@@ -1,0 +1,816 @@
+#
+# $Id: slax.txt,v 1.6 2006/11/03 15:43:05 phil Exp $
+#
+# Copyright (c) 2006-2008, Juniper Networks, Inc.
+# All rights reserved.
+# See ./Copyright for the status of this software
+#
+
+
+         SLAX -- Stylesheet Language, Alternative syntaX
+                  Phil Shafer <phil@juniper.net>
+                      Raleigh, NC
+
+* Abstract
+
+XSLT is a powerful language, but uses an XML-based syntax that is
+painful to read and write.  SLAX is an alternative syntax for the XSLT
+language, modeled after PERL and C which promotes the basic concepts
+of XSLT into first class language constructs.
+
+* SLAX -- An Alternative Syntax for XSLT
+
+XSLT is a commonly used transformation language for XML.  It is a
+simple, powerful, declarative language that uses XPath expressions to
+inspect an XML input document and can generate XML output based on
+that input hierarchy.  It's a great tool for handling XML.
+
+Except for the syntax.
+
+XSLT uses an XML-based syntax, and while XML is great for
+machine-to-machine communication, it is quite painful for humans to
+write, especially when writing programs.  The occasional benefits of
+having an XSLT stylesheet be an XML document are outweighed by the
+ongoing issues of dealing with the syntax.
+
+There have been a number of attempts to make an alternative syntax for
+XSLT, nothing revolutionary, but just some syntactic sugar to reduce
+the pain felt by normal people writing XSLT scripts.  None of these
+alternatives seems to have really gathered much of a following.  SLAX
+is another attempt in this same direction, with a more C-like syntax.
+
+* Overview
+
+SLAX has a simple syntax which follows the style of C and Perl.
+Programming constructs and XPath expressions are moved from XML
+elements and attributes to first class language constructs.  The
+overabundance of angle brackets and quotes is replaced by the
+parentheses and curly braces which programmers have enjoyed since the
+advent of "C".
+
+SLAX allows you to:
+
+- Use if/then/else instead of <xsl:choose> and <xsl:if>
+- Put test expressions in parentheses
+- Use "==" to test equality (to avoid building dangerous habits)
+- Use curly braces to show containment, reducing the noise from close
+  tags
+- Perform concatenation using the "_" operator (lifted from perl6)
+- Write text strings using simple quotes instead of <xsl:text>
+- Simplify invoking named templates with a syntax resembling a
+  function call
+- Simplify defining named template with a syntax resembling a
+  function definition
+- Simplify namespace declarations
+- Reduce the noise level in your script, allowing the important parts
+  of your code to increase their signal
+- Write readable scripts
+- Feel like a programmer again ;^)
+
+The benefits of SLAX are particularly strong for new developers, since
+it puts familiar constructs in familiar syntax, allowing them to
+concentrate in the new topics introduced by XSLT.
+
+* Peeking under the hood
+
+SLAX is purely syntactic sugar.  The underlaying constructs are
+completely native to XSLT.  Nothing is added to the XSLT engine.  The
+SLAX parser parses an input document and builds an XML tree identical
+to one produced when the XML parser reads an XSLT document.
+
+SLAX can be viewed as a pre-processor for XSLT, turning SLAX
+constructs (like if/then/else) into the equivalent XSLT constructs
+(like <xsl:choose> and <xsl:if>) before the real XSLT transformation
+engine gets invoked.
+
+SLAX uses the xsltSetLoaderFunc() in libxslt to tell libxslt to use a
+different function when loading script documents.  When
+xsltParseStylesheetDoc() loads a script, it then calls the SLAX loader
+code, which reads the script, constructs an XML document (xmlDoc)
+which mimics the document the normal XML parser would have created for
+a functionally equivalent script.  After this document is returned to
+the existing libxslt code, normal XSLT processing continues, unaffected
+by the fact that the script was written in SLAX.
+
+The "build-as-if" nature of SLAX makes is trivial to write a
+SLAX-to-XSLT convertor, which reads in SLAX and emit XSLT.  In
+addition, an XSLT-to-SLAX convertor is also available, which
+emits an XSLT document in SLAX format.  These make a great learning
+aid, as well as allowing conversion of SLAX scripts to XSLT for
+environments where libxslt is not available.
+
+* Statements
+
+This section lists the SLAX statements, with brief examples followed
+by their XSLT equivalents.  The utility of SLAX will hopefully be
+appearent, as will the simple transformation that SLAX parsing code is
+performing.
+
+** if/then/else
+
+SLAX supports an "if" statement that uses a C-like syntax.  The
+expressions that appear in parentheses are extended form of XPath
+expressions, which support the double equal sign ("==") in place of
+XPath's single equal sign ("=").  This allows C programmers to avoid
+slipping into dangerous habits.
+
+    if (this && that || the/other[one]) {
+        /* SLAX has a simple "if" statement */
+    } else if (yet[more == "fun"]) {
+        /* ... and it has "else if" */
+    } else {
+        /* ... and "else" */
+    }
+
+Depending on the presence of the "else" clause, an "if" statement can
+be transformed into either an <xsl:if> element or an <xsl:choose>
+element.
+
+    if (starts-with(name, "fe-")) {
+        if (mtu < 1500) {
+           /* Deal with fast ethernet interfaces with low MTUs */
+        }
+    } else {
+        if (mtu > 8096) {
+           /* Deal with non-fe interfaces with high MTUs */
+        }
+    }
+
+The XSLT equivalent:
+
+    <xsl:choose>
+      <xsl:when select="starts-with(name, 'fe-')">
+        <xsl:if test="mtu &lt; 1500">
+          <!-- Deal with fast ethernet interfaces with low MTUs -->
+        </xsl:if>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:if test="mtu &gt; 8096">
+          <!-- Deal with non-fe interfaces with high MTUs -->
+        </xsl:if>
+      </xsl:otherwise>
+    </xsl:choose>
+
+** Elements
+
+SLAX elements are written with in a C-like syntax, with only the open
+tag.  The contents of the tag appear immediately following the open
+tag.  These contents can either be a simple expression, or a more
+complex expression placed inside braces:
+
+  <top> {
+      <one>;
+      <two> {
+          <three>;
+          <four>;
+          <five> <six>;
+      }
+  }
+
+This is equivalent to:
+
+  <top>
+    <one/>
+    <two>
+      <three/>
+      <four/>
+      <five>
+        <six/>
+      </five>
+    </two>
+  </top>
+
+Programmers are used to using braces, indentations, and editor support
+to delineate blocks of data.  Using these nesting techniques and
+removing the close tag reduces the clutter and increases the clarity
+of code.
+
+** Expressions
+
+XPath expressions can appear as either the contents of an XML element
+or as the contents of a "expr" (expression) statement.  In either
+case, the value is translated in an <xsl:text> or <xsl:value-of>
+element.
+
+Strings are encoded using quotes (single or double) in a way that will
+feel natural to C programmers.  The concatenation operator is
+underscore ("_"), which is the new concatenation operator for Perl 6.
+(The use of "+" or "." would have created ambiguities in the SLAX
+language.)
+
+    <top> {
+        <one> "test";
+        <two> "The answer is " _ results/answer _ ".";
+        <three> results/count _ " attempts made by " _ results/user;
+        <four> {
+            expr results/count _ " attempts made by " _ results/user;
+        }
+        <five> {
+            expr results/count;
+            expr " attempts made by ";
+            expr results/user;
+        }
+        <six> results/message;
+    }
+
+The equivalent XSLT:
+
+    <top>
+      <one><xsl:text>test</xsl:text></one>
+      <two><xsl:value-of select='concat("The answer is ", 
+                                    results/answer, ".")'/></two>
+      <three><xsl:value-of select='concat(results/count,
+                   " attempts made by ", , results/user)'/></three>
+      <four><xsl:value-of select='concat(results/count,
+                   " attempts made by ", , results/user)'/></four>
+      <five>
+        <xsl:value-of select="results/count"/>
+        <xsl:text> attempts made by </xsl:text>
+        <xsl:value-of select="results/user"/>
+      </five>
+      <six><xsl:value-of select='results/message'/></six>
+    </top>
+
+In this example, the contents of the <three> and <four> element are
+identical, and the <five> element's contents are nearly identical,
+differing only in the use of the XPath concat() function.
+
+** Variables and Parameters
+
+Variable and parameter syntax uses the "var" and "param" statements to
+declare variables and parameters, respectively.  SLAX declarations
+differ from XSLT in that the variable name contains the dollar sign
+even in the declaration, which is unlike the "name" attribute of
+<xsl:variable> and <xsl:parameter>.  This was done to enhance the
+consistency of the language.
+
+    param $fido;
+    var $bone;
+
+The XSLT equivalent:
+
+    <xsl:parameter name="fido"/>
+    <xsl:variable name="bone"/>
+
+An initial value can be given by following the variable name with an
+equals sign and an expression.
+
+    param $dot = .;
+    var $location = $dot/@location;
+    var $message = "We are in " _ $location _ " now.";
+
+The XSLT equivalent:
+
+    <xsl:parameter name="dot" select="."/>
+    <xsl:variable name="location" select="$dot/location"/>
+    <xsl:variable name="message" select="concat('We are in ',
+                                           $location, ' now.')"/>
+
+Again, these are the same constucts as XSLT, but packaged in a more
+readable, maintainable syntax.
+
+** Attributes
+
+Attributes on elements follow the style of XML, with the attribute
+name, an equals sign, and the value of the attribute.
+
+    <element attr1="one" attr2="two">;
+
+Where XSLT allow attribute value templates using curly braces, SLAX
+uses the normal expression syntax.  Attribute values can be any XPath
+expression, including quoted strings, parameters, variables, and
+numbers, as well as the SLAX concatenation operator ("_").
+
+    <location state=$location/state
+              zip=$location/zip5 _ "-" _ $location/zip4>;
+
+The XSLT equivalent:
+
+    <location state="{$location/state}"
+              zip="{concat($location/zip5, "-", $location/zip4}"/>
+
+Note that curly braces placed inside quote strings are not
+interpreted as attribute value templates, but as real braces
+and are escaped when translated into XSLT.
+
+    <avt sign="{here}">;
+
+The XSLT equivalent:
+   
+    <avt sign="{{here}}"/>
+
+** The "match" statement
+
+Basic match templates are specified using the "match" statement,
+followed by an expression specifying when the template should be
+allowed.  This is followed by a block of statements enclosed in a set
+of braces.
+
+    match configuration {
+        <error> {
+            <message> "System is named " _ system/host-name;
+        }
+    }
+
+** Applying Templates
+
+Match templates are applied using the "apply-templates" statement.
+The statement accepts an optional XPath expression, which is
+equivalent to the "select" in an <xsl:apply-templates> element.
+
+    match configuration {
+        apply-template system/host-name;
+    }
+
+    match host-name {
+        <hello> .;
+    }
+
+The XSLT equivalent:
+
+    <xsl:template match="configuration">
+      <xsl:apply-templates select="system/host-name"/>
+    </xsl:template>
+
+    <xsl:template match="host-name">
+      <hello>
+        <xsl:value-of select="."/>
+      </hello>
+    </xsl:template>
+
+** Template Parameters
+
+Parameters may be passed to match templates using the "with"
+statement.  The "with" statement consists of the keyword "with" and
+the name of the parameter, optionally followed by an equals sign ("=")
+and a value expression.  If no value is given, the current value of
+that variable or parameter is passed, giving a simple shorthand for
+passing parameters if common names are used.
+
+    match configuration {
+        var $domain = domain-name;
+        apply-template system/host-name {
+            with $message = "Invalid host-name";
+            with $domain;
+        }
+    }
+
+    match host-name {
+        param $message = "Error";
+        param $domain;
+        <hello> $message _ ":: " _ . _ " (" _ $domain _ ")";
+    }
+
+The XSLT equivalent:
+
+    <xsl:template match="configuration">
+      <xsl:apply-templates select="system/host-name">
+        <xsl:with-param name="message" select="'Invalid host-name'"/>
+        <xsl:with-param name="domain" select="$domain"/>
+      </xsl:apply-templates>
+    </xsl:template>
+
+    <xsl:template match="host-name">
+      <xsl:param name="message" select="'Error'"/>
+      <xsl:param name="domain"/>
+      <hello>
+        <xsl:value-of select="concat($message, ':: ', ., 
+                                    ' (', $domain, ')')"/>
+      </hello>
+    </xsl:template>
+
+** The "mode" Statement
+
+The "mode" attribute of the <xsl:template> element is available
+using the "mode" statement.  This statement can appear inside a
+"match" statement and inside an "apply-templates" statement.
+
+    match * {
+        mode "one";
+        <one> .;
+    }
+
+    match * {
+        mode "two";
+        <two> string-length(.);
+    }
+
+    match / {
+        apply-templates version {
+            mode "one";
+        }
+        apply-templates version {
+            mode "two";
+        }
+    }
+
+The XSLT equivalent:
+
+    <xsl:template match="*" mode="one">
+      <one>
+        <xsl:value-of select="."/>
+      </one>
+    </xsl:template>
+
+    <xsl:template match="*" mode="two">
+      <two>
+        <xsl:value-of select="string-length(.)"/>
+      </two>
+    </xsl:template>
+
+    <xsl:template match="/">
+      <xsl:apply-template select="version" mode="one"/>
+      <xsl:apply-template select="version" mode="two"/>
+    </xsl:template>
+
+
+** The "priority" Statement
+
+The "priority" statement mimics the "priority" attribute of the
+<xsl:template> element.  It may appear inside a "match" statement.
+
+    match * {
+        priority 10;
+        <output> .;
+    }
+
+The XSLT equivalent:
+
+
+    <xsl:template match="*" priority="10">
+      <output>
+        <xsl:value-of select="."/>
+      </output>
+    </xsl:template>
+
+** Named Templates
+
+Named templates are defined using their name and parameters and
+invoked using the "call" statement.  The template definition consists
+of the "template" keyword, the template name, a set of parameters, and
+a braces-delineated block of code.  Parameter declarations can be
+either inline, with the parameter name and optionally an equals sign
+("=") and a value expression.  Additional parameters can be declared
+inside the block using the "param" statement.
+
+The template is invoked using the "call" statement, which consists of
+the "call" keyword followed by a set of parameter bindings.  These
+binding are a comma-separated list of parameter names, optionally
+followed by an equal sign and a value expression.  If the value is not
+given, the current value of that variable or parameter is passed,
+giving a simple shorthand for passing parameters if common names are
+used.  Additional template parameters can be supplied inside the block
+using the "with" statement.
+
+    match configuration {
+        var $name-servers = name-servers/name;
+        call temp:ting();
+        call temp:ting($name-servers, $size = count($name-servers));
+        call temp:ting() {
+            with $name-servers;
+            with $size = count($name-servers);
+        }
+    }
+
+    template temp:ting($name-servers, $size = 0) {
+        <output> "template called with size " _ $size;
+    }
+
+The XSLT equivalent:
+
+    <xsl:template match="configuration">
+      <xsl:variable name="name-servers" select="name-servers/name"/>
+      <xsl:call-template name="temp:ting"/>
+      <xsl:call-template name="temp:ting">
+        <xsl:with-param name="name-servers" select="$name-servers"/>
+        <xsl:with-param name="size" select="count($name-servers)"/>
+      </xsl:call-template>
+      <xsl:call-template name="temp:ting">
+        <xsl:with-param name="name-servers" select="$name-servers"/>
+        <xsl:with-param name="size" select="count($name-servers)"/>
+      </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="temp:ting">
+      <xsl:param name="name-servers"/>
+      <xsl:param name="size" select="0"/>
+      <output>
+        <xsl:value-of
+             select="concat('template called with size ', $size)"/>
+      </output>
+    </xsl:template>
+
+** The "for-each" Statement
+
+The "for-each" statement mimics functionality of the <xsl:for-each>
+element.  The statement consists of the "for-each" keyword, the
+parentheses-delimited select expression, and a block.
+
+    for-each ($inventory/chassis/chassis-module
+              /chassis-sub-module[part-number == '750-000610']) {
+        <message> "Down rev PIC in " _ ../name _ ", "
+                     _ name _ ": " _ description;
+    }
+
+The XSLT equivalent:
+
+
+    <xsl:for-each select="$inventory/chassis/chassis-module
+              /chassis-sub-module[part-number == '750-000610']">
+        <message>
+            <xsl:value-of select="concat('Down rev PIC in ', ../name,
+                                  ', ', name, ': ', description)"/>
+        </message>
+    </xsl:for-each>
+
+** "version"
+
+    version 1.0;
+
+All SLAX stylesheets must begin with a "version" statement, which
+gives the version number for the SLAX language.  This is currently
+fixed at "1.0" and will increase as the language evolves.
+
+SLAX version 1.0 implies XML version 1.0 and XSLT version 1.1.
+
+In addition, the "xsl" namespace is implicitly defined (as
+'xmlns:xsl="http://www.w3.org/1999/XSL/Transform"').
+
+** The "ns" Statement
+
+Namespace definitions are supplied using the "ns" statement.  This
+consists of either the "ns" keyword, a prefix string, an equal sign
+and a namespace URI or the "ns" keyword and a namespace URI.  The
+second form defines the default namespace.
+
+    ns junos = "http://www.juniper.net/junos/";
+
+The "ns" statement may appear either following the "version" statement
+at the beginning of the stylesheet or at the beginning of any block.
+
+    ns a = "http://example.com/1";
+    ns "http://example.com/global";
+    ns b = "http://example.com/2";
+
+    match / {
+        ns c = "http://example.com/3";
+        <top> {
+            ns a = "http://example.com/4";
+            apply-templates commit-script-input/configuration;
+        }
+    }
+
+When appearing at the beginning of the stylesheet, the ns statement
+may include either the "exclude" or "extension" keywords.  These
+keywords instruct the parser to add the namespace prefix to the
+"exclude-result-prefixes" or "extension-element-prefixes" attribute.
+
+    ns exclude foo = "http://example.com/foo";
+    ns extension jcs = "http://xml.juniper.net/jcs";
+
+The XSLT equivalent:
+
+    <xsl:stylesheet xmlns:foo="http://example.com/foo"
+                    xmlns:jcs="http://xml.juniper.net/jcs"
+                    exclude-result-prefixes="foo"
+                    extension-element-prefixes="jcs">
+        <!-- ... -->
+    </xsl:stylesheet>
+
+** The "copy-of" Statement
+
+The "copy-of" statement mimics the functionality of the <xsl:copy-of>
+element.
+
+    copy-of configuration/protocols/bgp;
+
+The XSLT equivalent:
+
+   <xsl:copy-of select="configuration/protocols/bgp"/>
+
+** The "apply-imports" Statement
+
+The "apply-imports" statement mimics the <xsl:apply-imports> element,
+allowing the script to invoke any imported templates.
+
+    apply-imports;
+
+The XSLT equivalent:
+
+   <xsl:apply-imports/>
+
+** The "include" and "import" Statements
+
+The "include" and "import" statements mimic the <xsl:include> and
+<xsl:import> elements.
+
+    include "foo.slax";
+    import "goo.xsl";
+
+The XSLT equivalent:
+
+    <xsl:include href="foo.slax"/>
+    <xsl:import href="goo.xsl"/>
+
+Import and include documents do _not_ need to be in written in SLAX.
+SLAX can import and include normal XSLT documents.
+
+** The "comment" Statement
+
+The "comment" statement mimics the <xsl:comment> element, allowing XML
+comments to be generated.
+
+    comment "Added by user " _ $user _ " on " _ $date;
+
+The XSLT equivalent:
+
+    <xsl:comment>
+      <xsl:value-of 
+           select='concat("Added by user ", $user, " on ", $date)'/>
+    </xsl:comment>
+
+** The "preserve-space" Statement
+
+The "preserve-space" statement mimics the <xsl:preserve-space>
+element, instructing the XSLT processor that certain elements
+should have internal whitespace retained.
+
+    preserve-space foo goo moo;
+
+The XSLT equivalent:
+
+    <xsl:preserve-space elements="foo goo moo"/>
+
+** The "strip-space" Statement
+
+The "strip-space" statement mimics the <xsl:strip-space>
+element, instructing the XSLT processor that certain elements
+should have internal whitespace removed.
+
+    strip-space foo goo moo;
+
+The XSLT equivalent:
+
+    <xsl:strip-space elements="foo goo moo"/>
+
+** Comments
+
+Comments in SLAX are entered in the traditional C style, beginning the
+"/*" and ending with "*/".  These comments are preserved in the
+in-memory XML tree representation of the SLAX script.  This allows
+comments to be preserved if the tree is emitted using the normal
+XML output renderer.
+
+    /*
+     * This is a comment.
+     */
+
+The XSLT equivalent:
+
+    <!-- /*
+     * This is a comment
+     */ -->
+
+** Other XSLT Elements
+
+A number of rarely used XSLT elements are not directly translated into
+SLAX statements.  Many of these elments are either rarely used or
+fairly complex, requiring the developer to refer to the XSLT spec (or
+the Kay book) for the syntax.  Adding a new SLAX syntax would make the
+developer's life harder, rather than helping them.  In some cases, the
+saving from making a SLAX version of the XSLT element is simply not
+sufficient to warrant a new syntax.
+
+These elements can be encoded directly as normal SLAX elements in the
+XSLT namespace:
+
+    <xsl:output method="xml" indent="yes" media-type="image/svg">;
+
+    match * {
+        for-each (configuration/interfaces/unit) {
+            <xsl:sort some-obnoxious-option="some-obnoxious-value">;
+        }
+    }
+
+* Example Stylesheets
+
+This section contains a few examples, converted from the libxslt test/
+directory.  The XSLT form can be found in the libxslt source code.
+They were converted using the slax writer.
+
+** general/itemschoose.xsl
+
+    version 1.0;
+ 
+    ns fo = "http://www.w3.org/1999/XSL/Format";
+ 
+    strip-space itemlist;
+    match doc {
+        <doc> {
+            apply-templates;
+        }
+    }
+    match orderedlist/listitem {
+        <fo:list-item indent-start="2pi"> {
+            <fo:list-item-label> {
+                var $level = count(ancestor::orderedlist) mod 3;
+     
+                if ($level=1) {
+                    <number format="i">;
+     
+                } else if ($level=2) {
+                    <number format="a">;
+     
+                } else {
+                    <number format="1">;
+                }
+                expr ". ";
+            }
+            <fo:list-item-body> {
+                apply-templates;
+            }
+        }
+    }
+
+** REC2/svg.xsl
+
+    version 1.0;
+ 
+    ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
+ 
+    <xsl:output method="xml" indent="yes" media-type="image/svg">;
+    match / {
+        <svg width="3in" height="3in"> {
+            <g style="stroke: #000000"> {
+                /* draw the axes */
+                <line x1="0" x2="150" y1="150" y2="150">;
+                <line x1="0" x2="0" y1="0" y2="150">;
+                <text x="0" y="10"> "Revenue";
+                <text x="150" y="165"> "Division";
+                for-each (sales/division) {
+                    /* define some useful variables */
+                    /* the bar's x position */
+                    var $pos = (position()*40)-30;
+                    /* the bar's height */
+                    var $height = revenue*10;
+                    /* the rectangle */
+                    <rect x=$pos y=150 - $height 
+                          width="20" height=$height>;
+                    /* the text label */
+                    <text x=$pos y="165"> @id;
+                    /* the bar value */
+                    <text x=$pos y=145 - $height> revenue;
+                }
+            }
+        }
+    }
+
+** XSLTMark/metric.xsl
+
+    version 1.0;
+ 
+    <xsl:output method="html" encoding="utf-8">;
+    match measurement {
+        var $m = {
+            if (@fromunit == 'km') {
+                expr . * 1000;
+     
+            } else if (@fromunit == 'm') {
+                expr .;
+     
+            } else if (@fromunit == 'cm') {
+                expr . * 0.01;
+     
+            } else if (@fromunit == 'mm') {
+                expr . * 0.001;
+            }
+        }
+        <measurement unit=@tounit> {
+            if (@tounit == 'mi') {
+                expr 0.00062137 * $m;
+     
+            } else if (@tounit == 'yd') {
+                expr 1.09361 * $m;
+     
+            } else if (@tounit == 'ft') {
+                expr 3.2808 * $m;
+     
+            } else if (@tounit == 'in') {
+                expr 39.37 * $m;
+            }
+        }
+    }
+
+* Status of the Software
+
+The SLAX software contains both a reader and a writer.  The reader
+turns a SLAX source file into an XSLT tree (xmlDocPtr) using the
+xsltSetLoaderFunc() hook.
+
+The writer turns an XSLT tree (xmlDocPtr) into a file containing
+SLAX statements.
+
+The software is currently working, but is not set up for "configure"
+use.  I need to get it working so the installer can say
+"--enable-slax".  When that's done, I'll make this available as
+a patch file.

@@ -1,0 +1,156 @@
+#
+# $Id: Makefile,v 1.11 2008/06/24 14:33:06 phil Exp $
+#
+# Copyright 2006-2008, Juniper Networks, Inc.
+# All rights reserved.
+# See ./Copyright for the status of this software
+#
+# Build libxslt
+#
+
+LIB=xslt
+
+SRC_PATHADD+= ${SRC_libxslt}
+
+DEBUG_FLAGS += ${XSLT_DEBUG_FLAGS}
+LIBXSLT_SRC=${CONTRIB}/libxslt
+LIBXML2_SRC=${CONTRIB}/libxml2
+LIBXML2_BUILD=${RELSRCTOP}/lib/libxml2
+
+SRCS=	attrvt.c \
+	xslt.c \
+	xsltutils.c \
+	pattern.c \
+	templates.c \
+	variables.c \
+	keys.c \
+	numbers.c \
+	extensions.c \
+	extra.c \
+	functions.c \
+	namespaces.c \
+	imports.c \
+	attributes.c \
+	documents.c \
+	preproc.c \
+	transform.c \
+	security.c
+
+
+# Incorporate EXSLT library functions into libxslt
+
+SRC_PATHADD += ${SRC_libxslt:H}
+
+SRCS += \
+	libexslt/common.c \
+	libexslt/crypto.c \
+	libexslt/date.c \
+	libexslt/dynamic.c \
+	libexslt/exslt.c \
+	libexslt/math.c \
+	libexslt/saxon.c \
+	libexslt/sets.c \
+	libexslt/strings.c
+
+# The file libexslt/functions.c is problematic, since there's already a
+# libxslt/functions.c, so we have to cheat a little.  See also note below.
+
+OBJS += libexslt_functions.o
+
+# SLAX files
+SRCS += slaxparser.c \
+	slaxloader.c \
+	slaxstring.c \
+	slaxwriter.c
+
+.if defined(NEED_BSD_UI)
+CFLAGS += -g
+.endif
+
+CFLAGS+= 	-I. -I${.CURDIR}
+
+# Need this to pick up "xsltconfig.h"
+CFLAGS += -I${SRC_libxslt}
+
+SRC_LIBS += \
+	${LIBXML2} \
+	${LIBXSLT}
+
+DPLIBS += ${LIBZ} ${LIBM}
+
+.include <bsd.lib.mk>
+
+#
+# Add an explicit rule to build libexslt_functins.o from the
+# libexslt file functions.c.  This is needed to avoid filename
+# conflicts with the libxslt file with the same basename.  I
+# need rules for .o, .So, and .po objects, which I can't count
+# on the built-in .c.o, etc rules.  To make matter worse,
+# .IMPSRC doesn't work for explicit rules and I need the full path
+# to my source files.  So I use ":M" to pull out my name and use
+# ":u" to avoid when it's listed twice (MYPROFILE=YES).
+#
+MYSRC = ${.ALLSRC:M*libexslt/functions.c:u}
+
+libexslt_functions.o: libexslt/functions.c
+	${_QUIETLY_}${CC} ${CFLAGS} -c ${MYSRC} -o ${.TARGET}
+
+libexslt_functions.po: libexslt/functions.c
+	${_QUIETLY_}${CC} ${PROFILE_FLAGS} ${CFLAGS} -c ${MYSRC} -o ${.TARGET}
+
+libexslt_functions.So: libexslt/functions.c
+	${_QUIETLY_}${CC} ${PICFLAG} -DPIC ${CFLAGS} -c ${MYSRC} -o ${.TARGET}
+
+MY_YACC = ${YACC_SH} YACC=${BISON} -kvd -b slaxparser
+
+slaxparser.h: slaxparser.c
+slaxloader.o slaxwriter.o: slaxparser.h
+
+slaxparser.c: slaxparser-out.y
+	${_QUIETLY_}${MY_YACC} -o slaxparser.c slaxparser-out.y
+	${_SILENTLY_}mv $@ $@.old
+	${_SILENTLY_}sed 's:int yyparse (void);::' < $@.old  > $@
+	@${RM} $@.old
+
+#
+# See the comment at the top of slaxparser-xp.y for details
+#
+SLAXPIECES = \
+	slaxparser.y \
+	slaxparser-xp.y \
+	slaxparser-xpl.y \
+	slaxparser-tail.y
+
+slaxparser-out.y: ${SLAXPIECES}
+	cat $> > $@
+
+slaxparser-xpl.y: slaxparser-xp.y
+	sed 's/xp_/xpl_/g' < ${.CURDIR}/slaxparser-xp.y > slaxparser-xpl.y
+
+clean-slaxparser:
+	${RM} -f slaxparser-xpl.y slaxparser-out.y
+
+.if defined(NEED_SLAX_TESTS) || make(slax)
+
+slaxloader.test slaxwriter.test: ${_LIBS}
+slax: slaxloader.test slaxwriter.test
+
+G_LIB = `pwd`/../
+GDB_ENV = LD_LIBRARY_PATH=`pwd`:\
+${G_LIB}/libxml2:${G_LIB}/libmd:\
+${G_LIB}/libz:${G_LIB}/msun:${G_LIB}/libc
+
+gdb gdb-loader: slaxloader.test
+	${GDB_ENV} gdb slaxloader.test
+
+gdb-w gdb-writer: slaxwriter.test
+	${GDB_ENV} slaxwriter.test
+
+.endif
+
+CLEANFILES += slaxparser.h slaxparser.c
+
+.if ${.OBJDIR} != ${.CURDIR}
+slaxclean:
+	rm ${CANONICALOBJDIR}/slax*
+.endif
