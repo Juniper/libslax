@@ -181,12 +181,11 @@
 /*
  * This is a pure parser, allowing this library to link with other users
  * of yacc. To allow this, we pass our data structure (slax_data_t)
- * to yyparse as a void argument, yyparse_void_param.
+ * to yyparse as the argument.
  */
 #define yyparse slaxParse
-#define YYPARSE_PARAM yyparse_void_param
-#define slax_data ((slax_data_t *) yyparse_void_param)
-#define YYLEX_PARAM yyparse_void_param
+#define YYPARSE_PARAM slax_data
+#define YYLEX_PARAM slax_data
 #define YYERROR_VERBOSE
 
 #define YYDEBUG 1		/* Enable debug output */
@@ -212,6 +211,13 @@
  * XPath expressions.
  */
 #define STACK_LINK(_x) slaxStringLink(slax_data, &(_x), yyvsp)
+
+/*
+ * Beginning with version 2.3, bison warns about unused values, which
+ * is not appropriate for our grammar, so we need to explicitly mark
+ * our mid-rule actions as UNUSED.
+ */
+#define STACK_UNUSED(_x...) /* nothing */
 
 %}
 
@@ -288,6 +294,7 @@ ns_decl :
 		    }
 
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 
 	| K_NS T_QUOTED L_EOS
@@ -418,6 +425,7 @@ param_decl :
 		    KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
 		}
 
 	| K_PARAM T_VAR L_ASSIGN
@@ -433,6 +441,7 @@ param_decl :
 		    slaxAvoidRtf(slax_data);
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
 		}
 	;
 
@@ -456,6 +465,7 @@ var_decl :
 		    KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
 		}
 
 	| K_VAR T_VAR L_ASSIGN
@@ -471,6 +481,7 @@ var_decl :
 		    slaxAvoidRtf(slax_data);
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
 		}
 	;
 
@@ -513,6 +524,7 @@ match_template :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -567,6 +579,7 @@ named_template :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -633,6 +646,7 @@ named_template_argument_decl :
 		    }
 		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -643,7 +657,10 @@ block :
 		    $$ = NULL;
 		}
 	    block_contents L_CBRACE
-		{ $$ = NULL; }
+		{
+		    $$ = NULL;
+		    STACK_UNUSED($2);
+		}
 	;
 
 block_contents :
@@ -737,6 +754,7 @@ apply_templates_stmt :
 		    KEYWORDS_OFF();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -773,6 +791,7 @@ call_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -858,6 +877,7 @@ call_argument_member :
 		    /* XXX else error */
 
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -871,7 +891,10 @@ call_arguments_braces_style :
 		    $$ = NULL;
 		}
 	    call_argument_braces_list L_CBRACE
-		{ $$ = NULL; }
+		{
+		    $$ = NULL;
+		    STACK_UNUSED($2);
+		}
 	;
 
 call_argument_braces_list :
@@ -920,6 +943,7 @@ call_argument_braces_member :
 		    nodePop(slax_data->sd_ctxt);
 
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
 		}
 
 	| mode_stmt
@@ -983,6 +1007,7 @@ element :
 		    ALL_KEYWORDS_ON();
 		    KEYWORDS_OFF();
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2, $4);
 		}
 	;
 
@@ -1027,6 +1052,7 @@ attribute :
 		{
 		    slaxAttribAddValue(slax_data, $1->ss_token, $4);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -1044,6 +1070,7 @@ for_each_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($5);
 		}
 	;
 
@@ -1067,6 +1094,7 @@ if_stmt :
 		    slaxElementPop(slax_data); /* Pop choose */
 		    slaxCheckIf(slax_data, choosep);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($5, $7);
 		}
 	;
 
@@ -1090,6 +1118,7 @@ elsif_stmt :
 		{
 		    slaxElementPop(slax_data); /* Pop when */
 		    $$ = NULL;
+		    STACK_UNUSED($6);
 		}
 	;
 
@@ -1106,6 +1135,7 @@ else_stmt :
 		{
 		    slaxElementPop(slax_data); /* Pop otherwise */
 		    $$ = NULL;
+		    STACK_UNUSED($2);
 		}
 	;
 

@@ -1,7 +1,7 @@
 /*
  * $Id: slaxinternals.h,v 1.3 2008/05/21 02:06:12 phil Exp $
  *
- * Copyright (c) 2006-2008, Juniper Networks, Inc.
+ * Copyright (c) 2006-2010, Juniper Networks, Inc.
  * All rights reserved.
  * See ./Copyright for the status of this software
  */
@@ -37,7 +37,7 @@
 #define FALSE 0
 #endif
 
-int slaxDebug;			/* Global debug switch */
+extern int slaxDebug;			/* Global debug switch */
 extern const char *keywordString[];
 
 /* Attribute names */
@@ -144,6 +144,12 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp);
 #define yyerror(str) slaxYyerror(slax_data, str, yylval)
 int
 slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE);
+
+/*
+ * The bison-based parser's main function
+ */
+int
+slaxParse (slax_data_t *);
 
 /*
  * Return a human-readable name for a given token type
@@ -347,23 +353,10 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
  */
 
 /*
- * Simple test for string equality: compare the first letters before
- * calling strcmp().
- */
-static inline int
-streq (const char *s1, const char *s2)
-{
-    if (s1 == NULL || s2 == NULL || *s1 != *s2)
-	return FALSE;
-
-    return (strcmp(s1, s2) == 0);
-}
-
-/*
  * Free a chunk of memory
  */
 static inline void
-xmlFreeAndEasy (char *ptr)
+xmlFreeAndEasy (void *ptr)
 {
     if (ptr)
 	xmlFree(ptr);

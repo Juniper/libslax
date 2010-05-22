@@ -237,10 +237,10 @@ slaxKeywordMatch (slax_data_t *sdp, const char *str)
  * ch1 and ch2.  Returns zero if there is none.
  */
 static int
-slaxDoubleWide (slax_data_t *sdp, int ch1, int ch2)
+slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
 {
-    if (ch2 == doubleWideData[doubleWide[ch1]])
-	return doubleWideData[doubleWide[ch1] - 2];
+    if (ch2 == doubleWideData[(unsigned) doubleWide[ch1]])
+	return doubleWideData[(unsigned) doubleWide[ch1] - 2];
     return 0;
 }
 
@@ -259,7 +259,6 @@ slaxKeyword (slax_data_t *sdp)
 {
     int slax_kwa = SLAX_KEYWORDS_ALLOWED(sdp);
     int xpath_kwa = XPATH_KEYWORDS_ALLOWED(sdp);
-    int kwa = slax_kwa || xpath_kwa;
     keyword_mapping_t *kmp;
     int ch;
 
@@ -446,7 +445,7 @@ slaxLexer (slax_data_t *sdp)
 		    int start = sdp->sd_start + COMMENT_MARKER_SIZE;
 		    int end = sdp->sd_cur - COMMENT_MARKER_SIZE;
 		    int len = end - start;
-		    char *buf = alloca(len + 1);
+		    unsigned char *buf = alloca(len + 1);
 		    xmlNodePtr nodep;
 
 		    while (isspace(sdp->sd_buf[start])) {
@@ -491,7 +490,7 @@ slaxLexer (slax_data_t *sdp)
 
     if (ch1 < SLAX_MAX_CHAR) {
 	if (doubleWide[ch1]) {
-	    int rc = slaxDoubleWide(sdp, ch1, ch2);
+	    rc = slaxDoubleWide(sdp, ch1, ch2);
 	    if (rc) {
 		sdp->sd_cur += 2;
 		return rc;
@@ -742,7 +741,6 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 int
 slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
 {
-    char buf[BUFSIZ];
     char *token = yylvalp ? yylvalp->ss_token : NULL;
 
     sdp->sd_errors += 1;
@@ -761,9 +759,9 @@ void
 slaxVersionMatch (const char *major, const char *minor)
 {
     if (major == NULL || !streq(major, "1")
-	|| minor == NULL && !streq(minor, "0"))
-	fprintf(stderr, "invalid version number: %d.%d\n",
-		major ? major : 0, minor ? minor : 0);
+	|| minor == NULL || !streq(minor, "0"))
+	fprintf(stderr, "invalid version number: %s.%s\n",
+		major ?: 0, minor ?: 0);
 }
 
 /*
@@ -971,7 +969,7 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
     cp = index(name, ':');
     if (cp) {
 	const char *prefix = name;
-	int len = cp - prefix;
+	len = cp - prefix;
 	name = cp + 1;
 	ns = slaxFindNs(sdp->sd_ctxt->node, prefix, len);
     }
@@ -1015,12 +1013,13 @@ slaxAttribAddString (slax_data_t *sdp, const char *name, slax_string_t *value)
 void
 slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 {
-    const char *current = xmlGetProp(sdp->sd_ctxt->node, attrib);
-    int clen = current ? strlen(current) + 1 : 0;
+    const xmlChar *uattrib = (const xmlChar *) attrib;
+    const xmlChar *current = xmlGetProp(sdp->sd_ctxt->node, uattrib);
+    int clen = current ? xmlStrlen(current) + 1 : 0;
     int vlen = strlen(value) + 1;
     xmlAttrPtr attr;
 
-    char *newp = alloca(clen + vlen);
+    unsigned char *newp = alloca(clen + vlen);
     if (newp == NULL) {
 	xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
 		       sdp->sd_filename, sdp->sd_line);
@@ -1034,16 +1033,17 @@ slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 
     memcpy(newp + clen, value, vlen);
 
-    attr = xmlSetProp(sdp->sd_ctxt->node, attrib, newp);
+    attr = xmlSetProp(sdp->sd_ctxt->node, uattrib, newp);
 }
 
 /*
  * Backup the stack up 'til the given node is seen
  */
 slax_string_t *
-slaxStackClear (slax_data_t *sdp, slax_string_t **sspp, slax_string_t **top)
+slaxStackClear (slax_data_t *sdp UNUSED, slax_string_t **sspp,
+		slax_string_t **top)
 {
-    slax_string_t *ssp, *osp;
+    slax_string_t *ssp;
 
     while (*sspp == NULL && sspp < top)
 	sspp += 1;
@@ -1187,8 +1187,8 @@ slaxAvoidRtf (slax_data_t *sdp)
     if (nodep->children == NULL)
 	return;
 
-    name = xmlGetProp(nodep, ATT_NAME);
-    clen = name ? strlen(name) + 1 : 0;
+    name = xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
+    clen = name ? xmlStrlen(name) + 1 : 0;
 
     /*
      * Generate the new temporary variable name using the original
@@ -1199,7 +1199,8 @@ slaxAvoidRtf (slax_data_t *sdp)
     temp_name = alloca(vlen);
     snprintf(temp_name, vlen, temp_name_format, name, ++temp_count);
 
-    (void) xmlSetProp(sdp->sd_ctxt->node, ATT_NAME, temp_name);
+    (void) xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) ATT_NAME,
+		      (xmlChar *) temp_name);
 
     /*
      * Now generate the new element, using the original, user-provided
@@ -1220,7 +1221,7 @@ slaxAvoidRtf (slax_data_t *sdp)
     value = alloca(vlen);
     snprintf(value, vlen, new_value_format, temp_name);
 
-    xmlNewProp(newp, (const xmlChar *) ATT_SELECT, (const xmlChar *) value);
+    xmlNewProp(newp, (const xmlChar *) ATT_SELECT, (xmlChar *) value);
 
     /* Add the namespace for 'ext' */
     xmlNewNs(newp, (const xmlChar *) EXT_URI, (const xmlChar *) EXT_PREFIX);
@@ -1235,7 +1236,7 @@ void
 slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 {
     char *buf;
-    xmlNodePtr nodep, textp;
+    xmlNodePtr nodep;
     xmlAttrPtr attr;
 
     if (value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
@@ -1321,7 +1322,7 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
 	if (nodep->type != XML_ELEMENT_NODE)
 	    return;
 
-	if (!streq(nodep->name, ELT_WHEN))
+	if (!streq((const char *) nodep->name, ELT_WHEN))
 	    return;
     }
 
@@ -1333,9 +1334,9 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
     nodep = choosep->children;
 
     xmlUnlinkNode(nodep);
-    xmlFree((char *) nodep->name);
+    xmlFree(const_drop(nodep->name));
 
-    nodep->name = xmlStrdup(ELT_IF);
+    nodep->name = xmlStrdup((const xmlChar *) ELT_IF);
     if (nodep->name == NULL)
 	return;
 
@@ -1353,13 +1354,13 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
     xmlDocPtr docp;
     xmlNodePtr nodep;
 
-    docp = xmlNewDoc(XML_DEFAULT_VERSION);
+    docp = xmlNewDoc((const xmlChar *) XML_DEFAULT_VERSION);
     if (docp == NULL)
 	return NULL;
 
     docp->standalone = 1;
 
-    nodep = xmlNewNode(NULL, ELT_STYLESHEET);
+    nodep = xmlNewNode(NULL, (const xmlChar *) ELT_STYLESHEET);
     if (nodep) {
 
 	sdp->sd_xsl_ns = xmlNewNs(nodep, (const xmlChar *) XSL_NS,
@@ -1369,7 +1370,8 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	xmlDocSetRootElement(docp, nodep);
 	nodePush(ctxt, nodep);
 
-	(void) xmlNewProp(nodep, ATT_VERSION, XSL_VERSION);
+	(void) xmlNewProp(nodep, (const xmlChar *) ATT_VERSION,
+			  (const xmlChar *) XSL_VERSION);
     }
 
     if (ctxt->dict) {
@@ -1426,7 +1428,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
     }
 
     if (filename != NULL)
-        sd.sd_docp->URL = (char *) xmlStrdup((const xmlChar *) filename);
+        sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) filename);
 
     rc = slaxParse(&sd);
 
@@ -1471,7 +1473,6 @@ static xmlDocPtr
 slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
 	   void *callerCtxt, xsltLoadType type)
 {
-    int rc;
     FILE *file;
     xmlDocPtr docp;
 
@@ -1482,7 +1483,7 @@ slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
     if (URI[0] == '-' && URI[1] == 0)
 	file = stdin;
     else {
-	file = fopen(URI, "r");
+	file = fopen((const char *) URI, "r");
 	if (file == NULL) {
 	    slaxTrace("slax: file open failed for '%s': %s",
 		      URI, strerror(errno));
@@ -1490,7 +1491,7 @@ slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
 	}
     }
 
-    docp = slaxLoadFile(URI, file, dict);
+    docp = slaxLoadFile((const char *) URI, file, dict);
 
     if (file != stdin)
 	fclose(file);
@@ -1506,7 +1507,6 @@ xmlDocPtr
 slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
 	       const char *encoding, int options)
 {
-    int rc;
     FILE *file;
     xmlDocPtr docp;
 
@@ -1558,16 +1558,25 @@ slaxSetTextAsElement (int enable)
 }
 
 /*
+ * Dump a formatted version of the XSL tree to a file
+ */
+void
+slaxDumpToFd (int fd, xmlDocPtr docp)
+{
+    xmlSaveCtxtPtr handle;
+
+    handle = xmlSaveToFd(fd, "UTF-8", XML_SAVE_FORMAT);
+    xmlSaveDoc(handle, docp);
+    xmlSaveClose(handle);
+}
+
+/*
  * Dump a formatted version of the XSL tree to stdout
  */
 void
 slaxDump (xmlDocPtr docp)
 {
-    xmlSaveCtxtPtr handle;
-
-    handle = xmlSaveToFd(1, "UTF-8", XML_SAVE_FORMAT);
-    xmlSaveDoc(handle, docp);
-    xmlSaveClose(handle);
+    slaxDumpToFd(1, docp);
 }
 
 #ifdef UNIT_TEST

@@ -1,0 +1,229 @@
+#
+# $Id$
+#
+
+AC_PREREQ(2.2)
+AC_INIT([libslax], [0.1], [phil@juniper.net])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+
+#
+# There is nothing specific about these versions, they are
+# just what I'm testing against.
+#
+LIBXML_REQUIRED_VERSION=2.6.27
+LIBXSLT_REQUIRED_VERSION=1.1.24
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+AC_CONFIG_MACRO_DIR([m4])
+
+AC_PATH_PROG(CAT, cat, /bin/cat)
+AC_PATH_PROG(MV, mv, /bin/mv)
+AC_PATH_PROG(RM, rm, /bin/rm)
+AC_PATH_PROG(SED, sed, /bin/sed)
+AC_PATH_PROG(BISON, bison, /usr/bin/bison)
+
+AC_STDC_HEADERS
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+AC_TYPE_SIZE_T
+
+# Checks for library functions.
+AC_FUNC_ALLOCA
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([bzero memmove strchr strcspn strerror strspn])
+
+AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h string.h sys/param.h unistd.h ])
+AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
+AC_CHECK_LIB([xslt], [xsltInit])
+
+dnl
+dnl Some packages need to be checked against version numbers so we
+dnl define a function here for later use
+dnl
+AC_DEFUN([VERSION_TO_NUMBER],
+[`$1 | sed -e 's/libxml //' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
+
+AC_ARG_ENABLE([debug],
+    [  --enable-debug    Turn on debugging],
+    [case "${enableval}" in
+        yes) SLAX_DEBUG=1 ;;
+        no)  SLAX_DEBUG= ;;
+        *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+    esac],[SLAX_DEBUG=])
+AM_CONDITIONAL(SLAX_DEBUG, test "$SLAX_DEBUG" != "")
+AC_SUBST(SLAX_DEBUG)
+
+
+#
+# ---- start of noise
+#
+
+#
+# ---- handle libxml2
+#
+
+LIBXML_CONFIG_PREFIX=""
+LIBXML_SRC=""
+
+AC_ARG_WITH(libxml-prefix,
+        [  --with-libxml-prefix=[PFX]           Specify location of libxml config],
+        LIBXML_CONFIG_PREFIX=$withval
+)
+        
+AC_ARG_WITH(libxml-include-prefix,
+        [  --with-libxml-include-prefix=[PFX]   Specify location of libxml headers],
+        LIBXML_CFLAGS="-I$withval"
+)
+
+AC_ARG_WITH(libxml-libs-prefix,
+        [  --with-libxml-libs-prefix=[PFX]      Specify location of libxml libs],
+        LIBXML_LIBS="-L$withval"
+)
+
+AC_ARG_WITH(libxml-src,
+        [  --with-libxml-src=[DIR]              For libxml thats not installed yet (sets all three above)],
+        LIBXML_SRC="$withval"
+)
+AC_SUBST(LIBXML_SRC)
+
+dnl
+dnl where is xml2-config
+dnl
+
+AC_SUBST(LIBXML_REQUIRED_VERSION)
+AC_MSG_CHECKING(for libxml libraries >= $LIBXML_REQUIRED_VERSION) 
+if test "x$LIBXML_CONFIG_PREFIX" != "x"
+then
+        XML_CONFIG=${LIBXML_CONFIG_PREFIX}/bin/xml2-config
+else
+        XML_CONFIG=xml2-config
+fi
+
+dnl
+dnl make sure xml2-config is executable,
+dnl test version and init our variables
+dnl
+
+if ${XML_CONFIG} --libs print > /dev/null 2>&1
+then
+	XMLVERS=`$XML_CONFIG --version`
+	if test VERSION_TO_NUMBER(echo $XMLVERS) -ge VERSION_TO_NUMBER(echo $LIBXML_REQUIRED_VERSION)
+	then
+		LIBXML_LIBS="$LIBXML_LIBS `$XML_CONFIG --libs`"
+		LIBXML_CFLAGS="$LIBXML_CFLAGS `$XML_CONFIG --cflags`"
+		AC_MSG_RESULT($XMLVERS found)
+	else
+		AC_MSG_ERROR(Version $XMLVERS found. You need at least libxml2 $LIBXML_REQUIRED_VERSION for this version of libxslt)
+	fi
+else
+	AC_MSG_ERROR([Could not find libxml2 anywhere, check ftp://xmlsoft.org/.])
+fi
+
+AC_SUBST(XML_CONFIG)
+AC_SUBST(LIBXML_LIBS)
+AC_SUBST(LIBXML_CFLAGS)
+
+
+
+#
+# ---- handle libxslt
+#
+
+LIBXSLT_CONFIG_PREFIX=""
+LIBXSLT_SRC=""
+
+AC_ARG_WITH(libxslt-prefix,
+        [  --with-libxslt-prefix=[PFX]           Specify location of libxslt config],
+        LIBXSLT_CONFIG_PREFIX=$withval
+)
+        
+AC_ARG_WITH(libxslt-include-prefix,
+        [  --with-libxslt-include-prefix=[PFX]   Specify location of libxslt headers],
+        LIBXSLT_CFLAGS="-I$withval"
+)
+
+AC_ARG_WITH(libxslt-libs-prefix,
+        [  --with-libxslt-libs-prefix=[PFX]      Specify location of libxslt libs],
+        LIBXSLT_LIBS="-L$withval"
+)
+
+AC_ARG_WITH(libxslt-src,
+        [  --with-libxslt-src=[DIR]              For libxslt thats not installed yet (sets all three above)],
+        LIBXSLT_SRC="$withval"
+)
+AC_SUBST(LIBXSLT_SRC)
+
+dnl
+dnl where is xslt-config
+dnl
+
+AC_SUBST(LIBXSLT_REQUIRED_VERSION)
+AC_MSG_CHECKING(for libxslt libraries >= $LIBXSLT_REQUIRED_VERSION) 
+if test "x$LIBXSLT_CONFIG_PREFIX" != "x"
+then
+        XSLT_CONFIG=${LIBXSLT_CONFIG_PREFIX}/bin/xslt-config
+else
+        XSLT_CONFIG=xslt-config
+fi
+
+dnl
+dnl make sure xslt-config is executable,
+dnl test version and init our variables
+dnl
+
+if ${XSLT_CONFIG} --libs print > /dev/null 2>&1
+then
+	XSLTVERS=`$XSLT_CONFIG --version`
+	if test VERSION_TO_NUMBER(echo $XSLTVERS) -ge VERSION_TO_NUMBER(echo $LIBXSLT_REQUIRED_VERSION)
+	then
+		LIBXSLT_LIBS="$LIBXSLT_LIBS `$XSLT_CONFIG --libs`"
+		LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS `$XSLT_CONFIG --cflags`"
+		AC_MSG_RESULT($XSLTVERS found)
+	else
+		AC_MSG_ERROR(Version $XSLTVERS found. You need at least libxslt $LIBXSLT_REQUIRED_VERSION for this version of libxslt)
+	fi
+else
+	AC_MSG_ERROR([Could not find libxslt anywhere, check ftp://xmlsoft.org/.])
+fi
+
+AC_SUBST(XSLT_CONFIG)
+AC_SUBST(LIBXSLT_LIBS)
+AC_SUBST(LIBXSLT_CFLAGS)
+
+#
+# ---- end of noise
+#
+
+case $host_os in
+     darwin*)
+        LIBTOOL=glibtool
+	;;
+esac
+
+SLAX_SRCDIR='${srcdir}'
+SLAX_LIBDIR='${libdir}'
+SLAX_INCLUDEDIR='${includedir}'
+AC_SUBST(SLAX_SRCDIR)
+AC_SUBST(SLAX_LIBDIR)
+AC_SUBST(SLAX_INCLUDEDIR)
+AC_SUBST(SLAX_CFLAGS)
+AC_SUBST(SLAX_LIBTOOLLIBS)
+AC_SUBST(SLAX_LIBS)
+
+dnl for the spec file
+RELDATE=`date +'%Y-%m-%d%n'`
+AC_SUBST(RELDATE)
+
+
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([
+  Makefile
+  slax-config
+  libslax/Makefile
+  slaxproc/Makefile
+])
+AC_OUTPUT
