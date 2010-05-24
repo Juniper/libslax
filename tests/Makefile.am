@@ -1,4 +1,4 @@
-SUBDIRS=spec bugs
+SUBDIRS=spec bugs fakeproc
 
 test tests:
 	@(cur=`pwd` ; for dir in $(SUBDIRS) ; do \
@@ -14,15 +14,28 @@ valgrind:
 
 full: tests libxslt-tests
 
-libxslt-tests:
+.PHONY: libxslt-tests libxslt-setup
+
+libxslt-tests: libxslt-setup
 if USE_LIBXSLT_TESTS
-	${RM} -fr libxslt
-	${CP} -r ${WITH_LIBXSLT_TESTS}/ libxslt
-	${CP} ${srcdir}/libxslt.ac libxslt/configure.ac
-	( cd libxslt ; sh configure )
-	( FAKEPROC=`cd $srcdir; pwd` ; \
-		cd libxslt ; ${MAKE} CHECKER=$$FAKEPROC )
+	(cd libxslt ; sh configure)
+	(FAKEPROC=`cd ${srcdir}; pwd`/fakeproc ; \
+		cd libxslt ; ${MAKE} CHECKER=$$FAKEPROC)
 else
 	@echo "skipping libxslt tests"
 endif
 
+setup libxslt-setup:
+if USE_LIBXSLT_TESTS
+	${RM} -fr libxslt
+	${CP} -r ${WITH_LIBXSLT_TESTS}/ libxslt
+	@-(for i in libxslt/*/Makefile.am ; do \
+		${MV} $$i $$i.save ; \
+		${SED} -e 's/xsltproc/slaxproc/g' \
+			-e 's:/slaxproc/slaxproc:/../../slaxproc/slaxproc:g' \
+				< $$i.save > $$i; \
+	done)
+	${CP} ${srcdir}/libxslt.ac libxslt/configure.ac
+	(cd libxslt ; /opt/local/bin/autoreconf --install)
+	(cd libxslt ; ./configure )
+endif
