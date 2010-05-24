@@ -1,0 +1,20 @@
++/* Machine Crafted with Care (tm) by slaxWriter */
+ version 1.0;
+ 
+ match configuration {
+     var $name-servers = name-servers/name;
++    
+     call temp:ting();
+     call temp:ting($name-servers, $size = count($name-servers));
+-    call temp:ting() {
+-	with $name-servers;
+-	with $size = count($name-servers);
+-    }
++    call temp:ting($name-servers, $size = count($name-servers));
+ }
+ 
+-template temp:ting($name-servers, $size = 0) {
++template temp:ting ($name-servers, $size = 0) {
+     <output> "template called with size " _ $size;
+ }
++

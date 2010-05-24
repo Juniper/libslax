@@ -163,7 +163,9 @@ complex expression placed inside braces:
       <two> {
           <three>;
           <four>;
-          <five> <six>;
+          <five> {
+              <six>;
+          }
       }
   }
 
@@ -809,8 +811,3 @@ xsltSetLoaderFunc() hook.
 
 The writer turns an XSLT tree (xmlDocPtr) into a file containing
 SLAX statements.
-
-The software is currently working, but is not set up for "configure"
-use.  I need to get it working so the installer can say
-"--enable-slax".  When that's done, I'll make this available as
-a patch file.

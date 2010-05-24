@@ -1,0 +1,13 @@
+version 1.0;
+/*
+ * This is a comment.
+ */
+
+match / { /* another */
+    /* one more */
+
+    for-each (list/input) {
+	/* more */
+    }
+}
+

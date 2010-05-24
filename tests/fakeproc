@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# $Id$
+#
+
+# fakeproc::
+# This is a "plug compatible" version of "xsltproc" suitable for
+# use as a "CHECKER" under the stock libxslt tests.
+
+echo "$@"
+exit 0

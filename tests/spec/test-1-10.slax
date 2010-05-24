@@ -1,0 +1,6 @@
+version 1.0;
+
+match * {
+    priority 10;
+    <output> .;
+}

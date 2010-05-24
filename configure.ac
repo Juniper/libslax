@@ -18,11 +18,15 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
+AC_PATH_PROG(BISON, bison, /usr/bin/bison)
 AC_PATH_PROG(CAT, cat, /bin/cat)
+AC_PATH_PROG(CP, cp, /bin/cp)
+AC_PATH_PROG(DIFF, diff, /usr/bin/diff)
+AC_PATH_PROG(MKDIR, mkdir, /bin/mkdir)
 AC_PATH_PROG(MV, mv, /bin/mv)
 AC_PATH_PROG(RM, rm, /bin/rm)
 AC_PATH_PROG(SED, sed, /bin/sed)
-AC_PATH_PROG(BISON, bison, /usr/bin/bison)
 
 AC_STDC_HEADERS
 
@@ -57,6 +61,24 @@ AC_ARG_ENABLE([debug],
 AM_CONDITIONAL(SLAX_DEBUG, test "$SLAX_DEBUG" != "")
 AC_SUBST(SLAX_DEBUG)
 
+# Allow the reuse of the libxslt tests, if they have the source code
+AC_ARG_WITH(libxslt_tests, [  --with-libxslt-tests[=DIR]    Include the libxslt tests])
+if test "$with_libxslt_tests" != "" ; then
+   if test -d "$with_libxslt_tests" ; then
+     with_libxslt_tests=`cd $with_libxslt_tests; pwd`
+   else
+      AC_MSG_ERROR([bad value ${with_libxslt_tests} for --with-libxslt-tests])
+   fi
+
+#   if ! test -f $with_libxslt_tests/Makefile ; then
+#      AC_MSG_ERROR([Run 'configure' in ${with_libxslt_tests}]) 
+#   fi
+
+   WITH_LIBXSLT_TESTS=$with_libxslt_tests
+   AC_MSG_RESULT(Using libxslt test in $WITH_LIBXSLT_TESTS)
+fi
+AM_CONDITIONAL(USE_LIBXSLT_TESTS, test "$WITH_LIBXSLT_TESTS" != "")
+AC_SUBST(WITH_LIBXSLT_TESTS)
 
 #
 # ---- start of noise
@@ -225,5 +247,8 @@ AC_CONFIG_FILES([
   slax-config
   libslax/Makefile
   slaxproc/Makefile
+  tests/Makefile
+  tests/spec/Makefile
+  tests/bugs/Makefile
 ])
 AC_OUTPUT

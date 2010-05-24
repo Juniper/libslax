@@ -1,0 +1,23 @@
+version 1.0;
+
+match / {
+    <op-script-results> {
+        var $version-info := <software-information> {
+	    <host-name> "test";
+	    <product-model> "m7i";
+	    <product-name> "m7i";
+	}
+
+        apply-templates $version-info/host-name;
+    }
+}
+
+match host-name {
+    priority -4;
+    <output> "Yellow";
+}
+
+match host-name {
+    priority -3;
+    <output> "Blue";
+}

@@ -1,0 +1,8 @@
+version 1.0;
+
+include "foo.slax";
+import "goo.xsl";
+
+match / {
+    apply-imports;
+}

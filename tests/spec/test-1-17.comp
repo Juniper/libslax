@@ -1,0 +1,15 @@
++/* Machine Crafted with Care (tm) by slaxWriter */
+ version 1.0;
+ 
+-preserve-space foo goo moo;
+-strip-space boo coo;
++preserve-space foo;
++strip-space boo;
+ 
+ match / {
+     <foo> {
+@@ -13,3 +14,4 @@
+ 	}
+     }
+ }
++

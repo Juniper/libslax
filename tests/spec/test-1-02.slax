@@ -1,0 +1,14 @@
+version 1.0;
+
+match / {
+    <top> {
+	<one>;
+	<two> {
+	    <three>;
+	    <four>;
+	    <five> {
+		<six>;
+	    }
+	}
+    }
+}
