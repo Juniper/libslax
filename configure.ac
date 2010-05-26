@@ -5,6 +5,8 @@
 AC_PREREQ(2.2)
 AC_INIT([libslax], [0.0.1a], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+LT_INIT([disable-shared])
+AC_DISABLE_SHARED
 
 #
 # There is nothing specific about these versions, they are
@@ -15,12 +17,12 @@ LIBXSLT_REQUIRED_VERSION=1.1.24
 
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
 AC_PATH_PROG(CAT, cat, /bin/cat)
+AC_PATH_PROG(CHMOD, chmod, /bin/chmod)
 AC_PATH_PROG(CP, cp, /bin/cp)
 AC_PATH_PROG(DIFF, diff, /usr/bin/diff)
 AC_PATH_PROG(MKDIR, mkdir, /bin/mkdir)
@@ -248,7 +250,9 @@ AC_CONFIG_FILES([
   libslax/Makefile
   slaxproc/Makefile
   tests/Makefile
+  tests/fakeproc/Makefile
   tests/spec/Makefile
   tests/bugs/Makefile
+  tests/libxslt/Makefile
 ])
 AC_OUTPUT
