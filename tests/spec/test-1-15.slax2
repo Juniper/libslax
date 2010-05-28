@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+include "foo.slax";
+import "goo.xsl";
+
+match / {
+    apply-imports;
+}
+

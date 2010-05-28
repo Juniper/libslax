@@ -1,0 +1,24 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match * {
+    mode "one";
+    
+    <one> .;
+}
+
+match * {
+    mode "two";
+    
+    <two> string-length(.);
+}
+
+match / {
+    apply-templates version {
+        mode "one";
+    }
+    apply-templates version {
+        mode "two";
+    }
+}
+

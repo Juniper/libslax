@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match configuration {
+    apply-templates system/host-name;
+}
+
+match host-name {
+    <hello> .;
+}
+

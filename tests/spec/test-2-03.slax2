@@ -1,0 +1,37 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="utf-8">;
+
+match measurement {
+    var $m = {
+        if (@fromunit == "km") {
+            expr . * 1000;
+        
+        } else if (@fromunit == "m") {
+            expr .;
+        
+        } else if (@fromunit == "cm") {
+            expr . * 0.01;
+        
+        } else if (@fromunit == "mm") {
+            expr . * 0.001;
+        }
+    }
+    
+    <measurement unit=@tounit> {
+        if (@tounit == "mi") {
+            expr 0.00062137 * $m;
+        
+        } else if (@tounit == "yd") {
+            expr 1.09361 * $m;
+        
+        } else if (@tounit == "ft") {
+            expr 3.2808 * $m;
+        
+        } else if (@tounit == "in") {
+            expr 39.37 * $m;
+        }
+    }
+}
+

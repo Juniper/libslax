@@ -1,0 +1,10 @@
+version 1.0;
+
+match / {
+    var $user = "test";
+    var $date = "now";
+
+    <top> {
+	comment "Added by user " _ $user _ " on " _ $date;
+    }
+}
