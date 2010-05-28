@@ -5,7 +5,7 @@ var $bone;
 
 match / {
     <top> {
-	param $dot = .;
+	var $dot = .;
 	var $location = $dot/@location;
 	var $message = "We are in " _ $location _ " now.";
     }

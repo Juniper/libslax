@@ -8,7 +8,21 @@
   </xsl:template>
   <xsl:template match="orderedlist/listitem">
     <fo:list-item indent-start="2pi">
-      <fo:list-item-label><xsl:variable name="level" select="count(ancestor::orderedlist) mod 3"/><xsl:choose><xsl:when test="$level = 1"><number format="i"/></xsl:when><xsl:when test="$level = 2"><number format="a"/></xsl:when><xsl:otherwise><number format="1"/></xsl:otherwise></xsl:choose>. </fo:list-item-label>
+      <fo:list-item-label>
+        <xsl:variable name="level" select="count(ancestor::orderedlist) mod 3"/>
+        <xsl:choose>
+          <xsl:when test="$level = 1">
+            <number format="i"/>
+          </xsl:when>
+          <xsl:when test="$level = 2">
+            <number format="a"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <number format="1"/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:text>. </xsl:text>
+      </fo:list-item-label>
       <fo:list-item-body>
         <xsl:apply-templates/>
       </fo:list-item-body>

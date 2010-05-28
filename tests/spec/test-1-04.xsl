@@ -4,7 +4,7 @@
   <xsl:variable name="bone"/>
   <xsl:template match="/">
     <top>
-      <xsl:param name="dot" select="."/>
+      <xsl:variable name="dot" select="."/>
       <xsl:variable name="location" select="$dot/@location"/>
       <xsl:variable name="message" select="concat(&quot;We are in &quot;, $location, &quot; now.&quot;)"/>
     </top>

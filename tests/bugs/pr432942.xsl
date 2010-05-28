@@ -13,10 +13,10 @@
       <xsl:apply-templates select="$version-info/host-name"/>
     </op-script-results>
   </xsl:template>
-  <xsl:template match="host-name" priority="concat(-, 4)">
+  <xsl:template match="host-name" priority="-4">
     <output>Yellow</output>
   </xsl:template>
-  <xsl:template match="host-name" priority="concat(-, 3)">
+  <xsl:template match="host-name" priority="-3">
     <output>Blue</output>
   </xsl:template>
 </xsl:stylesheet>

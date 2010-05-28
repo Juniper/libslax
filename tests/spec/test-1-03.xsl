@@ -12,7 +12,11 @@
       <four>
         <xsl:value-of select="concat(results/count, &quot; attempts made by &quot;, results/user)"/>
       </four>
-      <five><xsl:value-of select="results/count"/> attempts made by <xsl:value-of select="results/user"/></five>
+      <five>
+        <xsl:value-of select="results/count"/>
+        <xsl:text> attempts made by </xsl:text>
+        <xsl:value-of select="results/user"/>
+      </five>
       <six>
         <xsl:value-of select="results/message"/>
       </six>
