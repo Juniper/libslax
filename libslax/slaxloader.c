@@ -368,6 +368,34 @@ slaxGetInput (slax_data_t *sdp, int final)
 
 #define COMMENT_MARKER_SIZE 2	/* "\/\*" or "\*\/" */
 
+/*
+ * The logic is much similar to how LIBXML2 (in SAX2.c) is assiging the line 
+ * number in each nodes. It assigns the line number only when the context
+ * has the 'linenumbers' set.
+ *
+ * The only difference is, while parsing the slax ctxt->input->line will be 
+ * always one greater than the actual line number in the file. The reason
+ * is, in xmlNewInputStream() the input->line is initialized to 1. While
+ * we read the first line in slax input->line is already one and we increment 
+ * that by 1. Because of this here we assign (input->line - 1) as line number 
+ * in node.
+ */
+static xmlNodePtr
+xmlAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, 
+		   xmlNodePtr cur)
+{
+    if (ctxt->linenumbers) { 
+	if (ctxt->input != NULL) { 
+	    if (ctxt->input->line < 65535) 
+		cur->line = (short) ctxt->input->line - 1; 
+	    else 
+		cur->line = 65535;
+	}
+    }
+
+    return xmlAddChild(parent, cur);
+}
+
 static inline int
 slaxIsCommentStart (const char *buf)
 {
@@ -824,6 +852,7 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
     xmlNsPtr ns = NULL;
     xmlAttrPtr attr;
     const char *cp;
+    int buf_index, buf_len, count = 0;
 
     if (value == NULL)
 	return;
@@ -840,13 +869,38 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
 	buf = slaxStringAsChar(value, SSF_BRACES);
 
     } else {
-	/*
-	 * There are multiple values, like: var $x=test/one + test/two
-	 * We stuff these value inside a call to the XPath "concat()"
-	 * function, which will do all the hard work for us, without
-	 * giving us a result fragment tree.
+	/* 
+	 * In the case of negative priority value, XPATH concat() unable
+	 * to concatenate negative sign with value. Since negative number
+	 * is a unique value, we stuff it into the attribute give in the
+	 * 'name' parameter as below, and from the returned buffer remove
+	 * the "space" in between the tokens inserted by slaxStringCopy().
+	 * so that there will not be a space between negative sign and 
+	 * value.
 	 */
-	buf = slaxStringAsValue(value, SSF_BRACES);
+	if (streq(name, ATT_PRIORITY)) {
+	    buf = slaxStringAsChar(value, SSF_BRACES);
+	    buf_len = strlen(buf);
+
+	    for (buf_index = 0; buf_index < buf_len; buf_index++) {
+		if (buf[buf_index] == ' ') {
+		    count++;
+		    buf[buf_index] = '\0';
+		} else if (count) {
+		    buf[buf_index - count] = buf[buf_index];
+		    buf[buf_index] = '\0';
+		}
+	    }
+
+	} else {
+	    /*
+	    * There are multiple values, like: var $x=test/one + test/two
+	    * We stuff these value inside a call to the XPath "concat()"
+	    * function, which will do all the hard work for us, without
+	    * giving us a result fragment tree.
+	    */
+	    buf = slaxStringAsValue(value, SSF_BRACES);
+	}
     }
 
     /*
@@ -1072,7 +1126,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    xmlAddChild(sdp->sd_ctxt->node, nodep);
+    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -1141,7 +1195,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    xmlAddChild(sdp->sd_ctxt->node, nodep);
+    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -1212,7 +1266,7 @@ slaxAvoidRtf (slax_data_t *sdp)
 	return;
     }
 
-    xmlAddChild(nodep->parent, newp);
+    xmlAddChildLineNo(sdp->sd_ctxt, nodep->parent, newp);
 
     xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
 
@@ -1239,26 +1293,44 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
     xmlNodePtr nodep;
     xmlAttrPtr attr;
 
+    /* If the global flag is off, ignore the local one */
+    if (!slaxTextAsElement)
+	text_as_elt = FALSE;
+
     if (value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
-	char *cp = value->ss_token;
+	char *cp = value->ss_token, *ep;
 	int len = strlen(cp);
 
 	cp += 1;
 	cp[len - 2] = '\0';
+
+	/*
+	 * If the text string is entirely whitespace, then we must
+	 * use a text element
+	 */
+	for (ep = cp; *ep; ep++) {
+	    if (*ep == '\t' || *ep == ' ')
+		break;
+	}
+	if (*ep != '\0')
+	    text_as_elt = TRUE;
+
 	nodep = xmlNewText((const xmlChar *) cp);
 	if (nodep == NULL)
 	    fprintf(stderr, "could not make node: text\n");
-	else if (text_as_elt && slaxTextAsElement) {
+	else if (text_as_elt) {
 	    xmlNodePtr textp = xmlNewNode(sdp->sd_xsl_ns,
 					 (const xmlChar *) ELT_TEXT);
 	    if (textp == NULL) {
 		fprintf(stderr, "could not make node: %s\n", ELT_VALUE_OF);
 		return;
 	    }
-	    xmlAddChild(textp, nodep);
+	    xmlAddChildLineNo(sdp->sd_ctxt, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
-	} else xmlAddChild(sdp->sd_ctxt->node, nodep);
+	} else {
+	    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+	}
 
 	return;
     }
@@ -1298,7 +1370,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 	}
     }
 
-    xmlAddChild(sdp->sd_ctxt->node, nodep);
+    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
 }
 
@@ -1391,6 +1463,11 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
     slax_data_t sd;
     int rc;
     xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
+
+    /*
+     * Turn on line number recording in each node
+     */
+    ctxt->linenumbers = 1;
 
     if (ctxt == NULL)
 	return NULL;

@@ -31,8 +31,23 @@ static void slaxWriteChildren(slaxWriter_t *, xmlDocPtr, xmlNodePtr, int);
 static void slaxWriteXslElement(slaxWriter_t *swp, xmlDocPtr docp,
 				xmlNodePtr nodep, int *statep);
 
+static int slaxIndent = 4;
+static const char *slaxSpacesAroundAttributeEquals = "";
+
 #define NEWL_INDENT	1
 #define NEWL_OUTDENT	-1
+
+void
+slaxSetIndent (int indent)
+{
+    slaxIndent = indent;
+}
+
+void
+slaxSetSpacesAroundAttributeEquals (int spaces)
+{
+    slaxSpacesAroundAttributeEquals = spaces ? " " : "";
+}
 
 static int
 slaxWriteNewline (slaxWriter_t *swp, int change)
@@ -49,7 +64,7 @@ slaxWriteNewline (slaxWriter_t *swp, int change)
     if (change < 0)
 	swp->sw_indent += change;
     rc = (*swp->sw_write)(swp->sw_data, "%*s%s\n",
-			  swp->sw_indent * 4, "", swp->sw_buf);
+			  swp->sw_indent * slaxIndent, "", swp->sw_buf);
     if (rc < 0)
 	swp->sw_errors += 1;
 
@@ -141,6 +156,18 @@ nsIsMember (const xmlChar *prefix, xmlChar *list)
 
     return FALSE;
 }
+
+#if 0
+static int
+isNewLine (const xmlChar *str)
+{
+    for ( ; *str; str++)
+	if (*str == '\r'  || *str == '\n')
+	    return TRUE;
+
+    return FALSE;
+}
+#endif
 
 static int
 isWhiteString (const xmlChar *str)
@@ -287,7 +314,7 @@ slaxWriteText (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     xmlNodePtr childp;
 
     for (childp = nodep->children; childp; childp = childp->next) {
-	if (childp->type == XML_TEXT_NODE && !isWhiteString(childp->content))
+	if (childp->type == XML_TEXT_NODE)
 	    slaxWriteExpr(swp, childp->content, FALSE);
     }
 }
@@ -795,8 +822,9 @@ slaxWriteElement (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
 		pref = (attrp->ns && attrp->ns->prefix)
 		    ? (const char *) attrp->ns->prefix : NULL;
-		slaxWrite(swp, " %s%s%s = ", pref ?: "", pref ? ":" : "",
-			  attrp->name);
+		slaxWrite(swp, " %s%s%s%s=%s", pref ?: "", pref ? ":" : "",
+			  attrp->name, slaxSpacesAroundAttributeEquals,
+			  slaxSpacesAroundAttributeEquals);
 		slaxWrite(swp, "%s", content ?: UNKNOWN_EXPR);
 		xmlFreeAndEasy(content);
 	    }
@@ -1493,7 +1521,18 @@ slaxWriteXslElement (slaxWriter_t *swp, xmlDocPtr docp,
     }
 
     if (streq(name, "param")) {
-	if (swp->sw_indent == 0)
+	if (swp->sw_indent > 2) {
+	    slaxWrite(swp,
+		      "/* 'param' statement is inappropriately nested */");
+	    slaxWriteNewline(swp, 0);
+	}
+
+	/*
+	 * If indent equals 1, we are in a template. For templates,
+	 * slaxWriteNamedTemplateParams() will have emitted the parameter
+	 * list already, so we must not repeat it here.
+	 */
+	if (swp->sw_indent != 1)
 	    slaxWriteVariable(swp, docp, nodep);
 	return;
     }
@@ -1652,6 +1691,9 @@ slaxWriteChildren (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		slaxWriteXslElement(swp, docp, childp, &state);
 
 	    } else {
+		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))
+		    slaxWriteBlankline(swp);
+
 		slaxWriteElement(swp, docp, childp);
 		state = STATE_PAST_DECLS;
 	    }

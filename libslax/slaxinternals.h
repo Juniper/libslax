@@ -55,6 +55,7 @@ extern const char *keywordString[];
 #define ATT_VERSION	"version" 
 
 /* Element names */
+#define ELT_APPLY_IMPORTS "apply-imports"
 #define ELT_APPLY_TEMPLATES "apply-templates"
 #define ELT_ATTRIBUTE	"attribute"
 #define ELT_CALL_TEMPLATE "call-template"

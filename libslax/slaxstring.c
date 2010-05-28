@@ -174,6 +174,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
     int len = 0, slen;
     const char *str, *cp;
     char *bp = buf;
+    int squote = 0; /* Single quote string flag */
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
 	str = ssp->ss_token;
@@ -227,27 +228,22 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	     * we also have to handle embedded quotes.
 	     */
 
-	    *bp++ = '"';
-
-	    for (cp = str; cp; str = cp) {
-		cp = strchr(str, '"');
-		slen = cp ? cp - str : (int) strlen(str);
-
-		if (cp != str) {
-		    memcpy(bp, str, slen);
-		    bp += slen;
-		}
-
-		if (cp == NULL)
-		    break;
-
-		*bp++ = '\\';
+	    if (strchr(str, '"')) {
+		/* double quoted string to be surrounded by single quotes */
+		*bp++ = '\'';
+		squote = 1;
+	    } else
 		*bp++ = '"';
-		cp += 1;
-		len += 1;
-	    }
 
-	    *bp++ = '"';
+	    slen = strlen(str);
+	    memcpy(bp, str, slen);
+	    bp += slen;
+	    if (squote) {
+		/* double quoted string to be surrounded by single quotes */
+		*bp++ = '\'';
+		squote = 0;
+	    } else
+		*bp++ = '"';
 
 	} else if ((flags & SSF_BRACES) && ssp->ss_ttype == T_QUOTED) {
 	    for (cp = str; *cp; cp++) {

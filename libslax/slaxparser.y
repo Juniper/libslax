@@ -738,7 +738,11 @@ block_statement :
 
 apply_imports_stmt :
 	K_APPLY_IMPORTS L_EOS
-		{ $$ = NULL; }
+		{
+		    slaxElementAdd(slax_data, ELT_APPLY_IMPORTS,
+					    NULL, NULL);
+		    $$ = STACK_CLEAR($1);
+		}
 	;
 
 apply_templates_stmt :
@@ -1543,6 +1547,8 @@ xpc_number_sign_optional :
 
 	| L_MINUS
 		{ $$ = $1; }
+	| L_PLUS
+		{ $$ = NULL; }
 	;
 
 xpc_number :

@@ -60,6 +60,12 @@ slaxDumpToFd (int fd, xmlDocPtr docp);
 void
 slaxDump (xmlDocPtr docp);
 
+void
+slaxSetIndent (int indent);
+
+void
+slaxSetSpacesAroundAttributeEquals (int spaces);
+
 /* ----------------------------------------------------------------------
  * Functions that work on generic strings
  */
