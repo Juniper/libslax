@@ -10,7 +10,5 @@ match configuration {
 }
 
 template temp:ting ($name-servers, $size = 0) {
-    
     <output> "template called with size " _ $size;
 }
-

@@ -6,4 +6,3 @@ match configuration {
         <message> "System is named " _ system/host-name;
     }
 }
-

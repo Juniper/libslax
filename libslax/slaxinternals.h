@@ -188,6 +188,9 @@ slaxNsAdd (slax_data_t *, const char *prefix, const char *uri);
 xmlNodePtr
 slaxElementAdd (slax_data_t *, const char *tag,
 		    const char *attrib, const char *value);
+xmlNodePtr
+slaxElementAddString (slax_data_t *sdp, const char *tag,
+		      const char *attrib, slax_string_t *value);
 
 /*
  * Add an XSL element to the top of the context stack
@@ -201,6 +204,12 @@ slaxElementPush (slax_data_t *sdp, const char *tag,
  */
 void
 slaxElementPop (slax_data_t *sdp);
+
+/*
+ * Add an xsl:comment node
+ */
+xmlNodePtr
+slaxCommentAdd (slax_data_t *sdp, slax_string_t *value);
 
 /*
  * Simple trace function that tosses messages to stderr if slaxDebug

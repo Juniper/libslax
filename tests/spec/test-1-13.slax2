@@ -16,4 +16,3 @@ match / {
         apply-templates commit-script-input/configuration;
     }
 }
-

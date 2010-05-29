@@ -878,6 +878,7 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
 	 * so that there will not be a space between negative sign and 
 	 * value.
 	 */
+#if 1
 	if (streq(name, ATT_PRIORITY)) {
 	    buf = slaxStringAsChar(value, SSF_BRACES);
 	    buf_len = strlen(buf);
@@ -891,7 +892,7 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
 		    buf[buf_index] = '\0';
 		}
 	    }
-
+#endif
 	} else {
 	    /*
 	    * There are multiple values, like: var $x=test/one + test/two
@@ -1139,6 +1140,34 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 }
 
 /*
+ * Add an XSL element to the node at the top of the context stack
+ */
+xmlNodePtr
+slaxElementAddString (slax_data_t *sdp, const char *tag,
+	       const char *attrib, slax_string_t *value)
+{
+    xmlNodePtr nodep;
+
+    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) tag);
+    if (nodep == NULL) {
+	fprintf(stderr, "could not make node: %s\n", tag);
+	return NULL;
+    }
+
+    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+
+    if (attrib) {
+	char *full = slaxStringAsChar(value, 0);
+	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
+				     (const xmlChar *) full);
+	if (attr == NULL)
+	    fprintf(stderr, "could not make attribute: %s/@%s\n", tag, attrib);
+    }
+
+    return nodep;
+}
+
+/*
  * Add an XSL element to the top of the context stack
  */
 xmlNodePtr
@@ -1206,6 +1235,43 @@ void
 slaxElementClose (slax_data_t *sdp)
 {
     nodePop(sdp->sd_ctxt);
+}
+
+/*
+ * Add an xsl:comment node
+ */
+xmlNodePtr
+slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
+{
+    xmlNodePtr nodep;
+    nodep = slaxElementAdd(sdp, ELT_COMMENT, NULL, NULL);
+    if (nodep) {
+	if (value && value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
+	    char *cp = value->ss_token;
+	    int len = strlen(cp);
+	    xmlNodePtr tp;
+
+	    cp += 1;
+	    cp[len - 2] = '\0';
+
+	    tp = xmlNewText((const xmlChar *) cp);
+	    xmlAddChildLineNo(sdp->sd_ctxt, nodep, tp);
+
+	} else {
+	    xmlNodePtr attrp;
+	    nodePush(sdp->sd_ctxt, nodep);
+
+	    attrp = slaxElementAdd(sdp, ELT_VALUE_OF, NULL, NULL);
+	    if (attrp) {
+		nodePush(sdp->sd_ctxt, attrp);
+		slaxAttribAdd(sdp, ATT_SELECT, value);
+		nodePop(sdp->sd_ctxt);
+	    }
+	    nodePop(sdp->sd_ctxt);
+	}
+    }
+
+    return nodep;
 }
 
 /*
@@ -1298,22 +1364,23 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 	text_as_elt = FALSE;
 
     if (value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
-	char *cp = value->ss_token, *ep;
+	char *cp = value->ss_token;
 	int len = strlen(cp);
 
 	cp += 1;
 	cp[len - 2] = '\0';
 
 	/*
-	 * If the text string is entirely whitespace, then we must
-	 * use a text element
+	 * If the text string has leading or trailing whitespace, then we
+	 * must use a text element.
 	 */
-	for (ep = cp; *ep; ep++) {
-	    if (*ep == '\t' || *ep == ' ')
-		break;
-	}
-	if (*ep != '\0')
+	if (*cp == '\t' || *cp == ' ' || *cp == '\0')
 	    text_as_elt = TRUE;
+	else {
+	    char *ep = cp + len - 3;
+	    if (*ep == '\t' || *ep == ' ')
+		text_as_elt = TRUE;
+	}
 
 	nodep = xmlNewText((const xmlChar *) cp);
 	if (nodep == NULL)

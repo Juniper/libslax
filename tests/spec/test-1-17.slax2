@@ -1,3 +1,4 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
 preserve-space foo goo moo;
@@ -5,11 +6,11 @@ strip-space boo coo;
 
 match / {
     <foo> {
-	<goo> {
-	    <moo> "test";
-	}
-	<boo> {
-	    <coo> "test";
-	}
+        <goo> {
+            <moo> "test";
+        }
+        <boo> {
+            <coo> "test";
+        }
     }
 }

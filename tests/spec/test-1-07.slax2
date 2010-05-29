@@ -8,4 +8,3 @@ match configuration {
 match host-name {
     <hello> .;
 }
-

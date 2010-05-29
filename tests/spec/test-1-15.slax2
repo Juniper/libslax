@@ -7,4 +7,3 @@ import "goo.xsl";
 match / {
     apply-imports;
 }
-

@@ -31,6 +31,8 @@ static void slaxWriteChildren(slaxWriter_t *, xmlDocPtr, xmlNodePtr, int);
 static void slaxWriteXslElement(slaxWriter_t *swp, xmlDocPtr docp,
 				xmlNodePtr nodep, int *statep);
 
+static void slaxWriteCommentStatement (slaxWriter_t *, xmlDocPtr, xmlNodePtr);
+
 static int slaxIndent = 4;
 static const char *slaxSpacesAroundAttributeEquals = "";
 
@@ -68,8 +70,10 @@ slaxWriteNewline (slaxWriter_t *swp, int change)
     if (rc < 0)
 	swp->sw_errors += 1;
 
-    if (change > 0)
+    if (change > 0) {
 	swp->sw_indent += change;
+	swp->sw_flags |= SWF_BLANKLINE; /* Indenting counts as a blank line */
+    }
 
     swp->sw_cur = 0;
     swp->sw_buf[0] = '\0';
@@ -1048,7 +1052,9 @@ slaxWriteTemplate (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWriteNewline(swp, 0);
     }
 
+#if 0
     slaxWriteNewline(swp, 0);
+#endif
 
     xmlFreeAndEasy(mode);
     xmlFreeAndEasy(priority);
@@ -1286,7 +1292,7 @@ slaxWriteCallTemplate (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	first = FALSE;
 
 	slaxWrite(swp, "$%s", name);
-	if (!(name && sel && streq(name, sel + 1))) {
+	if (!(name && sel && *sel == '$' && streq(name, sel + 1))) {
 	    slaxWrite(swp, " = ");
 	    if (sel) {
 		char *expr = slaxMakeExpression(swp, childp, sel);
@@ -1505,6 +1511,11 @@ slaxWriteXslElement (slaxWriter_t *swp, xmlDocPtr docp,
 	return;
     }
 
+    if (streq(name, "comment")) {
+	slaxWriteCommentStatement(swp, docp, nodep);
+	return;
+    }
+
     if (streq(name, "for-each")) {
 	slaxWriteForEach(swp, docp, nodep);
 	return;
@@ -1652,6 +1663,36 @@ slaxWriteComment (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     *bp = '\0';
     slaxWrite(swp, "%s%s */", first ? "/* " : "", buf);
     slaxWriteNewline(swp, 0);
+}
+
+static void
+slaxWriteCommentStatement (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+{
+    slaxWrite(swp, "comment");
+
+    if (nodep->children == NULL) {
+	slaxWrite(swp, ";");
+	slaxWriteNewline(swp, 0);
+	return;
+    }
+	
+    slaxWrite(swp, " ");
+
+    if (!slaxNeedsBraces(nodep)) {
+	slaxWriteContent(swp, docp, nodep);
+	slaxWrite(swp, ";");
+	slaxWriteNewline(swp, 0);
+	return;
+    }
+
+    slaxWrite(swp, "{");
+    slaxWriteNewline(swp, NEWL_INDENT);
+
+    slaxWriteAllNs(swp, docp, nodep);
+    slaxWriteChildren(swp, docp, nodep, FALSE);
+
+    slaxWrite(swp, "}");
+    slaxWriteNewline(swp, NEWL_OUTDENT);
 }
 
 /**

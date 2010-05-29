@@ -381,8 +381,8 @@ strip_space_stmt :
 	K_STRIP_SPACE element_list L_EOS
 		{
 		    ALL_KEYWORDS_ON();
-		    slaxElementAdd(slax_data, $1->ss_token,
-				   ATT_ELEMENTS, $2->ss_token);
+		    slaxElementAddString(slax_data, $1->ss_token,
+				   ATT_ELEMENTS, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -399,8 +399,9 @@ preserve_space_stmt :
 	K_PRESERVE_SPACE element_list L_EOS
 		{
 		    ALL_KEYWORDS_ON();
-		    slaxElementAdd(slax_data, $1->ss_token,
-				   ATT_ELEMENTS, $2->ss_token);
+		    slaxElementAddString(slax_data, $1->ss_token,
+				       ATT_ELEMENTS, $2);
+
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -961,20 +962,7 @@ comment_stmt :
 	K_COMMENT xpath_value L_EOS
 		{
 		    KEYWORDS_ON();
-		    xmlNodePtr nodep;
-		    nodep = slaxElementAdd(slax_data, ELT_COMMENT, NULL, NULL);
-		    if (nodep) {
-			nodePush(slax_data->sd_ctxt, nodep);
-			nodep = slaxElementAdd(slax_data, ELT_VALUE_OF,
-					       NULL, NULL);
-			if (nodep) {
-			    nodePush(slax_data->sd_ctxt, nodep);
-			    slaxAttribAdd(slax_data, ATT_SELECT, $2);
-			    nodePop(slax_data->sd_ctxt);
-			}
-			nodePop(slax_data->sd_ctxt);
-		    }
-		    /* XXX else error */
+		    slaxCommentAdd(slax_data, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 	;

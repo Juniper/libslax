@@ -8,4 +8,3 @@ match / {
         <message> "Down rev PIC in " _ ../name _ ", " _ name _ ": " _ description;
     }
 }
-

@@ -16,4 +16,3 @@ match host-name {
     
     <hello> $message _ ":: " _ . _ " (" _ $domain _ ")";
 }
-

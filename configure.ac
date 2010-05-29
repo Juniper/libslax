@@ -250,7 +250,6 @@ AC_CONFIG_FILES([
   libslax/Makefile
   slaxproc/Makefile
   tests/Makefile
-  tests/fakeproc/Makefile
   tests/spec/Makefile
   tests/bugs/Makefile
   tests/libxslt/Makefile
