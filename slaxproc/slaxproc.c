@@ -218,9 +218,6 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    slaxDebug = TRUE;
 
-	} else if (streq(cp, "--text-as-element") || streq(cp, "-t")) {
-	    slaxSetTextAsElement(TRUE);
-
 	} else {
 	    fprintf(stderr, "invalid option\n");
 	    return -1;
@@ -234,7 +231,7 @@ main (int argc UNUSED, char **argv)
      * Start the XML API
      */
     xmlInitParser();
-    slaxEnable(SLAX_FORCE);
+    slaxEnable(SLAX_ENABLE);
 
     func(output, input, argv);
 

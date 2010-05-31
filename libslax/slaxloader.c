@@ -29,7 +29,6 @@ extern xsltDocLoaderFunc xsltDocDefaultLoader;
 xsltDocLoaderFunc originalXsltDocDefaultLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
-static int slaxTextAsElement;	/* Add text expressions in <xsl:text> */
 
 /*
  * These are lookup tables for one and two character literal tokens.
@@ -438,8 +437,8 @@ slaxDrainComment (slax_data_t *sdp)
 static int
 slaxLexer (slax_data_t *sdp)
 {
-    int ch1, ch2, rc;
-    int look;
+    unsigned ch1, ch2;
+    int look, rc;
 
     for (;;) {
 	sdp->sd_start = sdp->sd_cur;
@@ -513,8 +512,7 @@ slaxLexer (slax_data_t *sdp)
     sdp->sd_start = sdp->sd_cur;
 	
     ch1 = sdp->sd_buf[sdp->sd_cur];
-    ch2 = (sdp->sd_cur + 1 < sdp->sd_len)
-	? sdp->sd_buf[sdp->sd_cur + 1] : 0;
+    ch2 = (sdp->sd_cur + 1 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 1] : 0;
 
     if (ch1 < SLAX_MAX_CHAR) {
 	if (doubleWide[ch1]) {
@@ -553,7 +551,7 @@ slaxLexer (slax_data_t *sdp)
 	     * need to read some more, if the string is long.
 	     */
 	    sdp->sd_cur += 1;	/* Move past the first quote */
-	    while (sdp->sd_buf[sdp->sd_cur] != ch1) {
+	    while (((unsigned char *) sdp->sd_buf)[sdp->sd_cur] != ch1) {
 		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
 
 		sdp->sd_cur += 1;
@@ -1359,10 +1357,6 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
     xmlNodePtr nodep;
     xmlAttrPtr attr;
 
-    /* If the global flag is off, ignore the local one */
-    if (!slaxTextAsElement)
-	text_as_elt = FALSE;
-
     if (value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
 	char *cp = value->ss_token;
 	int len = strlen(cp);
@@ -1693,12 +1687,13 @@ slaxEnable (int enable)
 }
 
 /*
- * Prefer text expressions be stored in <xsl:text> elements
+ * Prefer text expressions be stored in <xsl:text> elements.
+ * THIS FUNCTION IS DEPRECATED.
  */
 void
-slaxSetTextAsElement (int enable)
+slaxSetTextAsElement (int enable UNUSED)
 {
-    slaxTextAsElement = enable;
+    return; /* deprecated */
 }
 
 /*
@@ -1740,10 +1735,6 @@ main (int argc, char **argv)
 
         case 'f':
 	    filename = optarg;
-	    break;
-
-	case 't':
-	    slaxTextAsElement = TRUE;
 	    break;
 
 	case 'y':

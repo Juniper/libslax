@@ -183,6 +183,19 @@ isWhiteString (const xmlChar *str)
     return TRUE;
 }
 
+#if 0
+static int
+slaxPrefixNeedsQuotes (const xmlChar *prefix)
+{
+    const unsigned char *cp = (const unsigned char *) prefix;
+
+    for ( ; *cp; cp++)
+	if (*cp < 0x20 || *cp > 0x7F)
+	    return TRUE;
+    return FALSE;
+}
+#endif
+
 static void
 slaxWriteAllNs (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
@@ -199,14 +212,15 @@ slaxWriteAllNs (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    continue;
 
 	if (cur->prefix) {
-	    const char *tag = "";
+	    const char *tag1 = "";
+	    const char *tag2 = "";
 
 	    slaxWrite(swp, "ns %s ", cur->prefix);
 	    if (excludes && nsIsMember(cur->prefix, excludes))
-		tag = "exclude ";
+		tag1 = "exclude ";
 	    if (extensions && nsIsMember(cur->prefix, extensions))
-		tag = "extension ";
-	    slaxWrite(swp, "%s= \"%s\";", tag, cur->href);
+		tag2 = "extension ";
+	    slaxWrite(swp, "%s%s= \"%s\";", tag1, tag2, cur->href);
 	} else slaxWrite(swp, "ns \"%s\";", cur->href);
 
 	slaxWriteNewline(swp, 0);
@@ -1003,7 +1017,8 @@ slaxWriteTemplate (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWriteBlankline(swp);
 
     if (name) {
-	slaxWrite(swp, "template %s (", name);
+	slaxWrite(swp, "template %s%s%s (", name, match ? " match " : "",
+		  match ?: "");
 	slaxWriteNamedTemplateParams(swp, docp, nodep, FALSE, FALSE);
 	slaxWrite(swp, ")");
 
@@ -1764,7 +1779,6 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
 {
     xmlNodePtr nodep;
     xmlNodePtr childp;
-    char *value;
     slaxWriter_t sw;
 
     bzero(&sw, sizeof(sw));
@@ -1778,11 +1792,9 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
     slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
     slaxWriteNewline(&sw, 0);
 
-    value = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_VERSION);
-    slaxWrite(&sw, "version %s;", value ?: "1.0");
+    slaxWrite(&sw, "version %s;", "1.0");
     slaxWriteNewline(&sw, 0);
     slaxWriteNewline(&sw, 0);
-    xmlFreeAndEasy(value);
 
     /*
      * Write out all top-level comments before doing anything else
@@ -1806,7 +1818,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
 	slaxWrite(&sw, "match / {");
 	slaxWriteNewline(&sw, NEWL_INDENT);
 
-	slaxWriteChildren(&sw, docp, nodep, FALSE);
+	slaxWriteElement(&sw, docp, nodep);
 
 	slaxWrite(&sw, "}");
 	slaxWriteNewline(&sw, NEWL_OUTDENT);

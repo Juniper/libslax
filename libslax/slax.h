@@ -44,6 +44,7 @@ slaxLoadFile(const char *filename, FILE *file, xmlDictPtr dict);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
+ * THIS FUNCTION IS DEPRECATED.
  */
 void
 slaxSetTextAsElement (int enable);
