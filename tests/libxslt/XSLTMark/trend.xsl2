@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output encoding="utf-8"/>
+  <xsl:template match="val">
+    <val>
+      <current>
+        <xsl:value-of select="."/>
+      </current>
+      <smooth>
+        <xsl:value-of select="floor(sum(preceding-sibling::val[position() &lt; 4] | following-sibling::val[position() &lt; 4]) div count(preceding-sibling::val[position() &lt; 4] | following-sibling::val[position() &lt; 4]))"/>
+      </smooth>
+      <delta>
+        <xsl:value-of select=". - preceding-sibling::val[1]"/>
+      </delta>
+    </val>
+  </xsl:template>
+</xsl:stylesheet>

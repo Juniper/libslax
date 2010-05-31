@@ -1,0 +1,160 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match / {
+    /* <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"> */
+    /* saved from url=(0042)http://www.tfi-technology.com/products.htm */
+    <HTML> {
+        <HEAD> {
+            <TITLE> "TFI Technology Products";
+            <META content="text/html; charset=windows-1252" http-equiv="Content-Type">;
+            <META content="Memory, Boost, Performance, Memory+, Memory Plus, Crash Protection, StayAlive, Crash, Protector, Crash Protector, TFI, TFI Technology, WatchOut , Access Violation, General Protection Fault, Application Hang, GPF, Screen Freeze, Freeze, Page Fault, Application Recovery, Crash of the Week, Well Known Bug, Bug, Cache, RAM, Virtual Memory, VCache, Memory Tuning, SIMMS, Page File, page faults" name="keywords">;
+            <META content="TFI Technology Ltd, Home of StayAlive, the premier crash protection software and Memory+ the total memory control system." name="description">;
+            <META content="MSHTML 5.00.2920.0" name="GENERATOR">;
+            <META content="(c) 1998-2000, TFI Technology Ltd" name="copyright">;
+            <META content="TFI Technology" name="author">;
+            <META content="1 day" name="revisit-after">;
+            <META content="ALL" name="Robot">;
+            <META content="General" name="rating">;
+            <META content="TFI Technology Ltd Home of StayAlive, the premier crash protection software." name="DC.Title">;
+            <META content="TFI Technology" name="DC.Creator">;
+            <META content="TFI Technology Ltd Home of StayAlive, the premier crash protection software." name="DC.Description">;
+            <META content="TFI Technology" name="DC.Publisher">;
+            <META content="TFI Technology" name="DC.Contributors">;
+            <SCRIPT language="JavaScript"> "\n \n\n	if (document.images)\n	{\n		var imgBannerPreload = new Image();\n		imgBannerPreload.src=\"images/AboutBanner.gif\";\n\n		var imgWaterMarkPreload = new Image();\n		imgWaterMarkPreload.src=\"images/WaterMark.gif\";\n\n		var imgAboutPreload = new Image();\n		imgAboutPreload.src=\"images/abouttfism.gif\";\n		var imgAboutSelPreload = new Image();\n		imgAboutSelPreload.src = \"images/abouttfism_sel.gif\"\n\n		var imgBuyNowPreload = new Image();\n		imgBuyNowPreload.src=\"images/buynowsm.gif\";\n		var imgBuyNowSelPreload = new Image();\n		imgBuyNowSelPreload.src = \"images/buynowsm_sel.gif\"\n\n		var imgDownloadsPreload = new Image();\n		imgDownloadsPreload.src=\"images/downloadssm.gif\";\n		var imgDownloadsSelPreload = new Image();\n		imgDownloadsSelPreload.src = \"images/downloadssm_sel.gif\"\n\n		var imgProductsPreload = new Image();\n		imgProductsPreload.src=\"images/productssm.gif\";\n		var imgProductsSelPreload = new Image();\n		imgProductsSelPreload.src = \"images/productssm_sel.gif\"\n\n		var imgNewswirePreload = new Image();\n		imgNewswirePreload.src=\"images/newswiresm.gif\";\n		var imgNewswireSelPreload = new Image();\n		imgNewswireSelPreload.src = \"images/newswiresm_sel.gif\"\n	}\n\nfunction img_preload(imgName)\n{\n	if (document.images)\n	{\n		var imgPreload = new Image();\n		imgPreload.src=\"images/\" + imgName;\n	}\n}\n\nfunction act(imgName)\n{\n	if (document.images)\n	{\n		document.images[imgName].src = eval(\"img\" + imgName + \"SelPreload.src\");\n	}\n}\n\nfunction inact(imgName)\n{\n	if (document.images)\n	{\n		document.images[imgName].src = eval(\"img\" + imgName + \"Preload.src\");\n	}\n}\n//\n\n";
+        }
+        <BODY background="TFI Technology Products_files/WaterMark.gif" bgColor="#ffffff" bgProperties="fixed"> {
+            <TABLE border="0" cellPadding="0" cellSpacing="0" height="516" width="125"> {
+                <TBODY> {
+                    <TR> {
+                        <TD colSpan="2" height="95"> {
+                            
+                            /* webbot bot="ImageMap" startspan
+                            rectangle="(0,5) (68,94) index.htm" src="images/ProductsBanner.gif" width="569"
+                            height="97" border="0" alt="TFI Technology Products" */
+                            <MAP name="FrontPageMap0"> {
+                                <AREA href="http://www.tfi-technology.com/index.htm">;
+                            }
+                            <IMG alt="TFI Technology Products" border="0" height="97" src="TFI Technology Products_files/ProductsBanner.gif" useMap="#FrontPageMap0" width="569">;
+                            
+                            /* webbot bot="ImageMap"
+                            i-checksum="26" endspan */
+                        }
+                    }
+                    <TR> {
+                        <TD align="left" height="450" vAlign="top" width="100"> {
+                            <TABLE border="0" cellPadding="4" cellSpacing="0" width="100%"> {
+                                <TBODY> {
+                                    <TR> {
+                                        <TD height="223" vAlign="top" width="6%"> {
+                                            expr "  \n                    ";
+                                            <P> {
+                                                <IMG align="middle" height="120" src="TFI Technology Products_files/vbarsm.gif" width="3">;
+                                            }
+                                        }
+                                        <TD background="TFI Technology Products_files/bar2.gif" height="223" vAlign="top" width="94%"> {
+                                            expr "  \n                    ";
+                                            <P> {
+                                                <A href="http://www.tfi-technology.com/products.htm" onmouseout="inact('Products')" onmouseover="act('Products')"> {
+                                                    <IMG align="middle" alt="Products" border="0" height="20" hspace="0" name="Products" src="TFI Technology Products_files/productssm.gif" width="95">;
+                                                    <BR>;
+                                                }
+                                                <A href="http://www.tfi-technology.com/downloads.htm" onmouseout="inact('Downloads')" onmouseover="act('Downloads')"> {
+                                                    <IMG align="middle" alt="Downloads" border="0" height="20" hspace="0" name="Downloads" src="TFI Technology Products_files/downloadssm.gif" width="95">;
+                                                    <BR>;
+                                                }
+                                                <A href="http://www.tfi-technology.com/buynow.htm" onmouseout="inact('BuyNow')" onmouseover="act('BuyNow')"> {
+                                                    <IMG align="middle" alt="Buy Now" border="0" height="20" hspace="0" name="BuyNow" src="TFI Technology Products_files/buynowsm.gif" width="95">;
+                                                    <BR>;
+                                                }
+                                                <A href="http://www.tfi-technology.com/about.htm" onmouseout="inact('About')" onmouseover="act('About')"> {
+                                                    <IMG align="middle" alt="About TFI" border="0" height="20" hspace="0" name="About" src="TFI Technology Products_files/abouttfism.gif" width="95">;
+                                                    <BR>;
+                                                }
+                                                <A href="http://www.tfi-technology.com/newsroom.htm" onmouseout="inact('Newswire')" onmouseover="act('Newswire')"> {
+                                                    <IMG align="middle" alt="News Room" border="0" height="20" hspace="0" name="Newswire" src="TFI Technology Products_files/newswiresm.gif" width="95">;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    <TR> {
+                                        <TD align="center" colSpan="2"> {
+                                            expr "  \n                    ";
+                                            <FORM action="http://cgi.www.tfi-technology.com/cgi-bin/www.tfi-technology.com/subscribe.pl" method="post"> {
+                                                <P> {
+                                                    <FONT face="Arial, Helvetica, sans-serif" size="1"> {
+                                                        <B> "Keep up to date!";
+                                                        <BR>;
+                                                        expr "Submit your e-mail address below.\n                          ";
+                                                        <BR>;
+                                                        <INPUT name="email" size="12">;
+                                                        <INPUT name="B1" type="submit" value="Submit">;
+                                                        <BR>;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    <TR> {
+                                        <TD colSpan="2" width="100"> {
+                                            expr "  \n                    ";
+                                            <P> " ";
+                                            <P> " ";
+                                            <P> {
+                                                <FONT face="Arial, Helvetica, sans-serif" size="1"> {
+                                                    expr "Copyright ©\n                        ";
+                                                    <BR>;
+                                                    expr "1998-2000\n                        ";
+                                                    <BR>;
+                                                    expr "TFI Technology Ltd\n                        ";
+                                                    <BR>;
+                                                    <A href="mailto:enquiry@tfi-technology.com"> "Mail Us";
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        <TD align="left" height="450" vAlign="top" width="464"> {
+                            <TABLE border="0" cellPadding="0" cellSpacing="0" width="464"> {
+                                <TBODY> {
+                                    <TR> {
+                                        <TD width="78">;
+                                        <TD vAlign="top" width="386"> "  ";
+                                    }
+                                }
+                            }
+                            apply-templates;
+                            <P align="left"> {
+                                <IMG alt="hbar.gif (979 bytes)" height="8" src="TFI Technology Products_files/hbar.gif" width="458">;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+match table {
+    <CENTER> {
+        <TABLE border="3" cellpadding="3"> {
+            apply-templates;
+        }
+    }
+}
+
+match row {
+    <TR> {
+        apply-templates;
+    }
+}
+
+match column {
+    <TD> {
+        apply-templates;
+    }
+}

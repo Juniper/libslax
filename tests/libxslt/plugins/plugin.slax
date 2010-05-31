@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns libxslt extension = "http://xmlsoft.org/xslt/testplugin";
+ns test extension = "http://xmlsoft.org/xslt/testplugin";
+
+/* the prefix is registered twice to check single initialization */
+match / {
+    <libxslt:testplugin>;
+    expr libxslt:testplugin("SUCCESS");
+}
+

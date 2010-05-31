@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml" xmlns:g="http://glandium.org/" xmlns:日本語="http://glandium.org/nihongo/" xmlns:date="http://exslt.org/dates-and-times" version="1.0" exclude-result-prefixes="g 日本語 date">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="g:posts">
+    <html xml:lang="fr">
+      <body>
+        <xsl:apply-templates select="*"/>
+      </body>
+    </html>
+  </xsl:template>
+  <xsl:template match="g:posts/g:post[g:date]">
+    <xsl:variable name="id" select="@id"/>
+    <xsl:variable name="date" select="concat(substring(g:date, 1, 4), &quot;/&quot;, substring(g:date, 5, 2), &quot;/&quot;, substring(g:date, 7, 2))"/>
+    <div id="post{$id}">
+      <xsl:if test="lang(ja)">
+        <xsl:attribute name="xml:lang">ja</xsl:attribute>
+      </xsl:if>
+      <h3>
+        <a href="{$date}/{$id}">
+          <xsl:apply-templates select="g:title"/>
+        </a>
+      </h3>
+      <xsl:apply-templates select="g:content"/>
+    </div>
+  </xsl:template>
+  <xsl:template match="g:post/g:title">
+    <xsl:apply-templates select="." mode="日本語"/>
+  </xsl:template>
+  <xsl:template match="g:post/g:content">
+    <xsl:apply-templates/>
+  </xsl:template>
+  <xsl:template match="g:content/g:para">
+    <p>
+      <xsl:apply-templates select="." mode="link"/>
+    </p>
+  </xsl:template>
+  <xsl:template match="g:para/g:span | g:item/g:span | g:span/g:span">
+    <xsl:apply-templates select="." mode="link"/>
+  </xsl:template>
+  <xsl:template match="g:content/g:list | g:item/g:list">
+    <ul>
+      <xsl:apply-templates select="." mode="link"/>
+    </ul>
+  </xsl:template>
+  <xsl:template match="g:list/g:item">
+    <li>
+      <xsl:apply-templates select="." mode="link"/>
+    </li>
+  </xsl:template>
+  <xsl:template match="g:span[@href] | g:para[@href] | g:item[@href]" mode="link">
+    <a href="{@href}">
+      <xsl:apply-templates select="." mode="日本語"/>
+    </a>
+  </xsl:template>
+  <xsl:template match="*" mode="link">
+    <xsl:apply-templates select="." mode="日本語"/>
+  </xsl:template>
+  <xsl:template match="*" mode="日本語">
+    <xsl:apply-templates/>
+  </xsl:template>
+  <xsl:template match="*[lang(&quot;ja&quot;) and not(ancestor::*[@xml:lang = &quot;ja&quot;])]" mode="日本語">
+    <xsl:apply-templates/>
+  </xsl:template>
+  <xsl:template match="g:span[lang(&quot;ja&quot;) and not(ancestor::*[@xml:lang = &quot;ja&quot;])] [not(@href)]" mode="日本語">
+    <span xml:lang="ja">
+      <xsl:apply-templates/>
+    </span>
+  </xsl:template>
+  <xsl:template match="*[lang(&quot;fr&quot;)]" mode="日本語">
+    <xsl:apply-templates/>
+  </xsl:template>
+  <xsl:template match="g:span[lang(&quot;fr&quot;)] [not(@href)]" mode="日本語">
+    <span xml:lang="fr">
+      <xsl:apply-templates/>
+    </span>
+  </xsl:template>
+</xsl:stylesheet>

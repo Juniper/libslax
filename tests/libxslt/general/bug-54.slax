@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns libxslt = "http://xmlsoft.org/XSLT/namespace";
+ns test1 = "http://www.test1.com";
+ns test2 = "http://www.test2.com";
+
+<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes">;
+
+match /all/* {
+    for-each (namespace::*) {
+        copy-of .;
+    }
+}
+
+match / {
+    <root> {
+        apply-templates;
+    }
+}

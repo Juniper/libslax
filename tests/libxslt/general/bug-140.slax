@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/2000/svg";
+
+<xsl:output method="xml" indent="yes" encoding="iso-8859-1" standalone="yes" cdata-section-elements="script">;
+var $foo = "bar";
+
+match / {
+    <script type="text/ecmascript"> "\n  var foo2 = text;\n  ";
+}

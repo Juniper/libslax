@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match ol/item {
+    <fo:block> {
+        <xsl:number>;
+        expr ". ";
+        apply-templates;
+    }
+}

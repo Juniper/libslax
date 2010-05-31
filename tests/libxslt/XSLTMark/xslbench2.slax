@@ -1,0 +1,59 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match PLAY {
+    <html> {
+        <head> {
+            <title> /PLAY/TITLE;
+        }
+        <body> {
+            <h1> /PLAY/TITLE;
+            apply-templates FM | PERSONAE | ACT;
+        }
+    }
+}
+
+match FM {
+    <i> {
+        apply-templates;
+    }
+}
+
+match PERSONAE {
+    <h2> {
+        expr "Parts - ";
+        expr TITLE;
+    }
+    apply-templates .//PERSONA;
+}
+
+match PERSONA {
+    <p> {
+        <b> {
+            <i> .;
+        }
+    }
+}
+
+match ACT {
+    <h3> TITLE;
+    apply-templates SCENE;
+}
+
+match SCENE {
+    <h3> TITLE;
+    apply-templates SPEECH;
+}
+
+match SPEAKER {
+    <p> {
+        <b> .;
+    }
+}
+
+match LINE {
+    expr .;
+    <br>;
+}

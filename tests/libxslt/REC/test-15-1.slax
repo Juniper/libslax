@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns test exclude extension = "http://example.org/";
+
+match / {
+    <test:test> {
+        <xsl:fallback> {
+            <doc> "SUCCESS";
+        }
+    }
+}

@@ -1,0 +1,44 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="utf-8">;
+
+template element ($indent = 0) {
+    expr "\n";
+    /* this next one's a real kludge!! */
+    expr substring("                                                                                                ", 0, $indent * 3);
+    if (self::text()) {
+        <span class="text"> normalize-space(.);
+    
+    } else if (self::*) {
+        <span class="element"> "<" _ name(.)  _ ">";
+        
+        for-each (node()) {
+            call element() {
+                with $indent = {
+                    expr $indent + 1;
+                 }
+            }
+        }
+        expr "\n";
+        expr substring("                                                                                                ", 0, $indent * 3);
+        <span class="element"> "</" _ name(.)  _ ">";
+    }
+}
+
+match / {
+    <html> {
+        <style> "\nbody      { background-color: #ffffff; }\n.element  { color: #447744; }\n.text     { color: #774444; }\n      ";
+        <body> {
+            <pre> {
+                for-each (node()) {
+                    call element() {
+                        with $indent = {
+                            expr "\n                1\n              ";
+                         }
+                    }
+                }
+            }
+        }
+    }
+}

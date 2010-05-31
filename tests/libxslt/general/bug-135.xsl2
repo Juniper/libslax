@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:key name="test" match="node()[self::sect][h1[h2]|h2]" use="'test'"/>
+  <xsl:template match="/">
+    <result>
+      <xsl:value-of select="count(key(&quot;test&quot;, &quot;test&quot;))"/>
+    </result>
+  </xsl:template>
+</xsl:stylesheet>

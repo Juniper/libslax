@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="doc">
+    <doc>
+      <xsl:apply-templates select="//employee"/>
+    </doc>
+  </xsl:template>
+  <xsl:template match="employee">
+    <fo:block>
+      <xsl:text>
+    Employee </xsl:text>
+      <xsl:apply-templates select="name"/>
+      <xsl:text> belongs to group
+	</xsl:text>
+      <xsl:apply-templates select="ancestor::department/group"/>
+    </fo:block>
+  </xsl:template>
+  <xsl:template match="group">
+    <xsl:apply-templates select="name"/>
+  </xsl:template>
+</xsl:stylesheet>

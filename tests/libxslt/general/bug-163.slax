@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/1999/XSL/Transform";
+
+<template match="/"> {
+    <value-of select="id('indexme')/@some-attr">;
+}

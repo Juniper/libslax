@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="doc">
+    <doc>
+      <xsl:apply-templates/>
+    </doc>
+  </xsl:template>
+  <xsl:template match="author-group">
+    <fo:inline-sequence>
+      <xsl:apply-templates select="author/given-name"/>
+    </fo:inline-sequence>
+  </xsl:template>
+</xsl:stylesheet>

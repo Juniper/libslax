@@ -1,0 +1,23 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output indent = "no" version = "1.0" encoding = "iso-8859-1">;
+<xsl:key name = "monthlist" match = "/list/month" use = "./alias">;
+
+match month {
+    <month> {
+        var $value = .;
+        
+        for-each (document("month.xml")) {
+            expr key("monthlist", $value)/alias[1];
+        }
+    }
+}
+
+match * {
+    <xsl:copy> {
+        copy-of @*;
+        apply-templates;
+    }
+}
+

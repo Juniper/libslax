@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+strip-space *;
+
+match / {
+    expr "SUCCESS";
+    apply-templates;
+}

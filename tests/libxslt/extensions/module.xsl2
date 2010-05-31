@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:libxslt="http://xmlsoft.org/XSLT/" xmlns:test="http://xmlsoft.org/XSLT/" version="1.0" extension-element-prefixes="libxslt test">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <!-- the prefix is registered twice to check single initialization -->
+  <xsl:template match="/">
+    <libxslt:test/>
+    <xsl:value-of select="libxslt:test(&quot;SUCCESS&quot;)"/>
+  </xsl:template>
+</xsl:stylesheet>

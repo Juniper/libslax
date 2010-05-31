@@ -1,0 +1,22 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+ns xhtml = "http://www.w3.org/1999/xhtml";
+
+<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
+
+match / {
+    <windows> {
+        <vbox flex="1"> {
+            apply-templates;
+        }
+    }
+}
+
+match a {
+    <vbox> {
+        <xhtml:div> "Hello";
+        <xsl:element name="xhtml:div"> "\n                        foo\n                ";
+    }
+}

@@ -1,0 +1,26 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns my exclude = "http://my/namespace";
+ns "http://www.w3.org/1999/xhtml";
+
+/* Root Node */
+match / {
+    <html> {
+        <head> {
+            <title> my:document/my:name;
+        }
+        apply-templates;
+    }
+}
+/* Header and Body for the Document */
+match my:document {
+    <body> {
+        <h1> my:name;
+        apply-templates;
+        <hr>;
+    }
+}
+/* Don't display name */
+match my:name {
+}

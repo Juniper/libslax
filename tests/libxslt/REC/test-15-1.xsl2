@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:test="http://example.org/" version="1.0" exclude-result-prefixes="test" extension-element-prefixes="test">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <test:test>
+      <xsl:fallback>
+        <doc>SUCCESS</doc>
+      </xsl:fallback>
+    </test:test>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,24 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* FileName: ResultTree005.xsl */
+/* Document: http://www.w3.org/TR/xslt */
+/* Section: 7.1.4 Named Attribute Sets */
+
+/* Purpose: Set attributes of an xsl:element using attribute sets that
+inherit. */
+/* Author: Carmelo Montanez */
+match / {
+    <out> {
+        <xsl:element name="test" use-attribute-sets="set1">;
+    }
+}
+<xsl:attribute-set name="set2" use-attribute-sets="set3"> {
+    <xsl:attribute name="text-decoration"> "underline";
+}
+<xsl:attribute-set name="set1" use-attribute-sets="set2"> {
+    <xsl:attribute name="color"> "black";
+}
+<xsl:attribute-set name="set3"> {
+    <xsl:attribute name="font-size"> "14pt";
+}

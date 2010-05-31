@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="html" encoding="ascii"/>
+  <xsl:template match="/">
+    <html>
+      <head/>
+      <body>
+        <a href="#ё">ё</a>
+        <p>a lot of text</p>
+        <a name="ё"/>
+        <h1>ё</h1>
+        <p>a lot of text</p>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

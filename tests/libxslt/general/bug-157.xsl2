@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:apply-templates select="*"/>
+  </xsl:template>
+  <xsl:template match="foo/bar[last() = 4]">
+    <xsl:text>
+ 4 </xsl:text>
+    <xsl:value-of select="."/>
+  </xsl:template>
+  <xsl:template match="foo/bar[last() = 3]">
+    <xsl:message>last() was 3</xsl:message>
+    <xsl:text>
+ 3 </xsl:text>
+    <xsl:value-of select="."/>
+  </xsl:template>
+  <xsl:template match="foo/bar[last() = 2]">
+    <xsl:text>
+ 2 </xsl:text>
+    <xsl:value-of select="."/>
+  </xsl:template>
+  <xsl:template match="foo/bar[last() = 1]">
+    <xsl:text>
+ 1 </xsl:text>
+    <xsl:value-of select="."/>
+  </xsl:template>
+  <xsl:template match="foo/bar" priority="-100">
+    <xsl:message>
+      <xsl:text>last() was </xsl:text>
+      <xsl:value-of select="last()"/>
+    </xsl:message>
+  </xsl:template>
+</xsl:stylesheet>

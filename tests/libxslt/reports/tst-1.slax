@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $my.var = "old-value";
+var $my.var = "the-value";
+
+match / {
+    expr $my.var;
+}
+

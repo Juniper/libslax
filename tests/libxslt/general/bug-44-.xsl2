@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:variable name="foo" select="&quot;FAILURE&quot;"/>
+  <xsl:template name="test">
+    <xsl:param name="foo" select="&quot;FAILURE&quot;"/>
+    <xsl:value-of select="$foo"/>
+  </xsl:template>
+  <xsl:template match="/">
+    <xsl:variable name="foo" select="&quot;FAILURE&quot;"/>
+    <xsl:call-template name="test">
+      <xsl:with-param name="foo" select="&quot;SUCCESS&quot;"/>
+    </xsl:call-template>
+  </xsl:template>
+</xsl:stylesheet>

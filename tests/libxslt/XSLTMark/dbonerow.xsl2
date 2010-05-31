@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="html" encoding="utf-8"/>
+  <xsl:template match="row[id = &quot;0432&quot;]">
+    <html>
+      <head bgcolor="#ffffff"/>
+      <body>
+        <table border="0">
+          <tr>
+            <td colspan="2" bgcolor="#000000">
+              <font color="#ffffff">
+                <xsl:value-of select="concat(&quot;personel record #&quot;, id)"/>
+              </font>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              First Name:
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="firstname"/>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              Last Name:
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="lastname"/>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              Street:
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="street"/>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              City:
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="city"/>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              State:
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="state"/>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#888888">
+              <xsl:text>
+              Zip
+            </xsl:text>
+            </td>
+            <td bgcolor="#dddddd">
+              <xsl:value-of select="zip"/>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  </xsl:template>
+  <xsl:template match="text()"/>
+</xsl:stylesheet>

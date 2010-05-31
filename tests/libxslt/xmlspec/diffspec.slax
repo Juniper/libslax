@@ -1,0 +1,292 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* Version: $Id: diffspec.xsl 140 2001-03-07 12:36:39Z veillard $ */
+/* Stylesheet for @diff markup in XMLspec */
+/* Author: Norman Walsh (Norman.Walsh@East.Sun.COM) */
+/* Date Created: 2000.07.21 */
+
+/* This stylesheet is copyright (c) 2000 by its authors.  Free
+distribution and modification is permitted, including adding to
+the list of authors and copyright holders, as long as this
+copyright notice is maintained. */
+
+/* This stylesheet attempts to implement the XML Specification V2.1
+DTD.  Documents conforming to earlier DTDs may not be correctly
+transformed.
+
+This stylesheet supports the use of change-markup with the @diff
+attribute. If you use @diff, you should always use this stylesheet.
+If you want to turn off the highlighting of differences, use this
+stylesheet, but set show.diff.markup to 0.
+
+Using the original xmlspec stylesheet with @diff markup will cause
+@diff=del text to be presented.
+ */
+
+/* ChangeLog:
+25 Sep 2000: (Norman.Walsh@East.Sun.COM)
+- Use inline diff markup (as opposed to block) for name and
+affiliation
+- Handle @diff='del' correctly in bibl and other list-contexts.
+14 Aug 2000: (Norman.Walsh@East.Sun.COM)
+- Support additional.title param
+27 Jul 2000: (Norman.Walsh@East.Sun.COM)
+- Fix HTML markup problem with diff'd authors in authlist
+26 Jul 2000: (Norman.Walsh@East.Sun.COM)
+- Update pointer to latest xmlspec-stylesheet.
+21 Jul 2000: (Norman.Walsh@East.Sun.COM)
+- Initial version
+ */
+import "xmlspec.xsl";
+param $show.diff.markup = "0";
+param $additional.css = {
+    if ($show.diff.markup == "1") {
+        expr "\ndiv.diff-add  { background-color: yellow }\ndiv.diff-del  { text-decoration: line-through }\ndiv.diff-chg  { background-color: lime }\ndiv.diff-off  {  }\n\nspan.diff-add { background-color: yellow }\nspan.diff-del { text-decoration: line-through }\nspan.diff-chg { background-color: lime }\nspan.diff-off {  }\n\ntd.diff-add   { background-color: yellow }\ntd.diff-del   { text-decoration: line-through }\ntd.diff-chg   { background-color: lime }\ntd.diff-off   {  }\n";
+    }
+}
+param $additional.title = {
+    if ($show.diff.markup != "0") {
+        expr "Review Version";
+    }
+}
+param $called.by.diffspec = "1";
+/* ==================================================================== */
+template diff-markup () {
+    param $diff = {
+        expr "off";
+    }
+    
+    if (ancestor::scrap) {
+        /* forget it, we can't add stuff inside tables */
+        /* handled in base stylesheet */
+        apply-imports;
+    
+    } else if (self::gitem || self::bibl) {
+        /* forget it, we can't add stuff inside dls; handled below */
+        apply-imports;
+    
+    } else if (ancestor-or-self::phrase) {
+        <span class="diff-" _ $diff> {
+            apply-imports;
+        }
+    
+    } else if (ancestor::p && not(self::p)) {
+        <span class="diff-" _ $diff> {
+            apply-imports;
+        }
+    
+    } else if (ancestor-or-self::affiliation) {
+        <span class="diff-" _ $diff> {
+            apply-imports;
+        }
+    
+    } else if (ancestor-or-self::name) {
+        <span class="diff-" _ $diff> {
+            apply-imports;
+        }
+    
+    } else {
+        <div class="diff-" _ $diff> {
+            apply-imports;
+        }
+    }
+}
+
+match *[@diff == "chg"] {
+    if ($show.diff.markup == "1") {
+        call diff-markup() {
+            with $diff = {
+                expr "chg";
+             }
+        }
+    
+    } else {
+        apply-imports;
+    }
+}
+
+match *[@diff == "add"] {
+    if ($show.diff.markup == "1") {
+        call diff-markup() {
+            with $diff = {
+                expr "add";
+             }
+        }
+    
+    } else {
+        apply-imports;
+    }
+}
+
+match *[@diff == "del"] {
+    if ($show.diff.markup == "1") {
+        call diff-markup() {
+            with $diff = {
+                expr "del";
+             }
+        }
+    
+    } else {
+        /* suppress deleted markup */
+    }
+}
+
+match *[@diff == "off"] {
+    if ($show.diff.markup == "1") {
+        call diff-markup() {
+            with $diff = {
+                expr "off";
+             }
+        }
+    
+    } else {
+        apply-imports;
+    }
+}
+/* ================================================================= */
+match bibl[@diff] {
+    priority 1;
+    
+    var $dt = {
+        if (@id) {
+            <a name=@id>;
+        }
+        if (@key) {
+            expr @key;
+        
+        } else {
+            expr @id;
+        }
+    }
+    var $dd = {
+        apply-templates;
+        if (@href) {
+            expr "  (See ";
+            <a href=@href> @href;
+            expr ".)";
+        }
+    }
+    
+    if (@diff && $show.diff.markup == "1") {
+        <dt class="label"> {
+            <span class="diff-" _ @diff> {
+                copy-of $dt;
+            }
+        }
+        <dd> {
+            <div class="diff-" _ @diff> {
+                copy-of $dd;
+            }
+        }
+    
+    } else if (@diff == "del" && $show.diff.markup == "0") {
+        /* suppressed */
+    
+    } else {
+        <dt class="label"> {
+            copy-of $dt;
+        }
+        <dd> {
+            copy-of $dd;
+        }
+    }
+}
+
+match gitem/label {
+    var $diffval = ancestor-or-self::*/@diff;
+    
+    if ($diffval != "" && $show.diff.markup == "1") {
+        <dt class="label"> {
+            <span class="diff-" _ ancestor-or-self::*/@diff> {
+                apply-templates;
+            }
+        }
+    
+    } else if ($diffval == "del" && $show.diff.markup == "0") {
+        /* suppressed */
+    
+    } else {
+        <dt class="label"> {
+            apply-templates;
+        }
+    }
+}
+
+match gitem/def {
+    var $diffval = ancestor-or-self::*/@diff;
+    
+    if ($diffval != "" && $show.diff.markup == "1") {
+        <dd> {
+            <div class="diff-" _ ancestor-or-self::*/@diff> {
+                apply-templates;
+            }
+        }
+    
+    } else if ($diffval == "del" && $show.diff.markup == "0") {
+        /* suppressed */
+    
+    } else {
+        <dd> {
+            apply-templates;
+        }
+    }
+}
+/* authlist: list of authors (editors, really) */
+
+/* called in enforced order from header's template, in <dl>
+context */
+match authlist[@diff] {
+    if ($show.diff.markup == "1") {
+        <dt> {
+            <span class="diff-" _ ancestor-or-self::*/@diff> {
+                expr "Editor";
+                if (count(author) > 1) {
+                    expr "s";
+                }
+                expr ":";
+            }
+        }
+    
+    } else if (@diff == "del" && $show.diff.markup == "0") {
+        /* suppressed */
+    
+    } else {
+        <dt> {
+            expr "Editor";
+            if (count(author) > 1) {
+                expr "s";
+            }
+            expr ":";
+        }
+    }
+    apply-templates;
+}
+/* author: an editor of a spec */
+/* only appears in authlist */
+/* called in <dl> context */
+match author[@diff] {
+    priority 1;
+    
+    if (@diff && $show.diff.markup == "1") {
+        <dd> {
+            <span class="diff-" _ ancestor-or-self::*/@diff> {
+                apply-templates;
+                if (@role == "2e") {
+                    expr " - Second Edition";
+                }
+            }
+        }
+    
+    } else if (@diff == "del" && $show.diff.markup == "0") {
+        /* suppressed */
+    
+    } else {
+        <dd> {
+            apply-templates;
+            if (@role == "2e") {
+                expr " - Second Edition";
+            }
+        }
+    }
+}

@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns bb = "http://bbrack.org";
+
+<xsl:output method = "xml" version = "1.0" encoding = "utf-8" indent = "yes">;
+<xsl:namespace-alias stylesheet-prefix = "#default" result-prefix = "bb">;
+strip-space *;
+
+match /adoc {
+    <root> {
+        <element1> {
+            ns "http://delightful.com.hk";
+            
+            <element2> "Content 2";
+        }
+        <element3> "Content 3";
+    }
+}
+

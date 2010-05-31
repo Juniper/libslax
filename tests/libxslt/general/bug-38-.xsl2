@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template name="ns">
+    <ns/>
+  </xsl:template>
+  <xsl:template match="/*">
+    <elem>
+      <xsl:copy-of select="document(&quot;&quot;)/*/xsl:template[@name = &quot;ns&quot;]/ns/namespace::ns"/>
+    </elem>
+  </xsl:template>
+</xsl:stylesheet>

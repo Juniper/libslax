@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns dsl = "http://www.decisionsoft.com/website";
+ns html = "http://www.w3.org/1999/xhtml";
+ns layout = "http://www.decisionsoft.com/website-layout";
+ns "http://www.w3.org/1999/xhtml";
+
+var $myPath = /dsl:page/@path;
+var $layout = document("../docs/bug-158.doc");
+var $root = {
+    expr $layout//layout:page[@path == $myPath];
+}
+
+match / {
+    expr "\nmyPath is ";
+    expr $myPath;
+    expr "\nroot is ";
+    expr $root;
+}

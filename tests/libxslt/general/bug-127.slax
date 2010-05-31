@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html">;
+var $var = "\"'\"";
+
+match / {
+    <html> {
+        <body> {
+            <input type="text" value=$var>;
+        }
+    }
+}

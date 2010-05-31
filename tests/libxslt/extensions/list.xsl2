@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:saxon="http://icl.com/saxon" xmlns:xalanredirect="org.apache.xalan.xslt.extensions.Redirect" xmlns:xt="http://www.jclark.com/xt" xmlns:libxslt="http://xmlsoft.org/XSLT/namespace" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:text> === 24 Standard elements:
+</xsl:text>
+    <xsl:if test="element-available(&quot;xsl:apply-templates&quot;)">
+      <xsl:text>xsl:apply-templates available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:apply-imports&quot;)">
+      <xsl:text>xsl:apply-imports available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:call-template&quot;)">
+      <xsl:text>xsl:call-template available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:element&quot;)">
+      <xsl:text>xsl:element available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:attribute&quot;)">
+      <xsl:text>xsl:attribute available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:text&quot;)">
+      <xsl:text>xsl:text available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:processing-instruction&quot;)">
+      <xsl:text>xsl:processing-instruction available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:comment&quot;)">
+      <xsl:text>xsl:comment available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:copy&quot;)">
+      <xsl:text>xsl:copy available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:value-of&quot;)">
+      <xsl:text>xsl:value-of available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:number&quot;)">
+      <xsl:text>xsl:number available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:for-each&quot;)">
+      <xsl:text>xsl:for-each available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:if&quot;)">
+      <xsl:text>xsl:if available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:choose&quot;)">
+      <xsl:text>xsl:choose available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:sort&quot;)">
+      <xsl:text>xsl:sort available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:copy-of&quot;)">
+      <xsl:text>xsl:copy-of available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:message&quot;)">
+      <xsl:text>xsl:message available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:variable&quot;)">
+      <xsl:text>xsl:variable available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:param&quot;)">
+      <xsl:text>xsl:param available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:with-param&quot;)">
+      <xsl:text>xsl:with-param available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:decimal-format&quot;)">
+      <xsl:text>xsl:decimal-format available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:when&quot;)">
+      <xsl:text>xsl:when available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:otherwise&quot;)">
+      <xsl:text>xsl:otherwise available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xsl:fallback&quot;)">
+      <xsl:text>xsl:fallback available
+</xsl:text>
+    </xsl:if>
+    <xsl:text> === 5 Extension elements:
+</xsl:text>
+    <xsl:if test="element-available(&quot;xsl:element&quot;)">
+      <xsl:text>xsl:element available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;saxon:output&quot;)">
+      <xsl:text>saxon:output available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xalanredirect:write&quot;)">
+      <xsl:text>xalanredirect:write available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;xt:document&quot;)">
+      <xsl:text>xt:document available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="element-available(&quot;libxslt:debug&quot;)">
+      <xsl:text>libxslt:debug available
+</xsl:text>
+    </xsl:if>
+    <xsl:text> === 6 Extension functions:
+</xsl:text>
+    <xsl:if test="function-available(&quot;libxslt:node-set&quot;)">
+      <xsl:text>libxslt:node-set() available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="function-available(&quot;saxon:node-set&quot;)">
+      <xsl:text>saxon:node-set() available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="function-available(&quot;xt:node-set&quot;)">
+      <xsl:text>xt:node-set() available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="function-available(&quot;saxon:evaluate&quot;)">
+      <xsl:text>saxon:evaluate() available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="function-available(&quot;saxon:expression&quot;)">
+      <xsl:text>saxon:expression() available
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="function-available(&quot;saxon:eval&quot;)">
+      <xsl:text>saxon:eval() available
+</xsl:text>
+    </xsl:if>
+  </xsl:template>
+</xsl:stylesheet>

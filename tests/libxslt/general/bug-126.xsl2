@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:variable name="x" select="&quot;val&quot;"/>
+  <xsl:template match="/">
+    <xsl:text>
+    </xsl:text>
+    <foo attr="$x"/>
+    <xsl:text> Expect '$x'
+    </xsl:text>
+    <foo attr="{$x}"/>
+    <xsl:text> Expect 'val'
+    </xsl:text>
+    <foo attr="{{$x"/>
+    <xsl:text> Expect 'bracket $x'
+    </xsl:text>
+    <foo attr="$x}}"/>
+    <xsl:text> Expect '$x bracket'
+    </xsl:text>
+    <foo attr="{{$x}}"/>
+    <xsl:text> Expect 'bracket $x bracket'
+    </xsl:text>
+    <foo attr="{{{$x}}}"/>
+    <xsl:text> Expect 'bracket val bracket'
+  </xsl:text>
+  </xsl:template>
+</xsl:stylesheet>

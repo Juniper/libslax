@@ -1,0 +1,22 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* generate text output as mime type model/vrml, using default charset */
+<xsl:output method = "text" encoding = "UTF-8" media-type = "model/vrml">;
+
+match / {
+    expr "#VRML V2.0 utf8 \n \n# externproto definition of a single bar element \nEXTERNPROTO bar [ \n  field SFInt32 x  \n  field SFInt32 y  \n  field SFInt32 z  \n  field SFString name  \n  ] \n  \"http://www.vrml.org/WorkingGroups/dbwork/barProto.wrl\" \n \n# inline containing the graph axes \nInline {  \n        url \"http://www.vrml.org/WorkingGroups/dbwork/barAxes.wrl\" \n        } \n        \n                ";
+    
+    for-each (sales/division) {
+        expr "\nbar {\n        x ";
+        expr revenue;
+        expr "\n        y ";
+        expr growth;
+        expr "\n        z ";
+        expr bonus;
+        expr "\n        name \"";
+        expr @id;
+        expr "\" \n        }\n                ";
+    }
+}
+

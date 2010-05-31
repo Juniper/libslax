@@ -1,0 +1,27 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match tr {
+    if (td[@colspan == "2"]) {
+    
+    } else {
+        <item> {
+            <name> td[1];
+            <quantity> td[2];
+        }
+        apply-templates following-sibling::tr[1];
+    }
+}
+
+match table {
+    for-each (tr[td[1] [@colspan == "2"]]) {
+        <factory> {
+            <name> td[1];
+            <inventory> {
+                apply-templates following-sibling::tr[1];
+            }
+        }
+    }
+}

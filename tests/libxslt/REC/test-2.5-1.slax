@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.8;
+
+match / {
+    if (system-property("xsl:version") >= 1.8) {
+        <xsl:exciting-new-1.8-feature>;
+    
+    } else {
+        <html> {
+            <head> {
+                <title> "XSLT 1.8 required";
+            }
+            <body> {
+                <p> "Sorry, this stylesheet requires XSLT 1.8.";
+            }
+        }
+    }
+}

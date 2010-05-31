@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="xml" indent="yes" encoding="iso-8859-1"/>
+  <xsl:decimal-format name="special" decimal-separator="*"/>
+  <xsl:template match="/format-number">
+    <format-number>
+      <xsl:apply-templates/>
+    </format-number>
+  </xsl:template>
+  <xsl:template match="/format-number/fixes">
+    <fixes>
+    one <xsl:value-of select="format-number(pi, &quot;prefix#,#,###.##suffix&quot;)"/>
+    two <xsl:value-of select="format-number(negpi, &quot;_#,#,###.##_&quot;)"/>
+    three <xsl:value-of select="format-number(negpi, &quot;_#,#,000.000##_&quot;)"/>
+    four <xsl:value-of select="format-number(negpi, &quot;_#.#_;_(#.#)_&quot;)"/>
+    five <xsl:value-of select="format-number(pi, &quot;prefix#,#,###*##suffix&quot;, &quot;special&quot;)"/>
+  </fixes>
+  </xsl:template>
+  <xsl:template match="/format-number/point-test"><point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'#'  ) = <xsl:value-of select="format-number(., &quot;#&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'0'  ) = <xsl:value-of select="format-number(., &quot;0&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>, '.' ) = <xsl:value-of select="format-number(., &quot;.&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'#.' ) = <xsl:value-of select="format-number(., &quot;#.&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'0.' ) = <xsl:value-of select="format-number(., &quot;0.&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>, '.#') = <xsl:value-of select="format-number(., &quot;.#&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>, '.##') = <xsl:value-of select="format-number(., &quot;.##&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>, '.0') = <xsl:value-of select="format-number(., &quot;.0&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'#.#') = <xsl:value-of select="format-number(., &quot;#.#&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'0.0') = <xsl:value-of select="format-number(., &quot;0.0&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'#.0') = <xsl:value-of select="format-number(., &quot;#.0&quot;)"/></xsl:for-each>
+  </point-test>
+  <point-test><xsl:for-each select="number">
+    format-number(<xsl:value-of select="."/>,'0.#') = <xsl:value-of select="format-number(., &quot;0.#&quot;)"/></xsl:for-each>
+  </point-test></xsl:template>
+</xsl:stylesheet>

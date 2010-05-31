@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text">;
+
+match / {
+    apply-templates //BBB;
+}
+
+match BBB {
+    expr "\n         BBB[";
+    expr position();
+    expr "]: ";
+    expr .;
+}

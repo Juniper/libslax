@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/Graphics/SVG/SVG-19990812.dtd" width="3in" height="3in">
+  <g style="stroke: #000000">
+    <line x1="0" x2="150" y1="150" y2="150"/>
+    <line x1="0" x2="0" y1="0" y2="150"/>
+    <text x="0" y="10">Revenue</text>
+    <text x="150" y="165">Division</text>
+  </g>
+</svg>

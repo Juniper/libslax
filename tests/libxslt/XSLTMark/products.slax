@@ -1,0 +1,31 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* the slow way... */
+<xsl:output encoding="utf-8">;
+
+template getsku () {
+    if (position() != 1) {
+        expr ", ";
+    }
+    expr sku;
+}
+
+match categories/category {
+    <tr> {
+        <td> name;
+        <td> {
+            for-each (//products/product[category == current()/id]) {
+                call getsku();
+            }
+        }
+    }
+}
+
+match / {
+    <html> {
+        <table border="1"> {
+            apply-templates //categories/category;
+        }
+    }
+}

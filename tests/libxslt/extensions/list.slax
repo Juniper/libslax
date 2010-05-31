@@ -1,0 +1,118 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns saxon = "http://icl.com/saxon";
+ns xalanredirect = "org.apache.xalan.xslt.extensions.Redirect";
+ns xt = "http://www.jclark.com/xt";
+ns libxslt = "http://xmlsoft.org/XSLT/namespace";
+
+match / {
+    expr " === 24 Standard elements:\n";
+    if (element-available("xsl:apply-templates")) {
+        expr "xsl:apply-templates available\n";
+    }
+    if (element-available("xsl:apply-imports")) {
+        expr "xsl:apply-imports available\n";
+    }
+    if (element-available("xsl:call-template")) {
+        expr "xsl:call-template available\n";
+    }
+    if (element-available("xsl:element")) {
+        expr "xsl:element available\n";
+    }
+    if (element-available("xsl:attribute")) {
+        expr "xsl:attribute available\n";
+    }
+    if (element-available("xsl:text")) {
+        expr "xsl:text available\n";
+    }
+    if (element-available("xsl:processing-instruction")) {
+        expr "xsl:processing-instruction available\n";
+    }
+    if (element-available("xsl:comment")) {
+        expr "xsl:comment available\n";
+    }
+    if (element-available("xsl:copy")) {
+        expr "xsl:copy available\n";
+    }
+    if (element-available("xsl:value-of")) {
+        expr "xsl:value-of available\n";
+    }
+    if (element-available("xsl:number")) {
+        expr "xsl:number available\n";
+    }
+    if (element-available("xsl:for-each")) {
+        expr "xsl:for-each available\n";
+    }
+    if (element-available("xsl:if")) {
+        expr "xsl:if available\n";
+    }
+    if (element-available("xsl:choose")) {
+        expr "xsl:choose available\n";
+    }
+    if (element-available("xsl:sort")) {
+        expr "xsl:sort available\n";
+    }
+    if (element-available("xsl:copy-of")) {
+        expr "xsl:copy-of available\n";
+    }
+    if (element-available("xsl:message")) {
+        expr "xsl:message available\n";
+    }
+    if (element-available("xsl:variable")) {
+        expr "xsl:variable available\n";
+    }
+    if (element-available("xsl:param")) {
+        expr "xsl:param available\n";
+    }
+    if (element-available("xsl:with-param")) {
+        expr "xsl:with-param available\n";
+    }
+    if (element-available("xsl:decimal-format")) {
+        expr "xsl:decimal-format available\n";
+    }
+    if (element-available("xsl:when")) {
+        expr "xsl:when available\n";
+    }
+    if (element-available("xsl:otherwise")) {
+        expr "xsl:otherwise available\n";
+    }
+    if (element-available("xsl:fallback")) {
+        expr "xsl:fallback available\n";
+    }
+    expr " === 5 Extension elements:\n";
+    if (element-available("xsl:element")) {
+        expr "xsl:element available\n";
+    }
+    if (element-available("saxon:output")) {
+        expr "saxon:output available\n";
+    }
+    if (element-available("xalanredirect:write")) {
+        expr "xalanredirect:write available\n";
+    }
+    if (element-available("xt:document")) {
+        expr "xt:document available\n";
+    }
+    if (element-available("libxslt:debug")) {
+        expr "libxslt:debug available\n";
+    }
+    expr " === 6 Extension functions:\n";
+    if (function-available("libxslt:node-set")) {
+        expr "libxslt:node-set() available\n";
+    }
+    if (function-available("saxon:node-set")) {
+        expr "saxon:node-set() available\n";
+    }
+    if (function-available("xt:node-set")) {
+        expr "xt:node-set() available\n";
+    }
+    if (function-available("saxon:evaluate")) {
+        expr "saxon:evaluate() available\n";
+    }
+    if (function-available("saxon:expression")) {
+        expr "saxon:expression() available\n";
+    }
+    if (function-available("saxon:eval")) {
+        expr "saxon:eval() available\n";
+    }
+}

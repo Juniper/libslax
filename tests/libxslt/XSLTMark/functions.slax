@@ -1,0 +1,29 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match table {
+    for-each (row) {
+        expr "\n      ";
+        <person> {
+            expr firstname _ " " _ lastname;
+            expr string-length(firstname);
+            /* rot13 */
+            expr translate(firstname, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", "nopqrstuvwxyzabcdefghijklmNOPQRSTUVWXYZABCDEFGHIJKLM");
+            expr sum(preceding-sibling::row/id);
+            expr floor(id div 17);
+            expr ceiling(id * 3.1415);
+            expr substring(lastname, 4, 3);
+        }
+        <extra> {
+            if (starts-with(id, "001")) {
+                expr zip;
+            }
+            if (contains(lastname, "k")) {
+                expr substring-after(lastname, "k");
+            }
+        }
+    }
+    expr "\n    ";
+}

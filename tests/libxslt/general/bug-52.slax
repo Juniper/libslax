@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html">;
+
+match doc {
+    apply-templates;
+}
+
+match img {
+    expr "Graphic file=";
+    expr unparsed-entity-uri(@entref);
+}

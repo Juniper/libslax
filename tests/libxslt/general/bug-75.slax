@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    expr format-number(100000000000, "#,##0.##");
+    expr "|\n";
+    expr format-number(2147483647, "#,##0.##");
+    expr "|\n";
+    expr format-number(2147483648, "#,##0.##");
+    expr "|\n";
+    expr format-number(4294967296, "#,##0.##");
+    expr "|\n";
+}

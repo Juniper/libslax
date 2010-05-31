@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $foo = "SUCCESS";
+/* Global var shouldn't be changed by call with param */
+match doc {
+    expr $foo;
+}
+
+match / {
+    var $foo = "FAILURE";
+    
+    apply-templates {
+        with $foo = "FAILURE";
+    }
+}

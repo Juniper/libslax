@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns vdv = "http://eric.van-der-vlist.com/tmpns";
+
+match / {
+    copy-of document("")/xsl:transform;
+}

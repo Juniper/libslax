@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml">;
+/* match first element of last item of any orderedlist */
+/* <xsl:template match="orderedlist/listitem[position()!=1][position()=last()]/ *[1]"> */
+match orderedlist/listitem[position() != 1] [position() == last()]/*[1] {
+    expr "First element of last item of orderedlist";
+    <xsl:copy> {
+        apply-templates @* | node();
+    }
+}

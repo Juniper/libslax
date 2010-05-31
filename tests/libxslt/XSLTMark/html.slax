@@ -1,0 +1,39 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    <html xsl:version="1.0" lang="en"> {
+        <head> {
+            <title> "Sales Results By Division";
+        }
+        <body> {
+            <table border="1"> {
+                <tr> {
+                    <th> "Division";
+                    <th> "Revenue";
+                    <th> "Growth";
+                    <th> "Bonus";
+                }
+                
+                for-each (sales/division) {
+                    /* order the result by revenue */
+                    <xsl:sort select="revenue" data-type="number" order="descending">;
+                    <tr> {
+                        <td> {
+                            <em> @id;
+                        }
+                        <td> revenue;
+                        <td> {
+                            /* highlight negative growth in red */
+                            if (growth < 0) {
+                                <xsl:attribute name="style"> "color:red";
+                            }
+                            expr growth;
+                        }
+                        <td> bonus;
+                    }
+                }
+            }
+        }
+    }
+}

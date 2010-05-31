@@ -1,0 +1,19 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns xs = "http://www.w3.org/2001/XMLSchema";
+
+<xsl:output method="xml" indent="yes" version="1.0">;
+
+match node() {
+    <xsl:element name="toto"> {
+        <xsl:attribute name="n"> name();
+        apply-templates;
+    }
+}
+
+match text() { }
+
+match comment() { }
+
+match processing-instruction() { }

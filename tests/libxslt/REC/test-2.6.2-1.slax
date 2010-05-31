@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+import "article.xsl";
+import "bigfont.xsl";
+<xsl:attribute-set name="note-style"> {
+    <xsl:attribute name="font-style"> "italic";
+}

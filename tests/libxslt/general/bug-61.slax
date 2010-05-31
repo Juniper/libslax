@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    expr "\ncase 1:\n";
+    expr format-number("", "#.#");
+    expr "\ncase 2:\n";
+    expr number("");
+    expr "\ncase 3:\n";
+    expr format-number(non/existing/path, "#.#");
+    expr "\ncase 4:\n";
+    expr number(non/existing/path);
+}

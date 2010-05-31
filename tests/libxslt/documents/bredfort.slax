@@ -1,0 +1,103 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/1999/xhtml";
+
+<xsl:output encoding="iso-8859-1" method="xml" doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN" doctype-system="DTD/xhtml1-strict.dtd">;
+
+match page {
+    <html xml:lang="en" lang="en"> {
+        <head> {
+            <title> @title;
+            <link rel="stylesheet" href="bredfort.css" type="text/css" title="bredfort">;
+        }
+        <body> {
+            apply-templates document("menu.xml");
+            <h1> @title;
+            apply-templates;
+        }
+    }
+}
+
+match h2 {
+    <h2> {
+        apply-templates;
+    }
+}
+
+match menu {
+    <table class="menu"> {
+        <tr> {
+            apply-templates;
+        }
+    }
+}
+
+match menuitem {
+    <td class="menu"> {
+        <a> {
+            <xsl:attribute name="href"> @href;
+            apply-templates;
+        }
+    }
+}
+
+match week {
+    <hr class="thin">;
+    <h2> {
+        expr "Week ";
+        expr @num;
+    }
+    apply-templates;
+}
+
+match what {
+    apply-templates;
+    <p class="who"> @who;
+}
+
+match p {
+    <p> {
+        apply-templates;
+    }
+}
+
+match a {
+    <a> {
+        <xsl:attribute name="href"> @href;
+        apply-templates;
+    }
+}
+
+match st {
+    <td class="progress"> {
+        apply-templates;
+        expr "%";
+    }
+}
+
+match progresstable {
+    <table border="2" class="progress"> {
+        <tr> {
+            <th class="progress"> "Week";
+            <th class="progress"> "Sys. des.";
+            <th class="progress"> "Test des.";
+            <th class="progress"> "Sales cli.";
+            <th class="progress"> "Adm. cli.";
+            <th class="progress"> "Proxy";
+            <th class="progress"> "Sale serv.";
+            <th class="progress"> "Fac. serv.";
+            <th class="progress"> "Comp. test";
+            <th class="progress"> "Func. test";
+            <th class="progress"> "Syst. test";
+        }
+        apply-templates progress;
+    }
+}
+
+match progress {
+    <tr> {
+        <td class="progress"> @week;
+        apply-templates;
+    }
+}

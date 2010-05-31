@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+template ns () {
+    <ns>;
+}
+
+match /* {
+    <elem> {
+        copy-of document("")/*/xsl:template[@name == "ns"]/ns/namespace::ns;
+    }
+}

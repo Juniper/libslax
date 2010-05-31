@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns b = "http://b";
+
+match @b:* { }
+
+match * {
+    <xsl:copy> {
+        apply-templates * |@*;
+    }
+}
+
+match @* {
+    <xsl:copy>;
+}

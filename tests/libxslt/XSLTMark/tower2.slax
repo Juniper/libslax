@@ -1,0 +1,127 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match towerheight {
+    <xsl:output encoding="utf-8">;
+    var $height = {
+        expr .;
+    }
+    var $tower = {
+        call initialize($height);
+    }
+    
+    <towers> {
+        copy-of $tower;
+        call transferstack($tower, $source = "left", $target = "center", $spare = "right", $howmany = $height);
+    }
+}
+
+template initialize ($height) {
+    <tower> {
+        <leftstack> {
+            call initstack($height);
+        }
+        <centerstack>;
+        <rightstack>;
+    }
+}
+
+template initstack ($height, $size = 0) {
+    if ($size > 0) {
+        <disc size=$size>;
+    }
+    if ($size < $height) {
+        call initstack($height, $size = $size + 1);
+    }
+}
+
+template transferstack ($tower, $source, $target, $spare, $howmany) {
+    if ($howmany > 0) {
+        var $firstpart = {
+            call transferstack($tower, $source, $target = $spare, $spare = $target, $howmany = $howmany - 1);
+        }
+        var $lasttower = {
+            if ($firstpart/tower[last()]) {
+                copy-of $firstpart/tower[last()];
+            
+            } else {
+                copy-of $tower;
+            }
+        }
+        var $secondpart = {
+            call transferdisc($tower = $lasttower, $source, $target);
+        }
+        
+        copy-of $firstpart;
+        copy-of $secondpart;
+        call transferstack($tower = $secondpart, $source = $spare, $target, $spare = $source, $howmany = $howmany - 1);
+    }
+}
+
+template transferdisc ($tower, $source, $target) {
+    var $disc = {
+        if ($source == "left") {
+            copy-of $tower/tower/leftstack/disc[1];
+        
+        } else if ($source == "center") {
+            copy-of $tower/tower/centerstack/disc[1];
+        
+        } else {
+            copy-of $tower/tower/rightstack/disc[1];
+        }
+    }
+    var $newleft = {
+        if ($source == "left") {
+            <leftstack> {
+                copy-of $tower/tower/leftstack/disc[position() > 1];
+            }
+        
+        } else if ($target == "left") {
+            <leftstack> {
+                copy-of $disc;
+                copy-of $tower/tower/leftstack/disc;
+            }
+        
+        } else {
+            copy-of $tower/tower/leftstack;
+        }
+    }
+    var $newcenter = {
+        if ($source == "center") {
+            <centerstack> {
+                copy-of $tower/tower/centerstack/disc[position() > 1];
+            }
+        
+        } else if ($target == "center") {
+            <centerstack> {
+                copy-of $disc;
+                copy-of $tower/tower/centerstack/disc;
+            }
+        
+        } else {
+            copy-of $tower/tower/centerstack;
+        }
+    }
+    var $newright = {
+        if ($source == "right") {
+            <rightstack> {
+                copy-of $tower/tower/rightstack/disc[position() > 1];
+            }
+        
+        } else if ($target == "right") {
+            <rightstack> {
+                copy-of $disc;
+                copy-of $tower/tower/rightstack/disc;
+            }
+        
+        } else {
+            copy-of $tower/tower/rightstack;
+        }
+    }
+    
+    <tower> {
+        copy-of $newleft;
+        copy-of $newcenter;
+        copy-of $newright;
+    }
+}

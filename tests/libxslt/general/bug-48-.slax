@@ -1,0 +1,22 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+template empty () {
+}
+
+template test () {
+    expr "SUCCESS";
+}
+
+match / {
+    var $foo = {
+        call test();
+    }
+    
+    if (1) {
+        apply-templates doc {
+            with $unused = $foo;
+        }
+    }
+    expr $foo;
+}

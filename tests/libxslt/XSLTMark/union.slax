@@ -1,0 +1,21 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match *[starts-with(., "a")] {
+    <A> .;
+    expr "\n";
+}
+
+match *[starts-with(substring(., string-length(.)) , "b")] {
+    <B> .;
+    expr "\n";
+}
+
+match top {
+    <TOP> {
+        expr "\n";
+        apply-templates *[starts-with(., "a")] | *[starts-with(substring(., string-length(.)) , "b")];
+    }
+}

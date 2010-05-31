@@ -1,0 +1,31 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo exclude = "http://www.w3.org/1999/XSL/Format";
+
+match / {
+    <html> {
+        <head> {
+            <title> "Customers";
+        }
+        <body> {
+            <table> {
+                <tbody> {
+                    for-each (customers/customer) {
+                        <tr> {
+                            <th> {
+                                apply-templates name;
+                            }
+                            
+                            for-each (order) {
+                                <td> {
+                                    apply-templates;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

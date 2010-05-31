@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $a = {
+    var $b = "SUCCESS";
+    
+    expr $b;
+}
+
+match / {
+    expr $a;
+}

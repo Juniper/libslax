@@ -1,0 +1,36 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match / {
+    <summary> {
+        <total> {
+            expr count(//node());
+            expr " nodes,\n      ";
+            expr count(//*);
+            expr " elements,\n      ";
+            expr count(//text());
+            expr " text nodes,\n      ";
+            expr count(//*/@*);
+            expr " attributes.\n    ";
+        }
+        apply-templates;
+    }
+}
+
+match /xsl:stylesheet |/xsl:transform {
+    <analysis> {
+        <description> "Recognized as xslt stylesheet:";
+        <stats> {
+            expr count(xsl:template);
+            expr " templates,\n      ";
+            expr count(descendant::xsl:variable);
+            expr " variables,\n      ";
+            expr count(descendant::xsl:value-of);
+            expr " value-of's,\n    ";
+        }
+    }
+}
+
+match text() { }

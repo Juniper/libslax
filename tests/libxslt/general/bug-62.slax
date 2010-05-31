@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+import "bug-62-inc.xsl";
+var $my.var = "the-value";
+
+match / {
+    expr $my.var;
+}

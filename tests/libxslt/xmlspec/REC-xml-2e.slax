@@ -1,0 +1,24 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+import "diffspec.xsl";
+
+match loc[@role == "erratumref"] {
+    if ($show.diff.markup == "0") {
+        /* nop */
+    
+    } else {
+        apply-imports;
+    }
+}
+
+match loc[@role == "erratumref"] {
+    mode "text";
+    
+    if ($show.diff.markup == "0") {
+        /* nop */
+    
+    } else {
+        apply-imports;
+    }
+}

@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method = "xml" indent = "yes" encoding = "ISO-8859-1">;
+var $two = "abcde";
+
+match * {
+    expr translate("hello", "ABCDE", $one);
+}
+

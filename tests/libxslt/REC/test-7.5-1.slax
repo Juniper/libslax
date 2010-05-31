@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+ns axsl = "http://www.w3.org/1999/XSL/TransformAlias";
+
+match @* | node() {
+    <xsl:copy> {
+        apply-templates @* | node();
+    }
+}

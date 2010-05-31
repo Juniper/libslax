@@ -1,0 +1,19 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match employees {
+    <ul> {
+        apply-templates employee {
+            <xsl:sort select="name/family">;
+            <xsl:sort select="name/given">;
+        }
+    }
+}
+
+match employee {
+    <li> {
+        expr name/given;
+        expr " ";
+        expr name/family;
+    }
+}

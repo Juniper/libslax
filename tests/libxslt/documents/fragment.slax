@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    <doc> {
+        copy-of document("fragment2.xml#xpointer(//p[1])");
+    }
+}

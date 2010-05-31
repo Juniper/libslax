@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:text>
+case 1:
+</xsl:text>
+    <xsl:value-of select="format-number(&quot;&quot;, &quot;#.#&quot;)"/>
+    <xsl:text>
+case 2:
+</xsl:text>
+    <xsl:value-of select="number(&quot;&quot;)"/>
+    <xsl:text>
+case 3:
+</xsl:text>
+    <xsl:value-of select="format-number(non/existing/path, &quot;#.#&quot;)"/>
+    <xsl:text>
+case 4:
+</xsl:text>
+    <xsl:value-of select="number(non/existing/path)"/>
+  </xsl:template>
+</xsl:stylesheet>

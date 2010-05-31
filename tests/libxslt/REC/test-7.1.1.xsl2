@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:axsl="http://www.w3.org/1999/XSL/TransformAlias" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:namespace-alias stylesheet-prefix="axsl" result-prefix="xsl"/>
+  <xsl:template match="/">
+    <axsl:stylesheet>
+      <xsl:apply-templates/>
+    </axsl:stylesheet>
+  </xsl:template>
+  <xsl:template match="block">
+    <axsl:template>
+      <xsl:attribute name="match">
+        <xsl:value-of select="."/>
+      </xsl:attribute>
+      <fo:block>
+        <axsl:apply-templates/>
+      </fo:block>
+    </axsl:template>
+  </xsl:template>
+</xsl:stylesheet>

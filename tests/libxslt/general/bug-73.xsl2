@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="text"/>
+  <xsl:template match="p/text()">
+    <xsl:value-of select="concat(&quot;text in &quot;, name(..), ' = &quot;')"/>
+    <xsl:value-of select="normalize-space(.)"/>
+    <xsl:text>"
+</xsl:text>
+  </xsl:template>
+  <xsl:template match="text()"/>
+</xsl:stylesheet>

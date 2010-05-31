@@ -1,0 +1,17 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="ascii">;
+
+match / {
+    <html> {
+        <head>;
+        <body> {
+            <a href="#ё"> "ё";
+            <p> "a lot of text";
+            <a name="ё">;
+            <h1> "ё";
+            <p> "a lot of text";
+        }
+    }
+}

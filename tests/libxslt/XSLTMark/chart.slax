@@ -1,0 +1,59 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="utf-8">;
+
+match salesdata {
+    var $max = 50;
+    
+    <html> {
+        <body bgcolor="#ffffff"> {
+            <table border="0"> {
+                <tr> {
+                    <td colspan=count(year) align="center"> "Sales By Region";
+                }
+                <tr> {
+                    for-each (year) {
+                        <td valign="top"> {
+                            <table border="0" cellpadding="2" cellspacing="0"> {
+                                <tr> {
+                                    for-each (region) {
+                                        var $color = {
+                                            if (name == "west") {
+                                                expr "#0000ff";
+                                            
+                                            } else if (name == "central") {
+                                                expr "#ff00ff";
+                                            
+                                            } else if (name == "east") {
+                                                expr "#00ff00";
+                                            }
+                                        }
+                                        
+                                        <td valign="top"> {
+                                            <table border="0" cellpadding="0" cellspacing="0"> {
+                                                <tr height=5 *($max - sales)> {
+                                                    <td bgcolor="#ffffff" width="10" height=5 *($max - sales)> {
+                                                        <xsl:text disable-output-escaping="yes"> "&#160;";
+                                                    }
+                                                }
+                                                <tr height=5 * sales> {
+                                                    <td bgcolor=$color width="10" height=5 * sales> {
+                                                        <xsl:text disable-output-escaping="yes"> "&#160;";
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                <tr> {
+                                    <td colspan=count(region) align="center"> year;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

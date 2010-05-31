@@ -1,0 +1,45 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="utf-8">;
+
+match row[id == "0432"] {
+    <html> {
+        <head bgcolor="#ffffff"> ;
+        <body> {
+            <table border="0"> {
+                <tr> {
+                    <td colspan="2" bgcolor="#000000"> {
+                        <font color="#ffffff"> "personel record #" _ id;
+                    }
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              First Name:\n            ";
+                    <td bgcolor="#dddddd"> firstname;
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              Last Name:\n            ";
+                    <td bgcolor="#dddddd"> lastname;
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              Street:\n            ";
+                    <td bgcolor="#dddddd"> street;
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              City:\n            ";
+                    <td bgcolor="#dddddd"> city;
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              State:\n            ";
+                    <td bgcolor="#dddddd"> state;
+                }
+                <tr> {
+                    <td bgcolor="#888888"> "\n              Zip\n            ";
+                    <td bgcolor="#dddddd"> zip;
+                }
+            }
+        }
+    }
+}
+
+match text() { }

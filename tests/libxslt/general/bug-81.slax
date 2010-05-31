@@ -1,0 +1,24 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    expr //a/value;
+    expr " - ";
+    expr //b/value;
+    expr " - ";
+    expr //c/value;
+    expr " =\n";
+    expr //a/value -//b/value -//c/value;
+    expr "\n";
+    apply-templates //c;
+}
+
+match c {
+    expr //a/value;
+    expr " - ";
+    expr //b/value;
+    expr " - ";
+    expr value;
+    expr " = ";
+    expr //a/value -//b/value - value;
+}

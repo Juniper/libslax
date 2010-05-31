@@ -1,0 +1,23 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match doc {
+    <doc> {
+        apply-templates //employee;
+    }
+}
+
+match employee {
+    <fo:block> {
+        expr "\n    Employee ";
+        apply-templates name;
+        expr " belongs to group\n	";
+        apply-templates ancestor::department/group;
+    }
+}
+
+match group {
+    apply-templates name;
+}

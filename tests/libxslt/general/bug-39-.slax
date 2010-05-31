@@ -1,0 +1,31 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    <root> {
+        apply-templates;
+    }
+}
+
+match x {
+    expr "Matched x template";
+    apply-templates;
+}
+/* Case 1: y=0.0 / *=0.0, even though / * should be 0.5 */
+
+/* works if split up to:
+<xsl:template match="/ *"> or of course you reverse the order
+so the y pattern is screwed instead
+ */
+match y |/* {
+    expr "Matched /* or y template";
+    apply-templates;
+}
+
+/*
+Case 2: Here, both should have 5.0 priority but / * seems to have 0.0!
+<xsl:template match="y|/ *" priority="5.0">
+<xsl:text>Matched / * or y template</xsl:text>
+<xsl:apply-templates />
+</xsl:template>
+ */

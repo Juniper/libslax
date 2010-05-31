@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match include {
+    expr "\n  Including: ";
+    expr @href;
+    apply-templates document(@href);
+}
+
+match person {
+    expr "\n  Person: ";
+    apply-templates;
+}

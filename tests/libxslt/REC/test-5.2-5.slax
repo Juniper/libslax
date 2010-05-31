@@ -1,0 +1,6 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match appendix//para {
+    expr "\nSuccess\n";
+}

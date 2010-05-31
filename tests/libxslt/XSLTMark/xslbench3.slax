@@ -1,0 +1,30 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match PLAY {
+    <html> {
+        <head> {
+            <title> /PLAY/TITLE;
+        }
+        <body> {
+            <h1> /PLAY/TITLE;
+            <table> {
+                for-each (//ACT) {
+                    var $act = TITLE;
+                    
+                    for-each (SCENE) {
+                        expr $act _ " - " _ TITLE _ "   ";
+                        expr "\n			Has ";
+                        expr count(.//SPEECH);
+                        expr " speeches\n			with an average of ";
+                        expr round(count(.//LINE) div count(.//SPEECH));
+                        expr "\n			line(s) each.\n			";
+                        <br>;
+                    }
+                }
+            }
+        }
+    }
+}

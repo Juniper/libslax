@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+strip-space *;
+
+match foo {
+    <FOO> {
+        apply-templates;
+    }
+}
+
+match bar {
+    <BAR INDEX=position()> .;
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output encoding="utf-8"/>
+  <xsl:template match="/">
+    <summary>
+      <total>
+        <xsl:value-of select="count(//node())"/>
+        <xsl:text> nodes,
+      </xsl:text>
+        <xsl:value-of select="count(//*)"/>
+        <xsl:text> elements,
+      </xsl:text>
+        <xsl:value-of select="count(//text())"/>
+        <xsl:text> text nodes,
+      </xsl:text>
+        <xsl:value-of select="count(//*/@*)"/>
+        <xsl:text> attributes.
+    </xsl:text>
+      </total>
+      <xsl:apply-templates/>
+    </summary>
+  </xsl:template>
+  <xsl:template match="/xsl:stylesheet |/xsl:transform">
+    <analysis>
+      <description>Recognized as xslt stylesheet:</description>
+      <stats>
+        <xsl:value-of select="count(xsl:template)"/>
+        <xsl:text> templates,
+      </xsl:text>
+        <xsl:value-of select="count(descendant::xsl:variable)"/>
+        <xsl:text> variables,
+      </xsl:text>
+        <xsl:value-of select="count(descendant::xsl:value-of)"/>
+        <xsl:text> value-of's,
+    </xsl:text>
+      </stats>
+    </analysis>
+  </xsl:template>
+  <xsl:template match="text()"/>
+</xsl:stylesheet>

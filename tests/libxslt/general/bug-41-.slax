@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $foo = "SUCCESS";
+/* Global var shouldn't be changed by call with param */
+template test () {
+    expr $foo;
+}
+
+match / {
+    var $foo = "FAILURE";
+    
+    call test($foo = "FAILURE");
+}

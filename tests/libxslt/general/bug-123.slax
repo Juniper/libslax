@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match @* {
+    <xsl:copy>;
+}
+
+match element {
+    <xsl:copy> {
+        <xsl:attribute name="foo"> "xsl";
+        apply-templates @*;
+    }
+}

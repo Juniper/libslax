@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/TR/xhtml1/strict" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <html>
+      <head>
+        <title>Expense Report Summary</title>
+      </head>
+      <body>
+        <p>
+          <xsl:text>Total Amount: </xsl:text>
+          <xsl:value-of select="expense-report/total"/>
+        </p>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

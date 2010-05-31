@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/TR/xhtml1/strict";
+ns tst = "http://example.org/";
+
+match tst:doc[5] {
+    expr "\nsuccess\n";
+}

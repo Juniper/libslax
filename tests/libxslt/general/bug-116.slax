@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns exsl exclude extension = "http://exslt.org/common";
+ns set exclude extension = "http://exslt.org/sets";
+
+<xsl:output method="xml">;
+/* This works as is.  Comment out the p element and un-comment the error line. */
+match / {
+    <results> {
+        var $n = <p>;
+        
+        copy-of set:distinct(exsl:node-set($n)/p/a);
+    }
+}

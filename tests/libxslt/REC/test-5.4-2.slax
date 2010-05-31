@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match doc {
+    <doc> {
+        apply-templates;
+    }
+}
+
+match author-group {
+    <fo:inline-sequence> {
+        apply-templates author;
+    }
+}

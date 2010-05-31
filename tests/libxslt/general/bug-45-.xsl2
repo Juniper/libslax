@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:variable name="foo" select="&quot;1&quot;"/>
+  <xsl:template name="test">
+    <xsl:param name="foo" select="&quot;2&quot;"/>
+    <xsl:choose>
+      <xsl:when test="$foo = &quot;0&quot;">
+        <xsl:text>SUCCESS</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>FAILURE </xsl:text>
+        <xsl:value-of select="$foo"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  <xsl:template match="/">
+    <xsl:variable name="foo" select="&quot;3&quot;"/>
+    <xsl:call-template name="test">
+      <xsl:with-param name="foo" select="&quot;0&quot;"/>
+    </xsl:call-template>
+  </xsl:template>
+</xsl:stylesheet>

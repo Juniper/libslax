@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html">;
+<xsl:attribute-set name="foo-attribs"> {
+    <xsl:attribute name="size"> "+1";
+}
+
+match foo {
+    <font xsl:use-attribute-sets="foo-attribs"> "\nfoo\n    ";
+}

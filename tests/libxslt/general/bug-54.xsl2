@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:libxslt="http://xmlsoft.org/XSLT/namespace" xmlns:test1="http://www.test1.com" xmlns:test2="http://www.test2.com" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
+  <xsl:template match="/all/*">
+    <xsl:for-each select="namespace::*">
+      <xsl:copy-of select="."/>
+    </xsl:for-each>
+  </xsl:template>
+  <xsl:template match="/">
+    <root>
+      <xsl:apply-templates/>
+    </root>
+  </xsl:template>
+</xsl:stylesheet>

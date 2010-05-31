@@ -1,0 +1,27 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match EIGHT {
+    <FOLLOWING> following::*[2];
+    <PRECEDING> preceding::THREE;
+    <EMPTY> {
+        expr preceding::TEN;
+        expr preceding::ELEVEN;
+        expr preceding::TOP;
+    }
+    <EMPTY> {
+        expr following::TWO;
+        expr following::FOUR;
+        expr following::ONE;
+    }
+    <ANCESTOR2> ancestor::*[2];
+    <TRICKY> parent::*/descendant::*[3];
+}
+
+match NINE {
+    <FOLLOWINGSIBLING1> following-sibling::*[1];
+    <FOLLOWINGSIBLING2> following-sibling::*[2];
+    <FOLLOWINGSIBLING3> following-sibling::*[3];
+}

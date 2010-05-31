@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns foo = "http://foo.org";
+
+<xsl:output cdata-section-elements="foo:elt">;
+
+match @* | node() {
+    <xsl:copy> {
+        apply-templates @* | node();
+    }
+}

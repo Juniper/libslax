@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match item {
+    <item> @name;
+}
+
+match //blah {
+    <first> {
+        apply-templates //glossary/item[@name == current()/@ref];
+    }
+    <second> {
+        apply-templates //glossary/item[@name == ./@ref];
+    }
+    <third> {
+        apply-templates //glossary/item[@name ==@ref];
+    }
+}

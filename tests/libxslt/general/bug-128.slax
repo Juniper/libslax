@@ -1,0 +1,23 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns test = "http://www.example.org/test";
+
+<xsl:output method="xml" encoding="UTF-8" indent="yes">;
+<xsl:key name="k" match="test:a" use="@a">;
+<xsl:key name="k" match="test:b" use="@b">;
+<xsl:key name="k" match="test.a" use="@a">;
+
+match / {
+    <test:data> {
+        for-each (key("k", "1")) {
+            copy-of .;
+        }
+    }
+}
+
+match text() |@* { }
+<test:data> {
+    <test:a a="1">;
+    <test:b b="1">;
+}

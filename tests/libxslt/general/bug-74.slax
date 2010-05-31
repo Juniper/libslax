@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml" encoding="UTF-8">;
+
+match TestNode {
+    <select> {
+        <xsl:attribute name="onclick"> "aaaa\n	bbbb";
+    }
+}

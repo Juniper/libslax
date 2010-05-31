@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method = "text" encoding = "iso-8859-1">;
+
+match /files/file {
+    var $file = document(@name);
+    
+    if (not($file)) {
+        expr "Can't Open File: ";
+        expr @name;
+    }
+    expr $file/tag1;
+}
+

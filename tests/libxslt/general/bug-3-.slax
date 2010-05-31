@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match * {
+    <xsl:copy> {
+        copy-of @*;
+        apply-templates;
+    }
+}

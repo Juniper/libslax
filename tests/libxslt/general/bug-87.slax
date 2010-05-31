@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text">;
+
+match /XML_DATA//* {
+    expr name();
+    expr " - ";
+    
+    for-each (namespace::*) {
+        expr " \"";
+        expr name();
+        expr "\" ";
+    }
+    expr "\n";
+}

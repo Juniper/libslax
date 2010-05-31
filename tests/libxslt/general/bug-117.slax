@@ -1,0 +1,49 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns l exclude = "http://www.foobar.com/xmlns/l";
+ns s = "http://www.foobar.com/xmlns/s";
+ns exsl extension = "http://exslt.org/common";
+
+<xsl:output method="html" media-type="text/html" encoding="ISO-8859-1">;
+
+match / {
+    apply-templates l:doc;
+}
+
+match l:doc {
+    <s:doc> {
+        for-each (@*) {
+            <xsl:attribute name=name()> .;
+        }
+        <s:doc-head> {
+            apply-templates l:doc-head;
+        }
+        <s:doc-body> {
+            <s:div class="header"> {
+                <s:a href="/"> {
+                    <s:img src="/images/logo/mylogo.jpg" width="200" height="100" border="0" title="LOGO" alt="LOGO">;
+                }
+            }
+            <s:br>;
+            <s:div class="body"> {
+                apply-templates l:doc-content;
+            }
+        }
+    }
+}
+
+match l:doc-title {
+    <s:doc-title> {
+        apply-templates;
+    }
+}
+/* some HTML-like elements */
+match l:a | l:abbr | l:acronym | l:address | l:area | l:b | l:base | l:bdo | l:big | l:blockquote | l:body | l:br | l:button | l:caption | l:cite | l:code | l:col | l:colgroup | l:dd | l:del | l:dfn | l:div | l:dl | l:dt | l:em | l:fieldset | l:form | l:frame | l:framset | l:h1 | l:h2 | l:h3 | l:h4 | l:h5 | l:h6 | l:head | l:hr | l:i | l:iframe | l:img | l:input | l:ins | l:kbd | l:label | l:legend | l:li | l:link | l:map | l:noframes | l:noscript | l:object | l:ol | l:optgroup | l:option | l:p | l:param | l:pre | l:q | l:samp | l:script | l:select | l:small | l:span | l:strong | l:style | l:sub | l:sup | l:table | l:tbody | l:td | l:textarea | l:tfoot | l:th | l:thead | l:tr | l:tt | l:ul | l:var {
+    <xsl:element name="s:" _ local-name()> {
+        for-each (@*) {
+            <xsl:attribute name=name()> .;
+        }
+        apply-templates;
+    }
+}

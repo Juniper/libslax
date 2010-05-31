@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="html"/>
+  <xsl:attribute-set name="foo-attribs">
+    <xsl:attribute name="size">+1</xsl:attribute>
+  </xsl:attribute-set>
+  <xsl:attribute-set name="foo-dep-attribs" use-attribute-sets="foo-attribs">
+    <xsl:attribute name="text-align">start</xsl:attribute>
+  </xsl:attribute-set>
+  <xsl:template match="/">
+    <font xsl:use-attribute-sets="foo-dep-attribs">
+      <xsl:text>
+    foo
+    </xsl:text>
+    </font>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,69 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns exsl exclude extension = "http://exslt.org/common";
+
+match / {
+    <root> {
+        var $pkglist = <sqltable name="F9670" datasource="System - B7333"> {
+            <colset column-count="18"> {
+                ns o = "http://www.jdedwards.com/OLAF";
+                
+                <col p="1"> "SUPKGNAME";
+                <col p="2"> "SURLS";
+                <col p="3"> "SUFRLS";
+                <col p="4"> "SUTRLS";
+                <col p="5"> "SUDL01";
+                <col p="6"> "SUSUTYPE";
+                <col p="7"> "SUSUDATE";
+            }
+            <sequencing> {
+                ns o = "http://www.jdedwards.com/OLAF";
+                
+                <col> "SUPKGNAME";
+            }
+            <results> {
+                <r> {
+                    <col> "JD12367";
+                    <col> "B7333";
+                    <col> "B7333";
+                    <col> "JD12367";
+                    <col> "ESU_JD12367_10/2/01";
+                    <col> "01";
+                    <col> "10/2/2001";
+                }
+                <r> {
+                    <col> "JD12860";
+                    <col> "B7333";
+                    <col> "B7333";
+                    <col> "JD12860";
+                    <col> "ESU_JD12860_11/13/01";
+                    <col> "01";
+                    <col> "11/14/2001";
+                }
+                <r> {
+                    <col> "JD14724";
+                    <col> "B7333";
+                    <col> "B7333";
+                    <col> "JD14724";
+                    <col> "ESU_JD14724_4/2/02";
+                    <col> "01";
+                    <col> "4/3/2002";
+                }
+                <r> {
+                    <col> "JD15448";
+                    <col> "B7333";
+                    <col> "B7333";
+                    <col> "JD15448";
+                    <col> "ESU_JD15448_5/28/02";
+                    <col> "01";
+                    <col> "5/29/2002";
+                }
+            }
+        }
+        
+        for-each (exsl:node-set($pkglist)/sqltable/results/r) {
+            <update name=col[1] release=col[2] from-release=col[3] to-release=col[4] description=col[5] type=col[6] date=col[7]> ;
+        }
+    }
+}

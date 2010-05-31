@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:key name="test" match="node()[self::sect][h1|h2]" use="'test'">;
+
+match / {
+    <result> count(key("test", "test"));
+}

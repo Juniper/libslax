@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match doc {
+    var $node = .;
+    
+    <xsl:element name="Document" namespace=namespace-uri(.)> {
+        for-each (namespace::*) {
+            if (string(.) != namespace-uri($node)) {
+                <xsl:copy>;
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text">;
+
+match / {
+    var $id1 = generate-id(/root/elem);
+    var $id2 = generate-id(id("id0"));
+    
+    if ($id1 == $id2) {
+        expr "SUCCESS\n";
+    }
+    if ($id1 != $id2) {
+        expr "ERROR\n";
+    }
+}

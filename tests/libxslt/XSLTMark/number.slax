@@ -1,0 +1,33 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text" encoding="utf-8">;
+<xsl:decimal-format name="default">;
+<xsl:decimal-format name="funky" decimal-separator="&" grouping-separator="/" infinity="unfunity" minus-sign="_" NaN="(c'est nes pas un nombre)" percent="@" per-mille="!" zero-digit="x" digit="#" pattern-separator=";">;
+<xsl:decimal-format name="dumb" digit="@" pattern-separator="R">;
+
+match numbertest {
+    apply-templates number;
+}
+
+match number {
+    expr "\nONE ";
+    expr format-number(., "##,##,00.##");
+    expr "\nTWO ";
+    expr format-number(., "####000,00.##;000.00000");
+    expr "\nTHREE ";
+    expr format-number(., "%##0.00");
+    expr "\nFOUR ";
+    expr format-number(., "?###0.00");
+    expr "\nFIVE ";
+    expr format-number(., "##,##00,000.##;-000000000.0");
+    expr "\nSIX ";
+    expr format-number(., "abc0.00123");
+    expr "\nSEVEN ";
+    expr format-number(., "-0;0");
+    expr "\nEIGHT ";
+    expr format-number(., "-0;-0");
+    expr "\nNINE ";
+    expr format-number(., "-0");
+    expr "\n";
+}

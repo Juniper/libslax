@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+/* alphabetizes an xml tree */
+match * {
+    <xsl:copy> {
+        apply-templates * | text() {
+            <xsl:sort select="name(.)" data-type="text" order="ascending">;
+        }
+    }
+}
+
+match text() {
+    expr normalize-space(.);
+}

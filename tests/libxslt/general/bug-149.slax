@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<foo>;
+
+match / {
+    <xsl:element name="foo">;
+}

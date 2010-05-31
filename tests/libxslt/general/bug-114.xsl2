@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:foo="http://borland.com/bogus" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="html" indent="yes"/>
+  <xsl:template match="/">
+    <html>
+      <xsl:for-each select="/sample/foo">
+        <xsl:element name="foo:whatever">
+          <xsl:value-of select="@name"/>
+        </xsl:element>
+      </xsl:for-each>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

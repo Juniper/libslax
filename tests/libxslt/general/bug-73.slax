@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text">;
+
+match p/text() {
+    expr "text in " _ name(..)  _ ' = "';
+    expr normalize-space(.);
+    expr "\"\n";
+}
+
+match text() { }

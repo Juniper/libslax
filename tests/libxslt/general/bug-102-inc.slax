@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html">;
+<xsl:attribute-set name="foo-attribs"> {
+    <xsl:attribute name="size"> "+1";
+}
+<xsl:attribute-set name="foo-dep-attribs" use-attribute-sets="foo-attribs"> {
+    <xsl:attribute name="text-align"> "start";
+}
+
+match / {
+    <font xsl:use-attribute-sets="foo-dep-attribs"> "\n    foo\n    ";
+}

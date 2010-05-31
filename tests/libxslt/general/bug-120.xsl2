@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output indent="yes"/>
+  <xsl:template match="a">
+    <a>
+      <xsl:text>
+   Ascending numeric
+   </xsl:text>
+      <xsl:for-each select="b">
+        <xsl:sort select="." data-type="number"/>
+        <xsl:copy-of select="."/>
+      </xsl:for-each>
+      <xsl:text>
+   Descending numeric
+   </xsl:text>
+      <xsl:for-each select="b">
+        <xsl:sort select="." data-type="number" order="descending"/>
+        <xsl:copy-of select="."/>
+      </xsl:for-each>
+      <xsl:text>
+   Ascending alpha
+   </xsl:text>
+      <xsl:for-each select="b">
+        <xsl:sort select="." data-type="text"/>
+        <xsl:copy-of select="."/>
+      </xsl:for-each>
+    </a>
+  </xsl:template>
+</xsl:stylesheet>

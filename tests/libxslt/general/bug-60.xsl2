@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <result xsl:version="6.1">
+      <xsl:foo-of select="/Fuhrpark">
+        <xsl:fallback>An error occoured, foo-of not known</xsl:fallback>
+      </xsl:foo-of>
+    </result>
+  </xsl:template>
+</xsl:stylesheet>

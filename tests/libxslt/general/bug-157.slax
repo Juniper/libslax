@@ -1,0 +1,36 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    apply-templates *;
+}
+
+match foo/bar[last() == 4] {
+    expr "\n 4 ";
+    expr .;
+}
+
+match foo/bar[last() == 3] {
+    <xsl:message> "last() was 3";
+    expr "\n 3 ";
+    expr .;
+}
+
+match foo/bar[last() == 2] {
+    expr "\n 2 ";
+    expr .;
+}
+
+match foo/bar[last() == 1] {
+    expr "\n 1 ";
+    expr .;
+}
+
+match foo/bar {
+    priority -100;
+    
+    <xsl:message> {
+        expr "last() was ";
+        expr last();
+    }
+}

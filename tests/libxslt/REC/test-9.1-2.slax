@@ -1,0 +1,31 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo exclude = "http://www.w3.org/1999/XSL/Format";
+
+strip-space itemlist;
+
+match / {
+    <html> {
+        <body> {
+            apply-templates;
+        }
+    }
+}
+
+match itemlist {
+    <table> {
+        <tbody> {
+            apply-templates;
+        }
+    }
+}
+
+match item {
+    <tr> {
+        if (position() mod 2 == 0) {
+            <xsl:attribute name="bgcolor"> "yellow";
+        }
+        apply-templates;
+    }
+}

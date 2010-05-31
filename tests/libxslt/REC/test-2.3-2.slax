@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/TR/xhtml1/strict";
+
+match / {
+    <html> {
+        <head> {
+            <title> "Expense Report Summary";
+        }
+        <body> {
+            <p> {
+                expr "Total Amount: ";
+                expr expense-report/total;
+            }
+        }
+    }
+}

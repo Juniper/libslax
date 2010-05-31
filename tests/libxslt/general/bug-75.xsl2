@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:value-of select="format-number(100000000000, &quot;#,##0.##&quot;)"/>
+    <xsl:text>|
+</xsl:text>
+    <xsl:value-of select="format-number(2147483647, &quot;#,##0.##&quot;)"/>
+    <xsl:text>|
+</xsl:text>
+    <xsl:value-of select="format-number(2147483648, &quot;#,##0.##&quot;)"/>
+    <xsl:text>|
+</xsl:text>
+    <xsl:value-of select="format-number(4294967296, &quot;#,##0.##&quot;)"/>
+    <xsl:text>|
+</xsl:text>
+  </xsl:template>
+</xsl:stylesheet>

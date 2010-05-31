@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns ex = "http://www.example.org/";
+
+<xsl:output method="xml">;
+
+match / {
+    copy-of /;
+}

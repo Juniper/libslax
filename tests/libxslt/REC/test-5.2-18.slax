@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    apply-templates /doc/para/@*;
+}
+
+match @* {
+    expr "Success";
+}

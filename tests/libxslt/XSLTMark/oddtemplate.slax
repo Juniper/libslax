@@ -1,0 +1,32 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match top/*[1] {
+    <A> .;
+}
+
+match top/*[6]/kid[2] {
+    <D> .;
+}
+
+match top/*[position() == 2] {
+    <B> .;
+}
+
+match top/*[position() == 3] {
+    <C> .;
+}
+/* bug in jclark's xt: "last()=position()" doesn't equal "position()=last()" */
+match top/*[position() == last()] {
+    <LAST> .;
+}
+
+match top {
+    priority 1;
+    
+    <TOP> {
+        apply-templates;
+    }
+}

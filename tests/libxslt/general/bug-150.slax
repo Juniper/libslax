@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    <root> {
+        ns "urn:A";
+        ns b = "urn:B";
+        ns a = "urn:A";
+        
+        <Product a:ID="1001">;
+    }
+}

@@ -1,0 +1,90 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="utf-8">;
+
+template inventory match inventory () {
+    <html> {
+        <table border="1"> {
+            for-each (warehouse) {
+                <tr> {
+                    <td class="bigtablehead" colspan="3"> {
+                        expr "\n            Warehouse: ";
+                        expr name;
+                    }
+                }
+                <tr> {
+                    <td class="tablehead"> "Sku";
+                    <td class="tablehead"> "Quantity";
+                    <td class="tablehead"> "Description";
+                }
+                apply-templates items/item {
+                    <xsl:sort select="sku" data-type="number" order="ascending">;
+                }
+                <tr> {
+                    <td class="tablehead"> "Total:";
+                    <td class="tablehead" colspan="2"> {
+                        expr sum(items/item/qty);
+                        expr " instances of\n             ";
+                        expr count(items/item);
+                        expr " kinds of items.\n          ";
+                    }
+                }
+            }
+        }
+        <table border="1"> {
+            <tr> {
+                <td colspan="4"> "Need to Reorder:";
+            }
+            /* <xsl:copy-of select="$soldout"/> */
+            apply-templates /inventory/warehouse/items/item[qty == 0] {
+                with $pwh = 1;
+            }
+            <tr> {
+                <td> "Total:";
+                <td colspan="3"> {
+                    expr count(/inventory/warehouse/items/item[qty == 0]);
+                    expr " items\n        ";
+                }
+            }
+        }
+    }
+}
+
+template item match item ($pwh = 0) {
+    <tr> {
+        if ($pwh == 0) {
+            <td> {
+                <xsl:attribute name="class"> "tablecell";
+                expr sku;
+            }
+            <td class="tablecell"> {
+                <table border="1"> {
+                    <tr> {
+                        <td width="40"> qty;
+                        <td width=qty bgcolor="#ffffff"> ".";
+                        <td width=100 - qty bgcolor="#000000"> ".";
+                    }
+                }
+            }
+            <td class="tablecell"> desc;
+        
+        } else {
+            <td class="tablecell"> ancestor::warehouse/name;
+            <td> {
+                <xsl:attribute name="class"> "tablecell";
+                expr sku;
+            }
+            <td class="tablecell"> qty;
+            <td class="tablecell"> desc;
+        }
+    }
+}
+
+/*
+<xsl:variable name="soldout">
+<xsl:apply-templates select="/inventory/warehouse/items/item[qty=0]">
+<xsl:with-param name="pwh" select="1"/>
+</xsl:apply-templates>
+</xsl:variable>
+ */

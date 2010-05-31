@@ -1,0 +1,34 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* bottles of beer by Cyrus Dolph May 16, 2000 */
+/* input template of form: <bottles>99</bottles> */
+<xsl:output method="text" encoding="utf-8">;
+
+template bottles ($bottles) {
+    if ($bottles == 1) {
+        expr "1 bottle";
+    
+    } else {
+        expr $bottles _ " bottles";
+    }
+}
+
+template verse ($bottles) {
+    if ($bottles == 0) {
+        expr "0 bottles of beer on the wall,\n0 bottles of beer!\nGo into town, buy a new round\nGet some more bottles of beer on the wall!\n";
+    
+    } else {
+        call bottles($bottles);
+        expr " of beer on the wall,\n";
+        call bottles($bottles);
+        expr " of beer!\nTake one down, pass it around;\n";
+        call bottles($bottles = $bottles - 1);
+        expr " of beer on the wall.\n\n";
+        call verse($bottles = $bottles - 1);
+    }
+}
+
+match / {
+    call verse($bottles = /bottles);
+}

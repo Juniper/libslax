@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match chapter/heading {
+    <fo:block quadding="start" xsl:use-attribute-sets="title-style"> {
+        apply-templates;
+    }
+}
+<xsl:attribute-set name="title-style"> {
+    <xsl:attribute name="font-size"> "12pt";
+    <xsl:attribute name="font-weight"> "bold";
+}

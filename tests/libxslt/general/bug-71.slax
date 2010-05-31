@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns rdf = "urn:test:rdf";
+ns pa = "urn:test:pa";
+
+match address {
+    var $id = @id;
+    
+    <pa:Contact rdf:about="hello"> {
+        <pa:primaryPhone> {
+            <xsl:attribute name="rdf:about"> "toto";
+        }
+    }
+}

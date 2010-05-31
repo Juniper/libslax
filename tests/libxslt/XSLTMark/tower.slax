@@ -1,0 +1,27 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match towerheight {
+    <towersequence> {
+        call print($height1 = ., $height2 = 0, $height3 = 0);
+        call transferstack($source = 1, $target = 2, $spare = 3, $height1 = ., $height2 = 0, $height3 = 0, $howmany = .);
+    }
+}
+
+template transferstack ($source, $target, $spare, $height1, $height2, $height3, $howmany) {
+    if ($howmany > 0) {
+        call transferstack($source, $target = $spare, $spare = $target, $height1, $height2, $height3, $howmany = $howmany - 1);
+        call print($height1 = ($source == 1) *($height1 - $howmany) +($target == 1) *($height1 + 1) +($spare == 1) *($height1 + $howmany - 1), $height2 = ($source == 2) *($height2 - $howmany) +($target == 2) *($height2 + 1) +($spare == 2) *($height2 + $howmany - 1), $height3 = ($source == 3) *($height3 - $howmany) +($target == 3) *($height3 + 1) +($spare == 3) *($height3 + $howmany - 1));
+        call transferstack($source = $spare, $target, $spare = $source, $height1 = ($source == 1) *($height1 - $howmany) +($target == 1) *($height1 + 1) +($spare == 1) *($height1 + $howmany - 1), $height2 = ($source == 2) *($height2 - $howmany) +($target == 2) *($height2 + 1) +($spare == 2) *($height2 + $howmany - 1), $height3 = ($source == 3) *($height3 - $howmany) +($target == 3) *($height3 + 1) +($spare == 3) *($height3 + $howmany - 1), $howmany = $howmany - 1);
+    }
+}
+
+template print ($height1, $height2, $height3) {
+    <tower> {
+        <pole height=$height1>;
+        <pole height=$height2>;
+        <pole height=$height3>;
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:bbb="test:7" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="aaa">
+    <xsl:value-of select="@bbb:ddd"/>
+    <xsl:value-of select="@eee"/>
+  </xsl:template>
+</xsl:stylesheet>

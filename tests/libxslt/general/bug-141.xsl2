@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:apply-templates select="//page"/>
+  </xsl:template>
+  <xsl:template match="page">
+    <xsl:text>
+
+current page : </xsl:text>
+    <xsl:value-of select="@name"/>
+    <xsl:text>
+--------------------
+  dump union : "</xsl:text>
+    <xsl:for-each select="(preceding-sibling::page[1] | parent::group[1] |/document)">
+      <xsl:value-of select="name()"/>
+      <xsl:text>,</xsl:text>
+    </xsl:for-each>
+    <xsl:text>"
+  union-last : </xsl:text>
+    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1] |/document) [last()])"/>
+    <xsl:text>
+  union-last (without /root) : </xsl:text>
+    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1]) [last()])"/>
+    <xsl:text>
+  preceeding-sibling </xsl:text>
+    <xsl:value-of select="name(preceding-sibling::page[1])"/>
+    <xsl:text>
+  parent-group </xsl:text>
+    <xsl:value-of select="name(parent::group[1])"/>
+    <xsl:text>
+  root </xsl:text>
+    <xsl:value-of select="name(/document)"/>
+    <xsl:text>
+-----------------------
+</xsl:text>
+  </xsl:template>
+</xsl:stylesheet>

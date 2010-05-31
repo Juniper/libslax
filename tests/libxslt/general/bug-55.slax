@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+preserve-space *;
+<xsl:output method="xml">;
+
+match child::foo {
+    <bar>;
+}

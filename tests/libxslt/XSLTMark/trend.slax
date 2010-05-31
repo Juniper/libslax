@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match val {
+    <val> {
+        <current> .;
+        <smooth> floor(sum(preceding-sibling::val[position() < 4] | following-sibling::val[position() < 4]) div count(preceding-sibling::val[position() < 4] | following-sibling::val[position() < 4]));
+        <delta> . - preceding-sibling::val[1];
+    }
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output encoding="utf-8"/>
+  <xsl:template match="top">
+    <TOP>
+      <xsl:apply-templates/>
+    </TOP>
+  </xsl:template>
+  <xsl:template match="bar[baz or following-sibling::*[1] [self::nar]]">
+    <BAR>
+      <xsl:value-of select="."/>
+    </BAR>
+  </xsl:template>
+  <xsl:template match="foo[following-sibling::*[position() &lt;= 2] [self::barg] and following-sibling::*[position() &lt;= 2] [self::nar]]">
+    <FOO>
+      <xsl:value-of select="."/>
+    </FOO>
+  </xsl:template>
+</xsl:stylesheet>

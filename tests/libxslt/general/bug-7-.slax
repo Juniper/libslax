@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns bbb = "test:7";
+
+match aaa {
+    expr @bbb:ddd;
+    expr @eee;
+}

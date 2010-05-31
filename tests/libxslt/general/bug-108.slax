@@ -1,0 +1,21 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="text">;
+
+match * {
+    expr "\nselecting by element:    ";
+    
+    for-each (ancestor-or-self::*) {
+        expr "/";
+        expr @name;
+    }
+    expr "\n          by attribute:  ";
+    
+    for-each (ancestor-or-self::*/@name) {
+        expr "/";
+        expr .;
+    }
+    expr "\n";
+    apply-templates;
+}

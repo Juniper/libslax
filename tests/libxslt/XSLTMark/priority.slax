@@ -1,0 +1,60 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match node {
+    mode "keep";
+    
+    <node key=@key> {
+        if (left) {
+            <left> {
+                apply-templates left/node {
+                    mode "keep";
+                }
+            }
+        }
+        if (right) {
+            <right> {
+                apply-templates right/node {
+                    mode "keep";
+                }
+            }
+        }
+    }
+}
+
+match * { }
+
+match node {
+    if ((left && not(right)) ||(left/node/@key < right/node/@key)) {
+        <node key=left/node/@key> {
+            <left> {
+                apply-templates left/node;
+            }
+            if (right) {
+                <right> {
+                    apply-templates right/node {
+                        mode "keep";
+                    }
+                }
+            }
+        }
+    
+    } else if (right) {
+        <node key=right/node/@key> {
+            if (left) {
+                <left> {
+                    apply-templates left/node {
+                        mode "keep";
+                    }
+                }
+            }
+            <right> {
+                apply-templates right/node;
+            }
+        }
+    
+    } else {
+    }
+}

@@ -1,0 +1,21 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml" indent="yes">;
+
+match / {
+    <indexdoc> {
+        apply-templates //indexterm {
+            <xsl:sort data-type="text" select="primary">;
+            <xsl:sort data-type="text" select="secondary">;
+        }
+    }
+}
+
+match indexterm {
+    <term> {
+        expr primary;
+        expr ":";
+        expr secondary;
+    }
+}

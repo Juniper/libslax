@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns mml = "http://example.org/foobar";
+
+strip-space mml:*;
+
+match / {
+    apply-templates;
+}
+
+match * {
+    <xsl:copy> {
+        apply-templates;
+    }
+}

@@ -1,0 +1,28 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns car = "http://www.example.com/xmlns/car";
+ns manu = "http://www.example.com/xmlns/manufacturer";
+
+<xsl:output method="text" encoding="UTF-8">;
+strip-space *;
+
+match / {
+    apply-templates;
+}
+
+match car:models {
+    expr "My Car Models:\n";
+    apply-templates car:model/@car:name;
+    expr "\n";
+}
+
+match manu:manufacturers {
+    expr "The Manufacturers:\n";
+    apply-templates manu:manufacturer/@manu:name;
+}
+
+match @*[local-name() == "name"] {
+    expr .;
+    expr "\n";
+}

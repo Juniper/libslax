@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/TR/REC-html40" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:import href="./bug-130-imp1.imp"/>
+  <xsl:import href="./bug-130-imp2.imp"/>
+  <xsl:import href="./bug-130-imp3.imp"/>
+  <xsl:import href="./bug-130-imp4.imp"/>
+  <xsl:output method="html" indent="no"/>
+  <xsl:variable name="g.doc.root" select="document(&quot;../docs/bug-130.doc&quot;)"/>
+  <xsl:template match="/">
+    <html>
+      <head/>
+      <body>
+        <xsl:apply-templates select="/frame"/>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

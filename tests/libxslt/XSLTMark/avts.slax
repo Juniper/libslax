@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match table {
+    <table> {
+        apply-templates;
+    }
+}
+
+match row {
+    <address id=id firstname=firstname lastname=lastname street=street city=city state=state zip=zip>;
+}

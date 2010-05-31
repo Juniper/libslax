@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns l exclude = "http://docbook.sourceforge.net/xmlns/l10n/1.0";
+
+<xsl:output method="xml">;
+param $local.l10n.xml = document("");
+
+match doc {
+    var $lang = "en";
+    var $dingbat = "nestedstartquote";
+    
+    expr "LOCALES: ";
+    expr count(($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat]) [1]);
+    var $local.l10n.dingbat = {
+        expr ($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat]) [1];
+    }
+    expr "\nLOCALES2: ";
+    expr count($local.l10n.dingbat);
+}

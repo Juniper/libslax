@@ -1,0 +1,31 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* borrowed from http://www.zvon.org/xxl/XSLTutorial/Output/example35_ch9.html */
+match / {
+    <TABLE> {
+        for-each (//number) {
+            <TR> {
+                <TH> {
+                    if (text() mod 2) {
+                        apply-templates . {
+                            with $type = "odd";
+                        }
+                    
+                    } else {
+                        apply-templates .;
+                    }
+                }
+            }
+        }
+    }
+}
+
+match number {
+    var $type = "even";
+    
+    expr .;
+    expr " (";
+    expr $type;
+    expr ")";
+}

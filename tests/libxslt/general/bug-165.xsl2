@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="p">
+    <xsl:value-of select="preceding-sibling::p[not(pPr/pStyle = $pStyle)] [1]/preceding-sibling::p/pPr/pStyle"/>
+  </xsl:template>
+</xsl:stylesheet>

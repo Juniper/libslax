@@ -1,0 +1,128 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+strip-space *;
+<xsl:output method="html" indent="no">;
+
+match / {
+    <div class="errataset"> {
+        expr "\n";
+        
+        for-each (errataset/errata) {
+            <xsl:sort select="@page" data-type="number">;
+            <xsl:sort select="@paragraph" data-type="number">;
+            <xsl:sort select="@line" data-type="number">;
+            apply-templates .;
+        }
+    }
+}
+
+template errata match errata () {
+    <div class="errata"> {
+        expr "\n";
+        call show-attributes();
+        
+        for-each (* | text()) {
+            apply-templates .;
+        }
+    }
+    expr "\n";
+}
+
+match text() {
+    if (string-length(normalize-space(.))) {
+        <p style="clear: both; padding: 3px;"> normalize-space(.);
+        expr "\n";
+    }
+}
+
+template explanation match explanation () {
+    <blockquote class="explanation"> {
+        expr "\n";
+        <p> {
+            expr "\n";
+            expr normalize-space(text());
+            expr "\n";
+        }
+        expr "\n";
+    }
+    expr "\n";
+}
+
+template show-attributes () {
+    <table class="location-type" cellspacing="0" cellpadding="2"> {
+        expr "\n";
+        if (@paragraph) {
+            if (@line) {
+                <tr> {
+                    <td style="width: 15%;" class="page"> {
+                        expr "Page: ";
+                        expr @page;
+                    }
+                    expr "\n";
+                    <td style="width: 15%;" class="paragraph"> {
+                        expr "Paragraph: ";
+                        expr @paragraph;
+                    }
+                    expr "\n";
+                    <td style="width: 15%;" class="line"> {
+                        expr "Line: ";
+                        expr @line;
+                    }
+                    expr "\n";
+                    <td style="width: 55%;" class="type"> @type;
+                    expr "\n";
+                }
+                expr "\n";
+            
+            } else {
+                <tr> {
+                    <td style="width: 15%;" class="page"> {
+                        expr "Page: ";
+                        expr @page;
+                    }
+                    expr "\n";
+                    <td style="width: 15%;" class="paragraph"> {
+                        expr "Paragraph: ";
+                        expr @paragraph;
+                    }
+                    expr "\n";
+                    <td style="width: 70%;" class="type"> @type;
+                    expr "\n";
+                }
+                expr "\n";
+            }
+        
+        } else if (@line) {
+            <tr> {
+                expr "\n";
+                <td style="width: 15%;" class="page"> {
+                    expr "Page: ";
+                    expr @page;
+                }
+                expr "\n";
+                <td style="width: 15%;" class="line"> {
+                    expr "Line: ";
+                    expr @line;
+                }
+                expr "\n";
+                <td style="width: 70%;" class="type"> @type;
+                expr "\n";
+            }
+            expr "\n";
+        
+        } else {
+            <tr> {
+                <td style="width: 15%;" class="page"> {
+                    expr "Page: ";
+                    expr @page;
+                }
+                expr "\n";
+                <td style="width: 85%;" class="type"> @type;
+                expr "\n";
+            }
+            expr "\n";
+        }
+    }
+    expr "\n";
+}

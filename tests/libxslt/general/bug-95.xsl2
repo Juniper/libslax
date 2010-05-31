@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="html" encoding="ISO-8859-1"/>
+  <xsl:decimal-format name="czf" decimal-separator="," grouping-separator=" "/>
+  <xsl:template match="Kapital">
+    <html>
+      <title>Example xsltproc</title>
+      <body>
+        <xsl:apply-templates select="Vklad"/>
+      </body>
+    </html>
+  </xsl:template>
+  <xsl:template match="Vklad">
+    <xsl:value-of select="format-number(Kc, &quot;# ###,00 Kè&quot;, &quot;czf&quot;)"/>
+  </xsl:template>
+</xsl:stylesheet>

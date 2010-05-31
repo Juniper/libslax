@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    apply-templates //processing-instruction();
+    apply-templates //comment();
+    /* xsl:apply-templates/ */
+}
+
+match processing-instruction() {
+    expr name()  _ " : " _ .;
+}
+
+match comment() {
+    expr "#########################\n        ";
+    expr .;
+    expr "\n#########################";
+}

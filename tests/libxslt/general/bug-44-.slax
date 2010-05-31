@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $foo = "FAILURE";
+
+template test ($foo = "FAILURE") {
+    expr $foo;
+}
+
+match / {
+    var $foo = "FAILURE";
+    
+    call test($foo = "SUCCESS");
+}

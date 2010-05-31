@@ -1,0 +1,4 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $my.var = "old-value";

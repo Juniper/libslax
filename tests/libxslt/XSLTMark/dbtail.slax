@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match table {
+    <document> {
+        apply-templates row[1];
+    }
+}
+
+match row {
+    <row> {
+        <first> firstname;
+        <last> lastname;
+    }
+    apply-templates following-sibling::row[1];
+}

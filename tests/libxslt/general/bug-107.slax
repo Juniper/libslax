@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* XSLT REC section 7.5 */
+match @* | node() {
+    <xsl:copy> {
+        apply-templates @* | node();
+    }
+}

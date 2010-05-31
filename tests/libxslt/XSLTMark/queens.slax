@@ -1,0 +1,107 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+
+/*
+<?xml version="1.0" encoding="ISO-8859-1"?>
+Copyright (C) 1999 Capella Computers Ltd.
+
+Author: Oren Ben-Kiki
+Date: 1999-06-14
+
+This stylesheet is public domain. However, if you modify it or decide to use
+it as part of an XSLT benchmark/testing suite, I'd appreciate it if you let
+me know at oren@capella.co.il
+
+ */
+
+/*
+
+This XSL stylesheet will convert an XML document of the form:
+
+<BoardSize>8</BoardSize>
+
+Into an HTML document listing all 8x8 chess boards containing
+8 queens such that no one threatens another.
+
+It uses the 1999-04-21 XSLT draft version.
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/XSL/Transform/1.0"
+xmlns:html="http://www.w3.org/TR/REC-html40"
+default-space="strip"
+indent-results="no"
+result-ns="html">
+
+ */
+<xsl:output encoding="utf-8">;
+
+match BoardSize {
+    call PlaceQueenInRow($BoardSize = ., $PlacedQueens = "-", $Row = 0);
+}
+
+template PlaceQueenInRow ($BoardSize, $PlacedQueens, $Row) {
+    if ($Row == $BoardSize) {
+        call PrintBoard($BoardSize, $PlacedQueens = substring-after($PlacedQueens, "-"));
+    
+    } else {
+        call PlaceQueenInColumn($BoardSize, $PlacedQueens, $Row, $Column = 0);
+    }
+}
+
+template PlaceQueenInColumn ($BoardSize, $PlacedQueens, $Row, $Column) {
+    if ($Column < $BoardSize) {
+        if (not(contains(concat("-", $PlacedQueens, "-") , concat("-", $Column, "-")))) {
+            call TestQueenPosition($BoardSize, $Row, $Column, $TestQueens = substring-after($PlacedQueens, "-"), $Offset = $Row) {
+                with $PlacedQueens = {
+                    expr $PlacedQueens;
+                    expr $Column;
+                    expr "-";
+                 }
+            }
+        }
+        call PlaceQueenInColumn($BoardSize, $PlacedQueens, $Row, $Column = $Column + 1);
+    }
+}
+
+template TestQueenPosition ($BoardSize, $PlacedQueens, $Row, $Column, $TestQueens, $Offset) {
+    if (not($TestQueens)) {
+        call PlaceQueenInRow($BoardSize, $PlacedQueens, $Row = $Row + 1);
+    
+    } else {
+        var $NextQueen = substring-before($TestQueens, "-");
+        
+        if (not($Column == $NextQueen + $Offset) && not($Column == $NextQueen - $Offset)) {
+            call TestQueenPosition($BoardSize, $PlacedQueens, $Row, $Column, $TestQueens = substring-after($TestQueens, "-"), $Offset = $Offset - 1);
+        }
+    }
+}
+
+template PrintBoard ($BoardSize, $PlacedQueens) {
+    <xsl:element name="P">;
+    <xsl:element name="TABLE"> {
+        call PrintBoardRow($BoardSize, $ColumnInThisRow = substring-before($PlacedQueens, "-"), $ColumnsInOtherRows = substring-after($PlacedQueens, "-"));
+    }
+}
+
+template PrintBoardRow ($BoardSize, $ColumnInThisRow, $ColumnsInOtherRows) {
+    <xsl:element name="TR"> {
+        call PrintBoardCell($CellsLeft = $BoardSize, $QueenCell = $ColumnInThisRow);
+    }
+    if ($ColumnsInOtherRows) {
+        call PrintBoardRow($BoardSize, $ColumnInThisRow = substring-before($ColumnsInOtherRows, "-"), $ColumnsInOtherRows = substring-after($ColumnsInOtherRows, "-"));
+    }
+}
+
+template PrintBoardCell ($CellsLeft, $QueenCell) {
+    if (not($CellsLeft == 0)) {
+        <xsl:element name="TD"> {
+            if ($QueenCell == 0) {
+                expr "Q";
+            
+            } else {
+                expr "-";
+            }
+        }
+        call PrintBoardCell($CellsLeft = $CellsLeft - 1, $QueenCell = $QueenCell - 1);
+    }
+}

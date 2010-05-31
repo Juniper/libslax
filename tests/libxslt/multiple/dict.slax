@@ -1,0 +1,146 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns xt exclude extension = "http://www.jclark.com/xt";
+ns doc exclude = "http://nwalsh.com/xsl/documentation/1.0";
+
+
+/* **********************************************
+ *
+ * dict.xsl: convert dict. of thieving slang into HTML
+ *
+ * Liam Quin, 2001
+ *
+ * $Id: dict.xsl 825 2003-01-09 13:30:35Z veillard $
+ *
+ * */
+/* * Generate HTML 4 * */
+<xsl:output method="html" version="4.0" encoding="UTF-8">;
+
+/* * strip white space from containers that don't have PCDATA in
+ * them; this list may not be complete.
+ * XSLT should have a way of doing this based on the DTD.
+ * */
+strip-space dict titlepage letter entry;
+
+/* **********************************************
+ *
+ * split the input into separate files at
+ * titlepage
+ * letter
+ * */
+/* * first, a template to make an HTML head, given a title * */
+template htmlhead ($title) {
+    <head> {
+        <title> $title;
+    }
+}
+
+match dict {
+    apply-templates;
+}
+
+match titlepage {
+    <xt:document method="html" href="out/titlepage.html"> {
+        <html> {
+            call htmlhead() {
+                with $title = {
+                    expr ./title;
+                 }
+            }
+            <body bgcolor="#FFFAFA" text="#330000"> {
+                apply-templates;
+            }
+        }
+    }
+}
+
+match titlepage/note {
+    <blockquote> {
+        apply-templates;
+    }
+}
+/* * a letter has all the entries starting with that letter * */
+match letter {
+    <xt:document method="html" href="out/letter" _ @name _ ".html"> {
+        <html> {
+            call htmlhead() {
+                with $title = {
+                    expr ./title;
+                 }
+            }
+            <body bgcolor="#FFFAFA" text="#330000"> {
+                apply-templates;
+            }
+        }
+    }
+}
+/* * unwanted elements * */
+match target { }
+/* * block elements * */
+match p {
+    <p> {
+        apply-templates;
+    }
+}
+
+match letter/title {
+    <h1> {
+        expr "The Letter ";
+        apply-templates;
+    }
+}
+
+match title {
+    <h2> {
+        apply-templates;
+    }
+}
+
+match blockquote {
+    <blockquote> {
+        apply-templates;
+    }
+}
+
+match entry {
+    <div class="entry"> {
+        apply-templates;
+    }
+}
+/* * inline elements * */
+match i | b | sub | sup {
+    <xsl:text disable-output-escaping="yes"> "<";
+    expr name();
+    <xsl:text disable-output-escaping="yes"> ">";
+    apply-templates;
+    <xsl:text disable-output-escaping="yes"> "</";
+    expr name();
+    <xsl:text disable-output-escaping="yes"> ">";
+}
+
+match eg {
+    <i class="eg"> {
+        apply-templates;
+    }
+}
+/* * turn italic off * */
+match interj {
+    <xsl:text disable-output-escaping="yes"> "</i>";
+    apply-templates;
+    <xsl:text disable-output-escaping="yes"> "<i>";
+}
+
+match meaning {
+    <span class="meaning"> {
+        apply-templates;
+    }
+}
+
+match xref {
+    <span style="color: #33CC33;"> {
+        <u> {
+            apply-templates;
+        }
+    }
+}

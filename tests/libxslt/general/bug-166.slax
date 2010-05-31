@@ -1,0 +1,103 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+
+/* This stylesheet will:
+- reorder, indent and normalize a comps file,
+- merge duplicate groups and categories,
+- warn about packages referenced by multiple groups,
+- kill multiple references to the same package within a group,
+
+Typical usage is:
+$ xsltproc -o output-file comps-cleanup.xsl original-file
+
+You can use the ‑‑novalid xsltproc switch to kill the warning about
+Fedora not installing the comps DTD anywhere xsltproc can find it.
+However without DTD there is no way to check the files completely.
+
+© Nicolas Mailhot <nim at fedoraproject dot org> 2006 */
+ns exsl extension = "http://exslt.org/common";
+
+strip-space *;
+<xsl:output method = "xml" indent = "yes" encoding = "UTF-8" doctype-system = "comps.dtd" doctype-public = "-//Red Hat, Inc.//DTD Comps info//EN">;
+<xsl:key name = "unique-groups" match = "/comps/group" use = "id/text()">;
+<xsl:key name = "unique-categories" match = "/comps/category" use = "id/text()">;
+<xsl:key name = "packages-by-group" match = "/comps/group/packagelist/packagereq" use = "../../id/text()">;
+<xsl:key name = "unique-package-entries" match = "/comps/group/packagelist/packagereq" use = "concat(../../id/text(),'/',text())">;
+<xsl:key name = "unique-packages" match = "/comps/group/packagelist/packagereq[generate-id(.) = generate-id(key('unique-package-entries',concat(../../id/text(),'/',text()))[1])]" use = "text()">;
+<xsl:key name = "groups-by-category" match = "/comps/category/grouplist/groupid" use = "../../id/text()">;
+<xsl:key name = "unique-group-entries" match = "/comps/category/grouplist/groupid" use = "concat(../../id/text(),'/',text())">;
+var $lcletters = "abcdefghijklmnopqrstuvwxyz";
+var $ucletters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var $type-sort-order = {
+    <unknown>;
+    <mandatory>;
+    <conditional>;
+    <default>;
+    <optional>;
+}
+var $attribute-sort-order = {
+    <unknown>;
+    <type>;
+    <requires>;
+    <basearch>;
+}
+/* Preserve most nodes */
+match * {
+    priority 0;
+    
+    apply-templates . {
+        mode "normalize";
+    }
+}
+
+match * {
+    mode "normalize";
+    
+    /* Group comments with the logically-following element */
+    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    <xsl:copy> {
+        apply-templates @* {
+            <xsl:sort select = "count(exsl:node-set($attribute-sort-order)/*[name() = name(current())]/preceding-sibling::*)" data-type = "number">;
+        }
+        apply-templates * | text();
+    }
+}
+
+/* Preserve attributes and text nodes */
+match comment() | text() {
+    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    <xsl:copy>;
+}
+
+/* Preserve attributes */
+match @* {
+    <xsl:copy>;
+}
+
+/* Sort groups by id, and categories by display order */
+match comps {
+    priority 1;
+    
+    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    <xsl:copy> {
+        apply-templates group {
+            <xsl:sort select = "translate(id/text(),$lcletters,$ucletters)">;
+        }
+        apply-templates category {
+            <xsl:sort select = "display_order/text()">;
+            <xsl:sort select = "translate(id/text(),$lcletters,$ucletters)">;
+        }
+    }
+}
+
+/* Warn about empty groups */
+match group[count(key("packages-by-group", id/text())) == 0] {
+    priority 2;
+    
+    <xsl:message> {
+        expr "☹☹☹ Empty group ";
+        expr _name/text() _ ' (' _ id/text() _ ')';
+    }
+}
+

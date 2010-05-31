@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match top {
+    <TOP> {
+        apply-templates;
+    }
+}
+
+match bar[baz || following-sibling::*[1] [self::nar]] {
+    <BAR> .;
+}
+
+match foo[following-sibling::*[position() <= 2] [self::barg] && following-sibling::*[position() <= 2] [self::nar]] {
+    <FOO> .;
+}

@@ -1,0 +1,2037 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* Version: $Id: xmlspec.xsl 91 2001-02-14 14:45:10Z veillard $ */
+/* Stylesheet for XMLspec */
+/* Author: Norman Walsh (Norman.Walsh@East.Sun.COM) */
+/* Author: Chris Maden (crism@lexica.net) */
+/* Author: Ben Trafford (ben@legendary.org) */
+/* Author: Eve Maler (eve.maler@east.sun.com) */
+/* Date Created: 1999.09.07 */
+
+/* This stylesheet is copyright (c) 2000 by its authors.  Free
+distribution and modification is permitted, including adding to
+the list of authors and copyright holders, as long as this
+copyright notice is maintained. */
+
+/* This stylesheet attempts to implement the XML Specification V2.1
+DTD.  Documents conforming to earlier DTDs may not be correctly
+transformed. */
+
+/* ChangeLog:
+
+25 Sep 2000: (Norman.Walsh@East.Sun.COM)
+- Sync'd with Eve's version:
+o Concatenated each inline element's output all on one line
+to avoid spurious spaces in the output. (This is really an
+IE bug, but...) (15 Sep 2000)
+o Updated crism's email address in header (7 Sep 2000)
+o Changed handling of affiliation to use comma instead of
+parentheses (9 Aug 2000)
+
+14 Aug 2000: (Norman.Walsh@East.Sun.COM)
+
+- Added additional.title param (for diffspec.xsl to change)
+- Fixed URI of W3C home icon
+- Made CSS stylesheet selection depend on the w3c-doctype attribute
+of spec instead of the w3c-doctype element in the header
+
+26 Jul 2000: (Norman.Walsh@East.Sun.COM)
+
+- Improved semantics of specref. Added xsl:message for unsupported
+cases. (I'm by no means confident that I've covered the whole
+list.)
+- Support @role on author.
+- Make lhs/rhs "code" in EBNF.
+- Fixed bug in ID/IDREF linking.
+- More effectively disabled special markup for showing @diffed
+versions
+
+21 Jul 2000: (Norman.Walsh@East.Sun.COM)
+
+- Added support for @diff change tracking, primarily through
+the auxiliary stylesheet diffspec.xsl. However, it was
+impractical to handle some constructions, such as DLs and TABLEs,
+in a completely out-of-band manner. So there is some inline
+support for @diff markup.
+
+- Added $additional.css to allow downstream stylesheets to add
+new markup to the <style> element.
+
+- Added required "type" attribute to the <style> element.
+
+- Fixed pervasive problem with nested <a> elements.
+
+- Added doctype-public to xsl:output.
+
+- Added $validity.hacks. If "1", then additional disable-output-escaping
+markup may be inserted in some places to attempt to get proper,
+valid HTML. For example, if a <glist> appears inside a <p> in the
+xmlspec source, this creates a nested <dl> inside a <p> in the
+HTML, which is not valid. If $validity.hacks is "1", then an
+extra </p>, <p> pair is inserted around the <dl>.
+ */
+ns saxon exclude = "http://icl.com/saxon";
+
+param $validity.hacks = "1";
+param $show.diff.markup = "0";
+param $additional.css;
+param $additional.title;
+param $called.by.diffspec = "0";
+param $show.ednotes = "1";
+
+<xsl:output method="html" encoding="ISO-8859-1" doctype-public="-//W3C//DTD HTML 4.01 Transitional//EN" indent="no">;
+strip-space author;
+
+/* not handled:
+attribute:   unhandled IDL stuff
+case:        unhandled IDL stuff
+component:   unhandled IDL stuff
+constant:    unhandled IDL stuff
+copyright:   boilerplate notice always used instead
+definitions: unhandled IDL stuff
+descr:       unhandled IDL stuff
+enum:        unhandled IDL stuff
+enumerator:  unhandled IDL stuff
+exception:   unhandled IDL stuff
+group:       unhandled IDL stuff
+interface:   unhandled IDL stuff
+method:      unhandled IDL stuff
+module:      unhandled IDL stuff
+param:       unhandled IDL stuff
+parameters:  unhandled IDL stuff
+raises:      unhandled IDL stuff
+reference:   unhandled IDL stuff
+returns:     unhandled IDL stuff
+sequence:    unhandled IDL stuff
+struct:      unhandled IDL stuff
+typedef:     unhandled IDL stuff
+typename:    unhandled IDL stuff
+union:       unhandled IDL stuff
+
+Warning!
+Only handles statuses of NOTE, WD, and REC.
+ */
+
+/* Template for the root node.  Creation of <html> element could
+go here, but that doesn't feel right. */
+match / {
+    apply-templates;
+}
+/* abstract: appears only in header */
+/* format as a second-level div */
+/* called in enforced order from header's template */
+match abstract {
+    <div id="abstract"> {
+        expr "\n";
+        <h2> {
+            <a name="abstract"> "Abstract";
+        }
+        apply-templates;
+    }
+}
+/* affiliation: follows a name in author and member */
+/* put it in parens with a leading space */
+match affiliation {
+    expr ", ";
+    apply-templates;
+}
+/* arg: appears only in proto */
+/* argument in function prototype */
+
+/* output argument type, italicized as placeholder; separate the
+list with commas and spaces */
+match arg {
+    if (preceding-sibling::arg) {
+        expr ", ";
+    }
+    <var> @type;
+    if (@occur == "opt") {
+        expr "?";
+    }
+}
+/* att: attribute name */
+/* used lots of places */
+/* format as monospaced code */
+match att {
+    <code> {
+        apply-templates;
+    }
+}
+/* attribute: */
+/* IDL stuff isn't handled yet */
+/* attval: attribute name */
+/* used lots of places */
+/* format as quoted string */
+match attval {
+    expr "\"";
+    apply-templates;
+    expr "\"";
+}
+/* authlist: list of authors (editors, really) */
+
+/* called in enforced order from header's template, in <dl>
+context */
+match authlist {
+    <dt> {
+        expr "Editor";
+        if (count(author) > 1) {
+            expr "s";
+        }
+        expr ":";
+    }
+    apply-templates;
+}
+/* author: an editor of a spec */
+/* only appears in authlist */
+/* called in <dl> context */
+match author {
+    <dd> {
+        apply-templates;
+        if (@role == "2e") {
+            expr " - Second Edition";
+        }
+    }
+}
+/* back: back matter for the spec */
+/* make a <div> for neatness */
+/* affects numbering of div1 children */
+match back {
+    <div class="back"> {
+        apply-templates;
+    }
+}
+/* bibl: bibliographic entry */
+/* only appears in blist */
+/* called with <dl> context */
+/* if there's a key, use it in the <dt>, otherwise use the ID */
+/* if there's an href, add a ref in parens at the end of the text */
+match bibl {
+    <dt class="label"> {
+        if (@id) {
+            <a name=@id>;
+        }
+        if (@key) {
+            expr @key;
+        
+        } else {
+            expr @id;
+        }
+    }
+    <dd> {
+        apply-templates;
+        if (@href) {
+            expr "  (See ";
+            <a href=@href> @href;
+            expr ".)";
+        }
+    }
+}
+/* bibref: reference to a bibliographic entry */
+/* make a link to the bibl */
+
+/* if the bibl has a key, put it in square brackets; otherwise use
+the bibl's ID */
+match bibref {
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = id(@ref));
+        }
+        expr "[";
+        if (id(@ref)/@key) {
+            expr id(@ref)/@key;
+        
+        } else {
+            expr @ref;
+        }
+        expr "]";
+    }
+}
+/* blist: list of bibliographic entries */
+/* set up the list and process children */
+match blist {
+    <dl> {
+        apply-templates;
+    }
+}
+/* bnf: un-marked-up BNF productions */
+/* preformatted within a table cell */
+/* scrap provides <table> context */
+match bnf {
+    <tbody> {
+        <tr> {
+            <td> {
+                if (@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr @diff;
+                    }
+                }
+                <pre> {
+                    apply-templates;
+                }
+            }
+        }
+    }
+}
+/* body: the meat of the spec */
+/* create a TOC and then go to work */
+
+/* (don't forget the TOC for the back matter and a pointer to end
+notes) */
+match body {
+    <div class="toc"> {
+        expr "\n";
+        <h2> {
+            <a name="contents"> "Table of Contents";
+        }
+        <p class="toc"> {
+            apply-templates div1 {
+                mode "toc";
+            }
+        }
+        if (../back) {
+            expr "\n";
+            <h3> {
+                expr "Appendi";
+                if (count(../back/div1 | ../back/inform-div1) > 1) {
+                    expr "ces";
+                
+                } else {
+                    expr "x";
+                }
+            }
+            <p class="toc"> {
+                apply-templates ../back/div1 | ../back/inform-div1 {
+                    mode "toc";
+                }
+            }
+        }
+        if (//footnote) {
+            <p class="toc"> {
+                <a href="#endnotes"> "End Notes";
+            }
+        }
+    }
+    <hr>;
+    <div class="body"> {
+        apply-templates;
+    }
+}
+/* caption: see table */
+/* case: */
+/* IDL stuff isn't handled yet */
+/* code: generic computer code */
+/* output as HTML <code> for monospaced formatting */
+match code {
+    <code> {
+        apply-templates;
+    }
+}
+/* col: see table */
+/* colgroup: see table */
+/* com: formal production comment */
+/* can appear in prod or rhs */
+match com {
+    if (preceding-sibling::*[1] [name() == "rhs"]) {
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            <i> {
+                expr "/* ";
+                apply-templates;
+                expr " */";
+            }
+        }
+    
+    } else {
+        <tr valign="baseline"> {
+            <td>;
+            <td>;
+            <td>;
+            <td>;
+            <td> {
+                if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr ancestor-or-self::*/@diff;
+                    }
+                }
+                <i> {
+                    expr "/* ";
+                    apply-templates;
+                    expr " */";
+                }
+            }
+        }
+    }
+}
+
+/* this could probably be handled better, but given that rhs can
+have arbitrary text and com mixed in, I don't feel like
+spending enough time to figure out how */
+match rhs/com {
+    <i> {
+        expr "/* ";
+        apply-templates;
+        expr " */";
+    }
+}
+/* component: */
+/* IDL stuff isn't handled yet */
+/* constant: */
+/* IDL stuff isn't handled yet */
+/* constraint: a note in a formal production */
+/* refers to a constraint note */
+match constraint {
+    if (preceding-sibling::*[1] [name() == "rhs"]) {
+        <td> {
+            if (@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr @diff;
+                }
+            }
+            <a> {
+                <xsl:attribute name="href"> {
+                    call href.target($target = id(@def));
+                }
+                expr "[Constraint: ";
+                apply-templates id(@def)/head {
+                    mode "text";
+                }
+                expr "]";
+            }
+        }
+    
+    } else {
+        <tr valign="baseline"> {
+            <td>;
+            <td>;
+            <td>;
+            <td>;
+            <td> {
+                if (@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr @diff;
+                    }
+                }
+                <a> {
+                    <xsl:attribute name="href"> {
+                        call href.target($target = id(@def));
+                    }
+                    expr "[Constraint: ";
+                    apply-templates id(@def)/head {
+                        mode "text";
+                    }
+                    expr "]";
+                }
+            }
+        }
+    }
+}
+/* constraintnote: note constraining a formal production */
+/* see also constraintnote/head */
+match constraintnote {
+    <div class="constraint"> {
+        apply-templates;
+    }
+}
+/* copyright: notice for this document */
+
+/* right now, a boilerplate copyright notice is inserted by the
+template for header; this may need to be changed */
+/* day: day of month of spec */
+/* only used in pudate; called directly from header template */
+/* def: glossary definition */
+/* already in <dl> context from glist */
+match def {
+    <dd> {
+        apply-templates;
+    }
+}
+/* definitions: */
+/* IDL stuff isn't handled yet */
+/* descr: */
+/* IDL stuff isn't handled yet */
+/* div[n]: structural divisions */
+/* make an HTML div */
+/* see also div[n]/head */
+match div1 {
+    <div class="div1"> {
+        apply-templates;
+    }
+}
+
+match div2 {
+    <div class="div2"> {
+        apply-templates;
+    }
+}
+
+match div3 {
+    <div class="div3"> {
+        apply-templates;
+    }
+}
+
+match div4 {
+    <div class="div4"> {
+        apply-templates;
+    }
+}
+
+match div5 {
+    <div class="div5"> {
+        apply-templates;
+    }
+}
+/* ednote: editors' note */
+match ednote {
+    if ($show.ednotes != 0) {
+        <table border="1"> {
+            <xsl:attribute name="summary"> {
+                expr "Editorial note";
+                if (name) {
+                    expr ": ";
+                    expr name;
+                }
+            }
+            <tr> {
+                <td align="left" valign="top" width="50%"> {
+                    <b> {
+                        expr "Editorial note";
+                        if (name) {
+                            expr ": ";
+                            apply-templates name;
+                        }
+                    }
+                }
+                <td align="right" valign="top" width="50%"> {
+                    if (date) {
+                        apply-templates date;
+                    
+                    } else {
+                        expr " ";
+                    }
+                }
+            }
+            <tr> {
+                <td colspan="2" align="left" valign="top"> {
+                    apply-templates edtext;
+                }
+            }
+        }
+    }
+}
+
+match date {
+    apply-templates;
+}
+/* edtext: text of an editors' note */
+/* ednote is currently hidden */
+/* eg: a literal example */
+/* present as preformatted text */
+match eg {
+    <table class="eg" cellpadding="5" border="1" bgcolor="#99ffff" width="100%" summary="Example"> {
+        <tr> {
+            <td> {
+                if (@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr @diff;
+                    }
+                }
+                <pre> {
+                    apply-templates;
+                }
+            }
+        }
+    }
+}
+/* el: an XML element */
+/* present as preformatted text, no markup */
+
+/* Chris's personal preference is to put pointy-brackets around
+this, but he seems to be in the minority */
+match el {
+    <code> {
+        apply-templates;
+    }
+}
+/* email: an email address for an editor */
+/* only occurs in author */
+match email {
+    expr " ";
+    <a href=@href> {
+        expr "<";
+        apply-templates;
+        expr ">";
+    }
+}
+/* emph: in-line emphasis */
+/* equates to HTML <em> */
+
+/* the role attribute could be used for multiple kinds of
+emphasis, but that would not be kind */
+match emph {
+    <em> {
+        apply-templates;
+    }
+}
+/* enum: */
+/* IDL stuff isn't handled yet */
+/* enumerator: */
+/* IDL stuff isn't handled yet */
+/* example: what it seems */
+/* block-level with title */
+/* see also example/head */
+match example {
+    <div class="example"> {
+        apply-templates;
+    }
+}
+/* exception: */
+/* IDL stuff isn't handled yet */
+/* footnote: format as endnote, actually */
+match footnote {
+    var $this-note-id = {
+        if (@id) {
+            expr @id;
+        
+        } else {
+            expr generate-id(.);
+        }
+    }
+    
+    <a name="FN-ANCH-" _ $this-note-id href="#" _ $this-note-id> {
+        <xsl:number level="any" format="[1]">;
+    }
+}
+/* front: front matter for the spec */
+/* make a div for cleanliness */
+match front {
+    <div class="front"> {
+        apply-templates;
+    }
+}
+/* function: name of a function */
+/* format as HTML <code> for monospaced presentation */
+match function {
+    <code> {
+        apply-templates;
+    }
+}
+/* gitem: glossary list entry */
+/* just pass children through for <dd>/<dt> formatting */
+match gitem {
+    apply-templates;
+}
+/* glist: glossary list */
+/* create <dl> and handle children */
+match glist {
+    if ($validity.hacks && local-name(..) == "p") {
+        <xsl:text disable-output-escaping="yes"> "</p>";
+    }
+    <dl> {
+        apply-templates;
+    }
+    if ($validity.hacks && local-name(..) == "p") {
+        <xsl:text disable-output-escaping="yes"> "<p>";
+    }
+}
+/* graphic: external illustration */
+/* reference external graphic file with alt text */
+match graphic {
+    <img src=@source> {
+        if (@alt) {
+            <xsl:attribute name="alt"> @alt;
+        }
+    }
+}
+/* group: */
+/* IDL stuff isn't handled yet */
+/* head: title for a variety of constructs */
+
+/* constraintnotes have different types, but they're
+non-enumerated; nothing is done with them right now */
+match constraintnote/head {
+    <p class="prefix"> {
+        if (../@id) {
+            <a name=../@id>;
+        }
+        <b> {
+            expr "Constraint: ";
+            apply-templates;
+        }
+    }
+}
+
+match div1/head {
+    expr "\n";
+    <h2> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+    }
+}
+
+match div2/head {
+    expr "\n";
+    <h3> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+    }
+}
+
+match div3/head {
+    expr "\n";
+    <h4> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+    }
+}
+
+match div4/head {
+    expr "\n";
+    <h5> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+    }
+}
+
+match div5/head {
+    expr "\n";
+    <h6> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+    }
+}
+
+match example/head {
+    expr "\n";
+    <h5> {
+        expr "Example: ";
+        apply-templates;
+    }
+}
+
+match inform-div1/head {
+    expr "\n";
+    <h2> {
+        <a> {
+            <xsl:attribute name="name"> {
+                if (../@id) {
+                    expr ../@id;
+                
+                } else {
+                    expr generate-id(..);
+                }
+            }
+        }
+        apply-templates .. {
+            mode "divnum";
+        }
+        apply-templates;
+        expr " (Non-Normative)";
+    }
+}
+
+match issue/head {
+    <p class="prefix"> {
+        <b> {
+            apply-templates;
+        }
+    }
+}
+
+match scrap/head {
+    expr "\n";
+    <h5> {
+        apply-templates;
+    }
+}
+
+match vcnote/head {
+    <p class="prefix"> {
+        if (../@id) {
+            <a name=../@id>;
+        }
+        <b> {
+            expr "Validity constraint: ";
+            apply-templates;
+        }
+    }
+}
+
+match wfcnote/head {
+    <p class="prefix"> {
+        if (../@id) {
+            <a name=../@id>;
+        }
+        <b> {
+            expr "Well-formedness constraint: ";
+            apply-templates;
+        }
+    }
+}
+/* header: metadata about the spec */
+/* pull out information into standard W3C layout */
+match header {
+    <div class="head"> {
+        <p> {
+            <a href="http://www.w3.org/"> {
+                <img src="http://www.w3.org/Icons/w3c_home" alt="W3C" height="48" width="72">;
+            }
+        }
+        expr "\n";
+        <h1> {
+            apply-templates title;
+            if (version) {
+                expr " ";
+                apply-templates version;
+            }
+        }
+        if (subtitle) {
+            expr "\n";
+            <h2> {
+                apply-templates subtitle;
+            }
+        }
+        expr "\n";
+        <h2> {
+            apply-templates w3c-doctype;
+            expr " ";
+            if (pubdate/day) {
+                apply-templates pubdate/day;
+                expr " ";
+            }
+            apply-templates pubdate/month;
+            expr " ";
+            apply-templates pubdate/year;
+        }
+        <dl> {
+            apply-templates publoc;
+            apply-templates latestloc;
+            apply-templates prevlocs;
+            apply-templates authlist;
+        }
+        <p class="copyright"> {
+            <a href="http://www.w3.org/Consortium/Legal/ipr-notice#Copyright"> "Copyright";
+            expr " © ";
+            apply-templates pubdate/year;
+            expr " ";
+            <a href="http://www.w3.org/"> {
+                <abbr title="World Wide Web Consortium"> "W3C";
+            }
+            <sup> "®";
+            expr " (";
+            <a href="http://www.lcs.mit.edu/"> {
+                <abbr title="Massachusetts Institute of Technology"> "MIT";
+            }
+            expr ", ";
+            <a href="http://www.inria.fr/"> {
+                <abbr lang="fr" title="Institut National de Recherche en Informatique et Automatique"> "INRIA";
+            }
+            expr ", ";
+            <a href="http://www.keio.ac.jp/"> "Keio";
+            expr "), All Rights Reserved. W3C ";
+            <a href="http://www.w3.org/Consortium/Legal/ipr-notice#Legal_Disclaimer"> "liability";
+            expr ", ";
+            <a href="http://www.w3.org/Consortium/Legal/ipr-notice#W3C_Trademarks"> "trademark";
+            expr ", ";
+            <a href="http://www.w3.org/Consortium/Legal/copyright-documents-19990405"> "document use";
+            expr ", and ";
+            <a href="http://www.w3.org/Consortium/Legal/copyright-software-19980720"> "software licensing";
+            expr " rules apply.";
+        }
+    }
+    <hr>;
+    apply-templates notice;
+    apply-templates abstract;
+    apply-templates status;
+}
+/* inform-div1: non-normative back matter top-level division */
+/* treat like div1 except add "(Non-Normative)" to title */
+match inform-div1 {
+    <div class="div1"> {
+        apply-templates;
+    }
+}
+/* interface: */
+/* IDL stuff isn't handled yet */
+/* issue: open issue before the Working Group */
+/* maintain an ID for linking to it */
+
+/* currently generates boilerplate head plus optional head child
+element; this should probably be cleaned up to only use the
+head if it's present */
+match issue {
+    <div class="issue"> {
+        <p class="prefix"> {
+            if (@id) {
+                <a name=@id>;
+            }
+            <b> {
+                expr "Issue (";
+                expr @id;
+                expr "):";
+            }
+        }
+        apply-templates;
+    }
+}
+/* item: generic list item */
+match item {
+    <li> {
+        apply-templates;
+    }
+}
+/* kw: keyword */
+/* make it bold */
+match kw {
+    <b> {
+        apply-templates;
+    }
+}
+/* label: term for defintion in glossary entry */
+/* already in <dl> context from glist */
+match label {
+    <dt class="label"> {
+        if (@id) {
+            <a name=@id>;
+        }
+        apply-templates;
+    }
+}
+/* language: */
+/* langusage: */
+/* identify language usage within a spec; not actually formatted */
+/* latestloc: latest location for this spec */
+/* called in a <dl> context from header */
+match latestloc {
+    <dt> "Latest version:";
+    <dd> {
+        apply-templates;
+    }
+}
+/* lhs: left-hand side of formal productions */
+
+/* make a table row with the lhs and the corresponding other
+pieces in this crazy mixed-up content model */
+match lhs {
+    <tr valign="baseline"> {
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            if (../@id) {
+                <a name=../@id>;
+            }
+            apply-templates ancestor::prod {
+                mode "number";
+            }
+            
+            /*
+            This could be done right here, but XT goes into deep space when the
+            node to be numbered isn't the current node and level="any":
+            <xsl:number count="prod" level="any" from="spec"
+            format="[1]"/>
+             */
+            expr "   ";
+        }
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            <code> {
+                apply-templates;
+            }
+        }
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            expr "   ::=   ";
+        }
+        apply-templates following-sibling::*[1] [name() == "rhs"];
+    }
+}
+/* loc: a Web location */
+/* outside the header, it's a normal cross-reference */
+match loc {
+    <a href=@href> {
+        apply-templates;
+    }
+}
+/* member: member of an organization */
+/* appears only in orglist, which creates <ul> context */
+match member {
+    <li> {
+        apply-templates;
+    }
+}
+/* method: */
+/* IDL stuff isn't handled yet */
+/* module: */
+/* IDL stuff isn't handled yet */
+/* month: month of spec */
+/* only used in pudate; called directly from header template */
+/* name: name of an editor or organization member */
+/* only appears in author and member */
+/* just output text */
+match name {
+    apply-templates;
+}
+/* note: a note about the spec */
+match note {
+    <div class="note"> {
+        <p class="prefix"> {
+            <b> "Note:";
+        }
+        apply-templates;
+    }
+}
+/* notice: a front-matter advisory about the spec's status */
+/* make sure people notice it */
+match notice {
+    <div class="notice"> {
+        <p class="prefix"> {
+            <b> "NOTICE:";
+        }
+        apply-templates;
+    }
+}
+/* nt: production non-terminal */
+/* make a link to the non-terminal's definition */
+match nt {
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = id(@def));
+        }
+        apply-templates;
+    }
+}
+/* olist: an ordered list */
+match olist {
+    <ol> {
+        apply-templates;
+    }
+}
+/* orglist: a list of an organization's members */
+match orglist {
+    <ul> {
+        apply-templates;
+    }
+}
+/* p: a standard paragraph */
+match p {
+    <p> {
+        if (@id) {
+            <xsl:attribute name="id"> @id;
+        }
+        if (@role) {
+            <xsl:attribute name="class"> @role;
+        }
+        apply-templates;
+    }
+}
+/* param: */
+/* IDL stuff isn't handled yet */
+/* parameters: */
+/* IDL stuff isn't handled yet */
+/* phrase: semantically meaningless markup hanger */
+
+/* role attributes may be used to request different formatting,
+which isn't currently handled */
+match phrase {
+    apply-templates;
+}
+/* prevlocs: previous locations for this spec */
+/* called in a <dl> context from header */
+match prevlocs {
+    <dt> "Previous versions:";
+    <dd> {
+        apply-templates;
+    }
+}
+/* prod: a formal grammar production */
+/* if not in a prodgroup, needs a <tbody> */
+
+/* has a weird content model; makes a table but there are no
+explicit rules; many different things can start a new row */
+
+/* process the first child in each row, and it will process the
+others */
+match prod {
+    <tbody> {
+        apply-templates lhs | rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+    }
+}
+
+match prodgroup/prod {
+    apply-templates lhs | rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+}
+/* prodgroup: group of formal productions */
+/* create one <tbody> for each group */
+match prodgroup {
+    <tbody> {
+        apply-templates;
+    }
+}
+/* prodrecap: reiteration of a prod */
+
+/* process the prod in another node that will never generate a
+<tbody> or a number, plus links the lhs to the original
+production */
+match prodrecap {
+    <tbody> {
+        apply-templates id(@ref) {
+            mode "ref";
+        }
+    }
+}
+/* proto: function prototype */
+/* type and name of the function, with arguments in parens */
+match proto {
+    <p> {
+        <em> @return-type;
+        expr " ";
+        <b> @name;
+        expr "(";
+        apply-templates;
+        expr ")";
+    }
+}
+/* pubdate: date of spec */
+/* called directly from header */
+/* publoc: location of current version of spec */
+/* called from header in <dl> context */
+match publoc {
+    <dt> "This version:";
+    <dd> {
+        apply-templates;
+    }
+}
+/* pubstmt: statement of publication */
+/* not currently output */
+/* quote: a quoted string or phrase */
+
+/* it would be nice to use HTML <q> elements, but browser support
+is abysmal */
+match quote {
+    expr "\"";
+    apply-templates;
+    expr "\"";
+}
+/* raises: */
+/* IDL stuff isn't handled yet */
+/* reference: */
+/* IDL stuff isn't handled yet */
+/* resolution: resolution of an issue */
+match resolution {
+    <p class="prefix"> {
+        <b> "Resolution:";
+    }
+    apply-templates;
+}
+/* returns: */
+/* IDL stuff isn't handled yet */
+/* revisiondesc: description of spec revision */
+/* used for internal tracking; not formatted */
+/* rhs: right-hand side of a formal production */
+
+/* make a table cell; if it's not the first after an LHS, make a
+new row, too */
+match rhs {
+    if (preceding-sibling::*[1] [name() == "lhs"]) {
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            <code> {
+                apply-templates;
+            }
+        }
+        <xsltdebug>;
+        apply-templates following-sibling::*[1] [name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
+    
+    } else {
+        <tr valign="baseline"> {
+            <td>;
+            <td>;
+            <td>;
+            <td> {
+                if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr ancestor-or-self::*/@diff;
+                    }
+                }
+                <code> {
+                    apply-templates;
+                }
+            }
+            apply-templates following-sibling::*[1] [name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
+        }
+    }
+}
+/* role: part played by a member of an organization */
+match role {
+    expr " (";
+    <i> {
+        apply-templates;
+    }
+    expr ") ";
+}
+/* scrap: series of formal grammar productions */
+/* set up a <table> and handle children */
+match scrap {
+    apply-templates head;
+    <table class="scrap" summary="Scrap"> {
+        apply-templates bnf | prod | prodgroup;
+    }
+}
+/* sequence: */
+/* IDL stuff isn't handled yet */
+/* sitem: simple list item */
+/* just make one paragraph with <br>s between items */
+match sitem[position() > 1] {
+    <br>;
+    apply-templates;
+}
+/* slist: simple list */
+
+/* using a <blockquote> to indent the list is very wrong, but it
+works */
+match slist {
+    <blockquote> {
+        <p> {
+            apply-templates;
+        }
+    }
+}
+/* source: the source of an issue */
+match source {
+    <p> {
+        <b> "Source";
+        expr ": ";
+        apply-templates;
+    }
+}
+/* sourcedesc: description of spec preparation */
+/* used for tracking the source, but not formatted */
+/* spec: the specification itself */
+match spec {
+    <html> {
+        if (header/langusage/language) {
+            <xsl:attribute name="lang"> header/langusage/language/@id;
+        }
+        <head> {
+            <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">;
+            <title> {
+                apply-templates header/title;
+                if (header/version) {
+                    expr " ";
+                    apply-templates header/version;
+                }
+                if ($additional.title != "") {
+                    expr " -- ";
+                    expr $additional.title;
+                }
+            }
+            call css();
+        }
+        <body> {
+            apply-templates;
+            if (//footnote) {
+                <hr>;
+                <div class="endnotes"> {
+                    expr "\n";
+                    <h3> {
+                        <a name="endnotes"> "End Notes";
+                    }
+                    <dl> {
+                        apply-templates //footnote {
+                            mode "notes";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+/* specref: reference to another part of teh current specification */
+match specref {
+    var $target = id(@ref) [1];
+    
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = id(@ref));
+        }
+        if (starts-with(local-name($target) , "div")) {
+            <b> {
+                apply-templates id(@ref) {
+                    mode "divnum";
+                }
+                apply-templates id(@ref)/head {
+                    mode "text";
+                }
+            }
+        
+        } else if (starts-with(local-name($target) , "inform-div")) {
+            <b> {
+                apply-templates id(@ref) {
+                    mode "divnum";
+                }
+                apply-templates id(@ref)/head {
+                    mode "text";
+                }
+            }
+        
+        } else if (local-name($target) == "vcnote") {
+            <b> {
+                expr "[VC: ";
+                apply-templates id(@ref)/head {
+                    mode "text";
+                }
+                expr "]";
+            }
+        
+        } else if (local-name($target) == "prod") {
+            <b> {
+                expr "[PROD: ";
+                apply-templates $target {
+                    mode "number-simple";
+                }
+                expr "]";
+            }
+        
+        } else if (local-name($target) == "label") {
+            <b> {
+                expr "[";
+                expr $target;
+                expr "]";
+            }
+        
+        } else {
+            <xsl:message> {
+                expr "Unsupported specref to ";
+                expr local-name($target);
+                expr " [";
+                expr @ref;
+                expr "] ";
+                expr " (Contact stylesheet maintainer).";
+            }
+            <b> "???";
+        }
+    }
+}
+/* status: the status of the spec */
+match status {
+    <div id="status"> {
+        expr "\n";
+        <h2> {
+            <a name="status"> "Status of this Document";
+        }
+        apply-templates;
+    }
+}
+/* struct: */
+/* IDL stuff isn't handled yet */
+/* sub: subscript */
+match sub {
+    <sub> {
+        apply-templates;
+    }
+}
+/* subtitle: secondary title of spec */
+/* handled directly within header */
+/* sup: superscript */
+match sup {
+    <sup> {
+        apply-templates;
+    }
+}
+/* table: the HTML table model adopted wholesale */
+/* tbody: */
+/* td: */
+match caption | col | colgroup | table | tbody | td | tfoot | th | thead | tr {
+    <xsl:copy> {
+        for-each (@*) {
+            /* Wait: some of these aren't HTML attributes after all... */
+            if (local-name(.) != "diff") {
+                <xsl:copy> {
+                    apply-templates;
+                }
+            }
+        }
+        apply-templates;
+    }
+}
+/* term: the actual mention of a term within a termdef */
+match term {
+    <b> {
+        apply-templates;
+    }
+}
+/* termdef: sentence or phrase defining a term */
+match termdef {
+    expr "[";
+    <a name=@id title=@term> "Definition";
+    expr ": ";
+    apply-templates;
+    expr "]";
+}
+/* termref: reference to a defined term */
+match termref {
+    <a title=id(@def)/@term> {
+        <xsl:attribute name="href"> {
+            call href.target($target = id(@def));
+        }
+        apply-templates;
+    }
+}
+/* tfoot: see table */
+/* th: see table */
+/* thead: see table */
+/* title: title of the specification */
+/* called directly within header */
+/* titleref: reference to the title of any work */
+/* if a URL is given, link it */
+match titleref {
+    if (@href) {
+        <a href=@href> {
+            <cite> {
+                apply-templates;
+            }
+        }
+    
+    } else {
+        <cite> {
+            apply-templates;
+        }
+    }
+}
+/* tr: see table */
+/* typedef: */
+/* IDL stuff isn't handled yet */
+/* typename: */
+/* IDL stuff isn't handled yet */
+/* ulist: unordered list */
+match ulist {
+    <ul> {
+        apply-templates;
+    }
+}
+/* union: */
+/* IDL stuff isn't handled yet */
+/* var: a variable */
+match var {
+    <var> {
+        apply-templates;
+    }
+}
+/* vc: validity check reference in a formal production */
+match vc {
+    if (preceding-sibling::*[1] [name() == "rhs"]) {
+        <td> {
+            if (@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr @diff;
+                }
+            }
+            <a> {
+                <xsl:attribute name="href"> {
+                    call href.target($target = id(@def));
+                }
+                expr "[VC: ";
+                apply-templates id(@def)/head {
+                    mode "text";
+                }
+                expr "]";
+            }
+        }
+    
+    } else {
+        <tr valign="baseline"> {
+            <td>;
+            <td>;
+            <td>;
+            <td>;
+            <td> {
+                if (@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr @diff;
+                    }
+                }
+                <a> {
+                    <xsl:attribute name="href"> {
+                        call href.target($target = id(@def));
+                    }
+                    expr "[VC: ";
+                    apply-templates id(@def)/head {
+                        mode "text";
+                    }
+                    expr "]";
+                }
+            }
+        }
+    }
+}
+/* vcnote: validity check note after a formal production */
+match vcnote {
+    <div class="constraint"> {
+        apply-templates;
+    }
+}
+/* version: version of this spec */
+/* called directly from header */
+/* w3c-designation: canonical name for this spec */
+/* not used for formatting */
+/* w3c-doctype: type of document the specification is */
+
+/* used by header template to select CSS stylesheet for output
+HTML */
+/* wfc: well-formedness check reference in a formal production */
+match wfc {
+    if (preceding-sibling::*[1] [name() == "rhs"]) {
+        <td> {
+            if (@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr @diff;
+                }
+            }
+            <a> {
+                <xsl:attribute name="href"> {
+                    call href.target($target = id(@def));
+                }
+                expr "[WFC: ";
+                apply-templates id(@def)/head {
+                    mode "text";
+                }
+                expr "]";
+            }
+        }
+    
+    } else {
+        <tr valign="baseline"> {
+            <td>;
+            <td>;
+            <td>;
+            <td>;
+            <td> {
+                if (@diff && $show.diff.markup == "1") {
+                    <xsl:attribute name="class"> {
+                        expr "diff-";
+                        expr @diff;
+                    }
+                }
+                <a> {
+                    <xsl:attribute name="href"> {
+                        call href.target($target = id(@def));
+                    }
+                    expr "[WFC: ";
+                    apply-templates id(@def)/head {
+                        mode "text";
+                    }
+                    expr "]";
+                }
+            }
+        }
+    }
+}
+/* wfcnote: well-formedness check note after formal production */
+match wfcnote {
+    <div class="constraint"> {
+        apply-templates;
+    }
+}
+/* xnt: external non-terminal */
+/* xspecref: external specification reference */
+/* xtermref: external term reference */
+/* just link to URI provided */
+match xnt | xspecref | xtermref {
+    <a href=@href> {
+        apply-templates;
+    }
+}
+/* year: year of spec */
+/* only used in pudate; called directly from header template */
+
+/* Silly HTML elements used for pasting stuff in; shouldn't ever
+show up in a spec, but they're easy to handle and you just
+never know. */
+match a | div | em | h1 | h2 | h3 | h4 | h5 | h6 | li | ol | pre | ul {
+    <xsl:copy> {
+        for-each (@*) {
+            <xsl:copy> {
+                apply-templates;
+            }
+        }
+        apply-templates;
+    }
+}
+/* legacy XML spec stuff */
+match htable {
+    <table summary="HTML Table"> {
+        for-each (@*) {
+            <xsl:copy> {
+                apply-templates;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match htbody {
+    <tbody> {
+        for-each (@*) {
+            <xsl:copy> {
+                apply-templates;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match key-term {
+    <b> {
+        apply-templates;
+    }
+}
+
+match statusp {
+    <p> {
+        apply-templates;
+    }
+}
+/* legacy DocBook stuff */
+match itemizedlist {
+    <ul> {
+        apply-templates;
+    }
+}
+
+match listitem {
+    <li> {
+        apply-templates;
+    }
+}
+
+match orderedlist {
+    <ol> {
+        apply-templates;
+    }
+}
+
+match para {
+    <p> {
+        apply-templates;
+    }
+}
+/* mode: divnum */
+match div1 {
+    mode "divnum";
+    
+    <xsl:number format="1 ">;
+}
+
+match back/div1 | inform-div1 {
+    mode "divnum";
+    
+    <xsl:number count="div1 | inform-div1" format="A ">;
+}
+
+match front/div1 | front//div2 | front//div3 | front//div4 | front//div5 {
+    mode "divnum";
+}
+
+match div2 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2" format="1.1 ">;
+}
+
+match back//div2 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | inform-div1" format="A.1 ">;
+}
+
+match div3 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3" format="1.1.1 ">;
+}
+
+match back//div3 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3 | inform-div1" format="A.1.1 ">;
+}
+
+match div4 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3 | div4" format="1.1.1.1 ">;
+}
+
+match back//div4 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | inform-div1" format="A.1.1.1 ">;
+}
+
+match div5 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5" format="1.1.1.1.1 ">;
+}
+
+match back//div5 {
+    mode "divnum";
+    
+    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5 | inform-div1" format="A.1.1.1.1 ">;
+}
+/* mode: notes */
+match footnote {
+    mode "notes";
+    
+    var $this-note-id = {
+        if (@id) {
+            expr @id;
+        
+        } else {
+            expr generate-id(.);
+        }
+    }
+    
+    <dt> {
+        <a name=$this-note-id href="#FN-ANCH-" _ $this-note-id> {
+            <xsl:number level="any" format="[1]">;
+        }
+    }
+    <dd> {
+        apply-templates;
+    }
+}
+/* mode: number */
+match prod {
+    mode "number";
+    
+    expr "[";
+    apply-templates . {
+        mode "number-simple";
+    }
+    expr "]";
+}
+
+match prod[@diff == "add"] {
+    mode "number";
+    
+    expr "[";
+    apply-templates preceding::prod[not(@diff == "add")] [1] {
+        mode "number-simple";
+    }
+    
+    /*
+    Once again, this could be done right here, but XT won't hear of it.
+    <xsl:number level="any" count="prod[not(@diff='add')]"/>
+     */
+    <xsl:number level="any" count="prod[@diff='add']" from="prod[not(@diff='add')]" format="a">;
+    expr "]";
+}
+/* mode: number-simple */
+match prod {
+    mode "number-simple";
+    
+    <xsl:number level="any" count="prod[not(@diff='add')]">;
+}
+/* mode: ref */
+match lhs {
+    mode "ref";
+    
+    <tr valign="baseline"> {
+        <td>;
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            if (../@id) {
+                <a name=../@id>;
+            }
+            <code> {
+                apply-templates;
+            }
+        }
+        <td> {
+            if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
+                <xsl:attribute name="class"> {
+                    expr "diff-";
+                    expr ancestor-or-self::*/@diff;
+                }
+            }
+            expr "   ::=   ";
+        }
+        apply-templates following-sibling::*[1] [name() == "rhs"];
+    }
+}
+
+match prod {
+    mode "ref";
+    
+    apply-templates lhs {
+        mode "ref";
+    }
+    apply-templates rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+}
+/* mode: text */
+
+/* most stuff processes just as text here, but some things should
+be hidden */
+match ednote | footnote {
+    mode "text";
+}
+/* mode: toc */
+match div1 {
+    mode "toc";
+    
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    <br>;
+    apply-templates div2 {
+        mode "toc";
+    }
+}
+
+match div2 {
+    mode "toc";
+    
+    expr "    ";
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    <br>;
+    apply-templates div3 {
+        mode "toc";
+    }
+}
+
+match div3 {
+    mode "toc";
+    
+    expr "        ";
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    <br>;
+    apply-templates div4 {
+        mode "toc";
+    }
+}
+
+match div4 {
+    mode "toc";
+    
+    expr "            ";
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    <br>;
+    apply-templates div5 {
+        mode "toc";
+    }
+}
+
+match div5 {
+    mode "toc";
+    
+    expr "                ";
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    <br>;
+}
+
+match inform-div1 {
+    mode "toc";
+    
+    apply-templates . {
+        mode "divnum";
+    }
+    <a> {
+        <xsl:attribute name="href"> {
+            call href.target($target = .);
+        }
+        apply-templates head {
+            mode "text";
+        }
+    }
+    expr " (Non-Normative)";
+    <br>;
+    apply-templates div2 {
+        mode "toc";
+    }
+}
+
+template css () {
+    <style type="text/css"> {
+        expr "\ncode           { font-family: monospace; }\n\ndiv.constraint,\ndiv.issue,\ndiv.note,\ndiv.notice     { margin-left: 2em; }\n\ndt.label       { display: run-in; }\n\nli p           { margin-top: 0.3em;\n                 margin-bottom: 0.3em; }\n      ";
+        expr $additional.css;
+    }
+    <link rel="stylesheet" type="text/css"> {
+        <xsl:attribute name="href"> {
+            expr "W3C-";
+            if (/spec/@w3c-doctype == "wd") {
+                expr "WD";
+            
+            } else if (/spec/@w3c-doctype == "rec") {
+                expr "REC";
+            
+            } else if (/spec/@w3c-doctype == "pr") {
+                expr "REC";
+            
+            } else if (/spec/@w3c-doctype == "cr") {
+                expr "REC";
+            
+            } else {
+                expr "NOTE";
+            }
+            expr ".css";
+        }
+    }
+}
+
+template href.target ($target = .) {
+    expr "#";
+    if ($target/@id) {
+        expr $target/@id;
+    
+    } else {
+        expr generate-id($target);
+    }
+}

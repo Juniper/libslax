@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:dsl="http://www.decisionsoft.com/website" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:layout="http://www.decisionsoft.com/website-layout" xmlns="http://www.w3.org/1999/xhtml" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:variable name="myPath" select="/dsl:page/@path"/>
+  <xsl:variable name="layout" select="document(&quot;../docs/bug-158.doc&quot;)"/>
+  <xsl:variable name="root">
+    <xsl:value-of select="$layout//layout:page[@path = $myPath]"/>
+  </xsl:variable>
+  <xsl:template match="/">
+    <xsl:text>
+myPath is </xsl:text>
+    <xsl:value-of select="$myPath"/>
+    <xsl:text>
+root is </xsl:text>
+    <xsl:value-of select="$root"/>
+  </xsl:template>
+</xsl:stylesheet>

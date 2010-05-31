@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+match table {
+    <table> {
+        apply-templates row {
+            <xsl:sort select="firstname">;
+        }
+    }
+}
+
+match * {
+    <xsl:copy> {
+        apply-templates;
+    }
+}

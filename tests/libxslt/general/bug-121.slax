@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html">;
+
+match / {
+    <a href="a?b+c"> "xxx";
+}

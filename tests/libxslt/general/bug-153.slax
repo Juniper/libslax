@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match cp {
+    apply-templates c;
+}
+
+match c {
+    <p> document("../docs/bug-153.doc")/ch/v[@name == current()/v];
+}
+<xsl:key name="k" match="u/p" use="un">;

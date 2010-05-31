@@ -1,0 +1,113 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="utf-8">;
+
+/*
+decoy stylesheet is same as patterns.xsl, but has lots of decoy patterns
+to distract the matching process...
+ */
+match decoy {
+    priority 2;
+    
+    <ERROR> {
+        apply-templates;
+    }
+}
+
+/*
+<xsl:template match="* / * / * / * / *">
+<ERROR/>
+</xsl:template>
+ */
+match decoy2 {
+    priority -100;
+    
+    <ERROR>;
+}
+
+template decoy () {
+    <ERROR>;
+}
+
+match /decoy/*/*/*/* {
+    <ERROR>;
+}
+
+match /foo/bar/baz/quux {
+    <ERROR>;
+}
+
+match text() [*/../*/../foobar] {
+    <ERROR>;
+}
+
+match foobar[../*/../*/baz] {
+    <ERROR>;
+}
+
+match foobar[3] {
+    <ERROR>;
+}
+
+match foo | bar | baz | quux | metasyntactic | variable | fubar {
+    <ERROR>;
+}
+
+match foobar/table/row/id {
+    <ERROR>;
+}
+
+match table/row[id == "abcdefg"] {
+    priority 3;
+    
+    <ERROR>;
+}
+
+match text() [contains(., "decoy")] {
+    <ERROR>;
+}
+
+match table/row[6] {
+    priority 5;
+    
+    <row6> {
+        apply-templates;
+    }
+}
+
+match table/row[id == "0091"] {
+    <id91> {
+        apply-templates;
+    }
+}
+
+match //row[firstname == "Egon"] {
+    <egon> {
+        apply-templates;
+    }
+}
+
+match table//row[*[. == "Aranow"]] {
+    <aranow> {
+        apply-templates;
+    }
+}
+
+match row {
+    priority -1;
+    
+    <row> {
+        apply-templates;
+    }
+}
+
+match row[id mod 3 == 2] [following-sibling::row[4]/firstname == "Bob"] {
+    <crazy> {
+        apply-templates;
+    }
+}
+
+match id | firstname | lastname | street | city | state | zip {
+    <xsl:copy> .;
+}

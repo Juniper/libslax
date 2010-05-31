@@ -1,0 +1,99 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="ISO-8859-1" method="xml">;
+var $targetId;
+var $action;
+
+match / {
+    apply-templates * |@*;
+}
+
+template toto () {
+    <toto>;
+}
+
+template add ($type) {
+    if ($type == "toto") {
+        call toto();
+    }
+}
+
+template copy () {
+    <xsl:copy> {
+        apply-templates node() |@*;
+    }
+}
+
+template del () {
+    /* effacer ! */
+}
+
+match *[attribute::id &&@id == ""] {
+    
+    /* attribute::type pour éviter de confondre l'absence d'attibute et
+    la valeur nulle */
+    if ($action == "del") {
+        call del();
+    
+    } else if ($action == "add") {
+        call copy();
+        call add() {
+            with $type = {
+                expr "toto";
+             }
+        }
+    
+    } else if ($action == "repl") {
+        if ($action == "del") {
+            call del();
+        }
+        call add() {
+            with $type = {
+                expr "toto";
+             }
+        }
+    }
+}
+/* liste des elements qui peuvent être édités, donc attribut id */
+match domain {
+    <xsl:copy> {
+        if (not(@id)) {
+            <xsl:attribute name="id"> generate-id();
+        }
+        <xsl:attribute name="add"> "task";
+        <xsl:attribute name="del"> "domain";
+        apply-templates node() |@*;
+    }
+}
+
+match name {
+    <xsl:copy> {
+        if (not(@id)) {
+            <xsl:attribute name="id"> generate-id();
+        }
+        <xsl:attribute name="replace"> "PCDATA";
+        apply-templates node() |@*;
+    }
+}
+
+match task {
+    <xsl:copy> {
+        if (not(@id)) {
+            <xsl:attribute name="id"> generate-id();
+        }
+        <xsl:attribute name="replace"> "PCDATA";
+        <xsl:attribute name="add"> "task";
+        apply-templates node() |@*;
+    }
+}
+
+match * {
+    <xsl:copy> {
+        apply-templates node() |@*;
+    }
+}
+
+match @* {
+    <xsl:copy>;
+}

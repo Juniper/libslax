@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output method="text"/>
+  <xsl:template match="/">
+    <xsl:variable name="id1" select="generate-id(/root/elem)"/>
+    <xsl:variable name="id2" select="generate-id(id(&quot;id0&quot;))"/>
+    <xsl:if test="$id1 = $id2">
+      <xsl:text>SUCCESS
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="$id1 != $id2">
+      <xsl:text>ERROR
+</xsl:text>
+    </xsl:if>
+  </xsl:template>
+</xsl:stylesheet>

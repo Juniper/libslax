@@ -1,0 +1,42 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+
+/*
+============================================================
+This is a stylesheet that will create, for each input <fruit> element,
+two output elements - <new-fruit1> and <new-fruit2> , each of
+which should wrap the content of the the input fruit/site element
+in a CDATA block.
+<new-fruit1> does this 'properly' via  cdata-section-elements
+<new-fruit2> does it with a workaround named template 'wrap-cdata'
+============================================================
+ */
+<xsl:output method="xml" cdata-section-elements="new-fruit1" indent="yes">;
+
+match fruit-sites/fruit {
+    <new-fruit1 type=@type> {
+        expr "\n      The site is at\n      ";
+        expr ./site;
+    }
+    <new-fruit2 type=@type> {
+        call wrap-cdata() {
+            with $content = {
+                expr "\n	  The site is at ";
+                expr ./site;
+             }
+        }
+    }
+}
+/* Wrap $content in a CDATA block */
+template wrap-cdata ($content) {
+    <xsl:text disable-output-escaping="yes"> "<![CDATA[";
+    
+    /*
+     */
+    <xsl:value-of disable-output-escaping="yes" select="$content">;
+    
+    /*
+     */
+    <xsl:text disable-output-escaping="yes"> "]]>";
+}

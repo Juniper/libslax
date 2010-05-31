@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:value-of select="id(&quot;hällo&quot;)"/>
+    <xsl:apply-templates/>
+  </xsl:template>
+  <xsl:template match="id(&quot;hällo&quot;)">
+    <xsl:text>
+WORKS TOO
+</xsl:text>
+  </xsl:template>
+  <xsl:template match="dest"/>
+</xsl:stylesheet>

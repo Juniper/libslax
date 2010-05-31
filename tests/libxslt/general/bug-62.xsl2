@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:import href="bug-62-inc.xsl"/>
+  <xsl:variable name="my.var" select="&quot;the-value&quot;"/>
+  <xsl:template match="/">
+    <xsl:value-of select="$my.var"/>
+  </xsl:template>
+</xsl:stylesheet>

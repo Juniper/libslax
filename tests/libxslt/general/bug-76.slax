@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    var $first = /doc/*[1];
+    var $last = /doc/*[last()];
+    
+    expr "Count1 :";
+    expr count($first/ancestor::* | $last/ancestor::*);
+    expr "\n";
+    var $both = /doc/child2 |/doc/child1;
+    expr "Count2 :";
+    expr count($both/ancestor::*);
+    expr "\n";
+}

@@ -1,0 +1,174 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method = "xml" indent = "yes" encoding = "iso-8859-1">;
+<xsl:decimal-format name = "special" decimal-separator = "*">;
+
+match /format-number {
+    <format-number> {
+        apply-templates;
+    }
+}
+
+match /format-number/fixes {
+    <fixes> {
+        expr "\n    one ";
+        expr format-number(pi, "prefix#,#,###.##suffix");
+        expr "\n    two ";
+        expr format-number(negpi, "_#,#,###.##_");
+        expr "\n    three ";
+        expr format-number(negpi, "_#,#,000.000##_");
+        expr "\n    four ";
+        expr format-number(negpi, "_#.#_;_(#.#)_");
+        expr "\n    five ";
+        expr format-number(pi, "prefix#,#,###*##suffix", "special");
+        expr "\n  ";
+    }
+}
+
+match /format-number/point-test {
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'#'  )";
+            expr " = ";
+            expr format-number(., "#");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'0'  )";
+            expr " = ";
+            expr format-number(., "0");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ", '.' )";
+            expr " = ";
+            expr format-number(., ".");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'#.' )";
+            expr " = ";
+            expr format-number(., "#.");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'0.' )";
+            expr " = ";
+            expr format-number(., "0.");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ", '.#')";
+            expr " = ";
+            expr format-number(., ".#");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ", '.##')";
+            expr " = ";
+            expr format-number(., ".##");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ", '.0')";
+            expr " = ";
+            expr format-number(., ".0");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'#.#')";
+            expr " = ";
+            expr format-number(., "#.#");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'0.0')";
+            expr " = ";
+            expr format-number(., "0.0");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'#.0')";
+            expr " = ";
+            expr format-number(., "#.0");
+        }
+        expr "\n  ";
+    }
+    expr "\n  ";
+    <point-test> {
+        
+        for-each (number) {
+            expr "\n    format-number(";
+            expr .;
+            expr ",'0.#')";
+            expr " = ";
+            expr format-number(., "0.#");
+        }
+        expr "\n  ";
+    }
+}
+

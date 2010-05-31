@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $test = "no value";
+param $test2 = "no value";
+
+match / {
+    <root> {
+        expr "\n  test: ";
+        expr $test;
+        expr "\n  test2: ";
+        expr $test2;
+    }
+}

@@ -1,0 +1,28 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    apply-templates //page;
+}
+
+match page {
+    expr "\n\ncurrent page : ";
+    expr @name;
+    expr "\n--------------------\n  dump union : \"";
+    
+    for-each ((preceding-sibling::page[1] | parent::group[1] |/document)) {
+        expr name();
+        expr ",";
+    }
+    expr "\"\n  union-last : ";
+    expr name((preceding-sibling::page[1] | parent::group[1] |/document) [last()]);
+    expr "\n  union-last (without /root) : ";
+    expr name((preceding-sibling::page[1] | parent::group[1]) [last()]);
+    expr "\n  preceeding-sibling ";
+    expr name(preceding-sibling::page[1]);
+    expr "\n  parent-group ";
+    expr name(parent::group[1]);
+    expr "\n  root ";
+    expr name(/document);
+    expr "\n-----------------------\n";
+}

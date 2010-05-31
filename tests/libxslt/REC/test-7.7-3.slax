@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match title {
+    <fo:block> {
+        <xsl:number level="multiple" count="chapter|section|subsection" format="1.1 ">;
+        apply-templates;
+    }
+}
+
+match appendix//title {
+    priority 1;
+    
+    <fo:block> {
+        <xsl:number level="multiple" count="appendix|section|subsection" format="A.1 ">;
+        apply-templates;
+    }
+}

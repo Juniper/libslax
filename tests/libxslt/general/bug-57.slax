@@ -1,0 +1,19 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns l exclude = "http://docbook.sourceforge.net/xmlns/l10n/1.0";
+
+<xsl:output method="xml">;
+
+match form {
+    for-each (field) {
+        <xsl:element name="input"> {
+            <xsl:attribute name="type"> "text";
+            <xsl:attribute name="name"> @name;
+            expr initialvalue;
+        }
+        <td> {
+            <input type="text" name="description">;
+        }
+    }
+}

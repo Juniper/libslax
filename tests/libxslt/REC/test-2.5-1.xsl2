@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:template match="/">
+    <xsl:choose>
+      <xsl:when test="system-property(&quot;xsl:version&quot;) &gt;= 1.8">
+        <xsl:exciting-new-1.8-feature/>
+      </xsl:when>
+      <xsl:otherwise>
+        <html>
+          <head>
+            <title>XSLT 1.8 required</title>
+          </head>
+          <body>
+            <p>Sorry, this stylesheet requires XSLT 1.8.</p>
+          </body>
+        </html>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+</xsl:stylesheet>

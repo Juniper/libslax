@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml" indent="yes">;
+
+match character {
+    apply-templates skills;
+}
+
+match skills {
+    for-each (*) {
+        expr ./@name;
+        expr " ";
+    }
+}

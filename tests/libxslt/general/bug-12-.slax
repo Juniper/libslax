@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml" version="1.0" encoding="ISO-8859-1" indent="yes">;
+
+match / {
+    <namespace> //namespace::*;
+}

@@ -1,0 +1,9 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns my exclude = "http://my/namespace";
+
+match my:document {
+    expr "\n    Big ";
+    apply-templates my:item;
+}

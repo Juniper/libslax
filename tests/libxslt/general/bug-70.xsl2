@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:key name="mykey" match="div|obj" use="@id"/>
+  <xsl:template match="link">
+    <xsl:value-of select="@linkend"/>
+    <xsl:text> </xsl:text>
+    <xsl:value-of select="key(&quot;mykey&quot;,@linkend)/@href"/>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <xsl:output encoding="utf-8"/>
+  <xsl:template match="PLAY">
+    <html>
+      <head>
+        <title>
+          <xsl:value-of select="/PLAY/TITLE"/>
+        </title>
+      </head>
+      <body>
+        <h1>
+          <xsl:value-of select="/PLAY/TITLE"/>
+        </h1>
+        <table>
+          <xsl:for-each select="//ACT">
+            <xsl:variable name="act" select="TITLE"/>
+            <xsl:for-each select="SCENE">
+              <xsl:value-of select="concat($act, &quot; - &quot;, TITLE, &quot;   &quot;)"/>
+              <xsl:text>
+			Has </xsl:text>
+              <xsl:value-of select="count(.//SPEECH)"/>
+              <xsl:text> speeches
+			with an average of </xsl:text>
+              <xsl:value-of select="round(count(.//LINE) div count(.//SPEECH))"/>
+              <xsl:text>
+			line(s) each.
+			</xsl:text>
+              <br/>
+            </xsl:for-each>
+          </xsl:for-each>
+        </table>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,22 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* string flipper */
+<xsl:output encoding="utf-8">;
+
+template textflipper ($instring = "") {
+    var $firstword = substring-before($instring, " ");
+    
+    if (string-length($firstword) > 0) {
+        call textflipper($instring = substring($instring, string-length($firstword) + 2));
+        expr " ";
+        expr $firstword;
+    
+    } else {
+        expr $instring;
+    }
+}
+
+match text() {
+    call textflipper($instring = normalize-space(.));
+}

@@ -1,0 +1,22 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+
+/* I have tried this with   xmlns:xml="http://www.w3.org/XML/1998/namespace"
+defined above, too
+ */
+match / {
+    apply-templates {
+        mode "copy";
+    }
+}
+
+match @* | node() {
+    mode "copy";
+    
+    <xsl:copy> {
+        apply-templates node() |@* {
+            mode "copy";
+        }
+    }
+}

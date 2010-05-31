@@ -1,0 +1,10 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns doc = "http://example.org/doc";
+
+<doc:doc> "Some ignored documentation the prefix should not show\n         up on the doc element";
+
+match / {
+    <out xsl:exclude-result-prefixes="doc"> "SUCCESS";
+}

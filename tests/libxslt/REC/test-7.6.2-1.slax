@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $image-dir = "/images";
+
+match photograph {
+    <img src=$image-dir _ "/" _ href width=size/@width>;
+}

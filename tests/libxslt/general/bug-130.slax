@@ -1,0 +1,20 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/TR/REC-html40";
+
+import "./bug-130-imp1.imp";
+import "./bug-130-imp2.imp";
+import "./bug-130-imp3.imp";
+import "./bug-130-imp4.imp";
+<xsl:output method="html" indent="no">;
+var $g.doc.root = document("../docs/bug-130.doc");
+
+match / {
+    <html> {
+        <head>;
+        <body> {
+            apply-templates /frame;
+        }
+    }
+}

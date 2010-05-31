@@ -1,0 +1,55 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://www.w3.org/TR/xhtml1/strict";
+
+strip-space doc chapter section;
+<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
+
+match doc {
+    <html> {
+        <head> {
+            <title> title;
+        }
+        <body> {
+            apply-templates;
+        }
+    }
+}
+
+match doc/title {
+    <h1> {
+        apply-templates;
+    }
+}
+
+match chapter/title {
+    <h2> {
+        apply-templates;
+    }
+}
+
+match section/title {
+    <h3> {
+        apply-templates;
+    }
+}
+
+match para {
+    <p> {
+        apply-templates;
+    }
+}
+
+match note {
+    <p class="note"> {
+        <b> "NOTE: ";
+        apply-templates;
+    }
+}
+
+match emph {
+    <em> {
+        apply-templates;
+    }
+}

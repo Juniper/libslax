@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+import "bug-137.imp";
+
+match / {
+    <result> key("mykey", "T");
+}

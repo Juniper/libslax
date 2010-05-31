@@ -1,0 +1,16 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns fo = "http://www.w3.org/1999/XSL/Format";
+
+match H4 {
+    <fo:block> {
+        <xsl:number level="any" from="H1" count="H2">;
+        expr ".";
+        <xsl:number level="any" from="H2" count="H3">;
+        expr ".";
+        <xsl:number level="any" from="H3" count="H4">;
+        expr " ";
+        apply-templates;
+    }
+}

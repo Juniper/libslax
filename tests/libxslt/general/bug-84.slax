@@ -1,0 +1,11 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match / {
+    for-each (//chapter) {
+        <xsl:number level="multiple">;
+        expr " ";
+        expr ./text();
+        expr "\n";
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns1="http://www.example.com/ns1" version="1.0" exclude-result-prefixes="ns1">
+  <!-- Machine Crafted with Care (tm) by slaxWriter -->
+  <foo/>
+  <xsl:template match="/">
+    <xsl:element name="foo"/>
+  </xsl:template>
+</xsl:stylesheet>

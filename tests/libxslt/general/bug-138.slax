@@ -1,0 +1,29 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns "http://me.envelope";
+
+<xsl:output method="xml" indent="yes">;
+
+match report {
+    <Message> {
+        <Header> {
+            <Title> title;
+            <From> origin;
+        }
+        <Body> {
+            ns "http://me.content";
+            
+            for-each (form) {
+                <Item> {
+                    <Ref> code;
+                    <xsl:element name="Info"> {
+                        <xsl:attribute name="desc"> description;
+                        <Note> description/@note;
+                    }
+                    <Quantity> qty;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,44 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+/* baseball game stats */
+<xsl:output encoding="utf-8">;
+
+match game {
+    <tr> {
+        <td> "Inning";
+        
+        for-each (innings/inning) {
+            <td> num;
+        }
+        <td> "final";
+    }
+    <tr> {
+        <td> {
+            <b> home;
+        }
+        
+        for-each (innings/inning) {
+            <td> home/runs;
+        }
+        <td> sum(innings/inning/home/runs);
+    }
+    <tr> {
+        <td> {
+            <b> visitors;
+        }
+        
+        for-each (innings/inning) {
+            <td> visitors/runs;
+        }
+        <td> sum(innings/inning/visitors/runs);
+    }
+}
+
+match / {
+    <html> {
+        <table border="1"> {
+            apply-templates games/game;
+        }
+    }
+}

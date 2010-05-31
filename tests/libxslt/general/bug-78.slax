@@ -1,0 +1,21 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns xi = "http://www.toto.com/xinclude";
+
+<xsl:output encoding="ISO-8859-1" method="html">;
+strip-space *;
+
+match / {
+    apply-templates;
+}
+
+match xi:* {
+    <xsl:copy> {
+        apply-templates node() |@*;
+    }
+}
+
+match @xi:* {
+    <xsl:copy>;
+}

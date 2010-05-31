@@ -1,0 +1,13 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match article {
+    <h3> title;
+    apply-templates para;
+}
+
+match para {
+    <p> {
+        apply-templates;
+    }
+}

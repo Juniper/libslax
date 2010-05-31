@@ -1,0 +1,15 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns ns2 = "whatever";
+ns ns = "another";
+
+<xsl:output method="text">;
+
+match ns:root {
+    expr "\n  WRONG\n";
+}
+
+match ns2:root {
+    expr "\n  RIGHT\n";
+}

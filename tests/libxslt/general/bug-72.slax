@@ -1,0 +1,37 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="xml">;
+
+match message {
+    var $foo = "foo";
+    
+    <ROOT> {
+        <ELEMENT1> {
+            var $test-var = {
+                call test1();
+                expr $foo;
+            }
+            
+            expr $test-var;
+            <hello>;
+        }
+        <ELEMENT2> {
+            var $test-var = {
+                call test2();
+                expr $foo;
+            }
+            
+            expr $test-var;
+            <hello>;
+        }
+    }
+}
+
+template test1 () {
+    expr "\nSome result\n";
+}
+
+template test2 () {
+    expr "\nother one\n";
+}

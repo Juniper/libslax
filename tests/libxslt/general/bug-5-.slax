@@ -1,0 +1,167 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+var $ACTIONgrid = //GROUP[@type == "REC" && not(@name == preceding::GROUP[@type == "REC"]/@name)]/@name;
+
+match / {
+    <html> {
+        <head> {
+            <title> "Churn by Product";
+            <style type="text/css"> "	.PROD {background-color:cyan}\n	.PROD * {background-color:cyan}\n	.ACT {background-color:green;font-weight:bold}\n	.ACT * {background-color:green;font-weight:bold}\n	.NR {background-color:yellow;color:blue}\n	.NR * {background-color:yellow;color:blue}\n	.RC {background-color:yellow;color:red}\n	.RC * {background-color:yellow;color:red}\n\n				";
+        }
+        <body> {
+            <h1> {
+                <center> "Churn by Product";
+            }
+            <table width="100%"> {
+                <tr> {
+                    <td width="50%" align="left" valign="top"> {
+                        expr "\n							Run Date: ";
+                        expr XMLDATA/RUNDATE;
+                        <br>;
+                        expr "\n							Parameters:\n						";
+                    }
+                    <td align="right" valign="top"> {
+                        <table> {
+                            <tr> {
+                                <th> "Legend";
+                            }
+                            <tr class="PROD"> {
+                                <td> "Product";
+                            }
+                            <tr class="ACT"> {
+                                <td> "Action";
+                            }
+                            <tr class="NR"> {
+                                <td> "Non-Recurring";
+                            }
+                            <tr class="RC"> {
+                                <td> "Recurring";
+                            }
+                        }
+                    }
+                }
+            }
+            <table align="center"> {
+                apply-templates /XMLDATA/GROUP;
+            }
+        }
+    }
+}
+
+match GROUP[@type == "PRODUCT"] {
+    <tr> {
+        <xsl:attribute name="class"> "\nPROD\n";
+        <td> .//ROW[1]/PRODUCT;
+        <td> {
+            expr "Proj. Rev: ";
+            expr sum(.//ROW/PREV);
+        }
+        <td> {
+            expr "Actual Rev: ";
+            expr sum(.//ROW/AREV);
+        }
+    }
+    apply-templates GROUP;
+    <tr> {
+        <xsl:attribute name="class"> "\nPROD\n";
+    }
+}
+
+match GROUP[@type == "ACTION"] {
+    var $grp = .;
+    
+    <tr> {
+        <xsl:attribute name="class"> "\nACT\n";
+        <td> .//ROW[1]/ACTION;
+        <td> {
+            expr "Proj. Rev: ";
+            expr sum(.//ROW/PREV);
+        }
+        <td> {
+            expr "Act. Rev: ";
+            expr sum(.//ROW/AREV);
+        }
+    }
+    <tr> {
+        for-each ($ACTIONgrid) {
+            <xsl:sort select=".">;
+            <td valign="top"> {
+                apply-templates $grp/GROUP[@name == current()];
+            }
+        }
+    }
+    <tr> {
+        <xsl:attribute name="class"> "\nACT\n";
+    }
+}
+
+match GROUP[@type == "REC"] {
+    <table> {
+        <tr> {
+            <xsl:attribute name="class"> {
+                if (@name == "Recurring") {
+                    expr "RC";
+                
+                } else {
+                    expr "NR";
+                }
+            }
+            <td> .//ROW[1]/REC;
+            <td> {
+                expr "Number: ";
+                expr sum(.//ROW/NUM);
+            }
+            <td> {
+                expr "Proj. Rev: ";
+                expr sum(.//ROW/PREV);
+            }
+            <td> {
+                expr "Act. Rev: ";
+                expr sum(.//ROW/AREV);
+            }
+        }
+        <tr> {
+            <td> "Segment";
+            <td> "Number";
+            <td> "Proj. Rev";
+            <td> "Act. Rev";
+        }
+        apply-templates ROW;
+        <tr> {
+            <xsl:attribute name="class"> {
+                if (@name == "Recurring") {
+                    expr "RC";
+                
+                } else {
+                    expr "NR";
+                }
+            }
+        }
+    }
+}
+
+match ROW {
+    <tr> {
+        apply-templates SEGMENT;
+        apply-templates NUM;
+        apply-templates PREV;
+        apply-templates AREV;
+    }
+}
+
+match SEGMENT {
+    <td> .;
+}
+
+match NUM {
+    <td> .;
+}
+
+match PREV {
+    <td> .;
+}
+
+match AREV {
+    <td> .;
+}

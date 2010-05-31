@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+match items {
+    for-each (item) {
+        <xsl:sort select=".">;
+        <p> {
+            <xsl:number value="position()" format="1. ">;
+            expr .;
+        }
+    }
+}

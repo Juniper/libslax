@@ -1,0 +1,8 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+strip-space doc;
+
+match *[position() == 1 && self::para] {
+    expr "\nSuccess\n";
+}

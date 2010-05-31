@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output method="html" encoding="ISO-8859-1">;
+<xsl:decimal-format name="czf" decimal-separator="," grouping-separator=" ">;
+
+match Kapital {
+    <html> {
+        <title> "Example xsltproc";
+        <body> {
+            apply-templates Vklad;
+        }
+    }
+}
+
+match Vklad {
+    expr format-number(Kc, "# ###,00 Kè", "czf");
+}

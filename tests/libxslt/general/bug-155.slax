@@ -1,0 +1,14 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+<xsl:output encoding="UTF-8" indent="yes" omit-xml-declaration="yes">;
+
+match object[@class == "Literaturhinweis"] {
+    <h3> "Literaturhinweis";
+    <ul> {
+        <li> {
+            <strong> "Ältestenrat:";
+            expr Ältestenrat;
+        }
+    }
+}
