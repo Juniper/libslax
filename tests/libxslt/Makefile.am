@@ -300,7 +300,6 @@ xmlspec/xmlspec.xsl
 # This list contains scripts that should work, but do not.  They are bugs.
 TROUBLE = \
 general/bug-166.xsl \
-general/bug-167.xsl \
 keys/month.xsl \
 namespaces/tst8.xsl \
 numbers/format-number.xsl
@@ -311,6 +310,7 @@ REC2/html.xsl \
 documents/test.xsl \
 extensions/module.xsl \
 general/bug-114.xsl \
+general/bug-167.xsl \
 namespaces/tst7.xsl \
 plugins/plugin.xsl \
 reports/recglobparam.xsl \
