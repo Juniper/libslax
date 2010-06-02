@@ -49,18 +49,23 @@ test tests: ${SLAXPROC}
 	@${MKDIR} -p out
 	-@(for test in ${TEST_CASES} ; do \
 	  echo "... $$test ..."; \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${SLAXPROC} --slax-to-xslt ${srcdir}/$$test out/$$name.xsl ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.xsl out/$$name.xsl ${S2O} ; \
-	  ${SLAXPROC} --xslt-to-slax out/$$name.xsl out/$$name.slax2 ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.slax2 out/$$name.slax2 ${S2O} ; \
+	  base=`${BASENAME} $$test .slax` ; \
+	  ${SLAXPROC} --slax-to-xslt ${srcdir}/$$test out/$$base.xsl ; \
+	  ${DIFF} -Nbu ${srcdir}/$$base.xsl out/$$base.xsl ${S2O} ; \
+	  ${SLAXPROC} --xslt-to-slax out/$$base.xsl out/$$base.slax2 ; \
+	  ${DIFF} -Nbu ${srcdir}/$$base.slax2 out/$$base.slax2 ${S2O} ; \
+	  if [ -f ${srcdir}/$$base.xml ]; then \
+	    ${SLAXPROC} ${srcdir}/$$test ${srcdir}/$$base.xml \
+	            > out/$$base.out 2> out/$$base.err ; \
+	    ${DIFF} -Nu ${srcdir}/$$base.out out/$$base.out ${S2O} ; \
+	  fi ; \
 	done)
 
 accept:
 	-@(for test in ${TEST_CASES} ; do \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${CP} out/$$name.xsl ${srcdir}/$$name.xsl ; \
-	  ${CP} out/$$name.slax2 ${srcdir}/$$name.slax2 ; \
+	  base=`${BASENAME} $$test .slax` ; \
+	  ${CP} out/$$base.xsl ${srcdir}/$$base.xsl ; \
+	  ${CP} out/$$base.slax2 ${srcdir}/$$base.slax2 ; \
 	done)
 
 clean-local:

@@ -542,7 +542,19 @@ slaxLexer (slax_data_t *sdp)
 		    return L_ASTERISK; /* It's a q_name (NCName) */
 	    }
 
-	    return ch1;
+	    /*
+	     * Underscore is a valid first character for an element
+	     * name, which is troubling, since it's also the concatenation
+	     * operator in SLAX.  We look ahead to see if the next
+	     * character is a valid character before making our
+	     * decision.
+	     */
+	    if (ch1 == L_UNDERSCORE) {
+		if (!isbare(sdp->sd_buf[sdp->sd_cur]))
+		    return ch1;
+	    } else {
+		return ch1;
+	    }
 	}
 
 	if (ch1 == '\'' || ch1 == '"') {
@@ -813,6 +825,24 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
 
     ns = xmlNewNs(sdp->sd_ctxt->node, (const xmlChar *) uri,
 		  (const xmlChar *) prefix);
+
+    /*
+     * set the namespace node, making sure that if the default namspace
+     * is unbound on a parent we simply keep it NULL
+     */
+    if (ns) {
+	xmlNsPtr cur = sdp->sd_ctxt->node->ns;
+	if (cur) {
+	    if ((cur->prefix == NULL && ns->prefix == NULL)
+		|| (cur->prefix && ns->prefix
+		    && streq((const char *) cur->prefix,
+			     (const char *) ns->prefix)))
+		xmlSetNs(sdp->sd_ctxt->node, ns);
+	} else {
+	    if (ns->prefix == NULL)
+		xmlSetNs(sdp->sd_ctxt->node, ns);
+	}
+    }
 }
 
 /**
@@ -1195,6 +1225,24 @@ slaxElementPop (slax_data_t *sdp)
 }
 
 /*
+ * Look upward thru the stack to find a namespace that's the
+ * default (one with no prefix).
+ */
+static xmlNsPtr
+slaxFindDefaultNs (slax_data_t *sdp UNUSED)
+{
+    xmlNsPtr ns = NULL;
+    xmlNodePtr nodep;
+
+    for (nodep = sdp->sd_ctxt->node; nodep; nodep = nodep->parent)
+	for (ns = nodep->nsDef; ns; ns = ns->next)
+	    if (ns->prefix == NULL)
+		return ns;
+
+    return NULL;
+}
+
+/*
  * Add an element to the top of the context stack
  */
 void
@@ -1215,6 +1263,10 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	tag = cp + 1;
 	ns = slaxFindNs(nodep, prefix, len);
     }
+
+    /* If we don't have a namespace, use the parent's namespace */
+    if (ns == NULL)
+	ns = slaxFindDefaultNs(sdp);
 
     nodep = xmlNewNode(ns, (const xmlChar *) tag);
     if (nodep == NULL) {

@@ -1,8 +1,8 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method = "xml" indent = "yes" encoding = "iso-8859-1">;
-<xsl:decimal-format name = "special" decimal-separator = "*">;
+<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
+<xsl:decimal-format name="special" decimal-separator="*">;
 
 match /format-number {
     <format-number> {
@@ -28,7 +28,6 @@ match /format-number/fixes {
 
 match /format-number/point-test {
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -40,7 +39,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -52,7 +50,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -64,7 +61,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -76,7 +72,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -88,7 +83,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -100,7 +94,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -112,7 +105,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -124,7 +116,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -136,7 +127,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -148,7 +138,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -160,7 +149,6 @@ match /format-number/point-test {
     }
     expr "\n  ";
     <point-test> {
-        
         for-each (number) {
             expr "\n    format-number(";
             expr .;
@@ -171,4 +159,3 @@ match /format-number/point-test {
         expr "\n  ";
     }
 }
-

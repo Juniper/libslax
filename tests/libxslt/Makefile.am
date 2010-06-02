@@ -187,6 +187,7 @@ general/bug-161.xsl \
 general/bug-163.xsl \
 general/bug-164.xsl \
 general/bug-165.xsl \
+general/bug-166.xsl \
 general/bug-17-.xsl \
 general/bug-18-.xsl \
 general/bug-19-.xsl \
@@ -290,27 +291,23 @@ namespaces/tst3.xsl \
 namespaces/tst4.xsl \
 namespaces/tst5.xsl \
 namespaces/tst6.xsl \
+namespaces/tst8.xsl \
 namespaces/tst9.xsl \
+numbers/format-number.xsl \
 reports/cmdlineparams.xsl \
 xinclude/e.xsl \
 xmlspec/REC-xml-2e.xsl \
 xmlspec/diffspec.xsl \
 xmlspec/xmlspec.xsl
 
-# This list contains scripts that should work, but do not.  They are bugs.
-TROUBLE = \
-general/bug-166.xsl \
-keys/month.xsl \
-namespaces/tst8.xsl \
-numbers/format-number.xsl
-
 # These scripts generate errors, so we skip them.
-NO_GOOD = \
+NOT_GOOD = \
 REC2/html.xsl \
 documents/test.xsl \
 extensions/module.xsl \
 general/bug-114.xsl \
 general/bug-167.xsl \
+keys/month.xsl \
 namespaces/tst7.xsl \
 plugins/plugin.xsl \
 reports/recglobparam.xsl \
@@ -326,6 +323,8 @@ EXTRA_DIST = \
     ${TEST_CASES:.slax=.xsl2} \
     ${TEST_CASES:.slax=.slax2}
 
+CLEANDIRS = out
+
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 
 ${SLAXPROC}:
@@ -339,40 +338,40 @@ S2X = ${SLAXPROC} --slax-to-xslt
 S2O = | ${SED} '1,/@@/d'
 
 test tests:
-	@-${MKDIR} -p out documents keys xinclude multiple
-	@-${CP} ${testdir}/documents/fragment2.xml documents/fragment2.xml
-	@-${CP} ${testdir}/keys/month.xml keys/month.xml
-	@-${CP} ${testdir}/xinclude/x1.xml xinclude/x1.xml
-	@-${CP} ${testdir}/multiple/dict.dtd multiple/dict.dtd
+	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
+	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
+	@-${CP} ${testdir}/xinclude/x1.xml out/xinclude/x1.xml
+	@-${CP} ${testdir}/multiple/dict.dtd out/multiple/dict.dtd
 	@-(for test in ${TEST_CASES}; do \
 	  base=`basename $$test .xsl` ; \
 	  dir=`dirname $$test` ; \
 	  echo ... $$test ... ; \
-	  ${MKDIR} -p $$dir ; \
-	  ${X2S} ${testdir}/$$test $$dir/$$base.slax ; \
-	  ${S2X} $$dir/$$base.slax $$dir/$$base.xsl2 ; \
-	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.xsl2 $$dir/$$base.xsl2 ${S2O}; \
+	  ${MKDIR} -p out/$$dir ; \
+	  ${X2S} ${testdir}/$$test out/$$dir/$$base.slax ; \
+	  ${S2X} out/$$dir/$$base.slax out/$$dir/$$base.xsl2 ; \
+	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.xsl2 \
+			out/$$dir/$$base.xsl2 ${S2O}; \
 	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
 	    input=${srcdir}/$$dir/$$base.xml ; \
           else \
 	    input=${testdir}/$$dir/$$base.xml ; \
 	  fi ; \
 	  if [ -f $$input ]; then \
-	    ${SLAXPROC} $$dir/$$base.slax $$input \
-	            > $$dir/$$base.out 2> $$dir/$$base.err ; \
+	    ${SLAXPROC} out/$$dir/$$base.slax $$input \
+	            > out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
 	    if [ -f ${srcdir}/$$dir/$$base.out ]; then \
 	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.out \
-                         $$dir/$$base.out ${S2O} ; \
+                         out/$$dir/$$base.out ${S2O} ; \
             else  \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.out \
-                         $$dir/$$base.out ${S2O} ; \
+                         out/$$dir/$$base.out ${S2O} ; \
 	    fi ; \
 	    if [ -f ${srcdir}/$$dir/$$base.err ]; then \
 	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.err \
-			$$dir/$$base.err ${S2O} ; \
+			out/$$dir/$$base.err ${S2O} ; \
 	    else \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.err \
-			$$dir/$$base.err ${S2O} ; \
+			out/$$dir/$$base.err ${S2O} ; \
 	    fi ; \
 	  fi ; \
 	done)
@@ -382,10 +381,10 @@ accept:
 	  base=`basename $$test .xsl` ; \
 	  dir=`dirname $$test` ; \
 	  ${MKDIR} -p ${srcdir}/$$dir ; \
-	  ${CP} $$dir/$$base.slax ${srcdir}/$$dir/$$base.slax ; \
-	  ${CP} $$dir/$$base.xsl2 ${srcdir}/$$dir/$$base.xsl2 ; \
+	  ${CP} out/$$dir/$$base.slax ${srcdir}/$$dir/$$base.slax ; \
+	  ${CP} out/$$dir/$$base.xsl2 ${srcdir}/$$dir/$$base.xsl2 ; \
 	  if [ -f ${testdir}/$$dir/$$base.xml ]; then \
-	    ${CP} $$dir/$$base.out ${srcdir}/$$dir/$$base.out ; \
-	    ${CP} $$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
+	    ${CP} out/$$dir/$$base.out ${srcdir}/$$dir/$$base.out ; \
+	    ${CP} out/$$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
 	  fi ; \
 	done)
