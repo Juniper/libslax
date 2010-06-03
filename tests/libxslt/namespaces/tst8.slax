@@ -3,8 +3,8 @@ version 1.0;
 
 ns bb = "http://bbrack.org";
 
-<xsl:output method = "xml" version = "1.0" encoding = "utf-8" indent = "yes">;
-<xsl:namespace-alias stylesheet-prefix = "#default" result-prefix = "bb">;
+<xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes">;
+<xsl:namespace-alias stylesheet-prefix="#default" result-prefix="bb">;
 strip-space *;
 
 match /adoc {
@@ -17,4 +17,3 @@ match /adoc {
         <element3> "Content 3";
     }
 }
-

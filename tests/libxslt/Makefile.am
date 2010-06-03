@@ -328,7 +328,7 @@ EXTRA_DIST_FILES = \
     ${TEST_CASES_WITH_INPUT:.xsl=.out} \
     ${TEST_CASES_WITH_INPUT:.xsl=.err} 
 
-EXTRA_DIST = $(patsubst %,out/%,${EXTRA_DIST_FILES})
+EXTRA_DIST = ${EXTRA_DIST_FILES}
 
 CLEANDIRS = out
 
@@ -344,6 +344,7 @@ S2X = ${SLAXPROC} --slax-to-xslt
 
 S2O = | ${SED} '1,/@@/d'
 
+if USE_LIBXSLT_TESTS
 test tests:
 	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
 	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
@@ -382,6 +383,7 @@ test tests:
 	    fi ; \
 	  fi ; \
 	done)
+endif
 
 accept:
 	@-(for test in ${TEST_CASES}; do \
@@ -395,9 +397,6 @@ accept:
 	    ${CP} out/$$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
 	  fi ; \
 	done)
-
-echo:
-	@echo ${EXTRA_DIST}
 
 test-input:
 	@echo TEST_CASES_WITH_INPUT =

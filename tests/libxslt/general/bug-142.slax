@@ -3,11 +3,11 @@ version 1.0;
 
 ns "http://www.w3.org/1999/xhtml";
 ns g exclude = "http://glandium.org/";
-ns "日本語" exclude = "http://glandium.org/nihongo/";
+ns 日本語 exclude = "http://glandium.org/nihongo/";
 ns date exclude = "http://exslt.org/dates-and-times";
 
 match g:posts {
-    <html xml:lang = "fr"> {
+    <html xml:lang="fr"> {
         <body> {
             apply-templates *;
         }
@@ -17,12 +17,13 @@ match g:posts {
 match g:posts/g:post[g:date] {
     var $id = @id;
     var $date = substring(g:date, 1, 4)  _ "/" _ substring(g:date, 5, 2)  _ "/" _ substring(g:date, 7, 2);
-    <div id = "post" _ $id> {
+    
+    <div id="post" _ $id> {
         if (lang(ja)) {
-            <xsl:attribute name = "xml:lang"> "ja";
+            <xsl:attribute name="xml:lang"> "ja";
         }
         <h3> {
-            <a href = $date _ "/" _ $id> {
+            <a href=$date _ "/" _ $id> {
                 apply-templates g:title;
             }
         }
@@ -73,7 +74,7 @@ match g:list/g:item {
 match g:span[@href] | g:para[@href] | g:item[@href] {
     mode "link";
     
-    <a href = @href> {
+    <a href=@href> {
         apply-templates . {
             mode "日本語";
         }
@@ -103,7 +104,7 @@ match *[lang("ja") && not(ancestor::*[@xml:lang == "ja"])] {
 match g:span[lang("ja") && not(ancestor::*[@xml:lang == "ja"])] [not(@href)] {
     mode "日本語";
     
-    <span xml:lang = "ja"> {
+    <span xml:lang="ja"> {
         apply-templates;
     }
 }
@@ -117,8 +118,7 @@ match *[lang("fr")] {
 match g:span[lang("fr")] [not(@href)] {
     mode "日本語";
     
-    <span xml:lang = "fr"> {
+    <span xml:lang="fr"> {
         apply-templates;
     }
 }
-

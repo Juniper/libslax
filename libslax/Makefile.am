@@ -18,17 +18,13 @@ include_HEADERS = \
 noinst_HEADERS = \
     slaxinternals.h
 
+BISON_COMMAND = ${BISON} -kvd -b slaxparser
+
 libslax_la_SOURCES = \
     slaxloader.c \
     slaxparser.c \
     slaxstring.c \
     slaxwriter.c
-
-atest:
-	echo ${LIBXSLT_CFLAGS}
-	echo ${AM_CFLAGS}
-
-BISON_COMMAND = ${BISON} -kvd -b slaxparser
 
 slaxparser.h: slaxparser.c
 slaxloader.lo slaxloader.o: slaxparser.h
@@ -57,6 +53,8 @@ SLAXPIECES = \
 
 slaxparser-out.y: ${SLAXPIECES}
 	cat ${SLAXPIECES} > $@
+
+EXTRA_DIST = ${SLAXPIECES}
 
 CLEANFILES += slaxparser-out.y slaxparser-xpl.y
 
