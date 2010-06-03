@@ -1,0 +1,13 @@
+configure
+Makefile.in
+depcomp
+config.guess
+config.sub
+ltmain.sh
+build
+config.h.in
+autom4te.cache
+missing
+Zaliases
+aclocal.m4
+install-sh

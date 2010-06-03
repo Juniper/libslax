@@ -2,9 +2,7 @@
 # $Id$
 #
 
-TEST_CASES = \
-REC/article.xsl \
-REC/bigfont.xsl \
+TEST_CASES_WITH_INPUT = \
 REC/stand-2.7-1.xsl \
 REC/test-10-1.xsl \
 REC/test-11.2-1.xsl \
@@ -66,14 +64,11 @@ REC/test-7.7-5.xsl \
 REC/test-8-1.xsl \
 REC/test-9.1-1.xsl \
 REC/test-9.1-2.xsl \
-REC/test-9.2-1.xsl \
 REC1/doc.xsl \
 REC2/svg.xsl \
 XSLTMark/alphabetize.xsl \
-XSLTMark/attsets.xsl \
 XSLTMark/avts.xsl \
 XSLTMark/axis.xsl \
-XSLTMark/backwards.xsl \
 XSLTMark/bottles.xsl \
 XSLTMark/brutal.xsl \
 XSLTMark/chart.xsl \
@@ -83,7 +78,6 @@ XSLTMark/dbonerow.xsl \
 XSLTMark/dbtail.xsl \
 XSLTMark/decoy.xsl \
 XSLTMark/encrypt.xsl \
-XSLTMark/find.xsl \
 XSLTMark/functions.xsl \
 XSLTMark/game.xsl \
 XSLTMark/html.xsl \
@@ -97,22 +91,44 @@ XSLTMark/prettyprint.xsl \
 XSLTMark/priority.xsl \
 XSLTMark/products.xsl \
 XSLTMark/queens.xsl \
-XSLTMark/reverser.xsl \
 XSLTMark/stringsort.xsl \
-XSLTMark/summarize.xsl \
-XSLTMark/total.xsl \
 XSLTMark/tower.xsl \
-XSLTMark/tower2.xsl \
 XSLTMark/trend.xsl \
 XSLTMark/union.xsl \
 XSLTMark/xpath.xsl \
 XSLTMark/xslbench1.xsl \
-XSLTMark/xslbench2.xsl \
-XSLTMark/xslbench3.xsl \
-documents/bredfort.xsl \
 documents/fragment.xsl \
 documents/message.xsl \
 extensions/list.xsl \
+multiple/dict.xsl \
+namespaces/extra.xsl \
+namespaces/extra2.xsl \
+namespaces/tst.xsl \
+namespaces/tst2.xsl \
+namespaces/tst3.xsl \
+namespaces/tst4.xsl \
+namespaces/tst5.xsl \
+namespaces/tst6.xsl \
+namespaces/tst8.xsl \
+namespaces/tst9.xsl \
+numbers/format-number.xsl \
+reports/cmdlineparams.xsl \
+xinclude/e.xsl
+
+TEST_CASES_WITH_NO_INPUT = \
+REC/article.xsl \
+REC/bigfont.xsl \
+REC/test-9.2-1.xsl \
+XSLTMark/attsets.xsl \
+XSLTMark/backwards.xsl \
+XSLTMark/find.xsl \
+XSLTMark/reverser.xsl \
+XSLTMark/summarize.xsl \
+XSLTMark/total.xsl \
+XSLTMark/tower2.xsl \
+XSLTMark/xslbench2.xsl \
+XSLTMark/xslbench3.xsl \
+documents/bredfort.xsl \
 general/array.xsl \
 general/bug-1-.xsl \
 general/bug-10-.xsl \
@@ -282,26 +298,12 @@ general/character.xsl \
 general/character2.xsl \
 general/inner.xsl \
 general/itemschoose.xsl \
-multiple/dict.xsl \
-namespaces/extra.xsl \
-namespaces/extra2.xsl \
-namespaces/tst.xsl \
-namespaces/tst2.xsl \
-namespaces/tst3.xsl \
-namespaces/tst4.xsl \
-namespaces/tst5.xsl \
-namespaces/tst6.xsl \
-namespaces/tst8.xsl \
-namespaces/tst9.xsl \
-numbers/format-number.xsl \
-reports/cmdlineparams.xsl \
-xinclude/e.xsl \
 xmlspec/REC-xml-2e.xsl \
 xmlspec/diffspec.xsl \
 xmlspec/xmlspec.xsl
 
 # These scripts generate errors, so we skip them.
-NOT_GOOD = \
+TEST_CASES_NOT_GOOD = \
 REC2/html.xsl \
 documents/test.xsl \
 extensions/module.xsl \
@@ -318,10 +320,15 @@ reports/tst-1.xsl \
 reports/tst-2.xsl \
 reports/undefvar.xsl
 
-EXTRA_DIST = \
-    ${TEST_CASES} \
-    ${TEST_CASES:.slax=.xsl2} \
-    ${TEST_CASES:.slax=.slax2}
+TEST_CASES = ${TEST_CASES_WITH_INPUT} ${TEST_CASES_WITH_NO_INPUT}
+
+EXTRA_DIST_FILES = \
+    ${TEST_CASES:.xsl=.xsl2} \
+    ${TEST_CASES:.xsl=.slax} \
+    ${TEST_CASES_WITH_INPUT:.xsl=.out} \
+    ${TEST_CASES_WITH_INPUT:.xsl=.err} 
+
+EXTRA_DIST = $(patsubst %,out/%,${EXTRA_DIST_FILES})
 
 CLEANDIRS = out
 
@@ -358,16 +365,16 @@ test tests:
 	  fi ; \
 	  if [ -f $$input ]; then \
 	    ${SLAXPROC} out/$$dir/$$base.slax $$input \
-	            > out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
+			> out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
 	    if [ -f ${srcdir}/$$dir/$$base.out ]; then \
 	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.out \
-                         out/$$dir/$$base.out ${S2O} ; \
+			out/$$dir/$$base.out ${S2O} ; \
             else  \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.out \
-                         out/$$dir/$$base.out ${S2O} ; \
+			out/$$dir/$$base.out ${S2O} ; \
 	    fi ; \
 	    if [ -f ${srcdir}/$$dir/$$base.err ]; then \
-	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.err \
+	    ${DIFF} -Nu ${srcdir}/$$dir/$$base.err \
 			out/$$dir/$$base.err ${S2O} ; \
 	    else \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.err \
@@ -383,8 +390,39 @@ accept:
 	  ${MKDIR} -p ${srcdir}/$$dir ; \
 	  ${CP} out/$$dir/$$base.slax ${srcdir}/$$dir/$$base.slax ; \
 	  ${CP} out/$$dir/$$base.xsl2 ${srcdir}/$$dir/$$base.xsl2 ; \
-	  if [ -f ${testdir}/$$dir/$$base.xml ]; then \
+	  if [ -f out/$$dir/$$base.out ]; then \
 	    ${CP} out/$$dir/$$base.out ${srcdir}/$$dir/$$base.out ; \
 	    ${CP} out/$$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
+	  fi ; \
+	done)
+
+echo:
+	@echo ${EXTRA_DIST}
+
+test-input:
+	@echo TEST_CASES_WITH_INPUT =
+	@-(for test in ${TEST_CASES}; do \
+	  base=`basename $$test .xsl` ; \
+	  dir=`dirname $$test` ; \
+	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
+	    input=${srcdir}/$$dir/$$base.xml ; \
+          else \
+	    input=${testdir}/$$dir/$$base.xml ; \
+	  fi ; \
+	  if [ -f $$input ]; then \
+	    echo $$test ; \
+	  fi ; \
+	done)
+	@echo TEST_CASES_WITH_NO_INPUT =
+	@-(for test in ${TEST_CASES}; do \
+	  base=`basename $$test .xsl` ; \
+	  dir=`dirname $$test` ; \
+	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
+	    input=${srcdir}/$$dir/$$base.xml ; \
+          else \
+	    input=${testdir}/$$dir/$$base.xml ; \
+	  fi ; \
+	  if [ ! -f $$input ]; then \
+	    echo $$test ; \
 	  fi ; \
 	done)
