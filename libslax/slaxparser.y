@@ -280,20 +280,21 @@ ns_list :
 	;
 
 ns_decl :
-	ns_intro ns_options1 ns_options2 L_EQUALS T_QUOTED L_EOS
+	K_NS T_BARE
 		{
-		    slaxNsAdd(slax_data, $1->ss_token, $5->ss_token);
-		    if ($2) {
-			slaxAttribExtend(slax_data,
-					 $2->ss_token, $1->ss_token);
-		    }
-		    if ($3) {
-			/* XXX check for duplication */
-			slaxAttribExtend(slax_data,
-					 $3->ss_token, $1->ss_token);
-		    }
+		    /* Stash the namespace */
+		    slax_data->sd_ns = $2;
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	    ns_option_list L_EQUALS T_QUOTED L_EOS
+		{
+		    slax_data->sd_ns = NULL;
+
+		    slaxNsAdd(slax_data, $2->ss_token, $6->ss_token);
 
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 
 	| K_NS T_QUOTED L_EOS
@@ -304,39 +305,30 @@ ns_decl :
 		}
 	;
 
-ns_intro :
-	K_NS T_BARE
-		{
-		    ALL_KEYWORDS_ON();
-		    $$ = $2;
-		}
-	| K_NS T_QUOTED
-		{
-		    ALL_KEYWORDS_ON();
-		    $$ = $2;
-		}
-	;
-
-ns_options1 :
+ns_option_list :
 	/* empty */
 		{ $$ = NULL; }
 
-	| K_EXCLUDE
-		{ $$ = slaxStringLiteral(ATT_EXCLUDE_RESULT_PREFIXES, 0); }
-
-	| K_EXTENSION
-		{ $$ = slaxStringLiteral(ATT_EXTENSION_ELEMENT_PREFIXES, 0); }
+	| ns_option_list ns_option
+		{ $$ = NULL; }
 	;
 
-ns_options2 :
-	/* empty */
-		{ $$ = NULL; }
-
-	| K_EXCLUDE
-		{ $$ = slaxStringLiteral(ATT_EXCLUDE_RESULT_PREFIXES, 0); }
+ns_option :
+	K_EXCLUDE
+		{
+		    slaxAttribExtend(slax_data,
+				     ATT_EXCLUDE_RESULT_PREFIXES,
+				     slax_data->sd_ns->ss_token);
+		    $$ = NULL;
+		}
 
 	| K_EXTENSION
-		{ $$ = slaxStringLiteral(ATT_EXTENSION_ELEMENT_PREFIXES, 0); }
+		{
+		    slaxAttribExtend(slax_data,
+				     ATT_EXTENSION_ELEMENT_PREFIXES,
+				     slax_data->sd_ns->ss_token);
+		    $$ = NULL;
+		}
 	;
 
 slax_stmt_list :

@@ -1,1 +1,165 @@
-This is supposed to be a man page
+.TH SLAXPROC 1  "01 June 2010"
+.SH NAME
+slaxproc \- process slax files
+.SH SYNOPSIS
+.na
+.B slaxproc
+[
+.B \-dv
+] [
+.B -i
+-I input-file
+] [
+.B -o
+-I output-file
+]
+.br
+[
+.B \-x
+[
+.I slax-file
+[
+.I output-file
+]]]
+.br
+| [
+.B \-s
+[
+.I xsl-file
+[
+.I output-file
+]]]
+]
+.br
+| [
+.B \-r
+]
+.I slax-file
+[
+.I input-file
+[
+.I output-file
+]]
+.br
+.ad
+.SH DESCRIPTION
+.LP
+\fISlaxproc\fP can processs files containing \fISLAX\fP scripts.  The
+\fISLAX\fP is the Stylesheet Language Alternate syntaX, a
+human-friendly format for XSLT, the W3C standard for XML-to-XML
+transformation.  SLAX has a C- and perl-like syntax that is familiar
+to programmers and is more readable than the XML-based standard XSLT
+syntax. More information about SLAX is available at:
+.LP
+.RS
+.I http://code.google.com/p/libslax
+.RE
+.LP
+The slaxproc utility can be used to translate between XSLT and SLAX
+formats, as well as run SLAX scripts.
+.SH OPTIONS
+.LP
+.B -d
+.br
+.B --debug
+.LP
+.RS
+Enable debug output, which is amazingly verbose.
+.RE
+.LP
+.B -x
+.I "[slax-file] [output-file]"
+.br
+.B --slax-to-xslt
+.I "[slax-file] [output-file]"
+.LP
+.RS
+Translate the SLAX format script in \fIslax-file\fP into XSLT format
+in \fIoutput-file\fP.
+If no
+.I slax-file
+argument is given, standard input is used, and if no
+.I output-file
+argument is given, standard output is used.
+.RE
+.LP
+.B -s
+.I "[xslt-file] [output-file]"
+.br
+.B --xslt-to-slax
+.I "[xslt-file] [output-file]"
+.LP
+.RS
+Translate the XSLT format script in \fIxslt-file\fP into SLAX format
+in \fIoutput-file\fP.
+If no
+.I xslt-file
+argument is given, standard input is used, and if no
+.I output-file
+argument is given, standard output is used.
+.RE
+.LP
+.B -r
+.I "[slax-file] [input-file] [output-file]"
+.br
+.B --run
+.I "[slax-file] [input-file] [output-file]"
+.LP
+.RS
+Run the SLAX format script in \fIslax-file\fP, passing as input the
+XML content in \fIinput-file\fP.  The XML output content is written to
+the file \fIoutput-file\fP.
+If no
+.I input-file
+argument is given, standard input is used, and if no
+.I output-file
+argument is given, standard output is used.
+.RE
+.LP
+.B -i
+.I input-file
+.br
+.B --input
+.I input-file
+.LP
+.RS
+Alternate mechanism for specifying the input file name.
+.RE
+.LP
+.B -o
+.I output-file
+.br
+.B --output
+.I output-file
+.LP
+.RS
+Alternate mechanism for specifying the output file name.
+.RE
+.LP
+.B -e
+.br
+.B --exslt
+.LP
+.RS
+Allow scripts to access functions and elements defined in
+the EXSLT extension library.
+.RE
+.LP
+.B -v
+.br
+.B --version
+.LP
+.RS
+Display the version string for slaxproc and related libraries.
+.RE
+.SH "SEE ALSO"
+libslax(3)
+.SH AUTHORS
+The original author of the SLAX language and this library is 
+Phil Shafer of Juniper Networks.
+.LP
+The current version is available hosted as a Google Code project at:
+.LP
+.RS
+.I http://code.google.com/p/libslax
+.RE

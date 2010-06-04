@@ -9,6 +9,8 @@
 #include <libxslt/transform.h>
 #include <libxml/HTMLparser.h>
 #include <libxslt/xsltutils.h>
+#include <libxml/globals.h>
+#include <libexslt/exslt.h>
 
 #include <err.h>
 
@@ -177,12 +179,28 @@ do_run (const char *output, const char *input, char **argv)
     return 0;
 }
 
+static void
+print_version (void)
+{
+    printf("libslax version %s\n",  PACKAGE_VERSION);
+    printf("Using libxml %s, libxslt %s and libexslt %s\n",
+	   xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
+    printf("slaxproc was compiled against libxml %d, "
+	   "libxslt %d and libexslt %d\n",
+	   LIBXML_VERSION, LIBXSLT_VERSION, LIBEXSLT_VERSION);
+    printf("libxslt %d was compiled against libxml %d\n",
+	   xsltLibxsltVersion, xsltLibxmlVersion);
+    printf("libexslt %d was compiled against libxml %d\n",
+	   exsltLibexsltVersion, exsltLibxmlVersion);
+}
+
 int
 main (int argc UNUSED, char **argv)
 {
     const char *cp;
     const char *input = NULL, *output = NULL;
     int (*func)(const char *output, const char *input, char **argv) = NULL;
+    int use_exslt = FALSE;
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -190,8 +208,8 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
-	if (streq(cp, "--version")) {
-	    puts(PACKAGE_VERSION);
+	if (streq(cp, "--version") || streq(cp, "-v")) {
+	    print_version();
 	    exit(0);
 
 	} else if (streq(cp, "--slax-to-xslt") || streq(cp, "-x")) {
@@ -208,6 +226,9 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_run;
+
+	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
+	    use_exslt = TRUE;
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = *++argv;
@@ -232,6 +253,8 @@ main (int argc UNUSED, char **argv)
      */
     xmlInitParser();
     slaxEnable(SLAX_ENABLE);
+    if (use_exslt)
+	exsltRegisterAll();
 
     func(output, input, argv);
 

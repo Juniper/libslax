@@ -10,6 +10,7 @@ AM_CFLAGS = \
     -I${top_srcdir}/libslax \
     ${LIBXML_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
+    -lexslt \
     ${WARNINGS}
 
 if SLAX_DEBUG

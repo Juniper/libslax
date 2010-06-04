@@ -45,6 +45,15 @@ build configure and friends:
 
     ./configure
 
+If you want to use the regression tests from libxslt, add the
+"--with-libxslt-tests=DIR" to the configure command:
+
+    ./configure --with-libxslt-test=~/work/libxslt-1.1.24
+
+The --enable-debug command turns on SLAX_DEBUG, but debugging
+is enabled even without it.  Use the "-d" option to "slaxproc"
+to get debug output.
+
 (3) Make the images
 
     make

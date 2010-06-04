@@ -108,6 +108,7 @@ typedef struct slax_data_s {
     xmlDocPtr sd_docp;		/* The XML document we are building */
     xmlNsPtr sd_xsl_ns;		/* Pointer to the XSL namespace */
     slax_string_t *sd_xpath;	/* Parsed XPath expression */
+    slax_string_t *sd_ns;	/* Namespace stash */
 } slax_data_t;
 
 /* Flags for sd_flags */
