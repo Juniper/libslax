@@ -213,6 +213,11 @@
 #define STACK_LINK(_x) slaxStringLink(slax_data, &(_x), yyvsp)
 
 /*
+ *
+ */
+#define STACK_CLEAR2(_x, _y) slaxStackClear2(slax_data, &(_x), yyvsp, &(_y))
+
+/*
  * Beginning with version 2.3, bison warns about unused values, which
  * is not appropriate for our grammar, so we need to explicitly mark
  * our mid-rule actions as UNUSED.
@@ -319,7 +324,7 @@ ns_option :
 		    slaxAttribExtend(slax_data,
 				     ATT_EXCLUDE_RESULT_PREFIXES,
 				     slax_data->sd_ns->ss_token);
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		}
 
 	| K_EXTENSION
@@ -327,7 +332,7 @@ ns_option :
 		    slaxAttribExtend(slax_data,
 				     ATT_EXTENSION_ELEMENT_PREFIXES,
 				     slax_data->sd_ns->ss_token);
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		}
 	;
 
@@ -612,7 +617,7 @@ template_name_stmt :
 	| K_TEMPLATE template_name
 		{
 		    ALL_KEYWORDS_ON();
-		    $$ = $2;
+		    $$ = STACK_CLEAR2($1, $2);
 		}
 	;
 
@@ -620,11 +625,9 @@ opt_match_stmt :
 	/* empty */
 		{ $$ = NULL; }
 	| K_MATCH xs_pattern
-		{ $$ = $2; }
+		{ $$ = STACK_CLEAR2($1, $2); }
 	| K_MATCH T_FUNCTION_NAME
-		{
-		    $$ = $2;
-		}
+		{ $$ = STACK_CLEAR2($1, $2); }
 	;
 
 named_template_arguments :
@@ -632,7 +635,7 @@ named_template_arguments :
 		{ $$ = NULL; }
 
 	| L_OPAREN named_template_argument_list L_CPAREN
-		{ $$ = NULL; }
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 named_template_argument_list :
@@ -691,7 +694,7 @@ block :
 		}
 	    block_contents L_CBRACE
 		{
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
 	;
@@ -763,7 +766,7 @@ block_statement :
 		{ $$ = STACK_CLEAR($1); }
 
 	| L_EOS
-		{ $$ = NULL; }
+		{ $$ = STACK_CLEAR($1); }
 
 	| error L_EOS
 		{ $$ = NULL; }
@@ -860,7 +863,7 @@ call_arguments_parens_style :
 		{ $$ = NULL; }
 
 	| L_OPAREN call_argument_list L_CPAREN
-		{ $$ = NULL; }
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 call_argument_list :
@@ -920,7 +923,7 @@ call_argument_member :
 
 call_arguments_braces_style :
 	L_EOS /* This is the semi-colon to end the statement */
-		{ $$ = NULL; }
+		{ $$ = STACK_CLEAR($1); }
 
 	| L_OBRACE
 		{
@@ -929,7 +932,7 @@ call_arguments_braces_style :
 		}
 	    call_argument_braces_list L_CBRACE
 		{
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
 	;
@@ -1141,7 +1144,7 @@ elsif_stmt :
 	    block
 		{
 		    slaxElementPop(slax_data); /* Pop when */
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($6);
 		}
 	;
@@ -1158,7 +1161,7 @@ else_stmt :
 	    block
 		{
 		    slaxElementPop(slax_data); /* Pop otherwise */
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
 	;

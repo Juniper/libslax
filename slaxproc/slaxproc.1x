@@ -32,6 +32,8 @@ slaxproc \- process slax files
 ]
 .br
 | [
+.B \-e
+] [
 .B \-r
 ]
 .I slax-file
@@ -116,6 +118,14 @@ argument is given, standard input is used, and if no
 argument is given, standard output is used.
 .RE
 .LP
+.B -e
+.br
+.B --exslt
+.LP
+.RS
+Allow script access to the exslt extension library, as defined by exslt.org.
+.RE
+.LP
 .B -i
 .I input-file
 .br
@@ -124,6 +134,16 @@ argument is given, standard output is used.
 .LP
 .RS
 Alternate mechanism for specifying the input file name.
+.RE
+.LP
+.B -n
+.I script-file
+.br
+.B --name
+.I script-file
+.LP
+.RS
+Alternate mechanism for specifying the script file name.
 .RE
 .LP
 .B -o

@@ -93,7 +93,7 @@ slaxStringLiteral (const char *str, int ttype)
     slax_string_t *ssp;
     int len = strlen(str);
 
-    ssp = malloc(sizeof(*ssp) + len);
+    ssp = xmlMalloc(sizeof(*ssp) + len);
     if (ssp) {
 	memcpy(ssp->ss_token, str, len);
 	ssp->ss_token[len] = 0;
@@ -332,7 +332,7 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
     if (len == 0)
 	return NULL;
 
-    buf = malloc(len);
+    buf = xmlMalloc(len);
     if (buf == NULL)
 	return NULL;
 
@@ -368,7 +368,7 @@ slaxStringAsValue (slax_string_t *value, unsigned flags UNUSED)
     len += sizeof(s_prepend) + sizeof(s_append) - 1;
 
     /* Allocate the buffer */
-    buf = bp = malloc(len);
+    buf = bp = xmlMalloc(len);
     if (buf == NULL) {
 	slaxTrace("slaxStringAsValue:: out of memory");
 	return NULL;
@@ -408,7 +408,7 @@ slaxStringFree (slax_string_t *ssp)
 	next = ssp->ss_next;
 	ssp->ss_ttype = 0;
 	ssp->ss_next = NULL;
-	free(ssp);
+	xmlFree(ssp);
     }
 }
 

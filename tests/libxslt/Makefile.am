@@ -334,15 +334,22 @@ CLEANDIRS = out
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 
-${SLAXPROC}:
-	@(cd ${top_builddir}/slaxproc ; ${MAKE} slaxproc)
+S2O = | ${SED} '1,/@@/d'
+SPDEBUG=
+S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
+X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
+SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
 
 testdir = ${WITH_LIBXSLT_TESTS}
 
-X2S = ${SLAXPROC} --xslt-to-slax
-S2X = ${SLAXPROC} --slax-to-xslt
+all:
 
-S2O = | ${SED} '1,/@@/d'
+${SLAXPROC}:
+	@(cd ${top_builddir}/slaxproc ; ${MAKE} slaxproc)
+
+valgrind:
+	@echo '## Running the regression tests under Valgrind'
+	${MAKE} CHECKER='valgrind -q' tests
 
 if USE_LIBXSLT_TESTS
 test tests:
@@ -365,7 +372,7 @@ test tests:
 	    input=${testdir}/$$dir/$$base.xml ; \
 	  fi ; \
 	  if [ -f $$input ]; then \
-	    ${SLAXPROC} out/$$dir/$$base.slax $$input \
+	    ${SRUN} out/$$dir/$$base.slax $$input \
 			> out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
 	    if [ -f ${srcdir}/$$dir/$$base.out ]; then \
 	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.out \

@@ -17,7 +17,6 @@
 #define MAX_PARAMETERS 64
 #define MAX_PATHS 64
 
-static int options = XSLT_PARSE_OPTIONS;
 #if 0
 static const char *params[MAX_PARAMETERS + 1];
 static int nbparams = 0;
@@ -26,6 +25,7 @@ static int nbstrparams = 0;
 static xmlChar *paths[MAX_PATHS + 1];
 static int nbpaths = 0;
 #endif
+static int options = XSLT_PARSE_OPTIONS;
 static int html = 0;
 static char *encoding = NULL;
 
@@ -51,7 +51,8 @@ get_filename (const char *filename, char ***pargv, int outp)
 }
 
 static int
-do_slax_to_xslt (const char *output, const char *input, char **argv)
+do_slax_to_xslt (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
 {
     FILE *infile, *outfile;
     xmlDocPtr docp;
@@ -63,20 +64,14 @@ do_slax_to_xslt (const char *output, const char *input, char **argv)
 	infile = stdin;
     else {
 	infile = fopen(input, "r");
-	if (infile == NULL) {
+	if (infile == NULL)
 	    err(1, "file open failed for '%s'", input);
-	}
     }
 
     docp = slaxLoadFile(input, infile, NULL);
 
     if (infile != stdin)
 	fclose(infile);
-
-    /*
-    docp = slaxLoader(input, NULL, XSLT_PARSE_OPTIONS,
-                               NULL, XSLT_LOAD_START);
-    */
 
     if (docp == NULL)
 	errx(1, "cannot parse file: '%s'", input);
@@ -93,11 +88,17 @@ do_slax_to_xslt (const char *output, const char *input, char **argv)
 
     fclose(outfile);
 
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
     return 0;
 }
 
 static int
-do_xslt_to_slax (const char *output, const char *input, char **argv)
+do_xslt_to_slax (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
 {
     xmlDocPtr docp;
     FILE *outfile;
@@ -123,38 +124,37 @@ do_xslt_to_slax (const char *output, const char *input, char **argv)
     if (outfile != stdout)
 	fclose(outfile);
 
+    xmlFreeDoc(docp);
+
     return 0;
 }
 
 static int
-do_run (const char *output, const char *input, char **argv)
+do_run (const char *name, const char *output, const char *input, char **argv)
 {
-    xmlDocPtr scriptdoc, indoc;
-    xsltStylesheetPtr script;
-    FILE *scriptfile;
+    xmlDocPtr scriptdoc;
     const char *scriptname;
-    xmlDocPtr res;
+    FILE *scriptfile;
+    xmlDocPtr indoc;
+    xsltStylesheetPtr script;
+    xmlDocPtr res = NULL;
 
-    scriptname = get_filename(NULL, &argv, -1);
+    scriptname = get_filename(name, &argv, -1);
     input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
     if (is_filename_std(scriptname))
-	scriptfile = stdin;
-    else {
-	scriptfile = fopen(scriptname, "r");
-	if (scriptfile == NULL) {
-	    err(1, "file open failed for '%s'", scriptname);
-	}
-    }
+	errx(1, "script file cannot be stdin");
 
-#if 0
-    exsltRegisterAll();
-#endif
+    scriptfile = fopen(scriptname, "r");
+    if (scriptfile == NULL)
+	err(1, "file open failed for '%s'", scriptname);
 
     scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL);
     if (scriptdoc == NULL)
 	errx(1, "cannot parse: '%s'", scriptname);
+    if (scriptfile != stdin)
+	fclose(scriptfile);
 
     script = xsltParseStylesheetDoc(scriptdoc);
     if (script == NULL || script->errors != 0)
@@ -174,6 +174,7 @@ do_run (const char *output, const char *input, char **argv)
     xsltSaveResultToFile(stdout, res, script);
 
     xmlFreeDoc(res);
+    xmlFreeDoc(indoc);
     xsltFreeStylesheet(script);
 
     return 0;
@@ -198,8 +199,9 @@ int
 main (int argc UNUSED, char **argv)
 {
     const char *cp;
-    const char *input = NULL, *output = NULL;
-    int (*func)(const char *output, const char *input, char **argv) = NULL;
+    const char *input = NULL, *output = NULL, *name = NULL;
+    int (*func)(const char *name, const char *output,
+		const char *input, char **argv) = NULL;
     int use_exslt = FALSE;
 
     for (argv++; *argv; argv++) {
@@ -239,6 +241,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    slaxDebug = TRUE;
 
+	} else if (streq(cp, "--name") || streq(cp, "-n")) {
+	    name = *++argv;
+
 	} else {
 	    fprintf(stderr, "invalid option\n");
 	    return -1;
@@ -252,11 +257,15 @@ main (int argc UNUSED, char **argv)
      * Start the XML API
      */
     xmlInitParser();
+    xsltInit();
     slaxEnable(SLAX_ENABLE);
     if (use_exslt)
 	exsltRegisterAll();
 
-    func(output, input, argv);
+    func(name, output, input, argv);
+
+    xsltCleanupGlobals();
+    xmlCleanupParser();
 
     return 0;
 }

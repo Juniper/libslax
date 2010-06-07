@@ -2,11 +2,6 @@
 # $Id$
 #
 
-SLAXPROC=${top_builddir}/slaxproc/slaxproc
-
-${SLAXPROC}:
-	@(cd ${top_builddir}/slaxproc ; ${MAKE} slaxproc)
-
 TEST_CASES = \
 test-1-01.slax \
 test-1-02.slax \
@@ -37,9 +32,19 @@ EXTRA_DIST = \
     ${TEST_CASES:.slax=.xsl} \
     ${TEST_CASES:.slax=.slax2}
 
+SLAXPROC=${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'
+SPDEBUG=
+S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
+X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
+SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
+
+CLEANDIRS = out
 
 all:
+
+${SLAXPROC}:
+	@(cd ${top_builddir}/slaxproc ; ${MAKE} slaxproc)
 
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
@@ -50,12 +55,12 @@ test tests: ${SLAXPROC}
 	-@(for test in ${TEST_CASES} ; do \
 	  echo "... $$test ..."; \
 	  base=`${BASENAME} $$test .slax` ; \
-	  ${SLAXPROC} --slax-to-xslt ${srcdir}/$$test out/$$base.xsl ; \
+	  ${S2X} ${srcdir}/$$test out/$$base.xsl ; \
 	  ${DIFF} -Nbu ${srcdir}/$$base.xsl out/$$base.xsl ${S2O} ; \
-	  ${SLAXPROC} --xslt-to-slax out/$$base.xsl out/$$base.slax2 ; \
+	  ${X2S} out/$$base.xsl out/$$base.slax2 ; \
 	  ${DIFF} -Nbu ${srcdir}/$$base.slax2 out/$$base.slax2 ${S2O} ; \
 	  if [ -f ${srcdir}/$$base.xml ]; then \
-	    ${SLAXPROC} ${srcdir}/$$test ${srcdir}/$$base.xml \
+	    ${SRUN} ${srcdir}/$$test ${srcdir}/$$base.xml \
 	            > out/$$base.out 2> out/$$base.err ; \
 	    ${DIFF} -Nu ${srcdir}/$$base.out out/$$base.out ${S2O} ; \
 	  fi ; \
@@ -67,6 +72,3 @@ accept:
 	  ${CP} out/$$base.xsl ${srcdir}/$$base.xsl ; \
 	  ${CP} out/$$base.slax2 ${srcdir}/$$base.slax2 ; \
 	done)
-
-clean-local:
-	${RM} -fr out

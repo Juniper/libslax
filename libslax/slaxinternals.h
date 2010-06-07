@@ -227,6 +227,13 @@ slaxStackClear (slax_data_t *sdp, slax_string_t **sspp,
 				    slax_string_t **top);
 
 /*
+ * Backup the stack up 'til the given node is seen; return the given node.
+ */
+slax_string_t *
+slaxStackClear2 (slax_data_t *sdp, slax_string_t **sspp,
+		 slax_string_t **top, slax_string_t **retp);
+
+/*
  * Add a simple value attribute.
  */
 void slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value);

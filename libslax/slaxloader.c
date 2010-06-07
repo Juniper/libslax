@@ -733,14 +733,14 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     }
 
     if (yylvalp)
-	*yylvalp = ssp = slaxStringCreate(sdp, rc);
+	*yylvalp = ssp = (rc > 0 ) ? slaxStringCreate(sdp, rc) : NULL;
 
     if (slaxDebug && ssp)
-	slaxTrace("slax: lex: (%s) '%.*s' -> %d/%s %x",
-		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords",
-		sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
-		rc, (rc > 0) ? slaxTokenName(rc) : "",
-		(ssp && ssp->ss_token) ? ssp->ss_token : 0);
+	slaxTrace("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
+		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords", ssp,
+		  sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
+		  rc, (rc > 0) ? slaxTokenName(rc) : "",
+		  (ssp && ssp->ss_token) ? ssp->ss_token : 0);
 
     /*
      * Disable keywords processing based on the token returned
@@ -1097,7 +1097,7 @@ void
 slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 {
     const xmlChar *uattrib = (const xmlChar *) attrib;
-    const xmlChar *current = xmlGetProp(sdp->sd_ctxt->node, uattrib);
+    xmlChar *current = xmlGetProp(sdp->sd_ctxt->node, uattrib);
     int clen = current ? xmlStrlen(current) + 1 : 0;
     int vlen = strlen(value) + 1;
     xmlAttrPtr attr;
@@ -1112,6 +1112,7 @@ slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
     if (clen) {
 	memcpy(newp, current, clen - 1);
 	newp[clen - 1] = ' ';
+	xmlFree(current);
     }
 
     memcpy(newp + clen, value, vlen);
@@ -1133,11 +1134,28 @@ slaxStackClear (slax_data_t *sdp UNUSED, slax_string_t **sspp,
 
     for ( ; sspp <= top; sspp++) {
 	ssp = *sspp;
-	slaxStringFree(ssp);
-	*sspp = NULL;
+	if (ssp) {
+	    slaxStringFree(ssp);
+	    *sspp = NULL;
+	}
     }
 
     return NULL;
+}
+
+/*
+ * Backup the stack up 'til the given node is seen; return the given node.
+ */
+slax_string_t *
+slaxStackClear2 (slax_data_t *sdp, slax_string_t **sspp,
+		 slax_string_t **top, slax_string_t **retp)
+{
+    slax_string_t *ssp;
+
+    ssp = *retp;
+    *retp = NULL;
+    (void) slaxStackClear(sdp, sspp, top);
+    return ssp;
 }
 
 /*
@@ -1190,6 +1208,8 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 				     (const xmlChar *) full);
 	if (attr == NULL)
 	    fprintf(stderr, "could not make attribute: %s/@%s\n", tag, attrib);
+
+	xmlFree(full);
     }
 
     return nodep;
@@ -1379,6 +1399,7 @@ slaxAvoidRtf (slax_data_t *sdp)
     newp = xmlNewNode(sdp->sd_xsl_ns, nodep->name);
     if (newp == NULL) {
 	fprintf(stderr, "could not make node: %s\n", nodep->name);
+	xmlFreeAndEasy(name);
 	return;
     }
 
@@ -1395,6 +1416,8 @@ slaxAvoidRtf (slax_data_t *sdp)
 
     /* Add the namespace for 'ext' */
     xmlNewNs(newp, (const xmlChar *) EXT_URI, (const xmlChar *) EXT_PREFIX);
+
+    xmlFreeAndEasy(name);
 }
 
 /*
@@ -1567,6 +1590,28 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
     return docp;
 }
 
+static void
+slaxDataCleanup (slax_data_t *sdp)
+{
+    if (sdp->sd_buf) {
+	free(sdp->sd_buf);
+	sdp->sd_buf = NULL;
+	sdp->sd_cur = sdp->sd_size = 0;
+    }
+
+    sdp->sd_ns = NULL;		/* We didn't allocate this */
+
+    if (sdp->sd_ctxt) {
+	xmlFreeParserCtxt(sdp->sd_ctxt);
+	sdp->sd_ctxt = NULL;
+    }
+
+    if (sdp->sd_docp) {
+	xmlFreeDoc(sdp->sd_docp);
+	sdp->sd_docp = NULL;
+    }
+}
+
 /*
  * Read a SLAX file from an open file pointer
  */
@@ -1574,6 +1619,7 @@ xmlDocPtr
 slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
 {
     slax_data_t sd;
+    xmlDocPtr res;
     int rc;
     xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
 
@@ -1613,7 +1659,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
 
     sd.sd_docp = slaxBuildDoc(&sd, ctxt);
     if (sd.sd_docp == NULL) {
-	xmlFreeParserCtxt(ctxt);
+	slaxDataCleanup(&sd);
 	return NULL;
     }
 
@@ -1622,16 +1668,20 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
 
     rc = slaxParse(&sd);
 
-    xmlFreeParserCtxt(ctxt);
-
     if (sd.sd_errors) {
 	xmlParserError(ctxt, "%s: %d error%s detected during parsing\n",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
-	xmlFreeDoc(sd.sd_docp);
+
+	slaxDataCleanup(&sd);
 	return NULL;
     }
 
-    return sd.sd_docp;
+    /* Save docp before slaxDataCleanup nukes it */
+    res = sd.sd_docp;
+    sd.sd_docp = NULL;
+    slaxDataCleanup(&sd);
+
+    return res;
 }
 
 /*

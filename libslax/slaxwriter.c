@@ -752,7 +752,11 @@ slaxMakeAttribValueTemplate (slaxWriter_t *swp, xmlNodePtr nodep,
 	    goto fail;
     }
 
-    return slaxStringAsChar(first, SSF_QUOTES);
+    buf = slaxStringAsChar(first, SSF_QUOTES);
+
+    slaxStringFree(first);
+
+    return buf;
     
  fail:
 
@@ -914,8 +918,10 @@ slaxWriteNamedTemplateParams (slaxWriter_t *swp, xmlDocPtr docp,
 
 	sel = (char *) xmlGetProp(childp, (const xmlChar *) ATT_SELECT);
 	if (sel || childp->children == NULL) {
-	    if (complex && !all)
+	    if (complex && !all) {
+		xmlFreeAndEasy(sel);
 		continue;
+	    }
 
 	    name = (char *) xmlGetProp(childp, (const xmlChar *) ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
@@ -943,8 +949,10 @@ slaxWriteNamedTemplateParams (slaxWriter_t *swp, xmlDocPtr docp,
 	    }
 
 	} else {
-	    if (!complex)
+	    if (!complex) {
+		xmlFreeAndEasy(sel);
 		continue;
+	    }
 
 	    name = (char *) xmlGetProp(childp, (const xmlChar *) ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
@@ -1209,6 +1217,7 @@ slaxWriteApplyTemplates (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     if (mode) {
 	slaxWrite(swp, "mode \"%s\";", mode);
 	slaxWriteNewline(swp, 0);
+	xmlFree(mode);
     }
 
     slaxWriteAllNs(swp, docp, nodep);
@@ -1406,8 +1415,8 @@ slaxWriteCopyOf (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	char *expr = slaxMakeExpression(swp, nodep, sel);
 	slaxWrite(swp, "copy-of %s;", expr ?: UNKNOWN_EXPR);
 	xmlFreeAndEasy(expr);
-	slaxWriteNewline(swp, 0);
 	xmlFree(sel);
+	slaxWriteNewline(swp, 0);
     }
 }
 
@@ -1767,6 +1776,15 @@ slaxWriteChildren (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
     }
 }
 
+static void
+slaxWriteCleanup (slaxWriter_t *swp)
+{
+    if (swp->sw_buf) {
+	xmlFree(swp->sw_buf);
+	swp->sw_buf = NULL;
+    }
+}
+
 /**
  * slaxWriteDoc:
  * Write an XSLT document in SLAX format
@@ -1823,6 +1841,8 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
 	slaxWrite(&sw, "}");
 	slaxWriteNewline(&sw, NEWL_OUTDENT);
     }
+
+    slaxWriteCleanup(&sw);
 
     return (sw.sw_errors == 0);
 }
