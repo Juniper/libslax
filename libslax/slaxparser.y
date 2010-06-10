@@ -103,6 +103,7 @@
 %token K_EXPR			/* 'expr' */
 %token K_EXTENSION		/* 'extension' */
 %token K_FOR_EACH		/* 'for-each' */
+%token K_FUNCTION		/* 'function' */
 %token K_ID			/* 'id' */
 %token K_IF			/* 'if' */
 %token K_IMPORT			/* 'import' */
@@ -116,6 +117,7 @@
 %token K_PRESERVE_SPACE		/* 'preserve-space' */
 %token K_PRIORITY		/* 'priority' */
 %token K_PROCESSING_INSTRUCTION /* 'processing-instruction' */
+%token K_RESULT			/* 'result' */
 %token K_STRIP_SPACE		/* 'strip-space' */
 %token K_TEMPLATE		/* 'template' */
 %token K_TEXT			/* 'text' */
@@ -173,6 +175,7 @@
 #include <libxml/xmlsave.h>
 
 #include <libxslt/documents.h>
+#include <libexslt/exslt.h>
 
 #include <libslax/slax.h>
 #include "slaxinternals.h"
@@ -373,6 +376,9 @@ slax_stmt :
 		{ $$ = NULL; }
 
 	| named_template
+		{ $$ = NULL; }
+
+	| function_definition
 		{ $$ = NULL; }
 
 	| error L_EOS
@@ -686,6 +692,50 @@ named_template_argument_decl :
 		}
 	;
 
+function_definition :
+	K_FUNCTION template_name
+		{
+		    xmlNodePtr nodep;
+		    nodep = slaxElementPush(slax_data, ELT_FUNCTION,
+					    ELT_NAME, $2->ss_token);
+		    if (nodep)
+			slaxSetFuncNs(slax_data, nodep);
+		    $$ = NULL;
+		}
+	    function_def_arguments block
+		{ 
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
+	;
+
+function_def_arguments :
+	L_OPAREN function_argument_list_optional L_CPAREN
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+function_argument_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| function_argument_list
+		{ $$ = NULL; }
+	;
+
+function_argument_list :
+	function_argument_decl
+		{ $$ = NULL; }
+
+	| function_argument_list L_COMMA function_argument_decl
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+function_argument_decl :
+	named_template_argument_decl
+		{ $$ = NULL; }
+	;
+
 block :
 	L_OBRACE
 		{
@@ -750,6 +800,9 @@ block_statement :
 	| element_stmt
 		{ $$ = NULL; }
 
+	| expr_stmt
+		{ $$ = STACK_CLEAR($1); }
+
 	| for_each_stmt
 		{ $$ = NULL; }
 
@@ -759,11 +812,11 @@ block_statement :
 	| param_decl
 		{ $$ = NULL; }
 
-	| var_decl
+	| result_stmt
 		{ $$ = NULL; }
 
-	| expr_stmt
-		{ $$ = STACK_CLEAR($1); }
+	| var_decl
+		{ $$ = NULL; }
 
 	| L_EOS
 		{ $$ = STACK_CLEAR($1); }
@@ -968,8 +1021,9 @@ call_argument_braces_member :
 
 	| K_WITH T_VAR L_EQUALS
 		{
-		    KEYWORDS_OFF();
 		    xmlNodePtr nodep;
+
+		    KEYWORDS_OFF();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep)
@@ -1005,8 +1059,9 @@ comment_stmt :
 copy_of_stmt :
 	K_COPY_OF xp_expr L_EOS
 		{
-		    KEYWORDS_ON();
 		    xmlNodePtr nodep;
+
+		    KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_COPY_OF, NULL, NULL);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
@@ -1015,6 +1070,24 @@ copy_of_stmt :
 		    }
 		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+result_stmt :
+	K_RESULT
+		{
+		    xmlNodePtr nodep;
+		    nodep = slaxElementPush(slax_data, ELT_RESULT, NULL, NULL);
+		    if (nodep)
+			slaxSetFuncNs(slax_data, nodep);
+		    $$ = NULL;
+		}
+	    initial_value
+		{
+		    KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
 		}
 	;
 

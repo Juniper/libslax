@@ -26,6 +26,12 @@
 #define XML_PREFIX  "xml"
 #define XML_NS "http://www.w3.org/XML/1998/namespace"
 
+#define EXT_URI "http://xmlsoft.org/XSLT/namespace"
+#define EXT_PREFIX "slax-ext"
+
+#define FUNC_URI EXSLT_FUNCTIONS_NAMESPACE
+#define FUNC_PREFIX "slax-func"
+
 /*
  * This is a should-not-occur error string if you ever see it, we've
  * done something wrong (but it beats a core dump).
@@ -63,9 +69,12 @@ extern const char *keywordString[];
 #define ELT_COMMENT	"comment"
 #define ELT_COPY_OF	"copy-of"
 #define ELT_FOR_EACH	"for-each"
+#define ELT_FUNCTION	"function"
 #define ELT_IF		"if"
+#define ELT_NAME	"name"
 #define ELT_OTHERWISE	"otherwise"
 #define ELT_PARAM	"param"
+#define ELT_RESULT	"result"
 #define ELT_STYLESHEET	"stylesheet"
 #define ELT_TEMPLATE	"template"
 #define ELT_TEXT	"text"
@@ -281,6 +290,15 @@ void slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *val);
  * we can rewrite it from an "xsl:choose" into an "xsl:if".
  */
 void slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
+
+/*
+ * Construct a temporary (and unique!) namespace node and put the given
+ * for the "func" exslt library and put the given node into
+ * that namespace.  We also have to add this as an "extension"
+ * namespace.
+ */
+void 
+slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 
 /*
  * If we know we're about to assign a result tree fragment (RTF)

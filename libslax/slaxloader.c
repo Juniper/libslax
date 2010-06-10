@@ -19,6 +19,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <libexslt/exslt.h>
+
 #define SD_BUF_FUDGE (BUFSIZ/8)
 #define SD_BUF_INCR BUFSIZ
 
@@ -113,6 +115,7 @@ keyword_mapping_t keywordMap[] = {
     { K_EXPR, "expr", KMF_SLAX_KW },
     { K_EXTENSION, "extension", KMF_SLAX_KW },
     { K_FOR_EACH, "for-each", KMF_SLAX_KW },
+    { K_FUNCTION, "function", KMF_SLAX_KW },
     { K_ID, "id", KMF_NODE_TEST }, /* Not really, but... */
     { K_IF, "if", KMF_SLAX_KW },
     { K_IMPORT, "import", KMF_SLAX_KW },
@@ -129,6 +132,7 @@ keyword_mapping_t keywordMap[] = {
     { K_PRIORITY, "priority", KMF_SLAX_KW },
     { K_PROCESSING_INSTRUCTION, "processing-instruction",
       KMF_NODE_TEST }, /* Not a node test, but close enough */
+    { K_RESULT, "result", KMF_SLAX_KW },
     { K_STRIP_SPACE, "strip-space", KMF_SLAX_KW },
     { K_TEMPLATE, "template", KMF_SLAX_KW },
     { K_TEXT, "text", KMF_NODE_TEST },
@@ -763,6 +767,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_STRIP_SPACE:
     case K_PRESERVE_SPACE:
     case K_CALL:
+    case K_FUNCTION:
 	sdp->sd_flags |= SDF_NO_KEYWORDS;
 	break;
 
@@ -1093,11 +1098,12 @@ slaxAttribAddString (slax_data_t *sdp, const char *name, slax_string_t *value)
 /*
  * Extend the existing value for an attribute, appending the given value.
  */
-void
-slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
+static void
+slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
+		  const char *attrib, const char *value)
 {
     const xmlChar *uattrib = (const xmlChar *) attrib;
-    xmlChar *current = xmlGetProp(sdp->sd_ctxt->node, uattrib);
+    xmlChar *current = xmlGetProp(nodep, uattrib);
     int clen = current ? xmlStrlen(current) + 1 : 0;
     int vlen = strlen(value) + 1;
     xmlAttrPtr attr;
@@ -1117,7 +1123,16 @@ slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 
     memcpy(newp + clen, value, vlen);
 
-    attr = xmlSetProp(sdp->sd_ctxt->node, uattrib, newp);
+    attr = xmlSetProp(nodep, uattrib, newp);
+}
+
+/*
+ * Extend the existing value for an attribute, appending the given value.
+ */
+void
+slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value);
 }
 
 /*
@@ -1345,6 +1360,42 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 }
 
 /*
+ * Find or construct a (possibly temporary) namespace node
+ * for the "func" exslt library and put the given node into
+ * that namespace.  We also have to add this as an "extension"
+ * namespace.
+ */
+void 
+slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
+{
+    const char *prefix = FUNC_PREFIX;
+    const xmlChar *uri = FUNC_URI;
+
+    xmlNsPtr nsp;
+
+    nsp = xmlSearchNs(sdp->sd_docp, nodep->parent, (const xmlChar *) prefix);
+    if (nsp == NULL) {
+	xmlNodePtr root = xmlDocGetRootElement(sdp->sd_docp);
+	nsp = xmlNewNs(root, uri, (const xmlChar *) prefix);
+	if (nsp == NULL) {
+	    xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
+			   sdp->sd_filename, sdp->sd_line);
+	    return;
+	}
+	/*
+	 * Since we added this namespace, we need to add it to the
+	 * list of extension prefixes.
+	 */
+	slaxNodeAttribExtend(sdp, root,
+			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix);
+    }
+
+    /* Add a distinct namespace to the current node */
+    nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
+    nodep->ns = nsp;
+}
+
+/*
  * If we know we're about to assign a result tree fragment (RTF)
  * to a variable, punt and do The Right Thing.
  *
@@ -1360,64 +1411,95 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 void
 slaxAvoidRtf (slax_data_t *sdp)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
-    xmlNodePtr newp;
-    xmlChar *name;
-    char *temp_name;
-    int clen, vlen;
-    char *value;
+
     static const char new_value_format[] = "ext:node-set($%s)";
+    static const char node_value_format[] = "ext:node-set(%s)";
     static const char temp_name_format[] = "%s-temp-%u";
-    static const char EXT_URI[] = "http://xmlsoft.org/XSLT/namespace";
-    static const char EXT_PREFIX[] = "ext";
 
     static unsigned temp_count;
 
-    /* If this node has no children, we don't need to rewrite it */
-    if (nodep->children == NULL)
-	return;
-
-    name = xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
-    clen = name ? xmlStrlen(name) + 1 : 0;
-
-    /*
-     * Generate the new temporary variable name using the original
-     * name, the string "-temp-", and a monotonically increasing
-     * number.
-     */
-    vlen = clen + strlen(temp_name_format) + 10 + 1; /* 10 is max %u */
-    temp_name = alloca(vlen);
-    snprintf(temp_name, vlen, temp_name_format, name, ++temp_count);
-
-    (void) xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) ATT_NAME,
-		      (xmlChar *) temp_name);
+    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr newp;
+    xmlChar *name;
+    char *temp_name, *value, *old_value;
+    const char *format;
+    int clen, vlen;
+    xmlChar *sel;
 
     /*
-     * Now generate the new element, using the original, user-provided
-     * name and a call to "slax:node-set" function.
+     * Parameters and variables can be assigned values in two ways,
+     * via the 'select' attribute and via contents of the element
+     * itself.  In most cases, the select attribute is not an RTF
+     * and doesn't need the node-set() functionality.  The main exception
+     * is <func:function>s, which are cursed to return RTFs.  Since
+     * we can't "know" if the expression is a func:function and since
+     * the cost of node-set() is minimal, we just wrap the select
+     * expression in a node-set call.
      */
-    newp = xmlNewNode(sdp->sd_xsl_ns, nodep->name);
-    if (newp == NULL) {
-	fprintf(stderr, "could not make node: %s\n", nodep->name);
+    sel = xmlGetProp(nodep, (const xmlChar *) ATT_SELECT);
+    if (sel) {
+	if (nodep->children != NULL) {
+	    xmlParserError(sdp->sd_ctxt,
+			   "%s:%d: %s cannot have both select and children\n",
+			   sdp->sd_filename, sdp->sd_line, nodep->name);
+	    return;
+	}
+
+	format = node_value_format;
+	old_value = (char *) sel;
+	vlen = strlen(old_value);
+
+    } else {
+
+	name = xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
+	clen = name ? xmlStrlen(name) + 1 : 0;
+
+	/*
+	 * Generate the new temporary variable name using the original
+	 * name, the string "-temp-", and a monotonically increasing
+	 * number.
+	 */
+	vlen = clen + strlen(temp_name_format) + 10 + 1; /* 10 is max %u */
+	temp_name = alloca(vlen);
+	snprintf(temp_name, vlen, temp_name_format, name, ++temp_count);
+
+	(void) xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) ATT_NAME,
+			  (xmlChar *) temp_name);
+
+	/*
+	 * Now generate the new element, using the original, user-provided
+	 * name and a call to "slax:node-set" function.
+	 */
+	newp = xmlNewNode(sdp->sd_xsl_ns, nodep->name);
+	if (newp == NULL) {
+	    fprintf(stderr, "could not make node: %s\n", nodep->name);
+	    xmlFreeAndEasy(name);
+	    return;
+	}
+
+	xmlAddChildLineNo(sdp->sd_ctxt, nodep->parent, newp);
+
+	xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
+
+	format = new_value_format;
+	old_value = temp_name;
+	nodep = newp;
 	xmlFreeAndEasy(name);
-	return;
     }
 
-    xmlAddChildLineNo(sdp->sd_ctxt, nodep->parent, newp);
-
-    xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
-
     /* Build the value for the new variable */
-    vlen = vlen + sizeof(new_value_format) + 1;
+    vlen += strlen(format) + 1;
     value = alloca(vlen);
-    snprintf(value, vlen, new_value_format, temp_name);
+    snprintf(value, vlen, format, old_value);
 
-    xmlNewProp(newp, (const xmlChar *) ATT_SELECT, (xmlChar *) value);
+    slaxTrace("AvoidRTF: '%s'", value);
+
+    xmlSetNsProp(nodep, NULL, (const xmlChar *) ATT_SELECT, (xmlChar *) value);
 
     /* Add the namespace for 'ext' */
-    xmlNewNs(newp, (const xmlChar *) EXT_URI, (const xmlChar *) EXT_PREFIX);
+    xmlNewNs(nodep, (const xmlChar *) EXT_URI, (const xmlChar *) EXT_PREFIX);
 
-    xmlFreeAndEasy(name);
+    xmlFreeAndEasy(sel);
 }
 
 /*
@@ -1779,6 +1861,17 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
 void
 slaxEnable (int enable)
 {
+    if (enable == SLAX_CLEANUP) {
+	xsltSetLoaderFunc(NULL);
+	
+	slaxEnabled = 0;
+	return;
+    }
+
+    /* Register EXSLT function functions so our function keywords work */
+    if (slaxEnabled == 0)
+	exsltFuncRegister();
+
     /*
      * Save the original doc loader to pass non-slax file into
      */

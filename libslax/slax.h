@@ -14,6 +14,7 @@ void slaxEnable(int enable);
 #define SLAX_DISABLE	0	/* SLAX is not available */
 #define SLAX_ENABLE	1	/* SLAX is auto-detected */
 #define SLAX_FORCE	2	/* SLAX is forced on */
+#define SLAX_CLEANUP	3	/* Clean up and shutdown */
 
 #ifndef UNUSED
 #define UNUSED __attribute__ ((__unused__))
