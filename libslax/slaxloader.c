@@ -519,7 +519,7 @@ slaxLexer (slax_data_t *sdp)
 	     * We don't want "$foo / * [. = 2]" (without the spaces)
 	     * to trigger a comment start.
 	     */
-	    if (!(sdp->sd_flags & SDF_NO_SLAX_KEYWORDS)
+	    if (SLAX_KEYWORDS_ALLOWED(sdp)
 		    && slaxIsCommentStart(sdp->sd_buf + sdp->sd_cur)) {
 
 		sdp->sd_start = sdp->sd_cur;

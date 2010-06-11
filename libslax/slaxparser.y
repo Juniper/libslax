@@ -517,7 +517,6 @@ var_decl :
 initial_value :
 	xpath_value L_EOS
 		{
-		    KEYWORDS_ON();
 		    slaxAttribAdd(slax_data, ATT_SELECT, $1);
 		    $$ = STACK_CLEAR($1);
 		}
@@ -1305,7 +1304,6 @@ xpath_value :
 		    ssp = slaxStringConcat(slax_data, M_XPATH, &$1);
 		    slaxTrace("xpath: %s", ssp ? ssp->ss_token : "");
 		    STACK_CLEAR($1);
-		    KEYWORDS_ON();
 		    $$ = ssp;
 		}
 
@@ -1328,7 +1326,6 @@ xpath_value :
 		    ssp = $1;
 		    $1 = NULL;	/* Save from free() */
 		    STACK_CLEAR($1);
-		    KEYWORDS_ON();
 		    $$ = ssp;
 		}
 	;
@@ -1343,7 +1340,6 @@ xpath_lite_value :
 		    ssp = slaxStringConcat(slax_data, M_XPATH, &$1);
 		    slaxTrace("xpath: %s", ssp ? ssp->ss_token : "");
 		    STACK_CLEAR($1);
-		    KEYWORDS_ON();
 		    $$ = ssp;
 		}
 
@@ -1366,7 +1362,6 @@ xpath_lite_value :
 		    ssp = $1;
 		    $1 = NULL;	/* Save from free() */
 		    STACK_CLEAR($1);
-		    KEYWORDS_ON();
 		    $$ = ssp;
 		}
 	;

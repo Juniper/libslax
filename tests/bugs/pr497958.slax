@@ -1,0 +1,10 @@
+version 1.0;
+
+var $x = div _ ./* _ mod;
+
+var $y = div div div + mod mod mod;
+
+match / {
+    <output> "Here is the data: " _ ./*[1];
+    <output> "this" _ "and" _ "that";
+}

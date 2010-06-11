@@ -1,7 +1,8 @@
 
 TEST_CASES = \
-    pr422249.slax
-    pr432942.slax
+    pr422249.slax \
+    pr432942.slax \
+    pr497958.slax
 
 EXTRA_DIST = \
     ${TEST_CASES} \
