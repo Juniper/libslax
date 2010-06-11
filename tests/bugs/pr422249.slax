@@ -1,0 +1,9 @@
+version 1.0;
+
+match / {
+    var $configuration = configuration;
+    
+    var $a = $configuration/descendant-or-self::*/*[@junos:changed];
+    var $b = descendant-or-self::node()/*[@junos:changed];
+    var $c = $configuration/descendant-or-self::node()/*[@junos:changed];
+}

@@ -145,7 +145,11 @@ slaxStringLength (slax_string_t *start, unsigned flags)
     char *cp;
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
-	len += strlen(ssp->ss_token) + 1; /* One for space or NUL */
+	len += strlen(ssp->ss_token);
+
+	if (ssp->ss_ttype != T_AXIS_NAME && ssp->ss_ttype != L_DCOLON)
+	    len += 1;		/* One for space or NUL */
+
 	if (ssp->ss_ttype == T_QUOTED) {
 	    if (flags & SSF_QUOTES) {
 		len += 2;
@@ -161,7 +165,7 @@ slaxStringLength (slax_string_t *start, unsigned flags)
 	}
     }
 
-    return len;
+    return len + 1;
 }
 
 /*
@@ -266,7 +270,10 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	    bp += slen;
 	}
 
-	*bp++ = ' ';
+	/* We want axis::elt with no spaces */
+	if (ssp->ss_ttype == T_AXIS_NAME || ssp->ss_ttype == L_DCOLON)
+	    len -= 1;
+	else *bp++ = ' ';
     }
 
     if (len > 0) {

@@ -69,6 +69,7 @@
 %token L_CBRACE			/* } */
 %token L_COMMA			/* , */
 %token L_DAMPER			/* '&&' */
+%token L_DCOLON			/* '::' */
 %token L_DEQUALS		/* == */
 %token L_DOTDOT			/* '..' */
 %token L_DSLASH			/* '//' */
@@ -148,6 +149,7 @@
 /*
  * Token types: generic tokens (returned via ss_token)
  */
+%token T_AXIS_NAME		/* a built-in axis name */
 %token T_BARE			/* a bare word string (bare-word) */
 %token T_FUNCTION_NAME		/* a function name (bare-word) */
 %token T_NUMBER			/* a number (4) */
@@ -1538,6 +1540,11 @@ xpc_axis_specifier_optional :
 	/* empty */
 		{ $$ = NULL; }
 
+	| T_AXIS_NAME L_DCOLON
+		{
+		    $$ = STACK_LINK($1);
+		}
+
 	| xpc_abbreviated_axis_specifier
 		{
 		    KEYWORDS_OFF();
@@ -1696,6 +1703,23 @@ xpc_node_test :
 	;
 
 xpc_name_test :
+	simple_name
+		{ $$ = STACK_LINK($1); }
+
+	| T_BARE L_DCOLON simple_name
+		{
+		    slaxCheckAxisName(slax_data, $1);
+		    $$ = STACK_LINK($1);
+		}
+
+	| T_AXIS_NAME L_DCOLON simple_name
+		{
+		    slaxCheckAxisName(slax_data, $1);
+		    $$ = STACK_LINK($1);
+		}
+	;
+
+simple_name :
 	q_name
 		{
 		    KEYWORDS_OFF();

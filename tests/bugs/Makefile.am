@@ -1,5 +1,6 @@
 
 TEST_CASES = \
+    pr422249.slax
     pr432942.slax
 
 EXTRA_DIST = \

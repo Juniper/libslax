@@ -243,6 +243,12 @@ slaxStackClear2 (slax_data_t *sdp, slax_string_t **sspp,
 		 slax_string_t **top, slax_string_t **retp);
 
 /*
+ * Give an error if the axis name is not valid
+ */
+void
+slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
+
+/*
  * Add a simple value attribute.
  */
 void slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value);

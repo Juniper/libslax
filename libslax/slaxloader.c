@@ -70,11 +70,12 @@ static int singleWideData[] = {
  * characters into a single slaxparser.y token.
  * N.B.:  These are not "double-wide" as in multi-byte characters,
  * but are two distinct characters.
- * See also: slaxDoubleWide()
+ * See also: slaxDoubleWide(), where this list is unfortunately duplicated.
  */
 static int doubleWideData[] = {
     L_ASSIGN, ':', '=',
     L_DAMPER, '&', '&',
+    L_DCOLON, ':', ':',
     L_DEQUALS, '=', '=',
     L_DOTDOT, '.', '.',
     L_DSLASH, '/', '/',
@@ -242,9 +243,26 @@ slaxKeywordMatch (slax_data_t *sdp, const char *str)
 static int
 slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
 {
+#define DOUBLE_WIDE(ch1, ch2) (((ch1) << 8) | (ch2))
+    switch (DOUBLE_WIDE(ch1, ch2)) {
+    case DOUBLE_WIDE(':', '='): return L_ASSIGN;
+    case DOUBLE_WIDE('&', '&'): return L_DAMPER;
+    case DOUBLE_WIDE(':', ':'): return L_DCOLON;
+    case DOUBLE_WIDE('=', '='): return L_DEQUALS;
+    case DOUBLE_WIDE('.', '.'): return L_DOTDOT;
+    case DOUBLE_WIDE('/', '/'): return L_DSLASH;
+    case DOUBLE_WIDE('|', '|'): return L_DVBAR;
+    case DOUBLE_WIDE('>', '='): return L_GRTREQ;
+    case DOUBLE_WIDE('<', '='): return L_LESSEQ;
+    case DOUBLE_WIDE('!', '='): return L_NOTEQUALS;
+    }
+
+    return 0;
+
+#if 0
     if (ch2 == doubleWideData[(unsigned) doubleWide[ch1]])
 	return doubleWideData[(unsigned) doubleWide[ch1] - 2];
-    return 0;
+#endif
 }
 
 /*
@@ -433,6 +451,45 @@ slaxDrainComment (slax_data_t *sdp)
 }
 
 /*
+ * Give an error if the axis name is not valid
+ */
+void
+slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
+{
+    static const char *axis_names[] = {
+	"ancestor-or-self",
+	"attribute",
+	"child",
+	"descendant",
+	"descendant-or-self",
+	"following",
+	"following-sibling",
+	"namespace",
+	"parent",
+	"preceding",
+	"preceding-sibling",
+	"self",
+	NULL
+    };
+    const char **namep;
+
+    /*
+     * Fix the token type correctly, since sometimes these are parsed
+     * as T_BARE.
+     */
+    axis->ss_ttype = T_AXIS_NAME;
+
+    for (namep = axis_names; *namep; namep++) {
+	if (streq(*namep, axis->ss_token))
+	    return;
+    }
+
+    xmlParserError(sdp->sd_ctxt,  "%s:%d: unknown axis name: %s\n",
+		   sdp->sd_filename, sdp->sd_line, axis->ss_token);
+}
+    
+
+/*
  * This function is the core of the lexer.
  *
  * We inspect the input buffer, finding the first token and returning
@@ -617,10 +674,13 @@ slaxLexer (slax_data_t *sdp)
      * as a special case.
      */
     for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+	if (sdp->sd_cur + 1 < sdp->sd_len && sdp->sd_buf[sdp->sd_cur] == ':'
+		&& sdp->sd_buf[sdp->sd_cur + 1] == ':')
+	    return T_AXIS_NAME;
 	if (isbare(sdp->sd_buf[sdp->sd_cur]))
 	    continue;
 	if (sdp->sd_cur > sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '*'
-	    && sdp->sd_buf[sdp->sd_cur - 1] == ':')
+		&& sdp->sd_buf[sdp->sd_cur - 1] == ':')
 	    continue;
 	break;
     }
