@@ -1542,6 +1542,7 @@ xpc_axis_specifier_optional :
 
 	| T_AXIS_NAME L_DCOLON
 		{
+		    slaxCheckAxisName(slax_data, $1);
 		    $$ = STACK_LINK($1);
 		}
 
@@ -1703,23 +1704,6 @@ xpc_node_test :
 	;
 
 xpc_name_test :
-	simple_name
-		{ $$ = STACK_LINK($1); }
-
-	| T_BARE L_DCOLON simple_name
-		{
-		    slaxCheckAxisName(slax_data, $1);
-		    $$ = STACK_LINK($1);
-		}
-
-	| T_AXIS_NAME L_DCOLON simple_name
-		{
-		    slaxCheckAxisName(slax_data, $1);
-		    $$ = STACK_LINK($1);
-		}
-	;
-
-simple_name :
 	q_name
 		{
 		    KEYWORDS_OFF();

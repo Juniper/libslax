@@ -457,6 +457,7 @@ void
 slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
 {
     static const char *axis_names[] = {
+	"ancestor",
 	"ancestor-or-self",
 	"attribute",
 	"child",
