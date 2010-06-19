@@ -338,6 +338,48 @@ slaxWriteText (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 }
 
 /*
+ * Escape an XPath expression into a SLAX expression.  In most cases, this
+ * simply means escaping quotes.
+ */
+static void
+slaxEscapeXpath (char *buf, int bufsiz, const char *inp)
+{
+    const char *save_inp = inp;
+    char quote = 0;
+    char *cp, *ep;
+
+    for (cp = buf, ep = buf + bufsiz - 1; *inp && cp < ep; inp++, cp++) {
+	if (*inp == quote) {
+	    quote = 0;
+
+	} else {
+
+	    switch (*inp) {
+	    case '\\':
+		*cp++ = '\\';
+		break;
+
+	    case '\'':
+	    case '\"':
+		if (quote) {
+		    *cp++ = '\\';
+		} else {
+		    quote = *inp;
+		}
+		break;
+	    }
+	}
+
+	*cp = *inp;
+    }
+    *cp = '\0';
+
+    if (quote)
+	slaxTrace("slax: unterminated quote in XPath expression: %s",
+		  save_inp);
+}
+
+/*
  * isDisableOutputEscaping:
  *   See if the "disable-output-escaping" attribute is set to "yes".
  * SLAX uses quoted text to represent text data (i.e. "foo") and
@@ -793,14 +835,22 @@ slaxWriteContent (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    if (streq((const char *) childp->name, ELT_VALUE_OF)) {
 		char *sel = (char *) xmlGetProp(childp,
 					  (const xmlChar *) ATT_SELECT);
-		char *expr = slaxMakeExpression(swp, nodep, sel);
+		if (sel) {
+		    char *xpath, *expr;
+		    int bufsiz = strlen(sel) * 2 + 1;
 
-		if (!first)
-		    slaxWrite(swp, " _ ");
-		else first = FALSE;
-		slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
-		xmlFreeAndEasy(expr);
-		xmlFreeAndEasy(sel);
+		    /* Expand the XSLT-style XPath to SLAX-style */
+		    xpath = alloca(bufsiz);
+		    slaxEscapeXpath(xpath, bufsiz, sel);
+		    expr = slaxMakeExpression(swp, nodep, xpath);
+
+		    if (!first)
+			slaxWrite(swp, " _ ");
+		    else first = FALSE;
+		    slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
+		    xmlFreeAndEasy(expr);
+		    xmlFreeAndEasy(sel);
+		}
 
 	    } else if (streq((const char *) childp->name, ELT_TEXT)) {
 		xmlNodePtr gcp;
