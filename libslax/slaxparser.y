@@ -517,7 +517,7 @@ var_decl :
 initial_value :
 	xpath_value L_EOS
 		{
-		    slaxAttribAdd(slax_data, ATT_SELECT, $1);
+		    slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $1);
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -543,7 +543,8 @@ match_template :
 		    nodep = slaxElementPush(slax_data, ELT_TEMPLATE,
 					    NULL, NULL);
 		    if (nodep)
-			slaxAttribAddString(slax_data, ATT_MATCH, $2);
+			slaxAttribAddString(slax_data, ATT_MATCH,
+					    $2, SSF_QUOTES);
 		    /* XXX else error */
 
 		    $$ = NULL;
@@ -583,7 +584,7 @@ match_block_preamble_stmt :
 mode_stmt :
 	K_MODE T_QUOTED L_EOS
 		{
-		    slaxAttribAdd(slax_data, ATT_MODE, $2);
+		    slaxAttribAddString(slax_data, ATT_MODE, $2, 0);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -591,7 +592,7 @@ mode_stmt :
 priority_stmt :
 	K_PRIORITY xpc_full_number L_EOS
 		{
-		    slaxAttribAdd(slax_data, ATT_PRIORITY, $2);
+		    slaxAttribAddString(slax_data, ATT_PRIORITY, $2, 0);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -606,7 +607,8 @@ named_template :
             opt_match_stmt
 		{
 		    if ($3)
-			slaxAttribAdd(slax_data, ATT_MATCH, $3);
+			slaxAttribAddString(slax_data, ATT_MATCH,
+					    $3, SSF_QUOTES);
 		    $$ = NULL;
 		}
 	    named_template_arguments block
@@ -684,7 +686,7 @@ named_template_argument_decl :
 					   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, ATT_SELECT, $4);
+			slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $4);
 			nodePop(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
@@ -859,7 +861,7 @@ xpath_expr_optional :
 	| xp_expr
 		{
 		    KEYWORDS_ON();
-		    slaxAttribAddString(slax_data, ATT_SELECT, $1);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $1);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -944,7 +946,7 @@ call_argument_member :
 				   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, ATT_SELECT, $1);
+			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $1);
 			nodePop(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
@@ -965,7 +967,7 @@ call_argument_member :
 				   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, ATT_SELECT, $4);
+			slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $4);
 			nodePop(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
@@ -1013,7 +1015,7 @@ call_argument_braces_member :
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, ATT_SELECT, $2);
+			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $2);
 			nodePop(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
@@ -1066,7 +1068,7 @@ copy_of_stmt :
 		    nodep = slaxElementAdd(slax_data, ELT_COPY_OF, NULL, NULL);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAddString(slax_data, ATT_SELECT, $2);
+			slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $2);
 			nodePop(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
@@ -1164,7 +1166,7 @@ for_each_stmt :
 		    KEYWORDS_ON();
 		    nodep = slaxElementPush(slax_data, ELT_FOR_EACH,
 					    NULL, NULL);
-		    slaxAttribAddString(slax_data, ATT_SELECT, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
 		    $$ = NULL;
 		}
 	    block
@@ -1181,7 +1183,7 @@ if_stmt :
 		    KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_CHOOSE, NULL, NULL);
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAddString(slax_data, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
 		    $$ = NULL;
 		}
 	    block
@@ -1212,7 +1214,7 @@ elsif_stmt :
 		{
 		    KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAddString(slax_data, ATT_TEST, $4);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $4);
 		    $$ = NULL;
 		}
 	    block
@@ -1297,27 +1299,19 @@ equals_operator :
 xpath_value :
 	xp_expr
 		{
-		    /*
-		     * Turn the entire xpath expression into a string
-		     */
-		    slax_string_t *ssp;
-		    ssp = slaxStringConcat(slax_data, M_XPATH, &$1);
-		    slaxTrace("xpath: %s", ssp ? ssp->ss_token : "");
-		    STACK_CLEAR($1);
-		    $$ = ssp;
+		    slaxTrace("xpath: %s", $1->ss_token);
+		    $$ = $1;
 		}
 
 	| xpath_value L_UNDERSCORE xp_expr
 		{
-		    slax_string_t *ssp, *newp;
+		    slax_string_t *ssp;
 
 		    if ($3) {
-			newp = slaxStringConcat(slax_data, M_XPATH, &$3);
-
 			/* Append the new xp_path_expr to the list */
-			for (ssp = $1; ssp; ssp = ssp->ss_next) {
-			    if (ssp->ss_next == NULL) {
-				ssp->ss_next = newp;
+			for (ssp = $1; ssp; ssp = ssp->ss_concat) {
+			    if (ssp->ss_concat == NULL) {
+				ssp->ss_concat = $3;
 				break;
 			    }
 			}
@@ -1325,6 +1319,7 @@ xpath_value :
 
 		    ssp = $1;
 		    $1 = NULL;	/* Save from free() */
+		    $3 = NULL;	/* Save from free() */
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1333,27 +1328,19 @@ xpath_value :
 xpath_lite_value :
 	xpl_expr
 		{
-		    /*
-		     * Turn the entire xpath expression into a string
-		     */
-		    slax_string_t *ssp;
-		    ssp = slaxStringConcat(slax_data, M_XPATH, &$1);
-		    slaxTrace("xpath: %s", ssp ? ssp->ss_token : "");
-		    STACK_CLEAR($1);
-		    $$ = ssp;
+		    slaxTrace("xpath: %s", $1->ss_token);
+		    $$ = $1;
 		}
 
 	| xpath_lite_value L_UNDERSCORE xpl_expr
 		{
-		    slax_string_t *ssp, *newp;
+		    slax_string_t *ssp;
 
 		    if ($3) {
-			newp = slaxStringConcat(slax_data, M_XPATH, &$3);
-
 			/* Append the new xp_path_expr to the list */
-			for (ssp = $1; ssp; ssp = ssp->ss_next) {
-			    if (ssp->ss_next == NULL) {
-				ssp->ss_next = newp;
+			for (ssp = $1; ssp; ssp = ssp->ss_concat) {
+			    if (ssp->ss_concat == NULL) {
+				ssp->ss_concat = $3;
 				break;
 			    }
 			}
@@ -1361,6 +1348,7 @@ xpath_lite_value :
 
 		    ssp = $1;
 		    $1 = NULL;	/* Save from free() */
+		    $3 = NULL;	/* Save from free() */
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}

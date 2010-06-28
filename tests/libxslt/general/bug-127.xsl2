@@ -2,7 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="html"/>
-  <xsl:variable name="var" select="'&quot;'&quot;'"/>
+  <xsl:variable name="var">"'"</xsl:variable>
   <xsl:template match="/">
     <html>
       <body>

@@ -88,9 +88,11 @@ extern const char *keywordString[];
  * We build strings as we go using this structure.
  */
 typedef struct slax_string_s {
-    struct slax_string_s *ss_next; /* Linked list of strings */
-    int ss_ttype;		/* Token type */
-    char ss_token[1];		/* Value of this token */
+    struct slax_string_s *ss_next; /* Linked list of strings in XPath expr */
+    struct slax_string_s *ss_concat; /* Linked list of strings with "_" op */
+    int ss_ttype;		   /* Token type */
+    int ss_flags;		   /* Flags */
+    char ss_token[1];		   /* Value of this token */
 } slax_string_t;
 
 #define YYSTYPE slax_string_t *	/* This is our bison stack frame */
@@ -249,9 +251,45 @@ void
 slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
 
 /*
+ * 'style' values for slaxAttribAdd*()
+ *
+ * Style is mainly concerned with how to represent data that can't
+ * be directly represented in XSLT.  The principle case is quotes,
+ * which are a problem because string in an attribute cannot have both
+ * single and double quotes.  SLAX can parse:
+ *     expr "quotes are \" or \'";
+ * but putting this into the "select" attribute of an <xsl:value-of>
+ * is not legal XSLT.  So we need to know how the caller wants us to
+ * handle this.  For select attributes on <xsl:*> nodes, values that
+ * are strickly strings can be tossed into a text node as the contents
+ * of the element:
+ *     <xsl:value-of>quotes are " or '</xsl:value-of>
+ * If the value is not a static string, then things get uglier:
+ *     expr fred("quotes are \" or \'");
+ * would need to become:
+ *     <xsl:value-of select="fred(concat('quotes are " or ', &quot;'&quot;))"/>
+ * If the attribute cannot accept an XPATH value, then this concat scheme
+ * will not work, but we can use <xsl:attribute> to construct the
+ * proper value:
+ *     <node fred="quotes are \" or \'">;
+ * would need to become:
+ *     <node>
+ *       <xsl:attribute name="fred>quotes are " or '</xsl:attribute>
+ *     </node>
+ * All this is pretty annoying, but it allows the script writer to
+ * avoid thinking about quotes and having to understand what's going
+ * on underneath.
+ */
+#define SAS_NONE	0	/* Don't do anything fancy */
+#define SAS_XPATH	1	/* Use concat() is you need it */
+#define SAS_ATTRIB	2	/* Use <xsl:attribute> if you need it */
+#define SAS_SELECT	3	/* Use concat or (non-attribute) text node */
+
+/*
  * Add a simple value attribute.
  */
-void slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value);
+void slaxAttribAdd (slax_data_t *sdp, int style,
+		    const char *name, slax_string_t *value);
 
 /*
  * Add a value to an attribute on an XML element.  The value consists of
@@ -267,7 +305,8 @@ void slaxAttribAddValue (slax_data_t *sdp, const char *name,
 /*
  * Add a simple value attribute as straight string
  */
-void slaxAttribAddString (slax_data_t *sdp, const char *name, slax_string_t *);
+void slaxAttribAddString (slax_data_t *sdp, const char *name,
+			  slax_string_t *, unsigned flags);
 
 /*
  * Add an XPath expression as a statement.  If this is a string,
@@ -319,12 +358,27 @@ void slaxAvoidRtf (slax_data_t *sdp);
 /* Flags for slaxString functions */
 #define SSF_QUOTES	(1<<0)	/* Wrap the string in double quotes */
 #define SSF_BRACES	(1<<1)	/* Escape braces (in attributes) */
+#define SSF_SINGLEQ	(1<<2)	/* String has single quotes */
+#define SSF_DOUBLEQ	(1<<3)	/* String has double quotes */
+
+#define SSF_BOTHQS	(1<<4)	/* String has both single and double quotes */
+#define SSF_CONCAT	(1<<5)	/* Turn BOTHQS string into xpath w/ concat */
 
 /*
- * Concatenate a variable number of strings, returning the results.
+ * If the string is simple, we can optimize how we treat it
+ */
+static inline int
+slaxStringIsSimple (slax_string_t *value, int ttype)
+{
+    return (value && value->ss_ttype == ttype
+	    && value->ss_next == NULL && value->ss_concat == NULL);
+}
+
+/*
+ * Fuse a variable number of strings together, returning the results.
  */
 slax_string_t *
-slaxStringConcat (slax_data_t *, int, slax_string_t **);
+slaxStringFuse (slax_data_t *, int, slax_string_t **);
 
 /*
  * Create a string.  Slax strings allow sections of strings (typically
@@ -369,7 +423,13 @@ slaxStringAsChar (slax_string_t *value, unsigned flags);
  * Return a set of xpath values as a concat() invocation
  */
 char *
-slaxStringAsValue (slax_string_t *value, unsigned flags);
+slaxStringAsConcat (slax_string_t *value, unsigned flags);
+
+/*
+ * Return a set of xpath values as an attribute value template
+ */
+char *
+slaxStringAsValueTemplate (slax_string_t *value, unsigned flags);
 
 /*
  * Calculate the length of the string consisting of the concatenation

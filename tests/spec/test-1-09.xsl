@@ -10,6 +10,11 @@
       <xsl:value-of select="string-length(.)"/>
     </two>
   </xsl:template>
+  <xsl:template match="random" mode="two">
+    <xxx>
+      <xsl:value-of select="string-length(.)"/>
+    </xxx>
+  </xsl:template>
   <xsl:template match="/">
     <xsl:apply-templates select="version" mode="one"/>
     <xsl:apply-templates select="version" mode="two"/>

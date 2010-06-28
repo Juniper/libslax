@@ -10,6 +10,11 @@ match * {
     <two> string-length(.);
 }
 
+match random {
+    mode "two";
+    <xxx> string-length(.);
+}
+
 match / {
     apply-templates version {
 	mode "one";

@@ -8,10 +8,7 @@
     </axsl:stylesheet>
   </xsl:template>
   <xsl:template match="block">
-    <axsl:template>
-      <xsl:attribute name="match">
-        <xsl:value-of select="."/>
-      </xsl:attribute>
+    <axsl:template match="{.}">
       <fo:block>
         <axsl:apply-templates/>
       </fo:block>

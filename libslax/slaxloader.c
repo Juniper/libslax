@@ -936,17 +936,22 @@ slaxFindNs (xmlNodePtr nodep, const char *prefix, int len)
 }
 
 /*
- * Add a simple value attribute.
+ * Add a simple value attribute.  Our style parameter is limited to
+ * SAS_NONE, SAS_XPATH, or SAS_SELECT.  See the other slaxAttribAdd*()
+ * variants for other styles.
  */
 void
-slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
+slaxAttribAdd (slax_data_t *sdp, int style,
+	       const char *name, slax_string_t *value)
 {
     slax_string_t *ssp;
     char *buf;
     xmlNsPtr ns = NULL;
     xmlAttrPtr attr;
     const char *cp;
-    int buf_index, buf_len, count = 0;
+    int ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
+
+    ss_flags |= SSF_QUOTES;	/* Always want the quotes */
 
     if (value == NULL)
 	return;
@@ -956,46 +961,35 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
 	    slaxTrace("initial: xpath_value: %s", ssp->ss_token);
 
     if (value->ss_next == NULL) {
+	if (style == SAS_SELECT && value->ss_ttype == T_QUOTED
+		&& (value->ss_flags & SSF_BOTHQS)) {
+	    /*
+	     * The string contains both types of quotes, which is bad news,
+	     * but we are 'select' style, so we just throw the string into
+	     * a text node.
+	     */
+	    xmlNodePtr tp;
+
+	    tp = xmlNewText((const xmlChar *) value->ss_token);
+	    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
+
+	    return;
+	}
+
 	/*
 	 * There is only one value, so we stuff it into the
 	 * attribute give in the 'name' parameter.
 	 */
-	buf = slaxStringAsChar(value, SSF_BRACES);
+	buf = slaxStringAsConcat(value, SSF_BRACES | ss_flags);
 
     } else {
-	/* 
-	 * In the case of negative priority value, XPATH concat() unable
-	 * to concatenate negative sign with value. Since negative number
-	 * is a unique value, we stuff it into the attribute give in the
-	 * 'name' parameter as below, and from the returned buffer remove
-	 * the "space" in between the tokens inserted by slaxStringCopy().
-	 * so that there will not be a space between negative sign and 
-	 * value.
+	/*
+	 * There are multiple values, like: var $x=test/one _ test/two
+	 * We stuff these values inside a call to the XPath "concat()"
+	 * function, which will do all the hard work for us, without
+	 * giving us a result fragment tree.
 	 */
-#if 1
-	if (streq(name, ATT_PRIORITY)) {
-	    buf = slaxStringAsChar(value, SSF_BRACES);
-	    buf_len = strlen(buf);
-
-	    for (buf_index = 0; buf_index < buf_len; buf_index++) {
-		if (buf[buf_index] == ' ') {
-		    count++;
-		    buf[buf_index] = '\0';
-		} else if (count) {
-		    buf[buf_index - count] = buf[buf_index];
-		    buf[buf_index] = '\0';
-		}
-	    }
-#endif
-	} else {
-	    /*
-	    * There are multiple values, like: var $x=test/one + test/two
-	    * We stuff these value inside a call to the XPath "concat()"
-	    * function, which will do all the hard work for us, without
-	    * giving us a result fragment tree.
-	    */
-	    buf = slaxStringAsValue(value, SSF_BRACES);
-	}
+	buf = slaxStringAsConcat(value, SSF_BRACES | ss_flags);
     }
 
     /*
@@ -1024,12 +1018,14 @@ slaxAttribAdd (slax_data_t *sdp, const char *name, slax_string_t *value)
  * or an xpath expression.  If the value (any items) does not contain an
  * xpath expression, we use the normal attribute substitution to achieve
  * this ({$foo}).  Otherwise, we use the xsl:attribute element to construct
- * the attribute.
+ * the attribute.  Note that this function uses only the SAS_ATTRIB style
+ * of quote handling.
  */
 void
 slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    slax_string_t *ssp;
+#if 0
+    slax_string_t *ssp, *value;
     int ch;
     int len = 0, slen, ilen;
     xmlAttrPtr attr;
@@ -1038,38 +1034,43 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
     char *buf, *bp;
     const char *cp;
 
-    for (ssp = value; ssp; ssp = ssp->ss_next) {
-	ch = ssp->ss_token[0];
-	slen = strlen(ssp->ss_token);
+    for (value = top; value; value = value->ss_concat) {
+	for (ssp = value; ssp; ssp = ssp->ss_next) {
+	    ch = ssp->ss_token[0];
+	    slen = strlen(ssp->ss_token);
 
-	switch (ssp->ss_ttype) {
-	case T_QUOTED:
-	    len += slen;
-	    for (cp = ssp->ss_token; *cp; cp++)
-		if (*cp == '{' || *cp == '}')
-		    len += 1; /* Needs a double */
-	    break;
+	    switch (ssp->ss_ttype) {
+	    case T_QUOTED:
+		len += slen;
+		for (cp = ssp->ss_token; *cp; cp++)
+		    if (*cp == '{' || *cp == '}')
+			len += 1; /* Needs a double */
+		break;
 
-	case T_VAR:
-	case T_BARE:
-	case M_XPATH:
-	    len += slen + 2;	/* "{" and "}" */
-	    break;
+	    case T_VAR:
+	    case T_BARE:
+	    case M_XPATH:
+		len += slen + 2;	/* "{" and "}" */
+		break;
 
-	default:
-	    /*
-	     * Create an xsl:attribute element
-	     */
-	    nodep = slaxElementPush(sdp, ELT_ATTRIBUTE, ATT_NAME, name);
-	    if (nodep) {
-		slaxElementXPath(sdp, value, FALSE);
-		slaxElementPop(sdp);
-	    } else
-		xmlParserError(sdp->sd_ctxt,
-			       "%s:%d: could not add attribute '%s'",
-			       sdp->sd_filename, sdp->sd_line, name);
+	    default:
+		len += slen;
 
-	    return;
+	    case M_ERROR:	/* XXX Do we still need this? */
+		/*
+		 * Create an xsl:attribute element
+		 */
+		nodep = slaxElementPush(sdp, ELT_ATTRIBUTE, ATT_NAME, name);
+		if (nodep) {
+		    slaxElementXPath(sdp, top, FALSE);
+		    slaxElementPop(sdp);
+		} else
+		    xmlParserError(sdp->sd_ctxt,
+				   "%s:%d: could not add attribute '%s'",
+				   sdp->sd_filename, sdp->sd_line, name);
+
+		return;
+	    }
 	}
     }
 
@@ -1079,37 +1080,52 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 	return;
 
     bp = buf;
+    
+    for (value = top; value; value = value->ss_concat) {
+	for (ssp = value; ssp; ssp = ssp->ss_next) {
+	    slen = strlen(ssp->ss_token);
 
-    for (ssp = value; ssp; ssp = ssp->ss_next) {
-	slen = strlen(ssp->ss_token);
+	    switch (ssp->ss_ttype) {
+	    case T_QUOTED:
+		/* Copy the string, knocking off the quotes */
+		for (cp = ssp->ss_token + 1, ilen = slen - 2;
+		     --ilen >= 0; cp++) {
+		    /*
+		     * Braces in attributes are used for attribute value
+		     * templates, which SLAX handles as normal expressions.
+		     * So we need to escape braces, which we do by using
+		     * double braces.
+		     */
+		    if (*cp == '{' || *cp == '}')
+			*bp++ = *cp; /* Needs a double */
+		    *bp++ = *cp;
+		}
+		break;
 
-	switch (ssp->ss_ttype) {
-	case T_QUOTED:
-	    /* Copy the string, knocking off the quotes */
-	    for (cp = ssp->ss_token + 1, ilen = slen - 2; --ilen >= 0; cp++) {
-		/*
-		 * Braces in attributes are used for attribute value
-		 * templates, which SLAX handles as normal expressions.
-		 * So we need to escape braces, which we do by using doubles.
-		 */
-		if (*cp == '{' || *cp == '}')
-		    *bp++ = *cp; /* Needs a double */
-		*bp++ = *cp;
+	    case T_VAR:
+	    case T_BARE:
+	    case M_XPATH:
+		*bp++ = '{';
+		memcpy(bp, ssp->ss_token, slen);
+		bp += slen;
+		*bp++ = '}';
+		break;
 	    }
-	    break;
-
-	case T_VAR:
-	case T_BARE:
-	case M_XPATH:
-	    *bp++ = '{';
-	    memcpy(bp, ssp->ss_token, slen);
-	    bp += slen;
-	    *bp++ = '}';
-	    break;
 	}
-    }
 
-    *bp = '\0';
+	*bp = '\0';
+    }
+#endif
+
+    int len;
+    xmlAttrPtr attr;
+    xmlNsPtr ns = NULL;
+    char *buf;
+    const char *cp;
+
+    buf = slaxStringAsValueTemplate(value, SSF_BRACES);
+    if (buf == NULL)
+	return;
 
     /*
      * Deal with namespaces.  If there's a prefix, we need to find
@@ -1130,10 +1146,12 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 }
 
 /*
- * Add a simple value attribute as straight string
+ * Add a simple value attribute as straight string.  Note that this function
+ * always uses the SAS_XPATH style of quote handling.
  */
 void
-slaxAttribAddString (slax_data_t *sdp, const char *name, slax_string_t *value)
+slaxAttribAddString (slax_data_t *sdp, const char *name,
+		     slax_string_t *value, unsigned flags)
 {
     slax_string_t *ssp;
     char *buf;
@@ -1146,7 +1164,7 @@ slaxAttribAddString (slax_data_t *sdp, const char *name, slax_string_t *value)
 	for (ssp = value; ssp; ssp = ssp->ss_next)
 	    slaxTrace("initial: xpath_value: %s", ssp->ss_token);
 	
-    buf = slaxStringAsChar(value, SSF_QUOTES);
+    buf = slaxStringAsChar(value, flags);
 
     attr = xmlNewProp(sdp->sd_ctxt->node, (const xmlChar *) name,
 		      (const xmlChar *) buf);
@@ -1392,16 +1410,11 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
     xmlNodePtr nodep;
     nodep = slaxElementAdd(sdp, ELT_COMMENT, NULL, NULL);
     if (nodep) {
-	if (value && value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
-	    char *cp = value->ss_token;
-	    int len = strlen(cp);
-	    xmlNodePtr tp;
+	if (slaxStringIsSimple(value, T_QUOTED)) {
+	    xmlNodePtr tp = xmlNewText((const xmlChar *) value->ss_token);
 
-	    cp += 1;
-	    cp[len - 2] = '\0';
-
-	    tp = xmlNewText((const xmlChar *) cp);
-	    xmlAddChildLineNo(sdp->sd_ctxt, nodep, tp);
+	    if (tp)
+		xmlAddChildLineNo(sdp->sd_ctxt, nodep, tp);
 
 	} else {
 	    xmlNodePtr attrp;
@@ -1410,7 +1423,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 	    attrp = slaxElementAdd(sdp, ELT_VALUE_OF, NULL, NULL);
 	    if (attrp) {
 		nodePush(sdp->sd_ctxt, attrp);
-		slaxAttribAdd(sdp, ATT_SELECT, value);
+		slaxAttribAdd(sdp, SAS_SELECT, ATT_SELECT, value);
 		nodePop(sdp->sd_ctxt);
 	    }
 	    nodePop(sdp->sd_ctxt);
@@ -1575,21 +1588,18 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
     xmlNodePtr nodep;
     xmlAttrPtr attr;
 
-    if (value->ss_next == NULL && value->ss_ttype == T_QUOTED) {
+    if (slaxStringIsSimple(value, T_QUOTED)) {
 	char *cp = value->ss_token;
 	int len = strlen(cp);
 
-	cp += 1;
-	cp[len - 2] = '\0';
-
 	/*
-	 * If the text string has leading or trailing whitespace, then we
-	 * must use a text element.
+	 * if the text string has leading or trailing whitespace.
+	 * then we must use a text element.
 	 */
 	if (*cp == '\t' || *cp == ' ' || *cp == '\0')
 	    text_as_elt = TRUE;
 	else {
-	    char *ep = cp + len - 3;
+	    char *ep = cp + len - 1;
 	    if (*ep == '\t' || *ep == ' ')
 		text_as_elt = TRUE;
 	}
@@ -1601,7 +1611,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 	    xmlNodePtr textp = xmlNewNode(sdp->sd_xsl_ns,
 					 (const xmlChar *) ELT_TEXT);
 	    if (textp == NULL) {
-		fprintf(stderr, "could not make node: %s\n", ELT_VALUE_OF);
+		fprintf(stderr, "could not make node: %s\n", ELT_TEXT);
 		return;
 	    }
 	    xmlAddChildLineNo(sdp->sd_ctxt, textp, nodep);
@@ -1620,34 +1630,23 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 	return;
     }
 
-    if (value->ss_next) {
-
-	buf = slaxStringAsValue(value, 0);
-	if (buf == NULL) {
-	    fprintf(stderr, "could not make attribute string: @%s=%s\n",
-		    ATT_SELECT, buf);
-	    return;
-	}
-
-	attr = xmlNewProp(nodep, (const xmlChar *) ATT_SELECT,
-			  (const xmlChar *) buf);
-	if (attr == NULL) {
-	    fprintf(stderr, "could not make attribute: @%s=%s\n",
-		    ATT_SELECT, buf);
-	    free(buf);
-	    return;
-	}
-
-	free(buf);
-
-    } else {
-	attr = xmlNewProp(nodep, (const xmlChar *) ATT_SELECT,
-			  (const xmlChar *) value->ss_token);
-	if (attr == NULL) {
-	    fprintf(stderr, "could not make attribute: @%s\n", ATT_SELECT);
-	    return;
-	}
+    buf = slaxStringAsConcat(value, SSF_CONCAT | SSF_QUOTES);
+    if (buf == NULL) {
+	fprintf(stderr, "could not make attribute string: @%s=%s\n",
+		ATT_SELECT, buf);
+	return;
     }
+
+    attr = xmlNewProp(nodep, (const xmlChar *) ATT_SELECT,
+		      (const xmlChar *) buf);
+    if (attr == NULL) {
+	fprintf(stderr, "could not make attribute: @%s=%s\n",
+		ATT_SELECT, buf);
+	free(buf);
+	return;
+    }
+
+    free(buf);
 
     xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
