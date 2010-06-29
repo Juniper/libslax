@@ -260,11 +260,6 @@ slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
     }
 
     return 0;
-
-#if 0
-    if (ch2 == doubleWideData[(unsigned) doubleWide[ch1]])
-	return doubleWideData[(unsigned) doubleWide[ch1] - 2];
-#endif
 }
 
 /*
@@ -1035,99 +1030,6 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 void
 slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-#if 0
-    slax_string_t *ssp, *value;
-    int ch;
-    int len = 0, slen, ilen;
-    xmlAttrPtr attr;
-    xmlNodePtr nodep;
-    xmlNsPtr ns = NULL;
-    char *buf, *bp;
-    const char *cp;
-
-    for (value = top; value; value = value->ss_concat) {
-	for (ssp = value; ssp; ssp = ssp->ss_next) {
-	    ch = ssp->ss_token[0];
-	    slen = strlen(ssp->ss_token);
-
-	    switch (ssp->ss_ttype) {
-	    case T_QUOTED:
-		len += slen;
-		for (cp = ssp->ss_token; *cp; cp++)
-		    if (*cp == '{' || *cp == '}')
-			len += 1; /* Needs a double */
-		break;
-
-	    case T_VAR:
-	    case T_BARE:
-	    case M_XPATH:
-		len += slen + 2;	/* "{" and "}" */
-		break;
-
-	    default:
-		len += slen;
-
-	    case M_ERROR:	/* XXX Do we still need this? */
-		/*
-		 * Create an xsl:attribute element
-		 */
-		nodep = slaxElementPush(sdp, ELT_ATTRIBUTE, ATT_NAME, name);
-		if (nodep) {
-		    slaxElementXPath(sdp, top, FALSE);
-		    slaxElementPop(sdp);
-		} else
-		    xmlParserError(sdp->sd_ctxt,
-				   "%s:%d: could not add attribute '%s'",
-				   sdp->sd_filename, sdp->sd_line, name);
-
-		return;
-	    }
-	}
-    }
-
-    /* Create a simple substitution attribute */
-    buf = alloca(len + 1);
-    if (buf == NULL)
-	return;
-
-    bp = buf;
-    
-    for (value = top; value; value = value->ss_concat) {
-	for (ssp = value; ssp; ssp = ssp->ss_next) {
-	    slen = strlen(ssp->ss_token);
-
-	    switch (ssp->ss_ttype) {
-	    case T_QUOTED:
-		/* Copy the string, knocking off the quotes */
-		for (cp = ssp->ss_token + 1, ilen = slen - 2;
-		     --ilen >= 0; cp++) {
-		    /*
-		     * Braces in attributes are used for attribute value
-		     * templates, which SLAX handles as normal expressions.
-		     * So we need to escape braces, which we do by using
-		     * double braces.
-		     */
-		    if (*cp == '{' || *cp == '}')
-			*bp++ = *cp; /* Needs a double */
-		    *bp++ = *cp;
-		}
-		break;
-
-	    case T_VAR:
-	    case T_BARE:
-	    case M_XPATH:
-		*bp++ = '{';
-		memcpy(bp, ssp->ss_token, slen);
-		bp += slen;
-		*bp++ = '}';
-		break;
-	    }
-	}
-
-	*bp = '\0';
-    }
-#endif
-
     int len;
     xmlAttrPtr attr;
     xmlNsPtr ns = NULL;

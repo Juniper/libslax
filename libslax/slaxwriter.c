@@ -161,18 +161,6 @@ nsIsMember (const xmlChar *prefix, xmlChar *list)
     return FALSE;
 }
 
-#if 0
-static int
-isNewLine (const xmlChar *str)
-{
-    for ( ; *str; str++)
-	if (*str == '\r'  || *str == '\n')
-	    return TRUE;
-
-    return FALSE;
-}
-#endif
-
 static int
 isWhiteString (const xmlChar *str)
 {
@@ -182,19 +170,6 @@ isWhiteString (const xmlChar *str)
 
     return TRUE;
 }
-
-#if 0
-static int
-slaxPrefixNeedsQuotes (const xmlChar *prefix)
-{
-    const unsigned char *cp = (const unsigned char *) prefix;
-
-    for ( ; *cp; cp++)
-	if (*cp < 0x20 || *cp > 0x7F)
-	    return TRUE;
-    return FALSE;
-}
-#endif
 
 static void
 slaxWriteAllNs (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
@@ -1124,10 +1099,6 @@ slaxWriteTemplate (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWrite(swp, " { }");
 	slaxWriteNewline(swp, 0);
     }
-
-#if 0
-    slaxWriteNewline(swp, 0);
-#endif
 
     xmlFreeAndEasy(mode);
     xmlFreeAndEasy(priority);
