@@ -25,7 +25,11 @@ test-1-19.slax \
 test-2-01.slax \
 test-2-02.slax \
 test-2-03.slax \
-test-2-04.slax
+test-2-04.slax \
+test-2-05.slax \
+test-2-06.slax \
+test-2-07.slax \
+test-2-08.slax
 
 EXTRA_DIST = \
     ${TEST_CASES} \

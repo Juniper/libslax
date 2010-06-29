@@ -1,0 +1,14 @@
+- Partial filter:
+   Something we can use for "filter-region" (emacs) or "!}" (vi)
+   Turns snippet of xslt into slax, or xml into slax-style xml
+
+- Add other xslt elements, to allow any/all xslt concepts to
+  be represented without <xsl:xxx>
+
+- Bump version number
+
+- Test portability
+  - cygwin, macos, freebsd, etc
+
+
+- Missing round-tripping "function" syntax in slaxwriter.c

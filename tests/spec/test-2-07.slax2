@@ -1,0 +1,40 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns my extension = "http://example.com";
+ns exslt extension = "http://exslt.org/common";
+ns slax-func extension = "http://exslt.org/functions";
+
+match / {
+    <out> {
+        var $a = my:test();
+        var $b = my:test(1, 2);
+        
+        <a> {
+            copy-of $a;
+        }
+        <b> {
+            copy-of $b;
+        }
+        <c> {
+            copy-of my:one("test");
+        }
+        var $d = ext:node-set(my:one("one", "two"));
+        <d> exslt:object-type($d);
+    }
+}
+<slax-func:function name="my:test"> {
+    ns slax-func = "http://exslt.org/functions";
+    
+    <slax-func:result select="$max - $min">;
+}
+<slax-func:function name="my:one"> {
+    ns slax-func = "http://exslt.org/functions";
+    
+    <slax-func:result> {
+        ns slax-func = "http://exslt.org/functions";
+        
+        <name> $name;
+        <fish> $fish;
+    }
+}

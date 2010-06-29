@@ -7,10 +7,6 @@ ns three = "http://three.example.org";
 
 import "test-2-06-import.xsl";
 <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes">;
-
-/*
-<xsl:namespace-alias stylesheet-prefix="#default" result-prefix="one">;
- */
 strip-space *;
 
 match /doc {
