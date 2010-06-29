@@ -143,9 +143,11 @@ keyword_mapping_t keywordMap[] = {
     { 0, NULL, 0 }
 };
 
-/*
+/**
  * Simple trace function that tosses messages to stderr if slaxDebug
  * has been set to non-zero.
+ *
+ * @param fmt format string plus variadic arguments
  */
 void
 slaxTrace (const char *fmt, ...)
@@ -450,8 +452,11 @@ slaxDrainComment (slax_data_t *sdp)
     }
 }
 
-/*
- * Give an error if the axis name is not valid
+/**
+ * Issue an error if the axis name is not valid
+ *
+ * @param sdp main slax data structure
+ * @param axis name of the axis to check
  */
 void
 slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
@@ -490,11 +495,14 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
 }
     
 
-/*
+/**
  * This function is the core of the lexer.
  *
  * We inspect the input buffer, finding the first token and returning
  * it's token type.
+ *
+ * @param sdp main slax data structure
+ * @return token type
  */
 static int
 slaxLexer (slax_data_t *sdp)
@@ -704,11 +712,15 @@ slaxLexer (slax_data_t *sdp)
     return T_BARE;
 }
 
-/*
+/**
  * Lexer function called from bison's yyparse()
  *
  * We lexically analyze the input and return the token type to
  * bison's yyparse function, which we've renamed to slaxParse.
+ *
+ * @param sdp main slax data structure
+ * @param yylvalp pointer to bison's lval (stack value)
+ * @return token type
  */
 int
 slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
@@ -839,8 +851,13 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     return rc;
 }
 
-/*
+/**
  * Callback from bison when an error is detected.
+ *
+ * @param sdp main slax data structure
+ * @param str error message
+ * @param yylvalp stack entry from bison's lexical stack
+ * @return zero
  */
 int
 slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
@@ -856,8 +873,11 @@ slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
     return 0;
 }
 
-/*
+/**
  * Check the version string.  The only supported version is "1.0".
+ *
+ * @param major major version number
+ * @param minor minor version number
  */
 void
 slaxVersionMatch (const char *major, const char *minor)
@@ -868,21 +888,12 @@ slaxVersionMatch (const char *major, const char *minor)
 		major ?: 0, minor ?: 0);
 }
 
-/*
- * Should the character be stripped of surrounding whitespace?
- */
-int
-slaxNoSpace (int ch)
-{
-    if (ch == '@' || ch == '/'
-	|| ch == '('  || ch == ')'
-	|| ch == '['  || ch == ']')
-	return TRUE;
-    return FALSE;
-}
-
-/*
+/**
  * Add a namespace to the node on the top of the stack
+ *
+ * @param sdp main slax data structure
+ * @param prefix namespace prefix
+ * @param uri namespace URI
  */
 void
 slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
@@ -912,14 +923,14 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
 }
 
 /**
- * slaxFindNs:
- * @nodep: the node where the search begins
- * @prefix: the prefix string
- * @len: the length of the prefix string
- *
  * Find a namespace definition in the node's parent chain that
  * matches the given prefix.  Since the prefix string lies in situ
  * in the original tag, we give the length of the prefix.
+ *
+ * @param nodep the node where the search begins
+ * @param prefix the prefix string
+ * @param len the length of the prefix string
+ * @return pointer to the existing name space 
  */
 static xmlNsPtr
 slaxFindNs (xmlNodePtr nodep, const char *prefix, int len)

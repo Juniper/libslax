@@ -183,12 +183,6 @@ void
 slaxVersionMatch (const char *major, const char *minor);
 
 /*
- * Should the character be stripped of surrounding whitespace?
- */
-int
-slaxNoSpace (int ch);
-
-/*
  * Add a namespace to the node on the top of the stack
  */
 void

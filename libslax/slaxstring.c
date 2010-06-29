@@ -49,10 +49,17 @@ slaxStringQFlags (slax_string_t *ssp)
     return rc;
 }
 
-/*
+/**
  * Create a string.  Slax strings allow sections of strings (typically
  * tokens returned by the lexer) to be chained together to built
  * longer strings (typically an XPath expression).
+ *
+ * The string is located in sdp->sd_buf[] between sdp->sd_start
+ * and sdp->sd_cur.
+ *
+ * @param sdp main slax data structure
+ * @param ttype token type for the string to be created
+ * @return newly allocated string structure
  */
 slax_string_t *
 slaxStringCreate (slax_data_t *sdp, int ttype)
@@ -62,7 +69,7 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     const char *start;
     slax_string_t *ssp;
 
-    if (ttype == L_EOS)
+    if (ttype == L_EOS)		/* Don't bother for ";" */
 	return NULL;
 
     len = sdp->sd_cur - sdp->sd_start;
@@ -116,8 +123,12 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     return ssp;
 }
 
-/*
+/**
  * Return a string for a literal string constant.
+ *
+ * @param str literal string
+ * @param ttype token type
+ * @return newly allocated string structure
  */
 slax_string_t *
 slaxStringLiteral (const char *str, int ttype)
@@ -137,9 +148,14 @@ slaxStringLiteral (const char *str, int ttype)
     return ssp;
 }
 
-/*
+/**
  * Link all strings above "start" (and below "top") into a single
  * string.
+ *
+ * @param sdp main slax data structure (UNUSED)
+ * @param start stack location to start linking
+ * @param top stack location to stop linking
+ * @return linked list of strings (via ss_next)
  */
 slax_string_t *
 slaxStringLink (slax_data_t *sdp UNUSED, slax_string_t **start,
@@ -166,9 +182,13 @@ slaxStringLink (slax_data_t *sdp UNUSED, slax_string_t **start,
     return results;
 }
 
-/*
+/**
  * Calculate the length of the string consisting of the concatenation
  * of all the string segments hung off "start".
+ *
+ * @param start string (linked via ss_next) to determine length
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes required to hold this string
  */
 int
 slaxStringLength (slax_string_t *start, unsigned flags)
@@ -202,7 +222,27 @@ slaxStringLength (slax_string_t *start, unsigned flags)
 }
 
 /*
+ * Should the character be stripped of surrounding whitespace?
+ */
+static int
+slaxStringNoSpace (int ch)
+{
+    if (ch == '@' || ch == '/'
+	|| ch == '('  || ch == ')'
+	|| ch == '['  || ch == ']')
+	return TRUE;
+    return FALSE;
+}
+
+
+/**
  * Build a single string out of the string segments hung off "start".
+ *
+ * @param buf memory buffer to hold built string
+ * @param bufsiz number of bytes available in buffer
+ * @param start first link in linked list
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes used to hold this string
  */
 int
 slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
@@ -233,7 +273,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 
 	    if (bp[-2] == '_' || *str == '_')
 		trim = FALSE;
-	    else if (slaxNoSpace(bp[-2]) || slaxNoSpace(*str))
+	    else if (slaxStringNoSpace(bp[-2]) || slaxStringNoSpace(*str))
 		trim = TRUE;	/* foo/goo[@zoo] */
 
 	    else if (*str == ',')
@@ -372,8 +412,12 @@ slaxStringFuse (slax_data_t *sdp UNUSED, int ttype, slax_string_t **sspp)
     return results;
 }
 
-/*
+/**
  * Build a string from the string segment hung off "value" and return it
+ *
+ * @param value start of linked list of string segments
+ * @param flags indicate how string data is marshalled
+ * @return newly allocated character string
  */
 char *
 slaxStringAsChar (slax_string_t *value, unsigned flags)
@@ -396,8 +440,17 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
     return buf;
 }
 
-/*
- * Return a set of xpath values as a concat() invocation
+/**
+ * Return a set of xpath values as a concat() invocation.  Strings are
+ * linked in two dimensions.  The "ss_next" field links tokens inside
+ * an XPath expression, and the "ss_concat" field links XPath expressions
+ * inside SLAX concatenation operations.
+ * For example: var $x = a1/a2/a3 _ b1/b2/b3;
+ * The "a1"'s ss_next would be "/", but its ss_concat link would be "b1".
+ *
+ * @param value start of linked list of string segments
+ * @param flags indicate how string data is marshalled
+ * @return newly allocated character string
  */
 char *
 slaxStringAsConcat (slax_string_t *value, unsigned flags)
@@ -459,8 +512,16 @@ slaxStringAsConcat (slax_string_t *value, unsigned flags)
     return buf;
 }
 
-/*
- * Return a set of xpath values as an attribute value template
+/**
+ * Return a set of xpath values as an attribute value template.  The SLAX
+ * concatenation operations used the "{a1}{b2}" braces templating scheme
+ * for concatenation.
+ * For example: <a b = one _ "-" _ two>;  would be <a b="{one}-{two}"/>.
+ * Attribute value templates are used for non-xsl elements.
+ *
+ * @param value start of linked list of string segments
+ * @param flags indicate how string data is marshalled
+ * @return newly allocated character string
  */
 char *
 slaxStringAsValueTemplate (slax_string_t *value, unsigned flags)
@@ -537,8 +598,10 @@ slaxStringFreeConcat (slax_string_t *ssp)
     }
 }
 
-/*
- * Free a set of string segments
+/**
+ * Free a set of string segments.  Both ss_concat and ss_next links are
+ * followed and all contents are freed.
+ * @param ssp string links to be freed.
  */
 void
 slaxStringFree (slax_string_t *ssp)
@@ -585,13 +648,14 @@ slaxStringAddTailHelper (slax_string_t ***tailp,
     return FALSE;
 }
 
-/*
+/**
  * Add a new slax string segment to the linked list
- * @tailp: pointer to a variable that points to the end of the linked list
- * @first: pointer to first string in linked list
- * @buf: the string to add
- * @bufsiz: length of the string to add
- * @ttype: token type
+ * @param tailp pointer to a variable that points to the end of the linked list
+ * @param first pointer to first string in linked list
+ * @param buf the string to add
+ * @param bufsiz length of the string to add
+ * @param ttype token type
+ * @return TRUE if xmlMalloc fails, FALSE otherwise
  */
 int
 slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
