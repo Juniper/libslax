@@ -75,4 +75,7 @@ accept:
 	  base=`${BASENAME} $$test .slax` ; \
 	  ${CP} out/$$base.xsl ${srcdir}/$$base.xsl ; \
 	  ${CP} out/$$base.slax2 ${srcdir}/$$base.slax2 ; \
+	  if [ -f out/$$base.out ]; then \
+	    ${CP} out/$$base.out ${srcdir}/$$base.out ; \
+	  fi ; \
 	done)

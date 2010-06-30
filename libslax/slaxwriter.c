@@ -8,6 +8,7 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
+#include <libexslt/exslt.h>
 #include "slaxparser.h"
 
 #define BUF_EXTEND 2048		/* Bump the buffer by this amount */
@@ -171,6 +172,20 @@ isWhiteString (const xmlChar *str)
     return TRUE;
 }
 
+/*
+ * We reserve all prefixes, valiable names, etc starting with 'slax'
+ */
+static int
+slaxIsReserved (const char *name)
+{
+    return (name
+	    && name[0] == 's'
+	    && name[1] == 'l'
+	    && name[2] == 'a'
+	    && name[3] == 'x');
+}
+
+
 static void
 slaxWriteAllNs (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
@@ -183,7 +198,10 @@ slaxWriteAllNs (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     xmlNsPtr cur;
 
     for (cur = nodep->nsDef; cur; cur = cur->next) {
-	if (streq((const char *) cur->prefix, XSL_PREFIX))
+	if (cur->prefix && streq((const char *) cur->prefix, XSL_PREFIX))
+	    continue;
+
+	if (slaxIsReserved((const char *) cur->prefix))
 	    continue;
 
 	if (cur->prefix) {
@@ -1107,6 +1125,105 @@ slaxWriteTemplate (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 }
 
 static void
+slaxWriteFunctionResult (slaxWriter_t *swp, xmlNodePtr nodep, char *sel)
+{
+    char *expr = slaxMakeExpression(swp, nodep, sel);
+
+    slaxWrite(swp, "expr ");
+    slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
+    slaxWrite(swp, ";");
+    slaxWriteNewline(swp, 0);
+    xmlFreeAndEasy(expr);
+}
+
+static int
+slaxWriteFunctionResultNeedsBraces (slaxWriter_t *swp UNUSED, xmlNodePtr nodep)
+{
+    xmlNsPtr cur;
+
+    for (cur = nodep->nsDef; cur; cur = cur->next) {
+	if (cur->prefix && streq((const char *) cur->prefix, XSL_PREFIX))
+	    continue;
+	if (slaxIsReserved((const char *) cur->prefix))
+	    continue;
+	return TRUE;
+    }
+
+    return FALSE;
+}
+
+#if 0
+static
+#else
+void
+slaxWriteFunctionElement (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep);
+#endif
+void
+slaxWriteFunctionElement (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+{
+    const char *name = (const char *) nodep->name;
+    char *sel = NULL, *fn;
+
+    if (streq(name, "function")) {
+	fn = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
+
+	if (fn == NULL) {
+	    slaxTrace("slax: function with out a name");
+	    return;
+	}
+
+	if (slaxNeedsBlankline(nodep))
+	    slaxWriteBlankline(swp);
+
+	slaxWrite(swp, "function %s (", fn);
+	slaxWriteNamedTemplateParams(swp, docp, nodep, FALSE, FALSE);
+	slaxWrite(swp, ") {");
+	slaxWriteNewline(swp, NEWL_INDENT);
+
+	slaxWriteNamedTemplateParams(swp, docp, nodep, fn == NULL, TRUE);
+
+	xmlFree(fn);
+
+    } else if (streq(name, "result")) {
+	sel = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_SELECT);
+
+	/*
+	 * If we have a select attribute, then this attribute is the
+	 * expresion on the "result" statement.
+	 */
+	if (sel && !slaxWriteFunctionResultNeedsBraces(swp, nodep)) {
+	    slaxWriteFunctionResult(swp, nodep, sel);
+	    xmlFree(sel);
+	    return;
+	}
+
+	/*
+	 * Otherwise we need to put the contents of this <xx:result> element
+	 * into a "result" statement.
+	 */
+	slaxWrite(swp, "result {");
+	slaxWriteNewline(swp, NEWL_INDENT);
+
+    } else {
+	slaxTrace("slax: unknown element: %s", name);
+	return;
+    }
+
+    slaxWriteAllNs(swp, docp, nodep);
+
+    if (sel) {
+	slaxWriteFunctionResult(swp, nodep, sel);
+	xmlFree(sel);
+
+    } else {
+	slaxWriteChildren(swp, docp, nodep, FALSE);
+    }
+
+    slaxWrite(swp, "}");
+    slaxWriteNewline(swp, NEWL_OUTDENT);
+}
+
+static void
 slaxWriteValueOf (slaxWriter_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
     char *sel = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_SELECT);
@@ -1775,6 +1892,11 @@ slaxWriteChildren (slaxWriter_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 	    if (childp->ns && childp->ns->prefix
 		&& streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
 		slaxWriteXslElement(swp, docp, childp, &state);
+
+	    } else if (childp->ns && childp->ns->href
+		       && streq((const char *) childp->ns->href,
+				(const char *) FUNC_URI)) {
+		slaxWriteFunctionElement(swp, docp, childp);
 
 	    } else {
 		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))

@@ -9,6 +9,3 @@
 
 - Test portability
   - cygwin, macos, freebsd, etc
-
-
-- Missing round-tripping "function" syntax in slaxwriter.c

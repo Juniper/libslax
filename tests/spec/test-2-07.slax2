@@ -3,7 +3,6 @@ version 1.0;
 
 ns my extension = "http://example.com";
 ns exslt extension = "http://exslt.org/common";
-ns slax-func extension = "http://exslt.org/functions";
 
 match / {
     <out> {
@@ -23,17 +22,13 @@ match / {
         <d> exslt:object-type($d);
     }
 }
-<slax-func:function name="my:test"> {
-    ns slax-func = "http://exslt.org/functions";
-    
-    <slax-func:result select="$max - $min">;
+
+function my:test ($min = 0, $max = 100) {
+    expr $max - $min;
 }
-<slax-func:function name="my:one"> {
-    ns slax-func = "http://exslt.org/functions";
-    
-    <slax-func:result> {
-        ns slax-func = "http://exslt.org/functions";
-        
+
+function my:one ($name, $fish = "fish") {
+    result {
         <name> $name;
         <fish> $fish;
     }
