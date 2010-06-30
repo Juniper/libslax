@@ -10,12 +10,16 @@ AM_CFLAGS = \
     -I${top_srcdir}/libslax \
     ${LIBXML_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
-    -lexslt \
     ${WARNINGS}
 
 if SLAX_DEBUG
 AM_CFLAGS += -g -DSLAX_DEBUG
 endif
+
+LIBS = \
+    ${LIBXSLT_LIBS} \
+    -lexslt \
+    ${LIBXML_LIBS}
 
 bin_PROGRAMS = slaxproc
 

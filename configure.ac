@@ -9,11 +9,10 @@ LT_INIT([disable-shared])
 AC_DISABLE_SHARED
 
 #
-# There is nothing specific about these versions, they are
-# just what I'm testing against.
+# libxslt 1.1.26 has a fix for AVT terminating with close braces
 #
-LIBXML_REQUIRED_VERSION=2.6.27
-LIBXSLT_REQUIRED_VERSION=1.1.24
+LIBXML_REQUIRED_VERSION=2.7.7
+LIBXSLT_REQUIRED_VERSION=1.1.26
 
 AC_PROG_CC
 AC_PROG_INSTALL
