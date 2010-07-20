@@ -4,8 +4,8 @@ version 1.0;
 match employees {
     <ul> {
         apply-templates employee {
-            <xsl:sort select="name/family">;
-            <xsl:sort select="name/given">;
+            sort name/family;
+            sort name/given;
         }
     }
 }

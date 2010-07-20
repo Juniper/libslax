@@ -1,12 +1,19 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html">;
-<xsl:attribute-set name="foo-attribs"> {
-    <xsl:attribute name="size"> "+1";
+output-method html;
+
+attribute-set foo-attribs {
+    attribute "size" {
+        expr "+1";
+    }
 }
-<xsl:attribute-set name="foo-dep-attribs" use-attribute-sets="foo-attribs"> {
-    <xsl:attribute name="text-align"> "start";
+
+attribute-set foo-dep-attribs {
+    use-attribute-sets foo-attribs;
+    attribute "text-align" {
+        expr "start";
+    }
 }
 
 match / {

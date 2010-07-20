@@ -6,7 +6,7 @@ match / {
 }
 
 match * |@* | text() {
-    <xsl:copy> {
+    copy-node {
         apply-templates * |@* | text();
     }
 }

@@ -3,7 +3,7 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:template match="note">
     <fo:block>
-      <xsl:number level="any" from="chapter" format="(1) "/>
+      <xsl:number level="any" format="(1) " from="chapter"/>
       <xsl:apply-templates/>
     </fo:block>
   </xsl:template>

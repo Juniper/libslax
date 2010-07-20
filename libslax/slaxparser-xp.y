@@ -52,13 +52,13 @@
 xp_location_path :
 	xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_absolute_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -66,13 +66,13 @@ xp_location_path :
 xp_absolute_location_path :
 	L_SLASH xp_relative_location_path_optional
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xpc_abbreviated_absolute_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -80,7 +80,7 @@ xp_absolute_location_path :
 xp_expr :
 	xp_or_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -88,31 +88,31 @@ xp_expr :
 xp_primary_expr :
 	L_OPAREN xpc_expr L_CPAREN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xpc_variable_reference
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_literal
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_number
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_function_call
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -120,13 +120,13 @@ xp_primary_expr :
 xp_union_expr :
 	xp_path_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_union_expr L_VBAR xp_path_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -134,25 +134,25 @@ xp_union_expr :
 xp_path_expr :
 	xp_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_filter_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_filter_expr L_SLASH xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_filter_expr L_DSLASH xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -160,13 +160,13 @@ xp_path_expr :
 xp_filter_expr :
 	xp_primary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_filter_expr xpc_predicate
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -174,13 +174,13 @@ xp_filter_expr :
 xp_or_expr :
 	xp_and_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_or_expr or_operator xp_and_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -188,13 +188,13 @@ xp_or_expr :
 xp_and_expr :
 	xp_equality_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_and_expr and_operator xp_equality_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -202,19 +202,19 @@ xp_and_expr :
 xp_equality_expr :
 	xp_relational_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_equality_expr equals_operator xp_relational_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_equality_expr L_NOTEQUALS xp_relational_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -222,19 +222,19 @@ xp_equality_expr :
 xp_additive_expr :
 	xp_multiplicative_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_additive_expr L_PLUS xp_multiplicative_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_additive_expr L_MINUS xp_multiplicative_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -242,25 +242,25 @@ xp_additive_expr :
 xp_multiplicative_expr :
 	xp_unary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_multiplicative_expr L_STAR xp_unary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_multiplicative_expr K_DIV xp_unary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_multiplicative_expr K_MOD xp_unary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -268,13 +268,13 @@ xp_multiplicative_expr :
 xp_unary_expr :
 	xp_union_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| L_MINUS xp_unary_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;

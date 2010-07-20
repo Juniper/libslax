@@ -8,7 +8,12 @@ match chapter/heading {
         apply-templates;
     }
 }
-<xsl:attribute-set name="title-style"> {
-    <xsl:attribute name="font-size"> "12pt";
-    <xsl:attribute name="font-weight"> "bold";
+
+attribute-set title-style {
+    attribute "font-size" {
+        expr "12pt";
+    }
+    attribute "font-weight" {
+        expr "bold";
+    }
 }

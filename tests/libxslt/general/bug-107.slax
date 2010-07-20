@@ -3,7 +3,7 @@ version 1.0;
 
 /* XSLT REC section 7.5 */
 match @* | node() {
-    <xsl:copy> {
+    copy-node {
         apply-templates @* | node();
     }
 }

@@ -3,7 +3,7 @@ version 1.0;
 
 ns ex = "http://www.example.org/";
 
-<xsl:output method="xml">;
+output-method xml;
 
 match / {
     copy-of /;

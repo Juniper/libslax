@@ -1,7 +1,9 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html" encoding="utf-8">;
+output-method html {
+    encoding "utf-8";
+}
 
 template element ($indent = 0) {
     expr "\n";

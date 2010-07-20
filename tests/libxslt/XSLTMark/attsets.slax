@@ -1,30 +1,45 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output encoding="utf-8">;
-<xsl:attribute-set name="attset1"> {
-    <xsl:attribute name="att1"> "foo";
-    <xsl:attribute name="att2"> "bar";
+output-method {
+    encoding "utf-8";
 }
-<xsl:attribute-set name="attset2"> {
-    <xsl:attribute name="att3"> "baz";
-    <xsl:attribute name="att4"> "quux";
+
+attribute-set attset1 {
+    attribute "att1" {
+        expr "foo";
+    }
+    attribute "att2" {
+        expr "bar";
+    }
+}
+
+attribute-set attset2 {
+    attribute "att3" {
+        expr "baz";
+    }
+    attribute "att4" {
+        expr "quux";
+    }
 }
 
 match salesdata | year {
-    <xsl:copy use-attribute-sets="attset1"> {
+    copy-node {
+        use-attribute-sets attset1;
         apply-templates;
     }
 }
 
 match region {
-    <xsl:copy use-attribute-sets="attset2"> {
+    copy-node {
+        use-attribute-sets attset2;
         apply-templates;
     }
 }
 
 match name | sales {
-    <xsl:copy use-attribute-sets="attset1 attset2"> {
+    copy-node {
+        use-attribute-sets attset1 attset2;
         apply-templates;
     }
 }

@@ -3,10 +3,12 @@ version 1.0;
 
 ns foo = "http://foo.org";
 
-<xsl:output cdata-section-elements="foo:elt">;
+output-method {
+    cdata-section-elements foo:elt;
+}
 
 match @* | node() {
-    <xsl:copy> {
+    copy-node {
         apply-templates @* | node();
     }
 }

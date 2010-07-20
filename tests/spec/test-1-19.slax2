@@ -1,10 +1,13 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" indent="yes" media-type="image/svg">;
+output-method xml {
+    indent "yes";
+    media-type "image/svg";
+}
 
 match * {
     for-each (configuration/interfaces/unit) {
-        <xsl:sort some-obnoxious-option="some-obnoxious-value">;
+        sort name;
     }
 }

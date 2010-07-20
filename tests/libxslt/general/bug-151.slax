@@ -3,7 +3,10 @@ version 1.0;
 
 ns ex = "http://example.org/";
 
-<xsl:output method="xml" encoding="UTF-8" doctype-public="-//example.org//Example 1.0//EN">;
+output-method xml {
+    encoding "UTF-8";
+    doctype-public "-//example.org//Example 1.0//EN";
+}
 
 match /tst {
     <ex:document> {

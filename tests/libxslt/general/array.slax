@@ -6,7 +6,7 @@ version 1.0;
  */
 ns local = "data_local_to_this_file";
 
-<xsl:output method="text">;
+output-method text;
 <local:benefit> {
     <local:period ID="12M"> "1";
     <local:period ID="18M"> "2";

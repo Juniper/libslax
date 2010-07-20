@@ -3,6 +3,8 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:import href="bug-131-imp.imp"/>
   <xsl:attribute-set name="title.properties">
-    <xsl:attribute name="font-size">8pt</xsl:attribute>
+    <xsl:attribute name="font-size">
+      <xsl:text>8pt</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
 </xsl:stylesheet>

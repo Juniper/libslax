@@ -3,7 +3,7 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="xml" encoding="iso-8859-1" indent="yes"/>
   <xsl:template match="/">
-    <xsl:message terminate="no">A simple message</xsl:message>
+    <xsl:message>A simple message</xsl:message>
     <xsl:apply-templates/>
   </xsl:template>
   <xsl:template match="root | node">

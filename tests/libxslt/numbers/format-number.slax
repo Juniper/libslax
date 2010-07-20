@@ -1,8 +1,13 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
-<xsl:decimal-format name="special" decimal-separator="*">;
+output-method xml {
+    indent "yes";
+    encoding "iso-8859-1";
+}
+decimal-format special {
+    decimal-separator "*";
+}
 
 match /format-number {
     <format-number> {

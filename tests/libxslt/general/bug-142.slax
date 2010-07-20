@@ -20,7 +20,9 @@ match g:posts/g:post[g:date] {
     
     <div id="post" _ $id> {
         if (lang(ja)) {
-            <xsl:attribute name="xml:lang"> "ja";
+            attribute "xml:lang" {
+                expr "ja";
+            }
         }
         <h3> {
             <a href=$date _ "/" _ $id> {

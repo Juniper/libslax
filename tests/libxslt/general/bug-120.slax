@@ -1,26 +1,35 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output indent="yes">;
+output-method {
+    indent "yes";
+}
 
 match a {
     <a> {
         expr "\n   Ascending numeric\n   ";
         
         for-each (b) {
-            <xsl:sort select="." data-type="number">;
+            sort . {
+                data-type "number";
+            }
             copy-of .;
         }
         expr "\n   Descending numeric\n   ";
         
         for-each (b) {
-            <xsl:sort select="." data-type="number" order="descending">;
+            sort . {
+                data-type "number";
+                order "descending";
+            }
             copy-of .;
         }
         expr "\n   Ascending alpha\n   ";
         
         for-each (b) {
-            <xsl:sort select="." data-type="text">;
+            sort . {
+                data-type "text";
+            }
             copy-of .;
         }
     }

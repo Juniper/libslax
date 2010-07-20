@@ -3,7 +3,9 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:template match="doc">
     <doc>
-      <xsl:processing-instruction name="xml-stylesheet">href="book.css" type="text/css"</xsl:processing-instruction>
+      <xsl:processing-instruction name="xml-stylesheet">
+        <xsl:text>href="book.css" type="text/css"</xsl:text>
+      </xsl:processing-instruction>
     </doc>
   </xsl:template>
 </xsl:stylesheet>

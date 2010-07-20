@@ -4,7 +4,9 @@ version 1.0;
 match / {
     <result xsl:version="6.1"> {
         <xsl:foo-of select="/Fuhrpark"> {
-            <xsl:fallback> "An error occoured, foo-of not known";
+            fallback {
+                expr "An error occoured, foo-of not known";
+            }
         }
     }
 }

@@ -17,7 +17,10 @@ match / {
                 
                 for-each (sales/division) {
                     /* order the result by revenue */
-                    <xsl:sort select="revenue" data-type="number" order="descending">;
+                    sort revenue {
+                        data-type "number";
+                        order "descending";
+                    }
                     <tr> {
                         <td> {
                             <em> @id;
@@ -26,7 +29,9 @@ match / {
                         <td> {
                             /* highlight negative growth in red */
                             if (growth < 0) {
-                                <xsl:attribute name="style"> "color:red";
+                                attribute "style" {
+                                    expr "color:red";
+                                }
                             }
                             expr growth;
                         }

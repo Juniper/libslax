@@ -1,9 +1,12 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html">;
-<xsl:attribute-set name="foo-attribs"> {
-    <xsl:attribute name="size"> "+1";
+output-method html;
+
+attribute-set foo-attribs {
+    attribute "size" {
+        expr "+1";
+    }
 }
 
 match foo {

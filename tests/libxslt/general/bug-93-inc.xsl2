@@ -3,7 +3,9 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="html"/>
   <xsl:attribute-set name="foo-attribs">
-    <xsl:attribute name="size">+1</xsl:attribute>
+    <xsl:attribute name="size">
+      <xsl:text>+1</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
   <xsl:template match="foo">
     <font xsl:use-attribute-sets="foo-attribs">

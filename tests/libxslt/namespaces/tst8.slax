@@ -2,9 +2,13 @@
 version 1.0;
 
 ns bb = "http://bbrack.org";
+ns-alias #default bb;
 
-<xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes">;
-<xsl:namespace-alias stylesheet-prefix="#default" result-prefix="bb">;
+output-method xml {
+    version "1.0";
+    encoding "utf-8";
+    indent "yes";
+}
 strip-space *;
 
 match /adoc {

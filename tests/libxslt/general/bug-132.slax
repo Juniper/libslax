@@ -1,7 +1,10 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" encoding="UTF-8" cdata-section-elements="test">;
+output-method xml {
+    encoding "UTF-8";
+    cdata-section-elements test;
+}
 
 match / {
     copy-of *;

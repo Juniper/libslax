@@ -15,7 +15,10 @@ ns doc exclude = "http://nwalsh.com/xsl/documentation/1.0";
  *
  * */
 /* * Generate HTML 4 * */
-<xsl:output method="html" version="4.0" encoding="UTF-8">;
+output-method html {
+    version "4.0";
+    encoding "UTF-8";
+}
 
 /* * strip white space from containers that don't have PCDATA in
  * them; this list may not be complete.
@@ -110,13 +113,13 @@ match entry {
 }
 /* * inline elements * */
 match i | b | sub | sup {
-    <xsl:text disable-output-escaping="yes"> "<";
+    uexpr "<";
     expr name();
-    <xsl:text disable-output-escaping="yes"> ">";
+    uexpr ">";
     apply-templates;
-    <xsl:text disable-output-escaping="yes"> "</";
+    uexpr "</";
     expr name();
-    <xsl:text disable-output-escaping="yes"> ">";
+    uexpr ">";
 }
 
 match eg {
@@ -126,9 +129,9 @@ match eg {
 }
 /* * turn italic off * */
 match interj {
-    <xsl:text disable-output-escaping="yes"> "</i>";
+    uexpr "</i>";
     apply-templates;
-    <xsl:text disable-output-escaping="yes"> "<i>";
+    uexpr "<i>";
 }
 
 match meaning {

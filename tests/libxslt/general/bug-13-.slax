@@ -2,7 +2,7 @@
 version 1.0;
 
 match * |@* | text() {
-    <xsl:copy> {
+    copy-node {
         apply-templates * |@* | text();
     }
 }

@@ -2,5 +2,8 @@
 version 1.0;
 
 match / {
-    <xsl:element name="test">;
+    element "test" {
+        ns "http://bar.xml";
+        
+    }
 }

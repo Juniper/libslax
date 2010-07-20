@@ -5,7 +5,7 @@ ns fo = "http://www.w3.org/1999/XSL/Format";
 ns axsl = "http://www.w3.org/1999/XSL/TransformAlias";
 
 match @* | node() {
-    <xsl:copy> {
+    copy-node {
         apply-templates @* | node();
     }
 }

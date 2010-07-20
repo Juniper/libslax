@@ -3,7 +3,9 @@ version 1.0;
 
 ns xi = "http://www.toto.com/xinclude";
 
-<xsl:output encoding="ISO-8859-1" method="html">;
+output-method html {
+    encoding "ISO-8859-1";
+}
 strip-space *;
 
 match / {
@@ -11,11 +13,11 @@ match / {
 }
 
 match xi:* {
-    <xsl:copy> {
+    copy-node {
         apply-templates node() |@*;
     }
 }
 
 match @xi:* {
-    <xsl:copy>;
+    copy-node;
 }

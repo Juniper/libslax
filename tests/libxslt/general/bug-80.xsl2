@@ -13,12 +13,18 @@ inherit. -->
     </out>
   </xsl:template>
   <xsl:attribute-set name="set2" use-attribute-sets="set3">
-    <xsl:attribute name="text-decoration">underline</xsl:attribute>
+    <xsl:attribute name="text-decoration">
+      <xsl:text>underline</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
   <xsl:attribute-set name="set1" use-attribute-sets="set2">
-    <xsl:attribute name="color">black</xsl:attribute>
+    <xsl:attribute name="color">
+      <xsl:text>black</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
   <xsl:attribute-set name="set3">
-    <xsl:attribute name="font-size">14pt</xsl:attribute>
+    <xsl:attribute name="font-size">
+      <xsl:text>14pt</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
 </xsl:stylesheet>

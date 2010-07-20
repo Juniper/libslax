@@ -4,6 +4,9 @@ version 1.0;
 ns fo = "http://www.w3.org/1999/XSL/Format";
 
 import "bug-131-imp.imp";
-<xsl:attribute-set name="title.properties"> {
-    <xsl:attribute name="font-size"> "8pt";
+
+attribute-set title.properties {
+    attribute "font-size" {
+        expr "8pt";
+    }
 }

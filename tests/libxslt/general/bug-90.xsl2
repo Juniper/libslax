@@ -11,7 +11,7 @@ in a CDATA block.
 <new-fruit2> does it with a workaround named template 'wrap-cdata'
 ============================================================
  -->
-  <xsl:output method="xml" cdata-section-elements="new-fruit1" indent="yes"/>
+  <xsl:output method="xml" indent="yes" cdata-section-elements="new-fruit1"/>
   <xsl:template match="fruit-sites/fruit">
     <new-fruit1 type="{@type}">
       <xsl:text>
@@ -35,7 +35,7 @@ in a CDATA block.
     <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>
     <!-- 
  -->
-    <xsl:value-of disable-output-escaping="yes" select="$content"/>
+    <xsl:value-of select="$content" disable-output-escaping="yes"/>
     <!-- 
  -->
     <xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>

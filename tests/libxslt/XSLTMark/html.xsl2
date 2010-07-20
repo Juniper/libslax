@@ -29,7 +29,9 @@
               <td>
                 <!-- highlight negative growth in red -->
                 <xsl:if test="growth &lt; 0">
-                  <xsl:attribute name="style">color:red</xsl:attribute>
+                  <xsl:attribute name="style">
+                    <xsl:text>color:red</xsl:text>
+                  </xsl:attribute>
                 </xsl:if>
                 <xsl:value-of select="growth"/>
               </td>

@@ -4,7 +4,10 @@ version 1.0;
 ns "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 ns xhtml = "http://www.w3.org/1999/xhtml";
 
-<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
+output-method xml {
+    indent "yes";
+    encoding "iso-8859-1";
+}
 
 match / {
     <windows> {
@@ -17,6 +20,8 @@ match / {
 match a {
     <vbox> {
         <xhtml:div> "Hello";
-        <xsl:element name="xhtml:div"> "\n                        foo\n                ";
+        element "xhtml:div" {
+            expr "\n                        foo\n                ";
+        }
     }
 }

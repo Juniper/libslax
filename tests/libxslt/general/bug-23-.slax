@@ -1,13 +1,19 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" indent="yes">;
+output-method xml {
+    indent "yes";
+}
 
 match / {
     <indexdoc> {
         apply-templates //indexterm {
-            <xsl:sort data-type="text" select="primary">;
-            <xsl:sort data-type="text" select="secondary">;
+            sort primary {
+                data-type "text";
+            }
+            sort secondary {
+                data-type "text";
+            }
         }
     }
 }

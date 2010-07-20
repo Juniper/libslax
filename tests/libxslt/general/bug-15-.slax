@@ -6,7 +6,7 @@ match doc {
         <body> {
             <ul> {
                 for-each (items) {
-                    <xsl:sort>;
+                    sort;
                     <li> .;
                 }
             }

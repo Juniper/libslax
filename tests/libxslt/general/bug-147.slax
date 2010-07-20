@@ -5,7 +5,7 @@ import "./bug-147-3.imp";
 import "./bug-147-2.imp";
 import "./bug-147-1.imp";
 import "./bug-147-4.imp";
-<xsl:output method="html">;
+output-method html;
 
 match / {
     <html> {

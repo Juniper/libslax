@@ -11,7 +11,7 @@ match foo/bar[last() == 4] {
 }
 
 match foo/bar[last() == 3] {
-    <xsl:message> "last() was 3";
+    message "last() was 3";
     expr "\n 3 ";
     expr .;
 }
@@ -29,7 +29,7 @@ match foo/bar[last() == 1] {
 match foo/bar {
     priority -100;
     
-    <xsl:message> {
+    message {
         expr "last() was ";
         expr last();
     }

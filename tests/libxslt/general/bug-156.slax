@@ -4,6 +4,6 @@ version 1.0;
 import "bug-156.imp1.imp";
 
 template message () {
-    <xsl:message> "From main";
+    message "From main";
     apply-imports;
 }

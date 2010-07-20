@@ -3,8 +3,13 @@ version 1.0;
 
 match doc {
     <doc> {
-        <xsl:attribute name="xmlns:xsl" namespace="whatever"> "http://www.w3.org/1999/XSL/Transform";
-        <xsl:attribute name="attr"> "value";
+        attribute "xmlns:xsl" {
+            ns-template "whatever";
+            expr "http://www.w3.org/1999/XSL/Transform";
+        }
+        attribute "attr" {
+            expr "value";
+        }
         
         /*
         <xsl:attribute name="a">x

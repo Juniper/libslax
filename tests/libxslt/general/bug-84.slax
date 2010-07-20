@@ -3,7 +3,9 @@ version 1.0;
 
 match / {
     for-each (//chapter) {
-        <xsl:number level="multiple">;
+        number {
+            level "multiple";
+        }
         expr " ";
         expr ./text();
         expr "\n";

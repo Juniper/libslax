@@ -10,7 +10,7 @@ match / {
 }
 
 match * {
-    <xsl:copy> {
+    copy-node {
         apply-templates;
     }
 }

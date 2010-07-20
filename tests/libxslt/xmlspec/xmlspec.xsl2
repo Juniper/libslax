@@ -1702,32 +1702,32 @@ never know. -->
     <xsl:number format="1 "/>
   </xsl:template>
   <xsl:template match="back/div1 | inform-div1" mode="divnum">
-    <xsl:number count="div1 | inform-div1" format="A "/>
+    <xsl:number format="A " count="div1 | inform-div1"/>
   </xsl:template>
   <xsl:template match="front/div1 | front//div2 | front//div3 | front//div4 | front//div5" mode="divnum"/>
   <xsl:template match="div2" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2" format="1.1 "/>
+    <xsl:number level="multiple" format="1.1 " count="div1 | div2"/>
   </xsl:template>
   <xsl:template match="back//div2" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | inform-div1" format="A.1 "/>
+    <xsl:number level="multiple" format="A.1 " count="div1 | div2 | inform-div1"/>
   </xsl:template>
   <xsl:template match="div3" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3" format="1.1.1 "/>
+    <xsl:number level="multiple" format="1.1.1 " count="div1 | div2 | div3"/>
   </xsl:template>
   <xsl:template match="back//div3" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3 | inform-div1" format="A.1.1 "/>
+    <xsl:number level="multiple" format="A.1.1 " count="div1 | div2 | div3 | inform-div1"/>
   </xsl:template>
   <xsl:template match="div4" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4" format="1.1.1.1 "/>
+    <xsl:number level="multiple" format="1.1.1.1 " count="div1 | div2 | div3 | div4"/>
   </xsl:template>
   <xsl:template match="back//div4" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | inform-div1" format="A.1.1.1 "/>
+    <xsl:number level="multiple" format="A.1.1.1 " count="div1 | div2 | div3 | div4 | inform-div1"/>
   </xsl:template>
   <xsl:template match="div5" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5" format="1.1.1.1.1 "/>
+    <xsl:number level="multiple" format="1.1.1.1.1 " count="div1 | div2 | div3 | div4 | div5"/>
   </xsl:template>
   <xsl:template match="back//div5" mode="divnum">
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5 | inform-div1" format="A.1.1.1.1 "/>
+    <xsl:number level="multiple" format="A.1.1.1.1 " count="div1 | div2 | div3 | div4 | div5 | inform-div1"/>
   </xsl:template>
   <!-- mode: notes -->
   <xsl:template match="footnote" mode="notes">
@@ -1763,12 +1763,12 @@ never know. -->
     Once again, this could be done right here, but XT won't hear of it.
     <xsl:number level="any" count="prod[not(@diff='add')]"/>
  -->
-    <xsl:number level="any" count="prod[@diff='add']" from="prod[not(@diff='add')]" format="a"/>
+    <xsl:number level="any" format="a" from="prod[not(@diff = &quot;add&quot;)]" count="prod[@diff = &quot;add&quot;]"/>
     <xsl:text>]</xsl:text>
   </xsl:template>
   <!-- mode: number-simple -->
   <xsl:template match="prod" mode="number-simple">
-    <xsl:number level="any" count="prod[not(@diff='add')]"/>
+    <xsl:number level="any" count="prod[not(@diff = &quot;add&quot;)]"/>
   </xsl:template>
   <!-- mode: ref -->
   <xsl:template match="lhs" mode="ref">

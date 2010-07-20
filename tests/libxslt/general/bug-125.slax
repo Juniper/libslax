@@ -2,16 +2,24 @@
 version 1.0;
 
 strip-space *;
-<xsl:output method="html" indent="no">;
+output-method html {
+    indent "no";
+}
 
 match / {
     <div class="errataset"> {
         expr "\n";
         
         for-each (errataset/errata) {
-            <xsl:sort select="@page" data-type="number">;
-            <xsl:sort select="@paragraph" data-type="number">;
-            <xsl:sort select="@line" data-type="number">;
+            sort @page {
+                data-type "number";
+            }
+            sort @paragraph {
+                data-type "number";
+            }
+            sort @line {
+                data-type "number";
+            }
             apply-templates .;
         }
     }

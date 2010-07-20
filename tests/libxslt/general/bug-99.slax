@@ -1,10 +1,14 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml">;
+output-method xml;
 
 match / {
-    <xsl:element name="doc" namespace="ns1"> {
-        <xsl:attribute name="attr" namespace="ns1"> "foo!";
+    element "doc" {
+        ns-template "ns1";
+        attribute "attr" {
+            ns-template "ns1";
+            expr "foo!";
+        }
     }
 }

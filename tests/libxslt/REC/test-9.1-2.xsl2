@@ -19,7 +19,9 @@
   <xsl:template match="item">
     <tr>
       <xsl:if test="position() mod 2 = 0">
-        <xsl:attribute name="bgcolor">yellow</xsl:attribute>
+        <xsl:attribute name="bgcolor">
+          <xsl:text>yellow</xsl:text>
+        </xsl:attribute>
       </xsl:if>
       <xsl:apply-templates/>
     </tr>

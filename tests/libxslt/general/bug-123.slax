@@ -2,12 +2,14 @@
 version 1.0;
 
 match @* {
-    <xsl:copy>;
+    copy-node;
 }
 
 match element {
-    <xsl:copy> {
-        <xsl:attribute name="foo"> "xsl";
+    copy-node {
+        attribute "foo" {
+            expr "xsl";
+        }
         apply-templates @*;
     }
 }

@@ -29,7 +29,11 @@ test-2-04.slax \
 test-2-05.slax \
 test-2-06.slax \
 test-2-07.slax \
-test-2-08.slax
+test-2-08.slax \
+test-3-01.slax \
+test-3-02.slax \
+test-3-03.slax \
+test-3-04.slax
 
 EXTRA_DIST = \
     ${TEST_CASES} \

@@ -1,15 +1,25 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" indent="yes">;
+output-method xml {
+    indent "yes";
+}
 
 match / {
     <result> {
         apply-templates;
     }
 }
-<xsl:key name="k1" match="entry" use="@cat1">;
-<xsl:key name="k2" match="entry" use="@cat2">;
+
+key k1 {
+    match entry;
+    value @cat1;
+}
+
+key k2 {
+    match entry;
+    value @cat2;
+}
 
 match list {
     var $k = {

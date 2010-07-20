@@ -1,13 +1,16 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" encoding="iso-8859-1" indent="yes">;
+output-method xml {
+    encoding "iso-8859-1";
+    indent "yes";
+}
 
 match / {
-    <xsl:message terminate="no"> "A simple message";
+    message "A simple message";
     apply-templates;
 }
 
 match root | node {
-    <xsl:message terminate="yes"> "A fatal message";
+    terminate "A fatal message";
 }

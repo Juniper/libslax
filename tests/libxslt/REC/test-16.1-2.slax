@@ -1,7 +1,9 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output cdata-section-elements="example">;
+output-method {
+    cdata-section-elements example;
+}
 
 match / {
     <example> "<foo>";

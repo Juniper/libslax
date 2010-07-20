@@ -3,6 +3,8 @@ version 1.0;
 
 match doc {
     <doc> {
-        <xsl:processing-instruction name="xml-stylesheet"> "href=\"book.css\" type=\"text/css\"";
+        processing-instruction "xml-stylesheet" {
+            expr "href=\"book.css\" type=\"text/css\"";
+        }
     }
 }

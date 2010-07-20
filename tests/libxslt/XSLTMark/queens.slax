@@ -33,7 +33,9 @@ indent-results="no"
 result-ns="html">
 
  */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 match BoardSize {
     call PlaceQueenInRow($BoardSize = ., $PlacedQueens = "-", $Row = 0);
@@ -77,14 +79,14 @@ template TestQueenPosition ($BoardSize, $PlacedQueens, $Row, $Column, $TestQueen
 }
 
 template PrintBoard ($BoardSize, $PlacedQueens) {
-    <xsl:element name="P">;
-    <xsl:element name="TABLE"> {
+    element "P";
+    element "TABLE" {
         call PrintBoardRow($BoardSize, $ColumnInThisRow = substring-before($PlacedQueens, "-"), $ColumnsInOtherRows = substring-after($PlacedQueens, "-"));
     }
 }
 
 template PrintBoardRow ($BoardSize, $ColumnInThisRow, $ColumnsInOtherRows) {
-    <xsl:element name="TR"> {
+    element "TR" {
         call PrintBoardCell($CellsLeft = $BoardSize, $QueenCell = $ColumnInThisRow);
     }
     if ($ColumnsInOtherRows) {
@@ -94,7 +96,7 @@ template PrintBoardRow ($BoardSize, $ColumnInThisRow, $ColumnsInOtherRows) {
 
 template PrintBoardCell ($CellsLeft, $QueenCell) {
     if (not($CellsLeft == 0)) {
-        <xsl:element name="TD"> {
+        element "TD" {
             if ($QueenCell == 0) {
                 expr "Q";
             

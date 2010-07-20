@@ -1,7 +1,9 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 match table/row[6] {
     priority 5;
@@ -44,5 +46,7 @@ match row[id mod 3 == 2] [following-sibling::row[4]/firstname == "Bob"] {
 }
 
 match id | firstname | lastname | street | city | state | zip {
-    <xsl:copy> .;
+    copy-node {
+        expr .;
+    }
 }

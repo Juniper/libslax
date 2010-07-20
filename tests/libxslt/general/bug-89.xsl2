@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
-  <xsl:output encoding="ISO-8859-1" method="xml"/>
+  <xsl:output method="xml" encoding="ISO-8859-1"/>
   <xsl:variable name="targetId"/>
   <xsl:variable name="action"/>
   <xsl:template match="/">
@@ -59,8 +59,12 @@
           <xsl:value-of select="generate-id()"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:attribute name="add">task</xsl:attribute>
-      <xsl:attribute name="del">domain</xsl:attribute>
+      <xsl:attribute name="add">
+        <xsl:text>task</xsl:text>
+      </xsl:attribute>
+      <xsl:attribute name="del">
+        <xsl:text>domain</xsl:text>
+      </xsl:attribute>
       <xsl:apply-templates select="node() |@*"/>
     </xsl:copy>
   </xsl:template>
@@ -71,7 +75,9 @@
           <xsl:value-of select="generate-id()"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:attribute name="replace">PCDATA</xsl:attribute>
+      <xsl:attribute name="replace">
+        <xsl:text>PCDATA</xsl:text>
+      </xsl:attribute>
       <xsl:apply-templates select="node() |@*"/>
     </xsl:copy>
   </xsl:template>
@@ -82,8 +88,12 @@
           <xsl:value-of select="generate-id()"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:attribute name="replace">PCDATA</xsl:attribute>
-      <xsl:attribute name="add">task</xsl:attribute>
+      <xsl:attribute name="replace">
+        <xsl:text>PCDATA</xsl:text>
+      </xsl:attribute>
+      <xsl:attribute name="add">
+        <xsl:text>task</xsl:text>
+      </xsl:attribute>
       <xsl:apply-templates select="node() |@*"/>
     </xsl:copy>
   </xsl:template>

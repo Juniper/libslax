@@ -4,10 +4,12 @@ version 1.0;
 match doc {
     var $node = .;
     
-    <xsl:element name="Document" namespace=namespace-uri(.)> {
+    element "Document" {
+        ns-template namespace-uri(.);
+        
         for-each (namespace::*) {
             if (string(.) != namespace-uri($node)) {
-                <xsl:copy>;
+                copy-node;
             }
         }
     }

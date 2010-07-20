@@ -3,7 +3,10 @@ version 1.0;
 
 ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
 
-<xsl:output method="xml" indent="yes" media-type="image/svg">;
+output-method xml {
+    indent "yes";
+    media-type "image/svg";
+}
 
 match / {
     <svg width="3in" height="3in"> {

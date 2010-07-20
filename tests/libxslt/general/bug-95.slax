@@ -1,8 +1,13 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html" encoding="ISO-8859-1">;
-<xsl:decimal-format name="czf" decimal-separator="," grouping-separator=" ">;
+output-method html {
+    encoding "ISO-8859-1";
+}
+decimal-format czf {
+    decimal-separator ",";
+    grouping-separator " ";
+}
 
 match Kapital {
     <html> {

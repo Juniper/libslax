@@ -2,7 +2,9 @@
 version 1.0;
 
 /* baseball game stats */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 match game {
     <tr> {

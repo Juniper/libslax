@@ -7,7 +7,11 @@
     </fo:block>
   </xsl:template>
   <xsl:attribute-set name="title-style">
-    <xsl:attribute name="font-size">12pt</xsl:attribute>
-    <xsl:attribute name="font-weight">bold</xsl:attribute>
+    <xsl:attribute name="font-size">
+      <xsl:text>12pt</xsl:text>
+    </xsl:attribute>
+    <xsl:attribute name="font-weight">
+      <xsl:text>bold</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
 </xsl:stylesheet>

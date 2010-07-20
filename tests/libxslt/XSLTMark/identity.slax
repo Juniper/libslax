@@ -2,10 +2,12 @@
 version 1.0;
 
 /* identity transformation */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 match * {
-    <xsl:copy> {
+    copy-node {
         apply-templates;
     }
 }

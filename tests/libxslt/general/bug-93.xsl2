@@ -3,6 +3,8 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:import href="bug-93-inc.xsl"/>
   <xsl:attribute-set name="foo-attribs">
-    <xsl:attribute name="size">+2</xsl:attribute>
+    <xsl:attribute name="size">
+      <xsl:text>+2</xsl:text>
+    </xsl:attribute>
   </xsl:attribute-set>
 </xsl:stylesheet>

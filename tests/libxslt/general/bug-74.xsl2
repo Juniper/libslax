@@ -4,8 +4,10 @@
   <xsl:output method="xml" encoding="UTF-8"/>
   <xsl:template match="TestNode">
     <select>
-      <xsl:attribute name="onclick">aaaa
-	bbbb</xsl:attribute>
+      <xsl:attribute name="onclick">
+        <xsl:text>aaaa
+	bbbb</xsl:text>
+      </xsl:attribute>
     </select>
   </xsl:template>
 </xsl:stylesheet>

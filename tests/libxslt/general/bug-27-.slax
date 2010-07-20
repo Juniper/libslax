@@ -1,12 +1,16 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:attribute-set name="my-attr-set"> {
-    <xsl:attribute name="attr"> "from-attr-set";
+attribute-set my-attr-set {
+    attribute "attr" {
+        expr "from-attr-set";
+    }
 }
 
 match / {
     <p xsl:use-attribute-sets="my-attr-set" attr="from-p-tag"> {
-        <xsl:attribute name="attr"> "from-xsl-attr";
+        attribute "attr" {
+            expr "from-xsl-attr";
+        }
     }
 }

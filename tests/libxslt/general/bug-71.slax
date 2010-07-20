@@ -9,7 +9,9 @@ match address {
     
     <pa:Contact rdf:about="hello"> {
         <pa:primaryPhone> {
-            <xsl:attribute name="rdf:about"> "toto";
+            attribute "rdf:about" {
+                expr "toto";
+            }
         }
     }
 }

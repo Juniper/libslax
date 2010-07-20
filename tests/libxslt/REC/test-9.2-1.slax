@@ -11,13 +11,19 @@ match orderedlist/listitem {
             var $level = count(ancestor::orderedlist) mod 3;
             
             if ($level == 1) {
-                <xsl:number format="i">;
+                number {
+                    format "i";
+                }
             
             } else if ($level == 2) {
-                <xsl:number format="a">;
+                number {
+                    format "a";
+                }
             
             } else {
-                <xsl:number format="1">;
+                number {
+                    format "1";
+                }
             }
             expr ". ";
         }

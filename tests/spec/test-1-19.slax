@@ -4,6 +4,6 @@ version 1.0;
 
 match * {
     for-each (configuration/interfaces/unit) {
-	<xsl:sort some-obnoxious-option="some-obnoxious-value">;
+	<xsl:sort select="name">;
     }
 }

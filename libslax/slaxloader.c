@@ -107,39 +107,85 @@ keyword_mapping_t keywordMap[] = {
     { K_AND, "and", KMF_XPATH_KW },
     { K_APPLY_IMPORTS, "apply-imports", KMF_SLAX_KW },
     { K_APPLY_TEMPLATES, "apply-templates", KMF_SLAX_KW },
+    { K_ATTRIBUTE, "attribute", KMF_SLAX_KW },
+    { K_ATTRIBUTE_SET, "attribute-set", KMF_SLAX_KW },
     { K_CALL, "call", KMF_SLAX_KW },
+    { K_CASE_ORDER, "case-order", KMF_SLAX_KW },
+    { K_CDATA_SECTION_ELEMENTS, "cdata-section-elements", KMF_SLAX_KW },
     { K_COMMENT, "comment", KMF_SLAX_KW | KMF_NODE_TEST },
+    { K_COPY_NODE, "copy-node", KMF_SLAX_KW },
     { K_COPY_OF, "copy-of", KMF_SLAX_KW },
+    { K_COUNT, "count", KMF_SLAX_KW },
+    { K_DATA_TYPE, "data-type", KMF_SLAX_KW },
+    { K_DECIMAL_FORMAT, "decimal-format", KMF_SLAX_KW },
+    { K_DECIMAL_SEPARATOR, "decimal-separator", KMF_SLAX_KW },
+    { K_DIGIT, "digit", KMF_SLAX_KW },
     { K_DIV, "div", KMF_XPATH_KW },
-    { K_EXCLUDE, "exclude", KMF_SLAX_KW },
+    { K_DOCTYPE_PUBLIC, "doctype-public", KMF_SLAX_KW },
+    { K_DOCTYPE_SYSTEM, "doctype-system", KMF_SLAX_KW },
+    { K_ELEMENT, "element", KMF_SLAX_KW },
     { K_ELSE, "else", KMF_SLAX_KW },
+    { K_ELSE, "else", KMF_SLAX_KW },
+    { K_ENCODING, "encoding", KMF_SLAX_KW },
+    { K_EXCLUDE, "exclude", KMF_SLAX_KW },
     { K_EXPR, "expr", KMF_SLAX_KW },
     { K_EXTENSION, "extension", KMF_SLAX_KW },
+    { K_FALLBACK, "fallback", KMF_SLAX_KW },
+    { K_FORMAT, "format", KMF_SLAX_KW },
     { K_FOR_EACH, "for-each", KMF_SLAX_KW },
+    { K_FROM, "from", KMF_SLAX_KW },
     { K_FUNCTION, "function", KMF_SLAX_KW },
+    { K_GROUPING_SEPARATOR, "grouping-separator", KMF_SLAX_KW },
+    { K_GROUPING_SIZE, "grouping-size", KMF_SLAX_KW },
     { K_ID, "id", KMF_NODE_TEST }, /* Not really, but... */
     { K_IF, "if", KMF_SLAX_KW },
     { K_IMPORT, "import", KMF_SLAX_KW },
     { K_INCLUDE, "include", KMF_SLAX_KW },
-    { K_KEY, "key", KMF_NODE_TEST }, /* Not really, but... */
+    { K_INDENT, "indent", KMF_SLAX_KW },
+    { K_INFINITY, "infinity", KMF_SLAX_KW },
+    { K_KEY, "key", KMF_SLAX_KW | KMF_NODE_TEST }, /* Not really, but... */
+    { K_LANGUAGE, "language", KMF_SLAX_KW },
+    { K_LETTER_VALUE, "letter-value", KMF_SLAX_KW },
+    { K_LEVEL, "level", KMF_SLAX_KW },
     { K_MATCH, "match", KMF_SLAX_KW },
+    { K_MEDIA_TYPE, "media-type", KMF_SLAX_KW },
+    { K_MESSAGE, "message", KMF_SLAX_KW },
+    { K_MINUS_SIGN, "minus-sign", KMF_SLAX_KW },
     { K_MOD, "mod", KMF_XPATH_KW },
     { K_MODE, "mode", KMF_SLAX_KW },
+    { K_NAN, "nan", KMF_SLAX_KW },
     { K_NODE, "node", KMF_NODE_TEST },
     { K_NS, "ns", KMF_SLAX_KW },
+    { K_NS_ALIAS, "ns-alias", KMF_SLAX_KW },
+    { K_NS_TEMPLATE, "ns-template", KMF_SLAX_KW },
+    { K_NUMBER, "number", KMF_SLAX_KW },
+    { K_OMIT_XML_DECLARATION, "omit-xml-declaration", KMF_SLAX_KW },
     { K_OR, "or", KMF_XPATH_KW },
+    { K_ORDER, "order", KMF_SLAX_KW },
+    { K_OUTPUT_METHOD, "output-method", KMF_SLAX_KW },
     { K_PARAM, "param", KMF_SLAX_KW },
+    { K_PATTERN_SEPARATOR, "pattern-separator", KMF_SLAX_KW },
+    { K_PERCENT, "percent", KMF_SLAX_KW },
+    { K_PER_MILLE, "per-mille", KMF_SLAX_KW },
     { K_PRESERVE_SPACE, "preserve-space", KMF_SLAX_KW },
     { K_PRIORITY, "priority", KMF_SLAX_KW },
     { K_PROCESSING_INSTRUCTION, "processing-instruction",
-      KMF_NODE_TEST }, /* Not a node test, but close enough */
+      KMF_SLAX_KW | KMF_NODE_TEST }, /* Not a node test, but close enough */
     { K_RESULT, "result", KMF_SLAX_KW },
+    { K_RESULT_PREFIX, "result-prefix", KMF_SLAX_KW },
+    { K_SORT, "sort", KMF_SLAX_KW },
+    { K_STANDALONE, "standalone", KMF_SLAX_KW },
     { K_STRIP_SPACE, "strip-space", KMF_SLAX_KW },
     { K_TEMPLATE, "template", KMF_SLAX_KW },
+    { K_TERMINATE, "terminate", KMF_SLAX_KW },
     { K_TEXT, "text", KMF_NODE_TEST },
+    { K_UEXPR, "uexpr", KMF_SLAX_KW },
+    { K_USE_ATTRIBUTE_SETS, "use-attribute-sets", KMF_SLAX_KW },
+    { K_VALUE, "value", KMF_SLAX_KW },
     { K_VAR, "var", KMF_SLAX_KW },
     { K_VERSION, "version", KMF_SLAX_KW },
     { K_WITH, "with", KMF_SLAX_KW },
+    { K_ZERO_DIGIT, "zero-digit", KMF_SLAX_KW },
     { 0, NULL, 0 }
 };
 
@@ -316,6 +362,8 @@ slaxKeyword (slax_data_t *sdp)
 static int
 slaxGetInput (slax_data_t *sdp, int final)
 {
+    int first_read = (sdp->sd_buf == NULL);
+
     /*
      * If we're parsing XPath expressions, we alreay have the
      * complete string, so further reads should fail
@@ -376,6 +424,16 @@ slaxGetInput (slax_data_t *sdp, int final)
 	    sdp->sd_line += 1;
 	    if (sdp->sd_ctxt->input)
 		sdp->sd_ctxt->input->line += 1;
+	}
+
+	if (first_read && sdp->sd_buf[0] == '#' && sdp->sd_buf[1] == '!') {
+	    /*
+	     * If we hit a line on our first read that starts with "#!",
+	     * then we skip the line.
+	     */
+	    sdp->sd_len = 0;
+	    first_read = FALSE;
+	    continue;
 	}
 
 	/* We don't want to get half a keyword */
@@ -489,6 +547,16 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
 		   sdp->sd_filename, sdp->sd_line, axis->ss_token);
 }
     
+/*
+ * Detect a particular xsl:* node
+ */
+static int
+slaxNodeIsXsl (xmlNodePtr node, const char *name)
+{
+    return (node && node->ns && node->ns->href
+	    && streq((const char *) node->name, name)
+	    && streq((const char *) node->ns->href, XSL_NS));
+}
 
 /**
  * This function is the core of the lexer.
@@ -562,8 +630,17 @@ slaxLexer (slax_data_t *sdp)
 			buf[len] = 0;
 
 			nodep = xmlNewComment(buf);
-			if (nodep)
-			    xmlAddChild(sdp->sd_ctxt->node, nodep);
+			if (nodep) {
+			    /*
+			     * xsl:sort elements cannot contain comments
+			     * so we may need to move the comment up one
+			     * level in the output document
+			     */
+			    xmlNodePtr par = sdp->sd_ctxt->node;
+			    if (slaxNodeIsXsl(par, ELT_SORT))
+				par = par->parent;
+			    xmlAddChild(par, nodep);
+			}
 		    }
 		}
 
@@ -704,6 +781,22 @@ slaxLexer (slax_data_t *sdp)
 	    break;
     }
 
+    if (sdp->sd_cur == sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '#') {
+	/*
+	 * There's a special token "#default" that's used for
+	 * namespace-alias.  It's an absurd hack, but we
+	 * have to dummy it up as a T_BARE.
+	 */
+	static const char pdef[] = "#default";
+	static const int plen = sizeof(pdef) - 1;
+	if (sdp->sd_len - sdp->sd_cur > plen
+	    && memcmp(sdp->sd_buf + sdp->sd_cur,
+		      pdef, plen) == 0
+	    && !isbare(sdp->sd_buf[sdp->sd_cur + plen])) {
+	    sdp->sd_cur += sizeof(pdef) - 1;
+	}
+    }
+
     return T_BARE;
 }
 
@@ -805,7 +898,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     }
 
     if (yylvalp)
-	*yylvalp = ssp = (rc > 0 ) ? slaxStringCreate(sdp, rc) : NULL;
+	*yylvalp = ssp = (rc > 0) ? slaxStringCreate(sdp, rc) : NULL;
 
     if (slaxDebug && ssp)
 	slaxTrace("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
@@ -818,29 +911,59 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
      * Disable keywords processing based on the token returned
      */
     switch (rc) {
-    case K_VAR:
-    case K_PARAM:
-    case K_MODE:
-    case K_MATCH:
-    case K_TEMPLATE:
-    case K_EXPR:
-    case K_WITH:
+    case K_APPLY_TEMPLATES:
+    case K_ATTRIBUTE:
+    case K_COMMENT:
     case K_COPY_OF:
+    case K_COUNT:
+    case K_DECIMAL_FORMAT:
+    case K_ELEMENT:
+    case K_EXPR:
     case K_FOR_EACH:
+    case K_FORMAT:
+    case K_FROM:
+    case K_GROUPING_SEPARATOR:
+    case K_GROUPING_SIZE:
     case K_IF:
+    case K_KEY:
+    case K_LANGUAGE:
+    case K_LETTER_VALUE:
+    case K_MATCH:
+    case K_MODE:
+    case K_NS_TEMPLATE:
+    case K_MESSAGE:
+    case K_NUMBER:
+    case K_PARAM:
+    case K_PROCESSING_INSTRUCTION:
+    case K_SORT:
+    case K_TEMPLATE:
+    case K_TERMINATE:
+    case K_UEXPR:
+    case K_VAR:
+    case K_VALUE:
+    case K_WITH:
 	sdp->sd_flags |= SDF_NO_SLAX_KEYWORDS;
 	break;
 
-    case K_NS:
-    case K_STRIP_SPACE:
-    case K_PRESERVE_SPACE:
+    case K_ATTRIBUTE_SET:
     case K_CALL:
+    case K_CDATA_SECTION_ELEMENTS:
+    case K_DOCTYPE_PUBLIC:
+    case K_DOCTYPE_SYSTEM:
+    case K_ENCODING:
     case K_FUNCTION:
+    case K_INDENT:
+    case K_MEDIA_TYPE:
+    case K_NS:
+    case K_NS_ALIAS:
+    case K_OMIT_XML_DECLARATION:
+    case K_PRESERVE_SPACE:
+    case K_STANDALONE:
+    case K_STRIP_SPACE:
+    case K_USE_ATTRIBUTE_SETS:
+    case K_VERSION:
 	sdp->sd_flags |= SDF_NO_KEYWORDS;
 	break;
-
-    case L_EOS:
-	sdp->sd_flags &= ~SDF_NO_KEYWORDS;
     }
 
     return rc;
@@ -880,7 +1003,7 @@ slaxVersionMatch (const char *major, const char *minor)
     if (major == NULL || !streq(major, "1")
 	|| minor == NULL || !streq(minor, "0"))
 	fprintf(stderr, "invalid version number: %s.%s\n",
-		major ?: 0, minor ?: 0);
+		major ?: "", minor ?: "");
 }
 
 /**
@@ -1085,6 +1208,20 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
 	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
 
     free(buf);
+}
+
+/*
+ * Add a literal value as an attribute to the current node
+ */
+void
+slaxAttribAddLiteral (slax_data_t *sdp, const char *name, const char *val)
+{
+    xmlAttrPtr attr;
+
+    attr = xmlNewProp(sdp->sd_ctxt->node, (const xmlChar *) name,
+		      (const xmlChar *) val);
+    if (attr == NULL)
+	fprintf(stderr, "could not make attribute: @%s=%s\n", name, val);
 }
 
 /*
@@ -1489,13 +1626,43 @@ slaxAvoidRtf (slax_data_t *sdp)
     xmlFreeAndEasy(sel);
 }
 
-/*
+/**
+ * Create namespace alias between the prefix given and the
+ * containing (current) prefix.
+ *
+ * @param sdp main slax data structure
+ * @param style stylesheet prefix value (as declared in the "ns" statement)
+ * @param results result prefix value
+ */
+void
+slaxNamespaceAlias (slax_data_t *sdp, slax_string_t *style,
+		    slax_string_t *results)
+{
+    const char *alias = style->ss_token;
+
+    xmlNodePtr nodep;
+    nodep = slaxElementPush(sdp, ELT_NAMESPACE_ALIAS,
+			    ATT_STYLESHEET_PREFIX, alias);
+
+    if (nodep) {
+	slaxAttribAddString(sdp, ATT_RESULT_PREFIX, results, 0);
+	slaxElementPop(sdp);
+    }
+}
+
+/**
  * Add an XPath expression as a statement.  If this is a string,
  * we place it inside an <xsl:text> element.  Otherwise we
  * put the value inside an <xsl:value-of>'s select attribute.
+ *
+ * @param sdp main slax data structure
+ * @param value XPath expression to add
+ * @param text_as_elt always use <xsl:text> for text data
+ * @param disable_escaping add the "disable-output-escaping" attribute
  */
 void
-slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
+slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
+		  int text_as_elt, int disable_escaping)
 {
     char *buf;
     xmlNodePtr nodep;
@@ -1509,7 +1676,9 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 	 * if the text string has leading or trailing whitespace.
 	 * then we must use a text element.
 	 */
-	if (*cp == '\t' || *cp == ' ' || *cp == '\0')
+	if (disable_escaping)
+	    text_as_elt = TRUE;
+	else if (*cp == '\t' || *cp == ' ' || *cp == '\0')
 	    text_as_elt = TRUE;
 	else {
 	    char *ep = cp + len - 1;
@@ -1527,6 +1696,15 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
 		fprintf(stderr, "could not make node: %s\n", ELT_TEXT);
 		return;
 	    }
+
+	    if (disable_escaping) {
+		xmlNewNsProp(textp, NULL,
+			     (const xmlChar *) ATT_DISABLE_OUTPUT_ESCAPING,
+			     (const xmlChar *) "yes");
+
+	    }
+
+
 	    xmlAddChildLineNo(sdp->sd_ctxt, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
@@ -1560,6 +1738,12 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value, int text_as_elt)
     }
 
     free(buf);
+
+    if (disable_escaping) {
+	xmlNewNsProp(nodep, NULL,
+		     (const xmlChar *) ATT_DISABLE_OUTPUT_ESCAPING,
+		     (const xmlChar *) "yes");
+    }
 
     xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 

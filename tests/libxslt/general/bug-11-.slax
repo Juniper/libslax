@@ -1,8 +1,10 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html">;
+output-method html;
 /* xsl:import href="test2.xsl"/ */
 match / {
-    <xsl:processing-instruction name="php"> "Success";
+    processing-instruction "php" {
+        expr "Success";
+    }
 }

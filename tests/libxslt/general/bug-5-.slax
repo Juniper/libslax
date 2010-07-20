@@ -51,7 +51,9 @@ match / {
 
 match GROUP[@type == "PRODUCT"] {
     <tr> {
-        <xsl:attribute name="class"> "\nPROD\n";
+        attribute "class" {
+            expr "\nPROD\n";
+        }
         <td> .//ROW[1]/PRODUCT;
         <td> {
             expr "Proj. Rev: ";
@@ -64,7 +66,9 @@ match GROUP[@type == "PRODUCT"] {
     }
     apply-templates GROUP;
     <tr> {
-        <xsl:attribute name="class"> "\nPROD\n";
+        attribute "class" {
+            expr "\nPROD\n";
+        }
     }
 }
 
@@ -72,7 +76,9 @@ match GROUP[@type == "ACTION"] {
     var $grp = .;
     
     <tr> {
-        <xsl:attribute name="class"> "\nACT\n";
+        attribute "class" {
+            expr "\nACT\n";
+        }
         <td> .//ROW[1]/ACTION;
         <td> {
             expr "Proj. Rev: ";
@@ -85,21 +91,23 @@ match GROUP[@type == "ACTION"] {
     }
     <tr> {
         for-each ($ACTIONgrid) {
-            <xsl:sort select=".">;
+            sort .;
             <td valign="top"> {
                 apply-templates $grp/GROUP[@name == current()];
             }
         }
     }
     <tr> {
-        <xsl:attribute name="class"> "\nACT\n";
+        attribute "class" {
+            expr "\nACT\n";
+        }
     }
 }
 
 match GROUP[@type == "REC"] {
     <table> {
         <tr> {
-            <xsl:attribute name="class"> {
+            attribute "class" {
                 if (@name == "Recurring") {
                     expr "RC";
                 
@@ -129,7 +137,7 @@ match GROUP[@type == "REC"] {
         }
         apply-templates ROW;
         <tr> {
-            <xsl:attribute name="class"> {
+            attribute "class" {
                 if (@name == "Recurring") {
                     expr "RC";
                 

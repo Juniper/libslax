@@ -2,12 +2,17 @@
 version 1.0;
 
 /* reassembles an xml tree in reverse order */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 match * {
-    <xsl:copy> {
+    copy-node {
         apply-templates node() {
-            <xsl:sort select="position()" data-type="number" order="descending">;
+            sort position() {
+                data-type "number";
+                order "descending";
+            }
         }
     }
 }

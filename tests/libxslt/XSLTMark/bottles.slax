@@ -3,7 +3,9 @@ version 1.0;
 
 /* bottles of beer by Cyrus Dolph May 16, 2000 */
 /* input template of form: <bottles>99</bottles> */
-<xsl:output method="text" encoding="utf-8">;
+output-method text {
+    encoding "utf-8";
+}
 
 template bottles ($bottles) {
     if ($bottles == 1) {

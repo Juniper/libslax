@@ -4,7 +4,9 @@
   <xsl:template match="/">
     <result xsl:version="6.1">
       <xsl:foo-of select="/Fuhrpark">
-        <xsl:fallback>An error occoured, foo-of not known</xsl:fallback>
+        <xsl:fallback>
+          <xsl:text>An error occoured, foo-of not known</xsl:text>
+        </xsl:fallback>
       </xsl:foo-of>
     </result>
   </xsl:template>

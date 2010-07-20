@@ -2,5 +2,7 @@
 version 1.0;
 
 match / {
-    <xsl:processing-instruction name="php"> "Success";
+    processing-instruction "php" {
+        expr "Success";
+    }
 }

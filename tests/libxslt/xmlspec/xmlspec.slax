@@ -80,7 +80,11 @@ param $additional.title;
 param $called.by.diffspec = "0";
 param $show.ednotes = "1";
 
-<xsl:output method="html" encoding="ISO-8859-1" doctype-public="-//W3C//DTD HTML 4.01 Transitional//EN" indent="no">;
+output-method html {
+    encoding "ISO-8859-1";
+    doctype-public "-//W3C//DTD HTML 4.01 Transitional//EN";
+    indent "no";
+}
 strip-space author;
 
 /* not handled:
@@ -234,7 +238,7 @@ match bibl {
 the bibl's ID */
 match bibref {
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = id(@ref));
         }
         expr "[";
@@ -262,7 +266,7 @@ match bnf {
         <tr> {
             <td> {
                 if (@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr @diff;
                     }
@@ -336,7 +340,7 @@ match com {
     if (preceding-sibling::*[1] [name() == "rhs"]) {
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -356,7 +360,7 @@ match com {
             <td>;
             <td> {
                 if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr ancestor-or-self::*/@diff;
                     }
@@ -391,13 +395,13 @@ match constraint {
     if (preceding-sibling::*[1] [name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr @diff;
                 }
             }
             <a> {
-                <xsl:attribute name="href"> {
+                attribute "href" {
                     call href.target($target = id(@def));
                 }
                 expr "[Constraint: ";
@@ -416,13 +420,13 @@ match constraint {
             <td>;
             <td> {
                 if (@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr @diff;
                     }
                 }
                 <a> {
-                    <xsl:attribute name="href"> {
+                    attribute "href" {
                         call href.target($target = id(@def));
                     }
                     expr "[Constraint: ";
@@ -495,7 +499,7 @@ match div5 {
 match ednote {
     if ($show.ednotes != 0) {
         <table border="1"> {
-            <xsl:attribute name="summary"> {
+            attribute "summary" {
                 expr "Editorial note";
                 if (name) {
                     expr ": ";
@@ -542,7 +546,7 @@ match eg {
         <tr> {
             <td> {
                 if (@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr @diff;
                     }
@@ -610,7 +614,10 @@ match footnote {
     }
     
     <a name="FN-ANCH-" _ $this-note-id href="#" _ $this-note-id> {
-        <xsl:number level="any" format="[1]">;
+        number {
+            level "any";
+            format "[1]";
+        }
     }
 }
 /* front: front matter for the spec */
@@ -636,13 +643,13 @@ match gitem {
 /* create <dl> and handle children */
 match glist {
     if ($validity.hacks && local-name(..) == "p") {
-        <xsl:text disable-output-escaping="yes"> "</p>";
+        uexpr "</p>";
     }
     <dl> {
         apply-templates;
     }
     if ($validity.hacks && local-name(..) == "p") {
-        <xsl:text disable-output-escaping="yes"> "<p>";
+        uexpr "<p>";
     }
 }
 /* graphic: external illustration */
@@ -650,7 +657,9 @@ match glist {
 match graphic {
     <img src=@source> {
         if (@alt) {
-            <xsl:attribute name="alt"> @alt;
+            attribute "alt" {
+                expr @alt;
+            }
         }
     }
 }
@@ -676,7 +685,7 @@ match div1/head {
     expr "\n";
     <h2> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -696,7 +705,7 @@ match div2/head {
     expr "\n";
     <h3> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -716,7 +725,7 @@ match div3/head {
     expr "\n";
     <h4> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -736,7 +745,7 @@ match div4/head {
     expr "\n";
     <h5> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -756,7 +765,7 @@ match div5/head {
     expr "\n";
     <h6> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -784,7 +793,7 @@ match inform-div1/head {
     expr "\n";
     <h2> {
         <a> {
-            <xsl:attribute name="name"> {
+            attribute "name" {
                 if (../@id) {
                     expr ../@id;
                 
@@ -987,7 +996,7 @@ match lhs {
     <tr valign="baseline"> {
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1009,7 +1018,7 @@ match lhs {
         }
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1020,7 +1029,7 @@ match lhs {
         }
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1079,7 +1088,7 @@ match notice {
 /* make a link to the non-terminal's definition */
 match nt {
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = id(@def));
         }
         apply-templates;
@@ -1101,10 +1110,14 @@ match orglist {
 match p {
     <p> {
         if (@id) {
-            <xsl:attribute name="id"> @id;
+            attribute "id" {
+                expr @id;
+            }
         }
         if (@role) {
-            <xsl:attribute name="class"> @role;
+            attribute "class" {
+                expr @role;
+            }
         }
         apply-templates;
     }
@@ -1220,7 +1233,7 @@ match rhs {
     if (preceding-sibling::*[1] [name() == "lhs"]) {
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1239,7 +1252,7 @@ match rhs {
             <td>;
             <td> {
                 if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr ancestor-or-self::*/@diff;
                     }
@@ -1301,7 +1314,9 @@ match source {
 match spec {
     <html> {
         if (header/langusage/language) {
-            <xsl:attribute name="lang"> header/langusage/language/@id;
+            attribute "lang" {
+                expr header/langusage/language/@id;
+            }
         }
         <head> {
             <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">;
@@ -1342,7 +1357,7 @@ match specref {
     var $target = id(@ref) [1];
     
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = id(@ref));
         }
         if (starts-with(local-name($target) , "div")) {
@@ -1391,7 +1406,7 @@ match specref {
             }
         
         } else {
-            <xsl:message> {
+            message {
                 expr "Unsupported specref to ";
                 expr local-name($target);
                 expr " [";
@@ -1433,11 +1448,11 @@ match sup {
 /* tbody: */
 /* td: */
 match caption | col | colgroup | table | tbody | td | tfoot | th | thead | tr {
-    <xsl:copy> {
+    copy-node {
         for-each (@*) {
             /* Wait: some of these aren't HTML attributes after all... */
             if (local-name(.) != "diff") {
-                <xsl:copy> {
+                copy-node {
                     apply-templates;
                 }
             }
@@ -1462,7 +1477,7 @@ match termdef {
 /* termref: reference to a defined term */
 match termref {
     <a title=id(@def)/@term> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = id(@def));
         }
         apply-templates;
@@ -1513,13 +1528,13 @@ match vc {
     if (preceding-sibling::*[1] [name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr @diff;
                 }
             }
             <a> {
-                <xsl:attribute name="href"> {
+                attribute "href" {
                     call href.target($target = id(@def));
                 }
                 expr "[VC: ";
@@ -1538,13 +1553,13 @@ match vc {
             <td>;
             <td> {
                 if (@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr @diff;
                     }
                 }
                 <a> {
-                    <xsl:attribute name="href"> {
+                    attribute "href" {
                         call href.target($target = id(@def));
                     }
                     expr "[VC: ";
@@ -1576,13 +1591,13 @@ match wfc {
     if (preceding-sibling::*[1] [name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr @diff;
                 }
             }
             <a> {
-                <xsl:attribute name="href"> {
+                attribute "href" {
                     call href.target($target = id(@def));
                 }
                 expr "[WFC: ";
@@ -1601,13 +1616,13 @@ match wfc {
             <td>;
             <td> {
                 if (@diff && $show.diff.markup == "1") {
-                    <xsl:attribute name="class"> {
+                    attribute "class" {
                         expr "diff-";
                         expr @diff;
                     }
                 }
                 <a> {
-                    <xsl:attribute name="href"> {
+                    attribute "href" {
                         call href.target($target = id(@def));
                     }
                     expr "[WFC: ";
@@ -1642,9 +1657,9 @@ match xnt | xspecref | xtermref {
 show up in a spec, but they're easy to handle and you just
 never know. */
 match a | div | em | h1 | h2 | h3 | h4 | h5 | h6 | li | ol | pre | ul {
-    <xsl:copy> {
+    copy-node {
         for-each (@*) {
-            <xsl:copy> {
+            copy-node {
                 apply-templates;
             }
         }
@@ -1655,7 +1670,7 @@ match a | div | em | h1 | h2 | h3 | h4 | h5 | h6 | li | ol | pre | ul {
 match htable {
     <table summary="HTML Table"> {
         for-each (@*) {
-            <xsl:copy> {
+            copy-node {
                 apply-templates;
             }
         }
@@ -1666,7 +1681,7 @@ match htable {
 match htbody {
     <tbody> {
         for-each (@*) {
-            <xsl:copy> {
+            copy-node {
                 apply-templates;
             }
         }
@@ -1713,13 +1728,18 @@ match para {
 match div1 {
     mode "divnum";
     
-    <xsl:number format="1 ">;
+    number {
+        format "1 ";
+    }
 }
 
 match back/div1 | inform-div1 {
     mode "divnum";
     
-    <xsl:number count="div1 | inform-div1" format="A ">;
+    number {
+        format "A ";
+        count div1 | inform-div1;
+    }
 }
 
 match front/div1 | front//div2 | front//div3 | front//div4 | front//div5 {
@@ -1729,49 +1749,81 @@ match front/div1 | front//div2 | front//div3 | front//div4 | front//div5 {
 match div2 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2" format="1.1 ">;
+    number {
+        level "multiple";
+        format "1.1 ";
+        count div1 | div2;
+    }
 }
 
 match back//div2 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | inform-div1" format="A.1 ">;
+    number {
+        level "multiple";
+        format "A.1 ";
+        count div1 | div2 | inform-div1;
+    }
 }
 
 match div3 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3" format="1.1.1 ">;
+    number {
+        level "multiple";
+        format "1.1.1 ";
+        count div1 | div2 | div3;
+    }
 }
 
 match back//div3 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3 | inform-div1" format="A.1.1 ">;
+    number {
+        level "multiple";
+        format "A.1.1 ";
+        count div1 | div2 | div3 | inform-div1;
+    }
 }
 
 match div4 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4" format="1.1.1.1 ">;
+    number {
+        level "multiple";
+        format "1.1.1.1 ";
+        count div1 | div2 | div3 | div4;
+    }
 }
 
 match back//div4 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | inform-div1" format="A.1.1.1 ">;
+    number {
+        level "multiple";
+        format "A.1.1.1 ";
+        count div1 | div2 | div3 | div4 | inform-div1;
+    }
 }
 
 match div5 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5" format="1.1.1.1.1 ">;
+    number {
+        level "multiple";
+        format "1.1.1.1.1 ";
+        count div1 | div2 | div3 | div4 | div5;
+    }
 }
 
 match back//div5 {
     mode "divnum";
     
-    <xsl:number level="multiple" count="div1 | div2 | div3 | div4 | div5 | inform-div1" format="A.1.1.1.1 ">;
+    number {
+        level "multiple";
+        format "A.1.1.1.1 ";
+        count div1 | div2 | div3 | div4 | div5 | inform-div1;
+    }
 }
 /* mode: notes */
 match footnote {
@@ -1788,7 +1840,10 @@ match footnote {
     
     <dt> {
         <a name=$this-note-id href="#FN-ANCH-" _ $this-note-id> {
-            <xsl:number level="any" format="[1]">;
+            number {
+                level "any";
+                format "[1]";
+            }
         }
     }
     <dd> {
@@ -1818,14 +1873,22 @@ match prod[@diff == "add"] {
     Once again, this could be done right here, but XT won't hear of it.
     <xsl:number level="any" count="prod[not(@diff='add')]"/>
      */
-    <xsl:number level="any" count="prod[@diff='add']" from="prod[not(@diff='add')]" format="a">;
+    number {
+        level "any";
+        format "a";
+        from prod[not(@diff == "add")];
+        count prod[@diff == "add"];
+    }
     expr "]";
 }
 /* mode: number-simple */
 match prod {
     mode "number-simple";
     
-    <xsl:number level="any" count="prod[not(@diff='add')]">;
+    number {
+        level "any";
+        count prod[not(@diff == "add")];
+    }
 }
 /* mode: ref */
 match lhs {
@@ -1835,7 +1898,7 @@ match lhs {
         <td>;
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1849,7 +1912,7 @@ match lhs {
         }
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
-                <xsl:attribute name="class"> {
+                attribute "class" {
                     expr "diff-";
                     expr ancestor-or-self::*/@diff;
                 }
@@ -1883,7 +1946,7 @@ match div1 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -1904,7 +1967,7 @@ match div2 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -1925,7 +1988,7 @@ match div3 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -1946,7 +2009,7 @@ match div4 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -1967,7 +2030,7 @@ match div5 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -1984,7 +2047,7 @@ match inform-div1 {
         mode "divnum";
     }
     <a> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             call href.target($target = .);
         }
         apply-templates head {
@@ -2004,7 +2067,7 @@ template css () {
         expr $additional.css;
     }
     <link rel="stylesheet" type="text/css"> {
-        <xsl:attribute name="href"> {
+        attribute "href" {
             expr "W3C-";
             if (/spec/@w3c-doctype == "wd") {
                 expr "WD";

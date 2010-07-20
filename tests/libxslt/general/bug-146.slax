@@ -1,15 +1,26 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="xml" encoding="windows-1251" indent="yes">;
+output-method xml {
+    encoding "windows-1251";
+    indent "yes";
+}
 strip-space *;
-<xsl:key name="EMPTY_EN_CODE_COLLS" match="/root/colls/goodcoll/goodcomb/@COL_ID [../@EN_CODE = '']" use="../../../@COL_COD">;
-<xsl:key name="EMPTY_EN_CODE_COLRS" match="/root/colls/goodcoll/goodcomb/@COL_ID [../@EN_CODE = '']" use="concat(.,':',../../../@COL_COD)">;
+
+key EMPTY_EN_CODE_COLLS {
+    match /root/colls/goodcoll/goodcomb/@COL_ID[../@EN_CODE == ""];
+    value ../../../@COL_COD;
+}
+
+key EMPTY_EN_CODE_COLRS {
+    match /root/colls/goodcoll/goodcomb/@COL_ID[../@EN_CODE == ""];
+    value concat(., ":", ../../../@COL_COD);
+}
 
 match / {
     <root> {
         for-each (/root/colls[key("EMPTY_EN_CODE_COLLS",@COL_COD)]) {
-            <xsl:copy> {
+            copy-node {
                 copy-of @*;
                 
                 for-each (key("EMPTY_EN_CODE_COLLS",@COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", concat(., ":", ../../../@COL_COD)))]) {

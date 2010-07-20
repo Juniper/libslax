@@ -5,7 +5,11 @@ ns fo = "http://www.w3.org/1999/XSL/Format";
 
 match note {
     <fo:block> {
-        <xsl:number level="any" from="chapter" format="(1) ">;
+        number {
+            level "any";
+            format "(1) ";
+            from chapter;
+        }
         apply-templates;
     }
 }

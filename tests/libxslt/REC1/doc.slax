@@ -4,7 +4,10 @@ version 1.0;
 ns "http://www.w3.org/TR/xhtml1/strict";
 
 strip-space doc chapter section;
-<xsl:output method="xml" indent="yes" encoding="iso-8859-1">;
+output-method xml {
+    indent "yes";
+    encoding "iso-8859-1";
+}
 
 match doc {
     <html> {

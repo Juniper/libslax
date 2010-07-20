@@ -2,6 +2,9 @@
 version 1.0;
 
 import "bug-93-inc.xsl";
-<xsl:attribute-set name="foo-attribs"> {
-    <xsl:attribute name="size"> "+2";
+
+attribute-set foo-attribs {
+    attribute "size" {
+        expr "+2";
+    }
 }

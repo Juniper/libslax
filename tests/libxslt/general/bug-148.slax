@@ -6,5 +6,5 @@ ns ns1 exclude = "http://www.example.com/ns1";
 <foo>;
 
 match / {
-    <xsl:element name="foo">;
+    element "foo";
 }

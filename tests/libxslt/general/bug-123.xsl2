@@ -6,7 +6,9 @@
   </xsl:template>
   <xsl:template match="element">
     <xsl:copy>
-      <xsl:attribute name="foo">xsl</xsl:attribute>
+      <xsl:attribute name="foo">
+        <xsl:text>xsl</xsl:text>
+      </xsl:attribute>
       <xsl:apply-templates select="@*"/>
     </xsl:copy>
   </xsl:template>

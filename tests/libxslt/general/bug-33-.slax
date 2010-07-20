@@ -1,16 +1,16 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html">;
+output-method html;
 
 match / {
     <html> {
         <head> {
             <title> exam/@name;
             <script> {
-                <xsl:text disable-output-escaping="yes"> "<";
+                uexpr "<";
                 expr "\n	 funtion test() {\n	   var a;\n	   var b;\n\n	   if (a < b) { alert('Hello'); }\n	 }\n\n	 ";
-                <xsl:text disable-output-escaping="yes"> "<";
+                uexpr "<";
             }
         }
         <body bgcolor="white"> ;

@@ -1,10 +1,26 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="text" encoding="utf-8">;
-<xsl:decimal-format name="default">;
-<xsl:decimal-format name="funky" decimal-separator="&" grouping-separator="/" infinity="unfunity" minus-sign="_" NaN="(c'est nes pas un nombre)" percent="@" per-mille="!" zero-digit="x" digit="#" pattern-separator=";">;
-<xsl:decimal-format name="dumb" digit="@" pattern-separator="R">;
+output-method text {
+    encoding "utf-8";
+}
+decimal-format default;
+decimal-format funky {
+    decimal-separator "&";
+    grouping-separator "/";
+    infinity "unfunity";
+    minus-sign "_";
+    percent "@";
+    per-mille "!";
+    zero-digit "x";
+    digit "#";
+    pattern-separator ";";
+    nan "(c'est nes pas un nombre)";
+}
+decimal-format dumb {
+    digit "@";
+    pattern-separator "R";
+}
 
 match numbertest {
     apply-templates number;

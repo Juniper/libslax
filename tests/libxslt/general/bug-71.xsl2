@@ -5,7 +5,9 @@
     <xsl:variable name="id" select="@id"/>
     <pa:Contact rdf:about="hello">
       <pa:primaryPhone>
-        <xsl:attribute name="rdf:about">toto</xsl:attribute>
+        <xsl:attribute name="rdf:about">
+          <xsl:text>toto</xsl:text>
+        </xsl:attribute>
       </pa:primaryPhone>
     </pa:Contact>
   </xsl:template>

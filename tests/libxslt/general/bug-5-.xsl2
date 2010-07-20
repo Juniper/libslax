@@ -64,8 +64,10 @@
   <xsl:template match="GROUP[@type = &quot;PRODUCT&quot;]">
     <tr>
       <xsl:attribute name="class">
+        <xsl:text>
 PROD
-</xsl:attribute>
+</xsl:text>
+      </xsl:attribute>
       <td>
         <xsl:value-of select=".//ROW[1]/PRODUCT"/>
       </td>
@@ -81,16 +83,20 @@ PROD
     <xsl:apply-templates select="GROUP"/>
     <tr>
       <xsl:attribute name="class">
+        <xsl:text>
 PROD
-</xsl:attribute>
+</xsl:text>
+      </xsl:attribute>
     </tr>
   </xsl:template>
   <xsl:template match="GROUP[@type = &quot;ACTION&quot;]">
     <xsl:variable name="grp" select="."/>
     <tr>
       <xsl:attribute name="class">
+        <xsl:text>
 ACT
-</xsl:attribute>
+</xsl:text>
+      </xsl:attribute>
       <td>
         <xsl:value-of select=".//ROW[1]/ACTION"/>
       </td>
@@ -113,8 +119,10 @@ ACT
     </tr>
     <tr>
       <xsl:attribute name="class">
+        <xsl:text>
 ACT
-</xsl:attribute>
+</xsl:text>
+      </xsl:attribute>
     </tr>
   </xsl:template>
   <xsl:template match="GROUP[@type = &quot;REC&quot;]">

@@ -2,7 +2,7 @@
 version 1.0;
 
 preserve-space *;
-<xsl:output method="xml">;
+output-method xml;
 
 match child::foo {
     <bar>;

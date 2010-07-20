@@ -13,7 +13,9 @@
     <xsl:variable name="date" select="concat(substring(g:date, 1, 4), &quot;/&quot;, substring(g:date, 5, 2), &quot;/&quot;, substring(g:date, 7, 2))"/>
     <div id="post{$id}">
       <xsl:if test="lang(ja)">
-        <xsl:attribute name="xml:lang">ja</xsl:attribute>
+        <xsl:attribute name="xml:lang">
+          <xsl:text>ja</xsl:text>
+        </xsl:attribute>
       </xsl:if>
       <h3>
         <a href="{$date}/{$id}">

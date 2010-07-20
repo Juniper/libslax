@@ -4,5 +4,5 @@ version 1.0;
 ns a = "http://a";
 
 match * {
-    <xsl:element name=name()>;
+    element name();
 }

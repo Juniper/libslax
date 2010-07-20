@@ -1,13 +1,15 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="text">;
+output-method text;
 
 match / {
     apply-templates //AAA;
 }
 
 match * {
-    <xsl:number level="multiple">;
+    number {
+        level "multiple";
+    }
     expr " AAA\n    ";
 }

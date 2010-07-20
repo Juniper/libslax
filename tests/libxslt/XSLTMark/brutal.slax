@@ -1,7 +1,9 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="html" encoding="utf-8">;
+output-method html {
+    encoding "utf-8";
+}
 
 template inventory match inventory () {
     <html> {
@@ -19,7 +21,10 @@ template inventory match inventory () {
                     <td class="tablehead"> "Description";
                 }
                 apply-templates items/item {
-                    <xsl:sort select="sku" data-type="number" order="ascending">;
+                    sort sku {
+                        data-type "number";
+                        order "ascending";
+                    }
                 }
                 <tr> {
                     <td class="tablehead"> "Total:";
@@ -55,7 +60,9 @@ template item match item ($pwh = 0) {
     <tr> {
         if ($pwh == 0) {
             <td> {
-                <xsl:attribute name="class"> "tablecell";
+                attribute "class" {
+                    expr "tablecell";
+                }
                 expr sku;
             }
             <td class="tablecell"> {
@@ -72,7 +79,9 @@ template item match item ($pwh = 0) {
         } else {
             <td class="tablecell"> ancestor::warehouse/name;
             <td> {
-                <xsl:attribute name="class"> "tablecell";
+                attribute "class" {
+                    expr "tablecell";
+                }
                 expr sku;
             }
             <td class="tablecell"> qty;

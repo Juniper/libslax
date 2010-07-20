@@ -2,7 +2,9 @@
 version 1.0;
 
 /* the slow way... */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 template getsku () {
     if (position() != 1) {

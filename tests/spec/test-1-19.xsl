@@ -3,7 +3,7 @@
   <xsl:output method="xml" indent="yes" media-type="image/svg"/>
   <xsl:template match="*">
     <xsl:for-each select="configuration/interfaces/unit">
-      <xsl:sort some-obnoxious-option="some-obnoxious-value"/>
+      <xsl:sort select="name"/>
     </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>

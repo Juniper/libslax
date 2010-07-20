@@ -4,7 +4,9 @@ version 1.0;
 ns car = "http://www.example.com/xmlns/car";
 ns manu = "http://www.example.com/xmlns/manufacturer";
 
-<xsl:output method="text" encoding="UTF-8">;
+output-method text {
+    encoding "UTF-8";
+}
 strip-space *;
 
 match / {

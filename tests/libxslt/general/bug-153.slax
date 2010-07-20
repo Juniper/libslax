@@ -8,4 +8,8 @@ match cp {
 match c {
     <p> document("../docs/bug-153.doc")/ch/v[@name == current()/v];
 }
-<xsl:key name="k" match="u/p" use="un">;
+
+key k {
+    match u/p;
+    value un;
+}

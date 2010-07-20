@@ -14,7 +14,7 @@ match / {
 match @* | node() {
     mode "copy";
     
-    <xsl:copy> {
+    copy-node {
         apply-templates node() |@* {
             mode "copy";
         }

@@ -2,7 +2,9 @@
 version 1.0;
 
 /* string flipper */
-<xsl:output encoding="utf-8">;
+output-method {
+    encoding "utf-8";
+}
 
 template textflipper ($instring = "") {
     var $firstword = substring-before($instring, " ");

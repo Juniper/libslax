@@ -1,7 +1,9 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output encoding="ISO-8859-1" method="xml">;
+output-method xml {
+    encoding "ISO-8859-1";
+}
 var $targetId;
 var $action;
 
@@ -20,7 +22,7 @@ template add ($type) {
 }
 
 template copy () {
-    <xsl:copy> {
+    copy-node {
         apply-templates node() |@*;
     }
 }
@@ -57,43 +59,59 @@ match *[attribute::id &&@id == ""] {
 }
 /* liste des elements qui peuvent être édités, donc attribut id */
 match domain {
-    <xsl:copy> {
+    copy-node {
         if (not(@id)) {
-            <xsl:attribute name="id"> generate-id();
+            attribute "id" {
+                expr generate-id();
+            }
         }
-        <xsl:attribute name="add"> "task";
-        <xsl:attribute name="del"> "domain";
+        attribute "add" {
+            expr "task";
+        }
+        attribute "del" {
+            expr "domain";
+        }
         apply-templates node() |@*;
     }
 }
 
 match name {
-    <xsl:copy> {
+    copy-node {
         if (not(@id)) {
-            <xsl:attribute name="id"> generate-id();
+            attribute "id" {
+                expr generate-id();
+            }
         }
-        <xsl:attribute name="replace"> "PCDATA";
+        attribute "replace" {
+            expr "PCDATA";
+        }
         apply-templates node() |@*;
     }
 }
 
 match task {
-    <xsl:copy> {
+    copy-node {
         if (not(@id)) {
-            <xsl:attribute name="id"> generate-id();
+            attribute "id" {
+                expr generate-id();
+            }
         }
-        <xsl:attribute name="replace"> "PCDATA";
-        <xsl:attribute name="add"> "task";
+        attribute "replace" {
+            expr "PCDATA";
+        }
+        attribute "add" {
+            expr "task";
+        }
         apply-templates node() |@*;
     }
 }
 
 match * {
-    <xsl:copy> {
+    copy-node {
         apply-templates node() |@*;
     }
 }
 
 match @* {
-    <xsl:copy>;
+    copy-node;
 }

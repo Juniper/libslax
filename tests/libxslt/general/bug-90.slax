@@ -12,7 +12,10 @@ in a CDATA block.
 <new-fruit2> does it with a workaround named template 'wrap-cdata'
 ============================================================
  */
-<xsl:output method="xml" cdata-section-elements="new-fruit1" indent="yes">;
+output-method xml {
+    indent "yes";
+    cdata-section-elements new-fruit1;
+}
 
 match fruit-sites/fruit {
     <new-fruit1 type=@type> {
@@ -30,13 +33,13 @@ match fruit-sites/fruit {
 }
 /* Wrap $content in a CDATA block */
 template wrap-cdata ($content) {
-    <xsl:text disable-output-escaping="yes"> "<![CDATA[";
+    uexpr "<![CDATA[";
     
     /*
      */
-    <xsl:value-of disable-output-escaping="yes" select="$content">;
+    uexpr $content;
     
     /*
      */
-    <xsl:text disable-output-escaping="yes"> "]]>";
+    uexpr "]]>";
 }

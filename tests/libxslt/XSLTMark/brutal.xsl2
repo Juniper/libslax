@@ -59,7 +59,9 @@
       <xsl:choose>
         <xsl:when test="$pwh = 0">
           <td>
-            <xsl:attribute name="class">tablecell</xsl:attribute>
+            <xsl:attribute name="class">
+              <xsl:text>tablecell</xsl:text>
+            </xsl:attribute>
             <xsl:value-of select="sku"/>
           </td>
           <td class="tablecell">
@@ -82,7 +84,9 @@
             <xsl:value-of select="ancestor::warehouse/name"/>
           </td>
           <td>
-            <xsl:attribute name="class">tablecell</xsl:attribute>
+            <xsl:attribute name="class">
+              <xsl:text>tablecell</xsl:text>
+            </xsl:attribute>
             <xsl:value-of select="sku"/>
           </td>
           <td class="tablecell">

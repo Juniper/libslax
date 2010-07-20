@@ -3,10 +3,25 @@ version 1.0;
 
 ns test = "http://www.example.org/test";
 
-<xsl:output method="xml" encoding="UTF-8" indent="yes">;
-<xsl:key name="k" match="test:a" use="@a">;
-<xsl:key name="k" match="test:b" use="@b">;
-<xsl:key name="k" match="test.a" use="@a">;
+output-method xml {
+    encoding "UTF-8";
+    indent "yes";
+}
+
+key k {
+    match test:a;
+    value @a;
+}
+
+key k {
+    match test:b;
+    value @b;
+}
+
+key k {
+    match test.a;
+    value @a;
+}
 
 match / {
     <test:data> {

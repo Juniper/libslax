@@ -5,7 +5,7 @@
   <xsl:template match="/">
     <indexdoc>
       <xsl:apply-templates select="//indexterm">
-        <xsl:sort data-type="text" select="primary"/>
+        <xsl:sort select="primary" data-type="text"/>
       </xsl:apply-templates>
     </indexdoc>
   </xsl:template>

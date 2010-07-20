@@ -4,7 +4,7 @@ version 1.0;
 ns ns2 = "whatever";
 ns ns = "another";
 
-<xsl:output method="text">;
+output-method text;
 
 match ns:root {
     expr "\n  WRONG\n";

@@ -2,9 +2,9 @@
 version 1.0;
 
 match / {
-    <xsl:element name="foo"> {
+    element "foo" {
         ns "http://baz.xml";
         
-        <xsl:element name="bar">;
+        element "bar";
     }
 }

@@ -3,7 +3,9 @@ version 1.0;
 
 ns libxslt exclude = "http://xmlsoft.org/XSLT/namespace";
 
-<xsl:output method="xml" indent="yes">;
+output-method xml {
+    indent "yes";
+}
 var $one = {
     copy-of .;
 }

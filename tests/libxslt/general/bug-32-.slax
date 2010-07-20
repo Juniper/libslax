@@ -6,11 +6,11 @@ ns b = "http://b";
 match @b:* { }
 
 match * {
-    <xsl:copy> {
+    copy-node {
         apply-templates * |@*;
     }
 }
 
 match @* {
-    <xsl:copy>;
+    copy-node;
 }

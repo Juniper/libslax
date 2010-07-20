@@ -1,7 +1,7 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.0;
 
-<xsl:output method="text">;
+output-method text;
 
 match /XML_DATA//* {
     expr name();

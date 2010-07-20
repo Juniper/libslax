@@ -3,7 +3,9 @@ version 1.0;
 
 ns "http://me.envelope";
 
-<xsl:output method="xml" indent="yes">;
+output-method xml {
+    indent "yes";
+}
 
 match report {
     <Message> {
@@ -17,8 +19,10 @@ match report {
             for-each (form) {
                 <Item> {
                     <Ref> code;
-                    <xsl:element name="Info"> {
-                        <xsl:attribute name="desc"> description;
+                    element "Info" {
+                        attribute "desc" {
+                            expr description;
+                        }
                         <Note> description/@note;
                     }
                     <Quantity> qty;

@@ -3,9 +3,11 @@ version 1.0;
 
 match items {
     for-each (item) {
-        <xsl:sort select=".">;
+        sort .;
         <p> {
-            <xsl:number value="position()" format="1. ">;
+            number position() {
+                format "1. ";
+            }
             expr .;
         }
     }

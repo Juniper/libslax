@@ -24,7 +24,9 @@ match itemlist {
 match item {
     <tr> {
         if (position() mod 2 == 0) {
-            <xsl:attribute name="bgcolor"> "yellow";
+            attribute "bgcolor" {
+                expr "yellow";
+            }
         }
         apply-templates;
     }

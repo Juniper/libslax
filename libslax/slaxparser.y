@@ -96,35 +96,80 @@
  */
 %token K_APPLY_IMPORTS		/* 'apply-imports' */
 %token K_APPLY_TEMPLATES	/* 'apply-templates' */
+%token K_ATTRIBUTE		/* 'attribute' */
+%token K_ATTRIBUTE_SET		/* 'attribute-set' */
 %token K_CALL			/* 'call' */
+%token K_CASE_ORDER		/* 'case-order' */
+%token K_CDATA_SECTION_ELEMENTS	/* 'cdata-section-elements' */
 %token K_COMMENT		/* 'comment' */
+%token K_COPY_NODE		/* 'copy-node' */
 %token K_COPY_OF		/* 'copy-of' */
-%token K_EXCLUDE		/* 'exclude' */
+%token K_COUNT			/* 'count' */
+%token K_DATA_TYPE		/* 'data-type' */
+%token K_DECIMAL_FORMAT		/* 'decimal-format' */
+%token K_DECIMAL_SEPARATOR	/* 'decimal-separator' */
+%token K_DIGIT			/* 'digit' */
+%token K_DOCTYPE_PUBLIC		/* 'doctype-public' */
+%token K_DOCTYPE_SYSTEM		/* 'doctype-system' */
+%token K_ELEMENT		/* 'element' */
 %token K_ELSE			/* 'else' */
+%token K_ENCODING		/* 'encoding' */
+%token K_EXCLUDE		/* 'exclude' */
 %token K_EXPR			/* 'expr' */
 %token K_EXTENSION		/* 'extension' */
+%token K_FALLBACK		/* 'fallback' */
+%token K_FORMAT			/* 'format' */
 %token K_FOR_EACH		/* 'for-each' */
+%token K_FROM			/* 'from' */
 %token K_FUNCTION		/* 'function' */
+%token K_GROUPING_SEPARATOR	/* 'grouping-separator' */
+%token K_GROUPING_SIZE		/* 'grouping-size' */
 %token K_ID			/* 'id' */
 %token K_IF			/* 'if' */
 %token K_IMPORT			/* 'import' */
 %token K_INCLUDE		/* 'include' */
+%token K_INDENT			/* 'indent' */
+%token K_INFINITY		/* 'infinity' */
 %token K_KEY			/* 'key' */
+%token K_LANGUAGE		/* 'language' */
+%token K_LETTER_VALUE		/* 'letter-value' */
+%token K_LEVEL			/* 'level' */
 %token K_MATCH			/* 'match' */
+%token K_MEDIA_TYPE		/* 'media-type' */
+%token K_MESSAGE		/* 'message' */
+%token K_MINUS_SIGN		/* 'minus-sign' */
 %token K_MODE			/* 'mode' */
+%token K_NAN			/* 'nan' */
 %token K_NODE			/* 'node' */
 %token K_NS			/* 'ns' */
+%token K_NS_ALIAS		/* 'ns-alias' */
+%token K_NS_TEMPLATE		/* 'ns-template' */
+%token K_NUMBER			/* 'number' */
+%token K_OMIT_XML_DECLARATION	/* 'omit-xml-declaration' */
+%token K_ORDER			/* 'order' */
+%token K_OUTPUT_METHOD		/* 'output-method' */
 %token K_PARAM			/* 'param' */
+%token K_PATTERN_SEPARATOR	/* 'pattern-separator' */
+%token K_PERCENT		/* 'percent' */
+%token K_PER_MILLE		/* 'per-mille' */
 %token K_PRESERVE_SPACE		/* 'preserve-space' */
 %token K_PRIORITY		/* 'priority' */
 %token K_PROCESSING_INSTRUCTION /* 'processing-instruction' */
 %token K_RESULT			/* 'result' */
+%token K_RESULT_PREFIX		/* 'result-prefix' */
+%token K_SORT			/* 'sort' */
+%token K_STANDALONE		/* 'standalone' */
 %token K_STRIP_SPACE		/* 'strip-space' */
 %token K_TEMPLATE		/* 'template' */
+%token K_TERMINATE		/* 'terminate' */
 %token K_TEXT			/* 'text' */
+%token K_UEXPR			/* 'uexpr' */
+%token K_USE_ATTRIBUTE_SETS	/* 'use-attribute-set' */
+%token K_VALUE			/* 'value' */
 %token K_VAR			/* 'var' */
 %token K_VERSION		/* 'version' */
 %token K_WITH			/* 'with' */
+%token K_ZERO_DIGIT		/* 'zero-digit' */
 
 /*
  * Operator keyword tokens, which might be NCNames if they appear inside an
@@ -267,7 +312,10 @@ stylesheet :
 
 version_stmt :
 	K_VERSION version_number L_EOS
-		{ $$ = STACK_CLEAR($1); }
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = STACK_CLEAR($1);
+		}
 	;
 
 version_number :
@@ -282,11 +330,19 @@ ns_list :
 	/* empty */
 		{ $$ = NULL; }
 
-	| ns_list ns_decl
+	| ns_list ns_stmt
 		{
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
+	;
+
+ns_stmt :
+	ns_decl
+		{ $$ = NULL; }
+
+	| ns_alias_stmt
+		{ $$ = NULL; }
 	;
 
 ns_decl :
@@ -302,6 +358,32 @@ ns_decl :
 		    slax_data->sd_ns = NULL;
 
 		    slaxNsAdd(slax_data, $2->ss_token, $6->ss_token);
+
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
+
+	| K_NS T_QUOTED L_EOS
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxNsAdd(slax_data, NULL, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+ns_decl_local :
+	K_NS T_BARE
+		{
+		    /* Stash the namespace */
+		    slax_data->sd_ns = $2;
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	    L_EQUALS T_QUOTED L_EOS
+		{
+		    slax_data->sd_ns = NULL;
+
+		    slaxNsAdd(slax_data, $2->ss_token, $5->ss_token);
 
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
@@ -341,6 +423,15 @@ ns_option :
 		}
 	;
 
+ns_alias_stmt :
+	K_NS_ALIAS T_BARE T_BARE L_EOS
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxNamespaceAlias(slax_data, $2, $3);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
 slax_stmt_list :
 	/* empty */
 		{ $$ = NULL; }
@@ -369,6 +460,18 @@ slax_stmt :
 		{ $$ = NULL; }
 
 	| preserve_space_stmt
+		{ $$ = NULL; }
+
+	| output_method_stmt
+		{ $$ = NULL; }
+
+	| decimal_format_stmt
+		{ $$ = NULL; }
+
+	| key_stmt
+		{ $$ = NULL; }
+
+	| attribute_set_stmt
 		{ $$ = NULL; }
 
 	| element_stmt
@@ -444,14 +547,14 @@ param_decl :
 
 	| K_PARAM T_VAR L_EQUALS
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_PARAM,
 				    ATT_NAME, $2->ss_token + 1);
 		    $$ = NULL;
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
@@ -459,14 +562,14 @@ param_decl :
 
 	| K_PARAM T_VAR L_ASSIGN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_PARAM,
 				    ATT_NAME, $2->ss_token + 1);
 		    $$ = NULL;
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    slaxAvoidRtf(slax_data);
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
@@ -484,14 +587,14 @@ var_decl :
 
 	| K_VAR T_VAR L_EQUALS
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
 		    $$ = NULL;
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
@@ -499,14 +602,14 @@ var_decl :
 
 	| K_VAR T_VAR L_ASSIGN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
 		    $$ = NULL;
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    slaxAvoidRtf(slax_data);
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
@@ -523,13 +626,13 @@ initial_value :
 
 	| block
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
 
 	| element_stmt
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
 	;
@@ -537,12 +640,8 @@ initial_value :
 match_template :
 	K_MATCH xs_pattern
 		{
-		    xmlNodePtr nodep;
-
-		    KEYWORDS_ON();
-		    nodep = slaxElementPush(slax_data, ELT_TEMPLATE,
-					    NULL, NULL);
-		    if (nodep)
+		    ALL_KEYWORDS_ON();
+		    if (slaxElementPush(slax_data, ELT_TEMPLATE, NULL, NULL))
 			slaxAttribAddString(slax_data, ATT_MATCH,
 					    $2, SSF_QUOTES);
 		    /* XXX else error */
@@ -558,7 +657,7 @@ match_template :
 	;
 
 match_block_contents :
-	match_preamble_list block_preamble_list block_statement_list
+	match_preamble_list block_preamble_list block_stmt_list
 		{ $$ = NULL; }
 	;
 
@@ -643,24 +742,23 @@ named_template_arguments :
 	/* empty */
 		{ $$ = NULL; }
 
-	| L_OPAREN named_template_argument_list L_CPAREN
+	| L_OPAREN named_template_argument_list_optional L_CPAREN
 		{ $$ = STACK_CLEAR($1); }
 	;
 
-named_template_argument_list :
+named_template_argument_list_optional :
 	/* empty */
 		{ $$ = NULL; }
 
-	| named_template_argument_list_not_empty
+	| named_template_argument_list
 		{ $$ = NULL; }
 	;
 
-named_template_argument_list_not_empty :
+named_template_argument_list :
 	named_template_argument_decl
 		{ $$ = NULL; }
 
-	| named_template_argument_list_not_empty
-		    L_COMMA named_template_argument_decl
+	| named_template_argument_list L_COMMA named_template_argument_decl
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -674,14 +772,14 @@ named_template_argument_decl :
 
 	| T_VAR L_EQUALS
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = NULL;
 		}
 	    xpath_value
 		{
 		    xmlNodePtr nodep;
 
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_PARAM,
 					   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
@@ -742,7 +840,7 @@ function_argument_decl :
 block :
 	L_OBRACE
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
 	    block_contents L_CBRACE
@@ -753,7 +851,7 @@ block :
 	;
 
 block_contents :
-	block_preamble_list block_statement_list
+	block_preamble_list block_stmt_list
 		{ $$ = NULL; }
 	;
 
@@ -769,32 +867,38 @@ block_preamble_list :
 	;
 
 block_preamble_stmt :
-	ns_decl
+	ns_decl_local
 		{ $$ = NULL; }
 	;
 
-block_statement_list :
+block_stmt_list :
 	/* empty */
 		{ $$ = NULL; }
 
-	| block_statement_list block_statement
+	| block_stmt_list block_stmt
 		{
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
 	;
 
-block_statement :
+block_stmt :
 	apply_imports_stmt
 		{ $$ = NULL; }
 
 	| apply_templates_stmt
 		{ $$ = NULL; }
 
+	| attribute_stmt
+		{ $$ = NULL; }
+
 	| call_stmt
 		{ $$ = NULL; }
 
 	| comment_stmt
+		{ $$ = NULL; }
+
+	| copy_node_stmt
 		{ $$ = NULL; }
 
 	| copy_of_stmt
@@ -804,7 +908,10 @@ block_statement :
 		{ $$ = NULL; }
 
 	| expr_stmt
-		{ $$ = STACK_CLEAR($1); }
+		{ $$ = NULL; }
+
+	| fallback_stmt
+		{ $$ = NULL; }
 
 	| for_each_stmt
 		{ $$ = NULL; }
@@ -812,10 +919,31 @@ block_statement :
 	| if_stmt
 		{ $$ = NULL; }
 
+	| message_stmt
+		{ $$ = NULL; }
+
 	| param_decl
 		{ $$ = NULL; }
 
+	| processing_instruction_stmt
+		{ $$ = NULL; }
+
+	| number_stmt
+		{ $$ = NULL; }
+
 	| result_stmt
+		{ $$ = NULL; }
+
+	| sort_stmt
+		{ $$ = NULL; }
+
+	| terminate_stmt
+		{ $$ = NULL; }
+
+	| uexpr_stmt
+		{ $$ = NULL; }
+
+	| use_attribute_stmt
 		{ $$ = NULL; }
 
 	| var_decl
@@ -840,14 +968,12 @@ apply_imports_stmt :
 apply_templates_stmt :
 	K_APPLY_TEMPLATES
 		{
-		    KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_APPLY_TEMPLATES,
 					    NULL, NULL);
 		    $$ = NULL;
 		}
 	    xpath_expr_optional apply_template_arguments
 		{
-		    KEYWORDS_OFF();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
@@ -858,9 +984,8 @@ xpath_expr_optional :
 	/* empty */
 		{ $$ = NULL; }
 
-	| xp_expr
+	| xpath_expr
 		{
-		    KEYWORDS_ON();
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $1);
 		    $$ = STACK_CLEAR($1);
 		}
@@ -869,8 +994,15 @@ xpath_expr_optional :
 expr_stmt :
 	K_EXPR xpath_value L_EOS
 		{
-		    KEYWORDS_ON();
-		    slaxElementXPath(slax_data, $2, TRUE);
+		    slaxElementXPath(slax_data, $2, TRUE, FALSE);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+uexpr_stmt :
+	K_UEXPR xpath_value L_EOS
+		{
+		    slaxElementXPath(slax_data, $2, TRUE, TRUE);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -905,7 +1037,45 @@ template_name :
 	;
 
 apply_template_arguments :
-	call_arguments_braces_style
+	L_EOS /* This is the semi-colon to end the statement */
+		{ $$ = STACK_CLEAR($1); }
+
+	| L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	    apply_template_sub_stmt_list_optional L_CBRACE
+		{
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+apply_template_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| apply_template_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+apply_template_sub_stmt_list :
+	apply_template_sub_stmt
+		{ $$ = NULL; }
+
+	| apply_template_sub_stmt_list apply_template_sub_stmt
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	;
+
+apply_template_sub_stmt :
+	sort_stmt
+		{ $$ = NULL; }
+
+	| call_argument_braces_member
 		{ $$ = NULL; }
 	;
 
@@ -918,23 +1088,23 @@ call_arguments_parens_style :
 	/* empty */
 		{ $$ = NULL; }
 
-	| L_OPAREN call_argument_list L_CPAREN
+	| L_OPAREN call_argument_list_optional L_CPAREN
 		{ $$ = STACK_CLEAR($1); }
 	;
 
-call_argument_list :
+call_argument_list_optional :
 	/* empty */
 		{ $$ = NULL; }
 
-	| call_argument_list_not_empty
+	| call_argument_list
 		{ $$ = NULL; }
 	;
 
-call_argument_list_not_empty :
+call_argument_list :
 	call_argument_member
 		{ $$ = NULL; }
 
-	| call_argument_list_not_empty L_COMMA call_argument_member
+	| call_argument_list L_COMMA call_argument_member
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -955,14 +1125,13 @@ call_argument_member :
 
 	| T_VAR L_EQUALS
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = NULL;
 		}
 	    xpath_value
 		{
 		    xmlNodePtr nodep;
 
-		    KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
@@ -983,27 +1152,26 @@ call_arguments_braces_style :
 
 	| L_OBRACE
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
-	    call_argument_braces_list L_CBRACE
+	    call_argument_braces_list_optional L_CBRACE
 		{
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
 	;
 
-call_argument_braces_list :
-	call_argument_braces_list_not_empty
+call_argument_braces_list_optional :
+	call_argument_braces_list
 		{ $$ = NULL; }
 	;
 
-call_argument_braces_list_not_empty :
+call_argument_braces_list :
 	call_argument_braces_member
 		{ $$ = NULL; }
 
-	| call_argument_braces_list_not_empty
-			call_argument_braces_member
+	| call_argument_braces_list call_argument_braces_member
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -1011,6 +1179,8 @@ call_argument_braces_member :
 	K_WITH T_VAR L_EOS
 		{
 		    xmlNodePtr nodep;
+
+		    ALL_KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep) {
@@ -1026,7 +1196,7 @@ call_argument_braces_member :
 		{
 		    xmlNodePtr nodep;
 
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep)
@@ -1036,7 +1206,7 @@ call_argument_braces_member :
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    nodePop(slax_data->sd_ctxt);
 
 		    $$ = STACK_CLEAR($1);
@@ -1053,18 +1223,16 @@ call_argument_braces_member :
 comment_stmt :
 	K_COMMENT xpath_value L_EOS
 		{
-		    KEYWORDS_ON();
 		    slaxCommentAdd(slax_data, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
 
 copy_of_stmt :
-	K_COPY_OF xp_expr L_EOS
+	K_COPY_OF xpath_expr L_EOS
 		{
 		    xmlNodePtr nodep;
 
-		    KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_COPY_OF, NULL, NULL);
 		    if (nodep) {
 			nodePush(slax_data->sd_ctxt, nodep);
@@ -1080,6 +1248,7 @@ result_stmt :
 	K_RESULT
 		{
 		    xmlNodePtr nodep;
+
 		    nodep = slaxElementPush(slax_data, ELT_RESULT, NULL, NULL);
 		    if (nodep)
 			slaxSetFuncNs(slax_data, nodep);
@@ -1087,7 +1256,7 @@ result_stmt :
 		}
 	    initial_value
 		{
-		    KEYWORDS_ON();
+		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
@@ -1108,7 +1277,7 @@ element :
 	    attribute_list L_GRTR
 		{
 		    ALL_KEYWORDS_ON();
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2, $4);
 		}
@@ -1131,11 +1300,64 @@ element_stmt :
 
 	| element xpath_value L_EOS
 		{
-		    ALL_KEYWORDS_ON();
-		    slaxElementXPath(slax_data, $2, FALSE);
+		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
 		    slaxElementClose(slax_data);
 		    $$ = STACK_CLEAR($1);
 		}
+
+	| K_ELEMENT xpath_value L_EOS
+		{
+		    xmlNodePtr nodep;
+		    nodep = slaxElementPush(slax_data, ELT_ELEMENT,
+					    NULL, NULL);
+		    if (nodep) {
+			slaxAttribAddValue(slax_data, ATT_NAME, $2);
+			slaxElementPop(slax_data);
+		    }
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_ELEMENT xpath_value L_OBRACE
+		{
+		    xmlNodePtr nodep;
+
+		    nodep = slaxElementPush(slax_data, ELT_ELEMENT,
+					    NULL, NULL);
+		    if (nodep)
+			slaxAttribAddValue(slax_data, ATT_NAME, $2);
+		    $$ = NULL;
+		}
+	    element_stmt_contents L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+	;
+
+element_stmt_contents :
+	element_stmt_preamble_list block_stmt_list
+		{ $$ = NULL; }
+	;
+
+element_stmt_preamble_list :
+	/* empty */
+		{ $$ = NULL; }
+
+	| element_stmt_preamble_list element_stmt_preamble_stmt
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	;
+
+element_stmt_preamble_stmt :
+	ns_decl_local
+		{ $$ = NULL; }
+
+	| ns_template
+		{ $$ = NULL; }
 	;
 
 attribute_list :
@@ -1149,6 +1371,7 @@ attribute_list :
 attribute :
 	q_name L_EQUALS
 		{
+		    ALL_KEYWORDS_OFF();
 		    $$ = NULL;
 		}
 	    xpath_lite_value
@@ -1159,11 +1382,60 @@ attribute :
 		}
 	;
 
-for_each_stmt :
-	K_FOR_EACH L_OPAREN xp_expr L_CPAREN
+attribute_stmt :
+	K_ATTRIBUTE xpath_value L_OBRACE
 		{
 		    xmlNodePtr nodep;
-		    KEYWORDS_ON();
+
+		    nodep = slaxElementPush(slax_data, ELT_ATTRIBUTE,
+					    NULL, NULL);
+		    slaxAttribAddValue(slax_data, ATT_NAME, $2);
+		    $$ = NULL;
+		}
+	    attribute_stmt_contents L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+	;
+
+attribute_stmt_contents :
+	attribute_stmt_preamble_list block_stmt_list
+		{ $$ = NULL; }
+	;
+
+attribute_stmt_preamble_list :
+	/* empty */
+		{ $$ = NULL; }
+
+	| attribute_stmt_preamble_list attribute_stmt_preamble_stmt
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	;
+
+attribute_stmt_preamble_stmt :
+	ns_decl_local
+		{ $$ = NULL; }
+
+	| ns_template
+		{ $$ = NULL; }
+	;
+
+ns_template :
+	K_NS_TEMPLATE xpath_value L_EOS
+		{
+		    slaxAttribAddValue(slax_data, ATT_NAMESPACE, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+for_each_stmt :
+	K_FOR_EACH L_OPAREN xpath_expr L_CPAREN
+		{
+		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_FOR_EACH,
 					    NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
@@ -1178,9 +1450,8 @@ for_each_stmt :
 	;
 
 if_stmt :
-	K_IF L_OPAREN xp_expr L_CPAREN
+	K_IF L_OPAREN xpath_expr L_CPAREN
 		{
-		    KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_CHOOSE, NULL, NULL);
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
@@ -1210,9 +1481,8 @@ elsif_stmt_list :
 	;
 
 elsif_stmt :
-	K_ELSE K_IF L_OPAREN xp_expr L_CPAREN 
+	K_ELSE K_IF L_OPAREN xpath_expr L_CPAREN 
 		{
-		    KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $4);
 		    $$ = NULL;
@@ -1241,6 +1511,720 @@ else_stmt :
 		    STACK_UNUSED($2);
 		}
 	;
+
+message_stmt :
+	K_MESSAGE
+		{
+		    slaxElementPush(slax_data, ELT_MESSAGE, NULL, NULL);
+		    $$ = NULL;
+		}
+	    terminate_contents
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+terminate_stmt :
+	K_TERMINATE
+		{
+		    if (slaxElementPush(slax_data, ELT_MESSAGE, NULL, NULL))
+			slaxAttribAddLiteral(slax_data, ATT_TERMINATE, "yes");
+		    $$ = NULL;
+		}
+	    terminate_contents
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+terminate_contents :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| xpath_value L_EOS
+		{
+		    slaxElementXPath(slax_data, $1, FALSE, FALSE);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| block
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+attribute_set_stmt :
+	K_ATTRIBUTE_SET q_name L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, ELT_ATTRIBUTE_SET,
+					   ATT_NAME, $2->ss_token);
+		    $$ = NULL;
+		}
+	    attribute_set_sub_stmt_list_optional L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+	;
+
+attribute_set_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| attribute_set_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+attribute_set_sub_stmt_list :
+	attribute_set_sub_stmt
+		{ $$ = NULL; }
+
+	| attribute_set_sub_stmt_list attribute_set_sub_stmt
+		{ $$ = NULL; }
+	;
+
+attribute_set_sub_stmt :
+	use_attribute_stmt
+		{ $$ = NULL; }
+
+	| attribute_stmt
+		{ $$ = NULL; }
+	;
+
+use_attribute_stmt :
+	K_USE_ATTRIBUTE_SETS use_attribute_list L_EOS
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAddString(slax_data, ATT_USE_ATTRIBUTE_SETS,
+					$2, 0);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+use_attribute_list :
+	q_name
+		{ $$ = STACK_LINK($1); }
+
+	| use_attribute_list q_name
+		{ $$ = STACK_LINK($1); }
+	;
+
+output_method_stmt :
+	output_method_intro output_method_block
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+output_method_intro :
+	K_OUTPUT_METHOD T_BARE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, ELT_OUTPUT,
+					   ATT_METHOD, $2->ss_token);
+		    $$ = NULL;
+		}
+	| K_OUTPUT_METHOD
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, ELT_OUTPUT, NULL, NULL);
+		    $$ = NULL;
+		}
+
+output_method_block :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| L_OBRACE output_method_block_sub_stmt_list_optional L_CBRACE
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+output_method_block_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| output_method_block_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+output_method_block_sub_stmt_list :
+	output_method_block_sub_stmt
+		{ $$ = NULL; }
+
+	| output_method_block_sub_stmt_list output_method_block_sub_stmt
+		{ $$ = NULL; }
+	;
+
+output_method_block_sub_stmt :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| K_VERSION data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_ENCODING data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_OMIT_XML_DECLARATION data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_STANDALONE data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_DOCTYPE_PUBLIC data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_DOCTYPE_SYSTEM data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_CDATA_SECTION_ELEMENTS cdata_section_element_list L_EOS
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAddString(slax_data, $1->ss_token,
+					$2, 0);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_INDENT data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_MEDIA_TYPE data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	;
+
+cdata_section_element_list :
+	q_name
+		{ $$ = STACK_LINK($1); }
+
+	| cdata_section_element_list q_name
+		{ $$ = STACK_LINK($1); }
+	;
+
+data_value :
+	T_QUOTED
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
+		}
+	| T_BARE
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
+		}
+	;
+
+
+
+decimal_format_stmt :
+	K_DECIMAL_FORMAT T_BARE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, $1->ss_token,
+					   ATT_NAME, $2->ss_token);
+		    $$ = NULL;
+		}
+	    decimal_format_block
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
+	;
+
+decimal_format_block :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| L_OBRACE decimal_format_block_sub_stmt_list_optional L_CBRACE
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+decimal_format_block_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| decimal_format_block_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+decimal_format_block_sub_stmt_list :
+	decimal_format_block_sub_stmt
+		{ $$ = NULL; }
+
+	| decimal_format_block_sub_stmt_list decimal_format_block_sub_stmt
+		{ $$ = NULL; }
+	;
+
+decimal_format_block_sub_stmt :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| K_DECIMAL_SEPARATOR data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_GROUPING_SEPARATOR data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_INFINITY data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_MINUS_SIGN data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_NAN data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 ATT_NAN, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_PERCENT data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_PER_MILLE data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_ZERO_DIGIT data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_DIGIT data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_PATTERN_SEPARATOR data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+;
+
+number_stmt :
+	K_NUMBER L_EOS
+		{
+		    ALL_KEYWORDS_ON();
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+			slaxElementPop(slax_data);
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_NUMBER xpath_value L_EOS
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL)) {
+			slaxAttribAddString(slax_data, ATT_VALUE,
+					    $2, SSF_QUOTES);
+			slaxElementPop(slax_data);
+		    }
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_NUMBER xpath_value L_OBRACE
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+			slaxAttribAddString(slax_data, ATT_VALUE,
+					    $2, SSF_QUOTES);
+		    $$ = NULL;
+		}
+	    number_expression_details_optional L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+
+	| K_NUMBER L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, $1->ss_token, NULL, NULL);
+		    $$ = NULL;
+		}
+	    number_constructed_details_optional L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
+	;
+
+number_expression_details_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| number_expression_details_list
+		{ $$ = NULL; }
+	;
+
+number_expression_details_list :
+	number_expression_detail
+		{ $$ = NULL; }
+
+	| number_expression_details_list number_expression_detail
+		{ $$ = NULL; }
+	;
+
+number_expression_detail :
+	number_conversion_stmt
+		{ $$ = NULL; }
+	;
+
+number_constructed_details_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| number_constructed_details_list
+		{ $$ = NULL; }
+	;
+
+number_constructed_details_list :
+	number_constructed_detail
+		{ $$ = NULL; }
+
+	| number_constructed_details_list number_constructed_detail
+		{ $$ = NULL; }
+	;
+
+number_constructed_detail :
+	number_conversion_stmt
+		{ $$ = NULL; }
+	
+	| K_LEVEL data_value L_EOS
+		{
+		    slaxAttribAddLiteral(slax_data,
+					 $1->ss_token, $2->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_FROM xpath_expr L_EOS
+		{
+		    slaxAttribAdd(slax_data, SAS_XPATH, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_COUNT xpath_expr L_EOS
+		{
+		    slaxAttribAdd(slax_data, SAS_XPATH, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+number_conversion_stmt :
+	K_FORMAT xpath_value L_EOS
+		{
+		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_LETTER_VALUE xpath_value L_EOS
+		{
+		    /*
+		     * As of libxslt 1.1.26, the "letter-value" attribute is
+		     * not implemented.
+		     */
+		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_GROUPING_SIZE xpath_value L_EOS
+		{
+		    slaxAttribAddValue(slax_data, ATT_GROUPING_SIZE, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_GROUPING_SEPARATOR xpath_value L_EOS
+		{
+		    slaxAttribAddValue(slax_data, ATT_GROUPING_SEPARATOR, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_LANGUAGE xpath_value L_EOS
+		{
+		    /*
+		     * As of libxslt 1.1.26, the "lang" attribute is
+		     * not implemented.
+		     */
+		    slaxAttribAddValue(slax_data, ATT_LANG, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+      
+processing_instruction_stmt :
+	K_PROCESSING_INSTRUCTION xpath_value L_EOS
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL)) {
+			slaxAttribAddValue(slax_data, ATT_VALUE, $2);
+			slaxElementPop(slax_data);
+		    }
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_PROCESSING_INSTRUCTION xpath_value L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+			slaxAttribAddValue(slax_data, ATT_NAME, $2);
+		    $$ = NULL;
+		}
+	    block_contents L_CBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+	;
+
+key_stmt :
+	K_KEY T_BARE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, $1->ss_token,
+				    ATT_NAME, $2->ss_token);
+		    $$ = NULL;
+		}
+	    L_OBRACE key_sub_stmt_list_optional L_CBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
+	;
+	    
+
+key_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| key_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+key_sub_stmt_list :
+	key_sub_stmt
+		{ $$ = NULL; }
+
+	| key_sub_stmt_list key_sub_stmt
+		{ $$ = NULL; }
+	;
+
+key_sub_stmt :
+	K_MATCH xpath_expr L_EOS
+		{
+		    slaxAttribAdd(slax_data, SAS_XPATH, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_VALUE xpath_expr L_EOS
+		{
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_USE, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+copy_node_stmt :
+	K_COPY_NODE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPush(slax_data, ELT_COPY, NULL, NULL);
+		    $$ = NULL;
+		}
+	    copy_node_rest
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+;
+
+copy_node_rest :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| block
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+sort_stmt :
+	K_SORT L_EOS
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+			slaxElementPop(slax_data);
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_SORT xpath_value L_EOS
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL)) {
+			slaxAttribAddString(slax_data, ATT_SELECT,
+					    $2, SSF_QUOTES);
+			slaxElementPop(slax_data);
+		    }
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_SORT xpath_value L_OBRACE
+		{
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+			slaxAttribAddString(slax_data, ATT_SELECT,
+					    $2, SSF_QUOTES);
+		    $$ = NULL;
+		}
+	    sort_sub_stmt_list_optional L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($4);
+		}
+	;
+
+sort_sub_stmt_list_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| sort_sub_stmt_list
+		{ $$ = NULL; }
+	;
+
+sort_sub_stmt_list :
+	sort_sub_stmt
+		{ $$ = NULL; }
+
+	| sort_sub_stmt_list sort_sub_stmt
+		{ $$ = NULL; }
+	;
+
+sort_sub_stmt :
+	L_EOS
+		{ $$ = STACK_CLEAR($1); }
+
+	| K_LANGUAGE xpath_value L_EOS
+		{
+		    /*
+		     * As of libxslt 1.1.26, the "lang" attribute is
+		     * not implemented.
+		     */
+		    slaxAttribAddValue(slax_data, ATT_LANG, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_DATA_TYPE data_value L_EOS
+		{
+		    /* "text" or "number" or qname-but-not-ncname */
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_ORDER data_value L_EOS
+		{
+		    /* "ascending" or "descending" */
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_CASE_ORDER data_value L_EOS
+		{
+		    /* "upper-first" or "lower-first" */
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+fallback_stmt :
+	K_FALLBACK
+		{
+		    slaxElementPush(slax_data, $1->ss_token, NULL, NULL);
+		    $$ = NULL;
+		}
+	    block
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+/* ---------------------------------------------------------------------- */
 
 and_operator :
 	K_AND
@@ -1296,14 +2280,41 @@ equals_operator :
 		}
 	;
 
+/*
+ * Use "xpath_expr" and "xpath_value" to clear the keyword flags
+ * automatically.  We can rely on slaxYylex turning them on for
+ * us as keywords are recognized, but the end-of-expression
+ * detection relys on the next token (L_EOS) so xp_* productions
+ * can play with flags in way that prevent us from having L_EOS
+ * turn the keywords back on automatically.  But putting this
+ * into a production, we know it will be fired off at an appropriate
+ * time.
+ */
+
+xpath_expr :
+	xp_expr
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
+		}
+	;
+
 xpath_value :
+	xpath_value_raw
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
+		}
+	;
+
+xpath_value_raw :
 	xp_expr
 		{
 		    slaxTrace("xpath: %s", $1->ss_token);
 		    $$ = $1;
 		}
 
-	| xpath_value L_UNDERSCORE xp_expr
+	| xpath_value_raw L_UNDERSCORE xp_expr
 		{
 		    slax_string_t *ssp;
 
@@ -1458,7 +2469,7 @@ xp_relative_location_path_optional :
 
 	| xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1466,7 +2477,7 @@ xp_relative_location_path_optional :
 xpl_relative_location_path_optional :
 	xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1486,7 +2497,7 @@ xpl_relative_location_path_optional :
 xpc_function_call :
 	T_FUNCTION_NAME L_OPAREN xpc_argument_list_optional L_CPAREN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
@@ -1500,7 +2511,7 @@ xpc_argument_list_optional :
 
 	| xpc_argument_list
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1508,13 +2519,13 @@ xpc_argument_list_optional :
 xpc_argument_list :
 	xp_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_argument_list L_COMMA xp_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1531,7 +2542,7 @@ xpc_axis_specifier_optional :
 
 	| xpc_abbreviated_axis_specifier
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1542,7 +2553,7 @@ xpc_predicate_list :
 
 	| xpc_predicate_list xpc_predicate
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1550,7 +2561,7 @@ xpc_predicate_list :
 xpc_predicate :
 	L_OBRACK xp_expr L_CBRACK
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1558,19 +2569,19 @@ xpc_predicate :
 xpc_relative_location_path :
 	xpc_step
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_relative_location_path L_SLASH xpc_step
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xpc_abbreviated_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1578,13 +2589,13 @@ xpc_relative_location_path :
 xpc_step :
 	xpc_axis_specifier_optional xpc_node_test xpc_predicate_list
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xpc_abbreviated_step
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1592,7 +2603,7 @@ xpc_step :
 xpc_abbreviated_absolute_location_path :
 	L_DSLASH xpc_relative_location_path
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1600,7 +2611,7 @@ xpc_abbreviated_absolute_location_path :
 xpc_abbreviated_relative_location_path :
 	xpc_relative_location_path L_DSLASH xpc_step
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1608,7 +2619,7 @@ xpc_abbreviated_relative_location_path :
 xpc_literal :
 	T_QUOTED
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1641,19 +2652,19 @@ xpc_number_sign_optional :
 xpc_number :
 	T_NUMBER
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| T_NUMBER L_DOT T_NUMBER
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| L_DOT T_NUMBER
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1661,7 +2672,7 @@ xpc_number :
 xpc_variable_reference :
 	T_VAR
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1669,19 +2680,19 @@ xpc_variable_reference :
 xpc_node_test :
 	xpc_name_test	
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xpc_node_type L_OPAREN L_CPAREN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| K_PROCESSING_INSTRUCTION L_OPAREN xpc_literal_optional L_CPAREN
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1689,13 +2700,13 @@ xpc_node_test :
 xpc_name_test :
 	q_name
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| L_ASTERISK /* L_STAR */
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1703,19 +2714,19 @@ xpc_name_test :
 xpc_node_type :
 	K_COMMENT
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| K_TEXT
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| K_NODE
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1723,13 +2734,13 @@ xpc_node_type :
 xpc_abbreviated_step :
 	L_DOT
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| L_DOTDOT
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1737,7 +2748,7 @@ xpc_abbreviated_step :
 xpc_abbreviated_axis_specifier :
 	L_AT
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;
@@ -1766,31 +2777,31 @@ xpc_expr :
 xp_relational_expr :
 	xp_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
 	| xp_relational_expr L_LESS xp_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_relational_expr L_GRTR xp_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_relational_expr L_LESSEQ xp_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
 	| xp_relational_expr L_GRTREQ xp_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 	;
@@ -1798,7 +2809,7 @@ xp_relational_expr :
 xpl_relational_expr :
 	xpl_additive_expr
 		{
-		    KEYWORDS_OFF();
+		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 	;

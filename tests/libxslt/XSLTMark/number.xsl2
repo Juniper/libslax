@@ -3,7 +3,7 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="text" encoding="utf-8"/>
   <xsl:decimal-format name="default"/>
-  <xsl:decimal-format name="funky" decimal-separator="&amp;" grouping-separator="/" infinity="unfunity" minus-sign="_" NaN="(c'est nes pas un nombre)" percent="@" per-mille="!" zero-digit="x" digit="#" pattern-separator=";"/>
+  <xsl:decimal-format name="funky" decimal-separator="&amp;" grouping-separator="/" infinity="unfunity" minus-sign="_" percent="@" per-mille="!" zero-digit="x" digit="#" pattern-separator=";" NaN="(c'est nes pas un nombre)"/>
   <xsl:decimal-format name="dumb" digit="@" pattern-separator="R"/>
   <xsl:template match="numbertest">
     <xsl:apply-templates select="number"/>

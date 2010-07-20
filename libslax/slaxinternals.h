@@ -47,38 +47,62 @@ extern int slaxDebug;			/* Global debug switch */
 extern const char *keywordString[];
 
 /* Attribute names */
+#define ATT_CDATA_SECTION_ELEMENTS "cdata-section-elements"
+#define ATT_COUNT	"count"
+#define ATT_DISABLE_OUTPUT_ESCAPING "disable-output-escaping"
 #define ATT_ELEMENTS	"elements"
 #define ATT_DISABLE_OUTPUT_ESCAPING "disable-output-escaping"
 #define ATT_EXCLUDE_RESULT_PREFIXES "exclude-result-prefixes"
 #define ATT_EXTENSION_ELEMENT_PREFIXES "extension-element-prefixes"
+#define ATT_FROM	"from"
+#define ATT_GROUPING_SEPARATOR "grouping-separator"
+#define ATT_GROUPING_SIZE "grouping-size"
 #define ATT_HREF	"href"
+#define ATT_LANG	"lang"
 #define ATT_NAME	"name"
+#define ATT_NAMESPACE	"namespace"
 #define ATT_MATCH	"match"
+#define ATT_METHOD	"method"
 #define ATT_MODE	"mode"
+#define ATT_NAN		"NaN"	/* Yes, it's mixed case */
 #define ATT_PRIORITY	"priority"
+#define ATT_RESULT_PREFIX "result-prefix"
 #define ATT_SELECT	"select"
+#define ATT_STYLESHEET_PREFIX "stylesheet-prefix"
+#define ATT_TERMINATE	"terminate"
 #define ATT_TEST	"test"
+#define ATT_USE		"use"
+#define ATT_USE_ATTRIBUTE_SETS	"use-attribute-sets"
+#define ATT_VALUE	"value"
 #define ATT_VERSION	"version" 
 
 /* Element names */
 #define ELT_APPLY_IMPORTS "apply-imports"
 #define ELT_APPLY_TEMPLATES "apply-templates"
 #define ELT_ATTRIBUTE	"attribute"
+#define ELT_ATTRIBUTE_SET "attribute-set"
 #define ELT_CALL_TEMPLATE "call-template"
 #define ELT_CHOOSE	"choose"
 #define ELT_COMMENT	"comment"
 #define ELT_COPY_OF	"copy-of"
+#define ELT_COPY	"copy"
+#define ELT_ELEMENT	"element"
 #define ELT_FOR_EACH	"for-each"
 #define ELT_FUNCTION	"function"
 #define ELT_IF		"if"
+#define ELT_MESSAGE	"message"
 #define ELT_NAME	"name"
+#define ELT_NAMESPACE_ALIAS "namespace-alias"
 #define ELT_OTHERWISE	"otherwise"
+#define ELT_OUTPUT	"output"
 #define ELT_PARAM	"param"
 #define ELT_RESULT	"result"
+#define ELT_SORT	"sort"
 #define ELT_STYLESHEET	"stylesheet"
 #define ELT_TEMPLATE	"template"
 #define ELT_TEXT	"text"
 #define ELT_TRANSFORM	"transform"
+#define ELT_USE_ATTRIBUTE_SETS	"use-attribute-sets"
 #define ELT_VALUE_OF	"value-of"
 #define ELT_VARIABLE	"variable"
 #define ELT_WHEN	"when"
@@ -134,8 +158,7 @@ typedef struct slax_data_s {
  * are not valid inside xpath expressions, but xpath ones
  * are.  This leaves some obvious problems, but...
  */
-#define KEYWORDS_OFF() slax_data->sd_flags |= SDF_NO_SLAX_KEYWORDS
-#define KEYWORDS_ON()  slax_data->sd_flags &= ~SDF_NO_KEYWORDS
+#define SLAX_KEYWORDS_OFF() slax_data->sd_flags |= SDF_NO_SLAX_KEYWORDS
 #define ALL_KEYWORDS_OFF() slax_data->sd_flags |= SDF_NO_KEYWORDS
 #define ALL_KEYWORDS_ON()  slax_data->sd_flags &= ~SDF_NO_KEYWORDS
 
@@ -187,6 +210,12 @@ slaxVersionMatch (const char *major, const char *minor);
  */
 void
 slaxNsAdd (slax_data_t *, const char *prefix, const char *uri);
+
+/*
+ * Create namespace alias between the two prefixes given.
+ */
+void
+slaxNamespaceAlias (slax_data_t *sdp, slax_string_t *, slax_string_t *);
 
 /*
  * Add an XSL element to the node at the top of the context stack
@@ -303,11 +332,18 @@ void slaxAttribAddString (slax_data_t *sdp, const char *name,
 			  slax_string_t *, unsigned flags);
 
 /*
+ * Add a literal value as an attribute to the current node
+ */
+void slaxAttribAddLiteral(slax_data_t *sdp, const char *name, const char *val);
+
+
+/*
  * Add an XPath expression as a statement.  If this is a string,
  * we place it inside an <xsl:text> element.  Otherwise we
  * put the value inside an <xsl:value-of>'s select attribute.
  */
-void slaxElementXPath (slax_data_t *sdp, slax_string_t *ssp, int text_as_elt);
+void slaxElementXPath (slax_data_t *sdp, slax_string_t *ssp,
+		       int text_as_elt, int disable_escaping);
 
 /*
  * Add an element to the top of the context stack

@@ -2,5 +2,7 @@
 version 1.0;
 
 match item {
-    <xsl:element name="foobar" namespace=@n>;
+    element "foobar" {
+        ns-template @n;
+    }
 }

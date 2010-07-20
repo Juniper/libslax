@@ -10,15 +10,28 @@ inherit. */
 /* Author: Carmelo Montanez */
 match / {
     <out> {
-        <xsl:element name="test" use-attribute-sets="set1">;
+        element "test" {
+            use-attribute-sets set1;
+        }
     }
 }
-<xsl:attribute-set name="set2" use-attribute-sets="set3"> {
-    <xsl:attribute name="text-decoration"> "underline";
+
+attribute-set set2 {
+    use-attribute-sets set3;
+    attribute "text-decoration" {
+        expr "underline";
+    }
 }
-<xsl:attribute-set name="set1" use-attribute-sets="set2"> {
-    <xsl:attribute name="color"> "black";
+
+attribute-set set1 {
+    use-attribute-sets set2;
+    attribute "color" {
+        expr "black";
+    }
 }
-<xsl:attribute-set name="set3"> {
-    <xsl:attribute name="font-size"> "14pt";
+
+attribute-set set3 {
+    attribute "font-size" {
+        expr "14pt";
+    }
 }

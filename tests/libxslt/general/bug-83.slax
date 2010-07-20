@@ -3,7 +3,10 @@ version 1.0;
 
 ns fo exclude = "http://www.w3.org/1999/XSL/Format";
 
-<xsl:output method="html" encoding="ISO-8859-1" indent="no">;
+output-method html {
+    encoding "ISO-8859-1";
+    indent "no";
+}
 
 match * {
     <a href="a b c">;

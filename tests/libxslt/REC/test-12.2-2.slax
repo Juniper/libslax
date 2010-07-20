@@ -3,7 +3,10 @@ version 1.0;
 
 ns fo = "http://www.w3.org/1999/XSL/Format";
 
-<xsl:key name="idkey" match="div" use="@id">;
+key idkey {
+    match div;
+    value @id;
+}
 
 match key("idkey", "lookup") {
     expr "\nSuccess\n";
