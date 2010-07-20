@@ -103,7 +103,7 @@ typedef struct keyword_mapping_s {
 #define KMF_SLAX_KW	(1<<1)	/* Keyword for slax */
 #define KMF_XPATH_KW	(1<<2)	/* Keyword for xpath */
 
-keyword_mapping_t keywordMap[] = {
+static keyword_mapping_t keywordMap[] = {
     { K_AND, "and", KMF_XPATH_KW },
     { K_APPLY_IMPORTS, "apply-imports", KMF_SLAX_KW },
     { K_APPLY_TEMPLATES, "apply-templates", KMF_SLAX_KW },
@@ -237,7 +237,7 @@ slaxSetupLexer (void)
  * Is the given character valid inside bare word tokens (T_BARE)?
  */
 static inline int
-isbare (int ch)
+slaxIsBareChar (int ch)
 {
     return (isalnum(ch) || (ch == ':') || (ch == '_') || (ch == '.')
 	    || (ch == '-') || (ch & 0x80));
@@ -247,7 +247,7 @@ isbare (int ch)
  * Is the given character valid inside variable names (T_VAR)?
  */
 static inline int
-isvar (int ch)
+slaxIsVarChar (int ch)
 {
     return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == ':');
 }
@@ -256,7 +256,7 @@ isvar (int ch)
  * Does the given character end a token?
  */
 static inline int
-isfinal (int ch)
+slaxIsFinalChar (int ch)
 {
     return (ch == ';' || isspace(ch));
 }
@@ -278,7 +278,7 @@ slaxKeywordMatch (slax_data_t *sdp, const char *str)
 
     ch = sdp->sd_buf[sdp->sd_start + len];
 
-    if (isbare(ch))
+    if (slaxIsBareChar(ch))
 	return FALSE;
 
     return TRUE;
@@ -437,7 +437,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 	}
 
 	/* We don't want to get half a keyword */
-	if (final && isfinal(sdp->sd_buf[sdp->sd_len - 1]))
+	if (final && slaxIsFinalChar(sdp->sd_buf[sdp->sd_len - 1]))
 	    return FALSE;
     }
 }
@@ -692,7 +692,7 @@ slaxLexer (slax_data_t *sdp)
 	     * decision.
 	     */
 	    if (ch1 == L_UNDERSCORE) {
-		if (!isbare(sdp->sd_buf[sdp->sd_cur]))
+		if (!slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
 		    return ch1;
 	    } else {
 		return ch1;
@@ -729,7 +729,7 @@ slaxLexer (slax_data_t *sdp)
 	     */
 	    sdp->sd_cur += 1;
 	    while (sdp->sd_cur < sdp->sd_len
-		   && isvar(sdp->sd_buf[sdp->sd_cur]))
+		   && slaxIsVarChar(sdp->sd_buf[sdp->sd_cur]))
 		sdp->sd_cur += 1;
 	    return T_VAR;
 	}
@@ -758,7 +758,7 @@ slaxLexer (slax_data_t *sdp)
 	if (sdp->sd_cur + 1 < sdp->sd_len && sdp->sd_buf[sdp->sd_cur] == ':'
 		&& sdp->sd_buf[sdp->sd_cur + 1] == ':')
 	    return T_AXIS_NAME;
-	if (isbare(sdp->sd_buf[sdp->sd_cur]))
+	if (slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
 	    continue;
 	if (sdp->sd_cur > sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '*'
 		&& sdp->sd_buf[sdp->sd_cur - 1] == ':')
@@ -792,7 +792,7 @@ slaxLexer (slax_data_t *sdp)
 	if (sdp->sd_len - sdp->sd_cur > plen
 	    && memcmp(sdp->sd_buf + sdp->sd_cur,
 		      pdef, plen) == 0
-	    && !isbare(sdp->sd_buf[sdp->sd_cur + plen])) {
+	    && !slaxIsBareChar(sdp->sd_buf[sdp->sd_cur + plen])) {
 	    sdp->sd_cur += sizeof(pdef) - 1;
 	}
     }
