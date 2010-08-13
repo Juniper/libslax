@@ -172,7 +172,6 @@ static keyword_mapping_t keywordMap[] = {
     { K_PROCESSING_INSTRUCTION, "processing-instruction",
       KMF_SLAX_KW | KMF_NODE_TEST }, /* Not a node test, but close enough */
     { K_RESULT, "result", KMF_SLAX_KW },
-    { K_RESULT_PREFIX, "result-prefix", KMF_SLAX_KW },
     { K_SORT, "sort", KMF_SLAX_KW },
     { K_STANDALONE, "standalone", KMF_SLAX_KW },
     { K_STRIP_SPACE, "strip-space", KMF_SLAX_KW },
@@ -1851,11 +1850,17 @@ slaxDataCleanup (slax_data_t *sdp)
     }
 }
 
-/*
+/**
  * Read a SLAX file from an open file pointer
+ *
+ * @param filename Name of the file (or "-")
+ * @param file File pointer for input
+ * @param dict libxml2 dictionary
+ * @param partial TRUE if parsing partial SLAX contents
+ * @return xml document pointer
  */
 xmlDocPtr
-slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
+slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
 {
     slax_data_t sd;
     xmlDocPtr res;
@@ -1881,7 +1886,10 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict)
     }
 
     bzero(&sd, sizeof(sd));
-    sd.sd_parse = sd.sd_ttype = M_PARSE_SLAX; /* We want to parse SLAX */
+
+    /* We want to parse SLAX, either full or partial */
+    sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_SLAX;
+
     strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
 
@@ -1970,7 +1978,7 @@ slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
 	}
     }
 
-    docp = slaxLoadFile((const char *) URI, file, dict);
+    docp = slaxLoadFile((const char *) URI, file, dict, 0);
 
     if (file != stdin)
 	fclose(file);
@@ -2003,7 +2011,7 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
 	}
     }
 
-    docp = slaxLoadFile(URL, file, ctxt->dict);
+    docp = slaxLoadFile(URL, file, ctxt->dict, 0);
 
     if (file != stdin)
 	fclose(file);
@@ -2048,16 +2056,33 @@ slaxSetTextAsElement (int enable UNUSED)
     return; /* deprecated */
 }
 
-/*
+/**
  * Dump a formatted version of the XSL tree to a file
+ *
+ * @param fd file descriptor open for output
+ * @param docp document pointer
+ * @param partial Should we emit partial (snippet) output?
  */
 void
-slaxDumpToFd (int fd, xmlDocPtr docp)
+slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
 {
     xmlSaveCtxtPtr handle;
 
     handle = xmlSaveToFd(fd, "UTF-8", XML_SAVE_FORMAT);
-    xmlSaveDoc(handle, docp);
+
+    if (!partial)
+	xmlSaveDoc(handle, docp);
+    else {
+	xmlNodePtr nodep = xmlDocGetRootElement(docp);
+	if (nodep)
+	    nodep = nodep->children;
+
+	for (; nodep; nodep = nodep->next) {
+	    if (nodep->type == XML_ELEMENT_NODE)
+		xmlSaveTree(handle, nodep);
+	}
+    }
+
     xmlSaveClose(handle);
 }
 
@@ -2067,7 +2092,7 @@ slaxDumpToFd (int fd, xmlDocPtr docp)
 void
 slaxDump (xmlDocPtr docp)
 {
-    slaxDumpToFd(1, docp);
+    slaxDumpToFd(1, docp, 0);
 }
 
 #ifdef UNIT_TEST

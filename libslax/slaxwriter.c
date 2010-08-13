@@ -1049,8 +1049,8 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
  *
  *    determine if we should emit a blank line before this xsl element
  *
- * @nodep: the node
- * Returns TRUE if the element should be preceeded by a blank line
+ * @param nodep the node
+ * @return TRUE if the element should be preceeded by a blank line
  */
 static int
 slaxNeedsBlankline (xmlNodePtr nodep)
@@ -1272,9 +1272,8 @@ slaxWriteValueOf (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
  *   determine if node contains just a single simple element, allowing
  *   us to avoid using braces for the value
  *
- * @node: node to test
- *
- * Returns TRUE if the node contains a single simple element
+ * @param node node to test
+ * @return TRUE if the node contains a single simple element
  */
 static int
 slaxIsSimpleElement (xmlNodePtr nodep)
@@ -2308,10 +2307,10 @@ slaxWriteCommentStatement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
  * slaxWriteChildren: recursively write the contents of the children
  * of the current node
  *
- * @swp: output stream writer
- * @docp: current document
- * @nodep: current node
- * @initializer: are we called to emit the initial value of a param or var?
+ * @param swp output stream writer
+ * @param docp current document
+ * @param nodep current node
+ * @param initializer are we called to emit the initial value of param or var?
  */
 static void
 slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
@@ -2378,12 +2377,13 @@ slaxWriteCleanup (slax_writer_t *swp)
 /**
  * slaxWriteDoc:
  * Write an XSLT document in SLAX format
- * @func: fprintf-like callback function to write data
- * @data: data passed to callback
- * @docp: source document (XSLT stylesheet)
+ * @param func fprintf-like callback function to write data
+ * @param data data passed to callback
+ * @param docp source document (XSLT stylesheet)
+ * @param partial Should we write partial (snippet) output?
  */
 int
-slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
+slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp, int partial)
 {
     xmlNodePtr nodep;
     xmlNodePtr childp;
@@ -2397,12 +2397,14 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
     if (nodep == NULL || nodep->name == NULL)
 	return 1;
 
-    slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
-    slaxWriteNewline(&sw, 0);
+    if (!partial) {
+	slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
+	slaxWriteNewline(&sw, 0);
 
-    slaxWrite(&sw, "version %s;", "1.0");
-    slaxWriteNewline(&sw, 0);
-    slaxWriteNewline(&sw, 0);
+	slaxWrite(&sw, "version %s;", "1.0");
+	slaxWriteNewline(&sw, 0);
+	slaxWriteNewline(&sw, 0);
+    }
 
     /*
      * Write out all top-level comments before doing anything else
@@ -2416,6 +2418,9 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp)
     if (streq((const char *) nodep->name, ELT_STYLESHEET)
 		|| streq((const char *) nodep->name, ELT_TRANSFORM)) {
 	slaxWriteChildren(&sw, docp, nodep, FALSE);
+
+    } else if (partial) {
+	slaxWriteElement(&sw, docp, nodep);
 
     } else {
 	/*
@@ -2479,7 +2484,7 @@ main (int argc, char **argv)
         return -1;
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, stdout, docp);
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, stdout, docp, 0);
 
     return 0;
 }

@@ -156,7 +156,6 @@
 %token K_PRIORITY		/* 'priority' */
 %token K_PROCESSING_INSTRUCTION /* 'processing-instruction' */
 %token K_RESULT			/* 'result' */
-%token K_RESULT_PREFIX		/* 'result-prefix' */
 %token K_SORT			/* 'sort' */
 %token K_STANDALONE		/* 'standalone' */
 %token K_STRIP_SPACE		/* 'strip-space' */
@@ -208,6 +207,7 @@
 %token M_XPATH			/* Building an XPath expression */
 %token M_PARSE_SLAX		/* Parse a slax document */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
+%token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
 
 %pure_parser
 %{
@@ -303,6 +303,88 @@ start :
 		    $2 = NULL;	/* Avoid double free */
 		    $$ = STACK_CLEAR($1);
 		}
+	| M_PARSE_PARTIAL partial_list
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+partial_list :
+	/* empty */
+		{ $$ = NULL; }
+
+	| partial_list partial_stmt
+		{ $$ = NULL; }
+	;
+
+partial_stmt :
+	version_stmt
+		{ $$ = NULL; }
+
+	| ns_stmt
+		{ $$ = NULL; }
+
+	| slax_stmt
+		{ $$ = NULL; }
+
+	| block
+		{ $$ = NULL; }
+
+	| apply_imports_stmt
+		{ $$ = NULL; }
+
+	| apply_templates_stmt
+		{ $$ = NULL; }
+
+	| attribute_stmt
+		{ $$ = NULL; }
+
+	| call_stmt
+		{ $$ = NULL; }
+
+	| comment_stmt
+		{ $$ = NULL; }
+
+	| copy_node_stmt
+		{ $$ = NULL; }
+
+	| copy_of_stmt
+		{ $$ = NULL; }
+
+	| expr_stmt
+		{ $$ = NULL; }
+
+	| fallback_stmt
+		{ $$ = NULL; }
+
+	| for_each_stmt
+		{ $$ = NULL; }
+
+	| if_stmt
+		{ $$ = NULL; }
+
+	| message_stmt
+		{ $$ = NULL; }
+
+	| processing_instruction_stmt
+		{ $$ = NULL; }
+
+	| number_stmt
+		{ $$ = NULL; }
+
+	| result_stmt
+		{ $$ = NULL; }
+
+	| sort_stmt
+		{ $$ = NULL; }
+
+	| terminate_stmt
+		{ $$ = NULL; }
+
+	| uexpr_stmt
+		{ $$ = NULL; }
+
+	| use_attribute_stmt
+		{ $$ = NULL; }
+
 	;
 
 stylesheet :

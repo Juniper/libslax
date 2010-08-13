@@ -29,6 +29,8 @@ static int options = XSLT_PARSE_OPTIONS;
 static int html = 0;
 static char *encoding = NULL;
 
+static int partial = 0;
+
 static inline int
 is_filename_std (const char *filename)
 {
@@ -68,7 +70,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	    err(1, "file open failed for '%s'", input);
     }
 
-    docp = slaxLoadFile(input, infile, NULL);
+    docp = slaxLoadFile(input, infile, NULL, partial);
 
     if (infile != stdin)
 	fclose(infile);
@@ -84,7 +86,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	    err(1, "could not open output file: '%s'", output);
     }
 
-    slaxDumpToFd(fileno(outfile), docp);
+    slaxDumpToFd(fileno(outfile), docp, partial);
 
     fclose(outfile);
 
@@ -120,7 +122,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	    err(1, "could not open file: '%s'", output);
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp);
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, partial);
     if (outfile != stdout)
 	fclose(outfile);
 
@@ -150,7 +152,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (scriptfile == NULL)
 	err(1, "file open failed for '%s'", scriptname);
 
-    scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL);
+    scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
     if (scriptdoc == NULL)
 	errx(1, "cannot parse: '%s'", scriptname);
     if (scriptfile != stdin)
@@ -195,13 +197,33 @@ print_version (void)
 	   exsltLibexsltVersion, exsltLibxmlVersion);
 }
 
+static void
+print_help (void)
+{
+    printf("Usage: slaxproc [options] [stylesheet] [file]\n");
+    printf("    Options:\n");
+    printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
+    printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
+    printf("\t--run OR -r: run a SLAX script\n");
+    printf("\n");
+
+    printf("\t--debug OR -d: enable debugging output\n");
+    printf("\t--exslt OR -e: enable the EXSLT library\n");
+    printf("\t--help OR -h: display this help message\n");
+    printf("\t--input <file> OR -i <file>: take input from the given file\n");
+    printf("\t--name <file> OR -n <file>: read the script from the given file\n");
+    printf("\t--output <file> OR -o <file>: make output into the given file\n");
+    printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
+    printf("\t--version OR -v or -V: show version information (and exit)\n");
+    printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
+}
+
 int
 main (int argc UNUSED, char **argv)
 {
     const char *cp;
     const char *input = NULL, *output = NULL, *name = NULL;
-    int (*func)(const char *name, const char *output,
-		const char *input, char **argv) = NULL;
+    int (*func)(const char *, const char *, const char *, char **) = NULL;
     int use_exslt = FALSE;
 
     for (argv++; *argv; argv++) {
@@ -210,7 +232,7 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
-	if (streq(cp, "--version") || streq(cp, "-v")) {
+	if (streq(cp, "--version") || streq(cp, "-v") || streq(cp, "-V")) {
 	    print_version();
 	    exit(0);
 
@@ -241,11 +263,19 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    slaxDebug = TRUE;
 
+	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
+	    partial = TRUE;
+
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
 
+	} else if (streq(cp, "--help") || streq(cp, "-n")) {
+	    print_help();
+	    return -1;
+
 	} else {
-	    fprintf(stderr, "invalid option\n");
+	    fprintf(stderr, "invalid option: %s\n", cp);
+	    print_help();
 	    return -1;
 	}
     }

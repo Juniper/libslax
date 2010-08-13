@@ -27,7 +27,7 @@ typedef int (*slaxWriterFunc_t)(void *data, const char *fmt, ...);
  * fprintf-like callback function.
  */
 int
-slaxWriteDoc(slaxWriterFunc_t func, void *data, xmlDocPtr docp);
+slaxWriteDoc(slaxWriterFunc_t func, void *data, xmlDocPtr docp, int partial);
 
 /*
  * Read a SLAX stylesheet from an open file descriptor.
@@ -41,7 +41,7 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd,
  * Read a SLAX file from an open file pointer
  */
 xmlDocPtr
-slaxLoadFile(const char *filename, FILE *file, xmlDictPtr dict);
+slaxLoadFile(const char *, FILE *, xmlDictPtr, int);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
@@ -54,7 +54,7 @@ slaxSetTextAsElement (int enable);
  * Dump a formatted version of the XSL tree to a file
  */
 void
-slaxDumpToFd (int fd, xmlDocPtr docp);
+slaxDumpToFd (int fd, xmlDocPtr docp, int);
 
 /*
  * Dump a formatted version of the XSL tree to stdout
