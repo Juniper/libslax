@@ -2077,7 +2077,7 @@ slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
 	if (nodep)
 	    nodep = nodep->children;
 
-	for (; nodep; nodep = nodep->next) {
+	for ( ; nodep; nodep = nodep->next) {
 	    if (nodep->type == XML_ELEMENT_NODE) {
 		xmlSaveTree(handle, nodep);
 		xmlSaveFlush(handle);
