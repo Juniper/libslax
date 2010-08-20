@@ -5,13 +5,11 @@
 # All rights reserved.
 # See ./Copyright for the status of this software
 #
-
-
-         SLAX -- Stylesheet Language, Alternative syntaX
-                  Phil Shafer <phil@juniper.net>
-                      Raleigh, NC
-
-* Abstract
+#
+#         SLAX -- Stylesheet Language, Alternative syntaX
+#                  Phil Shafer <phil@juniper.net>
+#                      Raleigh, NC
+#
 
 XSLT is a powerful language, but uses an XML-based syntax that is
 painful to read and write.  SLAX is an alternative syntax for the XSLT
@@ -59,7 +57,7 @@ The benefits of SLAX are particularly strong for new developers, since
 it puts familiar constructs in familiar syntax, allowing them to
 concentrate in the new topics introduced by XSLT.
 
-* Peeking under the hood
+** Peeking under the hood
 
 SLAX is purely syntactic sugar.  The underlaying constructs are
 completely native to XSLT.  Nothing is added to the XSLT engine.  The
@@ -88,8 +86,7 @@ emits an XSLT document in SLAX format.  These make a great learning
 aid, as well as allowing conversion of SLAX scripts to XSLT for
 environments where libxslt is not available.
 
-
-* Composite Technologies
+** Composite Technologies
 
 SLAX builds on three existing technologies, XML, XPath, and XSLT.
 
@@ -118,7 +115,7 @@ inspected, and what XML should be generated at each point.
 We'll examine each of these technologies in more detail in the
 following sections.
 
-** XML Concepts
+*** XML Concepts
 
 XML is a set of encoding rules that allow simplified parsing of
 documents, which gives a simple way to represent hierarchical data
@@ -158,7 +155,8 @@ and "-->".  For example:
 From these simple concepts, hierarchical documents are constructed,
 such as the following JUNOS configuration file:
 
-    <configuration xmlns:junos="http://xml.juniper.net/junos/7.1I0/junos">
+    <configuration
+           xmlns:junos="http://xml.juniper.net/junos/7.1I0/junos">
       <system>
         <host-name>my-router</host-name> 
         <domain-name>example.net</domain-name> 
@@ -212,16 +210,20 @@ such as the following JUNOS configuration file:
       </routing-options>
     </configuration>
 
-@see http://www.w3c.org/TR/REC-xml. 
+See also http://www.w3c.org/TR/REC-xml. 
 
-** XPath Concepts
+*** XPath Concepts
 
 The XPath expression language allows selection of arbitrary nodes from
-with an XML document using three key concepts.
+with an XML document.  XSLT uses the XPath standard to specify and
+locate elements in the input document's XML hierarchy.  XPath's
+powerful expression syntax allows complex criteria for selecting
+portions of the XML input document.
 
-*** Paths
+XPath views every piece of the document hierarchy as a node, including
+element nodes, text nodes, and attribute nodes.
 
-An XPath expression can include a path of XML elements names, which
+An XPath expression can include a path of XML node names, which
 select child nodes based on their ancestors' names.  Each member of
 the path must match an existing node, and only nodes that match all
 path members will be included in the results.  The members of the path
@@ -230,11 +232,9 @@ are separated by the slash character ('/').
 For example, the following expression selects all <paragraph> elements
 that are parented by a <section> element, which in turn must be
 parented by a <chapter> element, which must be parented by a <doc>
-element. 
+element.
 
     doc/chapter/section/paragraph
-
-*** Axis
 
 XSLT views nodes as being arranged in certain "axes".  The "ancestor"
 axis points from a node up through it's series of parent nodes.  The
@@ -258,19 +258,391 @@ allowing either "attribute::number" or "@number" to refer to the
 axis, so "doc//paragraph" will find all <paragraph> elements that have
 a <doc> element as an ancestor.
 
-@see
+See also .....
 
-*** Predicates
+Each XPath expression is evaluated from a particular node, which is
+referred to as the "context node" (or simply "context").  XSLT changes
+the context as the document's hierarchy is traversed, and XPath
+expressions are evaluated from that particular context node.
+
+XPath expression contain two types of syntaxes, a path syntax and a
+predicate syntax.  Path syntax allows traversal along one of the axis
+in the document's hierarchy from the current context node.
+
+= accounting-options
+    selects an element node named "accounting-options" that is a child
+    of the current context
+
+= server/name
+    selects an element node named "name" that is parented by an
+    element named "server" that is a child of the current context
+
+= /configuration/system/domain-name
+    selects an element node named "domain-name" that is parented by
+    a "system" element that is parented by a "configuration" element
+    that is the root element of the document.
+
+= parent::system/host-name
+    selects an element node name "host-name" that is parented by an
+    element named "system" that is the parent of the current context
+    node.  The "parent::" axis can be abbreviated as "..".
+
 
 A predicate is a boolean test must be satisfied for a node to be
 selected.  Each path member of the XPath expression can have zero or
 more predicates specified, and the expression will only select nodes
 for which all the predicates are true.
 
-** XSLT Concepts
+The predicate syntax allows tests to be performed at each member of
+the path syntax, and only nodes that pass the test are selected.  A
+predicate appears inside square brackets ("[]") after a path member.
 
+= server[name == '10.1.1.1']
+    selects a "server" element that is a child of the current context
+    and has a "name" element whose value is '10.1.1.1'
 
-* Statements
+= *[@inactive]
+    selects any node ('*' matches any node) that is a child of the
+    current context that has an attribute ('@' selects node from the
+    "attribute" axis) named "inactive"
+
+= route[starts-with(next-hop, '10.10.')]
+    selects a "route" element that is a child of the current context
+    and has a "next-hop" element whose value starts with the string
+    "10.10."
+
+The "starts-with" function is one of many functions that are built
+into XPath.  XPath also supports relational tests, equality tests,
+boolean operations, and many more features not listed here.
+
+SLAX defines a concatenation operator "_" that concatenates its two
+arguments using the XPath "concat()" function.  The following two
+lines are equivalent:
+
+    expr "Today is " _ $date _ ", " _ $user _ "!!";
+    expr concat("Today is ", $date, ", ", $user, "!!");
+
+The SLAX statement "expr" evaluates an XPath expression and inserts
+its value into the output tree.
+
+XPath is fully described in the W3C's specification,
+http://w3c.org/TR/xpath.
+
+*** XSLT Concepts
+
+This section contains some overview material, intended as both
+overview and introduction.  Careful reading of the specification or any
+of the numerous books on XSLT will certainly be helpful before using
+commit scripts, but the information here should provide a starting
+point.
+
+**** Language Concepts
+
+XSLT is a language for transforming one XML document into another XML
+document.  The basic model is that an XSLT engine (or processor) reads
+a script (or stylesheet) and an XML document.  The XSLT engine uses the
+instructions in the script to process the XML document by traversing
+the document's hierarchy.  The script indicates what portion of the
+tree should be traversed, how it should be inspected, and what XML
+should be generated at each point.
+
+                        +-------------+
+                        |  XSLT       |
+                        |   Script    |
+                        +-------------+
+                               |
+        +-----------+          |           +-----------+
+        |XML Input  |          v           |XML Output |
+        |  Document |   +-------------+    |  Document |
+        |     i     |-->|  XSLT       |--->|     o     |
+        |    /|\    |   |   Engine    |    |    / \    |
+        |   i i i   |   +-------------+    |   o   o   |
+        |  /| |  \  |                      |  /|\  |   |
+        | i i i   i |                      | o o o o   |
+        +-----------+                      +-----------+
+
+XSLT has seven basic concepts:
+
+- XPath -- expression syntax for selecting node from the input document
+- Templates -- maps input hierarchies to instructions that handle them
+- Parameters -- a mechanism for passing arguments to templates
+- Variables -- defines read-only references to nodes
+- Programming Constructs -- how to define logic in XSLT
+- Recursion -- templates that call themselves to facilitate looping
+- Context (Dot) -- the node currently be inspected in the input document
+
+XPath has be discussed above.  The other concepts are discussed in the
+following sections.  These sections are meant to be introductory in
+nature, and later sections will provide additional details and
+complete specifications.
+
+***** Templates
+
+An XSLT script consists of a series of template definitions.  There are
+two types of templates, named and unnamed.  Named templates operate
+like functions in traditional programming languages, although with a
+verbose syntax.  Parameters can be passed into named templates, and can
+be declared with default values.
+
+    template my-template ($a, $b = 'false', $c = name) {
+      /* ... body of the template goes here ... */
+    }
+
+A template named "my-template" is defined, with three parameters, one
+of which defaults to the string "false", and one of which defaults to
+the contents of the element node named "name" that is a child of the
+current context node.  If the template is called without values for
+these parameters, the default values will be used.  If no select
+attribute is given for a parameter, it defaults to an empty value.
+
+    call my-template($c = other-name);
+
+In this example, the template "my-template" is called with the
+parameter "c" containing the contents of the element node named
+"other-name" that is a child of the current context node.
+
+The parameter value can contain any XPath expression.  If no nodes
+are selected, the parameter is empty.
+
+***** Unnamed Templates
+
+Unnamed templates are something altogether different.  Each unnamed
+template contains a select attribute, specifying the criteria for
+nodes upon which that template should be invoked.
+
+    match route[starts-with(next-hop, '10.10.')] {
+      /* ... body of the template goes here ... */
+    }
+
+By default, when XSLT processes a document, it will recursively
+traverse the entire document hierarchy, inspecting each node, looking
+for a template that matches the current node.  When a matching
+template is found, the contents of that template are evaluated.
+
+The <xsl:apply-templates> element can be used inside a template to
+continue XSLT's default, hierarchical traversal of nodes.  If the
+<xsl:apply-templates> element is used with a "select" attribute, only
+nodes matching the XPath expression are traversed.  If no nodes are
+selected, nothing is traversed and nothing happens.  Without a
+"select" attributes, all children of the context node are traversed.
+In the following example, a <route> element is processed.  First all
+the nodes containing a "changed" attribute are processed under a <new>
+element.  Then all children are processed under an <all> element.  The
+particular processing depends on the other templates in the script and
+how they are applied.
+
+    match route {
+        <new> {
+            apply-templates *[@changed];
+        }
+        <all> {
+            apply-templates;
+        }
+    }
+
+***** Parameters
+
+Parameters can be passed to either named or unnamed templates using
+the <xsl:with-param> element.  Inside the template, parameters must be
+declared and can then be referenced using their name prefixed by the
+dollar sign.
+
+    /*
+     * This template matches on "/", the root of the XML document.
+     * It then generates an element named "outer", and instructs
+     * the XSLT engine to recursively apply templates to only the
+     * subtree only "configuration/system".  A parameter called
+     * "host" is passed to any templates that are processed.
+     */
+    match / {
+        <outer> {
+            apply-templates configuration/system {
+                with-param $host=configuration/system/host-name;
+            }
+        }
+    }
+        
+    /*
+     * This template matches the "system" element, which is the top
+     * of the subtree selected above.  The "host" parameter is
+     * declared with no default value.  An "inner" element is
+     * generated, which contains the value of the host parameter.
+     */
+    match system {
+        param $name = host;
+        <inner> $host;
+    }
+
+Parameters can be declares with default values by using the "select"
+attribute to specify the desired default.  If the template is invoked
+without the parameter, the XPath expression is evaluated and the
+results are assigned to the parameter.
+
+    match system {
+      call report-changed($changed = @changed || ../@changed);
+    }
+
+    template report-changed($dot = ., $changed = $dot/@changed) {
+      /* ... */
+    }
+
+The second template declares two parameters, $dot which defaults to
+the current node, and $changed, which defaults to the "changed"
+attribute of the node $dot.  This allows the caller to either use a
+different source for the "changed" attribute, use the "changed"
+attribute but relative to a different node that the current one, or 
+use the default of the "changed" attribute on the current node.
+
+***** Variables
+
+XSLT allows the definition of both local and global variables, but the
+value of variables can only be set when the variable is defined.  After
+that point, they are read only.
+
+    template emit-syslog ($device, $date, $user) {
+        var $message = "Device " _ $device _ " was changed on "
+                       _ $date _ " by user '" _ $user _ "'";
+        
+        <syslog> {
+            <message> $message;
+        }
+    }
+
+Although this example used an XSL variable, the above example could have
+used an XSL parameter for $message, allowing users to pass in their own
+message.
+
+***** Programming Constructs
+
+XSLT has a number of traditional programming constructs:
+
+    if (xpath-expression) {
+        /* Code here is evaluated if the expression is true */
+    }
+
+    if (xpath-expression) {
+        
+        /*
+         * xsl:choose is similar to a switch statement, but
+         * the "test" expression can vary among "when" statements.
+         */
+    
+    } else if (another-xpath-expression) {
+        
+        /*
+         * xsl:when is the case of the switch statement.
+         * Any number of "when" statements may appear.
+         */
+    
+    } else {
+        /* xsl:otherwise is the 'default' of the switch statement */
+    }
+    
+    for-each (xpath-expression) {
+        
+        /*
+         * Code here is evaluated for each node that matches 
+         * the xpath expression.  The context is moved to the
+         * node during each pass.
+         */
+    }
+
+XSLT is a declarative language, mixing language statements (in the
+"xsl" namespace) with output elements in other namespaces.  For
+example, the following snippet makes a <source> element containing
+the value of the "changed" attribute.
+
+    if (@changed) {
+        <source> {
+            <notify> name();
+            if (@changed == "changed") {
+                <changed>;
+            
+            } else {
+                <status> $changed;
+            }
+        }
+    }
+
+***** Recursion
+
+XSLT depends on recursion as a looping mechanism.  Recursion occurs
+when a section of code calls itself, either directly or
+indirectly.  Both named and unnamed templates can recurse, and
+different templates can mutually recurse, with one calling another
+that in turn calls the first.
+
+Care must be taken to prevent infinite recursion.  The XSLT engine used
+by JUNOS limits the maximum recursion, to avoid excessive consumption
+of system resources.  If this limit is reached, the commit script fails
+and the commit is stopped.
+
+In the following example, an unnamed template matches on a <count>
+element.  It then calls the "count-to-max" template, passing the value
+of that element as "max".  The "count-to-max" template starts by
+declaring both the "max" and "cur" parameters, which default to
+one.  Then the current value of "$cur" is emitted in an <out>
+element.  Finally, if "$cur" is less than "$max", the "count-to-max"
+template recursively invokes itself, passing "$cur + 1" as "cur".  This
+recursive pass then output the next number and recurses again until
+"$cur" equals "$max".
+
+    match count {
+        call count-to-max($max = count);
+    }
+    
+    template count-to-max ($cur = "1", $max = "1") {
+        param $cur = "1";
+        param $max = "1";
+        
+        <out> $cur;
+        if ($cur < $max) {
+            call count($cur = $cur + 1, $max);
+        }
+    }
+
+***** Context (Dot)
+
+As mentioned earlier, the current context node changes as the
+apply-templates logic traverses the document hierarchy and as 
+an <xsl:for-each> iterates through a set of nodes that match an XPath
+expression.  All relative node references are relative to the current
+context node.  This node is abbreviated "." (read: dot) and can be
+referred to in XPath expressions, allowing explicit references to the
+current node.
+
+    match system {
+        var $system = .;
+        
+        for-each (name-server/name[starts-with(., "10.")]) {
+            <tag> .;
+            if (. == "10.1.1.1") {
+                <match> $system/host-name;
+            }
+        }
+    }
+
+This example contains four uses for ".".  The "system" node is saved
+in the "system" variable for use inside the "for-each", where the
+value of "." will have changed.  The "for-each"'s "select" expression uses
+"." to mean the value of the "name" element.  "." is then used to pull
+the value of the "name" element into the <tag> element.  The <xsl:if>
+test then uses ".", also to reference the value of the current context
+node.
+
+**** Additional XSLT Resources
+
+The XSLT specification is on the W3C web site:
+http://www.w3c.org/TR/xslt.
+
+Books and tutorials on XSLT abound, helping programmers learn the
+technology.  XSLT processors (programs that run XSLT scripts) are
+available from both commercial and open-source developers, allowing
+users to play with XSLT offline.  IDEs with extended debuggers also
+exist.  XSLT is common enough that piecing together a simple script is
+easy, as is finding help and advice.
+
+* SLAX Statements
 
 This section lists the SLAX statements, with brief examples followed
 by their XSLT equivalents.  The utility of SLAX will hopefully be
@@ -336,6 +708,9 @@ The first three exceptions are meant to prevent programmers from
 learning habits in SLAX that will negatively affect their ability to
 program in other languages.  The last exception is for convenience.
 
+When referring to XPath expressions in this document, we
+mean this extended syntax.
+
 ** Creating the Result Tree
 
 SLAX (and XSLT) is a "declarative" language, meaning that a SLAX
@@ -352,7 +727,7 @@ flexibility in the output generated.
 
 We'll start by examining how SLAX generated these output nodes.
 
-**** Namespaces
+*** Namespaces
 
 Namespaces map URI strings to prefixes that are used to indicate the
 administrative domain of specific XML elements.  The syntax and
@@ -361,26 +736,27 @@ on the namespace under which it is defined.
 
 The URI is a string that uniquely identifies the namespace.  Here are
 some examples:
-|-------|
-| Example namespaces |
-|-------|
-| http://xml.juniper.net/junos |
-| http://www.example.com/example-one |
-| http://www.w3.org/1999/XSL/Format |
+
+|-------------------------------------------------|
+| Example namespaces                              |
+|-------------------------------------------------|
+| http://xml.juniper.net/junos                    |
+| http://www.example.com/example-one              |
+| http://www.w3.org/1999/XSL/Format               |
 | http://www.w3.org/Graphics/SVG/SVG-19990812.dtd |
-|-------|
+|-------------------------------------------------|
 
 The prefix is a string string pre-pended to the local element name with a
 colon.
 
-|---|----|
+|----------------+-----------------------|
 | Example Prefix | Example Element Usage |
-|---|----|
-| junos | <junos:name/> |
-| example | <example:name/> |
-| fo | <fo:name/> |
-| svg | <svg:name/> |
-|---|----|
+|----------------+-----------------------|
+| junos          | <junos:name/>         |
+| example        | <example:name/>       |
+| fo             | <fo:name/>            |
+| svg            | <svg:name/>           |
+|----------------+-----------------------|
 
 **** The "ns" Statement @ns@
 
@@ -415,27 +791,27 @@ The XML equivalent is:
     <some-element xmlns="http://example.com/main"
             xmlns:test="http://example.com/test"/>
 
-@see http://www.w3.org/TR/xml#namespaces
+See also http://www.w3.org/TR/xml#namespaces
 
-***** Reserved Prefixes
+**** Reserved Prefixes
 
 All prefixes beginning with "xml" are reserved for XML.  In addition,
 all prefixes beginning with "slax" are reserved for SLAX.
 
-***** The "extension" Statement @extension@
+**** The "extension" Statement @extension@
 
 The "extension" statement instructs the processing engine that
 extenstion namespaces, which will cause elements in that namespace to
 be given special handling by the engine.
 
-@see http://www.w3.org/TR/xslt#extension-element
+See also http://www.w3.org/TR/xslt#extension-element
 
-***** The "exclude" Statement @exclude@
+**** The "exclude" Statement @exclude@
 
 The "exclude" statement prevents the namespace from appearing in the
 result tree.
 
-@see http://www.w3.org/TR/xslt#literal-result-element
+See also http://www.w3.org/TR/xslt#literal-result-element
 
 *** Elements
 
@@ -455,56 +831,308 @@ element name, a set of optional attributes (discussed later), the
 slash character ('/'), and the greater than character ('>').
 
     <doc>
-        <chapter number="1" name="Introduction">
+        <chapter>
             <section>
-                <paragraph>
-                     This is a brief introduction.
-                </paragraph>
+                <paragraph>A brief introduction</paragraph>
             </section>
        </chapter>
+       <index/>
     </doc>
 
 **** XML Elements
 
+In SLAX, XML elements are encoded using braces instead of the closing
+tag.  The element is given, wrapped in chevrons as in XML, but it then
+followed by an open brace, the elements contents, and a close brace.
+If the element is empty, a semi-colon can be used to signify an empty
+element.  If the element contains only a single XPath expression, that
+expression can be used in place of the braces and the element is ended
+with a single semi-colon.
 
+The following SLAX is equivalent to the above XML data:
+
+    <doc> {
+        <chapter>
+            <section> {
+                <paragraph> "A brief introduction";
+            }
+        }
+        <index>;
+    }
 
 **** The "element" Statement @element@
 
+The name of an element can be specified by an XPath expression, using
+the "element" statement.  The contents of the element must be placed
+inside a set of braces.
+
+In this example, the value of the "name" node (rather than the literal
+string "name") will be used to create an XML element, whose contents
+are an empty element with a name of "from-" concatenated with the
+value of the address node.  Node values are selected from the current
+context. 
+
+    element name {
+        element "from-" _ address;
+    }
+
 *** Attributes
+
+XML allows a set attribute value to be specified on an open or empty
+tag.  These attributes are an unordered set of name/value pairs.  The
+XML encoding uses the attribute name, an equals sign ('='), and the
+value of the attribute in quotes.
+
+    <chapter number="1" title="Introduction" ref="intro">
+        <section number="1">
+            <!-- .... content ... -->
+        </section>
+    </chapter>
 
 **** XML Attributes
 
+SLAX uses an identical encoding scheme for attributes:
+
+    <chapter number="1" title="Introduction" ref="intro"> {
+        <section number="1"> {
+            /* .... content ... */
+        }
+    }
+
+In addition, XSLT introduces a means of assigning attribute values,
+called "attribute value templates".  SLAX encodes these as XPath
+values for attributes:
+
+In this example, the attributes are assigned values using XPath
+values.  The "tag" node value is assigned to the "ref" attribute,
+while the "title" attribute is assigned the value of the "$title"
+variable. 
+
+    <chapter number=position() title=$title ref=tag> {
+        <section number=position()> {
+            /* .... content ... */
+        }
+    }
+
 **** The "attribute" Statement @attribute@
+
+The name of an attribute can be specified by an XPath expression, using
+the "attribute" statement.  The contents of the attribute must be placed
+inside a set of braces.
+
+In this example, the value of the "name" node (rather than the literal
+string "name") will be used to create an XML attribute, whose contents
+are an empty element with a name of "from-" concatenated with the
+value of the address node.  Node values are selected from the current
+context.
+
+    attribute name {
+        expr "from-" _ address;
+    }
 
 *** Attribute Sets
 
+Attribute sets can be used to define sets of attributes that can be
+used together.  An attribute set contains a set of "attribute"
+statements that define the names and values of attributes.  These
+attributes can then be referred to as a collection rather than repeat
+the contents in the script.
+
+{{faq: Do people really use this?
+My guess (which could be wildly wrong) is that this is a rarely used
+feature that are created to cover the condition that a template cannot
+return a set of attributes.  That's my guess anyway.
+}}
+
 **** The "attribute-set" Statement @attribute-set@
+
+The "attribute-set" statement defines a set of attributes that can be
+used repeatedly.  The argument is the name of the attribute set, and
+the contents are a set of attribute statements.
+
+    attribute-set table-attributes {
+        attribute "order" { expr "0"; }
+        attribute "cellpadding" { expr $cellpadding; }
+        attribute "cellspacing" { expr $cellspacing; }
+    }
 
 **** The "use-attribute-sets" Statement @use-attribute-sets@
 
+The "use-attribute-sets" statement adds the attributes from a given
+set to the current element.
+
+    <table> {
+        use-attribute-sets table-attributes;
+    }
+
 *** Expressions
+
+XPath expression can be added to the result tree using the "expr" and
+"uexpr" statements.
 
 **** expr
 
+The "expr" statement adds an XPath expression to the result tree.  The
+expression is the argument to the statement:
+
+    expr "Test: ";
+    expr substring-before(name, ".");
+    expr status;
+
 **** uexpr
+
+The "uexpr" behaves identically to the "expr" statement, except that
+the contents are not escaped.  Normally characters like "<", ">", and
+"&" are escaped into proper XML (as "&lt;", "&gt;", and "&amp;",
+respectively), but uexpr avoids this escaping mechanism.
+
+    uexpr "<:-&>";
+
+See also disable-output-escaping
 
 *** Processing Instructions
 
+A processing instruction is a mechanism to convey application-specific
+information inside an XML document.  The application can see detect
+processing instructions and change their behaviour accordingly.
+
 **** The "processing-instruction" Statement @processing-instruction@
+
+The "processing-instruction" statement adds a processing instruction
+to the result tree.  The argument to the statement is that name of the
+processing instruction and the contents of the statement (within
+braces) is the value of that instruction.
+
+    processing-instruction "my-app" {
+        expr "my-value";
+    }
+
+Both the argument and the value may be XPath expressions.
 
 *** Comments
 
+Comments are information for the user or author.  They are not formal
+content and should not be inspected or parsed.  They can be discarded
+without affecting the content of the XML.
+
+    <!-- This is an XML comment -->
+
+SLAX comments are distinct from XML comments.  SLAX comments appear as
+part of the SLAX script, and are not part of either the input or
+output XML documents.  SLAX comments follow the C/Perl style of a "/*"
+followed by the comment, terminated by "*/".
+
+    /* This is a SLAX comment */
+
+XML comments may not appear inside a SLAX script.
+
 **** The "comment" Statement @comment@
+
+The "comment" statement adds an XML comment to the result tree.  The
+argument is an XPath expression containing the comment to be added:
+
+    comment "This script was run by " _ $user _ " on " _ $date;
+
+See also comment
 
 *** Copying Content
 
+On many occasions, parts of the input XML document will be copied to
+the output XML document.  Such copies can be deep or shallow, meaning
+that the entire node hierarchy is copied or just the node itself.
+SLAX contains two distinct statements for these two styles of
+copying. 
+
 **** The "copy-of" Statement @copy-of@
 
+The "copy-of" statement performs a deep copy of a given set of nodes.
+The argument to the statement is an XPath expression specifying which
+nodes should be copied.
+
+    copy-of $top/my/stuff;
+    copy-of .;
+
+See also copy-of
+
 **** The "copy-node" Statement @copy-node@
+
+The "copy-node" statement performs a shallow copy of the specific node
+to the result tree, along with any namespace nodes, but none other
+child nodes (including attribute nodes) are copied.  The contents of
+the statement are a template specifying what should be inserted into
+the new node.
+
+    copy-node $this {
+        <that> "one";
+    }
+
+See also copy
 
 *** Formatting
 
 **** The "number" Statement @number@
+
+The "number" statement inserts a generated number into the result
+tree.  This statement has two distinct forms.  When used with an
+argument, the statement inserts the number given by that XPath
+expression, and a set of optional statements can be used to
+specify the formatting to be used for that number.
+
+When used without an argument, the number is generated based on
+position of the current node in the source document, and a set of
+optional statements can be used to specify formatting.
+
+The formatting statements are given in the following table:
+
+|--------------------+-----------+-------------------------------|
+| Statement          | Value     | Description                   |
+|--------------------+-----------+-------------------------------|
+| format             | see below | Style of numbering            |
+| grouping-separator | character | Used between groups of digits |
+| grouping-size      | number    | Number of digits in a group   |
+|--------------------+-----------+-------------------------------|
+
+The value of the "format" statement gives the style of numbering, as
+#detailed in the following table:
+
+|-------+-------------|
+| Value | Style       |
+|-------+-------------|
+| "1"   | 1 2 3 4     |
+| "01"  | 01 02 03 04 |
+| "a"   | a b c d     |
+| "A"   | A B C D     |
+| "i"   | i ii iii iv |
+| "I"   | I II III IV |
+|-------+-------------|
+
+The selection statements used when the number statement has no
+argument are given in the following table:
+
+|-----------+-----------+------------------------------|
+| Statement | Value     | Description                  |
+|-----------+-----------+------------------------------|
+| count     | XPath     | What to count                |
+| from      | XPath     | Where to start counting from |
+| level     | See below | How to count                 |
+|-----------+-----------+------------------------------|
+
+|----------+--------------------------------|
+| Value    | Behavior                       |
+|----------+--------------------------------|
+| single   | Count from first ancestor node |
+| multiple | Count from any ancestor node   |
+| any      | Count from any node            |
+|----------+--------------------------------|
+
+    number $this {
+        format "001";
+    }
+    number {
+        count section;
+    }
+
+See also number
 
 ** Templates @templates@
 
@@ -542,12 +1170,64 @@ using the "with" statement.
 **** The "call" Statement @call@
 
 Named templates accept parameters by name, rather than by position.
-This means the caller needs to indicate the name of the desired parameter
+This means the caller needs to indicate the name of the desired
+parameter when passing a value:
 
+    call test($arg1 = 1, $arg4 = 4, $arg2 = 2);
 
-**** The "match" Statement @named-match@
+As a convenience, arguments with the same local name as the argument
+name can be passed directly:
 
-**** Example
+    var $message = "test " _ $name _ " is " _ $status;
+    call emit-message($message)
+
+This is identical to "call emit-message($message = $message)", but is
+simpler and the use of common names increased readability.
+
+***** The "with-param" Statement @with-param@
+
+In addition, template arguments can be passed using the "with-param"
+statement.  This statement is placed inside braces after the "call"
+statement, and gives the parameter name and the value:
+
+    call test {
+        with-param $arg1 = 1;
+	with-param $arg4 = 4;
+	with-param $arg2 = 2;
+    }
+
+{{note::
+Note that in SLAX parameter names are always prefixes by the dollar
+sign ("$").  This is not true for XSLT, where the dollar sign is not
+used when defining variables.
+}}
+
+***** The "match" Statement @named-match@
+
+While rarely used, XSLT allows named template to be used as match
+templates. This is done using the "match" statement after the
+"template" statement.  For more information on "match" statements, see
+^match^.
+
+    template <<<template name>>> match <<<xpath expression>>> {
+        <<<template contents>>>
+    }
+
+    template test match paragraph ($message) {
+        <message> $message;
+    }
+
+    match / {
+        call test($message = "called as named template");
+        apply-templates {
+            with-param $message = "called as match template";
+        }
+    } 
+
+**** Example with XSLT Translation
+
+This section includes a short example, allow with the XSLT into which
+the script translates. 
 
     match configuration {
         var $name-servers = name-servers/name;
@@ -613,8 +1293,8 @@ XPath expression that selects the nodes on which this template should
 be executed.  This is followed by a set of curly braces containing the
 template.
 
-    match _expression_ {
-        _template_
+    match <<<expression>>> {
+        <<<template>>>
     }
 
 The template consists of SLAX code, whose statements are defined later
@@ -663,7 +1343,7 @@ In this example, template processing is invoked twice, first for mode
         ... template ...
     }
 
-@see http://www.w3.org/TR/xslt#modes
+See also http://www.w3.org/TR/xslt#modes
 
 **** The "priority" Statement @priority@
 
@@ -680,7 +1360,7 @@ In this example, the template is given a high priority:
         ...
     }
 
-@see http://www.w3.org/TR/xslt#conflict
+See also http://www.w3.org/TR/xslt#conflict
 
 **** The "param" Statement
 
@@ -795,6 +1475,8 @@ The XSLT equivalent:
 *** Versioning
 
 **** The "version" Statement @version@
+
+Testing
 
 * Old Stuff
 
@@ -1402,7 +2084,7 @@ They were converted using the slax writer.
 
 * Odd and Annoying Topics
 
-*** Type Promotion for XPath Expressions
+** Type Promotion for XPath Expressions
 
 XPath expressions use a style of type promotion that coerces values
 into the particular type needed for the expression.  For example, if
@@ -1418,8 +2100,17 @@ argument is converted to a string value by concatenating all the text
 values of that node and all that node's child elements.
 
 For example, the expression "chapter[starts-with(section, 'A')]" will
-inspect all <chapter> elements, convert their <section> elements 
+inspect all <chapter> elements, convert their <section> elements to
+strings, and select those whose string value starts with 'A'.  This
+may be an expensive operation.
 
+* Security Considerations
+
+None.
+
+* IANA Considerations
+
+None.
 
 * Status of the Software
 
@@ -1429,3 +2120,14 @@ xsltSetLoaderFunc() hook.
 
 The writer turns an XSLT tree (xmlDocPtr) into a file containing
 SLAX statements.
+
+To support SLAX in your application, call the hook: slaxEnable(1);
+
+{{document:
+    name slax-docs;
+    ipr pre5378Trust200902;
+    category exp;
+    abbreviation SLAX-DOCS;
+    title "The SLAX Scripting Language: An Alternate Syntax for XSLT";
+    contributor "author:Phil Shafer:Juniper Networks:phil@juniper.net";
+}}

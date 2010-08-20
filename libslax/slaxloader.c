@@ -1535,8 +1535,8 @@ void
 slaxAvoidRtf (slax_data_t *sdp)
 {
 
-    static const char new_value_format[] = "ext:node-set($%s)";
-    static const char node_value_format[] = "ext:node-set(%s)";
+    static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
+    static const char node_value_format[] = EXT_PREFIX ":node-set(%s)";
     static const char temp_name_format[] = "%s-temp-%u";
 
     static unsigned temp_count;
