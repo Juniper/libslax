@@ -49,6 +49,49 @@ slaxStringQFlags (slax_string_t *ssp)
     return rc;
 }
 
+static int
+slaxHex (unsigned char x)
+{
+    if ('0' <= x && x <= '9')
+	return x - '0';
+    if ('a' <= x && x <= 'f')
+	return x - 'a' + 10;
+    if ('A' <= x && x <= 'F')
+	return x - 'A' + 10;
+    return -1;
+}    
+
+#define SLAX_UTF_INVALID_NUMBER 0xfffd
+
+ unsigned
+ slaxUtfWord (const char *cp, int width);
+ unsigned
+slaxUtfWord (const char *cp, int width)
+{
+    unsigned val;
+    int v1 = slaxHex(*cp++);
+    int v2 = slaxHex(*cp++);
+    int v3 = slaxHex(*cp++);
+    int v4 = slaxHex(*cp++);
+
+    if (v1 < 0 || v2 < 0 || v3 < 0 || v4 < 0)
+	return SLAX_UTF_INVALID_NUMBER;
+
+    val = (((((v1 << 4) | v2) << 4) | v3) << 4) | v4;
+
+    if (width == SLAX_UTF_WIDTH6) {
+	int v5 = slaxHex(*cp++);
+	int v6 = slaxHex(*cp++);
+
+	if (v5 < 0 || v6 < 0)
+	    return SLAX_UTF_INVALID_NUMBER;
+
+	val = (((val << 4) | v5) << 4) | v6;
+    }
+
+    return val;
+}
+
 /**
  * Create a string.  Slax strings allow sections of strings (typically
  * tokens returned by the lexer) to be chained together to built
@@ -64,7 +107,7 @@ slaxStringQFlags (slax_string_t *ssp)
 slax_string_t *
 slaxStringCreate (slax_data_t *sdp, int ttype)
 {
-    int len, i;
+    int len, i, width;
     char *cp;
     const char *start;
     slax_string_t *ssp;
@@ -108,6 +151,61 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 
 		    case 't':
 			ch = '\t';
+			break;
+
+		    case 'x':
+			{
+			    int v1 = slaxHex(start[++i]);
+			    int v2 = slaxHex(start[++i]);
+
+			    if (v1 >= 0 && v2 >= 0) {
+				ch = (v1 << 4) + v2;
+				if (ch > 0x7f) {
+				    /*
+				     * If the value is >0x7f, then we have
+				     * a UTF-8 character sequence to generate.
+				     */
+				    *cp++ = 0xc0 | (ch >> 6);
+				    ch = 0x80 | (ch & 0x3f);
+				}
+			    }
+			}
+			break;
+
+		    case 'u':
+			ch = start[++i];
+			if (ch == '+' && len - i >= SLAX_UTF_WIDTH4) {
+			    width = SLAX_UTF_WIDTH4;
+
+			} else if (ch == '-' && len - i >= SLAX_UTF_WIDTH6) {
+			    width = SLAX_UTF_WIDTH6;
+
+			} else {
+			    ch = 'u';
+			    break;
+			}
+
+			unsigned word = slaxUtfWord(start + i + 1, width);
+			i += width + 1;
+
+			if (word <= 0x7f) {
+			    ch = word;
+
+			} else if (word <= 0x7ff) {
+			    *cp++ = 0xc0 | ((word >> 6) & 0x1f);
+			    ch = 0x80 | (word & 0x3f);
+
+			} else if (word <= 0xffff) {
+			    *cp++ = 0xe0 | (word >> 12);
+			    *cp++ = 0x80 | ((word >> 6) & 0x3f);
+			    ch = 0x80 | (word & 0x3f);
+
+			} else {
+			    *cp++ = 0xf0 | ((word >> 18) & 0x7);
+			    *cp++ = 0x80 | ((word >> 12) & 0x3f);
+			    *cp++ = 0x80 | ((word >> 6) & 0x3f);
+			    ch = 0x80 | (word & 0x3f);
+			}
 			break;
 		    }
 		}

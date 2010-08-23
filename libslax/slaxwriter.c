@@ -304,7 +304,84 @@ static const char *
 slaxWriteEscapedChar (slax_writer_t *swp, const char *inp, unsigned flags)
 {
     char *outp;
-    int ch = *inp;
+    unsigned char ch = *inp;
+
+#if 0
+    if (ch >= 0x80) {
+	/*
+	 * We have a UTF-8 character that needs to be escaped in the
+	 * SLAX style "\u+xxxx", which means we first need to know the
+	 * value.
+	 */
+	unsigned word = 0;
+	int width;
+
+	if ((ch & 0xf0) == 0xf0)
+	    width = 4;
+	else if ((ch & 0xf0) == 0xe0)
+	    width = 3;
+	else if ((ch & 0xe0) == 0xc0)
+	    width = 2;
+	else
+	    goto bad_word;
+
+	if (width == 4) {
+	    word = (ch & 0x07);
+	    ch = *++inp;
+	    word <<= 6;
+	    word = (ch & 0x3f);
+
+	} else if (width == 3) {
+	    word = (ch & 0x1f);
+
+	} else if (width == 2) {
+	    word = (ch & 0x01f);
+
+	}
+
+	if (width >= 3) {
+	    ch = *++inp;
+	    if ((ch & 0xc0) != 0x80)
+		goto bad_word;
+	    word <<= 6;
+	    word |= (ch & 0x3f);
+
+	}
+
+	ch = *++inp;
+	word <<= 6;
+	word |= (ch & 0x3f);
+
+	if ((ch & 0xc0) != 0x80)
+	    goto bad_word;
+
+	if (word < 0xff) {
+	    outp = slaxWriteCheckRoom(swp, 5);
+	    if (outp == NULL)
+		return NULL;
+
+	    snprintf(outp, 5, "\\x%02x", word);
+	    swp->sw_cur += 4;
+
+	    return inp + 1;
+	}
+
+	if (0) {
+	bad_word:
+	    word = 0xfffd;
+	    width = 3;
+	}
+
+	outp = slaxWriteCheckRoom(swp, 10);
+	if (outp == NULL)
+	    return NULL;
+
+	snprintf(outp, 10, "\\u%c%0*x", (width < 4) ? '+' : '-',
+		 (width < 4) ? 4 : 6, word);
+	swp->sw_cur += (width < 4) ? 7 : 9;
+	return inp + 1;
+    }
+#endif
 
     switch (ch) {
     case '\n':

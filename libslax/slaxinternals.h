@@ -394,6 +394,10 @@ void slaxAvoidRtf (slax_data_t *sdp);
 #define SSF_BOTHQS	(1<<4)	/* String has both single and double quotes */
 #define SSF_CONCAT	(1<<5)	/* Turn BOTHQS string into xpath w/ concat */
 
+/* SLAX UTF-8 character conversions */
+#define SLAX_UTF_WIDTH4	4	/* '\u+xxxx' */
+#define SLAX_UTF_WIDTH6	6	/* '\u-xxxxxx' */
+
 /*
  * If the string is simple, we can optimize how we treat it
  */
