@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 ns l exclude = "http://docbook.sourceforge.net/xmlns/l10n/1.0";
 

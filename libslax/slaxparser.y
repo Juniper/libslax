@@ -162,6 +162,7 @@
 %token K_TEMPLATE		/* 'template' */
 %token K_TERMINATE		/* 'terminate' */
 %token K_TEXT			/* 'text' */
+%token K_TRACE			/* 'trace' */
 %token K_UEXPR			/* 'uexpr' */
 %token K_USE_ATTRIBUTE_SETS	/* 'use-attribute-set' */
 %token K_VALUE			/* 'value' */
@@ -379,6 +380,9 @@ partial_stmt :
 	| terminate_stmt
 		{ $$ = NULL; }
 
+	| trace_stmt
+		{ $$ = NULL; }
+
 	| uexpr_stmt
 		{ $$ = NULL; }
 
@@ -403,7 +407,7 @@ version_stmt :
 version_number :
 	T_NUMBER L_DOT T_NUMBER
 		{
-		    slaxVersionMatch($1->ss_token, $3->ss_token);
+		    slaxVersionMatch(slax_data, $1->ss_token, $3->ss_token);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -1022,6 +1026,9 @@ block_stmt :
 	| terminate_stmt
 		{ $$ = NULL; }
 
+	| trace_stmt
+		{ $$ = NULL; }
+
 	| uexpr_stmt
 		{ $$ = NULL; }
 
@@ -1607,6 +1614,36 @@ message_stmt :
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
+	;
+
+trace_stmt :
+	K_TRACE
+		{
+		    xmlNodePtr nodep;
+
+		    nodep = slaxElementPush(slax_data, ELT_TRACE, NULL, NULL);
+		    if (nodep)
+			slaxSetTraceNs(slax_data, nodep);
+		    $$ = NULL;
+		}
+	    trace_contents
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+trace_contents :
+	xpath_value L_EOS
+		{
+		    slaxElementXPath(slax_data, $1, FALSE, FALSE);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| block
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 terminate_stmt :

@@ -27,7 +27,8 @@ typedef int (*slaxWriterFunc_t)(void *data, const char *fmt, ...);
  * fprintf-like callback function.
  */
 int
-slaxWriteDoc(slaxWriterFunc_t func, void *data, xmlDocPtr docp, int partial);
+slaxWriteDoc(slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+	     int partial, const char *);
 
 /*
  * Read a SLAX stylesheet from an open file descriptor.

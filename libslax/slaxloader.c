@@ -19,6 +19,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
 
 #define SD_BUF_FUDGE (BUFSIZ/8)
@@ -178,6 +179,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_TEMPLATE, "template", KMF_SLAX_KW },
     { K_TERMINATE, "terminate", KMF_SLAX_KW },
     { K_TEXT, "text", KMF_NODE_TEST },
+    { K_TRACE, "trace", KMF_SLAX_KW },
     { K_UEXPR, "uexpr", KMF_SLAX_KW },
     { K_USE_ATTRIBUTE_SETS, "use-attribute-sets", KMF_SLAX_KW },
     { K_VALUE, "value", KMF_SLAX_KW },
@@ -937,6 +939,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_SORT:
     case K_TEMPLATE:
     case K_TERMINATE:
+    case K_TRACE:
     case K_UEXPR:
     case K_VAR:
     case K_VALUE:
@@ -997,12 +1000,14 @@ slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
  * @param minor minor version number
  */
 void
-slaxVersionMatch (const char *major, const char *minor)
+slaxVersionMatch (slax_data_t *sdp, const char *major, const char *minor)
 {
     if (major == NULL || !streq(major, "1")
-	|| minor == NULL || !streq(minor, "0"))
+	|| minor == NULL || !(streq(minor, "0") || streq(minor, "1"))) {
 	fprintf(stderr, "invalid version number: %s.%s\n",
 		major ?: "", minor ?: "");
+	sdp->sd_errors += 1;
+    }
 }
 
 /**
@@ -1488,12 +1493,10 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
  * that namespace.  We also have to add this as an "extension"
  * namespace.
  */
-void 
-slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
+static void 
+slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
+	   const char *prefix, const xmlChar *uri)
 {
-    const char *prefix = FUNC_PREFIX;
-    const xmlChar *uri = FUNC_URI;
-
     xmlNsPtr nsp;
 
     nsp = xmlSearchNs(sdp->sd_docp, nodep->parent, (const xmlChar *) prefix);
@@ -1516,6 +1519,31 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     /* Add a distinct namespace to the current node */
     nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
     nodep->ns = nsp;
+}
+
+
+/*
+ * Find or construct a (possibly temporary) namespace node
+ * for the "func" exslt library and put the given node into
+ * that namespace.  We also have to add this as an "extension"
+ * namespace.
+ */
+void 
+slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
+{
+    const char *prefix = FUNC_PREFIX;
+    const xmlChar *uri = FUNC_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri);
+}
+
+void 
+slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep)
+{
+    const char *prefix = TRACE_PREFIX;
+    const xmlChar *uri = (const xmlChar *) TRACE_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri);
 }
 
 /*
@@ -2019,6 +2047,21 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
     return docp;
 }
 
+static xsltElemPreCompPtr
+slaxTraceCompute (xsltStylesheetPtr style UNUSED, xmlNodePtr inst UNUSED,
+		  xsltTransformFunction function UNUSED)
+{
+    return NULL;
+}
+
+static void
+slaxTraceTransform (xsltTransformContextPtr ctxt UNUSED,
+		    xmlNodePtr node UNUSED, xmlNodePtr inst UNUSED,
+		    xsltElemPreCompPtr comp UNUSED)
+{
+    return;
+}
+
 /*
  * Turn on the SLAX XSLT document parsing hook.  This must be
  * called before SLAX files can be parsed.
@@ -2044,6 +2087,11 @@ slaxEnable (int enable)
 	originalXsltDocDefaultLoader = xsltDocDefaultLoader;
     xsltSetLoaderFunc(enable ? slaxLoader : NULL);
     slaxEnabled = enable;
+
+    xsltRegisterExtModuleElement((const xmlChar *) ELT_TRACE,
+				 (const xmlChar *) TRACE_URI,
+				 (xsltPreComputeFunction) slaxTraceCompute,
+				 (xsltTransformFunction) slaxTraceTransform);
 }
 
 /*

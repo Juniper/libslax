@@ -9,7 +9,7 @@
           <product-name>m7i</product-name>
         </software-information>
       </xsl:variable>
-      <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="version-info" select="ext:node-set($version-info-temp-1)"/>
+      <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="version-info" select="slax-ext:node-set($version-info-temp-1)"/>
       <xsl:apply-templates select="$version-info/host-name"/>
     </op-script-results>
   </xsl:template>

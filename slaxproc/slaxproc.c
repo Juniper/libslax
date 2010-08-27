@@ -19,17 +19,19 @@
 
 #if 0
 static const char *params[MAX_PARAMETERS + 1];
-static int nbparams = 0;
+static int nbparams;
 static xmlChar *strparams[MAX_PARAMETERS + 1];
-static int nbstrparams = 0;
+static int nbstrparams;
 static xmlChar *paths[MAX_PATHS + 1];
-static int nbpaths = 0;
+static int nbpaths;
 #endif
-static int options = XSLT_PARSE_OPTIONS;
-static int html = 0;
-static char *encoding = NULL;
 
-static int partial = 0;
+static int options = XSLT_PARSE_OPTIONS;
+static int html;
+static char *encoding;
+static char *version;
+
+static int partial;
 
 static inline int
 is_filename_std (const char *filename)
@@ -122,7 +124,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	    err(1, "could not open file: '%s'", output);
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, partial);
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, partial, version);
     if (outfile != stdout)
 	fclose(outfile);
 
@@ -215,6 +217,7 @@ print_help (void)
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--version OR -v or -V: show version information (and exit)\n");
+    printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
 }
 
@@ -268,6 +271,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
+
+	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
+	    version = *++argv;
 
 	} else if (streq(cp, "--help") || streq(cp, "-n")) {
 	    print_help();

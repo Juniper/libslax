@@ -443,9 +443,9 @@ how they are applied.
 ***** Parameters
 
 Parameters can be passed to either named or unnamed templates using
-the <xsl:with-param> element.  Inside the template, parameters must be
-declared and can then be referenced using their name prefixed by the
-dollar sign.
+either parameter lists or the "with" statement.  Inside the template,
+parameters must be declared with a "param" statement and can then be
+referenced using their name prefixed by the dollar sign.
 
     /*
      * This template matches on "/", the root of the XML document.
@@ -457,7 +457,7 @@ dollar sign.
     match / {
         <outer> {
             apply-templates configuration/system {
-                with-param $host=configuration/system/host-name;
+                with $host=configuration/system/host-name;
             }
         }
     }
@@ -498,6 +498,8 @@ use the default of the "changed" attribute on the current node.
 XSLT allows the definition of both local and global variables, but the
 value of variables can only be set when the variable is defined.  After
 that point, they are read only.
+
+A variable is defined using the "var" statement.
 
     template emit-syslog ($device, $date, $user) {
         var $message = "Device " _ $device _ " was changed on "
@@ -1184,16 +1186,16 @@ name can be passed directly:
 This is identical to "call emit-message($message = $message)", but is
 simpler and the use of common names increased readability.
 
-***** The "with-param" Statement @with-param@
+***** The "with" Statement @with@
 
-In addition, template arguments can be passed using the "with-param"
+In addition, template arguments can be passed using the "with"
 statement.  This statement is placed inside braces after the "call"
 statement, and gives the parameter name and the value:
 
     call test {
-        with-param $arg1 = 1;
-	with-param $arg4 = 4;
-	with-param $arg2 = 2;
+        with $arg1 = 1;
+	with $arg4 = 4;
+	with $arg2 = 2;
     }
 
 {{note::
@@ -1209,9 +1211,10 @@ templates. This is done using the "match" statement after the
 "template" statement.  For more information on "match" statements, see
 ^match^.
 
-    template <<<template name>>> match <<<xpath expression>>> {
-        <<<template contents>>>
-    }
+    SYNTAX::
+        'template' template-name 'match' xpath-expression '{'
+            template-contents
+        '}'
 
     template test match paragraph ($message) {
         <message> $message;
@@ -1220,7 +1223,7 @@ templates. This is done using the "match" statement after the
     match / {
         call test($message = "called as named template");
         apply-templates {
-            with-param $message = "called as match template";
+            with $message = "called as match template";
         }
     } 
 
@@ -1293,9 +1296,10 @@ XPath expression that selects the nodes on which this template should
 be executed.  This is followed by a set of curly braces containing the
 template.
 
-    match <<<expression>>> {
-        <<<template>>>
-    }
+    SYNTAX::
+        'match' xpath-expression '{'
+            template-contents
+        '}'
 
 The template consists of SLAX code, whose statements are defined later
 in this document.
@@ -1362,34 +1366,238 @@ In this example, the template is given a high priority:
 
 See also http://www.w3.org/TR/xslt#conflict
 
-**** The "param" Statement
-
-Template can accept parameters from their 
-
-**** The "with-param" Statement
-
-
-** Programming Constructs
-
-*** Variables
-
-**** The "var" Statement @var@
-
-*** Parameters
-
 **** The "param" Statement @param@
+
+Template can accept parameters from their callers, and scripts can
+accept parameters from the calling environment (typically the command
+line).  The "param" statement declares a parameter, along with an
+optional default value.
+
+    SYNTAX::
+        'param' parameter-name [ '=' optional-value ] ';'
+
+For example:
+
+    param $address = "10.1.2.3";
+    param $count = 25;
+
+    templace count {
+	/*
+         * This defines a local parameter $count and sets
+         * its value to that of the global parameter $count.
+         */
+        param $count = $count;
+    }
+
+Template parameters can also be defined in a C style following the
+template name:
+
+    template area ($width = 10, $length = 10, $scale = 1) {
+        <area> $width * $length * $scale;
+    }
 
 **** The "with" Statement @with@
 
+The "with" statement supplies a value for a given parameter.
+
+    call area {
+        with $length = 2;
+        with $width = 100;
+    }
+
+Parameter values may also be passed using a C/perl style, but since
+arguments in SLAX (and XSLT) are passed by name, the parameter names
+are also given:
+
+    call area($width = 100, $length = 2);
+
+** Programming Constructs
+
+This section covers the programming constructs in SLAX.  SLAX tries to
+use language paradigms and constructs from traditional languages
+(primarily C and Perl) to aid the user in readability and familiarity.
+But SLAX is built on top of XSLT, and the declarative nature of XSLT
+means that many of its constructs are visible.
+
+*** Variables
+
+Variables in SLAX are immutable.  Once defined, the value of a
+variable cannot be changed.  This is a major change from traditional
+programming language, and requires a somewhat different approach to
+programming.  There are two tools to help combat this view: recursion
+and complex variable assignments.
+
+Recursion allows new values for variables to be set, based on the
+parameters passed in on the recursive call.
+
+    template count ($cur = 1, $max = 10) {
+        if ($cur < $max) {
+            <output> $cur;
+            call count($cur = $cur + 1, $max);
+        }
+    }
+
+Complex variable assignments allow the use of programming constructs
+inside the variable definition:
+
+    var $message = {
+        if ($red > 40) {
+            expr "Invalid red value";
+        } else if ($blue > 80) {
+            expr "Invalid red value";
+        } else if ($green > 10) {
+            expr "Invalid green value";
+        }
+    }
+
+This requires different approaches to problems.  For example,
+instead of appending to a message as you loop thru a list of nodes,
+you would need to make the message initial value contain a "for-each"
+loop that emits parts of the message:
+
+    var $message = {
+        <output> "acceptable colors: ";
+        for-each (color) {
+            if (red <= 40 && blue <= 80 && green < 10) {
+                <output> "    " _ name _ 
+                   " (" _ red _ "," _ green _ "," _ blue _ ")";
+            }
+        }
+    }
+
+**** The "var" Statement @var@
+
+Variable are defined using the "var" statement, which accept a
+variable name and an initial value.  Variable names (and parameter
+names) always begin with a dollar sign ("$").
+
+    SYNTAX::
+        'var' variable-name '=' initial-value ';'
+
+The initial value can be an XPath expresion, an element, or a block of
+statements (enclosed in braces) that emit a set of nodes.
+
+    var $x = 4;
+    var $y = <price> cost div weight;
+    var $z = {
+        expr "this: ";
+        copy-of $this;
+    }
+
+These same constraints apply to parameters as well.
+
 *** Result Tree Fragments
+
+The most annoying "features" of XSLT is the concept of "Result Tree
+Fragments" (aka RTF).  These fragments are produced with nodes are
+created that are not directly emitted as output.  The main source is
+variable or parameter definitions that have complex content.
+
+    var $x = {
+        <color> {
+            <name> "cornflower blue";
+            <red> 100;
+            <green> 149;
+            <blue> 237;
+        }
+    }
+
+Only three operations can be performed on an RTF:
+- Emit as output
+- Conversion to a string
+- Conversion to a proper node-set
+
+In this example, an RTF is generated, and then each of the three valid
+operations is performed:
+
+    var $rtf = <rtf> {
+        <rats> "bad";
+    }
+    if ($rtf == "bad") { /* Converts the RTF into a string */
+        copy-of $rtf;  /* Emits the RTF to the output tree */
+
+	/* Convert RTF to a node set (see discussion below) */
+        var $node-set = ext:node-set($rtf);
+    }
+
+Any XPath operation performed against an RTF will result in an
+"Invalid type" error.
+
+In truth, the only interesting thing to do with an RTF is to convert
+it to a node set, which is not a standard XPath/XSLT operation.  Most
+scripts will use the extension function "ext:node-set()" (which is
+specific to libxslt) or "exslt:node-set()" (which is in the EXSLT
+extension library; see exslt.org for additional information).
+
+    ns ext = "http://xmlsoft.org/XSLT/namespace";
+    ...
+        var $alist = ext:node-set($alist-raw);
+
+This must be done when a variable or paramter has a complex initial
+value: 
+
+    var $this-raw = <this> {
+        <that>;
+        <the-other>;
+    }
+    var $this = ext:node-set($this-raw);
+
+Fortunately for SLAX programmers, the ":=" operator does away with
+these conversion issues, as the following section details.
 
 **** The ":=" Operator @colon-equals@
 
-*** Control
+The ":=" operator is designed to hide the conversion of RTFs to node
+sets from the programmer.  It is used in assigning initial values to
+variables and parameters.
+
+    var $this := <this> {
+        <that> "one";
+        <the-other> "one";
+    }
+    if ($this/that == "one") {
+        <output> "not an invalid type error";
+    }
+
+Calling named templates can also produce RTFs, since the "call"
+statement would be considered complex variable content.  But using the
+":=" operator removes this problem:
+
+    var $output := {
+        call matching-color($match = "corn");
+    }
+
+Behind the scenes, SLAX is performing the ext:node-set() call but the
+details are hidden from the user.
+
+*** Control Statements
 
 **** The "for-each" Statement @for-each@
 
+The "for-each" statement iterates through the members of a node set,
+evaluating the contents of the statement with the context set to each
+node.
+
+    SYNTAX::
+        'for-each' '(' xpath-expression ')' '{'
+            contents
+        '}'
+
+The XPath expression is evaluated into a set of nodes, and then each
+node is considered as the "context" node, the contents of the
+"for-each" statement are evaluated.
+
+    for-each ($inventory/chassis/chassis-module
+              /chassis-sub-module[part-number == '750-000610']) {
+        <message> "Down rev PIC in " _ ../name _ ", "
+                     _ name _ ": " _ description;
+    }
+
 **** The "sort" Statement @sort@
+
+The "for-each" normally considers nodes in document order, but the
+"sort" statement indicates the specific order the programmer needs.
+
 
 **** The "if" and "else" Statements @if-else@
 
@@ -1438,43 +1646,302 @@ The XSLT equivalent:
 
 *** Functions
 
+Functions are one of the coolest extensions defined by EXSLT.  They
+allow a script to define an extension function that is available in
+XPath expressions.  Functions have several advantages over templates:
+
+- Arguments are passed by position, not name 
+- Return values _can_ be objects (not RTFs)
+- Can be used in expressions
+- Can be resolved dynamically (using EXSLT's dyn:evaluate())
+
+This section describes how functions are defined.
+
 **** The "function" Statement @function@
+
+The "function" statement defines a function that can be called in
+XPath expressions.  
+
+    SYNTAX:
+        'function' function-name '(' argument-list ')' '{'
+            function-template
+        '}'
+
+The argument-list is a comma separated list of parameter names, which
+will be positionally assigned based on the function call.  Trailing
+arguments can have default values, in a similar way to templates.  If
+there are fewer parameters in the invocation than in the definition,
+then the default values will be used for any trailing arguments.  If
+is an error for the function to be invoke with more arguments than are
+defined.
+
+    function size ($width, $length, $scale = 1) {
+        ...
+    }
+
+Function parameters can also be defined using the "param" statement.
 
 **** The "result" Statement @result@
 
+The "result" statement defines a value or template used as the return
+value of the function.
+
+    SYNTAX:
+        'result' value ';'
+        'result' element
+        'result' '{'
+            result-template
+        '}'
+
+The value can be a simple XPath expression, an XML element, or a set
+of instructions that emit the value to be returned.
+
+
+    function size ($width, $length, $scale = 1) {
+        result $width * $length * $scale;
+    }
+
+    function box-parts ($width, $height, $depth, $scale = 1) {
+        result <box> {
+            <part count=2> size($width, $depth);
+            <part count=2> size($width, $height);
+            <part count=2> size($depth, $height);
+        }
+    }
+
+    function ark () {
+        result {
+            <ark> {
+                expr box-parts(2.5, 1.5, 1.5);
+            }
+        }
+    }
+
 ** Other Functionality
 
-*** Combining Scripts
+This section contains statements and constructs that don't easily
+fit into other categories.
 
-**** The "import" Statement @import@
+*** Combining Scripts ("include" and "import") @include-import@
 
-**** The "include" Statement @include@
+Scripts files can use multiple source files, allowing library files to
+be shared among a number of source files.  The "import" and "include"
+statements incorporate the templates and functions from one file into
+another, allowing them to be used implicitly or explicitly by the XSLT
+engine.  Files need not be SLAX files, but can be traditional XSLT
+files.
 
-*** Additional XPath Functions
+A script may include another script using the "include" statement.
+Content from included files is conceptually inserted into the script
+at the point where the "include" statement is used.  The "import"
+statement works similarly, but the contents of an imported file are
+given a lower priority (for expression matching and template or
+function redefinition).  Conceptually, imported files are inserted at
+the top of the script, in the order in which they are given in the
+source files.
 
-**** The "key" Statement @key@
+See also http://www.w3.org/TR/xslt#section-Combining-Stylesheets
 
-**** The "decimal-format" Statement @decimal-format@
+*** The "key" Statement @key@
+
+The "key" statement defines a key for use by the "key()" XPath
+function.  Keys allow a script to locate nodes in a document that are
+referenced by other nodes.  Each key definition indicates the nodes on
+which the key is defined and the value of the key.  The key() function
+can then be used to locate the appropriate node.
+
+    SYNTAX:
+        'key' key-name '{'
+            'match' match-expression ';'
+            'value value-expression ';'
+        '}'
+
+The "key-name" uniquely identifies the key within the script, and is
+passed as the first argument to the key() function.  The "match"
+statement gives an XPath expression selecting the set of nodes on
+which the keys are found, and the "value" statement gives an XPath
+expression for the value of the key.
+
+    key func {
+        match prototype;
+        value @name;
+    }
+
+See also http://www.w3.org/TR/xslt#key
+
+*** The "decimal-format" Statement @decimal-format@
+
+The "decimal-format" statement defines formatting parameters for use
+by the format-number() XPath function.
+
+    SYNTAX:
+        'decimal-format' format-name ';'
+        'decimal-format' format-name '{'
+            'decimal-separator' data_value ';'
+            'grouping-separator' data_value ';'
+            'infinity' data_value ';'
+            'minus-sign' data_value ';'
+            'nan' data_value ';'
+            'percent' data_value ';'
+            'per-mille' data_value ';'
+            'zero-digit' data_value ';'
+            'digit' data_value ';'
+            'pattern-separator' data_value ';'
+        '}'
+
+The format-name is the name passed as the third argument to the
+format-number() XPath function.  The statements under the
+"decimal-format" statement follow the meaning of their counterparts
+under the <xsl:decimal-format> element, as detailed in the reference
+below. 
+
+See also http://www.w3.org/TR/xslt#format-number
 
 *** Messages
 
+Typical scripts work by generating XML content as a result tree, but
+occasionally a script may need to make explicit, immediate output.
+The statements in this section allow for such output.
+
 **** The "message" Statement @message@
+
+The "message" statement allows output to be generated immediately,
+without waiting until the script generates its final result tree.
+
+    SYNTAX:
+        'message' message-expression ';'
+
+The message-expression is an XPath expression that is emitted as
+output, typically on the standard error file descriptor.
+
+    if (not(valid)) {
+        message "The " _ name() _ " node is not valid";
+    }
+
+See also http://www.w3.org/TR/xslt#message
 
 **** The "terminate" Statement @terminate@
 
+The "terminate" statement can be used to deliver a message to the user
+and then exit the script.
+
+    SYNTAX:
+        'terminate' message-expression ';'
+
+The message-expression is an XPath expression that is emitted as
+output, like the "message" statement.  The script then stops
+any further processing.
+
 **** The "trace" Statement @trace@
 
-*** Output
+Trace output is vital to writing, debugging, and maintaining scripts.
+SLAX introduces a trace facility that will record XPath expressions or
+template contents in a trace file.  If tracing is not enabled, then no
+trace output is generated.  The enabling of tracing and the naming of
+trace files is not covered here, since it is typically a feature of
+the environment in which a SLAX script is called.  For example, the
+"slaxproc" command uses the "-t" and "-T file" to enable tracing.
 
-**** The "output-method" Statement @output-method@
+    SYNTAX:
+        'trace' trace-message ';'
+        'trace' '{'
+            trace-template
+        '}'
+
+The trace-message is an XPath expression that is written to the trace
+file.  The trace-template is executed and the results are written to
+the trace file.
+
+    trace "max " _ $max _ "; min " _ $min;
+    trace {
+        <max> $max;
+        <min> $min;
+    }
+    trace {
+        if ($my-trace-flag) {
+            expr "max " _ $max _ "; min " _ $min;
+            copy-of options;
+        }
+    }
+
+*** The "output-method" Statement @output-method@
+
+The "output-method" statement defines the output style to be used when
+outputing the result tree.
+
+    SYNTAX:
+        'output-method' [style] '{'
+            'version' data_value ';'
+            'encoding' data_value ';'
+            'omit-xml-declaration' data_value ';'
+            'standalone' data_value ';'
+            'doctype-public' data_value ';'
+            'doctype-system' data_value ';'
+            'cdata-section-elements' cdata_section_element_list ';'
+            'indent' data_value ';'
+            'media-type' data_value ';'
+        '}'
+
+The style can be "xml", "html", or "text".
+
+The substatements of "output-method" correspond to the attributes of
+the XSLT <xsl:output-method> element.
+
+See also http://www.w3.org/TR/xslt#output
+
+*** Whitespace Handling
+
+SLAX includes a means of retaining or removing text nodes that contain
+only whitespace.  Whitespace for XML is the space, tab, newline or
+carriage return characters.
 
 **** The "strip-space" Statement @strip-space@
 
+The "strip-space" statement tells the engine to discard the given
+elements if they contain only whitespace.
+
+    SYNTAX:
+        'strip-space' list-of-element-names ';'
+
+The list-of-element-names is a space separated list of element names
+that should have their contents discarded if they contain only
+whitespace.
+
+    strip-space section paragraph bullet;
+
+See also http://www.w3.org/TR/xslt#strip
+
 **** The "preserve-space" Statement @preserve-space@
 
-*** Versioning
+The "preserve-space" statement works similar to the "strip-space"
+statement, but with the opposite result.
 
-**** The "version" Statement @version@
+    SYNTAX:
+        preserve-space' list-of-element-names ';'
+
+The list-of-element-names is a space separated list of element names
+that should have their contents retained even if they contain only
+whitespace.
+
+    preserve-space art picture line;
+
+See also http://www.w3.org/TR/xslt#strip
+
+*** The "version" Statement @version@
+
+The "version" statement contains the current version of the SLAX
+language, allowing scripts and interpreters to progress
+independently.  Old engines will not understand new constructs and
+should stop with an error when a version number that is unknown to
+them is seen.  New engines should accept any previous language version
+number, so allow old scripts to run on new engines.
+
+    SYNTAX:
+        'version' version-number ';'
+
+The version-number should be either "1.1" or "1.0".  The current
+version is "1.1" and newly developed scripts should use this version
+number. 
 
 Testing
 
@@ -1977,11 +2444,11 @@ XSLT namespace:
 
 This section contains a few examples, converted from the libxslt test/
 directory.  The XSLT form can be found in the libxslt source code.
-They were converted using the slax writer.
+They were converted using the "slaxproc" tool.
 
 ** general/itemschoose.xsl
 
-    version 1.0;
+    version 1.1;
  
     ns fo = "http://www.w3.org/1999/XSL/Format";
  
@@ -1991,6 +2458,7 @@ They were converted using the slax writer.
             apply-templates;
         }
     }
+
     match orderedlist/listitem {
         <fo:list-item indent-start="2pi"> {
             <fo:list-item-label> {
@@ -2015,11 +2483,15 @@ They were converted using the slax writer.
 
 ** REC2/svg.xsl
 
-    version 1.0;
+    version 1.1;
  
     ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
  
-    <xsl:output method="xml" indent="yes" media-type="image/svg">;
+    output-method xml {
+        indent "yes";
+         media-type "image/svg";
+    }
+
     match / {
         <svg width="3in" height="3in"> {
             <g style="stroke: #000000"> {
@@ -2028,17 +2500,23 @@ They were converted using the slax writer.
                 <line x1="0" x2="0" y1="0" y2="150">;
                 <text x="0" y="10"> "Revenue";
                 <text x="150" y="165"> "Division";
+
                 for-each (sales/division) {
+
                     /* define some useful variables */
                     /* the bar's x position */
                     var $pos = (position()*40)-30;
+
                     /* the bar's height */
                     var $height = revenue*10;
+
                     /* the rectangle */
                     <rect x=$pos y=150 - $height 
                           width="20" height=$height>;
+
                     /* the text label */
                     <text x=$pos y="165"> @id;
+
                     /* the bar value */
                     <text x=$pos y=145 - $height> revenue;
                 }
@@ -2048,9 +2526,12 @@ They were converted using the slax writer.
 
 ** XSLTMark/metric.xsl
 
-    version 1.0;
+    version 1.1;
  
-    <xsl:output method="html" encoding="utf-8">;
+    output-method html {
+        encoding "utf-8";
+    }
+
     match measurement {
         var $m = {
             if (@fromunit == 'km') {

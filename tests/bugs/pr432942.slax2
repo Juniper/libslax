@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 match / {
     <op-script-results> {
@@ -8,7 +8,7 @@ match / {
             <product-model> "m7i";
             <product-name> "m7i";
         }
-        var $version-info = ext:node-set($version-info-temp-1);
+        var $version-info = slax-ext:node-set($version-info-temp-1);
         
         apply-templates $version-info/host-name;
     }

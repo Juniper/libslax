@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 ns my exclude = "http://my/namespace";
 ns "http://www.w3.org/1999/xhtml";

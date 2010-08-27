@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 /* borrowed from http://www.zvon.org/xxl/XSLTutorial/Output/example35_ch9.html */
 match / {

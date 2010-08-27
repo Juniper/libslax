@@ -2458,9 +2458,11 @@ slaxWriteCleanup (slax_writer_t *swp)
  * @param data data passed to callback
  * @param docp source document (XSLT stylesheet)
  * @param partial Should we write partial (snippet) output?
+ * @param version Version number to use
  */
 int
-slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp, int partial)
+slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+	      int partial,  const char *version)
 {
     xmlNodePtr nodep;
     xmlNodePtr childp;
@@ -2478,7 +2480,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp, int partial)
 	slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
 	slaxWriteNewline(&sw, 0);
 
-	slaxWrite(&sw, "version %s;", "1.0");
+	slaxWrite(&sw, "version %s;", version ?: "1.1");
 	slaxWriteNewline(&sw, 0);
 	slaxWriteNewline(&sw, 0);
     }

@@ -13,7 +13,7 @@
       <c>
         <xsl:copy-of select="my:one(&quot;test&quot;)"/>
       </c>
-      <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="d" select="ext:node-set(my:one(&quot;one&quot;, &quot;two&quot;))"/>
+      <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="d" select="slax-ext:node-set(my:one(&quot;one&quot;, &quot;two&quot;))"/>
       <d>
         <xsl:value-of select="exslt:object-type($d)"/>
       </d>

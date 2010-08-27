@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 var $foo = "foo";
 var $bar = <foo bar="0" _ $foo _ "1"> "foo1";

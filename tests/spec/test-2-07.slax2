@@ -1,5 +1,5 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
-version 1.0;
+version 1.1;
 
 ns my extension = "http://example.com";
 ns exslt extension = "http://exslt.org/common";
@@ -18,7 +18,7 @@ match / {
         <c> {
             copy-of my:one("test");
         }
-        var $d = ext:node-set(my:one("one", "two"));
+        var $d = slax-ext:node-set(my:one("one", "two"));
         <d> exslt:object-type($d);
     }
 }

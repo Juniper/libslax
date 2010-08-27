@@ -32,6 +32,9 @@
 #define FUNC_URI EXSLT_FUNCTIONS_NAMESPACE
 #define FUNC_PREFIX "slax-func"
 
+#define TRACE_URI "http://code.google.com/p/libslax/trace"
+#define TRACE_PREFIX "slax-trace"
+
 /*
  * This is a should-not-occur error string if you ever see it, we've
  * done something wrong (but it beats a core dump).
@@ -101,6 +104,7 @@ extern const char *keywordString[];
 #define ELT_STYLESHEET	"stylesheet"
 #define ELT_TEMPLATE	"template"
 #define ELT_TEXT	"text"
+#define ELT_TRACE	"trace"
 #define ELT_TRANSFORM	"transform"
 #define ELT_USE_ATTRIBUTE_SETS	"use-attribute-sets"
 #define ELT_VALUE_OF	"value-of"
@@ -203,7 +207,7 @@ slaxTokenTranslate (int ttype);
  * Check the version string.  The only supported version is "1.0".
  */
 void
-slaxVersionMatch (const char *major, const char *minor);
+slaxVersionMatch (slax_data_t *sdp, const char *major, const char *minor);
 
 /*
  * Add a namespace to the node on the top of the stack
@@ -372,8 +376,11 @@ void slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
  * that namespace.  We also have to add this as an "extension"
  * namespace.
  */
-void 
+void
 slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
+
+void
+slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep);
 
 /*
  * If we know we're about to assign a result tree fragment (RTF)
