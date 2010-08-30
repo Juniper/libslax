@@ -2368,6 +2368,8 @@ SLAX version 1.1 implies XML version 1.0 and XSLT version 1.1.
 In addition, the "xsl" namespace is implicitly defined (as
 'xmlns:xsl="http://www.w3.org/1999/XSL/Transform"').
 
+*! start-appendix
+
 * Example Stylesheets
 
 This section contains a few examples, converted from the libxslt test/
@@ -2533,10 +2535,10 @@ SLAX statements.
 To support SLAX in your application, call the hook: slaxEnable(1);
 
 {{document:
-    name slax-docs;
+    name slax-manual;
     ipr pre5378Trust200902;
     category exp;
-    abbreviation SLAX-DOCS;
+    abbreviation SLAX-MANUAL;
     title "The SLAX Scripting Language: An Alternate Syntax for XSLT";
     contributor "author:Phil Shafer:Juniper Networks:phil@juniper.net";
 }}

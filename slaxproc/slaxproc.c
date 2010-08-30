@@ -1,5 +1,11 @@
 /*
  * $Id$
+ *
+ * Copyright (c) 2006-2010, Juniper Networks, Inc.
+ * All rights reserved.
+ * See ../Copyright for the status of this software
+ *
+ * slaxproc -- a command line interface to the SLAX language
  */
 
 #include "slaxinternals.h"
@@ -17,9 +23,10 @@
 #define MAX_PARAMETERS 64
 #define MAX_PATHS 64
 
-#if 0
 static const char *params[MAX_PARAMETERS + 1];
 static int nbparams;
+
+#if 0
 static xmlChar *strparams[MAX_PARAMETERS + 1];
 static int nbstrparams;
 static xmlChar *paths[MAX_PATHS + 1];
@@ -173,7 +180,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
 
-    res = xsltApplyStylesheet(script, indoc, NULL);
+    res = xsltApplyStylesheet(script, indoc, params);
 
     xsltSaveResultToFile(stdout, res, script);
 
@@ -215,6 +222,7 @@ print_help (void)
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
+    printf("\t--param name value OR -a name value: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--version OR -v or -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
@@ -256,6 +264,31 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;
+
+	} else if (streq(cp, "--param") || streq(cp, "-a")) {
+	    char *pname = *++argv;
+	    char *pvalue = *++argv;
+	    char *tvalue;
+	    char quote;
+	    int plen;
+
+	    if (pname == NULL || pvalue == NULL)
+		errx(1, "missing parameter value");
+
+	    plen = strlen(pvalue);
+	    tvalue = xmlMalloc(plen + 3);
+	    if (tvalue == NULL)
+		errx(1, "out of memory");
+
+	    quote = strrchr(pvalue, '\"') ? '\'' : '\"';
+	    tvalue[0] = quote;
+	    memcpy(tvalue + 1, pvalue, plen);
+	    tvalue[plen + 1] = quote;
+	    tvalue[plen + 2] = '\0';
+
+	    int pnum = nbparams++;
+	    params[pnum++] = pname;
+	    params[pnum] = tvalue;
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = *++argv;

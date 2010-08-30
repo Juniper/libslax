@@ -1,9 +1,9 @@
 /*
  * $Id: slaxparser-xp.y,v 1.1 2006/11/01 21:27:20 phil Exp $
  *
- * Copyright (c) 2006-2008, Juniper Networks, Inc.
+ * Copyright (c) 2006-210, Juniper Networks, Inc.
  * All rights reserved.
- * See ./Copyright for the status of this software
+ * See ../Copyright for the status of this software
  *
  * XPath expression rules.  These are mostly direct from the XPath REC.
  *

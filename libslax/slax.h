@@ -1,9 +1,9 @@
 /*
  * $Id: slax.h,v 1.6 2007/09/18 09:03:31 builder Exp $
  *
- * Copyright (c) 2006-2008, Juniper Networks, Inc.
+ * Copyright (c) 2006-2010, Juniper Networks, Inc.
  * All rights reserved.
- * See ./Copyright for the status of this software
+ * See ../Copyright for the status of this software
  */
 
 /*

@@ -1,9 +1,9 @@
 /*
  * $Id: slaxloader.c,v 1.6 2008/05/21 02:06:12 phil Exp $
  *
- * Copyright (c) 2006-2008, Juniper Networks, Inc.
+ * Copyright (c) 2006-2010, Juniper Networks, Inc.
  * All rights reserved.
- * See ./Copyright for the status of this software
+ * See ../Copyright for the status of this software
  *
  * slaxloader.c -- load slax files into XSL trees
  *

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2006-2010, Juniper Networks, Inc.
  * All rights reserved.
- * See ./Copyright for the status of this software
+ * See ../Copyright for the status of this software
  *
  * This module contains functions to build and handle a set of string
  * segments in a linked list.  It is used by both the slax reader and
