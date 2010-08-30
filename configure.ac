@@ -252,5 +252,6 @@ AC_CONFIG_FILES([
   tests/spec/Makefile
   tests/bugs/Makefile
   tests/libxslt/Makefile
+  doc/Makefile
 ])
 AC_OUTPUT

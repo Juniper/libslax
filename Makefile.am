@@ -4,7 +4,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = libslax slaxproc tests
+SUBDIRS = libslax slaxproc tests doc
 bin_SCRIPTS=slax-config
 dist_doc_DATA = Copyright README INSTALL doc/slax.txt
 
