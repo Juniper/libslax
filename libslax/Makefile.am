@@ -28,7 +28,9 @@ libslax_la_SOURCES = \
     slaxwriter.c
 
 slaxparser.h: slaxparser.c
+slaxext.lo slaxext.o: slaxparser.h
 slaxloader.lo slaxloader.o: slaxparser.h
+slaxstring.lo slaxstring.o: slaxparser.h
 slaxwriter.lo slaxwriter.o: slaxparser.h
 
 SED_ARGS = \
