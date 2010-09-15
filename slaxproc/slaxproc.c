@@ -260,7 +260,7 @@ print_help (void)
     printf("\t--run OR -r: run a SLAX script\n");
     printf("\n");
 
-    printf("\t--debug OR -d: enable debugging output\n");
+    printf("\t--debug OR -D: enable debugging output\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
@@ -342,7 +342,7 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
 	    output = *++argv;
 
-	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
+	} else if (streq(cp, "--debug") || streq(cp, "-D")) {
 	    slaxDebug = TRUE;
 
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {

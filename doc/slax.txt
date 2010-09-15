@@ -2039,7 +2039,7 @@ This section describes how functions are defined.
 The "function" statement defines a function that can be called in
 XPath expressions.  
 
-    SYNTAX:
+    SYNTAX::
         'function' function-name '(' argument-list ')' '{'
             function-template
         '}'
@@ -2063,7 +2063,7 @@ Function parameters can also be defined using the "param" statement.
 The "result" statement defines a value or template used as the return
 value of the function.
 
-    SYNTAX:
+    SYNTAX::
         'result' value ';'
         'result' element
         'result' '{'
@@ -2141,7 +2141,7 @@ referenced by other nodes.  Each key definition indicates the nodes on
 which the key is defined and the value of the key.  The key() function
 can then be used to locate the appropriate node.
 
-    SYNTAX:
+    SYNTAX::
         'key' key-name '{'
             'match' match-expression ';'
             'value value-expression ';'
@@ -2165,7 +2165,7 @@ See also http://www.w3.org/TR/xslt#key
 The "decimal-format" statement defines formatting parameters for use
 by the format-number() XPath function.
 
-    SYNTAX:
+    SYNTAX::
         'decimal-format' format-name ';'
         'decimal-format' format-name '{'
             'decimal-separator' data_value ';'
@@ -2199,7 +2199,7 @@ The statements in this section allow for such output.
 The "message" statement allows output to be generated immediately,
 without waiting until the script generates its final result tree.
 
-    SYNTAX:
+    SYNTAX::
         'message' message-expression ';'
 
 The message-expression is an XPath expression that is emitted as
@@ -2216,7 +2216,7 @@ See also http://www.w3.org/TR/xslt#message
 The "terminate" statement can be used to deliver a message to the user
 and then exit the script.
 
-    SYNTAX:
+    SYNTAX::
         'terminate' message-expression ';'
 
 The message-expression is an XPath expression that is emitted as
@@ -2233,7 +2233,7 @@ trace files is not covered here, since it is typically a feature of
 the environment in which a SLAX script is called.  For example, the
 "slaxproc" command uses the "-t" and "-T file" to enable tracing.
 
-    SYNTAX:
+    SYNTAX::
         'trace' trace-message ';'
         'trace' '{'
             trace-template
@@ -2260,7 +2260,7 @@ the trace file.
 The "output-method" statement defines the output style to be used when
 outputing the result tree.
 
-    SYNTAX:
+    SYNTAX::
         'output-method' [style] '{'
             'version' data_value ';'
             'encoding' data_value ';'
@@ -2291,7 +2291,7 @@ carriage return characters.
 The "strip-space" statement tells the engine to discard the given
 elements if they contain only whitespace.
 
-    SYNTAX:
+    SYNTAX::
         'strip-space' list-of-element-names ';'
 
 The list-of-element-names is a space separated list of element names
@@ -2317,8 +2317,8 @@ The XSLT equivalent:
 The "preserve-space" statement works similar to the "strip-space"
 statement, but with the opposite result.
 
-    SYNTAX:
-        preserve-space' list-of-element-names ';'
+    SYNTAX::
+        'preserve-space' list-of-element-names ';'
 
 The list-of-element-names is a space separated list of element names
 that should have their contents retained even if they contain only
@@ -2347,7 +2347,7 @@ should stop with an error when a version number that is unknown to
 them is seen.  New engines should accept any previous language version
 number, so allow old scripts to run on new engines.
 
-    SYNTAX:
+    SYNTAX::
         'version' version-number ';'
 
 The version-number should be either "1.1" or "1.0".  The current
