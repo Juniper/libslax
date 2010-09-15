@@ -1,0 +1,10 @@
+<!DOCTYPE html PUBLIC "string" "string">
+<doc xmlns:axsl="http://www.w3.org/1999/XSL/Transform"><mumble><two>002</two><three>0</three></mumble><doc test10="onehand" test12="anotherhand" hand="This is 'one'">
+  fish
+  This is 'one'
+  This is 'two'
+  10
+  12
+  hand
+  yup
+</doc><name></name><one></one><two></two><a></a><b></b><thing></thing><test></test></doc>

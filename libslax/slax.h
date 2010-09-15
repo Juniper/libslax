@@ -70,6 +70,21 @@ void
 slaxSetSpacesAroundAttributeEquals (int spaces);
 
 /* ----------------------------------------------------------------------
+ * Tracing
+ */
+
+typedef void (*slaxTraceCallback_t)(void *, xmlNodePtr, const char *fmt, ...);
+
+/**
+ * Enable tracing with a callback
+ *
+ * @func callback function
+ * @data opaque data passed to callback
+ */
+void
+slaxTraceEnable (slaxTraceCallback_t func, void *data);
+
+/* ----------------------------------------------------------------------
  * Functions that work on generic strings
  */
 

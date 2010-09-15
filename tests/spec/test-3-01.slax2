@@ -1,0 +1,111 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+ns axsl = "http://www.w3.org/1999/XSL/TransformAlias";
+ns-alias axsl xsl;
+
+output-method html {
+    version "4.0";
+}
+decimal-format name {
+    decimal-separator "char";
+    grouping-separator "char";
+    infinity "string";
+    minus-sign "char";
+    percent "char";
+    per-mille "char";
+    zero-digit "char";
+    digit "char";
+    pattern-separator "char";
+    nan "string";
+}
+output-method html {
+    version "nmtoken";
+    encoding "string";
+    omit-xml-declaration "yes";
+    standalone "yes";
+    doctype-public "string";
+    doctype-system "string";
+    indent "yes";
+    media-type "string";
+    cdata-section-elements qname1 qname2 qname3;
+}
+var $two = "2";
+
+key my-key {
+    match div;
+    value @id;
+}
+
+attribute-set one;
+
+attribute-set two {
+    attribute thing {
+        expr one;
+    }
+}
+
+attribute-set foo {
+    use-attribute-sets one two;
+    attribute "test" _ a {
+        expr "one" _ thing;
+    }
+    attribute "test" _ b {
+        expr "another" _ thing;
+    }
+}
+
+match doc {
+    var $site = "test.net";
+    
+    <doc> {
+        <mumble> {
+            <two> {
+                number $two {
+                    format "001";
+                    lang "en";
+                    letter-value "alphabetic";
+                    grouping-separator "/";
+                    grouping-size 100;
+                }
+            }
+            
+            /*
+             * The following substatements of 'number' can only appear if
+             * there is no argument to the number statement.
+             */
+            <three> {
+                number {
+                    level "any";
+                    from h1;
+                    count h2 | h3 | h4;
+                }
+            }
+        }
+        copy-node {
+            use-attribute-sets foo;
+            apply-templates @* | node();
+        }
+        
+        for-each (*) {
+            sort size {
+                data-type "text";
+                lang "en";
+                order "ascending";
+                case-order "upper-first";
+            }
+            /* or "number" or qname-but-not-ncname */
+            /* or "descending" */
+            /* or "lower-first" */
+            copy-node;
+        }
+        message "before";
+        terminate one _ " is  good";
+        message "after";
+    }
+    <xsl:some-fancy-element> {
+        fallback {
+            message "not implemented";
+        }
+    }
+}

@@ -1359,9 +1359,14 @@ slaxIsSimpleElement (xmlNodePtr nodep)
 
     for ( ; nodep; nodep = nodep->next) {
 	if (nodep->type == XML_ELEMENT_NODE) {
-	    if (nodep->ns && nodep->ns->href
-		    && streq((const char *) nodep->ns->href, XSL_NS))
-		return FALSE;
+	    if (nodep->ns && nodep->ns->href) {
+		/* Two special namespaces mean this is not simple */
+		if (streq((const char *) nodep->ns->href, XSL_NS))
+		    return FALSE;
+
+		if (streq((const char *) nodep->ns->href, TRACE_URI))
+		    return FALSE;
+	    }
 
 	    if (hit++)
 		return FALSE;
@@ -1432,6 +1437,53 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     xmlFreeAndEasy(name);
     xmlFreeAndEasy(sel);
 }
+
+static void
+slaxWriteTraceStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+		    xmlNodePtr nodep)
+{
+    char *sel = slaxGetAttrib(nodep, ATT_SELECT);
+
+    if (nodep->children) {
+	xmlNodePtr childp = nodep->children;
+
+	if (childp->next == NULL && childp->type == XML_TEXT_NODE) {
+	    /*
+	     * If there's only one child and it's text, we can emit
+	     * a simple string value.
+	     */
+	    slaxWrite(swp, "trace \"");
+	    slaxWriteEscaped(swp, (char *) childp->content, SEF_DOUBLEQ);
+	    slaxWrite(swp, "\";");
+	    slaxWriteNewline(swp, 0);
+
+	} else {
+	    slaxWrite(swp, "trace {");
+	    slaxWriteNewline(swp, NEWL_INDENT);
+
+	    slaxWriteChildren(swp, docp, nodep, FALSE);
+
+	    slaxWrite(swp, "}");
+	    slaxWriteNewline(swp, NEWL_OUTDENT);
+	}
+
+    } else if (sel) {
+	char *expr = slaxMakeExpression(swp, nodep, sel);
+
+	slaxWrite(swp, "trace ");
+	slaxWriteValue(swp, expr);
+	slaxWrite(swp, ";");
+	slaxWriteNewline(swp, 0);
+	xmlFreeAndEasy(expr);
+
+    } else {
+	slaxWrite(swp, "trace { }");
+	slaxWriteNewline(swp, 0);
+    }
+
+    xmlFreeAndEasy(sel);
+}
+
 
 static void
 slaxWriteParam (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
@@ -1531,6 +1583,10 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	} else if (childp->ns && childp->ns->prefix
 		   && streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
 	    slaxWriteXslElement(swp, docp, childp, NULL);
+
+	} else if (childp->ns && childp->ns->href
+		   && streq((const char *) childp->ns->href, TRACE_URI)) {
+	    slaxWriteTraceStmt(swp, docp, childp);
 
 	} else {
 	    slaxWriteElement(swp, docp, childp);
@@ -2420,6 +2476,11 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		       && streq((const char *) childp->ns->href,
 				(const char *) FUNC_URI)) {
 		slaxWriteFunctionElement(swp, docp, childp);
+
+
+	    } else if (childp->ns && childp->ns->href
+		       && streq((const char *) childp->ns->href, TRACE_URI)) {
+		slaxWriteTraceStmt(swp, docp, childp);
 
 	    } else {
 		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))

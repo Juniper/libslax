@@ -7,6 +7,9 @@
       <xsl:variable name="dot" select="."/>
       <xsl:variable name="location" select="$dot/@location"/>
       <xsl:variable name="message" select="concat(&quot;We are in &quot;, $location, &quot; now.&quot;)"/>
+      <fido>
+        <xsl:value-of select="$fido"/>
+      </fido>
     </top>
   </xsl:template>
 </xsl:stylesheet>

@@ -1626,24 +1626,13 @@ trace_stmt :
 			slaxSetTraceNs(slax_data, nodep);
 		    $$ = NULL;
 		}
-	    trace_contents
+	    initial_value
 		{
 		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
 		}
-	;
-
-trace_contents :
-	xpath_value L_EOS
-		{
-		    slaxElementXPath(slax_data, $1, FALSE, FALSE);
-		    $$ = STACK_CLEAR($1);
-		}
-
-	| block
-		{ $$ = STACK_CLEAR($1); }
 	;
 
 terminate_stmt :

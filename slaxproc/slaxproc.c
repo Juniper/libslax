@@ -19,6 +19,8 @@
 #include <libexslt/exslt.h>
 
 #include <err.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define MAX_PARAMETERS 64
 #define MAX_PATHS 64
@@ -192,6 +194,48 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 }
 
 static void
+slaxProcTrace (void *vfp, xmlNodePtr nodep, const char *fmt, ...)
+{
+    FILE *fp = vfp;
+    va_list vap;
+
+    va_start(vap, fmt);
+
+#if !defined(NO_TRACE_CLOCK)
+    {
+	struct timeval cur_time;
+	char *time_buffer;
+	
+	gettimeofday(&cur_time, NULL);
+	time_buffer = ctime(&cur_time.tv_sec);
+
+	fprintf(fp, "%.15s: ", time_buffer + 4);  /* "Mmm dd hh:mm:ss" */
+    }
+#endif
+
+    if (nodep) {
+	xmlSaveCtxt *handle;
+
+	fprintf(fp, "XML Content (%d)\n", nodep->type);
+	fflush(fp);
+	handle = xmlSaveToFd(fileno(fp), NULL,
+			     XML_SAVE_FORMAT | XML_SAVE_NO_DECL);
+	if (handle) {
+	    xmlSaveTree(handle, nodep);
+	    xmlSaveFlush(handle);
+	    xmlSaveClose(handle);
+	}
+
+    } else {
+	vfprintf(fp, fmt, vap);
+    }
+
+    fprintf(fp, "\n");
+    fflush(fp);
+    va_end(vap);
+}
+
+static void
 print_version (void)
 {
     printf("libslax version %s\n",  PACKAGE_VERSION);
@@ -224,6 +268,7 @@ print_help (void)
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
     printf("\t--param name value OR -a name value: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
+    printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
     printf("\t--version OR -v or -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
@@ -233,9 +278,10 @@ int
 main (int argc UNUSED, char **argv)
 {
     const char *cp;
-    const char *input = NULL, *output = NULL, *name = NULL;
+    const char *input = NULL, *output = NULL, *name = NULL, *trace_file = NULL;
     int (*func)(const char *, const char *, const char *, char **) = NULL;
     int use_exslt = FALSE;
+    FILE *trace_fp = NULL;
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -305,6 +351,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
 
+	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
+	    trace_file = *++argv;
+
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
 	    version = *++argv;
 
@@ -331,7 +380,16 @@ main (int argc UNUSED, char **argv)
     if (use_exslt)
 	exsltRegisterAll();
 
+    if (trace_file) {
+	trace_fp = is_filename_std(trace_file)
+	    ? stderr : fopen(trace_file, "w");
+	slaxTraceEnable(slaxProcTrace, trace_fp);
+    }
+
     func(name, output, input, argv);
+
+    if (trace_fp && trace_fp != stderr)
+	fclose(trace_fp);
 
     xsltCleanupGlobals();
     xmlCleanupParser();

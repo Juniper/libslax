@@ -1,0 +1,50 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+ns my = "http://my.example.com";
+
+var $key = 1;
+var $new = {
+    trace {
+        if ($key) {
+            <trace-test> "testing...1...2...3...";
+        
+        } else {
+            <trace-test> "testing...not...";
+        }
+    }
+}
+var $min = 1;
+var $max = {
+    trace "min: " _ $min;
+    expr 10;
+}
+
+match /list {
+    <top> {
+        trace my:test(10);
+        trace "test";
+        trace "count" _ count(.);
+        trace $max - $min;
+        trace {
+            <top> {
+                if ($min == 0) {
+                    expr "bad";
+                
+                } else {
+                    expr "good";
+                }
+            }
+        }
+        
+        for-each (item) {
+            trace "item: " _ name;
+        }
+    }
+}
+
+function my:test ($value) {
+    result {
+        <test> $value;
+    }
+}

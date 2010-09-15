@@ -1,0 +1,19 @@
+version 1.0;
+
+output-method xml {
+    indent "yes";
+}
+
+match / {
+    <op-script-results> {
+        <output> format-number( 1.15, "####.#" );
+        <output> format-number( 10.15, "####.#" );
+        <output> format-number( 100.15, "####.#" );
+        <output> format-number( "100.15", "####.#" );
+        <output> format-number( 1000.15, "####.#" );
+
+        <output> format-number( "100.15", "####.################" );
+        <output> format-number( 100.15, "####.################" );
+        <output> format-number( number("100.15"), "####.################" );
+    }
+}

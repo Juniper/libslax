@@ -1,0 +1,11 @@
+version 1.0;
+
+match / {
+    <out> {
+	trace "this";
+	trace that;
+	trace {
+	    <some> "thing";
+	}
+    }
+}

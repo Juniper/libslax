@@ -6,12 +6,6 @@ slaxproc \- process slax files
 .B slaxproc
 [
 .B \-dv
-] [
-.B -i
--I input-file
-] [
-.B -o
--I output-file
 ]
 .br
 [
@@ -32,9 +26,9 @@ slaxproc \- process slax files
 ]
 .br
 | [
-.B \-e
-] [
 .B \-r
+] [
+.B \-e
 ]
 .I slax-file
 [
@@ -42,6 +36,19 @@ slaxproc \- process slax files
 [
 .I output-file
 ]]
+.br
+[
+.B -t
+.I trace-file
+]
+[
+.B -i
+.I input-file
+] [
+.B -o
+.I output-file
+]
+.br
 .br
 .ad
 .SH DESCRIPTION
@@ -144,6 +151,19 @@ Alternate mechanism for specifying the input file name.
 .LP
 .RS
 Alternate mechanism for specifying the script file name.
+.RE
+.LP
+.B -t
+.I trace-file
+.br
+.B --trace
+.I trace-file
+.LP
+.RS
+Save trace output into the given file,
+where trace output is the contents of any "trace" statements
+encountered as part of the script execution.  Refer to the SLAX
+documentation for information about the "trace" statement.
 .RE
 .LP
 .B -o

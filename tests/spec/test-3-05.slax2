@@ -1,0 +1,12 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+match / {
+    <out> {
+        trace "this";
+        trace that;
+        trace {
+            <some> "thing";
+        }
+    }
+}

@@ -2047,21 +2047,6 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
     return docp;
 }
 
-static xsltElemPreCompPtr
-slaxTraceCompute (xsltStylesheetPtr style UNUSED, xmlNodePtr inst UNUSED,
-		  xsltTransformFunction function UNUSED)
-{
-    return NULL;
-}
-
-static void
-slaxTraceTransform (xsltTransformContextPtr ctxt UNUSED,
-		    xmlNodePtr node UNUSED, xmlNodePtr inst UNUSED,
-		    xsltElemPreCompPtr comp UNUSED)
-{
-    return;
-}
-
 /*
  * Turn on the SLAX XSLT document parsing hook.  This must be
  * called before SLAX files can be parsed.
@@ -2088,10 +2073,7 @@ slaxEnable (int enable)
     xsltSetLoaderFunc(enable ? slaxLoader : NULL);
     slaxEnabled = enable;
 
-    xsltRegisterExtModuleElement((const xmlChar *) ELT_TRACE,
-				 (const xmlChar *) TRACE_URI,
-				 (xsltPreComputeFunction) slaxTraceCompute,
-				 (xsltTransformFunction) slaxTraceTransform);
+    slaxExtRegister();
 }
 
 /*

@@ -504,3 +504,11 @@ xmlFreeAndEasy (void *ptr)
     if (ptr)
 	xmlFree(ptr);
 }
+
+
+/**
+ * Registers the SLAX extensions
+ */
+void slaxExtRegister (void);
+
+

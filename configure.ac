@@ -41,6 +41,9 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero memmove strchr strcspn strerror strspn])
 
+AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_FUNCS([gettimeofday ctime])
+
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h string.h sys/param.h unistd.h ])
 AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
 AC_CHECK_LIB([xslt], [xsltInit])

@@ -33,7 +33,10 @@ test-2-08.slax \
 test-3-01.slax \
 test-3-02.slax \
 test-3-03.slax \
-test-3-04.slax
+test-3-04.slax \
+test-3-05.slax \
+test-3-06.slax \
+test-3-07.slax
 
 EXTRA_DIST = \
     ${TEST_CASES} \
@@ -58,9 +61,12 @@ valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	${MAKE} CHECKER='valgrind -q' tests
 
+#TEST_TRACE = set -x ; 
+
 test tests: ${SLAXPROC}
+
 	@${MKDIR} -p out
-	-@(for test in ${TEST_CASES} ; do \
+	-@(${TEST_TRACE}; for test in ${TEST_CASES} ; do \
 	  echo "... $$test ..."; \
 	  base=`${BASENAME} $$test .slax` ; \
 	  ${S2X} ${srcdir}/$$test out/$$base.xsl ; \

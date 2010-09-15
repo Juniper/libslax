@@ -9,5 +9,7 @@ match / {
         var $dot = .;
         var $location = $dot/@location;
         var $message = "We are in " _ $location _ " now.";
+        
+        <fido> $fido;
     }
 }
