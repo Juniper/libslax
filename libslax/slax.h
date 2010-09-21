@@ -165,3 +165,19 @@ nodePush(xmlParserCtxtPtr ctxt, xmlNodePtr value);
  */
 xmlNodePtr
 nodePop(xmlParserCtxtPtr ctxt);
+
+/*
+ * Some fairly simple hooks for the debugger.
+ */
+typedef char *(*slaxDebugInputCallback_t)(const char *);
+typedef void (*slaxDebugOutputCallback_t)(const char *);
+
+void
+slaxDebugSetStylesheet (xsltStylesheetPtr stylep);
+
+int
+slaxDebugRegister (slaxDebugInputCallback_t input_callback,
+		   slaxDebugOutputCallback_t output_callback);
+
+void
+slaxDebugSetIncludes (const char **includes);

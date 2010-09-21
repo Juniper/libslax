@@ -41,6 +41,7 @@ static char *encoding;
 static char *version;
 
 static int partial;
+static int use_debugger;
 
 static inline int
 is_filename_std (const char *filename)
@@ -142,6 +143,28 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
     return 0;
 }
 
+static char *
+input_callback (const char *prompt)
+{
+    char buf[BUFSIZ];
+
+    fputs(prompt, stderr);
+    fflush(stderr);
+
+    if (fgets(buf, sizeof(buf), stdin) == NULL)
+	return NULL;
+
+    return (char *) xmlStrdup((xmlChar *) buf);
+}
+
+static void
+output_callback (const char *output)
+{
+    fputs(output, stderr);
+    fputs("\n", stderr);
+    fflush(stderr);
+}
+
 static int
 do_run (const char *name, const char *output, const char *input, char **argv)
 {
@@ -181,6 +204,12 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
+
+
+    if (use_debugger) {
+	slaxDebugRegister(input_callback, output_callback);
+	slaxDebugSetStylesheet(script);
+    }
 
     res = xsltApplyStylesheet(script, indoc, params);
 
@@ -260,7 +289,7 @@ print_help (void)
     printf("\t--run OR -r: run a SLAX script\n");
     printf("\n");
 
-    printf("\t--debug OR -D: enable debugging output\n");
+    printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
@@ -269,6 +298,7 @@ print_help (void)
     printf("\t--param name value OR -a name value: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
+    printf("\t--verbose OR -V: enable debugging output\n");
     printf("\t--version OR -v or -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
@@ -289,7 +319,7 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
-	if (streq(cp, "--version") || streq(cp, "-v") || streq(cp, "-V")) {
+	if (streq(cp, "--version") || streq(cp, "-v")) {
 	    print_version();
 	    exit(0);
 
@@ -342,8 +372,11 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
 	    output = *++argv;
 
-	} else if (streq(cp, "--debug") || streq(cp, "-D")) {
+	} else if (streq(cp, "--verbose") || streq(cp, "-V")) {
 	    slaxDebug = TRUE;
+
+	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
+	    use_debugger = TRUE;
 
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
 	    partial = TRUE;

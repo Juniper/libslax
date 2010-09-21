@@ -511,4 +511,17 @@ xmlFreeAndEasy (void *ptr)
  */
 void slaxExtRegister (void);
 
+#ifndef ALLOCADUP
+/*
+ * ALLOCADUP(): think of is as strdup + alloca
+ */
+static inline char *
+allocadupx (char *to, const char *from)
+{
+    if (to) strcpy(to, from);
+    return to;
+}
+#define ALLOCADUP(s) allocadupx((char *) alloca(strlen(s) + 1), s)
+#define ALLOCADUPX(s) ((s) ? allocadupx((char *) alloca(strlen(s) + 1), s) : NULL)
+#endif /* ALLOCADUP */
 
