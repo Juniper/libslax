@@ -1,0 +1,25 @@
+version 1.0;
+
+param $target;
+
+match / {
+    <top> {
+	if (string-length($target) > 0) {
+	    expr "\u+8220;";
+	    <a href=$target> {
+		expr front/title;
+	    }
+	    expr "\u+8221";
+	} else {
+	    expr "\u+8220";
+	    <a> {
+		expr front/title;
+	    }
+	    expr "\u+8221";
+	}
+
+	if (@one | @two) {
+	    <yup>;
+	}
+    }
+}

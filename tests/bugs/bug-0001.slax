@@ -1,0 +1,36 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.0;
+
+ns ed exclude = "http://greenbytes.de/2002/rfcedit";
+ns date exclude = "http://exslt.org/dates-and-times";
+ns exslt exclude = "http://exslt.org/common";
+ns msxsl exclude = "urn:schemas-microsoft-com:xslt";
+ns myns exclude = "mailto:julian.reschke@greenbytes.de?subject=rcf2629.xslt";
+ns rdf exclude = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+ns saxon-old exclude = "http://icl.com/saxon";
+ns saxon exclude = "http://saxon.sf.net/";
+ns x exclude = "http://purl.org/net/xml2rfc/ext";
+ns xhtml exclude = "http://www.w3.org/1999/xhtml";
+
+var $a = {
+    expr "$";
+}
+var $b = {
+    expr "\xa2";
+}
+var $c = {
+    expr "\u+20ac";
+}
+var $d = {
+    expr "\u-024b62";
+}
+
+var $e = "Don\'t drop the \"ball\"";
+
+match / {
+    <top> {
+    	  expr jcs:output("Both escaped \" \' ");
+          var $xyz = "working?" _ "Both escaped \" \' ";
+          <output> "Both escaped \" \' ";
+    }
+}

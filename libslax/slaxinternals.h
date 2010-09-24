@@ -18,6 +18,9 @@
 
 #include <libxslt/documents.h>
 
+#include "util.h"
+#include "libxmlhelper.h"
+
 #define XSL_VERSION "1.0"
 
 #define XSL_PREFIX  "xsl"
@@ -40,11 +43,6 @@
  * done something wrong (but it beats a core dump).
  */
 #define UNKNOWN_EXPR "<<<<slax error>>>>"
-
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
 
 extern int slaxDebug;			/* Global debug switch */
 extern const char *keywordString[];
@@ -510,18 +508,3 @@ xmlFreeAndEasy (void *ptr)
  * Registers the SLAX extensions
  */
 void slaxExtRegister (void);
-
-#ifndef ALLOCADUP
-/*
- * ALLOCADUP(): think of is as strdup + alloca
- */
-static inline char *
-allocadupx (char *to, const char *from)
-{
-    if (to) strcpy(to, from);
-    return to;
-}
-#define ALLOCADUP(s) allocadupx((char *) alloca(strlen(s) + 1), s)
-#define ALLOCADUPX(s) ((s) ? allocadupx((char *) alloca(strlen(s) + 1), s) : NULL)
-#endif /* ALLOCADUP */
-

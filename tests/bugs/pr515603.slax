@@ -1,0 +1,25 @@
+version 1.0;
+
+var $a0 = -3;
+
+var $a1 = fred(1,2,3,4);
+var $a2 = concat("this's", "that's");
+
+var $x1 = "both \' \"";
+var $x2 = "\"";
+var $x3 = '\'';
+var $x4 = '"';
+
+match / {
+    priority -3;
+    
+    <out test="{test}\""> {
+	expr jcs:output(concat("Both escaped \"", " \' "));
+	expr jcs:output("Both escaped \" \' ");
+    }
+
+    <out> "Both Escaped: \" \' ";
+    <out> 'Both2 Escaped: \" \' ';
+    <out> "One Escaped: \" ' ";
+    <out> 'One2 Escaped: " \' ';
+}

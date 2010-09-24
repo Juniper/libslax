@@ -39,4 +39,4 @@ HIGHER_WARNINGS?= ${HIGH_WARNINGS} \
     -Wpadded \
     -Wstrict-aliasing
 
-WARNINGS = ${HIGH_WARNINGS}
+WARNINGS = ${HIGH_WARNINGS} -fno-inline-functions-called-once

@@ -84,100 +84,19 @@ typedef void (*slaxTraceCallback_t)(void *, xmlNodePtr, const char *fmt, ...);
 void
 slaxTraceEnable (slaxTraceCallback_t func, void *data);
 
-/* ----------------------------------------------------------------------
- * Functions that work on generic strings
- */
-
-#ifndef HAVE_STREQ
-/**
- * @brief
- * Given two strings, return true if they are the same.
- * 
- * Tests the first characters for equality before calling strcmp.
- *
- * @param[in] red, blue
- *     The strings to be compared
- *
- * @return
- *     Nonzero (true) if the strings are the same. 
- */
-static inline int
-streq (const char *red, const char *blue)
-{
-    return (red && blue && *red == *blue && strcmp(red + 1, blue + 1) == 0);
-}
-#endif /* HAVE_STREQ */
-
-#ifndef HAVE_CONST_DROP
-
-/*
- * See const_* method below
- */
-typedef union {
-    void        *cg_vp;
-    const void  *cg_cvp;
-} const_remove_glue_t;
-
-/*
- * NOTE:
- *     This is EVIL.  The ONLY time you cast from a const is when calling some
- *     legacy function that does not require const:
- *          - you KNOW does not modify the data
- *          - you can't change
- *     That is why this is provided.  In that situation, the legacy API should
- *     have been written to accept const argument.  If you can change the 
- *     function you are calling to accept const, do THAT and DO NOT use this
- *     HACK.
- */
-static inline void *
-const_drop (const void *ptr)
-{
-    const_remove_glue_t cg;
-    cg.cg_cvp = ptr;
-    return cg.cg_vp;
-}
-
-#endif /* HAVE_CONST_DROP */
-
-/* ----------------------------------------------------------------------
- * Functions that aren't prototyped in libxml2 headers
- */
-
-/**
- * nodePush:
- * @ctxt:  an XML parser context
- * @value:  the element node
- *
- * Pushes a new element node on top of the node stack
- *
- * Returns 0 in case of error, the index in the stack otherwise
- */
-int
-nodePush(xmlParserCtxtPtr ctxt, xmlNodePtr value);
-
-/**
- * nodePop:
- * @ctxt: an XML parser context
- *
- * Pops the top element node from the node stack
- *
- * Returns the node just removed
- */
-xmlNodePtr
-nodePop(xmlParserCtxtPtr ctxt);
-
 /*
  * Some fairly simple hooks for the debugger.
  */
 typedef char *(*slaxDebugInputCallback_t)(const char *);
-typedef void (*slaxDebugOutputCallback_t)(const char *);
+typedef void (*slaxDebugOutputCallback_t)(const char *, ...);
 
 void
 slaxDebugSetStylesheet (xsltStylesheetPtr stylep);
 
 int
 slaxDebugRegister (slaxDebugInputCallback_t input_callback,
-		   slaxDebugOutputCallback_t output_callback);
+		   slaxDebugOutputCallback_t output_callback,
+		   xmlOutputWriteCallback raw_write);
 
 void
 slaxDebugSetIncludes (const char **includes);

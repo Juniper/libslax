@@ -151,6 +151,7 @@ input_callback (const char *prompt)
     fputs(prompt, stderr);
     fflush(stderr);
 
+    buf[0] = '\0';
     if (fgets(buf, sizeof(buf), stdin) == NULL)
 	return NULL;
 
@@ -158,11 +159,19 @@ input_callback (const char *prompt)
 }
 
 static void
-output_callback (const char *output)
+output_callback (const char *fmt, ...)
 {
-    fputs(output, stderr);
-    fputs("\n", stderr);
+    va_list vap;
+
+    va_start(vap, fmt);
+    vfprintf(stderr, fmt, vap);
     fflush(stderr);
+}
+
+static int
+rawwrite_callback (void *opaque UNUSED, const char *buf, int len)
+{
+    return write(fileno(stderr), buf, len);
 }
 
 static int
@@ -207,7 +216,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 
 
     if (use_debugger) {
-	slaxDebugRegister(input_callback, output_callback);
+	slaxDebugRegister(input_callback, output_callback, rawwrite_callback);
 	slaxDebugSetStylesheet(script);
     }
 
