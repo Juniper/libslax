@@ -17,12 +17,16 @@ match input {
     <top> {
 	call grand();
 	var $a = {
-	    call foo($min = 1, $max = 5);
+	    call foo($min = 10, $max = 15);
 	}
 	var $b = "10";
 
 	<fish> fish;
 	<trout> trout;
+	<a> {
+	    copy-of $a;
+	}
+	<b> $b + 10;
 
 	call foo($min = 1, $max = 5);
 	<finale> "ta da";

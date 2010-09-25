@@ -77,10 +77,11 @@
 typedef struct slaxDebugState_s {
     xsltStylesheetPtr ds_stylesheet; /* Current top-level stylesheet */
     xmlNodePtr ds_inst;	/* Current libxslt node being executed */
-    xmlNodePtr ds_last_inst;	/* Last libxslt node being executed */
     xmlNodePtr ds_node;	/* Current context node */
     xsltTemplatePtr ds_template; /* Current template being executed */
     xsltTransformContextPtr ds_ctxt; /* Transformation context */
+    xmlNodePtr ds_last_inst;	/* Last libxslt node being executed */
+    xmlNodePtr ds_stop_at;	/* Stopping point (from "cont xxx") */
     int ds_count;		     /* Command count */
     int ds_flags;		     /* Global state flags */
 } slaxDebugState_t;
@@ -316,7 +317,7 @@ slaxDebugGetNodeByLine (xmlNodePtr node, int lineno)
  * Return xmlnode for the given line number
  */
 static xmlNodePtr
-slaxDebugGetNode (slaxDebugState_t *statep,
+slaxDebugGetNodeByFilename (slaxDebugState_t *statep,
 		  const char *filename, int lineno)
 {
     xsltStylesheetPtr style;
@@ -369,7 +370,7 @@ slaxDebugGetScriptNode (slaxDebugState_t *statep, const char *arg)
  * Then read that file and send the the line to mgd one by one.
  */
 static void
-slaxDebugPrintNodeset (xmlNodeSetPtr nodeset)
+slaxDebugOutputNodeset (xmlNodeSetPtr nodeset)
 {
     int i;
 
@@ -381,7 +382,7 @@ slaxDebugPrintNodeset (xmlNodeSetPtr nodeset)
  * Print the given XPath object
  */
 static void
-slaxDebugPrintXpath (xmlXPathObjectPtr xpath)
+slaxDebugOutputXpath (xmlXPathObjectPtr xpath)
 {
     if (xpath == NULL)
 	return;
@@ -405,7 +406,7 @@ slaxDebugPrintXpath (xmlXPathObjectPtr xpath)
 			xpath->nodesetval ? "" : " [null]",
 			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
 	if (xpath->nodesetval)
-	    slaxDebugPrintNodeset(xpath->nodesetval);
+	    slaxDebugOutputNodeset(xpath->nodesetval);
 	break;
 
     case XPATH_XSLT_TREE:
@@ -413,7 +414,7 @@ slaxDebugPrintXpath (xmlXPathObjectPtr xpath)
 			xpath->nodesetval ? "" : " [null]",
 			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
 	if (xpath->nodesetval)
-	    slaxDebugPrintNodeset(xpath->nodesetval);
+	    slaxDebugOutputNodeset(xpath->nodesetval);
 	break;
 
     default:
@@ -522,8 +523,8 @@ slaxDebugMakeRelativePath (const char *src_f, const char *dest_f,
  * implement 'list' command.
  */
 static int
-slaxDebugPrintScriptLine (slaxDebugState_t *statep, const char *filename,
-			  int start, int stop)
+slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
+			    int start, int stop)
 {
     FILE *fp;
     int count = 0;
@@ -553,7 +554,7 @@ slaxDebugPrintScriptLine (slaxDebugState_t *statep, const char *filename,
 	if (line[strlen(line) - 1] == '\n')
 	    count++;
 
-	if (count == start)
+	if (count >= start)
 	    break;
     }
 
@@ -563,6 +564,10 @@ slaxDebugPrintScriptLine (slaxDebugState_t *statep, const char *filename,
     len = strlen(line);
     if (len > 0 && line[len - 1] == '\n')
 	line[len - 1] = '\0';
+
+    /* Ensure we get at least one line of output */
+    if (count > stop)
+	stop = count + 1;
 
     while (count < stop) {
 	slaxDebugOutput("%s:%d: %s", cp, count, line);
@@ -625,10 +630,19 @@ slaxDebugSplitArgs (char *buf, const char **args, int maxargs)
  * Check if the breakpoint is available for curnode being executed
  */
 static int
-slaxDebugCheckBreakpoint (slaxDebugState_t *statep UNUSED,
+slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
 			  xmlNodePtr node, int reached)
 {
     slaxDebugBreakpoint_t *dbp;
+
+    if (statep->ds_stop_at && statep->ds_stop_at == node) {
+	if (reached) {
+	    slaxDebugOutput("Reached stop at %s:%d", 
+			    node->doc->URL, xmlGetLineNo(node));
+	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	}
+	return TRUE;
+    }
 
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbp->dbp_inst == node) {
@@ -645,6 +659,76 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep UNUSED,
     return FALSE;
 }
 
+static char *
+slaxDebugTemplateInfo (xsltTemplatePtr template, char *buf, int bufsiz)
+{
+    char *cp = buf, *ep = buf + bufsiz;
+
+    if (template == NULL) {
+	strlcpy(buf, "[global]", bufsiz);
+	return buf;
+    }
+
+    if (template->name)
+	SNPRINTF(cp, ep, "template %s ", template->name);
+
+    if (template->match)
+	SNPRINTF(cp, ep, "match %s ", template->match);
+
+    return buf;
+}
+
+static void
+slaxDebugCallFlow (slaxDebugState_t *statep UNUSED, xsltTemplatePtr template,
+		   xmlNodePtr inst, const char *tag)
+{
+    char buf[BUFSIZ];
+
+    slaxDebugOutput("callflow: %s <%s%s%s> in %s at %s%s%d", tag,
+	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
+	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
+	NAME(inst), slaxDebugTemplateInfo(template, buf, sizeof(buf)),
+		    (inst->doc && inst->doc->URL) ? inst->doc->URL : null,
+	(inst->doc && inst->doc->URL) ? ":" : "",
+	inst ? xmlGetLineNo(inst) : 0);
+}
+
+static xmlNodePtr
+slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
+{
+    xmlNodePtr node;
+    int lineno;
+
+    /*
+     * Break on the current line
+     */
+    if (spec == NULL)
+	return statep->ds_node;
+
+    /*
+     * scriptname:linenumber format
+     */
+    if (strchr(spec, ':')) {
+	node = slaxDebugGetScriptNode(statep, spec);
+
+	/* If it wasn't foo:34, maybe it's foo:bar */
+	if (node == NULL)
+	    node = slaxDebugGetTemplateNodebyName(statep, spec);
+	return node;
+    }
+
+    /*
+     * simply linenumber, put breakpoint in the cur script
+     */
+    if ((lineno = atoi(spec)) > 0)
+	return slaxDebugGetNodeByFilename(statep,
+		(const char *) statep->ds_inst->doc->URL, lineno);
+    /*
+     * template name?
+     */
+    return slaxDebugGetTemplateNodebyName(statep, spec);
+}
+
 /*
  * 'break' command
  */
@@ -653,38 +737,8 @@ slaxDebugCmdBreak (DC_ARGS)
 {
     xmlNodePtr node = NULL;
     slaxDebugBreakpoint_t *bp;
-    int lineno;
 
-    if (argv[1] == NULL) {
-	/*
-	 * Break on the current line
-	 */
-	node = statep->ds_node;
-
-    } else if (strchr(argv[1], ':')) {
-	/*
-	 * scriptname:linenumber format
-	 */
-	node = slaxDebugGetScriptNode(statep, argv[1]);
-
-	/* If it wasn't foo:34, maybe it's foo:bar */
-	if (node == NULL)
-	    node = slaxDebugGetTemplateNodebyName(statep, argv[1]);
-
-    } else if ((lineno = atoi(argv[1])) > 0) {
-	/*
-	 * simply linenumber, put breakpoint in the cur script
-	 */
-	node = slaxDebugGetNode(statep,
-				(const char *) statep->ds_inst->doc->URL,
-				lineno);
-    } else {
-	/*
-	 * template name?
-	 */
-	node = slaxDebugGetTemplateNodebyName(statep, argv[1]);
-    }
-
+    node = slaxDebugGetNode(statep, argv[1]);
     if (node == NULL)
 	return;
 
@@ -716,6 +770,18 @@ slaxDebugCmdBreak (DC_ARGS)
 static void
 slaxDebugCmdContinue (DC_ARGS)
 {
+    xmlNodePtr node;
+
+    if (argv[1]) {
+	node = slaxDebugGetNode(statep, argv[1]);
+	if (node == NULL) {
+	    slaxDebugOutput("Unknown location: %s", argv[1]);
+	    return;
+	}
+
+	statep->ds_stop_at = node;
+    }
+
     xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
     statep->ds_flags |= DSF_DISPLAY;
 }
@@ -790,42 +856,17 @@ slaxDebugCmdHelp (DC_ARGS)
 static void
 slaxDebugCmdList (DC_ARGS)
 {
-    xsltStylesheetPtr style;
-    xmlNodePtr inst = statep->ds_inst;
-    int line_no;
-    char *script = ALLOCADUPX(argv[1]);
-    char *cp, *endp;
+    xmlNodePtr node = slaxDebugGetNode(statep, argv[1]);
 
-    if (script == NULL) {
-	style = statep->ds_stylesheet;
-	line_no = xmlGetLineNo(inst);
-
-    } else {
-	cp = strchr(script, ':');
-	if (cp == NULL) {
-	    cp = script;
-	    style = statep->ds_stylesheet;
-	    line_no = strtol(cp, &endp, 0);
-	    if (line_no <= 0 || cp == endp) {
-	    invalid_target:
-		slaxDebugOutput("invalid target: %s", script);
-		return;
-	    }
-
+    if (node) {
+	int line_no = xmlGetLineNo(node);
+	if (node->doc) {
+	    slaxDebugOutputScriptLines(statep, (const char *) node->doc->URL,
+				       line_no, line_no + 10);
 	} else {
-	    *cp++ = '\0';
-	    line_no = strtol(cp, &endp, 0);
-	    if (line_no <= 0 || cp == endp)
-		goto invalid_target;
-
-	    style = slaxDebugGetFile(statep->ds_stylesheet, script);
-	    if (style == NULL)
-		goto invalid_target;
+	    slaxDebugOutput("target lacks filename: %s", argv[1]);
 	}
     }
-
-    slaxDebugPrintScriptLine(statep, (const char *) style->doc->URL,
-			     line_no, line_no + 10);
 }
 
 /*
@@ -949,28 +990,9 @@ slaxDebugCmdPrint (DC_ARGS)
 
     res = slaxDebugEvalXpath (statep, cp);
     if (res) {
-	slaxDebugPrintXpath(res);
+	slaxDebugOutputXpath(res);
 	xmlXPathFreeObject(res);
     }
-}
-
-static char *
-slaxDebugTemplateInfo (xsltTemplatePtr template, char *buf, int bufsiz)
-{
-    char *cp = buf, *ep = buf + bufsiz;
-
-    if (template == NULL) {
-	strlcpy(buf, "[global]", bufsiz);
-	return buf;
-    }
-
-    if (template->name)
-	SNPRINTF(cp, ep, "template %s ", template->name);
-
-    if (template->match)
-	SNPRINTF(cp, ep, "match %s ", template->match);
-
-    return buf;
 }
 
 /*
@@ -984,6 +1006,7 @@ slaxDebugCmdWhere (DC_ARGS)
     const char *filename;
     const char *tag;
     int num = 0;
+    char buf[BUFSIZ];
 
     /*
      * Walk the stack linked list in reverse order and print it
@@ -1001,6 +1024,8 @@ slaxDebugCmdWhere (DC_ARGS)
 	    }
 	}
 
+	slaxDebugTemplateInfo(dsfp->dsf_template, buf, sizeof(buf)),
+
 	filename = NULL;
 	if (dsfp->dsf_inst) {
 	    filename = strrchr((const char *) dsfp->dsf_inst->doc->URL, '/');
@@ -1010,14 +1035,14 @@ slaxDebugCmdWhere (DC_ARGS)
 
 	if (name) {
 	    if (filename) {
-		slaxDebugOutput("#%d %s%s from %s:%d", num, name, tag,
+		slaxDebugOutput("#%d %s%s from %s:%d", num, buf, tag,
 				filename, xmlGetLineNo(dsfp->dsf_inst));
 	    } else {
-		slaxDebugOutput("#%d %s%s", num, name, tag);
+		slaxDebugOutput("#%d %s%s", num, buf, tag);
 	    }
-	}
 
-	num += 1;
+	    num += 1;
+	}
     }
 }
     
@@ -1037,12 +1062,12 @@ slaxDebugCmdQuit (DC_ARGS)
 
 static slaxDebugCommand_t slaxDebugCommandTable[] = {
     { "break",	       slaxDebugCmdBreak,
-      "break [where]   Add a breakpoint at [file:]line or template" },
+      "break [loc]     Add a breakpoint at [file:]line or template" },
 
     { "bt",	       slaxDebugCmdWhere, NULL }, /* Hidden */
 
     { "continue",      slaxDebugCmdContinue,
-      "continue        Continue running the script" },
+      "continue [loc]  Continue running the script" },
 
     { "delete",	       slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints" },
@@ -1053,7 +1078,7 @@ static slaxDebugCommand_t slaxDebugCommandTable[] = {
     { "?",	       slaxDebugCmdHelp, NULL }, /* Hidden */
 
     { "list",	       slaxDebugCmdList,
-      "list [num]      List contents of the current stylesheet" },
+      "list [loc]      List contents of the current stylesheet" },
 
     { "mode",	       slaxDebugCmdMode, NULL }, /* Hidden */
 
@@ -1061,7 +1086,7 @@ static slaxDebugCommand_t slaxDebugCommandTable[] = {
       "next            Execute the next instruction, stepping over calls" },
 
     { "print",	       slaxDebugCmdPrint,
-      "print <expr>    Print the value of an XPath expression" },
+      "print <xpath>   Print the value of an XPath expression" },
 
     { "step",	       slaxDebugCmdStep,
       "step            Execute the next instruction, stepping into calls" },
@@ -1130,7 +1155,7 @@ slaxDebugShell (slaxDebugState_t *statep)
     if (statep->ds_flags & DSF_DISPLAY) {
 	const char *filename = (const char *) statep->ds_stylesheet->doc->URL;
 	int line_no = xmlGetLineNo(statep->ds_inst);
-	slaxDebugPrintScriptLine(statep, filename, line_no, line_no + 1);
+	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
 	statep->ds_flags &= ~DSF_DISPLAY;
     }
 
@@ -1304,6 +1329,9 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0,
 	      statep->ds_inst, NAME(statep->ds_inst));
 
+    if (statep->ds_flags & DSF_CALLFLOW)
+	slaxDebugCallFlow(statep, template, inst, "enter");
+
     /*
      * Store the template backtrace in linked list
      */
@@ -1363,15 +1391,18 @@ slaxDebugDropFrame (void)
 
     slaxTrace("dropFrame: %s (%p), inst <%s%s%s> (%p; line %d%s)",
 	      slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-	      template, inst,
+	      template, 
 	      (inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
 	      (inst && inst->ns && inst->ns->prefix) ? ":" : "",
-	      NAME(dsfp->dsf_inst),
+	      NAME(dsfp->dsf_inst), inst,
 	      dsfp->dsf_inst ? xmlGetLineNo(dsfp->dsf_inst) : 0,
 	      (dsfp->dsf_flags & DSFF_STOPWHENPOP) ? " stopwhenpop" : "");
 
     if (dsfp->dsf_flags & DSFF_STOPWHENPOP)
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+
+    if (statep->ds_flags & DSF_CALLFLOW)
+	slaxDebugCallFlow(statep, template, inst, "exit");
 
     /*
      * If we're popping stack frames, then we're not on the same
