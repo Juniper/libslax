@@ -64,12 +64,18 @@
 
 #include <libxml/xmlsave.h>
 #include <libxslt/variables.h>
+#include <libxslt/transform.h>
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 #include "config.h"
 
 #define MAXARGS	256
+
+/* Add some values to the xsltDebugStatusCodes enum */
+#define XSLT_DEBUG_LOCAL (XSLT_DEBUG_QUIT + 1)
+#define XSLT_DEBUG_OVER (XSLT_DEBUG_LOCAL + 1) /* The "over" operation */
+#define XSLT_DEBUG_DONE (XSLT_DEBUG_LOCAL + 2) /* The script is done */
 
 /*
  * Information about the current point of debugging
@@ -88,9 +94,12 @@ typedef struct slaxDebugState_s {
 } slaxDebugState_t;
 
 /* Flags for ds_flags */
-#define DSF_NEXT 	(1<<0)	/* Step over next call */
+#define DSF_OVER 	(1<<0)	/* Step over the current instruction */
 #define DSF_DISPLAY	(1<<1)	/* Show instruction before next command */
 #define DSF_CALLFLOW	(1<<2)	/* Report call flow */
+#define DSF_INSHELL	(1<<3)	/* Inside the shell, so don't recurse */
+
+#define DSF_RESTART	(1<<4)	/* Restart the debugger/script */
 
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
@@ -225,14 +234,27 @@ slaxDebugOutputNode (xmlNodePtr node, const char *prefix)
 
 #if 0
 static void
-slaxDebugOutputElement (xmlNode node, const char *prefix)
+slaxDebugOutputElement (xmlNodePtr node, int indent, const char *prefix)
 {
     char buf[BUFSIZ], *cp = buf, *ep = buf + bufsiz;
 
-    cp += snprintf(cp, ep - cp, "<%s", node->name);
+    cp += snprintf(cp, ep - cp, "%.*s%s<%s", indent, "", prefix, node->name);
     
 }
 #endif
+
+static int
+slaxDebugIsXsl (xmlNodePtr inst, const char *tag)
+{
+    if (!(inst->ns && inst->ns->href && inst->name
+	  && streq((const char *) inst->ns->href, XSL_NS)))
+	return FALSE;
+
+    if (tag && !streq((const char *) inst->name, tag))
+	return FALSE;
+
+    return TRUE;
+}
 
 /**
  * Return the current debugger state object.  This is currently
@@ -768,6 +790,15 @@ slaxDebugCmdBreak (DC_ARGS)
 		    node->doc->URL, xmlGetLineNo(node));  
 }
 
+static int
+slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
+{
+    int rc = (xsltGetDebuggerStatus() == XSLT_DEBUG_DONE);
+    if (rc)
+	slaxDebugOutput("The stylesheet is not being run.");
+    return rc;
+}
+
 /*
  * 'continue' command
  */
@@ -775,6 +806,9 @@ static void
 slaxDebugCmdContinue (DC_ARGS)
 {
     xmlNodePtr node;
+
+    if (slaxDebugCheckDone(statep))
+	return;
 
     if (argv[1]) {
 	node = slaxDebugGetNode(statep, argv[1]);
@@ -847,11 +881,13 @@ slaxDebugCmdHelp (DC_ARGS)
     slaxDebugCommand_t *cmdp = slaxDebugCmdTable;
     int i;
 
-    slaxDebugOutput("Supported commands:");
+    slaxDebugOutput("List of commands:");
     for (i = 0; cmdp->dc_command; i++, cmdp++) {
 	if (cmdp->dc_help)
 	    slaxDebugOutput("  %s", cmdp->dc_help);
     }
+    slaxDebugOutput("");
+    slaxDebugOutput("Command name abbreviations are allowed");
 }
 
 /*
@@ -891,18 +927,43 @@ slaxDebugCmdMode (DC_ARGS)
 static void
 slaxDebugCmdStep (DC_ARGS)
 {
+    if (slaxDebugCheckDone(statep))
+	return;
+
     xsltSetDebuggerStatus(XSLT_DEBUG_STEP);
     statep->ds_flags |= DSF_DISPLAY;
 }
 
 /*
- * 'next' command
+ * 'next' command.  Is we are on a "call", then act like "over".
+ * Otherwise, act like "step".
  */
 static void
 slaxDebugCmdNext (DC_ARGS)
 {
-    xsltSetDebuggerStatus(XSLT_DEBUG_NEXT);
-    statep->ds_flags |= DSF_NEXT | DSF_DISPLAY;
+    if (slaxDebugCheckDone(statep))
+	return;
+
+    if (slaxDebugIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
+	xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
+	statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
+    } else {
+	xsltSetDebuggerStatus(XSLT_DEBUG_STEP);
+	statep->ds_flags |= DSF_DISPLAY;
+    }
+}
+
+/*
+ * 'over' command
+ */
+static void
+slaxDebugCmdOver (DC_ARGS)
+{
+    if (slaxDebugCheckDone(statep))
+	return;
+
+    xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
+    statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
 }
 
 /**
@@ -1013,6 +1074,9 @@ slaxDebugCmdWhere (DC_ARGS)
     int num = 0;
     char buf[BUFSIZ];
 
+    if (slaxDebugCheckDone(statep))
+	return;
+
     /*
      * Walk the stack linked list in reverse order and print it
      */
@@ -1081,6 +1145,37 @@ slaxDebugCmdCallFlow (DC_ARGS)
 }
     
 /*
+ * 'run' command
+ */
+static void
+slaxDebugCmdRun (DC_ARGS)
+{
+    int status = xsltGetDebuggerStatus();
+    int restart;
+
+    if (status != XSLT_DEBUG_DONE && status != XSLT_DEBUG_QUIT) {
+	const char prompt[] =
+"The program being debugged has been started already.\n\
+Start it from the beginning? (y or n) ";
+	char *input = slaxDebugInput(prompt);
+	int len;
+
+	if (input == NULL)
+	    return;
+
+	len = strlen(input);
+	restart = (len == 0 || strncmp("yes", input, len) != 0);
+	xmlFree(input);
+
+	if (!restart)
+	    return;
+    }
+
+    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+    statep->ds_flags |= DSF_RESTART | DSF_DISPLAY;
+}
+    
+/*
  * 'quit' command
  */
 static void
@@ -1120,10 +1215,16 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "mode",	       1, slaxDebugCmdMode, NULL }, /* Hidden */
 
     { "next",	       1, slaxDebugCmdNext,
-      "next            1, Execute the next instruction, stepping over calls" },
+      "next            Execute the over instruction, stepping over calls" },
+
+    { "over",	       1, slaxDebugCmdOver,
+      "over            Execute the current instruction hierarchy" },
 
     { "print",	       1, slaxDebugCmdPrint,
       "print <xpath>   Print the value of an XPath expression" },
+
+    { "run",	       3, slaxDebugCmdRun,
+      "run             Restart the stylesheet" },
 
     { "step",	       1, slaxDebugCmdStep,
       "step            Execute the next instruction, stepping into calls" },
@@ -1133,6 +1234,8 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
 
     { "quit",	       1, slaxDebugCmdQuit,
       "quit            Quit debugger" },
+
+    { NULL, 0, NULL, NULL }
 };
 
 /**
@@ -1217,7 +1320,9 @@ slaxDebugShell (slaxDebugState_t *statep)
 	strlcpy(prev_input, cp, sizeof(prev_input));
     }
 
+    statep->ds_flags |= DSF_INSHELL;
     slaxDebugRunCommand(statep, cp);
+    statep->ds_flags &= ~DSF_INSHELL;
 
     if (input)
 	xmlFree(input);
@@ -1265,7 +1370,7 @@ slaxDebugSameSlax (slaxDebugState_t *statep, xmlNodePtr inst)
  *        evaluating a global variable)
  * @ctxt transformation context
  */
-static void 
+static void
 slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 		  xsltTemplatePtr template, xsltTransformContextPtr ctxt)
 {
@@ -1273,13 +1378,18 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     int status;
     char buf[BUFSIZ];
 
-    slaxTrace("handleFrame: template %p/[%s], node %p/%s/%d, inst %p/%s/%d ctxt %x",
+    /* We don't want to be recursive (via the 'print' command) */
+    if (statep->ds_flags & DSF_INSHELL)
+	return;
+
+    slaxTrace("handleFrame: template %p/[%s], node %p/%s/%d, "
+	      "inst %p/%s/%d ctxt %x",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      node, NAME(node), node ? node->type : 0,
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0, ctxt);
 
     /*
-     * We do not debug text node
+     * We do not debug text nodes
      */
     if (inst && inst->type == XML_TEXT_NODE)
 	return;
@@ -1304,13 +1414,13 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 
     slaxDebugCheckBreakpoint(statep, inst, TRUE);
 
-    if (statep->ds_flags & DSF_NEXT) {
+    if (statep->ds_flags & DSF_OVER) {
 	/*
-	 * If we got here with the next flag still on, then there was
-	 * no addFrame/dropFrame, so we must have "next"ed a non-call.
-	 * Turn off the flag and get out of next mode.
+	 * If we got here with the over flag still on, then there was
+	 * no addFrame/dropFrame, so we must have "over"ed a non-call.
+	 * Turn off the flag and get out of over mode.
 	 */
-	statep->ds_flags &= ~DSF_NEXT;
+	statep->ds_flags &= ~DSF_OVER;
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
     }
 
@@ -1332,6 +1442,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 		statep->ds_last_inst = statep->ds_inst;
 		break;
 
+	    case XSLT_DEBUG_OVER:
 	    case XSLT_DEBUG_NEXT:
 	    case XSLT_DEBUG_CONT:
 	    case XSLT_DEBUG_NONE:
@@ -1380,6 +1491,10 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     slaxDebugStackFrame_t *dsfp;
     char buf[BUFSIZ];
 
+    /* We don't want to be recursive (via the 'print' command) */
+    if (statep->ds_flags & DSF_INSHELL)
+	return 0;
+
     slaxTrace("addFrame: template %p/[%s], inst %p/%s/%d (inst %p/%s)",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0,
@@ -1409,10 +1524,10 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     }
 
     if (!(dsfp->dsf_flags & DSFF_PARAM)) {
-	/* If we're 'next'ing, mark this frame as "stop when pop" */
+	/* If we're 'over'ing, mark this frame as "stop when pop" */
 	if (!slaxDebugIsInternalFrame(statep, dsfp)
-		&& (statep->ds_flags & DSF_NEXT)) {
-	    statep->ds_flags &= ~DSF_NEXT;
+		&& (statep->ds_flags & DSF_OVER)) {
+	    statep->ds_flags &= ~DSF_OVER;
 	    dsfp->dsf_flags |= DSFF_STOPWHENPOP;
 	    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
 	}
@@ -1437,6 +1552,10 @@ slaxDebugDropFrame (void)
     xsltTemplatePtr template;
     char buf[BUFSIZ];
     xmlNodePtr inst;
+
+    /* We don't want to be recursive (via the 'print' command) */
+    if (statep->ds_flags & DSF_INSHELL)
+	return;
 
     dsfp = TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s);
     if (dsfp == NULL) {
@@ -1512,8 +1631,10 @@ slaxDebugRegister (slaxDebugInputCallback_t input_callback,
     return FALSE;
 }
 
-/*
- * Set the top most stylesheet
+/**
+ * Set the top-most stylesheet
+ *
+ * @stylep the stylesheet aka script
  */
 void
 slaxDebugSetStylesheet (xsltStylesheetPtr stylep)
@@ -1524,8 +1645,69 @@ slaxDebugSetStylesheet (xsltStylesheetPtr stylep)
 	statep->ds_stylesheet = stylep;
 }
 
+/**
+ * Set a search path for included and imported files
+ *
+ * @includes array of search paths
+ */
 void
 slaxDebugSetIncludes (const char **includes)
 {
     slaxDebugIncludes = includes;
+}
+
+/**
+ * Apply a stylesheet to an input document, returning the results.
+ *
+ * @style stylesheet aka script
+ * @doc input document
+ * @params set of parameters
+ * @returns output document
+ */
+void
+slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
+			  const char **params)
+{
+    slaxDebugState_t *statep = slaxDebugGetState();
+    xmlDocPtr res;
+    int status;
+
+    slaxDebugSetStylesheet(style);
+
+    res = xsltApplyStylesheet(style, doc, params);
+
+    for (;;) {
+	status = xsltGetDebuggerStatus();
+
+	switch (status) {
+	case XSLT_DEBUG_QUIT:
+	    /* Quit without restart == exit */
+	    if (!(statep->ds_flags & DSF_RESTART)) {
+		xmlFreeAndEasy(res);
+		return;
+	    }
+
+	    statep->ds_flags &= ~DSF_RESTART;
+
+	    if (res)
+		xmlFreeDoc(res);
+
+	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+
+	    /* Reinvoke the xslt engine */
+	    res = xsltApplyStylesheet(style, doc, params);
+	    break;
+
+	default:
+	    if (res && status != XSLT_DEBUG_DONE)
+		xsltSaveResultToFile(stdout, res, style);
+
+	    xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
+	    if (slaxDebugShell(statep) < 0) {
+		xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+		xmlFreeAndEasy(res);
+		return;
+	    }
+	}
+    }
 }

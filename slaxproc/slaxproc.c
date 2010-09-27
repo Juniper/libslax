@@ -218,13 +218,16 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (use_debugger) {
 	slaxDebugRegister(input_callback, output_callback, rawwrite_callback);
 	slaxDebugSetStylesheet(script);
+	slaxDebugApplyStylesheet(script, indoc, params);
+    } else {
+	res = xsltApplyStylesheet(script, indoc, params);
+
+	xsltSaveResultToFile(stdout, res, script);
+
+	if (res)
+	    xmlFreeDoc(res);
     }
 
-    res = xsltApplyStylesheet(script, indoc, params);
-
-    xsltSaveResultToFile(stdout, res, script);
-
-    xmlFreeDoc(res);
     xmlFreeDoc(indoc);
     xsltFreeStylesheet(script);
 

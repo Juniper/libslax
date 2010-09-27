@@ -493,17 +493,6 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
  * Simple, inline convenience functions
  */
 
-/*
- * Free a chunk of memory
- */
-static inline void
-xmlFreeAndEasy (void *ptr)
-{
-    if (ptr)
-	xmlFree(ptr);
-}
-
-
 /**
  * Registers the SLAX extensions
  */

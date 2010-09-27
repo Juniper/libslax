@@ -54,3 +54,13 @@ xsltSetDebuggerCallbacksHelper (xsltHandleDebuggerCallback handler,
 
     xsltSetDebuggerCallbacks(NUM_ARRAY(cb), &cb);
 }
+
+/*
+ * Free a chunk of memory
+ */
+static inline void
+xmlFreeAndEasy (void *ptr)
+{
+    if (ptr)
+	xmlFree(ptr);
+}

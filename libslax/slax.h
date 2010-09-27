@@ -90,13 +90,35 @@ slaxTraceEnable (slaxTraceCallback_t func, void *data);
 typedef char *(*slaxDebugInputCallback_t)(const char *);
 typedef void (*slaxDebugOutputCallback_t)(const char *, ...);
 
-void
-slaxDebugSetStylesheet (xsltStylesheetPtr stylep);
-
 int
 slaxDebugRegister (slaxDebugInputCallback_t input_callback,
 		   slaxDebugOutputCallback_t output_callback,
 		   xmlOutputWriteCallback raw_write);
 
+/**
+ * Set the top-most stylesheet
+ *
+ * @stylep the stylesheet aka script
+ */
+void
+slaxDebugSetStylesheet (xsltStylesheetPtr stylep);
+
+/**
+ * Set a search path for included and imported files
+ *
+ * @includes array of search paths
+ */
 void
 slaxDebugSetIncludes (const char **includes);
+
+/**
+ * Apply a stylesheet to an input document, returning the results.
+ *
+ * @style stylesheet aka script
+ * @doc input document
+ * @params set of parameters
+ * @returns output document
+ */
+void
+slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
+			  const char **params);
