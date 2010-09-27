@@ -16,7 +16,11 @@ include_HEADERS = \
     slax.h
 
 noinst_HEADERS = \
-    slaxinternals.h
+    slaxinternals.h \
+    util.h \
+    xmlsoft.h
+
+SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
 BISON_COMMAND = ${BISON} -kvd -b slaxparser
 
@@ -29,10 +33,8 @@ libslax_la_SOURCES = \
     slaxwriter.c
 
 slaxparser.h: slaxparser.c
-slaxext.lo slaxext.o: slaxparser.h
-slaxloader.lo slaxloader.o: slaxparser.h
-slaxstring.lo slaxstring.o: slaxparser.h
-slaxwriter.lo slaxwriter.o: slaxparser.h
+${libslax_la_SOURCES:.c=.o}: ${SLAXHEADERS}
+${libslax_la_SOURCES:.c=.lo}: ${SLAXHEADERS}
 
 SED_ARGS = \
 -e 's:int yyparse (void);::' \

@@ -4,6 +4,8 @@
  * Copyright (c) 2010, Juniper Networks, Inc.
  * All rights reserved.
  * See ../Copyright for the status of this software
+ *
+ * This file includes hooks and additions to the libxml2 and libxslt APIs.
  */
 
 #include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */

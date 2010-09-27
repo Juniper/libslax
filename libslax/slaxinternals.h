@@ -19,7 +19,7 @@
 #include <libxslt/documents.h>
 
 #include "util.h"
-#include "libxmlhelper.h"
+#include "xmlsoft.h"
 
 #define XSL_VERSION "1.0"
 
