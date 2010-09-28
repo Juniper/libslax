@@ -147,6 +147,7 @@ static char *
 input_callback (const char *prompt)
 {
     char buf[BUFSIZ];
+    int len;
 
     fputs(prompt, stderr);
     fflush(stderr);
@@ -154,6 +155,10 @@ input_callback (const char *prompt)
     buf[0] = '\0';
     if (fgets(buf, sizeof(buf), stdin) == NULL)
 	return NULL;
+
+    len = strlen(buf);
+    if (len > 1 && buf[len - 1] == '\n')
+	buf[len - 1] = '\0';
 
     return (char *) xmlStrdup((xmlChar *) buf);
 }

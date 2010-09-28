@@ -127,16 +127,17 @@ static slaxDebugCommand_t slaxDebugCmdTable[];
  * Doubly linked list to store the templates call sequence
  */
 typedef struct slaxDebugStackFrame_s {
-    TAILQ_ENTRY(slaxDebugStackFrame_s) dsf_link;
-    unsigned dsf_depth;           /* Stack depth */
-    xsltTemplatePtr dsf_template; /* Template (parent) */
-    xmlNodePtr dsf_inst;	  /* Instruction (code) */
-    unsigned dsf_flags; /* DSFF_* flags for this stack frame */
+    TAILQ_ENTRY(slaxDebugStackFrame_s) st_link;
+    unsigned st_depth;           /* Stack depth */
+    xsltTemplatePtr st_template; /* Template (parent) */
+    xmlNodePtr st_inst;	  /* Instruction of the template (code) */
+    xmlNodePtr st_caller;        /* Instruction of the caller */
+    unsigned st_flags; /* STF_* flags for this stack frame */
 } slaxDebugStackFrame_t;
 
-/* Flags for dsf_flags */
-#define DSFF_STOPWHENPOP	(1<<0) /* Stop when this frame is popped */
-#define DSFF_PARAM		(1<<1) /* Frame is a with-param insn */
+/* Flags for st_flags */
+#define STF_STOPWHENPOP	(1<<0) /* Stop when this frame is popped */
+#define STF_PARAM		(1<<1) /* Frame is a with-param insn */
 
 TAILQ_HEAD(slaxDebugStack_s, slaxDebugStackFrame_s) slaxDebugStack;
 
@@ -194,6 +195,8 @@ slaxDebugInput (const char *prompt)
  * Use the callback to output a string
  * @fmt printf-style format string
  */
+static void
+slaxDebugOutput (const char *fmt, ...)  __printflike(1, 2);
 static void
 slaxDebugOutput (const char *fmt, ...)
 {
@@ -477,7 +480,7 @@ slaxDebugClearStacktrace (void)
 	dsfp = TAILQ_FIRST(&slaxDebugStack);
 	if (dsfp == NULL)
 	    break;
-	TAILQ_REMOVE(&slaxDebugStack, dsfp, dsf_link);
+	TAILQ_REMOVE(&slaxDebugStack, dsfp, st_link);
     }
 
     slaxDebugBreakpointNumber = 0;
@@ -662,7 +665,7 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
 
     if (statep->ds_stop_at && statep->ds_stop_at == node) {
 	if (reached) {
-	    slaxDebugOutput("Reached stop at %s:%d", 
+	    slaxDebugOutput("Reached stop at %s:%ld",
 			    node->doc->URL, xmlGetLineNo(node));
 	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	}
@@ -672,7 +675,7 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbp->dbp_inst == node) {
 	    if (reached) {
-		slaxDebugOutput("Reached breakpoint %d, at %s:%d", 
+		slaxDebugOutput("Reached breakpoint %d, at %s:%ld", 
 				dbp->dbp_num, node->doc->URL,
 				xmlGetLineNo(node));
 		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
@@ -698,7 +701,11 @@ slaxDebugTemplateInfo (xsltTemplatePtr template, char *buf, int bufsiz)
 	SNPRINTF(cp, ep, "template %s ", template->name);
 
     if (template->match)
-	SNPRINTF(cp, ep, "match %s ", template->match);
+	SNPRINTF(cp, ep, "match %s", template->match);
+
+    /* Trim trailing space */
+    if (cp > buf && cp[-1] == ' ')
+	cp[-1] = '\0';
 
     return buf;
 }
@@ -709,7 +716,7 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 {
     char buf[BUFSIZ];
 
-    slaxDebugOutput("callflow: %u: %s <%s%s%s> in %s at %s%s%d",
+    slaxDebugOutput("callflow: %u: %s <%s%s%s> in %s at %s%s%ld",
 	statep->ds_stackdepth, tag,
 	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
@@ -755,6 +762,14 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
     return slaxDebugGetTemplateNodebyName(statep, spec);
 }
 
+static int
+slaxDebugCheckAbbrev (const char *name, const char *value, int min)
+{
+    int len = value ? strlen(value) : 0;
+
+    return (len >= min && strncmp(name, value, len) == 0);
+}
+
 /*
  * 'break' command
  */
@@ -785,7 +800,7 @@ slaxDebugCmdBreak (DC_ARGS)
     bp->dbp_inst = node;
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
 
-    slaxDebugOutput("Breakpoint %d at file %s, line %d",
+    slaxDebugOutput("Breakpoint %d at file %s, line %ld",
 		    bp->dbp_num, 
 		    node->doc->URL, xmlGetLineNo(node));  
 }
@@ -886,7 +901,7 @@ slaxDebugCmdHelp (DC_ARGS)
 	if (cmdp->dc_help)
 	    slaxDebugOutput("  %s", cmdp->dc_help);
     }
-    slaxDebugOutput("");
+    slaxDebugOutput("%s", "");
     slaxDebugOutput("Command name abbreviations are allowed");
 }
 
@@ -919,6 +934,43 @@ slaxDebugCmdMode (DC_ARGS)
 	slaxDebugDisplayMode = EMACS_MODE;
     else if (streq(argv[1], "cli"))
 	slaxDebugDisplayMode = CLI_MODE; 
+}
+
+/*
+ * 'finish' command
+ */
+static void
+slaxDebugCmdFinish (DC_ARGS)
+{
+    slaxDebugStackFrame_t *dsfp, *last = NULL;
+
+    if (slaxDebugCheckDone(statep))
+	return;
+
+    /*
+     * Walk the stack linked list in reverse order, looking for the
+     * lowest template.  When we find it, turn on the "stop-when-pop"
+     * flag so we'll stop when it's popped by dropFrame.  Then mark
+     * the debugger for "continue".
+     */
+    TAILQ_FOREACH_REVERSE(dsfp, &slaxDebugStack, slaxDebugStack_s, st_link) {
+	if (slaxDebugIsXsl(dsfp->st_inst, ELT_TEMPLATE)) {
+	    dsfp->st_flags |= STF_STOPWHENPOP;
+	    statep->ds_flags |= DSF_DISPLAY;
+	    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+	    return;
+	}
+	last = dsfp;
+    }
+
+    if (last) {
+	last->st_flags |= STF_STOPWHENPOP;
+	statep->ds_flags |= DSF_DISPLAY;
+	xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+	return;
+    }
+
+    slaxDebugOutput("template not found");
 }
 
 /*
@@ -1003,7 +1055,7 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (comp == NULL)
 	return NULL;
 
-    nsList = xmlGetNsList(node->doc, inst);
+    nsList = xmlGetNsList(inst->doc, inst);
     for (nscount = 0; nsList && nsList[nscount]; nscount++)
 	continue;
     
@@ -1057,12 +1109,13 @@ slaxDebugCmdPrint (DC_ARGS)
     if (res) {
 	slaxDebugOutputXpath(res);
 	xmlXPathFreeObject(res);
-	slaxDebugOutput("");
+	slaxDebugOutput("%s", "");
     }
 }
 
 /*
  * 'where' command
+ *  syntax: where [full]
  */
 static void
 slaxDebugCmdWhere (DC_ARGS)
@@ -1072,47 +1125,64 @@ slaxDebugCmdWhere (DC_ARGS)
     const char *filename;
     const char *tag;
     int num = 0;
-    char buf[BUFSIZ];
+    char template_info[BUFSIZ];
+    char from_info[BUFSIZ];
+    int full;
+    xmlNodePtr caller;
 
     if (slaxDebugCheckDone(statep))
 	return;
 
+    full = slaxDebugCheckAbbrev("full", argv[1], 1);
+
     /*
      * Walk the stack linked list in reverse order and print it
      */
-    TAILQ_FOREACH(dsfp, &slaxDebugStack, dsf_link) {
+    TAILQ_FOREACH(dsfp, &slaxDebugStack, st_link) {
 	name = NULL;
 	tag = "";
 
-	if (dsfp->dsf_template) {
-	    if (dsfp->dsf_template->match) {
-		name = (const char *) dsfp->dsf_template->match;
-	    } else if (dsfp->dsf_template->name) {
-		name = (const char *) dsfp->dsf_template->name;
+	if (dsfp->st_template) {
+	    if (dsfp->st_template->match) {
+		name = (const char *) dsfp->st_template->match;
+	    } else if (dsfp->st_template->name) {
+		name = (const char *) dsfp->st_template->name;
 		tag = "()";
 	    }
 	}
 
-	slaxDebugTemplateInfo(dsfp->dsf_template, buf, sizeof(buf)),
+	if (name == NULL && !full)
+	    continue;
 
-	filename = NULL;
-	if (dsfp->dsf_inst) {
-	    filename = strrchr((const char *) dsfp->dsf_inst->doc->URL, '/');
-	    filename = filename ? filename + 1
-		: (const char *) dsfp->dsf_inst->doc->URL;
-	}
+	if (name)
+	    slaxDebugTemplateInfo(dsfp->st_template,
+				  template_info, sizeof(template_info));
+	else snprintf(template_info, sizeof(template_info),
+		      "<%s%s%s>",
+		      (dsfp->st_inst && dsfp->st_inst->ns
+		       && dsfp->st_inst->ns->prefix)
+		      ? dsfp->st_inst->ns->prefix : null,
+		      (dsfp->st_inst && dsfp->st_inst->ns
+		       && dsfp->st_inst->ns->prefix) ? ":" : "",
+		      NAME(dsfp->st_inst));
 
-	if (name) {
-	    if (filename) {
-		slaxDebugOutput("#%d %s%s from %s:%d", num, buf, tag,
-				filename, xmlGetLineNo(dsfp->dsf_inst));
-	    } else {
-		slaxDebugOutput("#%d %s%s", num, buf, tag);
-	    }
+	caller = dsfp->st_caller ?: dsfp->st_inst;
 
-	    num += 1;
-	}
+	filename = strrchr((const char *) caller->doc->URL, '/');
+	filename = filename ? filename + 1 : (const char *) caller->doc->URL;
+
+	if (dsfp->st_template->match)
+	    snprintf(from_info, sizeof(from_info),
+		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
+	else from_info[0] = '\0';
+
+	slaxDebugOutput("#%d %s%s%s", num, template_info, tag, from_info);
+
+	num += 1;
     }
+
+    if (num == 0)
+	slaxDebugOutput("call stack is empty");
 }
 
 /**
@@ -1155,16 +1225,14 @@ slaxDebugCmdRun (DC_ARGS)
 
     if (status != XSLT_DEBUG_DONE && status != XSLT_DEBUG_QUIT) {
 	const char prompt[] =
-"The program being debugged has been started already.\n\
+"The script being debugged has been started already.\n\
 Start it from the beginning? (y or n) ";
 	char *input = slaxDebugInput(prompt);
-	int len;
 
 	if (input == NULL)
 	    return;
 
-	len = strlen(input);
-	restart = (len == 0 || strncmp("yes", input, len) != 0);
+	restart = slaxDebugCheckAbbrev("yes", input, 1);
 	xmlFree(input);
 
 	if (!restart)
@@ -1181,6 +1249,16 @@ Start it from the beginning? (y or n) ";
 static void
 slaxDebugCmdQuit (DC_ARGS)
 {
+    const char prompt[] =
+	"The script is running.  Exit anyway? (y or n) ";
+
+    if (xsltGetDebuggerStatus() != XSLT_DEBUG_DONE) {
+	char *input = slaxDebugInput(prompt);
+
+	if (!slaxDebugCheckAbbrev("yes", input, 1))
+	    return;
+    }
+
     slaxDebugClearBreakpoints();
     slaxDebugClearStacktrace();
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
@@ -1204,6 +1282,9 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "delete",	       1, slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints" },
  
+    { "finish",	       1, slaxDebugCmdFinish,
+      "finish          Finish the current template" },
+
     { "help",	       1, slaxDebugCmdHelp,
       "help            Print this help message" },
 
@@ -1251,7 +1332,7 @@ slaxDebugGetCommand (const char *name)
     unsigned i;
 
     for (i = 0; i < NUM_ARRAY(slaxDebugCmdTable); i++, cmdp++) {
-	if (len >= cmdp->dc_min && strncmp(name, cmdp->dc_command, len) == 0)
+	if (slaxDebugCheckAbbrev(cmdp->dc_command, name, len))
 	    return cmdp;
     }
 
@@ -1414,6 +1495,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 
     slaxDebugCheckBreakpoint(statep, inst, TRUE);
 
+#if 0
     if (statep->ds_flags & DSF_OVER) {
 	/*
 	 * If we got here with the over flag still on, then there was
@@ -1423,6 +1505,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 	statep->ds_flags &= ~DSF_OVER;
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
     }
+#endif
 
     for (;;) {
 	status = xsltGetDebuggerStatus();
@@ -1458,25 +1541,6 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     }
 }
 
-static int
-slaxDebugIsInternalFrame (slaxDebugState_t *statep UNUSED,
-			  slaxDebugStackFrame_t *dsfp)
-{
-    xmlNodePtr inst = dsfp->dsf_inst;
-
-    if (!(inst->ns && inst->ns->href && inst->name
-	  && streq((const char *) inst->ns->href, XSL_NS)))
-	return FALSE;
-
-    if (streq((const char *) inst->name, ELT_CHOOSE)
-	|| streq((const char *) inst->name, ELT_WHEN)
-	|| streq((const char *) inst->name, ELT_OTHERWISE)
-	|| streq((const char *) inst->name, ELT_IF))
-	return TRUE;
-
-    return FALSE;
-}
-
 /**
  * Called from libxslt as callback function when template is executed.
  *
@@ -1500,6 +1564,24 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0,
 	      statep->ds_inst, NAME(statep->ds_inst));
 
+    /*
+     * They are two distinct calls for addFrame when a template is
+     * invoked.  The sequence goes like this:
+     *
+     * - handler(call-template)
+     * - addFrame(template)
+     * - handler(template)
+     * - addFrame(template)
+     *
+     * Looks like both xsltApplyXSLTTemplate() and
+     * xsltApplySequenceConstructor() have calls to the debugger.  We
+     * pick the outer addFrame to record so we want to skip the inner
+     * set.  Our clue is that for the inner set, the template
+     * instruction is the same one we recorded in Handler.
+     */
+    if (inst == statep->ds_inst)
+	return 0;
+
     if (statep->ds_flags & DSF_CALLFLOW)
 	slaxDebugCallFlow(statep, template, inst, "enter");
 
@@ -1513,27 +1595,27 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     }
 
     bzero(dsfp, sizeof(*dsfp));
-    dsfp->dsf_depth = statep->ds_stackdepth++;
-    dsfp->dsf_template = template;
-    dsfp->dsf_inst = inst;
+    dsfp->st_depth = statep->ds_stackdepth++;
+    dsfp->st_template = template;
+    dsfp->st_inst = inst;
+    dsfp->st_caller = statep->ds_inst;
 
     if (inst->ns && inst->ns->href && inst->name
 	&& streq((const char *) inst->ns->href, XSL_NS)) {
 	if (streq((const char *) inst->name, ELT_WITH_PARAM))
-	    dsfp->dsf_flags |= DSFF_PARAM;
+	    dsfp->st_flags |= STF_PARAM;
     }
 
-    if (!(dsfp->dsf_flags & DSFF_PARAM)) {
+    if (!(dsfp->st_flags & STF_PARAM)) {
 	/* If we're 'over'ing, mark this frame as "stop when pop" */
-	if (!slaxDebugIsInternalFrame(statep, dsfp)
-		&& (statep->ds_flags & DSF_OVER)) {
+	if (statep->ds_flags & DSF_OVER) {
 	    statep->ds_flags &= ~DSF_OVER;
-	    dsfp->dsf_flags |= DSFF_STOPWHENPOP;
+	    dsfp->st_flags |= STF_STOPWHENPOP;
 	    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
 	}
     }
 
-    TAILQ_INSERT_TAIL(&slaxDebugStack, dsfp, dsf_link);
+    TAILQ_INSERT_TAIL(&slaxDebugStack, dsfp, st_link);
 
     /*
      * return value > 0 makes libxslt to call slaxDebugDropFrame()
@@ -1563,23 +1645,23 @@ slaxDebugDropFrame (void)
 	return;
     }
 
-    template = dsfp->dsf_template;
-    inst = dsfp->dsf_inst;
+    template = dsfp->st_template;
+    inst = dsfp->st_inst;
 
     slaxTrace("dropFrame: %s (%p), inst <%s%s%s> (%p; line %d%s)",
 	      slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      template, 
 	      (inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
 	      (inst && inst->ns && inst->ns->prefix) ? ":" : "",
-	      NAME(dsfp->dsf_inst), inst,
-	      dsfp->dsf_inst ? xmlGetLineNo(dsfp->dsf_inst) : 0,
-	      (dsfp->dsf_flags & DSFF_STOPWHENPOP) ? " stopwhenpop" : "");
+	      NAME(dsfp->st_inst), inst,
+	      dsfp->st_inst ? xmlGetLineNo(dsfp->st_inst) : 0,
+	      (dsfp->st_flags & STF_STOPWHENPOP) ? " stopwhenpop" : "");
 
-    if (dsfp->dsf_flags & DSFF_STOPWHENPOP)
+    if (dsfp->st_flags & STF_STOPWHENPOP)
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 
     /* 'Pop' the stack frame */
-    TAILQ_REMOVE(&slaxDebugStack, dsfp, dsf_link);
+    TAILQ_REMOVE(&slaxDebugStack, dsfp, st_link);
     statep->ds_stackdepth -= 1;	/* Reduce depth of stack */
 
     if (statep->ds_flags & DSF_CALLFLOW)
@@ -1687,7 +1769,8 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 		return;
 	    }
 
-	    statep->ds_flags &= ~DSF_RESTART;
+	    slaxDebugOutput("Script exited normally.");
+	    statep->ds_flags &= ~(DSF_RESTART | DSF_DISPLAY);
 
 	    if (res)
 		xmlFreeDoc(res);
