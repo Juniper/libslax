@@ -1,0 +1,13 @@
+<top>
+  <resources>
+    <doctor>
+      <diagnosis>mumps</diagnosis>
+    </doctor>
+    <nurse>
+      <diagnosis>measles</diagnosis>
+    </nurse>
+    <lady>
+      <diagnosis>hiccups</diagnosis>
+    </lady>
+  </resources>
+</top>
