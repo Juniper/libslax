@@ -87,7 +87,7 @@ slaxTraceEnable (slaxTraceCallback_t func, void *data);
 /*
  * Some fairly simple hooks for the debugger.
  */
-typedef char *(*slaxDebugInputCallback_t)(const char *);
+typedef char *(*slaxDebugInputCallback_t)(const char *, int history);
 typedef void (*slaxDebugOutputCallback_t)(const char *, ...);
 
 int

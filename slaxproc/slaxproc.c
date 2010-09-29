@@ -34,6 +34,7 @@
 #include <readline/history.h>
 #else /* 0 */
 extern char *readline (const char *);
+extern void add_history (const char *);
 #endif /* 0 */
 
 #define MAX_PARAMETERS 64
@@ -158,7 +159,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 }
 
 static char *
-input_callback (const char *prompt)
+input_callback (const char *prompt, int history UNUSED)
 {
 #ifdef HAVE_LIBREADLINE
     char *cp, *res;
@@ -170,6 +171,10 @@ input_callback (const char *prompt)
     cp = readline(prompt);
     if (cp == NULL)
 	return NULL;
+
+    /* Add the command to the shell history (if it's not blank) */
+    if (history && *cp)
+	add_history(cp);
 
     res = (char *) xmlStrdup((xmlChar *) cp);
     free(cp);

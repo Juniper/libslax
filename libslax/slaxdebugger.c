@@ -82,7 +82,7 @@
  * Information about the current point of debugging
  */
 typedef struct slaxDebugState_s {
-    xsltStylesheetPtr ds_stylesheet; /* Current top-level stylesheet */
+    xsltStylesheetPtr ds_script; /* Current top-level script/stylesheet */
     xmlNodePtr ds_inst;	/* Current libxslt node being executed */
     xmlNodePtr ds_node;	/* Current context node */
     xsltTemplatePtr ds_template; /* Current template being executed */
@@ -183,11 +183,12 @@ static const xmlChar *null = (const xmlChar *) "";
  * @prompt the prompt to be displayed
  */
 static char *
-slaxDebugInput (const char *prompt)
+slaxDebugInput (const char *prompt, int history)
 {
     char *res;
     /* slaxTrace("slaxDebugInput: -> [%s]", prompt); */
-    res = slaxDebugInputCallback ? slaxDebugInputCallback(prompt) : NULL;
+    res = slaxDebugInputCallback
+			? slaxDebugInputCallback(prompt, history) : NULL;
     /* slaxTrace("slaxDebugInput: <- [%s]", res ?: "null"); */
     return res;
 }
@@ -316,7 +317,7 @@ slaxDebugGetTemplateNodebyName (slaxDebugState_t *statep, const char *name)
 {
     xsltTemplatePtr tmp;
 
-    for (tmp = statep->ds_stylesheet->templates; tmp; tmp = tmp->next) {
+    for (tmp = statep->ds_script->templates; tmp; tmp = tmp->next) {
 	if ((tmp->match && streq((const char *) tmp->match, name))
 	    || (tmp->name && streq((const char *) tmp->name, name)))
 	    return tmp->elem;
@@ -353,7 +354,7 @@ slaxDebugGetNodeByFilename (slaxDebugState_t *statep,
     xsltStylesheetPtr style;
     xmlNodePtr node;
 
-    style = slaxDebugGetFile(statep->ds_stylesheet, filename);
+    style = slaxDebugGetFile(statep->ds_script, filename);
     if (style == NULL)
 	return NULL;
 
@@ -383,7 +384,7 @@ slaxDebugGetScriptNode (slaxDebugState_t *statep, const char *arg)
     if (lineno <= 0 || cp == endp)
 	return NULL;
 
-    style = slaxDebugGetFile(statep->ds_stylesheet, script);
+    style = slaxDebugGetFile(statep->ds_script, script);
     if (!style)
 	return NULL;
 
@@ -574,7 +575,11 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	return TRUE;
     }
 
-    while (fgets(line, sizeof(line), fp)) {
+    for (;;) {
+	if (fgets(line, sizeof(line), fp) == NULL) {
+	    count += 1;
+	    break;
+	}
 	/*
 	 * Since we are only reading line_size per iteration, if the current 
 	 * line length is more than line_size then we may read same line in
@@ -582,7 +587,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	 * character is '\n'
 	 */
 	if (line[strlen(line) - 1] == '\n')
-	    count++;
+	    count += 1;
 
 	if (count >= start)
 	    break;
@@ -602,13 +607,15 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
     while (count < stop) {
 	slaxDebugOutput("%s:%d: %s", cp, count, line);
 
-	if (fgets(line, sizeof(line), fp) == NULL)
+	if (fgets(line, sizeof(line), fp) == NULL) {
+	    count += 1;
 	    break;
+	}
 
 	len = strlen(line);
 	if (len > 0 && line[len - 1] == '\n') {
 	    line[len - 1] = '\0';
-	    count++;
+	    count += 1;
 	}
     }
 
@@ -619,7 +626,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	 * In emacs path should be relative to remote default directory,
 	 * so print the relative path of the current file from main stylesheet
 	 */
-	cp = (const char *) statep->ds_stylesheet->doc->URL;
+	cp = (const char *) statep->ds_script->doc->URL;
 	slaxDebugMakeRelativePath(cp, filename, rel_path, sizeof(rel_path));
 	
 	slaxDebugOutput("%c%c%s:%d:0", 26, 26, rel_path, start);
@@ -765,10 +772,8 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
 }
 
 static int
-slaxDebugCheckAbbrev (const char *name, const char *value, int min)
+slaxDebugCheckAbbrev (const char *name, int min, const char *value, int len)
 {
-    int len = value ? strlen(value) : 0;
-
     return (len >= min && strncmp(name, value, len) == 0);
 }
 
@@ -812,7 +817,7 @@ slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
 {
     int rc = (xsltGetDebuggerStatus() == XSLT_DEBUG_DONE);
     if (rc)
-	slaxDebugOutput("The stylesheet is not being run.");
+	slaxDebugOutput("The script is not being run.");
     return rc;
 }
 
@@ -857,7 +862,7 @@ slaxDebugCmdDelete (DC_ARGS)
      * breakpoints
      */
     if (argv[1] == NULL) {
-	cp = slaxDebugInput(prompt);
+	cp = slaxDebugInput(prompt, FALSE);
 
 	if (!streq(cp, "y") && !streq(cp, "yes"))
 	    return;
@@ -895,15 +900,14 @@ slaxDebugCmdDelete (DC_ARGS)
 static void
 slaxDebugCmdHelp (DC_ARGS)
 {
-    slaxDebugCommand_t *cmdp = slaxDebugCmdTable;
-    int i;
+    slaxDebugCommand_t *cmdp;
 
     slaxDebugOutput("List of commands:");
-    for (i = 0; cmdp->dc_command; i++, cmdp++) {
+    for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
 	if (cmdp->dc_help)
 	    slaxDebugOutput("  %s", cmdp->dc_help);
     }
-    slaxDebugOutput("%s", "");
+    slaxDebugOutput("%s", "");	/* Avoid compiler warning */
     slaxDebugOutput("Command name abbreviations are allowed");
 }
 
@@ -1053,7 +1057,7 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (xpctxt == NULL)
 	return NULL;
 
-    comp = xsltXPathCompile(statep->ds_stylesheet, (const xmlChar *) expr);
+    comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) expr);
     if (comp == NULL)
 	return NULL;
 
@@ -1111,7 +1115,7 @@ slaxDebugCmdPrint (DC_ARGS)
     if (res) {
 	slaxDebugOutputXpath(res);
 	xmlXPathFreeObject(res);
-	slaxDebugOutput("%s", "");
+	slaxDebugOutput("%s", ""); /* Avoid compiler warning */
     }
 }
 
@@ -1135,7 +1139,7 @@ slaxDebugCmdWhere (DC_ARGS)
     if (slaxDebugCheckDone(statep))
 	return;
 
-    full = slaxDebugCheckAbbrev("full", argv[1], 1);
+    full = slaxDebugCheckAbbrev("full", 1, argv[1], strlen(argv[1]));
 
     /*
      * Walk the stack linked list in reverse order and print it
@@ -1229,12 +1233,12 @@ slaxDebugCmdRun (DC_ARGS)
 	const char prompt[] =
 "The script being debugged has been started already.\n\
 Start it from the beginning? (y or n) ";
-	char *input = slaxDebugInput(prompt);
+	char *input = slaxDebugInput(prompt, FALSE);
 
 	if (input == NULL)
 	    return;
 
-	restart = slaxDebugCheckAbbrev("yes", input, 1);
+	restart = slaxDebugCheckAbbrev("yes", 1, input, strlen(input));
 	xmlFree(input);
 
 	if (!restart)
@@ -1255,9 +1259,10 @@ slaxDebugCmdQuit (DC_ARGS)
 	"The script is running.  Exit anyway? (y or n) ";
 
     if (xsltGetDebuggerStatus() != XSLT_DEBUG_DONE) {
-	char *input = slaxDebugInput(prompt);
+	char *input = slaxDebugInput(prompt, FALSE);
 
-	if (!slaxDebugCheckAbbrev("yes", input, 1))
+	if (input == NULL
+	    	|| !slaxDebugCheckAbbrev("yes", 1, input, strlen(input)))
 	    return;
     }
 
@@ -1293,7 +1298,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "?",	       1, slaxDebugCmdHelp, NULL }, /* Hidden */
 
     { "list",	       1, slaxDebugCmdList,
-      "list [loc]      List contents of the current stylesheet" },
+      "list [loc]      List contents of the current script" },
 
     { "mode",	       1, slaxDebugCmdMode, NULL }, /* Hidden */
 
@@ -1307,7 +1312,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       "print <xpath>   Print the value of an XPath expression" },
 
     { "run",	       3, slaxDebugCmdRun,
-      "run             Restart the stylesheet" },
+      "run             Restart the script" },
 
     { "step",	       1, slaxDebugCmdStep,
       "step            Execute the next instruction, stepping into calls" },
@@ -1329,12 +1334,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
 static slaxDebugCommand_t *
 slaxDebugGetCommand (const char *name)
 {
-    slaxDebugCommand_t *cmdp = slaxDebugCmdTable;
+    slaxDebugCommand_t *cmdp;
     int len = strlen(name);
-    unsigned i;
 
-    for (i = 0; i < NUM_ARRAY(slaxDebugCmdTable); i++, cmdp++) {
-	if (slaxDebugCheckAbbrev(cmdp->dc_command, name, len))
+    for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
+	if (slaxDebugCheckAbbrev(cmdp->dc_command, cmdp->dc_min, name, len))
 	    return cmdp;
     }
 
@@ -1376,13 +1380,13 @@ slaxDebugShell (slaxDebugState_t *statep)
     static char prompt[] = "(sdb) ";
 
     if (statep->ds_flags & DSF_DISPLAY) {
-	const char *filename = (const char *) statep->ds_stylesheet->doc->URL;
+	const char *filename = (const char *) statep->ds_script->doc->URL;
 	int line_no = xmlGetLineNo(statep->ds_inst);
 	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
 	statep->ds_flags &= ~DSF_DISPLAY;
     }
 
-    input = slaxDebugInput(prompt);
+    input = slaxDebugInput(prompt, TRUE);
     if (input == NULL)
 	return -1;
 
@@ -1721,12 +1725,12 @@ slaxDebugRegister (slaxDebugInputCallback_t input_callback,
  * @stylep the stylesheet aka script
  */
 void
-slaxDebugSetStylesheet (xsltStylesheetPtr stylep)
+slaxDebugSetStylesheet (xsltStylesheetPtr script)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
 
     if (statep)
-	statep->ds_stylesheet = stylep;
+	statep->ds_script = script;
 }
 
 /**
@@ -1758,44 +1762,58 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 
     slaxDebugSetStylesheet(style);
 
-    res = xsltApplyStylesheet(style, doc, params);
-
-    if (xsltGetDebuggerStatus() != XSLT_DEBUG_QUIT)
-	slaxDebugOutput("Script exited normally.");
-	
-
     for (;;) {
+	res = xsltApplyStylesheet(style, doc, params);
+
 	status = xsltGetDebuggerStatus();
 
-	switch (status) {
-	case XSLT_DEBUG_QUIT:
+	if (status == XSLT_DEBUG_QUIT) {
+	    xmlFreeAndEasy(res);
+	    res = NULL;
+
 	    /* Quit without restart == exit */
-	    if (!(statep->ds_flags & DSF_RESTART)) {
-		xmlFreeAndEasy(res);
+	    if (!(statep->ds_flags & DSF_RESTART))
 		return;
+
+	} else {
+	    /*
+	     * We fell out the bottom of the script.  Show the output,
+	     * cleanup, and loop in the shell until something
+	     * interesting happens.
+	     */
+	    if (res) {
+		xsltSaveResultToFile(stdout, res, style);
+		xmlFreeDoc(res);
+		res = NULL;
 	    }
 
-	    statep->ds_flags &= ~(DSF_RESTART | DSF_DISPLAY);
-
-	    if (res)
-		xmlFreeDoc(res);
-
-	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
-
-	    /* Reinvoke the xslt engine */
-	    res = xsltApplyStylesheet(style, doc, params);
-	    break;
-
-	default:
-	    if (res && status != XSLT_DEBUG_DONE)
-		xsltSaveResultToFile(stdout, res, style);
-
+	    slaxDebugOutput("Script exited normally.");
 	    xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
-	    if (slaxDebugShell(statep) < 0) {
-		xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-		xmlFreeAndEasy(res);
+	    statep->ds_flags &= ~DSF_DISPLAY;
+
+	    for (;;) {
+		if (slaxDebugShell(statep) < 0)
+		    return;
+
+		status = xsltGetDebuggerStatus();
+		if (status != XSLT_DEBUG_QUIT)
+		    continue;
+
+		/* Quit without restart == exit */
+		if (statep->ds_flags & DSF_RESTART)
+		    break;
+
 		return;
 	    }
 	}
+
+	/*
+	 * We've here because the user said "run".  We do a little
+	 * cleanup and repeat this loop, which will reinvoke the xslt
+	 * engine on the next pass.
+	 */
+	statep->ds_flags &= ~DSF_RESTART;
+	statep->ds_flags |= DSF_DISPLAY;
+	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
     }
 }
