@@ -21,6 +21,20 @@
 #include <err.h>
 #include <time.h>
 #include <sys/time.h>
+#include <stdio.h>
+
+#if 0
+/*
+ * The readline header files contain function prototypes that
+ * won't compile with our warning level.  We take the "lesser
+ * of two evils" approach and fake a prototype here instead
+ * of turning down our warning levels.
+ */
+#include <readline/readline.h>
+#include <readline/history.h>
+#else /* 0 */
+extern char *readline (const char *);
+#endif /* 0 */
 
 #define MAX_PARAMETERS 64
 #define MAX_PATHS 64
@@ -146,6 +160,23 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 static char *
 input_callback (const char *prompt)
 {
+#ifdef HAVE_LIBREADLINE
+    char *cp, *res;
+
+    /*
+     * readline() will return a malloc'd buffer but we need to
+     * swap it for memory that's acquired via xmlMalloc().
+     */
+    cp = readline(prompt);
+    if (cp == NULL)
+	return NULL;
+
+    res = (char *) xmlStrdup((xmlChar *) cp);
+    free(cp);
+    return res;
+
+    
+#else /* HAVE_READLINE */
     char buf[BUFSIZ];
     int len;
 
@@ -161,6 +192,7 @@ input_callback (const char *prompt)
 	buf[len - 1] = '\0';
 
     return (char *) xmlStrdup((xmlChar *) buf);
+#endif /* HAVE_READLINE */
 }
 
 static void

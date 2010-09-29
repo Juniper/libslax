@@ -48,6 +48,24 @@ AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h string.h sys/param.h unistd.h
 AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
 AC_CHECK_LIB([xslt], [xsltInit])
 
+AC_ARG_WITH([readline],
+    [AS_HELP_STRING([--with-readline],
+        [enable experimental support for readline])],
+        [],
+        [with_readline=no])
+          
+      LIBREADLINE=
+        AS_IF([test "x$with_readline" != xno],
+          [AC_CHECK_LIB([readline], [main],
+            [AC_SUBST([LIBREADLINE], ["-lreadline -lncurses"])
+             AC_DEFINE([HAVE_LIBREADLINE], [1],
+                       [Define if you have libreadline])
+            ],
+            [AC_MSG_FAILURE(
+               [--with-readline was given, but test for readline failed])],
+            [-lncurses])])
+AM_CONDITIONAL(HAVE_LIBREADLINE, test "x$with_readline" != xno])
+
 dnl
 dnl Some packages need to be checked against version numbers so we
 dnl define a function here for later use

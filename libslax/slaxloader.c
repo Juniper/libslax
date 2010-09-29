@@ -458,7 +458,7 @@ slaxGetInput (slax_data_t *sdp, int final)
  * in node.
  */
 static xmlNodePtr
-xmlAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, 
+slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, 
 		   xmlNodePtr cur)
 {
     if (ctxt->linenumbers) { 
@@ -1104,7 +1104,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	    xmlNodePtr tp;
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
-	    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
+	    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
 
 	    return;
 	}
@@ -1321,7 +1321,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -1348,7 +1348,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
     if (attrib) {
 	char *full = slaxStringAsChar(value, 0);
@@ -1442,7 +1442,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -1468,7 +1468,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 	    xmlNodePtr tp = xmlNewText((const xmlChar *) value->ss_token);
 
 	    if (tp)
-		xmlAddChildLineNo(sdp->sd_ctxt, nodep, tp);
+		slaxAddChildLineNo(sdp->sd_ctxt, nodep, tp);
 
 	} else {
 	    xmlNodePtr attrp;
@@ -1628,7 +1628,11 @@ slaxAvoidRtf (slax_data_t *sdp)
 	    return;
 	}
 
-	xmlAddChildLineNo(sdp->sd_ctxt, nodep->parent, newp);
+	xmlAddChild(nodep->parent, newp);
+
+	/* Use the line number from the original node */
+	if (sdp->sd_ctxt->linenumbers)
+	    newp->line = nodep->line;
 
 	xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
 
@@ -1732,11 +1736,11 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	    }
 
 
-	    xmlAddChildLineNo(sdp->sd_ctxt, textp, nodep);
+	    slaxAddChildLineNo(sdp->sd_ctxt, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
 	} else {
-	    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+	    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 	}
 
 	return;
@@ -1772,7 +1776,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 		     (const xmlChar *) "yes");
     }
 
-    xmlAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
 
 }
 

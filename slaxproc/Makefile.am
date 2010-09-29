@@ -21,6 +21,10 @@ LIBS = \
     -lexslt \
     ${LIBXML_LIBS}
 
+if HAVE_LIBREADLINE
+LIBS += -lreadline
+endif
+
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c

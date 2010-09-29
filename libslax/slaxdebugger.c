@@ -63,6 +63,7 @@
 #include <sys/queue.h>
 
 #include <libxml/xmlsave.h>
+#include <libxml/xmlIO.h>
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
@@ -231,6 +232,7 @@ slaxDebugOutputNode (xmlNodePtr node, const char *prefix)
     if (handle) {
         xmlSaveTree(handle, node);
         xmlSaveFlush(handle);
+	slaxDebugIOWrite(NULL, "\n", 1);
 	xmlSaveClose(handle);
     }
 }
@@ -1758,6 +1760,10 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 
     res = xsltApplyStylesheet(style, doc, params);
 
+    if (xsltGetDebuggerStatus() != XSLT_DEBUG_QUIT)
+	slaxDebugOutput("Script exited normally.");
+	
+
     for (;;) {
 	status = xsltGetDebuggerStatus();
 
@@ -1769,7 +1775,6 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 		return;
 	    }
 
-	    slaxDebugOutput("Script exited normally.");
 	    statep->ds_flags &= ~(DSF_RESTART | DSF_DISPLAY);
 
 	    if (res)
