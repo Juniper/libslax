@@ -326,6 +326,26 @@ slaxDebugGetTemplateNodebyName (slaxDebugState_t *statep, const char *name)
     return NULL;
 }
 
+static xsltTemplatePtr
+slaxDebugGetTemplate (slaxDebugState_t *statep, xmlNodePtr inst)
+{
+    xsltTemplatePtr tmp;
+
+    for ( ; inst; inst = inst->parent) {
+	if (slaxDebugIsXsl(inst, ELT_TEMPLATE)) {
+	    
+	    for (tmp = statep->ds_script->templates; tmp; tmp = tmp->next) {
+		if (tmp->elem == inst)
+		    return tmp;
+	    }
+
+	    return NULL;
+	}
+    }
+
+    return NULL;
+}
+
 static xmlNodePtr
 slaxDebugGetNodeByLine (xmlNodePtr node, int lineno)
 {
@@ -912,6 +932,43 @@ slaxDebugCmdHelp (DC_ARGS)
 }
 
 /*
+ * 'info' command
+ */
+static void
+slaxDebugCmdInfo (DC_ARGS)
+{
+    xsltTemplatePtr template;
+    slaxDebugBreakpoint_t *dbp;
+    const char *tag;
+    char buf[BUFSIZ];
+    int hit = 0;
+
+    if (argv[1] == NULL
+	|| slaxDebugCheckAbbrev("break", 1, argv[1], strlen(argv[1]))) {
+
+	TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	    if (++hit == 1)
+		slaxDebugOutput("List of breakpoints:");
+
+	    tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
+	    template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
+
+	    slaxDebugOutput("    #%d %s at %s:%ld",
+		dbp->dbp_num,
+	        slaxDebugTemplateInfo(template, buf, sizeof(buf)),
+		(dbp->dbp_inst && dbp->dbp_inst->doc)
+			    ? dbp->dbp_inst->doc->URL : null,
+		xmlGetLineNo(dbp->dbp_inst));
+	}
+
+	if (hit == 0)
+	    slaxDebugOutput("No breakpoints.");
+    } else
+	slaxDebugOutput("Undefined command: \"%s\".  Try \"help\".", argv[1]);
+		
+}
+
+/*
  * 'list' command
  */
 static void
@@ -1293,7 +1350,10 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       "finish          Finish the current template" },
 
     { "help",	       1, slaxDebugCmdHelp,
-      "help            Print this help message" },
+      "help            Show this help message" },
+
+    { "info",	       1, slaxDebugCmdInfo,
+      "info            Showing info about the script being debugged" },
 
     { "?",	       1, slaxDebugCmdHelp, NULL }, /* Hidden */
 
@@ -1318,7 +1378,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       "step            Execute the next instruction, stepping into calls" },
 
     { "where",	       1, slaxDebugCmdWhere,
-      "where           Print the backtrace of template calls" },
+      "where           Show the backtrace of template calls" },
 
     { "quit",	       1, slaxDebugCmdQuit,
       "quit            Quit debugger" },
@@ -1365,7 +1425,7 @@ slaxDebugRunCommand (slaxDebugState_t *statep, char *input)
 	cmdp->dc_func(statep, input_copy, argv);
 
     } else {
-	slaxDebugOutput("Unknown command '%s'", argv[0]);
+	slaxDebugOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
     }
 }
 
