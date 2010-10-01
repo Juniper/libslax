@@ -12,16 +12,16 @@ AM_CFLAGS = \
     ${LIBXSLT_CFLAGS} \
     ${WARNINGS}
 
-if SLAX_DEBUG
-AM_CFLAGS += -g -DSLAX_DEBUG
-endif
-
 LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS}
 
-if HAVE_LIBREADLINE
+if SLAX_DEBUG
+AM_CFLAGS += -g -DSLAX_DEBUG
+endif
+
+if HAVE_READLINE
 LIBS += -lreadline
 endif
 

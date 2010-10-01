@@ -2536,7 +2536,8 @@ To support SLAX in your application, call the hook: slaxEnable(1);
 
 {{document:
     name slax-manual;
-    ipr pre5378Trust200902;
+    private "The SLAX Scripting Language";
+    ipr none;
     category exp;
     abbreviation SLAX-MANUAL;
     title "The SLAX Scripting Language: An Alternate Syntax for XSLT";

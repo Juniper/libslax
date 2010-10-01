@@ -56,6 +56,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -197,8 +198,11 @@ slaxDebugInput (const char *prompt, int history)
  * Use the callback to output a string
  * @fmt printf-style format string
  */
-static void
-slaxDebugOutput (const char *fmt, ...)  __printflike(1, 2);
+#ifdef HAVE_PRINTFLIKE
+static void __printflike(1, 2)
+slaxDebugOutput (const char *fmt, ...);
+#endif /* HAVE_PRINTFLIKE */
+
 static void
 slaxDebugOutput (const char *fmt, ...)
 {

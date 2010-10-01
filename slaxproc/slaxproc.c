@@ -161,7 +161,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 static char *
 input_callback (const char *prompt, int history UNUSED)
 {
-#ifdef HAVE_LIBREADLINE
+#ifdef HAVE_READLINE
     char *cp, *res;
 
     /*

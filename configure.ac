@@ -48,24 +48,6 @@ AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h string.h sys/param.h unistd.h
 AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
 AC_CHECK_LIB([xslt], [xsltInit])
 
-AC_ARG_WITH([readline],
-    [AS_HELP_STRING([--with-readline],
-        [enable experimental support for readline])],
-        [],
-        [with_readline=no])
-          
-      LIBREADLINE=
-        AS_IF([test "x$with_readline" != xno],
-          [AC_CHECK_LIB([readline], [main],
-            [AC_SUBST([LIBREADLINE], ["-lreadline -lncurses"])
-             AC_DEFINE([HAVE_LIBREADLINE], [1],
-                       [Define if you have libreadline])
-            ],
-            [AC_MSG_FAILURE(
-               [--with-readline was given, but test for readline failed])],
-            [-lncurses])])
-AM_CONDITIONAL(HAVE_LIBREADLINE, test "x$with_readline" != xno])
-
 dnl
 dnl Some packages need to be checked against version numbers so we
 dnl define a function here for later use
@@ -73,15 +55,31 @@ dnl
 AC_DEFUN([VERSION_TO_NUMBER],
 [`$1 | sed -e 's/libxml //' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
+AC_MSG_CHECKING([whether to build with debugging])
 AC_ARG_ENABLE([debug],
     [  --enable-debug    Turn on debugging],
-    [case "${enableval}" in
-        yes) SLAX_DEBUG=1 ;;
-        no)  SLAX_DEBUG= ;;
-        *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
-    esac],[SLAX_DEBUG=])
-AM_CONDITIONAL(SLAX_DEBUG, test "$SLAX_DEBUG" != "")
-AC_SUBST(SLAX_DEBUG)
+    [SLAX_DEBUG=yes; AC_DEFINE([SLAX_DEBUG], [1], [Enable debugging])],
+    [SLAX_DEBUG=no])
+AC_MSG_RESULT([$SLAX_DEBUG])
+AM_CONDITIONAL([SLAX_DEBUG], [test "$SLAX_DEBUG" != "no"])
+
+AC_MSG_CHECKING([whether to build with readline])
+AC_ARG_ENABLE([readline],
+    [  --enable-readline    Enable support for GNU readline],
+    [HAVE_READLINE=yes; AC_DEFINE([HAVE_READLINE], [1], [Support readline])],
+    [HAVE_READLINE=no])
+AC_MSG_RESULT([$HAVE_READLINE])
+AM_CONDITIONAL([HAVE_READLINE], [test "$HAVE_READLINE" != "no"])
+
+AC_MSG_CHECKING([whether to build with printflike])
+AC_ARG_ENABLE([printflike],
+    [  --enable-printflike    Enable use of GCC __printflike attribute],
+    [HAVE_PRINTFLIKE=yes;
+           AC_DEFINE([HAVE_PRINTFLIKE], [1], [Support printflike])],
+    [HAVE_PRINTFLIKE=no])
+AC_MSG_RESULT([$HAVE_PRINTFLIKE])
+AM_CONDITIONAL([HAVE_PRINTFLIKE], [test "$HAVE_PRINTFLIKE" != ""])
+
 
 # Allow the reuse of the libxslt tests, if they have the source code
 AC_ARG_WITH(libxslt_tests, [  --with-libxslt-tests[=DIR]    Include the libxslt tests])
@@ -99,7 +97,7 @@ if test "$with_libxslt_tests" != "" ; then
    WITH_LIBXSLT_TESTS=$with_libxslt_tests
    AC_MSG_RESULT(Using libxslt test in $WITH_LIBXSLT_TESTS)
 fi
-AM_CONDITIONAL(USE_LIBXSLT_TESTS, test "$WITH_LIBXSLT_TESTS" != "")
+AM_CONDITIONAL([USE_LIBXSLT_TESTS], [test "$WITH_LIBXSLT_TESTS" != ""])
 AC_SUBST(WITH_LIBXSLT_TESTS)
 
 #

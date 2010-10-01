@@ -6,10 +6,6 @@ include ${top_srcdir}/warnings.mk
 
 AM_CFLAGS = -I${top_srcdir} ${LIBXML_CFLAG} ${LIBXSLT_CFLAGS} ${WARNINGS}
 
-if SLAX_DEBUG
-AM_CFLAGS += -g -DSLAX_DEBUG
-endif
-
 lib_LTLIBRARIES = libslax.la
 
 include_HEADERS = \
