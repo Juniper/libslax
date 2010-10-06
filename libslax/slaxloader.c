@@ -1185,6 +1185,8 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 		      (const xmlChar *) buf);
     if (attr == NULL)
 	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+
+    xmlFreeAndEasy(buf);
 }
 
 /*
@@ -1207,13 +1209,14 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
 	    slaxTrace("initial: xpath_value: %s", ssp->ss_token);
 	
     buf = slaxStringAsChar(value, flags);
+    if (buf) {
+	attr = xmlNewProp(sdp->sd_ctxt->node, (const xmlChar *) name,
+			  (const xmlChar *) buf);
+	if (attr == NULL)
+	    fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
 
-    attr = xmlNewProp(sdp->sd_ctxt->node, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
-
-    free(buf);
+	xmlFree(buf);
+    }
 }
 
 /*
@@ -1359,7 +1362,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	if (attr == NULL)
 	    fprintf(stderr, "could not make attribute: %s/@%s\n", tag, attrib);
 
-	xmlFree(full);
+	xmlFreeAndEasy(full);
     }
 
     return nodep;

@@ -1793,13 +1793,14 @@ output_method_intro :
 		    ALL_KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_OUTPUT,
 					   ATT_METHOD, $2->ss_token);
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		}
+
 	| K_OUTPUT_METHOD
 		{
 		    ALL_KEYWORDS_ON();
 		    slaxElementPush(slax_data, ELT_OUTPUT, NULL, NULL);
-		    $$ = NULL;
+		    $$ = STACK_CLEAR($1);
 		}
 
 output_method_block :
