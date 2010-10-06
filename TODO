@@ -1,2 +1,36 @@
 - Test portability
   - cygwin, macos, freebsd, etc
+
+- Conditional breakpoints
+
+- Profiler
+
+- BUG: line numbers are off is file doesn't end in NL
+
+- Update man page for slaxproc:
+  -p
+  -d
+
+- Sequences:
+  for-each (1 .. 10) { ... }
+  var $range = 5 .. 20;
+  for-each ($x .. $y) { ... }
+
+- for loop
+  for $i (1..10) { ... }
+  for $item (items) { ... }
+  for $attr (./@*) { ... }
+
+- Make man page for debugger
+
+- Make man page for libslax (public API)
+
+- Make flag to syntax check and compile (exit code)
+
+- Mutable variables:
+  mvar $x = 1;
+  set $x = <number> 4;
+  set $x += <number> 5;
+
+- BUG: need to seed random generator for math:random
+

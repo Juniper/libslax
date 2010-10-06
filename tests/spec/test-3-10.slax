@@ -1,0 +1,15 @@
+version 1.0;
+
+output-method {
+    indent "yes";
+}
+
+match /top {
+    <out> {
+        for $i (item) {
+            <li item=class> {
+	        expr $i;
+	    }
+	}
+    }
+}

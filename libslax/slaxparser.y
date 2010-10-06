@@ -119,6 +119,7 @@
 %token K_EXTENSION		/* 'extension' */
 %token K_FALLBACK		/* 'fallback' */
 %token K_FORMAT			/* 'format' */
+%token K_FOR			/* 'for' */
 %token K_FOR_EACH		/* 'for-each' */
 %token K_FROM			/* 'from' */
 %token K_FUNCTION		/* 'function' */
@@ -354,6 +355,9 @@ partial_stmt :
 		{ $$ = NULL; }
 
 	| fallback_stmt
+		{ $$ = NULL; }
+
+	| for_stmt
 		{ $$ = NULL; }
 
 	| for_each_stmt
@@ -999,6 +1003,9 @@ block_stmt :
 	| fallback_stmt
 		{ $$ = NULL; }
 
+	| for_stmt
+		{ $$ = NULL; }
+
 	| for_each_stmt
 		{ $$ = NULL; }
 
@@ -1535,6 +1542,55 @@ for_each_stmt :
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($5);
+		}
+	;
+
+for_stmt :
+	K_FOR T_VAR L_OPAREN xpath_expr L_CPAREN
+		{
+		    /*
+		     * The for loop is a little tricky.  We are creating
+		     * the following logic:
+		     * var $slax-dot = .;
+		     * for-each (xpath_expr) {
+		     *     var $var = .;
+		     *     for-each ($slax-dot) {
+		     *         ...
+		     *     }
+		     * }
+		     * This allows "." to remain unchanged.
+		     */
+		    static unsigned for_count;
+		    char buf[BUFSIZ];
+
+		    /* var $slax-dot-xxx = . */
+		    snprintf(buf, sizeof(buf), "$slax-dot-%u", ++for_count);
+		    slaxElementPush(slax_data, ELT_VARIABLE,
+				    ATT_NAME, buf + 1);
+		    slaxAttribAddLiteral(slax_data, ATT_SELECT, ".");
+		    slaxElementPop(slax_data);
+
+		    /* Outer for-each loop */
+		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $4);
+
+		    /* Inner variable */
+		    slaxElementPush(slax_data, ELT_VARIABLE,
+				    ATT_NAME, $2->ss_token + 1);
+		    slaxAttribAddLiteral(slax_data, ATT_SELECT, ".");
+		    slaxElementPop(slax_data);
+
+		    /* Inner for-each loop */
+		    slaxElementPush(slax_data, ELT_FOR_EACH, ATT_SELECT, buf);
+
+		    $$ = NULL;
+		}
+	    block
+		{
+		    slaxElementPop(slax_data); /* Inner for-each loop */
+		    slaxElementPop(slax_data); /* Outer for-each loop */
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($6);
 		}
 	;
 

@@ -1110,6 +1110,9 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     xsltTransformContextPtr ctxt;
     xmlXPathContextPtr xpctxt;
 
+    if (slaxDebugCheckDone(statep))
+	return NULL;
+
     ctxt = statep->ds_ctxt;
     if (ctxt == NULL)
 	return NULL;
@@ -1316,7 +1319,7 @@ Start it from the beginning? (y or n) ";
 static void
 slaxDebugCmdQuit (DC_ARGS)
 {
-    const char prompt[] =
+    static const char prompt[] =
 	"The script is running.  Exit anyway? (y or n) ";
 
     if (xsltGetDebuggerStatus() != XSLT_DEBUG_DONE) {
@@ -1327,10 +1330,18 @@ slaxDebugCmdQuit (DC_ARGS)
 	    return;
     }
 
+    /* Free our resources */
     slaxDebugClearBreakpoints();
     slaxDebugClearStacktrace();
+
+    /*
+     * Some parts of libxslt tests the global debug status value and
+     * other parts use the context variable, so we have to set them
+     * both.  If we've "quit", then there's no context to set.
+     */
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-    statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
+    if (statep->ds_ctxt)
+	statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1850,6 +1861,14 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 		xmlFreeDoc(res);
 		res = NULL;
 	    }
+
+	    /* Clean up state pointers (all free'd by now) */
+	    statep->ds_ctxt = NULL;
+	    statep->ds_inst = NULL;
+	    statep->ds_node = NULL;
+	    statep->ds_template = NULL;
+	    statep->ds_last_inst = NULL;
+	    statep->ds_stop_at = NULL;
 
 	    slaxDebugOutput("Script exited normally.");
 	    xsltSetDebuggerStatus(XSLT_DEBUG_DONE);

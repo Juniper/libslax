@@ -133,6 +133,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_EXTENSION, "extension", KMF_SLAX_KW },
     { K_FALLBACK, "fallback", KMF_SLAX_KW },
     { K_FORMAT, "format", KMF_SLAX_KW },
+    { K_FOR, "for", KMF_SLAX_KW },
     { K_FOR_EACH, "for-each", KMF_SLAX_KW },
     { K_FROM, "from", KMF_SLAX_KW },
     { K_FUNCTION, "function", KMF_SLAX_KW },
@@ -920,6 +921,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_DECIMAL_FORMAT:
     case K_ELEMENT:
     case K_EXPR:
+    case K_FOR:
     case K_FOR_EACH:
     case K_FORMAT:
     case K_FROM:

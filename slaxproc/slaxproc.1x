@@ -5,7 +5,7 @@ slaxproc \- process slax files
 .na
 .B slaxproc
 [
-.B \-Dv
+.B \-dvV
 ]
 .br
 [
@@ -36,6 +36,13 @@ slaxproc \- process slax files
 [
 .I output-file
 ]]
+.br
+| 
+.B \-p
+[
+.B \-e
+]
+.I slax-file
 .br
 [
 .B -t
@@ -68,12 +75,20 @@ The slaxproc utility can be used to translate between XSLT and SLAX
 formats, as well as run SLAX scripts.
 .SH OPTIONS
 .LP
-.B -D
+.B -d
 .br
 .B --debug
 .LP
 .RS
-Enable debug output, which is amazingly verbose.
+Enable built in debugger.  See slaxdebugger(1x) for more information.
+.RE
+.LP
+.B -V
+.br
+.B --verbose
+.LP
+.RS
+Enable verbose (interal debug) output, which is shockingly verbose.
 .RE
 .LP
 .B -x
@@ -166,6 +181,16 @@ encountered as part of the script execution.  Refer to the SLAX
 documentation for information about the "trace" statement.
 .RE
 .LP
+.B -p
+.br
+.B --partial
+.LP
+.RS
+Read a partial SLAX script and config it to XSLT.  This is
+useful as a filter or pipe, turning a snippet of SLAX into
+XML format XSLT.
+.RE
+.LP
 .B -o
 .I output-file
 .br
@@ -174,15 +199,6 @@ documentation for information about the "trace" statement.
 .LP
 .RS
 Alternate mechanism for specifying the output file name.
-.RE
-.LP
-.B -e
-.br
-.B --exslt
-.LP
-.RS
-Allow scripts to access functions and elements defined in
-the EXSLT extension library.
 .RE
 .LP
 .B -v
