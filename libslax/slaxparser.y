@@ -2287,8 +2287,10 @@ copy_node_rest :
 sort_stmt :
 	K_SORT L_EOS
 		{
-		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL))
+		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL)) {
+			slaxRelocateSort(slax_data);
 			slaxElementPop(slax_data);
+		    }
 
 		    $$ = STACK_CLEAR($1);
 		}
@@ -2298,6 +2300,7 @@ sort_stmt :
 		    if (slaxElementPush(slax_data, $1->ss_token, NULL, NULL)) {
 			slaxAttribAddString(slax_data, ATT_SELECT,
 					    $2, SSF_QUOTES);
+			slaxRelocateSort(slax_data);
 			slaxElementPop(slax_data);
 		    }
 
@@ -2313,7 +2316,9 @@ sort_stmt :
 		}
 	    sort_sub_stmt_list_optional L_CBRACE
 		{
+		    slaxRelocateSort(slax_data);
 		    slaxElementPop(slax_data);
+
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
 		}

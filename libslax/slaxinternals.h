@@ -243,6 +243,12 @@ void
 slaxElementPop (slax_data_t *sdp);
 
 /*
+ * Relocate the most-recent "sort" node, if the parent was a "for" loop.
+ */
+void
+slaxRelocateSort (slax_data_t *sdp);
+
+/*
  * Add an xsl:comment node
  */
 xmlNodePtr

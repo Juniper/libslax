@@ -1970,6 +1970,29 @@ The XSLT equivalent:
         </message>
     </xsl:for-each>
 
+**** The "for" Statement @for@
+
+In addition to the standard XSLT "for-each" statement, SLAX
+incorporates a "for" statement that allows iteration through a node
+set without changing the context (".").
+
+    SYNTAX::
+        'for' variable-name '(' xpath-expression ')' '{'
+            contents
+        '}'
+
+The variable is assigned each member of the node-set selected by
+the expression in sequence, and the contents are then evaluated.
+
+    for $item (item-list) {
+        <item> $item;
+    }
+
+Internally, this is translated into normal XSLT constructs involving a
+pair of nested for-each loops, one to iterate and one to put the
+context back to the previous setting.  This allows the script writer
+to ignore the context change.
+
 **** The "sort" Statement @sort@
 
 The "for-each" normally considers nodes in document order, but the

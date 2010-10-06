@@ -1395,6 +1395,38 @@ slaxElementPop (slax_data_t *sdp)
 }
 
 /*
+ * Relocate the most-recent "sort" node, if the parent was a "for"
+ * loop.  The "sort" should be at the top of the stack.  If the parent
+ * is a "for", then the parser will have built two nested "for-each"
+ * loops, and we really want the sort to apply to the parent (outer)
+ * loop.  So if we've hitting these conditions, move the sort node.
+ */
+void
+slaxRelocateSort (slax_data_t *sdp)
+{
+    xmlNodePtr nodep = sdp->sd_ctxt->node;
+
+    if (nodep && nodep->parent) {
+	xmlNodePtr parent = nodep->parent;
+        xmlChar *sel = xmlGetProp(parent, (const xmlChar *) ATT_SELECT);
+
+	if (sel && strncmp((char *) sel, "$slax-dot-", 10) == 0) {
+	    slaxTrace("slaxRelocateSort: %s:%d: must relocate",
+		      nodep->name, xmlGetLineNo(nodep));
+	    /*
+	     * "parent" is the inner for-each loop, and "parent->parent"
+	     * is the outer for-each loop.  Add the sort as the first
+	     * child of the outer loop.  xmlAddPrevSibling will unlink
+	     * nodep from its current location.
+	     */
+	    xmlAddPrevSibling(parent->parent->children, nodep);
+	}
+
+	xmlFreeAndEasy(sel);
+    }
+}
+
+/*
  * Look upward thru the stack to find a namespace that's the
  * default (one with no prefix).
  */
@@ -1736,7 +1768,6 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 			     (const xmlChar *) "yes");
 
 	    }
-
 
 	    slaxAddChildLineNo(sdp->sd_ctxt, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);

@@ -6,9 +6,30 @@ output-method {
 
 match /top {
     <out> {
+	/* Simple test case */
         for $i (item) {
             <li item=class> {
 	        expr $i;
+	    }
+	}
+
+	/* Test that 'sort' gets relocated */
+        for $i (item) {
+	    sort . {
+		order "ascending";
+	    }
+            <ul item=class> {
+	        expr $i;
+	    }
+	}
+
+	/* Test that this 'sort' is not relocated */
+	for-each (item) {
+	    sort . {
+		order "ascending";
+	    }
+            <ol item=../class> {
+	        expr .;
 	    }
 	}
     }
