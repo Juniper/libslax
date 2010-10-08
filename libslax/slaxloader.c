@@ -2148,9 +2148,13 @@ slaxEnable (int enable)
 	return;
     }
 
-    /* Register EXSLT function functions so our function keywords work */
-    if (slaxEnabled == 0)
+    if (slaxEnabled == 0) {
+	/* Register EXSLT function functions so our function keywords work */
 	exsltFuncRegister();
+
+	/* Seed the random number generator */
+	sranddev();
+    }
 
     /*
      * Save the original doc loader to pass non-slax file into

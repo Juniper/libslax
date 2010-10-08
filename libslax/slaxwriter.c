@@ -26,12 +26,13 @@ typedef struct slax_writer_s {
 } slax_writer_t;
 
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
+#define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
 
 /* Forward function declarations */
 static void slaxWriteChildren(slax_writer_t *, xmlDocPtr, xmlNodePtr, int);
 static void slaxWriteXslElement(slax_writer_t *swp, xmlDocPtr docp,
 				xmlNodePtr nodep, int *statep);
-
+static void slaxWriteSort (slax_writer_t *, xmlDocPtr, xmlNodePtr);
 static void slaxWriteCommentStatement (slax_writer_t *, xmlDocPtr, xmlNodePtr);
 
 static int slaxIndent = 4;
@@ -1258,13 +1259,7 @@ slaxWriteFunctionResultNeedsBraces (slax_writer_t *swp UNUSED, xmlNodePtr nodep)
     return FALSE;
 }
 
-#if 0
-static
-#else
-void
-slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep);
-#endif
-void
+static void
 slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     const char *name = (const char *) nodep->name;
@@ -1386,12 +1381,152 @@ slaxIsSimpleElement (xmlNodePtr nodep)
     return FALSE;
 }
 
+static xmlNodePtr
+slaxWriterFindNext (xmlNodePtr start, const char *name,
+		    const char *uri, int first)
+{
+    xmlNodePtr cur;
+
+    for (cur = start; cur; cur = cur->next) {
+	if (cur->type != XML_ELEMENT_NODE)
+	    continue;
+
+	if (cur->ns && streq((const char *) cur->name, name)
+		    && streq((const char *) cur->ns->href, uri))
+	    return cur;
+
+	if (first)
+	    return NULL;
+    }
+
+    return NULL;
+}
+
+/*
+ * We are looking at a for loop, which turns:
+ *
+ *         for $i (item) {
+ *
+ * into:
+ *
+ *      <xsl:variable name="slax-dot-3" select="."/>
+ *      <xsl:for-each select="item">
+ *        <xsl:variable name="i" select="."/>
+ *        <xsl:for-each select="$slax-dot-3">
+ *
+ * We need to ensure this is really what we're looking at, and encode it
+ * as proper SLAX.  If it isn't a valid "for" loop, then we return TRUE
+ * to clue the caller in.
+ */
+static int
+slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
+		  const char *vname, const char *vselect)
+{
+    xmlNodePtr outer_for;
+    xmlNodePtr inner_for;
+    xmlNodePtr inner_var;
+    xmlNodePtr cur;
+    char *cp, *expr;
+
+    /* Must be 'select="."' */
+    if (vselect[0] != '.' || vselect[1] != '\0')
+	return TRUE;
+
+    outer_for = slaxWriterFindNext(outer_var->next,
+				   ELT_FOR_EACH, XSL_NS, TRUE);
+    if (outer_for == NULL)
+	return TRUE;
+
+    inner_var = slaxWriterFindNext(outer_for->children,
+				   ELT_VARIABLE, XSL_NS, FALSE);
+    if (inner_var == NULL)
+	return TRUE;
+
+    inner_for = slaxWriterFindNext(inner_var->next,
+				   ELT_FOR_EACH, XSL_NS, TRUE);
+    if (inner_for == NULL)
+	return TRUE;
+
+    /* Some final checks */
+    /* Check: nothing else in for loop */
+    for (cur = inner_for->next; cur; cur = cur->next) {
+	if (cur->type == XML_ELEMENT_NODE)
+	    return TRUE;
+    }
+
+    /* Check: First inner variable select must be "." */
+    cp = slaxGetAttrib(inner_var, ATT_SELECT);
+    if (cp[0] != '.' || cp[1] != '\0') {
+	xmlFree(cp);
+	return TRUE;
+    }
+    xmlFree(cp);
+
+    /* Check: The variable names must match */
+    cp = slaxGetAttrib(inner_for, ATT_SELECT);
+    if (cp[0] != '$' || !streq(cp + 1, vname)) {
+	xmlFree(cp);
+	return TRUE;
+    }
+    xmlFree(cp);
+
+    /* We have all the pieces; now we start writing */
+    cp = slaxGetAttrib(outer_for, ATT_SELECT);
+    expr = slaxMakeExpression(swp, outer_for, cp);
+    xmlFree(cp);
+
+    cp = slaxGetAttrib(inner_var, ATT_NAME);
+
+    slaxWriteBlankline(swp);
+    slaxWrite(swp, "for $%s (%s) {", cp, expr);
+    slaxWriteNewline(swp, NEWL_INDENT);
+
+    xmlFree(cp);
+    xmlFree(expr);
+
+    /* Now we need to check for any "sort" statements */
+    for (cur = outer_for->children; cur; cur = cur->next) {
+	if (cur == inner_var)
+	    break;
+
+	if (cur->type != XML_ELEMENT_NODE)
+	    continue;
+
+	if (cur->ns && streq((const char *) cur->name, ELT_SORT)
+		&& streq((const char *) cur->ns->href, XSL_NS))
+	    slaxWriteSort(swp, docp, cur);
+    }
+
+    slaxWriteChildren(swp, docp, inner_for, FALSE);
+
+    slaxWrite(swp, "}");
+    slaxWriteNewline(swp, NEWL_OUTDENT);
+
+    /*
+     * Turn on the SWF_FORLOOP flag but only _after_ we've written
+     * our children.  This tell slaxWriteForEach that we've already
+     * done his job.
+     */
+    swp->sw_flags |= SWF_FORLOOP;
+
+    return FALSE;
+}
+
 static void
 slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     char *name = slaxGetAttrib(nodep, ATT_NAME);
     char *sel = slaxGetAttrib(nodep, ATT_SELECT);
     const char *tag = (nodep->name[0] == 'v') ? "var" : "param";
+
+    if (name && sel && strncmp(name, FOR_VARIABLE_PREFIX + 1, 8) == 0) {
+	if (!slaxWriteForLoop(swp, docp, nodep, name, sel)) {
+	    xmlFree(sel);
+	    xmlFree(name);
+	    return;
+	}
+	/* Otherwise it wasn't a "real" "for" loop, so continue */
+    }
 
     if (nodep->children) {
 	xmlNodePtr childp = nodep->children;
@@ -1707,10 +1842,17 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 static void
 slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
-    char *sel = slaxGetAttrib(nodep, ATT_SELECT);
-    char *expr = slaxMakeExpression(swp, nodep, sel);
+    char *sel, *expr;
 
-    slaxWriteBlankline(swp);
+    /* If we just rendered a for-each loop as a 'for' loop, then we're done */
+    if (swp->sw_flags & SWF_FORLOOP) {
+	swp->sw_flags &= ~SWF_FORLOOP;
+	return;
+    }
+
+    sel = slaxGetAttrib(nodep, ATT_SELECT);
+    expr = slaxMakeExpression(swp, nodep, sel);
+
     slaxWrite(swp, "for-each (%s) {", expr ?: UNKNOWN_EXPR);
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(sel);
@@ -1836,7 +1978,7 @@ slaxWriteStatementWithAttributes (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 }
 
 static void
-slaxWriteSort (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+slaxWriteSort (slax_writer_t *swp, xmlDocPtr docp,
 		       xmlNodePtr nodep)
 {
     slaxWriteStatementWithAttributes(swp, docp, nodep,

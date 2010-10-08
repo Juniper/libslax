@@ -1,25 +1,21 @@
+
+The List of Things I Should Be Doing (if I weren't so busy making this list) 
+
 - Test portability
-  - cygwin, macos, freebsd, etc
+  - cygwin, macos, freebsd, linux, etc
 
 - Conditional breakpoints
 
 - Profiler
+  plan a: simple: record times with each line number
+  plan b: complex: record times with stack traces
 
-- BUG: line numbers are off is file doesn't end in NL
+- BUG: line numbers are off if file doesn't end in NL
 
-- Update man page for slaxproc:
-  -p
-  -d
-
-- Sequences:
+- slaxwriter for sequences
   for-each (1 .. 10) { ... }
   var $range = 5 .. 20;
   for-each ($x .. $y) { ... }
-
-- for loop
-  for $i (1..10) { ... }
-  for $item (items) { ... }
-  for $attr (./@*) { ... }
 
 - Make man page for debugger
 
@@ -32,5 +28,8 @@
   set $x = <number> 4;
   set $x += <number> 5;
 
-- BUG: need to seed random generator for math:random
+- BUG: need better random generator for math:random than rand(3)
 
+- sdb: add SLAX-style xpath expressions to the "print" command ("==", etc)
+
+- Nit: teach slaxProcTrace() how to keep the trace handle open
