@@ -1203,7 +1203,8 @@ slaxDebugCmdWhere (DC_ARGS)
     if (slaxDebugCheckDone(statep))
 	return;
 
-    full = slaxDebugCheckAbbrev("full", 1, argv[1], strlen(argv[1]));
+    full = slaxDebugCheckAbbrev("full", 1, argv[1],
+				argv[1] ? strlen(argv[1]) : 1);
 
     /*
      * Walk the stack linked list in reverse order and print it

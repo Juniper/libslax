@@ -38,6 +38,9 @@
 #define TRACE_URI "http://code.google.com/p/libslax/trace"
 #define TRACE_PREFIX "slax-trace"
 
+#define SLAX_URI "http://code.google.com/p/libslax/slax"
+#define SLAX_PREFIX "slax"
+
 /*
  * This is a should-not-occur error string if you ever see it, we've
  * done something wrong (but it beats a core dump).
@@ -385,6 +388,9 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 
 void
 slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep);
+
+void
+slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
 
 /*
  * If we know we're about to assign a result tree fragment (RTF)

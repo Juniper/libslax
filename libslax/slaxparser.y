@@ -72,6 +72,7 @@
 %token L_DCOLON			/* '::' */
 %token L_DEQUALS		/* == */
 %token L_DOTDOT			/* '..' */
+%token L_DOTDOTDOT		/* '...' */
 %token L_DSLASH			/* '//' */
 %token L_DVBAR			/* '||' */
 %token L_EOS			/* ; */
@@ -205,6 +206,7 @@
 /*
  * Magic tokens (used for special purposes)
  */
+%token M_SEQUENCE		/* A $x...$y sequence */
 %token M_ERROR			/* An error was detected in the lexer */
 %token M_XPATH			/* Building an XPath expression */
 %token M_PARSE_SLAX		/* Parse a slax document */
@@ -1535,6 +1537,11 @@ for_each_stmt :
 		    nodep = slaxElementPush(slax_data, ELT_FOR_EACH,
 					    NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
+
+		    if ($3->ss_ttype == M_SEQUENCE)
+			slaxSetSlaxNs(slax_data,
+				      slax_data->sd_ctxt->node, FALSE);
+
 		    $$ = NULL;
 		}
 	    block
@@ -1573,6 +1580,10 @@ for_stmt :
 		    /* Outer for-each loop */
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $4);
+
+		    if ($4->ss_ttype == M_SEQUENCE)
+			slaxSetSlaxNs(slax_data,
+				      slax_data->sd_ctxt->node, FALSE);
 
 		    /* Inner variable */
 		    slaxElementPush(slax_data, ELT_VARIABLE,
@@ -2467,7 +2478,30 @@ xpath_expr :
 		    ALL_KEYWORDS_ON();
 		    $$ = $1;
 		}
-	;
+
+	| xp_expr L_DOTDOTDOT xp_expr
+		{
+		    slax_string_t *res[7];
+
+		    ALL_KEYWORDS_ON();
+
+		    /* Build all the parts */
+		    res[0] = slaxStringLiteral("slax:build-sequence",
+					    T_FUNCTION_NAME);
+		    res[1] = slaxStringLiteral("(", L_OPAREN);
+		    res[2] = $1;
+		    res[3] = slaxStringLiteral(",", L_COMMA);
+		    res[4] = $3;
+		    res[5] = slaxStringLiteral(")", L_CPAREN);
+		    res[6] = NULL;
+
+		    /* Now assemble them */
+		    $$ = slaxStringLink(slax_data, res, &res[6]);
+		    slaxStringFree($2);
+		    $1 = $2 = $3 = NULL;
+		    $$->ss_ttype = M_SEQUENCE;
+		}
+    	;
 
 xpath_value :
 	xpath_value_raw

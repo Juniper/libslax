@@ -226,6 +226,47 @@ slaxTraceEnable (slaxTraceCallback_t func, void *data)
     slaxTraceCallbackData = data;
 }
 
+static void
+slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    long long num, low, high, step = 1;
+    xmlNodeSetPtr ns;
+    xmlNodePtr nodep;
+    char buf[BUFSIZ];
+
+    if (nargs != 2) {
+        xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+                "slax:build-sequence() expects two arguments\n");
+        ctxt->error = XPATH_INVALID_ARITY;
+        return;
+    }
+
+    /* Pop args in reverse order */
+    high = xmlXPathPopNumber(ctxt);
+    if (xmlXPathCheckError(ctxt))
+        return;
+
+    low = xmlXPathPopNumber(ctxt);
+    if (xmlXPathCheckError(ctxt))
+        return;
+
+    if (high < low)
+	step = -1;
+
+    ns = xmlXPathNodeSetCreate(NULL);
+
+    slaxTrace("build-sequence: %qd ... %qd + %qd", low, high, step);
+
+    for (num = low; num <= high; num += step) {
+	snprintf(buf, sizeof(buf), "%qd", num);
+	nodep = xmlNewText((const xmlChar *) buf);
+	if (nodep)
+	    xmlXPathNodeSetAddUnique(ns, nodep);
+    }
+
+    xmlXPathReturnNodeSet(ctxt, ns);
+}
+
 /**
  * Registers the SLAX extensions
  */
@@ -236,4 +277,8 @@ slaxExtRegister (void)
 				  (const xmlChar *) TRACE_URI,
 			  (xsltPreComputeFunction) slaxTraceCompile,
 			  (xsltTransformFunction) slaxTraceElement);
+
+    xsltRegisterExtModuleFunction((const xmlChar *) "build-sequence",
+                                  (const xmlChar *) SLAX_URI,
+                                  slaxExtBuildSequence);
 }

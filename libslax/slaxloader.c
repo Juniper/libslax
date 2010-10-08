@@ -38,6 +38,7 @@ static int slaxEnabled;		/* Global enable (SLAX_*) */
  */
 static short singleWide[SLAX_MAX_CHAR];
 static char doubleWide[SLAX_MAX_CHAR];
+static char tripleWide[SLAX_MAX_CHAR];
 
 /*
  * Define all one character literal tokens, mapping the single
@@ -86,6 +87,17 @@ static int doubleWideData[] = {
     L_NOTEQUALS, '!', '=',
     0
 };
+
+#if 0
+/*
+ * Define all three character literal tokens, mapping three contiguous
+ * characters into a single slaxparser.y token.
+ */
+static int tripleWideData[] = {
+    L_DOTDOTDOT, '.', '.', '.',
+    0
+};
+#endif
 
 /*
  * Define all keyword tokens, mapping the keywords into the slaxparser.y
@@ -230,6 +242,9 @@ slaxSetupLexer (void)
     for (i = 0; doubleWideData[i]; i += 3)
 	doubleWide[doubleWideData[i + 1]] = i + 2;
 
+    /* There's only one triple wide, so optimize (for now) */
+    tripleWide['.'] = 1;
+
     for (i = 0; keywordMap[i].km_ttype; i++)
 	keywordString[slaxTokenTranslate(keywordMap[i].km_ttype)]
 	    = keywordMap[i].km_string;
@@ -306,6 +321,19 @@ slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
     case DOUBLE_WIDE('<', '='): return L_LESSEQ;
     case DOUBLE_WIDE('!', '='): return L_NOTEQUALS;
     }
+
+    return 0;
+}
+
+/*
+ * Return the token type for the triple character token given by
+ * ch1, ch2 and ch3.  Returns zero if there is none.
+ */
+static int
+slaxTripleWide (slax_data_t *sdp UNUSED, int ch1, int ch2, int ch3)
+{
+    if (ch1 == '.' && ch2 == '.' && ch3 == '.')
+	return L_DOTDOTDOT;	/* Only one (for now) */
 
     return 0;
 }
@@ -572,7 +600,7 @@ slaxNodeIsXsl (xmlNodePtr node, const char *name)
 static int
 slaxLexer (slax_data_t *sdp)
 {
-    unsigned ch1, ch2;
+    unsigned ch1, ch2, ch3;
     int look, rc;
 
     for (;;) {
@@ -657,8 +685,17 @@ slaxLexer (slax_data_t *sdp)
 	
     ch1 = sdp->sd_buf[sdp->sd_cur];
     ch2 = (sdp->sd_cur + 1 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 1] : 0;
+    ch3 = (sdp->sd_cur + 2 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 2] : 0;
 
     if (ch1 < SLAX_MAX_CHAR) {
+	if (tripleWide[ch1]) {
+	    rc = slaxTripleWide(sdp, ch1, ch2, ch3);
+	    if (rc) {
+		sdp->sd_cur += 3;
+		return rc;
+	    }
+	}
+
 	if (doubleWide[ch1]) {
 	    rc = slaxDoubleWide(sdp, ch1, ch2);
 	    if (rc) {
@@ -1532,7 +1569,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
  */
 static void 
 slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
-	   const char *prefix, const xmlChar *uri)
+	   const char *prefix, const xmlChar *uri, int local)
 {
     xmlNsPtr nsp;
 
@@ -1555,7 +1592,8 @@ slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
 
     /* Add a distinct namespace to the current node */
     nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
-    nodep->ns = nsp;
+    if (local)
+	nodep->ns = nsp;
 }
 
 
@@ -1571,7 +1609,7 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     const char *prefix = FUNC_PREFIX;
     const xmlChar *uri = FUNC_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri);
+    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
 }
 
 void 
@@ -1580,7 +1618,16 @@ slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep)
     const char *prefix = TRACE_PREFIX;
     const xmlChar *uri = (const xmlChar *) TRACE_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri);
+    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
+}
+
+void 
+slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
+{
+    const char *prefix = SLAX_PREFIX;
+    const xmlChar *uri = (const xmlChar *) SLAX_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri, local);
 }
 
 /*
