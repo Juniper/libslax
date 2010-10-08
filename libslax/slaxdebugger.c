@@ -1661,7 +1661,9 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
      * set.  Our clue is that for the inner set, the template
      * instruction is the same one we recorded in Handler.
      */
-    if (inst == statep->ds_inst)
+    if (inst == statep->ds_inst
+	&& (streq((const char *) inst->name, ELT_CALL_TEMPLATE)
+	    || streq((const char *) inst->name, ELT_TEMPLATE)))
 	return 0;
 
     if (statep->ds_flags & DSF_CALLFLOW)

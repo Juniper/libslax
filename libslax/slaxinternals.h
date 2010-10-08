@@ -113,6 +113,9 @@ extern const char *keywordString[];
 #define ELT_WHEN	"when"
 #define ELT_WITH_PARAM	"with-param"
 
+#define FOR_VARIABLE_PREFIX "$slax-dot-"
+#define FUNC_BUILD_SEQUENCE "build-sequence"
+
 /*
  * We build strings as we go using this structure.
  */

@@ -11,7 +11,6 @@ match /top {
 
 	for-each (1 ... 10) {
 	    <first> .;
-	    <fish>;
 	}
 
 	for $i ($x ... count) {

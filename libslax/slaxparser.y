@@ -1571,7 +1571,8 @@ for_stmt :
 		    char buf[BUFSIZ];
 
 		    /* var $slax-dot-xxx = . */
-		    snprintf(buf, sizeof(buf), "$slax-dot-%u", ++for_count);
+		    snprintf(buf, sizeof(buf), "%s%u",
+			     FOR_VARIABLE_PREFIX, ++for_count);
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, buf + 1);
 		    slaxAttribAddLiteral(slax_data, ATT_SELECT, ".");
@@ -2486,8 +2487,9 @@ xpath_expr :
 		    ALL_KEYWORDS_ON();
 
 		    /* Build all the parts */
-		    res[0] = slaxStringLiteral("slax:build-sequence",
-					    T_FUNCTION_NAME);
+		    res[0] = slaxStringLiteral(
+					SLAX_PREFIX ":" FUNC_BUILD_SEQUENCE,
+					T_FUNCTION_NAME);
 		    res[1] = slaxStringLiteral("(", L_OPAREN);
 		    res[2] = $1;
 		    res[3] = slaxStringLiteral(",", L_COMMA);

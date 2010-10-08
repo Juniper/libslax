@@ -278,7 +278,7 @@ slaxExtRegister (void)
 			  (xsltPreComputeFunction) slaxTraceCompile,
 			  (xsltTransformFunction) slaxTraceElement);
 
-    xsltRegisterExtModuleFunction((const xmlChar *) "build-sequence",
+    xsltRegisterExtModuleFunction((const xmlChar *) FUNC_BUILD_SEQUENCE,
                                   (const xmlChar *) SLAX_URI,
                                   slaxExtBuildSequence);
 }
