@@ -2725,6 +2725,50 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 }
 
 
+/**
+ * See if we need to rewrite a function call into something else.
+ * The only current case is "..."/slax:build-sequnce.
+ */
+int
+slaxWriteRedoFunction (slax_data_t *swp UNUSED, const char *func,
+		       slax_string_t *xpath)
+{
+    slax_string_t *cur, *prev;
+    int depth;
+
+    slaxTrace("slaxWriteFunction: function %s", func);
+
+    if (xpath && streq(func, SLAX_PREFIX ":" FUNC_BUILD_SEQUENCE)) {
+	slaxTrace("slaxWriteFunction: %s ... ??? ",
+		  xpath ? xpath->ss_token : "");
+
+	for (depth = 0, prev = xpath, cur = xpath->ss_next; cur;
+			prev = cur, cur = cur->ss_next) {
+	    if (streq(cur->ss_token, ",") && depth == 0) {
+		slax_string_t *dotdotdot;
+
+		dotdotdot = slaxStringLiteral("...", L_DOTDOTDOT);
+
+		if (dotdotdot) {
+		    /* Rewrite the link of strings */
+		    prev->ss_next = dotdotdot;
+		    dotdotdot->ss_next = cur->ss_next;
+		    cur->ss_next = NULL;
+		    slaxStringFree(cur);
+		    return TRUE;
+		}
+
+	    } else if (streq(cur->ss_token, "(")) {
+		depth += 1;
+	    } else if (streq(cur->ss_token, ")")) {
+		depth -= 1;
+	    }
+	}
+    }
+
+    return FALSE;
+}
+
 #ifdef UNIT_TEST
 
 int

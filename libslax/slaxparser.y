@@ -2704,7 +2704,18 @@ xpc_function_call :
 	T_FUNCTION_NAME L_OPAREN xpc_argument_list_optional L_CPAREN
 		{
 		    SLAX_KEYWORDS_OFF();
-		    $$ = STACK_LINK($1);
+
+		    /* If we're turning XPath into SLAX, handle "..." */
+		    if (slax_data->sd_parse == M_PARSE_XPATH
+				&& slaxWriteRedoFunction(slax_data,
+							 $1->ss_token, $3)) {
+			slax_string_t *save = $3;
+			$3 = NULL;
+			STACK_CLEAR($1);
+			$$ = save;
+		    } else {
+			$$ = STACK_LINK($1);
+		    }
 		}
 
 	| xs_id_key_pattern

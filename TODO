@@ -12,11 +12,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - BUG: line numbers are off if file doesn't end in NL
 
-- slaxwriter for sequences
-  for-each (1 .. 10) { ... }
-  var $range = 5 .. 20;
-  for-each ($x .. $y) { ... }
-
 - Make man page for debugger
 
 - Make man page for libslax (public API)

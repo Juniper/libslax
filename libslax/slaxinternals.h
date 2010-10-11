@@ -512,3 +512,9 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
  * Registers the SLAX extensions
  */
 void slaxExtRegister (void);
+
+/**
+ * See if we need to rewrite a function call into something else.
+ * The only current case is "..."/slax:build-sequnce.
+ */
+int slaxWriteRedoFunction(slax_data_t *, const char *, slax_string_t *);
