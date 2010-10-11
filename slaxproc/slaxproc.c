@@ -276,6 +276,42 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     return 0;
 }
 
+static int
+do_check (const char *name, const char *output UNUSED,
+	  const char *input UNUSED, char **argv)
+{
+    xmlDocPtr scriptdoc;
+    const char *scriptname;
+    FILE *scriptfile;
+    xsltStylesheetPtr script;
+
+    scriptname = get_filename(name, &argv, -1);
+
+    if (is_filename_std(scriptname))
+	errx(1, "script file cannot be stdin");
+
+    scriptfile = fopen(scriptname, "r");
+    if (scriptfile == NULL)
+	err(1, "file open failed for '%s'", scriptname);
+
+    scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
+    if (scriptdoc == NULL)
+	errx(1, "cannot parse: '%s'", scriptname);
+    if (scriptfile != stdin)
+	fclose(scriptfile);
+
+    script = xsltParseStylesheetDoc(scriptdoc);
+    if (script == NULL || script->errors != 0)
+	errx(1, "%d errors parsing script: '%s'",
+	     script ? script->errors : 1, scriptname);
+
+    fprintf(stderr, "script check succeeds\n");
+
+    xsltFreeStylesheet(script);
+
+    return 0;
+}
+
 static void
 slaxProcTrace (void *vfp, xmlNodePtr nodep, const char *fmt, ...)
 {
@@ -341,6 +377,7 @@ print_help (void)
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
     printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
     printf("\t--run OR -r: run a SLAX script\n");
+    printf("\t--check OR -c: check syntax and content for a SLAX script\n");
     printf("\n");
 
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
@@ -353,7 +390,7 @@ print_help (void)
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
     printf("\t--verbose OR -V: enable debugging output\n");
-    printf("\t--version OR -v or -V: show version information (and exit)\n");
+    printf("\t--version OR -v: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
 }
@@ -391,6 +428,11 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_run;
+
+	} else if (streq(cp, "--check") || streq(cp, "-c")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_check;
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;

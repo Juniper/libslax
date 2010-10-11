@@ -37,6 +37,14 @@ slaxproc \- process slax files
 .I output-file
 ]]
 .br
+| [
+.B \-c
+[
+.B \-e
+]
+.I slax-file
+]
+.br
 | 
 .B \-p
 [
@@ -74,6 +82,15 @@ syntax. More information about SLAX is available at:
 The slaxproc utility can be used to translate between XSLT and SLAX
 formats, as well as run SLAX scripts.
 .SH OPTIONS
+.LP
+.B -c
+.br
+.B --check
+.LP
+.RS
+Check the given script for syntax errors.  The script is not run,
+but parse errors are reported.
+.RE
 .LP
 .B -d
 .br
