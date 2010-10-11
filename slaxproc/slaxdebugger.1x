@@ -1,0 +1,143 @@
+.TH SLAXDEBUGGER 1 "11 Oct 2010"
+.SH NAME
+slaxdebugger \- debug slax files
+.SH SYNOPSIS
+.na
+.TP
+slaxdebugger
+.br
+.ad
+.SH DESCRIPTION
+
+.LP The
+\fIslaxdebugger\fP is used to debug \fISLAX\fP
+scripts.  \fISLAX\fP is the "Stylesheet Language Alternate syntaX", a
+human-friendly format for XSLT, the W3C standard for XML-to-XML
+transformation.  SLAX has a C- and perl-like syntax that is familiar
+to programmers and is more readable than the XML-based standard XSLT
+syntax. More information about SLAX is available at:
+.LP
+.RS 
+.I http://code.google.com/p/libslax
+.RE
+.LP
+ The slaxdebugger is a debugger built into \fIlibslax\fP to allow
+consistent debugging under all environments supporting libslax.  You
+can use the debugger to start a script, trace execution, examine
+variable settings, and monitor the call flow of a script.
+.LP
+The slaxdebugger is typically invoked using the "-d" option to the
+\fIslaxproc\fP utility.
+.SH COMMANDS
+.LP
+.B break [loc]
+.LP
+.RS
+Add a breakpoint.  If a location is given, it can be either
+a \fI[file:]line\fP specification or a \fItemplate\fP name.
+The debugger will stop when a breakpoint is hit.
+.RE
+.LP
+.B  callflow [val]
+.LP
+.RS
+Enable \fIcall flow\fP tracing of the script.  A line will be printed
+each time a template is entered or exited.  "val" should be either "on"
+or "off"; if not value is given, the status is toggled.
+.RE
+.LP
+.B  continue [loc]  
+.LP
+.RS
+Continue running the script.  If a location is given, it functions as
+a temporary breakpoint, and the debugger will stop when it hits either
+that breakpoint or any breakpoint given via "break" command.
+.RE
+.LP
+.B  delete [num]    
+.LP
+.RS
+Delete all (or one) breakpoints.
+.RE
+.LP
+.B  finish          
+.LP
+.RS
+Finish the current template.  The debugger will stop when the current
+container is finished.
+.RE
+.LP
+.B  help            
+.LP
+.RS
+Show this help message
+.RE
+.LP
+.B  info            
+.LP
+.RS
+Showing info about the script being debugged. In particular "info
+breakpoint" will list current set of the breakpoints.
+.RE
+.LP
+.B list [loc]
+.LP
+.RS
+List contents of the current script, or the given location.
+.RE
+.LP
+.B  next
+.LP
+.RS
+Execute the over instruction, stepping over calls.
+.RE
+.LP
+.B  over
+.LP
+.RS
+Execute the current instruction hierarchy, skipping over nested
+hierarchies.
+.RE
+.LP
+.B  print <xpath>   
+.LP
+.RS
+Print the value of an XPath expression.
+.RE
+.LP
+.B  run             
+.LP
+.RS
+Restart the script.  Note that this does not reread, the script, but
+reruns the script as originally loaded.  To reread the script, exit
+and restart slaxproc.
+.RE
+.LP
+.B  step            
+.LP
+.RS
+Execute the next instruction, stepping into calls.
+.RE
+.LP
+.B where
+.LP
+.RS
+Show the backtrace of template calls.
+.RE
+.LP
+.B quit
+.LP
+.RS
+Quit debugger
+.RE
+.SH "SEE ALSO"
+libslax(3), slaxproc(1x)
+.SH AUTHORS
+The original author of the SLAX language and this library is 
+Phil Shafer of Juniper Networks.
+.LP
+The current version is available hosted as a Google Code project at:
+.LP
+.RS
+.I http://code.google.com/p/libslax
+.RE

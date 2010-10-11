@@ -12,8 +12,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - BUG: line numbers are off if file doesn't end in NL
 
-- Make man page for debugger
-
 - Make man page for libslax (public API)
 
 - Make flag to syntax check and compile (exit code)

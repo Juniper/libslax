@@ -1354,7 +1354,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "bt",	       1, slaxDebugCmdWhere, NULL }, /* Hidden */
 
     { "callflow",      2, slaxDebugCmdCallFlow,
-      "continue [loc]  Continue running the script" },
+      "callflow [val]  Enable call flow tracing" },
 
     { "continue",      1, slaxDebugCmdContinue,
       "continue [loc]  Continue running the script" },
