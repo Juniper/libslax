@@ -159,7 +159,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 }
 
 static char *
-input_callback (const char *prompt, int history UNUSED)
+input_callback (const char *prompt, unsigned flags UNUSED)
 {
 #ifdef HAVE_READLINE
     char *cp, *res;
@@ -173,7 +173,7 @@ input_callback (const char *prompt, int history UNUSED)
 	return NULL;
 
     /* Add the command to the shell history (if it's not blank) */
-    if (history && *cp)
+    if ((flags & SIF_HISTORY) && *cp)
 	add_history(cp);
 
     res = (char *) xmlStrdup((xmlChar *) cp);
@@ -258,7 +258,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 
 
     if (use_debugger) {
-	slaxDebugRegister(input_callback, output_callback, rawwrite_callback);
+	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
 	slaxDebugApplyStylesheet(script, indoc, params);
     } else {
@@ -506,6 +506,8 @@ main (int argc UNUSED, char **argv)
     xmlInitParser();
     xsltInit();
     slaxEnable(SLAX_ENABLE);
+    slaxIoRegister(input_callback, output_callback, rawwrite_callback);
+
     if (use_exslt)
 	exsltRegisterAll();
 

@@ -23,8 +23,10 @@ BISON_COMMAND = ${BISON} -kvd -b slaxparser
 libslax_la_SOURCES = \
     slaxdebugger.c \
     slaxext.c \
+    slaxio.c \
     slaxloader.c \
     slaxparser.c \
+    slaxprofiler.c \
     slaxstring.c \
     slaxwriter.c
 

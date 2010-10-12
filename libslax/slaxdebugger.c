@@ -166,92 +166,8 @@ typedef enum slaxDebugDisplayMode_s {
 
 slaxDebugDisplayMode_t slaxDebugDisplayMode;
 
-typedef struct slaxDebugOutputInfo_s {
-    const char *doi_prefix;	/* Content to emit before each line */
-    int doi_plen;		/* Length of the prefix */
-} slaxDebugOutputInfo_t;
-
-/* Callback functions for input and output */
-static slaxDebugInputCallback_t slaxDebugInputCallback;
-static slaxDebugOutputCallback_t slaxDebugOutputCallback;
-static xmlOutputWriteCallback slaxDebugIOWrite;
-
 static const xmlChar *null = (const xmlChar *) "";
 #define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : null)
-
-/**
- * Use the input callback to get data
- * @prompt the prompt to be displayed
- */
-static char *
-slaxDebugInput (const char *prompt, int history)
-{
-    char *res;
-    /* slaxTrace("slaxDebugInput: -> [%s]", prompt); */
-    res = slaxDebugInputCallback
-			? slaxDebugInputCallback(prompt, history) : NULL;
-    /* slaxTrace("slaxDebugInput: <- [%s]", res ?: "null"); */
-    return res;
-}
-
-/**
- * Use the callback to output a string
- * @fmt printf-style format string
- */
-#ifdef HAVE_PRINTFLIKE
-static void __printflike(1, 2)
-slaxDebugOutput (const char *fmt, ...);
-#endif /* HAVE_PRINTFLIKE */
-
-static void
-slaxDebugOutput (const char *fmt, ...)
-{
-    if (slaxDebugOutputCallback) {
-	char buf[BUFSIZ];
-	va_list vap;
-
-	va_start(vap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, vap);
-	va_end(vap);
-
-	/* slaxTrace("slaxDebugOutput: [%s]", buf); */
-	slaxDebugOutputCallback("%s\n", buf);
-    }
-}
-
-/**
- * 
- */
-static void
-slaxDebugOutputNode (xmlNodePtr node, const char *prefix)
-{
-    slaxDebugOutputInfo_t info;
-    xmlSaveCtxtPtr handle;
-
-    bzero(&info, sizeof(info));
-    info.doi_prefix = prefix;
-    info.doi_plen = prefix ? strlen(prefix) : 0;
-
-    handle = xmlSaveToIO(slaxDebugIOWrite, NULL, NULL, NULL,
-		 XML_SAVE_FORMAT | XML_SAVE_NO_DECL | XML_SAVE_NO_XHTML);
-    if (handle) {
-        xmlSaveTree(handle, node);
-        xmlSaveFlush(handle);
-	slaxDebugIOWrite(NULL, "\n", 1);
-	xmlSaveClose(handle);
-    }
-}
-
-#if 0
-static void
-slaxDebugOutputElement (xmlNodePtr node, int indent, const char *prefix)
-{
-    char buf[BUFSIZ], *cp = buf, *ep = buf + bufsiz;
-
-    cp += snprintf(cp, ep - cp, "%.*s%s<%s", indent, "", prefix, node->name);
-    
-}
-#endif
 
 static int
 slaxDebugIsXsl (xmlNodePtr inst, const char *tag)
@@ -421,19 +337,6 @@ slaxDebugGetScriptNode (slaxDebugState_t *statep, const char *arg)
 }
 
 /*
- * Print the given nodeset. First we print the nodeset in a temp file.
- * Then read that file and send the the line to mgd one by one.
- */
-static void
-slaxDebugOutputNodeset (xmlNodeSetPtr nodeset)
-{
-    int i;
-
-    for (i = 0; i < nodeset->nodeNr; i++)
-	slaxDebugOutputNode(nodeset->nodeTab[i], "");
-}
-
-/*
  * Print the given XPath object
  */
 static void
@@ -444,32 +347,32 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath)
 
     switch (xpath->type) {
     case XPATH_BOOLEAN:
-	slaxDebugOutput("[boolean] %s", xpath->boolval ? "true" : "false");
+	slaxOutput("[boolean] %s", xpath->boolval ? "true" : "false");
 	break;
 
     case XPATH_NUMBER:
-	slaxDebugOutput("[number] %lf", xpath->floatval);
+	slaxOutput("[number] %lf", xpath->floatval);
 	break;
 
     case XPATH_STRING:
 	if (xpath->stringval)
-	    slaxDebugOutput("[string] %s", xpath->stringval);
+	    slaxOutput("[string] %s", xpath->stringval);
 	break;
 
     case XPATH_NODESET:
-	slaxDebugOutput("[node-set]%s (%d)",
+	slaxOutput("[node-set]%s (%d)",
 			xpath->nodesetval ? "" : " [null]",
 			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
 	if (xpath->nodesetval)
-	    slaxDebugOutputNodeset(xpath->nodesetval);
+	    slaxOutputNodeset(xpath->nodesetval);
 	break;
 
     case XPATH_XSLT_TREE:
-	slaxDebugOutput("[rtf]%s (%d)",
+	slaxOutput("[rtf]%s (%d)",
 			xpath->nodesetval ? "" : " [null]",
 			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
 	if (xpath->nodesetval)
-	    slaxDebugOutputNodeset(xpath->nodesetval);
+	    slaxOutputNodeset(xpath->nodesetval);
 	break;
 
     default:
@@ -629,7 +532,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	stop = count + 1;
 
     while (count < stop) {
-	slaxDebugOutput("%s:%d: %s", cp, count, line);
+	slaxOutput("%s:%d: %s", cp, count, line);
 
 	if (fgets(line, sizeof(line), fp) == NULL) {
 	    count += 1;
@@ -653,7 +556,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	cp = (const char *) statep->ds_script->doc->URL;
 	slaxDebugMakeRelativePath(cp, filename, rel_path, sizeof(rel_path));
 	
-	slaxDebugOutput("%c%c%s:%d:0", 26, 26, rel_path, start);
+	slaxOutput("%c%c%s:%d:0", 26, 26, rel_path, start);
     }
 
     fclose(fp);
@@ -698,7 +601,7 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
 
     if (statep->ds_stop_at && statep->ds_stop_at == node) {
 	if (reached) {
-	    slaxDebugOutput("Reached stop at %s:%ld",
+	    slaxOutput("Reached stop at %s:%ld",
 			    node->doc->URL, xmlGetLineNo(node));
 	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	}
@@ -708,7 +611,7 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbp->dbp_inst == node) {
 	    if (reached) {
-		slaxDebugOutput("Reached breakpoint %d, at %s:%ld", 
+		slaxOutput("Reached breakpoint %d, at %s:%ld", 
 				dbp->dbp_num, node->doc->URL,
 				xmlGetLineNo(node));
 		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
@@ -749,7 +652,7 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 {
     char buf[BUFSIZ];
 
-    slaxDebugOutput("callflow: %u: %s <%s%s%s> in %s at %s%s%ld",
+    slaxOutput("callflow: %u: %s <%s%s%s> in %s at %s%s%ld",
 	statep->ds_stackdepth, tag,
 	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
@@ -815,7 +718,7 @@ slaxDebugCmdBreak (DC_ARGS)
 	return;
 
     if (slaxDebugCheckBreakpoint(statep, node, FALSE)) {
-	slaxDebugOutput("Duplicate breakpoint");
+	slaxOutput("Duplicate breakpoint");
 	return; 
     }
 
@@ -831,7 +734,7 @@ slaxDebugCmdBreak (DC_ARGS)
     bp->dbp_inst = node;
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
 
-    slaxDebugOutput("Breakpoint %d at file %s, line %ld",
+    slaxOutput("Breakpoint %d at file %s, line %ld",
 		    bp->dbp_num, 
 		    node->doc->URL, xmlGetLineNo(node));  
 }
@@ -841,7 +744,7 @@ slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
 {
     int rc = (xsltGetDebuggerStatus() == XSLT_DEBUG_DONE);
     if (rc)
-	slaxDebugOutput("The script is not being run.");
+	slaxOutput("The script is not being run.");
     return rc;
 }
 
@@ -859,7 +762,7 @@ slaxDebugCmdContinue (DC_ARGS)
     if (argv[1]) {
 	node = slaxDebugGetNode(statep, argv[1]);
 	if (node == NULL) {
-	    slaxDebugOutput("Unknown location: %s", argv[1]);
+	    slaxOutput("Unknown location: %s", argv[1]);
 	    return;
 	}
 
@@ -886,20 +789,20 @@ slaxDebugCmdDelete (DC_ARGS)
      * breakpoints
      */
     if (argv[1] == NULL) {
-	cp = slaxDebugInput(prompt, FALSE);
+	cp = slaxInput(prompt, 0);
 
 	if (!streq(cp, "y") && !streq(cp, "yes"))
 	    return;
 
 	slaxDebugClearBreakpoints();
-	slaxDebugOutput("Deleted all breakpoints");
+	slaxOutput("Deleted all breakpoints");
 	xmlFree(cp);
 	return;
     }
 
     num = atoi(argv[1]);
     if (num <= 0) {
-	slaxDebugOutput("Invalid breakpoint number");
+	slaxOutput("Invalid breakpoint number");
 	return;
     }
 
@@ -910,12 +813,12 @@ slaxDebugCmdDelete (DC_ARGS)
     TAILQ_FOREACH(dbpp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbpp->dbp_num == num) {
 	    TAILQ_REMOVE(&slaxDebugBreakpoints, dbpp, dbp_link);
-	    slaxDebugOutput("Deleted breakpoint '%d'", num);
+	    slaxOutput("Deleted breakpoint '%d'", num);
 	    return;
 	}
     }
 
-    slaxDebugOutput("Breakpoint '%d' not found", num);
+    slaxOutput("Breakpoint '%d' not found", num);
 }
 
 /*
@@ -926,13 +829,13 @@ slaxDebugCmdHelp (DC_ARGS)
 {
     slaxDebugCommand_t *cmdp;
 
-    slaxDebugOutput("List of commands:");
+    slaxOutput("List of commands:");
     for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
 	if (cmdp->dc_help)
-	    slaxDebugOutput("  %s", cmdp->dc_help);
+	    slaxOutput("  %s", cmdp->dc_help);
     }
-    slaxDebugOutput("%s", "");	/* Avoid compiler warning */
-    slaxDebugOutput("Command name abbreviations are allowed");
+    slaxOutput("%s", "");	/* Avoid compiler warning */
+    slaxOutput("Command name abbreviations are allowed");
 }
 
 /*
@@ -952,12 +855,12 @@ slaxDebugCmdInfo (DC_ARGS)
 
 	TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	    if (++hit == 1)
-		slaxDebugOutput("List of breakpoints:");
+		slaxOutput("List of breakpoints:");
 
 	    tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
 	    template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
-	    slaxDebugOutput("    #%d %s at %s:%ld",
+	    slaxOutput("    #%d %s at %s:%ld",
 		dbp->dbp_num,
 	        slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 		(dbp->dbp_inst && dbp->dbp_inst->doc)
@@ -966,9 +869,9 @@ slaxDebugCmdInfo (DC_ARGS)
 	}
 
 	if (hit == 0)
-	    slaxDebugOutput("No breakpoints.");
+	    slaxOutput("No breakpoints.");
     } else
-	slaxDebugOutput("Undefined command: \"%s\".  Try \"help\".", argv[1]);
+	slaxOutput("Undefined command: \"%s\".  Try \"help\".", argv[1]);
 		
 }
 
@@ -986,7 +889,7 @@ slaxDebugCmdList (DC_ARGS)
 	    slaxDebugOutputScriptLines(statep, (const char *) node->doc->URL,
 				       line_no, line_no + 10);
 	} else {
-	    slaxDebugOutput("target lacks filename: %s", argv[1]);
+	    slaxOutput("target lacks filename: %s", argv[1]);
 	}
     }
 }
@@ -1037,7 +940,7 @@ slaxDebugCmdFinish (DC_ARGS)
 	return;
     }
 
-    slaxDebugOutput("template not found");
+    slaxOutput("template not found");
 }
 
 /*
@@ -1179,7 +1082,7 @@ slaxDebugCmdPrint (DC_ARGS)
     if (res) {
 	slaxDebugOutputXpath(res);
 	xmlXPathFreeObject(res);
-	slaxDebugOutput("%s", ""); /* Avoid compiler warning */
+	slaxOutput("%s", ""); /* Avoid compiler warning */
     }
 }
 
@@ -1247,13 +1150,13 @@ slaxDebugCmdWhere (DC_ARGS)
 		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
 	else from_info[0] = '\0';
 
-	slaxDebugOutput("#%d %s%s%s", num, template_info, tag, from_info);
+	slaxOutput("#%d %s%s%s", num, template_info, tag, from_info);
 
 	num += 1;
     }
 
     if (num == 0)
-	slaxDebugOutput("call stack is empty");
+	slaxOutput("call stack is empty");
 }
 
 /**
@@ -1272,16 +1175,16 @@ slaxDebugCmdCallFlow (DC_ARGS)
 		 || streq(arg, "disable"))
 	    enable = FALSE;
 	else {
-	    slaxDebugOutput("invalid setting: %s", arg);
+	    slaxOutput("invalid setting: %s", arg);
 	}
     }
 
     if (enable) {
 	statep->ds_flags |= DSF_CALLFLOW;
-	slaxDebugOutput("Enabling callflow");
+	slaxOutput("Enabling callflow");
     } else {
 	statep->ds_flags &= ~DSF_CALLFLOW;
-	slaxDebugOutput("Disabling callflow");
+	slaxOutput("Disabling callflow");
     }
 }
     
@@ -1298,7 +1201,7 @@ slaxDebugCmdRun (DC_ARGS)
 	const char prompt[] =
 "The script being debugged has been started already.\n\
 Start it from the beginning? (y or n) ";
-	char *input = slaxDebugInput(prompt, FALSE);
+	char *input = slaxInput(prompt, 0);
 
 	if (input == NULL)
 	    return;
@@ -1324,7 +1227,7 @@ slaxDebugCmdQuit (DC_ARGS)
 	"The script is running.  Exit anyway? (y or n) ";
 
     if (xsltGetDebuggerStatus() != XSLT_DEBUG_DONE) {
-	char *input = slaxDebugInput(prompt, FALSE);
+	char *input = slaxInput(prompt, 0);
 
 	if (input == NULL
 	    	|| !slaxDebugCheckAbbrev("yes", 1, input, strlen(input)))
@@ -1441,7 +1344,7 @@ slaxDebugRunCommand (slaxDebugState_t *statep, char *input)
 	cmdp->dc_func(statep, input_copy, argv);
 
     } else {
-	slaxDebugOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
+	slaxOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
     }
 }
 
@@ -1462,7 +1365,7 @@ slaxDebugShell (slaxDebugState_t *statep)
 	statep->ds_flags &= ~DSF_DISPLAY;
     }
 
-    input = slaxDebugInput(prompt, TRUE);
+    input = slaxInput(prompt, SIF_HISTORY);
     if (input == NULL)
 	return -1;
 
@@ -1674,7 +1577,7 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
      */
     dsfp = xmlMalloc(sizeof(*dsfp));
     if (!dsfp) {
-	slaxDebugOutput("memory allocation failure");
+	slaxOutput("memory allocation failure");
 	return 0;
     }
 
@@ -1764,9 +1667,7 @@ slaxDebugDropFrame (void)
  * Register debugger
  */
 int
-slaxDebugRegister (slaxDebugInputCallback_t input_callback,
-		   slaxDebugOutputCallback_t output_callback,
-		   xmlOutputWriteCallback raw_write)
+slaxDebugInit (void)
 {
     static int done_register;
     slaxDebugState_t *statep = slaxDebugGetState();
@@ -1787,12 +1688,8 @@ slaxDebugRegister (slaxDebugInputCallback_t input_callback,
 
     slaxDebugDisplayMode = CLI_MODE;
 
-    slaxDebugInputCallback = input_callback;
-    slaxDebugOutputCallback = output_callback;
-    slaxDebugIOWrite = raw_write;
-
-    slaxDebugOutput("sdb: The SLAX Debugger (version %s)", PACKAGE_VERSION);
-    slaxDebugOutput("Type 'help' for help");
+    slaxOutput("sdb: The SLAX Debugger (version %s)", PACKAGE_VERSION);
+    slaxOutput("Type 'help' for help");
 
     return FALSE;
 }
@@ -1873,7 +1770,7 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 	    statep->ds_last_inst = NULL;
 	    statep->ds_stop_at = NULL;
 
-	    slaxDebugOutput("Script exited normally.");
+	    slaxOutput("Script exited normally.");
 	    xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
 	    statep->ds_flags &= ~DSF_DISPLAY;
 

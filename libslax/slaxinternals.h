@@ -518,3 +518,85 @@ void slaxExtRegister (void);
  * The only current case is "..."/slax:build-sequnce.
  */
 int slaxWriteRedoFunction(slax_data_t *, const char *, slax_string_t *);
+
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Input/output read/write/print functions
+ */
+
+/**
+ * Use the input callback to get data
+ * @prompt the prompt to be displayed
+ */
+char *
+slaxInput (const char *prompt, unsigned flags);
+
+/**
+ * Use the callback to output a string
+ * @fmt printf-style format string
+ */
+void
+#ifdef HAVE_PRINTFLIKE
+__printflike(1, 2)
+#endif /* HAVE_PRINTFLIKE */
+slaxOutput (const char *fmt, ...);
+
+/**
+ * Output a node
+ */
+void
+slaxOutputNode (xmlNodePtr);
+
+/**
+ * Print the given nodeset. First we print the nodeset in a temp file.
+ * Then read that file and send the the line to mgd one by one.
+ */
+void
+slaxOutputNodeset (xmlNodeSetPtr nodeset);
+
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Called from the debugger when we want to profile a script.
+ *
+ * @docp document pointer for the script
+ * @returns TRUE is there was a problem
+ */
+int
+slaxProfOpen (xmlDocPtr docp);
+
+/**
+ * Called when we enter a instruction.
+ *
+ * @docp document pointer
+ * @inst instruction (slax/xslt code) pointer
+ */
+void
+slaxProfEnter (xmlDocPtr docp, xmlNodePtr inst);
+
+/**
+ * Called when we exit an instruction
+ *
+ * @docp document pointer
+ * @inst instruction (slax/xslt code) pointer
+ */
+void
+slaxProfExit (xmlDocPtr docp, xmlNodePtr inst);
+
+typedef int (*slaxProfCallback_t)(void *, const char *fmt, ...);
+
+/**
+ * Print the results
+ */
+void
+slaxProfPrint (slaxProfCallback_t func, void *data);
+
+/**
+ * Done (free resources)
+ */
+void
+slaxProfClose (void);
+
+
+

@@ -6,6 +6,8 @@
  * See ../Copyright for the status of this software
  */
 
+#include <sys/time.h>
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -94,3 +96,17 @@ allocadupx (char *to, const char *from)
 	if ((_start) > (_end)) \
 	    (_start) = (_end); \
     } while (0);
+
+/* ---------------------------------------------------------------------- */
+
+/*
+ * A type for holding micro seconds.  This is for comparisons, so the fact
+ * that we leak seconds off the top is not a concern.
+ */
+typedef unsigned long time_usecs_t;
+
+static inline time_usecs_t
+timeval_to_usecs (struct timeval *tvp)
+{
+    return tvp->tv_sec * 1000000 + tvp->tv_usec;
+}

@@ -84,16 +84,33 @@ typedef void (*slaxTraceCallback_t)(void *, xmlNodePtr, const char *fmt, ...);
 void
 slaxTraceEnable (slaxTraceCallback_t func, void *data);
 
+/* ---------------------------------------------------------------------- */
+
+/*
+ * IO hooks
+ */
+typedef char *(*slaxInputCallback_t)(const char *, unsigned flags);
+typedef void (*slaxOutputCallback_t)(const char *, ...);
+
+/* Flags for slaxInputCallback_t */
+#define SIF_HISTORY	(1<<0)	/* Add input line to history */
+#define SIF_SECRET	(1<<1)	/* Secret/password text (do not echo) */
+
+void
+slaxIoRegister (slaxInputCallback_t input_callback,
+		slaxOutputCallback_t output_callback,
+		xmlOutputWriteCallback raw_write);
+
+/* ---------------------------------------------------------------------- */
 /*
  * Some fairly simple hooks for the debugger.
  */
-typedef char *(*slaxDebugInputCallback_t)(const char *, int history);
-typedef void (*slaxDebugOutputCallback_t)(const char *, ...);
 
+/*
+ * Register debugger
+ */
 int
-slaxDebugRegister (slaxDebugInputCallback_t input_callback,
-		   slaxDebugOutputCallback_t output_callback,
-		   xmlOutputWriteCallback raw_write);
+slaxDebugInit (void);
 
 /**
  * Set the top-most stylesheet
