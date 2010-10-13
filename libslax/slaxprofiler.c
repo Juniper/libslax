@@ -82,7 +82,7 @@ slaxProfOpen (xmlDocPtr docp)
     if (lines == 0)
 	return TRUE;
 
-    spp = xmlMalloc(sizeof(*spp) + sizeof(spp->sp_data[0]) * lines);
+    spp = xmlMalloc(sizeof(*spp) + sizeof(spp->sp_data[0]) * (lines + 1));
     if (spp == NULL) {
 	slaxOutput("out of memory");
 	return TRUE;
@@ -98,22 +98,25 @@ slaxProfOpen (xmlDocPtr docp)
 }
 
 /**
- * Called when we enter a instruction.
+ * Called when we enter an instruction.
  *
  * @docp document pointer
  * @inst instruction (slax/xslt code) pointer
  */
 void
-slaxProfEnter (xmlDocPtr docp, xmlNodePtr inst)
+slaxProfEnter (xmlNodePtr inst)
 {
     slax_prof_t *spp = slax_profile;
     long line;
     struct rusage ru;
 
+    if (spp->sp_inst_line)
+	slaxTrace("profile: warning: enter while still set");
+
     /* Zero means no valid data, so don't record */
     slax_profile_time_user = slax_profile_time_system = 0;
 
-    if (docp != spp->sp_docp)
+    if (inst->doc != spp->sp_docp)
 	return;
 
     line = xmlGetLineNo(inst);
@@ -122,30 +125,27 @@ slaxProfEnter (xmlDocPtr docp, xmlNodePtr inst)
 
     if (getrusage(0, &ru) == 0) {
 	slax_profile_time_user = timeval_to_usecs(&ru.ru_utime);
-	slax_profile_time_system = timeval_to_usecs(&ru.ru_utime);
+	slax_profile_time_system = timeval_to_usecs(&ru.ru_stime);
 	spp->sp_inst_line = line;	/* Save instruct line number */
     }
 }
 
 /**
  * Called when we exit an instruction
- *
- * @docp document pointer
- * @inst instruction (slax/xslt code) pointer
  */
 void
-slaxProfExit (xmlDocPtr docp, xmlNodePtr inst UNUSED)
+slaxProfExit (void)
 {
     slax_prof_t *spp = slax_profile;
     long line;
     struct rusage ru;
     int rc;
 
-    /* Zero means no valid data, so don't record */
-    if (slax_profile_time_user == 0)
+    if (spp->sp_inst_line == 0)
 	return;
 
-    if (docp != spp->sp_docp)
+    /* Zero means no valid data, so don't record */
+    if (slax_profile_time_user == 0)
 	return;
 
     rc = getrusage(0, &ru);
@@ -156,33 +156,51 @@ slaxProfExit (xmlDocPtr docp, xmlNodePtr inst UNUSED)
 
     if (rc == 0) {
 	time_usecs_t user = timeval_to_usecs(&ru.ru_utime);
-	time_usecs_t syst = timeval_to_usecs(&ru.ru_utime);
+	time_usecs_t syst = timeval_to_usecs(&ru.ru_stime);
 
 	spp->sp_data[line].spe_count += 1;
-	spp->sp_data[line].spe_user += user - slax_profile_time_user;
-	spp->sp_data[line].spe_system += syst - slax_profile_time_system;
+	user = (user > slax_profile_time_user)
+	      ? user - slax_profile_time_user : 0;
+	syst = (syst > slax_profile_time_system)
+	      ? syst - slax_profile_time_system : 0;
+
+	spp->sp_data[line].spe_user += user;
+	spp->sp_data[line].spe_system += syst;
     }
 
     slax_profile_time_user = slax_profile_time_system = 0; /* Not valid */
+    spp->sp_inst_line = 0;
+}
+
+static inline double
+doublediv (unsigned long num, unsigned long denom)
+{
+    double xnum = num, xdenom = denom;
+    return xnum / xdenom;
 }
 
 /**
- * Print the results
+ * Report the results
  */
 void
-slaxProfPrint (slaxProfCallback_t func, void *data)
+slaxProfReport (void)
 {
     slax_prof_t *spp = slax_profile;
     const char *filename = (const char *) spp->sp_docp->URL;
     FILE *fp;
-    unsigned num = 0;
+    unsigned num = 0, count;
     char line[BUFSIZ];
+    unsigned long tot_count = 0;
+    time_usecs_t tot_user = 0, tot_system = 0;
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-	func(data, "could not open file: %s", filename);
+	slaxOutput("could not open file: %s", filename);
 	return;
     }
+
+    slaxOutput("%5s %8s %8s %8s %8s %8s %s",
+	       "Line", "Hits", "User", "U/Hit", "System", "S/Hit", "Source");
 
     for (;;) {
 	if (fgets(line, sizeof(line), fp) == NULL) 
@@ -195,22 +213,49 @@ slaxProfPrint (slaxProfCallback_t func, void *data)
 	 * character is '\n'
 	 */
 	if (line[strlen(line) - 1] == '\n') {
+	    line[strlen(line) - 1] = '\0';
 	    num += 1;
 
-	    if (num < spp->sp_lines && spp->sp_data[num].spe_count) {
-		func(data, "%5d %5d %5d %5d%s", num,
-		   spp->sp_data[num].spe_count,
-		   spp->sp_data[num].spe_user / spp->sp_data[num].spe_count,
-		   spp->sp_data[num].spe_system / spp->sp_data[num].spe_count,
-		   line);
+	    count = spp->sp_data[num].spe_count;
+
+	    if (num <= spp->sp_lines && spp->sp_data[num].spe_count) {
+		slaxOutput("%5lu %8lu %8lu %8.2f %8lu %8.2f %s", num,
+			   count,
+			   spp->sp_data[num].spe_user,
+			   doublediv(spp->sp_data[num].spe_user, count),
+			   spp->sp_data[num].spe_system,
+			   doublediv(spp->sp_data[num].spe_system, count),
+			   line);
+
+		tot_count += spp->sp_data[num].spe_count;
+		tot_user += spp->sp_data[num].spe_user;
+		tot_system += spp->sp_data[num].spe_system;
+
 	    } else {
-		func(data, "%5d %17s%s", num, "", line);
+		slaxOutput("%5lu %8s %8s %8s %8s %8s %s",
+			   num, "-", "-", "-", "-", "-", line);
 	    }
 	} else {
-	    func(data, "%23s%s", "", line);
+	    slaxOutput("%5s %8s %8s %8s %8s %8s %s",
+		       "-", "-", "-", "-", "-", "-", line);
 	}
     }
 
+    slaxOutput("%5s %8lu %8lu %8lu %s", "Total", tot_count,
+	       tot_user, tot_system, "Totals");
+
+}
+
+
+/**
+ * Clear all values
+ */
+void
+slaxProfClear (void)
+{
+    slax_prof_t *spp = slax_profile;
+
+    bzero(spp->sp_data, (spp->sp_lines + 1) * sizeof(spp->sp_data[0]));
 }
 
 /**

@@ -26,3 +26,5 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - sdb: add SLAX-style xpath expressions to the "print" command ("==", etc)
 
 - Nit: teach slaxProcTrace() how to keep the trace handle open
+
+- Nit: make sdb's "run" command work like gdb's

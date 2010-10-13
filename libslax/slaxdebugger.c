@@ -102,6 +102,7 @@ typedef struct slaxDebugState_s {
 #define DSF_INSHELL	(1<<3)	/* Inside the shell, so don't recurse */
 
 #define DSF_RESTART	(1<<4)	/* Restart the debugger/script */
+#define DSF_PROFILER	(1<<5)	/* Profiler is on */
 
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
@@ -159,12 +160,10 @@ static uint slaxDebugBreakpointNumber;
 /*
  * Various display mode 
  */
-typedef enum slaxDebugDisplayMode_s {
-    CLI_MODE,
-    EMACS_MODE,
-} slaxDebugDisplayMode_t;
-
-slaxDebugDisplayMode_t slaxDebugDisplayMode;
+int slaxDebugDisplayMode;
+#define DEBUG_MODE_CLI		1 /* Normal CLI operations */
+#define DEBUG_MODE_EMACS	2 /* gdb/emacs mode */
+#define DEBUG_MODE_PROFILER	3 /* Profiler only */
 
 static const xmlChar *null = (const xmlChar *) "";
 #define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : null)
@@ -546,7 +545,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	}
     }
 
-    if (slaxDebugDisplayMode == EMACS_MODE) {
+    if (slaxDebugDisplayMode == DEBUG_MODE_EMACS) {
 	char rel_path[BUFSIZ];
 
 	/*
@@ -702,6 +701,12 @@ static int
 slaxDebugCheckAbbrev (const char *name, int min, const char *value, int len)
 {
     return (len >= min && strncmp(name, value, len) == 0);
+}
+
+static inline int
+slaxDebugIsAbbrev (const char *name, const char *value)
+{
+    return value ? slaxDebugCheckAbbrev(name, 1, value, strlen(value)) : 0;
 }
 
 /*
@@ -901,9 +906,9 @@ static void
 slaxDebugCmdMode (DC_ARGS)
 {
     if (streq(argv[1], "emacs"))
-	slaxDebugDisplayMode = EMACS_MODE;
+	slaxDebugDisplayMode = DEBUG_MODE_EMACS;
     else if (streq(argv[1], "cli"))
-	slaxDebugDisplayMode = CLI_MODE; 
+	slaxDebugDisplayMode = DEBUG_MODE_CLI;
 }
 
 /*
@@ -1087,6 +1092,46 @@ slaxDebugCmdPrint (DC_ARGS)
 }
 
 /*
+ * 'profiler [on|off]' command
+ */
+static void
+slaxDebugCmdProfiler (DC_ARGS)
+{
+    const char *arg = argv[1];
+    int enable = !(statep->ds_flags & DSF_PROFILER);
+
+    if (arg) {
+	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
+	    || slaxDebugIsAbbrev("enable", arg))
+	    enable = TRUE;
+	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
+		 || slaxDebugIsAbbrev("disable", arg))
+	    enable = FALSE;
+	else if (slaxDebugIsAbbrev("clear", arg)) {
+	    slaxProfClear();
+	    return;
+
+	} else if (slaxDebugIsAbbrev("report", arg)) {
+	    slaxProfReport();
+	    return;
+
+	} else {
+	    slaxOutput("invalid setting: %s", arg);
+	    return;
+	}
+    }
+
+    if (enable) {
+	statep->ds_flags |= DSF_PROFILER;
+	slaxOutput("Enabling profiler");
+    } else {
+	statep->ds_flags &= ~DSF_CALLFLOW;
+	slaxOutput("Disabling profiler");
+    }
+    
+}
+
+/*
  * 'where' command
  *  syntax: where [full]
  */
@@ -1106,8 +1151,7 @@ slaxDebugCmdWhere (DC_ARGS)
     if (slaxDebugCheckDone(statep))
 	return;
 
-    full = slaxDebugCheckAbbrev("full", 1, argv[1],
-				argv[1] ? strlen(argv[1]) : 1);
+    full = slaxDebugIsAbbrev("full", argv[1]);
 
     /*
      * Walk the stack linked list in reverse order and print it
@@ -1169,10 +1213,11 @@ slaxDebugCmdCallFlow (DC_ARGS)
     int enable = !(statep->ds_flags & DSF_CALLFLOW);
 
     if (arg) {
-	if (streq(arg, "on") || streq(arg, "yes") || streq(arg, "enable"))
+	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
+		|| slaxDebugIsAbbrev("enable", arg))
 	    enable = TRUE;
-	else if (streq(arg, "off") || streq(arg, "on")
-		 || streq(arg, "disable"))
+	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
+		 || slaxDebugIsAbbrev("disable", arg))
 	    enable = FALSE;
 	else {
 	    slaxOutput("invalid setting: %s", arg);
@@ -1289,6 +1334,9 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
 
     { "print",	       1, slaxDebugCmdPrint,
       "print <xpath>   Print the value of an XPath expression" },
+
+    { "profiler",      2, slaxDebugCmdProfiler,
+      "profiler [val]  Turn profiler on or off" },
 
     { "run",	       3, slaxDebugCmdRun,
       "run             Restart the script" },
@@ -1470,6 +1518,9 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     if (slaxDebugSameSlax(statep, inst))
 	return;
 
+    if (statep->ds_flags & DSF_PROFILER)
+	slaxProfExit();
+
     /*
      * Fill in the current state
      */
@@ -1496,32 +1547,35 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 	status = xsltGetDebuggerStatus();
 
 	switch (status) {
-	    case XSLT_DEBUG_INIT:
-		/*
-		 * If slaxDebugShell() fails, we are looking at EOF,
-		 * so shut it down and get out of here.
-		 */
-		if (slaxDebugShell(statep) < 0) {
-		    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-		    return;
-		}
-
-		/* Record the last instruction we looked at */
-		statep->ds_last_inst = statep->ds_inst;
-		break;
-
-	    case XSLT_DEBUG_OVER:
-	    case XSLT_DEBUG_NEXT:
-	    case XSLT_DEBUG_CONT:
-	    case XSLT_DEBUG_NONE:
+	case XSLT_DEBUG_INIT:
+	    /*
+	     * If slaxDebugShell() fails, we are looking at EOF,
+	     * so shut it down and get out of here.
+	     */
+	    if (slaxDebugShell(statep) < 0) {
+		xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
 		return;
+	    }
 
-	    case XSLT_DEBUG_STEP:
-		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
-		return;
+	    /* Record the last instruction we looked at */
+	    statep->ds_last_inst = statep->ds_inst;
+	    break;
 
-	    case XSLT_DEBUG_QUIT:
-		return;
+	case XSLT_DEBUG_QUIT:
+	    return;
+
+	case XSLT_DEBUG_STEP:
+	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	    /* Fallthru */
+
+	case XSLT_DEBUG_OVER:
+	case XSLT_DEBUG_NEXT:
+	case XSLT_DEBUG_CONT:
+	case XSLT_DEBUG_NONE:
+	    if (statep->ds_flags & DSF_PROFILER)
+		slaxProfEnter(inst);
+
+	    return;
 	}
     }
 }
@@ -1543,6 +1597,9 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     /* We don't want to be recursive (via the 'print' command) */
     if (statep->ds_flags & DSF_INSHELL)
 	return 0;
+
+    if (statep->ds_flags & DSF_PROFILER)
+	slaxProfExit();
 
     slaxTrace("addFrame: template %p/[%s], inst %p/%s/%d (inst %p/%s)",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
@@ -1626,6 +1683,9 @@ slaxDebugDropFrame (void)
     if (statep->ds_flags & DSF_INSHELL)
 	return;
 
+    if (statep->ds_flags & DSF_PROFILER)
+	slaxProfExit();
+
     dsfp = TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s);
     if (dsfp == NULL) {
 	slaxTrace("dropFrame: null");
@@ -1686,7 +1746,7 @@ slaxDebugInit (void)
     xsltSetDebuggerCallbacksHelper(slaxDebugHandler, slaxDebugAddFrame,
 				   slaxDebugDropFrame);
 
-    slaxDebugDisplayMode = CLI_MODE;
+    slaxDebugDisplayMode = DEBUG_MODE_CLI;
 
     slaxOutput("sdb: The SLAX Debugger (version %s)", PACKAGE_VERSION);
     slaxOutput("Type 'help' for help");
@@ -1736,6 +1796,8 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
     int status;
 
     slaxDebugSetStylesheet(style);
+    slaxProfOpen(style->doc);
+    statep->ds_flags |= DSF_PROFILER;
 
     for (;;) {
 	res = xsltApplyStylesheet(style, doc, params);
@@ -1748,7 +1810,7 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 
 	    /* Quit without restart == exit */
 	    if (!(statep->ds_flags & DSF_RESTART))
-		return;
+		goto done;
 
 	} else {
 	    /*
@@ -1776,7 +1838,7 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 
 	    for (;;) {
 		if (slaxDebugShell(statep) < 0)
-		    return;
+		    goto done;
 
 		status = xsltGetDebuggerStatus();
 		if (status != XSLT_DEBUG_QUIT)
@@ -1786,7 +1848,7 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 		if (statep->ds_flags & DSF_RESTART)
 		    break;
 
-		return;
+		goto done;
 	    }
 	}
 
@@ -1798,5 +1860,9 @@ slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
 	statep->ds_flags &= ~DSF_RESTART;
 	statep->ds_flags |= DSF_DISPLAY;
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	slaxProfClear();
     }
+
+ done:
+    slaxProfClose();
 }

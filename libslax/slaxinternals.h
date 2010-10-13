@@ -573,24 +573,27 @@ slaxProfOpen (xmlDocPtr docp);
  * @inst instruction (slax/xslt code) pointer
  */
 void
-slaxProfEnter (xmlDocPtr docp, xmlNodePtr inst);
+slaxProfEnter (xmlNodePtr inst);
 
 /**
  * Called when we exit an instruction
- *
- * @docp document pointer
- * @inst instruction (slax/xslt code) pointer
  */
 void
-slaxProfExit (xmlDocPtr docp, xmlNodePtr inst);
+slaxProfExit (void);
 
 typedef int (*slaxProfCallback_t)(void *, const char *fmt, ...);
 
 /**
- * Print the results
+ * Report the results
  */
 void
-slaxProfPrint (slaxProfCallback_t func, void *data);
+slaxProfReport (void);
+
+/**
+ * Clear all values
+ */
+void
+slaxProfClear (void);
 
 /**
  * Done (free resources)
