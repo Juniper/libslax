@@ -112,19 +112,27 @@ const char **slaxDebugIncludes;
         slaxDebugState_t *statep UNUSED, \
 	const char *commandline UNUSED, \
 	const char **argv UNUSED
+#define DH_ARGS \
+        slaxDebugState_t *statep UNUSED
 
 /*
  * Commands supported in debugger
  */
 typedef void (*slaxDebugCommandFunc_t)(DC_ARGS);
+typedef void (*slaxDebugHelpFunc_t)(DH_ARGS);
 
 typedef struct slaxDebugCommand_s {
     const char *dc_command;	/* Command name */
     int dc_min;			/* Minimum length */
     slaxDebugCommandFunc_t dc_func; /* Function pointer */
     const char *dc_help;	/* Help text */
+    slaxDebugHelpFunc_t dc_helpfunc; /* Function to generate more help */
 } slaxDebugCommand_t;
+
 static slaxDebugCommand_t slaxDebugCmdTable[];
+
+static slaxDebugCommand_t *
+slaxDebugGetCommand (const char *name);
 
 /*
  * Doubly linked list to store the templates call sequence
@@ -834,13 +842,33 @@ slaxDebugCmdHelp (DC_ARGS)
 {
     slaxDebugCommand_t *cmdp;
 
-    slaxOutput("List of commands:");
-    for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
-	if (cmdp->dc_help)
+    if (argv[1]) {
+	cmdp = slaxDebugGetCommand(argv[1]);
+	if (cmdp == NULL)
+	    slaxOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
+	else if (cmdp->dc_helpfunc)
+	    cmdp->dc_helpfunc(statep);
+	else if (cmdp->dc_help)
 	    slaxOutput("  %s", cmdp->dc_help);
+	else 
+	    slaxOutput("No help is available");
+	
+    } else {
+	slaxOutput("List of commands:");
+	for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
+	    if (cmdp->dc_help)
+		slaxOutput("  %s", cmdp->dc_help);
+	}
+	slaxOutput("%s", "");	/* Avoid compiler warning */
+	slaxOutput("Command name abbreviations are allowed");
     }
-    slaxOutput("%s", "");	/* Avoid compiler warning */
-    slaxOutput("Command name abbreviations are allowed");
+}
+
+static void
+slaxDebugHelpInfo (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  info breakpoints  Display current breakpoints");
 }
 
 /*
@@ -855,9 +883,7 @@ slaxDebugCmdInfo (DC_ARGS)
     char buf[BUFSIZ];
     int hit = 0;
 
-    if (argv[1] == NULL
-	|| slaxDebugCheckAbbrev("break", 1, argv[1], strlen(argv[1]))) {
-
+    if (argv[1] == NULL || slaxDebugIsAbbrev("breakpoints", argv[1])) {
 	TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	    if (++hit == 1)
 		slaxOutput("List of breakpoints:");
@@ -875,9 +901,12 @@ slaxDebugCmdInfo (DC_ARGS)
 
 	if (hit == 0)
 	    slaxOutput("No breakpoints.");
+
+    } else if (slaxDebugIsAbbrev("help", argv[1])) {
+	slaxDebugHelpInfo(statep);
+
     } else
 	slaxOutput("Undefined command: \"%s\".  Try \"help\".", argv[1]);
-		
 }
 
 /*
@@ -1091,6 +1120,16 @@ slaxDebugCmdPrint (DC_ARGS)
     }
 }
 
+static void
+slaxDebugHelpProfile (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  profile clear   Clear  profiling information");
+    slaxOutput("  profile off     Disable profiling");
+    slaxOutput("  profile on      Enable profiling");
+    slaxOutput("  profile report  Report profiling information");
+}
+
 /*
  * 'profiler [on|off]' command
  */
@@ -1104,15 +1143,22 @@ slaxDebugCmdProfiler (DC_ARGS)
 	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
 	    || slaxDebugIsAbbrev("enable", arg))
 	    enable = TRUE;
+
 	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
 		 || slaxDebugIsAbbrev("disable", arg))
 	    enable = FALSE;
+
 	else if (slaxDebugIsAbbrev("clear", arg)) {
+	    slaxOutput("Clearing profile information");
 	    slaxProfClear();
 	    return;
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
 	    slaxProfReport();
+	    return;
+
+	} else if (slaxDebugIsAbbrev("help", arg)) {
+	    slaxDebugHelpProfile(statep);
 	    return;
 
 	} else {
@@ -1125,7 +1171,7 @@ slaxDebugCmdProfiler (DC_ARGS)
 	statep->ds_flags |= DSF_PROFILER;
 	slaxOutput("Enabling profiler");
     } else {
-	statep->ds_flags &= ~DSF_CALLFLOW;
+	statep->ds_flags &= ~DSF_PROFILER;
 	slaxOutput("Disabling profiler");
     }
     
@@ -1203,6 +1249,14 @@ slaxDebugCmdWhere (DC_ARGS)
 	slaxOutput("call stack is empty");
 }
 
+static void
+slaxDebugHelpCallFlow (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  callflow off    Disable callflow tracing");
+    slaxOutput("  callflow on     Enable callflow tracing");
+}
+
 /**
  * 'callflow' command
  */
@@ -1216,11 +1270,18 @@ slaxDebugCmdCallFlow (DC_ARGS)
 	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
 		|| slaxDebugIsAbbrev("enable", arg))
 	    enable = TRUE;
+
 	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
 		 || slaxDebugIsAbbrev("disable", arg))
 	    enable = FALSE;
-	else {
+
+	else if (slaxDebugIsAbbrev("help", arg)) {
+	    slaxDebugHelpCallFlow(statep);
+	    return;
+
+	} else {
 	    slaxOutput("invalid setting: %s", arg);
+	    return;
 	}
     }
 
@@ -1297,60 +1358,92 @@ slaxDebugCmdQuit (DC_ARGS)
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "break",	       1, slaxDebugCmdBreak,
-      "break [loc]     Add a breakpoint at [file:]line or template" },
+      "break [loc]     Add a breakpoint at [file:]line or template",
+      NULL,
+    },
 
-    { "bt",	       1, slaxDebugCmdWhere, NULL }, /* Hidden */
+    { "bt",	       1, slaxDebugCmdWhere, NULL, NULL }, /* Hidden */
 
     { "callflow",      2, slaxDebugCmdCallFlow,
-      "callflow [val]  Enable call flow tracing" },
+      "callflow [val]  Enable call flow tracing",
+      slaxDebugHelpCallFlow,
+    },
 
     { "continue",      1, slaxDebugCmdContinue,
-      "continue [loc]  Continue running the script" },
+      "continue [loc]  Continue running the script",
+      NULL,
+    },
 
     { "delete",	       1, slaxDebugCmdDelete,
-      "delete [num]    Delete all (or one) breakpoints" },
+      "delete [num]    Delete all (or one) breakpoints",
+      NULL,
+    },
  
     { "finish",	       1, slaxDebugCmdFinish,
-      "finish          Finish the current template" },
+      "finish          Finish the current template",
+      NULL,
+    },
 
     { "help",	       1, slaxDebugCmdHelp,
-      "help            Show this help message" },
+      "help            Show this help message",
+      NULL,
+    },
 
     { "info",	       1, slaxDebugCmdInfo,
-      "info            Showing info about the script being debugged" },
+      "info            Showing info about the script being debugged",
+      slaxDebugHelpInfo,
+    },
 
-    { "?",	       1, slaxDebugCmdHelp, NULL }, /* Hidden */
+    { "?",	       1, slaxDebugCmdHelp, NULL, NULL }, /* Hidden */
 
     { "list",	       1, slaxDebugCmdList,
-      "list [loc]      List contents of the current script" },
+      "list [loc]      List contents of the current script",
+      NULL,
+    },
 
-    { "mode",	       1, slaxDebugCmdMode, NULL }, /* Hidden */
+    { "mode",	       1, slaxDebugCmdMode, NULL, NULL }, /* Hidden */
 
     { "next",	       1, slaxDebugCmdNext,
-      "next            Execute the over instruction, stepping over calls" },
+      "next            Execute the over instruction, stepping over calls",
+      NULL,
+    },
 
     { "over",	       1, slaxDebugCmdOver,
-      "over            Execute the current instruction hierarchy" },
+      "over            Execute the current instruction hierarchy",
+      NULL,
+    },
 
     { "print",	       1, slaxDebugCmdPrint,
-      "print <xpath>   Print the value of an XPath expression" },
+      "print <xpath>   Print the value of an XPath expression",
+      NULL,
+    },
 
-    { "profiler",      2, slaxDebugCmdProfiler,
-      "profiler [val]  Turn profiler on or off" },
+    { "profile",      2, slaxDebugCmdProfiler,
+      "profile [val]  Turn profiler on or off",
+      slaxDebugHelpProfile,
+    },
 
     { "run",	       3, slaxDebugCmdRun,
-      "run             Restart the script" },
+      "run             Restart the script",
+      NULL,
+    },
 
     { "step",	       1, slaxDebugCmdStep,
-      "step            Execute the next instruction, stepping into calls" },
+      "step            Execute the next instruction, stepping into calls",
+      NULL,
+    },
 
     { "where",	       1, slaxDebugCmdWhere,
-      "where           Show the backtrace of template calls" },
+      "where           Show the backtrace of template calls",
+      NULL,
+    },
 
     { "quit",	       1, slaxDebugCmdQuit,
-      "quit            Quit debugger" },
+      "quit            Quit debugger",
+      NULL,
+    },
 
-    { NULL, 0, NULL, NULL }
+    { NULL, 0, NULL, NULL, NULL }
 };
 
 /**
