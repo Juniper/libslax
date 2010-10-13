@@ -185,7 +185,7 @@ doublediv (unsigned long num, unsigned long denom)
  * Report the results
  */
 void
-slaxProfReport (void)
+slaxProfReport (int brief)
 {
     slax_prof_t *spp = slax_profile;
     const char *filename = (const char *) spp->sp_docp->URL;
@@ -233,11 +233,11 @@ slaxProfReport (void)
 		tot_user += spp->sp_data[num].spe_user;
 		tot_system += spp->sp_data[num].spe_system;
 
-	    } else {
+	    } else if (!brief) {
 		slaxOutput("%5lu %8s %8s %8s %8s %8s %s",
 			   num, "-", "-", "-", "-", "-", line);
 	    }
-	} else {
+	} else if (!brief) {
 	    slaxOutput("%5s %8s %8s %8s %8s %8s %s",
 		       "-", "-", "-", "-", "-", "-", line);
 	}

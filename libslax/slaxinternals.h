@@ -587,7 +587,7 @@ typedef int (*slaxProfCallback_t)(void *, const char *fmt, ...);
  * Report the results
  */
 void
-slaxProfReport (void);
+slaxProfReport (int);
 
 /**
  * Clear all values

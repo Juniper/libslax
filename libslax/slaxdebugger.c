@@ -869,6 +869,7 @@ slaxDebugHelpInfo (DH_ARGS)
 {
     slaxOutput("List of commands:");
     slaxOutput("  info breakpoints  Display current breakpoints");
+    slaxOutput("  info profile [brief]  Report profiling information");
 }
 
 /*
@@ -901,6 +902,10 @@ slaxDebugCmdInfo (DC_ARGS)
 
 	if (hit == 0)
 	    slaxOutput("No breakpoints.");
+
+    } else if (slaxDebugIsAbbrev("profile", argv[1])) {
+	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
+	slaxProfReport(brief);
 
     } else if (slaxDebugIsAbbrev("help", argv[1])) {
 	slaxDebugHelpInfo(statep);
@@ -1127,7 +1132,7 @@ slaxDebugHelpProfile (DH_ARGS)
     slaxOutput("  profile clear   Clear  profiling information");
     slaxOutput("  profile off     Disable profiling");
     slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report  Report profiling information");
+    slaxOutput("  profile report [brief]  Report profiling information");
 }
 
 /*
@@ -1154,7 +1159,8 @@ slaxDebugCmdProfiler (DC_ARGS)
 	    return;
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
-	    slaxProfReport();
+	    int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
+	    slaxProfReport(brief);
 	    return;
 
 	} else if (slaxDebugIsAbbrev("help", arg)) {
