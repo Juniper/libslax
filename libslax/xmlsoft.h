@@ -44,6 +44,7 @@ nodePop(xmlParserCtxtPtr ctxt);
  * I'm not sure of the reason but the arguments are untyped, giving it
  * a significant "ick" factor.  We preserve our dignity by hiding behind
  * an inline.
+ * @see http://mail.gnome.org/archives/xslt/2010-September/msg00013.html
  */
 static inline void
 xsltSetDebuggerCallbacksHelper (xsltHandleDebuggerCallback handler,

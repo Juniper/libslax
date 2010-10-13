@@ -6,15 +6,9 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Conditional breakpoints
 
-- Profiler
-  plan a: simple: record times with each line number
-  plan b: complex: record times with stack traces
-
 - BUG: line numbers are off if file doesn't end in NL
 
 - Make man page for libslax (public API)
-
-- Make flag to syntax check and compile (exit code)
 
 - Mutable variables:
   mvar $x = 1;
