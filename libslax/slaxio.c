@@ -26,6 +26,20 @@
 #include <libslax/slax.h>
 #include "config.h"
 
+#if 0
+/*
+ * The readline header files contain function prototypes that
+ * won't compile with our warning level.  We take the "lesser
+ * of two evils" approach and fake a prototype here instead
+ * of turning down our warning levels.
+ */
+#include <readline/readline.h>
+#include <readline/history.h>
+#else /* 0 */
+extern char *readline (const char *);
+extern void add_history (const char *);
+#endif /* 0 */
+
 /* Callback functions for input and output */
 static slaxInputCallback_t slaxInputCallback;
 static slaxOutputCallback_t slaxOutputCallback;
@@ -120,4 +134,140 @@ slaxIoRegister (slaxInputCallback_t input_callback,
     slaxInputCallback = input_callback;
     slaxOutputCallback = output_callback;
     slaxWriteCallback = raw_write;
+}
+
+static char *
+slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
+{
+#ifdef HAVE_READLINE
+    char *cp, *res;
+
+    /*
+     * readline() will return a malloc'd buffer but we need to
+     * swap it for memory that's acquired via xmlMalloc().
+     */
+    cp = readline(prompt);
+    if (cp == NULL)
+	return NULL;
+
+    /* Add the command to the shell history (if it's not blank) */
+    if ((flags & SIF_HISTORY) && *cp)
+	add_history(cp);
+
+    res = (char *) xmlStrdup((xmlChar *) cp);
+    free(cp);
+    return res;
+
+    
+#else /* HAVE_READLINE */
+    char buf[BUFSIZ];
+    int len;
+
+    fputs(prompt, stderr);
+    fflush(stderr);
+
+    buf[0] = '\0';
+    if (fgets(buf, sizeof(buf), stdin) == NULL)
+	return NULL;
+
+    len = strlen(buf);
+    if (len > 1 && buf[len - 1] == '\n')
+	buf[len - 1] = '\0';
+
+    return (char *) xmlStrdup((xmlChar *) buf);
+#endif /* HAVE_READLINE */
+}
+
+static void
+slaxIoStdioOutputCallback (const char *fmt, ...)
+{
+    va_list vap;
+
+    va_start(vap, fmt);
+    vfprintf(stderr, fmt, vap);
+    fflush(stderr);
+}
+
+static int
+slaxIoStdioRawwriteCallback (void *opaque UNUSED, const char *buf, int len)
+{
+    return write(fileno(stderr), buf, len);
+}
+
+void
+slaxIoUseStdio (void)
+{
+    slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
+		   slaxIoStdioRawwriteCallback);
+}
+
+static void
+slaxProcTrace (void *vfp, xmlNodePtr nodep, const char *fmt, ...)
+{
+    FILE *fp = vfp;
+    va_list vap;
+
+    va_start(vap, fmt);
+
+#if !defined(NO_TRACE_CLOCK)
+    {
+	struct timeval cur_time;
+	char *time_buffer;
+	
+	gettimeofday(&cur_time, NULL);
+	time_buffer = ctime(&cur_time.tv_sec);
+
+	fprintf(fp, "%.15s: ", time_buffer + 4);  /* "Mmm dd hh:mm:ss" */
+    }
+#endif
+
+    if (nodep) {
+	xmlSaveCtxt *handle;
+
+	fprintf(fp, "XML Content (%d)\n", nodep->type);
+	fflush(fp);
+	handle = xmlSaveToFd(fileno(fp), NULL,
+			     XML_SAVE_FORMAT | XML_SAVE_NO_DECL);
+	if (handle) {
+	    xmlSaveTree(handle, nodep);
+	    xmlSaveFlush(handle);
+	    xmlSaveClose(handle);
+	}
+
+    } else {
+	vfprintf(fp, fmt, vap);
+    }
+
+    fprintf(fp, "\n");
+    fflush(fp);
+    va_end(vap);
+}
+
+void
+slaxTraceToFile (FILE *fp)
+{
+    slaxTraceEnable(slaxProcTrace, fp);
+}
+
+/**
+ * Simple trace function that tosses messages to stderr if slaxDebug
+ * has been set to non-zero.
+ *
+ * @param fmt format string plus variadic arguments
+ */
+void
+slaxLog (const char *fmt, ...)
+{
+    va_list vap;
+
+    if (!slaxDebug)
+	return;
+
+    va_start(vap, fmt);
+
+    vfprintf(stderr, fmt, vap);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+
+    va_end(vap);
 }

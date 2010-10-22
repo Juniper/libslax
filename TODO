@@ -15,18 +15,11 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Doc: "..." operator
 
-- Feature: add "-c" --check option
-
 - Feature: parser issue warnings if 1.1 features with 1.0 version
 
 - Feature: slaxwriter must avoid 1.1 features if version 1.0 is requested
 
 - Code: move code that can be reused from slaxproc.c into libslax/
-  callbacks for slaxInput and slaxOutput; make wrapper setup() function.
-
-- Code: move slaxTrace, slaxOutput, slaxInput, etc to new file
-
-- Code: s/slaxTrace(/slaxLog(/ and s/-V/-l/
 
 - Code: functions to parse our arguments/table
 

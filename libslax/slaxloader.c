@@ -206,29 +206,6 @@ static keyword_mapping_t keywordMap[] = {
     { 0, NULL, 0 }
 };
 
-/**
- * Simple trace function that tosses messages to stderr if slaxDebug
- * has been set to non-zero.
- *
- * @param fmt format string plus variadic arguments
- */
-void
-slaxLog (const char *fmt, ...)
-{
-    va_list vap;
-
-    if (!slaxDebug)
-	return;
-
-    va_start(vap, fmt);
-
-    vfprintf(stderr, fmt, vap);
-    fprintf(stderr, "\n");
-    fflush(stderr);
-
-    va_end(vap);
-}
-
 /*
  * Set up the lexer's lookup tables
  */

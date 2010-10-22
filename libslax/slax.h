@@ -101,6 +101,9 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxOutputCallback_t output_callback,
 		xmlOutputWriteCallback raw_write);
 
+void slaxIoUseStdio (void);	/* Use the stock std{in,out} */
+void slaxTraceToFile (FILE *fp);
+
 /* ---------------------------------------------------------------------- */
 /*
  * Some fairly simple hooks for the debugger.
