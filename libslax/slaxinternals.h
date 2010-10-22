@@ -50,6 +50,9 @@
 extern int slaxDebug;			/* Global debug switch */
 extern const char *keywordString[];
 
+/* Stub to handle xmlChar strings in "?:" expressions */
+extern const xmlChar null[];
+
 /* Attribute names */
 #define ATT_CDATA_SECTION_ELEMENTS "cdata-section-elements"
 #define ATT_COUNT	"count"

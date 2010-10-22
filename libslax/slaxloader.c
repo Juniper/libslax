@@ -33,6 +33,9 @@ xsltDocLoaderFunc originalXsltDocDefaultLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
 
+/* Stub to handle xmlChar strings in "?:" expressions */
+const xmlChar null[] = "";
+
 /*
  * These are lookup tables for one and two character literal tokens.
  */
