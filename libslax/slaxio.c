@@ -40,9 +40,9 @@ slaxInput (const char *prompt, unsigned flags)
 {
     char *res;
 
-    /* slaxTrace("slaxInput: -> [%s]", prompt); */
+    /* slaxLog("slaxInput: -> [%s]", prompt); */
     res = slaxInputCallback ? slaxInputCallback(prompt, flags) : NULL;
-    /* slaxTrace("slaxInput: <- [%s]", res ?: "null"); */
+    /* slaxLog("slaxInput: <- [%s]", res ?: "null"); */
 
     return res;
 }
@@ -62,7 +62,7 @@ slaxOutput (const char *fmt, ...)
 	vsnprintf(buf, sizeof(buf), fmt, vap);
 	va_end(vap);
 
-	/* slaxTrace("slaxOutput: [%s]", buf); */
+	/* slaxLog("slaxOutput: [%s]", buf); */
 	slaxOutputCallback("%s\n", buf);
     }
 }

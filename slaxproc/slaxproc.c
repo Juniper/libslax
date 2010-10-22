@@ -389,8 +389,8 @@ print_help (void)
     printf("\t--param name value OR -a name value: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
-    printf("\t--verbose OR -V: enable debugging output\n");
-    printf("\t--version OR -v: show version information (and exit)\n");
+    printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
+    printf("\t--version OR -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: http://code.google.com/p/libslax\n");
 }
@@ -410,7 +410,7 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
-	if (streq(cp, "--version") || streq(cp, "-v")) {
+	if (streq(cp, "--version") || streq(cp, "-V")) {
 	    print_version();
 	    exit(0);
 
@@ -468,7 +468,7 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
 	    output = *++argv;
 
-	} else if (streq(cp, "--verbose") || streq(cp, "-V")) {
+	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
 	    slaxDebug = TRUE;
 
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {

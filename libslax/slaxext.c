@@ -255,7 +255,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 
     ns = xmlXPathNodeSetCreate(NULL);
 
-    slaxTrace("build-sequence: %qd ... %qd + %qd", low, high, step);
+    slaxLog("build-sequence: %qd ... %qd + %qd", low, high, step);
 
     for (num = low; num <= high; num += step) {
 	snprintf(buf, sizeof(buf), "%qd", num);

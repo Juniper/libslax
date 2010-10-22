@@ -213,7 +213,7 @@ static keyword_mapping_t keywordMap[] = {
  * @param fmt format string plus variadic arguments
  */
 void
-slaxTrace (const char *fmt, ...)
+slaxLog (const char *fmt, ...)
 {
     va_list vap;
 
@@ -436,7 +436,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 	    || fgets(sdp->sd_buf + sdp->sd_len, sdp->sd_size - sdp->sd_len,
 		     sdp->sd_file) == NULL) {
 	    if (slaxDebug)
-		slaxTrace("slax: lex: %s",
+		slaxLog("slax: lex: %s",
 			feof(sdp->sd_file) ? "eof seen" : "read failed");
 	    sdp->sd_flags |= SDF_EOF;
 
@@ -926,7 +926,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 
     if (rc > 0 && sdp->sd_start == sdp->sd_cur) {
 	if (slaxDebug)
-	    slaxTrace("slax: lex: zero length token: %d/%s",
+	    slaxLog("slax: lex: zero length token: %d/%s",
 		      rc, slaxTokenName(rc));
 	rc = M_ERROR;
 	/*
@@ -943,7 +943,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 	*yylvalp = ssp = (rc > 0) ? slaxStringCreate(sdp, rc) : NULL;
 
     if (slaxDebug && ssp)
-	slaxTrace("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
+	slaxLog("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
 		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords", ssp,
 		  sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
 		  rc, (rc > 0) ? slaxTokenName(rc) : "",
@@ -1133,7 +1133,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
     if (slaxDebug)
 	for (ssp = value; ssp; ssp = ssp->ss_next)
-	    slaxTrace("initial: xpath_value: %s", ssp->ss_token);
+	    slaxLog("initial: xpath_value: %s", ssp->ss_token);
 
     if (value->ss_next == NULL) {
 	if (style == SAS_SELECT && value->ss_ttype == T_QUOTED
@@ -1246,7 +1246,7 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
 
     if (slaxDebug)
 	for (ssp = value; ssp; ssp = ssp->ss_next)
-	    slaxTrace("initial: xpath_value: %s", ssp->ss_token);
+	    slaxLog("initial: xpath_value: %s", ssp->ss_token);
 	
     buf = slaxStringAsChar(value, flags);
     if (buf) {
@@ -1454,7 +1454,7 @@ slaxRelocateSort (slax_data_t *sdp)
         xmlChar *sel = xmlGetProp(parent, (const xmlChar *) ATT_SELECT);
 
 	if (sel && strncmp((char *) sel, "$slax-dot-", 10) == 0) {
-	    slaxTrace("slaxRelocateSort: %s:%d: must relocate",
+	    slaxLog("slaxRelocateSort: %s:%d: must relocate",
 		      nodep->name, xmlGetLineNo(nodep));
 	    /*
 	     * "parent" is the inner for-each loop, and "parent->parent"
@@ -1734,7 +1734,7 @@ slaxAvoidRtf (slax_data_t *sdp)
     value = alloca(vlen);
     snprintf(value, vlen, format, old_value);
 
-    slaxTrace("AvoidRTF: '%s'", value);
+    slaxLog("AvoidRTF: '%s'", value);
 
     xmlSetNsProp(nodep, NULL, (const xmlChar *) ATT_SELECT, (xmlChar *) value);
 
@@ -2090,7 +2090,7 @@ slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
     else {
 	file = fopen((const char *) URI, "r");
 	if (file == NULL) {
-	    slaxTrace("slax: file open failed for '%s': %s",
+	    slaxLog("slax: file open failed for '%s': %s",
 		      URI, strerror(errno));
 	    return NULL;
 	}
@@ -2123,7 +2123,7 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
     else {
 	file = fdopen(fd, "r");
 	if (file == NULL) {
-	    slaxTrace("slax: file open failed for %s: %s",
+	    slaxLog("slax: file open failed for %s: %s",
 		      URL, strerror(errno));
 	    return NULL;
 	}

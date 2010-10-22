@@ -110,10 +110,10 @@ slaxProfEnter (xmlNodePtr inst)
     long line;
     struct rusage ru;
 
-    slaxTrace("profile:enter for %s", inst->name);
+    slaxLog("profile:enter for %s", inst->name);
 
     if (spp->sp_inst_line)
-	slaxTrace("profile: warning: enter while still set");
+	slaxLog("profile: warning: enter while still set");
 
     /* Zero means no valid data, so don't record */
     slax_profile_time_user = slax_profile_time_system = 0;

@@ -411,7 +411,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 
 	    if (dqp && sqp) {
 		/* Bad news */
-		slaxTrace("bad news");
+		slaxLog("bad news");
 		*bp++ = '"';
 	    } else if (dqp) {
 		/* double quoted string to be surrounded by single quotes */
@@ -507,7 +507,7 @@ slaxStringFuse (slax_data_t *sdp UNUSED, int ttype, slax_string_t **sspp)
     results->ss_flags = (ttype == T_QUOTED) ? slaxStringQFlags(results) : 0;
 
     if (slaxDebug)
-	slaxTrace("slaxStringFuse: '%s'", results->ss_token);
+	slaxLog("slaxStringFuse: '%s'", results->ss_token);
     return results;
 }
 
@@ -535,7 +535,7 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
     slaxStringCopy(buf, len, value, flags);
 
     if (slaxDebug)
-	slaxTrace("slaxStringAsChar: '%s'", buf);
+	slaxLog("slaxStringAsChar: '%s'", buf);
     return buf;
 }
 
@@ -582,7 +582,7 @@ slaxStringAsConcat (slax_string_t *value, unsigned flags)
     buf = bp = xmlMalloc(len);
     blen = len;			/* Save buffer length */
     if (buf == NULL) {
-	slaxTrace("slaxStringAsConcat:: out of memory");
+	slaxLog("slaxStringAsConcat:: out of memory");
 	return NULL;
     }
 
@@ -655,7 +655,7 @@ slaxStringAsValueTemplate (slax_string_t *value, unsigned flags)
     buf = bp = xmlMalloc(len);
     blen = len;			/* Save buffer length */
     if (buf == NULL) {
-	slaxTrace("slaxStringAsConcat:: out of memory");
+	slaxLog("slaxStringAsConcat:: out of memory");
 	return NULL;
     }
 

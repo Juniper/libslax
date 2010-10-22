@@ -268,7 +268,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value);
  * has been set to non-zero.
  */
 void
-slaxTrace (const char *fmt, ...);
+slaxLog (const char *fmt, ...);
 
 /*
  * Backup the stack up 'til the given node is seen

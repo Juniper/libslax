@@ -2516,7 +2516,7 @@ xpath_value :
 xpath_value_raw :
 	xp_expr
 		{
-		    slaxTrace("xpath: %s", $1->ss_token);
+		    slaxLog("xpath: %s", $1->ss_token);
 		    $$ = $1;
 		}
 
@@ -2545,7 +2545,7 @@ xpath_value_raw :
 xpath_lite_value :
 	xpl_expr
 		{
-		    slaxTrace("xpath: %s", $1->ss_token);
+		    slaxLog("xpath: %s", $1->ss_token);
 		    $$ = $1;
 		}
 

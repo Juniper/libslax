@@ -98,7 +98,7 @@ slaxWriteRealloc (slax_writer_t *swp, int need)
 
     cp = xmlRealloc(swp->sw_buf, need);
     if (cp == NULL) {
-	slaxTrace("memory allocation failure");
+	slaxLog("memory allocation failure");
 	swp->sw_errors += 1;
 	return NULL;
     }
@@ -501,7 +501,7 @@ slaxEscapeXpath (char *buf, int bufsiz, const char *inp)
     *cp = '\0';
 
     if (quote)
-	slaxTrace("slax: unterminated quote in XPath expression: %s",
+	slaxLog("slax: unterminated quote in XPath expression: %s",
 		  save_inp);
 }
 
@@ -744,7 +744,7 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
 	/*
 	 * Something's wrong so we punt and return the original string
 	 */
-	slaxTrace("slax: xpath conversion failed: nothing returned");
+	slaxLog("slax: xpath conversion failed: nothing returned");
 	swp->sw_errors += 1;
 	goto fail;
     }
@@ -752,11 +752,11 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     buf = slaxStringAsChar(sd.sd_xpath, SSF_QUOTES);
 
     if (buf == NULL) {
-	slaxTrace("slax: xpath conversion failed: no buffer");
+	slaxLog("slax: xpath conversion failed: no buffer");
 	goto fail;
     }
 
-    slaxTrace("slax: xpath conversion: %s", buf);
+    slaxLog("slax: xpath conversion: %s", buf);
     slaxStringFree(sd.sd_xpath);
     xmlFreeNode(fakep);
 
@@ -1269,7 +1269,7 @@ slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	fn = slaxGetAttrib(nodep, ATT_NAME);
 
 	if (fn == NULL) {
-	    slaxTrace("slax: function with out a name");
+	    slaxLog("slax: function with out a name");
 	    return;
 	}
 
@@ -1306,7 +1306,7 @@ slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWriteNewline(swp, NEWL_INDENT);
 
     } else {
-	slaxTrace("slax: unknown element: %s", name);
+	slaxLog("slax: unknown element: %s", name);
 	return;
     }
 
@@ -1853,6 +1853,7 @@ slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     sel = slaxGetAttrib(nodep, ATT_SELECT);
     expr = slaxMakeExpression(swp, nodep, sel);
 
+    slaxWriteBlankline(swp);
     slaxWrite(swp, "for-each (%s) {", expr ?: UNKNOWN_EXPR);
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(sel);
@@ -2736,10 +2737,10 @@ slaxWriteRedoFunction (slax_data_t *swp UNUSED, const char *func,
     slax_string_t *cur, *prev;
     int depth;
 
-    slaxTrace("slaxWriteFunction: function %s", func);
+    slaxLog("slaxWriteFunction: function %s", func);
 
     if (xpath && streq(func, SLAX_PREFIX ":" FUNC_BUILD_SEQUENCE)) {
-	slaxTrace("slaxWriteFunction: %s ... ??? ",
+	slaxLog("slaxWriteFunction: %s ... ??? ",
 		  xpath ? xpath->ss_token : "");
 
 	for (depth = 0, prev = xpath, cur = xpath->ss_next; cur;

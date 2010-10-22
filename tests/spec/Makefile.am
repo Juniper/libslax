@@ -66,7 +66,7 @@ valgrind:
 test tests: ${SLAXPROC}
 
 	@${MKDIR} -p out
-	-@(${TEST_TRACE}; for test in ${TEST_CASES} ; do \
+	-@(for test in ${TEST_CASES} ; do \
 	  echo "... $$test ..."; \
 	  base=`${BASENAME} $$test .slax` ; \
 	  ${S2X} ${srcdir}/$$test out/$$base.xsl ; \
