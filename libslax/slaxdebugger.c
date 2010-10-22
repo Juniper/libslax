@@ -173,7 +173,6 @@ int slaxDebugDisplayMode;
 #define DEBUG_MODE_EMACS	2 /* gdb/emacs mode */
 #define DEBUG_MODE_PROFILER	3 /* Profiler only */
 
-static const xmlChar *null = (const xmlChar *) "";
 #define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : null)
 
 static int
@@ -581,19 +580,19 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 static int
 slaxDebugSplitArgs (char *buf, const char **args, int maxargs)
 {
+    static const char wsp[] = " \t\n\r";
     int i;
     char *s;
 
-    for (i = 0; (s = strsep(&buf, " \n")) && i < maxargs; i++) {
+    for (i = 0; (s = strsep(&buf, wsp)) && i < maxargs - 1; i++) {
 	args[i] = s;
 
-	if (*s == '\0') {
-	    args[i] = s;
-	    break;
-	}
+	if (buf)
+	    buf += strspn(buf, wsp);
     }
 
     args[i] = NULL;
+
     return i;
 }
 
@@ -612,6 +611,8 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
 			    node->doc->URL, xmlGetLineNo(node));
 	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	}
+
+	statep->ds_stop_at = NULL; /* One time only */
 	return TRUE;
     }
 

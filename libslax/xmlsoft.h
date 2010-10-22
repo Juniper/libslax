@@ -65,3 +65,16 @@ xmlFreeAndEasy (void *ptr)
     if (ptr)
 	xmlFree(ptr);
 }
+
+/*
+ * The stock xmlStrchr() returns a "const" pointer, which isn't good.
+ */
+static inline xmlChar *
+xmlStrchru (xmlChar *str, xmlChar val)
+{
+    for ( ; str && *str != 0; str++)
+        if (*str == val)
+	    return str;
+
+    return NULL;
+}
