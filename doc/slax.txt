@@ -1842,6 +1842,39 @@ statements (enclosed in braces) that emit a set of nodes.
 
 These same constraints apply to parameters as well.
 
+***** The "mvar" Statement @mvar@
+
+In XSLT, all variables are immutable, meaning that once created, their
+value cannot be changed.  This creates a distinct programming
+environment, which is challenging to new programmers.  Immutable
+variables allow various optimizations and advanced streaming
+functionality.
+
+Given the use case and scenarios for libslax (especially our use of it
+in JUNOS), we've added mutable variables, which can be changed.  The
+"set" statement allows a new value to be assigned to a variable and
+the "append" statement allows the value to be extended, with new data
+appended to it.
+
+    SYNTAX::
+        'mvar' variable-name '=' initial-value ';'
+        'set' variable-name '=' new-value ';'
+        'append' variable-name '+=' new-content ';'
+
+The mvar is typically a node set, and appended adds the new objects to
+the nodeset.
+
+    mvar $test;
+
+    set $test = <block> "start here";
+
+    for $item (list) {
+        append $test += <item> {
+            <name> $item/name;
+            <size> $item/size;
+        }
+    }
+
 *** Result Tree Fragments
 
 The most annoying "features" of XSLT is the concept of "Result Tree
@@ -1992,6 +2025,19 @@ Internally, this is translated into normal XSLT constructs involving a
 pair of nested for-each loops, one to iterate and one to put the
 context back to the previous setting.  This allows the script writer
 to ignore the context change.
+
+**** The "..." Operator @dotdotdot@
+
+Often a loop is required to iterator through a range of integer
+values, such a 1 to 10.  SLAX introduces the "..." operator to
+generate sequences of such numbers:
+
+    for $i (1 ... 10) {
+        <player number=$i>;
+    }
+
+The operator translates into an XPath function that generates the
+sequence as a node set.
 
 **** The "sort" Statement @sort@
 

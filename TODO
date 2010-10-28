@@ -6,14 +6,9 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Feature: Conditional breakpoints
 
-- Feature: "checkout" or compile-only mode --check/-c
-  load and compile a script, but do not run it
-
 - Feature: better error messages.  Please.
 
 - Doc: Make man page for libslax (public API)
-
-- Doc: "..." operator
 
 - Feature: parser issue warnings if 1.1 features with 1.0 version
 
