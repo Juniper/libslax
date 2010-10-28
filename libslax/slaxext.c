@@ -568,7 +568,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, xsltStackElemPtr var,
     if (slaxMvarCheckVar(ctxt, var))
 	return TRUE;
 
-    if (slaxMvarCheckValue(ctxt, value))
+    if (value && slaxMvarCheckValue(ctxt, value))
 	return TRUE;
 
     if (var->value->type == XPATH_XSLT_TREE
@@ -624,8 +624,6 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, xsltStackElemPtr var,
 	if (fp)
 	    xmlFree(fp);
 	xmlXPathFreeObject(value);
-	if (tree)
-	    xmlFreeDoc(tree);
 
 	return FALSE;
     }
@@ -639,8 +637,6 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, xsltStackElemPtr var,
 
     if (value)
 	xmlXPathFreeObject(value);
-    if (tree)
-	xmlFreeDoc(tree);
 
     return FALSE;
 }
@@ -851,7 +847,7 @@ slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
 	return NULL;
     }
 
-    xsltRegisterLocalRVT(ctxt, container);	
+    xsltRegisterLocalRVT(ctxt, container);
 
     save_insert = ctxt->insert;
     ctxt->insert = (xmlNodePtr) container;
@@ -913,6 +909,11 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 	return;
     }
 
+    /*
+     * We don't need to free "tree" because it's registered
+     * in the context and the normal garbage collection will
+     * handle it.
+     */
     if (append) {
 	slaxMvarAppend(ctxt, var, value, tree);
 
