@@ -527,6 +527,9 @@ slaxMvarInitVar (xsltTransformContextPtr ctxt, xsltStackElemPtr var UNUSED,
 	xmlXPathObjectPtr vvp = var->value;
 
 	if (vvp->nodesetval == NULL) {
+	    if (vvp->stringval)
+		xmlFree(vvp->stringval);
+
 	    bzero(vvp, sizeof(*vvp));
 
 	    vvp->type = XPATH_NODESET;
