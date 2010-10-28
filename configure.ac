@@ -2,8 +2,15 @@
 # $Id$
 #
 
+#
+# Release numbering: even numbered dot releases are official ones, and
+# odd numbers are development ones.  The svn version of this file will
+# only (ONLY!) ever (EVER!) contain odd numbers, so I'll always know if
+# a particular user has the dist or svn release.
+#
+
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.1.9], [phil@juniper.net])
+AC_INIT([libslax], [0.2.1], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([disable-shared])
 AC_DISABLE_SHARED
