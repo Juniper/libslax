@@ -71,6 +71,7 @@ extern const xmlChar null[];
 #define ATT_MATCH	"match"
 #define ATT_METHOD	"method"
 #define ATT_MODE	"mode"
+#define ATT_MUTABLE	"mutable"
 #define ATT_NAN		"NaN"	/* Yes, it's mixed case */
 #define ATT_PRIORITY	"priority"
 #define ATT_RESULT_PREFIX "result-prefix"
@@ -84,6 +85,7 @@ extern const xmlChar null[];
 #define ATT_VERSION	"version" 
 
 /* Element names */
+#define ELT_APPEND_TO_VARIABLE "append-to-variable"
 #define ELT_APPLY_IMPORTS "apply-imports"
 #define ELT_APPLY_TEMPLATES "apply-templates"
 #define ELT_ATTRIBUTE	"attribute"
@@ -104,6 +106,7 @@ extern const xmlChar null[];
 #define ELT_OUTPUT	"output"
 #define ELT_PARAM	"param"
 #define ELT_RESULT	"result"
+#define ELT_SET_VARIABLE "set-variable"
 #define ELT_SORT	"sort"
 #define ELT_STYLESHEET	"stylesheet"
 #define ELT_TEMPLATE	"template"

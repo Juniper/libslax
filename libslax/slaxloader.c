@@ -88,6 +88,7 @@ static int doubleWideData[] = {
     L_GRTREQ, '>', '=',
     L_LESSEQ, '<', '=',
     L_NOTEQUALS, '!', '=',
+    L_PLUSEQUALS, '+', '=',
     0
 };
 
@@ -121,6 +122,7 @@ typedef struct keyword_mapping_s {
 
 static keyword_mapping_t keywordMap[] = {
     { K_AND, "and", KMF_XPATH_KW },
+    { K_APPEND, "append", KMF_SLAX_KW },
     { K_APPLY_IMPORTS, "apply-imports", KMF_SLAX_KW },
     { K_APPLY_TEMPLATES, "apply-templates", KMF_SLAX_KW },
     { K_ATTRIBUTE, "attribute", KMF_SLAX_KW },
@@ -170,6 +172,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_MINUS_SIGN, "minus-sign", KMF_SLAX_KW },
     { K_MOD, "mod", KMF_XPATH_KW },
     { K_MODE, "mode", KMF_SLAX_KW },
+    { K_MVAR, "mvar", KMF_SLAX_KW },
     { K_NAN, "nan", KMF_SLAX_KW },
     { K_NODE, "node", KMF_NODE_TEST },
     { K_NS, "ns", KMF_SLAX_KW },
@@ -189,6 +192,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_PROCESSING_INSTRUCTION, "processing-instruction",
       KMF_SLAX_KW | KMF_NODE_TEST }, /* Not a node test, but close enough */
     { K_RESULT, "result", KMF_SLAX_KW },
+    { K_SET, "set", KMF_SLAX_KW },
     { K_SORT, "sort", KMF_SLAX_KW },
     { K_STANDALONE, "standalone", KMF_SLAX_KW },
     { K_STRIP_SPACE, "strip-space", KMF_SLAX_KW },
@@ -300,6 +304,7 @@ slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
     case DOUBLE_WIDE('>', '='): return L_GRTREQ;
     case DOUBLE_WIDE('<', '='): return L_LESSEQ;
     case DOUBLE_WIDE('!', '='): return L_NOTEQUALS;
+    case DOUBLE_WIDE('+', '='): return L_PLUSEQUALS;
     }
 
     return 0;
@@ -950,6 +955,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_LETTER_VALUE:
     case K_MATCH:
     case K_MODE:
+    case K_MVAR:
     case K_NS_TEMPLATE:
     case K_MESSAGE:
     case K_NUMBER:

@@ -87,6 +87,7 @@
 %token L_OBRACK			/* [ */
 %token L_OPAREN			/* ( */
 %token L_PLUS			/* '+' */
+%token L_PLUSEQUALS		/* '+=' */
 %token L_SLASH			/* '/' */
 %token L_STAR			/* '*' */
 %token L_UNDERSCORE		/* '_' */
@@ -95,6 +96,7 @@
 /*
  * Keyword tokens
  */
+%token K_APPEND			/* 'append' */
 %token K_APPLY_IMPORTS		/* 'apply-imports' */
 %token K_APPLY_TEMPLATES	/* 'apply-templates' */
 %token K_ATTRIBUTE		/* 'attribute' */
@@ -141,6 +143,7 @@
 %token K_MESSAGE		/* 'message' */
 %token K_MINUS_SIGN		/* 'minus-sign' */
 %token K_MODE			/* 'mode' */
+%token K_MVAR			/* 'mvar' */
 %token K_NAN			/* 'nan' */
 %token K_NODE			/* 'node' */
 %token K_NS			/* 'ns' */
@@ -158,6 +161,7 @@
 %token K_PRIORITY		/* 'priority' */
 %token K_PROCESSING_INSTRUCTION /* 'processing-instruction' */
 %token K_RESULT			/* 'result' */
+%token K_SET			/* 'set' */
 %token K_SORT			/* 'sort' */
 %token K_STANDALONE		/* 'standalone' */
 %token K_STRIP_SPACE		/* 'strip-space' */
@@ -378,6 +382,9 @@ partial_stmt :
 		{ $$ = NULL; }
 
 	| result_stmt
+		{ $$ = NULL; }
+
+	| set_mvar_stmt
 		{ $$ = NULL; }
 
 	| sort_stmt
@@ -669,19 +676,31 @@ param_decl :
 		}
 	;
 
+var_or_mvar :
+	K_VAR
+		{ $$ = $1; }
+	| K_MVAR
+		{ $$ = $1; }
+	;
+
 var_decl :
-	K_VAR T_VAR L_EOS
+	var_or_mvar T_VAR L_EOS
 		{
-		    slaxElementAdd(slax_data, ELT_VARIABLE,
+		    slaxElementPush(slax_data, ELT_VARIABLE,
 					   ATT_NAME, $2->ss_token + 1);
+		    if ($1->ss_ttype == K_MVAR)
+			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
+		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		}
 
-	| K_VAR T_VAR L_EQUALS
+	| var_or_mvar T_VAR L_EQUALS
 		{
 		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
+		    if ($1->ss_ttype == K_MVAR)
+			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
 		    $$ = NULL;
 		}
 	    initial_value
@@ -692,11 +711,13 @@ var_decl :
 		    STACK_UNUSED($4);
 		}
 
-	| K_VAR T_VAR L_ASSIGN
+	| var_or_mvar T_VAR L_ASSIGN
 		{
 		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
+		    if ($1->ss_ttype == K_MVAR)
+			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
 		    $$ = NULL;
 		}
 	    initial_value
@@ -726,6 +747,44 @@ initial_value :
 		{
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
+		}
+	;
+
+
+set_mvar_stmt :
+	set_mvar_preface initial_value
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+set_mvar_preface :
+	K_SET T_VAR L_EQUALS
+		{
+		    xmlNodePtr nodep;
+
+		    SLAX_KEYWORDS_OFF();
+		    nodep = slaxElementPush(slax_data, ELT_SET_VARIABLE,
+					    ATT_NAME, $2->ss_token + 1);
+		    if (nodep)
+			slaxSetSlaxNs(slax_data, nodep, TRUE);
+
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| K_APPEND T_VAR L_PLUSEQUALS
+		{
+		    xmlNodePtr nodep;
+
+		    SLAX_KEYWORDS_OFF();
+		    nodep = slaxElementPush(slax_data, ELT_APPEND_TO_VARIABLE,
+					    ATT_NAME, $2->ss_token + 1);
+		    if (nodep)
+			slaxSetSlaxNs(slax_data, nodep, TRUE);
+
+		    $$ = STACK_CLEAR($1);
 		}
 	;
 
@@ -1027,6 +1086,9 @@ block_stmt :
 		{ $$ = NULL; }
 
 	| result_stmt
+		{ $$ = NULL; }
+
+	| set_mvar_stmt
 		{ $$ = NULL; }
 
 	| sort_stmt
