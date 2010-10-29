@@ -847,8 +847,6 @@ slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
 	return NULL;
     }
 
-    xsltRegisterLocalRVT(ctxt, container);
-
     save_insert = ctxt->insert;
     ctxt->insert = (xmlNodePtr) container;
 
@@ -884,14 +882,6 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 				   comp->mp_select);
 	if (value == NULL)
 	    return;
-
-#if 0
-	/*
-	 * Mark it as a function result in order to avoid garbage
-	 * collecting of tree fragments before the function exits.
-	 */
-	xsltExtensionInstructionResultRegister(ctxt, value);
-#endif
 
     } else if (inst->children) {
 	tree = slaxMvarEvalBlock(ctxt, node, inst);

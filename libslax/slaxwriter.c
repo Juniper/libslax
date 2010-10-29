@@ -25,8 +25,16 @@ typedef struct slax_writer_s {
     unsigned sw_flags;		/* Flags for this instance (SWF_*) */
 } slax_writer_t;
 
+/* Flags for sw_flags */
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
+#define SWF_VERS_10	(1<<2)	/* Version 1.0 features only */
+
+static inline int
+slaxV10 (slax_writer_t *swp)
+{
+    return (swp->sw_flags & SWF_VERS_10) ? TRUE : FALSE;
+}
 
 /* Forward function declarations */
 static void slaxWriteChildren(slax_writer_t *, xmlDocPtr, xmlNodePtr, int);
@@ -239,14 +247,16 @@ slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	hit += 1;
     }
 
-    for (childp = nodep->children; childp; childp = childp->next) {
-	if (childp->type ==  XML_ELEMENT_NODE
-	    && childp->ns && childp->ns->prefix
-	    && streq((const char *) childp->ns->prefix, XSL_PREFIX)
-	    && streq((const char *) childp->name, "namespace-alias")) {
+    if (!slaxV10(swp)) {
+	for (childp = nodep->children; childp; childp = childp->next) {
+	    if (childp->type ==  XML_ELEMENT_NODE
+		&& childp->ns && childp->ns->prefix
+		&& streq((const char *) childp->ns->prefix, XSL_PREFIX)
+		&& streq((const char *) childp->name, "namespace-alias")) {
 
-	    slaxWriteNamespaceAlias(swp, docp, childp);
-	    hit += 1;
+		slaxWriteNamespaceAlias(swp, docp, childp);
+		hit += 1;
+	    }
 	}
     }
 
@@ -306,83 +316,6 @@ slaxWriteEscapedChar (slax_writer_t *swp, const char *inp, unsigned flags)
 {
     char *outp;
     unsigned char ch = *inp;
-
-#if 0
-    if (ch >= 0x80) {
-	/*
-	 * We have a UTF-8 character that needs to be escaped in the
-	 * SLAX style "\u+xxxx", which means we first need to know the
-	 * value.
-	 */
-	unsigned word = 0;
-	int width;
-
-	if ((ch & 0xf0) == 0xf0)
-	    width = 4;
-	else if ((ch & 0xf0) == 0xe0)
-	    width = 3;
-	else if ((ch & 0xe0) == 0xc0)
-	    width = 2;
-	else
-	    goto bad_word;
-
-	if (width == 4) {
-	    word = (ch & 0x07);
-	    ch = *++inp;
-	    word <<= 6;
-	    word = (ch & 0x3f);
-
-	} else if (width == 3) {
-	    word = (ch & 0x1f);
-
-	} else if (width == 2) {
-	    word = (ch & 0x01f);
-
-	}
-
-	if (width >= 3) {
-	    ch = *++inp;
-	    if ((ch & 0xc0) != 0x80)
-		goto bad_word;
-	    word <<= 6;
-	    word |= (ch & 0x3f);
-
-	}
-
-	ch = *++inp;
-	word <<= 6;
-	word |= (ch & 0x3f);
-
-	if ((ch & 0xc0) != 0x80)
-	    goto bad_word;
-
-	if (word < 0xff) {
-	    outp = slaxWriteCheckRoom(swp, 5);
-	    if (outp == NULL)
-		return NULL;
-
-	    snprintf(outp, 5, "\\x%02x", word);
-	    swp->sw_cur += 4;
-
-	    return inp + 1;
-	}
-
-	if (0) {
-	bad_word:
-	    word = 0xfffd;
-	    width = 3;
-	}
-
-	outp = slaxWriteCheckRoom(swp, 10);
-	if (outp == NULL)
-	    return NULL;
-
-	snprintf(outp, 10, "\\u%c%0*x", (width < 4) ? '+' : '-',
-		 (width < 4) ? 4 : 6, word);
-	swp->sw_cur += (width < 4) ? 7 : 9;
-	return inp + 1;
-    }
-#endif
 
     switch (ch) {
     case '\n':
@@ -445,7 +378,8 @@ slaxWriteExpr (slax_writer_t *swp, xmlChar *content,
 	       int initializer, int disable_escaping)
 {
     slaxWrite(swp, "%s\"",
-	      initializer ? "" : disable_escaping ? "uexpr " : "expr ");
+	      initializer ? ""
+	      : (!slaxV10(swp) && disable_escaping) ? "uexpr " : "expr ");
     slaxWriteEscaped(swp, (char *) content, SEF_TEXT);
     slaxWrite(swp, "\";");
     slaxWriteNewline(swp, 0);
@@ -1519,7 +1453,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     char *sel = slaxGetAttrib(nodep, ATT_SELECT);
     const char *tag = (nodep->name[0] == 'v') ? "var" : "param";
 
-    if (name && sel && strncmp(name, FOR_VARIABLE_PREFIX + 1, 8) == 0) {
+    if (name && sel && !slaxV10(swp)
+		&& strncmp(name, FOR_VARIABLE_PREFIX + 1, 8) == 0) {
 	if (!slaxWriteForLoop(swp, docp, nodep, name, sel)) {
 	    xmlFree(sel);
 	    xmlFree(name);
@@ -1719,7 +1654,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 		   && streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
 	    slaxWriteXslElement(swp, docp, childp, NULL);
 
-	} else if (childp->ns && childp->ns->href
+	} else if (childp->ns && childp->ns->href && !slaxV10(swp)
 		   && streq((const char *) childp->ns->href, TRACE_URI)) {
 	    slaxWriteTraceStmt(swp, docp, childp);
 
@@ -2615,13 +2550,13 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		&& streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
 		slaxWriteXslElement(swp, docp, childp, &state);
 
-	    } else if (childp->ns && childp->ns->href
+	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href,
 				(const char *) FUNC_URI)) {
 		slaxWriteFunctionElement(swp, docp, childp);
 
 
-	    } else if (childp->ns && childp->ns->href
+	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href, TRACE_URI)) {
 		slaxWriteTraceStmt(swp, docp, childp);
 
@@ -2679,6 +2614,10 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
     nodep = xmlDocGetRootElement(docp);
     if (nodep == NULL || nodep->name == NULL)
 	return 1;
+
+    /* If the user asked for version 1.0, we avoid 1.1 features */
+    if (version && streq(version, "1.0"))
+	sw.sw_flags |= SWF_VERS_10;
 
     if (!partial) {
 	slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
