@@ -103,6 +103,7 @@ match doc {
 
 	message "before";
 	terminate one _ " is  good";
+	die "too late";
 	message "after";
     }
      <xsl:some-fancy-element> {

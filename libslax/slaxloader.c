@@ -137,6 +137,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_DATA_TYPE, "data-type", KMF_SLAX_KW },
     { K_DECIMAL_FORMAT, "decimal-format", KMF_SLAX_KW },
     { K_DECIMAL_SEPARATOR, "decimal-separator", KMF_SLAX_KW },
+    { K_DIE, "die", KMF_SLAX_KW },
     { K_DIGIT, "digit", KMF_SLAX_KW },
     { K_DIV, "div", KMF_XPATH_KW },
     { K_DOCTYPE_PUBLIC, "doctype-public", KMF_SLAX_KW },
@@ -941,6 +942,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_COPY_OF:
     case K_COUNT:
     case K_DECIMAL_FORMAT:
+    case K_DIE:
     case K_ELEMENT:
     case K_EXPR:
     case K_FOR:
@@ -1019,7 +1021,7 @@ slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
 }
 
 /**
- * Check the version string.  The only supported version is "1.0".
+ * Check the version string.  The only supported versions are "1.0" and "1.1".
  *
  * @param major major version number
  * @param minor minor version number

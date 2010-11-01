@@ -111,6 +111,7 @@
 %token K_DATA_TYPE		/* 'data-type' */
 %token K_DECIMAL_FORMAT		/* 'decimal-format' */
 %token K_DECIMAL_SEPARATOR	/* 'decimal-separator' */
+%token K_DIE			/* 'die' */
 %token K_DIGIT			/* 'digit' */
 %token K_DOCTYPE_PUBLIC		/* 'doctype-public' */
 %token K_DOCTYPE_SYSTEM		/* 'doctype-system' */
@@ -1766,7 +1767,7 @@ trace_stmt :
 	;
 
 terminate_stmt :
-	K_TERMINATE
+	terminate_keyword
 		{
 		    if (slaxElementPush(slax_data, ELT_MESSAGE, NULL, NULL))
 			slaxAttribAddLiteral(slax_data, ATT_TERMINATE, "yes");
@@ -1780,6 +1781,13 @@ terminate_stmt :
 		    STACK_UNUSED($2);
 		}
 	;
+
+terminate_keyword:
+	K_TERMINATE
+		{ $$ = $1; }
+	| K_DIE
+		{ $$ = $1; }
+	  ;
 
 terminate_contents :
 	L_EOS
