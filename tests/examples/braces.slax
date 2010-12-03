@@ -1,0 +1,49 @@
+version 1.1;
+
+ns brace extension = "http://xml.juniper.net/brace";
+
+import "junos-data.slax";
+
+/* mvar $indent = "::"; */
+
+match / {
+    <configuration-text> {
+	apply-templates configuration;
+    }
+}
+
+var $nl = "
+";
+
+match * {
+    /* var $save = $indent; */
+
+    var $idents = {
+	if (count(name) == 1) {
+	    expr brace:quote(name);
+	} else if (brace:multi-ident(.)) {
+	}
+    }
+
+    <line> name() _ " {";
+    expr $nl;
+    /* append $indent += "::"; */
+
+    apply-templates;
+
+    <line> "}";
+    expr $nl;
+    /* set $indent = $save; */
+}
+
+match text() {
+    /* nothing */
+}
+
+function brace:multi-ident ($dot) {
+    result false();
+}
+
+function brace:quote ($value) {
+    result "\"" _ $value _ "\"";
+}

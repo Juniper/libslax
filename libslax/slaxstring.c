@@ -774,3 +774,31 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
 
     return slaxStringAddTailHelper(tailp, buf, bufsiz, ttype);
 }
+
+static int
+slaxNeedsSlaxNsSingle (slax_string_t *value)
+{
+    for ( ; value; value = value->ss_next) {
+	if (value->ss_flags & SSF_SLAXNS)
+	    return TRUE;
+	if (value->ss_concat && slaxNeedsSlaxNs(value->ss_concat))
+	    return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**
+ * Detect if the string needs the "slax" namespace
+ * @value: string to test
+ * @returns TRUE if the strings needs the slax namespace
+ */
+int
+slaxNeedsSlaxNs (slax_string_t *value)
+{
+    for ( ; value; value = value->ss_concat)
+	if (slaxNeedsSlaxNsSingle(value))
+	    return TRUE;
+
+    return FALSE;
+}

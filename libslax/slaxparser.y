@@ -175,6 +175,7 @@
 %token K_VALUE			/* 'value' */
 %token K_VAR			/* 'var' */
 %token K_VERSION		/* 'version' */
+%token K_WHILE			/* 'while' */
 %token K_WITH			/* 'with' */
 %token K_ZERO_DIGIT		/* 'zero-digit' */
 
@@ -401,6 +402,9 @@ partial_stmt :
 		{ $$ = NULL; }
 
 	| use_attribute_stmt
+		{ $$ = NULL; }
+
+	| while_stmt
 		{ $$ = NULL; }
 
 	;
@@ -689,8 +693,6 @@ var_decl :
 		{
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 					   ATT_NAME, $2->ss_token + 1);
-		    if ($1->ss_ttype == K_MVAR)
-			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		}
@@ -700,13 +702,14 @@ var_decl :
 		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
-		    if ($1->ss_ttype == K_MVAR)
-			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
 		    $$ = NULL;
 		}
 	    initial_value
 		{
 		    ALL_KEYWORDS_ON();
+		    if ($1->ss_ttype == K_MVAR)
+			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
@@ -724,7 +727,12 @@ var_decl :
 	    initial_value
 		{
 		    ALL_KEYWORDS_ON();
-		    slaxAvoidRtf(slax_data);
+
+		    if ($1->ss_ttype == K_MVAR)
+			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+		    else
+			slaxAvoidRtf(slax_data);
+
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
@@ -769,8 +777,10 @@ set_mvar_preface :
 		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementPush(slax_data, ELT_SET_VARIABLE,
 					    ATT_NAME, $2->ss_token + 1);
-		    if (nodep)
+		    if (nodep) {
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
+			slaxMvarAddSvarName(slax_data, nodep);
+		    }
 
 		    $$ = STACK_CLEAR($1);
 		}
@@ -782,8 +792,10 @@ set_mvar_preface :
 		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementPush(slax_data, ELT_APPEND_TO_VARIABLE,
 					    ATT_NAME, $2->ss_token + 1);
-		    if (nodep)
+		    if (nodep) {
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
+			slaxMvarAddSvarName(slax_data, nodep);
+		    }
 
 		    $$ = STACK_CLEAR($1);
 		}
@@ -1108,6 +1120,9 @@ block_stmt :
 		{ $$ = NULL; }
 
 	| var_decl
+		{ $$ = NULL; }
+
+	| while_stmt
 		{ $$ = NULL; }
 
 	| L_EOS
@@ -1668,6 +1683,29 @@ for_stmt :
 		    STACK_UNUSED($6);
 		}
 	;
+
+while_stmt :
+	K_WHILE L_OPAREN xpath_expr L_CPAREN
+		{
+		    xmlNodePtr nodep;
+		    nodep = slaxElementPush(slax_data, ELT_WHILE,
+					    NULL, NULL);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
+
+		    slaxSetSlaxNs(slax_data,
+				  slax_data->sd_ctxt->node, FALSE);
+
+		    $$ = NULL;
+		}
+	    block
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($5);
+		}
+	;
+
+
 
 if_stmt :
 	K_IF L_OPAREN xpath_expr L_CPAREN

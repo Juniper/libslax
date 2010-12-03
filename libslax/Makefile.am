@@ -13,7 +13,14 @@ include_HEADERS = \
 
 noinst_HEADERS = \
     slaxinternals.h \
-    util.h \
+    slaxio.h \
+    slaxlexer.h \
+    slaxloader.h \
+    slaxnames.h \
+    slaxprofiler.h \
+    slaxstring.h \
+    slaxtree.h \
+    slaxutil.h \
     xmlsoft.h
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
@@ -24,10 +31,13 @@ libslax_la_SOURCES = \
     slaxdebugger.c \
     slaxext.c \
     slaxio.c \
+    slaxlexer.c \
     slaxloader.c \
+    slaxmvar.c \
     slaxparser.c \
     slaxprofiler.c \
     slaxstring.c \
+    slaxtree.c \
     slaxwriter.c
 
 slaxparser.h: slaxparser.c

@@ -3,8 +3,6 @@
  *
  * Copyright (c) 2010, Juniper Networks, Inc.
  * All rights reserved.
- *
- * 
  */
 
 #include <stdio.h>
@@ -98,17 +96,6 @@ slaxOutputNode (xmlNodePtr node)
 	xmlSaveClose(handle);
     }
 }
-
-#if 0
-static void
-slaxOutputElement (xmlNodePtr node, int indent, const char *prefix)
-{
-    char buf[BUFSIZ], *cp = buf, *ep = buf + bufsiz;
-
-    cp += snprintf(cp, ep - cp, "%.*s%s<%s", indent, "", prefix, node->name);
-    
-}
-#endif
 
 /**
  * Print the given nodeset. First we print the nodeset in a temp file.
@@ -270,4 +257,46 @@ slaxLog (const char *fmt, ...)
     fflush(stderr);
 
     va_end(vap);
+}
+
+/**
+ * Dump a formatted version of the XSL tree to a file
+ *
+ * @param fd file descriptor open for output
+ * @param docp document pointer
+ * @param partial Should we emit partial (snippet) output?
+ */
+void
+slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
+{
+    xmlSaveCtxtPtr handle;
+
+    handle = xmlSaveToFd(fd, "UTF-8", XML_SAVE_FORMAT);
+
+    if (!partial)
+	xmlSaveDoc(handle, docp);
+    else {
+	xmlNodePtr nodep = xmlDocGetRootElement(docp);
+	if (nodep)
+	    nodep = nodep->children;
+
+	for ( ; nodep; nodep = nodep->next) {
+	    if (nodep->type == XML_ELEMENT_NODE) {
+		xmlSaveTree(handle, nodep);
+		xmlSaveFlush(handle);
+		write(fd, "\n", 1);
+	    }
+	}
+    }
+
+    xmlSaveClose(handle);
+}
+
+/*
+ * Dump a formatted version of the XSL tree to stdout
+ */
+void
+slaxDump (xmlDocPtr docp)
+{
+    slaxDumpToFd(1, docp, 0);
 }

@@ -194,12 +194,6 @@ slaxIsReserved (const char *name)
 	    && name[3] == 'x');
 }
 
-static inline char *
-slaxGetAttrib (xmlNodePtr nodep, const char *name)
-{
-    return (char *) xmlGetProp(nodep, (const xmlChar *) name);
-}
-
 static void
 slaxWriteNamespaceAlias (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 			 xmlNodePtr nodep)
@@ -508,7 +502,7 @@ slaxNeedsBlock (xmlNodePtr nodep)
 	     * If this is an XSLT element, we need to bust it out
 	     */
 	    if (childp->ns && childp->ns->href
-		&& streq((const char *) childp->ns->href, XSL_NS))
+		&& streq((const char *) childp->ns->href, XSL_URI))
 		return TRUE;
 
 	    /*
@@ -649,7 +643,7 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     if (fakep == NULL)
 	goto fail;
 
-    sd.sd_xsl_ns = xmlNewNs(fakep, (const xmlChar *) XSL_NS,
+    sd.sd_xsl_ns = xmlNewNs(fakep, (const xmlChar *) XSL_URI,
 			    (const xmlChar *) XSL_PREFIX);
     xmlSetNs(fakep, sd.sd_xsl_ns); /* Noop if NULL */
 
@@ -1290,7 +1284,7 @@ slaxIsSimpleElement (xmlNodePtr nodep)
 	if (nodep->type == XML_ELEMENT_NODE) {
 	    if (nodep->ns && nodep->ns->href) {
 		/* Two special namespaces mean this is not simple */
-		if (streq((const char *) nodep->ns->href, XSL_NS))
+		if (streq((const char *) nodep->ns->href, XSL_URI))
 		    return FALSE;
 
 		if (streq((const char *) nodep->ns->href, TRACE_URI))
@@ -1367,17 +1361,17 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
 	return TRUE;
 
     outer_for = slaxWriterFindNext(outer_var->next,
-				   ELT_FOR_EACH, XSL_NS, TRUE);
+				   ELT_FOR_EACH, XSL_URI, TRUE);
     if (outer_for == NULL)
 	return TRUE;
 
     inner_var = slaxWriterFindNext(outer_for->children,
-				   ELT_VARIABLE, XSL_NS, FALSE);
+				   ELT_VARIABLE, XSL_URI, FALSE);
     if (inner_var == NULL)
 	return TRUE;
 
     inner_for = slaxWriterFindNext(inner_var->next,
-				   ELT_FOR_EACH, XSL_NS, TRUE);
+				   ELT_FOR_EACH, XSL_URI, TRUE);
     if (inner_for == NULL)
 	return TRUE;
 
@@ -1427,7 +1421,7 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
 	    continue;
 
 	if (cur->ns && streq((const char *) cur->name, ELT_SORT)
-		&& streq((const char *) cur->ns->href, XSL_NS))
+		&& streq((const char *) cur->ns->href, XSL_URI))
 	    slaxWriteSort(swp, docp, cur);
     }
 
@@ -2327,40 +2321,43 @@ typedef void (*slax_func_t)(slax_writer_t *, xmlDocPtr, xmlNodePtr);
 typedef struct slax_func_table_s {
     const char *sft_name;	/* Element name (xsl:*) */ 
     slax_func_t sft_func;	/* Function to handle that element */
+    unsigned sft_flags;		/* Flags for this statement */
 } slax_func_table_t;
 
+/* Flags for sft_flags */
+#define SFTF_V11	(1<<0)	/* Statement is 1.1 and later (not 1.0) */
 slax_func_table_t slax_func_table[] = {
-    { "apply-imports", slaxWriteElementSimple },
-    { "apply-templates", slaxWriteApplyTemplates },
-    { "attribute", slaxWriteAttributeStatement },
-    { "attribute-set", slaxWriteAttributeSetStatement },
-    { "call-template", slaxWriteCallTemplate },
-    { "choose", slaxWriteChoose },
-    { "copy-of", slaxWriteCopyOf },
-    { "copy", slaxWriteCopyNode },
-    { "comment", slaxWriteCommentStatement },
-    { "decimal-format", slaxWriteDecimalFormat },
-    { "element", slaxWriteElementStatement },
-    { "fallback", slaxWriteFallback },
-    { "for-each", slaxWriteForEach },
-    { "if", slaxWriteIf },
-    { "import", slaxWriteImport },
-    { "include", slaxWriteImport },
-    { "key", slaxWriteKey },
-    { "message", slaxWriteMessage },
-    { "namespace-alias", NULL }, /* Skip them; handled in slaxWriteNsAll */
-    { "number", slaxWriteNumber },
-    { "output", slaxWriteOutputMethod },
-    { "param", slaxWriteParam },
-    { "preserve-space", slaxWritePreAndStripSpace },
-    { "processing-instruction", slaxWriteProcessingInstruction },
-    { "sort", slaxWriteSort },
-    { "strip-space", slaxWritePreAndStripSpace },
-    { "template", slaxWriteTemplate },
-    { "text", slaxWriteText },
-    { "value-of", slaxWriteValueOf },
-    { "variable", slaxWriteVariable },
-    { NULL, NULL }
+    { "apply-imports", slaxWriteElementSimple, 0 },
+    { "apply-templates", slaxWriteApplyTemplates, 0 },
+    { "attribute", slaxWriteAttributeStatement, SFTF_V11 },
+    { "attribute-set", slaxWriteAttributeSetStatement, SFTF_V11 },
+    { "call-template", slaxWriteCallTemplate, 0 },
+    { "choose", slaxWriteChoose, 0 },
+    { "copy-of", slaxWriteCopyOf, 0 },
+    { "copy", slaxWriteCopyNode, SFTF_V11 },
+    { "comment", slaxWriteCommentStatement, 0 },
+    { "decimal-format", slaxWriteDecimalFormat, SFTF_V11 },
+    { "element", slaxWriteElementStatement, SFTF_V11 },
+    { "fallback", slaxWriteFallback, SFTF_V11 },
+    { "for-each", slaxWriteForEach, 0 },
+    { "if", slaxWriteIf, 0 },
+    { "import", slaxWriteImport, 0 },
+    { "include", slaxWriteImport, 0 },
+    { "key", slaxWriteKey, SFTF_V11 },
+    { "message", slaxWriteMessage, SFTF_V11 },
+    { "namespace-alias", NULL, 0 }, /* Skip them; handled in slaxWriteNsAll */
+    { "number", slaxWriteNumber, SFTF_V11 },
+    { "output", slaxWriteOutputMethod, SFTF_V11 },
+    { "param", slaxWriteParam, 0 },
+    { "preserve-space", slaxWritePreAndStripSpace, 0 },
+    { "processing-instruction", slaxWriteProcessingInstruction, 0 },
+    { "sort", slaxWriteSort, SFTF_V11 },
+    { "strip-space", slaxWritePreAndStripSpace, 0 },
+    { "template", slaxWriteTemplate, 0 },
+    { "text", slaxWriteText, 0 },
+    { "value-of", slaxWriteValueOf, 0 },
+    { "variable", slaxWriteVariable, 0 },
+    { NULL, NULL, 0 }
 };
 
 /*
@@ -2400,9 +2397,14 @@ slaxWriteXslElement (slax_writer_t *swp, xmlDocPtr docp,
 	}
     }
 
-    for (sftp = slax_func_table; sftp->sft_name; sftp++)
+    for (sftp = slax_func_table; sftp->sft_name; sftp++) {
+	/* If it's a 1.1 feature and we're writing 1.0 SLAX, skip it */
+	if ((sftp->sft_flags & SFTF_V11) && slaxV10(swp))
+	    continue;
+
 	if (streq(sftp->sft_name, name))
 	    func = sftp->sft_func;
+    }
 
     if (func)
 	(*func)(swp, docp, nodep);

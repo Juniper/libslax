@@ -175,19 +175,6 @@ int slaxDebugDisplayMode;
 
 #define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : null)
 
-static int
-slaxDebugIsXsl (xmlNodePtr inst, const char *tag)
-{
-    if (!(inst->ns && inst->ns->href && inst->name
-	  && streq((const char *) inst->ns->href, XSL_NS)))
-	return FALSE;
-
-    if (tag && !streq((const char *) inst->name, tag))
-	return FALSE;
-
-    return TRUE;
-}
-
 /**
  * Return the current debugger state object.  This is currently
  * just a single global instance, but if we ever support threads,
@@ -258,7 +245,7 @@ slaxDebugGetTemplate (slaxDebugState_t *statep, xmlNodePtr inst)
     xsltTemplatePtr tmp;
 
     for ( ; inst; inst = inst->parent) {
-	if (slaxDebugIsXsl(inst, ELT_TEMPLATE)) {
+	if (slaxNodeIsXsl(inst, ELT_TEMPLATE)) {
 	    
 	    for (tmp = statep->ds_script->templates; tmp; tmp = tmp->next) {
 		if (tmp->elem == inst)
@@ -964,7 +951,7 @@ slaxDebugCmdFinish (DC_ARGS)
      * the debugger for "continue".
      */
     TAILQ_FOREACH_REVERSE(dsfp, &slaxDebugStack, slaxDebugStack_s, st_link) {
-	if (slaxDebugIsXsl(dsfp->st_inst, ELT_TEMPLATE)) {
+	if (slaxNodeIsXsl(dsfp->st_inst, ELT_TEMPLATE)) {
 	    dsfp->st_flags |= STF_STOPWHENPOP;
 	    statep->ds_flags |= DSF_DISPLAY;
 	    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
@@ -1006,7 +993,7 @@ slaxDebugCmdNext (DC_ARGS)
     if (slaxDebugCheckDone(statep))
 	return;
 
-    if (slaxDebugIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
+    if (slaxNodeIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
 	xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
 	statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
     } else {
@@ -1311,11 +1298,13 @@ slaxDebugCmdRun (DC_ARGS)
     int restart;
 
     if (status != XSLT_DEBUG_DONE && status != XSLT_DEBUG_QUIT) {
-	const char prompt[] =
-"The script being debugged has been started already.\n\
-Start it from the beginning? (y or n) ";
-	char *input = slaxInput(prompt, 0);
+	const char warning[] =
+	    "The script being debugged has been started already.";
+	const char prompt[] = "Start it from the beginning? (y or n) ";
+	char *input;
 
+	slaxOutput(warning);
+	input = slaxInput(prompt, 0);
 	if (input == NULL)
 	    return;
 
@@ -1357,8 +1346,10 @@ slaxDebugCmdQuit (DC_ARGS)
      * both.  If we've "quit", then there's no context to set.
      */
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-    if (statep->ds_ctxt)
+    if (statep->ds_ctxt) {
 	statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
+	statep->ds_ctxt->state = XSLT_STATE_STOPPED;
+    }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1507,7 +1498,7 @@ slaxDebugShell (slaxDebugState_t *statep)
     static char prompt[] = "(sdb) ";
 
     if (statep->ds_flags & DSF_DISPLAY) {
-	const char *filename = (const char *) statep->ds_script->doc->URL;
+	const char *filename = (const char *) statep->ds_inst->doc->URL;
 	int line_no = xmlGetLineNo(statep->ds_inst);
 	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
 	statep->ds_flags &= ~DSF_DISPLAY;
@@ -1707,6 +1698,15 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
 	      statep->ds_inst, NAME(statep->ds_inst));
 
     /*
+     * This should never happen, except when it does.
+     * Seems to be when the engine can't find the instruction, like
+     * an unknown function or template.  Ignore it instead of making
+     * a core file.
+     */
+    if (inst == NULL)
+	return 0;
+
+    /*
      * They are two distinct calls for addFrame when a template is
      * invoked.  The sequence goes like this:
      *
@@ -1745,7 +1745,7 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     dsfp->st_caller = statep->ds_inst;
 
     if (inst->ns && inst->ns->href && inst->name
-	&& streq((const char *) inst->ns->href, XSL_NS)) {
+	&& streq((const char *) inst->ns->href, XSL_URI)) {
 	if (streq((const char *) inst->name, ELT_WITH_PARAM))
 	    dsfp->st_flags |= STF_PARAM;
     }
