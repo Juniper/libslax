@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://my.example.com" xmlns:slax-trace="http://code.google.com/p/libslax/trace" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="slax-trace slax-func">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://my.example.com" xmlns:slax="http://code.google.com/p/libslax/slax" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="slax slax-func">
   <xsl:variable name="key" select="1"/>
   <xsl:variable name="new">
-    <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace">
+    <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax">
       <xsl:choose>
         <xsl:when test="$key">
           <trace-test>testing...1...2...3...</trace-test>
@@ -11,20 +11,20 @@
           <trace-test>testing...not...</trace-test>
         </xsl:otherwise>
       </xsl:choose>
-    </slax-trace:trace>
+    </slax:trace>
   </xsl:variable>
   <xsl:variable name="min" select="1"/>
   <xsl:variable name="max">
-    <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="concat(&quot;min: &quot;, $min)"/>
+    <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="concat(&quot;min: &quot;, $min)"/>
     <xsl:value-of select="10"/>
   </xsl:variable>
   <xsl:template match="/list">
     <top>
-      <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="my:test(10)"/>
-      <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="&quot;test&quot;"/>
-      <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="concat(&quot;count&quot;, count(.))"/>
-      <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="$max - $min"/>
-      <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace">
+      <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="my:test(10)"/>
+      <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="&quot;test&quot;"/>
+      <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="concat(&quot;count&quot;, count(.))"/>
+      <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="$max - $min"/>
+      <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax">
         <top>
           <xsl:choose>
             <xsl:when test="$min = 0">
@@ -35,9 +35,9 @@
             </xsl:otherwise>
           </xsl:choose>
         </top>
-      </slax-trace:trace>
+      </slax:trace>
       <xsl:for-each select="item">
-        <slax-trace:trace xmlns:slax-trace="http://code.google.com/p/libslax/trace" select="concat(&quot;item: &quot;, name)"/>
+        <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="concat(&quot;item: &quot;, name)"/>
       </xsl:for-each>
     </top>
   </xsl:template>

@@ -56,6 +56,7 @@
       <xsl:message terminate="yes">
         <xsl:value-of select="concat(one, &quot; is  good&quot;)"/>
       </xsl:message>
+      <xsl:message terminate="yes">too late</xsl:message>
       <xsl:message>after</xsl:message>
     </doc>
     <xsl:some-fancy-element>

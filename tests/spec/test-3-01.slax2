@@ -101,6 +101,7 @@ match doc {
         }
         message "before";
         terminate one _ " is  good";
+        terminate "too late";
         message "after";
     }
     <xsl:some-fancy-element> {
