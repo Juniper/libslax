@@ -240,6 +240,35 @@ do_check (const char *name, const char *output UNUSED,
     return 0;
 }
 
+/*
+ * An ugly attempt to seed the random number generator with the best
+ * value possible.  Ugly, but localized ugliness.
+ */
+static void
+init_randomizer (void)
+{
+#if defined(HAVE_SRANDDEV)
+    sranddev();
+
+#elif defined(HAVE_SRAND)
+#if defined(HAVE_GETTIMEOFDAY)
+
+    struct timeval tv;
+    int seed;
+
+    gettimeofday(&tv, NULL);
+    seed = ((int) tv.tv_sec) + ((int) tv.tv_usec);
+    srand(seed);
+
+#else /* HAVE_GETTIMEOFDAY */
+    srand((int) time(NULL));
+
+#endif /* HAVE_GETTIMEOFDAY */
+#else /* HAVE_SRAND */
+    fprintf(stderr, "could not initialize random\n");
+#endif /* HAVE_SRAND */
+}
+
 static void
 print_version (void)
 {
@@ -271,6 +300,7 @@ print_help (void)
     printf("\t--help OR -h: display this help message\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
+    printf("\t--no-randomize: do not initialize the random number generator\n");
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
     printf("\t--param name value OR -a name value: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
@@ -289,6 +319,7 @@ main (int argc UNUSED, char **argv)
     int (*func)(const char *, const char *, const char *, char **) = NULL;
     int use_exslt = FALSE;
     FILE *trace_fp = NULL;
+    int randomize = 1;
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -376,6 +407,9 @@ main (int argc UNUSED, char **argv)
 	    print_help();
 	    return -1;
 
+	} else if (streq(cp, "--no-randomize")) {
+	    randomize = 0;
+
 	} else {
 	    fprintf(stderr, "invalid option: %s\n", cp);
 	    print_help();
@@ -385,6 +419,14 @@ main (int argc UNUSED, char **argv)
 
     if (func == NULL)
 	func = do_run; /* the default action */
+
+    /*
+     * Seed the random number generator.  This is optional to allow
+     * test jigs to take advantage of the default stream of generated
+     * numbers.
+     */
+    if (randomize)
+	init_randomizer();
 
     /*
      * Start the XML API

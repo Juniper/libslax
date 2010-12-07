@@ -143,9 +143,6 @@ void
 slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 
 void
-slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep);
-
-void
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
 
 /**

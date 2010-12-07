@@ -693,6 +693,10 @@ var_decl :
 		{
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 					   ATT_NAME, $2->ss_token + 1);
+
+		    if ($1->ss_ttype == K_MVAR)
+			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		}
@@ -720,8 +724,6 @@ var_decl :
 		    SLAX_KEYWORDS_OFF();
 		    slaxElementPush(slax_data, ELT_VARIABLE,
 				    ATT_NAME, $2->ss_token + 1);
-		    if ($1->ss_ttype == K_MVAR)
-			slaxAttribAddLiteral(slax_data, ATT_MUTABLE, "yes");
 		    $$ = NULL;
 		}
 	    initial_value
@@ -1690,10 +1692,10 @@ while_stmt :
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_WHILE,
 					    NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
 
-		    slaxSetSlaxNs(slax_data,
-				  slax_data->sd_ctxt->node, FALSE);
+		    if (nodep)
+			slaxSetSlaxNs(slax_data, nodep, TRUE);
 
 		    $$ = NULL;
 		}
@@ -1792,7 +1794,7 @@ trace_stmt :
 
 		    nodep = slaxElementPush(slax_data, ELT_TRACE, NULL, NULL);
 		    if (nodep)
-			slaxSetTraceNs(slax_data, nodep);
+			slaxSetSlaxNs(slax_data, nodep, TRUE);
 		    $$ = NULL;
 		}
 	    initial_value

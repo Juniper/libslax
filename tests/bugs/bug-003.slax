@@ -12,12 +12,20 @@ match / {
 	call non-scalars;
 	call append-scalars;
 	call to-scalars;
+
+	mvar $set;
+	for-each (*/*) {
+	    if (starts-with(name(), "i")) {
+		append $set += .;
+	    }
+	}
+	<set> { copy-of $set; }
     }
 }
 
 template to-scalars {
     <to-scalars> {
-	mvar $var = "one";
+	mvar $var := "one";
 	<var> { copy-of $var; }
 	append $var += <two> "two";
 	var $save = $var;

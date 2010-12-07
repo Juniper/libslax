@@ -658,9 +658,6 @@ slaxEnable (int enable)
     if (slaxEnabled == 0) {
 	/* Register EXSLT function functions so our function keywords work */
 	exsltFuncRegister();
-
-	/* Seed the random number generator */
-	sranddev();
     }
 
     /*

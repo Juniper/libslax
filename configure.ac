@@ -47,6 +47,7 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero memmove strchr strcspn strerror strspn])
+AC_CHECK_FUNCS([sranddev srand])
 
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_FUNCS([gettimeofday ctime])

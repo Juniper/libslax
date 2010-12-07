@@ -92,6 +92,9 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 	    goto fail;
     }
 
+    /* Set the line number so the debugger can find us */
+    svar->line = mvar->line;
+
     /* Set the name of the shadow variable */
     xmlSetNsProp(svar, NULL, (const xmlChar *) ATT_NAME,
 		 (const xmlChar *) svarname);

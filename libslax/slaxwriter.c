@@ -1287,7 +1287,7 @@ slaxIsSimpleElement (xmlNodePtr nodep)
 		if (streq((const char *) nodep->ns->href, XSL_URI))
 		    return FALSE;
 
-		if (streq((const char *) nodep->ns->href, TRACE_URI))
+		if (streq((const char *) nodep->ns->href, SLAX_URI))
 		    return FALSE;
 	    }
 
@@ -1443,9 +1443,52 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
 static void
 slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
-    char *name = slaxGetAttrib(nodep, ATT_NAME);
-    char *sel = slaxGetAttrib(nodep, ATT_SELECT);
+    char *name;
+    char *sel;
+    char *mvarname = slaxGetAttrib(nodep, ATT_MVARNAME);
+    char *svarname;
     const char *tag = (nodep->name[0] == 'v') ? "var" : "param";
+    xmlNodePtr vnode = nodep;
+
+    if (mvarname) {
+	/*
+	 * If this variable has an 'mvarname' attribute, then we are
+	 * looking at the shadow variable of a mutable variable (aka
+	 * "mvar").  Since shadow variables aren't seen in real SLAX
+	 * code, we skip it, knowing that we'll see the real part
+	 * later.
+	 */
+	xmlFree(mvarname);
+	return;
+    }
+
+    name = slaxGetAttrib(nodep, ATT_NAME);
+    sel = slaxGetAttrib(nodep, ATT_SELECT);
+    svarname = slaxGetAttrib(nodep, ATT_SVARNAME);
+
+    if (svarname) {
+	/*
+	 * If this variable has an 'svarname' attribute, then we are
+	 * looking at the real part of a mutable variable (aka
+	 * "mvar").  We know that if the mvar is initialized with an
+	 * RTF, then the shadow variable has the contents and the real
+	 * variable has a select attribute containing a call to
+	 * "slax:mvar-init()" with the svarname passed as the only
+	 * parameter.  But the select could also have a scalar value.
+	 * If the select refers to the svar, we need to go find it and
+	 * use that value as the initializer for the mvar.
+	 */
+	const char mvar_init[] = SLAX_PREFIX ":" FUNC_MVAR_INIT "(";
+	tag = "mvar";
+
+	if (sel && strncmp(sel, mvar_init, strlen(mvar_init)) == 0) {
+	    for (vnode = nodep->prev; vnode; vnode = vnode->prev)
+		if (vnode->type == XML_ELEMENT_NODE)
+		    break;
+	    if (vnode == NULL || vnode->children == NULL)
+		vnode = nodep;	/* Revert */
+	}
+    }
 
     if (name && sel && !slaxV10(swp)
 		&& strncmp(name, FOR_VARIABLE_PREFIX + 1, 8) == 0) {
@@ -1457,8 +1500,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	/* Otherwise it wasn't a "real" "for" loop, so continue */
     }
 
-    if (nodep->children) {
-	xmlNodePtr childp = nodep->children;
+    if (vnode->children) {
+	xmlNodePtr childp = vnode->children;
 
 	if (childp->next == NULL && childp->type == XML_TEXT_NODE) {
 	    /*
@@ -1472,13 +1515,13 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
 	} else if (slaxIsSimpleElement(childp)) {
 	    slaxWrite(swp, "%s $%s = ", tag, name);
-	    slaxWriteChildren(swp, docp, nodep, FALSE);
+	    slaxWriteChildren(swp, docp, vnode, FALSE);
 
 	} else {
 	    slaxWrite(swp, "%s $%s = {", tag, name);
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, nodep, FALSE);
+	    slaxWriteChildren(swp, docp, vnode, FALSE);
 
 	    slaxWrite(swp, "}");
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1548,6 +1591,92 @@ slaxWriteTraceStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     xmlFreeAndEasy(sel);
 }
 
+static void
+slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+		    xmlNodePtr nodep)
+{
+    char *tst = slaxGetAttrib(nodep, ATT_TEST);
+    char *expr = slaxMakeExpression(swp, nodep, tst);
+
+    slaxWrite(swp, "while (");
+    slaxWriteValue(swp, expr);
+    slaxWrite(swp, ") {");
+    slaxWriteNewline(swp, NEWL_INDENT);
+
+    xmlFreeAndEasy(expr);
+    xmlFreeAndEasy(tst);
+
+    slaxWriteChildren(swp, docp, nodep, FALSE);
+
+    slaxWrite(swp, "}");
+    slaxWriteNewline(swp, NEWL_OUTDENT);
+}
+
+static void
+slaxWriteMvarStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+		   xmlNodePtr nodep, int append)
+{
+    char *name = slaxGetAttrib(nodep, ATT_NAME);
+    char *sel = slaxGetAttrib(nodep, ATT_SELECT);
+    const char *sn = append ? "append" : "set";
+    const char *op = append ? "+=" : "=";
+
+    if (nodep->children) {
+	xmlNodePtr childp = nodep->children;
+
+	if (childp->next == NULL && childp->type == XML_TEXT_NODE) {
+	    /*
+	     * If there's only one child and it's text, we can emit
+	     * a simple string value.
+	     */
+	    slaxWrite(swp, "%s $%s %s \"", sn, name, op);
+	    slaxWriteEscaped(swp, (char *) childp->content, SEF_DOUBLEQ);
+	    slaxWrite(swp, "\";");
+	    slaxWriteNewline(swp, 0);
+
+	} else if (slaxIsSimpleElement(childp)) {
+	    slaxWrite(swp, "%s $%s %s ", sn, name, op);
+	    slaxWriteChildren(swp, docp, nodep, FALSE);
+
+	} else {
+	    slaxWrite(swp, "%s $%s %s {", sn, name, op);
+	    slaxWriteNewline(swp, NEWL_INDENT);
+
+	    slaxWriteChildren(swp, docp, nodep, FALSE);
+
+	    slaxWrite(swp, "}");
+	    slaxWriteNewline(swp, NEWL_OUTDENT);
+	}
+
+    } else if (sel) {
+	char *expr = slaxMakeExpression(swp, nodep, sel);
+
+	slaxWrite(swp, "%s $%s %s ", sn, name, op);
+	slaxWriteValue(swp, expr);
+	slaxWrite(swp, ";");
+	slaxWriteNewline(swp, 0);
+	xmlFreeAndEasy(expr);
+
+    } else {
+	slaxWrite(swp, "%s $%s %s { }", sn, name, op);
+	slaxWriteNewline(swp, 0);
+    }
+
+    xmlFreeAndEasy(sel);
+    xmlFreeAndEasy(name);
+}
+
+static void
+slaxWriteMvarSetStmt (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+{
+    slaxWriteMvarStmt(swp, docp, nodep, FALSE);
+}
+
+static void
+slaxWriteMvarAppendStmt (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+{
+    slaxWriteMvarStmt(swp, docp, nodep, TRUE);
+}
 
 static void
 slaxWriteParam (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
@@ -1564,6 +1693,31 @@ slaxWriteParam (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
      */
     if (swp->sw_indent != 1)
 	slaxWriteVariable(swp, docp, nodep);
+}
+
+static void
+slaxWriteSlaxElement (slax_writer_t *swp, xmlDocPtr docp,
+		     xmlNodePtr nodep)
+{
+    if (streq((const char *) nodep->name, ELT_TRACE))
+	slaxWriteTraceStmt(swp, docp, nodep);
+
+    else if (streq((const char *) nodep->name, ELT_WHILE))
+	slaxWriteWhileStmt(swp, docp, nodep);
+
+    else if (streq((const char *) nodep->name, ELT_SET_VARIABLE))
+	slaxWriteMvarSetStmt(swp, docp, nodep);
+
+    else if (streq((const char *) nodep->name, ELT_APPEND_TO_VARIABLE))
+	slaxWriteMvarAppendStmt(swp, docp, nodep);
+    /*
+     * Add new slax elements here
+     */
+
+    /* XXX : need to add append, set, etc) */
+
+    else
+	slaxWriteElement(swp, docp, nodep);
 }
 
 static void
@@ -1649,8 +1803,8 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    slaxWriteXslElement(swp, docp, childp, NULL);
 
 	} else if (childp->ns && childp->ns->href && !slaxV10(swp)
-		   && streq((const char *) childp->ns->href, TRACE_URI)) {
-	    slaxWriteTraceStmt(swp, docp, childp);
+		   && streq((const char *) childp->ns->href, SLAX_URI)) {
+	    slaxWriteSlaxElement(swp, docp, childp);
 
 	} else {
 	    slaxWriteElement(swp, docp, childp);
@@ -2559,8 +2713,8 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 
 
 	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
-		       && streq((const char *) childp->ns->href, TRACE_URI)) {
-		slaxWriteTraceStmt(swp, docp, childp);
+		       && streq((const char *) childp->ns->href, SLAX_URI)) {
+		slaxWriteSlaxElement(swp, docp, childp);
 
 	    } else {
 		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))

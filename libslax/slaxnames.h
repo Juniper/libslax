@@ -20,9 +20,6 @@
 #define FUNC_URI EXSLT_FUNCTIONS_NAMESPACE
 #define FUNC_PREFIX "slax-func"
 
-#define TRACE_URI "http://code.google.com/p/libslax/trace"
-#define TRACE_PREFIX "slax-trace"
-
 #define SLAX_URI "http://code.google.com/p/libslax/slax"
 #define SLAX_PREFIX "slax"
 

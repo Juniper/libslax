@@ -70,14 +70,14 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...)
 
 /*
  * The following code supports the "trace" statement in SLAX, which is
- * turned into the XML element <slax-trace:trace> by the parser.  If
- * the environment has provided a callback function (via
- * slaxTraceEnable()), then script-level tracing data is passed
- * to that callback.  This makes a great way of keeping trace data
- * in the script in a maintainable way.
+ * turned into the XML element <slax:trace> by the parser.  If the
+ * environment has provided a callback function (via slaxTraceEnable()),
+ * then script-level tracing data is passed to that callback.  This
+ * makes a great way of keeping trace data in the script in a
+ * maintainable way.
  */
 typedef struct trace_precomp_s {
-    xsltElemPreComp tp_comp;	/* Standard precomp header */
+    xsltElemPreComp tp_comp;	   /* Standard precomp header */
     xmlXPathCompExprPtr tp_select; /* Compiled select expression */
     xmlNsPtr *tp_nslist;	   /* Prebuilt namespace list */
     int tp_nscount;		   /* Number of namespaces in tp_nslist */
@@ -282,6 +282,161 @@ slaxTraceEnable (slaxTraceCallback_t func, void *data)
 
 /* ---------------------------------------------------------------------- */
 
+/*
+ * The following code supports the "while" statement in SLAX, which is
+ * turned into the XML element <slax:while> by the parser.  A while is
+ * basically an "if" in a loop, and is fairly simple.
+ */
+typedef struct while_precomp_s {
+    xsltElemPreComp wp_comp;	   /* Standard precomp header */
+    xmlXPathCompExprPtr wp_test;   /* Compiled test expression */
+    xmlNsPtr *wp_nslist;	   /* Prebuilt namespace list */
+    int wp_nscount;		   /* Number of namespaces in tp_nslist */
+} while_precomp_t;
+
+/**
+ * Deallocates a while_precomp_t
+ *
+ * @comp the precomp data to free (a while_precomp_t)
+ */
+static void
+slaxWhileFreeComp (while_precomp_t *comp)
+{
+    if (comp == NULL)
+	return;
+
+    if (comp->wp_test)
+	xmlXPathFreeCompExpr(comp->wp_test);
+
+    xmlFreeAndEasy(comp->wp_nslist);
+    xmlFree(comp);
+}
+
+/**
+ * Precompile a while element, so make running it faster
+ *
+ * @style the current stylesheet
+ * @inst this instance
+ * @function the transform function (opaquely passed to xsltInitElemPreComp)
+ */
+static xsltElemPreCompPtr
+slaxWhileCompile (xsltStylesheetPtr style, xmlNodePtr inst,
+	       xsltTransformFunction function)
+{
+    xmlChar *sel;
+    while_precomp_t *comp;
+
+    comp = xmlMalloc(sizeof(*comp));
+    if (comp == NULL) {
+	xsltGenericError(xsltGenericErrorContext, "while: malloc failed\n");
+	return NULL;
+    }
+
+    memset(comp, 0, sizeof(*comp));
+
+    xsltInitElemPreComp((xsltElemPreCompPtr) comp, style, inst, function,
+			 (xsltElemPreCompDeallocator) slaxWhileFreeComp);
+    comp->wp_test = NULL;
+
+    if (inst->children == NULL) {
+	xsltGenericError(xsltGenericErrorContext,
+			 "warning: tight while loop was detected\n");
+    }
+
+    /* Precompile the test attribute */
+    sel = xmlGetNsProp(inst, (const xmlChar *) ATT_TEST, NULL);
+    if (sel == NULL) {
+	xsltGenericError(xsltGenericErrorContext,
+			 "while: missing test attribute\n");
+	return NULL;
+    }
+
+    comp->wp_test = xmlXPathCompile(sel);
+    if (comp->wp_test == NULL) {
+	xsltGenericError(xsltGenericErrorContext,
+			 "while: test attribute does not compile: %s\n", sel);
+	xmlFree(sel);
+	return NULL;
+    }
+
+    xmlFree(sel);
+
+    /* Prebuild the namespace list */
+    comp->wp_nslist = xmlGetNsList(inst->doc, inst);
+    if (comp->wp_nslist != NULL) {
+	int i = 0;
+	while (comp->wp_nslist[i] != NULL)
+	    i++;
+	comp->wp_nscount = i;
+    }
+
+    return &comp->wp_comp;
+}
+
+/**
+ * Handle a <slax:while> element, as manufactured by the "while" statement
+ *
+ * @ctxt transform context
+ * @node current input node
+ * @inst the <while> element
+ * @comp the precompiled info (a while_precomp_t)
+ */
+static void
+slaxWhileElement (xsltTransformContextPtr ctxt,
+		  xmlNodePtr node UNUSED, xmlNodePtr inst,
+		  while_precomp_t *comp)
+{
+    int value;
+
+    if (comp->wp_test == NULL) {
+	xsltGenericError(xsltGenericErrorContext,
+			 "while: test attribute was not compiled\n");
+	return;
+    }
+
+    for (;;) {
+	/*
+	 * Adjust the context to allow the XPath expresion to
+	 * find the right stuff.  Save old info like namespace,
+	 * install fake ones, eval the expression, then restore
+	 * the saved values.
+	 */
+	xmlNsPtr *save_nslist = ctxt->xpathCtxt->namespaces;
+	int save_nscount = ctxt->xpathCtxt->nsNr;
+	xmlNodePtr save_context = ctxt->xpathCtxt->node;
+
+	ctxt->xpathCtxt->namespaces = comp->wp_nslist;
+	ctxt->xpathCtxt->nsNr = comp->wp_nscount;
+	ctxt->xpathCtxt->node = node;
+
+	/* If the user typed 'quit' or 'run' at the debugger prompt, bail */
+        if (ctxt->debugStatus == XSLT_DEBUG_QUIT
+			|| ctxt->debugStatus == XSLT_DEBUG_RUN_RESTART)
+	    break;
+
+        if (ctxt->debugStatus != XSLT_DEBUG_NONE)
+            xslHandleDebugger(inst, node, ctxt->templ, ctxt);
+
+	value = xmlXPathCompiledEvalToBoolean(comp->wp_test, ctxt->xpathCtxt);
+
+	ctxt->xpathCtxt->node = save_context;
+	ctxt->xpathCtxt->nsNr = save_nscount;
+	ctxt->xpathCtxt->namespaces = save_nslist;
+
+	if (value < 0) {
+	    xsltGenericError(xsltGenericErrorContext, "while: test fails\n");
+	    break;
+	} else if (value == 0)
+	    break;
+
+	/* Apply the template code inside the element */
+	xsltApplyOneTemplate(ctxt, node,
+			      inst->children, NULL, NULL);
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+
 static void
 slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 {
@@ -354,9 +509,14 @@ void
 slaxExtRegister (void)
 {
     xsltRegisterExtModuleElement ((const xmlChar *) ELT_TRACE,
-				  (const xmlChar *) TRACE_URI,
+				  (const xmlChar *) SLAX_URI,
 			  (xsltPreComputeFunction) slaxTraceCompile,
 			  (xsltTransformFunction) slaxTraceElement);
+
+    xsltRegisterExtModuleElement ((const xmlChar *) ELT_WHILE,
+				  (const xmlChar *) SLAX_URI,
+			  (xsltPreComputeFunction) slaxWhileCompile,
+			  (xsltTransformFunction) slaxWhileElement);
 
     xsltRegisterExtModuleFunction((const xmlChar *) FUNC_BUILD_SEQUENCE,
 				  (const xmlChar *) SLAX_URI,

@@ -421,15 +421,6 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
 }
 
 void 
-slaxSetTraceNs (slax_data_t *sdp, xmlNodePtr nodep)
-{
-    const char *prefix = TRACE_PREFIX;
-    const xmlChar *uri = (const xmlChar *) TRACE_URI;
-
-    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
-}
-
-void 
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
 {
     const char *prefix = SLAX_PREFIX;
