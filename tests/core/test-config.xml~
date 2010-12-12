@@ -1,9 +1,0 @@
-<configuration>
-  <system>
-    <host-name>puff-the-magic-dragon</host-name>
-    <domain-name>by-the-sea.example.com</domain-name>
-    <name-server>
-      <name>10.1.2.3</name>
-    </name-server>
-  </system>
-</configuration>
