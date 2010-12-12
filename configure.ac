@@ -47,10 +47,10 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero memmove strchr strcspn strerror strspn])
-AC_CHECK_FUNCS([sranddev srand])
-
-AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_FUNCS([sranddev srand strlcpy])
+AC_CHECK_FUNCS([fdopen getrusage])
 AC_CHECK_FUNCS([gettimeofday ctime])
+AC_CHECK_HEADERS([sys/time.h])
 
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h string.h sys/param.h unistd.h ])
 AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
@@ -276,7 +276,7 @@ AC_CONFIG_FILES([
   libslax/Makefile
   slaxproc/Makefile
   tests/Makefile
-  tests/spec/Makefile
+  tests/core/Makefile
   tests/bugs/Makefile
   tests/libxslt/Makefile
   doc/Makefile
