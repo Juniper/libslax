@@ -40,6 +40,7 @@ static int options = XSLT_PARSE_OPTIONS;
 static int html;
 static char *encoding;
 static char *version;
+static int indent;
 
 static int partial;
 static int use_debugger;
@@ -180,10 +181,11 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	indoc = htmlReadFile(input, encoding, options);
     else
 	indoc = xmlReadFile(input, encoding, options);
-
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
 
+    if (indent)
+	script->indent = 1;
 
     if (use_debugger) {
 	slaxDebugInit();
@@ -297,6 +299,7 @@ print_help (void)
 
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
+    printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
@@ -393,6 +396,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
 	    partial = TRUE;
+
+	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
+	    indent = TRUE;
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;

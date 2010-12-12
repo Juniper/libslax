@@ -29,6 +29,8 @@ slaxproc \- process slax files
 .B \-r
 ] [
 .B \-e
+] [
+.B \-g
 ]
 .I slax-file
 [
@@ -163,6 +165,16 @@ argument is given, standard output is used.
 .LP
 .RS
 Allow script access to the exslt extension library, as defined by exslt.org.
+.RE
+.LP
+.B -g
+.br
+.B --indent
+.LP
+.RS
+Make script output indented as if the script contained:
+.br 
+        output-method { indent "yes"; }
 .RE
 .LP
 .B -i

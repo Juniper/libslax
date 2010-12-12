@@ -514,6 +514,27 @@ Although this example used an XSL variable, the above example could have
 used an XSL parameter for $message, allowing users to pass in their own
 message.
 
+***** Mutable Variables
+
+SLAX adds the ability to assign new values to variables and to append
+to node sets.
+
+    mvar $count = 10;
+    if (this < that) {
+        set $count = that;
+    }
+
+    mvar $errors;
+    if ($count < 2) {
+        append $errors += <error> {
+            <location> location;
+            <message> "Not good, dude.";
+        }
+    }
+
+Mutable variables can be used like normal variables, including use in
+XPath expressions.
+
 ***** Programming Constructs
 
 XSLT has a number of traditional programming constructs:
@@ -523,14 +544,12 @@ XSLT has a number of traditional programming constructs:
     }
 
     if (xpath-expression) {
-        
         /*
          * xsl:choose is similar to a switch statement, but
          * the "test" expression can vary among "when" statements.
          */
     
     } else if (another-xpath-expression) {
-        
         /*
          * xsl:when is the case of the switch statement.
          * Any number of "when" statements may appear.
@@ -541,13 +560,35 @@ XSLT has a number of traditional programming constructs:
     }
     
     for-each (xpath-expression) {
-        
         /*
          * Code here is evaluated for each node that matches 
          * the xpath expression.  The context is moved to the
          * node during each pass.
          */
     }
+
+    for $item (items) {
+        /* 
+         * Code here is evaluated with the variable $item set
+         * to each node that matches the xpath expression.
+         * The context is not moved.
+         */
+    }
+
+    for $i (1 ... 20) {
+        /*
+         * Code here is evaluated with the variable $i moving
+         * thru a sequence of values between 1 and 20.  The
+         * context is not changed.
+         */
+    }
+
+    while ($count < 10) {
+        /*
+         * Code here is evaluated until the XPath expression is
+         * false.  Note that this is normally only useful with
+         * mutable variables.
+         */
 
 XSLT is a declarative language, mixing language statements (in the
 "xsl" namespace) with output elements in other namespaces.  For
@@ -1846,7 +1887,7 @@ These same constraints apply to parameters as well.
 
 In XSLT, all variables are immutable, meaning that once created, their
 value cannot be changed.  This creates a distinct programming
-environment, which is challenging to new programmers.  Immutable
+environment which is challenging to new programmers.  Immutable
 variables allow various optimizations and advanced streaming
 functionality.
 
@@ -2025,6 +2066,29 @@ Internally, this is translated into normal XSLT constructs involving a
 pair of nested for-each loops, one to iterate and one to put the
 context back to the previous setting.  This allows the script writer
 to ignore the context change.
+
+**** The "while" Statement @while@
+
+The "while" statement allows a block of code to be repeated until a
+condition is no longer true.  This construct is only useful when
+combined with mutable variables (^mvar^).
+
+    SYNTAX::
+        'while' '(' xpath-expression ')' '{'
+            contents
+        '}'
+
+The xpath-expression is cast to a boolean type and if true, the
+contents are evaluated.  The context is not changed.  This loop
+continues until the expression is no longer true.  Care must be
+taken to avoid infinite loops.
+
+    mvar $seen;
+    mvar $count = 1;
+    while (not($seen)) {
+        if (item[$count]/value) {
+        set $seen = true();
+    }
 
 **** The "..." Operator @dotdotdot@
 
@@ -2584,24 +2648,45 @@ inspect all <chapter> elements, convert their <section> elements to
 strings, and select those whose string value starts with 'A'.  This
 may be an expensive operation.
 
-* Security Considerations
-
-None.
-
-* IANA Considerations
-
-None.
-
 * Status of the Software
 
-The SLAX software contains both a reader and a writer.  The reader
+The SLAX software contains a library (libslax) and a command line tool
+(slaxproc).  The command line tool can be used to convert between XSLT
+and SLAX syntax, as well as run stylesheets and check syntax.
+
+  Usage: slaxproc [options] [stylesheet] [file]
+    Options:
+      --slax-to-xslt OR -x: turn SLAX into XSLT
+      --xslt-to-slax OR -s: turn XSLT into SLAX
+      --run OR -r: run a SLAX script
+      --check OR -c: check syntax and content for a SLAX script
+
+      --debug OR -d: enable the SLAX/XSLT debugger
+      --exslt OR -e: enable the EXSLT library
+      --indent OR -g: indent output ala output-method/indent
+      --help OR -h: display this help message
+      --input <file> OR -i <file>: take input from the given file
+      --name <file> OR -n <file>: read the script from the given file
+      --no-randomize: do not initialize the random number generator
+      --output <file> OR -o <file>: make output into the given file
+      --param name value OR -a name value: pass parameters
+      --partial OR -p: allow partial SLAX input to --slax-to-xslt
+      --trace <file> OR -t <file>: write trace data to a file
+      --verbose OR -v: enable debugging output (slaxLog())
+      --version OR -V: show version information (and exit)
+      --write-version <version> OR -w <version>: write in version
+  Project libslax home page: http://code.google.com/p/libslax
+
+A man page for slaxproc is included in the libslax distribution.
+Refer to that documentation for additional information.
+
+The library contains both a SLAX reader and a SLAX writer.  The reader
 turns a SLAX source file into an XSLT tree (xmlDocPtr) using the
-xsltSetLoaderFunc() hook.
+xsltSetLoaderFunc() hook.  The writer turns an XSLT tree (xmlDocPtr)
+into a file containing SLAX statements.
 
-The writer turns an XSLT tree (xmlDocPtr) into a file containing
-SLAX statements.
-
-To support SLAX in your application, call the hook: slaxEnable(1);
+To support SLAX in your application, link with libslax and call the
+libslax initializer function, slaxEnable(1);
 
 {{document:
     name slax-manual;
