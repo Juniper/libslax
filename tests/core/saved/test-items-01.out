@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<out xmlns:xxx="http://code.google.com/p/libslax/slax">
+  <first>1</first>
+  <first>2</first>
+  <first>3</first>
+  <first>4</first>
+  <first>5</first>
+  <first>6</first>
+  <first>7</first>
+  <first>8</first>
+  <first>9</first>
+  <first>10</first>
+  <second count="12">5</second>
+  <second count="12">6</second>
+  <second count="12">7</second>
+  <second count="12">8</second>
+  <second count="12">9</second>
+  <second count="12">10</second>
+  <second count="12">11</second>
+  <second count="12">12</second>
+  <third>-3</third>
+  <third>-2</third>
+  <third>-1</third>
+  <third>0</third>
+  <third>1</third>
+  <third>2</third>
+  <third>3</third>
+  <li item="counting">one</li>
+  <li item="counting">two</li>
+  <li item="counting">three</li>
+  <li item="counting">four</li>
+  <ul item="counting">four</ul>
+  <ul item="counting">one</ul>
+  <ul item="counting">three</ul>
+  <ul item="counting">two</ul>
+  <ol item="counting">four</ol>
+  <ol item="counting">one</ol>
+  <ol item="counting">three</ol>
+  <ol item="counting">two</ol>
+</out>

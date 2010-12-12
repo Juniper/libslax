@@ -1,0 +1,26 @@
+version 1.0;
+
+match doc {
+    <top> {
+
+	if (this && that || the/other[one]) {
+	    /* SLAX has a simple "if" statement */
+	    <simple> "if";
+	} else if (yet[more == "fun"]) {
+	    /* ... and it has "else if" */
+	} else {
+	    /* ... and "else" */
+	}
+
+	if (starts-with(name, "fe-")) {
+	    if (mtu < 1500) {
+		/* Deal with fast ethernet interfaces with low MTUs */
+	    }
+	} else {
+	    if (mtu > 8096) {
+		/* Deal with non-fe interfaces with high MTUs */
+		<mtu> mtu;
+	    }
+        }
+    }
+}

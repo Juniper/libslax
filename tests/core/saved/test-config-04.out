@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<out xmlns:temp="temp.example.com">
+  <output>template called with size 0</output>
+  <output>template called with size 1</output>
+  <output>template called with size 1</output>
+</out>

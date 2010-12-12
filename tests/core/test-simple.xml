@@ -1,0 +1,32 @@
+<doc location="heaven">
+  <name>fish</name>
+  <one>This is 'one'</one>
+  <two>This is 'two'</two>
+  <a>10</a>
+  <b>12</b>
+  <thing>hand</thing>
+  <test>yup</test>
+  <fish>fish</fish>
+  <trout>trout</trout>
+  <this>this thing</this>
+  <that>that thing</that>
+  <mtu>10000</mtu>
+
+  <results>
+    <user>phil</user>
+    <count>45</count>
+    <message>It worked!!</message>
+  </results>
+
+  <location>
+    <city>raleigh</city>
+    <state>nc</state>
+    <zip5>27614</zip5>
+    <zip4>1312</zip4>
+  </location>
+
+  <version>7.1R1.4</version>
+
+  <_name>yes</_name>
+
+</doc>

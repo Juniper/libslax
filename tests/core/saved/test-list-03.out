@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<list xmlns:fo="http://www.w3.org/1999/XSL/Format">
+  <fo:list-item indent-start="2pi"><fo:list-item-label><number format="1"/>. </fo:list-item-label><fo:list-item-body>
+    toy
+  </fo:list-item-body></fo:list-item>
+  <fo:list-item indent-start="2pi"><fo:list-item-label><number format="1"/>. </fo:list-item-label><fo:list-item-body>
+    doll
+  </fo:list-item-body></fo:list-item>
+</list>

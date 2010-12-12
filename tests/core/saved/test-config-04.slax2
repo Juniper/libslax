@@ -1,0 +1,18 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+ns temp = "temp.example.com";
+
+match configuration {
+    <out> {
+        var $name-servers = system/name-server/name;
+        
+        call temp:ting();
+        call temp:ting($name-servers, $size = count($name-servers));
+        call temp:ting($name-servers, $size = count($name-servers));
+    }
+}
+
+template temp:ting ($name-servers, $size = 0) {
+    <output> "template called with size " _ $size;
+}

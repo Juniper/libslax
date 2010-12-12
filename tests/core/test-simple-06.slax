@@ -1,0 +1,14 @@
+version 1.0;
+
+match doc {
+    var $location = location;
+
+    <top> {
+	<element attr1="one" attr2="two">;
+
+	<location state=$location/state
+              zip=$location/zip5 _ "-" _ $location/zip4>;
+
+	<avt sign="{here}">;
+    }
+}

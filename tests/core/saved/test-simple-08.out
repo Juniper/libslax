@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<top>
+  <output pri="20">fish</output>
+  <output pri="20">This is 'one'</output>
+  <output pri="20">This is 'two'</output>
+  <output pri="20">10</output>
+  <output pri="20">12</output>
+  <output pri="20">hand</output>
+  <output pri="20">yup</output>
+  <output pri="20">fish</output>
+  <output pri="20">trout</output>
+  <output pri="20">this thing</output>
+  <output pri="20">that thing</output>
+  <output pri="20">10000</output>
+
+  <output pri="20">
+    phil
+    45
+    It worked!!
+  </output>
+
+  <output pri="20">
+    raleigh
+    nc
+    27614
+    1312
+  </output>
+
+  <output pri="20">7.1R1.4</output>
+
+  <output pri="20">yes</output>
+
+</top>

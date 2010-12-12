@@ -1,0 +1,27 @@
+version 1.0;
+
+ns one = "http://one.example.org";
+ns two = "http://two.example.org";
+ns three = "http://three.example.org";
+
+import "test-2-06-import.xsl";
+
+<xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes">;
+
+strip-space *;
+
+match /doc {
+    <one:root xmlns="http://six.example.com"> {
+        <element1> {
+	    ns "http://four.example.com";
+            
+            <element2> "Content 2";
+        }
+        <three:element3> {
+	    ns "http://five.example.com";
+	    <element4> "Content 4";
+	    <two:element6> "Content 6";
+	}
+        <element5> "Content 5";
+    }
+}

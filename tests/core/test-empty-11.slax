@@ -1,0 +1,52 @@
+version 1.1;
+
+output-method {
+    indent "yes";
+}
+
+match / {
+    <out> {
+	mvar $a;
+	mvar $b = 42;
+	mvar $c = <fish> "blue";
+	mvar $d = {
+	    <one> 1;
+	    <two> 2;
+	    <three> 3;
+	}
+
+	call print($name = "mvar", $a, $b, $c, $d);
+
+	set $a = "happy";
+	set $b = 99;
+	set $c = <fish> "red";
+	set $d = {
+	    <four> 4;
+	    <five> 5;
+	    <six> 6;
+	}
+
+	call print($name = "set", $a, $b, $c, $d);
+
+	append $a += " camper";
+	append $b += " bottles";
+	append $c += <fish> "old";
+	append $d += {
+	    <seven> 7;
+	    <eight> 8;
+	    <nine> 9;
+	}
+
+	call print($name = "append", $a, $b, $c, $d);
+
+    }
+}
+
+template print ($name, $a, $b, $c, $d) {
+    element $name {
+	<a> { copy-of $a; }
+	<b> { copy-of $b; }
+	<c> { copy-of $c; }
+	<d> { copy-of $d; }
+    }
+}

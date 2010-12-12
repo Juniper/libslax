@@ -1,0 +1,12 @@
+version 1.0;
+
+<xsl:output method="xml" indent="yes" media-type="image/svg">;
+
+match configuration {
+    <top> {
+	for-each (interfaces/interface) {
+	    <xsl:sort select="name">;
+	    copy-of .;
+	}
+    }
+}

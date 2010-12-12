@@ -1,0 +1,12 @@
+<inventory>
+  <chassis>
+    <chassis-module>
+      <name>Fruvenator</name>
+      <chassis-sub-module>
+        <name>Fru-Master 3000</name>
+        <part-number>750-000610</part-number>
+        <description>Broken part</description>
+      </chassis-sub-module>
+    </chassis-module>
+  </chassis>
+</inventory>

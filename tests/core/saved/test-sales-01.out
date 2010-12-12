@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/Graphics/SVG/SVG-19990812.dtd" version="1" width="3in" height="3in">
+  <g style="stroke: #000000">
+    <line x1="0" x2="150" y1="150" y2="150"/>
+    <line x1="0" x2="0" y1="0" y2="150"/>
+    <text x="0" y="10">Revenue</text>
+    <text x="150" y="165">Division</text>
+    <rect x="10" y="-930" width="20" height="1080"/>
+    <text x="10" y="165">north</text>
+    <text x="10" y="-935">108</text>
+    <rect x="50" y="-2230" width="20" height="2380"/>
+    <text x="50" y="165">south</text>
+    <text x="50" y="-2235">238</text>
+    <rect x="90" y="-990" width="20" height="1140"/>
+    <text x="90" y="165">east</text>
+    <text x="90" y="-995">114  </text>
+    <rect x="130" y="-730" width="20" height="880"/>
+    <text x="130" y="165">west</text>
+    <text x="130" y="-735">88</text>
+  </g>
+</svg>

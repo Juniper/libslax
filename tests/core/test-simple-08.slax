@@ -1,0 +1,23 @@
+version 1.0;
+
+match doc {
+    priority 100;
+    <top> {
+	apply-templates;
+    }
+}
+
+match * {
+    priority 10;
+    <output pri=10> .;
+}
+
+match * {
+    priority 20;
+    <output pri=20> .;
+}
+
+match * {
+    priority 5;
+    <output pri=5> .;
+}

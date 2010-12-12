@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<top>
+  <interface>
+      <name>ge-1/1/1</name>
+    </interface>
+  <interface>
+      <name>xe-1/1/1</name>
+    </interface>
+</top>

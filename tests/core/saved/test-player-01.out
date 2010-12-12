@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<out>
+  <x>
+    <player last="Cole" first="Erik">
+      <salary>2800000</salary>
+      <count>4</count>
+    </player>
+    <player last="Corvo" first="Joe">
+      <salary>2750000</salary>
+      <count>5</count>
+    </player>
+    <player last="Gleason" first="Tim">
+      <salary>2500000</salary>
+      <count>6</count>
+    </player>
+    <player last="Harrison" first="Jay">
+      <salary>500000</salary>
+      <count>11</count>
+    </player>
+    <player last="Jokinen" first="Jussi">
+      <salary>1500000</salary>
+      <count>8</count>
+    </player>
+    <player last="Kostopoulos" first="Tom">
+      <salary>700000</salary>
+      <count>10</count>
+    </player>
+    <player last="LaRose" first="Chad">
+      <salary>1500000</salary>
+      <count>8</count>
+    </player>
+    <player last="O'Sullivan" first="Patrick">
+      <salary>2387500</salary>
+      <count>7</count>
+    </player>
+    <player last="Pitkanen" first="Joni">
+      <salary>4000000</salary>
+      <count>1</count>
+    </player>
+    <player last="Ruutu" first="Tuomo">
+      <salary>3000000</salary>
+      <count>3</count>
+    </player>
+    <player last="Staal" first="Eric">
+      <salary>6000000</salary>
+      <count>0</count>
+    </player>
+    <player last="Ward" first="Cam">
+      <salary>3500000</salary>
+      <count>2</count>
+    </player>
+  </x>
+</out>

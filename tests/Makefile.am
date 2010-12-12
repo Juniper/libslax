@@ -1,4 +1,4 @@
-SUBDIRS=spec bugs
+SUBDIRS=core bugs
 
 if USE_LIBXSLT_TESTS
 SUBDIRS += libxslt

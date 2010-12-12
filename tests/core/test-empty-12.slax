@@ -1,0 +1,15 @@
+version 1.0;
+
+output-method { indent "yes"; }
+
+mvar $count = 10;
+
+match / {
+    <top> {
+	while ($count > 0) {
+	    <count> $count;
+	    set $count = $count - 1;
+	}
+	<boom>;
+    }
+}

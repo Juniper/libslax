@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<bgp>
+      <metric>15</metric>
+    </bgp>

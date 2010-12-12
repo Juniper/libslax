@@ -1,0 +1,104 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+
+/*
+
+miss lucy had a baby
+she named him tiny tim
+she put him in the bathtub
+to see if he could swim
+
+he drank up all the water
+he ate up all the soap
+he tried to eat the bathtub
+but is wouldn't go down his throat
+
+miss lucy called the doctor
+miss lucy called the nurse
+miss lucy called the lady
+with the alligator purse
+
+mumps said the doctor
+measles said the nurse
+hiccups said the lady
+with the alligator purse
+
+out went the doctor
+out went the nurse
+out went the lady
+with the alligator purse
+
+ */
+output-method {
+    indent "yes";
+}
+var $verses-temp-1 = {
+    <verse action="baby" where="bathtub" test="swim"> 1;
+    <verse action="tub"> 2;
+    <verse action="call"> 3;
+    <verse action="diagnosis"> 4;
+    <verse action="out"> 5;
+}
+var $verses = slax-ext:node-set($verses-temp-1);
+
+match / {
+    <top> {
+        var $miss-lucy-temp-2 = {
+            <name> "Miss Lucy";
+            call baby($name = "Tiny Tim");
+        }
+        var $miss-lucy = slax-ext:node-set($miss-lucy-temp-2);
+        var $bathtub-temp-3 = {
+            call swim($miss-lucy);
+        }
+        var $bathtub = slax-ext:node-set($bathtub-temp-3);
+        var $baby-temp-4 = {
+            <water> "drank";
+            <soap> "ate ";
+            <bathtub> {
+                <epic-fail> "throat";
+            }
+        }
+        var $baby = slax-ext:node-set($baby-temp-4);
+        var $who = top/resources;
+        
+        for-each ($verses) {
+            apply-templates {
+                with $who;
+                with $miss-lucy;
+                with $bathtub;
+                with $baby;
+            }
+        }
+    }
+}
+
+template baby ($name) {
+    <baby> $name;
+}
+
+template swim ($who) {
+    <swim> {
+        copy-of $who;
+    }
+}
+
+match verse[@action == "baby"] {
+    param $miss-lucy;
+    param $baby;
+    trace "verse 1";
+    
+    <line> $miss-lucy/name _ " had a " _ @action;
+    <line> "They named it " _ $miss-lucy/baby;
+    <line> "They put it in the " _ @where;
+    <line> "To see if it could " _ @test;
+}
+
+match verse[@action == "tub"] { }
+
+match verse[@action == "call"] { }
+
+match verse[@action == "diagnosis"] { }
+
+match verse[@action == "out"] { }

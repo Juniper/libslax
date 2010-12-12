@@ -1,0 +1,928 @@
+<!--
+  -  a list of detective fiction authors
+  -    http://en.wikipedia.org/wiki/List_of_detective_fiction_authors
+  -->
+  <authors>
+    <author>
+      <name>
+        <first>C.M.</first>
+        <last>Albrect</last>
+      </name>
+      <life-span>
+        <born>1927</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>C.M.</first>
+        <last>Albrecht</last>
+      </name>
+      <life-span>
+        <born>1927</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Margery</first>
+        <last>Allingham</last>
+      </name>
+      <life-span>
+        <born>1904</born>
+        <died>1966</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Gosho</first>
+        <last>Aoyama</last>
+      </name>
+      <life-span>
+        <born>1963</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Frank</first>
+        <last>Arnau</last>
+      </name>
+      <life-span>
+        <born>1894</born>
+        <died>1976</died>
+      </life-span>
+      <note>pseudonym of Heinrich Schmitt</note>
+    </author>
+
+    <author>
+      <name>
+        <first>E.C.</first>
+        <last>Bentley</last>
+      </name>
+      <life-span>
+        <born>1875</born>
+        <died>1956</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Earl Derr</first>
+        <last>Biggers</last>
+      </name>
+      <life-span>
+        <born>1884</born>
+        <died>1933</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Emery</first>
+        <last>Bonett</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>John</first>
+        <last>Bonett</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Leigh</first>
+        <last>Brackett</last>
+      </name>
+      <life-span>
+        <born>1915</born>
+        <died>1978</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Collin</first>
+        <last>Brooks</last>
+      </name>
+      <life-span>
+        <born>1893</born>
+        <died>1959</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Lilian Jackson</first>
+        <last>Braun</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Dan</first>
+        <last>Brown</last>
+      </name>
+      <life-span>
+        <born>1964</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>James Lee</first>
+        <last>Burke</last>
+      </name>
+      <life-span>
+        <born>1936</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>John Dickson</first>
+        <last>Carr</last>
+      </name>
+      <life-span>
+        <born>1905</born>
+        <died>1977</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Raymond</first>
+        <last>Chandler</last>
+      </name>
+      <life-span>
+        <born>1888</born>
+        <died>1959</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Leslie</first>
+        <last>Charteris</last>
+      </name>
+      <life-span>
+        <born>1907</born>
+        <died>1993</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>G. K.</first>
+        <last>Chesterton</last>
+      </name>
+      <life-span>
+        <born>1874</born>
+        <died>1936</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Agatha</first>
+        <last>Christie</last>
+      </name>
+      <life-span>
+        <born>1890</born>
+        <died>1976</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Edmund</first>
+        <last>Crispin</last>
+      </name>
+      <life-span>
+        <born>1921</born>
+        <died>1978</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Brian</first>
+        <last>Cleeve</last>
+      </name>
+      <life-span>
+        <born>1921</born>
+        <died>2003</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Michael</first>
+        <last>Collins</last>
+      </name>
+      <life-span>
+        <born>1924</born>
+        <died>2005</died>
+      </life-span>
+      <note>pseudonym of Dennis Lynds</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Michael</first>
+        <last>Connelly</last>
+      </name>
+      <life-span>
+        <born>1956</born>
+      </life-span>
+    </author>
+    <author>
+      <name>
+        <first>Patricia</first>
+        <last>Cornwell</last>
+      </name>
+      <life-span>
+        <born>1956</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Robert</first>
+        <last>Crais</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Amanda</first>
+        <last>Cross</last>
+      </name>
+      <life-span>
+        <born>1926</born>
+        <died>2003</died>
+      </life-span>
+      <note>pseudonym of Carolyn Gold Heilbrun</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Jordan</first>
+        <last>Dane</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Lindsey</first>
+        <last>Davis</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Jeffery</first>
+        <last>Deaver</last>
+      </name>
+      <life-span>
+        <born>1950</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Colin</first>
+        <last>Dexter</last>
+      </name>
+      <life-span>
+        <born>1930</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Graham</first>
+        <last>Diamond</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>David</first>
+        <last>Dodge</last>
+      </name>
+      <life-span>
+        <born>1910</born>
+        <died>1974</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Arthur Conan</first>
+        <last>Doyle</last>
+      </name>
+      <life-span>
+        <born>1859</born>
+        <died>1930</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Francis</first>
+        <last>Durbridge</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Rampo</first>
+        <last>Edogawa</last>
+      </name>
+      <life-span>
+        <born>1894</born>
+        <died>1965</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Martin</first>
+        <last>Edwards</last>
+      </name>
+      <life-span>
+        <born>1955</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Loren D.</first>
+        <last>Estleman</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Charles</first>
+        <last>Finch</last>
+      </name>
+      <life-span>
+        <born>1980</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>R. Austin</first>
+        <last>Freeman</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Kinky</first>
+        <last>Friedman</last>
+      </name>
+      <life-span>
+        <born>1944</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Gayleen</first>
+        <last>Froese</last>
+      </name>
+      <life-span>
+        <born>1972</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Jacques</first>
+        <last>Futrelle</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Frances</first>
+        <last>Fyfield</last>
+      </name>
+      <note>pseudonym of Frances Hegarty</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Erle Stanley</first>
+        <last>Gardner</last>
+      </name>
+      <life-span>
+        <born>1889</born>
+        <died>1970</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Sue</first>
+        <last>Grafton</last>
+      </name>
+      <life-span>
+        <born>1940</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Alan</first>
+        <last>Gordon</last>
+      </name>
+      <life-span>
+        <born>1959</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Chester</first>
+        <last>Gould</last>
+      </name>
+      <life-span>
+        <born>1900</born>
+        <died>1985</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Dashiell</first>
+        <last>Hammett</last>
+      </name>
+      <life-span>
+        <born>1894</born>
+        <died>1961</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>John</first>
+        <last>Harvey</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Edmund Wallace</first>
+        <last>Hildick</last>
+      </name>
+      <life-span>
+        <born>1925</born>
+        <died>2001</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Barry</first>
+        <last>Hughart</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Michael</first>
+        <last>Innes</last>
+      </name>
+      <life-span>
+        <born>1906</born>
+        <died>1994</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Dennis</first>
+        <last>Lehane</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Dennis</first>
+        <last>Lynds</last>
+      </name>
+      <life-span>
+        <born>1924</born>
+        <died>2005</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>P. D.</first>
+        <last>James</last>
+      </name>
+      <life-span>
+        <born>1920</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>J. A.</first>
+        <last>Jance</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Natsuo</first>
+        <last>Kirino</last>
+      </name>
+      <life-span>
+        <born>1951</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Andrew</first>
+        <last>Klavan</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Stieg</first>
+        <last>Larsson</last>
+      </name>
+      <life-span>
+        <born>1954</born>
+        <died>2004</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Paul</first>
+        <last>Levinson</last>
+      </name>
+      <life-span>
+        <born>1947</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>John D.</first>
+        <last>MacDonald</last>
+      </name>
+      <life-span>
+        <born>1916</born>
+        <died>1986</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Ross</first>
+        <last>MacDonald</last>
+      </name>
+      <life-span>
+        <born>1915</born>
+        <died>1983</died>
+      </life-span>
+      <note>pseudonym of Kenneth Millar</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Henning</first>
+        <last>Mankell</last>
+      </name>
+      <life-span>
+        <born>1948</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Ngaio</first>
+        <last>Marsh</last>
+      </name>
+      <life-span>
+        <born>1895</born>
+        <died>1982</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>James</first>
+        <last>McClure</last>
+      </name>
+      <life-span>
+        <born>1939</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Jimmy</first>
+        <last>McGovern</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Margaret</first>
+        <last>Murphy</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Gladys</first>
+        <last>Mitchell</last>
+      </name>
+      <life-span>
+        <born>1901</born>
+        <died>1983</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Christopher G.</first>
+        <last>Moore</last>
+      </name>
+      <life-span>
+        <born>1952</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Reggie</first>
+        <last>Nadelson</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Friedrich</first>
+        <last>Neznansky</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Joyce Carol</first>
+        <last>Oates</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Robert B.</first>
+        <last>Parker</last>
+      </name>
+      <life-span>
+        <born>1932</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Eliot</first>
+        <last>Pattison</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Ellis</first>
+        <last>Peters</last>
+      </name>
+      <life-span>
+        <born>1913</born>
+        <died>1995</died>
+      </life-span>
+      <note>pseudonym of Edith Pargeter</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Edgar Allan</first>
+        <last>Poe</last>
+      </name>
+      <life-span>
+        <born>1809</born>
+        <died>1849</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Ellery</first>
+        <last>Queen</last>
+      </name>
+      <note>pseudonym of Frederick Dannay and Manfred B. Lee</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Ian</first>
+        <last>Rankin</last>
+      </name>
+      <life-span>
+        <born>1960</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Kathy</first>
+        <last>Reichs</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Ruth</first>
+        <last>Rendell</last>
+      </name>
+      <life-span>
+        <born>1930</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>J. D.</first>
+        <last>Robb</last>
+      </name>
+      <note>pseudonym of Nora Roberts</note>
+    </author>
+
+    <author>
+      <name>
+        <first>Les</first>
+        <last>Roberts</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Dorothy L.</first>
+        <last>Sayers</last>
+      </name>
+      <life-span>
+        <born>1893</born>
+        <died>1957</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Steven</first>
+        <last>Saylor</last>
+      </name>
+      <life-span>
+        <born>1956</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Georges</first>
+        <last>Simenon</last>
+      </name>
+      <life-span>
+        <born>1903</born>
+        <died>1989</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Mickey</first>
+        <last>Spillane</last>
+      </name>
+      <life-span>
+        <born>1918</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Rex</first>
+        <last>Stout</last>
+      </name>
+      <life-span>
+        <born>1886</born>
+        <died>1975</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Leonie</first>
+        <last>Swann</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Cheryl Kaye</first>
+        <last>Tardif</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Josephine</first>
+        <last>Tey</last>
+      </name>
+      <life-span>
+        <born>1896</born>
+        <died>1952</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Andrew</first>
+        <last>Vachss</last>
+      </name>
+      <life-span>
+        <born>1942</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Jack</first>
+        <last>Vance</last>
+      </name>
+      <life-span>
+        <born>1916</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Janwillem van de</first>
+        <last>Wetering</last>
+      </name>
+      <life-span>
+        <born>1931</born>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Robert van</first>
+        <last>Gulik</last>
+      </name>
+    </author>
+
+    <author>
+      <name>
+        <first>Barbara</first>
+        <last>Vine</last>
+      </name>
+      <note>pseudonym of Ruth Rendell</note>
+    </author>
+
+    <author>
+      <name>
+        <first>H. Russell</first>
+        <last>Wakefield</last>
+      </name>
+      <life-span>
+        <born>1888</born>
+        <died>1964</died>
+      </life-span>
+    </author>
+
+    <author>
+      <name>
+        <first>Patricia</first>
+        <last>Wentworth</last>
+      </name>
+      <life-span>
+        <born>1878</born>
+        <died>1961</died>
+      </life-span>
+    </author>
+
+</authors>

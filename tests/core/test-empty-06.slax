@@ -1,0 +1,35 @@
+version 1.0;
+
+ns my extension = "http://example.com";
+ns exslt extension = "http://exslt.org/common";
+
+match / {
+    <out> {
+	var $a = my:test();
+	var $b = my:test(1, 2);
+	<a> { copy-of $a; }
+	<b> { copy-of $b; }
+
+	<c> {
+	    copy-of my:one("test");
+	}
+	var $d := my:one("one", "two");
+	<d> {
+	    expr exslt:object-type($d);
+	}
+    }
+}
+
+function my:test ($min = 0, $max = 100)
+{
+    result $max - $min;
+}
+
+function my:one ($name, $fish = "fish")
+{
+    result {
+	<name> $name;
+	<fish> $fish;
+    }
+}
+

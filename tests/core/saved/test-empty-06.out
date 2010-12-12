@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<out>
+  <a>100</a>
+  <b>1</b>
+  <c>
+    <name>test</name>
+    <fish>fish</fish>
+  </c>
+  <d/>
+</out>

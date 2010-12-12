@@ -1,0 +1,156 @@
+#!/usr/bin/slaxproc -r
+version 1.0;
+
+key year-born {
+    match author;
+    value life-span/born;
+}
+
+key first-name {
+    match author;
+    value name/first;
+}
+
+var $this-year = 2010;
+var $upper-case = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var $lower-case = "abcdefghijklmnopqrstuvwxyz";
+
+output-method xml {
+    indent yes;
+}
+
+attribute-set names {
+    attribute "first" {
+	expr name/first;
+    }
+    attribute "last" {
+	expr name/last;
+    }
+}
+
+attribute-set age {
+    attribute "age-" _ (life-span/died - life-span/born) {
+	expr life-span/born _ " - " _ life-span/died;
+    }
+}
+
+var $authors = /authors;
+
+match / {
+    <doc> {
+	for-each ($authors/author) {
+	    sort name/first;
+	    var $type = {
+		if (life-span/died) {
+		    expr "dead";
+		} else if (life-span/born) {
+		    expr "alive";
+		} else {
+		    expr "unknown";
+		}
+	    }
+		
+	    if (life-span/born && life-span/died) {
+		element "author-" _ $type {
+		    attribute translate(name/last, $upper-case, $lower-case) {
+			expr name/last;
+		    }
+		    use-attribute-sets names age;
+		    call emit-element;
+		}
+	    } else {
+		element "author-" _ $type {
+		    attribute translate(name/last, $upper-case, $lower-case) {
+			expr name/last;
+		    }
+		    use-attribute-sets names;
+		    call emit-element;
+		}
+	    }
+	}
+
+	for-each ($authors/author[life-span/born]) {
+	    sort life-span/born;
+	    sort life-span/died;
+	    if (life-span/died) {
+		<life-span age = life-span/died - life-span/born
+		    born = life-span/born died = life-span/died> {
+		    element "name" {
+			use-attribute-sets names;
+		    }
+		}
+	    } else {
+		<life-span age = $this-year - life-span/born
+		    born = life-span/born> {
+		    element "name" {
+			use-attribute-sets names;
+		    }
+		}
+	    }
+	}
+
+	/* Show the oldest five deceased authors */
+    	for-each ($authors/author[life-span/born && life-span/died]) {
+	    sort life-span/died - life-span/born {
+		order "descending";
+	    }
+	    sort life-span/born;
+
+	    var $gsize = 1;
+
+	    if (position() <= 5) {
+		element "oldest" {
+		    attribute "gsize" { expr $gsize; }
+		    attribute "age" {
+			number life-span/died - life-span/born {
+			    grouping-size "1";
+			    grouping-separator ".";
+			}
+		    }
+		    attribute "age2" {
+			number life-span/died - life-span/born {
+			    grouping-size $gsize;
+			    grouping-separator ".";
+			}
+		    }
+		    attribute "born" {
+			number life-span/born {
+			    format "i";
+			}
+		    }
+		    attribute "died" {
+			number life-span/died {
+			    format "I";
+			}
+		    }
+
+		    use-attribute-sets names;
+		}
+	    }
+	}
+    }
+}
+
+template emit-element {
+    for-each (name/node()) {
+	copy-node {
+
+	    attribute "source" { expr "copy-node"; }
+	    expr .;
+	}
+    }
+
+    var $born = life-span/born;
+    var $name = name;
+
+    for-each ($authors) {
+	for-each (key("year-born", $born)) {
+	    if (name/first != $name/first
+		&& name/last != $name/last) {
+		element "born-match" {
+		    use-attribute-sets names;
+		}
+	    }
+	}
+    }
+}

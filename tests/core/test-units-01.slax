@@ -1,0 +1,71 @@
+version 1.0;
+
+match /top {
+    <top> {
+	apply-templates *;
+    }
+}
+
+match measurement {
+    var $m = {
+	if (@fromunit == 'km') {
+	    expr . * 1000;
+     
+	} else if (@fromunit == 'm') {
+	    expr .;
+     
+	} else if (@fromunit == 'cm') {
+	    expr . * 0.01;
+     
+	} else if (@fromunit == 'mm') {
+	    expr . * 0.001;
+
+	} else if (@fromunit == 'mi') {
+	    expr . div 0.00062137;
+
+	} else if (@fromunit == 'yd') {
+	    expr . div 1.09361;
+     
+	} else if (@fromunit == 'ft') {
+	    expr . div 3.2808;
+     
+	} else if (@fromunit == 'in') {
+	    expr . div 39.37;
+	}
+    }
+
+    var $v = {
+	if (@tounit == 'km') {
+	    expr $m div 1000;
+     
+	} else if (@tounit == 'm') {
+	    expr $m;
+     
+	} else if (@tounit == 'cm') {
+	    expr $m div 0.01;
+     
+	} else if (@tounit == 'mm') {
+	    expr $m div 0.001;
+
+	} else if (@tounit == 'mi') {
+	    expr $m * 0.00062137;
+
+	} else if (@tounit == 'yd') {
+	    expr $m * 1.09361;
+     
+	} else if (@tounit == 'ft') {
+	    expr $m * 3.2808;
+     
+	} else if (@tounit == 'in') {
+	    expr $m * 39.37;
+	}
+    }
+
+    <measurement unit=@tounit> {
+	number $v {
+	    grouping-separator ",";
+	    grouping-size 3;
+	    format "1";
+	}
+    }
+}

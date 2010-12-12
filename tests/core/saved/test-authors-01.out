@@ -1,0 +1,594 @@
+<?xml version="1.0"?>
+<doc>
+  <author-dead first="Agatha" last="Christie" age-86="1890 - 1976" christie="Christie">
+        <first source="copy-node">Agatha</first>
+        <last source="copy-node">Christie</last>
+      </author-dead>
+  <author-alive first="Alan" last="Gordon" gordon="Gordon">
+        <first source="copy-node">Alan</first>
+        <last source="copy-node">Gordon</last>
+      </author-alive>
+  <author-dead first="Amanda" last="Cross" age-77="1926 - 2003" cross="Cross">
+        <first source="copy-node">Amanda</first>
+        <last source="copy-node">Cross</last>
+      </author-dead>
+  <author-unknown first="Andrew" last="Klavan" klavan="Klavan">
+        <first source="copy-node">Andrew</first>
+        <last source="copy-node">Klavan</last>
+      </author-unknown>
+  <author-alive first="Andrew" last="Vachss" vachss="Vachss">
+        <first source="copy-node">Andrew</first>
+        <last source="copy-node">Vachss</last>
+      </author-alive>
+  <author-dead first="Arthur Conan" last="Doyle" age-71="1859 - 1930" doyle="Doyle">
+        <first source="copy-node">Arthur Conan</first>
+        <last source="copy-node">Doyle</last>
+      </author-dead>
+  <author-unknown first="Barbara" last="Vine" vine="Vine">
+        <first source="copy-node">Barbara</first>
+        <last source="copy-node">Vine</last>
+      </author-unknown>
+  <author-unknown first="Barry" last="Hughart" hughart="Hughart">
+        <first source="copy-node">Barry</first>
+        <last source="copy-node">Hughart</last>
+      </author-unknown>
+  <author-dead first="Brian" last="Cleeve" age-82="1921 - 2003" cleeve="Cleeve">
+        <first source="copy-node">Brian</first>
+        <last source="copy-node">Cleeve</last>
+      <born-match first="Edmund" last="Crispin"/></author-dead>
+  <author-alive first="C.M." last="Albrect" albrect="Albrect">
+        <first source="copy-node">C.M.</first>
+        <last source="copy-node">Albrect</last>
+      </author-alive>
+  <author-alive first="C.M." last="Albrecht" albrecht="Albrecht">
+        <first source="copy-node">C.M.</first>
+        <last source="copy-node">Albrecht</last>
+      </author-alive>
+  <author-alive first="Charles" last="Finch" finch="Finch">
+        <first source="copy-node">Charles</first>
+        <last source="copy-node">Finch</last>
+      </author-alive>
+  <author-unknown first="Cheryl Kaye" last="Tardif" tardif="Tardif">
+        <first source="copy-node">Cheryl Kaye</first>
+        <last source="copy-node">Tardif</last>
+      </author-unknown>
+  <author-dead first="Chester" last="Gould" age-85="1900 - 1985" gould="Gould">
+        <first source="copy-node">Chester</first>
+        <last source="copy-node">Gould</last>
+      </author-dead>
+  <author-alive first="Christopher G." last="Moore" moore="Moore">
+        <first source="copy-node">Christopher G.</first>
+        <last source="copy-node">Moore</last>
+      </author-alive>
+  <author-alive first="Colin" last="Dexter" dexter="Dexter">
+        <first source="copy-node">Colin</first>
+        <last source="copy-node">Dexter</last>
+      <born-match first="Ruth" last="Rendell"/></author-alive>
+  <author-dead first="Collin" last="Brooks" age-66="1893 - 1959" brooks="Brooks">
+        <first source="copy-node">Collin</first>
+        <last source="copy-node">Brooks</last>
+      <born-match first="Dorothy L." last="Sayers"/></author-dead>
+  <author-alive first="Dan" last="Brown" brown="Brown">
+        <first source="copy-node">Dan</first>
+        <last source="copy-node">Brown</last>
+      </author-alive>
+  <author-dead first="Dashiell" last="Hammett" age-67="1894 - 1961" hammett="Hammett">
+        <first source="copy-node">Dashiell</first>
+        <last source="copy-node">Hammett</last>
+      <born-match first="Frank" last="Arnau"/><born-match first="Rampo" last="Edogawa"/></author-dead>
+  <author-dead first="David" last="Dodge" age-64="1910 - 1974" dodge="Dodge">
+        <first source="copy-node">David</first>
+        <last source="copy-node">Dodge</last>
+      </author-dead>
+  <author-unknown first="Dennis" last="Lehane" lehane="Lehane">
+        <first source="copy-node">Dennis</first>
+        <last source="copy-node">Lehane</last>
+      </author-unknown>
+  <author-dead first="Dennis" last="Lynds" age-81="1924 - 2005" lynds="Lynds">
+        <first source="copy-node">Dennis</first>
+        <last source="copy-node">Lynds</last>
+      <born-match first="Michael" last="Collins"/></author-dead>
+  <author-dead first="Dorothy L." last="Sayers" age-64="1893 - 1957" sayers="Sayers">
+        <first source="copy-node">Dorothy L.</first>
+        <last source="copy-node">Sayers</last>
+      <born-match first="Collin" last="Brooks"/></author-dead>
+  <author-dead first="E.C." last="Bentley" age-81="1875 - 1956" bentley="Bentley">
+        <first source="copy-node">E.C.</first>
+        <last source="copy-node">Bentley</last>
+      </author-dead>
+  <author-dead first="Earl Derr" last="Biggers" age-49="1884 - 1933" biggers="Biggers">
+        <first source="copy-node">Earl Derr</first>
+        <last source="copy-node">Biggers</last>
+      </author-dead>
+  <author-dead first="Edgar Allan" last="Poe" age-40="1809 - 1849" poe="Poe">
+        <first source="copy-node">Edgar Allan</first>
+        <last source="copy-node">Poe</last>
+      </author-dead>
+  <author-dead first="Edmund" last="Crispin" age-57="1921 - 1978" crispin="Crispin">
+        <first source="copy-node">Edmund</first>
+        <last source="copy-node">Crispin</last>
+      <born-match first="Brian" last="Cleeve"/></author-dead>
+  <author-dead first="Edmund Wallace" last="Hildick" age-76="1925 - 2001" hildick="Hildick">
+        <first source="copy-node">Edmund Wallace</first>
+        <last source="copy-node">Hildick</last>
+      </author-dead>
+  <author-unknown first="Eliot" last="Pattison" pattison="Pattison">
+        <first source="copy-node">Eliot</first>
+        <last source="copy-node">Pattison</last>
+      </author-unknown>
+  <author-unknown first="Ellery" last="Queen" queen="Queen">
+        <first source="copy-node">Ellery</first>
+        <last source="copy-node">Queen</last>
+      </author-unknown>
+  <author-dead first="Ellis" last="Peters" age-82="1913 - 1995" peters="Peters">
+        <first source="copy-node">Ellis</first>
+        <last source="copy-node">Peters</last>
+      </author-dead>
+  <author-unknown first="Emery" last="Bonett" bonett="Bonett">
+        <first source="copy-node">Emery</first>
+        <last source="copy-node">Bonett</last>
+      </author-unknown>
+  <author-dead first="Erle Stanley" last="Gardner" age-81="1889 - 1970" gardner="Gardner">
+        <first source="copy-node">Erle Stanley</first>
+        <last source="copy-node">Gardner</last>
+      </author-dead>
+  <author-unknown first="Frances" last="Fyfield" fyfield="Fyfield">
+        <first source="copy-node">Frances</first>
+        <last source="copy-node">Fyfield</last>
+      </author-unknown>
+  <author-unknown first="Francis" last="Durbridge" durbridge="Durbridge">
+        <first source="copy-node">Francis</first>
+        <last source="copy-node">Durbridge</last>
+      </author-unknown>
+  <author-dead first="Frank" last="Arnau" age-82="1894 - 1976" arnau="Arnau">
+        <first source="copy-node">Frank</first>
+        <last source="copy-node">Arnau</last>
+      <born-match first="Rampo" last="Edogawa"/><born-match first="Dashiell" last="Hammett"/></author-dead>
+  <author-unknown first="Friedrich" last="Neznansky" neznansky="Neznansky">
+        <first source="copy-node">Friedrich</first>
+        <last source="copy-node">Neznansky</last>
+      </author-unknown>
+  <author-dead first="G. K." last="Chesterton" age-62="1874 - 1936" chesterton="Chesterton">
+        <first source="copy-node">G. K.</first>
+        <last source="copy-node">Chesterton</last>
+      </author-dead>
+  <author-alive first="Gayleen" last="Froese" froese="Froese">
+        <first source="copy-node">Gayleen</first>
+        <last source="copy-node">Froese</last>
+      </author-alive>
+  <author-dead first="Georges" last="Simenon" age-86="1903 - 1989" simenon="Simenon">
+        <first source="copy-node">Georges</first>
+        <last source="copy-node">Simenon</last>
+      </author-dead>
+  <author-dead first="Gladys" last="Mitchell" age-82="1901 - 1983" mitchell="Mitchell">
+        <first source="copy-node">Gladys</first>
+        <last source="copy-node">Mitchell</last>
+      </author-dead>
+  <author-alive first="Gosho" last="Aoyama" aoyama="Aoyama">
+        <first source="copy-node">Gosho</first>
+        <last source="copy-node">Aoyama</last>
+      </author-alive>
+  <author-unknown first="Graham" last="Diamond" diamond="Diamond">
+        <first source="copy-node">Graham</first>
+        <last source="copy-node">Diamond</last>
+      </author-unknown>
+  <author-dead first="H. Russell" last="Wakefield" age-76="1888 - 1964" wakefield="Wakefield">
+        <first source="copy-node">H. Russell</first>
+        <last source="copy-node">Wakefield</last>
+      <born-match first="Raymond" last="Chandler"/></author-dead>
+  <author-alive first="Henning" last="Mankell" mankell="Mankell">
+        <first source="copy-node">Henning</first>
+        <last source="copy-node">Mankell</last>
+      </author-alive>
+  <author-alive first="Ian" last="Rankin" rankin="Rankin">
+        <first source="copy-node">Ian</first>
+        <last source="copy-node">Rankin</last>
+      </author-alive>
+  <author-unknown first="J. A." last="Jance" jance="Jance">
+        <first source="copy-node">J. A.</first>
+        <last source="copy-node">Jance</last>
+      </author-unknown>
+  <author-unknown first="J. D." last="Robb" robb="Robb">
+        <first source="copy-node">J. D.</first>
+        <last source="copy-node">Robb</last>
+      </author-unknown>
+  <author-alive first="Jack" last="Vance" vance="Vance">
+        <first source="copy-node">Jack</first>
+        <last source="copy-node">Vance</last>
+      <born-match first="John D." last="MacDonald"/></author-alive>
+  <author-unknown first="Jacques" last="Futrelle" futrelle="Futrelle">
+        <first source="copy-node">Jacques</first>
+        <last source="copy-node">Futrelle</last>
+      </author-unknown>
+  <author-alive first="James" last="McClure" mcclure="McClure">
+        <first source="copy-node">James</first>
+        <last source="copy-node">McClure</last>
+      </author-alive>
+  <author-alive first="James Lee" last="Burke" burke="Burke">
+        <first source="copy-node">James Lee</first>
+        <last source="copy-node">Burke</last>
+      </author-alive>
+  <author-alive first="Janwillem van de" last="Wetering" wetering="Wetering">
+        <first source="copy-node">Janwillem van de</first>
+        <last source="copy-node">Wetering</last>
+      </author-alive>
+  <author-alive first="Jeffery" last="Deaver" deaver="Deaver">
+        <first source="copy-node">Jeffery</first>
+        <last source="copy-node">Deaver</last>
+      </author-alive>
+  <author-unknown first="Jimmy" last="McGovern" mcgovern="McGovern">
+        <first source="copy-node">Jimmy</first>
+        <last source="copy-node">McGovern</last>
+      </author-unknown>
+  <author-unknown first="John" last="Bonett" bonett="Bonett">
+        <first source="copy-node">John</first>
+        <last source="copy-node">Bonett</last>
+      </author-unknown>
+  <author-unknown first="John" last="Harvey" harvey="Harvey">
+        <first source="copy-node">John</first>
+        <last source="copy-node">Harvey</last>
+      </author-unknown>
+  <author-dead first="John D." last="MacDonald" age-70="1916 - 1986" macdonald="MacDonald">
+        <first source="copy-node">John D.</first>
+        <last source="copy-node">MacDonald</last>
+      <born-match first="Jack" last="Vance"/></author-dead>
+  <author-dead first="John Dickson" last="Carr" age-72="1905 - 1977" carr="Carr">
+        <first source="copy-node">John Dickson</first>
+        <last source="copy-node">Carr</last>
+      </author-dead>
+  <author-unknown first="Jordan" last="Dane" dane="Dane">
+        <first source="copy-node">Jordan</first>
+        <last source="copy-node">Dane</last>
+      </author-unknown>
+  <author-dead first="Josephine" last="Tey" age-56="1896 - 1952" tey="Tey">
+        <first source="copy-node">Josephine</first>
+        <last source="copy-node">Tey</last>
+      </author-dead>
+  <author-unknown first="Joyce Carol" last="Oates" oates="Oates">
+        <first source="copy-node">Joyce Carol</first>
+        <last source="copy-node">Oates</last>
+      </author-unknown>
+  <author-unknown first="Kathy" last="Reichs" reichs="Reichs">
+        <first source="copy-node">Kathy</first>
+        <last source="copy-node">Reichs</last>
+      </author-unknown>
+  <author-alive first="Kinky" last="Friedman" friedman="Friedman">
+        <first source="copy-node">Kinky</first>
+        <last source="copy-node">Friedman</last>
+      </author-alive>
+  <author-dead first="Leigh" last="Brackett" age-63="1915 - 1978" brackett="Brackett">
+        <first source="copy-node">Leigh</first>
+        <last source="copy-node">Brackett</last>
+      <born-match first="Ross" last="MacDonald"/></author-dead>
+  <author-unknown first="Leonie" last="Swann" swann="Swann">
+        <first source="copy-node">Leonie</first>
+        <last source="copy-node">Swann</last>
+      </author-unknown>
+  <author-unknown first="Les" last="Roberts" roberts="Roberts">
+        <first source="copy-node">Les</first>
+        <last source="copy-node">Roberts</last>
+      </author-unknown>
+  <author-dead first="Leslie" last="Charteris" age-86="1907 - 1993" charteris="Charteris">
+        <first source="copy-node">Leslie</first>
+        <last source="copy-node">Charteris</last>
+      </author-dead>
+  <author-unknown first="Lilian Jackson" last="Braun" braun="Braun">
+        <first source="copy-node">Lilian Jackson</first>
+        <last source="copy-node">Braun</last>
+      </author-unknown>
+  <author-unknown first="Lindsey" last="Davis" davis="Davis">
+        <first source="copy-node">Lindsey</first>
+        <last source="copy-node">Davis</last>
+      </author-unknown>
+  <author-unknown first="Loren D." last="Estleman" estleman="Estleman">
+        <first source="copy-node">Loren D.</first>
+        <last source="copy-node">Estleman</last>
+      </author-unknown>
+  <author-unknown first="Margaret" last="Murphy" murphy="Murphy">
+        <first source="copy-node">Margaret</first>
+        <last source="copy-node">Murphy</last>
+      </author-unknown>
+  <author-dead first="Margery" last="Allingham" age-62="1904 - 1966" allingham="Allingham">
+        <first source="copy-node">Margery</first>
+        <last source="copy-node">Allingham</last>
+      </author-dead>
+  <author-alive first="Martin" last="Edwards" edwards="Edwards">
+        <first source="copy-node">Martin</first>
+        <last source="copy-node">Edwards</last>
+      </author-alive>
+  <author-dead first="Michael" last="Collins" age-81="1924 - 2005" collins="Collins">
+        <first source="copy-node">Michael</first>
+        <last source="copy-node">Collins</last>
+      <born-match first="Dennis" last="Lynds"/></author-dead>
+  <author-alive first="Michael" last="Connelly" connelly="Connelly">
+        <first source="copy-node">Michael</first>
+        <last source="copy-node">Connelly</last>
+      <born-match first="Patricia" last="Cornwell"/><born-match first="Steven" last="Saylor"/></author-alive>
+  <author-dead first="Michael" last="Innes" age-88="1906 - 1994" innes="Innes">
+        <first source="copy-node">Michael</first>
+        <last source="copy-node">Innes</last>
+      </author-dead>
+  <author-alive first="Mickey" last="Spillane" spillane="Spillane">
+        <first source="copy-node">Mickey</first>
+        <last source="copy-node">Spillane</last>
+      </author-alive>
+  <author-alive first="Natsuo" last="Kirino" kirino="Kirino">
+        <first source="copy-node">Natsuo</first>
+        <last source="copy-node">Kirino</last>
+      </author-alive>
+  <author-dead first="Ngaio" last="Marsh" age-87="1895 - 1982" marsh="Marsh">
+        <first source="copy-node">Ngaio</first>
+        <last source="copy-node">Marsh</last>
+      </author-dead>
+  <author-alive first="P. D." last="James" james="James">
+        <first source="copy-node">P. D.</first>
+        <last source="copy-node">James</last>
+      </author-alive>
+  <author-alive first="Patricia" last="Cornwell" cornwell="Cornwell">
+        <first source="copy-node">Patricia</first>
+        <last source="copy-node">Cornwell</last>
+      <born-match first="Michael" last="Connelly"/><born-match first="Steven" last="Saylor"/></author-alive>
+  <author-dead first="Patricia" last="Wentworth" age-83="1878 - 1961" wentworth="Wentworth">
+        <first source="copy-node">Patricia</first>
+        <last source="copy-node">Wentworth</last>
+      </author-dead>
+  <author-alive first="Paul" last="Levinson" levinson="Levinson">
+        <first source="copy-node">Paul</first>
+        <last source="copy-node">Levinson</last>
+      </author-alive>
+  <author-unknown first="R. Austin" last="Freeman" freeman="Freeman">
+        <first source="copy-node">R. Austin</first>
+        <last source="copy-node">Freeman</last>
+      </author-unknown>
+  <author-dead first="Rampo" last="Edogawa" age-71="1894 - 1965" edogawa="Edogawa">
+        <first source="copy-node">Rampo</first>
+        <last source="copy-node">Edogawa</last>
+      <born-match first="Frank" last="Arnau"/><born-match first="Dashiell" last="Hammett"/></author-dead>
+  <author-dead first="Raymond" last="Chandler" age-71="1888 - 1959" chandler="Chandler">
+        <first source="copy-node">Raymond</first>
+        <last source="copy-node">Chandler</last>
+      <born-match first="H. Russell" last="Wakefield"/></author-dead>
+  <author-unknown first="Reggie" last="Nadelson" nadelson="Nadelson">
+        <first source="copy-node">Reggie</first>
+        <last source="copy-node">Nadelson</last>
+      </author-unknown>
+  <author-dead first="Rex" last="Stout" age-89="1886 - 1975" stout="Stout">
+        <first source="copy-node">Rex</first>
+        <last source="copy-node">Stout</last>
+      </author-dead>
+  <author-unknown first="Robert" last="Crais" crais="Crais">
+        <first source="copy-node">Robert</first>
+        <last source="copy-node">Crais</last>
+      </author-unknown>
+  <author-alive first="Robert B." last="Parker" parker="Parker">
+        <first source="copy-node">Robert B.</first>
+        <last source="copy-node">Parker</last>
+      </author-alive>
+  <author-unknown first="Robert van" last="Gulik" gulik="Gulik">
+        <first source="copy-node">Robert van</first>
+        <last source="copy-node">Gulik</last>
+      </author-unknown>
+  <author-dead first="Ross" last="MacDonald" age-68="1915 - 1983" macdonald="MacDonald">
+        <first source="copy-node">Ross</first>
+        <last source="copy-node">MacDonald</last>
+      <born-match first="Leigh" last="Brackett"/></author-dead>
+  <author-alive first="Ruth" last="Rendell" rendell="Rendell">
+        <first source="copy-node">Ruth</first>
+        <last source="copy-node">Rendell</last>
+      <born-match first="Colin" last="Dexter"/></author-alive>
+  <author-alive first="Steven" last="Saylor" saylor="Saylor">
+        <first source="copy-node">Steven</first>
+        <last source="copy-node">Saylor</last>
+      <born-match first="Michael" last="Connelly"/><born-match first="Patricia" last="Cornwell"/></author-alive>
+  <author-dead first="Stieg" last="Larsson" age-50="1954 - 2004" larsson="Larsson">
+        <first source="copy-node">Stieg</first>
+        <last source="copy-node">Larsson</last>
+      </author-dead>
+  <author-alive first="Sue" last="Grafton" grafton="Grafton">
+        <first source="copy-node">Sue</first>
+        <last source="copy-node">Grafton</last>
+      </author-alive>
+  <life-span age="40" born="1809" died="1849">
+    <name first="Edgar Allan" last="Poe"/>
+  </life-span>
+  <life-span age="71" born="1859" died="1930">
+    <name first="Arthur Conan" last="Doyle"/>
+  </life-span>
+  <life-span age="62" born="1874" died="1936">
+    <name first="G. K." last="Chesterton"/>
+  </life-span>
+  <life-span age="81" born="1875" died="1956">
+    <name first="E.C." last="Bentley"/>
+  </life-span>
+  <life-span age="83" born="1878" died="1961">
+    <name first="Patricia" last="Wentworth"/>
+  </life-span>
+  <life-span age="49" born="1884" died="1933">
+    <name first="Earl Derr" last="Biggers"/>
+  </life-span>
+  <life-span age="89" born="1886" died="1975">
+    <name first="Rex" last="Stout"/>
+  </life-span>
+  <life-span age="71" born="1888" died="1959">
+    <name first="Raymond" last="Chandler"/>
+  </life-span>
+  <life-span age="76" born="1888" died="1964">
+    <name first="H. Russell" last="Wakefield"/>
+  </life-span>
+  <life-span age="81" born="1889" died="1970">
+    <name first="Erle Stanley" last="Gardner"/>
+  </life-span>
+  <life-span age="86" born="1890" died="1976">
+    <name first="Agatha" last="Christie"/>
+  </life-span>
+  <life-span age="64" born="1893" died="1957">
+    <name first="Dorothy L." last="Sayers"/>
+  </life-span>
+  <life-span age="66" born="1893" died="1959">
+    <name first="Collin" last="Brooks"/>
+  </life-span>
+  <life-span age="67" born="1894" died="1961">
+    <name first="Dashiell" last="Hammett"/>
+  </life-span>
+  <life-span age="71" born="1894" died="1965">
+    <name first="Rampo" last="Edogawa"/>
+  </life-span>
+  <life-span age="82" born="1894" died="1976">
+    <name first="Frank" last="Arnau"/>
+  </life-span>
+  <life-span age="87" born="1895" died="1982">
+    <name first="Ngaio" last="Marsh"/>
+  </life-span>
+  <life-span age="56" born="1896" died="1952">
+    <name first="Josephine" last="Tey"/>
+  </life-span>
+  <life-span age="85" born="1900" died="1985">
+    <name first="Chester" last="Gould"/>
+  </life-span>
+  <life-span age="82" born="1901" died="1983">
+    <name first="Gladys" last="Mitchell"/>
+  </life-span>
+  <life-span age="86" born="1903" died="1989">
+    <name first="Georges" last="Simenon"/>
+  </life-span>
+  <life-span age="62" born="1904" died="1966">
+    <name first="Margery" last="Allingham"/>
+  </life-span>
+  <life-span age="72" born="1905" died="1977">
+    <name first="John Dickson" last="Carr"/>
+  </life-span>
+  <life-span age="88" born="1906" died="1994">
+    <name first="Michael" last="Innes"/>
+  </life-span>
+  <life-span age="86" born="1907" died="1993">
+    <name first="Leslie" last="Charteris"/>
+  </life-span>
+  <life-span age="64" born="1910" died="1974">
+    <name first="David" last="Dodge"/>
+  </life-span>
+  <life-span age="82" born="1913" died="1995">
+    <name first="Ellis" last="Peters"/>
+  </life-span>
+  <life-span age="63" born="1915" died="1978">
+    <name first="Leigh" last="Brackett"/>
+  </life-span>
+  <life-span age="68" born="1915" died="1983">
+    <name first="Ross" last="MacDonald"/>
+  </life-span>
+  <life-span age="94" born="1916">
+    <name first="Jack" last="Vance"/>
+  </life-span>
+  <life-span age="70" born="1916" died="1986">
+    <name first="John D." last="MacDonald"/>
+  </life-span>
+  <life-span age="92" born="1918">
+    <name first="Mickey" last="Spillane"/>
+  </life-span>
+  <life-span age="90" born="1920">
+    <name first="P. D." last="James"/>
+  </life-span>
+  <life-span age="57" born="1921" died="1978">
+    <name first="Edmund" last="Crispin"/>
+  </life-span>
+  <life-span age="82" born="1921" died="2003">
+    <name first="Brian" last="Cleeve"/>
+  </life-span>
+  <life-span age="81" born="1924" died="2005">
+    <name first="Michael" last="Collins"/>
+  </life-span>
+  <life-span age="81" born="1924" died="2005">
+    <name first="Dennis" last="Lynds"/>
+  </life-span>
+  <life-span age="76" born="1925" died="2001">
+    <name first="Edmund Wallace" last="Hildick"/>
+  </life-span>
+  <life-span age="77" born="1926" died="2003">
+    <name first="Amanda" last="Cross"/>
+  </life-span>
+  <life-span age="83" born="1927">
+    <name first="C.M." last="Albrect"/>
+  </life-span>
+  <life-span age="83" born="1927">
+    <name first="C.M." last="Albrecht"/>
+  </life-span>
+  <life-span age="80" born="1930">
+    <name first="Colin" last="Dexter"/>
+  </life-span>
+  <life-span age="80" born="1930">
+    <name first="Ruth" last="Rendell"/>
+  </life-span>
+  <life-span age="79" born="1931">
+    <name first="Janwillem van de" last="Wetering"/>
+  </life-span>
+  <life-span age="78" born="1932">
+    <name first="Robert B." last="Parker"/>
+  </life-span>
+  <life-span age="74" born="1936">
+    <name first="James Lee" last="Burke"/>
+  </life-span>
+  <life-span age="71" born="1939">
+    <name first="James" last="McClure"/>
+  </life-span>
+  <life-span age="70" born="1940">
+    <name first="Sue" last="Grafton"/>
+  </life-span>
+  <life-span age="68" born="1942">
+    <name first="Andrew" last="Vachss"/>
+  </life-span>
+  <life-span age="66" born="1944">
+    <name first="Kinky" last="Friedman"/>
+  </life-span>
+  <life-span age="63" born="1947">
+    <name first="Paul" last="Levinson"/>
+  </life-span>
+  <life-span age="62" born="1948">
+    <name first="Henning" last="Mankell"/>
+  </life-span>
+  <life-span age="60" born="1950">
+    <name first="Jeffery" last="Deaver"/>
+  </life-span>
+  <life-span age="59" born="1951">
+    <name first="Natsuo" last="Kirino"/>
+  </life-span>
+  <life-span age="58" born="1952">
+    <name first="Christopher G." last="Moore"/>
+  </life-span>
+  <life-span age="50" born="1954" died="2004">
+    <name first="Stieg" last="Larsson"/>
+  </life-span>
+  <life-span age="55" born="1955">
+    <name first="Martin" last="Edwards"/>
+  </life-span>
+  <life-span age="54" born="1956">
+    <name first="Michael" last="Connelly"/>
+  </life-span>
+  <life-span age="54" born="1956">
+    <name first="Patricia" last="Cornwell"/>
+  </life-span>
+  <life-span age="54" born="1956">
+    <name first="Steven" last="Saylor"/>
+  </life-span>
+  <life-span age="51" born="1959">
+    <name first="Alan" last="Gordon"/>
+  </life-span>
+  <life-span age="50" born="1960">
+    <name first="Ian" last="Rankin"/>
+  </life-span>
+  <life-span age="47" born="1963">
+    <name first="Gosho" last="Aoyama"/>
+  </life-span>
+  <life-span age="46" born="1964">
+    <name first="Dan" last="Brown"/>
+  </life-span>
+  <life-span age="38" born="1972">
+    <name first="Gayleen" last="Froese"/>
+  </life-span>
+  <life-span age="30" born="1980">
+    <name first="Charles" last="Finch"/>
+  </life-span>
+  <oldest first="Rex" last="Stout" gsize="1" age="8.9" age2="89" born="mdccclxxxvi" died="MCMLXXV"/>
+  <oldest first="Michael" last="Innes" gsize="1" age="8.8" age2="88" born="mcmvi" died="MCMXCIV"/>
+  <oldest first="Ngaio" last="Marsh" gsize="1" age="8.7" age2="87" born="mdcccxcv" died="MCMLXXXII"/>
+  <oldest first="Agatha" last="Christie" gsize="1" age="8.6" age2="86" born="mdcccxc" died="MCMLXXVI"/>
+  <oldest first="Georges" last="Simenon" gsize="1" age="8.6" age2="86" born="mcmiii" died="MCMLXXXIX"/>
+</doc>

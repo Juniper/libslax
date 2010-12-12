@@ -1,0 +1,5 @@
+version 1.0;
+
+match / {
+    copy-of configuration/protocols/bgp;
+}

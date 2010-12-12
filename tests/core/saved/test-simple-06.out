@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<top>
+  <element attr1="one" attr2="two"/>
+  <location state="nc" zip="27614-1312"/>
+  <avt sign="{here}"/>
+</top>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<top>
+  <one/>
+  <two>
+    <three/>
+    <four/>
+    <five>
+      <six/>
+    </five>
+  </two>
+</top>

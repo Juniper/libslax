@@ -1,0 +1,31 @@
+version 1.0;
+ 
+ns fo = "http://www.w3.org/1999/XSL/Format";
+ 
+strip-space itemlist;
+match list {
+    <list> {
+	apply-templates;
+    }
+}
+match item {
+    <fo:list-item indent-start="2pi"> {
+	<fo:list-item-label> {
+	    var $level = count(ancestor::orderedlist) mod 3;
+     
+	    if ($level=1) {
+		<number format="i">;
+     
+	    } else if ($level=2) {
+		<number format="a">;
+     
+	    } else {
+		<number format="1">;
+	    }
+	    expr ". ";
+	}
+	<fo:list-item-body> {
+	    apply-templates;
+	}
+    }
+}

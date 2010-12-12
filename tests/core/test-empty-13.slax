@@ -1,0 +1,200 @@
+version 1.1;
+
+output-method { indent "yes"; }
+
+mvar $indent = "aaa";
+
+param $test = 1;
+
+match / {
+    <top> {
+	call scalars;
+	call non-scalars;
+	call append-scalars;
+	call to-scalars;
+
+	mvar $set;
+	for-each (*/*) {
+	    if (starts-with(name(), "i")) {
+		append $set += .;
+	    }
+	}
+	<set> { copy-of $set; }
+    }
+}
+
+template to-scalars {
+    <to-scalars> {
+	mvar $var := "one";
+	<var> { copy-of $var; }
+	append $var += <two> "two";
+	var $save = $var;
+	<var> { copy-of $var; }
+	append $var += "three";
+	<var> { copy-of $var; }
+	append $var += <four> "four";
+	<var> { copy-of $var; }
+	<save> { copy-of $save; }
+    }
+}
+
+template append-scalars {
+    <append-scalars> {
+	mvar $var = <one> "one";
+	<var> { copy-of $var; }
+	append $var += "two";
+	var $save = $var;
+	<var> { copy-of $var; }
+	append $var += "three";
+	<var> { copy-of $var; }
+	append $var += <four> "four";
+	<var> { copy-of $var; }
+	<save> { copy-of $save; }
+    }
+}
+
+template non-scalars {
+    <non-scalars> {
+	mvar $var = <one> "one";
+	<var> { copy-of $var; }
+	append $var += <two> "two";
+	var $save = $var;
+	<var> { copy-of $var; }
+	append $var += <three> "three";
+	<var> { copy-of $var; }
+	append $var += <four> "four";
+	<var> { copy-of $var; }
+	<save> { copy-of $save; }
+    }
+}
+
+template scalars {
+    <scalar> {
+	mvar $var = "one";
+	var $save = $var;
+	<var> { copy-of $var; }
+	append $var += "-and-two";
+	<var> { copy-of $var; }
+	set $var = 111;
+	<var> { copy-of $var; }
+	append $var += 222;
+	<var> { copy-of $var; }
+	append $var += 333;
+	<var> { copy-of $var; }
+	append $var += 444;
+	<var> { copy-of $var; }
+	<save> { copy-of $save; }
+    }
+}
+
+template basic-four {
+    <basic-four> {
+	mvar $var = <test> "one";
+	<var> { copy-of $var; }
+	set $var = <test> "two";
+	<var> { copy-of $var; }
+	set $var = "three";
+	<var> { copy-of $var; }
+	set $var = "four";
+	<var> { copy-of $var; }
+    }
+}
+
+template simple {
+    <simple> {
+	if ($test) {
+	    mvar $one = "111";
+	    <one> $one;
+	    set $one = "222";
+	    <one> $one;
+	    set $one = "333";
+	    <one> $one;
+	    set $one = "444";
+	    <one> $one;
+	    set $one = "555";
+	    <one> $one;
+	    call that;
+	    <one> $one;
+	    <one> $one _ $one _ $one;
+
+	    mvar $three = "three3";
+	    var $four = $three;
+	    set $three = "Third";
+	    <check three=$three four=$four>;
+	}
+
+	mvar $five = {
+	    <a> "eh";
+	    <b> "bee";
+	    <c> "sea";
+	    <d> "Dee";
+	    <e> "Eh!";
+	}
+
+	mvar $six = <stuff> {
+	    <a> "eh";
+	    <b> "bee";
+	    <c> "sea";
+	    <d> "Dee";
+	    <e> "Eh!";
+	}
+
+	set $five = <five> "t5";
+	/*
+* /
+	append $five += "a5";
+	/ *
+	append $five += "a25";
+	*/
+	<five> $five;
+	<five> { copy-of $five; }
+    }
+}
+
+template that ($one = "five") {
+    mvar $two = "too";
+    <two> $two;
+    set $two = "to";
+    <two> $two;
+}
+
+template foo {
+    <configuration-text> {
+	append $indent += "bbb";
+	call other;
+	append $indent += "ccc";
+    }
+}
+
+template other ($depth = 0) {
+    append $indent += "ddd";
+    var $tmp = "this" + "that";
+    var $save = $indent;
+    append $indent += "eee";
+    <sample> {
+	<indent> { copy-of $indent; }
+	<indent> $indent;
+	<save> { copy-of $save; }
+	<save> $save;
+    }
+    set $indent = $save;
+    if ($depth < 3) {
+	call other($depth = $depth + 1);
+    }
+}
+
+match * {
+    var $save = $indent;
+
+    <line length=string-length($indent)> name() _ " {";
+    append $indent += "ddd";
+
+    apply-templates;
+
+    <line> "}";
+    set $indent = $save;
+}
+
+match text() {
+    /* nothing */
+}

@@ -1,0 +1,49 @@
+version 1.0;
+
+output-method { indent "yes"; }
+
+var $one = 1;
+var $two = 2;
+
+var $global = {
+    if ($one == $two) {
+	<answer> "one";
+    } else {
+	<answer> "two";
+    }
+}
+
+match doc {
+    <top> {
+	call grand();
+	var $a = {
+	    call foo($min = 10, $max = 15);
+	}
+	var $b = "10";
+
+	<fish> fish;
+	<trout> trout;
+	<a> {
+	    copy-of $a;
+	}
+	<b> $b + 10;
+
+	call foo($min = 1, $max = 5);
+	<finale> "ta da";
+    }
+}
+
+template foo ($min, $max) {
+    call goo($name = $min);
+    if ($min < $max) {
+	call foo($min = $min + 1, $max);
+    }
+}
+
+template goo ($name) {
+    <number> $name;
+}
+
+template grand {
+    <just> "grand";
+}

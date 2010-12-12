@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<out>
+  <mvar>
+    <a/>
+    <b>42</b>
+    <c>
+      <fish>blue</fish>
+    </c>
+    <d>
+      <one>1</one>
+      <two>2</two>
+      <three>3</three>
+    </d>
+  </mvar>
+  <set>
+    <a>happy</a>
+    <b>99</b>
+    <c>
+      <fish>red</fish>
+    </c>
+    <d>
+      <four>4</four>
+      <five>5</five>
+      <six>6</six>
+    </d>
+  </set>
+  <append>
+    <a>happy camper</a>
+    <b>99 bottles</b>
+    <c>
+      <fish>red</fish>
+      <fish>old</fish>
+    </c>
+    <d>
+      <four>4</four>
+      <five>5</five>
+      <six>6</six>
+      <seven>7</seven>
+      <eight>8</eight>
+      <nine>9</nine>
+    </d>
+  </append>
+</out>

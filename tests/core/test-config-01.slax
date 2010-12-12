@@ -1,0 +1,7 @@
+version 1.0;
+
+match configuration {
+    <error> {
+	<message> "System is named " _ system/host-name;
+    }
+}

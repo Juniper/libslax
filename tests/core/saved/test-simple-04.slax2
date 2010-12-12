@@ -1,0 +1,17 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+match doc {
+    <top> {
+        <one> "test";
+        <two> "The answer is " _ results/answer _ ".";
+        <three> results/count _ " attempts made by " _ results/user;
+        <four> results/count _ " attempts made by " _ results/user;
+        <five> {
+            expr results/count;
+            expr " attempts made by ";
+            expr results/user;
+        }
+        <six> results/message;
+    }
+}

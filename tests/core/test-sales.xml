@@ -1,0 +1,14 @@
+<sales>
+  <division id="north">
+    <revenue>108</revenue>
+  </division>
+  <division id="south">
+    <revenue>238</revenue>
+  </division>
+  <division id="east">
+    <revenue>114  </revenue>
+  </division>
+  <division id="west">
+    <revenue>88</revenue>
+  </division>
+</sales>

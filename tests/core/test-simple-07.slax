@@ -1,0 +1,27 @@
+version 1.0;
+
+match * {
+    mode "one";
+    <one> .;
+}
+
+match * {
+    mode "two";
+    <two> string-length(.);
+}
+
+match random {
+    mode "two";
+    <xxx> string-length(.);
+}
+
+match doc {
+    <top> {
+	apply-templates version {
+	    mode "one";
+	}
+	apply-templates version {
+	    mode "two";
+	}
+    }
+}

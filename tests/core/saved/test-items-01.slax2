@@ -1,0 +1,47 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+output-method {
+    indent "yes";
+}
+
+match /top {
+    <out> {
+        ns xxx = "http://code.google.com/p/libslax/slax";
+        
+        var $x = 5;
+        
+        for-each (1 ... 10) {
+            <first> .;
+        }
+        
+        for $i ($x ... count) {
+            <second count=count> $i;
+        }
+        
+        for $i (1 - size ... 10 div 3) {
+            <third> $i;
+        }
+        /* Simple test case */
+        
+        for $i (item) {
+            <li item=class> $i;
+        }
+        /* Test that 'sort' gets relocated */
+        
+        for $i (item) {
+            sort . {
+                order "ascending";
+            }
+            <ul item=class> $i;
+        }
+        /* Test that this 'sort' is not relocated */
+        
+        for-each (item) {
+            sort . {
+                order "ascending";
+            }
+            <ol item=../class> .;
+        }
+    }
+}

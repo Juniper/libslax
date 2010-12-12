@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<top xmlns:my="http://my.example.com">
+  <found>toy</found>
+  <found>doll</found>
+</top>

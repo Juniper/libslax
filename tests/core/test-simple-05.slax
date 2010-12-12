@@ -1,0 +1,15 @@
+version 1.0;
+
+param $fido;
+var $bone;
+
+match doc {
+    <top> {
+	var $dot = .;
+	var $location = $dot/@location;
+	var $message = "We are in " _ $location _ " now.";
+        <fido> $fido;
+	<message> $message;
+	<this> this;
+    }
+}
