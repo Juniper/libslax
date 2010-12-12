@@ -1,9 +1,0 @@
-version 1.0;
-
-match configuration {
-    apply-templates system/host-name;
-}
-
-match host-name {
-    <hello> .;
-}
