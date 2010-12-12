@@ -635,7 +635,7 @@ slaxStringAsValueTemplate (slax_string_t *value, unsigned flags)
     /*
      * If there's no concatenation, just return the XPath expression
      */
-    if (slaxStringIsSimple(value, T_QUOTED))
+    if (slaxStringIsSimple2(value, T_QUOTED, T_NUMBER))
 	return slaxStringAsChar(value, flags);
 
     /*

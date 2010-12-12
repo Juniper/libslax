@@ -18,6 +18,7 @@
 
 #include <libxslt/documents.h>
 
+#include "config.h"
 #include "slaxutil.h"
 #include "xmlsoft.h"
 

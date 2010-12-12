@@ -221,8 +221,8 @@ slaxProfReport (int brief)
 	    count = spp->sp_data[num].spe_count;
 
 	    if (num <= spp->sp_lines && spp->sp_data[num].spe_count) {
-		slaxOutput("%5lu %8lu %8lu %8.2f %8lu %8.2f %s", num,
-			   count,
+		slaxOutput("%5u %8u %8lu %8.2f %8lu %8.2f %s",
+			   num, count,
 			   spp->sp_data[num].spe_user,
 			   doublediv(spp->sp_data[num].spe_user, count),
 			   spp->sp_data[num].spe_system,
@@ -234,7 +234,7 @@ slaxProfReport (int brief)
 		tot_system += spp->sp_data[num].spe_system;
 
 	    } else if (!brief) {
-		slaxOutput("%5lu %8s %8s %8s %8s %8s %s",
+		slaxOutput("%5u %8s %8s %8s %8s %8s %s",
 			   num, "-", "-", "-", "-", "-", line);
 	    }
 	} else if (!brief) {

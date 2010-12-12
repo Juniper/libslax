@@ -110,3 +110,22 @@ timeval_to_usecs (struct timeval *tvp)
 {
     return tvp->tv_sec * 1000000 + tvp->tv_usec;
 }
+
+/* ---------------------------------------------------------------------- */
+
+#ifndef HAVE_STRLCPY
+
+static inline size_t
+strlcpy (char *dst, const char *src, size_t sz)
+{
+    size_t len = strlen(src);
+
+    if (sz > len)
+        sz = len;
+    memmove(dst, src, sz);
+    dst[sz] = '\0';
+
+    return len;
+}
+
+#endif /* HAVE_STRLCPY */

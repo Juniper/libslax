@@ -43,6 +43,16 @@ slaxStringIsSimple (slax_string_t *value, int ttype)
 }
 
 /*
+ * If the string is simple, we can optimize how we treat it
+ */
+static inline int
+slaxStringIsSimple2 (slax_string_t *value, int ttype, int ttype2)
+{
+    return (value && (value->ss_ttype == ttype || value->ss_ttype == ttype2)
+	    && value->ss_next == NULL && value->ss_concat == NULL);
+}
+
+/*
  * Fuse a variable number of strings together, returning the results.
  */
 slax_string_t *
