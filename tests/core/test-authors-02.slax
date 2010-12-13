@@ -1,0 +1,43 @@
+version 1.1;
+
+mvar $errors;
+
+match / {
+    <top> {
+	apply-templates;
+
+	if ($errors) {
+	    <errors> { copy-of $errors; }
+	}
+    }
+}
+
+match text() { }
+
+match author {
+    var $age = life-span/died - life-span/born;
+    mvar $problem;
+    mvar $tag = " (" _ $age _ " years old)";
+
+    if ($age < 0) {
+	set $problem = "died before born";
+    } else if ($age <= 40) {
+	set $problem = "died too young";
+    }
+
+    if (life-span/died - life-span/born > 65) {
+	set $problem = "lived too long";
+    }
+
+    if (not($problem) && life-span/born < 1900) {
+	set $problem = "ancient history";
+	set $tag = " (c. " _ life-span/born _ ")";
+    }
+
+    if ($problem) {
+	append $errors += <error> {
+	    <name> name/first _ " " _ name/last;
+	    <message> $problem _ $tag;
+	}
+    }
+}

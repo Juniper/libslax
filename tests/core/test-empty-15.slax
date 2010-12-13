@@ -1,0 +1,26 @@
+version 1.1;
+
+mvar $test = "global";
+
+match / {
+    append $test += "-yes";
+    var $t1 = $test;
+
+    <top> {
+	<t1> $t1;
+
+	if (true()) {
+	    mvar $test = "local1";
+	    append $test += "-yes";
+	    var $t2 = $test;
+	    <t2> $t2;
+	}
+
+	if (true()) {
+	    mvar $test = "local2";
+	    append $test += "-yes";
+	    var $t3 = $test;
+	    <t3> $t3;
+	}
+    }
+}

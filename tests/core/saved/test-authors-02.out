@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<top>
+  <errors>
+    <error>
+      <name>Frank Arnau</name>
+      <message>lived too long (82 years old)</message>
+    </error>
+    <error>
+      <name>E.C. Bentley</name>
+      <message>lived too long (81 years old)</message>
+    </error>
+    <error>
+      <name>Earl Derr Biggers</name>
+      <message>ancient history (c. 1884)</message>
+    </error>
+    <error>
+      <name>Collin Brooks</name>
+      <message>lived too long (66 years old)</message>
+    </error>
+    <error>
+      <name>John Dickson Carr</name>
+      <message>lived too long (72 years old)</message>
+    </error>
+    <error>
+      <name>Raymond Chandler</name>
+      <message>lived too long (71 years old)</message>
+    </error>
+    <error>
+      <name>Leslie Charteris</name>
+      <message>lived too long (86 years old)</message>
+    </error>
+    <error>
+      <name>G. K. Chesterton</name>
+      <message>ancient history (c. 1874)</message>
+    </error>
+    <error>
+      <name>Agatha Christie</name>
+      <message>lived too long (86 years old)</message>
+    </error>
+    <error>
+      <name>Brian Cleeve</name>
+      <message>lived too long (82 years old)</message>
+    </error>
+    <error>
+      <name>Michael Collins</name>
+      <message>lived too long (81 years old)</message>
+    </error>
+    <error>
+      <name>Amanda Cross</name>
+      <message>lived too long (77 years old)</message>
+    </error>
+    <error>
+      <name>Arthur Conan Doyle</name>
+      <message>lived too long (71 years old)</message>
+    </error>
+    <error>
+      <name>Rampo Edogawa</name>
+      <message>lived too long (71 years old)</message>
+    </error>
+    <error>
+      <name>Erle Stanley Gardner</name>
+      <message>lived too long (81 years old)</message>
+    </error>
+    <error>
+      <name>Chester Gould</name>
+      <message>lived too long (85 years old)</message>
+    </error>
+    <error>
+      <name>Dashiell Hammett</name>
+      <message>lived too long (67 years old)</message>
+    </error>
+    <error>
+      <name>Edmund Wallace Hildick</name>
+      <message>lived too long (76 years old)</message>
+    </error>
+    <error>
+      <name>Michael Innes</name>
+      <message>lived too long (88 years old)</message>
+    </error>
+    <error>
+      <name>Dennis Lynds</name>
+      <message>lived too long (81 years old)</message>
+    </error>
+    <error>
+      <name>John D. MacDonald</name>
+      <message>lived too long (70 years old)</message>
+    </error>
+    <error>
+      <name>Ross MacDonald</name>
+      <message>lived too long (68 years old)</message>
+    </error>
+    <error>
+      <name>Ngaio Marsh</name>
+      <message>lived too long (87 years old)</message>
+    </error>
+    <error>
+      <name>Gladys Mitchell</name>
+      <message>lived too long (82 years old)</message>
+    </error>
+    <error>
+      <name>Ellis Peters</name>
+      <message>lived too long (82 years old)</message>
+    </error>
+    <error>
+      <name>Edgar Allan Poe</name>
+      <message>died too young (40 years old)</message>
+    </error>
+    <error>
+      <name>Dorothy L. Sayers</name>
+      <message>ancient history (c. 1893)</message>
+    </error>
+    <error>
+      <name>Georges Simenon</name>
+      <message>lived too long (86 years old)</message>
+    </error>
+    <error>
+      <name>Rex Stout</name>
+      <message>lived too long (89 years old)</message>
+    </error>
+    <error>
+      <name>Josephine Tey</name>
+      <message>ancient history (c. 1896)</message>
+    </error>
+    <error>
+      <name>H. Russell Wakefield</name>
+      <message>lived too long (76 years old)</message>
+    </error>
+    <error>
+      <name>Patricia Wentworth</name>
+      <message>lived too long (83 years old)</message>
+    </error>
+  </errors>
+</top>
