@@ -290,6 +290,7 @@ slaxValueIsScalar (xmlXPathObjectPtr value)
     return TRUE;
 }
 
+#if 0
 /*
  * Returns an allocated strings _OR_ stringval.
  */
@@ -310,6 +311,7 @@ slaxCastValueToString (xmlXPathObjectPtr value, int *freep)
 
     return value->stringval;
 }
+#endif
 
 /*
  * Return the root document for a shadow variable (svar)
@@ -485,36 +487,24 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    /*
 	     * case #1: [ scalar var / scalar value ] -> string concatenation
 	     */
-	    int old_free = FALSE, new_free = FALSE;
-	    xmlChar *old_str = slaxCastValueToString(var->value, &old_free);
-	    xmlChar *new_str = slaxCastValueToString(value, &new_free);
+	    xmlChar *old_str = xmlXPathCastToString(var->value);
+	    xmlChar *new_str = xmlXPathCastToString(value);
 	    int old_len = old_str ? xmlStrlen(old_str) : 0;
 	    int new_len = new_str ? xmlStrlen(new_str) : 0;
-	    xmlChar *buf = xmlRealloc(old_str, old_len + new_len + 1);
+	    xmlChar *buf = xmlMalloc(old_len + new_len + 1);
 
 	    if (buf) {
-		if (!old_free && buf != old_str)
-		    old_free = TRUE;
+		memcpy(buf, old_str, old_len);
 		memcpy(buf + old_len, new_str, new_len);
 		buf[old_len + new_len] = '\0';
 
-		/* Are we lucky enough have to realloc'd the buffer? */
-		old_free = (buf != old_str) ? TRUE : FALSE;
-
-		if (var->value->stringval && buf != var->value->stringval) {
-		    xmlFreeAndEasy(var->value->stringval);
-		    old_free = FALSE;
-		}
-
-		var->value->stringval = buf;
-		var->value->type = XPATH_STRING; /* Force as string */
+		xmlXPathFreeObject(var->value);
+		var->value = xmlXPathWrapString(buf);
 	    }
 
 	    /* Free the values if we allocated them */
-	    if (old_free)
-		xmlFreeAndEasy(old_str);
-	    if (new_free)
-		xmlFreeAndEasy(new_str);
+	    xmlFreeAndEasy(old_str);
+	    xmlFreeAndEasy(new_str);
 
 	    return FALSE;
 
@@ -532,14 +522,12 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	     * case #3: [ non-scalar var / scalar value ] -> use
 	     * <text> for value
 	     */
-	    int new_free = FALSE;
-	    xmlChar *new_str = slaxCastValueToString(value, &new_free);
+	    xmlChar *new_str = xmlXPathCastToString(value);
 
 	    if (new_str && *new_str)
 		newp = xmlNewText(new_str);
 
-	    if (new_free)
-		xmlFreeAndEasy(new_str);
+	    xmlFreeAndEasy(new_str);
 
 	} else {
 	    /*

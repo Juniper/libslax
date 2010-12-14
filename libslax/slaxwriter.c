@@ -4,6 +4,14 @@
  * Copyright (c) 2006-2010, Juniper Networks, Inc.
  * All rights reserved.
  * See ../Copyright for the status of this software
+ *
+ * This file contains code that recursively descends an XSLT document,
+ * emitting SLAX code that is functionaly equivalent.  Most of the work
+ * is dull and most of the arguments are identical (and are often
+ * unused), so the level of comments here is decidedly lower.
+ *
+ * One big item to be aware of is that the SWF_VERS_10 is used to
+ * limit slaxwriter to avoid 1.1 (and later) features.
  */
 
 #include "slaxinternals.h"
@@ -2776,7 +2784,8 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	sw.sw_flags |= SWF_VERS_10;
 
     if (!partial) {
-	slaxWrite(&sw, "/* Machine Crafted with Care (tm) by slaxWriter */");
+	slaxWrite(&sw,
+	      "/* Machine Crafted with Care (tm) by slaxWriter */");
 	slaxWriteNewline(&sw, 0);
 
 	slaxWrite(&sw, "version %s;", version ?: "1.1");

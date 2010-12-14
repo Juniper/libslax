@@ -4,7 +4,10 @@ ns brace extension = "http://xml.juniper.net/brace";
 
 import "junos-data.slax";
 
-/* mvar $indent = "::"; */
+output-method { indent "yes"; }
+
+mvar $indent = "::";
+var $nl = "\n";
 
 match / {
     <configuration-text> {
@@ -12,28 +15,18 @@ match / {
     }
 }
 
-var $nl = "
-";
-
 match * {
-    /* var $save = $indent; */
+    var $save = $indent;
 
-    var $idents = {
-	if (count(name) == 1) {
-	    expr brace:quote(name);
-	} else if (brace:multi-ident(.)) {
-	}
-    }
-
-    <line> name() _ " {";
+    <line indent=$indent> name() _ " {";
     expr $nl;
-    /* append $indent += "::"; */
+    append $indent += "::";
 
     apply-templates;
 
     <line> "}";
     expr $nl;
-    /* set $indent = $save; */
+    set $indent = $save;
 }
 
 match text() {

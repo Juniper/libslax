@@ -63,9 +63,11 @@ slaxHex (unsigned char x)
 
 #define SLAX_UTF_INVALID_NUMBER 0xfffd
 
- unsigned
- slaxUtfWord (const char *cp, int width);
- unsigned
+/*
+ * Turn a sequence of UTF-8 bytes into a word-wide integer.  Turns out
+ * this is pretty easy, if you know how.  Otherwise, you're dead meat.
+ */
+static unsigned
 slaxUtfWord (const char *cp, int width)
 {
     unsigned val;
