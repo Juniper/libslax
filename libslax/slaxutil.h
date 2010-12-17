@@ -129,3 +129,13 @@ strlcpy (char *dst, const char *src, size_t sz)
 }
 
 #endif /* HAVE_STRLCPY */
+
+/* ---------------------------------------------------------------------- */
+
+/* Useful time-related constants */
+#define NSEC_PER_SEC 1000000000
+#define NSEC_PER_MSEC 1000000
+#define NSEC_PER_USEC 1000
+#define USEC_PER_SEC 1000000
+#define USEC_PER_MSEC 1000
+#define MSEC_PER_SEC 1000

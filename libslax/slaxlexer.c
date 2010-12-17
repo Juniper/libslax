@@ -429,8 +429,8 @@ slaxGetInput (slax_data_t *sdp, int final)
 
 	if (sdp->sd_buf[sdp->sd_len - 1] == '\n') {
 	    sdp->sd_line += 1;
-	    if (sdp->sd_ctxt->input)
-		sdp->sd_ctxt->input->line += 1;
+	    if (final && sdp->sd_ctxt->input)
+		sdp->sd_ctxt->input->line = sdp->sd_line;
 	}
 
 	if (first_read && sdp->sd_buf[0] == '#' && sdp->sd_buf[1] == '!') {
@@ -444,7 +444,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 	}
 
 	/* We don't want to get half a keyword */
-	if (final && slaxIsFinalChar(sdp->sd_buf[sdp->sd_len - 1]))
+	if (!final || slaxIsFinalChar(sdp->sd_buf[sdp->sd_len - 1]))
 	    return FALSE;
     }
 }
@@ -471,7 +471,7 @@ slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
     if (ctxt->linenumbers) { 
 	if (ctxt->input != NULL) { 
 	    if (ctxt->input->line < 65535) 
-		cur->line = (short) ctxt->input->line - 1; 
+		cur->line = (short) ctxt->input->line;
 	    else 
 		cur->line = 65535;
 	}
@@ -905,6 +905,21 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 
     if (yylvalp)
 	*yylvalp = ssp = (rc > 0) ? slaxStringCreate(sdp, rc) : NULL;
+
+    /*
+     * If we're still looking at a function, determine if it's one
+     * using SLAX_PREFIX, and record that fact so we can later (in
+     * slaxElementPop()) ensure we've mapped the prefix.
+     */
+    if (rc == T_FUNCTION_NAME) {
+	static const char slax_prefix[] = SLAX_PREFIX ":";
+	const char *start = ssp->ss_token;
+	unsigned len = strlen(ssp->ss_token);
+
+	if (len > sizeof(slax_prefix)
+		&& strncmp(slax_prefix, start, sizeof(slax_prefix) - 1) == 0)
+	    ssp->ss_flags |= SSF_SLAXNS;
+    }
 
     if (slaxDebug && ssp)
 	slaxLog("slax: lex: (%s) %p '%.*s' -> %d/%s %x",

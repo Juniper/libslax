@@ -1,9 +1,31 @@
 version 1.0;
 
 var $junos-data := {
-    <oneliners> {
+    <skip-level> {
     }
-    <nokeyworks> {
+    <oneliner> {
+	<item> "/system/backup-router";
+	<item> "/system/scripts/op/traceoptions/file";
+    }
+    <oneset> {
+	<item> "/system/authentication-order";
+    }
+    <empty> {
+	<item> "/system/dump-on-panic";
+    }
+    <multi-identifier> {
+	<item id1="link" id2="area"> "/protocols/ospf/area/virtual-link";
+    }
+    <nokeyword> {
+	<item> "/system/backup-router/address";
+	<item> "/interfaces/interface";
+    }
+    <secret> {
+	<item> "/system/root-authentication/encryped-password";
+    }
+    <homogeneous> {
+	<item> "/system/name-server";
+	<item> "/groups";
     }
     <special> {
     }

@@ -9,6 +9,7 @@
  */
 
 #include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */
+#include <libxslt/extensions.h>
 
 #define NUM_ARRAY(x)    (sizeof(x)/sizeof(x[0]))
 
@@ -77,4 +78,26 @@ xmlStrchru (xmlChar *str, xmlChar val)
 	    return str;
 
     return NULL;
+}
+
+static inline void
+slaxRegisterFunction (const char *uri, const char *fn, xmlXPathFunction func)
+{
+    xsltRegisterExtModuleFunction((const xmlChar *) fn, (const xmlChar *) uri,
+				  func);
+}
+
+static inline void
+slaxRegisterElement (const char *uri, const char *fn, 
+		     xsltPreComputeFunction fcompile,
+		     xsltTransformFunction felement)
+{
+    xsltRegisterExtModuleElement((const xmlChar *) fn, (const xmlChar *) uri,
+				 fcompile, felement);
+}
+
+static inline int
+xmlAtoi (const xmlChar *nptr)
+{
+    return atoi((const char *) nptr);
 }

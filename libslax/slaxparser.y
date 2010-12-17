@@ -1611,7 +1611,7 @@ ns_template :
 	;
 
 for_each_stmt :
-	K_FOR_EACH L_OPAREN xpath_expr L_CPAREN
+	K_FOR_EACH L_OPAREN xpath_expr_dotdotdot L_CPAREN
 		{
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_FOR_EACH,
@@ -1633,7 +1633,7 @@ for_each_stmt :
 	;
 
 for_stmt :
-	K_FOR T_VAR L_OPAREN xpath_expr L_CPAREN
+	K_FOR T_VAR L_OPAREN xpath_expr_dotdotdot L_CPAREN
 		{
 		    /*
 		     * The for loop is a little tricky.  We are creating
@@ -2584,6 +2584,14 @@ equals_operator :
  */
 
 xpath_expr :
+	xp_expr
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
+		}
+	;
+
+xpath_expr_dotdotdot :
 	xp_expr
 		{
 		    ALL_KEYWORDS_ON();

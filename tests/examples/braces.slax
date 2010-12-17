@@ -1,42 +1,177 @@
 version 1.1;
 
 ns brace extension = "http://xml.juniper.net/brace";
+ns exslt extension = "http://exslt.org/common";
 
 import "junos-data.slax";
 
 output-method { indent "yes"; }
 
-mvar $indent = "::";
 var $nl = "\n";
+mvar $oneliner = false();
+mvar $indent;
+mvar $notag;
+mvar $save_line;
 
 match / {
     <configuration-text> {
-	apply-templates configuration;
+	expr $nl;
+	for-each (configuration) {
+	    call emit-main();
+	}
     }
 }
 
-match * {
-    var $save = $indent;
+template emit-main ($path = "") {
+    for-each (*) {
+	var $cpath = $path _ "/" _ name();
 
-    <line indent=$indent> name() _ " {";
-    expr $nl;
-    append $indent += "::";
+	if (name() == "undocumented" || $junos-data/skip[item == $cpath]) {
+	    call emit-main($path);
 
-    apply-templates;
+	} else if (name() == "name") {
+	    /* skip */
 
-    <line> "}";
-    expr $nl;
-    set $indent = $save;
+	} else if ($junos-data/homogeneous[item = $cpath]) {
+	    var $name = name();
+	    var $id = generate-id(.);
+	    var $all = ../ *[name() == $name];
+
+	    if ($id == generate-id($all[1])) {
+		call emit-homogeneous($path, $cpath, $all);
+	    }
+
+	} else if (name) {
+	    call emit-list($path, $cpath);
+
+	} else if ($junos-data/multi-idenfier[item == $cpath]) {
+	    call emit-multi-identifier($path);
+
+	} else if ($junos-data/empty[item = $cpath]) {
+	    call emit-empty($path, $cpath);
+
+	} else if (count(*) == 0) {
+	    call emit-text($path, $cpath);
+
+	} else if ($junos-data/oneliner[item == $cpath]) {
+	    call emit-oneliner($path, $cpath);
+
+	} else {
+	    call emit-container($path, $cpath);
+	}
+    }
 }
 
-match text() {
-    /* nothing */
+template emit-homogeneous ($path, $cpath, $all) {
+    call emit-open($line = name());
+
+    set $notag = true();
+
+    for-each ($all) {
+	call emit-list($path = $cpath);
+    }
+
+    set $notag = false();
+
+    call emit-close();
 }
 
-function brace:multi-ident ($dot) {
-    result false();
+template emit-oneliner ($path, $cpath) {
+    set $oneliner = true();
+    call emit-open($line = name());
+
+    call emit-main($path = $cpath);
+
+    call emit-close();
+    set $oneliner = false();
 }
 
-function brace:quote ($value) {
-    result "\"" _ $value _ "\"";
+template emit-container ($path, $cpath) {
+    call emit-open($line = name());
+    call emit-main($path = $cpath);
+    call emit-close();
+}
+
+template emit-list ($path, $cpath) {
+    var $name = {
+	if (not($notag)) {
+	    expr name() _ " ";
+	}
+    }
+
+    if (count(*[name() != "name"]) > 0) {
+	call emit-open($line = $name _ brace:clean(name));
+	call emit-main($path = $cpath);
+	call emit-close();
+    } else {
+	call emit-line($line = $name _ brace:clean(name));
+    }
+}
+
+template emit-empty ($path, $cpath) {
+    call emit-line($line = name());
+}
+
+template emit-text ($path, $cpath) {
+    var $value = {
+	if (string-length(.) > 0) {
+	    expr brace:clean(text());
+	}
+    }
+
+    var $tag = {
+	if (not($junos-data/nokeyword[item == $cpath])) {
+	    expr name();
+	    if (string-length($value) > 0) {
+		expr " ";
+	    }
+	}
+    }
+
+    call emit-line($line = $tag _ $value);
+}
+
+template emit-open ($line) {
+    if ($oneliner) {
+	set $save_line = $line;
+    } else {
+	message $indent _ $line _ " {";
+	<line> $indent _ $line _ " {";
+	append $indent += "....";
+	expr $nl;
+    }
+}
+
+template emit-line ($line) {
+    if ($oneliner) {
+	append $save_line += " " _ $line;
+    } else {
+	message $indent _ $line _ ";";
+	<line> $indent _ $line _ ";";
+	expr $nl;
+    }
+}
+
+template emit-close () {
+    if ($oneliner) {
+	<line> $indent _ $save_line _ ";";
+	expr $nl;
+
+    } else {
+	set $indent = substring($indent, 5);
+
+	message $indent _ "}";
+	<line> $indent _ "}";
+	expr $nl;
+    }
+}
+
+function brace:clean ($value) {
+    var $re = slax:regex("^(\n?)( +)(.*)", $value);
+
+    if (string-length($re[4]) == 0) {
+	result "";
+    } else {
+	result "\"" _ $value _ "\"";
+    }
 }

@@ -420,7 +420,7 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     slaxSetNs(sdp, nodep, prefix, uri, TRUE);
 }
 
-void 
+void
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
 {
     const char *prefix = SLAX_PREFIX;

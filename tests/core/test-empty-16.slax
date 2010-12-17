@@ -1,0 +1,130 @@
+version 1.1;
+
+param $full;
+
+var $bad;
+var $good = "first";
+
+var $data = <data> "
+this is line one
+and line two
+
+and line three
+and line four
+and finally, line five
+";
+
+match / {
+    <top> {
+	<sequence> {
+	    for-each (1 ... 3) {
+		for $i (1 ... 4) {
+		    <i> . _ ":" _ $i;
+		}
+	    }
+	}
+
+	<first> slax:first-of($bad, worse, $good, "huh");
+	<break-lines> {
+	    var $bl = slax:break-lines($data);
+	    for-each ($bl) {
+		<line> .;
+	    }
+	}
+
+	<printf> {
+	    for-each (1 ... 4) {
+		var $boom = {
+		    if (position() == last()) {
+			expr " boom!!";
+		    }
+		}
+		<one> slax:printf("testing %j1-4d... %4s... %s%s!",
+				  1, . + 1, "three", $boom);
+	    }
+	    <two> slax:printf("[%jcs] [%jt{test}s] [%jt{test}s]",
+			      "cool", "ing", no);
+	}
+
+	<is-empty> {
+	    var $e1;
+	    var $e2 := <test>;
+	    var $ne1 = "test";
+	    var $ne2 = <test>;
+	    mvar $ne3;
+
+	    <e1> slax:is-empty($e1);
+	    <e2> slax:is-empty($e2/fish);
+	    <e1> slax:is-empty($ne3);
+	    <ne1> slax:is-empty($ne1);
+	    <ne2> slax:is-empty($ne2);
+
+	    set $ne3 = <test>;
+	    <ne3> slax:is-empty($ne3);
+
+	}
+
+	<regex> {
+	    var $data = "this is a test of the regex";
+	    var $pattern = "(.*) test (.*) regex";
+	    var $re1 = slax:regex($pattern, $data);
+	    for-each ($re1) {
+		<re1 position=position()> .;
+	    }
+
+	    var $re2 = slax:regex("([0-9]+)", $data);
+	    for-each ($re2) {
+		<re2 position=position()> .;
+	    }
+
+	    var $re3 = slax:regex("([0-9]+)", "So..... 99 bottles of ... ");
+	    for-each ($re3) {
+		<re3 position=position()> .;
+	    }
+	}
+
+	<split> {
+	    var $in = "instructions 1 wash 2 rinse 3 repeat 4 not-reached";
+	    var $sp1 = slax:split("[0-9]", $in);
+	    for-each ($sp1) {
+		<sp1 position=position()> .;
+	    }
+	    var $sp2 = slax:split("[0-9]", $in, 4);
+	    for-each ($sp2) {
+		<sp2 position=position()> .;
+	    }
+	}
+
+	if ($full) {
+	    <dampen> {
+		for-each (1 ... 100) {
+		    if (slax:dampen("test", 4, 5)) {
+			<works> .;
+		    }
+		}
+	    }
+	    <sleep> {
+		message "before";
+		expr slax:sleep(3);
+		message "after";
+	    }
+
+	    <sysctl> {
+		var $names := {
+		    <v> "kern.ostype";
+		    <v> "kern.osrelease";
+		    <v> "kern.hostname";
+		}
+	    
+		for-each ($names/v) {
+		    <var name=.> slax:sysctl(.);
+		}
+		<var name="kern.maxproc"> slax:sysctl("kern.maxproc", "i");
+	    }
+
+	    <syslog> {
+		expr slax:syslog("daemon.error", "test", " message");
+	    }
+	}
+    }
+}

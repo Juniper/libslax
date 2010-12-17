@@ -52,6 +52,11 @@ slaxTransformError (xmlXPathParserContextPtr ctxt, const char *fmt, ...);
  */
 void
 slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...);
+/*
+ * Register our extension functions.
+ */
+int
+slaxExtRegisterOther (const char *namespace);
 
 /**
  * Registers the SLAX extensions
