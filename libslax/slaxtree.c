@@ -191,6 +191,10 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	for (ssp = value; ssp; ssp = ssp->ss_next)
 	    slaxLog("initial: xpath_value: %s", ssp->ss_token);
 
+    /* If we need the "slax" namespace, add it to the parent node */
+    if (slaxNeedsSlaxNs(value))
+	slaxSetSlaxNs(sdp, sdp->sd_ctxt->node, FALSE);
+
     if (value->ss_next == NULL) {
 	if (style == SAS_SELECT && value->ss_ttype == T_QUOTED
 		&& (value->ss_flags & SSF_BOTHQS)) {

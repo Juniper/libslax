@@ -2156,6 +2156,53 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 }
 
 /*
+ *
+ */
+static void
+slaxExtGetInputFlags (xmlXPathParserContext *ctxt, int nargs, unsigned flags)
+{
+    char *res, *prompt;
+
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    prompt = (char *) xmlXPathPopString(ctxt);
+    res = slaxInput(prompt, flags);
+    xmlFreeAndEasy(prompt);
+
+    xmlXPathReturnString(ctxt, (xmlChar *) res);
+}
+
+/*
+ * Get a line of input without echoing it
+ */
+static void
+slaxExtGetInput (xmlXPathParserContext *ctxt, int nargs)
+{
+    slaxExtGetInputFlags(ctxt, nargs, 0);
+}
+
+/*
+ * Get a line of input without echoing it
+ */
+static void
+slaxExtGetSecret (xmlXPathParserContext *ctxt, int nargs)
+{
+    slaxExtGetInputFlags(ctxt, nargs, SIF_SECRET);
+}
+
+/*
+ * Get a line of input with history
+ */
+static void
+slaxExtGetCommand (xmlXPathParserContext *ctxt, int nargs)
+{
+    slaxExtGetInputFlags(ctxt, nargs, SIF_HISTORY);
+}
+ 
+/*
  * Register our extension functions.
  */
 int
@@ -2169,9 +2216,14 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "dampen", slaxExtDampen);
     slaxRegisterFunction(namespace, "empty", slaxExtEmpty);
     slaxRegisterFunction(namespace, "first-of", slaxExtFirstOf);
+    slaxRegisterFunction(namespace, "get-command", slaxExtGetCommand);
+    slaxRegisterFunction(namespace, "get-input", slaxExtGetInput);
+    slaxRegisterFunction(namespace, "get-secret", slaxExtGetSecret);
+    
 #if 0
     slaxRegisterFunction(namespace, "hostname", slaxExtHostname);
 #endif
+    slaxRegisterFunction(namespace, "input", slaxExtGetInput);
     slaxRegisterFunction(namespace, "is-empty", slaxExtEmpty);
 #if 0
     slaxRegisterFunction(namespace, "parse-ip", slaxExtParseIp);

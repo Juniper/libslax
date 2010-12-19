@@ -126,43 +126,50 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 static char *
 slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 {
+    char *cp;
+
+    if (flags & SIF_SECRET) {
+	cp = getpass(prompt);
+	return cp ? (char *) xmlStrdup((xmlChar *) cp) : NULL;
+
+    } else {
 #ifdef HAVE_READLINE
-    char *cp, *res;
+	char *res;
 
-    /*
-     * readline() will return a malloc'd buffer but we need to
-     * swap it for memory that's acquired via xmlMalloc().
-     */
-    cp = readline(prompt);
-    if (cp == NULL)
-	return NULL;
+	/*
+	 * readline() will return a malloc'd buffer but we need to
+	 * swap it for memory that's acquired via xmlMalloc().
+	 */
+	cp = readline(prompt);
+	if (cp == NULL)
+	    return NULL;
 
-    /* Add the command to the shell history (if it's not blank) */
-    if ((flags & SIF_HISTORY) && *cp)
-	add_history(cp);
+	/* Add the command to the shell history (if it's not blank) */
+	if ((flags & SIF_HISTORY) && *cp)
+	    add_history(cp);
 
-    res = (char *) xmlStrdup((xmlChar *) cp);
-    free(cp);
-    return res;
-
+	res = (char *) xmlStrdup((xmlChar *) cp);
+	free(cp);
+	return res;
     
 #else /* HAVE_READLINE */
-    char buf[BUFSIZ];
-    int len;
+	char buf[BUFSIZ];
+	int len;
 
-    fputs(prompt, stderr);
-    fflush(stderr);
+	fputs(prompt, stderr);
+	fflush(stderr);
 
-    buf[0] = '\0';
-    if (fgets(buf, sizeof(buf), stdin) == NULL)
-	return NULL;
+	buf[0] = '\0';
+	if (fgets(buf, sizeof(buf), stdin) == NULL)
+	    return NULL;
 
-    len = strlen(buf);
-    if (len > 1 && buf[len - 1] == '\n')
-	buf[len - 1] = '\0';
+	len = strlen(buf);
+	if (len > 1 && buf[len - 1] == '\n')
+	    buf[len - 1] = '\0';
 
-    return (char *) xmlStrdup((xmlChar *) buf);
+	return (char *) xmlStrdup((xmlChar *) buf);
 #endif /* HAVE_READLINE */
+    }
 }
 
 static void

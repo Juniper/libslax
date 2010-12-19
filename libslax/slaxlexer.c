@@ -555,6 +555,43 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis)
 		   sdp->sd_filename, sdp->sd_line, axis->ss_token);
 }
 
+/*
+ * An XML comment cannot contain two adjacent dashes, which is
+ * sad.  And since libxml2 doesn't perform this escaping, we are
+ * left to do it ourselves.  We turn "--" into "-&#2d;"
+ */
+static xmlChar *
+slaxCommentMakeValue (xmlChar *input)
+{
+    static const char dash[] = "&#2d;"; /* XML character entity for dash */
+    xmlChar *cp, *out, *res;
+    int len = xmlStrlen(input);
+
+    for (cp = input; *cp; cp++)
+	if (*cp == '-')
+	    len += sizeof(dash) - 1; /* Worst case */
+
+    res = out = xmlMalloc(len + 1);
+    if (out == NULL)
+	return NULL;
+
+    for (cp = input; *cp; cp++) {
+
+	if (*cp == '-') {
+	    if (out > res && out[-1] == '-') {
+		memcpy(out, dash, sizeof(dash) - 1);
+		out += sizeof(dash) - 1;
+	    } else
+		*out++ = *cp;
+		
+	} else
+	    *out++ = *cp;
+    }
+    *out = '\0';
+
+    return (xmlChar *) res;
+}
+
 /**
  * This function is the core of the lexer.
  *
@@ -602,7 +639,7 @@ slaxLexer (slax_data_t *sdp)
 		    int start = sdp->sd_start + COMMENT_MARKER_SIZE;
 		    int end = sdp->sd_cur - COMMENT_MARKER_SIZE;
 		    int len = end - start;
-		    unsigned char *buf = alloca(len + 1);
+		    xmlChar *buf = alloca(len + 1), *contents;
 		    xmlNodePtr nodep;
 
 		    while (isspace(sdp->sd_buf[start])) {
@@ -626,7 +663,8 @@ slaxLexer (slax_data_t *sdp)
 			buf[len - 1] = ' ';
 			buf[len] = 0;
 
-			nodep = xmlNewComment(buf);
+			contents = slaxCommentMakeValue(buf);
+			nodep = contents ? xmlNewComment(contents) : NULL;
 			if (nodep) {
 			    /*
 			     * xsl:sort elements cannot contain comments
@@ -638,6 +676,7 @@ slaxLexer (slax_data_t *sdp)
 				par = par->parent;
 			    xmlAddChild(par, nodep);
 			}
+			xmlFreeAndEasy(contents);
 		    }
 		}
 
