@@ -93,14 +93,6 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...)
 }
 
 /*
- * Warning:  Do not confuse the "trace" statement and the <trace>
- * element with the SLAX internal slaxLog() function.  The former
- * is for scripts but the latter is internal, with output visible
- * via the "-v" switch (to slaxproc).  The naming is unfortunately
- * similar, but the tracing is at two distinct levels.
- */
-
-/*
  * The following code supports the "trace" statement in SLAX, which is
  * turned into the XML element <slax:trace> by the parser.  If the
  * environment has provided a callback function (via slaxTraceEnable()),
@@ -542,7 +534,7 @@ fail:
 /*
  * Return the first non-NULL member of the argument list
  *
- * Usage: <output> jcs:first-of($input, $argument, $default, "huh?");
+ * Usage: <output> slax:first-of($input, $argument, $default, "huh?");
  */
 static void
 slaxExtFirstOf (xmlXPathParserContext *ctxt, int nargs)
@@ -957,7 +949,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
  * printf -- C-style printf functionality with some juniper-specific
  * extensions.
  *
- * Usage: <output> jcs:printf("%j1-6s %jcs", $slot, $status);
+ * Usage: <output> slax:printf("%j1-6s %jcs", $slot, $status);
  */
 static void
 slaxExtPrintf (xmlXPathParserContext *ctxt, int nargs)
@@ -1005,7 +997,7 @@ bail:
  * arguments).  sleep(1) means one second and sleep(0, 10) means
  * ten milliseconds.
  *
- * Usage:  expr jcs:sleep(10);
+ * Usage:  expr slax:sleep(10);
  */
 static void
 slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
@@ -1152,7 +1144,7 @@ slaxExtBreakElement (xmlDocPtr container, xmlNodeSet *results, xmlNode *nodep,
  * newlines.  This is especially useful for big <output> elements,
  * such as are produced by the "show pfe" commands.
  *
- * Usage:  var $lines = jcs:break-lines($output);
+ * Usage:  var $lines = slax:break-lines($output);
  */
 static void
 slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
@@ -1232,9 +1224,9 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
  *
  * Usage:
  *     var $pat = "([0-9]+)(:*)([a-z]*)";
- *     var $a = jcs:regex($pat, "123:xyz");
- *     var $b = jcs:regex($pat, "r2d2");
- *     var $c = jcs:regex($pat, "test999!!!");
+ *     var $a = slax:regex($pat, "123:xyz");
+ *     var $b = slax:regex($pat, "r2d2");
+ *     var $c = slax:regex($pat, "test999!!!");
  *
  * $a[1] == "123:xyz"    # full string that matches the regex
  * $a[2] == "123"        # ([0-9]+)
@@ -1340,7 +1332,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 /*
  * Return TRUE if the nodeset or string arguments are empty
  *
- * Usage:  if (jcs:empty($set)) { .... }
+ * Usage:  if (slax:empty($set)) { .... }
  */
 static void
 slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
@@ -1379,7 +1371,7 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 /*
  * Return the value of the given sysctl as a string or integer
  *
- * Usage:   var $value = jcs:sysctl("kern.hostname", "s");
+ * Usage:   var $value = slax:sysctl("kern.hostname", "s");
  *       "s" -> "string; "i" -> "integer"
  *       nothing else is supported; defaults to "s"
  */
@@ -1426,7 +1418,7 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 
 /*
  * Usage: 
- *     var $substrings = jcs:split($pattern, $string, [$limit]);
+ *     var $substrings = slax:split($pattern, $string, [$limit]);
  *
  * Split string into an array of substrings on the regular expression pattern. 
  * If optional argument limit is specified, then only substrings up to limit 
@@ -1610,7 +1602,7 @@ slaxExtDecodePriority (const char *priority)
 
 /*
  * Usage: 
- *      expr jcs:syslog(priority, "this message ", $goes, $to, " syslog");
+ *      expr slax:syslog(priority, "this message ", $goes, $to, " syslog");
  *
  * Logs the message in syslog with the specified priority. First argument
  * is mandatory and should be priority.
@@ -1712,7 +1704,7 @@ slaxExtTimeCompare (const struct timeval *tv, double limit)
 
 /*
  * Usage: 
- *     var $rc = jcs:dampen($tag, max, frequency);
+ *     var $rc = slax:dampen($tag, max, frequency);
  *
  * dampen function returns true/false based on number of times the
  * function call made by a script. If dampen function is called less
