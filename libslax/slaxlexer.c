@@ -227,25 +227,6 @@ slaxSetupLexer (void)
 }
 
 /*
- * Is the given character valid inside bare word tokens (T_BARE)?
- */
-static inline int
-slaxIsBareChar (int ch)
-{
-    return (isalnum(ch) || (ch == ':') || (ch == '_') || (ch == '.')
-	    || (ch == '-') || (ch & 0x80));
-}
-
-/*
- * Is the given character valid inside variable names (T_VAR)?
- */
-static inline int
-slaxIsVarChar (int ch)
-{
-    return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == ':');
-}
-
-/*
  * Does the given character end a token?
  */
 static inline int

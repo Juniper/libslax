@@ -238,8 +238,8 @@ slaxAvoidRtf (slax_data_t *sdp)
 
     xmlSetNsProp(nodep, NULL, (const xmlChar *) ATT_SELECT, (xmlChar *) value);
 
-    /* Add the namespace for 'ext' */
-    xmlNewNs(nodep, (const xmlChar *) EXT_URI, (const xmlChar *) EXT_PREFIX);
+    /* Add the namespace for 'slax' */
+    slaxSetExtNs(sdp, nodep, FALSE);
 
     xmlFreeAndEasy(sel);
 }

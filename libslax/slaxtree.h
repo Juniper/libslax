@@ -145,6 +145,9 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 void
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
 
+void
+slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
+
 /**
  * Detect if the string needs the "slax" namespace
  * @value: string to test

@@ -433,6 +433,15 @@ slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
     slaxSetNs(sdp, nodep, prefix, uri, local);
 }
 
+void
+slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
+{
+    const char *prefix = EXT_PREFIX;
+    const xmlChar *uri = (const xmlChar *) EXT_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri, local);
+}
+
 /*
  * Backup the stack up 'til the given node is seen
  */

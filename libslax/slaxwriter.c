@@ -38,6 +38,8 @@ typedef struct slax_writer_s {
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
 #define SWF_VERS_10	(1<<2)	/* Version 1.0 features only */
 
+static const char slaxVarNsCall[] = EXT_PREFIX ":node-set(";
+
 static inline int
 slaxV10 (slax_writer_t *swp)
 {
@@ -1172,7 +1174,7 @@ slaxWriteFunctionResult (slax_writer_t *swp, xmlNodePtr nodep, char *sel)
 {
     char *expr = slaxMakeExpression(swp, nodep, sel);
 
-    slaxWrite(swp, "expr ");
+    slaxWrite(swp, "result ");
     slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
     slaxWrite(swp, ";");
     slaxWriteNewline(swp, 0);
@@ -1448,6 +1450,143 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
     return FALSE;
 }
 
+/*
+ * Extract the name of the real variable from a call to slax:node-set()
+ * during the deconstruction of the assignment operator (":=").  The
+ * caller must free the string.
+ */
+static char *
+slaxVarAssignName (const char *name)
+{
+    const char *cp, *start, *endp;
+    char *vname;
+
+    if (name == NULL
+	    || strncmp(name, slaxVarNsCall, sizeof(slaxVarNsCall) - 1) != 0)
+	return NULL;
+
+    cp = name + sizeof(slaxVarNsCall) - 1;
+    if (*cp++ != '$')
+	return NULL;
+
+    start = cp;		/* Save variable name starting point */
+    for ( ; *cp; cp++) {
+	if (*cp == ')') {
+
+	    /* Detect the temporary name part added in slaxAvoidRtf() */
+	    /* XXX handle if -temp- is part of the user name; use "slax-" */
+	    endp = strstr(start, "-temp-");
+	    if (endp == NULL)
+		return NULL;
+
+	    /* Note that we don't need a "+ 1" since we trim the ')' */
+	    vname = xmlMalloc(endp - start);
+	    if (vname == NULL) /* Cannot happen, but feels good anyway */
+		return FALSE;
+
+	    memcpy(vname, start, cp - start);
+	    vname[endp - start ] = '\0'; 
+
+	    return vname;
+	}
+
+	if (!slaxIsVarChar(*cp))
+	    return FALSE;
+    }
+
+    return NULL;
+}
+
+/*
+ * Was this variable the second part of the expansion of an assignment
+ * operator?  In order to avoid RTFs, we turn "var $x := <this>;" into
+ * a temporary variable that holds the RTF and then make the real
+ * variable with a call to slax:node-set().  To undo this, we need to
+ * notice the temp variable and unroll the logic.
+ */
+static int
+slaxVarWasAssign (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
+		  char *name UNUSED, char *sel)
+{
+    char *cp, *vname;
+    xmlNodePtr cur;
+
+    vname = slaxVarAssignName(sel);
+    if (vname == NULL)
+	return FALSE;
+
+    /* Find the previous variable and look at the variable name */
+    for (cur = nodep->prev; cur; cur = cur->prev) {
+	if (cur->type == XML_ELEMENT_NODE) {
+	    cp = slaxGetAttrib(nodep, ATT_NAME);
+	    if (cp && streq(cp, vname)) {
+		xmlFree(cp);
+		xmlFree(vname);
+		return TRUE;
+	    }
+
+	    xmlFreeAndEasy(cp);
+	    xmlFree(vname);
+	    return FALSE;	/* Otherwise, it's not our's */
+	}
+    }
+
+    xmlFree(vname);
+    return FALSE;
+}
+
+/*
+ * Determine if this is the second part of the assignment expansion.
+ * See slaxVarWasAssign() for details.
+ */
+static char *
+slaxVarIsAssign (slax_writer_t *swp UNUSED, xmlNodePtr nodep, char *name UNUSED)
+{
+    char *cp, *vname;
+    xmlNodePtr cur;
+
+    /* Find the next variable and look at the select attribute */
+    for (cur = nodep->next; cur; cur = cur->next) {
+	if (cur->type == XML_ELEMENT_NODE) {
+	    cp = slaxGetAttrib(cur, ATT_SELECT);
+	    vname = slaxVarAssignName(cp);
+	    xmlFree(cp);
+
+	    if (vname)
+		return vname;
+
+	    return NULL;	/* Otherwise, it's not our's */
+	}
+    }
+
+    return NULL;
+}
+
+static char *
+slaxVarAssignContents (const char *expr)
+{
+    const char *cp, *endp;
+    char *res;
+
+    if (expr == NULL
+	    || strncmp(expr, slaxVarNsCall, sizeof(slaxVarNsCall) - 1) != 0)
+	return NULL;
+
+    cp = expr + sizeof(slaxVarNsCall) - 1;
+    if (*cp == '$')		/* Variable reference */
+	return NULL;
+
+    endp = cp + strlen(cp) - 1;
+    if (*endp != ')')
+	return NULL;
+
+    res = xmlMalloc(endp - cp + 1);
+    memcpy(res, cp, endp - cp);
+    res[endp - cp] = '\0';
+
+    return res;
+}
+
 static void
 slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
@@ -1457,6 +1596,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     char *svarname;
     const char *tag = (nodep->name[0] == 'v') ? "var" : "param";
     xmlNodePtr vnode = nodep;
+    char *aname;
+    const char *operator;
 
     if (mvarname) {
 	/*
@@ -1508,6 +1649,25 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	/* Otherwise it wasn't a "real" "for" loop, so continue */
     }
 
+    /*
+     * If this is the second part of an assignment operator (":="),
+     * skip it.
+     */
+    if (slaxVarWasAssign(swp, nodep, name, sel))
+	return;
+
+    /*
+     * If this is the first part of assignment, use the name of
+     * the real variable.
+     */
+    aname = slaxVarIsAssign(swp, nodep, name);
+    if (aname) {
+	operator = ":=";
+    } else {
+	operator = "=";
+	aname = name;
+    }
+
     if (vnode->children) {
 	xmlNodePtr childp = vnode->children;
 
@@ -1516,17 +1676,17 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	     * If there's only one child and it's text, we can emit
 	     * a simple string initializer.
 	     */
-	    slaxWrite(swp, "%s $%s = \"", tag, name);
+	    slaxWrite(swp, "%s $%s %s \"", tag, aname, operator);
 	    slaxWriteEscaped(swp, (char *) childp->content, SEF_DOUBLEQ);
 	    slaxWrite(swp, "\";");
 	    slaxWriteNewline(swp, 0);
 
 	} else if (slaxIsSimpleElement(childp)) {
-	    slaxWrite(swp, "%s $%s = ", tag, name);
+	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
 	    slaxWriteChildren(swp, docp, vnode, FALSE);
 
 	} else {
-	    slaxWrite(swp, "%s $%s = {", tag, name);
+	    slaxWrite(swp, "%s $%s %s {", tag, aname, operator);
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
 	    slaxWriteChildren(swp, docp, vnode, FALSE);
@@ -1536,19 +1696,31 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	}
 
     } else if (sel) {
+	/*
+	 * The select might be an assignment if this is a function.
+	 */
 	char *expr = slaxMakeExpression(swp, nodep, sel);
+	char *contents = slaxVarAssignContents(expr);
 
-	slaxWrite(swp, "%s $%s = ", tag, name);
+	if (contents) {
+	    xmlFree(expr);
+	    expr = contents;
+	    operator = ":=";
+	}
+
+	slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
 	slaxWriteValue(swp, expr);
 	slaxWrite(swp, ";");
 	slaxWriteNewline(swp, 0);
 	xmlFreeAndEasy(expr);
 
     } else {
-	slaxWrite(swp, "%s $%s;", tag, name);
+	slaxWrite(swp, "%s $%s;", tag, aname);
 	slaxWriteNewline(swp, 0);
     }
 
+    if (name != aname) /* Could have been allocated by slaxVarIsAssign */
+	xmlFreeAndEasy(aname);
     xmlFreeAndEasy(name);
     xmlFreeAndEasy(sel);
 }

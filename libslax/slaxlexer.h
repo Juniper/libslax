@@ -6,6 +6,8 @@
  * See ../Copyright for the status of this software
  */
 
+#include <ctype.h>		/* isalnum() */
+
 /*
  * This is a should-not-occur error string if you ever see it, we've
  * done something wrong (but it beats a core dump).
@@ -126,3 +128,24 @@ slaxTokenName (int ttype);
  */
 int
 slaxTokenTranslate (int ttype);
+
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Is the given character valid inside bare word tokens (T_BARE)?
+ */
+static inline int
+slaxIsBareChar (int ch)
+{
+    return (isalnum(ch) || (ch == ':') || (ch == '_') || (ch == '.')
+	    || (ch == '-') || (ch & 0x80));
+}
+
+/*
+ * Is the given character valid inside variable names (T_VAR)?
+ */
+static inline int
+slaxIsVarChar (int ch)
+{
+    return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == ':');
+}
