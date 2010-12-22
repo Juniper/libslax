@@ -110,11 +110,10 @@ template test3 () {
     mvar $errors;
     
     for $i (1 ... 20) {
-        var $x-temp-1 = <error> {
+        var $x := <error> {
             <line> $i;
             <message> "Shut 'er down Clancey!  She's a-pumping mud!";
         }
-        var $x = slax-ext:node-set($x-temp-1);
         append $errors += $x;
         trace $errors;
     }

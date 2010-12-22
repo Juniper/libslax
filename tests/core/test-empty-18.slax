@@ -1,0 +1,17 @@
+version 1.1;
+
+function test ($x) {
+    result <test> $x;
+}
+
+match / {
+    <top> {
+	var $test := test("fish");
+	var $this := <that> "one";
+	var $mine := <your> "was";
+	var $gray := <new> "black";
+	copy-of $this;
+	copy-of $that;
+	copy-of $gray;
+    }
+}

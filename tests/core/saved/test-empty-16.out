@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<top>
+  <sequence>
+    <i>1:1</i>
+    <i>1:2</i>
+    <i>1:3</i>
+    <i>1:4</i>
+    <i>2:1</i>
+    <i>2:2</i>
+    <i>2:3</i>
+    <i>2:4</i>
+    <i>3:1</i>
+    <i>3:2</i>
+    <i>3:3</i>
+    <i>3:4</i>
+  </sequence>
+  <first>first</first>
+  <break-lines>
+    <line/>
+    <line>this is line one</line>
+    <line>and line two</line>
+    <line/>
+    <line>and line three</line>
+    <line>and line four</line>
+    <line>and finally, line five</line>
+  </break-lines>
+  <printf>
+    <one>testing 1   ...    2... three!</one>
+    <one>testing     ...    3... three!</one>
+    <one>testing     ...    4... three!</one>
+    <one>testing     ...    5... three boom!!!</one>
+    <two>[Cool] [testing] []</two>
+  </printf>
+  <is-empty>
+    <e1>true</e1>
+    <e2>true</e2>
+    <e1>true</e1>
+    <ne1>false</ne1>
+    <ne2>false</ne2>
+    <ne3>false</ne3>
+  </is-empty>
+  <regex>
+    <re1 position="1">this is a test of the regex</re1>
+    <re1 position="2">this is a</re1>
+    <re1 position="3">of the</re1>
+    <re3 position="1">99</re3>
+    <re3 position="2">99</re3>
+  </regex>
+  <split>
+    <sp1 position="1">instructions </sp1>
+    <sp1 position="2"> wash </sp1>
+    <sp1 position="3"> rinse </sp1>
+    <sp1 position="4"> repeat </sp1>
+    <sp1 position="5"> not-reached</sp1>
+    <sp2 position="1">instructions </sp2>
+    <sp2 position="2"> wash </sp2>
+    <sp2 position="3"> rinse </sp2>
+    <sp2 position="4"> repeat 4 not-reached</sp2>
+  </split>
+</top>

@@ -33,34 +33,30 @@ with the alligator purse
 output-method {
     indent "yes";
 }
-var $verses-temp-1 = {
+var $verses := {
     <verse action="baby" where="bathtub" test="swim"> 1;
     <verse action="tub"> 2;
     <verse action="call"> 3;
     <verse action="diagnosis"> 4;
     <verse action="out"> 5;
 }
-var $verses = slax-ext:node-set($verses-temp-1);
 
 match / {
     <top> {
-        var $miss-lucy-temp-2 = {
+        var $miss-lucy := {
             <name> "Miss Lucy";
             call baby($name = "Tiny Tim");
         }
-        var $miss-lucy = slax-ext:node-set($miss-lucy-temp-2);
-        var $bathtub-temp-3 = {
+        var $bathtub := {
             call swim($miss-lucy);
         }
-        var $bathtub = slax-ext:node-set($bathtub-temp-3);
-        var $baby-temp-4 = {
+        var $baby := {
             <water> "drank";
             <soap> "ate ";
             <bathtub> {
                 <epic-fail> "throat";
             }
         }
-        var $baby = slax-ext:node-set($baby-temp-4);
         var $who = top/resources;
         
         for-each ($verses) {

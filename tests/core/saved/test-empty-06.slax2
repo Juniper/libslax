@@ -18,13 +18,13 @@ match / {
         <c> {
             copy-of my:one("test");
         }
-        var $d = slax-ext:node-set(my:one("one", "two"));
+        var $d := my:one("one", "two");
         <d> exslt:object-type($d);
     }
 }
 
 function my:test ($min = 0, $max = 100) {
-    expr $max - $min;
+    result $max - $min;
 }
 
 function my:one ($name, $fish = "fish") {

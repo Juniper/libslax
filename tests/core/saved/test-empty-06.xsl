@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://example.com" xmlns:exslt="http://exslt.org/common" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="my exslt slax-func">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://example.com" xmlns:exslt="http://exslt.org/common" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="my exslt slax-ext slax-func">
   <xsl:template match="/">
     <out>
       <xsl:variable name="a" select="my:test()"/>
