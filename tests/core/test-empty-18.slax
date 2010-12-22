@@ -4,6 +4,18 @@ function test ($x) {
     result <test> $x;
 }
 
+match foo[concat(../../id/text(), "/", text())] {
+
+    expr "text in " _ name(..) _ ' = "';
+
+    var $date = substring(date, 1, 4)  _ "/"
+	_ substring(date, 5, 2)  _ "/" _ substring(date, 7, 2);
+
+    expr test( concat( local-game-prefix, opponent ), answer );
+
+    <span class="element"> "</" _ name(.) _ ">";
+}
+
 match / {
     <top> {
 	var $test := test("fish");

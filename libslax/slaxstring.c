@@ -369,17 +369,20 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	     * Decide if we can trim off the last trailing space.  You
 	     * would think this was an easy one, but it's not.
 	     */
-	    int trim = FALSE;
+	    int trim = FALSE, comma = FALSE;
 
 	    if (bp[-2] == '_' || *str == '_')
 		trim = FALSE;
-	    else if (slaxStringNoSpace(bp[-2]) || slaxStringNoSpace(*str))
-		trim = TRUE;	/* foo/goo[@zoo] */
 
-	    else if (*str == ',')
+	    else if (*str == ',') {
 		trim = TRUE;	/* foo(1, 2, 3) */
+		comma = TRUE;
 
-	    else if (isdigit(bp[-2]) && *str == '.'
+	    } else if (slaxStringNoSpace(bp[-2]) || slaxStringNoSpace(*str)) {
+		if (bp[-2] != ',')
+		    trim = TRUE;	/* foo/goo[@zoo] */
+
+	    } else if (isdigit(bp[-2]) && *str == '.'
 		     && ssp->ss_ttype != L_DOTDOTDOT)
 		trim = TRUE;	/* 1.0 (looking at the '.') */
 
@@ -391,11 +394,11 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 
 	    /*
 	     * We only want to trim closers if the next thing is a closer
-	     * or a slash, so that we handle "foo[goo]/zoo" correctly
+	     * or a slash, so that we handle "foo[goo]/zoo" correctly.
 	     */
 	    if ((bp[-2] == ')' || bp[-2] == ']')
 		    && !(*str == ')' || *str == ']' || *str == '/'))
-		trim = FALSE;
+		trim = comma;
 
 	    if (trim) {
 		bp -= 1;

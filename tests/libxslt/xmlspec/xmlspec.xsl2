@@ -1343,13 +1343,13 @@ works -->
         </xsl:call-template>
       </xsl:attribute>
       <xsl:choose>
-        <xsl:when test="starts-with(local-name($target) , &quot;div&quot;)">
+        <xsl:when test="starts-with(local-name($target), &quot;div&quot;)">
           <b>
             <xsl:apply-templates select="id(@ref)" mode="divnum"/>
             <xsl:apply-templates select="id(@ref)/head" mode="text"/>
           </b>
         </xsl:when>
-        <xsl:when test="starts-with(local-name($target) , &quot;inform-div&quot;)">
+        <xsl:when test="starts-with(local-name($target), &quot;inform-div&quot;)">
           <b>
             <xsl:apply-templates select="id(@ref)" mode="divnum"/>
             <xsl:apply-templates select="id(@ref)/head" mode="text"/>

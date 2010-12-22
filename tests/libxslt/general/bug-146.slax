@@ -19,11 +19,11 @@ key EMPTY_EN_CODE_COLRS {
 
 match / {
     <root> {
-        for-each (/root/colls[key("EMPTY_EN_CODE_COLLS",@COL_COD)]) {
+        for-each (/root/colls[key("EMPTY_EN_CODE_COLLS", @COL_COD)]) {
             copy-node {
                 copy-of @*;
                 
-                for-each (key("EMPTY_EN_CODE_COLLS",@COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", concat(., ":", ../../../@COL_COD)))]) {
+                for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", concat(., ":", ../../../@COL_COD)))]) {
                     <color> {
                         copy-of ../@TITLE | ../@RU_CODE | .;
                     }

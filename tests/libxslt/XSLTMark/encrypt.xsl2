@@ -3,7 +3,7 @@
   <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output encoding="utf-8"/>
   <xsl:template match="*">
-    <xsl:element name="{translate(name(.) , &quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ&quot;, &quot;zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA&quot;)}">
+    <xsl:element name="{translate(name(.), &quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ&quot;, &quot;zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA&quot;)}">
       <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>

@@ -5,6 +5,6 @@
   <xsl:template match="link">
     <xsl:value-of select="@linkend"/>
     <xsl:text> </xsl:text>
-    <xsl:value-of select="key(&quot;mykey&quot;,@linkend)/@href"/>
+    <xsl:value-of select="key(&quot;mykey&quot;, @linkend)/@href"/>
   </xsl:template>
 </xsl:stylesheet>

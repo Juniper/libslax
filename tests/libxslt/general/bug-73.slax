@@ -4,7 +4,7 @@ version 1.1;
 output-method text;
 
 match p/text() {
-    expr "text in " _ name(..)  _ ' = "';
+    expr "text in " _ name(..) _ ' = "';
     expr normalize-space(.);
     expr "\"\n";
 }

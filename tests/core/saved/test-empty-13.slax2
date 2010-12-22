@@ -16,7 +16,7 @@ match / {
         mvar $set;
         
         for-each (*/*) {
-            if (starts-with(name() , "i")) {
+            if (starts-with(name(), "i")) {
                 append $set += .;
             }
         }
@@ -252,7 +252,7 @@ template other ($depth = 0) {
 match * {
     var $save = $indent;
     
-    <line length=string-length($indent)> name()  _ " {";
+    <line length=string-length($indent)> name() _ " {";
     append $indent += "ddd";
     apply-templates;
     <line> "}";

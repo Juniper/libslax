@@ -11,6 +11,13 @@ test tests:
 		cd $$cur ; \
 	done)
 
+accept:
+	@(cur=`pwd` ; for dir in $(SUBDIRS) ; do \
+		cd $$dir ; \
+		$(MAKE) accept ; \
+		cd $$cur ; \
+	done)
+
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	@echo '## Go get a cup of coffee it is gonna take a while ...'

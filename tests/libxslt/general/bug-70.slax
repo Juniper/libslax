@@ -9,5 +9,5 @@ key mykey {
 match link {
     expr @linkend;
     expr " ";
-    expr key("mykey",@linkend)/@href;
+    expr key("mykey", @linkend)/@href;
 }

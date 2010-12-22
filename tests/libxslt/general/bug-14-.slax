@@ -8,7 +8,7 @@ match / {
 }
 
 match processing-instruction() {
-    expr name()  _ " : " _ .;
+    expr name() _ " : " _ .;
 }
 
 match comment() {

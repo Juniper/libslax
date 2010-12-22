@@ -43,11 +43,11 @@ key packages-by-group {
 
 key unique-package-entries {
     match /comps/group/packagelist/packagereq;
-    value concat(../../id/text() ,"/", text());
+    value concat(../../id/text(), "/", text());
 }
 
 key unique-packages {
-    match /comps/group/packagelist/packagereq[generate-id(.) == generate-id(key("unique-package-entries", concat(../../id/text() ,"/", text())) [1])];
+    match /comps/group/packagelist/packagereq[generate-id(.) == generate-id(key("unique-package-entries", concat(../../id/text(), "/", text())) [1])];
     value text();
 }
 
@@ -58,7 +58,7 @@ key groups-by-category {
 
 key unique-group-entries {
     match /comps/category/grouplist/groupid;
-    value concat(../../id/text() ,"/", text());
+    value concat(../../id/text(), "/", text());
 }
 var $lcletters = "abcdefghijklmnopqrstuvwxyz";
 var $ucletters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -128,7 +128,7 @@ match group[count(key("packages-by-group", id/text())) == 0] {
     
     message {
         expr "☹☹☹ Empty group ";
-        expr _name/text()  _ " (" _ id/text()  _ ")";
+        expr _name/text() _ " (" _ id/text() _ ")";
         expr "!";
     }
     apply-templates . {
@@ -141,7 +141,7 @@ match group[generate-id(.) != generate-id(key("unique-groups", id/text()) [1])] 
     
     message {
         expr " ☹☹ Duplicate group ";
-        expr _name/text()  _ " (" _ id/text()  _ ")";
+        expr _name/text() _ " (" _ id/text() _ ")";
         expr " will be merged.";
     }
 }
@@ -151,7 +151,7 @@ match category[count(key("groups-by-category", id/text())) == 0] {
     
     message {
         expr "☹☹☹ Empty category ";
-        expr _name/text()  _ " (" _ id/text()  _ ")";
+        expr _name/text() _ " (" _ id/text() _ ")";
         expr "!";
     }
     apply-templates . {
@@ -164,7 +164,7 @@ match category[generate-id(.) != generate-id(key("unique-categories", id/text())
     
     message {
         expr " ☹☹ Duplicate category ";
-        expr _name/text()  _ " (" _ id/text()  _ ")";
+        expr _name/text() _ " (" _ id/text() _ ")";
         expr " will be merged.";
     }
 }
@@ -192,31 +192,31 @@ match category/grouplist {
     }
 }
 /* Kill duplicate package entries */
-match packagereq[generate-id(.) != generate-id(key("unique-package-entries", concat(../../id/text() ,"/", text())) [1])] {
+match packagereq[generate-id(.) != generate-id(key("unique-package-entries", concat(../../id/text(), "/", text())) [1])] {
     priority 2;
     
     message {
         expr "☹☹☹ Ignoring duplicate reference to ";
         expr @type _ " package " _ text();
         expr " in group ";
-        expr ../../ _name/text()  _ " (" _ ../../id/text()  _ ")";
+        expr ../../ _name/text() _ " (" _ ../../id/text() _ ")";
         expr ".";
     }
     message {
         expr "     ⇒ Only its first reference (";
-        expr key("unique-package-entries", concat(../../id/text() ,"/", text())) [1]/@type;
+        expr key("unique-package-entries", concat(../../id/text(), "/", text())) [1]/@type;
         expr " package) will be kept.";
     }
 }
 /* Kill duplicate group entries */
-match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group-entries", concat(../../id/text() ,"/", text())) [1])] {
+match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group-entries", concat(../../id/text(), "/", text())) [1])] {
     priority 1;
     
     message {
         expr "  ☹ Ignoring duplicate reference to group ";
         expr text();
         expr " in category ";
-        expr ../../ _name/text()  _ " (" _ ../../id/text()  _ ")";
+        expr ../../ _name/text() _ " (" _ ../../id/text() _ ")";
         expr ".";
     }
 }

@@ -13,7 +13,7 @@ template element ($indent = 0) {
         <span class="text"> normalize-space(.);
     
     } else if (self::*) {
-        <span class="element"> "<" _ name(.)  _ ">";
+        <span class="element"> "<" _ name(.) _ ">";
         
         for-each (node()) {
             call element() {
@@ -24,7 +24,7 @@ template element ($indent = 0) {
         }
         expr "\n";
         expr substring("                                                                                                ", 0, $indent * 3);
-        <span class="element"> "</" _ name(.)  _ ">";
+        <span class="element"> "</" _ name(.) _ ">";
     }
 }
 

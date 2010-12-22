@@ -25,7 +25,7 @@
         <xsl:value-of select="format-number(100.15, &quot;####.################&quot;)"/>
       </output>
       <output>
-        <xsl:value-of select="format-number(number(&quot;100.15&quot;) , &quot;####.################&quot;)"/>
+        <xsl:value-of select="format-number(number(&quot;100.15&quot;), &quot;####.################&quot;)"/>
       </output>
     </op-script-results>
   </xsl:template>

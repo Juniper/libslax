@@ -9,7 +9,7 @@
     <xsl:text>
 </xsl:text>
   </xsl:template>
-  <xsl:template match="*[starts-with(substring(., string-length(.)) , &quot;b&quot;)]">
+  <xsl:template match="*[starts-with(substring(., string-length(.)), &quot;b&quot;)]">
     <B>
       <xsl:value-of select="."/>
     </B>
@@ -20,7 +20,7 @@
     <TOP>
       <xsl:text>
 </xsl:text>
-      <xsl:apply-templates select="*[starts-with(., &quot;a&quot;)] | *[starts-with(substring(., string-length(.)) , &quot;b&quot;)]"/>
+      <xsl:apply-templates select="*[starts-with(., &quot;a&quot;)] | *[starts-with(substring(., string-length(.)), &quot;b&quot;)]"/>
     </TOP>
   </xsl:template>
 </xsl:stylesheet>

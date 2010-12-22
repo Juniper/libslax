@@ -10,7 +10,7 @@ match *[starts-with(., "a")] {
     expr "\n";
 }
 
-match *[starts-with(substring(., string-length(.)) , "b")] {
+match *[starts-with(substring(., string-length(.)), "b")] {
     <B> .;
     expr "\n";
 }
@@ -18,6 +18,6 @@ match *[starts-with(substring(., string-length(.)) , "b")] {
 match top {
     <TOP> {
         expr "\n";
-        apply-templates *[starts-with(., "a")] | *[starts-with(substring(., string-length(.)) , "b")];
+        apply-templates *[starts-with(., "a")] | *[starts-with(substring(., string-length(.)), "b")];
     }
 }

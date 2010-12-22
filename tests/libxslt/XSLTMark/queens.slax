@@ -52,7 +52,7 @@ template PlaceQueenInRow ($BoardSize, $PlacedQueens, $Row) {
 
 template PlaceQueenInColumn ($BoardSize, $PlacedQueens, $Row, $Column) {
     if ($Column < $BoardSize) {
-        if (not(contains(concat("-", $PlacedQueens, "-") , concat("-", $Column, "-")))) {
+        if (not(contains(concat("-", $PlacedQueens, "-"), concat("-", $Column, "-")))) {
             call TestQueenPosition($BoardSize, $Row, $Column, $TestQueens = substring-after($PlacedQueens, "-"), $Offset = $Row) {
                 with $PlacedQueens = {
                     expr $PlacedQueens;

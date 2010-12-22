@@ -16,7 +16,7 @@ match g:posts {
 
 match g:posts/g:post[g:date] {
     var $id = @id;
-    var $date = substring(g:date, 1, 4)  _ "/" _ substring(g:date, 5, 2)  _ "/" _ substring(g:date, 7, 2);
+    var $date = substring(g:date, 1, 4) _ "/" _ substring(g:date, 5, 2) _ "/" _ substring(g:date, 7, 2);
     
     <div id="post" _ $id> {
         if (lang(ja)) {

@@ -3,12 +3,11 @@ version 1.1;
 
 match / {
     <op-script-results> {
-        var $version-info-temp-1 = <software-information> {
+        var $version-info := <software-information> {
             <host-name> "test";
             <product-model> "m7i";
             <product-name> "m7i";
         }
-        var $version-info = slax-ext:node-set($version-info-temp-1);
         
         apply-templates $version-info/host-name;
     }

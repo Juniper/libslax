@@ -20,10 +20,10 @@ However without DTD there is no way to check the files completely.
   <xsl:key name="unique-groups" match="/comps/group" use="id/text()"/>
   <xsl:key name="unique-categories" match="/comps/category" use="id/text()"/>
   <xsl:key name="packages-by-group" match="/comps/group/packagelist/packagereq" use="../../id/text()"/>
-  <xsl:key name="unique-package-entries" match="/comps/group/packagelist/packagereq" use="concat(../../id/text() ,&quot;/&quot;, text())"/>
-  <xsl:key name="unique-packages" match="/comps/group/packagelist/packagereq[generate-id(.) = generate-id(key(&quot;unique-package-entries&quot;, concat(../../id/text() ,&quot;/&quot;, text())) [1])]" use="text()"/>
+  <xsl:key name="unique-package-entries" match="/comps/group/packagelist/packagereq" use="concat(../../id/text(), &quot;/&quot;, text())"/>
+  <xsl:key name="unique-packages" match="/comps/group/packagelist/packagereq[generate-id(.) = generate-id(key(&quot;unique-package-entries&quot;, concat(../../id/text(), &quot;/&quot;, text())) [1])]" use="text()"/>
   <xsl:key name="groups-by-category" match="/comps/category/grouplist/groupid" use="../../id/text()"/>
-  <xsl:key name="unique-group-entries" match="/comps/category/grouplist/groupid" use="concat(../../id/text() ,&quot;/&quot;, text())"/>
+  <xsl:key name="unique-group-entries" match="/comps/category/grouplist/groupid" use="concat(../../id/text(), &quot;/&quot;, text())"/>
   <xsl:variable name="lcletters" select="&quot;abcdefghijklmnopqrstuvwxyz&quot;"/>
   <xsl:variable name="ucletters" select="&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;"/>
   <xsl:variable name="type-sort-order">
@@ -67,11 +67,11 @@ However without DTD there is no way to check the files completely.
     <xsl:apply-templates select="preceding-sibling::node() [normalize-space()] [1] [self::comment()]"/>
     <xsl:copy>
       <xsl:apply-templates select="group">
-        <xsl:sort select="translate(id/text() , $lcletters, $ucletters)"/>
+        <xsl:sort select="translate(id/text(), $lcletters, $ucletters)"/>
       </xsl:apply-templates>
       <xsl:apply-templates select="category">
         <xsl:sort select="display_order/text()"/>
-        <xsl:sort select="translate(id/text() , $lcletters, $ucletters)"/>
+        <xsl:sort select="translate(id/text(), $lcletters, $ucletters)"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
@@ -114,7 +114,7 @@ However without DTD there is no way to check the files completely.
     <xsl:copy>
       <xsl:apply-templates select="key(&quot;packages-by-group&quot;, ../id/text())">
         <xsl:sort select="count(exsl:node-set($type-sort-order)/*[name() = current()/@type]/preceding-sibling::*)" data-type="number"/>
-        <xsl:sort select="translate(text() , $lcletters, $ucletters)"/>
+        <xsl:sort select="translate(text(), $lcletters, $ucletters)"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
@@ -122,12 +122,12 @@ However without DTD there is no way to check the files completely.
   <xsl:template match="category/grouplist" priority="1">
     <xsl:copy>
       <xsl:apply-templates select="key(&quot;groups-by-category&quot;, ../id/text())">
-        <xsl:sort select="translate(text() , $lcletters, $ucletters)"/>
+        <xsl:sort select="translate(text(), $lcletters, $ucletters)"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
   <!-- Kill duplicate package entries -->
-  <xsl:template match="packagereq[generate-id(.) != generate-id(key(&quot;unique-package-entries&quot;, concat(../../id/text() ,&quot;/&quot;, text())) [1])]" priority="2">
+  <xsl:template match="packagereq[generate-id(.) != generate-id(key(&quot;unique-package-entries&quot;, concat(../../id/text(), &quot;/&quot;, text())) [1])]" priority="2">
     <xsl:message>
       <xsl:text>☹☹☹ Ignoring duplicate reference to </xsl:text>
       <xsl:value-of select="concat(@type, &quot; package &quot;, text())"/>
@@ -137,12 +137,12 @@ However without DTD there is no way to check the files completely.
     </xsl:message>
     <xsl:message>
       <xsl:text>     ⇒ Only its first reference (</xsl:text>
-      <xsl:value-of select="key(&quot;unique-package-entries&quot;, concat(../../id/text() ,&quot;/&quot;, text())) [1]/@type"/>
+      <xsl:value-of select="key(&quot;unique-package-entries&quot;, concat(../../id/text(), &quot;/&quot;, text())) [1]/@type"/>
       <xsl:text> package) will be kept.</xsl:text>
     </xsl:message>
   </xsl:template>
   <!-- Kill duplicate group entries -->
-  <xsl:template match="category/grouplist/groupid[generate-id(.) != generate-id(key(&quot;unique-group-entries&quot;, concat(../../id/text() ,&quot;/&quot;, text())) [1])]" priority="1">
+  <xsl:template match="category/grouplist/groupid[generate-id(.) != generate-id(key(&quot;unique-group-entries&quot;, concat(../../id/text(), &quot;/&quot;, text())) [1])]" priority="1">
     <xsl:message>
       <xsl:text>  ☹ Ignoring duplicate reference to group </xsl:text>
       <xsl:value-of select="text()"/>

@@ -13,7 +13,7 @@
       <xsl:variable name="slax-set" mvarname="set"/>
       <xsl:variable name="set" mutable="yes" svarname="slax-set"/>
       <xsl:for-each select="*/*">
-        <xsl:if test="starts-with(name() , &quot;i&quot;)">
+        <xsl:if test="starts-with(name(), &quot;i&quot;)">
           <slax:append-to-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="set" svarname="slax-set" select="."/>
         </xsl:if>
       </xsl:for-each>
