@@ -535,6 +535,25 @@ to node sets.
 Mutable variables can be used like normal variables, including use in
 XPath expressions.
 
+***** Character Encoding
+
+SLAX supports a C-like escaping mechanism for encoding characters.
+The following escapes are available:
+
+|-------------+----------------------------|
+| Escape      | Meaning                    |
+|-------------+----------------------------|
+| "\n"        | Newline (0x0a)             |
+| "\r"        | Return (0x0d)              |
+| "\t"        | Tab (0x09)                 |
+| "\xXX"      | Hex-based character number |
+| "\u+XXXX"   | UTF-8 4-byte hex value     |
+| "\u-XXXXXX" | UTF-8 6-byte hex value     |
+| "\\"        | The backslash character    |
+|-------------+----------------------------|
+
+Other character encodings based on '\' may be added at a later time. 
+
 ***** Programming Constructs
 
 XSLT has a number of traditional programming constructs:

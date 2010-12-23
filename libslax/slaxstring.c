@@ -184,6 +184,7 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 
 			} else {
 			    ch = 'u';
+			    i -= 1;
 			    break;
 			}
 

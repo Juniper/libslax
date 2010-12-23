@@ -6,13 +6,19 @@ function test ($x) {
 
 match foo[concat(../../id/text(), "/", text())] {
 
+    var $test = "\u+e004";
+
+    /* This one is odd */
     expr "text in " _ name(..) _ ' = "';
 
+    /* This one too */
     var $date = substring(date, 1, 4)  _ "/"
 	_ substring(date, 5, 2)  _ "/" _ substring(date, 7, 2);
 
+    /* This one tickles the bug */
     expr test( concat( local-game-prefix, opponent ), answer );
 
+    /* This one tickles a second bug */
     <span class="element"> "</" _ name(.) _ ">";
 }
 

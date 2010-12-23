@@ -50,11 +50,48 @@ static xmlOutputWriteCallback slaxWriteCallback;
 char *
 slaxInput (const char *prompt, unsigned flags)
 {
-    char *res;
+    char *res, *cp;
+    int count, len;
 
     /* slaxLog("slaxInput: -> [%s]", prompt); */
     res = slaxInputCallback ? slaxInputCallback(prompt, flags) : NULL;
     /* slaxLog("slaxInput: <- [%s]", res ?: "null"); */
+
+    for (cp = res, count = 0, len = 0; cp && *cp; cp++, len++)
+	if (iscntrl(*cp))
+	    count += 1;
+
+    if (count) {
+	/*
+	 * If we have control characters in the string, then we need
+	 * to escape them into another (new) buffer.
+	 */
+	char *buf, *bp;
+
+	buf = xmlMalloc(len + count * SLAX_UTF8_CNTRL_BYTES + 1);
+	if (buf == NULL)
+	    return res;
+
+	for (cp = res, bp = buf; cp && *cp; cp++) {
+	    if (iscntrl(*cp)) {
+		unsigned word = SLAX_UTF8_CNTRL_BASE + (unsigned char) *cp;
+
+		/*
+		 * Mystical UTF-8 encoding rules.  I skipped the
+		 * eye of newt, but the bat guano is essential.
+		 */
+		*bp++ = 0xe0 | (word >> 12);
+		*bp++ = 0x80 | ((word >> 6) & 0x3f);
+		*bp++ = 0x80 | (word & 0x3f);
+	    } else
+		*bp++ = *cp;
+	}
+
+	*bp = '\0';		/* Terminate the string */
+
+	xmlFree(res);
+	return buf;
+    }
 
     return res;
 }

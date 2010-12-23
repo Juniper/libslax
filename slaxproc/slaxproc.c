@@ -150,7 +150,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 {
     xmlDocPtr scriptdoc;
     const char *scriptname;
-    FILE *scriptfile;
+    FILE *scriptfile, *outfile;
     xmlDocPtr indoc;
     xsltStylesheetPtr script;
     xmlDocPtr res = NULL;
@@ -194,7 +194,18 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     } else {
 	res = xsltApplyStylesheet(script, indoc, params);
 
-	xsltSaveResultToFile(stdout, res, script);
+	if (output == NULL || is_filename_std(output))
+	    outfile = stdout;
+	else {
+	    outfile = fopen(output, "w");
+	    if (outfile == NULL)
+		err(1, "could not open file: '%s'", output);
+	}
+
+	xsltSaveResultToFile(outfile, res, script);
+
+	if (outfile != stdout)
+	    fclose(outfile);
 
 	if (res)
 	    xmlFreeDoc(res);

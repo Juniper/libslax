@@ -12,14 +12,11 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Feature: parser issue warnings if 1.1 features with 1.0 version
 
-- Feature: slaxwriter must avoid 1.1 features if version 1.0 is requested
-  (started but not finished)
-
 - Code: functions to parse our arguments/table
 
 - slaxproc: -I <path>
 
-- sdb: add SLAX-style xpath expressions to the "print" command (">==", etc)
+- sdb: add SLAX-style xpath expressions to the "print" command ("==", etc)
 
 - sdb: up, down, and stack-sensitive "print"
 
@@ -30,8 +27,16 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Bug: need better random generator for math:random than rand(3)
 
+- Bug: slaxwriter needs to unescape into \x and \u
+
+- Bug: foo("\"") needs to use single quotes for the wrapping string
+    (&apos;&quot;&apos;).  I don't know of a fix when both types of
+    quotes appear within a single string, which is just sad.
+
 - Nit: teach slaxProcTrace() how to keep the trace handle open
 
 - Nit: make sdb's "run" command work like gdb's
 
 - Nit: add command line option for profiler (without entering debugger)
+
+- Check: confirm that UTF-8 encoding functions are working correctly

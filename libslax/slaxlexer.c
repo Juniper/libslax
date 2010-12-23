@@ -547,10 +547,16 @@ slaxCommentMakeValue (xmlChar *input)
     static const char dash[] = "&#2d;"; /* XML character entity for dash */
     xmlChar *cp, *out, *res;
     int len = xmlStrlen(input);
+    int hit = FALSE;
 
     for (cp = input; *cp; cp++)
-	if (*cp == '-')
+	if (*cp == '-') {
 	    len += sizeof(dash) - 1; /* Worst case */
+	    hit = TRUE;
+	}
+
+    if (!hit)
+	return NULL;
 
     res = out = xmlMalloc(len + 1);
     if (out == NULL)
@@ -645,7 +651,7 @@ slaxLexer (slax_data_t *sdp)
 			buf[len] = 0;
 
 			contents = slaxCommentMakeValue(buf);
-			nodep = contents ? xmlNewComment(contents) : NULL;
+			nodep = xmlNewComment(contents ?: buf);
 			if (nodep) {
 			    /*
 			     * xsl:sort elements cannot contain comments
