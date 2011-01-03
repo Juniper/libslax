@@ -42,6 +42,7 @@ extern void add_history (const char *);
 static slaxInputCallback_t slaxInputCallback;
 static slaxOutputCallback_t slaxOutputCallback;
 static xmlOutputWriteCallback slaxWriteCallback;
+static slaxErrorCallback_t slaxErrorCallback;
 
 /**
  * Use the input callback to get data
@@ -148,16 +149,33 @@ slaxOutputNodeset (xmlNodeSetPtr nodeset)
 }
 
 /*
+ * Print an error message
+ */
+int
+slaxError (const char *fmt, ...)
+{
+    va_list vap;
+    int rc;
+
+    va_start(vap, fmt);
+    rc = slaxErrorCallback(fmt, vap);
+    va_end(vap);
+    return rc;
+}
+
+/*
  * Register debugger
  */
 void
 slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxOutputCallback_t output_callback,
-		xmlOutputWriteCallback raw_write)
+		xmlOutputWriteCallback raw_write,
+		slaxErrorCallback_t error_callback)
 {
     slaxInputCallback = input_callback;
     slaxOutputCallback = output_callback;
     slaxWriteCallback = raw_write;
+    slaxErrorCallback = error_callback;
 }
 
 static char *
@@ -217,6 +235,7 @@ slaxIoStdioOutputCallback (const char *fmt, ...)
     va_start(vap, fmt);
     vfprintf(stderr, fmt, vap);
     fflush(stderr);
+    va_end(vap);
 }
 
 static int
@@ -225,11 +244,17 @@ slaxIoStdioRawwriteCallback (void *opaque UNUSED, const char *buf, int len)
     return write(fileno(stderr), buf, len);
 }
 
+static int
+slaxIoStdioErrorCallback (const char *fmt, va_list vap)
+{
+    return vfprintf(stderr, fmt, vap);
+}
+
 void
 slaxIoUseStdio (void)
 {
     slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
-		   slaxIoStdioRawwriteCallback);
+		   slaxIoStdioRawwriteCallback, slaxIoStdioErrorCallback);
 }
 
 static void

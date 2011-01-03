@@ -101,3 +101,9 @@ xmlAtoi (const xmlChar *nptr)
 {
     return atoi((const char *) nptr);
 }
+
+static inline char *
+xmlStrdup2 (const char *str)
+{
+    return (char *) xmlStrdup((const xmlChar *) str);
+}

@@ -1,0 +1,13 @@
+version 1.0;
+
+{
+    var $test = ;
+}
+
+match {
+    var $test = ;
+}
+
+match /foo {
+    var $test = ;
+}

@@ -33,4 +33,4 @@ slaxproc_LDFLAGS = -static
 
 man_MANS = slaxproc.1x slaxdebugger.1x
 
-EXTRA_DIST = slaxproc.1x
+EXTRA_DIST = slaxproc.1x slaxdebugger.1x

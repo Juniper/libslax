@@ -86,23 +86,27 @@ slaxTraceEnable (slaxTraceCallback_t func, void *data);
 
 /* ---------------------------------------------------------------------- */
 
+/* Flags for slaxInputCallback_t */
+#define SIF_HISTORY	(1<<0)	/* Add input line to history */
+#define SIF_SECRET	(1<<1)	/* Secret/password text (do not echo) */
+
 /*
  * IO hooks
  */
 typedef char *(*slaxInputCallback_t)(const char *, unsigned flags);
 typedef void (*slaxOutputCallback_t)(const char *, ...);
-
-/* Flags for slaxInputCallback_t */
-#define SIF_HISTORY	(1<<0)	/* Add input line to history */
-#define SIF_SECRET	(1<<1)	/* Secret/password text (do not echo) */
+typedef int (*slaxErrorCallback_t)(const char *, va_list vap);
 
 void
 slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxOutputCallback_t output_callback,
-		xmlOutputWriteCallback raw_write);
+		xmlOutputWriteCallback raw_write,
+		slaxErrorCallback_t error_callback);
 
 void slaxIoUseStdio (void);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
+
+int slaxError (const char *fmt, ...);
 
 /* ---------------------------------------------------------------------- */
 /*

@@ -406,7 +406,39 @@ partial_stmt :
 
 	| while_stmt
 		{ $$ = NULL; }
+	;
 
+error_conditions :
+	error L_EOS
+		{
+		    yyclearin;
+		    yyerrok;
+		    $$ = NULL;
+		}
+
+	| error L_OBRACE rack_up_the_errors_list L_CBRACE
+		{
+		    yyerror("error recovery ignores input until this point");
+		    yyclearin;
+		    yyerrok;
+		    $$ = NULL;
+		}
+	;
+
+rack_up_the_errors_list :
+	/* Empty */
+		{ $$ = NULL }
+
+	| rack_up_the_errors_list rack_up_the_errors
+		{ $$ = NULL }
+	;
+
+rack_up_the_errors :
+	error
+		{ $$ = NULL }
+
+	| L_OBRACK rack_up_the_errors_list L_CBRACE
+		{ $$ = NULL }
 	;
 
 stylesheet :
@@ -590,7 +622,7 @@ slax_stmt :
 	| function_definition
 		{ $$ = NULL; }
 
-	| error L_EOS
+	| error_conditions
 		{ $$ = STACK_CLEAR($1); }
 	;
 

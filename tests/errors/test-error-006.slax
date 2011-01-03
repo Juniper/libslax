@@ -1,0 +1,9 @@
+version 1.0;
+
+match / {
+    /*
+      this is a comment that does not end
+    <foo> {
+        expr a + b;
+    }
+}

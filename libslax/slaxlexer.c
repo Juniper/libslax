@@ -202,13 +202,146 @@ static keyword_mapping_t keywordMap[] = {
     { 0, NULL, 0 }
 };
 
+typedef struct slaxTtnameMap_s {
+    int st_ttype;		/* Token number */
+    const char *st_name;	/* Fancy, human-readable value */
+} slaxTtnameMap_t;
+
+slaxTtnameMap_t slaxTtnameMap[] = {
+    { L_ASSIGN,			"assignment operator (':=')" },
+    { L_AT,			"attribute axis ('@')" },
+    { L_CBRACE,			"close brace ('}')" },
+    { L_COMMA,			"comma (',')" },
+    { L_DAMPER,			"logical AND operator ('&&')" },
+    { L_DCOLON,			"axis operator ('::')" },
+    { L_DEQUALS,		"equality operator ('==')" },
+    { L_DOTDOT,			"parent axis ('..')" },
+    { L_DOTDOTDOT,		"sequence operator ('...')" },
+    { L_DSLASH,			"descendant operator ('//')" },
+    { L_DVBAR,			"logical OR operator ('||')" },
+    { L_EOS,			"semi-colon (';')" },
+    { L_EQUALS,			"equal sign ('=')" },
+    { L_GRTR,			"greater-than operator ('>')" },
+    { L_GRTREQ,			"greater-or-equals operator ('>=')" },
+    { L_LESS,			"less-than operator ('<')" },
+    { L_LESSEQ,			"less-or-equals operator ('<=')" },
+    { L_MINUS,			"minus sign ('-')" },
+    { L_NOTEQUALS,		"not-equals sign ('!=')" },
+    { L_OBRACE,			"open brace ('{')" },
+    { L_OBRACK,			"open bracket ('[')" },
+    { L_OPAREN,			"open parentheses ('(')" },
+    { L_PLUS,			"plus sign ('+')" },
+    { L_PLUSEQUALS,		"increment assign operator ('+=')" },
+    { L_SLASH,			"slash ('/')" },
+    { L_STAR,			"star ('*')" },
+    { L_UNDERSCORE,		"concatenation operator ('_')" },
+    { L_VBAR,			"union operator ('|')" },
+    { K_APPEND,			"'append'" },
+    { K_APPLY_IMPORTS,		"'apply-imports'" },
+    { K_APPLY_TEMPLATES,	"'apply-templates'" },
+    { K_ATTRIBUTE,		"'attribute'" },
+    { K_ATTRIBUTE_SET,		"'attribute-set'" },
+    { K_CALL,			"'call'" },
+    { K_CASE_ORDER,		"'case-order'" },
+    { K_CDATA_SECTION_ELEMENTS,	"'cdata-section-elements'" },
+    { K_COMMENT,		"'comment'" },
+    { K_COPY_NODE,		"'copy-node'" },
+    { K_COPY_OF,		"'copy-of'" },
+    { K_COUNT,			"'count'" },
+    { K_DATA_TYPE,		"'data-type'" },
+    { K_DECIMAL_FORMAT,		"'decimal-format'" },
+    { K_DECIMAL_SEPARATOR,	"'decimal-separator'" },
+    { K_DIE,			"'die'" },
+    { K_DIGIT,			"'digit'" },
+    { K_DOCTYPE_PUBLIC,		"'doctype-public'" },
+    { K_DOCTYPE_SYSTEM,		"'doctype-system'" },
+    { K_ELEMENT,		"'element'" },
+    { K_ELSE,			"'else'" },
+    { K_ENCODING,		"'encoding'" },
+    { K_EXCLUDE,		"'exclude'" },
+    { K_EXPR,			"'expr'" },
+    { K_EXTENSION,		"'extension'" },
+    { K_FALLBACK,		"'fallback'" },
+    { K_FORMAT,			"'format'" },
+    { K_FOR,			"'for'" },
+    { K_FOR_EACH,		"'for-each'" },
+    { K_FROM,			"'from'" },
+    { K_FUNCTION,		"'function'" },
+    { K_GROUPING_SEPARATOR,	"'grouping-separator'" },
+    { K_GROUPING_SIZE,		"'grouping-size'" },
+    { K_ID,			"'id'" },
+    { K_IF,			"'if'" },
+    { K_IMPORT,			"'import'" },
+    { K_INCLUDE,		"'include'" },
+    { K_INDENT,			"'indent'" },
+    { K_INFINITY,		"'infinity'" },
+    { K_KEY,			"'key'" },
+    { K_LANGUAGE,		"'language'" },
+    { K_LETTER_VALUE,		"'letter-value'" },
+    { K_LEVEL,			"'level'" },
+    { K_MATCH,			"'match'" },
+    { K_MEDIA_TYPE,		"'media-type'" },
+    { K_MESSAGE,		"'message'" },
+    { K_MINUS_SIGN,		"'minus-sign'" },
+    { K_MODE,			"'mode'" },
+    { K_MVAR,			"'mvar'" },
+    { K_NAN,			"'nan'" },
+    { K_NODE,			"'node'" },
+    { K_NS,			"'ns'" },
+    { K_NS_ALIAS,		"'ns-alias'" },
+    { K_NS_TEMPLATE,		"'ns-template'" },
+    { K_NUMBER,			"'number'" },
+    { K_OMIT_XML_DECLARATION,	"'omit-xml-declaration'" },
+    { K_ORDER,			"'order'" },
+    { K_OUTPUT_METHOD,		"'output-method'" },
+    { K_PARAM,			"'param'" },
+    { K_PATTERN_SEPARATOR,	"'pattern-separator'" },
+    { K_PERCENT,		"'percent'" },
+    { K_PER_MILLE,		"'per-mille'" },
+    { K_PRESERVE_SPACE,		"'preserve-space'" },
+    { K_PRIORITY,		"'priority'" },
+    { K_PROCESSING_INSTRUCTION,	"'processing-instruction'" },
+    { K_RESULT,			"'result'" },
+    { K_SET,			"'set'" },
+    { K_SORT,			"'sort'" },
+    { K_STANDALONE,		"'standalone'" },
+    { K_STRIP_SPACE,		"'strip-space'" },
+    { K_TEMPLATE,		"'template'" },
+    { K_TERMINATE,		"'terminate'" },
+    { K_TEXT,			"'text'" },
+    { K_TRACE,			"'trace'" },
+    { K_UEXPR,			"'uexpr'" },
+    { K_USE_ATTRIBUTE_SETS,	"'use-attribute-set'" },
+    { K_VALUE,			"'value'" },
+    { K_VAR,			"'var'" },
+    { K_VERSION,		"'version'" },
+    { K_WHILE,			"'while'" },
+    { K_WITH,			"'with'" },
+    { K_ZERO_DIGIT,		"'zero-digit'" },
+    { K_AND,			"'and'" },
+    { K_DIV,			"'div'" },
+    { K_MOD,			"'mod'" },
+    { K_OR,			"'or'" },
+    { L_ASTERISK,		"asterisk ('*')" },
+    { L_CBRACK,			"close bracket (']')" },
+    { L_CPAREN,			"close parentheses (')')" },
+    { L_DOT,			"dot ('.')" },
+    { T_AXIS_NAME,		"built-in axis name" },
+    { T_BARE,			"bare word string" },
+    { T_FUNCTION_NAME,		"function name" },
+    { T_NUMBER,			"number" },
+    { T_QUOTED,			"quoted string" },
+    { T_VAR,			"variable name" },
+    { 0, NULL }
+};
+
 /*
  * Set up the lexer's lookup tables
  */
 static void
 slaxSetupLexer (void)
 {
-    int i;
+    int i, ttype;
 
     slaxSetup = 1;
 
@@ -222,8 +355,13 @@ slaxSetupLexer (void)
     tripleWide['.'] = 1;
 
     for (i = 0; keywordMap[i].km_ttype; i++)
-	keywordString[slaxTokenTranslate(keywordMap[i].km_ttype)]
+	slaxKeywordString[slaxTokenTranslate(keywordMap[i].km_ttype)]
 	    = keywordMap[i].km_string;
+
+    for (i = 0; slaxTtnameMap[i].st_ttype; i++) {
+	ttype = slaxTokenTranslate(slaxTtnameMap[i].st_ttype);
+	slaxTokenNameFancy[ttype] =  slaxTtnameMap[i].st_name;
+    }
 }
 
 /*
@@ -615,8 +753,10 @@ slaxLexer (slax_data_t *sdp)
 		    && slaxIsCommentStart(sdp->sd_buf + sdp->sd_cur)) {
 
 		sdp->sd_start = sdp->sd_cur;
-		if (slaxDrainComment(sdp))
+		if (slaxDrainComment(sdp)) {
+		    sdp->sd_flags |= SDF_OPEN_COMMENT;
 		    return -1;
+		}
 
 		/*
 		 * So now we've got the comment.  We need to turn it
@@ -768,7 +908,7 @@ slaxLexer (slax_data_t *sdp)
 
 	rc = slaxKeyword(sdp);
 	if (rc) {
-	    sdp->sd_cur += strlen(keywordString[slaxTokenTranslate(rc)]);
+	    sdp->sd_cur += strlen(slaxKeywordString[slaxTokenTranslate(rc)]);
 	    return rc;
 	}
 
@@ -1019,4 +1159,48 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     }
 
     return rc;
+}
+
+/**
+ * Callback from bison when an error is detected.
+ *
+ * @param sdp main slax data structure
+ * @param str error message
+ * @param yylvalp stack entry from bison's lexical stack
+ * @return zero
+ */
+int
+slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp,
+	     int yystate UNUSED)
+{
+    static const char leader[] = "syntax error, unexpected";
+    const char *token = yylvalp ? yylvalp->ss_token : NULL;
+
+    sdp->sd_errors += 1;
+
+    if (token == NULL) 
+	token = slaxTokenNameFancy[slaxTokenTranslate(sdp->sd_last)];
+
+    /*
+     * Two possibilities: generic "syntax error" or some
+     * specific error.  If the message has a generic
+     * prefix, use our logic instead.  This avoids tossing
+     * bison token names (K_VERSION) at the user.
+     */
+    if (strncmp(str, leader, sizeof(leader) - 1) == 0) {
+	char *msg = slaxSyntaxError(sdp, token, yystate, sdp->sd_last);
+
+	if (msg) {
+	    slaxError("%s:%d: %s\n", sdp->sd_filename, sdp->sd_line,
+		      msg);
+	    xmlFree(msg);
+	    return 0;
+	}
+    }
+
+    slaxError("%s:%d: %s%s%s%s\n",
+	      sdp->sd_filename, sdp->sd_line, str,
+	      token ? " before '" : "", token, token ? "': " : "");
+
+    return 0;
 }

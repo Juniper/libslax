@@ -9,18 +9,6 @@
 /* Stub to handle xmlChar strings in "?:" expressions */
 extern const xmlChar null[];
 
-
-/**
- * Callback from bison when an error is detected.
- *
- * @param sdp main slax data structure
- * @param str error message
- * @param yylvalp stack entry from bison's lexical stack
- * @return zero
- */
-int
-slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp);
-
 /**
  * Check the version string.  The only supported versions are "1.0" and "1.1".
  *

@@ -15,7 +15,8 @@
 #define UNKNOWN_EXPR "<<<<slax error>>>>"
 
 extern int slaxDebug;			/* Global debug switch */
-extern const char *keywordString[];
+extern const char *slaxKeywordString[];
+extern const char *slaxTokenNameFancy[];
 
 /*
  * YYSTYPE defines our stack frame.  Since we're all about strings,
@@ -52,6 +53,7 @@ struct slax_data_s {
 #define SDF_EOF			(1<<0)	/* EOF seen */
 #define SDF_NO_SLAX_KEYWORDS	(1<<1)	/* Do not allow slax keywords */
 #define SDF_NO_XPATH_KEYWORDS	(1<<2)	/* Do not allow xpath keywords */
+#define SDF_OPEN_COMMENT	(1<<3)	/* EOF with open comment */
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
@@ -71,13 +73,20 @@ struct slax_data_s {
 #define SLAX_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_SLAX_KEYWORDS))
 #define XPATH_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_XPATH_KEYWORDS))
 
-/*
- * We redefine yylex to give our parser a specific name, avoiding
- * conflicts with other yacc/bison based parsers.
+/**
+ * Callback from bison when an error is detected.
+ *
+ * @param sdp main slax data structure
+ * @param str error message
+ * @param yylvalp stack entry from bison's lexical stack
+ * @return zero
  */
-#define yylex(sp, v) slaxYylex(slax_data, sp)
+int
+slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp, int yystate);
+#define yyerror(str) slaxYyerror(slax_data, str, yylval, yystate)
 
-#define yyerror(str) slaxYyerror(slax_data, str, yylval)
+char *
+slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar);
 
 /**
  * Make a child node and assign it proper file/line number info.
@@ -106,6 +115,12 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
  */
 int
 slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp);
+
+/*
+ * We redefine yylex to give our parser a specific name, avoiding
+ * conflicts with other yacc/bison based parsers.
+ */
+#define yylex(sp, v) slaxYylex(slax_data, sp)
 
 /* ----------------------------------------------------------------------
  * Functions exposed in slaxparser.y (no better place than here)

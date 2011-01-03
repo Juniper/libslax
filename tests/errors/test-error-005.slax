@@ -1,0 +1,13 @@
+version 1.0;
+
+var $i = <test> {
+    <one> {
+	if (fishing) {
+	    fishing;
+	}
+	if (cooking) {
+	    cooking;
+	}
+    }
+    
+}

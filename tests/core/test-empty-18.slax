@@ -6,6 +6,7 @@ function test ($x) {
 
 match foo[concat(../../id/text(), "/", text())] {
 
+    var $test2 = "\u+20ac";
     var $test = "\u+e004";
 
     /* This one is odd */

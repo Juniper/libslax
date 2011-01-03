@@ -31,28 +31,6 @@ static int slaxEnabled;		/* Global enable (SLAX_*) */
 const xmlChar null[] = "";
 
 /**
- * Callback from bison when an error is detected.
- *
- * @param sdp main slax data structure
- * @param str error message
- * @param yylvalp stack entry from bison's lexical stack
- * @return zero
- */
-int
-slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp)
-{
-    char *token = yylvalp ? yylvalp->ss_token : NULL;
-
-    sdp->sd_errors += 1;
-
-    xmlParserError(sdp->sd_ctxt, "%s:%d: %s%s%s%s\n",
-		   sdp->sd_filename, sdp->sd_line, str,
-		   token ? " before '" : "", token, token ? "': " : "");
-
-    return 0;
-}
-
-/**
  * Check the version string.  The only supported versions are "1.0" and "1.1".
  *
  * @param major major version number
@@ -538,7 +516,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     rc = slaxParse(&sd);
 
     if (sd.sd_errors) {
-	xmlParserError(ctxt, "%s: %d error%s detected during parsing\n",
+	slaxError("%s: %d error%s detected during parsing\n",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
 
 	slaxDataCleanup(&sd);
