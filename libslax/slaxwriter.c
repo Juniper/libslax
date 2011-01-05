@@ -668,6 +668,10 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
 
     rc = slaxParse(&sd);
 
+    fakep = nodePop(ctxt);
+    if (fakep)
+	xmlFreeNode(fakep);
+
     xmlFreeParserCtxt(ctxt);
     ctxt = NULL;
 
@@ -696,15 +700,12 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
 
     slaxLog("slax: xpath conversion: %s", buf);
     slaxStringFree(sd.sd_xpath);
-    xmlFreeNode(fakep);
 
     return buf;
 
  fail:
     if (ctxt)
 	xmlFreeParserCtxt(ctxt);
-    if (fakep)
-	xmlFreeNode(fakep);
 
     /*
      * SLAX XPath expressions are completely backwards compatible
@@ -1273,6 +1274,7 @@ slaxWriteValueOf (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
     slaxWrite(swp, ";");
     slaxWriteNewline(swp, 0);
+
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(sel);
 }
@@ -1479,12 +1481,11 @@ slaxVarAssignName (const char *name)
 	    if (endp == NULL)
 		return NULL;
 
-	    /* Note that we don't need a "+ 1" since we trim the ')' */
-	    vname = xmlMalloc(endp - start);
+	    vname = xmlMalloc(endp - start + 1);
 	    if (vname == NULL) /* Cannot happen, but feels good anyway */
 		return FALSE;
 
-	    memcpy(vname, start, cp - start);
+	    memcpy(vname, start, endp - start);
 	    vname[endp - start ] = '\0'; 
 
 	    return vname;
@@ -1637,6 +1638,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    if (vnode == NULL || vnode->children == NULL)
 		vnode = nodep;	/* Revert */
 	}
+	xmlFree(svarname);
     }
 
     if (name && sel && !slaxV10(swp)
@@ -1653,8 +1655,11 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
      * If this is the second part of an assignment operator (":="),
      * skip it.
      */
-    if (slaxVarWasAssign(swp, nodep, name, sel))
+    if (slaxVarWasAssign(swp, nodep, name, sel)) {
+	    xmlFree(sel);
+	    xmlFree(name);
 	return;
+    }
 
     /*
      * If this is the first part of assignment, use the name of
@@ -1703,7 +1708,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	char *contents = slaxVarAssignContents(expr);
 
 	if (contents) {
-	    xmlFree(expr);
+	    xmlFreeAndEasy(expr);
 	    expr = contents;
 	    operator = ":=";
 	}
@@ -1721,6 +1726,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     if (name != aname) /* Could have been allocated by slaxVarIsAssign */
 	xmlFreeAndEasy(aname);
+
     xmlFreeAndEasy(name);
     xmlFreeAndEasy(sel);
 }

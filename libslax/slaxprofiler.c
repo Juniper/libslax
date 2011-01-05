@@ -19,6 +19,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/queue.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <libxml/xmlsave.h>
 #include <libxml/xmlIO.h>
@@ -76,7 +78,7 @@ slaxProfCountLines (xmlDocPtr docp)
 int
 slaxProfOpen (xmlDocPtr docp)
 {
-    long lines = slaxProfCountLines(docp);
+    unsigned lines = slaxProfCountLines(docp);
     slax_prof_t *spp;
 
     if (lines == 0)
@@ -107,7 +109,7 @@ void
 slaxProfEnter (xmlNodePtr inst)
 {
     slax_prof_t *spp = slax_profile;
-    long line;
+    unsigned line;
     struct rusage ru;
 
     slaxLog("profile:enter for %s", inst->name);
@@ -122,7 +124,7 @@ slaxProfEnter (xmlNodePtr inst)
 	return;
 
     line = xmlGetLineNo(inst);
-    if (line <= 0 || line > spp->sp_lines)
+    if (line == 0 || line > spp->sp_lines)
 	return;
 
     if (getrusage(0, &ru) == 0) {
@@ -139,7 +141,7 @@ void
 slaxProfExit (void)
 {
     slax_prof_t *spp = slax_profile;
-    long line;
+    unsigned line;
     struct rusage ru;
     int rc;
 
@@ -153,7 +155,7 @@ slaxProfExit (void)
     rc = getrusage(0, &ru);
 
     line = spp->sp_inst_line;
-    if (line <= 0 || line > spp->sp_lines)
+    if (line == 0 || line > spp->sp_lines)
 	return;
 
     if (rc == 0) {

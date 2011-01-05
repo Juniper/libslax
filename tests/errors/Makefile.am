@@ -2,11 +2,11 @@
 # $Id$
 #
 
-TEST_CASES = `cd ${srcdir} ; echo *.slax`
+TEST_CASES := $(shell cd ${srcdir} ; echo *.slax )
 
 EXTRA_DIST = \
     ${TEST_CASES} \
-    ${TEST_CASES:.slax=.err}
+    $(addprefix saved/, ${TEST_CASES:.slax=.err})
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'
@@ -32,7 +32,10 @@ TEST_ONE = \
  ${DIFF} -Nbu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
  ${DIFF} -Nbu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
 
-test tests: ${SLAXPROC}
+test tests:
+	@echo -n ""
+
+errors: ${SLAXPROC}
 	@${MKDIR} -p out
 	-@(for test in ${TEST_CASES} ; do \
 	      echo "... $$test ..."; \
@@ -43,7 +46,7 @@ one:
 	-@(test=${TEST_CASE}; data=${TEST_DATA}; ${TEST_ONE} ; true)
 
 accept:
-	-@(for test in $$cases ; do \
+	-@(for test in ${TEST_CASES} ; do \
 	      echo "... $$test ..."; \
 	      base=`${BASENAME} $$test .slax` ; \
 	      ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \

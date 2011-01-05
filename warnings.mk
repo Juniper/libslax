@@ -21,7 +21,6 @@ HIGH_WARNINGS?= ${MEDIUM_WARNINGS} \
     -Wcomment \
     -Wformat \
     -Wimplicit \
-    -Winline \
     -Wmissing-declarations \
     -Wnested-externs \
     -Wparentheses \
@@ -34,6 +33,7 @@ HIGH_WARNINGS?= ${MEDIUM_WARNINGS} \
     -Wwrite-strings
 
 HIGHER_WARNINGS?= ${HIGH_WARNINGS} \
+    -Winline \
     -Wbad-function-cast \
     -Wpacked \
     -Wpadded \

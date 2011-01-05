@@ -102,8 +102,6 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 
     slaxDumpToFd(fileno(outfile), docp, partial);
 
-    fclose(outfile);
-
     if (outfile != stdout)
 	fclose(outfile);
 
@@ -137,6 +135,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
     }
 
     slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, partial, version);
+
     if (outfile != stdout)
 	fclose(outfile);
 

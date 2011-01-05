@@ -2,13 +2,15 @@
 # $Id$
 #
 
-TEST_XML = `cd ${srcdir} ; echo *.xml`
-TEST_CASES = `cd ${srcdir} ; echo *.slax`
+TEST_XML := $(shell cd ${srcdir} ; echo *.xml )
+TEST_CASES := $(shell cd ${srcdir} ; echo *.slax )
 
 EXTRA_DIST = \
+    ${TEST_XML} \
     ${TEST_CASES} \
-    ${TEST_CASES:.slax=.xsl} \
-    ${TEST_CASES:.slax=.slax2}
+    ${addprefix saved/, ${TEST_CASES:.slax=.xsl}} \
+    ${addprefix saved/, ${TEST_CASES:.slax=.slax2}} \
+    ${addprefix saved/, ${TEST_CASES:.slax=.out}}
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'

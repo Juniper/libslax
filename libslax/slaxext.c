@@ -41,6 +41,12 @@
 #include <libxslt/transform.h>
 #include <libxml/xpathInternals.h>
 
+#ifdef O_EXLOCK
+#define DAMPEN_O_FLAGS (O_CREAT | O_RDWR | O_EXLOCK)
+#else
+#define DAMPEN_O_FLAGS (O_CREAT | O_RDWR)
+#endif /* O_EXLOCK */
+
 #ifndef PATH_DAMPEN_DIR
 #if defined(_PATH_VARTMP)
 #define PATH_DAMPEN_DIR _PATH_VARTMP
@@ -1391,6 +1397,10 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 
     size_t size = 0;
 
+#ifndef HAVE_SYSCTLBYNAME
+#define sysctlbyname(x,...) -1
+#endif
+
     if (sysctlbyname((char *) name, NULL, &size, NULL, 0) || size == 0) {
     done:
 	xsltGenericError(xsltGenericErrorContext,
@@ -1777,7 +1787,7 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
      * We use open/fdopen to allow us to lock it exclusively.
      */
     snprintf(new_filename, sizeof(new_filename), "%s+", filename);
-    fd = open(new_filename, O_CREAT | O_RDWR | O_EXLOCK,
+    fd = open(new_filename, DAMPEN_O_FLAGS,
 	      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1) {
 	xsltGenericError(xsltGenericErrorContext,
@@ -1785,8 +1795,18 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 			 new_filename, strerror(errno));
 	xmlXPathReturnFalse(ctxt);
 	return;
-
     }
+
+#if !defined(O_EXLOCK) && defined(LOCK_EX)
+    if (flock(fd, LOCK_EX) < 0) {
+	close(fd);
+	xsltGenericError(xsltGenericErrorContext,
+			 "File lock failed for file: %s: %s\n",
+			 new_filename, strerror(errno));
+	xmlXPathReturnFalse(ctxt);
+	return;
+    }
+#endif /* O_EXLOCK */
 
     new_fp = fdopen(fd, "w+");
 
