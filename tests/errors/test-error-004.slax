@@ -1,3 +1,5 @@
 version 1.0
 
 var $test = 4;
+
+The parser does not recover from errors in the "version" statement.

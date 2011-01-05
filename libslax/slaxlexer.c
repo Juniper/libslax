@@ -1161,25 +1161,138 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     return rc;
 }
 
+static xmlNodePtr
+slaxFindOpenNode (slax_data_t *sdp)
+{
+    return sdp->sd_ctxt->node;
+}
+
+/*
+ * Return a better class of error message
+ * @returns freshly allocated string containing error message
+ */
+static char *
+slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
+		 slax_string_t **vstack UNUSED, slax_string_t **vtop UNUSED)
+{
+    char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
+    xmlNodePtr nodep;
+
+    /*
+     * If yystate is 1, then we're in our initial state and have
+     * not seen any valid input.  We handle this state specifically
+     * to give better error messages.
+     */
+    if (yystate == 1) {
+	if (yychar == -1)
+	    return xmlStrdup2("unexpected end-of-file found (empty input)");
+
+	if (yychar == L_LESS)
+	    return xmlStrdup2("unexpected '<'; file may be XML/XSLT");
+
+	SNPRINTF(cp, ep, "missing 'version' statement");
+	if (token)
+	    SNPRINTF(cp, ep, "; %s in not legal", token);
+
+    } else if (yychar == -1) {
+	if (sdp->sd_flags & SDF_OPEN_COMMENT)
+	    return xmlStrdup2("unexpected end-of-file due to open comment");
+
+	SNPRINTF(cp, ep, "unexpected end-of-file");
+
+	nodep = slaxFindOpenNode(sdp);
+	if (nodep) {
+	    int lineno = xmlGetLineNo(nodep);
+
+	    if (lineno > 0) {
+		if (nodep->ns && nodep->ns->href
+			&& streq((const char *)nodep->ns->href, XSL_URI)) {
+		    SNPRINTF(cp, ep,
+			     "; unterminated statement (<xsl:%s>) on line %d",
+			     nodep->name, lineno);
+		} else {
+		    SNPRINTF(cp, ep, "; open element (<%s>) on line %d",
+			     nodep->name, lineno);
+		}
+	    }
+	}
+
+    } else {
+	char *msg = slaxExpectingError(token, yystate, yychar);
+	if (msg)
+	    return msg;
+
+	SNPRINTF(cp, ep, "unexpected input");
+	if (token)
+	    SNPRINTF(cp, ep, ": %s", token);
+    }
+
+    return xmlStrdup2(buf);
+}
+
+
+
 /**
  * Callback from bison when an error is detected.
  *
  * @param sdp main slax data structure
  * @param str error message
- * @param yylvalp stack entry from bison's lexical stack
+ * @param value stack entry from bison's lexical stack
  * @return zero
  */
 int
-slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp,
-	     int yystate UNUSED)
+slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
+	     int yystate, slax_string_t **vstack, slax_string_t **vtop)
 {
     static const char leader[] = "syntax error, unexpected";
-    const char *token = yylvalp ? yylvalp->ss_token : NULL;
+    static const char leader2[] = "error recovery ignores input";
+    const char *token = value ? value->ss_token : NULL;
+    char buf[BUFSIZ];
 
-    sdp->sd_errors += 1;
+    if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
+	sdp->sd_errors += 1;
 
-    if (token == NULL) 
+    if (token == NULL)
 	token = slaxTokenNameFancy[slaxTokenTranslate(sdp->sd_last)];
+    else {
+	int len = strlen(token);
+	char *cp = alloca(len + 3); /* Two quotes plus NUL */
+
+	cp[0] = '\'';
+	memcpy(cp + 1, token, len);
+	cp[len + 1] = '\'';
+	cp[len + 2] = '\0';
+
+	token = cp;
+    }
+
+    /*
+     * See if there's a multi-line string that could be the source
+     * of the problem.
+     */
+    buf[0] = '\0';
+    if (vtop && *vtop) {
+	slax_string_t *ssp = *vtop;
+
+	if (ssp->ss_ttype == T_QUOTED) {
+	    char *np = strchr(ssp->ss_token, '\n');
+
+	    if (np != NULL) {
+		int count = 1;
+		char *xp;
+
+		for (xp = np + 1; *xp; xp++)
+		    if (*xp == '\n')
+			count += 1;
+
+		snprintf(buf, sizeof(buf),
+			 "\n%s:%d:   could be related to unterminated string "
+			 "on line %d (\"%.*s\\n...\")",
+			 sdp->sd_filename, sdp->sd_line, sdp->sd_line - count,
+			 (int) (np - ssp->ss_token), ssp->ss_token);
+	    }
+	}
+    }
 
     /*
      * Two possibilities: generic "syntax error" or some
@@ -1188,19 +1301,20 @@ slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp,
      * bison token names (K_VERSION) at the user.
      */
     if (strncmp(str, leader, sizeof(leader) - 1) == 0) {
-	char *msg = slaxSyntaxError(sdp, token, yystate, sdp->sd_last);
+	char *msg = slaxSyntaxError(sdp, token, yystate, sdp->sd_last,
+				    vstack, vtop);
 
 	if (msg) {
-	    slaxError("%s:%d: %s\n", sdp->sd_filename, sdp->sd_line,
-		      msg);
+	    slaxError("%s:%d: %s%s\n", sdp->sd_filename, sdp->sd_line,
+		      msg, buf);
 	    xmlFree(msg);
 	    return 0;
 	}
     }
 
-    slaxError("%s:%d: %s%s%s%s\n",
+    slaxError("%s:%d: %s%s%s%s%s\n",
 	      sdp->sd_filename, sdp->sd_line, str,
-	      token ? " before '" : "", token, token ? "': " : "");
+	      token ? " before " : "", token, token ? ": " : "", buf);
 
     return 0;
 }

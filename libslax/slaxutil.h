@@ -95,7 +95,7 @@ allocadupx (char *to, const char *from)
 	(_start) += snprintf((_start), (_end) - (_start), _fmt); \
 	if ((_start) > (_end)) \
 	    (_start) = (_end); \
-    } while (0);
+    } while (0)
 
 /* ---------------------------------------------------------------------- */
 

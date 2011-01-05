@@ -7,7 +7,12 @@ var $i = <test> {
 	}
 	if (cooking) {
 	    cooking;
+	    expr +;
 	}
+	expr +;
     }
     
 }
+
+match test {
+	

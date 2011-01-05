@@ -78,15 +78,19 @@ struct slax_data_s {
  *
  * @param sdp main slax data structure
  * @param str error message
- * @param yylvalp stack entry from bison's lexical stack
+ * @param value stack entry from bison's lexical stack
  * @return zero
  */
 int
-slaxYyerror (slax_data_t *sdp, const char *str, YYSTYPE yylvalp, int yystate);
-#define yyerror(str) slaxYyerror(slax_data, str, yylval, yystate)
+slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *yylval,
+	     int yystate, slax_string_t **vstack, slax_string_t **vtop);
+#define yyerror(str) slaxYyerror(slax_data, str, yylval, yystate, yyvs, yyvsp)
 
+/*
+ * Return a better class of error message
+ */
 char *
-slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar);
+slaxExpectingError (const char *token, int yystate, int yychar);
 
 /**
  * Make a child node and assign it proper file/line number info.

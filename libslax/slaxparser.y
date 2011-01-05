@@ -62,6 +62,20 @@
  */
 
 /*
+ * These tokens are used for validity tests to see where we are in
+ * the syntax tree.  We use these to simplify error messages.  These
+ * tokens are never really parsed, and the lexer will never return them.
+ */
+%token V_FIRST			/* First of the "V_*" tokens */
+
+%token V_TOP_LEVEL		/* A top-level statement */
+%token V_BLOCK_LEVEL		/* A block-level statement */
+%token V_XPATH			/* An XPath expression */
+%token V_PATTERN		/* An XPath pattern */
+
+%token V_LAST			/* Last of the "V_*" tokens */
+
+/*
  * Literal tokens which may _not_ preceed the multiplication operator
  */
 %token L_ASSIGN			/* ':=' */
@@ -210,7 +224,10 @@
 %token T_VAR			/* a variable name ($foo) */
 
 /*
- * Magic tokens (used for special purposes)
+ * Magic tokens (used for special purposes).  M_* tokens are used to
+ * trigger explicit behavior in the parser.  These tokens are never
+ * really parsed, and the lexer will never return them, except for
+ * M_ERROR.
  */
 %token M_SEQUENCE		/* A $x...$y sequence */
 %token M_ERROR			/* An error was detected in the lexer */
@@ -307,7 +324,7 @@ start :
 	M_PARSE_SLAX stylesheet
 		{ $$ = STACK_CLEAR($1); }
 
-	| M_PARSE_XPATH xp_expr
+	| M_PARSE_XPATH xpath_expression
 		{
 		    slax_data->sd_xpath = $2;
 		    $2 = NULL;	/* Avoid double free */
@@ -580,7 +597,10 @@ slax_stmt_list :
 	;
 
 slax_stmt :
-	param_decl
+	V_TOP_LEVEL
+		{ $$ = NULL; }
+
+	| param_decl
 		{ $$ = NULL; }
 
 	| var_decl
@@ -1081,7 +1101,10 @@ block_stmt_list :
 	;
 
 block_stmt :
-	apply_imports_stmt
+	V_BLOCK_LEVEL
+		{ $$ = NULL; }
+
+	| apply_imports_stmt
 		{ $$ = NULL; }
 
 	| apply_templates_stmt
@@ -2616,7 +2639,7 @@ equals_operator :
  */
 
 xpath_expr :
-	xp_expr
+	xpath_expression
 		{
 		    ALL_KEYWORDS_ON();
 		    $$ = $1;
@@ -2624,13 +2647,13 @@ xpath_expr :
 	;
 
 xpath_expr_dotdotdot :
-	xp_expr
+	xpath_expression
 		{
 		    ALL_KEYWORDS_ON();
 		    $$ = $1;
 		}
 
-	| xp_expr L_DOTDOTDOT xp_expr
+	| xpath_expression L_DOTDOTDOT xpath_expression
 		{
 		    slax_string_t *res[7];
 
@@ -2664,13 +2687,13 @@ xpath_value :
 	;
 
 xpath_value_raw :
-	xp_expr
+	xpath_expression
 		{
 		    slaxLog("xpath: %s", $1->ss_token);
 		    $$ = $1;
 		}
 
-	| xpath_value_raw L_UNDERSCORE xp_expr
+	| xpath_value_raw L_UNDERSCORE xpath_expression
 		{
 		    slax_string_t *ssp;
 
@@ -2690,6 +2713,14 @@ xpath_value_raw :
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
+	;
+
+xpath_expression :
+	V_XPATH
+		{ $$ = NULL; }
+
+	| xp_expr
+		{ $$ = $1; }
 	;
 
 xpath_lite_value :
@@ -2761,10 +2792,10 @@ xs_dslash_optional :
 	;
 
 xs_id_key_pattern :
-	K_ID L_OPAREN xp_expr L_CPAREN
+	K_ID L_OPAREN xpath_expression L_CPAREN
 		{ $$ = STACK_LINK($1); }
 
-	| K_KEY L_OPAREN xp_expr L_COMMA xp_expr L_CPAREN
+	| K_KEY L_OPAREN xpath_expression L_COMMA xpath_expression L_CPAREN
 		{ $$ = STACK_LINK($1); }
 	;
 
@@ -2812,11 +2843,9 @@ xs_predicate_list :
  */
 
 /*
- * These two productions are the root of the difference between
- * "xpl" and "xp".  For the grammar to be unambiguous, we have
- * to make the 
- * The "xpl" version of xp_relative_location_path_optional is _not_
- * optional
+ * These two productions are the root of the difference between "xpl"
+ * and "xp".  The "xpl" version of xp_relative_location_path_optional
+ * is _not_ optional
  */
 
 xp_relative_location_path_optional :
@@ -2884,13 +2913,13 @@ xpc_argument_list_optional :
 	;
 
 xpc_argument_list :
-	xp_expr
+	xpath_expression
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xpc_argument_list L_COMMA xp_expr
+	| xpc_argument_list L_COMMA xpath_expression
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
@@ -2926,7 +2955,7 @@ xpc_predicate_list :
 	;
 
 xpc_predicate :
-	L_OBRACK xp_expr L_CBRACK
+	L_OBRACK xpath_expression L_CBRACK
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
@@ -3044,8 +3073,23 @@ xpc_variable_reference :
 		}
 	;
 
+/*
+ * Using V_PATTERN here is a bit of a waste, but there are enough
+ * optional production (meaning possibly empty) that when the bison
+ * engine see an invalid one, it runs the default action for the
+ * current state and bison magic routes us to the state matching
+ * this production.  It's an odd place for two reasons: (1) it's not
+ * pretty to hide the V_*-based validity tests this low in the grammar,
+ * and (2) because it prevents disambiguation between XPath patterns
+ * (ala "match") and XPath expressions (ala "expr"), which forces
+ * slaxExpectingError() to label them both the same.  Not ideal.
+ */
+
 xpc_node_test :
-	xpc_name_test	
+	V_PATTERN
+		{ $$ = NULL; }
+
+	| xpc_name_test	
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;

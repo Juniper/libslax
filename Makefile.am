@@ -14,3 +14,6 @@ EXTRA_DIST = slax-config.in warnings.mk
 
 test tests:
 	@(cd tests ; ${MAKE} tests)
+
+errors:
+	@(cd tests/errors ; ${MAKE} test)

@@ -1,0 +1,15 @@
+version 1.0;
+
+match test {
+    var $test = "reset";
+}
+}
+
+var $f = "reset";
+
+/* missing open brace */
+match /foo 
+    <this> {
+        expr "test";
+    }
+}

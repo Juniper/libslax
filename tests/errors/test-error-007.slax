@@ -10,4 +10,10 @@ match {
 
 match /foo {
     var $test = ;
+    var $a = "reset";
+    match this;
+    var $b = "reset";
+    <content> {
+	<one> {
+	    <two> {
 }

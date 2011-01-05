@@ -279,6 +279,7 @@ AC_CONFIG_FILES([
   tests/Makefile
   tests/core/Makefile
   tests/bugs/Makefile
+  tests/errors/Makefile
   tests/libxslt/Makefile
   doc/Makefile
 ])

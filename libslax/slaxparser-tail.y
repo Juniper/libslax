@@ -1,5 +1,5 @@
 %%
-#line 2 "slaxparser-tail.y"
+#line 3 "slaxparser-tail.y"
 
 /*
  * $Id: slaxparser-tail.y,v 1.1 2006/11/01 21:27:20 phil Exp $
@@ -36,72 +36,73 @@ slaxTokenTranslate (int ttype)
  * Return a better class of error message
  */
 char *
-slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar)
+slaxExpectingError (const char *token, int yystate, int yychar)
 {
+    const int MAX_EXPECT = 5;
+    char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
+    int expect = 0, expecting[MAX_EXPECT + 1];
     int yyn = yypact[yystate];
     int i;
     int yytype;
     int start, stop;
-    const int MAX_EXPECT = 5;
-    int expect = 0, expecting[MAX_EXPECT];
-    char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
+    int v_state = 0;
 
     if (!(YYPACT_NINF < yyn && yyn <= YYLAST))
 	return NULL;
-
-    /*
-     * If yystate is 1, then we're in our initial state and have
-     * not seen any valid input.  We handle this state specifically
-     * to give better error messages.
-     */
-    if (yystate == 1) {
-	if (yychar == -1)
-	    return xmlStrdup2("unexpected end-of-file found (empty input)");
-
-	if (yychar == L_LESS)
-	    return xmlStrdup2("unexpected '<'; file may be XML/XSLT");
-
-	SNPRINTF(cp, ep, "missing 'version' statement");
-	if (token)
-	    SNPRINTF(cp, ep, "; '%s' in not legal", token);
-
-	return xmlStrdup2(buf);
-    }
 
     yytype = YYTRANSLATE(yychar);
 
     start = yyn < 0 ? -yyn : 0;
     stop = YYLAST - yyn + 1;
     if (stop > YYNTOKENS)
+
 	stop = YYNTOKENS;
 
     for (i = start; i < stop; ++i) {
 	if (yycheck[i + yyn] == i && i != YYTERROR) {
+	    if (i > YYTRANSLATE(V_FIRST) && i < YYTRANSLATE(V_LAST))
+		v_state = i;
+
+	    if (slaxTokenNameFancy[i] == NULL)
+		continue;
+
 	    expecting[expect++] = i;
 	    if (expect > MAX_EXPECT)
 		break;
 	}
     }
 
-    if (yychar == -1) {
-	if (sdp->sd_flags & SDF_OPEN_COMMENT)
-	    return xmlStrdup2("unexpected end-of-file due to open comment");
+    if (expect > MAX_EXPECT)
+	expect += 1;		/* Avoid "or" below */
 
-	SNPRINTF(cp, ep, "unexpected end-of-file");
+    SNPRINTF(cp, ep, "unexpected input");
+    if (token)
+	SNPRINTF(cp, ep, ": %s", token);
 
-    } else {
-	SNPRINTF(cp, ep, "unexpected input token");
-	if (token)
-	    SNPRINTF(cp, ep, " '%s'", token);
-    }	
+    if (v_state) {
+	if (v_state == YYTRANSLATE(V_TOP_LEVEL))
+	    SNPRINTF(cp, ep, "; expected valid top-level statement");
+	else if (v_state == YYTRANSLATE(V_BLOCK_LEVEL))
+	    SNPRINTF(cp, ep, "; expected valid statement");
+	else if (v_state == YYTRANSLATE(V_XPATH))
+	    SNPRINTF(cp, ep, "; expected valid XPath expression");
+	else if (v_state == YYTRANSLATE(V_PATTERN))
+	    SNPRINTF(cp, ep, "; expected valid XPath expression");
+	else
+	    SNPRINTF(cp, ep, "; expected valid input");
 
-    if (expect && expect < MAX_EXPECT) {
-	const char *pre;
-
+    } else if (expect > 0) {
 	for (i = 0; i < expect; i++) {
-	    pre = (i == 0) ? "; expected"
-		: (i == expect - 1) ? " or" : ",";
-	    SNPRINTF(cp, ep, "%s %s", pre, slaxTokenNameFancy[expecting[i]]);
+	    const char *pre = (i == 0) ? "; expected"
+		                       : (i == expect - 1) ? " or" : ",";
+	    const char *value = slaxTokenNameFancy[expecting[i]];
+	    if (value)
+		SNPRINTF(cp, ep, "%s %s", pre, value);
+
+	    if (i >= MAX_EXPECT) {
+		SNPRINTF(cp, ep, ", etc.");
+		break;
+	    }
 	}
     }
 

@@ -1,0 +1,10 @@
+version 1.0;
+
+match / {
+    <top> {
+	var $x = "one;
+	<more> {
+	    var $y = "two " _ this _ " three";
+	}
+    }
+}
