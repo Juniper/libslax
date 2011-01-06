@@ -59,3 +59,12 @@ slaxOutputNodeset (xmlNodeSetPtr nodeset);
  */
 void
 slaxLog (const char *fmt, ...);
+
+/*
+ * Simple trace function that tosses messages to stderr if slaxDebug
+ * has been set to non-zero.  This one is specific to bison, which
+ * makes multiple calls to emit a single line, which means we can't
+ * include our implicit newline.
+ */
+void
+slaxLog2 (void *, const char *fmt, ...);

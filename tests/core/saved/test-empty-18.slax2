@@ -8,6 +8,7 @@ function test ($x) {
 }
 
 match foo[concat(../../id/text(), "/", text())] {
+    var $test2 = "€";
     var $test = "";
     /* This one is odd */
     expr "text in " _ name(..) _ ' = "';

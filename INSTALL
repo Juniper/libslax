@@ -45,6 +45,10 @@ build configure and friends:
 
     ./configure
 
+Expect to see the following error:
+
+    /usr/bin/rm: cannot remove `libtoolT': No such file or directory
+
 If you want to use the regression tests from libxslt, add the
 "--with-libxslt-tests=DIR" to the configure command:
 
@@ -65,3 +69,17 @@ to get debug output.
 (5) Install the images
 
     sudo make install
+
+** Special notes for cygwin
+
+You need to following packages installed:
+
+Under "developer":
+  make
+  gcc
+  bison
+  libxml2-devel
+Under "GNOME":
+  libxslt-devel
+
+The "configure" script may give some odd but mostly harmful errors.

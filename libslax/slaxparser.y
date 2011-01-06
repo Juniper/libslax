@@ -267,7 +267,7 @@
 
 #define YYDEBUG 1		/* Enable debug output */
 #define yydebug slaxDebug	/* Make debug flag parser specific */
-#define YYFPRINTF fprintf	/* Should do something better */
+#define YYFPRINTF slaxLog2	/* Log via our function */
 
 /*
  * The most common stack operation: clear everthing x and above. Since

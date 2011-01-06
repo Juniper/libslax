@@ -60,7 +60,7 @@ slaxInput (const char *prompt, unsigned flags)
     /* slaxLog("slaxInput: <- [%s]", res ?: "null"); */
 
     for (cp = res, count = 0, len = 0; cp && *cp; cp++, len++)
-	if (iscntrl(*cp))
+	if (iscntrl((int) *cp))
 	    count += 1;
 
     if (count) {
@@ -75,7 +75,7 @@ slaxInput (const char *prompt, unsigned flags)
 	    return res;
 
 	for (cp = res, bp = buf; cp && *cp; cp++) {
-	    if (iscntrl(*cp)) {
+	    if (iscntrl((int) *cp)) {
 		unsigned word = SLAX_UTF8_CNTRL_BASE + (unsigned char) *cp;
 
 		/*
@@ -324,6 +324,28 @@ slaxLog (const char *fmt, ...)
 
     vfprintf(stderr, fmt, vap);
     fprintf(stderr, "\n");
+    fflush(stderr);
+
+    va_end(vap);
+}
+
+/**
+ * Simple trace function that tosses messages to stderr if slaxDebug
+ * has been set to non-zero.
+ *
+ * @param fmt format string plus variadic arguments
+ */
+void
+slaxLog2 (void *ignore UNUSED, const char *fmt, ...)
+{
+    va_list vap;
+
+    if (!slaxDebug)
+	return;
+
+    va_start(vap, fmt);
+
+    vfprintf(stderr, fmt, vap);
     fflush(stderr);
 
     va_end(vap);

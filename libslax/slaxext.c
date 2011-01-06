@@ -21,7 +21,9 @@
 #include <math.h>
 #include <paths.h>
 #include <regex.h>
+#ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
+#endif
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/file.h>
@@ -925,8 +927,8 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 	    }
 	}
 
-	if (capitalize && islower(*pb.pb_cur))
-	    *pb.pb_cur = toupper(*pb.pb_cur);
+	if (capitalize && islower((int) *pb.pb_cur))
+	    *pb.pb_cur = toupper((int) *pb.pb_cur);
 
 	pb.pb_cur += needed;
 
@@ -1374,6 +1376,7 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathReturnFalse(ctxt);
 }
 
+#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
 /*
  * Return the value of the given sysctl as a string or integer
  *
@@ -1396,10 +1399,6 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
     name = xmlXPathPopString(ctxt);
 
     size_t size = 0;
-
-#ifndef HAVE_SYSCTLBYNAME
-#define sysctlbyname(x,...) -1
-#endif
 
     if (sysctlbyname((char *) name, NULL, &size, NULL, 0) || size == 0) {
     done:
@@ -1425,6 +1424,7 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 
     xmlXPathReturnString(ctxt, xmlStrdup((xmlChar *) buf));
 }
+#endif /* HAVE_SYS_SYSCTL_H */
 
 /*
  * Usage: 
@@ -1568,7 +1568,7 @@ slaxExtDecodePriority (const char *priority)
     int fac = LOG_USER;
     char *cp;
 	
-    if (isdigit(*priority)) {
+    if (isdigit((int) *priority)) {
 	pri = atoi(priority);
 
 	fac = LOG_FAC(pri);
@@ -1764,7 +1764,7 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
      * file is already present
      */
     snprintf(filename, sizeof(filename), "%s%s-%s.%u", PATH_DAMPEN_DIR,
-	     PATH_DAMPEN_FILE, tag, getuid());
+	     PATH_DAMPEN_FILE, tag, (unsigned) getuid());
 
     xmlFree(tag);
 
@@ -1947,7 +1947,9 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "regex", slaxExtRegex);
     slaxRegisterFunction(namespace, "sleep", slaxExtSleep);
     slaxRegisterFunction(namespace, "split", slaxExtSplit);
+#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
     slaxRegisterFunction(namespace, "sysctl", slaxExtSysctl);
+#endif
     slaxRegisterFunction(namespace, "syslog", slaxExtSyslog);
 
     return 0;

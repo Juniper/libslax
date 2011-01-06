@@ -1100,9 +1100,9 @@ slaxDebugCmdPrint (DC_ARGS)
     char *cp = ALLOCADUP(commandline);
 
     /* Move over command name */
-    while (*cp && !isspace(*cp))
+    while (*cp && !isspace((int) *cp))
 	cp += 1;
-    while (*cp && isspace(*cp))
+    while (*cp && isspace((int) *cp))
 	cp += 1;
 
     res = slaxDebugEvalXpath (statep, cp);
@@ -1516,7 +1516,7 @@ slaxDebugShell (slaxDebugState_t *statep)
 	*cp = '\0';
 
     cp = input;
-    while (isspace(*cp))
+    while (isspace((int) *cp))
 	cp++;
 
     if (*cp == '\0') {

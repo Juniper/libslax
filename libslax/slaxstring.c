@@ -383,11 +383,11 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 		if (bp[-2] != ',')
 		    trim = TRUE;	/* foo/goo[@zoo] */
 
-	    } else if (isdigit(bp[-2]) && *str == '.'
+	    } else if (isdigit((int) bp[-2]) && *str == '.'
 		     && ssp->ss_ttype != L_DOTDOTDOT)
 		trim = TRUE;	/* 1.0 (looking at the '.') */
 
-	    else if (bp[-2] == '.' && bp[-3] != '.' && isdigit(*str))
+	    else if (bp[-2] == '.' && bp[-3] != '.' && isdigit((int) *str))
 		trim = TRUE;	/* 1.0 (looking at the '0') */
 
 	    else if (bp == &buf[2] && buf[0] == '-')

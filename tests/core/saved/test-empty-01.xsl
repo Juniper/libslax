@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:one="http://one.example.org" xmlns:two="http://two.example.org" xmlns:three="http://three.example.org" version="1.0">
-  <xsl:import href="test-2-06-import.xsl"/>
   <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes"/>
   <xsl:strip-space elements="*"/>
   <xsl:template match="/doc">

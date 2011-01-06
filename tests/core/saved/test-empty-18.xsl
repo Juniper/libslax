@@ -9,6 +9,7 @@
     </slax-func:result>
   </slax-func:function>
   <xsl:template match="foo[concat(../../id/text(), &quot;/&quot;, text())]">
+    <xsl:variable name="test2" select="&quot;€&quot;"/>
     <xsl:variable name="test" select="&quot;&quot;"/>
     <!-- This one is odd -->
     <xsl:value-of select="concat(&quot;text in &quot;, name(..), ' = &quot;')"/>

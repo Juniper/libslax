@@ -739,7 +739,8 @@ slaxLexer (slax_data_t *sdp)
 	    if (slaxGetInput(sdp, 1))
 		return -1;
 
-	while (sdp->sd_cur < sdp->sd_len && isspace(sdp->sd_buf[sdp->sd_cur]))
+	while (sdp->sd_cur < sdp->sd_len
+	       && isspace((int) sdp->sd_buf[sdp->sd_cur]))
 	    sdp->sd_cur += 1;
 
 	if (sdp->sd_cur != sdp->sd_len) {
@@ -769,13 +770,14 @@ slaxLexer (slax_data_t *sdp)
 		    xmlChar *buf = alloca(len + 1), *contents;
 		    xmlNodePtr nodep;
 
-		    while (isspace(sdp->sd_buf[start])) {
+		    while (isspace((int) sdp->sd_buf[start])) {
 			if (sdp->sd_buf[start] == '\n')
 			    break;
 			start += 1;
 			len -= 1;
 		    }
-		    while (end > start && isspace(sdp->sd_buf[end - 1])) {
+		    while (end > start
+			   && isspace((int) sdp->sd_buf[end - 1])) {
 			if (sdp->sd_buf[end - 1] == '\n')
 			    break;
 			end -= 1;
@@ -838,10 +840,10 @@ slaxLexer (slax_data_t *sdp)
 	}
 
 	if (singleWide[ch1]) {
-	    ch1 = singleWide[ch1];
+	    int lit1 = singleWide[ch1];
 	    sdp->sd_cur += 1;
 
-	    if (ch1 == L_STAR) {
+	    if (lit1 == L_STAR) {
 		/*
 		 * If we see a "*", we have to think about if it's a
 		 * L_STAR or an L_ASTERISK.  If we put them both into
@@ -863,11 +865,11 @@ slaxLexer (slax_data_t *sdp)
 	     * character is a valid character before making our
 	     * decision.
 	     */
-	    if (ch1 == L_UNDERSCORE) {
+	    if (lit1 == L_UNDERSCORE) {
 		if (!slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
-		    return ch1;
+		    return lit1;
 	    } else {
-		return ch1;
+		return lit1;
 	    }
 	}
 
@@ -914,7 +916,7 @@ slaxLexer (slax_data_t *sdp)
 
 	if (isdigit(ch1)) {
 	    while (sdp->sd_cur < sdp->sd_len
-		   && isdigit(sdp->sd_buf[sdp->sd_cur]))
+		   && isdigit((int) sdp->sd_buf[sdp->sd_cur]))
 		sdp->sd_cur += 1;
 	    return T_NUMBER;
 	}
@@ -1031,7 +1033,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 		break;
 	    }
 
-	    if (!isspace(ch))
+	    if (!isspace((int) ch))
 		break;
 	}
     }
