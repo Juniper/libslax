@@ -1834,7 +1834,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 			|| slaxExtTimeCompare(&diff, freq_double)) {
 
 		snprintf(buf, sizeof(buf), timefmt,
-			 rec_tv.tv_sec, (unsigned long) rec_tv.tv_usec);
+			 (unsigned long) rec_tv.tv_sec,
+			 (unsigned long) rec_tv.tv_usec);
 
 		if (fputs(buf, new_fp) == EOF) {
 		    xsltGenericError(xsltGenericErrorContext,
@@ -1856,7 +1857,7 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
      */
     if (no_of_recs < max) {
 	snprintf(buf, sizeof(buf), timefmt,
-		 tv.tv_sec, (unsigned long) tv.tv_usec);
+		 (unsigned long) tv.tv_sec, (unsigned long) tv.tv_usec);
 	if (fputs(buf, new_fp) == EOF) {
 	    xsltGenericError(xsltGenericErrorContext,
 			     "Write operation failed: %s\n", strerror(errno));
