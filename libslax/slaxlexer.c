@@ -1194,7 +1194,7 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
 
 	SNPRINTF(cp, ep, "missing 'version' statement");
 	if (token)
-	    SNPRINTF(cp, ep, "; %s in not legal", token);
+	    SNPRINTF(cp, ep, "; %s is not legal", token);
 
     } else if (yychar == -1) {
 	if (sdp->sd_flags & SDF_OPEN_COMMENT)

@@ -201,6 +201,35 @@ The chief implications are:
   that may change over time, though it won't change once fetched
   (e.g. into a specific variable).
 
+* Error messages
+
+Quality error messages is a cost/reward equation, but I just wanted to
+note that we are implicitly trimming optional tokens/productions from
+error messages.  For example, if you have code that says:
+
+    expr jcs:output( "This is the user " $user );
+
+you'll get an error message that says:
+
+foo.slax:6: unexpected input: '$user'; expected close parentheses (')')
+
+Due to the way error recovery works (yacc/bison pops optional state
+transitions until it finds a valid one), comma (',') is not displayed
+as a valid option.
+
+Now I _could_ pass yystate to slaxYylex() and have it record the
+last-known-good state, so the error logic can see that the current
+state has been affected by the error.  I could then start at the right
+state and give a better list of acceptable tokens, including those
+that are optional.
+
+I'm not sure it's worth the code, since the current message is
+reasonable, if not exhaustive.  And the optional choices could be
+misleading, since there are a huge list of possibilities, where the
+best choice is likely the non-optional one (')' or ']').
+
+Something to think about, but I wanted to leave a mental dump here.
+
 ** Luck
 
 Wish me luck.....
