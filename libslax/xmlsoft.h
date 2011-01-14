@@ -107,3 +107,15 @@ xmlStrdup2 (const char *str)
 {
     return (char *) xmlStrdup((const xmlChar *) str);
 }
+
+/*
+ * There's no clear way to stop the XSLT engine in the middle of
+ * a script, but this is the way <xsl:message terminate="yes">
+ * does it.  See xsltMessage().
+ */
+static inline void
+xsltStopEngine (xsltTransformContextPtr ctxt)
+{
+    if (ctxt)
+	ctxt->state = XSLT_STATE_STOPPED;
+}

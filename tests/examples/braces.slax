@@ -78,12 +78,13 @@ template emit-homogeneous ($path, $cpath, $all) {
 
 template emit-oneliner ($path, $cpath) {
     set $oneliner = true();
+
     call emit-open($line = name());
-
     call emit-main($path = $cpath);
-
     call emit-close();
+
     set $oneliner = false();
+
 }
 
 template emit-container ($path, $cpath) {
@@ -103,6 +104,17 @@ template emit-list ($path, $cpath) {
 	call emit-open($line = $name _ brace:clean(name));
 	call emit-main($path = $cpath);
 	call emit-close();
+
+    } else if ($junos-data/oneliner[item == $cpath]) {
+    set $oneliner = true();
+	var $tag = $name _ brace:clean(name);
+
+	call emit-open($line = $name _ brace:clean(name));
+	call emit-main($path = $cpath);
+	call emit-close();
+
+	set $oneliner = false();
+
     } else {
 	call emit-line($line = $name _ brace:clean(name));
     }
@@ -120,7 +132,11 @@ template emit-text ($path, $cpath) {
     }
 
     var $tag = {
-	if (not($junos-data/nokeyword[item == $cpath])) {
+	if (name() == "junos:comment") {
+	    /* no tag */
+	} else if ($junos-data/nokeyword[item == $cpath]) {
+	    /* no tag */
+	} else {
 	    expr name();
 	    if (string-length($value) > 0) {
 		expr " ";
@@ -167,10 +183,10 @@ template emit-close () {
 }
 
 function brace:clean ($value) {
-    var $re = slax:regex("^(\n?)( +)(.*)", $value);
+    var $re = slax:regex("^(\n?)( *)(.*)", $value);
 
-    if (string-length($re[4]) == 0) {
-	result "";
+    if ($re[1]) {
+	result $re[4];
     } else {
 	result "\"" _ $value _ "\"";
     }

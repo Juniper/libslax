@@ -1478,15 +1478,15 @@ the script translates.
 
     match configuration {
         var $name-servers = name-servers/name;
-        call temp:ting();
-        call temp:ting($name-servers, $size = count($name-servers));
-        call temp:ting() {
+        call my:thing();
+        call my:thing($name-servers, $size = count($name-servers));
+        call my:thing() {
             with $name-servers;
             with $size = count($name-servers);
         }
     }
 
-    template temp:ting($name-servers, $size = 0) {
+    template my:thing($name-servers, $size = 0) {
         <output> "template called with size " _ $size;
     }
 
@@ -1494,18 +1494,18 @@ The XSLT equivalent:
 
     <xsl:template match="configuration">
       <xsl:variable name="name-servers" select="name-servers/name"/>
-      <xsl:call-template name="temp:ting"/>
-      <xsl:call-template name="temp:ting">
+      <xsl:call-template name="my:thing"/>
+      <xsl:call-template name="my:thing">
         <xsl:with-param name="name-servers" select="$name-servers"/>
         <xsl:with-param name="size" select="count($name-servers)"/>
       </xsl:call-template>
-      <xsl:call-template name="temp:ting">
+      <xsl:call-template name="my:thing">
         <xsl:with-param name="name-servers" select="$name-servers"/>
         <xsl:with-param name="size" select="count($name-servers)"/>
       </xsl:call-template>
     </xsl:template>
 
-    <xsl:template name="temp:ting">
+    <xsl:template name="my:thing">
       <xsl:param name="name-servers"/>
       <xsl:param name="size" select="0"/>
       <output>

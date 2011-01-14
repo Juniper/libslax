@@ -138,11 +138,14 @@ slaxDebugSetIncludes (const char **includes);
 /**
  * Apply a stylesheet to an input document, returning the results.
  *
+ * @scriptname Name of the script, or NULL to prohibit reloading
  * @style stylesheet aka script
+ * @docname Name of the input document, or NULL to prohibit reloading
  * @doc input document
  * @params set of parameters
  * @returns output document
  */
 void
-slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
+slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
+			  const char *docname, xmlDocPtr doc,
 			  const char **params);

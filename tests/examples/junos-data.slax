@@ -6,6 +6,7 @@ var $junos-data := {
     <oneliner> {
 	<item> "/system/backup-router";
 	<item> "/system/scripts/op/traceoptions/file";
+	<item> "/routing-options/rib/static/route";
     }
     <oneset> {
 	<item> "/system/authentication-order";

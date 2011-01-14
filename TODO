@@ -35,3 +35,9 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - Nit: add command line option for profiler (without entering debugger)
 
 - Check: confirm that UTF-8 encoding functions are working correctly
+
+- Nit: Put _all_ debugger info in statep; also s/dsfp/stp/
+
+- Doc: new reload command
+
+- sdb: add "reload data" command (default to "reload script")

@@ -21,7 +21,9 @@
  * The addFrame callback takes two arguments, a template and an
  * instruction.  The template node is NULL when executing initializers
  * for global variables, and when executing the <xsl:call-template>
- * instruction.  The instruction should never be NULL.
+ * instruction.  The instruction should never be NULL.  Sadly, addFrame
+ * doesn't get the context pointer, so we have to grab it the next time
+ * the handler is called (see DSF_FRESHADD).
  *
  * The dropFrame callback takes no arguments, but it only called when
  * the corresponding addFrame call returns non-zero.  We always record
@@ -57,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -103,6 +106,10 @@ typedef struct slaxDebugState_s {
 
 #define DSF_RESTART	(1<<4)	/* Restart the debugger/script */
 #define DSF_PROFILER	(1<<5)	/* Profiler is on */
+#define DSF_FRESHADD	(1<<6)	/* Just did an "addFrame" */
+#define DSF_CONTINUE	(1<<7)	/* Continue (or run) when restarted */
+
+#define DSF_RELOAD	(1<<8)	/* Reload the script */
 
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
@@ -143,6 +150,9 @@ typedef struct slaxDebugStackFrame_s {
     xsltTemplatePtr st_template; /* Template (parent) */
     xmlNodePtr st_inst;	  /* Instruction of the template (code) */
     xmlNodePtr st_caller;        /* Instruction of the caller */
+    xsltTransformContextPtr st_ctxt; /* Transform context pointer */
+    int st_locals_start;     /* Our first entry in ctxt->varsTab[] */
+    int st_locals_stop;      /* Our last entry in ctxt->varsTab[] */
     unsigned st_flags; /* STF_* flags for this stack frame */
 } slaxDebugStackFrame_t;
 
@@ -333,35 +343,51 @@ slaxDebugGetScriptNode (slaxDebugState_t *statep, const char *arg)
  * Print the given XPath object
  */
 static void
-slaxDebugOutputXpath (xmlXPathObjectPtr xpath)
+slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 {
     if (xpath == NULL)
 	return;
 
+    if (tag == NULL)
+	tag = "";
+
     switch (xpath->type) {
     case XPATH_BOOLEAN:
-	slaxOutput("[boolean] %s", xpath->boolval ? "true" : "false");
+	slaxOutput("%s[boolean] %s", tag, xpath->boolval ? "true" : "false");
 	break;
 
     case XPATH_NUMBER:
-	slaxOutput("[number] %lf", xpath->floatval);
+	slaxOutput("%s[number] %lf", tag, xpath->floatval);
 	break;
 
     case XPATH_STRING:
 	if (xpath->stringval)
-	    slaxOutput("[string] %s", xpath->stringval);
+	    slaxOutput("%s[string] \"%s\"", tag, xpath->stringval);
 	break;
 
     case XPATH_NODESET:
-	slaxOutput("[node-set]%s (%d)",
-			xpath->nodesetval ? "" : " [null]",
-			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
-	if (xpath->nodesetval)
-	    slaxOutputNodeset(xpath->nodesetval);
+	if (full) {
+	    slaxOutput("%s[node-set]%s (%d)", tag,
+		       xpath->nodesetval ? "" : " [null]",
+		       xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
+	    if (xpath->nodesetval)
+		slaxOutputNodeset(xpath->nodesetval);
+	} else {
+	    xmlNodeSetPtr ns = xpath->nodesetval;
+	    if (ns->nodeNr == 0)
+		ns = NULL;
+
+	    slaxOutput("%s[node-set]%s (%d)%s%s%s", tag,
+		       xpath->nodesetval ? "" : " [null]",
+		       ns ? ns->nodeNr : 0,
+		       ns ? " <" : "",
+		       ns ? ns->nodeTab[0]->name : null,
+		       ns ? "> ...." : "");
+	}
 	break;
 
     case XPATH_XSLT_TREE:
-	slaxOutput("[rtf]%s (%d)",
+	slaxOutput("%s[rtf]%s (%d)", tag,
 			xpath->nodesetval ? "" : " [null]",
 			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
 	if (xpath->nodesetval)
@@ -684,9 +710,13 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
     /*
      * simply linenumber, put breakpoint in the cur script
      */
-    if ((lineno = atoi(spec)) > 0)
-	return slaxDebugGetNodeByFilename(statep,
-		(const char *) statep->ds_inst->doc->URL, lineno);
+    if ((lineno = atoi(spec)) > 0) {
+	xmlDocPtr docp = statep->ds_inst
+	    ? statep->ds_inst->doc : statep->ds_script->doc;
+	const char *fname =  (const char *) docp->URL;
+	return slaxDebugGetNodeByFilename(statep, fname, lineno);
+    }
+
     /*
      * template name?
      */
@@ -715,8 +745,10 @@ slaxDebugCmdBreak (DC_ARGS)
     slaxDebugBreakpoint_t *bp;
 
     node = slaxDebugGetNode(statep, argv[1]);
-    if (node == NULL)
+    if (node == NULL) {
+	slaxOutput("Target \"%s\" is not defined", argv[1]);
 	return;
+    }
 
     if (slaxDebugCheckBreakpoint(statep, node, FALSE)) {
 	slaxOutput("Duplicate breakpoint");
@@ -743,10 +775,30 @@ slaxDebugCmdBreak (DC_ARGS)
 static int
 slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
 {
-    int rc = (xsltGetDebuggerStatus() == XSLT_DEBUG_DONE);
-    if (rc)
+    int status = xsltGetDebuggerStatus();
+    if (status == 0 || status == XSLT_DEBUG_DONE) {
 	slaxOutput("The script is not being run.");
-    return rc;
+	return TRUE;
+    }
+
+    return FALSE;
+}
+
+static int
+slaxDebugCheckStart (slaxDebugState_t *statep UNUSED)
+{
+    int status = xsltGetDebuggerStatus();
+
+    if (status == 0) {
+	statep->ds_flags |= DSF_RESTART | DSF_DISPLAY;
+	return FALSE;
+
+    } else if (status == XSLT_DEBUG_DONE) {
+	slaxOutput("The script is not being run.");
+	return TRUE;
+    }
+
+    return FALSE;
 }
 
 /*
@@ -757,7 +809,7 @@ slaxDebugCmdContinue (DC_ARGS)
 {
     xmlNodePtr node;
 
-    if (slaxDebugCheckDone(statep))
+    if (slaxDebugCheckStart(statep))
 	return;
 
     if (argv[1]) {
@@ -771,7 +823,7 @@ slaxDebugCmdContinue (DC_ARGS)
     }
 
     xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
-    statep->ds_flags |= DSF_DISPLAY;
+    statep->ds_flags |= DSF_DISPLAY | DSF_CONTINUE;
 }
 
 /*
@@ -860,11 +912,8 @@ slaxDebugHelpInfo (DH_ARGS)
     slaxOutput("  info profile [brief]  Report profiling information");
 }
 
-/*
- * 'info' command
- */
 static void
-slaxDebugCmdInfo (DC_ARGS)
+slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 {
     xsltTemplatePtr template;
     slaxDebugBreakpoint_t *dbp;
@@ -872,24 +921,33 @@ slaxDebugCmdInfo (DC_ARGS)
     char buf[BUFSIZ];
     int hit = 0;
 
-    if (argv[1] == NULL || slaxDebugIsAbbrev("breakpoints", argv[1])) {
-	TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
-	    if (++hit == 1)
-		slaxOutput("List of breakpoints:");
+    TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	if (++hit == 1)
+	    slaxOutput("List of breakpoints:");
 
-	    tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
-	    template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
+	tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
+	template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
-	    slaxOutput("    #%d %s at %s:%ld",
-		dbp->dbp_num,
-	        slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		(dbp->dbp_inst && dbp->dbp_inst->doc)
-			    ? dbp->dbp_inst->doc->URL : null,
-		xmlGetLineNo(dbp->dbp_inst));
+	slaxOutput("    #%d %s at %s:%ld",
+		   dbp->dbp_num,
+		   slaxDebugTemplateInfo(template, buf, sizeof(buf)),
+		   (dbp->dbp_inst && dbp->dbp_inst->doc)
+		   	? dbp->dbp_inst->doc->URL : null,
+		   xmlGetLineNo(dbp->dbp_inst));
 	}
 
-	if (hit == 0)
-	    slaxOutput("No breakpoints.");
+    if (hit == 0)
+	slaxOutput("No breakpoints.");
+}
+
+/*
+ * 'info' command
+ */
+static void
+slaxDebugCmdInfo (DC_ARGS)
+{
+    if (argv[1] == NULL || slaxDebugIsAbbrev("breakpoints", argv[1])) {
+	slaxDebugInfoBreakpoints(statep);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
 	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
@@ -976,7 +1034,7 @@ slaxDebugCmdFinish (DC_ARGS)
 static void
 slaxDebugCmdStep (DC_ARGS)
 {
-    if (slaxDebugCheckDone(statep))
+    if (slaxDebugCheckStart(statep))
 	return;
 
     xsltSetDebuggerStatus(XSLT_DEBUG_STEP);
@@ -990,7 +1048,7 @@ slaxDebugCmdStep (DC_ARGS)
 static void
 slaxDebugCmdNext (DC_ARGS)
 {
-    if (slaxDebugCheckDone(statep))
+    if (slaxDebugCheckStart(statep))
 	return;
 
     if (slaxNodeIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
@@ -1107,7 +1165,7 @@ slaxDebugCmdPrint (DC_ARGS)
 
     res = slaxDebugEvalXpath (statep, cp);
     if (res) {
-	slaxDebugOutputXpath(res);
+	slaxDebugOutputXpath(res, NULL, TRUE);
 	xmlXPathFreeObject(res);
 	slaxOutput("%s", ""); /* Avoid compiler warning */
     }
@@ -1229,12 +1287,45 @@ slaxDebugCmdWhere (DC_ARGS)
 	filename = strrchr((const char *) caller->doc->URL, '/');
 	filename = filename ? filename + 1 : (const char *) caller->doc->URL;
 
-	if (dsfp->st_template->match)
+	if (dsfp->st_template && dsfp->st_template->match)
 	    snprintf(from_info, sizeof(from_info),
 		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
 	else from_info[0] = '\0';
 
 	slaxOutput("#%d %s%s%s", num, template_info, tag, from_info);
+	slaxLog("  locals %d .. %d",
+		   dsfp->st_locals_start, dsfp->st_locals_stop);
+
+	if (dsfp->st_inst && dsfp->st_ctxt) {
+	    xsltStackElemPtr cur;
+	    int start, stop, i;
+	    char tbuf[BUFSIZ];
+	    xsltTransformContextPtr ctxt = dsfp->st_ctxt;
+
+	    /*
+	     * We display the parameter list for the template
+	     */
+	    start = (dsfp->st_locals_start > 0) ? dsfp->st_locals_start : 0;
+	    stop = dsfp->st_locals_stop ?:
+		dsfp->st_locals_start ? ctxt->varsNr : 0;
+	    for (i = start; i < stop; i++) {
+		cur = ctxt->varsTab[i];
+		if (cur == NULL)
+		    continue;
+
+		if (!full && cur->level >= 0)
+		    continue;
+
+		slaxLog("    $%s (%d)", cur->name, cur->level);
+		snprintf(tbuf, sizeof(tbuf), "    $%s = ", cur->name);
+
+		if (cur->value) {
+		    slaxDebugOutputXpath(cur->value, tbuf, FALSE);
+		} else {
+		    slaxOutput("%sNULL", tbuf);
+		}
+	    }
+	}
 
 	num += 1;
     }
@@ -1289,6 +1380,42 @@ slaxDebugCmdCallFlow (DC_ARGS)
 }
     
 /*
+ * 'reload' command
+ */
+static void
+slaxDebugCmdReload (DC_ARGS)
+{
+    int status = xsltGetDebuggerStatus();
+    int restart;
+
+    if (status != 0 && status != XSLT_DEBUG_DONE
+		&& status != XSLT_DEBUG_QUIT) {
+	const char warning[] =
+	    "The script being debugged has been started already.";
+	const char prompt[]
+	    = "Reload and restart it from the beginning? (y or n) ";
+	char *input;
+
+	slaxOutput(warning);
+	input = slaxInput(prompt, 0);
+	if (input == NULL)
+	    return;
+
+	restart = slaxDebugCheckAbbrev("yes", 1, input, strlen(input));
+	xmlFree(input);
+
+	if (!restart)
+	    return;
+    }
+
+    /* Tell the xslt engine to stop */
+    xsltStopEngine(statep->ds_ctxt);
+
+    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+    statep->ds_flags |= DSF_RELOAD;
+}
+    
+/*
  * 'run' command
  */
 static void
@@ -1297,7 +1424,8 @@ slaxDebugCmdRun (DC_ARGS)
     int status = xsltGetDebuggerStatus();
     int restart;
 
-    if (status != XSLT_DEBUG_DONE && status != XSLT_DEBUG_QUIT) {
+    if (status != 0 && status != XSLT_DEBUG_DONE
+		&& status != XSLT_DEBUG_QUIT) {
 	const char warning[] =
 	    "The script being debugged has been started already.";
 	const char prompt[] = "Start it from the beginning? (y or n) ";
@@ -1315,8 +1443,11 @@ slaxDebugCmdRun (DC_ARGS)
 	    return;
     }
 
+    /* Tell the xslt engine to stop */
+    xsltStopEngine(statep->ds_ctxt);
+
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-    statep->ds_flags |= DSF_RESTART | DSF_DISPLAY;
+    statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
 }
     
 /*
@@ -1327,8 +1458,9 @@ slaxDebugCmdQuit (DC_ARGS)
 {
     static const char prompt[] =
 	"The script is running.  Exit anyway? (y or n) ";
+    int status = xsltGetDebuggerStatus();
 
-    if (xsltGetDebuggerStatus() != XSLT_DEBUG_DONE) {
+    if (status != 0 && status != XSLT_DEBUG_DONE) {
 	char *input = slaxInput(prompt, 0);
 
 	if (input == NULL
@@ -1336,20 +1468,18 @@ slaxDebugCmdQuit (DC_ARGS)
 	    return;
     }
 
-    /* Free our resources */
-    slaxDebugClearBreakpoints();
-    slaxDebugClearStacktrace();
-
     /*
      * Some parts of libxslt tests the global debug status value and
      * other parts use the context variable, so we have to set them
      * both.  If we've "quit", then there's no context to set.
      */
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-    if (statep->ds_ctxt) {
+    if (statep->ds_ctxt)
 	statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
-	statep->ds_ctxt->state = XSLT_STATE_STOPPED;
-    }
+
+    /* Tell the xslt engine to stop */
+    xsltStopEngine(statep->ds_ctxt);
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1416,9 +1546,14 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
-    { "profile",      2, slaxDebugCmdProfiler,
-      "profile [val]  Turn profiler on or off",
+    { "profile",       2, slaxDebugCmdProfiler,
+      "profile [val]   Turn profiler on or off",
       slaxDebugHelpProfile,
+    },
+
+    { "reload",	       3, slaxDebugCmdReload,
+      "reload          Reload the script contents",
+      NULL,
     },
 
     { "run",	       3, slaxDebugCmdRun,
@@ -1497,7 +1632,7 @@ slaxDebugShell (slaxDebugState_t *statep)
     char *cp, *input;
     static char prompt[] = "(sdb) ";
 
-    if (statep->ds_flags & DSF_DISPLAY) {
+    if ((statep->ds_flags & DSF_DISPLAY) && statep->ds_inst != NULL) {
 	const char *filename = (const char *) statep->ds_inst->doc->URL;
 	int line_no = xmlGetLineNo(statep->ds_inst);
 	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
@@ -1555,7 +1690,7 @@ slaxDebugSameSlax (slaxDebugState_t *statep, xmlNodePtr inst)
     if (statep->ds_inst == inst)
 	return TRUE;
 
-    if (statep->ds_inst->doc == inst->doc) {
+    if (statep->ds_inst->doc && statep->ds_inst->doc == inst->doc) {
 	int lineno = xmlGetLineNo(inst);
 	if (lineno > 0 && lineno == xmlGetLineNo(statep->ds_inst))
 	    return TRUE;
@@ -1580,6 +1715,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 		  xsltTemplatePtr template, xsltTransformContextPtr ctxt)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
+    slaxDebugStackFrame_t *dsfp;
     int status;
     char buf[BUFSIZ];
 
@@ -1597,6 +1733,13 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
      * We do not debug text nodes
      */
     if (inst && inst->type == XML_TEXT_NODE)
+	return;
+
+    /*
+     * When we ask to quit, libxslt might keep going for a while
+     */
+    status = xsltGetDebuggerStatus();
+    if (status == XSLT_DEBUG_DONE || status == XSLT_DEBUG_QUIT)
 	return;
 
     /*
@@ -1620,6 +1763,35 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     statep->ds_template = template;
     statep->ds_ctxt = ctxt;
 
+    /*
+     * The addFrame callback doesn't get passed the context pointer
+     * and we need it to properly record the "varsBase" field, which
+     * tells us where local variables start.  Without that, we have
+     * to record it on the next handler call.
+     */
+    if (ctxt && (statep->ds_flags & DSF_FRESHADD)) {
+	statep->ds_flags &= ~DSF_FRESHADD;
+	dsfp = TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s);
+	if (dsfp) {
+	    dsfp->st_ctxt = ctxt;
+	    dsfp->st_locals_start = ctxt->varsNr;
+
+	    dsfp = TAILQ_PREV(dsfp, slaxDebugStack_s, st_link);
+	    if (dsfp) {
+		dsfp->st_ctxt = ctxt;
+		dsfp->st_locals_start = ctxt->varsBase;
+		dsfp->st_locals_stop = ctxt->varsNr;
+
+		/*
+		 * Record the last local index for the previous stack frame.
+		 */
+		dsfp = TAILQ_PREV(dsfp, slaxDebugStack_s, st_link);
+		if (dsfp && dsfp->st_ctxt == ctxt)
+		    dsfp->st_locals_stop = ctxt->varsBase;
+	    }
+	}
+    }
+
     slaxDebugCheckBreakpoint(statep, inst, TRUE);
 
 #if 0
@@ -1634,7 +1806,10 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     }
 #endif
 
+    statep->ds_flags &= ~DSF_CONTINUE;
+
     for (;;) {
+
 	status = xsltGetDebuggerStatus();
 
 	switch (status) {
@@ -1761,6 +1936,8 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
 
     TAILQ_INSERT_TAIL(&slaxDebugStack, dsfp, st_link);
 
+    statep->ds_flags |= DSF_FRESHADD;
+
     /*
      * return value > 0 makes libxslt to call slaxDebugDropFrame()
      */
@@ -1864,8 +2041,14 @@ slaxDebugSetStylesheet (xsltStylesheetPtr script)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
 
-    if (statep)
+    if (statep) {
 	statep->ds_script = script;
+	statep->ds_inst = NULL;
+	statep->ds_template = NULL;
+	statep->ds_node = NULL;
+	statep->ds_last_inst = NULL;
+	statep->ds_stop_at = NULL;
+    }
 }
 
 /**
@@ -1879,6 +2062,42 @@ slaxDebugSetIncludes (const char **includes)
     slaxDebugIncludes = includes;
 }
 
+static xsltStylesheetPtr
+slaxDebugReload (const char *scriptname)
+{
+    FILE *fp;
+    xmlDocPtr docp;
+    xsltStylesheetPtr newp = NULL;
+
+    fp = fopen(scriptname, "r");
+    if (fp == NULL) {
+	slaxOutput("could not open file '%s': %s",
+		   scriptname, strerror(errno));
+    } else {
+	docp = slaxLoadFile(scriptname, fp, NULL, 0);
+	fclose(fp);
+	if (docp == NULL) {
+	    slaxOutput("could not parse file '%s'", scriptname);
+	} else {
+	    newp = xsltParseStylesheetDoc(docp);
+	    if (newp && newp->errors == 0)
+		return newp;
+		
+	    slaxOutput("%d errors parsing script: '%s'",
+		       newp ? newp->errors : 1, scriptname);
+	    if (newp) {
+		xsltFreeStylesheet(newp);
+		newp = NULL;
+	    } else if (docp) {
+		xmlFreeDoc(docp);
+	    }
+	}
+    }
+
+    slaxOutput("Reload failed.");
+    return NULL;
+}
+
 /**
  * Apply a stylesheet to an input document, returning the results.
  *
@@ -1888,81 +2107,133 @@ slaxDebugSetIncludes (const char **includes)
  * @returns output document
  */
 void
-slaxDebugApplyStylesheet (xsltStylesheetPtr style, xmlDocPtr doc,
+slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
+			  const char *docname UNUSED, xmlDocPtr doc,
 			  const char **params)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
     xmlDocPtr res;
     int status;
+    xsltStylesheetPtr new_style, save_style = NULL;
 
     slaxDebugSetStylesheet(style);
     slaxProfOpen(style->doc);
     statep->ds_flags |= DSF_PROFILER;
 
+    xsltSetDebuggerStatus(0);
+
     for (;;) {
+	if (slaxDebugShell(statep) < 0)
+	    break;
+
+	/*
+	 * Lots of flag interactions here, based on how we got
+	 * to this spot.
+	 */
+	if (statep->ds_flags & DSF_RESTART) {
+	restart:
+	    statep->ds_flags &= ~DSF_RESTART;
+	    statep->ds_flags |= DSF_DISPLAY;
+
+	    if (statep->ds_flags & DSF_CONTINUE) {
+		xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+		statep->ds_flags &= ~DSF_CONTINUE;
+	    } else 
+		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+
+	} else if (statep->ds_flags & DSF_RELOAD) {
+	reload:
+	    statep->ds_flags &= ~DSF_RELOAD;
+	    xsltSetDebuggerStatus(0);
+
+	    if (save_style) {
+		xsltFreeStylesheet(save_style);
+		save_style = NULL;
+	    }
+
+	    new_style = slaxDebugReload(scriptname);
+	    if (new_style) {
+		/* Out with the old */
+		slaxDebugClearBreakpoints();
+		slaxDebugClearStacktrace();
+		slaxProfClear();
+		slaxProfClose();
+
+		/* In with the new */
+		save_style = style = new_style;
+		slaxDebugSetStylesheet(style);
+		slaxProfOpen(style->doc);
+
+		statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
+		xsltSetDebuggerStatus(0);
+
+		slaxOutput("Reloading complete.");
+	    }
+
+	    continue;
+
+	} else {
+	    status = xsltGetDebuggerStatus();
+	    if (status == XSLT_DEBUG_QUIT)
+		break;
+	    
+	    continue;	/* Until the user says "run", we go nothing */
+	}
+
 	res = xsltApplyStylesheet(style, doc, params);
 
 	status = xsltGetDebuggerStatus();
-
 	if (status == XSLT_DEBUG_QUIT) {
 	    xmlFreeAndEasy(res);
 	    res = NULL;
 
-	    /* Quit without restart == exit */
-	    if (!(statep->ds_flags & DSF_RESTART))
-		goto done;
+	    if (statep->ds_flags & DSF_RELOAD) {
+		slaxOutput("Reloading script...");
+		goto reload;
 
-	} else {
-	    /*
-	     * We fell out the bottom of the script.  Show the output,
-	     * cleanup, and loop in the shell until something
-	     * interesting happens.
-	     */
-	    if (res) {
-		xsltSaveResultToFile(stdout, res, style);
-		xmlFreeDoc(res);
-		res = NULL;
-	    }
+	    } else if (statep->ds_flags & DSF_RESTART) {
+		slaxOutput("Restarting script.");
+		slaxProfClear();
+		slaxDebugClearStacktrace();
+		goto restart;
 
-	    /* Clean up state pointers (all free'd by now) */
-	    statep->ds_ctxt = NULL;
-	    statep->ds_inst = NULL;
-	    statep->ds_node = NULL;
-	    statep->ds_template = NULL;
-	    statep->ds_last_inst = NULL;
-	    statep->ds_stop_at = NULL;
-
-	    slaxOutput("Script exited normally.");
-	    xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
-	    statep->ds_flags &= ~DSF_DISPLAY;
-
-	    for (;;) {
-		if (slaxDebugShell(statep) < 0)
-		    goto done;
-
-		status = xsltGetDebuggerStatus();
-		if (status != XSLT_DEBUG_QUIT)
-		    continue;
-
+	    } else {
 		/* Quit without restart == exit */
-		if (statep->ds_flags & DSF_RESTART)
-		    break;
-
-		goto done;
+		break;
 	    }
 	}
 
 	/*
-	 * We've here because the user said "run".  We do a little
-	 * cleanup and repeat this loop, which will reinvoke the xslt
-	 * engine on the next pass.
+	 * We fell out the bottom of the script.  Show the output,
+	 * cleanup, and loop in the shell until something
+	 * interesting happens.
 	 */
-	statep->ds_flags &= ~DSF_RESTART;
-	statep->ds_flags |= DSF_DISPLAY;
-	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	if (res) {
+	    xsltSaveResultToFile(stdout, res, style);
+	    xmlFreeDoc(res);
+	    res = NULL;
+	}
+
+	/* Clean up state pointers (all free'd by now) */
+	statep->ds_ctxt = NULL;
+	statep->ds_inst = NULL;
+	statep->ds_node = NULL;
+	statep->ds_template = NULL;
+	statep->ds_last_inst = NULL;
+	statep->ds_stop_at = NULL;
+
+	slaxOutput("Script exited normally.");
+
+	statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
+	xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
 	slaxProfClear();
     }
 
- done:
+    /* Free our resources */
+    slaxDebugClearBreakpoints();
+    slaxDebugClearStacktrace();
     slaxProfClose();
+
+    if (save_style)
+	xsltFreeStylesheet(save_style);
 }

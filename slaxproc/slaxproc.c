@@ -189,7 +189,9 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (use_debugger) {
 	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
-	slaxDebugApplyStylesheet(script, indoc, params);
+	slaxDebugApplyStylesheet(scriptname, script,
+				 is_filename_std(input) ? NULL : input,
+				 indoc, params);
     } else {
 	res = xsltApplyStylesheet(script, indoc, params);
 
@@ -299,14 +301,15 @@ print_version (void)
 static void
 print_help (void)
 {
-    printf("Usage: slaxproc [options] [stylesheet] [file]\n");
-    printf("    Options:\n");
+    printf("Usage: slaxproc [mode] [options] [stylesheet] [file]\n");
+    printf("    Modes:\n");
+    printf("\t--run OR -r: run a SLAX script (the default mode)\n");
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
     printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
-    printf("\t--run OR -r: run a SLAX script\n");
     printf("\t--check OR -c: check syntax and content for a SLAX script\n");
     printf("\n");
 
+    printf("    Options:\n");
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--indent OR -g: indent output ala output-method/indent\n");
