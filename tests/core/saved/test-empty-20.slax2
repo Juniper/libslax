@@ -1,0 +1,23 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+var $content = "\nline one\nline two\nline three\nline four\nline five\nse-ix\nse-ven\neh-it\nny-en\nte-en\nel-e-ven\ntwiel-ve\nt'ir-teeen\nfour-teen\nfift-teen\nse-ix-teen\n";
+var $content2 = <this> $content;
+
+match / {
+    <top> {
+        var $lines = slax:break-lines($content);
+        
+        message "done: " _ count($lines);
+        
+        for $line ($lines) {
+            copy-of $line;
+        }
+        var $lines2 = slax:break-lines($content2);
+        message "done: " _ count($lines);
+        
+        for $line2 ($lines2) {
+            copy-of $line2;
+        }
+    }
+}

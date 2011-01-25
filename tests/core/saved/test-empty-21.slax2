@@ -1,0 +1,30 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+match / {
+    param $z = "param to /";
+    var $a = 1;
+    
+    <top> {
+        var $b = "local to match(/)";
+        
+        call one($a);
+    }
+}
+
+template one ($a, $b) {
+    var $c = "local to one";
+    
+    <one> $a;
+    call two($a, $c = "arg to two", $d = "arg to two");
+}
+
+template two ($a, $c, $d) {
+    if ($a < 10) {
+        call three($a = $a + 1);
+    }
+}
+
+template three ($a) {
+    call one($a, $b = "bee");
+}

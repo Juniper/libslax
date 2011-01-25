@@ -1,0 +1,37 @@
+version 1.1;
+
+var $content = "
+line one
+line two
+line three
+line four
+line five
+se-ix
+se-ven
+eh-it
+ny-en
+te-en
+el-e-ven
+twiel-ve
+t'ir-teeen
+four-teen
+fift-teen
+se-ix-teen
+";
+
+var $content2 = <this> $content;
+
+match / {
+    <top> {
+	var $lines = slax:break-lines($content);
+	message "done: " _ count($lines);
+	for $line ($lines) {
+	    copy-of $line;
+	}
+	var $lines2 = slax:break-lines($content2);
+	message "done: " _ count($lines);
+	for $line2 ($lines2) {
+	    copy-of $line2;
+	}
+    }
+}

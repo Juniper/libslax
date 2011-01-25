@@ -23,6 +23,11 @@
       <xsl:variable name="f">
         <xsl:call-template name="_"/>
       </xsl:variable>
+      <xsl:variable name="g" select="concat(call, /this/or/that)"/>
+      <xsl:variable name="h" select="call"/>
+      <xsl:variable name="i">
+        <xsl:call-template name="call"/>
+      </xsl:variable>
       <a>
         <xsl:value-of select="$a"/>
       </a>
@@ -41,6 +46,24 @@
       <f>
         <xsl:value-of select="$f"/>
       </f>
+      <g>
+        <xsl:value-of select="$g"/>
+      </g>
+      <h>
+        <xsl:value-of select="$h"/>
+      </h>
+      <i>
+        <xsl:value-of select="$i"/>
+      </i>
+      <xsl:call-template name="test">
+        <xsl:with-param name="a" select="concat(&quot;this&quot;, &quot; and &quot;, &quot;that&quot;)"/>
+      </xsl:call-template>
+      <output>
+        <xsl:value-of select="concat(&quot;this&quot;, &quot; and &quot;, &quot;that&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="string-length(&quot;this&quot;)"/>
+      </output>
     </top>
   </xsl:template>
   <xsl:template name="test">
@@ -51,6 +74,12 @@
   </xsl:template>
   <xsl:template name="_">
     <xsl:param name="a" select="&quot;A&quot;"/>
+    <output>
+      <xsl:value-of select="$a"/>
+    </output>
+  </xsl:template>
+  <xsl:template name="call">
+    <xsl:param name="a" select="&quot;call&quot;"/>
     <output>
       <xsl:value-of select="$a"/>
     </output>
