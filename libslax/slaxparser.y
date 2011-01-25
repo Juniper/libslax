@@ -2922,13 +2922,13 @@ xpc_argument_list_optional :
 	;
 
 xpc_argument_list :
-	xpath_expression
+	xpath_value
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xpc_argument_list L_COMMA xpath_expression
+	| xpc_argument_list L_COMMA xpath_value
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);

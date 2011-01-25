@@ -1084,24 +1084,20 @@ slaxExtMakeTextNode (xmlNs *nsp, const char *name,
 }
 
 /*
- * Break a element into the set of clone element, with each clone
+ * Break a string into the set of clone element, with each clone
  * containing one line of text.
  */
 static void
-slaxExtBreakElement (xmlDocPtr container, xmlNodeSet *results, xmlNode *nodep, 
-		   xmlNode *textp)
+slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
+		    xmlNsPtr nsp, const char *name)
 {
     xmlNode *clone;
-    char *content, *cp, *sp;
     xmlNode *last;
-
-    if (nodep == NULL)
-	return;
+    char *cp, *sp;
 
     /* If there's no content, return an empty clone */
-    if (textp->content == NULL) {
-	clone = slaxExtMakeTextNode(nodep->ns, (const char *) nodep->name,
-				    NULL, 0);
+    if (content == NULL) {
+	clone = slaxExtMakeTextNode(nsp, name, NULL, 0);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    xmlAddChild((xmlNodePtr) container, clone);
@@ -1109,11 +1105,9 @@ slaxExtBreakElement (xmlDocPtr container, xmlNodeSet *results, xmlNode *nodep,
 	return;
     }
 
-    content = (char *) textp->content;
     cp = strchr(content, '\n');
     if (cp == NULL) {
-	clone = slaxExtMakeTextNode(nodep->ns, (const char *) nodep->name,
-				    content, strlen(content));
+	clone = slaxExtMakeTextNode(nsp, name, content, strlen(content));
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    xmlAddChild((xmlNodePtr) container, clone);
@@ -1125,8 +1119,7 @@ slaxExtBreakElement (xmlDocPtr container, xmlNodeSet *results, xmlNode *nodep,
     last = NULL;
 
     for (;;) {
-	clone = slaxExtMakeTextNode(nodep->ns, (const char *) nodep->name,
-				    sp, cp - sp);
+	clone = slaxExtMakeTextNode(nsp, name, sp, cp - sp);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    if (last)
@@ -1145,7 +1138,6 @@ slaxExtBreakElement (xmlDocPtr container, xmlNodeSet *results, xmlNode *nodep,
 	    cp = sp + strlen(sp);
     }
 }
-
 
 /*
  * Break a simple element into multiple elements, delimited by
@@ -1209,12 +1201,15 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 		    if (cop->type != XML_TEXT_NODE)
 			continue;
 
-		    slaxExtBreakElement(container, results, nop, cop);
+		    slaxExtBreakString(container, results,
+				       (char *) cop->content,
+				       nop->ns, (const char *) nop->name);
 		}
 	    }
 
 	} else if (obj->stringval) {
-	    /* XXX No idea XXX */
+	    slaxExtBreakString(container, results, (char *) obj->stringval,
+			       NULL, ELT_TEXT);
 	}
     }
 
