@@ -1,0 +1,6 @@
+../../../tests/errors/test-error-008.slax:6: unexpected input: '}'; expected valid top-level statement
+../../../tests/errors/test-error-008.slax:12: unexpected input: '<'; expected open brace ('{')
+../../../tests/errors/test-error-008.slax:14: error recovery ignores input until this point before '}': 
+../../../tests/errors/test-error-008.slax:14: unexpected input: '}'; expected valid top-level statement
+../../../tests/errors/test-error-008.slax: 3 errors detected during parsing
+slaxproc: cannot parse: '../../../tests/errors/test-error-008.slax'

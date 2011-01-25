@@ -1,0 +1,3 @@
+../../../tests/errors/test-error-004.slax:3: unexpected input: 'var'; expected semi-colon (';')
+../../../tests/errors/test-error-004.slax: 1 error detected during parsing
+slaxproc: cannot parse: '../../../tests/errors/test-error-004.slax'

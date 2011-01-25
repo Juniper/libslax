@@ -109,6 +109,7 @@ typedef struct keyword_mapping_s {
 #define KMF_NODE_TEST	(1<<0)	/* Node test */
 #define KMF_SLAX_KW	(1<<1)	/* Keyword for slax */
 #define KMF_XPATH_KW	(1<<2)	/* Keyword for xpath */
+#define KMF_STMT_KW	(1<<3)	/* Fancy statement (slax keyword in xpath) */
 
 static keyword_mapping_t keywordMap[] = {
     { K_AND, "and", KMF_XPATH_KW },
@@ -117,7 +118,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_APPLY_TEMPLATES, "apply-templates", KMF_SLAX_KW },
     { K_ATTRIBUTE, "attribute", KMF_SLAX_KW },
     { K_ATTRIBUTE_SET, "attribute-set", KMF_SLAX_KW },
-    { K_CALL, "call", KMF_SLAX_KW },
+    { K_CALL, "call", KMF_SLAX_KW | KMF_STMT_KW },
     { K_CASE_ORDER, "case-order", KMF_SLAX_KW },
     { K_CDATA_SECTION_ELEMENTS, "cdata-section-elements", KMF_SLAX_KW },
     { K_COMMENT, "comment", KMF_SLAX_KW | KMF_NODE_TEST },
@@ -459,6 +460,54 @@ slaxKeyword (slax_data_t *sdp)
 
 	    if (xpath_kwa && (kmp->km_flags & KMF_XPATH_KW))
 		return kmp->km_ttype;
+
+	    if ((sdp->sd_last == L_ASSIGN || sdp->sd_last == L_EQUALS)
+			&& (kmp->km_flags & KMF_STMT_KW)) {
+		int look = sdp->sd_cur + strlen(kmp->km_string);
+
+		for ( ; look < sdp->sd_len; look++) {
+		    ch = sdp->sd_buf[look];
+
+		    /*
+		     * An underscore here could be either the
+		     * concatenation operator or a bare word ("_foo")
+		     * or even just "_" as a bare word. Compare
+		     * 'var $a = call _;' and 'var $a = call _ call;'.
+		     */
+		    if (ch == '_') {
+			ch = sdp->sd_buf[++look];
+			if (slaxIsBareChar(ch))
+			    return kmp->km_ttype;
+
+			if (ch == 0 || ch == '(' || ch == ';')
+			    return kmp->km_ttype;
+
+			if (!isspace(ch))
+			    break;
+
+			for (;;) {
+			    if (look > sdp->sd_len)
+				return kmp->km_ttype;
+
+			    ch = sdp->sd_buf[++look];
+			    if (ch == 0 || ch == '(' || ch == ';')
+				return kmp->km_ttype;
+
+			    if (isspace(ch))
+				continue;
+
+			    if (slaxIsBareChar(ch))
+				break;
+			}
+			break;
+
+		    } else if (slaxIsBareChar(ch))
+			return kmp->km_ttype;
+
+		    if (!isspace(ch))
+			break;
+		}
+	    }
 
 	    if (kmp->km_flags & KMF_NODE_TEST) {
 		int look = sdp->sd_cur + strlen(kmp->km_string);
@@ -1019,11 +1068,10 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 	rc = T_BARE;
 
     /*
-     * It's a hack, but it's a standard-specified hack:
-     * We need to see if this is a function name (T_FUNCTION_NAME)
-     * or an NCName (q_name) (T_BARE).
-     * So we look ahead for a '('.  If we find one, it's a function;
-     * if not it's an T_BARE;
+     * It's a hack, but it's a standard-specified hack: We need to see
+     * if this is a function name (T_FUNCTION_NAME) or an NCName
+     * (q_name) (T_BARE).  So we look ahead for a '('.  If we find
+     * one, it's a function; if not it's an T_BARE;
      */
     if (rc == T_BARE) {
 	for (look = sdp->sd_cur; look < sdp->sd_len; look++) {

@@ -1,0 +1,19 @@
+version 1.0;
+
+match / {
+    <top> {
+
+	expr jcs:output( "This is the user " $user );
+
+	var $a = "reset";
+
+	var $variable = $set[5;
+ 
+        var $b = "reset";
+
+	var $z = $configuration/interfaces/*;
+					    /* comment 
+	var $y = $configuration/interfaces/*;
+
+    }
+}

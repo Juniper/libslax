@@ -811,6 +811,12 @@ initial_value :
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
+
+	| call_stmt
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
 	;
 
 
@@ -1266,6 +1272,9 @@ template_name :
 		{ $$ = $1; }
 
 	| T_FUNCTION_NAME
+		{ $$ = $1; }
+
+	| L_UNDERSCORE
 		{ $$ = $1; }
 	;
 

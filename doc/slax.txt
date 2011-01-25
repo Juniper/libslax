@@ -1428,6 +1428,11 @@ name can be passed directly:
 This is identical to "call emit-message($message = $message)", but is
 simpler and the use of common names increased readability.
 
+The call statement can be used as the initial value of a variable or
+parameter, without using an enclosing set of braces:
+
+    var $a = call test($a = 1);
+
 ***** Using the "with" Statement with "call" @with-call@
 
 In addition, template arguments can be passed using the "with"
@@ -2012,9 +2017,7 @@ Calling named templates can also produce RTFs, since the "call"
 statement would be considered complex variable content.  But using the
 ":=" operator removes this problem:
 
-    var $output := {
-        call matching-color($match = "corn");
-    }
+    var $output := call matching-color($match = "corn");
 
 Behind the scenes, SLAX is performing the ext:node-set() call but the
 details are hidden from the user.

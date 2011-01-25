@@ -1,0 +1,3 @@
+../../../tests/errors/test-error-003.slax:1: unexpected end-of-file found (empty input)
+../../../tests/errors/test-error-003.slax: 1 error detected during parsing
+slaxproc: cannot parse: '../../../tests/errors/test-error-003.slax'
