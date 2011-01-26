@@ -9,10 +9,14 @@ XML2HTMLBIN = ${BINDIR}/rfc2629-yang.xslt
 XML2HTMLDIR = `dirname ${XML2HTMLBIN}`
 XML2HTML = xsltproc --path ${XML2HTMLDIR} ${XML2HTMLBIN}
 
-OUTPUT = slax-manual
+OUTPUT = slax-manual-${PACKAGE_VERSION}
 INPUT = slax.txt
 
-doc: ${OUTPUT}.txt ${OUTPUT}.html
+EXTRA_DIST = \
+    ${OUTPUT}.html \
+    ${OUTPUT}.txt
+
+doc docs: ${OUTPUT}.txt ${OUTPUT}.html
 
 ${OUTPUT}.txt: ${OUTPUT}.xml
 	${XML2RFC} $< > $@

@@ -1354,8 +1354,17 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	     */
 
 	} else if (xop->nodesetval) {
-	    if (xop->nodesetval->nodeNr != 0)
+	    if (xop->nodesetval->nodeNr > 1) {
 		empty = FALSE;
+
+	    } else if (xop->nodesetval->nodeNr == 1) {
+		xmlNodePtr nop = xop->nodesetval->nodeTab[0];
+		if (XSLT_IS_RES_TREE_FRAG(nop)) {
+		    if (nop->children != NULL)
+			empty = FALSE;
+		} else 
+		    empty = FALSE;
+	    }
 
 	} else if (xop->stringval) {
 	    if (*xop->stringval)

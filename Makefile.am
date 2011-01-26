@@ -17,3 +17,6 @@ test tests:
 
 errors:
 	@(cd tests/errors ; ${MAKE} test)
+
+docs:
+	@(cd doc ; ${MAKE} docs)
