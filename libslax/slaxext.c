@@ -1272,7 +1272,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     xsltRegisterLocalRVT(tctxt, container);
 
     regex_t reg;
-    int nmatch = 9;
+    int nmatch = 10;
     regmatch_t pm[nmatch];
     int rc;
 
