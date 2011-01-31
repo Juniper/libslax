@@ -10,8 +10,11 @@ output-method { indent "yes"; }
 var $nl = "\n";
 mvar $oneliner = false();
 mvar $indent;
+mvar $dindent;
 mvar $notag;
 mvar $save_line;
+
+param $verbose;
 
 match / {
     <configuration-text> {
@@ -51,7 +54,11 @@ template emit-main ($path = "") {
 	    call emit-empty($path, $cpath);
 
 	} else if (count(*) == 0) {
-	    call emit-text($path, $cpath);
+	    if ($junos-data/p-container[item = $cpath]) {
+		call emit-empty($path, $cpath);
+	    } else {
+		call emit-text($path, $cpath);
+	    }
 
 	} else if ($junos-data/oneliner[item == $cpath]) {
 	    call emit-oneliner($path, $cpath);
@@ -151,9 +158,10 @@ template emit-open ($line) {
     if ($oneliner) {
 	set $save_line = $line;
     } else {
-	message $indent _ $line _ " {";
-	<line> $indent _ $line _ " {";
-	append $indent += "....";
+	if ($verbose) { message $dindent _ $line _ " {"; }
+	expr $indent _ $line _ " {";
+	append $dindent += "....";
+	append $indent += "    ";
 	expr $nl;
     }
 }
@@ -162,32 +170,48 @@ template emit-line ($line) {
     if ($oneliner) {
 	append $save_line += " " _ $line;
     } else {
-	message $indent _ $line _ ";";
-	<line> $indent _ $line _ ";";
+	if ($verbose) { message $dindent _ $line _ ";"; }
+	expr $indent _ $line _ ";";
 	expr $nl;
     }
 }
 
 template emit-close () {
     if ($oneliner) {
-	<line> $indent _ $save_line _ ";";
+	if ($verbose) { message $dindent _ $save_line _ ";"; }
+	expr $indent _ $save_line _ ";";
 	expr $nl;
 
     } else {
+	set $dindent = substring($dindent, 5);
 	set $indent = substring($indent, 5);
 
-	message $indent _ "}";
-	<line> $indent _ "}";
+	if ($verbose) { message $dindent _ "}"; }
+	expr $indent _ "}";
 	expr $nl;
     }
 }
 
 function brace:clean ($value) {
-    var $re = slax:regex("^(\n?)( *)(.*)", $value);
+    var $new = {
+	var $re = slax:regex("^(\n?)( *)(.*)", $value);
 
-    if ($re[1]) {
-	result $re[4];
-    } else {
-	result "\"" _ $value _ "\"";
+	if ($re[1]) {
+	    expr $re[4];
+	} else {
+	    expr $value;
+	}
     }
+
+    var $q = {
+	var $pat = "[ \\$\t;'\\(\\){}!@#\\$%^&'\\?~`|\'\"]";  /* Needs [] */
+	var $re = slax:regex($pat, $value);
+	if ($re[1]) {
+	    expr "\"";
+	} else {
+	    expr "";
+	}
+    }
+
+    result $q _ $new _ $q;
 }

@@ -1,0 +1,20 @@
+version 1.0;
+
+match / {
+    <out> {
+	/* Show the oldest five deceased authors */
+    	for-each (/authors/author) {
+	    sort life-span/died - life-span/born {
+		order "descending";
+	    }
+	    sort life-span/born;
+
+	    if (position() <= 5) {
+                var $age = life-span/died - life-span/born;
+		<oldest age = $age> {
+                    copy-of .;
+		}
+	    }
+	}
+    }
+}

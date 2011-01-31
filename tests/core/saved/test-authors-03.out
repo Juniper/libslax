@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<out>
+  <oldest age="NaN">
+    <author>
+      <name>
+        <first>Emery</first>
+        <last>Bonett</last>
+      </name>
+    </author>
+  </oldest>
+  <oldest age="NaN">
+    <author>
+      <name>
+        <first>John</first>
+        <last>Bonett</last>
+      </name>
+    </author>
+  </oldest>
+  <oldest age="NaN">
+    <author>
+      <name>
+        <first>Lilian Jackson</first>
+        <last>Braun</last>
+      </name>
+    </author>
+  </oldest>
+  <oldest age="NaN">
+    <author>
+      <name>
+        <first>Robert</first>
+        <last>Crais</last>
+      </name>
+    </author>
+  </oldest>
+  <oldest age="NaN">
+    <author>
+      <name>
+        <first>Jordan</first>
+        <last>Dane</last>
+      </name>
+    </author>
+  </oldest>
+</out>

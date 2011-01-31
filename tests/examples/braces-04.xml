@@ -1,0 +1,12 @@
+<configuration xmlns:junos="http://xml.juniper.net/junos/*/junos">
+    <system>
+        <services>
+            <ssh>
+            </ssh>
+            <netconf>
+                <ssh>
+                </ssh>
+            </netconf>
+        </services>
+    </system>
+</configuration>

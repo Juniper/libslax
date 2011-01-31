@@ -1,0 +1,22 @@
+<configuration xmlns:junos="http://xml.juniper.net/junos/*/junos">
+  <protocols>
+    <mpls>
+      <label-switched-path>
+        <name>path-a</name>
+        <to>10.5.20.2</to>
+        <primary>
+          <name>path-a</name>
+        </primary>
+      </label-switched-path>
+      <path>
+        <name>path-a</name>
+        <path-list>
+          <name>10.5.16.2</name>
+        </path-list>
+        <path-list>
+          <name>10.5.16.33</name>
+        </path-list>
+      </path>
+    </mpls>
+  </protocols>
+</configuration>

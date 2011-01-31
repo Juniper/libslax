@@ -2,6 +2,7 @@ version 1.0;
 
 var $junos-data := {
     <skip-level> {
+	<item> "/interfaces/interface";
     }
     <oneliner> {
 	<item> "/system/backup-router";
@@ -27,6 +28,10 @@ var $junos-data := {
     <homogeneous> {
 	<item> "/system/name-server";
 	<item> "/groups";
+    }
+    <p-container> {
+	<item> "/system/services/ssh";
+	<item> "/system/services/netconf/ssh";
     }
     <special> {
     }

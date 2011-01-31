@@ -1,0 +1,105 @@
+version 1.1;
+
+ns ms = "urn:schemas-microsoft-com:office:spreadsheet";
+ns o = "urn:schemas-microsoft-com:office:office";
+ns x = "urn:schemas-microsoft-com:office:excel";
+ns ss = "urn:schemas-microsoft-com:office:spreadsheet";
+ns html = "http://www.w3.org/TR/REC-html40";
+
+output-method {
+    indent "yes";
+}
+
+match / {
+    <html> {
+	<body> {
+	    var $deals := call build-deals;
+
+	    for-each ($deals/ *) {
+		<h1> name;
+		<table> {
+		    if (market) {
+			<tr> {
+			    <td> "Market";
+			    <td> market;
+			}
+		    }
+		    if (size) {
+			<tr> {
+			    <td> "Size";
+			    <td> size;
+			}
+		    }
+		    if (products) {
+			<tr> {
+			    <td> "Products";
+			    <td> products;
+			}
+		    }
+		    if (contact) {
+			<tr> {
+			    <td> "Contact";
+			    <td> contact;
+			}
+		    }
+		}
+		if (note) {
+		    <div> note;
+		}
+		if (link) {
+		    <div> {
+			<a href=link> link;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+template build-deals () {
+    for-each (ms:Workbook/ms:Worksheet/ms:Table/ms:Row[position() > 1]) {
+	var $name = ms:Cell[1]/ms:Data;
+	if ($name) {
+
+	    var $theater = call get-cell($cell = 2);
+	    var $market = call get-cell($cell = 3);
+	    var $size = call get-cell($cell = 4);
+	    var $products = call get-cell($cell = 5);
+	    var $contact = call get-cell($cell = 6);
+	    var $note = call get-cell($cell = 7);
+
+	    <deal> {
+		<name> $name;
+		if (not(slax:empty($market))) { <market> $market; }
+		if (not(slax:empty($size))) { <size> $size; }
+		if (not(slax:empty($products))) { <products> $products; }
+		if (not(slax:empty($contact))) { <contact> $contact; }
+		if (not(slax:empty($note))) {
+		    var $pat = "(.*)(https?://[-a-zA-Z0-9/\\.]+)(.*)";
+		    var $re = slax:regex($pat, $note);
+		    if ($re[1]) {
+			<note> $re[2] _ $re[4];
+			<link> $re[3];
+		    } else {
+		        <note> $note;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+template get-cell ($cell) {
+    mvar $cur = 0;
+    for-each (ms:Cell) {
+	if (@ss:Index) {
+	    set $cur = @ss:Index;
+	} else {
+	    set $cur = $cur + 1;
+	}
+
+	if ($cur == $cell) {
+	    expr ms:Data;
+	}
+    }
+}

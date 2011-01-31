@@ -1172,6 +1172,10 @@ set to the current element.
         use-attribute-sets table-attributes;
     }
 
+The use-attribute-sets statement can be used under the "element",
+"copy-node", and "attribute-sets" statements, as well as under a
+normal element.
+
 *** Expressions
 
 XPath expression can be added to the result tree using the "expr" and
