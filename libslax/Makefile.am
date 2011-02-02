@@ -4,11 +4,13 @@
 
 include ${top_srcdir}/warnings.mk
 
+slaxincdir = ${includedir}/libslax
+
 AM_CFLAGS = -I${top_srcdir} ${LIBXML_CFLAG} ${LIBXSLT_CFLAGS} ${WARNINGS}
 
 lib_LTLIBRARIES = libslax.la
 
-include_HEADERS = \
+slaxinc_HEADERS = \
     slax.h
 
 noinst_HEADERS = \
