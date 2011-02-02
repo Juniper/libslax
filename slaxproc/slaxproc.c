@@ -301,7 +301,7 @@ print_version (void)
 static void
 print_help (void)
 {
-    printf("Usage: slaxproc [mode] [options] [stylesheet] [file]\n");
+    printf("Usage: slaxproc [mode] [options] [script] [file]\n");
     printf("    Modes:\n");
     printf("\t--run OR -r: run a SLAX script (the default mode)\n");
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");

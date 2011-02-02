@@ -467,20 +467,18 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     int rc;
     xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
 
+    if (ctxt == NULL)
+	return NULL;
+
     /*
      * Turn on line number recording in each node
      */
     ctxt->linenumbers = 1;
 
-    if (ctxt == NULL)
-	return NULL;
-
-    if ((dict != NULL) && (ctxt->dict != NULL)) {
-	xmlDictFree(ctxt->dict);
-	ctxt->dict = NULL;
-    }
-
     if (dict) {
+	if (ctxt->dict)
+	    xmlDictFree(ctxt->dict);
+
     	ctxt->dict = dict;
  	xmlDictReference(ctxt->dict);
     }
