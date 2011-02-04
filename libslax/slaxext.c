@@ -1928,6 +1928,63 @@ slaxExtGetCommand (xmlXPathParserContext *ctxt, int nargs)
 {
     slaxExtGetInputFlags(ctxt, nargs, SIF_HISTORY);
 }
+
+/*
+ * Evaluate a SLAX expression
+ */
+static void
+slaxExtEvaluate (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlChar *str = NULL;
+    xmlXPathObjectPtr ret = NULL;
+    char *sexpr;
+    int errors = 0;
+
+    if (ctxt == NULL)
+	return;
+
+    if (nargs != 1) {
+	xsltPrintErrorContext(xsltXPathGetTransformContext(ctxt), NULL, NULL);
+        xsltGenericError(xsltGenericErrorContext,
+			 "slax:evalute: invalid number of args %d\n", nargs);
+	ctxt->error = XPATH_INVALID_ARITY;
+	return;
+    }
+
+    str = xmlXPathPopString(ctxt);
+    if (!str || !xmlStrlen(str)) {
+	/* Return an empty node-set if an empty string is passed in */
+	if (str)
+	    xmlFree(str);
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+	return;
+    }
+
+    /* Convert a SLAX expression into an XPath one */
+    sexpr = slaxSlaxToXpath("slax:evaluate", 1, (const char *) str, &errors);
+    if (sexpr == NULL || errors > 0) {
+        xsltGenericError(xsltGenericErrorContext,
+			 "slax:evalute: invalid expression: %s\n", str);
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+	xmlFreeAndEasy(sexpr);
+	xmlFree(str);
+	return;
+    }
+
+    xmlFree(str);
+
+    ret = xmlXPathEval((const xmlChar *) sexpr, ctxt->context);
+    if (ret)
+	valuePush(ctxt, ret);
+    else {
+	xsltGenericError(xsltGenericErrorContext,
+		"slax:evaluate: unable to evaluate expression '%s'\n", sexpr);
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+    }	
+
+    xmlFree(sexpr);
+    return;
+}
  
 /*
  * Register our extension functions.
@@ -1975,6 +2032,8 @@ slaxExtRegister (void)
 			slaxWhileCompile, slaxWhileElement);
 
     slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
+
+    slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
 
     slaxExtRegisterOther(NULL);
 

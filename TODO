@@ -15,8 +15,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - sdb: Conditional breakpoints
 
-- sdb: add SLAX-style xpath expressions to the "print" command ("==", etc)
-
 - sdb: up, down, and stack-sensitive "print"
 
 - sdb: "frame" command to display detailed information about a stack frame

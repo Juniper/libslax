@@ -486,7 +486,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     bzero(&sd, sizeof(sd));
 
     /* We want to parse SLAX, either full or partial */
-    sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_SLAX;
+    sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
 
     strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
@@ -527,6 +527,116 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     slaxDataCleanup(&sd);
 
     return res;
+}
+
+/*
+ * Turn a SLAX expression into an XPath one.  Returns a freshly
+ * allocated string, or NULL.
+ */
+char *
+slaxSlaxToXpath (const char *filename, int lineno,
+		 const char *slax_expr, int *errorsp)
+{
+    slax_data_t sd;
+    int rc, errors = 0;
+    xmlParserCtxtPtr ctxt;
+    xmlNodePtr fakep = NULL;
+    char *buf;
+
+    if (errorsp)
+	*errorsp = 0;
+
+    if (slax_expr == NULL || *slax_expr == '\0')
+	return (char *) xmlCharStrdup("\"\"");
+
+    ctxt = xmlNewParserCtxt();
+    if (ctxt == NULL)
+	return NULL;
+
+    bzero(&sd, sizeof(sd));
+    sd.sd_parse = sd.sd_ttype = M_PARSE_SLAX; /* We want to parse SLAX */
+    sd.sd_ctxt = ctxt;
+    sd.sd_flags |= SDF_NO_SLAX_KEYWORDS;
+
+    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
+    ctxt->userData = &sd;
+
+    /*
+     * Fake up an inputStream so the error mechanisms will work
+     */
+    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", filename);
+    sd.sd_line = lineno;
+
+    fakep = xmlNewNode(NULL, (const xmlChar *) ELT_STYLESHEET);
+    if (fakep == NULL)
+	goto fail;
+
+    sd.sd_xsl_ns = xmlNewNs(fakep, (const xmlChar *) XSL_URI,
+			    (const xmlChar *) XSL_PREFIX);
+    xmlSetNs(fakep, sd.sd_xsl_ns); /* Noop if NULL */
+
+    nodePush(ctxt, fakep);
+
+    sd.sd_len = strlen(slax_expr);
+    buf = alloca(sd.sd_len + 1);
+    if (buf == NULL)		/* Should not occur */
+	goto fail;
+    memcpy(buf, slax_expr, sd.sd_len + 1);
+    sd.sd_buf = buf;
+
+    rc = slaxParse(&sd);
+
+    fakep = nodePop(ctxt);
+    if (fakep)
+	xmlFreeNode(fakep);
+
+    xmlFreeParserCtxt(ctxt);
+    ctxt = NULL;
+
+    if (sd.sd_errors) {
+	errors += sd.sd_errors;
+	xmlParserError(ctxt, "%s: %d error%s detected during parsing\n",
+		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
+	goto fail;
+    }
+
+    if (sd.sd_xpath == NULL) {
+	/*
+	 * Something's wrong so we punt and return the original string
+	 */
+	slaxLog("slax: xpath conversion failed: nothing returned");
+	errors += 1;
+	goto fail;
+    }
+
+    buf = slaxStringAsChar(sd.sd_xpath, SSF_QUOTES);
+
+    if (buf == NULL) {
+	slaxLog("slax: xpath conversion failed: no buffer");
+	goto fail;
+    }
+
+    slaxLog("slax: xpath conversion: %s", buf);
+    slaxStringFree(sd.sd_xpath);
+
+    if (errorsp)
+	*errorsp = errors;
+    return buf;
+
+ fail:
+    if (ctxt)
+	xmlFreeParserCtxt(ctxt);
+
+    if (errorsp)
+	*errorsp = errors;
+
+    /*
+     * SLAX XPath expressions are completely backwards compatible
+     * with XSLT, so we can make an ugly version of the expression
+     * by simply returning a copy of our input.  You get "and" instead
+     * of "&&", but it's safe enough.
+     */
+    return (char *) xmlCharStrdup(slax_expr);
 }
 
 /*

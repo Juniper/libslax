@@ -141,7 +141,7 @@ xp_not_expr :
 	| L_NOT xp_path_expr
 		{
 		    SLAX_KEYWORDS_OFF();
-		    if (slax_data->sd_parse == M_PARSE_SLAX) {
+		    if (slaxParseIsSlax(slax_data)) {
 			slax_string_t *save, *dead, *notp, *oparen, *cparen;
 			dead = $1;
 			save = $2;

@@ -83,4 +83,10 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 void
 slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 
-
+/**
+ * Turn a SLAX expression into an XPath one.  Returns a freshly
+ * allocated string, or NULL.
+ */
+char *
+slaxSlaxToXpath (const char *filename, int lineno,
+		 const char *slax_expr, int *errorsp);

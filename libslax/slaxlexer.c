@@ -545,7 +545,7 @@ slaxGetInput (slax_data_t *sdp, int final)
      * If we're parsing XPath expressions, we alreay have the
      * complete string, so further reads should fail
      */
-    if (sdp->sd_parse == M_PARSE_XPATH)
+    if (sdp->sd_parse == M_PARSE_XPATH || sdp->sd_parse == M_PARSE_SLAX)
 	return TRUE;
 
     for (;;) {

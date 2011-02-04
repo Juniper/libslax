@@ -6,5 +6,10 @@ match / {
 	if (!$x && !/foo/bar && !goo[zoo && !moo]) {
 	    <not>;
 	}
+
+	var $y = 10;
+	var $z = slax:evaluate("$y + 1");
+	<answer> { copy-of $z; }
+	<answer> slax:evaluate("!$x");
     }
 }

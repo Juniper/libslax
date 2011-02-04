@@ -1097,6 +1097,7 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     xmlNodePtr inst = statep->ds_inst;
     xsltTransformContextPtr ctxt;
     xmlXPathContextPtr xpctxt;
+    char *sexpr = NULL;
 
     if (slaxDebugCheckDone(statep))
 	return NULL;
@@ -1109,9 +1110,15 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (xpctxt == NULL)
 	return NULL;
 
+    sexpr = slaxSlaxToXpath("sdb", 1, (const char *) expr, NULL);
+    if (sexpr)
+	expr = sexpr;
+
     comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) expr);
-    if (comp == NULL)
+    if (comp == NULL) {
+	xmlFreeAndEasy(sexpr);
 	return NULL;
+    }
 
     nsList = xmlGetNsList(inst->doc, inst);
     for (nscount = 0; nsList && nsList[nscount]; nscount++)
@@ -1141,6 +1148,7 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     xpctxt->nsNr = old.o_nscount;
     xpctxt->namespaces = old.o_nslist;
 
+    xmlFreeAndEasy(sexpr);
     xmlXPathFreeCompExpr(comp);
     xmlFree(nsList);
 

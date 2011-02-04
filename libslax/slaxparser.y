@@ -233,7 +233,8 @@
 %token M_SEQUENCE		/* A $x...$y sequence */
 %token M_ERROR			/* An error was detected in the lexer */
 %token M_XPATH			/* Building an XPath expression */
-%token M_PARSE_SLAX		/* Parse a slax document */
+%token M_PARSE_FULL		/* Parse a slax document */
+%token M_PARSE_SLAX		/* Parse a SLAX-style XPath expression */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
 
@@ -269,6 +270,18 @@
 #define YYDEBUG 1		/* Enable debug output */
 #define yydebug slaxDebug	/* Make debug flag parser specific */
 #define YYFPRINTF slaxLog2	/* Log via our function */
+
+static int
+slaxParseIsSlax (slax_data_t *sdp)
+{
+    return (sdp->sd_parse == M_PARSE_FULL || sdp->sd_parse == M_PARSE_SLAX);
+}
+
+static int
+slaxParseIsXpath (slax_data_t *sdp)
+{
+    return (sdp->sd_parse == M_PARSE_XPATH);
+}
 
 /*
  * The most common stack operation: clear everthing x and above. Since
@@ -322,7 +335,7 @@
 %%
 
 start :
-	M_PARSE_SLAX stylesheet
+	M_PARSE_FULL stylesheet
 		{ $$ = STACK_CLEAR($1); }
 
 	| M_PARSE_XPATH xpath_expression
@@ -331,6 +344,14 @@ start :
 		    $2 = NULL;	/* Avoid double free */
 		    $$ = STACK_CLEAR($1);
 		}
+
+	| M_PARSE_SLAX xpath_expression
+		{
+		    slax_data->sd_xpath = $2;
+		    $2 = NULL;	/* Avoid double free */
+		    $$ = STACK_CLEAR($1);
+		}
+
 	| M_PARSE_PARTIAL partial_list
 		{ $$ = STACK_CLEAR($1); }
 	;
@@ -2586,7 +2607,7 @@ fallback_stmt :
 and_operator :
 	K_AND
 		{
-		    if (slax_data->sd_parse == M_PARSE_XPATH) {
+		    if (slaxParseIsXpath(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("&&", L_DAMPER);
 		    } else $$ = $1;
@@ -2594,7 +2615,7 @@ and_operator :
 
 	| L_DAMPER
 		{
-		    if (slax_data->sd_parse == M_PARSE_SLAX) {
+		    if (slaxParseIsSlax(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("and", L_DAMPER);
 		    } else $$ = $1;
@@ -2604,7 +2625,7 @@ and_operator :
 or_operator :
 	K_OR
 		{
-		    if (slax_data->sd_parse == M_PARSE_XPATH) {
+		    if (slaxParseIsXpath(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("||", L_DVBAR);
 		    } else $$ = $1;
@@ -2612,7 +2633,7 @@ or_operator :
 
 	| L_DVBAR
 		{
-		    if (slax_data->sd_parse == M_PARSE_SLAX) {
+		    if (slaxParseIsSlax(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("or", L_DVBAR);
 		    } else $$ = $1;
@@ -2622,7 +2643,7 @@ or_operator :
 equals_operator :
 	L_EQUALS
 		{
-		    if (slax_data->sd_parse == M_PARSE_XPATH) {
+		    if (slaxParseIsXpath(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("==", L_DEQUALS);
 		    } else $$ = $1;
@@ -2630,7 +2651,7 @@ equals_operator :
 
 	| L_DEQUALS
 		{
-		    if (slax_data->sd_parse == M_PARSE_SLAX) {
+		    if (slaxParseIsSlax(slax_data)) {
 			STACK_CLEAR($1);
 			$$ = slaxStringLiteral("=", L_DEQUALS);
 		    } else $$ = $1;
@@ -2895,8 +2916,8 @@ xpc_function_call :
 		    SLAX_KEYWORDS_OFF();
 
 		    /* If we're turning XPath into SLAX, handle "..." */
-		    if (slax_data->sd_parse == M_PARSE_XPATH
-				&& slaxWriteRedoFunction(slax_data,
+		    if (slaxParseIsXpath(slax_data)
+			    && slaxWriteRedoFunction(slax_data,
 							 $1->ss_token, $3)) {
 			slax_string_t *save = $3;
 			$3 = NULL;
