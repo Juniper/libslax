@@ -1,0 +1,10 @@
+version 1.1;
+
+match / {
+    <top> {
+	var $x = /test;
+	if (!$x && !/foo/bar && !goo[zoo && !moo]) {
+	    <not>;
+	}
+    }
+}

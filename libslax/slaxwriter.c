@@ -615,8 +615,8 @@ slaxWriteValue (slax_writer_t *swp, const char *value)
 }
 
 /*
- * Turn an XPath expression into a SLAX one
- * Returns a freshly allocated string, or NULL
+ * Turn an XPath expression into a SLAX one Returns a freshly
+ * allocated string, or NULL.
  */
 static char *
 slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)

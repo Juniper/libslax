@@ -96,6 +96,7 @@
 %token L_LESS			/* '<' */
 %token L_LESSEQ			/* '<=' */
 %token L_MINUS			/* '-' */
+%token L_NOT			/* '!' */
 %token L_NOTEQUALS		/* '!=' */
 %token L_OBRACE			/* { */
 %token L_OBRACK			/* [ */

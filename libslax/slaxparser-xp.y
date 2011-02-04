@@ -118,16 +118,55 @@ xp_primary_expr :
 	;
 
 xp_union_expr :
-	xp_path_expr
+	xp_not_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xp_union_expr L_VBAR xp_path_expr
+	| xp_union_expr L_VBAR xp_not_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
+		}
+	;
+
+xp_not_expr :
+	xp_path_expr 
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = $1;
+		}
+
+	| L_NOT xp_path_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    if (slax_data->sd_parse == M_PARSE_SLAX) {
+			slax_string_t *save, *dead, *notp, *oparen, *cparen;
+			dead = $1;
+			save = $2;
+			notp = slaxStringLiteral("not", T_FUNCTION_NAME);
+			oparen = slaxStringLiteral("(", L_OPAREN);
+			cparen = slaxStringLiteral(")", L_CPAREN);
+			if (notp && oparen && cparen) {
+			    notp->ss_next = oparen;
+			    oparen->ss_next = save;
+			    while (save->ss_next) /* Skip to end of the list */
+				save = save->ss_next;
+			    save->ss_next = cparen;
+			    $$ = notp;
+
+			    dead->ss_next = NULL;
+			    slaxStringFree(dead);
+
+			} else {
+			    xmlFreeAndEasy(notp);
+			    xmlFreeAndEasy(oparen);
+			    xmlFreeAndEasy(cparen);
+			}
+		    } else {
+			$$ = STACK_LINK($1);
+		    }
 		}
 	;
 
