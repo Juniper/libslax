@@ -759,16 +759,17 @@ evaluates to "true" (with boolean() type conversion)
 -- Allows calls to pre-defined or user-defined functions
 --- Example: chapter[substring-before(title, "ne") == "O"]
 
-SLAX follows XPath syntax, with the following exceptions:
+SLAX follows XPath syntax, with the following additions:
 
 (a) "&&" may be used in place of the "and" operator
 (b) "||" may be used in place of the "or" operator
 (c) "==" may be used in place of the "=" operator
-(d) "_" is the concatenation operator ("a" _ "b" === concat("a", "b"))
+(d) "!" may be used in place of the "not()" operator
+(e) "_" is the concatenation operator ("a" _ "b" === concat("a", "b"))
 
-The first three exceptions are meant to prevent programmers from
+The first four additions are meant to prevent programmers from
 learning habits in SLAX that will negatively affect their ability to
-program in other languages.  The last exception is for convenience.
+program in other languages.  The last addition is for convenience.
 
 When referring to XPath expressions in this document, we
 mean this extended syntax.
