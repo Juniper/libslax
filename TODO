@@ -39,3 +39,10 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - Doc: new reload command
 
 - sdb: add "reload data" command (default to "reload script")
+
+- libxml2 bug:
+  This line gives a decent error message:
+      <xsl:if test="get:bug($x, $in">;
+  This line does not:
+      <func:result select="get:bug($x, $in">;
+  It only says "XPath error : Invalid expression" with no file/line info.

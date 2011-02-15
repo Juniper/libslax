@@ -32,9 +32,9 @@ match / {
         <g> $g;
         <h> $h;
         <i> $i;
-        call test($a = "this" _ " and " _ "that");
-        <output> "this" _ " and " _ "that";
-        <output> string-length("this");
+        call test($a = "this and that");
+        <output> "this and that";
+        <output> string-length("this and that");
     }
 }
 

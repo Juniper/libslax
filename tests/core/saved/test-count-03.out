@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<out>
+  <count>1-2-3-4-5</count>
+  <test>true</test>
+  <test>true</test>
+  <output>true</output>
+  <test>ten-4</test>
+  <test>10this106</test>
+  <title>Translation of :</title>
+  <one>uno, Man</one>
+  <two>dos</two>
+  <three>tres</three>
+  <four>quatro</four>
+  <five>cinco</five>
+</out>

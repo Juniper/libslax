@@ -199,7 +199,7 @@ match packagereq[generate-id(.) != generate-id(key("unique-package-entries", con
         expr "☹☹☹ Ignoring duplicate reference to ";
         expr @type _ " package " _ text();
         expr " in group ";
-        expr ../../ _name/text() _ " (" _ ../../id/text() _ ")";
+        expr ../../_name/text() _ " (" _ ../../id/text() _ ")";
         expr ".";
     }
     message {
@@ -216,7 +216,7 @@ match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group
         expr "  ☹ Ignoring duplicate reference to group ";
         expr text();
         expr " in category ";
-        expr ../../ _name/text() _ " (" _ ../../id/text() _ ")";
+        expr ../../_name/text() _ " (" _ ../../id/text() _ ")";
         expr ".";
     }
 }

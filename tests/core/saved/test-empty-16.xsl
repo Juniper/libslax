@@ -15,6 +15,21 @@ and finally, line five
   </xsl:variable>
   <xsl:template match="/">
     <top>
+      <back-reference>
+        <xsl:variable name="pat" select="&quot;([a-z]):\1:\1&quot;"/>
+        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="re1" select="slax:regex($pat, &quot;a:a:a&quot;)"/>
+        <re1>
+          <xsl:copy-of select="$re1"/>
+        </re1>
+        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="re2" select="slax:regex($pat, &quot;a:b:c&quot;)"/>
+        <re2>
+          <xsl:copy-of select="$re2"/>
+        </re2>
+        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="re3" select="slax:regex($pat, &quot;a:b:b:b:a:a&quot;)"/>
+        <re3>
+          <xsl:copy-of select="$re3"/>
+        </re3>
+      </back-reference>
       <sequence>
         <xsl:for-each xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:build-sequence(1, 3)">
           <xsl:variable name="slax-dot-1" select="."/>

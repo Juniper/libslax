@@ -132,7 +132,7 @@ However without DTD there is no way to check the files completely.
       <xsl:text>☹☹☹ Ignoring duplicate reference to </xsl:text>
       <xsl:value-of select="concat(@type, &quot; package &quot;, text())"/>
       <xsl:text> in group </xsl:text>
-      <xsl:value-of select="concat(../../ _name/text(), &quot; (&quot;, ../../id/text(), &quot;)&quot;)"/>
+      <xsl:value-of select="concat(../../_name/text(), &quot; (&quot;, ../../id/text(), &quot;)&quot;)"/>
       <xsl:text>.</xsl:text>
     </xsl:message>
     <xsl:message>
@@ -147,7 +147,7 @@ However without DTD there is no way to check the files completely.
       <xsl:text>  ☹ Ignoring duplicate reference to group </xsl:text>
       <xsl:value-of select="text()"/>
       <xsl:text> in category </xsl:text>
-      <xsl:value-of select="concat(../../ _name/text(), &quot; (&quot;, ../../id/text(), &quot;)&quot;)"/>
+      <xsl:value-of select="concat(../../_name/text(), &quot; (&quot;, ../../id/text(), &quot;)&quot;)"/>
       <xsl:text>.</xsl:text>
     </xsl:message>
   </xsl:template>

@@ -1451,7 +1451,7 @@ statement, and gives the parameter name and the value:
     }
 
 {{note::
-Note that in SLAX parameter names are always prefixes by the dollar
+Note that in SLAX parameter names are always prefixed with the dollar
 sign ("$").  This is not true for XSLT, where the dollar sign is not
 used when defining variables.
 }}

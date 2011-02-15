@@ -56,13 +56,11 @@
         <xsl:value-of select="$i"/>
       </i>
       <xsl:call-template name="test">
-        <xsl:with-param name="a" select="concat(&quot;this&quot;, &quot; and &quot;, &quot;that&quot;)"/>
+        <xsl:with-param name="a" select="&quot;this and that&quot;"/>
       </xsl:call-template>
+      <output>this and that</output>
       <output>
-        <xsl:value-of select="concat(&quot;this&quot;, &quot; and &quot;, &quot;that&quot;)"/>
-      </output>
-      <output>
-        <xsl:value-of select="string-length(&quot;this&quot;)"/>
+        <xsl:value-of select="string-length(&quot;this and that&quot;)"/>
       </output>
     </top>
   </xsl:template>

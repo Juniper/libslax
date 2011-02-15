@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <top>
+  <back-reference>
+    <re1/>
+    <re2/>
+    <re3/>
+  </back-reference>
   <sequence>
     <i>1:1</i>
     <i>1:2</i>

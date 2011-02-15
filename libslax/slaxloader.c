@@ -320,7 +320,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
     if (slaxNeedsSlaxNs(value))
 	slaxSetSlaxNs(sdp, nodep, FALSE);
 
-    buf = slaxStringAsConcat(value, SSF_CONCAT | SSF_QUOTES);
+    buf = slaxStringAsChar(value, SSF_CONCAT | SSF_QUOTES);
     if (buf == NULL) {
 	fprintf(stderr, "could not make attribute string: @%s=%s\n",
 		ATT_SELECT, buf);

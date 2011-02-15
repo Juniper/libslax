@@ -231,6 +231,7 @@
  * M_ERROR.
  */
 %token M_SEQUENCE		/* A $x...$y sequence */
+%token M_CONCAT			/* underscore -> concat mapping */
 %token M_ERROR			/* An error was detected in the lexer */
 %token M_XPATH			/* Building an XPath expression */
 %token M_PARSE_FULL		/* Parse a slax document */
@@ -2710,39 +2711,11 @@ xpath_expr_dotdotdot :
     	;
 
 xpath_value :
-	xpath_value_raw
-		{
-		    ALL_KEYWORDS_ON();
-		    $$ = $1;
-		}
-	;
-
-xpath_value_raw :
 	xpath_expression
 		{
+		    ALL_KEYWORDS_ON();
 		    slaxLog("xpath: %s", $1->ss_token);
 		    $$ = $1;
-		}
-
-	| xpath_value_raw L_UNDERSCORE xpath_expression
-		{
-		    slax_string_t *ssp;
-
-		    if ($3) {
-			/* Append the new xp_path_expr to the list */
-			for (ssp = $1; ssp; ssp = ssp->ss_concat) {
-			    if (ssp->ss_concat == NULL) {
-				ssp->ss_concat = $3;
-				break;
-			    }
-			}
-		    }
-
-		    ssp = $1;
-		    $1 = NULL;	/* Save from free() */
-		    $3 = NULL;	/* Save from free() */
-		    STACK_CLEAR($1);
-		    $$ = ssp;
 		}
 	;
 
@@ -2759,27 +2732,6 @@ xpath_lite_value :
 		{
 		    slaxLog("xpath: %s", $1->ss_token);
 		    $$ = $1;
-		}
-
-	| xpath_lite_value L_UNDERSCORE xpl_expr
-		{
-		    slax_string_t *ssp;
-
-		    if ($3) {
-			/* Append the new xp_path_expr to the list */
-			for (ssp = $1; ssp; ssp = ssp->ss_concat) {
-			    if (ssp->ss_concat == NULL) {
-				ssp->ss_concat = $3;
-				break;
-			    }
-			}
-		    }
-
-		    ssp = $1;
-		    $1 = NULL;	/* Save from free() */
-		    $3 = NULL;	/* Save from free() */
-		    STACK_CLEAR($1);
-		    $$ = ssp;
 		}
 	;
 
@@ -3217,31 +3169,31 @@ xpc_expr :
  */
 
 xp_relational_expr :
-	xp_additive_expr
+	xp_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xp_relational_expr L_LESS xp_additive_expr
+	| xp_relational_expr L_LESS xp_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
-	| xp_relational_expr L_GRTR xp_additive_expr
+	| xp_relational_expr L_GRTR xp_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
-	| xp_relational_expr L_LESSEQ xp_additive_expr
+	| xp_relational_expr L_LESSEQ xp_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
 
-	| xp_relational_expr L_GRTREQ xp_additive_expr
+	| xp_relational_expr L_GRTREQ xp_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
@@ -3249,7 +3201,7 @@ xp_relational_expr :
 	;
 
 xpl_relational_expr :
-	xpl_additive_expr
+	xpl_concative_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;

@@ -6,5 +6,5 @@ var $y = div div div + mod mod mod;
 
 match / {
     <output> "Here is the data: " _ ./*[1];
-    <output> "this" _ "and" _ "that";
+    <output> "thisandthat";
 }

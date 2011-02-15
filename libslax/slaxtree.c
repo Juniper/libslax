@@ -215,7 +215,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	 * There is only one value, so we stuff it into the
 	 * attribute give in the 'name' parameter.
 	 */
-	buf = slaxStringAsConcat(value, SSF_BRACES | ss_flags);
+	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
 
     } else {
 	/*
@@ -224,7 +224,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	 * function, which will do all the hard work for us, without
 	 * giving us a result fragment tree.
 	 */
-	buf = slaxStringAsConcat(value, SSF_BRACES | ss_flags);
+	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
     }
 
     /*

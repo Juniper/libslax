@@ -16,6 +16,16 @@ and finally, line five
 
 match / {
     <top> {
+	<back-reference> {
+	    var $pat = "([a-z]):\\1:\\1";
+	    var $re1 = slax:regex($pat, "a:a:a");
+	    <re1> { copy-of $re1; }
+	    var $re2 = slax:regex($pat, "a:b:c");
+	    <re2> { copy-of $re2; }
+	    var $re3 = slax:regex($pat, "a:b:b:b:a:a");
+	    <re3> { copy-of $re3; }
+	}
+
 	<sequence> {
 	    for-each (1 ... 3) {
 		for $i (1 ... 4) {

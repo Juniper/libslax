@@ -258,6 +258,21 @@ xp_equality_expr :
 		}
 	;
 
+xp_concative_expr :
+	xp_additive_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = $1;
+		}
+
+	| xp_concative_expr L_UNDERSCORE xp_additive_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = slaxConcatRewrite(slax_data, $1, $2, $3);
+		    $1 = $2 = $3 = NULL;
+		}
+	;
+
 xp_additive_expr :
 	xp_multiplicative_expr
 		{

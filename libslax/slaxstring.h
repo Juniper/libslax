@@ -12,7 +12,7 @@
  */
 struct slax_string_s {
     struct slax_string_s *ss_next; /* Linked list of strings in XPath expr */
-    struct slax_string_s *ss_concat; /* Linked list of strings with "_" op */
+    struct slax_string_s *ss_concat; /* Next link to concatenation */
     int ss_ttype;		   /* Token type */
     int ss_flags;		   /* Flags */
     char ss_token[1];		   /* Value of this token */
@@ -28,6 +28,8 @@ struct slax_string_s {
 #define SSF_CONCAT	(1<<5)	/* Turn BOTHQS string into xpath w/ concat */
 #define SSF_SLAXNS	(1<<6)	/* Need the slax namespace */
 
+#define SSF_QUOTE_MASK	(SSF_SINGLEQ | SSF_DOUBLEQ | SSF_BOTHQS)
+
 /* SLAX UTF-8 character conversions */
 #define SLAX_UTF_WIDTH4	4	/* '\u+xxxx' */
 #define SLAX_UTF_WIDTH6	6	/* '\u-xxxxxx' */
@@ -38,8 +40,7 @@ struct slax_string_s {
 static inline int
 slaxStringIsSimple (slax_string_t *value, int ttype)
 {
-    return (value && value->ss_ttype == ttype
-	    && value->ss_next == NULL && value->ss_concat == NULL);
+    return (value && value->ss_ttype == ttype && value->ss_next == NULL);
 }
 
 /*
@@ -49,14 +50,14 @@ static inline int
 slaxStringIsSimple2 (slax_string_t *value, int ttype, int ttype2)
 {
     return (value && (value->ss_ttype == ttype || value->ss_ttype == ttype2)
-	    && value->ss_next == NULL && value->ss_concat == NULL);
+	    && value->ss_next == NULL);
 }
 
 /*
- * Fuse a variable number of strings together, returning the results.
+ * Fuse a variable number of quoted strings together, returning the results.
  */
 slax_string_t *
-slaxStringFuse (slax_data_t *, int, slax_string_t **);
+slaxStringFuse (slax_string_t *);
 
 /*
  * Create a string.  Slax strings allow sections of strings (typically
@@ -98,12 +99,6 @@ char *
 slaxStringAsChar (slax_string_t *value, unsigned flags);
 
 /*
- * Return a set of xpath values as a concat() invocation
- */
-char *
-slaxStringAsConcat (slax_string_t *value, unsigned flags);
-
-/*
  * Return a set of xpath values as an attribute value template
  */
 char *
@@ -127,3 +122,10 @@ slaxStringLength (slax_string_t *start, unsigned flags);
 int
 slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
 		   const char *buf, size_t bufsiz, int ttype);
+
+/*
+ * Rebuild the two sides of a concatenation operation in useful form.
+ */
+slax_string_t *
+slaxConcatRewrite (slax_data_t *sdp, slax_string_t *,
+		   slax_string_t *, slax_string_t *);

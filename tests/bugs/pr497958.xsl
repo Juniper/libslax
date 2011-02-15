@@ -6,8 +6,6 @@
     <output>
       <xsl:value-of select="concat(&quot;Here is the data: &quot;, ./*[1])"/>
     </output>
-    <output>
-      <xsl:value-of select="concat(&quot;this&quot;, &quot;and&quot;, &quot;that&quot;)"/>
-    </output>
+    <output>thisandthat</output>
   </xsl:template>
 </xsl:stylesheet>

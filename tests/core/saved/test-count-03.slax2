@@ -1,0 +1,35 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+var $x = <message> "Down rev PIC in " _ ../name _ ", " _ name _ ": " _ description;
+var $message = <x> _name/text() _ " (" _ id/text() _ ")";
+var $count = /in/one _ "-2-" _ /in/three _ "-4-" _ /in/five;
+var $sp_one = "uno, Man";
+var $sp_two = "dos";
+var $sp_three = "tres";
+var $sp_four = "quatro";
+var $sp_five = "cinco";
+var $is = "is";
+var $zero = 0;
+
+match / {
+    <out> {
+        <count> $count;
+        var $variable = "this";
+        var $test = ($variable ==("this"));
+        <test> $test;
+        var $test2 = ($variable ==(concat("th", $is)));
+        <test> $test2;
+        <output> slax:evaluate("$variable == ('th' _ 'is')");
+        <test> substring("tent", 1, 3) _ 6 - 10;
+        <test> $zero + 10 _ (concat("th", $is, (concat(10, 6))));
+        <title> "Translation of " _ name() _ ":";
+        apply-templates in/*;
+    }
+}
+
+match * {
+    element name() {
+        expr slax:evaluate(concat("$sp_", name()));
+    }
+}

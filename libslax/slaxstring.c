@@ -326,11 +326,11 @@ slaxStringLength (slax_string_t *start, unsigned flags)
  * Should the character be stripped of surrounding whitespace?
  */
 static int
-slaxStringNoSpace (int ch)
+slaxStringNoSpace (int ttype)
 {
-    if (ch == '@' || ch == '/'
-	|| ch == '('  || ch == ')'
-	|| ch == '['  || ch == ']')
+    if (ttype == L_AT || ttype == L_SLASH || ttype == L_DSLASH
+	|| ttype == L_OPAREN  || ttype == L_CPAREN
+	|| ttype == L_OBRACK  || ttype == L_CBRACK)
 	return TRUE;
     return FALSE;
 }
@@ -353,6 +353,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
     const char *str, *cp;
     char *bp = buf;
     int squote = 0; /* Single quote string flag */
+    int last_ttype = 0;
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
 	str = ssp->ss_token;
@@ -372,22 +373,22 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	     */
 	    int trim = FALSE, comma = FALSE;
 
-	    if (bp[-2] == '_' || *str == '_')
+	    if (last_ttype == L_UNDERSCORE || ssp->ss_ttype == L_UNDERSCORE)
 		trim = FALSE;
 
-	    else if (*str == ',') {
+	    else if (ssp->ss_ttype == L_COMMA) {
 		trim = TRUE;	/* foo(1, 2, 3) */
 		comma = TRUE;
 
-	    } else if (slaxStringNoSpace(bp[-2]) || slaxStringNoSpace(*str)) {
+	    } else if (slaxStringNoSpace(last_ttype)
+		       || slaxStringNoSpace(ssp->ss_ttype)) {
 		if (bp[-2] != ',')
 		    trim = TRUE;	/* foo/goo[@zoo] */
 
-	    } else if (isdigit((int) bp[-2]) && *str == '.'
-		     && ssp->ss_ttype != L_DOTDOTDOT)
+	    } else if (last_ttype == T_NUMBER && ssp->ss_ttype == L_DOT)
 		trim = TRUE;	/* 1.0 (looking at the '.') */
 
-	    else if (bp[-2] == '.' && bp[-3] != '.' && isdigit((int) *str))
+	    else if (last_ttype == L_DOT && ssp->ss_ttype == T_NUMBER)
 		trim = TRUE;	/* 1.0 (looking at the '0') */
 
 	    else if (bp == &buf[2] && buf[0] == '-')
@@ -397,8 +398,11 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	     * We only want to trim closers if the next thing is a closer
 	     * or a slash, so that we handle "foo[goo]/zoo" correctly.
 	     */
-	    if ((bp[-2] == ')' || bp[-2] == ']')
-		    && !(*str == ')' || *str == ']' || *str == '/'))
+	    if ((last_ttype == L_CPAREN || last_ttype == L_CBRACK)
+		    && !(ssp->ss_ttype == L_CPAREN
+			 || ssp->ss_ttype == L_CBRACK
+			 || ssp->ss_ttype == L_SLASH
+			 || ssp->ss_ttype == L_DSLASH))
 		trim = comma;
 
 	    if (trim) {
@@ -462,6 +466,8 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	if (ssp->ss_ttype == T_AXIS_NAME || ssp->ss_ttype == L_DCOLON)
 	    len -= 1;
 	else *bp++ = ' ';
+
+	last_ttype = ssp->ss_ttype;
     }
 
     if (len <= 0)
@@ -474,47 +480,6 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	buf[--bufsiz] = '\0';
 	return bufsiz;
     }
-}
-
-/*
- * Fuse a variable number of strings together, returning the results.
- */
-slax_string_t *
-slaxStringFuse (slax_data_t *sdp UNUSED, int ttype, slax_string_t **sspp)
-{
-    slax_string_t *results, *start = *sspp;
-    int len;
-
-    if (start && start->ss_next == NULL && start->ss_ttype != T_QUOTED) {
-	/*
-	 * If we're only talking about one string and it doesn't
-	 * need quoting, return it directly.  We need to clear
-	 * out sspp to that the item isn't freed when the stack
-	 * is cleared.
-	 */
-	*sspp = NULL;
-	return start;
-    }
-
-    if (start && start->ss_next == NULL && start->ss_ttype == T_QUOTED)
-	ttype = T_QUOTED;
-
-    len = slaxStringLength(start, SSF_QUOTES);
-    if (len == 0)
-	return NULL;
-
-    results = xmlMalloc(sizeof(*results) + len);
-    if (results == NULL)
-	return NULL;
-
-    slaxStringCopy(results->ss_token, len, start, SSF_QUOTES);
-    results->ss_ttype = ttype;
-    results->ss_next = results->ss_concat = NULL;
-    results->ss_flags = (ttype == T_QUOTED) ? slaxStringQFlags(results) : 0;
-
-    if (slaxDebug)
-	slaxLog("slaxStringFuse: '%s'", results->ss_token);
-    return results;
 }
 
 /**
@@ -545,76 +510,128 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
     return buf;
 }
 
-/**
- * Return a set of xpath values as a concat() invocation.  Strings are
- * linked in two dimensions.  The "ss_next" field links tokens inside
- * an XPath expression, and the "ss_concat" field links XPath expressions
- * inside SLAX concatenation operations.
- * For example: var $x = a1/a2/a3 _ b1/b2/b3;
- * The "a1"'s ss_next would be "/", but its ss_concat link would be "b1".
- *
- * @param value start of linked list of string segments
- * @param flags indicate how string data is marshalled
- * @return newly allocated character string
- */
-char *
-slaxStringAsConcat (slax_string_t *value, unsigned flags)
+static slax_string_t *
+slaxStringSkipToMarker (slax_string_t *start, slax_string_t *marker)
 {
-    static const char s_prepend[] = "concat(";
-    static const char s_middle[] = ", ";
-    static const char s_append[] = ")";
-    char *buf, *bp;
-    int len = 0, blen, slen;
-    slax_string_t *ssp;
+    slax_string_t *ssp = NULL;
 
-    /*
-     * If there's no concatenation, just return the XPath expression
-     */
-    if (value->ss_concat == NULL)
-	return slaxStringAsChar(value, flags);
+    for (ssp = start; ssp && ssp->ss_next != marker; ssp = ssp->ss_next)
+	    continue;
 
-    /*
-     * First we work out the size of the buffer
-     */
-    for (ssp = value; ssp; ssp = ssp->ss_concat) {
-	if (len != 0)
-	    len += sizeof(s_middle) - 1;
-	len += slaxStringLength(ssp, flags);
-    }
+    return ssp;
+}
 
-    len += sizeof(s_prepend) + sizeof(s_append) - 1;
+static int
+slaxStringValueTemplateLength (slax_string_t *value, unsigned flags)
+{
+    int len = 0;
+    unsigned xflags;
 
-    /* Allocate the buffer */
-    buf = bp = xmlMalloc(len);
-    blen = len;			/* Save buffer length */
-    if (buf == NULL) {
-	slaxLog("slaxStringAsConcat:: out of memory");
-	return NULL;
-    }
+    if (value->ss_ttype == M_CONCAT) {
+	slax_string_t *ssp, *marker, *last;
 
-    /* Fill it in: build the xpath concat invocation */
-    slen = sizeof(s_prepend) - 1;
-    memcpy(bp, s_prepend, slen);
-    bp += slen;
+	ssp = value->ss_next->ss_next; /* Skip 'concat' and '(' */
+	marker = value->ss_concat;       /* ',' */
+	last = slaxStringSkipToMarker(ssp, marker);
 
-    for (ssp = value; ssp; ssp = ssp->ss_concat) {
-	if (ssp != value) {
-	    slen = sizeof(s_middle) - 1;
-	    memcpy(bp, s_middle, slen);
-	    bp += slen;
+	while (ssp && last) {
+	    last->ss_next = NULL; /* Fake terminate the string */
+
+	    xflags = flags;
+	    if (ssp->ss_ttype != T_QUOTED) {
+		len += 2; /* Room for braces */
+		xflags |= SSF_QUOTES;
+	    }
+
+	    len += slaxStringLength(ssp, xflags);
+
+	    last->ss_next = marker; /* Re-terminate the string */
+
+	    if (marker->ss_ttype == L_CPAREN)
+		break;
+
+	    ssp = marker->ss_next;
+	    marker = marker->ss_concat;
+	    last = slaxStringSkipToMarker(ssp, marker);
 	}
 
-	len = slaxStringCopy(bp, blen, ssp, flags);
+    } else {
+	xflags = flags;
+	if (value->ss_ttype != T_QUOTED) {
+	    len += 2; /* Room for braces */
+	    xflags |= SSF_QUOTES;
+	}
+
+	len += slaxStringLength(value, xflags);
+
+    }
+    return len;
+}
+
+static void
+slaxStringValueTemplateCopy (char *buf, int len,
+			     slax_string_t *value, unsigned flags)
+{
+    unsigned xflags;
+    int blen = len;
+    char *bp = buf;
+
+    if (value->ss_ttype == M_CONCAT) {
+	slax_string_t *ssp, *marker, *last;
+
+	ssp = value->ss_next->ss_next; /* Skip 'concat' and '(' */
+	marker = value->ss_concat;       /* ',' */
+	last = slaxStringSkipToMarker(ssp, marker);
+
+	while (ssp && last) {
+	    last->ss_next = NULL; /* Fake terminate the string */
+
+	    xflags = flags;
+	    if (ssp->ss_ttype != T_QUOTED) {
+		*bp++ = '{';
+		blen -= 1;
+		xflags |= SSF_QUOTES;
+	    }
+
+	    len = slaxStringCopy(bp, blen, ssp, xflags);
+	    blen -= len;
+	    bp += len;
+
+
+	    if (ssp->ss_ttype != T_QUOTED) {
+		*bp++ = '}';
+		blen -= 1;
+	    }
+
+	    last->ss_next = marker; /* Re-terminate the string */
+
+	    if (marker->ss_ttype == L_CPAREN)
+		break;
+
+	    ssp = marker->ss_next;
+	    marker = marker->ss_concat;
+	    last = slaxStringSkipToMarker(ssp, marker);
+	}
+
+    } else {
+	xflags = flags;
+	if (value->ss_ttype != T_QUOTED) {
+	    *bp++ = '{';
+	    blen -= 1;
+	    xflags |= SSF_QUOTES;
+	}
+
+	len = slaxStringCopy(bp, blen, value, xflags);
 	blen -= len;
 	bp += len;
+
+	if (value->ss_ttype != T_QUOTED) {
+	    *bp++ = '}';
+	    blen -= 1;
+	}
     }
 
-    slen = sizeof(s_append) - 1;
-    memcpy(bp, s_append, slen);
-    bp += slen;
-
-    *bp = 0;
-    return buf;
+    *bp = '\0';
 }
 
 /**
@@ -631,10 +648,8 @@ slaxStringAsConcat (slax_string_t *value, unsigned flags)
 char *
 slaxStringAsValueTemplate (slax_string_t *value, unsigned flags)
 {
-    char *buf, *bp;
-    int len = 0, blen;
-    unsigned xflags;
-    slax_string_t *ssp;
+    char *buf;
+    int len = 0;
 
     flags |= SSF_BRACES;	/* Just in case the caller forgot */
 
@@ -647,79 +662,199 @@ slaxStringAsValueTemplate (slax_string_t *value, unsigned flags)
     /*
      * First we work out the size of the buffer
      */
-    for (ssp = value; ssp; ssp = ssp->ss_concat) {
-	xflags = flags;
-	if (ssp->ss_ttype != T_QUOTED) {
-	    len += 2; /* Room for braces */
-	    xflags |= SSF_QUOTES;
-	}
-
-	len += slaxStringLength(ssp, xflags);
-    }
+    len = slaxStringValueTemplateLength(value, flags);
 
     /* Allocate the buffer */
-    buf = bp = xmlMalloc(len);
-    blen = len;			/* Save buffer length */
+    buf = xmlMalloc(len + 1);
     if (buf == NULL) {
-	slaxLog("slaxStringAsConcat:: out of memory");
+	slaxLog("slaxStringAsValueTemplate:: out of memory");
 	return NULL;
     }
 
     /* Fill it in: build the attribute value template */
-    for (ssp = value; ssp; ssp = ssp->ss_concat) {
-	xflags = flags;
-	if (ssp->ss_ttype != T_QUOTED) {
-	    *bp++ = '{';
-	    blen -= 1;
-	    xflags |= SSF_QUOTES;
-	}
+    slaxStringValueTemplateCopy(buf, len, value, flags);
 
-	len = slaxStringCopy(bp, blen, ssp, xflags);
-	blen -= len;
-	bp += len;
-
-	if (ssp->ss_ttype != T_QUOTED) {
-	    *bp++ = '}';
-	    blen -= 1;
-	}
-    }
-
-    *bp = 0;
     return buf;
 }
 
 /*
- * Free a set of string segments
+ * Fuse a variable number of quoted strings together, returning the results.
  */
-static void
-slaxStringFreeConcat (slax_string_t *ssp)
+slax_string_t *
+slaxStringFuse (slax_string_t *start)
 {
-    slax_string_t *concat;
+    slax_string_t *ssp, *results;
+    int len = 0;
+    char *cp;
 
-    for ( ; ssp; ssp = concat) {
-	concat = ssp->ss_concat;
-	ssp->ss_concat = NULL;
-	slaxStringFree(ssp);
+    for (ssp = start; ssp != NULL; ssp = ssp->ss_next)
+	len += strlen(ssp->ss_token);
+
+    if (len == 0)
+	return NULL;
+
+    results = xmlMalloc(sizeof(*results) + len + 1);
+    if (results == NULL)
+	return NULL;
+
+    cp = results->ss_token;
+    for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
+	len = strlen(ssp->ss_token);
+	memcpy(cp, ssp->ss_token, len);
+	cp += len;
     }
+
+    *cp = '\0';			/* NUL terminate the string */
+
+    results->ss_ttype = start->ss_ttype;
+    results->ss_next = NULL;
+    results->ss_flags = slaxStringQFlags(results);
+
+    if (slaxDebug)
+	slaxLog("slaxStringFuse: '%s'", results->ss_token);
+    return results;
+}
+
+/*
+ * Rewrite an invocation of the underscore operator to
+ * be a call to concat().
+ * Two cases:
+ * (a) first time called (for this expression)
+ *     - build new M_CONCAT node
+ *     - build new L_OPAREN node
+ *     - convert op to comma
+ *     - add close paren
+ * (b) not first time (for this expression)
+ *     - discard op to close paren
+ *     - convert last token of "left" to be a comma
+ *     - add close paren
+ */
+slax_string_t *
+slaxConcatRewrite (slax_data_t *sdp UNUSED, slax_string_t *left,
+		   slax_string_t *op, slax_string_t *right)
+{
+    slax_string_t *ssp, *commap;
+
+    slaxLog("slaxConcatRewrite: %p[%s], %p[%s], %p[%s]",
+	    left, left ? left->ss_token : "",
+	    op, op ? op->ss_token : "",
+	    right, right ? right->ss_token : "");
+
+    if (left == NULL || op == NULL || right == NULL)
+	return left;
+
+    if (left->ss_ttype == T_QUOTED && right->ss_ttype == T_QUOTED
+	&& left->ss_next == NULL && right->ss_next == NULL
+	&& ((left->ss_flags & SSF_QUOTE_MASK)
+	    == (right->ss_flags & SSF_QUOTE_MASK))) {
+	/*
+	 * Simple parse-time optimization: Both left and right are
+	 * simple quoted strings so we can combine them into a single
+	 * string.
+	 */
+	left->ss_next = right;
+	ssp = slaxStringFuse(left);
+	if (ssp) {
+	    slaxStringFree(left);
+	    slaxStringFree(op);
+	    /* Don't free right, because it was linked into left */
+	    return ssp;
+	}
+    }
+
+    /* Turn the op (L_UNDERSCORE) into a close paren (L_CPAREN) */
+    op->ss_token[0] = ')';
+    op->ss_ttype = L_CPAREN;
+
+    if (left->ss_ttype != M_CONCAT) {
+	slax_string_t *conp = slaxStringLiteral("concat", M_CONCAT);
+	slax_string_t *openp = slaxStringLiteral("(", L_OPAREN);
+	commap = slaxStringLiteral(",", L_COMMA);
+
+	/*
+	 * Create the concatenation sequence:
+	 *     "concat" -> "(" -> left... -> "," -> right... -> ")"
+	 */
+	if (conp && openp && commap) {
+	    conp->ss_next = openp;
+	    openp->ss_next = left;
+
+	    /* Find end of left list */
+	    for (ssp = left; ssp->ss_next; ssp = ssp->ss_next)
+		continue;
+	    ssp->ss_next = commap;
+	    conp->ss_concat = commap; /* Point to next marker */
+
+	    commap->ss_next = right;
+
+	    /* Find end of right list */
+	    for (ssp = right; ssp->ss_next; ssp = ssp->ss_next)
+		continue;
+	    ssp->ss_next = op;
+	    commap->ss_concat = op; /* Point to next marker */
+
+	    return conp;
+	}
+
+	slaxLog("slaxConcatRewrite: failed (cond 1): %p/%p/%p",
+		conp, openp, commap);
+
+	if (conp)
+	    slaxStringFree(conp);
+	if (openp)
+	    slaxStringFree(openp);
+	if (commap)
+	    slaxStringFree(commap);
+
+    } else {
+	/*
+	 * Modify an existing concatenation sequence
+	 *     left... -> "," -> right... -> ")"
+	 * We know that the existing sequence (left) has a close
+	 * paren at the end, so we turn that into a comma for
+	 * the middle and add "op" as the new cparen.
+	 */
+	for (commap = left; commap->ss_next; commap = commap->ss_next)
+	    continue;
+	if (commap->ss_ttype == L_CPAREN) {
+
+	    commap->ss_ttype = L_COMMA;
+	    commap->ss_token[0] = ',';
+	    commap->ss_next = right;
+
+	    /* Find end of right string */
+	    for (ssp = right; ssp->ss_next; ssp = ssp->ss_next)
+		continue;
+	    ssp->ss_next = op;
+
+	    commap->ss_concat = op; /* Point to next marker */
+
+	    return left;
+		
+	}
+
+	slaxLog("slaxConcatRewrite: failed (cond 2): %p/%d/%s",
+		ssp, ssp->ss_ttype, ssp->ss_token);
+    }
+
+    slaxStringFree(op);
+    slaxStringFree(right);
+    return left;
 }
 
 /**
- * Free a set of string segments.  Both ss_concat and ss_next links are
+ * Free a set of string segments.  The ss_next link is
  * followed and all contents are freed.
  * @param ssp string links to be freed.
  */
 void
 slaxStringFree (slax_string_t *ssp)
 {
-    slax_string_t *next, *concat;
+    slax_string_t *next;
 
     for ( ; ssp; ssp = next) {
 	next = ssp->ss_next;
-	concat = ssp->ss_concat;
-	ssp->ss_next = ssp->ss_concat = NULL;
-
-	if (concat)
-	    slaxStringFreeConcat(concat);
+	ssp->ss_next = NULL;
 
 	ssp->ss_ttype = 0;
 	ssp->ss_flags = 0;
@@ -743,7 +878,7 @@ slaxStringAddTailHelper (slax_string_t ***tailp,
 
     memcpy(ssp->ss_token, buf, bufsiz);
     ssp->ss_token[bufsiz] = '\0';
-    ssp->ss_next = ssp->ss_concat = NULL;
+    ssp->ss_next = NULL;
     ssp->ss_ttype = ttype;
     ssp->ss_flags = slaxStringQFlags(ssp);
 
@@ -781,19 +916,6 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
     return slaxStringAddTailHelper(tailp, buf, bufsiz, ttype);
 }
 
-static int
-slaxNeedsSlaxNsSingle (slax_string_t *value)
-{
-    for ( ; value; value = value->ss_next) {
-	if (value->ss_flags & SSF_SLAXNS)
-	    return TRUE;
-	if (value->ss_concat && slaxNeedsSlaxNs(value->ss_concat))
-	    return TRUE;
-    }
-
-    return FALSE;
-}
-
 /**
  * Detect if the string needs the "slax" namespace
  * @value: string to test
@@ -802,8 +924,8 @@ slaxNeedsSlaxNsSingle (slax_string_t *value)
 int
 slaxNeedsSlaxNs (slax_string_t *value)
 {
-    for ( ; value; value = value->ss_concat)
-	if (slaxNeedsSlaxNsSingle(value))
+    for ( ; value; value = value->ss_next)
+	if (value->ss_flags & SSF_SLAXNS)
 	    return TRUE;
 
     return FALSE;
