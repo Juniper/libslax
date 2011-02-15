@@ -2528,6 +2528,205 @@ SLAX version 1.1 implies XML version 1.0 and XSLT version 1.1.
 In addition, the "xsl" namespace is implicitly defined (as
 'xmlns:xsl="http://www.w3.org/1999/XSL/Transform"').
 
+* The libslax Distribution
+
+SLAX is available as an open-source project with the "New BSD"
+license.  Current releases, source code, documentation, and support
+materials can be downloaded from:
+
+   http://code.google.com/p/libslax
+
+** The libslax Library
+
+The core of the distribution is the libslax library, which
+incorporates a SLAX parser to read SLAX files, a SLAX writer to write
+SLAX files, a debugger, a profiler, and a commandline tool.
+
+The reader turns a SLAX source file into an XSLT tree (xmlDocPtr)
+using the xsltSetLoaderFunc() hook.  The writer turns an XSLT tree
+(xmlDocPtr) into a file containing SLAX statements.
+
+To support SLAX in your application, link with libslax and call the
+libslax initializer function:
+
+    #include <libslax/slax.h>
+
+    slaxEnable(1);
+
+** slaxproc: The SLAX Processor
+
+The SLAX software distribution contains a library (libslax) and a
+command line tool (slaxproc).  The command line tool can be used to
+convert between XSLT and SLAX syntax, as well as run stylesheets and
+check syntax.
+
+  Usage: slaxproc [options] [stylesheet] [files]
+    Options:
+      --slax-to-xslt OR -x: turn SLAX into XSLT
+      --xslt-to-slax OR -s: turn XSLT into SLAX
+      --run OR -r: run a SLAX script
+      --check OR -c: check syntax and content for a SLAX script
+
+      --debug OR -d: enable the SLAX/XSLT debugger
+      --exslt OR -e: enable the EXSLT library
+      --indent OR -g: indent output ala output-method/indent
+      --help OR -h: display this help message
+      --input <file> OR -i <file>: take input from the given file
+      --name <file> OR -n <file>: read the script from the given file
+      --no-randomize: do not initialize the random number generator
+      --output <file> OR -o <file>: make output into the given file
+      --param name value OR -a name value: pass parameters
+      --partial OR -p: allow partial SLAX input to --slax-to-xslt
+      --trace <file> OR -t <file>: write trace data to a file
+      --verbose OR -v: enable debugging output (slaxLog())
+      --version OR -V: show version information (and exit)
+      --write-version <version> OR -w <version>: write in version
+  Project libslax home page: http://code.google.com/p/libslax
+
+Files can be referenced positionally (where the script file first) or
+by using the "-n", "-i", and "-o" options.
+
+To use slaxproc to convert a SLAX file to XSLT:
+
+    $ slaxproc mine.slax new.xsl
+
+To convert an XSLT file to SLAX:
+
+    $ slaxproc existing.xsl new.slax
+
+To run a script:
+
+    $ slaxproc mine.slax infile.xml outfile.xml
+
+Use the "-g" option to produce good-looking output by enabling
+indenting (aka "pretty-printing") of output.  In this example,
+since the output filename is not given, the output is written to
+the standard output stream (stdout):
+
+    $ slaxproc -g mine.slax infile.xml
+
+Use the "-p" flag to perform conversion of SLAX and XML formats
+for partial data files.  This can be used as a filter inside an editor
+to convert a region from one format to the other:
+
+    $ cat in.xml | slaxproc -s -p > out.slax
+
+Use the "-w" option to restrict the output of slaxproc to 1.0
+features.
+
+** The SLAX Debugger (sdb)
+
+The SLAX distribution includes a debugger called "sdb", which can be
+accessed via the "slaxproc" command using the "-d" option.  The
+debugger resembles "gdb" command syntax and operation.
+
+    (sdb) help
+    List of commands:
+      break [loc]     Add a breakpoint at [file:]line or template
+      callflow [val]  Enable call flow tracing
+      continue [loc]  Continue running the script
+      delete [num]    Delete all (or one) breakpoints
+      finish          Finish the current template
+      help            Show this help message
+      info            Showing info about the script being debugged
+      list [loc]      List contents of the current script
+      next            Execute the over instruction, stepping over calls
+      over            Execute the current instruction hierarchy
+      print <xpath>   Print the value of an XPath expression
+      profile [val]   Turn profiler on or off
+      reload          Reload the script contents
+      run             Restart the script
+      step            Execute the next instruction, stepping into calls
+      where           Show the backtrace of template calls
+      quit            Quit debugger
+
+Many of these commands follow their "gdb" counterparts, to the extent
+possible.
+
+** The SLAX Profiler
+
+The SLAX debugger includes a profiler which can report information
+about the activity and performance of a script.  The profiler is
+automatically enabled when the debugger is started, and tracks script
+execution until the script terminates.  At any point, profiling
+information can be displayed or cleared, and the profiler can be
+temporarily disabled or enabled.
+
+Use the "profile" command to access the profiler:
+
+    (sdb) help profile
+    List of commands:
+      profile clear   Clear  profiling information
+      profile off     Disable profiling
+      profile on      Enable profiling
+      profile report [brief]  Report profiling information
+    (sdb) 
+
+The profile report includes the following information:
+
+- Line -- line number of the source file
+- Hits -- number of times this line was executed
+- User -- the number of microseconds if "user" time spent processing this line
+- U/Hit -- average number of microseconds per hit
+- System -- the number of microseconds if "system" time spent
+processing this line
+- S/Hit -- average number of microseconds per hit
+- Source -- Source code line
+
+The "brief" option instructs sdb to avoid showing lines that were not
+hit, since there is no valid information for them.  Without the
+"brief" option, dashes are displayed.
+
+In the following example, the source code data is heavily truncated
+(with "....")  to allow the material to fit on this page.  sdb would
+not truncate these lines:
+
+    (sdb) run
+    <?xml version="1.0"?>
+    <message>Down rev PIC in Fruvenator, Fru-Master 3000</message>
+    Script exited normally.
+    (sdb) profile report
+     Line     Hits     User    U/Hit   System    S/Hit Source
+        1        -        -        -        -        - version 1.0;
+        2        -        -        -        -        - 
+        3        2        4     2.00        8     4.00 match / {
+        4        1       25    25.00       13    13.00     var ....
+        5        -        -        -        -        - 
+        6        -        -        -        -        -     for-each....
+        7        1       45    45.00       10    10.00          ..
+        8        1       12    12.00        5     5.00         <message>
+        9        1       45    45.00       15    15.00          ....
+       10        -        -        -        -        -     }
+       11        -        -        -        -        - }
+    Total        6      131                51   Total
+    (sdb) pro rep b
+     Line     Hits     User    U/Hit   System    S/Hit Source
+        3        2        4     2.00        8     4.00 match / {
+        4        1       25    25.00       13    13.00     var  ....
+        7        1       45    45.00       10    10.00          ....
+        8        1       12    12.00        5     5.00      <message>
+        9        1       45    45.00       15    15.00          ....
+    Total        6      131                51   Total
+    (sdb) 
+
+This information not only show how much time is spent during code
+execution, but can also show which lines are being executed, which
+can help debug scripts where the execution does not match
+expectations.
+
+** callflow
+
+The "callflow" command enables the printing of informational data when
+levels of the script are entered and exited.  The lines are simple,
+but reference the instruction, filename, and line number of the frame:
+
+callflow: 0: enter <xsl:template> in match / at empty-15.slax:5
+callflow: 1: enter <xsl:variable> at empty-15.slax:13
+callflow: 1: exit <xsl:variable> at empty-15.slax:13
+callflow: 1: enter <xsl:variable> at empty-15.slax:20
+callflow: 1: exit <xsl:variable> at empty-15.slax:20
+callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
+
 *! start-appendix
 
 * Example Stylesheets
@@ -2674,46 +2873,6 @@ For example, the expression "chapter[starts-with(section, 'A')]" will
 inspect all <chapter> elements, convert their <section> elements to
 strings, and select those whose string value starts with 'A'.  This
 may be an expensive operation.
-
-* Status of the Software
-
-The SLAX software contains a library (libslax) and a command line tool
-(slaxproc).  The command line tool can be used to convert between XSLT
-and SLAX syntax, as well as run stylesheets and check syntax.
-
-  Usage: slaxproc [options] [stylesheet] [file]
-    Options:
-      --slax-to-xslt OR -x: turn SLAX into XSLT
-      --xslt-to-slax OR -s: turn XSLT into SLAX
-      --run OR -r: run a SLAX script
-      --check OR -c: check syntax and content for a SLAX script
-
-      --debug OR -d: enable the SLAX/XSLT debugger
-      --exslt OR -e: enable the EXSLT library
-      --indent OR -g: indent output ala output-method/indent
-      --help OR -h: display this help message
-      --input <file> OR -i <file>: take input from the given file
-      --name <file> OR -n <file>: read the script from the given file
-      --no-randomize: do not initialize the random number generator
-      --output <file> OR -o <file>: make output into the given file
-      --param name value OR -a name value: pass parameters
-      --partial OR -p: allow partial SLAX input to --slax-to-xslt
-      --trace <file> OR -t <file>: write trace data to a file
-      --verbose OR -v: enable debugging output (slaxLog())
-      --version OR -V: show version information (and exit)
-      --write-version <version> OR -w <version>: write in version
-  Project libslax home page: http://code.google.com/p/libslax
-
-A man page for slaxproc is included in the libslax distribution.
-Refer to that documentation for additional information.
-
-The library contains both a SLAX reader and a SLAX writer.  The reader
-turns a SLAX source file into an XSLT tree (xmlDocPtr) using the
-xsltSetLoaderFunc() hook.  The writer turns an XSLT tree (xmlDocPtr)
-into a file containing SLAX statements.
-
-To support SLAX in your application, link with libslax and call the
-libslax initializer function, slaxEnable(1);
 
 {{document:
     name slax-manual;

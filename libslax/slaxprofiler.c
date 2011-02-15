@@ -245,8 +245,8 @@ slaxProfReport (int brief)
 	}
     }
 
-    slaxOutput("%5s %8lu %8lu %8lu %s", "Total", tot_count,
-	       tot_user, tot_system, "Totals");
+    slaxOutput("%5s %8lu %8lu %8s %8lu   %s", "Total", tot_count,
+	       tot_user, " ", tot_system, "Total");
 
 }
 

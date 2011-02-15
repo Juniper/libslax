@@ -76,6 +76,7 @@
 #include "config.h"
 
 #define MAXARGS	256
+#define DEBUG_LIST_COUNT	12 /* Number of lines "list" shows */
 
 /* Add some values to the xsltDebugStatusCodes enum */
 #define XSLT_DEBUG_LOCAL (XSLT_DEBUG_QUIT + 1)
@@ -96,6 +97,8 @@ typedef struct slaxDebugState_s {
     int ds_count;		/* Command count */
     int ds_flags;		/* Global state flags */
     int ds_stackdepth;		/* Current depth of call stack */
+    xmlNodePtr ds_list_node;	/* Last "list" target */
+    int ds_list_line;		/* Last "list" line number */
 } slaxDebugState_t;
 
 /* Flags for ds_flags */
@@ -673,12 +676,13 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 {
     char buf[BUFSIZ];
 
-    slaxOutput("callflow: %u: %s <%s%s%s> in %s at %s%s%ld",
+    slaxOutput("callflow: %u: %s <%s%s%s>%s%s at %s%s%ld",
 	statep->ds_stackdepth, tag,
 	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
-	NAME(inst), slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		    (inst->doc && inst->doc->URL) ? inst->doc->URL : null,
+	NAME(inst), template ? " in " : "",
+	template ? slaxDebugTemplateInfo(template, buf, sizeof(buf)) : "",
+	(inst->doc && inst->doc->URL) ? inst->doc->URL : null,
 	(inst->doc && inst->doc->URL) ? ":" : "",
 	inst ? xmlGetLineNo(inst) : 0);
 }
@@ -733,6 +737,13 @@ static inline int
 slaxDebugIsAbbrev (const char *name, const char *value)
 {
     return value ? slaxDebugCheckAbbrev(name, 1, value, strlen(value)) : 0;
+}
+
+static inline void
+slaxDebugClearListInfo (slaxDebugState_t *statep)
+{
+    statep->ds_list_node = NULL;
+    statep->ds_list_line = 0;
 }
 
 /*
@@ -811,6 +822,8 @@ slaxDebugCmdContinue (DC_ARGS)
 
     if (slaxDebugCheckStart(statep))
 	return;
+
+    slaxDebugClearListInfo(statep);
 
     if (argv[1]) {
 	node = slaxDebugGetNode(statep, argv[1]);
@@ -966,16 +979,29 @@ slaxDebugCmdInfo (DC_ARGS)
 static void
 slaxDebugCmdList (DC_ARGS)
 {
-    xmlNodePtr node = slaxDebugGetNode(statep, argv[1]);
+    xmlNodePtr node;
+    int line_no;
 
-    if (node) {
-	int line_no = xmlGetLineNo(node);
-	if (node->doc) {
-	    slaxDebugOutputScriptLines(statep, (const char *) node->doc->URL,
-				       line_no, line_no + 10);
-	} else {
-	    slaxOutput("target lacks filename: %s", argv[1]);
-	}
+    if (argv[1]) {
+	node = slaxDebugGetNode(statep, argv[1]);
+	line_no = xmlGetLineNo(node);
+
+    } else if (statep->ds_list_node) {
+	node = statep->ds_list_node;
+	line_no = statep->ds_list_line;
+
+    } else {
+	node = statep->ds_inst;
+	line_no = xmlGetLineNo(node);
+    }
+
+    if (node && node->doc) {
+	slaxDebugOutputScriptLines(statep, (const char *) node->doc->URL,
+				   line_no, line_no + DEBUG_LIST_COUNT);
+	statep->ds_list_node = node;
+	statep->ds_list_line = line_no + DEBUG_LIST_COUNT;
+    } else {
+	slaxOutput("no target");
     }
 }
 
@@ -1001,6 +1027,8 @@ slaxDebugCmdFinish (DC_ARGS)
 
     if (slaxDebugCheckDone(statep))
 	return;
+
+    slaxDebugClearListInfo(statep);
 
     /*
      * Walk the stack linked list in reverse order, looking for the
@@ -1037,6 +1065,8 @@ slaxDebugCmdStep (DC_ARGS)
     if (slaxDebugCheckStart(statep))
 	return;
 
+    slaxDebugClearListInfo(statep);
+
     xsltSetDebuggerStatus(XSLT_DEBUG_STEP);
     statep->ds_flags |= DSF_DISPLAY;
 }
@@ -1050,6 +1080,8 @@ slaxDebugCmdNext (DC_ARGS)
 {
     if (slaxDebugCheckStart(statep))
 	return;
+
+    slaxDebugClearListInfo(statep);
 
     if (slaxNodeIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
 	xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
@@ -1068,6 +1100,8 @@ slaxDebugCmdOver (DC_ARGS)
 {
     if (slaxDebugCheckDone(statep))
 	return;
+
+    slaxDebugClearListInfo(statep);
 
     xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
     statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
@@ -1416,6 +1450,8 @@ slaxDebugCmdReload (DC_ARGS)
 	    return;
     }
 
+    slaxDebugClearListInfo(statep);
+
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
 
@@ -1451,6 +1487,8 @@ slaxDebugCmdRun (DC_ARGS)
 	    return;
     }
 
+    slaxDebugClearListInfo(statep);
+
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
 
@@ -1485,9 +1523,10 @@ slaxDebugCmdQuit (DC_ARGS)
     if (statep->ds_ctxt)
 	statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
 
+    slaxDebugClearListInfo(statep);
+
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2149,6 +2188,8 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	    } else 
 		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 
+	    slaxProfClear();
+
 	} else if (statep->ds_flags & DSF_RELOAD) {
 	reload:
 	    statep->ds_flags &= ~DSF_RELOAD;
@@ -2234,7 +2275,6 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 	statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
 	xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
-	slaxProfClear();
     }
 
     /* Free our resources */

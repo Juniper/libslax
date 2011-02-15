@@ -40,8 +40,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - sdb: add "reload data" command (default to "reload script")
 
-- sdb: "list" should work like gdb (show the next page)
-
 - libxml2 bug:
   This line gives a decent error message:
       <xsl:if test="get:bug($x, $in">;
