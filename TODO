@@ -34,11 +34,13 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Check: confirm that UTF-8 encoding functions are working correctly
 
-- Nit: Put _all_ debugger info in statep; also s/dsfp/stp/
+- Nit: Put _all_ debugger info in statep
 
 - Doc: new reload command
 
 - sdb: add "reload data" command (default to "reload script")
+
+- sdb: "list" should work like gdb (show the next page)
 
 - libxml2 bug:
   This line gives a decent error message:
