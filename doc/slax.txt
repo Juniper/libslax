@@ -2620,25 +2620,25 @@ The SLAX distribution includes a debugger called "sdb", which can be
 accessed via the "slaxproc" command using the "-d" option.  The
 debugger resembles "gdb" command syntax and operation.
 
-    (sdb) help
-    List of commands:
-      break [loc]     Add a breakpoint at [file:]line or template
-      callflow [val]  Enable call flow tracing
-      continue [loc]  Continue running the script
-      delete [num]    Delete all (or one) breakpoints
-      finish          Finish the current template
-      help            Show this help message
-      info            Showing info about the script being debugged
-      list [loc]      List contents of the current script
-      next            Execute the over instruction, stepping over calls
-      over            Execute the current instruction hierarchy
-      print <xpath>   Print the value of an XPath expression
-      profile [val]   Turn profiler on or off
-      reload          Reload the script contents
-      run             Restart the script
-      step            Execute the next instruction, stepping into calls
-      where           Show the backtrace of template calls
-      quit            Quit debugger
+  (sdb) help
+  List of commands:
+    break [loc]     Add a breakpoint at [file:]line or template
+    callflow [val]  Enable call flow tracing
+    continue [loc]  Continue running the script
+    delete [num]    Delete all (or one) breakpoints
+    finish          Finish the current template
+    help            Show this help message
+    info            Showing info about the script being debugged
+    list [loc]      List contents of the current script
+    next            Execute the over instruction, stepping over calls
+    over            Execute the current instruction hierarchy
+    print <xpath>   Print the value of an XPath expression
+    profile [val]   Turn profiler on or off
+    reload          Reload the script contents
+    run             Restart the script
+    step            Execute the next instruction, stepping into calls
+    where           Show the backtrace of template calls
+    quit            Quit debugger
 
 Many of these commands follow their "gdb" counterparts, to the extent
 possible.
@@ -2654,13 +2654,13 @@ temporarily disabled or enabled.
 
 Use the "profile" command to access the profiler:
 
-    (sdb) help profile
-    List of commands:
-      profile clear   Clear  profiling information
-      profile off     Disable profiling
-      profile on      Enable profiling
-      profile report [brief]  Report profiling information
-    (sdb) 
+  (sdb) help profile
+  List of commands:
+    profile clear   Clear  profiling information
+    profile off     Disable profiling
+    profile on      Enable profiling
+    profile report [brief]  Report profiling information
+  (sdb) 
 
 The profile report includes the following information:
 
@@ -2681,33 +2681,33 @@ In the following example, the source code data is heavily truncated
 (with "....")  to allow the material to fit on this page.  sdb would
 not truncate these lines:
 
-    (sdb) run
-    <?xml version="1.0"?>
-    <message>Down rev PIC in Fruvenator, Fru-Master 3000</message>
-    Script exited normally.
-    (sdb) profile report
-     Line     Hits     User    U/Hit   System    S/Hit Source
-        1        -        -        -        -        - version 1.0;
-        2        -        -        -        -        - 
-        3        2        4     2.00        8     4.00 match / {
-        4        1       25    25.00       13    13.00     var ....
-        5        -        -        -        -        - 
-        6        -        -        -        -        -     for-each....
-        7        1       45    45.00       10    10.00          ..
-        8        1       12    12.00        5     5.00         <message>
-        9        1       45    45.00       15    15.00          ....
-       10        -        -        -        -        -     }
-       11        -        -        -        -        - }
-    Total        6      131                51   Total
-    (sdb) pro rep b
-     Line     Hits     User    U/Hit   System    S/Hit Source
-        3        2        4     2.00        8     4.00 match / {
-        4        1       25    25.00       13    13.00     var  ....
-        7        1       45    45.00       10    10.00          ....
-        8        1       12    12.00        5     5.00      <message>
-        9        1       45    45.00       15    15.00          ....
-    Total        6      131                51   Total
-    (sdb) 
+  (sdb) run
+  <?xml version="1.0"?>
+  <message>Down rev PIC in Fruvenator, Fru-Master 3000</message>
+  Script exited normally.
+  (sdb) profile report
+   Line   Hits   User    U/Hit  System    S/Hit Source
+      1      -      -        -       -        - version 1.0;
+      2      -      -        -       -        - 
+      3      2      4     2.00       8     4.00 match / {
+      4      1     25    25.00      13    13.00     var ....
+      5      -      -        -       -        - 
+      6      -      -        -       -        -     for-each....
+      7      1     45    45.00      10    10.00          ..
+      8      1     12    12.00       5     5.00         <message>
+      9      1     45    45.00      15    15.00          ....
+     10      -      -        -       -        -     }
+     11      -      -        -       -        - }
+  Total      6    131               51   Total
+  (sdb) pro rep b
+   Line   Hits   User    U/Hit  System    S/Hit Source
+      3      2      4     2.00       8     4.00 match / {
+      4      1     25    25.00      13    13.00     var  ....
+      7      1     45    45.00      10    10.00          ....
+      8      1     12    12.00       5     5.00      <message>
+      9      1     45    45.00      15    15.00          ....
+  Total      6    131               51   Total
+  (sdb) 
 
 This information not only show how much time is spent during code
 execution, but can also show which lines are being executed, which
