@@ -11,7 +11,8 @@ AM_CFLAGS = -I${top_srcdir} ${LIBXML_CFLAG} ${LIBXSLT_CFLAGS} ${WARNINGS}
 lib_LTLIBRARIES = libslax.la
 
 slaxinc_HEADERS = \
-    slax.h
+     slax.h \
+     slaxconfig.h
 
 noinst_HEADERS = \
     slaxinternals.h \

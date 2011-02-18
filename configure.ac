@@ -1,6 +1,8 @@
 #
 # $Id$
 #
+# See ./INSTALL for more info
+#
 
 #
 # Release numbering: even numbered dot releases are official ones, and
@@ -263,6 +265,7 @@ esac
 SLAX_SRCDIR='${srcdir}'
 SLAX_LIBDIR='${libdir}'
 SLAX_INCLUDEDIR='${includedir}'
+
 AC_SUBST(SLAX_SRCDIR)
 AC_SUBST(SLAX_LIBDIR)
 AC_SUBST(SLAX_INCLUDEDIR)
@@ -274,12 +277,18 @@ dnl for the spec file
 RELDATE=`date +'%Y-%m-%d%n'`
 AC_SUBST(RELDATE)
 
+LIBSLAX_VERSION=$PACKAGE_VERSION
+LIBSLAX_VERSION_NUMBER=VERSION_TO_NUMBER(echo $PACKAGE_VERSION)
+AC_SUBST(LIBSLAX_VERSION)
+AC_SUBST(LIBSLAX_VERSION_NUMBER)
+
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
   Makefile
   slax-config
   libslax/Makefile
+  libslax/slaxconfig.h
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile

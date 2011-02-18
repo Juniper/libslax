@@ -6,6 +6,11 @@
  * See ../Copyright for the status of this software
  */
 
+#ifndef LIBSLAX_SLAX_H
+#define LIBSLAX_SLAX_H
+
+#include <libslax/slaxconfig.h>
+
 /*
  * Turn on the SLAX XSLT document parsing hook.  This must be
  * called before SLAX files can be parsed.
@@ -149,3 +154,5 @@ void
 slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 			  const char *docname, xmlDocPtr doc,
 			  const char **params);
+
+#endif /* LIBSLAX_SLAX_H */

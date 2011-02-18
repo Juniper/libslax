@@ -286,7 +286,7 @@ init_randomizer (void)
 static void
 print_version (void)
 {
-    printf("libslax version %s\n",  PACKAGE_VERSION);
+    printf("libslax version %s\n",  LIBSLAX_VERSION);
     printf("Using libxml %s, libxslt %s and libexslt %s\n",
 	   xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
     printf("slaxproc was compiled against libxml %d, "
