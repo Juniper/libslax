@@ -2003,6 +2003,7 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "get-command", slaxExtGetCommand);
     slaxRegisterFunction(namespace, "get-input", slaxExtGetInput);
     slaxRegisterFunction(namespace, "get-secret", slaxExtGetSecret);
+    slaxRegisterFunction(namespace, "getsecret", slaxExtGetSecret); /*OLD*/
     slaxRegisterFunction(namespace, "input", slaxExtGetInput); /*OLD*/
     slaxRegisterFunction(namespace, "is-empty", slaxExtEmpty);
     slaxRegisterFunction(namespace, "printf", slaxExtPrintf);

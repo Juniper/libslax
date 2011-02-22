@@ -3093,7 +3093,7 @@ main (int argc, char **argv)
         return -1;
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, stdout, docp, 0);
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, stdout, docp, 0, NULL);
 
     return 0;
 }

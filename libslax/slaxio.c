@@ -272,7 +272,7 @@ slaxProcTrace (void *vfp, xmlNodePtr nodep, const char *fmt, ...)
 	char *time_buffer;
 	
 	gettimeofday(&cur_time, NULL);
-	time_buffer = ctime(&cur_time.tv_sec);
+	time_buffer = ctime((time_t *)&cur_time.tv_sec);
 
 	fprintf(fp, "%.15s: ", time_buffer + 4);  /* "Mmm dd hh:mm:ss" */
     }
