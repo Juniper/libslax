@@ -27,4 +27,9 @@
  */
 #define LIBSLAX_VERSION_STRING	"@LIBSLAX_VERSION_NUMBER@"
 
+/**
+ * The version number extra info as a string
+ */
+#define LIBSLAX_VERSION_EXTRA	"@LIBSLAX_VERSION_EXTRA@"
+
 #endif /* LIBSLAX_SLAXCONFIG_H */

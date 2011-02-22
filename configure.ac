@@ -249,8 +249,8 @@ else
 fi
 
 AC_SUBST(XSLT_CONFIG)
-AC_SUBST(LIBXSLT_LIBS)
 AC_SUBST(LIBXSLT_CFLAGS)
+AC_SUBST(LIBXSLT_LIBS)
 
 #
 # ---- end of noise
@@ -262,6 +262,7 @@ case $host_os in
 	;;
 esac
 
+SLAX_LIBS=-lslax
 SLAX_SRCDIR='${srcdir}'
 SLAX_LIBDIR='${libdir}'
 SLAX_INCLUDEDIR='${includedir}'
@@ -272,16 +273,28 @@ AC_SUBST(SLAX_INCLUDEDIR)
 AC_SUBST(SLAX_CFLAGS)
 AC_SUBST(SLAX_LIBTOOLLIBS)
 AC_SUBST(SLAX_LIBS)
+AC_SUBST(WIN32_EXTRA_LIBADD)
 
 dnl for the spec file
 RELDATE=`date +'%Y-%m-%d%n'`
 AC_SUBST(RELDATE)
 
+AC_MSG_RESULT(Using configure dir $ac_abs_confdir)
+
+if test -d $ac_abs_confdir/.svn ; then
+  extra=`svn info $ac_abs_confdir | grep Revision | sed 's+Revision: ++'`
+  echo extra=$extra
+  if test "$extra" != ""
+  then
+      LIBSLAX_VERSION_EXTRA="-SVN$extra"
+  fi
+fi
+
 LIBSLAX_VERSION=$PACKAGE_VERSION
 LIBSLAX_VERSION_NUMBER=VERSION_TO_NUMBER(echo $PACKAGE_VERSION)
 AC_SUBST(LIBSLAX_VERSION)
 AC_SUBST(LIBSLAX_VERSION_NUMBER)
-
+AC_SUBST(LIBSLAX_VERSION_EXTRA)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([

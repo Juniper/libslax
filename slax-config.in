@@ -67,7 +67,7 @@ while test $# -gt 0; do
 	;;
 
     --cflags)
-       	echo @SLAX_INCLUDEDIR@ @SLAX_CFLAGS@
+       	echo -I@SLAX_INCLUDEDIR@ @SLAX_CFLAGS@
        	;;
 
     --libtool-libs)
@@ -88,10 +88,10 @@ while test $# -gt 0; do
 	    then
 		echo @SLAX_LIBS@ 
 	    else
-		echo @SLAX_LIBDIR@ @SLAX_LIBS@ 
+		echo -e -L@SLAX_LIBDIR@ @SLAX_LIBS@ 
 	    fi
 	else
-	    echo @SLAX_LIBDIR@ @SLAX_LIBS@ @WIN32_EXTRA_LIBADD@
+	    echo -e -L@SLAX_LIBDIR@ @SLAX_LIBS@ @WIN32_EXTRA_LIBADD@
 	fi
        	;;
 
