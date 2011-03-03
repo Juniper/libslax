@@ -337,6 +337,7 @@ main (int argc UNUSED, char **argv)
     int use_exslt = FALSE;
     FILE *trace_fp = NULL;
     int randomize = 1;
+    int logger = FALSE;
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -403,7 +404,7 @@ main (int argc UNUSED, char **argv)
 	    output = *++argv;
 
 	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
-	    slaxDebug = TRUE;
+	    logger = TRUE;
 
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    use_debugger = TRUE;
@@ -455,6 +456,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio();
+
+    if (logger)
+	slaxLogEnable(TRUE);
 
     if (use_exslt)
 	exsltRegisterAll();

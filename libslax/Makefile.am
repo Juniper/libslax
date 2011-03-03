@@ -6,9 +6,10 @@ include ${top_srcdir}/warnings.mk
 
 slaxincdir = ${includedir}/libslax
 
-AM_CFLAGS = -I${top_srcdir} ${LIBXML_CFLAG} ${LIBXSLT_CFLAGS} ${WARNINGS}
+AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
 
 lib_LTLIBRARIES = libslax.la
+libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
 slaxinc_HEADERS = \
      slax.h \

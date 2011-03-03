@@ -1495,6 +1495,45 @@ slaxDebugCmdRun (DC_ARGS)
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
     statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
 }
+static void
+slaxDebugHelpVerbose (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  verbose off     Disable verbose logging");
+    slaxOutput("  verbose on      Enable verbose logging");
+}
+
+/*
+ * 'verbose' command
+ */
+static void
+slaxDebugCmdVerbose (DC_ARGS)
+{
+    const char *arg = argv[1];
+    int enable = !slaxLogIsEnabled;
+
+    if (arg) {
+	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
+		|| slaxDebugIsAbbrev("enable", arg))
+	    enable = TRUE;
+
+	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
+		 || slaxDebugIsAbbrev("disable", arg))
+	    enable = FALSE;
+
+	else if (slaxDebugIsAbbrev("help", arg)) {
+	    slaxDebugHelpVerbose(statep);
+	    return;
+
+	} else {
+	    slaxOutput("invalid setting: %s", arg);
+	    return;
+	}
+    }
+
+    slaxLogEnable(enable);
+    slaxOutput("%s verbose logging", enable ? "Enabling" : "Disabling");
+}
     
 /*
  * 'quit' command
@@ -1611,6 +1650,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "step",	       1, slaxDebugCmdStep,
       "step            Execute the next instruction, stepping into calls",
       NULL,
+    },
+
+    { "verbose",       1, slaxDebugCmdVerbose,
+      "verbose         Turn on verbose (-v) output logging",
+      slaxDebugHelpVerbose,
     },
 
     { "where",	       1, slaxDebugCmdWhere,

@@ -14,7 +14,7 @@
 AC_PREREQ(2.2)
 AC_INIT([libslax], [0.6.1], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-LT_INIT([disable-shared])
+LT_INIT
 AC_DISABLE_SHARED
 
 #

@@ -45,6 +45,8 @@ static slaxOutputCallback_t slaxOutputCallback;
 static xmlOutputWriteCallback slaxWriteCallback;
 static slaxErrorCallback_t slaxErrorCallback;
 
+int slaxLogIsEnabled;
+
 /**
  * Use the input callback to get data
  * @prompt the prompt to be displayed
@@ -307,7 +309,16 @@ slaxTraceToFile (FILE *fp)
 }
 
 /**
- * Simple trace function that tosses messages to stderr if slaxDebug
+ * Enable logging information internal to the slax library
+ */
+void
+slaxLogEnable (int enable)
+{
+    slaxLogIsEnabled = enable;
+}
+
+/**
+ * Simple trace function that tosses messages to stderr if slaxLogIsEnabled
  * has been set to non-zero.
  *
  * @param fmt format string plus variadic arguments
@@ -317,7 +328,7 @@ slaxLog (const char *fmt, ...)
 {
     va_list vap;
 
-    if (!slaxDebug)
+    if (!slaxLogIsEnabled)
 	return;
 
     va_start(vap, fmt);
@@ -330,7 +341,7 @@ slaxLog (const char *fmt, ...)
 }
 
 /**
- * Simple trace function that tosses messages to stderr if slaxDebug
+ * Simple trace function that tosses messages to stderr if slaxLogIsEnabled
  * has been set to non-zero.
  *
  * @param fmt format string plus variadic arguments
@@ -340,7 +351,7 @@ slaxLog2 (void *ignore UNUSED, const char *fmt, ...)
 {
     va_list vap;
 
-    if (!slaxDebug)
+    if (!slaxLogIsEnabled)
 	return;
 
     va_start(vap, fmt);

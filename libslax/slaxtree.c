@@ -187,7 +187,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
     if (value == NULL)
 	return;
 
-    if (slaxDebug)
+    if (slaxLogIsEnabled)
 	for (ssp = value; ssp; ssp = ssp->ss_next)
 	    slaxLog("initial: xpath_value: %s", ssp->ss_token);
 
@@ -304,7 +304,7 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
     if (value == NULL)
 	return;
 
-    if (slaxDebug)
+    if (slaxLogIsEnabled)
 	for (ssp = value; ssp; ssp = ssp->ss_next)
 	    slaxLog("initial: xpath_value: %s", ssp->ss_token);
 	

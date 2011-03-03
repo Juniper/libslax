@@ -505,7 +505,7 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
 
     slaxStringCopy(buf, len, value, flags);
 
-    if (slaxDebug)
+    if (slaxLogIsEnabled)
 	slaxLog("slaxStringAsChar: '%s'", buf);
     return buf;
 }
@@ -710,7 +710,7 @@ slaxStringFuse (slax_string_t *start)
     results->ss_next = NULL;
     results->ss_flags = slaxStringQFlags(results);
 
-    if (slaxDebug)
+    if (slaxLogIsEnabled)
 	slaxLog("slaxStringFuse: '%s'", results->ss_token);
     return results;
 }

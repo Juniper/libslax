@@ -155,4 +155,22 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 			  const char *docname, xmlDocPtr doc,
 			  const char **params);
 
+/*
+ * Register our extension functions.
+ */
+int
+slaxExtRegisterOther (const char *namespace);
+
+/**
+ * Registers the SLAX extensions
+ */
+void slaxExtRegister (void);
+
+/**
+ * Enable logging information internal to the slax library
+ */
+void
+slaxLogEnable (int);
+
+
 #endif /* LIBSLAX_SLAX_H */

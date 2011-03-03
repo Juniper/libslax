@@ -610,7 +610,7 @@ slaxWriteValue (slax_writer_t *swp, const char *value)
 	    slaxWrite(swp, " _ %s", cp);
     }
 
-    if (slaxDebug)
+    if (slaxLogIsEnabled)
 	slaxWrite(swp, "/*%s*/", value);
 }
 
@@ -3064,7 +3064,7 @@ main (int argc, char **argv)
     while ((ch = getopt(argc, argv, "df:y")) != EOF) {
         switch (ch) {
         case 'd':
-	    slaxDebug = TRUE;
+	    slaxLogIsEnabled = TRUE;
 	    break;
 
         case 'f':

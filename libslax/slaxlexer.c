@@ -579,7 +579,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 	if ((sdp->sd_flags & SDF_EOF)
 	    || fgets(sdp->sd_buf + sdp->sd_len, sdp->sd_size - sdp->sd_len,
 		     sdp->sd_file) == NULL) {
-	    if (slaxDebug)
+	    if (slaxLogIsEnabled)
 		slaxLog("slax: lex: %s",
 			feof(sdp->sd_file) ? "eof seen" : "read failed");
 	    sdp->sd_flags |= SDF_EOF;
@@ -1107,7 +1107,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     sdp->sd_last = rc;
 
     if (rc > 0 && sdp->sd_start == sdp->sd_cur) {
-	if (slaxDebug)
+	if (slaxLogIsEnabled)
 	    slaxLog("slax: lex: zero length token: %d/%s",
 		      rc, slaxTokenName(rc));
 	rc = M_ERROR;
@@ -1139,7 +1139,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 	    ssp->ss_flags |= SSF_SLAXNS;
     }
 
-    if (slaxDebug && ssp)
+    if (slaxLogIsEnabled && ssp)
 	slaxLog("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
 		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords", ssp,
 		  sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
