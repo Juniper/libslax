@@ -1,7 +1,8 @@
 set libslax=`pwd`
 set test=~/work/slax/libxslt-1.1.24/tests/
 alias Zautoreconf "(cd $libslax ; autoreconf --install)"
-alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ --prefix=/opt/local --enable-readline --enable-printflike )"
+#alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ --prefix=/opt/local --enable-readline --enable-printflike )"
+alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ --prefix=/opt/local --enable-readline --enable-printflike --with-libxml-prefix=/Users/phil/work/root --with-libxslt-prefix=/Users/phil/work/root --prefix /Users/phil/work/root)"
 alias Zbuild "(cd $libslax/build; make \!* )"
 alias Zgdb "(cd $libslax/build ; ./libtool --mode=execute gdb \!* )"
 alias ttype "(cd $libslax/build/libslax; grep \!* slaxparser.h |grep define)"

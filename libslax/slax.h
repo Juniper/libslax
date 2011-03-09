@@ -172,5 +172,15 @@ void slaxExtRegister (void);
 void
 slaxLogEnable (int);
 
+typedef void (*slaxLogCallback_t)(void *opaque, const char *fmt, va_list vap);
+
+/**
+ * Enable logging with a callback
+ *
+ * @func callback function
+ * @data opaque data passed to callback
+ */
+void
+slaxLogEnableCallback (slaxLogCallback_t func, void *data);
 
 #endif /* LIBSLAX_SLAX_H */

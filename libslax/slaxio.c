@@ -46,6 +46,8 @@ static xmlOutputWriteCallback slaxWriteCallback;
 static slaxErrorCallback_t slaxErrorCallback;
 
 int slaxLogIsEnabled;
+static slaxLogCallback_t slaxLogCallback;
+static void *slaxLogCallbackData;
 
 /**
  * Use the input callback to get data
@@ -318,6 +320,19 @@ slaxLogEnable (int enable)
 }
 
 /**
+ * Enable logging with a callback
+ *
+ * @func callback function
+ * @data opaque data passed to callback
+ */
+void
+slaxLogEnableCallback (slaxLogCallback_t func, void *data)
+{
+    slaxLogCallback = func;
+    slaxLogCallbackData = data;
+}
+
+/**
  * Simple trace function that tosses messages to stderr if slaxLogIsEnabled
  * has been set to non-zero.
  *
@@ -333,9 +348,13 @@ slaxLog (const char *fmt, ...)
 
     va_start(vap, fmt);
 
-    vfprintf(stderr, fmt, vap);
-    fprintf(stderr, "\n");
-    fflush(stderr);
+    if (slaxLogCallback) {
+	slaxLogCallback(slaxLogCallbackData, fmt, vap);
+    } else {
+	vfprintf(stderr, fmt, vap);
+	fprintf(stderr, "\n");
+	fflush(stderr);
+    }
 
     va_end(vap);
 }
