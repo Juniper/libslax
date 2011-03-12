@@ -467,18 +467,18 @@ error_conditions :
 
 rack_up_the_errors_list :
 	/* Empty */
-		{ $$ = NULL }
+		{ $$ = NULL; }
 
 	| rack_up_the_errors_list rack_up_the_errors
-		{ $$ = NULL }
+		{ $$ = NULL; }
 	;
 
 rack_up_the_errors :
 	error
-		{ $$ = NULL }
+		{ $$ = NULL; }
 
 	| L_OBRACK rack_up_the_errors_list L_CBRACE
-		{ $$ = NULL }
+		{ $$ = NULL; }
 	;
 
 stylesheet :
@@ -2011,6 +2011,7 @@ output_method_intro :
 		    slaxElementPush(slax_data, ELT_OUTPUT, NULL, NULL);
 		    $$ = STACK_CLEAR($1);
 		}
+	;
 
 output_method_block :
 	L_EOS
@@ -2484,7 +2485,6 @@ copy_node_stmt :
 		    STACK_UNUSED($2);
 		}
 	;
-;
 
 copy_node_rest :
 	L_EOS
