@@ -88,10 +88,10 @@ while test $# -gt 0; do
 	    then
 		echo @SLAX_LIBS@ 
 	    else
-		echo -e -L@SLAX_LIBDIR@ @SLAX_LIBS@ 
+		echo -L@SLAX_LIBDIR@ @SLAX_LIBS@ 
 	    fi
 	else
-	    echo -e -L@SLAX_LIBDIR@ @SLAX_LIBS@ @WIN32_EXTRA_LIBADD@
+	    echo -L@SLAX_LIBDIR@ @SLAX_LIBS@ @WIN32_EXTRA_LIBADD@
 	fi
        	;;
 

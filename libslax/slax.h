@@ -183,4 +183,10 @@ typedef void (*slaxLogCallback_t)(void *opaque, const char *fmt, va_list vap);
 void
 slaxLogEnableCallback (slaxLogCallback_t func, void *data);
 
+/**
+ * Initial the randomizer
+ */
+void
+slaxInitRandomizer (void);
+
 #endif /* LIBSLAX_SLAX_H */

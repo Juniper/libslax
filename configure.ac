@@ -283,7 +283,6 @@ AC_MSG_RESULT(Using configure dir $ac_abs_confdir)
 
 if test -d $ac_abs_confdir/.svn ; then
   extra=`svn info $ac_abs_confdir | grep Revision | sed 's+Revision: ++'`
-  echo extra=$extra
   if test "$extra" != ""
   then
       LIBSLAX_VERSION_EXTRA="-SVN$extra"

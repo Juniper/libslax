@@ -733,7 +733,7 @@ slax_string_t *
 slaxConcatRewrite (slax_data_t *sdp UNUSED, slax_string_t *left,
 		   slax_string_t *op, slax_string_t *right)
 {
-    slax_string_t *ssp, *commap;
+    slax_string_t *ssp = NULL, *commap;
 
     slaxLog("slaxConcatRewrite: %p[%s], %p[%s], %p[%s]",
 	    left, left ? left->ss_token : "",
@@ -834,7 +834,7 @@ slaxConcatRewrite (slax_data_t *sdp UNUSED, slax_string_t *left,
 	}
 
 	slaxLog("slaxConcatRewrite: failed (cond 2): %p/%d/%s",
-		ssp, ssp->ss_ttype, ssp->ss_token);
+		ssp, ssp ? ssp->ss_ttype : 0, ssp ? ssp->ss_token : 0);
     }
 
     slaxStringFree(op);

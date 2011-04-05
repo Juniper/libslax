@@ -254,35 +254,6 @@ do_check (const char *name, const char *output UNUSED,
     return 0;
 }
 
-/*
- * An ugly attempt to seed the random number generator with the best
- * value possible.  Ugly, but localized ugliness.
- */
-static void
-init_randomizer (void)
-{
-#if defined(HAVE_SRANDDEV)
-    sranddev();
-
-#elif defined(HAVE_SRAND)
-#if defined(HAVE_GETTIMEOFDAY)
-
-    struct timeval tv;
-    int seed;
-
-    gettimeofday(&tv, NULL);
-    seed = ((int) tv.tv_sec) + ((int) tv.tv_usec);
-    srand(seed);
-
-#else /* HAVE_GETTIMEOFDAY */
-    srand((int) time(NULL));
-
-#endif /* HAVE_GETTIMEOFDAY */
-#else /* HAVE_SRAND */
-    fprintf(stderr, "could not initialize random\n");
-#endif /* HAVE_SRAND */
-}
-
 static void
 print_version (void)
 {
@@ -447,7 +418,7 @@ main (int argc UNUSED, char **argv)
      * numbers.
      */
     if (randomize)
-	init_randomizer();
+	slaxInitRandomizer();
 
     /*
      * Start the XML API

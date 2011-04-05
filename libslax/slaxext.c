@@ -1985,6 +1985,35 @@ slaxExtEvaluate (xmlXPathParserContext *ctxt, int nargs)
     xmlFree(sexpr);
     return;
 }
+
+/*
+ * An ugly attempt to seed the random number generator with the best
+ * value possible.  Ugly, but localized ugliness.
+ */
+void
+slaxInitRandomizer (void)
+{
+#if defined(HAVE_SRANDDEV)
+    sranddev();
+
+#elif defined(HAVE_SRAND)
+#if defined(HAVE_GETTIMEOFDAY)
+
+    struct timeval tv;
+    int seed;
+
+    gettimeofday(&tv, NULL);
+    seed = ((int) tv.tv_sec) + ((int) tv.tv_usec);
+    srand(seed);
+
+#else /* HAVE_GETTIMEOFDAY */
+    srand((int) time(NULL));
+
+#endif /* HAVE_GETTIMEOFDAY */
+#else /* HAVE_SRAND */
+    fprintf(stderr, "could not initialize random\n");
+#endif /* HAVE_SRAND */
+}
  
 /*
  * Register our extension functions.
