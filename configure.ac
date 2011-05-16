@@ -17,6 +17,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
 
+# Support silent build rules.  Requires at least automake-1.11.
+# Disable with "configure --disable-silent-rules" or "make V=1"
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 #
 # libxslt 1.1.26 has a fix for AVT terminating with close braces
 #

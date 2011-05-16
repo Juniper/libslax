@@ -1986,6 +1986,134 @@ slaxExtEvaluate (xmlXPathParserContext *ctxt, int nargs)
     return;
 }
 
+static void
+slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
+{
+    xsltTransformContextPtr tctxt;
+    xmlNodePtr top, nodep, child;
+    xmlDocPtr container;
+    xmlXPathObjectPtr ret = NULL;
+    int ti, tj, vi, vj;
+
+    if (nargs != 0) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    tctxt = xsltXPathGetTransformContext(ctxt);
+    if (tctxt == NULL) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+	      "exslt:tokenize : internal error tctxt == NULL\n");
+	goto fail;
+    }
+
+    container = xsltCreateRVT(tctxt);
+    if (container == NULL)
+	goto fail;
+    
+    xsltRegisterLocalRVT(tctxt, container);
+    ret = xmlXPathNewNodeSet(NULL);
+    if (ret == NULL)
+	goto fail;
+
+    top = xmlNewDocNode(container, NULL,
+			  (const xmlChar *) "debug", NULL);
+    if (top == NULL)
+	goto fail;
+
+    xmlAddChild((xmlNodePtr) container, top);
+    xmlXPathNodeSetAdd(ret->nodesetval, top);
+
+    nodep = xmlNewDocNode(container, NULL,
+			  (const xmlChar *) "templates", NULL);
+    if (nodep == NULL)
+	goto fail;
+
+    xmlAddChild((xmlNodePtr) top, nodep);
+
+    for (ti = 0, tj = tctxt->templNr - 1; ti < 15 && tj >= 0; ti++, tj--) {
+	child = xmlNewDocNode(container, NULL,
+			      (const xmlChar *) "template", NULL);
+
+	if (child) {
+	    xmlAddChild((xmlNodePtr) nodep, child);
+	    if (tctxt->templTab[tj]->name != NULL)
+		xmlAddChildContent(container, child, (const xmlChar *) "name",
+				   tctxt->templTab[tj]->name);
+	    if (tctxt->templTab[tj]->match != NULL)
+		xmlAddChildContent(container, child, (const xmlChar *) "match",
+				   tctxt->templTab[tj]->match);
+	    if (tctxt->templTab[tj]->mode != NULL)
+		xmlAddChildContent(container, child, (const xmlChar *) "mode",
+				   tctxt->templTab[tj]->mode);
+	}
+    }
+
+    nodep = xmlNewDocNode(container, NULL,
+			  (const xmlChar *) "variables", NULL);
+    if (nodep == NULL)
+	goto fail;
+
+    xmlAddChild((xmlNodePtr) top, nodep);
+
+    for (vi = 0, vj = tctxt->varsNr - 1; vi < 15 && vj >= 0; vi++, vj--) {
+        xsltStackElemPtr cur;
+
+        if (tctxt->varsTab[vj] == NULL)
+            continue;
+
+	child = xmlNewDocNode(container, NULL,
+			      (const xmlChar *) "scope", NULL);
+
+	if (child) {
+	    xmlAddChild(nodep, child);
+
+	    cur = tctxt->varsTab[vj];
+	    while (cur != NULL) {
+		const char *tag =
+		    (cur == NULL || cur->comp == NULL) ? "unknown"
+		    : (cur->comp->type == XSLT_FUNC_PARAM) ? "param"
+		    : (cur->comp->type == XSLT_FUNC_WITHPARAM) ? "with"
+		    : (cur->comp->type == XSLT_FUNC_VARIABLE) ? "var"
+		    : "other";
+
+		xmlNodePtr grandchild = xmlNewDocNode(container, NULL,
+					    (const xmlChar *) tag, NULL);
+		if (grandchild) {
+		    xmlAddChild(child, grandchild);
+		    if (cur->name != NULL)
+			xmlAddChildContent(container, grandchild,
+					   (const xmlChar *) "name",
+					   cur->name);
+
+		    if (cur->select)
+			xmlAddChildContent(container, grandchild,
+					   (const xmlChar *) "select",
+					   cur->select);
+
+		    if (cur->value) {
+			xmlChar *val = xmlXPathCastToString(cur->value);
+			if (val) {
+			    xmlAddChildContent(container, grandchild,
+					       (const xmlChar *) "string",
+					       val);
+			    xmlFree(val);
+			}
+		    }
+		}
+
+		cur = cur->next;
+	    }
+	}
+    }
+
+ fail:
+    if (ret != NULL)
+	valuePush(ctxt, ret);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+}
+
 /*
  * An ugly attempt to seed the random number generator with the best
  * value possible.  Ugly, but localized ugliness.
@@ -2062,6 +2190,8 @@ slaxExtRegister (void)
 			slaxWhileCompile, slaxWhileElement);
 
     slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
+
+    slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
 
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
 

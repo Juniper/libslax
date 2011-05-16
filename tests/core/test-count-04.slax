@@ -1,0 +1,35 @@
+version 1.1;
+
+var $root = 1;
+var $root2 = 2;
+
+match / {
+    var $local-slash = "top";
+    <out> {
+	var $nested-slash = "nested";
+	call outer ($this = "vthis", $that = "vthat");
+    }
+}
+
+template outer ($this, $that) {
+    var $local-outer = name();
+    var $local-outer2 = 2;
+    call inner($this, $that = "calling inner");
+}
+
+template inner ($this, $that) {
+    var $local-inner = name();
+    var $local-inner2 = 2;
+    apply-templates */*;
+}
+
+match * {
+    var $local-star = name();
+    var $local-star2 = 2;
+
+    message "hit: " _ name();
+
+    var $debug = slax:debug();
+    <debug-data> { copy-of $debug; }
+}
+

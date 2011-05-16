@@ -33,7 +33,7 @@ TEST_ONE = \
  ${DIFF} -Nbu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
 
 test tests:
-	@echo -n ""
+	-@echo "... (skipping errors) ...";
 
 errors: ${SLAXPROC}
 	@${MKDIR} -p out

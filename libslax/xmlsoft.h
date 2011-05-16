@@ -119,3 +119,15 @@ xsltStopEngine (xsltTransformContextPtr ctxt)
     if (ctxt)
 	ctxt->state = XSLT_STATE_STOPPED;
 }
+
+static inline xmlNodePtr
+xmlAddChildContent (xmlDocPtr docp, xmlNodePtr parent,
+		    const xmlChar *name, const xmlChar *value)
+{
+    xmlNodePtr nodep = xmlNewDocRawNode(docp, NULL, name, value);
+    if (nodep) {
+	xmlAddChild(parent, nodep);
+    }
+
+    return nodep;
+}
