@@ -42,6 +42,7 @@ static int singleWideData[] = {
     L_CBRACE, '}',
     L_CBRACK, ']',
     L_COMMA, ',',
+    L_COLON, ':',
     L_CPAREN, ')',
     L_DOT, '.',
     L_EOS, ';',
@@ -54,6 +55,7 @@ static int singleWideData[] = {
     L_OBRACK, '[',
     L_OPAREN, '(',
     L_PLUS, '+',
+    L_QUESTION, '?',
     L_SLASH, '/',
     L_STAR, '*',
     L_UNDERSCORE, '_',
@@ -554,7 +556,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 		/*
 		 * Shift the data forward to give us some room at the end
 		 */
-		memcpy(sdp->sd_buf, sdp->sd_buf + sdp->sd_start,
+		memmove(sdp->sd_buf, sdp->sd_buf + sdp->sd_start,
 		       sdp->sd_len - sdp->sd_start);
 		sdp->sd_len -= sdp->sd_start;
 		sdp->sd_cur -= sdp->sd_start;

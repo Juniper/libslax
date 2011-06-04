@@ -111,6 +111,23 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 void slaxIoUseStdio (void);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
 
+/**
+ * Use the input callback to get data
+ * @prompt the prompt to be displayed
+ */
+char *
+slaxInput (const char *prompt, unsigned flags);
+
+/**
+ * Use the callback to output a string
+ * @fmt printf-style format string
+ */
+void
+#ifdef HAVE_PRINTFLIKE
+__printflike(1, 2)
+#endif /* HAVE_PRINTFLIKE */
+slaxOutput (const char *fmt, ...);
+
 int slaxError (const char *fmt, ...);
 
 /* ---------------------------------------------------------------------- */

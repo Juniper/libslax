@@ -1656,8 +1656,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
      * skip it.
      */
     if (slaxVarWasAssign(swp, nodep, name, sel)) {
-	    xmlFree(sel);
-	    xmlFree(name);
+	xmlFree(sel);
+	xmlFree(name);
 	return;
     }
 

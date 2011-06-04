@@ -183,3 +183,13 @@ slaxGetAttrib (xmlNodePtr nodep, const char *name)
 {
     return (char *) xmlGetProp(nodep, (const xmlChar *) name);
 }
+
+void
+slaxTernaryExpand (slax_data_t *, slax_string_t *, unsigned);
+
+#define SLAX_TERNARY_PREFIX "$slax-ternary-"
+#define SLAX_TERNARY_FUNCTION "slax:value"
+#define SLAX_TERNARY_VAR_FORMAT \
+    SLAX_TERNARY_FUNCTION "(" SLAX_TERNARY_PREFIX "%u)"
+#define SLAX_TERNARY_COND_SUFFIX "-cond"
+#define SLAX_TERNARY_VAR_FORMAT_WIDTH 12

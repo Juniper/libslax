@@ -129,3 +129,10 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
 slax_string_t *
 slaxConcatRewrite (slax_data_t *sdp, slax_string_t *,
 		   slax_string_t *, slax_string_t *);
+
+/*
+ * Rebuild the two/three sides of a ternary (?:) operation in useful form.
+ */
+slax_string_t *
+slaxTernaryRewrite (slax_data_t *sdp, slax_string_t *, slax_string_t *,
+		    slax_string_t *, slax_string_t *, slax_string_t *);

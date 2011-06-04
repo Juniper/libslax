@@ -504,7 +504,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
     tctxt = xsltXPathGetTransformContext(ctxt);
     if (tctxt == NULL) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "exslt:tokenize : internal error tctxt == NULL\n");
+	      "slax:build-sequence : internal error tctxt == NULL\n");
 	goto fail;
     }
 
@@ -2003,7 +2003,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     tctxt = xsltXPathGetTransformContext(ctxt);
     if (tctxt == NULL) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "exslt:tokenize : internal error tctxt == NULL\n");
+	      "slax:debug : internal error tctxt == NULL\n");
 	goto fail;
     }
 
@@ -2114,6 +2114,87 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
 }
 
+static void
+slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
+{
+    xsltTransformContextPtr tctxt;
+    xmlXPathObjectPtr ret = NULL;
+    xmlXPathObjectPtr xop = NULL;
+    xmlNodePtr parent, child;
+
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    tctxt = xsltXPathGetTransformContext(ctxt);
+    if (tctxt == NULL) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+	      "slax:value : internal error tctxt == NULL\n");
+	goto fail;
+    }
+
+    xop = valuePop(ctxt);
+    if (xop == NULL)
+	goto fail;
+
+    if (xop->type == XPATH_BOOLEAN)
+	xmlXPathReturnBoolean(ctxt, xop->boolval);
+
+    else if (xop->type == XPATH_NUMBER)
+	xmlXPathReturnNumber(ctxt, xop->floatval);
+
+    else if (xop->type == XPATH_STRING)
+	xmlXPathReturnString(ctxt, xop->stringval);
+
+    else if (xop->type == XPATH_XSLT_TREE) {
+	if (xop->nodesetval == NULL || xop->nodesetval->nodeNr == 0)
+	    goto fail;
+
+	parent = xop->nodesetval->nodeTab[0];
+	if (parent == NULL || parent->children == NULL)
+	    goto fail;
+
+	ret = xmlXPathNewNodeSet(NULL);
+	if (ret == NULL)
+	    goto fail;
+
+	/* If there's one TEXT child, use it directly */
+	child = parent->children;
+	if (child && child->next == NULL && child->type == XML_TEXT_NODE)
+	    xmlXPathReturnString(ctxt, xmlStrdup(child->content));
+
+	else {
+	    /* For an RTF, we want the child nodes, not the parent */
+	    for (child = parent->children; child; child = child->next)
+		xmlXPathNodeSetAdd(ret->nodesetval, child);
+
+	    valuePush(ctxt, ret);
+	}
+
+    } else if (xop->type == XPATH_NODESET) {
+	if (xop->nodesetval == NULL)
+	    goto fail;
+
+	valuePush(ctxt, xop);
+
+    } else {
+	valuePush(ctxt, xop);
+    }
+
+ fail2:
+    if (xop)
+	xmlXPathFreeObject(xop);
+    return;
+
+ fail:
+    if (ret != NULL)
+	valuePush(ctxt, ret);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+    goto fail2;
+}
+
 /*
  * An ugly attempt to seed the random number generator with the best
  * value possible.  Ugly, but localized ugliness.
@@ -2139,7 +2220,7 @@ slaxInitRandomizer (void)
 
 #endif /* HAVE_GETTIMEOFDAY */
 #else /* HAVE_SRAND */
-    fprintf(stderr, "could not initialize random\n");
+    fprintf(stderr, "could not initialize random number generator\n");
 #endif /* HAVE_SRAND */
 }
  
@@ -2190,10 +2271,9 @@ slaxExtRegister (void)
 			slaxWhileCompile, slaxWhileElement);
 
     slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
-
     slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
-
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
+    slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
 
     slaxExtRegisterOther(NULL);
 

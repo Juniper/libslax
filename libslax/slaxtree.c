@@ -180,7 +180,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
     xmlNsPtr ns = NULL;
     xmlAttrPtr attr;
     const char *cp;
-    int ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
+    unsigned ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
 
     ss_flags |= SSF_QUOTES;	/* Always want the quotes */
 
@@ -224,6 +224,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	 * function, which will do all the hard work for us, without
 	 * giving us a result fragment tree.
 	 */
+	slaxTernaryExpand(sdp, value, ss_flags);
 	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
     }
 
@@ -510,6 +511,52 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 /*
  * Add an XSL element to the node at the top of the context stack
  */
+static xmlNodePtr
+slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    const char *tag = ELT_VARIABLE;
+    xmlNodePtr nodep;
+    xmlNodePtr sib;
+
+    /*
+     * Check if we're inside a with-param.  If so, we need to move
+     * any temporary variables up one level, since we're in a call.
+     */
+    sib = sdp->sd_ctxt->node;
+    if (slaxNodeIsXsl(sib, ELT_WITH_PARAM))
+	sib = sib->parent;
+
+    /*
+     * Templates limit their initial children to params, so if
+     * we're at the beginning of a template, we have to make
+     * hidden params.
+     */
+    if (slaxNodeIsXsl(sib, ELT_PARAM)
+		&& slaxNodeIsXsl(sib->parent, ELT_TEMPLATE))
+	tag = ELT_PARAM;
+
+    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) tag);
+    if (nodep == NULL) {
+	fprintf(stderr, "could not make node: %s\n", tag);
+	return NULL;
+    }
+
+    xmlAddPrevSibling(sib, nodep);
+    nodep->line = sdp->sd_ctxt->node->line;
+
+    if (attrib) {
+	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
+				     (const xmlChar *) value);
+	if (attr == NULL)
+	    fprintf(stderr, "could not make attribute: %s/@%s\n", tag, attrib);
+    }
+
+    return nodep;
+}
+
+/*
+ * Add an XSL element to the node at the top of the context stack
+ */
 xmlNodePtr
 slaxElementAddString (slax_data_t *sdp, const char *tag,
 	       const char *attrib, slax_string_t *value)
@@ -558,10 +605,152 @@ slaxElementPush (slax_data_t *sdp, const char *tag,
 }
 
 /*
+ * Add an XSL element to the top of the context stack
+ */
+static xmlNodePtr
+slaxElementPushVar (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    xmlNodePtr nodep;
+
+    nodep = slaxElementAddVar(sdp, attrib, value);
+    if (nodep == NULL) {
+	xmlParserError(sdp->sd_ctxt, "%s:%d: could not add element '%s'",
+		       sdp->sd_filename, sdp->sd_line, ELT_VARIABLE);
+	return NULL;
+    }
+
+    nodePush(sdp->sd_ctxt, nodep);
+    return nodep;
+}
+
+/*
  * Pop an XML element off the context stack
  */
 void
 slaxElementPop (slax_data_t *sdp)
 {
     nodePop(sdp->sd_ctxt);
+}
+
+/*
+ * We've hit a ternary operator (?:) in an otherwise innocent
+ * expression.  Ternary expressions are threaded (by
+ * slaxTernaryRewrite()) to have ss_concat (overloaded to) point to
+ * the next operand in the expression.  We use this to pull out the
+ * pieces and expand them into local variables.  The pieces are linked as:
+ *    M_TERNARY -> L_QUESTION -> L_COLON -> M_TERNARY_END
+ *
+ * The process is:
+ * - find ternary expression scond, strue, and sfalse
+ * - make local variable
+ * - make <xsl:choose>
+ * - construct :when/:otherwise from scond, strue, and sfalse
+ * - replace ternary with variable name
+ */
+void
+slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
+		   unsigned flags UNUSED)
+{
+    slax_string_t *ssp, *next;
+    slax_string_t *tsp, *qsp, *csp, *esp;
+    static char varfmt[] = SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
+    char condname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    int no_second_term;
+    char *vp;
+    unsigned len;
+
+    for (ssp = value; ssp; ssp = next) {
+	if (ssp->ss_ttype != M_TERNARY) {
+	    next = ssp->ss_next;
+	    continue;
+	}
+
+	/* Hit a ternary operator */
+	tsp = ssp;
+	qsp = tsp->ss_concat;
+	csp = qsp->ss_concat;
+	esp = csp->ss_concat;
+	no_second_term = (qsp->ss_next == csp);
+	vp = strchr(tsp->ss_token, '(');
+	if (vp == NULL) {
+	    vp = tsp->ss_token;
+	    len = strlen(vp);
+	} else {
+	    vp += 1;		  /* Trim '(' */
+	    len = strlen(vp) - 1; /* Trim ')' */
+	}
+	if (len >= sizeof(varname) - 1)
+	    len = sizeof(varname) - 1;
+
+	strncpy(varname, vp, len);
+	varname[len] = '\0';
+
+	for (ssp = tsp; ssp && ssp->ss_next != qsp; ssp = ssp->ss_next)
+	    continue;
+	ssp->ss_next = NULL;
+
+	for (ssp = qsp; ssp && ssp->ss_next != csp; ssp = ssp->ss_next)
+	    continue;
+	ssp->ss_next = NULL;
+
+	for (ssp = csp; ssp && ssp->ss_next != esp; ssp = ssp->ss_next)
+	    continue;
+	ssp->ss_next = NULL;
+
+	/*
+	 * We've pulled apart the original pieces.  Now we transform
+	 * them into a local variable containing an <xsl:choose>
+	 * statement.
+	 */
+
+	slaxElementPushVar(sdp, ATT_NAME, varname + 1);
+
+	if (no_second_term) {
+	    /* Need a local variable to hold the conditional value */
+	    snprintf(condname, sizeof(condname), "%s-cond", varname);
+
+	    slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, condname + 1);
+	    slaxAttribAdd(sdp, 0, ATT_SELECT, tsp->ss_next);
+	    slaxElementPop(sdp);
+	}
+
+	slaxElementPush(sdp, ELT_CHOOSE, NULL, NULL);
+	slaxElementPush(sdp, ELT_WHEN, NULL, NULL);
+
+	if (no_second_term) {
+	    slaxAttribAddLiteral(sdp, ATT_TEST, condname);
+	    slaxElementPush(sdp, ELT_COPY_OF, NULL, NULL);
+	    slaxAttribAddLiteral(sdp, ATT_SELECT, condname);
+	    slaxElementPop(sdp); /* Pop the <xsl:copy-of> */
+
+	} else {
+	    slaxAttribAdd(sdp, 0, ATT_TEST, tsp->ss_next);
+	    slaxElementPush(sdp, ELT_COPY_OF, NULL, NULL);
+	    slaxAttribAdd(sdp, 0, ATT_SELECT, qsp->ss_next);
+	    slaxElementPop(sdp); /* Pop the <xsl:copy-of> */
+	}
+
+	slaxElementPop(sdp);	/* Pop the <xsl:when> */
+
+	slaxElementPush(sdp, ELT_OTHERWISE, NULL, NULL);
+	slaxElementPush(sdp, ELT_COPY_OF, NULL, NULL);
+	slaxAttribAdd(sdp, 0, ATT_SELECT, csp->ss_next);
+	slaxElementPop(sdp);	/* Pop the <xsl:copy-of> */
+	slaxElementPop(sdp);	/* Pop the <xsl:otherwise> */
+	slaxElementPop(sdp);	/* Pop the <xsl:choose> */
+	slaxElementPop(sdp);	/* Pop the <xsl:variable> */
+
+	/* esp->ss_next can point to a trailing expression */
+	slaxStringFree(tsp->ss_next);
+	next = tsp->ss_next = esp->ss_next;
+	esp->ss_next = NULL;
+
+	tsp->ss_ttype = T_VAR;	/* Recast as normal variable */
+	tsp->ss_concat = NULL;
+
+	slaxStringFree(qsp);
+	slaxStringFree(csp);
+	slaxStringFree(esp);
+    }
 }

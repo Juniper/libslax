@@ -78,10 +78,30 @@ xp_absolute_location_path :
 	;
 
 xp_expr :
+	xp_ternary_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = $1;
+		}
+	;
+
+xp_ternary_expr :
 	xp_or_expr
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
+		}
+
+	| xp_or_expr L_QUESTION xp_or_expr L_COLON xp_ternary_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = slaxTernaryRewrite(slax_data, $1, $2, $3, $4, $5);
+		}
+
+	| xp_or_expr L_QUESTION L_COLON xp_ternary_expr
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = slaxTernaryRewrite(slax_data, $1, $2, NULL, $3, $4);
 		}
 	;
 

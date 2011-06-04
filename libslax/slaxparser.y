@@ -80,17 +80,18 @@
  */
 %token L_ASSIGN			/* ':=' */
 %token L_AT			/* '@' */
-%token L_CBRACE			/* } */
-%token L_COMMA			/* , */
+%token L_CBRACE			/* '}' */
+%token L_COMMA			/* ',' */
+%token L_COLON			/* ':' */
 %token L_DAMPER			/* '&&' */
 %token L_DCOLON			/* '::' */
-%token L_DEQUALS		/* == */
+%token L_DEQUALS		/* '==' */
 %token L_DOTDOT			/* '..' */
 %token L_DOTDOTDOT		/* '...' */
 %token L_DSLASH			/* '//' */
 %token L_DVBAR			/* '||' */
-%token L_EOS			/* ; */
-%token L_EQUALS			/* = */
+%token L_EOS			/* ';' */
+%token L_EQUALS			/* '=' */
 %token L_GRTR			/* '>' */
 %token L_GRTREQ			/* '>=' */
 %token L_LESS			/* '<' */
@@ -98,11 +99,12 @@
 %token L_MINUS			/* '-' */
 %token L_NOT			/* '!' */
 %token L_NOTEQUALS		/* '!=' */
-%token L_OBRACE			/* { */
-%token L_OBRACK			/* [ */
-%token L_OPAREN			/* ( */
+%token L_OBRACE			/* '{' */
+%token L_OBRACK			/* '[' */
+%token L_OPAREN			/* '(' */
 %token L_PLUS			/* '+' */
 %token L_PLUSEQUALS		/* '+=' */
+%token L_QUESTION		/* '?' */
 %token L_SLASH			/* '/' */
 %token L_STAR			/* '*' */
 %token L_UNDERSCORE		/* '_' */
@@ -232,6 +234,8 @@
  */
 %token M_SEQUENCE		/* A $x...$y sequence */
 %token M_CONCAT			/* underscore -> concat mapping */
+%token M_TERNARY		/* "?:" -> <xsl:choose> mapping */
+%token M_TERNARY_END		/* End of a M_TERNARY chain */
 %token M_ERROR			/* An error was detected in the lexer */
 %token M_XPATH			/* Building an XPath expression */
 %token M_PARSE_FULL		/* Parse a slax document */

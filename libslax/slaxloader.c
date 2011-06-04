@@ -310,29 +310,32 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	return;
     }
 
-    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) ELT_VALUE_OF);
-    if (nodep == NULL) {
-	fprintf(stderr, "could not make node: %s\n", ELT_VALUE_OF);
+    nodep = slaxElementPush(sdp, ELT_VALUE_OF, NULL, NULL);
+    if (nodep == NULL)
 	return;
-    }
 
     /* If we need the "slax" namespace, add it to the value-of node */
     if (slaxNeedsSlaxNs(value))
 	slaxSetSlaxNs(sdp, nodep, FALSE);
 
+    slaxTernaryExpand(sdp, value, 0);
     buf = slaxStringAsChar(value, SSF_CONCAT | SSF_QUOTES);
     if (buf == NULL) {
-	fprintf(stderr, "could not make attribute string: @%s=%s\n",
-		ATT_SELECT, buf);
+	xmlParserError(sdp->sd_ctxt,
+		       "%s:%d: could not make attribute string: @%s=%s",
+		       sdp->sd_filename, sdp->sd_line, ATT_SELECT, buf);
+	slaxElementPop(sdp);
 	return;
     }
 
     attr = xmlNewProp(nodep, (const xmlChar *) ATT_SELECT,
 		      (const xmlChar *) buf);
     if (attr == NULL) {
-	fprintf(stderr, "could not make attribute: @%s=%s\n",
-		ATT_SELECT, buf);
+	xmlParserError(sdp->sd_ctxt,
+		       "%s:%d: could not make attribute: @%s=%s",
+		       sdp->sd_filename, sdp->sd_line, ATT_SELECT, buf);
 	free(buf);
+	slaxElementPop(sdp);
 	return;
     }
 
@@ -344,8 +347,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 		     (const xmlChar *) "yes");
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
-
+    slaxElementPop(sdp);
 }
 
 /*

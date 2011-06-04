@@ -421,7 +421,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 
 	    if (dqp && sqp) {
 		/* Bad news */
-		slaxLog("bad news");
+		slaxLog("warning: both quotes used in string: %s", str);
 		*bp++ = '"';
 	    } else if (dqp) {
 		/* double quoted string to be surrounded by single quotes */
@@ -840,6 +840,67 @@ slaxConcatRewrite (slax_data_t *sdp UNUSED, slax_string_t *left,
     slaxStringFree(op);
     slaxStringFree(right);
     return left;
+}
+
+/*
+ * We need to rewrite the ternary operator ("?:") into a form suitable
+ * for the current usage.  This isn't easy, but puts the complexity
+ * into the compiler instead of exposing it to the user.  A couple of
+ * rewrite patterns are required.  The primary pattern uses
+ * <xsl:choose>.
+ */
+slax_string_t *
+slaxTernaryRewrite (slax_data_t *sdp UNUSED, slax_string_t *scond,
+		    slax_string_t *qsp, slax_string_t *strue,
+		    slax_string_t *csp, slax_string_t *sfalse)
+{
+    static unsigned varnumber;
+    static char varfmt[] = SLAX_TERNARY_VAR_FORMAT;
+    char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+
+    snprintf(varname, sizeof(varname), varfmt, ++varnumber);
+
+    slaxLog("slaxTernaryRewrite: %s/%s/%s", scond ? scond->ss_token : "",
+	    strue ? strue->ss_token : "", sfalse ? sfalse->ss_token : "");
+
+    slax_string_t *tsp = slaxStringLiteral(varname, M_TERNARY);
+    slax_string_t *esp = slaxStringLiteral(varname, M_TERNARY_END);
+    slax_string_t *nsp;
+
+    if (tsp == NULL || qsp == NULL || csp == NULL || esp == NULL)
+	return NULL;
+
+    /* Our use of "slax:value()" requires the SLAX namespace */
+    tsp->ss_flags |= SSF_SLAXNS;
+
+    /*
+     * Make "concat" links:
+     *    M_TERNARY -> L_QUESTION -> L_COLON -> M_TERNARY_END
+     */
+    tsp->ss_next = scond;
+    tsp->ss_concat = qsp;
+    qsp->ss_next = strue ?: csp;
+    qsp->ss_concat = csp;
+    csp->ss_next = sfalse;
+    csp->ss_concat = esp;
+
+    /* Link the 'question mark' string after the 'condition' string */
+    for (nsp = scond; nsp->ss_next; nsp = nsp->ss_next)
+	continue;
+    nsp->ss_next = qsp;
+
+    if (strue) {
+	/* Link the 'colon' string after the 'question mark' string */
+	for (nsp = strue; nsp->ss_next; nsp = nsp->ss_next)
+	    continue;
+	nsp->ss_next = csp;
+    }
+
+    for (nsp = sfalse; nsp->ss_next; nsp = nsp->ss_next)
+	continue;
+    nsp->ss_next = esp;
+
+    return tsp;
 }
 
 /**
