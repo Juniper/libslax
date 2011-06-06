@@ -81,3 +81,9 @@ slaxMvarRegister (void);
  */
 int
 slaxWriteRedoFunction(slax_data_t *, const char *, slax_string_t *);
+
+slax_string_t *
+slaxWriteRedoTernary (slax_data_t *sdp, slax_string_t *);
+
+slax_string_t *
+slaxWriteRedoConcat (slax_data_t *sdp, slax_string_t *f);

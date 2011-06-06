@@ -47,6 +47,7 @@ struct slax_data_s {
     xmlNsPtr sd_xsl_ns;		/* Pointer to the XSL namespace */
     slax_string_t *sd_xpath;	/* Parsed XPath expression */
     slax_string_t *sd_ns;	/* Namespace stash */
+    xmlNodePtr sd_nodep;	/* Node for looking up ternary expressions */
 };
 
 /* Flags for sd_flags */

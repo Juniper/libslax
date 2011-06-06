@@ -380,7 +380,15 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 		trim = TRUE;	/* foo(1, 2, 3) */
 		comma = TRUE;
 
-	    } else if (slaxStringNoSpace(last_ttype)
+	    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
+			|| last_ttype == L_QUESTION || last_ttype == L_COLON)
+		     && ssp->ss_ttype == L_OPAREN)
+		trim = FALSE;	/*  */
+
+	    else if (last_ttype == L_QUESTION && ssp->ss_ttype == L_COLON)
+		trim = TRUE;
+	    
+	    else if (slaxStringNoSpace(last_ttype)
 		       || slaxStringNoSpace(ssp->ss_ttype)) {
 		if (bp[-2] != ',')
 		    trim = TRUE;	/* foo/goo[@zoo] */

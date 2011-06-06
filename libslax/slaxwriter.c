@@ -39,6 +39,8 @@ typedef struct slax_writer_s {
 #define SWF_VERS_10	(1<<2)	/* Version 1.0 features only */
 
 static const char slaxVarNsCall[] = EXT_PREFIX ":node-set(";
+static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
+static char slaxTernaryPrefix[] = SLAX_TERNARY_PREFIX;
 
 static inline int
 slaxV10 (slax_writer_t *swp)
@@ -618,8 +620,9 @@ slaxWriteValue (slax_writer_t *swp, const char *value)
  * Turn an XPath expression into a SLAX one.  Returns a freshly
  * allocated string, or NULL.
  */
-static char *
-slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
+static slax_string_t *
+slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
+			  const char *xpath)
 {
     slax_data_t sd;
     int rc;
@@ -628,7 +631,7 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     char *buf;
 
     if (xpath == NULL || *xpath == '\0')
-	return (char *) xmlCharStrdup("\"\"");
+	return NULL;
 
     ctxt = xmlNewParserCtxt();
     if (ctxt == NULL)
@@ -638,6 +641,10 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     sd.sd_parse = sd.sd_ttype = M_PARSE_XPATH; /* We want to parse XPath */
     sd.sd_ctxt = ctxt;
     sd.sd_flags |= SDF_NO_SLAX_KEYWORDS;
+
+    /* sd_nodep is used for ternary expression, which aren't in SLAX-1.0 */
+    if (!slaxV10(swp))
+	sd.sd_nodep = nodep;
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
@@ -691,7 +698,38 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
 	goto fail;
     }
 
-    buf = slaxStringAsChar(sd.sd_xpath, SSF_QUOTES);
+    return sd.sd_xpath;
+
+fail:
+    if (ctxt)
+	xmlFreeParserCtxt(ctxt);
+
+    return NULL;
+}
+
+/*
+ * Turn an XPath expression into a SLAX one.  Returns a freshly
+ * allocated buffer, or NULL.
+ */
+static char *
+slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
+{
+    slax_string_t *ssp;
+    char *buf;
+
+    ssp = slaxMakeExpressionString(swp, nodep, xpath);
+    if (ssp == NULL) {
+fail:
+	/*
+	 * SLAX XPath expressions are completely backwards compatible
+	 * with XSLT, so we can make an ugly version of the expression
+	 * by simply returning a copy of our input.  You get "and" instead
+	 * of "&&", but it's safe enough.
+	 */
+	return (char *) xmlCharStrdup(xpath);
+    }
+
+    buf = slaxStringAsChar(ssp, SSF_QUOTES);
 
     if (buf == NULL) {
 	slaxLog("slax: xpath conversion failed: no buffer");
@@ -699,21 +737,9 @@ slaxMakeExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     }
 
     slaxLog("slax: xpath conversion: %s", buf);
-    slaxStringFree(sd.sd_xpath);
+    slaxStringFree(ssp);
 
     return buf;
-
- fail:
-    if (ctxt)
-	xmlFreeParserCtxt(ctxt);
-
-    /*
-     * SLAX XPath expressions are completely backwards compatible
-     * with XSLT, so we can make an ugly version of the expression
-     * by simply returning a copy of our input.  You get "and" instead
-     * of "&&", but it's safe enough.
-     */
-    return (char *) xmlCharStrdup(xpath);
 }
 
 /*
@@ -1046,6 +1072,14 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 
 	    name = slaxGetAttrib(childp, ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
+
+	    if (!slaxV10(swp)
+		&& strncmp(name, slaxTernaryPrefix + 1,
+			   sizeof(slaxTernaryPrefix) - 2) == 0) {
+		xmlFreeAndEasy(name);
+		xmlFreeAndEasy(sel);
+		continue;
+	    }
 
 	    slaxWrite(swp, "param $%s = {", rname);
 	    slaxWriteNewline(swp, NEWL_INDENT);
@@ -1519,6 +1553,12 @@ slaxVarWasAssign (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
     /* Find the previous variable and look at the variable name */
     for (cur = nodep->prev; cur; cur = cur->prev) {
 	if (cur->type == XML_ELEMENT_NODE) {
+	    /*
+	     * XXX this can't be right; 'nodep' should be 'cur', but
+	     * making that change breaks 'make test'.  Likely the
+	     * entire loop should be removed and only nodep should be
+	     * tested.
+	     */
 	    cp = slaxGetAttrib(nodep, ATT_NAME);
 	    if (cp && streq(cp, vname)) {
 		xmlFree(cp);
@@ -1642,13 +1682,24 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     }
 
     if (name && sel && !slaxV10(swp)
-		&& strncmp(name, FOR_VARIABLE_PREFIX + 1, 8) == 0) {
+	&& strncmp(name, slaxForVariablePrefix + 1,
+		   sizeof(slaxForVariablePrefix) - 2) == 0) {
 	if (!slaxWriteForLoop(swp, docp, nodep, name, sel)) {
 	    xmlFree(sel);
 	    xmlFree(name);
 	    return;
 	}
 	/* Otherwise it wasn't a "real" "for" loop, so continue */
+    }
+
+    /*
+     * Skim ternary variables
+     */
+    if (name && sel == NULL && !slaxV10(swp)
+	&& strncmp(name, slaxTernaryPrefix + 1,
+		   sizeof(slaxTernaryPrefix) - 2) == 0) {
+	xmlFree(name);
+	return;
     }
 
     /*
@@ -3013,7 +3064,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
  * The only current case is "..."/slax:build-sequnce.
  */
 int
-slaxWriteRedoFunction (slax_data_t *swp UNUSED, const char *func,
+slaxWriteRedoFunction (slax_data_t *sdp UNUSED, const char *func,
 		       slax_string_t *xpath)
 {
     slax_string_t *cur, *prev;
@@ -3050,6 +3101,199 @@ slaxWriteRedoFunction (slax_data_t *swp UNUSED, const char *func,
     }
 
     return FALSE;
+}
+
+static slax_string_t *
+slaxWriteAddTailLiteral (slax_string_t ***tailp, const char *str, int ttype)
+{
+    slax_string_t *ssp = slaxStringLiteral(str, ttype);
+
+    if (ssp) {
+	**tailp = ssp;
+	*tailp = &ssp->ss_next;
+    }
+
+    return ssp;
+}
+
+static void
+slaxWriteAddTailAppend (slax_string_t ***tailp, slax_string_t *ssp)
+{
+    **tailp = ssp;
+    while (ssp->ss_next)	/* Follow to the end of the string */
+	ssp = ssp->ss_next;
+    *tailp = &ssp->ss_next;
+}
+
+static void
+slaxWriteTernaryExpression (slax_data_t *sdp, xmlNodePtr cur,
+			    const char *xpath, slax_string_t ***tailp)
+{
+    slax_string_t *expr;
+    slax_writer_t sw;
+
+    bzero(&sw, sizeof(sw));
+    sw.sw_filename = (const char *) cur->doc->name;
+
+    expr = slaxMakeExpressionString(&sw, cur, xpath);
+    sdp->sd_errors += sw.sw_errors;
+
+    if (expr) {
+	slaxWriteAddTailAppend(tailp, expr);
+
+    } else {
+	slaxStringAddTail(tailp, NULL, xpath, strlen(xpath), M_TERNARY);
+    }
+}
+
+/*
+ * Find a child with the given name under the given parent.
+ */
+static xmlNodePtr
+slaxWriteFind (xmlNodePtr nodep, const char *name)
+{
+    xmlNodePtr cur;
+
+    for (cur = nodep->children; cur; cur = cur->next) {
+	if (cur->type != XML_ELEMENT_NODE)
+	    continue;
+
+	if (cur->ns && streq((const char *) cur->name, name)
+		&& streq((const char *) cur->ns->href, XSL_URI))
+	    return cur;
+    }
+
+    return NULL;
+}
+
+/*
+ * Return the ternary expresion as a string, instead of the expand
+ * content pointed to by cur.
+ */
+static slax_string_t *
+slaxWriteTernaryAsString (slax_data_t *sdp, xmlNodePtr cur)
+{
+    slax_string_t *first = NULL, **tail = &first;
+    xmlNodePtr varp, choosep, whenp, otherp;
+    char *teststr, *whenstr, *otherstr;
+
+    varp = slaxWriteFind(cur, ELT_VARIABLE);
+    choosep = slaxWriteFind(cur, ELT_CHOOSE);
+    if (choosep == NULL)
+	return NULL;
+
+    whenp = slaxWriteFind(choosep, ELT_WHEN);
+    otherp = slaxWriteFind(choosep, ELT_OTHERWISE);
+    if (whenp == NULL || otherp == NULL)
+	return NULL;
+
+    teststr = varp ? slaxGetAttrib(varp, ATT_SELECT)
+	: slaxGetAttrib(whenp, ATT_TEST);
+    if (teststr == NULL)
+	return NULL;
+
+    whenp = slaxWriteFind(whenp, ELT_COPY_OF);
+    otherp = slaxWriteFind(otherp, ELT_COPY_OF);
+    if (whenp && otherp) {
+	otherstr = slaxGetAttrib(otherp, ATT_SELECT);
+	whenstr = varp ? NULL : slaxGetAttrib(whenp, ATT_SELECT);
+	
+	/*
+	 * At this point we have the expressions for the three
+	 * operands of "?:".
+	 */
+	slaxWriteTernaryExpression(sdp, varp ?: whenp, teststr, &tail);
+	slaxWriteAddTailLiteral(&tail, "?", L_QUESTION);
+	if (whenstr)
+	    slaxWriteTernaryExpression(sdp, whenp, whenstr, &tail);
+	slaxWriteAddTailLiteral(&tail, ":", L_COLON);
+	slaxWriteTernaryExpression(sdp, otherp, otherstr, &tail);
+    
+	xmlFreeAndEasy(whenstr);
+	xmlFreeAndEasy(otherstr);
+    }
+
+    xmlFreeAndEasy(teststr);
+
+    return first;
+}
+
+/*
+ * Rewrite a ternary ("?:") expression as a string and return
+ * the string.
+ */
+slax_string_t *
+slaxWriteRedoTernary (slax_data_t *sdp, slax_string_t *func)
+{
+    slax_string_t *var, *newp;
+    char *vname;
+    xmlNodePtr nodep, cur;
+
+    /* Sanity checks */
+    if (sdp->sd_nodep == NULL || func == NULL
+	|| func->ss_ttype != T_FUNCTION_NAME
+	|| func->ss_next == NULL || func->ss_next->ss_next == NULL)
+	return NULL;
+
+    if (!streq(func->ss_token, SLAX_TERNARY_FUNCTION))
+	return NULL;
+
+    var = func->ss_next->ss_next;
+    vname = var->ss_token + 1;
+    nodep = sdp->sd_nodep;
+    slaxLog("slaxTernaryCheck: %s", vname);
+
+    for (cur = nodep->prev; cur; cur = cur->prev) {
+	if (cur->type == XML_ELEMENT_NODE) {
+	    char *cp = slaxGetAttrib(cur, ATT_NAME);
+	    if (cp && streq(cp, vname)) {
+		xmlFree(cp);
+		newp = slaxWriteTernaryAsString(sdp, cur);
+		if (newp) {
+		    slaxStringFree(func);
+		    return newp;
+		}
+		return NULL;
+	    }
+	}
+    }
+
+    return NULL;
+}
+
+/*
+ * Rewrite a concat function call expression as a string and return
+ * the string.
+ * XXX Need to deal with operator precedence (a + b _ c) somewhere
+ */
+slax_string_t *
+slaxWriteRedoConcat (slax_data_t *sdp UNUSED, slax_string_t *func)
+{
+    slax_string_t *ssp;
+    int level = 0;
+
+    if (func == NULL || func->ss_next == NULL || func->ss_next->ss_next == NULL
+	|| !streq(func->ss_token, "concat"))
+	return NULL;
+
+    for (ssp = func; ssp->ss_next; ssp = ssp->ss_next) {
+	if (ssp->ss_ttype == L_COMMA) {
+	    if (level == 1) {
+		ssp->ss_ttype = L_UNDERSCORE;
+		ssp->ss_token[0] = '_';
+	    }
+	} else if (ssp->ss_ttype == L_OPAREN) {
+	    level += 1;
+	} else if (ssp->ss_ttype == L_CPAREN) {
+	    level -= 1;
+	}
+    }
+
+    ssp = func->ss_next;
+    func->ss_next = NULL;
+    slaxStringFree(func);	/* Free leading concat token */
+
+    return ssp;
 }
 
 #ifdef UNIT_TEST

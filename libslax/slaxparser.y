@@ -2854,31 +2854,33 @@ xpl_relative_location_path_optional :
 		}
 	;
 
-
-/*
- * The following production is the source of all our shift/reduce
- * conflicts.  If the "q_name" is replaced with a specific token
- * type (T_FUNCTION_NAME), the conflicts disappear.  The problem
- * is that "foo:goo($x)" and "foo:goo/foo:hoo" are ambiguous
- * until you see the open paren.  I could fake this in the lexer
- * to allow a pristine grammar, but this seems like a worse
- * hack that just adding "shift_reduce=nn" to the invocation of
- * yacc.sh in the Makefile.
- */
-
 xpc_function_call :
 	T_FUNCTION_NAME L_OPAREN xpc_argument_list_optional L_CPAREN
 		{
 		    SLAX_KEYWORDS_OFF();
 
 		    /* If we're turning XPath into SLAX, handle "..." */
-		    if (slaxParseIsXpath(slax_data)
-			    && slaxWriteRedoFunction(slax_data,
-							 $1->ss_token, $3)) {
-			slax_string_t *save = $3;
-			$3 = NULL;
-			STACK_CLEAR($1);
-			$$ = save;
+		    if (slaxParseIsXpath(slax_data)) {
+			if (slaxWriteRedoFunction(slax_data,
+						  $1->ss_token, $3)) {
+			    slax_string_t *save = $3;
+			    $3 = NULL;
+			    STACK_CLEAR($1);
+			    $$ = save;
+			} else {
+			    slax_string_t *newp;
+
+			    $$ = STACK_LINK($1);
+
+			    newp = slaxWriteRedoTernary(slax_data, $$);
+			    if (newp)
+				$$ = newp;
+			    else {
+				newp = slaxWriteRedoConcat(slax_data, $$);
+				if (newp)
+				    $$ = newp;
+			    }
+			}
 		    } else {
 			$$ = STACK_LINK($1);
 		    }
