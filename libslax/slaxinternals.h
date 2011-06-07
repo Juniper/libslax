@@ -87,3 +87,6 @@ slaxWriteRedoTernary (slax_data_t *sdp, slax_string_t *);
 
 slax_string_t *
 slaxWriteRedoConcat (slax_data_t *sdp, slax_string_t *f);
+
+slax_string_t *
+slaxWriteRemoveParens (slax_data_t *sdp, slax_string_t *);

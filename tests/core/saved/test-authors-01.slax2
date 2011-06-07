@@ -28,7 +28,7 @@ attribute-set names {
 }
 
 attribute-set age {
-    attribute "age-" _ (life-span/died - life-span/born) {
+    attribute "age-" _ life-span/died - life-span/born {
         expr life-span/born _ " - " _ life-span/died;
     }
 }

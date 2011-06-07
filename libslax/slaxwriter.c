@@ -528,92 +528,14 @@ slaxNeedsBlock (xmlNodePtr nodep)
     return FALSE;
 }
 
-static void
+static inline void
 slaxWriteValue (slax_writer_t *swp, const char *value)
 {
-    static const char concat[] = "concat(";
-    int in_quotes = 0;
-    int parens = 1;
-    const char *cp;
-    const char *sp = NULL;
-
-    if (strncmp(concat, value, sizeof(concat) - 1) != 0) {
-	if (value[0] == '\'' || value[0] == '\"') {
-	    /*
-	     * The initializer is a static string in quotes.  Nuke the
-	     * quotes and emit it as an escaped string.
-	     */
-	    int len = strlen(value + 1);
-	    char *mine = alloca(len);
-	    memcpy(mine, value + 1, len - 1);
-	    mine[len - 1] = '\0';
-
-	    slaxWrite(swp, "\"");
-	    slaxWriteEscaped(swp, mine, SEF_ATTRIB);
-	    slaxWrite(swp, "\"");
-
-	} else slaxWrite(swp, "%s", value);
-	return;
-    }
-
     /*
-     * Tease a concat() invocation into the "_" form.
+     * This is a remnant from when slaxWriteValue handled concat()
+     * expansion, and should shortly be removed altogether.
      */
-    for (cp = value + sizeof(concat) - 1, sp = cp; *cp; cp++) {
-	if (in_quotes) {
-	    if (*cp == '\\') {	/* Skip anything backslashed */
-		cp += 1;
-		continue;
-	    }
-
-	    if (*cp != in_quotes) /* Skip is we're in quotes */
-		continue;
-
-	    in_quotes = 0;
-
-	} else if (*cp == '\'' || *cp == '\"') {
-	    in_quotes = *cp;
-
-	} else if (*cp == ',' && parens == 1) {
-	    if (sp) {
-		slaxWrite(swp, "%.*s", cp - sp, sp);
-		sp = cp + 1;
-	    }
-
-	    slaxWrite(swp, " _ ");
-
-	} else if (*cp == ' ' || *cp == '\t') {
-	    if (cp == sp)
-		sp += 1;	/* Trim leading whitespace */
-
-	} else if (*cp == '(' || *cp == '[') {
-	    parens += 1;
-
-	} else if (*cp == ']' || *cp == ')') {
-	    parens -= 1;
-	    if (parens == 0)
-		break;
-	}
-    }
-
-    /* If there's anything left over in the concat() call, write it out */
-    if (sp != cp) {
-	slaxWrite(swp, "%.*s", cp - sp, sp);
-    }
-
-    /*
-     * If there's anything left over from _outside_ the concat() call
-     * (besides white space), write it out.
-     */
-    if (*cp) {
-	cp += 1;
-	cp += strspn(cp, " \t\n");
-	if (*cp)
-	    slaxWrite(swp, " _ %s", cp);
-    }
-
-    if (slaxLogIsEnabled)
-	slaxWrite(swp, "/*%s*/", value);
+    slaxWrite(swp, "%s", value);
 }
 
 /*
@@ -3293,6 +3215,45 @@ slaxWriteRedoConcat (slax_data_t *sdp UNUSED, slax_string_t *func)
     func->ss_next = NULL;
     slaxStringFree(func);	/* Free leading concat token */
 
+    return ssp;
+}
+
+/*
+ * The logic in slaxWriteRedoConcat that unthreads concat() functions
+ * into the "_" operator does not know if the resulting expression
+ * needs parens.  So it has to leave them (really just leaving the
+ * parens from the "concat(...)" invocation).  When the expression
+ * is completely, we are called to remove that extraneous set of
+ * parens.  We know the first chunk of expr is a L_OPAREN, but need
+ * to look at the rest to ensure the parens are truly extraneous.
+ * If so, peel them off and return the rest of the expression.
+ */
+slax_string_t *
+slaxWriteRemoveParens (slax_data_t *sdp UNUSED, slax_string_t *expr)
+{
+    slax_string_t *ssp, *last = NULL;
+    int parens = 1;
+
+    for (ssp = expr->ss_next; ssp->ss_next; ssp = ssp->ss_next) {
+	if (ssp->ss_ttype == L_OPAREN)
+	    parens += 1;
+	else if (ssp->ss_ttype == L_CPAREN)
+	    if (--parens == 0)
+		return expr;
+	last = ssp;
+    }
+
+    if (ssp->ss_ttype != L_CPAREN || parens != 1 || last == NULL)
+	return expr;
+
+    /* Free the trailing L_CPAREN */
+    last->ss_next = NULL;
+    slaxStringFree(ssp);
+
+    /* Free the leading L_OPAREN) */
+    ssp = expr->ss_next;
+    expr->ss_next = NULL;
+    slaxStringFree(expr);
     return ssp;
 }
 

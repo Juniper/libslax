@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<top>
+  <d>
+    <bb1>
+      <bbb>BBB</bbb>
+    </bb1>
+    <bb2>
+      <bbb>BBB</bbb>
+    </bb2>
+    <bb3>
+      <bbb>BBB</bbb>
+    </bb3>
+  </d>
+  <d2>
+    <bb1>
+      <bbb>BBB</bbb>
+    </bb1>
+    <bb2>
+      <bbb>BBB</bbb>
+    </bb2>
+    <bb3>
+      <bbb>BBB</bbb>
+    </bb3>
+  </d2>
+  <action>fight</action>
+  <how>BBB</how>
+  <count>10</count>
+  <one>2</one>
+  <two>4</two>
+  <three>3</three>
+  <four>k</four>
+  <fish>7</fish>
+  <fish>500</fish>
+  <contains>true</contains>
+</top>

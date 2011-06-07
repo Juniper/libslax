@@ -7,7 +7,7 @@ function test ($x) {
     }
 }
 
-match foo[concat(../../id/text(), "/", text())] {
+match foo[../../id/text() _ "/" _ text()] {
     var $test2 = "€";
     var $test = "";
     /* This one is odd */
@@ -15,7 +15,7 @@ match foo[concat(../../id/text(), "/", text())] {
     /* This one too */
     var $date = substring(date, 1, 4) _ "/" _ substring(date, 5, 2) _ "/" _ substring(date, 7, 2);
     /* This one tickles the bug */
-    expr test(concat(local-game-prefix, opponent), answer);
+    expr test(local-game-prefix _ opponent, answer);
     /* This one tickles a second bug */
     <span class="element"> "</" _ name(.) _ ">";
 }

@@ -16,13 +16,13 @@ match / {
     <out> {
         <count> $count;
         var $variable = "this";
-        var $test = ($variable ==("this"));
+        var $test = $variable ==("this");
         <test> $test;
-        var $test2 = ($variable ==(concat("th", $is)));
+        var $test2 = $variable ==("th" _ $is);
         <test> $test2;
         <output> slax:evaluate("$variable == ('th' _ 'is')");
         <test> substring("tent", 1, 3) _ 6 - 10;
-        <test> $zero + 10 _ (concat("th", $is, (concat(10, 6))));
+        <test> $zero + 10 _ "th" _ $is _ 10 _ 6;
         <title> "Translation of " _ name() _ ":";
         apply-templates in/*;
     }
@@ -30,6 +30,6 @@ match / {
 
 match * {
     element name() {
-        expr slax:evaluate(concat("$sp_", name()));
+        expr slax:evaluate("$sp_" _ name());
     }
 }

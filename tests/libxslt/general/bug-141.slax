@@ -10,7 +10,7 @@ match page {
     expr @name;
     expr "\n--------------------\n  dump union : \"";
     
-    for-each ((preceding-sibling::page[1] | parent::group[1] |/document)) {
+    for-each (preceding-sibling::page[1] | parent::group[1] |/document) {
         expr name();
         expr ",";
     }

@@ -1,7 +1,24 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.1;
 
-var $content = "\nline one\nline two\nline three\nline four\nline five\nse-ix\nse-ven\neh-it\nny-en\nte-en\nel-e-ven\ntwiel-ve\nt'ir-teeen\nfour-teen\nfift-teen\nse-ix-teen\n";
+var $content = "
+line one
+line two
+line three
+line four
+line five
+se-ix
+se-ven
+eh-it
+ny-en
+te-en
+el-e-ven
+twiel-ve
+t'ir-teeen
+four-teen
+fift-teen
+se-ix-teen
+";
 var $content2 = <this> $content;
 
 match / {

@@ -1,0 +1,78 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+var $aaa := <aa1> {
+    <aaa> "AAA";
+}
+var $bbb := {
+    <bb1> {
+        <bbb> "BBB";
+    }
+    <bb2> {
+        <bbb> "BBB";
+    }
+    <bb3> {
+        <bbb> "BBB";
+    }
+}
+var $ccc := <cc1> {
+    <ccc> "CCC";
+}
+var $ddd = $aaa ? $bbb : $ccc;
+param $action = "fight";
+param $how = $action == "fight" ? $bbb : $ccc;
+param $count = $how == "quick" ? 1 : 10;
+var $top = this ? that : the-other;
+var $data := <more> {
+    <a> 1;
+    <b> 2;
+    <c> 3;
+    <d> 4;
+    <e> 5;
+    <h> 6;
+    <k> "k";
+    <n> "n";
+    <o> 7;
+    <p> 8;
+    <x> 9;
+    <z> 10;
+}
+
+match / {
+    <top> {
+        <d> {
+            copy-of $ddd;
+        }
+        <d2> {
+            copy-of $aaa ? $bbb : $ccc;
+        }
+        <action> $action;
+        <how> $how;
+        <count> $count;
+        
+        for-each ($data/more) {
+            var $one = a ? b : c;
+            var $two = d ?: e;
+            var $three = f ? 1 : g ? 2 : h ? 3 : 4;
+            var $four = i ?: j ?: k ?: l;
+            
+            <one> $one;
+            <two> $two;
+            <three> $three;
+            <four> $four;
+            <fish> {
+                expr m ? n : o;
+            }
+            <fish> {
+                call fish($name = slax:value($slax-ternary-15));
+            }
+            <contains> {
+                expr contains($one ? $two : $three, $one ? $two : $three);
+            }
+        }
+    }
+}
+
+template fish ($name = x ? y : z) {
+    expr $name ? $name _ "00" : 20;
+}

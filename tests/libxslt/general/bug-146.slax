@@ -14,7 +14,7 @@ key EMPTY_EN_CODE_COLLS {
 
 key EMPTY_EN_CODE_COLRS {
     match /root/colls/goodcoll/goodcomb/@COL_ID[../@EN_CODE == ""];
-    value concat(., ":", ../../../@COL_COD);
+    value . _ ":" _ ../../../@COL_COD;
 }
 
 match / {
@@ -23,7 +23,7 @@ match / {
             copy-node {
                 copy-of @*;
                 
-                for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", concat(., ":", ../../../@COL_COD)))]) {
+                for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", . _ ":" _ ../../../@COL_COD))]) {
                     <color> {
                         copy-of ../@TITLE | ../@RU_CODE | .;
                     }

@@ -12,7 +12,7 @@ current page : </xsl:text>
     <xsl:text>
 --------------------
   dump union : "</xsl:text>
-    <xsl:for-each select="(preceding-sibling::page[1] | parent::group[1] |/document)">
+    <xsl:for-each select="preceding-sibling::page[1] | parent::group[1] |/document">
       <xsl:value-of select="name()"/>
       <xsl:text>,</xsl:text>
     </xsl:for-each>

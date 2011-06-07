@@ -81,7 +81,12 @@ xp_expr :
 	xp_ternary_expr
 		{
 		    SLAX_KEYWORDS_OFF();
-		    $$ = $1;
+		    if (slaxParseIsXpath(slax_data)
+				&& $1->ss_ttype == L_OPAREN) {
+			$$ = slaxWriteRemoveParens(slax_data, $1);
+		    } else {
+			$$ = $1;
+		    }
 		}
 	;
 

@@ -229,7 +229,7 @@ template foo () {
 
 template other ($depth = 0) {
     append $indent += "ddd";
-    var $tmp = "this\" + \"that";
+    var $tmp = "this" + "that";
     var $save = $indent;
     append $indent += "eee";
     

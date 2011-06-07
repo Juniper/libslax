@@ -381,6 +381,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 		comma = TRUE;
 
 	    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
+			|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
 			|| last_ttype == L_QUESTION || last_ttype == L_COLON)
 		     && ssp->ss_ttype == L_OPAREN)
 		trim = FALSE;	/*  */
