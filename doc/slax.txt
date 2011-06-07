@@ -2038,7 +2038,7 @@ familiar C and Perl operator.
     var $x = ($a > 10) ? $b : $c;
     var $y = $action ?: "display";
 
-The generated XSLT is rather large:
+The generated XSLT uses an <xsl:choose> element:
 
     <xsl:variable name="slax-ternary-1">
       <xsl:choose>
@@ -2051,6 +2051,10 @@ The generated XSLT is rather large:
       </xsl:choose>
     </xsl:variable>
     <xsl:variable name="x" select="slax:value($slax-ternary-1)"/>
+
+The use of slax:value() make the "?:" operator non-standard, in that
+it requires a non-standard extension function.  Use of the "?:" should
+be limited to environments where this function is available.
 
 *** Control Statements
 
