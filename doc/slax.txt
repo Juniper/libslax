@@ -43,6 +43,7 @@ SLAX allows you to:
 - Use "==" to test equality (to avoid building dangerous habits)
 - Use curly braces to show containment instead of closing tags
 - Perform concatenation using the "_" operator (lifted from perl6)
+- Perform simple logic using the "?:" operator
 - Write text strings using simple quotes instead of the <xsl:text> element
 - Simplify invoking named templates with a syntax resembling a
   function call
@@ -766,10 +767,12 @@ SLAX follows XPath syntax, with the following additions:
 (c) "==" may be used in place of the "=" operator
 (d) "!" may be used in place of the "not()" operator
 (e) "_" is the concatenation operator ("a" _ "b" === concat("a", "b"))
+(f) "?:" is converted into choose/when/otherwise elements
 
 The first four additions are meant to prevent programmers from
 learning habits in SLAX that will negatively affect their ability to
-program in other languages.  The last addition is for convenience.
+program in other languages.  The last two additions are for
+convenience.
 
 When referring to XPath expressions in this document, we
 mean this extended syntax.
@@ -2026,6 +2029,28 @@ statement would be considered complex variable content.  But using the
 
 Behind the scenes, SLAX is performing the ext:node-set() call but the
 details are hidden from the user.
+
+**** The "?:" Operator @question-colon@
+
+The "?:" operator allows simple logic tests to be coded with the
+familiar C and Perl operator.
+
+    var $x = ($a > 10) ? $b : $c;
+    var $y = $action ?: "display";
+
+The generated XSLT is rather large:
+
+    <xsl:variable name="slax-ternary-1">
+      <xsl:choose>
+        <xsl:when test="($a &gt; 10)">
+          <xsl:copy-of select="$b"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:copy-of select="$c"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="x" select="slax:value($slax-ternary-1)"/>
 
 *** Control Statements
 
