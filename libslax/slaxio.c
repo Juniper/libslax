@@ -197,6 +197,16 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	char *res;
 
 	/*
+	 * The readline library doesn't seem to like multi-line
+	 * prompts.  So we avoid them.
+	 */
+	cp = strrchr(prompt, '\n');
+	if (cp) {
+	    fprintf(stderr, "%.*s", (int) (cp - prompt + 1), prompt);
+	    prompt = cp + 1;
+	}
+
+	/*
 	 * readline() will return a malloc'd buffer but we need to
 	 * swap it for memory that's acquired via xmlMalloc().
 	 */

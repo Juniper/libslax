@@ -3186,7 +3186,6 @@ slaxWriteRedoTernary (slax_data_t *sdp, slax_string_t *func)
 /*
  * Rewrite a concat function call expression as a string and return
  * the string.
- * XXX Need to deal with operator precedence (a + b _ c) somewhere
  */
 slax_string_t *
 slaxWriteRedoConcat (slax_data_t *sdp UNUSED, slax_string_t *func)
