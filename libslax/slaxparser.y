@@ -273,7 +273,7 @@
 #define YYERROR_VERBOSE
 
 #define YYDEBUG 1		/* Enable debug output */
-#define yydebug slaxDebug	/* Make debug flag parser specific */
+#define yydebug slaxYyDebug	/* Make debug flag parser specific */
 #define YYFPRINTF slaxLog2	/* Log via our function */
 
 static int
@@ -366,7 +366,10 @@ partial_list :
 		{ $$ = NULL; }
 
 	| partial_list partial_stmt
-		{ $$ = NULL; }
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
 	;
 
 partial_stmt :

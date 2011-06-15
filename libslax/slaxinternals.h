@@ -34,6 +34,8 @@ struct slax_data_s; typedef struct slax_data_s slax_data_t;
 #include "slaxio.h"
 #include "slaxprofiler.h"
 
+extern int slaxYyDebug;
+
 /*
  * The rest of the .c files expose so little we don't bother with
  * distinct header files.

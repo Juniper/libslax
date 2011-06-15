@@ -395,6 +395,12 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
 	    version = *++argv;
 
+	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
+	    version = *++argv;
+
+	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
+	    slaxYyDebug = TRUE;
+
 	} else if (streq(cp, "--help") || streq(cp, "-n")) {
 	    print_help();
 	    return -1;
