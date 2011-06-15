@@ -1,0 +1,1300 @@
+<?xml version="1.0"?>
+<out>
+  <result name="Albrect">
+    <e1a pat="(E)(.)(.)" target="Albrect" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Albrect" opts="i">
+      <match>ect</match>
+      <match>e</match>
+      <match>c</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Albrect" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="">
+      <match>Often r</match>
+      <match>ten r</match>
+    </o2a>
+    <o2b pat="^Of(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="n">
+      <match>Often r</match>
+      <match>ten r</match>
+    </o2b>
+    <o2c pat="^Of(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="n^$">
+      <match>Of all </match>
+      <match> all </match>
+    </o2c>
+    <o3a pat="^Oft(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="">
+      <match>Often re</match>
+      <match>en re</match>
+    </o3a>
+    <o3b pat="^Oft(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="n">
+      <match>Often re</match>
+      <match>en re</match>
+    </o3b>
+    <o3c pat="^Oft(.{5})" target="Often requested comment:&#10;Of all the authors in this list, this is the first.&#10;Off the cuff, that would be all I can say.&#10;      " opts="n^$"/>
+  </result>
+  <result name="Albrecht">
+    <e1a pat="(E)(.)(.)" target="Albrecht" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Albrecht" opts="i">
+      <match>ech</match>
+      <match>e</match>
+      <match>c</match>
+      <match>h</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Albrecht" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Allingham">
+    <e1a pat="(E)(.)(.)" target="Allingham" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Allingham" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Allingham" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Aoyama">
+    <e1a pat="(E)(.)(.)" target="Aoyama" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Aoyama" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Aoyama" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Arnau">
+    <e1a pat="(E)(.)(.)" target="Arnau" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Arnau" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Arnau" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Bentley">
+    <e1a pat="(E)(.)(.)" target="Bentley" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Bentley" opts="i">
+      <match>ent</match>
+      <match>e</match>
+      <match>n</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Bentley" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Biggers">
+    <e1a pat="(E)(.)(.)" target="Biggers" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Biggers" opts="i">
+      <match>ers</match>
+      <match>e</match>
+      <match>r</match>
+      <match>s</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Biggers" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Bonett">
+    <e1a pat="(E)(.)(.)" target="Bonett" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Bonett" opts="i">
+      <match>ett</match>
+      <match>e</match>
+      <match>t</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Bonett" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Bonett">
+    <e1a pat="(E)(.)(.)" target="Bonett" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Bonett" opts="i">
+      <match>ett</match>
+      <match>e</match>
+      <match>t</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Bonett" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Brackett">
+    <e1a pat="(E)(.)(.)" target="Brackett" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Brackett" opts="i">
+      <match>ett</match>
+      <match>e</match>
+      <match>t</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Brackett" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Brooks">
+    <e1a pat="(E)(.)(.)" target="Brooks" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Brooks" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Brooks" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Braun">
+    <e1a pat="(E)(.)(.)" target="Braun" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Braun" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Braun" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Brown">
+    <e1a pat="(E)(.)(.)" target="Brown" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Brown" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Brown" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Burke">
+    <e1a pat="(E)(.)(.)" target="Burke" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Burke" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Burke" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Carr">
+    <e1a pat="(E)(.)(.)" target="Carr" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Carr" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Carr" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Chandler">
+    <e1a pat="(E)(.)(.)" target="Chandler" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Chandler" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Chandler" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Charteris">
+    <e1a pat="(E)(.)(.)" target="Charteris" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Charteris" opts="i">
+      <match>eri</match>
+      <match>e</match>
+      <match>r</match>
+      <match>i</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Charteris" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Chesterton">
+    <e1a pat="(E)(.)(.)" target="Chesterton" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Chesterton" opts="i">
+      <match>est</match>
+      <match>e</match>
+      <match>s</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Chesterton" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Christie">
+    <e1a pat="(E)(.)(.)" target="Christie" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Christie" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Christie" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Crispin">
+    <e1a pat="(E)(.)(.)" target="Crispin" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Crispin" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Crispin" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Cleeve">
+    <e1a pat="(E)(.)(.)" target="Cleeve" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Cleeve" opts="i">
+      <match>eev</match>
+      <match>e</match>
+      <match>e</match>
+      <match>v</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Cleeve" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Collins">
+    <e1a pat="(E)(.)(.)" target="Collins" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Collins" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Collins" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Connelly">
+    <e1a pat="(E)(.)(.)" target="Connelly" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Connelly" opts="i">
+      <match>ell</match>
+      <match>e</match>
+      <match>l</match>
+      <match>l</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Connelly" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Cornwell">
+    <e1a pat="(E)(.)(.)" target="Cornwell" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Cornwell" opts="i">
+      <match>ell</match>
+      <match>e</match>
+      <match>l</match>
+      <match>l</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Cornwell" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Crais">
+    <e1a pat="(E)(.)(.)" target="Crais" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Crais" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Crais" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Cross">
+    <e1a pat="(E)(.)(.)" target="Cross" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Cross" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Cross" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Dane">
+    <e1a pat="(E)(.)(.)" target="Dane" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Dane" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Dane" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Davis">
+    <e1a pat="(E)(.)(.)" target="Davis" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Davis" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Davis" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Deaver">
+    <e1a pat="(E)(.)(.)" target="Deaver" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Deaver" opts="i">
+      <match>eav</match>
+      <match>e</match>
+      <match>a</match>
+      <match>v</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Deaver" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Dexter">
+    <e1a pat="(E)(.)(.)" target="Dexter" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Dexter" opts="i">
+      <match>ext</match>
+      <match>e</match>
+      <match>x</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Dexter" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Diamond">
+    <e1a pat="(E)(.)(.)" target="Diamond" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Diamond" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Diamond" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Dodge">
+    <e1a pat="(E)(.)(.)" target="Dodge" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Dodge" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Dodge" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Doyle">
+    <e1a pat="(E)(.)(.)" target="Doyle" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Doyle" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Doyle" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Durbridge">
+    <e1a pat="(E)(.)(.)" target="Durbridge" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Durbridge" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Durbridge" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Edogawa">
+    <e1a pat="(E)(.)(.)" target="Edogawa" opts="">
+      <match>Edo</match>
+      <match>E</match>
+      <match>d</match>
+      <match>o</match>
+    </e1a>
+    <e1b pat="(E)(.)(.)" target="Edogawa" opts="i">
+      <match>Edo</match>
+      <match>E</match>
+      <match>d</match>
+      <match>o</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Edogawa" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Edwards">
+    <e1a pat="(E)(.)(.)" target="Edwards" opts="">
+      <match>Edw</match>
+      <match>E</match>
+      <match>d</match>
+      <match>w</match>
+    </e1a>
+    <e1b pat="(E)(.)(.)" target="Edwards" opts="i">
+      <match>Edw</match>
+      <match>E</match>
+      <match>d</match>
+      <match>w</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Edwards" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Estleman">
+    <e1a pat="(E)(.)(.)" target="Estleman" opts="">
+      <match>Est</match>
+      <match>E</match>
+      <match>s</match>
+      <match>t</match>
+    </e1a>
+    <e1b pat="(E)(.)(.)" target="Estleman" opts="i">
+      <match>Est</match>
+      <match>E</match>
+      <match>s</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Estleman" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Finch">
+    <e1a pat="(E)(.)(.)" target="Finch" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Finch" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Finch" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Freeman">
+    <e1a pat="(E)(.)(.)" target="Freeman" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Freeman" opts="i">
+      <match>eem</match>
+      <match>e</match>
+      <match>e</match>
+      <match>m</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Freeman" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Friedman">
+    <e1a pat="(E)(.)(.)" target="Friedman" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Friedman" opts="i">
+      <match>edm</match>
+      <match>e</match>
+      <match>d</match>
+      <match>m</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Friedman" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Froese">
+    <e1a pat="(E)(.)(.)" target="Froese" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Froese" opts="i">
+      <match>ese</match>
+      <match>e</match>
+      <match>s</match>
+      <match>e</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Froese" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Futrelle">
+    <e1a pat="(E)(.)(.)" target="Futrelle" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Futrelle" opts="i">
+      <match>ell</match>
+      <match>e</match>
+      <match>l</match>
+      <match>l</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Futrelle" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Fyfield">
+    <e1a pat="(E)(.)(.)" target="Fyfield" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Fyfield" opts="i">
+      <match>eld</match>
+      <match>e</match>
+      <match>l</match>
+      <match>d</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Fyfield" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Gardner">
+    <e1a pat="(E)(.)(.)" target="Gardner" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Gardner" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Gardner" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Grafton">
+    <e1a pat="(E)(.)(.)" target="Grafton" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Grafton" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Grafton" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Gordon">
+    <e1a pat="(E)(.)(.)" target="Gordon" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Gordon" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Gordon" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Gould">
+    <e1a pat="(E)(.)(.)" target="Gould" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Gould" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Gould" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Hammett">
+    <e1a pat="(E)(.)(.)" target="Hammett" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Hammett" opts="i">
+      <match>ett</match>
+      <match>e</match>
+      <match>t</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Hammett" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Harvey">
+    <e1a pat="(E)(.)(.)" target="Harvey" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Harvey" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Harvey" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Hildick">
+    <e1a pat="(E)(.)(.)" target="Hildick" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Hildick" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Hildick" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Hughart">
+    <e1a pat="(E)(.)(.)" target="Hughart" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Hughart" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Hughart" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Innes">
+    <e1a pat="(E)(.)(.)" target="Innes" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Innes" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Innes" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Lehane">
+    <e1a pat="(E)(.)(.)" target="Lehane" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Lehane" opts="i">
+      <match>eha</match>
+      <match>e</match>
+      <match>h</match>
+      <match>a</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Lehane" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Lynds">
+    <e1a pat="(E)(.)(.)" target="Lynds" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Lynds" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Lynds" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="James">
+    <e1a pat="(E)(.)(.)" target="James" opts=""/>
+    <e1b pat="(E)(.)(.)" target="James" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="James" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Jance">
+    <e1a pat="(E)(.)(.)" target="Jance" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Jance" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Jance" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Kirino">
+    <e1a pat="(E)(.)(.)" target="Kirino" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Kirino" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Kirino" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Klavan">
+    <e1a pat="(E)(.)(.)" target="Klavan" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Klavan" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Klavan" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Larsson">
+    <e1a pat="(E)(.)(.)" target="Larsson" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Larsson" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Larsson" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Levinson">
+    <e1a pat="(E)(.)(.)" target="Levinson" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Levinson" opts="i">
+      <match>evi</match>
+      <match>e</match>
+      <match>v</match>
+      <match>i</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Levinson" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="MacDonald">
+    <e1a pat="(E)(.)(.)" target="MacDonald" opts=""/>
+    <e1b pat="(E)(.)(.)" target="MacDonald" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="MacDonald" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="MacDonald">
+    <e1a pat="(E)(.)(.)" target="MacDonald" opts=""/>
+    <e1b pat="(E)(.)(.)" target="MacDonald" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="MacDonald" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Mankell">
+    <e1a pat="(E)(.)(.)" target="Mankell" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Mankell" opts="i">
+      <match>ell</match>
+      <match>e</match>
+      <match>l</match>
+      <match>l</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Mankell" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Marsh">
+    <e1a pat="(E)(.)(.)" target="Marsh" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Marsh" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Marsh" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="McClure">
+    <e1a pat="(E)(.)(.)" target="McClure" opts=""/>
+    <e1b pat="(E)(.)(.)" target="McClure" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="McClure" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="McGovern">
+    <e1a pat="(E)(.)(.)" target="McGovern" opts=""/>
+    <e1b pat="(E)(.)(.)" target="McGovern" opts="i">
+      <match>ern</match>
+      <match>e</match>
+      <match>r</match>
+      <match>n</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="McGovern" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Murphy">
+    <e1a pat="(E)(.)(.)" target="Murphy" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Murphy" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Murphy" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Mitchell">
+    <e1a pat="(E)(.)(.)" target="Mitchell" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Mitchell" opts="i">
+      <match>ell</match>
+      <match>e</match>
+      <match>l</match>
+      <match>l</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Mitchell" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Moore">
+    <e1a pat="(E)(.)(.)" target="Moore" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Moore" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Moore" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Nadelson">
+    <e1a pat="(E)(.)(.)" target="Nadelson" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Nadelson" opts="i">
+      <match>els</match>
+      <match>e</match>
+      <match>l</match>
+      <match>s</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Nadelson" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Neznansky">
+    <e1a pat="(E)(.)(.)" target="Neznansky" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Neznansky" opts="i">
+      <match>ezn</match>
+      <match>e</match>
+      <match>z</match>
+      <match>n</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Neznansky" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Oates">
+    <e1a pat="(E)(.)(.)" target="Oates" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Oates" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Oates" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Parker">
+    <e1a pat="(E)(.)(.)" target="Parker" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Parker" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Parker" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Pattison">
+    <e1a pat="(E)(.)(.)" target="Pattison" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Pattison" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Pattison" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Peters">
+    <e1a pat="(E)(.)(.)" target="Peters" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Peters" opts="i">
+      <match>ete</match>
+      <match>e</match>
+      <match>t</match>
+      <match>e</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Peters" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Poe">
+    <e1a pat="(E)(.)(.)" target="Poe" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Poe" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Poe" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Queen">
+    <e1a pat="(E)(.)(.)" target="Queen" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Queen" opts="i">
+      <match>een</match>
+      <match>e</match>
+      <match>e</match>
+      <match>n</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Queen" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Rankin">
+    <e1a pat="(E)(.)(.)" target="Rankin" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Rankin" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Rankin" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Reichs">
+    <e1a pat="(E)(.)(.)" target="Reichs" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Reichs" opts="i">
+      <match>eic</match>
+      <match>e</match>
+      <match>i</match>
+      <match>c</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Reichs" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Rendell">
+    <e1a pat="(E)(.)(.)" target="Rendell" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Rendell" opts="i">
+      <match>end</match>
+      <match>e</match>
+      <match>n</match>
+      <match>d</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Rendell" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Robb">
+    <e1a pat="(E)(.)(.)" target="Robb" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Robb" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Robb" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Roberts">
+    <e1a pat="(E)(.)(.)" target="Roberts" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Roberts" opts="i">
+      <match>ert</match>
+      <match>e</match>
+      <match>r</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Roberts" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Sayers">
+    <e1a pat="(E)(.)(.)" target="Sayers" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Sayers" opts="i">
+      <match>ers</match>
+      <match>e</match>
+      <match>r</match>
+      <match>s</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Sayers" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Saylor">
+    <e1a pat="(E)(.)(.)" target="Saylor" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Saylor" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Saylor" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Simenon">
+    <e1a pat="(E)(.)(.)" target="Simenon" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Simenon" opts="i">
+      <match>eno</match>
+      <match>e</match>
+      <match>n</match>
+      <match>o</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Simenon" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Spillane">
+    <e1a pat="(E)(.)(.)" target="Spillane" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Spillane" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Spillane" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Stout">
+    <e1a pat="(E)(.)(.)" target="Stout" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Stout" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Stout" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Swann">
+    <e1a pat="(E)(.)(.)" target="Swann" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Swann" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Swann" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Tardif">
+    <e1a pat="(E)(.)(.)" target="Tardif" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Tardif" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Tardif" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Tey">
+    <e1a pat="(E)(.)(.)" target="Tey" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Tey" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Tey" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Vachss">
+    <e1a pat="(E)(.)(.)" target="Vachss" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Vachss" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Vachss" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Vance">
+    <e1a pat="(E)(.)(.)" target="Vance" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Vance" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Vance" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Wetering">
+    <e1a pat="(E)(.)(.)" target="Wetering" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Wetering" opts="i">
+      <match>ete</match>
+      <match>e</match>
+      <match>t</match>
+      <match>e</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Wetering" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Gulik">
+    <e1a pat="(E)(.)(.)" target="Gulik" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Gulik" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Gulik" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Vine">
+    <e1a pat="(E)(.)(.)" target="Vine" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Vine" opts="i"/>
+    <e1c pat="(E)(.)(.)" target="Vine" opts="ib">false</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Wakefield">
+    <e1a pat="(E)(.)(.)" target="Wakefield" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Wakefield" opts="i">
+      <match>efi</match>
+      <match>e</match>
+      <match>f</match>
+      <match>i</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Wakefield" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+  <result name="Wentworth">
+    <e1a pat="(E)(.)(.)" target="Wentworth" opts=""/>
+    <e1b pat="(E)(.)(.)" target="Wentworth" opts="i">
+      <match>ent</match>
+      <match>e</match>
+      <match>n</match>
+      <match>t</match>
+    </e1b>
+    <e1c pat="(E)(.)(.)" target="Wentworth" opts="ib">true</e1c>
+    <o2a pat="^Of(.{5})" target="" opts=""/>
+    <o2b pat="^Of(.{5})" target="" opts="n"/>
+    <o2c pat="^Of(.{5})" target="" opts="n^$"/>
+    <o3a pat="^Oft(.{5})" target="" opts=""/>
+    <o3b pat="^Oft(.{5})" target="" opts="n"/>
+    <o3c pat="^Oft(.{5})" target="" opts="n^$"/>
+  </result>
+</out>

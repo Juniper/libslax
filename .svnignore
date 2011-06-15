@@ -11,3 +11,5 @@ missing
 Zaliases
 aclocal.m4
 install-sh
+cscope.out
+Zinstall

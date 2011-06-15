@@ -1251,8 +1251,35 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret;
     xmlDocPtr container;
+    int cflags = REG_EXTENDED, eflags = 0;
+    int return_boolean = FALSE;
 
-    if (nargs != 2) {
+    regex_t reg;
+    int nmatch = 10;
+    regmatch_t pm[nmatch];
+    int rc;
+
+    if (nargs == 3) {
+	/* The optional third argument is a string containing flags */
+	xmlChar *opts = xmlXPathPopString(ctxt);
+	int i;
+
+	for (i = 0; opts[i]; i++) {
+	    if (opts[i] == 'i' || opts[i] == 'I')
+		cflags |= REG_ICASE;
+	    else if (opts[i] == 'b')
+		return_boolean = TRUE;
+	    else if (opts[i] == 'n')
+		cflags |= REG_NEWLINE;
+	    else if (opts[i] == '^')
+		eflags |= REG_NOTBOL;
+	    else if (opts[i] == '$')
+		eflags |= REG_NOTEOL;
+	}
+
+	xmlFreeAndEasy(opts);
+
+    } else if (nargs != 2) {
 	xmlXPathSetArityError(ctxt);
 	return;
     }
@@ -1261,7 +1288,10 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     char *target = (char *) target_str;
     xmlChar *pattern = xmlXPathPopString(ctxt);
     
-    xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+    xmlNodeSet *results = NULL;
+
+    if (return_boolean)
+	nmatch = 0;		/* Boolean doesn't care for patterns */
 
     /*
      * Create a Result Value Tree container, and register it with RVT garbage 
@@ -1271,24 +1301,27 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     container = xsltCreateRVT(tctxt);
     xsltRegisterLocalRVT(tctxt, container);
 
-    regex_t reg;
-    int nmatch = 10;
-    regmatch_t pm[nmatch];
-    int rc;
-
     bzero(&pm, sizeof(pm));
 
-    rc = regcomp(&reg, (const char *) pattern, REG_EXTENDED);
+    rc = regcomp(&reg, (const char *) pattern, cflags);
     if (rc)
 	goto fail;
 
-    rc = regexec(&reg, target, nmatch, pm, 0);
+    rc = regexec(&reg, target, nmatch, pm, eflags);
     if (rc && rc != REG_NOMATCH)
 	goto fail;
    
     if (rc != REG_NOMATCH) {
 	int i, len, max = 0;
 	xmlNode *last = NULL;
+
+	if (return_boolean) {
+	    regfree(&reg);
+	    xmlFree(target_str);
+	    xmlFree(pattern);
+	    xmlXPathReturnBoolean(ctxt, TRUE);
+	    return;
+	}
 
 	for (i = 0; i < nmatch; i++) {
 	    if (pm[i].rm_so == 0 && pm[i].rm_eo == 0)
@@ -1297,6 +1330,8 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 		continue;
 	    max = i;
 	}
+
+	results = xmlXPathNodeSetCreate(NULL);
 
 	for (i = 0; i <= max; i++) {
 	    len = pm[i].rm_eo - pm[i].rm_so;
@@ -1320,13 +1355,19 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     xmlFree(target_str);
     xmlFree(pattern);
 
-    ret = xmlXPathNewNodeSetList(results);
-    valuePush(ctxt, ret);
-    xmlXPathFreeNodeSet(results);
+    if (results) {
+	ret = xmlXPathNewNodeSetList(results);
+	valuePush(ctxt, ret);
+	xmlXPathFreeNodeSet(results);
+
+    } else if (return_boolean)
+	xmlXPathReturnBoolean(ctxt, FALSE);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+
     return;
 
  fail:
-
     regerror(rc, &reg, buf, sizeof(buf));
     xsltGenericError(xsltGenericErrorContext, "regex error: %s\n", buf);
     goto done;

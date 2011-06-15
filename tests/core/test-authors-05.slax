@@ -1,0 +1,40 @@
+version 1.0;
+
+match / {
+    var $pat1 = "(E)(.)(.)";
+    var $pat2 = "^Of(.{5})";
+    var $pat3 = "^Oft(.{5})";
+
+    <out> {
+	for-each (authors/author) {
+	    <result name=name/last> {
+		call test($name = "e1a", $pat = $pat1, $target = name/last);
+		call test($name = "e1b", $pat = $pat1, $target = name/last,
+			  $opts = "i");
+		call test($name = "e1c", $pat = $pat1, $target = name/last,
+			  $opts = "ib");
+		call test($name = "o2a", $pat = $pat2, $target = comment);
+		call test($name = "o2b", $pat = $pat2, $target = comment,
+			  $opts = "n");
+		call test($name = "o2c", $pat = $pat2, $target = comment,
+			  $opts = "n^$");
+		call test($name = "o3a", $pat = $pat3, $target = comment);
+		call test($name = "o3b", $pat = $pat3, $target = comment,
+			  $opts = "n");
+		call test($name = "o3c", $pat = $pat3, $target = comment,
+			  $opts = "n^$");
+	    }
+        }
+    }
+}
+
+template test ($pat, $name = $pat, $target, $opts) {
+    var $re = slax:regex($pat, $target, $opts);
+    element $name {
+	attribute "pat" { expr $pat; }
+	attribute "target" { expr $target; }
+	attribute "opts" { expr $opts; }
+
+	copy-of $re;
+    }
+}

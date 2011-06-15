@@ -35,3 +35,6 @@ upload: dist
 	@echo "Uploading slax-quick-reference-${PACKAGE_VERSION}.pdf ... "
 	@${UPLOAD} -s 'Quick Reference Card' -l Type-Docs,Featured \
 		doc/slax-quick-reference-${PACKAGE_VERSION}.pdf
+
+svnignore:
+	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}

@@ -416,7 +416,9 @@ slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
 	    if (nodep->type == XML_ELEMENT_NODE) {
 		xmlSaveTree(handle, nodep);
 		xmlSaveFlush(handle);
-		write(fd, "\n", 1);
+		int rc = write(fd, "\n", 1);
+		if (rc < 0)
+		    break;
 	    }
 	}
     }
