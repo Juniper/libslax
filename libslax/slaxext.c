@@ -1267,9 +1267,10 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 	for (i = 0; opts[i]; i++) {
 	    if (opts[i] == 'i' || opts[i] == 'I')
 		cflags |= REG_ICASE;
-	    else if (opts[i] == 'b')
+	    else if (opts[i] == 'b') {
 		return_boolean = TRUE;
-	    else if (opts[i] == 'n')
+		cflags |= REG_NOSUB;
+	    } else if (opts[i] == 'n')
 		cflags |= REG_NEWLINE;
 	    else if (opts[i] == '^')
 		eflags |= REG_NOTBOL;
