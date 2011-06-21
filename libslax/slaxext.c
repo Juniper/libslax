@@ -1253,7 +1253,9 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     xmlDocPtr container;
     int cflags = REG_EXTENDED, eflags = 0;
     int return_boolean = FALSE;
-
+    xmlChar *target_str, *pattern;
+    char *target;
+    xmlNodeSet *results = NULL;
     regex_t reg;
     int nmatch = 10;
     regmatch_t pm[nmatch];
@@ -1285,11 +1287,9 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 	return;
     }
 
-    xmlChar *target_str = xmlXPathPopString(ctxt);
-    char *target = (char *) target_str;
-    xmlChar *pattern = xmlXPathPopString(ctxt);
-    
-    xmlNodeSet *results = NULL;
+    target_str = xmlXPathPopString(ctxt);
+    target = (char *) target_str;
+    pattern = xmlXPathPopString(ctxt);
 
     if (return_boolean)
 	nmatch = 0;		/* Boolean doesn't care for patterns */
