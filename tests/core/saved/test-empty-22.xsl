@@ -14,6 +14,7 @@
       <answer>
         <xsl:value-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:evaluate(&quot;!$x&quot;)"/>
       </answer>
+      <xsl:value-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:output(&quot;this &quot;, &quot;is &quot;, &quot;a &quot;, &quot;test&quot;)"/>
     </top>
   </xsl:template>
 </xsl:stylesheet>

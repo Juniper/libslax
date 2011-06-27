@@ -14,5 +14,6 @@ match / {
             copy-of $z;
         }
         <answer> slax:evaluate("!$x");
+        expr slax:output("this ", "is ", "a ", "test");
     }
 }
