@@ -61,7 +61,8 @@
 #define PATH_DAMPEN_FILE "slax.dampen"
 #endif
 
-xmlChar slax_empty_string[1]; /* A non-const empty string */
+static xmlChar slax_empty_string[1]; /* A non-const empty string */
+static int slaxExtEmitProgressMessages;
 
 /*
  * Emit an error using a parser context
@@ -2237,6 +2238,114 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
     goto fail2;
 }
 
+
+static void
+slaxExtMessage (xmlXPathParserContext *ctxt, int nargs,
+	     void (*func)(const char *buf))
+{
+    xmlChar *strstack[nargs];	/* Stack for strings */
+    int ndx;
+    slax_printf_buffer_t pb;
+
+    bzero(&pb, sizeof(pb));
+
+    bzero(strstack, sizeof(strstack));
+    for (ndx = nargs - 1; ndx >= 0; ndx--) {
+	strstack[ndx] = xmlXPathPopString(ctxt);
+	if (xmlXPathCheckError(ctxt))
+	    goto bail;
+    }
+
+    for (ndx = 0; ndx < nargs; ndx++) {
+	xmlChar *str = strstack[ndx];
+	if (str == NULL)
+	    continue;
+
+	slaxExtPrintAppend(&pb, str, xmlStrlen(str));
+    }
+
+    /*
+     * If we made any output, toss it to the function
+     */
+    if (pb.pb_buf) {
+	func(pb.pb_buf);
+	xmlFree(pb.pb_buf);
+    }
+
+bail:
+    for (ndx = nargs - 1; ndx >= 0; ndx--) {
+	if (strstack[ndx])
+	    xmlFree(strstack[ndx]);
+    }
+
+    /*
+     * Nothing to return, we just push NULL
+     */
+    valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+}    
+
+static void
+slaxExtOutputCallback (const char *str)
+{
+    slaxOutput("%s", str);
+}
+
+/*
+ * Emit an output message for "slax:output" calls
+ *
+ * Usage: expr slax:output("this message ", $goes, $to, " the user");
+ */
+static void
+slaxExtOutput (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    slaxExtMessage(ctxt, nargs, slaxExtOutputCallback);
+}
+
+int
+slaxEmitProgressMessages (int allow)
+{
+    int old = slaxExtEmitProgressMessages;
+    slaxExtEmitProgressMessages = allow;
+    return old;
+}
+
+static void
+slaxExtProgressCallback (const char *str)
+{
+    if (slaxExtEmitProgressMessages)
+	slaxOutput("%s", str);
+    else
+	slaxLog("%s", str);
+}
+
+/*
+ * Emit a progress message for "slax:progress" calls
+ *
+ * Usage: expr slax:progress($only, "gets displayed if 'detail'", $is-used);
+ */
+static void
+slaxExtProgress (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    slaxExtMessage(ctxt, nargs, slaxExtProgressCallback);
+}
+
+static void
+slaxExtTraceCallback (const char *str)
+{
+    slaxLog("%s", str);
+}
+
+/*
+ * Emit a trace message for "slax:trace" calls
+ *
+ * Usage: expr slax:trace($only, "gets displayed if 'detail'", $is-used);
+ */
+static void
+slaxExtTrace (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    slaxExtMessage(ctxt, nargs, slaxExtTraceCallback);
+}
+
 /*
  * An ugly attempt to seed the random number generator with the best
  * value possible.  Ugly, but localized ugliness.
@@ -2286,6 +2395,8 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "getsecret", slaxExtGetSecret); /*OLD*/
     slaxRegisterFunction(namespace, "input", slaxExtGetInput); /*OLD*/
     slaxRegisterFunction(namespace, "is-empty", slaxExtEmpty);
+    slaxRegisterFunction(namespace, "output", slaxExtOutput);
+    slaxRegisterFunction(namespace, "progress", slaxExtProgress);
     slaxRegisterFunction(namespace, "printf", slaxExtPrintf);
     slaxRegisterFunction(namespace, "regex", slaxExtRegex);
     slaxRegisterFunction(namespace, "sleep", slaxExtSleep);
@@ -2294,6 +2405,7 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "sysctl", slaxExtSysctl);
 #endif
     slaxRegisterFunction(namespace, "syslog", slaxExtSyslog);
+    slaxRegisterFunction(namespace, "trace", slaxExtTrace);
 
     return 0;
 }

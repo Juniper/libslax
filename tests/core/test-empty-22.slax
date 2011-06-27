@@ -11,5 +11,7 @@ match / {
 	var $z = slax:evaluate("$y + 1");
 	<answer> { copy-of $z; }
 	<answer> slax:evaluate("!$x");
+
+	expr slax:output("this ", "is ", "a ", "test");
     }
 }

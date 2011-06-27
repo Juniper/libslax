@@ -184,6 +184,13 @@ slaxExtRegisterOther (const char *namespace);
 void slaxExtRegister (void);
 
 /**
+ * Determine if progress messages are written to user or trace file.
+ */
+int
+slaxEmitProgressMessages (int);
+
+
+/**
  * Enable logging information internal to the slax library
  */
 void
