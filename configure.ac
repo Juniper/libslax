@@ -101,7 +101,13 @@ AC_MSG_RESULT([$HAVE_PRINTFLIKE])
 AM_CONDITIONAL([HAVE_PRINTFLIKE], [test "$HAVE_PRINTFLIKE" != ""])
 
 
+#
 # Allow the reuse of the libxslt tests, if they have the source code
+# These are striclty optional and are really only needed for regression
+# testing during development.  Due to numerous issues with libxml and
+# libxslt, there are some platform-specific differences (like rounding
+# errors in libxml2) that may report test failures.
+#
 AC_ARG_WITH(libxslt_tests, [  --with-libxslt-tests[=DIR]    Include the libxslt tests])
 if test "$with_libxslt_tests" != "" ; then
    if test -d "$with_libxslt_tests" ; then
@@ -314,3 +320,24 @@ AC_CONFIG_FILES([
   doc/Makefile
 ])
 AC_OUTPUT
+
+AC_MSG_NOTICE([summary of build options:
+
+  libslax version:  ${VERSION} ${LIBSLAX_VERSION_EXTRA}
+  host type:        ${host}
+  install prefix:   ${prefix}
+  compiler:         ${CC}
+  compiler flags:   ${CFLAGS}
+  library types:    Shared=${enable_shared}, Static=${enable_static}
+  libxml version:   ${XMLVERS}
+  libxslt cflags:   ${LIBXSLT_CFLAGS}
+  libxml libs:      ${LIBXML_LIBS}
+  libxslt version:  ${XSLTVERS}
+  libxslt cflags:   ${LIBXSLT_CFLAGS}
+  libxslt libs:     ${LIBXSLT_LIBS}
+
+  debug:            ${SLAX_DEBUG:-no}
+  readline:         ${HAVE_READLINE:-no}
+  printf-like:      ${HAVE_PRINTFLIKE:-no}
+  libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
+])
