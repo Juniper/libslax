@@ -2314,6 +2314,8 @@ slaxExtProgressCallback (const char *str)
 {
     if (slaxExtEmitProgressMessages)
 	slaxOutput("%s", str);
+    else if (slaxTraceCallback)
+	slaxTraceCallback(slaxTraceCallbackData, NULL, "%s", str);
     else
 	slaxLog("%s", str);
 }
@@ -2332,7 +2334,10 @@ slaxExtProgress (xmlXPathParserContextPtr ctxt, int nargs)
 static void
 slaxExtTraceCallback (const char *str)
 {
-    slaxLog("%s", str);
+    if (slaxTraceCallback)
+	slaxTraceCallback(slaxTraceCallbackData, NULL, "%s", str);
+    else
+	slaxLog("%s", str);
 }
 
 /*
