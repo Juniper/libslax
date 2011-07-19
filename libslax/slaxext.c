@@ -2238,6 +2238,37 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
     goto fail2;
 }
 
+/*
+ * Remove illegal control characters from the input string.
+ */
+static void
+slaxExtRemoveControlChars (char *input)
+{
+    int len, i, count = 0;
+
+    if (!input)
+	return;
+
+    len = strlen(input);
+
+    for (i = 0; i < len; i++) {
+	/*
+	 * Allow newline, carriage return and tab characters but no
+	 * other control characters.  One of the most shocking sins
+	 * of XML is that it cannot encode control characters, so
+	 * we have no choice but to drop them.
+	 */
+	if (input[i] != '\n' && input[i] != '\r'&& input[i] != '\t') {
+	    if (iscntrl((int) input[i])) {
+		count++;
+		input[i] = '\0';
+	    }
+	} else if (count) {
+	    input[i - count] = input[i];
+	    input[i] = '\0';
+	}
+    }
+}
 
 static void
 slaxExtMessage (xmlXPathParserContext *ctxt, int nargs,
@@ -2268,6 +2299,12 @@ slaxExtMessage (xmlXPathParserContext *ctxt, int nargs,
      * If we made any output, toss it to the function
      */
     if (pb.pb_buf) {
+	/*
+	 * Remove the control characters from the string. This string is
+	 * output for the functions 'jcs:output', 'jcs:progress' and
+	 * 'jcs:trace'.
+	 */
+	slaxExtRemoveControlChars(pb.pb_buf);
 	func(pb.pb_buf);
 	xmlFree(pb.pb_buf);
     }
