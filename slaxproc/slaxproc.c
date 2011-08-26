@@ -44,6 +44,7 @@ static int indent;
 
 static int partial;
 static int use_debugger;
+static int empty_input;
 
 static inline int
 is_filename_std (const char *filename)
@@ -144,6 +145,19 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
     return 0;
 }
 
+static xmlDocPtr
+buildEmptyFile (void)
+{
+    xmlDocPtr docp;
+
+    docp = xmlNewDoc((const xmlChar *) XML_DEFAULT_VERSION);
+    if (docp) {
+	docp->standalone = 1;
+    }
+
+    return docp;
+}
+
 static int
 do_run (const char *name, const char *output, const char *input, char **argv)
 {
@@ -155,7 +169,8 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     xmlDocPtr res = NULL;
 
     scriptname = get_filename(name, &argv, -1);
-    input = get_filename(input, &argv, -1);
+    if (!empty_input)
+	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
     if (is_filename_std(scriptname))
@@ -176,7 +191,9 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	errx(1, "%d errors parsing script: '%s'",
 	     script ? script->errors : 1, scriptname);
 
-    if (html)
+    if (empty_input)
+	indoc = buildEmptyFile();
+    else if (html)
 	indoc = htmlReadFile(input, encoding, options);
     else
 	indoc = xmlReadFile(input, encoding, options);
@@ -283,6 +300,7 @@ print_help (void)
 
     printf("    Options:\n");
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
+    printf("\t--empty OR -E: give an empty document for input\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--help OR -h: display this help message\n");
@@ -339,6 +357,9 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_check;
+
+	} else if (streq(cp, "--empty") || streq(cp, "-E")) {
+	    empty_input = 1;
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;

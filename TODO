@@ -1,6 +1,13 @@
 
 The List of Things I Should Be Doing (if I weren't so busy making this list) 
 
+- New: need option to pass empty document as input ("-Z")
+
+- New: need ability to read dynamic shared libs to find extention
+  functions.  Assumable this will be found using the namespace URL
+  (URL-escaped) as the name of a .so in a fixed directory.  "-L"
+  would add alternative directories.
+
 - Test: portability
   - Have tested: cygwin, macos, freebsd, ubuntu
   - Need more
@@ -11,7 +18,7 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Code: functions to parse our arguments/table
 
-- slaxproc: -I <path>
+- slaxproc: -I <path> ala xsltproc's "--path"
 
 - sdb: Conditional breakpoints
 
@@ -46,3 +53,7 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
   This line does not:
       <func:result select="get:bug($x, $in">;
   It only says "XPath error : Invalid expression" with no file/line info.
+
+- Nit: semi-colon should be a valid top-level statement
+
+- Nit: should give an error for unterminated string (doesn't seem to work yet)
