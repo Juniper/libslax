@@ -165,11 +165,19 @@ typedef struct slaxDebugStackFrame_s {
 
 TAILQ_HEAD(slaxDebugStack_s, slaxDebugStackFrame_s) slaxDebugStack;
 
+typedef struct slaxDebugRestartItem_s {
+    TAILQ_ENTRY(slaxDebugRestartItem_s) sdr_link;
+    slaxRestartFunc sdr_func; /* Func to call at restart time */
+} slaxDebugRestartItem_t;
+
+TAILQ_HEAD(slaxDebugRestartList_s, slaxDebugRestartItem_s) slaxDebugRestartList;
+
 /*
  * Double linked list to hold the breakpoints
  */
 typedef struct slaxDebugBreakpoint_s {
     TAILQ_ENTRY(slaxDebugBreakpoint_s) dbp_link;
+    char *dbp_where;		/* Text name as given by user */
     xmlNodePtr dbp_inst;	/* Node we are breaking on */
     uint dbp_num;		/* Breakpoint number */
 } slaxDebugBreakpoint_t;
@@ -198,6 +206,29 @@ static slaxDebugState_t *
 slaxDebugGetState (void)
 {
     return &slaxDebugState;
+}
+
+void
+slaxRestartListAdd (slaxRestartFunc func)
+{
+    slaxDebugRestartItem_t *itemp;
+
+    itemp = malloc(sizeof(*itemp));
+    if (itemp) {
+	bzero(itemp, sizeof(*itemp));
+	itemp->sdr_func = func;
+	TAILQ_INSERT_TAIL(&slaxDebugRestartList, itemp, sdr_link);
+    }
+}
+
+void
+slaxRestartListCall (void)
+{
+    slaxDebugRestartItem_t *itemp;
+
+    TAILQ_FOREACH(itemp, &slaxDebugRestartList, sdr_link) {
+	itemp->sdr_func();
+    }
 }
 
 static xsltStylesheetPtr
@@ -414,6 +445,7 @@ slaxDebugClearBreakpoints (void)
 	dbp = TAILQ_FIRST(&slaxDebugBreakpoints);
 	if (dbp == NULL)
 	    break;
+	xmlFreeAndEasy(dbp->dbp_where);
 	TAILQ_REMOVE(&slaxDebugBreakpoints, dbp, dbp_link);
     }
 
@@ -434,8 +466,6 @@ slaxDebugClearStacktrace (void)
 	    break;
 	TAILQ_REMOVE(&slaxDebugStack, stp, st_link);
     }
-
-    slaxDebugBreakpointNumber = 0;
 }
 
 static void
@@ -633,7 +663,7 @@ slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
     }
 
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
-	if (dbp->dbp_inst == node) {
+	if (dbp->dbp_inst && dbp->dbp_inst == node) {
 	    if (reached) {
 		slaxOutput("Reached breakpoint %d, at %s:%ld", 
 				dbp->dbp_num, node->doc->URL,
@@ -727,6 +757,27 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
     return slaxDebugGetTemplateNodebyName(statep, spec);
 }
 
+/*
+ * Reload all breakpoints
+ */
+static void
+slaxDebugReloadBreakpoints (slaxDebugState_t *statep)
+{
+    slaxDebugBreakpoint_t *dbp;
+    xmlNodePtr node;
+
+    TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	dbp->dbp_inst = NULL;	/* No dangling references */
+
+	node = slaxDebugGetNode(statep, dbp->dbp_where);
+	if (node)
+	    dbp->dbp_inst = node;
+	else
+	    slaxOutput("Breakpoint target \"%s\" was not defined",
+		       dbp->dbp_where);
+    }
+}
+
 static int
 slaxDebugCheckAbbrev (const char *name, int min, const char *value, int len)
 {
@@ -774,6 +825,7 @@ slaxDebugCmdBreak (DC_ARGS)
 	return;
 
     bzero(bp, sizeof(*bp));
+    bp->dbp_where = xmlStrdup2(argv[1]);
     bp->dbp_num = ++slaxDebugBreakpointNumber;
     bp->dbp_inst = node;
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
@@ -941,13 +993,15 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
 	template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
-	slaxOutput("    #%d %s at %s:%ld",
-		   dbp->dbp_num,
-		   slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		   (dbp->dbp_inst && dbp->dbp_inst->doc)
-		   	? dbp->dbp_inst->doc->URL : null,
-		   xmlGetLineNo(dbp->dbp_inst));
-	}
+	if (dbp->dbp_inst)
+	    slaxOutput("    #%d %s at %s:%ld",
+		       dbp->dbp_num,
+		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
+		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : null,
+		       xmlGetLineNo(dbp->dbp_inst));
+	else
+	    slaxOutput("    #%d %s (orphaned)", dbp->dbp_num, dbp->dbp_where);
+    }
 
     if (hit == 0)
 	slaxOutput("No breakpoints.");
@@ -2104,6 +2158,7 @@ slaxDebugInit (void)
 	return FALSE;
     done_register = TRUE;
 
+    TAILQ_INIT(&slaxDebugRestartList);
     TAILQ_INIT(&slaxDebugBreakpoints);
     TAILQ_INIT(&slaxDebugStack);
 
@@ -2233,6 +2288,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 
 	    slaxProfClear();
+	    slaxRestartListCall();
 
 	} else if (statep->ds_flags & DSF_RELOAD) {
 	reload:
@@ -2244,10 +2300,12 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		save_style = NULL;
 	    }
 
+	    slaxRestartListCall();
+
 	    new_style = slaxDebugReload(scriptname);
 	    if (new_style) {
 		/* Out with the old */
-		slaxDebugClearBreakpoints();
+		slaxDebugReloadBreakpoints(statep);
 		slaxDebugClearStacktrace();
 		slaxProfClear();
 		slaxProfClose();

@@ -40,7 +40,10 @@ slaxNodeIs (xmlNodePtr nodep, const char *uri, const char *name)
 int
 slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
 {
-    return (nodep && nodep->ns && nodep->ns->href
+    if (nodep == NULL || nodep->type == XML_DOCUMENT_NODE)
+	return FALSE;
+
+    return (nodep->ns && nodep->ns->href
 	    && streq((const char *) nodep->name, name)
 	    && streq((const char *) nodep->ns->href, XSL_URI));
 }

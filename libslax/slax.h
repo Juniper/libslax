@@ -213,4 +213,8 @@ slaxLogEnableCallback (slaxLogCallback_t func, void *data);
 void
 slaxInitRandomizer (void);
 
+typedef void (*slaxRestartFunc)(void);
+void slaxRestartListAdd(slaxRestartFunc func);
+void slaxRestartListCall(void);
+
 #endif /* LIBSLAX_SLAX_H */
