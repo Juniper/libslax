@@ -2597,6 +2597,7 @@ check syntax.
       --check OR -c: check syntax and content for a SLAX script
 
       --debug OR -d: enable the SLAX/XSLT debugger
+      --empty OR -E: give an empty document for input
       --exslt OR -e: enable the EXSLT library
       --indent OR -g: indent output ala output-method/indent
       --help OR -h: display this help message
