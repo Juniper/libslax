@@ -1259,7 +1259,7 @@ slaxDebugCmdPrint (DC_ARGS)
     while (*cp && isspace((int) *cp))
 	cp += 1;
 
-    res = slaxDebugEvalXpath (statep, cp);
+    res = slaxDebugEvalXpath(statep, cp);
     if (res) {
 	slaxDebugOutputXpath(res, NULL, TRUE);
 	xmlXPathFreeObject(res);
