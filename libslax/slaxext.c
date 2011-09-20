@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <resolv.h>
+#include <sys/queue.h>
 
 #define SYSLOG_NAMES		/* Ask for all the names and typedef CODE */
 #include <sys/syslog.h>
@@ -2238,6 +2239,203 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
     goto fail2;
 }
 
+static void
+slaxExtStringToXml (xmlXPathParserContext *ctxt, int nargs)
+{
+    xsltTransformContextPtr tctxt;
+    xmlXPathObjectPtr ret = NULL;
+    xmlDocPtr xmlp = NULL;
+    xmlDocPtr container = NULL;
+    xmlNodePtr childp;
+    xmlChar *strstack[nargs];	/* Stack for strings */
+    int ndx;
+    int bufsiz;
+    char *buf;
+
+    tctxt = xsltXPathGetTransformContext(ctxt);
+    if (tctxt == NULL)
+	goto bail;
+
+    bzero(strstack, sizeof(strstack));
+    for (ndx = nargs - 1; ndx >= 0; ndx--) {
+	strstack[ndx] = xmlXPathPopString(ctxt);
+    }
+
+    for (bufsiz = 0, ndx = 0; ndx < nargs; ndx++)
+	if (strstack[ndx])
+	    bufsiz += xmlStrlen(strstack[ndx]);
+
+    buf = alloca(bufsiz + 1);
+    buf[bufsiz] = '\0';
+    for (bufsiz = 0, ndx = 0; ndx < nargs; ndx++) {
+	if (strstack[ndx]) {
+	    int len = xmlStrlen(strstack[ndx]);
+	    memcpy(buf + bufsiz, strstack[ndx], len);
+	    bufsiz += len;
+	}
+    }
+
+    /* buf now has the complete string */
+    xmlp = xmlReadMemory(buf, bufsiz, "raw_data", NULL, XML_PARSE_NOENT);
+    if (xmlp == NULL)
+	goto bail;
+
+    ret = xmlXPathNewNodeSet(NULL);
+    if (ret == NULL)
+	goto bail;
+
+    /* Fake an RVT to hold the output of the template */
+    container = xsltCreateRVT(tctxt);
+    if (container == NULL)
+	goto bail;
+
+    xsltRegisterLocalRVT(tctxt, container);
+
+    childp = xmlDocGetRootElement(xmlp);
+    if (childp) {
+	xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
+	if (newp) {
+	    xmlAddChild((xmlNodePtr) container, newp);
+	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
+	}
+    }
+
+bail:
+    if (ret != NULL)
+	valuePush(ctxt, ret);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+
+    if (xmlp)
+	xmlFreeDoc(xmlp);
+
+    for (ndx = nargs - 1; ndx >= 0; ndx--) {
+	if (strstack[ndx])
+	    xmlFree(strstack[ndx]);
+    }
+}
+
+typedef struct data_node_s {
+    TAILQ_ENTRY(data_node_s) dn_link; /* Next session */
+    int dn_len; 		/* Length of the chunk of data */
+    char dn_data[0];		/* Data follows this header */
+} data_node_t;
+
+typedef TAILQ_HEAD(data_chain_s, data_node_s) data_chain_t;
+
+static int
+slaxExtRawwriteCallback (void *opaque, const char *buf, int len)
+{
+    data_chain_t *listp = opaque;
+    data_node_t *dnp;
+
+    if (listp == NULL)
+	return 0;
+
+    dnp = xmlMalloc(sizeof(*dnp) + len);
+    if (dnp) {
+	dnp->dn_len = len;
+	memcpy(dnp->dn_data, buf, len + 1);
+	TAILQ_INSERT_TAIL(listp, dnp, dn_link);
+    }
+
+    return len;
+}
+
+static void
+slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlSaveCtxtPtr handle;
+    data_chain_t list;
+    data_node_t *dnp;
+    xmlXPathObjectPtr xop;
+    xmlXPathObjectPtr objstack[nargs];	/* Stack for objects */
+    int ndx;
+    char *buf;
+    int bufsiz;
+    int hit = 0;
+
+    TAILQ_INIT(&list);
+
+    bzero(objstack, sizeof(objstack));
+    for (ndx = nargs - 1; ndx >= 0; ndx--) {
+	objstack[ndx] = valuePop(ctxt);
+	if (objstack[ndx])
+	    hit += 1;
+    }
+
+    /* If the args are empty, let's get out now */
+    if (hit == 0) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    /* We make a custom IO handler to save content into a list of strings */
+    handle = xmlSaveToIO(slaxExtRawwriteCallback, NULL, &list, NULL,
+                 XML_SAVE_FORMAT | XML_SAVE_NO_DECL | XML_SAVE_NO_XHTML);
+    if (handle == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+	goto bail;
+    }
+
+    for (ndx = 0; ndx < nargs; ndx++) {
+	xop = objstack[ndx];
+	if (xop == NULL)
+	    continue;
+
+	if (xop->nodesetval) {
+	    xmlNodeSetPtr tab = xop->nodesetval;
+	    int i;
+	    for (i = 0; i < tab->nodeNr; i++) {
+		xmlNodePtr node = tab->nodeTab[i];
+
+		xmlSaveTree(handle, node);
+		xmlSaveFlush(handle);
+	    }
+	}
+    }
+
+    xmlSaveClose(handle);	/* This frees is also */
+
+    /* Now we turn the saved data from a linked list into a single string */
+    bufsiz = 0;
+    TAILQ_FOREACH(dnp, &list, dn_link) {
+	bufsiz += dnp->dn_len;
+    }
+
+    /* If the objects are empty, let's get out now */
+    if (bufsiz == 0) {
+	xmlXPathReturnEmptyString(ctxt);
+	goto bail;
+    }
+
+    buf = xmlMalloc(bufsiz + 1);
+    if (buf == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+	goto bail;
+    }
+	
+    bufsiz = 0;
+    TAILQ_FOREACH(dnp, &list, dn_link) {
+	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
+	bufsiz += dnp->dn_len;
+    }
+
+    valuePush(ctxt, xmlXPathWrapCString(buf));
+
+ bail:
+    for (;;) {
+	dnp = TAILQ_FIRST(&list);
+        if (dnp == NULL)
+            break;
+        TAILQ_REMOVE(&list, dnp, dn_link);
+	xmlFree(dnp);
+    }
+
+    for (ndx = 0; ndx < nargs; ndx++)
+	xmlXPathFreeObject(objstack[ndx]);
+}
+
 /*
  * Remove illegal control characters from the input string.
  */
@@ -2469,7 +2667,9 @@ slaxExtRegister (void)
     slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
     slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
+    slaxRegisterFunction(SLAX_URI, "string-to-xml", slaxExtStringToXml);
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
+    slaxRegisterFunction(SLAX_URI, "xml-to-string", slaxExtXmlToString);
 
     slaxExtRegisterOther(NULL);
 

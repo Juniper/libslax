@@ -757,3 +757,75 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 	slaxStringFree(esp);
     }
 }
+
+/*
+ * In libxslt while evaluating global variables, when a global
+ * variable needs to evaluate another global variable it deletes the
+ * node-set returned by the extension function. For example,
+ *
+ * var $var1 = jcs:split();
+ * var $var2 = $var1;
+ *
+ * In the above if $var2 is evaluated before $var1 (libxslt uses
+ * hashes for evaluation, so the evaluation order depends on the name
+ * of the variables) while evaluating $var2, since $var1 is not
+ * evaluated yet, it will be recursively evaluated, in this scenario
+ * the node-set returned by slax:split() is getting deleted.
+ *
+ * This is PR in libxslt 
+ * https://bugzilla.gnome.org/show_bug.cgi?id=495995
+ * 
+ * The fix in libxslt for this is calling 
+ * xsltExtensionInstructionResultRegister() in the extension functions.
+ *
+ * This function set the preserve flag so that the garbage collector
+ * won't free the RVT (which has the node-set), till the execution of
+ * template is over.
+ *
+ * template my_templ() {
+ *     for-each (ten-iteration) {
+ *         var $ret = jcs:invoke('get-software-information');
+ *     }
+ * }
+ *
+ * The node-set returned by the jcs:invoke() in all the ten-iterations
+ * will be finally freed only when the execution of whole 'my_templ'
+ * is over.  Unnecessarily it is occupying the space for node-set
+ * returned in each iteration even after the scope is over. This may
+ * be problem for our high-intensity scripts, where a single for-each
+ * can have multiple iterations and each iteration jcs:invoke can
+ * return huge node-set.
+ *
+ * The fix we are taking to this is to call
+ * xsltExtensionInstructionResultRegister() only for global
+ * variables. So, while executing the extension functions we need to
+ * check whether it is evaluated for global or local variable. There
+ * is no function in libxslt which tells us this. The transformation
+ * context has member to hold the local variable, this member will be
+ * NULL when evaluating global variables, we can use that to check
+ * whether the evaluation is for global or local.  All the global
+ * variables will be evaluated before any local variable
+ * evaluation. With the node-set returned for the global var will be
+ * deleted in the final stage when full execution of script is over.
+ *
+ * Set the preserve bit only for gloabl variables.
+ */
+void
+slaxSetPreserveFlag (xsltTransformContextPtr tctxt, xmlXPathObjectPtr ret)
+{
+    xmlNodePtr parent;
+
+    if (tctxt->vars) {
+	if (tctxt == NULL || tctxt->inst == NULL)
+	    return;
+
+	parent = tctxt->inst->parent;
+	if (parent == NULL || parent->type != XML_ELEMENT_NODE)
+	    return;
+	
+	if (!slaxNodeIsXsl(parent, ELT_STYLESHEET))
+	    return;
+    }
+
+    xsltExtensionInstructionResultRegister(tctxt, ret);
+}

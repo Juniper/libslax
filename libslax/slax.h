@@ -32,22 +32,22 @@ typedef int (*slaxWriterFunc_t)(void *data, const char *fmt, ...);
  * fprintf-like callback function.
  */
 int
-slaxWriteDoc(slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
 	     int partial, const char *);
 
 /*
  * Read a SLAX stylesheet from an open file descriptor.
  * Written as a clone of libxml2's xmlCtxtReadFd().
  */
-xmlDocPtr
-slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd,
+struct _xmlDoc *
+slaxCtxtReadFd(struct _xmlParserCtxt *ctxt, int fd,
 	       const char *URL, const char *encoding, int options);
 
 /*
  * Read a SLAX file from an open file pointer
  */
-xmlDocPtr
-slaxLoadFile(const char *, FILE *, xmlDictPtr, int);
+struct _xmlDoc *
+slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
@@ -60,13 +60,13 @@ slaxSetTextAsElement (int enable);
  * Dump a formatted version of the XSL tree to a file
  */
 void
-slaxDumpToFd (int fd, xmlDocPtr docp, int);
+slaxDumpToFd (int fd, struct _xmlDoc *docp, int);
 
 /*
  * Dump a formatted version of the XSL tree to stdout
  */
 void
-slaxDump (xmlDocPtr docp);
+slaxDump (struct _xmlDoc *docp);
 
 void
 slaxSetIndent (int indent);
@@ -78,7 +78,8 @@ slaxSetSpacesAroundAttributeEquals (int spaces);
  * Tracing
  */
 
-typedef void (*slaxTraceCallback_t)(void *, xmlNodePtr, const char *fmt, ...);
+typedef void (*slaxTraceCallback_t)(void *, struct _xmlNode *,
+				    const char *fmt, ...);
 
 /**
  * Enable tracing with a callback
@@ -147,7 +148,7 @@ slaxDebugInit (void);
  * @stylep the stylesheet aka script
  */
 void
-slaxDebugSetStylesheet (xsltStylesheetPtr stylep);
+slaxDebugSetStylesheet (struct _xsltStylesheet *stylep);
 
 /**
  * Set a search path for included and imported files
@@ -168,8 +169,9 @@ slaxDebugSetIncludes (const char **includes);
  * @returns output document
  */
 void
-slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
-			  const char *docname, xmlDocPtr doc,
+slaxDebugApplyStylesheet (const char *scriptname,
+			  struct _xsltStylesheet *style,
+			  const char *docname, struct _xmlDoc *doc,
 			  const char **params);
 
 /*
@@ -216,5 +218,9 @@ slaxInitRandomizer (void);
 typedef void (*slaxRestartFunc)(void);
 void slaxRestartListAdd(slaxRestartFunc func);
 void slaxRestartListCall(void);
+
+void
+slaxSetPreserveFlag (struct _xsltTransformContext *tctxt,
+		     struct _xmlXPathObject *ret);
 
 #endif /* LIBSLAX_SLAX_H */
