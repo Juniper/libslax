@@ -57,3 +57,10 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - Nit: semi-colon should be a valid top-level statement
 
 - Nit: should give an error for unterminated string (doesn't seem to work yet)
+
+- New: need to be able to dynamically load extension functions
+
+- New: Need -I paths for import/include files
+
+- New: Need ./configure option to turn off -Werror for platforms I
+  don't care about
