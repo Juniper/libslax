@@ -13,7 +13,8 @@ libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
 slaxinc_HEADERS = \
      slax.h \
-     slaxconfig.h
+     slaxconfig.h \
+     slaxdata.h
 
 noinst_HEADERS = \
     slaxinternals.h \

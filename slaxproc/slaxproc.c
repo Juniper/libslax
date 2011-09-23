@@ -29,12 +29,9 @@
 static const char *params[MAX_PARAMETERS + 1];
 static int nbparams;
 
-#if 0
-static xmlChar *strparams[MAX_PARAMETERS + 1];
-static int nbstrparams;
-static xmlChar *paths[MAX_PATHS + 1];
+static char *paths[MAX_PATHS + 1];
 static int nbpaths;
-#endif
+static xmlExternalEntityLoader defaultEntityLoader;
 
 static int options = XSLT_PARSE_OPTIONS;
 static int html;
@@ -45,6 +42,90 @@ static int indent;
 static int partial;
 static int use_debugger;
 static int empty_input;
+
+/*
+ * Entity loading control and customization (lifted from xsltproc)
+ */
+static void
+slaxAddIncludePath (const char *path)
+{
+    if (path == NULL || *path == '\0')
+	return;
+
+    if (nbpaths >= MAX_PATHS) {
+	fprintf(stderr, "MAX_PATHS reached: too many paths\n");
+    } else {
+	paths[nbpaths] = xmlStrdup2(path);
+	if (paths[nbpaths] != NULL)
+	    nbpaths += 1;
+    }
+}
+
+static xmlParserInputPtr 
+slaxExternalEntityLoader (const char *url, const char *id,
+			      xmlParserCtxtPtr ctxt)
+{
+    xmlParserInputPtr ret;
+    warningSAXFunc warning = NULL;
+    int i;
+    const char *lastsegment = url;
+    char *buf = NULL;
+    int bufsiz = 0;
+
+    if (nbpaths > 0) {
+	const char *iter;
+	for (iter = url; *iter != 0; iter++)
+	    if (*iter == '/')
+		lastsegment = iter + 1;
+    }
+
+    if (ctxt != NULL && ctxt->sax != NULL) {
+	warning = ctxt->sax->warning;
+	ctxt->sax->warning = NULL;
+    }
+
+    if (defaultEntityLoader) {
+	ret = defaultEntityLoader(url, id, ctxt);
+	if (ret)
+	    goto success;
+    }
+
+    for (i = 0; i < nbpaths;i++) {
+	char *dir = paths[i];
+	int dirlen = strlen(dir);
+	int lastlen = strlen(lastsegment);
+	int len = dirlen + lastlen + 2;
+
+	if (len > bufsiz) {
+	    bufsiz = (len + BUFSIZ - 1) & ~(BUFSIZ - 1);
+	    buf = alloca(bufsiz);
+	}
+
+	memcpy(buf, dir, dirlen);
+	buf[dirlen] = '/';
+	memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
+
+	ret = defaultEntityLoader((const char *) buf, id, ctxt);
+	if (ret)
+	    goto success;
+    }
+
+    /* If there's a warning function, use it and restore it */
+    if (warning) {
+	ctxt->sax->warning = warning;
+	if (url)
+	    warning(ctxt, "failed to load external entity \"%s\"\n", url);
+	else if (id)
+	    warning(ctxt, "failed to load external entity \"%s\"\n", id);
+    }
+
+    return NULL;
+
+ success:
+    if (warning)
+	ctxt->sax->warning = warning;
+    return ret;
+}
 
 static inline int
 is_filename_std (const char *filename)
@@ -305,6 +386,7 @@ print_help (void)
     printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
+    printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
     printf("\t--no-randomize: do not initialize the random number generator\n");
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
@@ -410,6 +492,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
 
+	} else if (streq(cp, "--include") || streq(cp, "-I")) {
+	    slaxAddIncludePath(*++argv);
+
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
 
@@ -454,6 +539,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio();
+
+    defaultEntityLoader = xmlGetExternalEntityLoader();
+    xmlSetExternalEntityLoader(slaxExternalEntityLoader);
 
     if (logger)
 	slaxLogEnable(TRUE);

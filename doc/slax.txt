@@ -2557,6 +2557,198 @@ SLAX version 1.1 implies XML version 1.0 and XSLT version 1.1.
 In addition, the "xsl" namespace is implicitly defined (as
 'xmlns:xsl="http://www.w3.org/1999/XSL/Transform"').
 
+* SLAX Functions
+
+SLAX includes a number of utility functions, both for internal and
+external use.  This section documents the external functions.
+
+** SLAX External Functions
+
+*** slax:break-lines
+
+Use the slax:break-lines function to break multi-line text content
+into multiple elements, each containing a single line of text.
+
+    SYNTAX::
+        node-set slax:break-lines(node-set)
+
+    EXAMPLE::
+        var $lines = slax:break-lines(.//p);
+        for-each ($lines) {
+            if (start-with("pfe:", .)) {
+                <output> .;
+            }
+        }
+
+*** slax:dampen
+
+Use the slax:dampen() function to limit the rate of occurrence of a
+named event.  If slax:dampen() is called more than "max" times in
+"time-period" minutes, it will return "true", allowing the caller to
+react to this condition.
+
+    SYNTAX::
+        boolean slax:dampen(name, max, time-period)
+
+    EXAMPLE::
+        if (slax:dampen("reset", 2, 10)) {
+            message "reset avoided";
+        } else {
+            <reset>;
+        }
+
+*** slax:evaluate
+
+Use the slax:evaluate() function to evaluate a SLAX expression.  This
+permits expressions using the extended syntax that SLAX provides in
+addition to what is allowed in XPath (see ^expressions^).  The
+results of the expression are returned.
+
+    SYNTAX::
+        object slax:evaluate(expression)
+
+    EXAMPLE::
+        var $result = slax:evaluate("expr[name == '&']");
+
+*** slax:first-of
+
+Use the slax:first-of() function to find the first value present in a
+test of arguments.  The first non-empty or non-zero length string will
+be returned.
+
+    SYNTAX::
+        object slax:first-of(object+)
+
+    EXAMPLE::
+        var $title = slax:first-of(@title, $title, "Unknown");
+
+*** slax:get-command
+
+Use the slax:get-command() function to return an input string provided
+by the user in response to a given prompt string.  If the "readline"
+library was found at install time, the returned value is entered in
+the readline history, and will be available via the readline history
+keystrokes (Control-P and Control-N).
+
+    SYNTAX::
+        string slax:get-command(prompt)
+
+    EXAMPLE::
+        var $response = slax:get-command("# ");
+
+*** slax:get-input
+
+Use the slax:get-input() function to return an input string provided
+by the user in response to a given prompt string.
+
+    SYNTAX::
+        string slax:get-input(prompt)
+
+    EXAMPLE::
+        var $response = slax:get-input("Enter peer address: ");
+
+*** slax:get-secret
+
+Use the slax:get-secret() function to return an input string provided
+by the user in response to a given prompt string.  Any text entered by
+the user will not be displayed or echoed back to the user, making this
+function suitable for obtaining secret information such as passwords.
+
+    SYNTAX::
+        string slax:get-secret(prompt)
+
+    EXAMPLE::
+        var $response = slax:get-secret("Enter password: ");
+
+*** slax:is-empty
+
+Use the slax:is-empty() function to determine if a node-set or RTF is
+truly empty.
+
+    SYNTAX::
+        boolean slax:is-empty(object)
+
+    EXAMPLE::
+        if (slax:is-empty($result)) {
+            message "missing result";
+        }
+
+*** slax:printf
+
+Use the slax:printf() function to format text in the manner of the
+standard "C" "printf" function (printf(3)).  The normal printf format
+values are honored, as are a number of "%j" extensions.
+
+|-------------+-------------------------------------|
+| Format      | Description                         |
+|-------------+-------------------------------------|
+| "%jcs"      | Capitalize first letter             |
+| "%jt{TAG}s" | Prepend TAG if string is not empty  |
+| "%j1s"      | Skip field if value has not changed |
+|-------------+-------------------------------------|
+
+    SYNTAX::
+        string slax:printf(format, string*)
+
+    EXAMPLE::
+        for-each (article) {
+            for-each (author) {
+                message  slax:printf("%8j1s%8s%8jcj1s %jt{b:}s",
+                                    ../title, name, dept, born);
+            }
+        }
+
+*** slax:regex
+
+    SYNTAX::
+        node-set slax:regex(pattern, string, opts?)
+
+Match a regex, returning a node set of the full string matched plus any parenthesized matches.  Options include "b", "i", "n", "^", and "$", for boolean results, ICASE, NEWLINE, NOTBOL, and NOTEOL.
+
+*** slax:sleep
+
+    SYNTAX::
+        void slax:sleep(seconds, milliseconds)
+
+Sleep for a given time period.
+
+*** slax:split
+
+    SYNTAX::
+        node-set slax:split(pattern, string, limit)
+
+Break a string into a set of elements, up to the limit times, at the pattern.
+
+*** slax:sysctl
+
+    SYNTAX::
+        string slax:sysctl(name, format)
+
+Retrieve a sysctl variable.  Format is "i" or "s".
+
+*** slax:string-to-xml
+
+    SYNTAX::
+        node-set slax:string-to-xml(string+)
+
+Return parsed XML of concatenated arguments.
+
+*** slax:syslog
+
+    SYNTAX::
+        void slax:syslog(priority, string+)
+
+Syslog the concatenation of set of arguments.
+
+*** slax:xml-to-string
+
+    SYNTAX::
+        string slax:xml-to-string(node-set+)
+
+Return stringified XML hierarchies.
+
+
+
 * The libslax Distribution
 
 SLAX is available as an open-source project with the "New BSD"

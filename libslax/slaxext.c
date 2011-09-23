@@ -37,6 +37,8 @@
 #include <resolv.h>
 #include <sys/queue.h>
 
+#include <libslax/slaxdata.h>
+
 #define SYSLOG_NAMES		/* Ask for all the names and typedef CODE */
 #include <sys/syslog.h>
 
@@ -2315,29 +2317,15 @@ bail:
     }
 }
 
-typedef struct data_node_s {
-    TAILQ_ENTRY(data_node_s) dn_link; /* Next session */
-    int dn_len; 		/* Length of the chunk of data */
-    char dn_data[0];		/* Data follows this header */
-} data_node_t;
-
-typedef TAILQ_HEAD(data_chain_s, data_node_s) data_chain_t;
-
 static int
 slaxExtRawwriteCallback (void *opaque, const char *buf, int len)
 {
-    data_chain_t *listp = opaque;
-    data_node_t *dnp;
+    slax_data_list_t *listp = opaque;
 
     if (listp == NULL)
 	return 0;
 
-    dnp = xmlMalloc(sizeof(*dnp) + len);
-    if (dnp) {
-	dnp->dn_len = len;
-	memcpy(dnp->dn_data, buf, len + 1);
-	TAILQ_INSERT_TAIL(listp, dnp, dn_link);
-    }
+    slaxDataListAddLen(listp, buf, len);
 
     return len;
 }
@@ -2346,8 +2334,8 @@ static void
 slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
 {
     xmlSaveCtxtPtr handle;
-    data_chain_t list;
-    data_node_t *dnp;
+    slax_data_list_t list;
+    slax_data_node_t *dnp;
     xmlXPathObjectPtr xop;
     xmlXPathObjectPtr objstack[nargs];	/* Stack for objects */
     int ndx;
@@ -2355,7 +2343,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
     int bufsiz;
     int hit = 0;
 
-    TAILQ_INIT(&list);
+    slaxDataListInit(&list);
 
     bzero(objstack, sizeof(objstack));
     for (ndx = nargs - 1; ndx >= 0; ndx--) {
@@ -2399,7 +2387,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
 
     /* Now we turn the saved data from a linked list into a single string */
     bufsiz = 0;
-    TAILQ_FOREACH(dnp, &list, dn_link) {
+    SLAXDATALIST_FOREACH(dnp, &list, dn_link) {
 	bufsiz += dnp->dn_len;
     }
 
@@ -2416,7 +2404,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
     }
 	
     bufsiz = 0;
-    TAILQ_FOREACH(dnp, &list, dn_link) {
+    SLAXDATALIST_FOREACH(dnp, &list, dn_link) {
 	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
 	bufsiz += dnp->dn_len;
     }
@@ -2424,13 +2412,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
     valuePush(ctxt, xmlXPathWrapCString(buf));
 
  bail:
-    for (;;) {
-	dnp = TAILQ_FIRST(&list);
-        if (dnp == NULL)
-            break;
-        TAILQ_REMOVE(&list, dnp, dn_link);
-	xmlFree(dnp);
-    }
+    slaxDataListClean(&list);
 
     for (ndx = 0; ndx < nargs; ndx++)
 	xmlXPathFreeObject(objstack[ndx]);

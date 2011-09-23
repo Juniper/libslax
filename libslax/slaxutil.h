@@ -6,6 +6,9 @@
  * See ../Copyright for the status of this software
  */
 
+#ifndef LIBSLAX_SLAXUTIL_H
+#define LIBSLAX_SLAXUTIL_H
+
 #include <sys/time.h>
 
 #ifndef TRUE
@@ -50,9 +53,9 @@ typedef union {
 /*
  * NOTE:
  *     This is EVIL.  The ONLY time you cast from a const is when calling some
- *     legacy function that does not require const:
- *          - you KNOW does not modify the data
- *          - you can't change
+ *     legacy function that does not allow const and:
+ *          - you KNOW it does not modify the data
+ *          - you can't change it
  *     That is why this is provided.  In that situation, the legacy API should
  *     have been written to accept const argument.  If you can change the 
  *     function you are calling to accept const, do THAT and DO NOT use this
@@ -151,3 +154,5 @@ strerror (int num)
 }
 
 #endif /* HAVE_STRERROR */
+
+#endif /* LIBSLAX_SLAXUTIL_H */

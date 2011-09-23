@@ -1,8 +1,6 @@
 
 The List of Things I Should Be Doing (if I weren't so busy making this list) 
 
-- New: need option to pass empty document as input ("-Z")
-
 - New: need ability to read dynamic shared libs to find extention
   functions.  Assumable this will be found using the namespace URL
   (URL-escaped) as the name of a .so in a fixed directory.  "-L"
@@ -14,7 +12,7 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Doc: Make man page for libslax (public API)
 
-- Feature: parser issue warnings if 1.1 features with 1.0 version
+- Feature: parser issue warnings if 1.1 features with "version 1.0;"
 
 - Code: functions to parse our arguments/table
 
@@ -57,10 +55,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - Nit: semi-colon should be a valid top-level statement
 
 - Nit: should give an error for unterminated string (doesn't seem to work yet)
-
-- New: need to be able to dynamically load extension functions
-
-- New: Need -I paths for import/include files
 
 - New: Need ./configure option to turn off -Werror for platforms I
   don't care about

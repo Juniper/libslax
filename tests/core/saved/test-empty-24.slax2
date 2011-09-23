@@ -1,0 +1,35 @@
+/* Machine Crafted with Care (tm) by slaxWriter */
+version 1.1;
+
+match / {
+    <out> {
+        var $test = "<test><one>1</one></test>";
+        var $res = slax:string-to-xml($test);
+        var $r2 = slax:string-to-xml("<a>", "<b>", "<c>", $test, "</c>", "</b>", "</a>");
+        
+        <one> {
+            <res> {
+                copy-of $res;
+            }
+            <r2> {
+                copy-of $r2;
+            }
+        }
+        var $ores = slax:xml-to-string($res);
+        var $or2 = slax:xml-to-string($r2);
+        <two> {
+            <ores> $ores;
+            <or2> $or2;
+        }
+        var $xres = slax:string-to-xml($ores);
+        var $xr2 = slax:string-to-xml($or2);
+        <three> {
+            <xres> {
+                copy-of $xres;
+            }
+            <xr2> {
+                copy-of $xr2;
+            }
+        }
+    }
+}
