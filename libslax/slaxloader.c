@@ -33,7 +33,6 @@ static int slaxEnabled;		/* Global enable (SLAX_*) */
 const xmlChar slaxNull[] = "";
 
 static slax_data_list_t slaxIncludes;
-static xmlExternalEntityLoader slaxDefaultEntityLoader;
 
 /*
  * Add a directory to the list of directories searched for files
@@ -42,75 +41,6 @@ void
 slaxAddInclude (const char *dir)
 {
     slaxDataListAddNul(&slaxIncludes, dir);
-}
-
-/*
- * Define a custom "external entity" loader that honors our search paths
- */
-static xmlParserInputPtr 
-slaxExternalEntityLoader (const char *url, const char *id,
-			      xmlParserCtxtPtr ctxt)
-{
-    xmlParserInputPtr ret;
-    warningSAXFunc warning = NULL;
-    const char *lastsegment = url;
-    char *buf = NULL;
-    int bufsiz = 0;
-    const char *iter;
-    slax_data_node_t *dnp;
-
-    if (ctxt != NULL && ctxt->sax != NULL) {
-	warning = ctxt->sax->warning;
-	ctxt->sax->warning = NULL;
-    }
-
-    if (slaxDefaultEntityLoader) {
-	ret = slaxDefaultEntityLoader(url, id, ctxt);
-	if (ret)
-	    goto success;
-    }
-
-    if (TAILQ_EMPTY(&slaxIncludes))
-	goto fail;
-
-    for (iter = url; *iter != 0; iter++)
-	if (*iter == '/')
-	    lastsegment = iter + 1;
-
-    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
-	char *dir = dnp->dn_data;
-	int dirlen = strlen(dir);
-	int lastlen = strlen(lastsegment);
-	int len = dirlen + lastlen + 2;
-
-	if (len > bufsiz) {
-	    bufsiz = len + 1;
-	    buf = alloca(bufsiz);
-	}
-
-	memcpy(buf, dir, dirlen);
-	buf[dirlen] = '/';
-	memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
-
-	ret = slaxDefaultEntityLoader((const char *) buf, id, ctxt);
-	if (ret)
-	    goto success;
-    }
-
-    /* If there's a warning function, use it and restore it */
- fail:
-    if (warning) {
-	ctxt->sax->warning = warning;
-	warning(ctxt, "failed to load external entity \"%s\"\n",
-		url ?: id ?: "unknown");
-    }
-
-    return NULL;
-
- success:
-    if (warning)
-	ctxt->sax->warning = warning;
-    return ret;
 }
 
 /**
@@ -855,7 +785,6 @@ slaxEnable (int enable)
 	xsltSetLoaderFunc(NULL);
 	if (slaxEnabled) {
 	    slaxDataListClean(&slaxIncludes);
-	    xmlSetExternalEntityLoader(slaxDefaultEntityLoader);
 	}
 
 	slaxEnabled = 0;
@@ -866,9 +795,6 @@ slaxEnable (int enable)
 	/* Register EXSLT function functions so our function keywords work */
 	exsltFuncRegister();
 
-	slaxDefaultEntityLoader = xmlGetExternalEntityLoader();
-	xmlSetExternalEntityLoader(slaxExternalEntityLoader);
-
 	slaxDataListInit(&slaxIncludes);
     }
 
@@ -877,11 +803,6 @@ slaxEnable (int enable)
      */
     if (slaxOriginalXsltDocDefaultLoader == NULL)
 	slaxOriginalXsltDocDefaultLoader = xsltDocDefaultLoader;
-
-    if (slaxDefaultEntityLoader == NULL) {
-	slaxDefaultEntityLoader = xmlGetExternalEntityLoader();
-	xmlSetExternalEntityLoader(slaxExternalEntityLoader);
-    }
 
     xsltSetLoaderFunc(enable ? slaxLoader : NULL);
     slaxEnabled = enable;
