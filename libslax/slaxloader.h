@@ -7,7 +7,7 @@
  */
 
 /* Stub to handle xmlChar strings in "?:" expressions */
-extern const xmlChar null[];
+extern const xmlChar slaxNull[];
 
 /**
  * Check the version string.  The only supported versions are "1.0" and "1.1".
@@ -90,3 +90,9 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 char *
 slaxSlaxToXpath (const char *filename, int lineno,
 		 const char *slax_expr, int *errorsp);
+
+/*
+ * Add a directory to the list of directories searched for files
+ */
+void
+slaxAddInclude (const char *dir);

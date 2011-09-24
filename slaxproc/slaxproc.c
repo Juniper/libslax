@@ -10,6 +10,7 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
+#include <sys/queue.h>
 #include "config.h"
 
 #include <libxslt/transform.h>
@@ -17,21 +18,16 @@
 #include <libxslt/xsltutils.h>
 #include <libxml/globals.h>
 #include <libexslt/exslt.h>
+#include <libslax/slaxdata.h>
 
 #include <err.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdio.h>
 
-#define MAX_PARAMETERS 64
-#define MAX_PATHS 64
-
-static const char *params[MAX_PARAMETERS + 1];
+static slax_data_list_t plist;
 static int nbparams;
-
-static char *paths[MAX_PATHS + 1];
-static int nbpaths;
-static xmlExternalEntityLoader defaultEntityLoader;
+static const char **params;
 
 static int options = XSLT_PARSE_OPTIONS;
 static int html;
@@ -42,90 +38,6 @@ static int indent;
 static int partial;
 static int use_debugger;
 static int empty_input;
-
-/*
- * Entity loading control and customization (lifted from xsltproc)
- */
-static void
-slaxAddIncludePath (const char *path)
-{
-    if (path == NULL || *path == '\0')
-	return;
-
-    if (nbpaths >= MAX_PATHS) {
-	fprintf(stderr, "MAX_PATHS reached: too many paths\n");
-    } else {
-	paths[nbpaths] = xmlStrdup2(path);
-	if (paths[nbpaths] != NULL)
-	    nbpaths += 1;
-    }
-}
-
-static xmlParserInputPtr 
-slaxExternalEntityLoader (const char *url, const char *id,
-			      xmlParserCtxtPtr ctxt)
-{
-    xmlParserInputPtr ret;
-    warningSAXFunc warning = NULL;
-    int i;
-    const char *lastsegment = url;
-    char *buf = NULL;
-    int bufsiz = 0;
-
-    if (nbpaths > 0) {
-	const char *iter;
-	for (iter = url; *iter != 0; iter++)
-	    if (*iter == '/')
-		lastsegment = iter + 1;
-    }
-
-    if (ctxt != NULL && ctxt->sax != NULL) {
-	warning = ctxt->sax->warning;
-	ctxt->sax->warning = NULL;
-    }
-
-    if (defaultEntityLoader) {
-	ret = defaultEntityLoader(url, id, ctxt);
-	if (ret)
-	    goto success;
-    }
-
-    for (i = 0; i < nbpaths;i++) {
-	char *dir = paths[i];
-	int dirlen = strlen(dir);
-	int lastlen = strlen(lastsegment);
-	int len = dirlen + lastlen + 2;
-
-	if (len > bufsiz) {
-	    bufsiz = (len + BUFSIZ - 1) & ~(BUFSIZ - 1);
-	    buf = alloca(bufsiz);
-	}
-
-	memcpy(buf, dir, dirlen);
-	buf[dirlen] = '/';
-	memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
-
-	ret = defaultEntityLoader((const char *) buf, id, ctxt);
-	if (ret)
-	    goto success;
-    }
-
-    /* If there's a warning function, use it and restore it */
-    if (warning) {
-	ctxt->sax->warning = warning;
-	if (url)
-	    warning(ctxt, "failed to load external entity \"%s\"\n", url);
-	else if (id)
-	    warning(ctxt, "failed to load external entity \"%s\"\n", id);
-    }
-
-    return NULL;
-
- success:
-    if (warning)
-	ctxt->sax->warning = warning;
-    return ret;
-}
 
 static inline int
 is_filename_std (const char *filename)
@@ -409,6 +321,10 @@ main (int argc UNUSED, char **argv)
     FILE *trace_fp = NULL;
     int randomize = 1;
     int logger = FALSE;
+    slax_data_node_t *dnp;
+    int i;
+
+    slaxDataListInit(&plist);
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -467,9 +383,9 @@ main (int argc UNUSED, char **argv)
 	    tvalue[plen + 1] = quote;
 	    tvalue[plen + 2] = '\0';
 
-	    int pnum = nbparams++;
-	    params[pnum++] = pname;
-	    params[pnum] = tvalue;
+	    nbparams += 1;
+	    slaxDataListAddNul(&plist, pname);
+	    slaxDataListAddNul(&plist, tvalue);
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = *++argv;
@@ -493,7 +409,7 @@ main (int argc UNUSED, char **argv)
 	    name = *++argv;
 
 	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxAddIncludePath(*++argv);
+	    slaxAddInclude(*++argv);
 
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
@@ -521,6 +437,13 @@ main (int argc UNUSED, char **argv)
 	}
     }
 
+    params = alloca(nbparams * 2 * sizeof(*params) + 1);
+    i = 0;
+    SLAXDATALIST_FOREACH(dnp, &plist) {
+	params[i++] = dnp->dn_data;
+    }
+    params[i] = NULL;
+
     if (func == NULL)
 	func = do_run; /* the default action */
 
@@ -539,9 +462,6 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio();
-
-    defaultEntityLoader = xmlGetExternalEntityLoader();
-    xmlSetExternalEntityLoader(slaxExternalEntityLoader);
 
     if (logger)
 	slaxLogEnable(TRUE);

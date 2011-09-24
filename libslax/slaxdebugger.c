@@ -194,7 +194,7 @@ int slaxDebugDisplayMode;
 #define DEBUG_MODE_EMACS	2 /* gdb/emacs mode */
 #define DEBUG_MODE_PROFILER	3 /* Profiler only */
 
-#define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : null)
+#define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : slaxNull)
 
 /**
  * Return the current debugger state object.  This is currently
@@ -415,7 +415,7 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 		       xpath->nodesetval ? "" : " [null]",
 		       ns ? ns->nodeNr : 0,
 		       ns ? " <" : "",
-		       ns ? ns->nodeTab[0]->name : null,
+		       ns ? ns->nodeTab[0]->name : slaxNull,
 		       ns ? "> ...." : "");
 	}
 	break;
@@ -708,11 +708,11 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 
     slaxOutput("callflow: %u: %s <%s%s%s>%s%s at %s%s%ld",
 	statep->ds_stackdepth, tag,
-	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
+	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : slaxNull,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
 	NAME(inst), template ? " in " : "",
 	template ? slaxDebugTemplateInfo(template, buf, sizeof(buf)) : "",
-	(inst->doc && inst->doc->URL) ? inst->doc->URL : null,
+	(inst->doc && inst->doc->URL) ? inst->doc->URL : slaxNull,
 	(inst->doc && inst->doc->URL) ? ":" : "",
 	inst ? xmlGetLineNo(inst) : 0);
 }
@@ -997,7 +997,7 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	    slaxOutput("    #%d %s at %s:%ld",
 		       dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : null,
+		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : slaxNull,
 		       xmlGetLineNo(dbp->dbp_inst));
 	else
 	    slaxOutput("    #%d %s (orphaned)", dbp->dbp_num, dbp->dbp_where);
@@ -1373,7 +1373,7 @@ slaxDebugCmdWhere (DC_ARGS)
 		      "<%s%s%s>",
 		      (stp->st_inst && stp->st_inst->ns
 		       && stp->st_inst->ns->prefix)
-		      ? stp->st_inst->ns->prefix : null,
+		      ? stp->st_inst->ns->prefix : slaxNull,
 		      (stp->st_inst && stp->st_inst->ns
 		       && stp->st_inst->ns->prefix) ? ":" : "",
 		      NAME(stp->st_inst));
@@ -1848,10 +1848,10 @@ slaxDebugSameSlax (slaxDebugState_t *statep, xmlNodePtr inst)
  * Called as callback function from libxslt before each statement is executed.
  * Here is where we handle all our debugger logic.
  *
- * @inst instruction being executed (never null)
- * @node context node (if null, we're just starting to evaluate a
+ * @inst instruction being executed (never NULL)
+ * @node context node (if NULL, we're just starting to evaluate a
  *       global variable) (and called from xsltEvalGlobalVariable)
- * @template  template being executed (if null, we're called while
+ * @template  template being executed (if NULL, we're called while
  *        evaluating a global variable)
  * @ctxt transformation context
  */
@@ -1994,7 +1994,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 /**
  * Called from libxslt as callback function when template is executed.
  *
- * @template  template being executed (if null, we're called while
+ * @template  template being executed (if NULL, we're called while
  *        evaluating a global variable)
  * @inst instruction node
  */
@@ -2120,7 +2120,8 @@ slaxDebugDropFrame (void)
     slaxLog("dropFrame: %s (%p), inst <%s%s%s> (%p; line %d%s)",
 	      slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      template, 
-	      (inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : null,
+	      (inst && inst->ns && inst->ns->prefix)
+	    		? inst->ns->prefix : slaxNull,
 	      (inst && inst->ns && inst->ns->prefix) ? ":" : "",
 	      NAME(stp->st_inst), inst,
 	      stp->st_inst ? xmlGetLineNo(stp->st_inst) : 0,

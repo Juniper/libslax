@@ -2387,7 +2387,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
 
     /* Now we turn the saved data from a linked list into a single string */
     bufsiz = 0;
-    SLAXDATALIST_FOREACH(dnp, &list, dn_link) {
+    SLAXDATALIST_FOREACH(dnp, &list) {
 	bufsiz += dnp->dn_len;
     }
 
@@ -2404,7 +2404,7 @@ slaxExtXmlToString (xmlXPathParserContext *ctxt, int nargs)
     }
 	
     bufsiz = 0;
-    SLAXDATALIST_FOREACH(dnp, &list, dn_link) {
+    SLAXDATALIST_FOREACH(dnp, &list) {
 	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
 	bufsiz += dnp->dn_len;
     }

@@ -97,7 +97,7 @@ slaxDataListClean (slax_data_list_t *listp)
     }
 }
 
-#define SLAXDATALIST_FOREACH(_dnp, _listp, _link) \
-    TAILQ_FOREACH(_dnp, _listp, _link)
+#define SLAXDATALIST_FOREACH(_dnp, _listp) TAILQ_FOREACH(_dnp, _listp, dn_link)
+#define SLAXDATALIST_EMPTY(_listp) TAILQ_EMPTY(_listp)
 
 #endif /* LIBSLAX_SLAXDATA_H */

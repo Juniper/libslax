@@ -17,18 +17,101 @@
 #include <libslax/slax.h>
 #include "slaxparser.h"
 #include <ctype.h>
+#include <sys/queue.h>
 #include <errno.h>
 
 #include <libxslt/extensions.h>
+#include <libxslt/documents.h>
 #include <libexslt/exslt.h>
+#include <libslax/slaxdata.h>
 
-extern xsltDocLoaderFunc xsltDocDefaultLoader;
 static xsltDocLoaderFunc slaxOriginalXsltDocDefaultLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
 
 /* Stub to handle xmlChar strings in "?:" expressions */
-const xmlChar null[] = "";
+const xmlChar slaxNull[] = "";
+
+static slax_data_list_t slaxIncludes;
+static xmlExternalEntityLoader slaxDefaultEntityLoader;
+
+/*
+ * Add a directory to the list of directories searched for files
+ */
+void
+slaxAddInclude (const char *dir)
+{
+    slaxDataListAddNul(&slaxIncludes, dir);
+}
+
+/*
+ * Define a custom "external entity" loader that honors our search paths
+ */
+static xmlParserInputPtr 
+slaxExternalEntityLoader (const char *url, const char *id,
+			      xmlParserCtxtPtr ctxt)
+{
+    xmlParserInputPtr ret;
+    warningSAXFunc warning = NULL;
+    const char *lastsegment = url;
+    char *buf = NULL;
+    int bufsiz = 0;
+    const char *iter;
+    slax_data_node_t *dnp;
+
+    if (ctxt != NULL && ctxt->sax != NULL) {
+	warning = ctxt->sax->warning;
+	ctxt->sax->warning = NULL;
+    }
+
+    if (slaxDefaultEntityLoader) {
+	ret = slaxDefaultEntityLoader(url, id, ctxt);
+	if (ret)
+	    goto success;
+    }
+
+    if (TAILQ_EMPTY(&slaxIncludes))
+	goto fail;
+
+    for (iter = url; *iter != 0; iter++)
+	if (*iter == '/')
+	    lastsegment = iter + 1;
+
+    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
+	char *dir = dnp->dn_data;
+	int dirlen = strlen(dir);
+	int lastlen = strlen(lastsegment);
+	int len = dirlen + lastlen + 2;
+
+	if (len > bufsiz) {
+	    bufsiz = len + 1;
+	    buf = alloca(bufsiz);
+	}
+
+	memcpy(buf, dir, dirlen);
+	buf[dirlen] = '/';
+	memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
+
+	ret = slaxDefaultEntityLoader((const char *) buf, id, ctxt);
+	if (ret)
+	    goto success;
+    }
+
+    /* If there's a warning function, use it and restore it */
+ fail:
+    if (warning) {
+	ctxt->sax->warning = warning;
+	warning(ctxt, "failed to load external entity \"%s\"\n",
+		url ?: id ?: "unknown");
+    }
+
+    return NULL;
+
+ success:
+    if (warning)
+	ctxt->sax->warning = warning;
+    return ret;
+}
 
 /**
  * Check the version string.  The only supported versions are "1.0" and "1.1".
@@ -667,28 +750,60 @@ slaxIsSlaxFile (const char *filename)
  * crack at parsing a stylesheet.
  */
 static xmlDocPtr
-slaxLoader(const xmlChar * URI, xmlDictPtr dict, int options,
+slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
 	   void *callerCtxt, xsltLoadType type)
 {
     FILE *file;
     xmlDocPtr docp;
 
-    if (!slaxIsSlaxFile((const char *) URI))
-	return slaxOriginalXsltDocDefaultLoader(URI, dict, options,
+    if (!slaxIsSlaxFile((const char *) url))
+	return slaxOriginalXsltDocDefaultLoader(url, dict, options,
 					    callerCtxt, type);
 
-    if (URI[0] == '-' && URI[1] == 0)
+    if (url[0] == '-' && url[1] == 0)
 	file = stdin;
     else {
-	file = fopen((const char *) URI, "r");
+	file = fopen((const char *) url, "r");
 	if (file == NULL) {
-	    slaxLog("slax: file open failed for '%s': %s",
-		      URI, strerror(errno));
-	    return NULL;
+	    const char *lastsegment = (const char *) url;
+	    const char *iter;
+	    slax_data_node_t *dnp;
+	    char *buf = NULL;
+	    size_t bufsiz = 0;
+
+	    for (iter = lastsegment; *iter != 0; iter++)
+		if (*iter == '/')
+		    lastsegment = iter + 1;
+
+	    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
+		char *dir = dnp->dn_data;
+		int dirlen = strlen(dir);
+		int lastlen = strlen(lastsegment);
+		size_t len = dirlen + lastlen + 2;
+
+		if (len > bufsiz) {
+		    bufsiz = len + 1;
+		    buf = alloca(bufsiz);
+		}
+
+		memcpy(buf, dir, dirlen);
+		buf[dirlen] = '/';
+		memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
+
+		file = fopen((const char *) url, "r");
+		if (file)
+		    break;
+	    }
+
+	    if (file == NULL) {
+		slaxLog("slax: file open failed for '%s': %s",
+			url, strerror(errno));
+		return NULL;
+	    }
 	}
     }
 
-    docp = slaxLoadFile((const char *) URI, file, dict, 0);
+    docp = slaxLoadFile((const char *) url, file, dict, 0);
 
     if (file != stdin)
 	fclose(file);
@@ -738,7 +853,11 @@ slaxEnable (int enable)
 {
     if (enable == SLAX_CLEANUP) {
 	xsltSetLoaderFunc(NULL);
-	
+	if (slaxEnabled) {
+	    slaxDataListClean(&slaxIncludes);
+	    xmlSetExternalEntityLoader(slaxDefaultEntityLoader);
+	}
+
 	slaxEnabled = 0;
 	return;
     }
@@ -746,6 +865,11 @@ slaxEnable (int enable)
     if (slaxEnabled == 0) {
 	/* Register EXSLT function functions so our function keywords work */
 	exsltFuncRegister();
+
+	slaxDefaultEntityLoader = xmlGetExternalEntityLoader();
+	xmlSetExternalEntityLoader(slaxExternalEntityLoader);
+
+	slaxDataListInit(&slaxIncludes);
     }
 
     /*
@@ -753,6 +877,12 @@ slaxEnable (int enable)
      */
     if (slaxOriginalXsltDocDefaultLoader == NULL)
 	slaxOriginalXsltDocDefaultLoader = xsltDocDefaultLoader;
+
+    if (slaxDefaultEntityLoader == NULL) {
+	slaxDefaultEntityLoader = xmlGetExternalEntityLoader();
+	xmlSetExternalEntityLoader(slaxExternalEntityLoader);
+    }
+
     xsltSetLoaderFunc(enable ? slaxLoader : NULL);
     slaxEnabled = enable;
 

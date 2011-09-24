@@ -624,9 +624,9 @@ slaxFindVariable (xsltStylesheetPtr style UNUSED, xmlNodePtr inst,
 		continue;
 
 	    slaxLog("findVariable: %s:%s -> %s:%s (%d)",
-		      uri ?: null, name,
+		      uri ?: slaxNull, name,
 		      (child->ns && child->ns->prefix)
-		      	? child->ns->prefix : null,
+		      	? child->ns->prefix : slaxNull,
 		      child->name, child->type);
 
 	    if (!streq((const char *) child->name, ELT_VARIABLE))
