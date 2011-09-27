@@ -85,10 +85,10 @@ extLogicalExtractArgs (xmlXPathParserContextPtr ctxt, int nargs,
 static void
 extLogicalAnd (xmlXPathParserContextPtr ctxt, int nargs)
 {
-    xmlChar *leftv, *rightv, *res;
+    xmlChar *lv, *rv, *res;
     int llen, rlen, width, i;
 
-    if (extLogicalExtractArgs(ctxt, nargs, &leftv, &rightv,
+    if (extLogicalExtractArgs(ctxt, nargs, &lv, &rv,
 			      &llen, &rlen, &width))
 	return;
 
@@ -96,14 +96,44 @@ extLogicalAnd (xmlXPathParserContextPtr ctxt, int nargs)
     if (res) {
 	res[width] = '\0';
 	for (i = 0; i < width; i++) {
-	    xmlChar lv = (i < width - llen) ? leftv[i] : '0';
-	    xmlChar rv = (i < width - rlen) ? rightv[i] : '0';
-	    res[i] = (lv == '1' && rv == '1') ? '1' : '0';
+	    xmlChar lb = (i >= width - llen) ? lv[i - (width - llen)] : '0';
+	    xmlChar rb = (i >= width - rlen) ? rv[i - (width - rlen)] : '0';
+	    res[i] = (lb == '1' && rb == '1') ? '1' : '0';
 	}
     }
 
-    xmlFree(leftv);
-    xmlFree(rightv);
+    slaxLog("logical:and:: %d [%s] & [%s] == [%s]", width, lv, rv, res);
+
+    xmlFree(lv);
+    xmlFree(rv);
+
+    xmlXPathReturnString(ctxt, res);
+}
+
+static void
+extLogicalOr (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *lv, *rv, *res;
+    int llen, rlen, width, i;
+
+    if (extLogicalExtractArgs(ctxt, nargs, &lv, &rv,
+			      &llen, &rlen, &width))
+	return;
+
+    res = xmlMalloc(width + 1);
+    if (res) {
+	res[width] = '\0';
+	for (i = 0; i < width; i++) {
+	    xmlChar lb = (i >= width - llen) ? lv[i - (width - llen)] : '0';
+	    xmlChar rb = (i >= width - rlen) ? rv[i - (width - rlen)] : '0';
+	    res[i] = (lb == '1' || rb == '1') ? '1' : '0';
+	}
+    }
+
+    slaxLog("logical:and:: %d [%s] & [%s] == [%s]", width, lv, rv, res);
+
+    xmlFree(lv);
+    xmlFree(rv);
 
     xmlXPathReturnString(ctxt, res);
 }
@@ -177,9 +207,17 @@ template logical:not ( $bitA = "0" ) {
 
 #endif
 
-SLAX_DYN_INIT_FUNC(slaxDynLibInit)
+SLAX_DYN_FUNC(slaxDynLibInit)
 {
     slaxRegisterFunction(URI_LOGICAL, "and", extLogicalAnd);
+    slaxRegisterFunction(URI_LOGICAL, "or", extLogicalOr);
 
     return SLAX_DYN_VERSION;
+}
+
+SLAX_DYN_FUNC(slaxDynLibClean)
+{
+    slaxUnregisterFunction(URI_LOGICAL, "or");
+
+    return 0;
 }

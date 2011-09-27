@@ -57,12 +57,15 @@
 
 slax_data_list_t slaxDynDirList;
 slax_data_list_t slaxDynLoaded;
+slax_data_list_t slaxDynLibraries;
 
 void
 slaxDynAdd (const char *dir)
 {
     slaxDataListAddNul(&slaxDynDirList, dir);
 }
+
+
 
 static void
 slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
@@ -80,19 +83,19 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
     }
     slaxDataListAddNul(&slaxDynLoaded, ns);
 
-    ret = xmlURIEscapeStr((const xmlChar *) ns,
-			  (const xmlChar *) "-_.!~*'();/?:@&=+$,[]");
+    ret = xmlURIEscapeStr((const xmlChar *) ns, (const xmlChar *) "-_.");
     if (ret == NULL)
 	return;
 
     SLAXDATALIST_FOREACH(dnp, &slaxDynDirList) {
+	static const char fmt[] = "%s/%s.ext";
 	char *dir = dnp->dn_data;
-	size_t len = snprintf(buf, bufsiz, "%s/lib%s.so", dir, ret);
+	size_t len = snprintf(buf, bufsiz, fmt, dir, ret);
 
 	if (len > bufsiz) {
 	    bufsiz = len + BUFSIZ;
 	    buf = alloca(bufsiz);
-	    len = snprintf(buf, bufsiz, "%s/lib%s.so", dir, ret);
+	    len = snprintf(buf, bufsiz, fmt, dir, ret);
 	}
 
 	dlp = dlopen((const char *) buf, RTLD_NOW);
@@ -109,12 +112,26 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 
 	func = dlfunc(dlp, SLAX_DYN_INIT_NAME);
 	if (func) {
-	    struct slaxDynInitArg arg;
-	    bzero(&arg, sizeof(arg));
-	    arg.da_version = SLAX_DYN_VERSION;
-	    (*func)(SLAX_DYN_VERSION, &arg);
+	    static struct slaxDynArg arg; /* Static zeros */
+	    struct slaxDynArg *dap;
+
+	    /*
+	     * We're building a list of open libraries, using the
+	     * "args" structure as our handle.  We store these in a
+	     * slaxDataList, which is odd but too convenient too pass
+	     * up.  The static arg above it just used to initialize
+	     * dnp->dn_data.
+	     */
+	    dnp = slaxDataListAddLen(&slaxDynLibraries,
+				     (char *) &arg, sizeof(arg));
+	    if (dnp) {
+		dap = (struct slaxDynArg *) dnp->dn_data;
+		dap->da_version = SLAX_DYN_VERSION;
+		dap->da_handle = dlp;
+
+		(*func)(SLAX_DYN_VERSION, dap);
+	    }
 	}
-	dlclose(dlp);
     }
 
     xmlFree(ret);
@@ -156,7 +173,7 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
 	    /* Find the next prefix token */
 	    cp += strspn(cp, white_space); /* Skip leading whitespace */
 	    np = cp + strcspn(cp, white_space);
-	    if (np)
+	    if (*np)
 		*np++ = '\0';
 
 	    /* Find the associated namespace and add it */
@@ -205,8 +222,10 @@ void
 slaxDynInit (void)
 {
     slaxDataListInit(&slaxDynDirList);
-    slaxDataListInit(&slaxDynLoaded);
     slaxDataListAddNul(&slaxDynDirList, SLAX_EXTDIR);
+
+    slaxDataListInit(&slaxDynLoaded);
+    slaxDataListInit(&slaxDynLibraries);
 }
 
 /*
@@ -215,6 +234,24 @@ slaxDynInit (void)
 void
 slaxDynClean (void)
 {
+    slax_data_node_t *dnp;
+
     slaxDataListClean(&slaxDynDirList);
     slaxDataListClean(&slaxDynLoaded);
+
+    SLAXDATALIST_FOREACH(dnp, &slaxDynLibraries) {
+	struct slaxDynArg *dap;
+	dap = (struct slaxDynArg *) dnp->dn_data;
+	if (dap->da_handle) {
+	    slaxDynInitFunc_t func;
+
+	    func = dlfunc(dap->da_handle, SLAX_DYN_CLEAN_NAME);
+	    if (func)
+		(*func)(SLAX_DYN_VERSION, dap);
+
+	    dlclose(dap->da_handle);
+	}
+    }
+
+    slaxDataListClean(&slaxDynLibraries);
 }

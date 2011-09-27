@@ -14,19 +14,22 @@
  * and the code in the extension library.  This structure should
  * only be extended by additions to the end.
  */
-struct slaxDynInitArg {
-    int da_version;
+struct slaxDynArg {
+    unsigned da_version;	/* Version of the caller */
+    void *da_handle;		/* Handle from dlopen() */
+    void *da_custom;		/* Memory hook for the extension */
 };
 
 #define SLAX_DYN_VERSION 1	/* Current version */
-#define SLAX_DYN_INIT_ARGS  \
-    int version __unused, struct slaxDynInitArg *arg __unused
+#define SLAX_DYN_ARGS  \
+    unsigned version __unused, struct slaxDynArg *arg __unused
 #define SLAX_DYN_INIT_NAME	"slaxDynLibInit"
+#define SLAX_DYN_CLEAN_NAME	"slaxDynLibClean"
 
-#define SLAX_DYN_INIT_FUNC(_n) \
-    int _n (SLAX_DYN_INIT_ARGS); int _n (SLAX_DYN_INIT_ARGS)
+#define SLAX_DYN_FUNC(_n) \
+    unsigned _n (SLAX_DYN_ARGS); unsigned _n (SLAX_DYN_ARGS)
 
-typedef int (*slaxDynInitFunc_t)(SLAX_DYN_INIT_ARGS);
+typedef unsigned (*slaxDynInitFunc_t)(SLAX_DYN_ARGS);
 
 void
 slaxDynAdd (const char *dir);

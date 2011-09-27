@@ -88,12 +88,26 @@ slaxRegisterFunction (const char *uri, const char *fn, xmlXPathFunction func)
 }
 
 static inline void
+slaxUnregisterFunction (const char *uri, const char *fn)
+{
+    xsltUnregisterExtModuleFunction((const xmlChar *) fn,
+				    (const xmlChar *) uri);
+}
+
+static inline void
 slaxRegisterElement (const char *uri, const char *fn, 
 		     xsltPreComputeFunction fcompile,
 		     xsltTransformFunction felement)
 {
     xsltRegisterExtModuleElement((const xmlChar *) fn, (const xmlChar *) uri,
 				 fcompile, felement);
+}
+
+static inline void
+slaxUnregisterElement (const char *uri, const char *fn)
+{
+    xsltUnregisterExtModuleElement((const xmlChar *) fn,
+				   (const xmlChar *) uri);
 }
 
 static inline int

@@ -542,6 +542,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     sd.sd_docp = NULL;
     slaxDataCleanup(&sd);
 
+    slaxDynLoad(res);		/* Check dynamic extensions */
+
     return res;
 }
 
@@ -793,24 +795,30 @@ slaxEnable (int enable)
 	return;
     }
 
-    if (slaxEnabled == 0) {
+    if (!slaxEnabled && enable) {
 	/* Register EXSLT function functions so our function keywords work */
 	exsltFuncRegister();
+	slaxExtRegister();
 
 	slaxDataListInit(&slaxIncludes);
 	slaxDynInit();
+
+	/*
+	 * Save the original doc loader to pass non-slax file into
+	 */
+	if (slaxOriginalXsltDocDefaultLoader == NULL)
+	    slaxOriginalXsltDocDefaultLoader = xsltDocDefaultLoader;
+
+	xsltSetLoaderFunc(slaxLoader);
+
+    } else if (slaxEnabled && !enable) {
+	slaxDynClean();
+	slaxDataListClean(&slaxIncludes);
+
+	xsltSetLoaderFunc(NULL);
     }
 
-    /*
-     * Save the original doc loader to pass non-slax file into
-     */
-    if (slaxOriginalXsltDocDefaultLoader == NULL)
-	slaxOriginalXsltDocDefaultLoader = xsltDocDefaultLoader;
-
-    xsltSetLoaderFunc(enable ? slaxLoader : NULL);
     slaxEnabled = enable;
-
-    slaxExtRegister();
 }
 
 /*
