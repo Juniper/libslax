@@ -60,6 +60,9 @@ AC_CHECK_FUNCS([getpass])
 AC_CHECK_FUNCS([sysctlbyname])
 AC_CHECK_FUNCS([flock])
 
+AC_CHECK_FUNCS([dlopen dlsym dlfunc])
+AC_CHECK_HEADERS([dlfcn.h])
+
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h])
 AC_CHECK_HEADERS([string.h sys/param.h unistd.h ])
@@ -272,10 +275,16 @@ case $host_os in
 	;;
 esac
 
+AC_ARG_WITH(extensions-dir,
+        [  --with-extensions-dir=[DIR]           Specify location of extension libraries],
+        [SLAX_EXTDIR=$withval],
+        [SLAX_EXTDIR=$prefix/lib/slax/extensions]
+)
+
 SLAX_LIBS=-lslax
-SLAX_SRCDIR='${srcdir}'
-SLAX_LIBDIR='${libdir}'
-SLAX_INCLUDEDIR='${includedir}'
+SLAX_SRCDIR=${srcdir}
+SLAX_LIBDIR=${libdir}
+SLAX_INCLUDEDIR=${includedir}
 
 AC_SUBST(SLAX_SRCDIR)
 AC_SUBST(SLAX_LIBDIR)
@@ -311,6 +320,8 @@ AC_CONFIG_FILES([
   slax-config
   libslax/Makefile
   libslax/slaxconfig.h
+  extensions/Makefile
+  extensions/logical/Makefile
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile
@@ -326,6 +337,11 @@ AC_MSG_NOTICE([summary of build options:
   libslax version:  ${VERSION} ${LIBSLAX_VERSION_EXTRA}
   host type:        ${host}
   install prefix:   ${prefix}
+  srcdir:           ${SLAX_SRCDIR}
+  libdir:           ${SLAX_LIBDIR}
+  includedir:       ${SLAX_INCLUDEDIR}
+  extensions dir:   ${SLAX_EXTDIR}
+
   compiler:         ${CC}
   compiler flags:   ${CFLAGS}
   library types:    Shared=${enable_shared}, Static=${enable_static}

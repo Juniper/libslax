@@ -95,4 +95,4 @@ slaxSlaxToXpath (const char *filename, int lineno,
  * Add a directory to the list of directories searched for files
  */
 void
-slaxAddInclude (const char *dir);
+slaxIncludeAdd (const char *dir);

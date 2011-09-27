@@ -24,6 +24,7 @@
 #include <libxslt/documents.h>
 #include <libexslt/exslt.h>
 #include <libslax/slaxdata.h>
+#include <libslax/slaxdyn.h>
 
 static xsltDocLoaderFunc slaxOriginalXsltDocDefaultLoader;
 
@@ -38,7 +39,7 @@ static slax_data_list_t slaxIncludes;
  * Add a directory to the list of directories searched for files
  */
 void
-slaxAddInclude (const char *dir)
+slaxIncludeAdd (const char *dir)
 {
     slaxDataListAddNul(&slaxIncludes, dir);
 }
@@ -738,6 +739,8 @@ slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
     if (file != stdin)
 	fclose(file);
 
+    slaxDynLoad(docp);
+
     return docp;
 }
 
@@ -783,9 +786,8 @@ slaxEnable (int enable)
 {
     if (enable == SLAX_CLEANUP) {
 	xsltSetLoaderFunc(NULL);
-	if (slaxEnabled) {
+	if (slaxEnabled)
 	    slaxDataListClean(&slaxIncludes);
-	}
 
 	slaxEnabled = 0;
 	return;
@@ -796,6 +798,7 @@ slaxEnable (int enable)
 	exsltFuncRegister();
 
 	slaxDataListInit(&slaxIncludes);
+	slaxDynInit();
     }
 
     /*

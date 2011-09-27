@@ -8,6 +8,9 @@ slaxincdir = ${includedir}/libslax
 
 AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
 
+AM_CFLAGS += \
+ -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+
 lib_LTLIBRARIES = libslax.la
 libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
@@ -17,6 +20,7 @@ slaxinc_HEADERS = \
      slaxdata.h
 
 noinst_HEADERS = \
+    slaxdyn.h \
     slaxinternals.h \
     slaxio.h \
     slaxlexer.h \
@@ -34,6 +38,7 @@ BISON_COMMAND = ${BISON} -kvd -b slaxparser
 
 libslax_la_SOURCES = \
     slaxdebugger.c \
+    slaxdyn.c \
     slaxext.c \
     slaxio.c \
     slaxlexer.c \

@@ -18,6 +18,7 @@
 #include <libxslt/xsltutils.h>
 #include <libxml/globals.h>
 #include <libexslt/exslt.h>
+#include <libslax/slaxdyn.h>
 #include <libslax/slaxdata.h>
 
 #include <err.h>
@@ -30,14 +31,14 @@ static int nbparams;
 static const char **params;
 
 static int options = XSLT_PARSE_OPTIONS;
-static int html;
 static char *encoding;
 static char *version;
-static int indent;
 
-static int partial;
-static int use_debugger;
-static int empty_input;
+static int opt_html;		/* Parse input as HTML */
+static int opt_indent;		/* Indent the output (pretty print) */
+static int opt_partial;		/* Parse partial contents */
+static int opt_debugger;	/* Invoke the debugger */
+static int opt_empty_input;	/* Use an empty input file */
 
 static inline int
 is_filename_std (const char *filename)
@@ -61,6 +62,51 @@ get_filename (const char *filename, char ***pargv, int outp)
 }
 
 static int
+do_format (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    FILE *infile, *outfile;
+    xmlDocPtr docp;
+
+    input = get_filename(input, &argv, -1);
+    output = get_filename(output, &argv, -1);
+
+    if (is_filename_std(input))
+	infile = stdin;
+    else {
+	infile = fopen(input, "r");
+	if (infile == NULL)
+	    err(1, "file open failed for '%s'", input);
+    }
+
+    docp = slaxLoadFile(input, infile, NULL, opt_partial);
+
+    if (infile != stdin)
+	fclose(infile);
+
+    if (docp == NULL)
+	errx(1, "cannot parse file: '%s'", input);
+
+    if (output == NULL || is_filename_std(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open output file: '%s'", output);
+    }
+
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
+		 opt_partial, version);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
 do_slax_to_xslt (const char *name UNUSED, const char *output,
 		 const char *input, char **argv)
 {
@@ -78,7 +124,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	    err(1, "file open failed for '%s'", input);
     }
 
-    docp = slaxLoadFile(input, infile, NULL, partial);
+    docp = slaxLoadFile(input, infile, NULL, opt_partial);
 
     if (infile != stdin)
 	fclose(infile);
@@ -94,7 +140,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	    err(1, "could not open output file: '%s'", output);
     }
 
-    slaxDumpToFd(fileno(outfile), docp, partial);
+    slaxDumpToFd(fileno(outfile), docp, opt_partial);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -128,7 +174,8 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	    err(1, "could not open file: '%s'", output);
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, partial, version);
+    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
+		 opt_partial, version);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -162,7 +209,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     xmlDocPtr res = NULL;
 
     scriptname = get_filename(name, &argv, -1);
-    if (!empty_input)
+    if (!opt_empty_input)
 	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
@@ -184,19 +231,19 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	errx(1, "%d errors parsing script: '%s'",
 	     script ? script->errors : 1, scriptname);
 
-    if (empty_input)
+    if (opt_empty_input)
 	indoc = buildEmptyFile();
-    else if (html)
+    else if (opt_html)
 	indoc = htmlReadFile(input, encoding, options);
     else
 	indoc = xmlReadFile(input, encoding, options);
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
 
-    if (indent)
+    if (opt_indent)
 	script->indent = 1;
 
-    if (use_debugger) {
+    if (opt_debugger) {
 	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
 	slaxDebugApplyStylesheet(scriptname, script,
@@ -295,10 +342,12 @@ print_help (void)
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--empty OR -E: give an empty document for input\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
-    printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--help OR -h: display this help message\n");
+    printf("\t--html OR -H: Parse input data as HTML\n");
+    printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
     printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
+    printf("\t--lib <dir> OR -L <dir>: search directory for extension libraries\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
     printf("\t--no-randomize: do not initialize the random number generator\n");
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
@@ -356,8 +405,13 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_check;
 
+	} else if (streq(cp, "--format") || streq(cp, "-F")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_format;
+
 	} else if (streq(cp, "--empty") || streq(cp, "-E")) {
-	    empty_input = 1;
+	    opt_empty_input = TRUE;
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;
@@ -397,19 +451,22 @@ main (int argc UNUSED, char **argv)
 	    logger = TRUE;
 
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
-	    use_debugger = TRUE;
+	    opt_debugger = TRUE;
 
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
-	    partial = TRUE;
+	    opt_partial = TRUE;
 
 	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
-	    indent = TRUE;
+	    opt_indent = TRUE;
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
 
 	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxAddInclude(*++argv);
+	    slaxIncludeAdd(*++argv);
+
+	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
+	    slaxDynAdd(*++argv);
 
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
@@ -422,6 +479,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
 	    slaxYyDebug = TRUE;
+
+	} else if (streq(cp, "--html") || streq(cp, "-H")) {
+	    opt_html = TRUE;
 
 	} else if (streq(cp, "--help") || streq(cp, "-n")) {
 	    print_help();
