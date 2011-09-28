@@ -332,10 +332,11 @@ print_help (void)
 {
     printf("Usage: slaxproc [mode] [options] [script] [files]\n");
     printf("    Modes:\n");
+    printf("\t--check OR -c: check syntax and content for a SLAX script\n");
+    printf("\t--format OR -F: format (pretty print) a SLAX script\n");
     printf("\t--run OR -r: run a SLAX script (the default mode)\n");
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
     printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
-    printf("\t--check OR -c: check syntax and content for a SLAX script\n");
     printf("\n");
 
     printf("    Options:\n");
@@ -344,14 +345,14 @@ print_help (void)
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--html OR -H: Parse input data as HTML\n");
+    printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
     printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
-    printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
     printf("\t--lib <dir> OR -L <dir>: search directory for extension libraries\n");
     printf("\t--name <file> OR -n <file>: read the script from the given file\n");
     printf("\t--no-randomize: do not initialize the random number generator\n");
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
-    printf("\t--param name value OR -a name value: pass parameters\n");
+    printf("\t--param <name> <value> OR -a <name> <value>: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
     printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
@@ -381,9 +382,20 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
-	if (streq(cp, "--version") || streq(cp, "-V")) {
-	    print_version();
-	    exit(0);
+	if (streq(cp, "--check") || streq(cp, "-c")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_check;
+
+	} else if (streq(cp, "--format") || streq(cp, "-F")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_format;
+
+	} else if (streq(cp, "--run") || streq(cp, "-r")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_run;
 
 	} else if (streq(cp, "--slax-to-xslt") || streq(cp, "-x")) {
 	    if (func)
@@ -395,26 +407,42 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_xslt_to_slax;
 
-	} else if (streq(cp, "--run") || streq(cp, "-r")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_run;
-
-	} else if (streq(cp, "--check") || streq(cp, "-c")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_check;
-
-	} else if (streq(cp, "--format") || streq(cp, "-F")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_format;
+	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
+	    opt_debugger = TRUE;
 
 	} else if (streq(cp, "--empty") || streq(cp, "-E")) {
 	    opt_empty_input = TRUE;
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;
+
+	} else if (streq(cp, "--help") || streq(cp, "-h")) {
+	    print_help();
+	    return -1;
+
+	} else if (streq(cp, "--html") || streq(cp, "-H")) {
+	    opt_html = TRUE;
+
+	} else if (streq(cp, "--include") || streq(cp, "-I")) {
+	    slaxIncludeAdd(*++argv);
+
+	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
+	    opt_indent = TRUE;
+
+	} else if (streq(cp, "--input") || streq(cp, "-i")) {
+	    input = *++argv;
+
+	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
+	    slaxDynAdd(*++argv);
+
+	} else if (streq(cp, "--name") || streq(cp, "-n")) {
+	    name = *++argv;
+
+	} else if (streq(cp, "--no-randomize")) {
+	    randomize = 0;
+
+	} else if (streq(cp, "--output") || streq(cp, "-o")) {
+	    output = *++argv;
 
 	} else if (streq(cp, "--param") || streq(cp, "-a")) {
 	    char *pname = *++argv;
@@ -441,54 +469,24 @@ main (int argc UNUSED, char **argv)
 	    slaxDataListAddNul(&plist, pname);
 	    slaxDataListAddNul(&plist, tvalue);
 
-	} else if (streq(cp, "--input") || streq(cp, "-i")) {
-	    input = *++argv;
-
-	} else if (streq(cp, "--output") || streq(cp, "-o")) {
-	    output = *++argv;
-
-	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
-	    logger = TRUE;
-
-	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
-	    opt_debugger = TRUE;
-
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
 	    opt_partial = TRUE;
-
-	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
-	    opt_indent = TRUE;
-
-	} else if (streq(cp, "--name") || streq(cp, "-n")) {
-	    name = *++argv;
-
-	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxIncludeAdd(*++argv);
-
-	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
-	    slaxDynAdd(*++argv);
 
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
 
-	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
-	    version = *++argv;
+	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
+	    logger = TRUE;
+
+	} else if (streq(cp, "--version") || streq(cp, "-V")) {
+	    print_version();
+	    exit(0);
 
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
 	    version = *++argv;
 
 	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
 	    slaxYyDebug = TRUE;
-
-	} else if (streq(cp, "--html") || streq(cp, "-H")) {
-	    opt_html = TRUE;
-
-	} else if (streq(cp, "--help") || streq(cp, "-n")) {
-	    print_help();
-	    return -1;
-
-	} else if (streq(cp, "--no-randomize")) {
-	    randomize = 0;
 
 	} else {
 	    fprintf(stderr, "invalid option: %s\n", cp);
