@@ -4,7 +4,7 @@
 
 include ${top_srcdir}/warnings.mk
 
-logicalincdir = ${includedir}/libslax
+bitincdir = ${includedir}/libslax
 
 AM_CFLAGS = \
     -I${top_srcdir} \
@@ -16,8 +16,18 @@ AM_CFLAGS = \
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
-lib_LTLIBRARIES = liblogical.la
-liblogical_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+lib_LTLIBRARIES = libbit.la
+libbit_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
-liblogical_la_SOURCES = \
-    ext_logical.c
+libbit_la_SOURCES = \
+    ext_bit.c
+
+libdir = ${SLAX_EXTDIR}
+
+UGLY_NAME = http-mumble.ext
+
+install-exec-hook:
+	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \
+		&& echo Initializing $$DLNAME "->" ${UGLY_NAME} "..." \
+	        && cd ${SLAX_EXTDIR} \
+		&& ln -s -f $$DLNAME ${UGLY_NAME}
