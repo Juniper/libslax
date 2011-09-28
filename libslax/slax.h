@@ -223,4 +223,18 @@ void
 slaxSetPreserveFlag (struct _xsltTransformContext *tctxt,
 		     struct _xmlXPathObject *ret);
 
+/*
+ * Add a directory to the list of directories searched for import
+ * and include files
+ */
+void
+slaxIncludeAdd (const char *dir);
+
+/*
+ * Add a directory to the list of directories searched for dynamic
+ * extension libraries
+ */
+void
+slaxDynAdd (const char *dir);
+
 #endif /* LIBSLAX_SLAX_H */

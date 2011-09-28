@@ -382,6 +382,12 @@ main (int argc UNUSED, char **argv)
 	if (*cp != '-')
 	    break;
 
+	/*
+	 * We mirror the order in print_help() above:
+	 * - first list the modes in alphabetically order
+	 * - then list the options in alphabetically order
+	 */
+
 	if (streq(cp, "--check") || streq(cp, "-c")) {
 	    if (func)
 		errx(1, "open one action allowed");

@@ -90,9 +90,3 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 char *
 slaxSlaxToXpath (const char *filename, int lineno,
 		 const char *slax_expr, int *errorsp);
-
-/*
- * Add a directory to the list of directories searched for files
- */
-void
-slaxIncludeAdd (const char *dir);
