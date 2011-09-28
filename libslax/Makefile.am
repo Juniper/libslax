@@ -78,7 +78,10 @@ SLAXPIECES = \
 slaxparser-out.y: ${SLAXPIECES}
 	cat ${SLAXPIECES} > $@
 
-EXTRA_DIST = ${SLAXPIECES}
+EXTRA_DIST = \
+    slaxparser.y \
+    slaxparser-xp.y \
+    slaxparser-tail.y
 
 CLEANFILES += slaxparser-out.y slaxparser-xpl.y
 
