@@ -322,7 +322,7 @@ AC_CONFIG_FILES([
   libslax/Makefile
   libslax/slaxconfig.h
   extensions/Makefile
-  extensions/logical/Makefile
+  extensions/bit/Makefile
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile
