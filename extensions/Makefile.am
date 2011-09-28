@@ -2,7 +2,7 @@
 # $Id$
 #
 
-SUBDIRS = logical
+SUBDIRS = bit
 
 svnignore:
 	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}

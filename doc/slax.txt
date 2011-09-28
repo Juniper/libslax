@@ -2747,8 +2747,6 @@ Syslog the concatenation of set of arguments.
 
 Return stringified XML hierarchies.
 
-
-
 * The libslax Distribution
 
 SLAX is available as an open-source project with the "New BSD"
@@ -2773,6 +2771,16 @@ libslax initializer function:
     #include <libslax/slax.h>
 
     slaxEnable(1);
+
+** Extension Libraries
+
+libslax supports a means of dynamically loading extension libraries.
+After a script is parsed, any extension prefixes are determined, along
+with their namespaces.  Each namespace are then URL-escaped and a
+".ext" suffix is appended to generate a filename for the extension
+library that supports that namespace.  The extension library should be
+placed in the directory named with the --with-extension-dir options
+(aka SLAX_EXTDIR) or in a directory named by a --lib/-L argument.
 
 ** slaxproc: The SLAX Processor
 

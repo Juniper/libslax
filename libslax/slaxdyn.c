@@ -108,9 +108,9 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 	 * If the library exists, find the initializer function and
 	 * call it.
 	 */
-	slaxDynInitFunc_t func;
+	slax_dyn_init_func_t func;
 
-	func = dlfunc(dlp, SLAX_DYN_INIT_NAME);
+	func = (slax_dyn_init_func_t) dlfunc(dlp, SLAX_DYN_INIT_NAME);
 	if (func) {
 	    static slax_dyn_arg_t arg; /* Static zeros */
 	    slax_dyn_arg_t *dap;
@@ -138,7 +138,8 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 		    slaxRegisterElementTable(dap->da_uri,
 						dap->da_elements);
 	    }
-	}
+	} else
+	    dlclose(dlp);
     }
 
     xmlFree(ret);
@@ -250,7 +251,7 @@ slaxDynClean (void)
 	slax_dyn_arg_t *dap;
 	dap = (slax_dyn_arg_t *) dnp->dn_data;
 	if (dap->da_handle) {
-	    slaxDynInitFunc_t func;
+	    slax_dyn_init_func_t func;
 
 	    /*
 	     * If the extension gave us a list of functions or element,
@@ -264,7 +265,8 @@ slaxDynClean (void)
 						dap->da_elements);
 
 	    /* If there's a cleanup function, then call it */
-	    func = dlfunc(dap->da_handle, SLAX_DYN_CLEAN_NAME);
+	    func = (slax_dyn_init_func_t) dlfunc(dap->da_handle,
+						 SLAX_DYN_CLEAN_NAME);
 	    if (func)
 		(*func)(SLAX_DYN_VERSION, dap);
 

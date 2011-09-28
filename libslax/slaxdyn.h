@@ -32,7 +32,7 @@ typedef struct slax_dyn_arg_s {
 #define SLAX_DYN_FUNC(_n) \
     unsigned _n (SLAX_DYN_ARGS); unsigned _n (SLAX_DYN_ARGS)
 
-typedef unsigned (*slaxDynInitFunc_t)(SLAX_DYN_ARGS);
+typedef unsigned (*slax_dyn_init_func_t)(SLAX_DYN_ARGS);
 
 void
 slaxDynAdd (const char *dir);
