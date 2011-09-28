@@ -1,12 +1,25 @@
 /* Machine Crafted with Care (tm) by slaxWriter */
 version 1.1;
 
+ns foo extension = "http://example.com/foo";
+
 match / {
     <top> {
         var $x = /test;
         
         if (not($x) && not(/foo/bar) && not(goo[zoo && not(moo)])) {
-            <not>;
+            <not xsl:extension-element-prefixes="goo"> {
+                ns goo extension = "http://example.com/goo";
+                
+                <goo:this> "oh yeah";
+            }
+        }
+        <mumble xsl:extension-element-prefixes="zoo yoo"> {
+            ns zoo extension = "http://example.com/zoo";
+            ns yoo extension = "http://example.com/yoo";
+            
+            <zoo:zoo>;
+            <yoo:yoo>;
         }
         var $y = 10;
         var $z = slax:evaluate("$y + 1");

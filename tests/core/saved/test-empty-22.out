@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <top>
-  <not/>
+  <not xmlns:goo="http://example.com/goo">
+    <goo:this>oh yeah</goo:this>
+  </not>
+  <mumble xmlns:zoo="http://example.com/zoo" xmlns:yoo="http://example.com/yoo">
+    <zoo:zoo/>
+    <yoo:yoo/>
+  </mumble>
   <answer>11</answer>
   <answer>true</answer>
 </top>
