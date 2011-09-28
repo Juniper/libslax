@@ -112,8 +112,8 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 
 	func = dlfunc(dlp, SLAX_DYN_INIT_NAME);
 	if (func) {
-	    static struct slaxDynArg arg; /* Static zeros */
-	    struct slaxDynArg *dap;
+	    static slax_dyn_arg_t arg; /* Static zeros */
+	    slax_dyn_arg_t *dap;
 
 	    /*
 	     * We're building a list of open libraries, using the
@@ -125,11 +125,18 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 	    dnp = slaxDataListAddLen(&slaxDynLibraries,
 				     (char *) &arg, sizeof(arg));
 	    if (dnp) {
-		dap = (struct slaxDynArg *) dnp->dn_data;
+		dap = (slax_dyn_arg_t *) dnp->dn_data;
 		dap->da_version = SLAX_DYN_VERSION;
 		dap->da_handle = dlp;
+		dap->da_uri = xmlStrdup2(ns);
 
 		(*func)(SLAX_DYN_VERSION, dap);
+
+		if (dap->da_functions)
+		    slaxRegisterFunctionTable(dap->da_uri, dap->da_functions);
+		if (dap->da_elements)
+		    slaxRegisterElementTable(dap->da_uri,
+						dap->da_elements);
 	    }
 	}
     }
@@ -240,11 +247,23 @@ slaxDynClean (void)
     slaxDataListClean(&slaxDynLoaded);
 
     SLAXDATALIST_FOREACH(dnp, &slaxDynLibraries) {
-	struct slaxDynArg *dap;
-	dap = (struct slaxDynArg *) dnp->dn_data;
+	slax_dyn_arg_t *dap;
+	dap = (slax_dyn_arg_t *) dnp->dn_data;
 	if (dap->da_handle) {
 	    slaxDynInitFunc_t func;
 
+	    /*
+	     * If the extension gave us a list of functions or element,
+	     * we can go ahead and unregister them
+	     */
+	    if (dap->da_functions)
+		    slaxUnregisterFunctionTable(dap->da_uri,
+						dap->da_functions);
+	    if (dap->da_elements)
+		    slaxUnregisterElementTable(dap->da_uri,
+						dap->da_elements);
+
+	    /* If there's a cleanup function, then call it */
 	    func = dlfunc(dap->da_handle, SLAX_DYN_CLEAN_NAME);
 	    if (func)
 		(*func)(SLAX_DYN_VERSION, dap);

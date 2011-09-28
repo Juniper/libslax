@@ -24,7 +24,7 @@ libbit_la_SOURCES = \
 
 libdir = ${SLAX_EXTDIR}
 
-UGLY_NAME = http-mumble.ext
+UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextension%2Fbit.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \

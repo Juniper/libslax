@@ -38,7 +38,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = extensions/logical
+subdir = extensions/bit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -75,10 +75,9 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-liblogical_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_liblogical_la_OBJECTS = ext_logical.lo
-liblogical_la_OBJECTS = $(am_liblogical_la_OBJECTS)
+libbit_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_libbit_la_OBJECTS = ext_bit.lo
+libbit_la_OBJECTS = $(am_libbit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -108,8 +107,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(liblogical_la_SOURCES)
-DIST_SOURCES = $(liblogical_la_SOURCES)
+SOURCES = $(libbit_la_SOURCES)
+DIST_SOURCES = $(libbit_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -241,7 +240,7 @@ htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
-libdir = @libdir@
+libdir = ${SLAX_EXTDIR}
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
@@ -260,14 +259,15 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-logicalincdir = ${includedir}/libslax
+bitincdir = ${includedir}/libslax
 AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} \
 	${LIBXML_CFLAG} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
-lib_LTLIBRARIES = liblogical.la
-liblogical_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
-liblogical_la_SOURCES = \
-    ext_logical.c
+lib_LTLIBRARIES = libbit.la
+libbit_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+libbit_la_SOURCES = \
+    ext_bit.c
 
+UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextension%2Fbit.ext
 all: all-am
 
 .SUFFIXES:
@@ -281,9 +281,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign extensions/logical/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign extensions/bit/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign extensions/logical/Makefile
+	  $(AUTOMAKE) --foreign extensions/bit/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -333,8 +333,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-liblogical.la: $(liblogical_la_OBJECTS) $(liblogical_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(liblogical_la_OBJECTS) $(liblogical_la_LIBADD) $(LIBS)
+libbit.la: $(libbit_la_OBJECTS) $(libbit_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libbit_la_OBJECTS) $(libbit_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -342,7 +342,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext_logical.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext_bit.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -518,7 +518,8 @@ install-dvi: install-dvi-am
 install-dvi-am:
 
 install-exec-am: install-libLTLIBRARIES
-
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 install-html: install-html-am
 
 install-html-am:
@@ -559,15 +560,15 @@ ps-am:
 
 uninstall-am: uninstall-libLTLIBRARIES
 
-.MAKE: install-am install-strip
+.MAKE: install-am install-exec-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libLTLIBRARIES clean-libtool ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
 	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
@@ -577,6 +578,12 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 
 include ${top_srcdir}/warnings.mk
+
+install-exec-hook:
+	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \
+		&& echo Initializing $$DLNAME "->" ${UGLY_NAME} "..." \
+	        && cd ${SLAX_EXTDIR} \
+		&& ln -s -f $$DLNAME ${UGLY_NAME}
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

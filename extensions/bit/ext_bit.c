@@ -5,7 +5,7 @@
  * All rights reserved.
  * See ../Copyright for the status of this software
  *
- * ext_logical.c -- extension functions for logical operations
+ * ext_bit.c -- extension functions for bit operations
  */
 
 #include "slaxinternals.h"
@@ -18,10 +18,10 @@
 #include <libxslt/extensions.h>
 #include <libslax/slaxdyn.h>
 
-#define URI_LOGICAL  "http://xml.juniper.net/extension/logical"
+#define URI_BIT  "http://xml.juniper.net/extension/bit"
 
 static xmlChar *
-extLogicalStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
+extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
 {
     if (xop->type == XPATH_NUMBER) {
 	xmlChar *res;
@@ -46,51 +46,41 @@ extLogicalStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
     return xmlXPathPopString(ctxt);
 }
 
-static int
-extLogicalExtractArgs (xmlXPathParserContextPtr ctxt, int nargs,
-		       xmlChar **leftp, xmlChar **rightp,
-		       int *llen, int *rlen, int *widthp)
+typedef xmlChar (*slax_bit_callback_t)(xmlChar, xmlChar);
+
+static void
+extBitOperation (xmlXPathParserContextPtr ctxt, int nargs,
+		 slax_bit_callback_t func, const char *name)
 {
+    xmlChar *lv, *rv, *res;
+    int llen, rlen, width, i;
     xmlXPathObjectPtr xop;
 
     if (nargs != 2) {
 	xmlXPathSetArityError(ctxt);
-	return TRUE;
+	return;
     }
 
     /* Pop args in reverse order */
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
-	return TRUE;
-    *rightp = extLogicalStringVal(ctxt, xop);
-    if (*rightp == NULL)
-	return TRUE;
+	return;
+    rv = extBitStringVal(ctxt, xop);
+    if (rv == NULL)
+	return;
 
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
-	return TRUE;
-    *leftp = extLogicalStringVal(ctxt, xop);
-    if (*leftp == NULL) {
-	xmlFree(*rightp);
-	return TRUE;
+	return;
+    lv = extBitStringVal(ctxt, xop);
+    if (lv == NULL) {
+	xmlFree(rv);
+	return;
     }
 
-    *llen = xmlStrlen(*leftp);
-    *rlen = xmlStrlen(*rightp);
-    *widthp = (*llen > *rlen) ? *llen : *rlen;
-
-    return FALSE;
-}
-
-static void
-extLogicalAnd (xmlXPathParserContextPtr ctxt, int nargs)
-{
-    xmlChar *lv, *rv, *res;
-    int llen, rlen, width, i;
-
-    if (extLogicalExtractArgs(ctxt, nargs, &lv, &rv,
-			      &llen, &rlen, &width))
-	return;
+    llen = xmlStrlen(lv);
+    rlen = xmlStrlen(rv);
+    width = (llen > rlen) ? llen : rlen;
 
     res = xmlMalloc(width + 1);
     if (res) {
@@ -98,126 +88,133 @@ extLogicalAnd (xmlXPathParserContextPtr ctxt, int nargs)
 	for (i = 0; i < width; i++) {
 	    xmlChar lb = (i >= width - llen) ? lv[i - (width - llen)] : '0';
 	    xmlChar rb = (i >= width - rlen) ? rv[i - (width - rlen)] : '0';
-	    res[i] = (lb == '1' && rb == '1') ? '1' : '0';
+	    res[i] = (*func)(lb, rb);
 	}
     }
 
-    slaxLog("logical:and:: %d [%s] & [%s] == [%s]", width, lv, rv, res);
+    slaxLog("bit:%s:: %d [%s] -> [%s] == [%s]", name, width, lv, rv, res);
 
     xmlFree(lv);
     xmlFree(rv);
 
     xmlXPathReturnString(ctxt, res);
+}
+
+static xmlChar
+extBitOpAnd (xmlChar lb, xmlChar rb)
+{
+    return (lb == '1' && rb == '1') ? '1' : '0';
 }
 
 static void
-extLogicalOr (xmlXPathParserContextPtr ctxt, int nargs)
+extBitAnd (xmlXPathParserContextPtr ctxt, int nargs)
 {
-    xmlChar *lv, *rv, *res;
-    int llen, rlen, width, i;
+    extBitOperation(ctxt, nargs, extBitOpAnd, "and");
+}
 
-    if (extLogicalExtractArgs(ctxt, nargs, &lv, &rv,
-			      &llen, &rlen, &width))
+static xmlChar
+extBitOpOr (xmlChar lb, xmlChar rb)
+{
+    return (lb == '1' || rb == '1') ? '1' : '0';
+}
+
+static void
+extBitOr (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitOperation(ctxt, nargs, extBitOpOr, "or");
+}
+
+static xmlChar
+extBitOpNand (xmlChar lb, xmlChar rb)
+{
+    return (lb == '0' && rb == '0') ? '1' : '0';
+}
+
+static void
+extBitNand (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitOperation(ctxt, nargs, extBitOpNand, "nand");
+}
+
+static xmlChar
+extBitOpNor (xmlChar lb, xmlChar rb)
+{
+    return (lb == '0' || rb == '0') ? '1' : '0';
+}
+
+static void
+extBitNor (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitOperation(ctxt, nargs, extBitOpNor, "nor");
+}
+
+static xmlChar
+extBitOpXor (xmlChar lb, xmlChar rb)
+{
+    return (lb != rb) ? '1' : '0';
+}
+
+static void
+extBitXor (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitOperation(ctxt, nargs, extBitOpXor, "xor");
+}
+
+static xmlChar
+extBitOpXnor (xmlChar lb, xmlChar rb)
+{
+    return (lb == rb) ? '1' : '0';
+}
+
+static void
+extBitXnor (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitOperation(ctxt, nargs, extBitOpXnor, "xnor");
+}
+
+static void
+extBitNot (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    int width, i;
+    xmlXPathObjectPtr xop;
+
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
 	return;
-
-    res = xmlMalloc(width + 1);
-    if (res) {
-	res[width] = '\0';
-	for (i = 0; i < width; i++) {
-	    xmlChar lb = (i >= width - llen) ? lv[i - (width - llen)] : '0';
-	    xmlChar rb = (i >= width - rlen) ? rv[i - (width - rlen)] : '0';
-	    res[i] = (lb == '1' || rb == '1') ? '1' : '0';
-	}
     }
 
-    slaxLog("logical:and:: %d [%s] & [%s] == [%s]", width, lv, rv, res);
+    /* Pop args in reverse order */
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res = extBitStringVal(ctxt, xop);
+    if (res == NULL)
+	return;
 
-    xmlFree(lv);
-    xmlFree(rv);
+    width = xmlStrlen(res);
+    for (i = 0; i < width; i++) {
+	xmlChar lb = res[i];
+	res[i] = (lb == '0') ? '1' : '0';
+    }
 
     xmlXPathReturnString(ctxt, res);
 }
 
-#if 0
-
-template logical:and ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA == "1" && $bitB == "1") {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:or ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA == "1" || $bitB == "1") {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:nand ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA == "0" && $bitB == "0") {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:nor ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA == "0" && $bitB == "0") {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:xor ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA != $bitB) {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:xnor ( $bitA = "0", $bitB = "0" ) {
-	if ($bitA == $bitB) {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-template logical:not ( $bitA = "0" ) {
-	if ($bitA == "0") {
-		expr "1";
-	}
-	else {
-		expr "0";
-	}
-}
-
-
-
-#endif
+slax_function_table_t slaxBitTable[] = {
+    { "and", extBitAnd },
+    { "or", extBitOr },
+    { "nand", extBitNand },
+    { "nor", extBitNor },
+    { "xor", extBitXor },
+    { "xnor", extBitXnor },
+    { "not", extBitNot },
+    { NULL, NULL },
+};
 
 SLAX_DYN_FUNC(slaxDynLibInit)
 {
-    slaxRegisterFunction(URI_LOGICAL, "and", extLogicalAnd);
-    slaxRegisterFunction(URI_LOGICAL, "or", extLogicalOr);
+    arg->da_functions = slaxBitTable; /* Fill in our function table */
 
     return SLAX_DYN_VERSION;
-}
-
-SLAX_DYN_FUNC(slaxDynLibClean)
-{
-    slaxUnregisterFunction(URI_LOGICAL, "or");
-
-    return 0;
 }

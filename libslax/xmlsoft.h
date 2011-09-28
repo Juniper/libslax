@@ -94,6 +94,27 @@ slaxUnregisterFunction (const char *uri, const char *fn)
 				    (const xmlChar *) uri);
 }
 
+typedef struct slax_function_table_s {
+    const char *ft_name;	/* Name of the function */
+    xmlXPathFunction ft_func;	/* Function pointer */
+} slax_function_table_t;
+
+static inline void
+slaxRegisterFunctionTable (const char *uri, slax_function_table_t *ftp)
+{
+    if (ftp)
+	for ( ; ftp->ft_name; ftp++)
+	    slaxRegisterFunction(uri, ftp->ft_name, ftp->ft_func);
+}
+
+static inline void
+slaxUnregisterFunctionTable (const char *uri, slax_function_table_t *ftp)
+{
+    if (ftp)
+	for ( ; ftp->ft_name; ftp++)
+	    slaxUnregisterFunction(uri, ftp->ft_name);
+}
+
 static inline void
 slaxRegisterElement (const char *uri, const char *fn, 
 		     xsltPreComputeFunction fcompile,
@@ -108,6 +129,29 @@ slaxUnregisterElement (const char *uri, const char *fn)
 {
     xsltUnregisterExtModuleElement((const xmlChar *) fn,
 				   (const xmlChar *) uri);
+}
+
+typedef struct slax_element_table_s {
+    const char *et_name;	/* Name of the element */
+    xsltPreComputeFunction et_fcompile;
+    xsltTransformFunction et_felement;
+} slax_element_table_t;
+
+static inline void
+slaxRegisterElementTable (const char *uri, slax_element_table_t *etp)
+{
+    if (etp)
+	for ( ; etp->et_name; etp++)
+	    slaxRegisterElement(uri, etp->et_name,
+				etp->et_fcompile, etp->et_felement);
+}
+
+static inline void
+slaxUnregisterElementTable (const char *uri, slax_element_table_t *etp)
+{
+    if (etp)
+	for ( ; etp->et_name; etp++)
+	    slaxUnregisterElement(uri, etp->et_name);
 }
 
 static inline int
