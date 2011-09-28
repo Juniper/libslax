@@ -55,17 +55,20 @@
 #define dlfunc(_p, _n)		NULL /* Fail */
 #endif /* HAVE_DLFCN_H */
 
-slax_data_list_t slaxDynDirList;
-slax_data_list_t slaxDynLoaded;
-slax_data_list_t slaxDynLibraries;
+static slax_data_list_t slaxDynDirList;
+static slax_data_list_t slaxDynLoaded;
+static slax_data_list_t slaxDynLibraries;
+
+static int slaxDynInited;
 
 void
 slaxDynAdd (const char *dir)
 {
+    if (!slaxDynInited)
+	slaxDynInit();
+
     slaxDataListAddNul(&slaxDynDirList, dir);
 }
-
-
 
 static void
 slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
@@ -98,6 +101,7 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 	    len = snprintf(buf, bufsiz, fmt, dir, ret);
 	}
 
+	slaxLog("extension: attempting %s", buf);
 	dlp = dlopen((const char *) buf, RTLD_NOW);
 	if (dlp)
 	    break;
@@ -109,6 +113,8 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 	 * call it.
 	 */
 	slax_dyn_init_func_t func;
+
+	slaxLog("extension: success for %s", buf);
 
 	func = (slax_dyn_init_func_t) dlfunc(dlp, SLAX_DYN_INIT_NAME);
 	if (func) {
@@ -130,6 +136,7 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 		dap->da_handle = dlp;
 		dap->da_uri = xmlStrdup2(ns);
 
+		slaxLog("extension: calling %s::%s", buf, SLAX_DYN_INIT_NAME);
 		(*func)(SLAX_DYN_VERSION, dap);
 
 		if (dap->da_functions)
@@ -229,7 +236,11 @@ slaxDynLoad (xmlDocPtr docp)
 void
 slaxDynInit (void)
 {
-    slaxDataListInit(&slaxDynDirList);
+    if (!slaxDynInited) {
+	slaxDynInited = TRUE;
+	slaxDataListInit(&slaxDynDirList);
+    }
+
     slaxDataListAddNul(&slaxDynDirList, SLAX_EXTDIR);
 
     slaxDataListInit(&slaxDynLoaded);
@@ -244,7 +255,8 @@ slaxDynClean (void)
 {
     slax_data_node_t *dnp;
 
-    slaxDataListClean(&slaxDynDirList);
+    if (slaxDynInited)
+	slaxDataListClean(&slaxDynDirList);
     slaxDataListClean(&slaxDynLoaded);
 
     SLAXDATALIST_FOREACH(dnp, &slaxDynLibraries) {

@@ -34,6 +34,7 @@ static int slaxEnabled;		/* Global enable (SLAX_*) */
 const xmlChar slaxNull[] = "";
 
 static slax_data_list_t slaxIncludes;
+static int slaxIncludesInited;
 
 /*
  * Add a directory to the list of directories searched for files
@@ -41,6 +42,11 @@ static slax_data_list_t slaxIncludes;
 void
 slaxIncludeAdd (const char *dir)
 {
+    if (!slaxIncludesInited) {
+	slaxIncludesInited = TRUE;
+	slaxDataListInit(&slaxIncludes);
+    }
+
     slaxDataListAddNul(&slaxIncludes, dir);
 }
 
@@ -788,7 +794,7 @@ slaxEnable (int enable)
 {
     if (enable == SLAX_CLEANUP) {
 	xsltSetLoaderFunc(NULL);
-	if (slaxEnabled)
+	if (slaxIncludesInited)
 	    slaxDataListClean(&slaxIncludes);
 
 	slaxEnabled = 0;
@@ -800,7 +806,11 @@ slaxEnable (int enable)
 	exsltFuncRegister();
 	slaxExtRegister();
 
-	slaxDataListInit(&slaxIncludes);
+	if (!slaxIncludesInited) {
+	    slaxIncludesInited = TRUE;
+	    slaxDataListInit(&slaxIncludes);
+	}
+
 	slaxDynInit();
 
 	/*
@@ -813,7 +823,8 @@ slaxEnable (int enable)
 
     } else if (slaxEnabled && !enable) {
 	slaxDynClean();
-	slaxDataListClean(&slaxIncludes);
+	if (slaxIncludesInited)
+	    slaxDataListClean(&slaxIncludes);
 
 	xsltSetLoaderFunc(NULL);
     }

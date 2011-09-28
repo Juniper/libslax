@@ -134,6 +134,12 @@ void slaxElementClose (slax_data_t *sdp);
 void slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *val);
 
 /*
+ * Extend the existing value for an XSL attribute, appending the given value.
+ */
+void slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib,
+			  const char *val);
+
+/*
  * Construct a temporary (and unique!) namespace node and put the given
  * for the "func" exslt library and put the given node into
  * that namespace.  We also have to add this as an "extension"

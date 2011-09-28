@@ -35,9 +35,6 @@ typedef struct slax_dyn_arg_s {
 typedef unsigned (*slax_dyn_init_func_t)(SLAX_DYN_ARGS);
 
 void
-slaxDynAdd (const char *dir);
-
-void
 slaxDynLoad (xmlDocPtr docp);
 
 /*

@@ -1,10 +1,23 @@
 version 1.1;
 
+ns foo extension = "http://example.com/foo";
+
 match / {
     <top> {
 	var $x = /test;
 	if (!$x && !/foo/bar && !goo[zoo && !moo]) {
-	    <not>;
+	    <not> {
+                ns goo extension = "http://example.com/goo";
+                <goo:this> "oh yeah";
+            }
+	}
+
+	<mumble> {
+	    ns zoo extension = "http://example.com/zoo";
+	    ns yoo extension = "http://example.com/yoo";
+
+	    <zoo:zoo>;
+	    <yoo:yoo>;
 	}
 
 	var $y = 10;

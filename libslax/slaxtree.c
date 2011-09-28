@@ -342,10 +342,11 @@ slaxAttribAddLiteral (slax_data_t *sdp, const char *name, const char *val)
  */
 static void
 slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
-		  const char *attrib, const char *value)
+		      const char *attrib, const char *value, const char *uri)
 {
     const xmlChar *uattrib = (const xmlChar *) attrib;
-    xmlChar *current = xmlGetProp(nodep, uattrib);
+    xmlChar *current = uri ? xmlGetProp(nodep, uattrib)
+	: xmlGetNsProp(nodep, uattrib, (const xmlChar *) uri);
     int clen = current ? xmlStrlen(current) + 1 : 0;
     int vlen = strlen(value) + 1;
     xmlAttrPtr attr;
@@ -365,7 +366,13 @@ slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
 
     memcpy(newp + clen, value, vlen);
 
-    attr = xmlSetProp(nodep, uattrib, newp);
+    if (uri == NULL)
+	attr = xmlSetProp(nodep, uattrib, newp);
+    else {
+	xmlNsPtr nsp = xmlSearchNsByHref(sdp->sd_docp, nodep,
+					 (const xmlChar *) uri);
+	attr = xmlSetNsProp(nodep, nsp, uattrib, newp);
+    }
 }
 
 /*
@@ -374,7 +381,16 @@ slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
 void
 slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 {
-    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value);
+    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, NULL);
+}
+
+/*
+ * Extend the existing value for an attribute, appending the given value.
+ */
+void
+slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, XSL_URI);
 }
 
 /*
@@ -404,7 +420,7 @@ slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
 	 * list of extension prefixes.
 	 */
 	slaxNodeAttribExtend(sdp, root,
-			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix);
+			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix, NULL);
     }
 
     /* Add a distinct namespace to the current node */

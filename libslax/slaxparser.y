@@ -562,11 +562,11 @@ ns_decl_local :
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
-	    L_EQUALS T_QUOTED L_EOS
+	    ns_option_list_local L_EQUALS T_QUOTED L_EOS
 		{
 		    slax_data->sd_ns = NULL;
 
-		    slaxNsAdd(slax_data, $2->ss_token, $5->ss_token);
+		    slaxNsAdd(slax_data, $2->ss_token, $6->ss_token);
 
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
@@ -606,6 +606,24 @@ ns_option :
 		}
 	;
 
+ns_option_list_local :
+	/* empty */
+		{ $$ = NULL; }
+
+	| ns_option_list_local ns_option_local
+		{ $$ = NULL; }
+	;
+
+ns_option_local :
+	K_EXTENSION
+		{
+		    slaxAttribExtendXsl(slax_data,
+					ATT_EXTENSION_ELEMENT_PREFIXES,
+					slax_data->sd_ns->ss_token);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
 ns_alias_stmt :
 	K_NS_ALIAS T_BARE T_BARE L_EOS
 		{
@@ -617,6 +635,9 @@ ns_alias_stmt :
 
 slax_stmt_list :
 	/* empty */
+		{ $$ = NULL; }
+
+	| L_EOS
 		{ $$ = NULL; }
 
 	| slax_stmt_list slax_stmt
