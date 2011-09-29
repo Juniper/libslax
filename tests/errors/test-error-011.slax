@@ -1,0 +1,11 @@
+version 1.1;
+
+match / {
+    <out> {
+	expr "test;
+    }
+}
+
+match test {
+    <mumble> "test";
+}

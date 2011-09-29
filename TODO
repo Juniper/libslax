@@ -42,6 +42,5 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
   It only says "XPath error : Invalid expression" with no file/line info.
 
 - Nit: should give an error for unterminated string (doesn't seem to work yet)
-
-- New: Need ./configure option to turn off -Werror for platforms I
-  don't care about
+  Mixed reviews: seems to work great in some instances but I've
+  seen it not be triggered; need more testing.
