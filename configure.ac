@@ -78,6 +78,14 @@ dnl
 AC_DEFUN([VERSION_TO_NUMBER],
 [`$1 | sed -e 's/libxml //' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
+AC_MSG_CHECKING([whether to build with warnings])
+AC_ARG_ENABLE([warnings],
+    [  --enable-warnings    Turn on compiler warnings],
+    [SLAX_WARNINGS=$enableval],
+    [SLAX_WARNINGS=yes])
+AC_MSG_RESULT([$SLAX_WARNINGS])
+AM_CONDITIONAL([SLAX_WARNINGS], [test "$SLAX_WARNINGS" != "no"])
+
 AC_MSG_CHECKING([whether to build with debugging])
 AC_ARG_ENABLE([debug],
     [  --enable-debug    Turn on debugging],
@@ -353,6 +361,7 @@ AC_MSG_NOTICE([summary of build options:
   libxslt cflags:   ${LIBXSLT_CFLAGS}
   libxslt libs:     ${LIBXSLT_LIBS}
 
+  warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
   readline:         ${HAVE_READLINE:-no}
   printf-like:      ${HAVE_PRINTFLIKE:-no}

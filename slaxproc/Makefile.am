@@ -2,8 +2,9 @@
 # $Id$
 #
 
-
+if SLAX_WARNINGS
 include ${top_srcdir}/warnings.mk
+endif
 
 AM_CFLAGS = \
     -I${top_srcdir} \

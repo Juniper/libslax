@@ -2,7 +2,9 @@
 # $Id$
 #
 
+if SLAX_WARNINGS
 include ${top_srcdir}/warnings.mk
+endif
 
 slaxincdir = ${includedir}/libslax
 
