@@ -1,0 +1,4 @@
+../../../tests/errors/test-error-011.slax:10: unexpected input: 'test'; expected semi-colon (';')
+../../../tests/errors/test-error-011.slax:10:   could be related to unterminated string on line 5 ("test;\n...")
+../../../tests/errors/test-error-011.slax: 1 error detected during parsing
+slaxproc: cannot parse: '../../../tests/errors/test-error-011.slax'
