@@ -26,18 +26,24 @@ extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
     if (xop->type == XPATH_NUMBER) {
 	xmlChar *res;
 	int width;
-	unsigned long val = xop->floatval, v2;
+	unsigned long long val = xop->floatval, v2;
 
 	xmlXPathFreeObject(xop);
 
-	for (width = 1, v2 = val; v2; width++, v2 /= 2)
+	for (width = 0, v2 = val; v2; width++, v2 /= 2)
 	    continue;
 
+	if (width == 0)		/* Gotta have one zero */
+	    width = 1;
+
 	res = xmlMalloc(width + 1);
+	if (res == NULL)
+	    return NULL;
+
 	res[width] = '\0';
 	for (width--, v2 = val; width >= 0; width--, v2 /= 2)
 	    res[width] = (v2 & 1) ? '1' : '0';
-	
+
 	return res;
     }
 
@@ -201,6 +207,201 @@ extBitNot (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathReturnString(ctxt, res);
 }
 
+static void
+extBitMask (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    int width, maxw = 0;
+
+    if (nargs != 1 && nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    if (nargs == 2) {
+	maxw = xmlXPathPopNumber(ctxt);
+	if (maxw < 0 || xmlXPathCheckError(ctxt))
+	    return;
+    }
+
+    width = xmlXPathPopNumber(ctxt);
+    if (width < 0 || xmlXPathCheckError(ctxt))
+	return;
+
+    if (maxw < width)		/* maxw cannot be < width */
+	maxw = width;
+    if (maxw < 1)		/* At least make one zero */
+	maxw = 1;
+
+    res = xmlMalloc(maxw + 1);
+    if (res) {
+	res[maxw] = '\0';
+	if (maxw > width)
+	    memset(res, '0', maxw - width);
+	memset(res + maxw - width, '1', width);
+    }
+
+    xmlXPathReturnString(ctxt, res);
+}
+
+static void
+extBitToInt (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    xmlXPathObjectPtr xop;
+    unsigned long long val;
+    int i;
+
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res = extBitStringVal(ctxt, xop);
+    if (res == NULL)
+	return;
+
+    for (i = 0, val = 0; res[i]; i++) {
+	val <<= 1;
+	if (res[i] == '1')
+	    val += 1;
+    }
+
+    xmlXPathReturnNumber(ctxt, (float) val);
+}
+
+static void
+extBitFromInt (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    xmlXPathObjectPtr xop;
+    int width = 0, len;
+
+    if (nargs != 1 && nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    if (nargs == 2) {
+	width = xmlXPathPopNumber(ctxt);
+	if (width < 0 || xmlXPathCheckError(ctxt))
+	    return;
+    }
+
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res = extBitStringVal(ctxt, xop);
+    if (res == NULL)
+	return;
+
+    len = xmlStrlen(res);
+    if (width > len) {
+	res = xmlRealloc(res, width + 1);
+	if (res) {
+	    int count = width - len;
+	    memmove(res + count, res, len + 1);
+	    memset(res, '0', count);
+	}
+    }
+
+    xmlXPathReturnString(ctxt, res);
+}
+
+static void
+extBitToHex (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    xmlXPathObjectPtr xop;
+    unsigned long long val;
+    int i, len1, len2;
+
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res = extBitStringVal(ctxt, xop);
+    if (res == NULL)
+	return;
+
+    for (i = 0, val = 0; res[i]; i++) {
+	val <<= 1;
+	if (res[i] == '1')
+	    val += 1;
+    }
+
+    len1 = xmlStrlen(res);
+    len2 = snprintf((char *) res, len1 + 1, "0x%qx", val);
+    if (len2 > len1) {
+	res = xmlRealloc(res, len2 + 1);
+	if (res)
+	    snprintf((char *) res, len2 + 1, "0x%qx", val);
+    }
+
+    xmlXPathReturnString(ctxt, res);
+}
+
+static void
+extBitFromHex (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res;
+    int maxw = 0, width = 0, i;
+    unsigned long long val, v2;
+
+    if (nargs != 1 && nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    if (nargs == 2) {
+	maxw = xmlXPathPopNumber(ctxt);
+	if (maxw < 0 || xmlXPathCheckError(ctxt))
+	    return;
+    }
+
+    res = xmlXPathPopString(ctxt);
+    if (res == NULL || xmlXPathCheckError(ctxt))
+	return;
+
+    val = strtoull((char *) res, 0, 0x10);
+    
+    for (width = 0, v2 = val; v2; width++, v2 /= 2)
+	continue;
+
+    if (width == 0)		/* Gotta have one zero */
+	width = 1;
+
+    if (maxw < width)
+	maxw = width;
+
+    res = xmlRealloc(res, maxw + 1);
+    if (res) {
+	res[maxw] = '\0';
+
+	for (i = maxw - 1, v2 = val; i >= 0; i--) {
+	    if (width-- <= 0)
+		res[i] = '0';
+	    else {
+		res[i] = (v2 & 1) ? '1' : '0';
+		v2 /= 2;
+	    }
+	}
+    }
+
+    xmlXPathReturnString(ctxt, res);
+}
+
 slax_function_table_t slaxBitTable[] = {
     { "and", extBitAnd },
     { "or", extBitOr },
@@ -209,6 +410,11 @@ slax_function_table_t slaxBitTable[] = {
     { "xor", extBitXor },
     { "xnor", extBitXnor },
     { "not", extBitNot },
+    { "mask", extBitMask },
+    { "to-int", extBitToInt },
+    { "from-int", extBitFromInt },
+    { "to-hex", extBitToHex },
+    { "from-hex", extBitFromHex },
     { NULL, NULL },
 };
 

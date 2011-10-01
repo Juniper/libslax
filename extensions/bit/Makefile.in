@@ -260,6 +260,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 bitincdir = ${includedir}/libslax
+EXTRA_DIST = bit.txt
 AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} \
 	${LIBXML_CFLAG} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libbit.la
@@ -581,9 +582,10 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 install-exec-hook:
 	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \
-		&& echo Initializing $$DLNAME "->" ${UGLY_NAME} "..." \
+		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
 	        && cd ${SLAX_EXTDIR} \
-		&& ln -s -f $$DLNAME ${UGLY_NAME}
+	        && rm -f ${UGLY_NAME} \
+		&& ${LN_S} $$DLNAME ${UGLY_NAME}
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

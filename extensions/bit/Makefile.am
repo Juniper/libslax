@@ -8,6 +8,8 @@ endif
 
 bitincdir = ${includedir}/libslax
 
+EXTRA_DIST = bit.txt
+
 AM_CFLAGS = \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
@@ -30,6 +32,7 @@ UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextension%2Fbit.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \
-		&& echo Initializing $$DLNAME "->" ${UGLY_NAME} "..." \
+		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
 	        && cd ${SLAX_EXTDIR} \
-		&& ln -s -f $$DLNAME ${UGLY_NAME}
+	        && rm -f ${UGLY_NAME} \
+		&& ${LN_S} $$DLNAME ${UGLY_NAME}

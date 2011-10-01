@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.9.1], [phil@juniper.net])
+AC_INIT([libslax], [0.9.4], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -30,6 +30,7 @@ LIBXSLT_REQUIRED_VERSION=1.1.26
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_CONFIG_MACRO_DIR([m4])
+AC_PROG_LN_S
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)

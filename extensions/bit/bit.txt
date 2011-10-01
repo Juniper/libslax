@@ -1,0 +1,117 @@
+
+The "bit" extension library contains a set of functions that make and
+manipulate bit strings, which are strings containing '0's and
+'1's.  Traditional bit-oriented operations are supported.
+
+** "bit" Extension Library
+
+The "bit" extension library uses the following namespace:
+
+    ns bit extension = "http://xml.juniper.net/extension/bit";
+
+*** bit:and
+
+The "bit:and" function returns the logical "AND" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:and(string1, string2);
+
+*** bit:mask
+
+The "bit:mask" function returns a bit string, with the given width of
+'1's.  If the optional second argument is given, the string contains
+enough leading '0's to pad its length to the value given.
+
+    SYNTAX::
+        string bit:mask(ones-count);
+        string bit:mask(ones-count, total-width);
+
+    EXAMPLES::
+        var $mask = bit:mask(4); /* Returns "1111" */
+        var $mask = bit:mask(8, 32);
+        /* Returns "00000000000000000000000011111111" */
+
+*** bit:nand
+
+The "bit:and" function returns the logical "NAND" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:nand(string1, string2);
+
+*** bit:nor
+
+The "bit:nor" function returns the logical "NOR" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:and(string1, string2);
+
+*** bit:not
+
+The "bit:and" function returns the logical "NOT" of the argument
+bit string.
+
+    SYNTAX::
+        string bit:not(string);
+
+*** bit:or
+
+The "bit:and" function returns the logical "OR" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:or(string1, string2);
+
+*** bit:xnor
+
+The "bit:and" function returns the logical "XNOR" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:xnor(string1, string2);
+
+*** bit:xor
+
+The "bit:and" function returns the logical "XOR" of the two argument
+bit strings.
+
+    SYNTAX::
+        string bit:xor(string1, string2);
+
+*** bit:to-int
+
+The "bit:to-int" function returns the value of the argument bit string
+as an XPath number.
+
+    SYNTAX::
+        number bit:to-int(string);
+
+*** bit:from-int
+
+The "bit:from-int" function returns the value of the argument integer
+as a bit string.  An optional "width" argument can be used to pad the
+result with sufficient leading zeros to achieve the requested length.
+
+    SYNTAX::
+        string bit:from-int(number);
+        string bit:from-int(number, width);
+
+*** bit:to-hex
+
+The "bit:to-hex" function returns the value of the argument bit string
+as a hex value, with a leading "0x".
+
+    SYNTAX::
+        string bit:to-hex(string);
+
+*** bit:from-hex
+
+The "bit:from-hex" function returns the value of the argument hex number
+as a bit string.  An optional "width" argument can be used to pad the
+result with sufficient leading zeros to achieve the requested length.
+
+    SYNTAX::
+        string bit:from-hex(number);
+        string bit:from-hex(number, width);
