@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "slaxutil.h"
+#include "slaxdyn.h"
 #include "xmlsoft.h"
 
 /* Forward declarations for common structures */

@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.9.4], [phil@juniper.net])
+AC_INIT([libslax], [0.9.6], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -61,8 +61,8 @@ AC_CHECK_FUNCS([getpass])
 AC_CHECK_FUNCS([sysctlbyname])
 AC_CHECK_FUNCS([flock])
 
-AC_CHECK_FUNCS([dlopen dlsym dlfunc])
 AC_CHECK_HEADERS([dlfcn.h])
+AC_CHECK_FUNCS([dlfunc])
 
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h])

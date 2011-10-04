@@ -19,10 +19,10 @@ libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 slaxinc_HEADERS = \
      slax.h \
      slaxconfig.h \
-     slaxdata.h
+     slaxdata.h \
+     slaxdyn.h
 
 noinst_HEADERS = \
-    slaxdyn.h \
     slaxinternals.h \
     slaxio.h \
     slaxlexer.h \

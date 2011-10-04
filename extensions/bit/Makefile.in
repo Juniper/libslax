@@ -74,8 +74,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-libbit_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+libbit_la_LIBADD =
 am_libbit_la_OBJECTS = ext_bit.lo
 libbit_la_OBJECTS = $(am_libbit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -153,7 +152,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+LIBS = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} -L${SLAX_EXTDIR} -lslax
 LIBSLAX_VERSION = @LIBSLAX_VERSION@
 LIBSLAX_VERSION_EXTRA = @LIBSLAX_VERSION_EXTRA@
 LIBSLAX_VERSION_NUMBER = @LIBSLAX_VERSION_NUMBER@
@@ -264,11 +263,10 @@ EXTRA_DIST = bit.txt
 AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} \
 	${LIBXML_CFLAG} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libbit.la
-libbit_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 libbit_la_SOURCES = \
     ext_bit.c
 
-UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextension%2Fbit.ext
+UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextensions%2Fbit.ext
 all: all-am
 
 .SUFFIXES:

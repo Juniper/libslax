@@ -94,11 +94,6 @@ slaxUnregisterFunction (const char *uri, const char *fn)
 				    (const xmlChar *) uri);
 }
 
-typedef struct slax_function_table_s {
-    const char *ft_name;	/* Name of the function */
-    xmlXPathFunction ft_func;	/* Function pointer */
-} slax_function_table_t;
-
 static inline void
 slaxRegisterFunctionTable (const char *uri, slax_function_table_t *ftp)
 {
@@ -130,12 +125,6 @@ slaxUnregisterElement (const char *uri, const char *fn)
     xsltUnregisterExtModuleElement((const xmlChar *) fn,
 				   (const xmlChar *) uri);
 }
-
-typedef struct slax_element_table_s {
-    const char *et_name;	/* Name of the element */
-    xsltPreComputeFunction et_fcompile;
-    xsltTransformFunction et_felement;
-} slax_element_table_t;
 
 static inline void
 slaxRegisterElementTable (const char *uri, slax_element_table_t *etp)

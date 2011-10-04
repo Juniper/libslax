@@ -32,8 +32,8 @@
  */
 
 #include <sys/queue.h>
-#include <dlfcn.h>
 #include <string.h>
+#include <errno.h>
 
 #include <libxml/uri.h>
 #include <libxml/tree.h>
@@ -44,9 +44,11 @@
 #include <libslax/slax.h>
 #include "slaxdata.h"
 
-#ifdef HAVE_DLFCN_H
 #include "slaxdyn.h"
-#if !defined(HAVE_DLFUNC) && defined(HAVE_DLSYM)
+
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#if !defined(HAVE_DLFUNC)
 #define dlfunc(_p, _n)		dlsym(_p, _n)
 #endif
 #else /* HAVE_DLFCN_H */
@@ -105,6 +107,7 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 	dlp = dlopen((const char *) buf, RTLD_NOW);
 	if (dlp)
 	    break;
+	slaxLog("extension failed: %s", dlerror() ?: "none");
     }
 
     if (dlp) {

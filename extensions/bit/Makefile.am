@@ -21,14 +21,14 @@ AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
 lib_LTLIBRARIES = libbit.la
-libbit_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+LIBS = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} -L${SLAX_EXTDIR} -lslax
 
 libbit_la_SOURCES = \
     ext_bit.c
 
 libdir = ${SLAX_EXTDIR}
 
-UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextension%2Fbit.ext
+UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextensions%2Fbit.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \

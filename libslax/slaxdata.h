@@ -23,6 +23,14 @@ slaxDataListInit (slax_data_list_t *listp)
     TAILQ_INIT(listp);
 }
 
+static inline slax_data_list_t *
+slaxDataListCheckInit (slax_data_list_t *listp)
+{
+    if (listp->tqh_last == NULL)
+	TAILQ_INIT(listp);
+    return listp;
+}
+
 static inline slax_data_node_t *
 slaxDataListAddLen (slax_data_list_t *listp, const char *buf, size_t len)
 {
@@ -30,6 +38,8 @@ slaxDataListAddLen (slax_data_list_t *listp, const char *buf, size_t len)
 
     if (listp == NULL)
 	return NULL;
+
+    slaxDataListCheckInit(listp);
 
     dnp = xmlMalloc(sizeof(*dnp) + len);
     if (dnp) {
@@ -70,6 +80,9 @@ slaxDataListCopy (slax_data_list_t *top, slax_data_list_t *fromp)
 {
     slax_data_node_t *dnp, *newp;
 
+    slaxDataListCheckInit(top);
+    slaxDataListCheckInit(fromp);
+
     TAILQ_FOREACH(dnp, fromp, dn_link) {
 	newp  = xmlMalloc(sizeof(*dnp) + dnp->dn_len + 1);
 	if (newp == NULL)
@@ -88,6 +101,8 @@ slaxDataListClean (slax_data_list_t *listp)
 {
     slax_data_node_t *dnp;
 
+    slaxDataListCheckInit(listp);
+
     for (;;) {
 	dnp = TAILQ_FIRST(listp);
         if (dnp == NULL)
@@ -97,7 +112,11 @@ slaxDataListClean (slax_data_list_t *listp)
     }
 }
 
-#define SLAXDATALIST_FOREACH(_dnp, _listp) TAILQ_FOREACH(_dnp, _listp, dn_link)
-#define SLAXDATALIST_EMPTY(_listp) TAILQ_EMPTY(_listp)
+/* Cannot put this inside a "do { .. } while (0)" */
+#define SLAXDATALIST_FOREACH(_dnp, _listp) \
+    slaxDataListCheckInit(_listp); \
+    TAILQ_FOREACH(_dnp, _listp, dn_link)
+
+#define SLAXDATALIST_EMPTY(_listp) TAILQ_EMPTY(slaxDataListCheckInit(_listp))
 
 #endif /* LIBSLAX_SLAXDATA_H */

@@ -9,6 +9,26 @@
 #ifndef LIBSLAX_SLAXDYN_H
 #define LIBSLAX_SLAXDYN_H
 
+#include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */
+#include <libxslt/extensions.h>
+#include <libslax/slax.h>
+
+/*
+ * This structure defines the mapping between function (or element)
+ * names and the functions that implement them.  It is also used by
+ * the table-based function registration functions.
+ */
+typedef struct slax_function_table_s {
+    const char *ft_name;	/* Name of the function */
+    xmlXPathFunction ft_func;	/* Function pointer */
+} slax_function_table_t;
+
+typedef struct slax_element_table_s {
+    const char *et_name;	/* Name of the element */
+    xsltPreComputeFunction et_fcompile;
+    xsltTransformFunction et_felement;
+} slax_element_table_t;
+
 /*
  * This structure is an interface between the libslax main code
  * and the code in the extension library.  This structure should
@@ -25,7 +45,9 @@ typedef struct slax_dyn_arg_s {
 
 #define SLAX_DYN_VERSION 1	/* Current version */
 #define SLAX_DYN_ARGS  \
-    unsigned version __unused, struct slax_dyn_arg_s *arg __unused
+    unsigned version UNUSED, \
+	struct slax_dyn_arg_s *arg UNUSED
+
 #define SLAX_DYN_INIT_NAME	"slaxDynLibInit"
 #define SLAX_DYN_CLEAN_NAME	"slaxDynLibClean"
 
