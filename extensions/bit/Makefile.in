@@ -579,7 +579,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 @SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
-	@DLNAME=`sh -c '. libbit.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. ${libdir}/libbit.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
 	        && cd ${SLAX_EXTDIR} \
 	        && rm -f ${UGLY_NAME} \
