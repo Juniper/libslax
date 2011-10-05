@@ -41,10 +41,16 @@ slaxDataListAddLen (slax_data_list_t *listp, const char *buf, size_t len)
 
     slaxDataListCheckInit(listp);
 
-    dnp = xmlMalloc(sizeof(*dnp) + len);
+    /*
+     * We allocate an extra byte to allow us to NUL terminate it.  The
+     * data is opaque to us, but will likely be a string, so we want
+     * to allow this option.
+     */
+    dnp = xmlMalloc(sizeof(*dnp) + len + 1);
     if (dnp) {
 	dnp->dn_len = len;
 	memcpy(dnp->dn_data, buf, len);
+	dnp->dn_data[len] = '\0';
 	TAILQ_INSERT_TAIL(listp, dnp, dn_link);
     }
 
