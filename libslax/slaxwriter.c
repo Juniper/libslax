@@ -2936,7 +2936,8 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 
     if (!partial) {
 	slaxWrite(&sw,
-	      "/* Machine Crafted with Care (tm) by slaxWriter */");
+		  "/* SLAX format using libslax-%s%s */",
+		  LIBSLAX_VERSION, LIBSLAX_VERSION_EXTRA);
 	slaxWriteNewline(&sw, 0);
 
 	slaxWrite(&sw, "version %s;", version ?: "1.1");
