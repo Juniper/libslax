@@ -74,9 +74,9 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libbit_la_LIBADD =
-am_libbit_la_OBJECTS = ext_bit.lo
-libbit_la_OBJECTS = $(am_libbit_la_OBJECTS)
+libext_bit_la_LIBADD =
+am_libext_bit_la_OBJECTS = ext_bit.lo
+libext_bit_la_OBJECTS = $(am_libext_bit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -106,8 +106,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libbit_la_SOURCES)
-DIST_SOURCES = $(libbit_la_SOURCES)
+SOURCES = $(libext_bit_la_SOURCES)
+DIST_SOURCES = $(libext_bit_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -258,12 +258,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-bitincdir = ${includedir}/libslax
+ext_bitincdir = ${includedir}/libslax
 EXTRA_DIST = bit.txt
 AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} \
 	${LIBXML_CFLAG} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
-lib_LTLIBRARIES = libbit.la
-libbit_la_SOURCES = \
+lib_LTLIBRARIES = libext_bit.la
+libext_bit_la_SOURCES = \
     ext_bit.c
 
 UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextensions%2Fbit.ext
@@ -332,8 +332,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libbit.la: $(libbit_la_OBJECTS) $(libbit_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libbit_la_OBJECTS) $(libbit_la_LIBADD) $(LIBS)
+libext_bit.la: $(libext_bit_la_OBJECTS) $(libext_bit_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libext_bit_la_OBJECTS) $(libext_bit_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -579,7 +579,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 @SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libbit.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. ${libdir}/libext_bit.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
 	        && cd ${SLAX_EXTDIR} \
 	        && rm -f ${UGLY_NAME} \
