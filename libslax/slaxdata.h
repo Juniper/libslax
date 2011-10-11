@@ -125,4 +125,49 @@ slaxDataListClean (slax_data_list_t *listp)
 
 #define SLAXDATALIST_EMPTY(_listp) TAILQ_EMPTY(slaxDataListCheckInit(_listp))
 
+static inline size_t
+slaxDataListAsCharLen (slax_data_list_t *listp, const char *sep)
+{
+    size_t slen = sep ? strlen(sep) : 0;
+    slax_data_node_t *dnp;
+    size_t result = 1;
+
+    SLAXDATALIST_FOREACH(dnp, listp) {
+	result += dnp->dn_len + slen;
+    }
+
+    return result;
+}
+
+static inline char *
+slaxDataListAsChar (char *buf, size_t bufsiz,
+		    slax_data_list_t *listp, const char *sep)
+{
+    size_t slen = sep ? strlen(sep) : 0;
+    slax_data_node_t *dnp;
+    char *cp = buf;
+    size_t left = bufsiz;
+
+    if (left <= 0)
+	return NULL;
+
+    SLAXDATALIST_FOREACH(dnp, listp) {
+	if (dnp->dn_len + slen >= left)
+	    break;
+
+	if (cp != buf) {
+	    memcpy(cp, sep, slen);
+	    cp += slen;
+	    left -= slen;
+	}
+
+	memcpy(cp, dnp->dn_data, dnp->dn_len);
+	cp += dnp->dn_len;
+	left -= dnp->dn_len;
+    }
+
+    *cp = '\0';
+    return buf;
+}
+
 #endif /* LIBSLAX_SLAXDATA_H */

@@ -44,3 +44,11 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 - Nit: should give an error for unterminated string (doesn't seem to work yet)
   Mixed reviews: seems to work great in some instances but I've
   seen it not be triggered; need more testing.
+
+- Nit: slaxwriter needs to care about wrapping lines, say, at
+  commas, underscores, operators, etc and reindenting the next line
+
+- Bug: "slaxproc -F" turns:
+    <sym xml:space="preserve"> " ";
+  into:
+    <sym xml:space="preserve"> ;

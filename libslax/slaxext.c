@@ -2623,6 +2623,7 @@ slaxExtRegisterOther (const char *namespace)
     slaxRegisterFunction(namespace, "regex", slaxExtRegex);
     slaxRegisterFunction(namespace, "sleep", slaxExtSleep);
     slaxRegisterFunction(namespace, "split", slaxExtSplit);
+    slaxRegisterFunction(namespace, "sprintf", slaxExtPrintf);
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
     slaxRegisterFunction(namespace, "sysctl", slaxExtSysctl);
 #endif
