@@ -130,6 +130,9 @@ slaxOutputNode (xmlNodePtr node)
 {
     xmlSaveCtxtPtr handle;
 
+    if (slaxWriteCallback == NULL)
+	return;
+
     handle = xmlSaveToIO(slaxWriteCallback, NULL, NULL, NULL,
 		 XML_SAVE_FORMAT | XML_SAVE_NO_DECL | XML_SAVE_NO_XHTML);
     if (handle) {
@@ -161,6 +164,9 @@ slaxError (const char *fmt, ...)
 {
     va_list vap;
     int rc;
+
+    if (slaxErrorCallback == NULL)
+	return -1;
 
     va_start(vap, fmt);
     rc = slaxErrorCallback(fmt, vap);
