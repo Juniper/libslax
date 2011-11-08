@@ -1542,6 +1542,8 @@ result_stmt :
 		{
 		    xmlNodePtr nodep;
 
+		    SLAX_KEYWORDS_OFF();
+
 		    nodep = slaxElementPush(slax_data, ELT_RESULT, NULL, NULL);
 		    if (nodep)
 			slaxSetFuncNs(slax_data, nodep);

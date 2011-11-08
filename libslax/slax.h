@@ -168,7 +168,7 @@ slaxDebugSetIncludes (const char **includes);
  * @params set of parameters
  * @returns output document
  */
-void
+xmlDocPtr
 slaxDebugApplyStylesheet (const char *scriptname,
 			  struct _xsltStylesheet *style,
 			  const char *docname, struct _xmlDoc *doc,

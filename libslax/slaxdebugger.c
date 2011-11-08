@@ -2253,13 +2253,13 @@ slaxDebugReload (const char *scriptname)
  * @params set of parameters
  * @returns output document
  */
-void
+xmlDocPtr
 slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 			  const char *docname UNUSED, xmlDocPtr doc,
 			  const char **params)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
-    xmlDocPtr res;
+    xmlDocPtr res = NULL;
     int status;
     xsltStylesheetPtr new_style, save_style = NULL;
 
@@ -2332,11 +2332,15 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	    continue;	/* Until the user says "run", we go nothing */
 	}
 
+	if (res)		/* Free doc from last run */
+	    xmlFreeDoc(res);
+
 	res = xsltApplyStylesheet(style, doc, params);
 
 	status = xsltGetDebuggerStatus();
 	if (status == XSLT_DEBUG_QUIT) {
-	    xmlFreeAndEasy(res);
+	    if (res)
+		xmlFreeDoc(res);
 	    res = NULL;
 
 	    if (statep->ds_flags & DSF_RELOAD) {
@@ -2360,11 +2364,8 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 * cleanup, and loop in the shell until something
 	 * interesting happens.
 	 */
-	if (res) {
+	if (res)
 	    xsltSaveResultToFile(stdout, res, style);
-	    xmlFreeDoc(res);
-	    res = NULL;
-	}
 
 	/* Clean up state pointers (all free'd by now) */
 	statep->ds_ctxt = NULL;
@@ -2387,4 +2388,6 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
     if (save_style)
 	xsltFreeStylesheet(save_style);
+
+    return res;
 }

@@ -246,12 +246,14 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (opt_debugger) {
 	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
-	slaxDebugApplyStylesheet(scriptname, script,
+	res = slaxDebugApplyStylesheet(scriptname, script,
 				 is_filename_std(input) ? NULL : input,
 				 indoc, params);
     } else {
 	res = xsltApplyStylesheet(script, indoc, params);
+    }
 
+    if (res) {
 	if (output == NULL || is_filename_std(output))
 	    outfile = stdout;
 	else {
@@ -265,8 +267,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	if (outfile != stdout)
 	    fclose(outfile);
 
-	if (res)
-	    xmlFreeDoc(res);
+	xmlFreeDoc(res);
     }
 
     xmlFreeDoc(indoc);

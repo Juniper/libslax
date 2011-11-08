@@ -27,6 +27,7 @@
 #include <libslax/slaxdyn.h>
 
 static xsltDocLoaderFunc slaxOriginalXsltDocDefaultLoader;
+xmlExternalEntityLoader slaxOriginalEntityLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
 
@@ -684,6 +685,68 @@ slaxIsSlaxFile (const char *filename)
     return TRUE;
 }
 
+static FILE *
+slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz)
+{
+    FILE *file;
+    const char *lastsegment = (const char *) url;
+    const char *iter;
+    slax_data_node_t *dnp;
+
+    if (strchr(url, ':'))	/* It's a real URL */
+	return NULL;
+
+    file = fopen((const char *) url, "r");
+    if (file) {			/* Straight file name was found */
+	strlcpy(buf, url, bufsiz);
+	return file;
+    }
+
+    for (iter = lastsegment; *iter != 0; iter++)
+	if (*iter == '/')
+	    lastsegment = iter + 1;
+
+    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
+	char *dir = dnp->dn_data;
+	int dirlen = strlen(dir);
+	int lastlen = strlen(lastsegment);
+	size_t len = dirlen + lastlen + 2;
+
+	if (len > bufsiz)
+	    return NULL;
+
+	memcpy(buf, dir, dirlen);
+	buf[dirlen] = '/';
+	memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
+
+	file = fopen((const char *) buf, "r");
+	if (file) {
+	    return file;
+	}
+    }
+
+    return NULL;
+}
+
+/*
+ * A hook into the XSLT parsing mechanism, that gives us first
+ * crack at parsing an entity (import or include).
+ */
+static xmlParserInputPtr
+slaxLoadEntity (const char *url, const char *id,
+		xmlParserCtxtPtr ctxt)
+{
+    FILE *file;
+    char buf[BUFSIZ];
+
+    file = slaxFindIncludeFile((const char *) url, buf, sizeof(buf));
+    if (file == NULL)
+	return slaxOriginalEntityLoader(url, id, ctxt);
+
+    fclose(file);
+    return slaxOriginalEntityLoader(buf, id, ctxt);
+}
+
 /*
  * A hook into the XSLT parsing mechanism, that gives us first
  * crack at parsing a stylesheet.
@@ -694,6 +757,7 @@ slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
 {
     FILE *file;
     xmlDocPtr docp;
+    char buf[BUFSIZ];
 
     if (!slaxIsSlaxFile((const char *) url))
 	return slaxOriginalXsltDocDefaultLoader(url, dict, options,
@@ -702,43 +766,11 @@ slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
     if (url[0] == '-' && url[1] == 0)
 	file = stdin;
     else {
-	file = fopen((const char *) url, "r");
+	file = slaxFindIncludeFile((const char *) url, buf, sizeof(buf));
 	if (file == NULL) {
-	    const char *lastsegment = (const char *) url;
-	    const char *iter;
-	    slax_data_node_t *dnp;
-	    char *buf = NULL;
-	    size_t bufsiz = 0;
-
-	    for (iter = lastsegment; *iter != 0; iter++)
-		if (*iter == '/')
-		    lastsegment = iter + 1;
-
-	    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
-		char *dir = dnp->dn_data;
-		int dirlen = strlen(dir);
-		int lastlen = strlen(lastsegment);
-		size_t len = dirlen + lastlen + 2;
-
-		if (len > bufsiz) {
-		    bufsiz = len + 1;
-		    buf = alloca(bufsiz);
-		}
-
-		memcpy(buf, dir, dirlen);
-		buf[dirlen] = '/';
-		memcpy(buf + dirlen + 1, lastsegment, lastlen + 1);
-
-		file = fopen((const char *) url, "r");
-		if (file)
-		    break;
-	    }
-
-	    if (file == NULL) {
-		slaxLog("slax: file open failed for '%s': %s",
-			url, strerror(errno));
-		return NULL;
-	    }
+	    slaxLog("slax: file open failed for '%s': %s",
+		    url, strerror(errno));
+	    return NULL;
 	}
     }
 
@@ -818,8 +850,11 @@ slaxEnable (int enable)
 	 */
 	if (slaxOriginalXsltDocDefaultLoader == NULL)
 	    slaxOriginalXsltDocDefaultLoader = xsltDocDefaultLoader;
-
 	xsltSetLoaderFunc(slaxLoader);
+
+	if (slaxOriginalEntityLoader == NULL)
+	    slaxOriginalEntityLoader = xmlGetExternalEntityLoader();
+	xmlSetExternalEntityLoader(slaxLoadEntity);
 
     } else if (slaxEnabled && !enable) {
 	slaxDynClean();
@@ -827,6 +862,8 @@ slaxEnable (int enable)
 	    slaxDataListClean(&slaxIncludes);
 
 	xsltSetLoaderFunc(NULL);
+	if (slaxOriginalEntityLoader)
+	    xmlSetExternalEntityLoader(slaxOriginalEntityLoader);
     }
 
     slaxEnabled = enable;
