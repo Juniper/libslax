@@ -21,7 +21,9 @@ AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
 lib_LTLIBRARIES = libext_bit.la
-LIBS = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} -L${SLAX_EXTDIR} -lslax
+LIBS = \
+    ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} \
+    -L${SLAX_EXTDIR} -L../../libslax -lslax
 
 libext_bit_la_SOURCES = \
     ext_bit.c

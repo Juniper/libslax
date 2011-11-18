@@ -2288,6 +2288,22 @@ of instructions that emit the value to be returned.
 This section contains statements and constructs that don't easily
 fit into other categories.
 
+*** The "#!" Line
+
+If the first line of a SLAX script begins with the characters "#!",
+the rest of that line is ignored.  This allows scripts to be invoked
+directly by name on a unix command line.  Additional details are
+available at the following site:
+
+    http://en.wikipedia.org/wiki/Shebang_%28Unix%29
+
+(Note that I've never heard it pronounced "shebang" before; we call it
+"pound-bang" around here, just as we say "pound define" rather than
+"hash define".)
+
+See ^slaxproc-arguments^ for details about the slaxproc utility
+argument handling and the "#!" line.
+
 *** Combining Scripts ("include" and "import") @include-import@
 
 Scripts files can use multiple source files, allowing library files to
@@ -2843,6 +2859,45 @@ to convert a region from one format to the other:
 
 Use the "-w" option to restrict the output of slaxproc to 1.0
 features.
+
+*** Argument Handling @slaxproc-arguments@
+
+slaxproc accept the script name, input name, and output name in two ways.
+You can say:
+
+    slaxproc script.slax input.xml output.xml
+
+using positional arguments.  This way allows slaxproc to be plug
+compatible with xsltproc.
+
+The other way is to give explicit option values using "-n", "-i", 
+and "-o".  The above command line can be given as:
+
+   slaxproc -i input.xml -n script.slax -o output.xml
+  
+These options can be in any order and can be intermixed with other 
+arguments.  If none of the values are given, they can still be
+parsed positionally.  In this example, the script name is positional
+but the input and output file names are positional.
+   
+   slaxproc -i input.xml -o output.xml -g -v script.slax
+
+Flexible argument parsing allows aliases and #! arguments to tailor
+the slaxproc invocation to match specific needs.  For example if a
+script begins with:
+
+    #!/usr/bin/slaxproc -n
+
+then additional slaxproc arguments can be given:
+
+    $ that-script -g input.xml
+
+The -E option tells slaxproc to use an empty input document, removing
+the need for the "-i" option or a positional argument.
+
+If the input or output arguments have the value "-" (or is not 
+given), the standard input or standard output file will be used. 
+This allows slaxproc to be used as a traditional unix filter.
 
 ** The SLAX Debugger (sdb)
 
