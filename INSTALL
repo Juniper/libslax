@@ -83,3 +83,10 @@ Under "GNOME":
   libxslt-devel
 
 The "configure" script may give some odd but mostly harmful errors.
+
+** Special notes for ubuntu
+
+You will need the following packages installed:
+
+libxml2-dev
+libxslt-dev

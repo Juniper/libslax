@@ -26,6 +26,10 @@ if HAVE_READLINE
 LIBS += -lreadline
 endif
 
+if HAVE_LIBEDIT
+LIBS += -ledit
+endif
+
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c

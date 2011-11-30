@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.9.16], [phil@juniper.net])
+AC_INIT([libslax], [0.9.18], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -102,6 +102,14 @@ AC_ARG_ENABLE([readline],
     [HAVE_READLINE=no])
 AC_MSG_RESULT([$HAVE_READLINE])
 AM_CONDITIONAL([HAVE_READLINE], [test "$HAVE_READLINE" != "no"])
+
+AC_MSG_CHECKING([whether to build with libedit])
+AC_ARG_ENABLE([libedit],
+    [  --enable-libedit    Enable support for libedit (BSD readline)],
+    [HAVE_LIBEDIT=yes; AC_DEFINE([HAVE_LIBEDIT], [1], [Support libedit])],
+    [HAVE_LIBEDIT=no])
+AC_MSG_RESULT([$HAVE_LIBEDIT])
+AM_CONDITIONAL([HAVE_LIBEDIT], [test "$HAVE_LIBEDIT" != "no"])
 
 AC_MSG_CHECKING([whether to build with printflike])
 AC_ARG_ENABLE([printflike],
@@ -375,6 +383,7 @@ AC_MSG_NOTICE([summary of build options:
   warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
   readline:         ${HAVE_READLINE:-no}
+  libedit:          ${HAVE_LIBEDIT:-no}
   printf-like:      ${HAVE_PRINTFLIKE:-no}
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
 ])

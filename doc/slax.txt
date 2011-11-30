@@ -2642,9 +2642,9 @@ be returned.
 
 Use the slax:get-command() function to return an input string provided
 by the user in response to a given prompt string.  If the "readline"
-library was found at install time, the returned value is entered in
-the readline history, and will be available via the readline history
-keystrokes (Control-P and Control-N).
+(or "libedit") library was found at install time, the returned value
+is entered in the readline history, and will be available via the
+readline history keystrokes (Control-P and Control-N).
 
     SYNTAX::
         string slax:get-command(prompt)

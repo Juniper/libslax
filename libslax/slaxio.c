@@ -199,7 +199,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	return cp ? (char *) xmlStrdup((xmlChar *) cp) : NULL;
 
     } else {
-#ifdef HAVE_READLINE
+#if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
 	char *res;
 
 	/*
@@ -228,7 +228,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	free(cp);
 	return res;
     
-#else /* HAVE_READLINE */
+#else /* HAVE_READLINE || HAVE_LIBEDIT */
 	char buf[BUFSIZ];
 	int len;
 
@@ -244,7 +244,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	    buf[len - 1] = '\0';
 
 	return (char *) xmlStrdup((xmlChar *) buf);
-#endif /* HAVE_READLINE */
+#endif /* HAVE_READLINE || HAVE_LIBEDIT */
     }
 }
 
