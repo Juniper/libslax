@@ -1038,7 +1038,30 @@ slaxDebugCmdList (DC_ARGS)
 
     if (argv[1]) {
 	node = slaxDebugGetNode(statep, argv[1]);
-	line_no = xmlGetLineNo(node);
+	if (node) {
+	    line_no = xmlGetLineNo(node);
+	} else {
+	    line_no = atoi(argv[1]);
+	    if (line_no <= 0) {
+		slaxOutput("invalid target: %s", argv[1]);
+		return;
+	    }
+
+	    /* We have a line number but no node */
+	    if (statep->ds_list_node)
+		node = statep->ds_list_node;
+
+	    else if (statep->ds_inst)
+		node = statep->ds_inst;
+
+	    else if (statep->ds_script->doc)
+		node = xmlDocGetRootElement(statep->ds_script->doc);
+
+	    else {
+		slaxOutput("unknown location");
+		return;
+	    }
+	}
 
     } else if (statep->ds_list_node) {
 	node = statep->ds_list_node;
