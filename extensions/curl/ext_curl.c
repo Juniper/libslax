@@ -27,8 +27,8 @@
 #include <libslax/slaxdata.h>
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxio.h>
-#include <libslax/slaxutil.h>
 #include <libslax/xmlsoft.h>
+#include <libslax/slaxutil.h>
 
 #include "ext_curl.h"
 

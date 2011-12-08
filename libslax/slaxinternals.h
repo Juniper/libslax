@@ -19,9 +19,9 @@
 #include <libxslt/documents.h>
 
 #include "config.h"
+#include "xmlsoft.h"
 #include "slaxutil.h"
 #include "slaxdyn.h"
-#include "xmlsoft.h"
 
 /* Forward declarations for common structures */
 struct slax_string_s; typedef struct slax_string_s slax_string_t;

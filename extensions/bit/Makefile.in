@@ -267,8 +267,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ext_bitincdir = ${includedir}/libslax
 EXTRA_DIST = bit.txt
-AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} \
-	${LIBXML_CFLAG} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+AM_CFLAGS = -DLIBSLAX_XMLSOFT_NEED_PRIVATE -I${top_srcdir} \
+	-I${top_srcdir}/libslax ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} \
+	${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libext_bit.la
 libext_bit_la_SOURCES = \
     ext_bit.c
