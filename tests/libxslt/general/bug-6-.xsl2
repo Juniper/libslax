@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://my/namespace" xmlns="http://www.w3.org/1999/xhtml" version="1.0" exclude-result-prefixes="my">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <!-- Root Node -->
   <xsl:template match="/">
     <html>

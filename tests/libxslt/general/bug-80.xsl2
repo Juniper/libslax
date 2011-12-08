@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <!-- FileName: ResultTree005.xsl -->
   <!-- Document: http://www.w3.org/TR/xslt -->
   <!-- Section: 7.1.4 Named Attribute Sets -->

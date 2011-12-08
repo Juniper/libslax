@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:exsl="http://exslt.org/common" version="1.0" exclude-result-prefixes="exsl" extension-element-prefixes="exsl">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:template match="/">
     <root>
       <xsl:variable name="pkglist">

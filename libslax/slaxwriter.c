@@ -2935,11 +2935,6 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	sw.sw_flags |= SWF_VERS_10;
 
     if (!partial) {
-	slaxWrite(&sw,
-		  "/* SLAX format using libslax-%s%s */",
-		  LIBSLAX_VERSION, LIBSLAX_VERSION_EXTRA);
-	slaxWriteNewline(&sw, 0);
-
 	slaxWrite(&sw, "version %s;", version ?: "1.1");
 	slaxWriteNewline(&sw, 0);
 	slaxWriteNewline(&sw, 0);

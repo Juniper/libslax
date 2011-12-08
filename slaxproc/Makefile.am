@@ -7,6 +7,7 @@ include ${top_srcdir}/warnings.mk
 endif
 
 AM_CFLAGS = \
+    -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     ${LIBXML_CFLAGS} \

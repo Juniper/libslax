@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:l="http://www.foobar.com/xmlns/l" xmlns:s="http://www.foobar.com/xmlns/s" xmlns:exsl="http://exslt.org/common" version="1.0" exclude-result-prefixes="l" extension-element-prefixes="exsl">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="html" media-type="text/html" encoding="ISO-8859-1"/>
   <xsl:template match="/">
     <xsl:apply-templates select="l:doc"/>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:doc="http://example.org/doc" version="1.0" exclude-result-prefixes="doc">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <doc:doc>Some ignored documentation the prefix should not show
          up on the doc element</doc:doc>
   <xsl:template match="/">

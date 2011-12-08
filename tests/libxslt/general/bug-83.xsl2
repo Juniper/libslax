@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format" version="1.0" exclude-result-prefixes="fo">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="html" encoding="ISO-8859-1" indent="no"/>
   <xsl:template match="*">
     <a href="a b c"/>

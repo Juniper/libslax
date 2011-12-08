@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="text" encoding="utf-8"/>
   <xsl:decimal-format name="default"/>
   <xsl:decimal-format name="funky" decimal-separator="&amp;" grouping-separator="/" infinity="unfunity" minus-sign="_" percent="@" per-mille="!" zero-digit="x" digit="#" pattern-separator=";" NaN="(c'est nes pas un nombre)"/>

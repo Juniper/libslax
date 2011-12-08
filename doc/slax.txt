@@ -2798,6 +2798,246 @@ library that supports that namespace.  The extension library should be
 placed in the directory named with the --with-extension-dir options
 (aka SLAX_EXTDIR) or in a directory named by a --lib/-L argument.
 
+*** The "bit" Extension Library 
+
+The "bit" extension library has functions that interpret a string as a
+series of bit, allowing arbitrary length bit arrays and operations on
+those arrays.
+
+|------------------------+------------------------------------------|
+| Function and Arguments | Description                              |
+|------------------------+------------------------------------------|
+| bit:and(b1, b2)        | Return AND of two bit strings            |
+| bit:or(b1, b2)         | Return OR of two bit strings             |
+| bit:nand(b1, b2)       | Return NAND of two bit strings           |
+| bit:nor(b1, b2)        | Return NOR of two bit strings            |
+| bit:xor(b1, b2)        | Return XOR of two bit strings            |
+| bit:xnor(b1, b2)       | Return XNOR of two bit strings           |
+| bit:not(b1)            | Return inversion (NOT) of a bit string   |
+| bit:mask(count, len?)  | Return a len bits with the low count set |
+| bit:to-int(bs)         | Return integer value of bit string       |
+| bit:from-int(str)      | Return bit string of integer value       |
+| bit:to-hex(bs)         | Return hex value of a bit string         |
+| bit:from-hex(str)      | Return bit string of hex value           |
+|------------------------+------------------------------------------|
+
+*** The "curl" Extension Library
+
+curl and libcurl are software components that allow access to a number
+of protocols, include http, https, smtp, ftp, and scp.
+
+**** curl Elements
+
+Curl operations are directed using a set of elements, passed to the
+curl extension functions.  This section gives details on the elements
+supported.
+
+***** <url>
+
+The <url> element sets the base URL for the request.
+
+    SYNTAX::
+      <url> "target-url";
+
+***** <method>
+
+The <method> element sets the method used to transfer data.  This
+controls the HTTP request type, as well as triggering other transfer
+mechanisms.
+
+    SYNTAX::
+      <method> $method;
+
+Method names are listed in the table below.
+
+|--------|
+| Method |
+|--------|
+| get    |
+| post   |
+| delete |
+| head   |
+| email  |
+| put    |
+| upload |
+|--------|
+
+The "get" method is the default.
+
+***** <username>
+
+The <username> element sets the user name to use for the transfer.
+
+    SYNTAX::
+      <username> "username";
+
+***** <password>
+
+The <password> element sets the user's password for the transfer.
+
+    SYNTAX::
+      <password> "password";
+
+***** <content-type>
+
+The <content-type> element gives the MIME type for the transfer
+payload.
+
+    SYNTAX::
+      <content-type> "mime/type";
+
+***** <contents>
+
+The <contents> element gives the contents to be transfered.
+
+    SYNTAX::
+      <contents> "multi-\nline\ncontents\n";
+
+***** <format>
+
+The <format> element gives the expected format of the returned
+results, allowing the curl extension to automatically make the content
+available in the native format.
+
+<format> "xml"; 
+
+|-------------+--------------------------|
+| Format name | Special behavior         |
+|-------------+--------------------------|
+| html        | Result is parsed as HTML |
+| text        | None                     |
+| xml         | Result is parsed as XML  |
+|-------------+--------------------------|
+
+***** <server>
+
+The <server> element gives the outgoing SMTP server name.  At present,
+MX records are not handled, but that will be fixed shortly.
+
+    SYNTAX::
+      <server> "email-server.example.com";
+
+***** <local>
+
+The <local> element gives the name to use as the local hostname for
+"email" (SMTP) requests .
+
+    SYNTAX::
+      <local> "local host name";
+
+***** <from>
+
+The <from> element gives the "From" address to use for "email" (SMTP)
+requests.
+
+    SYNTAX::
+      <from> "source-user@email.example.com";
+
+***** <subject>
+
+The <subject> element gives the "Subject" field for "email" (SMTP)
+requests. 
+
+    SYNTAX::
+      <subject> "email subject string";
+
+***** <upload>
+
+The <upload> element indicates this is a file upload request.
+
+    SYNTAX::
+      <upload>;
+
+***** <fail-on-error>
+
+The <fail-on-error> element indicates that the transfer should fail if
+any errors where detected, including insignificant ones.
+
+    SYNTAX::
+      <fail-on-error>;
+
+***** <verbose>
+
+The <verbose> element requests an insanely detailed level of debug
+information that can be useful when debugging requests.  The curl
+extension will display detailed information about the operations and
+communication of the curl transfer.
+
+    SYNTAX::
+      <verbose>;
+
+***** <insecure>
+
+The <insecure> element indicates a willingness to tolerate insecure
+communications operations.  In particular, it will
+allow SSL Certs without checking the common name.
+
+    SYNTAX::
+      <insecure>;
+
+***** <secure>
+
+The <secure> element requests the use of the "secure" sibling of many
+protocols, including HTTPS and FTPS.
+
+    SYNTAX::
+      <secure>;
+
+***** <to>
+
+The <to> element gives a "To" address for "email" (SMTP) requests.
+For multiple address, use multiple <to> elements.
+
+    SYNTAX::
+      <to> "to-user@email.examplecom";
+
+***** <cc>
+
+The <cc> element gives a "Cc" address for "email" (SMTP) requests.
+For multiple address, use multiple <cc> elements.
+
+    SYNTAX::
+      <cc> "cc-user@email.examplecom";
+
+***** <header>
+
+The <header> element gives additional header fields for the request.
+
+    SYNTAX::
+      <header name="name"> "value";
+
+***** <param>
+
+The <param> element gives additional parameter values for the
+request.  These parameters are typically encoded into the URL.
+
+    SYNTAX::
+      <param name="x"> "y";
+
+**** curl:perform
+
+The "curl:perform" extension function performs simple transfers.
+
+**** curl:open
+
+The "curl:perform" extension function opens a connection to a remote
+server, allowing multiple operations over a single connection. 
+
+**** curl:set
+
+The "curl:set" extension function records a set of parameters that
+will persist for the lifespan of a connection.
+
+**** curl:single
+
+The "curl:single" extension function performs transfer operations
+without using a persistent connection.
+
+**** curl:close
+
+The "curl:close" extension function closes an open connection.
+Further operations cannot be performed over the connection.
+
 ** slaxproc: The SLAX Processor
 
 The SLAX software distribution contains a library (libslax) and a

@@ -11,7 +11,8 @@ slaxincdir = ${includedir}/libslax
 AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
 
 AM_CFLAGS += \
- -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+    -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
+    -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
 lib_LTLIBRARIES = libslax.la
 libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
@@ -20,7 +21,8 @@ slaxinc_HEADERS = \
      slax.h \
      slaxconfig.h \
      slaxdata.h \
-     slaxdyn.h
+     slaxdyn.h \
+     xmlsoft.h
 
 noinst_HEADERS = \
     slaxinternals.h \

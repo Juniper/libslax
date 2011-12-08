@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:output method="xml"/>
   <xsl:key name="next-headings" match="h2" use="generate-id(preceding-sibling::h1[1])"/>
   <xsl:key name="immediate-nodes" match="node() [not(self::h1 | self::h2)]" use="generate-id(preceding-sibling::*[self::h1 or self::h2] [1])"/>

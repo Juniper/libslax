@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <!-- Version: $Id: diffspec.xsl 140 2001-03-07 12:36:39Z veillard $ -->
   <!-- Stylesheet for @diff markup in XMLspec -->
   <!-- Author: Norman Walsh (Norman.Walsh@East.Sun.COM) -->

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml" xmlns:g="http://glandium.org/" xmlns:日本語="http://glandium.org/nihongo/" xmlns:date="http://exslt.org/dates-and-times" version="1.0" exclude-result-prefixes="g 日本語 date">
-  <!-- Machine Crafted with Care (tm) by slaxWriter -->
   <xsl:template match="g:posts">
     <html xml:lang="fr">
       <body>

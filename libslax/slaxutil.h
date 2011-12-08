@@ -10,11 +10,7 @@
 #define LIBSLAX_SLAXUTIL_H
 
 #include <sys/time.h>
-
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
+#include <ctype.h>
 
 /* ----------------------------------------------------------------------
  * Functions that work on generic strings
@@ -154,5 +150,18 @@ strerror (int num)
 }
 
 #endif /* HAVE_STRERROR */
+
+/*
+ * ISO compatible replacement for ctime(3).
+ * NOTE: takes time_t by reference, not value.
+ */
+static inline char *
+slaxTimeIso (const time_t *t, char *buf, size_t bufsiz)
+{
+    if (strftime(buf, bufsiz, "%Y-%m-%d %T %Z", localtime(t)) == 0)
+        return NULL;
+
+    return buf;
+}
 
 #endif /* LIBSLAX_SLAXUTIL_H */

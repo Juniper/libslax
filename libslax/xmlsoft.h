@@ -8,8 +8,21 @@
  * This file includes hooks and additions to the libxml2 and libxslt APIs.
  */
 
+#ifndef LIBSLAX_XMLSOFT_H
+#define LIBSLAX_XMLSOFT_H
+
+#ifdef LIBSLAX_XMLSOFT_NEED_PRIVATE
+
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+
+#include <ctype.h>
+
 #include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */
 #include <libxslt/extensions.h>
+#include <libslax/slaxdyn.h>
 
 #define NUM_ARRAY(x)    (sizeof(x)/sizeof(x[0]))
 
@@ -39,6 +52,11 @@ nodePush(xmlParserCtxtPtr ctxt, xmlNodePtr value);
  */
 xmlNodePtr
 nodePop(xmlParserCtxtPtr ctxt);
+
+/*
+ * Simple error call
+ */
+#define LX_ERR(_msg...) xsltGenericError(xsltGenericErrorContext, _msg)
 
 /**
  * Call xsltSetDebuggerCallbacks() with the properly typed argument.
@@ -83,8 +101,12 @@ xmlStrchru (xmlChar *str, xmlChar val)
 static inline void
 slaxRegisterFunction (const char *uri, const char *fn, xmlXPathFunction func)
 {
-    xsltRegisterExtModuleFunction((const xmlChar *) fn, (const xmlChar *) uri,
-				  func);
+    if (xsltRegisterExtModuleFunction((const xmlChar *) fn,
+				      (const xmlChar *) uri,
+				      func))
+         xsltGenericError(xsltGenericErrorContext,
+		  "could not register extension function for {%s}:%s\n",
+			  uri ?: "", fn);
 }
 
 static inline void
@@ -178,3 +200,51 @@ xmlAddChildContent (xmlDocPtr docp, xmlNodePtr parent,
 
     return nodep;
 }
+
+
+/*
+ * Return the name of a node
+ */
+static inline const char *
+xmlNodeName (xmlNodePtr np)
+{
+    if (np == NULL || np->name == NULL)
+	return NULL;
+    return (const char *) np->name;
+}
+
+static inline int
+slaxStringIsWhitespace (const char *str)
+{
+    for ( ; *str; str++)
+	if (!isspace((int) *str))
+	    return FALSE;
+    return TRUE;
+}
+
+/*
+ * Return the value of this element
+ */
+static inline const char *
+xmlNodeValue (xmlNodePtr np)
+{
+    xmlNodePtr gp;
+  
+    if (np->type == XML_ELEMENT_NODE) {
+	for (gp = np->children; gp; gp = gp->next)
+	    if (gp->type == XML_TEXT_NODE
+		    && !slaxStringIsWhitespace((char *) gp->content))
+		return (char *) gp->content;
+	/*
+	 * If we found the element but not a valid text node,
+	 * return an empty string to the caller can see
+	 * empty elements.
+	 */
+	return "";
+    }
+     
+    return NULL;
+}
+
+#endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */
+#endif /* LIBSLAX_XMLSOFT_H */

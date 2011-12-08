@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.9.20], [phil@juniper.net])
+AC_INIT([libslax], [0.10.0], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -26,6 +26,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 #
 LIBXML_REQUIRED_VERSION=2.7.7
 LIBXSLT_REQUIRED_VERSION=1.1.26
+LIBCURL_REQUIRED_VERSION=7.21.6
 
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -77,7 +78,7 @@ dnl Some packages need to be checked against version numbers so we
 dnl define a function here for later use
 dnl
 AC_DEFUN([VERSION_TO_NUMBER],
-[`$1 | sed -e 's/libxml //' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
+[`$1 | sed -e 's/lib.* //' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
 AC_MSG_CHECKING([whether to build with warnings])
 AC_ARG_ENABLE([warnings],
@@ -282,6 +283,39 @@ AC_SUBST(XSLT_CONFIG)
 AC_SUBST(LIBXSLT_CFLAGS)
 AC_SUBST(LIBXSLT_LIBS)
 
+AC_SUBST(LIBCURL_REQUIRED_VERSION)
+AC_MSG_CHECKING(for libcurl libraries >= $LIBCURL_REQUIRED_VERSION) 
+if test "x$LIBCURL_CONFIG_PREFIX" != "x"
+then
+        CURL_CONFIG=${LIBCURL_CONFIG_PREFIX}/bin/curl-config
+else
+        CURL_CONFIG=curl-config
+fi
+
+dnl
+dnl make sure curl-config is executable,
+dnl test version and init our variables
+dnl
+
+if ${CURL_CONFIG} --libs > /dev/null 2>&1
+then
+        CURLVERS=`$CURL_CONFIG --version`
+        if test VERSION_TO_NUMBER(echo $CURLVERS) -ge VERSION_TO_NUMBER(echo $LIBCURL_REQUIRED_VERSION)
+        then
+                LIBCURL_LIBS="$LIBCURL_LIBS `$CURL_CONFIG --libs`"
+                LIBCURL_CFLAGS="$LIBCURL_CFLAGS `$CURL_CONFIG --cflags`"
+                AC_MSG_RESULT($CURLVERS found)
+        else
+                AC_MSG_ERROR(Version $CURLVERS found. You need at least libcurl $LIBCURL_REQUIRED_VERSION for this version of juise)
+        fi
+else
+        AC_MSG_ERROR([Could not find libcurl anywhere, check http://curl.haxx.se])
+fi
+
+AC_SUBST(CURL_CONFIG)
+AC_SUBST(LIBCURL_CFLAGS)
+AC_SUBST(LIBCURL_LIBS)
+
 #
 # ---- end of noise
 #
@@ -350,6 +384,7 @@ AC_CONFIG_FILES([
   libslax/slaxconfig.h
   extensions/Makefile
   extensions/bit/Makefile
+  extensions/curl/Makefile
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile
@@ -379,6 +414,9 @@ AC_MSG_NOTICE([summary of build options:
   libxslt version:  ${XSLTVERS}
   libxslt cflags:   ${LIBXSLT_CFLAGS}
   libxslt libs:     ${LIBXSLT_LIBS}
+  libcurl version:  ${CURLVERS}
+  libcurl cflags:   ${LIBCURL_CFLAGS}
+  libcurl libs:     ${LIBCURL_LIBS}
 
   warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
