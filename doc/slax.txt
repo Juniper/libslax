@@ -1,9 +1,12 @@
 #
 # $Id: slax.txt,v 1.6 2006/11/03 15:43:05 phil Exp $
 #
-# Copyright (c) 2006-2008, Juniper Networks, Inc.
+# Copyright (c) 2006-2011, Juniper Networks, Inc.
 # All rights reserved.
-# See ./Copyright for the status of this software
+# This SOFTWARE is licensed under the LICENSE provided in the
+# ../Copyright file. By downloading, installing, copying, or otherwise
+# using the SOFTWARE, you agree to be bound by the terms of that
+# LICENSE.
 #
 #
 #         SLAX -- Stylesheet Language, Alternative syntaX

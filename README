@@ -1,6 +1,10 @@
 #
 # $Id$
 #
+# This SOFTWARE is licensed under the LICENSE provided in the
+# ./Copyright file. By downloading, installing, copying, or otherwise
+# using the SOFTWARE, you agree to be bound by the terms of that
+# LICENSE.
 
 Welcome to libslax, an implementation of the SLAX syntax for XSLT.
 This library builds on the most excellent work of Daniel Veillard et

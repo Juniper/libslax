@@ -1,8 +1,12 @@
 /*
  * $Id: debugger.c 384736 2010-06-16 04:41:59Z deo $
  *
- * Copyright (c) 2010, Juniper Networks, Inc.
+ * Copyright (c) 2010-2011, Juniper Networks, Inc.
  * All rights reserved.
+ * This SOFTWARE is licensed under the LICENSE provided in the
+ * ../Copyright file. By downloading, installing, copying, or otherwise
+ * using the SOFTWARE, you agree to be bound by the terms of that
+ * LICENSE.
  *
  * A profiler for SLAX scripts
  *
