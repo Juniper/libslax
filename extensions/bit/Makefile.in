@@ -44,6 +44,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@HAVE_READLINE_TRUE@am__append_1 = -L/opt/local/lib -lreadline
+@HAVE_LIBEDIT_TRUE@am__append_2 = -ledit
 subdir = extensions/bit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -162,10 +164,8 @@ LIBCURL_CFLAGS = @LIBCURL_CFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
 LIBCURL_REQUIRED_VERSION = @LIBCURL_REQUIRED_VERSION@
 LIBOBJS = @LIBOBJS@
-LIBS = \
-    ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} \
-    -L${SLAX_EXTDIR} -L../../libslax -lslax
-
+LIBS = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} -L${SLAX_EXTDIR} \
+	-L../../libslax -lslax $(am__append_1) $(am__append_2)
 LIBSLAX_VERSION = @LIBSLAX_VERSION@
 LIBSLAX_VERSION_EXTRA = @LIBSLAX_VERSION_EXTRA@
 LIBSLAX_VERSION_NUMBER = @LIBSLAX_VERSION_NUMBER@

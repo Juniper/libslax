@@ -32,6 +32,13 @@ LIBS = \
     ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} \
     -L${SLAX_EXTDIR} -L../../libslax -lslax
 
+if HAVE_READLINE
+LIBS += -L/opt/local/lib -lreadline
+endif
+
+if HAVE_LIBEDIT
+LIBS += -ledit
+endif
 libext_bit_la_SOURCES = \
     ext_bit.c
 

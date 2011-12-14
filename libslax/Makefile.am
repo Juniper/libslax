@@ -89,7 +89,7 @@ slaxparser-out.y: ${SLAXPIECES}
 	cat ${SLAXPIECES} > $@
 
 if HAVE_READLINE
-LIBS += -lreadline
+LIBS += -L/opt/local/lib -lreadline
 endif
 
 if HAVE_LIBEDIT

@@ -35,6 +35,14 @@ LIBS = \
     ${LIBCURL_LIBS} \
     -L${SLAX_LIBDIR} -lslax
 
+if HAVE_READLINE
+LIBS += -L/opt/local/lib -lreadline
+endif
+
+if HAVE_LIBEDIT
+LIBS += -ledit
+endif
+
 libext_curl_la_SOURCES = \
     ext_curl.c
 
