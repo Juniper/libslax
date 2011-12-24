@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.10.0], [phil@juniper.net])
+AC_INIT([libslax], [0.10.3], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -307,7 +307,7 @@ then
                 LIBCURL_CFLAGS="$LIBCURL_CFLAGS `$CURL_CONFIG --cflags`"
                 AC_MSG_RESULT($CURLVERS found)
         else
-                AC_MSG_ERROR(Version $CURLVERS found. You need at least libcurl $LIBCURL_REQUIRED_VERSION for this version of juise)
+                AC_MSG_ERROR(Version $CURLVERS found. You need at least libcurl $LIBCURL_REQUIRED_VERSION for this version of libslax)
         fi
 else
         AC_MSG_ERROR([Could not find libcurl anywhere, check http://curl.haxx.se])
@@ -324,6 +324,9 @@ AC_SUBST(LIBCURL_LIBS)
 case $host_os in
      darwin*)
         LIBTOOL=glibtool
+	;;
+     Linux*|linux*)
+        CFLAGS="-D_GNU_SOURCE $CFLAGS"
 	;;
      cygwin*|CYGWIN*)
 	LDFLAGS=-no-undefined
@@ -399,7 +402,7 @@ AC_OUTPUT
 AC_MSG_NOTICE([summary of build options:
 
   libslax version:  ${VERSION} ${LIBSLAX_VERSION_EXTRA}
-  host type:        ${host}
+  host type:        ${host} / ${host_os}
   install prefix:   ${prefix}
   srcdir:           ${SLAX_SRCDIR}
   libdir:           ${SLAX_LIBDIR}

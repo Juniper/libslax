@@ -12,6 +12,7 @@
 #ifndef LIBSLAX_SLAXUTIL_H
 #define LIBSLAX_SLAXUTIL_H
 
+#include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
 

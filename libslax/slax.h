@@ -234,6 +234,20 @@ void
 slaxIncludeAdd (const char *dir);
 
 /*
+ * Add a set of directories to the list of directories searched for import
+ * and include files.  The argument should contain a set of directory
+ * names, seperated by colons ("/dir/one:/dir/two:/dir/three").
+ */
+void
+slaxIncludeAddPath (const char *dir);
+
+/*
+ * Find and open a file, filling in buf with the name of the file
+ */
+FILE *
+slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz);
+
+/*
  * Add a directory to the list of directories searched for dynamic
  * extension libraries
  */

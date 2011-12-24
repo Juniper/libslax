@@ -210,6 +210,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     xmlDocPtr indoc;
     xsltStylesheetPtr script;
     xmlDocPtr res = NULL;
+    char buf[BUFSIZ];
 
     scriptname = get_filename(name, &argv, -1);
     if (!opt_empty_input)
@@ -219,7 +220,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (is_filename_std(scriptname))
 	errx(1, "script file cannot be stdin");
 
-    scriptfile = fopen(scriptname, "r");
+    scriptfile = slaxFindIncludeFile(scriptname, buf, sizeof(buf));
     if (scriptfile == NULL)
 	err(1, "file open failed for '%s'", scriptname);
 
@@ -504,6 +505,10 @@ main (int argc UNUSED, char **argv)
 	    return -1;
 	}
     }
+
+    cp = getenv("SLAXPATH");
+    if (cp)
+	slaxIncludeAddPath(cp);
 
     params = alloca(nbparams * 2 * sizeof(*params) + 1);
     i = 0;

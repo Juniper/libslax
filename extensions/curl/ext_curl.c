@@ -77,6 +77,7 @@ typedef struct curl_handle_s {
     slax_data_list_t ch_reply_data;
     char ch_name[CURL_NAME_SIZE]; /* Unique ID for this handle */
     CURL *ch_handle;		/* libcurl "easy" handle */
+    unsigned ch_code;		/* Most recent return code */
     curl_opts_t ch_opts;	/* Options set for this handle */
     char ch_error[CURL_ERROR_SIZE]; /* Error buffer for CURLOPT_ERRORBUFFER */
 } curl_handle_t;
@@ -619,6 +620,7 @@ ext_curl_build_email (curl_opts_t *opts)
     size_t len;
     char *cp;
     char *subject = opts->co_subject;
+    int rc;
 
     snprintf(msgid, sizeof(msgid), "ext-curl-%lu-%lu",
 	     (unsigned long) time, (unsigned long) random());
@@ -643,14 +645,14 @@ ext_curl_build_email (curl_opts_t *opts)
     if (cp)
 	*cp = '\0';
 
-    asprintf(&cp, "From: %s%s%s%s%s%s%s\nDate: %s\n"
+    rc = asprintf(&cp, "From: %s%s%s%s%s%s%s\nDate: %s\n"
 	     "Message-ID: %s\n\n%s\n",
 	     opts->co_from ?: "",
 	     to_line ? "\nTo: " : "", to_line ?: "",
 	     cc_line ? "\nCc: " : "", cc_line ?: "",
 	     subject ? "\nSubject: " : "", subject ?: "",
 	     date_line, msgid, opts->co_contents ?: "");
-    return cp;
+    return (rc > 0) ? cp : NULL;
 }
 
 /*
@@ -1089,6 +1091,8 @@ ext_curl_build_reply_headers (curl_handle_t *curlp, xmlDocPtr docp,
 	    *sp++ = '\0';
 	    xmlAddChildContent(docp, nodep, (const xmlChar *) "code",
 			       (const xmlChar *) cp);
+	    curlp->ch_code = strtoul(cp, NULL, 0);
+
 	    if (*sp)
 		xmlAddChildContent(docp, nodep,
 				   (const xmlChar *) "message",
@@ -1152,7 +1156,7 @@ ext_curl_build_results (xmlDocPtr docp, curl_handle_t *curlp,
 	raw_data = ext_curl_build_data(curlp, docp, nodep,
 				       &curlp->ch_reply_data, "raw-data");
 
-	if (raw_data && opts->co_format)
+	if (raw_data && opts->co_format && curlp->ch_code < 300)
 	    ext_curl_build_data_parsed(curlp, opts, docp, nodep, raw_data);
 
     } else {

@@ -54,6 +54,41 @@ slaxIncludeAdd (const char *dir)
     slaxDataListAddNul(&slaxIncludes, dir);
 }
 
+/*
+ * Add a set of directories to the list of directories searched for files
+ */
+void
+slaxIncludeAddPath (const char *dir)
+{
+    char *buf = NULL;
+    int buflen = 0;
+    const char *cp;
+
+    while (dir && *dir) {
+	cp = strchr(dir, ':');
+	if (cp == NULL) {
+	    slaxIncludeAdd(dir);
+	    break;
+	}
+
+	if (cp - dir > 1) {
+	    if (buflen < cp - dir + 1) {
+		buflen = cp - dir + 1 + BUFSIZ;
+		buf = alloca(buflen);
+	    }
+
+	    memcpy(buf, dir, cp - dir);
+	    buf[cp - dir] = '\0';
+
+	    slaxIncludeAdd(buf);
+	}
+
+	if (*cp == '\0')
+	    break;
+	dir = cp + 1;
+    }
+}
+
 /**
  * Check the version string.  The only supported versions are "1.0" and "1.1".
  *
@@ -688,7 +723,10 @@ slaxIsSlaxFile (const char *filename)
     return TRUE;
 }
 
-static FILE *
+/*
+ * Find and open a file, filling in buf with the name of the file
+ */
+FILE *
 slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz)
 {
     FILE *file;
