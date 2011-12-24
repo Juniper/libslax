@@ -1514,10 +1514,17 @@ call_argument_braces_member :
 	;
 
 comment_stmt :
-	K_COMMENT xpath_value L_EOS
+	K_COMMENT
 		{
-		    slaxCommentAdd(slax_data, $2);
+		    slaxElementPush(slax_data, ELT_COMMENT, NULL, NULL);
+		    $$ = NULL;
+		} 
+	    simple_contents
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -1895,7 +1902,7 @@ message_stmt :
 		    slaxElementPush(slax_data, ELT_MESSAGE, NULL, NULL);
 		    $$ = NULL;
 		}
-	    terminate_contents
+	    simple_contents
 		{
 		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
@@ -1930,7 +1937,7 @@ terminate_stmt :
 			slaxAttribAddLiteral(slax_data, ATT_TERMINATE, "yes");
 		    $$ = NULL;
 		}
-	    terminate_contents
+	    simple_contents
 		{
 		    ALL_KEYWORDS_ON();
 		    slaxElementPop(slax_data);
@@ -1946,7 +1953,7 @@ terminate_keyword:
 		{ $$ = $1; }
 	  ;
 
-terminate_contents :
+simple_contents :
 	L_EOS
 		{ $$ = STACK_CLEAR($1); }
 
