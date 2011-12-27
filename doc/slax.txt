@@ -722,55 +722,54 @@ Expressions are used to select nodes, specify conditions, and to
 generate output content.  Expressions contain five constructs:
 
 - Paths to elements
--- Select nodes based on node names
---- Example: chapter
--- Selects child nodes based on parent node names
---- Example: doc/chapter/section/paragraph
--- Selects child nodes under at any depth
---- Example: doc//paragraph
--- Selects parent nodes relative to the current node
---- Example: ../../chapter
--- Selects attributes using "@" followed by attribute name
---- Example: ../../chapter/@number
+ - Select nodes based on node names
+  - Example: chapter
+ - Selects child nodes based on parent node names
+  - Example: doc/chapter/section/paragraph
+ - Selects child nodes under at any depth
+  - Example: doc//paragraph
+ - Selects parent nodes relative to the current node
+  - Example: ../../chapter
+ - Selects attributes using "@" followed by attribute name
+  - Example: ../../chapter/@number
 
 - Predicate tests
--- Selects nodes for which the expression in the square brackets
+ - Selects nodes for which the expression in the square brackets
 evaluates to "true" (with boolean() type conversion)
---- Example chapter[@number == 1]
--- Can be applied to any path member
---- Example: chapter[@number == 1]/section[@number == 2]
--- Use a number to select the <n>th node from a node set
---- Example: chapter[1]
--- Multiple predicate tests can be specified (ANDed together)
---- Example: chapter[@number > 15][section/@number > 15]
+  - Example chapter[@number == 1]
+ - Can be applied to any path member
+  - Example: chapter[@number == 1]/section[@number == 2]
+ - Use a number to select the <n>th node from a node set
+  - Example: chapter[1]
+ - Multiple predicate tests can be specified (ANDed together)
+  - Example: chapter[@number > 15][section/@number > 15]
 
 - References to variables or parameters
--- Variable and parameter names start with "$"
---- Example: $this
--- Variables can hold expressions, node sets, etc
---- Example: $this/paragraph
--- 
+ - Variable and parameter names start with "$"
+  - Example: $this
+ - Variables can hold expressions, node sets, etc
+  - Example: $this/paragraph
 
 - Literal strings
--- SLAX accepts single or double quotes
---- Example: "test"
--- Character escaping is allowed
---- Example: '\tthat\'s good\n\tnow what?\n'
+ - SLAX accepts single or double quotes
+  - Example: "test"
+ - Character escaping is allowed
+  - Example: '\tthat\'s good\n\tnow what?\n'
 
 - Calls to functions
--- Function calls can be used in expressions or predicate tests
---- Example: chapter[count(section) > 15]
--- Allows calls to pre-defined or user-defined functions
---- Example: chapter[substring-before(title, "ne") == "O"]
+ - Function calls can be used in expressions or predicate tests
+  - Example: chapter[count(section) > 15]
+ - Allows calls to pre-defined or user-defined functions
+  - Example: chapter[substring-before(title, "ne") == "O"]
 
 SLAX follows XPath syntax, with the following additions:
 
-(a) "&&" may be used in place of the "and" operator
-(b) "||" may be used in place of the "or" operator
-(c) "==" may be used in place of the "=" operator
-(d) "!" may be used in place of the "not()" operator
-(e) "_" is the concatenation operator ("a" _ "b" === concat("a", "b"))
-(f) "?:" is converted into choose/when/otherwise elements
++ "&&" may be used in place of the "and" operator
++ "||" may be used in place of the "or" operator
++ "==" may be used in place of the "=" operator
++ "!" may be used in place of the "not()" operator
++ "_" is the concatenation operator ("x" _ "y" === concat("x", "y"))
++ "?:" is converted into choose/when/otherwise elements
 
 The first four additions are meant to prevent programmers from
 learning habits in SLAX that will negatively affect their ability to
@@ -1372,6 +1371,8 @@ argument are given in the following table:
 | level     | See below | How to count                 |
 |-----------+-----------+------------------------------|
 
+The "level" statement indicates how to count tags:
+
 |----------+--------------------------------|
 | Value    | Behavior                       |
 |----------+--------------------------------|
@@ -1380,6 +1381,10 @@ argument are given in the following table:
 | any      | Count from any node            |
 |----------+--------------------------------|
 
+In the following example, the value of $this is formatted with three
+digits of output and the number of "section" elements before the
+current context value is emitted.
+
     number $this {
         format "001";
     }
@@ -1387,7 +1392,7 @@ argument are given in the following table:
         count section;
     }
 
-See also number
+See also the format-number() XPath function.
 
 ** Templates @templates@
 
@@ -3048,29 +3053,35 @@ command line tool (slaxproc).  The command line tool can be used to
 convert between XSLT and SLAX syntax, as well as run stylesheets and
 check syntax.
 
-  Usage: slaxproc [options] [stylesheet] [files]
-    Options:
-      --slax-to-xslt OR -x: turn SLAX into XSLT
-      --xslt-to-slax OR -s: turn XSLT into SLAX
-      --run OR -r: run a SLAX script
-      --check OR -c: check syntax and content for a SLAX script
+  Usage: slaxproc [mode] [options] [script] [files]
+   Modes:
+     --check OR -c: check syntax and content for a SLAX script
+     --format OR -F: format (pretty print) a SLAX script
+     --run OR -r: run a SLAX script (the default mode)
+     --slax-to-xslt OR -x: turn SLAX into XSLT
+     --xslt-to-slax OR -s: turn XSLT into SLAX
 
-      --debug OR -d: enable the SLAX/XSLT debugger
-      --empty OR -E: give an empty document for input
-      --exslt OR -e: enable the EXSLT library
-      --indent OR -g: indent output ala output-method/indent
-      --help OR -h: display this help message
-      --input <file> OR -i <file>: take input from the given file
-      --name <file> OR -n <file>: read the script from the given file
-      --no-randomize: do not initialize the random number generator
-      --output <file> OR -o <file>: make output into the given file
-      --param name value OR -a name value: pass parameters
-      --partial OR -p: allow partial SLAX input to --slax-to-xslt
-      --trace <file> OR -t <file>: write trace data to a file
-      --verbose OR -v: enable debugging output (slaxLog())
-      --version OR -V: show version information (and exit)
-      --write-version <version> OR -w <version>: write in version
-  Project libslax home page: http://code.google.com/p/libslax
+    Options:
+     --debug OR -d: enable the SLAX/XSLT debugger
+     --empty OR -E: give an empty document for input
+     --exslt OR -e: enable the EXSLT library
+     --help OR -h: display this help message
+     --html OR -H: Parse input data as HTML
+     --include <dir> OR -I <dir>: search dir for includes/imports
+     --indent OR -g: indent output ala output-method/indent
+     --input <file> OR -i <file>: take input from the given file
+     --lib <dir> OR -L <dir>: search dir for extension libraries
+     --name <file> OR -n <file>: read the script from the given file
+     --no-randomize: do not initialize the random number generator
+     --output <file> OR -o <file>: make output into the given file
+     --param <name> <value> OR -a <name> <value>: pass parameters
+     --partial OR -p: allow partial SLAX input to --slax-to-xslt
+     --trace <file> OR -t <file>: write trace data to a file
+     --verbose OR -v: enable debugging output (slaxLog())
+     --version OR -V: show version information (and exit)
+     --write-version <version> OR -w <version>: write in version
+
+  Project libslax home page: http://libslax.googlecode.com
 
 Files can be referenced positionally (where the script file first) or
 by using the "-n", "-i", and "-o" options.
@@ -3142,7 +3153,89 @@ If the input or output arguments have the value "-" (or is not
 given), the standard input or standard output file will be used. 
 This allows slaxproc to be used as a traditional unix filter.
 
-** The SLAX Debugger (sdb)
+*** Command Line Options
+
+Command line options to slaxproc can be divided into two types.  Mode
+options affect the 
+
+**** Modes
+
+= --check OR -c
+Perform syntax and content check for a SLAX script, reporting any
+errors detected.  This mode is useful for off-box syntax checks for
+scripts before installing or uploading them.
+= --format OR -F
+Format (aka "pretty print") a SLAX script, correcting indentation and
+spacing to the style preferred by the author (that is, me).
+= --run OR -r
+Run a SLAX script.  The script name, input file name, and output file
+name can be provided via command line options and/or using positional
+arguments as described in ^slaxproc-arguments^.  Input defaults to
+standard input and output defaults to standard output.  "-r" is the
+default mode for slaxproc.
+= --slax-to-xslt OR -x
+Convert a SLAX script into XSLT format.  The script name and output file
+name can be provided via command line options and/or using positional
+arguments as described in ^slaxproc-arguments^.
+= --xslt-to-slax OR -s
+Convert a XSLT script into SLAX format.  The script name and output file
+name can be provided via command line options and/or using positional
+arguments as described in ^slaxproc-arguments^.
+
+**** Options
+
+= --debug OR -d
+Enable the SLAX/XSLT debugger.  See ^sdb^ for complete details on the
+operation of the debugger.
+= --empty OR -E
+Provide an empty document as the input data set.  This is useful for
+scripts that do not expect or need meaningful input.
+= --exslt OR -e
+Enables the EXSLT library, which provides a set of standard extension
+functions.  See exslt.org for more information.
+= --help OR -h
+Displays this help message and exits.
+= --html OR -H
+Parse input data using the HTML parser, which differs from XML.
+= --include <dir> OR -I <dir>
+Add a directory to the list of directories searched for include and
+/import files.
+= --indent OR -g
+Indent output to make it good looking.  This option is identical to
+the behavior triggered by "output-method { indent 'true'; }".
+= --input <file> OR -i <file>
+Use the given file for  input.
+= --lib <dir> OR -L <dir>
+Add a directory to the list of directories searched for extension
+libraries.
+= --name <file> OR -n <file>
+Read the SLAX script from the given file.
+= --no-randomize
+Do not initialize the random number generator.  This is useful if you
+want the script to return identical data for a series of invocation,
+which is typically only used during testing.
+= --output <file> OR -o <file>
+Write output into the given file.
+= --param <name> <value> OR -a <name> <value>
+Pass a parameter to the script using the name/value pair provided.
+Note that all parameters are string parameters, so normal quoting
+rules apply.
+= --partial OR -p
+Allow the input data to contain a partial SLAX script, which can be
+used with the "--slax-to-xslt" to perform partial transformations.
+= --trace <file> OR -t <file>
+Write trace data to the given file.
+= --verbose OR -v
+Enable very verbose debugging output, such as calls to the slaxLog()
+function.
+= --version OR -V
+Show version information and exit.
+= --write-version <version> OR -w <version>
+Write in the given version number on the output file for "-x" or "-s"
+output.  This can be also be used to limit the conversion to avoid
+SLAX 1.1 feature (using "-w 1.0").
+
+** The SLAX Debugger (sdb) @sdb@
 
 The SLAX distribution includes a debugger called "sdb", which can be
 accessed via the "slaxproc" command using the "-d" option.  The
@@ -3248,12 +3341,12 @@ The "callflow" command enables the printing of informational data when
 levels of the script are entered and exited.  The lines are simple,
 but reference the instruction, filename, and line number of the frame:
 
-callflow: 0: enter <xsl:template> in match / at empty-15.slax:5
-callflow: 1: enter <xsl:variable> at empty-15.slax:13
-callflow: 1: exit <xsl:variable> at empty-15.slax:13
-callflow: 1: enter <xsl:variable> at empty-15.slax:20
-callflow: 1: exit <xsl:variable> at empty-15.slax:20
-callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
+  callflow: 0: enter <xsl:template> in match / at empty-15.slax:5
+  callflow: 1: enter <xsl:variable> at empty-15.slax:13
+  callflow: 1: exit <xsl:variable> at empty-15.slax:13
+  callflow: 1: enter <xsl:variable> at empty-15.slax:20
+  callflow: 1: exit <xsl:variable> at empty-15.slax:20
+  callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
 
 *! start-appendix
 
