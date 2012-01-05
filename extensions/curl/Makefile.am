@@ -51,11 +51,12 @@ noinst_HEADERS = \
 
 libdir = ${SLAX_EXTDIR}
 
-UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextensions%2Fcurl.ext
+UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fcurl.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libext_curl.la ; echo $$dlname'`; \
+	@DLNAME=`sh -c '. libext_curl.la ; echo $$dlname'`; \
                     echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
                     && cd ${SLAX_EXTDIR} \
+                    && chmod +w . \
 	            && rm -f ${UGLY_NAME} \
 		    && ${LN_S} $$DLNAME ${UGLY_NAME}

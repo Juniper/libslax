@@ -32,7 +32,7 @@
 
 #include "ext_curl.h"
 
-#define CURL_FULL_NS "http://xml.juniper.net/curl"
+#define CURL_FULL_NS "http://xml.libslax.org/curl"
 #define CURL_NAME_SIZE 12
 
 /*

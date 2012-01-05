@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.10.5], [phil@juniper.net])
+AC_INIT([libslax], [0.10.6], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -389,6 +389,7 @@ AC_CONFIG_FILES([
   extensions/Makefile
   extensions/bit/Makefile
   extensions/curl/Makefile
+  extensions/xml/Makefile
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile

@@ -280,7 +280,7 @@ lib_LTLIBRARIES = libext_bit.la
 libext_bit_la_SOURCES = \
     ext_bit.c
 
-UGLY_NAME = http%3A%2F%2Fxml.juniper.net%2Fextensions%2Fbit.ext
+UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fbit.ext
 all: all-am
 
 .SUFFIXES:
@@ -593,10 +593,11 @@ uninstall-am: uninstall-libLTLIBRARIES
 @SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libext_bit.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. libext_bit.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
-	        && cd ${SLAX_EXTDIR} \
-	        && rm -f ${UGLY_NAME} \
+		&& cd ${SLAX_EXTDIR} \
+		&& chmod +w . \
+		&& rm -f ${UGLY_NAME} \
 		&& ${LN_S} $$DLNAME ${UGLY_NAME}
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

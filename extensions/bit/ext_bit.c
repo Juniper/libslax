@@ -18,7 +18,7 @@
 #include <libxslt/extensions.h>
 #include <libslax/slaxdyn.h>
 
-#define URI_BIT  "http://xml.juniper.net/extension/bit"
+#define URI_BIT  "http://xml.libslax.org/bit"
 
 static xmlChar *
 extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)

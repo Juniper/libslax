@@ -22,12 +22,14 @@ INPUT = slax.txt
 # SVN since printing docx requires ms-word.  We want the
 # package version number in the file that we put on the
 # web site, so we just copy it.
-QUICKREF = slax-quick-reference-${PACKAGE_VERSION}
+QUICKREF = slax-quick-reference
+QUICKREFVERS = ${QUICKREF}-${PACKAGE_VERSION}
 
 EXTRA_DIST = \
     ${OUTPUT}.html \
     ${OUTPUT}.txt \
-    ${QUICKREF}.pdf
+    ${QUICKREF}.pdf \
+    ${QUICKREFVERS}.pdf
 
 doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREF}.pdf
 
