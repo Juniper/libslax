@@ -23,7 +23,7 @@
 #define FUNC_URI EXSLT_FUNCTIONS_NAMESPACE
 #define FUNC_PREFIX "slax-func"
 
-#define SLAX_URI "http://code.google.com/p/libslax/slax"
+#define SLAX_URI "http://xml.libslax.org/slax"
 #define SLAX_PREFIX "slax"
 
 /* Attribute names */

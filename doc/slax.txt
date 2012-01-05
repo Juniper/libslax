@@ -2305,8 +2305,8 @@ available at the following site:
 
     http://en.wikipedia.org/wiki/Shebang_%28Unix%29
 
-(Note that I've never heard it pronounced "shebang" before; we call it
-"pound-bang" around here, just as we say "pound define" rather than
+(Personally, I've never heard it pronounced "shebang" before; we call
+it "pound-bang" around here, just as we say "pound define" rather than
 "hash define".)
 
 See ^slaxproc-arguments^ for details about the slaxproc utility
@@ -2858,17 +2858,17 @@ mechanisms.
 
 Method names are listed in the table below.
 
-|--------|
-| Method |
-|--------|
-| get    |
-| post   |
-| delete |
-| head   |
-| email  |
-| put    |
-| upload |
-|--------|
+|--------+--------------------------------|
+| Method | Description                    |
+|--------+--------------------------------|
+| get    | HTTP GET or FTP GET operation  |
+| post   | HTTP POST operation            |
+| delete | HTTP DELETE operation          |
+| head   | HTTP HEAD operation            |
+| email  | SMTP email send operation      |
+| put    | HTTP PUT operation             |
+| upload | HTTP POST or FTP PUT operation |
+|--------+--------------------------------|
 
 The "get" method is the default.
 
@@ -3136,15 +3136,35 @@ but the input and output file names are positional.
    
    slaxproc -i input.xml -o output.xml -g -v script.slax
 
-Flexible argument parsing allows aliases and #! arguments to tailor
-the slaxproc invocation to match specific needs.  For example if a
-script begins with:
+**** "#!" Support
+
+SLAX supports the "#!" unix scripting mechanism, allowing the first
+line of a script to begin with the characters '#' and '!'  followed by
+a path to the executable that runs the script and a set of command
+line arguments.  For SLAX scripts, this might be something like:
 
     #!/usr/bin/slaxproc -n
 
+or:
+
+    #!/opt/local/bin/slaxproc -n
+
+The operating system will add the name of the scripts and any command
+line arguments to the command line that follows the "#!".  Adding the
+"-n" option (as shown above) allows additional arguments to be passed
+in on the command line.  Flexible argument parsing allows aliases and
+#! arguments to tailor the slaxproc invocation to match specific
+needs.  For example if a script begins with:
+
+    #!/usr/bin/slaxproc -E -n 
+
 then additional slaxproc arguments can be given:
 
-    $ that-script -g input.xml
+    $ that-script -g output.xml
+
+and the resulting command should be:
+
+    /usr/bin/slaxproc -E -n /path/to/that-script -g output.xml
 
 The -E option tells slaxproc to use an empty input document, removing
 the need for the "-i" option or a positional argument.
@@ -3199,7 +3219,8 @@ Displays this help message and exits.
 Parse input data using the HTML parser, which differs from XML.
 = --include <dir> OR -I <dir>
 Add a directory to the list of directories searched for include and
-/import files.
+/import files.  The environment variable SLAXPATH can be set to a list
+of search directories, separated by colons.
 = --indent OR -g
 Indent output to make it good looking.  This option is identical to
 the behavior triggered by "output-method { indent 'true'; }".
@@ -3226,8 +3247,8 @@ used with the "--slax-to-xslt" to perform partial transformations.
 = --trace <file> OR -t <file>
 Write trace data to the given file.
 = --verbose OR -v
-Enable very verbose debugging output, such as calls to the slaxLog()
-function.
+Adds very verbose internal debugging output to the trace data output,
+including calls to the slaxLog() function.
 = --version OR -V
 Show version information and exit.
 = --write-version <version> OR -w <version>
