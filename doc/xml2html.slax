@@ -1,0 +1,5223 @@
+version 1.1;
+
+
+/*
+XSLT transformation from RFC2629 XML format to HTML
+
+Copyright (c) 2006-2008, Julian Reschke (julian.reschke@greenbytes.de)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+ * Neither the name of Julian Reschke nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+ */
+ns ed exclude = "http://greenbytes.de/2002/rfcedit";
+ns date exclude = "http://exslt.org/dates-and-times";
+ns exslt exclude = "http://exslt.org/common";
+ns msxsl exclude = "urn:schemas-microsoft-com:xslt";
+ns myns exclude = "mailto:julian.reschke@greenbytes.de?subject=rcf2629.xslt";
+ns rdf exclude = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+ns saxon-old exclude = "http://icl.com/saxon";
+ns saxon exclude = "http://saxon.sf.net/";
+ns x exclude = "http://purl.org/net/xml2rfc/ext";
+ns xhtml exclude = "http://www.w3.org/1999/xhtml";
+
+strip-space back front list middle rfc section;
+output-method html {
+    encoding "iso-8859-1";
+    version "4.0";
+    doctype-public "-//W3C//DTD HTML 4.01//EN";
+    indent "no";
+}
+
+/* process some of the processing instructions supported by Marshall T. Rose's
+xml2rfc sofware, see <http://xml.resource.org/> */
+/* delimiters in PIs */
+var $quote-chars = "\"'";
+var $warning;
+/* rfc comments PI */
+param $xml2rfc-comments = substring-after(translate(/processing-instruction("rfc") [contains(., "comments=")], $quote-chars _ " ", ""), "comments=");
+/* rfc compact PI */
+param $xml2rfc-compact = substring-after(translate(/processing-instruction("rfc") [contains(., "compact=")], $quote-chars _ " ", ""), "compact=");
+/* rfc footer PI */
+param $xml2rfc-footer = substring-after(translate(/processing-instruction("rfc") [contains(., "footer=")], $quote-chars _ " ", ""), "footer=");
+/* rfc header PI */
+param $xml2rfc-header = substring-after(translate(/processing-instruction("rfc") [contains(., "header=")], $quote-chars _ " ", ""), "header=");
+/* rfc inline PI */
+param $xml2rfc-inline = substring-after(translate(/processing-instruction("rfc") [contains(., "inline=")], $quote-chars _ " ", ""), "inline=");
+/* rfc strict PI */
+param $xml2rfc-strict = substring-after(translate(/processing-instruction("rfc") [contains(., "strict=")], $quote-chars _ " ", ""), "strict=");
+
+/* include a table of contents if a processing instruction <?rfc?>
+exists with contents toc="yes". Can be overriden by an XSLT parameter */
+param $xml2rfc-toc = substring-after(translate(/processing-instruction("rfc") [contains(., "toc=")], $quote-chars _ " ", ""), "toc=");
+/* optional tocdepth */
+param $xml2rfc-tocdepth = substring-after(translate(/processing-instruction("rfc") [contains(., "tocdepth=")], $quote-chars _ " ", ""), "tocdepth=");
+var $parsedTocDepth = {
+    if ($xml2rfc-tocdepth == "1") {
+        expr "1";
+    
+    } else if ($xml2rfc-tocdepth == "2") {
+        expr "2";
+    
+    } else if ($xml2rfc-tocdepth == "3") {
+        expr "3";
+    
+    } else if ($xml2rfc-tocdepth == "4") {
+        expr "4";
+    
+    } else if ($xml2rfc-tocdepth == "5") {
+        expr "5";
+    
+    } else {
+        expr "99";
+    }
+}
+
+/* suppress top block if a processing instruction <?rfc?>
+exists with contents tocblock="no". Can be overriden by an XSLT parameter */
+param $xml2rfc-topblock = substring-after(translate(/processing-instruction("rfc") [contains(., "topblock=")], $quote-chars _ " ", ""), "topblock=");
+
+/* use symbolic reference names instead of numeric ones unless a processing instruction <?rfc?>
+exists with contents symrefs="no". Can be overriden by an XSLT parameter */
+param $xml2rfc-symrefs = substring-after(translate(/processing-instruction("rfc") [contains(., "symrefs=")], $quote-chars _ " ", ""), "symrefs=");
+
+/* sort references if a processing instruction <?rfc?>
+exists with contents sortrefs="yes". Can be overriden by an XSLT parameter */
+param $xml2rfc-sortrefs = substring-after(translate(/processing-instruction("rfc") [contains(., "sortrefs=")], $quote-chars _ " ", ""), "sortrefs=");
+
+/* insert editing marks if a processing instruction <?rfc?>
+exists with contents editing="yes". Can be overriden by an XSLT parameter */
+param $xml2rfc-editing = substring-after(translate(/processing-instruction("rfc") [contains(., "editing=")], $quote-chars _ " ", ""), "editing=");
+/* make it a private paper */
+param $xml2rfc-private = substring-after(translate(/processing-instruction("rfc") [contains(., "private=")], $quote-chars, ""), "private=");
+/* background image? */
+param $xml2rfc-background = substring-after(translate(/processing-instruction("rfc") [contains(., "background=")], $quote-chars, ""), "background=");
+/* extension for XML parsing in artwork */
+param $xml2rfc-ext-parse-xml-in-artwork = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "parse-xml-in-artwork=")], $quote-chars _ " ", ""), "parse-xml-in-artwork=");
+/* extension for excluding DCMI properties in meta tag (RFC2731) */
+param $xml2rfc-ext-support-rfc2731 = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "support-rfc2731=")], $quote-chars _ " ", ""), "support-rfc2731=");
+/* extension for allowing markup inside artwork */
+param $xml2rfc-ext-allow-markup-in-artwork = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "allow-markup-in-artwork=")], $quote-chars _ " ", ""), "allow-markup-in-artwork=");
+/* extension for including references into index */
+param $xml2rfc-ext-include-references-in-index = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "include-references-in-index=")], $quote-chars _ " ", ""), "include-references-in-index=");
+/* position of author's section */
+param $xml2rfc-ext-authors-section = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "authors-section=")], $quote-chars _ " ", ""), "authors-section=");
+/* justification? */
+param $xml2rfc-ext-justification = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "justification=")], $quote-chars _ " ", ""), "justification=");
+/* trailing dots in section numbers */
+param $xml2rfc-ext-sec-no-trailing-dots = substring-after(translate(/processing-instruction("rfc-ext") [contains(., "sec-no-trailing-dots=")], $quote-chars _ " ", ""), "sec-no-trailing-dots=");
+/* choose whether or not to do mailto links */
+param $xml2rfc-linkmailto = substring-after(translate(/processing-instruction("rfc") [contains(., "linkmailto=")], $quote-chars _ " ", ""), "linkmailto=");
+/* iprnotified switch */
+param $xml2rfc-iprnotified = substring-after(translate(/processing-instruction("rfc") [contains(., "iprnotified=")], $quote-chars _ " ", ""), "iprnotified=");
+/* URL templates for RFCs and Internet Drafts. */
+
+/* Reference the authorative ASCII versions
+<xsl:param name="rfcUrlPrefix" select="'http://www.ietf.org/rfc/rfc'" />
+<xsl:param name="rfcUrlPostfix" select="'.txt'" />
+ */
+/* Reference the marked up versions over on http://tools.ietf.org/html. */
+param $rfcUrlPrefix = "http://tools.ietf.org/html/rfc";
+param $rfcUrlPostfix = "";
+param $rfcUrlFrag = "section-";
+param $internetDraftUrlPrefix = "http://tools.ietf.org/html/";
+param $internetDraftUrlPostfix = "";
+param $internetDraftUrlFrag = "section-";
+/* warning re: absent node-set ext. function */
+var $node-set-warning = "
+  This stylesheet requires either an XSLT-1.0 processor with node-set()
+  extension function, or an XSLT-2.0 processor. Therefore, parts of the
+  document couldn't be displayed.
+";
+/* character translation tables */
+var $lcase = "abcdefghijklmnopqrstuvwxyz";
+var $ucase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var $plain = " #/ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var $touri = "___abcdefghijklmnopqrstuvwxyz";
+/* build help keys for indices */
+key index-first-letter {
+    match iref | reference;
+    value translate(substring(@anchor _ @item, 1, 1), "abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+}
+
+key index-item {
+    match iref;
+    value @item;
+}
+
+key index-item-subitem {
+    match iref;
+    value @item _ ".." _ @subitem;
+}
+
+key index-xref-by-sec {
+    match xref[@x:sec];
+    value @target _ ".." _ @x:sec;
+}
+
+key index-xref-by-anchor {
+    match xref[@x:rel];
+    value @target _ ".." _ @x:rel;
+}
+
+key anchor-item {
+    match //*[@anchor];
+    value @anchor;
+}
+
+key xref-item {
+    match //xref;
+    value @target;
+}
+
+key extref-item {
+    match //x:ref;
+    value .;
+}
+/* prefix for automatically generated anchors */
+var $anchor-prefix = "rfc";
+/* IPR version switch */
+var $ipr-rfc3667 = (/rfc/@number > 3708) || not((/rfc/@ipr == "full2026") ||(/rfc/@ipr == "noDerivativeWorks2026") ||(/rfc/@ipr == "noDerivativeWorksNow") ||(/rfc/@ipr == "none") ||(/rfc/@ipr == "") || not(/rfc/@ipr));
+var $ipr-rfc4748 = $ipr-rfc3667 &&((/rfc/@number > 4671) ||($xml2rfc-ext-pub-year > 2006) ||($xml2rfc-ext-pub-year > 2005 && $xml2rfc-ext-pub-month-numeric >= 11));
+var $ipr-2007-08 = $ipr-rfc4748 &&((/rfc/@number > 5000 &&/rfc/@number != 5020 &&/rfc/@number != 5021 &&/rfc/@number != 5034 &&/rfc/@number != 5052 &&/rfc/@number != 5065 &&/rfc/@number != 5094) ||($xml2rfc-ext-pub-year >= 2008) ||(not(/rfc/@number) && $xml2rfc-ext-pub-year >= 2007 && $xml2rfc-ext-pub-month-numeric >= 9));
+/* funding switch */
+var $funding0 = (/rfc/@number > 2499) ||(not(/rfc/@number) &&/rfc/@docName && $xml2rfc-ext-pub-year >= 1999);
+var $funding1 = (/rfc/@number > 4320) ||(not(/rfc/@number) &&/rfc/@docName && $xml2rfc-ext-pub-year >= 2006);
+var $funding2 = $ipr-2007-08;
+/* will document have an index */
+var $has-index = //iref ||(//xref && $xml2rfc-ext-include-references-in-index == "yes");
+/* does the document contain edits? */
+var $has-edits = //ed:ins |//ed:del |//ed:replace;
+/* Templates for the various elements of rfc2629.dtd */
+match text() [not(ancestor::artwork)] {
+    var $starts-with-ws = translate(substring(., 1, 1), "	
+ ", "");
+    var $ends-with-ws = translate(substring(., string-length(.), 1), "	
+ ", "");
+    
+    /* <xsl:message> Orig: "<xsl:value-of select="."/>"</xsl:message>
+    <xsl:message>Start: "<xsl:value-of select="$starts-with-ws"/>"</xsl:message>
+    <xsl:message>  End: "<xsl:value-of select="$ends-with-ws"/>"</xsl:message> */
+    if ($starts-with-ws == "" && preceding-sibling::node()) {
+        expr " ";
+    }
+    expr normalize-space(.);
+    if ($ends-with-ws == "" && following-sibling::node()) {
+        expr " ";
+    }
+}
+
+match abstract {
+    <h1 id=$anchor-prefix _ ".abstract"> {
+        <a href="#" _ $anchor-prefix _ ".abstract"> "Abstract";
+    }
+    apply-templates;
+}
+<msxsl:script language="JScript" implements-prefix="myns"> "\n  function parseXml(str) {\n    try {\n      var doc = new ActiveXObject(\"MSXML2.DOMDocument\");\n      doc.async = false;\n      if (doc.loadXML(str)) {\n        return \"\";\n      }\n      else {\n        return doc.parseError.reason + \"\\n\" + doc.parseError.srcText + \" (\" + doc.parseError.line + \"/\" + doc.parseError.linepos + \")\";\n      }\n    }\n    catch(e) {\n      return \"\";\n    }\n  }\n";
+
+template add-artwork-class () {
+    if (@type == "abnf" ||@type == "abnf2616" ||@type == "application/xml-dtd" ||@type == "inline" ||@type == "application/relax-ng-compact-syntax") {
+        attribute "class" {
+            expr "inline";
+        }
+    
+    } else if (starts-with(@type, "message/http") && contains(@type, 'msgtype="request"')) {
+        attribute "class" {
+            expr "text2";
+        }
+    
+    } else if (starts-with(@type, "message/http")) {
+        attribute "class" {
+            expr "text";
+        }
+    
+    } else if (starts-with(@type, "drawing")) {
+        attribute "class" {
+            expr "drawing";
+        }
+    
+    } else if (starts-with(@type, "text/plain") ||@type == "example" ||@type == "code") {
+        attribute "class" {
+            expr "text";
+        }
+    
+    } else {
+    }
+}
+
+match artwork {
+    if (not(ancestor::ed:del) && $xml2rfc-ext-parse-xml-in-artwork == "yes" && function-available("myns:parseXml")) {
+        if (contains(., "<?xml")) {
+            var $body = substring-after(substring-after(., "<?xml"), "?>");
+            
+            if ($body != "" && myns:parseXml($body) != "") {
+                <table style="background-color: red; border-width: thin; border-style: solid; border-color: black;"> {
+                    <tr> {
+                        <td> {
+                            expr "\n        XML PARSE ERROR; parsed the body below:\n        ";
+                            <pre> $body;
+                            expr "\n        resulting in:\n        ";
+                            <pre> myns:parseXml($body);
+                        }
+                    }
+                }
+            }
+        }
+        if (@ed:parse-xml-after) {
+            if (myns:parseXml(string(.)) != "") {
+                <table style="background-color: red; border-width: thin; border-style: solid; border-color: black;"> {
+                    <tr> {
+                        <td> {
+                            expr "\n        XML PARSE ERROR:\n        ";
+                            <pre> myns:parseXml(string(.));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    var $display = {
+        if ($xml2rfc-ext-allow-markup-in-artwork == "yes") {
+            apply-templates;
+        
+        } else {
+            expr .;
+        }
+    }
+    
+    if (@align == "right") {
+        <div style="display:table; margin-left: auto; margin-right: 0pt;"> {
+            <pre style="margin-left: 0em;"> {
+                call add-artwork-class();
+                call insertInsDelClass();
+                copy-of $display;
+            }
+        }
+    
+    } else if (@align == "center") {
+        <div style="display:table; margin-left: auto; margin-right: auto;"> {
+            <pre style="margin-left: 0em;"> {
+                call add-artwork-class();
+                call insertInsDelClass();
+                copy-of $display;
+            }
+        }
+    
+    } else {
+        <pre> {
+            call add-artwork-class();
+            call insertInsDelClass();
+            copy-of $display;
+        }
+    }
+    call check-artwork-width() {
+        with $content = {
+            apply-templates;
+         }
+    }
+}
+/* special case for first text node in artwork */
+match artwork/text() [1] {
+    if (starts-with(., "
+")) {
+        /* reduce leading whitespace */
+        expr substring(., 2);
+    
+    } else {
+        expr .;
+    }
+}
+
+template check-artwork-width ($content) {
+    if (not(contains($content, "
+"))) {
+        if (string-length($content) > 69 && $warning) {
+            call warning($inline = "no") {
+                with $msg = {
+                    expr "artwork line too long: '";
+                    expr $content;
+                    expr "' (";
+                    expr string-length($content);
+                    expr " characters)";
+                 }
+            }
+        }
+    
+    } else {
+        var $start = substring-before($content, "
+");
+        var $end = substring-after($content, "
+");
+        
+        if (string-length($start) > 69 && $warning) {
+            call warning($inline = "no") {
+                with $msg = {
+                    expr "artwork line too long: '";
+                    expr $start;
+                    expr "' (";
+                    expr string-length($start);
+                    expr " characters)";
+                 }
+            }
+        }
+        call check-artwork-width($content = $end);
+    }
+}
+
+match artwork[@src && starts-with(@type, "image/")] {
+    <p> {
+        <img src=@src alt=.> {
+            copy-of @width |@height;
+        }
+    }
+}
+
+match author {
+    <address class="vcard"> {
+        <span class="vcardline"> {
+            <span class="fn"> @fullname;
+            if (@role) {
+                expr "\n          (";
+                expr @role;
+                expr ")\n        ";
+            }
+            /* components of name (hidden from display */
+            <span class="n hidden"> {
+                <span class="family-name"> @surname;
+                /* given-name family-name */
+                if (@surname == substring(@fullname, 1 + string-length(@fullname) - string-length(@surname))) {
+                    <span class="given-name"> normalize-space(substring(@fullname, 1, string-length(@fullname) - string-length(@surname)));
+                }
+                /* family-name given-name */
+                if (starts-with(@fullname, @surname)) {
+                    <span class="given-name"> normalize-space(substring-after(@fullname, @surname));
+                }
+            }
+        }
+        if (normalize-space(organization) != "") {
+            <span class="org vcardline"> organization;
+        }
+        if (address/postal) {
+            <span class="adr"> {
+                if (address/postal/street != "") {
+                    for-each (address/postal/street) {
+                        <span class="street-address vcardline"> .;
+                    }
+                }
+                if (address/postal/city | address/postal/region | address/postal/code) {
+                    <span class="vcardline"> {
+                        if (address/postal/city) {
+                            <span class="locality"> address/postal/city;
+                            expr ", ";
+                        }
+                        if (address/postal/region) {
+                            <span class="region"> address/postal/region;
+                            expr " ";
+                        }
+                        if (address/postal/code) {
+                            <span class="postal-code"> address/postal/code;
+                        }
+                    }
+                }
+                if (address/postal/country) {
+                    <span class="country-name vcardline"> address/postal/country;
+                }
+            }
+        }
+        if (address/phone) {
+            <span class="vcardline tel"> {
+                expr "Phone: ";
+                <a href="tel:" _ translate(address/phone, " ", "")> {
+                    <span class="value"> address/phone;
+                }
+            }
+        }
+        if (address/facsimile) {
+            <span class="vcardline tel"> {
+                <span class="type"> "Fax";
+                expr ": ";
+                <a href="fax:" _ translate(address/facsimile, " ", "")> {
+                    <span class="value"> address/facsimile;
+                }
+            }
+        }
+        
+        for-each (address/email) {
+            var $email = {
+                call extract-email();
+            }
+            
+            <span class="vcardline"> {
+                expr "EMail: ";
+                <a> {
+                    if ($xml2rfc-linkmailto != "no") {
+                        attribute "href" {
+                            expr "mailto:";
+                            expr $email;
+                        }
+                    }
+                    <span class="email"> $email;
+                }
+            }
+        }
+        
+        for-each (address/uri) {
+            var $uri = {
+                call extract-uri();
+            }
+            
+            <span class="vcardline"> {
+                expr "URI: ";
+                <a href=$uri class="url"> $uri;
+            }
+        }
+    }
+}
+
+match back {
+    
+    /* add references section first, no matter where it appears in the
+    source document */
+    
+    /* as of April 2004, process from middle section
+    <xsl:apply-templates select="references" />
+     */
+    /* add editorial comments */
+    if (//cref && $xml2rfc-comments == "yes" && $xml2rfc-inline != "yes") {
+        call insertComments();
+    }
+    /* next, add information about the document's authors */
+    if ($xml2rfc-ext-authors-section != "end") {
+        call insertAuthors();
+    }
+    /* add all other top-level sections under <back> */
+    apply-templates *[not(self::references) && not(self::ed:replace && .//references)];
+    if ($xml2rfc-ext-authors-section == "end") {
+        call insertAuthors();
+    }
+    if (not($xml2rfc-private)) {
+        /* copyright statements */
+        var $copyright = {
+            call insertCopyright();
+        }
+        /* emit it */
+        if (function-available("exslt:node-set")) {
+            apply-templates exslt:node-set($copyright);
+        
+        } else {
+            call error($msg = $node-set-warning);
+        }
+    }
+    /* insert the index if index entries exist */
+    if ($has-index) {
+        call insertIndex();
+    }
+}
+
+match eref[node()] {
+    <a href=@target> {
+        apply-templates;
+    }
+}
+
+match eref[not(node())] {
+    expr "<";
+    <a href=@target> @target;
+    expr ">";
+}
+
+match figure {
+    if (@anchor != "") {
+        <div id=@anchor>;
+    }
+    var $anch = {
+        call get-figure-anchor();
+    }
+    
+    <div id=$anch>;
+    apply-templates;
+    if ((@title != "" ||@anchor != "") && not(@suppress-title == "true")) {
+        var $n = {
+            number {
+                level "any";
+                count figure[(@title != "" ||@anchor != "") && not(@suppress-title == "true")];
+            }
+        }
+        
+        <p class="figure"> {
+            expr "Figure ";
+            expr $n;
+            if (@title != "") {
+                expr ": ";
+                expr @title;
+            }
+        }
+    }
+}
+
+match front {
+    if ($xml2rfc-topblock != "no") {
+        /* collect information for left column */
+        var $leftColumn = {
+            call collectLeftHeaderColumn();
+        }
+        /* collect information for right column */
+        var $rightColumn = {
+            call collectRightHeaderColumn();
+        }
+        /* insert the collected information */
+        <table summary="header information" class="header" border="0" cellpadding="1" cellspacing="1"> {
+            if (function-available("exslt:node-set")) {
+                call emitheader($lc = exslt:node-set($leftColumn), $rc = exslt:node-set($rightColumn));
+            
+            } else {
+                call error($msg = $node-set-warning);
+            }
+        }
+    }
+    <p class="title"> {
+        /* main title */
+        apply-templates title;
+        if (/rfc/@docName) {
+            <br>;
+            <span class="filename"> /rfc/@docName;
+            if (contains(/rfc/@docName, ".")) {
+                call warning() {
+                    with $msg = {
+                        expr "The @docName attribute should contain the base name, not the filename (thus no file extension).";
+                     }
+                }
+            }
+        }
+    }
+    /* insert notice about update */
+    var $published-as = /*/x:link[@rel == "Alternate" && starts-with(@title, "RFC")];
+    if ($published-as) {
+        <p style="color: green; text-align: center; font-size: 14pt; background-color: yellow;"> {
+            <b> "Note:";
+            expr " a later version of this document has been published as ";
+            <a href=$published-as/@href> $published-as/@title;
+            expr ".\n    ";
+        }
+    }
+    if (not($xml2rfc-private)) {
+        /* Get status info formatted as per RFC2629 */
+        var $preamble = {
+            call insertPreamble();
+        }
+        /* emit it */
+        if (function-available("exslt:node-set")) {
+            apply-templates exslt:node-set($preamble);
+        
+        } else {
+            call error($msg = $node-set-warning);
+        }
+    }
+    apply-templates abstract;
+    apply-templates note;
+    /* show notes inside change tracking as well */
+    apply-templates ed:replace[.//note];
+    if ($xml2rfc-toc == "yes") {
+        apply-templates / {
+            mode "toc";
+        }
+        call insertTocAppendix();
+    }
+}
+
+match iref {
+    var $anchor = {
+        call compute-iref-anchor();
+    }
+    
+    if (ancestor::t | ancestor::figure) {
+        <span id=$anchor>;
+    
+    } else {
+        <div id=$anchor>;
+    }
+}
+
+template compute-iref-anchor () {
+    var $first = translate(substring(@item, 1, 1), $ucase, $lcase);
+    var $nkey = translate($first, $lcase, "");
+    
+    if ($nkey == "") {
+        expr $anchor-prefix;
+        expr ".iref.";
+        expr $first;
+        expr ".";
+        number {
+            level "any";
+            count iref[starts-with(translate(@item, $ucase, $lcase), $first)];
+        }
+    
+    } else {
+        expr $anchor-prefix;
+        expr ".iref.";
+        number {
+            level "any";
+            count iref[translate(substring(@item, 1, 1), $lcase _ $ucase, "") == ""];
+        }
+    }
+}
+
+template compute-extref-anchor () {
+    var $first = translate(substring(., 1, 1), $ucase, $lcase);
+    var $nkey = translate($first, $lcase, "");
+    
+    if ($nkey == "") {
+        expr $anchor-prefix;
+        expr ".extref.";
+        expr $first;
+        expr ".";
+        number {
+            level "any";
+            count x:ref[starts-with(translate(., $ucase, $lcase), $first)];
+        }
+    
+    } else {
+        expr $anchor-prefix;
+        expr ".extref.";
+        number {
+            level "any";
+            count x:ref[translate(substring(., 1, 1), $lcase _ $ucase, "") == ""];
+        }
+    }
+}
+/* list templates depend on the list style */
+match list[@style == "empty" || not(@style)] {
+    <dl class="empty"> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+
+match list[starts-with(@style, "format ")] {
+    <dl> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+
+match list[@style == "hanging"] {
+    <dl> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+
+match list[@style == "numbers"] {
+    <ol> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+/* numbered list inside numbered list */
+match list[@style == "numbers"]/t/list[@style == "numbers"] {
+    priority 9;
+    
+    <ol style="list-style-type: lower-alpha"> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+
+match list[@style == "letters"] {
+    <ol style="list-style-type: lower-alpha"> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+/* nested lettered list uses uppercase */
+match list//t//list[@style == "letters"] {
+    priority 9;
+    
+    <ol style="list-style-type: upper-alpha"> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+
+match list[@style == "symbols"] {
+    <ul> {
+        call insertInsDelClass();
+        apply-templates;
+    }
+}
+/* same for t(ext) elements */
+match list[@style == "empty" || not(@style)]/t | list[@style == "empty" || not(@style)]/ed:replace/ed:*/t {
+    /* Inherited through CSS now <dd style="margin-top: .5em"> */
+    <dd> {
+        call insertInsDelClass();
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match list[@style == "numbers" ||@style == "symbols" ||@style == "letters"]/x:lt {
+    <li> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates t;
+    }
+}
+
+match list[@style == "numbers" ||@style == "symbols" ||@style == "letters"]/t | list[@style == "numbers" ||@style == "symbols" ||@style == "letters"]/ed:replace/ed:*/t {
+    <li> {
+        call insertInsDelClass();
+        
+        for-each (../..) {
+            call insert-issue-pointer();
+        }
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match list[@style == "hanging"]/x:lt {
+    if (@hangText != "") {
+        <dt> {
+            call insertInsDelClass();
+            var $del-node = ancestor::ed:del;
+            var $rep-node = ancestor::ed:replace;
+            var $deleted = $del-node &&($rep-node/ed:ins);
+            
+            for-each (../..) {
+                call insert-issue-pointer($deleted-anchor = $deleted);
+            }
+            if (@anchor) {
+                attribute "id" {
+                    expr @anchor;
+                }
+            }
+            expr @hangText;
+        }
+    }
+    <dd> {
+        call insertInsDelClass();
+        /* if hangIndent present, use 0.7 of the specified value (1em is the width of the "m" character */
+        if (../@hangIndent && ../@hangIndent != "0") {
+            attribute "style" {
+                expr "margin-left: ";
+                expr ../@hangIndent * 0.7;
+                expr "em";
+            }
+        }
+        apply-templates t;
+    }
+}
+
+match list[@style == "hanging"]/t | list[@style == "hanging"]/ed:replace/ed:*/t {
+    if (@hangText != "") {
+        <dt> {
+            call insertInsDelClass();
+            if (count(preceding-sibling::t) == 0) {
+                var $del-node = ancestor::ed:del;
+                var $rep-node = ancestor::ed:replace;
+                var $deleted = $del-node &&($rep-node/ed:ins);
+                
+                for-each (../..) {
+                    call insert-issue-pointer($deleted-anchor = $deleted);
+                }
+            }
+            if (@anchor) {
+                attribute "id" {
+                    expr @anchor;
+                }
+            }
+            expr @hangText;
+        }
+    }
+    var $dd-content = {
+        apply-templates;
+    }
+    
+    if ($dd-content != "") {
+        <dd> {
+            call insertInsDelClass();
+            /* if hangIndent present, use 0.7 of the specified value (1em is the width of the "m" character */
+            if (../@hangIndent && ../@hangIndent != "0") {
+                attribute "style" {
+                    expr "margin-left: ";
+                    expr ../@hangIndent * 0.7;
+                    expr "em";
+                }
+            }
+            apply-templates;
+        }
+    }
+}
+
+match list[starts-with(@style, "format ") &&(contains(@style, "%c") || contains(@style, "%d"))]/t {
+    var $list = ..;
+    var $format = substring-after(../@style, "format ");
+    var $pos = {
+        if ($list/@counter) {
+            number {
+                level "any";
+                count list[@counter == $list/@counter ||(not(@counter) &&@style ==("format " _ $list/@counter))]/t;
+            }
+        
+        } else {
+            number {
+                level "any";
+                count list[("format " _ @counter) == $list/@style ||(not(@counter) &&@style == $list/@style)]/t;
+            }
+        }
+    }
+    
+    <dt> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        if (contains($format, "%c")) {
+            expr substring-before($format, "%c");
+            number $pos {
+                format "a";
+            }
+            expr substring-after($format, "%c");
+        
+        } else {
+            expr substring-before($format, "%d");
+            number $pos {
+                format "1";
+            }
+            expr substring-after($format, "%d");
+        }
+    }
+    <dd> {
+        apply-templates;
+    }
+}
+
+match middle {
+    apply-templates;
+    apply-templates ../back//references;
+}
+
+match note {
+    var $num = {
+        number;
+    }
+    
+    <h1 id=$anchor-prefix _ ".note." _ $num> {
+        call insertInsDelClass();
+        <a href="#" _ $anchor-prefix _ ".note." _ $num> @title;
+    }
+    apply-templates;
+}
+
+match postamble {
+    if (normalize-space(.) != "") {
+        <p> {
+            call insertInsDelClass();
+            call editingMark();
+            apply-templates;
+        }
+    }
+}
+
+match preamble {
+    if (normalize-space(.) != "") {
+        <p> {
+            if (@anchor) {
+                attribute "id" {
+                    expr @anchor;
+                }
+            }
+            call insertInsDelClass();
+            call editingMark();
+            apply-templates;
+        }
+    }
+}
+
+template computed-auto-target ($bib, $ref) {
+    if ($ref && $bib/x:source/@href && $bib/x:source/@basename && $ref/@x:rel) {
+        expr $bib/x:source/@basename _ ".html" _ $ref/@x:rel;
+    
+    } else if ($bib/seriesInfo/@name == "RFC") {
+        var $sec = {
+            if ($ref && starts-with($ref/@x:rel, "#") && not($ref/@x:sec)) {
+                var $extdoc = document($bib/x:source/@href);
+                
+                for-each ($extdoc//*[@anchor == substring-after($ref/@x:rel, "#")]) {
+                    call get-section-number();
+                }
+            
+            } else if ($ref) {
+                expr $ref/@x:sec;
+            
+            } else {
+            }
+        }
+        
+        expr $rfcUrlPrefix _ $bib/seriesInfo[@name == "RFC"]/@value _ $rfcUrlPostfix;
+        if ($ref && $sec != "" && $rfcUrlFrag) {
+            expr "#" _ $rfcUrlFrag _ $sec;
+        }
+    
+    } else if ($bib/seriesInfo/@name == "Internet-Draft") {
+        expr $internetDraftUrlPrefix _ $bib/seriesInfo[@name == "Internet-Draft"]/@value _ $internetDraftUrlPostfix;
+        if ($ref && $ref/@x:sec && $internetDraftUrlFrag) {
+            expr "#" _ $internetDraftUrlFrag _ $ref/@x:sec;
+        }
+    
+    } else {
+    }
+}
+
+template computed-target ($bib, $ref) {
+    if ($bib/@target) {
+        if ($ref && $ref/@x:sec && $ref/@x:rel) {
+            expr $bib/@target _ $ref/@x:rel;
+        }
+    
+    } else {
+        call computed-auto-target($bib, $ref);
+    }
+}
+
+match reference {
+    /* check for reference to reference */
+    var $anchor = @anchor;
+    
+    if (not(ancestor::ed:del) && not(key("xref-item", $anchor))) {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "unused reference '";
+                expr @anchor;
+                expr "'";
+             }
+        }
+    }
+    var $target = {
+        if (@target) {
+            expr @target;
+        
+        } else {
+            call computed-auto-target($bib = .);
+        }
+    }
+    <tr> {
+        <td class="reference"> {
+            call insertInsDelClass();
+            var $del-node = ancestor::ed:del;
+            var $rep-node = ancestor::ed:replace;
+            var $deleted = $del-node &&($rep-node/ed:ins);
+            
+            for-each (../..) {
+                call insert-issue-pointer($deleted-anchor = $deleted);
+            }
+            <b id=@anchor> {
+                call referencename($node = .);
+            }
+        }
+        <td class="top"> {
+            call insertInsDelClass();
+            
+            for-each (front/author) {
+                var $initials = {
+                    call format-initials();
+                }
+                
+                if (@surname &&@surname != "") {
+                    var $displayname = {
+                        /* surname/initials is reversed for last author except when it's the only one */
+                        if (position() == last() && position() != 1) {
+                            expr $initials _ " " _ @surname;
+                        
+                        } else {
+                            expr @surname _ ", " _ $initials;
+                        }
+                        if (@role == "editor") {
+                            expr ", Ed.";
+                        }
+                    }
+                    
+                    if (address/email) {
+                        <a> {
+                            if ($xml2rfc-linkmailto != "no") {
+                                attribute "href" {
+                                    expr "mailto:";
+                                    expr address/email;
+                                }
+                            }
+                            if (organization/text()) {
+                                attribute "title" {
+                                    expr organization/text();
+                                }
+                            }
+                            expr $displayname;
+                        }
+                    
+                    } else {
+                        expr $displayname;
+                    }
+                    if (position() == last() - 1) {
+                        if (last() > 2) {
+                            expr ",";
+                        }
+                        expr " and ";
+                    
+                    } else {
+                        expr ", ";
+                    }
+                
+                } else if (organization/text()) {
+                    if (address/uri) {
+                        <a href=address/uri> organization;
+                    
+                    } else {
+                        expr organization;
+                    }
+                    if (position() == last() - 1) {
+                        if (last() > 2) {
+                            expr ",";
+                        }
+                        expr " and ";
+                    
+                    } else {
+                        expr ", ";
+                    }
+                
+                } else {
+                }
+            }
+            if (string-length($target) > 0) {
+                expr "“";
+                <a href=$target> front/title;
+                expr "”";
+            
+            } else {
+                expr "“";
+                expr front/title;
+                expr "”";
+            }
+            
+            for-each (seriesInfo) {
+                expr ", ";
+                if (not(@name) && not(@value) && ./text()) {
+                    expr .;
+                
+                } else {
+                    expr @name;
+                    if (@value != "") {
+                        expr " ";
+                        expr @value;
+                    }
+                    if (translate(@name, $ucase, $lcase) == "internet-draft") {
+                        expr " (work in progress)";
+                    }
+                }
+            }
+            if (front/date/@year != "" && front/date/@year != "???") {
+                expr ", ";
+                if (front/date/@month != "") {
+                    expr front/date/@month;
+                    expr " ";
+                }
+                expr front/date/@year;
+            }
+            if (@target) {
+                expr ", <";
+                <a href=@target> @target;
+                expr ">";
+            }
+            expr ".";
+            
+            for-each (annotation) {
+                <br>;
+                apply-templates;
+            }
+        }
+    }
+}
+
+match references {
+    var $name = {
+        if (ancestor::ed:del) {
+            expr "del-";
+        }
+        number {
+            level "any";
+        }
+    }
+    var $refseccount = count(/rfc/back/references) + count(/rfc/back/ed:replace/ed:ins/references);
+    /* insert pseudo section when needed */
+    if (not(preceding::references) && $refseccount != 1) {
+        call insert-conditional-hrule();
+        <h1 id=$anchor-prefix _ ".references"> {
+            call insert-conditional-pagebreak();
+            var $sectionNumber = {
+                call get-references-section-number();
+            }
+            
+            <a id=$anchor-prefix _ ".section." _ $sectionNumber href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+                call emit-section-number($no = $sectionNumber);
+            }
+            expr " References";
+        }
+    }
+    var $elemtype = {
+        if ($refseccount != 1) {
+            expr "h2";
+        
+        } else {
+            expr "h1";
+        }
+    }
+    var $title = {
+        if (not(@title) ||@title == "") {
+            expr "References";
+        
+        } else {
+            expr @title;
+        }
+    }
+    element $elemtype {
+        if ($name == "1") {
+            call insert-conditional-pagebreak();
+        }
+        var $sectionNumber = {
+            call get-section-number();
+        }
+        var $anchorpref = {
+            if ($elemtype == "h1") {
+            
+            } else {
+                expr ".";
+                expr $name;
+            }
+        }
+        
+        attribute "id" {
+            expr $anchor-prefix _ ".references" _ $anchorpref;
+        }
+        <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber id=$anchor-prefix _ ".section." _ $sectionNumber> {
+            call emit-section-number($no = $sectionNumber);
+        }
+        expr " ";
+        expr $title;
+    }
+    <table summary=$title> {
+        if ($xml2rfc-sortrefs == "yes" && $xml2rfc-symrefs != "no") {
+            apply-templates {
+                sort @anchor|.//ed:ins//reference/@anchor;
+            }
+        
+        } else {
+            apply-templates;
+        }
+    }
+}
+
+match rfc {
+    /* conformance checks */
+    if ($xml2rfc-symrefs != "no" && $xml2rfc-symrefs != "yes" &&//reference) {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "symrefs PI not specified; default has changed from 'no' to 'yes'.";
+             }
+        }
+    }
+    var $lang = {
+        call get-lang();
+    }
+    
+    <html lang=$lang> {
+        <head profile="http://www.w3.org/2006/03/hcard"> {
+            <title> {
+                apply-templates front/title {
+                    mode "get-text-content";
+                }
+            }
+            <style type="text/css" title="Xml2Rfc (sans serif)"> {
+                call insertCss();
+            }
+            <script> {
+                call insertJavascript();
+            }
+            /* <link rel="alternate stylesheet" type="text/css" media="screen" title="Plain (typewriter)" href="rfc2629tty.css" /> */
+            /* link elements */
+            if ($xml2rfc-toc == "yes") {
+                <link rel="Contents" href="#" _ $anchor-prefix _ ".toc">;
+            }
+            <link rel="Author" href="#" _ $anchor-prefix _ ".authors">;
+            if (not($xml2rfc-private)) {
+                <link rel="Copyright" href="#" _ $anchor-prefix _ ".copyright">;
+            }
+            if ($has-index) {
+                <link rel="Index" href="#" _ $anchor-prefix _ ".index">;
+            }
+            apply-templates / {
+                mode "links";
+            }
+            
+            for-each (/rfc/x:link) {
+                <link> {
+                    copy-of @*;
+                }
+            }
+            if (/rfc/@number) {
+                <link rel="Alternate" title="Authorative ASCII version" href="http://www.ietf.org/rfc/rfc" _ /rfc/@number _ ".txt">;
+            }
+            /* generator */
+            var $gen = {
+                call get-generator();
+            }
+            <meta name="generator" content=$gen>;
+            /* keywords */
+            if (front/keyword) {
+                var $keyw = {
+                    call get-keywords();
+                }
+                
+                <meta name="keywords" content=$keyw>;
+            }
+            if ($xml2rfc-ext-support-rfc2731 != "no") {
+                /* Dublin Core Metadata */
+                <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">;
+                /* DC creator, see RFC2731 */
+                
+                for-each (/rfc/front/author) {
+                    var $initials = {
+                        call format-initials();
+                    }
+                    
+                    <meta name="DC.Creator" content=@surname _ ", " _ $initials>;
+                }
+                if (not($xml2rfc-private)) {
+                    if (/rfc/@number) {
+                        <meta name="DC.Identifier" content="urn:ietf:rfc:" _ /rfc/@number>;
+                    
+                    } else if (/rfc/@docName) {
+                        <meta name="DC.Identifier" content="urn:ietf:id:" _ /rfc/@docName>;
+                    
+                    } else {
+                    }
+                    <meta name="DC.Date.Issued" scheme="ISO8601" content=$xml2rfc-ext-pub-year _ "-" _ $xml2rfc-ext-pub-month-numeric>;
+                    if (/rfc/@obsoletes != "") {
+                        call rfclist-for-dcmeta($list = /rfc/@obsoletes);
+                    }
+                }
+                if (/rfc/front/abstract) {
+                    <meta name="DC.Description.Abstract" content=normalize-space(/rfc/front/abstract)>;
+                }
+            }
+        }
+        <body style="font-size: 80%"> {
+            /* insert diagnostics */
+            call insert-diagnostics();
+            apply-templates front;
+            apply-templates middle;
+            apply-templates back;
+        }
+    }
+}
+
+match t {
+    if (preceding-sibling::section || preceding-sibling::appendix) {
+        call warning() {
+            with $msg = {
+                expr "The paragraph below is misplaced; maybe a section is closed in the wrong place: ";
+             }
+            with $msg2 = {
+                expr .;
+             }
+        }
+    }
+    if (@anchor) {
+        <div id=@anchor> {
+            apply-templates node() [1] {
+                mode "t-content";
+            }
+        }
+    
+    } else {
+        apply-templates node() [1] {
+            mode "t-content";
+        }
+    }
+}
+/* for t-content, dispatch to default templates if it's block-level content */
+match list | figure | texttable {
+    mode "t-content";
+    
+    /* <xsl:comment>t-content block-level</xsl:comment> */
+    apply-templates .;
+    apply-templates following-sibling::node() [1] {
+        mode "t-content";
+    }
+}
+/* ... otherwise group into p elements */
+match * | node() {
+    mode "t-content";
+    
+    var $p = {
+        call get-paragraph-number();
+    }
+    /* do not open a new p element if this is a whitespace-only text node and no siblings follow */
+    if (not(self::text() && normalize-space(.) == "" && not(following-sibling::node()))) {
+        <p> {
+            if ($p != "" && not(ancestor::ed:del) && not(ancestor::ed:ins) && not(ancestor::x:lt) && count(preceding-sibling::node()) == 0) {
+                attribute "id" {
+                    expr $anchor-prefix;
+                    expr ".section.";
+                    expr $p;
+                }
+            }
+            call insertInsDelClass();
+            call editingMark();
+            apply-templates . {
+                mode "t-content2";
+            }
+        }
+    }
+    apply-templates following-sibling::*[self::list || self::figure || self::texttable] [1] {
+        mode "t-content";
+    }
+}
+
+match * {
+    mode "t-content2";
+    
+    apply-templates .;
+    if (not(following-sibling::node() [1] [self::list || self::figure || self::texttable])) {
+        apply-templates following-sibling::node() [1] {
+            mode "t-content2";
+        }
+    }
+}
+
+match text() {
+    mode "t-content2";
+    
+    apply-templates .;
+    if (not(following-sibling::node() [1] [self::list || self::figure || self::texttable])) {
+        apply-templates following-sibling::node() [1] {
+            mode "t-content2";
+        }
+    }
+}
+
+match title {
+    apply-templates;
+}
+
+template insertTitle () {
+    if (@ed:old-title) {
+        <del> {
+            if (ancestor-or-self::*[@ed:entered-by] &&@ed:datetime) {
+                attribute "title" {
+                    expr @ed:datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+                }
+            }
+            expr @ed:old-title;
+        }
+        <ins> {
+            if (ancestor-or-self::*[@ed:entered-by] &&@ed:datetime) {
+                attribute "title" {
+                    expr @ed:datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+                }
+            }
+            expr @title;
+        }
+    
+    } else {
+        expr @title;
+    }
+}
+
+match section | appendix {
+    if (self::appendix) {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "The \"appendix\" element is deprecated, use \"section\" inside \"back\" instead.";
+             }
+        }
+    }
+    var $sectionNumber = {
+        if (@myns:unnumbered) {
+        
+        } else {
+            call get-section-number();
+        }
+    }
+    
+    if (not(ancestor::section) && not(@myns:notoclink)) {
+        call insert-conditional-hrule();
+    }
+    var $elemtype = {
+        if (count(ancestor::section) == 0) {
+            expr "h1";
+        
+        } else if (count(ancestor::section) == 1) {
+            expr "h2";
+        
+        } else if (count(ancestor::section) == 2) {
+            expr "h3";
+        
+        } else if (count(ancestor::section) == 3) {
+            expr "h4";
+        
+        } else {
+            expr "h5";
+        }
+    }
+    
+    /* process irefs immediadetely following the section so that their anchor
+    actually is the section heading */
+    apply-templates iref[count(preceding-sibling::*[not(self::iref)]) == 0];
+    element $elemtype {
+        if ($sectionNumber != "") {
+            attribute "id" {
+                expr $anchor-prefix;
+                expr ".section.";
+                expr $sectionNumber;
+            }
+        }
+        if ($sectionNumber == "1") {
+            /* pagebreak, this the first section */
+            attribute "class" {
+                expr "np";
+            }
+        
+        } else if (not(ancestor::section) && not(@myns:notoclink)) {
+            call insert-conditional-pagebreak();
+        
+        } else {
+        }
+        call insertInsDelClass();
+        if ($sectionNumber != "") {
+            <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+                call emit-section-number($no = $sectionNumber);
+            }
+            expr " ";
+        }
+        /* issue tracking? */
+        if (@ed:resolves) {
+            call insert-issue-pointer();
+        }
+        if (@anchor) {
+            <a id=@anchor href="#" _ @anchor> {
+                call insertTitle();
+            }
+        
+        } else {
+            call insertTitle();
+        }
+    }
+    /* continue with all child elements but the irefs processed above */
+    apply-templates *[not(self::iref)] | iref[count(preceding-sibling::*[not(self::iref)]) != 0];
+}
+
+match spanx[@style == "emph" || not(@style)] {
+    <em> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match spanx[@style == "verb"] {
+    <samp> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match spanx[@style == "strong"] {
+    <strong> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+
+template insert-blank-lines ($no) {
+    if ($no <= 0) {
+        <br>;
+        /* done */
+    
+    } else {
+        <br>;
+        call insert-blank-lines($no = $no - 1);
+    }
+}
+
+match vspace[not(@blankLines)] {
+    <br>;
+}
+
+match vspace {
+    call insert-blank-lines($no = @blankLines);
+}
+/* keep the root for the case when we process XSLT-inline markup */
+var $src = /;
+
+template render-section-ref ($from, $to) {
+    var $refname = {
+        for-each ($to) {
+            call get-section-type($prec = $from/preceding-sibling::node() [1]);
+        }
+    }
+    var $refnum = {
+        for-each ($to) {
+            call get-section-number();
+        }
+    }
+    
+    attribute "title" {
+        expr $to/@title;
+    }
+    if (@format == "counter") {
+        expr $refnum;
+    
+    } else if (@format == "title") {
+        expr $to/@title;
+    
+    } else {
+        expr normalize-space($refname _ " " _ $refnum);
+    }
+}
+
+match xref[node()] {
+    var $target = @target;
+    var $node = key("anchor-item", $target);
+    var $anchor = {
+        expr $anchor-prefix;
+        expr ".xref.";
+        expr @target;
+        expr ".";
+        number {
+            level "any";
+            count xref[@target == $target];
+        }
+    }
+    
+    if (@x:fmt == "none") {
+        if (name($node) == "reference") {
+            <cite title=normalize-space($node/front/title)> {
+                if ($xml2rfc-ext-include-references-in-index == "yes") {
+                    attribute "id" {
+                        expr $anchor;
+                    }
+                }
+                /* insert id when a backlink to this xref is needed in the index */
+                if (//iref[@x:for-anchor == $target] |//iref[@x:for-anchor == "" && ../@anchor == $target]) {
+                    attribute "id" {
+                        expr $anchor;
+                    }
+                }
+                apply-templates;
+            }
+        
+        } else {
+            apply-templates;
+        }
+    
+    } else if (@x:fmt &&@x:fmt != "none") {
+        call error($msg = "unknown xref/@x:fmt extension: " _ @x:fmt);
+    
+    } else if (name($node) == "section" || name($node) == "appendix") {
+        apply-templates;
+        var $context = .;
+        
+        expr " (";
+        <a href="#" _ @target> {
+            /* insert id when a backlink to this xref is needed in the index */
+            if (//iref[@x:for-anchor == $target] |//iref[@x:for-anchor == "" && ../@anchor == $target]) {
+                attribute "id" {
+                    expr $anchor;
+                }
+            }
+            call render-section-ref($from = ., $to = $node);
+        }
+        expr ")";
+    
+    } else {
+        <a href="#" _ $target> {
+            apply-templates;
+        }
+        
+        for-each ($src/rfc/back/references//reference[@anchor == $target]) {
+            expr " ";
+            <cite title=normalize-space(front/title)> {
+                if ($xml2rfc-ext-include-references-in-index == "yes") {
+                    attribute "id" {
+                        expr $anchor;
+                    }
+                }
+                call referencename($node = .);
+            }
+        }
+    }
+}
+
+key iref-xanch {
+    match iref[@x:for-anchor];
+    value @x:for-anchor;
+}
+
+match xref[not(node())] {
+    var $context = .;
+    var $target = @target;
+    var $anchor = {
+        expr $anchor-prefix;
+        expr ".xref.";
+        expr @target;
+        expr ".";
+        number {
+            level "any";
+            count xref[@target == $target];
+        }
+    }
+    var $node = key("anchor-item", $target);
+    
+    if (count($node) == 0 && not(ancestor::ed:del)) {
+        call error($msg = "Undefined target: " _ @target);
+    }
+    if (name($node) == "section" || name($node) == "appendix") {
+        <a href="#" _ @target> {
+            /* insert id when a backlink to this xref is needed in the index */
+            if (key("iref-xanch", $target) | key("iref-xanch", "") [../@anchor == $target]) {
+                attribute "id" {
+                    expr $anchor;
+                }
+            }
+            call render-section-ref($from = ., $to = $node);
+        }
+    
+    } else if (name($node) == "figure") {
+        <a href="#" _ $target> {
+            var $figcnt = {
+                for-each ($node) {
+                    number {
+                        level "any";
+                        count figure[(@title != "" ||@anchor != "") && not(@suppress-title == "true")];
+                    }
+                }
+            }
+            
+            if (@format == "counter") {
+                expr $figcnt;
+            
+            } else if (@format == "title") {
+                expr $node/@title;
+            
+            } else {
+                expr normalize-space("Figure " _ $figcnt);
+            }
+        }
+    
+    } else if (name($node) == "texttable") {
+        <a href="#" _ $target> {
+            var $tabcnt = {
+                for-each ($node) {
+                    number {
+                        level "any";
+                        count texttable[(@title != "" ||@anchor != "") && not(@suppress-title == "true")];
+                    }
+                }
+            }
+            
+            if (@format == "counter") {
+                expr $tabcnt;
+            
+            } else if (@format == "title") {
+                expr $node/@title;
+            
+            } else {
+                expr normalize-space("Table " _ $tabcnt);
+            }
+        }
+    
+    } else if (name($node) == "reference") {
+        var $href = {
+            call computed-target($bib = $node, $ref = .);
+        }
+        var $sec = {
+            if (starts-with(@x:rel, "#") && not(@x:sec) && $node/x:source/@href) {
+                var $extdoc = document($node/x:source/@href);
+                var $nodes = $extdoc//*[@anchor == substring-after(current()/@x:rel, "#")];
+                
+                if (not($nodes)) {
+                    call error() {
+                        with $msg = {
+                            expr "Anchor '";
+                            expr substring-after(current()/@x:rel, "#");
+                            expr "' not found in ";
+                            expr $node/x:source/@href;
+                            expr ".";
+                         }
+                    }
+                }
+                
+                for-each ($nodes) {
+                    call get-section-number();
+                }
+            
+            } else {
+                expr @x:sec;
+            }
+        }
+        var $secterm = {
+            if (translate(substring($sec, 1, 1), $ucase, "") == "") {
+                expr "Appendix";
+            
+            } else {
+                expr "Section";
+            }
+        }
+        var $fmt = {
+            if (@x:fmt != "") {
+                expr @x:fmt;
+            
+            } else if (ancestor::artwork) {
+                expr ",";
+            
+            } else {
+                expr "of";
+            }
+        }
+        var $title = {
+            if (starts-with(@x:rel, "#") && not(@x:sec) && $node/x:source/@href) {
+                var $extdoc = document($node/x:source/@href);
+                var $nodes = $extdoc//*[@anchor == substring-after(current()/@x:rel, "#")];
+                
+                if (not($nodes)) {
+                    call error() {
+                        with $msg = {
+                            expr "Anchor '";
+                            expr substring-after(current()/@x:rel, "#");
+                            expr "' not found in ";
+                            expr $node/x:source/@href;
+                            expr ".";
+                         }
+                    }
+                }
+                
+                for-each ($nodes) {
+                    expr @title;
+                }
+            
+            } else {
+            }
+        }
+        
+        /*
+        Formats:
+        
+        ()      [XXXX] (Section SS)
+        ,       [XXXX], Section SS
+        of      Section SS of [XXXX]
+        sec     Section SS
+        number  SS
+         */
+        if ($fmt && not($fmt == "()" || $fmt == "," || $fmt == "of" || $fmt == "sec" || $fmt == "anchor" || $fmt == "number")) {
+            call error($msg = "unknown xref/@x:fmt extension: " _ $fmt);
+        }
+        if ($sec != "") {
+            if ($fmt == "of" || $fmt == "sec") {
+                if ($href != "") {
+                    <a href=$href> {
+                        if ($title != "") {
+                            attribute "title" {
+                                expr $title;
+                            }
+                        }
+                        if ($fmt == "sec" && $xml2rfc-ext-include-references-in-index == "yes") {
+                            attribute "id" {
+                                expr $anchor;
+                            }
+                        }
+                        expr $secterm;
+                        expr " ";
+                        expr $sec;
+                    }
+                
+                } else {
+                    expr $secterm;
+                    expr " ";
+                    expr $sec;
+                }
+                if ($fmt == "of") {
+                    expr " of ";
+                }
+            
+            } else if ($fmt == "number") {
+                if ($href != "") {
+                    <a href=$href> {
+                        if ($title != "") {
+                            attribute "title" {
+                                expr $title;
+                            }
+                        }
+                        if ($xml2rfc-ext-include-references-in-index == "yes") {
+                            attribute "id" {
+                                expr $anchor;
+                            }
+                        }
+                        expr $sec;
+                    }
+                
+                } else {
+                    expr $sec;
+                }
+            
+            } else {
+            }
+        }
+        if ($sec == "" ||($fmt != "sec" && $fmt != "number")) {
+            <a href="#" _ $target> {
+                if ($xml2rfc-ext-include-references-in-index == "yes") {
+                    attribute "id" {
+                        expr $anchor;
+                    }
+                }
+                <cite title=normalize-space($node/front/title)> {
+                    var $val = {
+                        call referencename($node);
+                    }
+                    
+                    if ($fmt == "anchor") {
+                        /* remove brackets */
+                        expr substring($val, 2, string-length($val) - 2);
+                    
+                    } else {
+                        expr $val;
+                    }
+                }
+            }
+        }
+        if ($sec != "") {
+            if ($fmt == "()") {
+                expr " (";
+                if ($href != "") {
+                    <a href=$href> {
+                        expr $secterm;
+                        expr " ";
+                        expr $sec;
+                    }
+                
+                } else {
+                    expr $secterm;
+                    expr " ";
+                    expr $sec;
+                }
+                expr ")";
+            
+            } else if ($fmt == ",") {
+                expr ", ";
+                if ($href != "") {
+                    <a href=$href> {
+                        if ($title != "") {
+                            attribute "title" {
+                                expr $title;
+                            }
+                        }
+                        expr $secterm;
+                        expr " ";
+                        expr $sec;
+                    }
+                
+                } else {
+                    expr $secterm;
+                    expr " ";
+                    expr $sec;
+                }
+            
+            } else {
+            }
+        }
+    
+    } else {
+        call error($msg = "xref to unknown element: " _ name($node));
+    }
+}
+/* mark unmatched elements red */
+match * {
+    message {
+        expr "ERROR: no XSLT template for element: <";
+        expr name();
+        expr ">";
+    }
+    <tt class="error"> {
+        expr "<";
+        expr name();
+        expr ">";
+    }
+    copy-node {
+        apply-templates node() |@*;
+    }
+    <tt class="error"> {
+        expr "</";
+        expr name();
+        expr ">";
+    }
+}
+
+match / {
+    apply-templates *;
+}
+/* utility templates */
+template collectLeftHeaderColumn ($mode) {
+    /* default case */
+    if (not($xml2rfc-private)) {
+        <myns:item> "Network Working Group";
+        <myns:item> {
+            if (/rfc/@ipr && not(/rfc/@number)) {
+                expr "Internet Draft";
+            
+            } else {
+                expr "Request for Comments: ";
+                expr /rfc/@number;
+            }
+        }
+        if (/rfc/@docName && $mode != "nroff") {
+            <myns:item> {
+                expr "\n        <";
+                expr /rfc/@docName;
+                expr ">\n      ";
+            }
+        }
+        if (/rfc/@obsoletes &&/rfc/@obsoletes != "") {
+            <myns:item> {
+                expr "Obsoletes: ";
+                call rfclist($list = normalize-space(/rfc/@obsoletes));
+                if (not(/rfc/@number)) {
+                    expr " (if approved)";
+                }
+            }
+        }
+        if (/rfc/@seriesNo) {
+            <myns:item> {
+                if (/rfc/@category == "bcp") {
+                    expr "BCP: ";
+                    expr /rfc/@seriesNo;
+                
+                } else if (/rfc/@category == "info") {
+                    expr "FYI: ";
+                    expr /rfc/@seriesNo;
+                
+                } else if (/rfc/@category == "std") {
+                    expr "STD: ";
+                    expr /rfc/@seriesNo;
+                
+                } else {
+                    expr /rfc/@category _ ": " _ /rfc/@seriesNo;
+                }
+            }
+        }
+        if (/rfc/@updates &&/rfc/@updates != "") {
+            <myns:item> {
+                expr "Updates: ";
+                call rfclist($list = normalize-space(/rfc/@updates));
+                if (not(/rfc/@number)) {
+                    expr " (if approved)";
+                }
+            }
+        }
+        if ($mode != "nroff") {
+            <myns:item> {
+                if (/rfc/@number) {
+                    expr "Category: ";
+                
+                } else {
+                    expr "Intended status: ";
+                }
+                call get-category-long();
+            }
+        }
+        if (/rfc/@ipr && not(/rfc/@number)) {
+            <myns:item> {
+                expr "Expires: ";
+                call expirydate();
+            }
+        }
+    }
+    /* private case */
+    if ($xml2rfc-private) {
+        <myns:item> $xml2rfc-private;
+    }
+}
+
+template collectRightHeaderColumn () {
+    for-each (author) {
+        var $initials = {
+            call format-initials();
+        }
+        
+        if (@surname) {
+            <myns:item> {
+                expr $initials _ " " _ @surname;
+                if (@role) {
+                    if (@role == "editor") {
+                        expr ", Editor";
+                    
+                    } else {
+                        expr ", ";
+                        expr @role;
+                    }
+                }
+            }
+        }
+        var $org = {
+            if (organization/@abbrev) {
+                expr organization/@abbrev;
+            
+            } else {
+                expr organization;
+            }
+        }
+        var $orgOfFollowing = {
+            if (following-sibling::*[1]/organization/@abbrev) {
+                expr following-sibling::*[1]/organization/@abbrev;
+            
+            } else {
+                expr following-sibling::*/organization;
+            }
+        }
+        if ($org != $orgOfFollowing && $org != "") {
+            <myns:item> $org;
+        }
+    }
+    <myns:item> {
+        if ($xml2rfc-ext-pub-month != "") {
+            expr $xml2rfc-ext-pub-month;
+            if ($xml2rfc-ext-pub-day != "" &&/rfc/@ipr && not(/rfc/@number)) {
+                expr " ";
+                expr $xml2rfc-ext-pub-day;
+                expr ",";
+            }
+        }
+        expr " " _ $xml2rfc-ext-pub-year;
+    }
+}
+
+template emitheader ($lc, $rc) {
+    for-each ($lc/myns:item | $rc/myns:item) {
+        var $pos = position();
+        
+        if ($pos < count($lc/myns:item) + 1 || $pos < count($rc/myns:item) + 1) {
+            <tr> {
+                <td class="header left"> {
+                    call copynodes($nodes = $lc/myns:item[$pos]/node());
+                }
+                <td class="header right"> {
+                    call copynodes($nodes = $rc/myns:item[$pos]/node());
+                }
+            }
+        }
+    }
+}
+/* convenience template that avoids copying namespace nodes we don't want */
+template copynodes ($nodes) {
+    for-each ($nodes) {
+        if (namespace-uri() == "http://www.w3.org/1999/xhtml") {
+            element name() {
+                ns-template namespace-uri();
+                copy-of @* | node();
+            }
+        
+        } else if (self::*) {
+            element name() {
+                copy-of @* | node();
+            }
+        
+        } else if (self::text()) {
+            expr .;
+        
+        } else {
+            copy-of .;
+        }
+    }
+}
+
+template expirydate () {
+    if ($xml2rfc-ext-pub-month == "January") {
+        expr "July ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "February") {
+        expr "August ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "March") {
+        expr "September ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "April") {
+        expr "October ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "May") {
+        expr "November ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "June") {
+        expr "December ";
+        expr $xml2rfc-ext-pub-year;
+    
+    } else if ($xml2rfc-ext-pub-month == "July") {
+        expr "January ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else if ($xml2rfc-ext-pub-month == "August") {
+        expr "February ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else if ($xml2rfc-ext-pub-month == "September") {
+        expr "March ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else if ($xml2rfc-ext-pub-month == "October") {
+        expr "April ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else if ($xml2rfc-ext-pub-month == "November") {
+        expr "May ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else if ($xml2rfc-ext-pub-month == "December") {
+        expr "June ";
+        expr $xml2rfc-ext-pub-year + 1;
+    
+    } else {
+        expr "WRONG SYNTAX FOR MONTH";
+    }
+}
+
+template get-month-as-num ($month) {
+    if ($month == "January") {
+        expr "01";
+    
+    } else if ($month == "February") {
+        expr "02";
+    
+    } else if ($month == "March") {
+        expr "03";
+    
+    } else if ($month == "April") {
+        expr "04";
+    
+    } else if ($month == "May") {
+        expr "05";
+    
+    } else if ($month == "June") {
+        expr "06";
+    
+    } else if ($month == "July") {
+        expr "07";
+    
+    } else if ($month == "August") {
+        expr "08";
+    
+    } else if ($month == "September") {
+        expr "09";
+    
+    } else if ($month == "October") {
+        expr "10";
+    
+    } else if ($month == "November") {
+        expr "11";
+    
+    } else if ($month == "December") {
+        expr "12";
+    
+    } else {
+        expr "WRONG SYNTAX FOR MONTH";
+    }
+}
+
+template get-month-as-name ($month) {
+    if ($month == 1) {
+        expr "January";
+    
+    } else if ($month == 2) {
+        expr "February";
+    
+    } else if ($month == 3) {
+        expr "March";
+    
+    } else if ($month == 4) {
+        expr "April";
+    
+    } else if ($month == 5) {
+        expr "May";
+    
+    } else if ($month == 6) {
+        expr "June";
+    
+    } else if ($month == 7) {
+        expr "July";
+    
+    } else if ($month == 8) {
+        expr "August";
+    
+    } else if ($month == 9) {
+        expr "September";
+    
+    } else if ($month == 10) {
+        expr "October";
+    
+    } else if ($month == 11) {
+        expr "November";
+    
+    } else if ($month == 12) {
+        expr "December";
+    
+    } else {
+        expr "WRONG SYNTAX FOR MONTH";
+    }
+}
+/* produce back section with author information */
+template get-authors-section-title () {
+    if (count(/rfc/front/author) == 1) {
+        expr "Author's Address";
+    
+    } else {
+        expr "Authors' Addresses";
+    }
+}
+
+template get-authors-section-number () {
+    if (/*/x:assign-section-number[@builtin-target == "authors"]) {
+        expr /*/x:assign-section-number[@builtin-target == "authors"]/@number;
+    }
+}
+
+template insertAuthors () {
+    call insert-conditional-hrule();
+    var $number = {
+        call get-authors-section-number();
+    }
+    
+    <h1 id=$anchor-prefix _ ".authors"> {
+        call insert-conditional-pagebreak();
+        if ($number != "") {
+            <a href="#" _ $anchor-prefix _ ".section." _ $number id=$anchor-prefix _ ".section." _ $number> {
+                expr $number;
+                expr ".";
+            }
+            expr " ";
+        }
+        <a href="#" _ $anchor-prefix _ ".authors"> {
+            call get-authors-section-title();
+        }
+    }
+    apply-templates /rfc/front/author;
+}
+/* insert copyright statement */
+template insertCopyright () {
+    if ($ipr-rfc3667) {
+        <section title="Full Copyright Statement" anchor=$anchor-prefix _ ".copyright" myns:unnumbered="unnumbered" myns:notoclink="notoclink"> {
+            <t> {
+                if ($ipr-2007-08) {
+                
+                } else if ($ipr-rfc4748) {
+                    expr "\n              Copyright © The IETF Trust (";
+                    expr $xml2rfc-ext-pub-year;
+                    expr ").\n            ";
+                
+                } else {
+                    expr "\n              Copyright © The Internet Society (";
+                    expr $xml2rfc-ext-pub-year;
+                    expr ").\n            ";
+                }
+            }
+            <t> {
+                expr "\n          This document is subject to the rights, licenses and restrictions\n          contained in BCP 78";
+                if (/rfc/@submissionType == "independent") {
+                    expr " and at ";
+                    <eref target="http://www.rfc-editor.org/copyright.html">;
+                }
+                expr ", and except as set forth therein, the authors\n          retain all their rights.\n        ";
+            }
+            <t> {
+                if ($ipr-rfc4748) {
+                    expr "\n              This document and the information contained herein are provided\n              on an “AS IS” basis and THE CONTRIBUTOR,\n              THE ORGANIZATION HE/SHE REPRESENTS OR IS SPONSORED BY (IF ANY),\n              THE INTERNET SOCIETY, THE IETF TRUST AND THE INTERNET ENGINEERING\n              TASK FORCE DISCLAIM ALL WARRANTIES,\n              EXPRESS OR IMPLIED,\n              INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE\n              INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED\n              WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.\n            ";
+                
+                } else {
+                    expr "\n              This document and the information contained herein are provided\n              on an “AS IS” basis and THE CONTRIBUTOR,\n              THE ORGANIZATION HE/SHE REPRESENTS OR IS SPONSORED BY (IF ANY),\n              THE INTERNET SOCIETY AND THE INTERNET ENGINEERING TASK FORCE DISCLAIM\n              ALL WARRANTIES,\n              EXPRESS OR IMPLIED,\n              INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE\n              INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED\n              WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.\n            ";
+                }
+            }
+        }
+    
+    } else {
+        /* <http://tools.ietf.org/html/rfc2026#section-10.4> */
+        <section title="Full Copyright Statement" anchor=$anchor-prefix _ ".copyright" myns:unnumbered="unnumbered" myns:notoclink="notoclink"> {
+            <t> {
+                expr "\n          Copyright © The Internet Society (";
+                expr $xml2rfc-ext-pub-year;
+                expr "). All Rights Reserved.\n        ";
+            }
+            <t> "\n          This document and translations of it may be copied and furnished to\n          others, and derivative works that comment on or otherwise explain it\n          or assist in its implementation may be prepared, copied, published and\n          distributed, in whole or in part, without restriction of any kind,\n          provided that the above copyright notice and this paragraph are\n          included on all such copies and derivative works. However, this\n          document itself may not be modified in any way, such as by removing\n          the copyright notice or references to the Internet Society or other\n          Internet organizations, except as needed for the purpose of\n          developing Internet standards in which case the procedures for\n          copyrights defined in the Internet Standards process must be\n          followed, or as required to translate it into languages other than\n          English.\n        ";
+            <t> "\n          The limited permissions granted above are perpetual and will not be\n          revoked by the Internet Society or its successors or assignees.\n        ";
+            <t> "\n          This document and the information contained herein is provided on an\n          “AS IS” basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING\n          TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING\n          BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION\n          HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF\n          MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.\n        ";
+        }
+    }
+    <section title="Intellectual Property" anchor=$anchor-prefix _ ".ipr" myns:unnumbered="unnumbered"> {
+        if ($ipr-rfc3667) {
+            <t> "\n          The IETF takes no position regarding the validity or scope of any\n          Intellectual Property Rights or other rights that might be claimed to\n          pertain to the implementation or use of the technology described in\n          this document or the extent to which any license under such rights\n          might or might not be available; nor does it represent that it has\n          made any independent effort to identify any such rights.  Information\n          on the procedures with respect to rights in RFC documents\n          can be found in BCP 78 and BCP 79.\n        ";
+            <t> {
+                expr "\n          Copies of IPR disclosures made to the IETF Secretariat and any\n          assurances of licenses to be made available, or the result of an\n          attempt made to obtain a general license or permission for the use\n          of such proprietary rights by implementers or users of this\n          specification can be obtained from the IETF on-line IPR repository \n          at ";
+                <eref target="http://www.ietf.org/ipr">;
+                expr ".\n        ";
+            }
+            <t> {
+                expr "\n          The IETF invites any interested party to bring to its attention any\n          copyrights, patents or patent applications, or other proprietary\n          rights that may cover technology that may be required to implement\n          this standard. Please address the information to the IETF at\n          ";
+                <eref target="mailto:ietf-ipr@ietf.org"> "ietf-ipr@ietf.org";
+                expr ".\n        ";
+            }
+        
+        } else {
+            <t> "\n          The IETF takes no position regarding the validity or scope of\n          any intellectual property or other rights that might be claimed\n          to  pertain to the implementation or use of the technology\n          described in this document or the extent to which any license\n          under such rights might or might not be available; neither does\n          it represent that it has made any effort to identify any such\n          rights. Information on the IETF's procedures with respect to\n          rights in standards-track and standards-related documentation\n          can be found in BCP-11. Copies of claims of rights made\n          available for publication and any assurances of licenses to\n          be made available, or the result of an attempt made\n          to obtain a general license or permission for the use of such\n          proprietary rights by implementors or users of this\n          specification can be obtained from the IETF Secretariat.\n        ";
+            <t> "\n          The IETF invites any interested party to bring to its\n          attention any copyrights, patents or patent applications, or\n          other proprietary rights which may cover technology that may be\n          required to practice this standard. Please address the\n          information to the IETF Executive Director.\n        ";
+            if ($xml2rfc-iprnotified == "yes") {
+                <t> "\n            The IETF has been notified of intellectual property rights\n            claimed in regard to some or all of the specification contained\n            in this document. For more information consult the online list\n            of claimed rights.\n          ";
+            }
+        }
+    }
+    if ($funding2) {
+    
+    } else if ($funding1 &&/rfc/@number) {
+        <section title="Acknowledgement" myns:unnumbered="unnumbered" myns:notoclink="notoclink"> {
+            <t> "\n          Funding for the RFC Editor function is provided by the IETF\n          Administrative Support Activity (IASA).\n        ";
+        }
+    
+    } else if ($funding0 &&/rfc/@number) {
+        <section title="Acknowledgement" myns:unnumbered="unnumbered" myns:notoclink="notoclink"> {
+            <t> "\n          Funding for the RFC Editor function is currently provided by\n          the Internet Society.\n        ";
+        }
+    
+    } else {
+    }
+}
+/* insert CSS style info */
+template insertCss () {
+    expr "\na {\n  text-decoration: none;\n}\na.smpl {\n  color: black;\n}\na:hover {\n  text-decoration: underline;\n}\na:active {\n  text-decoration: underline;\n}\naddress {\n  margin-top: 1em;\n  margin-left: 2em;\n  font-style: normal;\n}";
+    if (//x:blockquote) {
+        expr "\nblockquote {\n  border-style: solid;\n  border-color: gray;\n  border-width: 0 0 0 .25em;\n  font-style: italic;\n  padding-left: 0.5em;\n}";
+    }
+    expr "\nbody {";
+    if ($xml2rfc-background != "") {
+        expr "\n  background: url(";
+        expr $xml2rfc-background;
+        expr ") #ffffff left top;";
+    }
+    expr "\n  color: black;\n  font-family: verdana, helvetica, arial, sans-serif;\n  font-size: 10pt;\n}";
+    if (//xhtml:p) {
+        expr "\nbr.p {\n  line-height: 150%;\n}";
+    }
+    expr "\ncite {\n  font-style: normal;\n}";
+    if (//x:note) {
+        expr "\ndiv.note {\n  margin-left: 2em;\n}";
+    }
+    expr "\ndd {\n  margin-right: 2em;";
+    if ($xml2rfc-ext-justification == "always") {
+        expr "\n  text-align: justify;";
+    }
+    expr "\n}\ndl {\n  margin-left: 2em;\n}\n";
+    /* spacing between two entries in definition lists */
+    expr "\ndl.empty dd {\n  margin-top: .5em;\n}\ndl p {\n  margin-left: 0em;\n}\ndt {\n  margin-top: .5em;\n}\nh1 {\n  font-size: 14pt;\n  line-height: 21pt;\n  page-break-after: avoid;\n}\nh1.np {\n  page-break-before: always;\n}\nh1 a {\n  color: #333333;\n}\nh2 {\n  font-size: 12pt;\n  line-height: 15pt;\n  page-break-after: avoid;\n}\nh2 a {\n  color: black;\n}\nh3 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh3 a {\n  color: black;\n}\nh4 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh4 a {\n  color: black;\n}\nh5 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh5 a {\n  color: black;\n}\nimg {\n  margin-left: 3em;\n}\nli {\n  margin-left: 2em;\n  margin-right: 2em;";
+    if ($xml2rfc-ext-justification == "always") {
+        expr "\n  text-align: justify;";
+    }
+    expr "\n}\nol {\n  margin-left: 2em;\n  margin-right: 2em;\n}\nol p {\n  margin-left: 0em;\n}";
+    if (//xhtml:q) {
+        expr "\nq {\n  font-style: italic;\n}";
+    }
+    expr "\np {\n  margin-left: 2em;\n  margin-right: 2em;";
+    if ($xml2rfc-ext-justification == "always") {
+        expr "\n  text-align: justify;";
+    }
+    expr "\n}\npre {\n  margin-left: 3em;\n  background-color: lightyellow;\n  padding: .25em;\n}\npre.text2 {\n  border-style: dotted;\n  border-width: 1px;\n  background-color: #f0f0f0;\n  width: 69em;\n}\npre.inline {\n  background-color: white;\n  padding: 0em;\n}\npre.text {\n  border-style: dotted;\n  border-width: 1px;\n  background-color: #f8f8f8;\n  width: 69em;\n}\npre.drawing {\n  border-style: solid;\n  border-width: 1px;\n  background-color: #f8f8f8;\n  padding: 2em;\n}";
+    if (//x:q) {
+        expr "\nq {\n  font-style: italic;\n}";
+    }
+    if (//x:sup) {
+        expr "\nsup {\n  font-size: 60%;\n}";
+    }
+    expr "\ntable {\n  margin-left: 2em;\n}";
+    if (//texttable) {
+        expr "\ntable.tt {\n  vertical-align: top;\n}\ntable.full {\n  border-style: outset;\n  border-width: 1px;\n}\ntable.headers {\n  border-style: outset;\n  border-width: 1px;\n}\ntable.tt td {\n  vertical-align: top;\n}\ntable.full td {\n  border-style: inset;\n  border-width: 1px;\n}\ntable.tt th {\n  vertical-align: top;\n}\ntable.full th {\n  border-style: inset;\n  border-width: 1px;\n}\ntable.headers th {\n  border-style: none none inset none;\n  border-width: 1px;\n}";
+    }
+    expr "\ntable.header {\n  width: 95%;\n  font-size: 10pt;\n  color: white;\n}\ntd.top {\n  vertical-align: top;\n}\ntd.topnowrap {\n  vertical-align: top;\n  white-space: nowrap; \n}\ntd.header {\n  background-color: gray;\n  width: 50%;\n}";
+    if (/rfc/@obsoletes |/rfc/@updates) {
+        expr "\ntd.header a {\n  color: white;\n}";
+    }
+    expr "\ntd.reference {\n  vertical-align: top;\n  white-space: nowrap;\n  padding-right: 1em;\n}\nthead {\n  display:table-header-group;\n}\nul.toc {\n  list-style: none;\n  margin-left: 1.5em;\n  margin-right: 0em;\n  padding-left: 0em;\n}\nli.tocline0 {\n  line-height: 150%;\n  font-weight: bold;\n  font-size: 10pt;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.tocline1 {\n  line-height: normal;\n  font-weight: normal;\n  font-size: 9pt;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.tocline2 {\n  font-size: 0pt;\n}\nul p {\n  margin-left: 0em;\n}\nul.ind {\n  list-style: none;\n  margin-left: 1.5em;\n  margin-right: 0em;\n  padding-left: 0em;\n}\nli.indline0 {\n  font-weight: bold;\n  line-height: 200%;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.indline1 {\n  font-weight: normal;\n  line-height: 150%;\n  margin-left: 0em;\n  margin-right: 0em;\n}\n";
+    if (//x:bcp14) {
+        expr ".bcp14 {\n  font-style: normal;\n  text-transform: lowercase;\n  font-variant: small-caps;\n}";
+    }
+    if (//x:blockquote) {
+        expr "\nblockquote > * .bcp14 {\n  font-style: italic;\n}";
+    }
+    expr "\n.comment {\n  background-color: yellow;\n}";
+    if ($xml2rfc-editing == "yes") {
+        expr "\n.editingmark {\n  background-color: khaki;\n}";
+    }
+    expr "\n.center {\n  text-align: center;\n}\n.error {\n  color: red;\n  font-style: italic;\n  font-weight: bold;\n}\n.figure {\n  font-weight: bold;\n  text-align: center;\n  font-size: 9pt;\n}\n.filename {\n  color: #333333;\n  font-weight: bold;\n  font-size: 12pt;\n  line-height: 21pt;\n  text-align: center;\n}\n.fn {\n  font-weight: bold;\n}\n.hidden {\n  display: none;\n}\n.left {\n  text-align: left;\n}\n.right {\n  text-align: right;\n}\n.title {\n  color: #990000;\n  font-size: 18pt;\n  line-height: 18pt;\n  font-weight: bold;\n  text-align: center;\n  margin-top: 36pt;\n}\n.vcardline {\n  display: block;\n}\n.warning {\n  font-size: 14pt;\n  background-color: yellow;\n}\n";
+    if ($has-edits) {
+        expr "del {\n  color: red;\n  text-decoration: line-through;\n}\n.del {\n  color: red;\n  text-decoration: line-through;\n}\nins {\n  color: green;\n  text-decoration: underline;\n}\n.ins {\n  color: green;\n  text-decoration: underline;\n}\ndiv.issuepointer {\n  float: left;\n}";
+    }
+    if (//ed:issue) {
+        expr "\ntable.openissue {\n  background-color: khaki;\n  border-width: thin;\n  border-style: solid;\n  border-color: black;\n}\ntable.closedissue {\n  background-color: white;\n  border-width: thin;\n  border-style: solid;\n  border-color: gray;\n  color: gray; \n}\nthead th {\n  text-align: left;\n}\n.bg-issue {\n  border: solid;\n  border-width: 1px;\n  font-size: 7pt;\n}\n.closed-issue {\n  border: solid;\n  border-width: thin;\n  background-color: lime;\n  font-size: smaller;\n  font-weight: bold;\n}\n.open-issue {\n  border: solid;\n  border-width: thin;\n  background-color: red;\n  font-size: smaller;\n  font-weight: bold;\n}\n.editor-issue {\n  border: solid;\n  border-width: thin;\n  background-color: yellow;\n  font-size: smaller;\n  font-weight: bold;\n}";
+    }
+    expr "\n\n@media print {\n  .noprint {\n    display: none;\n  }\n  \n  a {\n    color: black;\n    text-decoration: none;\n  }\n\n  table.header {\n    width: 90%;\n  }\n\n  td.header {\n    width: 50%;\n    color: black;\n    background-color: white;\n    vertical-align: top;\n    font-size: 12pt;\n  }\n\n  ul.toc a::after {\n    content: leader('.') target-counter(attr(href), page);\n  }\n  \n  a.iref {\n    content: target-counter(attr(href), page);\n  }\n  \n  .print2col {\n    column-count: 2;\n    -moz-column-count: 2;";
+    /* for Firefox */
+    expr "\n    column-fill: auto;";
+    /* for PrinceXML */
+    expr "\n  }\n";
+    if ($xml2rfc-ext-justification == "print") {
+        expr "\n  dd {\n    text-align: justify;\n  }\n  li {\n    text-align: justify;\n  }\n  p {\n    text-align: justify;\n  }\n";
+    }
+    expr "}\n\n@page {\n  @top-left {\n       content: \"";
+    call get-header-left();
+    expr "\"; \n  } \n  @top-right {\n       content: \"";
+    call get-header-right();
+    expr "\"; \n  } \n  @top-center {\n       content: \"";
+    call get-header-center();
+    expr "\"; \n  } \n  @bottom-left {\n       content: \"";
+    call get-author-summary();
+    expr "\"; \n  } \n  @bottom-center {\n       content: \"";
+    call get-category-long();
+    expr "\"; \n  } \n  @bottom-right {\n       content: \"[Page \" counter(page) \"]\"; \n  } \n}\n\n@page:first { \n    @top-left {\n      content: normal;\n    }\n    @top-right {\n      content: normal;\n    }\n    @top-center {\n      content: normal;\n    }\n}\n\ndiv.tooltip {\n  border: solid 1px #666666;\n  padding: 0px;\n  position: absolute;\n  z-index: 100;\n  display: none;\n  color: #333333;\n  top: 20px;\n  left: 90px;\n  background-color: #ffffcc;\n  layer-background-color: #ffffcc;\n}\n\ndiv.fancy-tooltip-empty-header {\n  text-align: left;\n  font-weight: bold;\n  margin: 2px;\n}\n\ndiv.fancy-tooltip-header {\n  text-align: left;\n  font-weight: bold;\n  margin: 2px 2px 0px 2px;\n  border-bottom: 1px solid black;\n}\n\ndiv.fancy-tooltip-body {\n  font-weight: normal;\n  margin: 4px;\n}\n\ndiv.fancy-tooltip-body ul, div.fancy-tooltip-body li  {\n  padding: 1px 4px 1px 4px;\n  margin: 1px 2px 1px 8px;\n}\n\nspan.digress {\n  background-color: #778899;\n  font: courier new, courier, monospace;\n  color: black;\n  font-weight: bold;\n  font-size: 10px;\n  border: 1px solid #aaaaaa;\n}\n\nspan.digress-anchor {\n  margin: 10pt 20pt 10pt 50pt;\n}\n\na.digress-anchor:link, a.digress-anchor:visited, \n        a.digress-anchor-hover, a.digress-anchor,active {\n  text-decoration: none;\n  color: black;\n}\n\n";
+}
+
+template insertJavascript () {
+    expr "\nfunction popClick(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        popDown(event, objectId);\n        sc[objectId] = false;\n    } else {\n        popUp(event, objectId);\n        if (!sc) {\n            window[\"stickyClick\"] = sc = [];\n        }\n        sc[objectId] = true;\n    }\n    return false;\n}\n\nfunction popUp(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        return;\n    }\n\n    if (document.getElementById == null)\n        return;\n    var ie = document.all ? 1 : 0;      /* Is this Internet Explorer? */\n    var dm = document.getElementById(objectId);\n    if (dm == null)\n        return;\n\n    var ds = dm.style;\n    var widthPage = window.innerWidth ? window.innerWidth\n                : document.body.clientWidth;\n\n    var elementWidth = dm.offsetWidth;\n    var top;\n    var left;\n\n    if (event.pageY) {\n        top = event.pageY + 10;\n        left = event.pageX + 10;\n    } else if (event.clientY) {\n        top = event.clientY + 10;\n        left = event.clientX + 10;\n    } else {\n        return;\n    }    \n\n    if (left + elementWidth > widthPage)\n        left = widthPage - elementWidth - 25;\n\n    if (ie) {\n        ds.width = \"1200px\";\n        ds.display = \"block\";\n        var cw = dm.firstChild.clientWidth;\n        if (cw > widthPage - left - 10) {\n            cw = widthPage - left - 10;\n        }\n        ds.width = cw + \"px\";\n    }\n\n    ds.left = \"10px\";\n    ds.top = top + \"px\";\n    ds.width = widthPage / 2 + \"px\";\n    ds.display = \"block\";\n\n    var tm = document.getElementById(\"table-\" + objectId);\n    if (tm == null)\n        return;\n\n    elementWidth = tm.offsetWidth;\n    if (left + elementWidth > widthPage)\n        left = widthPage - elementWidth - 25;\n\n    ds.left = left + \"px\";\n}\n\nfunction popDown(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        return;\n    }\n\n    if (document.getElementById == null)\n        return;\n    var dm = document.getElementById(objectId);\n    if (dm) {\n        dm.style.display = \"none\";\n    }\n}\n  \n";
+}
+/* generate the index section */
+template insertSingleIref () {
+    if (@ed:xref) {
+        /* special index generator mode */
+        expr "[";
+        <a href="#" _ @ed:xref> @ed:xref;
+        expr ", ";
+        <a> {
+            var $htmluri = //reference[@anchor == current()/@ed:xref]/format[@type == "HTML"]/@target;
+            
+            if ($htmluri) {
+                attribute "href" {
+                    expr $htmluri _ "#" _ @ed:frag;
+                }
+            }
+            if (@primary == "true") {
+                <b> @ed:label;
+            
+            } else {
+                expr @ed:label;
+            }
+        }
+        expr "]";
+        if (position() != last()) {
+            expr ", ";
+        }
+    
+    } else {
+        var $_n = {
+            call get-section-number();
+        }
+        var $n = {
+            if ($_n != "") {
+                expr $_n;
+            
+            } else {
+                expr "§";
+            }
+        }
+        var $backlink = {
+            if (self::xref) {
+                var $target = @target;
+                
+                expr "#";
+                expr $anchor-prefix;
+                expr ".xref.";
+                expr @target;
+                expr ".";
+                number {
+                    level "any";
+                    count xref[@target == $target];
+                }
+            
+            } else if (self::iref) {
+                expr "#";
+                call compute-iref-anchor();
+            
+            } else if (self::x:ref) {
+                expr "#";
+                call compute-extref-anchor();
+            
+            } else {
+                message "Unsupported element type for insertSingleIref";
+            }
+        }
+        
+        <a class="iref" href=$backlink> {
+            call insertInsDelClass();
+            if (@primary == "true") {
+                <b> $n;
+            
+            } else {
+                expr $n;
+            }
+        }
+        if (position() != last()) {
+            expr ", ";
+        }
+    }
+}
+
+template insertSingleXref () {
+    var $_n = {
+        call get-section-number();
+    }
+    var $n = {
+        if ($_n != "") {
+            expr $_n;
+        
+        } else {
+            expr "§";
+        }
+    }
+    
+    if (self::reference) {
+        <a class="iref" href="#" _ @anchor> {
+            call insertInsDelClass();
+            <b> $n;
+        }
+    
+    } else {
+        var $target = @target;
+        var $backlink = {
+            expr "#";
+            expr $anchor-prefix;
+            expr ".xref.";
+            expr $target;
+            expr ".";
+            number {
+                level "any";
+                count xref[@target == $target];
+            }
+        }
+        
+        <a class="iref" href=$backlink> {
+            call insertInsDelClass();
+            expr $n;
+        }
+    }
+    if (position() != last()) {
+        expr ", ";
+    }
+}
+
+template insertIndex () {
+    call insert-conditional-hrule();
+    <h1 id=$anchor-prefix _ ".index"> {
+        call insert-conditional-pagebreak();
+        <a href="#" _ $anchor-prefix _ ".index"> "Index";
+    }
+    /* generate navigation links to index subsections */
+    <p class="noprint"> {
+        var $irefs = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
+        var $xrefs = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
+        
+        for-each ($irefs | $xrefs) {
+            sort translate(concat(@item,@anchor),$lcase,$ucase);
+            var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
+            /* character? */
+            if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
+                var $showit = {
+                    if ($xml2rfc-ext-include-references-in-index != "yes") {
+                        if ($irefs[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
+                            expr "yes";
+                        }
+                    
+                    } else {
+                        expr "yes";
+                    }
+                }
+                
+                if ($showit == "yes") {
+                    <a href="#" _ $anchor-prefix _ ".index." _ $letter> $letter;
+                    expr " ";
+                }
+            }
+        }
+    }
+    /* for each index subsection */
+    <div class="print2col"> {
+        <ul class="ind"> {
+            var $irefs2 = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
+            var $xrefs2 = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
+            
+            for-each ($irefs2 | $xrefs2) {
+                sort translate(concat(@item,@anchor),$lcase,$ucase);
+                var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
+                var $showit = {
+                    if ($xml2rfc-ext-include-references-in-index != "yes") {
+                        if ($irefs2[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
+                            expr "yes";
+                        }
+                    
+                    } else {
+                        expr "yes";
+                    }
+                }
+                
+                if ($showit == "yes") {
+                    <li class="indline0"> {
+                        /* make letters and digits stand out */
+                        if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
+                            <a id=$anchor-prefix _ ".index." _ $letter href="#" _ $anchor-prefix _ ".index." _ $letter> {
+                                <b> $letter;
+                            }
+                        
+                        } else {
+                            <b> $letter;
+                        }
+                        <ul class="ind"> {
+                            for-each (key("index-first-letter", translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase))) {
+                                sort translate(concat(@item,@anchor),$lcase,$ucase);
+                                if (self::reference) {
+                                    if ($xml2rfc-ext-include-references-in-index == "yes" && not(starts-with(@anchor, "deleted-"))) {
+                                        <li class="indline1"> {
+                                            <em> @anchor;
+                                            expr "  ";
+                                            var $rs = key("xref-item", current()/@anchor) | . | key("anchor-item", "deleted-" _ current()/@anchor);
+                                            
+                                            for-each ($rs) {
+                                                call insertSingleXref();
+                                            }
+                                            var $rs2 = $rs[@x:sec];
+                                            if ($rs2) {
+                                                <ul class="ind"> {
+                                                    for-each ($rs2) {
+                                                        sort substring-before(concat(@x:sec,'.'),'.') {
+                                                            data-type "number";
+                                                        }
+                                                        sort substring(@x:sec,1+string-length(substring-before(@x:sec,'.'))) {
+                                                            data-type "number";
+                                                        }
+                                                        if (generate-id(.) == generate-id(key("index-xref-by-sec", @target _ ".." _ @x:sec))) {
+                                                            <li class="indline1"> {
+                                                                <em> {
+                                                                    if (translate(substring(@x:sec, 1, 1), $ucase, "") == "") {
+                                                                        expr "Appendix ";
+                                                                    
+                                                                    } else {
+                                                                        expr "Section ";
+                                                                    }
+                                                                    expr @x:sec;
+                                                                }
+                                                                expr "  ";
+                                                                
+                                                                for-each (key("index-xref-by-sec", @target _ ".." _ @x:sec)) {
+                                                                    call insertSingleXref();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            if (current()/x:source/@href) {
+                                                var $rs3 = $rs[not(@x:sec) &&@x:rel];
+                                                var $doc = document(current()/x:source/@href);
+                                                
+                                                if ($rs3) {
+                                                    <ul class="ind"> {
+                                                        for-each ($rs3) {
+                                                            sort count($doc//*[@anchor and following::*/@anchor=substring-after(current()/@x:rel,'#')]) {
+                                                                order "ascending";
+                                                                data-type "number";
+                                                            }
+                                                            if (generate-id(.) == generate-id(key("index-xref-by-anchor", @target _ ".." _ @x:rel))) {
+                                                                <li class="indline1"> {
+                                                                    <em> {
+                                                                        var $sec = {
+                                                                            for-each ($doc//*[@anchor == substring-after(current()/@x:rel, "#")]) {
+                                                                                call get-section-number();
+                                                                            }
+                                                                        }
+                                                                        
+                                                                        if (translate(substring($sec, 1, 1), $ucase, "") == "") {
+                                                                            expr "Appendix ";
+                                                                        
+                                                                        } else {
+                                                                            expr "Section ";
+                                                                        }
+                                                                        expr $sec;
+                                                                    }
+                                                                    expr "  ";
+                                                                    
+                                                                    for-each (key("index-xref-by-anchor", @target _ ".." _ @x:rel)) {
+                                                                        call insertSingleXref();
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                
+                                } else {
+                                    /* regular iref */
+                                    if (generate-id(.) == generate-id(key("index-item", @item _ @anchor))) {
+                                        var $item = @item;
+                                        var $in-artwork = key("index-item", $item) [@primary == "true" && ancestor::artwork];
+                                        
+                                        <li class="indline1"> {
+                                            if ($in-artwork) {
+                                                <tt> @item;
+                                            
+                                            } else {
+                                                expr @item;
+                                            }
+                                            expr "  ";
+                                            var $irefs3 = key("index-item", @item) [not(@subitem) ||@subitem == ""];
+                                            var $xrefs3 = key("xref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs3/@x:for-anchor);
+                                            var $extrefs3 = key("extref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs3/@x:for-anchor);
+                                            
+                                            for-each ($irefs3 | $xrefs3 | $extrefs3) {
+                                                /* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
+                                                call insertSingleIref();
+                                            }
+                                            var $s2 = key("index-item", @item) [@subitem &&@subitem != ""];
+                                            if ($s2) {
+                                                <ul class="ind"> {
+                                                    for-each ($s2) {
+                                                        sort translate(@subitem,$lcase,$ucase);
+                                                        if (generate-id(.) == generate-id(key("index-item-subitem", @item _ ".." _ @subitem))) {
+                                                            var $itemsubitem = @item _ ".." _ @subitem;
+                                                            var $in-artwork2 = key("index-item-subitem", @item _ ".." _ @subitem) [@primary == "true" && ancestor::artwork];
+                                                            
+                                                            <li class="indline1"> {
+                                                                if ($in-artwork2) {
+                                                                    <tt> @subitem;
+                                                                
+                                                                } else {
+                                                                    expr @subitem;
+                                                                }
+                                                                expr "  ";
+                                                                var $irefs4 = key("index-item-subitem", @item _ ".." _ @subitem);
+                                                                var $xrefs4 = key("xref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs4/@x:for-anchor);
+                                                                var $extrefs4 = key("extref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs4/@x:for-anchor);
+                                                                
+                                                                for-each ($irefs4 | $xrefs4 | $extrefs4) {
+                                                                    /* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
+                                                                    call insertSingleIref();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+template insertPreamble () {
+    <section title="Status of this Memo" myns:unnumbered="unnumbered" myns:notoclink="notoclink" anchor=$anchor-prefix _ ".status"> {
+        if (/rfc/@ipr && not(/rfc/@number)) {
+            <t> {
+                if (/rfc/@ipr == "full2026") {
+                    expr "\n            This document is an Internet-Draft and is \n            in full conformance with all provisions of Section 10 of RFC2026.    \n          ";
+                
+                } else if (/rfc/@ipr == "noDerivativeWorks2026") {
+                    expr "\n            This document is an Internet-Draft and is \n            in full conformance with all provisions of Section 10 of RFC2026\n            except that the right to produce derivative works is not granted.   \n          ";
+                
+                } else if (/rfc/@ipr == "noDerivativeWorksNow") {
+                    expr "\n            This document is an Internet-Draft and is \n            in full conformance with all provisions of Section 10 of RFC2026\n            except that the right to produce derivative works is not granted.\n            (If this document becomes part of an IETF working group activity,\n            then it will be brought into full compliance with Section 10 of RFC2026.)  \n          ";
+                
+                } else if (/rfc/@ipr == "none") {
+                    expr "\n            This document is an Internet-Draft and is \n            NOT offered in accordance with Section 10 of RFC2026,\n            and the author does not provide the IETF with any rights other\n            than to publish as an Internet-Draft.\n          ";
+                
+                } else if (/rfc/@ipr == "full3667") {
+                    expr "\n            This document is an Internet-Draft and is subject to all provisions\n            of section 3 of RFC 3667.  By submitting this Internet-Draft, each\n            author represents that any applicable patent or other IPR claims of\n            which he or she is aware have been or will be disclosed, and any of\n            which he or she become aware will be disclosed, in accordance with\n            RFC 3668.\n          ";
+                
+                } else if (/rfc/@ipr == "noModification3667") {
+                    expr "\n            This document is an Internet-Draft and is subject to all provisions\n            of section 3 of RFC 3667.  By submitting this Internet-Draft, each\n            author represents that any applicable patent or other IPR claims of\n            which he or she is aware have been or will be disclosed, and any of\n            which he or she become aware will be disclosed, in accordance with\n            RFC 3668.  This document may not be modified, and derivative works of\n            it may not be created, except to publish it as an RFC and to\n            translate it into languages other than English";
+                    if (/rfc/@iprExtract) {
+                        expr ",\n            other than to extract ";
+                        <xref target=/rfc/@iprExtract>;
+                        expr " as-is\n            for separate use.";
+                    }
+                    expr ".\n          ";
+                
+                } else if (/rfc/@ipr == "noDerivatives3667") {
+                    expr "\n            This document is an Internet-Draft and is subject to all provisions\n            of section 3 of RFC 3667 except for the right to produce derivative\n            works.  By submitting this Internet-Draft, each author represents \n            that any applicable patent or other IPR claims of which he or she\n            is aware have been or will be disclosed, and any of which he or she\n            become aware will be disclosed, in accordance with RFC 3668.  This\n            document may not be modified, and derivative works of it may\n            not be created";
+                    if (/rfc/@iprExtract) {
+                        expr ", other than to extract\n            ";
+                        <xref target=/rfc/@iprExtract>;
+                        expr " as-is for separate use.";
+                    }
+                    expr ".\n          ";
+                
+                } else if (/rfc/@ipr == "full3978") {
+                    expr "\n            By submitting this Internet-Draft, each\n            author represents that any applicable patent or other IPR claims of\n            which he or she is aware have been or will be disclosed, and any of\n            which he or she becomes aware will be disclosed, in accordance with\n            Section 6 of BCP 79.\n          ";
+                
+                } else if (/rfc/@ipr == "noModification3978") {
+                    expr "\n            By submitting this Internet-Draft, each\n            author represents that any applicable patent or other IPR claims of\n            which he or she is aware have been or will be disclosed, and any of\n            which he or she becomes aware will be disclosed, in accordance with\n            Section 6 of BCP 79.  This document may not be modified, and derivative works of\n            it may not be created, except to publish it as an RFC and to\n            translate it into languages other than English";
+                    if (/rfc/@iprExtract) {
+                        expr ",\n            other than to extract ";
+                        <xref target=/rfc/@iprExtract>;
+                        expr " as-is\n            for separate use.";
+                    }
+                    expr ".\n          ";
+                
+                } else if (/rfc/@ipr == "noDerivatives3978") {
+                    expr "\n            By submitting this Internet-Draft, each author represents \n            that any applicable patent or other IPR claims of which he or she\n            is aware have been or will be disclosed, and any of which he or she\n            becomes aware will be disclosed, in accordance with Section 6 of BCP 79.  This\n            document may not be modified, and derivative works of it may\n            not be created";
+                    if (/rfc/@iprExtract) {
+                        expr ", other than to extract\n            ";
+                        <xref target=/rfc/@iprExtract>;
+                        expr " as-is for separate use.";
+                    }
+                    expr ".\n          ";
+                
+                } else if (/rfc/@ipr == "trust200811") {
+                    expr "\n            This Internet-Draft is submitted to IETF in full conformance with the\n            provisions of BCP 78 and BCP 79.\n          ";
+                
+                } else {
+                    expr "CONFORMANCE UNDEFINED.";
+                }
+            }
+            <t> "\n        Internet-Drafts are working documents of the Internet Engineering\n        Task Force (IETF), its areas, and its working groups.\n        Note that other groups may also distribute working documents as\n        Internet-Drafts.\n      ";
+            <t> "\n        Internet-Drafts are draft documents valid for a maximum of six months\n        and may be updated, replaced, or obsoleted by other documents at any time.\n        It is inappropriate to use Internet-Drafts as reference material or to cite\n        them other than as “work in progress”.\n      ";
+            <t> {
+                expr "\n        The list of current Internet-Drafts can be accessed at\n        ";
+                <eref target="http://www.ietf.org/ietf/1id-abstracts.txt">;
+                expr ".\n      ";
+            }
+            <t> {
+                expr "\n        The list of Internet-Draft Shadow Directories can be accessed at\n        ";
+                <eref target="http://www.ietf.org/shadow.html">;
+                expr ".\n      ";
+            }
+            <t> {
+                expr "\n        This Internet-Draft will expire in ";
+                call expirydate();
+                expr ".\n      ";
+            }
+        
+        } else if (/rfc/@category == "bcp") {
+            <t> "\n        This document specifies an Internet Best Current Practices for the Internet\n        Community, and requests discussion and suggestions for improvements.\n        Distribution of this memo is unlimited.\n      ";
+        
+        } else if (/rfc/@category == "exp") {
+            <t> "\n        This memo defines an Experimental Protocol for the Internet community.\n        It does not specify an Internet standard of any kind.\n        Discussion and suggestions for improvement are requested.\n        Distribution of this memo is unlimited.\n      ";
+        
+        } else if (/rfc/@category == "historic") {
+            <t> "\n        This memo describes a historic protocol for the Internet community.\n        It does not specify an Internet standard of any kind.\n        Distribution of this memo is unlimited.\n      ";
+        
+        } else if (/rfc/@category == "info" || not(/rfc/@category)) {
+            <t> "\n        This memo provides information for the Internet community.\n        It does not specify an Internet standard of any kind.\n        Distribution of this memo is unlimited.\n      ";
+        
+        } else if (/rfc/@category == "std") {
+            <t> "\n        This document specifies an Internet standards track protocol for the Internet\n        community, and requests discussion and suggestions for improvements.\n        Please refer to the current edition of the “Internet Official Protocol\n        Standards” (STD 1) for the standardization state and status of this\n        protocol. Distribution of this memo is unlimited.\n      ";
+        
+        } else {
+            <t> "UNSUPPORTED CATEGORY.";
+        }
+    }
+    if ($ipr-2007-08) {
+    
+    } else if ($ipr-rfc4748) {
+        <section title="Copyright Notice" myns:unnumbered="unnumbered" myns:notoclink="notoclink" anchor=$anchor-prefix _ ".copyrightnotice"> {
+            <t> {
+                expr "\n          Copyright © The IETF Trust (";
+                expr $xml2rfc-ext-pub-year;
+                expr ").  All Rights Reserved.\n        ";
+            }
+        }
+    
+    } else {
+        <section title="Copyright Notice" myns:unnumbered="unnumbered" myns:notoclink="notoclink" anchor=$anchor-prefix _ ".copyrightnotice"> {
+            <t> {
+                expr "\n          Copyright © The Internet Society (";
+                expr $xml2rfc-ext-pub-year;
+                expr ").  All Rights Reserved.\n      ";
+            }
+        }
+    }
+}
+/* TOC generation */
+match / {
+    mode "toc";
+    
+    <hr class="noprint">;
+    <h1 class="np" id=$anchor-prefix _ ".toc"> {
+        /* this pagebreak occurs always */
+        <a href="#" _ $anchor-prefix _ ".toc"> "Table of Contents";
+    }
+    <ul class="toc"> {
+        apply-templates {
+            mode "toc";
+        }
+    }
+}
+
+template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $waschanged) {
+    /* handle tocdepth parameter */
+    if (($tocparam == "" || $tocparam == "default") && string-length(translate($number, ".ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890§", ".")) >= $parsedTocDepth) {
+        /* dropped entry because excluded */
+        attribute "class" {
+            expr "tocline2";
+        }
+    
+    } else if ($tocparam == "exclude") {
+        /* dropped entry because excluded */
+        attribute "class" {
+            expr "tocline2";
+        }
+    
+    } else {
+        if (starts-with($number, "del-")) {
+            <del> {
+                expr $number;
+                <a href="#" _ $target> $title;
+            }
+        
+        } else {
+            if (not(contains($number, "."))) {
+                attribute "class" {
+                    expr "tocline0";
+                }
+            
+            } else {
+                attribute "class" {
+                    expr "tocline1";
+                }
+            }
+            if ($number != "") {
+                call emit-section-number($no = $number);
+                expr "   ";
+            }
+            <a href="#" _ $target> {
+                if ($waschanged != "") {
+                    <ins> $title;
+                    <del> $oldtitle;
+                
+                } else {
+                    expr $title;
+                }
+            }
+        }
+    }
+}
+
+match back {
+    mode "toc";
+    
+    /* <xsl:apply-templates select="references" mode="toc" /> */
+    if (//cref && $xml2rfc-comments == "yes" && $xml2rfc-inline != "yes") {
+        <li> {
+            call insert-toc-line($target = $anchor-prefix _ ".comments", $title = "Editorial Comments");
+        }
+    }
+    if ($xml2rfc-ext-authors-section != "end") {
+        apply-templates /rfc/front {
+            mode "toc";
+        }
+    }
+    apply-templates *[not(self::references)] {
+        mode "toc";
+    }
+    if ($xml2rfc-ext-authors-section == "end") {
+        apply-templates /rfc/front {
+            mode "toc";
+        }
+    }
+    /* copyright statements */
+    if (not($xml2rfc-private)) {
+        <li> {
+            call insert-toc-line($target = $anchor-prefix _ ".ipr", $title = "Intellectual Property and Copyright Statements");
+        }
+    }
+    /* insert the index if index entries exist */
+    if (//iref) {
+        <li> {
+            call insert-toc-line($target = $anchor-prefix _ ".index", $title = "Index");
+        }
+    }
+}
+
+match front {
+    mode "toc";
+    
+    <li> {
+        var $authors-title = {
+            call get-authors-section-title();
+        }
+        var $authors-number = {
+            call get-authors-section-number();
+        }
+        
+        call insert-toc-line($target = $anchor-prefix _ ".authors", $title = $authors-title, $number = $authors-number);
+    }
+}
+
+template references-toc () {
+    
+    /* distinguish two cases: (a) single references element (process
+    as toplevel section; (b) multiple references sections (add one toplevel
+    container with subsection) */
+    var $refsecs = /rfc/back/references |/rfc/back/ed:replace/ed:ins/references;
+    
+    if (count($refsecs) == 0) {
+        /* nop */
+    
+    } else if (count($refsecs) == 1) {
+        for-each ($refsecs) {
+            var $title = {
+                if (@title != "") {
+                    expr @title;
+                
+                } else {
+                    expr "References";
+                }
+            }
+            
+            <li> {
+                call insert-toc-line($target = $anchor-prefix _ ".references", $title) {
+                    with $number = {
+                        call get-references-section-number();
+                     }
+                }
+            }
+        }
+    
+    } else {
+        <li> {
+            /* insert pseudo container */
+            call insert-toc-line($target = $anchor-prefix _ ".references", $title = "References") {
+                with $number = {
+                    call get-references-section-number();
+                 }
+            }
+            <ul class="toc"> {
+                /* ...with subsections... */
+                
+                for-each ($refsecs) {
+                    var $title = {
+                        if (@title != "") {
+                            expr @title;
+                        
+                        } else {
+                            expr "References";
+                        }
+                    }
+                    var $sectionNumber = {
+                        call get-section-number();
+                    }
+                    var $num = {
+                        number {
+                            level "any";
+                        }
+                    }
+                    
+                    <li> {
+                        call insert-toc-line($number = $sectionNumber, $target = $anchor-prefix _ ".references" _ "." _ $num, $title);
+                    }
+                }
+            }
+        }
+    }
+}
+
+match section | appendix {
+    mode "toc";
+    
+    var $sectionNumber = {
+        call get-section-number();
+    }
+    var $target = {
+        if (@anchor) {
+            expr @anchor;
+        
+        } else {
+            expr $anchor-prefix;
+            expr ".section.";
+            expr $sectionNumber;
+        }
+    }
+    /* obtain content, just to check whether we need to recurse at all */
+    var $content = <li> {
+        call insert-toc-line($number = $sectionNumber, $target, $title = @title, $tocparam = @toc, $oldtitle = @ed:old-title, $waschanged = @ed:resolves);
+        <ul class="toc"> {
+            apply-templates {
+                mode "toc";
+            }
+        }
+    }
+    
+    if ($content != "") {
+        <li> {
+            call insert-toc-line($number = $sectionNumber, $target, $title = @title, $tocparam = @toc, $oldtitle = @ed:old-title, $waschanged = @ed:resolves);
+            /* obtain nested content, just to check whether we need to recurse at all */
+            var $nested-content = <ul class="toc"> {
+                apply-templates {
+                    mode "toc";
+                }
+            }
+            /* only recurse if we need to (do not produce useless list container) */
+            if ($nested-content != "") {
+                <ul class="toc"> {
+                    apply-templates {
+                        mode "toc";
+                    }
+                }
+            }
+        }
+    }
+}
+
+match middle {
+    mode "toc";
+    
+    apply-templates {
+        mode "toc";
+    }
+    call references-toc();
+}
+
+match rfc {
+    mode "toc";
+    
+    apply-templates middle | back {
+        mode "toc";
+    }
+}
+
+match ed:del | ed:ins | ed:replace {
+    mode "toc";
+    
+    apply-templates {
+        mode "toc";
+    }
+}
+
+match * | text() {
+    mode "toc";
+}
+
+template insertTocAppendix () {
+    if (//figure[@title != "" ||@anchor != ""]) {
+        <ul class="toc"> {
+            for-each (//figure[@title != "" ||@anchor != ""]) {
+                var $title = {
+                    expr "Figure ";
+                    expr position();
+                    if (@title) {
+                        expr ": ";
+                        expr @title;
+                    }
+                }
+                
+                <li> {
+                    call insert-toc-line($target = $anchor-prefix _ ".figure." _ position(), $title);
+                }
+            }
+        }
+    }
+    /* experimental */
+    if (//ed:issue) {
+        call insertIssuesList();
+    }
+}
+
+template referencename ($node) {
+    for-each ($node) {
+        if ($xml2rfc-symrefs != "no" && ancestor::ed:del) {
+            var $unprefixed = substring-after(@anchor, "deleted-");
+            
+            if ($unprefixed != "") {
+                expr "[" _ $unprefixed _ "]";
+            
+            } else {
+                if (count(//reference[@anchor == current()/@anchor]) != 1) {
+                    message {
+                        expr "Deleted duplicate anchors should have the prefix \"deleted-\": ";
+                        expr @anchor;
+                    }
+                }
+                expr "[" _ @anchor _ "]";
+            }
+        
+        } else if ($xml2rfc-symrefs != "no") {
+            expr "[";
+            expr @anchor;
+            expr "]";
+        
+        } else if (ancestor::ed:del) {
+            expr "[del]";
+        
+        } else {
+            expr "[";
+            number {
+                level "any";
+                count reference[not(ancestor::ed:del)];
+            }
+            expr "]";
+        }
+    }
+}
+
+template replace-substring ($string, $replace, $by) {
+    if (contains($string, $replace)) {
+        expr substring-before($string, $replace) _ $by;
+        call replace-substring($string = substring-after($string, $replace), $replace, $by);
+    
+    } else {
+        expr $string;
+    }
+}
+
+template rfclist ($list) {
+    if (contains($list, ",")) {
+        var $rfcNo = substring-before($list, ",");
+        
+        call check-front-matter-ref($name = $rfcNo);
+        <a href=$rfcUrlPrefix _ $rfcNo _ $rfcUrlPostfix> $rfcNo;
+        expr ",\n      ";
+        call rfclist($list = normalize-space(substring-after($list, ",")));
+    
+    } else {
+        var $rfcNo = $list;
+        
+        call check-front-matter-ref($name = $rfcNo);
+        <a href=$rfcUrlPrefix _ $rfcNo _ $rfcUrlPostfix> $rfcNo;
+    }
+}
+
+template check-front-matter-ref ($name) {
+    if (starts-with($name, "draft-")) {
+        if (count(//references//reference/seriesInfo[@name == "Internet-Draft" &&@value == $name]) == 0) {
+            call warning($inline = "no", $msg = "front matter mentions I-D " _ $name _ " for which there is no reference element");
+        }
+    
+    } else {
+        if (count(//references//reference/seriesInfo[@name == "RFC" &&@value == $name]) == 0) {
+            call warning($inline = "no", $msg = "front matter mentions RFC " _ $name _ " for which there is no reference element");
+        }
+    }
+}
+
+template rfclist-for-dcmeta ($list) {
+    if (contains($list, ",")) {
+        var $rfcNo = substring-before($list, ",");
+        
+        <meta name="DC.Relation.Replaces" content="urn:ietf:rfc:" _ $rfcNo>;
+        call rfclist-for-dcmeta($list = normalize-space(substring-after($list, ",")));
+    
+    } else {
+        var $rfcNo = $list;
+        
+        <meta name="DC.Relation.Replaces" content="urn:ietf:rfc:" _ $rfcNo>;
+    }
+}
+
+template get-paragraph-number () {
+    /* get section number of ancestor section element, then add t or figure number */
+    if (ancestor::section && not(ancestor::section[@myns:unnumbered == "unnumbered"]) && not(ancestor::x:blockquote) && not(ancestor::x:note)) {
+        for-each (ancestor::section[1]) {
+            call get-section-number();
+            expr ".p.";
+        }
+        number {
+            count t | figure | x:blockquote | x:note;
+        }
+    }
+}
+
+template editingMark () {
+    if ($xml2rfc-editing == "yes" && ancestor::rfc) {
+        <sup class="editingmark"> {
+            <span> {
+                number {
+                    level "any";
+                    count postamble | preamble | t;
+                }
+            }
+            expr " ";
+        }
+    }
+}
+/* internal ref support */
+key anchor-item-alias {
+    match //*[@anchor &&(x:anchor-alias/@value || ed:replace/ed:ins/x:anchor-alias)];
+    value x:anchor-alias/@value | ed:replace/ed:ins/x:anchor-alias/@value;
+}
+
+match x:ref {
+    var $val = .;
+    /* <xsl:variable name="target" select="// *[(@anchor and x:anchor-alias/@value=$val) or (@anchor and ed:replace/ed:ins/x:anchor-alias/@value=$val) or (@anchor=$val)]"/> */
+    var $target = key("anchor-item", $val) | key("anchor-item-alias", $val);
+    var $irefs = //iref[@x:for-anchor == $val];
+    
+    if ($target) {
+        <a href="#" _ $target/@anchor class="smpl"> {
+            /* to be indexed? */
+            if ($irefs) {
+                attribute "id" {
+                    call compute-extref-anchor();
+                }
+            }
+            expr .;
+        }
+    
+    } else {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "internal link target for '";
+                expr .;
+                expr "' does not exist.";
+             }
+        }
+        expr .;
+    }
+}
+/* Nothing to do here */
+match x:anchor-alias { }
+/* Quotes */
+match x:q {
+    <q> {
+        copy-of @cite;
+        apply-templates;
+    }
+}
+/* Notes */
+match x:note {
+    <div class="note"> {
+        apply-templates;
+    }
+}
+
+match x:bcp14 {
+    /* check valid BCP14 keywords, then emphasize them */
+    var $c = normalize-space(.);
+    
+    if ($c == "MUST" || $c == "REQUIRED" || $c == "SHALL") {
+        <em class="bcp14"> .;
+    
+    } else if ($c == "MUST NOT" || $c == "SHALL NOT") {
+        <em class="bcp14"> .;
+    
+    } else if ($c == "SHOULD" || $c == "RECOMMENDED") {
+        <em class="bcp14"> .;
+    
+    } else if ($c == "SHOULD NOT" || $c == "NOT RECOMMENDED") {
+        <em class="bcp14"> .;
+    
+    } else if ($c == "MAY" || $c == "OPTIONAL") {
+        <em class="bcp14"> .;
+    
+    } else {
+        expr .;
+        message {
+            expr "ERROR: unknown BCP14 keyword: ";
+            expr .;
+        }
+    }
+}
+
+match x:blockquote {
+    var $p = {
+        call get-paragraph-number();
+    }
+    
+    <blockquote> {
+        if (string-length($p) > 0 && not(ancestor::ed:del) && not(ancestor::ed:ins)) {
+            attribute "id" {
+                expr $anchor-prefix;
+                expr ".section.";
+                expr $p;
+            }
+        }
+        call insertInsDelClass();
+        call editingMark();
+        copy-of @cite;
+        apply-templates;
+    }
+}
+/* Definitions */
+match x:dfn {
+    <dfn> {
+        if (@anchor) {
+            attribute "id" {
+                expr @anchor;
+            }
+        }
+        apply-templates;
+    }
+}
+/* headings */
+match x:h {
+    <b> {
+        apply-templates;
+    }
+}
+/* superscripts */
+match x:sup {
+    <sup> {
+        apply-templates;
+    }
+}
+/* bold */
+match x:highlight {
+    <b> {
+        apply-templates;
+    }
+}
+/* measuring lengths */
+match x:length-of {
+    var $target = //*[@anchor == current()/@target];
+    
+    if (count($target) != 1) {
+        call error($msg = "@target " _ @target _ " defined " _ count($target) _ " times.");
+    }
+    var $content = {
+        apply-templates $target;
+    }
+    var $lineends = string-length($content) - string-length(translate($content, "
+", ""));
+    var $indents = {
+        if (@indented) {
+            expr number(@indented) * $lineends;
+        
+        } else {
+            expr "0";
+        }
+    }
+    expr string-length($content) + $lineends - $indents;
+}
+/* Nop */
+match x:span {
+    apply-templates;
+}
+
+match x:parse-xml {
+    apply-templates;
+    if (function-available("exslt:node-set")) {
+        var $cleaned = {
+            apply-templates {
+                mode "cleanup-edits";
+            }
+        }
+        
+        if (function-available("myns:parseXml")) {
+            if (myns:parseXml($cleaned _ "") != "") {
+                call error($msg = "Parse error in XML: " _ myns:parseXml($cleaned _ ""));
+            }
+        
+        } else if (function-available("saxon:parse")) {
+            var $parsed = saxon:parse($cleaned _ "");
+            
+            if ($parsed == "foo") {
+                comment "should not get here";
+            }
+        
+        } else {
+        }
+    }
+}
+/* inlined RDF support */
+match rdf:Description {
+    /* ignore */
+}
+/* cleanup for ins/del */
+match comment() |@* {
+    mode "cleanup-edits";
+    
+    copy-node;
+}
+
+match text() {
+    mode "cleanup-edits";
+    
+    copy-node;
+}
+
+match / {
+    mode "cleanup-edits";
+    
+    copy-node {
+        apply-templates node() {
+            mode "cleanup-edits";
+        }
+    }
+}
+
+match ed:del {
+    mode "cleanup-edits";
+}
+
+match ed:replace {
+    mode "cleanup-edits";
+    
+    apply-templates {
+        mode "cleanup-edits";
+    }
+}
+
+match ed:ins {
+    mode "cleanup-edits";
+    
+    apply-templates {
+        mode "cleanup-edits";
+    }
+}
+/* ABNF support */
+template to-abnf-char-sequence ($chars) {
+    var $c = substring($chars, 1, 1);
+    var $r = substring($chars, 2);
+    
+    if ($c == "A") {
+        expr "41";
+    
+    } else if ($c == "B") {
+        expr "42";
+    
+    } else if ($c == "C") {
+        expr "43";
+    
+    } else if ($c == "D") {
+        expr "44";
+    
+    } else if ($c == "E") {
+        expr "45";
+    
+    } else if ($c == "F") {
+        expr "46";
+    
+    } else if ($c == "G") {
+        expr "47";
+    
+    } else if ($c == "H") {
+        expr "48";
+    
+    } else if ($c == "I") {
+        expr "49";
+    
+    } else if ($c == "J") {
+        expr "4A";
+    
+    } else if ($c == "K") {
+        expr "4B";
+    
+    } else if ($c == "L") {
+        expr "4C";
+    
+    } else if ($c == "M") {
+        expr "4D";
+    
+    } else if ($c == "N") {
+        expr "4E";
+    
+    } else if ($c == "O") {
+        expr "4F";
+    
+    } else if ($c == "P") {
+        expr "50";
+    
+    } else if ($c == "Q") {
+        expr "51";
+    
+    } else if ($c == "R") {
+        expr "52";
+    
+    } else if ($c == "S") {
+        expr "53";
+    
+    } else if ($c == "T") {
+        expr "54";
+    
+    } else if ($c == "U") {
+        expr "55";
+    
+    } else if ($c == "V") {
+        expr "56";
+    
+    } else if ($c == "W") {
+        expr "57";
+    
+    } else if ($c == "X") {
+        expr "58";
+    
+    } else if ($c == "Y") {
+        expr "59";
+    
+    } else if ($c == "Z") {
+        expr "5A";
+    
+    } else if ($c == "a") {
+        expr "61";
+    
+    } else if ($c == "b") {
+        expr "62";
+    
+    } else if ($c == "c") {
+        expr "63";
+    
+    } else if ($c == "d") {
+        expr "64";
+    
+    } else if ($c == "e") {
+        expr "65";
+    
+    } else if ($c == "f") {
+        expr "66";
+    
+    } else if ($c == "g") {
+        expr "67";
+    
+    } else if ($c == "h") {
+        expr "68";
+    
+    } else if ($c == "i") {
+        expr "69";
+    
+    } else if ($c == "j") {
+        expr "6A";
+    
+    } else if ($c == "k") {
+        expr "6B";
+    
+    } else if ($c == "l") {
+        expr "6C";
+    
+    } else if ($c == "m") {
+        expr "6D";
+    
+    } else if ($c == "n") {
+        expr "6E";
+    
+    } else if ($c == "o") {
+        expr "6F";
+    
+    } else if ($c == "p") {
+        expr "70";
+    
+    } else if ($c == "q") {
+        expr "71";
+    
+    } else if ($c == "r") {
+        expr "72";
+    
+    } else if ($c == "s") {
+        expr "73";
+    
+    } else if ($c == "t") {
+        expr "74";
+    
+    } else if ($c == "u") {
+        expr "75";
+    
+    } else if ($c == "v") {
+        expr "76";
+    
+    } else if ($c == "w") {
+        expr "77";
+    
+    } else if ($c == "x") {
+        expr "78";
+    
+    } else if ($c == "y") {
+        expr "79";
+    
+    } else if ($c == "z") {
+        expr "7A";
+    
+    } else {
+        expr "??";
+        call error($msg = "unexpected character in ABNF char sequence: " _ substring($chars, 1, 1));
+    }
+    if ($r != "") {
+        expr ".";
+        call to-abnf-char-sequence($chars = $r);
+    }
+}
+
+match x:abnf-char-sequence {
+    if (substring(., 1, 1) != '"' || substring(., string-length(.), 1) != '"') {
+        call error($msg = "contents of x:abnf-char-sequence needs to be quoted.");
+    
+    } else {
+        expr "%x";
+        call to-abnf-char-sequence($chars = substring(., 2, string-length(.) - 2));
+    }
+}
+/* box drawing */
+/* nop for alignment */
+match x:x { }
+/* box (top) */
+match x:bt {
+    expr "┌";
+    expr translate(substring(., 2, string-length(.) - 2), "-", "─");
+    expr "┐";
+}
+/* box (center) */
+match x:bc {
+    var $first = substring(., 1);
+    var $last = substring(., string-length(.) - 1);
+    var $content = substring(., 2, string-length(.) - 2);
+    var $is-delimiter = translate($content, "-", "") == "";
+    
+    if ($is-delimiter) {
+        expr "├";
+        expr translate($content, "-", "─");
+        expr "┤";
+    
+    } else if (*) {
+        for-each (node()) {
+            if (position() == 1) {
+                expr "│";
+                expr substring(., 2);
+            
+            } else if (position() == last()) {
+                expr substring(., 1, string-length(.) - 1);
+                expr "│";
+            
+            } else {
+                apply-templates .;
+            }
+        }
+    
+    } else {
+        expr "│";
+        expr $content;
+        expr "│";
+    }
+}
+/* box (bottom) */
+match x:bb {
+    expr "└";
+    expr translate(substring(., 2, string-length(.) - 2), "-", "─");
+    expr "┘";
+}
+/* experimental annotation support */
+match ed:issueref {
+    if (. ==//ed:issue/@name) {
+        <a href="#" _ $anchor-prefix _ ".issue." _ .> {
+            apply-templates;
+        }
+    
+    } else {
+        call warning() {
+            with $msg = {
+                expr "Dangling ed:issueref: ";
+                expr .;
+             }
+        }
+        apply-templates;
+    }
+}
+
+match ed:issue {
+    var $class = {
+        if (@status == "closed") {
+            expr "closedissue";
+        
+        } else {
+            expr "openissue";
+        }
+    }
+    
+    <table summary="issue " _ @name class=$class> {
+        <tr> {
+            <td colspan="3"> {
+                <a id=$anchor-prefix _ ".issue." _ @name> {
+                    if (@status == "closed") {
+                        attribute "class" {
+                            expr "closed-issue";
+                        }
+                    
+                    } else if (@status == "editor") {
+                        attribute "class" {
+                            expr "editor-issue";
+                        }
+                    
+                    } else {
+                        attribute "class" {
+                            expr "open-issue";
+                        }
+                    }
+                    expr " I ";
+                }
+                expr " ";
+                if (@href) {
+                    <em> {
+                        <a href=@href> @name;
+                    }
+                
+                } else if (@alternate-href) {
+                    <em> {
+                        expr "[";
+                        <a href=@alternate-href> "alternate link";
+                        expr "]";
+                    }
+                
+                } else {
+                    <em> @name;
+                }
+                expr "\n         \n        (type: ";
+                expr @type;
+                expr ", status: ";
+                expr @status;
+                expr ")\n      ";
+            }
+        }
+        apply-templates ed:item;
+        apply-templates ed:resolution;
+        var $changes = //*[@ed:resolves == current()/@name || ed:resolves == current()/@name];
+        if ($changes) {
+            <tr> {
+                <td class="top" colspan="3"> {
+                    expr "\n          Associated changes in this document:\n          ";
+                    var $issue = @name;
+                    
+                    for-each ($changes) {
+                        <a href="#" _ $anchor-prefix _ ".change." _ $issue _ "." _ position()> {
+                            var $label = {
+                                call get-section-number();
+                            }
+                            
+                            if ($label != "") {
+                                expr $label;
+                            
+                            } else {
+                                expr "<";
+                                expr "#" _ $anchor-prefix _ ".change." _ $issue _ "." _ position();
+                                expr ">";
+                            }
+                        }
+                        if (position() != last()) {
+                            expr ", ";
+                        }
+                    }
+                    expr ".";
+                }
+            }
+        }
+    }
+}
+
+match ed:item {
+    <tr> {
+        <td class="top"> {
+            if (@entered-by) {
+                <a href="mailto:" _ @entered-by _ "?subject=" _ /rfc/@docName _ ",%20" _ ../@name> {
+                    <i> @entered-by;
+                }
+            }
+        }
+        <td class="topnowrap"> @date;
+        <td class="top"> {
+            apply-templates node() {
+                mode "issuehtml";
+            }
+        }
+    }
+}
+
+match ed:resolution {
+    <tr> {
+        <td class="top"> {
+            if (@entered-by) {
+                <a href="mailto:" _ @entered-by _ "?subject=" _ /rfc/@docName _ ",%20" _ ../@name> {
+                    <i> @entered-by;
+                }
+            }
+        }
+        <td class="topnowrap"> @datetime;
+        <td class="top"> {
+            <em> "Resolution:";
+            apply-templates node() {
+                mode "issuehtml";
+            }
+        }
+    }
+}
+
+match ed:annotation {
+    <em> {
+        apply-templates;
+    }
+}
+/* special templates for handling XHTML in issues */
+match text() {
+    mode "issuehtml";
+    
+    expr .;
+}
+
+match * |@* {
+    mode "issuehtml";
+    
+    terminate {
+        expr "Unexpected node in issue HTML: ";
+        expr local-name(.);
+    }
+}
+
+match xhtml:a | xhtml:b | xhtml:br | xhtml:cite | xhtml:del | xhtml:em | xhtml:i | xhtml:ins | xhtml:q | xhtml:pre | xhtml:tt {
+    mode "issuehtml";
+    
+    element local-name() {
+        apply-templates @* | node() {
+            mode "issuehtml";
+        }
+    }
+}
+
+match xhtml:p {
+    mode "issuehtml";
+    
+    apply-templates node() {
+        mode "issuehtml";
+    }
+    <br class="p">;
+}
+
+match xhtml:a/@href | xhtml:q/@cite {
+    mode "issuehtml";
+    
+    attribute local-name(.) {
+        expr .;
+    }
+}
+
+match ed:issueref {
+    mode "issuehtml";
+    
+    apply-templates .;
+}
+
+match ed:eref {
+    mode "issuehtml";
+    
+    expr "<";
+    <a href=.> .;
+    expr ">";
+}
+
+template insertIssuesList () {
+    <h2 id=$anchor-prefix _ ".issues-list"> {
+        <a href="#" _ $anchor-prefix _ ".issues-list"> "Issues list";
+    }
+    <table summary="Issues list"> {
+        <thead> {
+            <tr> {
+                <th> "Id";
+                <th> "Type";
+                <th> "Status";
+                <th> "Date";
+                <th> "Raised By";
+            }
+        }
+        <tbody> {
+            for-each (//ed:issue) {
+                sort @status;
+                sort @name;
+                <tr> {
+                    <td> {
+                        <a href="#" _ $anchor-prefix _ ".issue." _ @name> @name;
+                    }
+                    <td> @type;
+                    <td> @status;
+                    <td> ed:item[1]/@date;
+                    <td> {
+                        <a href="mailto:" _ ed:item[1]/@entered-by _ "?subject=" _ /rfc/@docName _ ",%20" _ @name> ed:item[1]/@entered-by;
+                    }
+                }
+            }
+        }
+    }
+}
+
+template formatTitle () {
+    if (@who) {
+        expr @who;
+    }
+    if (@datetime) {
+        expr " (" _ @datetime _ ")";
+    }
+    if (@reason) {
+        expr ": " _ @reason;
+    }
+    if (@cite) {
+        expr " <" _ @cite _ ">";
+    }
+}
+
+template insert-diagnostics () {
+    /* check anchor names */
+    var $badAnchors = //*[starts-with(@anchor, $anchor-prefix _ ".")];
+    
+    if ($badAnchors) {
+        <p class="warning"> {
+            expr "\n      The following anchor names may collide with internally generated anchors because of their prefix \"";
+            expr $anchor-prefix;
+            expr "\":\n      ";
+            
+            for-each ($badAnchors) {
+                expr @anchor;
+                if (position() != last()) {
+                    expr ", ";
+                }
+            }
+        }
+        message {
+            expr "\n      The following anchor names may collide with internally generated anchors because of their prefix \"";
+            expr $anchor-prefix;
+            expr "\":\n      ";
+            
+            for-each ($badAnchors) {
+                expr @anchor;
+                if (position() != last()) {
+                    expr ", ";
+                }
+            }
+        }
+    }
+    /* check IDs */
+    var $badTargets = //xref[not(@target ==//@anchor) && not(ancestor::ed:del)];
+    if ($badTargets) {
+        <p class="error"> {
+            expr "\n      The following target names do not exist:\n      ";
+            
+            for-each ($badTargets) {
+                expr @target;
+                if (position() != last()) {
+                    expr ", ";
+                }
+            }
+        }
+        message {
+            expr "\n      The following target names do not exist:\n      ";
+            
+            for-each ($badTargets) {
+                expr @target;
+                if (position() != last()) {
+                    expr ", ";
+                }
+            }
+        }
+    }
+}
+/* special change mark support, not supported by RFC2629 yet */
+match @ed:* { }
+
+match ed:del {
+    call insert-issue-pointer();
+    <del> {
+        copy-of @*[namespace-uri() == ""];
+        if (not(@title) && ancestor-or-self::*[@ed:entered-by] &&@datetime) {
+            attribute "title" {
+                expr @datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+            }
+        }
+        apply-templates;
+    }
+}
+
+match ed:ins {
+    call insert-issue-pointer();
+    <ins> {
+        copy-of @*[namespace-uri() == ""];
+        if (not(@title) && ancestor-or-self::*[@ed:entered-by] &&@datetime) {
+            attribute "title" {
+                expr @datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+            }
+        }
+        apply-templates;
+    }
+}
+
+template insert-issue-pointer ($deleted-anchor) {
+    var $change = .;
+    
+    for-each (@ed:resolves | ed:resolves) {
+        var $resolves = .;
+        /* need the right context node for proper numbering */
+        var $count = {
+            for-each (..) {
+                number {
+                    level "any";
+                    count *[@ed:resolves == $resolves || ed:resolves == $resolves];
+                }
+            }
+        }
+        var $total = count(//*[@ed:resolves == $resolves || ed:resolves == $resolves]);
+        var $id = {
+            expr $anchor-prefix;
+            expr ".change.";
+            expr $resolves;
+            expr ".";
+            expr $count;
+        }
+        
+        if (not(ancestor::t) && not(ancestor::title) && not(ancestor::figure) && not($change/@ed:old-title)) {
+            <div class="issuepointer noprint"> {
+                if (not($deleted-anchor)) {
+                    attribute "id" {
+                        expr $id;
+                    }
+                }
+                if ($count > 1) {
+                    <a class="bg-issue" title="previous change for " _ $resolves href="#" _ $anchor-prefix _ ".change." _ $resolves _ "." _ $count - 1> "↑";
+                }
+                <a class="open-issue" href="#" _ $anchor-prefix _ ".issue." _ $resolves title="resolves: " _ $resolves> {
+                    if (//ed:issue[@name == $resolves &&@status == "closed"]) {
+                        attribute "class" {
+                            expr "closed-issue";
+                        }
+                    
+                    } else if (//ed:issue[@name == $resolves &&@status == "editor"]) {
+                        attribute "class" {
+                            expr "editor-issue";
+                        }
+                    
+                    } else {
+                        attribute "class" {
+                            expr "open-issue";
+                        }
+                    }
+                    expr " I ";
+                }
+                if ($count < $total) {
+                    <a class="bg-issue" title="next change for " _ $resolves href="#" _ $anchor-prefix _ ".change." _ $resolves _ "." _ $count + 1> "↓";
+                }
+                expr " ";
+            }
+        
+        } else {
+            if ($count > 1) {
+                <a class="bg-issue" title="previous change for " _ $resolves href="#" _ $anchor-prefix _ ".change." _ $resolves _ "." _ $count - 1> "↑";
+            }
+            <a title="resolves: " _ $resolves href="#" _ $anchor-prefix _ ".issue." _ $resolves> {
+                if (not($deleted-anchor)) {
+                    attribute "id" {
+                        expr $id;
+                    }
+                }
+                if (//ed:issue[@name == $resolves &&@status == "closed"]) {
+                    attribute "class" {
+                        expr "closed-issue noprint";
+                    }
+                
+                } else if (//ed:issue[@name == $resolves &&@status == "editor"]) {
+                    attribute "class" {
+                        expr "editor-issue noprint";
+                    }
+                
+                } else {
+                    attribute "class" {
+                        expr "open-issue noprint";
+                    }
+                }
+                expr " I ";
+            }
+            if ($count < $total) {
+                <a class="bg-issue" title="next change for " _ $resolves href="#" _ $anchor-prefix _ ".change." _ $resolves _ "." _ $count + 1> "↓";
+            }
+        }
+    }
+}
+
+match ed:replace {
+    /* we need to special-case things like lists and tables */
+    if (parent::list) {
+        apply-templates ed:del/node();
+        apply-templates ed:ins/node();
+    
+    } else if (ancestor::references) {
+        apply-templates ed:del/node();
+        apply-templates ed:ins/node();
+    
+    } else {
+        if (@cite) {
+            <a class="editor-issue" href=@cite target="_blank" title="see " _ @cite> " i ";
+        }
+        call insert-issue-pointer();
+        if (ed:del) {
+            <del> {
+                copy-of @*[namespace-uri() == ""];
+                if (not(@title) && ancestor-or-self::xsl:template[@ed:entered-by] &&@datetime) {
+                    attribute "title" {
+                        expr @datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+                    }
+                }
+                apply-templates ed:del/node();
+            }
+        }
+        if (ed:ins) {
+            <ins> {
+                copy-of @*[namespace-uri() == ""];
+                if (not(@title) && ancestor-or-self::*[@ed:entered-by] &&@datetime) {
+                    attribute "title" {
+                        expr @datetime _ ", " _ ancestor-or-self::*[@ed:entered-by] [1]/@ed:entered-by;
+                    }
+                }
+                apply-templates ed:ins/node();
+            }
+        }
+    }
+}
+/* convenience template for helping Mozilla (pre/ins inheritance problem) */
+template insertInsDelClass () {
+    if (ancestor::ed:del) {
+        attribute "class" {
+            expr "del";
+        }
+    }
+    if (ancestor::ed:ins) {
+        attribute "class" {
+            expr "ins";
+        }
+    }
+}
+
+template sectionnumberAndEdits () {
+    if (ancestor::ed:del) {
+        expr "del-";
+        number {
+            level "any";
+            count ed:del//section;
+        }
+    
+    } else if (@x:fixed-section-number) {
+        expr @x:fixed-section-number;
+    
+    } else if (self::section && parent::ed:ins && local-name(../..) == "replace") {
+        for-each (../..) {
+            call sectionnumberAndEdits();
+        }
+        
+        for-each (..) {
+            if (parent::ed:replace) {
+                for-each (..) {
+                    if (parent::section) {
+                        expr ".";
+                    }
+                    var $cnt = 1 + count(preceding-sibling::section | preceding-sibling::ed:ins/section | preceding-sibling::ed:replace/ed:ins/section);
+                    
+                    if (ancestor::back && not(ancestor::section)) {
+                        number $cnt {
+                            format "A";
+                        }
+                    
+                    } else {
+                        expr $cnt;
+                    }
+                }
+            }
+        }
+    
+    } else if (self::section[parent::ed:ins]) {
+        for-each (../..) {
+            call sectionnumberAndEdits();
+        }
+        
+        for-each (..) {
+            if (parent::section) {
+                expr ".";
+            }
+            expr 1 + count(preceding-sibling::section | preceding-sibling::ed:ins/section | preceding-sibling::ed:replace/ed:ins/section);
+        }
+    
+    } else if (self::section) {
+        for-each (..) {
+            call sectionnumberAndEdits();
+        }
+        if (parent::section) {
+            expr ".";
+        }
+        if (parent::back) {
+            number 1+count(preceding-sibling::section|preceding-sibling::ed:ins/section|preceding-sibling::ed:replace/ed:ins/section) {
+                format "A";
+            }
+        
+        } else {
+            number 1+count(preceding-sibling::section|preceding-sibling::ed:ins/section|preceding-sibling::ed:replace/ed:ins/section);
+        }
+    
+    } else if (self::references) {
+        if (count(/*/back/references) + count(/*/back/ed:replace/ed:ins/references) == 1) {
+            call get-references-section-number();
+        
+        } else {
+            call get-references-section-number();
+            expr ".";
+            number {
+                level "any";
+            }
+        }
+    
+    } else if (self::middle || self::back) {
+        /* done */
+    
+    } else {
+        /* go up one level */
+        
+        for-each (..) {
+            call sectionnumberAndEdits();
+        }
+    }
+}
+/* utilities for warnings */
+template warning ($msg, $msg2, $inline) {
+    if ($inline != "no") {
+        <div class="error"> {
+            expr "WARNING: ";
+            expr $msg;
+            expr $msg2;
+        }
+    }
+    message {
+        expr "WARNING: ";
+        expr $msg;
+        expr $msg2;
+        call lineno();
+    }
+}
+
+template error ($msg, $msg2, $inline) {
+    if ($inline != "no") {
+        <div class="error"> {
+            expr "ERROR: ";
+            expr $msg;
+            expr $msg2;
+        }
+    }
+    message {
+        expr "ERROR: ";
+        expr $msg;
+        expr $msg2;
+        call lineno();
+    }
+}
+/* table formatting */
+match texttable {
+    var $anch = {
+        call get-table-anchor();
+    }
+    
+    <div id=$anch> {
+        if (@anchor != "") {
+            <div id=@anchor>;
+        }
+        apply-templates preamble;
+        var $style = {
+            expr "tt ";
+            if (@style != "") {
+                expr @style;
+            
+            } else {
+                expr "full";
+            }
+        }
+        
+        <table summary=preamble class=$style cellpadding="3" cellspacing="0"> {
+            <thead> {
+                <tr> {
+                    apply-templates ttcol;
+                }
+            }
+            <tbody> {
+                var $columns = count(ttcol);
+                var $modulus = {
+                    if ($columns == 1) {
+                        expr "2";
+                    
+                    } else {
+                        expr $columns;
+                    }
+                }
+                var $fields = c | ed:replace/ed:ins/c | ed:replace/ed:del/c;
+                
+                for-each ($fields[(position() mod $modulus) == 1]) {
+                    <tr> {
+                        for-each (. | following-sibling::c[position() < $columns]) {
+                            <td> {
+                                call insertInsDelClass();
+                                var $pos = position();
+                                var $col = ../ttcol[position() == $pos];
+                                
+                                if ($col/@align == "right" || $col/@align == "center") {
+                                    attribute "class" {
+                                        expr $col/@align;
+                                    }
+                                
+                                } else if ($col/@align == "left" || not($col/@align)) {
+                                    /* that's the default, nothing to do here */
+                                
+                                } else {
+                                    message {
+                                        expr "Unknown align attribute on ttcol: ";
+                                        expr $col/@align;
+                                    }
+                                }
+                                apply-templates node();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        apply-templates postamble;
+        if ((@title != "" ||@anchor != "") && not(@suppress-title == "true")) {
+            var $n = {
+                number {
+                    level "any";
+                    count texttable[(@title != "" ||@anchor != "") && not(@suppress-title == "true")];
+                }
+            }
+            
+            <p class="figure"> {
+                expr "Table ";
+                expr $n;
+                if (@title != "") {
+                    expr ": ";
+                    expr @title;
+                }
+            }
+        }
+    }
+}
+
+match ttcol {
+    <th> {
+        if (@align == "right" ||@align == "center" ||@align == "left") {
+            attribute "class" {
+                expr @align;
+            }
+        
+        } else if (not(@align)) {
+            /* that's the default, nothing to do here */
+        
+        } else {
+            message {
+                expr "Unknown align attribute on ttcol: ";
+                expr @align;
+            }
+        }
+        if (@width) {
+            attribute "style" {
+                expr "width: ";
+                expr @width;
+                expr ";";
+            }
+        }
+        apply-templates;
+    }
+}
+/* cref support */
+match cref {
+    if ($xml2rfc-comments != "no") {
+        var $cid = {
+            if (@anchor) {
+                expr @anchor;
+            
+            } else {
+                expr $anchor-prefix;
+                expr ".comment.";
+                number {
+                    level "any";
+                    count cref[not(@anchor)];
+                }
+            }
+        }
+        
+        <span class="comment"> {
+            if ($xml2rfc-inline != "yes") {
+                attribute "title" {
+                    if (@source) {
+                        expr @source;
+                        expr ": ";
+                    }
+                    apply-templates text() | eref;
+                }
+            }
+            expr "[";
+            if ($xml2rfc-inline == "yes") {
+                expr $cid;
+                expr ": ";
+                apply-templates text() | eref;
+                if (@source) {
+                    expr " --";
+                    expr @source;
+                }
+            
+            } else {
+                <a href="#" _ $cid> $cid;
+            }
+            expr "]";
+        }
+    }
+}
+
+template insertComments () {
+    call insert-conditional-hrule();
+    <h1> {
+        call insert-conditional-pagebreak();
+        <a id=$anchor-prefix _ ".comments" href="#" _ $anchor-prefix _ ".comments"> "Editorial Comments";
+    }
+    <dl> {
+        for-each (//cref) {
+            var $cid = {
+                if (@anchor) {
+                    expr @anchor;
+                
+                } else {
+                    expr $anchor-prefix;
+                    expr ".comment.";
+                    number {
+                        level "any";
+                        count cref[not(@anchor)];
+                    }
+                }
+            }
+            
+            <dt id=$cid> {
+                expr "\n        [";
+                expr $cid;
+                expr "]\n      ";
+            }
+            <dd> {
+                apply-templates node();
+                if (@source) {
+                    expr " --";
+                    expr @source;
+                }
+            }
+        }
+    }
+}
+/* Chapter Link Generation */
+match * {
+    mode "links";
+    
+    apply-templates {
+        mode "links";
+    }
+}
+
+match text() {
+    mode "links";
+}
+
+match /*/middle//section[not(myns:unnumbered) && not(ancestor::section)] {
+    mode "links";
+    
+    var $sectionNumber = {
+        call get-section-number();
+    }
+    
+    <link rel="Chapter" title=$sectionNumber _ " " _ @title href="#" _ $anchor-prefix _ ".section." _ $sectionNumber>;
+    apply-templates {
+        mode "links";
+    }
+}
+
+match /*/back//section[not(myns:unnumbered) && not(ancestor::section)] {
+    mode "links";
+    
+    var $sectionNumber = {
+        call get-section-number();
+    }
+    
+    <link rel="Appendix" title=$sectionNumber _ " " _ @title href="#" _ $anchor-prefix _ ".section." _ $sectionNumber>;
+    apply-templates {
+        mode "links";
+    }
+}
+
+match /*/back/references[position() == 1] {
+    mode "links";
+    
+    var $sectionNumber = {
+        call get-references-section-number();
+    }
+    
+    <link rel="Chapter" href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+        if (@title && count(/*/back/references) == 1) {
+            attribute "title" {
+                call get-references-section-number();
+                expr " ";
+                expr @title;
+            }
+        
+        } else {
+            attribute "title" {
+                call get-references-section-number();
+                expr " References";
+            }
+        }
+    }
+}
+/* convenience templates */
+template get-author-summary () {
+    if (count(/rfc/front/author) == 1) {
+        expr /rfc/front/author[1]/@surname;
+    
+    } else if (count(/rfc/front/author) == 2) {
+        expr /rfc/front/author[1]/@surname _ " & " _ /rfc/front/author[2]/@surname;
+    
+    } else {
+        expr /rfc/front/author[1]/@surname _ ", et al.";
+    }
+}
+
+template get-authors () {
+    for-each (/rfc/front/author) {
+        expr @fullname;
+        if (position() != last()) {
+            expr ", ";
+        }
+    }
+}
+
+template get-category-long () {
+    if ($xml2rfc-footer) {
+        expr $xml2rfc-footer;
+    
+    } else if ($xml2rfc-private) {
+    
+    } else if (/rfc/@category == "bcp") {
+        expr "Best Current Practice";
+    
+    } else if (/rfc/@category == "historic") {
+        expr "Historic";
+    
+    } else if (/rfc/@category == "info" || not(/rfc/@category)) {
+        expr "Informational";
+    
+    } else if (/rfc/@category == "std") {
+        expr "Standards Track";
+    
+    } else if (/rfc/@category == "exp") {
+        expr "Experimental";
+    
+    } else {
+        expr "(category unknown)";
+    }
+}
+
+template get-header-center () {
+    if (string-length(/rfc/front/title/@abbrev) > 0) {
+        expr /rfc/front/title/@abbrev;
+    
+    } else {
+        apply-templates /rfc/front/title {
+            mode "get-text-content";
+        }
+    }
+}
+
+template get-header-left () {
+    if ($xml2rfc-header) {
+        expr $xml2rfc-header;
+    
+    } else if ($xml2rfc-private) {
+    
+    } else if (/rfc/@ipr && not(/rfc/@number)) {
+        expr "INTERNET DRAFT";
+    
+    } else {
+        expr "RFC ";
+        expr /rfc/@number;
+    }
+}
+
+template get-generator () {
+    var $gen = {
+        expr "http://greenbytes.de/tech/webdav/rfc2629.xslt, ";
+        /* when RCS keyword substitution in place, add version info */
+        if (contains("$Revision: 1.389 $", ":")) {
+            expr "Revision " _ normalize-space(translate(substring-after("$Revision: 1.389 $", "Revision: "), "$", "")) _ ", ";
+        }
+        if (contains("$Date: 2008-08-20 14:21:35 $", ":")) {
+            expr normalize-space(translate(substring-after("$Date: 2008-08-20 14:21:35 $", "Date: "), "$", "")) _ ", ";
+        }
+        expr "XSLT vendor: " _ system-property("xsl:vendor") _ " " _ system-property("xsl:vendor-url");
+    }
+    
+    expr $gen;
+}
+
+template get-header-right () {
+    expr $xml2rfc-ext-pub-month _ " " _ $xml2rfc-ext-pub-year;
+}
+
+template get-keywords () {
+    var $keyw = {
+        for-each (/rfc/front/keyword) {
+            expr translate(., ",", " ");
+            if (position() != last()) {
+                expr ", ";
+            }
+        }
+    }
+    
+    expr normalize-space($keyw);
+}
+/* get language from context node. nearest ancestor or return the default of "en" */
+template get-lang () {
+    if (ancestor-or-self::*[@xml:lang]) {
+        expr ancestor-or-self::*/@xml:lang;
+    
+    } else {
+        expr "en";
+    }
+}
+
+template get-section-number () {
+    var $anchor = @anchor;
+    
+    if (@x:fixed-section-number) {
+        expr @x:fixed-section-number;
+    
+    } else if ($has-edits || ancestor::*/@x:fixed-section-number) {
+        call sectionnumberAndEdits();
+    
+    } else {
+        if (self::references) {
+            if (count(/*/back/references) == 1) {
+                call get-references-section-number();
+            
+            } else {
+                call get-references-section-number();
+                expr ".";
+                number {
+                    count references;
+                }
+            }
+        
+        } else if (self::reference) {
+            for-each (parent::references) {
+                if (count(/*/back/references) == 1) {
+                    call get-references-section-number();
+                
+                } else {
+                    call get-references-section-number();
+                    expr ".";
+                    number {
+                        count references;
+                    }
+                }
+            }
+        
+        } else if (ancestor::reference) {
+            for-each (ancestor::reference) {
+                call get-section-number();
+            }
+        
+        } else if (ancestor::back) {
+            number {
+                level "multiple";
+                format "A.1.1.1.1.1.1.1";
+                count section | appendix;
+            }
+        
+        } else if (self::appendix) {
+            number {
+                level "multiple";
+                format "A.1.1.1.1.1.1.1";
+                count appendix;
+            }
+        
+        } else {
+            number {
+                level "multiple";
+                count section;
+            }
+        }
+    }
+}
+/* get the section number for the references section */
+template get-references-section-number () {
+    expr count(/rfc/middle/section) + count(/rfc/middle/ed:replace/ed:ins/section) + 1;
+}
+
+template emit-section-number ($no) {
+    expr $no;
+    if (not(contains($no, ".")) || $xml2rfc-ext-sec-no-trailing-dots == "yes") {
+        expr ".";
+    }
+}
+
+template get-section-type ($prec) {
+    /* TODO: check this, it's unused */
+    if (ancestor::back) {
+        expr "Appendix";
+    
+    } else {
+        expr "Section";
+    }
+}
+
+template get-table-anchor () {
+    expr $anchor-prefix;
+    expr ".table.";
+    if (@title != "" ||@anchor != "") {
+        number {
+            level "any";
+            count texttable[@title != "" ||@anchor != ""];
+        }
+    
+    } else {
+        expr "u.";
+        number {
+            level "any";
+            count texttable[not(@title != "" ||@anchor != "")];
+        }
+    }
+}
+
+template get-figure-anchor () {
+    expr $anchor-prefix;
+    expr ".figure.";
+    if (@title != "" ||@anchor != "") {
+        number {
+            level "any";
+            count figure[@title != "" ||@anchor != ""];
+        }
+    
+    } else {
+        expr "u.";
+        number {
+            level "any";
+            count figure[not(@title != "" ||@anchor != "")];
+        }
+    }
+}
+/* reformat contents of author/@initials */
+template format-initials () {
+    if (string-length(@initials) == 1) {
+        expr @initials _ ".";
+    
+    } else {
+        expr @initials;
+    }
+}
+/* checking for email element */
+template extract-email () {
+    var $email = normalize-space(.);
+    
+    if (string-length(.) != string-length($email) || contains($email, " ")) {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "excessive whitespace in email address: '";
+                expr .;
+                expr "'";
+             }
+        }
+    }
+    var $email2 = {
+        if (starts-with($email, "mailto:")) {
+            call warning($inline = "no") {
+                with $msg = {
+                    expr "email should not include URI scheme: '";
+                    expr .;
+                    expr "'";
+                 }
+            }
+            expr substring($email, 1 + string-length("mailto:"));
+        
+        } else {
+            expr $email;
+        }
+    }
+    expr $email2;
+}
+/* checking for uri element */
+template extract-uri () {
+    var $uri = normalize-space(.);
+    
+    if (string-length(.) != string-length($uri) || contains($uri, " ")) {
+        call warning($inline = "no") {
+            with $msg = {
+                expr "excessive whitespace in URI: '";
+                expr .;
+                expr "'";
+             }
+        }
+    }
+    expr $uri;
+}
+
+template insert-conditional-pagebreak () {
+    if ($xml2rfc-compact != "yes") {
+        attribute "class" {
+            expr "np";
+        }
+    }
+}
+
+template insert-conditional-hrule () {
+    if ($xml2rfc-compact != "yes") {
+        <hr class="noprint">;
+    }
+}
+/* get text content from marked-up text */
+match text() {
+    mode "get-text-content";
+    
+    expr .;
+}
+
+match * {
+    mode "get-text-content";
+    
+    apply-templates {
+        mode "get-text-content";
+    }
+}
+
+match ed:del {
+    mode "get-text-content";
+    
+}
+/* diag support */
+template lineno () {
+    if (function-available("saxon-old:line-number")) {
+        if (saxon-old:line-number() > 0) {
+            expr " (at line ";
+            expr saxon-old:line-number();
+            expr ")";
+        }
+    }
+    if (function-available("saxon:line-number")) {
+        if (saxon:line-number() > 0) {
+            expr " (at line ";
+            expr saxon:line-number();
+            expr ")";
+        }
+    }
+}
+/* define exslt:node-set for msxml */
+<msxsl:script language="JScript" implements-prefix="exslt"> "\n  this['node-set'] = function (x) {\n    return x;\n  }\n";
+/* date handling */
+<msxsl:script language="JScript" implements-prefix="date"> "\n  this['year'] = function (x) {\n    if (x) {throw \"not supported\"};\n    return (new Date()).getFullYear();\n  }\n\n  this['month-in-year'] = function (x) {\n    if (x) {throw \"not supported\"};\n    return 1 + (new Date()).getMonth();\n  }\n\n  this['day-in-month'] = function (x) {\n    if (x) {throw \"not supported\"};\n    return (new Date()).getDate();\n  }\n";
+var $may-default-dates = {
+    if (function-available("date:year") && function-available("date:month-in-year") && date:day-in-month()) {
+        var $year-specified = /rfc/front/date/@year &&/rfc/front/date/@year != "";
+        var $month-specified = /rfc/front/date/@month &&/rfc/front/date/@month != "";
+        var $day-specified = /rfc/front/date/@day &&/rfc/front/date/@day != "";
+        var $system-month = {
+            call get-month-as-name($month = date:month-in-year());
+        }
+        
+        if ($year-specified &&/rfc/front/date/@year != date:year()) {
+            expr "Specified year ";
+            expr /rfc/front/date/@year;
+            expr " does not match system date (";
+            expr date:year();
+            expr ")";
+        
+        } else if ($month-specified &&/rfc/front/date/@month != $system-month) {
+            expr "Specified month ";
+            expr /rfc/front/date/@month;
+            expr " does not match system date (";
+            expr $system-month;
+            expr ")";
+        
+        } else if ($day-specified &&/rfc/front/date/@day != date:day-in-month()) {
+            expr "Specified day does not match system date";
+        
+        } else if (not($year-specified) &&($month-specified || $day-specified)) {
+            expr "Can't default year when month or day is specified";
+        
+        } else if (not($month-specified) && $day-specified) {
+            expr "Can't default month when day is specified";
+        
+        } else {
+            expr "yes";
+        }
+    
+    } else {
+        expr "yes";
+    }
+}
+param $xml2rfc-ext-pub-year = {
+    if (/rfc/front/date/@year &&/rfc/front/date/@year != "") {
+        expr /rfc/front/date/@year;
+    
+    } else if (function-available("date:year")) {
+        if (/rfc/front/date/@month &&/rfc/front/date/@month != "") {
+            call error($msg = "defaulting publication year although month was specified");
+        }
+        if (/rfc/front/date/@day &&/rfc/front/date/@day != "") {
+            call error($msg = "defaulting publication year although day was specified");
+        }
+        expr date:year();
+    
+    } else {
+        call error($msg = "/rfc/front/date/@year missing (and XSLT processor cannot compute the system date)");
+    }
+}
+param $xml2rfc-ext-pub-month = {
+    if (/rfc/front/date/@month &&/rfc/front/date/@month != "") {
+        expr /rfc/front/date/@month;
+    
+    } else if (function-available("date:month-in-year") && $may-default-dates == "yes") {
+        call get-month-as-name($month = date:month-in-year());
+    
+    } else if (function-available("date:month-in-year") && $may-default-dates != "yes") {
+        call warning($inline = "no", $msg = $may-default-dates);
+    
+    } else {
+        call error($msg = "/rfc/front/date/@month missing (and XSLT processor cannot compute the system date)");
+    }
+}
+param $xml2rfc-ext-pub-month-numeric = {
+    call get-month-as-num($month = $xml2rfc-ext-pub-month);
+}
+param $xml2rfc-ext-pub-day = {
+    if (/rfc/front/date/@day &&/rfc/front/date/@day != "") {
+        expr /rfc/front/date/@day;
+    
+    } else if (function-available("date:day-in-month") && $may-default-dates == "yes") {
+        expr date:day-in-month();
+    
+    } else {
+    }
+}
+
+match digress[@type == "document"] {
+}
+
+match digress {
+    var $type = @type;
+    var $dtag = {
+        if ($type) {
+            expr $type;
+        
+        } else {
+            expr "digress";
+        }
+    }
+    var $id = {
+        if (@name) {
+            expr @name;
+        
+        } else if (@target) {
+            expr @target;
+        
+        } else {
+            expr generate-id();
+        }
+    }
+    
+    if (not(@target)) {
+        <div class="digress tooltip " _ $type id=$id> {
+            <table class="tooltip" cellpadding="0" cellspacing="0" id="table-" _ $id> {
+                <tr> {
+                    <td> {
+                        <div class="fancy-tooltip-header"> {
+                            expr $type;
+                            expr ": ";
+                            expr @title;
+                        }
+                    }
+                }
+                <tr> {
+                    <td> {
+                        <div class="fancy-tooltip-body"> {
+                            apply-templates;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (@target || not(@name)) {
+        <a href="?" tabindex="9999" class="digress-anchor"> {
+            attribute "onClick" {
+                expr "return popClick(event, '";
+                expr $id;
+                expr "'); ";
+            }
+            attribute "onmouseover" {
+                expr "popUp(event, '";
+                expr $id;
+                expr "')";
+            }
+            attribute "onmouseout" {
+                expr "popDown(event, '";
+                expr $id;
+                expr "')";
+            }
+            <span> {
+                attribute "class" {
+                    if (@target) {
+                        expr "digress digress-link";
+                    
+                    } else {
+                        expr "digress digress-anchor";
+                    }
+                }
+                expr "[";
+                expr $dtag;
+                expr "]";
+            }
+        }
+    }
+}

@@ -389,7 +389,7 @@ AC_CONFIG_FILES([
   extensions/Makefile
   extensions/bit/Makefile
   extensions/curl/Makefile
-  extensions/xml/Makefile
+  extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile
   tests/core/Makefile
