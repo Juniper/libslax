@@ -5,5 +5,5 @@
  * All rights reserved.  See ../Copyright for additional information.
  */
 
-void ext_curl_init (void);
+void extCurlInit (void);
 

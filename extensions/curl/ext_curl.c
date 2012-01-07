@@ -82,14 +82,14 @@ typedef struct curl_handle_s {
     char ch_error[CURL_ERROR_SIZE]; /* Error buffer for CURLOPT_ERRORBUFFER */
 } curl_handle_t;
 
-TAILQ_HEAD(curl_session_s, curl_handle_s) ext_curl_sessions;
+TAILQ_HEAD(curl_session_s, curl_handle_s) extCurlSessions;
 
 /*
  * Discard any transient data in the handle, particularly data
  * read from the peer.
  */
 static void
-ext_curl_handle_clean (curl_handle_t *curlp)
+extCurlHandleClean (curl_handle_t *curlp)
 {
     slaxDataListClean(&curlp->ch_reply_data);
     slaxDataListClean(&curlp->ch_reply_headers);
@@ -100,7 +100,7 @@ ext_curl_handle_clean (curl_handle_t *curlp)
  * contents.
  */
 static void
-ext_curl_options_release (curl_opts_t *opts)
+extCurlOptionsRelease (curl_opts_t *opts)
 {
     xmlFreeAndEasy(opts->co_url);
     xmlFreeAndEasy(opts->co_method);
@@ -129,7 +129,7 @@ ext_curl_options_release (curl_opts_t *opts)
  * Copy a set of options from one curl_opts_t to another.
  */
 static void
-ext_curl_options_copy (curl_opts_t *top, curl_opts_t *fromp)
+extCurlOptionsCopy (curl_opts_t *top, curl_opts_t *fromp)
 {
     bzero(top, sizeof(*top));
 
@@ -167,15 +167,15 @@ ext_curl_options_copy (curl_opts_t *top, curl_opts_t *fromp)
  * Free a curl handle
  */
 static void
-ext_curl_handle_free (curl_handle_t *curlp)
+extCurlHandleFree (curl_handle_t *curlp)
 {
-    ext_curl_handle_clean(curlp);
+    extCurlHandleClean(curlp);
 
     if (curlp->ch_handle)
 	curl_easy_cleanup(curlp->ch_handle);
-    ext_curl_options_release(&curlp->ch_opts);
+    extCurlOptionsRelease(&curlp->ch_opts);
 
-    TAILQ_REMOVE(&ext_curl_sessions, curlp, ch_link);
+    TAILQ_REMOVE(&extCurlSessions, curlp, ch_link);
     xmlFree(curlp);
 }
 
@@ -183,11 +183,11 @@ ext_curl_handle_free (curl_handle_t *curlp)
  * Given the name of a handle, return it.
  */
 static curl_handle_t *
-ext_curl_handle_find (const char *name)
+extCurlHandleFind (const char *name)
 {
     curl_handle_t *curlp;
 
-    TAILQ_FOREACH(curlp, &ext_curl_sessions, ch_link) {
+    TAILQ_FOREACH(curlp, &extCurlSessions, ch_link) {
 	if (streq(name, curlp->ch_name))
 	    return curlp;
     }
@@ -196,7 +196,7 @@ ext_curl_handle_find (const char *name)
 }
 
 static void
-ext_curl_set_contents (curl_opts_t *opts, xmlNodePtr nodep)
+extCurlSetContents (curl_opts_t *opts, xmlNodePtr nodep)
 {
     if (opts->co_contents) {
 	xmlFree(opts->co_contents);
@@ -233,7 +233,7 @@ ext_curl_set_contents (curl_opts_t *opts, xmlNodePtr nodep)
  * Parse any options from an input XML node.
  */
 static void
-ext_curl_parse_node (curl_opts_t *opts, xmlNodePtr nodep)
+extCurlParseNode (curl_opts_t *opts, xmlNodePtr nodep)
 {
     const char *key;
 
@@ -252,7 +252,7 @@ ext_curl_parse_node (curl_opts_t *opts, xmlNodePtr nodep)
     else if (streq(key, "content-type"))
 	CURL_SET_STRING(opts->co_content_type);
     else if (streq(key, "contents"))
-	ext_curl_set_contents(opts, nodep);
+	extCurlSetContents(opts, nodep);
     else if (streq(key, "format"))
 	CURL_SET_STRING(opts->co_format);
     else if (streq(key, "server"))
@@ -353,7 +353,7 @@ ext_curl_parse_node (curl_opts_t *opts, xmlNodePtr nodep)
  * Record data from a libcurl callback into our curl handle.
  */
 static size_t
-ext_curl_record_data (curl_handle_t *curlp UNUSED, void *buf, size_t bufsiz,
+extCurlRecordData (curl_handle_t *curlp UNUSED, void *buf, size_t bufsiz,
 		      slax_data_list_t *listp)
 {
     slaxDataListAddLen(listp, buf, bufsiz);
@@ -366,12 +366,12 @@ ext_curl_record_data (curl_handle_t *curlp UNUSED, void *buf, size_t bufsiz,
  * a transfer request.
  */
 static size_t
-ext_curl_write_data (void *buf, size_t membsize, size_t nmemb, void *userp)
+extCurlWriteData (void *buf, size_t membsize, size_t nmemb, void *userp)
 {
     curl_handle_t *curlp = userp;
     size_t bufsiz = membsize * nmemb;
 
-    ext_curl_record_data(curlp, buf, bufsiz, &curlp->ch_reply_data);
+    extCurlRecordData(curlp, buf, bufsiz, &curlp->ch_reply_data);
 
     return bufsiz;
 }
@@ -381,12 +381,12 @@ ext_curl_write_data (void *buf, size_t membsize, size_t nmemb, void *userp)
  * from a server.
  */
 static size_t 
-ext_curl_header_data (void *buf, size_t membsize, size_t nmemb, void *userp)
+extCurlHeaderData (void *buf, size_t membsize, size_t nmemb, void *userp)
 {
     curl_handle_t *curlp = userp;
     size_t bufsiz = membsize * nmemb;
 
-    ext_curl_record_data(curlp, buf, bufsiz, &curlp->ch_reply_headers);
+    extCurlRecordData(curlp, buf, bufsiz, &curlp->ch_reply_headers);
 
     return bufsiz;
 }
@@ -404,7 +404,7 @@ ext_curl_header_data (void *buf, size_t membsize, size_t nmemb, void *userp)
  * this is a "half us and half them" thing.
  */
 static curl_handle_t *
-ext_curl_handle_alloc (void)
+extCurlHandleAlloc (void)
 {
     curl_handle_t *curlp = xmlMalloc(sizeof(*curlp));
     static unsigned seed = 1618; /* Non-zero starting number (why not phi?) */
@@ -424,14 +424,14 @@ ext_curl_handle_alloc (void)
 	curlp->ch_handle = curl_easy_init();
 
 	/* Add it to the list of curl handles */
-	TAILQ_INSERT_TAIL(&ext_curl_sessions, curlp, ch_link);
+	TAILQ_INSERT_TAIL(&extCurlSessions, curlp, ch_link);
     }
 
     return curlp;
 }
 
 static int
-ext_curl_verbose (CURL *handle UNUSED, curl_infotype type,
+extCurlVerbose (CURL *handle UNUSED, curl_infotype type,
 		char *data, size_t size, void *opaque)
 {
     curl_handle_t *curlp UNUSED = opaque;
@@ -484,7 +484,7 @@ ext_curl_verbose (CURL *handle UNUSED, curl_infotype type,
  * Turn a chain of cur_data_t into a libcurl-style slist.
  */
 static struct curl_slist *
-ext_curl_build_slist (slax_data_list_t *listp, struct curl_slist *slist)
+extCurlBuildSlist (slax_data_list_t *listp, struct curl_slist *slist)
 {
     slax_data_node_t *dnp;
 
@@ -496,7 +496,7 @@ ext_curl_build_slist (slax_data_list_t *listp, struct curl_slist *slist)
 }
 
 static char *
-ext_curl_build_param_data (slax_data_list_t **chains)
+extCurlBuildParamData (slax_data_list_t **chains)
 {
     slax_data_list_t **chainp;
     slax_data_node_t *dnp;
@@ -537,7 +537,7 @@ ext_curl_build_param_data (slax_data_list_t **chains)
  *    var $handle = curl:open();
  */
 static void
-ext_curl_open (xmlXPathParserContext *ctxt, int nargs)
+extCurlOpen (xmlXPathParserContext *ctxt, int nargs)
 {
     curl_handle_t *curlp;
 
@@ -547,7 +547,7 @@ ext_curl_open (xmlXPathParserContext *ctxt, int nargs)
 	return;
     }
 
-    curlp = ext_curl_handle_alloc();
+    curlp = extCurlHandleAlloc();
 
     /* Return session cookie */
     xmlXPathReturnString(ctxt, xmlStrdup((const xmlChar *) curlp->ch_name));
@@ -560,7 +560,7 @@ ext_curl_open (xmlXPathParserContext *ctxt, int nargs)
  *    expr curl:close($handle); 
  */
 static void
-ext_curl_close (xmlXPathParserContext *ctxt, int nargs)
+extCurlClose (xmlXPathParserContext *ctxt, int nargs)
 {
     char *name = NULL;
     curl_handle_t *curlp;
@@ -576,9 +576,9 @@ ext_curl_close (xmlXPathParserContext *ctxt, int nargs)
 	return;
     }
 
-    curlp = ext_curl_handle_find(name);
+    curlp = extCurlHandleFind(name);
     if (curlp)
-	ext_curl_handle_free(curlp);
+	extCurlHandleFree(curlp);
 
     xmlFree(name);
 
@@ -592,7 +592,7 @@ struct cr_data {
 };
 
 static size_t
-ext_curl_read_contents (char *buf, size_t isize, size_t nitems, void *userp)
+extCurlReadContents (char *buf, size_t isize, size_t nitems, void *userp)
 {
     struct cr_data *crp = userp;
     size_t bufsiz = isize * nitems;
@@ -610,7 +610,7 @@ ext_curl_read_contents (char *buf, size_t isize, size_t nitems, void *userp)
 }
 
 static char *
-ext_curl_build_email (curl_opts_t *opts)
+extCurlBuildEmail (curl_opts_t *opts)
 {
     char *to_line, *cc_line;
     time_t now = time(NULL);
@@ -660,7 +660,7 @@ ext_curl_build_email (curl_opts_t *opts)
  * curl handle.
  */
 static CURLcode
-ext_curl_do_email (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
+extCurlDoEmail (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
 {
     CURLcode success;
     struct curl_slist *mailto_listp = NULL;
@@ -690,16 +690,16 @@ ext_curl_do_email (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
     }
     CURL_SET(CURLOPT_MAIL_FROM, from);
 
-    mailto_listp = ext_curl_build_slist(&opts->co_to, NULL);
-    mailto_listp = ext_curl_build_slist(&opts->co_cc, mailto_listp);
+    mailto_listp = extCurlBuildSlist(&opts->co_to, NULL);
+    mailto_listp = extCurlBuildSlist(&opts->co_cc, mailto_listp);
     CURL_SET(CURLOPT_MAIL_RCPT, mailto_listp);
 
     bzero(&cr, sizeof(cr));
-    buf = cr.cr_data = ext_curl_build_email(opts);
+    buf = cr.cr_data = extCurlBuildEmail(opts);
     cr.cr_len = strlen(buf);
     cr.cr_offset = 0;
 
-    CURL_SET(CURLOPT_READFUNCTION, ext_curl_read_contents);
+    CURL_SET(CURLOPT_READFUNCTION, extCurlReadContents);
     CURL_SET(CURLOPT_READDATA, &cr);
 
     success = curl_easy_perform(curlp->ch_handle);
@@ -723,7 +723,7 @@ ext_curl_do_email (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
  * use curl_easy_reset instead.
  */
 static CURLcode
-ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
+extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
 {
     CURLcode success;
     long putv = 0, postv = 0, getv = 0, deletev = 0, headv = 0, emailv = 0,
@@ -732,7 +732,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
     char *param_data = NULL;
 
     curl_easy_reset(curlp->ch_handle);
-    ext_curl_handle_clean(curlp); /* Shouldn't be needed */
+    extCurlHandleClean(curlp); /* Shouldn't be needed */
 
     if (opts->co_method) {
 	if (streq(opts->co_method, "delete")) {
@@ -766,9 +766,9 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
     CURL_SET(CURLOPT_NETRC, CURL_NETRC_OPTIONAL); /* Allow .netrc */
 
     /* Register callbacks */
-    CURL_SET(CURLOPT_WRITEFUNCTION, ext_curl_write_data);
+    CURL_SET(CURLOPT_WRITEFUNCTION, extCurlWriteData);
     CURL_SET(CURLOPT_WRITEDATA, curlp);
-    CURL_SET(CURLOPT_HEADERFUNCTION, ext_curl_header_data);
+    CURL_SET(CURLOPT_HEADERFUNCTION, extCurlHeaderData);
     CURL_SET(CURLOPT_WRITEHEADER, curlp);
 
     CURL_COND(CURLOPT_USERNAME, opts->co_username);
@@ -782,7 +782,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
 	 * The DEBUGFUNCTION has no effect until we enable VERBOSE.
 	 */ 
 	curl_easy_setopt(curlp->ch_handle,
-			 CURLOPT_DEBUGFUNCTION, ext_curl_verbose);
+			 CURLOPT_DEBUGFUNCTION, extCurlVerbose);
 	curl_easy_setopt(curlp->ch_handle, CURLOPT_DEBUGDATA, curlp);
 	curl_easy_setopt(curlp->ch_handle, CURLOPT_VERBOSE, 1L);
     }
@@ -799,7 +799,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
      * a unique route.
      */
     if (emailv)
-	return ext_curl_do_email(curlp, opts);
+	return extCurlDoEmail(curlp, opts);
 
     /* A missing URL is fatal */
     if (opts->co_url == NULL) {
@@ -835,8 +835,8 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
      * and the ones passed into this function.
      */
     if (opts != &curlp->ch_opts)
-	headers = ext_curl_build_slist(&curlp->ch_opts.co_headers, headers);
-    headers = ext_curl_build_slist(&opts->co_headers, headers);
+	headers = extCurlBuildSlist(&curlp->ch_opts.co_headers, headers);
+    headers = extCurlBuildSlist(&opts->co_headers, headers);
     CURL_SET(CURLOPT_HTTPHEADER, headers);
 
     if (postv || putv) {
@@ -851,7 +851,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
 	cr.cr_len = strlen(opts->co_contents);
 
 	CURL_SET(CURLOPT_INFILESIZE, (long) cr.cr_len);
-	CURL_SET(CURLOPT_READFUNCTION, ext_curl_read_contents);
+	CURL_SET(CURLOPT_READFUNCTION, extCurlReadContents);
 	CURL_SET(CURLOPT_READDATA, &cr);
     }
 
@@ -864,7 +864,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
     if (opts != &curlp->ch_opts)
 	param_data_lists[1] = &opts->co_params;
 
-    param_data = ext_curl_build_param_data(param_data_lists);
+    param_data = extCurlBuildParamData(param_data_lists);
     if (param_data) {
 	if (getv || deletev) {
 	    size_t ulen = strlen(opts->co_url), plen = strlen(param_data);
@@ -904,7 +904,7 @@ ext_curl_do_perform (curl_handle_t *curlp, curl_opts_t *opts)
 }
 
 static void
-ext_curl_build_data_parsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
+extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 			    xmlDocPtr docp, xmlNodePtr parent,
 			    const char *raw_data)
 {
@@ -984,7 +984,7 @@ ext_curl_build_data_parsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
  * @returns the built data string (which is inside a text element)
  */
 static const char *
-ext_curl_build_data (curl_handle_t *curlp UNUSED, xmlDocPtr docp,
+extCurlBuildData (curl_handle_t *curlp UNUSED, xmlDocPtr docp,
 		     xmlNodePtr nodep, slax_data_list_t *listp,
 		     const char *name)
 {
@@ -1040,7 +1040,7 @@ ext_curl_build_data (curl_handle_t *curlp UNUSED, xmlDocPtr docp,
       </header>
  */
 static void
-ext_curl_build_reply_headers (curl_handle_t *curlp, xmlDocPtr docp,
+extCurlBuildReplyHeaders (curl_handle_t *curlp, xmlDocPtr docp,
 			      xmlNodePtr parent)
 {
     if (curlp->ch_reply_headers.tqh_first == NULL)
@@ -1131,7 +1131,7 @@ ext_curl_build_reply_headers (curl_handle_t *curlp, xmlDocPtr docp,
  *    if (curl-success && header/code && header/code < 400) { ... }
  */
 static xmlNodePtr 
-ext_curl_build_results (xmlDocPtr docp, curl_handle_t *curlp,
+extCurlBuildResults (xmlDocPtr docp, curl_handle_t *curlp,
 			curl_opts_t *opts, CURLcode success)
 {
     const char *raw_data;
@@ -1148,16 +1148,16 @@ ext_curl_build_results (xmlDocPtr docp, curl_handle_t *curlp,
 	    xmlAddChild(nodep, xp);
 
 	/* Add header information, raw and cooked */
-	ext_curl_build_data(curlp, docp, nodep,
+	extCurlBuildData(curlp, docp, nodep,
 			    &curlp->ch_reply_headers, "raw-headers");
-	ext_curl_build_reply_headers(curlp, docp, nodep);
+	extCurlBuildReplyHeaders(curlp, docp, nodep);
 
 	/* Add raw data string */
-	raw_data = ext_curl_build_data(curlp, docp, nodep,
+	raw_data = extCurlBuildData(curlp, docp, nodep,
 				       &curlp->ch_reply_data, "raw-data");
 
 	if (raw_data && opts->co_format && curlp->ch_code < 300)
-	    ext_curl_build_data_parsed(curlp, opts, docp, nodep, raw_data);
+	    extCurlBuildDataParsed(curlp, opts, docp, nodep, raw_data);
 
     } else {
 	xmlAddChildContent(docp, nodep, (const xmlChar *) "error",
@@ -1171,7 +1171,7 @@ ext_curl_build_results (xmlDocPtr docp, curl_handle_t *curlp,
  * Parse a set of option values and store them in an options structure
  */
 static void
-ext_curl_options_parse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
+extCurlOptionsParse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 			xmlXPathObject *ostack[], int nargs)
 {
     int osi;
@@ -1194,7 +1194,7 @@ ext_curl_options_parse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 		nop = nodeset->nodeTab[i];
 
 		if (nop->type == XML_ELEMENT_NODE)
-		    ext_curl_parse_node(opts, nop);
+		    extCurlParseNode(opts, nop);
 
 		if (nop->children == NULL)
 		    continue;
@@ -1203,7 +1203,7 @@ ext_curl_options_parse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 		    if (cop->type != XML_ELEMENT_NODE)
 			continue;
 
-		    ext_curl_parse_node(opts, cop);
+		    extCurlParseNode(opts, cop);
 		}
 	    }
 	}
@@ -1217,7 +1217,7 @@ ext_curl_options_parse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
       expr curl:set($handle, $opts, $more-opts);
  */
 static void
-ext_curl_set (xmlXPathParserContext *ctxt, int nargs)
+extCurlSet (xmlXPathParserContext *ctxt, int nargs)
 {
     xmlXPathObject *ostack[nargs];	/* Stack for objects */
     curl_handle_t *curlp;
@@ -1238,7 +1238,7 @@ ext_curl_set (xmlXPathParserContext *ctxt, int nargs)
 	goto fail;
     }
 
-    curlp = ext_curl_handle_find(name);
+    curlp = extCurlHandleFind(name);
     if (curlp == NULL) {
 	slaxLog("curl:set: unknown handle: %s", name);
 	xmlFree(name);
@@ -1249,7 +1249,7 @@ ext_curl_set (xmlXPathParserContext *ctxt, int nargs)
      * The zeroeth element of the ostack is the handle name, so we
      * have skip over it.
      */
-    ext_curl_options_parse(curlp, &curlp->ch_opts, ostack + 1, nargs - 1);
+    extCurlOptionsParse(curlp, &curlp->ch_opts, ostack + 1, nargs - 1);
 
     xmlXPathReturnString(ctxt, xmlStrdup((const xmlChar *) ""));
 
@@ -1266,7 +1266,7 @@ ext_curl_set (xmlXPathParserContext *ctxt, int nargs)
       var $res = curl:perform($handle, $url, $opts, $more-opts);
  */
 static void
-ext_curl_perform (xmlXPathParserContext *ctxt, int nargs)
+extCurlPerform (xmlXPathParserContext *ctxt, int nargs)
 {
     xmlXPathObject *ostack[nargs];	/* Stack for objects */
     curl_handle_t *curlp;
@@ -1293,7 +1293,7 @@ ext_curl_perform (xmlXPathParserContext *ctxt, int nargs)
 	return;
     }
 
-    curlp = ext_curl_handle_find(name);
+    curlp = extCurlHandleFind(name);
     if (curlp == NULL) {
 	slaxLog("curl:execute: unknown handle: %s", name);
 	xmlFree(name);
@@ -1304,11 +1304,11 @@ ext_curl_perform (xmlXPathParserContext *ctxt, int nargs)
      * We make a local copy of our options that the parameters will
      * affect, but won't be saved.
      */
-    ext_curl_options_copy(&co, &curlp->ch_opts);
+    extCurlOptionsCopy(&co, &curlp->ch_opts);
 
-    ext_curl_options_parse(curlp, &co, ostack + 1, nargs - 1);
+    extCurlOptionsParse(curlp, &co, ostack + 1, nargs - 1);
 
-    success = ext_curl_do_perform(curlp, &co);
+    success = extCurlDoPerform(curlp, &co);
 
     /*
      * Create a Result Value Tree container, and register it with RVT garbage
@@ -1318,15 +1318,15 @@ ext_curl_perform (xmlXPathParserContext *ctxt, int nargs)
     container = xsltCreateRVT(tctxt);
     xsltRegisterLocalRVT(tctxt, container);
 
-    nodep = ext_curl_build_results(container, curlp, &co, success);
+    nodep = extCurlBuildResults(container, curlp, &co, success);
 
     xmlAddChild((xmlNodePtr) container, nodep);
     xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
     xmlXPathNodeSetAdd(results, nodep);
     ret = xmlXPathNewNodeSetList(results);
 
-    ext_curl_options_release(&co);
-    ext_curl_handle_clean(curlp);
+    extCurlOptionsRelease(&co);
+    extCurlHandleClean(curlp);
 
     valuePush(ctxt, ret);
     xmlXPathFreeNodeSet(results);
@@ -1338,7 +1338,7 @@ ext_curl_perform (xmlXPathParserContext *ctxt, int nargs)
 }
 
 static void
-ext_curl_single (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+extCurlSingle (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 {
     xmlXPathObject *ostack[nargs];	/* Stack for objects */
     curl_handle_t *curlp;
@@ -1357,15 +1357,15 @@ ext_curl_single (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     for (osi = nargs - 1; osi >= 0; osi--)
 	ostack[osi] = valuePop(ctxt);
 
-    curlp = ext_curl_handle_alloc();
+    curlp = extCurlHandleAlloc();
     if (curlp == NULL) {
 	slaxLog("curl:fetch: alloc failed");
 	goto fail;
     }
 
-    ext_curl_options_parse(curlp, &curlp->ch_opts, ostack, nargs);
+    extCurlOptionsParse(curlp, &curlp->ch_opts, ostack, nargs);
 
-    success = ext_curl_do_perform(curlp, &curlp->ch_opts);
+    success = extCurlDoPerform(curlp, &curlp->ch_opts);
 
     /*
      * Create a Result Value Tree container, and register it with RVT garbage
@@ -1375,14 +1375,14 @@ ext_curl_single (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     container = xsltCreateRVT(tctxt);
     xsltRegisterLocalRVT(tctxt, container);
 
-    nodep = ext_curl_build_results(container, curlp, &curlp->ch_opts, success);
+    nodep = extCurlBuildResults(container, curlp, &curlp->ch_opts, success);
 
     xmlAddChild((xmlNodePtr) container, nodep);
     xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
     xmlXPathNodeSetAdd(results, nodep);
     ret = xmlXPathNewNodeSetList(results);
 
-    ext_curl_handle_free(curlp);
+    extCurlHandleFree(curlp);
 
     valuePush(ctxt, ret);
     xmlXPathFreeNodeSet(results);
@@ -1394,25 +1394,25 @@ ext_curl_single (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 }
 
 slax_function_table_t slaxCurlTable[] = {
-    { "close", ext_curl_close },
-    { "perform", ext_curl_perform },
-    { "single", ext_curl_single },
-    { "open", ext_curl_open },
-    { "set", ext_curl_set },
+    { "close", extCurlClose },
+    { "perform", extCurlPerform },
+    { "single", extCurlSingle },
+    { "open", extCurlOpen },
+    { "set", extCurlSet },
     { NULL, NULL }
 };
 
 void
-ext_curl_init (void)
+extCurlInit (void)
 {
-    TAILQ_INIT(&ext_curl_sessions);
+    TAILQ_INIT(&extCurlSessions);
 
     slaxRegisterFunctionTable(CURL_FULL_NS, slaxCurlTable);
 }
 
 SLAX_DYN_FUNC(slaxDynLibInit)
 {
-    TAILQ_INIT(&ext_curl_sessions);
+    TAILQ_INIT(&extCurlSessions);
 
     arg->da_functions = slaxCurlTable; /* Fill in our function table */
 
