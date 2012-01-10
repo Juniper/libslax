@@ -11,6 +11,8 @@
  * slax_string_t string handling functions
  */
 
+struct slax_data_s;		/* Forward declaration */
+
 /*
  * We build strings as we go using this structure.
  */
@@ -69,7 +71,7 @@ slaxStringFuse (slax_string_t *);
  * longer strings (typically an XPath expression).
  */
 slax_string_t *
-slaxStringCreate (slax_data_t *sdp, int token);
+slaxStringCreate (struct slax_data_s *sdp, int token);
 
 /*
  * Build a single string out of the string segments hung off "start".
@@ -88,7 +90,7 @@ slaxStringLiteral (const char *str, int);
  * string.
  */
 slax_string_t *
-slaxStringLink (slax_data_t *sdp, slax_string_t **, slax_string_t **);
+slaxStringLink (struct slax_data_s *sdp, slax_string_t **, slax_string_t **);
 
 /*
  * Free a set of string segments
@@ -131,12 +133,12 @@ slaxStringAddTail (slax_string_t ***tailp, slax_string_t *first,
  * Rebuild the two sides of a concatenation operation in useful form.
  */
 slax_string_t *
-slaxConcatRewrite (slax_data_t *sdp, slax_string_t *,
+slaxConcatRewrite (struct slax_data_s *sdp, slax_string_t *,
 		   slax_string_t *, slax_string_t *);
 
 /*
  * Rebuild the two/three sides of a ternary (?:) operation in useful form.
  */
 slax_string_t *
-slaxTernaryRewrite (slax_data_t *sdp, slax_string_t *, slax_string_t *,
+slaxTernaryRewrite (struct slax_data_s *sdp, slax_string_t *, slax_string_t *,
 		    slax_string_t *, slax_string_t *, slax_string_t *);

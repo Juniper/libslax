@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax-ext slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax-ext slax">
   <!-- 
 
   miss lucy had a baby
@@ -98,7 +98,7 @@
   <xsl:template match="verse[@action = &quot;baby&quot;]">
     <xsl:param name="miss-lucy"/>
     <xsl:param name="baby"/>
-    <slax:trace xmlns:slax="http://code.google.com/p/libslax/slax" select="&quot;verse 1&quot;"/>
+    <slax:trace xmlns:slax="http://xml.libslax.org/slax" select="&quot;verse 1&quot;"/>
     <line>
       <xsl:value-of select="concat($miss-lucy/name, &quot; had a &quot;, @action)"/>
     </line>

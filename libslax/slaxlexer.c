@@ -541,7 +541,7 @@ slaxKeyword (slax_data_t *sdp)
  * Fill the input buffer, shifting data forward if we need the room
  * and dynamically reallocating the buffer if we still need room.
  */
-static int
+int
 slaxGetInput (slax_data_t *sdp, int final)
 {
     int first_read = (sdp->sd_buf == NULL);
@@ -550,7 +550,8 @@ slaxGetInput (slax_data_t *sdp, int final)
      * If we're parsing XPath expressions, we alreay have the
      * complete string, so further reads should fail
      */
-    if (sdp->sd_parse == M_PARSE_XPATH || sdp->sd_parse == M_PARSE_SLAX)
+    if (sdp->sd_parse == M_PARSE_XPATH || sdp->sd_parse == M_PARSE_SLAX
+		|| sdp->sd_file == NULL)
 	return TRUE;
 
     for (;;) {

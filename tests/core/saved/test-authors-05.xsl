@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:template match="/">
     <xsl:variable name="pat1" select="&quot;(E)(.)(.)&quot;"/>
     <xsl:variable name="pat2" select="&quot;^Of(.{5})&quot;"/>
@@ -67,7 +67,7 @@
     <xsl:param name="name" select="$pat"/>
     <xsl:param name="target"/>
     <xsl:param name="opts"/>
-    <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="re" select="slax:regex($pat, $target, $opts)"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re" select="slax:regex($pat, $target, $opts)"/>
     <xsl:element name="{$name}">
       <xsl:attribute name="pat">
         <xsl:value-of select="$pat"/>

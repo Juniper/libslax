@@ -489,7 +489,7 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
     return docp;
 }
 
-static void
+void
 slaxDataCleanup (slax_data_t *sdp)
 {
     if (sdp->sd_buf) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:variable name="root" select="1"/>
   <xsl:variable name="root2" select="2"/>
   <xsl:template match="/">
@@ -35,7 +35,7 @@
     <xsl:message>
       <xsl:value-of select="concat(&quot;hit: &quot;, name())"/>
     </xsl:message>
-    <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="debug" select="slax:debug()"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="debug" select="slax:debug()"/>
     <debug-data>
       <xsl:copy-of select="$debug"/>
     </debug-data>

@@ -74,6 +74,7 @@
 #define ELT_FOR_EACH	"for-each"
 #define ELT_FUNCTION	"function"
 #define ELT_IF		"if"
+#define ELT_JSON	"json"
 #define ELT_MESSAGE	"message"
 #define ELT_NAME	"name"
 #define ELT_NAMESPACE_ALIAS "namespace-alias"

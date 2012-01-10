@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax-ext slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax-ext slax">
   <xsl:variable name="aaa-temp-1">
     <aa1>
       <aaa>AAA</aaa>
@@ -34,7 +34,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
-  <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="ddd" select="slax:value($slax-ternary-1)"/>
+  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="ddd" select="slax:value($slax-ternary-1)"/>
   <xsl:param name="action" select="&quot;fight&quot;"/>
   <xsl:variable name="slax-ternary-2">
     <xsl:choose>
@@ -46,7 +46,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
-  <xsl:param xmlns:slax="http://code.google.com/p/libslax/slax" name="how" select="slax:value($slax-ternary-2)"/>
+  <xsl:param xmlns:slax="http://xml.libslax.org/slax" name="how" select="slax:value($slax-ternary-2)"/>
   <xsl:variable name="slax-ternary-3">
     <xsl:choose>
       <xsl:when test="$how = &quot;quick&quot;">
@@ -57,7 +57,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
-  <xsl:param xmlns:slax="http://code.google.com/p/libslax/slax" name="count" select="slax:value($slax-ternary-3)"/>
+  <xsl:param xmlns:slax="http://xml.libslax.org/slax" name="count" select="slax:value($slax-ternary-3)"/>
   <xsl:variable name="slax-ternary-4">
     <xsl:choose>
       <xsl:when test="this">
@@ -68,7 +68,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
-  <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="top" select="slax:value($slax-ternary-4)"/>
+  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="top" select="slax:value($slax-ternary-4)"/>
   <xsl:variable name="data-temp-4">
     <more>
       <a>
@@ -122,7 +122,7 @@
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
-        <xsl:copy-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-5)"/>
+        <xsl:copy-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-5)"/>
       </d2>
       <action>
         <xsl:value-of select="$action"/>
@@ -144,7 +144,7 @@
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
-        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="one" select="slax:value($slax-ternary-6)"/>
+        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="slax:value($slax-ternary-6)"/>
         <xsl:variable name="slax-ternary-7">
           <xsl:variable name="slax-ternary-7-cond" select="d"/>
           <xsl:choose>
@@ -156,7 +156,7 @@
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
-        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="two" select="slax:value($slax-ternary-7)"/>
+        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="two" select="slax:value($slax-ternary-7)"/>
         <xsl:variable name="slax-ternary-10">
           <xsl:choose>
             <xsl:when test="f">
@@ -179,15 +179,15 @@
                         </xsl:otherwise>
                       </xsl:choose>
                     </xsl:variable>
-                    <xsl:copy-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-8)"/>
+                    <xsl:copy-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-8)"/>
                   </xsl:otherwise>
                 </xsl:choose>
               </xsl:variable>
-              <xsl:copy-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-9)"/>
+              <xsl:copy-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-9)"/>
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
-        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="three" select="slax:value($slax-ternary-10)"/>
+        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="three" select="slax:value($slax-ternary-10)"/>
         <xsl:variable name="slax-ternary-13">
           <xsl:variable name="slax-ternary-13-cond" select="i"/>
           <xsl:choose>
@@ -213,15 +213,15 @@
                         </xsl:otherwise>
                       </xsl:choose>
                     </xsl:variable>
-                    <xsl:copy-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-11)"/>
+                    <xsl:copy-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-11)"/>
                   </xsl:otherwise>
                 </xsl:choose>
               </xsl:variable>
-              <xsl:copy-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-12)"/>
+              <xsl:copy-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-12)"/>
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
-        <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="four" select="slax:value($slax-ternary-13)"/>
+        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="four" select="slax:value($slax-ternary-13)"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
@@ -245,7 +245,7 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:variable>
-          <xsl:value-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-14)"/>
+          <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-14)"/>
         </fish>
         <fish>
           <xsl:variable name="slax-ternary-15">
@@ -259,7 +259,7 @@
             </xsl:choose>
           </xsl:variable>
           <xsl:call-template name="fish">
-            <xsl:with-param xmlns:slax="http://code.google.com/p/libslax/slax" name="name" select="slax:value($slax-ternary-15)"/>
+            <xsl:with-param xmlns:slax="http://xml.libslax.org/slax" name="name" select="slax:value($slax-ternary-15)"/>
           </xsl:call-template>
         </fish>
         <contains>
@@ -283,7 +283,7 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:variable>
-          <xsl:value-of xmlns:slax="http://code.google.com/p/libslax/slax" select="contains(slax:value($slax-ternary-16), slax:value($slax-ternary-17))"/>
+          <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="contains(slax:value($slax-ternary-16), slax:value($slax-ternary-17))"/>
         </contains>
       </xsl:for-each>
     </top>
@@ -299,7 +299,7 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:param>
-    <xsl:param xmlns:slax="http://code.google.com/p/libslax/slax" name="name" select="slax:value($slax-ternary-18)"/>
+    <xsl:param xmlns:slax="http://xml.libslax.org/slax" name="name" select="slax:value($slax-ternary-18)"/>
     <xsl:variable name="slax-ternary-19">
       <xsl:choose>
         <xsl:when test="$name">
@@ -310,6 +310,6 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    <xsl:value-of xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:value($slax-ternary-19)"/>
+    <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:value($slax-ternary-19)"/>
   </xsl:template>
 </xsl:stylesheet>

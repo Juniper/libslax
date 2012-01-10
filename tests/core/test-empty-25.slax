@@ -1,0 +1,13 @@
+version 1.1;
+
+ns redirect extension = "org.apache.xalan.xslt.extensions.Redirect";
+
+match / {
+    <redirect:write append="true" href="foo.txt" method="text"> {
+        expr "Hello, World!\n";
+    }
+
+    <redirect:write append="true" href="foo.txt" method="text"> {
+        expr "World goes Boom!\n";
+    }
+}

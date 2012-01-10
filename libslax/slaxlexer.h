@@ -172,3 +172,10 @@ slaxIsVarChar (int ch)
 {
     return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == ':');
 }
+
+/*
+ * Fill the input buffer, shifting data forward if we need the room
+ * and dynamically reallocating the buffer if we still need room.
+ */
+int
+slaxGetInput (slax_data_t *sdp, int final);

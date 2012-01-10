@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<out xmlns:xxx="http://code.google.com/p/libslax/slax">
+<out xmlns:xxx="http://xml.libslax.org/slax">
   <first>1</first>
   <first>2</first>
   <first>3</first>

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:output indent="yes"/>
   <xsl:template match="/top">
-    <out xmlns:xxx="http://code.google.com/p/libslax/slax">
+    <out xmlns:xxx="http://xml.libslax.org/slax">
       <xsl:variable name="x" select="5"/>
-      <xsl:for-each xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:build-sequence(1, 10)">
+      <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence(1, 10)">
         <first>
           <xsl:value-of select="."/>
         </first>
       </xsl:for-each>
       <xsl:variable name="slax-dot-1" select="."/>
-      <xsl:for-each xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:build-sequence($x, count)">
+      <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence($x, count)">
         <xsl:variable name="i" select="."/>
         <xsl:for-each select="$slax-dot-1">
           <second count="{count}">
@@ -19,7 +19,7 @@
         </xsl:for-each>
       </xsl:for-each>
       <xsl:variable name="slax-dot-2" select="."/>
-      <xsl:for-each xmlns:slax="http://code.google.com/p/libslax/slax" select="slax:build-sequence(1 - size, 10 div 3)">
+      <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence(1 - size, 10 div 3)">
         <xsl:variable name="i" select="."/>
         <xsl:for-each select="$slax-dot-2">
           <third>

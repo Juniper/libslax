@@ -108,4 +108,3 @@ slaxExpectingError (const char *token, int yystate, int yychar)
 
     return xmlStrdup2(buf);
 }
-

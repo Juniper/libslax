@@ -83,7 +83,7 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libext_xutil_la_LIBADD =
-am_libext_xutil_la_OBJECTS = ext_xutil.lo
+am_libext_xutil_la_OBJECTS = jsonparser.lo jsonlexer.lo ext_xutil.lo
 libext_xutil_la_OBJECTS = $(am_libext_xutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -271,14 +271,23 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+BISON_COMMAND = ${BISON} -kvd -b jsonparser
 ext_curlincdir = ${includedir}/libslax
 AM_CFLAGS = -DLIBSLAX_XMLSOFT_NEED_PRIVATE -I${top_srcdir} \
-	${LIBSLAX_CFLAGS} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAGS} \
-	${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+	-I${top_srcdir}/libslax ${LIBSLAX_CFLAGS} ${LIBXSLT_CFLAGS} \
+	${LIBXML_CFLAGS} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libext_xutil.la
+XUTILHEADERS = jsonparser.h
 libext_xutil_la_SOURCES = \
+    jsonparser.c \
+    jsonlexer.c \
     ext_xutil.c
 
+SED_ARGS = \
+-e 's:int yyparse (void);::' \
+-e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonParse (slax_data_t *slax_data)/'
+
+CLEANFILES = jsonparser.h jsonparser.c jsonparser.output
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fxutil.ext
 all: all-am
 
@@ -355,6 +364,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext_xutil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsonlexer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsonparser.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -492,6 +503,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -591,6 +603,16 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 include ${top_srcdir}/warnings.mk
 
+jsonparser.h: jsonparser.c
+${libext_xutil_la_SOURCES:.c=.o}: ${XUTILHEADERS}
+${libext_xutil_la_SOURCES:.c=.lo}: ${XUTILHEADERS}
+
+jsonparser.c: jsonparser.y
+	${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
+	@${MV} $@ $@.old
+	@${SED} ${SED_ARGS} < $@.old  > $@
+	@${RM} $@.old
+
 install-exec-hook:
 	@DLNAME=`sh -c '. libext_xutil.la ; echo $$dlname'`; \
                     echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
@@ -598,6 +620,10 @@ install-exec-hook:
                     && chmod +w . \
 	            && rm -f ${UGLY_NAME} \
 		    && ${LN_S} $$DLNAME ${UGLY_NAME}
+
+jsontest: jsonparser.o
+	${COMPILE} -DUNIT_TEST ${srcdir}/jsonlexer.c -o jsontest.o 
+	${LINK} -o jsontest jsonparser.o jsontest.o
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

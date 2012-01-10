@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://code.google.com/p/libslax/slax" version="1.0" extension-element-prefixes="slax">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:output indent="yes"/>
   <xsl:template match="/">
     <out>
@@ -10,7 +10,7 @@
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-c" mvarname="c">
         <fish>blue</fish>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;slax-c&quot;)" svarname="slax-c"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;slax-c&quot;)" svarname="slax-c"/>
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-d" mvarname="d">
         <one>
           <xsl:value-of select="1"/>
@@ -22,7 +22,7 @@
           <xsl:value-of select="3"/>
         </three>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://code.google.com/p/libslax/slax" name="d" mutable="yes" select="slax:mvar-init(&quot;slax-d&quot;)" svarname="slax-d"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="d" mutable="yes" select="slax:mvar-init(&quot;slax-d&quot;)" svarname="slax-d"/>
       <xsl:call-template name="print">
         <xsl:with-param name="name" select="&quot;mvar&quot;"/>
         <xsl:with-param name="a" select="$a"/>
@@ -30,12 +30,12 @@
         <xsl:with-param name="c" select="$c"/>
         <xsl:with-param name="d" select="$d"/>
       </xsl:call-template>
-      <slax:set-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="a" svarname="slax-a" select="&quot;happy&quot;"/>
-      <slax:set-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="b" svarname="slax-b" select="99"/>
-      <slax:set-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="c" svarname="slax-c">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot;happy&quot;"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b" select="99"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c">
         <fish>red</fish>
       </slax:set-variable>
-      <slax:set-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="d" svarname="slax-d">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="d" svarname="slax-d">
         <four>
           <xsl:value-of select="4"/>
         </four>
@@ -53,12 +53,12 @@
         <xsl:with-param name="c" select="$c"/>
         <xsl:with-param name="d" select="$d"/>
       </xsl:call-template>
-      <slax:append-to-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="a" svarname="slax-a" select="&quot; camper&quot;"/>
-      <slax:append-to-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="b" svarname="slax-b" select="&quot; bottles&quot;"/>
-      <slax:append-to-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="c" svarname="slax-c">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot; camper&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b" select="&quot; bottles&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c">
         <fish>old</fish>
       </slax:append-to-variable>
-      <slax:append-to-variable xmlns:slax="http://code.google.com/p/libslax/slax" name="d" svarname="slax-d">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="d" svarname="slax-d">
         <seven>
           <xsl:value-of select="7"/>
         </seven>
