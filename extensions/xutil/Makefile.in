@@ -277,6 +277,11 @@ AM_CFLAGS = -DLIBSLAX_XMLSOFT_NEED_PRIVATE -I${top_srcdir} \
 	-I${top_srcdir}/libslax ${LIBSLAX_CFLAGS} ${LIBXSLT_CFLAGS} \
 	${LIBXML_CFLAGS} ${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libext_xutil.la
+EXTRA_DIST = \
+    jsonparser.h \
+    jsonlexer.h \
+    jsonparser.y
+
 XUTILHEADERS = jsonparser.h
 libext_xutil_la_SOURCES = \
     jsonparser.c \
@@ -287,6 +292,8 @@ SED_ARGS = \
 -e 's:int yyparse (void);::' \
 -e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonParse (slax_data_t *slax_data)/'
 
+ECHO_BISON_0 = @echo "  BISON " $@;
+ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
 CLEANFILES = jsonparser.h jsonparser.c jsonparser.output
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fxutil.ext
 all: all-am
@@ -608,7 +615,7 @@ ${libext_xutil_la_SOURCES:.c=.o}: ${XUTILHEADERS}
 ${libext_xutil_la_SOURCES:.c=.lo}: ${XUTILHEADERS}
 
 jsonparser.c: jsonparser.y
-	${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
+	${ECHO_BISON_${V}}${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
 	@${MV} $@ $@.old
 	@${SED} ${SED_ARGS} < $@.old  > $@
 	@${RM} $@.old

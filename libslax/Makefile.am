@@ -12,6 +12,11 @@ if SLAX_WARNINGS
 include ${top_srcdir}/warnings.mk
 endif
 
+ECHO_BUILD_0 = @echo "  BUILD " $@;
+ECHO_BUILD_ = ${ECHO_BUILD_${AM_DEFAULT_VERBOSITY}}
+ECHO_BISON_0 = @echo "  BISON " $@;
+ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
+
 slaxincdir = ${includedir}/libslax
 
 AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
@@ -69,7 +74,7 @@ SED_ARGS = \
 -e 's/yyparse (void \*YYPARSE_PARAM)/slaxParse (slax_data_t *slax_data)/'
 
 slaxparser.c: slaxparser-out.y
-	${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
+	${ECHO_BISON_${V}}${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
 	@${MV} $@ $@.old
 	@${SED} ${SED_ARGS} < $@.old  > $@
 	@${RM} $@.old
@@ -86,7 +91,7 @@ SLAXPIECES = \
     ${srcdir}/slaxparser-tail.y
 
 slaxparser-out.y: ${SLAXPIECES}
-	cat ${SLAXPIECES} > $@
+	${ECHO_BUILD_${V}}cat ${SLAXPIECES} > $@
 
 if HAVE_READLINE
 LIBS += -L/opt/local/lib -lreadline
@@ -104,7 +109,7 @@ EXTRA_DIST = \
 CLEANFILES += slaxparser-out.y slaxparser-xpl.y
 
 slaxparser-xpl.y: slaxparser-xp.y
-	sed 's/xp_/xpl_/g' < ${srcdir}/slaxparser-xp.y > slaxparser-xpl.y
+	${ECHO_BUILD_${V}}sed 's/xp_/xpl_/g' < ${srcdir}/slaxparser-xp.y > slaxparser-xpl.y
 
 clean-slaxparser:
 	${RM} -f slaxparser-xpl.y slaxparser-out.y

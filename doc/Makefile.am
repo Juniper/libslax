@@ -31,7 +31,7 @@ EXTRA_DIST = \
     ${QUICKREF}.pdf \
     ${QUICKREFVERS}.pdf
 
-doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREF}.pdf
+doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREFVERS}.pdf
 
 ${OUTPUT}.txt: ${OUTPUT}.xml
 	${XML2RFC} $< > $@
@@ -45,7 +45,7 @@ ${OUTPUT}.html: ${OUTPUT}.fxml ${XML2HTMLBIN}
 ${OUTPUT}.fxml: ${INPUT} ${OUTLINE2XML}
 	${OUTLINE2XML} -D $< > $@
 
-${QUICKREF}.pdf: slax-quick-reference.pdf
+${QUICKREFVERS}.pdf: ${QUICKREF}.pdf
 	cp $< $@
 
 CLEANFILES = \
@@ -53,4 +53,4 @@ ${OUTPUT}.xml \
 ${OUTPUT}.txt \
 ${OUTPUT}.fxml \
 ${OUTPUT}.html \
-${QUICKREF}.pdf
+${QUICKREFVERS}.pdf

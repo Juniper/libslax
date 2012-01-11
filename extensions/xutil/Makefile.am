@@ -41,6 +41,11 @@ if HAVE_LIBEDIT
 LIBS += -ledit
 endif
 
+EXTRA_DIST = \
+    jsonparser.h \
+    jsonlexer.h \
+    jsonparser.y
+
 XUTILHEADERS = jsonparser.h
 
 libext_xutil_la_SOURCES = \
@@ -57,9 +62,11 @@ ${libext_xutil_la_SOURCES:.c=.lo}: ${XUTILHEADERS}
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
 -e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonParse (slax_data_t *slax_data)/'
+ECHO_BISON_0 = @echo "  BISON " $@;
+ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
 
 jsonparser.c: jsonparser.y
-	${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
+	${ECHO_BISON_${V}}${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
 	@${MV} $@ $@.old
 	@${SED} ${SED_ARGS} < $@.old  > $@
 	@${RM} $@.old
