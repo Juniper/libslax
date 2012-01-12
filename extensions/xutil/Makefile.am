@@ -49,9 +49,11 @@ EXTRA_DIST = \
 XUTILHEADERS = jsonparser.h
 
 libext_xutil_la_SOURCES = \
-    jsonparser.c \
-    jsonlexer.c \
     ext_xutil.c
+
+libext_xutil_la_SOURCES_one_day = \
+    jsonparser.c \
+    jsonlexer.c
 
 libdir = ${SLAX_EXTDIR}
 

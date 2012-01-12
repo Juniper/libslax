@@ -1316,7 +1316,7 @@ child nodes (including attribute nodes) are copied.  The contents of
 the statement are a template specifying what should be inserted into
 the new node.
 
-    copy-node $this {
+    copy-node {
         <that> "one";
     }
 

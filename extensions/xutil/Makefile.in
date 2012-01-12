@@ -83,7 +83,7 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libext_xutil_la_LIBADD =
-am_libext_xutil_la_OBJECTS = jsonparser.lo jsonlexer.lo ext_xutil.lo
+am_libext_xutil_la_OBJECTS = ext_xutil.lo
 libext_xutil_la_OBJECTS = $(am_libext_xutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -284,9 +284,11 @@ EXTRA_DIST = \
 
 XUTILHEADERS = jsonparser.h
 libext_xutil_la_SOURCES = \
-    jsonparser.c \
-    jsonlexer.c \
     ext_xutil.c
+
+libext_xutil_la_SOURCES_one_day = \
+    jsonparser.c \
+    jsonlexer.c
 
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
@@ -371,8 +373,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext_xutil.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsonlexer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsonparser.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

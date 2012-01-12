@@ -481,7 +481,7 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 static void
 slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 {
-    long long num, low, high, step = 1;
+    long long num, start, last, step = 1;
     xsltTransformContextPtr tctxt;
     xmlNodePtr nodep;
     xmlDocPtr container;
@@ -494,18 +494,22 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     /* Pop args in reverse order */
-    high = xmlXPathPopNumber(ctxt);
+    last = xmlXPathPopNumber(ctxt);
     if (xmlXPathCheckError(ctxt))
 	return;
 
-    low = xmlXPathPopNumber(ctxt);
+    start = xmlXPathPopNumber(ctxt);
     if (xmlXPathCheckError(ctxt))
 	return;
 
-    if (high < low)
+    if (start <= last)
+	last += 1;
+    else {
 	step = -1;
+	last = last - 1;
+    }
 
-    slaxLog("build-sequence: %qd ... %qd + %qd", low, high, step);
+    slaxLog("build-sequence: %qd ... %qd + %qd", start, last, step);
 
     /* Return a result tree fragment */
     tctxt = xsltXPathGetTransformContext(ctxt);
@@ -524,7 +528,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
     if (ret == NULL)
 	goto fail;
 
-    for (num = low; num <= high; num += step) {
+    for (num = start; num != last; num += step) {
 	snprintf(buf, sizeof(buf), "%qd", num);
 	nodep = xmlNewDocRawNode(container, NULL,
 				 (const xmlChar *) "item", (xmlChar *) buf);
