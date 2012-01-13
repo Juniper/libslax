@@ -78,7 +78,7 @@ CLEANFILES = jsonparser.h jsonparser.c jsonparser.output
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fxutil.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. libext_xutil.la ; echo $$dlname'`; \
+	@DLNAME=`sh -c '. ./libext_xutil.la ; echo $$dlname'`; \
                     echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
                     && cd ${SLAX_EXTDIR} \
                     && chmod +w . \
