@@ -68,7 +68,6 @@
 #endif
 
 static xmlChar slax_empty_string[1]; /* A non-const empty string */
-static int slaxExtEmitProgressMessages;
 
 /*
  * Emit an error using a parser context
@@ -2348,6 +2347,14 @@ slaxExtOutput (xmlXPathParserContextPtr ctxt, int nargs)
     slaxExtMessage(ctxt, nargs, slaxExtOutputCallback);
 }
 
+/*
+ * This is the callback function that we use to pass trace data
+ * up to the caller.
+ */
+static slaxProgressCallback_t slaxProgressCallback;
+static void *slaxProgressCallbackData;
+static int slaxExtEmitProgressMessages;
+
 int
 slaxEmitProgressMessages (int allow)
 {
@@ -2356,12 +2363,29 @@ slaxEmitProgressMessages (int allow)
     return old;
 }
 
+/**
+ * Enable progress messages with a callback
+ *
+ * @func callback function
+ * @data opaque data passed to callback
+ */
+void
+slaxProgressEnable (slaxProgressCallback_t func, void *data)
+{
+    slaxExtEmitProgressMessages = (func != NULL);
+    slaxProgressCallback = func;
+    slaxProgressCallbackData = data;
+}
+
 static void
 slaxExtProgressCallback (const char *str)
 {
-    if (slaxExtEmitProgressMessages)
-	slaxOutput("%s", str);
-    else if (slaxTraceCallback)
+    if (slaxExtEmitProgressMessages) {
+	if (slaxProgressCallback)
+	    slaxProgressCallback(slaxProgressCallbackData,  "%s", str);
+	else
+	    slaxOutput("%s", str);
+    } else if (slaxTraceCallback)
 	slaxTraceCallback(slaxTraceCallbackData, NULL, "%s", str);
     else
 	slaxLog("%s", str);

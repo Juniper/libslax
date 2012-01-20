@@ -621,7 +621,7 @@ jsonparser.c: jsonparser.y
 	@${RM} $@.old
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ./libext_xutil.la ; echo $$dlname'`; \
+	@DLNAME=`sh -c '. ${libdir}/libext_xutil.la ; echo $$dlname'`; \
                     echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
                     && cd ${SLAX_EXTDIR} \
                     && chmod +w . \

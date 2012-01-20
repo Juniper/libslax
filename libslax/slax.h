@@ -93,6 +93,27 @@ typedef void (*slaxTraceCallback_t)(void *, struct _xmlNode *,
 void
 slaxTraceEnable (slaxTraceCallback_t func, void *data);
 
+/* ----------------------------------------------------------------------
+ * Progress messages
+ */
+
+typedef void (*slaxProgressCallback_t)(void *, const char *fmt, ...);
+
+/**
+ * Enable progress messages with a callback
+ *
+ * @func callback function
+ * @data opaque data passed to callback
+ */
+void
+slaxProgressEnable (slaxProgressCallback_t func, void *data);
+
+/**
+ * Determine if progress messages are written to user or trace file.
+ */
+int
+slaxEmitProgressMessages (int);
+
 /* ---------------------------------------------------------------------- */
 
 /* Flags for slaxInputCallback_t */
@@ -187,12 +208,6 @@ slaxExtRegisterOther (const char *namespace);
  * Registers the SLAX extensions
  */
 void slaxExtRegister (void);
-
-/**
- * Determine if progress messages are written to user or trace file.
- */
-int
-slaxEmitProgressMessages (int);
 
 
 /**

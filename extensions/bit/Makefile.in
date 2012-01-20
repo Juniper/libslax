@@ -593,7 +593,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 @SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ./libext_bit.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. ${libdir}/libext_bit.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
 		&& cd ${SLAX_EXTDIR} \
 		&& chmod +w . \
