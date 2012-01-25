@@ -97,6 +97,12 @@
           </xsl:element>
         </xsl:if>
       </xsl:for-each>
+      <xsl:for-each select="$authors/author[life-span/born and life-span/died]">
+        <xsl:sort order="descending"/>
+        <author>
+          <xsl:value-of select="name"/>
+        </author>
+      </xsl:for-each>
     </doc>
   </xsl:template>
   <xsl:template name="emit-element">

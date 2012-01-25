@@ -2569,6 +2569,21 @@ sort_stmt :
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
 		}
+	| K_SORT L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+
+		    slaxElementPush(slax_data, $1->ss_token, NULL, NULL);
+		    $$ = NULL;
+		}
+	    sort_sub_stmt_list_optional L_CBRACE
+		{
+		    slaxRelocateSort(slax_data);
+		    slaxElementPop(slax_data);
+
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
+		}
 	;
 
 sort_sub_stmt_list_optional :

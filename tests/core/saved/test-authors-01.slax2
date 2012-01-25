@@ -127,6 +127,13 @@ match / {
                 }
             }
         }
+        
+        for-each ($authors/author[life-span/born && life-span/died]) {
+            sort {
+                order "descending";
+            }
+            <author> name;
+        }
     }
 }
 

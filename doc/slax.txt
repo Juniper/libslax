@@ -2151,7 +2151,9 @@ taken to avoid infinite loops.
     mvar $count = 1;
     while (not($seen)) {
         if (item[$count]/value) {
-        set $seen = true();
+	        set $seen = true();
+        }
+        set $count = $count + 1;
     }
 
 **** The "..." Operator @dotdotdot@

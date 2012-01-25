@@ -591,4 +591,152 @@
   <oldest first="Ngaio" last="Marsh" gsize="1" age="8.7" age2="87" born="mdcccxcv" died="MCMLXXXII"/>
   <oldest first="Agatha" last="Christie" gsize="1" age="8.6" age2="86" born="mdcccxc" died="MCMLXXVI"/>
   <oldest first="Georges" last="Simenon" gsize="1" age="8.6" age2="86" born="mcmiii" died="MCMLXXXIX"/>
+  <author>
+        Stieg
+        Larsson
+      </author>
+  <author>
+        Ross
+        MacDonald
+      </author>
+  <author>
+        Rex
+        Stout
+      </author>
+  <author>
+        Raymond
+        Chandler
+      </author>
+  <author>
+        Rampo
+        Edogawa
+      </author>
+  <author>
+        Patricia
+        Wentworth
+      </author>
+  <author>
+        Ngaio
+        Marsh
+      </author>
+  <author>
+        Michael
+        Innes
+      </author>
+  <author>
+        Michael
+        Collins
+      </author>
+  <author>
+        Margery
+        Allingham
+      </author>
+  <author>
+        Leslie
+        Charteris
+      </author>
+  <author>
+        Leigh
+        Brackett
+      </author>
+  <author>
+        Josephine
+        Tey
+      </author>
+  <author>
+        John Dickson
+        Carr
+      </author>
+  <author>
+        John D.
+        MacDonald
+      </author>
+  <author>
+        H. Russell
+        Wakefield
+      </author>
+  <author>
+        Gladys
+        Mitchell
+      </author>
+  <author>
+        Georges
+        Simenon
+      </author>
+  <author>
+        G. K.
+        Chesterton
+      </author>
+  <author>
+        Frank
+        Arnau
+      </author>
+  <author>
+        Erle Stanley
+        Gardner
+      </author>
+  <author>
+        Ellis
+        Peters
+      </author>
+  <author>
+        Edmund Wallace
+        Hildick
+      </author>
+  <author>
+        Edmund
+        Crispin
+      </author>
+  <author>
+        Edgar Allan
+        Poe
+      </author>
+  <author>
+        Earl Derr
+        Biggers
+      </author>
+  <author>
+        E.C.
+        Bentley
+      </author>
+  <author>
+        Dorothy L.
+        Sayers
+      </author>
+  <author>
+        Dennis
+        Lynds
+      </author>
+  <author>
+        David
+        Dodge
+      </author>
+  <author>
+        Dashiell
+        Hammett
+      </author>
+  <author>
+        Collin
+        Brooks
+      </author>
+  <author>
+        Chester
+        Gould
+      </author>
+  <author>
+        Brian
+        Cleeve
+      </author>
+  <author>
+        Arthur Conan
+        Doyle
+      </author>
+  <author>
+        Amanda
+        Cross
+      </author>
+  <author>
+        Agatha
+        Christie
+      </author>
 </doc>
