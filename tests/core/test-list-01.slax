@@ -36,6 +36,7 @@ match /list {
 	    }
 	}
 	for-each (item) {
+	    trace name;
 	    trace "item: " _ name;
 	    <found> name;
 	}

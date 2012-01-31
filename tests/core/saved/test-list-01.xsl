@@ -37,6 +37,7 @@
         </top>
       </slax:trace>
       <xsl:for-each select="item">
+        <slax:trace xmlns:slax="http://xml.libslax.org/slax" select="name"/>
         <slax:trace xmlns:slax="http://xml.libslax.org/slax" select="concat(&quot;item: &quot;, name)"/>
         <found>
           <xsl:value-of select="name"/>

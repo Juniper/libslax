@@ -280,6 +280,7 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	break;
 
     case XPATH_XSLT_TREE:
+    case XPATH_NODESET:
 	if (value->nodesetval) {
 	    int i;
 	    xmlNodeSetPtr tab = value->nodesetval;
@@ -296,7 +297,6 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	break;
 
     case XPATH_UNDEFINED:
-    case XPATH_NODESET:
     case XPATH_POINT:
     case XPATH_RANGE:
     case XPATH_LOCATIONSET:
