@@ -543,8 +543,13 @@ main (int argc UNUSED, char **argv)
 	exsltRegisterAll();
 
     if (trace_file) {
-	trace_fp = is_filename_std(trace_file)
-	    ? stderr : fopen(trace_file, "w");
+	if (is_filename_std(trace_file))
+	    trace_fp = stderr;
+	else {
+	    trace_fp = fopen(trace_file, "w");
+	    if (trace_fp == NULL)
+		err(1, "could not open trace file: '%s'", trace_file);
+	}
 	slaxTraceToFile(trace_fp);
     }
 
