@@ -1,0 +1,57 @@
+version 1.1;
+
+ns redirect extension = "org.apache.xalan.xslt.extensions.Redirect";
+
+var $test := {
+    <x> "ManManMan";
+    <x> "Fish Sauce";
+    <x> "amazingly awesome sizabilities";
+}
+
+match / {
+    <out> {
+	<in> { expr slax:base64-encode("ManManMan"); }
+	<out> { expr slax:base64-decode("TWFuTWFuTWFu"); }
+	    
+	for $in ($test/x) {
+	    var $enc = slax:base64-encode($in);
+	    var $dec = slax:base64-decode($in);
+	    <test> {
+		<in> $in;
+		<enc> $enc;
+		<dec> $dec;
+	    }
+	}
+
+	<redirect:write href="hello.txt" method="text"> {
+	    expr "Hello, World!\n";
+	}
+
+	<test> { expr slax:document("hello.txt"); }
+
+	<redirect:write href="hello.txt" method="text"> {
+	    expr "TWFuTWFuTWFu";
+	}
+
+	var $opts = {
+	    <format> "base64";
+	    <encoding> "utf-8";
+	    <control-character> "X";
+	}
+
+	<test2> { expr slax:document("hello.txt", $opts); }
+
+	<redirect:write href="hello.txt" method="text"> {
+	    expr "AQwQaAECBXkgc291EAoGAQwMBQ4K";
+	}
+
+	<test3> { expr slax:document("hello.txt", $opts); }
+
+	var $opts2 = {
+	    <format> "base64";
+	    <encoding> "utf-8";
+	    <control-character> "\u+1000";
+	}
+	<test3> { expr slax:document("hello.txt", $opts2); }
+    }
+}

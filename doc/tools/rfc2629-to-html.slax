@@ -3100,7 +3100,7 @@ a.digress-anchor:link, a.digress-anchor:visited,
 
     if ($tools-inline) {
 	for $file ($css-files/file) {
-	    var $content = document($file _ ".xml");
+	    var $content = slax:document($tools-dir _ "/" _ $file);
 	    <style type="text/css"> {
 		copy-of string($content);
 	    }
@@ -3124,7 +3124,7 @@ template insertJavascript () {
 
     if ($tools-inline) {
 	for $file ($js-files/file) {
-	    var $content = document($file _ ".xml");
+	    var $content = slax:document($tools-dir _ "/" _ $file);
 	    <script type="text/javascript"> {
 		copy-of string($content);
 	    }

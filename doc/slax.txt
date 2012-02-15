@@ -14,12 +14,26 @@
 #                      Raleigh, NC
 #
 
-XSLT is a powerful language, but uses an XML-based syntax that is
-painful to read and write.  SLAX is an alternative syntax for the XSLT
-language, modeled after PERL and C which promotes the basic concepts
-of XSLT into first class language constructs.
+SLAX is an alternate syntax for XSLT, the W3C standard XML-to-XML
+transformation.  XSLT is a powerful language, but uses an XML-based
+syntax that is painful to read and write.  SLAX uses a syntax modeled
+after PERL and C which promotes the basic concepts of XSLT into first
+class language constructs.  The result is scripts that are easier to
+develop and maintain.
 
-* SLAX -- An Alternative Syntax for XSLT
+This documentation covers the SLAX language, beginning with an
+overview and a reference section listing all SLAX statements.  SLAX
+has a number of built-in functions which are also covered.
+
+An implementation of the SLAX is available in an open source project
+called libslax.  Built on top of libxslt and libxml2, libslax parses
+SLAX files and executes them, and can convert between SLAX and XSLT.
+A debugger and profiler are included.  libslax was originally
+developed as part of the JUNOS Operating System by Juniper Networks
+and is released under a BSD license.  See the "Copyright" file for
+details. 
+
+* SLAX (Overview)
 
 XSLT is a commonly used transformation language for XML.  It is a
 declarative language that uses XPath expressions to
@@ -64,9 +78,9 @@ concentrate in the new topics introduced by XSLT.
 ** Peeking under the hood
 
 SLAX is purely syntactic sugar.  The underlaying constructs are
-completely native to XSLT.  Nothing is added to the XSLT engine.  The
-SLAX parser parses an input document and builds an XML tree identical
-to one produced when the XML parser reads an XSLT document.
+completely native to XSLT.  All SLAX constructs can be represented in
+XSLT.  The SLAX parser parses an input document and builds an XML tree
+identical to one produced when the XML parser reads an XSLT document.
 
 SLAX can be viewed as a pre-processor for XSLT, turning SLAX
 constructs (like if/then/else) into the equivalent XSLT constructs
@@ -84,11 +98,12 @@ normal XSLT processing continues, unaffected by the fact that the
 script was written in SLAX.
 
 The "build-as-if" nature of SLAX makes is trivial to write a
-SLAX-to-XSLT convertor, which reads in SLAX and emit XSLT.  In
-addition, an XSLT-to-SLAX convertor is also available, which
-emits an XSLT document in SLAX format.  These make a great learning
-aid, as well as allowing conversion of SLAX scripts to XSLT for
-environments where libxslt is not available.
+SLAX-to-XSLT convertor, which reads in SLAX and emits XSLT using the
+normal libxslt file writing mechanism.  In addition, an XSLT-to-SLAX
+convertor is also available, which emits an XSLT document in SLAX
+format.  These make a great learning aid, as well as allowing
+conversion of SLAX scripts to XSLT for environments where libxslt is
+not available.
 
 ** Composite Technologies
 
@@ -340,8 +355,6 @@ of the numerous books on XSLT will certainly be helpful before using
 commit scripts, but the information here should provide a starting
 point.
 
-**** Language Concepts
-
 XSLT is a language for transforming one XML document into another XML
 document.  The basic model is that an XSLT engine (or processor) reads
 a script (or stylesheet) and an XML document.  The XSLT engine uses the
@@ -380,7 +393,7 @@ following sections.  These sections are meant to be introductory in
 nature, and later sections will provide additional details and
 complete specifications.
 
-***** Templates
+**** Templates
 
 An XSLT script consists of a series of template definitions.  There are
 two types of templates, named and unnamed.  Named templates operate
@@ -408,7 +421,7 @@ parameter "c" containing the contents of the element node named
 The parameter value can contain any XPath expression.  If no nodes
 are selected, the parameter is empty.
 
-***** Unnamed Templates
+**** Unnamed Templates
 
 Unnamed templates are something altogether different.  Each unnamed
 template contains a select attribute, specifying the criteria for
@@ -444,7 +457,11 @@ how they are applied.
         }
     }
 
-***** Parameters
+Named templates can also use the "match" statement to perform dual
+roles, so the template can be used via "apply-templates" or be calling
+it explicitly.
+
+**** Parameters
 
 Parameters can be passed to either named or unnamed templates using
 either parameter lists or the "with" statement.  Inside the template,
@@ -497,7 +514,7 @@ different source for the "changed" attribute, use the "changed"
 attribute but relative to a different node that the current one, or 
 use the default of the "changed" attribute on the current node.
 
-***** Variables
+**** Variables
 
 XSLT allows the definition of both local and global variables, but the
 value of variables can only be set when the variable is defined.  After
@@ -518,7 +535,7 @@ Although this example used an XSL variable, the above example could have
 used an XSL parameter for $message, allowing users to pass in their own
 message.
 
-***** Mutable Variables
+**** Mutable Variables
 
 SLAX adds the ability to assign new values to variables and to append
 to node sets.
@@ -539,7 +556,7 @@ to node sets.
 Mutable variables can be used like normal variables, including use in
 XPath expressions.
 
-***** Character Encoding
+**** Character Encoding
 
 SLAX supports a C-like escaping mechanism for encoding characters.
 The following escapes are available:
@@ -558,7 +575,7 @@ The following escapes are available:
 
 Other character encodings based on '\' may be added at a later time. 
 
-***** Programming Constructs
+**** Programming Constructs
 
 XSLT has a number of traditional programming constructs:
 
@@ -630,7 +647,7 @@ the value of the "changed" attribute.
         }
     }
 
-***** Recursion
+**** Recursion
 
 XSLT depends on recursion as a looping mechanism.  Recursion occurs
 when a section of code calls itself, either directly or
@@ -667,7 +684,7 @@ recursive pass then output the next number and recurses again until
         }
     }
 
-***** Context (Dot)
+**** Context (Dot)
 
 As mentioned earlier, the current context node changes as the
 apply-templates logic traverses the document hierarchy and as 
@@ -696,10 +713,12 @@ the value of the "name" element into the <tag> element.  The <xsl:if>
 test then uses ".", also to reference the value of the current context
 node.
 
-**** Additional XSLT Resources
+*** Additional Resources
 
-The XSLT specification is on the W3C web site:
-http://www.w3c.org/TR/xslt.
+The XPath specification is on the W3C web site:
+(http://www.w3c.org/TR/xpath)
+and the XSLT specification is on the W3C web site
+(http://www.w3c.org/TR/xslt).
 
 Books and tutorials on XSLT abound, helping programmers learn the
 technology.  XSLT processors (programs that run XSLT scripts) are
@@ -945,8 +964,11 @@ The XSLT equivalent:
 
 **** Reserved Prefixes
 
-All prefixes beginning with "xml" are reserved for XML.  In addition,
-all prefixes beginning with "slax" are reserved for SLAX.
+The XML specification reserved all prefixes and attributes beginning
+with the characters "xml".  In addition, SLAX reserves all prefixes
+and attributes that begin with the characters "slax".  These
+reservations help to future proof against changes and enhancements to
+the language.
 
 **** The "extension" Statement @extension@
 
@@ -954,12 +976,17 @@ The "extension" statement instructs the processing engine that
 extenstion namespaces, which will cause elements in that namespace to
 be given special handling by the engine.
 
+For libslax, the extension keyword instructs the library to search for
+an extension library associated with the namespace.  If found, the
+extension library is loaded and initialized so the script can use
+functions and elements defined within that library.
+
 See also http://www.w3.org/TR/xslt#extension-element
 
 **** The "exclude" Statement @exclude@
 
 The "exclude" statement prevents the namespace from appearing in the
-result tree.
+final result tree, effectively blocking it from output.
 
 See also http://www.w3.org/TR/xslt#literal-result-element
 
@@ -1015,7 +1042,7 @@ The following SLAX is equivalent to the above XML data:
         <index>;
     }
 
-Programmers are used to using braces, indentations, and editor support
+Programmers are accustomed to using braces, indentations, and editor support
 to delineate blocks of data.  Using these nesting techniques and
 removing the close tag reduces the clutter and increases the clarity
 of code.
@@ -1342,6 +1369,7 @@ The formatting statements are given in the following table:
 | Statement          | Value     | Description                   |
 |--------------------+-----------+-------------------------------|
 | format             | see below | Style of numbering            |
+| letter-value       |           | Not implemented in libxslt    |
 | grouping-separator | character | Used between groups of digits |
 | grouping-size      | number    | Number of digits in a group   |
 |--------------------+-----------+-------------------------------|
@@ -2173,6 +2201,31 @@ sequence as a node set.
 
 The "for-each" normally considers nodes in document order, but the
 "sort" statement indicates the specific order the programmer needs.
+
+The "sort" statement takes an expression argument that is used as the
+key, as well as substatements that alter the normal sort behavior.
+
+|------------+--------------------------------|
+| Statement  | Values                         |
+|------------+--------------------------------|
+| language   | Not implemented in libxslt     |
+| data-type  | "text", "number", or qname     |
+| order      | "ascending" or "descending"    |
+| case-order | "upper-first" or "lower-first" |
+|------------+--------------------------------|
+
+Multiple "sort" statements can be used to given secondary sorting keys.
+
+    for-each (author) {
+        sort name/last;
+        sort name/first;
+        sort age {
+            order "descending";
+        }
+    }
+
+XSLT equivalent:
+
 
 
 **** The "if" and "else" Statements @if-else@
@@ -3496,7 +3549,7 @@ They were converted using the "slaxproc" tool.
         }
     }
 
-* Odd and Annoying Topics
+* Additional Notes
 
 ** Type Promotion for XPath Expressions
 

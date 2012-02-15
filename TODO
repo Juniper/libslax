@@ -11,6 +11,10 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
 
 - Code: functions to parse our arguments/table
 
+- sdb: use /dev/tty
+
+- opt: handle empty <xsl:otherwise/> (don't make empty "else { }")
+
 - sdb: Conditional breakpoints
 
 - sdb: up, down, and stack-sensitive "print"

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<out>
+  <in>TWFuTWFuTWFu</in>
+  <out>ManManMan</out>
+  <test>
+    <in>ManManMan</in>
+    <enc>TWFuTWFuTWFu</enc>
+    <dec>ManManMan</dec>
+  </test>
+  <test>
+    <in>Fish Sauce</in>
+    <enc>RmlzaCBTYXVjZQ==</enc>
+    <dec>Fish Sauce</dec>
+  </test>
+  <test>
+    <in>amazingly awesome sizabilities</in>
+    <enc>YW1hemluZ2x5IGF3ZXNvbWUgc2l6YWJpbGl0aWVz</enc>
+    <dec>amazingly awesome sizabilities</dec>
+  </test>
+  <test>Hello, World!
+</test>
+  <test2>ManManMan</test2>
+  <test3>XXXhXXXy souX
+XXXXXX
+</test3>
+  <test3>ကကကhကကကy souက
+ကကကကကက
+</test3>
+</out>

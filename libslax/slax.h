@@ -273,4 +273,9 @@ void
 slaxMemDump (FILE *fp, const char *title, const char *data,
 	     size_t len, const char *tag, int indent);
 
+char *
+slaxBase64Encode (const char *buf, size_t blen, size_t *olenp);
+char *
+slaxBase64Decode (const char *buf, size_t blen, size_t *olenp);
+
 #endif /* LIBSLAX_SLAX_H */

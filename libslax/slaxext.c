@@ -48,6 +48,8 @@
 #include <libxslt/xsltutils.h>
 #include <libxslt/transform.h>
 #include <libxml/xpathInternals.h>
+#include <libxml/parserInternals.h>
+#include <libxml/uri.h>
 
 #ifdef O_EXLOCK
 #define DAMPEN_O_FLAGS (O_CREAT | O_RDWR | O_EXLOCK)
@@ -575,8 +577,8 @@ slaxExtFirstOf (xmlXPathParserContext *ctxt, int nargs)
 	    continue;
 	}
 
-	if (xop->type == XPATH_STRING && 
-	    (!xop->stringval || !*xop->stringval)) {
+	if (xop->type == XPATH_STRING
+		    && (!xop->stringval || !*xop->stringval)) {
 	    xmlXPathFreeObject(xop);
 	    continue;
 	}
@@ -2166,6 +2168,298 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
 }
 
+struct slaxDocumentOptions {
+    xmlCharEncoding sdo_encoding; /* Name of text encoding scheme */
+    int sdo_base64;		/* Boolean: do base64 decode */
+    xmlChar *sdo_control;	/* Text to replace control characters */
+    xmlChar *sdo_rpath;		/* Relative path/base for document */
+};
+
+static void
+slaxExtDocumentOptionsClear (struct slaxDocumentOptions *sdop)
+{
+    xmlFreeAndEasy(sdop->sdo_control);
+    xmlFreeAndEasy(sdop->sdo_rpath);
+}
+
+static void
+slaxExtDocumentOptionsSet (struct slaxDocumentOptions *sdop,
+			   const xmlChar *name, const xmlChar *value)
+{
+    if (streq((const char *) name, "format")) {
+	if (streq((const char *) value, "base64"))
+	    sdop->sdo_base64 = TRUE;
+    } else if (streq((const char *) name, "encoding")) {
+	sdop->sdo_encoding = xmlParseCharEncoding((const char *) value);
+	if (sdop->sdo_encoding == XML_CHAR_ENCODING_NONE)
+	    sdop->sdo_encoding = XML_CHAR_ENCODING_UTF8;
+    } else if (streq((const char *) name, "relative-path")) {
+	sdop->sdo_rpath = xmlStrdup(value);
+    } else if (streq((const char *) name, "control-character")) {
+	sdop->sdo_control = xmlStrdup(value);
+    }
+}
+
+static void
+slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
+			xmlXPathObjectPtr xop)
+{
+    if (xop == NULL)
+	return;
+
+    if (xop->type == XPATH_NODESET && xop->nodesetval == NULL)
+	return;
+
+    if (xop->nodesetval && xop->nodesetval->nodeNr == 0)
+	return;
+
+    if (xop->type == XPATH_STRING) {
+	if  (!xop->stringval || !*xop->stringval)
+	    return;
+
+    } else if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
+	xmlNodePtr parent = xop->nodesetval->nodeTab[0];
+	if (parent == NULL || parent->children == NULL)
+	    return;
+
+	xmlNodePtr child = parent->children;
+
+#if 0
+	/* For an RTF, we want the child nodes, not the parent */
+	if (XSLT_IS_RES_TREE_FRAG(parent))
+	    parent = parent->children;
+#endif
+
+	for (child = parent->children; child; child = child->next) {
+	    slaxExtDocumentOptionsSet(sdop,
+				      (const xmlChar *) xmlNodeName(child),
+				      (const xmlChar *) xmlNodeValue(child));
+	}
+    }
+}
+
+static void
+slaxExtRewriteControlCharacters (char **datap, size_t *lenp,
+				 const xmlChar *control)
+{
+    char *data = *datap;
+    size_t len = *lenp;
+    char *cp;
+    size_t i;
+
+    if (control[1] == '\0') {
+	for (i = 0, cp = data; i < len; i++, cp++)
+	    if (!xmlIsChar_ch(*cp))
+		*cp = control[0];
+
+    } else {
+	int count;
+
+	for (i = 0, count = 0, cp = data; i < len; i++, cp++)
+	    if (!xmlIsChar_ch(*cp))
+		count += 1;
+
+	if (count) {
+	    int add = xmlStrlen(control);
+	    size_t nlen = len + count * (add - 1);
+	    char *newp = xmlMalloc(nlen + 1), *np = newp;
+
+	    if (newp) {
+		for (i = 0, count = 0, cp = data; i < len; i++, cp++)
+		    if (!xmlIsChar_ch(*cp)) {
+			memcpy(np, control, add);
+			np += add;
+		    } else {
+			*np++ = *cp;
+		    }
+
+		xmlFree(data);
+		data = newp;
+		len = nlen;
+		data[len] = '\0';
+	    }
+	}
+    }
+
+    *datap = data;
+    *lenp = len;
+}
+
+static void
+slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlXPathObjectPtr ret = NULL;
+    xmlXPathObjectPtr xop = NULL;
+    xmlChar *filename = NULL;
+    xmlParserInputBufferPtr input;
+    char *data;
+    struct slaxDocumentOptions sdo;
+    size_t len = 0;
+    int rc;
+    slax_data_list_t list;
+
+    bzero(&sdo, sizeof(sdo));
+    sdo.sdo_encoding = XML_CHAR_ENCODING_UTF8;
+
+    if (nargs == 1) {
+	filename = xmlXPathPopString(ctxt);
+
+    } else if (nargs == 2) {
+	xop = valuePop(ctxt);
+	filename = xmlXPathPopString(ctxt);
+	slaxExtDocumentOptions(&sdo, xop);
+
+	if (sdo.sdo_rpath) {
+	    /* Find the complete URL for our document */
+	    xmlChar *file_uri = xmlBuildURI(filename, sdo.sdo_rpath);
+	    if (file_uri == NULL)
+		goto fail;
+	    xmlFree(filename);
+	    filename = file_uri;
+	}
+
+    } else {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    input = xmlParserInputBufferCreateFilename((char *) filename,
+					       sdo.sdo_encoding);
+    if (input == NULL) {
+        xsltTransformError(NULL, NULL, NULL,
+		   "slax:document() : failed to parse URI ('%s')\n", filename);
+        valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+	xmlFree(filename);
+	slaxExtDocumentOptionsClear(&sdo);
+        return;
+    }
+
+    xmlFree(filename);
+
+    slaxDataListInit(&list);
+
+    for (;;) {
+	char buf[BUFSIZ];
+	
+        rc = input->readcallback(input->context, buf, sizeof(buf));
+	if (rc <= 0)
+	    break;
+	slaxDataListAddLen(&list, buf, rc);
+    }
+    xmlFreeParserInputBuffer(input);
+
+    /*
+     * At this point, we've read all our data into the list
+     * Now we turn it into a single blob of data
+     */
+    len = slaxDataListAsCharLen(&list, NULL);
+    data = xmlMalloc(len);
+    if (data == NULL)
+	goto fail;
+
+    slaxDataListAsChar(data, len, &list, NULL);
+    len -= 1;			/* Remove trailing NUL */
+
+    /*
+     * Now we can apply any post-processing needed
+     */
+    if (sdo.sdo_base64) {
+	size_t dlen;
+	char *dec = slaxBase64Decode(data, len, &dlen);
+	if (dec) {
+	    xmlFree(data);
+	    data = dec;
+	    len = dlen;
+	}
+    }
+
+    /*
+     * The control characters value is a single character to replace
+     * all control characters.  This is required since XML documents
+     * cannot contain control characters (which is exceedingly lame).
+     */
+    if (sdo.sdo_control)
+	slaxExtRewriteControlCharacters(&data, &len, sdo.sdo_control);
+
+    /* Generate our returnable object */
+    ret = xmlXPathWrapString((xmlChar *) data);
+
+ fail:
+    slaxExtDocumentOptionsClear(&sdo);
+
+    if (ret != NULL)
+	valuePush(ctxt, ret);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+}
+
+static void
+slaxExtBase64Decode (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlChar *control = NULL;
+    char *data;
+
+    if (nargs == 1) {
+	data = (char *) xmlXPathPopString(ctxt);
+    } else if (nargs == 2) {
+	control = xmlXPathPopString(ctxt);
+	data = (char *) xmlXPathPopString(ctxt);
+    } else {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    if (data == NULL) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+	      "slax:base64-decode : internal error tctxt == NULL\n");
+	return;
+    }
+
+    size_t len = strlen(data), dlen;
+
+    char *dec = slaxBase64Decode(data, len, &dlen);
+    if (dec) {
+	xmlFree(data);
+	data = dec;
+	len = dlen;
+    }
+
+    if (control && *control)
+	slaxExtRewriteControlCharacters(&data, &len, control);
+
+    xmlXPathReturnString(ctxt, (xmlChar *) data);
+}
+
+static void
+slaxExtBase64Encode (xmlXPathParserContext *ctxt, int nargs)
+{
+    char *data;
+
+    if (nargs == 1) {
+	data = (char *) xmlXPathPopString(ctxt);
+    } else {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    if (data == NULL) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+	      "slax:base64-encode : internal error tctxt == NULL\n");
+	return;
+    }
+
+    size_t len = strlen(data), dlen;
+
+    char *dec = slaxBase64Encode(data, len, &dlen);
+    if (dec) {
+	xmlFree(data);
+	data = dec;
+	len = dlen;
+    }
+
+    xmlXPathReturnString(ctxt, (xmlChar *) data);
+}
+
 static void
 slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 {
@@ -2502,7 +2796,11 @@ slaxExtRegister (void)
 			slaxWhileCompile, slaxWhileElement);
 
     slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
+
+    slaxRegisterFunction(SLAX_URI, "base64-decode", slaxExtBase64Decode);
+    slaxRegisterFunction(SLAX_URI, "base64-encode", slaxExtBase64Encode);
     slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
+    slaxRegisterFunction(SLAX_URI, "document", slaxExtDocument);
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
 
