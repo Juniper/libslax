@@ -42,6 +42,10 @@ ns saxon exclude = "http://saxon.sf.net/";
 ns x exclude = "http://purl.org/net/xml2rfc/ext";
 ns xhtml exclude = "http://www.w3.org/1999/xhtml";
 
+param $tools-dir = ".";
+param $tools-inline;
+param $tools-install-dir = ".";
+
 strip-space back front list middle rfc section;
 output-method html {
     encoding "iso-8859-1";
@@ -196,7 +200,8 @@ key extref-item {
     value .;
 }
 /* prefix for automatically generated anchors */
-var $anchor-prefix = "rfc";
+param $anchor-prefix = "rfc";
+
 /* IPR version switch */
 var $ipr-rfc3667 = (/rfc/@number > 3708) || not((/rfc/@ipr == "full2026") ||(/rfc/@ipr == "noDerivativeWorks2026") ||(/rfc/@ipr == "noDerivativeWorksNow") ||(/rfc/@ipr == "none") ||(/rfc/@ipr == "") || not(/rfc/@ipr));
 var $ipr-rfc4748 = $ipr-rfc3667 &&((/rfc/@number > 4671) ||($xml2rfc-ext-pub-year > 2006) ||($xml2rfc-ext-pub-year > 2005 && $xml2rfc-ext-pub-month-numeric >= 11));
@@ -229,12 +234,13 @@ match text() [not(ancestor::artwork)] {
 }
 
 match abstract {
-    <h1 id=$anchor-prefix _ ".abstract"> {
-        <a href="#" _ $anchor-prefix _ ".abstract"> "Abstract";
+    <div class="content"> {
+	<h1 id=$anchor-prefix _ ".abstract"> {
+	    <a href="#" _ $anchor-prefix _ ".abstract"> "Abstract";
+	}
+	apply-templates;
     }
-    apply-templates;
 }
-<msxsl:script language="JScript" implements-prefix="myns"> "\n  function parseXml(str) {\n    try {\n      var doc = new ActiveXObject(\"MSXML2.DOMDocument\");\n      doc.async = false;\n      if (doc.loadXML(str)) {\n        return \"\";\n      }\n      else {\n        return doc.parseError.reason + \"\\n\" + doc.parseError.srcText + \" (\" + doc.parseError.line + \"/\" + doc.parseError.linepos + \")\";\n      }\n    }\n    catch(e) {\n      return \"\";\n    }\n  }\n";
 
 template add-artwork-class () {
     if (@type == "abnf" ||@type == "abnf2616" ||@type == "application/xml-dtd" ||@type == "inline" ||@type == "application/relax-ng-compact-syntax") {
@@ -261,8 +267,6 @@ template add-artwork-class () {
         attribute "class" {
             expr "text";
         }
-    
-    } else {
     }
 }
 
@@ -587,16 +591,18 @@ match front {
             call collectRightHeaderColumn();
         }
         /* insert the collected information */
-        <table summary="header information" class="header" border="0" cellpadding="1" cellspacing="1"> {
-            if (function-available("exslt:node-set")) {
-                call emitheader($lc = exslt:node-set($leftColumn), $rc = exslt:node-set($rightColumn));
+	<div id="header"> {
+	    <table summary="header information" class="header" border="0" cellpadding="1" cellspacing="1"> {
+		if (function-available("exslt:node-set")) {
+		    call emitheader($lc = exslt:node-set($leftColumn), $rc = exslt:node-set($rightColumn));
             
-            } else {
-                call error($msg = $node-set-warning);
-            }
+		} else {
+		    call error($msg = $node-set-warning);
+		}
+	    }
         }
     }
-    <p class="title"> {
+    <p id="title" class="title"> {
         /* main title */
         apply-templates title;
         if (/rfc/@docName) {
@@ -982,8 +988,6 @@ template computed-auto-target ($bib, $ref) {
             
             } else if ($ref) {
                 expr $ref/@x:sec;
-            
-            } else {
             }
         }
         
@@ -997,8 +1001,6 @@ template computed-auto-target ($bib, $ref) {
         if ($ref && $ref/@x:sec && $internetDraftUrlFrag) {
             expr "#" _ $internetDraftUrlFrag _ $ref/@x:sec;
         }
-    
-    } else {
     }
 }
 
@@ -1115,8 +1117,6 @@ match reference {
                     } else {
                         expr ", ";
                     }
-                
-                } else {
                 }
             }
             if (string-length($target) > 0) {
@@ -1267,12 +1267,10 @@ match rfc {
                     mode "get-text-content";
                 }
             }
-            <style type="text/css" title="Xml2Rfc (sans serif)"> {
-                call insertCss();
-            }
-            <script> {
-                call insertJavascript();
-            }
+
+	    call insertCss();
+	    call insertJavascript();
+
             /* <link rel="alternate stylesheet" type="text/css" media="screen" title="Plain (typewriter)" href="rfc2629tty.css" /> */
             /* link elements */
             if ($xml2rfc-toc == "yes") {
@@ -1328,8 +1326,6 @@ match rfc {
                     
                     } else if (/rfc/@docName) {
                         <meta name="DC.Identifier" content="urn:ietf:id:" _ /rfc/@docName>;
-                    
-                    } else {
                     }
                     <meta name="DC.Date.Issued" scheme="ISO8601" content=$xml2rfc-ext-pub-year _ "-" _ $xml2rfc-ext-pub-month-numeric>;
                     if (/rfc/@obsoletes != "") {
@@ -1501,50 +1497,59 @@ match section | appendix {
         }
     }
     
-    /* process irefs immediadetely following the section so that their anchor
-    actually is the section heading */
-    apply-templates iref[count(preceding-sibling::*[not(self::iref)]) == 0];
-    element $elemtype {
-        if ($sectionNumber != "") {
-            attribute "id" {
-                expr $anchor-prefix;
-                expr ".section.";
-                expr $sectionNumber;
-            }
-        }
-        if ($sectionNumber == "1") {
-            /* pagebreak, this the first section */
-            attribute "class" {
-                expr "np";
-            }
+    <div class="content"> {
+	if ($elemtype == "h1" || $elemtype == "h2" || $elemtype == "h3") {
+	    attribute "class" {
+		expr "content";
+	    }
+	}
+
+	/* process irefs immediadetely following the section so that their anchor
+	   actually is the section heading */
+	apply-templates iref[count(preceding-sibling::*[not(self::iref)]) == 0];
+	element $elemtype {
+	    if ($sectionNumber != "") {
+		attribute "id" {
+		    expr $anchor-prefix;
+		    expr ".section.";
+		    expr $sectionNumber;
+		}
+	    }
+	    if ($sectionNumber == "1") {
+		/* pagebreak, this the first section */
+		attribute "class" {
+		    expr "np";
+		}
+
+	    } else if (not(ancestor::section) && not(@myns:notoclink)) {
+		call insert-conditional-pagebreak();
+	    }
+	    call insertInsDelClass();
+	    if ($sectionNumber != "") {
+		<div class="self-section-number"> {
+		    <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+			call emit-section-number($no = $sectionNumber);
+		    }
+		    expr " ";
+		}
+	    }
+	    /* issue tracking? */
+	    if (@ed:resolves) {
+		call insert-issue-pointer();
+	    }
+	    if (@anchor) {
+		<a id=@anchor href="#" _ @anchor> {
+		    call insertTitle();
+		}
         
-        } else if (not(ancestor::section) && not(@myns:notoclink)) {
-            call insert-conditional-pagebreak();
-        
-        } else {
-        }
-        call insertInsDelClass();
-        if ($sectionNumber != "") {
-            <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
-                call emit-section-number($no = $sectionNumber);
-            }
-            expr " ";
-        }
-        /* issue tracking? */
-        if (@ed:resolves) {
-            call insert-issue-pointer();
-        }
-        if (@anchor) {
-            <a id=@anchor href="#" _ @anchor> {
-                call insertTitle();
-            }
-        
-        } else {
-            call insertTitle();
-        }
+	    } else {
+		call insertTitle();
+	    }
+	}
+
+	/* continue with all child elements but the irefs processed above */
+	apply-templates *[not(self::iref)] | iref[count(preceding-sibling::*[not(self::iref)]) != 0];
     }
-    /* continue with all child elements but the irefs processed above */
-    apply-templates *[not(self::iref)] | iref[count(preceding-sibling::*[not(self::iref)]) != 0];
 }
 
 match spanx[@style == "emph" || not(@style)] {
@@ -1846,8 +1851,6 @@ match xref[not(node())] {
                 for-each ($nodes) {
                     expr @title;
                 }
-            
-            } else {
             }
         }
         
@@ -1910,8 +1913,6 @@ match xref[not(node())] {
                 } else {
                     expr $sec;
                 }
-            
-            } else {
             }
         }
         if ($sec == "" ||($fmt != "sec" && $fmt != "number")) {
@@ -1972,8 +1973,6 @@ match xref[not(node())] {
                     expr " ";
                     expr $sec;
                 }
-            
-            } else {
             }
         }
     
@@ -2339,20 +2338,22 @@ template insertAuthors () {
         call get-authors-section-number();
     }
     
-    <h1 id=$anchor-prefix _ ".authors"> {
-        call insert-conditional-pagebreak();
-        if ($number != "") {
-            <a href="#" _ $anchor-prefix _ ".section." _ $number id=$anchor-prefix _ ".section." _ $number> {
-                expr $number;
-                expr ".";
-            }
-            expr " ";
-        }
-        <a href="#" _ $anchor-prefix _ ".authors"> {
-            call get-authors-section-title();
-        }
+    <div class="content"> {
+	<h1 id=$anchor-prefix _ ".authors"> {
+	    call insert-conditional-pagebreak();
+	    if ($number != "") {
+		<a href="#" _ $anchor-prefix _ ".section." _ $number id=$anchor-prefix _ ".section." _ $number> {
+		    expr $number;
+		    expr ".";
+		}
+		    expr " ";
+	    }
+	    <a href="#" _ $anchor-prefix _ ".authors"> {
+		call get-authors-section-title();
+	    }
+	}
+	apply-templates /rfc/front/author;
     }
-    apply-templates /rfc/front/author;
 }
 /* insert copyright statement */
 template insertCopyright () {
@@ -2436,105 +2437,707 @@ template insertCopyright () {
         <section title="Acknowledgement" myns:unnumbered="unnumbered" myns:notoclink="notoclink"> {
             <t> "\n          Funding for the RFC Editor function is currently provided by\n          the Internet Society.\n        ";
         }
-    
-    } else {
     }
 }
 /* insert CSS style info */
 template insertCss () {
-    expr "\na {\n  text-decoration: none;\n}\na.smpl {\n  color: black;\n}\na:hover {\n  text-decoration: underline;\n}\na:active {\n  text-decoration: underline;\n}\naddress {\n  margin-top: 1em;\n  margin-left: 2em;\n  font-style: normal;\n}";
+
+    <style type="text/css" title="Xml2Rfc (sans serif)"> {
+    expr "
+a {
+  text-decoration: none;
+}
+a.smpl {
+  color: black;
+}
+a:hover {
+  text-decoration: underline;
+}
+a:active {
+  text-decoration: underline;
+}
+address {
+  margin-top: 1em;
+  margin-left: 2em;
+  font-style: normal;
+}";
+
     if (//x:blockquote) {
-        expr "\nblockquote {\n  border-style: solid;\n  border-color: gray;\n  border-width: 0 0 0 .25em;\n  font-style: italic;\n  padding-left: 0.5em;\n}";
+        expr "
+blockquote {
+  border-style: solid;
+  border-color: gray;
+  border-width: 0 0 0 .25em;
+  font-style: italic;
+  padding-left: 0.5em;
+}";
+
     }
-    expr "\nbody {";
+
+    expr "
+body {";
+
     if ($xml2rfc-background != "") {
-        expr "\n  background: url(";
+        expr "
+  background: url(";
         expr $xml2rfc-background;
         expr ") #ffffff left top;";
     }
-    expr "\n  color: black;\n  font-family: verdana, helvetica, arial, sans-serif;\n  font-size: 10pt;\n}";
+    expr "
+  color: black;
+  font-family: verdana, helvetica, arial, sans-serif;
+  font-size: 10pt;
+}";
+
     if (//xhtml:p) {
-        expr "\nbr.p {\n  line-height: 150%;\n}";
+        expr "
+br.p {
+  line-height: 150%;
+}";
+
     }
-    expr "\ncite {\n  font-style: normal;\n}";
+    expr "
+cite {
+  font-style: normal;
+}";
+
     if (//x:note) {
-        expr "\ndiv.note {\n  margin-left: 2em;\n}";
+        expr "
+div.note {
+  margin-left: 2em;
+}";
+
     }
-    expr "\ndd {\n  margin-right: 2em;";
+    expr "
+dd {
+  margin-right: 2em;";
+
     if ($xml2rfc-ext-justification == "always") {
-        expr "\n  text-align: justify;";
+        expr "
+  text-align: justify;";
+
     }
-    expr "\n}\ndl {\n  margin-left: 2em;\n}\n";
+    expr "
+}
+dl {
+  margin-left: 2em;
+}
+";
+
     /* spacing between two entries in definition lists */
-    expr "\ndl.empty dd {\n  margin-top: .5em;\n}\ndl p {\n  margin-left: 0em;\n}\ndt {\n  margin-top: .5em;\n}\nh1 {\n  font-size: 14pt;\n  line-height: 21pt;\n  page-break-after: avoid;\n}\nh1.np {\n  page-break-before: always;\n}\nh1 a {\n  color: #333333;\n}\nh2 {\n  font-size: 12pt;\n  line-height: 15pt;\n  page-break-after: avoid;\n}\nh2 a {\n  color: black;\n}\nh3 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh3 a {\n  color: black;\n}\nh4 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh4 a {\n  color: black;\n}\nh5 {\n  font-size: 10pt;\n  page-break-after: avoid;\n}\nh5 a {\n  color: black;\n}\nimg {\n  margin-left: 3em;\n}\nli {\n  margin-left: 2em;\n  margin-right: 2em;";
+    expr "
+dl.empty dd {
+  margin-top: .5em;
+}
+dl p {
+  margin-left: 0em;
+}
+dt {
+  margin-top: .5em;
+}
+h1 {
+  font-size: 14pt;
+/*  line-height: 21pt;*/
+  page-break-after: avoid;
+}
+h1.np {
+  page-break-before: always;
+}
+h1 a {
+  color: #333333;
+}
+h2 {
+  font-size: 12pt;
+/*  line-height: 15pt; */
+  page-break-after: avoid;
+}
+h2 a {
+  color: black;
+}
+h3 {
+  font-size: 10pt;
+  page-break-after: avoid;
+}
+h3 a {
+  color: black;
+}
+h4 {
+  font-size: 10pt;
+  page-break-after: avoid;
+}
+h4 a {
+  color: black;
+}
+h5 {
+  font-size: 10pt;
+  page-break-after: avoid;
+}
+h5 a {
+  color: black;
+}
+img {
+  margin-left: 3em;
+}
+li {
+  margin-left: 2em;
+  margin-right: 2em;";
+
     if ($xml2rfc-ext-justification == "always") {
-        expr "\n  text-align: justify;";
+        expr "
+  text-align: justify;";
+
     }
-    expr "\n}\nol {\n  margin-left: 2em;\n  margin-right: 2em;\n}\nol p {\n  margin-left: 0em;\n}";
+    expr "
+}
+ol {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+ol p {
+  margin-left: 0em;
+}";
+
     if (//xhtml:q) {
-        expr "\nq {\n  font-style: italic;\n}";
+        expr "
+q {
+  font-style: italic;
+}";
+
     }
-    expr "\np {\n  margin-left: 2em;\n  margin-right: 2em;";
+    expr "
+p {
+  margin-left: 2em;
+  margin-right: 2em;";
+
     if ($xml2rfc-ext-justification == "always") {
-        expr "\n  text-align: justify;";
+        expr "
+  text-align: justify;";
+
     }
-    expr "\n}\npre {\n  margin-left: 3em;\n  background-color: lightyellow;\n  padding: .25em;\n}\npre.text2 {\n  border-style: dotted;\n  border-width: 1px;\n  background-color: #f0f0f0;\n  width: 69em;\n}\npre.inline {\n  background-color: white;\n  padding: 0em;\n}\npre.text {\n  border-style: dotted;\n  border-width: 1px;\n  background-color: #f8f8f8;\n  width: 69em;\n}\npre.drawing {\n  border-style: solid;\n  border-width: 1px;\n  background-color: #f8f8f8;\n  padding: 2em;\n}";
+    expr "
+}
+pre {
+  margin-left: 3em;
+  background-color: lightyellow;
+  padding: .25em;
+}
+pre.text2 {
+  border-style: dotted;
+  border-width: 1px;
+  background-color: #f0f0f0;
+  width: 69em;
+}
+pre.inline {
+  background-color: white;
+  padding: 0em;
+}
+pre.text {
+  border-style: dotted;
+  border-width: 1px;
+  background-color: #f8f8f8;
+  width: 69em;
+}
+pre.drawing {
+  border-style: solid;
+  border-width: 1px;
+  background-color: #f8f8f8;
+  padding: 2em;
+}";
+
     if (//x:q) {
-        expr "\nq {\n  font-style: italic;\n}";
+        expr "
+q {
+  font-style: italic;
+}";
+
     }
     if (//x:sup) {
-        expr "\nsup {\n  font-size: 60%;\n}";
+        expr "
+sup {
+  font-size: 60%;
+}";
+
     }
-    expr "\ntable {\n  margin-left: 2em;\n}";
+    expr "
+table {
+  margin-left: 2em;
+}";
+
     if (//texttable) {
-        expr "\ntable.tt {\n  vertical-align: top;\n}\ntable.full {\n  border-style: outset;\n  border-width: 1px;\n}\ntable.headers {\n  border-style: outset;\n  border-width: 1px;\n}\ntable.tt td {\n  vertical-align: top;\n}\ntable.full td {\n  border-style: inset;\n  border-width: 1px;\n}\ntable.tt th {\n  vertical-align: top;\n}\ntable.full th {\n  border-style: inset;\n  border-width: 1px;\n}\ntable.headers th {\n  border-style: none none inset none;\n  border-width: 1px;\n}";
+        expr "
+table.tt {
+  vertical-align: top;
+}
+table.full {
+  border-style: outset;
+  border-width: 1px;
+}
+table.headers {
+  border-style: outset;
+  border-width: 1px;
+}
+table.tt td {
+  vertical-align: top;
+}
+table.full td {
+  border-style: inset;
+  border-width: 1px;
+}
+table.tt th {
+  vertical-align: top;
+}
+table.full th {
+  border-style: inset;
+  border-width: 1px;
+}
+table.headers th {
+  border-style: none none inset none;
+  border-width: 1px;
+}";
+
     }
-    expr "\ntable.header {\n  width: 95%;\n  font-size: 10pt;\n  color: white;\n}\ntd.top {\n  vertical-align: top;\n}\ntd.topnowrap {\n  vertical-align: top;\n  white-space: nowrap; \n}\ntd.header {\n  background-color: gray;\n  width: 50%;\n}";
+    expr "
+table.header {
+  width: 95%;
+  font-size: 10pt;
+  color: white;
+}
+td.top {
+  vertical-align: top;
+}
+td.topnowrap {
+  vertical-align: top;
+  white-space: nowrap; 
+}
+td.header {
+  background-color: gray;
+  width: 50%;
+}";
+
     if (/rfc/@obsoletes |/rfc/@updates) {
-        expr "\ntd.header a {\n  color: white;\n}";
+        expr "
+td.header a {
+  color: white;
+}";
+
     }
-    expr "\ntd.reference {\n  vertical-align: top;\n  white-space: nowrap;\n  padding-right: 1em;\n}\nthead {\n  display:table-header-group;\n}\nul.toc {\n  list-style: none;\n  margin-left: 1.5em;\n  margin-right: 0em;\n  padding-left: 0em;\n}\nli.tocline0 {\n  line-height: 150%;\n  font-weight: bold;\n  font-size: 10pt;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.tocline1 {\n  line-height: normal;\n  font-weight: normal;\n  font-size: 9pt;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.tocline2 {\n  font-size: 0pt;\n}\nul p {\n  margin-left: 0em;\n}\nul.ind {\n  list-style: none;\n  margin-left: 1.5em;\n  margin-right: 0em;\n  padding-left: 0em;\n}\nli.indline0 {\n  font-weight: bold;\n  line-height: 200%;\n  margin-left: 0em;\n  margin-right: 0em;\n}\nli.indline1 {\n  font-weight: normal;\n  line-height: 150%;\n  margin-left: 0em;\n  margin-right: 0em;\n}\n";
+    expr "
+td.reference {
+  vertical-align: top;
+  white-space: nowrap;
+  padding-right: 1em;
+}
+thead {
+  display:table-header-group;
+}
+ul.toc {
+  list-style: none;
+  margin-left: 1.5em;
+  margin-right: 0em;
+  padding-left: 0em;
+}
+li.tocline0 {
+  line-height: 150%;
+  font-weight: bold;
+  font-size: 10pt;
+  margin-left: 0em;
+  margin-right: 0em;
+}
+li.tocline1 {
+  line-height: normal;
+  font-weight: normal;
+  font-size: 9pt;
+  margin-left: 0em;
+  margin-right: 0em;
+}
+li.tocline2 {
+  font-size: 0pt;
+}
+ul p {
+  margin-left: 0em;
+}
+ul.ind {
+  list-style: none;
+  margin-left: 1.5em;
+  margin-right: 0em;
+  padding-left: 0em;
+}
+li.indline0 {
+  font-weight: bold;
+  line-height: 200%;
+  margin-left: 0em;
+  margin-right: 0em;
+}
+li.indline1 {
+  font-weight: normal;
+  line-height: 150%;
+  margin-left: 0em;
+  margin-right: 0em;
+}
+";
+
     if (//x:bcp14) {
-        expr ".bcp14 {\n  font-style: normal;\n  text-transform: lowercase;\n  font-variant: small-caps;\n}";
+        expr ".bcp14 {
+  font-style: normal;
+  text-transform: lowercase;
+  font-variant: small-caps;
+}";
+
     }
     if (//x:blockquote) {
-        expr "\nblockquote > * .bcp14 {\n  font-style: italic;\n}";
+        expr "
+blockquote > * .bcp14 {
+  font-style: italic;
+}";
+
     }
-    expr "\n.comment {\n  background-color: yellow;\n}";
+    expr "
+.comment {
+  background-color: yellow;
+}";
+
     if ($xml2rfc-editing == "yes") {
-        expr "\n.editingmark {\n  background-color: khaki;\n}";
+        expr "
+.editingmark {
+  background-color: khaki;
+}";
+
     }
-    expr "\n.center {\n  text-align: center;\n}\n.error {\n  color: red;\n  font-style: italic;\n  font-weight: bold;\n}\n.figure {\n  font-weight: bold;\n  text-align: center;\n  font-size: 9pt;\n}\n.filename {\n  color: #333333;\n  font-weight: bold;\n  font-size: 12pt;\n  line-height: 21pt;\n  text-align: center;\n}\n.fn {\n  font-weight: bold;\n}\n.hidden {\n  display: none;\n}\n.left {\n  text-align: left;\n}\n.right {\n  text-align: right;\n}\n.title {\n  color: #990000;\n  font-size: 18pt;\n  line-height: 18pt;\n  font-weight: bold;\n  text-align: center;\n  margin-top: 36pt;\n}\n.vcardline {\n  display: block;\n}\n.warning {\n  font-size: 14pt;\n  background-color: yellow;\n}\n";
+    expr "
+.center {
+  text-align: center;
+}
+.error {
+  color: red;
+  font-style: italic;
+  font-weight: bold;
+}
+.figure {
+  font-weight: bold;
+  text-align: center;
+  font-size: 9pt;
+}
+.filename {
+  color: #333333;
+  font-weight: bold;
+  font-size: 12pt;
+  line-height: 21pt;
+  text-align: center;
+}
+.fn {
+  font-weight: bold;
+}
+.hidden {
+  display: none;
+}
+.left {
+  text-align: left;
+}
+.right {
+  text-align: right;
+}
+.title {
+  color: #990000;
+  font-size: 18pt;
+  line-height: 18pt;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 36pt;
+}
+.vcardline {
+  display: block;
+}
+.warning {
+  font-size: 14pt;
+  background-color: yellow;
+}
+";
+
     if ($has-edits) {
-        expr "del {\n  color: red;\n  text-decoration: line-through;\n}\n.del {\n  color: red;\n  text-decoration: line-through;\n}\nins {\n  color: green;\n  text-decoration: underline;\n}\n.ins {\n  color: green;\n  text-decoration: underline;\n}\ndiv.issuepointer {\n  float: left;\n}";
+        expr "del {
+  color: red;
+  text-decoration: line-through;
+}
+.del {
+  color: red;
+  text-decoration: line-through;
+}
+ins {
+  color: green;
+  text-decoration: underline;
+}
+.ins {
+  color: green;
+  text-decoration: underline;
+}
+div.issuepointer {
+  float: left;
+}";
+
     }
     if (//ed:issue) {
-        expr "\ntable.openissue {\n  background-color: khaki;\n  border-width: thin;\n  border-style: solid;\n  border-color: black;\n}\ntable.closedissue {\n  background-color: white;\n  border-width: thin;\n  border-style: solid;\n  border-color: gray;\n  color: gray; \n}\nthead th {\n  text-align: left;\n}\n.bg-issue {\n  border: solid;\n  border-width: 1px;\n  font-size: 7pt;\n}\n.closed-issue {\n  border: solid;\n  border-width: thin;\n  background-color: lime;\n  font-size: smaller;\n  font-weight: bold;\n}\n.open-issue {\n  border: solid;\n  border-width: thin;\n  background-color: red;\n  font-size: smaller;\n  font-weight: bold;\n}\n.editor-issue {\n  border: solid;\n  border-width: thin;\n  background-color: yellow;\n  font-size: smaller;\n  font-weight: bold;\n}";
+        expr "
+table.openissue {
+  background-color: khaki;
+  border-width: thin;
+  border-style: solid;
+  border-color: black;
+}
+table.closedissue {
+  background-color: white;
+  border-width: thin;
+  border-style: solid;
+  border-color: gray;
+  color: gray; 
+}
+thead th {
+  text-align: left;
+}
+.bg-issue {
+  border: solid;
+  border-width: 1px;
+  font-size: 7pt;
+}
+.closed-issue {
+  border: solid;
+  border-width: thin;
+  background-color: lime;
+  font-size: smaller;
+  font-weight: bold;
+}
+.open-issue {
+  border: solid;
+  border-width: thin;
+  background-color: red;
+  font-size: smaller;
+  font-weight: bold;
+}
+.editor-issue {
+  border: solid;
+  border-width: thin;
+  background-color: yellow;
+  font-size: smaller;
+  font-weight: bold;
+}";
+
     }
-    expr "\n\n@media print {\n  .noprint {\n    display: none;\n  }\n  \n  a {\n    color: black;\n    text-decoration: none;\n  }\n\n  table.header {\n    width: 90%;\n  }\n\n  td.header {\n    width: 50%;\n    color: black;\n    background-color: white;\n    vertical-align: top;\n    font-size: 12pt;\n  }\n\n  ul.toc a::after {\n    content: leader('.') target-counter(attr(href), page);\n  }\n  \n  a.iref {\n    content: target-counter(attr(href), page);\n  }\n  \n  .print2col {\n    column-count: 2;\n    -moz-column-count: 2;";
+    expr "
+
+@media print {
+  .noprint {
+    display: none;
+  }
+  
+  a {
+    color: black;
+    text-decoration: none;
+  }
+
+  table.header {
+    width: 90%;
+  }
+
+  td.header {
+    width: 50%;
+    color: black;
+    background-color: white;
+    vertical-align: top;
+    font-size: 12pt;
+  }
+
+  ul.toc a::after {
+    content: leader('.') target-counter(attr(href), page);
+  }
+  
+  a.iref {
+    content: target-counter(attr(href), page);
+  }
+  
+  .print2col {
+    column-count: 2;
+    -moz-column-count: 2;";
+
     /* for Firefox */
-    expr "\n    column-fill: auto;";
+    expr "
+    column-fill: auto;";
+
     /* for PrinceXML */
-    expr "\n  }\n";
+    expr "
+  }
+";
+
     if ($xml2rfc-ext-justification == "print") {
-        expr "\n  dd {\n    text-align: justify;\n  }\n  li {\n    text-align: justify;\n  }\n  p {\n    text-align: justify;\n  }\n";
+        expr "
+  dd {
+    text-align: justify;
+  }
+  li {
+    text-align: justify;
+  }
+  p {
+    text-align: justify;
+  }
+";
+
     }
-    expr "}\n\n@page {\n  @top-left {\n       content: \"";
+    expr "}
+
+@page {
+  @top-left {
+       content: \"";
+
     call get-header-left();
-    expr "\"; \n  } \n  @top-right {\n       content: \"";
+    expr "\";
+ 
+  } 
+  @top-right {
+       content: \"";
+
     call get-header-right();
-    expr "\"; \n  } \n  @top-center {\n       content: \"";
+    expr "\";
+ 
+  } 
+  @top-center {
+       content: \"";
+
     call get-header-center();
-    expr "\"; \n  } \n  @bottom-left {\n       content: \"";
+    expr "\";
+ 
+  } 
+  @bottom-left {
+       content: \"";
+
     call get-author-summary();
-    expr "\"; \n  } \n  @bottom-center {\n       content: \"";
+    expr "\";
+ 
+  } 
+  @bottom-center {
+       content: \"";
+
     call get-category-long();
-    expr "\"; \n  } \n  @bottom-right {\n       content: \"[Page \" counter(page) \"]\"; \n  } \n}\n\n@page:first { \n    @top-left {\n      content: normal;\n    }\n    @top-right {\n      content: normal;\n    }\n    @top-center {\n      content: normal;\n    }\n}\n\ndiv.tooltip {\n  border: solid 1px #666666;\n  padding: 0px;\n  position: absolute;\n  z-index: 100;\n  display: none;\n  color: #333333;\n  top: 20px;\n  left: 90px;\n  background-color: #ffffcc;\n  layer-background-color: #ffffcc;\n}\n\ndiv.fancy-tooltip-empty-header {\n  text-align: left;\n  font-weight: bold;\n  margin: 2px;\n}\n\ndiv.fancy-tooltip-header {\n  text-align: left;\n  font-weight: bold;\n  margin: 2px 2px 0px 2px;\n  border-bottom: 1px solid black;\n}\n\ndiv.fancy-tooltip-body {\n  font-weight: normal;\n  margin: 4px;\n}\n\ndiv.fancy-tooltip-body ul, div.fancy-tooltip-body li  {\n  padding: 1px 4px 1px 4px;\n  margin: 1px 2px 1px 8px;\n}\n\nspan.digress {\n  background-color: #778899;\n  font: courier new, courier, monospace;\n  color: black;\n  font-weight: bold;\n  font-size: 10px;\n  border: 1px solid #aaaaaa;\n}\n\nspan.digress-anchor {\n  margin: 10pt 20pt 10pt 50pt;\n}\n\na.digress-anchor:link, a.digress-anchor:visited, \n        a.digress-anchor-hover, a.digress-anchor,active {\n  text-decoration: none;\n  color: black;\n}\n\n";
+    expr "\";
+ 
+  } 
+  @bottom-right {
+       content: \"[Page \" counter(page) \"]\";
+ 
+  } 
+}
+
+@page:first { 
+    @top-left {
+      content: normal;
+    }
+    @top-right {
+      content: normal;
+    }
+    @top-center {
+      content: normal;
+    }
+}
+
+div.tooltip {
+  border: solid 1px #666666;
+  padding: 0px;
+  position: absolute;
+  z-index: 100;
+  display: none;
+  color: #333333;
+  top: 20px;
+  left: 90px;
+  background-color: #ffffcc;
+  layer-background-color: #ffffcc;
+}
+
+div.fancy-tooltip-empty-header {
+  text-align: left;
+  font-weight: bold;
+  margin: 2px;
+}
+
+div.fancy-tooltip-header {
+  text-align: left;
+  font-weight: bold;
+  margin: 2px 2px 0px 2px;
+  border-bottom: 1px solid black;
+}
+
+div.fancy-tooltip-body {
+  font-weight: normal;
+  margin: 4px;
+}
+
+div.fancy-tooltip-body ul, div.fancy-tooltip-body li  {
+  padding: 1px 4px 1px 4px;
+  margin: 1px 2px 1px 8px;
+}
+
+span.digress {
+  background-color: #778899;
+  font: courier new, courier, monospace;
+  color: black;
+  font-weight: bold;
+  font-size: 10px;
+  border: 1px solid #aaaaaa;
+}
+
+span.digress-anchor {
+  margin: 10pt 20pt 10pt 50pt;
+}
+
+a.digress-anchor:link, a.digress-anchor:visited, 
+        a.digress-anchor-hover, a.digress-anchor,active {
+  text-decoration: none;
+  color: black;
+}
+
+";
+    }
+
+    var $css-files := {
+	<file> "outline.css";
+    }
+
+    if ($tools-inline) {
+	for $file ($css-files/file) {
+	    var $content = document($file _ ".xml");
+	    <style type="text/css"> {
+		copy-of string($content);
+	    }
+	}
+    } else {
+	for $file ($css-files/file) {
+	    <link type="text/css" rel="Stylesheet"
+			  href=$tools-install-dir _ "/" _ $file>;
+	}
+    }
 }
 
 template insertJavascript () {
-    expr "\nfunction popClick(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        popDown(event, objectId);\n        sc[objectId] = false;\n    } else {\n        popUp(event, objectId);\n        if (!sc) {\n            window[\"stickyClick\"] = sc = [];\n        }\n        sc[objectId] = true;\n    }\n    return false;\n}\n\nfunction popUp(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        return;\n    }\n\n    if (document.getElementById == null)\n        return;\n    var ie = document.all ? 1 : 0;      /* Is this Internet Explorer? */\n    var dm = document.getElementById(objectId);\n    if (dm == null)\n        return;\n\n    var ds = dm.style;\n    var widthPage = window.innerWidth ? window.innerWidth\n                : document.body.clientWidth;\n\n    var elementWidth = dm.offsetWidth;\n    var top;\n    var left;\n\n    if (event.pageY) {\n        top = event.pageY + 10;\n        left = event.pageX + 10;\n    } else if (event.clientY) {\n        top = event.clientY + 10;\n        left = event.clientX + 10;\n    } else {\n        return;\n    }    \n\n    if (left + elementWidth > widthPage)\n        left = widthPage - elementWidth - 25;\n\n    if (ie) {\n        ds.width = \"1200px\";\n        ds.display = \"block\";\n        var cw = dm.firstChild.clientWidth;\n        if (cw > widthPage - left - 10) {\n            cw = widthPage - left - 10;\n        }\n        ds.width = cw + \"px\";\n    }\n\n    ds.left = \"10px\";\n    ds.top = top + \"px\";\n    ds.width = widthPage / 2 + \"px\";\n    ds.display = \"block\";\n\n    var tm = document.getElementById(\"table-\" + objectId);\n    if (tm == null)\n        return;\n\n    elementWidth = tm.offsetWidth;\n    if (left + elementWidth > widthPage)\n        left = widthPage - elementWidth - 25;\n\n    ds.left = left + \"px\";\n}\n\nfunction popDown(event, objectId) {\n    var sc = window[\"stickyClick\"];\n    if (sc && sc[objectId]) {\n        return;\n    }\n\n    if (document.getElementById == null)\n        return;\n    var dm = document.getElementById(objectId);\n    if (dm) {\n        dm.style.display = \"none\";\n    }\n}\n  \n";
+    var $js-files := {
+	<file> "jquery.js";
+	<file> "jquery-ui.js";
+	<file> "jquery.dbgpr.js";
+	<file> "tools-tips.js";
+	<file> "outline-nav.js";
+    }
+
+    if ($tools-inline) {
+	for $file ($js-files/file) {
+	    var $content = document($file _ ".xml");
+	    <script type="text/javascript"> {
+		copy-of string($content);
+	    }
+	}
+    } else {
+	for $file ($js-files/file) {
+	    <script type="text/javascript" src=$tools-install-dir _ "/" _ $file> {
+	        expr "";
+	    }
+	}
+    }
 }
+
 /* generate the index section */
 template insertSingleIref () {
     if (@ed:xref) {
@@ -3001,14 +3604,16 @@ template insertPreamble () {
 match / {
     mode "toc";
     
-    <hr class="noprint">;
-    <h1 class="np" id=$anchor-prefix _ ".toc"> {
-        /* this pagebreak occurs always */
-        <a href="#" _ $anchor-prefix _ ".toc"> "Table of Contents";
-    }
-    <ul class="toc"> {
-        apply-templates {
-            mode "toc";
+    <div id="toc"> {
+	<h1 class="np" id=$anchor-prefix _ ".toc"> {
+	    /* this pagebreak occurs always */
+	    <a href="#" _ $anchor-prefix _ ".toc"> "Table of Contents";
+	}
+
+	<ul class="toc"> {
+	    apply-templates {
+		mode "toc";
+	    }
         }
     }
 }
@@ -3046,8 +3651,10 @@ template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $wasch
                 }
             }
             if ($number != "") {
-                call emit-section-number($no = $number);
-                expr "   ";
+		<div class="section-number"> {
+		    call emit-section-number($no = $number);
+		    expr "   ";
+		}
             }
             <a href="#" _ $target> {
                 if ($waschanged != "") {
@@ -3200,10 +3807,13 @@ match section | appendix {
     /* obtain content, just to check whether we need to recurse at all */
     var $content = <li> {
         call insert-toc-line($number = $sectionNumber, $target, $title = @title, $tocparam = @toc, $oldtitle = @ed:old-title, $waschanged = @ed:resolves);
-        <ul class="toc"> {
-            apply-templates {
-                mode "toc";
-            }
+	<ul> {
+	    attribute "class" {
+		expr "toc";
+		if (not(contains($sectionNumber, "."))) {
+		    expr " top-toc";
+		}
+	    }
         }
     }
     
@@ -3218,7 +3828,13 @@ match section | appendix {
             }
             /* only recurse if we need to (do not produce useless list container) */
             if ($nested-content != "") {
-                <ul class="toc"> {
+                <ul> {
+		    attribute "class" {
+			expr "toc";
+			if (not(contains($sectionNumber, "."))) {
+			    expr " top-toc";
+			}
+		    }
                     apply-templates {
                         mode "toc";
                     }
@@ -3572,8 +4188,6 @@ match x:parse-xml {
             if ($parsed == "foo") {
                 comment "should not get here";
             }
-        
-        } else {
         }
     }
 }
@@ -5136,8 +5750,6 @@ param $xml2rfc-ext-pub-day = {
     
     } else if (function-available("date:day-in-month") && $may-default-dates == "yes") {
         expr date:day-in-month();
-    
-    } else {
     }
 }
 
