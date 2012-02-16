@@ -2643,6 +2643,37 @@ external use.  This section documents the external functions.
 
 ** SLAX External Functions
 
+*** slax:base64-decode
+
+Use the slax:base64-decode function to decode BASE64 encoded data.
+BASE64 is means of encoding arbitrary data into a radix-64 format
+that can be more easily transmitted, typically via STMP or HTTP.
+
+The argument is a string of BASE64 encoded data and an option string
+which is used to replace any non-XML control characters, if any, in
+the decoded string.  The decoded data is returned to the caller.
+
+    SYNTAX::
+        string slax:base64-decode(string [,control])
+
+    EXAMPLE::
+        var $real-data = slax:base64-decode($encoded-data, "@");
+
+*** slax:base64-encode
+
+Use the slax:base64-encode function to encode a string of data in the
+BASE64 encoding format.  BASE64 is means of encoding arbitrary data
+into a radix-64 format that can be more easily transmitted, typically
+via STMP or HTTP.
+
+The argument is a string of data, and the encoded data is returned.
+
+    SYNTAX::
+        string slax:base64-encode(string)
+
+    EXAMPLE::
+        var $encoded-data = slax:base64-encode($real-data);
+
 *** slax:break-lines
 
 Use the slax:break-lines function to break multi-line text content
@@ -2675,6 +2706,34 @@ react to this condition.
         } else {
             <reset>;
         }
+
+*** slax:document
+
+Use the slax:document() function to read a data from a file or URL.
+The data can be encoded in any character set (defaulting to "utf-8")
+and can be BASE64 encoded.  In addition, non-XML control characters,
+if any, can be replaced.
+
+    SYNTAX::
+        string slax:document(url [, options])
+
+    EXAMPLE::
+        var $data = slax:document($url);
+
+	var $options := {
+            <format> "base64";
+            <encoding> "ascii";
+            <non-xml> "#";
+        }
+        var $data2 = slax:document($url, $options);
+
+|------------+-------------------------------------|
+| Option     | Description                         |
+|------------+-------------------------------------|
+| <non-xml>  | Skip field if value has not changed |
+| <encoding> | Prepend TAG if string is not empty  |
+| <format>   | "base64" for BASE64-encoded data    |
+|------------+-------------------------------------|
 
 *** slax:evaluate
 

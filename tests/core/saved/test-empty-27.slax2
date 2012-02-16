@@ -30,7 +30,7 @@ match / {
         var $opts = {
             <format> "base64";
             <encoding> "utf-8";
-            <control-character> "X";
+            <non-xml> "X";
         }
         <test2> slax:document("hello.txt", $opts);
         <redirect:write href="hello.txt" method="text"> "AQwQaAECBXkgc291EAoGAQwMBQ4K";
@@ -38,7 +38,7 @@ match / {
         var $opts2 = {
             <format> "base64";
             <encoding> "utf-8";
-            <control-character> "က";
+            <non-xml> "က";
         }
         <test3> slax:document("hello.txt", $opts2);
     }

@@ -36,7 +36,7 @@ match / {
 	var $opts = {
 	    <format> "base64";
 	    <encoding> "utf-8";
-	    <control-character> "X";
+	    <non-xml> "X";
 	}
 
 	<test2> { expr slax:document("hello.txt", $opts); }
@@ -50,7 +50,7 @@ match / {
 	var $opts2 = {
 	    <format> "base64";
 	    <encoding> "utf-8";
-	    <control-character> "\u+1000";
+	    <non-xml> "\u+1000";
 	}
 	<test3> { expr slax:document("hello.txt", $opts2); }
     }

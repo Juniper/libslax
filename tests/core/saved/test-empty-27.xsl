@@ -46,7 +46,7 @@
       <xsl:variable name="opts">
         <format>base64</format>
         <encoding>utf-8</encoding>
-        <control-character>X</control-character>
+        <non-xml>X</non-xml>
       </xsl:variable>
       <test2>
         <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts)"/>
@@ -60,7 +60,7 @@
       <xsl:variable name="opts2">
         <format>base64</format>
         <encoding>utf-8</encoding>
-        <control-character>က</control-character>
+        <non-xml>က</non-xml>
       </xsl:variable>
       <test3>
         <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts2)"/>

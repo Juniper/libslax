@@ -2171,14 +2171,14 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 struct slaxDocumentOptions {
     xmlCharEncoding sdo_encoding; /* Name of text encoding scheme */
     int sdo_base64;		/* Boolean: do base64 decode */
-    xmlChar *sdo_control;	/* Text to replace control characters */
+    xmlChar *sdo_non_xml;	/* Text to replace non-xml characters */
     xmlChar *sdo_rpath;		/* Relative path/base for document */
 };
 
 static void
 slaxExtDocumentOptionsClear (struct slaxDocumentOptions *sdop)
 {
-    xmlFreeAndEasy(sdop->sdo_control);
+    xmlFreeAndEasy(sdop->sdo_non_xml);
     xmlFreeAndEasy(sdop->sdo_rpath);
 }
 
@@ -2195,8 +2195,8 @@ slaxExtDocumentOptionsSet (struct slaxDocumentOptions *sdop,
 	    sdop->sdo_encoding = XML_CHAR_ENCODING_UTF8;
     } else if (streq((const char *) name, "relative-path")) {
 	sdop->sdo_rpath = xmlStrdup(value);
-    } else if (streq((const char *) name, "control-character")) {
-	sdop->sdo_control = xmlStrdup(value);
+    } else if (streq((const char *) name, "non-xml")) {
+	sdop->sdo_non_xml = xmlStrdup(value);
     }
 }
 
@@ -2239,18 +2239,18 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 }
 
 static void
-slaxExtRewriteControlCharacters (char **datap, size_t *lenp,
-				 const xmlChar *control)
+slaxExtRewriteNonXmlCharacters (char **datap, size_t *lenp,
+				 const xmlChar *non_xml)
 {
     char *data = *datap;
     size_t len = *lenp;
     char *cp;
     size_t i;
 
-    if (control[1] == '\0') {
+    if (non_xml[1] == '\0') {
 	for (i = 0, cp = data; i < len; i++, cp++)
 	    if (!xmlIsChar_ch(*cp))
-		*cp = control[0];
+		*cp = non_xml[0];
 
     } else {
 	int count;
@@ -2260,14 +2260,14 @@ slaxExtRewriteControlCharacters (char **datap, size_t *lenp,
 		count += 1;
 
 	if (count) {
-	    int add = xmlStrlen(control);
+	    int add = xmlStrlen(non_xml);
 	    size_t nlen = len + count * (add - 1);
 	    char *newp = xmlMalloc(nlen + 1), *np = newp;
 
 	    if (newp) {
 		for (i = 0, count = 0, cp = data; i < len; i++, cp++)
 		    if (!xmlIsChar_ch(*cp)) {
-			memcpy(np, control, add);
+			memcpy(np, non_xml, add);
 			np += add;
 		    } else {
 			*np++ = *cp;
@@ -2374,12 +2374,12 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
     }
 
     /*
-     * The control characters value is a single character to replace
-     * all control characters.  This is required since XML documents
-     * cannot contain control characters (which is exceedingly lame).
+     * The non-xml value is a single character to replace
+     * all non-xml characters.  This is required since XML documents
+     * cannot contain some control characters (which is exceedingly lame).
      */
-    if (sdo.sdo_control)
-	slaxExtRewriteControlCharacters(&data, &len, sdo.sdo_control);
+    if (sdo.sdo_non_xml)
+	slaxExtRewriteNonXmlCharacters(&data, &len, sdo.sdo_non_xml);
 
     /* Generate our returnable object */
     ret = xmlXPathWrapString((xmlChar *) data);
@@ -2396,13 +2396,13 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
 static void
 slaxExtBase64Decode (xmlXPathParserContext *ctxt, int nargs)
 {
-    xmlChar *control = NULL;
+    xmlChar *non_xml = NULL;
     char *data;
 
     if (nargs == 1) {
 	data = (char *) xmlXPathPopString(ctxt);
     } else if (nargs == 2) {
-	control = xmlXPathPopString(ctxt);
+	non_xml = xmlXPathPopString(ctxt);
 	data = (char *) xmlXPathPopString(ctxt);
     } else {
 	xmlXPathSetArityError(ctxt);
@@ -2424,8 +2424,8 @@ slaxExtBase64Decode (xmlXPathParserContext *ctxt, int nargs)
 	len = dlen;
     }
 
-    if (control && *control)
-	slaxExtRewriteControlCharacters(&data, &len, control);
+    if (non_xml && *non_xml)
+	slaxExtRewriteNonXmlCharacters(&data, &len, non_xml);
 
     xmlXPathReturnString(ctxt, (xmlChar *) data);
 }
@@ -2542,10 +2542,10 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 }
 
 /*
- * Remove illegal control characters from the input string.
+ * Remove illegal non-XML characters from the input string.
  */
 static void
-slaxExtRemoveControlChars (char *input)
+slaxExtRemoveNonXmlChars (char *input)
 {
     int len, i, count = 0;
 
@@ -2557,8 +2557,8 @@ slaxExtRemoveControlChars (char *input)
     for (i = 0; i < len; i++) {
 	/*
 	 * Allow newline, carriage return and tab characters but no
-	 * other control characters.  One of the most shocking sins
-	 * of XML is that it cannot encode control characters, so
+	 * other non-xml characters.  One of the most shocking sins
+	 * of XML is that it cannot encode non-xml characters, so
 	 * we have no choice but to drop them.
 	 */
 	if (input[i] != '\n' && input[i] != '\r'&& input[i] != '\t') {
@@ -2603,11 +2603,11 @@ slaxExtMessage (xmlXPathParserContext *ctxt, int nargs,
      */
     if (pb.pb_buf) {
 	/*
-	 * Remove the control characters from the string. This string is
+	 * Remove the non-xml characters from the string. This string is
 	 * output for the functions 'jcs:output', 'jcs:progress' and
 	 * 'jcs:trace'.
 	 */
-	slaxExtRemoveControlChars(pb.pb_buf);
+	slaxExtRemoveNonXmlChars(pb.pb_buf);
 	func(pb.pb_buf);
 	xmlFree(pb.pb_buf);
     }
