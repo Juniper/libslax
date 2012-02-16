@@ -48,12 +48,17 @@ EXTRA_DIST = \
     ${QUICKREFVERS}.pdf
 
 DOC_FILES = \
-    outline.css \
-    jquery.js \
-    jquery-ui.js \
-    jquery.dbgpr.js \
-    tools-tips.js \
-    outline-nav.js
+    tools/jquery-ui.js \
+    tools/jquery.dbgpr.js \
+    tools/jquery.js \
+    tools/outline-nav.js \
+    tools/outline.css \
+    tools/rfc2629-other.ent \
+    tools/rfc2629-to-html.slax \
+    tools/rfc2629-to-html.xslt \
+    tools/rfc2629-xhtml.ent \
+    tools/rfc2629.dtd \
+    tools/tools-tips.js
 
 EXTRA_DIST += ${DOC_FILES}
 

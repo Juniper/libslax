@@ -2651,7 +2651,8 @@ that can be more easily transmitted, typically via STMP or HTTP.
 
 The argument is a string of BASE64 encoded data and an option string
 which is used to replace any non-XML control characters, if any, in
-the decoded string.  The decoded data is returned to the caller.
+the decoded string.  If this argument is an empty string, then non-xml
+characters will be removed.  The decoded data is returned to the caller.
 
     SYNTAX::
         string slax:base64-decode(string [,control])
@@ -2734,6 +2735,10 @@ if any, can be replaced.
 | <encoding> | Prepend TAG if string is not empty  |
 | <format>   | "base64" for BASE64-encoded data    |
 |------------+-------------------------------------|
+
+If the <non-xml> value is an empty string, then non-xml characters
+will be removed, otherwise they will be replaced with the given
+string. 
 
 *** slax:evaluate
 
