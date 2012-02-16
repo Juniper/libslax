@@ -2247,7 +2247,17 @@ slaxExtRewriteNonXmlCharacters (char **datap, size_t *lenp,
     char *cp;
     size_t i;
 
-    if (non_xml[1] == '\0') {
+    if (non_xml[0] == '\0') {
+	/* If the string is empty, remove non-xml characters */
+	char *op;
+	for (i = 0, op = cp = data; i < len; i++, cp++)
+	    if (xmlIsChar_ch(*cp))
+		*op++ = *cp;
+	*op = '\0';
+	len = op - data;
+
+    } else if (non_xml[1] == '\0') {
+	/* If the string is length == 1 , replace non-xml characters */
 	for (i = 0, cp = data; i < len; i++, cp++)
 	    if (!xmlIsChar_ch(*cp))
 		*cp = non_xml[0];

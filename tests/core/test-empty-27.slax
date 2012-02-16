@@ -47,11 +47,24 @@ match / {
 
 	<test3> { expr slax:document("hello.txt", $opts); }
 
-	var $opts2 = {
+	var $opts3 = {
 	    <format> "base64";
 	    <encoding> "utf-8";
 	    <non-xml> "\u+1000";
 	}
-	<test3> { expr slax:document("hello.txt", $opts2); }
+	<test3> { expr slax:document("hello.txt", $opts3); }
+
+	var $opts4 = {
+	    <format> "base64";
+	    <non-xml> "";
+	}
+	<test4> { expr slax:document("hello.txt", $opts4); }
+
+	var $opts5 = {
+	    <format> "base64";
+	    <encoding> "utf-8";
+	    <non-xml> "[invalid]";
+	}
+	<test5> { expr slax:document("hello.txt", $opts5); }
     }
 }

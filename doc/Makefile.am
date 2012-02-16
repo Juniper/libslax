@@ -47,20 +47,19 @@ EXTRA_DIST = \
     ${QUICKREF}.pdf \
     ${QUICKREFVERS}.pdf
 
-DOC_FILES = \
-    tools/jquery-ui.js \
-    tools/jquery.dbgpr.js \
-    tools/jquery.js \
-    tools/outline-nav.js \
-    tools/outline.css \
-    tools/rfc2629-other.ent \
-    tools/rfc2629-to-html.slax \
-    tools/rfc2629-to-html.xslt \
-    tools/rfc2629-xhtml.ent \
-    tools/rfc2629.dtd \
-    tools/tools-tips.js
+OXTRADOC_FILES = \
+    oxtradoc/jquery-ui.js \
+    oxtradoc/jquery.dbgpr.js \
+    oxtradoc/jquery.js \
+    oxtradoc/rfc2629-to-html.slax \
+    oxtradoc/rfc2629-other.ent \
+    oxtradoc/rfc2629-xhtml.ent \
+    oxtradoc/rfc2629.dtd \
+    oxtradoc/oxtradoc-nav.js \
+    oxtradoc/oxtradoc.css \
+    oxtradoc/oxtradoc-tips.js
 
-EXTRA_DIST += ${DOC_FILES}
+EXTRA_DIST += ${OXTRADOC_FILES}
 
 doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREFVERS}.pdf
 

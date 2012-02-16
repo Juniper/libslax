@@ -57,14 +57,23 @@
       <test3>
         <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts)"/>
       </test3>
-      <xsl:variable name="opts2">
+      <xsl:variable name="opts3">
         <format>base64</format>
         <encoding>utf-8</encoding>
         <non-xml>က</non-xml>
       </xsl:variable>
       <test3>
-        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts2)"/>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts3)"/>
       </test3>
+      <xsl:variable name="opts4">
+        <format>base64</format>
+        <non-xml>
+          <xsl:text></xsl:text>
+        </non-xml>
+      </xsl:variable>
+      <test4>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts4)"/>
+      </test4>
     </out>
   </xsl:template>
 </xsl:stylesheet>
