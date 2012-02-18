@@ -74,6 +74,14 @@
       <test4>
         <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts4)"/>
       </test4>
+      <xsl:variable name="opts5">
+        <format>base64</format>
+        <encoding>utf-8</encoding>
+        <non-xml>[invalid]</non-xml>
+      </xsl:variable>
+      <test5>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:document(&quot;hello.txt&quot;, $opts5)"/>
+      </test5>
     </out>
   </xsl:template>
 </xsl:stylesheet>

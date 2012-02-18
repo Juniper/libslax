@@ -12,22 +12,22 @@ BINDIR = ~/work/yang/bin
 OUTLINE2XML = ${BINDIR}/outline2xml
 XML2RFC = ${BINDIR}/xml2rfc.tcl
 XML2HTMLDIR = `dirname ${XML2HTMLBIN}`
-TOOLS_DIR = ${srcdir}/tools
-XML2HTMLBIN = ${TOOLS_DIR}/rfc2629-to-html.slax
-SLAXPROC = slaxproc ${SLAXOPTS}
+OXTRADOC_DIR = ${srcdir}/oxtradoc
+XML2HTMLBIN = ${OXTRADOC_DIR}/rfc2629-to-html.slax
+SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
 
 SLAXPROC_ARGS = \
-    -a tools-dir ${TOOLS_DIR} \
-    -a tools-install-dir ${TOOLS_DIR} \
+    -a oxtradoc-dir ${OXTRADOC_DIR} \
+    -a oxtradoc-install-dir ${OXTRADOC_DIR} \
     -a anchor-prefix docs
 
 SLAXPROC_ARGS_INLINE = \
-    -a tools-inline yes
+    -a oxtradoc-inline yes
 
 SLAXPROC_ARGS += ${SLAXPROC_ARGS_INLINE}
 
 XML2HTML = \
-    ${SLAXPROC} -g -e -I ${TOOLS_DIR} -I . \
+    ${SLAXPROC} -g -e -I ${OXTRADOC_DIR} -I . \
     ${SLAXPROC_ARGS} \
     ${XML2HTMLBIN}
 

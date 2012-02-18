@@ -42,9 +42,10 @@ ns saxon exclude = "http://saxon.sf.net/";
 ns x exclude = "http://purl.org/net/xml2rfc/ext";
 ns xhtml exclude = "http://www.w3.org/1999/xhtml";
 
-param $tools-dir = ".";
-param $tools-inline;
-param $tools-install-dir = ".";
+param $oxtradoc-dir = ".";
+param $oxtradoc-inline;
+param $oxtradoc-install-dir = ".";
+param $oxtradoc-numbers;
 
 strip-space back front list middle rfc section;
 output-method html {
@@ -1337,9 +1338,13 @@ match rfc {
                 }
             }
         }
+
         <body style="font-size: 80%"> {
+	    <div id="media-inspector">;
+
             /* insert diagnostics */
             call insert-diagnostics();
+
             apply-templates front;
             apply-templates middle;
             apply-templates back;
@@ -2442,6 +2447,24 @@ template insertCopyright () {
 /* insert CSS style info */
 template insertCss () {
 
+    var $css-files := {
+	<file> "oxtradoc.css";
+    }
+
+    if ($oxtradoc-inline) {
+	for $file ($css-files/file) {
+	    var $content = slax:document($oxtradoc-dir _ "/" _ $file);
+	    <style type="text/css"> {
+		copy-of string($content);
+	    }
+	}
+    } else {
+	for $file ($css-files/file) {
+	    <link type="text/css" rel="Stylesheet"
+			  href=$oxtradoc-install-dir _ "/" _ $file>;
+	}
+    }
+
     <style type="text/css" title="Xml2Rfc (sans serif)"> {
     expr "
 a {
@@ -2524,6 +2547,15 @@ dl {
 }
 ";
 
+    if ($oxtradoc-numbers) {
+	expr "
+div.self-section-number, div.section-number {
+    display: inline;
+}
+";
+    }
+
+
     /* spacing between two entries in definition lists */
     expr "
 dl.empty dd {
@@ -2534,46 +2566,6 @@ dl p {
 }
 dt {
   margin-top: .5em;
-}
-h1 {
-  font-size: 14pt;
-/*  line-height: 21pt;*/
-  page-break-after: avoid;
-}
-h1.np {
-  page-break-before: always;
-}
-h1 a {
-  color: #333333;
-}
-h2 {
-  font-size: 12pt;
-/*  line-height: 15pt; */
-  page-break-after: avoid;
-}
-h2 a {
-  color: black;
-}
-h3 {
-  font-size: 10pt;
-  page-break-after: avoid;
-}
-h3 a {
-  color: black;
-}
-h4 {
-  font-size: 10pt;
-  page-break-after: avoid;
-}
-h4 a {
-  color: black;
-}
-h5 {
-  font-size: 10pt;
-  page-break-after: avoid;
-}
-h5 a {
-  color: black;
 }
 img {
   margin-left: 3em;
@@ -3093,24 +3085,6 @@ a.digress-anchor:link, a.digress-anchor:visited,
 
 ";
     }
-
-    var $css-files := {
-	<file> "outline.css";
-    }
-
-    if ($tools-inline) {
-	for $file ($css-files/file) {
-	    var $content = slax:document($tools-dir _ "/" _ $file);
-	    <style type="text/css"> {
-		copy-of string($content);
-	    }
-	}
-    } else {
-	for $file ($css-files/file) {
-	    <link type="text/css" rel="Stylesheet"
-			  href=$tools-install-dir _ "/" _ $file>;
-	}
-    }
 }
 
 template insertJavascript () {
@@ -3118,20 +3092,21 @@ template insertJavascript () {
 	<file> "jquery.js";
 	<file> "jquery-ui.js";
 	<file> "jquery.dbgpr.js";
-	<file> "tools-tips.js";
-	<file> "outline-nav.js";
+	<file> "oxtradoc-tips.js";
+	<file> "oxtradoc-nav.js";
     }
 
-    if ($tools-inline) {
+    if ($oxtradoc-inline) {
 	for $file ($js-files/file) {
-	    var $content = slax:document($tools-dir _ "/" _ $file);
+	    var $content = slax:document($oxtradoc-dir _ "/" _ $file);
 	    <script type="text/javascript"> {
 		copy-of string($content);
 	    }
 	}
     } else {
 	for $file ($js-files/file) {
-	    <script type="text/javascript" src=$tools-install-dir _ "/" _ $file> {
+	    <script type="text/javascript"
+			  src=$oxtradoc-install-dir _ "/" _ $file> {
 	        expr "";
 	    }
 	}
@@ -3651,8 +3626,22 @@ template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $wasch
                 }
             }
             if ($number != "") {
+		var $sn = {
+		    /* call emit-section-number($no = $number); */
+		    call get-section-number();
+		}
+
 		<div class="section-number"> {
-		    call emit-section-number($no = $number);
+		    if ($sn != "") {
+			attribute "id" {
+			    expr "toc.";
+			    expr $anchor-prefix;
+			    expr ".section.";
+			    expr $sn;
+			}
+		    }
+
+		    expr $sn;
 		    expr "   ";
 		}
             }

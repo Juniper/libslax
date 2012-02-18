@@ -46,5 +46,11 @@ match / {
             <non-xml> ;
         }
         <test4> slax:document("hello.txt", $opts4);
+        var $opts5 = {
+            <format> "base64";
+            <encoding> "utf-8";
+            <non-xml> "[invalid]";
+        }
+        <test5> slax:document("hello.txt", $opts5);
     }
 }

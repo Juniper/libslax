@@ -727,12 +727,26 @@ users to play with XSLT offline.  IDEs with extended debuggers also
 exist.  XSLT is common enough that piecing together a simple script is
 easy, as is finding help and advice.
 
-* SLAX Statements
-
-This section lists the SLAX statements, with brief examples followed
+This document lists the SLAX statements, with brief examples followed
 by their XSLT equivalents.  The utility of SLAX will hopefully be
 appearent, as will the simple transformation that SLAX parsing code is
 performing.
+
+* Building Content with SLAX
+
+SLAX (and XSLT) is a "declarative" language, meaning that a SLAX
+script will describe the output that should be generated, not give
+imperative instructions about how to generate that output.  This is
+quite different than traditional procedural programming, in both
+content and style.
+
+As a SLAX script executes, it uses the description contained in rules
+and templates to generate a "result tree", which is a hierarchy of XML
+output nodes.  Some logic statements and conditional processing
+statements are intermixed with the output description to allow
+flexibility in the output generated.
+
+We'll start by examining how SLAX generated these output nodes.
 
 ** Expressions @expressions@
 
@@ -841,23 +855,249 @@ The equivalent XSLT:
         <six><xsl:value-of select='results/message'/></six>
     </top>
 
-** Creating the Result Tree
+XPath expression can be added to the result tree using the "expr" and
+"uexpr" statements.
 
-SLAX (and XSLT) is a "declarative" language, meaning that a SLAX
-script will describe the output that should be generated, not give
-imperative instructions about how to generate that output.  This is
-quite different than traditional procedural programming, in both
-content and style.
+*** expr
 
-As a SLAX script executes, it uses the description contained in rules
-and templates to generate a "result tree", which is a hierarchy of XML
-output nodes.  Some logic statements and conditional processing
-statements are intermixed with the output description to allow
-flexibility in the output generated.
+The "expr" statement adds an XPath expression to the result tree.  The
+expression is the argument to the statement:
 
-We'll start by examining how SLAX generated these output nodes.
+    expr "Test: ";
+    expr substring-before(name, ".");
+    expr status;
 
-*** Namespaces
+*** uexpr
+
+The "uexpr" behaves identically to the "expr" statement, except that
+the contents are not escaped.  Normally characters like "<", ">", and
+"&" are escaped into proper XML (as "&lt;", "&gt;", and "&amp;",
+respectively), but uexpr avoids this escaping mechanism.
+
+    uexpr "<:-&>";
+
+See also disable-output-escaping
+
+** Elements
+
+Elements are the primary encoding mechanism of XML, and can be
+combined and arranged to encoding complex hierarchical constructs.
+
+The XML encoding uses three tags: the start tag, the end tag, and the
+empty tag.  The start tag consists of the less than character ('<'),
+the element name, a set of optional attributes (discussed later), and
+the greater than character ('>').  This is followed by the contents of
+the XML element, which may include additional elements.  The end tag
+consists of the less than character ('<'), the slash character ('/'),
+the element name, and the greater than character ('>').  If an element
+has no content, an empty tag can be used in place of an open and close
+tags.  The empty tag consists of the less than character ('<'), the
+element name, a set of optional attributes (discussed later), the
+slash character ('/'), and the greater than character ('>').
+
+    <doc>
+        <chapter>
+            <section>
+                <paragraph>A brief introduction</paragraph>
+            </section>
+       </chapter>
+       <index/>
+    </doc>
+
+*** XML Elements
+
+In SLAX, XML elements are encoded using braces instead of the closing
+tag.  The element is given, wrapped in chevrons as in XML, but it then
+followed by an open brace, the elements contents, and a close brace.
+If the element is empty, a semi-colon can be used to signify an empty
+element.  If the element contains only a single XPath expression, that
+expression can be used in place of the braces and the element is ended
+with a single semi-colon.
+
+Elements are written with in a C-like syntax, with only the open tag.
+The contents of the tag appear immediately following the open tag.
+These contents can either be a simple expression, or a more complex
+expression placed inside braces.
+
+The following SLAX is equivalent to the above XML data:
+
+    <doc> {
+        <chapter>
+            <section> {
+                <paragraph> "A brief introduction";
+            }
+        }
+        <index>;
+    }
+
+Programmers are accustomed to using braces, indentations, and editor support
+to delineate blocks of data.  Using these nesting techniques and
+removing the close tag reduces the clutter and increases the clarity
+of code.
+
+    <top> {
+        <one>;
+        <two> {
+            <three>;
+            <four>;
+            <five> {
+                <six>;
+            }
+        }
+    }
+
+This is equivalent to:
+
+    <top>
+        <one/>
+        <two>
+            <three/>
+            <four/>
+            <five>
+                <six/>
+            </five>
+        </two>
+    </top>
+
+*** The "element" Statement @element@
+
+The name of an element can be specified by an XPath expression, using
+the "element" statement.  The contents of the element must be placed
+inside a set of braces.
+
+In this example, the value of the "name" node (rather than the literal
+string "name") will be used to create an XML element, whose contents
+are an empty element with a name of "from-" concatenated with the
+value of the address node.  Node values are selected from the current
+context. 
+
+    element name {
+        element "from-" _ address;
+    }
+
+** Attributes
+
+XML allows a set attribute value to be specified on an open or empty
+tag.  These attributes are an unordered set of name/value pairs.  The
+XML encoding uses the attribute name, an equals sign ('='), and the
+value of the attribute in quotes.
+
+    <chapter number="1" title="Introduction" ref="intro">
+        <section number="1">
+            <!-- .... content ... -->
+        </section>
+    </chapter>
+
+*** XML Attributes
+
+SLAX uses an identical encoding scheme for attributes:
+
+    <chapter number="1" title="Introduction" ref="intro"> {
+        <section number="1"> {
+            /* .... content ... */
+        }
+    }
+
+In addition, XSLT introduces a means of assigning attribute values,
+called "attribute value templates" (AVT).  SLAX encodes these as XPath
+values for attributes:
+
+Attributes on elements follow the style of XML, with the attribute
+name, an equals sign, and the value of the attribute.
+
+    <element attr1="one" attr2="two">;
+
+In this example, the attributes are assigned values using XPath
+values.  The "tag" node value is assigned to the "ref" attribute,
+while the "title" attribute is assigned the value of the "$title"
+variable. 
+
+    <chapter number=position() title=$title ref=tag> {
+        <section number=position()> {
+            /* .... content ... */
+        }
+    }
+
+Where XSLT allow attribute value templates using curly braces, SLAX
+uses the normal expression syntax.  Attribute values can be any XPath
+expression, including quoted strings, parameters, variables, and
+numbers, as well as the SLAX concatenation operator ("_").
+
+    <location state=$location/state
+              zip=$location/zip5 _ "-" _ $location/zip4>;
+
+The XSLT equivalent:
+
+    <location state="{$location/state}"
+              zip="{concat($location/zip5, "-", $location/zip4}"/>
+
+Note that curly braces placed inside quote strings are not
+interpreted as attribute value templates, but as real braces
+and are escaped when translated into XSLT.
+
+    <avt sign="{here}">;
+
+The XSLT equivalent:
+   
+    <avt sign="{{here}}"/>
+
+
+*** The "attribute" Statement @attribute@
+
+The name of an attribute can be specified by an XPath expression, using
+the "attribute" statement.  The contents of the attribute must be placed
+inside a set of braces.
+
+In this example, the value of the "name" node (rather than the literal
+string "name") will be used to create an XML attribute, whose contents
+are an empty element with a name of "from-" concatenated with the
+value of the address node.  Node values are selected from the current
+context.
+
+    attribute name {
+        expr "from-" _ address;
+    }
+
+** Attribute Sets
+
+Attribute sets can be used to define sets of attributes that can be
+used together.  An attribute set contains a set of "attribute"
+statements that define the names and values of attributes.  These
+attributes can then be referred to as a collection rather than repeat
+the contents in the script.
+
+{{faq: Do people really use this?
+My guess (which could be wildly wrong) is that this is a rarely used
+feature that are created to cover the condition that a template cannot
+return a set of attributes.  That's my guess anyway.
+}}
+
+*** The "attribute-set" Statement @attribute-set@
+
+The "attribute-set" statement defines a set of attributes that can be
+used repeatedly.  The argument is the name of the attribute set, and
+the contents are a set of attribute statements.
+
+    attribute-set table-attributes {
+        attribute "order" { expr "0"; }
+        attribute "cellpadding" { expr $cellpadding; }
+        attribute "cellspacing" { expr $cellspacing; }
+    }
+
+*** The "use-attribute-sets" Statement @use-attribute-sets@
+
+The "use-attribute-sets" statement adds the attributes from a given
+set to the current element.
+
+    <table> {
+        use-attribute-sets table-attributes;
+    }
+
+The use-attribute-sets statement can be used under the "element",
+"copy-node", and "attribute-sets" statements, as well as under a
+normal element.
+
+** Namespaces
 
 Namespaces map URI strings to prefixes that are used to indicate the
 administrative domain of specific XML elements.  The syntax and
@@ -876,8 +1116,9 @@ some examples:
 | http://www.w3.org/Graphics/SVG/SVG-19990812.dtd |
 |-------------------------------------------------|
 
-The prefix is a string string pre-pended to the local element name with a
-colon.
+The prefix is a string pre-pended to the local element name with a
+colon.  Prefixes map to namespaces and are used as "shorthand" for the
+underlaying namespace.
 
 |----------------+-----------------------|
 | Example Prefix | Example Element Usage |
@@ -888,7 +1129,7 @@ colon.
 | svg            | <svg:name/>           |
 |----------------+-----------------------|
 
-**** The "ns" Statement @ns@
+*** The "ns" Statement @ns@
 
 The "ns" statement defines a mapping from a prefix to a URI namespace
 identifier.  Namespaces must be defined prior to their use.
@@ -962,7 +1203,7 @@ The XSLT equivalent:
         <!-- ... -->
     </xsl:stylesheet>
 
-**** Reserved Prefixes
+*** Reserved Prefixes
 
 The XML specification reserved all prefixes and attributes beginning
 with the characters "xml".  In addition, SLAX reserves all prefixes
@@ -970,7 +1211,7 @@ and attributes that begin with the characters "slax".  These
 reservations help to future proof against changes and enhancements to
 the language.
 
-**** The "extension" Statement @extension@
+*** The "extension" Statement @extension@
 
 The "extension" statement instructs the processing engine that
 extenstion namespaces, which will cause elements in that namespace to
@@ -983,264 +1224,20 @@ functions and elements defined within that library.
 
 See also http://www.w3.org/TR/xslt#extension-element
 
-**** The "exclude" Statement @exclude@
+*** The "exclude" Statement @exclude@
 
 The "exclude" statement prevents the namespace from appearing in the
 final result tree, effectively blocking it from output.
 
 See also http://www.w3.org/TR/xslt#literal-result-element
 
-*** Elements
-
-Elements are the primary encoding mechanism of XML, and can be
-combined and arranged to encoding complex hierarchical constructs.
-
-The XML encoding uses three tags: the start tag, the end tag, and the
-empty tag.  The start tag consists of the less than character ('<'),
-the element name, a set of optional attributes (discussed later), and
-the greater than character ('>').  This is followed by the contents of
-the XML element, which may include additional elements.  The end tag
-consists of the less than character ('<'), the slash character ('/'),
-the element name, and the greater than character ('>').  If an element
-has no content, an empty tag can be used in place of an open and close
-tags.  The empty tag consists of the less than character ('<'), the
-element name, a set of optional attributes (discussed later), the
-slash character ('/'), and the greater than character ('>').
-
-    <doc>
-        <chapter>
-            <section>
-                <paragraph>A brief introduction</paragraph>
-            </section>
-       </chapter>
-       <index/>
-    </doc>
-
-**** XML Elements
-
-In SLAX, XML elements are encoded using braces instead of the closing
-tag.  The element is given, wrapped in chevrons as in XML, but it then
-followed by an open brace, the elements contents, and a close brace.
-If the element is empty, a semi-colon can be used to signify an empty
-element.  If the element contains only a single XPath expression, that
-expression can be used in place of the braces and the element is ended
-with a single semi-colon.
-
-Elements are written with in a C-like syntax, with only the open tag.
-The contents of the tag appear immediately following the open tag.
-These contents can either be a simple expression, or a more complex
-expression placed inside braces.
-
-The following SLAX is equivalent to the above XML data:
-
-    <doc> {
-        <chapter>
-            <section> {
-                <paragraph> "A brief introduction";
-            }
-        }
-        <index>;
-    }
-
-Programmers are accustomed to using braces, indentations, and editor support
-to delineate blocks of data.  Using these nesting techniques and
-removing the close tag reduces the clutter and increases the clarity
-of code.
-
-    <top> {
-        <one>;
-        <two> {
-            <three>;
-            <four>;
-            <five> {
-                <six>;
-            }
-        }
-    }
-
-This is equivalent to:
-
-    <top>
-        <one/>
-        <two>
-            <three/>
-            <four/>
-            <five>
-                <six/>
-            </five>
-        </two>
-    </top>
-
-**** The "element" Statement @element@
-
-The name of an element can be specified by an XPath expression, using
-the "element" statement.  The contents of the element must be placed
-inside a set of braces.
-
-In this example, the value of the "name" node (rather than the literal
-string "name") will be used to create an XML element, whose contents
-are an empty element with a name of "from-" concatenated with the
-value of the address node.  Node values are selected from the current
-context. 
-
-    element name {
-        element "from-" _ address;
-    }
-
-*** Attributes
-
-XML allows a set attribute value to be specified on an open or empty
-tag.  These attributes are an unordered set of name/value pairs.  The
-XML encoding uses the attribute name, an equals sign ('='), and the
-value of the attribute in quotes.
-
-    <chapter number="1" title="Introduction" ref="intro">
-        <section number="1">
-            <!-- .... content ... -->
-        </section>
-    </chapter>
-
-**** XML Attributes
-
-SLAX uses an identical encoding scheme for attributes:
-
-    <chapter number="1" title="Introduction" ref="intro"> {
-        <section number="1"> {
-            /* .... content ... */
-        }
-    }
-
-In addition, XSLT introduces a means of assigning attribute values,
-called "attribute value templates" (AVT).  SLAX encodes these as XPath
-values for attributes:
-
-Attributes on elements follow the style of XML, with the attribute
-name, an equals sign, and the value of the attribute.
-
-    <element attr1="one" attr2="two">;
-
-In this example, the attributes are assigned values using XPath
-values.  The "tag" node value is assigned to the "ref" attribute,
-while the "title" attribute is assigned the value of the "$title"
-variable. 
-
-    <chapter number=position() title=$title ref=tag> {
-        <section number=position()> {
-            /* .... content ... */
-        }
-    }
-
-Where XSLT allow attribute value templates using curly braces, SLAX
-uses the normal expression syntax.  Attribute values can be any XPath
-expression, including quoted strings, parameters, variables, and
-numbers, as well as the SLAX concatenation operator ("_").
-
-    <location state=$location/state
-              zip=$location/zip5 _ "-" _ $location/zip4>;
-
-The XSLT equivalent:
-
-    <location state="{$location/state}"
-              zip="{concat($location/zip5, "-", $location/zip4}"/>
-
-Note that curly braces placed inside quote strings are not
-interpreted as attribute value templates, but as real braces
-and are escaped when translated into XSLT.
-
-    <avt sign="{here}">;
-
-The XSLT equivalent:
-   
-    <avt sign="{{here}}"/>
-
-
-**** The "attribute" Statement @attribute@
-
-The name of an attribute can be specified by an XPath expression, using
-the "attribute" statement.  The contents of the attribute must be placed
-inside a set of braces.
-
-In this example, the value of the "name" node (rather than the literal
-string "name") will be used to create an XML attribute, whose contents
-are an empty element with a name of "from-" concatenated with the
-value of the address node.  Node values are selected from the current
-context.
-
-    attribute name {
-        expr "from-" _ address;
-    }
-
-*** Attribute Sets
-
-Attribute sets can be used to define sets of attributes that can be
-used together.  An attribute set contains a set of "attribute"
-statements that define the names and values of attributes.  These
-attributes can then be referred to as a collection rather than repeat
-the contents in the script.
-
-{{faq: Do people really use this?
-My guess (which could be wildly wrong) is that this is a rarely used
-feature that are created to cover the condition that a template cannot
-return a set of attributes.  That's my guess anyway.
-}}
-
-**** The "attribute-set" Statement @attribute-set@
-
-The "attribute-set" statement defines a set of attributes that can be
-used repeatedly.  The argument is the name of the attribute set, and
-the contents are a set of attribute statements.
-
-    attribute-set table-attributes {
-        attribute "order" { expr "0"; }
-        attribute "cellpadding" { expr $cellpadding; }
-        attribute "cellspacing" { expr $cellspacing; }
-    }
-
-**** The "use-attribute-sets" Statement @use-attribute-sets@
-
-The "use-attribute-sets" statement adds the attributes from a given
-set to the current element.
-
-    <table> {
-        use-attribute-sets table-attributes;
-    }
-
-The use-attribute-sets statement can be used under the "element",
-"copy-node", and "attribute-sets" statements, as well as under a
-normal element.
-
-*** Expressions
-
-XPath expression can be added to the result tree using the "expr" and
-"uexpr" statements.
-
-**** expr
-
-The "expr" statement adds an XPath expression to the result tree.  The
-expression is the argument to the statement:
-
-    expr "Test: ";
-    expr substring-before(name, ".");
-    expr status;
-
-**** uexpr
-
-The "uexpr" behaves identically to the "expr" statement, except that
-the contents are not escaped.  Normally characters like "<", ">", and
-"&" are escaped into proper XML (as "&lt;", "&gt;", and "&amp;",
-respectively), but uexpr avoids this escaping mechanism.
-
-    uexpr "<:-&>";
-
-See also disable-output-escaping
-
-*** Processing Instructions
+** Processing Instructions
 
 A processing instruction is a mechanism to convey application-specific
 information inside an XML document.  The application can see detect
 processing instructions and change their behaviour accordingly.
 
-**** The "processing-instruction" Statement @processing-instruction@
+*** The "processing-instruction" Statement @processing-instruction@
 
 The "processing-instruction" statement adds a processing instruction
 to the result tree.  The argument to the statement is that name of the
@@ -1253,7 +1250,7 @@ braces) is the value of that instruction.
 
 Both the argument and the value may be XPath expressions.
 
-*** Comments
+** Comments
 
 Comments are information for the user or author.  They are not formal
 content and should not be inspected or parsed.  They can be discarded
@@ -1286,7 +1283,7 @@ The XSLT equivalent:
      * This is a comment
      */ -->
 
-**** The "comment" Statement @comment@
+*** The "comment" Statement @comment@
 
 The "comment" statement adds an XML comment to the result tree.  The
 argument is an XPath expression containing the comment to be added:
@@ -1307,7 +1304,7 @@ The XSLT equivalent:
            select='concat("Added by user ", $user, " on ", $date)'/>
     </xsl:comment>
 
-*** Copying Content
+** Copying Content
 
 On many occasions, parts of the input XML document will be copied to
 the output XML document.  Such copies can be deep or shallow, meaning
@@ -1315,7 +1312,7 @@ that the entire node hierarchy is copied or just the node itself.
 SLAX contains two distinct statements for these two styles of
 copying. 
 
-**** The "copy-of" Statement @copy-of@
+*** The "copy-of" Statement @copy-of@
 
 The "copy-of" statement performs a deep copy of a given set of nodes.
 The argument to the statement is an XPath expression specifying which
@@ -1324,7 +1321,7 @@ nodes should be copied.
     copy-of $top/my/stuff;
     copy-of .;
 
-See also copy-of
+See also copy (^copy-node^).
 
 The "copy-of" statement mimics the functionality of the <xsl:copy-of>
 element.
@@ -1335,7 +1332,7 @@ The XSLT equivalent:
 
    <xsl:copy-of select="configuration/protocols/bgp"/>
 
-**** The "copy-node" Statement @copy-node@
+*** The "copy-node" Statement @copy-node@
 
 The "copy-node" statement performs a shallow copy of the specific node
 to the result tree, along with any namespace nodes, but none other
@@ -1347,11 +1344,11 @@ the new node.
         <that> "one";
     }
 
-See also copy
+See also copy-of (^copy-of^).
 
-*** Formatting
+** Formatting
 
-**** The "number" Statement @number@
+*** The "number" Statement @number@
 
 The "number" statement inserts a generated number into the result
 tree.  This statement has two distinct forms.  When used with an
@@ -1422,13 +1419,13 @@ current context value is emitted.
 
 See also the format-number() XPath function.
 
-** Templates @templates@
+* Templates @templates@
 
 A SLAX script consists of a set of templates.  There are two types of
 templates, match templates and named templates.  This section
 discusses each of these types.
 
-*** Named Templates
+** Named Templates
 
 In addition to the template processing, templates can be given
 explicit names and called directly, allowing a programming style that
@@ -1436,7 +1433,7 @@ follows more traditional procedural languages.  Named templates are
 called like function, returning their XML output nodes to the caller,
 where they can be merged into the caller's XML output tree.
 
-**** The "template" Statement @template@
+*** The "template" Statement @template@
 
 Named templates are defined using their name and parameters and
 invoked using the "call" statement.  The template definition consists
@@ -1455,7 +1452,7 @@ giving a simple shorthand for passing parameters if common names are
 used.  Additional template parameters can be supplied inside the block
 using the "with" statement.
 
-**** The "call" Statement @call@
+*** The "call" Statement @call@
 
 Named templates accept parameters by name, rather than by position.
 This means the caller needs to indicate the name of the desired
@@ -1477,7 +1474,7 @@ parameter, without using an enclosing set of braces:
 
     var $a = call test($a = 1);
 
-***** Using the "with" Statement with "call" @with-call@
+**** Using the "with" Statement with "call" @with-call@
 
 In addition, template arguments can be passed using the "with"
 statement.  This statement is placed inside braces after the "call"
@@ -1497,7 +1494,7 @@ used when defining variables.
 
 The "with" statement is described in more detail below (^with^).
 
-***** The "match" Statement @named-match@
+**** The "match" Statement @named-match@
 
 While rarely used, XSLT allows named template to be used as match
 templates. This is done using the "match" statement after the
@@ -1520,7 +1517,7 @@ templates. This is done using the "match" statement after the
         }
     } 
 
-**** Example with XSLT Translation
+*** Example with XSLT Translation
 
 This section includes a short example, allow with the XSLT into which
 the script translates. 
@@ -1564,7 +1561,7 @@ The XSLT equivalent:
     </xsl:template>
 
 
-*** Match Templates @match-templates@
+** Match Templates @match-templates@
 
 The processing model for SLAX is identical to that of XSLT.  A set of
 XML input nodes are processed to generate a set of XML output nodes.
@@ -1581,7 +1578,7 @@ associated with the rules, builds the XML output nodes, and merges
 those nodes with the XML output nodes from other rules to build the
 XML output nodes.
 
-**** The "match" Statement @match@
+*** The "match" Statement @match@
 
 The "match" statement defines a match template, with its matching
 criteria and its template.  The keyword "match" is followed by an
@@ -1603,7 +1600,7 @@ in this document.
         }
     }
 
-**** The "apply-templates" Statement @apply-templates@
+*** The "apply-templates" Statement @apply-templates@
 
 The "apply-templates" statement instructs the processing engine to
 apply the set of templates given in the script to a set of nodes.  The
@@ -1638,7 +1635,7 @@ The XSLT equivalent:
       </hello>
     </xsl:template>
 
-**** The "apply-imports" Statement @apply-imports@
+*** The "apply-imports" Statement @apply-imports@
 
 The "apply-imports" statement mimics the <xsl:apply-imports> element,
 allowing the script to invoke any imported templates.
@@ -1649,7 +1646,7 @@ The XSLT equivalent:
 
    <xsl:apply-imports/>
 
-**** The "mode" Statement @mode@
+*** The "mode" Statement @mode@
 
 The "mode" statement allows the apply-template to choice a distinct
 set of rules to use during processing.  The argument to the "mode"
@@ -1726,7 +1723,7 @@ The XSLT equivalent:
     </xsl:template>
 
 
-**** The "priority" Statement @priority@
+*** The "priority" Statement @priority@
 
 The "priority" statement sets the priority of the template, which is
 used as part of the conflict resolution when more that one template
@@ -1760,7 +1757,7 @@ The XSLT equivalent:
       </output>
     </xsl:template>
 
-**** The "param" Statement @param@
+*** The "param" Statement @param@
 
 Template can accept parameters from their callers, and scripts can
 accept parameters from the calling environment (typically the command
@@ -1790,7 +1787,7 @@ template name:
         <area> $width * $length * $scale;
     }
 
-**** The "with" Statement @with@
+*** The "with" Statement @with@
 
 The "with" statement supplies a value for a given parameter.
 
@@ -1844,7 +1841,7 @@ The XSLT equivalent:
       </hello>
     </xsl:template>
 
-** Programming Constructs
+* Programming Constructs
 
 This section covers the programming constructs in SLAX.  SLAX tries to
 use language paradigms and constructs from traditional languages
@@ -1852,7 +1849,7 @@ use language paradigms and constructs from traditional languages
 But SLAX is built on top of XSLT, and the declarative nature of XSLT
 means that many of its constructs are visible.
 
-*** Variables
+** Variables
 
 Variables in SLAX are immutable.  Once defined, the value of a
 variable cannot be changed.  This is a major change from traditional
@@ -1930,7 +1927,7 @@ The XSLT equivalent:
 Again, these are the same constucts as XSLT, but packaged in a more
 readable, maintainable syntax.
 
-**** The "var" Statement @var@
+*** The "var" Statement @var@
 
 Variable are defined using the "var" statement, which accept a
 variable name and an initial value.  Variable names (and parameter
@@ -1951,7 +1948,7 @@ statements (enclosed in braces) that emit a set of nodes.
 
 These same constraints apply to parameters as well.
 
-***** The "mvar" Statement @mvar@
+**** The "mvar" Statement @mvar@
 
 In XSLT, all variables are immutable, meaning that once created, their
 value cannot be changed.  This creates a distinct programming
@@ -1984,7 +1981,7 @@ the nodeset.
         }
     }
 
-*** Result Tree Fragments
+** Result Tree Fragments
 
 The most annoying "features" of XSLT is the concept of "Result Tree
 Fragments" (aka RTF).  These fragments are produced with nodes are
@@ -2043,7 +2040,7 @@ value:
 Fortunately for SLAX programmers, the ":=" operator does away with
 these conversion issues, as the following section details.
 
-**** The ":=" Operator @colon-equals@
+*** The ":=" Operator @colon-equals@
 
 The ":=" operator is designed to hide the conversion of RTFs to node
 sets from the programmer.  It is used in assigning initial values to
@@ -2066,7 +2063,7 @@ statement would be considered complex variable content.  But using the
 Behind the scenes, SLAX is performing the ext:node-set() call but the
 details are hidden from the user.
 
-**** The "?:" Operator @question-colon@
+*** The "?:" Operator @question-colon@
 
 The "?:" operator allows simple logic tests to be coded with the
 familiar C and Perl operator.
@@ -2092,9 +2089,9 @@ The use of slax:value() make the "?:" operator non-standard, in that
 it requires a non-standard extension function.  Use of the "?:" should
 be limited to environments where this function is available.
 
-*** Control Statements
+** Control Statements
 
-**** The "for-each" Statement @for-each@
+*** The "for-each" Statement @for-each@
 
 The "for-each" statement iterates through the members of a node set,
 evaluating the contents of the statement with the context set to each
@@ -2136,7 +2133,7 @@ The XSLT equivalent:
         </message>
     </xsl:for-each>
 
-**** The "for" Statement @for@
+*** The "for" Statement @for@
 
 In addition to the standard XSLT "for-each" statement, SLAX
 incorporates a "for" statement that allows iteration through a node
@@ -2159,7 +2156,7 @@ pair of nested for-each loops, one to iterate and one to put the
 context back to the previous setting.  This allows the script writer
 to ignore the context change.
 
-**** The "while" Statement @while@
+*** The "while" Statement @while@
 
 The "while" statement allows a block of code to be repeated until a
 condition is no longer true.  This construct is only useful when
@@ -2184,7 +2181,7 @@ taken to avoid infinite loops.
         set $count = $count + 1;
     }
 
-**** The "..." Operator @dotdotdot@
+*** The "..." Operator @dotdotdot@
 
 Often a loop is required to iterator through a range of integer
 values, such a 1 to 10.  SLAX introduces the "..." operator to
@@ -2197,7 +2194,7 @@ generate sequences of such numbers:
 The operator translates into an XPath function that generates the
 sequence as a node set.
 
-**** The "sort" Statement @sort@
+*** The "sort" Statement @sort@
 
 The "for-each" normally considers nodes in document order, but the
 "sort" statement indicates the specific order the programmer needs.
@@ -2228,7 +2225,7 @@ XSLT equivalent:
 
 
 
-**** The "if" and "else" Statements @if-else@
+*** The "if" and "else" Statements @if-else@
 
 SLAX supports an "if" statement that uses a C-like syntax.  The
 expressions that appear in parentheses are extended form of XPath
@@ -2273,7 +2270,7 @@ The XSLT equivalent:
       </xsl:otherwise>
     </xsl:choose>
 
-*** Functions
+** Functions
 
 Functions are one of the coolest extensions defined by EXSLT.  They
 allow a script to define an extension function that is available in
@@ -2286,7 +2283,7 @@ XPath expressions.  Functions have several advantages over templates:
 
 This section describes how functions are defined.
 
-**** The "function" Statement @function@
+*** The "function" Statement @function@
 
 The "function" statement defines a function that can be called in
 XPath expressions.  
@@ -2310,7 +2307,7 @@ defined.
 
 Function parameters can also be defined using the "param" statement.
 
-**** The "result" Statement @result@
+*** The "result" Statement @result@
 
 The "result" statement defines a value or template used as the return
 value of the function.
@@ -2346,12 +2343,12 @@ of instructions that emit the value to be returned.
         }
     }
 
-** Other Functionality
+* Additional SLAX Statements
 
 This section contains statements and constructs that don't easily
 fit into other categories.
 
-*** The "#!" Line
+** The "#!" Line
 
 If the first line of a SLAX script begins with the characters "#!",
 the rest of that line is ignored.  This allows scripts to be invoked
@@ -2367,7 +2364,7 @@ it "pound-bang" around here, just as we say "pound define" rather than
 See ^slaxproc-arguments^ for details about the slaxproc utility
 argument handling and the "#!" line.
 
-*** Combining Scripts ("include" and "import") @include-import@
+** Combining Scripts ("include" and "import") @include-import@
 
 Scripts files can use multiple source files, allowing library files to
 be shared among a number of source files.  The "import" and "include"
@@ -2401,7 +2398,7 @@ The XSLT equivalent:
 Import and include documents do _not_ need to be in written in SLAX.
 SLAX can import and include normal XSLT documents.
 
-*** The "key" Statement @key@
+** The "key" Statement @key@
 
 The "key" statement defines a key for use by the "key()" XPath
 function.  Keys allow a script to locate nodes in a document that are
@@ -2428,7 +2425,7 @@ expression for the value of the key.
 
 See also http://www.w3.org/TR/xslt#key
 
-*** The "decimal-format" Statement @decimal-format@
+** The "decimal-format" Statement @decimal-format@
 
 The "decimal-format" statement defines formatting parameters for use
 by the format-number() XPath function.
@@ -2456,13 +2453,13 @@ below.
 
 See also http://www.w3.org/TR/xslt#format-number
 
-*** Messages
+** Messages
 
 Typical scripts work by generating XML content as a result tree, but
 occasionally a script may need to make explicit, immediate output.
 The statements in this section allow for such output.
 
-**** The "message" Statement @message@
+*** The "message" Statement @message@
 
 The "message" statement allows output to be generated immediately,
 without waiting until the script generates its final result tree.
@@ -2479,7 +2476,7 @@ output, typically on the standard error file descriptor.
 
 See also http://www.w3.org/TR/xslt#message
 
-**** The "terminate" Statement @terminate@
+*** The "terminate" Statement @terminate@
 
 The "terminate" statement can be used to deliver a message to the user
 and then exit the script.
@@ -2491,7 +2488,7 @@ The message-expression is an XPath expression that is emitted as
 output, like the "message" statement.  The script then stops
 any further processing.
 
-**** The "trace" Statement @trace@
+*** The "trace" Statement @trace@
 
 Trace output is vital to writing, debugging, and maintaining scripts.
 SLAX introduces a trace facility that will record XPath expressions or
@@ -2523,7 +2520,7 @@ the trace file.
         }
     }
 
-*** The "output-method" Statement @output-method@
+** The "output-method" Statement @output-method@
 
 The "output-method" statement defines the output style to be used when
 outputing the result tree.
@@ -2548,13 +2545,13 @@ the XSLT <xsl:output-method> element.
 
 See also http://www.w3.org/TR/xslt#output
 
-*** Whitespace Handling
+** Whitespace Handling
 
 SLAX includes a means of retaining or removing text nodes that contain
 only whitespace.  Whitespace for XML is the space, tab, newline or
 carriage return characters.
 
-**** The "strip-space" Statement @strip-space@
+*** The "strip-space" Statement @strip-space@
 
 The "strip-space" statement tells the engine to discard the given
 elements if they contain only whitespace.
@@ -2580,7 +2577,7 @@ The XSLT equivalent:
 
     <xsl:strip-space elements="foo goo moo"/>
 
-**** The "preserve-space" Statement @preserve-space@
+*** The "preserve-space" Statement @preserve-space@
 
 The "preserve-space" statement works similar to the "strip-space"
 statement, but with the opposite result.
@@ -2606,7 +2603,7 @@ The XSLT equivalent:
 
     <xsl:preserve-space elements="foo goo moo"/>
 
-*** The "version" Statement @version@
+** The "version" Statement @version@
 
 The "version" statement contains the current version of the SLAX
 language, allowing scripts and interpreters to progress
@@ -2914,256 +2911,6 @@ libslax initializer function:
     #include <libslax/slax.h>
 
     slaxEnable(1);
-
-** Extension Libraries
-
-libslax supports a means of dynamically loading extension libraries.
-After a script is parsed, any extension prefixes are determined, along
-with their namespaces.  Each namespace are then URL-escaped and a
-".ext" suffix is appended to generate a filename for the extension
-library that supports that namespace.  The extension library should be
-placed in the directory named with the --with-extension-dir options
-(aka SLAX_EXTDIR) or in a directory named by a --lib/-L argument.
-
-*** The "bit" Extension Library 
-
-The "bit" extension library has functions that interpret a string as a
-series of bit, allowing arbitrary length bit arrays and operations on
-those arrays.
-
-|------------------------+------------------------------------------|
-| Function and Arguments | Description                              |
-|------------------------+------------------------------------------|
-| bit:and(b1, b2)        | Return AND of two bit strings            |
-| bit:or(b1, b2)         | Return OR of two bit strings             |
-| bit:nand(b1, b2)       | Return NAND of two bit strings           |
-| bit:nor(b1, b2)        | Return NOR of two bit strings            |
-| bit:xor(b1, b2)        | Return XOR of two bit strings            |
-| bit:xnor(b1, b2)       | Return XNOR of two bit strings           |
-| bit:not(b1)            | Return inversion (NOT) of a bit string   |
-| bit:mask(count, len?)  | Return a len bits with the low count set |
-| bit:to-int(bs)         | Return integer value of bit string       |
-| bit:from-int(str)      | Return bit string of integer value       |
-| bit:to-hex(bs)         | Return hex value of a bit string         |
-| bit:from-hex(str)      | Return bit string of hex value           |
-|------------------------+------------------------------------------|
-
-*** The "curl" Extension Library
-
-curl and libcurl are software components that allow access to a number
-of protocols, include http, https, smtp, ftp, and scp.
-
-**** curl Elements
-
-Curl operations are directed using a set of elements, passed to the
-curl extension functions.  This section gives details on the elements
-supported.
-
-***** <url>
-
-The <url> element sets the base URL for the request.
-
-    SYNTAX::
-      <url> "target-url";
-
-***** <method>
-
-The <method> element sets the method used to transfer data.  This
-controls the HTTP request type, as well as triggering other transfer
-mechanisms.
-
-    SYNTAX::
-      <method> $method;
-
-Method names are listed in the table below.
-
-|--------+--------------------------------|
-| Method | Description                    |
-|--------+--------------------------------|
-| get    | HTTP GET or FTP GET operation  |
-| post   | HTTP POST operation            |
-| delete | HTTP DELETE operation          |
-| head   | HTTP HEAD operation            |
-| email  | SMTP email send operation      |
-| put    | HTTP PUT operation             |
-| upload | HTTP POST or FTP PUT operation |
-|--------+--------------------------------|
-
-The "get" method is the default.
-
-***** <username>
-
-The <username> element sets the user name to use for the transfer.
-
-    SYNTAX::
-      <username> "username";
-
-***** <password>
-
-The <password> element sets the user's password for the transfer.
-
-    SYNTAX::
-      <password> "password";
-
-***** <content-type>
-
-The <content-type> element gives the MIME type for the transfer
-payload.
-
-    SYNTAX::
-      <content-type> "mime/type";
-
-***** <contents>
-
-The <contents> element gives the contents to be transfered.
-
-    SYNTAX::
-      <contents> "multi-\nline\ncontents\n";
-
-***** <format>
-
-The <format> element gives the expected format of the returned
-results, allowing the curl extension to automatically make the content
-available in the native format.
-
-<format> "xml"; 
-
-|-------------+--------------------------|
-| Format name | Special behavior         |
-|-------------+--------------------------|
-| html        | Result is parsed as HTML |
-| text        | None                     |
-| xml         | Result is parsed as XML  |
-|-------------+--------------------------|
-
-***** <server>
-
-The <server> element gives the outgoing SMTP server name.  At present,
-MX records are not handled, but that will be fixed shortly.
-
-    SYNTAX::
-      <server> "email-server.example.com";
-
-***** <local>
-
-The <local> element gives the name to use as the local hostname for
-"email" (SMTP) requests .
-
-    SYNTAX::
-      <local> "local host name";
-
-***** <from>
-
-The <from> element gives the "From" address to use for "email" (SMTP)
-requests.
-
-    SYNTAX::
-      <from> "source-user@email.example.com";
-
-***** <subject>
-
-The <subject> element gives the "Subject" field for "email" (SMTP)
-requests. 
-
-    SYNTAX::
-      <subject> "email subject string";
-
-***** <upload>
-
-The <upload> element indicates this is a file upload request.
-
-    SYNTAX::
-      <upload>;
-
-***** <fail-on-error>
-
-The <fail-on-error> element indicates that the transfer should fail if
-any errors where detected, including insignificant ones.
-
-    SYNTAX::
-      <fail-on-error>;
-
-***** <verbose>
-
-The <verbose> element requests an insanely detailed level of debug
-information that can be useful when debugging requests.  The curl
-extension will display detailed information about the operations and
-communication of the curl transfer.
-
-    SYNTAX::
-      <verbose>;
-
-***** <insecure>
-
-The <insecure> element indicates a willingness to tolerate insecure
-communications operations.  In particular, it will
-allow SSL Certs without checking the common name.
-
-    SYNTAX::
-      <insecure>;
-
-***** <secure>
-
-The <secure> element requests the use of the "secure" sibling of many
-protocols, including HTTPS and FTPS.
-
-    SYNTAX::
-      <secure>;
-
-***** <to>
-
-The <to> element gives a "To" address for "email" (SMTP) requests.
-For multiple address, use multiple <to> elements.
-
-    SYNTAX::
-      <to> "to-user@email.examplecom";
-
-***** <cc>
-
-The <cc> element gives a "Cc" address for "email" (SMTP) requests.
-For multiple address, use multiple <cc> elements.
-
-    SYNTAX::
-      <cc> "cc-user@email.examplecom";
-
-***** <header>
-
-The <header> element gives additional header fields for the request.
-
-    SYNTAX::
-      <header name="name"> "value";
-
-***** <param>
-
-The <param> element gives additional parameter values for the
-request.  These parameters are typically encoded into the URL.
-
-    SYNTAX::
-      <param name="x"> "y";
-
-**** curl:perform
-
-The "curl:perform" extension function performs simple transfers.
-
-**** curl:open
-
-The "curl:perform" extension function opens a connection to a remote
-server, allowing multiple operations over a single connection. 
-
-**** curl:set
-
-The "curl:set" extension function records a set of parameters that
-will persist for the lifespan of a connection.
-
-**** curl:single
-
-The "curl:single" extension function performs transfer operations
-without using a persistent connection.
-
-**** curl:close
-
-The "curl:close" extension function closes an open connection.
-Further operations cannot be performed over the connection.
 
 ** slaxproc: The SLAX Processor
 
@@ -3487,6 +3234,256 @@ but reference the instruction, filename, and line number of the frame:
   callflow: 1: enter <xsl:variable> at empty-15.slax:20
   callflow: 1: exit <xsl:variable> at empty-15.slax:20
   callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
+
+* Extension Libraries in libslax
+
+libslax supports a means of dynamically loading extension libraries.
+After a script is parsed, any extension prefixes are determined, along
+with their namespaces.  Each namespace are then URL-escaped and a
+".ext" suffix is appended to generate a filename for the extension
+library that supports that namespace.  The extension library should be
+placed in the directory named with the --with-extension-dir options
+(aka SLAX_EXTDIR) or in a directory named by a --lib/-L argument.
+
+** The "bit" Extension Library 
+
+The "bit" extension library has functions that interpret a string as a
+series of bit, allowing arbitrary length bit arrays and operations on
+those arrays.
+
+|------------------------+------------------------------------------|
+| Function and Arguments | Description                              |
+|------------------------+------------------------------------------|
+| bit:and(b1, b2)        | Return AND of two bit strings            |
+| bit:or(b1, b2)         | Return OR of two bit strings             |
+| bit:nand(b1, b2)       | Return NAND of two bit strings           |
+| bit:nor(b1, b2)        | Return NOR of two bit strings            |
+| bit:xor(b1, b2)        | Return XOR of two bit strings            |
+| bit:xnor(b1, b2)       | Return XNOR of two bit strings           |
+| bit:not(b1)            | Return inversion (NOT) of a bit string   |
+| bit:mask(count, len?)  | Return a len bits with the low count set |
+| bit:to-int(bs)         | Return integer value of bit string       |
+| bit:from-int(str)      | Return bit string of integer value       |
+| bit:to-hex(bs)         | Return hex value of a bit string         |
+| bit:from-hex(str)      | Return bit string of hex value           |
+|------------------------+------------------------------------------|
+
+** The "curl" Extension Library
+
+curl and libcurl are software components that allow access to a number
+of protocols, include http, https, smtp, ftp, and scp.
+
+*** curl Elements
+
+Curl operations are directed using a set of elements, passed to the
+curl extension functions.  This section gives details on the elements
+supported.
+
+**** <url>
+
+The <url> element sets the base URL for the request.
+
+    SYNTAX::
+      <url> "target-url";
+
+**** <method>
+
+The <method> element sets the method used to transfer data.  This
+controls the HTTP request type, as well as triggering other transfer
+mechanisms.
+
+    SYNTAX::
+      <method> $method;
+
+Method names are listed in the table below.
+
+|--------+--------------------------------|
+| Method | Description                    |
+|--------+--------------------------------|
+| get    | HTTP GET or FTP GET operation  |
+| post   | HTTP POST operation            |
+| delete | HTTP DELETE operation          |
+| head   | HTTP HEAD operation            |
+| email  | SMTP email send operation      |
+| put    | HTTP PUT operation             |
+| upload | HTTP POST or FTP PUT operation |
+|--------+--------------------------------|
+
+The "get" method is the default.
+
+**** <username>
+
+The <username> element sets the user name to use for the transfer.
+
+    SYNTAX::
+      <username> "username";
+
+**** <password>
+
+The <password> element sets the user's password for the transfer.
+
+    SYNTAX::
+      <password> "password";
+
+**** <content-type>
+
+The <content-type> element gives the MIME type for the transfer
+payload.
+
+    SYNTAX::
+      <content-type> "mime/type";
+
+**** <contents>
+
+The <contents> element gives the contents to be transfered.
+
+    SYNTAX::
+      <contents> "multi-\nline\ncontents\n";
+
+**** <format>
+
+The <format> element gives the expected format of the returned
+results, allowing the curl extension to automatically make the content
+available in the native format.
+
+<format> "xml"; 
+
+|-------------+--------------------------|
+| Format name | Special behavior         |
+|-------------+--------------------------|
+| html        | Result is parsed as HTML |
+| text        | None                     |
+| xml         | Result is parsed as XML  |
+|-------------+--------------------------|
+
+**** <server>
+
+The <server> element gives the outgoing SMTP server name.  At present,
+MX records are not handled, but that will be fixed shortly.
+
+    SYNTAX::
+      <server> "email-server.example.com";
+
+**** <local>
+
+The <local> element gives the name to use as the local hostname for
+"email" (SMTP) requests .
+
+    SYNTAX::
+      <local> "local host name";
+
+**** <from>
+
+The <from> element gives the "From" address to use for "email" (SMTP)
+requests.
+
+    SYNTAX::
+      <from> "source-user@email.example.com";
+
+**** <subject>
+
+The <subject> element gives the "Subject" field for "email" (SMTP)
+requests. 
+
+    SYNTAX::
+      <subject> "email subject string";
+
+**** <upload>
+
+The <upload> element indicates this is a file upload request.
+
+    SYNTAX::
+      <upload>;
+
+**** <fail-on-error>
+
+The <fail-on-error> element indicates that the transfer should fail if
+any errors where detected, including insignificant ones.
+
+    SYNTAX::
+      <fail-on-error>;
+
+**** <verbose>
+
+The <verbose> element requests an insanely detailed level of debug
+information that can be useful when debugging requests.  The curl
+extension will display detailed information about the operations and
+communication of the curl transfer.
+
+    SYNTAX::
+      <verbose>;
+
+**** <insecure>
+
+The <insecure> element indicates a willingness to tolerate insecure
+communications operations.  In particular, it will
+allow SSL Certs without checking the common name.
+
+    SYNTAX::
+      <insecure>;
+
+**** <secure>
+
+The <secure> element requests the use of the "secure" sibling of many
+protocols, including HTTPS and FTPS.
+
+    SYNTAX::
+      <secure>;
+
+**** <to>
+
+The <to> element gives a "To" address for "email" (SMTP) requests.
+For multiple address, use multiple <to> elements.
+
+    SYNTAX::
+      <to> "to-user@email.examplecom";
+
+**** <cc>
+
+The <cc> element gives a "Cc" address for "email" (SMTP) requests.
+For multiple address, use multiple <cc> elements.
+
+    SYNTAX::
+      <cc> "cc-user@email.examplecom";
+
+**** <header>
+
+The <header> element gives additional header fields for the request.
+
+    SYNTAX::
+      <header name="name"> "value";
+
+**** <param>
+
+The <param> element gives additional parameter values for the
+request.  These parameters are typically encoded into the URL.
+
+    SYNTAX::
+      <param name="x"> "y";
+
+*** curl:perform
+
+The "curl:perform" extension function performs simple transfers.
+
+*** curl:open
+
+The "curl:perform" extension function opens a connection to a remote
+server, allowing multiple operations over a single connection. 
+
+*** curl:set
+
+The "curl:set" extension function records a set of parameters that
+will persist for the lifespan of a connection.
+
+*** curl:single
+
+The "curl:single" extension function performs transfer operations
+without using a persistent connection.
+
+*** curl:close
+
+The "curl:close" extension function closes an open connection.
+Further operations cannot be performed over the connection.
 
 *! start-appendix
 

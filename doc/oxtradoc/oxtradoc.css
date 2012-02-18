@@ -1,4 +1,29 @@
+#media-inspector {
+    display:none
+}
 @media screen {
+    #media-inspector { z-index: 1 }
+}
+@media print {
+    #media-inspector { z-index: 2 }
+}
+
+@media screen {
+    hr.noprint {
+	display: none;
+    }
+
+    h1, h2, h3, h4, h5 {
+	font-size: 14pt;
+	color: black;
+	margin: 0;
+	padding: 0;
+    }
+    h1 a, h2 a, h3 a, h4 a, h5 a {
+	font-size: 12pt;
+	color: black;
+    }
+
     div#top {
 	display: table;
     }
@@ -43,6 +68,10 @@
 	display: block;
     }
 
+    a.toc-active {
+	background-color: #dddddd;
+    }
+
     div.self-section-number {
 	display: none;
     }
@@ -55,8 +84,12 @@
 	margin: 0;
     }
 
+    div#toc {
+	overflow-y: scroll;
+    }
+
     div#toc > ul.toc {
-	margin: 0px;
+	margin-left: 2px;
     }
 
     table.header {
@@ -75,7 +108,7 @@
 	display: none;
     }
 
-    ul.top-toc-active {
+    ul.top-toc-open {
 	display: block;
     }
 
@@ -92,5 +125,46 @@
 
     button {
 	display: none;
+    }
+
+    h1 {
+	font-size: 14pt;
+	/*  line-height: 21pt;*/
+	page-break-after: avoid;
+    }
+    h1.np {
+	page-break-before: always;
+    }
+    h1 a {
+	color: #333333;
+    }
+    h2 {
+	font-size: 12pt;
+	/*  line-height: 15pt; */
+	page-break-after: avoid;
+    }
+    h2 a {
+	color: black;
+    }
+    h3 {
+	font-size: 10pt;
+	page-break-after: avoid;
+    }
+    h3 a {
+	color: black;
+    }
+    h4 {
+	font-size: 10pt;
+	page-break-after: avoid;
+    }
+    h4 a {
+	color: black;
+    }
+    h5 {
+	font-size: 10pt;
+	page-break-after: avoid;
+    }
+    h5 a {
+	color: black;
     }
 }
