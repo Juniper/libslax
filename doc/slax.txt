@@ -525,7 +525,6 @@ A variable is defined using the "var" statement.
     template emit-syslog ($device, $date, $user) {
         var $message = "Device " _ $device _ " was changed on "
                        _ $date _ " by user '" _ $user _ "'";
-        
         <syslog> {
             <message> $message;
         }
@@ -629,6 +628,7 @@ XSLT has a number of traditional programming constructs:
          * false.  Note that this is normally only useful with
          * mutable variables.
          */
+    }
 
 XSLT is a declarative language, mixing language statements (in the
 "xsl" namespace) with output elements in other namespaces.  For
@@ -876,7 +876,7 @@ respectively), but uexpr avoids this escaping mechanism.
 
     uexpr "<:-&>";
 
-See also disable-output-escaping
+See also disable-output-escaping.
 
 ** Elements
 
@@ -1222,6 +1222,8 @@ an extension library associated with the namespace.  If found, the
 extension library is loaded and initialized so the script can use
 functions and elements defined within that library.
 
+    ns pref extension = "http://some.example.com";
+
 See also http://www.w3.org/TR/xslt#extension-element
 
 *** The "exclude" Statement @exclude@
@@ -1229,13 +1231,16 @@ See also http://www.w3.org/TR/xslt#extension-element
 The "exclude" statement prevents the namespace from appearing in the
 final result tree, effectively blocking it from output.
 
+    ns xslax extension = "http://libslax.org/slax";
+
 See also http://www.w3.org/TR/xslt#literal-result-element
 
 ** Processing Instructions
 
-A processing instruction is a mechanism to convey application-specific
-information inside an XML document.  The application can see detect
-processing instructions and change their behaviour accordingly.
+An XML processing instruction is a mechanism to convey
+application-specific information inside an XML document.  The
+application can detect processing instructions and change behaviour
+accordingly.
 
 *** The "processing-instruction" Statement @processing-instruction@
 

@@ -3980,7 +3980,7 @@ template rfclist-for-dcmeta ($list) {
 
 template get-paragraph-number () {
     /* get section number of ancestor section element, then add t or figure number */
-    if (ancestor::section && not(ancestor::section[@myns:unnumbered == "unnumbered"]) && not(ancestor::x:blockquote) && not(ancestor::x:note)) {
+    if (ancestor::section && not(ancestor::section[@myns:unnumbered == "unnumbered"]) && not(ancestor::x:blockquote) && not(ancestor::x:note) && not(ancestor::digress)) {
         for-each (ancestor::section[1]) {
             call get-section-number();
             expr ".p.";
@@ -3988,6 +3988,9 @@ template get-paragraph-number () {
         number {
             count t | figure | x:blockquote | x:note;
         }
+    }
+    if (../digress) {
+	expr ".digress";
     }
 }
 
