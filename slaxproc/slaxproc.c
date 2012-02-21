@@ -378,6 +378,7 @@ main (int argc UNUSED, char **argv)
     int logger = FALSE;
     slax_data_node_t *dnp;
     int i;
+    unsigned ioflags = 0;
 
     slaxDataListInit(&plist);
 
@@ -486,6 +487,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
 
+	} else if (streq(cp, "--no-tty")) {
+	    ioflags |= SIF_NO_TTY;
+
 	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
 	    logger = TRUE;
 
@@ -534,7 +538,7 @@ main (int argc UNUSED, char **argv)
     xmlInitParser();
     xsltInit();
     slaxEnable(SLAX_ENABLE);
-    slaxIoUseStdio();
+    slaxIoUseStdio(ioflags);
 
     if (logger)
 	slaxLogEnable(TRUE);

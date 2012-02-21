@@ -14,6 +14,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <paths.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -35,12 +36,17 @@
  * won't compile with our warning level.  We take the "lesser
  * of two evils" approach and fake a prototype here instead
  * of turning down our warning levels.
+ *
+ * (...Hmmmm.... when this was a one-line extern for readline, I
+ * didn't feel guilty, but it's getting longer....)
  */
 #include <readline/readline.h>
 #include <readline/history.h>
 #else /* 0 */
 extern char *readline (const char *);
 extern void add_history (const char *);
+extern FILE *rl_instream;
+extern FILE *rl_outstream;
 #endif /* 0 */
 
 /* Callback functions for input and output */
@@ -52,6 +58,7 @@ static slaxErrorCallback_t slaxErrorCallback;
 int slaxLogIsEnabled;
 static slaxLogCallback_t slaxLogCallback;
 static void *slaxLogCallbackData;
+static FILE *slaxIoTty;
 
 /**
  * Use the input callback to get data
@@ -115,10 +122,16 @@ slaxOutput (const char *fmt, ...)
 {
     if (slaxOutputCallback) {
 	char buf[BUFSIZ];
+	size_t len;
 	va_list vap;
 
 	va_start(vap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, vap);
+	len = vsnprintf(buf, sizeof(buf), fmt, vap);
+	if (len >= sizeof(buf)) {
+	    char *cp = buf + sizeof(buf) - 4;
+	    cp[0] = cp[1] = cp[2] = '.';
+	    cp[3] = '\0';
+	}
 	va_end(vap);
 
 	/* slaxLog("slaxOutput: [%s]", buf); */
@@ -276,8 +289,14 @@ slaxIoStdioErrorCallback (const char *fmt, va_list vap)
 }
 
 void
-slaxIoUseStdio (void)
+slaxIoUseStdio (unsigned flags)
 {
+#if defined(_PATH_TTY)
+    if (!(flags & SIF_NO_TTY) && rl_instream == NULL)
+	rl_instream = rl_outstream = slaxIoTty = fopen(_PATH_TTY, "r+");
+	/* Non-fatal failure; falls back to stdin */
+#endif /* _PATH_TTY */
+
     slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
 		   slaxIoStdioRawwriteCallback, slaxIoStdioErrorCallback);
 }

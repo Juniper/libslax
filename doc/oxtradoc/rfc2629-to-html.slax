@@ -3100,7 +3100,7 @@ template insertJavascript () {
 	for $file ($js-files/file) {
 	    var $content = slax:document($oxtradoc-dir _ "/" _ $file);
 	    <script type="text/javascript"> {
-		copy-of string($content);
+		expr $content;
 	    }
 	}
     } else {
@@ -3111,6 +3111,24 @@ template insertJavascript () {
 	    }
 	}
     }
+}
+
+template htmlescape ($content) {
+    var $s1 = { call replace($input = $content, $old = "&", $new = "&amp;"); }
+    var $s2 = { call replace($input = $s1, $old = "<", $new = "&lt;"); }
+    var $s3 = { call replace($input = $s2, $old = ">", $new = "&gt;"); }
+    expr $s3;
+}
+
+template replace ($input, $old, $new) {
+    var $pieces = slax:split($old, $input);
+    var $out = {
+	for-each ($pieces) {
+	    expr $new;
+	    expr .;
+	}
+    }
+    expr substring($out, string-length($new));
 }
 
 /* generate the index section */

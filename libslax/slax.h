@@ -119,6 +119,7 @@ slaxEmitProgressMessages (int);
 /* Flags for slaxInputCallback_t */
 #define SIF_HISTORY	(1<<0)	/* Add input line to history */
 #define SIF_SECRET	(1<<1)	/* Secret/password text (do not echo) */
+#define SIF_NO_TTY	(1<<2)	/* Avoid the real terminal tty (use stdin) */
 
 /*
  * IO hooks
@@ -133,7 +134,7 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 		xmlOutputWriteCallback raw_write,
 		slaxErrorCallback_t error_callback);
 
-void slaxIoUseStdio (void);	/* Use the stock std{in,out} */
+void slaxIoUseStdio (unsigned flags);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
 
 /**
