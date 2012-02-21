@@ -2724,19 +2724,19 @@ if any, can be replaced.
         var $data = slax:document($url);
 
 	var $options := {
-            <format> "base64";
             <encoding> "ascii";
+            <format> "base64";
             <non-xml> "#";
         }
         var $data2 = slax:document($url, $options);
 
-|------------+-------------------------------------|
-| Option     | Description                         |
-|------------+-------------------------------------|
-| <non-xml>  | Skip field if value has not changed |
-| <encoding> | Prepend TAG if string is not empty  |
-| <format>   | "base64" for BASE64-encoded data    |
-|------------+-------------------------------------|
+|------------+---------------------------------------------|
+| Option     | Description                                 |
+|------------+---------------------------------------------|
+| <encoding> | Character encoding scheme ("utf-8")         |
+| <format>   | "base64" for BASE64-encoded data            |
+| <non-xml>  | Replace non-xml characters with this string |
+|------------+---------------------------------------------|
 
 If the <non-xml> value is an empty string, then non-xml characters
 will be removed, otherwise they will be replaced with the given

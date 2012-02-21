@@ -1,5 +1,24 @@
 version 1.1;
 
+/*
+ * Copyright (c) 2006-2011, Juniper Networks, Inc.
+ * All rights reserved.
+ * This SOFTWARE is licensed under the LICENSE provided in the
+ * ../Copyright file. By downloading, installing, copying, or otherwise
+ *  using the SOFTWARE, you agree to be bound by the terms of that
+ * LICENSE.
+ */
+
+/*
+ * This script turns the non-inlined version of slax-manual.html into
+ * a <div> that can be loaded into nested HTML pages, such as
+ * libslax.org/the-slax-language.  You'll first need to
+ * "make SLAX_INLINE_ARGS= slax-manual-*.html" in build/doc/
+ * to make the "right" html file, then run this script as
+ *   ../slaxproc/slaxproc webify.slax slax-manual*.html foo.html
+ * I will add all this to the Makefile.am when I can find time.
+ */
+
 output-method html;
 
 match / {
