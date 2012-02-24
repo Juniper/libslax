@@ -278,9 +278,9 @@ top_srcdir = @top_srcdir@
 ext_curlincdir = ${includedir}/libslax
 EXTRA_DIST = curl.txt
 AM_CFLAGS = -DLIBSLAX_XMLSOFT_NEED_PRIVATE -DCURL_DISABLE_TYPECHECK \
-	-I${top_srcdir} ${LIBSLAX_CFLAGS} ${LIBXSLT_CFLAGS} \
-	${LIBXML_CFLAGS} ${LIBCURL_CFLAGS} ${WARNINGS} \
-	-DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+	-I${top_srcdir} ${LIBCURL_CFLAGS} ${LIBSLAX_CFLAGS} \
+	${LIBXSLT_CFLAGS} ${LIBXML_CFLAGS} ${LIBCURL_CFLAGS} \
+	${WARNINGS} -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 lib_LTLIBRARIES = libext_curl.la
 libext_curl_la_SOURCES = \
     ext_curl.c

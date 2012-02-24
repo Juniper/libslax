@@ -46,6 +46,7 @@ param $oxtradoc-dir = ".";
 param $oxtradoc-inline;
 param $oxtradoc-install-dir = ".";
 param $oxtradoc-numbers;
+param $oxtradoc-sep = "_";
 
 strip-space back front list middle rfc section;
 output-method html {
@@ -235,9 +236,10 @@ match text() [not(ancestor::artwork)] {
 }
 
 match abstract {
+    param $sep = $oxtradoc-sep;
     <div class="content"> {
-	<h1 id=$anchor-prefix _ ".abstract"> {
-	    <a href="#" _ $anchor-prefix _ ".abstract"> "Abstract";
+	<h1 id=$anchor-prefix _ $sep _ "abstract"> {
+	    <a href="#" _ $anchor-prefix _ $sep _ "abstract"> "Abstract";
 	}
 	apply-templates;
     }
@@ -666,15 +668,15 @@ match iref {
     }
 }
 
-template compute-iref-anchor () {
+template compute-iref-anchor ($sep = $oxtradoc-sep) {
     var $first = translate(substring(@item, 1, 1), $ucase, $lcase);
     var $nkey = translate($first, $lcase, "");
     
     if ($nkey == "") {
         expr $anchor-prefix;
-        expr ".iref.";
+        expr $sep _ "iref" _ $sep;
         expr $first;
-        expr ".";
+        expr $sep;
         number {
             level "any";
             count iref[starts-with(translate(@item, $ucase, $lcase), $first)];
@@ -682,7 +684,7 @@ template compute-iref-anchor () {
     
     } else {
         expr $anchor-prefix;
-        expr ".iref.";
+        expr $sep _ "iref" _ $sep;
         number {
             level "any";
             count iref[translate(substring(@item, 1, 1), $lcase _ $ucase, "") == ""];
@@ -690,15 +692,15 @@ template compute-iref-anchor () {
     }
 }
 
-template compute-extref-anchor () {
+template compute-extref-anchor ($sep = $oxtradoc-sep) {
     var $first = translate(substring(., 1, 1), $ucase, $lcase);
     var $nkey = translate($first, $lcase, "");
     
     if ($nkey == "") {
         expr $anchor-prefix;
-        expr ".extref.";
+        expr $sep _ "extref" _ $sep;
         expr $first;
-        expr ".";
+        expr $sep;
         number {
             level "any";
             count x:ref[starts-with(translate(., $ucase, $lcase), $first)];
@@ -706,7 +708,7 @@ template compute-extref-anchor () {
     
     } else {
         expr $anchor-prefix;
-        expr ".extref.";
+        expr $sep _ "extref" _ $sep;
         number {
             level "any";
             count x:ref[translate(substring(., 1, 1), $lcase _ $ucase, "") == ""];
@@ -938,13 +940,14 @@ match middle {
 }
 
 match note {
+    param $sep = $oxtradoc-sep;
     var $num = {
         number;
     }
     
-    <h1 id=$anchor-prefix _ ".note." _ $num> {
+    <h1 id=$anchor-prefix _ $sep _ "note" _ $sep _ $num> {
         call insertInsDelClass();
-        <a href="#" _ $anchor-prefix _ ".note." _ $num> @title;
+        <a href="#" _ $anchor-prefix _ $sep _ "note" _ $sep _ $num> @title;
     }
     apply-templates;
 }
@@ -1189,7 +1192,9 @@ match references {
                 call get-references-section-number();
             }
             
-            <a id=$anchor-prefix _ ".section." _ $sectionNumber href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+            <a id=$anchor-prefix _ $sep _ "section" _ $sep
+	        _ $sectionNumber href="#" _ $anchor-prefix
+	        _ $sep _ "section" _ $sep _ $sectionNumber> {
                 call emit-section-number($no = $sectionNumber);
             }
             expr " References";
@@ -1222,7 +1227,7 @@ match references {
             if ($elemtype == "h1") {
             
             } else {
-                expr ".";
+                expr .;
                 expr $name;
             }
         }
@@ -1230,7 +1235,9 @@ match references {
         attribute "id" {
             expr $anchor-prefix _ ".references" _ $anchorpref;
         }
-        <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber id=$anchor-prefix _ ".section." _ $sectionNumber> {
+        <a href="#" _ $anchor-prefix _ $sep _ "section"
+	     _ $sep _ $sectionNumber id=$anchor-prefix
+	     _ $sep _ "section" _ $sep _ $sectionNumber> {
             call emit-section-number($no = $sectionNumber);
         }
         expr " ";
@@ -1389,6 +1396,7 @@ match list | figure | texttable {
 /* ... otherwise group into p elements */
 match * | node() {
     mode "t-content";
+    param $sep = $oxtradoc-sep;
     
     var $p = {
         call get-paragraph-number();
@@ -1399,7 +1407,7 @@ match * | node() {
             if ($p != "" && not(ancestor::ed:del) && not(ancestor::ed:ins) && not(ancestor::x:lt) && count(preceding-sibling::node()) == 0) {
                 attribute "id" {
                     expr $anchor-prefix;
-                    expr ".section.";
+                    expr $sep _ "section" _ $sep;
                     expr $p;
                 }
             }
@@ -1466,6 +1474,8 @@ template insertTitle () {
 }
 
 match section | appendix {
+    param $sep = $oxtradoc-sep;
+
     if (self::appendix) {
         call warning($inline = "no") {
             with $msg = {
@@ -1516,7 +1526,7 @@ match section | appendix {
 	    if ($sectionNumber != "") {
 		attribute "id" {
 		    expr $anchor-prefix;
-		    expr ".section.";
+		    expr $sep _ "section" _ $sep;
 		    expr $sectionNumber;
 		}
 	    }
@@ -1532,7 +1542,8 @@ match section | appendix {
 	    call insertInsDelClass();
 	    if ($sectionNumber != "") {
 		<div class="self-section-number"> {
-		    <a href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+		    <a href="#" _ $anchor-prefix
+		            _ $sep _ "section" _ $sep _ $sectionNumber> {
 			call emit-section-number($no = $sectionNumber);
 		    }
 		    expr " ";
@@ -1611,17 +1622,18 @@ match vspace {
 /* keep the root for the case when we process XSLT-inline markup */
 var $src = /;
 
-template render-section-ref ($from, $to) {
+    template render-section-ref ($from, $to, $sep = $oxtradoc-sep) {
     var $refname = {
         for-each ($to) {
             call get-section-type($prec = $from/preceding-sibling::node() [1]);
         }
     }
-    var $refnum = {
+    var $refnumx = {
         for-each ($to) {
             call get-section-number();
         }
     }
+    var $refnum = translate($refnumx, $sep, ".");
     
     attribute "title" {
         expr $to/@title;
@@ -2337,7 +2349,7 @@ template get-authors-section-number () {
     }
 }
 
-template insertAuthors () {
+template insertAuthors ($sep = $oxtradoc-sep) {
     call insert-conditional-hrule();
     var $number = {
         call get-authors-section-number();
@@ -2347,7 +2359,9 @@ template insertAuthors () {
 	<h1 id=$anchor-prefix _ ".authors"> {
 	    call insert-conditional-pagebreak();
 	    if ($number != "") {
-		<a href="#" _ $anchor-prefix _ ".section." _ $number id=$anchor-prefix _ ".section." _ $number> {
+		<a href="#" _ $anchor-prefix _ $sep _ "section"
+		    _ $sep _ $number
+		    id=$anchor-prefix _ $sep _ "section" _ $sep _ $number> {
 		    expr $number;
 		    expr ".";
 		}
@@ -3611,7 +3625,8 @@ match / {
     }
 }
 
-template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $waschanged) {
+template insert-toc-line ($number, $target, $title, $tocparam,
+			  $oldtitle, $waschanged, $sep = $oxtradoc-sep) {
     /* handle tocdepth parameter */
     if (($tocparam == "" || $tocparam == "default") && string-length(translate($number, ".ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890§", ".")) >= $parsedTocDepth) {
         /* dropped entry because excluded */
@@ -3633,7 +3648,7 @@ template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $wasch
             }
         
         } else {
-            if (not(contains($number, "."))) {
+            if (not(contains($number, $sep))) {
                 attribute "class" {
                     expr "tocline0";
                 }
@@ -3652,14 +3667,14 @@ template insert-toc-line ($number, $target, $title, $tocparam, $oldtitle, $wasch
 		<div class="section-number"> {
 		    if ($sn != "") {
 			attribute "id" {
-			    expr "toc.";
+			    expr "toc" _ $sep;
 			    expr $anchor-prefix;
-			    expr ".section.";
+			    expr $sep _ "section" _ $sep;
 			    expr $sn;
 			}
 		    }
 
-		    expr $sn;
+		    expr translate($sn, $oxtradoc-sep, ".");
 		    expr "   ";
 		}
             }
@@ -3797,6 +3812,7 @@ template references-toc () {
 
 match section | appendix {
     mode "toc";
+    param $sep = $oxtradoc-sep;
     
     var $sectionNumber = {
         call get-section-number();
@@ -3807,7 +3823,7 @@ match section | appendix {
         
         } else {
             expr $anchor-prefix;
-            expr ".section.";
+            expr $sep _ "section" _ $sep;
             expr $sectionNumber;
         }
     }
@@ -3817,7 +3833,7 @@ match section | appendix {
 	<ul> {
 	    attribute "class" {
 		expr "toc";
-		if (not(contains($sectionNumber, "."))) {
+		if (not(contains($sectionNumber, $sep))) {
 		    expr " top-toc";
 		}
 	    }
@@ -3838,7 +3854,7 @@ match section | appendix {
                 <ul> {
 		    attribute "class" {
 			expr "toc";
-			if (not(contains($sectionNumber, "."))) {
+			if (not(contains($sectionNumber, $sep))) {
 			    expr " top-toc";
 			}
 		    }
@@ -3977,7 +3993,9 @@ template check-front-matter-ref ($name) {
     
     } else {
         if (count(//references//reference/seriesInfo[@name == "RFC" &&@value == $name]) == 0) {
-            call warning($inline = "no", $msg = "front matter mentions RFC " _ $name _ " for which there is no reference element");
+            call warning($inline = "no",
+			 $msg = "front matter mentions RFC " _ $name
+			 _ " for which there is no reference element");
         }
     }
 }
@@ -3996,19 +4014,23 @@ template rfclist-for-dcmeta ($list) {
     }
 }
 
-template get-paragraph-number () {
+template get-paragraph-number ($sep = $oxtradoc-sep) {
     /* get section number of ancestor section element, then add t or figure number */
-    if (ancestor::section && not(ancestor::section[@myns:unnumbered == "unnumbered"]) && not(ancestor::x:blockquote) && not(ancestor::x:note) && not(ancestor::digress)) {
+    if (ancestor::section
+	    && not(ancestor::section[@myns:unnumbered == "unnumbered"])
+	    && not(ancestor::x:blockquote)
+	    && not(ancestor::x:note)
+	    && not(ancestor::digress)) {
         for-each (ancestor::section[1]) {
             call get-section-number();
-            expr ".p.";
+            expr $sep _ "p" _ $sep;
         }
         number {
             count t | figure | x:blockquote | x:note;
         }
     }
     if (../digress) {
-	expr ".digress";
+	expr $sep _ "digress";
     }
 }
 
@@ -4112,7 +4134,7 @@ match x:blockquote {
         if (string-length($p) > 0 && not(ancestor::ed:del) && not(ancestor::ed:ins)) {
             attribute "id" {
                 expr $anchor-prefix;
-                expr ".section.";
+                expr $sep _ "section" _ $sep;
                 expr $p;
             }
         }
@@ -5289,12 +5311,14 @@ match text() {
 
 match /*/middle//section[not(myns:unnumbered) && not(ancestor::section)] {
     mode "links";
+    param $sep = $oxtradoc-sep;
     
     var $sectionNumber = {
         call get-section-number();
     }
     
-    <link rel="Chapter" title=$sectionNumber _ " " _ @title href="#" _ $anchor-prefix _ ".section." _ $sectionNumber>;
+    <link rel="Chapter" title=$sectionNumber _ " " _ @title
+        href="#" _ $anchor-prefix _ $sep _ "section" _ $sep _ $sectionNumber>;
     apply-templates {
         mode "links";
     }
@@ -5302,12 +5326,14 @@ match /*/middle//section[not(myns:unnumbered) && not(ancestor::section)] {
 
 match /*/back//section[not(myns:unnumbered) && not(ancestor::section)] {
     mode "links";
+    param $sep = $oxtradoc-sep;
     
     var $sectionNumber = {
         call get-section-number();
     }
     
-    <link rel="Appendix" title=$sectionNumber _ " " _ @title href="#" _ $anchor-prefix _ ".section." _ $sectionNumber>;
+    <link rel="Appendix" title=$sectionNumber _ " " _ @title
+	 href="#" _ $anchor-prefix _ $sep _ "section" _ $sep _ $sectionNumber>;
     apply-templates {
         mode "links";
     }
@@ -5315,12 +5341,14 @@ match /*/back//section[not(myns:unnumbered) && not(ancestor::section)] {
 
 match /*/back/references[position() == 1] {
     mode "links";
+    param $sep = $oxtradoc-sep;
     
     var $sectionNumber = {
         call get-references-section-number();
     }
     
-    <link rel="Chapter" href="#" _ $anchor-prefix _ ".section." _ $sectionNumber> {
+    <link rel="Chapter" href="#" _ $anchor-prefix
+    _ $sep _ "section" _ $sep _ $sectionNumber> {
         if (@title && count(/*/back/references) == 1) {
             attribute "title" {
                 call get-references-section-number();
@@ -5452,7 +5480,7 @@ template get-lang () {
     }
 }
 
-template get-section-number () {
+template get-section-number ($sep = $oxtradoc-sep) {
     var $anchor = @anchor;
     
     if (@x:fixed-section-number) {
@@ -5468,7 +5496,7 @@ template get-section-number () {
             
             } else {
                 call get-references-section-number();
-                expr ".";
+                expr $sep;
                 number {
                     count references;
                 }
@@ -5481,7 +5509,7 @@ template get-section-number () {
                 
                 } else {
                     call get-references-section-number();
-                    expr ".";
+                    expr $sep;
                     number {
                         count references;
                     }
@@ -5510,6 +5538,7 @@ template get-section-number () {
         } else {
             number {
                 level "multiple";
+		format "1_1_1_1_1_1_1";
                 count section;
             }
         }
@@ -5520,10 +5549,10 @@ template get-references-section-number () {
     expr count(/rfc/middle/section) + count(/rfc/middle/ed:replace/ed:ins/section) + 1;
 }
 
-template emit-section-number ($no) {
-    expr $no;
-    if (not(contains($no, ".")) || $xml2rfc-ext-sec-no-trailing-dots == "yes") {
-        expr ".";
+template emit-section-number ($no, $sep = $oxtradoc-sep) {
+    expr translate($no, $sep, ".");
+    if (not(contains($no, $sep)) || $xml2rfc-ext-sec-no-trailing-dots == "yes") {
+        expr $sep;
     }
 }
 
@@ -5537,9 +5566,9 @@ template get-section-type ($prec) {
     }
 }
 
-template get-table-anchor () {
+template get-table-anchor ($sep = $oxtradoc-sep) {
     expr $anchor-prefix;
-    expr ".table.";
+    expr $sep _ "table" _ $sep;
     if (@title != "" ||@anchor != "") {
         number {
             level "any";
@@ -5555,9 +5584,9 @@ template get-table-anchor () {
     }
 }
 
-template get-figure-anchor () {
+template get-figure-anchor ($sep = $oxtradoc-sep) {
     expr $anchor-prefix;
-    expr ".figure.";
+    expr $sep _ "figure" _ $sep;
     if (@title != "" ||@anchor != "") {
         number {
             level "any";

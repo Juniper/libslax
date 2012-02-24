@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.11.10], [phil@juniper.net])
+AC_INIT([libslax], [0.11.11], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -26,7 +26,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 #
 LIBXML_REQUIRED_VERSION=2.7.7
 LIBXSLT_REQUIRED_VERSION=1.1.26
-LIBCURL_REQUIRED_VERSION=7.21.6
+LIBCURL_REQUIRED_VERSION=7.21.3
 
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -283,6 +283,13 @@ fi
 AC_SUBST(XSLT_CONFIG)
 AC_SUBST(LIBXSLT_CFLAGS)
 AC_SUBST(LIBXSLT_LIBS)
+
+LIBCURL_CONFIG_PREFIX=""
+
+AC_ARG_WITH(libcurl-prefix,
+        [  --with-libcurl-prefix=[PFX]           Specify location of libcurl config],
+        LIBCURL_CONFIG_PREFIX=$withval
+)
 
 AC_SUBST(LIBCURL_REQUIRED_VERSION)
 AC_MSG_CHECKING(for libcurl libraries >= $LIBCURL_REQUIRED_VERSION) 

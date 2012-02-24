@@ -17,7 +17,7 @@ jQuery(function ($) {
     $("#rfc.toc").remove();
     $("h1", $left).remove();
 
-    $body.append($("<div id='debug-log'/>"));
+    /* $body.append($("<div id='debug-log'/>")); */
     $left.append($("<div class='padding'/>"));
 
     var active;
@@ -25,7 +25,7 @@ jQuery(function ($) {
 
     setActive($($right.children("div.content").get(0)));
 
-    function setActive ($elt) {
+    function setActive ($elt, toggle) {
         if ($elt && $elt.length > 0 && $elt.hasClass("content")) {
             /* Mark a new element "active" */
             if (active)
@@ -38,15 +38,21 @@ jQuery(function ($) {
                 tocactive.removeClass("toc-active");
 
             var id = $elt.get(0).children[0].id
+            $.dbgpr("sa:", id);
             if (id) {
-                id = "#toc\\." + id.replace(".", "\\.", "g");
+                id = "#toc_" + id;
                 tocactive = $("a", $(id).parent());
+                $.dbgpr("ta:", tocactive.length, id);
                 if (tocactive.length) {
                     tocactive = $(tocactive[0]);
                     tocactive.addClass("toc-active");
 
                     var $tt = tocactive.parents("li.tocline0");
-                    $("ul.top-toc", $tt).addClass("top-toc-open");
+                    $.dbgpr("tt:", $tt.length);
+                    if (toggle)
+                        $("ul.top-toc", $tt).toggleClass("top-toc-open");
+                    else
+                        $("ul.top-toc", $tt).addClass("top-toc-open");
                 }
             }
 
@@ -63,7 +69,35 @@ jQuery(function ($) {
         }
     }
 
+    function findParent ($elt, className) {
+        while ($elt) {
+            if ($elt.hasClass(className))
+                return $elt;
+            $elt = $elt.parent();
+        }
+        return null;
+    }
+
     $("a", $left).click(function (event) {
+        event.preventDefault();
+        var $this = $(this);
+        var id = this.href.split("#");
+        id = id[id.length - 1];
+
+        var toggle = $(this).parent().hasClass("tocline0");
+
+        var $target = $(document.getElementById(id));
+        $.dbgpr("id: ", id, " + ", $target, " + ", $target.length);
+
+        var $parent = findParent($target, "content");
+        $.dbgpr("pr: ", $parent);
+        setActive($parent, toggle);
+        $.dbgpr("done");
+
+        $("html").animate({ scrollTop: 0 }, 500);
+    });
+
+    $("a", $right).click(function (event) {
         event.preventDefault();
         var id = this.href.split("#");
         id = id[id.length - 1];
@@ -72,6 +106,15 @@ jQuery(function ($) {
         setActive($target.parents("div.content"));
 
         $("html").animate({ scrollTop: 0 }, 500);
+    });
+
+    $("a", $right).each(function (idx, elt) {
+        /* Put the @title as the link value */
+        var $elt = $(elt);
+        var t = $elt.attr("title");
+        var href = $elt.attr("href");
+        if (t !== undefined && href !== undefined)
+            $elt.text(t);
     });
 
     $("button#nav-prev").button({
