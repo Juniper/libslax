@@ -8,7 +8,9 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
+if SLAX_WARNINGS
 include ${top_srcdir}/warnings.mk
+endif
 
 ext_curlincdir = ${includedir}/libslax
 
