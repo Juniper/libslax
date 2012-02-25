@@ -598,7 +598,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
 
 
-include ${top_srcdir}/warnings.mk
+@SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ${libdir}/libext_curl.la ; echo $$dlname'`; \

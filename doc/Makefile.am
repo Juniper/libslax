@@ -8,7 +8,7 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-BINDIR = ~/work/yang/bin
+BINDIR = ${srcdir}/oxtradoc
 OUTLINE2XML = ${BINDIR}/outline2xml
 XML2RFC = ${BINDIR}/xml2rfc.tcl
 XML2HTMLDIR = `dirname ${XML2HTMLBIN}`
@@ -48,6 +48,8 @@ EXTRA_DIST = \
     ${QUICKREFVERS}.pdf
 
 OXTRADOC_FILES = \
+    oxtradoc/outline2xml \
+    oxtradoc/xml2rfc.tcl \
     oxtradoc/jquery-ui.js \
     oxtradoc/jquery.dbgpr.js \
     oxtradoc/jquery.js \

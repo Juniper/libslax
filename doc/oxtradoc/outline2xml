@@ -1,0 +1,856 @@
+#!/usr/bin/perl
+
+# Author: Phil Shafer
+# Somewhat documented by Martin Björklund
+
+# The first non comment, non whitespace lines must be the abstract.
+# The abstract is written as normal text, but with whitespace at
+# the beginning of the line.
+#
+# After the abstract, each '*' marked line marks a new section.
+#
+# After the line "*! start-appendix", each '*' marked line marks a
+# new appendix.
+#
+# front.xml must be used.
+#
+# back.xml is optional.
+#
+# '#' at the beginning of the line marks a comment.
+# '@' at the beginning of the line escapes the entire line, i.e.
+#     the line (minus the '@') is not translated.
+# '!! include-figure <filename>' includes the file, and makes
+#    it's content a figure.
+# '-' at the beginning of the line marks a symbol list item.
+# '_' at the beginning of the line marks an empty list item.
+# '+' at the beginning of the line marks a numbered list item.
+# '=' at the beginning of the line marks an hanging list item, where
+#    the rest of the line is the hang text.
+# '!! table' [<preamble>] [<anchor>]
+#    starts a texttable
+# '!! head'  ! <head1> ! <head2> ... ! <headN>
+# '!! row'   ! <col1>  ! <col2>  ... ! <colN>
+# '{{ <tag>: <text>' starts a digress
+#     a digress is not present in the text output, but is
+#     present in the XML.
+# '}}' ends the digress
+# '?' at the beginning of a line make the following section an 
+#     Open Question
+#
+# outline2xml tries to detect XML, ascii-art, and code.  Each
+# such block will be a <figure>. Note that a block is ended by
+# a single newline at a line, so if the code has empty newlines,
+# these lines have to be changed to either a sinlge '@' or e.g. a ' '.
+#
+# An anchor can be defined in a section header by enclosing the anchor name
+# within two '@' characters, after the section name, e.g.:
+#   "* Introduction @intro@"
+#
+# An anchor can be referenced in any text by enclosing the anchor name
+# within two '^' characters, e.g.:
+#  "see ^intro^"
+
+@lines = ();
+@tags = ();
+@authors = ();
+$wrapwidth = 70;
+
+sub main {
+    while ($ARGV[0] =~ /^-/) {
+	$_ = shift @ARGV;
+	$args{abbreviation} = shift @ARGV if /^-a/;
+	push(@authors, shift @ARGV) if /^-A/;
+	$args{references} = shift @ARGV if /^-b/;
+	$args{category} = shift @ARGV if /^-c/;
+	$debug = 1 if /^-d/;
+	die "-f no longer supported" if /^-f/;
+	$args{name} = shift @ARGV if /^-n/;
+	$do_digress = 1 if /^-D/;
+	$autowrap = 1 if /^-w/;
+	$args{ipr} = shift @ARGV if /^-i/;
+	$args{title} = shift @ARGV if /^-t/;
+    }
+
+    &outline2xml();
+}
+
+# outline2xml:
+# - read the entire document into an array
+# - tag lines of the array with handling tags
+#   - first pass gets all the obvious stuff
+#   - second pass gets all the odd stuff
+# - then generate output based on the handling tags
+sub outline2xml {
+    $file = $ARGV[0];
+    @lines = <ARGV>;	# Read the entire input file into an array
+    chomp(@lines);	# Trim newlines off each input line
+
+    # Nuke lines containing only whitespace, under the theory that
+    # whitespace is noise and should be ignored.
+    grep(s/^\s+$//, @lines);
+
+    &first_pass();	# Do the easy stuff
+    &dump_labels("first pass") if $debug;
+    &second_pass();	# Do the not-so-easy stuff
+    &dump_labels("second pass") if $debug;
+
+    my $doc = document_header();
+
+    &front_matter($doc);
+
+    &generate_output();	# Make XML output
+
+    &back_matter($doc) unless $seen_appendix;
+    &close_sections();
+    print "</back></rfc>\n";
+}
+
+sub dump_labels {
+    my ($pass) = @_;
+
+    printf "<!-- dump of lines and tag: $pass\n";
+    for ($i = 0; $i <= $#lines; $i++) {
+	printf("[%-20s] %s\n", $tags[$i], $lines[$i]);
+    }
+    printf "- - end dump of lines and tag -->\n";
+}
+
+sub first_pass {
+    my $last_tag;
+
+    for ($i = 0; $i <= $#lines; $i++) {
+	$lnum = $i + 1;
+	$_ = $lines[$i];
+	my $tag;
+
+	do {{
+	    # Comments are lines that begin with a pound sign
+	    $tag = "comment", last if /^#/;
+
+	    # @foo lines are passed directly into the xml output
+	    $tag = "passthru", last if /^@/;
+
+	    # Appendices start with "start-appendix"
+	    $tag = "appendix", last if /^\*! start-appendix/;
+	    $tag = "appendix", last if /^\* Appendices/;
+
+	    # Handles include-figure, table, and row
+	    if (/^!!\s*(\S+)/) {
+		$tag = $1;
+		$tag =~ s/-/_/g;
+		last;
+	    }
+
+	    # Other modes are detected based on leading string
+	    $tag = "org_table", last if /^\|/;
+	    $tag = "digress", last if /^{{/;
+	    $tag = "enddigress", last if /^}}/;
+	    $tag = "section", last if /^\*+\s/;
+	    $tag = "nlist", last if /^[-=_+]\s/;
+	    $tag = "nlist", last if /^(\s+)[-=_+]\s/ && $last_tag eq "nlist";
+	    $tag = "picture", last if /^\s+\+-/ && $last_tag ne "code";
+	    $tag = "xml", last if /^\s+</;
+	    $tag = "xml", last if $last_tag eq "xml" and /^\s+./;
+	    $tag = "xml", last if /^\d{1,2}\s+</;
+	    $tag = "xml", last if /^\d{1,2}\s+/ && $last_tag eq "xml";
+	    $tag = "question", last if /^\?\s+/;
+	    $tag = "code", last if /^\s+./; #/
+	    $tag = "text", last if /^./; #/
+
+	}} while undef;
+
+	$tags[$i] = $tag;	# Record our tag
+	$last_tag = $tag;
+    }
+}
+
+@sticky = qw(artwork picture nlist code xml question);
+%sticky = ();
+
+for (my $s = 0; $s <= $#sticky; $s++) {
+    $sticky{$sticky[$s]} = 1;
+}
+
+sub second_pass {
+    my $mode, $last_tag, $last_line, $last_real;
+
+    for ($i = 0; $i <= $#lines; $i++) {
+	$lnum = $i + 1;
+	$_ = $lines[$i];
+	my $tag = $tags[$i];	# Tag from the first pass
+
+	do {{
+	    # We start in the abstract section, until we see the
+	    # first section header.
+	    if (!$seen_section && ($tag eq "text"|| $tag eq "code")) {
+		$tag = "abstract";
+		next;
+	    }
+	    $seen_section = 1 if $tag eq "section";
+
+            # No one can claim the end of a digress
+	    last if /^}}/;
+
+	    foreach $s (@sticky) {
+		($tag, $mode) = &update($s, $mode, $tag, $_);
+	    }
+
+	    # If the last line didn't have a tag and the line before
+	    # that had the same tag as our's, claim the blank lines.
+	    # We don't do this behavior for "text" lines.
+	    if ($last_tag eq undef && $last_real eq $tag && $sticky{$tag}) {
+		for (my $j = $i - 1; $j >= 0; $j--) {
+		    last if $tags[$j];	# Stop when we hit a tagged line
+		    $tags[$j] = $tag;	# Claim lines as our's
+		}
+	    }
+
+	}} while undef;
+
+	$tags[$i] = $tag;	# Update our tag
+
+	$last_line = $_;
+	$last_tag = $tag;
+	$last_real = $tag if $tag;
+    }
+}
+
+# Update the tag and mode based on the current mode and input line
+sub update {
+    my($test, $mode, $tag, $line) = @_;
+
+    if ($tag eq $test) {
+	$mode = $test;
+    } elsif ($mode eq $test) {
+	if ($line =~ /^$/) {
+	    $mode = undef;
+	} else {
+	    $tag = $test;
+	}
+    }
+
+    return ($tag, $mode);
+}    
+
+sub generate_output {
+    local $last_tag, $line, $tag, $line_number;
+
+    for ($i = 0; $i <= $#lines; $i++) {
+	$lnum = $i + 1;
+	$line_number = $i;
+	$line = $_ = $lines[$i];
+	$tag = $tags[$i];	# Tag from the first pass
+
+	if (!$do_digress && $in_digress && !$inline_digress) {
+	    next if $tag ne "enddigress";
+	}
+
+	if ($last_tag ne $tag) {
+	    &emit($last_tag, "end") if $last_tag;
+	    &emit($tag, "start") if $tag;
+
+	} elsif ($art) {
+	    check_line_length($line, $file, $lnum) unless $do_digress;
+	    print untabify($line), "\n";
+
+	} elsif ($tag || $_) {
+	    if (defined &$tag) {
+		&$tag();
+	    } else {
+		restart_digress();
+		print esc($_), "\n";
+	    }
+	}
+
+	$last_tag = $tag;
+    }
+    &emit($last_tag, "end") if $last_tag;
+}
+
+sub emit {
+    local($tag, $phase) = @_;
+
+    my $func = $phase . "_" . $tag;
+    $func = $tag unless defined &$func;
+    &$func() if defined &$func;
+}
+
+sub esc {
+    local($_) = shift;
+
+    s/&/&amp;/g;
+
+    # replace all '-' within XML tags or quotes with a non-breakable hyphen
+    my $rest = $_;
+    $_ = "";
+    while ($rest =~ /^(.*?)((("|')[^\s]*?\4)|(<[^>\s]*?>))(.*)$/) {
+        $_ .= $1;
+        $m = $2;
+        $rest = $6;
+        $m =~ s/-/&#8209;/g;
+        $_ .= $m;
+    }
+    $_ .= $rest;
+
+    s/</&lt;/g;
+    s/>/&gt;/g;
+    s/'/&apos;/g; #';
+    s/"/&quot;/g; #";
+    s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
+    s/{{(.*?)}}/<digress target=\"$1\"\/>/g;
+    s/ % /&nbsp;/g; # explicit non-breakable space
+    s/-%-/&#8209;/g; # explicit non-breakable hyphen
+    return $_;
+}
+
+sub escf {
+    local($_) = shift;
+
+    s/&/&amp;/g;
+    s/</&lt;/g;
+    s/>/&gt;/g;
+    s/'/&apos;/g; #';
+    s/"/&quot;/g; #";
+    s/\^(.*?)\^/<xref format=\"counter\" target=\"$1\"\/>/g;
+    return $_;
+}
+
+sub next_tag {
+    for (my $i = $line_number + 1; $i < $#lines; $i++) {
+	next if $tags[$i] eq "comment";
+	return $tags[$i] if $tags[$i];
+    }
+}
+
+sub prev_tag {
+    for (my $i = $line_number - 1; $i >= 0; $i--) {
+	next if $tags[$i] eq "comment";
+	return $tags[$i] if $tags[$i];
+    }
+}
+
+$depth = 0;
+
+sub section {
+    return if $phase eq "end";
+
+    unless ($emitted_middle++) {
+	print "</front>\n<middle>\n";
+    }
+
+    ($stars, $rest) = ($line =~ /^(\*+)\s+(.*)$/);
+    ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+
+    # The length of the outline-mode header gives us the depth, but
+    # if we're doing our appendices as sections under an "Appendix",
+    # we deduct one for the appendix (which isn't really a section).
+    $new_depth = length($stars);
+    $new_depth -= 1 if $appendix_as_sections;
+
+    while ($depth >= $new_depth) {	# Close off the previous sections
+	print "</section>\n";
+	$depth -= 1;
+    }
+    $depth = $new_depth;
+
+    print "<section title=\"", esc($title), "\"";
+    print " anchor=\"", esc($anchor), "\"" if $anchor;
+    print "\>\n";
+}
+
+sub start_picture {
+    suspend_digress();
+    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    check_line_length($line, $file, $lnum) unless $do_digress;
+    print $indent_digress, untabify($line), "\n";
+}
+
+$suspended_digress = 0;
+
+sub suspend_digress {
+    if ($inline_digress && !$restarting_digress) {
+	print "</list></t>\n";
+	$suspended_digress = 1;
+    }
+}
+
+sub resume_digress {
+    if ($suspended_digress) {
+	$restarting_digress = 1;
+	$suspended_digress = 0;
+    }
+}
+
+sub restart_digress {
+    if ($restarting_digress) {
+	if ($inline_digress) {
+	    print "<t><list style='empty'>\n";
+	}
+	$restarting_digress = 0;
+    }
+}
+
+sub start_digress {
+    $in_digress = 1;
+
+    my($type, $rest) = ($line =~ /([^\s{}]+):\s*(.*)/);
+    my($rest, $x, $name) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+
+   if ($type eq "example") {
+	$inline_digress = 1;
+	$indent_digress = "    ";
+	$restarting_digress = 0;
+	$suspended_digress = 0;
+	print "<t><list style='empty'>\n";
+	return;
+    }
+
+    return unless $do_digress;
+
+    my $tag = "";
+    $tag = " name='" . $name . "'" if $name;
+
+    print "<digress type='", $type, "' title='", esc($rest), "'", $tag, ">\n";
+}
+
+sub start_enddigress {
+    return unless $in_digress;
+
+    $in_digress = undef;
+    if ($inline_digress) {
+	unless ($restarting_digress) {
+	    print "</list></t>\n";
+	}
+	$inline_digress = undef;
+	$indent_digress = undef;
+	return;
+    }
+
+    return unless $do_digress;
+    print "</digress>\n";
+}
+
+sub picture {
+    print $indent_digress, untabify($line), "\n";
+}
+
+sub end_picture {
+    print "\t    ]]></artwork>\n\t</figure>\n";
+    resume_digress();
+}
+
+sub start_code {
+    suspend_digress();
+    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    print $indent_digress, untabify($line), "\n";
+    $art = 1;
+}
+
+sub end_code {
+    print "\t    ]]></artwork>\n\t</figure>\n";
+    resume_digress();
+    $art = 0;
+}
+
+sub start_xml {
+    suspend_digress();
+    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    print $indent_digress, untabify($line), "\n";
+    $art = 1;
+}
+
+sub end_xml {
+    print "\t    ]]></artwork>\n\t</figure>\n";
+    resume_digress();
+    $art = 0;
+}
+
+sub text {
+    restart_digress();
+    if ($in_text) {
+	if ($line =~ /^$/) {
+	    print "    </t>\n";
+	    $in_text = 0;
+	} else {
+	    print esc($line), "\n";
+	}
+    } else {
+	print "    <t>\n", esc($line), "\n";
+	$in_text = 1;
+    }
+}
+
+sub end_text {
+    print "    </t>\n";
+    $in_text = 0;
+}
+
+sub start_nlist {
+    $last_ndepth = 0;
+    print "<t>\n";
+    nlist();
+}
+
+sub nlist {
+    my ($leader, $type, $content) = ($line =~ /^(\s*)([-_=\+])\s+(.*)$/);
+
+    if ($debug) {
+	print "#last ", $last_ndepth, " / ", $last_type, "\n";
+	print "#->", esc($line), "\n";
+    }
+
+    unless ($type) {
+	$line =~ s/^\s+//;
+	return if $line =~ /^$/;
+	print esc($line), "\n";
+	return;
+    }
+
+    $ndepth = length($leader) + 1;
+    $type = ($type eq "-") ? "symbols" :
+	($type eq "+") ? "numbers" :
+	($type eq "=") ? "hanging" :
+	($type eq "_") ? "empty" : "unknown";
+
+    die "list indent by > 1" if $ndepth > $last_ndepth + 1;
+    die "list type changed" if $ndepth == $last_ndepth && $type ne $last_type;
+
+    my $close = $last_ndepth >= $ndepth;
+
+    while ($last_ndepth > $ndepth) {
+	print " " x $last_ndepth, "</t>\n";
+	print " " x $last_ndepth, "</list>\n";
+	$last_ndepth -= 1;
+    }
+
+    print " " x $ndepth, "</t>\n" if $close;
+
+    if ($last_ndepth < $ndepth) {
+	print " " x $ndepth, "<list style=\"$type\">\n";
+	$last_ndepth += 1;
+    }
+
+    if ($type eq "hanging") {
+	    print "\t<t hangText=\"", esc($content), "\">\n";
+    } else {
+	print " " x $ndepth, "<t>\n", esc($content), "\n";
+    }
+
+    $last_type = $type;
+}
+
+sub end_nlist {
+    while ($last_ndepth > 0) {
+	print " " x $last_ndepth, "</t>\n";
+	print " " x $last_ndepth, "</list>\n";
+	$last_ndepth -= 1;
+    }
+
+    print "</t>\n";
+}
+
+sub start_abstract {
+    print "    <abstract>\n" unless &prev_tag() eq "abstract";
+    print "\t<t>\n", esc($line), "\n";
+}
+
+sub end_abstract {
+    print "\t</t>\n";
+    print "</abstract>\n" unless &next_tag() eq "abstract";
+}
+
+sub start_appendix {
+    &back_matter();
+    $seen_appendix = 1;
+
+    # Are we doing the section-based appendix style?
+    $appendix_as_sections = 1 if /^\* Appendices/;
+}
+
+sub close_sections {
+    while ($depth >= 1) {
+	print "</section>\n";
+	$depth -= 1;
+    }
+}
+
+sub comment {
+    # Nothing
+}
+
+sub passthru {
+    print substr($line, 1), "\n";
+}
+
+sub untabify {
+    my ($in) = @_;
+    my $res = "";
+    my $tab = "";
+    foreach my $bit (split(/\t/, $in)) {
+	$res .= $tab;
+	$res .= $bit;
+	$tab = " " x (8 - length($res) % 8);
+    }
+    return $res;
+}
+
+sub check_line_length {
+    my ($line, $file, $lnum) = @_;
+    my $len = length($line);
+    print STDERR "${file}:${lnum}: text exceeds $wrapwidth columns ($len)\n"
+	if ($len > $wrapwidth);
+}    
+
+sub split_lines {
+    my ($line, $file, $lnum) = @_;
+    my $len = length($line);
+    print STDERR "${file}:${lnum}: text exceeds $wrapwidth columns ($len)\n";
+    return $line;
+}
+
+sub include_figure {
+    my $prefix;
+    return if $phase eq "end";
+
+    my ($file, $rest) = ($line =~ /^!!\s*include-figure (\S+)(.*)/);
+    my ($prefix) = ($rest =~ /\sprefix="([^"]*)"/); #"
+    my ($extract_to) = ($rest =~ /\sextract-to="([^"]*)"/); #"
+    my ($wrap) = ($rest =~ /\swrap="([^"]*)"/); #"
+    my $lnum = 0;
+
+    suspend_digress();
+    if ($extract_to) {
+	print "<t>&lt;CODE BEGINS> file \"${extract_to}\"</t>\n";
+    }
+
+    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    open(FD, $file) || die "could not open file: $file";
+    while (<FD>) {
+	$lnum += 1;
+	$line = untabify($_);
+
+        if ($wrap && $autowrap && length($line) > $wrapwidth) {
+            my(@lines) = split_lines($line, $file, $lnum);
+            for $line (@lines) {
+	        print $indent_digress, $prefix, $line;
+            }
+	} else {
+	    print $indent_digress, $prefix, $line;
+	}
+    }
+    close FD;
+    print "\t    ]]></artwork>\n\t</figure>\n";
+    if ($extract_to) {
+	print "<t>&lt;CODE ENDS></t>\n";
+    }
+    resume_digress();
+}
+
+sub start_table {
+    ($rest) = ($line =~ /^!!\s*table\s*(.*)$/);
+    ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+    print "<?rfc compact=\"yes\"?>";
+    print "<texttable";
+    print " anchor=\"", esc($anchor), "\"" if $anchor;
+    print "\>\n";
+    print "<preamble>", esc($title), "</preamble>\n" if $title;
+}
+
+sub start_head {
+    ($rest) = ($line =~ /^!!\s*head\s+!(.*)$/);
+    split(/\s*\!\s*/, $rest);
+    foreach (@_) {
+	print "<ttcol align='left'>", esc($_), "</ttcol>\n";
+    }
+}
+
+sub row {
+    ($rest) = ($line =~ /^!!\s*row\s+!\s*(.*)$/);
+    split(/\s*\!\s*/, $rest);
+    foreach (@_) {
+	print "<c>", escf($_), "</c>\n";
+    }
+}
+
+sub end_row {
+    print "</texttable>\n";
+    print "<?rfc compact=\"no\"?>";
+}
+
+sub start_org_table {
+    ($rest) = ($line =~ /^\|--+\s+(.+)(\s+-*)?/);
+    ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+    print "<?rfc compact=\"yes\"?>\n";
+    print "<texttable";
+    print " anchor=\"", esc($anchor), "\"" if $anchor;
+    print "\>\n";
+    print "<preamble>", esc($title), "</preamble>\n" if $title;
+    $org_header = 0;
+    org_table_header() unless $line =~ /^\|--/;
+}
+
+sub org_table_header {
+    $org_header = 1;
+    ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
+    split(/\s*\|\s*/, $rest);
+    foreach (@_) {
+	print "<ttcol align='left'>", esc($_), "</ttcol>\n";
+    }
+}
+
+sub org_table {
+    return if $line =~ /^\|--/;
+
+    unless ($org_header) {
+	org_table_header();
+	return;
+    }
+
+    ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
+    split(/\s*\|\s*/, $rest);
+    foreach (@_) {
+	print "<c>", escf($_), "</c>\n";
+    }
+}
+
+sub end_org_table {
+    print "</texttable>\n";
+    print "<?rfc compact=\"no\"?>\n";
+}
+
+sub question {
+    return if /^$/;
+
+    if (/^\? /) {
+	print "\t    </c>\n\t</texttable>\n" if $in_question;
+
+	print "\t<?rfc compact=\"yes\"?>\n\t<texttable>\n",
+	    "<ttcol align='left' width='60em'>Open Question</ttcol>\n";
+	print "\t    <c>\n";
+	s/^\?\s+//;
+    }
+
+    print esc($_), "\n";
+    $in_question = 1;
+}
+
+sub end_question {
+    print "\t    </c>\n\t</texttable>\n\t<?rfc compact=\"no\"?>\n";
+    $in_question = 0;
+}
+
+sub front_matter {
+    my($doc) = @_;
+    my $numstr = "";
+
+    if ($doc{number}) {
+        $numstr = "number=\"" . $doc{number} . "\"";
+    }
+
+    print <<EOF;
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="rfc2629.xslt"?>
+<!DOCTYPE rfc SYSTEM 'rfc2629.dtd'>
+<?rfc toc="yes"?>
+<?rfc compact="no"?>
+<?rfc subcompact="no"?>
+<?rfc symrefs="yes" ?>
+<?rfc sortrefs="yes"?>
+<?rfc iprnotified="no"?>
+<?rfc strict="yes"?>
+EOF
+
+print "<?rfc private=\"$doc{private}\"?>\n" if $doc{private};
+
+    print <<EOF;
+<rfc ipr="$doc{ipr}" category="$doc{category}" docName="$doc{name}" ${numstr}>
+    <front>
+    <title abbrev="$doc{abbreviation}">$doc{title}</title>
+
+EOF
+
+    print_authors($doc);
+    print "\t<date/>\n";
+    foreach $k (@{$doc{keyword}}) {
+	print "\t<keyword>", $k, "</keyword>\n";
+    }
+}
+
+sub print_authors {
+    my($doc) = @_;
+    my $contributor = $doc{contributor};
+
+    foreach $author (@{$contributor}) {
+	my ($role, $name, $org, $email) = ($author =~ /(.*):(.*):(.*):(.*)/);
+	my ($initial, $lastname) = ($name =~ /^(.).* (.*)$/);
+
+	my $prole = 'role="' . $role . '"' unless $role eq "author";
+
+	print <<EOF;
+    <author initials="$initial" surname="$lastname" fullname='$name' $prole>
+      <organization>$org</organization>
+      <address>
+        <email>$email</email>
+      </address>
+    </author>
+EOF
+
+    }
+}
+
+sub document_header {
+    my $doc = {};
+    my $i;
+    my $contributor = [];
+    my $keyword - [];
+
+    for ($i = 0; $i <= $#lines; $i++) {
+	last if $lines[$i] =~ /^{{document:/;
+    }
+
+    for ($i += 1; $i <= $#lines; $i++) {
+	last if $lines[$i] =~ /^}}/;
+	my($f, $v) = ($lines[$i] =~ /^\s*(\S+)\s+(.*);/);
+	next unless $f;
+	$v =~ s/"//g; #";
+        if ($f eq "contributor") {
+	    push @{$contributor}, $v;
+	} elsif ($f eq "keyword") {
+	    push @{$keyword}, $v;
+	} elsif ($v =~ /^\$/) {
+	    $doc{$f} = $ENV{$'};
+	} else {
+	    $doc{$f} = $v;
+	}
+    }
+
+    foreach my $key (%args) {
+	$doc{$key} = $args{$key};
+    }
+
+    push @{$contributor}, @authors;
+
+    $doc{ipr} = "none" unless $doc{ipr};
+
+    $doc{contributor} = $contributor;
+    $doc{keyword} = $keyword;
+}
+
+sub back_matter {
+    my($doc) = @_;
+
+    &close_sections();
+    print "</middle>\n";
+    print "<back>\n";
+    if ($doc{references} && -f $doc{references}) {
+	open(BACK, $doc{references}) || die;
+	while (<BACK>) {
+	    print untabify($_);
+	}
+	close BACK;
+    }
+}
+
+_main: {
+    &main(); # Give us someplace to breakpoint
+}
