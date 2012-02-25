@@ -34,7 +34,7 @@ LIBS += -L/opt/local/lib -lreadline
 endif
 
 if HAVE_LIBEDIT
-LIBS += -ledit
+LIBS += -ledit -lcurses
 endif
 
 bin_PROGRAMS = slaxproc

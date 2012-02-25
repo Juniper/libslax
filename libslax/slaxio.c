@@ -30,6 +30,7 @@
 #include <libslax/slax.h>
 #include "config.h"
 
+#if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
 #if 0
 /*
  * The readline header files contain function prototypes that
@@ -48,6 +49,7 @@ extern void add_history (const char *);
 extern FILE *rl_instream;
 extern FILE *rl_outstream;
 #endif /* 0 */
+#endif /* defined(HAVE_READLINE) || defined(HAVE_LIBEDIT) */
 
 /* Callback functions for input and output */
 static slaxInputCallback_t slaxInputCallback;
@@ -253,7 +255,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	fflush(stderr);
 
 	buf[0] = '\0';
-	if (fgets(buf, sizeof(buf), stdin) == NULL)
+	if (fgets(buf, sizeof(buf), slaxIoTty) == NULL)
 	    return NULL;
 
 	len = strlen(buf);
@@ -291,11 +293,21 @@ slaxIoStdioErrorCallback (const char *fmt, va_list vap)
 void
 slaxIoUseStdio (unsigned flags)
 {
+    FILE *inst = slaxIoTty;
+
+#if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
+    inst = rl_instream;
+#endif /* defined(HAVE_READLINE) || defined(HAVE_LIBEDIT) */
+
 #if defined(_PATH_TTY)
-    if (!(flags & SIF_NO_TTY) && rl_instream == NULL)
-	rl_instream = rl_outstream = slaxIoTty = fopen(_PATH_TTY, "r+");
-	/* Non-fatal failure; falls back to stdin */
+    /* Non-fatal failure; falls back to stdin */
+    if (!(flags & SIF_NO_TTY) && inst == NULL)
+	slaxIoTty = fopen(_PATH_TTY, "r+");
 #endif /* _PATH_TTY */
+
+#if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
+    rl_instream = rl_outstream = slaxIoTty;
+#endif /* defined(HAVE_READLINE) || defined(HAVE_LIBEDIT) */
 
     slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
 		   slaxIoStdioRawwriteCallback, slaxIoStdioErrorCallback);
