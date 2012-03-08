@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.11.12], [phil@juniper.net])
+AC_INIT([libslax], [0.11.15], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 LT_INIT([])
 AC_DISABLE_SHARED
@@ -404,6 +404,7 @@ AC_CONFIG_FILES([
   tests/errors/Makefile
   tests/libxslt/Makefile
   doc/Makefile
+  doc/oxtradoc/oxtradoc
 ])
 AC_OUTPUT
 

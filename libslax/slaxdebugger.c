@@ -2333,7 +2333,6 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	    new_style = slaxDebugReload(scriptname);
 	    if (new_style) {
 		/* Out with the old */
-		slaxDebugReloadBreakpoints(statep);
 		slaxDebugClearStacktrace();
 		slaxProfClear();
 		slaxProfClose();
@@ -2341,6 +2340,8 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		/* In with the new */
 		save_style = style = new_style;
 		slaxDebugSetStylesheet(style);
+		slaxDebugReloadBreakpoints(statep);
+
 		slaxProfOpen(style->doc);
 
 		statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);

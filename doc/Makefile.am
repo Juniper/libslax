@@ -8,13 +8,20 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-BINDIR = ${srcdir}/oxtradoc
-OUTLINE2XML = ${BINDIR}/outline2xml
-XML2RFC = ${BINDIR}/xml2rfc.tcl
+PERL = perl
+OXDIR = oxtradoc
+OXTRADOC_PREFIX = ${srcdir}
+OXSRCDIR = ${OXTRADOC_PREFIX}/oxtradoc
+OXTRADOC = ${OXDIR}/oxtradoc
+XML2RFC = ${OXSRCDIR}/xml2rfc.tcl
 XML2HTMLDIR = `dirname ${XML2HTMLBIN}`
-OXTRADOC_DIR = ${srcdir}/oxtradoc
+OXTRADOC_DIR = ${OXTRADOC_PREFIX}/oxtradoc
 XML2HTMLBIN = ${OXTRADOC_DIR}/rfc2629-to-html.slax
 SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
+
+OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc
+OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
+OXTRADOC_CMD = ${OX_CMD}
 
 SLAXPROC_ARGS = \
     -a oxtradoc-dir ${OXTRADOC_DIR} \
@@ -47,8 +54,7 @@ EXTRA_DIST = \
     ${QUICKREF}.pdf \
     ${QUICKREFVERS}.pdf
 
-OXTRADOC_FILES = \
-    oxtradoc/outline2xml \
+OXTRADOC_COMMON_FILES = \
     oxtradoc/xml2rfc.tcl \
     oxtradoc/jquery-ui.js \
     oxtradoc/jquery.dbgpr.js \
@@ -61,28 +67,47 @@ OXTRADOC_FILES = \
     oxtradoc/oxtradoc.css \
     oxtradoc/oxtradoc-tips.js
 
-EXTRA_DIST += ${OXTRADOC_FILES}
+OXTRADOC_INSTALL_FILES = \
+    ${OXTRADOC_COMMON_FILES} \
+    oxtradoc/oxtradoc
+
+OXTRADOC_SRC_FILES = \
+    ${OXTRADOC_COMMON_FILES} \
+    oxtradoc/oxtradoc.in
+
+EXTRA_DIST += ${OXTRADOC_SRC_FILES}
 
 doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREFVERS}.pdf
 
-${OUTPUT}.txt: ${OUTPUT}.xml
-	${XML2RFC} $< > $@
+${OUTPUT}.txt: ${INPUT} ${OXTRADOC}
+	${OXTRADOC_CMD} -m text -o $@ $<
 
-${OUTPUT}.xml: ${INPUT} ${OUTLINE2XML}
-	${OUTLINE2XML} $< > $@
-
-${OUTPUT}.html: ${OUTPUT}.fxml ${XML2HTMLBIN}
-	${XML2HTML} $< > $@
-
-${OUTPUT}.fxml: ${INPUT} ${OUTLINE2XML}
-	${OUTLINE2XML} -D $< > $@
+${OUTPUT}.html: ${INPUT} ${OXTRADOC} ${XML2HTMLBIN}
+	${OXTRADOC_CMD} -m html -o $@ $<
 
 ${QUICKREFVERS}.pdf: ${QUICKREF}.pdf
 	cp $< $@
 
 CLEANFILES = \
-${OUTPUT}.xml \
+${INPUT:.txt=.xml} \
 ${OUTPUT}.txt \
-${OUTPUT}.fxml \
+${INPUT:.txt=.fxml} \
 ${OUTPUT}.html \
 ${QUICKREFVERS}.pdf
+
+OXTRADOC_INSTALL_DIR = ${prefix}/share/oxtradoc
+
+install-data-hook:
+	@echo "Installing oxtradoc ... "
+	@-mkdir -p ${OXTRADOC_INSTALL_DIR}
+	@for file in ${OXTRADOC_INSTALL_FILES} ; do \
+		if [ -f $$file ]; then \
+			rfile=$$file ; \
+		else \
+			rfile=${srcdir}/$$file ; \
+		fi ; \
+		mdir=${OXTRADOC_INSTALL_DIR}/ ; \
+		mkdir -p $$mdir ; \
+		cp $$rfile $$mdir/ ; \
+        done
+	@${CHMOD} a+x ${OXTRADOC_INSTALL_DIR}/oxtradoc

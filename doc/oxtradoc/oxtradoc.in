@@ -54,6 +54,10 @@
 @tags = ();
 @authors = ();
 $wrapwidth = 70;
+$opt_mode = "full";
+
+$prefix = "@prefix@";
+$anchor_prefix = undef;
 
 sub main {
     while ($ARGV[0] =~ /^-/) {
@@ -62,16 +66,116 @@ sub main {
 	push(@authors, shift @ARGV) if /^-A/;
 	$args{references} = shift @ARGV if /^-b/;
 	$args{category} = shift @ARGV if /^-c/;
+	$do_digress = 1 if /^-D/;
 	$debug = 1 if /^-d/;
 	die "-f no longer supported" if /^-f/;
-	$args{name} = shift @ARGV if /^-n/;
-	$do_digress = 1 if /^-D/;
-	$autowrap = 1 if /^-w/;
 	$args{ipr} = shift @ARGV if /^-i/;
+	$opt_mode = shift @ARGV if /^-m/;
+	$args{name} = shift @ARGV if /^-n/;
+	$output = shift @ARGV if /^-o/;
+	$opt_mode = "outline-to-xml" if /^-O/;
+	$anchor_prefix = shift @ARGV if /^-p/;
+	$prefix = shift @ARGV if /^-P/;
+	$slaxproc = shift @ARGV if /^-S/;
 	$args{title} = shift @ARGV if /^-t/;
+	$autowrap = 1 if /^-w/;
     }
 
-    &outline2xml();
+    $libdir = $prefix . "/oxtradoc/";
+    $slaxproc = $libdir . "slaxproc" unless $slaxproc;
+
+    my $file = shift @ARGV;
+    $output = shift @ARGV unless $output;
+
+    die "no input file given" unless $file;
+    die "no output file given" unless $output;
+
+    my ($base) = ($file =~ /([^\/]*)\.([^\.\/])/);
+
+    if ($opt_mode eq "full") {
+
+    } elsif ($opt_mode eq "outline-to-xml" || $opt_mode eq "xml") {
+	&open_stdout($output);
+	&outline2xml($file, $output);
+	&close_stdout($output);
+
+    } elsif ($opt_mode eq "fxml") {
+	# Fancy xml is just xml with digresses; xml2rfc doesn't like them.
+	$do_digress = 1;
+	&open_stdout($output);
+	&outline2xml($file, $output);
+	&close_stdout($output);
+
+    } elsif ($opt_mode eq "text") {
+	my $next = $base . ".xml";
+	&open_stdout($next);
+	&outline2xml($file, $next);
+	&close_stdout;
+	&xml2text($next, $output);
+
+    } elsif ($opt_mode eq "html") {
+	my $next = $base . ".fxml";
+	&open_stdout($next);
+	$do_digress = 1;
+	&outline2xml($file, $next);
+	&close_stdout;
+	&xml2html($next, $output);
+
+    } elsif ($opt_mode eq "xml-to-txt") {
+	&xml2text($file, $output);
+
+    } elsif ($opt_mode eq "xml-to-html") {
+	&xml2html($file, $output);
+
+    } else {
+	die "unknown mode: " . $opt_mode;
+    }
+
+    print STDERR "  [done]\n";
+
+    exit(0);
+}
+
+sub open_stdout {
+    my ($out) = @_;
+    open NEWOUT, ">$out" || die;
+    open SAVEOUT, ">&STDOUT" || die;
+    open STDOUT, ">&NEWOUT" || die;
+}
+
+sub close_stdout {
+    open STDOUT, ">&SAVEOUT" || die;
+    close NEWOUT;
+}
+
+sub xml2html {
+    my ($file, $output) = @_;
+    open NEWIN, "<$file" || die;
+    open STDIN, "<&NEWIN" || die;
+
+    print STDERR "  [converting $file (xml) to $output (html)]\n";
+
+    my $slaxargs = $slaxproc;
+    $slaxargs .= " -g -e -I " . $libdir;
+    $slaxargs .= " -a oxtradoc-dir " . $libdir;
+    $slaxargs .= " -a oxtradoc-install-dir " . $libdir;
+    $slaxargs .= " -a anchor-prefix " . $anchor_prefix if $anchor_prefix;
+    $slaxargs .= " " . $libdir . "rfc2629-to-html.slax";
+
+    &open_stdout($output) if $output;
+    system($slaxargs) && die "cannot run '$slaxargs'";
+    &close_stdout();
+}
+
+sub xml2text {
+    my ($file, $output) = @_;
+
+    print STDERR "  [converting $file (xml) to $output (text)]\n";
+
+    my $slaxargs = $libdir . "xml2rfc.tcl " . $file . " " . $output;
+
+    system($slaxargs) && die "cannot run '$slaxargs'";
+    
 }
 
 # outline2xml:
@@ -81,8 +185,13 @@ sub main {
 #   - second pass gets all the odd stuff
 # - then generate output based on the handling tags
 sub outline2xml {
-    $file = $ARGV[0];
-    @lines = <ARGV>;	# Read the entire input file into an array
+    my($file, $output) = @_;
+    open(FILE, $file) || die;
+
+    print STDERR "  [converting $file (oxtradoc) to $output (xml)]\n";
+
+    @lines = <FILE>;	# Read the entire input file into an array
+    close FILE;
     chomp(@lines);	# Trim newlines off each input line
 
     # Nuke lines containing only whitespace, under the theory that
@@ -692,7 +801,7 @@ sub start_org_table {
 sub org_table_header {
     $org_header = 1;
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    split(/\s*\|\s*/, $rest);
+    @_ = split(/\s*\|\s*/, $rest);
     foreach (@_) {
 	print "<ttcol align='left'>", esc($_), "</ttcol>\n";
     }
@@ -707,7 +816,7 @@ sub org_table {
     }
 
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    split(/\s*\|\s*/, $rest);
+    @_ = split(/\s*\|\s*/, $rest);
     foreach (@_) {
 	print "<c>", escf($_), "</c>\n";
     }

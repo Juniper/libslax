@@ -3255,9 +3255,18 @@ libslax supports a means of dynamically loading extension libraries.
 After a script is parsed, any extension prefixes are determined, along
 with their namespaces.  Each namespace are then URL-escaped and a
 ".ext" suffix is appended to generate a filename for the extension
-library that supports that namespace.  The extension library should be
-placed in the directory named with the --with-extension-dir options
-(aka SLAX_EXTDIR) or in a directory named by a --lib/-L argument.
+library that supports that namespace.
+
+Extension libraries should be placed in the directory named that is
+either:
+- the /usr/lib/slax/extensions directory
+- the "lib/slax/extensions" directory under the "configure --prefix"
+  option given at build time
+- the directory specified with the "configure --with-extension-dir"
+  option given at build time
+- one of the directories listed in the environment variable
+  SLAX_EXTDIR (colon separated)
+- one of the directories provided via the --lib/-L argument to "slaxproc"
 
 ** The "bit" Extension Library 
 
