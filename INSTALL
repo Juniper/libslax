@@ -41,9 +41,14 @@ build configure and friends:
     cd libslax
     autoreconf --install
 
-(2) Run "configure":
+(2) Make a "build" directory:
 
-    ./configure
+    mkdir build
+    cd build
+
+(3) Run "configure":
+
+    ../configure
 
 Expect to see the following error:
 
@@ -52,23 +57,50 @@ Expect to see the following error:
 If you want to use the regression tests from libxslt, add the
 "--with-libxslt-tests=DIR" to the configure command:
 
-    ./configure --with-libxslt-test=~/work/libxslt-1.1.24
+    ../configure --with-libxslt-test=~/work/libxslt-1.1.24
 
 The --enable-debug command turns on SLAX_DEBUG, but debugging
 is enabled even without it.  Use the "-d" option to "slaxproc"
 to get debug output.
 
-(3) Make the images
+(4) Make the images
 
     make
 
-(4) Test the images
+(5) Test the images
 
     make test
 
-(5) Install the images
+(6) Install the images
 
     sudo make install
+
+** libslax configure Options
+
+The libslax-specific options are:
+
+  --enable-warnings    Turn on compiler warnings
+  --enable-debug    Turn on debugging
+  --enable-readline    Enable support for GNU readline
+  --enable-libedit    Enable support for libedit (BSD readline)
+  --enable-printflike    Enable use of GCC __printflike attribute
+ 
+  --with-libxslt-tests=DIR    Include the libxslt tests
+  --with-libxml-prefix=PFX           Specify location of libxml config
+  --with-libxml-include-prefix=PFX   Specify location of libxml headers
+  --with-libxml-libs-prefix=PFX      Specify location of libxml libs
+  --with-libxml-src=DIR              For libxml thats not installed yet (sets all three ab
+ove)
+  --with-libxslt-prefix=PFX           Specify location of libxslt config
+  --with-libxslt-include-prefix=PFX   Specify location of libxslt headers
+  --with-libxslt-libs-prefix=PFX      Specify location of libxslt libs
+  --with-libxslt-src=DIR              For libxslt thats not installed yet (sets all three
+above)
+  --with-libcurl-prefix=PFX           Specify location of libcurl config
+  --with-extensions-dir=DIR           Specify location of extension libraries
+
+If these packages (libxml2, libxslt, curl) are installed normally,
+then their options are not needed.
 
 ** Special notes for cygwin
 
