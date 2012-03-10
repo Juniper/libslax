@@ -60,6 +60,14 @@
 	float: right;
     }
 
+    div#nav-bar button#nav-next {
+        margin-right: 1em;
+    }
+
+    div#nav-bar button {
+        border-radius: 4px;
+    }
+
     div.content {
 	display: none;
     }

@@ -1071,9 +1071,16 @@ slaxDebugCmdList (DC_ARGS)
 	node = statep->ds_list_node;
 	line_no = statep->ds_list_line;
 
-    } else {
+    } else if (statep->ds_inst) {
 	node = statep->ds_inst;
 	line_no = xmlGetLineNo(node);
+
+    } else if (statep->ds_script->doc) {
+	node = statep->ds_script->doc->children;
+	line_no = xmlGetLineNo(node) ?: 1;
+    } else {
+	slaxOutput("no target");
+	return;
     }
 
     if (node && node->doc) {

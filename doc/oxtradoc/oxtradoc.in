@@ -258,6 +258,8 @@ sub first_pass {
 	    $tag = "nlist", last if /^[-=_+]\s/;
 	    $tag = "nlist", last if /^(\s+)[-=_+]\s/ && $last_tag eq "nlist";
 	    $tag = "picture", last if /^\s+\+-/ && $last_tag ne "code";
+	    $tag = "code", last if /^\s+</ && $last_tag eq "code";
+	    $tag = "code", last if /^\s+<.*{/;
 	    $tag = "xml", last if /^\s+</;
 	    $tag = "xml", last if $last_tag eq "xml" and /^\s+./;
 	    $tag = "xml", last if /^\d{1,2}\s+</;

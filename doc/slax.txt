@@ -1770,20 +1770,25 @@ line).  The "param" statement declares a parameter, along with an
 optional default value.
 
     SYNTAX::
-        'param' parameter-name [ '=' optional-value ] ';'
+        'param' parameter-name ';'
+        'param' parameter-name '=' optional-value ';'
+        'param' parameter-name '=' '{' value-block '}'
 
-For example:
+    EXAMPLE::
+        param $address = "10.1.2.3";
+        param $count = 25;
 
-    param $address = "10.1.2.3";
-    param $count = 25;
+        templace count {
+	    /*
+             * This defines a local parameter $count and sets
+             * its value to that of the global parameter $count.
+             */
+            param $count = $count;
+        }
 
-    templace count {
-	/*
-         * This defines a local parameter $count and sets
-         * its value to that of the global parameter $count.
-         */
-        param $count = $count;
-    }
+Like variables, parameters are immutable.  Once created, their value
+cannot be changed.  See ^main-var^ for a discussion on dealing with
+immutable values.
 
 Template parameters can also be defined in a C style following the
 template name:
@@ -1854,7 +1859,7 @@ use language paradigms and constructs from traditional languages
 But SLAX is built on top of XSLT, and the declarative nature of XSLT
 means that many of its constructs are visible.
 
-** Variables
+** Variables @main-var@
 
 Variables in SLAX are immutable.  Once defined, the value of a
 variable cannot be changed.  This is a major change from traditional
@@ -1939,7 +1944,8 @@ variable name and an initial value.  Variable names (and parameter
 names) always begin with a dollar sign ("$").
 
     SYNTAX::
-        'var' variable-name '=' initial-value ';'
+        'var' name '=' initial-value ';'
+        'var' name '=' '{' initial-value-block '}'
 
 The initial value can be an XPath expresion, an element, or a block of
 statements (enclosed in braces) that emit a set of nodes.
@@ -1950,8 +1956,6 @@ statements (enclosed in braces) that emit a set of nodes.
         expr "this: ";
         copy-of $this;
     }
-
-These same constraints apply to parameters as well.
 
 *** The "mvar" Statement @mvar@
 
@@ -3162,10 +3166,36 @@ debugger resembles "gdb" command syntax and operation.
     where           Show the backtrace of template calls
     quit            Quit debugger
 
+The "info" command can display the following information:
+
+  (sdb) info help
+  List of commands:
+    info breakpoints  Display current breakpoints
+    info profile [brief]  Report profiling information
+
 Many of these commands follow their "gdb" counterparts, to the extent
 possible.
 
-** The SLAX Profiler
+The location for the "break", "continue", and "list" commands can be
+either a line number of the current file, a filename and a line
+number, separated by a colon, or the name of a template.
+
+  (sdb) b 14
+  Breakpoint 1 at file ../tests/core/test-empty-21.slax, line 14
+  (sdb) b 19
+  Breakpoint 2 at file ../tests/core/test-empty-21.slax, line 19
+  (sdb) b three
+  Breakpoint 3 at file ../tests/core/test-empty-21.slax, line 24
+  (sdb) info br
+  List of breakpoints:
+      #1 template one at ../tests/core/test-empty-21.slax:14
+      #2 template two at ../tests/core/test-empty-21.slax:19
+      #3 template three at ../tests/core/test-empty-21.slax:24
+  (sdb) 
+
+Information on the profiler is in the next section (^profiler^).
+
+** The SLAX Profiler @profiler@
 
 The SLAX debugger includes a profiler which can report information
 about the activity and performance of a script.  The profiler is
@@ -3274,22 +3304,22 @@ The "bit" extension library has functions that interpret a string as a
 series of bit, allowing arbitrary length bit arrays and operations on
 those arrays.
 
-|------------------------+------------------------------------------|
-| Function and Arguments | Description                              |
-|------------------------+------------------------------------------|
-| bit:and(b1, b2)        | Return AND of two bit strings            |
-| bit:or(b1, b2)         | Return OR of two bit strings             |
-| bit:nand(b1, b2)       | Return NAND of two bit strings           |
-| bit:nor(b1, b2)        | Return NOR of two bit strings            |
-| bit:xor(b1, b2)        | Return XOR of two bit strings            |
-| bit:xnor(b1, b2)       | Return XNOR of two bit strings           |
-| bit:not(b1)            | Return inversion (NOT) of a bit string   |
-| bit:mask(count, len?)  | Return a len bits with the low count set |
-| bit:to-int(bs)         | Return integer value of bit string       |
-| bit:from-int(str)      | Return bit string of integer value       |
-| bit:to-hex(bs)         | Return hex value of a bit string         |
-| bit:from-hex(str)      | Return bit string of hex value           |
-|------------------------+------------------------------------------|
+|---------------------------+----------------------------------------|
+| Function and Arguments    | Description                            |
+|---------------------------+----------------------------------------|
+| bit:and(b1, b2)           | Return AND of two bit strings          |
+| bit:or(b1, b2)            | Return OR of two bit strings           |
+| bit:nand(b1, b2)          | Return NAND of two bit strings         |
+| bit:nor(b1, b2)           | Return NOR of two bit strings          |
+| bit:xor(b1, b2)           | Return XOR of two bit strings          |
+| bit:xnor(b1, b2)          | Return XNOR of two bit strings         |
+| bit:not(b1)               | Return inversion (NOT) of a bit string |
+| bit:mask(count, len?)     | Return len bits with the low count set |
+| bit:to-int(bs)            | Return integer value of bit string     |
+| bit:from-int(value, len?) | Return bit string of integer value     |
+| bit:to-hex(bs)            | Return hex value of a bit string       |
+| bit:from-hex(str)         | Return bit string of hex value         |
+|---------------------------+----------------------------------------|
 
 ** The "curl" Extension Library
 

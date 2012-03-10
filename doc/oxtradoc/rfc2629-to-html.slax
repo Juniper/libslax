@@ -2626,6 +2626,8 @@ pre {
   margin-left: 3em;
   background-color: lightyellow;
   padding: .25em;
+  padding-top: 12px;
+  margin-right: 1em;
   -moz-box-shadow:    0 0 4px #000000;
   -webkit-box-shadow: 0 0 4px #000000;
   box-shadow:         0 0 4px #000000;
