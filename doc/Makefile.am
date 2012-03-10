@@ -19,7 +19,7 @@ OXTRADOC_DIR = ${OXTRADOC_PREFIX}/oxtradoc
 XML2HTMLBIN = ${OXTRADOC_DIR}/rfc2629-to-html.slax
 SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
 
-OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc
+OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc -p doc
 OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
 OXTRADOC_CMD = ${OX_CMD}
 
