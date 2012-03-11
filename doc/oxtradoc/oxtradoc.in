@@ -774,8 +774,8 @@ sub start_table {
     print "<?rfc compact=\"yes\"?>";
     print "<texttable";
     print " anchor=\"", esc($anchor), "\"" if $anchor;
+    print " title=\"", esc($title), "\"" if $title;
     print "\>\n";
-    print "<preamble>", esc($title), "</preamble>\n" if $title;
 }
 
 sub start_head {
@@ -805,8 +805,8 @@ sub start_org_table {
     print "<?rfc compact=\"yes\"?>\n";
     print "<texttable";
     print " anchor=\"", esc($anchor), "\"" if $anchor;
+    print " title=\"", esc($title), "\"" if $title;
     print "\>\n";
-    print "<preamble>", esc($title), "</preamble>\n" if $title;
     $org_header = 0;
     org_table_header() unless $line =~ /^\|--/;
 }
@@ -814,8 +814,8 @@ sub start_org_table {
 sub org_table_header {
     $org_header = 1;
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    @_ = split(/\s*\|\s*/, $rest);
-    foreach (@_) {
+    my (@fs) = split(/\s*\|\s*/, $rest);
+    foreach (@fs) {
 	print "<ttcol align='left'>", esc($_), "</ttcol>\n";
     }
 }
@@ -829,8 +829,8 @@ sub org_table {
     }
 
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    @_ = split(/\s*\|\s*/, $rest);
-    foreach (@_) {
+    my (@fs) = split(/\s*\|\s*/, $rest);
+    foreach (@fs) {
 	print "<c>", escf($_), "</c>\n";
     }
 }
@@ -924,7 +924,7 @@ sub document_header {
     my $doc = {};
     my $i;
     my $contributor = [];
-    my $keyword - [];
+    my $keyword = [];
 
     for ($i = 0; $i <= $#lines; $i++) {
 	last if $lines[$i] =~ /^{{document:/;
