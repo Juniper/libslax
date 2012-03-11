@@ -19,10 +19,6 @@ OXTRADOC_DIR = ${OXTRADOC_PREFIX}/oxtradoc
 XML2HTMLBIN = ${OXTRADOC_DIR}/rfc2629-to-html.slax
 SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
 
-OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc -p doc
-OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
-OXTRADOC_CMD = ${OX_CMD}
-
 SLAXPROC_ARGS = \
     -a oxtradoc-dir ${OXTRADOC_DIR} \
     -a oxtradoc-install-dir ${OXTRADOC_DIR} \
@@ -37,6 +33,10 @@ XML2HTML = \
     ${SLAXPROC} -g -e -I ${OXTRADOC_DIR} -I . \
     ${SLAXPROC_ARGS} \
     ${XML2HTMLBIN}
+
+OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc -p doc
+OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
+OXTRADOC_CMD = ${OX_CMD}
 
 OUTPUT = slax-manual-${PACKAGE_VERSION}
 INPUT = slax.txt

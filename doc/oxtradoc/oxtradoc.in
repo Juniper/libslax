@@ -170,6 +170,7 @@ sub xml2html {
     $slaxargs .= " -a oxtradoc-dir " . $libdir;
     $slaxargs .= " -a oxtradoc-install-dir " . $libdir;
     $slaxargs .= " -a anchor-prefix " . $anchor_prefix if $anchor_prefix;
+    $slaxargs .= " -a oxtradoc-inline yes";
     $slaxargs .= " " . $libdir . "rfc2629-to-html.slax";
 
     &open_stdout($output) if $output;
