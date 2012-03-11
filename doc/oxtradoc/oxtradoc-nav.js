@@ -34,7 +34,18 @@ jQuery(function ($) {
     var active;
     var tocactive;
 
-    setActive($($right.children("div.content").get(0)));
+    {
+        var $active = $($right.children("div.content").get(0));
+        if (this.URL) {
+            var last = this.URL.lastIndexOf("#");
+            if (last) {
+                var $found = $(this.URL.substring(last));
+                if ($found.length > 0)
+                    $active = $found.parent();
+            }
+        }
+        setActive($active);
+    }
 
     function setActive ($elt, toggle) {
         if ($elt && $elt.length > 0 && $elt.hasClass("content")) {
