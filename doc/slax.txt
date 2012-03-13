@@ -3289,7 +3289,7 @@ library that supports that namespace.
 
 Extension libraries should be placed in the directory named that is
 either:
-- the /usr/lib/slax/extensions directory
+- the /usr/local/lib/slax/extensions directory
 - the "lib/slax/extensions" directory under the "configure --prefix"
   option given at build time
 - the directory specified with the "configure --with-extension-dir"
@@ -3318,7 +3318,7 @@ those arrays.
 | bit:to-int(bs)            | Return integer value of bit string     |
 | bit:from-int(value, len?) | Return bit string of integer value     |
 | bit:to-hex(bs)            | Return hex value of a bit string       |
-| bit:from-hex(str)         | Return bit string of hex value         |
+| bit:from-hex(str, len?)   | Return bit string of hex value         |
 |---------------------------+----------------------------------------|
 
 ** The "curl" Extension Library

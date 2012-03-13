@@ -113,6 +113,8 @@ Under "developer":
   libxml2-devel
 Under "GNOME":
   libxslt-devel
+Under "Web" or "Net":
+  libcurl-devel
 
 The "configure" script may give some odd but mostly harmful errors.
 
@@ -122,3 +124,4 @@ You will need the following packages installed:
 
 libxml2-dev
 libxslt-dev
+libcurl-dev
