@@ -508,6 +508,16 @@ main (int argc UNUSED, char **argv)
 	    print_help();
 	    return -1;
 	}
+
+	if (*argv == NULL) {
+	    /*
+	     * The only way we could have a null argv is if we said
+	     * "xxx = *++argv" off the end of argv.  Bail.
+	     */
+	    fprintf(stderr, "missing option value: %s\n", cp);
+	    print_help();
+	    return 1;
+	}
     }
 
     cp = getenv("SLAXPATH");
