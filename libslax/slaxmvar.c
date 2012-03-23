@@ -422,7 +422,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    return TRUE;
 	}
 
-	for (i = 0; i < nset->nodeNr; i++) {
+	for (i = 0; nset && i < nset->nodeNr; i++) {
 	    xmlNodePtr cur = nset->nodeTab[i];
 	    if (cur == NULL)
 		continue;
