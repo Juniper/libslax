@@ -26,9 +26,9 @@
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
+#include "config.h"
 #include "slaxinternals.h"
 #include <libslax/slax.h>
-#include "config.h"
 
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
 #if 0
@@ -636,4 +636,32 @@ slaxBase64Decode (const char *buf, size_t blen, size_t *olenp)
     *out = '\0';
     *olenp = out - data;
     return data;
+}
+
+/*
+ * Our own replacement for asprintf (ifndef HAVE_ASPRINTF).  See
+ * the definition in slaxutil.h.
+ */
+int
+slaxAsprintf (char **ret, const char *format, ...)
+{
+    char buf[128], *bp;		/* Smallish buffer */
+    int rc;
+    va_list vap;
+
+    va_start(vap, format);
+    rc = vsnprintf(buf, sizeof(buf), format, vap);
+    if (rc < (int) sizeof(buf)) {
+	*ret = bp = xmlStrdup2(buf);
+
+    } else {
+	*ret = bp = xmlMalloc(rc + 1);
+	if (bp == NULL)
+	    rc = -1;
+	else
+	    vsnprintf(bp, rc + 1, format, vap);
+    }
+
+    va_end(vap);
+    return rc;
 }

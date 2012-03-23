@@ -169,37 +169,13 @@ slaxTimeIso (const time_t *t, char *buf, size_t bufsiz)
 }
 
 #ifndef HAVE_ASPRINTF
-
 /*
- * stdio.h has already declared asprintf() as non-static.  We use a
+ * stdio.h may have already declared asprintf() as non-static.  We use a
  * quick #define to get around that.
  */
 #define asprintf slaxAsprintf
-
-static inline int
-slaxAsprintf (char **ret, const char *format, ...)
-{
-    char buf[128], *bp;		/* Smallish buffer */
-    int rc;
-    va_list vap;
-
-    va_start(vap, format);
-    rc = vsnprintf(buf, sizeof(buf), format, vap);
-    if (rc < (int) sizeof(buf)) {
-	*ret = bp = xmlStrdup2(buf);
-
-    } else {
-	*ret = bp = xmlMalloc(rc + 1);
-	if (bp == NULL)
-	    rc = -1;
-	else
-	    vsnprintf(bp, rc + 1, format, vap);
-    }
-
-    va_end(vap);
-    return rc;
-}
-
 #endif /* HAVE_ASPRINTF */
+
+int slaxAsprintf (char **ret, const char *format, ...);
 
 #endif /* LIBSLAX_SLAXUTIL_H */
