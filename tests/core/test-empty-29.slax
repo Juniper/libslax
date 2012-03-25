@@ -1,0 +1,65 @@
+version 1.1;
+
+ns app = "http://xml.juniper.net/wonder/app";
+
+mvar $book;
+mvar $ref;
+
+match / {
+    <top> {
+	set $book = {
+	    <book> "one";
+	    <book x="1"> "two";
+	    <book> "three";
+	    <book y="1"> "four";
+	}
+
+	for-each ($book[@x]) {
+	    <found-x> .;
+	}
+
+	for-each ($book[@y]) {
+	    <found-y> .;
+	}
+
+	set $book = {
+	    <book> "five";
+	    <book x="1"> "six";
+	    <book> "seven";
+	    <book y="1"> "eight";
+	}
+
+	set $ref = $book;
+	set $ref = $book[@y];
+	set $ref = $book;
+	for-each ($ref) {
+	    <found-x> .;
+	}
+
+	for-each ($book[@y]) {
+	    <found-y> .;
+	}
+
+	set $book = app:get();
+	set $ref = $book;
+	for-each ($ref) {
+	    <found-x> .;
+	}
+
+	for-each ($book[@y]) {
+	    <found-y> .;
+	}
+
+	<book> { copy-of $book; }
+	<slax-book> { copy-of $slax-book; }
+    }
+}
+
+function app:get () {
+    result {
+	<book> "nine";
+	<book x=1> "ten";
+	<book> "eleven";
+	<book y=1> "twelve";
+    }
+}

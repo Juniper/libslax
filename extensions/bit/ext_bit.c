@@ -405,19 +405,140 @@ extBitFromHex (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathReturnString(ctxt, res);
 }
 
+static void
+extBitClearOrSet (xmlXPathParserContextPtr ctxt, int nargs, xmlChar value)
+{
+    xmlChar *res;
+    int width, bitnum = 0, delta;
+    xmlXPathObjectPtr xop;
+
+    if (nargs != 1 && nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    if (nargs == 2) {
+	bitnum = xmlXPathPopNumber(ctxt);
+	if (bitnum < 0 || xmlXPathCheckError(ctxt))
+	    return;
+    }
+
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res = extBitStringVal(ctxt, xop);
+    if (res == NULL)
+	return;
+
+    width = xmlStrlen(res);
+    delta = width - bitnum - 1;
+
+    if (delta < 0) {
+	xmlChar *newp = xmlRealloc(res, bitnum + 2);
+	if (newp == NULL)
+	    return;
+
+	delta = -delta;
+	memmove(newp + delta, newp, width + 1);
+	newp[0] = value;
+	memset(newp + 1, '0', delta - 1);
+	res = newp;
+
+    } else {
+	res[delta] = value;
+    }
+
+    xmlXPathReturnString(ctxt, res);
+}
+
+static void
+extBitClear (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitClearOrSet(ctxt, nargs, '0');
+}
+
+static void
+extBitSet (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    extBitClearOrSet(ctxt, nargs, '1');
+}
+
+static void
+extBitCompare (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlChar *res1, *res2;
+    xmlXPathObjectPtr xop;
+    int width1, width2, off1, off2, rc, delta;
+
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res2 = extBitStringVal(ctxt, xop);
+    if (res2 == NULL)
+	return;
+
+    xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+    res1 = extBitStringVal(ctxt, xop);
+    if (res1 == NULL)
+	return;
+
+    width1 = xmlStrlen(res1);
+    width2 = xmlStrlen(res2);
+    delta = width1 - width2;
+
+    rc = 0;
+    off1 = off2 = 0;
+    if (delta < 0) {
+	for ( ; delta < 0; delta++, off2++) {
+	    if (res2[off2] != '0') {
+		rc = -1;
+		goto done;
+	    }
+	}
+
+    } else if (delta > 0) {
+	for ( ; delta > 0; delta--, off1++) {
+	    if (res1[off1] != '0') {
+		rc = 1;
+		goto done;
+	    }
+	}
+    }
+
+    rc = xmlStrcmp(res1 + off1, res2 + off2);
+
+ done:
+    xmlFree(res1);
+    xmlFree(res2);
+
+    xmlXPathReturnNumber(ctxt, rc);
+}
+
 slax_function_table_t slaxBitTable[] = {
     { "and", extBitAnd },
-    { "or", extBitOr },
+    { "clear", extBitClear },
+    { "compare", extBitCompare },
+    { "from-hex", extBitFromHex },
+    { "from-int", extBitFromInt },
+    { "mask", extBitMask },
     { "nand", extBitNand },
     { "nor", extBitNor },
-    { "xor", extBitXor },
-    { "xnor", extBitXnor },
     { "not", extBitNot },
-    { "mask", extBitMask },
-    { "to-int", extBitToInt },
-    { "from-int", extBitFromInt },
+    { "or", extBitOr },
+    { "set", extBitSet },
     { "to-hex", extBitToHex },
-    { "from-hex", extBitFromHex },
+    { "to-int", extBitToInt },
+    { "xnor", extBitXnor },
+    { "xor", extBitXor },
     { NULL, NULL },
 };
 

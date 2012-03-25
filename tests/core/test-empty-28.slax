@@ -1,0 +1,78 @@
+version 1.1;
+
+ns bit extension = "http://xml.libslax.org/bit";
+
+var $a = 63;
+var $b = { expr "10111"; }
+
+match / {
+    <out> {
+	<bit-set> {
+	    <a1> bit:set("10000", 0);
+	    <a2> bit:set("10000", 3);
+	    <a3> bit:set("10000", 5);
+	    <a4> bit:set("10000", 8);
+	}
+	<bit-clear> {
+	    <a1> bit:clear("11111", 0);
+	    <a2> bit:clear("11111", 3);
+	    <a3> bit:clear("11111", 5);
+	    <a4> bit:clear("11111", 8);
+	}
+	<bit-compare> {
+	    <a1> bit:compare(13, 14);
+	    <a2> bit:compare(14, 12);
+	    <a3> bit:compare(16, 15);
+	    <a4> bit:compare("10000", 16);
+	    <a5> bit:compare("11111", "10000");
+	    <a6> bit:compare("10101", "101010");
+	    <a7> bit:compare("101010", "10101");
+	}
+	<bit-and> {
+	    <a1> bit:and("10", "01");
+	    <a2> bit:and("101100", "100101");
+	    <a3> bit:and("0110", "1010101");
+	    <a4> bit:and("11111111", "1111");
+	    <a5> bit:and("111", "1111111");
+	    <a6> bit:and("101", "1111111");
+	    <a7> bit:and("10111", "1111101");
+	    <a8> bit:and(256 + 8, 256 + 8 + 1);
+	    <a9> bit:and($a, $b);
+	    <a10> bit:and($a, number($b));
+	}
+
+	<bit-or> {
+            <a1> bit:or("10", "01");
+	    <a2> bit:or("101100", "100101");
+	    <a3> bit:or("0110", "1010101");
+	    <a4> bit:or("11111111", "1111");
+	    <a5> bit:or("111", "1111111");
+	    <a6> bit:or("101", "1111111");
+	    <a7> bit:or("10111", "1111101");
+	    <a8> bit:or(256 + 8, 256 + 8 + 1);
+	    <a9> bit:or($a, $b);
+	    <a10> bit:or($a, number($b));
+	}
+
+	<bit-mask> {
+            <a1> bit:mask(0);
+	    <a2> bit:mask(1);
+	    <a3> bit:mask(4);
+	    <a4> bit:mask(4, 8);
+	    <a5> bit:mask(8, 32);
+	    <a6> bit:mask(10, 8);
+	    <a7> bit:mask(3, 3);
+	    <a8> bit:mask(7, 3);
+	    <a9> bit:mask(3, 7);
+	    <a10> bit:not(bit:mask(3, 7));
+	}
+
+	<ops> {
+	    <a1> bit:to-int("10101");
+	    <a2> bit:from-int(65535);
+	    <a3> bit:from-int(15, 10);
+	    <a4> bit:to-hex("10101");
+	    <a5> bit:from-hex("0x345");
+	}
+    }
+}

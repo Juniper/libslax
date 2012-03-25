@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<top xmlns:app="http://xml.juniper.net/wonder/app">
+  <found-x>two</found-x>
+  <found-y>four</found-y>
+  <found-x>five</found-x>
+  <found-x>six</found-x>
+  <found-x>seven</found-x>
+  <found-x>eight</found-x>
+  <found-y>eight</found-y>
+  <found-x>nine</found-x>
+  <found-x>ten</found-x>
+  <found-x>eleven</found-x>
+  <found-x>twelve</found-x>
+  <found-y>twelve</found-y>
+  <book>
+    <book>nine</book>
+    <book x="1">ten</book>
+    <book>eleven</book>
+    <book y="1">twelve</book>
+  </book>
+  <slax-book>
+    <book>one</book>
+    <book x="1">two</book>
+    <book>three</book>
+    <book y="1">four</book>
+    <book>five</book>
+    <book x="1">six</book>
+    <book>seven</book>
+    <book y="1">eight</book>
+    <book>nine</book>
+    <book x="1">ten</book>
+    <book>eleven</book>
+    <book y="1">twelve</book>
+  </slax-book>
+</top>
