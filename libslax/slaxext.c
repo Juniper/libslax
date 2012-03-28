@@ -2336,8 +2336,7 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
     input = xmlParserInputBufferCreateFilename((char *) filename,
 					       sdo.sdo_encoding);
     if (input == NULL) {
-        xsltTransformError(NULL, NULL, NULL,
-		   "slax:document() : failed to parse URI ('%s')\n", filename);
+	slaxLog("slax:document: failed to parse URI ('%s')", filename);
         valuePush(ctxt, xmlXPathNewNodeSet(NULL));
 	xmlFree(filename);
 	slaxExtDocumentOptionsClear(&sdo);

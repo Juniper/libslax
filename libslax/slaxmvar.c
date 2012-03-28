@@ -739,9 +739,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
     /* Look up the variable to report syntax errors */
     var = slaxFindVariable(style, inst, comp->mp_localname, NULL);
     if (var == NULL) {
-	xsltTransformError(NULL, style, inst,
-		"mvar: invalid variable '%s'.\n", comp->mp_localname);
-	style->errors += 1;
+	slaxLog("mvar: variable not found '%s'.\n", comp->mp_localname);
 
     } else {
 	xmlChar *mutable;
@@ -749,12 +747,13 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	mutable = xmlGetNsProp(var, (const xmlChar *) ATT_MUTABLE, NULL);
 	if (mutable == NULL) {
 	    xsltTransformError(NULL, style, inst,
-		"mvar: immutable variable '%s'.\n", comp->mp_localname);
+			 "immutable variable cannot be changed (var): '%s'.\n",
+			       comp->mp_localname);
 	    style->errors += 1;
 	} else {
 	    if (!streq((const char *) mutable, "yes")) {
 		xsltTransformError(NULL, style, inst,
-		    "mvar: immutable variable '%s'.\n", comp->mp_localname);
+		    "immutable variable cannot be changed: '%s'.\n", name);
 		style->errors += 1;
 	    }
 
@@ -768,13 +767,13 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	comp->mp_select = xmlXPathCompile(sel);
 	if (comp->mp_select == NULL) {
 	    xsltTransformError(NULL, style, inst,
-	       "mvar: invalid XPath expression '%s'.\n", sel);
+	       "invalid XPath expression for mvar '%s': '%s'.\n", name, sel);
 	    style->errors += 1;
 	}
 
 	if (inst->children != NULL) {
 	    xsltTransformError(NULL, style, inst,
-		"mvar: cannot have child nodes, since the "
+		"mvar cannot have child nodes when the "
 		"attribute 'select' is used.\n");
 	    style->errors += 1;
 	}
@@ -786,7 +785,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 				     NULL);
     if (comp->mp_svarname == NULL) {
 	xsltTransformError(NULL, style, inst,
-	   "mvar: missing svarname attribute for mvar: %s\n", name);
+	   "missing 'svarname' attribute for mvar: '%s'.\n", name);
 	style->errors += 1;
     }
 
@@ -896,7 +895,7 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
     var = slaxMvarLookup (ctxt, comp->mp_name, comp->mp_uri, &local);
     if (var == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
-			 "mvar: variable not found: %s\n", comp->mp_name);
+			 "mvar variable not found: %s\n", comp->mp_name);
 	if (value)
 	    xmlXPathFreeObject(value);
 	return;
