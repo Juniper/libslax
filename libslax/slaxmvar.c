@@ -79,6 +79,8 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 {
     xmlNodePtr mvar = sdp->sd_ctxt->node, svar;
     xmlChar *svarname;
+    char buf[BUFSIZ];
+    char *sel = NULL;
 
     svarname = slaxMvarSvarName(mvarname);
     if (svarname == NULL)
@@ -111,20 +113,27 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
      * - Clear children
      */
     slaxAttribAddLiteral(sdp, ATT_MUTABLE, "yes");
-    if (mvar->children) {
-	char buf[BUFSIZ];
 
-	/* Set the 'select' attribute to our init function */
-	snprintf(buf, sizeof(buf),
-		 SLAX_PREFIX ":" FUNC_MVAR_INIT "(\"%s\")", svarname);
-	xmlSetNsProp(mvar, NULL,
-		     (const xmlChar *) ATT_SELECT, (const xmlChar *) buf);
-	slaxSetSlaxNs(sdp, mvar, FALSE);
+    /* Set the 'select' attribute to our init function */
+    if (mvar->children == NULL)
+	sel = (char *) xmlGetNsProp(mvar,
+				    (const xmlChar *) ATT_SELECT, NULL);
+    
 
-	/* Remove the children (copies are under the svar) */
-	xmlFreeNodeList(mvar->children);
-	mvar->children = NULL;
-    }
+    snprintf(buf, sizeof(buf),
+	     SLAX_PREFIX ":" FUNC_MVAR_INIT "(\"%s\", \"%s\", $%s%s%s)",
+	     mvarname, svarname, svarname,
+	     sel ? ", " : "", sel ?: "");
+
+    xmlFreeAndEasy(sel);
+
+    xmlSetNsProp(mvar, NULL,
+		 (const xmlChar *) ATT_SELECT, (const xmlChar *) buf);
+    slaxSetSlaxNs(sdp, mvar, FALSE);
+
+    /* Remove the children (copies are under the svar) */
+    xmlFreeNodeList(mvar->children);
+    mvar->children = NULL;
 
     /* Leave a pointer to our svar's name */
     xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_SVARNAME,
@@ -964,24 +973,41 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 {
     xsltTransformContextPtr tctxt;
     xmlChar *svarname = NULL;
+    xmlChar *mvarname = NULL;
     xsltStackElemPtr svar;
     xmlXPathObjectPtr ret = NULL;
     xmlNodePtr nodep;
+    xmlXPathObjectPtr xop = NULL;
+    xmlXPathObjectPtr varg = NULL;
 
-    if (nargs != 1) {
+    if (nargs < 3 || nargs > 4) {
 	xmlXPathSetArityError(ctxt);
 	return;
+    }
+
+    /* If we have an initial value, fetch it.  If null, no problemo */
+    if (nargs == 4)
+	xop = valuePop(ctxt);
+
+    /*
+     * vop is a reference to our shadow variable, used to force libxslt
+     * to evaluate it before we are run.  We can fetch and discard it.
+     */
+    varg = valuePop(ctxt);
+    if (varg)
+	xmlXPathFreeObject(varg);
+
+    /* The first two parameters are the names of our variable and shadow */
+    svarname = xmlXPathPopString(ctxt);
+    mvarname = xmlXPathPopString(ctxt);
+    if (svarname == NULL || mvarname == NULL) {
+	slaxTransformError(ctxt, "slax:mvar-init: variable names are NULL");
+	goto fail;
     }
 
     tctxt = xsltXPathGetTransformContext(ctxt);
     if (tctxt == NULL) {
 	slaxTransformError(ctxt, "slax:mvar-init: tctxt is NULL");
-	goto fail;
-    }
-
-    svarname = xmlXPathPopString(ctxt);
-    if (svarname == NULL) {
-	slaxTransformError(ctxt, "slax:mvar-init: svarname is NULL");
 	goto fail;
     }
 
@@ -992,27 +1018,39 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	goto fail;
     }
 
-    if (svar->value == NULL || svar->value->nodesetval == NULL
-	|| svar->value->nodesetval->nodeTab == NULL
-	|| svar->value->nodesetval->nodeTab[0] == NULL
-	|| svar->value->nodesetval->nodeTab[0]->children == NULL)
-	goto fail;
+    if (xop) {
+	/*
+	 * xop is the new value that needs assigned to the var.  If
+	 * it is not a scalar, then we need to copy it into the shadow
+	 * variable, which should be initialized since it is one of
+	 * our parameters.
+	 */
+	ret = xop;
 
-    /*
-     * Now we have the shadow variable and just need to build a nodeset
-     * containing its nodes.
-     */
-    ret = xmlXPathNewNodeSet(NULL);
-    if (ret == NULL)
-	goto fail;
+    } else {
+	if (svar->value == NULL || svar->value->nodesetval == NULL
+	    || svar->value->nodesetval->nodeTab == NULL
+	    || svar->value->nodesetval->nodeTab[0] == NULL
+	    || svar->value->nodesetval->nodeTab[0]->children == NULL)
+	    goto fail;
 
-    nodep = svar->value->nodesetval->nodeTab[0]->children;
-    for ( ; nodep; nodep = nodep->next) {
-	xmlXPathNodeSetAdd(ret->nodesetval, nodep);
+	/*
+	 * Now we have the shadow variable and just need to build a nodeset
+	 * containing its nodes.
+	 */
+	ret = xmlXPathNewNodeSet(NULL);
+	if (ret == NULL)
+	    goto fail;
+
+	nodep = svar->value->nodesetval->nodeTab[0]->children;
+	for ( ; nodep; nodep = nodep->next) {
+	    xmlXPathNodeSetAdd(ret->nodesetval, nodep);
+	}
     }
 
 
 fail:
+    xmlFreeAndEasy(mvarname);
     xmlFreeAndEasy(svarname);
 
     if (ret)
