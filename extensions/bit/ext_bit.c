@@ -136,7 +136,7 @@ extBitOr (xmlXPathParserContextPtr ctxt, int nargs)
 static xmlChar
 extBitOpNand (xmlChar lb, xmlChar rb)
 {
-    return (lb == '0' && rb == '0') ? '1' : '0';
+    return (lb == '1' && rb == '1') ? '0' : '1';
 }
 
 static void
@@ -148,7 +148,7 @@ extBitNand (xmlXPathParserContextPtr ctxt, int nargs)
 static xmlChar
 extBitOpNor (xmlChar lb, xmlChar rb)
 {
-    return (lb == '0' || rb == '0') ? '1' : '0';
+    return (lb == '1' || rb == '1') ? '0' : '1';
 }
 
 static void
