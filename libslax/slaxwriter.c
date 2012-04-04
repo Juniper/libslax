@@ -1564,6 +1564,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     xmlNodePtr vnode = nodep;
     char *aname;
     const char *operator;
+    int is_mvar = FALSE;
 
     if (mvarname) {
 	/*
@@ -1595,6 +1596,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	 */
 	const char mvar_init[] = SLAX_PREFIX ":" FUNC_MVAR_INIT "(";
 	tag = "mvar";
+
+	is_mvar = TRUE;
 
 	if (sel && strncmp(sel, mvar_init, strlen(mvar_init)) == 0) {
 	    for (vnode = nodep->prev; vnode; vnode = vnode->prev)
@@ -1677,10 +1680,42 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	}
 
     } else if (sel) {
+	char *selval = sel;
+
+	if (is_mvar) {
+	    /*
+	     * We are looking at an initialization that is a call to
+	     * mvar-init().  We know the real expression is the optional
+	     * fourth argument.  The other args are the mvar name,
+	     * the shadow variable name, and the shadow variable value.
+	     *    $x = slax:mvar-init("x", "slax-x", $slax-x, real/value);
+	     *                           a         b        c
+	     * So we skip over the first three commas and use anything
+	     * else as the initial value.  If there is no fourth
+	     * argument, there's no initial value.
+	     */
+	    do {
+		char *cp = strchr(sel, ','); /* Find 'a' */
+		if (cp == NULL)
+		    break;
+		cp = strchr(cp + 1, ','); /* Find 'b' */
+		if (cp == NULL)
+		    break;
+		cp = strchr(cp + 1, ','); /* Find 'c' */
+		if (cp == NULL)
+		    goto emit_simple;
+
+		selval = cp + 1;
+		cp = selval + strlen(selval) - 1;
+		if (*cp == ')')
+		    *cp = '\0';
+	    } while (0);
+	}
+
 	/*
 	 * The select might be an assignment if this is a function.
 	 */
-	char *expr = slaxMakeExpression(swp, nodep, sel);
+	char *expr = slaxMakeExpression(swp, nodep, selval);
 	char *contents = slaxVarAssignContents(expr);
 
 	if (contents) {
@@ -1696,6 +1731,8 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	xmlFreeAndEasy(expr);
 
     } else {
+
+    emit_simple:
 	slaxWrite(swp, "%s $%s;", tag, aname);
 	slaxWriteNewline(swp, 0);
     }
