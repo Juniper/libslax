@@ -362,7 +362,6 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlFreeAndEasy(value->stringval); /* Discard stringval if any */
     memset(value, 0, sizeof(*value));
     value->type = XPATH_NODESET;
-    value->boolval = 1;		/* Free container when value is freed */
     value->nodesetval = xmlXPathNodeSetCreate((xmlNodePtr) container);
 
     if (value->nodesetval && value->nodesetval->nodeNr > 0
@@ -436,13 +435,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    if (cur == NULL)
 		continue;
 
-	   if (XSLT_IS_RES_TREE_FRAG(cur)) {
-	       for (cur = cur->children; cur; cur = cur->next)
-		   slaxMvarAdd(container, res, cur);
-
-	   } else {
-	       slaxMvarAdd(container, res, cur);
-	   }
+	    slaxMvarAdd(container, res, cur);
 	}
 
 	/* We need to free the new value, since we've copied its contents */
@@ -1005,6 +998,8 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	goto fail;
     }
 
+    slaxLog("mvar: init: %s/%s (%p)", mvarname, svarname, xop);
+
     tctxt = xsltXPathGetTransformContext(ctxt);
     if (tctxt == NULL) {
 	slaxTransformError(ctxt, "slax:mvar-init: tctxt is NULL");
@@ -1042,12 +1037,9 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	if (ret == NULL)
 	    goto fail;
 
-	nodep = svar->value->nodesetval->nodeTab[0]->children;
-	for ( ; nodep; nodep = nodep->next) {
-	    xmlXPathNodeSetAdd(ret->nodesetval, nodep);
-	}
+	nodep = svar->value->nodesetval->nodeTab[0];
+	xmlXPathNodeSetAdd(ret->nodesetval, nodep);
     }
-
 
 fail:
     xmlFreeAndEasy(mvarname);

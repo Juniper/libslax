@@ -2393,6 +2393,8 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
     /* Generate our returnable object */
     ret = xmlXPathWrapString((xmlChar *) data);
 
+    slaxDataListClean(&list);
+
  fail:
     slaxExtDocumentOptionsClear(&sdo);
 
@@ -2510,16 +2512,15 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	if (parent == NULL || parent->children == NULL)
 	    goto fail;
 
-	ret = xmlXPathNewNodeSet(NULL);
-	if (ret == NULL)
-	    goto fail;
-
 	/* If there's one TEXT child, use it directly */
 	child = parent->children;
 	if (child && child->next == NULL && child->type == XML_TEXT_NODE)
 	    xmlXPathReturnString(ctxt, xmlStrdup(child->content));
-
 	else {
+	    ret = xmlXPathNewNodeSet(NULL);
+	    if (ret == NULL)
+		goto fail;
+
 	    /* For an RTF, we want the child nodes, not the parent */
 	    for (child = parent->children; child; child = child->next)
 		xmlXPathNodeSetAdd(ret->nodesetval, child);
