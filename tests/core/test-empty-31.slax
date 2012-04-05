@@ -1,0 +1,47 @@
+version 1.1;
+
+var $v1 := {
+    <a> "a";
+    <b> "b";
+    <c> "c";
+}
+
+mvar $v2 = {
+    <a> "a";
+    <b> "b";
+    <c> "c";
+}
+
+    
+mvar $v3 = $v1;
+
+mvar $s1 = "test";
+mvar $s2 = 45;
+mvar $s3 = /asdf;
+
+match / {
+    <top> {
+	<v1 c=count($v1)> $v1/a;
+	<v2 c=count($v2)> $v2/a;
+	<v3 c=count($v3)> $v3/a;
+
+	set $s1 = $v1;
+	<s1 c=count($s1)> $s1/a;
+	set $s2 = $v2;
+	<s2 c=count($s2)> $s2/a;
+	set $s3 = $v3;
+	<s3 c=count($s3)> $s3/a;
+
+	append $s1 += {
+	    <d> "d";
+	    <e> "e";
+	}
+	<as1> { copy-of $s1; }
+
+	append $s1 += {
+	    <f> "f";
+	    <g> "g";
+	}
+	<as1> { copy-of $s1; }
+    }
+}

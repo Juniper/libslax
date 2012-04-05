@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<top>
+  <v1 c="1">a</v1>
+  <v2 c="1">a</v2>
+  <v3 c="1">a</v3>
+  <s1 c="1">a</s1>
+  <s2 c="1">a</s2>
+  <s3 c="1">a</s3>
+  <as1>
+    <a>a</a>
+    <b>b</b>
+    <c>c</c>
+    <d>d</d>
+    <e>e</e>
+  </as1>
+  <as1>
+    <a>a</a>
+    <b>b</b>
+    <c>c</c>
+    <d>d</d>
+    <e>e</e>
+    <f>f</f>
+    <g>g</g>
+  </as1>
+</top>
