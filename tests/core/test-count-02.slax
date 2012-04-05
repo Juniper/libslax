@@ -19,7 +19,10 @@ match / {
 	<a> { copy-of $a; }
 	<b> { copy-of $b; }
 
-	call main;
+	set $b = { <test> "test"; }
+	<b> { copy-of $b; }
+
+	/* call main; */
     }
 }
 
@@ -43,7 +46,6 @@ template main {
 	var $y1 = 10;
 
 	append $x1 += $y;
-
 	<x1> { copy-of $x1; }
 
 	append $x += $y;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:variable name="slax-errors" mvarname="errors"/>
-  <xsl:variable name="errors" mutable="yes" svarname="slax-errors"/>
+  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="errors" mutable="yes" select="slax:mvar-init(&quot;errors&quot;, &quot;slax-errors&quot;, $slax-errors)" svarname="slax-errors"/>
   <xsl:template match="/">
     <top>
       <xsl:apply-templates/>
@@ -16,9 +16,9 @@
   <xsl:template match="author">
     <xsl:variable name="age" select="life-span/died - life-span/born"/>
     <xsl:variable name="slax-problem" mvarname="problem"/>
-    <xsl:variable name="problem" mutable="yes" svarname="slax-problem"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="problem" mutable="yes" select="slax:mvar-init(&quot;problem&quot;, &quot;slax-problem&quot;, $slax-problem)" svarname="slax-problem"/>
     <xsl:variable name="slax-tag" mvarname="tag"/>
-    <xsl:variable name="tag" select="concat(&quot; (&quot;, $age, &quot; years old)&quot;)" mutable="yes" svarname="slax-tag"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="tag" select="slax:mvar-init(&quot;tag&quot;, &quot;slax-tag&quot;, $slax-tag, concat(&quot; (&quot;, $age, &quot; years old)&quot;))" mutable="yes" svarname="slax-tag"/>
     <xsl:choose>
       <xsl:when test="$age &lt; 0">
         <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="problem" svarname="slax-problem" select="&quot;died before born&quot;"/>

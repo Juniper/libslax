@@ -80,7 +80,7 @@ and finally, line five
           <test/>
         </xsl:variable>
         <xsl:variable name="slax-ne3" mvarname="ne3"/>
-        <xsl:variable name="ne3" mutable="yes" svarname="slax-ne3"/>
+        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="ne3" mutable="yes" select="slax:mvar-init(&quot;ne3&quot;, &quot;slax-ne3&quot;, $slax-ne3)" svarname="slax-ne3"/>
         <e1>
           <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:is-empty($e1)"/>
         </e1>
