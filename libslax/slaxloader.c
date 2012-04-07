@@ -96,14 +96,13 @@ slaxIncludeAddPath (const char *dir)
  * @param minor minor version number
  */
 void
-slaxVersionMatch (slax_data_t *sdp, const char *major, const char *minor)
+slaxVersionMatch (slax_data_t *sdp, const char *vers)
 {
-    if (major == NULL || !streq(major, "1")
-	|| minor == NULL || !(streq(minor, "0") || streq(minor, "1"))) {
-	fprintf(stderr, "invalid version number: %s.%s\n",
-		major ?: "", minor ?: "");
-	sdp->sd_errors += 1;
-    }
+    if (streq(vers, "1.0") || streq(vers, "1.1"))
+	return;
+
+    fprintf(stderr, "invalid version number: %s\n", vers);
+    sdp->sd_errors += 1;
 }
 
 /*

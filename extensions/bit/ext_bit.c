@@ -11,6 +11,8 @@
  * ext_bit.c -- extension functions for bit operations
  */
 
+#include <math.h>
+
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 
@@ -30,6 +32,9 @@ extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
 	xmlChar *res;
 	int width;
 	unsigned long long val = xop->floatval, v2;
+
+	if (xop->floatval > pow(2, 32))
+	    val = (unsigned long long) -1;
 
 	xmlXPathFreeObject(xop);
 

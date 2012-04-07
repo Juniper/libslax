@@ -2,9 +2,6 @@ version 1.1;
 
 ns bit extension = "http://xml.libslax.org/bit";
 
-import "../import/junos.xsl";
-mvar $output;
-
 match / {
     <op-script-results> {
         message "bit:and(0011, 0101) -> " _ bit:and("0011", "0101");
@@ -92,5 +89,10 @@ match / {
         message "bit:from-hex('0xD') -> " _ bit:from-hex("0xD");
         message "bit:from-hex('0xE') -> " _ bit:from-hex("0xE");
         message "bit:from-hex('0xF') -> " _ bit:from-hex("0xF");
+        /* Large numbers */
+        message "bit:from-int(4.2e20) -> " _ bit:from-int(4.2e10);
+        message "bit:from-int(4.2e30) -> " _ bit:from-int(4.2e30);
+        message "bit:from-int(4.2e40) -> " _ bit:from-int(4.2e40);
+        message "bit:from-int(4.2e60) -> " _ bit:from-int(4.2e60);
     }
 }

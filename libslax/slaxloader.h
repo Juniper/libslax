@@ -19,7 +19,7 @@ extern const xmlChar slaxNull[];
  * @param minor minor version number
  */
 void
-slaxVersionMatch (slax_data_t *sdp, const char *major, const char *minor);
+slaxVersionMatch (slax_data_t *sdp, const char *vers);
 
 /*
  * Relocate the most-recent "sort" node, if the parent was a "for"

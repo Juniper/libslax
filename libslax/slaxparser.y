@@ -502,9 +502,9 @@ version_stmt :
 	;
 
 version_number :
-	T_NUMBER L_DOT T_NUMBER
+	T_NUMBER
 		{
-		    slaxVersionMatch(slax_data, $1->ss_token, $3->ss_token);
+		    slaxVersionMatch(slax_data, $1->ss_token);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
@@ -3087,18 +3087,6 @@ xpc_number :
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
-		}
-
-	| T_NUMBER L_DOT T_NUMBER
-		{
-		    SLAX_KEYWORDS_OFF();
-		    $$ = STACK_LINK($1);
-		}
-
-	| L_DOT T_NUMBER
-		{
-		    SLAX_KEYWORDS_OFF();
-		    $$ = STACK_LINK($1);
 		}
 	;
 

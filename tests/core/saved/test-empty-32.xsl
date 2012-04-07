@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:bit="http://xml.libslax.org/bit" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="bit slax">
-  <xsl:import href="../import/junos.xsl"/>
-  <xsl:variable name="slax-output" mvarname="output"/>
-  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="output" mutable="yes" select="slax:mvar-init(&quot;output&quot;, &quot;slax-output&quot;, $slax-output)" svarname="slax-output"/>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:bit="http://xml.libslax.org/bit" version="1.0" extension-element-prefixes="bit">
   <xsl:template match="/">
     <op-script-results>
       <xsl:message>
@@ -259,6 +256,19 @@
       </xsl:message>
       <xsl:message>
         <xsl:value-of select="concat(&quot;bit:from-hex('0xF') -&gt; &quot;, bit:from-hex(&quot;0xF&quot;))"/>
+      </xsl:message>
+      <!-- Large numbers -->
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int(4.2e20) -&gt; &quot;, bit:from-int(4.2e10))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int(4.2e30) -&gt; &quot;, bit:from-int(4.2e30))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int(4.2e40) -&gt; &quot;, bit:from-int(4.2e40))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int(4.2e60) -&gt; &quot;, bit:from-int(4.2e60))"/>
       </xsl:message>
     </op-script-results>
   </xsl:template>

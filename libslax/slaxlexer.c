@@ -972,9 +972,22 @@ slaxLexer (slax_data_t *sdp)
 	}
 
 	if (isdigit(ch1)) {
-	    while (sdp->sd_cur < sdp->sd_len
-		   && isdigit((int) sdp->sd_buf[sdp->sd_cur]))
-		sdp->sd_cur += 1;
+	    int seen_e = FALSE;
+
+	    for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+		int ch4 =  sdp->sd_buf[sdp->sd_cur];
+		if (isdigit(ch4))
+		    continue;
+		if (ch4 == '.')
+		    continue;
+		if (ch4 == 'e' || ch4 == 'E') {
+		    seen_e = TRUE;
+		    continue;
+		}
+		if (seen_e && (ch4 == '+' || ch4 == '-'))
+		    continue;
+		break;		/* Otherwise, we're done */
+	    }
 	    return T_NUMBER;
 	}
     }
