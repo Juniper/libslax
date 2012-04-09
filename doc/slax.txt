@@ -2552,10 +2552,24 @@ outputing the result tree.
             'media-type' data_value ';'
         '}'
 
-The style can be "xml", "html", or "text".
+The style can be "xml", "html", or "text" (without quotes).
 
 The substatements of "output-method" correspond to the attributes of
-the XSLT <xsl:output-method> element.
+the XSLT <xsl:output> element.
+
+|------------------------+--------------------------------------|
+| Statement              | Description                          |
+|------------------------+--------------------------------------|
+| version                | Version number of output method      |
+| encoding               | Character set                        |
+| omit-xml-declaration   | (yes/no) Omit initial XML DECL       |
+| standalone             | (yes/no) Emit standalone declaration |
+| doctype-public         | Public identifier in DTD             |
+| doctype-system         | System identifier in DTD             |
+| cdata-section-elements | List of elements to use CDATA        |
+| indent                 | (yes/no) Emit pretty indentation     |
+| media-type             | MIME type for document               |
+|------------------------+--------------------------------------|
 
 See also http://www.w3.org/TR/xslt#output
 

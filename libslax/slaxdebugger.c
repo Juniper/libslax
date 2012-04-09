@@ -405,14 +405,23 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 
     case XPATH_NODESET:
 	if (full) {
-	    slaxOutput("%s[node-set]%s (%d)", tag,
+	    xmlNodeSetPtr ns = xpath->nodesetval;
+	    const char *frag = "";
+
+	    if (ns && ns->nodeNr == 1 && ns->nodeTab
+		    && XSLT_IS_RES_TREE_FRAG(ns->nodeTab[0]))
+		frag = " rtf-doc";
+
+	    slaxOutput("%s[node-set]%s (%d)%s", tag,
 		       xpath->nodesetval ? "" : " [null]",
-		       xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
+		       xpath->nodesetval ? xpath->nodesetval->nodeNr : 0,
+		       frag);
+
 	    if (xpath->nodesetval)
 		slaxOutputNodeset(xpath->nodesetval);
 	} else {
 	    xmlNodeSetPtr ns = xpath->nodesetval;
-	    if (ns->nodeNr == 0)
+	    if (ns && ns->nodeNr == 0)
 		ns = NULL;
 
 	    slaxOutput("%s[node-set]%s (%d)%s%s%s", tag,

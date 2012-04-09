@@ -355,6 +355,8 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     if (container == NULL)
 	return NULL;
 
+    xsltRegisterPersistRVT(ctxt, container);
+
     /*
      * We build value as a nodeset containing the RTF/RVT.  It's
      * not pretty, but building it by hand is unavoidable.
@@ -371,6 +373,34 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     return NULL;
 }
 
+static xmlDocPtr
+slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
+{
+    xmlXPathObjectPtr value = svar->value;
+    xmlDocPtr container;
+    xmlNodePtr prev;
+
+    /* If this is the first value, make the nodeset */
+    if (value->nodesetval == NULL ||value->nodesetval->nodeNr == 0
+	    || value->nodesetval->nodeTab == NULL)
+	return slaxMvarGetSvarRoot(ctxt, svar);
+
+    container = xsltCreateRVT(ctxt);
+    if (container == NULL)
+	return NULL;
+
+    /*
+     * The garbage collection list is linked via the next/prev or
+     * RTFs.
+     */
+    prev = value->nodesetval->nodeTab[value->nodesetval->nodeNr - 1];
+    prev->next = (xmlNodePtr) container;
+
+    xmlXPathNodeSetAdd(value->nodesetval, (xmlNodePtr) container);
+
+    return container;
+}
+
 static void
 slaxMvarAdd (xmlDocPtr container, xmlNodeSetPtr res, xmlNodePtr cur)
 {
@@ -379,7 +409,8 @@ slaxMvarAdd (xmlDocPtr container, xmlNodeSetPtr res, xmlNodePtr cur)
     newp = xmlDocCopyNode(cur, container, 1);
     if (newp) {
 	xmlAddChild((xmlNodePtr) container, newp);
-	xmlXPathNodeSetAdd(res, newp);
+	if (res)
+	    xmlXPathNodeSetAdd(res, newp);
     }
 }
 
@@ -403,7 +434,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 	 */
 	xmlDocPtr container;
 	xsltStackElemPtr svar;
-	xmlNodeSetPtr res;
+	xmlNodeSetPtr res = NULL;
 	xmlNodeSetPtr nset = value->nodesetval;
 
 	svar = slaxMvarGetSvar(ctxt, var, name, svarname);
@@ -414,7 +445,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    return TRUE;
 	}
 
-	container = slaxMvarGetSvarRoot(ctxt, svar);
+	container = slaxMvarNewContainer(ctxt, svar);
 	if (container == NULL) {
 	    slaxTransformError2(ctxt,
 				"found not find shadow container for %s (%s)",
@@ -435,7 +466,13 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    if (cur == NULL)
 		continue;
 
-	    slaxMvarAdd(container, res, cur);
+	    if (XSLT_IS_RES_TREE_FRAG(cur)) {
+		for (cur = cur->children; cur; cur = cur->next)
+		    slaxMvarAdd(container, NULL, cur);
+		xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
+	    } else {
+		slaxMvarAdd(container, res, cur);
+	    }
 	}
 
 	/* We need to free the new value, since we've copied its contents */
@@ -1021,6 +1058,8 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	 * our parameters.
 	 */
 	ret = xop;
+
+	/* XXX Need to copy to svar */
 
     } else {
 	if (svar->value == NULL || svar->value->nodesetval == NULL
