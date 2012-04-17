@@ -22,7 +22,7 @@ match / {
 	set $b = { <test> "test"; }
 	<b> { copy-of $b; }
 
-	/* call main; */
+	call main;
     }
 }
 
@@ -58,11 +58,9 @@ template main {
 	    copy-of $y;
 	}
 
- /*
 	call test3();
 	call test1();
 	call test2();
- */
     }
 }
 

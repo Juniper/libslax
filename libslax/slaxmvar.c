@@ -580,7 +580,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	     * case #2: [ scalar var / non-scalar value ] -> discard var
 	     */
 
-	    /* Turns out, we don't need to do anything */
+	    nset = value ? value->nodesetval : NULL;
 	}
 
     } else {
@@ -1131,15 +1131,24 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 
     } else {
 	/*
+	 * If we don't have an initial value, do not give outselves
+	 * an empty RTF.  Use an empty string instead.
+	 */
+	nodep = svar->value->nodesetval->nodeTab[0];
+	if (nodep == NULL || nodep->children == NULL) {
+	    xmlFreeAndEasy(mvarname);
+	    xmlFreeAndEasy(svarname);
+	    xmlXPathReturnEmptyString(ctxt);
+	    return;
+	}
+
+	/*
 	 * Now we have the shadow variable and just need to build a nodeset
 	 * containing its nodes.
 	 */
-	ret = xmlXPathNewNodeSet(NULL);
+	ret = xmlXPathNewNodeSet(nodep);
 	if (ret == NULL)
 	    goto fail;
-
-	nodep = svar->value->nodesetval->nodeTab[0];
-	xmlXPathNodeSetAdd(ret->nodesetval, nodep);
     }
 
 fail:

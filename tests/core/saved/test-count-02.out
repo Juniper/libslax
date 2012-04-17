@@ -6,8 +6,44 @@
     <c>sea</c>
     <d>dee</d>
   </b>
+  <b>
+    <test>test</test>
+  </b>
   <main>
-    <x1/>
+    <x1>
+      <error>
+        <line>10</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>11</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>12</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>13</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>15</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>16</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>17</line>
+        <message>fake</message>
+      </error>
+      <error>
+        <line>18</line>
+        <message>fake</message>
+      </error>
+    </x1>
     <x>
       <error>
         <line>1</line>
@@ -172,5 +208,111 @@
         <message>fake</message>
       </error>
     </y>
+    <errors>
+      <error>
+        <line>1</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>2</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>3</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>4</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>5</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>6</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>7</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>8</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>9</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>10</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>11</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>12</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>13</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>14</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>15</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>16</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>17</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>18</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>19</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+      <error>
+        <line>20</line>
+        <message>Shut 'er down Clancey!  She's a-pumping mud!</message>
+      </error>
+    </errors>
+    <test1>10</test1>
+    <test1>20</test1>
+    <test1>30</test1>
+    <test1>40</test1>
+    <test2>1</test2>
+    <test2>3</test2>
+    <test2>6</test2>
+    <test2>10</test2>
+    <test2>15</test2>
+    <test2>21</test2>
+    <test2>28</test2>
+    <test2>36</test2>
+    <test2>45</test2>
+    <test2>55</test2>
+    <test2>66</test2>
+    <test2>78</test2>
+    <test2>91</test2>
+    <test2>105</test2>
+    <test2>120</test2>
+    <test2>136</test2>
+    <test2>153</test2>
+    <test2>171</test2>
+    <test2>190</test2>
+    <test2>210</test2>
   </main>
 </out>

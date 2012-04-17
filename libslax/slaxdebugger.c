@@ -2305,6 +2305,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     xmlDocPtr res = NULL;
     int status;
     xsltStylesheetPtr new_style, save_style = NULL;
+    int indent = style->indent;	/* Save indent value */
 
     slaxDebugSetStylesheet(style);
     slaxProfOpen(style->doc);
@@ -2355,6 +2356,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 		/* In with the new */
 		save_style = style = new_style;
+		style->indent = indent; /* Restore indent value */
 		slaxDebugSetStylesheet(style);
 		slaxDebugReloadBreakpoints(statep);
 

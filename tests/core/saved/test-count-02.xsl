@@ -4,13 +4,13 @@
   <xsl:template match="/">
     <out>
       <xsl:variable name="slax-a" mvarname="a"/>
-      <xsl:variable name="a" select="&quot;a&quot;" mutable="yes" svarname="slax-a"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="a" select="slax:mvar-init(&quot;a&quot;, &quot;slax-a&quot;, $slax-a, &quot;a&quot;)" mutable="yes" svarname="slax-a"/>
       <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot;b&quot;"/>
       <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot;c&quot;"/>
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-b" mvarname="b">
         <b>bee</b>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="b" mutable="yes" select="slax:mvar-init(&quot;slax-b&quot;)" svarname="slax-b"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="b" mutable="yes" select="slax:mvar-init(&quot;b&quot;, &quot;slax-b&quot;, $slax-b)" svarname="slax-b"/>
       <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b">
         <c>sea</c>
       </slax:append-to-variable>
@@ -20,6 +20,12 @@
       <a>
         <xsl:copy-of select="$a"/>
       </a>
+      <b>
+        <xsl:copy-of select="$b"/>
+      </b>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b">
+        <test>test</test>
+      </slax:set-variable>
       <b>
         <xsl:copy-of select="$b"/>
       </b>
@@ -36,7 +42,7 @@
           <xsl:with-param name="line" select="5"/>
         </xsl:call-template>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x" mutable="yes" select="slax:mvar-init(&quot;slax-x&quot;)" svarname="slax-x"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x" mutable="yes" select="slax:mvar-init(&quot;x&quot;, &quot;slax-x&quot;, $slax-x)" svarname="slax-x"/>
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-y" mvarname="y">
         <xsl:call-template name="test4">
           <xsl:with-param name="line" select="10"/>
@@ -45,10 +51,10 @@
           <xsl:with-param name="line" select="15"/>
         </xsl:call-template>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="y" mutable="yes" select="slax:mvar-init(&quot;slax-y&quot;)" svarname="slax-y"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="y" mutable="yes" select="slax:mvar-init(&quot;y&quot;, &quot;slax-y&quot;, $slax-y)" svarname="slax-y"/>
       <slax:trace xmlns:slax="http://xml.libslax.org/slax" select="$x"/>
       <xsl:variable name="slax-x1" mvarname="x1"/>
-      <xsl:variable name="x1" select="4" mutable="yes" svarname="slax-x1"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x1" select="slax:mvar-init(&quot;x1&quot;, &quot;slax-x1&quot;, $slax-x1, 4)" mutable="yes" svarname="slax-x1"/>
       <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="x1" svarname="slax-x1" select="5"/>
       <xsl:variable name="y1" select="10"/>
       <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="x1" svarname="slax-x1" select="$y"/>
@@ -63,11 +69,9 @@
       <y>
         <xsl:copy-of select="$y"/>
       </y>
-      <!-- 
-	call test3();
-	call test1();
-	call test2();
- -->
+      <xsl:call-template name="test3"/>
+      <xsl:call-template name="test1"/>
+      <xsl:call-template name="test2"/>
     </main>
   </xsl:template>
   <xsl:template name="test4">
@@ -103,7 +107,7 @@
   </xsl:template>
   <xsl:template name="test1">
     <xsl:variable name="slax-test" mvarname="test"/>
-    <xsl:variable name="test" select="10" mutable="yes" svarname="slax-test"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="test" select="slax:mvar-init(&quot;test&quot;, &quot;slax-test&quot;, $slax-test, 10)" mutable="yes" svarname="slax-test"/>
     <test1>
       <xsl:value-of select="$test"/>
     </test1>
@@ -122,7 +126,7 @@
   </xsl:template>
   <xsl:template name="test2">
     <xsl:variable name="slax-x" mvarname="x"/>
-    <xsl:variable name="x" select="0" mutable="yes" svarname="slax-x"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x" select="slax:mvar-init(&quot;x&quot;, &quot;slax-x&quot;, $slax-x, 0)" mutable="yes" svarname="slax-x"/>
     <xsl:variable name="slax-dot-1" select="."/>
     <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence(1, 20)">
       <xsl:variable name="i" select="."/>
@@ -136,7 +140,7 @@
   </xsl:template>
   <xsl:template name="test3">
     <xsl:variable name="slax-errors" mvarname="errors"/>
-    <xsl:variable name="errors" mutable="yes" svarname="slax-errors"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="errors" mutable="yes" select="slax:mvar-init(&quot;errors&quot;, &quot;slax-errors&quot;, $slax-errors)" svarname="slax-errors"/>
     <xsl:variable name="slax-dot-2" select="."/>
     <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence(1, 20)">
       <xsl:variable name="i" select="."/>

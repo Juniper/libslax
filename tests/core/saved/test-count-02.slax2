@@ -19,6 +19,10 @@ match / {
         <b> {
             copy-of $b;
         }
+        set $b = <test> "test";
+        <b> {
+            copy-of $b;
+        }
         call main();
     }
 }
@@ -50,12 +54,9 @@ template main () {
         <y> {
             copy-of $y;
         }
-        
-        /*
         call test3();
         call test1();
         call test2();
-         */
     }
 }
 

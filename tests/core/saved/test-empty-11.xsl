@@ -4,13 +4,13 @@
   <xsl:template match="/">
     <out>
       <xsl:variable name="slax-a" mvarname="a"/>
-      <xsl:variable name="a" mutable="yes" svarname="slax-a"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="a" mutable="yes" select="slax:mvar-init(&quot;a&quot;, &quot;slax-a&quot;, $slax-a)" svarname="slax-a"/>
       <xsl:variable name="slax-b" mvarname="b"/>
-      <xsl:variable name="b" select="42" mutable="yes" svarname="slax-b"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="b" select="slax:mvar-init(&quot;b&quot;, &quot;slax-b&quot;, $slax-b, 42)" mutable="yes" svarname="slax-b"/>
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-c" mvarname="c">
         <fish>blue</fish>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;slax-c&quot;)" svarname="slax-c"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;c&quot;, &quot;slax-c&quot;, $slax-c)" svarname="slax-c"/>
       <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-d" mvarname="d">
         <one>
           <xsl:value-of select="1"/>
@@ -22,7 +22,10 @@
           <xsl:value-of select="3"/>
         </three>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="d" mutable="yes" select="slax:mvar-init(&quot;slax-d&quot;)" svarname="slax-d"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="d" mutable="yes" select="slax:mvar-init(&quot;d&quot;, &quot;slax-d&quot;, $slax-d)" svarname="slax-d"/>
+      <xsl:variable name="slax-e" mvarname="e"/>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="e" select="slax:mvar-init(&quot;e&quot;, &quot;slax-e&quot;, $slax-e, $d/two)" mutable="yes" svarname="slax-e"/>
+      <xsl:variable name="f" select="$d/two"/>
       <xsl:call-template name="print">
         <xsl:with-param name="name" select="&quot;mvar&quot;"/>
         <xsl:with-param name="a" select="$a"/>
