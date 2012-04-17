@@ -14,6 +14,8 @@ match / {
 	    <two> 2;
 	    <three> 3;
 	}
+	mvar $e = $d/two;
+	var $f = $d/two;
 
 	call print($name = "mvar", $a, $b, $c, $d);
 

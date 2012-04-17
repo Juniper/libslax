@@ -476,7 +476,6 @@ slaxDump (xmlDocPtr docp)
     slaxDumpToFd(1, docp, 0);
 }
 
-
 /*
  * slaxMemDump(): dump memory contents in hex/ascii
 0         1         2         3         4         5         6         7
@@ -484,7 +483,7 @@ slaxDump (xmlDocPtr docp)
 XX XX XX XX  XX XX XX XX - XX XX XX XX  XX XX XX XX abcdefghijklmnop
  */
 void
-slaxMemDump (FILE *fp, const char *title, const char *data,
+slaxMemDump (const char *title, const char *data,
          size_t len, const char *tag, int indent)
 {
     enum { MAX_PER_LINE = 16 };
@@ -497,9 +496,7 @@ slaxMemDump (FILE *fp, const char *title, const char *data,
                                               29, 32, 35, 38, 42, 45, 48, 51 };
 #endif
 
-    if (fp == NULL) fp = stdout;
-
-    fprintf(fp, "%*s[%s] @ %p (%lx/%lu)\n", indent + 1, tag,
+    slaxLog("%*s[%s] @ %p (%lx/%lu)", indent + 1, tag,
             title, data, (unsigned long) len, (unsigned long) len);
 
     while (len > 0) {
@@ -520,7 +517,7 @@ slaxMemDump (FILE *fp, const char *title, const char *data,
 
         *tp = 0;
         *bp = 0;
-        fprintf(fp, "%*s%-54s%s\n", indent + 1, tag, buf, text);
+        slaxLog("%*s%-54s%s", indent + 1, tag, buf, text);
         len -= i;
     }
 }

@@ -443,7 +443,7 @@ extCurlVerbose (CURL *handle UNUSED, curl_infotype type,
  
     switch (type) {
     case CURLINFO_TEXT:
-	fprintf(stderr, "== Info: %s", data);
+	slaxLog("curl:== Info: %s", data);
 	return 0;
  
     case CURLINFO_HEADER_OUT:
@@ -480,7 +480,7 @@ extCurlVerbose (CURL *handle UNUSED, curl_infotype type,
 	return 0;
     }
  
-    slaxMemDump(stderr, text, data, size, dir, 0);
+    slaxMemDump(text, data, size, dir, 0);
     return 0;
 }
 

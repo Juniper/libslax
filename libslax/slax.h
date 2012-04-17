@@ -271,7 +271,7 @@ void
 slaxDynAdd (const char *dir);
 
 void
-slaxMemDump (FILE *fp, const char *title, const char *data,
+slaxMemDump (const char *title, const char *data,
 	     size_t len, const char *tag, int indent);
 
 char *

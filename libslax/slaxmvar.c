@@ -355,6 +355,12 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     if (container == NULL)
 	return NULL;
 
+    /*
+     * We need to register the new RVT with the context to allow
+     * for garbage collection.  This means the context passed in
+     * MUST be the context the variable appears in.  We force this
+     * by having every mvar initialized (via slax:mvar-init()).
+     */
     xsltRegisterPersistRVT(ctxt, container);
 
     /*
@@ -365,6 +371,10 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     memset(value, 0, sizeof(*value));
     value->type = XPATH_NODESET;
     value->nodesetval = xmlXPathNodeSetCreate((xmlNodePtr) container);
+    if (value->stringval) {
+	xmlFree(value->stringval);
+	value->stringval = NULL;
+    }
 
     if (value->nodesetval && value->nodesetval->nodeNr > 0
 	    && value->nodesetval->nodeTab)
@@ -381,7 +391,7 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlNodePtr prev;
 
     /* If this is the first value, make the nodeset */
-    if (value->nodesetval == NULL ||value->nodesetval->nodeNr == 0
+    if (value->nodesetval == NULL || value->nodesetval->nodeNr == 0
 	    || value->nodesetval->nodeTab == NULL)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
@@ -399,6 +409,21 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlXPathNodeSetAdd(value->nodesetval, (xmlNodePtr) container);
 
     return container;
+}
+
+static xmlDocPtr
+slaxMvarLastContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
+{
+    xmlXPathObjectPtr value = svar->value;
+    xmlNodePtr nodep;
+
+    /* If this is the first value, make the nodeset */
+    if (value->nodesetval == NULL || value->nodesetval->nodeNr == 0
+	    || value->nodesetval->nodeTab == NULL)
+	return slaxMvarGetSvarRoot(ctxt, svar);
+
+    nodep = value->nodesetval->nodeTab[value->nodesetval->nodeNr - 1];
+    return (xmlDocPtr) nodep;
 }
 
 static void
@@ -515,7 +540,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
     xmlNodePtr newp = NULL, cur;
     xmlDocPtr container;
     xsltStackElemPtr svar;
-    xmlNodeSetPtr res = var->value->nodesetval;
+    xmlNodeSetPtr res;
     xmlNodeSetPtr nset = NULL;
     int i;
 
@@ -588,7 +613,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	return TRUE;
     }
 
-    container = slaxMvarGetSvarRoot(ctxt, svar);
+    container = slaxMvarLastContainer(ctxt, svar);
     if (container == NULL) {
 	slaxTransformError2(ctxt,
 			    "found not find shadow container for %s (%s)",
@@ -597,6 +622,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
     }
 
     /* Make a node set if we need one */
+    res = var->value->nodesetval;
     if (res == NULL) {
 	res = xmlXPathNodeSetCreate(NULL);
 	if (res == NULL) {
@@ -605,13 +631,22 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 				name, svarname);
 	    return TRUE;
 	}
+
 	var->value->nodesetval = res;
 	var->value->type = XPATH_NODESET;
+	var->value->boolval = FALSE;
 	if (var->value->stringval) {
 	    xmlFree(var->value->stringval);
 	    var->value->stringval = NULL;
 	}
     }
+
+    /*
+     * If we are appending to an emtpy set, we need to add the
+     * container to the variable's node set.
+     */
+    if (res->nodeNr == 0)
+	xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 
     if (newp) {
 	cur = xmlNewNode(NULL, (const xmlChar *) ELT_TEXT);
@@ -619,7 +654,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    xmlAddChild(cur, newp);
 
 	    /* Add one node to the variable */
-	    slaxMvarAdd(container, res, cur);
+	    slaxMvarAdd(container, NULL, cur);
 
 	    /*
 	     * Since slaxMvarAdd has copied cur into the container tree,
@@ -632,7 +667,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
     } else if (tree) {
 	/* Add all the nodes in a tree to the variable */
 	for (cur = tree->children; cur; cur = cur->next)
-	    slaxMvarAdd(container, res, cur);
+	    slaxMvarAdd(container, NULL, cur);
 
     } else if (nset) {
 	/* Add everything in the node set to the variable */
@@ -643,9 +678,9 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 
 	    if (XSLT_IS_RES_TREE_FRAG(cur)) {
 		for (cur = cur->children; cur; cur = cur->next)
-		    slaxMvarAdd(container, res, cur);
+		    slaxMvarAdd(container, NULL, cur);
 	    } else {
-		slaxMvarAdd(container, res, cur);
+		slaxMvarAdd(container, NULL, cur);
 	    }
 	}
     }
@@ -1009,6 +1044,7 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
     xmlNodePtr nodep;
     xmlXPathObjectPtr xop = NULL;
     xmlXPathObjectPtr varg = NULL;
+    xmlDocPtr container;
 
     if (nargs < 3 || nargs > 4) {
 	xmlXPathSetArityError(ctxt);
@@ -1050,6 +1086,15 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	goto fail;
     }
 
+    /*
+     * We have to have an initial value, even if the assigned value
+     * is a string or number.  So if the value isn't kocher, force it
+     * into being a real and usable root.  This is required for append
+     * to work, since we have to have the document allocated in the
+     * original context.
+     */
+    container = slaxMvarLastContainer(tctxt, svar);
+
     if (xop) {
 	/*
 	 * xop is the new value that needs assigned to the var.  If
@@ -1057,17 +1102,34 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	 * variable, which should be initialized since it is one of
 	 * our parameters.
 	 */
-	ret = xop;
+	if (xop->nodesetval == NULL) {
+	    ret = xop;
+	} else {
+	    xmlNodeSetPtr nset = xop->nodesetval;
+	    int i;
 
-	/* XXX Need to copy to svar */
+	    ret = xmlXPathNewNodeSet(NULL);
+	    if (ret == NULL)
+		goto fail;
+
+	    for (i = 0; nset && i < nset->nodeNr; i++) {
+		xmlNodePtr cur = nset->nodeTab[i];
+		if (cur == NULL)
+		    continue;
+
+		if (XSLT_IS_RES_TREE_FRAG(cur)) {
+		    for (cur = cur->children; cur; cur = cur->next)
+			slaxMvarAdd(container, NULL, cur);
+		    xmlXPathNodeSetAdd(ret->nodesetval,
+				       (xmlNodePtr) container);
+		} else {
+		    slaxMvarAdd(container, ret->nodesetval, cur);
+		}
+	    }
+	    xmlXPathFreeObject(xop);
+	}
 
     } else {
-	if (svar->value == NULL || svar->value->nodesetval == NULL
-	    || svar->value->nodesetval->nodeTab == NULL
-	    || svar->value->nodesetval->nodeTab[0] == NULL
-	    || svar->value->nodesetval->nodeTab[0]->children == NULL)
-	    goto fail;
-
 	/*
 	 * Now we have the shadow variable and just need to build a nodeset
 	 * containing its nodes.
