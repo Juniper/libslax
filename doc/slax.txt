@@ -3633,6 +3633,20 @@ will persist for the lifespan of a connection.
     SYNTAX::
         void cur:set(handle, options);
 
+curl:set() sets options on the handle, so they don't need to be
+repeated on each curl:perform() call.
+
+    var $curl = curl:open();
+    var $global-options = {
+        <method> "post";
+        <header name="id"> "phil";
+        <header name="location"> "raleigh";
+    }
+    
+    expr curl:set($curl, $global-options);
+
+    call some-other-template($curl);
+
 **** curl:single
 
 The "curl:single" extension function performs transfer operations

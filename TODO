@@ -54,3 +54,6 @@ The List of Things I Should Be Doing (if I weren't so busy making this list)
     <sym xml:space="preserve"> " ";
   into:
     <sym xml:space="preserve"> ;
+
+- Feature: --strip-xmlns to remove namespaces completely from
+  the input document
