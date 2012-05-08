@@ -1,2 +1,15 @@
 <?xml version="1.0"?>
-<out/>
+<out>
+  <author>
+    <author>
+      <name>
+        <first>Edgar Allan</first>
+        <last>Poe</last>
+      </name>
+      <life-span>
+        <born>1809</born>
+        <died>1849</died>
+      </life-span>
+    </author>
+  </author>
+</out>

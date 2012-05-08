@@ -279,4 +279,10 @@ slaxBase64Encode (const char *buf, size_t blen, size_t *olenp);
 char *
 slaxBase64Decode (const char *buf, size_t blen, size_t *olenp);
 
+static inline int
+slaxFilenameIsStd (const char *filename)
+{
+    return (filename == NULL || (filename[0] == '-' && filename[1] == '\0'));
+}
+
 #endif /* LIBSLAX_SLAX_H */

@@ -5,6 +5,7 @@ param $name = "Poe";
 var $favorites := {
     <name hidden="yes"> "Spillane";
     <name> "Doyle";
+    <name> "Poe";
 }
 
 match / {
@@ -16,11 +17,11 @@ match / {
 
 template test ($name, $elt = "default") {
     for $this ($favorites/name) {
-        if ($name == $this && not(@hidden)) {
+        if ($name == $this && not($this/@hidden)) {
             element $elt {
                 copy-of .//author[name/last == $this];
             }
-        } else if ($name == .) {
+        } else if ($name == $this) {
             message "Hidden: " _ $name;
         }
     }

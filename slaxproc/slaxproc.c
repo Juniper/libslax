@@ -43,12 +43,6 @@ static int opt_partial;		/* Parse partial contents */
 static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
 
-static inline int
-is_filename_std (const char *filename)
-{
-    return (filename == NULL || (filename[0] == '-' && filename[1] == '\0'));
-}
-
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
 {
@@ -59,7 +53,7 @@ get_filename (const char *filename, char ***pargv, int outp)
 	else filename = "-";
     }
 
-    if (outp >= 0 && is_filename_std(filename))
+    if (outp >= 0 && slaxFilenameIsStd(filename))
 	filename = outp ? "/dev/stdout" : "/dev/stdin";
     return filename;
 }
@@ -74,7 +68,7 @@ do_format (const char *name UNUSED, const char *output,
     input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (is_filename_std(input))
+    if (slaxFilenameIsStd(input))
 	infile = stdin;
     else {
 	infile = fopen(input, "r");
@@ -90,7 +84,7 @@ do_format (const char *name UNUSED, const char *output,
     if (docp == NULL)
 	errx(1, "cannot parse file: '%s'", input);
 
-    if (output == NULL || is_filename_std(output))
+    if (output == NULL || slaxFilenameIsStd(output))
 	outfile = stdout;
     else {
 	outfile = fopen(output, "w");
@@ -119,7 +113,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
     input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (is_filename_std(input))
+    if (slaxFilenameIsStd(input))
 	infile = stdin;
     else {
 	infile = fopen(input, "r");
@@ -135,7 +129,7 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
     if (docp == NULL)
 	errx(1, "cannot parse file: '%s'", input);
 
-    if (output == NULL || is_filename_std(output))
+    if (output == NULL || slaxFilenameIsStd(output))
 	outfile = stdout;
     else {
 	outfile = fopen(output, "w");
@@ -169,7 +163,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
         return -1;
     }
 
-    if (output == NULL || is_filename_std(output))
+    if (output == NULL || slaxFilenameIsStd(output))
 	outfile = stdout;
     else {
 	outfile = fopen(output, "w");
@@ -217,7 +211,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (is_filename_std(scriptname))
+    if (slaxFilenameIsStd(scriptname))
 	errx(1, "script file cannot be stdin");
 
     scriptfile = slaxFindIncludeFile(scriptname, buf, sizeof(buf));
@@ -251,14 +245,14 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
 	res = slaxDebugApplyStylesheet(scriptname, script,
-				 is_filename_std(input) ? NULL : input,
+				 slaxFilenameIsStd(input) ? NULL : input,
 				 indoc, params);
     } else {
 	res = xsltApplyStylesheet(script, indoc, params);
     }
 
     if (res) {
-	if (output == NULL || is_filename_std(output))
+	if (output == NULL || slaxFilenameIsStd(output))
 	    outfile = stdout;
 	else {
 	    outfile = fopen(output, "w");
@@ -291,7 +285,7 @@ do_check (const char *name, const char *output UNUSED,
 
     scriptname = get_filename(name, &argv, -1);
 
-    if (is_filename_std(scriptname))
+    if (slaxFilenameIsStd(scriptname))
 	errx(1, "script file cannot be stdin");
 
     scriptfile = fopen(scriptname, "r");
@@ -557,7 +551,7 @@ main (int argc UNUSED, char **argv)
 	exsltRegisterAll();
 
     if (trace_file) {
-	if (is_filename_std(trace_file))
+	if (slaxFilenameIsStd(trace_file))
 	    trace_fp = stderr;
 	else {
 	    trace_fp = fopen(trace_file, "w");
