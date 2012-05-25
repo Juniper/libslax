@@ -1,6 +1,8 @@
 version 1.1;
 
-function test ($x) {
+ns my = "http://my.example.com/my";
+
+function my:test ($x) {
     result {
         <test> $x;
     }
@@ -14,16 +16,16 @@ match foo[../../id/text() _ "/" _ text()] {
     /* This one too */
     var $date = substring(date, 1, 4) _ "/" _ substring(date, 5, 2) _ "/" _ substring(date, 7, 2);
     /* This one tickles the bug */
-    expr test(local-game-prefix _ opponent, answer);
+    expr my:test(local-game-prefix _ opponent, answer);
     /* This one tickles a second bug */
     <span class="element"> "</" _ name(.) _ ">";
 }
 
 match / {
     <top> {
-        var $test := test("fish");
+        var $test := my:test("fish");
         var $this := <that> "one";
-        var $mine := <your> "was";
+        var $that := <your> "was";
         var $gray := <new> "black";
         
         copy-of $this;

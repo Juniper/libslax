@@ -23,7 +23,7 @@ S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
 X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
-SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent
+SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
 
 CLEANDIRS = out
 
@@ -46,7 +46,8 @@ TEST_ONE = \
  ${DIFF} -Nbu ${srcdir}/saved/$$base.slax2 out/$$base.slax2 ${S2O} ; \
  ${SRUN} ${srcdir}/$$test ${srcdir}/$$data \
    > out/$$base.out 2> out/$$base.err ; \
- ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O}
+ ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
+ ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
 
 test tests: ${SLAXPROC}
 	@${MKDIR} -p out
@@ -73,5 +74,6 @@ accept:
 	      ${CP} out/$$base.xsl ${srcdir}/saved/$$base.xsl ; \
 	      ${CP} out/$$base.slax2 ${srcdir}/saved/$$base.slax2 ; \
 	      ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \
+	      ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \
 	    done); \
 	done)

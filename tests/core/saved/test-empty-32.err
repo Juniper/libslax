@@ -1,0 +1,95 @@
+bit:and(0011, 0101) -> 0001
+bit:and(0, 0) -> 0
+bit:and(0, 1) -> 0
+bit:and(1, 0) -> 0
+bit:and(1, 1) -> 1
+bit:nand(0011, 0101) -> 1110
+bit:nand(0, 0) -> 1
+bit:nand(0, 1) -> 1
+bit:nand(1, 0) -> 1
+bit:nand(1, 1) -> 0
+bit:nor(0011, 0101) -> 1000
+bit:nor(0, 0) -> 1
+bit:nor(0, 1) -> 0
+bit:nor(1, 0) -> 0
+bit:nor(1, 1) -> 0
+bit:not(0011) -> 1100
+bit:not(0) -> 1
+bit:not(1) -> 0
+bit:not(01) -> 10
+bit:not(10) -> 01
+bit:not(0000) -> 1111
+bit:not(1111) -> 0000
+bit:or(0011, 0101) -> 0111
+bit:or(0, 0) -> 0
+bit:or(0, 1) -> 1
+bit:or(1, 0) -> 1
+bit:or(1, 1) -> 1
+bit:xnor(0011, 0101) -> 1001
+bit:xnor(0, 0) -> 1
+bit:xnor(0, 1) -> 0
+bit:xnor(1, 0) -> 0
+bit:xnor(1, 1) -> 1
+bit:xor(0011, 0101) -> 0110
+bit:xor(0, 0) -> 0
+bit:xor( 0, 1) -> 1
+bit:xor( 1, 0) -> 1
+bit:xor( 1, 1) -> 0
+bit:mask(8, 32) -> 00000000000000000000000011111111
+bit:mask(1, 0) -> 1
+bit:mask(8) -> 11111111
+bit:mask(4) -> 1111
+bit:mask(7) -> 1111111
+bit:to-int(11111111) -> 255
+bit:to-int(00) -> 0
+bit:to-int(01) -> 1
+bit:to-int(10) -> 2
+bit:to-int(11) -> 3
+bit:from-int(0) -> 0
+bit:from-int(1) -> 1
+bit:from-int(2) -> 10
+bit:from-int(3) -> 11
+bit:from-int(255) -> 11111111
+bit:from-int(255, 16) -> 0000000011111111
+bit:to-hex(0000) -> 0x0
+bit:to-hex(0001) -> 0x1
+bit:to-hex(0010) -> 0x2
+bit:to-hex(0011) -> 0x3
+bit:to-hex(0100) -> 0x4
+bit:to-hex(0101) -> 0x5
+bit:to-hex(0110) -> 0x6
+bit:to-hex(0111) -> 0x7
+bit:to-hex(1000) -> 0x8
+bit:to-hex(1001) -> 0x9
+bit:to-hex(1010) -> 0xa
+bit:to-hex(1011) -> 0xb
+bit:to-hex(1100) -> 0xc
+bit:to-hex(1101) -> 0xd
+bit:to-hex(1110) -> 0xe
+bit:to-hex(1111) -> 0xf
+bit:from-hex('0x0') -> 0
+bit:from-hex('0x1') -> 1
+bit:from-hex('0x2') -> 10
+bit:from-hex('0x3') -> 11
+bit:from-hex('0x4') -> 100
+bit:from-hex('0x5') -> 101
+bit:from-hex('0x6') -> 110
+bit:from-hex('0x7') -> 111
+bit:from-hex('0x8') -> 1000
+bit:from-hex('0x9') -> 1001
+bit:from-hex('0xA') -> 1010
+bit:from-hex('0xB') -> 1011
+bit:from-hex('0xC') -> 1100
+bit:from-hex('0xD') -> 1101
+bit:from-hex('0xE') -> 1110
+bit:from-hex('0xF') -> 1111
+bit:from-int(4.2e20) -> 100111000111011001010010010000000000
+bit:from-int(4.2e30) -> 1111111111111111111111111111111111111111111111111111111111111111
+bit:from-int(4.2e40) -> 1111111111111111111111111111111111111111111111111111111111111111
+bit:from-int(4.2e60) -> 1111111111111111111111111111111111111111111111111111111111111111
+bit:to-int(32767999) -> 32767999
+bit:to-int(32768001) -> 32768001
+bit:to-int(327680012) -> 327680012
+bit:to-int(3276800123) ->  3.276800123e+09
+bit:to-int(32768001234) ->  3.2768001234e+10
+bit:to-int(-1) ->  1.84467440737096e+19

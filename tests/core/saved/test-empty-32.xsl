@@ -270,6 +270,24 @@
       <xsl:message>
         <xsl:value-of select="concat(&quot;bit:from-int(4.2e60) -&gt; &quot;, bit:from-int(4.2e60))"/>
       </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(32767999) -&gt; &quot;, bit:to-int(32767999))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(32768001) -&gt; &quot;, bit:to-int(32768001))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(327680012) -&gt; &quot;, bit:to-int(327680012))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(3276800123) -&gt; &quot;, bit:to-int(3276800123))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(32768001234) -&gt; &quot;, bit:to-int(32768001234))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:to-int(-1) -&gt; &quot;, bit:to-int(- 1))"/>
+      </xsl:message>
     </op-script-results>
   </xsl:template>
 </xsl:stylesheet>

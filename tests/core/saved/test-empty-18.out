@@ -1,2 +1,6 @@
 <?xml version="1.0"?>
-<top/>
+<top xmlns:my="http://my.example.com/my">
+  <that>one</that>
+  <your>was</your>
+  <new>black</new>
+</top>

@@ -107,5 +107,12 @@ match / {
 	message "bit:from-int(4.2e30) -> " _ bit:from-int(4.2e30);
 	message "bit:from-int(4.2e40) -> " _ bit:from-int(4.2e40);
 	message "bit:from-int(4.2e60) -> " _ bit:from-int(4.2e60);
+
+	message "bit:to-int(32767999) -> " _ bit:to-int(32767999);
+	message "bit:to-int(32768001) -> " _ bit:to-int(32768001);
+	message "bit:to-int(327680012) -> " _ bit:to-int(327680012);
+	message "bit:to-int(3276800123) -> " _ bit:to-int(3276800123);
+	message "bit:to-int(32768001234) -> " _ bit:to-int(32768001234);
+	message "bit:to-int(-1) -> " _ bit:to-int(-1);
      }
 }

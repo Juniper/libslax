@@ -1,7 +1,7 @@
 version 1.1;
 
 ns my extension = "http://example.com";
-ns exslt extension = "http://exslt.org/common";
+ns exsl extension = "http://exslt.org/common";
 
 match / {
     <out> {
@@ -18,7 +18,7 @@ match / {
             copy-of my:one("test");
         }
         var $d := my:one("one", "two");
-        <d> exslt:object-type($d);
+        <d> exsl:object-type($d);
     }
 }
 

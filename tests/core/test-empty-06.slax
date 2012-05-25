@@ -1,7 +1,7 @@
 version 1.0;
 
 ns my extension = "http://example.com";
-ns exslt extension = "http://exslt.org/common";
+ns exsl extension = "http://exslt.org/common";
 
 match / {
     <out> {
@@ -15,7 +15,7 @@ match / {
 	}
 	var $d := my:one("one", "two");
 	<d> {
-	    expr exslt:object-type($d);
+	    expr exsl:object-type($d);
 	}
     }
 }

@@ -33,7 +33,7 @@ extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
 	int width;
 	unsigned long long val = xop->floatval, v2;
 
-	if (xop->floatval > pow(2, 32))
+	if (xop->floatval >= pow(2, 64))
 	    val = (unsigned long long) -1;
 
 	xmlXPathFreeObject(xop);
@@ -273,13 +273,16 @@ extBitToInt (xmlXPathParserContextPtr ctxt, int nargs)
     if (res == NULL)
 	return;
 
-    for (i = 0, val = 0; res[i]; i++) {
+    for (i = 0, val = 0; i <= 64 && res[i]; i++) {
 	val <<= 1;
 	if (res[i] == '1')
 	    val += 1;
     }
 
-    xmlXPathReturnNumber(ctxt, (float) val);
+    if (i > 64)
+	xmlXPathReturnNumber(ctxt, (double) -1);
+    else
+	xmlXPathReturnNumber(ctxt, (double) val);
 }
 
 static void
@@ -342,21 +345,25 @@ extBitToHex (xmlXPathParserContextPtr ctxt, int nargs)
     if (res == NULL)
 	return;
 
-    for (i = 0, val = 0; res[i]; i++) {
+    for (i = 0, val = 0; i <= 64 && res[i]; i++) {
 	val <<= 1;
 	if (res[i] == '1')
 	    val += 1;
     }
 
-    len1 = xmlStrlen(res);
-    len2 = snprintf((char *) res, len1 + 1, "0x%qx", val);
-    if (len2 > len1) {
-	res = xmlRealloc(res, len2 + 1);
-	if (res)
-	    snprintf((char *) res, len2 + 1, "0x%qx", val);
-    }
+    if (i > 64)
+	xmlXPathReturnNumber(ctxt, (double) -1);
+    else {
+	len1 = xmlStrlen(res);
+	len2 = snprintf((char *) res, len1 + 1, "0x%qx", val);
+	if (len2 > len1) {
+	    res = xmlRealloc(res, len2 + 1);
+	    if (res)
+		snprintf((char *) res, len2 + 1, "0x%qx", val);
+	}
 
-    xmlXPathReturnString(ctxt, res);
+	xmlXPathReturnString(ctxt, res);
+    }
 }
 
 static void

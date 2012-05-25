@@ -485,11 +485,8 @@ static void
 slaxDebugMakeRelativePath (const char *src_f, const char *dest_f,
 			   char *relative_path, int size)
 {
-    int slen, dlen, i, j, slash, n;
+    int i, j, slash, n;
     const char *f;
-
-    slen = strlen(src_f);
-    dlen = strlen(dest_f);
 
     i = 0;
     j = 0;
@@ -1007,8 +1004,8 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
 	if (dbp->dbp_inst)
-	    slaxOutput("    #%d %s at %s:%ld",
-		       dbp->dbp_num,
+	    slaxOutput("    %s#%d %s at %s:%ld",
+		       tag, dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : slaxNull,
 		       xmlGetLineNo(dbp->dbp_inst));

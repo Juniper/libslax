@@ -4,7 +4,9 @@ ns func = "http://exslt.org/functions";
 ns test-ns = "http://xml.juniper.net/test";
 
 match / {
-    <test> test-ns:test-func();
+    <test> {
+	expr test-ns:test-func();
+    }
 }
 
 <func:function name="test-ns:test-func"> {

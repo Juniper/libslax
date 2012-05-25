@@ -6,5 +6,5 @@
     <name>test</name>
     <fish>fish</fish>
   </c>
-  <d/>
+  <d>node-set</d>
 </out>

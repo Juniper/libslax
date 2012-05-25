@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://example.com" xmlns:exslt="http://exslt.org/common" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="my exslt slax-ext slax-func">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="http://example.com" xmlns:exsl="http://exslt.org/common" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="my exsl slax-ext slax-func">
   <xsl:template match="/">
     <out>
       <xsl:variable name="a" select="my:test()"/>
@@ -15,7 +15,7 @@
       </c>
       <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="d" select="slax-ext:node-set(my:one(&quot;one&quot;, &quot;two&quot;))"/>
       <d>
-        <xsl:value-of select="exslt:object-type($d)"/>
+        <xsl:value-of select="exsl:object-type($d)"/>
       </d>
     </out>
   </xsl:template>
