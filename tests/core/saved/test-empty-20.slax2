@@ -30,10 +30,17 @@ match / {
             copy-of $line;
         }
         var $lines2 = slax:break-lines($content2);
-        message "done: " _ count($lines);
+        message "done: " _ count($lines2);
         
         for $line2 ($lines2) {
             copy-of $line2;
+        }
+        var $content3 = translate($content, "", "");
+        var $lines3 = slax:break-lines($content3);
+        message "done: " _ count($lines3);
+        
+        for $line3 ($lines3) {
+            copy-of $line3;
         }
     }
 }

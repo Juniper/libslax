@@ -1131,7 +1131,13 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
     last = NULL;
 
     for (;;) {
-	clone = slaxExtMakeTextNode(nsp, name, sp, cp - sp);
+	/*
+	 * MS-DOS uses CRLF instead of just LF, and windows keeps this
+	 * encoding alive.
+	 */
+	int dos_format = (cp <= sp) ? 0 : (cp[-1] == '\r') ? 1 : 0;
+					  
+	clone = slaxExtMakeTextNode(nsp, name, sp, cp - sp - dos_format);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    if (last)
