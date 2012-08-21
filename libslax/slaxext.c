@@ -2179,6 +2179,7 @@ struct slaxDocumentOptions {
     int sdo_base64;		/* Boolean: do base64 decode */
     xmlChar *sdo_non_xml;	/* Text to replace non-xml characters */
     xmlChar *sdo_rpath;		/* Relative path/base for document */
+    int sdo_retain_returns;	/* Do not remove "\r" (keep DOS file hack) */
 };
 
 static void
@@ -2203,6 +2204,8 @@ slaxExtDocumentOptionsSet (struct slaxDocumentOptions *sdop,
 	sdop->sdo_rpath = xmlStrdup(value);
     } else if (streq((const char *) name, "non-xml")) {
 	sdop->sdo_non_xml = xmlStrdup(value);
+    } else if (streq((const char *) name, "retain-returns")) {
+	sdop->sdo_retain_returns = TRUE;
     }
 }
 
@@ -2302,6 +2305,34 @@ slaxExtRewriteNonXmlCharacters (char **datap, size_t *lenp,
 }
 
 static void
+slaxExtRemoveReturns (char *data, size_t *lenp)
+{
+    size_t len = *lenp;
+    char *fp, *tp;
+    size_t i, delta = 0;
+
+    tp = data;
+    fp = memchr(data, '\r', len);
+    if (fp == NULL)
+	return;
+
+    /* We now know that we're stuck doing the find/copy loop */
+    i = fp - data;
+    tp = fp;
+    for ( ; i < len; i++, fp++) {
+	if (*fp == '\r') {
+	    delta += 1;
+	} else if (fp != tp) {
+	    *tp++ = *fp;
+	}
+    }
+
+    *tp = '\0';
+
+    *lenp -= delta;		/* Mark the removed bytes */
+}
+
+static void
 slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
 {
     xmlXPathObjectPtr ret = NULL;
@@ -2387,6 +2418,9 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
 	    len = dlen;
 	}
     }
+
+    if (!sdo.sdo_retain_returns)
+	slaxExtRemoveReturns(data, &len);
 
     /*
      * The non-xml value is a single character to replace
