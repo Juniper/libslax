@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <template match="/">
-    <value-of select="id('indexme')/@some-attr"/>
-  </template>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <xsl:template match="/">
+    <xsl:value-of select="id(&quot;indexme&quot;)/@some-attr"/>
+  </xsl:template>
 </xsl:stylesheet>

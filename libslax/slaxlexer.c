@@ -537,6 +537,18 @@ slaxKeyword (slax_data_t *sdp)
     return 0;
 }
 
+int
+slaxParseIsSlax (slax_data_t *sdp)
+{
+    return (sdp->sd_parse == M_PARSE_FULL || sdp->sd_parse == M_PARSE_SLAX);
+}
+
+int
+slaxParseIsXpath (slax_data_t *sdp)
+{
+    return (sdp->sd_parse == M_PARSE_XPATH);
+}
+
 /*
  * Fill the input buffer, shifting data forward if we need the room
  * and dynamically reallocating the buffer if we still need room.

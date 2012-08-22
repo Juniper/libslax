@@ -392,12 +392,12 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	xmlParserError(sdp->sd_ctxt,
 		       "%s:%d: could not make attribute: @%s=%s",
 		       sdp->sd_filename, sdp->sd_line, ATT_SELECT, buf);
-	free(buf);
+	xmlFree(buf);
 	slaxElementPop(sdp);
 	return;
     }
 
-    free(buf);
+    xmlFree(buf);
 
     if (disable_escaping) {
 	xmlNewNsProp(nodep, NULL,
@@ -492,7 +492,7 @@ void
 slaxDataCleanup (slax_data_t *sdp)
 {
     if (sdp->sd_buf) {
-	free(sdp->sd_buf);
+	xmlFree(sdp->sd_buf);
 	sdp->sd_buf = NULL;
 	sdp->sd_cur = sdp->sd_size = 0;
     }

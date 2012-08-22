@@ -272,21 +272,10 @@
 #define YYLEX_PARAM slax_data
 #define YYERROR_VERBOSE
 
+#undef YYDEBUG
 #define YYDEBUG 1		/* Enable debug output */
 #define yydebug slaxYyDebug	/* Make debug flag parser specific */
 #define YYFPRINTF slaxLog2	/* Log via our function */
-
-static int
-slaxParseIsSlax (slax_data_t *sdp)
-{
-    return (sdp->sd_parse == M_PARSE_FULL || sdp->sd_parse == M_PARSE_SLAX);
-}
-
-static int
-slaxParseIsXpath (slax_data_t *sdp)
-{
-    return (sdp->sd_parse == M_PARSE_XPATH);
-}
 
 /*
  * The most common stack operation: clear everthing x and above. Since

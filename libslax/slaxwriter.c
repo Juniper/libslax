@@ -131,6 +131,15 @@ slaxWriteRealloc (slax_writer_t *swp, int need)
     return cp;
 }
 
+static int
+slaxIsXsl (xmlNodePtr nodep)
+{
+    if (nodep && nodep->ns && nodep->ns->href
+		&& streq((const char *) nodep->ns->href, XSL_URI))
+	return TRUE;
+    return FALSE;
+}
+
 static void
 slaxWrite (slax_writer_t *swp, const char *fmt, ...)
 {
@@ -234,7 +243,7 @@ slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     xmlNsPtr cur;
 
     for (cur = nodep->nsDef; cur; cur = cur->next) {
-	if (cur->prefix && streq((const char *) cur->prefix, XSL_PREFIX))
+	if (cur->href && streq((const char *) cur->href, XSL_URI))
 	    continue;
 
 	if (slaxIsReserved((const char *) cur->prefix))
@@ -259,8 +268,7 @@ slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     if (!slaxV10(swp)) {
 	for (childp = nodep->children; childp; childp = childp->next) {
 	    if (childp->type ==  XML_ELEMENT_NODE
-		&& childp->ns && childp->ns->prefix
-		&& streq((const char *) childp->ns->prefix, XSL_PREFIX)
+		&& slaxIsXsl(childp)
 		&& streq((const char *) childp->name, "namespace-alias")) {
 
 		slaxWriteNamespaceAlias(swp, docp, childp);
@@ -465,9 +473,7 @@ slaxNeedsBraces (xmlNodePtr nodep)
 	    continue;
 	}
 
-	if (childp->type == XML_ELEMENT_NODE
-		&& childp->ns && childp->ns->prefix
-	    && streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
+	if (childp->type == XML_ELEMENT_NODE && slaxIsXsl(childp)) {
 
 	    if (streq((const char *) childp->name, ELT_VALUE_OF)
 		    || streq((const char *) childp->name, ELT_TEXT)) {
@@ -516,8 +522,7 @@ slaxNeedsBlock (xmlNodePtr nodep)
 	    /*
 	     * If this is an XSLT element, we need to bust it out
 	     */
-	    if (childp->ns && childp->ns->href
-		&& streq((const char *) childp->ns->href, XSL_URI))
+	    if (slaxIsXsl(childp))
 		return TRUE;
 
 	    /*
@@ -820,9 +825,7 @@ slaxWriteContent (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    continue;
 	}
 
-	if (childp->type == XML_ELEMENT_NODE
-	    && childp->ns && childp->ns->prefix
-	    && streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
+	if (childp->type == XML_ELEMENT_NODE && slaxIsXsl(childp)) {
 
 	    if (streq((const char *) childp->name, ELT_VALUE_OF)) {
 		char *sel = slaxGetAttrib(childp, ATT_SELECT);
@@ -952,8 +955,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 	char *sel;
 
 	if (childp->type != XML_ELEMENT_NODE
-	    || childp->ns == NULL || childp->ns->prefix == NULL
-	    || !streq((const char *) childp->ns->prefix, XSL_PREFIX)
+	    || !slaxIsXsl(childp)
 	    || !streq((const char *) childp->name, ELT_PARAM))
 	    continue;
 
@@ -1147,7 +1149,7 @@ slaxWriteFunctionResultNeedsBraces (slax_writer_t *swp UNUSED, xmlNodePtr nodep)
     xmlNsPtr cur;
 
     for (cur = nodep->nsDef; cur; cur = cur->next) {
-	if (cur->prefix && streq((const char *) cur->prefix, XSL_PREFIX))
+	if (cur->href && streq((const char *) cur->href, XSL_URI))
 	    continue;
 	if (slaxIsReserved((const char *) cur->prefix))
 	    continue;
@@ -1255,7 +1257,7 @@ slaxIsSimpleElement (xmlNodePtr nodep)
 	if (nodep->type == XML_ELEMENT_NODE) {
 	    if (nodep->ns && nodep->ns->href) {
 		/* Two special namespaces mean this is not simple */
-		if (streq((const char *) nodep->ns->href, XSL_URI))
+		if (slaxIsXsl(nodep))
 		    return FALSE;
 
 		if (streq((const char *) nodep->ns->href, SLAX_URI))
@@ -1392,7 +1394,7 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
 	    continue;
 
 	if (cur->ns && streq((const char *) cur->name, ELT_SORT)
-		&& streq((const char *) cur->ns->href, XSL_URI))
+		&& slaxIsXsl(cur))
 	    slaxWriteSort(swp, docp, cur);
     }
 
@@ -1997,8 +1999,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    xmlFreeAndEasy(sel);
 	    xmlFreeAndEasy(name);
 
-	} else if (childp->ns && childp->ns->prefix
-		   && streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
+	} else if (slaxIsXsl(childp)) {
 	    slaxWriteXslElement(swp, docp, childp, NULL);
 
 	} else if (childp->ns && childp->ns->href && !slaxV10(swp)
@@ -2901,8 +2902,7 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 	    break;
 
 	case XML_ELEMENT_NODE:
-	    if (childp->ns && childp->ns->prefix
-		&& streq((const char *) childp->ns->prefix, XSL_PREFIX)) {
+	    if (slaxIsXsl(childp)) {
 		slaxWriteXslElement(swp, docp, childp, &state);
 
 	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
@@ -3117,7 +3117,7 @@ slaxWriteFind (xmlNodePtr nodep, const char *name)
 	    continue;
 
 	if (cur->ns && streq((const char *) cur->name, name)
-		&& streq((const char *) cur->ns->href, XSL_URI))
+		&& slaxIsXsl(cur))
 	    return cur;
     }
 

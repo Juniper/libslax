@@ -179,3 +179,9 @@ slaxIsVarChar (int ch)
  */
 int
 slaxGetInput (slax_data_t *sdp, int final);
+
+int
+slaxParseIsSlax (slax_data_t *sdp);
+
+int
+slaxParseIsXpath (slax_data_t *sdp);
