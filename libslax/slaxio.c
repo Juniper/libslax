@@ -124,20 +124,24 @@ slaxOutput (const char *fmt, ...)
 {
     if (slaxOutputCallback) {
 	char buf[BUFSIZ];
+	char *cp = buf;
 	size_t len;
 	va_list vap;
 
 	va_start(vap, fmt);
 	len = vsnprintf(buf, sizeof(buf), fmt, vap);
 	if (len >= sizeof(buf)) {
-	    char *cp = buf + sizeof(buf) - 4;
-	    cp[0] = cp[1] = cp[2] = '.';
-	    cp[3] = '\0';
+	    va_end(vap);
+	    va_start(vap, fmt);
+	    if (vasprintf(&cp, fmt, vap) < 0 || cp == NULL)
+		return;
 	}
 	va_end(vap);
 
-	/* slaxLog("slaxOutput: [%s]", buf); */
-	slaxOutputCallback("%s\n", buf);
+	slaxOutputCallback("%s\n", cp);
+
+	if (cp != buf)
+	    free(cp);	/* Allocated by vasprintf() */
     }
 }
 

@@ -12,9 +12,8 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.11.24], [phil@juniper.net])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-LT_INIT([])
+AC_INIT([libslax], [0.11.26], [phil@juniper.net])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
 # Support silent build rules.  Requires at least automake-1.11.
@@ -29,9 +28,13 @@ LIBXSLT_REQUIRED_VERSION=1.1.26
 LIBCURL_REQUIRED_VERSION=7.21.3
 
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_INSTALL
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_LN_S
+
+# Must be after AC_PROG_AR
+LT_INIT([])
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
