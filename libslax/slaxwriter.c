@@ -414,48 +414,6 @@ slaxWriteText (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     }
 }
 
-/*
- * Escape an XPath expression into a SLAX expression.  In most cases, this
- * simply means escaping quotes.
- */
-static void
-slaxEscapeXpath (char *buf, int bufsiz, const char *inp)
-{
-    const char *save_inp = inp;
-    char quote = 0;
-    char *cp, *ep;
-
-    for (cp = buf, ep = buf + bufsiz - 1; *inp && cp < ep; inp++, cp++) {
-	if (*inp == quote) {
-	    quote = 0;
-
-	} else {
-
-	    switch (*inp) {
-	    case '\\':
-		*cp++ = '\\';
-		break;
-
-	    case '\'':
-	    case '\"':
-		if (quote) {
-		    *cp++ = '\\';
-		} else {
-		    quote = *inp;
-		}
-		break;
-	    }
-	}
-
-	*cp = *inp;
-    }
-    *cp = '\0';
-
-    if (quote)
-	slaxLog("slax: unterminated quote in XPath expression: %s",
-		  save_inp);
-}
-
 static int
 slaxNeedsBraces (xmlNodePtr nodep)
 {
@@ -659,7 +617,7 @@ fail:
 	return (char *) xmlCharStrdup(xpath);
     }
 
-    buf = slaxStringAsChar(ssp, SSF_QUOTES);
+    buf = slaxStringAsChar(ssp, SSF_QUOTES | SSF_ESCAPE);
 
     if (buf == NULL) {
 	slaxLog("slax: xpath conversion failed: no buffer");
@@ -830,13 +788,10 @@ slaxWriteContent (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    if (streq((const char *) childp->name, ELT_VALUE_OF)) {
 		char *sel = slaxGetAttrib(childp, ATT_SELECT);
 		if (sel) {
-		    char *xpath, *expr;
-		    int bufsiz = strlen(sel) * 2 + 1;
+		    char *expr;
 
 		    /* Expand the XSLT-style XPath to SLAX-style */
-		    xpath = alloca(bufsiz);
-		    slaxEscapeXpath(xpath, bufsiz, sel);
-		    expr = slaxMakeExpression(swp, nodep, xpath);
+		    expr = slaxMakeExpression(swp, nodep, sel);
 
 		    if (!first)
 			slaxWrite(swp, " _ ");

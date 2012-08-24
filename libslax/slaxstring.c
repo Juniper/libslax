@@ -142,7 +142,15 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 	    for (i = 0; i < len; i++) {
 		unsigned char ch = start[i];
 
-		if (ch == '\\') {
+		if (ch == '\\' && !slaxParseIsXpath(sdp)) {
+		    if (i == len - 1) {
+			slaxError("%s:%d: trailing backslash in string",
+				  sdp->sd_filename, sdp->sd_line);
+			sdp->sd_errors += 1;
+			ch = '\0';
+			break;
+		    }
+
 		    ch = start[++i];
 
 		    switch (ch) {
@@ -319,6 +327,11 @@ slaxStringLength (slax_string_t *start, unsigned flags)
 		    if (*cp == '{' || *cp == '}')
 			len += 1; /* Needs a double */
 	    }
+	    if (flags & SSF_ESCAPE) {
+		for (cp = ssp->ss_token; *cp; cp++)
+		    if (*cp == '\\')
+			len += 1; /* Must be escaped */
+	    }
 	}
     }
 
@@ -443,8 +456,21 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 		*bp++ = '"';
 
 	    slen = strlen(str);
-	    memcpy(bp, str, slen);
-	    bp += slen;
+	    if (flags & SSF_ESCAPE) {
+		int i;
+		for (i = 0; i < slen; i++) {
+		    *bp++ = str[i];
+		    if (str[i] == '\\') {
+			if (++len > bufsiz)
+			    break;
+			*bp++ = '\\';
+		    }
+		}
+	    } else {
+		memcpy(bp, str, slen);
+		bp += slen;
+	    }
+
 	    if (squote) {
 		/* double quoted string to be surrounded by single quotes */
 		*bp++ = '\'';

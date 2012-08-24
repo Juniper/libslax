@@ -958,7 +958,8 @@ slaxLexer (slax_data_t *sdp)
 			return -1;
 		}
 
-		if (bump && sdp->sd_cur < sdp->sd_len)
+		if (bump && !slaxParseIsXpath(sdp)
+			&& sdp->sd_cur < sdp->sd_len)
 		    sdp->sd_cur += bump;
 	    }
 
