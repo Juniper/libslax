@@ -249,5 +249,20 @@ xmlNodeValue (xmlNodePtr np)
     return NULL;
 }
 
+/* libxslt provides no means for setting the max call depth */
+extern int xsltMaxDepth;
+
+static inline int
+xsltGetMaxDepth (void)
+{
+    return xsltMaxDepth;
+}
+
+static inline void
+xsltSetMaxDepth (int value)
+{
+    xsltMaxDepth = value;
+}
+
 #endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */
 #endif /* LIBSLAX_XMLSOFT_H */

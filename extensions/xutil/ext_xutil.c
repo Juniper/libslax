@@ -212,9 +212,30 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathFreeObject(objstack[ndx]);
 }
 
+static void
+extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
+{
+    int value;
+
+    if (nargs == 0) {
+	xmlXPathReturnNumber(ctxt, xsltGetMaxDepth());
+	return;
+    }
+
+    value = xmlXPathPopNumber(ctxt);
+    if (xmlXPathCheckError(ctxt))
+	return;
+
+    if (value > 0)
+	xsltSetMaxDepth(value);
+
+    xmlXPathReturnEmptyString(ctxt);
+}
+
 slax_function_table_t slaxXutilTable[] = {
     { "xml-to-string", extXutilXmlToString },
     { "string-to-xml", extXutilStringToXml },
+    { "max-call-depth", extXutilMaxCallDepth },
     { NULL, NULL }
 };
 
