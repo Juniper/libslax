@@ -3773,6 +3773,51 @@ This script sends an email via a server provided as a parameter.
         }
     }
 
+** The "xutil" Extension Library
+
+The xutil extension library provides a number of XML- and XSLT-related
+utility functions.
+
+*** "xutil" Extension Functions
+
+**** xutil:max-call-depth()
+
+SLAX and XSLT use recursion as a programming tool for iteration, but
+unlimited recursion can lead to disaster.  To avoid this, the libxslt
+engine limits the depth of recursive calls to 3,000.  This limit
+should be find for almost all uses, but it the value is not suitable,
+it can be adjusted using the xutil:max-call-depth() function.
+
+If invoked without an argument, the function returns the current
+value.  If a number is passed as the argument, that number is used as
+the new max call depth limit.
+
+    EXAMPLE::
+        var $limit = xutil:max-call-depth();
+        expr xutil:max-call-depth($limit * 2);
+
+**** xutil:string-to-xml()
+
+The xutil:string-to-xml() function turns a string containing XML data
+into the native representation of that data.
+
+    EXAMPLE::
+        var $data = "<doc><title>fred</title></doc>";
+        var $xml = xutil:string-to-xml($data);
+        message "title is " _ $xml/title;
+
+**** xutil:xml-to-string()
+
+The xutil:xml-to-string() function turns XML content into a string.
+This is different than the normal XPath stringification, which
+discards open and close tag.  xml-to-string will encode tags as part
+of the string.
+
+    EXAMPLE::
+        var $xml = <dog> "red";
+        var $str = xutil:xml-to-string($xml);
+        /* str is now the string "<dog>red</dog>" */
+
 *! start-appendix
 
 * Example Stylesheets
