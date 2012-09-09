@@ -14,6 +14,13 @@
 
 #include <libslax/slaxconfig.h>
 
+/* Forward declarations for libxml2/libxslt structures */
+struct _xmlDoc;
+struct _xmlNode;
+struct _xmlParserCtxt;
+struct _xsltStylesheet;
+struct _xmlXPathObject;
+
 /*
  * Turn on the SLAX XSLT document parsing hook.  This must be
  * called before SLAX files can be parsed.
