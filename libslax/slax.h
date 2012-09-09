@@ -16,10 +16,12 @@
 
 /* Forward declarations for libxml2/libxslt structures */
 struct _xmlDoc;
+struct _xmlDict;
 struct _xmlNode;
-struct _xmlParserCtxt;
-struct _xsltStylesheet;
 struct _xmlXPathObject;
+struct _xmlParserCtxt;
+struct _xsltTransformContext;
+struct _xsltStylesheet;
 
 /*
  * Turn on the SLAX XSLT document parsing hook.  This must be
@@ -135,11 +137,13 @@ typedef char *(*slaxInputCallback_t)(const char *, unsigned flags);
 typedef void (*slaxOutputCallback_t)(const char *, ...);
 typedef int (*slaxErrorCallback_t)(const char *, va_list vap);
 
+#if defined(XMLCALL) /* Need xml headers for xmlOutputWriteCallback */
 void
 slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxOutputCallback_t output_callback,
 		xmlOutputWriteCallback raw_write,
 		slaxErrorCallback_t error_callback);
+#endif /* XMLCALL */
 
 void slaxIoUseStdio (unsigned flags);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
@@ -200,7 +204,7 @@ slaxDebugSetIncludes (const char **includes);
  * @params set of parameters
  * @returns output document
  */
-xmlDocPtr
+struct _xmlDoc *
 slaxDebugApplyStylesheet (const char *scriptname,
 			  struct _xsltStylesheet *style,
 			  const char *docname, struct _xmlDoc *doc,
