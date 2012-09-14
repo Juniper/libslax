@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+
+Name: libslax
+Version: @VERSION@
+Description: SLAX (Stylesheet Language Alternate syntaX)
+Requires: libxml-2.0 libxslt
+Libs: @SLAX_LIBDIR@ @SLAX_LIBS@
+Cflags: @SLAX_INCLUDEDIR@

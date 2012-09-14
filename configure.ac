@@ -408,6 +408,7 @@ AC_CONFIG_FILES([
   tests/libxslt/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc
+  libslax.pc
 ])
 AC_OUTPUT
 

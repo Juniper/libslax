@@ -44,3 +44,6 @@ upload: dist
 
 svnignore:
 	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}
+
+pkgconfigdir=$(libdir)/pkgconfig
+pkgconfig_DATA = libslax.pc
