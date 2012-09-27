@@ -352,7 +352,6 @@ slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
 	: xmlGetNsProp(nodep, uattrib, (const xmlChar *) uri);
     int clen = current ? xmlStrlen(current) + 1 : 0;
     int vlen = strlen(value) + 1;
-    xmlAttrPtr attr;
 
     unsigned char *newp = alloca(clen + vlen);
     if (newp == NULL) {
@@ -370,11 +369,11 @@ slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
     memcpy(newp + clen, value, vlen);
 
     if (uri == NULL)
-	attr = xmlSetProp(nodep, uattrib, newp);
+	xmlSetProp(nodep, uattrib, newp);
     else {
 	xmlNsPtr nsp = xmlSearchNsByHref(sdp->sd_docp, nodep,
 					 (const xmlChar *) uri);
-	attr = xmlSetNsProp(nodep, nsp, uattrib, newp);
+	xmlSetNsProp(nodep, nsp, uattrib, newp);
     }
 }
 

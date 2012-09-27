@@ -572,8 +572,8 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
 
     if (sd.sd_errors) {
 	swp->sw_errors += sd.sd_errors;
-	xmlParserError(ctxt, "%s: %d error%s detected during parsing\n",
-		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
+	xmlParserError(ctxt, "%s: %d error%s detected during parsing (%d)\n",
+	     sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 	goto fail;
     }
 

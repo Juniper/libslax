@@ -574,8 +574,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     rc = slaxParse(&sd);
 
     if (sd.sd_errors) {
-	slaxError("%s: %d error%s detected during parsing\n",
-		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
+	slaxError("%s: %d error%s detected during parsing (%d)\n",
+	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 
 	slaxDataCleanup(&sd);
 	return NULL;
@@ -657,8 +657,8 @@ slaxSlaxToXpath (const char *filename, int lineno,
 
     if (sd.sd_errors) {
 	errors += sd.sd_errors;
-	xmlParserError(ctxt, "%s: %d error%s detected during parsing\n",
-		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
+	xmlParserError(ctxt, "%s: %d error%s detected during parsing (%d)\n",
+             sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 	goto fail;
     }
 

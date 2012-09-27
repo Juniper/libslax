@@ -1676,10 +1676,7 @@ attribute :
 attribute_stmt :
 	K_ATTRIBUTE xpath_value L_OBRACE
 		{
-		    xmlNodePtr nodep;
-
-		    nodep = slaxElementPush(slax_data, ELT_ATTRIBUTE,
-					    NULL, NULL);
+		    slaxElementPush(slax_data, ELT_ATTRIBUTE, NULL, NULL);
 		    slaxAttribAddValue(slax_data, ATT_NAME, $2);
 		    $$ = NULL;
 		}
@@ -1726,9 +1723,7 @@ ns_template :
 for_each_stmt :
 	K_FOR_EACH L_OPAREN xpath_expr_dotdotdot L_CPAREN
 		{
-		    xmlNodePtr nodep;
-		    nodep = slaxElementPush(slax_data, ELT_FOR_EACH,
-					    NULL, NULL);
+		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
 		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
 
 		    if ($3->ss_ttype == M_SEQUENCE)

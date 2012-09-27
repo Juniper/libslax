@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.11.28], [phil@juniper.net])
+AC_INIT([libslax], [0.11.30], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -88,7 +88,7 @@ AC_MSG_CHECKING([whether to build with warnings])
 AC_ARG_ENABLE([warnings],
     [  --enable-warnings    Turn on compiler warnings],
     [SLAX_WARNINGS=$enableval],
-    [SLAX_WARNINGS=yes])
+    [SLAX_WARNINGS=no])
 AC_MSG_RESULT([$SLAX_WARNINGS])
 AM_CONDITIONAL([SLAX_WARNINGS], [test "$SLAX_WARNINGS" != "no"])
 
@@ -340,7 +340,6 @@ case $host_os in
 	;;
      cygwin*|CYGWIN*)
 	LDFLAGS=-no-undefined
-	SLAX_WARNINGS=no
 	;;
 esac
 

@@ -36,21 +36,18 @@ slaxTokenTranslate (int ttype)
  * Return a better class of error message
  */
 char *
-slaxExpectingError (const char *token, int yystate, int yychar)
+slaxExpectingError (const char *token, int yystate, int yychar UNUSED)
 {
     const int MAX_EXPECT = 5;
     char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
     int expect = 0, expecting[MAX_EXPECT + 1];
     int yyn = yypact[yystate];
     int i;
-    int yytype;
     int start, stop;
     int v_state = 0;
 
     if (!(YYPACT_NINF < yyn && yyn <= YYLAST))
 	return NULL;
-
-    yytype = YYTRANSLATE(yychar);
 
     start = yyn < 0 ? -yyn : 0;
     stop = YYLAST - yyn + 1;

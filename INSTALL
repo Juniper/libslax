@@ -57,7 +57,7 @@ Expect to see the following error:
 If you want to use the regression tests from libxslt, add the
 "--with-libxslt-tests=DIR" to the configure command:
 
-    ../configure --with-libxslt-test=~/work/libxslt-1.1.24
+    ../configure --with-libxslt-tests=~/work/libxslt-1.1.24
 
 The --enable-debug command turns on SLAX_DEBUG, but debugging
 is enabled even without it.  Use the "-d" option to "slaxproc"
@@ -116,7 +116,7 @@ Under "GNOME":
 Under "Web" or "Net":
   libcurl-devel
 
-The "configure" script may give some odd but mostly harmful errors.
+The "configure" script may give some odd but mostly harmless errors.
 
 ** Special notes for ubuntu
 

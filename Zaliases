@@ -1,9 +1,9 @@
 set libslax=`pwd`
 set test=~/work/slax/libxslt-1.1.24/tests/
 alias Zautoreconf "(cd $libslax ; autoreconf --install)"
-#alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ --enable-readline --enable-printflike )"
-alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ -enable-readline --enable-printflike --with-libxml-prefix=/Users/phil/work/root --with-libxslt-prefix=/Users/phil/work/root --prefix /Users/phil/work/root)"
+#alias Zconfigure "(cd $libslax/build; ../configure --enable-warnings --enable-debug --with-libxslt-tests=../../libxslt-1.1.24/tests/ --enable-readline --enable-printflike )"
+alias Zconfigure "(cd $libslax/build; ../configure --enable-debug --enable-warnings --with-libxslt-tests=../../libxslt-1.1.24/tests/ -enable-readline --enable-printflike --with-libxml-prefix=/Users/phil/work/root --with-libxslt-prefix=/Users/phil/work/root --prefix /Users/phil/work/root)"
 alias Zbuild "(cd $libslax/build; make \!* )"
 alias Zgdb "(cd $libslax/build ; ./libtool --mode=execute gdb \!* )"
 alias ttype "(cd $libslax/build/libslax; grep \!* slaxparser.h |grep define)"
-alias Zsbuild "(cd $libslax/build ; glibtool --tag=CC --mode=link gcc -g -DSLAX_DEBUG -O2 -static -o slaxproc/slaxproc slaxproc/slaxproc.o libslax/.libs/libslax.a ../../libxslt-1.1.26/libxslt/.libs/libxslt.a ../../libxslt-1.1.26/libexslt/.libs/libexslt.a ../../libxml2-2.6.32/.libs/libxml2.a -lm /usr/lib/libiconv.2.dylib /opt/local/lib/libz.a -lpthread -lreadline )"
+alias Zsbuild "(cd $libslax/build ; glibtool --tag=CC --mode=link gcc -g -DSLAX_DEBUG -O2 -static -o slaxproc/slaxproc slaxproc/slaxproc.o libslax/.libs/libslax.a ../../libxslt-1.1.26/build/libxslt/.libs/libxslt.a ../../libxslt-1.1.26/build/libexslt/.libs/libexslt.a ../../libxml2-2.7.7/.libs/libxml2.a -lm /usr/lib/libiconv.2.dylib /opt/local/lib/libz.a -lpthread /opt/local/lib/libreadline.a /opt/local/lib/libgcrypt.la /opt/local/lib/libtermcap.dylib )"
