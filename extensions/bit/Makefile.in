@@ -17,7 +17,7 @@
 #
 # $Id$
 #
-# Copyright 2011, Juniper Networks, Inc.
+# Copyright 2011-2012, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
 # ../Copyright file. By downloading, installing, copying, or otherwise
@@ -308,6 +308,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@SLAX_WARNINGS_HIGH_TRUE@SLAX_WARNINGS = HIGH
 ext_bitincdir = ${includedir}/libslax
 EXTRA_DIST = bit.txt
 AM_CFLAGS = -DLIBSLAX_XMLSOFT_NEED_PRIVATE -I${top_srcdir} \
@@ -645,8 +646,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
 
-
-@SLAX_WARNINGS_TRUE@include ${top_srcdir}/warnings.mk
+include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ${libdir}/libext_bit.la ; echo $$dlname'` \

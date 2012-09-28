@@ -90,7 +90,7 @@ AC_ARG_ENABLE([warnings],
     [SLAX_WARNINGS=$enableval],
     [SLAX_WARNINGS=no])
 AC_MSG_RESULT([$SLAX_WARNINGS])
-AM_CONDITIONAL([SLAX_WARNINGS], [test "$SLAX_WARNINGS" != "no"])
+AM_CONDITIONAL([SLAX_WARNINGS_HIGH], [test "$SLAX_WARNINGS" != "no"])
 
 AC_MSG_CHECKING([whether to build with debugging])
 AC_ARG_ENABLE([debug],

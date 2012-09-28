@@ -8,6 +8,9 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
+if SLAX_WARNINGS_HIGH
+SLAX_WARNINGS = HIGH
+endif
 include ${top_srcdir}/warnings.mk
 
 BISON_COMMAND = ${BISON} -kvd -b jsonparser
