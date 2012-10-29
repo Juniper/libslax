@@ -125,3 +125,38 @@ You will need the following packages installed:
 libxml2-dev
 libxslt-dev
 libcurl-dev
+
+** Special notes re: xmlcatalog
+
+libxml2, libxslt, and libslax do not ship with the DTDs for XHTML,
+which can be a massive concern for performance, given that 130 million
+requests are made per day to www.w3.org to retrive them.  This is
+annoying and fairly silly.
+
+The fix is unfortunately not always simple.  For MacOSX, you need to
+install the "xhtml1" package from MacPorts, and then build you own
+catalog.
+
+When you are done, your /etc/xml/catalog file should look like this:
+
+<?xml version="1.0"?>
+<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://w
+ww.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+
+    <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-strict.dtd"/>
+ 
+    <public publicId="-//W3C//DTD XHTML 1.0 Transitional//EN"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-transitional.dtd"/>
+ 
+    <system systemId="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-strict.dtd"/>
+ 
+    <system systemId="http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-transitional.dtd"/>
+
+    <delegateURI uriStartString="http://www.w3.org/TR/xhtml1/DTD"
+            catalog="file://opt/local/share/xml/html/4"/>
+
+</catalog>
