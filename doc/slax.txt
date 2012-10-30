@@ -3386,6 +3386,14 @@ For multiple address, use multiple <cc> elements.
     SYNTAX::
       <cc> "cc-user@email.examplecom";
 
+**** <connect-timeout>
+
+The <connect-timeout> element gives the number of seconds before a
+connection attempt is considered to have failed.
+
+    SYNTAX::
+      <connect-timeout> 10;
+
 **** <contents>
 
 The <contents> element gives the contents to be transfered.
@@ -3520,6 +3528,14 @@ requests.
 
     SYNTAX::
       <subject> "email subject string";
+
+**** <timeout>
+
+The <timeout> element gives the number of seconds before an open
+connection is considered to have failed.
+
+    SYNTAX::
+      <timeout> 10;
 
 **** <to>
 

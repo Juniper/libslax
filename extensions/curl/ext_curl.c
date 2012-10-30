@@ -52,6 +52,8 @@ typedef struct curl_opts_s {
     u_int8_t co_verbose;	/* Verbose (debug) output */
     u_int8_t co_insecure;	/* Allow insecure SSL certs  */
     u_int8_t co_secure;		/* Use SSL-enabled version of protocol */
+    long co_timeout;		/* Operation timeout */
+    long co_connect_timeout;	/* Connect timeout */
     char *co_username;		/* Value for CURLOPT_USERNAME */
     char *co_password;		/* Value for CURLOPT_PASSWORD */
     slax_data_list_t co_headers; /* Headers for CURLOPT_HTTPHEADER */
@@ -154,6 +156,8 @@ extCurlOptionsCopy (curl_opts_t *top, curl_opts_t *fromp)
     COPY_STRING(co_local);
     COPY_STRING(co_from);
     COPY_STRING(co_subject);
+    COPY_FIELD(co_timeout);
+    COPY_FIELD(co_connect_timeout);
 
     slaxDataListInit(&top->co_headers);
     slaxDataListCopy(&top->co_headers, &fromp->co_headers);
@@ -278,6 +282,10 @@ extCurlParseNode (curl_opts_t *opts, xmlNodePtr nodep)
 	opts->co_insecure = TRUE;
     else if (streq(key, "secure"))
 	opts->co_secure = TRUE;
+    else if (streq(key, "timeout"))
+	opts->co_timeout = atoi(xmlNodeValue(nodep));
+    else if (streq(key, "connect-timeout"))
+	opts->co_connect_timeout = atoi(xmlNodeValue(nodep));
 
     else if (streq(key, "to"))
 	slaxDataListAdd(&opts->co_to, xmlNodeValue(nodep));
@@ -778,6 +786,8 @@ extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
 
     CURL_COND(CURLOPT_USERNAME, opts->co_username);
     CURL_COND(CURLOPT_PASSWORD, opts->co_password);
+    CURL_COND(CURLOPT_TIMEOUT, opts->co_timeout);
+    CURL_COND(CURLOPT_CONNECTTIMEOUT, opts->co_connect_timeout);
 
     CURL_SET(CURLOPT_FAILONERROR, opts->co_fail_on_error ? 1L : 0L);
 
@@ -805,6 +815,9 @@ extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
      */
     if (emailv)
 	return extCurlDoEmail(curlp, opts);
+
+    if (opts->co_secure)
+	CURL_SET(CURLOPT_USE_SSL, (long) CURLUSESSL_ALL);
 
     /* A missing URL is fatal */
     if (opts->co_url == NULL) {
