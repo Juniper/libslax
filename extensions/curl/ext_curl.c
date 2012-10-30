@@ -24,6 +24,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xmlsave.h>
+#include <libxml/HTMLparser.h>
 
 #include "config.h"
 
@@ -968,6 +969,23 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	xmlDocPtr xmlp;
 
 	xmlp = xmlReadMemory(raw_data, strlen(raw_data), "raw_data", NULL,
+			     XML_PARSE_NOENT);
+	if (xmlp == NULL)
+	    return;
+
+	xmlNodePtr childp = xmlDocGetRootElement(xmlp);
+	if (childp) {
+	    xmlNodePtr newp = xmlDocCopyNode(childp, docp, 1);
+	    if (newp)
+		xmlAddChild(nodep, newp);
+	}
+
+	xmlFreeDoc(xmlp);
+
+    } else if (streq(opts->co_format, "html")) {
+	xmlDocPtr xmlp;
+
+	xmlp = htmlReadMemory(raw_data, strlen(raw_data), "raw_data", NULL,
 			     XML_PARSE_NOENT);
 	if (xmlp == NULL)
 	    return;
