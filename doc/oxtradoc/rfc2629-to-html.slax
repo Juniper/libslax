@@ -46,6 +46,7 @@ param $oxtradoc-dir = ".";
 param $oxtradoc-inline;
 param $oxtradoc-install-dir = ".";
 param $oxtradoc-numbers;
+param $oxtradoc-rfc;
 param $oxtradoc-sep = "_";
 
 strip-space back front list middle rfc section;
@@ -610,7 +611,15 @@ match front {
         apply-templates title;
         if (/rfc/@docName) {
             <br>;
-            <span class="filename"> /rfc/@docName;
+            <span> {
+		attribute "class" {
+		    expr "filename";
+		    if ($oxtradoc-rfc) {
+			expr " filename-rfc";
+		    }
+		}
+		expr /rfc/@docName;
+	    }
             if (contains(/rfc/@docName, ".")) {
                 call warning() {
                     with $msg = {
@@ -936,7 +945,9 @@ match list[starts-with(@style, "format ") &&(contains(@style, "%c") || contains(
 
 match middle {
     apply-templates;
-    apply-templates ../back//references;
+    <div class="content"> {
+        apply-templates ../back//references;
+    }
 }
 
 match note {
@@ -945,11 +956,13 @@ match note {
         number;
     }
     
-    <h1 id=$anchor-prefix _ $sep _ "note" _ $sep _ $num> {
-        call insertInsDelClass();
-        <a href="#" _ $anchor-prefix _ $sep _ "note" _ $sep _ $num> @title;
+    <div class="note"> {
+	<h1 id=$anchor-prefix _ $sep _ "note" _ $sep _ $num> {
+	    call insertInsDelClass();
+	    <a href="#" _ $anchor-prefix _ $sep _ "note" _ $sep _ $num> @title;
+	}
+	apply-templates;
     }
-    apply-templates;
 }
 
 match postamble {
@@ -1174,6 +1187,7 @@ match reference {
 }
 
 match references {
+    param $sep = $oxtradoc-sep;
     var $name = {
         if (ancestor::ed:del) {
             expr "del-";
@@ -3280,217 +3294,219 @@ template insertSingleXref () {
 }
 
 template insertIndex () {
-    call insert-conditional-hrule();
-    <h1 id=$anchor-prefix _ ".index"> {
-        call insert-conditional-pagebreak();
-        <a href="#" _ $anchor-prefix _ ".index"> "Index";
-    }
-    /* generate navigation links to index subsections */
-    <p class="noprint"> {
-        var $irefs = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
-        var $xrefs = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
+    <div class="content index"> {
+	call insert-conditional-hrule();
+	<h1 id=$anchor-prefix _ ".index"> {
+	    call insert-conditional-pagebreak();
+	    <a href="#" _ $anchor-prefix _ ".index"> "Index";
+	}
+	/* generate navigation links to index subsections */
+	<p class="noprint"> {
+	    var $irefs = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
+	    var $xrefs = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
         
-        for-each ($irefs | $xrefs) {
-            sort translate(concat(@item,@anchor),$lcase,$ucase);
-            var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
-            /* character? */
-            if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
-                var $showit = {
-                    if ($xml2rfc-ext-include-references-in-index != "yes") {
-                        if ($irefs[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
-                            expr "yes";
-                        }
-                    
-                    } else {
-                        expr "yes";
-                    }
-                }
+	    for-each ($irefs | $xrefs) {
+		sort translate(concat(@item,@anchor),$lcase,$ucase);
+		var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
+		/* character? */
+		if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
+		    var $showit = {
+			if ($xml2rfc-ext-include-references-in-index != "yes") {
+			    if ($irefs[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
+				expr "yes";
+			    }
+			} else {
+			    expr "yes";
+			}
+		    }
                 
-                if ($showit == "yes") {
-                    <a href="#" _ $anchor-prefix _ ".index." _ $letter> $letter;
-                    expr " ";
-                }
-            }
-        }
-    }
-    /* for each index subsection */
-    <div class="print2col"> {
-        <ul class="ind"> {
-            var $irefs2 = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
-            var $xrefs2 = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
-            
-            for-each ($irefs2 | $xrefs2) {
-                sort translate(concat(@item,@anchor),$lcase,$ucase);
-                var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
-                var $showit = {
-                    if ($xml2rfc-ext-include-references-in-index != "yes") {
-                        if ($irefs2[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
-                            expr "yes";
-                        }
-                    
-                    } else {
-                        expr "yes";
-                    }
-                }
+			if ($showit == "yes") {
+			    <a href="#" _ $anchor-prefix _ ".index." _ $letter> $letter;
+			    expr " ";
+			}
+		}
+	    }
+	}
+
+	/* for each index subsection */
+	<div class="print2col"> {
+	    <ul class="ind"> {
+		var $irefs2 = //iref[generate-id(.) == generate-id(key("index-first-letter", translate(substring(@item, 1, 1), $lcase, $ucase)))];
+		var $xrefs2 = //reference[not(starts-with(@anchor, "deleted-"))] [generate-id(.) == generate-id(key("index-first-letter", translate(substring(@anchor, 1, 1), $lcase, $ucase)))];
+		
+		for-each ($irefs2 | $xrefs2) {
+		    sort translate(concat(@item,@anchor),$lcase,$ucase);
+		    var $letter = translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase);
+		    var $showit = {
+			if ($xml2rfc-ext-include-references-in-index != "yes") {
+			    if ($irefs2[starts-with(translate(@item, $lcase, $ucase), $letter)]) {
+				expr "yes";
+			    }
+			    
+			} else {
+			    expr "yes";
+			}
+		    }
                 
-                if ($showit == "yes") {
-                    <li class="indline0"> {
-                        /* make letters and digits stand out */
-                        if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
-                            <a id=$anchor-prefix _ ".index." _ $letter href="#" _ $anchor-prefix _ ".index." _ $letter> {
-                                <b> $letter;
-                            }
+		    if ($showit == "yes") {
+			<li class="indline0"> {
+			    /* make letters and digits stand out */
+			    if (translate($letter, $lcase _ $ucase _ "0123456789", "") == "") {
+				<a id=$anchor-prefix _ ".index." _ $letter href="#" _ $anchor-prefix _ ".index." _ $letter> {
+				    <b> $letter;
+				}
                         
-                        } else {
-                            <b> $letter;
-                        }
-                        <ul class="ind"> {
-                            for-each (key("index-first-letter", translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase))) {
-                                sort translate(concat(@item,@anchor),$lcase,$ucase);
-                                if (self::reference) {
-                                    if ($xml2rfc-ext-include-references-in-index == "yes" && not(starts-with(@anchor, "deleted-"))) {
-                                        <li class="indline1"> {
-                                            <em> @anchor;
-                                            expr "  ";
-                                            var $rs = key("xref-item", current()/@anchor) | . | key("anchor-item", "deleted-" _ current()/@anchor);
-                                            
-                                            for-each ($rs) {
-                                                call insertSingleXref();
-                                            }
-                                            var $rs2 = $rs[@x:sec];
-                                            if ($rs2) {
-                                                <ul class="ind"> {
-                                                    for-each ($rs2) {
-                                                        sort substring-before(concat(@x:sec,'.'),'.') {
-                                                            data-type "number";
-                                                        }
-                                                        sort substring(@x:sec,1+string-length(substring-before(@x:sec,'.'))) {
-                                                            data-type "number";
-                                                        }
-                                                        if (generate-id(.) == generate-id(key("index-xref-by-sec", @target _ ".." _ @x:sec))) {
-                                                            <li class="indline1"> {
-                                                                <em> {
-                                                                    if (translate(substring(@x:sec, 1, 1), $ucase, "") == "") {
-                                                                        expr "Appendix ";
+			    } else {
+				<b> $letter;
+			    }
+			    <ul class="ind"> {
+				for-each (key("index-first-letter", translate(substring(@item _ @anchor, 1, 1), $lcase, $ucase))) {
+				    sort translate(concat(@item,@anchor),$lcase,$ucase);
+				    if (self::reference) {
+					if ($xml2rfc-ext-include-references-in-index == "yes" && not(starts-with(@anchor, "deleted-"))) {
+					    <li class="indline1"> {
+						<em> @anchor;
+						expr "  ";
+						var $rs = key("xref-item", current()/@anchor) | . | key("anchor-item", "deleted-" _ current()/@anchor);
+						
+						for-each ($rs) {
+						    call insertSingleXref();
+						}
+						var $rs2 = $rs[@x:sec];
+						if ($rs2) {
+						    <ul class="ind"> {
+							for-each ($rs2) {
+							    sort substring-before(concat(@x:sec,'.'),'.') {
+								data-type "number";
+							    }
+							    sort substring(@x:sec,1+string-length(substring-before(@x:sec,'.'))) {
+								data-type "number";
+							    }
+							    if (generate-id(.) == generate-id(key("index-xref-by-sec", @target _ ".." _ @x:sec))) {
+								<li class="indline1"> {
+								    <em> {
+									if (translate(substring(@x:sec, 1, 1), $ucase, "") == "") {
+									    expr "Appendix ";
                                                                     
-                                                                    } else {
-                                                                        expr "Section ";
-                                                                    }
-                                                                    expr @x:sec;
-                                                                }
-                                                                expr "  ";
+									} else {
+									    expr "Section ";
+									}
+									expr @x:sec;
+								    }
+								    expr "  ";
                                                                 
-                                                                for-each (key("index-xref-by-sec", @target _ ".." _ @x:sec)) {
-                                                                    call insertSingleXref();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (current()/x:source/@href) {
-                                                var $rs3 = $rs[not(@x:sec) &&@x:rel];
-                                                var $doc = document(current()/x:source/@href);
+								    for-each (key("index-xref-by-sec", @target _ ".." _ @x:sec)) {
+									call insertSingleXref();
+								    }
+								}
+							    }
+							}
+						    }
+						}
+						if (current()/x:source/@href) {
+						    var $rs3 = $rs[not(@x:sec) &&@x:rel];
+						    var $doc = document(current()/x:source/@href);
                                                 
-                                                if ($rs3) {
-                                                    <ul class="ind"> {
-                                                        for-each ($rs3) {
-                                                            sort count($doc//*[@anchor and following::*/@anchor=substring-after(current()/@x:rel,'#')]) {
-                                                                order "ascending";
-                                                                data-type "number";
-                                                            }
-                                                            if (generate-id(.) == generate-id(key("index-xref-by-anchor", @target _ ".." _ @x:rel))) {
-                                                                <li class="indline1"> {
-                                                                    <em> {
-                                                                        var $sec = {
-                                                                            for-each ($doc//*[@anchor == substring-after(current()/@x:rel, "#")]) {
-                                                                                call get-section-number();
-                                                                            }
-                                                                        }
-                                                                        
-                                                                        if (translate(substring($sec, 1, 1), $ucase, "") == "") {
-                                                                            expr "Appendix ";
-                                                                        
-                                                                        } else {
-                                                                            expr "Section ";
-                                                                        }
-                                                                        expr $sec;
-                                                                    }
-                                                                    expr "  ";
-                                                                    
-                                                                    for-each (key("index-xref-by-anchor", @target _ ".." _ @x:rel)) {
-                                                                        call insertSingleXref();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+						    if ($rs3) {
+							<ul class="ind"> {
+							    for-each ($rs3) {
+								sort count($doc//*[@anchor and following::*/@anchor=substring-after(current()/@x:rel,'#')]) {
+									   order "ascending";
+									   data-type "number";
+									   }
+								if (generate-id(.) == generate-id(key("index-xref-by-anchor", @target _ ".." _ @x:rel))) {
+								    <li class="indline1"> {
+									<em> {
+									    var $sec = {
+										for-each ($doc//*[@anchor == substring-after(current()/@x:rel, "#")]) {
+											  call get-section-number();
+											  }
+									    }
+									    
+									    if (translate(substring($sec, 1, 1), $ucase, "") == "") {
+										expr "Appendix ";
+										
+									    } else {
+										expr "Section ";
+									    }
+									    expr $sec;
+									}
+									expr "  ";
+									
+									for-each (key("index-xref-by-anchor", @target _ ".." _ @x:rel)) {
+									    call insertSingleXref();
+									}
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
                                 
-                                } else {
-                                    /* regular iref */
-                                    if (generate-id(.) == generate-id(key("index-item", @item _ @anchor))) {
-                                        var $item = @item;
-                                        var $in-artwork = key("index-item", $item) [@primary == "true" && ancestor::artwork];
+				    } else {
+					/* regular iref */
+					if (generate-id(.) == generate-id(key("index-item", @item _ @anchor))) {
+					    var $item = @item;
+					    var $in-artwork = key("index-item", $item) [@primary == "true" && ancestor::artwork];
                                         
-                                        <li class="indline1"> {
-                                            if ($in-artwork) {
-                                                <tt> @item;
+					    <li class="indline1"> {
+						if ($in-artwork) {
+						    <tt> @item;
                                             
-                                            } else {
-                                                expr @item;
-                                            }
-                                            expr "  ";
-                                            var $irefs3 = key("index-item", @item) [not(@subitem) ||@subitem == ""];
-                                            var $xrefs3 = key("xref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs3/@x:for-anchor);
-                                            var $extrefs3 = key("extref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs3/@x:for-anchor);
+						} else {
+						    expr @item;
+						}
+						expr "  ";
+						var $irefs3 = key("index-item", @item) [not(@subitem) ||@subitem == ""];
+						var $xrefs3 = key("xref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs3/@x:for-anchor);
+						var $extrefs3 = key("extref-item", $irefs3[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs3/@x:for-anchor);
                                             
-                                            for-each ($irefs3 | $xrefs3 | $extrefs3) {
-                                                /* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
-                                                call insertSingleIref();
-                                            }
-                                            var $s2 = key("index-item", @item) [@subitem &&@subitem != ""];
-                                            if ($s2) {
-                                                <ul class="ind"> {
-                                                    for-each ($s2) {
-                                                        sort translate(@subitem,$lcase,$ucase);
-                                                        if (generate-id(.) == generate-id(key("index-item-subitem", @item _ ".." _ @subitem))) {
-                                                            var $itemsubitem = @item _ ".." _ @subitem;
-                                                            var $in-artwork2 = key("index-item-subitem", @item _ ".." _ @subitem) [@primary == "true" && ancestor::artwork];
+						for-each ($irefs3 | $xrefs3 | $extrefs3) {
+						    /* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
+						    call insertSingleIref();
+						}
+						var $s2 = key("index-item", @item) [@subitem &&@subitem != ""];
+						if ($s2) {
+						    <ul class="ind"> {
+							for-each ($s2) {
+							    sort translate(@subitem,$lcase,$ucase);
+							    if (generate-id(.) == generate-id(key("index-item-subitem", @item _ ".." _ @subitem))) {
+								var $itemsubitem = @item _ ".." _ @subitem;
+								var $in-artwork2 = key("index-item-subitem", @item _ ".." _ @subitem) [@primary == "true" && ancestor::artwork];
                                                             
-                                                            <li class="indline1"> {
-                                                                if ($in-artwork2) {
-                                                                    <tt> @subitem;
+								<li class="indline1"> {
+								    if ($in-artwork2) {
+									<tt> @subitem;
                                                                 
-                                                                } else {
-                                                                    expr @subitem;
-                                                                }
-                                                                expr "  ";
-                                                                var $irefs4 = key("index-item-subitem", @item _ ".." _ @subitem);
-                                                                var $xrefs4 = key("xref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs4/@x:for-anchor);
-                                                                var $extrefs4 = key("extref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs4/@x:for-anchor);
+								    } else {
+									expr @subitem;
+								    }
+								    expr "  ";
+								    var $irefs4 = key("index-item-subitem", @item _ ".." _ @subitem);
+								    var $xrefs4 = key("xref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("xref-item", $irefs4/@x:for-anchor);
+								    var $extrefs4 = key("extref-item", $irefs4[@x:for-anchor == ""]/../@anchor) | key("extref-item", $irefs4/@x:for-anchor);
                                                                 
-                                                                for-each ($irefs4 | $xrefs4 | $extrefs4) {
-                                                                    /* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
-                                                                    call insertSingleIref();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+								    for-each ($irefs4 | $xrefs4 | $extrefs4) {
+									/* <xsl:sort select="translate(@item,$lcase,$ucase)" /> */
+									call insertSingleIref();
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
     }
 }
 
@@ -4102,7 +4118,7 @@ match x:q {
 }
 /* Notes */
 match x:note {
-    <div class="note"> {
+    <div class="content note"> {
         apply-templates;
     }
 }

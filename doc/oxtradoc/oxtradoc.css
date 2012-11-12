@@ -139,7 +139,7 @@
 
 @media print {
     div.self-section-number, div.section-number {
-	display: inline;
+	display: block-inline;
     }
 
     button {

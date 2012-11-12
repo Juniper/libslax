@@ -91,14 +91,14 @@ sub main {
 	$autowrap = 1 if /^-w/;
     }
 
-    $libdir = $prefix . "/oxtradoc/";
-    $slaxproc = $libdir . "slaxproc" unless $slaxproc;
+    $libdir = $prefix . "/share/oxtradoc/";
+    $slaxproc = $prefix . "/bin/slaxproc" unless $slaxproc;
 
     my $file = shift @ARGV;
     $output = shift @ARGV unless $output;
 
     die "no input file given" unless $file;
-    die "no output file given" unless $output;
+    #die "no output file given" unless $output;
 
     my ($base) = ($file =~ /([^\/]*)\.([^\.\/])/);
 
@@ -137,6 +137,22 @@ sub main {
     } elsif ($opt_mode eq "xml-to-html") {
 	&xml2html($file, $output);
 
+    } elsif ($opt_mode eq "rfc") {
+	&xml2html($file, $output, 1);
+
+    } elsif ($opt_mode eq "view-rfc") {
+	if ($file =~ /^https?:/) {
+	    chdir("/tmp");
+	    system("fetch $file") && die;
+	    ($file) = ($file =~ m:([^/]+)$:);
+	}
+	my ($base) = ($file =~ m:([^/]+)$:);
+	$base = "output" unless $base;
+	$base =~ s/\.xml$//;
+	$output = "/tmp/" . $base . ".html" unless $output;
+	&xml2html($file, $output, 1);
+	system("open $output");
+
     } else {
 	die "unknown mode: " . $opt_mode;
     }
@@ -159,7 +175,7 @@ sub close_stdout {
 }
 
 sub xml2html {
-    my ($file, $output) = @_;
+    my ($file, $output, $rfc) = @_;
     open NEWIN, "<$file" || die;
     open STDIN, "<&NEWIN" || die;
 
@@ -171,6 +187,8 @@ sub xml2html {
     $slaxargs .= " -a oxtradoc-install-dir " . $libdir;
     $slaxargs .= " -a anchor-prefix " . $anchor_prefix if $anchor_prefix;
     $slaxargs .= " -a oxtradoc-inline yes";
+    $slaxargs .= " -a oxtradoc-numbers yes" if $rfc;
+    $slaxargs .= " -a oxtradoc-rfc yes" if $rfc;
     $slaxargs .= " " . $libdir . "rfc2629-to-html.slax";
 
     &open_stdout($output) if $output;

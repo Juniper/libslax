@@ -19,13 +19,16 @@ jQuery(function ($) {
     $right.append($("<div id='nav-bar'><button id='nav-prev'/>"
                     + "<button id='nav-next'/></div>"));
 
-    $("div.content", $body).each(function (i, elt) {
+    $body.append($newp);
+    $left.append($("div#toc"));
+
+    $("div.content, div.index, div.note", $body).each(function (i, elt) {
         $(elt).appendTo($right);
     });
 
-    $body.append($newp);
-    $left.append($("div#toc"));
+    $("body > ul.toc").remove();
     $("#rfc.toc").remove();
+    $("div.note").remove();
     $("h1", $left).remove();
 
     /* $body.append($("<div id='debug-log'/>")); */
