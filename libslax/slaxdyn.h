@@ -24,12 +24,16 @@
 typedef struct slax_function_table_s {
     const char *ft_name;	/* Name of the function */
     xmlXPathFunction ft_func;	/* Function pointer */
+    const char *ft_desc;	/* Description */
+    const char *ft_arghelp;	/* Help string for arguments */
+    xmlXPathObjectType ft_returns; /* Type of returned data */
 } slax_function_table_t;
 
 typedef struct slax_element_table_s {
     const char *et_name;	/* Name of the element */
     xsltPreComputeFunction et_fcompile;
     xsltTransformFunction et_felement;
+    const char *et_help;	/* Help string */
 } slax_element_table_t;
 
 /*

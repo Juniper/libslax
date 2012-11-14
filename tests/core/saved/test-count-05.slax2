@@ -1,0 +1,28 @@
+version 1.1;
+
+var $last = document("test-count.xml");
+mvar $one = $last/in;
+mvar $two = $last/in/node();
+
+match / {
+    <top> {
+        <one> {
+            <before> {
+                copy-of $one;
+            }
+            append $one += <new> "one";
+            <after> {
+                copy-of $one;
+            }
+        }
+        <two> {
+            <before> {
+                copy-of $two;
+            }
+            append $two += <new> "one";
+            <after> {
+                copy-of $two;
+            }
+        }
+    }
+}

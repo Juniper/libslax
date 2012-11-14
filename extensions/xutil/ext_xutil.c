@@ -233,10 +233,22 @@ extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
 }
 
 slax_function_table_t slaxXutilTable[] = {
-    { "xml-to-string", extXutilXmlToString },
-    { "string-to-xml", extXutilStringToXml },
-    { "max-call-depth", extXutilMaxCallDepth },
-    { NULL, NULL }
+    {
+	"xml-to-string", extXutilXmlToString,
+	"Encodes XML hierarchies as text strings",
+	"(xml-data)", XPATH_STRING,
+    },
+    {
+	"string-to-xml", extXutilStringToXml,
+	"Decodes XML data from strings into nodes",
+	"(string)", XPATH_XSLT_TREE,
+    },
+    {
+	"max-call-depth", extXutilMaxCallDepth,
+	"Sets the maximum call depth for recursion in the XSLT engine",
+	"(call-depth)", XPATH_UNDEFINED,
+    },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };
 
 SLAX_DYN_FUNC(slaxDynLibInit)

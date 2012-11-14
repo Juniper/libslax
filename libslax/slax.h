@@ -296,4 +296,9 @@ slaxFilenameIsStd (const char *filename)
     return (filename == NULL || (filename[0] == '-' && filename[1] == '\0'));
 }
 
+void
+slaxSetExitCode (int code);
+int
+slaxGetExitCode (void);
+
 #endif /* LIBSLAX_SLAX_H */

@@ -569,5 +569,5 @@ main (int argc UNUSED, char **argv)
     xsltCleanupGlobals();
     xmlCleanupParser();
 
-    return 0;
+    return slaxGetExitCode();
 }

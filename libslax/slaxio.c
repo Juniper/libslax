@@ -666,3 +666,17 @@ slaxAsprintf (char **ret, const char *format, ...)
     va_end(vap);
     return rc;
 }
+
+static int slaxExitCode;
+
+void
+slaxSetExitCode (int code)
+{
+    slaxExitCode = code;
+}
+
+int
+slaxGetExitCode (void)
+{
+    return slaxExitCode;
+}

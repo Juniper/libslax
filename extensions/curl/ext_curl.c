@@ -1429,12 +1429,32 @@ extCurlSingle (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 }
 
 slax_function_table_t slaxCurlTable[] = {
-    { "close", extCurlClose },
-    { "perform", extCurlPerform },
-    { "single", extCurlSingle },
-    { "open", extCurlOpen },
-    { "set", extCurlSet },
-    { NULL, NULL }
+    {
+	"close", extCurlClose,
+	"Close a CURL handle",
+	"(handle)", XPATH_UNDEFINED,
+    },
+    {
+	"perform", extCurlPerform,
+	"Perform a CURL transfer",
+	"(handle, options*)", XPATH_XSLT_TREE,
+    },
+    {
+	"single", extCurlSingle,
+	"Perform a CURL transfer",
+	"(options+)", XPATH_XSLT_TREE,
+    },
+    {
+	"open", extCurlOpen,
+	"Open a CURL handle",
+	"()", XPATH_NODESET,
+    },
+    {
+	"set", extCurlSet,
+	"Set persistent options on a CURL handle",
+	"(handle, options+)", XPATH_UNDEFINED,
+    },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };
 
 void

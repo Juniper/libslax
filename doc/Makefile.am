@@ -34,7 +34,8 @@ XML2HTML = \
     ${SLAXPROC_ARGS} \
     ${XML2HTMLBIN}
 
-OX_ARGS = -P ${OXTRADOC_PREFIX} -S ../slaxproc/slaxproc -p doc
+OX_ARGS = -P ${OXTRADOC_PREFIX} -L ${OXTRADOC_PREFIX}/oxtradoc
+OX_ARGS += -S ../slaxproc/slaxproc -p doc
 OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
 OXTRADOC_CMD = ${OX_CMD}
 

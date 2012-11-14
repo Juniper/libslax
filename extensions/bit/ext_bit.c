@@ -536,22 +536,82 @@ extBitCompare (xmlXPathParserContextPtr ctxt, int nargs)
 }
 
 slax_function_table_t slaxBitTable[] = {
-    { "and", extBitAnd },
-    { "clear", extBitClear },
-    { "compare", extBitCompare },
-    { "from-hex", extBitFromHex },
-    { "from-int", extBitFromInt },
-    { "mask", extBitMask },
-    { "nand", extBitNand },
-    { "nor", extBitNor },
-    { "not", extBitNot },
-    { "or", extBitOr },
-    { "set", extBitSet },
-    { "to-hex", extBitToHex },
-    { "to-int", extBitToInt },
-    { "xnor", extBitXnor },
-    { "xor", extBitXor },
-    { NULL, NULL },
+    {
+	"and", extBitAnd,
+	"Bit-wise AND operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"clear", extBitClear,
+	"Clear a bit inside a bit string",
+	"(bit-string, bit-number)", XPATH_STRING,
+    },
+    {
+	"compare", extBitCompare,
+	"Compare two bit strings, returning 1, 0, or -1",
+	"(bit-string, bit-string)", XPATH_NUMBER,
+    },
+    {
+	"from-hex", extBitFromHex,
+	"Return a bit string based on a hexidecimal number",
+	"(hex-value, len?)", XPATH_STRING,
+    },
+    {
+	"from-int", extBitFromInt,
+	"Return a bit string based on a number",
+	"(value, len?)", XPATH_STRING,
+    },
+    {
+	"mask", extBitMask,
+	"Return a bit string of len with the low count bits set",
+	"(count, len?)", XPATH_STRING,
+    },
+    {
+	"nand", extBitNand,
+	"Bit-wise NAND operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"nor", extBitNor,
+	"Bit-wise NOR operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"not", extBitNot,
+	"Bit-wise NOT operation",
+	"(bit-string)", XPATH_STRING,
+    },
+    {
+	"or", extBitOr,
+	"Bit-wise OR operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"set", extBitSet,
+	"Set a bit within a bit-string",
+	"(bit-string, bit-number)", XPATH_STRING,
+    },
+    {
+	"to-hex", extBitToHex,
+	"Return the hexidecimal value of a bit-string",
+	"(bit-string)", XPATH_STRING,
+    },
+    {
+	"to-int", extBitToInt,
+	"Return the numeric value of a bit-string",
+	"(bit-string)", XPATH_NUMBER,
+    },
+    {
+	"xnor", extBitXnor,
+	"Bit-wise XNOR operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"xor", extBitXor,
+	"Bit-wise XOR operator",
+	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED },
 };
 
 SLAX_DYN_FUNC(slaxDynLibInit)

@@ -3328,6 +3328,9 @@ those arrays.
 | bit:xor(b1, b2)           | Return XOR of two bit strings          |
 | bit:xnor(b1, b2)          | Return XNOR of two bit strings         |
 | bit:not(b1)               | Return inversion (NOT) of a bit string |
+| bit:clear(b, off)         | Clear a bit within a bit string        |
+| bit:compare(b1, b2)       | Compare two bit strings                |
+| bit:set(b, off)           | Set a bit within a bit string          |
 | bit:mask(count, len?)     | Return len bits with the low count set |
 | bit:to-int(bs)            | Return integer value of bit string     |
 | bit:from-int(value, len?) | Return bit string of integer value     |

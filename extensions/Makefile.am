@@ -8,7 +8,7 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-SUBDIRS = bit curl xutil
+SUBDIRS = bit curl xutil os
 
 svnignore:
 	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}

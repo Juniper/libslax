@@ -66,7 +66,8 @@
 $wrapwidth = 70;
 $opt_mode = "full";
 
-$prefix = "@prefix@";
+$base_prefix = "@prefix@";
+$prefix = $base_prefix;
 $anchor_prefix = undef;
 
 sub main {
@@ -80,6 +81,7 @@ sub main {
 	$debug = 1 if /^-d/;
 	die "-f no longer supported" if /^-f/;
 	$args{ipr} = shift @ARGV if /^-i/;
+	$libdir = shift @ARGV if /^-L/;
 	$opt_mode = shift @ARGV if /^-m/;
 	$args{name} = shift @ARGV if /^-n/;
 	$output = shift @ARGV if /^-o/;
@@ -91,7 +93,7 @@ sub main {
 	$autowrap = 1 if /^-w/;
     }
 
-    $libdir = $prefix . "/share/oxtradoc/";
+    $libdir = $prefix . "/share/oxtradoc/" unless $libdir;
     $slaxproc = $prefix . "/bin/slaxproc" unless $slaxproc;
 
     my $file = shift @ARGV;
@@ -189,7 +191,7 @@ sub xml2html {
     $slaxargs .= " -a oxtradoc-inline yes";
     $slaxargs .= " -a oxtradoc-numbers yes" if $rfc;
     $slaxargs .= " -a oxtradoc-rfc yes" if $rfc;
-    $slaxargs .= " " . $libdir . "rfc2629-to-html.slax";
+    $slaxargs .= " " . $libdir . "/rfc2629-to-html.slax";
 
     &open_stdout($output) if $output;
     system($slaxargs) && die "cannot run '$slaxargs'";
@@ -201,7 +203,7 @@ sub xml2text {
 
     print STDERR "  [converting $file (xml) to $output (text)]\n";
 
-    my $slaxargs = $libdir . "xml2rfc.tcl " . $file . " " . $output;
+    my $slaxargs = $libdir . "/xml2rfc.tcl " . $file . " " . $output;
 
     system($slaxargs) && die "cannot run '$slaxargs'";
     
