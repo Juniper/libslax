@@ -2542,8 +2542,8 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathReturnNumber(ctxt, xop->floatval);
 
     else if (xop->type == XPATH_STRING)
-	xmlXPathReturnString(ctxt, xop->stringval);
-
+	valuePush(ctxt, xmlXPathNewString(xop->stringval));
+ 
     else if (xop->type == XPATH_XSLT_TREE) {
 	if (xop->nodesetval == NULL || xop->nodesetval->nodeNr == 0)
 	    goto fail;
@@ -2561,10 +2561,7 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	    if (ret == NULL)
 		goto fail;
 
-	    /* For an RTF, we want the child nodes, not the parent */
-	    for (child = parent->children; child; child = child->next)
-		xmlXPathNodeSetAdd(ret->nodesetval, child);
-
+	    xmlXPathNodeSetAdd(ret->nodesetval, parent);
 	    valuePush(ctxt, ret);
 	}
 
