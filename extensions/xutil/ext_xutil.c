@@ -35,6 +35,12 @@
 
 #define XML_FULL_NS "http://xml.libslax.org/xml"
 
+/*
+ * Parse a string into an XML hierarchy:
+ *     var $xml = xutil:string-to-xml($string);
+ * Multiple strings can be passed in and they are automatically concatenated:
+ *     var $xml = xutil:string-to-xml($string1, $string2, $string3);
+ */
 static void
 extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
 {
@@ -80,6 +86,10 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
     if (container == NULL)
 	goto bail;
 
+    /*
+     * XXX There should be a way to read the xml input directly
+     * into the RTF container.  Lacking that, we copy it.
+     */
     childp = xmlDocGetRootElement(xmlp);
     if (childp) {
 	xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
@@ -104,6 +114,9 @@ bail:
     }
 }
 
+/*
+ * Callback from the libxml2 IO mechanism to build the output string
+ */
 static int
 extXutilRawwriteCallback (void *opaque, const char *buf, int len)
 {
@@ -117,6 +130,12 @@ extXutilRawwriteCallback (void *opaque, const char *buf, int len)
     return len;
 }
 
+/*
+ * Encode an XML hierarchy into a string:
+ *     var $string = xutil:xml-to-string($xml);
+ * Multiple XML hierarchies can be passed in:
+ *     var $string = xutil:xml-to-string($xml1, $xml2, $xml3);
+ */
 static void
 extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 {
@@ -205,6 +224,10 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathFreeObject(objstack[ndx]);
 }
 
+/*
+ * Adjust the max call depth, the limit of recursion in libxml2:
+ *     expr xutil:max-call-depth(5000);
+ */
 static void
 extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
 {
