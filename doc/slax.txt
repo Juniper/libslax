@@ -2284,6 +2284,14 @@ The use of slax:value() make the "?:" operator non-standard, in that
 it requires a non-standard extension function.  Use of the "?:" should
 be limited to environments where this function is available.
 
+The use of <xsl:copy-of> means that attributes cannot be used in
+a ?: expression, directly or indirectly.
+
+    /* These are examples of invalid use of attributes */
+    var $direct = $test ? @broken : will-not-work;
+    var $attrib = @some-attribute;
+    var $indirect = $test ? $attrib : wont-work-either;
+
 ** Functions
 
 Functions are one of the coolest extensions defined by EXSLT.  They
