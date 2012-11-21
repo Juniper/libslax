@@ -78,5 +78,9 @@ slaxDynInit (void);
 void
 slaxDynClean (void);
 
+struct _xmlXPathParserContext;
+xmlDocPtr
+slaxMakeRtf (struct _xmlXPathParserContext *ctxt);
+
 #endif /* LIBSLAX_SLAXDYN_H */
 

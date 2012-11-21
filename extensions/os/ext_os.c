@@ -36,8 +36,12 @@
 
 #define XML_FULL_NS "http://xml.libslax.org/xml"
 
+/*
+ * Set the exit code for the process:
+ *     expr os:exit-code(15);
+ */
 static void
-extOsExit (xmlXPathParserContext *ctxt, int nargs)
+extOsExitCode (xmlXPathParserContext *ctxt, int nargs)
 {
     int value;
 
@@ -137,7 +141,7 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 
 slax_function_table_t slaxOsTable[] = {
     {
-	"exit", extOsExit,
+	"exit-code", extOsExitCode,
 	"Specify an exit code for the process",
 	"(number)", XPATH_UNDEFINED,
     },

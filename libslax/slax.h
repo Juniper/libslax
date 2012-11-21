@@ -301,7 +301,4 @@ slaxSetExitCode (int code);
 int
 slaxGetExitCode (void);
 
-xmlDocPtr
-slaxMakeRtf (xmlXPathParserContextPtr ctxt);
-
 #endif /* LIBSLAX_SLAX_H */
