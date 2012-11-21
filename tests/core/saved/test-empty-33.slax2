@@ -1,0 +1,25 @@
+version 1.1;
+
+var $list1 := {
+    <one> 1;
+    <two> 2;
+    <three> 3;
+    <four> 4;
+}
+var $list2 := {
+    <a> 1;
+    <b> 2;
+}
+param $test;
+
+match / {
+    <top> {
+        <count1> count($list1);
+        <count1> count($list1/node());
+        <count2> count($list2);
+        <count2> count($list2/node());
+        var $res = $test ? $list1 : $list2;
+        <countr> count($res);
+        <countr> count($res/node());
+    }
+}

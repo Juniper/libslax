@@ -108,6 +108,28 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...)
 		       tctxt? tctxt->inst : NULL, "%s\n", buf);
 }
 
+static xmlDocPtr
+slaxMakeRvt (xmlXPathParserContextPtr ctxt)
+{
+    xmlDocPtr container;
+    xsltTransformContextPtr tctxt;
+
+    /* Return a result tree fragment */
+    tctxt = xsltXPathGetTransformContext(ctxt);
+    if (tctxt == NULL) {
+	slaxTransformError(ctxt,
+		       "slax:makeRvt: internal error: tctxt is NULL");
+	return NULL;
+    }
+
+    container = xsltCreateRVT(tctxt);
+    if (container == NULL)
+	return NULL;
+    
+    xsltRegisterLocalRVT(tctxt, container);
+    return container;
+}
+
 /*
  * The following code supports the "trace" statement in SLAX, which is
  * turned into the XML element <slax:trace> by the parser.  If the
@@ -250,6 +272,7 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 
 	xsltRegisterLocalRVT(ctxt, container);	
 
+	/* Set up the insertion point for new output */
 	save_insert = ctxt->insert;
 	ctxt->insert = (xmlNodePtr) container;
 
@@ -259,7 +282,9 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	ctxt->insert = save_insert;
 
 	value = xmlXPathNewValueTree((xmlNodePtr) container);
-    } else return;
+
+    } else
+	return;
 
     if (value == NULL)
 	return;
@@ -364,7 +389,7 @@ static xsltElemPreCompPtr
 slaxWhileCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	       xsltTransformFunction function)
 {
-    xmlChar *sel;
+    xmlChar *test;
     while_precomp_t *comp;
 
     comp = xmlMalloc(sizeof(*comp));
@@ -384,23 +409,24 @@ slaxWhileCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 			 "warning: tight while loop was detected\n");
     }
 
-    /* Precompile the test attribute */
-    sel = xmlGetNsProp(inst, (const xmlChar *) ATT_TEST, NULL);
-    if (sel == NULL) {
+    /* Get the test attribute value */
+    test = xmlGetNsProp(inst, (const xmlChar *) ATT_TEST, NULL);
+    if (test == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "while: missing test attribute\n");
 	return NULL;
     }
 
-    comp->wp_test = xmlXPathCompile(sel);
+    /* Precompile the test attribute */
+    comp->wp_test = xmlXPathCompile(test);
     if (comp->wp_test == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
-			 "while: test attribute does not compile: %s\n", sel);
-	xmlFree(sel);
+			 "while: test attribute does not compile: %s\n", test);
+	xmlFree(test);
 	return NULL;
     }
 
-    xmlFree(sel);
+    xmlFree(test);
 
     /* Prebuild the namespace list */
     comp->wp_nslist = xmlGetNsList(inst->doc, inst);
@@ -479,11 +505,17 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 
 /* ---------------------------------------------------------------------- */
 
+/*
+ * Return a sequence of fictional nodes, based on the two arguments.
+ * "1 .. 10" builds <item> 1, <item> 2, thru <item> 10, where
+ * "44 .. 40" builds <item> 44, <item> 43, thur <item> 40.
+ * These can be used to make cheap iterators, but have the sad side effect
+ * of making all the nodes at one time.
+ */
 static void
 slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 {
     long long num, start, last, step = 1;
-    xsltTransformContextPtr tctxt;
     xmlNodePtr nodep;
     xmlDocPtr container;
     xmlXPathObjectPtr ret = NULL;
@@ -513,18 +545,10 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
     slaxLog("build-sequence: %qd ... %qd + %qd", start, last, step);
 
     /* Return a result tree fragment */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    if (tctxt == NULL) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "slax:build-sequence : internal error tctxt == NULL\n");
-	goto fail;
-    }
-
-    container = xsltCreateRVT(tctxt);
+    container = slaxMakeRvt(ctxt);
     if (container == NULL)
 	goto fail;
-    
-    xsltRegisterLocalRVT(tctxt, container);
+
     ret = xmlXPathNewNodeSet(NULL);
     if (ret == NULL)
 	goto fail;
@@ -1169,7 +1193,6 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 {
     xmlXPathObject *stack[nargs];	/* Stack for args as objects */
     xmlXPathObject *obj;
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret;
     xmlDocPtr container;
 
@@ -1188,9 +1211,9 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    container = xsltCreateRVT(tctxt);
-    xsltRegisterLocalRVT(tctxt, container);
+    container = slaxMakeRvt(ctxt);
+    if (container == NULL)
+	goto fail;
 
     for (ndx = 0; ndx < nargs; ndx++) {
 	if (stack[ndx] == NULL)	/* Should not occur */
@@ -1234,6 +1257,7 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
     for (ndx = 0; ndx < nargs; ndx++)
 	xmlXPathFreeObject(stack[ndx]);
 
+ fail:
     ret = xmlXPathNewNodeSetList(results);
     valuePush(ctxt, ret);
     xmlXPathFreeNodeSet(results);
@@ -1266,7 +1290,6 @@ static void
 slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 {
     char buf[BUFSIZ];
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret;
     xmlDocPtr container;
     int cflags = REG_EXTENDED, eflags = 0;
@@ -1316,9 +1339,9 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    container = xsltCreateRVT(tctxt);
-    xsltRegisterLocalRVT(tctxt, container);
+    container = slaxMakeRvt(ctxt);
+    if (container == NULL)
+	return;
 
     bzero(&pm, sizeof(pm));
 
@@ -1501,7 +1524,6 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 static void
 slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 {
-    xsltTransformContextPtr tctxt;
     xmlDocPtr container;
     xmlChar *string, *pattern;
     xmlXPathObjectPtr ret;
@@ -1511,6 +1533,8 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
     regex_t reg;
     regmatch_t pmatch[1];
     int rc, limit = -1;
+
+    bzero(&reg, sizeof(reg));
 
     if (nargs != 2 && nargs != 3) {
 	xmlXPathSetArityError(ctxt);
@@ -1537,9 +1561,9 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    container = xsltCreateRVT(tctxt);
-    xsltRegisterLocalRVT(tctxt, container);
+    container = slaxMakeRvt(ctxt);
+    if (container == NULL)
+	goto done;
 
     rc = regcomp(&reg, (char *) pattern, REG_EXTENDED);
     if (rc)
@@ -2061,17 +2085,10 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     }
 
     tctxt = xsltXPathGetTransformContext(ctxt);
-    if (tctxt == NULL) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "slax:debug : internal error tctxt == NULL\n");
-	goto fail;
-    }
-
-    container = xsltCreateRVT(tctxt);
+    container = slaxMakeRvt(ctxt);
     if (container == NULL)
 	goto fail;
-    
-    xsltRegisterLocalRVT(tctxt, container);
+
     ret = xmlXPathNewNodeSet(NULL);
     if (ret == NULL)
 	goto fail;
@@ -2462,7 +2479,7 @@ slaxExtBase64Decode (xmlXPathParserContext *ctxt, int nargs)
 
     if (data == NULL) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "slax:base64-decode : internal error tctxt == NULL\n");
+	      "slax:base64-decode : internal error: data == NULL\n");
 	return;
     }
 
@@ -2495,7 +2512,7 @@ slaxExtBase64Encode (xmlXPathParserContext *ctxt, int nargs)
 
     if (data == NULL) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "slax:base64-encode : internal error tctxt == NULL\n");
+	      "slax:base64-encode : internal error: data == NULL\n");
 	return;
     }
 
@@ -2514,7 +2531,6 @@ slaxExtBase64Encode (xmlXPathParserContext *ctxt, int nargs)
 static void
 slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 {
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret = NULL;
     xmlXPathObjectPtr xop = NULL;
     xmlNodePtr parent, child;
@@ -2522,13 +2538,6 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
     if (nargs != 1) {
 	xmlXPathSetArityError(ctxt);
 	return;
-    }
-
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    if (tctxt == NULL) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	      "slax:value : internal error tctxt == NULL\n");
-	goto fail;
     }
 
     xop = valuePop(ctxt);
