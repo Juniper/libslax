@@ -108,8 +108,14 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...)
 		       tctxt? tctxt->inst : NULL, "%s\n", buf);
 }
 
-static xmlDocPtr
-slaxMakeRvt (xmlXPathParserContextPtr ctxt)
+/*
+ * Many functions return RTFs (Resultant Tree Fragments).  These are
+ * containers hung off the current context so they can be released
+ * when the context is popped.  So we make an RTF (RVT is the older
+ * name) and register it with the context.
+ */
+xmlDocPtr
+slaxMakeRtf (xmlXPathParserContextPtr ctxt)
 {
     xmlDocPtr container;
     xsltTransformContextPtr tctxt;
@@ -118,7 +124,7 @@ slaxMakeRvt (xmlXPathParserContextPtr ctxt)
     tctxt = xsltXPathGetTransformContext(ctxt);
     if (tctxt == NULL) {
 	slaxTransformError(ctxt,
-		       "slax:makeRvt: internal error: tctxt is NULL");
+		       "slax:makeRtf: internal error: tctxt is NULL");
 	return NULL;
     }
 
@@ -545,7 +551,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
     slaxLog("build-sequence: %qd ... %qd + %qd", start, last, step);
 
     /* Return a result tree fragment */
-    container = slaxMakeRvt(ctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	goto fail;
 
@@ -1211,7 +1217,7 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    container = slaxMakeRvt(ctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	goto fail;
 
@@ -1339,7 +1345,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    container = slaxMakeRvt(ctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	return;
 
@@ -1561,7 +1567,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage 
      * collector. 
      */
-    container = slaxMakeRvt(ctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	goto done;
 
@@ -2085,7 +2091,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     }
 
     tctxt = xsltXPathGetTransformContext(ctxt);
-    container = slaxMakeRvt(ctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	goto fail;
 

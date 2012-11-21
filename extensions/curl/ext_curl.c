@@ -1309,7 +1309,6 @@ extCurlPerform (xmlXPathParserContext *ctxt, int nargs)
     CURLcode success;
     int osi;
     xmlNodePtr nodep;
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret;
     xmlDocPtr container;
     curl_opts_t co;
@@ -1349,9 +1348,9 @@ extCurlPerform (xmlXPathParserContext *ctxt, int nargs)
      * Create a Result Value Tree container, and register it with RVT garbage
      * collector.
      */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    container = xsltCreateRVT(tctxt);
-    xsltRegisterLocalRVT(tctxt, container);
+    container = slaxMakeRtf(ctxt);
+    if (container == NULL)
+	goto fail;
 
     nodep = extCurlBuildResults(container, curlp, &co, success);
 
@@ -1380,7 +1379,6 @@ extCurlSingle (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     CURLcode success;
     int osi;
     xmlNodePtr nodep;
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret;
     xmlDocPtr container;
 
@@ -1406,9 +1404,9 @@ extCurlSingle (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
      * Create a Result Value Tree container, and register it with RVT garbage
      * collector.
      */
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    container = xsltCreateRVT(tctxt);
-    xsltRegisterLocalRVT(tctxt, container);
+    container = slaxMakeRtf(ctxt);
+    if (container == NULL)
+	goto fail;
 
     nodep = extCurlBuildResults(container, curlp, &curlp->ch_opts, success);
 

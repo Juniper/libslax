@@ -38,7 +38,6 @@
 static void
 extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
 {
-    xsltTransformContextPtr tctxt;
     xmlXPathObjectPtr ret = NULL;
     xmlDocPtr xmlp = NULL;
     xmlDocPtr container = NULL;
@@ -47,10 +46,6 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
     int ndx;
     int bufsiz;
     char *buf;
-
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    if (tctxt == NULL)
-	goto bail;
 
     bzero(strstack, sizeof(strstack));
     for (ndx = nargs - 1; ndx >= 0; ndx--) {
@@ -81,11 +76,9 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
 	goto bail;
 
     /* Fake an RVT to hold the output of the template */
-    container = xsltCreateRVT(tctxt);
+    container = slaxMakeRtf(ctxt);
     if (container == NULL)
 	goto bail;
-
-    xsltRegisterLocalRVT(tctxt, container);
 
     childp = xmlDocGetRootElement(xmlp);
     if (childp) {
