@@ -566,6 +566,7 @@ main (int argc UNUSED, char **argv)
     if (trace_fp && trace_fp != stderr)
 	fclose(trace_fp);
 
+    slaxDynClean();
     xsltCleanupGlobals();
     xmlCleanupParser();
 
