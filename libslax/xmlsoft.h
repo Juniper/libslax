@@ -264,5 +264,27 @@ xsltSetMaxDepth (int value)
     xsltMaxDepth = value;
 }
 
+/*
+ * Add a new attribute (aka property) to a node
+ */
+static inline void
+xmlAddProp (xmlNodePtr nodep, xmlAttrPtr newp)
+{
+    if (nodep == NULL)
+	return;
+
+    newp->parent = nodep;
+    if (nodep->properties == NULL) {
+	nodep->properties = newp;
+    } else {
+	xmlAttrPtr prev = nodep->properties;
+
+	while (prev->next != NULL)
+	    prev = prev->next;
+	prev->next = newp;
+	newp->prev = prev;
+    }
+}
+
 #endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */
 #endif /* LIBSLAX_XMLSOFT_H */

@@ -1107,10 +1107,10 @@ slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
  * Build a node containing a text node
  */
 static xmlNode *
-slaxExtMakeTextNode (xmlNs *nsp, const char *name,
+slaxExtMakeTextNode (xmlDocPtr docp, xmlNs *nsp, const char *name,
 		     const char *content, int len)
 {
-    xmlNode *newp = xmlNewNode(nsp, (const xmlChar *) name);
+    xmlNode *newp = xmlNewDocNode(docp, nsp, (const xmlChar *) name, NULL);
 
     if (newp == NULL)
         return NULL;
@@ -1139,7 +1139,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 
     /* If there's no content, return an empty clone */
     if (content == NULL) {
-	clone = slaxExtMakeTextNode(nsp, name, NULL, 0);
+	clone = slaxExtMakeTextNode(container, nsp, name, NULL, 0);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    xmlAddChild((xmlNodePtr) container, clone);
@@ -1149,7 +1149,8 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 
     cp = strchr(content, '\n');
     if (cp == NULL) {
-	clone = slaxExtMakeTextNode(nsp, name, content, strlen(content));
+	clone = slaxExtMakeTextNode(container, nsp, name,
+				    content, strlen(content));
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    xmlAddChild((xmlNodePtr) container, clone);
@@ -1167,7 +1168,8 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 	 */
 	int dos_format = (cp <= sp) ? 0 : (cp[-1] == '\r') ? 1 : 0;
 					  
-	clone = slaxExtMakeTextNode(nsp, name, sp, cp - sp - dos_format);
+	clone = slaxExtMakeTextNode(container, nsp, name,
+				    sp, cp - sp - dos_format);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
 	    if (last)
@@ -1384,7 +1386,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 	for (i = 0; i <= max; i++) {
 	    len = pm[i].rm_eo - pm[i].rm_so;
 
-	    xmlNode *newp = slaxExtMakeTextNode(NULL, "match",
+	    xmlNode *newp = slaxExtMakeTextNode(container, NULL, "match",
 					       target + pm[i].rm_so, len);
 	    if (newp) {
 		xmlXPathNodeSetAdd(results, newp);
@@ -1585,9 +1587,10 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 
 	if (pmatch[0].rm_so == 0 && pmatch[0].rm_eo) {
 	    /* Match at start of the string, create empty node */
-	    newp = slaxExtMakeTextNode(NULL, "split", NULL, 0);
+	    newp = slaxExtMakeTextNode(container, NULL, "split", NULL, 0);
 	} else {
-	    newp = slaxExtMakeTextNode(NULL, "split", strp, pmatch[0].rm_so);
+	    newp = slaxExtMakeTextNode(container, NULL, "split",
+				       strp, pmatch[0].rm_so);
 	}
 
 	strp += pmatch[0].rm_eo;
@@ -1609,7 +1612,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
     if (rc && rc != REG_NOMATCH)
 	goto fail;
 
-    newp = slaxExtMakeTextNode(NULL, "split", strp, endp - strp);
+    newp = slaxExtMakeTextNode(container, NULL, "split", strp, endp - strp);
     if (newp) {
 	xmlXPathNodeSetAdd(results, newp);
 

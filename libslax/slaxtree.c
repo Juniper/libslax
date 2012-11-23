@@ -119,7 +119,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
     if (ns == NULL)
 	ns = slaxFindDefaultNs(sdp);
 
-    nodep = xmlNewNode(ns, (const xmlChar *) tag);
+    nodep = xmlNewDocNode(sdp->sd_docp, ns, (const xmlChar *) tag, NULL);
     if (nodep == NULL) {
 	fprintf(stderr, "could not make node: %s\n", tag);
 	return;
@@ -511,7 +511,8 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 {
     xmlNodePtr nodep;
 
-    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) tag);
+    nodep = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+			  (const xmlChar *) tag, NULL);
     if (nodep == NULL) {
 	fprintf(stderr, "could not make node: %s\n", tag);
 	return NULL;
@@ -556,7 +557,8 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
 		&& slaxNodeIsXsl(sib->parent, ELT_TEMPLATE))
 	tag = ELT_PARAM;
 
-    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) tag);
+    nodep = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+			  (const xmlChar *) tag, NULL);
     if (nodep == NULL) {
 	fprintf(stderr, "could not make node: %s\n", tag);
 	return NULL;
@@ -584,7 +586,8 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 {
     xmlNodePtr nodep;
 
-    nodep = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) tag);
+    nodep = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+			  (const xmlChar *) tag, NULL);
     if (nodep == NULL) {
 	fprintf(stderr, "could not make node: %s\n", tag);
 	return NULL;

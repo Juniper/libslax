@@ -244,7 +244,7 @@ slaxAvoidRtf (slax_data_t *sdp)
 	 * Now generate the new element, using the original, user-provided
 	 * name and a call to "slax:node-set" function.
 	 */
-	newp = xmlNewNode(sdp->sd_xsl_ns, nodep->name);
+	newp = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns, nodep->name, NULL);
 	if (newp == NULL) {
 	    fprintf(stderr, "could not make node: %s\n", nodep->name);
 	    xmlFreeAndEasy(name);
@@ -344,8 +344,8 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	if (nodep == NULL)
 	    fprintf(stderr, "could not make node: text\n");
 	else if (text_as_elt) {
-	    xmlNodePtr textp = xmlNewNode(sdp->sd_xsl_ns,
-					 (const xmlChar *) ELT_TEXT);
+	    xmlNodePtr textp = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+					     (const xmlChar *) ELT_TEXT, NULL);
 	    if (textp == NULL) {
 		fprintf(stderr, "could not make node: %s\n", ELT_TEXT);
 		return;
@@ -465,8 +465,15 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	return NULL;
 
     docp->standalone = 1;
+    if (ctxt->dict)
+	docp->dict = ctxt->dict;
+    else {
+	docp->dict = xmlDictCreate();
+	if (ctxt->dict == NULL)
+	    ctxt->dict = docp->dict;
+    }
 
-    nodep = xmlNewNode(NULL, (const xmlChar *) ELT_STYLESHEET);
+    nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) ELT_STYLESHEET, NULL);
     if (nodep) {
 
 	sdp->sd_xsl_ns = xmlNewNs(nodep, (const xmlChar *) XSL_URI,
@@ -476,8 +483,10 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	xmlDocSetRootElement(docp, nodep);
 	nodePush(ctxt, nodep);
 
-	(void) xmlNewProp(nodep, (const xmlChar *) ATT_VERSION,
+	xmlAttrPtr attr = xmlNewDocProp(docp, (const xmlChar *) ATT_VERSION,
 			  (const xmlChar *) XSL_VERSION);
+	if (attr)
+	    xmlAddProp(nodep, attr);
     }
 
     if (ctxt->dict) {

@@ -92,7 +92,8 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 	if (svar == NULL)
 	    goto fail;
     } else {
-	svar = xmlNewNode(sdp->sd_xsl_ns, (const xmlChar *) ELT_VARIABLE);
+	svar = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+			  (const xmlChar *) ELT_VARIABLE, NULL);
 	if (svar == NULL)
 	    goto fail;
     }
@@ -649,7 +650,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 
     if (newp) {
-	cur = xmlNewNode(NULL, (const xmlChar *) ELT_TEXT);
+	cur = xmlNewDocNode(container, NULL, (const xmlChar *) ELT_TEXT, NULL);
 	if (cur) {
 	    xmlAddChild(cur, newp);
 
