@@ -12,7 +12,7 @@
 #ifndef LIBSLAX_SLAXDYN_H
 #define LIBSLAX_SLAXDYN_H
 
-#include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */
+#include <libxslt/xsltutils.h>
 #include <libxslt/extensions.h>
 #include <libslax/slax.h>
 
