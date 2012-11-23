@@ -289,6 +289,8 @@ slaxDynClean (void)
 		(*func)(SLAX_DYN_VERSION, dap);
 
 	    dlclose(dap->da_handle);
+
+	    xmlFreeAndEasy(dap->da_uri);
 	}
     }
 
