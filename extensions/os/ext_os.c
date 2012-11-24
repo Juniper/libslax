@@ -33,6 +33,7 @@
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
 #include <libslax/slaxutil.h>
+#include <libslax/slaxnames.h>
 
 #define XML_FULL_NS "http://xml.libslax.org/xml"
 
@@ -432,7 +433,7 @@ slaxMakeNode (xmlDocPtr docp, xmlNodePtr parent,
 static void
 extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 {
-    char *name, *save, *cp;
+    char *name, *path, *cp;
     int rc, i;
     const char *value, *key;
     mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
@@ -481,7 +482,7 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathFreeObject(xop);
     }
 
-    save = name = (char *) xmlXPathPopString(ctxt);
+    path = name = (char *) xmlXPathPopString(ctxt);
     if (name == NULL || xmlXPathCheckError(ctxt))
 	return;
 
@@ -493,23 +494,27 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 		*cp = '\0';
 	}
 
-	rc = mkdir(save, mode);
+	rc = mkdir(path, mode);
 	if (rc && errno != EEXIST && cp == NULL) {
 	    int eno = errno;
 	    char *seno = strerror(eno);
 	    const char *err_name = slaxErrnoName(eno);
 
-	    slaxLog("os:mkdir for '%s' fails: %s", save, seno);
+	    slaxLog("os:mkdir for '%s' fails: %s", path, seno);
 
 	    xmlDocPtr container = slaxMakeRtf(ctxt);
 	    xmlNodePtr nodep = NULL;
 	    if (container) {
 		nodep = slaxMakeNode(container, NULL, "error", seno,
 				     "errno", err_name);
+		if (nodep)
+		    xmlSetNsProp(nodep, NULL, (const xmlChar *) ATT_PATH,
+				 (const xmlChar *) path);
+
 	    }
 
 	    valuePush(ctxt, xmlXPathNewNodeSet(nodep));
-	    xmlFreeAndEasy(save);
+	    xmlFreeAndEasy(path);
 	    return;
 	}
 
@@ -520,7 +525,7 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 	name = cp + 1;
     }
 
-    xmlFreeAndEasy(save);
+    xmlFreeAndEasy(path);
 
     valuePush(ctxt, xmlXPathNewNodeSet(NULL));
 }

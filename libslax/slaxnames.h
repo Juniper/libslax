@@ -47,6 +47,7 @@
 #define ATT_MUTABLE	"mutable"
 #define ATT_MVARNAME	"mvarname"
 #define ATT_NAN		"NaN"	/* Yes, it's mixed case */
+#define ATT_PATH	"path"
 #define ATT_PRIORITY	"priority"
 #define ATT_RESULT_PREFIX "result-prefix"
 #define ATT_SELECT	"select"
