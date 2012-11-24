@@ -192,6 +192,7 @@ sub xml2html {
     $slaxargs .= " -a oxtradoc-numbers yes" if $rfc;
     $slaxargs .= " -a oxtradoc-rfc yes" if $rfc;
     $slaxargs .= " " . $libdir . "/rfc2629-to-html.slax";
+    $slaxargs .= " " . $file;
 
     &open_stdout($output) if $output;
     system($slaxargs) && die "cannot run '$slaxargs'";
