@@ -440,9 +440,11 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
     nodep = choosep->children;
 
     xmlUnlinkNode(nodep);
-    xmlFree(const_drop(nodep->name));
+    if (!xmlDictOwns(sdp->sd_ctxt->dict, nodep->name))
+	xmlFree(const_drop(nodep->name));
 
-    nodep->name = xmlStrdup((const xmlChar *) ELT_IF);
+    nodep->name = xmlDictLookup(sdp->sd_ctxt->dict,
+				(const xmlChar *) ELT_IF, -1);
     if (nodep->name == NULL)
 	return;
 
