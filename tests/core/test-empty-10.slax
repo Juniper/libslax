@@ -4,6 +4,8 @@ output-method xml {
     indent "yes";
 }
 
+/* See https://bugzilla.gnome.org/show_bug.cgi?id=629325 */
+
 match / {
     <op-script-results> {
         <output> format-number( 1.15, "####.#" );
