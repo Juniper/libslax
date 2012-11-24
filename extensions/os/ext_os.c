@@ -430,6 +430,39 @@ slaxMakeNode (xmlDocPtr docp, xmlNodePtr parent,
     return nodep;
 }
 
+static xmlNodePtr
+slaxMakeErrorNode (xmlXPathParserContext *ctxt, int eno,
+		   const char *path, const char *message)
+{
+    xmlDocPtr container = slaxMakeRtf(ctxt);
+    xmlNodePtr nodep;
+
+    if (container == NULL)
+	return NULL;
+
+    nodep = xmlNewDocNode(container, NULL, (const xmlChar *) "error", NULL);
+    if (nodep == NULL) {
+	xmlFreeDoc(container);
+	return NULL;
+    }
+
+    if (eno) {
+	char *seno = strerror(eno);
+	const char *err_name = slaxErrnoName(eno);
+
+	slaxMakeNode(container, nodep, "errno", seno,
+		     err_name ? "code" : NULL, err_name);
+    }
+
+    if (path)
+	slaxMakeNode(container, nodep, "path", path, NULL, NULL);
+
+    if (message)
+	slaxMakeNode(container, nodep, "message", message, NULL, NULL);
+
+    return nodep;
+}
+
 static void
 extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 {
@@ -495,23 +528,14 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 	}
 
 	rc = mkdir(path, mode);
-	if (rc && errno != EEXIST && cp == NULL) {
+	if (rc && errno != EEXIST) {
+	    xmlNodePtr nodep;
 	    int eno = errno;
-	    char *seno = strerror(eno);
-	    const char *err_name = slaxErrnoName(eno);
 
-	    slaxLog("os:mkdir for '%s' fails: %s", path, seno);
+	    slaxLog("os:mkdir for '%s' fails: %d", path, eno);
 
-	    xmlDocPtr container = slaxMakeRtf(ctxt);
-	    xmlNodePtr nodep = NULL;
-	    if (container) {
-		nodep = slaxMakeNode(container, NULL, "error", seno,
-				     "errno", err_name);
-		if (nodep)
-		    xmlSetNsProp(nodep, NULL, (const xmlChar *) ATT_PATH,
-				 (const xmlChar *) path);
-
-	    }
+	    nodep = slaxMakeErrorNode(ctxt, eno, path,
+				      "could not make directory");
 
 	    valuePush(ctxt, xmlXPathNewNodeSet(nodep));
 	    xmlFreeAndEasy(path);
