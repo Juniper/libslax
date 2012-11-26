@@ -19,6 +19,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/queue.h>
+#include <glob.h>
+#include <pwd.h>
+#include <grp.h>
+#include <dirent.h>
 
 #include <libxml/xpathInternals.h>
 #include <libxml/parser.h>
@@ -440,7 +444,7 @@ slaxMakeErrorNode (xmlXPathParserContext *ctxt, int eno,
     if (container == NULL)
 	return NULL;
 
-    nodep = xmlNewDocNode(container, NULL, (const xmlChar *) "error", NULL);
+    nodep = xmlNewDocNode(container, NULL, (const xmlChar *) ELT_ERROR, NULL);
     if (nodep == NULL) {
 	xmlFreeDoc(container);
 	return NULL;
@@ -450,15 +454,15 @@ slaxMakeErrorNode (xmlXPathParserContext *ctxt, int eno,
 	char *seno = strerror(eno);
 	const char *err_name = slaxErrnoName(eno);
 
-	slaxMakeNode(container, nodep, "errno", seno,
-		     err_name ? "code" : NULL, err_name);
+	slaxMakeNode(container, nodep, ELT_ERRNO, seno,
+		     err_name ? ATT_CODE : NULL, err_name);
     }
 
     if (path)
-	slaxMakeNode(container, nodep, "path", path, NULL, NULL);
+	slaxMakeNode(container, nodep, ELT_PATH, path, NULL, NULL);
 
     if (message)
-	slaxMakeNode(container, nodep, "message", message, NULL, NULL);
+	slaxMakeNode(container, nodep, ELT_MESSAGE, message, NULL, NULL);
 
     return nodep;
 }
@@ -502,11 +506,11 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 		    continue;
 		value = xmlNodeValue(cop);
 
-		if (streq(key, "mode")) {
+		if (streq(key, ELT_MODE)) {
 		    mode_t x = strtol(value, NULL, 8);
 		    if (x)
 			mode = x;
-		} else if (streq(key, "path")) {
+		} else if (streq(key, ELT_PATH)) {
 		    build_path = TRUE;
 		}
 	    }
@@ -554,6 +558,219 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
     valuePush(ctxt, xmlXPathNewNodeSet(NULL));
 }
 
+static void
+extOsModeToPerm (char *buf, int bufsiz, mode_t perm)
+{
+    char *p = buf;
+    int i;
+
+    if (bufsiz < 11)
+	return;
+
+    switch (perm & S_IFMT) {
+    case S_IFDIR:
+        *p = 'd';
+        break;
+    case S_IFCHR:
+        *p = 'c';
+        break;
+    case S_IFBLK:
+        *p = 'b';
+        break;
+    case S_IFLNK:
+        *p = 'l';
+        break;
+    case S_IFSOCK:
+        *p = 's';
+        break;
+    case S_IFIFO:
+        *p = 'f';
+        break;
+    default:
+	*p = '-';
+        break;
+    };
+
+    p += 1;
+
+    for (i = 0; i < 3; i++) {
+	*p++ = (perm & S_IRUSR) ? 'r' : '-';
+	*p++ = (perm & S_IWUSR) ? 'w' : '-';
+	*p++ = (perm & S_IXUSR) ? 'x' : '-';
+	perm <<= 3;
+    }
+
+    *p = '\0';
+}
+
+static void
+extOsStatTime (char *buf, int bufsiz, struct timespec *tvp)
+{
+    static const char *month_names [] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    struct tm tm;
+
+    localtime_r(&tvp->tv_sec, &tm);
+    snprintf(buf, bufsiz, "%s %-2d %02d:%02d",
+	     month_names[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min);
+}
+
+static void
+extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
+	       const char *path, const char *name, int recurse);
+
+static void
+extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
+	       const char *path, struct stat *stp, int recurse)
+{
+    char buf[BUFSIZ];
+    char buf2[BUFSIZ/4];
+    struct passwd *pwd = getpwuid(stp->st_uid);
+    struct group *grp = getgrgid(stp->st_gid);
+    int isdir = ((stp->st_mode & S_IFMT) == S_IFDIR);
+    const char *tag = isdir ? ELT_DIRECTORY_NAME : ELT_FILE_NAME;
+
+    slaxMakeNode(docp, parent, tag, path, NULL, NULL);
+
+    if ((stp->st_mode & S_IFMT) == S_IFLNK) {
+	ssize_t len = readlink(path, buf, sizeof(buf));
+
+	if (len < 0)
+	    buf[0] = '\0';
+	else if ((size_t) len < sizeof(buf))
+	    buf[len] = '\0';
+	else if ((size_t) len < sizeof(buf))
+	    buf[sizeof(buf) - 1] = '\0';
+	
+	slaxMakeNode(docp, parent, ELT_FILE_SYMLINK, "@", NULL, NULL);
+	if (buf[0])
+	    slaxMakeNode(docp, parent, ELT_FILE_SYMLINK_TARGET, buf,
+			 NULL, NULL);
+
+    } else if (isdir)
+	slaxMakeNode(docp, parent, ELT_FILE_DIRECTORY, "/", NULL, NULL);
+
+    else if (stp->st_mode & S_IXUSR)
+	slaxMakeNode(docp, parent, ELT_FILE_EXECUTABLE, "*", NULL, NULL);
+
+    extOsModeToPerm(buf, sizeof(buf), stp->st_mode);
+    snprintf(buf2, sizeof(buf2), "%o", stp->st_mode & 0777);
+    slaxMakeNode(docp, parent, ELT_FILE_PERMISSIONS, buf2, ATT_FORMAT, buf);
+
+    snprintf(buf, sizeof(buf), "%d", stp->st_uid);
+    slaxMakeNode(docp, parent, ELT_FILE_OWNER,
+		 pwd ? pwd->pw_name : buf, ATT_UID, buf);
+
+    snprintf(buf, sizeof(buf), "%d", stp->st_gid);
+    slaxMakeNode(docp, parent, ELT_FILE_GROUP,
+		 grp ? grp->gr_name : buf, ATT_GID, buf);
+
+    snprintf(buf, sizeof(buf), "%d", stp->st_nlink);
+    slaxMakeNode(docp, parent, ELT_FILE_LINKS, buf, NULL, NULL);
+
+    snprintf(buf, sizeof(buf), "%llu", stp->st_size);
+    slaxMakeNode(docp, parent, ELT_FILE_SIZE, buf, NULL, NULL);
+
+    extOsStatTime(buf, sizeof(buf), &stp->st_mtimespec);
+    snprintf(buf2, sizeof(buf2), "%ld", (long) stp->st_mtimespec.tv_sec);
+    slaxMakeNode(docp, parent, ELT_FILE_DATE, buf2, ATT_FORMAT, buf);
+
+    if (isdir && recurse) {
+	DIR *dirp = opendir(path);
+
+	if (dirp) {
+	    struct dirent *dp;
+
+	    for (;;) {
+		dp = readdir(dirp);
+		if (dp == NULL)
+		    break;
+		
+		extOsStatPath(results, docp, parent, path, dp->d_name, FALSE);
+	    }
+
+	    closedir(dirp);
+	}
+    }
+}
+
+static void
+extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
+	       const char *path, const char *name, int recurse)
+{
+    int rc;
+    struct stat st;
+    xmlNodePtr nodep;
+    char *newp = NULL;
+
+    if (name) {
+	ssize_t plen = strlen(path), nlen = strlen(name);
+	newp = alloca(plen + nlen + 2);
+	if (newp) {
+	    memcpy(newp, path, plen);
+	    memcpy(newp + plen + 1, name, nlen);
+	    newp[plen] = '/';
+	    newp[plen + nlen + 1] = '\0';
+	    path = newp;
+	}
+    }
+
+    rc = stat(path, &st);
+    if (rc)
+	return;
+
+    const char *tag = ((st.st_mode & S_IFMT) == S_IFDIR)
+	? ELT_DIRECTORY : ELT_FILE_INFORMATION;
+
+    nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) tag, NULL);
+    if (nodep == NULL)
+	return;
+
+    xmlAddChild(parent, nodep);
+
+    if (results)
+	xmlXPathNodeSetAdd(results, nodep);
+
+    extOsStatInfo(results, docp, nodep, path, &st, recurse);
+}
+
+static void
+extOsStat (xmlXPathParserContext *ctxt, int nargs)
+{
+    char *stack[nargs], **cpp;
+    int ndx, rc;
+    glob_t gl;
+    int gflags = GLOB_APPEND | GLOB_TILDE | GLOB_NOCHECK;
+
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = (char *) xmlXPathPopString(ctxt);
+
+    bzero(&gl, sizeof(gl));
+
+    for (ndx = 0; ndx < nargs; ndx++) {
+	if (stack[ndx] == NULL)	/* Should not occur */
+	    continue;
+
+	rc = glob(stack[ndx], gflags, NULL, &gl);
+	if (rc) {
+	    slaxLog("glob returned %d (%d)", rc, errno);
+	    /* XXX But we otherwise ignore and continue */
+	}
+
+	xmlFree(stack[ndx]);
+    }
+
+    xmlDocPtr container = slaxMakeRtf(ctxt);
+    xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+
+    for (cpp = gl.gl_pathv; *cpp; cpp++)
+	extOsStatPath(results, container, NULL, *cpp, NULL, TRUE);
+
+    valuePush(ctxt, xmlXPathWrapNodeSet(results));
+}
+
 slax_function_table_t slaxOsTable[] = {
     {
 	"exit-code", extOsExitCode,
@@ -564,6 +781,11 @@ slax_function_table_t slaxOsTable[] = {
 	"mkdir", extOsMkdir,
 	"Create a directory",
 	"(path)", XPATH_UNDEFINED,
+    },
+    {
+	"stat", extOsStat,
+	"Return stat information about a file",
+	"(file-spec)", XPATH_XSLT_TREE,
     },
 #if 0
     {
@@ -580,11 +802,6 @@ slax_function_table_t slaxOsTable[] = {
 	"rmdir", extOsRmdir,
 	"Remove a directory",
 	"(path)", XPATH_UNDEFINED,
-    },
-    {
-	"stat", extOsStat,
-	"Return stat information about a file",
-	"(file-spec)", XPATH_XSLT_TREE,
     },
     {
 	"chmod", extOsChmod,
