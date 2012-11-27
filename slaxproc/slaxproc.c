@@ -42,6 +42,7 @@ static int opt_indent;		/* Indent the output (pretty print) */
 static int opt_partial;		/* Parse partial contents */
 static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
+static int opt_slax_output;	/* Make output in SLAX format */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -260,7 +261,11 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 		err(1, "could not open file: '%s'", output);
 	}
 
-	xsltSaveResultToFile(outfile, res, script);
+	if (opt_slax_output)
+	    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, res,
+		 TRUE, version);
+	else
+	    xsltSaveResultToFile(outfile, res, script);
 
 	if (outfile != stdout)
 	    fclose(outfile);
@@ -447,6 +452,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--no-randomize")) {
 	    randomize = 0;
 
+	} else if (streq(cp, "--no-tty")) {
+	    ioflags |= SIF_NO_TTY;
+
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
 	    output = *++argv;
 
@@ -478,11 +486,11 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
 	    opt_partial = TRUE;
 
+	} else if (streq(cp, "--slax-output") || streq(cp, "-S")) {
+	    opt_slax_output = TRUE;
+
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
 	    trace_file = *++argv;
-
-	} else if (streq(cp, "--no-tty")) {
-	    ioflags |= SIF_NO_TTY;
 
 	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
 	    logger = TRUE;
