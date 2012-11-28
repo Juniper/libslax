@@ -2969,6 +2969,7 @@ check syntax.
      --exslt OR -e: enable the EXSLT library
      --help OR -h: display this help message
      --html OR -H: Parse input data as HTML
+     --ignore-arguments: Do not process any further arguments
      --include <dir> OR -I <dir>: search dir for includes/imports
      --indent OR -g: indent output ala output-method/indent
      --input <file> OR -i <file>: take input from the given file
@@ -2979,6 +2980,7 @@ check syntax.
      --output <file> OR -o <file>: make output into the given file
      --param <name> <value> OR -a <name> <value>: pass parameters
      --partial OR -p: allow partial SLAX input to --slax-to-xslt
+     --slax-output OR -S: emit SLAX-style XML output
      --trace <file> OR -t <file>: write trace data to a file
      --verbose OR -v: enable debugging output (slaxLog())
      --version OR -V: show version information (and exit)
@@ -3121,6 +3123,9 @@ functions.  See exslt.org for more information.
 Displays this help message and exits.
 = --html OR -H
 Parse input data using the HTML parser, which differs from XML.
+= --ignore-arguments
+Do not process any further arguments.  This can be combined
+with "#!" to allow distinct styles of argument parsing.
 = --include <dir> OR -I <dir>
 Add a directory to the list of directories searched for include and
 /import files.  The environment variable SLAXPATH can be set to a list
@@ -3150,6 +3155,8 @@ rules apply.
 = --partial OR -p
 Allow the input data to contain a partial SLAX script, which can be
 used with the "--slax-to-xslt" to perform partial transformations.
+= --slax-output OR -S
+Write the result using SLAX-style XML (braces, etc)
 = --trace <file> OR -t <file>
 Write trace data to the given file.
 = --verbose OR -v
@@ -3844,6 +3851,143 @@ of the string.
         var $xml = <dog> "red";
         var $str = xutil:xml-to-string($xml);
         /* str is now the string "<dog>red</dog>" */
+
+** The "os" Extension Library
+
+The "os" extension library provides a set of functions to invoke
+operating system-related operations on the local host.  Note that
+these are _not_ run on the remote target, but on the machine where the
+script is being executed.
+
+*** "os" Extension Functions
+
+**** os:exit-code
+
+The os:exit-code function sets the exit code for the process running
+the script.  This can be used to indicate an error to the caller.
+The argument to the function is the exit code value, in numeric form.
+
+    SYNTAX::
+        void os:exit-code(number);
+
+    EXAMPLE::
+        expr os:exit-code(1);
+
+**** os:mkdir
+
+The os:mkdir function makes directories, similar to the "mkdir"
+command or the POSIX "mkdir" library function.  These are two
+arguments; the first is name of the directory to be made and the
+second is an node-set containing options to be used during the
+operation.  The options can include the values in the following table.
+
+|---------+---------------------------------------------|
+| Element | Description                                 |
+|---------+---------------------------------------------|
+| mode    | Octal value of directory permissions        |
+| path    | Create intermediate directories as required |
+|---------+---------------------------------------------|
+
+    SYNTAX::
+        node-set os:mkdir(path, [options]);
+
+    EXAMPLE::
+        var $res = os:mkdir("/tmp/foo");
+        var $opts = {
+            <mode> "0700";
+            <path>;
+        }
+        var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
+
+The return value of os:mkdir is a node-set which may contain an
+<error> element is an error occurred.  This element may contain
+the following elements:
+
+|---------+-----------------------------------|
+| Element | Description                       |
+|---------+-----------------------------------|
+| errno   | Error message based on errno      |
+| path    | The path that triggered the error |
+| message | The error message                 |
+|---------+-----------------------------------|
+
+In addition, the <errno> element contains a "code" attribute which
+holds the tag for the errno value, if known.
+
+**** os:stat
+
+The os:stat function returns information about files and directories,
+similar to the POSIX stat() function, returning a node-set of <entry>
+elements containing details about each file.
+
+The arguments to the os:stat() function are either strings or
+node-sets.  os:stat() allows any number of arguments.  If the argument
+is a string, it is used as a path specification and information on
+matching files is returned.  The path specification can include
+glob-style wildcards (e.g. test*.c, *.slax).  If the argument is a
+node-set, then the node can contains the following elements:
+
+|---------+----------------------------------------------|
+| Element | Description                                  |
+|---------+----------------------------------------------|
+| brief   | Only summary information is emitted          |
+| depth   | The number of subdirectory levels to descend |
+| hidden  | Return information on hidden files           |
+| name    | File specification (same as string argument) |
+| recurse | Show all subdirectories                      |
+|---------+----------------------------------------------|
+
+Note the <name> element functions identically to the string argument
+details given above.
+
+The return value is a node-set of <entry> elements.  Each entry
+contains the following elements:
+
+|----------------+--------------------------------------------+-------|
+| Element        | Description                                | Brief |
+|----------------+--------------------------------------------+-------|
+| name           | Path to the entry                          | Y     |
+| type           | Type of file (see below)                   | Y     |
+| executable     | Present if the entry is executable         | Y     |
+| symlink        | Present if the entry is a symbolic link    | Y     |
+| symlink-target | Contents of the symbolic link              | N     |
+| permissions    | Permissions for the entry                  | N     |
+| owner          | Name of the owning user                    | N     |
+| group          | Name of the owning group                   | N     |
+| links          | Number of hard links to this entry         | N     |
+| size           | Number of bytes used by the entry          | N     |
+| date           | Time and date of last modification (mtime) | N     |
+| entry          | Directory contents                         | N     |
+|----------------+--------------------------------------------+-------|
+
+Only elements tagged "Y" are emitted when the <brief> option is used.
+
+The <type> element contains one of the following:
+
+|-----------+---------------------------------------|
+| Value     | Description                           |
+|-----------+---------------------------------------|
+| directory | Directory containing additional files |
+| file      | Regular file                          |
+| character | Character-oriented device (tty)       |
+| block     | Block-oriented device (disk)          |
+| link      | Symbolic link                         |
+| socket    | AF_UNIX Socket                        |
+| fifo      | Named pipe (First-in/first-out)       |
+| unknown   | Other/unknown file type               |
+|-----------+---------------------------------------|
+
+In some cases, attributes are used to attach useful information to
+elements.  The following table lists these attributes and values.
+
+|-------------+-----------+----------------------------------|
+| Element     | Attribute | Description                      |
+|-------------+-----------+----------------------------------|
+| permissions | mode      | Octal value for the mode         |
+| owner       | uid       | Numeric value of the user's uid  |
+| group       | gid       | Numeric value of the group's gid |
+| date        | date      | Seconds since Jan 1, 1970        |
+|-------------+-----------+----------------------------------|
 
 *! start-appendix
 

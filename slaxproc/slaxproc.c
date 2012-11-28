@@ -35,7 +35,8 @@ static const char **params;
 
 static int options = XSLT_PARSE_OPTIONS;
 static char *encoding;
-static char *version;
+static char *opt_version;
+static char **opt_args;
 
 static int opt_html;		/* Parse input as HTML */
 static int opt_indent;		/* Indent the output (pretty print) */
@@ -94,7 +95,7 @@ do_format (const char *name UNUSED, const char *output,
     }
 
     slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
-		 opt_partial, version);
+		 opt_partial, opt_version);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -173,7 +174,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
     }
 
     slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
-		 opt_partial, version);
+		 opt_partial, opt_version);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -263,7 +264,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 
 	if (opt_slax_output)
 	    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, res,
-		 TRUE, version);
+		 TRUE, opt_version);
 	else
 	    xsltSaveResultToFile(outfile, res, script);
 
@@ -349,6 +350,7 @@ print_help (void)
     printf("\t--exslt OR -e: enable the EXSLT library\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--html OR -H: Parse input data as HTML\n");
+    printf("\t--ignore-arguments: Do not process any further arguments\n");
     printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
     printf("\t--indent OR -g: indent output ala output-method/indent\n");
     printf("\t--input <file> OR -i <file>: take input from the given file\n");
@@ -358,6 +360,7 @@ print_help (void)
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
     printf("\t--param <name> <value> OR -a <name> <value>: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
+    printf("\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
     printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
     printf("\t--version OR -V: show version information (and exit)\n");
@@ -378,8 +381,11 @@ main (int argc UNUSED, char **argv)
     slax_data_node_t *dnp;
     int i;
     unsigned ioflags = 0;
+    int opt_ignore_arguments = FALSE;
 
     slaxDataListInit(&plist);
+
+    opt_args = argv;
 
     for (argv++; *argv; argv++) {
 	cp = *argv;
@@ -433,6 +439,10 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--html") || streq(cp, "-H")) {
 	    opt_html = TRUE;
+
+	} else if (streq(cp, "--ignore-arguments")) {
+	    opt_ignore_arguments = TRUE;
+	    break;
 
 	} else if (streq(cp, "--include") || streq(cp, "-I")) {
 	    slaxIncludeAdd(*++argv);
@@ -500,7 +510,7 @@ main (int argc UNUSED, char **argv)
 	    exit(0);
 
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
-	    version = *++argv;
+	    opt_version = *++argv;
 
 	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
 	    slaxYyDebug = TRUE;
@@ -567,6 +577,11 @@ main (int argc UNUSED, char **argv)
 		err(1, "could not open trace file: '%s'", trace_file);
 	}
 	slaxTraceToFile(trace_fp);
+    }
+
+    if (opt_ignore_arguments) {
+	static char *null_argv[] = { NULL };
+	argv = null_argv;
     }
 
     func(name, output, input, argv);
