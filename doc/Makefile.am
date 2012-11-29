@@ -18,7 +18,7 @@ OXTRADOC = ${OXTRADOC_BINDIR}/oxtradoc
 XML2RFC = ${OXTRADOC_DIR}/xml2rfc.tcl
 XML2HTMLDIR = ${OXTRADOC_DIR}
 XML2HTMLBIN = ${XML2HTMLDIR}/rfc2629-to-html.slax
-SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
+SLAXPROC = ${SLAX_BINDIR}/slaxproc
 
 SLAXPROC_ARGS = \
     -a oxtradoc-dir ${OXTRADOC_DIR} \
