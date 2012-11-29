@@ -95,7 +95,7 @@ while test $# -gt 0; do
        	echo @SLAX_OXTRADOCDIR@
        	;;
 
-    --bindoc)
+    --bindir)
        	echo @SLAX_BINDIR@
        	;;
 
