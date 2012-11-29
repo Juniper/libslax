@@ -5550,14 +5550,14 @@ template get-section-number ($sep = $oxtradoc-sep) {
         } else if (ancestor::back) {
             number {
                 level "multiple";
-                format "A.1.1.1.1.1.1.1";
+                format "A_1_1_1_1_1_1_1";
                 count section | appendix;
             }
         
         } else if (self::appendix) {
             number {
                 level "multiple";
-                format "A.1.1.1.1.1.1.1";
+                format "A_1_1_1_1_1_1_1";
                 count appendix;
             }
         

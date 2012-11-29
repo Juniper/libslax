@@ -355,6 +355,24 @@ AC_ARG_WITH(extensions-dir,
         [SLAX_EXTDIR=$prefix/lib/slax/extensions]
 )
 
+AC_ARG_WITH(share-dir,
+        [  --with-share-dir=[DIR]           Specify location of shared files],
+        [SLAX_SHAREDIR=$withval],
+        [SLAX_SHAREDIR=$prefix/share/slax]
+)
+
+AC_ARG_WITH(oxtradoc-dir,
+        [  --with-oxtradoc-dir=[DIR]        Specify location of oxtradoc files],
+        [SLAX_OXTRADOCDIR=$withval],
+        [SLAX_OXTRADOCDIR=$prefix/share/oxtradoc]
+)
+
+AC_ARG_WITH(bin-dir,
+        [  --with-bin-dir=[DIR]        Specify location of executable files],
+        [SLAX_BINDIR=$withval],
+        [SLAX_BINDIR=$prefix/bin]
+)
+
 SLAX_LIBS=-lslax
 SLAX_SRCDIR=${srcdir}
 SLAX_LIBDIR=${libdir}
@@ -363,6 +381,9 @@ SLAX_INCLUDEDIR=${includedir}
 AC_SUBST(SLAX_SRCDIR)
 AC_SUBST(SLAX_LIBDIR)
 AC_SUBST(SLAX_EXTDIR)
+AC_SUBST(SLAX_SHAREDIR)
+AC_SUBST(SLAX_OXTRADOCDIR)
+AC_SUBST(SLAX_BINDIR)
 AC_SUBST(SLAX_INCLUDEDIR)
 AC_SUBST(SLAX_CFLAGS)
 AC_SUBST(SLAX_LIBTOOLLIBS)
@@ -419,6 +440,7 @@ AC_MSG_NOTICE([summary of build options:
   install prefix:   ${prefix}
   srcdir:           ${SLAX_SRCDIR}
   libdir:           ${SLAX_LIBDIR}
+  bindir:           ${SLAX_BINDIR}
   includedir:       ${SLAX_INCLUDEDIR}
   extensions dir:   ${SLAX_EXTDIR}
 

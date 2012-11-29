@@ -24,8 +24,11 @@ Known values for OPTION are:
   --prefix=DIR		change libslax prefix [default $prefix]
   --exec-prefix=DIR	change libslax exec prefix [default $exec_prefix]
   --libs		print library linking information
+  --bindir              print the bin directory
   --extdir              print the extension directory
   --cflags		print pre-processor and compiler flags
+  --share		print share directory
+  --oxtradoc		print oxtradoc directory
   --modules		module support enabled
   --help		display this help and exit
   --version		output version information
@@ -82,6 +85,18 @@ while test $# -gt 0; do
 
     --extdir)
        	echo @SLAX_EXTDIR@
+       	;;
+
+    --share)
+       	echo @SLAX_SHAREDIR@
+       	;;
+
+    --oxtradoc)
+       	echo @SLAX_OXTRADOCDIR@
+       	;;
+
+    --bindoc)
+       	echo @SLAX_BINDIR@
        	;;
 
     --libdir)

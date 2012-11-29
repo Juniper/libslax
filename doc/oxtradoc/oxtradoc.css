@@ -19,6 +19,13 @@
     #media-inspector { z-index: 2 }
 }
 
+pre {
+    font-family: Consolas, Menlo, Monaco,Lucida Console, Liberation Mono,
+                 DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New,
+                 monospace, serif;
+    margin-bottom: 10px;
+}
+
 @media screen {
     hr.noprint {
 	display: none;

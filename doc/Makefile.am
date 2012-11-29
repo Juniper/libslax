@@ -9,14 +9,15 @@
 # LICENSE.
 
 PERL = perl
-OXDIR = oxtradoc
 OXTRADOC_PREFIX = ${srcdir}
-OXSRCDIR = ${OXTRADOC_PREFIX}/oxtradoc
-OXTRADOC = ${OXDIR}/oxtradoc
-XML2RFC = ${OXSRCDIR}/xml2rfc.tcl
-XML2HTMLDIR = `dirname ${XML2HTMLBIN}`
+OXTRADOC_BINDIR = oxtradoc
 OXTRADOC_DIR = ${OXTRADOC_PREFIX}/oxtradoc
-XML2HTMLBIN = ${OXTRADOC_DIR}/rfc2629-to-html.slax
+SLAXPROC_BINDIR = ../slaxproc
+
+OXTRADOC = ${OXTRADOC_BINDIR}/oxtradoc
+XML2RFC = ${OXTRADOC_DIR}/xml2rfc.tcl
+XML2HTMLDIR = ${OXTRADOC_DIR}
+XML2HTMLBIN = ${XML2HTMLDIR}/rfc2629-to-html.slax
 SLAXPROC = ../slaxproc/slaxproc ${SLAXOPTS}
 
 SLAXPROC_ARGS = \
@@ -35,8 +36,8 @@ XML2HTML = \
     ${XML2HTMLBIN}
 
 OX_ARGS = -P ${OXTRADOC_PREFIX} -L ${OXTRADOC_PREFIX}/oxtradoc
-OX_ARGS += -S ../slaxproc/slaxproc -p doc
-OX_CMD = ${PERL} ${PERLOPTS} ${OXDIR}/oxtradoc ${OX_ARGS}
+OX_ARGS += -S ${SLAXPROC_BINDIR}/slaxproc -p doc
+OX_CMD = ${PERL} ${PERLOPTS} ${OXTRADOC_BINDIR}/oxtradoc ${OX_ARGS}
 OXTRADOC_CMD = ${OX_CMD}
 
 OUTPUT = slax-manual-${PACKAGE_VERSION}
