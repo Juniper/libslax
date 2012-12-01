@@ -394,6 +394,7 @@ sub generate_output {
 
 	} elsif ($art) {
 	    check_line_length($line, $file, $lnum) unless $do_digress;
+	    $line =~ s/]]>]]>/]]>]]&gt;]]&gt;<![CDATA[/g;
 	    print untabify($line), "\n";
 
 	} elsif ($tag || $_) {

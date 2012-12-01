@@ -2696,6 +2696,7 @@ table.tt {
 table.full {
   border-style: outset;
   border-width: 1px;
+  margin-left: 3em;
   background-color: lightyellow;
   padding: .25em;
   -moz-box-shadow:    0 0 4px #000000;
