@@ -886,10 +886,12 @@ sub end_question {
 sub front_matter {
     my($doc) = @_;
     my $numstr = "";
+    my $updatesstr = "";
+    my $obsoletesstr = "";
 
-    if ($doc{number}) {
-        $numstr = "number=\"" . $doc{number} . "\"";
-    }
+    $numstr = "number=\"" . $doc{number} . "\"" if $doc{number};
+    $updatesstr = "updates=\"" . $doc{updates} . "\"" if $doc{updates};
+    $obsoletesstr = "obsoletes=\"" . $doc{obsoletes} . "\"" if $doc{obsoletes}
 
     print <<EOF;
 <?xml version="1.0"?>
@@ -907,7 +909,8 @@ EOF
 print "<?rfc private=\"$doc{private}\"?>\n" if $doc{private};
 
     print <<EOF;
-<rfc ipr="$doc{ipr}" category="$doc{category}" docName="$doc{name}" ${numstr}>
+<rfc ipr="$doc{ipr}" ${updatesstr} ${obsoletesstr} category="$doc{category}"
+    docName="$doc{name}" ${numstr}>
     <front>
     <title abbrev="$doc{abbreviation}">$doc{title}</title>
 

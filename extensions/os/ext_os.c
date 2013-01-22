@@ -662,6 +662,7 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
     struct passwd *pwd = getpwuid(stp->st_uid);
     struct group *grp = getgrgid(stp->st_gid);
     int isdir = ((stp->st_mode & S_IFMT) == S_IFDIR);
+    struct timespec mtime;
 
     slaxMakeNode(docp, parent, ELT_NAME, path, NULL, NULL);
 
@@ -696,11 +697,11 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	slaxMakeNode(docp, parent, ELT_PERMISSIONS, buf2,
 		     ATT_MODE, buf);
 
-	snprintf(buf, sizeof(buf), "%d", stp->st_uid);
+	snprintf(buf, sizeof(buf), "%d", (int) stp->st_uid);
 	slaxMakeNode(docp, parent, ELT_OWNER,
 		     pwd ? pwd->pw_name : buf, ATT_UID, buf);
 
-	snprintf(buf, sizeof(buf), "%d", stp->st_gid);
+	snprintf(buf, sizeof(buf), "%d", (int) stp->st_gid);
 	slaxMakeNode(docp, parent, ELT_GROUP,
 		     grp ? grp->gr_name : buf, ATT_GID, buf);
 
@@ -710,8 +711,15 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	snprintf(buf, sizeof(buf), "%llu", stp->st_size);
 	slaxMakeNode(docp, parent, ELT_SIZE, buf, NULL, NULL);
 
-	extOsStatTime(buf, sizeof(buf), &stp->st_mtimespec);
-	snprintf(buf2, sizeof(buf2), "%ld", (long) stp->st_mtimespec.tv_sec);
+#if HAVE_MTIMESPEC
+	mtime = stp->st_mtimespec;
+#else /* HAVE_MTIMESPEC */
+	bzero(&mtime, sizeof(mtime));
+	mtime.tv_sec = stp->st_mtime;
+#endif /* HAVE_MTIMESPEC */
+
+	extOsStatTime(buf, sizeof(buf), &mtime);
+	snprintf(buf2, sizeof(buf2), "%ld", (long) mtime.tv_sec);
 	slaxMakeNode(docp, parent, ELT_DATE, buf2, ATT_DATE, buf);
     }
 

@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.12.2], [phil@juniper.net])
+AC_INIT([libslax], [0.12.3], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -330,6 +330,26 @@ AC_SUBST(LIBCURL_LIBS)
 #
 # ---- end of noise
 #
+
+# Cygwin lacks the modern st_mtimespec field in struct stat
+AC_MSG_CHECKING([for stat.st_mtimespec])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/stat.h>
+]],
+                     [[struct stat st; st.st_mtimespec.tv_sec = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_MTIMESPEC], 1,
+	                   [Define to 1 if you have the `st_mtimespec' field.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+        AC_DEFINE_UNQUOTED([HAVE_MTIMESPEC], 0,
+                           [Define to 1 if you have the `st_mtimespec' field.])
+    ]
+)
 
 case $host_os in
      darwin*)
