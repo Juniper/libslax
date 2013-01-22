@@ -891,7 +891,7 @@ sub front_matter {
 
     $numstr = "number=\"" . $doc{number} . "\"" if $doc{number};
     $updatesstr = "updates=\"" . $doc{updates} . "\"" if $doc{updates};
-    $obsoletesstr = "obsoletes=\"" . $doc{obsoletes} . "\"" if $doc{obsoletes}
+    $obsoletesstr = "obsoletes=\"" . $doc{obsoletes} . "\"" if $doc{obsoletes};
 
     print <<EOF;
 <?xml version="1.0"?>
