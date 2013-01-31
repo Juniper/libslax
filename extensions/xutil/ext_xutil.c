@@ -221,6 +221,7 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
 	bufsiz += dnp->dn_len;
     }
+    buf[bufsiz] = '\0';
 
     valuePush(ctxt, xmlXPathWrapCString(buf));
 
@@ -357,6 +358,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
 	bufsiz += dnp->dn_len;
     }
+    buf[bufsiz] = '\0';
 
     valuePush(ctxt, xmlXPathWrapCString(buf));
 
