@@ -708,7 +708,7 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	snprintf(buf, sizeof(buf), "%d", stp->st_nlink);
 	slaxMakeNode(docp, parent, ELT_LINKS, buf, NULL, NULL);
 
-	snprintf(buf, sizeof(buf), "%llu", stp->st_size);
+	snprintf(buf, sizeof(buf), "%llu", (long long unsigned) stp->st_size);
 	slaxMakeNode(docp, parent, ELT_SIZE, buf, NULL, NULL);
 
 #if HAVE_MTIMESPEC
