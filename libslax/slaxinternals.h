@@ -81,6 +81,24 @@ slaxMvarRegister (void);
 
 /* --- slaxwriter.h --- */
 
+struct slax_writer_s;
+typedef struct slax_writer_s slax_writer_t;
+
+slax_writer_t *
+slaxGetWriter (slaxWriterFunc_t func, void *data);
+
+void
+slaxFreeWriter (slax_writer_t *swp);
+
+void
+slaxWrite (slax_writer_t *swp, const char *fmt, ...);
+
+int
+slaxWriteNewline (slax_writer_t *swp, int change);
+
+#define NEWL_INDENT 1
+#define NEWL_OUTDENT -1
+
 /**
  * See if we need to rewrite a function call into something else.
  * The only current case is "..."/slax:build-sequnce.

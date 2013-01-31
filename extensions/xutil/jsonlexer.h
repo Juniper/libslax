@@ -16,6 +16,27 @@
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 
+/*
+ * XXX This flag needs to be moved from sd_flags (owned by libslax) to
+ * a caller-oriented field in slax_data_t, which will have to wait for
+ * a new release.  We use "16" as "high enough to stay out of the
+ * way".
+ */
+#define SDF_NO_TYPES	(1<<16)	/* Do not decorate nodes with type info */
+
+#define ELT_MEMBER	"member"
+#define ELT_PRETTY	"pretty"
+
+#define ATT_TYPE	"type"
+
+#define VAL_ARRAY	"array"
+#define VAL_FALSE	"false"
+#define VAL_NULL	"null"
+#define VAL_MEMBER	"member"
+#define VAL_NUMBER	"number"
+#define VAL_TRUE	"true"
+
+extern int extXutilJsonYyDebug;
 extern int extXutilJsonLogIsEnabled;	/* Global logging output switch */
 extern const char *extXutilJsonKeywordString[];
 extern const char *extXutilJsonTokenNameFancy[];
@@ -25,6 +46,12 @@ extern const char *extXutilJsonTokenNameFancy[];
  * we use strings as a natural token stack element.
  */
 #define YYSTYPE slax_string_t *	/* This is our bison stack frame */
+
+void
+extXutilJsonAddTypeInfo (slax_data_t *sdp, const char *value);
+
+void
+extXutilJsonClearMember (slax_data_t *sdp);
 
 /**
  * Callback from bison when an error is detected.
@@ -96,4 +123,12 @@ int
 extXutilJsonTokenTranslate (int ttype);
 
 xmlDocPtr
-extXutilJsonToXml (char *data, unsigned flags);
+extXutilJsonDataToXml (const char *data, const char *root_name,
+		       unsigned flags);
+
+xmlDocPtr
+extXutilJsonFileToXml (const char *fname, const char *root_name,
+		       unsigned flags);
+
+void
+extXutilJsonElementValue (slax_data_t *sdp, slax_string_t *value);

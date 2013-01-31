@@ -1,0 +1,90 @@
+version 1.1;
+
+ns xutil extension = "http://xml.libslax.org/xutil";
+
+var $tests := {
+    <one> "{ a: 1, b: 2.5e-5 }";
+    <two> "[ 1, 2, 3, 4 ]";
+    <three> "{ a: 1, b: [ 2, 3 ] }";
+    <four> "[ {a: 1}, {b: 2}, {c: 3} ]";
+    <five> '{ a: "fish", b: "tur key", c: "mon key suit" }';
+    <six> '   {
+      "Image": {
+          "Width":  800,
+          "Height": 600,
+          "Title":  "View from 15th Floor",
+          "Thumbnail": {
+              "Url":    "http://www.example.com/image/481989943",
+              "Height": 125,
+              "Width":  "100"
+          },
+          "IDs": [116, 943, 234, 38793]
+        }
+     }';
+    <seven> '
+   [
+      {
+         "precision": "zip",
+         "Latitude":  37.7668,
+         "Longitude": -122.3959,
+         "Address":   "",
+         "City":      "SAN FRANCISCO",
+         "State":     "CA",
+         "Zip":       "94107",
+         "Country":   "US"
+      },
+      {
+         "precision": "zip",
+         "Latitude":  37.371991,
+         "Longitude": -122.026020,
+         "Address":   "",
+         "City":      "SUNNYVALE",
+         "State":     "CA",
+         "Zip":       "94085",
+         "Country":   "US"
+      }
+   ]
+';
+    <eight> '[ { a: "nrt\n\r\tnrt" } ]';
+    <nine> '{ "name": "Skip Tracer",
+              "location": "The city that never sleeps",
+              "age": 5,
+              "real": false,
+              "cases": null,
+              "equipment": [ "hat", "desk", "attitude" ]
+            }';
+}
+
+param $root = "my-top";
+param $types;
+param $pretty;
+
+var $j2x-opts = {
+    if ($root) {
+	<root> $root;
+    }
+    if ($types) {
+	<types> $types;
+    }
+}
+
+var $x2j-opts = {
+    if ($pretty) {
+	<pretty>;
+    }
+}
+
+match / {
+    <top> {
+	for-each ($tests/node()) {
+	    element name() {
+		<input> .;
+		var $x = xutil:json-to-xml(., $j2x-opts);
+		<xml> {
+		    copy-of $x;
+		}
+		<back> xutil:xml-to-json($x, $x2j-opts);
+	    }
+	}
+    }
+}

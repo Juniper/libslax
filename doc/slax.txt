@@ -3916,6 +3916,116 @@ of the string.
         var $str = xutil:xml-to-string($xml);
         /* str is now the string "<dog>red</dog>" */
 
+**** xutil:json-to-xml()
+
+The xutil:json-to-xml() function turns a string containing JSON data
+into the native representation of that data in XML.
+
+    EXAMPLE::
+        var $data = "[ { "a" : 4, "name": "fish"}, 4, 5]";
+        var $xml = xutil:json-to-xml($data);
+        message "title is " _ $xml/json/name;
+
+An optional second parameter contains a node set of the following
+optional elements:
+
+|---------+--------+-------------------------------------------|
+| Element | Value  | Description                               |
+|---------+--------+-------------------------------------------|
+| types   | "no"   | Do not encode type information            |
+| root    | string | Name of root node to be returned ("json") |
+|---------+--------+-------------------------------------------|
+
+        var $options = {
+            <root> "my-top";
+            <types> "no";
+        }
+        var $xml = xutil:json-to-xml($data);
+
+The XML returned from json-to-xml() is decorated with attributes
+(including the "type" and "name" attributes) which allow the data to
+be converted back into XML using xml-to-json().  Refer to that
+function for additional information.
+
+**** xutil:xml-to-json()
+
+The xutil:xml-to-json() function turns XML content into a string of
+JSON data.  This is different than the normal XPath stringification,
+which discards open and close tag.  xml-to-json will encode tags as
+JSON objects inside a string
+
+    EXAMPLE::
+        var $xml = <json> {
+            <color> "red";
+        }
+        var $str = xutil:xml-to-json($xml);
+        /* str is now the string '{ "color": "red" }' */
+
+An optional second parameter contains a node set of the following
+optional elements:
+
+|---------+-------+----------------------------------------|
+| Element | Value | Description                            |
+|---------+-------+----------------------------------------|
+| pretty  | empty | Add newlines and indentation to output |
+|---------+-------+----------------------------------------|
+
+Since there is a mismatch between the data encoding capabilities in
+XML and JSON, a set of attributes can be used to control the exact
+rendering of JSON data.
+
+|-----------+--------+--------------------------------------------|
+| Attribute | Value  | Description                                |
+|-----------+--------+--------------------------------------------|
+| name      | string | A name to use in place of the element name |
+| type      | string | An indication of the desired encoding      |
+|-----------+--------+--------------------------------------------|
+
+asdfsdf
+
+|--------+---------------------------------|
+| Type   | Description                     |
+|--------+---------------------------------|
+| array  | Contains a JSON array           |
+| false  | Contains the JSON "false" value |
+| null   | Contains the JSON "null" value  |
+| member | Is a member of an array         |
+| number | Contains a number value         |
+| true   | Contains the JSON "true" value  |
+|--------+---------------------------------|
+
+This allows the library to distinguish between '{ "value": "5" }'
+and '{ "value": "5" }' to control the encoding of the value as a
+string of number.  Similarly the caller can control whether "null" is
+a string or the special null value.
+
+In this example, the type attribute is used to control the encoding of
+XML into JSON.
+
+      <json>
+        <name>Skip Tracer</name>
+        <location>The city that never sleeps</location>
+        <age type="number">5</age>
+        <real type="false">false</real>
+        <cases type="null">null</cases>
+        <equipment type="array">
+          <member type="member">hat</member>
+          <member type="member">desk</member>
+          <member type="member">attitude</member>
+        </equipment>
+      </json>
+
+This yields:
+
+    {
+      "name": "Skip Tracer",
+      "location": "The city that never sleeps", 
+      "age": 5,
+      "real": false, 
+      "cases": null, 
+      "equipment": [ "hat", "desk", "attitude" ]
+     }
+
 ** The "os" Extension Library
 
 The "os" extension library provides a set of functions to invoke

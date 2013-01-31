@@ -47,16 +47,16 @@ endif
 EXTRA_DIST = \
     jsonparser.h \
     jsonlexer.h \
-    jsonparser.y
+    jsonparser.y \
+    jsonwriter.h
 
 XUTILHEADERS = jsonparser.h
 
 libext_xutil_la_SOURCES = \
-    ext_xutil.c
-
-libext_xutil_la_SOURCES_one_day = \
+    ext_xutil.c \
     jsonparser.c \
-    jsonlexer.c
+    jsonlexer.c \
+    jsonwriter.c
 
 libdir = ${SLAX_EXTDIR}
 
@@ -66,7 +66,9 @@ ${libext_xutil_la_SOURCES:.c=.lo}: ${XUTILHEADERS}
 
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
--e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonParse (slax_data_t *slax_data)/'
+-e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonYyParse (slax_data_t *slax_data)/' \
+-e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
+
 ECHO_BISON_0 = @echo "  BISON " $@;
 ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
 
@@ -88,6 +90,9 @@ install-exec-hook:
 	            && rm -f ${UGLY_NAME} \
 		    && ${LN_S} $$DLNAME ${UGLY_NAME}
 
-jsontest: jsonparser.o
-	${COMPILE} -DUNIT_TEST ${srcdir}/jsonlexer.c -o jsontest.o 
-	${LINK} -o jsontest jsonparser.o jsontest.o
+TEST_OBJECTS = jsonparser.o jsonwriter.o
+
+jsontest: ${TEST_OBJECTS}
+	${COMPILE} -c -DUNIT_TEST ${srcdir}/jsonlexer.c -o jsontest.o 
+	echo ${LINK} -o jsontest jsonparser.o -L../../libslax -lslax jsontest.o
+	${LINK} -o jsontest ${TEST_OBJECTS} -L../../libslax -lslax jsontest.o

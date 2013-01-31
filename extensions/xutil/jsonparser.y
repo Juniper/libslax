@@ -74,8 +74,6 @@
 
 #include "jsonlexer.h"
 
-extern int extXutilJsonYyDebug;
-
 /*
  * This is a pure parser, allowing this library to link with other users
  * of yacc. To allow this, we pass our data structure (slax_data_t)
@@ -87,7 +85,7 @@ extern int extXutilJsonYyDebug;
 #define YYERROR_VERBOSE
 
 #define YYDEBUG 1		/* Enable debug output */
-#define yydebug extXutilJsonDebug /* Make debug flag parser specific */
+#define yydebug extXutilJsonYyDebug /* Make debug flag parser specific */
 #define YYFPRINTF slaxLog2	/* Log via our function */
 
     
@@ -117,15 +115,17 @@ extern int extXutilJsonYyDebug;
 
 start :
 	object
-		{ $$ = STACK_CLEAR($1); }
+		{ $$ = NULL; }
 
 	| array
-		{ $$ = STACK_CLEAR($1); }
+		{ $$ = NULL; }
 	;
 
 object :
 	L_OBRACE member_list_or_empty L_CBRACE
-		{ $$ = STACK_CLEAR($1); }
+		{
+		    $$ = STACK_CLEAR($1);
+		}
 	;
 
 member_list_or_empty :
@@ -133,21 +133,33 @@ member_list_or_empty :
 		{ $$ = NULL; }
 
 	| member_list
-		{ $$ = $1; }
+		{ $$ = NULL; }
 	;
 
 member_list :
 	pair
-		{ $$ = STACK_CLEAR($1); }
+		{ $$ = NULL; }
+
+	| pair L_COMMA
+		{ $$ = NULL; }
 
 	| pair L_COMMA member_list
-		{ $$ = STACK_CLEAR($1); }
+		{ $$ = NULL; }
 	;
 
 pair :
-	name L_COLON value
-		{ $$ = STACK_CLEAR($1); }
+	name L_COLON
+		{
+		    slaxElementOpen(slax_data, $1->ss_token);
+		    $$ = NULL;
+		}
+	    value
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
 	;
+
 
 name :
 	T_TOKEN
@@ -159,30 +171,59 @@ name :
 
 value :
 	object
-		{ $$ = $1; }
+		{ $$ = NULL; }
 
 	| array
 		{ $$ = $1; }
 
 	| T_STRING
-		{ $$ = $1; }
+		{
+		    extXutilJsonElementValue(slax_data, $1);
+		    $$ = $1;
+		}
 
 	| T_NUMBER
-		{ $$ = $1; }
+		{
+		    extXutilJsonElementValue(slax_data, $1);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_NUMBER);
+		    $$ = $1;
+		}
 
 	| K_TRUE
-		{ $$ = $1; }
+		{
+		    extXutilJsonElementValue(slax_data, $1);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_TRUE);
+		    $$ = $1;
+		}
 
-	| K_FALSE
-		{ $$ = $1; }
+        | K_FALSE
+		{
+		    extXutilJsonElementValue(slax_data, $1);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_FALSE);
+		    $$ = $1;
+		}
 
 	| K_NULL
-		{ $$ = $1; }
+		{
+		    extXutilJsonElementValue(slax_data, $1);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_NULL);
+		    $$ = $1;
+		}
 	;
 
 array :
-	L_OBRACK element_list_or_empty L_CBRACK
-		{ $$ = STACK_CLEAR($1); }
+	L_OBRACK
+	    {
+		extXutilJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		extXutilJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            element_list_or_empty L_CBRACK
+		{
+		    extXutilJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
 	;
 
 element_list_or_empty :
@@ -190,15 +231,33 @@ element_list_or_empty :
 		{ $$ = NULL; }
 
 	| element_list
-		{ $$ = $1; }
+		{ $$ = NULL; }
 	;
 
 element_list :
-	value
-		{ $$ = STACK_CLEAR($1); }
+        element_item
+		{ $$ = NULL; }
 
-	| value L_COMMA element_list
-		{ $$ = STACK_CLEAR($1); }
+        | element_list element_item
+		{ $$ = NULL; }
+	;
+
+element_item :
+	value
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
+
+	| value L_COMMA
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    extXutilJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
 	;
 
 %%

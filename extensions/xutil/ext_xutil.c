@@ -33,7 +33,14 @@
 #include <libslax/xmlsoft.h>
 #include <libslax/slaxutil.h>
 
-#define XML_FULL_NS "http://xml.libslax.org/xml"
+#include "jsonlexer.h"
+#include "jsonwriter.h"
+
+#define XML_FULL_NS "http://xml.libslax.org/xutil"
+
+#define ELT_TYPES	"types"
+#define ELT_ROOT	"root"
+#define VAL_NO		"no"
 
 /*
  * Parse a string into an XML hierarchy:
@@ -225,6 +232,234 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 }
 
 /*
+ * Callback from the libxml2 IO mechanism to build the output string
+ */
+static int
+extXutilWriteCallback (void *opaque, const char *fmt, ...)
+{
+    slax_data_list_t *listp = opaque;
+    char buf[BUFSIZ];
+    char *cp = buf;
+    size_t len;
+    va_list vap;
+
+    if (listp == NULL)
+	return 0;
+
+    va_start(vap, fmt);
+    len = vsnprintf(buf, sizeof(buf), fmt, vap);
+    if (len >= sizeof(buf)) {
+	va_end(vap);
+	va_start(vap, fmt);
+	if (vasprintf(&cp, fmt, vap) < 0 || cp == NULL)
+	    return -1;
+    }
+    va_end(vap);
+
+    slaxDataListAddLen(listp, cp, len);
+
+    if (cp != buf)
+	free(cp);   /* Allocated by vasprintf() */
+
+    return len;
+}
+
+static void
+extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+{
+    int i;
+    xmlXPathObject *xop;
+    const char *value, *key;
+    slax_data_list_t list;
+    slax_data_node_t *dnp;
+    char *buf;
+    int bufsiz;
+    unsigned flags = 0;
+
+    if (nargs < 1 || nargs > 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    if (nargs == 2) {
+	xop = valuePop(ctxt);
+	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	    LX_ERR("os:mkdir invalid second parameter\n");
+	    xmlXPathFreeObject(xop);
+	    xmlXPathReturnEmptyString(ctxt);
+	    return;
+	}
+
+	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	    xmlNodePtr nop, cop;
+
+	    nop = xop->nodesetval->nodeTab[i];
+	    if (nop->children == NULL)
+		continue;
+
+	    for (cop = nop->children; cop; cop = cop->next) {
+		if (cop->type != XML_ELEMENT_NODE)
+		    continue;
+
+		key = xmlNodeName(cop);
+		if (!key)
+		    continue;
+		value = xmlNodeValue(cop);
+		if (streq(key, ELT_PRETTY)) {
+		    flags |= JWF_PRETTY;
+		}
+	    }
+	}
+
+	xmlXPathFreeObject(xop);
+    }
+
+    xop = valuePop(ctxt);
+    if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	LX_ERR("os:mkdir invalid second parameter\n");
+	xmlXPathFreeObject(xop);
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    slaxDataListInit(&list);
+
+    for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	xmlNodePtr nop;
+
+	nop = xop->nodesetval->nodeTab[i];
+	if (nop->type != XML_ELEMENT_NODE)
+	    continue;
+
+	extXutilJsonWriteNode(extXutilWriteCallback, &list, nop, flags);
+    }
+
+    /* Now we turn the saved data from a linked list into a single string */
+    bufsiz = 0;
+    SLAXDATALIST_FOREACH(dnp, &list) {
+	bufsiz += dnp->dn_len;
+    }
+
+    /* If the objects are empty, let's get out now */
+    if (bufsiz == 0) {
+	xmlXPathReturnEmptyString(ctxt);
+	goto bail;
+    }
+
+    buf = xmlMalloc(bufsiz + 1);
+    if (buf == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+	goto bail;
+    }
+	
+    bufsiz = 0;
+    SLAXDATALIST_FOREACH(dnp, &list) {
+	memcpy(buf + bufsiz, dnp->dn_data, dnp->dn_len);
+	bufsiz += dnp->dn_len;
+    }
+
+    valuePush(ctxt, xmlXPathWrapCString(buf));
+
+ bail:
+    xmlXPathFreeObject(xop);
+}
+
+static void
+extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+{
+    xmlXPathObjectPtr ret = NULL;
+    unsigned flags = 0;
+    xmlDocPtr docp = NULL;
+    xmlDocPtr container = NULL;
+    xmlNodePtr childp;
+    int i;
+    const char *value, *key;
+    char *root_name = NULL;
+
+    if (nargs < 1 || nargs > 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    if (nargs == 2) {
+	xmlXPathObject *xop = valuePop(ctxt);
+	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	    LX_ERR("os:mkdir invalid second parameter\n");
+	    xmlXPathFreeObject(xop);
+	    xmlXPathReturnEmptyString(ctxt);
+	    return;
+	}
+
+	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	    xmlNodePtr nop, cop;
+
+	    nop = xop->nodesetval->nodeTab[i];
+	    if (nop->children == NULL)
+		continue;
+
+	    for (cop = nop->children; cop; cop = cop->next) {
+		if (cop->type != XML_ELEMENT_NODE)
+		    continue;
+
+		key = xmlNodeName(cop);
+		if (!key)
+		    continue;
+		value = xmlNodeValue(cop);
+		if (streq(key, ELT_TYPES)) {
+		    if (streq(value, VAL_NO))
+			flags |= SDF_NO_TYPES;
+		} else if (streq(key, ELT_ROOT)) {
+		    root_name = xmlStrdup2(value);
+		}
+	    }
+	}
+
+	xmlXPathFreeObject(xop);
+    }
+
+    char *json = (char *) xmlXPathPopString(ctxt);
+    if (json == NULL)
+	goto bail;
+
+    docp = extXutilJsonDataToXml(json, root_name, flags);
+    if (docp == NULL)
+	goto bail;
+    
+    ret = xmlXPathNewNodeSet(NULL);
+    if (ret == NULL)
+	goto bail;
+
+    /* Fake an RVT to hold the output of the template */
+    container = slaxMakeRtf(ctxt);
+    if (container == NULL)
+	goto bail;
+
+    /*
+     * XXX There should be a way to read the xml input directly
+     * into the RTF container.  Lacking that, we copy it.
+     */
+    childp = xmlDocGetRootElement(docp);
+    xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
+    if (newp) {
+	xmlAddChild((xmlNodePtr) container, newp);
+	xmlXPathNodeSetAdd(ret->nodesetval, newp);
+    }
+
+bail:
+    if (root_name != NULL)
+	xmlFree(root_name);
+
+    if (ret != NULL)
+	valuePush(ctxt, ret);
+    else
+	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+
+    xmlFreeAndEasy(json);
+    if (docp)
+	xmlFreeDoc(docp);
+}
+
+/*
  * Adjust the max call depth, the limit of recursion in libxml2:
  *     expr xutil:max-call-depth(5000);
  */
@@ -256,7 +491,17 @@ slax_function_table_t slaxXutilTable[] = {
     },
     {
 	"string-to-xml", extXutilStringToXml,
-	"Decodes XML data from strings into nodes",
+	"Decodes data from strings into XML nodes",
+	"(string)", XPATH_XSLT_TREE,
+    },
+    {
+	"xml-to-json", extXutilXmlToJson,
+	"Encodes XML hierarchies as JSON data",
+	"(xml-data)", XPATH_STRING,
+    },
+    {
+	"json-to-xml", extXutilJsonToXml,
+	"Decodes data from JSON into XML nodes",
 	"(string)", XPATH_XSLT_TREE,
     },
     {

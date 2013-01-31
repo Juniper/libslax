@@ -24,7 +24,7 @@
 
 #define BUF_EXTEND 2048		/* Bump the buffer by this amount */
 
-typedef struct slax_writer_s {
+struct slax_writer_s {
     const char *sw_filename;	/* Filename being parsed */
     slaxWriterFunc_t sw_write;	/* Client callback */
     void *sw_data;		/* Client data */
@@ -34,7 +34,7 @@ typedef struct slax_writer_s {
     int sw_bufsiz;		/* Size of the buffer in sw_buf[] */
     int sw_errors;		/* Errors reading or writing data */
     unsigned sw_flags;		/* Flags for this instance (SWF_*) */
-} slax_writer_t;
+};
 
 /* Flags for sw_flags */
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
@@ -61,9 +61,6 @@ static void slaxWriteCommentStatement (slax_writer_t *, xmlDocPtr, xmlNodePtr);
 static int slaxIndent = 4;
 static const char *slaxSpacesAroundAttributeEquals = "";
 
-#define NEWL_INDENT	1
-#define NEWL_OUTDENT	-1
-
 void
 slaxSetIndent (int indent)
 {
@@ -76,7 +73,7 @@ slaxSetSpacesAroundAttributeEquals (int spaces)
     slaxSpacesAroundAttributeEquals = spaces ? " " : "";
 }
 
-static int
+int
 slaxWriteNewline (slax_writer_t *swp, int change)
 {
     int rc;
@@ -119,6 +116,10 @@ slaxWriteRealloc (slax_writer_t *swp, int need)
 {
     char *cp;
 
+    /* Make sure we're making enough room for the future */
+    if (need < 2 * swp->sw_bufsiz)
+	need = 2 * swp->sw_bufsiz;
+
     cp = xmlRealloc(swp->sw_buf, need);
     if (cp == NULL) {
 	slaxLog("memory allocation failure");
@@ -140,7 +141,7 @@ slaxIsXsl (xmlNodePtr nodep)
     return FALSE;
 }
 
-static void
+void
 slaxWrite (slax_writer_t *swp, const char *fmt, ...)
 {
     int rc = 0, len;
@@ -2898,6 +2899,29 @@ slaxWriteCleanup (slax_writer_t *swp)
 	xmlFree(swp->sw_buf);
 	swp->sw_buf = NULL;
     }
+}
+
+slax_writer_t *
+slaxGetWriter (slaxWriterFunc_t func, void *data)
+{
+    slax_writer_t *swp = xmlMalloc(sizeof(*swp));
+
+    if (swp == NULL)
+	return NULL;
+
+    bzero(swp, sizeof(*swp));
+
+    swp->sw_write = func;
+    swp->sw_data = data;
+
+    return swp;
+}
+
+void
+slaxFreeWriter (slax_writer_t *swp)
+{
+    slaxWriteCleanup(swp);
+    xmlFree(swp);
 }
 
 /**

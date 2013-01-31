@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<top>
+  <one>
+    <input>{ a: 1, b: 2.5e-5 }</input>
+    <xml>
+      <my-top>
+        <a type="number">1</a>
+        <b type="number">2.5e-5</b>
+      </my-top>
+    </xml>
+    <back>{ "a": 1, "b": 2.5e-5 }
+</back>
+  </one>
+  <two>
+    <input>[ 1, 2, 3, 4 ]</input>
+    <xml>
+      <my-top type="array">
+        <member type="number">1</member>
+        <member type="number">2</member>
+        <member type="number">3</member>
+        <member type="number">4</member>
+      </my-top>
+    </xml>
+    <back>[ 1, 2, 3, 4 ]
+</back>
+  </two>
+  <three>
+    <input>{ a: 1, b: [ 2, 3 ] }</input>
+    <xml>
+      <my-top>
+        <a type="number">1</a>
+        <b type="array">
+          <member type="number">2</member>
+          <member type="number">3</member>
+        </b>
+      </my-top>
+    </xml>
+    <back>{ "a": 1, "b": [ 2, 3 ] }
+</back>
+  </three>
+  <four>
+    <input>[ {a: 1}, {b: 2}, {c: 3} ]</input>
+    <xml>
+      <my-top type="array">
+        <member type="member">
+          <a type="number">1</a>
+        </member>
+        <member type="member">
+          <b type="number">2</b>
+        </member>
+        <member type="member">
+          <c type="number">3</c>
+        </member>
+      </my-top>
+    </xml>
+    <back>[ { "a": 1 }, { "b": 2 }, { "c": 3 } ]
+</back>
+  </four>
+  <five>
+    <input>{ a: "fish", b: "tur key", c: "mon key suit" }</input>
+    <xml>
+      <my-top>
+        <a>fish</a>
+        <b>tur key</b>
+        <c>mon key suit</c>
+      </my-top>
+    </xml>
+    <back>{ "a": "fish", "b": "tur key", "c": "mon key suit" }
+</back>
+  </five>
+  <six>
+    <input>   {
+      "Image": {
+          "Width":  800,
+          "Height": 600,
+          "Title":  "View from 15th Floor",
+          "Thumbnail": {
+              "Url":    "http://www.example.com/image/481989943",
+              "Height": 125,
+              "Width":  "100"
+          },
+          "IDs": [116, 943, 234, 38793]
+        }
+     }</input>
+    <xml>
+      <my-top>
+        <Image>
+          <Width type="number">800</Width>
+          <Height type="number">600</Height>
+          <Title>View from 15th Floor</Title>
+          <Thumbnail>
+            <Url>http://www.example.com/image/481989943</Url>
+            <Height type="number">125</Height>
+            <Width>100</Width>
+          </Thumbnail>
+          <IDs type="array">
+            <member type="number">116</member>
+            <member type="number">943</member>
+            <member type="number">234</member>
+            <member type="number">38793</member>
+          </IDs>
+        </Image>
+      </my-top>
+    </xml>
+    <back>{ "Image": { "Width": 800, "Height": 600, "Title": "View from 15th Floor", "Thumbnail": { "Url": "http://www.example.com/image/481989943", "Height": 125, "Width": "100" }, "IDs": [ 116, 943, 234, 38793 ] } }
+</back>
+  </six>
+  <seven>
+    <input>
+   [
+      {
+         "precision": "zip",
+         "Latitude":  37.7668,
+         "Longitude": -122.3959,
+         "Address":   "",
+         "City":      "SAN FRANCISCO",
+         "State":     "CA",
+         "Zip":       "94107",
+         "Country":   "US"
+      },
+      {
+         "precision": "zip",
+         "Latitude":  37.371991,
+         "Longitude": -122.026020,
+         "Address":   "",
+         "City":      "SUNNYVALE",
+         "State":     "CA",
+         "Zip":       "94085",
+         "Country":   "US"
+      }
+   ]
+</input>
+    <xml>
+      <my-top type="array">
+        <member type="member">
+          <precision>zip</precision>
+          <Latitude type="number">37.7668</Latitude>
+          <Longitude type="number">-122.3959</Longitude>
+          <Address></Address>
+          <City>SAN FRANCISCO</City>
+          <State>CA</State>
+          <Zip>94107</Zip>
+          <Country>US</Country>
+        </member>
+        <member type="member">
+          <precision>zip</precision>
+          <Latitude type="number">37.371991</Latitude>
+          <Longitude type="number">-122.026020</Longitude>
+          <Address></Address>
+          <City>SUNNYVALE</City>
+          <State>CA</State>
+          <Zip>94085</Zip>
+          <Country>US</Country>
+        </member>
+      </my-top>
+    </xml>
+    <back>[ { "precision": "zip", "Latitude": 37.7668, "Longitude": -122.3959, "Address": "", "City": "SAN FRANCISCO", "State": "CA", "Zip": "94107", "Country": "US" }, { "precision": "zip", "Latitude": 37.371991, "Longitude": -122.026020, "Address": "", "City": "SUNNYVALE", "State": "CA", "Zip": "94085", "Country": "US" } ]
+</back>
+  </seven>
+  <eight>
+    <input>[ { a: "nrt
+&#13;	nrt" } ]</input>
+    <xml>
+      <my-top type="array">
+        <member type="member">
+          <a>nrt
+&#13;	nrt</a>
+        </member>
+      </my-top>
+    </xml>
+    <back>[ { "a": "nrt\n\r\tnrt" } ]
+</back>
+  </eight>
+  <nine>
+    <input>{ "name": "Skip Tracer",
+              "location": "The city that never sleeps",
+              "age": 5,
+              "real": false,
+              "cases": null,
+              "equipment": [ "hat", "desk", "attitude" ]
+            }</input>
+    <xml>
+      <my-top>
+        <name>Skip Tracer</name>
+        <location>The city that never sleeps</location>
+        <age type="number">5</age>
+        <real type="false">false</real>
+        <cases type="null">null</cases>
+        <equipment type="array">
+          <member type="member">hat</member>
+          <member type="member">desk</member>
+          <member type="member">attitude</member>
+        </equipment>
+      </my-top>
+    </xml>
+    <back>{ "name": "Skip Tracer", "location": "The city that never sleeps", "age": 5, "real": false, "cases": null, "equipment": [ "hat", "desk", "attitude" ] }
+</back>
+  </nine>
+</top>

@@ -218,6 +218,8 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { L_ASSIGN,			"assignment operator (':=')" },
     { L_AT,			"attribute axis ('@')" },
     { L_CBRACE,			"close brace ('}')" },
+    { L_OBRACK,			"close bracket (']')" },
+    { L_COLON,			"colon (':')" },
     { L_COMMA,			"comma (',')" },
     { L_DAMPER,			"logical AND operator ('&&')" },
     { L_DCOLON,			"axis operator ('::')" },
@@ -1313,8 +1315,6 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
 
     return xmlStrdup2(buf);
 }
-
-
 
 /**
  * Callback from bison when an error is detected.
