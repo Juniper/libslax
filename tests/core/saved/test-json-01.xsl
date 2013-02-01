@@ -54,11 +54,13 @@
               "cases": null,
               "equipment": [ "hat", "desk", "attitude" ]
             }</nine>
+    <ten>{ "the	end": 1, "moment of truth": 2.5e-5, "3com": "dead" }</ten>
   </xsl:variable>
   <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="tests" select="slax-ext:node-set($tests-temp-1)"/>
   <xsl:param name="root" select="&quot;my-top&quot;"/>
   <xsl:param name="types"/>
   <xsl:param name="pretty"/>
+  <xsl:param name="quotes"/>
   <xsl:variable name="j2x-opts">
     <xsl:if test="$root">
       <root>
@@ -74,6 +76,11 @@
   <xsl:variable name="x2j-opts">
     <xsl:if test="$pretty">
       <pretty/>
+    </xsl:if>
+    <xsl:if test="$quotes">
+      <quotes>
+        <xsl:value-of select="$quotes"/>
+      </quotes>
     </xsl:if>
   </xsl:variable>
   <xsl:template match="/">

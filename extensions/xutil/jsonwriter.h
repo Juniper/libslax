@@ -23,3 +23,5 @@ extXutilJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 #define JWF_ARRAY	(1<<1)	/* Inside array */
 #define JWF_NODESET	(1<<2)	/* Top of a nodeset */
 #define JWF_PRETTY	(1<<3)	/* Pretty print (newlines) */
+
+#define JWF_OPTIONAL_QUOTES (1<<4)	/* Don't use quotes unless needed */

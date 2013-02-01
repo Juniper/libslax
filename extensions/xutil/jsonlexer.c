@@ -341,6 +341,17 @@ extXutilJsonYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 }
 
 void
+extXutilJsonElementOpen (slax_data_t *sdp, const char *name)
+{
+    int valid = xmlValidateName((const xmlChar *) name, FALSE);
+    const char *element = valid ? ELT_ELEMENT : name;
+
+    slaxElementOpen(sdp, element);
+    if (element != name)
+	slaxAttribAddLiteral(sdp, ATT_NAME, name);
+}
+
+void
 extXutilJsonElementValue (slax_data_t *sdp, slax_string_t *value)
 {
     xmlNodePtr nodep;

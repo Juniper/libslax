@@ -196,4 +196,16 @@
     <back>{ "name": "Skip Tracer", "location": "The city that never sleeps", "age": 5, "real": false, "cases": null, "equipment": [ "hat", "desk", "attitude" ] }
 </back>
   </nine>
+  <ten>
+    <input>{ "the	end": 1, "moment of truth": 2.5e-5, "3com": "dead" }</input>
+    <xml>
+      <my-top>
+        <element name="the&#9;end" type="number">1</element>
+        <element name="moment of truth" type="number">2.5e-5</element>
+        <element name="3com">dead</element>
+      </my-top>
+    </xml>
+    <back>{ "the\tend": 1, "moment of truth": 2.5e-5, "3com": "dead" }
+</back>
+  </ten>
 </top>

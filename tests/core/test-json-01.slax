@@ -53,11 +53,13 @@ var $tests := {
               "cases": null,
               "equipment": [ "hat", "desk", "attitude" ]
             }';
+    <ten> '{ "the\tend": 1, "moment of truth": 2.5e-5, "3com": "dead" }';
 }
 
 param $root = "my-top";
 param $types;
 param $pretty;
+param $quotes;
 
 var $j2x-opts = {
     if ($root) {
@@ -71,6 +73,9 @@ var $j2x-opts = {
 var $x2j-opts = {
     if ($pretty) {
 	<pretty>;
+    }
+    if ($quotes) {
+	<quotes> $quotes;
     }
 }
 

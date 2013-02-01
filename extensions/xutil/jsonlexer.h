@@ -24,8 +24,10 @@
  */
 #define SDF_NO_TYPES	(1<<16)	/* Do not decorate nodes with type info */
 
+#define ELT_ELEMENT	"element"
 #define ELT_MEMBER	"member"
 #define ELT_PRETTY	"pretty"
+#define ELT_QUOTES	"quotes"
 
 #define ATT_TYPE	"type"
 
@@ -34,6 +36,7 @@
 #define VAL_NULL	"null"
 #define VAL_MEMBER	"member"
 #define VAL_NUMBER	"number"
+#define VAL_OPTIONAL	"optional"
 #define VAL_TRUE	"true"
 
 extern int extXutilJsonYyDebug;
@@ -99,6 +102,9 @@ extXutilJsonYylex (slax_data_t *sdp, YYSTYPE *yylvalp);
  */
 #undef yylex			/* Remove slaxinternals. definition */
 #define yylex(sp, v) extXutilJsonYylex(slax_data, sp)
+
+void
+extXutilJsonElementOpen (slax_data_t *sdp, const char *name);
 
 /* ----------------------------------------------------------------------
  * Functions exposed in jsonparser.y (no better place than here)

@@ -308,6 +308,9 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 		value = xmlNodeValue(cop);
 		if (streq(key, ELT_PRETTY)) {
 		    flags |= JWF_PRETTY;
+		} else if (streq(key, ELT_QUOTES)) {
+		    if (streq(value, VAL_OPTIONAL))
+			flags |= JWF_OPTIONAL_QUOTES;
 		}
 	    }
 	}

@@ -3944,7 +3944,7 @@ optional elements:
 
 The XML returned from json-to-xml() is decorated with attributes
 (including the "type" and "name" attributes) which allow the data to
-be converted back into XML using xml-to-json().  Refer to that
+be converted back into JSON using xml-to-json().  Refer to that
 function for additional information.
 
 **** xutil:xml-to-json()
@@ -3964,11 +3964,12 @@ JSON objects inside a string
 An optional second parameter contains a node set of the following
 optional elements:
 
-|---------+-------+----------------------------------------|
-| Element | Value | Description                            |
-|---------+-------+----------------------------------------|
-| pretty  | empty | Add newlines and indentation to output |
-|---------+-------+----------------------------------------|
+|---------+------------+----------------------------------------|
+| Element | Value      | Description                            |
+|---------+------------+----------------------------------------|
+| pretty  | empty      | Add newlines and indentation to output |
+| quotes  | "optional" | Avoid quotes for names                 |
+|---------+------------+----------------------------------------|
 
 Since there is a mismatch between the data encoding capabilities in
 XML and JSON, a set of attributes can be used to control the exact

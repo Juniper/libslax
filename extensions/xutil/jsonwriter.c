@@ -74,14 +74,15 @@ jsonValue (xmlNodePtr nodep)
 }
 
 static const char *
-jsonNameNeedsQuotes (const char *str UNUSED)
+jsonNameNeedsQuotes (const char *str, unsigned flags)
 {
-#if 0
     static const char illegal[] = "\":;{} \n\t";
 
-    if (str != NULL && strcspn(str, illegal) == strlen(str))
+    if ((flags & JWF_OPTIONAL_QUOTES) && str != NULL
+	    && xmlValidateName((const xmlChar *) str, FALSE) == 0
+	    && strcspn(str, illegal) == strlen(str))
 	return "";
-#endif
+
     return "\"";
 }
 
@@ -141,7 +142,7 @@ jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
 {
     const char *type = jsonAttribValue(nodep, ATT_TYPE);
     const char *name = jsonName(nodep);
-    const char *quote = jsonNameNeedsQuotes(name);
+    const char *quote = jsonNameNeedsQuotes(name, flags);
     const char *comma = jsonNeedsComma(nodep);
 
     if (name == NULL)

@@ -24,10 +24,12 @@ var $tests := {
     <seven> "\n   [\n      {\n         \"precision\": \"zip\",\n         \"Latitude\":  37.7668,\n         \"Longitude\": -122.3959,\n         \"Address\":   \"\",\n         \"City\":      \"SAN FRANCISCO\",\n         \"State\":     \"CA\",\n         \"Zip\":       \"94107\",\n         \"Country\":   \"US\"\n      },\n      {\n         \"precision\": \"zip\",\n         \"Latitude\":  37.371991,\n         \"Longitude\": -122.026020,\n         \"Address\":   \"\",\n         \"City\":      \"SUNNYVALE\",\n         \"State\":     \"CA\",\n         \"Zip\":       \"94085\",\n         \"Country\":   \"US\"\n      }\n   ]\n";
     <eight> "[ { a: \"nrt\n\r	nrt\" } ]";
     <nine> "{ \"name\": \"Skip Tracer\",\n              \"location\": \"The city that never sleeps\",\n              \"age\": 5,\n              \"real\": false,\n              \"cases\": null,\n              \"equipment\": [ \"hat\", \"desk\", \"attitude\" ]\n            }";
+    <ten> "{ \"the	end\": 1, \"moment of truth\": 2.5e-5, \"3com\": \"dead\" }";
 }
 param $root = "my-top";
 param $types;
 param $pretty;
+param $quotes;
 var $j2x-opts = {
     if ($root) {
         <root> $root;
@@ -39,6 +41,9 @@ var $j2x-opts = {
 var $x2j-opts = {
     if ($pretty) {
         <pretty>;
+    }
+    if ($quotes) {
+        <quotes> $quotes;
     }
 }
 
