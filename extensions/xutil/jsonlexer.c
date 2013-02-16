@@ -448,7 +448,7 @@ extXutilJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 
     sd.sd_buf = xmlStrdup2(data);
     sd.sd_len = strlen(data);
-    strlcpy(sd.sd_filename, "json", sizeof(sd.sd_filename));
+    strncpy(sd.sd_filename, "json", sizeof(sd.sd_filename));
     sd.sd_flags = flags;
     sd.sd_ctxt = ctxt;
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);

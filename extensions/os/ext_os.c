@@ -705,7 +705,7 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	slaxMakeNode(docp, parent, ELT_GROUP,
 		     grp ? grp->gr_name : buf, ATT_GID, buf);
 
-	snprintf(buf, sizeof(buf), "%d", stp->st_nlink);
+	snprintf(buf, sizeof(buf), "%d", (int) stp->st_nlink);
 	slaxMakeNode(docp, parent, ELT_LINKS, buf, NULL, NULL);
 
 	snprintf(buf, sizeof(buf), "%llu", (long long unsigned) stp->st_size);

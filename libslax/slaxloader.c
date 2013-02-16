@@ -559,7 +559,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     /* We want to parse SLAX, either full or partial */
     sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
 
-    strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
+    strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
 
     sd.sd_ctxt = ctxt;

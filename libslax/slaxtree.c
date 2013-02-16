@@ -678,8 +678,8 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
     slax_string_t *ssp, *next;
     slax_string_t *tsp, *qsp, *csp, *esp;
     static char varfmt[] = SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
-    char condname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH + 1];
-    char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH + 1];
+    char condname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
     int no_second_term;
     char *vp;
     unsigned len;
@@ -707,7 +707,8 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 	if (len >= sizeof(varname) - 1)
 	    len = sizeof(varname) - 1;
 
-	strlcpy(varname, vp, len + 1);
+	strncpy(varname, vp, len);
+	varname[len] = '\0';
 	slaxLog("ternary expand: %s (%d) -> '%s'", vp, len, varname);
 
 	for (ssp = tsp; ssp && ssp->ss_next != qsp; ssp = ssp->ss_next)
