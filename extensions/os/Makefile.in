@@ -292,7 +292,7 @@ htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
-libdir = ${SLAX_EXTDIR}
+libdir = ${slaxextdir}
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
@@ -320,6 +320,9 @@ lib_LTLIBRARIES = libext_os.la
 libext_os_la_SOURCES = \
     ext_os.c
 
+slaxextdir = ${SLAX_EXTDIR}
+ext_oslibdir = ${slaxextdir}
+#slaxext_LIBRARIES = libext_os.la
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fos.ext
 all: all-am
 
@@ -651,9 +654,9 @@ uninstall-am: uninstall-libLTLIBRARIES
 include ${top_srcdir}/warnings.mk
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libext_os.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. ${slaxextdir}/libext_os.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
-		&& cd ${SLAX_EXTDIR} \
+		&& cd ${slaxextdir} \
 		&& chmod +w . \
 		&& rm -f ${UGLY_NAME} \
 		&& ${LN_S} $$DLNAME ${UGLY_NAME}

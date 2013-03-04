@@ -41,14 +41,17 @@ endif
 libext_os_la_SOURCES = \
     ext_os.c
 
-libdir = ${SLAX_EXTDIR}
+slaxextdir = ${SLAX_EXTDIR}
+libdir = ${slaxextdir}
+ext_oslibdir = ${slaxextdir}
+#slaxext_LIBRARIES = libext_os.la
 
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fos.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libext_os.la ; echo $$dlname'` \
+	@DLNAME=`sh -c '. ${slaxextdir}/libext_os.la ; echo $$dlname'` \
 		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
-		&& cd ${SLAX_EXTDIR} \
+		&& cd ${slaxextdir} \
 		&& chmod +w . \
 		&& rm -f ${UGLY_NAME} \
 		&& ${LN_S} $$DLNAME ${UGLY_NAME}

@@ -332,6 +332,8 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	xmlNodePtr nop;
 
 	nop = xop->nodesetval->nodeTab[i];
+	if (nop->type == XML_DOCUMENT_NODE)
+	    nop = nop->children;
 	if (nop->type != XML_ELEMENT_NODE)
 	    continue;
 
