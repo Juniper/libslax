@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.14.3], [phil@juniper.net])
+AC_INIT([libslax], [0.14.5], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -378,13 +378,13 @@ AC_ARG_WITH(extensions-dir,
 AC_ARG_WITH(share-dir,
         [  --with-share-dir=[DIR]           Specify location of shared files],
         [SLAX_SHAREDIR=$withval],
-        [SLAX_SHAREDIR=$sharedir/slax]
+        [SLAX_SHAREDIR=$datarootdir/slax]
 )
 
 AC_ARG_WITH(oxtradoc-dir,
         [  --with-oxtradoc-dir=[DIR]        Specify location of oxtradoc files],
         [SLAX_OXTRADOCDIR=$withval],
-        [SLAX_OXTRADOCDIR=$sharedir/oxtradoc]
+        [SLAX_OXTRADOCDIR=$datarootdir/oxtradoc]
 )
 
 AC_ARG_WITH(bin-dir,

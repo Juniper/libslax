@@ -231,9 +231,9 @@
       </slax:set-variable>
       <!-- 
 * /
-	append $five += "a5";
-	/ *
-	append $five += "a25";
+        append $five += "a5";
+        / *
+        append $five += "a25";
  -->
       <five>
         <xsl:value-of select="$five"/>

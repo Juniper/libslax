@@ -4040,7 +4040,6 @@ The "os" extension functions require the following ns statement:
 
     ns os extension = "http://xml.libslax.org/os";
 
-
 **** os:exit-code
 
 The os:exit-code function sets the exit code for the process running
