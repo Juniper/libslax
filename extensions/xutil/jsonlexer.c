@@ -427,7 +427,6 @@ extXutilJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 {
     slax_data_t sd;
     xmlDocPtr res;
-    int rc;
 
     if (!extXutilJsonInited) {
 	extXutilJsonInited = TRUE;
@@ -467,7 +466,7 @@ extXutilJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 
     sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) "json.input");
 
-    rc = extXutilJsonYyParse(&sd);
+    extXutilJsonYyParse(&sd);
 
     if (sd.sd_errors) {
 	slaxError("%s: %d error%s detected during parsing\n",
@@ -491,7 +490,6 @@ extXutilJsonFileToXml (const char *fname, const char *root_name,
 {
     slax_data_t sd;
     xmlDocPtr res;
-    int rc;
 
     if (!extXutilJsonInited) {
 	extXutilJsonInited = TRUE;
@@ -535,7 +533,7 @@ extXutilJsonFileToXml (const char *fname, const char *root_name,
 
     sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) "json.input");
 
-    rc = extXutilJsonYyParse(&sd);
+    extXutilJsonYyParse(&sd);
 
     if (sd.sd_errors) {
 	slaxError("%s: %d error%s detected during parsing\n",

@@ -1,4 +1,4 @@
 ../../../tests/errors/test-error-009.slax:7: unexpected input: 'two'; expected semi-colon (';')
 ../../../tests/errors/test-error-009.slax:7:   could be related to unterminated string on line 5 ("one;\n...")
-../../../tests/errors/test-error-009.slax: 1 error detected during parsing
+../../../tests/errors/test-error-009.slax: 1 error detected during parsing (1)
 slaxproc: cannot parse: '../../../tests/errors/test-error-009.slax'

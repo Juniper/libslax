@@ -2,5 +2,5 @@
 ../../../tests/errors/test-error-005.slax:9: unexpected input: 'cooking'; expected valid statement
 ../../../tests/errors/test-error-005.slax:12: unexpected input: '+'; expected valid XPath expression
 ../../../tests/errors/test-error-005.slax:17: unexpected end-of-file; unterminated statement (<xsl:template>) on line 17
-../../../tests/errors/test-error-005.slax: 4 errors detected during parsing
+../../../tests/errors/test-error-005.slax: 4 errors detected during parsing (1)
 slaxproc: cannot parse: '../../../tests/errors/test-error-005.slax'

@@ -5,5 +5,5 @@
 ../../../tests/errors/test-error-007.slax:12: unexpected input: semi-colon (';'); expected valid XPath expression
 ../../../tests/errors/test-error-007.slax:14: unexpected input: 'match'; expected valid statement
 ../../../tests/errors/test-error-007.slax:19: unexpected end-of-file; open element (<one>) on line 17
-../../../tests/errors/test-error-007.slax: 5 errors detected during parsing
+../../../tests/errors/test-error-007.slax: 5 errors detected during parsing (1)
 slaxproc: cannot parse: '../../../tests/errors/test-error-007.slax'
