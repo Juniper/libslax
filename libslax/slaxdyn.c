@@ -60,9 +60,16 @@
 #define dlfunc(_p, _n)		NULL /* Fail */
 #endif /* HAVE_DLFCN_H */
 
+typedef struct slax_dyn_node_s {
+    TAILQ_ENTRY(slax_dyn_node_s) dn_link; /* Next session */
+    struct slax_dyn_arg_s dn_da;	   /* Argument data */
+} slax_dyn_node_t;
+
+typedef TAILQ_HEAD(slax_dyn_list_s, slax_dyn_node_s) slax_dyn_list_t;
+
 static slax_data_list_t slaxDynDirList;
 static slax_data_list_t slaxDynLoaded;
-static slax_data_list_t slaxDynLibraries;
+static slax_dyn_list_t slaxDynLibraries;
 
 static int slaxDynInited;
 
@@ -124,20 +131,17 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 
 	func = (slax_dyn_init_func_t) dlfunc(dlp, SLAX_DYN_INIT_NAME);
 	if (func) {
-	    static slax_dyn_arg_t arg; /* Static zeros */
-	    slax_dyn_arg_t *dap;
-
 	    /*
-	     * We're building a list of open libraries, using the
-	     * "args" structure as our handle.  We store these in a
-	     * slaxDataList, which is odd but too convenient too pass
-	     * up.  The static arg above it just used to initialize
-	     * dnp->dn_data.
+	     * Build a list of open libraries.
 	     */
-	    dnp = slaxDataListAddLen(&slaxDynLibraries,
-				     (char *) &arg, sizeof(arg));
-	    if (dnp) {
-		dap = (slax_dyn_arg_t *) dnp->dn_data;
+	    slax_dyn_node_t *dynp = xmlMalloc(sizeof(*dynp));
+	    if (dynp) {
+		slax_dyn_arg_t *dap = &dynp->dn_da;
+
+		bzero(dynp, sizeof(*dynp));
+
+		TAILQ_INSERT_TAIL(&slaxDynLibraries, dynp, dn_link);
+
 		dap->da_version = SLAX_DYN_VERSION;
 		dap->da_handle = dlp;
 		dap->da_uri = xmlStrdup2(ns);
@@ -250,7 +254,7 @@ slaxDynInit (void)
     slaxDataListAddNul(&slaxDynDirList, SLAX_EXTDIR);
 
     slaxDataListInit(&slaxDynLoaded);
-    slaxDataListInit(&slaxDynLibraries);
+    TAILQ_INIT(&slaxDynLibraries);
 }
 
 /*
@@ -259,40 +263,46 @@ slaxDynInit (void)
 void
 slaxDynClean (void)
 {
-    slax_data_node_t *dnp;
+    slax_dyn_node_t *dnp;
 
     if (slaxDynInited)
 	slaxDataListClean(&slaxDynDirList);
     slaxDataListClean(&slaxDynLoaded);
 
-    SLAXDATALIST_FOREACH(dnp, &slaxDynLibraries) {
-	slax_dyn_arg_t *dap;
-	dap = (slax_dyn_arg_t *) dnp->dn_data;
-	if (dap->da_handle) {
-	    slax_dyn_init_func_t func;
+    if (slaxDynLibraries.tqh_last != NULL) {
+	for (;;) {
+	    dnp = TAILQ_FIRST(&slaxDynLibraries);
+	    if (dnp == NULL)
+		break;
+	    slax_dyn_arg_t *dap;
+	    dap = &dnp->dn_da;
+	    if (dap->da_handle) {
+		slax_dyn_init_func_t func;
 
-	    /*
-	     * If the extension gave us a list of functions or element,
-	     * we can go ahead and unregister them
-	     */
-	    if (dap->da_functions)
+		/*
+		 * If the extension gave us a list of functions or element,
+		 * we can go ahead and unregister them
+		 */
+		if (dap->da_functions)
 		    slaxUnregisterFunctionTable(dap->da_uri,
 						dap->da_functions);
-	    if (dap->da_elements)
+		if (dap->da_elements)
 		    slaxUnregisterElementTable(dap->da_uri,
 						dap->da_elements);
 
-	    /* If there's a cleanup function, then call it */
-	    func = (slax_dyn_init_func_t) dlfunc(dap->da_handle,
-						 SLAX_DYN_CLEAN_NAME);
-	    if (func)
-		(*func)(SLAX_DYN_VERSION, dap);
+		/* If there's a cleanup function, then call it */
+		func = (slax_dyn_init_func_t) dlfunc(dap->da_handle,
+						     SLAX_DYN_CLEAN_NAME);
+		if (func)
+		    (*func)(SLAX_DYN_VERSION, dap);
 
-	    dlclose(dap->da_handle);
+		dlclose(dap->da_handle);
 
-	    xmlFreeAndEasy(dap->da_uri);
+		xmlFreeAndEasy(dap->da_uri);
+	    }
+
+	    TAILQ_REMOVE(&slaxDynLibraries, dnp, dn_link);
+	    xmlFree(dnp);
 	}
     }
-
-    slaxDataListClean(&slaxDynLibraries);
 }

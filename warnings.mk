@@ -46,4 +46,10 @@ HIGHER_WARNINGS?= ${HIGH_WARNINGS} \
     -Wpadded \
     -Wstrict-aliasing
 
-WARNINGS = ${HIGH_WARNINGS} -fno-inline-functions-called-once
+ifeq "${SLAX_WARNINGS}" "HIGH"
+WARNINGS += ${HIGH_WARNINGS}
+else
+WARNINGS += ${LOW_WARNINGS}
+endif
+
+WARNINGS += -fno-inline-functions-called-once
