@@ -72,6 +72,30 @@
 static xmlChar slax_empty_string[1]; /* A non-const empty string */
 
 /*
+ * GCC nicks us for putting constant strings into a "char *" for
+ * MACOSX (which lackes the "const").  Somehow this works for
+ * <sys/syslog.h> but not for us.
+ */
+typedef struct const_code {
+    const char *c_name;
+    int c_val;
+} XCODE;
+
+XCODE junos_facilitynames[] = {
+    { "dfc",      LOG_LOCAL1 }, /**< Local DFC facility */
+    { "external", LOG_LOCAL2 },  /**< Local external facility */
+    { "firewall", LOG_LOCAL3 }, /**< Local firewall facility */
+    { "pfe",      LOG_LOCAL4 }, /**< Local PFE facility */
+    { "conflict", LOG_LOCAL5 }, /**< Local conflict facility */
+    { "change",   LOG_LOCAL6 }, /**< Local change facility */
+    { "interact", LOG_LOCAL7 }, /**< Local interact facility */
+    { NULL,       -1         }
+};
+
+/* More MACOSX breakage, where LOG_MAKEPRI() does the "<<3" shift */
+#define LOG_MAKEPRI2(fac, pri)   ((fac) | (pri))
+
+/*
  * Emit an error using a parser context
  */
 void
@@ -1654,6 +1678,18 @@ slaxExtDecode (const char *name, CODE *codetab)
     return -1;
 }
 
+static int
+slaxExtDecode2 (const char *name, XCODE *codetab)
+{
+    XCODE *c;
+
+    for (c = codetab; c->c_name; c++)
+	if (!strcasecmp(name, c->c_name))
+	    return c->c_val;
+
+    return -1;
+}
+
 /*
  * Helper function for slaxExtSyslog() to decode the given priority.
  *
@@ -1685,7 +1721,9 @@ slaxExtDecodePriority (const char *priority)
     if (cp) {
 	*cp = '\0';
 	
-	fac = slaxExtDecode(priority, facilitynames);
+	fac = slaxExtDecode2(priority, junos_facilitynames);
+	if (fac < 0)
+	    fac = slaxExtDecode(priority, facilitynames);
 	if (fac < 0) {
 	    xsltGenericError(xsltGenericErrorContext,
 			     "syslog error: Unknown facility name: %s\n",
@@ -1704,7 +1742,7 @@ slaxExtDecodePriority (const char *priority)
 	return -1;
     }
 
-    return (LOG_MAKEPRI(fac, sev));
+    return (LOG_MAKEPRI2(fac, sev));
 }
 
 /*
