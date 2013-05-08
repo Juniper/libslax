@@ -956,7 +956,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 	    name = slaxGetAttrib(childp, ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
 
-	    if (!slaxV10(swp)
+	    if (!slaxV10(swp) && name
 		&& strncmp(name, slaxTernaryPrefix + 1,
 			   sizeof(slaxTernaryPrefix) - 2) == 0) {
 		xmlFreeAndEasy(name);
