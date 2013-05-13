@@ -72,9 +72,9 @@
 static xmlChar slax_empty_string[1]; /* A non-const empty string */
 
 /*
- * GCC nicks us for putting constant strings into a "char *" for
- * MACOSX (which lackes the "const").  Somehow this works for
- * <sys/syslog.h> but not for us.
+ * Macosx issue: their version of c_name lacks the "const" and
+ * GCC nicks us for putting constant strings into a "char *".
+ * Somehow this works for <sys/syslog.h> but not for us....
  */
 typedef struct const_code {
     const char *c_name;
@@ -92,8 +92,11 @@ XCODE junos_facilitynames[] = {
     { NULL,       -1         }
 };
 
-/* More MACOSX breakage, where LOG_MAKEPRI() does the "<<3" shift */
-#define LOG_MAKEPRI2(fac, pri)   ((fac) | (pri))
+/*
+ * More macosx breakage: their version of LOG_MAKEPRI() does the "<<3"
+ * shift on fac values that are already shifted.
+ */
+#define LOG_MAKEPRI_REAL(fac, pri) ((fac) | (pri))
 
 /*
  * Emit an error using a parser context
@@ -1742,7 +1745,7 @@ slaxExtDecodePriority (const char *priority)
 	return -1;
     }
 
-    return (LOG_MAKEPRI2(fac, sev));
+    return (LOG_MAKEPRI_REAL(fac, sev));
 }
 
 /*
