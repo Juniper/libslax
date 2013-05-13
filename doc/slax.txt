@@ -3878,6 +3878,10 @@ utility functions.
 
 *** "xutil" Extension Functions
 
+The "xutil" extension functions require the following ns statement:
+
+    ns xutil extension = "http://xml.libslax.org/xutil";
+
 **** xutil:max-call-depth()
 
 SLAX and XSLT use recursion as a programming tool for iteration, but
