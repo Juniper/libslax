@@ -256,5 +256,5 @@ extXutilJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 		      unsigned flags)
 {
     xmlNodePtr nodep = xmlDocGetRootElement(docp);
-    return extXutilJsonWriteNode(func, data, nodep,flags | JWF_ROOT);
+    return extXutilJsonWriteNode(func, data, nodep, flags | JWF_ROOT);
 }
