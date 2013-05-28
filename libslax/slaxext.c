@@ -39,6 +39,7 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <sys/queue.h>
+#include <tzfile.h>
 
 #include <libslax/slaxdata.h>
 
@@ -1843,11 +1844,9 @@ slaxExtTimeDiff (const struct timeval *new, const struct timeval *old,
 }
 
 static int
-slaxExtTimeCompare (const struct timeval *tv, double limit)
+slaxExtTimeCompare (const struct timeval *tvp, long secs)
 {
-    double t = tv->tv_sec + tv->tv_usec * USEC_PER_SEC;
-
-    return (t < limit) ? TRUE : FALSE;
+    return (tvp->tv_sec < secs) ? TRUE : FALSE;
 }
 
 /*
@@ -1871,7 +1870,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
     struct stat sb;
     struct timeval tv, rec_tv, diff;
     int no_of_recs = 0;
-    int fd, rc, max, freq_int;
+    int fd, rc, max;
+    long freq_in_secs;
     double freq_double;
     static const char timefmt[] = "%lu.%06lu\n";
 
@@ -1885,11 +1885,11 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 
     /* Pop our three arguments */
     freq_double = xmlXPathPopNumber(ctxt);
-    freq_int = (int) floor(freq_double);
+    freq_in_secs = lrint(freq_double * SECSPERMIN);
     max = (int) xmlXPathPopNumber(ctxt);
     tag = (char *) xmlXPathPopString(ctxt);
 
-    if (max <= 0 || freq_int <= 0) {
+    if (max <= 0 || freq_in_secs <= 0) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "invalid arguments (<= zero)\n");
 	xmlXPathReturnFalse(ctxt);
@@ -1968,8 +1968,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
              * time stamp then write it into the new file.
              */
             slaxExtTimeDiff(&tv, &rec_tv, &diff);
-            if (diff.tv_sec < (freq_int * 60)
-			|| slaxExtTimeCompare(&diff, freq_double)) {
+            if (diff.tv_sec < freq_in_secs
+			|| slaxExtTimeCompare(&diff, freq_in_secs)) {
 
 		snprintf(buf, sizeof(buf), timefmt,
 			 (unsigned long) rec_tv.tv_sec,
