@@ -1768,7 +1768,7 @@ slaxExtSyslog (xmlXPathParserContext *ctxt, int nargs)
 
     if (nargs == 0) {
 	xmlXPathSetArityError(ctxt);
-	goto bail;
+	return;
     }
 
     bzero(&pb, sizeof(pb));
@@ -1910,7 +1910,7 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
     if (rc != -1) {
 	/* If the file is already present then open it in the read mode */
 	old_fp = fopen(filename, "r");
-	if (!old_fp) {
+	if (old_fp == NULL) {
 	    xsltGenericError(xsltGenericErrorContext,
 			     "File open failed for file: %s: %s\n",
 			     filename, strerror(errno));
@@ -1931,6 +1931,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 	xsltGenericError(xsltGenericErrorContext,
 			 "File open failed for file: %s: %s\n",
 			 new_filename, strerror(errno));
+	if (old_fp)
+	    fclose(old_fp);
 	xmlXPathReturnFalse(ctxt);
 	return;
     }
@@ -1938,6 +1940,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 #if !defined(O_EXLOCK) && defined(LOCK_EX)
     if (flock(fd, LOCK_EX) < 0) {
 	close(fd);
+	if (old_fp)
+	    fclose(old_fp);
 	xsltGenericError(xsltGenericErrorContext,
 			 "File lock failed for file: %s: %s\n",
 			 new_filename, strerror(errno));

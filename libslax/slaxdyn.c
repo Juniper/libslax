@@ -154,7 +154,8 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 		if (dap->da_elements)
 		    slaxRegisterElementTable(dap->da_uri,
 						dap->da_elements);
-	    }
+	    } else
+		dlclose(dlp);
 	} else
 	    dlclose(dlp);
     }
