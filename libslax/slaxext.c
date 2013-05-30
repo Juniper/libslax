@@ -891,7 +891,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		    tlen = tep - fmt + 1;
 		    tag = alloca(tlen + 1);
 		    memcpy(tag, fmt, tlen);
-		    tag[tlen + 1] = '\0';
+		    tag[tlen] = '\0';
 
 		    fmt = tep + 1; /* More part the '}' */
 		    break;
