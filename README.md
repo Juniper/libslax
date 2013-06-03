@@ -35,3 +35,4 @@ To build libslax from the git repo:
 We use "build" to keep object files and generated files away from the
 source tree.
 
+(FYI: I'm using autoreconf version 2.69.)
