@@ -200,15 +200,17 @@ jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
 
     } else {
 	const char *value = jsonValue(nodep);
-
-	int vlen = strlen(value) + 1;
+	int vlen = value ? strlen(value) + 1 : 0;
 	char evalue[vlen * 2];
-	jsonEscape(evalue, sizeof(evalue), value);
-	value = evalue;
+	if (value) {
+	    jsonEscape(evalue, sizeof(evalue), value);
+	    value = evalue;
+	}
 
 	if (!(flags & JWF_ARRAY))
 	    slaxWrite(swp, "%s%s%s: ", quote, name, quote);
-	slaxWrite(swp, "\"%s\"%s", value, comma);
+
+	slaxWrite(swp, "\"%s\"%s", value ?: "", comma);
 	jsonWriteNewline(swp, 0, flags);
     }
 
