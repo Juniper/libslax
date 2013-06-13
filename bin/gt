@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# $Id$
+#
+# Copyright 2011, Juniper Networks, Inc.
+# All rights reserved.
+# This SOFTWARE is licensed under the LICENSE provided in the
+# ../Copyright file. By downloading, installing, copying, or otherwise
+# using the SOFTWARE, you agree to be bound by the terms of that
+# LICENSE.
+
+op="$1"
+shift
+
+case "$op" in
+    pu|pom|push)
+	# Push all local changes to the master server
+	git push origin master
+	;;
+
+    pt|ptest|push-test)
+	# Push all local changes to the master server
+	git push --dry-run origin master
+	;;
+
+    ci|check|checkin|checkpoint)
+        git diff $file
+        git status -s "$@"
+
+	opts=
+	if [ "$@" = "" ]; then
+	    opts=-a
+	fi
+
+        /bin/echo -n "Commit message: "
+	read comment
+	if [ "$comment" = "" ]; then
+	    echo "Commit aborted"
+	else
+  	    git commit -m "$comment" "$@"
+	fi
+	;;
+
+    cid|check-in-details)
+	files=`git status -s "$@" | sed -e 's/^...//'`
+
+	for file in $files; do
+	    git diff $file
+            status=`git status -s "$file"`
+	    echo $status
+
+            /bin/echo -n "Commit message: "
+	    read comment
+	    if [ "$comment" = "" ]; then
+		echo "Skipping file $file";
+	    else
+		if [ "$status" = "?? $file" ]; then
+		    git add "$file"
+		fi
+		git commit -m "$comment" "$file"
+	    fi
+	done
+	;;
+
+    out|outstanding)
+        git diff origin/master master
+	;;
+
+    gh-pages)
+        url=`git config --get remote.origin.url`
+	base=`basename "$url" .git`
+        mkdir -p gh-pages
+	git clone $url
+	cd $base
+	git checkout gh-pages
+	;;
+
+    up|update)
+	# Update working copy with repo's changes
+	git pull -v "$@"
+	;;
+
+    ctag|current-tag)
+        git tag -l 'v*' | sed 's/^v//'
+	;;
+
+    add-tag)
+	# Tag source code with revision number
+        # If you make a tag like "libslax-0.15.0", then you can
+        # use an URL like:
+        # https://github.com/Juniper/libslax/archive/libslax-0.15.0.tar.gz
+        if [ "$@" -eq "" ]; then
+	    echo "missing tag name"
+	    exit 1
+        fi
+	git tag "$@" && git push origin --tags master
+	;;
+
+    archive)
+        url=`git config --get remote.origin.url`
+	base=`basename "$url" .git`
+        tag=`git tag -l 'v*' | sed 's/^v//'`
+	git archive --prefix=$base-$tag --format=tar HEAD | gzip > $base-$tag.tgz
+	;;
+
+    st|stat|status)
+	# Show status
+	git status -s "$@"
+	;;
+
+    *)
+	# Anything else get passed on directly
+	git "$op" "$@"
+	;;
+esac
+
+exit $?
