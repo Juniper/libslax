@@ -47,3 +47,10 @@ svnignore:
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = libslax.pc
+
+get-wiki:
+	git clone https://github.com/Juniper/libslax.wiki.git wiki
+
+get-gh-pages:
+	git clone https://github.com/Juniper/libslax.git gh-pages
+	cd gh-pages && git checkout gh-pages
