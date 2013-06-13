@@ -42,7 +42,7 @@ case "$op" in
 	;;
 
     cid|check-in-details)
-	files=`git status -s "$@" | sed -e 's/^...//'`
+	files=`git status -s "$@" | awk '{print $2}'`
 
 	for file in $files; do
 	    git diff $file
