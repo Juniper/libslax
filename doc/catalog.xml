@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://w
+ww.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+
+    <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-strict.dtd"/>
+ 
+    <public publicId="-//W3C//DTD XHTML 1.0 Transitional//EN"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-transitional.dtd"/>
+ 
+    <system systemId="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-strict.dtd"/>
+ 
+    <system systemId="http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+            uri="file:///opt/local/share/xml/html/4/xhtml1-transitional.dtd"/>
+
+    <delegateURI uriStartString="http://www.w3.org/TR/xhtml1/DTD"
+            catalog="file://opt/local/share/xml/html/4"/>
+
+</catalog>
