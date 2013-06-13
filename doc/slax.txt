@@ -1,5 +1,6 @@
 #
 # $Id: slax.txt,v 1.6 2006/11/03 15:43:05 phil Exp $
+#  -*-  indent-tabs-mode:nil -*-
 #
 # Copyright (c) 2006-2011, Juniper Networks, Inc.
 # All rights reserved.
@@ -1490,8 +1491,8 @@ statement, and gives the parameter name and the value:
 
     call test {
         with $arg1 = 1;
-	with $arg4 = 4;
-	with $arg2 = 2;
+        with $arg4 = 4;
+        with $arg2 = 2;
     }
 
 {{note::
@@ -1782,7 +1783,7 @@ optional default value.
         param $count = 25;
 
         templace count {
-	    /*
+            /*
              * This defines a local parameter $count and sets
              * its value to that of the global parameter $count.
              */
@@ -1978,11 +1979,11 @@ environment which is challenging to new programmers.  Immutable
 variables allow various optimizations and advanced streaming
 functionality.
 
-Given the use case and scenarios for libslax (especially our use of it
-in JUNOS), we've added mutable variables, which can be changed.  The
-"set" statement allows a new value to be assigned to a variable and
-the "append" statement allows the value to be extended, with new data
-appended to it.
+Given the use case and scenarios for libslax (especially our usage
+patterns in JUNOS), we've added mutable variables, which are variables
+that can be changed.  The "set" statement allows a new value to be
+assigned to a variable and the "append" statement allows the value to
+be extended, with new data appended to it.
 
     SYNTAX::
         'mvar' variable-name '=' initial-value ';'
@@ -2033,7 +2034,7 @@ operations is performed:
     if ($rtf == "bad") { /* Converts the RTF into a string */
         copy-of $rtf;  /* Emits the RTF to the output tree */
 
-	/* Convert RTF to a node set (see discussion below) */
+        /* Convert RTF to a node set (see discussion below) */
         var $node-set = ext:node-set($rtf);
     }
 
@@ -2089,6 +2090,51 @@ details are hidden from the user.
 
 This section gives details and examples for each of the control
 statements in SLAX.
+
+*** The "if" and "else" Statements @if-else@
+
+SLAX supports an "if" statement that uses a C-like syntax.  The
+expressions that appear in parentheses are extended form of XPath
+expressions, which support the double equal sign ("==") in place of
+XPath's single equal sign ("=").  This allows C programmers to avoid
+slipping into dangerous habits.
+
+    if (this && that || the/other[one]) {
+        /* SLAX has a simple "if" statement */
+    } else if (yet[more == "fun"]) {
+        /* ... and it has "else if" */
+    } else {
+        /* ... and "else" */
+    }
+
+Depending on the presence of the "else" clause, an "if" statement can
+be transformed into either an <xsl:if> element or an <xsl:choose>
+element.
+
+    if (starts-with(name, "fe-")) {
+        if (mtu < 1500) {
+           /* Deal with fast ethernet interfaces with low MTUs */
+        }
+    } else {
+        if (mtu > 8096) {
+           /* Deal with non-fe interfaces with high MTUs */
+        }
+    }
+
+The XSLT equivalent:
+
+    <xsl:choose>
+      <xsl:when select="starts-with(name, 'fe-')">
+        <xsl:if test="mtu &lt; 1500">
+          <!-- Deal with fast ethernet interfaces with low MTUs -->
+        </xsl:if>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:if test="mtu &gt; 8096">
+          <!-- Deal with non-fe interfaces with high MTUs -->
+        </xsl:if>
+      </xsl:otherwise>
+    </xsl:choose>
 
 *** The "for-each" Statement @for-each@
 
@@ -2174,23 +2220,10 @@ taken to avoid infinite loops.
     mvar $count = 1;
     while (not($seen)) {
         if (item[$count]/value) {
-	        set $seen = true();
+            set $seen = true();
         }
         set $count = $count + 1;
     }
-
-*** The "..." Operator @dotdotdot@
-
-Often a loop is required to iterator through a range of integer
-values, such a 1 to 10.  SLAX introduces the "..." operator to
-generate sequences of such numbers:
-
-    for $i (1 ... 10) {
-        <player number=$i>;
-    }
-
-The operator translates into an XPath function that generates the
-sequence as a node set.
 
 *** The "sort" Statement @sort@
 
@@ -2217,7 +2250,7 @@ Multiple "sort" statements can be used to given secondary sorting keys.
         sort age {
             order "descending";
         }
-	copy-of .;
+        copy-of .;
     }
 
 XSLT equivalent:
@@ -2229,52 +2262,26 @@ XSLT equivalent:
       <xsl:copy-of select="."/>
     </xsl:for-each>
 
-*** The "if" and "else" Statements @if-else@
+*** The "..." Operator @dotdotdot@
 
-SLAX supports an "if" statement that uses a C-like syntax.  The
-expressions that appear in parentheses are extended form of XPath
-expressions, which support the double equal sign ("==") in place of
-XPath's single equal sign ("=").  This allows C programmers to avoid
-slipping into dangerous habits.
+Often a loop is required to iterator through a range of integer
+values, such a 1 to 10.  SLAX introduces the "..." operator to
+generate sequences of such numbers:
 
-    if (this && that || the/other[one]) {
-        /* SLAX has a simple "if" statement */
-    } else if (yet[more == "fun"]) {
-        /* ... and it has "else if" */
-    } else {
-        /* ... and "else" */
+    for $i (1 ... 10) {
+        <player number=$i>;
     }
 
-Depending on the presence of the "else" clause, an "if" statement can
-be transformed into either an <xsl:if> element or an <xsl:choose>
-element.
+The operator translates into an XPath function that generates the
+sequence as a node set, which contains a node for each value.  The
+"for" and "for-each" statements can be used to iterate thru the
+nodes in a sequence.
 
-    if (starts-with(name, "fe-")) {
-        if (mtu < 1500) {
-           /* Deal with fast ethernet interfaces with low MTUs */
-        }
-    } else {
-        if (mtu > 8096) {
-           /* Deal with non-fe interfaces with high MTUs */
-        }
+    for-each ($min ... $max) {
+        message "Value: " _ .;
     }
 
-The XSLT equivalent:
-
-    <xsl:choose>
-      <xsl:when select="starts-with(name, 'fe-')">
-        <xsl:if test="mtu &lt; 1500">
-          <!-- Deal with fast ethernet interfaces with low MTUs -->
-        </xsl:if>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:if test="mtu &gt; 8096">
-          <!-- Deal with non-fe interfaces with high MTUs -->
-        </xsl:if>
-      </xsl:otherwise>
-    </xsl:choose>
-
-** The "?:" Operator @question-colon@
+*** The "?:" Operator @question-colon@
 
 The "?:" operator allows simple logic tests to be coded with the
 familiar C and Perl operator.
@@ -2818,7 +2825,7 @@ if any, can be replaced.
     EXAMPLE::
         var $data = slax:document($url);
 
-	var $options := {
+        var $options := {
             <encoding> "ascii";
             <format> "base64";
             <non-xml> "#";
