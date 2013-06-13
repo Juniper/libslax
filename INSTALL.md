@@ -1,4 +1,4 @@
-# * Instructions for building libslax
+# Instructions for building libslax
 
 "libslax" depends on the Gnu auto* tools to help it remain as platform
 independent as possible. The "autoreconf" command does most of the
@@ -16,13 +16,15 @@ source code from svn, then you'll need to run "autoconf" by hand.
 
 ## Instructions on getting source code:
 
-1. To download the latest release:
+1. To download the current code release:
 
-    http://code.google.com/p/libslax/downloads/list
+   https://github.com/Juniper/libslax/archive/libslax-XXXXX.tar.gz
 
-2. To download directly from Google SVN:
+See https://github.com/Juniper/libslax/wiki/List for the latest.
 
-    http://code.google.com/p/libslax/source/checkout
+2. To download directly from github:
+
+   git clone https://github.com/Juniper/libslax.git
 
 ## Instructions for building:
 
@@ -31,20 +33,21 @@ source code from svn, then you'll need to run "autoconf" by hand.
     tar zxf libslax-XXXX.tar.gz
     cd libslax-XXXX
 
-If you downloaded from svn, then you'll need to run "autoreconf" to
-build configure and friends:
+You'll need to run "autoreconf" to build configure and friends.  A
+script is provided to do invoke autoreconf with the right options:
 
-    cd libslax
-    autoreconf --install
+    $ sh ./bin/setup.sh
 
-2. Make a "build" directory:
+The script will also make the build directory ("build") and report
+the rest of these install instructions.
 
-    mkdir build
-    cd build
+2. Change directory into the "build" directory:
+
+    $ cd build
 
 3. Run "configure":
 
-    ../configure
+    $ ../configure
 
 Expect to see the following error:
 
@@ -59,17 +62,17 @@ The --enable-debug command turns on SLAX_DEBUG, but debugging
 is enabled even without it.  Use the "-d" option to "slaxproc"
 to get debug output.
 
-4. Make the images
+4. Make the images:
 
-    make
+    $ make
 
-5. Test the images
+5. Run the self-tests:
 
-    make test
+    $ make test
 
-6. Install the images
+6. Install the images:
 
-    sudo make install
+    $ sudo make install
 
 ## libslax configure Options
 
@@ -140,7 +143,10 @@ The fix is unfortunately not always simple.  For MacOSX, you need to
 install the "xhtml1" package from MacPorts, and then build you own
 catalog.
 
-When you are done, your /etc/xml/catalog file should look like this:
+    $ port install xhtml1
+
+When you are done, your /etc/xml/catalog file should look like this
+(see doc/catalog.xml):
 
 ```
 <?xml version="1.0"?>
