@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Libslax by Juniper</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Libslax</h1>
+        <p>libslax is a C implementation of the SLAX programming language, a dialect of XSLT that is more perl/C-like and easier to read/code/use</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/Juniper/libslax" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/Juniper/libslax/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/Juniper/libslax/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>
+<a name="welcome-to-libslax" class="anchor" href="#welcome-to-libslax"><span class="octicon octicon-link"></span></a>Welcome to Libslax</h1>
+
+<p>Welcome to libslax, an open-source implementation of the SLAX language. SLAX is an alternative syntax for XSLT which is tailored for readability and familiarity, following the style of C and Perl. Programming constructs and XPath expressions are moved from the XML elements and attributes used in XSLT to first class language constructs. The overabundance of angle brackets and quotes is replaced by the parentheses and curly braces which programmers have enjoyed since the birth of "C".</p>
+
+<p>SLAX allows you to:</p>
+
+<ul>
+<li>Use if/then/else instead of <a>xsl:choose</a> and <a>xsl:if</a> elements</li>
+<li>Put test expressions in parentheses</li>
+<li>Use "==" to test equality (to avoid building dangerous habits)</li>
+<li>Use curly braces to show containment instead of closing tags</li>
+<li>Perform concatenation using the underscore operator</li>
+<li>Write text strings using quotes instead of the <a>xsl:text</a> element</li>
+<li>Simplify invoking named templates with a syntax resembling a function call</li>
+<li>Simplify defining named template with a syntax resembling a function definition</li>
+<li>Simplify namespace declarations</li>
+<li>Reduce the clutter in scripts, allowing the important parts to be more obvious to the reader</li>
+<li>Write more readable scripts </li>
+</ul><p>The benefits of SLAX are particularly strong for new developers, since it puts familiar constructs in familiar syntax, allowing them to concentrate in the new topics introduced by XSLT.</p>
+
+<p>Here is a simple example script: </p>
+
+<pre><code>version 1.1;            /* All scripts start with "version" */
+
+param $name = "Poe";    /* Script parameters with default values */
+
+var $favorites := {     /* ":=" avoids RTFs */
+    &lt;name hidden="yes"&gt; "Spillane";
+    &lt;name&gt; "Doyle";     /* Creates elements and attributes */
+    &lt;name&gt; "Poe";
+}
+
+match / {               /* A match template */
+    &lt;out&gt; {
+        /* Parameters are passed by name to templates */
+        call test($elt = "author", $name);
+    }
+}
+
+template test ($name, $elt = "default") {
+    for $this ($favorites/name) {
+        if ($name == $this &amp;&amp; not($this/@hidden)) {
+            element $elt {
+                copy-of .//author[name/last == $this];
+            }
+        } else if ($name == $this) {
+            message "Hidden: " _ $name;
+        }
+    }
+}
+</code></pre>
+
+<p>An XSLT version of this script is also available, and the "slaxproc" program can be used to easily convert between the two formats.</p>
+
+<p>Complete documentation for the SLAX language is available at:</p>
+
+<pre><code>http://libslax.googlecode.com/files/slax-manual-0.11.10.html 
+</code></pre>
+
+<p>libslax includes the "slaxproc" utility, which can be used to run scripts and to convert between XSLT and SLAX. "slaxproc" also includes a gdb-like debugger and a simple profiler.
+Origins of SLAX</p>
+
+<p>SLAX was originally developed as part of the Juniper Networks' JUNOS Operating System. It is used for on-box scripting to allow users to customize and enhance the CLI.</p>
+
+<ul>
+<li>Configuration data can be restricted by adding rules to the configuration checkout process</li>
+<li>Configuration data can be expanded using macro-like facilities</li>
+<li>New CLI commands can be added to perform custom diagnosis, display, or task-oriented operations</li>
+<li>Scripts can be triggered by events within the system, to respond automatically to problems as they occur </li>
+</ul><p>Our customers were unhappy with the XSLT syntax and wanted something simpler and more readable. With SLAX, we were able to give them that, and are now happy to be able to share this as an open-source project.</p>
+
+<p>libslax is written in C, and is built on top of Daniel Veillard's most excellent libxml2 and libxslt libraries.</p>
+
+<h2>
+<a name="links" class="anchor" href="#links"><span class="octicon octicon-link"></span></a>Links</h2>
+
+<p>The TODO page lists remaining work.</p>
+
+<p>The SLAX documentation is available in either HTML or text formats.</p>
+
+<p>A Quick Reference Card is available, along with assembly instructions.</p>
+
+<p>A discussion group and archive are available. </p>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/Juniper">Juniper</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-25845345-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
