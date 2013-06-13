@@ -40,21 +40,15 @@ OX_ARGS += -S ${SLAXPROC_BINDIR}/slaxproc -p doc
 OX_CMD = ${PERL} ${PERLOPTS} ${OXTRADOC_BINDIR}/oxtradoc ${OX_ARGS}
 OXTRADOC_CMD = ${OX_CMD}
 
-OUTPUT = slax-manual-${PACKAGE_VERSION}
+OUTPUT = slax-manual
 INPUT = slax.txt
 
-# We cheat and add the PDF for the quick reference card to
-# SVN since printing docx requires ms-word.  We want the
-# package version number in the file that we put on the
-# web site, so we just copy it.
 QUICKREF = slax-quick-reference
-QUICKREFVERS = ${QUICKREF}-${PACKAGE_VERSION}
 
 EXTRA_DIST = \
     ${OUTPUT}.html \
     ${OUTPUT}.txt \
-    ${QUICKREF}.pdf \
-    ${QUICKREFVERS}.pdf
+    ${QUICKREF}.pdf
 
 OXTRADOC_COMMON_FILES = \
     oxtradoc/xml2rfc.tcl \
@@ -79,7 +73,7 @@ OXTRADOC_SRC_FILES = \
 
 EXTRA_DIST += ${OXTRADOC_SRC_FILES}
 
-doc docs: ${OUTPUT}.txt ${OUTPUT}.html ${QUICKREFVERS}.pdf
+doc docs: ${OUTPUT}.txt ${OUTPUT}.html
 
 ${OUTPUT}.txt: ${INPUT} ${OXTRADOC}
 	${OXTRADOC_CMD} -m text -o $@ $<
@@ -87,15 +81,11 @@ ${OUTPUT}.txt: ${INPUT} ${OXTRADOC}
 ${OUTPUT}.html: ${INPUT} ${OXTRADOC} ${XML2HTMLBIN}
 	${OXTRADOC_CMD} -m html -o $@ $<
 
-${QUICKREFVERS}.pdf: ${QUICKREF}.pdf
-	cp $< $@
-
 CLEANFILES = \
 ${INPUT:.txt=.xml} \
 ${OUTPUT}.txt \
 ${INPUT:.txt=.fxml} \
-${OUTPUT}.html \
-${QUICKREFVERS}.pdf
+${OUTPUT}.html
 
 OXTRADOC_INSTALL_DIR = ${prefix}/share/oxtradoc
 
