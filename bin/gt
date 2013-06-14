@@ -32,7 +32,7 @@ case "$op" in
 	# Push all local changes to the master server
         set_master
 	echo "Pushing to $master ..."
-	echo git push origin $master
+	git push origin $master
 	;;
 
     pt|ptest|push-test)
