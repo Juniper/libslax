@@ -12,15 +12,33 @@
 op="$1"
 shift
 
+function set_master () {
+    master=`git status -b -s | head -1 | awk '{print $2}'`
+    case "$master" in
+	gh-pages*)
+            master=gh-pages
+	    ;;
+	*)
+	    master=master
+    esac
+}
+
 case "$op" in
+    dif|diff*)
+        git diff "$@"
+	;;
+
     pu|pom|push)
 	# Push all local changes to the master server
-	git push origin master
+        set_master
+	echo "Pushing to $master ..."
+	echo git push origin $master
 	;;
 
     pt|ptest|push-test)
 	# Push all local changes to the master server
-	git push --dry-run origin master
+        set_master
+	git push --dry-run origin $master
 	;;
 
     ci|check|checkin|checkpoint)
@@ -63,6 +81,7 @@ case "$op" in
 	;;
 
     out|outstanding)
+        set_master
         git diff origin/master master
 	;;
 
