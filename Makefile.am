@@ -42,9 +42,6 @@ upload: dist
 	@${UPLOAD} -s 'Quick Reference Card' -l Type-Docs,Featured \
 		doc/slax-quick-reference-${PACKAGE_VERSION}.pdf
 
-svnignore:
-	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}
-
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = libslax.pc
 
@@ -52,5 +49,4 @@ get-wiki:
 	git clone https://github.com/Juniper/libslax.wiki.git wiki
 
 get-gh-pages:
-	git clone https://github.com/Juniper/libslax.git gh-pages
-	cd gh-pages && git checkout gh-pages
+	git clone https://github.com/Juniper/libslax.git gh-pages -b gh-pages
