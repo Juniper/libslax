@@ -6,5 +6,10 @@ This library builds on the most excellent work of Daniel Veillard
 et al in the [libxml2 and libxslt libraries](http://xmlsoft.org),
 for which I heartily give thanks.
 
-More information is available in the
-[Wiki](https://github.com/Juniper/libslax/wiki).
+Our download page is hosted on
+[dropbox.com](https://www.dropbox.com/sh/krw6ddg5sdkf97z/3KoP-2fLaL)
+
+Please visit the 
+[libslax wiki](https://github.com/Juniper/libslax/wiki).
+for more information, documentation, examples, and notes on
+SLAX and libslax.
