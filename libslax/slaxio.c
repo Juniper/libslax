@@ -60,6 +60,8 @@ static slaxErrorCallback_t slaxErrorCallback;
 int slaxLogIsEnabled;
 static slaxLogCallback_t slaxLogCallback;
 static void *slaxLogCallbackData;
+static FILE *slaxLogFp;
+
 static FILE *slaxIoTty;
 
 /**
@@ -388,6 +390,17 @@ slaxLogEnableCallback (slaxLogCallback_t func, void *data)
 }
 
 /**
+ * Enable logging to a file
+ *
+ * @filename name of log file
+ */
+void
+slaxLogToFile (FILE *fp)
+{
+    slaxLogFp = fp;
+}
+
+/**
  * Simple trace function that tosses messages to stderr if slaxLogIsEnabled
  * has been set to non-zero.
  *
@@ -406,9 +419,9 @@ slaxLog (const char *fmt, ...)
     if (slaxLogCallback) {
 	slaxLogCallback(slaxLogCallbackData, fmt, vap);
     } else {
-	vfprintf(stderr, fmt, vap);
-	fprintf(stderr, "\n");
-	fflush(stderr);
+	vfprintf(slaxLogFp ?: stderr, fmt, vap);
+	fprintf(slaxLogFp ?: stderr, "\n");
+	fflush(slaxLogFp ?: stderr);
     }
 
     va_end(vap);
@@ -430,8 +443,8 @@ slaxLog2 (void *ignore UNUSED, const char *fmt, ...)
 
     va_start(vap, fmt);
 
-    vfprintf(stderr, fmt, vap);
-    fflush(stderr);
+    vfprintf(slaxLogFp ?: stderr, fmt, vap);
+    fflush(slaxLogFp ?: stderr);
 
     va_end(vap);
 }
