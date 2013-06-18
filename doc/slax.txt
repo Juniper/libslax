@@ -3514,13 +3514,14 @@ available in the native format.
 
 <format> "xml"; 
 
-|-------------+--------------------------|
-| Format name | Special behavior         |
-|-------------+--------------------------|
-| html        | Result is parsed as HTML |
-| text        | None                     |
-| xml         | Result is parsed as XML  |
-|-------------+--------------------------|
+|-------------+----------------------------|
+| Format name | Special behavior           |
+|-------------+----------------------------|
+| html        | Result is parsed as HTML   |
+| name        | Result is name=value pairs |
+| text        | None                       |
+| xml         | Result is parsed as XML    |
+|-------------+----------------------------|
 
 **** <from>
 
