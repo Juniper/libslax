@@ -985,7 +985,8 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 		break;		/* Last one (end of data) */
 	}
 
-    } else if (streq(opts->co_format, "url-encoded")) {
+    } else if (streq(opts->co_format, "url-encoded")
+	       || streq(opts->co_format, "urlencoded")) {
 	for (cp = raw_data; *cp; cp = ep + 1) {
 	    sp = strchr(cp, '=');
 	    if (sp == NULL)
