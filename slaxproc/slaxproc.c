@@ -382,6 +382,7 @@ main (int argc UNUSED, char **argv)
     int i;
     unsigned ioflags = 0;
     int opt_ignore_arguments = FALSE;
+    char *opt_log_file = NULL;
 
     slaxDataListInit(&plist);
 
@@ -455,6 +456,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
 	    slaxDynAdd(*++argv);
+
+	} else if (streq(cp, "--log") || streq(cp, "-l")) {
+	    opt_log_file = *++argv;
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
@@ -562,8 +566,17 @@ main (int argc UNUSED, char **argv)
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
 
-    if (logger)
+    if (opt_log_file) {
+	FILE *fp = fopen(opt_log_file, "w");
+	if (fp == NULL)
+	    err(1, "could not open log file: '%s'", opt_log_file);
+
 	slaxLogEnable(TRUE);
+	slaxLogToFile(fp);
+
+    } else if (logger) {
+	slaxLogEnable(TRUE);
+    }
 
     if (use_exslt)
 	exsltRegisterAll();
