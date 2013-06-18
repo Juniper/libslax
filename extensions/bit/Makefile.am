@@ -30,8 +30,14 @@ AM_CFLAGS += \
 
 lib_LTLIBRARIES = libext_bit.la
 LIBS = \
-    ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS} \
-    -L../../libslax -L${SLAX_LIBDIR} -lslax
+    ${LIBXSLT_LIBS} \
+    -lexslt \
+    ${LIBXML_LIBS}
+
+LDADD = \
+    -L../../libslax \
+    -L${SLAX_LIBDIR} -lslax
+
 
 if HAVE_READLINE
 LIBS += -L/opt/local/lib -lreadline
