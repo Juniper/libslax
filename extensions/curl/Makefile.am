@@ -36,7 +36,9 @@ LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS} \
-    ${LIBCURL_LIBS} \
+    ${LIBCURL_LIBS}
+
+LDADD = \
     -L../../libslax \
     -L${SLAX_LIBDIR} -lslax
 
