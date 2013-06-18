@@ -3514,14 +3514,65 @@ available in the native format.
 
 <format> "xml"; 
 
-|-------------+----------------------------|
-| Format name | Special behavior           |
-|-------------+----------------------------|
-| html        | Result is parsed as HTML   |
-| name        | Result is name=value pairs |
-| text        | None                       |
-| xml         | Result is parsed as XML    |
-|-------------+----------------------------|
+|-------------+-----------------------------|
+| Format name | Special behavior            |
+|-------------+-----------------------------|
+| html        | Result is parsed as HTML    |
+| name        | Result is name=value pairs  |
+| text        | None                        |
+| url-encoded | Result is n1=v1&n2=v2 pairs |
+| xml         | Result is parsed as XML     |
+|-------------+-----------------------------|
+
+The "name" encoding is used for name=value pairs separated by
+newlines, where the url-encoded encoding is used when the name=value
+pairs are separated by "&".
+
+The parsed data is returned in the <data> element, using <name>
+elements.  In the following example results, <format> was set
+to "url-encoded":
+
+    <results>
+      <url>https://api.example.com/request_token</url>
+      <curl-success/>
+      <raw-headers>HTTP/1.1 200 OK&#xD;
+    Server: XXXX&#xD;
+    Date: Tue, 18 Jun 2013 18:56:31 GMT&#xD;
+    Content-Type: application/x-www-form-urlencoded&#xD;
+    Transfer-Encoding: chunked&#xD;
+    Connection: keep-alive&#xD;
+    x-server-response-time: 69&#xD;
+    x-example-request-id: 123456&#xD;
+    pragma: no-cache&#xD;
+    cache-control: no-cache&#xD;
+    x-http-protocol: None&#xD;
+    x-frame-options: SAMEORIGIN&#xD;
+    X-RequestId: 12345&#xD;
+    &#xD;
+    </raw-headers>
+      <headers>
+        <version>HTTP/1.1</version>
+        <code>200</code>
+        <message>OK</message>
+        <header name="Server">XXXXX</header>
+        <header name="Date">Tue, 18 Jun 2013 18:56:31 GMT</header>
+        <header name="Content-Type">application/x-www-form-urlencoded</header>
+        <header name="Transfer-Encoding">chunked</header>
+        <header name="Connection">keep-alive</header>
+        <header name="x-server-response-time">69</header>
+        <header name="x-example-request-id">123456</header>
+        <header name="pragma">no-cache</header>
+        <header name="cache-control">no-cache</header>
+        <header name="x-http-protocol">None</header>
+        <header name="x-frame-options">SAMEORIGIN</header>
+        <header name="X-RequestId">12345</header>
+      </headers>
+      <raw-data>oauth_token_secret=secret&amp;oauth_token=token</raw-data>
+      <data format="url-encoded">
+        <name name="oauth_token_secret">secret</name>
+        <name name="oauth_token">token</name>
+      </data>
+    </results>
 
 **** <from>
 
