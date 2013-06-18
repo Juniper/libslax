@@ -240,6 +240,14 @@ void
 slaxLogEnableCallback (slaxLogCallback_t func, void *data);
 
 /**
+ * Enable logging to a file
+ *
+ * @filename name of log file
+ */
+void
+slaxLogToFile (FILE *fp);
+
+/**
  * Initial the randomizer
  */
 void
