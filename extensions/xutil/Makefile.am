@@ -33,8 +33,11 @@ lib_LTLIBRARIES = libext_xutil.la
 LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
-    ${LIBXML_LIBS} \
-    -L../../libslax -L${SLAX_LIBDIR} -lslax
+    ${LIBXML_LIBS}
+
+LDADD = \
+    -L../../libslax \
+    -L${SLAX_LIBDIR} -lslax
 
 if HAVE_READLINE
 LIBS += -L/opt/local/lib -lreadline
