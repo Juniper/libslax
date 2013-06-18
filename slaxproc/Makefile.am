@@ -41,8 +41,12 @@ endif
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c
-slaxproc_LDADD = ../libslax/libslax.la
-slaxproc_LDFLAGS = -static
+#slaxproc_LDADD = ../libslax/libslax.la
+#slaxproc_LDFLAGS = -static
+
+LDADD = \
+    -L../libslax \
+    -L${SLAX_LIBDIR} -lslax
 
 man_MANS = slaxproc.1x slaxdebugger.1x
 
