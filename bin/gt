@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Copyright 2011, Juniper Networks, Inc.
+# Copyright 2013, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
 # ../Copyright file. By downloading, installing, copying, or otherwise
@@ -20,6 +20,7 @@ function set_master () {
 	    ;;
 	*)
 	    master=master
+	    ;;
     esac
 }
 
@@ -105,9 +106,9 @@ case "$op" in
 
     add-tag)
 	# Tag source code with revision number
-        # If you make a tag like "libslax-0.15.0", then you can
+        # If you make a tag like "0.15.0", then you can
         # use an URL like:
-        # https://github.com/Juniper/libslax/archive/libslax-0.15.0.tar.gz
+        # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
         if [ "$@" -eq "" ]; then
 	    echo "missing tag name"
 	    exit 1
