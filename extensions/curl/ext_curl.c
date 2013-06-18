@@ -204,6 +204,13 @@ extCurlHandleFind (const char *name)
     return NULL;
 }
 
+static int
+strceq (const char *red, const char *blue)
+{
+    return (red && blue && tolower((int) *red) == tolower((int) *blue)
+	    && strcasecmp(red + 1, blue + 1) == 0);
+}
+
 static void
 extCurlSetContents (curl_opts_t *opts, xmlNodePtr nodep)
 {
@@ -748,21 +755,21 @@ extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
     extCurlHandleClean(curlp); /* Shouldn't be needed */
 
     if (opts->co_method) {
-	if (streq(opts->co_method, "delete")) {
+	if (strceq(opts->co_method, "delete")) {
 	    deletev = 1;
 	    CURL_SET(CURLOPT_CUSTOMREQUEST, "DELETE");
-	} else if (streq(opts->co_method, "email"))
+	} else if (strceq(opts->co_method, "email"))
 	    emailv = 1;
-	else if (streq(opts->co_method, "get"))
+	else if (strceq(opts->co_method, "get"))
 	    getv = 1;
-	else if (streq(opts->co_method, "head"))
+	else if (strceq(opts->co_method, "head"))
 	    headv = 1;
-	else if (streq(opts->co_method, "post"))
+	else if (strceq(opts->co_method, "post"))
 	    postv = 1;
-	else if (streq(opts->co_method, "put")) {
+	else if (strceq(opts->co_method, "put")) {
 	    putv = 1;
 	    CURL_SET(CURLOPT_CUSTOMREQUEST, "PUT");
-	} else if (streq(opts->co_method, "upload"))
+	} else if (strceq(opts->co_method, "upload"))
 	    uploadv = 1;
     }
 
@@ -945,6 +952,45 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	    if (sp == NULL)
 		break;
 	    ep = strchr(sp, '\n');
+	    if (ep == NULL)
+		ep = sp + strlen(sp); /* Point at trailing NUL */
+
+	    if (sp - cp >= nbufsiz) {
+		nbufsiz = sp - cp + 1;
+		nbufsiz += BUFSIZ - 1;
+		nbufsiz &= ~(BUFSIZ - 1);
+		nbuf = alloca(nbufsiz);
+	    }
+	    memcpy(nbuf, cp, sp - cp);
+	    nbuf[sp - cp] = '\0';
+
+	    sp += 1;
+	    if (ep - sp >= vbufsiz) {
+		vbufsiz = ep - sp + 1;
+		vbufsiz += BUFSIZ - 1;
+		vbufsiz &= ~(BUFSIZ - 1);
+		vbuf = alloca(vbufsiz);
+	    }
+	    memcpy(vbuf, sp, ep - sp);
+	    vbuf[ep - sp] = '\0';
+
+	    xmlNodePtr xp = xmlAddChildContent(docp, nodep,
+				   (const xmlChar *) "name",
+				   (const xmlChar *) vbuf);
+	    if (xp)
+		xmlSetProp(xp, (const xmlChar *) "name",
+			   (const xmlChar *) nbuf);
+
+	    if (*ep == '\0')
+		break;		/* Last one (end of data) */
+	}
+
+    } else if (streq(opts->co_format, "url-encoded")) {
+	for (cp = raw_data; *cp; cp = ep + 1) {
+	    sp = strchr(cp, '=');
+	    if (sp == NULL)
+		break;
+	    ep = strchr(sp, '&');
 	    if (ep == NULL)
 		ep = sp + strlen(sp); /* Point at trailing NUL */
 
