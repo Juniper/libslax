@@ -104,12 +104,12 @@ case "$op" in
         git tag -l 'v*' | sed 's/^v//'
 	;;
 
-    add-tag)
+    tag|add-tag)
 	# Tag source code with revision number
         # If you make a tag like "0.15.0", then you can
         # use an URL like:
         # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
-        if [ "$@" -eq "" ]; then
+        if [ "$@" = "" ]; then
 	    echo "missing tag name"
 	    exit 1
         fi
