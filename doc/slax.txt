@@ -3556,7 +3556,8 @@ to "url-encoded":
         <message>OK</message>
         <header name="Server">XXXXX</header>
         <header name="Date">Tue, 18 Jun 2013 18:56:31 GMT</header>
-        <header name="Content-Type">application/x-www-form-urlencoded</header>
+        <header name="Content-Type"
+               >application/x-www-form-urlencoded</header>
         <header name="Transfer-Encoding">chunked</header>
         <header name="Connection">keep-alive</header>
         <header name="x-server-response-time">69</header>
@@ -3567,10 +3568,10 @@ to "url-encoded":
         <header name="x-frame-options">SAMEORIGIN</header>
         <header name="X-RequestId">12345</header>
       </headers>
-      <raw-data>oauth_token_secret=secret&amp;oauth_token=token</raw-data>
+      <raw-data>oauth_token_secret=s&amp;oauth_token=t</raw-data>
       <data format="url-encoded">
-        <name name="oauth_token_secret">secret</name>
-        <name name="oauth_token">token</name>
+        <name name="oauth_token_secret">s</name>
+        <name name="oauth_token">t</name>
       </data>
     </results>
 
