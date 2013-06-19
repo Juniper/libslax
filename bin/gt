@@ -90,9 +90,7 @@ case "$op" in
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
         mkdir -p gh-pages
-	git clone $url
-	cd $base
-	git checkout gh-pages
+	git clone $url -b gh-pages
 	;;
 
     up|update)
