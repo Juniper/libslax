@@ -30,7 +30,7 @@ docs:
 USER_INFO := $(shell if [ -f .upload ]; then cat .upload; fi )
 
 UPLOAD = python ~/bin/googlecode_upload.py -p libslax ${USER_INFO}
-upload: dist
+upload-google: dist
 	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
 	@${UPLOAD} -s 'Release ${PACKAGE_VERSION}' \
 		-l Type-Source,OpSys-All,Featured \
@@ -41,6 +41,21 @@ upload: dist
 	@echo "Uploading slax-quick-reference-${PACKAGE_VERSION}.pdf ... "
 	@${UPLOAD} -s 'Quick Reference Card' -l Type-Docs,Featured \
 		doc/slax-quick-reference-${PACKAGE_VERSION}.pdf
+
+DIST_FILES_DIR = ~/Dropbox/dist-files/
+GH_PAGES_DIR = gh-pages/
+upload: dist
+	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
+	@cp libslax-${PACKAGE_VERSION}.tar.gz ${DIST_FILES_DIR}
+	@echo "Uploading slax-manual.html ... "
+	@cp doc/slax-manual.html ${DIST_FILES_DIR}
+	@-[ -d ${GH_PAGES_DIR} ] \
+		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
+		&& (cd ${GH_PAGES_DIR} \
+			&& git commit -m 'new docs' slax-manual.html \
+			&& git push origin gh-pages )
+	@echo "Uploading slax-quick-reference.pdf ... "
+	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = libslax.pc
