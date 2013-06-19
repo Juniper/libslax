@@ -21972,7 +21972,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">June 13, 2013</td>
+<td class="header right">June 18, 2013</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -23486,11 +23486,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_4">2.4</a> </div>Attribute Sets</h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="idp18466224"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp18466224">
+<div class="digress tooltip faq" id="idp18448576"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp18448576">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp18466224'); " onmouseover="popUp(event, 'idp18466224')" onmouseout="popDown(event, 'idp18466224')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp18448576'); " onmouseover="popUp(event, 'idp18448576')" onmouseout="popDown(event, 'idp18448576')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
 <h3 id="doc_section_2_4_1">
 <div class="self-section-number">
 <a href="#doc_section_2_4_1">2.4.1</a> </div>
@@ -23925,11 +23925,11 @@ jQuery(function ($) {
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="idp18689792"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp18689792">
+	    </pre> <div class="digress tooltip note:" id="idp18672288"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp18672288">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp18689792'); " onmouseover="popUp(event, 'idp18689792')" onmouseout="popDown(event, 'idp18689792')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp18672288'); " onmouseover="popUp(event, 'idp18672288')" onmouseout="popDown(event, 'idp18672288')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
@@ -25808,8 +25808,16 @@ jQuery(function ($) {
 <td>Result is parsed as HTML</td>
 </tr>
 <tr>
+<td>name</td>
+<td>Result is name=value pairs</td>
+</tr>
+<tr>
 <td>text</td>
 <td>None</td>
+</tr>
+<tr>
+<td>url-encoded</td>
+<td>Result is n1=v1&amp;n2=v2 pairs</td>
 </tr>
 <tr>
 <td>xml</td>
@@ -25817,13 +25825,58 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-</div>
+<p id="doc_section_8_2_1_6_p_3">The "name" encoding is used for name=value pairs separated by newlines, where the url-encoded encoding is used when the name=value pairs are separated by "&amp;".</p>
+<p id="doc_section_8_2_1_6_p_4">The parsed data is returned in the &lt;data&gt; element, using &lt;name&gt; elements. In the following example results, &lt;format&gt; was set to "url&#8209;encoded":</p>
+<div id="doc_figure_u.196"></div> <pre>
+    &lt;results&gt;
+      &lt;url&gt;https://api.example.com/request_token&lt;/url&gt;
+      &lt;curl-success/&gt;
+      &lt;raw-headers&gt;HTTP/1.1 200 OK&amp;#xD;
+    Server: XXXX&amp;#xD;
+    Date: Tue, 18 Jun 2013 18:56:31 GMT&amp;#xD;
+    Content-Type: application/x-www-form-urlencoded&amp;#xD;
+    Transfer-Encoding: chunked&amp;#xD;
+    Connection: keep-alive&amp;#xD;
+    x-server-response-time: 69&amp;#xD;
+    x-example-request-id: 123456&amp;#xD;
+    pragma: no-cache&amp;#xD;
+    cache-control: no-cache&amp;#xD;
+    x-http-protocol: None&amp;#xD;
+    x-frame-options: SAMEORIGIN&amp;#xD;
+    X-RequestId: 12345&amp;#xD;
+    &amp;#xD;
+    &lt;/raw-headers&gt;
+      &lt;headers&gt;
+        &lt;version&gt;HTTP/1.1&lt;/version&gt;
+        &lt;code&gt;200&lt;/code&gt;
+        &lt;message&gt;OK&lt;/message&gt;
+        &lt;header name="Server"&gt;XXXXX&lt;/header&gt;
+        &lt;header name="Date"&gt;Tue, 18 Jun 2013 18:56:31 GMT&lt;/header&gt;
+        &lt;header name="Content-Type"
+               &gt;application/x-www-form-urlencoded&lt;/header&gt;
+        &lt;header name="Transfer-Encoding"&gt;chunked&lt;/header&gt;
+        &lt;header name="Connection"&gt;keep-alive&lt;/header&gt;
+        &lt;header name="x-server-response-time"&gt;69&lt;/header&gt;
+        &lt;header name="x-example-request-id"&gt;123456&lt;/header&gt;
+        &lt;header name="pragma"&gt;no-cache&lt;/header&gt;
+        &lt;header name="cache-control"&gt;no-cache&lt;/header&gt;
+        &lt;header name="x-http-protocol"&gt;None&lt;/header&gt;
+        &lt;header name="x-frame-options"&gt;SAMEORIGIN&lt;/header&gt;
+        &lt;header name="X-RequestId"&gt;12345&lt;/header&gt;
+      &lt;/headers&gt;
+      &lt;raw-data&gt;oauth_token_secret=s&amp;amp;oauth_token=t&lt;/raw-data&gt;
+      &lt;data format="url-encoded"&gt;
+        &lt;name name="oauth_token_secret"&gt;s&lt;/name&gt;
+        &lt;name name="oauth_token"&gt;t&lt;/name&gt;
+      &lt;/data&gt;
+    &lt;/results&gt;
+	    </pre> </div>
 <div class="content">
 <h4 id="doc_section_8_2_1_7">
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_7">8.2.1.7</a> </div>&lt;from&gt;</h4>
 <p id="doc_section_8_2_1_7_p_1">The &lt;from&gt; element gives the "From" address to use for "email" (SMTP) requests.</p>
-<div id="doc_figure_u.196"></div> <pre>
+<div id="doc_figure_u.197"></div> <pre>
     SYNTAX::
       &lt;from&gt; "source-user@email.example.com";
 	    </pre> </div>
@@ -25832,7 +25885,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_8">8.2.1.8</a> </div>&lt;header&gt;</h4>
 <p id="doc_section_8_2_1_8_p_1">The &lt;header&gt; element gives additional header fields for the request.</p>
-<div id="doc_figure_u.197"></div> <pre>
+<div id="doc_figure_u.198"></div> <pre>
     SYNTAX::
       &lt;header name="name"&gt; "value";
 	    </pre> </div>
@@ -25841,7 +25894,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_9">8.2.1.9</a> </div>&lt;insecure&gt;</h4>
 <p id="doc_section_8_2_1_9_p_1">The &lt;insecure&gt; element indicates a willingness to tolerate insecure communications operations. In particular, it will allow SSL Certs without checking the common name.</p>
-<div id="doc_figure_u.198"></div> <pre>
+<div id="doc_figure_u.199"></div> <pre>
     SYNTAX::
       &lt;insecure&gt;;
 	    </pre> </div>
@@ -25850,7 +25903,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_10">8.2.1.10</a> </div>&lt;local&gt;</h4>
 <p id="doc_section_8_2_1_10_p_1">The &lt;local&gt; element gives the name to use as the local hostname for "email" (SMTP) requests .</p>
-<div id="doc_figure_u.199"></div> <pre>
+<div id="doc_figure_u.200"></div> <pre>
     SYNTAX::
       &lt;local&gt; "local host name";
 	    </pre> </div>
@@ -25859,7 +25912,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_11">8.2.1.11</a> </div>&lt;method&gt;</h4>
 <p id="doc_section_8_2_1_11_p_1">The &lt;method&gt; element sets the method used to transfer data. This controls the HTTP request type, as well as triggering other transfer mechanisms.</p>
-<div id="doc_figure_u.200"></div> <pre>
+<div id="doc_figure_u.201"></div> <pre>
     SYNTAX::
       &lt;method&gt; $method;
 	    </pre> <p id="doc_section_8_2_1_11_p_3">Method names are listed in the table below.</p>
@@ -25906,7 +25959,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_12">8.2.1.12</a> </div>&lt;param&gt;</h4>
 <p id="doc_section_8_2_1_12_p_1">The &lt;param&gt; element gives additional parameter values for the request. These parameters are typically encoded into the URL.</p>
-<div id="doc_figure_u.201"></div> <pre>
+<div id="doc_figure_u.202"></div> <pre>
     SYNTAX::
       &lt;param name="x"&gt; "y";
 	    </pre> </div>
@@ -25915,7 +25968,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_13">8.2.1.13</a> </div>&lt;password&gt;</h4>
 <p id="doc_section_8_2_1_13_p_1">The &lt;password&gt; element sets the user's password for the transfer.</p>
-<div id="doc_figure_u.202"></div> <pre>
+<div id="doc_figure_u.203"></div> <pre>
     SYNTAX::
       &lt;password&gt; "password";
 	    </pre> </div>
@@ -25924,7 +25977,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_14">8.2.1.14</a> </div>&lt;secure&gt;</h4>
 <p id="doc_section_8_2_1_14_p_1">The &lt;secure&gt; element requests the use of the "secure" sibling of many protocols, including HTTPS and FTPS.</p>
-<div id="doc_figure_u.203"></div> <pre>
+<div id="doc_figure_u.204"></div> <pre>
     SYNTAX::
       &lt;secure&gt;;
 	    </pre> </div>
@@ -25933,7 +25986,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_15">8.2.1.15</a> </div>&lt;server&gt;</h4>
 <p id="doc_section_8_2_1_15_p_1">The &lt;server&gt; element gives the outgoing SMTP server name. At present, MX records are not handled, but that will be fixed shortly.</p>
-<div id="doc_figure_u.204"></div> <pre>
+<div id="doc_figure_u.205"></div> <pre>
     SYNTAX::
       &lt;server&gt; "email-server.example.com";
 	    </pre> </div>
@@ -25942,7 +25995,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_16">8.2.1.16</a> </div>&lt;subject&gt;</h4>
 <p id="doc_section_8_2_1_16_p_1">The &lt;subject&gt; element gives the "Subject" field for "email" (SMTP) requests.</p>
-<div id="doc_figure_u.205"></div> <pre>
+<div id="doc_figure_u.206"></div> <pre>
     SYNTAX::
       &lt;subject&gt; "email subject string";
 	    </pre> </div>
@@ -25951,7 +26004,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_17">8.2.1.17</a> </div>&lt;timeout&gt;</h4>
 <p id="doc_section_8_2_1_17_p_1">The &lt;timeout&gt; element gives the number of seconds before an open connection is considered to have failed.</p>
-<div id="doc_figure_u.206"></div> <pre>
+<div id="doc_figure_u.207"></div> <pre>
     SYNTAX::
       &lt;timeout&gt; 10;
 	    </pre> </div>
@@ -25960,7 +26013,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_18">8.2.1.18</a> </div>&lt;to&gt;</h4>
 <p id="doc_section_8_2_1_18_p_1">The &lt;to&gt; element gives a "To" address for "email" (SMTP) requests. For multiple address, use multiple &lt;to&gt; elements.</p>
-<div id="doc_figure_u.207"></div> <pre>
+<div id="doc_figure_u.208"></div> <pre>
     SYNTAX::
       &lt;to&gt; "to-user@email.examplecom";
 	    </pre> </div>
@@ -25969,7 +26022,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_19">8.2.1.19</a> </div>&lt;upload&gt;</h4>
 <p id="doc_section_8_2_1_19_p_1">The &lt;upload&gt; element indicates this is a file upload request.</p>
-<div id="doc_figure_u.208"></div> <pre>
+<div id="doc_figure_u.209"></div> <pre>
     SYNTAX::
       &lt;upload&gt;;
 	    </pre> </div>
@@ -25978,7 +26031,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_20">8.2.1.20</a> </div>&lt;url&gt;</h4>
 <p id="doc_section_8_2_1_20_p_1">The &lt;url&gt; element sets the base URL for the request.</p>
-<div id="doc_figure_u.209"></div> <pre>
+<div id="doc_figure_u.210"></div> <pre>
     SYNTAX::
       &lt;url&gt; "target-url";
 	    </pre> </div>
@@ -25987,7 +26040,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_21">8.2.1.21</a> </div>&lt;username&gt;</h4>
 <p id="doc_section_8_2_1_21_p_1">The &lt;username&gt; element sets the user name to use for the transfer.</p>
-<div id="doc_figure_u.210"></div> <pre>
+<div id="doc_figure_u.211"></div> <pre>
     SYNTAX::
       &lt;username&gt; "username";
 	    </pre> </div>
@@ -25996,7 +26049,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_22">8.2.1.22</a> </div>&lt;verbose&gt;</h4>
 <p id="doc_section_8_2_1_22_p_1">The &lt;verbose&gt; element requests an insanely detailed level of debug information that can be useful when debugging requests. The curl extension will display detailed information about the operations and communication of the curl transfer.</p>
-<div id="doc_figure_u.211"></div> <pre>
+<div id="doc_figure_u.212"></div> <pre>
     SYNTAX::
       &lt;verbose&gt;;
 	    </pre> </div>
@@ -26016,7 +26069,7 @@ jQuery(function ($) {
 </h4>
 <p id="doc_section_8_2_2_1_p_1">The "curl:perform" extension function performs simple transfers using a persistent connection handle, as provided by curl:open (<a href="#curl-open" title="curl:open">Section 8.2.2.2</a>).</p>
 <p id="doc_section_8_2_2_1_p_2">The arguments are the connection handle and a set of option elements as listed in <a href="#curl-elements" title="curl Elements">Section 8.2.1</a>. The returned object is an XML hierarchy containing the results of the transfer.</p>
-<div id="doc_figure_u.212"></div> <pre>
+<div id="doc_figure_u.213"></div> <pre>
     SYNTAX::
         object curl:perform(handle, options)
 	    </pre> <p id="doc_section_8_2_2_1_p_4">The returned object may contain the following elements:</p>
@@ -26082,7 +26135,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_2_2_1_p_6">The following is an example of the &lt;header&gt; element, with header fields parsed into &lt;field&gt; elements.</p>
-<div id="doc_figure_u.213"></div> <pre>
+<div id="doc_figure_u.214"></div> <pre>
       &lt;header&gt;
         &lt;version&gt;HTTP/1.1&lt;/version&gt;
         &lt;code&gt;404&lt;/code&gt;
@@ -26100,7 +26153,7 @@ jQuery(function ($) {
 <a id="curl-open" href="#curl-open">curl:open</a>
 </h4>
 <p id="doc_section_8_2_2_2_p_1">The "curl:open" extension function opens a connection to a remote server, allowing multiple operations over a single connection.</p>
-<div id="doc_figure_u.214"></div> <pre>
+<div id="doc_figure_u.215"></div> <pre>
     SYNTAX::
         handle curl:open();
 	    </pre> <p id="doc_section_8_2_2_2_p_3">The returned handle can be passed to curl:perform() or curl:close().</p>
@@ -26110,11 +26163,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_3">8.2.2.3</a> </div>curl:set</h4>
 <p id="doc_section_8_2_2_3_p_1">The "curl:set" extension function records a set of parameters that will persist for the lifespan of a connection.</p>
-<div id="doc_figure_u.215"></div> <pre>
+<div id="doc_figure_u.216"></div> <pre>
     SYNTAX::
         void cur:set(handle, options);
 	    </pre> <p id="doc_section_8_2_2_3_p_3">curl:set() sets options on the handle, so they don't need to be repeated on each curl:perform() call.</p>
-<div id="doc_figure_u.216"></div> <pre>
+<div id="doc_figure_u.217"></div> <pre>
     var $curl = curl:open();
     var $global-options = {
         &lt;method&gt; "post";
@@ -26131,7 +26184,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_4">8.2.2.4</a> </div>curl:single</h4>
 <p id="doc_section_8_2_2_4_p_1">The "curl:single" extension function performs transfer operations without using a persistent connection.</p>
-<div id="doc_figure_u.217"></div> <pre>
+<div id="doc_figure_u.218"></div> <pre>
     SYNTAX::
         object curl:single(options);
 	    </pre> <p id="doc_section_8_2_2_4_p_3">The returned object is identical in structure to the one returned by curl:perform. Refer to <a href="#curl-perform" title="curl:perform">Section 8.2.2.1</a> for additional information.</p>
@@ -26141,7 +26194,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_5">8.2.2.5</a> </div>curl:close</h4>
 <p id="doc_section_8_2_2_5_p_1">The "curl:close" extension function closes an open connection. Further operations cannot be performed over the connection.</p>
-<div id="doc_figure_u.218"></div> <pre>
+<div id="doc_figure_u.219"></div> <pre>
     SYNTAX::
         void curl:close(handle);
 	    </pre> </div>
@@ -26156,7 +26209,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_1">8.2.3.1</a> </div>Simple GET</h4>
 <p id="doc_section_8_2_3_1_p_1">This script gets a vanilla web page, but just to be interesting, includes a header field for the HTTP header and a parameter that is incorporated into the requested URL.</p>
-<div id="doc_figure_u.219"></div> <pre>
+<div id="doc_figure_u.220"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26183,7 +26236,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_2">8.2.3.2</a> </div>Google Auth</h4>
 <p id="doc_section_8_2_3_2_p_1">This script take a username and password and uses the google login services to translate them into an "Authorization" string.</p>
-<div id="doc_figure_u.220"></div> <pre>
+<div id="doc_figure_u.221"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26225,7 +26278,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_3">8.2.3.3</a> </div>Email</h4>
 <p id="doc_section_8_2_3_3_p_1">This script sends an email via a server provided as a parameter.</p>
-<div id="doc_figure_u.221"></div> <pre>
+<div id="doc_figure_u.222"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26267,7 +26320,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1">8.3.1</a> </div>"xutil" Extension Functions</h3>
 <p id="doc_section_8_3_1_p_1">The "xutil" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.222"></div> <pre>
+<div id="doc_figure_u.223"></div> <pre>
     ns xutil extension = "http://xml.libslax.org/xutil";
 	    </pre> <div class="content">
 <h4 id="doc_section_8_3_1_1">
@@ -26275,7 +26328,7 @@ jQuery(function ($) {
 <a href="#doc_section_8_3_1_1">8.3.1.1</a> </div>xutil:max-call-depth()</h4>
 <p id="doc_section_8_3_1_1_p_1">SLAX and XSLT use recursion as a programming tool for iteration, but unlimited recursion can lead to disaster. To avoid this, the libxslt engine limits the depth of recursive calls to 3,000. This limit should be find for almost all uses, but it the value is not suitable, it can be adjusted using the xutil:max-call-depth() function.</p>
 <p id="doc_section_8_3_1_1_p_2">If invoked without an argument, the function returns the current value. If a number is passed as the argument, that number is used as the new max call depth limit.</p>
-<div id="doc_figure_u.223"></div> <pre>
+<div id="doc_figure_u.224"></div> <pre>
     EXAMPLE::
         var $limit = xutil:max-call-depth();
         expr xutil:max-call-depth($limit * 2);
@@ -26285,7 +26338,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_2">8.3.1.2</a> </div>xutil:string-to-xml()</h4>
 <p id="doc_section_8_3_1_2_p_1">The xutil:string-to-xml() function turns a string containing XML data into the native representation of that data.</p>
-<div id="doc_figure_u.224"></div> <pre>
+<div id="doc_figure_u.225"></div> <pre>
     EXAMPLE::
         var $data = "&lt;doc&gt;&lt;title&gt;fred&lt;/title&gt;&lt;/doc&gt;";
         var $xml = xutil:string-to-xml($data);
@@ -26296,7 +26349,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_3">8.3.1.3</a> </div>xutil:xml-to-string()</h4>
 <p id="doc_section_8_3_1_3_p_1">The xutil:xml-to-string() function turns XML content into a string. This is different than the normal XPath stringification, which discards open and close tag. xml-to-string will encode tags as part of the string.</p>
-<div id="doc_figure_u.225"></div> <pre>
+<div id="doc_figure_u.226"></div> <pre>
     EXAMPLE::
         var $xml = &lt;dog&gt; "red";
         var $str = xutil:xml-to-string($xml);
@@ -26307,7 +26360,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_4">8.3.1.4</a> </div>xutil:json-to-xml()</h4>
 <p id="doc_section_8_3_1_4_p_1">The xutil:json-to-xml() function turns a string containing JSON data into the native representation of that data in XML.</p>
-<div id="doc_figure_u.226"></div> <pre>
+<div id="doc_figure_u.227"></div> <pre>
     EXAMPLE::
         var $data = "[ { "a" : 4, "name": "fish"}, 4, 5]";
         var $xml = xutil:json-to-xml($data);
@@ -26332,7 +26385,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.227"></div> <pre>
+<div id="doc_figure_u.228"></div> <pre>
         var $options = {
             &lt;root&gt; "my-top";
             &lt;types&gt; "no";
@@ -26345,7 +26398,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_5">8.3.1.5</a> </div>xutil:xml-to-json()</h4>
 <p id="doc_section_8_3_1_5_p_1">The xutil:xml-to-json() function turns XML content into a string of JSON data. This is different than the normal XPath stringification, which discards open and close tag. xml-to-json will encode tags as JSON objects inside a string</p>
-<div id="doc_figure_u.228"></div> <pre>
+<div id="doc_figure_u.229"></div> <pre>
     EXAMPLE::
         var $xml = &lt;json&gt; {
             &lt;color&gt; "red";
@@ -26427,7 +26480,7 @@ jQuery(function ($) {
 </table></div>
 <p id="doc_section_8_3_1_5_p_6">This allows the library to distinguish between '{ "value": "5" }' and '{ "value": "5" }' to control the encoding of the value as a string of number. Similarly the caller can control whether "null" is a string or the special null value.</p>
 <p id="doc_section_8_3_1_5_p_7">In this example, the type attribute is used to control the encoding of XML into JSON.</p>
-<div id="doc_figure_u.229"></div> <pre>
+<div id="doc_figure_u.230"></div> <pre>
       &lt;json&gt;
         &lt;name&gt;Skip Tracer&lt;/name&gt;
         &lt;location&gt;The city that never sleeps&lt;/location&gt;
@@ -26441,7 +26494,7 @@ jQuery(function ($) {
         &lt;/equipment&gt;
       &lt;/json&gt;
 	    </pre> <p id="doc_section_8_3_1_5_p_9">This yields:</p>
-<div id="doc_figure_u.230"></div> <pre>
+<div id="doc_figure_u.231"></div> <pre>
     {
       "name": "Skip Tracer",
       "location": "The city that never sleeps", 
@@ -26463,14 +26516,14 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_4_1">8.4.1</a> </div>"os" Extension Functions</h3>
 <p id="doc_section_8_4_1_p_1">The "os" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.231"></div> <pre>
+<div id="doc_figure_u.232"></div> <pre>
     ns os extension = "http://xml.libslax.org/os";
 	    </pre> <div class="content">
 <h4 id="doc_section_8_4_1_1">
 <div class="self-section-number">
 <a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>os:exit-code</h4>
 <p id="doc_section_8_4_1_1_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
-<div id="doc_figure_u.232"></div> <pre>
+<div id="doc_figure_u.233"></div> <pre>
     SYNTAX::
         void os:exit-code(number);
 
@@ -26498,7 +26551,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.233"></div> <pre>
+<div id="doc_figure_u.234"></div> <pre>
     SYNTAX::
         node-set os:mkdir(path, [options]);
 
@@ -26567,7 +26620,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_4_1_3_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
-<div id="doc_figure_u.234"></div> <pre>
+<div id="doc_figure_u.235"></div> <pre>
     var $files = os:stat("/etc/m*");
     var $options = {
         &lt;hidden&gt;;
@@ -26741,7 +26794,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_1">
 <div class="self-section-number">
 <a href="#doc_section_A_1">A.1</a> </div>general/itemschoose.xsl</h2>
-<div id="doc_figure_u.235"></div> <pre>
+<div id="doc_figure_u.236"></div> <pre>
     version 1.1;
 
     ns fo = "http://www.w3.org/1999/XSL/Format";
@@ -26779,7 +26832,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_2">
 <div class="self-section-number">
 <a href="#doc_section_A_2">A.2</a> </div>REC2/svg.xsl</h2>
-<div id="doc_figure_u.236"></div> <pre>
+<div id="doc_figure_u.237"></div> <pre>
     version 1.1;
 
     ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
@@ -26825,7 +26878,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_3">
 <div class="self-section-number">
 <a href="#doc_section_A_3">A.3</a> </div>XSLTMark/metric.xsl</h2>
-<div id="doc_figure_u.237"></div> <pre>
+<div id="doc_figure_u.238"></div> <pre>
     version 1.1;
 
     output-method html {
@@ -26889,7 +26942,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_B_1_2">B.1.2</a> </div>The Ternary Conditional Operator</h3>
 <p id="doc_section_B_1_2_p_1">As the last touch to SLAX-1.1, I've added the ternary operator from C, allowing expressions like:</p>
-<div id="doc_figure_u.238"></div> <pre>
+<div id="doc_figure_u.239"></div> <pre>
     var $a = $b ? $c : $d;
     var $e = $f ?: $g;
 	    </pre> <p id="doc_section_B_1_2_p_3">The caveat is that this uses an extension function slax:value() which may not be available in all XSLT environments. Coders must consider whether should a restriction deems this operator unusable. Portability considerations are identical to mutable variables (mvars).</p>
@@ -26924,27 +26977,27 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_11">All this works well for immutable objects and RTFs, but does not allow my mutable variables to work cleanly. This is quite annoying.</p>
 <p id="doc_section_B_1_3_p_12">I need to allow a variable to hold a nodeset, a document, or a scalar value, without caring about the previous value. But I need to hold on to the previous values to allow others to refer to them without dangling references. Dangling References</p>
 <p id="doc_section_B_1_3_p_13">Consider the following input document:</p>
-<div id="doc_figure_u.239"></div> <pre>
+<div id="doc_figure_u.240"></div> <pre>
     &lt;top&gt;
         &lt;x1/&gt;
         &lt;x2/&gt; 
         &lt;x3/&gt;
     &lt;/top&gt;
 	    </pre> <p id="doc_section_B_1_3_p_15">The following code makes a nodeset (type XPATH_NODESET) whose nodeTab array points into the input document:</p>
-<div id="doc_figure_u.240"></div> <pre>
+<div id="doc_figure_u.241"></div> <pre>
     var $x = top/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_17">The following code make an RTF/RVT (type XPATH_XSLT_TREE), whose "fake" document contains a root element (type XML_DOCUMENT_NODE) that contains the "top" element node.</p>
-<div id="doc_figure_u.241"></div> <pre>
+<div id="doc_figure_u.242"></div> <pre>
     var $y = &lt;top&gt; {
         &lt;x1&gt;;
         &lt;x2&gt;;
         &lt;x3&gt;;
     }
 	    </pre> <p id="doc_section_B_1_3_p_19">The following code makes a nodeset (type XPATH_NODESET) that refers to nodes in the "fake" document under $y:</p>
-<div id="doc_figure_u.242"></div> <pre>
+<div id="doc_figure_u.243"></div> <pre>
     var $z = $y/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_21">Now consider the following code:</p>
-<div id="doc_figure_u.243"></div> <pre>
+<div id="doc_figure_u.244"></div> <pre>
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
     if ($a) {
@@ -26970,17 +27023,17 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_30">But where does the "overhead" live?</p>
 <p id="doc_section_B_1_3_p_31">In classic SLAX style, the overhead is kept in a shadow variable. The shadow variable (svar) holds an RTF/RVT that contains all the nodes ever assigned to the variable, a living history of all values of the variable.</p>
 <p id="doc_section_B_1_3_p_32">We don't need to record scalar values, so:</p>
-<div id="doc_figure_u.244"></div> <pre>
+<div id="doc_figure_u.245"></div> <pre>
     mvar $x = 4;
 	    </pre> <p id="doc_section_B_1_3_p_34">becomes:</p>
-<div id="doc_figure_u.245"></div> <pre>
+<div id="doc_figure_u.246"></div> <pre>
     &lt;xsl:variable name="slax-x"/&gt;
     &lt;xsl:variable name="x" select="4"/&gt;
 	    </pre> <p id="doc_section_B_1_3_p_36">But for RTFs, the content must be preserved, so:</p>
-<div id="doc_figure_u.246"></div> <pre>
+<div id="doc_figure_u.247"></div> <pre>
     mvar $x = &lt;next&gt; "one";
 	    </pre> <p id="doc_section_B_1_3_p_38">becomes:</p>
-<div id="doc_figure_u.247"></div> <pre>
+<div id="doc_figure_u.248"></div> <pre>
     &lt;xsl:variable name="slax-x"&gt;
         &lt;next&gt;one&lt;/next&gt;
     &lt;/xsl:variable&gt;
@@ -27011,7 +27064,7 @@ jQuery(function ($) {
 <p id="doc_section_B_2_1_p_3">In the 2005-2006 timeframe, we started developing on-box script capabilities using XSLT. I like the niche and properties of XSLT, but the syntax makes development and maintenance problematic. First class constructs are buried in attributes, with unreadable encodings. Customers objections were fairly strong, and they asked for a more perl-like syntax. SLAX was our answer.</p>
 <p id="doc_section_B_2_1_p_4">SLAX simplifies the syntax of XSLT, making an encoding that makes scripts more readable, maintainable, and helps the reader to see what's going on. XML escaping is replaced by unix/perl/c-style escaping. Control elements like &lt;xsl:if&gt; are replaced with the familiar "if" statement. Minor details are more transparent.</p>
 <p id="doc_section_B_2_1_p_5">The majority of our scripts are simple, following the pattern:</p>
-<div id="doc_figure_u.248"></div> <pre>
+<div id="doc_figure_u.249"></div> <pre>
     if (find/something/bad) {
         call error($message = "found something bad");
     }
@@ -27046,7 +27099,7 @@ jQuery(function ($) {
 <p id="doc_section_B_3_1_p_2">The prefixes found in the document are translated into namespace URIs, which are then escaped using the URL-escaping algorithm that turns unacceptable characters into three character strings like "%2F".</p>
 <p id="doc_section_B_3_1_p_3">An extension of ".ext" is appended to the URL-escaped URI and this file is searched but in ${SLAX_EXTDIR} and any directories given via the "&#8209;&#8209;lib/&#8209;L" argument.</p>
 <p id="doc_section_B_3_1_p_4">When the extension library is found, we dlopen() it and look for the magic symbol "slaxDynLibInit". This function is called with two arguments, the API version number and a struct that contains information about the extension library.</p>
-<div id="doc_figure_u.249"></div> <pre>
+<div id="doc_figure_u.250"></div> <pre>
     /*
      * This structure is an interface between the libslax main code
      * and the code in the extension library.  This structure should
@@ -27069,7 +27122,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_B_3_2">B.3.2</a> </div>Example</h3>
 <p id="doc_section_B_3_2_p_1">Here's a quick example:</p>
-<div id="doc_figure_u.250"></div> <pre>
+<div id="doc_figure_u.251"></div> <pre>
     slax_function_table_t slaxBitTable[] = {
         { "and", extBitAnd },
         { "or", extBitOr },
@@ -27096,17 +27149,17 @@ jQuery(function ($) {
 <a href="#doc_section_B_4">B.4</a> </div>External Documentation</h2>
 <p id="doc_section_B_4_p_1">My documentation style tends to be man-page-like, rather than tutorial-ish. But folks at Juniper Networks have made some outrageously great documentation and it's available on the Juniper website. Many thanks for Curtis Call, Jeremy Schulman, and others for doing this work.</p>
 <p id="doc_section_B_4_p_2">This Week: Junos Automation Reference for SLAX 1.0 does not cover any of the new SLAX-1.1 material, but is an incredible reference book.</p>
-<div id="doc_figure_u.251"></div> <pre>
+<div id="doc_figure_u.252"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/
       automation-series/junos-automation-slax/
 	    </pre> <p id="doc_section_B_4_p_4">This Week: Mastering Junos Automation Programming covers many introductory tasks with a tutorial style:</p>
-<div id="doc_figure_u.252"></div> <pre>
+<div id="doc_figure_u.253"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/automation-series/
       mastering-junos-automation/
 	    </pre> <p id="doc_section_B_4_p_6">Script Library contains a set of scripts that will help get you started:</p>
-<div id="doc_figure_u.253"></div> <pre>
+<div id="doc_figure_u.254"></div> <pre>
   https://www.juniper.net/us/en/community/junos/script-automation/
 	    </pre> <p id="doc_section_B_4_p_8">Note these require Juniper-specific permissions, JNet logins, and other hurdles. Apologies for the inconvenience.</p>
 <p id="doc_section_B_4_p_9">News! The Day One Guides are available for &lt;$2 (some free) on the itunes store! Search under books for "juniper".</p>
