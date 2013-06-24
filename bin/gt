@@ -91,6 +91,8 @@ case "$op" in
 	base=`basename "$url" .git`
         mkdir -p gh-pages
 	git clone $url -b gh-pages
+	cd gh-pages
+        git branch --set-upstream gh-pages origin/gh-pages
 	;;
 
     up|update)
