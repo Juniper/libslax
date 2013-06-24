@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.16.2], [phil@juniper.net])
+AC_INIT([libslax], [0.16.3], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -67,6 +67,7 @@ AC_CHECK_FUNCS([flock])
 AC_CHECK_FUNCS([asprintf])
 
 AC_CHECK_HEADERS([dlfcn.h])
+AC_CHECK_HEADERS([tzfile.h])
 AC_CHECK_FUNCS([dlfunc])
 
 AC_CHECK_HEADERS([sys/time.h])
