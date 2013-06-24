@@ -139,9 +139,10 @@ strlcpy (char *dst, const char *src, size_t sz)
 #define NSEC_PER_SEC 1000000000
 #define NSEC_PER_MSEC 1000000
 #define NSEC_PER_USEC 1000
-#define USEC_PER_SEC 1000000
+#define USEC_PER_SEC 1000000ull
 #define USEC_PER_MSEC 1000
 #define MSEC_PER_SEC 1000
+#define SEC_PER_MIN 60
 
 /* ---------------------------------------------------------------------- */
 
