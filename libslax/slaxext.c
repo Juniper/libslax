@@ -39,7 +39,6 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <sys/queue.h>
-#include <tzfile.h>
 
 #include <libslax/slaxdata.h>
 
@@ -1885,7 +1884,7 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 
     /* Pop our three arguments */
     freq_double = xmlXPathPopNumber(ctxt);
-    freq_in_secs = lrint(freq_double * SECSPERMIN);
+    freq_in_secs = lrint(freq_double * SEC_PER_MIN);
     max = (int) xmlXPathPopNumber(ctxt);
     tag = (char *) xmlXPathPopString(ctxt);
 
