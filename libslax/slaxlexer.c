@@ -542,7 +542,9 @@ slaxKeyword (slax_data_t *sdp)
 int
 slaxParseIsSlax (slax_data_t *sdp)
 {
-    return (sdp->sd_parse == M_PARSE_FULL || sdp->sd_parse == M_PARSE_SLAX);
+    return (sdp->sd_parse == M_PARSE_FULL
+	    || sdp->sd_parse == M_PARSE_SLAX
+	    || sdp->sd_parse == M_PARSE_PARTIAL);
 }
 
 int
