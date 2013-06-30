@@ -1,0 +1,90 @@
+version 1.1;
+
+ns curl extension = "http://xml.libslax.org/curl";
+ns date extension = "http://exslt.org/dates-and-times";
+
+var $access-token := {
+    <url> "https://api.dropbox.com/1/oauth/access_token";
+}
+
+param $app-key = "ccbft4u4ygk6d3u";
+param $app-secret = "i47p88i1b21euie";
+
+match / {
+    var $params := {
+	<param name="oauth_consumer_key"> $app-key;
+	<param name="oauth_signature_method"> "PLAINTEXT";
+	<param name="oauth_signature"> $app-secret _ "%26";
+	<param name="oauth_timestamp"> date:seconds();
+	<param name="oauth_nonce"> date:second-in-minute();
+	<param name="oauth_version"> "1.0";
+    }
+
+    var $curl = curl:open();
+
+    var $tokens := {
+	call request-token($curl, $params);
+    }
+
+    var $r2 := {
+	call authorize($curl, $tokens);
+    }
+
+    var $r3 := {
+	call access-token($curl, $tokens, $params);
+    }
+    <r3> { copy-of $r3; }
+}
+
+template request-token ($curl, $params) {
+    var $request-token := {
+	<url> "https://api.dropbox.com/1/oauth/request_token";
+	<method> "get";
+	<format> "url-encoded";
+	<verbose>;
+	<insecure>;
+	copy-of $params;
+    }
+
+    var $res = curl:perform($curl, $request-token);
+    <oauth_token_secret> $res/data/name[@name == "oauth_token_secret"];
+    <oauth_token> $res/data/name[@name == "oauth_token"];
+}
+
+template authorize ($curl, $tokens) {
+    var $authorize := {
+	<url> "https://www.dropbox.com/1/oauth/authorize";
+	<method> "get";
+	<verbose>;
+	<insecure>;
+	<param name="oauth_token"> $tokens/oauth_token;
+	<param name="oauth_callback"> "https://my.example.com/callback";
+    }
+
+    var $url = $authorize/url _ "?oauth_token=" _ $tokens/oauth_token;
+
+    message "* ";
+    message "*  Open the following URL in a brower:";
+    message "*";
+    message "   open " _ $url;
+    message "*";
+    message "*  Please ENTER after clicking the [Allow] button";
+    var $x = slax:get-input("Done? ");
+}
+
+template access-token ($curl, $tokens, $params) {
+    var $access-token := {
+	<url> "https://api.dropbox.com/1/oauth/access_token";
+	<method> "post";
+	<format> "url-encoded";
+	<verbose>;
+	<insecure>;
+	<param name="oauth_token"> $tokens/oauth_token;
+	copy-of $params;
+    }
+
+    var $res = curl:perform($curl, $access-token);
+    <res> { copy-of $res; }
+    <oauth_token_secret> $res/data/name[@name == "oauth_token_secret"];
+    <oauth_token> $res/data/name[@name == "oauth_token"];
+}
