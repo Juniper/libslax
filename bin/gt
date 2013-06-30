@@ -24,6 +24,33 @@ function set_master () {
     esac
 }
 
+function check_in_details () {
+    files=`git status -s "$@" | awk '{print $2}'`
+
+    for file in $files; do
+	git diff $file
+        status=`git status -s "$file"`
+	echo $status
+
+        /bin/echo -n "Commit message: "
+	read comment
+	if [ "$comment" = "" ]; then
+	    echo "Skipping file $file";
+	else
+	    if [ "$status" = "?? $file" ]; then
+		git add "$file"
+	    fi
+	    git commit -m "$comment" "$file"
+	fi
+    done
+}
+
+function push_to_master () {
+    set_master
+    echo "Pushing to $master ..."
+    git push origin $master
+}
+
 case "$op" in
     dif|diff*)
         git diff "$@"
@@ -31,9 +58,7 @@ case "$op" in
 
     pu|pom|push)
 	# Push all local changes to the master server
-        set_master
-	echo "Pushing to $master ..."
-	git push origin $master
+        push_to_master
 	;;
 
     pt|ptest|push-test)
@@ -60,25 +85,13 @@ case "$op" in
 	fi
 	;;
 
-    cid|check-in-details)
-	files=`git status -s "$@" | awk '{print $2}'`
+    commit)
+        check_in_details
+	push_to_master
+	;;
 
-	for file in $files; do
-	    git diff $file
-            status=`git status -s "$file"`
-	    echo $status
-
-            /bin/echo -n "Commit message: "
-	    read comment
-	    if [ "$comment" = "" ]; then
-		echo "Skipping file $file";
-	    else
-		if [ "$status" = "?? $file" ]; then
-		    git add "$file"
-		fi
-		git commit -m "$comment" "$file"
-	    fi
-	done
+    commit|cid|check-in-details)
+        check_in_details
 	;;
 
     out|outstanding)
