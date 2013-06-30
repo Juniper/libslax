@@ -365,7 +365,7 @@ print_help (void)
     printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
     printf("\t--version OR -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
-    printf("\nProject libslax home page: http://libslax.googlecode.com\n");
+    printf("\nProject libslax home page: https://github.com/Juniper/libslax\n");
 }
 
 int
