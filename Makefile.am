@@ -61,7 +61,7 @@ upload: dist params.json
 			&& git push origin gh-pages )
 	@-[ -d ${GH_PAGES_DIR} ] \
 		&& echo "Updating distfiles.json on gh-pages ..." \
-		&& sh ${srcdir}/bin/dist-uploader.sh \
+		&& sh ${srcdir}/bin/add-distfile.sh \
 	           ${PACKAGE_FILE} ${PACKAGE_VERSION} gh-pages/distfiles.json \
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m 'new release' distfiles.json \
