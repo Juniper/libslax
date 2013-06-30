@@ -44,18 +44,28 @@ upload-google: dist
 
 DIST_FILES_DIR = ~/Dropbox/dist-files/
 GH_PAGES_DIR = gh-pages/
-upload: dist
+PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
+
+upload: dist params.json
 	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
 	@cp libslax-${PACKAGE_VERSION}.tar.gz ${DIST_FILES_DIR}
+	@echo "Uploading slax-quick-reference.pdf ... "
+	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
 	@echo "Uploading slax-manual.html ... "
 	@cp doc/slax-manual.html ${DIST_FILES_DIR}
 	@-[ -d ${GH_PAGES_DIR} ] \
+		&& echo "Updating manual on gh-pages ..." \
 		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m 'new docs' slax-manual.html \
 			&& git push origin gh-pages )
-	@echo "Uploading slax-quick-reference.pdf ... "
-	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
+	@-[ -d ${GH_PAGES_DIR} ] \
+		&& echo "Updating distfiles.json on gh-pages ..." \
+		&& sh ${srcdir}/bin/dist-uploader.sh \
+	           ${PACKAGE_FILE} ${PACKAGE_VERSION} gh-pages/distfiles.json \
+		&& (cd ${GH_PAGES_DIR} \
+			&& git commit -m 'new release' distfiles.json \
+			&& git push origin gh-pages )
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = libslax.pc
