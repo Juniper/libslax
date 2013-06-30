@@ -2644,6 +2644,22 @@ the XSLT <xsl:output> element.
 
 See also http://www.w3.org/TR/xslt#output
 
+** The "fallback" Statement @fallback@
+
+The "fallback" statement directs the XSLT engine to perform a block of
+code when an extension element is invoked which is not supported.
+
+    SYNTAX::
+        'fallback' '{' statements '}'
+
+    EXAMPLE::
+        if ($working) {
+            <some:fancy> "thing";
+            fallback {
+                message "nothing fancy, please";
+            }
+        }
+
 ** Whitespace Handling
 
 SLAX includes a means of retaining or removing text nodes that contain
@@ -3112,7 +3128,7 @@ but the input and output file names are positional.
    
    slaxproc -i input.xml -o output.xml -g -v script.slax
 
-**** "#!" Support
+**** "#!" Support @pound-bang@
 
 SLAX supports the "#!" unix scripting mechanism, allowing the first
 line of a script to begin with the characters '#' and '!'  followed by
@@ -3155,7 +3171,7 @@ Command line options to slaxproc can be divided into two types.  Mode
 options control the operation of slaxproc, and are mutually exclusive.
 Behavioral options tailor the behavior of slaxproc in minor ways.
 
-**** Modes Options
+**** Modes Options @slaxproc-modes@
 
 = --check OR -c
 Perform syntax and content check for a SLAX script, reporting any
@@ -3179,7 +3195,7 @@ Convert a XSLT script into SLAX format.  The script name and output file
 name can be provided via command line options and/or using positional
 arguments as described in ^slaxproc-arguments^.
 
-**** Behavioral Options
+**** Behavioral Options @slaxproc-options@
 
 = --debug OR -d
 Enable the SLAX/XSLT debugger.  See ^sdb^ for complete details on the
@@ -4396,7 +4412,7 @@ inspect all <chapter> elements, convert their <section> elements to
 strings, and select those whose string value starts with 'A'.  This
 may be an expensive operation.
 
-*** The Ternary Conditional Operator
+*** The Ternary Conditional Operator @ternary-operator@
 
 As the last touch to SLAX-1.1, I've added the ternary operator from C,
 allowing expressions like:
