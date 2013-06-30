@@ -45,6 +45,8 @@ jQuery(function ($) {
                 var $found = $(this.URL.substring(last));
                 if ($found.length > 0)
                     $active = $found.parent();
+                    if (!$active.hasClass("content"))
+                        $active = $active.parent();
             }
         }
         setActive($active);
