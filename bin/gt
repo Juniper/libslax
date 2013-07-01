@@ -12,14 +12,14 @@
 op="$1"
 shift
 
-function set_master () {
-    master=`git status -b -s | head -1 | awk '{print $2}'`
-    case "$master" in
+function set_branch () {
+    branch=`git status -b -s | head -1 | awk '{print $2}'`
+    case "$branch" in
 	gh-pages*)
-            master=gh-pages
+            branch=gh-pages
 	    ;;
 	*)
-	    master=master
+	    branch=master
 	    ;;
     esac
 }
@@ -45,29 +45,29 @@ function check_in_details () {
     done
 }
 
-function push_to_master () {
-    set_master
-    echo "Pushing to $master ..."
-    git push origin $master
+function push_to_branch () {
+    set_branch
+    echo "Pushing to $branch ..."
+    git push origin $branch
 }
 
 case "$op" in
-    dif|diff*)
+    diff|dif|delta)
         git diff "$@"
 	;;
 
-    pu|pom|push)
-	# Push all local changes to the master server
-        push_to_master
+    push|pu|pom|pob)
+	# Push all local changes to the origin/repo server
+        push_to_branch
 	;;
 
-    pt|ptest|push-test)
-	# Push all local changes to the master server
-        set_master
-	git push --dry-run origin $master
+    push-test|pt|ptest)
+	# Push all local changes to the origin/repo server
+        set_branch
+	git push --dry-run origin $branch
 	;;
 
-    ci|check|checkin|checkpoint)
+    checkin|ci|check|checkpoint)
         git diff $file
         git status -s "$@"
 
@@ -87,25 +87,25 @@ case "$op" in
 
     commit)
         check_in_details
-	push_to_master
+	push_to_branch
 	;;
 
-    commit|cid|check-in-details)
+    check-in-details|cid)
         check_in_details
 	;;
 
-    out|outstanding)
-        set_master
-        git diff origin/master master
+    outstanding|out|what)
+        set_branch
+        git diff origin/$branch $branch
 	;;
 
-    gh-pages)
+    make-gh-pages)
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
         mkdir -p gh-pages
 	git clone $url -b gh-pages
 	cd gh-pages
-        git branch --set-upstream gh-pages origin/gh-pages
+        git master --set-upstream gh-pages origin/gh-pages
 	;;
 
     up|update)
@@ -127,7 +127,7 @@ case "$op" in
 	    exit 1
         fi
 	git tag "$@"
-	git push origin --tags master
+	git push origin --tags $branch
 	;;
 
     archive)
