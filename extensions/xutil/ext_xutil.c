@@ -484,8 +484,17 @@ extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
     if (xmlXPathCheckError(ctxt))
 	return;
 
-    if (value > 0)
+    if (value > 0) {
+	xsltTransformContextPtr tctxt;
+
+	/* Set the value for _our_ transform context */
+	tctxt = xsltXPathGetTransformContext(ctxt);
+	if (tctxt)
+	    tctxt->maxTemplateDepth = value;
+
+	/* Set the value globally */
 	xsltSetMaxDepth(value);
+    }
 
     xmlXPathReturnEmptyString(ctxt);
 }
