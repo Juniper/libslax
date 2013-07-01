@@ -66,12 +66,13 @@ upload: dist params.json
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m 'new release' distfiles.json \
 			&& git push origin gh-pages )
+	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
 
 pkgconfigdir=$(libdir)/pkgconfig
-pkgconfig_DATA = libslax.pc
+pkgconfig_DATA = ${PACKAGE_NAME}.pc
 
 get-wiki:
-	git clone https://github.com/Juniper/libslax.wiki.git wiki
+	git clone https://github.com/Juniper/${PACKAGE_NAME}.wiki.git wiki
 
 get-gh-pages:
-	git clone https://github.com/Juniper/libslax.git gh-pages -b gh-pages
+	git clone https://github.com/Juniper/${PACKAGE_NAME}.git gh-pages -b gh-pages
