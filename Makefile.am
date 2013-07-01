@@ -45,6 +45,7 @@ upload-google: dist
 DIST_FILES_DIR = ~/Dropbox/dist-files/
 GH_PAGES_DIR = gh-pages/
 PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
+GIT_MSG = "New ${PACKAGE_NAME} release: ${PACKAGE_FILE}"
 
 upload: dist params.json
 	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
@@ -64,7 +65,7 @@ upload: dist params.json
 		&& sh ${srcdir}/bin/add-distfile.sh \
 	           ${PACKAGE_FILE} ${PACKAGE_VERSION} gh-pages/distfiles.json \
 		&& (cd ${GH_PAGES_DIR} \
-			&& git commit -m 'new release' distfiles.json \
+			&& git commit -m ${GIT_MSG} distfiles.json \
 			&& git push origin gh-pages )
 	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
 
