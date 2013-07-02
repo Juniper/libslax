@@ -1,19 +1,19 @@
-Name: 		libslax	
-Version: 	0.16.5	
-Release: 	1%{?dist}
-Summary: 	implementation of the SLAX language
+Name:        ${PACKAGE_NAME}
+Version:     ${PACKAGE_VERSION}
+Release:     1%{?dist}
+Summary:     Implementation of the SLAX language
 
-Group: 		Development/Libraries	
-License: 	MIT	
-URL: 		https://github.com/Juniper/libslax		
-Source0: 	https://www.dropbox.com/sh/krw6ddg5sdkf97z/69ZxHVoXOh/libslax-%{version}.tar.gz
+Group:       Development/Libraries
+License:     MIT
+URL:         https://github.com/Juniper/libslax
+Source0:     https://github.com/Juniper/libslax/archive/%{version}.tar.gz
 
-BuildRequires: 	libxml2-devel 
+BuildRequires:  libxml2-devel
 BuildRequires:  libxslt-devel
 BuildRequires:  curl-devel
 BuildRequires:  libedit-devel
-BuildRequires:  automake 
-BuildRequires:  autoconf 
+BuildRequires:  automake
+BuildRequires:  autoconf
 BuildRequires:  libtool
 
 %description
@@ -22,10 +22,10 @@ syntax for XSLT that follow the patterns of C and Perl. This library
 builds on the most excellent work of Daniel Veillard et al in the
 libxml2 and libxslt libraries, for which I heartily give thanks.
 
-#%package	devel
-#Summary:        Development files for %{name}
-#Group:          Development/Libraries
-#Requires:       %{name} = %{version}-%{release}
+#%package     devel
+#Summary:     Development files for %{name}
+#Group:       Development/Libraries
+#Requires:    %{name} = %{version}-%{release}
 
 #%description    devel
 #The %{name}-devel package contains libraries and header files for
@@ -39,7 +39,6 @@ libxml2 and libxslt libraries, for which I heartily give thanks.
 %configure
 make %{?_smp_mflags}
 
-
 %install
 rm -rf $RPM_BUILD_ROOT
 %make_install
@@ -47,7 +46,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-
 
 %post -p /sbin/ldconfig
 
@@ -65,5 +63,8 @@ rm -rf $RPM_BUILD_ROOT
 #%{_libdir}/*.so
 
 %changelog
-* Sun Jun 30 2013 John Deatherage <john@routelastresort.com> - 0.16.5-1.el6_2.4
-- first go
+For the complete changelog, please see:
+  https://github.com/Juniper/libslax/commits/master/libslax.spec.in
+
+Thanks goes to John Deatherage <john@routelastresort.com> for working this up.
+
