@@ -17,4 +17,10 @@
   'checksum': '2b5242123f6fd09298498701916ebcfa', 
   'date': 'Mon Jul  1 12:49:59 EDT 2013' 
 },
+{
+  'version': '0.16.7', 
+  'url': 'https://www.dropbox.com/s/y8hrxkwky2sevn0/libslax-0.16.7.tar.gz', 
+  'checksum': '49d302ee0a3e83befa9a668b8af7bd01', 
+  'date': 'Tue Jul  2 15:02:22 EDT 2013' 
+},
 { 'LASTLINE': true }]
