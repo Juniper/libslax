@@ -42,6 +42,10 @@ if HAVE_LIBDL
 LIBS += -ldl
 endif
 
+if HAVE_LIBM
+LIBS += -lm
+endif
+
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c
