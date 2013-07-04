@@ -47,7 +47,7 @@ GH_PAGES_DIR = gh-pages/
 PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
 GIT_MSG = "New ${PACKAGE_NAME} release: ${PACKAGE_FILE}"
 
-upload: dist params.json
+upload-dropbox: dist params.json
 	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
 	@cp libslax-${PACKAGE_VERSION}.tar.gz ${DIST_FILES_DIR}
 	@echo "Uploading slax-quick-reference.pdf ... "
@@ -66,6 +66,19 @@ upload: dist params.json
 	           ${PACKAGE_FILE} ${PACKAGE_VERSION} gh-pages/distfiles.json \
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m ${GIT_MSG} distfiles.json \
+			&& git push origin gh-pages )
+	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
+
+upload: dist
+	@echo "Uploading slax-quick-reference.pdf ... "
+	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
+	@echo "Uploading slax-manual.html ... "
+	@cp doc/slax-manual.html ${DIST_FILES_DIR}
+	@-[ -d ${GH_PAGES_DIR} ] \
+		&& echo "Updating manual on gh-pages ..." \
+		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
+		&& (cd ${GH_PAGES_DIR} \
+			&& git commit -m 'new docs' slax-manual.html \
 			&& git push origin gh-pages )
 	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
 
