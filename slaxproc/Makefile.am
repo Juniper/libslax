@@ -38,6 +38,10 @@ if HAVE_LIBEDIT
 LIBS += -ledit -lcurses
 endif
 
+if HAVE_LIBDL
+LIBS += -ldl
+endif
+
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c
