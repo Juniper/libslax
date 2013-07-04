@@ -19,7 +19,7 @@ EXTRA_DIST = slax-config.in warnings.mk README.md INSTALL.md
 .PHONY: test tests
 
 test tests:
-	@(cd tests ; ${MAKE} tests)
+	@(cd tests ; ${MAKE} test)
 
 errors:
 	@(cd tests/errors ; ${MAKE} test)
@@ -70,13 +70,13 @@ upload-dropbox: dist params.json
 	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
 
 upload: dist
-	@echo "Uploading slax-quick-reference.pdf ... "
-	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
 	@echo "Uploading slax-manual.html ... "
 	@cp doc/slax-manual.html ${DIST_FILES_DIR}
 	@-[ -d ${GH_PAGES_DIR} ] \
 		&& echo "Updating manual on gh-pages ..." \
 		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
+		&& echo "Uploading slax-quick-reference.pdf ... "; \
+		&& cp ${srcdir}/doc/slax-quick-reference.pdf ${GH_PAGES_DIR}
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m 'new docs' slax-manual.html \
 			&& git push origin gh-pages )
