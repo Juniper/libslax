@@ -6,8 +6,9 @@ This library builds on the most excellent work of Daniel Veillard
 et al in the [libxml2 and libxslt libraries](http://xmlsoft.org),
 for which I heartily give thanks.
 
-Our download page is hosted on
-[dropbox.com](https://www.dropbox.com/sh/krw6ddg5sdkf97z/3KoP-2fLaL)
+Check our
+[github release page](https://github.com/Juniper/libslax/releases)
+to find the latest release.
 
 Please visit the 
 [libslax wiki](https://github.com/Juniper/libslax/wiki).
