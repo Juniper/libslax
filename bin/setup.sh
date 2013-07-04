@@ -8,15 +8,17 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-vers=`autoreconf --version | head -1`
-
-echo "Using" $vers
-
-autoreconf --install
 
 if [ ! -f configure ]; then
-    echo "Failed to create configure script"
-    exit 1
+    vers=`autoreconf --version | head -1`
+    echo "Using" $vers
+
+    autoreconf --install
+
+    if [ ! -f configure ]; then
+	echo "Failed to create configure script"
+	exit 1
+    fi
 fi
 
 echo "Creating build directory ..."
@@ -24,8 +26,8 @@ mkdir build
 
 echo "Setup is complete.  To build libslax:"
 
-echo "1) Type 'cd build ; ../configure' to configure libslax"
-echo "2) Type 'make' to build libslax"
-echo "3) Type 'make install' to install libslax"
+echo "    1) Type 'cd build ; ../configure' to configure libslax"
+echo "    2) Type 'make' to build libslax"
+echo "    3) Type 'make install' to install libslax"
 
 exit 0
