@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.16.8], [phil@juniper.net])
+AC_INIT([libslax], [0.16.9], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -80,6 +80,9 @@ AM_CONDITIONAL([HAVE_LIBDL], [test "$HAVE_LIBDL" != "no"])
 
 AC_CHECK_LIB([crypto], [MD5_Init])
 AM_CONDITIONAL([HAVE_LIBCRYPTO], [test "$HAVE_LIBCRYPTO" != "no"])
+
+AC_CHECK_LIB([m], [lrint])
+AM_CONDITIONAL([HAVE_LIBM], [test "$HAVE_LIBM" != "no"])
 
 AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
 AC_CHECK_LIB([xslt], [xsltInit])
