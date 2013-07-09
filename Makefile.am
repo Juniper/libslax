@@ -74,6 +74,8 @@ upload: dist
 	@-[ -d ${GH_PAGES_DIR} ] \
 		&& echo "Updating manual on gh-pages ..." \
 		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
+		&& echo "Uploading slax-quick-reference.pdf ... " \
+		&& cp ${srcdir}/doc/slax-quick-reference.pdf ${GH_PAGES_DIR} \
 		&& (cd ${GH_PAGES_DIR} \
 			&& git commit -m 'new docs' slax-manual.html \
 			&& git push origin gh-pages )
