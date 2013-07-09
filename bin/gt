@@ -95,7 +95,7 @@ case "$op" in
 	;;
 
     ctag|current-tag)
-        git tag -l 'v*' | sed 's/^v//'
+        git tag -l '*' | sed 's/^v//'
 	;;
 
     diff|dif|delta)
