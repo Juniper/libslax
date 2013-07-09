@@ -66,7 +66,7 @@ case "$op" in
 	fi
 	;;
 
-    checkin|ci|check|checkpoint)
+    checkin|check|checkpoint)
         git diff $file
         git status -s "$@"
 
@@ -84,7 +84,7 @@ case "$op" in
 	fi
 	;;
 
-    check-in-details|cid)
+    check-in-details|ci|cid)
         check_in_details
 	;;
 
@@ -92,10 +92,6 @@ case "$op" in
         set_branch
         check_in_details
 	push_to_branch
-	;;
-
-    ctag|current-tag)
-        git tag -l '*' | sed 's/^v//'
 	;;
 
     diff|dif|delta)
