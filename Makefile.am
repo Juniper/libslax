@@ -77,8 +77,9 @@ upload: dist
 		&& echo "Uploading slax-quick-reference.pdf ... " \
 		&& cp ${srcdir}/doc/slax-quick-reference.pdf ${GH_PAGES_DIR} \
 		&& (cd ${GH_PAGES_DIR} \
-			&& git commit -m 'new docs' slax-manual.html \
-			&& git push origin gh-pages )
+			&& git commit -m 'new docs' \
+                               slax-manual.html slax-quick-reference.pdf \
+			&& git push origin gh-pages ) ; true
 	@echo "Remember to run:"
 	@echo "        gt tag ${PACKAGE_VERSION}"
 
