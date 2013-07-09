@@ -13,7 +13,7 @@ op="$1"
 shift
 
 function set_branch () {
-    branch=`git status -b -s | head -1 | awk '{print $2}'`
+    branch=`git branch -q | head -1 | awk '{print $2}'`
     case "$branch" in
 	gh-pages*)
             branch=gh-pages
@@ -72,7 +72,7 @@ case "$op" in
         git status -s "$@"
 
 	opts=
-	if [ "$@" = "" ]; then
+	if [ x"$@" = x"" ]; then
 	    opts=-a
 	fi
 
