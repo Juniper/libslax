@@ -46,6 +46,7 @@ INPUT = slax.txt
 QUICKREF = slax-quick-reference
 
 EXTRA_DIST = \
+    ${INPUT} \
     ${OUTPUT}.html \
     ${OUTPUT}.txt \
     ${QUICKREF}.pdf
