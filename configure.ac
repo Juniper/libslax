@@ -430,7 +430,7 @@ if test -d $ac_abs_confdir/.git ; then
   extra=`git branch | awk '/\*/ { print $2 }'`
   if test "$extra" != "" -a "$extra" != "master"
   then
-      LIBJUISE_VERSION_EXTRA="-git-$extra"
+      LIBSLAX_VERSION_EXTRA="-git-$extra"
   fi
 fi
 
