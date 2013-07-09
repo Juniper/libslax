@@ -49,6 +49,13 @@ function push_to_branch () {
 }
 
 case "$op" in
+    archive)
+        url=`git config --get remote.origin.url`
+	base=`basename "$url" .git`
+        tag=`git tag -l 'v*' | sed 's/^v//'`
+	git archive --prefix=$base-$tag --format=tar HEAD | gzip > $base-$tag.tgz
+	;;
+
     br)
         set_branch
         if [ x"$@" = x ]; then
@@ -58,21 +65,6 @@ case "$op" in
 	else
 	    git checkout "$@"
 	fi
-	;;
-
-    diff|dif|delta)
-        git diff "$@"
-	;;
-
-    push|pu|pom|pob)
-	# Push all local changes to the origin/repo server
-        push_to_branch
-	;;
-
-    push-test|pt|ptest)
-	# Push all local changes to the origin/repo server
-        set_branch
-	git push --dry-run origin $branch
 	;;
 
     checkin|ci|check|checkpoint)
@@ -93,18 +85,21 @@ case "$op" in
 	fi
 	;;
 
+    check-in-details|cid)
+        check_in_details
+	;;
+
     commit)
         check_in_details
 	push_to_branch
 	;;
 
-    check-in-details|cid)
-        check_in_details
+    ctag|current-tag)
+        git tag -l 'v*' | sed 's/^v//'
 	;;
 
-    outstanding|out|what)
-        set_branch
-        git diff origin/$branch $branch
+    diff|dif|delta)
+        git diff "$@"
 	;;
 
     make-gh-pages)
@@ -116,13 +111,25 @@ case "$op" in
         git master --set-upstream gh-pages origin/gh-pages
 	;;
 
-    up|update)
-	# Update working copy with repo's changes
-	git pull -v "$@"
+    outstanding|out|what)
+        set_branch
+        git diff origin/$branch $branch
 	;;
 
-    ctag|current-tag)
-        git tag -l 'v*' | sed 's/^v//'
+    push|pu|pom|pob)
+	# Push all local changes to the origin/repo server
+        push_to_branch
+	;;
+
+    push-test|pt|ptest)
+	# Push all local changes to the origin/repo server
+        set_branch
+	git push --dry-run origin $branch
+	;;
+
+    st|stat|status)
+	# Show status
+	git status -s "$@"
 	;;
 
     tag|add-tag)
@@ -138,16 +145,9 @@ case "$op" in
 	git push origin --tags $branch
 	;;
 
-    archive)
-        url=`git config --get remote.origin.url`
-	base=`basename "$url" .git`
-        tag=`git tag -l 'v*' | sed 's/^v//'`
-	git archive --prefix=$base-$tag --format=tar HEAD | gzip > $base-$tag.tgz
-	;;
-
-    st|stat|status)
-	# Show status
-	git status -s "$@"
+    up|update)
+	# Update working copy with repo's changes
+	git pull -v "$@"
 	;;
 
     *)
