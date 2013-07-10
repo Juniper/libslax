@@ -84,7 +84,7 @@ upload: dist
 	@echo "        gt tag ${PACKAGE_VERSION}"
 
 pkgconfigdir=$(libdir)/pkgconfig
-pkgconfig_DATA = ${PACKAGE_NAME}.pc
+pkgconfig_DATA = packaging/${PACKAGE_NAME}.pc
 
 get-wiki:
 	git clone https://github.com/Juniper/${PACKAGE_NAME}.wiki.git wiki
