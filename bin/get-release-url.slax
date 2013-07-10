@@ -1,0 +1,37 @@
+#!/usr/local/bin/slaxproc -E -n
+version 1.1;
+
+/*
+ * github puts a number in the URLs for the "releases"
+ * feature.  It seems to be a monotonically increasing
+ * number in a global namespace.  We need to find the
+ * url for the latest release and report it.
+ */
+
+ns curl extension = "http://xml.libslax.org/curl";
+
+param $user = "Juniper";
+param $project = "libslax";
+
+var $base = "https://github.com/";
+var $url = $base _ $user _ "/" _ $project _ "/releases";
+
+output-method text;
+
+match / {
+    var $options = {
+	<insecure>;
+	<format> "html";
+    }
+    var $results = curl:single($url, $options);
+
+    var $href = $results/data//ul[@class == "release-downloads"][1]
+	/li[1]/a/@href;
+    var $link = string($href);
+    if ($link != "") {
+	if (not(starts-with($link, "http"))) {
+	    expr "https://github.com";
+	}
+	expr $link _ "\n";
+    }
+}
