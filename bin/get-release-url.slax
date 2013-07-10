@@ -9,12 +9,13 @@ version 1.1;
  */
 
 ns curl extension = "http://xml.libslax.org/curl";
+ns os extension = "http://xml.libslax.org/os";
 
 param $user = "Juniper";
 param $project = "libslax";
 
-var $base = "https://github.com/";
-var $url = $base _ $user _ "/" _ $project _ "/releases";
+var $base = "https://github.com";
+var $url = $base _ "/" _ $user _ "/" _ $project _ "/releases";
 
 output-method text;
 
@@ -28,9 +29,11 @@ match / {
     var $href = $results/data//ul[@class == "release-downloads"][1]
 	/li[1]/a/@href;
     var $link = string($href);
-    if ($link != "") {
-	if (not(starts-with($link, "http"))) {
-	    expr "https://github.com";
+    if ($link == "") {
+	expr os:exit-code(1);
+    } else {
+	if (not(starts-with($link, $base))) {
+	    expr $base;
 	}
 	expr $link _ "\n";
     }
