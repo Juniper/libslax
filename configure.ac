@@ -460,8 +460,9 @@ AC_CONFIG_FILES([
   bin/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc
-  libslax.pc
-  libslax.spec
+  packaging/libslax.pc
+  packaging/libslax.spec
+  packaging/libslax.rb
 ])
 AC_OUTPUT
 
