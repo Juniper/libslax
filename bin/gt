@@ -168,9 +168,10 @@ case "$op" in
 	git push origin --tags $branch
 	;;
 
-    up|update)
+    pull|up|update)
 	# Update working copy with repo's changes
-	git pull -v "$@"
+	set_branch
+	git pull -v origin $branch
 	;;
 
     *)
