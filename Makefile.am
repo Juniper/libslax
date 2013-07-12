@@ -27,47 +27,10 @@ errors:
 docs:
 	@(cd doc ; ${MAKE} docs)
 
-USER_INFO := $(shell if [ -f .upload ]; then cat .upload; fi )
-
-UPLOAD = python ~/bin/googlecode_upload.py -p libslax ${USER_INFO}
-upload-google: dist
-	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
-	@${UPLOAD} -s 'Release ${PACKAGE_VERSION}' \
-		-l Type-Source,OpSys-All,Featured \
-		libslax-${PACKAGE_VERSION}.tar.gz
-	@echo "Uploading slax-manual-${PACKAGE_VERSION}.html ... "
-	@${UPLOAD} -s 'Full Documentation' -l Type-Docs,Featured \
-		doc/slax-manual-${PACKAGE_VERSION}.html
-	@echo "Uploading slax-quick-reference-${PACKAGE_VERSION}.pdf ... "
-	@${UPLOAD} -s 'Quick Reference Card' -l Type-Docs,Featured \
-		doc/slax-quick-reference-${PACKAGE_VERSION}.pdf
 
 DIST_FILES_DIR = ~/Dropbox/dist-files/
 GH_PAGES_DIR = gh-pages/
 PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
-GIT_MSG = "New ${PACKAGE_NAME} release: ${PACKAGE_FILE}"
-
-upload-dropbox: dist params.json
-	@echo "Uploading libslax-${PACKAGE_VERSION}.tar.gz ... "
-	@cp libslax-${PACKAGE_VERSION}.tar.gz ${DIST_FILES_DIR}
-	@echo "Uploading slax-quick-reference.pdf ... "
-	@cp ${srcdir}/doc/slax-quick-reference.pdf ${DIST_FILES_DIR}
-	@echo "Uploading slax-manual.html ... "
-	@cp doc/slax-manual.html ${DIST_FILES_DIR}
-	@-[ -d ${GH_PAGES_DIR} ] \
-		&& echo "Updating manual on gh-pages ..." \
-		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
-		&& (cd ${GH_PAGES_DIR} \
-			&& git commit -m 'new docs' slax-manual.html \
-			&& git push origin gh-pages )
-	@-[ -d ${GH_PAGES_DIR} ] \
-		&& echo "Updating distfiles.json on gh-pages ..." \
-		&& sh ${srcdir}/bin/add-distfile.sh \
-	           ${PACKAGE_FILE} ${PACKAGE_VERSION} gh-pages/distfiles.json \
-		&& (cd ${GH_PAGES_DIR} \
-			&& git commit -m ${GIT_MSG} distfiles.json \
-			&& git push origin gh-pages )
-	@echo "Remember to run: gt tag ${PACKAGE_VERSION}"
 
 upload: dist
 	@echo "Uploading slax-manual.html ... "
@@ -103,8 +66,11 @@ packages:
 		&& SHA1=`openssl sha1 ${PACKAGE_FILE} | awk '{print $$2}'` \
 		&& mkdir -p ${GH_PAGES_PACKAGE_DIR} \
 		&& echo "... ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb ..." \
-		&& sed ${UPDATE_PACKAGE_FILE} packaging/libslax.rb.base \
+		&& sed ${UPDATE_PACKAGE_FILE} \
+			packaging/${PACKAGE_NAME}.rb.base \
 			> ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb \
+		&& cp packaging/${PACKAGE_NAME}.spec \
+			${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.spec \
 		&& (cd ${GH_PAGES_DIR} \
 			&& git add ${GH_PACKAGING_DIR} \
 			&& git commit -m 'new packaging data' \
