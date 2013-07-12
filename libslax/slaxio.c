@@ -400,6 +400,20 @@ slaxLogToFile (FILE *fp)
     slaxLogFp = fp;
 }
 
+static void
+slaxLogv (const char *fmt, int newline, va_list vap)
+{
+    if (slaxLogCallback) {
+	slaxLogCallback(slaxLogCallbackData, fmt, vap);
+    } else {
+	vfprintf(slaxLogFp ?: stderr, fmt, vap);
+	if (newline)
+	    fprintf(slaxLogFp ?: stderr, "\n");
+	fflush(slaxLogFp ?: stderr);
+    }
+}
+
+
 /**
  * Simple trace function that tosses messages to stderr if slaxLogIsEnabled
  * has been set to non-zero.
@@ -415,15 +429,7 @@ slaxLog (const char *fmt, ...)
 	return;
 
     va_start(vap, fmt);
-
-    if (slaxLogCallback) {
-	slaxLogCallback(slaxLogCallbackData, fmt, vap);
-    } else {
-	vfprintf(slaxLogFp ?: stderr, fmt, vap);
-	fprintf(slaxLogFp ?: stderr, "\n");
-	fflush(slaxLogFp ?: stderr);
-    }
-
+    slaxLogv(fmt, TRUE, vap);
     va_end(vap);
 }
 
@@ -442,10 +448,7 @@ slaxLog2 (void *ignore UNUSED, const char *fmt, ...)
 	return;
 
     va_start(vap, fmt);
-
-    vfprintf(slaxLogFp ?: stderr, fmt, vap);
-    fflush(slaxLogFp ?: stderr);
-
+    slaxLogv(fmt, FALSE, vap);
     va_end(vap);
 }
 
@@ -692,4 +695,80 @@ int
 slaxGetExitCode (void)
 {
     return slaxExitCode;
+}
+
+typedef struct slax_error_data_s {
+    int sed_mode;		/* Mode (SLAX_ERROR_*) */
+    xmlNodePtr sed_nodep;	/* Node to record into */
+} slax_error_data_t;
+
+static slax_error_data_t slax_error_data;
+
+static void
+slaxGenericError (void *opaque, const char *fmt, ...)
+{
+    slax_error_data_t *sedp = opaque;
+    va_list vap;
+
+    va_start(vap, fmt);
+
+    switch (sedp->sed_mode) {
+    case SLAX_ERROR_RECORD:
+	if (sedp->sed_nodep) {
+	    char buf[BUFSIZ];
+	    int bufsiz = sizeof(buf);
+	    char *bp = buf;
+	    int rc = vsnprintf(buf, bufsiz, fmt, vap);
+	    if (rc >= bufsiz) {
+		bp = alloca(rc + 1);
+		vsnprintf(bp, rc + 1, fmt, vap);
+	    }
+	    if (rc > 0) {
+		xmlNodePtr tp = xmlNewText((const xmlChar *) bp);
+		if (tp)
+		    xmlAddChild(sedp->sed_nodep, tp);
+	    }
+	}
+	break;
+    case SLAX_ERROR_LOG:
+	if (slaxLogIsEnabled)
+	    slaxLogv(fmt, FALSE, vap);
+	break;
+    }
+
+    va_end(vap);
+}
+
+/*
+ * Return the value cooresponding to the given name
+ */
+int
+slaxErrorValue (const char *name)
+{
+    if (streq(name, "ignore"))
+	return SLAX_ERROR_IGNORE;
+    if (streq(name, "record"))
+	return SLAX_ERROR_RECORD;
+    if (streq(name, "log"))
+	return SLAX_ERROR_LOG;
+    return SLAX_ERROR_DEFAULT;
+}
+
+/*
+ * Catch errors and do something specific with them
+ */
+int
+slaxCatchErrors (int mode, xmlNodePtr recorder)
+{
+    if (mode == SLAX_ERROR_RECORD && recorder == NULL) {
+	slaxLog("slaxCatchErrors: can't catch with no target node");
+	return -1;
+    }
+
+    slax_error_data.sed_mode = mode;
+    slax_error_data.sed_nodep = recorder;
+
+    xmlSetGenericErrorFunc(&slax_error_data, slaxGenericError);
+
+    return 0;
 }
