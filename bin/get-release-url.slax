@@ -23,6 +23,7 @@ match / {
     var $options = {
 	<insecure>;
 	<format> "html";
+	<errors> "ignore";
     }
     var $results = curl:single($url, $options);
 
