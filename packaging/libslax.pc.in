@@ -6,7 +6,7 @@ includedir=@includedir@
 
 Name: libslax
 Version: @VERSION@
-Description: SLAX (Stylesheet Language Alternate syntaX)
+Description: The SLAX language (XSLT alternative)
 Requires: libxml-2.0 libxslt
 Libs: @SLAX_LIBDIR@ @SLAX_LIBS@
 Cflags: @SLAX_INCLUDEDIR@
