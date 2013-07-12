@@ -90,4 +90,14 @@ get-wiki:
 	git clone https://github.com/Juniper/${PACKAGE_NAME}.wiki.git wiki
 
 get-gh-pages:
-	git clone https://github.com/Juniper/${PACKAGE_NAME}.git gh-pages -b gh-pages
+	git clone https://github.com/Juniper/${PACKAGE_NAME}.git \
+		gh-pages -b gh-pages
+
+UPDATE_PACKAGE_FILE = -e "s/__SHA1__/$$SHA1/"
+
+packages:
+	@-[ -d ${GH_PAGES_DIR} ] && set -x \
+		&& echo "Updating packages on gh-pages ..." \
+		&& SHA1=`openssl sha1 ${PACKAGE_FILE} | awk '{print $$2}'` \
+		&& sed ${UPDATE_PACKAGE_FILE} packaging/libslax.rb.base \
+			> packaging/libslax.rb
