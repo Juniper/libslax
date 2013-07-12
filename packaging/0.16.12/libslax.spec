@@ -64,7 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 For the complete changelog, please see:
-  https://github.com/Juniper/${PACKAGE_NAME}/releases/
+  https://github.com/Juniper/libslax/releases/
 
 Thanks goes to John Deatherage <john@routelastresort.com> for working this up.
 
