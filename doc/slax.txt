@@ -3514,6 +3514,37 @@ payload.
     SYNTAX::
       <content-type> "mime/type";
 
+**** <errors>
+
+The <errors> element controls how HTML and XML parsing errors are
+handled.  The default (display them on stderr) is often not
+attractive.  Instead errors can be ignored, logged, or recorded, based
+on the contents of the <errors> element:
+
+|---------+-----------------------------------|
+| Value   | Special behavior                  |
+|---------+-----------------------------------|
+| default | Errors are displayed on stderr    |
+| ignore  | Errors are discarded              |
+| log     | Errors are logged (via slaxLog()) |
+| record  | Errors are recorded               |
+|---------+-----------------------------------|
+
+When <errors> is set to "record", all errors appear in a string under
+the <errors> element in the XML node (as returned by
+e.g. curl:perform).  If no errors are generated, the <errors> element
+will not be present, allowing it to be used as a test for errors:
+
+    var $opt = {
+        <url> $url;
+        <format> "html";
+        <errors> "record";
+    }
+    var $res = curl:single($opts);
+    if ($res/errors) {
+        terminate "failure: " _ $res/errors;
+    }
+
 **** <fail-on-error>
 
 The <fail-on-error> element indicates that the transfer should fail if
