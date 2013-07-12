@@ -94,8 +94,8 @@ get-gh-pages:
 		gh-pages -b gh-pages
 
 UPDATE_PACKAGE_FILE = -e "s/__SHA1__/$$SHA1/"
-GH_PAGES_PACKAGE_DIR = \
-        ${GH_PAGES_DIR}/packaging/${PACKAGE_VERSION}
+GH_PACKAGING_DIR = packaging/${PACKAGE_VERSION}
+GH_PAGES_PACKAGE_DIR = ${GH_PAGES_DIR}/${GH_PACKAGING_DIR}
 
 packages:
 	@-[ -d ${GH_PAGES_DIR} ] \
@@ -104,4 +104,9 @@ packages:
 		&& mkdir -p ${GH_PAGES_PACKAGE_DIR} \
 		&& echo "... ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb ..." \
 		&& sed ${UPDATE_PACKAGE_FILE} packaging/libslax.rb.base \
-			> ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb
+			> ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb \
+		&& (cd ${GH_PAGES_DIR} \
+			&& git add ${GH_PACKAGING_DIR} \
+			&& git commit -m 'new packaging data' \
+                               ${GH_PACKAGING_DIR} \
+			&& git push origin gh-pages ) ; true
