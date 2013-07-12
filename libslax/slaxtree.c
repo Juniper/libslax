@@ -212,7 +212,8 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	    xmlNodePtr tp;
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
-	    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
+	    if (tp)
+		slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
 
 	    return;
 	}
