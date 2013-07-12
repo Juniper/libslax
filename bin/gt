@@ -113,9 +113,9 @@ case "$op" in
 	echo "Merging $branch into $to ..."
 	echo "Switching to $to ..."
         git checkout $to
-	if [ $status -eq 0 ]; then
+	if [ $? -eq 0 ]; then
 	    git merge --no-ff $branch
-	    if [ $status -eq 0 ]; then
+	    if [ $? -eq 0 ]; then
 		echo "Pushing to $to ..."
 		git push origin $to
 	    fi
@@ -128,7 +128,7 @@ case "$op" in
         from=$1
 	echo "Merging $from into $branch ..."
 	git merge --no-ff $from
-	if [ $status -eq 0 ]; then
+	if [ $? -eq 0 ]; then
 	    push_to_branch
 	fi
         ;;
