@@ -1,7 +1,7 @@
 Name:        @PACKAGE_NAME@
 Version:     @PACKAGE_VERSION@
 Release:     1%{?dist}
-Summary:     Implementation of the SLAX language
+Summary:     The SLAX language (XSLT alternative)
 
 Group:       Development/Libraries
 License:     MIT
@@ -64,7 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 For the complete changelog, please see:
-  https://github.com/Juniper/libslax/commits/master/libslax.spec.in
+  https://github.com/Juniper/libslax/releases/
 
 Thanks goes to John Deatherage <john@routelastresort.com> for working this up.
 
