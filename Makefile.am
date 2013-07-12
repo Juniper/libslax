@@ -94,10 +94,14 @@ get-gh-pages:
 		gh-pages -b gh-pages
 
 UPDATE_PACKAGE_FILE = -e "s/__SHA1__/$$SHA1/"
+GH_PAGES_PACKAGE_DIR = \
+        ${GH_PAGES_DIR}/packaging/${PACKAGE_VERSION}
 
 packages:
-	@-[ -d ${GH_PAGES_DIR} ] && set -x \
+	@-[ -d ${GH_PAGES_DIR} ] \
 		&& echo "Updating packages on gh-pages ..." \
 		&& SHA1=`openssl sha1 ${PACKAGE_FILE} | awk '{print $$2}'` \
+		&& mkdir -p ${GH_PAGES_PACKAGE_DIR} \
+		&& echo "... ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb ..." \
 		&& sed ${UPDATE_PACKAGE_FILE} packaging/libslax.rb.base \
-			> packaging/libslax.rb
+			> ${GH_PAGES_PACKAGE_DIR}/${PACKAGE_NAME}.rb
