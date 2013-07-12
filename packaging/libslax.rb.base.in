@@ -6,9 +6,9 @@
 require 'formula'
 
 class Libslax < Formula
-  homepage 'https://github.com/Juniper/libslax'
-  url '{URL}'
-  sha1 '{SHA1}'
+  homepage 'https://github.com/Juniper/@PACKAGE-NAME@'
+  url 'https://github.com/Juniper/@PACKAGE_NAME@/releases/@PACKAGE_VERSION@/@PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz'
+  sha1 '__SHA1__'
 
   depends_on 'libtool' => :build
 
