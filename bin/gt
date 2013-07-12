@@ -43,7 +43,6 @@ function check_in_details () {
 }
 
 function push_to_branch () {
-    set_branch
     echo "Pushing to $branch ..."
     git push origin $branch
 }
@@ -67,7 +66,7 @@ case "$op" in
 	fi
 	;;
 
-    checkin|ci|check|checkpoint)
+    checkin|check|checkpoint)
         git diff $file
         git status -s "$@"
 
@@ -85,17 +84,14 @@ case "$op" in
 	fi
 	;;
 
-    check-in-details|cid)
+    check-in-details|ci|cid)
         check_in_details
 	;;
 
     commit)
+        set_branch
         check_in_details
 	push_to_branch
-	;;
-
-    ctag|current-tag)
-        git tag -l '*' | sed 's/^v//'
 	;;
 
     diff|dif|delta)
@@ -111,6 +107,32 @@ case "$op" in
         git master --set-upstream gh-pages origin/gh-pages
 	;;
 
+    merge-to)
+        set_branch
+        to=$1
+	echo "Merging $branch into $to ..."
+	echo "Switching to $to ..."
+        git checkout $to
+	if [ $status -eq 0 ]; then
+	    git merge --no-ff $branch
+	    if [ $status -eq 0 ]; then
+		echo "Pushing to $to ..."
+		git push origin $to
+	    fi
+	    git checkout $branch
+	fi
+        ;;
+
+    merge-from)
+        set_branch
+        from=$1
+	echo "Merging $from into $branch ..."
+	git merge --no-ff $from
+	if [ $status -eq 0 ]; then
+	    push_to_branch
+	fi
+        ;;
+
     outstanding|out|what)
         set_branch
         git diff origin/$branch $branch
@@ -118,6 +140,7 @@ case "$op" in
 
     push|pu|pom|pob)
 	# Push all local changes to the origin/repo server
+        set_branch
         push_to_branch
 	;;
 
@@ -145,9 +168,10 @@ case "$op" in
 	git push origin --tags $branch
 	;;
 
-    up|update)
+    pull|up|update)
 	# Update working copy with repo's changes
-	git pull -v "$@"
+	set_branch
+	git pull -v origin $branch
 	;;
 
     *)

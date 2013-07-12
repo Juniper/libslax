@@ -55,3 +55,14 @@ slaxLog (const char *fmt, ...);
  */
 void
 slaxLog2 (void *, const char *fmt, ...);
+
+#define SLAX_ERROR_DEFAULT	0 /* Default behavior */
+#define SLAX_ERROR_IGNORE	1 /* Ignore errors; discard them */
+#define SLAX_ERROR_RECORD	2 /* Record errors */
+#define SLAX_ERROR_LOG		3 /* Log errors (slaxLog()) */
+
+int
+slaxCatchErrors (int mode, xmlNodePtr recorder);
+
+int
+slaxErrorValue (const char *name);

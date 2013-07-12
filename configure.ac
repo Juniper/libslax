@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.16.10], [phil@juniper.net])
+AC_INIT([libslax], [0.16.11], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 AC_DISABLE_SHARED
 
@@ -430,7 +430,7 @@ if test -d $ac_abs_confdir/.git ; then
   extra=`git branch | awk '/\*/ { print $2 }'`
   if test "$extra" != "" -a "$extra" != "master"
   then
-      LIBJUISE_VERSION_EXTRA="-git-$extra"
+      LIBSLAX_VERSION_EXTRA="-git-$extra"
   fi
 fi
 
@@ -460,8 +460,9 @@ AC_CONFIG_FILES([
   bin/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc
-  libslax.pc
-  libslax.spec
+  packaging/libslax.pc
+  packaging/libslax.spec
+  packaging/libslax.rb.base
 ])
 AC_OUTPUT
 

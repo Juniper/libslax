@@ -52,6 +52,7 @@ typedef struct curl_opts_s {
     u_int8_t co_verbose;	/* Verbose (debug) output */
     u_int8_t co_insecure;	/* Allow insecure SSL certs  */
     u_int8_t co_secure;		/* Use SSL-enabled version of protocol */
+    int co_errors;		/* How to handle errors (SLAX_ERROR_*) */
     long co_timeout;		/* Operation timeout */
     long co_connect_timeout;	/* Connect timeout */
     char *co_username;		/* Value for CURLOPT_USERNAME */
@@ -147,6 +148,7 @@ extCurlOptionsCopy (curl_opts_t *top, curl_opts_t *fromp)
     COPY_FIELD(co_verbose);
     COPY_FIELD(co_insecure);
     COPY_FIELD(co_secure);
+    COPY_FIELD(co_errors);
     COPY_STRING(co_username);
     COPY_STRING(co_password);
     COPY_STRING(co_content_type);
@@ -289,6 +291,8 @@ extCurlParseNode (curl_opts_t *opts, xmlNodePtr nodep)
 	opts->co_insecure = TRUE;
     else if (streq(key, "secure"))
 	opts->co_secure = TRUE;
+    else if (streq(key, "errors"))
+	opts->co_errors = slaxErrorValue(xmlNodeValue(nodep));
     else if (streq(key, "timeout"))
 	opts->co_timeout = atoi(xmlNodeValue(nodep));
     else if (streq(key, "connect-timeout"))
@@ -936,7 +940,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
     const char *cp, *ep, *sp;
     char *nbuf = NULL, *vbuf = NULL;
     ssize_t nbufsiz = 0, vbufsiz = 0;
-
+    xmlNodePtr errp = NULL;
     xmlNodePtr nodep = xmlNewDocNode(docp, NULL,
 				     (const xmlChar *) "data", NULL);
     if (nodep == NULL)
@@ -945,6 +949,14 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
     xmlAddChild(parent, nodep);
     xmlSetProp(nodep, (const xmlChar *) "format",
 	       (const xmlChar *) opts->co_format);
+
+
+    if (opts->co_errors) {
+	if (opts->co_errors == SLAX_ERROR_RECORD)
+	    errp = xmlNewDocNode(docp, NULL, (const xmlChar *) "errors", NULL);
+	if (opts->co_errors != SLAX_ERROR_RECORD || errp)
+	    slaxCatchErrors(opts->co_errors, errp);
+    }
 
     if (streq(opts->co_format, "name")) {
 	for (cp = raw_data; *cp; cp = ep + 1) {
@@ -1031,7 +1043,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	xmlp = xmlReadMemory(raw_data, strlen(raw_data), "raw_data", NULL,
 			     XML_PARSE_NOENT);
 	if (xmlp == NULL)
-	    return;
+	    goto bail;
 
 	xmlNodePtr childp = xmlDocGetRootElement(xmlp);
 	if (childp) {
@@ -1048,7 +1060,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	xmlp = htmlReadMemory(raw_data, strlen(raw_data), "raw_data", NULL,
 			     XML_PARSE_NOENT);
 	if (xmlp == NULL)
-	    return;
+	    goto bail;
 
 	xmlNodePtr childp = xmlDocGetRootElement(xmlp);
 	if (childp) {
@@ -1058,6 +1070,21 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	}
 
 	xmlFreeDoc(xmlp);
+    }
+
+ bail:
+    if (opts->co_errors) {
+	slaxCatchErrors(SLAX_ERROR_DEFAULT, NULL);
+	if (errp) {
+	    /*
+	     * If we have errors, record them; otherwise free the empty
+	     * "errors" node.
+	     */
+	    if (errp->children)
+		xmlAddChild(parent, errp);
+	    else
+		xmlFreeNode(errp);
+	}
     }
 }
 
