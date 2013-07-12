@@ -160,12 +160,16 @@ case "$op" in
         # If you make a tag like "0.15.0", then you can
         # use an URL like:
         # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
-        if [ "$@" = "" ]; then
-	    echo "missing tag name"
-	    exit 1
+        if [ x"$@" = x"" ]; then
+	    git tag -n5
+	    exit 0
         fi
-	git tag "$@"
-	git push origin --tags $branch
+
+	DATE=`date "+%Y-%m-%d/%H:%M:%S"`
+	git tag -a -m "[$DATE]" "$@"
+	if [ $? -eq 0 ]; then
+	    git push origin --tags $branch
+	fi
 	;;
 
     pull|up|update)
