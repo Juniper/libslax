@@ -7,7 +7,7 @@ PORTVERSION=	0.16.13
 PORTREVISION?=	1
 CATEGORIES?=	textproc
 MASTER_SITES=	https://github.com/Juniper/libslax/releases/0.16.13
-DIST_SUBDIR=	xxx
+DIST_SUBDIR=	textproc
 
 MAINTAINER?=	juise@googlegroups.com
 COMMENT?=	The SLAX language (XSLT alternative)
