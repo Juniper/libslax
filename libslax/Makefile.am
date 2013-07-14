@@ -108,6 +108,9 @@ EXTRA_DIST = \
     slaxparser-xp.y \
     slaxparser-tail.y
 
+man_MANS = libslax.3x
+EXTRA_DIST += libslax.3x
+
 CLEANFILES += slaxparser-out.y slaxparser-xpl.y
 
 slaxparser-xpl.y: slaxparser-xp.y

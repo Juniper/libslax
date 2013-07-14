@@ -34,7 +34,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_LN_S
 
 # Must be after AC_PROG_AR
-LT_INIT([])
+LT_INIT([dlopen])
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
@@ -74,9 +74,6 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h])
 AC_CHECK_HEADERS([string.h sys/param.h unistd.h ])
 AC_CHECK_HEADERS([sys/sysctl.h])
-
-AC_CHECK_LIB([dl], [dlopen])
-AM_CONDITIONAL([HAVE_LIBDL], [test "$HAVE_LIBDL" != "no"])
 
 AC_CHECK_LIB([crypto], [MD5_Init])
 AM_CONDITIONAL([HAVE_LIBCRYPTO], [test "$HAVE_LIBCRYPTO" != "no"])
@@ -463,6 +460,7 @@ AC_CONFIG_FILES([
   packaging/libslax.pc
   packaging/libslax.spec
   packaging/libslax.rb.base
+  packaging/freebsd/port-Makefile
 ])
 AC_OUTPUT
 

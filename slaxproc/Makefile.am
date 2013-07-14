@@ -38,10 +38,6 @@ if HAVE_LIBEDIT
 LIBS += -ledit -lcurses
 endif
 
-if HAVE_LIBDL
-LIBS += -ldl
-endif
-
 if HAVE_LIBM
 LIBS += -lm
 endif
@@ -53,8 +49,7 @@ slaxproc_SOURCES = slaxproc.c
 #slaxproc_LDFLAGS = -static
 
 LDADD = \
-    -L../libslax \
-    -L${SLAX_LIBDIR} -lslax
+    ${top_builddir}/libslax/libslax.la
 
 man_MANS = slaxproc.1x slaxdebugger.1x
 
