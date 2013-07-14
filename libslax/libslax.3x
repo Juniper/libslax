@@ -1,0 +1,140 @@
+.\" # Copyright 2011, Juniper Networks, Inc.
+.\" # All rights reserved.
+.\" # This SOFTWARE is licensed under the LICENSE provided in the
+.\" # ../Copyright file. By downloading, installing, copying, or otherwise
+.\" # using the SOFTWARE, you agree to be bound by the terms of that
+.\" # LICENSE.
+.TH LIBSLAX 3x  "13 July 2013"
+.SH NAME
+libslax \- process slax files
+.SH SYNOPSIS
+\fB#include <libslax/slax.h>\fR
+.br
+void slaxEnable(int enable);
+.br
+int slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
+	     int partial, const char *);
+.br
+struct _xmlDoc *slaxCtxtReadFd(struct _xmlParserCtxt *ctxt, int fd,
+	       const char *URL, const char *encoding, int options);
+.br
+struct _xmlDoc *slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
+.br
+void slaxSetTextAsElement (int enable);
+.br
+void slaxDumpToFd (int fd, struct _xmlDoc *docp, int);
+.br
+void slaxDump (struct _xmlDoc *docp);
+.br
+void slaxSetIndent (int indent);
+.br
+void slaxSetSpacesAroundAttributeEquals (int spaces);
+.br
+typedef void (*slaxTraceCallback_t)(void *, struct _xmlNode *,
+				    const char *fmt, ...);
+.br
+void slaxTraceEnable (slaxTraceCallback_t func, void *data);
+.br
+typedef void (*slaxProgressCallback_t)(void *, const char *fmt, ...);
+.br
+void slaxProgressEnable (slaxProgressCallback_t func, void *data);
+.br
+int slaxEmitProgressMessages (int);
+.br
+typedef char *(*slaxInputCallback_t)(const char *, unsigned flags);
+typedef void (*slaxOutputCallback_t)(const char *, ...);
+typedef int (*slaxErrorCallback_t)(const char *, va_list vap);
+.br
+void slaxIoRegister (slaxInputCallback_t input_callback,
+		slaxOutputCallback_t output_callback,
+		xmlOutputWriteCallback raw_write,
+		slaxErrorCallback_t error_callback);
+.br
+void slaxIoUseStdio (unsigned flags);	/* Use the stock std{in,out} */
+.br
+void slaxTraceToFile (FILE *fp);
+.br
+char *slaxInput (const char *prompt, unsigned flags);
+.br
+void slaxOutput (const char *fmt, ...);
+.br
+int slaxError (const char *fmt, ...);
+.br
+int slaxDebugInit (void);
+.br
+void slaxDebugSetStylesheet (struct _xsltStylesheet *stylep);
+.br
+void slaxDebugSetIncludes (const char **includes);
+.br
+struct _xmlDoc *slaxDebugApplyStylesheet (const char *scriptname,
+			  struct _xsltStylesheet *style,
+			  const char *docname, struct _xmlDoc *doc,
+			  const char **params);
+.br
+int slaxExtRegisterOther (const char *namespace);
+void slaxExtRegister (void);
+.br
+void slaxLogEnable (int);
+.br
+typedef void (*slaxLogCallback_t)(void *opaque, const char *fmt, va_list vap);
+.br
+void slaxLogEnableCallback (slaxLogCallback_t func, void *data);
+.br
+void slaxLogToFile (FILE *fp);
+.br
+void slaxInitRandomizer (void);
+.br
+typedef void (*slaxRestartFunc)(void);
+.br
+void slaxRestartListAdd(slaxRestartFunc func);
+.br
+void slaxRestartListCall(void);
+.br
+void slaxSetPreserveFlag (struct _xsltTransformContext *tctxt,
+		     struct _xmlXPathObject *ret);
+.br
+void slaxIncludeAdd (const char *dir);
+.br
+void slaxIncludeAddPath (const char *dir);
+.br
+FILE *slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz);
+.br
+void slaxDynAdd (const char *dir);
+.br
+void slaxMemDump (const char *title, const char *data,
+	     size_t len, const char *tag, int indent);
+.br
+char *slaxBase64Encode (const char *buf, size_t blen, size_t *olenp);
+.br
+char *slaxBase64Decode (const char *buf, size_t blen, size_t *olenp);
+.br
+static inline int slaxFilenameIsStd (const char *filename);
+.br
+void slaxSetExitCode (int code);
+.br
+int slaxGetExitCode (void);
+.SH DESCRIPTION
+.SH DESCRIPTION
+.LP
+\fIlibslax\fP is a library for accessing \fISLAX\fP scripts.
+\fISLAX\fP is the "Stylesheet Language Alternate syntaX", a
+human-friendly format for XSLT, the W3C standard for XML-to-XML
+transformation.  SLAX has a C- and perl-like syntax that is familiar
+to programmers and is more readable than the XML-based standard XSLT
+syntax. More information about SLAX is available at:
+.LP
+.RS
+.I http://code.google.com/p/libslax
+.RE
+.LP
+.SH "SEE ALSO"
+slaxproc(1x)
+.SH AUTHORS
+The original author of the SLAX language and this library is 
+Phil Shafer of Juniper Networks.
+.LP
+The current version is available hosted as a github project at:
+.LP
+.RS
+.I https://github.com/Juniper/libslax
+.RE
