@@ -12,6 +12,8 @@ DIST_SUBDIR=	textproc
 MAINTAINER?=	juise@googlegroups.com
 COMMENT?=	The SLAX language (XSLT alternative)
 
+FETCH_ARGS?=    -Fpr
+
 .if !defined(REFERENCE_PORT)
 
 USE_GMAKE=	yes
