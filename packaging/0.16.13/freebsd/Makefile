@@ -20,7 +20,7 @@ USE_GMAKE=	yes
 GNU_CONFIGURE=	yes
 USE_LDCONFIG=	yes
 USE_GNOME?=	libxml2 libxslt
-CONFIGURE_ARGS?= --enable-libedit --enable-printflike
+CONFIGURE_ARGS?= 
 
 CPPFLAGS+=	-I${LOCALBASE}/include
 LDFLAGS+=	-L${LOCALBASE}/lib
