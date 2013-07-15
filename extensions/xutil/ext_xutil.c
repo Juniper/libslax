@@ -285,7 +285,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (nargs == 2) {
 	xop = valuePop(ctxt);
 	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
-	    LX_ERR("os:mkdir invalid second parameter\n");
+	    LX_ERR("xml-to-json: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
@@ -320,7 +320,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     xop = valuePop(ctxt);
     if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
-	LX_ERR("os:mkdir invalid second parameter\n");
+	LX_ERR("xml-to-json: invalid parameter\n");
 	xmlXPathFreeObject(xop);
 	xmlXPathReturnEmptyString(ctxt);
 	return;
@@ -391,7 +391,7 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (nargs == 2) {
 	xmlXPathObject *xop = valuePop(ctxt);
 	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
-	    LX_ERR("os:mkdir invalid second parameter\n");
+	    LX_ERR("json-to-xml: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
