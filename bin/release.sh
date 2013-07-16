@@ -39,6 +39,7 @@ function okay {
    /bin/echo -n "proceed? "
    read OKAY
    if [ x"$OKAY" = xn -o  x"$OKAY" = xno ]; then
+      echo "okay; exiting"
       exit 1;
    fi
 }
