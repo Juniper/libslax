@@ -653,7 +653,7 @@ extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	       statOptions_t *sop);
 
 static void
-extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
+extOsStatInfo (xmlDocPtr docp, xmlNodePtr parent,
 	       const char *path, struct stat *stp, int recurse,
 	       statOptions_t *sop)
 {
@@ -733,9 +733,17 @@ extOsStatInfo (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 		dp = readdir(dirp);
 		if (dp == NULL)
 		    break;
-		if (!sop->so_hidden && dp->d_name[0] == '.')
-		    continue;
-		extOsStatPath(results, docp, parent, path, dp->d_name,
+
+		if (dp->d_name[0] == '.') {
+		    if (!sop->so_hidden)
+			continue; /* Ignore hidden files */
+		    if (dp->d_name[1] == '\0')
+			continue; /* Don't follow self */
+		    if (dp->d_name[1] == '.' && dp->d_name[2] == '\0')
+			continue; /* Don't follow parent */
+		}
+
+		extOsStatPath(NULL, docp, parent, path, dp->d_name,
 			      recurse - 1, sop);
 	    }
 
@@ -771,7 +779,7 @@ extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
 	}
     }
 
-    rc = stat(path, &st);
+    rc = lstat(path, &st);
     if (rc)
 	return;
 
@@ -784,7 +792,7 @@ extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
     if (results)
 	xmlXPathNodeSetAdd(results, nodep);
 
-    extOsStatInfo(results, docp, nodep, path, &st, recurse, sop);
+    extOsStatInfo(docp, nodep, path, &st, recurse, sop);
 }
 
 static void
