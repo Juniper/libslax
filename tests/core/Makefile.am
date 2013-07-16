@@ -16,6 +16,7 @@ EXTRA_DIST = \
     ${TEST_CASES} \
     ${addprefix saved/, ${TEST_CASES:.slax=.xsl}} \
     ${addprefix saved/, ${TEST_CASES:.slax=.slax2}} \
+    ${addprefix saved/, ${TEST_CASES:.slax=.err}} \
     ${addprefix saved/, ${TEST_CASES:.slax=.out}}
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc

@@ -28,8 +28,8 @@ LDFLAGS+=	-L${LOCALBASE}/lib
 .if defined(MASTERDIR)
 _SLAVE_PORT=	yes
 .else
-MAN3=		libslax.3
-MAN1=		slaxproc.1
+MAN3=		libslax.3x
+MAN1=		slaxproc.1x
 
 OPTIONS=	DEBUG "Enable debugging" off \
 		WARNINGS "Enable compile warnings (-Werror)" off

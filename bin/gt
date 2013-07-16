@@ -85,12 +85,12 @@ case "$op" in
 	;;
 
     check-in-details|ci|cid)
-        check_in_details
+        check_in_details "$@"
 	;;
 
     commit)
         set_branch
-        check_in_details
+        check_in_details "$@"
 	push_to_branch
 	;;
 

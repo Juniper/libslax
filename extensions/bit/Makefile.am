@@ -28,16 +28,13 @@ AM_CFLAGS = \
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
-lib_LTLIBRARIES = libext_bit.la
+pkglib_LTLIBRARIES = libext_bit.la
 LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS}
 
-LDADD = \
-    -L../../libslax \
-    -L${SLAX_LIBDIR} -lslax
-
+LDADD = ${top_builddir}/libslax/libslax.la
 
 if HAVE_READLINE
 LIBS += -L/opt/local/lib -lreadline
@@ -49,14 +46,15 @@ endif
 libext_bit_la_SOURCES = \
     ext_bit.c
 
-libdir = ${SLAX_EXTDIR}
+pkglibdir = ${SLAX_EXTDIR}
 
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fbit.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${libdir}/libext_bit.la ; echo $$dlname'` \
-		&& echo Install link $$DLNAME "->" ${UGLY_NAME} "..." \
-		&& cd ${SLAX_EXTDIR} \
+	@DLNAME=`sh -c '. ${pkglibdir}/libext_bit.la ; echo $$dlname'` ; \
+		if [ x"$$DLNAME" = x ]; then echo error: emtpy dlname; fi ; \
+		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
+		cd ${SLAX_EXTDIR} \
 		&& chmod +w . \
 		&& rm -f ${UGLY_NAME} \
 		&& ${LN_S} $$DLNAME ${UGLY_NAME}
