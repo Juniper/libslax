@@ -14,7 +14,6 @@
 AC_PREREQ(2.2)
 AC_INIT([libslax], [0.16.14], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
-AC_DISABLE_SHARED
 
 # Support silent build rules.  Requires at least automake-1.11.
 # Disable with "configure --disable-silent-rules" or "make V=1"
@@ -34,7 +33,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_LN_S
 
 # Must be after AC_PROG_AR
-LT_INIT([dlopen])
+LT_INIT([dlopen shared])
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
@@ -364,6 +363,7 @@ case $host_os in
 	;;
      Linux*|linux*)
         CFLAGS="-D_GNU_SOURCE $CFLAGS"
+	LDFLAGS=-ldl
 	;;
      cygwin*|CYGWIN*)
 	LDFLAGS=-no-undefined
