@@ -14,11 +14,6 @@ shift
 
 function set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
-    case "$branch" in
-	gh-pages*)
-            branch=gh-pages
-	    ;;
-    esac
 }
 
 function check_in_details () {
