@@ -1,5 +1,45 @@
 #!/bin/sh -e
 
+function find_git_dir {
+    GIT_DIR="$PWD"
+    while true; do
+	if [ -d "$GIT_DIR"/.git ]; then
+	    return;
+	fi
+	GIT_DIR=`dirname "$GIT_DIR"`
+	if [ x"$GIT_DIR" = x"/" ]; then
+	    echo "Not running inside a git repository"
+	    exit 1
+	fi
+    done
+}
+
+function find_version {
+    # grep AC_INIT $GIT_DIR/configure.ac
+    VERS=`grep AC_INIT $GIT_DIR/configure.ac \
+	| awk -F[ '{print $3}' | sed 's/].*//'`
+}
+
+function get_log_comments {
+    echo "Commit log:"
+    git log ${1}...${2} \
+	| grep '^ ' | sort -u \
+	| sed -e 's/^ */- /' -e "/^ - Merge branch '/d"
+}
+
+function bump_version {
+    find_version
+    OLD_VERSION=$VERS
+
+    vi $GIT_DIR/configure.ac
+
+    find_version
+    NEW_VERSION=$VERS
+
+    echo "previous version: " $OLD_VERSION
+    echo "new version:      " $NEW_VERSION
+}
+
 function run {
     desc="$1"
     cmd="$2"
@@ -17,24 +57,6 @@ function run {
     fi
 }
 
-function find_version {
-    grep AC_INIT $@
-    VERS=`grep AC_INIT $@ | awk -F[ '{print $3}' | sed 's/].*//'`
-}
-
-function bump_version {
-    find_version ../configure.ac
-    OLD_VERSION=$VERS
-
-    vi ../configure.ac
-
-    find_version ../configure.ac
-    NEW_VERSION=$VERS
-
-    echo "previous version: " $OLD_VERSION
-    echo "new version:      " $NEW_VERSION
-}
-
 function okay {
    /bin/echo -n "proceed? "
    read OKAY
@@ -48,7 +70,18 @@ if [ "$1" = "-d" ]; then
     DOC=doc
 fi
 
-echo "starting new release"
+find_git_dir
+
+if [ ! -f $GIT_DIR/configure.ac ]; then
+    echo "$GIT_DIR/configure.ac not found"
+    exit 1
+fi
+
+echo "GIT_DIR is $GIT_DIR"
+find_version
+echo "Current version is $VERS"
+
+echo "Starting new release::"
 
 run "commit any changes" "gt commit"
 run "move to master branch" "gt br master"
@@ -58,7 +91,7 @@ run "bump version number in configure.ac" "bump_version"
 run "autoconf" "autoreconf --install"
 run "configure" "../configure $CONFIGURE_OPTS"
 run "build and test" \
-  "make clean && make && make install && make test && make dist"
+    "make clean && make && make install && make test && make dist"
 run "Commit any changes" "gt commit"
 
 run "upload any documentation changes to gh-pages/" "make upload"
@@ -67,5 +100,8 @@ run "publish packaging data to gh-pages/" "make packages"
 
 run "move back to develop branch" "gt br develop"
 run "pick up changes for configure.ac" "gt merge-from master"
+
 run "show diffs" "gt diff ${OLD_VERSION}...${NEW_VERSION}"
+get_log_comments $OLD_VERSION $NEW_VERSION
+
 run "goto https://github.com/Juniper/libslax/releases" "open https://github.com/Juniper/libslax/releases"
