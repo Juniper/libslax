@@ -230,7 +230,7 @@ such as the following JUNOS configuration file:
       </routing-options>
     </configuration>
 
-See also http://www.w3c.org/TR/REC-xml. 
+See also ^http://www.w3c.org/TR/REC-xml^. 
 
 *** XPath Concepts
 
@@ -346,7 +346,7 @@ The SLAX statement "expr" evaluates an XPath expression and inserts
 its value into the output tree.
 
 XPath is fully described in the W3C's specification,
-http://w3c.org/TR/xpath.
+^http://w3c.org/TR/xpath^.
 
 *** XSLT Concepts
 
@@ -717,9 +717,9 @@ node.
 *** Additional Resources
 
 The XPath specification is on the W3C web site:
-(http://www.w3c.org/TR/xpath)
+(^http://www.w3c.org/TR/xpath^)
 and the XSLT specification is on the W3C web site
-(http://www.w3c.org/TR/xslt).
+(^http://www.w3c.org/TR/xslt^).
 
 Books and tutorials on XSLT abound, helping programmers learn the
 technology.  XSLT processors (programs that run XSLT scripts) are
@@ -1163,7 +1163,7 @@ The XML equivalent is:
     <some-element xmlns="http://example.com/main"
             xmlns:test="http://example.com/test"/>
 
-See also http://www.w3.org/TR/xml#namespaces
+See also ^http://www.w3.org/TR/xml#namespaces^.
 
 Namespace definitions are supplied using the "ns" statement.  This
 consists of either the "ns" keyword, a prefix string, an equal sign
@@ -1225,7 +1225,7 @@ functions and elements defined within that library.
 
     ns pref extension = "http://some.example.com";
 
-See also http://www.w3.org/TR/xslt#extension-element
+See also ^http://www.w3.org/TR/xslt#extension-element^.
 
 *** The "exclude" Statement @exclude@
 
@@ -1234,7 +1234,7 @@ final result tree, effectively blocking it from output.
 
     ns xslax extension = "http://libslax.org/slax";
 
-See also http://www.w3.org/TR/xslt#literal-result-element
+See also ^http://www.w3.org/TR/xslt#literal-result-element^.
 
 ** Processing Instructions
 
@@ -1687,7 +1687,7 @@ In this example, template processing is invoked twice, first for mode
         ... template ...
     }
 
-See also http://www.w3.org/TR/xslt#modes
+See also ^http://www.w3.org/TR/xslt#modes^.
 
 The "mode" attribute of the <xsl:template> element is available
 using the "mode" statement.  This statement can appear inside a
@@ -1747,7 +1747,7 @@ In this example, the template is given a high priority:
         ...
     }
 
-See also http://www.w3.org/TR/xslt#conflict
+See also ^http://www.w3.org/TR/xslt#conflict^.
 
 The "priority" statement mimics the "priority" attribute of the
 <xsl:template> element.  It may appear inside a "match" statement.
@@ -2427,7 +2427,7 @@ function redefinition).  Conceptually, imported files are inserted at
 the top of the script, in the order in which they are given in the
 source files.
 
-See also http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+See also ^http://www.w3.org/TR/xslt#section-Combining-Stylesheets^.
 
 The "include" and "import" statements mimic the <xsl:include> and
 <xsl:import> elements.
@@ -2468,7 +2468,7 @@ expression for the value of the key.
         value @name;
     }
 
-See also http://www.w3.org/TR/xslt#key
+See also ^http://www.w3.org/TR/xslt#key^.
 
 ** The "decimal-format" Statement @decimal-format@
 
@@ -2496,7 +2496,23 @@ format-number() XPath function.  The statements under the
 under the <xsl:decimal-format> element, as detailed in the reference
 below. 
 
-See also http://www.w3.org/TR/xslt#format-number
+    decimal-format us {
+        decimal-separator ".";
+        grouping-separator ",";
+    }
+    decimal-format european {
+        decimal-separator ",";
+        grouping-separator ".";
+    }
+
+    match / {
+        <top> {
+            <data> format-number(24535.2, "###.###,00", "european");
+            <data> format-number(24535.2, "###,###.00", "us");
+        }
+    }
+
+See also ^http://www.w3.org/TR/xslt#format-number^.
 
 ** Messages
 
@@ -2551,7 +2567,7 @@ The XSLT is as follows:
       </xsl:when>
     </xsl:choose>
 
-See also http://www.w3.org/TR/xslt#message
+See also ^http://www.w3.org/TR/xslt#message^.
 
 *** The "terminate" Statement @terminate@
 
@@ -2642,7 +2658,7 @@ the XSLT <xsl:output> element.
 | media-type             | MIME type for document               |
 |------------------------+--------------------------------------|
 
-See also http://www.w3.org/TR/xslt#output
+See also ^http://www.w3.org/TR/xslt#output^.
 
 ** The "fallback" Statement @fallback@
 
@@ -2680,7 +2696,7 @@ whitespace.
 
     strip-space section paragraph bullet;
 
-See also http://www.w3.org/TR/xslt#strip
+See also ^http://www.w3.org/TR/xslt#strip^.
 
 The "strip-space" statement mimics the <xsl:strip-space>
 element, instructing the XSLT processor that certain elements
@@ -2706,7 +2722,7 @@ whitespace.
 
     preserve-space art picture line;
 
-See also http://www.w3.org/TR/xslt#strip
+See also ^http://www.w3.org/TR/xslt#strip^.
 
 The "preserve-space" statement mimics the <xsl:preserve-space>
 element, instructing the XSLT processor that certain elements
@@ -3016,7 +3032,7 @@ SLAX is available as an open-source project with the "New BSD"
 license.  Current releases, source code, documentation, and support
 materials can be downloaded from:
 
-   http://code.google.com/p/libslax
+^https://github.com/Juniper/libslax^
 
 ** The libslax Library
 
@@ -3073,7 +3089,7 @@ check syntax.
      --version OR -V: show version information (and exit)
      --write-version <version> OR -w <version>: write in version
 
-  Project libslax home page: http://libslax.googlecode.com
+  Project libslax home page: https://github.com/Juniper/libslax
 
 Files can be referenced positionally (where the script file first) or
 by using the "-n", "-i", and "-o" options.
@@ -3444,7 +3460,7 @@ those arrays.
 
 curl and libcurl are software components that allow access to a number
 of protocols, include http, https, smtp, ftp, and scp.  They are open
-source and available from the web site http://curl.haxx.se/libcurl/.
+source and available from the web site ^http://curl.haxx.se/libcurl/^.
 Please refer to that site for additional information.
 
 *** curl Elements @curl-elements@
@@ -3454,7 +3470,7 @@ curl extension functions.  These elements closely mimic the options
 used by the native C libcurl API via libcurl's curl_easy_setopt()
 function), as documented on the following web page:
 
-http://curl.haxx.se/libcurl/c/curl_easy_setopt.html
+^http://curl.haxx.se/libcurl/c/curl_easy_setopt.html^
 
 Once these values are set, a call to curl_easy_perform() performs the
 requested transfer.
@@ -4188,6 +4204,15 @@ operation.  The options can include the values in the following table.
             <path>;
         }
         var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
+
+If the value for <mode> is a string, it will be converted to an
+integer using the default numeric base of 8 (octal), so '<mode> "644"'
+will work, but '<mode> 644' will see 644 as a number with base 10
+(decimal), which will result in undesirable results since 644 base 10
+is 01204 base 8.
+
+If the value of <mode> is not a valid mode integer value, it will be
+ignored.
 
 The return value of os:mkdir is a node-set which may contain an
 <error> element is an error occurred.  This element may contain
