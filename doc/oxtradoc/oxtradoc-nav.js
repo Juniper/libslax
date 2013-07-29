@@ -124,24 +124,34 @@ jQuery(function ($) {
         $("html").animate({ scrollTop: 0 }, 500);
     });
 
-    $("a", $right).click(function (event) {
-        event.preventDefault();
-        var id = this.href.split("#");
-        id = id[id.length - 1];
-
-        var $target = $(document.getElementById(id));
-        setActive($target.parents("div.content"));
-
-        $("html").animate({ scrollTop: 0 }, 500);
-    });
 
     $("a", $right).each(function (idx, elt) {
         /* Put the @title as the link value */
         var $elt = $(elt);
-        var t = $elt.attr("title");
         var href = $elt.attr("href");
-        if (t !== undefined && href !== undefined)
-            $elt.text(t);
+        var proto;
+
+        if (href) {
+            var len = href.indexOf(":");
+            if (len > 0) {
+                proto = href.substr(0, len);
+            }
+        }
+        if (proto != "http" && proto != "https") {
+            var t = $elt.attr("title");
+            if (t !== undefined && href !== undefined)
+                $elt.text(t);
+            $elt.click(function (event) {
+                event.preventDefault();
+                var id = this.href.split("#");
+                id = id[id.length - 1];
+
+                var $target = $(document.getElementById(id));
+                setActive($target.parents("div.content"));
+
+                $("html").animate({ scrollTop: 0 }, 500);
+            });
+        }
     });
 
     $("button#nav-prev").button({
