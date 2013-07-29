@@ -440,6 +440,7 @@ sub esc {
     s/>/&gt;/g;
     s/'/&apos;/g; #';
     s/"/&quot;/g; #";
+    s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
     s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
     s/{{(.*?)}}/<digress target=\"$1\"\/>/g;
     s/ % /&nbsp;/g; # explicit non-breakable space
@@ -455,6 +456,7 @@ sub escf {
     s/>/&gt;/g;
     s/'/&apos;/g; #';
     s/"/&quot;/g; #";
+    s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
     s/\^(.*?)\^/<xref format=\"counter\" target=\"$1\"\/>/g;
     return $_;
 }
