@@ -2500,14 +2500,14 @@ below.
         decimal-separator ".";
         grouping-separator ",";
     }
-    decimal-format european {
+    decimal-format eu {
         decimal-separator ",";
         grouping-separator ".";
     }
 
     match / {
         <top> {
-            <data> format-number(24535.2, "###.###,00", "european");
+            <data> format-number(24535.2, "###.###,00", "eu");
             <data> format-number(24535.2, "###,###.00", "us");
         }
     }
