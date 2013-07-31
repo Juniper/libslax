@@ -2632,9 +2632,10 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	    goto fail;
 
 	valuePush(ctxt, xop);
-
+        xop = NULL;
     } else {
 	valuePush(ctxt, xop);
+        xop = NULL;
     }
 
  fail2:
