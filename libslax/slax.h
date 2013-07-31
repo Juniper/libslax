@@ -23,29 +23,32 @@ struct _xmlParserCtxt;
 struct _xsltTransformContext;
 struct _xsltStylesheet;
 
-/*
+/**
  * Turn on the SLAX XSLT document parsing hook.  This must be
  * called before SLAX files can be parsed.
+ * @param enable [in] new setting for enabling slax
  */
 void slaxEnable(int enable);
-#define SLAX_DISABLE	0	/* SLAX is not available */
-#define SLAX_ENABLE	1	/* SLAX is auto-detected */
-#define SLAX_FORCE	2	/* SLAX is forced on */
-#define SLAX_CLEANUP	3	/* Clean up and shutdown */
+#define SLAX_DISABLE	0	/**< SLAX is not available */
+#define SLAX_ENABLE	1	/**< SLAX is auto-detected */
+#define SLAX_FORCE	2	/**< SLAX is forced on */
+#define SLAX_CLEANUP	3	/**< Clean up and shutdown */
 
 #ifndef UNUSED
 #define UNUSED __attribute__ ((__unused__))
 #endif
 
+/**
+ * @typedef A callback used to write data to a destination, typically
+ * referenced by the opaque `data` parameter.
+ * @param data [in] opaque value passed thru to function
+ * @param fmt [in] printf-style format argument
+ */
 typedef int (*slaxWriterFunc_t)(void *data, const char *fmt, ...);
 
-/*
- * Write an XSLT document in SLAX format using the specified
- * fprintf-like callback function.
- */
 int
 slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
-	     int partial, const char *);
+	     int partial, const char *vers);
 
 /*
  * Read a SLAX stylesheet from an open file descriptor.

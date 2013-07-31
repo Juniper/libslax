@@ -28,6 +28,7 @@ AM_CFLAGS = \
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
+LIBNAME = libext_bit
 pkglib_LTLIBRARIES = libext_bit.la
 LIBS = \
     ${LIBXSLT_LIBS} \
@@ -52,7 +53,8 @@ UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fbit.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ${pkglibdir}/libext_bit.la ; echo $$dlname'` ; \
-		if [ x"$$DLNAME" = x ]; then echo error: emtpy dlname; fi ; \
+		if [ x"$$DLNAME" = x ]; \
+                    then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
 		cd ${SLAX_EXTDIR} \
 		&& chmod +w . \

@@ -26,6 +26,7 @@ AM_CFLAGS = \
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
+LIBNAME = libext_os
 pkglib_LTLIBRARIES = libext_os.la
 LIBS = \
     ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
@@ -51,7 +52,8 @@ UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fos.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ${pkglibdir}/libext_os.la ; echo $$dlname'` ; \
-		if [ x"$$DLNAME" = x ]; then echo error: emtpy dlname; fi ; \
+		if [ x"$$DLNAME" = x ]; \
+                    then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
 		cd ${slaxextdir} \
 		&& chmod +w . \

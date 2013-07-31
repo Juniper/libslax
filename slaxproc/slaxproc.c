@@ -34,8 +34,9 @@ static int nbparams;
 static const char **params;
 
 static int options = XSLT_PARSE_OPTIONS;
-static char *encoding;
-static char *opt_version;
+static char *encoding;		/* Desired document encoding */
+static char *opt_version;	/* Desired SLAX version */
+static char *opt_expression;	/* Expression to convert */
 static char **opt_args;
 
 static int opt_html;		/* Parse input as HTML */
@@ -112,6 +113,15 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
     FILE *infile, *outfile;
     xmlDocPtr docp;
 
+    if (opt_expression) {
+	char *res = slaxConvertExpression(opt_expression, TRUE);
+	if (res) {
+	    printf("%s\n", res);
+	    xmlFree(res);
+	}
+	return res ? 0 : -1;
+    }
+
     input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
@@ -155,6 +165,16 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 {
     xmlDocPtr docp;
     FILE *outfile;
+
+    if (opt_expression) {
+	char *res = slaxConvertExpression(opt_expression, FALSE);
+	if (res) {
+	    printf("%s\n", res);
+	    xmlFree(res);
+	}
+	return res ? 0 : -1;
+	return 0;
+    }
 
     input = get_filename(input, &argv, 0);
     output = get_filename(output, &argv, -1);
@@ -348,6 +368,7 @@ print_help (void)
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--empty OR -E: give an empty document for input\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
+    printf("\t--expression <expr>: convert an expression\n");
     printf("\t--help OR -h: display this help message\n");
     printf("\t--html OR -H: Parse input data as HTML\n");
     printf("\t--ignore-arguments: Do not process any further arguments\n");
@@ -433,6 +454,11 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
 	    use_exslt = TRUE;
+
+	} else if (streq(cp, "--expression")) {
+	    opt_expression = *++argv;
+	    if (opt_expression == NULL)
+		errx(1, "missing expression argument");
 
 	} else if (streq(cp, "--help") || streq(cp, "-h")) {
 	    print_help();

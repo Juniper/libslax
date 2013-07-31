@@ -115,6 +115,9 @@ slaxWriteRedoConcat (slax_data_t *sdp, slax_string_t *f);
 slax_string_t *
 slaxWriteRemoveParens (slax_data_t *sdp, slax_string_t *);
 
+char *
+slaxConvertExpression (const char *opt_expression, int is_slax);
+
 /* --- slaxloader.h -- */
 void
 slaxDataCleanup (slax_data_t *sdp);

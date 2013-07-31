@@ -496,6 +496,9 @@ extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
 
 	/* Set the value globally */
 	xsltSetMaxDepth(value);
+    } else {
+        LX_ERR("xutil:max-call-depth invalid parameter\n");
+        return;
     }
 
     xmlXPathReturnEmptyString(ctxt);
