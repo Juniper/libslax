@@ -88,7 +88,9 @@ run "move to master branch" "gt br master"
 run "merge development changes into master" "gt merge-from develop"
 run "bump version number in configure.ac" "bump_version"
 
+cd $GIT_DIR
 run "autoconf" "autoreconf --install"
+cd $GIT_DIR/build
 run "configure" "../configure $CONFIGURE_OPTS"
 run "build and test" \
     "make clean && make && make install && make test && make dist"
