@@ -360,13 +360,16 @@ AC_COMPILE_IFELSE(
 case $host_os in
      darwin*)
         LIBTOOL=glibtool
+	SLAX_LIBEXT=dylib
 	;;
      Linux*|linux*)
         CFLAGS="-D_GNU_SOURCE $CFLAGS"
 	LDFLAGS=-ldl
+	SLAX_LIBEXT=so
 	;;
      cygwin*|CYGWIN*)
 	LDFLAGS=-no-undefined
+	SLAX_LIBEXT=ddl
 	;;
 esac
 
@@ -407,6 +410,7 @@ SLAX_INCLUDEDIR=${includedir}
 
 AC_SUBST(SLAX_SRCDIR)
 AC_SUBST(SLAX_LIBDIR)
+AC_SUBST(SLAX_LIBEXT)
 AC_SUBST(SLAX_EXTDIR)
 AC_SUBST(SLAX_SHAREDIR)
 AC_SUBST(SLAX_OXTRADOCDIR)
