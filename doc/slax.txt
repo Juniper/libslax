@@ -3070,6 +3070,7 @@ check syntax.
      --debug OR -d: enable the SLAX/XSLT debugger
      --empty OR -E: give an empty document for input
      --exslt OR -e: enable the EXSLT library
+     --expression <expr>: convert an expression
      --help OR -h: display this help message
      --html OR -H: Parse input data as HTML
      --ignore-arguments: Do not process any further arguments
@@ -3222,6 +3223,9 @@ scripts that do not expect or need meaningful input.
 = --exslt OR -e
 Enables the EXSLT library, which provides a set of standard extension
 functions.  See exslt.org for more information.
+= --expression <expr>
+Converts a SLAX expression to an XPATH one, or vice versa, depending
+on the presence of --slax-to-xslt and --xslt-to-slax.
 = --help OR -h
 Displays this help message and exits.
 = --html OR -H
