@@ -631,6 +631,23 @@ fail:
     return buf;
 }
 
+char *
+slaxConvertExpression (const char *opt_expression, int is_slax)
+{
+    char *res = NULL;
+    slax_writer_t sw;
+
+    bzero(&sw, sizeof(sw));
+    sw.sw_filename = "internal";
+
+    if (is_slax) {
+	res = slaxSlaxToXpath(sw.sw_filename, 1, opt_expression, NULL);
+    } else {
+	res = slaxMakeExpression(&sw, NULL, opt_expression);
+    }
+    return res;
+}
+
 /*
  * Turn an attribute value template into a SLAX expression.  The
  * template can contain three things:
