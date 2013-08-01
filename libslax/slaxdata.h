@@ -12,6 +12,8 @@
 #ifndef LIBSLAX_SLAXDATA_H
 #define LIBSLAX_SLAXDATA_H
 
+#include <libslax/xmlsoft.h>
+
 typedef struct slax_data_node_s {
     TAILQ_ENTRY(slax_data_node_s) dn_link; /* Next session */
     int dn_len; 		/* Length of the chunk of data */
@@ -171,6 +173,55 @@ slaxDataListAsChar (char *buf, size_t bufsiz,
 
     *cp = '\0';
     return buf;
+}
+
+/*
+ * Add a directory to the list of directories searched for files
+ */
+static inline void
+slaxDataListAddDir (slax_data_list_t *where, int *inited, const char *dir)
+{
+    if (!*inited) {
+	*inited = TRUE;
+	slaxDataListInit(where);
+    }
+
+    slaxDataListAddNul(where, dir);
+}
+
+/*
+ * Add a set of directories to the list of directories searched for files
+ */
+static inline void
+slaxDataListAddPath (slax_data_list_t *where, int *inited, const char *dir)
+{
+    char *buf = NULL;
+    int buflen = 0;
+    const char *cp;
+
+    while (dir && *dir) {
+	cp = strchr(dir, ':');
+	if (cp == NULL) {
+	    slaxIncludeAdd(dir);
+	    break;
+	}
+
+	if (cp - dir > 1) {
+	    if (buflen < cp - dir + 1) {
+		buflen = cp - dir + 1 + BUFSIZ;
+		buf = alloca(buflen);
+	    }
+
+	    memcpy(buf, dir, cp - dir);
+	    buf[cp - dir] = '\0';
+
+	    slaxDataListAddDir(where, inited, buf);
+	}
+
+	if (*cp == '\0')
+	    break;
+	dir = cp + 1;
+    }
 }
 
 #endif /* LIBSLAX_SLAXDATA_H */
