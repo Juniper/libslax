@@ -34,6 +34,15 @@ void slaxEnable(int enable);
 #define SLAX_FORCE	2	/**< SLAX is forced on */
 #define SLAX_CLEANUP	3	/**< Clean up and shutdown */
 
+/**
+ * Allow protoscript processing
+ * @param enable [in] new setting for enabling protoscript
+ * @param base [in] base protoscript name
+ * @param base_default [in] default base protoscript name (if no match found)
+ */
+void slaxEnableProtoscript(int enable, const char *base,
+			    const char *base_default);
+
 #ifndef UNUSED
 #define UNUSED __attribute__ ((__unused__))
 #endif
@@ -63,6 +72,10 @@ slaxCtxtReadFd(struct _xmlParserCtxt *ctxt, int fd,
  */
 struct _xmlDoc *
 slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
+
+/* Flags for slaxLoadFile */
+#define SLF_PARTIAL	(1<<0)	/**< Partial file */
+#define SLF_PROTOSCRIPT	(1<<1)	/**< Protoscript file */
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
@@ -284,6 +297,21 @@ slaxIncludeAddPath (const char *dir);
  */
 FILE *
 slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz);
+
+/*
+ * Add a directory to the list of directories searched for
+ * protoscript files.
+ */
+void
+slaxProtoscriptAdd (const char *dir);
+
+/*
+ * Add a set of directories to the list of directories searched for
+ * protoscript files.  The argument should contain a set of directory
+ * names, seperated by colons ("/dir/one:/dir/two:/dir/three").
+ */
+void
+slaxProtoscriptAddPath (const char *dir);
 
 /*
  * Add a directory to the list of directories searched for dynamic
