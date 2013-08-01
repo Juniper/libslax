@@ -52,6 +52,7 @@ function run {
         echo "Phase: $desc"
         echo "  Run: $cmd"
         okay
+	# We need to eval to handle "&&" in commands
         eval $cmd
         okay
     fi
