@@ -46,6 +46,10 @@ static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_slax_output;	/* Make output in SLAX format */
 
+static int opt_protoscript;	/* Activate protoscript processing */
+static char *opt_base;		/* Base protoscript name */
+static char *opt_base_default;	/* Default base protoscript name */
+
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
 {
@@ -365,6 +369,8 @@ print_help (void)
     printf("\n");
 
     printf("    Options:\n");
+    printf("\t--base <name>: base protoscript name\n");
+    printf("\t--base-default <name>: default base protoscript name\n");
     printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
     printf("\t--empty OR -E: give an empty document for input\n");
     printf("\t--exslt OR -e: enable the EXSLT library\n");
@@ -381,12 +387,32 @@ print_help (void)
     printf("\t--output <file> OR -o <file>: make output into the given file\n");
     printf("\t--param <name> <value> OR -a <name> <value>: pass parameters\n");
     printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
+    printf("\t--protoscript: check for protoscript logic to build script\n");
     printf("\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n");
     printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
     printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
     printf("\t--version OR -V: show version information (and exit)\n");
     printf("\t--write-version <version> OR -w <version>: write in version\n");
     printf("\nProject libslax home page: https://github.com/Juniper/libslax\n");
+}
+
+static char *
+check_arg (char ***argvp, const char *name)
+{
+    char **argv = *argvp;
+    if (*argv) {
+	char *arg = *++argv;
+
+	if (arg) {
+	    *argvp = argv;
+	    return arg;
+	}
+    }
+
+    if (name == NULL)
+	name = **argvp + 2;
+
+    errx(1, "missing option value for '%s <%s>'", **argvp, name);
 }
 
 int
@@ -446,6 +472,12 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_xslt_to_slax;
 
+	} else if (streq(cp, "--base")) {
+	    opt_base = check_arg(&argv, NULL);
+
+	} else if (streq(cp, "--base-default")) {
+	    opt_base_default = check_arg(&argv, NULL);
+
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    opt_debugger = TRUE;
 
@@ -456,9 +488,7 @@ main (int argc UNUSED, char **argv)
 	    use_exslt = TRUE;
 
 	} else if (streq(cp, "--expression")) {
-	    opt_expression = *++argv;
-	    if (opt_expression == NULL)
-		errx(1, "missing expression argument");
+	    opt_expression = check_arg(&argv, NULL);
 
 	} else if (streq(cp, "--help") || streq(cp, "-h")) {
 	    print_help();
@@ -472,22 +502,22 @@ main (int argc UNUSED, char **argv)
 	    break;
 
 	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxIncludeAdd(*++argv);
+	    slaxIncludeAdd(check_arg(&argv, "include-dir"));
 
 	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
 	    opt_indent = TRUE;
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
-	    input = *++argv;
+	    input = check_arg(&argv, "input-file-name");
 
 	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
-	    slaxDynAdd(*++argv);
+	    slaxDynAdd(check_arg(&argv, "library-dir"));
 
 	} else if (streq(cp, "--log") || streq(cp, "-l")) {
-	    opt_log_file = *++argv;
+	    opt_log_file = check_arg(&argv, "log-file-name");
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
-	    name = *++argv;
+	    name = check_arg(&argv, "script-name");
 
 	} else if (streq(cp, "--no-randomize")) {
 	    randomize = 0;
@@ -496,11 +526,11 @@ main (int argc UNUSED, char **argv)
 	    ioflags |= SIF_NO_TTY;
 
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
-	    output = *++argv;
+	    output = check_arg(&argv, "output-file-name");
 
 	} else if (streq(cp, "--param") || streq(cp, "-a")) {
-	    char *pname = *++argv;
-	    char *pvalue = *++argv;
+	    char *pname = check_arg(&argv, "parameter name");
+	    char *pvalue = check_arg(&argv, "parameter value");
 	    char *tvalue;
 	    char quote;
 	    int plen;
@@ -523,6 +553,12 @@ main (int argc UNUSED, char **argv)
 	    slaxDataListAddNul(&plist, pname);
 	    slaxDataListAddNul(&plist, tvalue);
 
+	} else if (streq(cp, "--protoscript")) {
+	    opt_protoscript = TRUE;
+
+	} else if (streq(cp, "--protoscript-path")) {
+	    slaxProtoscriptAddPath(check_arg(&argv, "colon-separated-path"));
+
 	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
 	    opt_partial = TRUE;
 
@@ -530,7 +566,7 @@ main (int argc UNUSED, char **argv)
 	    opt_slax_output = TRUE;
 
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
-	    trace_file = *++argv;
+	    trace_file = check_arg(&argv, "trace-file-name");
 
 	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
 	    logger = TRUE;
@@ -540,7 +576,7 @@ main (int argc UNUSED, char **argv)
 	    exit(0);
 
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
-	    opt_version = *++argv;
+	    opt_version = check_arg(&argv, "version");
 
 	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
 	    slaxYyDebug = TRUE;
@@ -566,6 +602,12 @@ main (int argc UNUSED, char **argv)
     if (cp)
 	slaxIncludeAddPath(cp);
 
+    if (opt_protoscript) {
+	cp = getenv("SLAXPROTOSCRIPTPATH");
+	if (cp)
+	    slaxProtoscriptAddPath(cp);
+    }
+
     params = alloca(nbparams * 2 * sizeof(*params) + 1);
     i = 0;
     SLAXDATALIST_FOREACH(dnp, &plist) {
@@ -590,6 +632,8 @@ main (int argc UNUSED, char **argv)
     xmlInitParser();
     xsltInit();
     slaxEnable(SLAX_ENABLE);
+    if (opt_protoscript)
+	slaxEnableProtoscript(SLAX_ENABLE, opt_base, opt_base_default);
     slaxIoUseStdio(ioflags);
 
     if (opt_log_file) {
