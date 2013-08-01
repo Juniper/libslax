@@ -242,6 +242,7 @@
 %token M_PARSE_SLAX		/* Parse a SLAX-style XPath expression */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
+%token M_PARSE_PROTOSCRIPT	/* Parse a protoscript file */
 
 %pure_parser
 %{
