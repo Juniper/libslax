@@ -33,6 +33,12 @@ static xsltDocLoaderFunc slaxOriginalXsltDocDefaultLoader;
 xmlExternalEntityLoader slaxOriginalEntityLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
+static int slaxEnabledProtoscript; /* Protoscript enable (SLAX_*) */
+static char *slaxProtoBase;	   /* Base protoscript name  */
+static char *slaxProtoBaseDefault; /* Default base protoscript name  */
+
+static slax_data_list_t slaxProtoDirs; /* List of directories to search */
+static int slaxProtoDirsInited;	       /* Has slaxProtoDirs been inited? */
 
 /* Stub to handle xmlChar strings in "?:" expressions */
 const xmlChar slaxNull[] = "";
@@ -46,12 +52,7 @@ static int slaxIncludesInited;
 void
 slaxIncludeAdd (const char *dir)
 {
-    if (!slaxIncludesInited) {
-	slaxIncludesInited = TRUE;
-	slaxDataListInit(&slaxIncludes);
-    }
-
-    slaxDataListAddNul(&slaxIncludes, dir);
+    slaxDataListAddDir(&slaxIncludes, &slaxIncludesInited, dir);
 }
 
 /*
@@ -60,33 +61,25 @@ slaxIncludeAdd (const char *dir)
 void
 slaxIncludeAddPath (const char *dir)
 {
-    char *buf = NULL;
-    int buflen = 0;
-    const char *cp;
+    slaxDataListAddPath(&slaxIncludes, &slaxIncludesInited, dir);
+}
 
-    while (dir && *dir) {
-	cp = strchr(dir, ':');
-	if (cp == NULL) {
-	    slaxIncludeAdd(dir);
-	    break;
-	}
+/*
+ * Add a directory to the list of directories searched for protoscripts
+ */
+void
+slaxProtoscriptAdd (const char *dir)
+{
+    slaxDataListAddDir(&slaxProtoDirs, &slaxProtoDirsInited, dir);
+}
 
-	if (cp - dir > 1) {
-	    if (buflen < cp - dir + 1) {
-		buflen = cp - dir + 1 + BUFSIZ;
-		buf = alloca(buflen);
-	    }
-
-	    memcpy(buf, dir, cp - dir);
-	    buf[cp - dir] = '\0';
-
-	    slaxIncludeAdd(buf);
-	}
-
-	if (*cp == '\0')
-	    break;
-	dir = cp + 1;
-    }
+/*
+ * Add a set of directories to the list of directories searched for files
+ */
+void
+slaxProtoscriptAddPath (const char *dir)
+{
+    slaxDataListAddPath(&slaxProtoDirs, &slaxProtoDirsInited, dir);
 }
 
 /**
@@ -531,11 +524,11 @@ slaxDataCleanup (slax_data_t *sdp)
  * @return xml document pointer
  */
 xmlDocPtr
-slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
+slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int flags)
 {
     slax_data_t sd;
     xmlDocPtr res;
-    int rc;
+    int rc, type;
     xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
 
     if (ctxt == NULL)
@@ -557,7 +550,9 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     bzero(&sd, sizeof(sd));
 
     /* We want to parse SLAX, either full or partial */
-    sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
+    type = (flags & SLF_PARTIAL) ? M_PARSE_PARTIAL :
+	(flags & SLF_PROTOSCRIPT) ? M_PARSE_PROTOSCRIPT : M_PARSE_FULL;
+    sd.sd_parse = sd.sd_ttype = type;
 
     strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
@@ -879,6 +874,8 @@ slaxEnable (int enable)
 	xsltSetLoaderFunc(NULL);
 	if (slaxIncludesInited)
 	    slaxDataListClean(&slaxIncludes);
+	if (slaxProtoDirsInited)
+	    slaxDataListClean(&slaxProtoDirs);
 
 	slaxEnabled = 0;
 	return;
@@ -892,6 +889,11 @@ slaxEnable (int enable)
 	if (!slaxIncludesInited) {
 	    slaxIncludesInited = TRUE;
 	    slaxDataListInit(&slaxIncludes);
+	}
+
+	if (!slaxProtoDirsInited) {
+	    slaxProtoDirsInited = TRUE;
+	    slaxDataListInit(&slaxProtoDirs);
 	}
 
 	slaxDynInit();
@@ -911,6 +913,8 @@ slaxEnable (int enable)
 	slaxDynClean();
 	if (slaxIncludesInited)
 	    slaxDataListClean(&slaxIncludes);
+	if (slaxProtoDirsInited)
+	    slaxDataListClean(&slaxProtoDirs);
 
 	xsltSetLoaderFunc(NULL);
 	if (slaxOriginalEntityLoader)
@@ -919,6 +923,33 @@ slaxEnable (int enable)
 
     slaxEnabled = enable;
 }
+
+/**
+ * Allow protoscript processing
+ * @param enable [in] new setting for enabling protoscript
+ * @param base [in] base protoscript name
+ * @param base_default [in] default base protoscript name (if no match found)
+ */
+void
+slaxEnableProtoscript (int enable, const char *base, const char *base_default)
+{
+    slaxEnabledProtoscript = enable;
+
+    if (slaxProtoBase) {
+	xmlFree(slaxProtoBase);
+	slaxProtoBase = NULL;
+    }
+    if (base)
+	slaxProtoBase = xmlStrdup2(base);
+
+    if (slaxProtoBaseDefault) {
+	xmlFree(slaxProtoBaseDefault);
+	slaxProtoBaseDefault = NULL;
+    }
+    if (base_default)
+	slaxProtoBaseDefault = xmlStrdup2(base_default);
+}
+
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements.
