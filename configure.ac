@@ -403,6 +403,12 @@ AC_ARG_WITH(bin-dir,
         [SLAX_BINDIR=$prefix/bin]
 )
 
+AC_ARG_WITH(protoscript-dir,
+        [  --with-protoscript-dir=[DIR]  Specify location of protoscript files],
+        [SLAX_PROTOSCRIPTDIR=$withval],
+        [SLAX_PROTOSCRIPTDIR=$libdir/slax/protoscripts]
+)
+
 SLAX_LIBS=-lslax
 SLAX_SRCDIR=${srcdir}
 SLAX_LIBDIR=${libdir}
@@ -415,6 +421,7 @@ AC_SUBST(SLAX_EXTDIR)
 AC_SUBST(SLAX_SHAREDIR)
 AC_SUBST(SLAX_OXTRADOCDIR)
 AC_SUBST(SLAX_BINDIR)
+AC_SUBST(SLAX_PROTOSCRIPTDIR)
 AC_SUBST(SLAX_INCLUDEDIR)
 AC_SUBST(SLAX_CFLAGS)
 AC_SUBST(SLAX_LIBTOOLLIBS)
@@ -476,6 +483,8 @@ AC_MSG_NOTICE([summary of build options:
   srcdir:           ${SLAX_SRCDIR}
   libdir:           ${SLAX_LIBDIR}
   bindir:           ${SLAX_BINDIR}
+  sharedir:         ${SLAX_SHAREDIR}
+  protoscriptdir:   ${SLAX_PROTOSCRIPTDIR}
   includedir:       ${SLAX_INCLUDEDIR}
   extensions dir:   ${SLAX_EXTDIR}
 
