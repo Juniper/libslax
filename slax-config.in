@@ -91,6 +91,10 @@ while test $# -gt 0; do
        	echo @SLAX_SHAREDIR@
        	;;
 
+    --protoscript)
+       	echo @SLAX_PROTOSCRIPTDIR@
+       	;;
+
     --oxtradoc)
        	echo @SLAX_OXTRADOCDIR@
        	;;
