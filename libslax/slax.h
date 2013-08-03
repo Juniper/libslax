@@ -14,6 +14,10 @@
 
 #include <libslax/slaxconfig.h>
 
+#ifndef UNUSED
+#define UNUSED __attribute__ ((__unused__))
+#endif
+
 /* Forward declarations for libxml2/libxslt structures */
 struct _xmlDoc;
 struct _xmlDict;
@@ -43,9 +47,7 @@ void slaxEnable(int enable);
 void slaxEnableProtoscript(int enable, const char *base,
 			    const char *base_default);
 
-#ifndef UNUSED
-#define UNUSED __attribute__ ((__unused__))
-#endif
+void slaxProtoscriptInit(void);
 
 /**
  * @typedef A callback used to write data to a destination, typically
