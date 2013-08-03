@@ -27,24 +27,18 @@
 #include <libxslt/documents.h>
 #include <libexslt/exslt.h>
 #include <libslax/slaxdata.h>
+#include <libslax/slaxdatadir.h>
 #include <libslax/slaxdyn.h>
 
 static xsltDocLoaderFunc slaxOriginalXsltDocDefaultLoader;
 xmlExternalEntityLoader slaxOriginalEntityLoader;
 
 static int slaxEnabled;		/* Global enable (SLAX_*) */
-static int slaxEnabledProtoscript; /* Protoscript enable (SLAX_*) */
-static char *slaxProtoBase;	   /* Base protoscript name  */
-static char *slaxProtoBaseDefault; /* Default base protoscript name  */
-
-static slax_data_list_t slaxProtoDirs; /* List of directories to search */
-static int slaxProtoDirsInited;	       /* Has slaxProtoDirs been inited? */
 
 /* Stub to handle xmlChar strings in "?:" expressions */
 const xmlChar slaxNull[] = "";
 
-static slax_data_list_t slaxIncludes;
-static int slaxIncludesInited;
+static slax_data_dirlist_t slaxIncludes;
 
 /*
  * Add a directory to the list of directories searched for files
@@ -52,7 +46,7 @@ static int slaxIncludesInited;
 void
 slaxIncludeAdd (const char *dir)
 {
-    slaxDataListAddDir(&slaxIncludes, &slaxIncludesInited, dir);
+    slaxDataDirAdd(&slaxIncludes, dir);
 }
 
 /*
@@ -61,25 +55,7 @@ slaxIncludeAdd (const char *dir)
 void
 slaxIncludeAddPath (const char *dir)
 {
-    slaxDataListAddPath(&slaxIncludes, &slaxIncludesInited, dir);
-}
-
-/*
- * Add a directory to the list of directories searched for protoscripts
- */
-void
-slaxProtoscriptAdd (const char *dir)
-{
-    slaxDataListAddDir(&slaxProtoDirs, &slaxProtoDirsInited, dir);
-}
-
-/*
- * Add a set of directories to the list of directories searched for files
- */
-void
-slaxProtoscriptAddPath (const char *dir)
-{
-    slaxDataListAddPath(&slaxProtoDirs, &slaxProtoDirsInited, dir);
+    slaxDataDirAddPath(&slaxIncludes, dir);
 }
 
 /**
@@ -493,7 +469,7 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 }
 
 void
-slaxDataCleanup (slax_data_t *sdp)
+slaxDataClean (slax_data_t *sdp)
 {
     if (sdp->sd_buf) {
 	xmlFree(sdp->sd_buf);
@@ -551,7 +527,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int flags)
 
     /* We want to parse SLAX, either full or partial */
     type = (flags & SLF_PARTIAL) ? M_PARSE_PARTIAL :
-	(flags & SLF_PROTOSCRIPT) ? M_PARSE_PROTOSCRIPT : M_PARSE_FULL;
+	(flags & SLF_PROTOSCRIPT) ? M_PARSE_PROTOSCRIPT :
+	slaxEnabledProtoscript ? M_PARSE_PROTOSCRIPT : M_PARSE_FULL;
     sd.sd_parse = sd.sd_ttype = type;
 
     strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
@@ -570,7 +547,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int flags)
 
     sd.sd_docp = slaxBuildDoc(&sd, ctxt);
     if (sd.sd_docp == NULL) {
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
@@ -583,14 +560,24 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int flags)
 	slaxError("%s: %d error%s detected during parsing (%d)\n",
 	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
-    /* Save docp before slaxDataCleanup nukes it */
+    /* Save docp before slaxDataClean nukes it */
     res = sd.sd_docp;
     sd.sd_docp = NULL;
-    slaxDataCleanup(&sd);
+    slaxDataClean(&sd);
+
+    if (type == M_PARSE_PROTOSCRIPT) {
+	/* If this is a protoscript, we need to fire off the base script */
+	if (slaxProtoscriptCheck(sd.sd_filename, res)) {
+	    xmlDocPtr res2 = slaxProtoscriptRun(sd.sd_filename, res);
+
+	    xmlFreeDoc(res);
+	    res = res2;
+	}
+    }
 
     slaxDynLoad(res);		/* Check dynamic extensions */
 
@@ -752,7 +739,7 @@ slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz)
 	if (*iter == '/')
 	    lastsegment = iter + 1;
 
-    SLAXDATALIST_FOREACH(dnp, &slaxIncludes) {
+    SLAXDATALIST_FOREACH(dnp, &slaxIncludes.sdd_list) {
 	char *dir = dnp->dn_data;
 	int dirlen = strlen(dir);
 	int lastlen = strlen(lastsegment);
@@ -872,10 +859,8 @@ slaxEnable (int enable)
 {
     if (enable == SLAX_CLEANUP) {
 	xsltSetLoaderFunc(NULL);
-	if (slaxIncludesInited)
-	    slaxDataListClean(&slaxIncludes);
-	if (slaxProtoDirsInited)
-	    slaxDataListClean(&slaxProtoDirs);
+	slaxDataDirClean(&slaxIncludes);
+	slaxProtoscriptClean();
 
 	slaxEnabled = 0;
 	return;
@@ -886,15 +871,8 @@ slaxEnable (int enable)
 	exsltFuncRegister();
 	slaxExtRegister();
 
-	if (!slaxIncludesInited) {
-	    slaxIncludesInited = TRUE;
-	    slaxDataListInit(&slaxIncludes);
-	}
-
-	if (!slaxProtoDirsInited) {
-	    slaxProtoDirsInited = TRUE;
-	    slaxDataListInit(&slaxProtoDirs);
-	}
+	slaxDataDirClean(&slaxIncludes);
+	slaxProtoscriptClean();
 
 	slaxDynInit();
 
@@ -911,10 +889,8 @@ slaxEnable (int enable)
 
     } else if (slaxEnabled && !enable) {
 	slaxDynClean();
-	if (slaxIncludesInited)
-	    slaxDataListClean(&slaxIncludes);
-	if (slaxProtoDirsInited)
-	    slaxDataListClean(&slaxProtoDirs);
+	slaxDataDirClean(&slaxIncludes);
+	slaxProtoscriptClean();
 
 	xsltSetLoaderFunc(NULL);
 	if (slaxOriginalEntityLoader)
@@ -923,33 +899,6 @@ slaxEnable (int enable)
 
     slaxEnabled = enable;
 }
-
-/**
- * Allow protoscript processing
- * @param enable [in] new setting for enabling protoscript
- * @param base [in] base protoscript name
- * @param base_default [in] default base protoscript name (if no match found)
- */
-void
-slaxEnableProtoscript (int enable, const char *base, const char *base_default)
-{
-    slaxEnabledProtoscript = enable;
-
-    if (slaxProtoBase) {
-	xmlFree(slaxProtoBase);
-	slaxProtoBase = NULL;
-    }
-    if (base)
-	slaxProtoBase = xmlStrdup2(base);
-
-    if (slaxProtoBaseDefault) {
-	xmlFree(slaxProtoBaseDefault);
-	slaxProtoBaseDefault = NULL;
-    }
-    if (base_default)
-	slaxProtoBaseDefault = xmlStrdup2(base_default);
-}
-
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements.
