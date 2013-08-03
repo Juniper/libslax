@@ -118,6 +118,7 @@
 %token K_APPLY_TEMPLATES	/* 'apply-templates' */
 %token K_ATTRIBUTE		/* 'attribute' */
 %token K_ATTRIBUTE_SET		/* 'attribute-set' */
+%token K_BASE			/* 'base' */
 %token K_CALL			/* 'call' */
 %token K_CASE_ORDER		/* 'case-order' */
 %token K_CDATA_SECTION_ELEMENTS	/* 'cdata-section-elements' */
@@ -349,6 +350,9 @@ start :
 
 	| M_PARSE_PARTIAL partial_list
 		{ $$ = STACK_CLEAR($1); }
+
+	| M_PARSE_PROTOSCRIPT protoscript_contents
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 partial_list :
@@ -480,6 +484,14 @@ rack_up_the_errors :
 
 stylesheet :
 	version_stmt ns_list slax_stmt_list
+		{ $$ = NULL; }
+	;
+
+version_stmt_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| version_stmt
 		{ $$ = NULL; }
 	;
 
@@ -685,6 +697,30 @@ slax_stmt :
 
 	| error_conditions
 		{ $$ = STACK_CLEAR($1); }
+	;
+
+protoscript_contents :
+	version_stmt_optional ns_list protoscript_stmt_list
+		{ $$ = NULL; }
+	;
+
+protoscript_stmt_list :
+	/* empty */
+		{ $$ = NULL; }
+
+	| L_EOS
+		{ $$ = NULL; }
+
+	| protoscript_stmt_list protoscript_stmt
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	;
+
+protoscript_stmt :
+	slax_stmt
+		{ $$ = NULL; }
 	;
 
 import_stmt :
