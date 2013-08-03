@@ -120,4 +120,17 @@ slaxConvertExpression (const char *opt_expression, int is_slax);
 
 /* --- slaxloader.h -- */
 void
-slaxDataCleanup (slax_data_t *sdp);
+slaxDataClean (slax_data_t *sdp);
+
+/* --- slaxprotoscript.c --- */
+
+int
+slaxProtoscriptCheck (const char *filename, xmlDocPtr script);
+
+xmlDocPtr
+slaxProtoscriptRun (const char *filename, xmlDocPtr script);
+
+void
+slaxProtoscriptClean (void);
+
+extern int slaxEnabledProtoscript; /* Protoscript enable (SLAX_*) */
