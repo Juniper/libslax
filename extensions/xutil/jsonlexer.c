@@ -460,7 +460,7 @@ extXutilJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 
     sd.sd_docp = extXutilJsonBuildDoc(&sd, root_name, ctxt);
     if (sd.sd_docp == NULL) {
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
@@ -472,14 +472,14 @@ extXutilJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 	slaxError("%s: %d error%s detected during parsing\n",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
 
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
-    /* Save docp before slaxDataCleanup nukes it */
+    /* Save docp before slaxDataClean nukes it */
     res = sd.sd_docp;
     sd.sd_docp = NULL;
-    slaxDataCleanup(&sd);
+    slaxDataClean(&sd);
 
     return res;
 }
@@ -527,7 +527,7 @@ extXutilJsonFileToXml (const char *fname, const char *root_name,
 
     sd.sd_docp = extXutilJsonBuildDoc(&sd, root_name, ctxt);
     if (sd.sd_docp == NULL) {
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
@@ -539,14 +539,14 @@ extXutilJsonFileToXml (const char *fname, const char *root_name,
 	slaxError("%s: %d error%s detected during parsing\n",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
 
-	slaxDataCleanup(&sd);
+	slaxDataClean(&sd);
 	return NULL;
     }
 
-    /* Save docp before slaxDataCleanup nukes it */
+    /* Save docp before slaxDataClean nukes it */
     res = sd.sd_docp;
     sd.sd_docp = NULL;
-    slaxDataCleanup(&sd);
+    slaxDataClean(&sd);
 
     fclose(sd.sd_file);
 
