@@ -1,0 +1,40 @@
+version 1.1;
+
+ns axsl = "http://www.w3.org/1999/XSL/TransformAlias";
+ns-alias axsl xsl;
+
+match / {
+    <axsl:stylesheet> {
+        <axsl:template match="/"> {
+            <top> {
+		<input> {
+		    copy-of .;
+		}
+		for-each (* /commit-script/ *) {
+		    var $select = xsl:value-of/@select;
+		    if (name() == "prevent") {
+			<axsl:call-template name="do-prevent"> {
+			    <axsl:with-param name="name"> $select;
+			    <axsl:with-param name="select" value=$select>;
+			}
+		    } else if (name() == "require") {
+			<axsl:call-template name="do-require"> {
+			    <axsl:with-param name="name"> $select;
+			    <axsl:with-param name="select" value=$select>;
+			}
+		    } else {
+			terminate "unknown directive: " _ name();
+		    }
+		}
+	    }
+        }
+        <axsl:template name="do-prevent"> {
+	    <axsl:param name="name">;
+	    <axsl:param name="select">;
+	}
+        <axsl:template name="do-require"> {
+	    <axsl:param name="name">;
+	    <axsl:param name="select">;
+	}
+    }
+}
