@@ -24,7 +24,8 @@ AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
 
 AM_CFLAGS += \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
-    -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+    -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\" \
+    -DSLAX_PROTOSCRIPTDIR=\"${SLAX_PROTOSCRIPTDIR}\"
 
 lib_LTLIBRARIES = libslax.la
 libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
@@ -33,6 +34,7 @@ slaxinc_HEADERS = \
      slax.h \
      slaxconfig.h \
      slaxdata.h \
+     slaxdatadir.h \
      slaxdyn.h \
      xmlsoft.h
 
@@ -62,6 +64,7 @@ libslax_la_SOURCES = \
     slaxmvar.c \
     slaxparser.c \
     slaxprofiler.c \
+    slaxprotoscript.c \
     slaxstring.c \
     slaxtree.c \
     slaxwriter.c
