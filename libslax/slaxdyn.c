@@ -194,6 +194,9 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
     xmlNsPtr nsp;
     xmlNodePtr childp;
 
+    if (nodep == NULL)
+	return;
+
     prefixes = slaxDynExtensionPrefixes(docp, nodep, top);
     if (prefixes) {
 	for (cp = prefixes, ep = cp + strlen(cp); cp && cp < ep; cp = np) {
