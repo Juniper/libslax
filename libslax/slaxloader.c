@@ -871,9 +871,6 @@ slaxEnable (int enable)
 	exsltFuncRegister();
 	slaxExtRegister();
 
-	slaxDataDirClean(&slaxIncludes);
-	slaxProtoscriptClean();
-
 	slaxDynInit();
 
 	/*
