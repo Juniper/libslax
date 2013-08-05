@@ -242,6 +242,9 @@ slaxDebugGetFile (xsltStylesheetPtr style, const char *filename)
     char *slash;
     const char **inc;
 
+    if (style->doc == NULL || style->doc->URL == NULL)
+	return NULL;
+
     for ( ; style; style = style->next) {
 	if (streq((const char *) style->doc->URL, filename))
 	    return style;
