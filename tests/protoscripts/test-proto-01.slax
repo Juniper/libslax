@@ -1,14 +1,14 @@
 <commit-script> {
     <prevent> interfaces/interface[name == 'lo0'];
     <require> routing-options/static;
-     <require> policy-options/policy-statement;
-     <require> protocols/ospf;
-     <prevent> protocols/ospf/disable;
-     <prevent> protocols/ospf3;
-     <require> protocols/mpls;
-     <require> protocols/ldp;
-     <prevent> protocols/ldp/disable;
-     <require> protocols/bgp;
-     <prevent> protocols/bgp/disable;
-     <prevent> protocols/isis;
+    <require> policy-options/policy-statement;
+    <require> protocols/ospf;
+    <prevent> protocols/ospf/disable;
+    <prevent> protocols/ospf3;
+    <require> protocols/mpls;
+    <require> protocols/ldp;
+    <prevent> protocols/ldp/disable;
+    <require> protocols/bgp;
+    <prevent> protocols/bgp/disable;
+    <prevent> protocols/isis;
 }
