@@ -1,0 +1,39 @@
+version 1.1;
+
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs extension = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+template do-prevent($name, $select) {
+    if (not(slax:empty($select))) {
+	<xnm:error> {
+	    call jcs:edit-path($dot = $select);
+	    <message> "illegal statement: " _ $name;
+	}
+    }
+}
+
+template do-require($name, $select) {
+    if (slax:empty($select)) {
+	<xnm:error> {
+	    <edit-path> {
+		expr "[edit";
+		call jcs:bare-edit-path($dot = .);
+		call name2path($name);
+		expr "]";
+	    }
+	    <message> "missing statement: " _ $name;
+	}
+    }
+}
+
+template name2path ($name) {
+    var $leading = substring-before($name, "/");
+    var $rest = substring-after($name, "/");
+
+    expr " ";
+    expr $leading;
+
+    if (not(slax:empty($rest))) {
+	call name2path($name = $rest);
+    }
+}
