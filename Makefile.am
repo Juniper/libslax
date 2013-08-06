@@ -14,7 +14,12 @@ SUBDIRS = libslax extensions slaxproc tests doc bin
 bin_SCRIPTS=slax-config
 dist_doc_DATA = Copyright doc/slax.txt
 
-EXTRA_DIST = slax-config.in warnings.mk README.md INSTALL.md
+EXTRA_DIST = \
+    slax-config.in \
+    warnings.mk \
+    README.md \
+    INSTALL.md \
+    packaging/libslax.spec
 
 .PHONY: test tests
 
