@@ -1,0 +1,208 @@
+/*
+ * $Id$
+ *  -*-  indent-tabs-mode:nil -*-
+ * Copyright 2013, Juniper Network Inc.
+ * All rights reserved.
+ * This SOFTWARE is licensed under the LICENSE provided in the
+ * ../Copyright file. By downloading, installing, copying, or otherwise
+ * using the SOFTWARE, you agree to be bound by the terms of that
+ * LICENSE.
+ */
+
+<service-guide> {
+    <variable> $vpn;
+    <name> "IPSec VPN Service";
+
+    <guide title="VPN definition" path="vpn"> {
+        <leaf title="VPN name" path="name"
+            type="string" mandatory="yes">;
+
+        <leaf title="Pre-shared key" path="pre-shared-key"
+            type="secret" mandatory="yes">;
+
+        <container title="Local parameters" path="local"> {
+            <leaf title="Local service interface" path="service"
+                mandatory="yes"> {
+                 <help> "Service interface (sp-*/*/*) to handle this VPN";
+             }
+             <leaf title="Local VPN prefix" path="prefix"
+                 mandatory="yes"> {
+                 <help> "Local prefix of traffic carried by VPN";
+             }
+             <leaf title="Local outbound interface" path="public"
+                 mandatory="yes"> {
+                 <help> "Local interface thru which the remote device is reached";
+             }
+             <leaf title="Local gateway address" path="gateway"
+                 mandatory="yes"> {
+                 <help> "Address of that local interface";
+             }
+         }
+
+         <container title="Remote parameters" path="remote"> {
+             <leaf title="Remote Device Name" path="device"
+                 mandatory="yes"> {
+                 <help> "Name of remote device on other side of VPN";
+             }
+             <leaf title="Remote service interface" path="service"
+                 mandatory="yes"> {
+                 <help> "Service interface (sp-*/*/*) to handle this VPN";
+             }
+             <leaf title="Remote VPN prefix" path="prefix"
+                 mandatory="yes"> {
+                 <help> "Remote prefix of traffic carried by VPN";
+             }
+             <leaf title="Remote outbound interface" path="public"
+                 mandatory="yes"> {
+                 <help> "Remote interface thru which the local device is reached";
+             }
+             <leaf title="Remote gateway address" path="gateway"
+                 mandatory="yes"> {
+                 <help> "Address of that local interface";
+             }
+         }
+     }
+ }
+
+<generate> {
+    <configuration> {
+        <groups> {
+            <name> "ipsec-vpn";
+             <insert-apply-macro>;
+             <services> {
+                <ipsec-vpn> {
+                    <rule op="create"> {
+                        <name key="key"> $vpn/name _ "-secure-traffic";
+                        <term> {
+                            <name key="key"> "1";
+                            <from> {
+                                <source-address> {
+                                    <name key="key"> $vpn/local/prefix;
+                                }
+                                <destination-address> {
+                                    <name key="key"> $vpn/remote/prefix;
+                                }
+                            }
+                            <then> {
+                                <remote-gateway> $vpn/remote/public;
+                                <dynamic> {
+                                    <ike-policy> $vpn/name _ "-ike-policy";
+                                }
+                            }
+                        }
+                        <match-direction> "output";
+                    }
+                    <ike> {
+                        <policy op="create"> {
+                            <name key="key"> $vpn/name _ "-ike-policy";
+                            <pre-shared-key> {
+                                <ascii-text> $vpn/pre-shared-key;
+                            }
+                        }
+                    }
+                }
+                <service-set op="create"> {
+                    <name key="key"> $vpn/name _ "-SP-INTERFACE-DEFINED";
+                    <interface-service> {
+                        <service-interface> $vpn/service;
+                    }
+                    <ipsec-vpn-options> {
+                        <local-gateway> {
+                            <address> $vpn/local/gateway;
+                        }
+                    }
+                    <ipsec-vpn-rules> {
+                        <name key="key"> $vpn/name _ "-secure-traffic";
+                    }
+                }
+            }
+            <interfaces> {
+                <interface> {
+                    <name key="key"> $vpn/local/service;
+                    <unit> {
+                        <name key="key"> "0";
+                        <family> {
+                            <inet>;
+                        }
+                    }
+                }
+                <interface> {
+                    <name key="key"> $vpn/local/public;
+                    <unit> {
+                        <name key="key"> "0";
+                        <family> {
+                            <inet> {
+                                <service> {
+                                    <input> {
+                                        <service-set op="create"> {
+                                            <name key="key"> $vpn/name _ "-SP-INTERFACE-DEFINED";
+                                            <service-filter> $vpn/name - "-INPUT";
+                                        }
+                                    }
+                                    <output> {
+                                        <service-set op="create"> {
+                                            <name key="key"> $vpn/name _ "-SP-INTERFACE-DEFINED";
+                                            <service-filter> $vpn/name _ "-OUTPUT";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            <firewall> {
+                <family> {
+                    <inet> {
+                        <service-filter op="create"> {
+                            <name key="key"> $vpn/name _ "-OUTPUT";
+                            <term> {
+                                <name key="key"> "1";
+                                <from> {
+                                    <source-address> {
+                                        <name key="key"> $vpn/local/prefix;
+                                    }
+                                    <destination-address> {
+                                        <name key="key"> $vpn/remote/prefix;
+                                    }
+                                }
+                                <then> {
+                                    <service>;
+                                }
+                            }
+                            <term> {
+                                <name key="key"> "2";
+                                <then> {
+                                    <skip>;
+                                }
+                            }
+                        }
+                        <service-filter op="create"> {
+                            <name key="key"> $vpn/name _ "-INPUT";
+                            <term> {
+                                <name key="key"> "1";
+                                <from> {
+                                    <source-address> {
+                                        <name key="key"> $vpn/remote/gateway;
+                                    }
+                                    <destination-address> {
+                                        <name key="key"> $vpn/local/gateway;
+                                    }
+                                }
+                                <then> {
+                                    <service>;
+                                }
+                            }
+                            <term> {
+                                <name key="key"> "2";
+                                <then> {
+                                    <skip>;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+ }
