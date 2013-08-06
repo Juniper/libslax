@@ -60,11 +60,12 @@ pkglibdir = ${SLAX_EXTDIR}
 UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fcurl.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ${pkglibdir}/libext_curl.la ; echo $$dlname'`; \
+	@DLNAME=`sh -c '. ./libext_curl.la ; echo $$dlname'`; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
-		cd ${SLAX_EXTDIR} \
+		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
+		cd ${DESTDIR}${SLAX_EXTDIR} \
 		&& chmod +w . \
 	        && rm -f ${UGLY_NAME} \
 		&& ${LN_S} $$DLNAME ${UGLY_NAME}

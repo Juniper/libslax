@@ -52,7 +52,8 @@ function run {
         echo "Phase: $desc"
         echo "  Run: $cmd"
         okay
-        $cmd
+	# We need to eval to handle "&&" in commands
+        eval $cmd
         okay
     fi
 }
@@ -107,3 +108,7 @@ run "show diffs" "gt diff ${OLD_VERSION}...${NEW_VERSION}"
 get_log_comments $OLD_VERSION $NEW_VERSION
 
 run "goto https://github.com/Juniper/libslax/releases" "open https://github.com/Juniper/libslax/releases"
+
+echo "Do not forget to copy libslax-${NEW_VERSION}.tar.gz to the release page"
+
+exit 0
