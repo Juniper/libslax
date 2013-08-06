@@ -52,7 +52,7 @@ case "$op" in
 
     br)
         set_branch
-        if [ x"$@" = x ]; then
+        if [ x"$1" = x ]; then
 	    echo $branch
 	elif [ x"$1" = xnew ]; then
 	    git checkout -b "$2" $branch
