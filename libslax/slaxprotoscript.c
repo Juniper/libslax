@@ -190,7 +190,19 @@ slaxProtoscriptRun (const char *protofilename, xmlDocPtr indoc UNUSED)
 	res = slaxDebugApplyStylesheet(scriptname, script, "input",
 				       indoc, NULL);
     } else {
+	struct timeval tv;
+	time_usecs_t before = 0, after = 0;
+
+	/* Fetch time before running the script */
+	if (slaxLogIsEnabled && gettimeofday(&tv, NULL) == 0)
+	    before = timeval_to_usecs(&tv);
+
 	res = xsltApplyStylesheet(script, indoc, NULL);
+
+	if (slaxLogIsEnabled && before != 0 && gettimeofday(&tv, NULL) == 0) {
+	    after = timeval_to_usecs(&tv);
+	    slaxLog("protoscript: time to run: %lu usecs", after - before);
+	}
     }
 
     return res;
