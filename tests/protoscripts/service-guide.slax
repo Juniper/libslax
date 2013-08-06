@@ -1,0 +1,106 @@
+version 1.1;
+
+match / {
+    <top> {
+	<input> {
+	    copy-of /;
+	}
+    }
+}
+
+
+/*
+
+        set interfaces sp-1/3/0 unit 0 family inet   <----- On LAB router
+        set interfaces sp-1/2/0 unit 0 family inet   <----- On OXYGEN router
+
+
+    Define an IKE policy referencing either a preshared key or a certificate on both routers i.e. LAB and OXYGEN.  The pre-shared key also must match on both routers for IKE phase to negotiate and to successfully be able to encrypt/decrypt the traffic.
+
+        set services ipsec-vpn ike policy IKE-POLICY pre-shared-key ascii-text "$9$PTF/1IceMX/CyKvW-dk.P5T3"   <----- On LAB router
+        set services ipsec-vpn ike policy IKE-POLICY pre-shared-key ascii-text "$9$PTF/1IceMX/CyKvW-dk.P5T3"   <----- On OXYGEN router
+
+
+    Define an IPSec VPN rule to match on the interesting traffic using the IPSec VPN rule. The IKE policy defined in Step 2 also needs to be applied here to define the direction in which to encrypt the traffic.
+
+    On LAB router
+
+        set services ipsec-vpn rule secure-traffic term 1 from source-address 1.1.1.1/32
+        set services ipsec-vpn rule secure-traffic term 1 from destination-address 3.3.3.3/32
+        set services ipsec-vpn rule secure-traffic term 1 then remote-gateway 20.1.1.2
+        set services ipsec-vpn rule secure-traffic term 1 then dynamic ike-policy IKE-POLICY
+        set services ipsec-vpn rule secure-traffic match-direction output
+
+
+    On OXYGEN router
+
+        set services ipsec-vpn rule SECURE-TRAFFIC term 1 from source-address 3.3.3.3/32
+        set services ipsec-vpn rule SECURE-TRAFFIC term 1 from destination-address 1.1.1.1/32
+        set services ipsec-vpn rule SECURE-TRAFFIC term 1 then remote-gateway 10.1.1.1
+        set services ipsec-vpn rule SECURE-TRAFFIC term 1 then dynamic ike-policy IKE-POLICY
+        set services ipsec-vpn rule SECURE-TRAFFIC match-direction output
+
+
+    Create the service set that maps the IPSec rule (defined in Step 3) and the service interface (defined in step1).   Additionally, configure the local gateway for the IPSec tunnel which will be the address used to source all IPSec packets; as well as the remote-gateway (which is configured in step3) which is the address for connecting the local tunnels to. Note, only a single gateway address can be in a service set, but you can configure multiple remote gateways in the IPSec rules.
+
+    On LAB router
+
+        set services service-set SP-INTERFACE-DEFINED ipsec-vpn-options local-gateway 10.1.1.1
+        set services service-set SP-INTERFACE-DEFINED ipsec-vpn-rules secure-traffic
+        set services service-set SP-INTERFACE-DEFINED interface-service service-interface sp-1/3/0.0
+
+
+    On OXYGEN router
+
+        set services service-set SP-INTERFACE-DEFINED ipsec-vpn-options local-gateway 20.1.1.2
+        set services service-set SP-INTERFACE-DEFINED ipsec-vpn-rules SECURE-TRAFFIC
+        set services service-set SP-INTERFACE-DEFINED interface-service service-interface sp-1/2/0.0
+
+
+    Define the traffic that will be allowed service by AS-PIC and the traffic that should be skipped.  In the topology above,  we are running OSPF across all the interfaces for IPSec tunnel endpoints to be reachable by the intermediate routers.  Also, as per our goal, would like to have only traffic from source 1.1.1.1 and destination 3.3.3.3 (and vice-versa) should transit via the IPSec tunnel.  Hence only this traffic should be allowed from being serviced by the service-pic and all other traffic should be skipped from it.  Here is the relevant configuration defining the same.
+
+    On LAB router
+
+        set protocols ospf area 0.0.0.0 interface all
+        set firewall family inet service-filter OUTPUT term 1 from source-address 1.1.1.1/32
+        set firewall family inet service-filter OUTPUT term 1 from destination-address 3.3.3.3/32
+        set firewall family inet service-filter OUTPUT term 1 then service
+        set firewall family inet service-filter OUTPUT term 2 then skip
+
+        set firewall family inet service-filter INPUT term 1 from source-address 20.1.1.2/32
+        set firewall family inet service-filter INPUT term 1 from destination-address 10.1.1.1/32
+        set firewall family inet service-filter INPUT term 1 then service
+        set firewall family inet service-filter INPUT term 2 then skip
+
+
+    On OXYGEN router
+
+        set firewall family inet service-filter INPUT term 1 from source-address 10.1.1.1/32
+        set firewall family inet service-filter INPUT term 1 from destination-address 20.1.1.2/32
+        set firewall family inet service-filter INPUT term 1 then service
+        set firewall family inet service-filter INPUT term 2 then skip
+
+        set firewall family inet service-filter OUTPUT term 1 from source-address 3.3.3.3/32
+        set firewall family inet service-filter OUTPUT term 1 from destination-address 1.1.1.1/32
+        set firewall family inet service-filter OUTPUT term 1 then service
+        set firewall family inet service-filter OUTPUT term 2 then skip
+
+
+    Note: All other traffic should be skipped from being serviced as defined in term 2. This is very important else OSPF hello packets received from Dysprosium also may get serviced by service-pic; leading to the OSPF neighborship going down.
+
+    Finally, apply these filters on the tunnel outbound interface i.e. fe-0/3/0.0 on LAB and fe-0/3/0.0 on OXYGEN.
+
+    On LAB router
+
+        set interfaces fe-0/3/0 unit 0 family inet service input service-set SP-INTERFACE-DEFINED service-filter INPUT
+        set interfaces fe-0/3/0 unit 0 family inet service output service-set SP-INTERFACE-DEFINED service-filter OUTPUT
+        set interfaces fe-0/3/0 unit 0 family inet address 10.1.1.1/30
+
+
+    On OXYGEN router
+
+        set interfaces fe-0/3/0 unit 0 family inet service input service-set SP-INTERFACE-DEFINED service-filter INPUT
+        set interfaces fe-0/3/0 unit 0 family inet service output service-set SP-INTERFACE-DEFINED service-filter OUTPUT
+        set interfaces fe-0/3/0 unit 0 family inet address 20.1.1.2/30
+
+*/
