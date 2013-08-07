@@ -105,6 +105,10 @@ case "$op" in
     merge-to)
         set_branch
         to=$1
+        if [ x"$to" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
 	echo "Merging $branch into $to ..."
 	echo "Switching to $to ..."
         git checkout $to
@@ -121,6 +125,10 @@ case "$op" in
     merge-from)
         set_branch
         from=$1
+        if [ x"$from" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
 	echo "Merging $from into $branch ..."
 	git -c core.editor=/usr/bin/true merge --no-ff $from
 	if [ $? -eq 0 ]; then
