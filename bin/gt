@@ -122,7 +122,7 @@ case "$op" in
         set_branch
         from=$1
 	echo "Merging $from into $branch ..."
-	git merge --no-ff $from
+	git -c core.editor=/usr/bin/true merge --no-ff $from
 	if [ $? -eq 0 ]; then
 	    push_to_branch
 	fi
