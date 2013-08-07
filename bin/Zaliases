@@ -14,6 +14,8 @@ set opts=' \
 '
 set opts=`echo $opts`
 
+setenv CONFIGURE_OPTS "$opts"
+
 alias Zconfigure "(cd $libslax/build; ../configure $opts)"
 
 alias Zbuild "(cd $libslax/build; make \!* )"
