@@ -3,10 +3,13 @@ Version:     @PACKAGE_VERSION@
 Release:     1%{?dist}
 Summary:     The SLAX language (XSLT alternative)
 
-prefix:      /usr
+Prefix:      /usr
+
+Vender:      Juniper Networks, Inc.
+Packager:    Phil Shafer <phil@juniper.net>
+License:     BSD
 
 Group:       Development/Libraries
-License:     MIT
 URL:         https://github.com/Juniper/libslax
 Source0:     https://github.com/Juniper/@PACKAGE_NAME@/releases/@PACKAGE_VERSION@/@PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz
 
@@ -46,4 +49,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libslax.pc
 %{_libdir}/slax/extensions/*
 %{_datadir}/doc/libslax/*
+%docdir %{_datadir}/doc/libslax/*
 %{_mandir}/*/*
+%docdir %{_mandir}/*/*
