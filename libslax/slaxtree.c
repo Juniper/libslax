@@ -113,6 +113,11 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	int len = cp - prefix;
 	tag = cp + 1;
 	ns = slaxFindNs(nodep, prefix, len);
+        if (ns == NULL) {
+            sdp->sd_errors += 1;
+	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			   len, prefix, prefix);
+        }
     }
 
     /* If we don't have a namespace, use the parent's namespace */
@@ -245,6 +250,11 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	int len = cp - prefix;
 	name = cp + 1;
 	ns = slaxFindNs(sdp->sd_ctxt->node, prefix, len);
+        if (ns == NULL) {
+            sdp->sd_errors += 1;
+	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			   len, prefix, prefix);
+        }
     }
 
     attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
@@ -287,6 +297,11 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 	len = cp - prefix;
 	name = cp + 1;
 	ns = slaxFindNs(sdp->sd_ctxt->node, prefix, len);
+        if (ns == NULL) {
+            sdp->sd_errors += 1;
+	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			   len, prefix, prefix);
+        }
     }
 
     attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
