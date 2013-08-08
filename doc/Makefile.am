@@ -88,7 +88,7 @@ ${OUTPUT}.txt \
 ${INPUT:.txt=.fxml} \
 ${OUTPUT}.html
 
-OXTRADOC_INSTALL_DIR = ${prefix}/share/oxtradoc
+OXTRADOC_INSTALL_DIR = ${DESTDIR}${prefix}/share/oxtradoc
 
 install-data-hook:
 	@echo "Installing oxtradoc ... "
@@ -104,4 +104,5 @@ install-data-hook:
 		cp $$rfile $$mdir/ ; \
         done
 	@${CHMOD} a+x ${OXTRADOC_INSTALL_DIR}/oxtradoc
-	@${LN_S} ${OXTRADOC_INSTALL_DIR}/oxtradoc ${bindir}/oxtradoc
+	@${RM} ${DESTDIR}${bindir}/oxtradoc
+	@${LN_S} ${OXTRADOC_INSTALL_DIR}/oxtradoc ${DESTDIR}${bindir}/oxtradoc
