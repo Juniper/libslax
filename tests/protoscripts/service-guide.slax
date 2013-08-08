@@ -4,10 +4,10 @@ ns axsl = "http://www.w3.org/1999/XSL/TransformAlias";
 ns-alias axsl xsl;
 
 match / {
-    ns xmlns="x";
     var $top = /xsl:stylesheet/service-guide;
-    <axsl:stylesheet version="1.0"
-         xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace"> {
+    var $gen = /xsl:stylesheet/generate;
+    <axsl:stylesheet version="1.0"> {
+        ns slax-ext = "http://xmlsoft.org/XSLT/namespace";
 	<axsl:import href="../import/junos.xsl">;
 	<axsl:import href="../protoscripts/service-guide-lib.slax">;
 
@@ -18,6 +18,11 @@ match / {
         <axsl:variable name="title"> {
             attribute "select" {
                 expr "'" _ $top/title _ "'";
+            }
+        }
+        <axsl:variable name="group"> {
+            attribute "select" {
+                expr "'" _ $gen/@group _ "'";
             }
         }
     }
