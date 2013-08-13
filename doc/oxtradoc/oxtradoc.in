@@ -68,7 +68,7 @@
 @tags = ();
 @authors = ();
 $wrapwidth = 70;
-$opt_mode = "full";
+$opt_mode = "unknown";
 
 $base_prefix = "@prefix@";
 $prefix = $base_prefix;
@@ -108,7 +108,8 @@ sub main {
 
     my ($base) = ($file =~ /([^\/]*)\.([^\.\/])/);
 
-    if ($opt_mode eq "full") {
+    if ($opt_mode eq "unknown") {
+        die "missing mode: -m <mode>";
 
     } elsif ($opt_mode eq "outline-to-xml" || $opt_mode eq "xml") {
 	&open_stdout($output);
