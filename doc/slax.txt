@@ -4113,7 +4113,12 @@ rendering of JSON data.
 | type      | string | An indication of the desired encoding      |
 |-----------+--------+--------------------------------------------|
 
-asdfsdf
+The value of the "type" attribute must be one of the subset listed
+below.  This allows the library to distinguish between '{ "value": "5" }'
+and '{ "value": 5 }' to control the encoding of the value as a
+string or a number.  Similarly the caller can control whether "null"
+is a string or the special null value.  If the type attribute is
+missing, the element is assumed to be a simple field.
 
 |--------+---------------------------------|
 | Type   | Description                     |
@@ -4125,11 +4130,6 @@ asdfsdf
 | number | Contains a number value         |
 | true   | Contains the JSON "true" value  |
 |--------+---------------------------------|
-
-This allows the library to distinguish between '{ "value": "5" }'
-and '{ "value": "5" }' to control the encoding of the value as a
-string of number.  Similarly the caller can control whether "null" is
-a string or the special null value.
 
 In this example, the type attribute is used to control the encoding of
 XML into JSON.
