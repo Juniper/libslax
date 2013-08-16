@@ -17,6 +17,7 @@ function set_branch () {
 }
 
 function check_in_details () {
+    set_branch
     files=`git status -s "$@" | awk '{print $2}'`
 
     for file in $files; do
@@ -24,6 +25,7 @@ function check_in_details () {
         status=`git status -s "$file"`
 	echo $status
 
+        /bin/echo "[Checking $file into branch $branch]"
         /bin/echo -n "Commit message: "
 	read comment
 	if [ "$comment" = "" ]; then
