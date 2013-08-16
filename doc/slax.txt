@@ -3063,6 +3063,8 @@ check syntax.
      --check OR -c: check syntax and content for a SLAX script
      --format OR -F: format (pretty print) a SLAX script
      --run OR -r: run a SLAX script (the default mode)
+     --show-select: show XPath selection from the input document
+     --show-variable: show contents of a global variable
      --slax-to-xslt OR -x: turn SLAX into XSLT
      --xslt-to-slax OR -s: turn XSLT into SLAX
 
@@ -3203,6 +3205,16 @@ name can be provided via command line options and/or using positional
 arguments as described in ^slaxproc-arguments^.  Input defaults to
 standard input and output defaults to standard output.  "-r" is the
 default mode for slaxproc.
+= --show-select
+Show an XPath selection from the input document.  Used to extract
+selections from a script out for external consumption.  This allows
+the consumer to avoid a SLAX parser, but still have visibility into
+the contents of the script.
+= --show-variable
+Show contents of a global variable.  Used to extract static variable
+contents for external consumption.  This allows the consumer of the
+data to avoid a SLAX parser, but still have access to the static
+contents of global variables, such as the $arguments variable.
 = --slax-to-xslt OR -x
 Convert a SLAX script into XSLT format.  The script name and output file
 name can be provided via command line options and/or using positional
