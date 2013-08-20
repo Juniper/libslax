@@ -1,0 +1,7 @@
+language: c
+
+script: /bin/sh ./bin/setup.sh && cd build && ../configure && make && make test
+
+notifications:
+  recipients:
+    - libslax-noise@googlegroups.com
