@@ -1,6 +1,6 @@
 language: c
 
-script: /bin/sh ./bin/setup.sh && cd build && ../configure && make && sudo make install && make test
+script: uname -a && /bin/sh ./bin/setup.sh && cd build && ../configure && make && sudo make install && make test
 
 notifications:
   recipients:
