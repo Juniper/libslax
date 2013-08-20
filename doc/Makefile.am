@@ -104,5 +104,5 @@ install-data-hook:
 		cp $$rfile $$mdir/ ; \
         done
 	@${CHMOD} a+x ${OXTRADOC_INSTALL_DIR}/oxtradoc
-	@${RM} ${DESTDIR}${bindir}/oxtradoc
+	@${RM} -f ${DESTDIR}${bindir}/oxtradoc
 	@${LN_S} ${OXTRADOC_INSTALL_DIR}/oxtradoc ${DESTDIR}${bindir}/oxtradoc
