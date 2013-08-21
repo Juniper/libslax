@@ -21984,7 +21984,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">August 6, 2013</td>
+<td class="header right">August 21, 2013</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -23506,11 +23506,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_4">2.4</a> </div>Attribute Sets</h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="id35958206"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-id35958206">
+<div class="digress tooltip faq" id="idp17572208"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17572208">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'id35958206'); " onmouseover="popUp(event, 'id35958206')" onmouseout="popDown(event, 'id35958206')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17572208'); " onmouseover="popUp(event, 'idp17572208')" onmouseout="popDown(event, 'idp17572208')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
 <h3 id="doc_section_2_4_1">
 <div class="self-section-number">
 <a href="#doc_section_2_4_1">2.4.1</a> </div>
@@ -23945,11 +23945,11 @@ jQuery(function ($) {
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="id35960086"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-id35960086">
+	    </pre> <div class="digress tooltip note:" id="idp17797824"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17797824">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'id35960086'); " onmouseover="popUp(event, 'id35960086')" onmouseout="popDown(event, 'id35960086')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17797824'); " onmouseover="popUp(event, 'idp17797824')" onmouseout="popDown(event, 'idp17797824')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
@@ -25405,6 +25405,8 @@ jQuery(function ($) {
      --check OR -c: check syntax and content for a SLAX script
      --format OR -F: format (pretty print) a SLAX script
      --run OR -r: run a SLAX script (the default mode)
+     --show-select: show XPath selection from the input document
+     --show-variable: show contents of a global variable
      --slax-to-xslt OR -x: turn SLAX into XSLT
      --xslt-to-slax OR -s: turn XSLT into SLAX
 
@@ -25511,6 +25513,10 @@ jQuery(function ($) {
 <dd>Format (aka "pretty print") a SLAX script, correcting indentation and spacing to the style preferred by the author (that is, me).</dd>
 <dt>--run OR -r</dt>
 <dd>Run a SLAX script. The script name, input file name, and output file name can be provided via command line options and/or using positional arguments as described in <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a>. Input defaults to standard input and output defaults to standard output. "&#8209;r" is the default mode for slaxproc.</dd>
+<dt>--show-select</dt>
+<dd>Show an XPath selection from the input document. Used to extract selections from a script out for external consumption. This allows the consumer to avoid a SLAX parser, but still have visibility into the contents of the script.</dd>
+<dt>--show-variable</dt>
+<dd>Show contents of a global variable. Used to extract static variable contents for external consumption. This allows the consumer of the data to avoid a SLAX parser, but still have access to the static contents of global variables, such as the $arguments variable.</dd>
 <dt>--slax-to-xslt OR -x</dt>
 <dd>Convert a SLAX script into XSLT format. The script name and output file name can be provided via command line options and/or using positional arguments as described in <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a>.</dd>
 <dt>--xslt-to-slax OR -s</dt>
@@ -26549,7 +26555,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_3_1_5_p_5">asdfsdf</p>
+<p id="doc_section_8_3_1_5_p_5">The value of the "type" attribute must be one of the subset listed below. This allows the library to distinguish between '{ "value": "5" }' and '{ "value": 5 }' to control the encoding of the value as a string or a number. Similarly the caller can control whether "null" is a string or the special null value. If the type attribute is missing, the element is assumed to be a simple field.</p>
 <div id="doc_table_u.21"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Type</th>
@@ -26582,8 +26588,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_3_1_5_p_6">This allows the library to distinguish between '{ "value": "5" }' and '{ "value": "5" }' to control the encoding of the value as a string of number. Similarly the caller can control whether "null" is a string or the special null value.</p>
-<p id="doc_section_8_3_1_5_p_7">In this example, the type attribute is used to control the encoding of XML into JSON.</p>
+<p id="doc_section_8_3_1_5_p_6">In this example, the type attribute is used to control the encoding of XML into JSON.</p>
 <div id="doc_figure_u.232"></div> <pre>
       &lt;json&gt;
         &lt;name&gt;Skip Tracer&lt;/name&gt;
@@ -26597,7 +26602,7 @@ jQuery(function ($) {
           &lt;member type="member"&gt;attitude&lt;/member&gt;
         &lt;/equipment&gt;
       &lt;/json&gt;
-	    </pre> <p id="doc_section_8_3_1_5_p_9">This yields:</p>
+	    </pre> <p id="doc_section_8_3_1_5_p_8">This yields:</p>
 <div id="doc_figure_u.233"></div> <pre>
     {
       "name": "Skip Tracer",
