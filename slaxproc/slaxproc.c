@@ -20,6 +20,7 @@
 #include <libxml/HTMLparser.h>
 #include <libxslt/xsltutils.h>
 #include <libxml/globals.h>
+#include <libxml/xpathInternals.h>
 #include <libexslt/exslt.h>
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxdata.h>
@@ -38,6 +39,8 @@ static char *encoding;		/* Desired document encoding */
 static char *opt_version;	/* Desired SLAX version */
 static char *opt_expression;	/* Expression to convert */
 static char **opt_args;
+static char *opt_show_variable; /* Variable (in script) to show */
+static char *opt_show_select;   /* Expression (in script) to show */
 
 static int opt_html;		/* Parse input as HTML */
 static int opt_indent;		/* Indent the output (pretty print) */
@@ -204,6 +207,117 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
     return 0;
 }
 
+static int
+do_show_select (const char *name UNUSED, const char *output,
+                  const char *input, char **argv)
+{
+    FILE *infile, *outfile = NULL;
+    xmlDocPtr docp, newdocp;
+    xmlNodePtr root, newroot;
+    xmlXPathContextPtr xpath_context;
+    xmlXPathObjectPtr objp;
+    xmlNodeSetPtr nsp;
+    int i;
+
+    input = get_filename(input, &argv, -1);
+    output = get_filename(output, &argv, -1);
+
+    if (slaxFilenameIsStd(input))
+	infile = stdin;
+    else {
+	infile = fopen(input, "r");
+	if (infile == NULL)
+	    err(1, "file open failed for '%s'", input);
+    }
+
+    docp = slaxLoadFile(input, infile, xmlDictCreate(), opt_partial);
+    if (docp == NULL)
+	errx(1, "cannot parse file: '%s'", input);
+
+    if (infile != stdin)
+	fclose(infile);
+
+    root = xmlDocGetRootElement(docp);
+    if (root == NULL)
+        err(1, "invalid document (no root node)");
+
+    /* Setup a context in which the expression can be evaluated */
+    xpath_context = xmlXPathNewContext(docp);
+    if (xpath_context == NULL)
+        err(1, "xpath context creation failed");
+
+    xmlXPathRegisterNs(xpath_context, (const xmlChar *) XSL_PREFIX,
+                       (const xmlChar *) XSL_URI);
+
+    /* Evaluate with our document's root node as "." */
+    xpath_context->node = root;
+
+    newdocp = xmlNewDoc((const xmlChar *) XML_DEFAULT_VERSION);
+    if (newdocp == NULL)
+        err(1, "document context creation failed");
+
+    newdocp->standalone = 1;
+    newdocp->dict = xmlDictCreate();
+
+    newroot = xmlNewDocNode(newdocp, NULL, (const xmlChar *) "select", NULL);
+    if (newroot == NULL)
+        err(1, "document context creation failed");
+
+    xmlDocSetRootElement(newdocp, newroot);
+
+    if (output == NULL || slaxFilenameIsStd(output))
+        outfile = stdout;
+    else {
+        outfile = fopen(output, "w");
+        if (outfile == NULL)
+            err(1, "could not open file: '%s'", output);
+    }
+
+    objp = xmlXPathEvalExpression((const xmlChar *) opt_show_select,
+                                  xpath_context);
+    if (objp->type == XPATH_NODESET) {
+        nsp = objp->nodesetval;
+        if (nsp && nsp->nodeNr > 0) {
+
+            for (i = 0; i < nsp->nodeNr; i++) {
+		xmlNodePtr newp = xmlDocCopyNode(nsp->nodeTab[i], newdocp, 1);
+		if (newp)
+		    xmlAddChild(newroot, newp);
+            }
+        }
+    }
+
+    slaxDumpToFd(fileno(outfile), newdocp, opt_partial);
+
+    if (outfile && outfile != stdout)
+	fclose(outfile);
+
+    xmlXPathFreeContext(xpath_context);
+    xmlFreeDoc(newdocp);
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_show_variable (const char *name UNUSED, const char *output,
+                  const char *input, char **argv)
+{
+    char select_argument[BUFSIZ];
+
+    if (opt_show_variable == NULL)
+        errx(1, "no variable name");
+
+    if (opt_show_variable[0] == '$')
+        opt_show_variable += 1;
+
+    snprintf(select_argument, sizeof(select_argument),
+            "xsl:variable[@name='%s']", opt_show_variable);
+    opt_show_select = select_argument;
+
+    return do_show_select(name, output, input, argv);
+}
+
 static xmlDocPtr
 buildEmptyFile (void)
 {
@@ -360,6 +474,8 @@ print_help (void)
     printf("\t--check OR -c: check syntax and content for a SLAX script\n");
     printf("\t--format OR -F: format (pretty print) a SLAX script\n");
     printf("\t--run OR -r: run a SLAX script (the default mode)\n");
+    printf("\t--show-select: show XPath selection from the input document\n");
+    printf("\t--show-variable: show contents of a global variable\n");
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
     printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
     printf("\n");
@@ -436,6 +552,22 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_run;
 
+	} else if (streq(cp, "--show-select")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_show_select;
+            opt_show_select = *++argv;
+	    if (opt_show_select == NULL)
+		errx(1, "missing select argument");
+
+	} else if (streq(cp, "--show-variable")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_show_variable;
+            opt_show_variable = *++argv;
+	    if (opt_show_variable == NULL)
+		errx(1, "missing variable name argument");
+
 	} else if (streq(cp, "--slax-to-xslt") || streq(cp, "-x")) {
 	    if (func)
 		errx(1, "open one action allowed");
@@ -446,6 +578,7 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_xslt_to_slax;
 
+/* Non-mode flags start here */
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    opt_debugger = TRUE;
 

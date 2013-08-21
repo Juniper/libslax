@@ -1,5 +1,5 @@
 set libslax=`pwd`
-set test=~/work/slax/libxslt-1.1.24/tests/
+set test=~/work/xmlsoft/libxslt-1.1.24/tests/
 alias Zautoreconf "(cd $libslax ; autoreconf --install)"
 
 set opts=' \
@@ -13,6 +13,8 @@ set opts=' \
 --prefix /Users/phil/work/root \
 '
 set opts=`echo $opts`
+
+setenv CONFIGURE_OPTS "$opts"
 
 alias Zconfigure "(cd $libslax/build; ../configure $opts)"
 

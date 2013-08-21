@@ -17,6 +17,7 @@ function set_branch () {
 }
 
 function check_in_details () {
+    set_branch
     files=`git status -s "$@" | awk '{print $2}'`
 
     for file in $files; do
@@ -24,6 +25,7 @@ function check_in_details () {
         status=`git status -s "$file"`
 	echo $status
 
+        /bin/echo "[Checking $file into branch $branch]"
         /bin/echo -n "Commit message: "
 	read comment
 	if [ "$comment" = "" ]; then
@@ -105,6 +107,10 @@ case "$op" in
     merge-to)
         set_branch
         to=$1
+        if [ x"$to" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
 	echo "Merging $branch into $to ..."
 	echo "Switching to $to ..."
         git checkout $to
@@ -121,8 +127,12 @@ case "$op" in
     merge-from)
         set_branch
         from=$1
+        if [ x"$from" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
 	echo "Merging $from into $branch ..."
-	git merge --no-ff $from
+	git -c core.editor=/usr/bin/true merge --no-ff $from
 	if [ $? -eq 0 ]; then
 	    push_to_branch
 	fi

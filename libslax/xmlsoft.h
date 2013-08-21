@@ -286,5 +286,23 @@ xmlAddProp (xmlNodePtr nodep, xmlAttrPtr newp)
     }
 }
 
+/**
+ * Determine if a name is reserved.  A useful function, perhaps, but
+ * I'm not sure how/when to use it.  If I fail elements and attributes
+ * that are reserved, then in the future if/when some new feature
+ * uses 'xml.*', I will fail it, which isn't acceptable.
+ *
+ * So for now, nothing will call this.
+ *
+ * @see http://www.w3.org/TR/xml/#sec-common-syn
+ * @param name [in] name to test
+ * @return boolean TRUE if the name is reserved by the XML spec
+ */
+static inline int
+xmlIsReserved (const char *name)
+{
+    return (name && strlen(name) > 3 && strncasecmp(name, "xml", 3) == 0);
+}
+
 #endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */
 #endif /* LIBSLAX_XMLSOFT_H */

@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Copyright (c) 2006-2011, Juniper Networks, Inc.
+# Copyright (c) 2006-2013, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
 # ../Copyright file. By downloading, installing, copying, or otherwise
@@ -36,10 +36,14 @@
 # '+' at the beginning of the line marks a numbered list item.
 # '=' at the beginning of the line marks an hanging list item, where
 #    the rest of the line is the hang text.
-# '!! table' [<preamble>] [<anchor>]
-#    starts a texttable
-# '!! head'  ! <head1> ! <head2> ... ! <headN>
-# '!! row'   ! <col1>  ! <col2>  ... ! <colN>
+# Deprecated:
+#   '!! table' [<preamble>] [<anchor>]
+#      starts a texttable
+#   '!! head'  ! <head1> ! <head2> ... ! <headN>
+#   '!! row'   ! <col1>  ! <col2>  ... ! <colN>
+# Use org-mode style table instead.
+# '--' <title> [<anchor>]
+#    optional title and anchor preceding an org table
 # '{{ <tag>: <text>' starts a digress
 #     a digress is not present in the text output, but is
 #     present in the XML.
@@ -64,7 +68,7 @@
 @tags = ();
 @authors = ();
 $wrapwidth = 70;
-$opt_mode = "full";
+$opt_mode = "unknown";
 
 $base_prefix = "@prefix@";
 $prefix = $base_prefix;
@@ -104,7 +108,8 @@ sub main {
 
     my ($base) = ($file =~ /([^\/]*)\.([^\.\/])/);
 
-    if ($opt_mode eq "full") {
+    if ($opt_mode eq "unknown") {
+        die "missing mode: -m <mode>";
 
     } elsif ($opt_mode eq "outline-to-xml" || $opt_mode eq "xml") {
 	&open_stdout($output);
@@ -217,7 +222,7 @@ sub xml2text {
 #   - second pass gets all the odd stuff
 # - then generate output based on the handling tags
 sub outline2xml {
-    my($file, $output) = @_;
+    my ($file, $output) = @_;
     open(FILE, $file) || die;
 
     print STDERR "  [converting $file (oxtradoc) to $output (xml)]\n";
@@ -284,8 +289,11 @@ sub first_pass {
 
 	    # Other modes are detected based on leading string
 	    $tag = "org_table", last if /^\|/;
+	    $tag = "plain", $default = "plain", last if /^{{plain:/;
+	    $tag = "quote", $default = "quote", last if /^{{quote:/;
 	    $tag = "digress", last if /^{{/;
-	    $tag = "enddigress", last if /^}}/;
+	    $tag = "enddigress", undef $default, last if /^}}/;
+           $tag = $default, last if $default;
 	    $tag = "section", last if /^\*+\s/;
 	    $tag = "nlist", last if /^[-=_+]\s/;
 	    $tag = "nlist", last if /^(\s+)[-=_+]\s/ && $last_tag eq "nlist";
@@ -360,7 +368,7 @@ sub second_pass {
 
 # Update the tag and mode based on the current mode and input line
 sub update {
-    my($test, $mode, $tag, $line) = @_;
+    my ($test, $mode, $tag, $line) = @_;
 
     if ($tag eq $test) {
 	$mode = $test;
@@ -539,8 +547,8 @@ sub restart_digress {
 sub start_digress {
     $in_digress = 1;
 
-    my($type, $rest) = ($line =~ /([^\s{}]+):\s*(.*)/);
-    my($rest, $x, $name) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+    my ($type, $rest) = ($line =~ /([^\s{}]+):\s*(.*)/);
+    my ($rest, $x, $name) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
 
    if ($type eq "example") {
 	$inline_digress = 1;
@@ -624,6 +632,22 @@ sub text {
 	print "    <t>\n", esc($line), "\n";
 	$in_text = 1;
     }
+}
+
+sub plain {
+    return if /^{{/ || /^}}/;
+    text();
+}
+
+sub start_quote {
+}
+
+sub end_quote {
+    end_text();
+}
+
+sub quote {
+    text();
 }
 
 sub end_text {
@@ -776,7 +800,7 @@ sub include_figure {
 	$line = untabify($_);
 
         if ($wrap && $autowrap && length($line) > $wrapwidth) {
-            my(@lines) = split_lines($line, $file, $lnum);
+            my (@lines) = split_lines($line, $file, $lnum);
             for $line (@lines) {
 	        print $indent_digress, $prefix, $line;
             }
@@ -804,16 +828,16 @@ sub start_table {
 
 sub start_head {
     ($rest) = ($line =~ /^!!\s*head\s+!(.*)$/);
-    split(/\s*\!\s*/, $rest);
-    foreach (@_) {
+    my (@fs) = split(/\s*\!\s*/, $rest);
+    foreach (@fs) {
 	print "<ttcol align='left'>", esc($_), "</ttcol>\n";
     }
 }
 
 sub row {
     ($rest) = ($line =~ /^!!\s*row\s+!\s*(.*)$/);
-    split(/\s*\!\s*/, $rest);
-    foreach (@_) {
+    my (@fs) = split(/\s*\!\s*/, $rest);
+    foreach (@fs) {
 	print "<c>", escf($_), "</c>\n";
     }
 }
@@ -824,7 +848,7 @@ sub end_row {
 }
 
 sub start_org_table {
-    ($rest) = ($line =~ /^\|--+\s+(.+)(\s+-*)?/);
+    ($rest) = ($line =~ /^\|?--+\s+(.+)(\s+-*)?/);
     ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
     print "<?rfc compact=\"yes\"?>\n";
     print "<texttable";
@@ -886,7 +910,7 @@ sub end_question {
 }
 
 sub front_matter {
-    my($doc) = @_;
+    my ($doc) = @_;
     my $numstr = "";
     my $updatesstr = "";
     my $obsoletesstr = "";
@@ -926,7 +950,7 @@ EOF
 }
 
 sub print_authors {
-    my($doc) = @_;
+    my ($doc) = @_;
     my $contributor = $doc{contributor};
 
     foreach $author (@{$contributor}) {
@@ -959,7 +983,7 @@ sub document_header {
 
     for ($i += 1; $i <= $#lines; $i++) {
 	last if $lines[$i] =~ /^}}/;
-	my($f, $v) = ($lines[$i] =~ /^\s*(\S+)\s+(.*);/);
+	my ($f, $v) = ($lines[$i] =~ /^\s*(\S+)\s+(.*);/);
 	next unless $f;
 	$v =~ s/"//g; #";
         if ($f eq "contributor") {
@@ -986,7 +1010,7 @@ sub document_header {
 }
 
 sub back_matter {
-    my($doc) = @_;
+    my ($doc) = @_;
 
     &close_sections();
     print "</middle>\n";

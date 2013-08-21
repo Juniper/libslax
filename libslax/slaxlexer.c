@@ -931,15 +931,17 @@ slaxLexer (slax_data_t *sdp)
 		    return L_ASTERISK; /* It's a q_name (NCName) */
 	    }
 
-	    /*
-	     * Underscore is a valid first character for an element
-	     * name, which is troubling, since it's also the concatenation
-	     * operator in SLAX.  We look ahead to see if the next
-	     * character is a valid character before making our
-	     * decision.
-	     */
-	    if (lit1 == L_UNDERSCORE) {
-		if (!slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
+            if (ch1 == '.' && isdigit((int) ch2)) {
+                /* continue */
+            } else if (lit1 == L_UNDERSCORE) {
+                /*
+                 * Underscore is a valid first character for an element
+                 * name, which is troubling, since it's also the concatenation
+                 * operator in SLAX.  We look ahead to see if the next
+                 * character is a valid character before making our
+                 * decision.
+                 */
+		if (!slaxIsBareChar(ch2))
 		    return lit1;
 	    } else {
 		return lit1;
@@ -988,7 +990,7 @@ slaxLexer (slax_data_t *sdp)
 	    return rc;
 	}
 
-	if (isdigit(ch1)) {
+	if (isdigit(ch1) || (ch1 == '.' && isdigit(ch2))) {
 	    int seen_e = FALSE;
 
 	    for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
