@@ -37,10 +37,10 @@ details.
 * SLAX (Overview)
 
 XSLT is a commonly used transformation language for XML.  It is a
-declarative language that uses XPath expressions to
-inspect an XML input document and can generate XML output based on
-that input hierarchy.  It's a simple but powerful tool for handling
-XML, but the syntax is problematic for developers.
+declarative language that uses XPath expressions to inspect an XML
+input document and can generate XML output based on that input
+hierarchy.  It's a simple but powerful tool for handling XML, but the
+syntax is problematic for developers.
 
 XSLT uses an XML-based syntax, and while XML is great for
 machine-to-machine communication, it is inconvenient for humans to
@@ -3409,10 +3409,14 @@ not truncate these lines:
   Total      6    131               51   Total
   (sdb) 
 
-This information not only show how much time is spent during code
-execution, but can also show which lines are being executed, which
+This information not only shows how much time is spent during code
+execution, but also shows which lines are being executed, which
 can help debug scripts where the execution does not match
 expectations.
+
+The profiling is not "Monte Carlo", or clock based, but is based on
+trace data generated as each SLAX instruction is executed, giving
+more precise data.
 
 ** callflow
 
