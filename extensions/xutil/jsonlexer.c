@@ -351,6 +351,38 @@ extXutilJsonElementOpen (slax_data_t *sdp, const char *name)
 	slaxAttribAddLiteral(sdp, ATT_NAME, name);
 }
 
+static int
+extXutilValidStartChar (int ch)
+{
+    if (ch == '_' || isalpha(ch))
+	return TRUE;
+    return FALSE;
+}
+
+static int
+extXutilValidChar (int ch)
+{
+    if (ch == '_' || ch == '.' || isalnum(ch))
+	return TRUE;
+    return FALSE;
+}
+
+void
+extXutilJsonElementOpenName (slax_data_t *sdp, char *name)
+{
+    char *s = name;
+
+    if (!extXutilValidStartChar((int) *s))
+	*s = '_';
+
+    for (s = name; *s; s++) {
+	if (!extXutilValidChar((int) *s))
+	    *s = '_';
+    }
+
+    extXutilJsonElementOpen(sdp, name);
+}
+
 void
 extXutilJsonElementValue (slax_data_t *sdp, slax_string_t *value)
 {
