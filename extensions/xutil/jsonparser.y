@@ -150,7 +150,7 @@ member_list :
 pair :
 	name L_COLON
 		{
-		    extXutilJsonElementOpen(slax_data, $1->ss_token);
+		    extXutilJsonElementOpenName(slax_data, $1->ss_token);
 		    $$ = NULL;
 		}
 	    value
