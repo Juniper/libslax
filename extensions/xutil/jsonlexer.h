@@ -106,6 +106,9 @@ extXutilJsonYylex (slax_data_t *sdp, YYSTYPE *yylvalp);
 void
 extXutilJsonElementOpen (slax_data_t *sdp, const char *name);
 
+void
+extXutilJsonElementOpenName (slax_data_t *sdp, char *name);
+
 /* ----------------------------------------------------------------------
  * Functions exposed in jsonparser.y (no better place than here)
  */
