@@ -64,6 +64,6 @@ install-exec-hook:
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \
 		&& chmod +w . \
-		&& rm -f ${UGLY_NAME} \
+		&& rm -f ${UGLY_NAMES} \
 		&& for name in ${UGLY_NAMES}; do \
 			${LN_S} $$DLNAME $$name; done
