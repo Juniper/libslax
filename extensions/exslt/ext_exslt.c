@@ -40,23 +40,20 @@
 #include <libslax/slaxutil.h>
 #include <libslax/slaxnames.h>
 
-static int extExsltCount;
+static int extExsltInited;
+
+/*
+ * libexslt lacks an unregister function, so we cannot unregister.  There's
+ * no point in defining a slaxDynLibClean() function.
+ */
 
 SLAX_DYN_FUNC(slaxDynLibInit)
 {
-    if (extExsltCount++ == 0) {
+    if (!extExsltInited) {
 	slaxLog("exslt: registering exslt library");
 	exsltRegisterAll();
+	extExsltInited = TRUE;
     }
 	
-    return SLAX_DYN_VERSION;
-}
-
-SLAX_DYN_FUNC(slaxDynLibClean)
-{
-    if (--extExsltCount == 0) {
-	slaxLog("exslt: registering exslt library (noop)");
-    }
-
     return SLAX_DYN_VERSION;
 }
