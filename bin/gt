@@ -29,7 +29,7 @@ function check_in_details () {
         /bin/echo -n "Commit message: "
 	read comment
 	if [ "$comment" = "==" -o "$comment" = "ditto" ]; then
-	    command="$last"
+	    comment="$last"
         fi
 	if [ "$comment" = "" ]; then
 	    echo "Skipping file $file";
