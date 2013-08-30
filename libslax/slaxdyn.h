@@ -73,6 +73,13 @@ void
 slaxDynInit (void);
 
 /*
+ * Find the uri behind a "well-known" prefix
+ */
+int
+slaxDynFindPrefix (char *uri, size_t urisiz, const char *name);
+
+
+/*
  * De-initialize the entire dynamic extension loading mechanism.
  */
 void
