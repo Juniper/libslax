@@ -740,7 +740,7 @@ slaxGenericError (void *opaque, const char *fmt, ...)
 }
 
 /*
- * Return the value cooresponding to the given name
+ * Return the value corresponding to the given name
  */
 int
 slaxErrorValue (const char *name)
