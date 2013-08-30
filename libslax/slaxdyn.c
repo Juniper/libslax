@@ -89,8 +89,7 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
     slax_data_node_t *dnp;
     xmlChar *ret;
     void *dlp = NULL;
-    size_t bufsiz = BUFSIZ;
-    char *buf = alloca(bufsiz);
+    char buf[MAXPATHLEN];
 
     SLAXDATALIST_FOREACH(dnp, &slaxDynLoaded) {
 	if (streq(ns, dnp->dn_data))
@@ -105,13 +104,10 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
     SLAXDATALIST_FOREACH(dnp, &slaxDynDirList) {
 	static const char fmt[] = "%s/%s.ext";
 	char *dir = dnp->dn_data;
-	size_t len = snprintf(buf, bufsiz, fmt, dir, ret);
+	size_t len = snprintf(buf, sizeof(buf), fmt, dir, ret);
 
-	if (len > bufsiz) {
-	    bufsiz = len + BUFSIZ;
-	    buf = alloca(bufsiz);
-	    len = snprintf(buf, bufsiz, fmt, dir, ret);
-	}
+	if (len > sizeof(buf))	/* Should not occur */
+	    continue;
 
 	slaxLog("extension: attempting %s", buf);
 	dlp = dlopen((const char *) buf, RTLD_NOW);
@@ -219,6 +215,47 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
 	if (childp->type == XML_ELEMENT_NODE)
 	    slaxDynFindNamespaces(listp, docp, childp, FALSE);
     }
+}
+
+/*
+ * Find the uri behind a "well-known" prefix
+ */
+int
+slaxDynFindPrefix (char *uri, size_t urisiz, const char *name)
+{
+    char buf[MAXPATHLEN];
+    slax_data_node_t *dnp;
+
+    SLAXDATALIST_FOREACH(dnp, &slaxDynDirList) {
+	static const char fmt[] = "%s/%s.prefix";
+	static const char ext[] = ".ext";
+
+	char *dir = dnp->dn_data;
+	size_t len = snprintf(buf, sizeof(buf) - 1, fmt, dir, name);
+
+	if (len > sizeof(buf))	/* Should not occur */
+	    continue;
+
+	len = readlink(buf, uri, urisiz - 1);
+	if (len > urisiz)	/* Should not occur */
+	    continue;
+
+	uri[len] = '\0';
+	if (strlen(uri) != len)	/* Should not occur */
+	    continue;
+
+
+	if (xmlURIUnescapeString(uri, 0, uri) == NULL)
+	    continue;
+
+	len = strlen(uri);
+	if (len > sizeof(ext) && streq(uri + len - sizeof(ext) + 1, ext))
+	    uri[len - sizeof(ext) + 1] = '\0';
+
+	return 0; /* Success */
+    }
+
+    return -1; /* Failure */
 }
 
 /*
