@@ -46,15 +46,15 @@ ext_exsltlibdir = ${slaxextdir}
 #slaxext_LIBRARIES = libext_exslt.la
 
 UGLY_NAMES = \
-    http%3A%2F%2Fexslt.org%2Fcommon.ext \
-    http%3A%2F%2Fexslt.org%2Fcrypto.ext \
-    http%3A%2F%2Fexslt.org%2Fmath.ext \
-    http%3A%2F%2Fexslt.org%2Fsets.ext \
-    http%3A%2F%2Fexslt.org%2Ffunctions.ext \
-    http%3A%2F%2Fexslt.org%2Fstrings.ext \
-    http%3A%2F%2Fexslt.org%2Fdates-and-times.ext \
-    http%3A%2F%2Fexslt.org%2Fdynamic.ext \
-    http%3A%2F%2Ficl.com%2Fsaxon.ext
+    exsl.prefix:http%3A%2F%2Fexslt.org%2Fcommon.ext \
+    crypto.prefix:http%3A%2F%2Fexslt.org%2Fcrypto.ext \
+    math.prefix:http%3A%2F%2Fexslt.org%2Fmath.ext \
+    set.prefix:http%3A%2F%2Fexslt.org%2Fsets.ext \
+    func.prefix:http%3A%2F%2Fexslt.org%2Ffunctions.ext \
+    str.prefix:http%3A%2F%2Fexslt.org%2Fstrings.ext \
+    date.prefix:http%3A%2F%2Fexslt.org%2Fdates-and-times.ext \
+    dyn.prefix:http%3A%2F%2Fexslt.org%2Fdynamic.ext \
+    saxon.prefix:http%3A%2F%2Ficl.com%2Fsaxon.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ./libext_exslt.la ; echo $$dlname'` ; \
@@ -66,4 +66,9 @@ install-exec-hook:
 		&& chmod +w . \
 		&& rm -f ${UGLY_NAMES} \
 		&& for name in ${UGLY_NAMES}; do \
-			${LN_S} $$DLNAME $$name; done
+			prefix=`echo $$name | awk -F: '{ print $$1 }'` \
+			&& url=`echo $$name | awk -F: '{ print $$2 }'` \
+			&& rm -f $$prefix $$url \
+			&& ${LN_S} $$DLNAME $$url \
+			&& ${LN_S} $$url $$prefix; \
+		done
