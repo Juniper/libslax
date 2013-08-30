@@ -48,15 +48,18 @@ pkglibdir = ${slaxextdir}
 ext_oslibdir = ${slaxextdir}
 #slaxext_LIBRARIES = libext_os.la
 
-UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fos.ext
+UGLY_NAME = os.prefix:http%3A%2F%2Fxml.libslax.org%2Fos.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ./libext_os.la ; echo $$dlname'` ; \
+	@set -x ; DLNAME=`sh -c '. ./libext_os.la ; echo $$dlname'` ; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \
 		&& chmod +w . \
-		&& rm -f ${UGLY_NAME} \
-		&& ${LN_S} $$DLNAME ${UGLY_NAME}
+		&& prefix=`echo ${UGLY_NAME} | awk -F: '{ print $$1 }'` \
+		&& url=`echo ${UGLY_NAME} | awk -F: '{ print $$2 }'` \
+		&& rm -f $$prefix $$url \
+		&& ${LN_S} $$DLNAME $$url \
+		&& ${LN_S} $$url $$prefix
