@@ -969,11 +969,13 @@ inside a set of braces.
 In this example, the value of the "name" node (rather than the literal
 string "name") will be used to create an XML element, whose contents
 are an empty element with a name of "from-" concatenated with the
-value of the address node.  Node values are selected from the current
-context. 
+value of the address node and an emply element whose name is the value
+of the variable "$my-var" (refer to ^main-var^ for more information about
+variables).  Node values are selected from the current context.
 
     element name {
         element "from-" _ address;
+        element $my-var;
     }
 
 ** Attributes
@@ -1204,14 +1206,6 @@ The XSLT equivalent:
         <!-- ... -->
     </xsl:stylesheet>
 
-*** Reserved Prefixes
-
-The XML specification reserved all prefixes and attributes beginning
-with the characters "xml".  In addition, SLAX reserves all prefixes
-and attributes that begin with the characters "slax".  These
-reservations help to future proof against changes and enhancements to
-the language.
-
 *** The "extension" Statement @extension@
 
 The "extension" statement instructs the processing engine that
@@ -1235,6 +1229,67 @@ final result tree, effectively blocking it from output.
     ns xslax extension = "http://libslax.org/slax";
 
 See also ^http://www.w3.org/TR/xslt#literal-result-element^.
+
+*** Reserved Prefixes
+
+The XML specification reserved all prefixes and attributes beginning
+with the characters "xml".  In addition, SLAX reserves all prefixes
+and attributes that begin with the characters "slax".  These
+reservations help to future proof against changes and enhancements to
+the language.
+
+*** Default Namespaces for Prefixes
+
+When a prefix is used without the a corresponding "ns" statement in
+scope, SLAX will refer to a set of default namespaces.  If the prefix
+has a default namespace, that namespace will be automatically mapped
+to the prefix.
+
+The following table lists the default set of prefixes installed with
+the libslax software distribution:
+
+|--------+---------+------------------------------------|
+| Prefix | Source  | URI                                |
+|--------+---------+------------------------------------|
+| bit    | libslax | http://xml.libslax.org/bit         |
+| curl   | libslax | http://xml.libslax.org/curl        |
+| exsl   | exslt   | http://exslt.org/common            |
+| crypto | exslt   | http://exslt.org/crypto            |
+| math   | exslt   | http://exslt.org/math              |
+| set    | exslt   | http://exslt.org/sets              |
+| func   | exslt   | http://exslt.org/functions         |
+| str    | exslt   | http://exslt.org/strings           |
+| date   | exslt   | http://exslt.org/dates-and-times   |
+| dyn    | exslt   | http://exslt.org/dynamic           |
+| saxon  | libxslt | http://icl.com/saxon               |
+| os     | libslax | http://xml.libslax.org/os          |
+| xutil  | libslax | http://xml.libslax.org/xutil       |
+|--------+---------+------------------------------------|
+
+The libslax extension libraries are documented in this document under
+the ^libslax-extensions^ section.  The exslt extension libraries are documented
+at ^http://exslt.org^ and the libxslt extension library is documented at
+^http://xmlsoft.org^.
+
+When using the "slaxproc" tool with the --format or --slax-to-xslt
+command line options, the namespace will be properly displayed:
+
+    % cat /tmp/foo.slax
+    version 1.1;
+   
+    match / {
+        <top> {
+            expr date:time();
+        }
+    }
+    % slaxproc --format /tmp/foo.slax
+    version 1.1;
+
+    ns date extension = "http://exslt.org/dates-and-times";
+
+    match / {
+        <top> date:time();
+    }
 
 ** Processing Instructions
 
@@ -2045,7 +2100,7 @@ In truth, the only interesting thing to do with an RTF is to convert
 it to a node set, which is not a standard XPath/XSLT operation.  Most
 scripts will use the extension function "ext:node-set()" (which is
 specific to libxslt) or "exslt:node-set()" (which is in the EXSLT
-extension library; see exslt.org for additional information).
+extension library; see ^http://exslt.org^ for additional information).
 
     ns ext = "http://xmlsoft.org/XSLT/namespace";
     ...
@@ -3431,7 +3486,7 @@ but reference the instruction, filename, and line number of the frame:
   callflow: 1: exit <xsl:variable> at empty-15.slax:20
   callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
 
-* Extension Libraries in libslax
+* Extension Libraries in libslax @libslax-extensions@
 
 libslax supports a means of dynamically loading extension libraries.
 After a script is parsed, any extension prefixes are determined, along
@@ -4823,6 +4878,18 @@ search is made for the library to find the symbol
 
 The file slaxdyn.h defines some macros for helping define extension
 libraries.
+
+*** Default Prefixes for Extension Libraries
+
+When a default prefix is used with an extension library, the prefix is
+mapped to the extension using a symbolic link ("ln -s").  The source
+of the symlink should be the prefix with a ".prefix" appended and
+should be located in the extension directory ("${SLAX_EXTDIR}").  The
+target of the symlink should be the namespace URI with the escaping
+and ".ext" extension as described above.
+
+See the Makefile.am file in any of the libslax extension directories
+for examples of creating the appropriate symlink.
 
 *** Example
 
