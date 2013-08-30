@@ -2891,6 +2891,8 @@ xpc_function_call :
 		{
 		    SLAX_KEYWORDS_OFF();
 
+		    slaxCheckFunction(slax_data, $1->ss_token);
+
 		    /* If we're turning XPath into SLAX, handle "..." */
 		    if (slaxParseIsXpath(slax_data)) {
 			if (slaxWriteRedoFunction(slax_data,
