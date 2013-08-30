@@ -185,6 +185,19 @@ int
 slaxNodeIsXsl (xmlNodePtr nodep, const char *name);
 
 /**
+ * Find a namespace, or make one if the prefix is well known
+ */
+xmlNsPtr
+slaxFindNs (slax_data_t *sdp, xmlNodePtr nodep,
+	       const char *prefix, int len);
+
+/**
+ * Check that we have a known namespace for a function name
+ */
+void
+slaxCheckFunction (slax_data_t *sdp, const char *fname);
+
+/**
  * Simple (casted) version of xmlGetProp
  */
 static inline char *
