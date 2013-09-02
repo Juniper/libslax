@@ -51,7 +51,7 @@ ext_oslibdir = ${slaxextdir}
 UGLY_NAME = os.prefix:http%3A%2F%2Fxml.libslax.org%2Fos.ext
 
 install-exec-hook:
-	@set -x ; DLNAME=`sh -c '. ./libext_os.la ; echo $$dlname'` ; \
+	@DLNAME=`sh -c '. ./libext_os.la ; echo $$dlname'` ; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
