@@ -185,7 +185,6 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 void
 slaxAvoidRtf (slax_data_t *sdp)
 {
-
     static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
     static const char node_value_format[] = EXT_PREFIX ":node-set(%s)";
     static const char temp_name_format[] = "%s-temp-%u";
@@ -451,6 +450,75 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
     xmlUnlinkNode(choosep);
     xmlFreeNode(choosep);
     xmlAddChild(sdp->sd_ctxt->node, nodep);
+}
+
+void 
+slaxHandleElementFunctionArgPrep (slax_data_t *sdp)
+{
+    static const char varfmt[] = SLAX_ELTARG_FORMAT;
+    static unsigned varcount;
+    char varname[sizeof(varfmt) + SLAX_ELTARG_WIDTH];
+
+    snprintf(varname, sizeof(varname), varfmt, ++varcount);
+
+    slaxLog("slaxHandleElementFunctionArgPrep: %s", varname);
+
+    slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, varname);
+}
+
+slax_string_t *
+slaxHandleElementFunctionArg (slax_data_t *sdp, int is_list)
+{
+    static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
+    char str[BUFSIZ];
+    char *varname;
+    xmlNodePtr nodep = NULL;
+    slax_string_t *ssp;
+    xmlNodePtr varp;
+    xmlNodePtr parent;
+
+    if (!is_list) {
+	slaxHandleElementFunctionArgPrep(sdp);
+    }
+    varp = nodePop(sdp->sd_ctxt);
+    if (varp == NULL)
+	return NULL;
+
+    xmlUnlinkNode(varp);
+    varname = slaxGetAttrib(varp, ATT_NAME);
+    slaxLog("slaxHandle: varname '%s'", varname);
+
+    if (is_list) {
+	nodep = sdp->sd_ctxt->node;
+    } else {
+	nodep = nodePop(sdp->sd_ctxt);
+    }
+    if (nodep == NULL)
+	return NULL;
+
+    slaxLog("slaxHandle: node %p", nodep);
+
+    parent = nodep->parent;
+
+    slaxSetExtNs(sdp, parent, FALSE);
+    if (is_list) {
+	slaxLog("slaxHandleElementFunctionArg: is list");
+	xmlAddPrevSibling(parent, varp);
+    } else {
+	xmlAddPrevSibling(parent, varp);
+	xmlUnlinkNode(nodep);
+	xmlAddChild(varp, nodep);
+    }
+
+    /* Use the line number from the original node */
+    if (sdp->sd_ctxt->linenumbers)
+	varp->line = nodep->line;
+
+    snprintf(str, sizeof(str), new_value_format, varname);
+
+    ssp = slaxStringLiteral(str, T_BARE);
+
+    return ssp;
 }
 
 /*
