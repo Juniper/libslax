@@ -257,6 +257,9 @@ slaxCheckFunction (slax_data_t *sdp, const char *fname)
     xmlNsPtr ns = NULL;
     const char *cp;
 
+    if (sdp->sd_parse != M_PARSE_SLAX)
+	return;
+
     cp = index(fname, ':');
     if (cp) {
 	const char *prefix = fname;
