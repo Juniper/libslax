@@ -859,6 +859,20 @@ initial_value :
 		}
 	;
 
+initial_argument_value :
+	xpath_value
+		{
+		    slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $1);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| element_stmt_argument
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $1);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
 
 set_mvar_stmt :
 	set_mvar_preface initial_value
@@ -1401,28 +1415,25 @@ call_argument_member :
 			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $1);
 			nodePop(slax_data->sd_ctxt);
 		    }
-		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
 		}
 
 	| T_VAR L_EQUALS
 		{
-		    SLAX_KEYWORDS_OFF();
-		    $$ = NULL;
-		}
-	    xpath_value
-		{
 		    xmlNodePtr nodep;
 
+		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $1->ss_token + 1);
-		    if (nodep) {
+		    if (nodep)
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $4);
-			nodePop(slax_data->sd_ctxt);
-		    }
-		    /* XXX else error */
+		    $$ = NULL;
+		}
+	    initial_argument_value
+		{
+		    ALL_KEYWORDS_ON();
 
+		    nodePop(slax_data->sd_ctxt);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
 		}
@@ -1624,6 +1635,98 @@ element_stmt :
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
+		}
+	;
+
+element_stmt_argument :
+	element
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementClose(slax_data);
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element block
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementClose(slax_data);
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element xpath_value
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxHandleElementFunctionArgPrep(slax_data);
+		    $$ = NULL;
+		}
+	    block_contents L_CBRACE
+		{
+		    slax_string_t *ssp;
+		    ssp = slaxHandleElementFunctionArg(slax_data, TRUE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		    STACK_UNUSED($2);
+		}
+	;
+
+element_xpath_argument :
+	element
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element block
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element xpath_value
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
+		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxHandleElementFunctionArgPrep(slax_data);
+		    $$ = NULL;
+		}
+	    block_contents L_CBRACE
+		{
+		    slax_string_t *ssp;
+		    ssp = slaxHandleElementFunctionArg(slax_data, TRUE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -2936,17 +3039,25 @@ xpc_argument_list_optional :
 	;
 
 xpc_argument_list :
-	xpath_value
+	xpc_argument
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xpc_argument_list L_COMMA xpath_value
+	| xpc_argument_list L_COMMA xpc_argument
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
+	;
+
+xpc_argument :
+	xpath_value
+		{ $$ = $1; }
+
+	| element_xpath_argument
+		{ $$ = $1; }
 	;
 
 xpc_axis_specifier_optional :
