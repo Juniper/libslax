@@ -82,7 +82,7 @@ slaxparser.c: slaxparser-out.y
 	@${RM} slaxparser.c.old
 
 slaxparser.h: slaxparser.c
-	@${MV} slaxparser.h.new slaxparser.h
+	@[ -f slaxparser.h.new ] && ${MV} slaxparser.h.new slaxparser.h
 
 CLEANFILES = slaxparser.h slaxparser.c slaxparser.output
 
