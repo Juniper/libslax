@@ -33,22 +33,33 @@ struct slax_writer_s {
     int sw_cur;			/* Current index in output buffer */
     int sw_bufsiz;		/* Size of the buffer in sw_buf[] */
     int sw_errors;		/* Errors reading or writing data */
+    int sw_vers;		/* Target SLAX version number times 10 */
     unsigned sw_flags;		/* Flags for this instance (SWF_*) */
 };
 
 /* Flags for sw_flags */
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
-#define SWF_VERS_10	(1<<2)	/* Version 1.0 features only */
+
+/* Values for sw_vers */
+#define SWF_VERS_10	10	/* Version 1.0 features only */
+#define SWF_VERS_11	11	/* Version 1.1 features only */
+#define SWF_VERS_12	12	/* Version 1.2 features only */
 
 static const char slaxVarNsCall[] = EXT_PREFIX ":node-set(";
 static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
 static char slaxTernaryPrefix[] = SLAX_TERNARY_PREFIX;
 
 static inline int
-slaxV10 (slax_writer_t *swp)
+slaxV11 (slax_writer_t *swp)
 {
-    return (swp->sw_flags & SWF_VERS_10) ? TRUE : FALSE;
+    return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_11) ? TRUE : FALSE;
+}
+
+static inline int
+slaxV12 (slax_writer_t *swp)
+{
+    return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_12) ? TRUE : FALSE;
 }
 
 /* Forward function declarations */
@@ -266,7 +277,7 @@ slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	hit += 1;
     }
 
-    if (!slaxV10(swp)) {
+    if (slaxV11(swp)) {
 	for (childp = nodep->children; childp; childp = childp->next) {
 	    if (childp->type ==  XML_ELEMENT_NODE
 		&& slaxIsXsl(childp)
@@ -397,7 +408,7 @@ slaxWriteExpr (slax_writer_t *swp, xmlChar *content,
 {
     slaxWrite(swp, "%s\"",
 	      initializer ? ""
-	      : (!slaxV10(swp) && disable_escaping) ? "uexpr " : "expr ");
+	      : (slaxV11(swp) && disable_escaping) ? "uexpr " : "expr ");
     slaxWriteEscaped(swp, (char *) content, SEF_TEXT);
     slaxWrite(swp, "\";");
     slaxWriteNewline(swp, 0);
@@ -532,7 +543,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     sd.sd_flags |= SDF_NO_SLAX_KEYWORDS;
 
     /* sd_nodep is used for ternary expression, which aren't in SLAX-1.0 */
-    if (!slaxV10(swp))
+    if (slaxV11(swp))
 	sd.sd_nodep = nodep;
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
@@ -973,7 +984,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 	    name = slaxGetAttrib(childp, ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
 
-	    if (!slaxV10(swp) && name
+	    if (slaxV11(swp) && name
 		&& strncmp(name, slaxTernaryPrefix + 1,
 			   sizeof(slaxTernaryPrefix) - 2) == 0) {
 		xmlFreeAndEasy(name);
@@ -1584,7 +1595,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	xmlFree(svarname);
     }
 
-    if (name && sel && !slaxV10(swp)
+    if (name && sel && slaxV11(swp)
 	&& strncmp(name, slaxForVariablePrefix + 1,
 		   sizeof(slaxForVariablePrefix) - 2) == 0) {
 	if (!slaxWriteForLoop(swp, docp, nodep, name, sel)) {
@@ -1598,7 +1609,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     /*
      * Skim ternary variables
      */
-    if (name && sel == NULL && !slaxV10(swp)
+    if (name && sel == NULL && slaxV11(swp)
 	&& strncmp(name, slaxTernaryPrefix + 1,
 		   sizeof(slaxTernaryPrefix) - 2) == 0) {
 	xmlFree(name);
@@ -1975,7 +1986,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	} else if (slaxIsXsl(childp)) {
 	    slaxWriteXslElement(swp, docp, childp, NULL);
 
-	} else if (childp->ns && childp->ns->href && !slaxV10(swp)
+	} else if (childp->ns && childp->ns->href && slaxV11(swp)
 		   && streq((const char *) childp->ns->href, SLAX_URI)) {
 	    slaxWriteSlaxElement(swp, docp, childp);
 
@@ -2726,7 +2737,7 @@ slaxWriteXslElement (slax_writer_t *swp, xmlDocPtr docp,
 
     for (sftp = slax_func_table; sftp->sft_name; sftp++) {
 	/* If it's a 1.1 feature and we're writing 1.0 SLAX, skip it */
-	if ((sftp->sft_flags & SFTF_V11) && slaxV10(swp))
+	if ((sftp->sft_flags & SFTF_V11) && !slaxV11(swp))
 	    continue;
 
 	if (streq(sftp->sft_name, name))
@@ -2878,13 +2889,13 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 	    if (slaxIsXsl(childp)) {
 		slaxWriteXslElement(swp, docp, childp, &state);
 
-	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
+	    } else if (slaxV11(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href,
 				(const char *) FUNC_URI)) {
 		slaxWriteFunctionElement(swp, docp, childp);
 
 
-	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
+	    } else if (slaxV11(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href, SLAX_URI)) {
 		slaxWriteSlaxElement(swp, docp, childp);
 
@@ -2967,8 +2978,14 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	return 1;
 
     /* If the user asked for version 1.0, we avoid 1.1 features */
-    if (version && streq(version, "1.0"))
-	sw.sw_flags |= SWF_VERS_10;
+    if (version) {
+	if (streq(version, "1.0"))
+	    sw.sw_vers = SWF_VERS_10;
+	else if (streq(version, "1.1"))
+	    sw.sw_vers = SWF_VERS_11;
+	else if (streq(version, "1.2"))
+	    sw.sw_vers = SWF_VERS_12;
+    }
 
     if (!partial) {
 	slaxWrite(&sw, "version %s;", version ?: "1.1");
