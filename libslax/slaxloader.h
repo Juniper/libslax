@@ -86,6 +86,19 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 void
 slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 
+/*
+ * Handle the case where an element is used as a function argument
+ */
+slax_string_t *
+slaxHandleElementFunctionArg (slax_data_t *sdp, int is_list);
+#define SLAX_ELTARG_PREFIX "slax-temp-arg-"
+#define SLAX_ELTARG_FORMAT SLAX_ELTARG_PREFIX "%u"
+#define SLAX_ELTARG_WIDTH 10
+
+void 
+slaxHandleElementFunctionArgPrep (slax_data_t *sdp);
+
+
 /**
  * Turn a SLAX expression into an XPath one.  Returns a freshly
  * allocated string, or NULL.
