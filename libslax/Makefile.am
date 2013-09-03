@@ -13,7 +13,7 @@ SLAX_WARNINGS = HIGH
 endif
 include ${top_srcdir}/warnings.mk
 
-BISON_COMMAND = ${BISON} -kv -b slaxparser
+BISON_COMMAND = ${BISON} -kvd -b slaxparser
 ECHO_BISON_0 = @echo "  BISON " $@;
 ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
 ECHO_BUILD_0 = @echo "  BUILD " $@;
@@ -75,14 +75,10 @@ SED_ARGS = \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
 slaxparser.c: slaxparser-out.y
-	${ECHO_BISON_${V}}${BISON_COMMAND} --defines=slaxparser.h.new \
-			-o slaxparser.c slaxparser-out.y
+	${ECHO_BISON_${V}}${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
 	@${MV} slaxparser.c slaxparser.c.old
 	@${SED} ${SED_ARGS} < slaxparser.c.old  > slaxparser.c
 	@${RM} slaxparser.c.old
-
-slaxparser.h: slaxparser.c
-	@${MV} slaxparser.h.new slaxparser.h
 
 CLEANFILES = slaxparser.h slaxparser.c slaxparser.output
 
