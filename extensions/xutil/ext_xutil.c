@@ -40,7 +40,9 @@
 
 #define ELT_TYPES	"types"
 #define ELT_ROOT	"root"
+#define ELT_CLEAN_NAMES	"clean-names"
 #define VAL_NO		"no"
+#define VAL_YES		"yes"
 
 /*
  * Parse a string into an XML hierarchy:
@@ -417,6 +419,9 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 			flags |= SDF_NO_TYPES;
 		} else if (streq(key, ELT_ROOT)) {
 		    root_name = xmlStrdup2(value);
+		} else if (streq(key, ELT_CLEAN_NAMES)) {
+		    if (streq(value, VAL_YES))
+			flags |= SDF_CLEAN_NAMES;
 		}
 	    }
 	}
