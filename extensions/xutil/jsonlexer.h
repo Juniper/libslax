@@ -23,6 +23,7 @@
  * way".
  */
 #define SDF_NO_TYPES	(1<<16)	/* Do not decorate nodes with type info */
+#define SDF_CLEAN_NAMES (1<<17) /* Clean element names, if needed */
 
 #define ELT_ELEMENT	"element"
 #define ELT_MEMBER	"member"
