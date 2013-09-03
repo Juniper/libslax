@@ -372,12 +372,14 @@ extXutilJsonElementOpenName (slax_data_t *sdp, char *name)
 {
     char *s = name;
 
-    if (!extXutilValidStartChar((int) *s))
-	*s = '_';
-
-    for (s = name; *s; s++) {
-	if (!extXutilValidChar((int) *s))
+    if (sdp->sd_flags & SDF_CLEAN_NAMES) {
+	if (!extXutilValidStartChar((int) *s))
 	    *s = '_';
+
+	for (s = name; *s; s++) {
+	    if (!extXutilValidChar((int) *s))
+		*s = '_';
+	}
     }
 
     extXutilJsonElementOpen(sdp, name);
