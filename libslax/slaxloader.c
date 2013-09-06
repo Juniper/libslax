@@ -453,7 +453,7 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
 }
 
 void 
-slaxHandleElementFunctionArgPrep (slax_data_t *sdp)
+slaxHandleEltArgPrep (slax_data_t *sdp)
 {
     static const char varfmt[] = SLAX_ELTARG_FORMAT;
     static unsigned varcount;
@@ -461,13 +461,58 @@ slaxHandleElementFunctionArgPrep (slax_data_t *sdp)
 
     snprintf(varname, sizeof(varname), varfmt, ++varcount);
 
-    slaxLog("slaxHandleElementFunctionArgPrep: %s", varname);
+    slaxLog("slaxHandleEltArgPrep: '%s'", varname);
 
     slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, varname);
 }
 
+xmlNodePtr
+slaxHandleEltArgSafeInsert (xmlNodePtr base)
+{
+    const char *name;
+    xmlNodePtr nodep = base;
+
+    for (;; nodep = nodep->parent) {
+	if (nodep == NULL || nodep->parent == nodep)
+	    return NULL;
+
+	name = (const char *) nodep->name;
+	if (streq(name, ELT_WITH_PARAM)
+	    || streq(name, ELT_WHEN)
+	    || streq(name, ELT_OTHERWISE))
+	    continue;
+	break;
+    }
+
+    slaxLog("slaxHandleEltArgParent: parent of '%s' is '%s'",
+	    (const char *) base->name, (const char *) nodep->name);
+
+    return nodep;
+}
+
+static void
+slaxPrintNode (const char *txt, xmlNodePtr nodep)
+{
+    const char *localname = (const char *) nodep->name;
+    xmlNodePtr parent = nodep->parent;
+    const char *plocalname = NULL;
+    char *name = slaxGetAttrib(nodep, ATT_NAME);
+    char *pname = NULL;
+
+    if (parent) {
+	plocalname = (const char *) parent->name;
+	pname = slaxGetAttrib(parent, ATT_NAME);
+    }
+
+    slaxLog("%s (<%s @name=%s> parent=<%s @name=%s>)",
+	    txt, localname, name ?: "", plocalname ?: "", pname ?: "");
+
+    xmlFreeAndEasy(pname);
+    xmlFreeAndEasy(name);
+}
+
 slax_string_t *
-slaxHandleElementFunctionArg (slax_data_t *sdp, int is_list)
+slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
 {
     static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
     char str[BUFSIZ];
@@ -475,40 +520,43 @@ slaxHandleElementFunctionArg (slax_data_t *sdp, int is_list)
     xmlNodePtr nodep = NULL;
     slax_string_t *ssp;
     xmlNodePtr varp;
-    xmlNodePtr parent;
+    xmlNodePtr insert;
 
-    if (!is_list) {
-	slaxHandleElementFunctionArgPrep(sdp);
+    if (!var_on_stack) {
+	slaxHandleEltArgPrep(sdp);
     }
     varp = nodePop(sdp->sd_ctxt);
     if (varp == NULL)
 	return NULL;
 
     xmlUnlinkNode(varp);
-    varname = slaxGetAttrib(varp, ATT_NAME);
-    slaxLog("slaxHandle: varname '%s'", varname);
 
-    if (is_list) {
-	nodep = sdp->sd_ctxt->node;
+    varname = slaxGetAttrib(varp, ATT_NAME);
+    slaxLog("slaxHandleEltArg: varname '%s', var_on_stack %s",
+	    varname, var_on_stack ? "yes" : "no");
+
+    if (var_on_stack) {
+	insert = nodep = sdp->sd_ctxt->node;
+	if (nodep == NULL)
+	    return NULL;
     } else {
 	nodep = nodePop(sdp->sd_ctxt);
-    }
-    if (nodep == NULL)
-	return NULL;
-
-    slaxLog("slaxHandle: node %p", nodep);
-
-    parent = nodep->parent;
-
-    slaxSetExtNs(sdp, parent, FALSE);
-    if (is_list) {
-	slaxLog("slaxHandleElementFunctionArg: is list");
-	xmlAddPrevSibling(parent, varp);
-    } else {
-	xmlAddPrevSibling(parent, varp);
+	if (nodep == NULL)
+	    return NULL;
+	insert = nodep->parent;
 	xmlUnlinkNode(nodep);
 	xmlAddChild(varp, nodep);
     }
+
+    slaxPrintNode("slaxHandleEltArg: varp", varp);
+    slaxPrintNode("slaxHandleEltArg: nodep", nodep);
+    slaxPrintNode("slaxHandleEltArg: insert", insert);
+
+    insert = slaxHandleEltArgSafeInsert(insert);
+
+    slaxPrintNode("slaxHandleEltArg: insert (final)", insert);
+    slaxSetExtNs(sdp, insert, FALSE);
+    xmlAddPrevSibling(insert, varp);
 
     /* Use the line number from the original node */
     if (sdp->sd_ctxt->linenumbers)
