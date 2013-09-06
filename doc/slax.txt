@@ -4142,7 +4142,7 @@ optional elements:
             <root> "my-top";
             <types> "no";
         }
-        var $xml = xutil:json-to-xml($data);
+        var $xml = xutil:json-to-xml($data, $options);
 
 The XML returned from json-to-xml() is decorated with attributes
 (including the "type" and "name" attributes) which allow the data to
@@ -4270,7 +4270,7 @@ operation.  The options can include the values in the following table.
 |---------+---------------------------------------------|
 
     SYNTAX::
-        node-set os:mkdir(path, [options]);
+        node-set os:mkdir(path [, options]);
 
     EXAMPLE::
         var $res = os:mkdir("/tmp/foo");

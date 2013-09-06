@@ -74,7 +74,7 @@ SED_ARGS = \
 -e 's/yyparse (void \*YYPARSE_PARAM)/slaxParse (slax_data_t *slax_data)/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
-slaxparser.c: slaxparser-out.y
+slaxparser.h slaxparser.c: slaxparser-out.y
 	${ECHO_BISON_${V}}${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
 	@${MV} slaxparser.c slaxparser.c.old
 	@${SED} ${SED_ARGS} < slaxparser.c.old  > slaxparser.c
