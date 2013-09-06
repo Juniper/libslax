@@ -257,20 +257,21 @@ slaxCheckFunction (slax_data_t *sdp, const char *fname)
     xmlNsPtr ns = NULL;
     const char *cp;
 
-    if (sdp->sd_parse != M_PARSE_SLAX)
-	return;
+    if (sdp->sd_parse == M_PARSE_SLAX
+	|| sdp->sd_parse == M_PARSE_FULL
+	|| sdp->sd_parse == M_PARSE_PARTIAL) {
+	cp = index(fname, ':');
+	if (cp) {
+	    const char *prefix = fname;
+	    int len = cp - prefix;
 
-    cp = index(fname, ':');
-    if (cp) {
-	const char *prefix = fname;
-	int len = cp - prefix;
-
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, nodep, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
+	    if (!slaxIsSlaxNs(prefix, len)) {
+		ns = slaxFindNs(sdp, nodep, prefix, len);
+		if (ns == NULL) {
+		    sdp->sd_errors += 1;
+		    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+				   len, prefix, prefix);
+		}
 	    }
         }
     }
