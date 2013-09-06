@@ -51,7 +51,7 @@
 # '?' at the beginning of a line make the following section an 
 #     Open Question
 #
-# outline2xml tries to detect XML, ascii-art, and code.  Each
+# oxtradoc tries to detect XML, ascii-art, and code.  Each
 # such block will be a <figure>. Note that a block is ended by
 # a single newline at a line, so if the code has empty newlines,
 # these lines have to be changed to either a sinlge '@' or e.g. a ' '.
