@@ -859,6 +859,28 @@ The equivalent XSLT:
 XPath expression can be added to the result tree using the "expr" and
 "uexpr" statements.
 
+*** Using Elements as Function Arguments
+
+Beginning with SLAX-1.2, elements may be used directly as function
+arguments.  Arguments can be either a single element or a block of
+SLAX code, placed inside braces.
+
+    var $a = my:function(<elt>, <max> 15);
+    var $b = my:test({
+        <min> 5;
+        <max> 15;
+        if ($step) {
+            <step> $step;
+        }
+    });
+    var $c = my:write(<content> {
+        <document> "total.txt";
+        <size> $file/size;
+        if (node[@type == "full]) {
+            <full>;
+        }
+    });
+
 *** expr
 
 The "expr" statement adds an XPath expression to the result tree.  The
@@ -1557,6 +1579,28 @@ used when defining variables.
 }}
 
 The "with" statement is described in more detail below (^with^).
+
+**** Using Elements As Argument Values
+
+Beginning with SLAX-1.2, elements may be used directly as argument
+values for templates.  Arguments can be either a single element or
+a block of SLAX code, placed inside braces.
+
+    call my-template($a = <elt>, $b = <max> 15);
+    call test($params = {
+        <min> 5;
+        <max> 15;
+        if ($step) {
+            <step> $step;
+        }
+    }
+    call write($content = <content> {
+        <document> "total.txt";
+        <size> $file/size;
+        if (node[@type == "full]) {
+            <full>;
+        }
+    });
 
 **** The "match" Statement @named-match@
 
