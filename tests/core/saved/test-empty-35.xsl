@@ -20,6 +20,12 @@ var $test = {
       <xsl:variable name="slax-temp-arg-2">
         <first>one</first>
         <second>two</second>
+        <xsl:if test="2 = 3">
+          <bad>news</bad>
+        </xsl:if>
+        <xsl:if test="1 = 1">
+          <good>news</good>
+        </xsl:if>
       </xsl:variable>
       <xsl:variable name="slax-temp-arg-3">
         <third>three</third>
@@ -37,13 +43,16 @@ var $test = {
       <xsl:variable name="slax-temp-arg-5">
         <too>to</too>
       </xsl:variable>
+      <xsl:variable name="slax-temp-arg-6">
+        <cc/>
+      </xsl:variable>
       <xsl:call-template xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="test">
         <xsl:with-param name="name" select="3"/>
         <xsl:with-param name="a" select="&quot;test&quot;"/>
         <xsl:with-param name="b" select="slax-ext:node-set($slax-temp-arg-5)"/>
-        <xsl:with-param name="c" select="&quot;3&quot;"/>
+        <xsl:with-param name="c" select="slax-ext:node-set($slax-temp-arg-6)"/>
       </xsl:call-template>
-      <xsl:variable name="slax-temp-arg-6">
+      <xsl:variable name="slax-temp-arg-7">
         <top>
           <one>
             <xsl:value-of select="1"/>
@@ -58,30 +67,30 @@ var $test = {
       </xsl:variable>
       <xsl:call-template xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="test">
         <xsl:with-param name="name" select="4"/>
-        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-6)"/>
+        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-7)"/>
         <xsl:with-param name="b" select="&quot;no problemo&quot;"/>
       </xsl:call-template>
-      <xsl:variable name="slax-temp-arg-7">
+      <xsl:variable name="slax-temp-arg-8">
         <x>x</x>
         <y>y</y>
       </xsl:variable>
       <xsl:call-template xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="test">
         <xsl:with-param name="name" select="5"/>
-        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-7)"/>
+        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-8)"/>
       </xsl:call-template>
-      <xsl:variable name="slax-temp-arg-8">
+      <xsl:variable name="slax-temp-arg-9">
         <x>x1</x>
         <y>y1</y>
       </xsl:variable>
-      <xsl:variable name="slax-temp-arg-9">
+      <xsl:variable name="slax-temp-arg-10">
         <z>z</z>
         <zz>zz</zz>
         <zzz>zzz</zzz>
       </xsl:variable>
       <xsl:call-template xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="test">
         <xsl:with-param name="name" select="6"/>
-        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-8)"/>
-        <xsl:with-param name="b" select="slax-ext:node-set($slax-temp-arg-9)"/>
+        <xsl:with-param name="a" select="slax-ext:node-set($slax-temp-arg-9)"/>
+        <xsl:with-param name="b" select="slax-ext:node-set($slax-temp-arg-10)"/>
       </xsl:call-template>
     </top>
   </xsl:template>
