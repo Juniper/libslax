@@ -1643,8 +1643,7 @@ element_stmt_argument :
 		{
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
-		    slaxElementClose(slax_data);
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1653,8 +1652,7 @@ element_stmt_argument :
 		{
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
-		    slaxElementClose(slax_data);
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1664,7 +1662,7 @@ element_stmt_argument :
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
 		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1672,13 +1670,13 @@ element_stmt_argument :
 	| L_OBRACE
 		{
 		    ALL_KEYWORDS_ON();
-		    slaxHandleElementFunctionArgPrep(slax_data);
+		    slaxHandleEltArgPrep(slax_data);
 		    $$ = NULL;
 		}
 	    block_contents L_CBRACE
 		{
 		    slax_string_t *ssp;
-		    ssp = slaxHandleElementFunctionArg(slax_data, TRUE);
+		    ssp = slaxHandleEltArg(slax_data, TRUE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		    STACK_UNUSED($2);
@@ -1690,7 +1688,7 @@ element_xpath_argument :
 		{
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1699,7 +1697,7 @@ element_xpath_argument :
 		{
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1709,7 +1707,7 @@ element_xpath_argument :
 		    slax_string_t *ssp;
 		    ALL_KEYWORDS_ON();
 		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
-		    ssp = slaxHandleElementFunctionArg(slax_data, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		}
@@ -1717,13 +1715,13 @@ element_xpath_argument :
 	| L_OBRACE
 		{
 		    ALL_KEYWORDS_ON();
-		    slaxHandleElementFunctionArgPrep(slax_data);
+		    slaxHandleEltArgPrep(slax_data);
 		    $$ = NULL;
 		}
 	    block_contents L_CBRACE
 		{
 		    slax_string_t *ssp;
-		    ssp = slaxHandleElementFunctionArg(slax_data, TRUE);
+		    ssp = slaxHandleEltArg(slax_data, TRUE);
 		    STACK_CLEAR($1);
 		    $$ = ssp;
 		    STACK_UNUSED($2);
