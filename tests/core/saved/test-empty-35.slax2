@@ -1,0 +1,78 @@
+version 1.1;
+
+ns my = "mine";
+ns exsl extension = "http://exslt.org/common";
+
+
+/*
+var $test = {
+"a": "a",
+"b": "b",
+"c": {
+"d": 1,
+"e": 2,
+}
+}
+ */
+match / {
+    <top> {
+        var $x0 = my:test(0, <command> "show something", "else");
+        
+        copy-of $x0;
+        var $x1 = my:test(1, {
+             <first> "one";
+             <second> "two";
+        }, {
+             <third> "three";
+             <fourth> "four";
+        });
+        copy-of $x1;
+        call test($name = 2, $a = <command> "foo");
+        call test($name = 3, $a = "test", $b = <too> "to", $c = "3");
+        call test($name = 4, $a = <top> {
+            <one> 1;
+            <two> 2;
+            <three> 3;
+        }, $b = "no problemo");
+        call test($name = 5, $a = {
+                <x> "x";
+                <y> "y";
+        });
+        call test($name = 6, $a = {
+                <x> "x1";
+                <y> "y1";
+        }, $b = {
+                <z> "z";
+                <zz> "zz";
+                <zzz> "zzz";
+        });
+    }
+}
+
+template test ($name, $a, $b = /null) {
+    <template test=$name> {
+        <a type=exsl:object-type($a)> {
+            copy-of $a;
+        }
+        if ($b) {
+            <b type=exsl:object-type($b)> {
+                copy-of $b;
+            }
+        }
+    }
+}
+
+function my:test ($name, $a, $b = /null) {
+    result {
+        <function test=$name> {
+            <a type=exsl:object-type($a)> {
+                copy-of $a;
+            }
+            if ($b) {
+                <b type=exsl:object-type($b)> {
+                    copy-of $b;
+                }
+            }
+        }
+    }
+}
