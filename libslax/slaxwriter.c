@@ -1096,8 +1096,10 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
     slaxWrite(swp, ">");
 
     if (nodep->children == NULL) {
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
+	if (trailing_newline) {
+	    slaxWrite(swp, ";");
+	    slaxWriteNewline(swp, 0);
+	}
 	return;
     }
 	
