@@ -22,29 +22,36 @@ match / {
         var $x1 = my:test(1, {
              <first> "one";
              <second> "two";
+             if (2 == 3) {
+                 <bad> "news";
+             }
+             if (1 == 1) {
+                 <good> "news";
+             }
         }, {
              <third> "three";
              <fourth> "four";
         });
         copy-of $x1;
         call test($name = 2, $a = <command> "foo");
-        call test($name = 3, $a = "test", $b = <too> "to", $c = "3");
+        call test($name = 3, $a = "test", $b = <too> "to", $c = <cc>;
+        );
         call test($name = 4, $a = <top> {
             <one> 1;
             <two> 2;
             <three> 3;
         }, $b = "no problemo");
         call test($name = 5, $a = {
-                <x> "x";
-                <y> "y";
+            <x> "x";
+            <y> "y";
         });
         call test($name = 6, $a = {
-                <x> "x1";
-                <y> "y1";
+            <x> "x1";
+            <y> "y1";
         }, $b = {
-                <z> "z";
-                <zz> "zz";
-                <zzz> "zzz";
+            <z> "z";
+            <zz> "zz";
+            <zzz> "zzz";
         });
     }
 }
