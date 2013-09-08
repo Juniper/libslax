@@ -32,6 +32,7 @@
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
 #include <libslax/slaxutil.h>
+#include <libslax/slaxinternals.h>
 
 #include "jsonlexer.h"
 #include "jsonwriter.h"
@@ -339,7 +340,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	if (nop->type != XML_ELEMENT_NODE)
 	    continue;
 
-	extXutilJsonWriteNode(extXutilWriteCallback, &list, nop, flags);
+	slaxJsonWriteNode(extXutilWriteCallback, &list, nop, flags);
     }
 
     /* Now we turn the saved data from a linked list into a single string */
@@ -433,7 +434,7 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (json == NULL)
 	goto bail;
 
-    docp = extXutilJsonDataToXml(json, root_name, flags);
+    docp = slaxJsonDataToXml(json, root_name, flags);
     if (docp == NULL)
 	goto bail;
     
