@@ -59,6 +59,10 @@ struct slax_data_s {
 #define SDF_NO_XPATH_KEYWORDS	(1<<2)	/* Do not allow xpath keywords */
 #define SDF_OPEN_COMMENT	(1<<3)	/* EOF with open comment */
 
+#define SDF_JSON_KEYWORDS	(1<<4) /* Allow JSON keywords */
+#define SDF_NO_TYPES		(1<<5)/* Do not decorate nodes w/ type info */
+#define SDF_CLEAN_NAMES		(1<<6) /* Clean element names, if needed */
+
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
 /*
@@ -76,6 +80,7 @@ struct slax_data_s {
 
 #define SLAX_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_SLAX_KEYWORDS))
 #define XPATH_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_XPATH_KEYWORDS))
+#define JSON_KEYWORDS_ALLOWED(_x) ((_x)->sd_flags & SDF_JSON_KEYWORDS)
 
 /**
  * Callback from bison when an error is detected.
@@ -185,3 +190,9 @@ slaxParseIsSlax (slax_data_t *sdp);
 
 int
 slaxParseIsXpath (slax_data_t *sdp);
+
+/*
+ * Set up the lexer's lookup tables
+ */
+void
+slaxSetupLexer (void);
