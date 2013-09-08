@@ -110,6 +110,8 @@
 %token L_UNDERSCORE		/* '_' */
 %token L_VBAR			/* '|' */
 
+%token L_LAST			/* Last literal token value */
+
 /*
  * Keyword tokens
  */
@@ -139,8 +141,9 @@
 %token K_EXPR			/* 'expr' */
 %token K_EXTENSION		/* 'extension' */
 %token K_FALLBACK		/* 'fallback' */
-%token K_FORMAT			/* 'format' */
+%token K_FALSE			/* JSON: 'false' */
 %token K_FOR			/* 'for' */
+%token K_FORMAT			/* 'format' */
 %token K_FOR_EACH		/* 'for-each' */
 %token K_FROM			/* 'from' */
 %token K_FUNCTION		/* 'function' */
@@ -167,6 +170,7 @@
 %token K_NS			/* 'ns' */
 %token K_NS_ALIAS		/* 'ns-alias' */
 %token K_NS_TEMPLATE		/* 'ns-template' */
+%token K_NULL			/* JSON: 'null' */
 %token K_NUMBER			/* 'number' */
 %token K_OMIT_XML_DECLARATION	/* 'omit-xml-declaration' */
 %token K_ORDER			/* 'order' */
@@ -187,6 +191,7 @@
 %token K_TERMINATE		/* 'terminate' */
 %token K_TEXT			/* 'text' */
 %token K_TRACE			/* 'trace' */
+%token K_TRUE			/* JSON: 'true' */
 %token K_UEXPR			/* 'uexpr' */
 %token K_USE_ATTRIBUTE_SETS	/* 'use-attribute-set' */
 %token K_VALUE			/* 'value' */
@@ -242,6 +247,7 @@
 %token M_PARSE_SLAX		/* Parse a SLAX-style XPath expression */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
+%token M_JSON			/* Parse a JSON document */
 
 %pure_parser
 %{
@@ -261,6 +267,7 @@
 #include <libslax/slax.h>
 #include "slaxinternals.h"
 #include "slaxparser.h"
+#include "jsonlexer.h"
 
 /*
  * This is a pure parser, allowing this library to link with other users
@@ -347,6 +354,9 @@ start :
 		}
 
 	| M_PARSE_PARTIAL partial_list
+		{ $$ = STACK_CLEAR($1); }
+
+	| M_JSON json_content
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -3342,5 +3352,155 @@ xpl_relational_expr :
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
+		}
+	;
+
+/*
+ * JSON parsing rules
+ */
+json_content :
+	json_object
+		{ $$ = NULL; }
+
+	| json_array
+		{ $$ = NULL; }
+	;
+
+json_object :
+	L_OBRACE json_member_list_or_empty L_CBRACE
+		{
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+json_member_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| json_member_list
+		{ $$ = NULL; }
+	;
+
+json_member_list :
+	json_pair
+		{ $$ = NULL; }
+
+	| json_pair L_COMMA
+		{ $$ = NULL; }
+
+	| json_pair L_COMMA json_member_list
+		{ $$ = NULL; }
+	;
+
+json_pair :
+	json_name L_COLON
+		{
+		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    $$ = NULL;
+		}
+	    json_value
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+
+json_name :
+	T_BARE
+		{ $$ = $1; }
+
+	| T_QUOTED
+		{ $$ = $1; }
+	;
+
+json_value :
+	json_object
+		{ $$ = NULL; }
+
+	| json_array
+		{ $$ = $1; }
+
+	| T_QUOTED
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    $$ = $1;
+		}
+
+	| T_NUMBER
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NUMBER);
+		    $$ = $1;
+		}
+
+	| K_TRUE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_TRUE);
+		    $$ = $1;
+		}
+
+        | K_FALSE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_FALSE);
+		    $$ = $1;
+		}
+
+	| K_NULL
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NULL);
+		    $$ = $1;
+		}
+	;
+
+json_array :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            json_element_list_or_empty L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+json_element_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| json_element_list
+		{ $$ = NULL; }
+	;
+
+json_element_list :
+        json_element_item
+		{ $$ = NULL; }
+
+        | json_element_list json_element_item
+		{ $$ = NULL; }
+	;
+
+json_element_item :
+	json_value
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
+
+	| json_value L_COMMA
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
 		}
 	;
