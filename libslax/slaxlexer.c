@@ -116,6 +116,7 @@ typedef struct keyword_mapping_s {
 #define KMF_SLAX_KW	(1<<1)	/* Keyword for slax */
 #define KMF_XPATH_KW	(1<<2)	/* Keyword for xpath */
 #define KMF_STMT_KW	(1<<3)	/* Fancy statement (slax keyword in xpath) */
+#define KMF_JSON_KW	(1<<4)	/* JSON-only keywords */
 
 static keyword_mapping_t keywordMap[] = {
     { K_AND, "and", KMF_XPATH_KW },
@@ -147,6 +148,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_EXPR, "expr", KMF_SLAX_KW },
     { K_EXTENSION, "extension", KMF_SLAX_KW },
     { K_FALLBACK, "fallback", KMF_SLAX_KW },
+    { K_FALSE, "false", KMF_JSON_KW },
     { K_FORMAT, "format", KMF_SLAX_KW },
     { K_FOR, "for", KMF_SLAX_KW },
     { K_FOR_EACH, "for-each", KMF_SLAX_KW },
@@ -176,6 +178,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_NS, "ns", KMF_SLAX_KW },
     { K_NS_ALIAS, "ns-alias", KMF_SLAX_KW },
     { K_NS_TEMPLATE, "ns-template", KMF_SLAX_KW },
+    { K_NULL, "null", KMF_JSON_KW },
     { K_NUMBER, "number", KMF_SLAX_KW },
     { K_OMIT_XML_DECLARATION, "omit-xml-declaration", KMF_SLAX_KW },
     { K_OR, "or", KMF_XPATH_KW },
@@ -198,6 +201,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_TERMINATE, "terminate", KMF_SLAX_KW },
     { K_TEXT, "text", KMF_NODE_TEST },
     { K_TRACE, "trace", KMF_SLAX_KW },
+    { K_TRUE, "true", KMF_JSON_KW },
     { K_UEXPR, "uexpr", KMF_SLAX_KW },
     { K_USE_ATTRIBUTE_SETS, "use-attribute-sets", KMF_SLAX_KW },
     { K_VALUE, "value", KMF_SLAX_KW },
@@ -272,6 +276,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_EXPR,			"'expr'" },
     { K_EXTENSION,		"'extension'" },
     { K_FALLBACK,		"'fallback'" },
+    { K_FALSE,			"'false'" },
     { K_FORMAT,			"'format'" },
     { K_FOR,			"'for'" },
     { K_FOR_EACH,		"'for-each'" },
@@ -300,6 +305,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_NS,			"'ns'" },
     { K_NS_ALIAS,		"'ns-alias'" },
     { K_NS_TEMPLATE,		"'ns-template'" },
+    { K_NULL,			"'null'" },
     { K_NUMBER,			"'number'" },
     { K_OMIT_XML_DECLARATION,	"'omit-xml-declaration'" },
     { K_ORDER,			"'order'" },
@@ -320,6 +326,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_TERMINATE,		"'terminate'" },
     { K_TEXT,			"'text'" },
     { K_TRACE,			"'trace'" },
+    { K_TRUE,			"'true'" },
     { K_UEXPR,			"'uexpr'" },
     { K_USE_ATTRIBUTE_SETS,	"'use-attribute-set'" },
     { K_VALUE,			"'value'" },
@@ -348,7 +355,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
 /*
  * Set up the lexer's lookup tables
  */
-static void
+void
 slaxSetupLexer (void)
 {
     int i, ttype;
@@ -459,11 +466,15 @@ slaxKeyword (slax_data_t *sdp)
 {
     int slax_kwa = SLAX_KEYWORDS_ALLOWED(sdp);
     int xpath_kwa = XPATH_KEYWORDS_ALLOWED(sdp);
+    int json_kwa = JSON_KEYWORDS_ALLOWED(sdp);
     keyword_mapping_t *kmp;
     int ch;
 
     for (kmp = keywordMap; kmp->km_string; kmp++) {
 	if (slaxKeywordMatch(sdp, kmp->km_string)) {
+	    if (json_kwa && (kmp->km_flags & KMF_JSON_KW))
+		return kmp->km_ttype;
+
 	    if (slax_kwa && (kmp->km_flags & KMF_SLAX_KW))
 		return kmp->km_ttype;
 
@@ -943,6 +954,21 @@ slaxLexer (slax_data_t *sdp)
                  */
 		if (!slaxIsBareChar(ch2))
 		    return lit1;
+	    } else if (sdp->sd_parse == M_JSON
+		       && (lit1 == L_PLUS || lit1 == L_MINUS)) {
+		static const char digits[] = "0123456789.+-eE";
+		unsigned char ch;
+
+		rc = lit1;
+		for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+		    ch = sdp->sd_buf[sdp->sd_cur];
+		    if (strchr(digits, (int) ch) == NULL)
+			return rc;
+		    rc = T_NUMBER;
+		}
+
+		return rc;
+
 	    } else {
 		return lit1;
 	    }
@@ -1009,6 +1035,19 @@ slaxLexer (slax_data_t *sdp)
 	    }
 	    return T_NUMBER;
 	}
+    }
+
+    /*
+     * The rules for JSON are a bit simpler.  T_BARE can't contain
+     * colons and we don't need the fancy exceptions below.
+     */
+    if (sdp->sd_parse == M_JSON) {
+	for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+	    int ch = sdp->sd_buf[sdp->sd_cur];
+	    if (!isalnum((int) ch) && ch != '_')
+		break;
+	}
+	return T_BARE;
     }
 
     /*
@@ -1113,7 +1152,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
      * (q_name) (T_BARE).  So we look ahead for a '('.  If we find
      * one, it's a function; if not it's an T_BARE;
      */
-    if (rc == T_BARE) {
+    if (rc == T_BARE && sdp->sd_parse != M_JSON) {
 	for (look = sdp->sd_cur; look < sdp->sd_len; look++) {
 	    unsigned char ch = sdp->sd_buf[look];
 	    if (ch == '(') {
