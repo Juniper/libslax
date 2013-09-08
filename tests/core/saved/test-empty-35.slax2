@@ -34,8 +34,7 @@ match / {
         });
         copy-of $x1;
         call test($name = 2, $a = <command> "foo");
-        call test($name = 3, $a = "test", $b = <too> "to", $c = <cc>;
-        );
+        call test($name = 3, $a = "test", $b = <too> "to", $c = <cc>);
         call test($name = 4, $a = <top> {
             <one> 1;
             <two> 2;
