@@ -24,6 +24,8 @@
 #include <libexslt/exslt.h>
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxdata.h>
+#include <libslax/jsonlexer.h>
+#include <libslax/jsonwriter.h>
 
 #include <err.h>
 #include <time.h>
@@ -198,6 +200,75 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 
     slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
 		 opt_partial, opt_version);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_json_to_xml (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    xmlDocPtr docp;
+    FILE *outfile;
+
+    input = get_filename(input, &argv, 0);
+    output = get_filename(output, &argv, -1);
+
+    docp = slaxJsonFileToXml(input, NULL, 0);
+    if (docp == NULL) {
+	errx(1, "cannot parse file: '%s'", input);
+        return -1;
+    }
+
+    if (output == NULL || slaxFilenameIsStd(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open file: '%s'", output);
+    }
+
+    slaxDumpToFd(fileno(outfile), docp, opt_partial);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_xml_to_json (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    xmlDocPtr docp;
+    FILE *outfile;
+
+    input = get_filename(input, &argv, 0);
+    output = get_filename(output, &argv, -1);
+
+    docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
+    if (docp == NULL) {
+	errx(1, "cannot parse file: '%s'", input);
+        return -1;
+    }
+
+    if (output == NULL || slaxFilenameIsStd(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open file: '%s'", output);
+    }
+
+    slaxJsonWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
+		     opt_indent ? JWF_PRETTY : 0);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -473,10 +544,12 @@ print_help (void)
     printf("    Modes:\n");
     printf("\t--check OR -c: check syntax and content for a SLAX script\n");
     printf("\t--format OR -F: format (pretty print) a SLAX script\n");
+    printf("\t--json-to-xml: Turn JSON data into XML\n");
     printf("\t--run OR -r: run a SLAX script (the default mode)\n");
     printf("\t--show-select: show XPath selection from the input document\n");
     printf("\t--show-variable: show contents of a global variable\n");
     printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
+    printf("\t--xml-to-json: turn XML into JSON\n");
     printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
     printf("\n");
 
@@ -547,6 +620,11 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_format;
 
+	} else if (streq(cp, "--json-to-xml")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_json_to_xml;
+
 	} else if (streq(cp, "--run") || streq(cp, "-r")) {
 	    if (func)
 		errx(1, "open one action allowed");
@@ -572,6 +650,11 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_slax_to_xslt;
+
+	} else if (streq(cp, "--xml-to-json")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_xml_to_json;
 
 	} else if (streq(cp, "--xslt-to-slax") || streq(cp, "-s")) {
 	    if (func)
