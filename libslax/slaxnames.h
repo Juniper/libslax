@@ -42,6 +42,7 @@
 #define ATT_GROUPING_SEPARATOR "grouping-separator"
 #define ATT_GROUPING_SIZE "grouping-size"
 #define ATT_HREF	"href"
+#define ATT_JSON	"json"
 #define ATT_LANG	"lang"
 #define ATT_MATCH	"match"
 #define ATT_METHOD	"method"
@@ -132,11 +133,13 @@
 
 #define VAL_ARRAY	"array"
 #define VAL_FALSE	"false"
-#define VAL_NULL	"null"
+#define VAL_JSON	"json"
 #define VAL_MEMBER	"member"
+#define VAL_NULL	"null"
 #define VAL_NUMBER	"number"
 #define VAL_OPTIONAL	"optional"
 #define VAL_TRUE	"true"
+#define VAL_XPATH	"xpath"
 
 /* Names for generated code */
 #define FOR_VARIABLE_PREFIX "$slax-dot-"
