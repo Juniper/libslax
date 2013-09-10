@@ -436,6 +436,53 @@ slaxJsonClearMember (slax_data_t *sdp)
     }
 }
 
+int
+slaxJsonIsTagged (slax_data_t *sdp)
+{
+    xmlNodePtr nodep = sdp->sd_ctxt->node;
+
+    for (nodep = sdp->sd_ctxt->node; nodep; nodep = nodep->parent) {
+	if (xmlHasProp(nodep, (const xmlChar *) ATT_JSON))
+	    return TRUE;
+    }
+
+    return FALSE;
+}
+
+void
+slaxJsonTag (slax_data_t *sdp)
+{
+    if (slaxJsonIsTagged(sdp))
+	return;
+
+    slaxAttribAddLiteral(sdp, ATT_JSON, ATT_JSON);
+}
+
+void
+slaxJsonTagContent (slax_data_t *sdp, int content)
+{
+    const char *tag = NULL;
+
+    if (!slaxJsonIsTagged(sdp))
+	return;
+
+    switch (content) {
+    case K_FALSE:
+	tag = VAL_FALSE;
+	break;
+
+    case M_JSON:
+	tag = VAL_JSON;
+	break;
+
+    case M_XPATH:
+	tag = VAL_XPATH;
+    }
+
+    if (tag)
+	slaxAttribAddLiteral(sdp, ATT_TYPE, tag);
+}
+
 xmlDocPtr
 slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 {
