@@ -45,6 +45,15 @@ slaxJsonAddTypeInfo (slax_data_t *sdp, const char *value);
 void
 slaxJsonClearMember (slax_data_t *sdp);
 
+int
+slaxJsonIsTagged (slax_data_t *sdp);
+
+void
+slaxJsonTag (slax_data_t *sdp);
+
+void
+slaxJsonTagContent (slax_data_t *sdp, int content);
+
 #if 0
 /**
  * Callback from bison when an error is detected.
