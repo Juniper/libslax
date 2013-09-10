@@ -867,6 +867,7 @@ initial_value :
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
+
 	;
 
 initial_argument_value :
@@ -1211,6 +1212,9 @@ block_stmt :
 		{ $$ = NULL; }
 
 	| if_stmt
+		{ $$ = NULL; }
+
+	| jsonst_stmt
 		{ $$ = NULL; }
 
 	| message_stmt
@@ -1593,6 +1597,7 @@ element :
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2, $4);
 		}
+
 	;
 
 element_stmt :
@@ -3368,11 +3373,8 @@ json_content :
 
 json_object :
 	L_OBRACE json_member_list_or_empty L_CBRACE
-		{
-		    $$ = STACK_CLEAR($1);
-		}
+		{ $$ = STACK_CLEAR($1); }
 	;
-
 json_member_list_or_empty :
 	/* empty */
 		{ $$ = NULL; }
@@ -3497,6 +3499,217 @@ json_element_item :
 		}
 
 	| json_value L_COMMA
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
+	;
+
+/*
+ * Stright JSON parsing rules (with no T_BARE).  We use these rules
+ * to parse JSON intermixed with SLAX.
+ */
+
+jsonst_stmt :
+	jsonst_pair_nested jsonst_comma_optional
+		{ $$ = NULL; }
+
+	| jsonst_pair_simple jsonst_comma_optional
+		{ $$ = NULL; }
+
+	| jsonst_array_top jsonst_comma_optional
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+jsonst_object :
+	L_OBRACE jsonst_member_list_or_empty L_CBRACE
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+jsonst_member_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| jsonst_member_list
+		{ $$ = NULL; }
+	;
+
+jsonst_member_list :
+	jsonst_pair
+		{ $$ = NULL; }
+
+	| jsonst_pair jsonst_member_list
+		{ $$ = NULL; }
+	;
+
+jsonst_pair :
+	jsonst_name L_COLON
+		{
+		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    $$ = NULL;
+		}
+	    jsonst_pair_value
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+jsonst_pair_nested :
+	jsonst_name_and_colon jsonst_nested
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+jsonst_pair_simple :
+	jsonst_name_and_colon jsonst_simple
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+jsonst_name_and_colon :
+	jsonst_name L_COLON
+		{
+		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_name :
+	T_QUOTED
+		{ $$ = $1; }
+	;
+
+jsonst_pair_value :
+	jsonst_simple jsonst_comma_optional
+		{ $$ = $1; }
+
+	| jsonst_nested jsonst_comma_optional
+		{ $$ = $1; }
+	;
+
+jsonst_comma_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| L_COMMA
+		{ $$ = $1; }
+	;
+
+jsonst_comma_or_eos :
+	L_COMMA
+		{ $$ = $1; }
+
+	| L_EOS
+		{ $$ = $1; }
+	;
+
+jsonst_nested :
+	jsonst_object
+		{ $$ = NULL; }
+
+	| jsonst_array
+		{ $$ = $1; }
+	;
+
+jsonst_simple :
+	T_QUOTED
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    $$ = $1;
+		}
+
+	| T_NUMBER
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NUMBER);
+		    $$ = $1;
+		}
+
+	| K_TRUE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_TRUE);
+		    $$ = $1;
+		}
+
+        | K_FALSE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_FALSE);
+		    $$ = $1;
+		}
+
+	| K_NULL
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NULL);
+		    $$ = $1;
+		}
+	;
+
+jsonst_value :
+	jsonst_nested
+		{ $$ = $1; }
+
+	| jsonst_simple
+		{ $$ = $1; }
+	;
+
+jsonst_array :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            jsonst_element_list_or_empty L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_array_top :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            jsonst_element_list L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_element_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| jsonst_element_list
+		{ $$ = NULL; }
+	;
+
+jsonst_element_list :
+        jsonst_element_item
+		{ $$ = NULL; }
+
+        | jsonst_element_list L_COMMA jsonst_element_item
+		{ $$ = NULL; }
+	;
+
+jsonst_element_item :
+	jsonst_value
 		{
 		    slaxElementClose(slax_data);
 		    slaxElementOpen(slax_data, ELT_MEMBER);
