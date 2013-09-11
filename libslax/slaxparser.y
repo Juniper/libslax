@@ -160,6 +160,7 @@
 %token K_LETTER_VALUE		/* 'letter-value' */
 %token K_LEVEL			/* 'level' */
 %token K_MATCH			/* 'match' */
+%token K_MAIN			/* 'main' */
 %token K_MEDIA_TYPE		/* 'media-type' */
 %token K_MESSAGE		/* 'message' */
 %token K_MINUS_SIGN		/* 'minus-sign' */
@@ -686,6 +687,9 @@ slax_stmt :
 	| match_template
 		{ $$ = NULL; }
 
+	| main_template
+		{ $$ = NULL; }
+
 	| named_template
 		{ $$ = NULL; }
 
@@ -942,6 +946,24 @@ match_template :
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
+		}
+	;
+
+main_template :
+	K_MAIN
+		{
+		    ALL_KEYWORDS_ON();
+		    if (slaxElementPush(slax_data, ELT_TEMPLATE, NULL, NULL))
+			slaxAttribAddLiteral(slax_data, ATT_MATCH, "/");
+		    /* XXX else error */
+
+		    $$ = NULL;
+		}
+	    L_OBRACE match_block_contents L_CBRACE
+		{
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
 		}
 	;
 
