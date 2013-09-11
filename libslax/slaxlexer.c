@@ -167,6 +167,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_LETTER_VALUE, "letter-value", KMF_SLAX_KW },
     { K_LEVEL, "level", KMF_SLAX_KW },
     { K_MATCH, "match", KMF_SLAX_KW },
+    { K_MAIN, "main", KMF_SLAX_KW },
     { K_MEDIA_TYPE, "media-type", KMF_SLAX_KW },
     { K_MESSAGE, "message", KMF_SLAX_KW },
     { K_MINUS_SIGN, "minus-sign", KMF_SLAX_KW },
@@ -295,6 +296,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_LETTER_VALUE,		"'letter-value'" },
     { K_LEVEL,			"'level'" },
     { K_MATCH,			"'match'" },
+    { K_MAIN,			"'main'" },
     { K_MEDIA_TYPE,		"'media-type'" },
     { K_MESSAGE,		"'message'" },
     { K_MINUS_SIGN,		"'minus-sign'" },
@@ -1247,6 +1249,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_LANGUAGE:
     case K_LETTER_VALUE:
     case K_MATCH:
+    case K_MAIN:
     case K_MODE:
     case K_MVAR:
     case K_NS_TEMPLATE:
