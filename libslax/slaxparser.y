@@ -251,6 +251,13 @@
 %token M_JSON			/* Parse a JSON document */
 
 %pure_parser
+
+/*
+ * %expect is a hack, but adding the JSON-like encoding option
+ * makes this unavoidable.  We get a shift/reduce configure.
+ */
+%expect 1
+
 %{
 
 #include <stdio.h>
@@ -3406,14 +3413,11 @@ json_member_list_or_empty :
 	;
 
 json_member_list :
-	json_pair
-		{ $$ = NULL; }
-
-	| json_pair L_COMMA
-		{ $$ = NULL; }
+	json_pair jsonst_comma_optional
+		{ $$ = STACK_CLEAR($1); }
 
 	| json_pair L_COMMA json_member_list
-		{ $$ = NULL; }
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 json_pair :
@@ -3535,13 +3539,13 @@ json_element_item :
  */
 
 jsonst_stmt :
-	jsonst_pair_nested jsonst_comma_optional
-		{ $$ = NULL; }
+	jsonst_pair_nested jsonst_comma_or_eos_optional
+		{ $$ = STACK_CLEAR($1); }
 
-	| jsonst_pair_simple jsonst_comma_optional
-		{ $$ = NULL; }
+	| jsonst_pair_simple jsonst_comma_or_eos
+		{ $$ = STACK_CLEAR($1); }
 
-	| jsonst_array_top jsonst_comma_optional
+	| jsonst_array_top jsonst_comma_or_eos
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -3559,24 +3563,8 @@ jsonst_member_list_or_empty :
 	;
 
 jsonst_member_list :
-	jsonst_pair
-		{ $$ = NULL; }
-
-	| jsonst_pair jsonst_member_list
-		{ $$ = NULL; }
-	;
-
-jsonst_pair :
-	jsonst_name L_COLON
-		{
-		    slaxJsonElementOpenName(slax_data, $1->ss_token);
-		    $$ = NULL;
-		}
-	    jsonst_pair_value
-		{
-		    slaxElementClose(slax_data);
-		    $$ = STACK_CLEAR($1);
-		}
+	block_stmt
+		{ $$ = STACK_CLEAR($1); }
 	;
 
 jsonst_pair_nested :
@@ -3608,14 +3596,6 @@ jsonst_name :
 		{ $$ = $1; }
 	;
 
-jsonst_pair_value :
-	jsonst_simple jsonst_comma_optional
-		{ $$ = $1; }
-
-	| jsonst_nested jsonst_comma_optional
-		{ $$ = $1; }
-	;
-
 jsonst_comma_optional :
 	/* empty */
 		{ $$ = NULL; }
@@ -3624,17 +3604,28 @@ jsonst_comma_optional :
 		{ $$ = $1; }
 	;
 
-jsonst_comma_or_eos :
-	L_COMMA
+jsonst_comma_or_eos_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| L_COMMA
 		{ $$ = $1; }
 
 	| L_EOS
 		{ $$ = $1; }
 	;
 
+jsonst_comma_or_eos :
+	L_EOS
+		{ $$ = $1; }
+
+	| L_COMMA
+		{ $$ = $1; }
+	;
+
 jsonst_nested :
 	jsonst_object
-		{ $$ = NULL; }
+		{ $$ = $1; }
 
 	| jsonst_array
 		{ $$ = $1; }
