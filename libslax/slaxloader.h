@@ -114,3 +114,6 @@ slaxHandleEltArgPrep (slax_data_t *sdp);
 char *
 slaxSlaxToXpath (const char *filename, int lineno,
 		 const char *slax_expr, int *errorsp);
+
+void
+slaxMainElement (slax_data_t *sdp);
