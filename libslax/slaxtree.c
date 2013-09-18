@@ -47,7 +47,7 @@ slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
 	return FALSE;
 
     return (nodep->ns && nodep->ns->href
-	    && streq((const char *) nodep->name, name)
+	    && (name == NULL || streq((const char *) nodep->name, name))
 	    && streq((const char *) nodep->ns->href, XSL_URI));
 }
 
@@ -317,7 +317,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -405,7 +405,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
 	    if (tp)
-		slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
+		slaxAddChild(sdp, NULL, tp);
 
 	    return;
 	}
@@ -602,7 +602,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -677,7 +677,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	char *full = slaxStringAsChar(value, 0);
