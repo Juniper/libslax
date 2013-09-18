@@ -50,6 +50,7 @@ static int opt_partial;		/* Parse partial contents */
 static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_slax_output;	/* Make output in SLAX format */
+static int opt_json_tagging;	/* Tag JSON output */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -696,6 +697,9 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = *++argv;
 
+	} else if (streq(cp, "--json-tagging")) {
+	    opt_json_tagging = 1;
+
 	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
 	    slaxDynAdd(*++argv);
 
@@ -807,6 +811,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
+
+    if (opt_json_tagging)
+	slaxJsonTagging(TRUE);
 
     if (opt_log_file) {
 	FILE *fp = fopen(opt_log_file, "w");
