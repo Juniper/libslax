@@ -51,6 +51,7 @@ struct slax_data_s {
     slax_string_t *sd_xpath;	/* Parsed XPath expression */
     slax_string_t *sd_ns;	/* Namespace stash */
     xmlNodePtr sd_nodep;	/* Node for looking up ternary expressions */
+    xmlNodePtr sd_insert;	/* List of nodes to be inserted shortly */
 };
 
 /* Flags for sd_flags */
@@ -106,6 +107,25 @@ slaxExpectingError (const char *token, int yystate, int yychar);
  */
 xmlNodePtr
 slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur);
+
+/**
+ * Add an item to the insert list
+ *
+ * @param sdp Main parsing data structure
+ * @param nodep Node to add
+ */
+void
+slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep);
+
+/**
+ * Add a child to the current node context
+ *
+ * @param sdp Main parsing data structure
+ * @param parent Parent node (if NULL defaults to the context node)
+ * @param nodep Child node
+ */
+xmlNodePtr
+slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep);
 
 /**
  * Issue an error if the axis name is not valid
