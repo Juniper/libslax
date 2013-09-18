@@ -46,279 +46,15 @@
 #include "jsonlexer.h"
 #include "jsonwriter.h"
 
-#if 0
-static int
-slaxJsonToken (slax_data_t *sdp, int rc)
-{
-    static const char digits[] = "0123456789.+-eE";
-    unsigned char ch;
-
-    if (rc == T_QUOTED)
-	sdp->sd_start += 1;
-
-    for (;;) {
-	for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
-	    ch = sdp->sd_buf[sdp->sd_cur];
-
-	    switch (rc) {
-	    case T_QUOTED:
-		if (ch == '"') {
-		    sdp->sd_cur += 1;
-		    return rc;
-
-		} else if (ch == '\\') {
-		    sdp->sd_cur += 1;
-		}
-		break;
-
-	    case T_MINUS:
-	    case T_PLUS:
-	    case T_NUMBER:
-		if (strchr(digits, (int) ch) == NULL)
-		    return rc;
-		rc = T_NUMBER;
-		break;
-
-	    case T_BARE:
-		if (!isalnum((int) ch) && ch != '_')
-		    return rc;
-		break;
-	    }
-	}
-
-	if (slaxGetInput(sdp, 1))
-	    return -1;		/* End of file or error */
-    }
-
-    return rc;
-}
+static int slaxJsonDoTagging;
 
 int
-slaxJsonLexer (slax_data_t *sdp)
+slaxJsonTagging (int tagging)
 {
-    sdp->sd_start = sdp->sd_cur;
-    if (sdp->sd_cur == sdp->sd_len)
-	if (slaxGetInput(sdp, 1))
-	    return -1;		/* End of file or error */
-
-    /* Skip leading whitespace */
-    for (;;) {
-	while (sdp->sd_cur < sdp->sd_len
-	       && isspace((int) sdp->sd_buf[sdp->sd_cur]))
-	    sdp->sd_cur += 1;
-
-	if (sdp->sd_cur < sdp->sd_len)
-	    break;
-
-	if (slaxGetInput(sdp, 1))
-	    return -1;
-    }
-
-    sdp->sd_start = sdp->sd_cur; /* Reset start */
-
-    switch (sdp->sd_buf[sdp->sd_cur++]) {
-    case '}': return L_CBRACE;
-    case ']': return L_CBRACK;
-    case ',': return L_COMMA;
-    case ':': return L_COLON;
-    case '{': return L_OBRACE;
-    case '[': return L_OBRACK;
-
-    case '"':
-	return slaxJsonToken(sdp, T_QUOTED);
-
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-    case '-': case '+':
-	return slaxJsonToken(sdp, T_NUMBER);
-
-    default:
-	return slaxJsonToken(sdp, T_BARE);
-    }
-
-    return -1;
+    int was = slaxJsonDoTagging;
+    slaxJsonDoTagging = tagging;
+    return was;
 }
-
-int
-slaxJsonYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
-{
-    int rc;
-    slax_string_t *ssp = NULL;
-
-    rc = slaxJsonLexer(sdp);
-    if (rc < L_LAST) {
-	/* Don't make a string for literal values */
-	if (yylvalp)
-	    *yylvalp = NULL;
-
-	slaxLog("json: lex: %p %s '%.*s' -> %d/%s %x",
-		ssp, slaxJsonTokenName(rc),
-		sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
-		rc, (rc > 0) ? slaxJsonTokenName(rc) : "",
-		(ssp && ssp->ss_token) ? ssp->ss_token : 0);
-
-	return rc;
-    }
-
-    if (yylvalp) {
-	if (rc == T_QUOTED)
-	    sdp->sd_cur -= 1;
-
-	*yylvalp = ssp = (rc > 0) ? slaxStringCreate(sdp, rc) : NULL;
-
-	if (rc == T_QUOTED)
-	    sdp->sd_cur += 1;
-
-	if (rc == T_BARE) {
-	    int i;
-
-	    for (i = 0; jsonTokenMap[i].st_ttype; i++) {
-		if (streq(ssp->ss_token, jsonTokenMap[i].st_name)) {
-		    ssp->ss_ttype = rc = jsonTokenMap[i].st_ttype;
-		    break;
-		}
-	    }
-	}
-    }
-
-    slaxLog("json: lex: %p %s '%.*s' -> %d/%s %x",
-	    ssp, slaxJsonTokenName(rc),
-	    sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
-	    rc, (rc > 0) ? slaxJsonTokenName(rc) : "",
-	    (ssp && ssp->ss_token) ? ssp->ss_token : 0);
-
-    return rc;
-}
-
-/*
- * Return a better class of error message
- * @returns freshly allocated string containing error message
- */
-static char *
-jsonSyntaxError (slax_data_t *sdp UNUSED, const char *token,
-		 int yystate, int yychar,
-		 slax_string_t **vstack UNUSED, slax_string_t **vtop UNUSED)
-{
-    char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
-
-    /*
-     * If yystate is 1, then we're in our initial state and have
-     * not seen any valid input.  We handle this state specifically
-     * to give better error messages.
-     */
-    if (yystate == 1) {
-	if (yychar == -1)
-	    return xmlStrdup2("unexpected end-of-file found (empty input)");
-
-	SNPRINTF(cp, ep, "invalid JSON data");
-
-	if (token)
-	    SNPRINTF(cp, ep, "; %s is not legal", token);
-
-    } else if (yychar == -1) {
-	SNPRINTF(cp, ep, "unexpected end-of-file");
-
-    } else {
-	char *msg = slaxJsonExpectingError(token, yystate, yychar);
-	if (msg)
-	    return msg;
-
-	SNPRINTF(cp, ep, "unexpected input");
-	if (token)
-	    SNPRINTF(cp, ep, ": %s", token);
-    }
-
-    return xmlStrdup2(buf);
-}
-
-/**
- * Callback from bison when an error is detected.
- *
- * @param sdp main json data structure
- * @param str error message
- * @param value stack entry from bison's lexical stack
- * @return zero
- */
-int
-slaxJsonYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
-		     int yystate, slax_string_t **vstack, slax_string_t **vtop)
-{
-    static const char leader[] = "syntax error, unexpected";
-    static const char leader2[] = "error recovery ignores input";
-    const char *token = value ? value->ss_token : NULL;
-    char buf[BUFSIZ];
-
-    if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
-	sdp->sd_errors += 1;
-
-    if (token == NULL)
-	token = slaxTokenNameFancy[
-				 slaxTokenTranslate(sdp->sd_last)];
-    else {
-	int len = strlen(token);
-	char *cp = alloca(len + 3); /* Two quotes plus NUL */
-
-	cp[0] = '\'';
-	memcpy(cp + 1, token, len);
-	cp[len + 1] = '\'';
-	cp[len + 2] = '\0';
-
-	token = cp;
-    }
-
-    /*
-     * See if there's a multi-line string that could be the source
-     * of the problem.
-     */
-    buf[0] = '\0';
-    if (vtop && *vtop) {
-	slax_string_t *ssp = *vtop;
-
-	if (ssp->ss_ttype == T_QUOTED) {
-	    char *np = strchr(ssp->ss_token, '\n');
-
-	    if (np != NULL) {
-		int count = 1;
-		char *xp;
-
-		for (xp = np + 1; *xp; xp++)
-		    if (*xp == '\n')
-			count += 1;
-
-		snprintf(buf, sizeof(buf),
-			 "\n%s:%d:   could be related to unterminated string "
-			 "on line %d (\"%.*s\\n...\")",
-			 sdp->sd_filename, sdp->sd_line, sdp->sd_line - count,
-			 (int) (np - ssp->ss_token), ssp->ss_token);
-	    }
-	}
-    }
-
-    /*
-     * Two possibilities: generic "syntax error" or some
-     * specific error.  If the message has a generic
-     * prefix, use our logic instead.  This avoids tossing
-     * bison token names (K_VERSION) at the user.
-     */
-    if (strncmp(str, leader, sizeof(leader) - 1) == 0) {
-	char *msg = jsonSyntaxError(sdp, token, yystate, sdp->sd_last,
-				    vstack, vtop);
-
-	if (msg) {
-	    slaxError("%s:%d: %s%s\n", sdp->sd_filename, sdp->sd_line,
-		      msg, buf);
-	    xmlFree(msg);
-	    return 0;
-	}
-    }
-
-    slaxError("%s:%d: %s%s%s%s%s\n",
-	      sdp->sd_filename, sdp->sd_line, str,
-	      token ? " before " : "", token, token ? ": " : "", buf);
-
-    return 0;
-}
-#endif
 
 void
 slaxJsonElementOpen (slax_data_t *sdp, const char *name)
@@ -373,7 +109,7 @@ slaxJsonElementValue (slax_data_t *sdp, slax_string_t *value)
 
     nodep = xmlNewText((const xmlChar *) cp);
     if (nodep)
-	slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+	slaxAddChild(sdp, NULL, nodep);
 }
 
 static xmlDocPtr
@@ -437,21 +173,42 @@ slaxJsonClearMember (slax_data_t *sdp)
 }
 
 int
-slaxJsonIsTagged (slax_data_t *sdp)
+slaxJsonIsTaggedNode (xmlNodePtr nodep)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    const char *json = NULL;
+    xmlAttrPtr attrp;
 
-    for (nodep = sdp->sd_ctxt->node; nodep; nodep = nodep->parent) {
-	if (xmlHasProp(nodep, (const xmlChar *) ATT_JSON))
-	    return TRUE;
+    for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	if (attrp->children && attrp->children->content) {
+	    char *content = (char *) attrp->children->content;
+
+	    if (streq((const char *) attrp->name, ATT_JSON)) {
+		json = content;
+	    } else if (streq((const char *) attrp->name, ATT_TYPE)) {
+		/* nothing; skip */
+	    } else if (streq((const char *) attrp->name, ATT_NAME)) {
+		/* nothing; skip */
+	    } else {
+		return FALSE;
+	    }
+	}
     }
 
-    return FALSE;
+    return (json != NULL);
+}
+
+int
+slaxJsonIsTagged (slax_data_t *sdp)
+{
+    return slaxJsonIsTaggedNode(sdp->sd_ctxt->node);
 }
 
 void
 slaxJsonTag (slax_data_t *sdp)
 {
+    if (!slaxJsonDoTagging)
+	return;
+
     if (slaxJsonIsTagged(sdp))
 	return;
 
