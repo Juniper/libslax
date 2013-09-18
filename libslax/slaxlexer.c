@@ -685,6 +685,45 @@ slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
     return xmlAddChild(parent, cur);
 }
 
+void
+slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep)
+{
+    xmlNodePtr *nextp = &sdp->sd_insert;
+
+    while (*nextp != NULL) {
+	nextp = &(*nextp)->next;
+    }
+
+    nodep->next = nodep->prev = nodep->parent = NULL;
+    *nextp = nodep;
+}
+
+xmlNodePtr
+slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
+{
+    xmlNodePtr res;
+
+    if (parent == NULL)
+	parent = sdp->sd_ctxt->node;
+
+    res = slaxAddChildLineNo(sdp->sd_ctxt, parent, nodep);
+
+    if (sdp->sd_insert) {
+	xmlNodePtr cur, next;
+
+	cur = sdp->sd_insert;
+	sdp->sd_insert = NULL;
+
+	for ( ; cur; cur = next) {
+	    next = cur->next;
+	    cur->next = cur->prev = cur->parent = NULL;
+	    xmlAddPrevSibling(nodep, cur);
+	}
+    }
+
+    return res;
+}
+
 static inline int
 slaxIsCommentStart (const char *buf)
 {
