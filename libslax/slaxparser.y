@@ -254,9 +254,9 @@
 
 /*
  * %expect is a hack, but adding the JSON-like encoding option
- * makes this unavoidable.  We get a shift/reduce configure.
+ * makes this unavoidable.  We get two shift/reduce conflicts.
  */
-%expect 1
+%expect 2
 
 %{
 
@@ -966,11 +966,25 @@ main_template :
 
 		    $$ = NULL;
 		}
-	    L_OBRACE match_block_contents L_CBRACE
+	    main_element_optional L_OBRACE match_block_contents L_CBRACE
 		{
-		    slaxElementPop(slax_data);
+		    slaxMainElement(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2);
+		}
+	;
+
+main_element_optional :
+	/* empty */
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+
+	| element
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
 		}
 	;
 
@@ -3542,7 +3556,7 @@ jsonst_stmt :
 	jsonst_pair_nested jsonst_comma_or_eos_optional
 		{ $$ = STACK_CLEAR($1); }
 
-	| jsonst_pair_simple jsonst_comma_or_eos
+	| jsonst_pair_simple jsonst_comma_or_eos_optional
 		{ $$ = STACK_CLEAR($1); }
 
 	| jsonst_array_top jsonst_comma_or_eos
@@ -3564,6 +3578,9 @@ jsonst_member_list_or_empty :
 
 jsonst_member_list :
 	block_stmt
+		{ $$ = STACK_CLEAR($1); }
+
+	| block_stmt jsonst_member_list
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -3587,6 +3604,7 @@ jsonst_name_and_colon :
 	jsonst_name L_COLON
 		{
 		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    slaxJsonTag(slax_data);
 		    $$ = NULL;
 		}
 	;
@@ -3680,6 +3698,7 @@ jsonst_array :
 	    {
 		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
 		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonTag(slax_data);
 		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
 		$$ = NULL;
 	    }
@@ -3695,6 +3714,7 @@ jsonst_array_top :
 	    {
 		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
 		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonTag(slax_data);
 		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
 		$$ = NULL;
 	    }
@@ -3726,6 +3746,7 @@ jsonst_element_item :
 		{
 		    slaxElementClose(slax_data);
 		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonTag(slax_data);
 		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
 		    $$ = NULL;
 		}
