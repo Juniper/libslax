@@ -21,6 +21,7 @@
 #include <libslax/slax.h>
 #include <libexslt/exslt.h>
 #include "slaxparser.h"
+#include "jsonlexer.h"
 
 #define BUF_EXTEND 2048		/* Bump the buffer by this amount */
 
@@ -576,10 +577,11 @@ slaxRewriteEltArg (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
     xmlNodePtr curp;
     char *buf = NULL;
     int bufsiz = 0;
+    xmlNodePtr searchp;
 
-    nodep = slaxHandleEltArgSafeInsert(nodep);
-    if (nodep == NULL)
-	return data;
+    searchp = slaxHandleEltArgSafeInsert(nodep);
+    if (searchp)
+	nodep = searchp;
 
     /* Use our own writer and write function */
 
@@ -1057,6 +1059,163 @@ slaxWriteContent (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     }
 }
 
+static int
+slaxWriteJsonArrayOneliner (xmlNodePtr nodep)
+{
+    xmlNodePtr childp;
+
+    for (nodep = nodep->children; nodep; nodep = nodep->next) {
+	if (nodep->type != XML_ELEMENT_NODE) /* Must be an element */
+	    return FALSE;
+
+	/* Should look at the attributes of that element, but .... */
+
+	childp = nodep->children;
+	if (childp == NULL) /* Must have one child */
+	    return FALSE;
+	if (childp->next != NULL) /* Must have one exactly child */
+	    return FALSE;
+
+	if (childp->type != XML_TEXT_NODE) /* Must be a text node */
+	    return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
+slaxWriteJsonIsArray (xmlNodePtr nodep)
+{
+    if (nodep->parent == NULL)
+	return FALSE;
+
+    if (!slaxJsonIsTaggedNode(nodep))
+	return FALSE;
+
+    if (nodep->parent) {
+	xmlAttrPtr attrp;
+	for (attrp = nodep->parent->properties; attrp; attrp = attrp->next) {
+	    if (attrp->children && attrp->children->content) {
+		char *content = (char *) attrp->children->content;
+
+		if (streq((const char *) attrp->name, ATT_TYPE)
+		    && streq(content, VAL_ARRAY))
+		    return TRUE;
+	    }
+	}
+    }
+
+    return FALSE;
+}
+
+static void
+slaxWriteJsonValueTyped (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+			 xmlNodePtr nodep, int trailing_newline,
+			 const char *type_name)
+{
+    const char *comma = nodep->next ? "," : "";
+
+    if (type_name == NULL) {
+	goto simple;
+    } else if (streq(type_name, "number")) {
+	if (nodep->children && nodep->children->type == XML_TEXT_NODE) {
+	    slaxWrite(swp, " %s%s", nodep->children->content, comma);
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+	} else goto simple;
+
+    } else if (streq(type_name, "true")
+	       || streq(type_name, "false")
+	       || streq(type_name, "null")) {
+	slaxWrite(swp, " %s%s", type_name, comma);
+	if (trailing_newline)
+	    slaxWriteNewline(swp, 0);
+
+    } else {
+    simple:
+	slaxWrite(swp, " \"%s\"%s", nodep->children->content, comma);
+	if (trailing_newline)
+	    slaxWriteNewline(swp, 0);
+    }
+}
+
+static void
+slaxWriteJsonValue (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
+		    int trailing_newline)
+{
+    xmlAttrPtr attrp;
+
+    for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	if (attrp->children && attrp->children->content) {
+	    char *content = (char *) attrp->children->content;
+
+	    if (streq((const char *) attrp->name, ATT_TYPE)) {
+		slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline,
+					content);
+		return;
+	    }
+	}
+    }
+}
+
+static void
+slaxWriteJsonElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
+		      int trailing_newline, const char *elt_name,
+		      const char *type_name)
+{
+    int array = slaxWriteJsonIsArray(nodep);
+
+    if (elt_name == NULL)
+	elt_name = (const char *) nodep->name;
+
+    if (!array)
+	slaxWrite(swp, "\"%s\":", elt_name);
+
+    if (type_name == NULL) {
+	if (nodep->children == NULL) {
+	    slaxWrite(swp, "(null: %s)", type_name);
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+
+	} else if (nodep->children->type != XML_TEXT_NODE) {
+	    slaxWrite(swp, " {");
+	    slaxWriteNewline(swp, NEWL_INDENT);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, trailing_newline);
+	    slaxWrite(swp, "}");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, NEWL_OUTDENT);
+
+	} else {
+	    slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline, NULL);
+	}
+
+    } else if (streq(type_name, "array")) {
+	int oneliner = slaxWriteJsonArrayOneliner(nodep);
+
+	if (oneliner) {
+	    xmlNodePtr childp;
+
+	    slaxWrite(swp, " [");
+	    for (childp = nodep->children; childp; childp = childp->next) {
+		slaxWriteJsonValue(swp, docp, childp, FALSE);
+	    }
+	    slaxWrite(swp, " ],");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+	} else {
+	    slaxWrite(swp, " [");
+	    slaxWriteNewline(swp, NEWL_INDENT);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
+	    slaxWrite(swp, "],");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, NEWL_OUTDENT);
+	}
+
+    } else {
+	slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline, type_name);
+    }
+}
+
 static void
 slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		      int trailing_newline)
@@ -1066,10 +1225,42 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
     if (nodep->ns && nodep->ns->prefix)
 	pref = (const char *) nodep->ns->prefix;
 
+    if (pref == NULL) {
+	char *json = NULL, *type_name = NULL, *elt_name = NULL;
+	xmlAttrPtr attrp;
+	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	    if (attrp->children && attrp->children->content) {
+		char *content = (char *) attrp->children->content;
+
+		if (streq((const char *) attrp->name, ATT_JSON)) {
+		    json = content;
+		} else if (streq((const char *) attrp->name, ATT_TYPE)) {
+		    type_name = content;
+		} else if (streq((const char *) attrp->name, ATT_NAME)) {
+		    elt_name = content;
+		} else {
+		    break;
+		}
+	    }
+	}
+
+	if (attrp == NULL && json) {
+	    /*
+	     * To be a considered a "json" node, it needs a json
+	     * attribute and an optional type attribute, and not other
+	     * attributes.
+	     */
+	    slaxWriteJsonElement(swp, docp, nodep, trailing_newline,
+				 elt_name, type_name);
+	    return;
+	}
+    }
+
     slaxWrite(swp, "<%s%s%s", pref ?: "", pref ? ":" : "", nodep->name);
 
     if (nodep->properties) {
 	xmlAttrPtr attrp;
+
 	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
 	    if (attrp->children && attrp->children->content) {
 		char *content = (char *) attrp->children->content;
@@ -1263,6 +1454,26 @@ slaxNeedsBlankline (xmlNodePtr nodep)
     return FALSE;
 }
 
+static xmlNodePtr
+slaxWriteIsMainElt (xmlNodePtr nodep)
+{
+    xmlNodePtr res = NULL;
+
+    for ( ; nodep; nodep = nodep->next) {
+	if (nodep->type == XML_ELEMENT_NODE) {
+	    if (res)
+		return FALSE;
+	    res = nodep;
+	} else if (nodep->type == XML_TEXT_NODE
+		   && slaxStringIsWhitespace((const char *) nodep->content)) {
+	    continue;
+	} else
+	    return NULL;
+    }
+
+    return res;
+}
+
 /**
  * slaxWriteTemplate:
  *
@@ -1289,7 +1500,27 @@ slaxWriteTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     } else if (match) {
 	char *expr = slaxMakeExpression(swp, nodep, match);
-	slaxWrite(swp, "match %s", expr ?: UNKNOWN_EXPR);
+
+	if (slaxV12(swp) && streq(expr, "/")) {
+	    xmlNodePtr childp = nodep->children;
+
+	    slaxWrite(swp, "main");
+
+	    if (childp && priority == NULL && mode == NULL
+		&& nodep->nsDef == NULL) {
+		childp = slaxWriteIsMainElt(childp);
+		if (childp) {
+		    /* We have the case where 'main' can take an element */
+		    slaxWrite(swp, " ");
+		    slaxWriteElementFull(swp, docp, childp, TRUE);
+		    return;
+		}
+	    }
+
+	} else {
+	    slaxWrite(swp, "match %s", expr ?: UNKNOWN_EXPR);
+	}
+
 	xmlFreeAndEasy(expr);
 
     } else {
@@ -1459,6 +1690,9 @@ static int
 slaxIsSimpleElement (xmlNodePtr nodep)
 {
     int hit = 0;
+
+    if (slaxJsonIsTaggedNode(nodep))
+	return FALSE;
 
     for ( ; nodep; nodep = nodep->next) {
 	if (nodep->type == XML_ELEMENT_NODE) {
