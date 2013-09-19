@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 attribute-set my-attr-set {
     attribute "attr" {
@@ -6,10 +6,8 @@ attribute-set my-attr-set {
     }
 }
 
-match / {
-    <p xsl:use-attribute-sets="my-attr-set" attr="from-p-tag"> {
-        attribute "attr" {
-            expr "from-xsl-attr";
-        }
+main <p xsl:use-attribute-sets="my-attr-set" attr="from-p-tag"> {
+    attribute "attr" {
+        expr "from-xsl-attr";
     }
 }
