@@ -497,7 +497,7 @@ li.indline1 {
  
   } 
   @top-right {
-       content: "August 2013";
+       content: "September 2013";
  
   } 
   @top-center {
@@ -21984,7 +21984,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">August 21, 2013</td>
+<td class="header right">September 19, 2013</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -22068,11 +22068,15 @@ jQuery(function ($) {
 <a href="#expressions">Expressions</a><ul class="toc">
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_2_1_1">2.1.1   </div>
-<a href="#doc_section_2_1_1">expr</a>
+<a href="#doc_section_2_1_1">Using Elements as Function Arguments</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_2_1_2">2.1.2   </div>
-<a href="#doc_section_2_1_2">uexpr</a>
+<a href="#doc_section_2_1_2">expr</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_1_3">2.1.3   </div>
+<a href="#doc_section_2_1_3">uexpr</a>
 </li>
 </ul>
 </li>
@@ -22081,11 +22085,28 @@ jQuery(function ($) {
 <a href="#doc_section_2_2">Elements</a><ul class="toc">
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_2_2_1">2.2.1   </div>
-<a href="#doc_section_2_2_1">XML Elements</a>
+<a href="#xml-elements">XML Elements</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_2_2_2">2.2.2   </div>
 <a href="#element">The "element" Statement</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_2_3">2.2.3   </div>
+<a href="#json-elements">JSON Elements</a><ul class="toc">
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_2_3_1">2.2.3.1   </div>
+<a href="#json-attributes">Attributes for JSON Elements</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_2_3_2">2.2.3.2   </div>
+<a href="#json-arrays">Encoding JSON Arrays in XML</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_2_3_3">2.2.3.3   </div>
+<a href="#json-names">Encoding Invalid JSON Names</a>
+</li>
+</ul>
 </li>
 </ul>
 </li>
@@ -22124,15 +22145,19 @@ jQuery(function ($) {
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_2_5_2">2.5.2   </div>
-<a href="#doc_section_2_5_2">Reserved Prefixes</a>
-</li>
-<li class="tocline1">
-<div class="section-number" id="toc_doc_section_2_5_3">2.5.3   </div>
 <a href="#extension">The "extension" Statement</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_2_5_4">2.5.4   </div>
+<div class="section-number" id="toc_doc_section_2_5_3">2.5.3   </div>
 <a href="#exclude">The "exclude" Statement</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_5_4">2.5.4   </div>
+<a href="#doc_section_2_5_4">Reserved Prefixes</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_2_5_5">2.5.5   </div>
+<a href="#doc_section_2_5_5">Default Namespaces for Prefixes</a>
 </li>
 </ul>
 </li>
@@ -22191,6 +22216,10 @@ jQuery(function ($) {
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_3_1_2_2">3.1.2.2   </div>
+<a href="#doc_section_3_1_2_2">Using Elements As Argument Values</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_3_1_2_3">3.1.2.3   </div>
 <a href="#named-match">The "match" Statement</a>
 </li>
 </ul>
@@ -22233,6 +22262,10 @@ jQuery(function ($) {
 <a href="#with">The "with" Statement</a>
 </li>
 </ul>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_3_3">3.3   </div>
+<a href="#main-template">The "main" Template</a>
 </li>
 </ul>
 </li>
@@ -22502,7 +22535,7 @@ jQuery(function ($) {
 </li>
 <li class="tocline0">
 <div class="section-number" id="toc_doc_section_8">8   </div>
-<a href="#doc_section_8">Extension Libraries in libslax</a><ul class="toc top-toc">
+<a href="#libslax-extensions">Extension Libraries in libslax</a><ul class="toc top-toc">
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_1">8.1   </div>
 <a href="#doc_section_8_1">The "bit" Extension Library </a>
@@ -22764,7 +22797,11 @@ jQuery(function ($) {
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_B_3_2">B.3.2   </div>
-<a href="#doc_section_B_3_2">Example</a>
+<a href="#doc_section_B_3_2">Default Prefixes for Extension Libraries</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_B_3_3">B.3.3   </div>
+<a href="#doc_section_B_3_3">Example</a>
 </li>
 </ul>
 </li>
@@ -23352,21 +23389,43 @@ jQuery(function ($) {
 <div class="content">
 <h3 id="doc_section_2_1_1">
 <div class="self-section-number">
-<a href="#doc_section_2_1_1">2.1.1</a> </div>expr</h3>
-<p id="doc_section_2_1_1_p_1">The "expr" statement adds an XPath expression to the result tree. The expression is the argument to the statement:</p>
+<a href="#doc_section_2_1_1">2.1.1</a> </div>Using Elements as Function Arguments</h3>
+<p id="doc_section_2_1_1_p_1">Beginning with SLAX-1.2, elements may be used directly as function arguments. Arguments can be either a single element or a block of SLAX code, placed inside braces.</p>
 <div id="doc_figure_u.20"></div> <pre>
+    var $a = my:function(&lt;elt&gt;, &lt;max&gt; 15);
+    var $b = my:test({
+        &lt;min&gt; 5;
+        &lt;max&gt; 15;
+        if ($step) {
+            &lt;step&gt; $step;
+        }
+    });
+    var $c = my:write(&lt;content&gt; {
+        &lt;document&gt; "total.txt";
+        &lt;size&gt; $file/size;
+        if (node[@type == "full]) {
+            &lt;full&gt;;
+        }
+    });
+	    </pre> </div>
+<div class="content">
+<h3 id="doc_section_2_1_2">
+<div class="self-section-number">
+<a href="#doc_section_2_1_2">2.1.2</a> </div>expr</h3>
+<p id="doc_section_2_1_2_p_1">The "expr" statement adds an XPath expression to the result tree. The expression is the argument to the statement:</p>
+<div id="doc_figure_u.21"></div> <pre>
     expr "Test: ";
     expr substring-before(name, ".");
     expr status;
 	    </pre> </div>
 <div class="content">
-<h3 id="doc_section_2_1_2">
+<h3 id="doc_section_2_1_3">
 <div class="self-section-number">
-<a href="#doc_section_2_1_2">2.1.2</a> </div>uexpr</h3>
-<p id="doc_section_2_1_2_p_1">The "uexpr" behaves identically to the "expr" statement, except that the contents are not escaped. Normally characters like "&lt;", "&gt;", and "&amp;" are escaped into proper XML (as "&amp;lt;", "&amp;gt;", and "&amp;amp;", respectively), but uexpr avoids this escaping mechanism.</p>
-<div id="doc_figure_u.21"></div> <pre>
+<a href="#doc_section_2_1_3">2.1.3</a> </div>uexpr</h3>
+<p id="doc_section_2_1_3_p_1">The "uexpr" behaves identically to the "expr" statement, except that the contents are not escaped. Normally characters like "&lt;", "&gt;", and "&amp;" are escaped into proper XML (as "&amp;lt;", "&amp;gt;", and "&amp;amp;", respectively), but uexpr avoids this escaping mechanism.</p>
+<div id="doc_figure_u.22"></div> <pre>
     uexpr "&lt;:-&amp;&gt;";
-	    </pre> <p id="doc_section_2_1_2_p_3">See also disable-output-escaping in the XSLT specification.</p>
+	    </pre> <p id="doc_section_2_1_3_p_3">See also disable-output-escaping in the XSLT specification.</p>
 </div>
 </div>
 <div class="content">
@@ -23375,7 +23434,7 @@ jQuery(function ($) {
 <a href="#doc_section_2_2">2.2</a> </div>Elements</h2>
 <p id="doc_section_2_2_p_1">Elements are the primary encoding mechanism of XML, and can be combined and arranged to encoding complex hierarchical constructs.</p>
 <p id="doc_section_2_2_p_2">The XML encoding uses three tags: the start tag, the end tag, and the empty tag. The start tag consists of the less than character ('&lt;'), the element name, a set of optional attributes (discussed later), and the greater than character ('&gt;'). This is followed by the contents of the XML element, which may include additional elements. The end tag consists of the less than character ('&lt;'), the slash character ('/'), the element name, and the greater than character ('&gt;'). If an element has no content, an empty tag can be used in place of an open and close tags. The empty tag consists of the less than character ('&lt;'), the element name, a set of optional attributes (discussed later), the slash character ('/'), and the greater than character ('&gt;').</p>
-<div id="doc_figure_u.22"></div> <pre>
+<div id="doc_figure_u.23"></div> <pre>
     &lt;doc&gt;
         &lt;chapter&gt;
             &lt;section&gt;
@@ -23387,11 +23446,13 @@ jQuery(function ($) {
 	    </pre> <div class="content">
 <h3 id="doc_section_2_2_1">
 <div class="self-section-number">
-<a href="#doc_section_2_2_1">2.2.1</a> </div>XML Elements</h3>
+<a href="#doc_section_2_2_1">2.2.1</a> </div>
+<a id="xml-elements" href="#xml-elements">XML Elements</a>
+</h3>
 <p id="doc_section_2_2_1_p_1">In SLAX, XML elements are encoded using braces instead of the closing tag. The element is given, wrapped in chevrons as in XML, but it then followed by an open brace, the elements contents, and a close brace. If the element is empty, a semi-colon can be used to signify an empty element. If the element contains only a single XPath expression, that expression can be used in place of the braces and the element is ended with a single semi-colon.</p>
 <p id="doc_section_2_2_1_p_2">Elements are written with in a C-like syntax, with only the open tag. The contents of the tag appear immediately following the open tag. These contents can either be a simple expression, or a more complex expression placed inside braces.</p>
 <p id="doc_section_2_2_1_p_3">The following SLAX is equivalent to the above XML data:</p>
-<div id="doc_figure_u.23"></div> <pre>
+<div id="doc_figure_u.24"></div> <pre>
     &lt;doc&gt; {
         &lt;chapter&gt;
             &lt;section&gt; {
@@ -23401,26 +23462,26 @@ jQuery(function ($) {
         &lt;index&gt;;
     }
 	    </pre> <p id="doc_section_2_2_1_p_5">Programmers are accustomed to using braces, indentations, and editor support to delineate blocks of data. Using these nesting techniques and removing the close tag reduces the clutter and increases the clarity of code.</p>
-<div id="doc_figure_u.24"></div> <pre>
+<div id="doc_figure_u.25"></div> <pre>
     &lt;top&gt; {
-        &lt;one&gt;;
+        &lt;one&gt; 1;
         &lt;two&gt; {
-            &lt;three&gt;;
-            &lt;four&gt;;
+            &lt;three&gt; 3;
+            &lt;four&gt; 4;
             &lt;five&gt; {
-                &lt;six&gt;;
+                &lt;six&gt; 6;
             }
         }
     }
 	    </pre> <p id="doc_section_2_2_1_p_7">This is equivalent to:</p>
-<div id="doc_figure_u.25"></div> <pre>
+<div id="doc_figure_u.26"></div> <pre>
     &lt;top&gt;
-        &lt;one/&gt;
+        &lt;one&gt;1&lt;/one&gt;
         &lt;two&gt;
-            &lt;three/&gt;
-            &lt;four/&gt;
+            &lt;three&gt;3&lt;/three&gt;
+            &lt;four&gt;4&lt;/four&gt;
             &lt;five&gt;
-                &lt;six/&gt;
+                &lt;six&gt;6&lt;/six&gt;
             &lt;/five&gt;
         &lt;/two&gt;
     &lt;/top&gt;
@@ -23432,19 +23493,243 @@ jQuery(function ($) {
 <a id="element" href="#element">The "element" Statement</a>
 </h3>
 <p id="doc_section_2_2_2_p_1">The name of an element can be specified by an XPath expression, using the "element" statement. The contents of the element must be placed inside a set of braces.</p>
-<p id="doc_section_2_2_2_p_2">In this example, the value of the "name" node (rather than the literal string "name") will be used to create an XML element, whose contents are an empty element with a name of "from&#8209;" concatenated with the value of the address node. Node values are selected from the current context.</p>
-<div id="doc_figure_u.26"></div> <pre>
+<p id="doc_section_2_2_2_p_2">In this example, the value of the "name" node (rather than the literal string "name") will be used to create an XML element, whose contents are an empty element with a name of "from&#8209;" concatenated with the value of the address node and an emply element whose name is the value of the variable "$my&#8209;var" (refer to <a href="#main-var" title="Variables">Section 4.1</a> for more information about variables). Node values are selected from the current context.</p>
+<div id="doc_figure_u.27"></div> <pre>
     element name {
         element "from-" _ address;
+        element $my-var;
     }
 	    </pre> </div>
+<div class="content">
+<h3 id="doc_section_2_2_3">
+<div class="self-section-number">
+<a href="#doc_section_2_2_3">2.2.3</a> </div>
+<a id="json-elements" href="#json-elements">JSON Elements</a>
+</h3>
+<p id="doc_section_2_2_3_p_1">XML elements can also be specified using a JSON-like style, where quoted strings name the element, followed by a colon and the contents of the element. The contents can be any of the following:</p>
+<div id="doc_table_u.2"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Type</th>
+<th class="left">Examples</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>String</td>
+<td>"test", "when in the course", "42"</td>
+</tr>
+<tr>
+<td>Number</td>
+<td>42, 1.5, 2e45.5</td>
+</tr>
+<tr>
+<td>boolean</td>
+<td>true, false</td>
+</tr>
+<tr>
+<td>null</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Array</td>
+<td>[ 1, 2, 3, 4, 5 ]</td>
+</tr>
+<tr>
+<td>Object</td>
+<td>{ "this": { "that": "the other" } }</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_2_2_3_p_2">Hierarchical nesting is done using objects:</p>
+<div id="doc_figure_u.28"></div> <pre>
+    "top" : {
+        "one": 1,
+        "two": {
+            "three": 3,
+            "four": 4,
+            "five": {
+                "six: 6
+            }
+        }
+    }
+	    </pre> <p id="doc_section_2_2_3_p_4">This would generate XML equivalent to the examples in <a href="#xml-elements" title="XML Elements">Section 2.2.1</a>.</p>
+<div class="content">
+<h4 id="doc_section_2_2_3_1">
+<div class="self-section-number">
+<a href="#doc_section_2_2_3_1">2.2.3.1</a> </div>
+<a id="json-attributes" href="#json-attributes">Attributes for JSON Elements</a>
+</h4>
+<p id="doc_section_2_2_3_1_p_1">Since there is a mismatch between the data encoding capabilities in XML and JSON, a set of attributes can be used to control the exact rendering of JSON data.</p>
+<div id="doc_table_u.3"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Attribute</th>
+<th class="left">Value</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>A name to use in place of the element name</td>
+</tr>
+<tr>
+<td>type</td>
+<td>string</td>
+<td>An indication of the desired encoding</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_2_2_3_1_p_2">The value of the "type" attribute must be one of the subset listed below. This allows SLAX to distinguish between '{ "value": "5" }' and '{ "value": 5 }' to control the encoding of the value as a string or a number. Similarly the caller can control whether "null" is a string or the special null value. If the type attribute is missing, the element is assumed to be a simple field.</p>
+<div id="doc_table_u.4"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Type</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>array</td>
+<td>Contains a JSON array</td>
+</tr>
+<tr>
+<td>false</td>
+<td>Contains the JSON "false" value</td>
+</tr>
+<tr>
+<td>null</td>
+<td>Contains the JSON "null" value</td>
+</tr>
+<tr>
+<td>member</td>
+<td>Is a member of an array</td>
+</tr>
+<tr>
+<td>number</td>
+<td>Contains a number value</td>
+</tr>
+<tr>
+<td>true</td>
+<td>Contains the JSON "true" value</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_2_2_3_1_p_3">In this example, the type attribute is used to indicate the encoding of JSON in XML.</p>
+<div id="doc_figure_u.29"></div> <pre>
+    JSON:
+      "name": "Skip Tracer",
+      "location": "The city that never sleeps", 
+      "age": 5,
+      "real": false, 
+      "cases": null, 
+
+    XML:
+      &lt;name&gt;Skip Tracer&lt;/name&gt;
+      &lt;location&gt;The city that never sleeps&lt;/location&gt;
+      &lt;age type="number"&gt;5&lt;/age&gt;
+      &lt;real type="false"&gt;false&lt;/real&gt;
+      &lt;cases type="null"&gt;null&lt;/cases&gt;
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_2_2_3_2">
+<div class="self-section-number">
+<a href="#doc_section_2_2_3_2">2.2.3.2</a> </div>
+<a id="json-arrays" href="#json-arrays">Encoding JSON Arrays in XML</a>
+</h4>
+<p id="doc_section_2_2_3_2_p_1">The mismatch of capabilities between JSON and XML also requires the use of alternative encodings for arrays. The &lt;member&gt; element is used to contain member (type="member" of an array (of type="array").</p>
+<p id="doc_section_2_2_3_2_p_2">In this example, alternative encodings are used for array values. Also the "type" attribute is used to hold the JSON type:</p>
+<div id="doc_figure_u.30"></div> <pre>
+    "book" : {
+        "topics": [ "colors", "fish", "spots", "stars", "cars" ],
+        "pages": 63,
+        "counts": [
+            { "red": 1 },
+            { "blue": 1 },
+            { "sad": "some" },
+            { "glad": "some" },
+        ]
+    }
+	    </pre> <p id="doc_section_2_2_3_2_p_4">The equivalent in SLAX elements would be:</p>
+<div id="doc_figure_u.31"></div> <pre>
+    &lt;book&gt; {
+        &lt;topics type="array"&gt; {
+            &lt;member type="member"&gt; "colors";
+            &lt;member type="member"&gt; "fish";
+            &lt;member type="member"&gt; "spots";
+            &lt;member type="member"&gt; "stars";
+            &lt;member type="member"&gt; "cars";
+        }
+        &lt;pages type="number"&gt; "63";
+        &lt;counts type="array"&gt; {
+            &lt;member type="member"&gt; {
+                &lt;red type="number"&gt; "1";
+            }
+            &lt;member type="member"&gt; {
+                &lt;blue type="number"&gt; "1";
+            }
+            &lt;member type="member"&gt; {
+                &lt;sad&gt; "some";
+            }
+            &lt;member type="member"&gt; {
+                &lt;glad&gt; "some";
+            }
+        }
+    }
+	    </pre> <p id="doc_section_2_2_3_2_p_6">The XML equivalent is shown below:</p>
+<div id="doc_figure_u.32"></div> <pre>
+    &lt;book&gt;
+      &lt;topics type="array"&gt;
+        &lt;member type="member"&gt;colors&lt;/member&gt;
+        &lt;member type="member"&gt;fish&lt;/member&gt;
+        &lt;member type="member"&gt;spots&lt;/member&gt;
+        &lt;member type="member"&gt;stars&lt;/member&gt;
+        &lt;member type="member"&gt;cars&lt;/member&gt;
+      &lt;/topics&gt;
+      &lt;pages type="number"&gt;63&lt;/pages&gt;
+      &lt;counts type="array"&gt;
+        &lt;member type="member"&gt;
+          &lt;red type="number"&gt;1&lt;/red&gt;
+        &lt;/member&gt;
+        &lt;member type="member"&gt;
+          &lt;blue type="number"&gt;1&lt;/blue&gt;
+        &lt;/member&gt;
+        &lt;member type="member"&gt;
+          &lt;sad&gt;some&lt;/sad&gt;
+        &lt;/member&gt;
+        &lt;member type="member"&gt;
+          &lt;glad&gt;some&lt;/glad&gt;
+        &lt;/member&gt;
+      &lt;/counts&gt;
+    &lt;/book&gt;
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_2_2_3_3">
+<div class="self-section-number">
+<a href="#doc_section_2_2_3_3">2.2.3.3</a> </div>
+<a id="json-names" href="#json-names">Encoding Invalid JSON Names</a>
+</h4>
+<p id="doc_section_2_2_3_3_p_1">In addition, JSON allows values for the names which an invalid in XML. When this occurs, an element named "element" is used to hold the content with the "name" attribute containing the real name:</p>
+<div id="doc_figure_u.33"></div> <pre>
+    JSON style:
+        "": {
+            "&lt;&gt;": "&lt;&gt;"
+        }
+
+    SLAX style:
+        &lt;element name=""&gt; {
+            &lt;element name="&lt;&gt;"&gt; "&lt;&gt;";
+        }
+
+    XML content:
+        &lt;element name=""&gt;
+            &lt;element name="&amp;lt;&amp;gt;"&gt;&amp;lt;&amp;gt;&lt;/element&gt;
+        &lt;/element&gt;
+	    </pre> </div>
+</div>
 </div>
 <div class="content">
 <h2 id="doc_section_2_3">
 <div class="self-section-number">
 <a href="#doc_section_2_3">2.3</a> </div>Attributes</h2>
 <p id="doc_section_2_3_p_1">XML allows a set attribute value to be specified on an open or empty tag. These attributes are an unordered set of name/value pairs. The XML encoding uses the attribute name, an equals sign ('='), and the value of the attribute in quotes.</p>
-<div id="doc_figure_u.27"></div> <pre>
+<div id="doc_figure_u.34"></div> <pre>
     &lt;chapter number="1" title="Introduction" ref="intro"&gt;
         &lt;section number="1"&gt;
             &lt;!-- .... content ... --&gt;
@@ -23455,7 +23740,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_3_1">2.3.1</a> </div>XML Attributes</h3>
 <p id="doc_section_2_3_1_p_1">SLAX uses an identical encoding scheme for attributes:</p>
-<div id="doc_figure_u.28"></div> <pre>
+<div id="doc_figure_u.35"></div> <pre>
     &lt;chapter number="1" title="Introduction" ref="intro"&gt; {
         &lt;section number="1"&gt; {
             /* .... content ... */
@@ -23463,28 +23748,28 @@ jQuery(function ($) {
     }
 	    </pre> <p id="doc_section_2_3_1_p_3">In addition, XSLT introduces a means of assigning attribute values, called "attribute value templates" (AVT). SLAX encodes these as XPath values for attributes:</p>
 <p id="doc_section_2_3_1_p_4">Attributes on elements follow the style of XML, with the attribute name, an equals sign, and the value of the attribute.</p>
-<div id="doc_figure_u.29"></div> <pre>
+<div id="doc_figure_u.36"></div> <pre>
     &lt;element attr1="one" attr2="two"&gt;;
 	    </pre> <p id="doc_section_2_3_1_p_6">In this example, the attributes are assigned values using XPath values. The "tag" node value is assigned to the "ref" attribute, while the "title" attribute is assigned the value of the "$title" variable.</p>
-<div id="doc_figure_u.30"></div> <pre>
+<div id="doc_figure_u.37"></div> <pre>
     &lt;chapter number=position() title=$title ref=tag&gt; {
         &lt;section number=position()&gt; {
             /* .... content ... */
         }
     }
 	    </pre> <p id="doc_section_2_3_1_p_8">Where XSLT allow attribute value templates using curly braces, SLAX uses the normal expression syntax. Attribute values can be any XPath expression, including quoted strings, parameters, variables, and numbers, as well as the SLAX concatenation operator ("_").</p>
-<div id="doc_figure_u.31"></div> <pre>
+<div id="doc_figure_u.38"></div> <pre>
     &lt;location state=$location/state
               zip=$location/zip5 _ "-" _ $location/zip4&gt;;
 	    </pre> <p id="doc_section_2_3_1_p_10">The XSLT equivalent:</p>
-<div id="doc_figure_u.32"></div> <pre>
+<div id="doc_figure_u.39"></div> <pre>
     &lt;location state="{$location/state}"
               zip="{concat($location/zip5, "-", $location/zip4}"/&gt;
 	    </pre> <p id="doc_section_2_3_1_p_12">Note that curly braces placed inside quote strings are not interpreted as attribute value templates, but as real braces and are escaped when translated into XSLT.</p>
-<div id="doc_figure_u.33"></div> <pre>
+<div id="doc_figure_u.40"></div> <pre>
     &lt;avt sign="{here}"&gt;;
 	    </pre> <p id="doc_section_2_3_1_p_14">The XSLT equivalent:</p>
-<div id="doc_figure_u.34"></div> <pre>
+<div id="doc_figure_u.41"></div> <pre>
     &lt;avt sign="{{here}}"/&gt;
 	    </pre> </div>
 <div class="content">
@@ -23495,7 +23780,7 @@ jQuery(function ($) {
 </h3>
 <p id="doc_section_2_3_2_p_1">The name of an attribute can be specified by an XPath expression, using the "attribute" statement. The contents of the attribute must be placed inside a set of braces.</p>
 <p id="doc_section_2_3_2_p_2">In this example, the value of the "name" node (rather than the literal string "name") will be used to create an XML attribute, whose contents are an empty element with a name of "from&#8209;" concatenated with the value of the address node. Node values are selected from the current context.</p>
-<div id="doc_figure_u.35"></div> <pre>
+<div id="doc_figure_u.42"></div> <pre>
     attribute name {
         expr "from-" _ address;
     }
@@ -23506,18 +23791,18 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_4">2.4</a> </div>Attribute Sets</h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="idp17572208"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17572208">
+<div class="digress tooltip faq" id="idp17605296"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17605296">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17572208'); " onmouseover="popUp(event, 'idp17572208')" onmouseout="popDown(event, 'idp17572208')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17605296'); " onmouseover="popUp(event, 'idp17605296')" onmouseout="popDown(event, 'idp17605296')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
 <h3 id="doc_section_2_4_1">
 <div class="self-section-number">
 <a href="#doc_section_2_4_1">2.4.1</a> </div>
 <a id="attribute-set" href="#attribute-set">The "attribute&#8209;set" Statement</a>
 </h3>
 <p id="doc_section_2_4_1_p_1">The "attribute&#8209;set" statement defines a set of attributes that can be used repeatedly. The argument is the name of the attribute set, and the contents are a set of attribute statements.</p>
-<div id="doc_figure_u.36"></div> <pre>
+<div id="doc_figure_u.43"></div> <pre>
     attribute-set table-attributes {
         attribute "order" { expr "0"; }
         attribute "cellpadding" { expr $cellpadding; }
@@ -23531,7 +23816,7 @@ jQuery(function ($) {
 <a id="use-attribute-sets" href="#use-attribute-sets">The "use&#8209;attribute&#8209;sets" Statement</a>
 </h3>
 <p id="doc_section_2_4_2_p_1">The "use&#8209;attribute&#8209;sets" statement adds the attributes from a given set to the current element.</p>
-<div id="doc_figure_u.37"></div> <pre>
+<div id="doc_figure_u.44"></div> <pre>
     &lt;table&gt; {
         use-attribute-sets table-attributes;
     }
@@ -23544,7 +23829,7 @@ jQuery(function ($) {
 <a href="#doc_section_2_5">2.5</a> </div>Namespaces</h2>
 <p id="doc_section_2_5_p_1">Namespaces map URI strings to prefixes that are used to indicate the administrative domain of specific XML elements. The syntax and semantic constraints for the element &lt;size&gt; will be distinct depending on the namespace under which it is defined.</p>
 <p id="doc_section_2_5_p_2">The URI is a string that uniquely identifies the namespace. Here are some examples:</p>
-<div id="doc_table_u.2"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.5"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr><th class="left">Example namespaces</th></tr></thead>
 <tbody>
 <tr><td>http://xml.juniper.net/junos</td></tr>
@@ -23552,7 +23837,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_2_5_p_3">The prefix is a string pre-pended to the local element name with a colon. Prefixes map to namespaces and are used as "shorthand" for the underlaying namespace.</p>
-<div id="doc_table_u.3"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.6"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Example Prefix</th>
 <th class="left">Example Element Usage</th>
@@ -23585,28 +23870,28 @@ jQuery(function ($) {
 <p id="doc_section_2_5_1_p_1">The "ns" statement defines a mapping from a prefix to a URI namespace identifier. Namespaces must be defined prior to their use.</p>
 <p id="doc_section_2_5_1_p_2">By default, elements are in the "null" namespace, but the "ns" statement can be used to change the namespace for unprefixed elements.</p>
 <p id="doc_section_2_5_1_p_3">The syntax of the "ns" statement is:</p>
-<div id="doc_figure_u.38"></div> <pre>
+<div id="doc_figure_u.45"></div> <pre>
     ns [&lt;prefix&gt; &lt;options&gt; = ] &lt;uri&gt;;
 	    </pre> <p id="doc_section_2_5_1_p_5">If a prefix is the value prefixed to element names to indicate their namespace should be that of the given URI. If no prefix is given, the given URI will be applied to all elements that do not include a prefix. The values and meanings of &lt;options&gt; are detailed below.</p>
-<div id="doc_figure_u.39"></div> <pre>
+<div id="doc_figure_u.46"></div> <pre>
     ns junos =  "http://xml.juniper.net/junos";
     ns example = "http://www.example.com/example-one";
     ns fo = "http://www.w3.org/1999/XSL/Format";
     ns svg = "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
 	    </pre> <p id="doc_section_2_5_1_p_7">In this example, a default namespace is defined, as well as a namespace mapped to the "test" prefix:</p>
-<div id="doc_figure_u.40"></div> <pre>
+<div id="doc_figure_u.47"></div> <pre>
     ns "http://example.com/main";
     ns test = "http://example.com/test";
 	    </pre> <p id="doc_section_2_5_1_p_9">The XML equivalent is:</p>
-<div id="doc_figure_u.41"></div> <pre>
+<div id="doc_figure_u.48"></div> <pre>
     &lt;some-element xmlns="http://example.com/main"
             xmlns:test="http://example.com/test"/&gt;
 	    </pre> <p id="doc_section_2_5_1_p_11">See also <a href="http://www.w3.org/TR/xml#namespaces">http://www.w3.org/TR/xml#namespaces</a>.</p>
 <p id="doc_section_2_5_1_p_12">Namespace definitions are supplied using the "ns" statement. This consists of either the "ns" keyword, a prefix string, an equal sign and a namespace URI or the "ns" keyword and a namespace URI. The second form defines the default namespace.</p>
-<div id="doc_figure_u.42"></div> <pre>
+<div id="doc_figure_u.49"></div> <pre>
     ns junos = "http://www.juniper.net/junos/";
 	    </pre> <p id="doc_section_2_5_1_p_14">The "ns" statement may appear either following the "version" statement at the beginning of the stylesheet or at the beginning of any block.</p>
-<div id="doc_figure_u.43"></div> <pre>
+<div id="doc_figure_u.50"></div> <pre>
     ns a = "http://example.com/1";
     ns "http://example.com/global";
     ns b = "http://example.com/2";
@@ -23619,11 +23904,11 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_2_5_1_p_16">When appearing at the beginning of the stylesheet, the ns statement may include either the "exclude" or "extension" keywords. These keywords instruct the parser to add the namespace prefix to the "exclude&#8209;result&#8209;prefixes" or "extension&#8209;element&#8209;prefixes" attribute.</p>
-<div id="doc_figure_u.44"></div> <pre>
+<div id="doc_figure_u.51"></div> <pre>
     ns exclude foo = "http://example.com/foo";
     ns extension jcs = "http://xml.juniper.net/jcs";
 	    </pre> <p id="doc_section_2_5_1_p_18">The XSLT equivalent:</p>
-<div id="doc_figure_u.45"></div> <pre>
+<div id="doc_figure_u.52"></div> <pre>
     &lt;xsl:stylesheet xmlns:foo="http://example.com/foo"
                     xmlns:jcs="http://xml.juniper.net/jcs"
                     exclude-result-prefixes="foo"
@@ -23634,32 +23919,132 @@ jQuery(function ($) {
 <div class="content">
 <h3 id="doc_section_2_5_2">
 <div class="self-section-number">
-<a href="#doc_section_2_5_2">2.5.2</a> </div>Reserved Prefixes</h3>
-<p id="doc_section_2_5_2_p_1">The XML specification reserved all prefixes and attributes beginning with the characters "xml". In addition, SLAX reserves all prefixes and attributes that begin with the characters "slax". These reservations help to future proof against changes and enhancements to the language.</p>
+<a href="#doc_section_2_5_2">2.5.2</a> </div>
+<a id="extension" href="#extension">The "extension" Statement</a>
+</h3>
+<p id="doc_section_2_5_2_p_1">The "extension" statement instructs the processing engine that extenstion namespaces, which will cause elements in that namespace to be given special handling by the engine.</p>
+<p id="doc_section_2_5_2_p_2">For libslax, the extension keyword instructs the library to search for an extension library associated with the namespace. If found, the extension library is loaded and initialized so the script can use functions and elements defined within that library.</p>
+<div id="doc_figure_u.53"></div> <pre>
+    ns pref extension = "http://some.example.com";
+	    </pre> <p id="doc_section_2_5_2_p_4">See also <a href="http://www.w3.org/TR/xslt#extension-element">http://www.w3.org/TR/xslt#extension-element</a>.</p>
 </div>
 <div class="content">
 <h3 id="doc_section_2_5_3">
 <div class="self-section-number">
 <a href="#doc_section_2_5_3">2.5.3</a> </div>
-<a id="extension" href="#extension">The "extension" Statement</a>
+<a id="exclude" href="#exclude">The "exclude" Statement</a>
 </h3>
-<p id="doc_section_2_5_3_p_1">The "extension" statement instructs the processing engine that extenstion namespaces, which will cause elements in that namespace to be given special handling by the engine.</p>
-<p id="doc_section_2_5_3_p_2">For libslax, the extension keyword instructs the library to search for an extension library associated with the namespace. If found, the extension library is loaded and initialized so the script can use functions and elements defined within that library.</p>
-<div id="doc_figure_u.46"></div> <pre>
-    ns pref extension = "http://some.example.com";
-	    </pre> <p id="doc_section_2_5_3_p_4">See also <a href="http://www.w3.org/TR/xslt#extension-element">http://www.w3.org/TR/xslt#extension-element</a>.</p>
+<p id="doc_section_2_5_3_p_1">The "exclude" statement prevents the namespace from appearing in the final result tree, effectively blocking it from output.</p>
+<div id="doc_figure_u.54"></div> <pre>
+    ns xslax extension = "http://libslax.org/slax";
+	    </pre> <p id="doc_section_2_5_3_p_3">See also <a href="http://www.w3.org/TR/xslt#literal-result-element">http://www.w3.org/TR/xslt#literal-result-element</a>.</p>
 </div>
 <div class="content">
 <h3 id="doc_section_2_5_4">
 <div class="self-section-number">
-<a href="#doc_section_2_5_4">2.5.4</a> </div>
-<a id="exclude" href="#exclude">The "exclude" Statement</a>
-</h3>
-<p id="doc_section_2_5_4_p_1">The "exclude" statement prevents the namespace from appearing in the final result tree, effectively blocking it from output.</p>
-<div id="doc_figure_u.47"></div> <pre>
-    ns xslax extension = "http://libslax.org/slax";
-	    </pre> <p id="doc_section_2_5_4_p_3">See also <a href="http://www.w3.org/TR/xslt#literal-result-element">http://www.w3.org/TR/xslt#literal-result-element</a>.</p>
+<a href="#doc_section_2_5_4">2.5.4</a> </div>Reserved Prefixes</h3>
+<p id="doc_section_2_5_4_p_1">The XML specification reserved all prefixes and attributes beginning with the characters "xml". In addition, SLAX reserves all prefixes and attributes that begin with the characters "slax". These reservations help to future proof against changes and enhancements to the language.</p>
 </div>
+<div class="content">
+<h3 id="doc_section_2_5_5">
+<div class="self-section-number">
+<a href="#doc_section_2_5_5">2.5.5</a> </div>Default Namespaces for Prefixes</h3>
+<p id="doc_section_2_5_5_p_1">When a prefix is used without the a corresponding "ns" statement in scope, SLAX will refer to a set of default namespaces. If the prefix has a default namespace, that namespace will be automatically mapped to the prefix.</p>
+<p id="doc_section_2_5_5_p_2">The following table lists the default set of prefixes installed with the libslax software distribution:</p>
+<div id="doc_table_u.7"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Prefix</th>
+<th class="left">Source</th>
+<th class="left">URI</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>bit</td>
+<td>libslax</td>
+<td>http://xml.libslax.org/bit</td>
+</tr>
+<tr>
+<td>curl</td>
+<td>libslax</td>
+<td>http://xml.libslax.org/curl</td>
+</tr>
+<tr>
+<td>exsl</td>
+<td>exslt</td>
+<td>http://exslt.org/common</td>
+</tr>
+<tr>
+<td>crypto</td>
+<td>exslt</td>
+<td>http://exslt.org/crypto</td>
+</tr>
+<tr>
+<td>math</td>
+<td>exslt</td>
+<td>http://exslt.org/math</td>
+</tr>
+<tr>
+<td>set</td>
+<td>exslt</td>
+<td>http://exslt.org/sets</td>
+</tr>
+<tr>
+<td>func</td>
+<td>exslt</td>
+<td>http://exslt.org/functions</td>
+</tr>
+<tr>
+<td>str</td>
+<td>exslt</td>
+<td>http://exslt.org/strings</td>
+</tr>
+<tr>
+<td>date</td>
+<td>exslt</td>
+<td>http://exslt.org/dates-and-times</td>
+</tr>
+<tr>
+<td>dyn</td>
+<td>exslt</td>
+<td>http://exslt.org/dynamic</td>
+</tr>
+<tr>
+<td>saxon</td>
+<td>libxslt</td>
+<td>http://icl.com/saxon</td>
+</tr>
+<tr>
+<td>os</td>
+<td>libslax</td>
+<td>http://xml.libslax.org/os</td>
+</tr>
+<tr>
+<td>xutil</td>
+<td>libslax</td>
+<td>http://xml.libslax.org/xutil</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_2_5_5_p_3">The libslax extension libraries are documented in this document under the <a href="#libslax-extensions" title="Extension Libraries in libslax">Section 8</a> section. The exslt extension libraries are documented at <a href="http://exslt.org">http://exslt.org</a> and the libxslt extension library is documented at <a href="http://xmlsoft.org">http://xmlsoft.org</a>.</p>
+<p id="doc_section_2_5_5_p_4">When using the "slaxproc" tool with the --format or --slax-to-xslt command line options, the namespace will be properly displayed:</p>
+<div id="doc_figure_u.55"></div> <pre>
+    % cat /tmp/foo.slax
+    version 1.1;
+
+    match / {
+        &lt;top&gt; {
+            expr date:time();
+        }
+    }
+    % slaxproc --format /tmp/foo.slax
+    version 1.1;
+
+    ns date extension = "http://exslt.org/dates-and-times";
+
+    match / {
+        &lt;top&gt; date:time();
+    }
+	    </pre> </div>
 </div>
 <div class="content">
 <h2 id="doc_section_2_6">
@@ -23673,7 +24058,7 @@ jQuery(function ($) {
 <a id="processing-instruction" href="#processing-instruction">The "processing&#8209;instruction" Statement</a>
 </h3>
 <p id="doc_section_2_6_1_p_1">The "processing&#8209;instruction" statement adds a processing instruction to the result tree. The argument to the statement is that name of the processing instruction and the contents of the statement (within braces) is the value of that instruction.</p>
-<div id="doc_figure_u.48"></div> <pre>
+<div id="doc_figure_u.56"></div> <pre>
     processing-instruction "my-app" {
         expr "my-value";
     }
@@ -23685,19 +24070,19 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_7">2.7</a> </div>Comments</h2>
 <p id="doc_section_2_7_p_1">Comments are information for the user or author. They are not formal content and should not be inspected or parsed. They can be discarded without affecting the content of the XML.</p>
-<div id="doc_figure_u.49"></div> <pre>
+<div id="doc_figure_u.57"></div> <pre>
     &lt;!-- This is an XML comment --&gt;
 	    </pre> <p id="doc_section_2_7_p_3">SLAX comments are distinct from XML comments. SLAX comments appear as part of the SLAX script, and are not part of either the input or output XML documents. SLAX comments follow the C/Perl style of a "/*" followed by the comment, terminated by "*/".</p>
-<div id="doc_figure_u.50"></div> <pre>
+<div id="doc_figure_u.58"></div> <pre>
     /* This is a SLAX comment */
 	    </pre> <p id="doc_section_2_7_p_5">XML comments may not appear inside a SLAX script.</p>
 <p id="doc_section_2_7_p_6">Comments in SLAX are entered in the traditional C style, beginning the "/*" and ending with "*/". These comments are preserved in the in-memory XML tree representation of the SLAX script. This allows comments to be preserved if the tree is emitted using the normal XML output renderer.</p>
-<div id="doc_figure_u.51"></div> <pre>
+<div id="doc_figure_u.59"></div> <pre>
     /*
      * This is a comment.
      */
 	    </pre> <p id="doc_section_2_7_p_8">The XSLT equivalent:</p>
-<div id="doc_figure_u.52"></div> <pre>
+<div id="doc_figure_u.60"></div> <pre>
     &lt;!-- /*
      * This is a comment
      */ --&gt;
@@ -23708,14 +24093,14 @@ jQuery(function ($) {
 <a id="comment" href="#comment">The "comment" Statement</a>
 </h3>
 <p id="doc_section_2_7_1_p_1">The "comment" statement adds an XML comment to the result tree. The argument is an XPath expression containing the comment to be added:</p>
-<div id="doc_figure_u.53"></div> <pre>
+<div id="doc_figure_u.61"></div> <pre>
     comment "This script was run by " _ $user _ " on " _ $date;
 	    </pre> <p id="doc_section_2_7_1_p_3">See also comment</p>
 <p id="doc_section_2_7_1_p_4">The "comment" statement mimics the &lt;xsl:comment&gt; element, allowing XML comments to be generated.</p>
-<div id="doc_figure_u.54"></div> <pre>
+<div id="doc_figure_u.62"></div> <pre>
     comment "Added by user " _ $user _ " on " _ $date;
 	    </pre> <p id="doc_section_2_7_1_p_6">The XSLT equivalent:</p>
-<div id="doc_figure_u.55"></div> <pre>
+<div id="doc_figure_u.63"></div> <pre>
     &lt;xsl:comment&gt;
       &lt;xsl:value-of 
            select='concat("Added by user ", $user, " on ", $date)'/&gt;
@@ -23734,15 +24119,15 @@ jQuery(function ($) {
 <a id="copy-of" href="#copy-of">The "copy&#8209;of" Statement</a>
 </h3>
 <p id="doc_section_2_8_1_p_1">The "copy&#8209;of" statement performs a deep copy of a given set of nodes. The argument to the statement is an XPath expression specifying which nodes should be copied.</p>
-<div id="doc_figure_u.56"></div> <pre>
+<div id="doc_figure_u.64"></div> <pre>
     copy-of $top/my/stuff;
     copy-of .;
 	    </pre> <p id="doc_section_2_8_1_p_3">See also copy-node (<a href="#copy-node" title='The "copy&#8209;node" Statement'>Section 2.8.2</a>).</p>
 <p id="doc_section_2_8_1_p_4">The "copy&#8209;of" statement mimics the functionality of the &lt;xsl:copy&#8209;of&gt; element.</p>
-<div id="doc_figure_u.57"></div> <pre>
+<div id="doc_figure_u.65"></div> <pre>
     copy-of configuration/protocols/bgp;
 	    </pre> <p id="doc_section_2_8_1_p_6">The XSLT equivalent:</p>
-<div id="doc_figure_u.58"></div> <pre>
+<div id="doc_figure_u.66"></div> <pre>
    &lt;xsl:copy-of select="configuration/protocols/bgp"/&gt;
 	    </pre> </div>
 <div class="content">
@@ -23752,7 +24137,7 @@ jQuery(function ($) {
 <a id="copy-node" href="#copy-node">The "copy&#8209;node" Statement</a>
 </h3>
 <p id="doc_section_2_8_2_p_1">The "copy&#8209;node" statement performs a shallow copy of the specific node to the result tree, along with any namespace nodes, but none other child nodes (including attribute nodes) are copied. The contents of the statement are a template specifying what should be inserted into the new node.</p>
-<div id="doc_figure_u.59"></div> <pre>
+<div id="doc_figure_u.67"></div> <pre>
     copy-node {
         &lt;that&gt; "one";
     }
@@ -23773,7 +24158,7 @@ jQuery(function ($) {
 <p id="doc_section_2_9_1_p_1">The "number" statement inserts a generated number into the result tree. This statement has two distinct forms. When used with an argument, the statement inserts the number given by that XPath expression, and a set of optional statements can be used to specify the formatting to be used for that number.</p>
 <p id="doc_section_2_9_1_p_2">When used without an argument, the number is generated based on position of the current node in the source document, and a set of optional statements can be used to specify formatting.</p>
 <p id="doc_section_2_9_1_p_3">The formatting statements are given in the following table:</p>
-<div id="doc_table_u.4"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.8"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Statement</th>
 <th class="left">Value</th>
@@ -23803,7 +24188,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_2_9_1_p_4">The value of the "format" statement gives the style of numbering, as</p>
-<div id="doc_table_u.5"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.9"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Style</th>
@@ -23836,7 +24221,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_2_9_1_p_5">The selection statements used when the number statement has no argument are given in the following table:</p>
-<div id="doc_table_u.6"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.10"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Statement</th>
 <th class="left">Value</th>
@@ -23861,7 +24246,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_2_9_1_p_6">The "level" statement indicates how to count tags:</p>
-<div id="doc_table_u.7"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.11"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Behavior</th>
@@ -23882,7 +24267,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_2_9_1_p_7">In the following example, the value of $this is formatted with three digits of output and the number of "section" elements before the current context value is emitted.</p>
-<div id="doc_figure_u.60"></div> <pre>
+<div id="doc_figure_u.68"></div> <pre>
     number $this {
         format "001";
     }
@@ -23922,15 +24307,15 @@ jQuery(function ($) {
 <a id="call" href="#call">The "call" Statement</a>
 </h3>
 <p id="doc_section_3_1_2_p_1">Named templates accept parameters by name, rather than by position. This means the caller needs to indicate the name of the desired parameter when passing a value:</p>
-<div id="doc_figure_u.61"></div> <pre>
+<div id="doc_figure_u.69"></div> <pre>
     call test($arg1 = 1, $arg4 = 4, $arg2 = 2);
 	    </pre> <p id="doc_section_3_1_2_p_3">As a convenience, arguments with the same local name as the argument name can be passed directly:</p>
-<div id="doc_figure_u.62"></div> <pre>
+<div id="doc_figure_u.70"></div> <pre>
     var $message = "test " _ $name _ " is " _ $status;
     call emit-message($message)
 	    </pre> <p id="doc_section_3_1_2_p_5">This is identical to "call emit-message($message = $message)", but is simpler and the use of common names increased readability.</p>
 <p id="doc_section_3_1_2_p_6">The call statement can be used as the initial value of a variable or parameter, without using an enclosing set of braces:</p>
-<div id="doc_figure_u.63"></div> <pre>
+<div id="doc_figure_u.71"></div> <pre>
     var $a = call test($a = 1);
 	    </pre> <div class="content">
 <h4 id="doc_section_3_1_2_1">
@@ -23939,26 +24324,48 @@ jQuery(function ($) {
 <a id="with-call" href="#with-call">Using the "with" Statement with "call"</a>
 </h4>
 <p id="doc_section_3_1_2_1_p_1">In addition, template arguments can be passed using the "with" statement. This statement is placed inside braces after the "call" statement, and gives the parameter name and the value:</p>
-<div id="doc_figure_u.64"></div> <pre>
+<div id="doc_figure_u.72"></div> <pre>
     call test {
         with $arg1 = 1;
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="idp17797824"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17797824">
+	    </pre> <div class="digress tooltip note:" id="idp17860832"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17860832">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17797824'); " onmouseover="popUp(event, 'idp17797824')" onmouseout="popDown(event, 'idp17797824')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17860832'); " onmouseover="popUp(event, 'idp17860832')" onmouseout="popDown(event, 'idp17860832')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
 <div class="self-section-number">
-<a href="#doc_section_3_1_2_2">3.1.2.2</a> </div>
+<a href="#doc_section_3_1_2_2">3.1.2.2</a> </div>Using Elements As Argument Values</h4>
+<p id="doc_section_3_1_2_2_p_1">Beginning with SLAX-1.2, elements may be used directly as argument values for templates. Arguments can be either a single element or a block of SLAX code, placed inside braces.</p>
+<div id="doc_figure_u.73"></div> <pre>
+    call my-template($a = &lt;elt&gt;, $b = &lt;max&gt; 15);
+    call test($params = {
+        &lt;min&gt; 5;
+        &lt;max&gt; 15;
+        if ($step) {
+            &lt;step&gt; $step;
+        }
+    }
+    call write($content = &lt;content&gt; {
+        &lt;document&gt; "total.txt";
+        &lt;size&gt; $file/size;
+        if (node[@type == "full]) {
+            &lt;full&gt;;
+        }
+    });
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_3_1_2_3">
+<div class="self-section-number">
+<a href="#doc_section_3_1_2_3">3.1.2.3</a> </div>
 <a id="named-match" href="#named-match">The "match" Statement</a>
 </h4>
-<p id="doc_section_3_1_2_2_p_1">While rarely used, XSLT allows named template to be used as match templates. This is done using the "match" statement after the "template" statement. For more information on "match" statements, see <a href="#match" title='The "match" Statement'>Section 3.2.1</a>.</p>
-<div id="doc_figure_u.65"></div> <pre>
+<p id="doc_section_3_1_2_3_p_1">While rarely used, XSLT allows named template to be used as match templates. This is done using the "match" statement after the "template" statement. For more information on "match" statements, see <a href="#match" title='The "match" Statement'>Section 3.2.1</a>.</p>
+<div id="doc_figure_u.74"></div> <pre>
     SYNTAX::
         'template' template-name 'match' xpath-expression '{'
             template-contents
@@ -23981,7 +24388,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_3_1_3">3.1.3</a> </div>Example with XSLT Translation</h3>
 <p id="doc_section_3_1_3_p_1">This section includes a short example, allow with the XSLT into which the script translates.</p>
-<div id="doc_figure_u.66"></div> <pre>
+<div id="doc_figure_u.75"></div> <pre>
     match configuration {
         var $name-servers = name-servers/name;
         call my:thing();
@@ -23996,7 +24403,7 @@ jQuery(function ($) {
         &lt;output&gt; "template called with size " _ $size;
     }
 	    </pre> <p id="doc_section_3_1_3_p_3">The XSLT equivalent:</p>
-<div id="doc_figure_u.67"></div> <pre>
+<div id="doc_figure_u.76"></div> <pre>
     &lt;xsl:template match="configuration"&gt;
       &lt;xsl:variable name="name-servers" select="name-servers/name"/&gt;
       &lt;xsl:call-template name="my:thing"/&gt;
@@ -24035,13 +24442,13 @@ jQuery(function ($) {
 <a id="match" href="#match">The "match" Statement</a>
 </h3>
 <p id="doc_section_3_2_1_p_1">The "match" statement defines a match template, with its matching criteria and its template. The keyword "match" is followed by an XPath expression that selects the nodes on which this template should be executed. This is followed by a set of curly braces containing the template.</p>
-<div id="doc_figure_u.68"></div> <pre>
+<div id="doc_figure_u.77"></div> <pre>
     SYNTAX::
         'match' xpath-expression '{'
             template-contents
         '}'
 	    </pre> <p id="doc_section_3_2_1_p_3">The template consists of SLAX code, whose statements are defined later in this document.</p>
-<div id="doc_figure_u.69"></div> <pre>
+<div id="doc_figure_u.78"></div> <pre>
     match configuration {
         &lt;error&gt; {
             &lt;message&gt; "System is named " _ system/host-name;
@@ -24057,7 +24464,7 @@ jQuery(function ($) {
 <p id="doc_section_3_2_2_p_1">The "apply&#8209;templates" statement instructs the processing engine to apply the set of templates given in the script to a set of nodes. The statement takes as its argument an XPath expression that selects a set of nodes to use. If no expression is given, the current node is used.</p>
 <p id="doc_section_3_2_2_p_2">The set of XML input nodes is processed according to the set of templates, and the XML output nodes are given to the context in which the apply-templates statement was issued.</p>
 <p id="doc_section_3_2_2_p_3">Match templates are applied using the "apply&#8209;templates" statement. The statement accepts an optional XPath expression, which is equivalent to the "select" in an &lt;xsl:apply&#8209;templates&gt; element.</p>
-<div id="doc_figure_u.70"></div> <pre>
+<div id="doc_figure_u.79"></div> <pre>
     match configuration {
         apply-template system/host-name;
     }
@@ -24066,7 +24473,7 @@ jQuery(function ($) {
         &lt;hello&gt; .;
     }
 	    </pre> <p id="doc_section_3_2_2_p_5">The XSLT equivalent:</p>
-<div id="doc_figure_u.71"></div> <pre>
+<div id="doc_figure_u.80"></div> <pre>
     &lt;xsl:template match="configuration"&gt;
       &lt;xsl:apply-templates select="system/host-name"/&gt;
     &lt;/xsl:template&gt;
@@ -24084,10 +24491,10 @@ jQuery(function ($) {
 <a id="apply-imports" href="#apply-imports">The "apply&#8209;imports" Statement</a>
 </h3>
 <p id="doc_section_3_2_3_p_1">The "apply&#8209;imports" statement mimics the &lt;xsl:apply&#8209;imports&gt; element, allowing the script to invoke any imported templates.</p>
-<div id="doc_figure_u.72"></div> <pre>
+<div id="doc_figure_u.81"></div> <pre>
     apply-imports;
 	    </pre> <p id="doc_section_3_2_3_p_3">The XSLT equivalent:</p>
-<div id="doc_figure_u.73"></div> <pre>
+<div id="doc_figure_u.82"></div> <pre>
    &lt;xsl:apply-imports/&gt;
 	    </pre> </div>
 <div class="content">
@@ -24098,7 +24505,7 @@ jQuery(function ($) {
 </h3>
 <p id="doc_section_3_2_4_p_1">The "mode" statement allows the apply-template to choice a distinct set of rules to use during processing. The argument to the "mode" statement is a text string that identifies the mode for both the template and the template processing. Templates processing will only select templates that match the current mode value. If no mode statement is given with an "apply&#8209;templates" invocation, then the current mode remains in effect.</p>
 <p id="doc_section_3_2_4_p_2">In this example, template processing is invoked twice, first for mode "content" and then for mode "index".</p>
-<div id="doc_figure_u.74"></div> <pre>
+<div id="doc_figure_u.83"></div> <pre>
     match doc {
         apply-templates {
             mode "content";
@@ -24119,7 +24526,7 @@ jQuery(function ($) {
     }
 	    </pre> <p id="doc_section_3_2_4_p_4">See also <a href="http://www.w3.org/TR/xslt#modes">http://www.w3.org/TR/xslt#modes</a>.</p>
 <p id="doc_section_3_2_4_p_5">The "mode" attribute of the &lt;xsl:template&gt; element is available using the "mode" statement. This statement can appear inside a "match" statement and inside an "apply&#8209;templates" statement.</p>
-<div id="doc_figure_u.75"></div> <pre>
+<div id="doc_figure_u.84"></div> <pre>
     match * {
         mode "one";
         &lt;one&gt; .;
@@ -24139,7 +24546,7 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_3_2_4_p_7">The XSLT equivalent:</p>
-<div id="doc_figure_u.76"></div> <pre>
+<div id="doc_figure_u.85"></div> <pre>
     &lt;xsl:template match="*" mode="one"&gt;
       &lt;one&gt;
         &lt;xsl:value-of select="."/&gt;
@@ -24165,20 +24572,20 @@ jQuery(function ($) {
 </h3>
 <p id="doc_section_3_2_5_p_1">The "priority" statement sets the priority of the template, which is used as part of the conflict resolution when more that one template matches a source node. The highest priority rule is chosen. The argument to the "priority" statement is a real number (positive or negative).</p>
 <p id="doc_section_3_2_5_p_2">In this example, the template is given a high priority:</p>
-<div id="doc_figure_u.77"></div> <pre>
+<div id="doc_figure_u.86"></div> <pre>
     match paragraph {
         priority 100;
         ...
     }
 	    </pre> <p id="doc_section_3_2_5_p_4">See also <a href="http://www.w3.org/TR/xslt#conflict">http://www.w3.org/TR/xslt#conflict</a>.</p>
 <p id="doc_section_3_2_5_p_5">The "priority" statement mimics the "priority" attribute of the &lt;xsl:template&gt; element. It may appear inside a "match" statement.</p>
-<div id="doc_figure_u.78"></div> <pre>
+<div id="doc_figure_u.87"></div> <pre>
     match * {
         priority 10;
         &lt;output&gt; .;
     }
 	    </pre> <p id="doc_section_3_2_5_p_7">The XSLT equivalent:</p>
-<div id="doc_figure_u.79"></div> <pre>
+<div id="doc_figure_u.88"></div> <pre>
     &lt;xsl:template match="*" priority="10"&gt;
       &lt;output&gt;
         &lt;xsl:value-of select="."/&gt;
@@ -24192,7 +24599,7 @@ jQuery(function ($) {
 <a id="param" href="#param">The "param" Statement</a>
 </h3>
 <p id="doc_section_3_2_6_p_1">Template can accept parameters from their callers, and scripts can accept parameters from the calling environment (typically the command line). The "param" statement declares a parameter, along with an optional default value.</p>
-<div id="doc_figure_u.80"></div> <pre>
+<div id="doc_figure_u.89"></div> <pre>
     SYNTAX::
         'param' parameter-name ';'
         'param' parameter-name '=' optional-value ';'
@@ -24211,7 +24618,7 @@ jQuery(function ($) {
         }
 	    </pre> <p id="doc_section_3_2_6_p_3">Like variables, parameters are immutable. Once created, their value cannot be changed. See <a href="#main-var" title="Variables">Section 4.1</a> for a discussion on dealing with immutable values.</p>
 <p id="doc_section_3_2_6_p_4">Template parameters can also be defined in a C style following the template name:</p>
-<div id="doc_figure_u.81"></div> <pre>
+<div id="doc_figure_u.90"></div> <pre>
     template area ($width = 10, $length = 10, $scale = 1) {
         &lt;area&gt; $width * $length * $scale;
     }
@@ -24223,23 +24630,23 @@ jQuery(function ($) {
 <a id="with" href="#with">The "with" Statement</a>
 </h3>
 <p id="doc_section_3_2_7_p_1">The "with" statement supplies a value for a given parameter.</p>
-<div id="doc_figure_u.82"></div> <pre>
+<div id="doc_figure_u.91"></div> <pre>
     call area {
         with $length = 2;
         with $width = 100;
         with $max;
     }
 	    </pre> <p id="doc_section_3_2_7_p_3">Parameter values may also be passed using a C/perl style, but since arguments in SLAX (and XSLT) are passed by name, the parameter names are also given:</p>
-<div id="doc_figure_u.83"></div> <pre>
+<div id="doc_figure_u.92"></div> <pre>
     call area($width = 100, $length = 2, $max);
 	    </pre> <p id="doc_section_3_2_7_p_5">If a parameter is not supplied with a value, the current value of that parameter variable (in the current context) is used, meaning that</p>
-<div id="doc_figure_u.84"></div> <pre>
+<div id="doc_figure_u.93"></div> <pre>
     with $max;
 	    </pre> <p id="doc_section_3_2_7_p_7">is equivalent to:</p>
-<div id="doc_figure_u.85"></div> <pre>
+<div id="doc_figure_u.94"></div> <pre>
     with $max = $max;
 	    </pre> <p id="doc_section_3_2_7_p_9">Parameters may be passed to match templates using the "with" statement. The "with" statement consists of the keyword "with" and the name of the parameter, optionally followed by an equals sign ("=") and a value expression. If no value is given, the current value of that variable or parameter (in the current scope) is passed, giving a simple shorthand for passing parameters if common names are used.</p>
-<div id="doc_figure_u.86"></div> <pre>
+<div id="doc_figure_u.95"></div> <pre>
     match configuration {
         var $domain = domain-name;
         apply-template system/host-name {
@@ -24254,7 +24661,7 @@ jQuery(function ($) {
         &lt;hello&gt; $message _ ":: " _ . _ " (" _ $domain _ ")";
     }
 	    </pre> <p id="doc_section_3_2_7_p_11">The XSLT equivalent:</p>
-<div id="doc_figure_u.87"></div> <pre>
+<div id="doc_figure_u.96"></div> <pre>
     &lt;xsl:template match="configuration"&gt;
       &lt;xsl:apply-templates select="system/host-name"&gt;
         &lt;xsl:with-param name="message" select="'Invalid host-name'"/&gt;
@@ -24272,6 +24679,32 @@ jQuery(function ($) {
     &lt;/xsl:template&gt;
 	    </pre> </div>
 </div>
+<div class="content">
+<h2 id="doc_section_3_3">
+<div class="self-section-number">
+<a href="#doc_section_3_3">3.3</a> </div>
+<a id="main-template" href="#main-template">The "main" Template</a>
+</h2>
+<p id="doc_section_3_3_p_1">The XSLT programming model used with SLAX calls for a traversal of the input data hierarchy. Since the first step is typically the match of the top of the hierarchy and the creation of the top-level tag of the output hierarchy. The "main" statement allows both of these objectives. Two forms of the statement are supported, with and without the output tag. Without an output element, the "main" template is equivalent to "match /". The token "main" is followed by a block of statements within a set of braces:</p>
+<div id="doc_figure_u.97"></div> <pre>
+    main {
+        &lt;top&gt; {
+            &lt;answer&gt; 42;
+        }
+    }
+	    </pre> <p id="doc_section_3_3_p_3">The "main" template can also be used with a top-level output element following the "main" token. The element can include attributes.</p>
+<div id="doc_figure_u.98"></div> <pre>
+    main &lt;top&gt; {
+        &lt;answer&gt; 42;
+    }
+	    </pre> <p id="doc_section_3_3_p_5">Both of the preceding examples are equivalent to the following XSLT:</p>
+<div id="doc_figure_u.99"></div> <pre>
+    &lt;xsl:template match="/"&gt;
+        &lt;top&gt;
+            &lt;answer&gt;42&lt;/answer&gt;
+        &lt;/top&gt;
+    &lt;/xsl:template&gt;
+	    </pre> </div>
 </div>
 <hr class="noprint">
 <div class="content">
@@ -24287,7 +24720,7 @@ jQuery(function ($) {
 </h2>
 <p id="doc_section_4_1_p_1">Variables in SLAX are immutable. Once defined, the value of a variable cannot be changed. This is a major change from traditional programming language, and requires a somewhat different approach to programming. There are two tools to help combat this view: recursion and complex variable assignments.</p>
 <p id="doc_section_4_1_p_2">Recursion allows new values for variables to be set, based on the parameters passed in on the recursive call.</p>
-<div id="doc_figure_u.88"></div> <pre>
+<div id="doc_figure_u.100"></div> <pre>
     template count ($cur = 1, $max = 10) {
         if ($cur &lt; $max) {
             &lt;output&gt; $cur;
@@ -24295,7 +24728,7 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_4_1_p_4">Complex variable assignments allow the use of programming constructs inside the variable definition:</p>
-<div id="doc_figure_u.89"></div> <pre>
+<div id="doc_figure_u.101"></div> <pre>
     var $message = {
         if ($red &gt; 40) {
             expr "Invalid red value";
@@ -24306,7 +24739,7 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_4_1_p_6">This requires different approaches to problems. For example, instead of appending to a message as you loop thru a list of nodes, you would need to make the message initial value contain a "for&#8209;each" loop that emits parts of the message:</p>
-<div id="doc_figure_u.90"></div> <pre>
+<div id="doc_figure_u.102"></div> <pre>
     var $message = {
         &lt;output&gt; "acceptable colors: ";
         for-each (color) {
@@ -24317,20 +24750,20 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_4_1_p_8">Variable and parameter syntax uses the "var" and "param" statements to declare variables and parameters, respectively. SLAX declarations differ from XSLT in that the variable name contains the dollar sign even in the declaration, which is unlike the "name" attribute of &lt;xsl:variable&gt; and &lt;xsl:parameter&gt;. This was done to enhance the consistency of the language.</p>
-<div id="doc_figure_u.91"></div> <pre>
+<div id="doc_figure_u.103"></div> <pre>
     param $fido;
     var $bone;
 	    </pre> <p id="doc_section_4_1_p_10">The XSLT equivalent:</p>
-<div id="doc_figure_u.92"></div> <pre>
+<div id="doc_figure_u.104"></div> <pre>
     &lt;xsl:parameter name="fido"/&gt;
     &lt;xsl:variable name="bone"/&gt;
 	    </pre> <p id="doc_section_4_1_p_12">An initial value can be given by following the variable name with an equals sign and an expression.</p>
-<div id="doc_figure_u.93"></div> <pre>
+<div id="doc_figure_u.105"></div> <pre>
     param $dot = .;
     var $location = $dot/@location;
     var $message = "We are in " _ $location _ " now.";
 	    </pre> <p id="doc_section_4_1_p_14">The XSLT equivalent:</p>
-<div id="doc_figure_u.94"></div> <pre>
+<div id="doc_figure_u.106"></div> <pre>
     &lt;xsl:parameter name="dot" select="."/&gt;
     &lt;xsl:variable name="location" select="$dot/location"/&gt;
     &lt;xsl:variable name="message" select="concat('We are in ',
@@ -24343,12 +24776,12 @@ jQuery(function ($) {
 <a id="var" href="#var">The "var" Statement</a>
 </h3>
 <p id="doc_section_4_1_1_p_1">Variable are defined using the "var" statement, which accept a variable name and an initial value. Variable names (and parameter names) always begin with a dollar sign ("$").</p>
-<div id="doc_figure_u.95"></div> <pre>
+<div id="doc_figure_u.107"></div> <pre>
     SYNTAX::
         'var' name '=' initial-value ';'
         'var' name '=' '{' initial-value-block '}'
 	    </pre> <p id="doc_section_4_1_1_p_3">The initial value can be an XPath expresion, an element, or a block of statements (enclosed in braces) that emit a set of nodes.</p>
-<div id="doc_figure_u.96"></div> <pre>
+<div id="doc_figure_u.108"></div> <pre>
     var $x = 4;
     var $y = &lt;price&gt; cost div weight;
     var $z = {
@@ -24364,13 +24797,13 @@ jQuery(function ($) {
 </h3>
 <p id="doc_section_4_1_2_p_1">In XSLT, all variables are immutable, meaning that once created, their value cannot be changed. This creates a distinct programming environment which is challenging to new programmers. Immutable variables allow various optimizations and advanced streaming functionality.</p>
 <p id="doc_section_4_1_2_p_2">Given the use case and scenarios for libslax (especially our usage patterns in JUNOS), we've added mutable variables, which are variables that can be changed. The "set" statement allows a new value to be assigned to a variable and the "append" statement allows the value to be extended, with new data appended to it.</p>
-<div id="doc_figure_u.97"></div> <pre>
+<div id="doc_figure_u.109"></div> <pre>
     SYNTAX::
         'mvar' variable-name '=' initial-value ';'
         'set' variable-name '=' new-value ';'
         'append' variable-name '+=' new-content ';'
 	    </pre> <p id="doc_section_4_1_2_p_4">The mvar is typically a node set, and appended adds the new objects to the nodeset.</p>
-<div id="doc_figure_u.98"></div> <pre>
+<div id="doc_figure_u.110"></div> <pre>
     mvar $test;
 
     set $test = &lt;block&gt; "start here";
@@ -24388,7 +24821,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_4_2">4.2</a> </div>Result Tree Fragments</h2>
 <p id="doc_section_4_2_p_1">The most annoying "features" of XSLT is the concept of "Result Tree Fragments" (aka RTF). These fragments are produced with nodes are created that are not directly emitted as output. The main source is variable or parameter definitions that have complex content.</p>
-<div id="doc_figure_u.99"></div> <pre>
+<div id="doc_figure_u.111"></div> <pre>
     var $x = {
         &lt;color&gt; {
             &lt;name&gt; "cornflower blue";
@@ -24405,7 +24838,7 @@ jQuery(function ($) {
 <li>Conversion to a proper node-set</li>
 </ul>
 <p id="doc_section_4_2_p_5">In this example, an RTF is generated, and then each of the three valid operations is performed:</p>
-<div id="doc_figure_u.100"></div> <pre>
+<div id="doc_figure_u.112"></div> <pre>
     var $rtf = &lt;rtf&gt; {
         &lt;rats&gt; "bad";
     }
@@ -24416,13 +24849,13 @@ jQuery(function ($) {
         var $node-set = ext:node-set($rtf);
     }
 	    </pre> <p id="doc_section_4_2_p_7">Any XPath operation performed against an RTF will result in an "Invalid type" error.</p>
-<p id="doc_section_4_2_p_8">In truth, the only interesting thing to do with an RTF is to convert it to a node set, which is not a standard XPath/XSLT operation. Most scripts will use the extension function "ext:node&#8209;set()" (which is specific to libxslt) or "exslt:node&#8209;set()" (which is in the EXSLT extension library; see exslt.org for additional information).</p>
-<div id="doc_figure_u.101"></div> <pre>
+<p id="doc_section_4_2_p_8">In truth, the only interesting thing to do with an RTF is to convert it to a node set, which is not a standard XPath/XSLT operation. Most scripts will use the extension function "ext:node&#8209;set()" (which is specific to libxslt) or "exslt:node&#8209;set()" (which is in the EXSLT extension library; see <a href="http://exslt.org">http://exslt.org</a> for additional information).</p>
+<div id="doc_figure_u.113"></div> <pre>
     ns ext = "http://xmlsoft.org/XSLT/namespace";
     ...
         var $alist = ext:node-set($alist-raw);
 	    </pre> <p id="doc_section_4_2_p_10">This must be done when a variable or paramter has a complex initial value:</p>
-<div id="doc_figure_u.102"></div> <pre>
+<div id="doc_figure_u.114"></div> <pre>
     var $this-raw = &lt;this&gt; {
         &lt;that&gt;;
         &lt;the-other&gt;;
@@ -24436,7 +24869,7 @@ jQuery(function ($) {
 <a id="colon-equals" href="#colon-equals">The ":=" Operator</a>
 </h3>
 <p id="doc_section_4_2_1_p_1">The ":=" operator is designed to hide the conversion of RTFs to node sets from the programmer. It is used in assigning initial values to variables and parameters.</p>
-<div id="doc_figure_u.103"></div> <pre>
+<div id="doc_figure_u.115"></div> <pre>
     var $this := &lt;this&gt; {
         &lt;that&gt; "one";
         &lt;the-other&gt; "one";
@@ -24445,7 +24878,7 @@ jQuery(function ($) {
         &lt;output&gt; "not an invalid type error";
     }
 	    </pre> <p id="doc_section_4_2_1_p_3">Calling named templates can also produce RTFs, since the "call" statement would be considered complex variable content. But using the ":=" operator removes this problem:</p>
-<div id="doc_figure_u.104"></div> <pre>
+<div id="doc_figure_u.116"></div> <pre>
     var $output := call matching-color($match = "corn");
 	    </pre> <p id="doc_section_4_2_1_p_5">Behind the scenes, SLAX is performing the ext:node-set() call but the details are hidden from the user.</p>
 </div>
@@ -24462,7 +24895,7 @@ jQuery(function ($) {
 <a id="if-else" href="#if-else">The "if" and "else" Statements</a>
 </h3>
 <p id="doc_section_4_3_1_p_1">SLAX supports an "if" statement that uses a C-like syntax. The expressions that appear in parentheses are extended form of XPath expressions, which support the double equal sign ("==") in place of XPath's single equal sign ("="). This allows C programmers to avoid slipping into dangerous habits.</p>
-<div id="doc_figure_u.105"></div> <pre>
+<div id="doc_figure_u.117"></div> <pre>
     if (this &amp;&amp; that || the/other[one]) {
         /* SLAX has a simple "if" statement */
     } else if (yet[more == "fun"]) {
@@ -24471,7 +24904,7 @@ jQuery(function ($) {
         /* ... and "else" */
     }
 	    </pre> <p id="doc_section_4_3_1_p_3">Depending on the presence of the "else" clause, an "if" statement can be transformed into either an &lt;xsl:if&gt; element or an &lt;xsl:choose&gt; element.</p>
-<div id="doc_figure_u.106"></div> <pre>
+<div id="doc_figure_u.118"></div> <pre>
     if (starts-with(name, "fe-")) {
         if (mtu &lt; 1500) {
            /* Deal with fast ethernet interfaces with low MTUs */
@@ -24482,7 +24915,7 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_4_3_1_p_5">The XSLT equivalent:</p>
-<div id="doc_figure_u.107"></div> <pre>
+<div id="doc_figure_u.119"></div> <pre>
     &lt;xsl:choose&gt;
       &lt;xsl:when select="starts-with(name, 'fe-')"&gt;
         &lt;xsl:if test="mtu &amp;lt; 1500"&gt;
@@ -24503,27 +24936,27 @@ jQuery(function ($) {
 <a id="for-each" href="#for-each">The "for&#8209;each" Statement</a>
 </h3>
 <p id="doc_section_4_3_2_p_1">The "for&#8209;each" statement iterates through the members of a node set, evaluating the contents of the statement with the context set to each node.</p>
-<div id="doc_figure_u.108"></div> <pre>
+<div id="doc_figure_u.120"></div> <pre>
     SYNTAX::
         'for-each' '(' xpath-expression ')' '{'
             contents
         '}'
 	    </pre> <p id="doc_section_4_3_2_p_3">The XPath expression is evaluated into a set of nodes, and then each node is considered as the "context" node, the contents of the "for&#8209;each" statement are evaluated.</p>
-<div id="doc_figure_u.109"></div> <pre>
+<div id="doc_figure_u.121"></div> <pre>
     for-each ($inventory/chassis/chassis-module
               /chassis-sub-module[part-number == '750-000610']) {
         &lt;message&gt; "Down rev PIC in " _ ../name _ ", "
                      _ name _ ": " _ description;
     }
 	    </pre> <p id="doc_section_4_3_2_p_5">The "for&#8209;each" statement mimics functionality of the &lt;xsl:for&#8209;each&gt; element. The statement consists of the "for&#8209;each" keyword, the parentheses-delimited select expression, and a block.</p>
-<div id="doc_figure_u.110"></div> <pre>
+<div id="doc_figure_u.122"></div> <pre>
     for-each ($inventory/chassis/chassis-module
               /chassis-sub-module[part-number == '750-000610']) {
         &lt;message&gt; "Down rev PIC in " _ ../name _ ", "
                      _ name _ ": " _ description;
     }
 	    </pre> <p id="doc_section_4_3_2_p_7">The XSLT equivalent:</p>
-<div id="doc_figure_u.111"></div> <pre>
+<div id="doc_figure_u.123"></div> <pre>
     &lt;xsl:for-each select="$inventory/chassis/chassis-module
               /chassis-sub-module[part-number == '750-000610']"&gt;
         &lt;message&gt;
@@ -24539,13 +24972,13 @@ jQuery(function ($) {
 <a id="for" href="#for">The "for" Statement</a>
 </h3>
 <p id="doc_section_4_3_3_p_1">In addition to the standard XSLT "for&#8209;each" statement, SLAX incorporates a "for" statement that allows iteration through a node set without changing the context (".").</p>
-<div id="doc_figure_u.112"></div> <pre>
+<div id="doc_figure_u.124"></div> <pre>
     SYNTAX::
         'for' variable-name '(' xpath-expression ')' '{'
             contents
         '}'
 	    </pre> <p id="doc_section_4_3_3_p_3">The variable is assigned each member of the node-set selected by the expression in sequence, and the contents are then evaluated.</p>
-<div id="doc_figure_u.113"></div> <pre>
+<div id="doc_figure_u.125"></div> <pre>
     for $item (item-list) {
         &lt;item&gt; $item;
     }
@@ -24558,13 +24991,13 @@ jQuery(function ($) {
 <a id="while" href="#while">The "while" Statement</a>
 </h3>
 <p id="doc_section_4_3_4_p_1">The "while" statement allows a block of code to be repeated until a condition is no longer true. This construct is only useful when combined with mutable variables (<a href="#mvar" title='The "mvar" Statement'>Section 4.1.2</a>).</p>
-<div id="doc_figure_u.114"></div> <pre>
+<div id="doc_figure_u.126"></div> <pre>
     SYNTAX::
         'while' '(' xpath-expression ')' '{'
             contents
         '}'
 	    </pre> <p id="doc_section_4_3_4_p_3">The xpath-expression is cast to a boolean type and if true, the contents are evaluated. The context is not changed. This loop continues until the expression is no longer true. Care must be taken to avoid infinite loops.</p>
-<div id="doc_figure_u.115"></div> <pre>
+<div id="doc_figure_u.127"></div> <pre>
     mvar $seen;
     mvar $count = 1;
     while (not($seen)) {
@@ -24582,7 +25015,7 @@ jQuery(function ($) {
 </h3>
 <p id="doc_section_4_3_5_p_1">The "for&#8209;each" normally considers nodes in document order, but the "sort" statement indicates the specific order the programmer needs.</p>
 <p id="doc_section_4_3_5_p_2">The "sort" statement takes an expression argument that is used as the key, as well as substatements that alter the normal sort behavior.</p>
-<div id="doc_table_u.8"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.12"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Statement</th>
 <th class="left">Values</th>
@@ -24607,7 +25040,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_4_3_5_p_3">Multiple "sort" statements can be used to given secondary sorting keys.</p>
-<div id="doc_figure_u.116"></div> <pre>
+<div id="doc_figure_u.128"></div> <pre>
     for-each (author) {
         sort name/last;
         sort name/first;
@@ -24617,7 +25050,7 @@ jQuery(function ($) {
         copy-of .;
     }
 	    </pre> <p id="doc_section_4_3_5_p_5">XSLT equivalent:</p>
-<div id="doc_figure_u.117"></div> <pre>
+<div id="doc_figure_u.129"></div> <pre>
     &lt;xsl:for-each select="author"&gt;
       &lt;xsl:sort select="name/last"/&gt;
       &lt;xsl:sort select="name/first"/&gt;
@@ -24632,12 +25065,12 @@ jQuery(function ($) {
 <a id="dotdotdot" href="#dotdotdot">The "..." Operator</a>
 </h3>
 <p id="doc_section_4_3_6_p_1">Often a loop is required to iterator through a range of integer values, such a 1 to 10. SLAX introduces the "..." operator to generate sequences of such numbers:</p>
-<div id="doc_figure_u.118"></div> <pre>
+<div id="doc_figure_u.130"></div> <pre>
     for $i (1 ... 10) {
         &lt;player number=$i&gt;;
     }
 	    </pre> <p id="doc_section_4_3_6_p_3">The operator translates into an XPath function that generates the sequence as a node set, which contains a node for each value. The "for" and "for&#8209;each" statements can be used to iterate thru the nodes in a sequence.</p>
-<div id="doc_figure_u.119"></div> <pre>
+<div id="doc_figure_u.131"></div> <pre>
     for-each ($min ... $max) {
         message "Value: " _ .;
     }
@@ -24649,11 +25082,11 @@ jQuery(function ($) {
 <a id="question-colon" href="#question-colon">The "?:" Operator</a>
 </h3>
 <p id="doc_section_4_3_7_p_1">The "?:" operator allows simple logic tests to be coded with the familiar C and Perl operator.</p>
-<div id="doc_figure_u.120"></div> <pre>
+<div id="doc_figure_u.132"></div> <pre>
     var $x = ($a &gt; 10) ? $b : $c;
     var $y = $action ?: "display";
 	    </pre> <p id="doc_section_4_3_7_p_3">The generated XSLT uses an &lt;xsl:choose&gt; element:</p>
-<div id="doc_figure_u.121"></div> <pre>
+<div id="doc_figure_u.133"></div> <pre>
     &lt;xsl:variable name="slax-ternary-1"&gt;
       &lt;xsl:choose&gt;
         &lt;xsl:when test="($a &amp;gt; 10)"&gt;
@@ -24667,7 +25100,7 @@ jQuery(function ($) {
     &lt;xsl:variable name="x" select="slax:value($slax-ternary-1)"/&gt;
 	    </pre> <p id="doc_section_4_3_7_p_5">The use of slax:value() make the "?:" operator non-standard, in that it requires a non-standard extension function. Use of the "?:" should be limited to environments where this function is available.</p>
 <p id="doc_section_4_3_7_p_6">The use of &lt;xsl:copy&#8209;of&gt; means that attributes cannot be used in a ?: expression, directly or indirectly.</p>
-<div id="doc_figure_u.122"></div> <pre>
+<div id="doc_figure_u.134"></div> <pre>
     /* These are examples of invalid use of attributes */
     var $direct = $test ? @broken : will-not-work;
     var $attrib = @some-attribute;
@@ -24694,13 +25127,13 @@ jQuery(function ($) {
 <a id="function" href="#function">The "function" Statement</a>
 </h3>
 <p id="doc_section_4_4_1_p_1">The "function" statement defines a function that can be called in XPath expressions.</p>
-<div id="doc_figure_u.123"></div> <pre>
+<div id="doc_figure_u.135"></div> <pre>
     SYNTAX::
         'function' function-name '(' argument-list ')' '{'
             function-template
         '}'
 	    </pre> <p id="doc_section_4_4_1_p_3">The argument-list is a comma separated list of parameter names, which will be positionally assigned based on the function call. Trailing arguments can have default values, in a similar way to templates. If there are fewer parameters in the invocation than in the definition, then the default values will be used for any trailing arguments. If is an error for the function to be invoke with more arguments than are defined.</p>
-<div id="doc_figure_u.124"></div> <pre>
+<div id="doc_figure_u.136"></div> <pre>
     function size ($width, $length, $scale = 1) {
         ...
     }
@@ -24713,7 +25146,7 @@ jQuery(function ($) {
 <a id="result" href="#result">The "result" Statement</a>
 </h3>
 <p id="doc_section_4_4_2_p_1">The "result" statement defines a value or template used as the return value of the function.</p>
-<div id="doc_figure_u.125"></div> <pre>
+<div id="doc_figure_u.137"></div> <pre>
     SYNTAX::
         'result' value ';'
         'result' element
@@ -24721,7 +25154,7 @@ jQuery(function ($) {
             result-template
         '}'
 	    </pre> <p id="doc_section_4_4_2_p_3">The value can be a simple XPath expression, an XML element, or a set of instructions that emit the value to be returned.</p>
-<div id="doc_figure_u.126"></div> <pre>
+<div id="doc_figure_u.138"></div> <pre>
     function size ($width, $length, $scale = 1) {
         result $width * $length * $scale;
     }
@@ -24755,7 +25188,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_5_1">5.1</a> </div>The "#!" Line</h2>
 <p id="doc_section_5_1_p_1">If the first line of a SLAX script begins with the characters "#!", the rest of that line is ignored. This allows scripts to be invoked directly by name on a unix command line. Additional details are available at the following site:</p>
-<div id="doc_figure_u.127"></div> <pre>
+<div id="doc_figure_u.139"></div> <pre>
     http://en.wikipedia.org/wiki/Shebang_%28Unix%29
 	    </pre> <p id="doc_section_5_1_p_3">(Personally, I've never heard it pronounced "shebang" before; we call it "pound&#8209;bang" around here, just as we say "pound define" rather than "hash define".)</p>
 <p id="doc_section_5_1_p_4">See <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a> for details about the slaxproc utility argument handling and the "#!" line.</p>
@@ -24770,11 +25203,11 @@ jQuery(function ($) {
 <p id="doc_section_5_2_p_2">A script may include another script using the "include" statement. Content from included files is conceptually inserted into the script at the point where the "include" statement is used. The "import" statement works similarly, but the contents of an imported file are given a lower priority (for expression matching and template or function redefinition). Conceptually, imported files are inserted at the top of the script, in the order in which they are given in the source files.</p>
 <p id="doc_section_5_2_p_3">See also <a href="http://www.w3.org/TR/xslt#section-Combining-Stylesheets">http://www.w3.org/TR/xslt#section-Combining-Stylesheets</a>.</p>
 <p id="doc_section_5_2_p_4">The "include" and "import" statements mimic the &lt;xsl:include&gt; and &lt;xsl:import&gt; elements.</p>
-<div id="doc_figure_u.128"></div> <pre>
+<div id="doc_figure_u.140"></div> <pre>
     include "foo.slax";
     import "goo.xsl";
 	    </pre> <p id="doc_section_5_2_p_6">The XSLT equivalent:</p>
-<div id="doc_figure_u.129"></div> <pre>
+<div id="doc_figure_u.141"></div> <pre>
     &lt;xsl:include href="foo.slax"/&gt;
     &lt;xsl:import href="goo.xsl"/&gt;
 	    </pre> <p id="doc_section_5_2_p_8">Import and include documents do _not_ need to be in written in SLAX. SLAX can import and include normal XSLT documents.</p>
@@ -24786,14 +25219,14 @@ jQuery(function ($) {
 <a id="key" href="#key">The "key" Statement</a>
 </h2>
 <p id="doc_section_5_3_p_1">The "key" statement defines a key for use by the "key()" XPath function. Keys allow a script to locate nodes in a document that are referenced by other nodes. Each key definition indicates the nodes on which the key is defined and the value of the key. The key() function can then be used to locate the appropriate node.</p>
-<div id="doc_figure_u.130"></div> <pre>
+<div id="doc_figure_u.142"></div> <pre>
     SYNTAX::
         'key' key-name '{'
             'match' match-expression ';'
             'value value-expression ';'
         '}'
 	    </pre> <p id="doc_section_5_3_p_3">The "key&#8209;name" uniquely identifies the key within the script, and is passed as the first argument to the key() function. The "match" statement gives an XPath expression selecting the set of nodes on which the keys are found, and the "value" statement gives an XPath expression for the value of the key.</p>
-<div id="doc_figure_u.131"></div> <pre>
+<div id="doc_figure_u.143"></div> <pre>
     key func {
         match prototype;
         value @name;
@@ -24807,7 +25240,7 @@ jQuery(function ($) {
 <a id="decimal-format" href="#decimal-format">The "decimal&#8209;format" Statement</a>
 </h2>
 <p id="doc_section_5_4_p_1">The "decimal&#8209;format" statement defines formatting parameters for use by the format-number() XPath function.</p>
-<div id="doc_figure_u.132"></div> <pre>
+<div id="doc_figure_u.144"></div> <pre>
     SYNTAX::
         'decimal-format' format-name ';'
         'decimal-format' format-name '{'
@@ -24823,7 +25256,7 @@ jQuery(function ($) {
             'pattern-separator' data_value ';'
         '}'
 	    </pre> <p id="doc_section_5_4_p_3">The format-name is the name passed as the third argument to the format-number() XPath function. The statements under the "decimal&#8209;format" statement follow the meaning of their counterparts under the &lt;xsl:decimal&#8209;format&gt; element, as detailed in the reference below.</p>
-<div id="doc_figure_u.133"></div> <pre>
+<div id="doc_figure_u.145"></div> <pre>
     decimal-format us {
         decimal-separator ".";
         grouping-separator ",";
@@ -24853,14 +25286,14 @@ jQuery(function ($) {
 <a id="message" href="#message">The "message" Statement</a>
 </h3>
 <p id="doc_section_5_5_1_p_1">The "message" statement allows output to be generated immediately, without waiting until the script generates its final result tree.</p>
-<div id="doc_figure_u.134"></div> <pre>
+<div id="doc_figure_u.146"></div> <pre>
     SYNTAX::
         'message' message-expression ';'
         'message' '{'
             block-statements
         '}'
 	    </pre> <p id="doc_section_5_5_1_p_3">The message-expression is an XPath expression that is emitted as output, typically on the standard error file descriptor. Alternatively, a block of statements can be used to generate the content of the message. The output of the block will be converted to a string using the normal XSLT rules.</p>
-<div id="doc_figure_u.135"></div> <pre>
+<div id="doc_figure_u.147"></div> <pre>
     if (not(valid)) {
         message name() _ " invalid";
     } else if (failed) {
@@ -24872,7 +25305,7 @@ jQuery(function ($) {
         }
     }
 	    </pre> <p id="doc_section_5_5_1_p_5">The XSLT is as follows:</p>
-<div id="doc_figure_u.136"></div> <pre>
+<div id="doc_figure_u.148"></div> <pre>
     &lt;xsl:choose&gt;
       &lt;xsl:when test="not(valid)"&gt;
         &lt;xsl:message&gt;
@@ -24898,7 +25331,7 @@ jQuery(function ($) {
 <a id="terminate" href="#terminate">The "terminate" Statement</a>
 </h3>
 <p id="doc_section_5_5_2_p_1">The "terminate" statement can be used to deliver a message to the user and then exit the script.</p>
-<div id="doc_figure_u.137"></div> <pre>
+<div id="doc_figure_u.149"></div> <pre>
     SYNTAX::
         'terminate' message-expression ';'
         'terminate' '{'
@@ -24914,14 +25347,14 @@ jQuery(function ($) {
 <a id="trace" href="#trace">The "trace" Statement</a>
 </h3>
 <p id="doc_section_5_5_3_p_1">Trace output is vital to writing, debugging, and maintaining scripts. SLAX introduces a trace facility that will record XPath expressions or template contents in a trace file. If tracing is not enabled, then the trace template is not evaluated and no trace output is generated. The enabling of tracing and the naming of trace files is not covered here, since it is typically a feature of the environment in which a SLAX script is called. For example, the "slaxproc" command uses the "&#8209;t" and "-T file" to enable tracing.</p>
-<div id="doc_figure_u.138"></div> <pre>
+<div id="doc_figure_u.150"></div> <pre>
     SYNTAX::
         'trace' trace-message ';'
         'trace' '{'
             trace-template
         '}'
 	    </pre> <p id="doc_section_5_5_3_p_3">The trace-message is an XPath expression that is written to the trace file. The trace-template is executed and the results are written to the trace file.</p>
-<div id="doc_figure_u.139"></div> <pre>
+<div id="doc_figure_u.151"></div> <pre>
     trace "max " _ $max _ "; min " _ $min;
     trace {
         &lt;max&gt; $max;
@@ -24942,7 +25375,7 @@ jQuery(function ($) {
 <a id="output-method" href="#output-method">The "output&#8209;method" Statement</a>
 </h2>
 <p id="doc_section_5_6_p_1">The "output&#8209;method" statement defines the output style to be used when outputing the result tree.</p>
-<div id="doc_figure_u.140"></div> <pre>
+<div id="doc_figure_u.152"></div> <pre>
     SYNTAX::
         'output-method' [style] '{'
             'version' data_value ';'
@@ -24957,7 +25390,7 @@ jQuery(function ($) {
         '}'
 	    </pre> <p id="doc_section_5_6_p_3">The style can be "xml", "html", or "text" (without quotes).</p>
 <p id="doc_section_5_6_p_4">The substatements of "output&#8209;method" correspond to the attributes of the XSLT &lt;xsl:output&gt; element.</p>
-<div id="doc_table_u.9"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.13"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Statement</th>
 <th class="left">Description</th>
@@ -25010,7 +25443,7 @@ jQuery(function ($) {
 <a id="fallback" href="#fallback">The "fallback" Statement</a>
 </h2>
 <p id="doc_section_5_7_p_1">The "fallback" statement directs the XSLT engine to perform a block of code when an extension element is invoked which is not supported.</p>
-<div id="doc_figure_u.141"></div> <pre>
+<div id="doc_figure_u.153"></div> <pre>
     SYNTAX::
         'fallback' '{' statements '}'
 
@@ -25034,18 +25467,18 @@ jQuery(function ($) {
 <a id="strip-space" href="#strip-space">The "strip&#8209;space" Statement</a>
 </h3>
 <p id="doc_section_5_8_1_p_1">The "strip&#8209;space" statement tells the engine to discard the given elements if they contain only whitespace.</p>
-<div id="doc_figure_u.142"></div> <pre>
+<div id="doc_figure_u.154"></div> <pre>
     SYNTAX::
         'strip-space' list-of-element-names ';'
 	    </pre> <p id="doc_section_5_8_1_p_3">The list-of-element-names is a space separated list of element names that should have their contents discarded if they contain only whitespace.</p>
-<div id="doc_figure_u.143"></div> <pre>
+<div id="doc_figure_u.155"></div> <pre>
     strip-space section paragraph bullet;
 	    </pre> <p id="doc_section_5_8_1_p_5">See also <a href="http://www.w3.org/TR/xslt#strip">http://www.w3.org/TR/xslt#strip</a>.</p>
 <p id="doc_section_5_8_1_p_6">The "strip&#8209;space" statement mimics the &lt;xsl:strip&#8209;space&gt; element, instructing the XSLT processor that certain elements should have internal whitespace removed.</p>
-<div id="doc_figure_u.144"></div> <pre>
+<div id="doc_figure_u.156"></div> <pre>
     strip-space foo goo moo;
 	    </pre> <p id="doc_section_5_8_1_p_8">The XSLT equivalent:</p>
-<div id="doc_figure_u.145"></div> <pre>
+<div id="doc_figure_u.157"></div> <pre>
     &lt;xsl:strip-space elements="foo goo moo"/&gt;
 	    </pre> </div>
 <div class="content">
@@ -25055,18 +25488,18 @@ jQuery(function ($) {
 <a id="preserve-space" href="#preserve-space">The "preserve&#8209;space" Statement</a>
 </h3>
 <p id="doc_section_5_8_2_p_1">The "preserve&#8209;space" statement works similar to the "strip&#8209;space" statement, but with the opposite result.</p>
-<div id="doc_figure_u.146"></div> <pre>
+<div id="doc_figure_u.158"></div> <pre>
     SYNTAX::
         'preserve-space' list-of-element-names ';'
 	    </pre> <p id="doc_section_5_8_2_p_3">The list-of-element-names is a space separated list of element names that should have their contents retained even if they contain only whitespace.</p>
-<div id="doc_figure_u.147"></div> <pre>
+<div id="doc_figure_u.159"></div> <pre>
     preserve-space art picture line;
 	    </pre> <p id="doc_section_5_8_2_p_5">See also <a href="http://www.w3.org/TR/xslt#strip">http://www.w3.org/TR/xslt#strip</a>.</p>
 <p id="doc_section_5_8_2_p_6">The "preserve&#8209;space" statement mimics the &lt;xsl:preserve&#8209;space&gt; element, instructing the XSLT processor that certain elements should have internal whitespace retained.</p>
-<div id="doc_figure_u.148"></div> <pre>
+<div id="doc_figure_u.160"></div> <pre>
     preserve-space foo goo moo;
 	    </pre> <p id="doc_section_5_8_2_p_8">The XSLT equivalent:</p>
-<div id="doc_figure_u.149"></div> <pre>
+<div id="doc_figure_u.161"></div> <pre>
     &lt;xsl:preserve-space elements="foo goo moo"/&gt;
 	    </pre> </div>
 </div>
@@ -25077,11 +25510,11 @@ jQuery(function ($) {
 <a id="version" href="#version">The "version" Statement</a>
 </h2>
 <p id="doc_section_5_9_p_1">The "version" statement contains the current version of the SLAX language, allowing scripts and interpreters to progress independently. Old engines will not understand new constructs and should stop with an error when a version number that is unknown to them is seen. New engines should accept any previous language version number, so allow old scripts to run on new engines.</p>
-<div id="doc_figure_u.150"></div> <pre>
+<div id="doc_figure_u.162"></div> <pre>
     SYNTAX::
         'version' version-number ';'
 	    </pre> <p id="doc_section_5_9_p_3">The version-number should be either "1.1" or "1.0". The current version is "1.1" and newly developed scripts should use this version number.</p>
-<div id="doc_figure_u.151"></div> <pre>
+<div id="doc_figure_u.163"></div> <pre>
     version 1.1;
 	    </pre> <p id="doc_section_5_9_p_5">All SLAX stylesheets must begin with a "version" statement, which gives the version number for the SLAX language. This is currently fixed at "1.1" and will increase as the language evolves. Version 1.1 is completely backward compatible with version 1.0, but adds additional functionality that may cause issues for implementations of SLAX 1.0.</p>
 <p id="doc_section_5_9_p_6">SLAX version 1.1 implies XML version 1.0 and XSLT version 1.1.</p>
@@ -25105,7 +25538,7 @@ jQuery(function ($) {
 <a href="#doc_section_6_1_1">6.1.1</a> </div>slax:base64-decode</h3>
 <p id="doc_section_6_1_1_p_1">Use the slax:base64-decode function to decode BASE64 encoded data. BASE64 is means of encoding arbitrary data into a radix-64 format that can be more easily transmitted, typically via STMP or HTTP.</p>
 <p id="doc_section_6_1_1_p_2">The argument is a string of BASE64 encoded data and an option string which is used to replace any non-XML control characters, if any, in the decoded string. If this argument is an empty string, then non-xml characters will be removed. The decoded data is returned to the caller.</p>
-<div id="doc_figure_u.152"></div> <pre>
+<div id="doc_figure_u.164"></div> <pre>
     SYNTAX::
         string slax:base64-decode(string [,control])
 
@@ -25118,7 +25551,7 @@ jQuery(function ($) {
 <a href="#doc_section_6_1_2">6.1.2</a> </div>slax:base64-encode</h3>
 <p id="doc_section_6_1_2_p_1">Use the slax:base64-encode function to encode a string of data in the BASE64 encoding format. BASE64 is means of encoding arbitrary data into a radix-64 format that can be more easily transmitted, typically via STMP or HTTP.</p>
 <p id="doc_section_6_1_2_p_2">The argument is a string of data, and the encoded data is returned.</p>
-<div id="doc_figure_u.153"></div> <pre>
+<div id="doc_figure_u.165"></div> <pre>
     SYNTAX::
         string slax:base64-encode(string)
 
@@ -25130,7 +25563,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_3">6.1.3</a> </div>slax:break-lines</h3>
 <p id="doc_section_6_1_3_p_1">Use the slax:break-lines function to break multi-line text content into multiple elements, each containing a single line of text.</p>
-<div id="doc_figure_u.154"></div> <pre>
+<div id="doc_figure_u.166"></div> <pre>
     SYNTAX::
         node-set slax:break-lines(node-set)
 
@@ -25148,7 +25581,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_4">6.1.4</a> </div>slax:dampen</h3>
 <p id="doc_section_6_1_4_p_1">Use the slax:dampen() function to limit the rate of occurrence of a named event. If slax:dampen() is called more than "max" times in "time&#8209;period" minutes, it will return "true", allowing the caller to react to this condition.</p>
-<div id="doc_figure_u.155"></div> <pre>
+<div id="doc_figure_u.167"></div> <pre>
     SYNTAX::
         boolean slax:dampen(name, max, time-period)
 
@@ -25164,7 +25597,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_5">6.1.5</a> </div>slax:document</h3>
 <p id="doc_section_6_1_5_p_1">Use the slax:document() function to read a data from a file or URL. The data can be encoded in any character set (defaulting to "utf&#8209;8") and can be BASE64 encoded. In addition, non-XML control characters, if any, can be replaced.</p>
-<div id="doc_figure_u.156"></div> <pre>
+<div id="doc_figure_u.168"></div> <pre>
     SYNTAX::
         string slax:document(url [, options])
 
@@ -25177,7 +25610,7 @@ jQuery(function ($) {
             &lt;non-xml&gt; "#";
         }
         var $data2 = slax:document($url, $options);
-	    </pre> <div id="doc_table_u.10"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <div id="doc_table_u.14"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Option</th>
 <th class="left">Description</th>
@@ -25204,7 +25637,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_6">6.1.6</a> </div>slax:evaluate</h3>
 <p id="doc_section_6_1_6_p_1">Use the slax:evaluate() function to evaluate a SLAX expression. This permits expressions using the extended syntax that SLAX provides in addition to what is allowed in XPath (see <a href="#expressions" title="Expressions">Section 2.1</a>). The results of the expression are returned.</p>
-<div id="doc_figure_u.157"></div> <pre>
+<div id="doc_figure_u.169"></div> <pre>
     SYNTAX::
         object slax:evaluate(expression)
 
@@ -25216,7 +25649,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_7">6.1.7</a> </div>slax:first-of</h3>
 <p id="doc_section_6_1_7_p_1">Use the slax:first-of() function to find the first value present in a test of arguments. The first non-empty or non-zero length string will be returned.</p>
-<div id="doc_figure_u.158"></div> <pre>
+<div id="doc_figure_u.170"></div> <pre>
     SYNTAX::
         object slax:first-of(object+)
 
@@ -25228,7 +25661,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_8">6.1.8</a> </div>slax:get-command</h3>
 <p id="doc_section_6_1_8_p_1">Use the slax:get-command() function to return an input string provided by the user in response to a given prompt string. If the "readline" (or "libedit") library was found at install time, the returned value is entered in the readline history, and will be available via the readline history keystrokes (Control-P and Control-N).</p>
-<div id="doc_figure_u.159"></div> <pre>
+<div id="doc_figure_u.171"></div> <pre>
     SYNTAX::
         string slax:get-command(prompt)
 
@@ -25240,7 +25673,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_9">6.1.9</a> </div>slax:get-input</h3>
 <p id="doc_section_6_1_9_p_1">Use the slax:get-input() function to return an input string provided by the user in response to a given prompt string.</p>
-<div id="doc_figure_u.160"></div> <pre>
+<div id="doc_figure_u.172"></div> <pre>
     SYNTAX::
         string slax:get-input(prompt)
 
@@ -25252,7 +25685,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_10">6.1.10</a> </div>slax:get-secret</h3>
 <p id="doc_section_6_1_10_p_1">Use the slax:get-secret() function to return an input string provided by the user in response to a given prompt string. Any text entered by the user will not be displayed or echoed back to the user, making this function suitable for obtaining secret information such as passwords.</p>
-<div id="doc_figure_u.161"></div> <pre>
+<div id="doc_figure_u.173"></div> <pre>
     SYNTAX::
         string slax:get-secret(prompt)
 
@@ -25264,7 +25697,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_11">6.1.11</a> </div>slax:is-empty</h3>
 <p id="doc_section_6_1_11_p_1">Use the slax:is-empty() function to determine if a node-set or RTF is truly empty.</p>
-<div id="doc_figure_u.162"></div> <pre>
+<div id="doc_figure_u.174"></div> <pre>
     SYNTAX::
         boolean slax:is-empty(object)
 
@@ -25278,7 +25711,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_6_1_12">6.1.12</a> </div>slax:printf</h3>
 <p id="doc_section_6_1_12_p_1">Use the slax:printf() function to format text in the manner of the standard "C" "printf" function (printf(3)). The normal printf format values are honored, as are a number of "%j" extensions.</p>
-<div id="doc_table_u.11"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.15"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Format</th>
 <th class="left">Description</th>
@@ -25298,7 +25731,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.163"></div> <pre>
+<div id="doc_figure_u.175"></div> <pre>
     SYNTAX::
         string slax:printf(format, string*)
 
@@ -25314,7 +25747,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_13">
 <div class="self-section-number">
 <a href="#doc_section_6_1_13">6.1.13</a> </div>slax:regex</h3>
-<div id="doc_figure_u.164"></div> <pre>
+<div id="doc_figure_u.176"></div> <pre>
     SYNTAX::
         node-set slax:regex(pattern, string, opts?)
 	    </pre> <p id="doc_section_6_1_13_p_2">Match a regex, returning a node set of the full string matched plus any parenthesized matches. Options include "b", "i", "n", "^", and "$", for boolean results, ICASE, NEWLINE, NOTBOL, and NOTEOL.</p>
@@ -25323,7 +25756,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_14">
 <div class="self-section-number">
 <a href="#doc_section_6_1_14">6.1.14</a> </div>slax:sleep</h3>
-<div id="doc_figure_u.165"></div> <pre>
+<div id="doc_figure_u.177"></div> <pre>
     SYNTAX::
         void slax:sleep(seconds, milliseconds)
 	    </pre> <p id="doc_section_6_1_14_p_2">Sleep for a given time period.</p>
@@ -25332,7 +25765,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_15">
 <div class="self-section-number">
 <a href="#doc_section_6_1_15">6.1.15</a> </div>slax:split</h3>
-<div id="doc_figure_u.166"></div> <pre>
+<div id="doc_figure_u.178"></div> <pre>
     SYNTAX::
         node-set slax:split(pattern, string, limit)
 	    </pre> <p id="doc_section_6_1_15_p_2">Break a string into a set of elements, up to the limit times, at the pattern.</p>
@@ -25341,7 +25774,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_16">
 <div class="self-section-number">
 <a href="#doc_section_6_1_16">6.1.16</a> </div>slax:sysctl</h3>
-<div id="doc_figure_u.167"></div> <pre>
+<div id="doc_figure_u.179"></div> <pre>
     SYNTAX::
         string slax:sysctl(name, format)
 	    </pre> <p id="doc_section_6_1_16_p_2">Retrieve a sysctl variable. Format is "i" or "s".</p>
@@ -25350,7 +25783,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_17">
 <div class="self-section-number">
 <a href="#doc_section_6_1_17">6.1.17</a> </div>slax:string-to-xml</h3>
-<div id="doc_figure_u.168"></div> <pre>
+<div id="doc_figure_u.180"></div> <pre>
     SYNTAX::
         node-set slax:string-to-xml(string+)
 	    </pre> <p id="doc_section_6_1_17_p_2">Return parsed XML of concatenated arguments.</p>
@@ -25359,7 +25792,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_18">
 <div class="self-section-number">
 <a href="#doc_section_6_1_18">6.1.18</a> </div>slax:syslog</h3>
-<div id="doc_figure_u.169"></div> <pre>
+<div id="doc_figure_u.181"></div> <pre>
     SYNTAX::
         void slax:syslog(priority, string+)
 	    </pre> <p id="doc_section_6_1_18_p_2">Syslog the concatenation of set of arguments.</p>
@@ -25368,7 +25801,7 @@ jQuery(function ($) {
 <h3 id="doc_section_6_1_19">
 <div class="self-section-number">
 <a href="#doc_section_6_1_19">6.1.19</a> </div>slax:xml-to-string</h3>
-<div id="doc_figure_u.170"></div> <pre>
+<div id="doc_figure_u.182"></div> <pre>
     SYNTAX::
         string slax:xml-to-string(node-set+)
 	    </pre> <p id="doc_section_6_1_19_p_2">Return stringified XML hierarchies.</p>
@@ -25389,7 +25822,7 @@ jQuery(function ($) {
 <p id="doc_section_7_1_p_1">The core of the distribution is the libslax library, which incorporates a SLAX parser to read SLAX files, a SLAX writer to write SLAX files, a debugger, a profiler, and a commandline tool.</p>
 <p id="doc_section_7_1_p_2">The reader turns a SLAX source file into an XSLT tree (xmlDocPtr) using the xsltSetLoaderFunc() hook. The writer turns an XSLT tree (xmlDocPtr) into a file containing SLAX statements.</p>
 <p id="doc_section_7_1_p_3">To support SLAX in your application, link with libslax and call the libslax initializer function:</p>
-<div id="doc_figure_u.171"></div> <pre>
+<div id="doc_figure_u.183"></div> <pre>
     #include &lt;libslax/slax.h&gt;
 
     slaxEnable(1);
@@ -25399,15 +25832,17 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_7_2">7.2</a> </div>slaxproc: The SLAX Processor</h2>
 <p id="doc_section_7_2_p_1">The SLAX software distribution contains a library (libslax) and a command line tool (slaxproc). The command line tool can be used to convert between XSLT and SLAX syntax, as well as run stylesheets and check syntax.</p>
-<div id="doc_figure_u.172"></div> <pre>
+<div id="doc_figure_u.184"></div> <pre>
   Usage: slaxproc [mode] [options] [script] [files]
    Modes:
      --check OR -c: check syntax and content for a SLAX script
      --format OR -F: format (pretty print) a SLAX script
+     --json-to-xml: Turn JSON data into XML
      --run OR -r: run a SLAX script (the default mode)
      --show-select: show XPath selection from the input document
      --show-variable: show contents of a global variable
      --slax-to-xslt OR -x: turn SLAX into XSLT
+     --xml-to-json: turn XML into JSON
      --xslt-to-slax OR -s: turn XSLT into SLAX
 
     Options:
@@ -25421,6 +25856,7 @@ jQuery(function ($) {
      --include &lt;dir&gt; OR -I &lt;dir&gt;: search dir for includes/imports
      --indent OR -g: indent output ala output-method/indent
      --input &lt;file&gt; OR -i &lt;file&gt;: take input from the given file
+     --json-tagging: tag json-style input with the 'json' attribute
      --lib &lt;dir&gt; OR -L &lt;dir&gt;: search dir for extension libraries
      --name &lt;file&gt; OR -n &lt;file&gt;: read the script from the given file
      --no-randomize: do not initialize the random number generator
@@ -25437,19 +25873,19 @@ jQuery(function ($) {
   Project libslax home page: https://github.com/Juniper/libslax
 	    </pre> <p id="doc_section_7_2_p_3">Files can be referenced positionally (where the script file first) or by using the "&#8209;n", "&#8209;i", and "&#8209;o" options.</p>
 <p id="doc_section_7_2_p_4">To use slaxproc to convert a SLAX file to XSLT:</p>
-<div id="doc_figure_u.173"></div> <pre>
+<div id="doc_figure_u.185"></div> <pre>
     $ slaxproc mine.slax new.xsl
 	    </pre> <p id="doc_section_7_2_p_6">To convert an XSLT file to SLAX:</p>
-<div id="doc_figure_u.174"></div> <pre>
+<div id="doc_figure_u.186"></div> <pre>
     $ slaxproc existing.xsl new.slax
 	    </pre> <p id="doc_section_7_2_p_8">To run a script:</p>
-<div id="doc_figure_u.175"></div> <pre>
+<div id="doc_figure_u.187"></div> <pre>
     $ slaxproc mine.slax infile.xml outfile.xml
 	    </pre> <p id="doc_section_7_2_p_10">Use the "&#8209;g" option to produce good-looking output by enabling indenting (aka "pretty&#8209;printing") of output. In this example, since the output filename is not given, the output is written to the standard output stream (stdout):</p>
-<div id="doc_figure_u.176"></div> <pre>
+<div id="doc_figure_u.188"></div> <pre>
     $ slaxproc -g mine.slax infile.xml
 	    </pre> <p id="doc_section_7_2_p_12">Use the "&#8209;p" flag to perform conversion of SLAX and XML formats for partial data files. This can be used as a filter inside an editor to convert a region from one format to the other:</p>
-<div id="doc_figure_u.177"></div> <pre>
+<div id="doc_figure_u.189"></div> <pre>
     $ cat in.xml | slaxproc -s -p &gt; out.slax
 	    </pre> <p id="doc_section_7_2_p_14">Use the "&#8209;w" option to restrict the output of slaxproc to 1.0 features.</p>
 <div class="content">
@@ -25459,14 +25895,14 @@ jQuery(function ($) {
 <a id="slaxproc-arguments" href="#slaxproc-arguments">Argument Handling</a>
 </h3>
 <p id="doc_section_7_2_1_p_1">slaxproc accept the script name, input name, and output name in two ways. You can say:</p>
-<div id="doc_figure_u.178"></div> <pre>
+<div id="doc_figure_u.190"></div> <pre>
     slaxproc script.slax input.xml output.xml
 	    </pre> <p id="doc_section_7_2_1_p_3">using positional arguments. This way allows slaxproc to be plug compatible with xsltproc.</p>
 <p id="doc_section_7_2_1_p_4">The other way is to give explicit option values using "&#8209;n", "&#8209;i", and "&#8209;o". The above command line can be given as:</p>
-<div id="doc_figure_u.179"></div> <pre>
+<div id="doc_figure_u.191"></div> <pre>
    slaxproc -i input.xml -n script.slax -o output.xml
 	    </pre> <p id="doc_section_7_2_1_p_6">These options can be in any order and can be intermixed with other arguments. If none of the values are given, they can still be parsed positionally. In this example, the script name is positional but the input and output file names are positional.</p>
-<div id="doc_figure_u.180"></div> <pre>
+<div id="doc_figure_u.192"></div> <pre>
    slaxproc -i input.xml -o output.xml -g -v script.slax
 	    </pre> <div class="content">
 <h4 id="doc_section_7_2_1_1">
@@ -25475,20 +25911,20 @@ jQuery(function ($) {
 <a id="pound-bang" href="#pound-bang">"#!" Support</a>
 </h4>
 <p id="doc_section_7_2_1_1_p_1">SLAX supports the "#!" unix scripting mechanism, allowing the first line of a script to begin with the characters '#' and '!' followed by a path to the executable that runs the script and a set of command line arguments. For SLAX scripts, this might be something like:</p>
-<div id="doc_figure_u.181"></div> <pre>
+<div id="doc_figure_u.193"></div> <pre>
     #!/usr/bin/slaxproc -n
 	    </pre> <p id="doc_section_7_2_1_1_p_3">or:</p>
-<div id="doc_figure_u.182"></div> <pre>
+<div id="doc_figure_u.194"></div> <pre>
     #!/opt/local/bin/slaxproc -n
 	    </pre> <p id="doc_section_7_2_1_1_p_5">The operating system will add the name of the scripts and any command line arguments to the command line that follows the "#!". Adding the "&#8209;n" option (as shown above) allows additional arguments to be passed in on the command line. Flexible argument parsing allows aliases and</p>
 <p id="doc_section_7_2_1_1_p_6">needs. For example if a script begins with:</p>
-<div id="doc_figure_u.183"></div> <pre>
+<div id="doc_figure_u.195"></div> <pre>
     #!/usr/bin/slaxproc -E -n 
 	    </pre> <p id="doc_section_7_2_1_1_p_8">then additional slaxproc arguments can be given:</p>
-<div id="doc_figure_u.184"></div> <pre>
+<div id="doc_figure_u.196"></div> <pre>
     $ that-script -g output.xml
 	    </pre> <p id="doc_section_7_2_1_1_p_10">and the resulting command should be:</p>
-<div id="doc_figure_u.185"></div> <pre>
+<div id="doc_figure_u.197"></div> <pre>
     /usr/bin/slaxproc -E -n /path/to/that-script -g output.xml
 	    </pre> <p id="doc_section_7_2_1_1_p_12">The -E option tells slaxproc to use an empty input document, removing the need for the "&#8209;i" option or a positional argument.</p>
 <p id="doc_section_7_2_1_1_p_13">If the input or output arguments have the value "&#8209;" (or is not given), the standard input or standard output file will be used. This allows slaxproc to be used as a traditional unix filter.</p>
@@ -25511,6 +25947,8 @@ jQuery(function ($) {
 <dd>Perform syntax and content check for a SLAX script, reporting any errors detected. This mode is useful for off-box syntax checks for scripts before installing or uploading them.</dd>
 <dt>--format OR -F</dt>
 <dd>Format (aka "pretty print") a SLAX script, correcting indentation and spacing to the style preferred by the author (that is, me).</dd>
+<dt>--json-to-xml</dt>
+<dd>Transform JSON input into XML, using the conventions defined in <a href="#json-elements" title="JSON Elements">Section 2.2.3</a>.</dd>
 <dt>--run OR -r</dt>
 <dd>Run a SLAX script. The script name, input file name, and output file name can be provided via command line options and/or using positional arguments as described in <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a>. Input defaults to standard input and output defaults to standard output. "&#8209;r" is the default mode for slaxproc.</dd>
 <dt>--show-select</dt>
@@ -25519,6 +25957,8 @@ jQuery(function ($) {
 <dd>Show contents of a global variable. Used to extract static variable contents for external consumption. This allows the consumer of the data to avoid a SLAX parser, but still have access to the static contents of global variables, such as the $arguments variable.</dd>
 <dt>--slax-to-xslt OR -x</dt>
 <dd>Convert a SLAX script into XSLT format. The script name and output file name can be provided via command line options and/or using positional arguments as described in <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a>.</dd>
+<dt>--xml-to-json</dt>
+<dd>Transform XML input into JSON, using the conventions defined in <a href="#json-elements" title="JSON Elements">Section 2.2.3</a>.</dd>
 <dt>--xslt-to-slax OR -s</dt>
 <dd>Convert a XSLT script into SLAX format. The script name and output file name can be provided via command line options and/or using positional arguments as described in <a href="#slaxproc-arguments" title="Argument Handling">Section 7.2.1</a>.</dd>
 </dl>
@@ -25551,6 +25991,8 @@ jQuery(function ($) {
 <dd>Indent output to make it good looking. This option is identical to the behavior triggered by "output-method { indent 'true'; }".</dd>
 <dt>--input &lt;file&gt; OR -i &lt;file&gt;</dt>
 <dd>Use the given file for input.</dd>
+<dt>--json-tagging</dt>
+<dd>Tag JSON elements as they are parsing into XML with the 'json' attribute. This allows the --format mode to transform them back into JSON format.</dd>
 <dt>--lib &lt;dir&gt; OR -L &lt;dir&gt;</dt>
 <dd>Add a directory to the list of directories searched for extension libraries.</dd>
 <dt>--name &lt;file&gt; OR -n &lt;file&gt;</dt>
@@ -25586,7 +26028,7 @@ jQuery(function ($) {
 <a id="sdb" href="#sdb">The SLAX Debugger (sdb)</a>
 </h2>
 <p id="doc_section_7_3_p_1">The SLAX distribution includes a debugger called "sdb", which can be accessed via the "slaxproc" command using the "&#8209;d" option. The debugger resembles "gdb" command syntax and operation.</p>
-<div id="doc_figure_u.186"></div> <pre>
+<div id="doc_figure_u.198"></div> <pre>
   (sdb) help
   List of commands:
     break [loc]     Add a breakpoint at [file:]line or template
@@ -25607,14 +26049,14 @@ jQuery(function ($) {
     where           Show the backtrace of template calls
     quit            Quit debugger
 	    </pre> <p id="doc_section_7_3_p_3">The "info" command can display the following information:</p>
-<div id="doc_figure_u.187"></div> <pre>
+<div id="doc_figure_u.199"></div> <pre>
   (sdb) info help
   List of commands:
     info breakpoints  Display current breakpoints
     info profile [brief]  Report profiling information
 	    </pre> <p id="doc_section_7_3_p_5">Many of these commands follow their "gdb" counterparts, to the extent possible.</p>
 <p id="doc_section_7_3_p_6">The location for the "break", "continue", and "list" commands can be either a line number of the current file, a filename and a line number, separated by a colon, or the name of a template.</p>
-<div id="doc_figure_u.188"></div> <pre>
+<div id="doc_figure_u.200"></div> <pre>
   (sdb) b 14
   Breakpoint 1 at file ../tests/core/test-empty-21.slax, line 14
   (sdb) b 19
@@ -25637,7 +26079,7 @@ jQuery(function ($) {
 </h2>
 <p id="doc_section_7_4_p_1">The SLAX debugger includes a profiler which can report information about the activity and performance of a script. The profiler is automatically enabled when the debugger is started, and tracks script execution until the script terminates. At any point, profiling information can be displayed or cleared, and the profiler can be temporarily disabled or enabled.</p>
 <p id="doc_section_7_4_p_2">Use the "profile" command to access the profiler:</p>
-<div id="doc_figure_u.189"></div> <pre>
+<div id="doc_figure_u.201"></div> <pre>
   (sdb) help profile
   List of commands:
     profile clear   Clear  profiling information
@@ -25658,7 +26100,7 @@ jQuery(function ($) {
 </ul>
 <p id="doc_section_7_4_p_6">The "brief" option instructs sdb to avoid showing lines that were not hit, since there is no valid information for them. Without the "brief" option, dashes are displayed.</p>
 <p id="doc_section_7_4_p_7">In the following example, the source code data is heavily truncated (with "....") to allow the material to fit on this page. sdb would not truncate these lines:</p>
-<div id="doc_figure_u.190"></div> <pre>
+<div id="doc_figure_u.202"></div> <pre>
   (sdb) run
   &lt;?xml version="1.0"?&gt;
   &lt;message&gt;Down rev PIC in Fruvenator, Fru-Master 3000&lt;/message&gt;
@@ -25686,14 +26128,15 @@ jQuery(function ($) {
       9      1     45    45.00      15    15.00          ....
   Total      6    131               51   Total
   (sdb) 
-	    </pre> <p id="doc_section_7_4_p_9">This information not only show how much time is spent during code execution, but can also show which lines are being executed, which can help debug scripts where the execution does not match expectations.</p>
+	    </pre> <p id="doc_section_7_4_p_9">This information not only shows how much time is spent during code execution, but also shows which lines are being executed, which can help debug scripts where the execution does not match expectations.</p>
+<p id="doc_section_7_4_p_10">The profiling is not "Monte Carlo", or clock based, but is based on trace data generated as each SLAX instruction is executed, giving more precise data.</p>
 </div>
 <div class="content">
 <h2 id="doc_section_7_5">
 <div class="self-section-number">
 <a href="#doc_section_7_5">7.5</a> </div>callflow</h2>
 <p id="doc_section_7_5_p_1">The "callflow" command enables the printing of informational data when levels of the script are entered and exited. The lines are simple, but reference the instruction, filename, and line number of the frame:</p>
-<div id="doc_figure_u.191"></div> <pre>
+<div id="doc_figure_u.203"></div> <pre>
   callflow: 0: enter &lt;xsl:template&gt; in match / at empty-15.slax:5
   callflow: 1: enter &lt;xsl:variable&gt; at empty-15.slax:13
   callflow: 1: exit &lt;xsl:variable&gt; at empty-15.slax:13
@@ -25706,7 +26149,9 @@ jQuery(function ($) {
 <div class="content">
 <h1 id="doc_section_8" class="np">
 <div class="self-section-number">
-<a href="#doc_section_8">8_</a> </div>Extension Libraries in libslax</h1>
+<a href="#doc_section_8">8_</a> </div>
+<a id="libslax-extensions" href="#libslax-extensions">Extension Libraries in libslax</a>
+</h1>
 <p id="doc_section_8_p_1">libslax supports a means of dynamically loading extension libraries. After a script is parsed, any extension prefixes are determined, along with their namespaces. Each namespace are then URL-escaped and a ".ext" suffix is appended to generate a filename for the extension library that supports that namespace.</p>
 <p id="doc_section_8_p_2">Extension libraries should be placed in the directory named that is either:</p>
 <p id="doc_section_8_p_3"> </p>
@@ -25722,7 +26167,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_1">8.1</a> </div>The "bit" Extension Library </h2>
 <p id="doc_section_8_1_p_1">The "bit" extension library has functions that interpret a string as a series of bit, allowing arbitrary length bit arrays and operations on those arrays.</p>
-<div id="doc_table_u.12"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.16"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Function and Arguments</th>
 <th class="left">Description</th>
@@ -25820,7 +26265,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_1">8.2.1.1</a> </div>&lt;cc&gt;</h4>
 <p id="doc_section_8_2_1_1_p_1">The &lt;cc&gt; element gives a "Cc" address for "email" (SMTP) requests. For multiple address, use multiple &lt;cc&gt; elements.</p>
-<div id="doc_figure_u.192"></div> <pre>
+<div id="doc_figure_u.204"></div> <pre>
     SYNTAX::
       &lt;cc&gt; "cc-user@email.examplecom";
 	    </pre> </div>
@@ -25829,7 +26274,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_2">8.2.1.2</a> </div>&lt;connect&#8209;timeout&gt;</h4>
 <p id="doc_section_8_2_1_2_p_1">The &lt;connect&#8209;timeout&gt; element gives the number of seconds before a connection attempt is considered to have failed.</p>
-<div id="doc_figure_u.193"></div> <pre>
+<div id="doc_figure_u.205"></div> <pre>
     SYNTAX::
       &lt;connect-timeout&gt; 10;
 	    </pre> </div>
@@ -25838,7 +26283,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_3">8.2.1.3</a> </div>&lt;contents&gt;</h4>
 <p id="doc_section_8_2_1_3_p_1">The &lt;contents&gt; element gives the contents to be transfered.</p>
-<div id="doc_figure_u.194"></div> <pre>
+<div id="doc_figure_u.206"></div> <pre>
     SYNTAX::
       &lt;contents&gt; "multi-\nline\ncontents\n";
 	    </pre> </div>
@@ -25847,7 +26292,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_4">8.2.1.4</a> </div>&lt;content&#8209;type&gt;</h4>
 <p id="doc_section_8_2_1_4_p_1">The &lt;content&#8209;type&gt; element gives the MIME type for the transfer payload.</p>
-<div id="doc_figure_u.195"></div> <pre>
+<div id="doc_figure_u.207"></div> <pre>
     SYNTAX::
       &lt;content-type&gt; "mime/type";
 	    </pre> </div>
@@ -25856,7 +26301,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_5">8.2.1.5</a> </div>&lt;errors&gt;</h4>
 <p id="doc_section_8_2_1_5_p_1">The &lt;errors&gt; element controls how HTML and XML parsing errors are handled. The default (display them on stderr) is often not attractive. Instead errors can be ignored, logged, or recorded, based on the contents of the &lt;errors&gt; element:</p>
-<div id="doc_table_u.13"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.17"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Special behavior</th>
@@ -25881,7 +26326,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_2_1_5_p_2">When &lt;errors&gt; is set to "record", all errors appear in a string under the &lt;errors&gt; element in the XML node (as returned by e.g. curl:perform). If no errors are generated, the &lt;errors&gt; element will not be present, allowing it to be used as a test for errors:</p>
-<div id="doc_figure_u.196"></div> <pre>
+<div id="doc_figure_u.208"></div> <pre>
     var $opt = {
         &lt;url&gt; $url;
         &lt;format&gt; "html";
@@ -25897,7 +26342,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_6">8.2.1.6</a> </div>&lt;fail&#8209;on&#8209;error&gt;</h4>
 <p id="doc_section_8_2_1_6_p_1">The &lt;fail&#8209;on&#8209;error&gt; element indicates that the transfer should fail if any errors where detected, including insignificant ones.</p>
-<div id="doc_figure_u.197"></div> <pre>
+<div id="doc_figure_u.209"></div> <pre>
     SYNTAX::
       &lt;fail-on-error&gt;;
 	    </pre> </div>
@@ -25907,7 +26352,7 @@ jQuery(function ($) {
 <a href="#doc_section_8_2_1_7">8.2.1.7</a> </div>&lt;format&gt;</h4>
 <p id="doc_section_8_2_1_7_p_1">The &lt;format&gt; element gives the expected format of the returned results, allowing the curl extension to automatically make the content available in the native format.</p>
 <p id="doc_section_8_2_1_7_p_2">&lt;format&gt; "xml";</p>
-<div id="doc_table_u.14"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.18"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Format name</th>
 <th class="left">Special behavior</th>
@@ -25937,7 +26382,7 @@ jQuery(function ($) {
 </table></div>
 <p id="doc_section_8_2_1_7_p_3">The "name" encoding is used for name=value pairs separated by newlines, where the url-encoded encoding is used when the name=value pairs are separated by "&amp;".</p>
 <p id="doc_section_8_2_1_7_p_4">The parsed data is returned in the &lt;data&gt; element, using &lt;name&gt; elements. In the following example results, &lt;format&gt; was set to "url&#8209;encoded":</p>
-<div id="doc_figure_u.198"></div> <pre>
+<div id="doc_figure_u.210"></div> <pre>
     &lt;results&gt;
       &lt;url&gt;https://api.example.com/request_token&lt;/url&gt;
       &lt;curl-success/&gt;
@@ -25986,7 +26431,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_8">8.2.1.8</a> </div>&lt;from&gt;</h4>
 <p id="doc_section_8_2_1_8_p_1">The &lt;from&gt; element gives the "From" address to use for "email" (SMTP) requests.</p>
-<div id="doc_figure_u.199"></div> <pre>
+<div id="doc_figure_u.211"></div> <pre>
     SYNTAX::
       &lt;from&gt; "source-user@email.example.com";
 	    </pre> </div>
@@ -25995,7 +26440,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_9">8.2.1.9</a> </div>&lt;header&gt;</h4>
 <p id="doc_section_8_2_1_9_p_1">The &lt;header&gt; element gives additional header fields for the request.</p>
-<div id="doc_figure_u.200"></div> <pre>
+<div id="doc_figure_u.212"></div> <pre>
     SYNTAX::
       &lt;header name="name"&gt; "value";
 	    </pre> </div>
@@ -26004,7 +26449,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_10">8.2.1.10</a> </div>&lt;insecure&gt;</h4>
 <p id="doc_section_8_2_1_10_p_1">The &lt;insecure&gt; element indicates a willingness to tolerate insecure communications operations. In particular, it will allow SSL Certs without checking the common name.</p>
-<div id="doc_figure_u.201"></div> <pre>
+<div id="doc_figure_u.213"></div> <pre>
     SYNTAX::
       &lt;insecure&gt;;
 	    </pre> </div>
@@ -26013,7 +26458,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_11">8.2.1.11</a> </div>&lt;local&gt;</h4>
 <p id="doc_section_8_2_1_11_p_1">The &lt;local&gt; element gives the name to use as the local hostname for "email" (SMTP) requests .</p>
-<div id="doc_figure_u.202"></div> <pre>
+<div id="doc_figure_u.214"></div> <pre>
     SYNTAX::
       &lt;local&gt; "local host name";
 	    </pre> </div>
@@ -26022,11 +26467,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_12">8.2.1.12</a> </div>&lt;method&gt;</h4>
 <p id="doc_section_8_2_1_12_p_1">The &lt;method&gt; element sets the method used to transfer data. This controls the HTTP request type, as well as triggering other transfer mechanisms.</p>
-<div id="doc_figure_u.203"></div> <pre>
+<div id="doc_figure_u.215"></div> <pre>
     SYNTAX::
       &lt;method&gt; $method;
 	    </pre> <p id="doc_section_8_2_1_12_p_3">Method names are listed in the table below.</p>
-<div id="doc_table_u.15"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.19"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Method</th>
 <th class="left">Description</th>
@@ -26069,7 +26514,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_13">8.2.1.13</a> </div>&lt;param&gt;</h4>
 <p id="doc_section_8_2_1_13_p_1">The &lt;param&gt; element gives additional parameter values for the request. These parameters are typically encoded into the URL.</p>
-<div id="doc_figure_u.204"></div> <pre>
+<div id="doc_figure_u.216"></div> <pre>
     SYNTAX::
       &lt;param name="x"&gt; "y";
 	    </pre> </div>
@@ -26078,7 +26523,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_14">8.2.1.14</a> </div>&lt;password&gt;</h4>
 <p id="doc_section_8_2_1_14_p_1">The &lt;password&gt; element sets the user's password for the transfer.</p>
-<div id="doc_figure_u.205"></div> <pre>
+<div id="doc_figure_u.217"></div> <pre>
     SYNTAX::
       &lt;password&gt; "password";
 	    </pre> </div>
@@ -26087,7 +26532,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_15">8.2.1.15</a> </div>&lt;secure&gt;</h4>
 <p id="doc_section_8_2_1_15_p_1">The &lt;secure&gt; element requests the use of the "secure" sibling of many protocols, including HTTPS and FTPS.</p>
-<div id="doc_figure_u.206"></div> <pre>
+<div id="doc_figure_u.218"></div> <pre>
     SYNTAX::
       &lt;secure&gt;;
 	    </pre> </div>
@@ -26096,7 +26541,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_16">8.2.1.16</a> </div>&lt;server&gt;</h4>
 <p id="doc_section_8_2_1_16_p_1">The &lt;server&gt; element gives the outgoing SMTP server name. At present, MX records are not handled, but that will be fixed shortly.</p>
-<div id="doc_figure_u.207"></div> <pre>
+<div id="doc_figure_u.219"></div> <pre>
     SYNTAX::
       &lt;server&gt; "email-server.example.com";
 	    </pre> </div>
@@ -26105,7 +26550,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_17">8.2.1.17</a> </div>&lt;subject&gt;</h4>
 <p id="doc_section_8_2_1_17_p_1">The &lt;subject&gt; element gives the "Subject" field for "email" (SMTP) requests.</p>
-<div id="doc_figure_u.208"></div> <pre>
+<div id="doc_figure_u.220"></div> <pre>
     SYNTAX::
       &lt;subject&gt; "email subject string";
 	    </pre> </div>
@@ -26114,7 +26559,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_18">8.2.1.18</a> </div>&lt;timeout&gt;</h4>
 <p id="doc_section_8_2_1_18_p_1">The &lt;timeout&gt; element gives the number of seconds before an open connection is considered to have failed.</p>
-<div id="doc_figure_u.209"></div> <pre>
+<div id="doc_figure_u.221"></div> <pre>
     SYNTAX::
       &lt;timeout&gt; 10;
 	    </pre> </div>
@@ -26123,7 +26568,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_19">8.2.1.19</a> </div>&lt;to&gt;</h4>
 <p id="doc_section_8_2_1_19_p_1">The &lt;to&gt; element gives a "To" address for "email" (SMTP) requests. For multiple address, use multiple &lt;to&gt; elements.</p>
-<div id="doc_figure_u.210"></div> <pre>
+<div id="doc_figure_u.222"></div> <pre>
     SYNTAX::
       &lt;to&gt; "to-user@email.examplecom";
 	    </pre> </div>
@@ -26132,7 +26577,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_20">8.2.1.20</a> </div>&lt;upload&gt;</h4>
 <p id="doc_section_8_2_1_20_p_1">The &lt;upload&gt; element indicates this is a file upload request.</p>
-<div id="doc_figure_u.211"></div> <pre>
+<div id="doc_figure_u.223"></div> <pre>
     SYNTAX::
       &lt;upload&gt;;
 	    </pre> </div>
@@ -26141,7 +26586,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_21">8.2.1.21</a> </div>&lt;url&gt;</h4>
 <p id="doc_section_8_2_1_21_p_1">The &lt;url&gt; element sets the base URL for the request.</p>
-<div id="doc_figure_u.212"></div> <pre>
+<div id="doc_figure_u.224"></div> <pre>
     SYNTAX::
       &lt;url&gt; "target-url";
 	    </pre> </div>
@@ -26150,7 +26595,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_22">8.2.1.22</a> </div>&lt;username&gt;</h4>
 <p id="doc_section_8_2_1_22_p_1">The &lt;username&gt; element sets the user name to use for the transfer.</p>
-<div id="doc_figure_u.213"></div> <pre>
+<div id="doc_figure_u.225"></div> <pre>
     SYNTAX::
       &lt;username&gt; "username";
 	    </pre> </div>
@@ -26159,7 +26604,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_1_23">8.2.1.23</a> </div>&lt;verbose&gt;</h4>
 <p id="doc_section_8_2_1_23_p_1">The &lt;verbose&gt; element requests an insanely detailed level of debug information that can be useful when debugging requests. The curl extension will display detailed information about the operations and communication of the curl transfer.</p>
-<div id="doc_figure_u.214"></div> <pre>
+<div id="doc_figure_u.226"></div> <pre>
     SYNTAX::
       &lt;verbose&gt;;
 	    </pre> </div>
@@ -26179,11 +26624,11 @@ jQuery(function ($) {
 </h4>
 <p id="doc_section_8_2_2_1_p_1">The "curl:perform" extension function performs simple transfers using a persistent connection handle, as provided by curl:open (<a href="#curl-open" title="curl:open">Section 8.2.2.2</a>).</p>
 <p id="doc_section_8_2_2_1_p_2">The arguments are the connection handle and a set of option elements as listed in <a href="#curl-elements" title="curl Elements">Section 8.2.1</a>. The returned object is an XML hierarchy containing the results of the transfer.</p>
-<div id="doc_figure_u.215"></div> <pre>
+<div id="doc_figure_u.227"></div> <pre>
     SYNTAX::
         object curl:perform(handle, options)
 	    </pre> <p id="doc_section_8_2_2_1_p_4">The returned object may contain the following elements:</p>
-<div id="doc_table_u.16"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.20"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Contents</th>
@@ -26220,7 +26665,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_2_2_1_p_5">The &lt;header&gt; element can contain the following elements:</p>
-<div id="doc_table_u.17"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.21"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Contents</th>
@@ -26245,7 +26690,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_2_2_1_p_6">The following is an example of the &lt;header&gt; element, with header fields parsed into &lt;field&gt; elements.</p>
-<div id="doc_figure_u.216"></div> <pre>
+<div id="doc_figure_u.228"></div> <pre>
       &lt;header&gt;
         &lt;version&gt;HTTP/1.1&lt;/version&gt;
         &lt;code&gt;404&lt;/code&gt;
@@ -26263,7 +26708,7 @@ jQuery(function ($) {
 <a id="curl-open" href="#curl-open">curl:open</a>
 </h4>
 <p id="doc_section_8_2_2_2_p_1">The "curl:open" extension function opens a connection to a remote server, allowing multiple operations over a single connection.</p>
-<div id="doc_figure_u.217"></div> <pre>
+<div id="doc_figure_u.229"></div> <pre>
     SYNTAX::
         handle curl:open();
 	    </pre> <p id="doc_section_8_2_2_2_p_3">The returned handle can be passed to curl:perform() or curl:close().</p>
@@ -26273,11 +26718,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_3">8.2.2.3</a> </div>curl:set</h4>
 <p id="doc_section_8_2_2_3_p_1">The "curl:set" extension function records a set of parameters that will persist for the lifespan of a connection.</p>
-<div id="doc_figure_u.218"></div> <pre>
+<div id="doc_figure_u.230"></div> <pre>
     SYNTAX::
         void cur:set(handle, options);
 	    </pre> <p id="doc_section_8_2_2_3_p_3">curl:set() sets options on the handle, so they don't need to be repeated on each curl:perform() call.</p>
-<div id="doc_figure_u.219"></div> <pre>
+<div id="doc_figure_u.231"></div> <pre>
     var $curl = curl:open();
     var $global-options = {
         &lt;method&gt; "post";
@@ -26294,7 +26739,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_4">8.2.2.4</a> </div>curl:single</h4>
 <p id="doc_section_8_2_2_4_p_1">The "curl:single" extension function performs transfer operations without using a persistent connection.</p>
-<div id="doc_figure_u.220"></div> <pre>
+<div id="doc_figure_u.232"></div> <pre>
     SYNTAX::
         object curl:single(options);
 	    </pre> <p id="doc_section_8_2_2_4_p_3">The returned object is identical in structure to the one returned by curl:perform. Refer to <a href="#curl-perform" title="curl:perform">Section 8.2.2.1</a> for additional information.</p>
@@ -26304,7 +26749,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_2_5">8.2.2.5</a> </div>curl:close</h4>
 <p id="doc_section_8_2_2_5_p_1">The "curl:close" extension function closes an open connection. Further operations cannot be performed over the connection.</p>
-<div id="doc_figure_u.221"></div> <pre>
+<div id="doc_figure_u.233"></div> <pre>
     SYNTAX::
         void curl:close(handle);
 	    </pre> </div>
@@ -26319,7 +26764,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_1">8.2.3.1</a> </div>Simple GET</h4>
 <p id="doc_section_8_2_3_1_p_1">This script gets a vanilla web page, but just to be interesting, includes a header field for the HTTP header and a parameter that is incorporated into the requested URL.</p>
-<div id="doc_figure_u.222"></div> <pre>
+<div id="doc_figure_u.234"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26346,7 +26791,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_2">8.2.3.2</a> </div>Google Auth</h4>
 <p id="doc_section_8_2_3_2_p_1">This script take a username and password and uses the google login services to translate them into an "Authorization" string.</p>
-<div id="doc_figure_u.223"></div> <pre>
+<div id="doc_figure_u.235"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26388,7 +26833,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_2_3_3">8.2.3.3</a> </div>Email</h4>
 <p id="doc_section_8_2_3_3_p_1">This script sends an email via a server provided as a parameter.</p>
-<div id="doc_figure_u.224"></div> <pre>
+<div id="doc_figure_u.236"></div> <pre>
     version 1.1;
 
     ns curl extension = "http://xml.libslax.org/curl";
@@ -26430,7 +26875,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1">8.3.1</a> </div>"xutil" Extension Functions</h3>
 <p id="doc_section_8_3_1_p_1">The "xutil" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.225"></div> <pre>
+<div id="doc_figure_u.237"></div> <pre>
     ns xutil extension = "http://xml.libslax.org/xutil";
 	    </pre> <div class="content">
 <h4 id="doc_section_8_3_1_1">
@@ -26438,7 +26883,7 @@ jQuery(function ($) {
 <a href="#doc_section_8_3_1_1">8.3.1.1</a> </div>xutil:max-call-depth()</h4>
 <p id="doc_section_8_3_1_1_p_1">SLAX and XSLT use recursion as a programming tool for iteration, but unlimited recursion can lead to disaster. To avoid this, the libxslt engine limits the depth of recursive calls to 3,000. This limit should be find for almost all uses, but it the value is not suitable, it can be adjusted using the xutil:max-call-depth() function.</p>
 <p id="doc_section_8_3_1_1_p_2">If invoked without an argument, the function returns the current value. If a number is passed as the argument, that number is used as the new max call depth limit.</p>
-<div id="doc_figure_u.226"></div> <pre>
+<div id="doc_figure_u.238"></div> <pre>
     EXAMPLE::
         var $limit = xutil:max-call-depth();
         expr xutil:max-call-depth($limit * 2);
@@ -26448,7 +26893,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_2">8.3.1.2</a> </div>xutil:string-to-xml()</h4>
 <p id="doc_section_8_3_1_2_p_1">The xutil:string-to-xml() function turns a string containing XML data into the native representation of that data.</p>
-<div id="doc_figure_u.227"></div> <pre>
+<div id="doc_figure_u.239"></div> <pre>
     EXAMPLE::
         var $data = "&lt;doc&gt;&lt;title&gt;fred&lt;/title&gt;&lt;/doc&gt;";
         var $xml = xutil:string-to-xml($data);
@@ -26459,7 +26904,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_3">8.3.1.3</a> </div>xutil:xml-to-string()</h4>
 <p id="doc_section_8_3_1_3_p_1">The xutil:xml-to-string() function turns XML content into a string. This is different than the normal XPath stringification, which discards open and close tag. xml-to-string will encode tags as part of the string.</p>
-<div id="doc_figure_u.228"></div> <pre>
+<div id="doc_figure_u.240"></div> <pre>
     EXAMPLE::
         var $xml = &lt;dog&gt; "red";
         var $str = xutil:xml-to-string($xml);
@@ -26470,13 +26915,13 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_4">8.3.1.4</a> </div>xutil:json-to-xml()</h4>
 <p id="doc_section_8_3_1_4_p_1">The xutil:json-to-xml() function turns a string containing JSON data into the native representation of that data in XML.</p>
-<div id="doc_figure_u.229"></div> <pre>
+<div id="doc_figure_u.241"></div> <pre>
     EXAMPLE::
         var $data = "[ { "a" : 4, "name": "fish"}, 4, 5]";
         var $xml = xutil:json-to-xml($data);
         message "title is " _ $xml/json/name;
 	    </pre> <p id="doc_section_8_3_1_4_p_3">An optional second parameter contains a node set of the following optional elements:</p>
-<div id="doc_table_u.18"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.22"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Value</th>
@@ -26495,20 +26940,21 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.230"></div> <pre>
+<div id="doc_figure_u.242"></div> <pre>
         var $options = {
             &lt;root&gt; "my-top";
             &lt;types&gt; "no";
         }
-        var $xml = xutil:json-to-xml($data);
+        var $xml = xutil:json-to-xml($data, $options);
 	    </pre> <p id="doc_section_8_3_1_4_p_5">The XML returned from json-to-xml() is decorated with attributes (including the "type" and "name" attributes) which allow the data to be converted back into JSON using xml-to-json(). Refer to that function for additional information.</p>
+<p id="doc_section_8_3_1_4_p_6">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
 </div>
 <div class="content">
 <h4 id="doc_section_8_3_1_5">
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_5">8.3.1.5</a> </div>xutil:xml-to-json()</h4>
 <p id="doc_section_8_3_1_5_p_1">The xutil:xml-to-json() function turns XML content into a string of JSON data. This is different than the normal XPath stringification, which discards open and close tag. xml-to-json will encode tags as JSON objects inside a string</p>
-<div id="doc_figure_u.231"></div> <pre>
+<div id="doc_figure_u.243"></div> <pre>
     EXAMPLE::
         var $xml = &lt;json&gt; {
             &lt;color&gt; "red";
@@ -26516,7 +26962,7 @@ jQuery(function ($) {
         var $str = xutil:xml-to-json($xml);
         /* str is now the string '{ "color": "red" }' */
 	    </pre> <p id="doc_section_8_3_1_5_p_3">An optional second parameter contains a node set of the following optional elements:</p>
-<div id="doc_table_u.19"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.23"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Value</th>
@@ -26535,84 +26981,8 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_3_1_5_p_4">Since there is a mismatch between the data encoding capabilities in XML and JSON, a set of attributes can be used to control the exact rendering of JSON data.</p>
-<div id="doc_table_u.20"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
-<thead><tr>
-<th class="left">Attribute</th>
-<th class="left">Value</th>
-<th class="left">Description</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>name</td>
-<td>string</td>
-<td>A name to use in place of the element name</td>
-</tr>
-<tr>
-<td>type</td>
-<td>string</td>
-<td>An indication of the desired encoding</td>
-</tr>
-</tbody>
-</table></div>
-<p id="doc_section_8_3_1_5_p_5">The value of the "type" attribute must be one of the subset listed below. This allows the library to distinguish between '{ "value": "5" }' and '{ "value": 5 }' to control the encoding of the value as a string or a number. Similarly the caller can control whether "null" is a string or the special null value. If the type attribute is missing, the element is assumed to be a simple field.</p>
-<div id="doc_table_u.21"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
-<thead><tr>
-<th class="left">Type</th>
-<th class="left">Description</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>array</td>
-<td>Contains a JSON array</td>
-</tr>
-<tr>
-<td>false</td>
-<td>Contains the JSON "false" value</td>
-</tr>
-<tr>
-<td>null</td>
-<td>Contains the JSON "null" value</td>
-</tr>
-<tr>
-<td>member</td>
-<td>Is a member of an array</td>
-</tr>
-<tr>
-<td>number</td>
-<td>Contains a number value</td>
-</tr>
-<tr>
-<td>true</td>
-<td>Contains the JSON "true" value</td>
-</tr>
-</tbody>
-</table></div>
-<p id="doc_section_8_3_1_5_p_6">In this example, the type attribute is used to control the encoding of XML into JSON.</p>
-<div id="doc_figure_u.232"></div> <pre>
-      &lt;json&gt;
-        &lt;name&gt;Skip Tracer&lt;/name&gt;
-        &lt;location&gt;The city that never sleeps&lt;/location&gt;
-        &lt;age type="number"&gt;5&lt;/age&gt;
-        &lt;real type="false"&gt;false&lt;/real&gt;
-        &lt;cases type="null"&gt;null&lt;/cases&gt;
-        &lt;equipment type="array"&gt;
-          &lt;member type="member"&gt;hat&lt;/member&gt;
-          &lt;member type="member"&gt;desk&lt;/member&gt;
-          &lt;member type="member"&gt;attitude&lt;/member&gt;
-        &lt;/equipment&gt;
-      &lt;/json&gt;
-	    </pre> <p id="doc_section_8_3_1_5_p_8">This yields:</p>
-<div id="doc_figure_u.233"></div> <pre>
-    {
-      "name": "Skip Tracer",
-      "location": "The city that never sleeps", 
-      "age": 5,
-      "real": false, 
-      "cases": null, 
-      "equipment": [ "hat", "desk", "attitude" ]
-     }
-	    </pre> </div>
+<p id="doc_section_8_3_1_5_p_4">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
+</div>
 </div>
 </div>
 <div class="content">
@@ -26625,14 +26995,14 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_4_1">8.4.1</a> </div>"os" Extension Functions</h3>
 <p id="doc_section_8_4_1_p_1">The "os" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.234"></div> <pre>
+<div id="doc_figure_u.244"></div> <pre>
     ns os extension = "http://xml.libslax.org/os";
 	    </pre> <div class="content">
 <h4 id="doc_section_8_4_1_1">
 <div class="self-section-number">
 <a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>os:exit-code</h4>
 <p id="doc_section_8_4_1_1_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
-<div id="doc_figure_u.235"></div> <pre>
+<div id="doc_figure_u.245"></div> <pre>
     SYNTAX::
         void os:exit-code(number);
 
@@ -26644,7 +27014,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_8_4_1_2">8.4.1.2</a> </div>os:mkdir</h4>
 <p id="doc_section_8_4_1_2_p_1">The os:mkdir function makes directories, similar to the "mkdir" command or the POSIX "mkdir" library function. These are two arguments; the first is name of the directory to be made and the second is an node-set containing options to be used during the operation. The options can include the values in the following table.</p>
-<div id="doc_table_u.22"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.24"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -26660,9 +27030,9 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.236"></div> <pre>
+<div id="doc_figure_u.246"></div> <pre>
     SYNTAX::
-        node-set os:mkdir(path, [options]);
+        node-set os:mkdir(path [, options]);
 
     EXAMPLE::
         var $res = os:mkdir("/tmp/foo");
@@ -26674,7 +27044,7 @@ jQuery(function ($) {
 	    </pre> <p id="doc_section_8_4_1_2_p_3">If the value for &lt;mode&gt; is a string, it will be converted to an integer using the default numeric base of 8 (octal), so '&lt;mode&gt; "644"' will work, but '&lt;mode&gt; 644' will see 644 as a number with base 10 (decimal), which will result in undesirable results since 644 base 10 is 01204 base 8.</p>
 <p id="doc_section_8_4_1_2_p_4">If the value of &lt;mode&gt; is not a valid mode integer value, it will be ignored.</p>
 <p id="doc_section_8_4_1_2_p_5">The return value of os:mkdir is a node-set which may contain an &lt;error&gt; element is an error occurred. This element may contain the following elements:</p>
-<div id="doc_table_u.23"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -26702,7 +27072,7 @@ jQuery(function ($) {
 <a href="#doc_section_8_4_1_3">8.4.1.3</a> </div>os:stat</h4>
 <p id="doc_section_8_4_1_3_p_1">The os:stat function returns information about files and directories, similar to the POSIX stat() function, returning a node-set of &lt;entry&gt; elements containing details about each file.</p>
 <p id="doc_section_8_4_1_3_p_2">The arguments to the os:stat() function are either strings or node-sets. os:stat() allows any number of arguments. If the argument is a string, it is used as a path specification and information on matching files is returned. The path specification can include glob-style wildcards (e.g. test*.c, *.slax). If the argument is a node-set, then the node can contains the following elements:</p>
-<div id="doc_table_u.24"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.26"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -26731,7 +27101,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_4_1_3_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
-<div id="doc_figure_u.237"></div> <pre>
+<div id="doc_figure_u.247"></div> <pre>
     var $files = os:stat("/etc/m*");
     var $options = {
         &lt;hidden&gt;;
@@ -26742,7 +27112,7 @@ jQuery(function ($) {
         message name _ " is a " _ type;
     }
 	    </pre> <p id="doc_section_8_4_1_3_p_5">The return value is a node-set of &lt;entry&gt; elements. Each entry contains the following elements:</p>
-<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -26813,7 +27183,7 @@ jQuery(function ($) {
 </table></div>
 <p id="doc_section_8_4_1_3_p_6">Only elements tagged "Y" are emitted when the &lt;brief&gt; option is used.</p>
 <p id="doc_section_8_4_1_3_p_7">The &lt;type&gt; element contains one of the following:</p>
-<div id="doc_table_u.26"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.28"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Description</th>
@@ -26854,7 +27224,7 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 <p id="doc_section_8_4_1_3_p_8">In some cases, attributes are used to attach useful information to elements. The following table lists these attributes and values.</p>
-<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<div id="doc_table_u.29"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Attribute</th>
@@ -26905,7 +27275,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_1">
 <div class="self-section-number">
 <a href="#doc_section_A_1">A.1</a> </div>general/itemschoose.xsl</h2>
-<div id="doc_figure_u.238"></div> <pre>
+<div id="doc_figure_u.248"></div> <pre>
     version 1.1;
 
     ns fo = "http://www.w3.org/1999/XSL/Format";
@@ -26943,7 +27313,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_2">
 <div class="self-section-number">
 <a href="#doc_section_A_2">A.2</a> </div>REC2/svg.xsl</h2>
-<div id="doc_figure_u.239"></div> <pre>
+<div id="doc_figure_u.249"></div> <pre>
     version 1.1;
 
     ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
@@ -26989,7 +27359,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_3">
 <div class="self-section-number">
 <a href="#doc_section_A_3">A.3</a> </div>XSLTMark/metric.xsl</h2>
-<div id="doc_figure_u.240"></div> <pre>
+<div id="doc_figure_u.250"></div> <pre>
     version 1.1;
 
     output-method html {
@@ -27055,7 +27425,7 @@ jQuery(function ($) {
 <a id="ternary-operator" href="#ternary-operator">The Ternary Conditional Operator</a>
 </h3>
 <p id="doc_section_B_1_2_p_1">As the last touch to SLAX-1.1, I've added the ternary operator from C, allowing expressions like:</p>
-<div id="doc_figure_u.241"></div> <pre>
+<div id="doc_figure_u.251"></div> <pre>
     var $a = $b ? $c : $d;
     var $e = $f ?: $g;
 	    </pre> <p id="doc_section_B_1_2_p_3">The caveat is that this uses an extension function slax:value() which may not be available in all XSLT environments. Coders must consider whether should a restriction deems this operator unusable. Portability considerations are identical to mutable variables (mvars).</p>
@@ -27090,27 +27460,27 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_11">All this works well for immutable objects and RTFs, but does not allow my mutable variables to work cleanly. This is quite annoying.</p>
 <p id="doc_section_B_1_3_p_12">I need to allow a variable to hold a nodeset, a document, or a scalar value, without caring about the previous value. But I need to hold on to the previous values to allow others to refer to them without dangling references. Dangling References</p>
 <p id="doc_section_B_1_3_p_13">Consider the following input document:</p>
-<div id="doc_figure_u.242"></div> <pre>
+<div id="doc_figure_u.252"></div> <pre>
     &lt;top&gt;
         &lt;x1/&gt;
         &lt;x2/&gt; 
         &lt;x3/&gt;
     &lt;/top&gt;
 	    </pre> <p id="doc_section_B_1_3_p_15">The following code makes a nodeset (type XPATH_NODESET) whose nodeTab array points into the input document:</p>
-<div id="doc_figure_u.243"></div> <pre>
+<div id="doc_figure_u.253"></div> <pre>
     var $x = top/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_17">The following code make an RTF/RVT (type XPATH_XSLT_TREE), whose "fake" document contains a root element (type XML_DOCUMENT_NODE) that contains the "top" element node.</p>
-<div id="doc_figure_u.244"></div> <pre>
+<div id="doc_figure_u.254"></div> <pre>
     var $y = &lt;top&gt; {
         &lt;x1&gt;;
         &lt;x2&gt;;
         &lt;x3&gt;;
     }
 	    </pre> <p id="doc_section_B_1_3_p_19">The following code makes a nodeset (type XPATH_NODESET) that refers to nodes in the "fake" document under $y:</p>
-<div id="doc_figure_u.245"></div> <pre>
+<div id="doc_figure_u.255"></div> <pre>
     var $z = $y/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_21">Now consider the following code:</p>
-<div id="doc_figure_u.246"></div> <pre>
+<div id="doc_figure_u.256"></div> <pre>
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
     if ($a) {
@@ -27136,17 +27506,17 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_30">But where does the "overhead" live?</p>
 <p id="doc_section_B_1_3_p_31">In classic SLAX style, the overhead is kept in a shadow variable. The shadow variable (svar) holds an RTF/RVT that contains all the nodes ever assigned to the variable, a living history of all values of the variable.</p>
 <p id="doc_section_B_1_3_p_32">We don't need to record scalar values, so:</p>
-<div id="doc_figure_u.247"></div> <pre>
+<div id="doc_figure_u.257"></div> <pre>
     mvar $x = 4;
 	    </pre> <p id="doc_section_B_1_3_p_34">becomes:</p>
-<div id="doc_figure_u.248"></div> <pre>
+<div id="doc_figure_u.258"></div> <pre>
     &lt;xsl:variable name="slax-x"/&gt;
     &lt;xsl:variable name="x" select="4"/&gt;
 	    </pre> <p id="doc_section_B_1_3_p_36">But for RTFs, the content must be preserved, so:</p>
-<div id="doc_figure_u.249"></div> <pre>
+<div id="doc_figure_u.259"></div> <pre>
     mvar $x = &lt;next&gt; "one";
 	    </pre> <p id="doc_section_B_1_3_p_38">becomes:</p>
-<div id="doc_figure_u.250"></div> <pre>
+<div id="doc_figure_u.260"></div> <pre>
     &lt;xsl:variable name="slax-x"&gt;
         &lt;next&gt;one&lt;/next&gt;
     &lt;/xsl:variable&gt;
@@ -27177,7 +27547,7 @@ jQuery(function ($) {
 <p id="doc_section_B_2_1_p_3">In the 2005-2006 timeframe, we started developing on-box script capabilities using XSLT. I like the niche and properties of XSLT, but the syntax makes development and maintenance problematic. First class constructs are buried in attributes, with unreadable encodings. Customers objections were fairly strong, and they asked for a more perl-like syntax. SLAX was our answer.</p>
 <p id="doc_section_B_2_1_p_4">SLAX simplifies the syntax of XSLT, making an encoding that makes scripts more readable, maintainable, and helps the reader to see what's going on. XML escaping is replaced by unix/perl/c-style escaping. Control elements like &lt;xsl:if&gt; are replaced with the familiar "if" statement. Minor details are more transparent.</p>
 <p id="doc_section_B_2_1_p_5">The majority of our scripts are simple, following the pattern:</p>
-<div id="doc_figure_u.251"></div> <pre>
+<div id="doc_figure_u.261"></div> <pre>
     if (find/something/bad) {
         call error($message = "found something bad");
     }
@@ -27212,7 +27582,7 @@ jQuery(function ($) {
 <p id="doc_section_B_3_1_p_2">The prefixes found in the document are translated into namespace URIs, which are then escaped using the URL-escaping algorithm that turns unacceptable characters into three character strings like "%2F".</p>
 <p id="doc_section_B_3_1_p_3">An extension of ".ext" is appended to the URL-escaped URI and this file is searched but in ${SLAX_EXTDIR} and any directories given via the "&#8209;&#8209;lib/&#8209;L" argument.</p>
 <p id="doc_section_B_3_1_p_4">When the extension library is found, we dlopen() it and look for the magic symbol "slaxDynLibInit". This function is called with two arguments, the API version number and a struct that contains information about the extension library.</p>
-<div id="doc_figure_u.252"></div> <pre>
+<div id="doc_figure_u.262"></div> <pre>
     /*
      * This structure is an interface between the libslax main code
      * and the code in the extension library.  This structure should
@@ -27233,9 +27603,16 @@ jQuery(function ($) {
 <div class="content">
 <h3 id="doc_section_B_3_2">
 <div class="self-section-number">
-<a href="#doc_section_B_3_2">B.3.2</a> </div>Example</h3>
-<p id="doc_section_B_3_2_p_1">Here's a quick example:</p>
-<div id="doc_figure_u.253"></div> <pre>
+<a href="#doc_section_B_3_2">B.3.2</a> </div>Default Prefixes for Extension Libraries</h3>
+<p id="doc_section_B_3_2_p_1">When a default prefix is used with an extension library, the prefix is mapped to the extension using a symbolic link ("ln -s"). The source of the symlink should be the prefix with a ".prefix" appended and should be located in the extension directory ("${SLAX_EXTDIR}"). The target of the symlink should be the namespace URI with the escaping and ".ext" extension as described above.</p>
+<p id="doc_section_B_3_2_p_2">See the Makefile.am file in any of the libslax extension directories for examples of creating the appropriate symlink.</p>
+</div>
+<div class="content">
+<h3 id="doc_section_B_3_3">
+<div class="self-section-number">
+<a href="#doc_section_B_3_3">B.3.3</a> </div>Example</h3>
+<p id="doc_section_B_3_3_p_1">Here's a quick example:</p>
+<div id="doc_figure_u.263"></div> <pre>
     slax_function_table_t slaxBitTable[] = {
         { "and", extBitAnd },
         { "or", extBitOr },
@@ -27262,17 +27639,17 @@ jQuery(function ($) {
 <a href="#doc_section_B_4">B.4</a> </div>External Documentation</h2>
 <p id="doc_section_B_4_p_1">My documentation style tends to be man-page-like, rather than tutorial-ish. But folks at Juniper Networks have made some outrageously great documentation and it's available on the Juniper website. Many thanks for Curtis Call, Jeremy Schulman, and others for doing this work.</p>
 <p id="doc_section_B_4_p_2">This Week: Junos Automation Reference for SLAX 1.0 does not cover any of the new SLAX-1.1 material, but is an incredible reference book.</p>
-<div id="doc_figure_u.254"></div> <pre>
+<div id="doc_figure_u.264"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/
       automation-series/junos-automation-slax/
 	    </pre> <p id="doc_section_B_4_p_4">This Week: Mastering Junos Automation Programming covers many introductory tasks with a tutorial style:</p>
-<div id="doc_figure_u.255"></div> <pre>
+<div id="doc_figure_u.265"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/automation-series/
       mastering-junos-automation/
 	    </pre> <p id="doc_section_B_4_p_6">Script Library contains a set of scripts that will help get you started:</p>
-<div id="doc_figure_u.256"></div> <pre>
+<div id="doc_figure_u.266"></div> <pre>
   https://www.juniper.net/us/en/community/junos/script-automation/
 	    </pre> <p id="doc_section_B_4_p_8">Note these require Juniper-specific permissions, JNet logins, and other hurdles. Apologies for the inconvenience.</p>
 <p id="doc_section_B_4_p_9">News! The Day One Guides are available for &lt;$2 (some free) on the itunes store! Search under books for "juniper".</p>
