@@ -1,49 +1,47 @@
-version 1.1;
+version 1.2;
 
 var $ACTIONgrid = //GROUP[@type == "REC" && not(@name == preceding::GROUP[@type == "REC"]/@name)]/@name;
 
-match / {
-    <html> {
-        <head> {
-            <title> "Churn by Product";
-            <style type="text/css"> "	.PROD {background-color:cyan}\n	.PROD * {background-color:cyan}\n	.ACT {background-color:green;font-weight:bold}\n	.ACT * {background-color:green;font-weight:bold}\n	.NR {background-color:yellow;color:blue}\n	.NR * {background-color:yellow;color:blue}\n	.RC {background-color:yellow;color:red}\n	.RC * {background-color:yellow;color:red}\n\n				";
+main <html> {
+    <head> {
+        <title> "Churn by Product";
+        <style type="text/css"> "	.PROD {background-color:cyan}\n	.PROD * {background-color:cyan}\n	.ACT {background-color:green;font-weight:bold}\n	.ACT * {background-color:green;font-weight:bold}\n	.NR {background-color:yellow;color:blue}\n	.NR * {background-color:yellow;color:blue}\n	.RC {background-color:yellow;color:red}\n	.RC * {background-color:yellow;color:red}\n\n				";
+    }
+    <body> {
+        <h1> {
+            <center> "Churn by Product";
         }
-        <body> {
-            <h1> {
-                <center> "Churn by Product";
-            }
-            <table width="100%"> {
-                <tr> {
-                    <td width="50%" align="left" valign="top"> {
-                        expr "\n							Run Date: ";
-                        expr XMLDATA/RUNDATE;
-                        <br>;
-                        expr "\n							Parameters:\n						";
-                    }
-                    <td align="right" valign="top"> {
-                        <table> {
-                            <tr> {
-                                <th> "Legend";
-                            }
-                            <tr class="PROD"> {
-                                <td> "Product";
-                            }
-                            <tr class="ACT"> {
-                                <td> "Action";
-                            }
-                            <tr class="NR"> {
-                                <td> "Non-Recurring";
-                            }
-                            <tr class="RC"> {
-                                <td> "Recurring";
-                            }
+        <table width="100%"> {
+            <tr> {
+                <td width="50%" align="left" valign="top"> {
+                    expr "\n							Run Date: ";
+                    expr XMLDATA/RUNDATE;
+                    <br>;
+                    expr "\n							Parameters:\n						";
+                }
+                <td align="right" valign="top"> {
+                    <table> {
+                        <tr> {
+                            <th> "Legend";
+                        }
+                        <tr class="PROD"> {
+                            <td> "Product";
+                        }
+                        <tr class="ACT"> {
+                            <td> "Action";
+                        }
+                        <tr class="NR"> {
+                            <td> "Non-Recurring";
+                        }
+                        <tr class="RC"> {
+                            <td> "Recurring";
                         }
                     }
                 }
             }
-            <table align="center"> {
-                apply-templates /XMLDATA/GROUP;
-            }
+        }
+        <table align="center"> {
+            apply-templates /XMLDATA/GROUP;
         }
     }
 }
