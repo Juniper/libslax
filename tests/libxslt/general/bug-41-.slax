@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 var $foo = "SUCCESS";
 /* Global var shouldn't be changed by call with param */
@@ -6,7 +6,7 @@ template test () {
     expr $foo;
 }
 
-match / {
+main {
     var $foo = "FAILURE";
     
     call test($foo = "FAILURE");
