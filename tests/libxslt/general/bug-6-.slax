@@ -1,16 +1,14 @@
-version 1.1;
+version 1.2;
 
 ns my exclude = "http://my/namespace";
 ns "http://www.w3.org/1999/xhtml";
 
 /* Root Node */
-match / {
-    <html> {
-        <head> {
-            <title> my:document/my:name;
-        }
-        apply-templates;
+main <html> {
+    <head> {
+        <title> my:document/my:name;
     }
+    apply-templates;
 }
 /* Header and Body for the Document */
 match my:document {
