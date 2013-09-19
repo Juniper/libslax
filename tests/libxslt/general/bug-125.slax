@@ -1,26 +1,24 @@
-version 1.1;
+version 1.2;
 
 strip-space *;
 output-method html {
     indent "no";
 }
 
-match / {
-    <div class="errataset"> {
-        expr "\n";
-        
-        for-each (errataset/errata) {
-            sort @page {
-                data-type "number";
-            }
-            sort @paragraph {
-                data-type "number";
-            }
-            sort @line {
-                data-type "number";
-            }
-            apply-templates .;
+main <div class="errataset"> {
+    expr "\n";
+    
+    for-each (errataset/errata) {
+        sort @page {
+            data-type "number";
         }
+        sort @paragraph {
+            data-type "number";
+        }
+        sort @line {
+            data-type "number";
+        }
+        apply-templates .;
     }
 }
 
