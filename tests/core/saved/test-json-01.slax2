@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns xutil extension = "http://xml.libslax.org/xutil";
 
@@ -47,17 +47,15 @@ var $x2j-opts = {
     }
 }
 
-match / {
-    <top> {
-        for-each ($tests/node()) {
-            element name() {
-                <input> .;
-                var $x = xutil:json-to-xml(., $j2x-opts);
-                <xml> {
-                    copy-of $x;
-                }
-                <back> xutil:xml-to-json($x, $x2j-opts);
+main <top> {
+    for-each ($tests/node()) {
+        element name() {
+            <input> .;
+            var $x = xutil:json-to-xml(., $j2x-opts);
+            <xml> {
+                copy-of $x;
             }
+            <back> xutil:xml-to-json($x, $x2j-opts);
         }
     }
 }

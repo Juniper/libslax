@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (c) 2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
@@ -12,11 +10,11 @@
  */
 
 int
-extXutilJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+slaxJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 		       unsigned flags);
 
 int
-extXutilJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+slaxJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 		      unsigned flags);
 
 #define JWF_ROOT	(1<<0)	/* Root node */

@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 output-method html;
 
@@ -15,6 +15,6 @@ attribute-set foo-dep-attribs {
     }
 }
 
-match / {
-    <font xsl:use-attribute-sets="foo-dep-attribs"> "\n    foo\n    ";
+main <font xsl:use-attribute-sets="foo-dep-attribs"> {
+    expr "\n    foo\n    ";
 }

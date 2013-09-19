@@ -1,21 +1,19 @@
-version 1.1;
+version 1.2;
 
 var $test = 1;
 
-match / {
-    <out> {
-        trace "this";
-        trace that;
-        trace {
-            <some> "thing";
+main <out> {
+    trace "this";
+    trace that;
+    trace {
+        <some> "thing";
+    }
+    trace {
+        if ($test) {
+            <big> "deal";
         }
-        trace {
-            if ($test) {
-                <big> "deal";
-            }
-            if ($test) {
-                <bigger> "deal";
-            }
+        if ($test) {
+            <bigger> "deal";
         }
     }
 }

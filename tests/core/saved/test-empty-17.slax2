@@ -1,23 +1,21 @@
-version 1.1;
+version 1.2;
 
 param $full;
 
-match / {
-    <top> {
-        if ($full) {
-            var $host = slax:get-input("Please enter hostname: ");
-            var $pass = slax:get-secret("Please enter password: ");
-            
-            <host> $host;
-            <pass> $pass;
-            var $list = {
-                for-each (1 ... 10) {
-                    <cmd> slax:get-command("$ ");
-                }
+main <top> {
+    if ($full) {
+        var $host = slax:get-input("Please enter hostname: ");
+        var $pass = slax:get-secret("Please enter password: ");
+        
+        <host> $host;
+        <pass> $pass;
+        var $list = {
+            for-each (1 ... 10) {
+                <cmd> slax:get-command("$ ");
             }
-            <list> {
-                copy-of $list;
-            }
+        }
+        <list> {
+            copy-of $list;
         }
     }
 }

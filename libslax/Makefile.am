@@ -1,7 +1,5 @@
 #
-# $Id$
-#
-# Copyright 2011-2012, Juniper Networks, Inc.
+# Copyright 2011-2013, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
 # ../Copyright file. By downloading, installing, copying, or otherwise
@@ -13,10 +11,11 @@ SLAX_WARNINGS = HIGH
 endif
 include ${top_srcdir}/warnings.mk
 
-ECHO_BUILD_0 = @echo "  BUILD " $@;
-ECHO_BUILD_ = ${ECHO_BUILD_${AM_DEFAULT_VERBOSITY}}
+BISON_COMMAND = ${BISON} -kvd -b slaxparser
 ECHO_BISON_0 = @echo "  BISON " $@;
 ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
+ECHO_BUILD_0 = @echo "  BUILD " $@;
+ECHO_BUILD_ = ${ECHO_BUILD_${AM_DEFAULT_VERBOSITY}}
 
 slaxincdir = ${includedir}/libslax
 
@@ -37,6 +36,8 @@ slaxinc_HEADERS = \
      xmlsoft.h
 
 noinst_HEADERS = \
+    jsonlexer.h \
+    jsonwriter.h \
     slaxinternals.h \
     slaxio.h \
     slaxlexer.h \
@@ -50,9 +51,9 @@ noinst_HEADERS = \
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
-BISON_COMMAND = ${BISON} -kvd -b slaxparser
-
 libslax_la_SOURCES = \
+    jsonlexer.c \
+    jsonwriter.c \
     slaxdebugger.c \
     slaxdyn.c \
     slaxext.c \
@@ -75,11 +76,11 @@ SED_ARGS = \
 -e 's/yyparse (void \*YYPARSE_PARAM)/slaxParse (slax_data_t *slax_data)/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
-slaxparser.c: slaxparser-out.y
+slaxparser.h slaxparser.c: slaxparser-out.y
 	${ECHO_BISON_${V}}${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
-	@${MV} $@ $@.old
-	@${SED} ${SED_ARGS} < $@.old  > $@
-	@${RM} $@.old
+	@${MV} slaxparser.c slaxparser.c.old
+	@${SED} ${SED_ARGS} < slaxparser.c.old  > slaxparser.c
+	@${RM} slaxparser.c.old
 
 CLEANFILES = slaxparser.h slaxparser.c slaxparser.output
 

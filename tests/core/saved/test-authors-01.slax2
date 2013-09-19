@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 key year-born {
     match author;
@@ -33,107 +33,105 @@ attribute-set age {
 }
 var $authors = /authors;
 
-match / {
-    <doc> {
-        for-each ($authors/author) {
-            sort name/first;
-            var $type = {
-                if (life-span/died) {
-                    expr "dead";
-                
-                } else if (life-span/born) {
-                    expr "alive";
-                
-                } else {
-                    expr "unknown";
-                }
-            }
-            
-            if (life-span/born && life-span/died) {
-                element "author-" _ $type {
-                    use-attribute-sets names age;
-                    attribute translate(name/last, $upper-case, $lower-case) {
-                        expr name/last;
-                    }
-                    call emit-element();
-                }
-            
-            } else {
-                element "author-" _ $type {
-                    use-attribute-sets names;
-                    attribute translate(name/last, $upper-case, $lower-case) {
-                        expr name/last;
-                    }
-                    call emit-element();
-                }
-            }
-        }
-        
-        for-each ($authors/author[life-span/born]) {
-            sort life-span/born;
-            sort life-span/died;
+main <doc> {
+    for-each ($authors/author) {
+        sort name/first;
+        var $type = {
             if (life-span/died) {
-                <life-span age=life-span/died - life-span/born born=life-span/born died=life-span/died> {
-                    element "name" {
-                        use-attribute-sets names;
-                    }
-                }
+                expr "dead";
+            
+            } else if (life-span/born) {
+                expr "alive";
             
             } else {
-                <life-span age=$this-year - life-span/born born=life-span/born> {
-                    element "name" {
-                        use-attribute-sets names;
-                    }
-                }
+                expr "unknown";
             }
         }
-        /* Show the oldest five deceased authors */
         
-        for-each ($authors/author[life-span/born && life-span/died]) {
-            sort life-span/died - life-span/born {
-                order "descending";
+        if (life-span/born && life-span/died) {
+            element "author-" _ $type {
+                use-attribute-sets names age;
+                attribute translate(name/last, $upper-case, $lower-case) {
+                    expr name/last;
+                }
+                call emit-element();
             }
-            sort life-span/born;
-            var $gsize = 1;
-            
-            if (position() <= 5) {
-                element "oldest" {
+        
+        } else {
+            element "author-" _ $type {
+                use-attribute-sets names;
+                attribute translate(name/last, $upper-case, $lower-case) {
+                    expr name/last;
+                }
+                call emit-element();
+            }
+        }
+    }
+    
+    for-each ($authors/author[life-span/born]) {
+        sort life-span/born;
+        sort life-span/died;
+        if (life-span/died) {
+            <life-span age=life-span/died - life-span/born born=life-span/born died=life-span/died> {
+                element "name" {
                     use-attribute-sets names;
-                    attribute "gsize" {
-                        expr $gsize;
+                }
+            }
+        
+        } else {
+            <life-span age=$this-year - life-span/born born=life-span/born> {
+                element "name" {
+                    use-attribute-sets names;
+                }
+            }
+        }
+    }
+    /* Show the oldest five deceased authors */
+    
+    for-each ($authors/author[life-span/born && life-span/died]) {
+        sort life-span/died - life-span/born {
+            order "descending";
+        }
+        sort life-span/born;
+        var $gsize = 1;
+        
+        if (position() <= 5) {
+            element "oldest" {
+                use-attribute-sets names;
+                attribute "gsize" {
+                    expr $gsize;
+                }
+                attribute "age" {
+                    number life-span/died - life-span/born {
+                        grouping-size "1";
+                        grouping-separator ".";
                     }
-                    attribute "age" {
-                        number life-span/died - life-span/born {
-                            grouping-size "1";
-                            grouping-separator ".";
-                        }
+                }
+                attribute "age2" {
+                    number life-span/died - life-span/born {
+                        grouping-size $gsize;
+                        grouping-separator ".";
                     }
-                    attribute "age2" {
-                        number life-span/died - life-span/born {
-                            grouping-size $gsize;
-                            grouping-separator ".";
-                        }
+                }
+                attribute "born" {
+                    number life-span/born {
+                        format "i";
                     }
-                    attribute "born" {
-                        number life-span/born {
-                            format "i";
-                        }
-                    }
-                    attribute "died" {
-                        number life-span/died {
-                            format "I";
-                        }
+                }
+                attribute "died" {
+                    number life-span/died {
+                        format "I";
                     }
                 }
             }
         }
-        
-        for-each ($authors/author[life-span/born && life-span/died]) {
-            sort {
-                order "descending";
-            }
-            <author> name;
+    }
+    
+    for-each ($authors/author[life-span/born && life-span/died]) {
+        sort {
+            order "descending";
         }
+        <author> name;
     }
 }
 

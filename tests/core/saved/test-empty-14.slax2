@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns foo exclude = "http://example.com/foo";
 ns jcs extension = "http://xml.juniper.net/jcs";
@@ -6,7 +6,7 @@ ns a = "http://example.com/1";
 ns "http://example.com/global";
 ns b = "http://example.com/2";
 
-match / {
+main {
     ns c = "http://example.com/3";
     
     <top> {

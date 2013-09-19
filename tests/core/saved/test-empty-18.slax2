@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns my = "http://my.example.com/my";
 
@@ -21,15 +21,13 @@ match foo[../../id/text() _ "/" _ text()] {
     <span class="element"> "</" _ name(.) _ ">";
 }
 
-match / {
-    <top> {
-        var $test := my:test("fish");
-        var $this := <that> "one";
-        var $that := <your> "was";
-        var $gray := <new> "black";
-        
-        copy-of $this;
-        copy-of $that;
-        copy-of $gray;
-    }
+main <top> {
+    var $test := my:test("fish");
+    var $this := <that> "one";
+    var $that := <your> "was";
+    var $gray := <new> "black";
+    
+    copy-of $this;
+    copy-of $that;
+    copy-of $gray;
 }

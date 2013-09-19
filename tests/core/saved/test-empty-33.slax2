@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 var $list1 := {
     <one> 1;
@@ -12,14 +12,12 @@ var $list2 := {
 }
 param $test;
 
-match / {
-    <top> {
-        <count1> count($list1);
-        <count1> count($list1/node());
-        <count2> count($list2);
-        <count2> count($list2/node());
-        var $res = $test ? $list1 : $list2;
-        <countr> count($res);
-        <countr> count($res/node());
-    }
+main <top> {
+    <count1> count($list1);
+    <count1> count($list1/node());
+    <count2> count($list2);
+    <count2> count($list2/node());
+    var $res = $test ? $list1 : $list2;
+    <countr> count($res);
+    <countr> count($res/node());
 }

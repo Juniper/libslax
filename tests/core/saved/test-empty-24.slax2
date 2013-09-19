@@ -1,36 +1,34 @@
-version 1.1;
+version 1.2;
 
 ns xutil extension = "http://xml.libslax.org/xutil";
 
-match / {
-    <out> {
-        var $test = "<test><one>1</one></test>";
-        var $res = xutil:string-to-xml($test);
-        var $r2 = xutil:string-to-xml("<a>", "<b>", "<c>", $test, "</c>", "</b>", "</a>");
-        
-        <one> {
-            <res> {
-                copy-of $res;
-            }
-            <r2> {
-                copy-of $r2;
-            }
+main <out> {
+    var $test = "<test><one>1</one></test>";
+    var $res = xutil:string-to-xml($test);
+    var $r2 = xutil:string-to-xml("<a>", "<b>", "<c>", $test, "</c>", "</b>", "</a>");
+    
+    <one> {
+        <res> {
+            copy-of $res;
         }
-        var $ores = xutil:xml-to-string($res);
-        var $or2 = xutil:xml-to-string($r2);
-        <two> {
-            <ores> $ores;
-            <or2> $or2;
+        <r2> {
+            copy-of $r2;
         }
-        var $xres = xutil:string-to-xml($ores);
-        var $xr2 = xutil:string-to-xml($or2);
-        <three> {
-            <xres> {
-                copy-of $xres;
-            }
-            <xr2> {
-                copy-of $xr2;
-            }
+    }
+    var $ores = xutil:xml-to-string($res);
+    var $or2 = xutil:xml-to-string($r2);
+    <two> {
+        <ores> $ores;
+        <or2> $or2;
+    }
+    var $xres = xutil:string-to-xml($ores);
+    var $xr2 = xutil:string-to-xml($or2);
+    <three> {
+        <xres> {
+            copy-of $xres;
+        }
+        <xr2> {
+            copy-of $xr2;
         }
     }
 }

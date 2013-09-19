@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns "http://www.w3.org/2000/svg";
 
@@ -10,6 +10,6 @@ output-method xml {
 }
 var $foo = "bar";
 
-match / {
-    <script type="text/ecmascript"> "\n  var foo2 = text;\n  ";
+main <script type="text/ecmascript"> {
+    expr "\n  var foo2 = text;\n  ";
 }

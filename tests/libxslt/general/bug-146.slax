@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 output-method xml {
     encoding "windows-1251";
@@ -16,16 +16,14 @@ key EMPTY_EN_CODE_COLRS {
     value . _ ":" _ ../../../@COL_COD;
 }
 
-match / {
-    <root> {
-        for-each (/root/colls[key("EMPTY_EN_CODE_COLLS", @COL_COD)]) {
-            copy-node {
-                copy-of @*;
-                
-                for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", . _ ":" _ ../../../@COL_COD))]) {
-                    <color> {
-                        copy-of ../@TITLE | ../@RU_CODE | .;
-                    }
+main <root> {
+    for-each (/root/colls[key("EMPTY_EN_CODE_COLLS", @COL_COD)]) {
+        copy-node {
+            copy-of @*;
+            
+            for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", . _ ":" _ ../../../@COL_COD))]) {
+                <color> {
+                    copy-of ../@TITLE | ../@RU_CODE | .;
                 }
             }
         }

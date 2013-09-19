@@ -1,7 +1,5 @@
 /*
- * $Id: slaxstring.c,v 1.1 2006/11/01 21:27:20 phil Exp $
- *
- * Copyright (c) 2006-2011, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -21,6 +19,9 @@
 #include <libslax/slax.h>
 #include "slaxparser.h"
 #include <ctype.h>
+
+static char slaxEscapedFrom[] = "\t\n\r\\";
+static char slaxEscapedTo[] = "tnr\\";
 
 /*
  * If the string has both types of quotes (single and double), then
@@ -329,7 +330,7 @@ slaxStringLength (slax_string_t *start, unsigned flags)
 	    }
 	    if (flags & SSF_ESCAPE) {
 		for (cp = ssp->ss_token; *cp; cp++)
-		    if (*cp == '\\')
+		    if (index(slaxEscapedFrom, *cp) != NULL)
 			len += 1; /* Must be escaped */
 	    }
 	}
@@ -458,13 +459,16 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	    slen = strlen(str);
 	    if (flags & SSF_ESCAPE) {
 		int i;
+
 		for (i = 0; i < slen; i++) {
-		    *bp++ = str[i];
-		    if (str[i] == '\\') {
-			if (++len > bufsiz)
-			    break;
-			*bp++ = '\\';
-		    }
+		    cp = index(slaxEscapedFrom, str[i]);
+		    if (cp) {
+			if (++len < bufsiz) {
+			    *bp++ = '\\';
+			    *bp++ = slaxEscapedTo[cp - slaxEscapedFrom];
+			}
+		    } else
+			*bp++ = str[i];
 		}
 	    } else {
 		memcpy(bp, str, slen);

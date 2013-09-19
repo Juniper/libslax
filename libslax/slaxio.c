@@ -1,7 +1,5 @@
 /*
- * $Id$
- *
- * Copyright (c) 2010-2011, Juniper Networks, Inc.
+ * Copyright (c) 2010-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -740,7 +738,7 @@ slaxGenericError (void *opaque, const char *fmt, ...)
 }
 
 /*
- * Return the value cooresponding to the given name
+ * Return the value corresponding to the given name
  */
 int
 slaxErrorValue (const char *name)

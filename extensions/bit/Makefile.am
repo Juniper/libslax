@@ -49,7 +49,7 @@ libext_bit_la_SOURCES = \
 
 pkglibdir = ${SLAX_EXTDIR}
 
-UGLY_NAME = http%3A%2F%2Fxml.libslax.org%2Fbit.ext
+UGLY_NAME = bit.prefix:http%3A%2F%2Fxml.libslax.org%2Fbit.ext
 
 install-exec-hook:
 	@DLNAME=`sh -c '. ./libext_bit.la ; echo $$dlname'` ; \
@@ -59,5 +59,8 @@ install-exec-hook:
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \
 		&& chmod +w . \
-		&& rm -f ${UGLY_NAME} \
-		&& ${LN_S} $$DLNAME ${UGLY_NAME}
+		&& prefix=`echo ${UGLY_NAME} | awk -F: '{ print $$1 }'` \
+		&& url=`echo ${UGLY_NAME} | awk -F: '{ print $$2 }'` \
+		&& rm -f $$prefix $$url \
+		&& ${LN_S} $$DLNAME $$url \
+		&& ${LN_S} $$url $$prefix

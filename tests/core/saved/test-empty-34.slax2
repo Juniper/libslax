@@ -1,18 +1,16 @@
-version 1.1;
+version 1.2;
 
-match / {
-    <op-script-results> {
-        var $xml := <config> {
-            <system> {
-                <hostname> "abc";
-            }
+main <op-script-results> {
+    var $xml := <config> {
+        <system> {
+            <hostname> "abc";
         }
-        
-        if ($xml/config/system/hostname == "abc") {
-            expr slax:output("work");
-        
-        } else {
-            expr slax:output("non-work");
-        }
+    }
+    
+    if ($xml/config/system/hostname == "abc") {
+        expr slax:output("work");
+    
+    } else {
+        expr slax:output("non-work");
     }
 }

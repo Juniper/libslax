@@ -1,6 +1,6 @@
-version 1.1;
+version 1.2;
 
-match / {
+main {
     expr "\ncase 1:\n";
     expr format-number("", "#.#");
     expr "\ncase 2:\n";

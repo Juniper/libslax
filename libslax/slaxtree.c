@@ -1,7 +1,5 @@
 /*
- * $Id: slaxinternals.h,v 1.3 2008/05/21 02:06:12 phil Exp $
- *
- * Copyright (c) 2010-2011, Juniper Networks, Inc.
+ * Copyright (c) 2010-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -47,8 +45,147 @@ slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
 	return FALSE;
 
     return (nodep->ns && nodep->ns->href
-	    && streq((const char *) nodep->name, name)
+	    && (name == NULL || streq((const char *) nodep->name, name))
 	    && streq((const char *) nodep->ns->href, XSL_URI));
+}
+
+/*
+ * Extend the existing value for an attribute, appending the given value.
+ */
+static void
+slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
+		      const char *attrib, const char *value, const char *uri)
+{
+    const xmlChar *uattrib = (const xmlChar *) attrib;
+    xmlChar *current = uri ? xmlGetProp(nodep, uattrib)
+	: xmlGetNsProp(nodep, uattrib, (const xmlChar *) uri);
+    int clen = current ? xmlStrlen(current) + 1 : 0;
+    int vlen = strlen(value) + 1;
+
+    unsigned char *newp = alloca(clen + vlen);
+    if (newp == NULL) {
+	xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
+		       sdp->sd_filename, sdp->sd_line);
+	return;
+    }
+
+    if (clen) {
+	memcpy(newp, current, clen - 1);
+	newp[clen - 1] = ' ';
+	xmlFree(current);
+    }
+
+    memcpy(newp + clen, value, vlen);
+
+    if (uri == NULL)
+	xmlSetProp(nodep, uattrib, newp);
+    else {
+	xmlNsPtr nsp = xmlSearchNsByHref(sdp->sd_docp, nodep,
+					 (const xmlChar *) uri);
+	xmlSetNsProp(nodep, nsp, uattrib, newp);
+    }
+}
+
+/*
+ * Extend the existing value for an attribute, appending the given value.
+ */
+void
+slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, NULL);
+}
+
+/*
+ * Extend the existing value for an attribute, appending the given value.
+ */
+void
+slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
+{
+    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, XSL_URI);
+}
+
+/*
+ * Find or construct a (possibly temporary) namespace node
+ * for the "func" exslt library and put the given node into
+ * that namespace.  We also have to add this as an "extension"
+ * namespace.
+ */
+static xmlNsPtr
+slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
+	   const char *prefix, const xmlChar *uri, int local)
+{
+    xmlNsPtr nsp;
+    xmlNodePtr root = xmlDocGetRootElement(sdp->sd_docp);
+
+    nsp = xmlSearchNs(sdp->sd_docp, root, (const xmlChar *) prefix);
+    if (nsp == NULL) {
+	nsp = xmlNewNs(root, uri, (const xmlChar *) prefix);
+	if (nsp == NULL) {
+	    xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
+			   sdp->sd_filename, sdp->sd_line);
+	    return NULL;
+	}
+
+	/*
+	 * Since we added this namespace, we need to add it to the
+	 * list of extension prefixes.
+	 */
+	slaxNodeAttribExtend(sdp, root,
+			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix, NULL);
+    }
+
+    if (nodep) {
+	/* Add a distinct namespace to the current node */
+	nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
+	if (local)
+	    nodep->ns = nsp;
+    }
+
+    return nsp;
+}
+
+/*
+ * Find or construct a (possibly temporary) namespace node
+ * for the "func" exslt library and put the given node into
+ * that namespace.  We also have to add this as an "extension"
+ * namespace.
+ */
+void 
+slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
+{
+    const char *prefix = FUNC_PREFIX;
+    const xmlChar *uri = FUNC_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
+}
+
+void
+slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
+{
+    const char *prefix = SLAX_PREFIX;
+    const xmlChar *uri = (const xmlChar *) SLAX_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri, local);
+}
+
+static int
+slaxIsSlaxNs (const char *prefix, int len)
+{
+    static char sp[] = SLAX_PREFIX;
+    if (len != sizeof(sp) - 1)
+	return FALSE;
+    if (strncmp(sp, prefix, len) != 0)
+	return FALSE;
+    return TRUE;
+}
+
+void
+slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
+{
+    const char *prefix = EXT_PREFIX;
+    const xmlChar *uri = (const xmlChar *) EXT_URI;
+
+    slaxSetNs(sdp, nodep, prefix, uri, local);
 }
 
 /*
@@ -69,20 +206,34 @@ slaxFindDefaultNs (slax_data_t *sdp UNUSED)
     return NULL;
 }
 
+static xmlNsPtr
+slaxMakeStdNs (slax_data_t *sdp, const char *name)
+{
+    char uri[MAXPATHLEN];
+
+    if (slaxDynFindPrefix(uri, sizeof(uri), name) < 0)
+	return NULL;
+
+    return slaxSetNs(sdp, NULL, name, (const xmlChar *) uri, FALSE);
+}
+
 /**
  * Find a namespace definition in the node's parent chain that
  * matches the given prefix.  Since the prefix string lies in situ
- * in the original tag, we give the length of the prefix.
+ * in the original tag, we give the length of the prefix.  If the
+ * prefix has a standard prefix mapping, use that mapping's namespace.
  *
+ * @param sdp pointer to main slax data structure
  * @param nodep the node where the search begins
  * @param prefix the prefix string
  * @param len the length of the prefix string
- * @return pointer to the existing name space 
+ * @return pointer to the name space 
  */
-static xmlNsPtr
-slaxFindNs (xmlNodePtr nodep, const char *prefix, int len)
+xmlNsPtr
+slaxFindNs (slax_data_t *sdp, xmlNodePtr nodep, const char *prefix, int len)
 {
-    xmlChar *name;
+    xmlNsPtr ns;
+    char *name;
 
     name = alloca(len + 1);
     if (name == NULL)
@@ -90,7 +241,38 @@ slaxFindNs (xmlNodePtr nodep, const char *prefix, int len)
 
     memcpy(name, prefix, len);
     name[len] = '\0';
-    return xmlSearchNs(nodep->doc, nodep, name);
+    ns = xmlSearchNs(nodep->doc, nodep, (xmlChar *) name);
+    if (ns == NULL)
+	ns = slaxMakeStdNs(sdp, name);
+
+    return ns;
+}
+
+void
+slaxCheckFunction (slax_data_t *sdp, const char *fname)
+{
+    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNsPtr ns = NULL;
+    const char *cp;
+
+    if (sdp->sd_parse == M_PARSE_SLAX
+	|| sdp->sd_parse == M_PARSE_FULL
+	|| sdp->sd_parse == M_PARSE_PARTIAL) {
+	cp = index(fname, ':');
+	if (cp) {
+	    const char *prefix = fname;
+	    int len = cp - prefix;
+
+	    if (!slaxIsSlaxNs(prefix, len)) {
+		ns = slaxFindNs(sdp, nodep, prefix, len);
+		if (ns == NULL) {
+		    sdp->sd_errors += 1;
+		    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+				   len, prefix, prefix);
+		}
+	    }
+        }
+    }
 }
 
 /*
@@ -111,12 +293,15 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
     if (cp) {
 	const char *prefix = tag;
 	int len = cp - prefix;
+
 	tag = cp + 1;
-	ns = slaxFindNs(nodep, prefix, len);
-        if (ns == NULL) {
-            sdp->sd_errors += 1;
-	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			   len, prefix, prefix);
+	if (!slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxFindNs(sdp, nodep, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
         }
     }
 
@@ -130,7 +315,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -218,7 +403,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
 	    if (tp)
-		slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, tp);
+		slaxAddChild(sdp, NULL, tp);
 
 	    return;
 	}
@@ -248,12 +433,15 @@ slaxAttribAdd (slax_data_t *sdp, int style,
     if (cp) {
 	const char *prefix = name;
 	int len = cp - prefix;
+
 	name = cp + 1;
-	ns = slaxFindNs(sdp->sd_ctxt->node, prefix, len);
-        if (ns == NULL) {
-            sdp->sd_errors += 1;
-	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			   len, prefix, prefix);
+	if (!slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
         }
     }
 
@@ -277,7 +465,6 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 void
 slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    int len;
     xmlAttrPtr attr;
     xmlNsPtr ns = NULL;
     char *buf;
@@ -294,13 +481,16 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
     cp = index(name, ':');
     if (cp) {
 	const char *prefix = name;
-	len = cp - prefix;
+	int len = cp - prefix;
+
 	name = cp + 1;
-	ns = slaxFindNs(sdp->sd_ctxt->node, prefix, len);
-        if (ns == NULL) {
-            sdp->sd_errors += 1;
-	    xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			   len, prefix, prefix);
+	if (!slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
         }
     }
 
@@ -357,130 +547,6 @@ slaxAttribAddLiteral (slax_data_t *sdp, const char *name, const char *val)
 }
 
 /*
- * Extend the existing value for an attribute, appending the given value.
- */
-static void
-slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
-		      const char *attrib, const char *value, const char *uri)
-{
-    const xmlChar *uattrib = (const xmlChar *) attrib;
-    xmlChar *current = uri ? xmlGetProp(nodep, uattrib)
-	: xmlGetNsProp(nodep, uattrib, (const xmlChar *) uri);
-    int clen = current ? xmlStrlen(current) + 1 : 0;
-    int vlen = strlen(value) + 1;
-
-    unsigned char *newp = alloca(clen + vlen);
-    if (newp == NULL) {
-	xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
-		       sdp->sd_filename, sdp->sd_line);
-	return;
-    }
-
-    if (clen) {
-	memcpy(newp, current, clen - 1);
-	newp[clen - 1] = ' ';
-	xmlFree(current);
-    }
-
-    memcpy(newp + clen, value, vlen);
-
-    if (uri == NULL)
-	xmlSetProp(nodep, uattrib, newp);
-    else {
-	xmlNsPtr nsp = xmlSearchNsByHref(sdp->sd_docp, nodep,
-					 (const xmlChar *) uri);
-	xmlSetNsProp(nodep, nsp, uattrib, newp);
-    }
-}
-
-/*
- * Extend the existing value for an attribute, appending the given value.
- */
-void
-slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
-{
-    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, NULL);
-}
-
-/*
- * Extend the existing value for an attribute, appending the given value.
- */
-void
-slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
-{
-    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, XSL_URI);
-}
-
-/*
- * Find or construct a (possibly temporary) namespace node
- * for the "func" exslt library and put the given node into
- * that namespace.  We also have to add this as an "extension"
- * namespace.
- */
-static void 
-slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
-	   const char *prefix, const xmlChar *uri, int local)
-{
-    xmlNsPtr nsp;
-    xmlNodePtr root = xmlDocGetRootElement(sdp->sd_docp);
-
-    nsp = xmlSearchNs(sdp->sd_docp, root, (const xmlChar *) prefix);
-    if (nsp == NULL) {
-	nsp = xmlNewNs(root, uri, (const xmlChar *) prefix);
-	if (nsp == NULL) {
-	    xmlParserError(sdp->sd_ctxt, "%s:%d: out of memory",
-			   sdp->sd_filename, sdp->sd_line);
-	    return;
-	}
-
-	/*
-	 * Since we added this namespace, we need to add it to the
-	 * list of extension prefixes.
-	 */
-	slaxNodeAttribExtend(sdp, root,
-			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix, NULL);
-    }
-
-    /* Add a distinct namespace to the current node */
-    nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
-    if (local)
-	nodep->ns = nsp;
-}
-
-/*
- * Find or construct a (possibly temporary) namespace node
- * for the "func" exslt library and put the given node into
- * that namespace.  We also have to add this as an "extension"
- * namespace.
- */
-void 
-slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
-{
-    const char *prefix = FUNC_PREFIX;
-    const xmlChar *uri = FUNC_URI;
-
-    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
-}
-
-void
-slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
-{
-    const char *prefix = SLAX_PREFIX;
-    const xmlChar *uri = (const xmlChar *) SLAX_URI;
-
-    slaxSetNs(sdp, nodep, prefix, uri, local);
-}
-
-void
-slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
-{
-    const char *prefix = EXT_PREFIX;
-    const xmlChar *uri = (const xmlChar *) EXT_URI;
-
-    slaxSetNs(sdp, nodep, prefix, uri, local);
-}
-
-/*
  * Backup the stack up 'til the given node is seen
  */
 slax_string_t *
@@ -534,7 +600,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -609,7 +675,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+    slaxAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	char *full = slaxStringAsChar(value, 0);

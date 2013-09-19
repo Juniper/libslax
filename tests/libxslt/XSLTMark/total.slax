@@ -1,26 +1,24 @@
-version 1.1;
+version 1.2;
 
 output-method html {
     encoding "utf-8";
 }
 
-match / {
-    <html> {
-        <table border="1"> {
+main <html> {
+    <table border="1"> {
+        <tr> {
+            <td colspan="2"> "Total Sales";
+        }
+        
+        for-each (salesdata/year) {
             <tr> {
-                <td colspan="2"> "Total Sales";
+                <td> year;
+                <td align="right"> sum(region/sales);
             }
-            
-            for-each (salesdata/year) {
-                <tr> {
-                    <td> year;
-                    <td align="right"> sum(region/sales);
-                }
-            }
-            <tr> {
-                <td> "Grand Total";
-                <td align="right"> sum(salesdata/year/region/sales);
-            }
+        }
+        <tr> {
+            <td> "Grand Total";
+            <td align="right"> sum(salesdata/year/region/sales);
         }
     }
 }

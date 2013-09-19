@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 var $a = {
     var $b = "SUCCESS";
@@ -6,6 +6,6 @@ var $a = {
     expr $b;
 }
 
-match / {
+main {
     expr $a;
 }

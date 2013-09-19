@@ -1,8 +1,8 @@
-version 1.1;
+version 1.2;
 
 ns exsl exclude extension = "http://exslt.org/common";
 
-match / {
+main {
     var $tds = <row> {
         <cell> "a";
         <cell> "b";

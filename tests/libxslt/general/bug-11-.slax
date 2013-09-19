@@ -1,8 +1,8 @@
-version 1.1;
+version 1.2;
 
 output-method html;
 /* xsl:import href="test2.xsl"/ */
-match / {
+main {
     processing-instruction "php" {
         expr "Success";
     }

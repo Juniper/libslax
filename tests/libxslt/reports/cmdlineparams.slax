@@ -1,13 +1,11 @@
-version 1.1;
+version 1.2;
 
 var $test = "no value";
 param $test2 = "no value";
 
-match / {
-    <root> {
-        expr "\n  test: ";
-        expr $test;
-        expr "\n  test2: ";
-        expr $test2;
-    }
+main <root> {
+    expr "\n  test: ";
+    expr $test;
+    expr "\n  test2: ";
+    expr $test2;
 }

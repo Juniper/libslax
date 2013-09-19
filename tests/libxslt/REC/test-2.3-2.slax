@@ -1,17 +1,15 @@
-version 1.1;
+version 1.2;
 
 ns "http://www.w3.org/TR/xhtml1/strict";
 
-match / {
-    <html> {
-        <head> {
-            <title> "Expense Report Summary";
-        }
-        <body> {
-            <p> {
-                expr "Total Amount: ";
-                expr expense-report/total;
-            }
+main <html> {
+    <head> {
+        <title> "Expense Report Summary";
+    }
+    <body> {
+        <p> {
+            expr "Total Amount: ";
+            expr expense-report/total;
         }
     }
 }

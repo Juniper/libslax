@@ -3,6 +3,8 @@
   <doc:doc>Some ignored documentation the prefix should not show
          up on the doc element</doc:doc>
   <xsl:template match="/">
-    <out>SUCCESS</out>
+    <out>
+      <xsl:text>SUCCESS</xsl:text>
+    </out>
   </xsl:template>
 </xsl:stylesheet>

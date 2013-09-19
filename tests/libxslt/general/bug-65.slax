@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns libxslt exclude = "http://xmlsoft.org/XSLT/namespace";
 
@@ -10,7 +10,7 @@ var $one = {
 }
 var $two = document("bug-65.ent");
 
-match / {
+main {
     apply-templates $two {
         mode "two";
     }

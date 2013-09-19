@@ -1,7 +1,7 @@
-version 1.1;
+version 1.2;
 
 import "inner.xsl";
 /* Root Node */
-match / {
+main {
     apply-templates;
 }

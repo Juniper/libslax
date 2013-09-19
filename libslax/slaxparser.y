@@ -3,9 +3,7 @@
 %}
 
 /*
- * $Id: slaxparser.y,v 1.3 2008/05/21 02:06:12 phil Exp $
- *
- * Copyright (c) 2006-2010, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, Juniper Networks, Inc.
  * All rights reserved.
  * See ../Copyright for the status of this software
  *
@@ -110,6 +108,8 @@
 %token L_UNDERSCORE		/* '_' */
 %token L_VBAR			/* '|' */
 
+%token L_LAST			/* Last literal token value */
+
 /*
  * Keyword tokens
  */
@@ -139,8 +139,9 @@
 %token K_EXPR			/* 'expr' */
 %token K_EXTENSION		/* 'extension' */
 %token K_FALLBACK		/* 'fallback' */
-%token K_FORMAT			/* 'format' */
+%token K_FALSE			/* JSON: 'false' */
 %token K_FOR			/* 'for' */
+%token K_FORMAT			/* 'format' */
 %token K_FOR_EACH		/* 'for-each' */
 %token K_FROM			/* 'from' */
 %token K_FUNCTION		/* 'function' */
@@ -157,6 +158,7 @@
 %token K_LETTER_VALUE		/* 'letter-value' */
 %token K_LEVEL			/* 'level' */
 %token K_MATCH			/* 'match' */
+%token K_MAIN			/* 'main' */
 %token K_MEDIA_TYPE		/* 'media-type' */
 %token K_MESSAGE		/* 'message' */
 %token K_MINUS_SIGN		/* 'minus-sign' */
@@ -167,6 +169,7 @@
 %token K_NS			/* 'ns' */
 %token K_NS_ALIAS		/* 'ns-alias' */
 %token K_NS_TEMPLATE		/* 'ns-template' */
+%token K_NULL			/* JSON: 'null' */
 %token K_NUMBER			/* 'number' */
 %token K_OMIT_XML_DECLARATION	/* 'omit-xml-declaration' */
 %token K_ORDER			/* 'order' */
@@ -187,6 +190,7 @@
 %token K_TERMINATE		/* 'terminate' */
 %token K_TEXT			/* 'text' */
 %token K_TRACE			/* 'trace' */
+%token K_TRUE			/* JSON: 'true' */
 %token K_UEXPR			/* 'uexpr' */
 %token K_USE_ATTRIBUTE_SETS	/* 'use-attribute-set' */
 %token K_VALUE			/* 'value' */
@@ -242,8 +246,16 @@
 %token M_PARSE_SLAX		/* Parse a SLAX-style XPath expression */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
+%token M_JSON			/* Parse a JSON document */
 
 %pure_parser
+
+/*
+ * %expect is a hack, but adding the JSON-like encoding option
+ * makes this unavoidable.  We get two shift/reduce conflicts.
+ */
+%expect 2
+
 %{
 
 #include <stdio.h>
@@ -261,6 +273,7 @@
 #include <libslax/slax.h>
 #include "slaxinternals.h"
 #include "slaxparser.h"
+#include "jsonlexer.h"
 
 /*
  * This is a pure parser, allowing this library to link with other users
@@ -347,6 +360,9 @@ start :
 		}
 
 	| M_PARSE_PARTIAL partial_list
+		{ $$ = STACK_CLEAR($1); }
+
+	| M_JSON json_content
 		{ $$ = STACK_CLEAR($1); }
 	;
 
@@ -676,6 +692,9 @@ slax_stmt :
 	| match_template
 		{ $$ = NULL; }
 
+	| main_template
+		{ $$ = NULL; }
+
 	| named_template
 		{ $$ = NULL; }
 
@@ -859,6 +878,20 @@ initial_value :
 		}
 	;
 
+initial_argument_value :
+	xpath_value
+		{
+		    slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $1);
+		    $$ = STACK_CLEAR($1);
+		}
+
+	| element_stmt_argument
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $1);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
 
 set_mvar_stmt :
 	set_mvar_preface initial_value
@@ -917,6 +950,38 @@ match_template :
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
+		}
+	;
+
+main_template :
+	K_MAIN
+		{
+		    ALL_KEYWORDS_ON();
+		    if (slaxElementPush(slax_data, ELT_TEMPLATE, NULL, NULL))
+			slaxAttribAddLiteral(slax_data, ATT_MATCH, "/");
+		    /* XXX else error */
+
+		    $$ = NULL;
+		}
+	    main_element_optional L_OBRACE match_block_contents L_CBRACE
+		{
+		    slaxMainElement(slax_data);
+		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($2);
+		}
+	;
+
+main_element_optional :
+	/* empty */
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+
+	| element
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = $1;
 		}
 	;
 
@@ -1189,6 +1254,9 @@ block_stmt :
 	| if_stmt
 		{ $$ = NULL; }
 
+	| jsonst_stmt
+		{ $$ = NULL; }
+
 	| message_stmt
 		{ $$ = NULL; }
 
@@ -1401,28 +1469,25 @@ call_argument_member :
 			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $1);
 			nodePop(slax_data->sd_ctxt);
 		    }
-		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
 		}
 
 	| T_VAR L_EQUALS
 		{
-		    SLAX_KEYWORDS_OFF();
-		    $$ = NULL;
-		}
-	    xpath_value
-		{
 		    xmlNodePtr nodep;
 
+		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $1->ss_token + 1);
-		    if (nodep) {
+		    if (nodep)
 			nodePush(slax_data->sd_ctxt, nodep);
-			slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $4);
-			nodePop(slax_data->sd_ctxt);
-		    }
-		    /* XXX else error */
+		    $$ = NULL;
+		}
+	    initial_argument_value
+		{
+		    ALL_KEYWORDS_ON();
 
+		    nodePop(slax_data->sd_ctxt);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
 		}
@@ -1572,6 +1637,7 @@ element :
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($2, $4);
 		}
+
 	;
 
 element_stmt :
@@ -1624,6 +1690,96 @@ element_stmt :
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
+		}
+	;
+
+element_stmt_argument :
+	element
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element block
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element xpath_value
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxHandleEltArgPrep(slax_data);
+		    $$ = NULL;
+		}
+	    block_contents L_CBRACE
+		{
+		    slax_string_t *ssp;
+		    ssp = slaxHandleEltArg(slax_data, TRUE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		    STACK_UNUSED($2);
+		}
+	;
+
+element_xpath_argument :
+	element
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element block
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| element xpath_value
+		{
+		    slax_string_t *ssp;
+		    ALL_KEYWORDS_ON();
+		    slaxElementXPath(slax_data, $2, FALSE, FALSE);
+		    ssp = slaxHandleEltArg(slax_data, FALSE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		}
+
+	| L_OBRACE
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxHandleEltArgPrep(slax_data);
+		    $$ = NULL;
+		}
+	    block_contents L_CBRACE
+		{
+		    slax_string_t *ssp;
+		    ssp = slaxHandleEltArg(slax_data, TRUE);
+		    STACK_CLEAR($1);
+		    $$ = ssp;
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -2891,6 +3047,8 @@ xpc_function_call :
 		{
 		    SLAX_KEYWORDS_OFF();
 
+		    slaxCheckFunction(slax_data, $1->ss_token);
+
 		    /* If we're turning XPath into SLAX, handle "..." */
 		    if (slaxParseIsXpath(slax_data)) {
 			if (slaxWriteRedoFunction(slax_data,
@@ -2934,17 +3092,25 @@ xpc_argument_list_optional :
 	;
 
 xpc_argument_list :
-	xpath_value
+	xpc_argument
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
 		}
 
-	| xpc_argument_list L_COMMA xpath_value
+	| xpc_argument_list L_COMMA xpc_argument
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = STACK_LINK($1);
 		}
+	;
+
+xpc_argument :
+	xpath_value
+		{ $$ = $1; }
+
+	| element_xpath_argument
+		{ $$ = $1; }
 	;
 
 xpc_axis_specifier_optional :
@@ -3231,5 +3397,354 @@ xpl_relational_expr :
 		{
 		    SLAX_KEYWORDS_OFF();
 		    $$ = $1;
+		}
+	;
+
+/*
+ * JSON parsing rules
+ */
+json_content :
+	json_object
+		{ $$ = NULL; }
+
+	| json_array
+		{ $$ = NULL; }
+	;
+
+json_object :
+	L_OBRACE json_member_list_or_empty L_CBRACE
+		{ $$ = STACK_CLEAR($1); }
+	;
+json_member_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| json_member_list
+		{ $$ = NULL; }
+	;
+
+json_member_list :
+	json_pair jsonst_comma_optional
+		{ $$ = STACK_CLEAR($1); }
+
+	| json_pair L_COMMA json_member_list
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+json_pair :
+	json_name L_COLON
+		{
+		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    $$ = NULL;
+		}
+	    json_value
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+
+json_name :
+	T_BARE
+		{ $$ = $1; }
+
+	| T_QUOTED
+		{ $$ = $1; }
+	;
+
+json_value :
+	json_object
+		{ $$ = NULL; }
+
+	| json_array
+		{ $$ = $1; }
+
+	| T_QUOTED
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    $$ = $1;
+		}
+
+	| T_NUMBER
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NUMBER);
+		    $$ = $1;
+		}
+
+	| K_TRUE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_TRUE);
+		    $$ = $1;
+		}
+
+        | K_FALSE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_FALSE);
+		    $$ = $1;
+		}
+
+	| K_NULL
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NULL);
+		    $$ = $1;
+		}
+	;
+
+json_array :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            json_element_list_or_empty L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+json_element_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| json_element_list
+		{ $$ = NULL; }
+	;
+
+json_element_list :
+        json_element_item
+		{ $$ = NULL; }
+
+        | json_element_list json_element_item
+		{ $$ = NULL; }
+	;
+
+json_element_item :
+	json_value
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
+
+	| json_value L_COMMA
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
+	;
+
+/*
+ * Stright JSON parsing rules (with no T_BARE).  We use these rules
+ * to parse JSON intermixed with SLAX.
+ */
+
+jsonst_stmt :
+	jsonst_pair_nested jsonst_comma_or_eos_optional
+		{ $$ = STACK_CLEAR($1); }
+
+	| jsonst_pair_simple jsonst_comma_or_eos_optional
+		{ $$ = STACK_CLEAR($1); }
+
+	| jsonst_array_top jsonst_comma_or_eos
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+jsonst_object :
+	L_OBRACE jsonst_member_list_or_empty L_CBRACE
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+jsonst_member_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| jsonst_member_list
+		{ $$ = NULL; }
+	;
+
+jsonst_member_list :
+	block_stmt
+		{ $$ = STACK_CLEAR($1); }
+
+	| block_stmt jsonst_member_list
+		{ $$ = STACK_CLEAR($1); }
+	;
+
+jsonst_pair_nested :
+	jsonst_name_and_colon jsonst_nested
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+jsonst_pair_simple :
+	jsonst_name_and_colon jsonst_simple
+		{
+		    slaxElementClose(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+jsonst_name_and_colon :
+	jsonst_name L_COLON
+		{
+		    slaxJsonElementOpenName(slax_data, $1->ss_token);
+		    slaxJsonTag(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_name :
+	T_QUOTED
+		{ $$ = $1; }
+	;
+
+jsonst_comma_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| L_COMMA
+		{ $$ = $1; }
+	;
+
+jsonst_comma_or_eos_optional :
+	/* empty */
+		{ $$ = NULL; }
+
+	| L_COMMA
+		{ $$ = $1; }
+
+	| L_EOS
+		{ $$ = $1; }
+	;
+
+jsonst_comma_or_eos :
+	L_EOS
+		{ $$ = $1; }
+
+	| L_COMMA
+		{ $$ = $1; }
+	;
+
+jsonst_nested :
+	jsonst_object
+		{ $$ = $1; }
+
+	| jsonst_array
+		{ $$ = $1; }
+	;
+
+jsonst_simple :
+	T_QUOTED
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    $$ = $1;
+		}
+
+	| T_NUMBER
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NUMBER);
+		    $$ = $1;
+		}
+
+	| K_TRUE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_TRUE);
+		    $$ = $1;
+		}
+
+        | K_FALSE
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_FALSE);
+		    $$ = $1;
+		}
+
+	| K_NULL
+		{
+		    slaxJsonElementValue(slax_data, $1);
+		    slaxJsonAddTypeInfo(slax_data, VAL_NULL);
+		    $$ = $1;
+		}
+	;
+
+jsonst_value :
+	jsonst_nested
+		{ $$ = $1; }
+
+	| jsonst_simple
+		{ $$ = $1; }
+	;
+
+jsonst_array :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonTag(slax_data);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            jsonst_element_list_or_empty L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_array_top :
+	L_OBRACK
+	    {
+		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		slaxElementOpen(slax_data, ELT_MEMBER);
+		slaxJsonTag(slax_data);
+		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		$$ = NULL;
+	    }
+            jsonst_element_list L_CBRACK
+		{
+		    slaxJsonClearMember(slax_data);
+		    $$ = NULL;
+		}
+	;
+
+jsonst_element_list_or_empty :
+	/* empty */
+		{ $$ = NULL; }
+
+	| jsonst_element_list
+		{ $$ = NULL; }
+	;
+
+jsonst_element_list :
+        jsonst_element_item
+		{ $$ = NULL; }
+
+        | jsonst_element_list L_COMMA jsonst_element_item
+		{ $$ = NULL; }
+	;
+
+jsonst_element_item :
+	jsonst_value
+		{
+		    slaxElementClose(slax_data);
+		    slaxElementOpen(slax_data, ELT_MEMBER);
+		    slaxJsonTag(slax_data);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
 		}
 	;

@@ -1,46 +1,27 @@
-version 1.1;
+version 1.2;
 
-var $content = "
-line one
-line two
-line three
-line four
-line five
-se-ix
-se-ven
-eh-it
-ny-en
-te-en
-el-e-ven
-twiel-ve
-t'ir-teeen
-four-teen
-fift-teen
-se-ix-teen
-";
+var $content = "\r\nline one\r\nline two\r\nline three\r\nline four\r\nline five\r\nse-ix\r\nse-ven\r\neh-it\r\nny-en\r\nte-en\r\nel-e-ven\r\ntwiel-ve\r\nt'ir-teeen\r\nfour-teen\r\nfift-teen\r\nse-ix-teen\r\n";
 var $content2 = <this> $content;
 
-match / {
-    <top> {
-        var $lines = slax:break-lines($content);
-        
-        message "done: " _ count($lines);
-        
-        for $line ($lines) {
-            copy-of $line;
-        }
-        var $lines2 = slax:break-lines($content2);
-        message "done: " _ count($lines2);
-        
-        for $line2 ($lines2) {
-            copy-of $line2;
-        }
-        var $content3 = translate($content, "", "");
-        var $lines3 = slax:break-lines($content3);
-        message "done: " _ count($lines3);
-        
-        for $line3 ($lines3) {
-            copy-of $line3;
-        }
+main <top> {
+    var $lines = slax:break-lines($content);
+    
+    message "done: " _ count($lines);
+    
+    for $line ($lines) {
+        copy-of $line;
+    }
+    var $lines2 = slax:break-lines($content2);
+    message "done: " _ count($lines2);
+    
+    for $line2 ($lines2) {
+        copy-of $line2;
+    }
+    var $content3 = translate($content, "\r", "");
+    var $lines3 = slax:break-lines($content3);
+    message "done: " _ count($lines3);
+    
+    for $line3 ($lines3) {
+        copy-of $line3;
     }
 }

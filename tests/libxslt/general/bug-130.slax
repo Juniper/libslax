@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns "http://www.w3.org/TR/REC-html40";
 
@@ -11,11 +11,9 @@ output-method html {
 }
 var $g.doc.root = document("../docs/bug-130.doc");
 
-match / {
-    <html> {
-        <head>;
-        <body> {
-            apply-templates /frame;
-        }
+main <html> {
+    <head>;
+    <body> {
+        apply-templates /frame;
     }
 }

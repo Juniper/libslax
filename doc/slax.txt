@@ -37,10 +37,10 @@ details.
 * SLAX (Overview)
 
 XSLT is a commonly used transformation language for XML.  It is a
-declarative language that uses XPath expressions to
-inspect an XML input document and can generate XML output based on
-that input hierarchy.  It's a simple but powerful tool for handling
-XML, but the syntax is problematic for developers.
+declarative language that uses XPath expressions to inspect an XML
+input document and can generate XML output based on that input
+hierarchy.  It's a simple but powerful tool for handling XML, but the
+syntax is problematic for developers.
 
 XSLT uses an XML-based syntax, and while XML is great for
 machine-to-machine communication, it is inconvenient for humans to
@@ -859,6 +859,28 @@ The equivalent XSLT:
 XPath expression can be added to the result tree using the "expr" and
 "uexpr" statements.
 
+*** Using Elements as Function Arguments
+
+Beginning with SLAX-1.2, elements may be used directly as function
+arguments.  Arguments can be either a single element or a block of
+SLAX code, placed inside braces.
+
+    var $a = my:function(<elt>, <max> 15);
+    var $b = my:test({
+        <min> 5;
+        <max> 15;
+        if ($step) {
+            <step> $step;
+        }
+    });
+    var $c = my:write(<content> {
+        <document> "total.txt";
+        <size> $file/size;
+        if (node[@type == "full]) {
+            <full>;
+        }
+    });
+
 *** expr
 
 The "expr" statement adds an XPath expression to the result tree.  The
@@ -905,7 +927,7 @@ slash character ('/'), and the greater than character ('>').
        <index/>
     </doc>
 
-*** XML Elements
+*** XML Elements @xml-elements@
 
 In SLAX, XML elements are encoded using braces instead of the closing
 tag.  The element is given, wrapped in chevrons as in XML, but it then
@@ -937,12 +959,12 @@ removing the close tag reduces the clutter and increases the clarity
 of code.
 
     <top> {
-        <one>;
+        <one> 1;
         <two> {
-            <three>;
-            <four>;
+            <three> 3;
+            <four> 4;
             <five> {
-                <six>;
+                <six> 6;
             }
         }
     }
@@ -950,12 +972,12 @@ of code.
 This is equivalent to:
 
     <top>
-        <one/>
+        <one>1</one>
         <two>
-            <three/>
-            <four/>
+            <three>3</three>
+            <four>4</four>
             <five>
-                <six/>
+                <six>6</six>
             </five>
         </two>
     </top>
@@ -969,12 +991,189 @@ inside a set of braces.
 In this example, the value of the "name" node (rather than the literal
 string "name") will be used to create an XML element, whose contents
 are an empty element with a name of "from-" concatenated with the
-value of the address node.  Node values are selected from the current
-context. 
+value of the address node and an emply element whose name is the value
+of the variable "$my-var" (refer to ^main-var^ for more information about
+variables).  Node values are selected from the current context.
 
     element name {
         element "from-" _ address;
+        element $my-var;
     }
+
+*** JSON Elements @json-elements@
+
+XML elements can also be specified using a JSON-like style, where
+quoted strings name the element, followed by a colon and the contents
+of the element.  The contents can be any of the following:
+
+|---------+-------------------------------------|
+| Type    | Examples                            |
+|---------+-------------------------------------|
+| String  | "test", "when in the course", "42"  |
+| Number  | 42, 1.5, 2e45.5                     |
+| boolean | true, false                         |
+| null    | null                                |
+| Array   | [ 1, 2, 3, 4, 5 ]                   |
+| Object  | { "this": { "that": "the other" } } |
+|---------+-------------------------------------|
+
+Hierarchical nesting is done using objects:
+
+    "top" : {
+        "one": 1,
+        "two": {
+            "three": 3,
+            "four": 4,
+            "five": {
+                "six: 6
+            }
+        }
+    }
+
+This would generate XML equivalent to the examples in ^xml-elements^.
+
+**** Attributes for JSON Elements @json-attributes@
+
+Since there is a mismatch between the data encoding capabilities in
+XML and JSON, a set of attributes can be used to control the exact
+rendering of JSON data.
+
+|-----------+--------+--------------------------------------------|
+| Attribute | Value  | Description                                |
+|-----------+--------+--------------------------------------------|
+| name      | string | A name to use in place of the element name |
+| type      | string | An indication of the desired encoding      |
+|-----------+--------+--------------------------------------------|
+
+The value of the "type" attribute must be one of the subset listed
+below.  This allows SLAX to distinguish between '{ "value": "5" }' and
+'{ "value": 5 }' to control the encoding of the value as a string or a
+number.  Similarly the caller can control whether "null" is a string
+or the special null value.  If the type attribute is missing, the
+element is assumed to be a simple field.
+
+|--------+---------------------------------|
+| Type   | Description                     |
+|--------+---------------------------------|
+| array  | Contains a JSON array           |
+| false  | Contains the JSON "false" value |
+| null   | Contains the JSON "null" value  |
+| member | Is a member of an array         |
+| number | Contains a number value         |
+| true   | Contains the JSON "true" value  |
+|--------+---------------------------------|
+
+In this example, the type attribute is used to indicate the encoding of
+JSON in XML.
+
+    JSON:
+      "name": "Skip Tracer",
+      "location": "The city that never sleeps", 
+      "age": 5,
+      "real": false, 
+      "cases": null, 
+
+    XML:
+      <name>Skip Tracer</name>
+      <location>The city that never sleeps</location>
+      <age type="number">5</age>
+      <real type="false">false</real>
+      <cases type="null">null</cases>
+
+**** Encoding JSON Arrays in XML @json-arrays@
+
+The mismatch of capabilities between JSON and XML also requires the use of
+alternative encodings for arrays.  The <member> element is used to
+contain member (type="member" of an array (of type="array").
+
+In this example, alternative encodings are used for array values.
+Also the "type" attribute is used to hold the JSON type:
+
+    "book" : {
+        "topics": [ "colors", "fish", "spots", "stars", "cars" ],
+        "pages": 63,
+        "counts": [
+            { "red": 1 },
+            { "blue": 1 },
+            { "sad": "some" },
+            { "glad": "some" },
+        ]
+    }
+
+The equivalent in SLAX elements would be:
+
+    <book> {
+        <topics type="array"> {
+            <member type="member"> "colors";
+            <member type="member"> "fish";
+            <member type="member"> "spots";
+            <member type="member"> "stars";
+            <member type="member"> "cars";
+        }
+        <pages type="number"> "63";
+        <counts type="array"> {
+            <member type="member"> {
+                <red type="number"> "1";
+            }
+            <member type="member"> {
+                <blue type="number"> "1";
+            }
+            <member type="member"> {
+                <sad> "some";
+            }
+            <member type="member"> {
+                <glad> "some";
+            }
+        }
+    }
+
+The XML equivalent is shown below:
+
+    <book>
+      <topics type="array">
+        <member type="member">colors</member>
+        <member type="member">fish</member>
+        <member type="member">spots</member>
+        <member type="member">stars</member>
+        <member type="member">cars</member>
+      </topics>
+      <pages type="number">63</pages>
+      <counts type="array">
+        <member type="member">
+          <red type="number">1</red>
+        </member>
+        <member type="member">
+          <blue type="number">1</blue>
+        </member>
+        <member type="member">
+          <sad>some</sad>
+        </member>
+        <member type="member">
+          <glad>some</glad>
+        </member>
+      </counts>
+    </book>
+
+**** Encoding Invalid JSON Names @json-names@
+
+In addition, JSON allows values for the names which an invalid in
+XML.  When this occurs, an element named "element" is used to hold the
+content with the "name" attribute containing the real name:
+
+    JSON style:
+        "": {
+            "<>": "<>"
+        }
+
+    SLAX style:
+        <element name=""> {
+            <element name="<>"> "<>";
+        }
+
+    XML content:
+        <element name="">
+            <element name="&lt;&gt;">&lt;&gt;</element>
+        </element>
 
 ** Attributes
 
@@ -1204,14 +1403,6 @@ The XSLT equivalent:
         <!-- ... -->
     </xsl:stylesheet>
 
-*** Reserved Prefixes
-
-The XML specification reserved all prefixes and attributes beginning
-with the characters "xml".  In addition, SLAX reserves all prefixes
-and attributes that begin with the characters "slax".  These
-reservations help to future proof against changes and enhancements to
-the language.
-
 *** The "extension" Statement @extension@
 
 The "extension" statement instructs the processing engine that
@@ -1235,6 +1426,67 @@ final result tree, effectively blocking it from output.
     ns xslax extension = "http://libslax.org/slax";
 
 See also ^http://www.w3.org/TR/xslt#literal-result-element^.
+
+*** Reserved Prefixes
+
+The XML specification reserved all prefixes and attributes beginning
+with the characters "xml".  In addition, SLAX reserves all prefixes
+and attributes that begin with the characters "slax".  These
+reservations help to future proof against changes and enhancements to
+the language.
+
+*** Default Namespaces for Prefixes
+
+When a prefix is used without the a corresponding "ns" statement in
+scope, SLAX will refer to a set of default namespaces.  If the prefix
+has a default namespace, that namespace will be automatically mapped
+to the prefix.
+
+The following table lists the default set of prefixes installed with
+the libslax software distribution:
+
+|--------+---------+------------------------------------|
+| Prefix | Source  | URI                                |
+|--------+---------+------------------------------------|
+| bit    | libslax | http://xml.libslax.org/bit         |
+| curl   | libslax | http://xml.libslax.org/curl        |
+| exsl   | exslt   | http://exslt.org/common            |
+| crypto | exslt   | http://exslt.org/crypto            |
+| math   | exslt   | http://exslt.org/math              |
+| set    | exslt   | http://exslt.org/sets              |
+| func   | exslt   | http://exslt.org/functions         |
+| str    | exslt   | http://exslt.org/strings           |
+| date   | exslt   | http://exslt.org/dates-and-times   |
+| dyn    | exslt   | http://exslt.org/dynamic           |
+| saxon  | libxslt | http://icl.com/saxon               |
+| os     | libslax | http://xml.libslax.org/os          |
+| xutil  | libslax | http://xml.libslax.org/xutil       |
+|--------+---------+------------------------------------|
+
+The libslax extension libraries are documented in this document under
+the ^libslax-extensions^ section.  The exslt extension libraries are documented
+at ^http://exslt.org^ and the libxslt extension library is documented at
+^http://xmlsoft.org^.
+
+When using the "slaxproc" tool with the --format or --slax-to-xslt
+command line options, the namespace will be properly displayed:
+
+    % cat /tmp/foo.slax
+    version 1.1;
+   
+    match / {
+        <top> {
+            expr date:time();
+        }
+    }
+    % slaxproc --format /tmp/foo.slax
+    version 1.1;
+
+    ns date extension = "http://exslt.org/dates-and-times";
+
+    match / {
+        <top> date:time();
+    }
 
 ** Processing Instructions
 
@@ -1502,6 +1754,28 @@ used when defining variables.
 }}
 
 The "with" statement is described in more detail below (^with^).
+
+**** Using Elements As Argument Values
+
+Beginning with SLAX-1.2, elements may be used directly as argument
+values for templates.  Arguments can be either a single element or
+a block of SLAX code, placed inside braces.
+
+    call my-template($a = <elt>, $b = <max> 15);
+    call test($params = {
+        <min> 5;
+        <max> 15;
+        if ($step) {
+            <step> $step;
+        }
+    }
+    call write($content = <content> {
+        <document> "total.txt";
+        <size> $file/size;
+        if (node[@type == "full]) {
+            <full>;
+        }
+    });
 
 **** The "match" Statement @named-match@
 
@@ -1865,6 +2139,38 @@ The XSLT equivalent:
       </hello>
     </xsl:template>
 
+** The "main" Template @main-template@
+
+The XSLT programming model used with SLAX calls for a traversal of the
+input data hierarchy.  Since the first step is typically the match of
+the top of the hierarchy and the creation of the top-level tag of the
+output hierarchy.  The "main" statement allows both of these
+objectives.  Two forms of the statement are supported, with and
+without the output tag.  Without an output element, the "main"
+template is equivalent to "match /".  The token "main" is followed by
+a block of statements within a set of braces:
+
+    main {
+        <top> {
+            <answer> 42;
+        }
+    }
+
+The "main" template can also be used with a top-level output element
+following the "main" token.  The element can include attributes.
+
+    main <top> {
+        <answer> 42;
+    }
+
+Both of the preceding examples are equivalent to the following XSLT:
+
+    <xsl:template match="/">
+        <top>
+            <answer>42</answer>
+        </top>
+    </xsl:template>
+
 * Programming Constructs
 
 This section covers the programming constructs in SLAX.  SLAX tries to
@@ -2045,7 +2351,7 @@ In truth, the only interesting thing to do with an RTF is to convert
 it to a node set, which is not a standard XPath/XSLT operation.  Most
 scripts will use the extension function "ext:node-set()" (which is
 specific to libxslt) or "exslt:node-set()" (which is in the EXSLT
-extension library; see exslt.org for additional information).
+extension library; see ^http://exslt.org^ for additional information).
 
     ns ext = "http://xmlsoft.org/XSLT/namespace";
     ...
@@ -3062,10 +3368,12 @@ check syntax.
    Modes:
      --check OR -c: check syntax and content for a SLAX script
      --format OR -F: format (pretty print) a SLAX script
+     --json-to-xml: Turn JSON data into XML
      --run OR -r: run a SLAX script (the default mode)
      --show-select: show XPath selection from the input document
      --show-variable: show contents of a global variable
      --slax-to-xslt OR -x: turn SLAX into XSLT
+     --xml-to-json: turn XML into JSON
      --xslt-to-slax OR -s: turn XSLT into SLAX
 
     Options:
@@ -3079,6 +3387,7 @@ check syntax.
      --include <dir> OR -I <dir>: search dir for includes/imports
      --indent OR -g: indent output ala output-method/indent
      --input <file> OR -i <file>: take input from the given file
+     --json-tagging: tag json-style input with the 'json' attribute
      --lib <dir> OR -L <dir>: search dir for extension libraries
      --name <file> OR -n <file>: read the script from the given file
      --no-randomize: do not initialize the random number generator
@@ -3199,6 +3508,9 @@ scripts before installing or uploading them.
 = --format OR -F
 Format (aka "pretty print") a SLAX script, correcting indentation and
 spacing to the style preferred by the author (that is, me).
+= --json-to-xml
+Transform JSON input into XML, using the conventions defined in
+^json-elements^.
 = --run OR -r
 Run a SLAX script.  The script name, input file name, and output file
 name can be provided via command line options and/or using positional
@@ -3219,6 +3531,9 @@ contents of global variables, such as the $arguments variable.
 Convert a SLAX script into XSLT format.  The script name and output file
 name can be provided via command line options and/or using positional
 arguments as described in ^slaxproc-arguments^.
+= --xml-to-json
+Transform XML input into JSON, using the conventions defined in
+^json-elements^.
 = --xslt-to-slax OR -s
 Convert a XSLT script into SLAX format.  The script name and output file
 name can be provided via command line options and/or using positional
@@ -3254,6 +3569,10 @@ Indent output to make it good looking.  This option is identical to
 the behavior triggered by "output-method { indent 'true'; }".
 = --input <file> OR -i <file>
 Use the given file for  input.
+= --json-tagging
+Tag JSON elements as they are parsing into XML with the 'json'
+attribute.  This allows the --format mode to transform them
+back into JSON format.
 = --lib <dir> OR -L <dir>
 Add a directory to the list of directories searched for extension
 libraries.
@@ -3409,10 +3728,14 @@ not truncate these lines:
   Total      6    131               51   Total
   (sdb) 
 
-This information not only show how much time is spent during code
-execution, but can also show which lines are being executed, which
+This information not only shows how much time is spent during code
+execution, but also shows which lines are being executed, which
 can help debug scripts where the execution does not match
 expectations.
+
+The profiling is not "Monte Carlo", or clock based, but is based on
+trace data generated as each SLAX instruction is executed, giving
+more precise data.
 
 ** callflow
 
@@ -3427,7 +3750,7 @@ but reference the instruction, filename, and line number of the frame:
   callflow: 1: exit <xsl:variable> at empty-15.slax:20
   callflow: 0: exit <xsl:template> in match / at empty-15.slax:5
 
-* Extension Libraries in libslax
+* Extension Libraries in libslax @libslax-extensions@
 
 libslax supports a means of dynamically loading extension libraries.
 After a script is parsed, any extension prefixes are determined, along
@@ -4083,12 +4406,15 @@ optional elements:
             <root> "my-top";
             <types> "no";
         }
-        var $xml = xutil:json-to-xml($data);
+        var $xml = xutil:json-to-xml($data, $options);
 
 The XML returned from json-to-xml() is decorated with attributes
 (including the "type" and "name" attributes) which allow the data to
 be converted back into JSON using xml-to-json().  Refer to that
 function for additional information.
+
+For details on the JSON to XML encoding, refer to ^json-attributes^,
+^json-arrays^, and ^json-names^.
 
 **** xutil:xml-to-json()
 
@@ -4114,61 +4440,8 @@ optional elements:
 | quotes  | "optional" | Avoid quotes for names                 |
 |---------+------------+----------------------------------------|
 
-Since there is a mismatch between the data encoding capabilities in
-XML and JSON, a set of attributes can be used to control the exact
-rendering of JSON data.
-
-|-----------+--------+--------------------------------------------|
-| Attribute | Value  | Description                                |
-|-----------+--------+--------------------------------------------|
-| name      | string | A name to use in place of the element name |
-| type      | string | An indication of the desired encoding      |
-|-----------+--------+--------------------------------------------|
-
-The value of the "type" attribute must be one of the subset listed
-below.  This allows the library to distinguish between '{ "value": "5" }'
-and '{ "value": 5 }' to control the encoding of the value as a
-string or a number.  Similarly the caller can control whether "null"
-is a string or the special null value.  If the type attribute is
-missing, the element is assumed to be a simple field.
-
-|--------+---------------------------------|
-| Type   | Description                     |
-|--------+---------------------------------|
-| array  | Contains a JSON array           |
-| false  | Contains the JSON "false" value |
-| null   | Contains the JSON "null" value  |
-| member | Is a member of an array         |
-| number | Contains a number value         |
-| true   | Contains the JSON "true" value  |
-|--------+---------------------------------|
-
-In this example, the type attribute is used to control the encoding of
-XML into JSON.
-
-      <json>
-        <name>Skip Tracer</name>
-        <location>The city that never sleeps</location>
-        <age type="number">5</age>
-        <real type="false">false</real>
-        <cases type="null">null</cases>
-        <equipment type="array">
-          <member type="member">hat</member>
-          <member type="member">desk</member>
-          <member type="member">attitude</member>
-        </equipment>
-      </json>
-
-This yields:
-
-    {
-      "name": "Skip Tracer",
-      "location": "The city that never sleeps", 
-      "age": 5,
-      "real": false, 
-      "cases": null, 
-      "equipment": [ "hat", "desk", "attitude" ]
-     }
+For details on the JSON to XML encoding, refer to ^json-attributes^,
+^json-arrays^, and ^json-names^.
 
 ** The "os" Extension Library
 
@@ -4211,7 +4484,7 @@ operation.  The options can include the values in the following table.
 |---------+---------------------------------------------|
 
     SYNTAX::
-        node-set os:mkdir(path, [options]);
+        node-set os:mkdir(path [, options]);
 
     EXAMPLE::
         var $res = os:mkdir("/tmp/foo");
@@ -4819,6 +5092,18 @@ search is made for the library to find the symbol
 
 The file slaxdyn.h defines some macros for helping define extension
 libraries.
+
+*** Default Prefixes for Extension Libraries
+
+When a default prefix is used with an extension library, the prefix is
+mapped to the extension using a symbolic link ("ln -s").  The source
+of the symlink should be the prefix with a ".prefix" appended and
+should be located in the extension directory ("${SLAX_EXTDIR}").  The
+target of the symlink should be the namespace URI with the escaping
+and ".ext" extension as described above.
+
+See the Makefile.am file in any of the libslax extension directories
+for examples of creating the appropriate symlink.
 
 *** Example
 

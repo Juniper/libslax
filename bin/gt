@@ -1,7 +1,5 @@
 #!/bin/sh
 #
-# $Id$
-#
 # Copyright 2013, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
@@ -28,6 +26,9 @@ function check_in_details () {
         /bin/echo "[Checking $file into branch $branch]"
         /bin/echo -n "Commit message: "
 	read comment
+	if [ "$comment" = "==" -o "$comment" = "ditto" ]; then
+	    comment="$last"
+        fi
 	if [ "$comment" = "" ]; then
 	    echo "Skipping file $file";
 	else
@@ -36,6 +37,7 @@ function check_in_details () {
 	    fi
 	    git commit -m "$comment" "$file"
 	fi
+	last="$comment"
     done
 }
 
@@ -136,6 +138,17 @@ case "$op" in
 	if [ $? -eq 0 ]; then
 	    push_to_branch
 	fi
+        ;;
+
+    merge-softly-from)
+        set_branch
+        from=$1
+        if [ x"$from" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
+	echo "Merging $from into $branch ..."
+	git -c core.editor=/usr/bin/true merge --no-ff $from
         ;;
 
     outstanding|out|what)

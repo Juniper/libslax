@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns test = "http://www.example.org/test";
 
@@ -22,11 +22,9 @@ key k {
     value @a;
 }
 
-match / {
-    <test:data> {
-        for-each (key("k", "1")) {
-            copy-of .;
-        }
+main <test:data> {
+    for-each (key("k", "1")) {
+        copy-of .;
     }
 }
 

@@ -1,7 +1,7 @@
-version 1.1;
+version 1.2;
 
 output-method html;
 
-match / {
-    <a href="a?b+c"> "xxx";
+main <a href="a?b+c"> {
+    expr "xxx";
 }

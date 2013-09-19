@@ -1,8 +1,8 @@
-version 1.1;
+version 1.2;
 
 ns n exclude = "http://xmlsoft.org/";
 
-match / {
+main {
     var $var = /n:x;
     
     <root> $var;

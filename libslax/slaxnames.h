@@ -1,7 +1,5 @@
 /*
- * $Id$
- *
- * Copyright (c) 2006-2011, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -42,6 +40,7 @@
 #define ATT_GROUPING_SEPARATOR "grouping-separator"
 #define ATT_GROUPING_SIZE "grouping-size"
 #define ATT_HREF	"href"
+#define ATT_JSON	"json"
 #define ATT_LANG	"lang"
 #define ATT_MATCH	"match"
 #define ATT_METHOD	"method"
@@ -59,6 +58,7 @@
 #define ATT_SVARNAME	"svarname"
 #define ATT_TERMINATE	"terminate"
 #define ATT_TEST	"test"
+#define ATT_TYPE	"type"
 #define ATT_UID		"uid"
 #define ATT_USE		"use"
 #define ATT_USE_ATTRIBUTE_SETS	"use-attribute-sets"
@@ -95,6 +95,7 @@
 #define ELT_IF		"if"
 #define ELT_JSON	"json"
 #define ELT_LINKS	"links"
+#define ELT_MEMBER	"member"
 #define ELT_MESSAGE	"message"
 #define ELT_MODE	"mode"
 #define ELT_NAME	"name"
@@ -106,6 +107,8 @@
 #define ELT_PARAM	"param"
 #define ELT_PATH	"path"
 #define ELT_PERMISSIONS "permissions"
+#define ELT_PRETTY	"pretty"
+#define ELT_QUOTES	"quotes"
 #define ELT_RECURSE	"recurse"
 #define ELT_RESULT	"result"
 #define ELT_SET_VARIABLE "set-variable"
@@ -125,6 +128,16 @@
 #define ELT_WHEN	"when"
 #define ELT_WHILE	"while"
 #define ELT_WITH_PARAM	"with-param"
+
+#define VAL_ARRAY	"array"
+#define VAL_FALSE	"false"
+#define VAL_JSON	"json"
+#define VAL_MEMBER	"member"
+#define VAL_NULL	"null"
+#define VAL_NUMBER	"number"
+#define VAL_OPTIONAL	"optional"
+#define VAL_TRUE	"true"
+#define VAL_XPATH	"xpath"
 
 /* Names for generated code */
 #define FOR_VARIABLE_PREFIX "$slax-dot-"

@@ -1,11 +1,11 @@
-version 1.1;
+version 1.2;
 
 ns saxon = "http://icl.com/saxon";
 ns xalanredirect = "org.apache.xalan.xslt.extensions.Redirect";
 ns xt = "http://www.jclark.com/xt";
 ns libxslt = "http://xmlsoft.org/XSLT/namespace";
 
-match / {
+main {
     expr " === 24 Standard elements:\n";
     if (element-available("xsl:apply-templates")) {
         expr "xsl:apply-templates available\n";

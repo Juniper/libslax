@@ -1,10 +1,9 @@
-version 1.1;
+version 1.2;
 
 output-method html {
     indent "yes";
     omit-xml-declaration "yes";
 }
 
-match / {
-    <IMG a="">;
+main <IMG a=""> {
 }

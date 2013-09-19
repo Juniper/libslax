@@ -1,7 +1,5 @@
 /*
- * $Id: debugger.c 384736 2010-06-16 04:41:59Z deo $
- *
- * Copyright (c) 2010-2011, Juniper Networks, Inc.
+ * Copyright (c) 2010-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise

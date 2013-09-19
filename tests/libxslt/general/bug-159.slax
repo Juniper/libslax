@@ -1,18 +1,16 @@
-version 1.1;
+version 1.2;
 
 output-method html {
     encoding "ascii";
 }
 
-match / {
-    <html> {
-        <head>;
-        <body> {
-            <a href="#ё"> "ё";
-            <p> "a lot of text";
-            <a name="ё">;
-            <h1> "ё";
-            <p> "a lot of text";
-        }
+main <html> {
+    <head>;
+    <body> {
+        <a href="#ё"> "ё";
+        <p> "a lot of text";
+        <a name="ё">;
+        <h1> "ё";
+        <p> "a lot of text";
     }
 }

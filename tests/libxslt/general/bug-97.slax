@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns car = "http://www.example.com/xmlns/car";
 ns manu = "http://www.example.com/xmlns/manufacturer";
@@ -8,7 +8,7 @@ output-method text {
 }
 strip-space *;
 
-match / {
+main {
     apply-templates;
 }
 

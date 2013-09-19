@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns libxslt = "http://xmlsoft.org/XSLT/namespace";
 ns test1 = "http://www.test1.com";
@@ -16,8 +16,6 @@ match /all/* {
     }
 }
 
-match / {
-    <root> {
-        apply-templates;
-    }
+main <root> {
+    apply-templates;
 }

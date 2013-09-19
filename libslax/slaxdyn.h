@@ -1,7 +1,5 @@
 /*
- * $Id$
- *
- * Copyright (c) 2006-2010, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -71,6 +69,13 @@ slaxDynLoad (xmlDocPtr docp);
  */
 void
 slaxDynInit (void);
+
+/*
+ * Find the uri behind a "well-known" prefix
+ */
+int
+slaxDynFindPrefix (char *uri, size_t urisiz, const char *name);
+
 
 /*
  * De-initialize the entire dynamic extension loading mechanism.

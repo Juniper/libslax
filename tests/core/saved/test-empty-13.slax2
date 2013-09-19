@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 output-method {
     indent "yes";
@@ -6,22 +6,20 @@ output-method {
 mvar $indent = "aaa";
 param $test = 1;
 
-match / {
-    <top> {
-        call scalars();
-        call non-scalars();
-        call append-scalars();
-        call to-scalars();
-        mvar $set;
-        
-        for-each (*/*) {
-            if (starts-with(name(), "i")) {
-                append $set += .;
-            }
+main <top> {
+    call scalars();
+    call non-scalars();
+    call append-scalars();
+    call to-scalars();
+    mvar $set;
+    
+    for-each (*/*) {
+        if (starts-with(name(), "i")) {
+            append $set += .;
         }
-        <set> {
-            copy-of $set;
-        }
+    }
+    <set> {
+        copy-of $set;
     }
 }
 

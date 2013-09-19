@@ -1,7 +1,5 @@
 /*
- * $Id$
- *
- * Copyright (c) 2012, Juniper Networks, Inc.
+ * Copyright (c) 2012-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -150,7 +148,7 @@ member_list :
 pair :
 	name L_COLON
 		{
-		    extXutilJsonElementOpen(slax_data, $1->ss_token);
+		    extXutilJsonElementOpenName(slax_data, $1->ss_token);
 		    $$ = NULL;
 		}
 	    value

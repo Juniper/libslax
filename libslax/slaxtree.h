@@ -1,7 +1,5 @@
 /*
- * $Id: slaxinternals.h,v 1.3 2008/05/21 02:06:12 phil Exp $
- *
- * Copyright (c) 2006-2011, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -183,6 +181,19 @@ int slaxNodeIs (xmlNodePtr nodep, const char *uri, const char *name);
  */
 int
 slaxNodeIsXsl (xmlNodePtr nodep, const char *name);
+
+/**
+ * Find a namespace, or make one if the prefix is well known
+ */
+xmlNsPtr
+slaxFindNs (slax_data_t *sdp, xmlNodePtr nodep,
+	       const char *prefix, int len);
+
+/**
+ * Check that we have a known namespace for a function name
+ */
+void
+slaxCheckFunction (slax_data_t *sdp, const char *fname);
 
 /**
  * Simple (casted) version of xmlGetProp
