@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 output-method xml {
     encoding "UTF-8";
@@ -6,6 +6,5 @@ output-method xml {
     doctype-system "http://www.wapforum.org/DTD/wml_1.1.xml";
 }
 
-match / {
-    <doc>;
+main <doc> {
 }
