@@ -142,6 +142,17 @@ case "$op" in
 	fi
         ;;
 
+    merge-softly-from)
+        set_branch
+        from=$1
+        if [ x"$from" = x ]; then
+            echo "missing branch name"
+            exit 1
+        fi
+	echo "Merging $from into $branch ..."
+	git -c core.editor=/usr/bin/true merge --no-ff $from
+        ;;
+
     outstanding|out|what)
         set_branch
         git diff origin/$branch $branch
