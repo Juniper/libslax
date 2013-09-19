@@ -1,7 +1,7 @@
-version 1.1;
+version 1.2;
 
 ns a = "a";
 
-match / {
+main {
     call a:a();
 }
