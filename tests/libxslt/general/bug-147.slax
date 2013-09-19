@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 import "./bug-147-3.imp";
 import "./bug-147-2.imp";
@@ -6,12 +6,10 @@ import "./bug-147-1.imp";
 import "./bug-147-4.imp";
 output-method html;
 
-match / {
-    <html> {
-        <head>;
-        <body> {
-            apply-templates /dokument;
-        }
+main <html> {
+    <head>;
+    <body> {
+        apply-templates /dokument;
     }
 }
 
