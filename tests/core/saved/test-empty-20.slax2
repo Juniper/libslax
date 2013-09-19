@@ -1,23 +1,6 @@
 version 1.2;
 
-var $content = "
-line one
-line two
-line three
-line four
-line five
-se-ix
-se-ven
-eh-it
-ny-en
-te-en
-el-e-ven
-twiel-ve
-t'ir-teeen
-four-teen
-fift-teen
-se-ix-teen
-";
+var $content = "\r\nline one\r\nline two\r\nline three\r\nline four\r\nline five\r\nse-ix\r\nse-ven\r\neh-it\r\nny-en\r\nte-en\r\nel-e-ven\r\ntwiel-ve\r\nt'ir-teeen\r\nfour-teen\r\nfift-teen\r\nse-ix-teen\r\n";
 var $content2 = <this> $content;
 
 main <top> {
@@ -34,7 +17,7 @@ main <top> {
     for $line2 ($lines2) {
         copy-of $line2;
     }
-    var $content3 = translate($content, "", "");
+    var $content3 = translate($content, "\r", "");
     var $lines3 = slax:break-lines($content3);
     message "done: " _ count($lines3);
     
