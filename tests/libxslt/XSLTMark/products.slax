@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 /* the slow way... */
 output-method {
@@ -23,10 +23,8 @@ match categories/category {
     }
 }
 
-match / {
-    <html> {
-        <table border="1"> {
-            apply-templates //categories/category;
-        }
+main <html> {
+    <table border="1"> {
+        apply-templates //categories/category;
     }
 }
