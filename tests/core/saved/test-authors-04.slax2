@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 param $name = "Poe";
 var $favorites := {
@@ -7,11 +7,9 @@ var $favorites := {
     <name> "Poe";
 }
 
-match / {
-    <out> {
-        /* Parameters are passed by name */
-        call test($elt = "author", $name);
-    }
+main <out> {
+    /* Parameters are passed by name */
+    call test($elt = "author", $name);
 }
 
 template test ($name, $elt = "default") {
