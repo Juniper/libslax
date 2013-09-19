@@ -1,15 +1,13 @@
-version 1.1;
+version 1.2;
 
-match / {
-    <op-script-results> {
-        var $version-info := <software-information> {
-            <host-name> "test";
-            <product-model> "m7i";
-            <product-name> "m7i";
-        }
-        
-        apply-templates $version-info/host-name;
+main <op-script-results> {
+    var $version-info := <software-information> {
+        <host-name> "test";
+        <product-model> "m7i";
+        <product-name> "m7i";
     }
+    
+    apply-templates $version-info/host-name;
 }
 
 match host-name {
