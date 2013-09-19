@@ -3,7 +3,7 @@ version 1.2;
 ns exsl exclude extension = "http://exslt.org/common";
 
 main <root> {
-    var $dtree = <DIRTREE dirpath="c:\file" dirname="file"> {
+    var $dtree = <DIRTREE dirpath="c:\\file" dirname="file"> {
         <f n="AdditionalInfo.bmp" s="1999194" m="03/06/2002 11:21" a=" A">;
         <f n="AdditionalInfo.jpg" s="65835" m="03/15/2002 13:43" a=" A">;
         <f n="jdesupport.htm" s="6264" m="03/15/2002 13:32" a=" A">;
