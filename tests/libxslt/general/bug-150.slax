@@ -1,11 +1,9 @@
-version 1.1;
+version 1.2;
 
-match / {
-    <root> {
-        ns "urn:A";
-        ns b = "urn:B";
-        ns a = "urn:A";
-        
-        <Product a:ID="1001">;
-    }
+main <root> {
+    ns "urn:A";
+    ns b = "urn:B";
+    ns a = "urn:A";
+    
+    <Product a:ID="1001">;
 }
