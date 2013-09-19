@@ -13,8 +13,6 @@ SLAX_WARNINGS = HIGH
 endif
 include ${top_srcdir}/warnings.mk
 
-BISON_COMMAND = ${BISON} -kvd -b jsonparser
-
 ext_curlincdir = ${includedir}/libslax
 
 AM_CFLAGS = \
@@ -46,42 +44,10 @@ if HAVE_LIBEDIT
 LIBS += -ledit
 endif
 
-EXTRA_DIST = \
-    jsonparser.h \
-    jsonlexer.h \
-    jsonparser.y \
-    jsonwriter.h
-
-XUTILHEADERS = jsonparser.h
-
 libext_xutil_la_SOURCES = \
-    ext_xutil.c \
-    jsonparser.c \
-    jsonlexer.c \
-    jsonwriter.c
+    ext_xutil.c
 
 pkglibdir = ${SLAX_EXTDIR}
-
-jsonparser.h: jsonparser.c
-${libext_xutil_la_SOURCES:.c=.o}: ${XUTILHEADERS}
-${libext_xutil_la_SOURCES:.c=.lo}: ${XUTILHEADERS}
-
-SED_ARGS = \
--e 's:int yyparse (void);::' \
--e 's/yyparse (void \*YYPARSE_PARAM)/extXutilJsonYyParse (slax_data_t *slax_data)/' \
--e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
-
-ECHO_BISON_0 = @echo "  BISON " $@;
-ECHO_BISON_ = ${ECHO_BISON_${AM_DEFAULT_VERBOSITY}}
-
-jsonparser.c: jsonparser.y
-	${ECHO_BISON_${V}}${BISON_COMMAND} -o jsonparser.c ${srcdir}/jsonparser.y
-	@${MV} $@ $@.old
-	@${SED} ${SED_ARGS} < $@.old  > $@
-	@${RM} $@.old
-
-CLEANFILES = jsonparser.h jsonparser.c jsonparser.output
-
 UGLY_NAME = xutil.prefix:http%3A%2F%2Fxml.libslax.org%2Fxutil.ext
 
 install-exec-hook:
@@ -97,10 +63,3 @@ install-exec-hook:
 		&& rm -f $$prefix $$url \
 		&& ${LN_S} $$DLNAME $$url \
 		&& ${LN_S} $$url $$prefix
-
-TEST_OBJECTS = jsonparser.o jsonwriter.o
-
-jsontest: ${TEST_OBJECTS}
-	${COMPILE} -c -DUNIT_TEST ${srcdir}/jsonlexer.c -o jsontest.o 
-	echo ${LINK} -o jsontest jsonparser.o -L../../libslax -lslax jsontest.o
-	${LINK} -o jsontest ${TEST_OBJECTS} -L../../libslax -lslax jsontest.o

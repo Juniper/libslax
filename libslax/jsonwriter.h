@@ -12,11 +12,11 @@
  */
 
 int
-extXutilJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+slaxJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 		       unsigned flags);
 
 int
-extXutilJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+slaxJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 		      unsigned flags);
 
 #define JWF_ROOT	(1<<0)	/* Root node */

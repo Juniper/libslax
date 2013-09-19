@@ -51,6 +51,7 @@ struct slax_data_s {
     slax_string_t *sd_xpath;	/* Parsed XPath expression */
     slax_string_t *sd_ns;	/* Namespace stash */
     xmlNodePtr sd_nodep;	/* Node for looking up ternary expressions */
+    xmlNodePtr sd_insert;	/* List of nodes to be inserted shortly */
 };
 
 /* Flags for sd_flags */
@@ -58,6 +59,10 @@ struct slax_data_s {
 #define SDF_NO_SLAX_KEYWORDS	(1<<1)	/* Do not allow slax keywords */
 #define SDF_NO_XPATH_KEYWORDS	(1<<2)	/* Do not allow xpath keywords */
 #define SDF_OPEN_COMMENT	(1<<3)	/* EOF with open comment */
+
+#define SDF_JSON_KEYWORDS	(1<<4) /* Allow JSON keywords */
+#define SDF_NO_TYPES		(1<<5)/* Do not decorate nodes w/ type info */
+#define SDF_CLEAN_NAMES		(1<<6) /* Clean element names, if needed */
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
@@ -76,6 +81,7 @@ struct slax_data_s {
 
 #define SLAX_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_SLAX_KEYWORDS))
 #define XPATH_KEYWORDS_ALLOWED(_x) (!((_x)->sd_flags & SDF_NO_XPATH_KEYWORDS))
+#define JSON_KEYWORDS_ALLOWED(_x) ((_x)->sd_flags & SDF_JSON_KEYWORDS)
 
 /**
  * Callback from bison when an error is detected.
@@ -101,6 +107,25 @@ slaxExpectingError (const char *token, int yystate, int yychar);
  */
 xmlNodePtr
 slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur);
+
+/**
+ * Add an item to the insert list
+ *
+ * @param sdp Main parsing data structure
+ * @param nodep Node to add
+ */
+void
+slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep);
+
+/**
+ * Add a child to the current node context
+ *
+ * @param sdp Main parsing data structure
+ * @param parent Parent node (if NULL defaults to the context node)
+ * @param nodep Child node
+ */
+xmlNodePtr
+slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep);
 
 /**
  * Issue an error if the axis name is not valid
@@ -185,3 +210,9 @@ slaxParseIsSlax (slax_data_t *sdp);
 
 int
 slaxParseIsXpath (slax_data_t *sdp);
+
+/*
+ * Set up the lexer's lookup tables
+ */
+void
+slaxSetupLexer (void);

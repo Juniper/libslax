@@ -86,6 +86,27 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 void
 slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 
+/*
+ * Handle the case where an element is used as a function argument
+ */
+slax_string_t *
+slaxHandleEltArg (slax_data_t *sdp, int is_list);
+#define SLAX_ELTARG_PREFIX "slax-temp-arg-"
+#define SLAX_ELTARG_FORMAT SLAX_ELTARG_PREFIX "%u"
+#define SLAX_ELTARG_WIDTH 10
+
+/*
+ * Find an appropriate node to insert (PrevSibling) our internal
+ * element-as-argument variable.  We can't insert this in the
+ * middle of a <xsl:choose>, etc.
+ */
+xmlNodePtr
+slaxHandleEltArgSafeInsert (xmlNodePtr base);
+
+void 
+slaxHandleEltArgPrep (slax_data_t *sdp);
+
+
 /**
  * Turn a SLAX expression into an XPath one.  Returns a freshly
  * allocated string, or NULL.
@@ -93,3 +114,6 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep);
 char *
 slaxSlaxToXpath (const char *filename, int lineno,
 		 const char *slax_expr, int *errorsp);
+
+void
+slaxMainElement (slax_data_t *sdp);

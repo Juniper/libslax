@@ -24,6 +24,8 @@
 #include <libexslt/exslt.h>
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxdata.h>
+#include <libslax/jsonlexer.h>
+#include <libslax/jsonwriter.h>
 
 #include <err.h>
 #include <time.h>
@@ -48,6 +50,7 @@ static int opt_partial;		/* Parse partial contents */
 static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_slax_output;	/* Make output in SLAX format */
+static int opt_json_tagging;	/* Tag JSON output */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -198,6 +201,75 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 
     slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
 		 opt_partial, opt_version);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_json_to_xml (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    xmlDocPtr docp;
+    FILE *outfile;
+
+    input = get_filename(input, &argv, 0);
+    output = get_filename(output, &argv, -1);
+
+    docp = slaxJsonFileToXml(input, NULL, 0);
+    if (docp == NULL) {
+	errx(1, "cannot parse file: '%s'", input);
+        return -1;
+    }
+
+    if (output == NULL || slaxFilenameIsStd(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open file: '%s'", output);
+    }
+
+    slaxDumpToFd(fileno(outfile), docp, opt_partial);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_xml_to_json (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    xmlDocPtr docp;
+    FILE *outfile;
+
+    input = get_filename(input, &argv, 0);
+    output = get_filename(output, &argv, -1);
+
+    docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
+    if (docp == NULL) {
+	errx(1, "cannot parse file: '%s'", input);
+        return -1;
+    }
+
+    if (output == NULL || slaxFilenameIsStd(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open file: '%s'", output);
+    }
+
+    slaxJsonWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
+		     opt_indent ? JWF_PRETTY : 0);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -469,40 +541,44 @@ print_version (void)
 static void
 print_help (void)
 {
-    printf("Usage: slaxproc [mode] [options] [script] [files]\n");
-    printf("    Modes:\n");
-    printf("\t--check OR -c: check syntax and content for a SLAX script\n");
-    printf("\t--format OR -F: format (pretty print) a SLAX script\n");
-    printf("\t--run OR -r: run a SLAX script (the default mode)\n");
-    printf("\t--show-select: show XPath selection from the input document\n");
-    printf("\t--show-variable: show contents of a global variable\n");
-    printf("\t--slax-to-xslt OR -x: turn SLAX into XSLT\n");
-    printf("\t--xslt-to-slax OR -s: turn XSLT into SLAX\n");
-    printf("\n");
-
-    printf("    Options:\n");
-    printf("\t--debug OR -d: enable the SLAX/XSLT debugger\n");
-    printf("\t--empty OR -E: give an empty document for input\n");
-    printf("\t--exslt OR -e: enable the EXSLT library\n");
-    printf("\t--expression <expr>: convert an expression\n");
-    printf("\t--help OR -h: display this help message\n");
-    printf("\t--html OR -H: Parse input data as HTML\n");
-    printf("\t--ignore-arguments: Do not process any further arguments\n");
-    printf("\t--include <dir> OR -I <dir>: search directory for includes/imports\n");
-    printf("\t--indent OR -g: indent output ala output-method/indent\n");
-    printf("\t--input <file> OR -i <file>: take input from the given file\n");
-    printf("\t--lib <dir> OR -L <dir>: search directory for extension libraries\n");
-    printf("\t--name <file> OR -n <file>: read the script from the given file\n");
-    printf("\t--no-randomize: do not initialize the random number generator\n");
-    printf("\t--output <file> OR -o <file>: make output into the given file\n");
-    printf("\t--param <name> <value> OR -a <name> <value>: pass parameters\n");
-    printf("\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n");
-    printf("\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n");
-    printf("\t--trace <file> OR -t <file>: write trace data to a file\n");
-    printf("\t--verbose OR -v: enable debugging output (slaxLog())\n");
-    printf("\t--version OR -V: show version information (and exit)\n");
-    printf("\t--write-version <version> OR -w <version>: write in version\n");
-    printf("\nProject libslax home page: https://github.com/Juniper/libslax\n");
+    fprintf(stderr,
+"Usage: slaxproc [mode] [options] [script] [files]\n"
+"    Modes:\n"
+"\t--check OR -c: check syntax and content for a SLAX script\n"
+"\t--format OR -F: format (pretty print) a SLAX script\n"
+"\t--json-to-xml: Turn JSON data into XML\n"
+"\t--run OR -r: run a SLAX script (the default mode)\n"
+"\t--show-select: show XPath selection from the input document\n"
+"\t--show-variable: show contents of a global variable\n"
+"\t--slax-to-xslt OR -x: turn SLAX into XSLT\n"
+"\t--xml-to-json: turn XML into JSON\n"
+"\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
+"\n"
+"    Options:\n"
+"\t--debug OR -d: enable the SLAX/XSLT debugger\n"
+"\t--empty OR -E: give an empty document for input\n"
+"\t--exslt OR -e: enable the EXSLT library\n"
+"\t--expression <expr>: convert an expression\n"
+"\t--help OR -h: display this help message\n"
+"\t--html OR -H: Parse input data as HTML\n"
+"\t--ignore-arguments: Do not process any further arguments\n"
+"\t--include <dir> OR -I <dir>: search directory for includes/imports\n"
+"\t--indent OR -g: indent output ala output-method/indent\n"
+"\t--input <file> OR -i <file>: take input from the given file\n"
+"\t--json-tagging: tag json-style input with the 'json' attribute\n"
+"\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
+"\t--name <file> OR -n <file>: read the script from the given file\n"
+"\t--no-randomize: do not initialize the random number generator\n"
+"\t--output <file> OR -o <file>: make output into the given file\n"
+"\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
+"\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
+"\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
+"\t--trace <file> OR -t <file>: write trace data to a file\n"
+"\t--verbose OR -v: enable debugging output (slaxLog())\n"
+"\t--version OR -V: show version information (and exit)\n"
+"\t--write-version <version> OR -w <version>: write in version\n"
+"\nProject libslax home page: https://github.com/Juniper/libslax\n"
+"\n");
 }
 
 int
@@ -547,6 +623,11 @@ main (int argc UNUSED, char **argv)
 		errx(1, "open one action allowed");
 	    func = do_format;
 
+	} else if (streq(cp, "--json-to-xml")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_json_to_xml;
+
 	} else if (streq(cp, "--run") || streq(cp, "-r")) {
 	    if (func)
 		errx(1, "open one action allowed");
@@ -572,6 +653,11 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_slax_to_xslt;
+
+	} else if (streq(cp, "--xml-to-json")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_xml_to_json;
 
 	} else if (streq(cp, "--xslt-to-slax") || streq(cp, "-s")) {
 	    if (func)
@@ -612,6 +698,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = *++argv;
+
+	} else if (streq(cp, "--json-tagging")) {
+	    opt_json_tagging = 1;
 
 	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
 	    slaxDynAdd(*++argv);
@@ -724,6 +813,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
+
+    if (opt_json_tagging)
+	slaxJsonTagging(TRUE);
 
     if (opt_log_file) {
 	FILE *fp = fopen(opt_log_file, "w");

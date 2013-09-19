@@ -21,6 +21,7 @@
 #include <libslax/slax.h>
 #include <libexslt/exslt.h>
 #include "slaxparser.h"
+#include "jsonlexer.h"
 
 #define BUF_EXTEND 2048		/* Bump the buffer by this amount */
 
@@ -29,30 +30,47 @@ struct slax_writer_s {
     slaxWriterFunc_t sw_write;	/* Client callback */
     void *sw_data;		/* Client data */
     int sw_indent;		/* Indentation count */
+    int sw_indent_extra;	/* Extra special indentation */
     char *sw_buf;		/* Output buffer */
     int sw_cur;			/* Current index in output buffer */
     int sw_bufsiz;		/* Size of the buffer in sw_buf[] */
     int sw_errors;		/* Errors reading or writing data */
+    int sw_vers;		/* Target SLAX version number times 10 */
     unsigned sw_flags;		/* Flags for this instance (SWF_*) */
 };
 
 /* Flags for sw_flags */
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
-#define SWF_VERS_10	(1<<2)	/* Version 1.0 features only */
+
+/* Values for sw_vers */
+#define SWF_VERS_10	10	/* Version 1.0 features only */
+#define SWF_VERS_11	11	/* Version 1.1 features only */
+#define SWF_VERS_12	12	/* Version 1.2 features only */
 
 static const char slaxVarNsCall[] = EXT_PREFIX ":node-set(";
 static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
 static char slaxTernaryPrefix[] = SLAX_TERNARY_PREFIX;
+static char slaxEltArgPrefix[] = SLAX_ELTARG_PREFIX;
+static char slaxEltArgCall[] = EXT_PREFIX ":node-set($" SLAX_ELTARG_PREFIX;
+static char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
+static char slaxEltArgCallP2[] = EXT_PREFIX ":node-set";
 
 static inline int
-slaxV10 (slax_writer_t *swp)
+slaxV11 (slax_writer_t *swp)
 {
-    return (swp->sw_flags & SWF_VERS_10) ? TRUE : FALSE;
+    return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_11) ? TRUE : FALSE;
+}
+
+static inline int
+slaxV12 (slax_writer_t *swp)
+{
+    return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_12) ? TRUE : FALSE;
 }
 
 /* Forward function declarations */
-static void slaxWriteChildren(slax_writer_t *, xmlDocPtr, xmlNodePtr, int);
+static void slaxWriteChildren(slax_writer_t *, xmlDocPtr, xmlNodePtr,
+			      int, int);
 static void slaxWriteXslElement(slax_writer_t *swp, xmlDocPtr docp,
 				xmlNodePtr nodep, int *statep);
 static void slaxWriteSort (slax_writer_t *, xmlDocPtr, xmlNodePtr);
@@ -94,6 +112,10 @@ slaxWriteNewline (slax_writer_t *swp, int change)
 
     if (change > 0) {
 	swp->sw_indent += change;
+	if (swp->sw_indent_extra) {
+	    swp->sw_indent += swp->sw_indent_extra;
+	    swp->sw_indent_extra = 0;
+	}
 	swp->sw_flags |= SWF_BLANKLINE; /* Indenting counts as a blank line */
     }
 
@@ -266,7 +288,7 @@ slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	hit += 1;
     }
 
-    if (!slaxV10(swp)) {
+    if (slaxV11(swp)) {
 	for (childp = nodep->children; childp; childp = childp->next) {
 	    if (childp->type ==  XML_ELEMENT_NODE
 		&& slaxIsXsl(childp)
@@ -397,7 +419,7 @@ slaxWriteExpr (slax_writer_t *swp, xmlChar *content,
 {
     slaxWrite(swp, "%s\"",
 	      initializer ? ""
-	      : (!slaxV10(swp) && disable_escaping) ? "uexpr " : "expr ");
+	      : (slaxV11(swp) && disable_escaping) ? "uexpr " : "expr ");
     slaxWriteEscaped(swp, (char *) content, SEF_TEXT);
     slaxWrite(swp, "\";");
     slaxWriteNewline(swp, 0);
@@ -505,6 +527,204 @@ slaxWriteValue (slax_writer_t *swp, const char *value)
     slaxWrite(swp, "%s", value);
 }
 
+static int
+slaxRewriteEltArgWriter (void *data, const char *fmt, ...)
+{
+    char buf[BUFSIZ], *bp = buf;
+    slax_string_t ***resp = data, *ssp;
+    int rc;
+
+    va_list vap;
+
+    va_start(vap, fmt);
+
+    rc = vsnprintf(buf, sizeof(buf), fmt, vap);
+    if (rc > (int) sizeof(buf)) {
+	bp = alloca(rc + 1);
+	rc = vsnprintf(bp, rc, fmt, vap);
+    }
+
+    ssp = slaxStringLiteral(bp, 0);
+    if (ssp) {
+	**resp = ssp;
+	*resp = &ssp->ss_next;
+    }
+
+    va_end(vap);
+
+    return 0;
+}
+
+/*
+ * Rewrite a element argument inside an xpath expression.  This
+ * involves (a) finding the argument, (b) parsing the associated
+ * variable, and (c) inserting it back into the string.  Since a
+ * slax_string is just a linked list of tokens, the insert is
+ * the easy part.
+ */
+static slax_string_t *
+slaxRewriteEltArg (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
+		   slax_string_t *data)
+{
+    slax_string_t *results = data;
+    slax_string_t **tailp = &results;
+    slax_string_t *ssp;
+    slax_string_t *output, *trash;
+    slax_string_t **val;
+    char *varname, *name;
+    slax_writer_t sw;
+    int need_braces;
+    xmlNodePtr curp;
+    char *buf = NULL;
+    int bufsiz = 0;
+    xmlNodePtr searchp;
+
+    searchp = slaxHandleEltArgSafeInsert(nodep);
+    if (searchp)
+	nodep = searchp;
+
+    /* Use our own writer and write function */
+
+    bzero(&sw, sizeof(sw));
+    sw.sw_write = slaxRewriteEltArgWriter;
+
+    for (;; tailp = &ssp->ss_next) {
+	ssp = *tailp;
+	if (ssp == NULL)
+	    break;
+	if (!streq(ssp->ss_token, slaxEltArgCallP2))
+	    continue;
+	ssp = ssp->ss_next;
+	if (ssp == NULL)
+	    break;
+	if (ssp->ss_ttype != L_OPAREN)
+	    continue;
+	ssp = ssp->ss_next;
+	if (ssp == NULL)
+	    break;
+	varname = ssp->ss_token;
+	if (ssp->ss_ttype != T_VAR || varname[0] != '$'
+	    || strncmp(++varname, slaxEltArgPrefix,
+		       sizeof(slaxEltArgPrefix) - 1) != 0)
+	    continue;
+	ssp = ssp->ss_next;
+	if (ssp == NULL)
+	    break;
+	if (ssp->ss_ttype != L_CPAREN)
+	    continue;
+
+	/*
+	 * Okay, so now we've found one.  tailp points to the location to
+	 * put the new string (either our data parameter or some slax_string's
+	 * ss_next field), varname is the name of our variable (with no '$'),
+	 * and nodep is the node where we should be looking for our definition.
+	 */
+	slaxLog("slaxRewriteEltArg: found '%s'", varname);
+	for (curp = nodep; curp; curp = curp->prev) {
+	    if (curp->type != XML_ELEMENT_NODE)
+		continue;
+	    if (!streq(ELT_VARIABLE, (const char *) curp->name))
+		continue;
+	    if (!slaxIsXsl(curp))
+		continue;
+	    name = slaxGetAttrib(curp, ATT_NAME);
+	    if (name == NULL)
+		continue;
+	    if (streq(varname, name)) {
+		xmlFree(name);
+		break;
+	    }
+	    xmlFree(name);
+	}
+
+	if (curp == NULL) {
+	    slaxLog("slaxRewriteEltArg: variable not found: %s", varname);
+	    continue;
+	}
+
+	/*
+	 * Now we have the variable and it's contents.  We just need
+	 * to write them into the XPath slax_string_t chain.  To do
+	 * this, we need to build our own slax_writer_t with a custom
+	 * function that churns out slax_string_t's into a chain.
+	 * Intentation is also tricky, but we use sw_indent_extra
+	 * to get what we need.  It's a one-time indent bonus for
+	 * the next indent (slaxWriteNewline) call.
+	 */
+	need_braces = slaxNeedsBlock(curp);
+	output = NULL;
+	val = &output;
+	sw.sw_data = &val;
+	sw.sw_cur = 0;
+	sw.sw_errors = 0;
+	sw.sw_indent = 0;
+	sw.sw_indent_extra = swp->sw_indent;
+
+	if (need_braces) {
+	    slaxWrite(&sw, "{");
+	    slaxWriteNewline(&sw, NEWL_INDENT);
+	}
+
+	slaxWriteChildren(&sw, curp->doc, curp, TRUE, need_braces);
+
+	if (need_braces)
+	    slaxWrite(&sw, "}");
+
+	/* Make a string of anything left in the buffer */
+	if (sw.sw_cur) {
+	    if (sw.sw_indent) {
+		/*
+		 * We have to build an "indentation string" ourselves,
+		 * since we don't want to make a newline after the close
+		 * brace.  This is easy enough, since we just make some
+		 * padding, build a string and insert it into the chain.
+		 * The only tricky bit is that we know that when the
+		 * slaxString concatenation code fires off, it will put
+		 * spaces between tokens like this, so we trim the
+		 * padding by two, one for the space inserted before and
+		 * one for after.
+		 */
+		int len = swp->sw_indent * slaxIndent - 2;
+		slax_string_t *padp;
+
+		if (len > bufsiz) {
+		    bufsiz = (((len + BUFSIZ) / BUFSIZ) + 1) * BUFSIZ;
+		    buf = alloca(bufsiz);
+		}
+
+		memset(buf, ' ', len);
+		buf[len] = '\0';
+		padp = slaxStringLiteral(buf, 0);
+		if (padp) {
+		    *val = padp;
+		    val = &(*val)->ss_next;
+		}
+	    }
+
+	    sw.sw_buf[sw.sw_cur] = '\0';
+	    *val = slaxStringLiteral(sw.sw_buf, 0);
+	    val = &(*val)->ss_next;
+	}
+
+	if (output == NULL)
+	    continue;
+
+	/*
+	 * Now we have the string, ready to be assembled.  Put the
+	 * part together and discard the slax:node-set() we are
+	 * replacing.
+	 */
+	trash = *tailp;
+	*tailp = output;
+	*val = ssp->ss_next;
+	ssp->ss_next = NULL;
+	ssp = *val;
+	slaxStringFree(trash);
+    }
+
+    return results;
+}
+
 /*
  * Turn an XPath expression into a SLAX one.  Returns a freshly
  * allocated string, or NULL.
@@ -532,7 +752,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     sd.sd_flags |= SDF_NO_SLAX_KEYWORDS;
 
     /* sd_nodep is used for ternary expression, which aren't in SLAX-1.0 */
-    if (!slaxV10(swp))
+    if (slaxV11(swp))
 	sd.sd_nodep = nodep;
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
@@ -586,6 +806,10 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
 	swp->sw_errors += 1;
 	goto fail;
     }
+
+    /* Rewrite any elements-as-arguments in the Xpath expression */
+    if (slaxV12(swp))
+	slaxRewriteEltArg(swp, nodep, sd.sd_xpath);
 
     return sd.sd_xpath;
 
@@ -835,18 +1059,208 @@ slaxWriteContent (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     }
 }
 
+static int
+slaxWriteJsonArrayOneliner (xmlNodePtr nodep)
+{
+    xmlNodePtr childp;
+
+    for (nodep = nodep->children; nodep; nodep = nodep->next) {
+	if (nodep->type != XML_ELEMENT_NODE) /* Must be an element */
+	    return FALSE;
+
+	/* Should look at the attributes of that element, but .... */
+
+	childp = nodep->children;
+	if (childp == NULL) /* Must have one child */
+	    return FALSE;
+	if (childp->next != NULL) /* Must have one exactly child */
+	    return FALSE;
+
+	if (childp->type != XML_TEXT_NODE) /* Must be a text node */
+	    return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
+slaxWriteJsonIsArray (xmlNodePtr nodep)
+{
+    if (nodep->parent == NULL)
+	return FALSE;
+
+    if (!slaxJsonIsTaggedNode(nodep))
+	return FALSE;
+
+    if (nodep->parent) {
+	xmlAttrPtr attrp;
+	for (attrp = nodep->parent->properties; attrp; attrp = attrp->next) {
+	    if (attrp->children && attrp->children->content) {
+		char *content = (char *) attrp->children->content;
+
+		if (streq((const char *) attrp->name, ATT_TYPE)
+		    && streq(content, VAL_ARRAY))
+		    return TRUE;
+	    }
+	}
+    }
+
+    return FALSE;
+}
+
 static void
-slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+slaxWriteJsonValueTyped (slax_writer_t *swp, xmlDocPtr docp UNUSED,
+			 xmlNodePtr nodep, int trailing_newline,
+			 const char *type_name)
+{
+    const char *comma = nodep->next ? "," : "";
+
+    if (type_name == NULL) {
+	goto simple;
+    } else if (streq(type_name, "number")) {
+	if (nodep->children && nodep->children->type == XML_TEXT_NODE) {
+	    slaxWrite(swp, " %s%s", nodep->children->content, comma);
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+	} else goto simple;
+
+    } else if (streq(type_name, "true")
+	       || streq(type_name, "false")
+	       || streq(type_name, "null")) {
+	slaxWrite(swp, " %s%s", type_name, comma);
+	if (trailing_newline)
+	    slaxWriteNewline(swp, 0);
+
+    } else {
+    simple:
+	slaxWrite(swp, " \"%s\"%s", nodep->children->content, comma);
+	if (trailing_newline)
+	    slaxWriteNewline(swp, 0);
+    }
+}
+
+static void
+slaxWriteJsonValue (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
+		    int trailing_newline)
+{
+    xmlAttrPtr attrp;
+
+    for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	if (attrp->children && attrp->children->content) {
+	    char *content = (char *) attrp->children->content;
+
+	    if (streq((const char *) attrp->name, ATT_TYPE)) {
+		slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline,
+					content);
+		return;
+	    }
+	}
+    }
+}
+
+static void
+slaxWriteJsonElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
+		      int trailing_newline, const char *elt_name,
+		      const char *type_name)
+{
+    int array = slaxWriteJsonIsArray(nodep);
+
+    if (elt_name == NULL)
+	elt_name = (const char *) nodep->name;
+
+    if (!array)
+	slaxWrite(swp, "\"%s\":", elt_name);
+
+    if (type_name == NULL) {
+	if (nodep->children == NULL) {
+	    slaxWrite(swp, "(null: %s)", type_name);
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+
+	} else if (nodep->children->type != XML_TEXT_NODE) {
+	    slaxWrite(swp, " {");
+	    slaxWriteNewline(swp, NEWL_INDENT);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, trailing_newline);
+	    slaxWrite(swp, "}");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, NEWL_OUTDENT);
+
+	} else {
+	    slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline, NULL);
+	}
+
+    } else if (streq(type_name, "array")) {
+	int oneliner = slaxWriteJsonArrayOneliner(nodep);
+
+	if (oneliner) {
+	    xmlNodePtr childp;
+
+	    slaxWrite(swp, " [");
+	    for (childp = nodep->children; childp; childp = childp->next) {
+		slaxWriteJsonValue(swp, docp, childp, FALSE);
+	    }
+	    slaxWrite(swp, " ],");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, 0);
+	} else {
+	    slaxWrite(swp, " [");
+	    slaxWriteNewline(swp, NEWL_INDENT);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
+	    slaxWrite(swp, "],");
+	    if (trailing_newline)
+		slaxWriteNewline(swp, NEWL_OUTDENT);
+	}
+
+    } else {
+	slaxWriteJsonValueTyped(swp, docp, nodep, trailing_newline, type_name);
+    }
+}
+
+static void
+slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
+		      int trailing_newline)
 {
     const char *pref = NULL;
 
     if (nodep->ns && nodep->ns->prefix)
 	pref = (const char *) nodep->ns->prefix;
 
+    if (pref == NULL) {
+	char *json = NULL, *type_name = NULL, *elt_name = NULL;
+	xmlAttrPtr attrp;
+	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	    if (attrp->children && attrp->children->content) {
+		char *content = (char *) attrp->children->content;
+
+		if (streq((const char *) attrp->name, ATT_JSON)) {
+		    json = content;
+		} else if (streq((const char *) attrp->name, ATT_TYPE)) {
+		    type_name = content;
+		} else if (streq((const char *) attrp->name, ATT_NAME)) {
+		    elt_name = content;
+		} else {
+		    break;
+		}
+	    }
+	}
+
+	if (attrp == NULL && json) {
+	    /*
+	     * To be a considered a "json" node, it needs a json
+	     * attribute and an optional type attribute, and not other
+	     * attributes.
+	     */
+	    slaxWriteJsonElement(swp, docp, nodep, trailing_newline,
+				 elt_name, type_name);
+	    return;
+	}
+    }
+
     slaxWrite(swp, "<%s%s%s", pref ?: "", pref ? ":" : "", nodep->name);
 
     if (nodep->properties) {
 	xmlAttrPtr attrp;
+
 	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
 	    if (attrp->children && attrp->children->content) {
 		char *content = (char *) attrp->children->content;
@@ -873,8 +1287,10 @@ slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     slaxWrite(swp, ">");
 
     if (nodep->children == NULL) {
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
+	if (trailing_newline) {
+	    slaxWrite(swp, ";");
+	    slaxWriteNewline(swp, 0);
+	}
 	return;
     }
 	
@@ -882,8 +1298,10 @@ slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     if (!slaxNeedsBraces(nodep)) {
 	slaxWriteContent(swp, docp, nodep);
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
+	if (trailing_newline) {
+	    slaxWrite(swp, ";");
+	    slaxWriteNewline(swp, 0);
+	}
 	return;
     }
 
@@ -891,10 +1309,17 @@ slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteAllNs(swp, docp, nodep);
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
-    slaxWriteNewline(swp, NEWL_OUTDENT);
+    if (trailing_newline)
+	slaxWriteNewline(swp, NEWL_OUTDENT);
+}
+
+static void
+slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
+{
+    slaxWriteElementFull(swp, docp, nodep, TRUE);
 }
 
 static void
@@ -973,7 +1398,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 	    name = slaxGetAttrib(childp, ATT_NAME);
 	    rname = (name && *name == '$') ? name + 1 : name;
 
-	    if (!slaxV10(swp) && name
+	    if (slaxV11(swp) && name
 		&& strncmp(name, slaxTernaryPrefix + 1,
 			   sizeof(slaxTernaryPrefix) - 2) == 0) {
 		xmlFreeAndEasy(name);
@@ -984,7 +1409,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 	    slaxWrite(swp, "param $%s = {", rname);
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, childp, FALSE);
+	    slaxWriteChildren(swp, docp, childp, FALSE, TRUE);
 	    
 	    slaxWrite(swp, "}");
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1029,6 +1454,26 @@ slaxNeedsBlankline (xmlNodePtr nodep)
     return FALSE;
 }
 
+static xmlNodePtr
+slaxWriteIsMainElt (xmlNodePtr nodep)
+{
+    xmlNodePtr res = NULL;
+
+    for ( ; nodep; nodep = nodep->next) {
+	if (nodep->type == XML_ELEMENT_NODE) {
+	    if (res)
+		return FALSE;
+	    res = nodep;
+	} else if (nodep->type == XML_TEXT_NODE
+		   && slaxStringIsWhitespace((const char *) nodep->content)) {
+	    continue;
+	} else
+	    return NULL;
+    }
+
+    return res;
+}
+
 /**
  * slaxWriteTemplate:
  *
@@ -1055,7 +1500,27 @@ slaxWriteTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     } else if (match) {
 	char *expr = slaxMakeExpression(swp, nodep, match);
-	slaxWrite(swp, "match %s", expr ?: UNKNOWN_EXPR);
+
+	if (slaxV12(swp) && streq(expr, "/")) {
+	    xmlNodePtr childp = nodep->children;
+
+	    slaxWrite(swp, "main");
+
+	    if (childp && priority == NULL && mode == NULL
+		&& nodep->nsDef == NULL) {
+		childp = slaxWriteIsMainElt(childp);
+		if (childp) {
+		    /* We have the case where 'main' can take an element */
+		    slaxWrite(swp, " ");
+		    slaxWriteElementFull(swp, docp, childp, TRUE);
+		    return;
+		}
+	    }
+
+	} else {
+	    slaxWrite(swp, "match %s", expr ?: UNKNOWN_EXPR);
+	}
+
 	xmlFreeAndEasy(expr);
 
     } else {
@@ -1088,7 +1553,7 @@ slaxWriteTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWriteNamedTemplateParams(swp, docp, nodep, name == NULL, TRUE);
 
 	slaxWriteAllNs(swp, docp, nodep);
-	slaxWriteChildren(swp, docp, nodep, FALSE);
+	slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	slaxWrite(swp, "}");
 	slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1190,7 +1655,7 @@ slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	xmlFree(sel);
 
     } else {
-	slaxWriteChildren(swp, docp, nodep, FALSE);
+	slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
     }
 
     slaxWrite(swp, "}");
@@ -1225,6 +1690,9 @@ static int
 slaxIsSimpleElement (xmlNodePtr nodep)
 {
     int hit = 0;
+
+    if (slaxJsonIsTaggedNode(nodep))
+	return FALSE;
 
     for ( ; nodep; nodep = nodep->next) {
 	if (nodep->type == XML_ELEMENT_NODE) {
@@ -1371,7 +1839,7 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
 	    slaxWriteSort(swp, docp, cur);
     }
 
-    slaxWriteChildren(swp, docp, inner_for, FALSE);
+    slaxWriteChildren(swp, docp, inner_for, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1584,7 +2052,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	xmlFree(svarname);
     }
 
-    if (name && sel && !slaxV10(swp)
+    if (name && sel && slaxV11(swp)
 	&& strncmp(name, slaxForVariablePrefix + 1,
 		   sizeof(slaxForVariablePrefix) - 2) == 0) {
 	if (!slaxWriteForLoop(swp, docp, nodep, name, sel)) {
@@ -1598,9 +2066,19 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     /*
      * Skim ternary variables
      */
-    if (name && sel == NULL && !slaxV10(swp)
+    if (name && sel == NULL && slaxV11(swp)
 	&& strncmp(name, slaxTernaryPrefix + 1,
 		   sizeof(slaxTernaryPrefix) - 2) == 0) {
+	xmlFree(name);
+	return;
+    }
+
+    /*
+     * Skip element-as-argument variables
+     */
+    if (name && sel == NULL && slaxV12(swp)
+	&& strncmp(name, slaxEltArgPrefix,
+		   sizeof(slaxEltArgPrefix) - 1) == 0) {
 	xmlFree(name);
 	return;
     }
@@ -1642,13 +2120,13 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
 	} else if (slaxIsSimpleElement(childp)) {
 	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
-	    slaxWriteChildren(swp, docp, vnode, FALSE);
+	    slaxWriteChildren(swp, docp, vnode, FALSE, TRUE);
 
 	} else {
 	    slaxWrite(swp, "%s $%s %s {", tag, aname, operator);
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, vnode, FALSE);
+	    slaxWriteChildren(swp, docp, vnode, FALSE, TRUE);
 
 	    slaxWrite(swp, "}");
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1742,7 +2220,7 @@ slaxWriteTraceStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 	    slaxWrite(swp, "trace {");
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, nodep, FALSE);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	    slaxWrite(swp, "}");
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1780,7 +2258,7 @@ slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(tst);
 
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1810,13 +2288,13 @@ slaxWriteMvarStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 
 	} else if (slaxIsSimpleElement(childp)) {
 	    slaxWrite(swp, "%s $%s %s ", sn, name, op);
-	    slaxWriteChildren(swp, docp, nodep, FALSE);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	} else {
 	    slaxWrite(swp, "%s $%s %s {", sn, name, op);
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, nodep, FALSE);
+	    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	    slaxWrite(swp, "}");
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -1894,6 +2372,74 @@ slaxWriteSlaxElement (slax_writer_t *swp, xmlDocPtr docp,
 	slaxWriteElement(swp, docp, nodep);
 }
 
+static int
+slaxWriteIsEltArg (slax_writer_t *swp, const char *sel)
+{
+    return (slaxV12(swp)
+	    && strncmp(sel, slaxEltArgCall, sizeof(slaxEltArgCall) - 1) == 0)
+	? TRUE : FALSE;
+}
+
+static int
+slaxWriteEltArg (slax_writer_t *swp UNUSED, xmlDocPtr docp, xmlNodePtr curp,
+		 const char *sel)
+{
+    xmlNodePtr searchp, nodep;
+    char *varname, *cp;
+    int off, save_indent = swp->sw_indent, need_braces;
+    char *name;
+
+    sel += sizeof(slaxEltArgCallPref) - 1;
+    cp = strchr(sel, ')');
+    if (cp == NULL)
+	return FALSE;
+
+    off = cp - sel;
+    varname = alloca(off + 1);
+    memcpy(varname, sel, off);
+    varname[off] = '\0';
+
+    slaxLog("EltArg: %s", varname);
+
+    searchp = slaxHandleEltArgSafeInsert(curp);
+    for (nodep = searchp; nodep; nodep = nodep->prev) {
+	if (nodep->type != XML_ELEMENT_NODE)
+	    continue;
+	if (!streq(ELT_VARIABLE, (const char *) nodep->name))
+	    continue;
+	if (!slaxIsXsl(nodep))
+	    continue;
+	name = slaxGetAttrib(nodep, ATT_NAME);
+	if (name == NULL)
+	    continue;
+	if (streq(varname, name)) {
+	    xmlFree(name);
+	    break;
+	}
+	xmlFree(name);
+    }
+
+    if (nodep == NULL || nodep->children == NULL)
+	return FALSE;
+
+    need_braces = slaxNeedsBlock(nodep);
+
+    if (need_braces) {
+	slaxWrite(swp, "{");
+	slaxWriteNewline(swp, NEWL_INDENT);
+    }
+
+    slaxWriteChildren(swp, docp, nodep, TRUE, need_braces);
+
+    if (need_braces)
+	slaxWrite(swp, "}");
+
+    swp->sw_indent = save_indent;
+    swp->sw_indent_extra = 0;   /* Just in case it wasn't needed */
+
+    return TRUE;
+}
+
 static void
 slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
@@ -1960,7 +2506,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 			slaxWriteNewline(swp, NEWL_INDENT);
 		    }
 
-		    slaxWriteChildren(swp, docp, childp, TRUE);
+		    slaxWriteChildren(swp, docp, childp, TRUE, TRUE);
 
 		    if (need_braces) {
 			slaxWrite(swp, "}");
@@ -1975,7 +2521,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	} else if (slaxIsXsl(childp)) {
 	    slaxWriteXslElement(swp, docp, childp, NULL);
 
-	} else if (childp->ns && childp->ns->href && !slaxV10(swp)
+	} else if (childp->ns && childp->ns->href && slaxV11(swp)
 		   && streq((const char *) childp->ns->href, SLAX_URI)) {
 	    slaxWriteSlaxElement(swp, docp, childp);
 
@@ -2027,10 +2573,13 @@ slaxWriteCallTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	if (!(name && sel && *sel == '$' && streq(name, sel + 1))) {
 	    slaxWrite(swp, " = ");
 	    if (sel) {
-		char *expr = slaxMakeExpression(swp, childp, sel);
+		if (!slaxWriteIsEltArg(swp, sel)
+		    || !slaxWriteEltArg(swp, docp, childp, sel)) {
+		    char *expr = slaxMakeExpression(swp, childp, sel);
 
-		slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
-		xmlFree(expr);
+		    slaxWriteValue(swp, expr ?: UNKNOWN_EXPR);
+		    xmlFreeAndEasy(expr);
+		}
 
 	    } else slaxWrite(swp, "''");
 	}
@@ -2067,7 +2616,7 @@ slaxWriteCallTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWriteNewline(swp, NEWL_INDENT);
 	xmlFreeAndEasy(name);
 
-	slaxWriteChildren(swp, docp, childp, FALSE);
+	slaxWriteChildren(swp, docp, childp, FALSE, TRUE);
 
 	slaxWrite(swp, " }");
 	slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2089,7 +2638,7 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     slaxWriteNewline(swp, NEWL_INDENT);
 
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2116,7 +2665,7 @@ slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     slaxWriteNewline(swp, NEWL_INDENT);
 
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2320,7 +2869,7 @@ slaxWriteCopyNode (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 	}
 
 	slaxWriteAllNs(swp, docp, nodep);
-	slaxWriteChildren(swp, docp, nodep, FALSE);
+	slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	slaxWrite(swp, "}");
 	slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2422,7 +2971,7 @@ slaxWriteAttributeStatement (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 				   "ns-template", ATT_NAMESPACE, S1A_AVT);
 
     slaxWriteAllNs(swp, docp, nodep);
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2451,7 +3000,7 @@ slaxWriteAttributeSetStatement (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 	    slaxWrite(swp, "use-attribute-sets %s;", asets);
 	    slaxWriteNewline(swp, 0);
 	}
-	slaxWriteChildren(swp, docp, nodep, FALSE);
+	slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	slaxWrite(swp, "}");
 	slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2497,7 +3046,7 @@ slaxWriteElementStatement (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 	    slaxWriteNewline(swp, 0);
 	}
 
-	slaxWriteChildren(swp, docp, nodep, FALSE);
+	slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
 	slaxWrite(swp, "}");
 	slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2537,14 +3086,14 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, childp, FALSE);
+	    slaxWriteChildren(swp, docp, childp, FALSE, TRUE);
 
 	} else if (streq((const char *) childp->name, ELT_OTHERWISE)) {
 	    slaxWriteNewline(swp, NEWL_OUTDENT);
 	    slaxWrite(swp, "} else {");
 	    slaxWriteNewline(swp, NEWL_INDENT);
 
-	    slaxWriteChildren(swp, docp, childp, FALSE);
+	    slaxWriteChildren(swp, docp, childp, FALSE, TRUE);
 
 	} /* XXX else error */
 
@@ -2579,7 +3128,7 @@ slaxWriteFallback (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteAllNs(swp, docp, nodep);
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2611,7 +3160,7 @@ slaxWriteComplexElement (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteAllNs(swp, docp, nodep);
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2726,7 +3275,7 @@ slaxWriteXslElement (slax_writer_t *swp, xmlDocPtr docp,
 
     for (sftp = slax_func_table; sftp->sft_name; sftp++) {
 	/* If it's a 1.1 feature and we're writing 1.0 SLAX, skip it */
-	if ((sftp->sft_flags & SFTF_V11) && slaxV10(swp))
+	if ((sftp->sft_flags & SFTF_V11) && !slaxV11(swp))
 	    continue;
 
 	if (streq(sftp->sft_name, name))
@@ -2837,7 +3386,7 @@ slaxWriteCommentStatement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteAllNs(swp, docp, nodep);
-    slaxWriteChildren(swp, docp, nodep, FALSE);
+    slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
     slaxWrite(swp, "}");
     slaxWriteNewline(swp, NEWL_OUTDENT);
@@ -2854,7 +3403,7 @@ slaxWriteCommentStatement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
  */
 static void
 slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
-		   int initializer)
+		   int initializer, int trailing_newline)
 {
     xmlNodePtr childp;
     int state = 0;
@@ -2878,13 +3427,12 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 	    if (slaxIsXsl(childp)) {
 		slaxWriteXslElement(swp, docp, childp, &state);
 
-	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
+	    } else if (slaxV11(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href,
 				(const char *) FUNC_URI)) {
 		slaxWriteFunctionElement(swp, docp, childp);
 
-
-	    } else if (!slaxV10(swp) && childp->ns && childp->ns->href
+	    } else if (slaxV11(swp) && childp->ns && childp->ns->href
 		       && streq((const char *) childp->ns->href, SLAX_URI)) {
 		slaxWriteSlaxElement(swp, docp, childp);
 
@@ -2892,7 +3440,7 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))
 		    slaxWriteBlankline(swp);
 
-		slaxWriteElement(swp, docp, childp);
+		slaxWriteElementFull(swp, docp, childp, trailing_newline);
 		state = STATE_PAST_DECLS;
 	    }
 
@@ -2967,11 +3515,17 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	return 1;
 
     /* If the user asked for version 1.0, we avoid 1.1 features */
-    if (version && streq(version, "1.0"))
-	sw.sw_flags |= SWF_VERS_10;
+    if (version) {
+	if (streq(version, "1.0"))
+	    sw.sw_vers = SWF_VERS_10;
+	else if (streq(version, "1.1"))
+	    sw.sw_vers = SWF_VERS_11;
+	else if (streq(version, "1.2"))
+	    sw.sw_vers = SWF_VERS_12;
+    }
 
     if (!partial) {
-	slaxWrite(&sw, "version %s;", version ?: "1.1");
+	slaxWrite(&sw, "version %s;", version ?: "1.2");
 	slaxWriteNewline(&sw, 0);
 	slaxWriteNewline(&sw, 0);
     }
@@ -2987,7 +3541,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 
     if (streq((const char *) nodep->name, ELT_STYLESHEET)
 		|| streq((const char *) nodep->name, ELT_TRANSFORM)) {
-	slaxWriteChildren(&sw, docp, nodep, FALSE);
+	slaxWriteChildren(&sw, docp, nodep, FALSE, TRUE);
 
     } else if (partial) {
 	slaxWriteElement(&sw, docp, nodep);

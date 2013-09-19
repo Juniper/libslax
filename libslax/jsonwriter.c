@@ -22,6 +22,8 @@
 #include <libxml/parser.h>
 #include <libxml/xmlsave.h>
 
+#include <libslax/slax.h>
+#include "slaxinternals.h"
 #include "jsonlexer.h"
 #include "jsonwriter.h"
 
@@ -91,7 +93,7 @@ jsonNeedsComma (xmlNodePtr nodep UNUSED)
 {
     xmlNodePtr nextp;
     for (nextp = nodep->next; nextp; nextp = nextp->next)
-	if (nodep->type != XML_TEXT_NODE)
+	if (nextp->type != XML_TEXT_NODE)
 	    return ",";
 
     return "";
@@ -225,14 +227,15 @@ jsonWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
     int rc = 0;
 
     for (nodep = parent->children; nodep; nodep = nodep->next) {
-	jsonWriteNode(swp, nodep, flags);
+	if (nodep->type == XML_ELEMENT_NODE)
+	    jsonWriteNode(swp, nodep, flags);
     }
 
     return rc;
 }
 
 int
-extXutilJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+slaxJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 		       unsigned flags)
 {
     slax_writer_t *swp = slaxGetWriter(func, data);
@@ -254,9 +257,9 @@ extXutilJsonWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 }
 
 int
-extXutilJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+slaxJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 		      unsigned flags)
 {
     xmlNodePtr nodep = xmlDocGetRootElement(docp);
-    return extXutilJsonWriteNode(func, data, nodep, flags | JWF_ROOT);
+    return slaxJsonWriteNode(func, data, nodep, flags | JWF_ROOT);
 }

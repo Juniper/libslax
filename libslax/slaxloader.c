@@ -90,7 +90,7 @@ slaxIncludeAddPath (const char *dir)
 }
 
 /**
- * Check the version string.  The only supported versions are "1.0" and "1.1".
+ * Check the version string.
  *
  * @param major major version number
  * @param minor minor version number
@@ -98,7 +98,7 @@ slaxIncludeAddPath (const char *dir)
 void
 slaxVersionMatch (slax_data_t *sdp, const char *vers)
 {
-    if (streq(vers, "1.0") || streq(vers, "1.1"))
+    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2"))
 	return;
 
     fprintf(stderr, "invalid version number: %s\n", vers);
@@ -150,7 +150,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 	    xmlNodePtr tp = xmlNewText((const xmlChar *) value->ss_token);
 
 	    if (tp)
-		slaxAddChildLineNo(sdp->sd_ctxt, nodep, tp);
+		slaxAddChild(sdp, nodep, tp);
 
 	} else {
 	    xmlNodePtr attrp;
@@ -185,7 +185,6 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 void
 slaxAvoidRtf (slax_data_t *sdp)
 {
-
     static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
     static const char node_value_format[] = EXT_PREFIX ":node-set(%s)";
     static const char temp_name_format[] = "%s-temp-%u";
@@ -358,11 +357,11 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 
 	    }
 
-	    slaxAddChildLineNo(sdp->sd_ctxt, textp, nodep);
+	    slaxAddChild(sdp, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
 	} else {
-	    slaxAddChildLineNo(sdp->sd_ctxt, sdp->sd_ctxt->node, nodep);
+	    slaxAddChild(sdp, NULL, nodep);
 	}
 
 	return;
@@ -451,6 +450,152 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
     xmlUnlinkNode(choosep);
     xmlFreeNode(choosep);
     xmlAddChild(sdp->sd_ctxt->node, nodep);
+}
+
+void 
+slaxHandleEltArgPrep (slax_data_t *sdp)
+{
+    static const char varfmt[] = SLAX_ELTARG_FORMAT;
+    static unsigned varcount;
+    char varname[sizeof(varfmt) + SLAX_ELTARG_WIDTH];
+
+    snprintf(varname, sizeof(varname), varfmt, ++varcount);
+
+    slaxLog("slaxHandleEltArgPrep: '%s'", varname);
+
+    slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, varname);
+}
+
+xmlNodePtr
+slaxHandleEltArgSafeInsert (xmlNodePtr base)
+{
+    const char *name;
+    xmlNodePtr nodep = base;
+
+    for ( ; nodep; nodep = nodep->parent) {
+	if (!slaxNodeIsXsl(base, NULL))
+	    break;
+
+	name = (const char *) nodep->name;
+
+	if (streq(name, ELT_VARIABLE))
+	    return nodep;
+
+	/* These statements can't contain variables */
+	if (!(streq(name, ELT_WITH_PARAM)
+	      || streq(name, ELT_WHEN)
+	      || streq(name, ELT_OTHERWISE)))
+	    break;
+    }
+
+    if (base == nodep)
+	return NULL;
+
+    return nodep;
+}
+
+static void
+slaxPrintNode (const char *txt, xmlNodePtr nodep)
+{
+    const char *localname = (const char *) nodep->name;
+    xmlNodePtr parent = nodep->parent;
+    const char *plocalname = NULL;
+    char *name = slaxGetAttrib(nodep, ATT_NAME);
+    char *pname = NULL;
+
+    if (parent) {
+	plocalname = (const char *) parent->name;
+	pname = slaxGetAttrib(parent, ATT_NAME);
+    }
+
+    slaxLog("%s (<%s @name=%s> parent=<%s @name=%s>)",
+	    txt, localname, name ?: "", plocalname ?: "", pname ?: "");
+
+    xmlFreeAndEasy(pname);
+    xmlFreeAndEasy(name);
+}
+
+slax_string_t *
+slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
+{
+    static const char new_value_format[] = EXT_PREFIX ":node-set($%s)";
+    char str[BUFSIZ];
+    char *varname;
+    xmlNodePtr nodep = NULL;
+    slax_string_t *ssp;
+    xmlNodePtr varp;
+    xmlNodePtr insert;
+
+    if (!var_on_stack) {
+	slaxHandleEltArgPrep(sdp);
+    }
+    varp = nodePop(sdp->sd_ctxt);
+    if (varp == NULL)
+	return NULL;
+
+    xmlUnlinkNode(varp);
+
+    varname = slaxGetAttrib(varp, ATT_NAME);
+    slaxLog("slaxHandleEltArg: varname '%s', var_on_stack %s",
+	    varname, var_on_stack ? "yes" : "no");
+    slaxPrintNode("slaxHandleEltArg: varp", varp);
+
+    if (var_on_stack) {
+	nodep = sdp->sd_ctxt->node;
+	if (nodep == NULL)
+	    return NULL;
+
+    } else {
+	nodep = nodePop(sdp->sd_ctxt);
+	if (nodep == NULL)
+	    return NULL;
+
+	xmlUnlinkNode(nodep);
+	xmlAddChild(varp, nodep);
+    }
+
+    insert = slaxHandleEltArgSafeInsert(sdp->sd_ctxt->node);
+
+    slaxLog("slaxHandleEltArg: insert of '%s' is '%s'",
+	    (const char *) sdp->sd_ctxt->node->name,
+	    insert ? (const char *) insert->name : "");
+
+    if (insert) {
+	slaxPrintNode("slaxHandleEltArg: insert", insert);
+	slaxSetExtNs(sdp, sdp->sd_ctxt->node, FALSE);
+	xmlAddPrevSibling(insert, varp);
+
+    } else {
+	/*
+	 * Add this to a list of delayed nodes that will be inserted
+	 * before the next node added to the parse tree.
+	 */
+	slaxAddInsert(sdp, varp);
+    }
+
+    /* Use the line number from the original node */
+    if (sdp->sd_ctxt->linenumbers)
+	varp->line = nodep->line;
+
+    snprintf(str, sizeof(str), new_value_format, varname);
+    ssp = slaxStringLiteral(str, T_BARE);
+
+    return ssp;
+}
+
+/*
+ * We are cleaning up after a "main <elt> { ... }" statement, where
+ * we aren't sure if the optional element is on the stack.  So if the
+ * top item isn't a template, then we pop it.
+ */
+void
+slaxMainElement (slax_data_t *sdp)
+{
+    slaxLog("slaxMainElement: %p", sdp);
+
+    if (!slaxNodeIsXsl(sdp->sd_ctxt->node, ELT_TEMPLATE))
+	slaxElementPop(sdp);
+    slaxElementPop(sdp);
 }
 
 /*
