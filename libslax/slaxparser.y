@@ -878,7 +878,6 @@ initial_value :
 		    ALL_KEYWORDS_ON();
 		    $$ = NULL;
 		}
-
 	;
 
 initial_argument_value :
