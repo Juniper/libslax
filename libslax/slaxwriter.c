@@ -1216,7 +1216,7 @@ slaxWriteJsonElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 
 static void
 slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
-		      int trailing_newline)
+		      int trailing_newline, int must_braces)
 {
     const char *pref = NULL;
 
@@ -1284,23 +1284,27 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 
     slaxWrite(swp, ">");
 
-    if (nodep->children == NULL) {
-	if (trailing_newline) {
-	    slaxWrite(swp, ";");
-	    slaxWriteNewline(swp, 0);
+    if (must_braces) {
+	slaxWrite(swp, " ");
+    } else {
+	if (nodep->children == NULL) {
+	    if (trailing_newline) {
+		slaxWrite(swp, ";");
+		slaxWriteNewline(swp, 0);
+	    }
+	    return;
 	}
-	return;
-    }
 	
-    slaxWrite(swp, " ");
+	slaxWrite(swp, " ");
 
-    if (!slaxNeedsBraces(nodep)) {
-	slaxWriteContent(swp, docp, nodep);
-	if (trailing_newline) {
-	    slaxWrite(swp, ";");
-	    slaxWriteNewline(swp, 0);
+	if (!slaxNeedsBraces(nodep)) {
+	    slaxWriteContent(swp, docp, nodep);
+	    if (trailing_newline) {
+		slaxWrite(swp, ";");
+		slaxWriteNewline(swp, 0);
+	    }
+	    return;
 	}
-	return;
     }
 
     slaxWrite(swp, "{");
@@ -1317,7 +1321,7 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 static void
 slaxWriteElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
-    slaxWriteElementFull(swp, docp, nodep, TRUE);
+    slaxWriteElementFull(swp, docp, nodep, TRUE, FALSE);
 }
 
 static void
@@ -1458,9 +1462,12 @@ slaxWriteIsMainElt (xmlNodePtr nodep)
     xmlNodePtr res = NULL;
 
     for ( ; nodep; nodep = nodep->next) {
+	if (slaxNodeIsXsl(nodep, NULL))
+	    return NULL;
+
 	if (nodep->type == XML_ELEMENT_NODE) {
 	    if (res)
-		return FALSE;
+		return NULL;
 	    res = nodep;
 	} else if (nodep->type == XML_TEXT_NODE
 		   && slaxStringIsWhitespace((const char *) nodep->content)) {
@@ -1510,7 +1517,7 @@ slaxWriteTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 		if (childp) {
 		    /* We have the case where 'main' can take an element */
 		    slaxWrite(swp, " ");
-		    slaxWriteElementFull(swp, docp, childp, TRUE);
+		    slaxWriteElementFull(swp, docp, childp, TRUE, TRUE);
 		    return;
 		}
 	    }
@@ -3438,7 +3445,8 @@ slaxWriteChildren (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		if (state == STATE_IN_DECLS && slaxNeedsBlankline(childp))
 		    slaxWriteBlankline(swp);
 
-		slaxWriteElementFull(swp, docp, childp, trailing_newline);
+		slaxWriteElementFull(swp, docp, childp,
+				     trailing_newline, FALSE);
 		state = STATE_PAST_DECLS;
 	    }
 
