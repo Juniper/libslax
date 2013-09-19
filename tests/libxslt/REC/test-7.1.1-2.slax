@@ -1,9 +1,9 @@
-version 1.1;
+version 1.2;
 
 ns doc exclude = "http://example.org/doc";
 
 <doc:doc> "Some ignored documentation the prefix should not show\n         up on the doc element";
 
-match / {
-    <out> "SUCCESS";
+main <out> {
+    expr "SUCCESS";
 }
