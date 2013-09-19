@@ -1,6 +1,6 @@
-version 1.1;
+version 1.2;
 
-match / {
+main {
     var $pat1 = "(E)(.)(.)";
     var $pat2 = "^Of(.{5})";
     var $pat3 = "^Oft(.{5})";
