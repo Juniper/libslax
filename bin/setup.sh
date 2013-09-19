@@ -1,6 +1,4 @@
 #
-# $Id$
-#
 # Copyright 2013, Juniper Networks, Inc.
 # All rights reserved.
 # This SOFTWARE is licensed under the LICENSE provided in the
