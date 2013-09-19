@@ -1,9 +1,9 @@
-version 1.1;
+version 1.2;
 
 ns ex = "http://www.example.org/";
 
 output-method xml;
 
-match / {
+main {
     copy-of /;
 }
