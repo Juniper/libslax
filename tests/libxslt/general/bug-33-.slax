@@ -1,17 +1,15 @@
-version 1.1;
+version 1.2;
 
 output-method html;
 
-match / {
-    <html> {
-        <head> {
-            <title> exam/@name;
-            <script> {
-                uexpr "<";
-                expr "\n	 funtion test() {\n	   var a;\n	   var b;\n\n	   if (a < b) { alert('Hello'); }\n	 }\n\n	 ";
-                uexpr "<";
-            }
+main <html> {
+    <head> {
+        <title> exam/@name;
+        <script> {
+            uexpr "<";
+            expr "\n	 funtion test() {\n	   var a;\n	   var b;\n\n	   if (a < b) { alert('Hello'); }\n	 }\n\n	 ";
+            uexpr "<";
         }
-        <body bgcolor="white"> ;
     }
+    <body bgcolor="white"> ;
 }
