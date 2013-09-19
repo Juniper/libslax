@@ -1,19 +1,17 @@
-version 1.1;
+version 1.2;
 
 /* borrowed from http://www.zvon.org/xxl/XSLTutorial/Output/example35_ch9.html */
-match / {
-    <TABLE> {
-        for-each (//number) {
-            <TR> {
-                <TH> {
-                    if (text() mod 2) {
-                        apply-templates . {
-                            with $type = "odd";
-                        }
-                    
-                    } else {
-                        apply-templates .;
+main <TABLE> {
+    for-each (//number) {
+        <TR> {
+            <TH> {
+                if (text() mod 2) {
+                    apply-templates . {
+                        with $type = "odd";
                     }
+                
+                } else {
+                    apply-templates .;
                 }
             }
         }
