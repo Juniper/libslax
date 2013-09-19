@@ -1,6 +1,4 @@
 /*
- * $Id: slaxloader.c,v 1.6 2008/05/21 02:06:12 phil Exp $
- *
  * Copyright (c) 2013, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
