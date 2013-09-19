@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 /* Version: $Id: xmlspec.xsl 91 2001-02-14 14:45:10Z veillard $ */
 /* Stylesheet for XMLspec */
@@ -118,7 +118,7 @@ Only handles statuses of NOTE, WD, and REC.
 
 /* Template for the root node.  Creation of <html> element could
 go here, but that doesn't feel right. */
-match / {
+main {
     apply-templates;
 }
 /* abstract: appears only in header */
