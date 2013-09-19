@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 
 /* filename:      test.xsl                                                         created on:    2001 Jun 14 01:35:21 +0200 (CEST)                                last modified: 2001 Jun 14 01:47:18 +0200 (CEST)                                (c) 2001 by Goetz Bock <bock@blacknet.de>
@@ -14,7 +14,7 @@ output-method text;
     <local:period ID="5Y"> "5";
 }
 
-match / {
+main {
     expr "First we try to find the value for \"12M\" (should be 1): ";
     expr document("")//local:benefit/local:period[@ID == "12M"];
     expr "\nNow we define a variable $BP to be \"18M\".";
