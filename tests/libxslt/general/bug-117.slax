@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns l exclude = "http://www.foobar.com/xmlns/l";
 ns s = "http://www.foobar.com/xmlns/s";
@@ -9,7 +9,7 @@ output-method html {
     encoding "ISO-8859-1";
 }
 
-match / {
+main {
     apply-templates l:doc;
 }
 
