@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 var $aaa := <aa1> {
     <aaa> "AAA";
@@ -37,37 +37,35 @@ var $data := <more> {
     <z> 10;
 }
 
-match / {
-    <top> {
-        <d> {
-            copy-of $ddd;
-        }
-        <d2> {
-            copy-of $aaa ? $bbb : $ccc;
-        }
-        <action> $action;
-        <how> $how;
-        <count> $count;
+main <top> {
+    <d> {
+        copy-of $ddd;
+    }
+    <d2> {
+        copy-of $aaa ? $bbb : $ccc;
+    }
+    <action> $action;
+    <how> $how;
+    <count> $count;
+    
+    for-each ($data/more) {
+        var $one = a ? b : c;
+        var $two = d ?: e;
+        var $three = f ? 1 : g ? 2 : h ? 3 : 4;
+        var $four = i ?: j ?: k ?: l;
         
-        for-each ($data/more) {
-            var $one = a ? b : c;
-            var $two = d ?: e;
-            var $three = f ? 1 : g ? 2 : h ? 3 : 4;
-            var $four = i ?: j ?: k ?: l;
-            
-            <one> $one;
-            <two> $two;
-            <three> $three;
-            <four> $four;
-            <fish> {
-                expr m ? n : o;
-            }
-            <fish> {
-                call fish($name = slax:value($slax-ternary-15));
-            }
-            <contains> {
-                expr contains($one ? $two : $three, $one ? $two : $three);
-            }
+        <one> $one;
+        <two> $two;
+        <three> $three;
+        <four> $four;
+        <fish> {
+            expr m ? n : o;
+        }
+        <fish> {
+            call fish($name = slax:value($slax-ternary-15));
+        }
+        <contains> {
+            expr contains($one ? $two : $three, $one ? $two : $three);
         }
     }
 }
