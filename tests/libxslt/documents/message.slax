@@ -1,11 +1,11 @@
-version 1.1;
+version 1.2;
 
 output-method xml {
     encoding "iso-8859-1";
     indent "yes";
 }
 
-match / {
+main {
     message "A simple message";
     apply-templates;
 }
