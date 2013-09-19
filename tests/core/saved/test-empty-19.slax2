@@ -1,40 +1,38 @@
-version 1.1;
+version 1.2;
 
-match / {
-    <top> {
-        var $a = {
-            call test($a = 1);
-        }
-        var $b := {
-            call test($a = 2);
-        }
-        var $c = call/call/call;
-        var $d = {
-            call test($a = 3);
-        }
-        var $e = call _ call _ call;
-        var $f = {
-            call _();
-        }
-        var $g = call _ /this/or/that;
-        var $h = call;
-        var $i = {
-            call call();
-        }
-        
-        <a> $a;
-        <b> $b;
-        <c> $c;
-        <d> $d;
-        <e> $e;
-        <f> $f;
-        <g> $g;
-        <h> $h;
-        <i> $i;
-        call test($a = "this and that");
-        <output> "this and that";
-        <output> string-length("this and that");
+main <top> {
+    var $a = {
+        call test($a = 1);
     }
+    var $b := {
+        call test($a = 2);
+    }
+    var $c = call/call/call;
+    var $d = {
+        call test($a = 3);
+    }
+    var $e = call _ call _ call;
+    var $f = {
+        call _();
+    }
+    var $g = call _ /this/or/that;
+    var $h = call;
+    var $i = {
+        call call();
+    }
+    
+    <a> $a;
+    <b> $b;
+    <c> $c;
+    <d> $d;
+    <e> $e;
+    <f> $f;
+    <g> $g;
+    <h> $h;
+    <i> $i;
+    call test($a = "this and that");
+    <output> "this and that";
+    <output> string-length("this and that");
 }
 
 template test ($a = "A") {
