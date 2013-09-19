@@ -90,7 +90,7 @@ slaxIncludeAddPath (const char *dir)
 }
 
 /**
- * Check the version string.  The only supported versions are "1.0" and "1.1".
+ * Check the version string.
  *
  * @param major major version number
  * @param minor minor version number
@@ -98,7 +98,7 @@ slaxIncludeAddPath (const char *dir)
 void
 slaxVersionMatch (slax_data_t *sdp, const char *vers)
 {
-    if (streq(vers, "1.0") || streq(vers, "1.1"))
+    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2"))
 	return;
 
     fprintf(stderr, "invalid version number: %s\n", vers);
