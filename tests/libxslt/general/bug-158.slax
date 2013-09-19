@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 ns dsl = "http://www.decisionsoft.com/website";
 ns html = "http://www.w3.org/1999/xhtml";
@@ -11,7 +11,7 @@ var $root = {
     expr $layout//layout:page[@path == $myPath];
 }
 
-match / {
+main {
     expr "\nmyPath is ";
     expr $myPath;
     expr "\nroot is ";
