@@ -1,23 +1,21 @@
-version 1.1;
+version 1.2;
 
 output-method {
     encoding "utf-8";
 }
 
-match / {
-    <summary> {
-        <total> {
-            expr count(//node());
-            expr " nodes,\n      ";
-            expr count(//*);
-            expr " elements,\n      ";
-            expr count(//text());
-            expr " text nodes,\n      ";
-            expr count(//*/@*);
-            expr " attributes.\n    ";
-        }
-        apply-templates;
+main <summary> {
+    <total> {
+        expr count(//node());
+        expr " nodes,\n      ";
+        expr count(//*);
+        expr " elements,\n      ";
+        expr count(//text());
+        expr " text nodes,\n      ";
+        expr count(//*/@*);
+        expr " attributes.\n    ";
     }
+    apply-templates;
 }
 
 match /xsl:stylesheet |/xsl:transform {
