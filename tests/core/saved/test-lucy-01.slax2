@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 
 /*
@@ -40,31 +40,29 @@ var $verses := {
     <verse action="out"> 5;
 }
 
-match / {
-    <top> {
-        var $miss-lucy := {
-            <name> "Miss Lucy";
-            call baby($name = "Tiny Tim");
+main <top> {
+    var $miss-lucy := {
+        <name> "Miss Lucy";
+        call baby($name = "Tiny Tim");
+    }
+    var $bathtub := {
+        call swim($miss-lucy);
+    }
+    var $baby := {
+        <water> "drank";
+        <soap> "ate ";
+        <bathtub> {
+            <epic-fail> "throat";
         }
-        var $bathtub := {
-            call swim($miss-lucy);
-        }
-        var $baby := {
-            <water> "drank";
-            <soap> "ate ";
-            <bathtub> {
-                <epic-fail> "throat";
-            }
-        }
-        var $who = top/resources;
-        
-        for-each ($verses) {
-            apply-templates {
-                with $who;
-                with $miss-lucy;
-                with $bathtub;
-                with $baby;
-            }
+    }
+    var $who = top/resources;
+    
+    for-each ($verses) {
+        apply-templates {
+            with $who;
+            with $miss-lucy;
+            with $bathtub;
+            with $baby;
         }
     }
 }
