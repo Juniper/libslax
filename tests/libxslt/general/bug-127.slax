@@ -1,12 +1,10 @@
-version 1.1;
+version 1.2;
 
 output-method html;
 var $var = "\"'\"";
 
-match / {
-    <html> {
-        <body> {
-            <input type="text" value=$var>;
-        }
+main <html> {
+    <body> {
+        <input type="text" value=$var>;
     }
 }
