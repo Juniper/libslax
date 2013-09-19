@@ -989,7 +989,7 @@ slaxMakeAttribValueTemplate (slax_writer_t *swp, xmlNodePtr nodep,
 	    goto fail;
     }
 
-    buf = slaxStringAsChar(first, SSF_QUOTES);
+    buf = slaxStringAsChar(first, SSF_QUOTES | SSF_ESCAPE);
 
     slaxStringFree(first);
 
