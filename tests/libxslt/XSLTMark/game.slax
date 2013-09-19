@@ -1,4 +1,4 @@
-version 1.1;
+version 1.2;
 
 /* baseball game stats */
 output-method {
@@ -36,10 +36,8 @@ match game {
     }
 }
 
-match / {
-    <html> {
-        <table border="1"> {
-            apply-templates games/game;
-        }
+main <html> {
+    <table border="1"> {
+        apply-templates games/game;
     }
 }
