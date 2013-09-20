@@ -103,4 +103,4 @@ install-data-hook:
         done
 	@${CHMOD} a+x ${OXTRADOC_INSTALL_DIR}/oxtradoc
 	@${RM} -f ${DESTDIR}${bindir}/oxtradoc
-	@${LN_S} ${OXTRADOC_INSTALL_DIR}/oxtradoc ${DESTDIR}${bindir}/oxtradoc
+	@${LN_S} ${prefix}/share/oxtradoc/oxtradoc ${DESTDIR}${bindir}/oxtradoc
