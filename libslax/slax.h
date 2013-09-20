@@ -12,6 +12,9 @@
 
 #include <libslax/slaxconfig.h>
 
+#define SLAX_VERSION "1.2"
+#define SLAX_VERSION_NUMBER 12
+
 /* Forward declarations for libxml2/libxslt structures */
 struct _xmlDoc;
 struct _xmlDict;
@@ -61,6 +64,19 @@ slaxCtxtReadFd(struct _xmlParserCtxt *ctxt, int fd,
  */
 struct _xmlDoc *
 slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
+
+/**
+ * Read a SLAX file from a memory buffer
+ *
+ * @param filename Name of the file (or "-")
+ * @param input Input data
+ * @param dict libxml2 dictionary
+ * @param partial TRUE if parsing partial SLAX contents
+ * @return xml document pointer
+ */
+xmlDocPtr
+slaxLoadBuffer (const char *filename, char *input,
+		xmlDictPtr dict, int partial);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
