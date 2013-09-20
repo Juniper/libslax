@@ -41,6 +41,7 @@ static char *opt_expression;	/* Expression to convert */
 static char **opt_args;
 static char *opt_show_variable; /* Variable (in script) to show */
 static char *opt_show_select;   /* Expression (in script) to show */
+static char *opt_xpath;		/* XPath expresion to match on */
 
 static int opt_html;		/* Parse input as HTML */
 static int opt_indent;		/* Indent the output (pretty print) */
@@ -484,6 +485,92 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     return 0;
 }
 
+static const char xpath_script[] = "\
+version " SLAX_VERSION ";\n\
+main <results> { copy-of %s; }\n";
+
+static int
+do_xpath (const char *name UNUSED, const char *output,
+	  const char *input, char **argv)
+{
+    const char *scriptname = "xpath";
+    xmlDocPtr scriptdoc;
+    FILE *outfile;
+    xmlDocPtr indoc;
+    xsltStylesheetPtr script;
+    xmlDocPtr res = NULL;
+    char *buf;
+    int len;
+
+    if (!opt_empty_input)
+	input = get_filename(input, &argv, -1);
+    output = get_filename(output, &argv, -1);
+
+    len = strlen(xpath_script) + strlen(opt_xpath) + 1;
+    buf = malloc(len);
+    if (buf == NULL)
+	errx(1, "out of memory");
+
+    snprintf(buf, len, xpath_script, opt_xpath);
+
+    scriptdoc = slaxLoadBuffer(scriptname, buf, NULL, 0);
+    if (scriptdoc == NULL)
+	errx(1, "cannot parse: '%s'", opt_xpath);
+
+    script = xsltParseStylesheetDoc(scriptdoc);
+    if (script == NULL || script->errors != 0)
+	errx(1, "%d errors parsing script: '%s'",
+	     script ? script->errors : 1, opt_xpath);
+
+    if (opt_empty_input)
+	indoc = buildEmptyFile();
+    else if (opt_html)
+	indoc = htmlReadFile(input, encoding, options);
+    else
+	indoc = xmlReadFile(input, encoding, options);
+    if (indoc == NULL)
+	errx(1, "unable to parse: '%s'", input);
+
+    if (opt_indent)
+	script->indent = 1;
+
+    if (opt_debugger) {
+	slaxDebugInit();
+	slaxDebugSetStylesheet(script);
+	res = slaxDebugApplyStylesheet(scriptname, script,
+				 slaxFilenameIsStd(input) ? NULL : input,
+				 indoc, params);
+    } else {
+	res = xsltApplyStylesheet(script, indoc, params);
+    }
+
+    if (res) {
+	if (output == NULL || slaxFilenameIsStd(output))
+	    outfile = stdout;
+	else {
+	    outfile = fopen(output, "w");
+	    if (outfile == NULL)
+		err(1, "could not open file: '%s'", output);
+	}
+
+	if (opt_slax_output)
+	    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, res,
+		 TRUE, opt_version);
+	else
+	    xsltSaveResultToFile(outfile, res, script);
+
+	if (outfile != stdout)
+	    fclose(outfile);
+
+	xmlFreeDoc(res);
+    }
+
+    xmlFreeDoc(indoc);
+    xsltFreeStylesheet(script);
+
+    return 0;
+}
+
 static int
 do_check (const char *name, const char *output UNUSED,
 	  const char *input UNUSED, char **argv)
@@ -615,6 +702,14 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_check;
+
+	} else if (streq(cp, "--xpath") || streq(cp, "-X")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_xpath;
+	    opt_xpath = *++argv;
+	    if (opt_xpath == NULL)
+		errx(1, "missing xpath argument");
 
 	} else if (streq(cp, "--format") || streq(cp, "-F")) {
 	    if (func)
