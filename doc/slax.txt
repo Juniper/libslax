@@ -3374,6 +3374,7 @@ check syntax.
      --show-variable: show contents of a global variable
      --slax-to-xslt OR -x: turn SLAX into XSLT
      --xml-to-json: turn XML into JSON
+     --xpath <xpath> OR -X <xpath>: select XPath data from input
      --xslt-to-slax OR -s: turn XSLT into SLAX
 
     Options:
@@ -3534,6 +3535,9 @@ arguments as described in ^slaxproc-arguments^.
 = --xml-to-json
 Transform XML input into JSON, using the conventions defined in
 ^json-elements^.
+= --xpath <xpath> OR -X <xpath>
+Select data matching an XPath data from input document.  This allows
+slaxproc to operate as a filter.
 = --xslt-to-slax OR -s
 Convert a XSLT script into SLAX format.  The script name and output file
 name can be provided via command line options and/or using positional
