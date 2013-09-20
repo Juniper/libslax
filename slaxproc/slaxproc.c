@@ -637,6 +637,7 @@ print_help (void)
 "\t--show-variable: show contents of a global variable\n"
 "\t--slax-to-xslt OR -x: turn SLAX into XSLT\n"
 "\t--xml-to-json: turn XML into JSON\n"
+"\t--xpath <xpath> OR -X <xpath>: select XPath data from input\n"
 "\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
 "\n"
 "    Options:\n"
