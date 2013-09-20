@@ -3531,7 +3531,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
     }
 
     if (!partial) {
-	slaxWrite(&sw, "version %s;", version ?: "1.2");
+	slaxWrite(&sw, "version %s;", version ?: SLAX_VERSION);
 	slaxWriteNewline(&sw, 0);
 	slaxWriteNewline(&sw, 0);
     }

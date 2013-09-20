@@ -5,7 +5,7 @@ Summary:     The SLAX language (XSLT alternative)
 
 Prefix:      /usr
 
-Vender:      Juniper Networks, Inc.
+Vendor:      Juniper Networks, Inc.
 Packager:    Phil Shafer <phil@juniper.net>
 License:     BSD
 
@@ -46,8 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/*
 %{_includedir}/libslax/*
 %{_libdir}/*
-%{_libdir}/pkgconfig/libslax.pc
-%{_libdir}/slax/extensions/*
+%{_datadir}/oxtradoc/*
 %{_datadir}/doc/libslax/*
 %docdir %{_datadir}/doc/libslax/*
 %{_mandir}/*/*

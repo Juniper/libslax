@@ -745,6 +745,88 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     return res;
 }
 
+/**
+ * Read a SLAX file from a memory buffer
+ *
+ * @param filename Name of the file (or "-")
+ * @param input Input data
+ * @param dict libxml2 dictionary
+ * @param partial TRUE if parsing partial SLAX contents
+ * @return xml document pointer
+ */
+xmlDocPtr
+slaxLoadBuffer (const char *filename, char *input,
+		xmlDictPtr dict, int partial)
+{
+    slax_data_t sd;
+    xmlDocPtr res;
+    int rc;
+    xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
+
+    if (ctxt == NULL)
+	return NULL;
+
+    /*
+     * Turn on line number recording in each node
+     */
+    ctxt->linenumbers = 1;
+
+    if (dict) {
+	if (ctxt->dict)
+	    xmlDictFree(ctxt->dict);
+
+    	ctxt->dict = dict;
+ 	xmlDictReference(ctxt->dict);
+    }
+
+    bzero(&sd, sizeof(sd));
+
+    /* We want to parse SLAX, either full or partial */
+    sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
+
+    strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
+    sd.sd_ctxt = ctxt;
+
+    /*
+     * Fake up an inputStream so the error mechanisms will work
+     */
+    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", filename);
+
+    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
+    ctxt->userData = &sd;
+
+    sd.sd_docp = slaxBuildDoc(&sd, ctxt);
+    if (sd.sd_docp == NULL) {
+	slaxDataCleanup(&sd);
+	return NULL;
+    }
+
+    sd.sd_buf = input;
+    sd.sd_len = strlen(input);
+
+    if (filename != NULL)
+        sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) filename);
+
+    rc = slaxParse(&sd);
+
+    if (sd.sd_errors) {
+	slaxError("%s: %d error%s detected during parsing (%d)\n",
+	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
+
+	slaxDataCleanup(&sd);
+	return NULL;
+    }
+
+    /* Save docp before slaxDataCleanup nukes it */
+    res = sd.sd_docp;
+    sd.sd_docp = NULL;
+    slaxDataCleanup(&sd);
+
+    slaxDynLoad(res);		/* Check dynamic extensions */
+
+    return res;
+}
+
 /*
  * Turn a SLAX expression into an XPath one.  Returns a freshly
  * allocated string, or NULL.
