@@ -76,7 +76,7 @@ slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
  */
 xmlDocPtr
 slaxLoadBuffer (const char *filename, char *input,
-		xmlDictPtr dict, int partial);
+		struct _xmlDict *dict, int partial);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements
