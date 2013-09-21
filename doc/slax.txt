@@ -1437,7 +1437,7 @@ the language.
 
 *** Default Namespaces for Prefixes
 
-When a prefix is used without the a corresponding "ns" statement in
+When a prefix is used without a corresponding "ns" statement in
 scope, SLAX will refer to a set of default namespaces.  If the prefix
 has a default namespace, that namespace will be automatically mapped
 to the prefix.
