@@ -1,6 +1,6 @@
-set libslax=`pwd`
+set top_src=`pwd`
 set test=~/work/xmlsoft/libxslt-1.1.24/tests/
-alias Zautoreconf "(cd $libslax ; autoreconf --install)"
+alias Zautoreconf "(cd $top_src ; autoreconf --install)"
 
 set opts=' \
 --enable-debug \
@@ -16,9 +16,9 @@ set opts=`echo $opts`
 
 setenv CONFIGURE_OPTS "$opts"
 
-alias Zconfigure "(cd $libslax/build; ../configure $opts)"
-
-alias Zbuild "(cd $libslax/build; make \!* )"
+alias Zconfigure "(cd $top_src/build; ../configure $opts)"
+alias Zbuild "(cd $top_src/build; make \!* )"
+alias mi "(cd $top_src/build; make && make install); ."
 
 mkdir -p build
 cd build
