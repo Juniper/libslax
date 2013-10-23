@@ -181,7 +181,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	return 0;
     }
 
-    input = get_filename(input, &argv, 0);
+    input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
     docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
