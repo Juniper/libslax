@@ -89,6 +89,10 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
     void *dlp = NULL;
     char buf[MAXPATHLEN];
 
+    /* The SLAX namespace is statically loaded; skip it */
+    if (streq(ns, SLAX_URI))
+	return;
+
     SLAXDATALIST_FOREACH(dnp, &slaxDynLoaded) {
 	if (streq(ns, dnp->dn_data))
 	    return;		/* Already loaded */
