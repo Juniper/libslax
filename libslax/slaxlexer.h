@@ -92,7 +92,13 @@ struct slax_data_s {
 int
 slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *yylval,
 	     int yystate, slax_string_t **vstack, slax_string_t **vtop);
-#define yyerror(str) slaxYyerror(slax_data, str, yylval, yystate, yyvs, yyvsp)
+#define yyerror2(slax_data, str) \
+    slaxYyerror(slax_data, str, yylval, yystate, yyvs, yyvsp)
+#ifdef HAVE_BISON30
+#define yyerror(_data, _str) yyerror2(_data, _str)
+#else
+#define yyerror(_str) yyerror2(slax_data, _str)
+#endif /* HAVE_BISON30 */
 
 /*
  * Return a better class of error message
