@@ -73,7 +73,7 @@ ${libslax_la_SOURCES:.c=.lo}: ${SLAXHEADERS}
 
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
--e 's/yyparse (void.*/slaxParse (slax_data_t *slax_data)/' \
+-e 's/yyparse (void[^;]*/slaxParse (slax_data_t *slax_data)/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
 slaxparser.h slaxparser.c: slaxparser-out.y
