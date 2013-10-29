@@ -334,6 +334,23 @@ AC_SUBST(LIBCURL_CFLAGS)
 AC_SUBST(LIBCURL_LIBS)
 
 #
+# Find the version of BISON
+#
+AC_MSG_CHECKING([bison version])
+test -z "${BISON}" && BISON=bison
+BISON_VERSION=[`${BISON} --version | grep 'GNU Bison' | cut -d ' ' -f 4 \
+    | sed -e 's/[-\.]/ /g' | tr -d a-z \
+    | sed -e 's/\([0-9]*\) \([0-9]*\).*/\1.\2/'`]
+BISON_VERSION_NUMBER=VERSION_TO_NUMBER(echo $BISON_VERSION)
+AC_SUBST(BISON_VERSION)
+AC_SUBST(BISON_VERSION_NUMBER)
+AM_CONDITIONAL([HAVE_BISON30], [test "$BISON_VERSION_NUMBER" -ge 3000000])
+if test "$BISON_VERSION_NUMBER" -ge 3000000 ; then
+    AC_DEFINE([HAVE_BISON30], [1], [Bison version >= 3.0])
+fi
+AC_MSG_RESULT($BISON_VERSION)
+
+#
 # ---- end of noise
 #
 
@@ -492,6 +509,7 @@ AC_MSG_NOTICE([summary of build options:
   libcurl version:  ${CURLVERS}
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
+  bison version:    ${BISON_VERSION}
 
   warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
