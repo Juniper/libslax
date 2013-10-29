@@ -248,7 +248,7 @@
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
 %token M_JSON			/* Parse a JSON document */
 
-%pure_parser
+%pure-parser
 
 /*
  * %expect is a hack, but adding the JSON-like encoding option
@@ -470,7 +470,8 @@ error_conditions :
 
 	| error L_OBRACE rack_up_the_errors_list L_CBRACE
 		{
-		    yyerror("error recovery ignores input until this point");
+		    yyerror2(slax_data,
+			    "error recovery ignores input until this point");
 		    yyclearin;
 		    yyerrok;
 		    $$ = NULL;
