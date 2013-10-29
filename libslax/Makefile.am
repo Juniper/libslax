@@ -73,7 +73,7 @@ ${libslax_la_SOURCES:.c=.lo}: ${SLAXHEADERS}
 
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
--e 's/yyparse (void \*YYPARSE_PARAM)/slaxParse (slax_data_t *slax_data)/' \
+-e 's/yyparse (void.*/slaxParse (slax_data_t *slax_data)/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
 slaxparser.h slaxparser.c: slaxparser-out.y
@@ -93,8 +93,15 @@ SLAXPIECES = \
     slaxparser-xpl.y \
     ${srcdir}/slaxparser-tail.y
 
+
+if HAVE_BISON30
+BISON_HEADER = "%param {slax_data_t *slax_data}"
+else
+BISON_HEADER = 
+endif
+
 slaxparser-out.y: ${SLAXPIECES}
-	${ECHO_BUILD_${V}}cat ${SLAXPIECES} > $@
+	${ECHO_BUILD_${V}}(echo ${BISON_HEADER} ; cat ${SLAXPIECES} ) > $@
 
 if HAVE_READLINE
 LIBS += -L/opt/local/lib -lreadline
