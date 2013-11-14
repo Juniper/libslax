@@ -32,6 +32,7 @@ struct slax_data_s {
     int sd_errors;		/* Number of errors seen */
     FILE *sd_file;		/* File to read from */
     unsigned sd_flags;		/* Flags */
+    unsigned sd_flags_next;	/* Flags for the next yylex call */
     int sd_parse;		/* Parsing mode (M_PARSE_*) */
     int sd_ttype;		/* Token type returned on next lexer call */
     int sd_last;		/* Last token type returned */
