@@ -1174,6 +1174,10 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 	return rc;
     }
 
+    /* Add the record flags to the current set */
+    sdp->sd_flags |= sdp->sd_flags_next;
+    sdp->sd_flags_next = 0;
+
     /*
      * Discard the previous token by moving the start pointer
      * past it.
@@ -1304,6 +1308,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_WHILE:
     case K_WITH:
 	sdp->sd_flags |= SDF_NO_SLAX_KEYWORDS;
+	sdp->sd_flags_next |= SDF_NO_SLAX_KEYWORDS;
 	break;
 
     case K_ATTRIBUTE_SET:
@@ -1324,6 +1329,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     case K_USE_ATTRIBUTE_SETS:
     case K_VERSION:
 	sdp->sd_flags |= SDF_NO_KEYWORDS;
+	sdp->sd_flags_next |= SDF_NO_KEYWORDS;
 	break;
     }
 
