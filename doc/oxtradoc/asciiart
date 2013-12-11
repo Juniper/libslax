@@ -1,0 +1,789 @@
+#!/usr/bin/perl
+
+$opt_debug = 0;
+$opt_open = 0;
+
+# Return the character at a given (x,y) coordinate
+sub art_char_at {
+    my($x, $y) = @_;
+    return undef if $y < 0 || $x < 0;
+    return substr($lines[$y], $x, 1);
+}
+
+# Return non-zero if the character at a given (x,y) coordinate is
+# a member of the string what.
+sub art_char_is {
+    my($x, $y, $what) = @_;
+    my $v = art_char_at($x, $y);
+    $v = " " unless $v;
+    return 1 if $v eq $what;
+    return 1 if index($what, $v) >= 0;
+    return 0;
+}
+
+# Return non-zero if the (x,y) pair has been "seen" by a line
+# oriented in the given direction ("s", "e", "se", or "sw").
+# Use "*" for wildcarding/any.
+sub art_char_seen {
+    my($x, $y, $dir) = @_;
+
+    return $seen{$x . "," . $y . "," . $dir};
+}
+
+# Make an (x,y) pair as seen.
+sub art_char_seen_set {
+    my($x, $y, $dir) = @_;
+
+    $seen{$x . "," . $y . "," . $dir} = 1;
+    $seen{$x . "," . $y . ",*"} = 1;
+}
+
+sub art_rx {
+    my($x) = @_;
+    return ($x * $art_data->{cwidth}) + $art_data->{xmargin};
+}
+
+sub art_ry {
+    my($y) = @_;
+    return ($y * $art_data->{cheight}) + $art_data->{ymargin};
+}
+
+sub art_isalpha {
+    return 1 if $_[0] =~ /[A-Za-z]/;
+    return 0;
+}
+
+sub art_isalpha_at {
+    my($x, $y) = @_;
+    return art_isalpha(art_char_at($x, $y));
+}
+
+sub art_draw_add {
+    my $out = join(" ", @_);
+    print "data: ", $out, "\n" if $opt_debug;
+    push(@cdata, $out);
+}
+
+#$svg_text = "font-family='Verdana' font-size='55' fill='blue'";
+$svg_text = "";
+
+sub art_draw_text {
+    my($x, $y, $c, $comment) = @_;
+    my $rx = art_rx($x) + $art_data->{text_x};
+    my $ry = art_ry($y) + $art_data->{text_y};
+
+
+    if ($art_format eq "svg") {
+	# Escape backslashes and quotes
+	$c = "&lt;" if $c eq "<";
+	$c = "&gt;" if $c eq ">";
+	$c = "&amp;" if $c eq "&";
+	art_draw_add("<!-- $comment -->") if $comment && $opt_debug;
+	art_draw_add("<text x='$rx' y='$ry' $svg_text>$c</text>");
+    } else {
+	# Escape backslashes and quotes
+	$c = "\\\\" if $c eq "\\";
+	$c = "\\'" if $c eq "'";
+	art_draw_add("#$comment") if $comment && $opt_debug;
+	art_draw_add("text", "$rx,$ry", " '" . $c . "'");
+    }
+}
+
+sub art_draw_arrow {
+    my($x, $y, $dir) = @_;
+
+    $x += 1 if $dir eq "e";
+    $y += 1 if $dir eq "s";
+
+    if ($art_format eq "svg") {
+	art_draw_add("<path class='arrow' d='M", art_rx($x) . "," . art_ry($y),
+		     "l", $art_data->{arrow}->{$dir}, "z'/>");
+    } else {
+	art_draw_add("path 'M", art_rx($x) . "," . art_ry($y),
+		     "l", $art_data->{arrow}->{$dir}, "z'");
+    }
+}
+
+sub art_draw_marker {
+    my($x, $y) = @_;
+
+    if ($art_format eq "svg") {
+	art_draw_add("<path class='marker' d='M",
+		     art_rx($x) . "," . art_ry($y),
+		     "l -2,0 +2,-2 +2,+2 -2,+2 -2,-2 z'/>");
+    } else {
+	art_draw_add("path 'M", art_rx($x) . "," . art_ry($y),
+		     "l -2,0 +2,-2 +2,+2 -2,+2 -2,-2 z'");
+    }
+}
+
+sub art_draw_line {
+    my($x1, $y1, $x2, $y2, $comment) = @_;
+
+    if ($art_format eq "svg") {
+	art_draw_add("<!-- #$comment -->") if $comment && $opt_debug;
+	art_draw_add("<path class='line' d='M$x1,$y1 L $x2,$y2'/>");
+    } else {
+	art_draw_add("#$comment") if $comment && $opt_debug;
+	art_draw_add("path 'M$x1,$y1 L $x2,$y2'");
+#	art_draw_add("line $x1,$y1 $x2,$y2");
+    }
+}
+
+sub art_draw_bump_over {
+    my($x, $y) = @_;
+    my $rx = art_rx($x);
+    my $ry = art_ry($y) - $art_data->{bump_delta};
+
+    if ($art_format eq "svg") {
+	# $rx -= 1;
+	art_draw_add("<path class='erase' d='M", "$rx,$ry", "l",
+		     $art_data->{bump_end} . "'",
+		     "fill='white' stroke='white' stroke-width='3'/>");
+	art_draw_add("<path class='bump' d='M", "$rx,$ry",
+		     $art_data->{bump_path} . "'",
+		     "fill='white' stroke='black'/>");
+    } else {
+	art_draw_add("fill white");
+	art_draw_add("stroke black");
+	art_draw_add("path 'M", "$rx,$ry", $art_data->{bump_path} . "'");
+	art_draw_add("stroke transparent");
+	art_draw_add("fill black");
+    }
+}
+
+@art_corner = ( "se", "sw", "ne", "nw" );
+
+sub art_draw_curve {
+    my($x, $y) = @_;
+    my $rx = art_rx($x);
+    my $ry = art_ry($y);
+
+    my $dx = art_char_is($x - 1, $y, "-_") ? 0 : 1;
+    my $dy = art_char_is($x, $y - 1, "|") ? 0 : 2;
+    my $corner = $art_corner[$dx + $dy];
+
+    my $cd = $art_data->{corners}->{$corner};
+    return unless $cd;
+    my $ed = $cd;
+    $ed =~ s/q/l/;
+
+    if ($art_format eq "svg") {
+	# $rx -= 1;
+	art_draw_add("<path class='erase' d='M", "$rx,$ry", $ed . "'",
+		     "fill='white' stroke='white' stroke-width='3'/>");
+	art_draw_add("<path class='bump' d='M", "$rx,$ry", $cd . "'",
+		     "fill='white' stroke='black'/>");
+    } else {
+	art_draw_add("fill white");
+	art_draw_add("stroke white");
+	art_draw_add("path 'M", "$rx,$ry", $ed . "'");
+	art_draw_add("stroke black");
+	art_draw_add("path 'M", "$rx,$ry", $cd . "'");
+	art_draw_add("stroke transparent");
+	art_draw_add("fill black");
+    }
+}
+
+sub art_write_header {
+    my($width,$height) = @_;
+    my $rx = art_rx($width + 1);
+    my $ry = art_ry($height + 1);
+
+    if ($art_format eq "svg") {
+	art_draw_add("<?xml version='1.0' standalone='no'?>");
+	art_draw_add('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"'
+	     . ' "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">');
+	art_draw_add("<svg xmlns='http://www.w3.org/2000/svg' version='1.1'",
+	     "width='$rx' height='$ry'",
+	     "viewBox='0 0 $rx $ry'>");
+
+	art_draw_add("<style type='text/css'>");
+	art_draw_add("<![CDATA[");
+
+	art_draw_add("path.arrow, path.marker, path.line, path.bump {");
+	art_draw_add("stroke:", "black", ";");
+	art_draw_add("stroke-width:", $art_data->{stroke}, ";");
+	art_draw_add("}");
+
+	art_draw_add("text {");
+	art_draw_add("stroke-width:", $art_data->{stroke}, ";");
+	art_draw_add("font-family:", $art_data->{font_svg}, ";");
+	art_draw_add("font-size:", $art_data->{fontsize}, ";");
+	art_draw_add("}");
+
+	art_draw_add("]]>");
+	art_draw_add("</style>");
+
+    } else {
+	push(@cargs, "convert", "-size", "${rx}x${ry}", "xc:white");
+	push(@cargs, "-verbose") if $opt_debug;
+
+	art_draw_add("stroke-width", $art_data->{stroke});
+	art_draw_add("font", $art_data->{font});
+	art_draw_add("font-size", $art_data->{fontsize});
+    }
+}
+
+sub art_write_footer {
+    if ($art_format eq "svg") {
+	art_draw_add("</svg>");
+    } else {
+	# Nothing
+    }
+}
+
+sub art_char_set {
+    my($x, $y, $ch) = @_;
+    return if $y < 0 || $x < 0;
+
+    my $l = $lines[$y];
+    my $ns = substr($l, 0, $x) . $ch . substr($l, $x + 1);
+    $lines[$y] = $ns;
+}
+
+%pre_fine = (
+    "e" => "+-|vV^\\/",
+    "s" => "+|-_<>vV^",
+    "se" => "+|-_<>|vV^/\\",
+    "sw" => "+|-_<>|vV^/\\",
+);
+
+%post_fine = (
+    "e" => "+->|",
+    "s" => "+-_|vV",
+    "se" => "+->|/\\",
+    "sw" => "+->|/\\",
+);
+
+%stack_fine = (
+    "e" => "|",
+    "s" => "-_",
+);
+
+%fine_data = (
+    "e" => ":+-_<>)/\\",
+    "s" => ":+|vV^)",
+    "se" => "+|-_vV^<>/\\",
+    "sw" => "+|-_vV^<>/\\",
+);
+
+sub art_check_line {
+    my($sx, $sy, $dx, $dy, $dir) = @_;
+
+    # If we've seen this spot before, as part of another line
+    return 1 if art_char_seen($sx, $sy, $dir);
+
+    my $len = 0;
+    my $fine = $fine_data{$dir};
+    my $x = $sx;
+    my $y = $sy;
+    my $fx = 0;
+    my $fy = 0;
+    my $i;
+    my $v;
+    my $skip = 0;
+    my $start;
+    my $tag = "";
+
+    for (;;) {
+	$v = art_char_at($x, $y);
+	last unless $v;		# nothig there
+	last if index($fine, $v) < 0; # bail if not fine
+
+	# Can't be a line if we're starting at the bottom
+	last if $len == 1 && ($v eq "v" || $v eq "V");
+	$len += 1;
+	$x += $dx;
+	$y += $dy;
+
+	if ($x > $sx) {
+	    if ($dx != 0) {
+		last if $v eq "|";
+	    }
+	    if ($dy != 0) {
+		last if $v eq "-" || $v eq "_";
+	    }
+	}
+    }
+
+    $len -= 1;
+
+    # We want a line between blocks to touch both blocks
+    # But if the line terminates with a "+", don't get confused
+    unless (art_char_is($sx, $sy, "+")) {
+	# Don't consider a single "line" character real if it's with
+	# normal text
+	if ($len > 0 || $dir ne "e"
+	    || !art_isalpha_at($sx + 1, $sy)) {
+	    # If the preceeding character is a drawing element, extend
+	    # the line to it
+	    if (art_char_is($sx - $dx, $sy - $dy, $pre_fine{$dir})) {
+		$fx = $dx;
+		$fy = $dy;
+	    }
+	} elsif (len > 0 && art_char_is($sx - $dx, $sy - $dy, " ")) {
+	}
+    }
+
+    # If we didn't end at a "+", we make want to extend to the next block
+    unless (art_char_is($sx + ($dx * $len), $sy + ($dy * $len), "+")) {
+	if (art_char_is($sx + ($dx * ($len + 1)), $sy + ($dy * ($len + 1)),
+		    $post_fine{$dir})) {
+	    # If the next character is a block, extend the line
+	    $len += 1;
+	} elsif (art_char_is($sx + ($dx * $len), $sy + ($dy * $len), "vV>")
+	    && art_char_is($sx + ($dx * ($len + 1)),
+			   $sy + ($dy * ($len + 1)), " ")) {
+	    # If we end on an arrow and the next character is a space, extend
+	    $len += 1;
+	}
+    }
+
+    if ($len <= 0) {
+	if (art_char_is($sx, $sy, "+")
+	    && art_char_is($sx - $dx, $sy - $dy, $stack_fine{$dir})) {
+	    # We are looking at a "stack" of boxes, with each one
+	    # covering all by the edges of the one beneath it.
+	    $len = 0;
+	    $fx = $dx;
+	    $fy = $dy;
+	    $tag = " (stack)";
+	}
+    }
+
+    # Some art has the se/sw line with a 2/1 angle but the e/w/n/s line
+    # is misplaced, being one space too close to hit the 2/1 intercept.
+    # This is most annoying, but looks fine in the ascii version.
+    # So we look for "short" intercepts and extend the line up/down as
+    # needed.  It's fairly ugly, but.....
+    if ($dir eq "se" || $dir eq "sw") {
+	# Look at the bottom of the line for a disconnect to an eastern line
+	my $hx = $sx + ($dx * ($len + 1));
+	my $hy = $sy + ($dy * ($len + 1));
+	if (art_char_is($hx, $hy, " ")) {
+	    if (art_char_is($hx + $dx, $hy, "-_")) {
+		# We "rewrite" the eastern line to add the connector
+		my $nch = art_char_at($hx + $dx, $hy);
+		art_char_set($hx, $hy, $nch);
+		$len += 1;
+		$tag = " (intercept)";
+	    }
+	}
+
+	# Look at the top of the line for a disconnect to an eastern line
+	$hx = $sx - ($dx * 2);
+	$hy = $sy - $dy;
+	if ($len > 0 && art_char_is($hx + $dx, $hy, " ")) {
+	    if (art_char_is($hx, $hy, "-_")) {
+		$fx = $dx;
+		$fy = $dy;
+		$tag = " (pre-intercept)";
+		# Since the line is already drawn, we can't rewrite it
+		# as above. So we write a new line to make the connection.
+		# Ugly, but ...
+		art_draw_line(art_rx($hx), art_ry($hy),
+			      art_rx($hx) + ($dx * $art_data->{cwidth}),
+			      art_ry($hy),
+			      "len 1, ($hx,$hy) $dir (hack)");
+	    }
+
+	    # Look for a connection to a se/sw line
+	    if (art_char_is($sx, $hy, "/\\")) {
+		$tag = " (pre-intercept2)";
+		# Since the line is already drawn, we can't rewrite it
+		# as above. So we write a new line to make the connection.
+		# Ugly, but ...
+		art_draw_line(art_rx($sx), art_ry($sy),
+			      art_rx($sx) - ($dx * $art_data->{cwidth} / 2),
+			      art_ry($sy) - ($dy * $art_data->{cheight} / 2),
+			      "len 1, ($sx,$sy) $dir (hack diagonal)");
+	    }
+
+	    # Look for a connection to the top of a se/sw line
+	    if (art_char_is($sx + 1, $sy, "\\")) {
+		$tag = " (pre-intercept3)";
+		# Since the line is already drawn, we can't rewrite it
+		# as above. So we write a new line to make the connection.
+		# Ugly, but ...
+		art_draw_line(art_rx($sx), art_ry($sy),
+			      art_rx($sx) - ($dx * $art_data->{cwidth} / 2),
+			      art_ry($sy) - ($dy * $art_data->{cheight} / 2),
+			      "len 1, ($sx,$sy) $dir (hack diagonal2)");
+		art_draw_line(art_rx($sx + 1), art_ry($sy),
+			      art_rx($sx) - ($dx * $art_data->{cwidth} / 2),
+			      art_ry($sy) - ($dy * $art_data->{cheight} / 2),
+			      "len 1, ($sx,$sy) $dir (hack diagonal3)");
+	    }
+	}
+
+	# Look at the bottom of the line for the other sort of disconnect,
+	# where the southern line is too close to the se/sw line.
+	$hx = $sx + ($dx * $len) + 1;
+	$hy = $sy + ($dy * ($len + 1));
+	if (art_char_is($hx + $dx, $hy, " ")) {
+	    if (art_char_is($hx, $hy, "|")) {
+		# This is a tricky case, since the intercept will be in the
+		# middle of the square.  We have to draw _two_ lines to make
+		# the connection.
+		my $rx = art_rx($hx);
+		my $ry = art_ry($hy) - $art_data->{cheight} / 2;
+
+		art_draw_line($rx, $ry,
+			  art_rx($sx) + ($len * $dx * $art_data->{cwidth}),
+			  art_ry($sy) + ($len * $dy * $art_data->{cheight}),
+			  "len 1, ($hx,$hy) $dir (hack2)");
+		art_draw_line($rx, $ry, art_rx($hx), art_ry($hy));
+	    }
+	}
+
+	$hx = $sx + ($dx * $len);
+	$hy = $sy + ($dy * $len);
+	if ($len > 0 && art_char_is($hx + $dx, $hy, " ")) {
+	    # Look for a connection to a se/sw line
+	    if (art_char_is($hx, $hy, "/\\")) {
+		my $rx = art_rx($hx);
+		my $ry = art_ry($hy);
+
+		art_draw_line($rx, $ry,
+			  $rx + ($dx * $art_data->{cwidth} / 2),
+			  $ry + ($dy * $art_data->{cheight} / 2),
+			  "len 1, ($hx,$hy) $dir (hack2)");
+	    }
+	}
+
+	# Look for a connection to the bottom of a se/sw line
+	if ($len > 0 && art_char_is($hx + $dx, $hy, "/")) {
+	    $tag = " (pre-intercept3)";
+	    # Since the line is already drawn, we can't rewrite it
+	    # as above. So we write a new line to make the connection.
+	    # Ugly, but ...
+	    art_draw_line(art_rx($hx), art_ry($hy),
+			  art_rx($hx) + ($dx * $art_data->{cwidth} / 2),
+			  art_ry($hy) + ($dy * $art_data->{cheight} / 2),
+			  "len 1, ($hx,$hy) $dir (hack diagonal2)");
+	    art_draw_line(art_rx($hx + 1), art_ry($hy),
+			  art_rx($hx) + ($dx * $art_data->{cwidth} / 2),
+			  art_ry($hy) + ($dy * $art_data->{cheight} / 2),
+			  "len 1, ($hx,$hy) $dir (hack diagonal3)");
+	}
+    }
+
+    # If the "+" is at the top of a diagonal line, just make a marker
+    if (len <= 0 && art_char_is($sx, $sy, "+")
+	&& (art_char_is($sx - 1, $sy + 1, "/")
+	    || art_char_is($sx - 1, $sy + 2, "/")
+	    || art_char_is($sx + 1, $sy + 1, "\\")
+	    || art_char_is($sx + 1, $sy + 2, "\\"))) {
+	art_draw_marker($sx, $sy);
+	return 1;
+    }
+
+    # If we only found a single character of a line, skip it
+    unless ($fx || $fy) {
+	return 0 unless $len > 0;
+    }
+
+    # Draw our line
+    art_draw_line(art_rx($sx - $fx), art_ry($sy - $fy),
+	      art_rx($sx) + ($len * $dx * $art_data->{cwidth}),
+	      art_ry($sy) + ($len * $dy * $art_data->{cheight}),
+	      "len $len, ($sx,$sy) $dir$tag");
+
+    # Look back along the line for decorations, like arrows and markers
+    # At the same time, mark each x/y we look at as seen so we won't
+    # draw it again.
+    $x = $sx;
+    $y = $sy;
+    for ($i = 0; $i <= $len; $i++) {
+	$v = art_char_at($x, $y);
+	last unless $v;
+	last if index($fine, $v) < 0;
+
+	if ($v eq "<") {
+	    $fx = $dx if art_char_is($x - 1, $y, "+");
+	    art_draw_arrow($x - $fx, $y, "w");
+	} elsif ($v eq ">") {
+	    art_draw_arrow($x, $y, "e");
+	} elsif ($v eq "^") {
+	    $fy = $dy if art_char_is($x, $y - 1, "+");
+	    art_draw_arrow($x, $y - $fy, "n");
+	} elsif ($v eq "v" || $v eq "V") {
+	    art_draw_arrow($x, $y, "s");
+	} elsif ($v eq "+") {
+	    art_draw_marker($x, $y);
+	} elsif ($v eq ")") {
+	    art_draw_bump_over($x, $y);
+	} elsif ($v eq ":") {
+	    art_draw_curve($x, $y);
+	}
+
+	print "seen{$x, $y, $dir} (" . art_char_at($x,$y) . ") "
+	    . art_char_seen($x, $y, $dir) . " -> 1\n" if $opt_debug;
+	art_char_seen_set($x, $y, $dir);
+	$x += $dx;
+	$y += $dy;
+    }
+
+    if (0) {
+	$v = art_char_at($x, $y);
+	if ($v && index($post_fine{$dir}, $v) >= 0) {
+	    print "seen{$x,$y,$dir} (" . art_char_at($x,$y) . ") trailer"
+		. art_char_seen($x, $y, $dir) . " -> 1\n" if $opt_debug;
+	    art_char_seen_set($x, $y, $dir);
+	}
+    }
+
+    return 1;
+}
+
+%art_size_data = (
+    "m" => {
+	font => "American-Typewriter-Bold",
+	font_svg => "New Courier,Courier,Times,monospace",
+	fontsize => 14,
+	stroke => 1,
+	cwidth => 11,
+	cheight => 18,
+	xmargin => 11,
+	ymargin => 18,
+	text_x => -4,
+	text_y => +4,
+	arrow => {
+	    # The @arrow arry maps a direction in the coordinates for an arrow
+
+	    "e" => "-13,-4  +4,+4  -4,+4  +13,-4",
+	    "w" => "+13,-4  -4,+4  +4,+4  -13,-4",
+	    "n" => "-4,+13  +4,-4  +4,+4  -4,-13",
+	    "s" => "-4,-13  +4,+4  +4,-4  -4,+13",
+	},
+	bump_delta => 5,
+	bump_path => "q 10,5 0,10",
+	bump_end => "0,10",
+	corners => {
+	    "ne" => "m -5,0 q 5,0 5, 5",
+	    "nw" => "m 5,0 q -5,0 -5, 5",
+	    "se" => "m -5,0 q 5,0 5, -5",
+	    "sw" => "m 5,0 q -5,0 -5, -5",
+	},
+    },
+    "l" => {
+	font => "Optima-Bold",
+	fontsize => 18,
+	stroke => 1,
+	cwidth => 15,
+	cheight => 35,
+	xmargin => 15,
+	ymargin => 35,
+	text_x => -5,
+	text_y => +5,
+	arrow => {
+	    # The @arrow arry maps a direction in the coordinates for an arrow
+
+	    "e" => "-15,-5  +5,+5  -5,+5  +15,-5",
+	    "w" => "+15,-5  -5,+5  +5,+5  -15,-5",
+	    "n" => "-5,+15  +5,-5  +5,+5  -5,-15",
+	    "s" => "-5,-15  +5,+5  +5,-5  -5,+15",
+	},
+	bump_delta => 5,
+	bump_path => "q 10,5 0,10",
+	bump_end => "0,10",
+    },
+);
+
+sub art_build_image {
+    local($base, $size, @lines) = @_;
+    local @cdata;
+    local $art_data = $art_size_data{$size};
+    local %seen;
+
+    my $x;
+    my $y;
+    my $tw;
+
+    # First find the smallest leading whitespace
+    my $start = 40;
+    for ($y = 0; $y <= $#lines; $y++) {
+	next if $lines[$y] =~ /^([ ]*)$/;
+	my($leading) = ($lines[$y] =~ /^([ ]*)/);
+	$x = length($leading);
+	$start = $x if $start > $x;
+    }
+
+    # Trim off leading whitespace
+    if ($start > 0) {
+	$start -= 1;
+
+	for ($y = 0; $y <= $#lines; $y++) {
+	    $lines[$y] = substr($lines[$y], $start);
+	}
+    }
+
+    # Find the widest line
+    my $width = 10;
+    for ($y = 0; $y <= $#lines; $y++) {
+	$tw = length($lines[$y]);
+	$width = $tw if $width < $tw;
+    }
+
+    art_write_header($width, $#lines);
+
+    for ($y = 0; $y <= $#lines; $y++) {
+	local $line = $lines[$y];
+	my $len = length($line);
+	my($last, $c);
+
+	for ($x = 0; $x < $len; $x++) {
+	    $last = $c;
+	    $c = substr($line, $x, 1);
+	    print "art_char_at($x,$y): $c\n" if $opt_debug;
+	    my $hit = 0;
+
+	    art_draw_line(art_rx($x), art_ry($y),
+			  art_rx($x) + 1, art_ry($y) + 1, "tick")
+		if $opt_debug;
+
+	    next if $c eq " ";
+
+	    if ($c eq "-" || $c eq "_") {
+		# If we're in the middle of a line, do nothing
+		next if $last eq "-" || $last eq "_" || $last eq "<";
+		$hit += art_check_line($x, $y, 1, 0, "e");
+
+	    } elsif ($c eq "\\") {
+		# Diagonal lines come in two flavors: 30 and 45 degrees
+		# So we look for both (dx of 2 and 1)
+		$hit += art_check_line($x, $y, 1, 1, "se");
+		$hit += art_check_line($x, $y, 2, 1, "se") unless $hit;
+
+	    } elsif ($c eq "/") {
+		# If a slash appears in the middle of text, then it's boring
+		if (art_isalpha_at($x - 1, $y)) {
+		    $hit = 0;
+		} else {
+		    # Handle 30 and 45 degree angled lines
+		    $hit += art_check_line($x, $y, -1, 1, "sw");
+		    $hit += art_check_line($x, $y, -2, 1, "sw") unless $hit;
+		}
+
+	    } elsif ($c eq ">") {
+		# Eastern lines are handled already
+		$hit = art_char_seen($x, $y, "e");
+
+	    } elsif ($c eq "<") {
+		# This is normal eastern line
+		$hit = art_char_seen($x, $y, "e");
+		$hit += art_check_line($x, $y, 1, 0, "e") unless $hit;
+
+	    } elsif ($c eq "+") {
+		# A plus is typically the corner of a block, and if
+		# it's the north-west corner, we have east and south lines
+		$hit += art_check_line($x, $y, 1, 0, "e");
+		$hit += art_check_line($x, $y, 0, 1, "s");
+
+	    } elsif ($c eq ":" && !art_isalpha_at($x - 1, $y)) {
+		# A plus is typically the corner of a block, and if
+		# it's the north-west corner, we have east and south lines
+		$hit += art_check_line($x, $y, 1, 0, "e");
+		$hit += art_check_line($x, $y, 0, 1, "s");
+
+	    } elsif ($c eq "|" || $c eq "^" || $c eq "v" || $c eq "V") {
+		if (art_char_seen($x, $y, "s")) {
+		    # Already seen and handled
+		    $hit = 1;
+		} elsif (art_isalpha_at($x - 1, $y)
+			 || art_isalpha_at($x + 1, $y)) {
+		    # In the middle of text
+		    $hit = 0;
+		} elsif ($y == 0 || art_char_at($x, $y - 1) ne '|') {
+		    # Look for a southern line
+		    $hit += art_check_line($x, $y, 0, 1, "s");
+		} else {
+		    # Have we seen it already?
+		    $hit = art_char_seen($x, $y, "s");
+		}
+	    }
+
+	    # If it's been handled, move along
+	    $hit += 1 if art_char_seen($x, $y, "*");
+
+	    if ($hit == 0) {
+		# Add the single character as text
+		art_draw_text($x, $y, $c, "text ($x,$y) -> $c");
+	    }
+	}
+    }
+
+    art_write_footer();
+
+    return @cdata;
+}
+
+sub art_build_png {
+    local($base, $size, @lines) = @_;
+    local $art_format = "png";
+    local @cargs;
+
+    my @cdata = art_build_image($base, $size, @lines);
+
+    print "data: \n" . join("\n", @cdata) . "\n" if $opt_debug;
+
+    open(MVG, ">$base.mvg");
+    print MVG join("\n", @cdata) . "\n";
+    close(MVG);
+
+    push(@cargs, "-draw", "\@$base.mvg", "$base.png");
+    print "'" . join("' '", @cargs) . "'\n" if $opt_debug;
+    system(@cargs) == 0 or die "convert failed: $?";
+    system("open", "$base.png") if $opt_open;
+}
+
+sub art_build_svg {
+    local($base, $size, @lines) = @_;
+    local $art_format = "svg";
+
+    my @cdata = art_build_image($base, $size, @lines);
+
+    open(SVG, ">$base.svg");
+    print SVG join("\n", @cdata) . "\n";
+    close(SVG);
+}
+
+sub main {
+    my $file;
+    my $base;
+    my $size = "m";
+    my $svg;
+
+    while ($ARGV[0] =~ /^-/) {
+	$_ = shift @ARGV;
+	$opt_debug = 1 if /^-D/;
+	$file = shift @ARGV if /^-f/;
+	$base = shift @ARGV if /^-o/;
+	$opt_open = 1 if /^-O/;
+	$size = shift @ARGV if /^-s/;
+	$svg = 1 if /^-S/;
+    }
+
+    $file = shift @ARGV unless $file;
+    die "missing filename" unless $file;
+    unless ($base) {
+	($base) = ($file =~ m:([^\./]+)(\.[^\./]+)?$:);
+	$base = "out" unless $base;
+    }
+
+    open(FILE, $file);
+    @lines = <FILE>;	# Read the entire input file into an array
+    close FILE;
+    chomp(@lines);	# Trim newlines off each input line
+
+    if ($svg) {
+	art_build_svg($base, $size, @lines);
+    } else {
+	art_build_png($base, $size, @lines);
+    }
+}
+
+_main: {
+    &main();
+}
