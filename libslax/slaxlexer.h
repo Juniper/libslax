@@ -60,8 +60,9 @@ struct slax_data_s {
 #define SDF_OPEN_COMMENT	(1<<3)	/* EOF with open comment */
 
 #define SDF_JSON_KEYWORDS	(1<<4) /* Allow JSON keywords */
-#define SDF_NO_TYPES		(1<<5)/* Do not decorate nodes w/ type info */
+#define SDF_NO_TYPES		(1<<5) /* Do not decorate nodes w/ type info */
 #define SDF_CLEAN_NAMES		(1<<6) /* Clean element names, if needed */
+#define SDF_JSON_NO_MEMBERS	(1<<7) /* Don't use <member>s as json arrays */
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
