@@ -1984,7 +1984,7 @@ if_stmt :
 		}
 	    block
 		{
-		    slaxElementPop(slax_data); /* Pop when */
+		    slaxElementPop(slax_data); /* Pop the ELT_WHEN node */
 		    $$ = NULL;
 		}
 	    elsif_stmt_list else_stmt
@@ -3498,16 +3498,21 @@ json_value :
 
 json_array :
 	L_OBRACK
-	    {
-		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
-		slaxElementOpen(slax_data, ELT_MEMBER);
-		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
-		$$ = NULL;
-	    }
+		{
+		    const char *member = ELT_MEMBER;
+		    if (slax_data->sd_flags & SDF_JSON_NO_MEMBERS)
+			member = (const char *) slax_data->sd_ctxt->node->name;
+
+		    slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		    slaxElementOpen(slax_data, member);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
             json_element_list_or_empty L_CBRACK
 		{
 		    slaxJsonClearMember(slax_data);
 		    $$ = NULL;
+		    STACK_UNUSED($2);
 		}
 	;
 
