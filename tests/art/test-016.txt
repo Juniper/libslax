@@ -1,0 +1,17 @@
+      +--rw system
+         +--rw dns
+            +--rw search*    inet:host
+            +--rw server*    inet:ip-address
+            +--rw options
+               +--rw timeout?    uint8
+               +--rw attempts?   uint8
+
+      +--rw system
+         +--rw radius
+            +--rw server [address]
+            |  +--rw address                inet:host
+            |  +--rw authentication-port?   inet:port-number
+            |  +--rw shared-secret?         string
+            +--rw options
+               +--rw timeout?    uint8
+               +--rw attempts?   uint8
