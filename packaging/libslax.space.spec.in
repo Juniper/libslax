@@ -1,0 +1,58 @@
+Name:        @PACKAGE_NAME@
+Version:     @PACKAGE_VERSION@
+Release:     1%{?dist}
+Summary:     The SLAX language (XSLT alternative)
+
+Prefix:      /usr
+
+Vendor:      Juniper Networks, Inc.
+Packager:    Phil Shafer <phil@juniper.net>
+License:     BSD
+
+Group:       Development/Libraries
+URL:         https://github.com/Juniper/libslax
+Source0:     https://github.com/Juniper/@PACKAGE_NAME@/releases/@PACKAGE_VERSION@/@PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz
+
+BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}-root
+
+BuildRequires:  libxml2-devel
+BuildRequires:  libxslt-devel
+BuildRequires:  curl-devel
+BuildRequires:  libedit-devel
+BuildRequires:  bison-devel
+BuildRequires:  bison
+
+%description
+Welcome to libslax, an implementation of the SLAX language, an alternate
+syntax for XSLT that follow the patterns of C and Perl. This library
+builds on the most excellent work of Daniel Veillard et al in the
+libxml2 and libxslt libraries, for which I heartily give thanks.
+
+NOTE: This is the spec file used for JUNOS Space, and should not
+be used for other builds;  use libslax.spec instead.
+
+%prep
+%setup -q
+
+%build
+%configure
+make %{?_smp_mflags}
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make ROOT="$RPM_BUILD_ROOT" install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%post -p /sbin/ldconfig
+
+%files
+%{_bindir}/*
+%{_includedir}/libslax/*
+%{_libdir}/*
+%{_datadir}/oxtradoc/*
+%{_datadir}/doc/libslax/*
+%docdir %{_datadir}/doc/libslax/*
+%{_mandir}/*/*
+%docdir %{_mandir}/*/*
