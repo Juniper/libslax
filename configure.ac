@@ -67,6 +67,7 @@ AC_CHECK_FUNCS([asprintf])
 
 AC_CHECK_HEADERS([dlfcn.h])
 AC_CHECK_HEADERS([tzfile.h])
+AC_CHECK_HEADERS([stdtime/tzfile.h])
 AC_CHECK_FUNCS([dlfunc])
 
 AC_CHECK_HEADERS([sys/time.h])
@@ -472,6 +473,7 @@ AC_CONFIG_FILES([
   extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile
+  tests/art/Makefile
   tests/core/Makefile
   tests/bugs/Makefile
   tests/errors/Makefile
@@ -481,6 +483,7 @@ AC_CONFIG_FILES([
   doc/oxtradoc/oxtradoc
   packaging/libslax.pc
   packaging/libslax.spec
+  packaging/libslax.space.spec
   packaging/libslax.rb.base
   packaging/freebsd/port-Makefile
 ])
