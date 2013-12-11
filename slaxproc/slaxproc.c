@@ -50,6 +50,7 @@ static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_slax_output;	/* Make output in SLAX format */
 static int opt_json_tagging;	/* Tag JSON output */
+static int opt_json_flags;	/* Flags for JSON conversion */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -219,7 +220,7 @@ do_json_to_xml (const char *name UNUSED, const char *output,
     input = get_filename(input, &argv, 0);
     output = get_filename(output, &argv, -1);
 
-    docp = slaxJsonFileToXml(input, NULL, 0);
+    docp = slaxJsonFileToXml(input, NULL, opt_json_flags);
     if (docp == NULL) {
 	errx(1, "cannot parse file: '%s'", input);
         return -1;
@@ -654,7 +655,9 @@ print_help (void)
 "\t--json-tagging: tag json-style input with the 'json' attribute\n"
 "\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
 "\t--name <file> OR -n <file>: read the script from the given file\n"
+"\t--no-json-types: do not insert 'type' attribute for --json-to-xml\n"
 "\t--no-randomize: do not initialize the random number generator\n"
+"\t--no-tty: do not fall back to stdin for tty io\n"
 "\t--output <file> OR -o <file>: make output into the given file\n"
 "\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
 "\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
@@ -804,6 +807,9 @@ main (int argc UNUSED, char **argv)
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
 	    name = *++argv;
+
+	} else if (streq(cp, "--no-json-types")) {
+	    opt_json_flags |= SDF_NO_TYPES;
 
 	} else if (streq(cp, "--no-randomize")) {
 	    randomize = 0;
