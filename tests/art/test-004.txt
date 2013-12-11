@@ -1,0 +1,18 @@
+       +------+ +-----+ +-----+       +-----+
+       |Telnet| | FTP | |Voice|  ...  |     |  Application Level
+       +------+ +-----+ +-----+       +-----+
+             |   |         |             |
+            +-----+     +-----+       +-----+
+            | TCP |     | RTP |  ...  |     |  Host Level
+            +-----+     +-----+       +-----+
+               |           |             |
+            +-------------------------------+
+            |    Internet Protocol & ICMP   |  Gateway Level
+            +-------------------------------+
+                           |
+              +---------------------------+
+              |   Local Network Protocol  |    Network Level
+              +---------------------------+
+
+                         Protocol Relationships
+
