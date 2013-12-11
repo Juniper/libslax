@@ -1,0 +1,185 @@
+#
+#  -*-  indent-tabs-mode:nil -*-
+# Copyright (c) 2013, Juniper Networks, Inc.
+# All rights reserved.
+# This SOFTWARE is licensed under the LICENSE provided in the
+# ../Copyright file. By downloading, installing, copying, or otherwise
+# using the SOFTWARE, you agree to be bound by the terms of that
+# LICENSE.
+#
+
+#
+#  RFCDOC -- a tool for writing RFCs without writing XML
+#            Phil Shafer <phil@juniper.net>
+#
+
+RFCDOC is a tool for formatting RFCs, Internet Drafts, manuals,
+documentation, and any other thing you happen to need to write.
+By combining normal text conventions with some simple format rules,
+high-quality output is possible using source files that are
+neither XML nor application specific (Word, FooEdit, etc).  Since the
+source contents are text, traditional tools like diff, patch, and
+grep work normally, as do source repository tools.  Sanity is
+preserved and work is minimized.  By using XML2RFC as an intermediate
+format, tools tailored to that format can be used as well.
+
+This documentation covers the RFCDOC format, the rules, and the tools
+used to turn normal text into RFCs and other high-quality
+documentation.
+
+* RFCDOC (Overview)
+
+** History
+
+It all began about a zillion years ago, when I had to write an
+Internet Draft.  The tools for writing drafts are mostly barbaric, and
+I like text, so I started writing normal text, and when the content
+was finished, I wrote a perl script to turn my text document into a
+draft (^http://tools.ietf.org/html/draft-shafer-js-xml-api-00^).  I
+continued to use it internally for functional specs, internal
+documentation, and even user documentation.  Though user documentation
+was merely the source content feed to the TechPubs group at Juniper,
+one can see bits of the original docs in the ASCII art rendered
+in ^http://www.juniper.net/techpubs/en_US/junos/topics/concept/junos-script-automation-commit-script-works.html^,
+which still makes me smile.
+
+Over the years, this tool been used by others inside and outside
+Juniper Networks.  It has been used for most of the NETMOD and NETCONF
+working group documents, including RFC6020 and RFC6244.
+
+The open-source libslax and juise projects use these tools for their
+documentation, which required adding a more web-friendly HTML
+rendering.
+
+Finally, seeing too many IETF slides containing ASCII art convinced me
+to add code to render ASCII art into SVG.
+
+RFCDOC has helped me write and present documentation written with
+normal text within the happy confines of my favorite editor (emacs).
+I'm hoping it will be useful to you also.
+
+** RFCDOC in Sixty Seconds
+
+Here are the formatting layout rules for writing documents for RFCDOC:
+
+- Use your favorite editor, such as emacs or vi, in text mode.
+- Use normal text for paragraphs, putting newlines as needed.
+- Use "*"s before headings, with the number of "*"s indicating depth.
+- Use a single blank line to separate paragraphs.
+- Use "-" to start "bullet" lists (like this one).
+- Use indented "-"s to make deep bullet lists.
+- Use "+" to start numbered bullet lists.
+- Use "=" to make hanging lists.
+- Use "#" for comments.
+- Use indentation to indicated code.
+- Use ASCII art to draw pictures.
+- Use uphats ("^") to make references.
+- Use "@"s in headings to define references.
+- Use "|" as the column separator for tables (ala org-mode).
+- Use "!!" for wiki-style tables.
+- Use "{{{ }}}" to hold extra information, such as FAQs, digressions,
+examples, or document information.
+
+Nothing here is earth shattering, awe inspiring, or amazing, except
+that you can write normal text in your normal editor and produce
+good-looking documentation.
+
+If you are an emacs user, the following modes may be useful:
+
+|----------------+--------------------------------|
+| Name           | Functionality                  |
+|----------------+--------------------------------|
+| outline-mode   | organizing hierarchy           |
+| org-mode       | tables                         |
+| auto-fill-mode | automatic newlines/indentation |
+| fly-spell-mode | spelling checker               |
+|----------------+--------------------------------|
+
+In the remaining sections of this document, we'll look at these text
+conventions and give examples, but if you are a learn-by-example sort
+of person, the SLAX manual would be the place to start.  The text
+version is
+^https://raw.github.com/Juniper/libslax/master/doc/slax.txt^
+and the HTML version is
+^http://juniper.github.io/libslax/slax-manual.html^.
+
+** RFCDOC In Depth
+
+In this section, we'll revisit some of the information in the "Sixty
+Second" overview with more details.
+
+*** Text, Your Old Friend
+
+RFCDOC input is normal ASCII text, allowing any traditional text tools
+to be used to edit, process, inspect, or store RFCDOC files.  Use your
+favorite editor, grep, awk, 
+
+*** Paragraphs
+
+RFCDOC keeps paragraphs in normal text style, with newlines within
+paragraphs and blank lines separating paragraphs.
+
+{{{doc-example:
+
+}}}
+
+*** Headings with "*"s
+
+RFCDOC uses the convention from Emacs outline-mode
+(^http://gnu.org/software/emacs/manual/html_node/emacs/Outline-Mode.html^)
+which uses section header lines that begin with one or more asterisks
+('*'), with the number of asterisks indicating the depth of the
+heading.  One asterisks ("*") followed by a name would be high-level
+topic, while five asterisks ("*****") would be a minor topic.  For
+example, this document begins with "* RFCDOC (Overview)", "**
+History", and "** RFCDOC in Sixty Seconds" headings.
+
+Outline-mode gives excellent key-bindings for traversing and
+organizing nodes within a document, and these are indispensable to
+writers.
+
+{{{doc-example:
+
+**** Four Star Heading (Example)
+
+Some example text here.
+
+***** Five Star Heading (Example)
+
+More text here
+
+}}}
+
+*** Lists
+
+Four distinct types of lists are supported:
+
+- simple bullet lists
+- nested bullet lists
+- numbered lists
+- hanging lists
+
+Simple lists are lines that start with a dash ("-"), followed by the
+list text.
+
+{{{doc-example:
+
+- simple bullet lists
+- nested bullet lists
+- numbered lists
+- hanging lists
+
+}}}
+
+*** Use indented "-"s to make deep bullet lists.
+*** Use "+" to start numbered bullet lists.
+*** Use "=" to make hanging lists.
+*** Use "#" for comments.
+*** Use indentation to indicated code.
+*** Use ASCII art to draw pictures.
+*** Use uphats ("^") to make references.
+*** Use "@"s in headings to define references.
+*** Use "|" as the column separator for tables (ala org-mode).
+*** Use "!!" for wiki-style tables.
+*** Use "{{{ }}}" to hold extra information, such as FAQs, digressions,
+examples, or document information.
