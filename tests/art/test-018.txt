@@ -1,0 +1,6 @@
+   DEVICE     LOCAL DHCP 
+     |          SERVER  
+     |             |   
+     |------------>|  
+     |  <pu>.<ey>  | 
+     |             |

@@ -248,7 +248,7 @@
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
 %token M_JSON			/* Parse a JSON document */
 
-%pure_parser
+%pure-parser
 
 /*
  * %expect is a hack, but adding the JSON-like encoding option
@@ -470,7 +470,8 @@ error_conditions :
 
 	| error L_OBRACE rack_up_the_errors_list L_CBRACE
 		{
-		    yyerror("error recovery ignores input until this point");
+		    yyerror2(slax_data,
+			    "error recovery ignores input until this point");
 		    yyclearin;
 		    yyerrok;
 		    $$ = NULL;
@@ -1983,7 +1984,7 @@ if_stmt :
 		}
 	    block
 		{
-		    slaxElementPop(slax_data); /* Pop when */
+		    slaxElementPop(slax_data); /* Pop the ELT_WHEN node */
 		    $$ = NULL;
 		}
 	    elsif_stmt_list else_stmt
@@ -3497,16 +3498,21 @@ json_value :
 
 json_array :
 	L_OBRACK
-	    {
-		slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
-		slaxElementOpen(slax_data, ELT_MEMBER);
-		slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
-		$$ = NULL;
-	    }
+		{
+		    const char *member = ELT_MEMBER;
+		    if (slax_data->sd_flags & SDF_JSON_NO_MEMBERS)
+			member = (const char *) slax_data->sd_ctxt->node->name;
+
+		    slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
+		    slaxElementOpen(slax_data, member);
+		    slaxJsonAddTypeInfo(slax_data, VAL_MEMBER);
+		    $$ = NULL;
+		}
             json_element_list_or_empty L_CBRACK
 		{
 		    slaxJsonClearMember(slax_data);
 		    $$ = NULL;
+		    STACK_UNUSED($2);
 		}
 	;
 

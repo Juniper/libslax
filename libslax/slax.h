@@ -74,9 +74,9 @@ slaxLoadFile(const char *, FILE *, struct _xmlDict *, int);
  * @param partial TRUE if parsing partial SLAX contents
  * @return xml document pointer
  */
-xmlDocPtr
+struct _xmlDoc *
 slaxLoadBuffer (const char *filename, char *input,
-		xmlDictPtr dict, int partial);
+		struct _xmlDict *dict, int partial);
 
 /*
  * Prefer text expressions be stored in <xsl:text> elements

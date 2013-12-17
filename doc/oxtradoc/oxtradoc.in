@@ -293,7 +293,7 @@ sub first_pass {
 	    $tag = "quote", $default = "quote", last if /^{{quote:/;
 	    $tag = "digress", last if /^{{/;
 	    $tag = "enddigress", undef $default, last if /^}}/;
-           $tag = $default, last if $default;
+	    $tag = $default, last if $default;
 	    $tag = "section", last if /^\*+\s/;
 	    $tag = "nlist", last if /^[-=_+]\s/;
 	    $tag = "nlist", last if /^(\s+)[-=_+]\s/ && $last_tag eq "nlist";

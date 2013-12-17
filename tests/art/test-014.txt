@@ -1,0 +1,22 @@
+   DEVICE     LOCAL DHCP          LOCAL DNS     VENDOR'S DNS       NMS
+     |          SERVER             SERVER      SERVER (DNSSEC)      |
+     |             |                  |              |              |
+     |------------>|                  |              |              |
+     | Lease IP    |                  |              |              |
+     |             |                  |              |              |
+     |------------------------------->|              |              |
+     | Lookup vendor's DNS server     |              |              |
+     |             |                  |              |              |
+     |             |                  |              |              |
+     |---------------------------------------------->|              |
+     | Lookup <sha1-of-device-pub-key>.<vendor-zone> |              |
+     |             |                  |              |              |
+     |             |                  |              |              |
+     |------------------------------->|              |              |
+     | Lookup NMS IP address          |              |              |
+     |             |                  |              |              |
+     |             |                  |              |              |
+     |------------------------------------------------------------->|
+     | Reverse SSH or Reverse TLS     |              |              |
+     |             |                  |              |              |
+     |             |                  |              |              |

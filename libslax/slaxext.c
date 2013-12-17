@@ -38,6 +38,10 @@
 #include <resolv.h>
 #include <sys/queue.h>
 
+#ifdef HAVE_STDTIME_TZFILE_H
+#include <stdtime/tzfile.h>
+#endif /* HAVE_STDTIME_TZFILE_H */
+
 #include <libslax/slaxdata.h>
 
 #define SYSLOG_NAMES		/* Ask for all the names and typedef CODE */
@@ -1841,9 +1845,12 @@ slaxExtTimeDiff (const struct timeval *new, const struct timeval *old,
 }
 
 static int
-slaxExtTimeCompare (const struct timeval *tvp, long secs)
+slaxExtTimeCompare (const struct timeval *tvp, double limit)
 {
-    return (tvp->tv_sec < secs) ? TRUE : FALSE;
+    double t = tvp->tv_sec;
+    t += ((double) tvp->tv_usec) / USEC_PER_SEC;
+
+    return (t < limit) ? TRUE : FALSE;
 }
 
 /*
@@ -1968,9 +1975,18 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
              * If the time difference between this record and current
              * time stamp then write it into the new file.
              */
-            slaxExtTimeDiff(&tv, &rec_tv, &diff);
+	    if (slaxExtTimeDiff(&tv, &rec_tv, &diff) < 0) {
+		/*
+		 * Time differences should not be negative.  If we find
+		 * one, then either we're in a time warp or someone has
+		 * been manually fiddling with the time.  Either way,
+		 * we can pretend that we have no meaningful records.
+		 */
+		no_of_recs = 0;
+		break;
+	    }
             if (diff.tv_sec < freq_in_secs
-			|| slaxExtTimeCompare(&diff, freq_in_secs)) {
+		|| slaxExtTimeCompare(&diff, freq_double * SEC_PER_MIN)) {
 
 		snprintf(buf, sizeof(buf), timefmt,
 			 (unsigned long) rec_tv.tv_sec,
@@ -2301,12 +2317,6 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 
 	xmlNodePtr child = parent->children;
 
-#if 0
-	/* For an RTF, we want the child nodes, not the parent */
-	if (XSLT_IS_RES_TREE_FRAG(parent))
-	    parent = parent->children;
-#endif
-
 	for (child = parent->children; child; child = child->next) {
 	    slaxExtDocumentOptionsSet(sdop,
 				      (const xmlChar *) xmlNodeName(child),
@@ -2621,7 +2631,14 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	    if (ret == NULL)
 		goto fail;
 
+#if THIS_FIX_DOES_NOT_WORK
+            /* For an RTF, we want the child nodes, not the parent */
+            for (child = parent->children; child; child = child->next)
+                xmlXPathNodeSetAdd(ret->nodesetval, child);
+#else
 	    xmlXPathNodeSetAdd(ret->nodesetval, parent);
+#endif
+
 	    valuePush(ctxt, ret);
 	}
 

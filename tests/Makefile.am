@@ -6,7 +6,7 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-SUBDIRS=core bugs errors
+SUBDIRS=core bugs errors art
 
 if USE_LIBXSLT_TESTS
 SUBDIRS += libxslt

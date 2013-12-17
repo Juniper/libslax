@@ -32,6 +32,7 @@ struct slax_data_s {
     int sd_errors;		/* Number of errors seen */
     FILE *sd_file;		/* File to read from */
     unsigned sd_flags;		/* Flags */
+    unsigned sd_flags_next;	/* Flags for the next yylex call */
     int sd_parse;		/* Parsing mode (M_PARSE_*) */
     int sd_ttype;		/* Token type returned on next lexer call */
     int sd_last;		/* Last token type returned */
@@ -59,8 +60,9 @@ struct slax_data_s {
 #define SDF_OPEN_COMMENT	(1<<3)	/* EOF with open comment */
 
 #define SDF_JSON_KEYWORDS	(1<<4) /* Allow JSON keywords */
-#define SDF_NO_TYPES		(1<<5)/* Do not decorate nodes w/ type info */
+#define SDF_NO_TYPES		(1<<5) /* Do not decorate nodes w/ type info */
 #define SDF_CLEAN_NAMES		(1<<6) /* Clean element names, if needed */
+#define SDF_JSON_NO_MEMBERS	(1<<7) /* Don't use <member>s as json arrays */
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
@@ -92,7 +94,13 @@ struct slax_data_s {
 int
 slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *yylval,
 	     int yystate, slax_string_t **vstack, slax_string_t **vtop);
-#define yyerror(str) slaxYyerror(slax_data, str, yylval, yystate, yyvs, yyvsp)
+#define yyerror2(slax_data, str) \
+    slaxYyerror(slax_data, str, yylval, yystate, yyvs, yyvsp)
+#ifdef HAVE_BISON30
+#define yyerror(_data, _str) yyerror2(_data, _str)
+#else
+#define yyerror(_str) yyerror2(slax_data, _str)
+#endif /* HAVE_BISON30 */
 
 /*
  * Return a better class of error message

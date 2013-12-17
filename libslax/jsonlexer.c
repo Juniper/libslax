@@ -168,6 +168,22 @@ slaxJsonClearMember (slax_data_t *sdp)
 	xmlUnlinkNode(nodep);
 	xmlFreeNode(nodep);
     }
+
+    /*
+     * If we're not using the <member> element, then we need to turn
+     * array memory into direct children.  Move our children to predecessors
+     * and remove the parent.
+     */
+    if (sdp->sd_flags & SDF_JSON_NO_MEMBERS) {
+	xmlNodePtr parent = sdp->sd_ctxt->node, childp, nextp;
+
+	for (childp = parent->children; childp; childp = nextp) {
+	    nextp = childp->next;
+	    /* XXX Underimplemented */
+	}
+
+	slaxElementClose(sdp);
+    }
 }
 
 int
