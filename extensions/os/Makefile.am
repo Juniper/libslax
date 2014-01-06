@@ -29,7 +29,10 @@ AM_CFLAGS += \
 LIBNAME = libext_os
 pkglib_LTLIBRARIES = libext_os.la
 LIBS = \
-    ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+    ${LIBXSLT_LIBS} \
+    -lexslt \
+    ${LIBXML_LIBS} \
+    -L${top_builddir}/libslax -lslax
 
 LDADD = ${top_builddir}/libslax/libslax.la
 

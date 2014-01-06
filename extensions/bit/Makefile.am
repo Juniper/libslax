@@ -33,7 +33,8 @@ pkglib_LTLIBRARIES = libext_bit.la
 LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
-    ${LIBXML_LIBS}
+    ${LIBXML_LIBS} \
+    -L${top_builddir}/libslax -lslax
 
 LDADD = ${top_builddir}/libslax/libslax.la
 
