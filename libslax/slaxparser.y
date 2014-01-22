@@ -709,7 +709,7 @@ slax_stmt :
 import_stmt :
 	K_IMPORT T_QUOTED L_EOS
 		{
-		    slaxElementAdd(slax_data, $1->ss_token,
+		    slaxElementAddEscaped(slax_data, $1->ss_token,
 				  ATT_HREF, $2->ss_token);
 		    $$ = STACK_CLEAR($1);
 		}
@@ -718,7 +718,7 @@ import_stmt :
 include_stmt :
 	K_INCLUDE T_QUOTED L_EOS
 		{
-		    slaxElementAdd(slax_data, $1->ss_token,
+		    slaxElementAddEscaped(slax_data, $1->ss_token,
 				  ATT_HREF, $2->ss_token);
 		    $$ = STACK_CLEAR($1);
 		}
