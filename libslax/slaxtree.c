@@ -612,6 +612,40 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
     return nodep;
 }
 
+
+/*
+ * Add an XSL element to the node at the top of the context stack, but
+ * URL-escape the attribute value.
+ */
+xmlNodePtr
+slaxElementAddEscaped (slax_data_t *sdp, const char *tag,
+		       const char *attrib, const char *value)
+{
+    if (value) {
+	char *newurl = alloca(strlen(value) * 3 + 1);
+	char *np = newurl;
+	const char *up = value;
+
+	while (*up) {
+	    if (*up == ' ' || *up == '%') {
+		/* Turn ' ' into '%20' */
+		*np++ = '%';
+		*np++ = ((*up >> 4) & 0x0F) + '0';
+		*np++ = (*up & 0x0F) + '0';
+		up += 1;
+
+	    } else {
+		*np++ = *up++;
+	    }
+	}
+
+	*np = '\0';
+	value = newurl;
+    }
+
+    return slaxElementAdd(sdp, tag, attrib, value);
+}
+
 /*
  * Add an XSL element to the node at the top of the context stack
  */
