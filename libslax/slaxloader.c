@@ -1042,6 +1042,27 @@ slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
     if (url[0] == '-' && url[1] == 0)
 	file = stdin;
     else {
+	/* Unescape the URL to remove '%20' etc */
+	xmlChar *newurl = alloca(strlen((const char *) url) + 1);
+	xmlChar *np = newurl;
+	const xmlChar *up = url;
+
+	while (*up) {
+	    if (*up == '%') {
+		/* Turn '%20' into ' ' */
+		int val = (up[1] ? *++up - '0' : 0) * 0x10;
+		val += up[1] ? *++up - '0' : 0;
+		*np++ = val;
+		up += 1;
+
+	    } else {
+		*np++ = *up++;
+	    }
+	}
+
+	*np = '\0';
+	url = newurl;
+	
 	file = slaxFindIncludeFile((const char *) url, buf, sizeof(buf));
 	if (file == NULL) {
 	    slaxLog("slax: file open failed for '%s': %s",
