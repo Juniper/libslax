@@ -18,10 +18,13 @@ slaxNsAdd (slax_data_t *, const char *prefix, const char *uri);
  */
 xmlNodePtr
 slaxElementAdd (slax_data_t *, const char *tag,
-		    const char *attrib, const char *value);
+		const char *attrib, const char *value);
 xmlNodePtr
 slaxElementAddString (slax_data_t *sdp, const char *tag,
 		      const char *attrib, slax_string_t *value);
+xmlNodePtr
+slaxElementAddEscaped (slax_data_t *, const char *tag,
+		       const char *attrib, const char *value);
 
 /*
  * Add an XSL element to the top of the context stack

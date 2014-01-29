@@ -37,7 +37,8 @@ LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS} \
-    ${LIBCURL_LIBS}
+    ${LIBCURL_LIBS} \
+    -L${top_builddir}/libslax -lslax
 
 LDADD = ${top_builddir}/libslax/libslax.la
 

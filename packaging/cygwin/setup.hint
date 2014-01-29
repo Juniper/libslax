@@ -1,0 +1,10 @@
+# libslax from Juniper
+
+@ libslax
+
+category: Libs
+requires: libxml2 libxslt libcurl4
+sdesc: "libslax library"
+ldesc: "SLAX is an alternative syntax for XSLT which is tailored for
+readability and familiarity, following the style of C and Perl."
+
