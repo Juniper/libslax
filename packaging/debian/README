@@ -1,0 +1,31 @@
+Building libslax.deb & libslax-dev.deb
+--------------------------------------
+
+In order to build the debian/ubuntu .deb files, you will need to be running
+under the base line version of debian that you want to support.  If you want to
+build an amd64 deb file, be under an amd64 host.
+
+Prerequisites
+-------------
+
+The prereqs for building the .deb files are:
+
+apt-get install build-essential autoconf automake autotools-dev dh-make debhelper devscripts fakeroot xutils lintian pbuilder dpkg-dev libtool libxml2-dev libxslt1-dev libcurl4-gnutls-dev bison
+
+Building the .deb files
+-----------------------
+
+1) Update `changelog` file
+
+Include the release notes & the proper version string in the `changelog` file
+so that the debian packager can figure out the correct version name.
+
+2) Run './debian.sh'
+
+This script should take care of all the necessary steps to build and package
+the .deb files.  After it is done, the files should be in the `output`
+directory.
+
+If you add any files to the distribution that need to be installed, be sure to
+modify libslax.install and libslax-dev.install respectively.
+

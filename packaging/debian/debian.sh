@@ -6,19 +6,7 @@
 # This is a somewhat hacky script to use debian tools to build a valid .deb
 # package file for libslax.
 #
-# You will need to have the following packages (and their prereqs) installed to
-# run this:
-#
-# build-essential autoconf automake autotools-dev dh-make debhelper devscripts
-# fakeroot xutils lintian pbuilder dpkg-dev libtool libxml2-dev libxslt1-dev
-# libcurl4-gnutls-dev bison
-#
-# Please make sure the host system you are compiling on is the base line
-# version of debian/ubuntu you want to support.  If you do not, you will likely
-# run into glibc errors when attempting to install the built .deb files.
-#
-# MAKE SURE YOU HAVE UPDATED `changelog` FILE TO INCLUDE THE MOST RECENT
-# VERSION AND CHANGES!
+# See the README file in this directory on steps how to use this script.
 #
 
 cd ../..
