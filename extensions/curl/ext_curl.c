@@ -725,6 +725,7 @@ extCurlDoEmail (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
 
     CURL_SET(CURLOPT_READFUNCTION, extCurlReadContents);
     CURL_SET(CURLOPT_READDATA, &cr);
+	CURL_SET(CURLOPT_UPLOAD, 1L);
 
     success = curl_easy_perform(curlp->ch_handle);
 
