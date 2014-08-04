@@ -101,10 +101,20 @@ case "$op" in
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
         mkdir -p gh-pages
-	git clone $url -b gh-pages
+	git clone $url -b gh-pages gh-pages
 	cd gh-pages
-        git master --set-upstream gh-pages origin/gh-pages
+        git branch -u origin/gh-pages
 	;;
+
+    create-gh-pages)
+        url=`git config --get remote.origin.url`
+	base=`basename "$url" .git`
+        mkdir -p gh-pages
+	git clone $url gh-pages
+	cd gh-pages
+        git checkout --orphan gh-pages
+        echo "clone gh-pages into gh-page; 'cd gh-pages && gt rm -fr .' to clean it"
+        ;;
 
     merge-to)
         set_branch
