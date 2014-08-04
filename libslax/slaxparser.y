@@ -709,8 +709,10 @@ slax_stmt :
 import_stmt :
 	K_IMPORT T_QUOTED L_EOS
 		{
-		    slaxElementAddEscaped(slax_data, $1->ss_token,
-				  ATT_HREF, $2->ss_token);
+		    xmlNodePtr nodep;
+		    nodep = slaxElementAddEscaped(slax_data, $1->ss_token,
+						  ATT_HREF, $2->ss_token);
+		    slaxMoveImport(slax_data, nodep);
 		    $$ = STACK_CLEAR($1);
 		}
 	;
