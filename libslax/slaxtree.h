@@ -216,3 +216,6 @@ slaxTernaryExpand (slax_data_t *, slax_string_t *, unsigned);
 #define SLAX_TERNARY_VAR_FORMAT SLAX_TERNARY_VAR_LEADER "%u)"
 #define SLAX_TERNARY_COND_SUFFIX "-cond"
 #define SLAX_TERNARY_VAR_FORMAT_WIDTH 12
+
+void
+slaxMoveImport (slax_data_t *sdp, xmlNodePtr);
