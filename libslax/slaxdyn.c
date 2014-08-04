@@ -267,9 +267,16 @@ slaxDynFindPrefix (char *uri, size_t urisiz, const char *name)
 void
 slaxDynLoad (xmlDocPtr docp)
 {
-    xmlNodePtr root = xmlDocGetRootElement(docp);
+    xmlNodePtr root;
     slax_data_list_t nslist;
     slax_data_node_t *dnp;
+
+    if (docp == NULL)
+	return;
+
+    root = xmlDocGetRootElement(docp);
+    if (root == NULL)
+	return;
 
     slaxDataListInit(&nslist);
 
