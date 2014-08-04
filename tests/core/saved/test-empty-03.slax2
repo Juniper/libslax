@@ -1,7 +1,7 @@
 version 1.2;
 
-include "foo.slax";
-import "goo.xsl";
+import "saved/test-empty-01.xsl";
+include "saved/test-empty-02.xsl";
 
 main {
     apply-imports;
