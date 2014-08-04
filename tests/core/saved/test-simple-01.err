@@ -1,10 +1,5 @@
 compilation error: file ../../../tests/core/test-simple-01.slax line 65 element number
-xsl:number : lang attribute not implemented
-Unimplemented block at ../../libxslt/preproc.c:1467
-compilation error: file ../../../tests/core/test-simple-01.slax line 65 element number
 xsl:number : letter-value 'alphabetic' not implemented
 Unimplemented block at ../../libxslt/preproc.c:1476
-compilation error: file ../../../tests/core/test-simple-01.slax line 109 element some-fancy-element
-xsltStylePreCompute: unknown xsl:some-fancy-element
 before
 This is 'one' is  good
