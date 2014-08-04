@@ -1,5 +1,0 @@
-compilation error: file ../../../tests/core/test-empty-03.slax line 3 element include
-xsl:include : unable to load ../../../tests/core/foo.slax
-compilation error: file ../../../tests/core/test-empty-03.slax line 4 element import
-xsltParseStylesheetTop: ignoring misplaced import element
-slaxproc: 1 errors parsing script: '../../../tests/core/test-empty-03.slax'
