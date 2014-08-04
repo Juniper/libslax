@@ -967,3 +967,33 @@ slaxSetPreserveFlag (xsltTransformContextPtr tctxt, xmlXPathObjectPtr ret)
 
     xsltExtensionInstructionResultRegister(tctxt, ret);
 }
+
+/*
+ * The W3C XSLT spec requires that imports preceed just about
+ * anything else.  We want to be somewhat more flexible, so
+ * we move them up as needed.
+ */
+void
+slaxMoveImport (slax_data_t *sdp UNUSED, xmlNodePtr curp)
+{
+    xmlNodePtr nodep, prev = NULL;
+
+    for (nodep = curp; nodep; nodep = nodep->prev) {
+	if (nodep->type == XML_COMMENT_NODE)
+	    continue;
+	if (nodep->prev == NULL)
+	    break;
+	if (nodep->prev->type == XML_COMMENT_NODE)
+	    continue;;
+	prev = nodep->prev;
+	if (slaxNodeIsXsl(prev, ELT_IMPORT)) {
+	    prev = prev->next;
+	    break;
+	}
+    }
+
+    if (prev && prev != curp) {
+	xmlUnlinkNode(curp);
+	xmlAddPrevSibling(prev, curp);
+    }
+}
