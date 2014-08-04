@@ -1,6 +1,8 @@
 version 1.2;
 
 import "saved/test-empty-01.xsl";
+param $x = 1;
+
 include "saved/test-empty-02.xsl";
 
 main {
