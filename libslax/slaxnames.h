@@ -93,6 +93,8 @@
 #define ELT_GROUP	"group"
 #define ELT_HIDDEN	"hidden"
 #define ELT_IF		"if"
+#define ELT_IMPORT	"import"
+#define ELT_INCLUDE	"include"
 #define ELT_JSON	"json"
 #define ELT_LINKS	"links"
 #define ELT_MEMBER	"member"
