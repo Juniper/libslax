@@ -39,8 +39,6 @@
 #include <libxml/uri.h>
 #include <libxml/tree.h>
 
-#include "config.h"
-
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 #include "slaxdata.h"
