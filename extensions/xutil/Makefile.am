@@ -17,6 +17,7 @@ ext_curlincdir = ${includedir}/libslax
 
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
+    -I${top_builddir} \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     ${LIBSLAX_CFLAGS} \
