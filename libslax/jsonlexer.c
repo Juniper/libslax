@@ -300,7 +300,7 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
     slaxParse(&sd);
 
     if (sd.sd_errors) {
-	slaxError("%s: %d error%s detected during parsing\n",
+	slaxError("%s: %d error%s detected during parsing",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
 
 	slaxDataCleanup(&sd);
@@ -346,7 +346,7 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
 
     sd.sd_file = fopen(fname, "r");
     if (sd.sd_file == NULL) {
-	slaxError("%s: cannot open: %s\n", fname, strerror(errno));
+	slaxError("%s: cannot open: %s", fname, strerror(errno));
 	return NULL;
     }
 
@@ -366,7 +366,7 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
     slaxParse(&sd);
 
     if (sd.sd_errors) {
-	slaxError("%s: %d error%s detected during parsing\n",
+	slaxError("%s: %d error%s detected during parsing",
 		sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s");
 
 	slaxDataCleanup(&sd);
