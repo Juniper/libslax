@@ -497,7 +497,7 @@ li.indline1 {
  
   } 
   @top-right {
-       content: "December 2013";
+       content: "August 2014";
  
   } 
   @top-center {
@@ -21984,7 +21984,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">December 17, 2013</td>
+<td class="header right">August 5, 2014</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -22719,15 +22719,27 @@ jQuery(function ($) {
 <a href="#doc_section_8_4_1">"os" Extension Functions</a><ul class="toc">
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_4_1_1">8.4.1.1   </div>
-<a href="#doc_section_8_4_1_1">os:exit-code</a>
+<a href="#error-nodes">Error Nodes</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_4_1_2">8.4.1.2   </div>
-<a href="#doc_section_8_4_1_2">os:mkdir</a>
+<a href="#chmod">os:chmod</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_4_1_3">8.4.1.3   </div>
-<a href="#doc_section_8_4_1_3">os:stat</a>
+<a href="#doc_section_8_4_1_3">os:chown</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_4">8.4.1.4   </div>
+<a href="#doc_section_8_4_1_4">os:exit-code</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_5">8.4.1.5   </div>
+<a href="#doc_section_8_4_1_5">os:mkdir</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_6">8.4.1.6   </div>
+<a href="#doc_section_8_4_1_6">os:stat</a>
 </li>
 </ul>
 </li></ul>
@@ -23791,11 +23803,11 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_2_4">2.4</a> </div>Attribute Sets</h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="idp17598800"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17598800">
+<div class="digress tooltip faq" id="idp10249200"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp10249200">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17598800'); " onmouseover="popUp(event, 'idp17598800')" onmouseout="popDown(event, 'idp17598800')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp10249200'); " onmouseover="popUp(event, 'idp10249200')" onmouseout="popDown(event, 'idp10249200')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
 <h3 id="doc_section_2_4_1">
 <div class="self-section-number">
 <a href="#doc_section_2_4_1">2.4.1</a> </div>
@@ -24330,11 +24342,11 @@ jQuery(function ($) {
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="idp17854288"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17854288">
+	    </pre> <div class="digress tooltip note:" id="idp10504784"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp10504784">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17854288'); " onmouseover="popUp(event, 'idp17854288')" onmouseout="popDown(event, 'idp17854288')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp10504784'); " onmouseover="popUp(event, 'idp10504784')" onmouseout="popDown(event, 'idp10504784')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
@@ -25833,44 +25845,44 @@ jQuery(function ($) {
 <a href="#doc_section_7_2">7.2</a> </div>slaxproc: The SLAX Processor</h2>
 <p id="doc_section_7_2_p_1">The SLAX software distribution contains a library (libslax) and a command line tool (slaxproc). The command line tool can be used to convert between XSLT and SLAX syntax, as well as run stylesheets and check syntax.</p>
 <div id="doc_figure_u.184"></div> <pre>
-  Usage: slaxproc [mode] [options] [script] [files]
-   Modes:
-     --check OR -c: check syntax and content for a SLAX script
-     --format OR -F: format (pretty print) a SLAX script
-     --json-to-xml: Turn JSON data into XML
-     --run OR -r: run a SLAX script (the default mode)
-     --show-select: show XPath selection from the input document
-     --show-variable: show contents of a global variable
-     --slax-to-xslt OR -x: turn SLAX into XSLT
-     --xml-to-json: turn XML into JSON
-     --xpath &lt;xpath&gt; OR -X &lt;xpath&gt;: select XPath data from input
-     --xslt-to-slax OR -s: turn XSLT into SLAX
+ Usage: slaxproc [mode] [options] [script] [files]
+  Modes:
+    --check OR -c: check syntax and content for a SLAX script
+    --format OR -F: format (pretty print) a SLAX script
+    --json-to-xml: Turn JSON data into XML
+    --run OR -r: run a SLAX script (the default mode)
+    --show-select: show XPath selection from the input document
+    --show-variable: show contents of a global variable
+    --slax-to-xslt OR -x: turn SLAX into XSLT
+    --xml-to-json: turn XML into JSON
+    --xpath &lt;xpath&gt; OR -X &lt;xpath&gt;: select XPath data from input
+    --xslt-to-slax OR -s: turn XSLT into SLAX
 
-    Options:
-     --debug OR -d: enable the SLAX/XSLT debugger
-     --empty OR -E: give an empty document for input
-     --exslt OR -e: enable the EXSLT library
-     --expression &lt;expr&gt;: convert an expression
-     --help OR -h: display this help message
-     --html OR -H: Parse input data as HTML
-     --ignore-arguments: Do not process any further arguments
-     --include &lt;dir&gt; OR -I &lt;dir&gt;: search dir for includes/imports
-     --indent OR -g: indent output ala output-method/indent
-     --input &lt;file&gt; OR -i &lt;file&gt;: take input from the given file
-     --json-tagging: tag json-style input with the 'json' attribute
-     --lib &lt;dir&gt; OR -L &lt;dir&gt;: search dir for extension libraries
-     --name &lt;file&gt; OR -n &lt;file&gt;: read the script from the given file
-     --no-randomize: do not initialize the random number generator
-     --no-tty: Do not use tty for sdb and other input needs
-     --no-json-types: do not insert 'type' attribute for --json-to-xml
-     --output &lt;file&gt; OR -o &lt;file&gt;: make output into the given file
-     --param &lt;name&gt; &lt;value&gt; OR -a &lt;name&gt; &lt;value&gt;: pass parameters
-     --partial OR -p: allow partial SLAX input to --slax-to-xslt
-     --slax-output OR -S: emit SLAX-style XML output
-     --trace &lt;file&gt; OR -t &lt;file&gt;: write trace data to a file
-     --verbose OR -v: enable debugging output (slaxLog())
-     --version OR -V: show version information (and exit)
-     --write-version &lt;version&gt; OR -w &lt;version&gt;: write in version
+   Options:
+    --debug OR -d: enable the SLAX/XSLT debugger
+    --empty OR -E: give an empty document for input
+    --exslt OR -e: enable the EXSLT library
+    --expression &lt;expr&gt;: convert an expression
+    --help OR -h: display this help message
+    --html OR -H: Parse input data as HTML
+    --ignore-arguments: Do not process any further arguments
+    --include &lt;dir&gt; OR -I &lt;dir&gt;: search dir for includes/imports
+    --indent OR -g: indent output ala output-method/indent
+    --input &lt;file&gt; OR -i &lt;file&gt;: take input from the given file
+    --json-tagging: tag json-style input with the 'json' attribute
+    --lib &lt;dir&gt; OR -L &lt;dir&gt;: search dir for extension libraries
+    --name &lt;file&gt; OR -n &lt;file&gt;: read the script from the given file
+    --no-randomize: do not initialize the random number generator
+    --no-tty: Do not use tty for sdb and other input needs
+    --no-json-types: do not insert 'type' attribute for --json-to-xml
+    --output &lt;file&gt; OR -o &lt;file&gt;: make output into the given file
+    --param &lt;name&gt; &lt;value&gt; OR -a &lt;name&gt; &lt;value&gt;: pass parameters
+    --partial OR -p: allow partial SLAX input to --slax-to-xslt
+    --slax-output OR -S: emit SLAX-style XML output
+    --trace &lt;file&gt; OR -t &lt;file&gt;: write trace data to a file
+    --verbose OR -v: enable debugging output (slaxLog())
+    --version OR -V: show version information (and exit)
+    --write-version &lt;version&gt; OR -w &lt;version&gt;: write in version
 
   Project libslax home page: https://github.com/Juniper/libslax
 	    </pre> <p id="doc_section_7_2_p_3">Files can be referenced positionally (where the script file first) or by using the "&#8209;n", "&#8209;i", and "&#8209;o" options.</p>
@@ -27006,51 +27018,11 @@ jQuery(function ($) {
 	    </pre> <div class="content">
 <h4 id="doc_section_8_4_1_1">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>os:exit-code</h4>
-<p id="doc_section_8_4_1_1_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
-<div id="doc_figure_u.245"></div> <pre>
-    SYNTAX::
-        void os:exit-code(number);
-
-    EXAMPLE::
-        expr os:exit-code(1);
-	    </pre> </div>
-<div class="content">
-<h4 id="doc_section_8_4_1_2">
-<div class="self-section-number">
-<a href="#doc_section_8_4_1_2">8.4.1.2</a> </div>os:mkdir</h4>
-<p id="doc_section_8_4_1_2_p_1">The os:mkdir function makes directories, similar to the "mkdir" command or the POSIX "mkdir" library function. These are two arguments; the first is name of the directory to be made and the second is an node-set containing options to be used during the operation. The options can include the values in the following table.</p>
+<a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>
+<a id="error-nodes" href="#error-nodes">Error Nodes</a>
+</h4>
+<p id="doc_section_8_4_1_1_p_1">The return value of many os:* functions consists of a set of zero or more error nodes. Each node may contain an &lt;error&gt; element, which in turn may contain the following elements:</p>
 <div id="doc_table_u.24"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
-<thead><tr>
-<th class="left">Element</th>
-<th class="left">Description</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>mode</td>
-<td>Octal value of directory permissions</td>
-</tr>
-<tr>
-<td>path</td>
-<td>Create intermediate directories as required</td>
-</tr>
-</tbody>
-</table></div>
-<div id="doc_figure_u.246"></div> <pre>
-    SYNTAX::
-        node-set os:mkdir(path [, options]);
-
-    EXAMPLE::
-        var $res = os:mkdir("/tmp/foo");
-        var $opts = {
-            &lt;mode&gt; "0700";
-            &lt;path&gt;;
-        }
-        var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
-	    </pre> <p id="doc_section_8_4_1_2_p_3">If the value for &lt;mode&gt; is a string, it will be converted to an integer using the default numeric base of 8 (octal), so '&lt;mode&gt; "644"' will work, but '&lt;mode&gt; 644' will see 644 as a number with base 10 (decimal), which will result in undesirable results since 644 base 10 is 01204 base 8.</p>
-<p id="doc_section_8_4_1_2_p_4">If the value of &lt;mode&gt; is not a valid mode integer value, it will be ignored.</p>
-<p id="doc_section_8_4_1_2_p_5">The return value of os:mkdir is a node-set which may contain an &lt;error&gt; element is an error occurred. This element may contain the following elements:</p>
-<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27070,15 +27042,152 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_2_p_6">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
+<p id="doc_section_8_4_1_1_p_2">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
+<div id="doc_figure_u.245"></div> <pre>
+    &lt;error&gt;
+      &lt;errno code="ENOENT"&gt;No such file or directory&lt;/errno&gt;
+      &lt;message&gt;unknown group: phil&lt;/message&gt;
+    &lt;/error&gt;
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_4_1_2">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_2">8.4.1.2</a> </div>
+<a id="chmod" href="#chmod">os:chmod</a>
+</h4>
+<p id="doc_section_8_4_1_2_p_1">The os:chmod function changes the permissions of one or more files, allowing or preventing different sets of users from accessing those files.</p>
+<p id="doc_section_8_4_1_2_p_2">The first argument is a mode specification similar to the chmod command, with either an octal number to set the permissions to, or an expression consisting of one or more of the letters 'u', 'g', 'o', and 'a' (for user, group, other, and all) followed by '+' or '&#8209;' (for setting or clearing) and one or more of the letters 'r', 'w', and 'x' (for read, write, and execute). The expression "ug+rw" would give read and write permission to the user and group which own the file or directory.</p>
+<p id="doc_section_8_4_1_2_p_3">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements, with the former two contain path for files and directories, and the latter contains shell/glob-style wildcard patterns. The following patterns are permitted:</p>
+<p id="doc_section_8_4_1_2_p_4"> </p>
+<ul>
+<li>'*' matches zero or more characters</li>
+<li>'?' matches any single character</li>
+<li>'[...]' matches any of the enclosed characters</li>
+<li>'{...}' matches any of the enclosed comma-separated sequences</li>
+</ul>
+<p id="doc_section_8_4_1_2_p_5">For example, &lt;wildcard&gt; "*.txt" matches all text files.</p>
+<div id="doc_figure_u.246"></div> <pre>
+    SYNTAX::
+        void os:chmod(mode, files, ...);
+
+    EXAMPLE::
+        $res = os:chmod("g+w", "file1", {
+            &lt;file&gt; "test.test";
+            &lt;directory&gt; "dir";
+            &lt;wildcard&gt; "*.c";
+        });
+	    </pre> <p id="doc_section_8_4_1_2_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
 </div>
 <div class="content">
 <h4 id="doc_section_8_4_1_3">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_3">8.4.1.3</a> </div>os:stat</h4>
-<p id="doc_section_8_4_1_3_p_1">The os:stat function returns information about files and directories, similar to the POSIX stat() function, returning a node-set of &lt;entry&gt; elements containing details about each file.</p>
-<p id="doc_section_8_4_1_3_p_2">The arguments to the os:stat() function are either strings or node-sets. os:stat() allows any number of arguments. If the argument is a string, it is used as a path specification and information on matching files is returned. The path specification can include glob-style wildcards (e.g. test*.c, *.slax). If the argument is a node-set, then the node can contains the following elements:</p>
+<a href="#doc_section_8_4_1_3">8.4.1.3</a> </div>os:chown</h4>
+<p id="doc_section_8_4_1_3_p_1">The os:chown function changes for owning user and group for one or more files.</p>
+<p id="doc_section_8_4_1_3_p_2">The first argument is the target name and/or group, in either symbolic or numeric format:</p>
+<div id="doc_figure_u.247"></div> <pre>
+    SYNTAX::
+        [ &lt;user&gt; ]? [ ':' &lt;group&gt; ]
+    EXAMPLE:
+        phil
+        phil:eng
+        :eng
+        :12
+        0:0
+	    </pre> <p id="doc_section_8_4_1_3_p_4">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements. See <a href="#chmod" title="os:chmod">Section 8.4.1.2</a> for details.</p>
+<div id="doc_figure_u.248"></div> <pre>
+    SYNTAX::
+        void os:chown(owner, files, ...);
+
+    EXAMPLE::
+        $res = os:chown(":eng", "file1", {
+            &lt;file&gt; "test.test";
+            &lt;directory&gt; "dir";
+            &lt;wildcard&gt; "*.c";
+        });
+	    </pre> <p id="doc_section_8_4_1_3_p_6">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
+</div>
+<div class="content">
+<h4 id="doc_section_8_4_1_4">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_4">8.4.1.4</a> </div>os:exit-code</h4>
+<p id="doc_section_8_4_1_4_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
+<div id="doc_figure_u.249"></div> <pre>
+    SYNTAX::
+        void os:exit-code(number);
+
+    EXAMPLE::
+        expr os:exit-code(1);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_4_1_5">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_5">8.4.1.5</a> </div>os:mkdir</h4>
+<p id="doc_section_8_4_1_5_p_1">The os:mkdir function makes directories, similar to the "mkdir" command or the POSIX "mkdir" library function. These are two arguments; the first is name of the directory to be made and the second is an node-set containing options to be used during the operation. The options can include the values in the following table.</p>
+<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Element</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>create</td>
+<td>Error if the last element of the path exists</td>
+</tr>
+<tr>
+<td>mode</td>
+<td>Octal value of directory permissions</td>
+</tr>
+<tr>
+<td>path</td>
+<td>Create intermediate directories as required</td>
+</tr>
+</tbody>
+</table></div>
+<div id="doc_figure_u.250"></div> <pre>
+    SYNTAX::
+        node-set os:mkdir(path [, options]);
+
+    EXAMPLE::
+        var $res = os:mkdir("/tmp/foo");
+        var $opts = {
+            &lt;mode&gt; "0700";
+            &lt;path&gt;;
+            &lt;create&gt;;
+        }
+        var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
+	    </pre> <p id="doc_section_8_4_1_5_p_3">If the value for &lt;mode&gt; is a string, it will be converted to an integer using the default numeric base of 8 (octal), so '&lt;mode&gt; "644"' will work, but '&lt;mode&gt; 644' will see 644 as a number with base 10 (decimal), which will result in undesirable results since 644 base 10 is 01204 base 8.</p>
+<p id="doc_section_8_4_1_5_p_4">If the value of &lt;mode&gt; is not a valid mode integer value, it will be ignored.</p>
+<p id="doc_section_8_4_1_5_p_5">The return value of os:mkdir is a node-set which may contain an &lt;error&gt; element is an error occurred. This element may contain the following elements:</p>
 <div id="doc_table_u.26"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Element</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>errno</td>
+<td>Error message based on errno</td>
+</tr>
+<tr>
+<td>path</td>
+<td>The path that triggered the error</td>
+</tr>
+<tr>
+<td>message</td>
+<td>The error message</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_8_4_1_5_p_6">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
+<p id="doc_section_8_4_1_5_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
+</div>
+<div class="content">
+<h4 id="doc_section_8_4_1_6">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_6">8.4.1.6</a> </div>os:stat</h4>
+<p id="doc_section_8_4_1_6_p_1">The os:stat function returns information about files and directories, similar to the POSIX stat() function, returning a node-set of &lt;entry&gt; elements containing details about each file.</p>
+<p id="doc_section_8_4_1_6_p_2">The arguments to the os:stat() function are either strings or node-sets. os:stat() allows any number of arguments. If the argument is a string, it is used as a path specification and information on matching files is returned. The path specification can include glob-style wildcards (e.g. test*.c, *.slax). If the argument is a node-set, then the node can contains the following elements:</p>
+<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27106,8 +27215,8 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_3_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
-<div id="doc_figure_u.247"></div> <pre>
+<p id="doc_section_8_4_1_6_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
+<div id="doc_figure_u.251"></div> <pre>
     var $files = os:stat("/etc/m*");
     var $options = {
         &lt;hidden&gt;;
@@ -27117,8 +27226,8 @@ jQuery(function ($) {
     for-each ($logs) {
         message name _ " is a " _ type;
     }
-	    </pre> <p id="doc_section_8_4_1_3_p_5">The return value is a node-set of &lt;entry&gt; elements. Each entry contains the following elements:</p>
-<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <p id="doc_section_8_4_1_6_p_5">The return value is a node-set of &lt;entry&gt; elements. Each entry contains the following elements:</p>
+<div id="doc_table_u.28"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27187,9 +27296,9 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_3_p_6">Only elements tagged "Y" are emitted when the &lt;brief&gt; option is used.</p>
-<p id="doc_section_8_4_1_3_p_7">The &lt;type&gt; element contains one of the following:</p>
-<div id="doc_table_u.28"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_4_1_6_p_6">Only elements tagged "Y" are emitted when the &lt;brief&gt; option is used.</p>
+<p id="doc_section_8_4_1_6_p_7">The &lt;type&gt; element contains one of the following:</p>
+<div id="doc_table_u.29"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Description</th>
@@ -27229,8 +27338,8 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_3_p_8">In some cases, attributes are used to attach useful information to elements. The following table lists these attributes and values.</p>
-<div id="doc_table_u.29"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_4_1_6_p_8">In some cases, attributes are used to attach useful information to elements. The following table lists these attributes and values.</p>
+<div id="doc_table_u.30"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Attribute</th>
@@ -27281,7 +27390,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_1">
 <div class="self-section-number">
 <a href="#doc_section_A_1">A.1</a> </div>general/itemschoose.xsl</h2>
-<div id="doc_figure_u.248"></div> <pre>
+<div id="doc_figure_u.252"></div> <pre>
     version 1.1;
 
     ns fo = "http://www.w3.org/1999/XSL/Format";
@@ -27319,7 +27428,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_2">
 <div class="self-section-number">
 <a href="#doc_section_A_2">A.2</a> </div>REC2/svg.xsl</h2>
-<div id="doc_figure_u.249"></div> <pre>
+<div id="doc_figure_u.253"></div> <pre>
     version 1.1;
 
     ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
@@ -27365,7 +27474,7 @@ jQuery(function ($) {
 <h2 id="doc_section_A_3">
 <div class="self-section-number">
 <a href="#doc_section_A_3">A.3</a> </div>XSLTMark/metric.xsl</h2>
-<div id="doc_figure_u.250"></div> <pre>
+<div id="doc_figure_u.254"></div> <pre>
     version 1.1;
 
     output-method html {
@@ -27431,7 +27540,7 @@ jQuery(function ($) {
 <a id="ternary-operator" href="#ternary-operator">The Ternary Conditional Operator</a>
 </h3>
 <p id="doc_section_B_1_2_p_1">As the last touch to SLAX-1.1, I've added the ternary operator from C, allowing expressions like:</p>
-<div id="doc_figure_u.251"></div> <pre>
+<div id="doc_figure_u.255"></div> <pre>
     var $a = $b ? $c : $d;
     var $e = $f ?: $g;
 	    </pre> <p id="doc_section_B_1_2_p_3">The caveat is that this uses an extension function slax:value() which may not be available in all XSLT environments. Coders must consider whether should a restriction deems this operator unusable. Portability considerations are identical to mutable variables (mvars).</p>
@@ -27466,27 +27575,27 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_11">All this works well for immutable objects and RTFs, but does not allow my mutable variables to work cleanly. This is quite annoying.</p>
 <p id="doc_section_B_1_3_p_12">I need to allow a variable to hold a nodeset, a document, or a scalar value, without caring about the previous value. But I need to hold on to the previous values to allow others to refer to them without dangling references. Dangling References</p>
 <p id="doc_section_B_1_3_p_13">Consider the following input document:</p>
-<div id="doc_figure_u.252"></div> <pre>
+<div id="doc_figure_u.256"></div> <pre>
     &lt;top&gt;
         &lt;x1/&gt;
         &lt;x2/&gt; 
         &lt;x3/&gt;
     &lt;/top&gt;
 	    </pre> <p id="doc_section_B_1_3_p_15">The following code makes a nodeset (type XPATH_NODESET) whose nodeTab array points into the input document:</p>
-<div id="doc_figure_u.253"></div> <pre>
+<div id="doc_figure_u.257"></div> <pre>
     var $x = top/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_17">The following code make an RTF/RVT (type XPATH_XSLT_TREE), whose "fake" document contains a root element (type XML_DOCUMENT_NODE) that contains the "top" element node.</p>
-<div id="doc_figure_u.254"></div> <pre>
+<div id="doc_figure_u.258"></div> <pre>
     var $y = &lt;top&gt; {
         &lt;x1&gt;;
         &lt;x2&gt;;
         &lt;x3&gt;;
     }
 	    </pre> <p id="doc_section_B_1_3_p_19">The following code makes a nodeset (type XPATH_NODESET) that refers to nodes in the "fake" document under $y:</p>
-<div id="doc_figure_u.255"></div> <pre>
+<div id="doc_figure_u.259"></div> <pre>
     var $z = $y/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_21">Now consider the following code:</p>
-<div id="doc_figure_u.256"></div> <pre>
+<div id="doc_figure_u.260"></div> <pre>
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
     if ($a) {
@@ -27512,17 +27621,17 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_30">But where does the "overhead" live?</p>
 <p id="doc_section_B_1_3_p_31">In classic SLAX style, the overhead is kept in a shadow variable. The shadow variable (svar) holds an RTF/RVT that contains all the nodes ever assigned to the variable, a living history of all values of the variable.</p>
 <p id="doc_section_B_1_3_p_32">We don't need to record scalar values, so:</p>
-<div id="doc_figure_u.257"></div> <pre>
+<div id="doc_figure_u.261"></div> <pre>
     mvar $x = 4;
 	    </pre> <p id="doc_section_B_1_3_p_34">becomes:</p>
-<div id="doc_figure_u.258"></div> <pre>
+<div id="doc_figure_u.262"></div> <pre>
     &lt;xsl:variable name="slax-x"/&gt;
     &lt;xsl:variable name="x" select="4"/&gt;
 	    </pre> <p id="doc_section_B_1_3_p_36">But for RTFs, the content must be preserved, so:</p>
-<div id="doc_figure_u.259"></div> <pre>
+<div id="doc_figure_u.263"></div> <pre>
     mvar $x = &lt;next&gt; "one";
 	    </pre> <p id="doc_section_B_1_3_p_38">becomes:</p>
-<div id="doc_figure_u.260"></div> <pre>
+<div id="doc_figure_u.264"></div> <pre>
     &lt;xsl:variable name="slax-x"&gt;
         &lt;next&gt;one&lt;/next&gt;
     &lt;/xsl:variable&gt;
@@ -27553,7 +27662,7 @@ jQuery(function ($) {
 <p id="doc_section_B_2_1_p_3">In the 2005-2006 timeframe, we started developing on-box script capabilities using XSLT. I like the niche and properties of XSLT, but the syntax makes development and maintenance problematic. First class constructs are buried in attributes, with unreadable encodings. Customers objections were fairly strong, and they asked for a more perl-like syntax. SLAX was our answer.</p>
 <p id="doc_section_B_2_1_p_4">SLAX simplifies the syntax of XSLT, making an encoding that makes scripts more readable, maintainable, and helps the reader to see what's going on. XML escaping is replaced by unix/perl/c-style escaping. Control elements like &lt;xsl:if&gt; are replaced with the familiar "if" statement. Minor details are more transparent.</p>
 <p id="doc_section_B_2_1_p_5">The majority of our scripts are simple, following the pattern:</p>
-<div id="doc_figure_u.261"></div> <pre>
+<div id="doc_figure_u.265"></div> <pre>
     if (find/something/bad) {
         call error($message = "found something bad");
     }
@@ -27588,7 +27697,7 @@ jQuery(function ($) {
 <p id="doc_section_B_3_1_p_2">The prefixes found in the document are translated into namespace URIs, which are then escaped using the URL-escaping algorithm that turns unacceptable characters into three character strings like "%2F".</p>
 <p id="doc_section_B_3_1_p_3">An extension of ".ext" is appended to the URL-escaped URI and this file is searched but in ${SLAX_EXTDIR} and any directories given via the "&#8209;&#8209;lib/&#8209;L" argument.</p>
 <p id="doc_section_B_3_1_p_4">When the extension library is found, we dlopen() it and look for the magic symbol "slaxDynLibInit". This function is called with two arguments, the API version number and a struct that contains information about the extension library.</p>
-<div id="doc_figure_u.262"></div> <pre>
+<div id="doc_figure_u.266"></div> <pre>
     /*
      * This structure is an interface between the libslax main code
      * and the code in the extension library.  This structure should
@@ -27618,7 +27727,7 @@ jQuery(function ($) {
 <div class="self-section-number">
 <a href="#doc_section_B_3_3">B.3.3</a> </div>Example</h3>
 <p id="doc_section_B_3_3_p_1">Here's a quick example:</p>
-<div id="doc_figure_u.263"></div> <pre>
+<div id="doc_figure_u.267"></div> <pre>
     slax_function_table_t slaxBitTable[] = {
         { "and", extBitAnd },
         { "or", extBitOr },
@@ -27645,17 +27754,17 @@ jQuery(function ($) {
 <a href="#doc_section_B_4">B.4</a> </div>External Documentation</h2>
 <p id="doc_section_B_4_p_1">My documentation style tends to be man-page-like, rather than tutorial-ish. But folks at Juniper Networks have made some outrageously great documentation and it's available on the Juniper website. Many thanks for Curtis Call, Jeremy Schulman, and others for doing this work.</p>
 <p id="doc_section_B_4_p_2">This Week: Junos Automation Reference for SLAX 1.0 does not cover any of the new SLAX-1.1 material, but is an incredible reference book.</p>
-<div id="doc_figure_u.264"></div> <pre>
+<div id="doc_figure_u.268"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/
       automation-series/junos-automation-slax/
 	    </pre> <p id="doc_section_B_4_p_4">This Week: Mastering Junos Automation Programming covers many introductory tasks with a tutorial style:</p>
-<div id="doc_figure_u.265"></div> <pre>
+<div id="doc_figure_u.269"></div> <pre>
   https://www.juniper.net/us/en/community/junos/
       training-certification/day-one/automation-series/
       mastering-junos-automation/
 	    </pre> <p id="doc_section_B_4_p_6">Script Library contains a set of scripts that will help get you started:</p>
-<div id="doc_figure_u.266"></div> <pre>
+<div id="doc_figure_u.270"></div> <pre>
   https://www.juniper.net/us/en/community/junos/script-automation/
 	    </pre> <p id="doc_section_B_4_p_8">Note these require Juniper-specific permissions, JNet logins, and other hurdles. Apologies for the inconvenience.</p>
 <p id="doc_section_B_4_p_9">News! The Day One Guides are available for &lt;$2 (some free) on the itunes store! Search under books for "juniper".</p>
