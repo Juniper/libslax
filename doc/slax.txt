@@ -4485,12 +4485,13 @@ arguments; the first is name of the directory to be made and the
 second is an node-set containing options to be used during the
 operation.  The options can include the values in the following table.
 
-|---------+---------------------------------------------|
-| Element | Description                                 |
-|---------+---------------------------------------------|
-| mode    | Octal value of directory permissions        |
-| path    | Create intermediate directories as required |
-|---------+---------------------------------------------|
+|---------+----------------------------------------------|
+| Element | Description                                  |
+|---------+----------------------------------------------|
+| create  | Error if the last element of the path exists |
+| mode    | Octal value of directory permissions         |
+| path    | Create intermediate directories as required  |
+|---------+----------------------------------------------|
 
     SYNTAX::
         node-set os:mkdir(path [, options]);
@@ -4500,6 +4501,7 @@ operation.  The options can include the values in the following table.
         var $opts = {
             <mode> "0700";
             <path>;
+            <create>;
         }
         var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
 
