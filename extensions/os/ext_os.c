@@ -713,6 +713,8 @@ typedef struct ext_os_chmod_s {
     mode_t eoc_off;		/* Mask to set off */
 } ext_os_chmod_t;
 
+#define S_MODE_ALL 0777		/* All mode bits */
+
 static int
 extOsChmodCallback (SLAX_OS_CALLBACK_ARGS)
 {
@@ -727,7 +729,7 @@ extOsChmodCallback (SLAX_OS_CALLBACK_ARGS)
 	return rc;
 
     mode_t mode = st.st_mode;
-    mode &= 0777;		/* Just the important bits */
+    mode &= S_MODE_ALL;		/* Just the important bits */
     mode &= ~eocp->eoc_off;
     mode |= eocp->eoc_on;
 
@@ -765,7 +767,7 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
 	const char *cp = (const char *) xop->stringval;
 	char *sp = NULL;
 
-	eoc.eoc_off = 0777;
+	eoc.eoc_off = S_MODE_ALL;
 	eoc.eoc_on = strtoul(cp, &sp, 8);
 
 	if (cp == sp) {
@@ -788,6 +790,9 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
 		    break;
 		case 'o':
 		    eoc.eoc_off |= S_IRWXO;
+		    break;
+		case 'a':
+		    eoc.eoc_off |= S_MODE_ALL;
 		    break;
 		case 'r':
 		    eoc.eoc_on |= S_IRUSR | S_IRGRP | S_IROTH;
@@ -812,7 +817,7 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
 
     } else if (xop->floatval) {
 	eoc.eoc_on = xop->floatval;
-	eoc.eoc_off = 0777;
+	eoc.eoc_off = S_MODE_ALL;
 
     } else {
 	LX_ERR("invalid argument\n");
