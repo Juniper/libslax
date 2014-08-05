@@ -34,3 +34,5 @@ missing
 Makefile.in
 configure
 .DS_Store
+
+slaxconfig.h.in
