@@ -3364,44 +3364,44 @@ command line tool (slaxproc).  The command line tool can be used to
 convert between XSLT and SLAX syntax, as well as run stylesheets and
 check syntax.
 
-  Usage: slaxproc [mode] [options] [script] [files]
-   Modes:
-     --check OR -c: check syntax and content for a SLAX script
-     --format OR -F: format (pretty print) a SLAX script
-     --json-to-xml: Turn JSON data into XML
-     --run OR -r: run a SLAX script (the default mode)
-     --show-select: show XPath selection from the input document
-     --show-variable: show contents of a global variable
-     --slax-to-xslt OR -x: turn SLAX into XSLT
-     --xml-to-json: turn XML into JSON
-     --xpath <xpath> OR -X <xpath>: select XPath data from input
-     --xslt-to-slax OR -s: turn XSLT into SLAX
+ Usage: slaxproc [mode] [options] [script] [files]
+  Modes:
+    --check OR -c: check syntax and content for a SLAX script
+    --format OR -F: format (pretty print) a SLAX script
+    --json-to-xml: Turn JSON data into XML
+    --run OR -r: run a SLAX script (the default mode)
+    --show-select: show XPath selection from the input document
+    --show-variable: show contents of a global variable
+    --slax-to-xslt OR -x: turn SLAX into XSLT
+    --xml-to-json: turn XML into JSON
+    --xpath <xpath> OR -X <xpath>: select XPath data from input
+    --xslt-to-slax OR -s: turn XSLT into SLAX
 
-    Options:
-     --debug OR -d: enable the SLAX/XSLT debugger
-     --empty OR -E: give an empty document for input
-     --exslt OR -e: enable the EXSLT library
-     --expression <expr>: convert an expression
-     --help OR -h: display this help message
-     --html OR -H: Parse input data as HTML
-     --ignore-arguments: Do not process any further arguments
-     --include <dir> OR -I <dir>: search dir for includes/imports
-     --indent OR -g: indent output ala output-method/indent
-     --input <file> OR -i <file>: take input from the given file
-     --json-tagging: tag json-style input with the 'json' attribute
-     --lib <dir> OR -L <dir>: search dir for extension libraries
-     --name <file> OR -n <file>: read the script from the given file
-     --no-randomize: do not initialize the random number generator
-     --no-tty: Do not use tty for sdb and other input needs
-     --no-json-types: do not insert 'type' attribute for --json-to-xml
-     --output <file> OR -o <file>: make output into the given file
-     --param <name> <value> OR -a <name> <value>: pass parameters
-     --partial OR -p: allow partial SLAX input to --slax-to-xslt
-     --slax-output OR -S: emit SLAX-style XML output
-     --trace <file> OR -t <file>: write trace data to a file
-     --verbose OR -v: enable debugging output (slaxLog())
-     --version OR -V: show version information (and exit)
-     --write-version <version> OR -w <version>: write in version
+   Options:
+    --debug OR -d: enable the SLAX/XSLT debugger
+    --empty OR -E: give an empty document for input
+    --exslt OR -e: enable the EXSLT library
+    --expression <expr>: convert an expression
+    --help OR -h: display this help message
+    --html OR -H: Parse input data as HTML
+    --ignore-arguments: Do not process any further arguments
+    --include <dir> OR -I <dir>: search dir for includes/imports
+    --indent OR -g: indent output ala output-method/indent
+    --input <file> OR -i <file>: take input from the given file
+    --json-tagging: tag json-style input with the 'json' attribute
+    --lib <dir> OR -L <dir>: search dir for extension libraries
+    --name <file> OR -n <file>: read the script from the given file
+    --no-randomize: do not initialize the random number generator
+    --no-tty: Do not use tty for sdb and other input needs
+    --no-json-types: do not insert 'type' attribute for --json-to-xml
+    --output <file> OR -o <file>: make output into the given file
+    --param <name> <value> OR -a <name> <value>: pass parameters
+    --partial OR -p: allow partial SLAX input to --slax-to-xslt
+    --slax-output OR -S: emit SLAX-style XML output
+    --trace <file> OR -t <file>: write trace data to a file
+    --verbose OR -v: enable debugging output (slaxLog())
+    --version OR -V: show version information (and exit)
+    --write-version <version> OR -w <version>: write in version
 
   Project libslax home page: https://github.com/Juniper/libslax
 
@@ -4465,6 +4465,103 @@ The "os" extension functions require the following ns statement:
 
     ns os extension = "http://xml.libslax.org/os";
 
+**** Error Nodes @error-nodes@
+
+The return value of many os:* functions consists of a set of zero or
+more error nodes.  Each node may contain an <error> element, which
+in turn may contain the following elements:
+
+|---------+-----------------------------------|
+| Element | Description                       |
+|---------+-----------------------------------|
+| errno   | Error message based on errno      |
+| path    | The path that triggered the error |
+| message | The error message                 |
+|---------+-----------------------------------|
+
+In addition, the <errno> element contains a "code" attribute which
+holds the tag for the errno value, if known.
+
+    <error>
+      <errno code="ENOENT">No such file or directory</errno>
+      <message>unknown group: phil</message>
+    </error>
+
+**** os:chmod @chmod@
+
+The os:chmod function changes the permissions of one or more files,
+allowing or preventing different sets of users from accessing those
+files. 
+
+The first argument is a mode specification similar to the chmod
+command, with either an octal number to set the permissions to, or an
+expression consisting of one or more of the letters 'u', 'g', 'o', and
+'a' (for user, group, other, and all) followed by '+' or '-' (for
+setting or clearing) and one or more of the letters 'r', 'w', and 'x'
+(for read, write, and execute).  The expression "ug+rw" would give
+read and write permission to the user and group which own the file or
+directory.
+
+The second and subsequent arguments can be either a path name string
+or a nodeset of <file>, <directory>, and <wildcard> elements, with the
+former two contain path for files and directories, and the latter
+contains shell/glob-style wildcard patterns.  The following patterns
+are permitted:
+
+- '*' matches zero or more characters
+- '?' matches any single character
+- '[...]' matches any of the enclosed characters
+- '{...}' matches any of the enclosed comma-separated sequences
+
+For example, <wildcard> "*.txt" matches all text files.
+
+    SYNTAX::
+        void os:chmod(mode, files, ...);
+
+    EXAMPLE::
+        $res = os:chmod("g+w", "file1", {
+            <file> "test.test";
+            <directory> "dir";
+            <wildcard> "*.c";
+        });
+
+If successful, nothing is returned.  On failure, a set of error nodes
+is returned.  See ^error-nodes^ for details.
+
+**** os:chown
+
+The os:chown function changes for owning user and group for one or
+more files.
+
+The first argument is the target name and/or group, in either symbolic
+or numeric format:
+
+    SYNTAX::
+        [ <user> ]? [ ':' <group> ]
+    EXAMPLE:
+        phil
+        phil:eng
+        :eng
+        :12
+        0:0
+
+The second and subsequent arguments can be either a path name string
+or a nodeset of <file>, <directory>, and <wildcard> elements.  See
+^chmod^ for details.
+
+    SYNTAX::
+        void os:chown(owner, files, ...);
+
+    EXAMPLE::
+        $res = os:chown(":eng", "file1", {
+            <file> "test.test";
+            <directory> "dir";
+            <wildcard> "*.c";
+        });
+
+If successful, nothing is returned.  On failure, a set of error nodes
+is returned.  See ^error-nodes^ for details.
+
 **** os:exit-code
 
 The os:exit-code function sets the exit code for the process running
@@ -4485,12 +4582,13 @@ arguments; the first is name of the directory to be made and the
 second is an node-set containing options to be used during the
 operation.  The options can include the values in the following table.
 
-|---------+---------------------------------------------|
-| Element | Description                                 |
-|---------+---------------------------------------------|
-| mode    | Octal value of directory permissions        |
-| path    | Create intermediate directories as required |
-|---------+---------------------------------------------|
+|---------+----------------------------------------------|
+| Element | Description                                  |
+|---------+----------------------------------------------|
+| create  | Error if the last element of the path exists |
+| mode    | Octal value of directory permissions         |
+| path    | Create intermediate directories as required  |
+|---------+----------------------------------------------|
 
     SYNTAX::
         node-set os:mkdir(path [, options]);
@@ -4500,6 +4598,7 @@ operation.  The options can include the values in the following table.
         var $opts = {
             <mode> "0700";
             <path>;
+            <create>;
         }
         var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
 
@@ -4526,6 +4625,9 @@ the following elements:
 
 In addition, the <errno> element contains a "code" attribute which
 holds the tag for the errno value, if known.
+
+If successful, nothing is returned.  On failure, a set of error nodes
+is returned.  See ^error-nodes^ for details.
 
 **** os:stat
 

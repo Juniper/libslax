@@ -929,8 +929,10 @@ main (int argc UNUSED, char **argv)
 	slaxLogEnable(TRUE);
     }
 
-    if (use_exslt)
+    if (use_exslt) {
 	exsltRegisterAll();
+	slaxDynMarkExslt();
+    }
 
     if (trace_file) {
 	if (slaxFilenameIsStd(trace_file))

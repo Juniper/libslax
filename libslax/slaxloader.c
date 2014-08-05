@@ -740,7 +740,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     sd.sd_docp = NULL;
     slaxDataCleanup(&sd);
 
-    slaxDynLoad(res);		/* Check dynamic extensions */
+    if (res)
+	slaxDynLoad(res);	/* Check dynamic extensions */
 
     return res;
 }
@@ -822,7 +823,8 @@ slaxLoadBuffer (const char *filename, char *input,
     sd.sd_docp = NULL;
     slaxDataCleanup(&sd);
 
-    slaxDynLoad(res);		/* Check dynamic extensions */
+    if (res)
+	slaxDynLoad(res);	/* Check dynamic extensions */
 
     return res;
 }
@@ -1076,7 +1078,8 @@ slaxLoader (const xmlChar *url, xmlDictPtr dict, int options,
     if (file != stdin)
 	fclose(file);
 
-    slaxDynLoad(docp);
+    if (docp)
+	slaxDynLoad(docp);
 
     return docp;
 }

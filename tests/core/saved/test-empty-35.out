@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<top xmlns:my="mine">
+  <function test="0">
+    <a type="node-set">
+      <command>show something</command>
+    </a>
+    <b type="string">else</b>
+  </function>
+  <function test="1">
+    <a type="node-set">
+      <first>one</first>
+      <second>two</second>
+      <good>news</good>
+    </a>
+    <b type="node-set">
+      <third>three</third>
+      <fourth>four</fourth>
+    </b>
+  </function>
+  <template test="2">
+    <a type="node-set">
+      <command>foo</command>
+    </a>
+  </template>
+  <template test="3">
+    <a type="string">test</a>
+    <b type="node-set">
+      <too>to</too>
+    </b>
+  </template>
+  <template test="4">
+    <a type="node-set">
+      <top>
+        <one>1</one>
+        <two>2</two>
+        <three>3</three>
+      </top>
+    </a>
+    <b type="string">no problemo</b>
+  </template>
+  <template test="5">
+    <a type="node-set">
+      <x>x</x>
+      <y>y</y>
+    </a>
+  </template>
+  <template test="6">
+    <a type="node-set">
+      <x>x1</x>
+      <y>y1</y>
+    </a>
+    <b type="node-set">
+      <z>z</z>
+      <zz>zz</zz>
+      <zzz>zzz</zzz>
+    </b>
+  </template>
+</top>

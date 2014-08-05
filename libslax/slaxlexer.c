@@ -636,12 +636,25 @@ slaxGetInput (slax_data_t *sdp, int final)
 		sdp->sd_ctxt->input->line = sdp->sd_line;
 	}
 
-	if (first_read && sdp->sd_buf[0] == '#' && sdp->sd_buf[1] == '!') {
+	if (first_read) {
 	    /*
-	     * If we hit a line on our first read that starts with "#!",
-	     * then we skip the line.
+	     * UTF-8 allows (but doesn't recommend) UTF-8 files
+	     * to start with a BOM, which is 0xefbbbf.  Skip over it.
 	     */
-	    sdp->sd_len = 0;
+	    if ((unsigned char) sdp->sd_buf[0] == 0xef
+		    && (unsigned char) sdp->sd_buf[1] == 0xbb
+		    && (unsigned char) sdp->sd_buf[2] == 0xbf)
+		sdp->sd_cur += 3;
+
+	    if (sdp->sd_buf[sdp->sd_cur] == '#'
+		    && sdp->sd_buf[sdp->sd_cur + 1] == '!') {
+		/*
+		 * If we hit a line on our first read that starts with "#!",
+		 * then we skip the line.
+		 */
+		sdp->sd_len = 0;
+	    }
+
 	    first_read = FALSE;
 	    continue;
 	}

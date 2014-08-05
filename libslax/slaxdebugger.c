@@ -1547,7 +1547,7 @@ slaxDebugCmdReload (DC_ARGS)
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
 
-    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
     statep->ds_flags |= DSF_RELOAD;
 }
     

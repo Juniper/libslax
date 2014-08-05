@@ -1,0 +1,9 @@
+usr/share/man/man3/libslax.*
+usr/share/man/man1/slax*
+usr/lib/lib*.so.*
+usr/lib/slax/extensions/lib*.so.*
+usr/lib/slax/extensions/*.prefix
+usr/lib/slax/extensions/*.ext
+usr/share/doc/libslax/*
+usr/bin/slaxproc
+usr/bin/slax-config

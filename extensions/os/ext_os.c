@@ -481,7 +481,7 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
     int rc, i;
     const char *value, *key;
     mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
-    int build_path = FALSE;
+    int build_path = FALSE, create = FALSE;
 
     if (nargs < 1 || nargs > 2) {
 	xmlXPathReturnNumber(ctxt, xsltGetMaxDepth());
@@ -519,6 +519,8 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 			mode = x;
 		} else if (streq(key, ELT_PATH)) {
 		    build_path = TRUE;
+		} else if (streq(key, ELT_CREATE)) {
+		    create = TRUE;
 		}
 	    }
 	}
@@ -539,7 +541,12 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 	}
 
 	rc = mkdir(path, mode);
-	if (rc && errno != EEXIST) {
+	if (rc && errno == EEXIST) {
+	    if (!create || cp)
+		rc = 0;
+	}
+
+	if (rc) {
 	    xmlNodePtr nodep;
 	    int eno = errno;
 
@@ -563,6 +570,411 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
     xmlFreeAndEasy(path);
 
     valuePush(ctxt, xmlXPathNewNodeSet(NULL));
+}
+
+#define SLAX_OS_CALLBACK_ARGS \
+    void *opaque UNUSED, \
+    xmlNodeSet *results UNUSED, xmlXPathParserContext *ctxt UNUSED, \
+    const char *key UNUSED, const char *value UNUSED
+typedef int (*slax_os_callback_t)(SLAX_OS_CALLBACK_ARGS);
+
+static void
+extOsWorkerOne (slax_os_callback_t func, const char *action,
+		SLAX_OS_CALLBACK_ARGS)
+{
+    char buf[BUFSIZ];
+    int rc;
+    xmlNodePtr nodep;
+    int eno;
+
+    if (key == NULL || streq(key, "file")) {
+	rc = func(opaque, results, ctxt, key, value);
+	if (rc) {
+	    eno = errno;
+	    snprintf(buf, sizeof(buf), "could not %s file", action);
+	    nodep = slaxMakeErrorNode(ctxt, eno, value, buf);
+	    xmlXPathNodeSetAdd(results, nodep);
+	}
+
+    } else if (streq(key, "directory")) {
+	rc = func(opaque, results, ctxt, key, value);
+	if (rc) {
+	    eno = errno;
+	    snprintf(buf, sizeof(buf), "could not %s directory", action);
+	    nodep = slaxMakeErrorNode(ctxt, eno, value, buf);
+	    xmlXPathNodeSetAdd(results, nodep);
+	}
+
+    } else if (streq(key, "wildcard")) {
+	glob_t gl;
+	int flags = GLOB_NOSORT | GLOB_BRACE | GLOB_TILDE;
+
+	bzero(&gl, sizeof(gl));
+	rc = glob(value, flags, NULL, &gl);
+	if (rc) {
+	    eno = errno;
+	    nodep = slaxMakeErrorNode(ctxt, eno, value,
+				      "nothing matches path");
+	    xmlXPathNodeSetAdd(results, nodep);
+
+	} else {
+	    size_t j;
+
+	    for (j = 0; j < gl.gl_pathc;j++) {
+		value = gl.gl_pathv[j];
+		rc = func(opaque, results, ctxt, key, value);
+		if (rc) {
+		    eno = errno;
+		    snprintf(buf, sizeof(buf),
+			     "could not %s file (wildcard)", action);
+		    nodep = slaxMakeErrorNode(ctxt, eno, value, buf);
+		    xmlXPathNodeSetAdd(results, nodep);
+		}
+	    }
+	}
+    }
+}
+
+static void
+extOsWorker (slax_os_callback_t func, const char *action, void *opaque,
+	     xmlXPathParserContext *ctxt, int nargs)
+{
+    int i;
+    const char *value, *key;
+    xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+    xmlXPathObjectPtr ret;
+
+    while (nargs-- > 0) {
+	xmlXPathObject *xop = valuePop(ctxt);
+	if (xop->stringval) {
+	    extOsWorkerOne(func, action, opaque, results, ctxt,
+			   "file", (const char *) xop->stringval);
+	    xmlXPathFreeObject(xop);
+	    continue;
+	}
+
+	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	    xmlXPathFreeObject(xop);
+	    continue;
+	}
+
+	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	    xmlNodePtr nop, cop;
+
+	    nop = xop->nodesetval->nodeTab[i];
+	    if (nop->children == NULL)
+		continue;
+
+	    for (cop = nop->children; cop; cop = cop->next) {
+		if (cop->type != XML_ELEMENT_NODE)
+		    continue;
+
+		key = xmlNodeName(cop);
+		if (!key)
+		    continue;
+
+		value = xmlNodeValue(cop);
+		if (value == NULL)
+		    continue;
+
+		extOsWorkerOne(func, action, opaque, results, ctxt, key, value);
+	    }
+	}
+	xmlXPathFreeObject(xop);
+    }
+
+    ret = xmlXPathNewNodeSetList(results);
+    valuePush(ctxt, ret);
+    xmlXPathFreeNodeSet(results);
+}
+
+static int
+extOsRemoveCallback (SLAX_OS_CALLBACK_ARGS)
+{
+    int rc;
+
+    if (key && streq(key, "directory")) {
+	rc = rmdir(value);
+    } else {
+	rc = unlink(value);
+    }
+
+    return rc;
+}
+
+static void
+extOsRemove (xmlXPathParserContext *ctxt, int nargs)
+{
+    extOsWorker(extOsRemoveCallback, "remove", NULL, ctxt, nargs);
+}
+
+typedef struct ext_os_chmod_s {
+    mode_t eoc_on;		/* Bits to set on */
+    mode_t eoc_off;		/* Mask to set off */
+} ext_os_chmod_t;
+
+#define S_MODE_ALL 0777		/* All mode bits */
+
+static int
+extOsChmodCallback (SLAX_OS_CALLBACK_ARGS)
+{
+    ext_os_chmod_t *eocp = (ext_os_chmod_t *) opaque;
+    int rc;
+
+    struct stat st;
+
+    rc = stat(value, &st);
+    slaxLog("chmod: %s -> %d %o", value, rc, st.st_mode);
+    if (rc == -1)
+	return rc;
+
+    mode_t mode = st.st_mode;
+    mode &= S_MODE_ALL;		/* Just the important bits */
+    mode &= ~eocp->eoc_off;
+    mode |= eocp->eoc_on;
+
+    rc = chmod(value, mode);
+
+    return rc;
+}
+
+static void
+extOsChmod (xmlXPathParserContext *ctxt, int nargs)
+{
+    ext_os_chmod_t eoc;
+    xmlXPathObject *stack[nargs];	/* Stack for args as objects */
+    int ndx;
+
+    if (nargs < 2) {
+	xmlXPathReturnNumber(ctxt, xsltGetMaxDepth());
+	return;
+    }
+
+    /* Pop and re-push our arguments; we need to first one */
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = valuePop(ctxt);
+    for (ndx = 1; ndx < nargs; ndx++)
+	valuePush(ctxt, stack[ndx]);
+
+    nargs -= 1;
+    xmlXPathObject *xop = stack[0];
+    if (xop == NULL)
+	return;
+
+    bzero(&eoc, sizeof(eoc));
+
+    if (xop->stringval) {
+	const char *cp = (const char *) xop->stringval;
+	char *sp = NULL;
+
+	eoc.eoc_off = S_MODE_ALL;
+	eoc.eoc_on = strtoul(cp, &sp, 8);
+
+	if (cp == sp) {
+	    int set = 0;
+	    eoc.eoc_on = eoc.eoc_off = 0;
+
+	    for ( ; *cp; cp++) {
+		switch (*cp) {
+		case '+':
+		    set = 1;
+		    break;
+		case '-':
+		    set = 0;
+		    break;
+		case 'u':
+		    eoc.eoc_off |= S_IRWXU;
+		    break;
+		case 'g':
+		    eoc.eoc_off |= S_IRWXG;
+		    break;
+		case 'o':
+		    eoc.eoc_off |= S_IRWXO;
+		    break;
+		case 'a':
+		    eoc.eoc_off |= S_MODE_ALL;
+		    break;
+		case 'r':
+		    eoc.eoc_on |= S_IRUSR | S_IRGRP | S_IROTH;
+		    break;
+		case 'w':
+		    eoc.eoc_on |= S_IWUSR | S_IWGRP | S_IWOTH;
+		    break;
+		case 'x':
+		    eoc.eoc_on |= S_IXUSR | S_IXGRP | S_IXOTH;
+		    break;
+		}
+	    }
+
+	    if (set) {
+		eoc.eoc_on = eoc.eoc_off & eoc.eoc_on;
+		eoc.eoc_off = 0;
+	    } else {
+		eoc.eoc_off = eoc.eoc_off & eoc.eoc_on;
+		eoc.eoc_on = 0;
+	    }
+	}
+
+    } else if (xop->floatval) {
+	eoc.eoc_on = xop->floatval;
+	eoc.eoc_off = S_MODE_ALL;
+
+    } else {
+	LX_ERR("invalid argument\n");
+	return;
+    }
+
+    extOsWorker(extOsChmodCallback, "chmod", &eoc, ctxt, nargs);
+}
+
+typedef struct ext_os_chown_s {
+    uid_t eoc_uid;
+    gid_t eoc_gid;
+} ext_os_chown_t;
+
+static int
+extOsChownCallback (SLAX_OS_CALLBACK_ARGS)
+{
+    ext_os_chown_t *eocp = (ext_os_chown_t *) opaque;
+    int rc;
+
+    rc = chown(value, eocp->eoc_uid, eocp->eoc_gid);
+
+    return rc;
+}
+
+static void
+extOsChown (xmlXPathParserContext *ctxt, int nargs)
+{
+    ext_os_chown_t eoc;
+    xmlXPathObject *stack[nargs];	/* Stack for args as objects */
+    int ndx;
+    const char *ctype = NULL;
+
+    if (nargs < 2) {
+	xmlXPathReturnNumber(ctxt, xsltGetMaxDepth());
+	return;
+    }
+
+    /* Pop and re-push our arguments; we need to first one */
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = valuePop(ctxt);
+    for (ndx = 1; ndx < nargs; ndx++)
+	valuePush(ctxt, stack[ndx]);
+
+    nargs -= 1;
+    xmlXPathObject *xop = stack[0];
+    if (xop == NULL)
+	return;
+
+    eoc.eoc_uid = (uid_t) -1;
+    eoc.eoc_gid = (gid_t) -1;
+
+    struct passwd *pwp;
+    struct group *grp;
+    unsigned long ul;
+    char *np;
+
+    if (xop->stringval) {
+	const char *cp = (const char *) xop->stringval;
+	char *sp = NULL;
+
+	ul = strtoul(cp, &sp, 10);
+	if (cp != sp) {
+	    eoc.eoc_uid = ul;
+
+	    if (*sp == ':') {	/* Have a group */
+		ul = strtoul(sp + 1, &np, 10);
+		if (sp + 1 == np) { /* Not a number */
+		    grp = getgrnam(np);
+		    if (grp)
+			eoc.eoc_gid = grp->gr_gid;
+		    else {
+			cp = np;
+			ctype = "group";
+			goto fail;
+		    }
+		} else {
+		    eoc.eoc_gid = ul;
+		}
+	    }
+	} else if (*cp == ':') {
+	    ul = strtoul(cp + 1, &sp, 10);
+	    if (sp == cp + 1) {	/* Not a number */
+		grp = getgrnam(sp);
+		if (grp)
+		    eoc.eoc_gid = grp->gr_gid;
+		else {
+		    cp = sp;
+		    ctype = "group";
+		    goto fail;
+		}
+	    } else {
+		eoc.eoc_gid = ul;
+	    }
+
+	} else {
+	    sp = strchr(cp, ':');
+	    if (sp) {
+		int len = sp - cp;
+		np = alloca(len + 1);
+		memcpy(np, cp, len);
+		np[len] = '\0';
+
+		cp  = sp + 1;
+		ul = strtoul(cp, &sp, 10);
+		if (sp == cp) {	/* Not a number */
+		    grp = getgrnam(sp);
+		    if (grp)
+			eoc.eoc_gid = grp->gr_gid;
+		    else {
+			cp = sp;
+			ctype = "group";
+			goto fail;
+		    }
+		} else {
+		    eoc.eoc_gid = ul;
+		}
+
+		cp = np;
+	    }
+
+	    pwp = getpwnam(cp);
+	    if (pwp)
+		eoc.eoc_uid = pwp->pw_uid;
+	    else {
+		char buf[128];
+		xmlNodePtr nodep;
+		int eno;
+		ctype = "user";
+
+	    fail:
+		eno = errno;
+		snprintf(buf, sizeof(buf), "unknown %s: %s", ctype, cp);
+		nodep = slaxMakeErrorNode(ctxt, eno, NULL, buf);
+
+		for (ndx = 0; ndx < nargs; ndx++)
+		    (void) valuePop(ctxt);
+
+		valuePush(ctxt, xmlXPathNewNodeSet(nodep));
+		return;
+	    }
+	}
+
+    } else if (xop->floatval) {
+	eoc.eoc_uid = xop->floatval;
+
+    } else {
+	LX_ERR("invalid argument\n");
+	return;
+    }
+
+    if (eoc.eoc_uid == (uid_t) -1 && eoc.eoc_gid == (gid_t) -1) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    extOsWorker(extOsChownCallback, "chown", &eoc, ctxt, nargs);
 }
 
 static void
@@ -903,27 +1315,22 @@ slax_function_table_t slaxOsTable[] = {
 	"Copy files",
 	"(filespec, file-or-directory)", XPATH_NUMBER,
     },
+#endif
     {
-	"remove", extOsRemove
+	"remove", extOsRemove,
 	"Remove files",
-	"(filespec)", XPATH_UNDEFINED,
-    },
-    {
-	"rmdir", extOsRmdir,
-	"Remove a directory",
-	"(path)", XPATH_UNDEFINED,
+	"(filespec, ...)", XPATH_UNDEFINED,
     },
     {
 	"chmod", extOsChmod,
 	"Change the mode of a file",
-	"(file-spec, permissions)", XPATH_UNDEFINED,
+	"(permissions, filespec, ...)", XPATH_UNDEFINED,
     },
     {
 	"chown", extOsChown,
 	"Change ownership of a file",
-	"(file-spec, ownership)", XPATH_UNDEFINED,
+	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
     },
-#endif
 
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };

@@ -69,6 +69,13 @@ function okay {
 
 if [ "$1" = "-d" ]; then
     DOC=doc
+    shift;
+fi
+
+PROJECT="$1"
+if [ -z "$PROJECT" ]; then
+    echo "Usage: new-release <project-name> (e.g. libslax)"
+    exit 1
 fi
 
 find_git_dir
@@ -107,8 +114,8 @@ run "pick up changes for configure.ac" "gt merge-from master"
 run "show diffs" "gt diff ${OLD_VERSION}...${NEW_VERSION}"
 get_log_comments $OLD_VERSION $NEW_VERSION
 
-run "goto https://github.com/Juniper/libslax/releases" "open https://github.com/Juniper/libslax/releases"
+run "goto https://github.com/Juniper/$PROJECT/releases" "open https://github.com/Juniper/$PROJECT/releases"
 
-echo "Do not forget to copy libslax-${NEW_VERSION}.tar.gz to the release page"
+echo "Do not forget to copy $PROJECT-${NEW_VERSION}.tar.gz to the release page"
 
 exit 0

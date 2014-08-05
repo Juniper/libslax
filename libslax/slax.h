@@ -326,4 +326,10 @@ slaxSetExitCode (int code);
 int
 slaxGetExitCode (void);
 
+int
+slaxDynMarkLoaded (const char *);
+
+void
+slaxDynMarkExslt (void);
+
 #endif /* LIBSLAX_SLAX_H */

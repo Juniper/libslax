@@ -1,7 +1,9 @@
 version 1.0;
 
-include "foo.slax";
-import "goo.xsl";
+param $x = 1;
+
+include "saved/test-empty-02.xsl";
+import "saved/test-empty-01.xsl";
 
 match / {
     apply-imports;
