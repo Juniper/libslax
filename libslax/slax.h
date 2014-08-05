@@ -10,7 +10,7 @@
 #ifndef LIBSLAX_SLAX_H
 #define LIBSLAX_SLAX_H
 
-#include <libslax/slaxconfig.h>
+#include <libslax/slaxversion.h>
 
 #define SLAX_VERSION "1.2"
 #define SLAX_VERSION_NUMBER 12
@@ -182,7 +182,11 @@ __printflike(1, 2)
 #endif /* HAVE_PRINTFLIKE */
 slaxOutput (const char *fmt, ...);
 
-int slaxError (const char *fmt, ...);
+int
+#ifdef HAVE_PRINTFLIKE
+__printflike(1, 2)
+#endif /* HAVE_PRINTFLIKE */
+slaxError (const char *fmt, ...);
 
 /* ---------------------------------------------------------------------- */
 /*
@@ -202,6 +206,12 @@ slaxDebugInit (void);
  */
 void
 slaxDebugSetStylesheet (struct _xsltStylesheet *stylep);
+
+/**
+ * Tell the debugger to use an in-memory buffer for the script
+ */
+void
+slaxDebugSetScriptBuffer (const char *buffer);
 
 /**
  * Set a search path for included and imported files
