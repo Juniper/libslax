@@ -115,3 +115,6 @@ slaxSlaxToXpath (const char *filename, int lineno,
 
 void
 slaxMainElement (slax_data_t *sdp);
+
+xmlDocPtr
+slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt);
