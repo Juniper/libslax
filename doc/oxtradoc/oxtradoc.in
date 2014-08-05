@@ -288,7 +288,7 @@ sub first_pass {
 	    }
 
 	    # Other modes are detected based on leading string
-	    $tag = "org_table", last if /^\|/;
+	    $tag = "org_table", last if /^\|/ or /^--/;
 	    $tag = "plain", $default = "plain", last if /^{{plain:/;
 	    $tag = "quote", $default = "quote", last if /^{{quote:/;
 	    $tag = "digress", last if /^{{/;
@@ -856,7 +856,7 @@ sub start_org_table {
     print " title=\"", esc($title), "\"" if $title;
     print "\>\n";
     $org_header = 0;
-    org_table_header() unless $line =~ /^\|--/;
+    org_table_header() unless $line =~ /^\--/;
 }
 
 sub org_table_header {
