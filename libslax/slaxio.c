@@ -24,7 +24,6 @@
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
-#include "config.h"
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 
@@ -291,7 +290,13 @@ slaxIoStdioRawwriteCallback (void *opaque UNUSED, const char *buf, int len)
 static int
 slaxIoStdioErrorCallback (const char *fmt, va_list vap)
 {
-    return vfprintf(stderr, fmt, vap);
+    size_t len = strlen(fmt);
+    char *cp = alloca(len + 2);
+    memcpy(cp, fmt, len);
+    cp[len] = '\n';
+    cp[len + 1] = '\0';
+
+    return vfprintf(stderr, cp, vap);
 }
 
 void
