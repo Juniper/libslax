@@ -614,7 +614,7 @@ extOsWorkerOne (slax_os_callback_t func, const char *action,
 	if (rc) {
 	    eno = errno;
 	    nodep = slaxMakeErrorNode(ctxt, eno, value,
-				      "could not find wildcard path");
+				      "nothing matches path");
 	    xmlXPathNodeSetAdd(results, nodep);
 
 	} else {
@@ -820,6 +820,156 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
     }
 
     extOsWorker(extOsChmodCallback, "chmod", &eoc, ctxt, nargs);
+}
+
+typedef struct ext_os_chown_s {
+    uid_t eoc_uid;
+    gid_t eoc_gid;
+} ext_os_chown_t;
+
+static int
+extOsChownCallback (SLAX_OS_CALLBACK_ARGS)
+{
+    ext_os_chown_t *eocp = (ext_os_chown_t *) opaque;
+    int rc;
+
+    rc = chown(value, eocp->eoc_uid, eocp->eoc_gid);
+
+    return rc;
+}
+
+static void
+extOsChown (xmlXPathParserContext *ctxt, int nargs)
+{
+    ext_os_chown_t eoc;
+    xmlXPathObject *stack[nargs];	/* Stack for args as objects */
+    int ndx;
+    const char *ctype = NULL;
+
+    if (nargs < 2) {
+	xmlXPathReturnNumber(ctxt, xsltGetMaxDepth());
+	return;
+    }
+
+    /* Pop and re-push our arguments; we need to first one */
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = valuePop(ctxt);
+    for (ndx = 1; ndx < nargs; ndx++)
+	valuePush(ctxt, stack[ndx]);
+
+    nargs -= 1;
+    xmlXPathObject *xop = stack[0];
+    if (xop == NULL)
+	return;
+
+    eoc.eoc_uid = (uid_t) -1;
+    eoc.eoc_gid = (gid_t) -1;
+
+    struct passwd *pwp;
+    struct group *grp;
+    unsigned long ul;
+    char *np;
+
+    if (xop->stringval) {
+	const char *cp = (const char *) xop->stringval;
+	char *sp = NULL;
+
+	ul = strtoul(cp, &sp, 10);
+	if (cp != sp) {
+	    eoc.eoc_uid = ul;
+
+	    if (*sp == ':') {	/* Have a group */
+		ul = strtoul(sp + 1, &np, 10);
+		if (sp + 1 == np) { /* Not a number */
+		    grp = getgrnam(np);
+		    if (grp)
+			eoc.eoc_gid = grp->gr_gid;
+		    else {
+			cp = np;
+			ctype = "group";
+			goto fail;
+		    }
+		} else {
+		    eoc.eoc_gid = ul;
+		}
+	    }
+	} else if (*cp == ':') {
+	    ul = strtoul(cp + 1, &sp, 10);
+	    if (sp == cp + 1) {	/* Not a number */
+		grp = getgrnam(sp);
+		if (grp)
+		    eoc.eoc_gid = grp->gr_gid;
+		else {
+		    cp = sp;
+		    ctype = "group";
+		    goto fail;
+		}
+	    } else {
+		eoc.eoc_gid = ul;
+	    }
+
+	} else {
+	    sp = strchr(cp, ':');
+	    if (sp) {
+		int len = sp - cp;
+		np = alloca(len + 1);
+		memcpy(np, cp, len);
+		np[len] = '\0';
+
+		cp  = sp + 1;
+		ul = strtoul(cp, &sp, 10);
+		if (sp == cp) {	/* Not a number */
+		    grp = getgrnam(sp);
+		    if (grp)
+			eoc.eoc_gid = grp->gr_gid;
+		    else {
+			cp = sp;
+			ctype = "group";
+			goto fail;
+		    }
+		} else {
+		    eoc.eoc_gid = ul;
+		}
+
+		cp = np;
+	    }
+
+	    pwp = getpwnam(cp);
+	    if (pwp)
+		eoc.eoc_uid = pwp->pw_uid;
+	    else {
+		char buf[128];
+		xmlNodePtr nodep;
+		int eno;
+		ctype = "user";
+
+	    fail:
+		eno = errno;
+		snprintf(buf, sizeof(buf), "unknown %s: %s", ctype, cp);
+		nodep = slaxMakeErrorNode(ctxt, eno, NULL, buf);
+
+		for (ndx = 0; ndx < nargs; ndx++)
+		    (void) valuePop(ctxt);
+
+		valuePush(ctxt, xmlXPathNewNodeSet(nodep));
+		return;
+	    }
+	}
+
+    } else if (xop->floatval) {
+	eoc.eoc_uid = xop->floatval;
+
+    } else {
+	LX_ERR("invalid argument\n");
+	return;
+    }
+
+    if (eoc.eoc_uid == (uid_t) -1 && eoc.eoc_gid == (gid_t) -1) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    extOsWorker(extOsChownCallback, "chown", &eoc, ctxt, nargs);
 }
 
 static void
@@ -1169,15 +1319,13 @@ slax_function_table_t slaxOsTable[] = {
     {
 	"chmod", extOsChmod,
 	"Change the mode of a file",
-	"(file-spec, permissions)", XPATH_UNDEFINED,
+	"(permissions, filespec, ...)", XPATH_UNDEFINED,
     },
-#if 0
     {
 	"chown", extOsChown,
 	"Change ownership of a file",
-	"(file-spec, ownership)", XPATH_UNDEFINED,
+	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
     },
-#endif
 
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };
