@@ -3311,26 +3311,12 @@ Break a string into a set of elements, up to the limit times, at the pattern.
 
 Retrieve a sysctl variable.  Format is "i" or "s".
 
-*** slax:string-to-xml
-
-    SYNTAX::
-        node-set slax:string-to-xml(string+)
-
-Return parsed XML of concatenated arguments.
-
 *** slax:syslog
 
     SYNTAX::
         void slax:syslog(priority, string+)
 
 Syslog the concatenation of set of arguments.
-
-*** slax:xml-to-string
-
-    SYNTAX::
-        string slax:xml-to-string(node-set+)
-
-Return stringified XML hierarchies.
 
 * The libslax Distribution
 
@@ -4378,6 +4364,12 @@ into the native representation of that data.
         var $data = "<doc><title>fred</title></doc>";
         var $xml = xutil:string-to-xml($data);
         message "title is " _ $xml/title;
+
+Multiple strings can be passed, in which case, they will be
+concatenated before the XML conversion:
+
+    EXAMPLE::
+        var $xml2 = xutil:string-to-xml("<top>", $content, "</top");
 
 **** xutil:xml-to-string()
 
