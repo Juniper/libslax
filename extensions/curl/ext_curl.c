@@ -26,7 +26,7 @@
 #include <libxml/xmlsave.h>
 #include <libxml/HTMLparser.h>
 
-#include "config.h"
+#include "slaxconfig.h"
 
 #include <libxslt/extensions.h>
 #include <libslax/slaxdata.h>
