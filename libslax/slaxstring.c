@@ -333,6 +333,8 @@ slaxStringLength (slax_string_t *start, unsigned flags)
 		    if (index(slaxEscapedFrom, *cp) != NULL)
 			len += 1; /* Must be escaped */
 	    }
+	} else if (ssp->ss_ttype == T_VAR && (flags & SSF_XPATH)) {
+	    len += 2;		/* Space for braces: {$foo} */
 	}
     }
 
@@ -499,6 +501,12 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 		}
 	    }
 
+	} else if (ssp->ss_ttype == T_VAR && (flags & SSF_XPATH)) {
+	    *bp++ = '{';
+	    memcpy(bp, str, slen);
+	    bp += slen;
+	    *bp++ = '}';
+	    len += 2;
 	} else {
 	    memcpy(bp, str, slen);
 	    bp += slen;
@@ -567,7 +575,7 @@ static int
 slaxStringValueTemplateLength (slax_string_t *value, unsigned flags)
 {
     int len = 0;
-    unsigned xflags;
+    unsigned xflags = flags;
 
     if (value->ss_ttype == M_CONCAT) {
 	slax_string_t *ssp, *marker, *last;
@@ -580,7 +588,7 @@ slaxStringValueTemplateLength (slax_string_t *value, unsigned flags)
 	    last->ss_next = NULL; /* Fake terminate the string */
 
 	    xflags = flags;
-	    if (ssp->ss_ttype != T_QUOTED) {
+	    if (ssp->ss_ttype != T_QUOTED && !(xflags & SSF_XPATH)) {
 		len += 2; /* Room for braces */
 		xflags |= SSF_QUOTES;
 	    }
@@ -598,8 +606,7 @@ slaxStringValueTemplateLength (slax_string_t *value, unsigned flags)
 	}
 
     } else {
-	xflags = flags;
-	if (value->ss_ttype != T_QUOTED) {
+	if (!(xflags & SSF_XPATH) && value->ss_ttype != T_QUOTED) {
 	    len += 2; /* Room for braces */
 	    xflags |= SSF_QUOTES;
 	}
@@ -614,7 +621,7 @@ static void
 slaxStringValueTemplateCopy (char *buf, int len,
 			     slax_string_t *value, unsigned flags)
 {
-    unsigned xflags;
+    unsigned xflags = flags;
     int blen = len;
     char *bp = buf;
 
@@ -629,7 +636,7 @@ slaxStringValueTemplateCopy (char *buf, int len,
 	    last->ss_next = NULL; /* Fake terminate the string */
 
 	    xflags = flags;
-	    if (ssp->ss_ttype != T_QUOTED) {
+	    if (ssp->ss_ttype != T_QUOTED && !(xflags & SSF_XPATH)) {
 		*bp++ = '{';
 		blen -= 1;
 		xflags |= SSF_QUOTES;
@@ -640,7 +647,7 @@ slaxStringValueTemplateCopy (char *buf, int len,
 	    bp += len;
 
 
-	    if (ssp->ss_ttype != T_QUOTED) {
+	    if (ssp->ss_ttype != T_QUOTED && !(xflags & SSF_XPATH)) {
 		*bp++ = '}';
 		blen -= 1;
 	    }
@@ -656,8 +663,7 @@ slaxStringValueTemplateCopy (char *buf, int len,
 	}
 
     } else {
-	xflags = flags;
-	if (value->ss_ttype != T_QUOTED) {
+	if (!(xflags & SSF_XPATH) && value->ss_ttype != T_QUOTED) {
 	    *bp++ = '{';
 	    blen -= 1;
 	    xflags |= SSF_QUOTES;
@@ -667,7 +673,7 @@ slaxStringValueTemplateCopy (char *buf, int len,
 	blen -= len;
 	bp += len;
 
-	if (value->ss_ttype != T_QUOTED) {
+	if (!(xflags & SSF_XPATH) && value->ss_ttype != T_QUOTED) {
 	    *bp++ = '}';
 	    blen -= 1;
 	}

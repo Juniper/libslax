@@ -30,7 +30,7 @@
 #include <libxml/xmlsave.h>
 #include <libexslt/exslt.h>
 
-#include "config.h"
+#include "slaxconfig.h"
 
 #include <libxslt/extensions.h>
 #include <libslax/slaxdata.h>

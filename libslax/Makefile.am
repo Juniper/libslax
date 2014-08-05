@@ -19,7 +19,12 @@ ECHO_BUILD_ = ${ECHO_BUILD_${AM_DEFAULT_VERBOSITY}}
 
 slaxincdir = ${includedir}/libslax
 
-AM_CFLAGS = -I${top_srcdir} ${LIBXSLT_CFLAGS} ${LIBXML_CFLAG} ${WARNINGS}
+AM_CFLAGS = \
+    -I${top_builddir} \
+    -I${top_srcdir} \
+    ${LIBXSLT_CFLAGS} \
+    ${LIBXML_CFLAG} \
+    ${WARNINGS}
 
 AM_CFLAGS += \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
@@ -33,6 +38,7 @@ slaxinc_HEADERS = \
      slaxconfig.h \
      slaxdata.h \
      slaxdyn.h \
+     slaxversion.h \
      xmlsoft.h
 
 noinst_HEADERS = \
@@ -46,8 +52,7 @@ noinst_HEADERS = \
     slaxprofiler.h \
     slaxstring.h \
     slaxtree.h \
-    slaxutil.h \
-    xmlsoft.h
+    slaxutil.h
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
@@ -126,3 +131,19 @@ slaxparser-xpl.y: slaxparser-xp.y
 
 clean-slaxparser:
 	${RM} -f slaxparser-xpl.y slaxparser-out.y
+
+INTERNAL_DIR = ${DESTDIR}${slaxincdir}/internal
+INTERNAL_FILES = ${noinst_HEADERS} ${SLAXPIECES}
+
+install-exec-hook:
+	@echo Installing internal header files ... ; \
+		mkdir -p ${INTERNAL_DIR} ; \
+		chmod +w ${INTERNAL_DIR} ; \
+		for file in ${INTERNAL_FILES}; do \
+                    if [ -f $$file ]; then \
+                       fpath=$$file ; \
+                    else \
+                       fpath=${srcdir}/$$file ; \
+                    fi ; \
+		    ${CP} $$fpath ${INTERNAL_DIR} ; \
+                done

@@ -1241,7 +1241,8 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 
     if (rc > 0 && sdp->sd_start == sdp->sd_cur) {
 	if (slaxLogIsEnabled)
-	    slaxLog("slax: lex: zero length token: %d/%s",
+	    slaxError("%s:%d: slax: lex: zero length token: %d/%s",
+		      sdp->sd_filename, sdp->sd_line,
 		      rc, slaxTokenName(rc));
 	rc = M_ERROR;
 	/*

@@ -1,0 +1,38 @@
+/*
+ * $Id$
+ *
+ * Copyright (c) 2010-2011, Juniper Networks, Inc.
+ * All rights reserved.
+ * This SOFTWARE is licensed under the LICENSE provided in the
+ * ../Copyright file. By downloading, installing, copying, or otherwise
+ * using the SOFTWARE, you agree to be bound by the terms of that
+ * LICENSE.
+ *
+ * slaxconfig.h -- compile time constants for libslax
+ * NOTE: This file is generated from slaxconfig.h.in.
+ */
+
+#ifndef LIBSLAX_SLAXCONFIG_H
+#define LIBSLAX_SLAXCONFIG_H
+
+/**
+ * The version string
+ */
+#define LIBSLAX_VERSION		"@PACKAGE_VERSION@"
+
+/**
+ * The version number
+ */
+#define LIBSLAX_VERSION_NUMBER	@LIBSLAX_VERSION_NUMBER@
+
+/**
+ * The version number as a string
+ */
+#define LIBSLAX_VERSION_STRING	"@LIBSLAX_VERSION_NUMBER@"
+
+/**
+ * The version number extra info as a string
+ */
+#define LIBSLAX_VERSION_EXTRA	"@LIBSLAX_VERSION_EXTRA@"
+
+#endif /* LIBSLAX_SLAXCONFIG_H */

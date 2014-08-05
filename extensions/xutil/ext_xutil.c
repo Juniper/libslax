@@ -24,7 +24,7 @@
 #include <libxml/tree.h>
 #include <libxml/xmlsave.h>
 
-#include "config.h"
+#include <libslax/slaxconfig.h>
 
 #include <libxslt/extensions.h>
 #include <libslax/slaxdata.h>

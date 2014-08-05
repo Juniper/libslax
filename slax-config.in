@@ -27,6 +27,7 @@ Known values for OPTION are:
   --bindir              print the bin directory
   --extdir              print the extension directory
   --cflags		print pre-processor and compiler flags
+  --cflags-internal     print internal pre-processor and compiler flags
   --share		print share directory
   --oxtradoc		print oxtradoc directory
   --modules		module support enabled
@@ -81,6 +82,15 @@ while test $# -gt 0; do
 
     --cflags)
        	echo -I@SLAX_INCLUDEDIR@ @SLAX_CFLAGS@
+       	;;
+
+    --cflags-internal)
+       	echo -I@SLAX_INCLUDEDIR@ -I@SLAX_INCLUDEDIR@/libslax \
+            -I@SLAX_INCLUDEDIR@/libslax/internal @SLAX_CFLAGS@
+       	;;
+
+    --internal)
+       	echo @SLAX_INCLUDEDIR@/libslax/internal/
        	;;
 
     --extdir)

@@ -20,6 +20,7 @@ EXTRA_DIST = curl.txt
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
     -DCURL_DISABLE_TYPECHECK \
+    -I${top_builddir} \
     -I${top_srcdir} \
     ${LIBCURL_CFLAGS} \
     ${LIBSLAX_CFLAGS} \

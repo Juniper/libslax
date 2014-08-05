@@ -29,7 +29,7 @@
 #include <libxml/tree.h>
 #include <libxml/xmlsave.h>
 
-#include "config.h"
+#include <libslax/slaxconfig.h>
 
 #include <libxslt/extensions.h>
 #include <libslax/slaxdata.h>
@@ -39,7 +39,7 @@
 #include <libslax/slaxutil.h>
 #include <libslax/slaxnames.h>
 
-#define XML_FULL_NS "http://xml.libslax.org/xml"
+#define XML_FULL_NS "http://xml.libslax.org/os"
 
 typedef struct statOptions_s {
     int so_brief;		/* Skip most fields */

@@ -599,7 +599,7 @@ slaxMainElement (slax_data_t *sdp)
 /*
  * Build the initial document, with the heading and top-level element.
  */
-static xmlDocPtr
+xmlDocPtr
 slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 {
     xmlDocPtr docp;
@@ -702,7 +702,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     /* We want to parse SLAX, either full or partial */
     sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
 
-    strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
+    strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
 
     sd.sd_ctxt = ctxt;
@@ -728,7 +728,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     rc = slaxParse(&sd);
 
     if (sd.sd_errors) {
-	slaxError("%s: %d error%s detected during parsing (%d)\n",
+	slaxError("%s: %d error%s detected during parsing (%d)",
 	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 
 	slaxDataCleanup(&sd);
@@ -785,7 +785,7 @@ slaxLoadBuffer (const char *filename, char *input,
     /* We want to parse SLAX, either full or partial */
     sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
 
-    strncpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
+    strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_ctxt = ctxt;
 
     /*
@@ -805,13 +805,19 @@ slaxLoadBuffer (const char *filename, char *input,
     sd.sd_buf = input;
     sd.sd_len = strlen(input);
 
+    /*
+     * Unlike the normal line reader, we are post-increment, which
+     * mean we need to start with line one, not zero
+     */
+    sd.sd_line = 1;
+
     if (filename != NULL)
         sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) filename);
 
     rc = slaxParse(&sd);
 
     if (sd.sd_errors) {
-	slaxError("%s: %d error%s detected during parsing (%d)\n",
+	slaxError("%s: %d error%s detected during parsing (%d)",
 	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
 
 	slaxDataCleanup(&sd);

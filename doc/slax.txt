@@ -3311,26 +3311,12 @@ Break a string into a set of elements, up to the limit times, at the pattern.
 
 Retrieve a sysctl variable.  Format is "i" or "s".
 
-*** slax:string-to-xml
-
-    SYNTAX::
-        node-set slax:string-to-xml(string+)
-
-Return parsed XML of concatenated arguments.
-
 *** slax:syslog
 
     SYNTAX::
         void slax:syslog(priority, string+)
 
 Syslog the concatenation of set of arguments.
-
-*** slax:xml-to-string
-
-    SYNTAX::
-        string slax:xml-to-string(node-set+)
-
-Return stringified XML hierarchies.
 
 * The libslax Distribution
 
@@ -3389,7 +3375,10 @@ check syntax.
     --indent OR -g: indent output ala output-method/indent
     --input <file> OR -i <file>: take input from the given file
     --json-tagging: tag json-style input with the 'json' attribute
+    --keep-text: mini-templates should not discard text
     --lib <dir> OR -L <dir>: search dir for extension libraries
+    --log <file>: use given log file
+    --mini-template <code> OR -m <code>: wrap template code in script
     --name <file> OR -n <file>: read the script from the given file
     --no-randomize: do not initialize the random number generator
     --no-tty: Do not use tty for sdb and other input needs
@@ -3578,9 +3567,20 @@ Use the given file for  input.
 Tag JSON elements as they are parsing into XML with the 'json'
 attribute.  This allows the --format mode to transform them
 back into JSON format.
+= --keep-text
+When building a script from mini-templates, do not add a template to
+discard normal text.  By default XSLT will display unmatched text
+data.  This option preserves this default behavior instead of
+replacing it with the more typically desirable discard action.
 = --lib <dir> OR -L <dir>
 Add a directory to the list of directories searched for extension
 libraries.
+= --log <file>
+Write log data to the given file.
+= --mini-template <code> or -m <code>
+Allows a simple script to be passed in via the command line using one
+of more "-m" options.  The argument to "-m" is typically a template,
+such as a named or match template
 = --name <file> OR -n <file>
 Read the SLAX script from the given file.
 = --no-json-types
@@ -3784,25 +3784,25 @@ The "bit" extension library has functions that interpret a string as a
 series of bit, allowing arbitrary length bit arrays and operations on
 those arrays.
 
-|---------------------------+----------------------------------------|
-| Function and Arguments    | Description                            |
-|---------------------------+----------------------------------------|
-| bit:and(b1, b2)           | Return AND of two bit strings          |
-| bit:or(b1, b2)            | Return OR of two bit strings           |
-| bit:nand(b1, b2)          | Return NAND of two bit strings         |
-| bit:nor(b1, b2)           | Return NOR of two bit strings          |
-| bit:xor(b1, b2)           | Return XOR of two bit strings          |
-| bit:xnor(b1, b2)          | Return XNOR of two bit strings         |
-| bit:not(b1)               | Return inversion (NOT) of a bit string |
-| bit:clear(b, off)         | Clear a bit within a bit string        |
-| bit:compare(b1, b2)       | Compare two bit strings                |
-| bit:set(b, off)           | Set a bit within a bit string          |
-| bit:mask(count, len?)     | Return len bits with the low count set |
-| bit:to-int(bs)            | Return integer value of bit string     |
-| bit:from-int(value, len?) | Return bit string of integer value     |
-| bit:to-hex(bs)            | Return hex value of a bit string       |
-| bit:from-hex(str, len?)   | Return bit string of hex value         |
-|---------------------------+----------------------------------------|
+|-------------------------+------------------------------------|
+| Function and Arguments  | Description                        |
+|-------------------------+------------------------------------|
+| bit:and(b1, b2)         | Return AND of two bit strings      |
+| bit:or(b1, b2)          | Return OR of two bit strings       |
+| bit:nand(b1, b2)        | Return NAND of two bit strings     |
+| bit:nor(b1, b2)         | Return NOR of two bit strings      |
+| bit:xor(b1, b2)         | Return XOR of two bit strings      |
+| bit:xnor(b1, b2)        | Return XNOR of two bit strings     |
+| bit:not(b1)             | Return NOT of a bit string         |
+| bit:clear(b, off)       | Clear a bit within a bit string    |
+| bit:compare(b1, b2)     | Compare two bit strings            |
+| bit:set(b, off)         | Set a bit within a bit string      |
+| bit:mask(count, len?)   | Return len bits set on             |
+| bit:to-int(bs)          | Return integer value of bit string |
+| bit:from-int(val, len?) | Return bit string of integer value |
+| bit:to-hex(bs)          | Return hex value of a bit string   |
+| bit:from-hex(str, len?) | Return bit string of hex value     |
+|-------------------------+------------------------------------|
 
 ** The "curl" Extension Library
 
@@ -4379,6 +4379,12 @@ into the native representation of that data.
         var $xml = xutil:string-to-xml($data);
         message "title is " _ $xml/title;
 
+Multiple strings can be passed, in which case, they will be
+concatenated before the XML conversion:
+
+    EXAMPLE::
+        var $xml2 = xutil:string-to-xml("<top>", $content, "</top");
+
 **** xutil:xml-to-string()
 
 The xutil:xml-to-string() function turns XML content into a string.
@@ -4668,22 +4674,22 @@ details given above.
 The return value is a node-set of <entry> elements.  Each entry
 contains the following elements:
 
-|----------------+--------------------------------------------+-------|
-| Element        | Description                                | Brief |
-|----------------+--------------------------------------------+-------|
-| name           | Path to the entry                          | Y     |
-| type           | Type of file (see below)                   | Y     |
-| executable     | Present if the entry is executable         | Y     |
-| symlink        | Present if the entry is a symbolic link    | Y     |
-| symlink-target | Contents of the symbolic link              | N     |
-| permissions    | Permissions for the entry                  | N     |
-| owner          | Name of the owning user                    | N     |
-| group          | Name of the owning group                   | N     |
-| links          | Number of hard links to this entry         | N     |
-| size           | Number of bytes used by the entry          | N     |
-| date           | Time and date of last modification (mtime) | N     |
-| entry          | Directory contents                         | N     |
-|----------------+--------------------------------------------+-------|
+|----------------+--------------------------------------+-------|
+| Element        | Description                          | Brief |
+|----------------+--------------------------------------+-------|
+| name           | Path to the entry                    | Y     |
+| type           | Type of file (see below)             | Y     |
+| executable     | Present if entry is executable       | Y     |
+| symlink        | Present if entry is a symbolic link  | Y     |
+| symlink-target | Contents of the symbolic link        | N     |
+| permissions    | Permissions for the entry            | N     |
+| owner          | Name of the owning user              | N     |
+| group          | Name of the owning group             | N     |
+| links          | Number of hard links to this entry   | N     |
+| size           | Number of bytes used by the entry    | N     |
+| date           | Time and date of last modification	| N     |
+| entry          | Directory contents                   | N     |
+|----------------+--------------------------------------+-------|
 
 Only elements tagged "Y" are emitted when the <brief> option is used.
 
