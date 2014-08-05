@@ -35,7 +35,7 @@ template emit-main ($path = "") {
 	} else if (name() == "name") {
 	    /* skip */
 
-	} else if ($junos-data/homogeneous[item = $cpath]) {
+	} else if ($junos-data/homogeneous[item == $cpath]) {
 	    var $name = name();
 	    var $id = generate-id(.);
 	    var $all = ../ *[name() == $name];
@@ -50,11 +50,11 @@ template emit-main ($path = "") {
 	} else if ($junos-data/multi-idenfier[item == $cpath]) {
 	    call emit-multi-identifier($path);
 
-	} else if ($junos-data/empty[item = $cpath]) {
+	} else if ($junos-data/empty[item == $cpath]) {
 	    call emit-empty($path, $cpath);
 
 	} else if (count(*) == 0) {
-	    if ($junos-data/p-container[item = $cpath]) {
+	    if ($junos-data/p-container[item == $cpath]) {
 		call emit-empty($path, $cpath);
 	    } else {
 		call emit-text($path, $cpath);
