@@ -77,6 +77,7 @@
 #define ELT_COMMENT	"comment"
 #define ELT_COPY	"copy"
 #define ELT_COPY_OF	"copy-of"
+#define ELT_CREATE	"create"
 #define ELT_DATE	"date"
 #define ELT_DEPTH	"depth"
 #define ELT_DIRECTORY	"directory"
