@@ -1,0 +1,8 @@
+libslax is an implementation of the SLAX language, an alternative
+syntax for XSLT.  SLAX replaces the XML syntax of XSLT with a
+C/Perl-like syntax.
+
+The package includes the libslax library and the slaxproc command line
+utility.
+
+WWW: https://github.com/Juniper/libslax
