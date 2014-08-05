@@ -459,12 +459,12 @@ AC_SUBST(LIBSLAX_VERSION)
 AC_SUBST(LIBSLAX_VERSION_NUMBER)
 AC_SUBST(LIBSLAX_VERSION_EXTRA)
 
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([libslax/slaxconfig.h])
 AC_CONFIG_FILES([
   Makefile
   slax-config
   libslax/Makefile
-  libslax/slaxconfig.h
+  libslax/slaxversion.h
   extensions/Makefile
   extensions/bit/Makefile
   extensions/curl/Makefile
