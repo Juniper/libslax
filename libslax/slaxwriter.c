@@ -1131,7 +1131,9 @@ slaxWriteJsonValueTyped (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 
     } else {
     simple:
-	slaxWrite(swp, " \"%s\"%s", nodep->children->content, comma);
+	if (nodep->children)
+	    slaxWrite(swp, " \"%s\"%s", nodep->children->content, comma);
+
 	if (trailing_newline)
 	    slaxWriteNewline(swp, 0);
     }
