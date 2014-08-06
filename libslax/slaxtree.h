@@ -93,6 +93,7 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
 #define SAS_XPATH	1	/* Use concat() is you need it */
 #define SAS_ATTRIB	2	/* Use <xsl:attribute> if you need it */
 #define SAS_SELECT	3	/* Use concat or (non-attribute) text node */
+#define SAS_VALUE	4	/* Simple value */
 
 /*
  * Add a simple value attribute.
@@ -110,6 +111,9 @@ void slaxAttribAdd (slax_data_t *sdp, int style,
  */
 void slaxAttribAddValue (slax_data_t *sdp, const char *name,
 			 slax_string_t *value);
+
+void
+slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value);
 
 /*
  * Add a simple value attribute as straight string
@@ -216,3 +220,13 @@ slaxTernaryExpand (slax_data_t *, slax_string_t *, unsigned);
 #define SLAX_TERNARY_VAR_FORMAT SLAX_TERNARY_VAR_LEADER "%u)"
 #define SLAX_TERNARY_COND_SUFFIX "-cond"
 #define SLAX_TERNARY_VAR_FORMAT_WIDTH 12
+
+void
+slaxMoveImport (slax_data_t *sdp, xmlNodePtr);
+
+xmlXPathObjectPtr
+slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
+	       xsltStylesheetPtr script, const char *expr);
+
+xmlNodeSetPtr
+slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr);

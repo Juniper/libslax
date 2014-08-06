@@ -62,7 +62,6 @@ match doc {
             <two> {
                 number $two {
                     format "001";
-                    lang "en";
                     letter-value "alphabetic";
                     grouping-separator "/";
                     grouping-size "100";
@@ -103,7 +102,7 @@ match doc {
         terminate "too late";
         message "after";
     }
-    <xsl:some-fancy-element> {
+    <axsl:some-fancy-element> {
         fallback {
             message "not implemented";
         }

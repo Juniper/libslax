@@ -19,6 +19,7 @@ EXTRA_DIST = bit.txt
 
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
+    -I${top_builddir} \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     ${LIBXSLT_CFLAGS} \

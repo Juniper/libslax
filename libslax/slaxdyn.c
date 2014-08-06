@@ -39,8 +39,6 @@
 #include <libxml/uri.h>
 #include <libxml/tree.h>
 
-#include "config.h"
-
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 #include "slaxdata.h"
@@ -89,15 +87,8 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
     void *dlp = NULL;
     char buf[MAXPATHLEN];
 
-    /* The SLAX namespace is statically loaded; skip it */
-    if (streq(ns, SLAX_URI))
+    if (slaxDynMarkLoaded(ns))
 	return;
-
-    SLAXDATALIST_FOREACH(dnp, &slaxDynLoaded) {
-	if (streq(ns, dnp->dn_data))
-	    return;		/* Already loaded */
-    }
-    slaxDataListAddNul(&slaxDynLoaded, ns);
 
     ret = xmlURIEscapeStr((const xmlChar *) ns, (const xmlChar *) "-_.");
     if (ret == NULL)
@@ -267,9 +258,16 @@ slaxDynFindPrefix (char *uri, size_t urisiz, const char *name)
 void
 slaxDynLoad (xmlDocPtr docp)
 {
-    xmlNodePtr root = xmlDocGetRootElement(docp);
+    xmlNodePtr root;
     slax_data_list_t nslist;
     slax_data_node_t *dnp;
+
+    if (docp == NULL)
+	return;
+
+    root = xmlDocGetRootElement(docp);
+    if (root == NULL)
+	return;
 
     slaxDataListInit(&nslist);
 
@@ -280,6 +278,37 @@ slaxDynLoad (xmlDocPtr docp)
     }
 
     slaxDataListClean(&nslist);
+}
+
+int
+slaxDynMarkLoaded (const char *ns)
+{
+    slax_data_node_t *dnp;
+
+    if (streq(ns, SLAX_URI))
+	return TRUE;
+
+    SLAXDATALIST_FOREACH(dnp, &slaxDynLoaded) {
+	if (streq(ns, dnp->dn_data))
+	    return TRUE;		/* Already loaded */
+    }
+
+    slaxDataListAddNul(&slaxDynLoaded, ns);
+    return FALSE;
+}
+
+void
+slaxDynMarkExslt (void)
+{
+    slaxDynMarkLoaded("http://exslt.org/common.ext");
+    slaxDynMarkLoaded("http://exslt.org/crypto.ext");
+    slaxDynMarkLoaded("http://exslt.org/dates-and-times.ext");
+    slaxDynMarkLoaded("http://exslt.org/dynamic.ext");
+    slaxDynMarkLoaded("http://exslt.org/functions.ext");
+    slaxDynMarkLoaded("http://exslt.org/math.ext");
+    slaxDynMarkLoaded("http://exslt.org/sets.ext");
+    slaxDynMarkLoaded("http://exslt.org/strings.ext");
+    slaxDynMarkLoaded("http://icl.com/saxon.ext");
 }
 
 /*

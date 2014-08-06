@@ -31,7 +31,6 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
-#include "config.h"
 
 typedef struct slax_prof_entry_s {
     unsigned long spe_count; /* Number of times we've hit this line */
@@ -189,28 +188,49 @@ doublediv (unsigned long num, unsigned long denom)
  * Report the results
  */
 void
-slaxProfReport (int brief)
+slaxProfReport (int brief, const char *buffer)
 {
     slax_prof_t *spp = slax_profile;
     const char *filename = (const char *) spp->sp_docp->URL;
-    FILE *fp;
+    FILE *fp = NULL;
     unsigned num = 0, count;
     char line[BUFSIZ];
     unsigned long tot_count = 0;
     time_usecs_t tot_user = 0, tot_system = 0;
+    const char *xp, *last = NULL;
+    size_t len;
 
-    fp = fopen(filename, "r");
-    if (fp == NULL) {
-	slaxOutput("could not open file: %s", filename);
-	return;
+    if (buffer) {
+	last = buffer;
+    } else {
+	fp = fopen(filename, "r");
+	if (fp == NULL) {
+	    slaxOutput("could not open file: %s", filename);
+	    return;
+	}
     }
 
     slaxOutput("%5s %8s %8s %8s %8s %8s %s",
 	       "Line", "Hits", "User", "U/Hit", "System", "S/Hit", "Source");
 
     for (;;) {
-	if (fgets(line, sizeof(line), fp) == NULL) 
-	    break;
+	if (buffer) {
+	    /* If we were passed an in-memory script, use it */
+	    if (last == NULL)
+		break;
+
+	    xp = strchr(last, '\n'); /* Break a newlines */
+	    len = xp ? (size_t) (xp - last + 1) : strlen(last);
+	    if (len > sizeof(line) - 1)
+		len = sizeof(line) - 1;
+	    memcpy(line, last, len); /* Mimic the fgets functionality */
+	    line[len] = '\0';
+	    last = xp ? xp + 1 : NULL;
+
+	} else {
+	    if (fgets(line, sizeof(line), fp) == NULL) 
+		break;
+	}
 
 	/*
 	 * Since we are only reading line_size per iteration, if the current 
@@ -218,32 +238,33 @@ slaxProfReport (int brief)
 	 * more than one iteration, so increment the count only when the last 
 	 * character is '\n'
 	 */
-	if (line[strlen(line) - 1] == '\n') {
-	    line[strlen(line) - 1] = '\0';
+	int line_len = strlen(line);
+	if (line[line_len - 1] == '\n') {
+	    line_len -= 1;
 	    num += 1;
 
 	    count = spp->sp_data[num].spe_count;
 
 	    if (num <= spp->sp_lines && spp->sp_data[num].spe_count) {
-		slaxOutput("%5u %8u %8lu %8.2f %8lu %8.2f %s",
+		slaxOutput("%5u %8u %8lu %8.2f %8lu %8.2f %.*s",
 			   num, count,
 			   spp->sp_data[num].spe_user,
 			   doublediv(spp->sp_data[num].spe_user, count),
 			   spp->sp_data[num].spe_system,
 			   doublediv(spp->sp_data[num].spe_system, count),
-			   line);
+			   line_len, line);
 
 		tot_count += spp->sp_data[num].spe_count;
 		tot_user += spp->sp_data[num].spe_user;
 		tot_system += spp->sp_data[num].spe_system;
 
 	    } else if (!brief) {
-		slaxOutput("%5u %8s %8s %8s %8s %8s %s",
-			   num, "-", "-", "-", "-", "-", line);
+		slaxOutput("%5u %8s %8s %8s %8s %8s %.*s",
+			   num, "-", "-", "-", "-", "-", line_len, line);
 	    }
 	} else if (!brief) {
-	    slaxOutput("%5s %8s %8s %8s %8s %8s %s",
-		       "-", "-", "-", "-", "-", "-", line);
+	    slaxOutput("%5s %8s %8s %8s %8s %8s %.*s",
+		       "-", "-", "-", "-", "-", "-", line_len, line);
 	}
     }
 

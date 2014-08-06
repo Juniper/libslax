@@ -33,6 +33,8 @@ struct slax_string_s {
 #define SSF_SLAXNS	(1<<6)	/* Need the slax namespace */
 #define SSF_ESCAPE	(1<<7)	/* String uses escape ('\\') */
 
+#define SSF_XPATH	(1<<8)	/* Need an XPath expression */
+
 #define SSF_QUOTE_MASK	(SSF_SINGLEQ | SSF_DOUBLEQ | SSF_BOTHQS)
 
 /* SLAX UTF-8 character conversions */

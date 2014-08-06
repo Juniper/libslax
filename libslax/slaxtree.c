@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <libxml/xpathInternals.h>
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
 
@@ -378,7 +379,8 @@ slaxAttribAdd (slax_data_t *sdp, int style,
     const char *cp;
     unsigned ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
 
-    ss_flags |= SSF_QUOTES;	/* Always want the quotes */
+    if (style != SAS_VALUE)
+	ss_flags |= SSF_QUOTES;	/* Always want the quotes */
 
     if (value == NULL)
 	return;
@@ -471,6 +473,55 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
     const char *cp;
 
     buf = slaxStringAsValueTemplate(value, SSF_BRACES);
+    if (buf == NULL)
+	return;
+
+    /*
+     * Deal with namespaces.  If there's a prefix, we need to find
+     * the definition of this namespace and pass it along.
+     */
+    cp = index(name, ':');
+    if (cp) {
+	const char *prefix = name;
+	int len = cp - prefix;
+
+	name = cp + 1;
+	if (!slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
+        }
+    }
+
+    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
+		      (const xmlChar *) buf);
+    if (attr == NULL)
+	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+
+    xmlFreeAndEasy(buf);
+}
+
+/*
+ * Add an XPath to an attribute on an XML element.  The value consists of
+ * one or more items, each of which can be a string, a variable reference,
+ * or an xpath expression.  If the value (any items) does not contain an
+ * xpath expression, we use the normal attribute substitution to achieve
+ * this ({$foo}).  Otherwise, we use the xsl:attribute element to construct
+ * the attribute.  Note that this function uses only the SAS_ATTRIB style
+ * of quote handling.
+ */
+void
+slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value)
+{
+    xmlAttrPtr attr;
+    xmlNsPtr ns = NULL;
+    char *buf;
+    const char *cp;
+
+    buf = slaxStringAsValueTemplate(value, SSF_XPATH);
     if (buf == NULL)
 	return;
 
@@ -966,4 +1017,161 @@ slaxSetPreserveFlag (xsltTransformContextPtr tctxt, xmlXPathObjectPtr ret)
     }
 
     xsltExtensionInstructionResultRegister(tctxt, ret);
+}
+
+/*
+ * The W3C XSLT spec requires that imports preceed just about
+ * anything else.  We want to be somewhat more flexible, so
+ * we move them up as needed.
+ */
+void
+slaxMoveImport (slax_data_t *sdp UNUSED, xmlNodePtr curp)
+{
+    xmlNodePtr nodep, prev = NULL;
+
+    for (nodep = curp; nodep; nodep = nodep->prev) {
+	if (nodep->type == XML_COMMENT_NODE)
+	    continue;
+	if (nodep->prev == NULL)
+	    break;
+	if (nodep->prev->type == XML_COMMENT_NODE)
+	    continue;;
+	prev = nodep->prev;
+	if (slaxNodeIsXsl(prev, ELT_IMPORT)) {
+	    prev = prev->next;
+	    break;
+	}
+    }
+
+    if (prev && prev != curp) {
+	xmlUnlinkNode(curp);
+	xmlAddPrevSibling(prev, curp);
+    }
+}
+
+xmlXPathObjectPtr
+slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
+	       xsltStylesheetPtr script, const char *expr)
+{
+    struct {
+	xmlDocPtr o_doc;
+	xmlNsPtr *o_nslist;
+	xmlNodePtr o_node;
+	int o_position;
+	int o_contextsize;
+	int o_nscount;
+    } old;
+
+    xmlNsPtr *nsList;
+    int nscount;
+    xmlXPathCompExprPtr comp;
+    xmlXPathObjectPtr res;
+
+    char *sexpr = NULL;
+
+    
+    sexpr = slaxSlaxToXpath("select", 1, (const char *) expr, NULL);
+    if (sexpr)
+	expr = sexpr;
+
+    comp = xsltXPathCompile(script, (const xmlChar *) expr);
+    if (comp == NULL) {
+	xmlFreeAndEasy(sexpr);
+	return NULL;
+    }
+
+    nsList = xmlGetNsList(inst->doc, inst);
+    for (nscount = 0; nsList && nsList[nscount]; nscount++)
+	continue;
+    
+    /* Save old values */
+    old.o_doc = xpctxt->doc;
+    old.o_node = xpctxt->node;
+    old.o_position = xpctxt->proximityPosition;
+    old.o_contextsize = xpctxt->contextSize;
+    old.o_nscount = xpctxt->nsNr;
+    old.o_nslist = xpctxt->namespaces;
+
+    /* Fill in context */
+    xpctxt->node = node;
+    xpctxt->namespaces = nsList;
+    xpctxt->nsNr = nscount;
+
+    /* Run the compiled expression */
+    res = xmlXPathCompiledEval(comp, xpctxt);
+
+    /* Restore saved values */
+    xpctxt->doc = old.o_doc;
+    xpctxt->node = old.o_node;
+    xpctxt->contextSize = old.o_contextsize;
+    xpctxt->proximityPosition = old.o_position;
+    xpctxt->nsNr = old.o_nscount;
+    xpctxt->namespaces = old.o_nslist;
+
+    xmlFreeAndEasy(sexpr);
+    xmlXPathFreeCompExpr(comp);
+    xmlFree(nsList);
+
+    return res;
+}
+
+xmlNodeSetPtr
+slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr)
+{
+    xmlXPathObjectPtr objp;
+    xmlNodeSetPtr results = NULL;
+    xmlXPathContextPtr xpath_context;
+    xmlNsPtr nsp, *nsList;
+    int nscount;
+    char *sexpr = NULL;
+
+    /* Translate a SLAX XPath into a native one */
+    sexpr = slaxSlaxToXpath("select", 1, (const char *) expr, NULL);
+    if (sexpr)
+	expr = sexpr;
+
+    /*
+     * Some XPath initialization: Create xpath evaluation context
+     */
+    xpath_context = xmlXPathNewContext(docp);
+    if (xpath_context == NULL) {
+	xmlFreeAndEasy(sexpr);
+	return NULL;
+    }
+
+    xmlXPathRegisterNs(xpath_context, (const xmlChar *) XSL_PREFIX,
+                       (const xmlChar *) XSL_URI);
+
+    nsList = xmlGetNsList(docp, nodep);
+    for (nscount = 0; nsList && nsList[nscount]; nscount++) {
+	nsp = nsList[nscount];
+	if (nsp->href == NULL)
+	    continue;
+	if (streq((const char *) nsp->href, XSL_URI))
+	    continue;
+	xmlXPathRegisterNs(xpath_context, nsp->prefix, nsp->href);
+    }
+
+    if (nodep == NULL)
+        nodep = xmlDocGetRootElement(docp);
+
+    xpath_context->node = nodep;
+
+    objp = xmlXPathEvalExpression((const xmlChar *) expr, xpath_context);
+    if (objp == NULL) {
+        LX_ERR("could not evaluate xpath expression: %s", expr);
+	xmlFreeAndEasy(sexpr);
+        return NULL;
+    }
+
+    if (objp->type == XPATH_NODESET) {
+        results = objp->nodesetval;
+        objp->nodesetval = NULL; /* Prevent double free */
+    }
+
+    xmlXPathFreeContext(xpath_context);
+    xmlXPathFreeObject(objp);
+    xmlFreeAndEasy(sexpr);
+
+    return results;
 }

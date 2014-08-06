@@ -75,7 +75,6 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
-#include "config.h"
 
 #define MAXARGS	256
 #define DEBUG_LIST_COUNT	12 /* Number of lines "list" shows */
@@ -101,6 +100,7 @@ typedef struct slaxDebugState_s {
     int ds_stackdepth;		/* Current depth of call stack */
     xmlNodePtr ds_list_node;	/* Last "list" target */
     int ds_list_line;		/* Last "list" line number */
+    char *ds_script_buffer;	/* In-memory copy of the script text */
 } slaxDebugState_t;
 
 /* Flags for ds_flags */
@@ -552,6 +552,35 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 
     if (filename == NULL || start == 0 || stop == 0)
 	return TRUE;
+
+    if (statep->ds_script_buffer) {
+	char *xp, *last;
+
+	last = statep->ds_script_buffer;
+	for (xp = strchr(last, '\n'); xp; xp = strchr(last, '\n')) {
+	    if (++count >= start)
+		break;
+	    last = xp + 1;
+	}
+	if (xp == NULL)
+	    return TRUE;
+
+	/* Ensure we get at least one line of output */
+	if (count > stop)
+	    stop = count + 1;
+
+	while (count < stop) {
+	    len = xp ? xp - last : (int) strlen(last);
+	    slaxOutput("%d: %.*s", count++, len, last);
+
+	    if (xp == NULL)
+		break;
+
+	    last = xp + 1;
+	    xp = strchr(last, '\n');
+	}
+	return TRUE;
+    }
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
@@ -1026,7 +1055,7 @@ slaxDebugCmdInfo (DC_ARGS)
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
 	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	slaxProfReport(brief);
+	slaxProfReport(brief, statep->ds_script_buffer);
 
     } else if (slaxDebugIsAbbrev("help", argv[1])) {
 	slaxDebugHelpInfo(statep);
@@ -1206,29 +1235,12 @@ slaxDebugCmdOver (DC_ARGS)
 static xmlXPathObjectPtr
 slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
 {
-    struct {
-	xmlDocPtr o_doc;
-	xmlNsPtr *o_nslist;
-	xmlNodePtr o_node;
-	int o_position;
-	int o_contextsize;
-	int o_nscount;
-    } old;
-
-    xmlNsPtr *nsList;
-    int nscount;
-    xmlXPathCompExprPtr comp;
-    xmlXPathObjectPtr res;
-    xmlNodePtr node = statep->ds_node;
-    xmlNodePtr inst = statep->ds_inst;
-    xsltTransformContextPtr ctxt;
-    xmlXPathContextPtr xpctxt;
-    char *sexpr = NULL;
-
     if (slaxDebugCheckDone(statep))
 	return NULL;
 
-    ctxt = statep->ds_ctxt;
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+    xmlXPathContextPtr xpctxt;
+
     if (ctxt == NULL)
 	return NULL;
 
@@ -1236,49 +1248,8 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (xpctxt == NULL)
 	return NULL;
 
-    sexpr = slaxSlaxToXpath("sdb", 1, (const char *) expr, NULL);
-    if (sexpr)
-	expr = sexpr;
-
-    comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) expr);
-    if (comp == NULL) {
-	xmlFreeAndEasy(sexpr);
-	return NULL;
-    }
-
-    nsList = xmlGetNsList(inst->doc, inst);
-    for (nscount = 0; nsList && nsList[nscount]; nscount++)
-	continue;
-    
-    /* Save old values */
-    old.o_doc = xpctxt->doc;
-    old.o_node = xpctxt->node;
-    old.o_position = xpctxt->proximityPosition;
-    old.o_contextsize = xpctxt->contextSize;
-    old.o_nscount = xpctxt->nsNr;
-    old.o_nslist = xpctxt->namespaces;
-
-    /* Fill in context */
-    xpctxt->node = node;
-    xpctxt->namespaces = nsList;
-    xpctxt->nsNr = nscount;
-
-    /* Run the compiled expression */
-    res = xmlXPathCompiledEval(comp, xpctxt);
-
-    /* Restore saved values */
-    xpctxt->doc = old.o_doc;
-    xpctxt->node = old.o_node;
-    xpctxt->contextSize = old.o_contextsize;
-    xpctxt->proximityPosition = old.o_position;
-    xpctxt->nsNr = old.o_nscount;
-    xpctxt->namespaces = old.o_nslist;
-
-    xmlFreeAndEasy(sexpr);
-    xmlXPathFreeCompExpr(comp);
-    xmlFree(nsList);
-
-    return res;
+    return slaxXpathEval(statep->ds_node, statep->ds_inst, xpctxt,
+			 statep->ds_script, expr);
 }
 
 /*
@@ -1340,7 +1311,7 @@ slaxDebugCmdProfiler (DC_ARGS)
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
 	    int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	    slaxProfReport(brief);
+	    slaxProfReport(brief, statep->ds_script_buffer);
 	    return;
 
 	} else if (slaxDebugIsAbbrev("help", arg)) {
@@ -1547,7 +1518,7 @@ slaxDebugCmdReload (DC_ARGS)
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
 
-    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
     statep->ds_flags |= DSF_RELOAD;
 }
     
@@ -2236,6 +2207,15 @@ slaxDebugSetStylesheet (xsltStylesheetPtr script)
     }
 }
 
+void
+slaxDebugSetScriptBuffer (const char *buffer)
+{
+    slaxDebugState_t *statep = slaxDebugGetState();
+
+    if (statep)
+	statep->ds_script_buffer = strdup(buffer);
+}
+
 /**
  * Set a search path for included and imported files
  *
@@ -2335,6 +2315,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	    statep->ds_flags &= ~DSF_RELOAD;
 	    xsltSetDebuggerStatus(0);
 
+	    if (statep->ds_script_buffer) {
+		new_style = style;
+		goto reload_skip;
+	    }
+
 	    if (save_style) {
 		xsltFreeStylesheet(save_style);
 		save_style = NULL;
@@ -2344,13 +2329,16 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 	    new_style = slaxDebugReload(scriptname);
 	    if (new_style) {
+		save_style = new_style;
+
+	    reload_skip:
 		/* Out with the old */
 		slaxDebugClearStacktrace();
 		slaxProfClear();
 		slaxProfClose();
 
 		/* In with the new */
-		save_style = style = new_style;
+		style = new_style;
 		style->indent = indent; /* Restore indent value */
 		slaxDebugSetStylesheet(style);
 		slaxDebugReloadBreakpoints(statep);
@@ -2361,6 +2349,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		xsltSetDebuggerStatus(0);
 
 		slaxOutput("Reloading complete.");
+
+		if (res) {
+		    xmlFreeDoc(res);
+		    res = NULL;
+		}
 	    }
 
 	    continue;

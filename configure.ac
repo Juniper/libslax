@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.17.3], [phil@juniper.net])
+AC_INIT([libslax], [0.18.1], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 
 # Support silent build rules.  Requires at least automake-1.11.
@@ -459,12 +459,12 @@ AC_SUBST(LIBSLAX_VERSION)
 AC_SUBST(LIBSLAX_VERSION_NUMBER)
 AC_SUBST(LIBSLAX_VERSION_EXTRA)
 
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([libslax/slaxconfig.h])
 AC_CONFIG_FILES([
   Makefile
   slax-config
   libslax/Makefile
-  libslax/slaxconfig.h
+  libslax/slaxversion.h
   extensions/Makefile
   extensions/bit/Makefile
   extensions/curl/Makefile

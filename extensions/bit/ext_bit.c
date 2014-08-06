@@ -16,8 +16,6 @@
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 
-#include "config.h"
-
 #include <libxml/xpathInternals.h>
 #include <libxml/tree.h>
 #include <libxslt/extensions.h>

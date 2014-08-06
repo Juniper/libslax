@@ -11,8 +11,8 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
+
 #include <sys/queue.h>
-#include "config.h"
 
 #include <libxslt/transform.h>
 #include <libxml/HTMLparser.h>
@@ -34,6 +34,10 @@ static slax_data_list_t plist;
 static int nbparams;
 static const char **params;
 
+static slax_data_list_t mini_templates;
+static xmlDocPtr mini_docp;
+static char *mini_buffer;
+
 static int options = XSLT_PARSE_OPTIONS;
 static char *encoding;		/* Desired document encoding */
 static char *opt_version;	/* Desired SLAX version */
@@ -51,6 +55,7 @@ static int opt_empty_input;	/* Use an empty input file */
 static int opt_slax_output;	/* Make output in SLAX format */
 static int opt_json_tagging;	/* Tag JSON output */
 static int opt_json_flags;	/* Flags for JSON conversion */
+static int opt_keep_text;	/* Don't add a rule to discard text values */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -71,27 +76,32 @@ static int
 do_format (const char *name UNUSED, const char *output,
 		 const char *input, char **argv)
 {
-    FILE *infile, *outfile;
+    FILE *infile = NULL, *outfile;
     xmlDocPtr docp;
 
-    input = get_filename(input, &argv, -1);
+    if (mini_docp == NULL)
+	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (slaxFilenameIsStd(input))
-	infile = stdin;
+    if (mini_docp)
+	docp = mini_docp;
     else {
-	infile = fopen(input, "r");
-	if (infile == NULL)
-	    err(1, "file open failed for '%s'", input);
+	if (slaxFilenameIsStd(input))
+	    infile = stdin;
+	else {
+	    infile = fopen(input, "r");
+	    if (infile == NULL)
+		err(1, "file open failed for '%s'", input);
+	}
+
+	docp = slaxLoadFile(input, infile, NULL, opt_partial);
+
+	if (infile != stdin)
+	    fclose(infile);
+
+	if (docp == NULL)
+	    errx(1, "cannot parse file: '%s'", input);
     }
-
-    docp = slaxLoadFile(input, infile, NULL, opt_partial);
-
-    if (infile != stdin)
-	fclose(infile);
-
-    if (docp == NULL)
-	errx(1, "cannot parse file: '%s'", input);
 
     if (output == NULL || slaxFilenameIsStd(output))
 	outfile = stdout;
@@ -116,7 +126,7 @@ static int
 do_slax_to_xslt (const char *name UNUSED, const char *output,
 		 const char *input, char **argv)
 {
-    FILE *infile, *outfile;
+    FILE *infile = NULL, *outfile;
     xmlDocPtr docp;
 
     if (opt_expression) {
@@ -128,24 +138,29 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	return res ? 0 : -1;
     }
 
-    input = get_filename(input, &argv, -1);
+    if (mini_docp == NULL)
+	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (slaxFilenameIsStd(input))
-	infile = stdin;
+    if (mini_docp)
+	docp = mini_docp;
     else {
-	infile = fopen(input, "r");
-	if (infile == NULL)
-	    err(1, "file open failed for '%s'", input);
+	if (slaxFilenameIsStd(input))
+	    infile = stdin;
+	else {
+	    infile = fopen(input, "r");
+	    if (infile == NULL)
+		err(1, "file open failed for '%s'", input);
+	}
+
+	docp = slaxLoadFile(input, infile, NULL, opt_partial);
+
+	if (infile != stdin)
+	    fclose(infile);
+
+	if (docp == NULL)
+	    errx(1, "cannot parse file: '%s'", input);
     }
-
-    docp = slaxLoadFile(input, infile, NULL, opt_partial);
-
-    if (infile != stdin)
-	fclose(infile);
-
-    if (docp == NULL)
-	errx(1, "cannot parse file: '%s'", input);
 
     if (output == NULL || slaxFilenameIsStd(output))
 	outfile = stdout;
@@ -419,18 +434,23 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	input = get_filename(input, &argv, -1);
     output = get_filename(output, &argv, -1);
 
-    if (slaxFilenameIsStd(scriptname))
-	errx(1, "script file cannot be stdin");
+    if (mini_docp) {
+	scriptdoc = mini_docp;
+	scriptname = "mini-template";
+    } else {
+	if (slaxFilenameIsStd(scriptname))
+	    errx(1, "script file cannot be stdin");
 
-    scriptfile = slaxFindIncludeFile(scriptname, buf, sizeof(buf));
-    if (scriptfile == NULL)
-	err(1, "file open failed for '%s'", scriptname);
+	scriptfile = slaxFindIncludeFile(scriptname, buf, sizeof(buf));
+	if (scriptfile == NULL)
+	    err(1, "file open failed for '%s'", scriptname);
 
-    scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
-    if (scriptdoc == NULL)
-	errx(1, "cannot parse: '%s'", scriptname);
-    if (scriptfile != stdin)
-	fclose(scriptfile);
+	scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
+	if (scriptdoc == NULL)
+	    errx(1, "cannot parse: '%s'", scriptname);
+	if (scriptfile != stdin)
+	    fclose(scriptfile);
+    }
 
     script = xsltParseStylesheetDoc(scriptdoc);
     if (script == NULL || script->errors != 0)
@@ -452,6 +472,9 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (opt_debugger) {
 	slaxDebugInit();
 	slaxDebugSetStylesheet(script);
+	if (mini_docp)
+	    slaxDebugSetScriptBuffer(mini_buffer);
+
 	res = slaxDebugApplyStylesheet(scriptname, script,
 				 slaxFilenameIsStd(input) ? NULL : input,
 				 indoc, params);
@@ -608,6 +631,51 @@ do_check (const char *name, const char *output UNUSED,
     return 0;
 }
 
+static const char mini_prefix[] = "version " SLAX_VERSION ";\n";
+static const char mini_discard[] = "match text() { }\n";
+
+static void
+build_mini_template (void)
+{
+    size_t len = sizeof(mini_prefix);
+    slax_data_node_t *dnp;
+    char *buf, *cp;
+
+    SLAXDATALIST_FOREACH(dnp, &mini_templates) {
+	len += dnp->dn_len + 2;
+    }
+    if (!opt_keep_text)
+	len += sizeof(mini_discard);
+
+    buf = xmlMalloc(len + 1);
+    if (buf == NULL)
+	errx(1, "could not allocate mini-template");
+
+    memcpy(buf, mini_prefix, sizeof(mini_prefix));
+    cp = buf + sizeof(mini_prefix) - 1;
+
+    SLAXDATALIST_FOREACH(dnp, &mini_templates) {
+	memcpy(cp, dnp->dn_data, dnp->dn_len);
+	cp += dnp->dn_len - 1;
+	*cp++ = '\n';
+	*cp++ = '\n';
+    }
+    if (!opt_keep_text) {
+	memcpy(cp, mini_discard, sizeof(mini_discard));
+	cp += sizeof(mini_discard) - 1;
+    }
+
+    /*
+     * We need to copy our buffer _before_ calling the parser,
+     * since the parser frees the buffer for us.
+     */
+    mini_buffer = strdup(buf);
+
+    mini_docp = slaxLoadBuffer("mini-template", buf, NULL, FALSE);
+    if (mini_docp == NULL)
+	errx(1, "parse error for mini-template");
+}
+
 static void
 print_version (void)
 {
@@ -653,7 +721,10 @@ print_help (void)
 "\t--indent OR -g: indent output ala output-method/indent\n"
 "\t--input <file> OR -i <file>: take input from the given file\n"
 "\t--json-tagging: tag json-style input with the 'json' attribute\n"
+"\t--keep-text: mini-templates should not discard text\n"
 "\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
+"\t--log <file>: use given log file\n"
+"\t--mini-template <code> OR -m <code>: wrap template code in a script\n"
 "\t--name <file> OR -n <file>: read the script from the given file\n"
 "\t--no-json-types: do not insert 'type' attribute for --json-to-xml\n"
 "\t--no-randomize: do not initialize the random number generator\n"
@@ -668,6 +739,21 @@ print_help (void)
 "\t--write-version <version> OR -w <version>: write in version\n"
 "\nProject libslax home page: https://github.com/Juniper/libslax\n"
 "\n");
+}
+
+static char *
+check_arg (const char *name, char ***argvp)
+{
+    char *opt, *arg;
+
+    opt = **argvp;
+    *argvp += 1;
+    arg = **argvp;
+
+    if (arg == NULL)
+	errx(1, "missing %s argument for '%s' option", name, opt);
+
+    return arg;
 }
 
 int
@@ -687,6 +773,7 @@ main (int argc UNUSED, char **argv)
     char *opt_log_file = NULL;
 
     slaxDataListInit(&plist);
+    slaxDataListInit(&mini_templates);
 
     opt_args = argv;
 
@@ -711,9 +798,7 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_xpath;
-	    opt_xpath = *++argv;
-	    if (opt_xpath == NULL)
-		errx(1, "missing xpath argument");
+	    opt_xpath = check_arg("xpath expression", &argv);
 
 	} else if (streq(cp, "--format") || streq(cp, "-F")) {
 	    if (func)
@@ -734,17 +819,13 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_show_select;
-            opt_show_select = *++argv;
-	    if (opt_show_select == NULL)
-		errx(1, "missing select argument");
+            opt_show_select = check_arg("select", &argv);
 
 	} else if (streq(cp, "--show-variable")) {
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_show_variable;
-            opt_show_variable = *++argv;
-	    if (opt_show_variable == NULL)
-		errx(1, "missing variable name argument");
+            opt_show_variable = check_arg("variable name", &argv);
 
 	} else if (streq(cp, "--slax-to-xslt") || streq(cp, "-x")) {
 	    if (func)
@@ -772,9 +853,8 @@ main (int argc UNUSED, char **argv)
 	    use_exslt = TRUE;
 
 	} else if (streq(cp, "--expression")) {
-	    opt_expression = *++argv;
-	    if (opt_expression == NULL)
-		errx(1, "missing expression argument");
+	    opt_expression = check_arg("expression", &argv);
+
 
 	} else if (streq(cp, "--help") || streq(cp, "-h")) {
 	    print_help();
@@ -788,25 +868,31 @@ main (int argc UNUSED, char **argv)
 	    break;
 
 	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxIncludeAdd(*++argv);
+	    slaxIncludeAdd(check_arg("include path", &argv));
 
 	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
 	    opt_indent = TRUE;
 
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
-	    input = *++argv;
+	    input = check_arg("input file", &argv);
 
 	} else if (streq(cp, "--json-tagging")) {
-	    opt_json_tagging = 1;
+	    opt_json_tagging = TRUE;
+
+	} else if (streq(cp, "--keep-text")) {
+	    opt_keep_text = TRUE;
 
 	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
-	    slaxDynAdd(*++argv);
+	    slaxDynAdd(check_arg("library path", &argv));
 
 	} else if (streq(cp, "--log") || streq(cp, "-l")) {
-	    opt_log_file = *++argv;
+	    opt_log_file = check_arg("log file name", &argv);
+
+	} else if (streq(cp, "--mini-template") || streq(cp, "-m")) {
+	    slaxDataListAdd(&mini_templates, check_arg("template", &argv));
 
 	} else if (streq(cp, "--name") || streq(cp, "-n")) {
-	    name = *++argv;
+	    name = check_arg("script name", &argv);
 
 	} else if (streq(cp, "--no-json-types")) {
 	    opt_json_flags |= SDF_NO_TYPES;
@@ -818,17 +904,14 @@ main (int argc UNUSED, char **argv)
 	    ioflags |= SIF_NO_TTY;
 
 	} else if (streq(cp, "--output") || streq(cp, "-o")) {
-	    output = *++argv;
+	    output = check_arg("output file name", &argv);
 
 	} else if (streq(cp, "--param") || streq(cp, "-a")) {
-	    char *pname = *++argv;
-	    char *pvalue = *++argv;
+	    char *pname = check_arg("parameter name", &argv);
+	    char *pvalue = check_arg("parameter value", &argv);
 	    char *tvalue;
 	    char quote;
 	    int plen;
-
-	    if (pname == NULL || pvalue == NULL)
-		errx(1, "missing parameter value");
 
 	    plen = strlen(pvalue);
 	    tvalue = xmlMalloc(plen + 3);
@@ -852,7 +935,7 @@ main (int argc UNUSED, char **argv)
 	    opt_slax_output = TRUE;
 
 	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
-	    trace_file = *++argv;
+	    trace_file = check_arg("trace file name", &argv);
 
 	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
 	    logger = TRUE;
@@ -862,7 +945,7 @@ main (int argc UNUSED, char **argv)
 	    exit(0);
 
 	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
-	    opt_version = *++argv;
+	    opt_version = check_arg("version number", &argv);
 
 	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
 	    slaxYyDebug = TRUE;
@@ -929,8 +1012,10 @@ main (int argc UNUSED, char **argv)
 	slaxLogEnable(TRUE);
     }
 
-    if (use_exslt)
+    if (use_exslt) {
 	exsltRegisterAll();
+	slaxDynMarkExslt();
+    }
 
     if (trace_file) {
 	if (slaxFilenameIsStd(trace_file))
@@ -947,6 +1032,9 @@ main (int argc UNUSED, char **argv)
 	static char *null_argv[] = { NULL };
 	argv = null_argv;
     }
+
+    if (!TAILQ_EMPTY(&mini_templates))
+	build_mini_template();
 
     func(name, output, input, argv);
 

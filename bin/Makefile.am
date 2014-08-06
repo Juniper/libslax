@@ -10,7 +10,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = gt setup.sh
 
-GT_INSTALL_DIR = ${prefix}/bin
+GT_INSTALL_DIR = ${DESTDIR}${prefix}/bin
 GT_INSTALL_FILES = gt
 
 install-data-hook:

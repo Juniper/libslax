@@ -30,7 +30,9 @@
     <doc>
       <mumble>
         <two>
-          <xsl:number value="$two" format="001" lang="en" letter-value="alphabetic" grouping-separator="/" grouping-size="100"/>
+          <xsl:number value="$two" format="001" letter-value="alphabetic" grouping-separator="/" grouping-size="100">
+            <!-- language "en"; -->
+          </xsl:number>
         </two>
         <!-- 
 	     * The following substatements of 'number' can only appear if
@@ -59,10 +61,10 @@
       <xsl:message terminate="yes">too late</xsl:message>
       <xsl:message>after</xsl:message>
     </doc>
-    <xsl:some-fancy-element>
+    <axsl:some-fancy-element>
       <xsl:fallback>
         <xsl:message>not implemented</xsl:message>
       </xsl:fallback>
-    </xsl:some-fancy-element>
+    </axsl:some-fancy-element>
   </xsl:template>
 </xsl:stylesheet>
