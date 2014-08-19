@@ -78,6 +78,23 @@ slaxDynAdd (const char *dir)
     slaxDataListAddNul(&slaxDynDirList, dir);
 }
 
+void
+slaxDynAddPath (const char *path)
+{
+    int len = strlen(path) + 1;
+    char *dir = alloca(len), *np;
+
+    memcpy(dir, path, len);
+    for (np = dir; np; dir = np) {
+	np = strchr(dir, ':');
+	if (np)
+	    *np++ = '\0';
+	if (*dir)
+	    slaxDynAdd(dir);
+    }
+}
+
+
 static void
 slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 		      const char *ns)
@@ -317,15 +334,21 @@ slaxDynMarkExslt (void)
 void
 slaxDynInit (void)
 {
+    char *cp;
+
     if (!slaxDynInited) {
 	slaxDynInited = TRUE;
 	slaxDataListInit(&slaxDynDirList);
     }
 
-    slaxDataListAddNul(&slaxDynDirList, SLAX_EXTDIR);
-
     slaxDataListInit(&slaxDynLoaded);
     TAILQ_INIT(&slaxDynLibraries);
+
+    cp = getenv("SLAX_EXTDIR");
+    if (cp)
+	slaxDynAddPath(cp);
+
+    slaxDataListAddNul(&slaxDynDirList, SLAX_EXTDIR);
 }
 
 /*
