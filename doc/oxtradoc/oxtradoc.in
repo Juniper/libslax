@@ -280,6 +280,13 @@ sub first_pass {
 	    $tag = "appendix", last if /^\*! start-appendix/;
 	    $tag = "appendix", last if /^\* Appendices/;
 
+	    # Handle include-file
+	    if (/^!!\s*(include-file)\s+(.*)/) {
+		include_file($2, $i);
+		$i -= 1;
+		last;
+	    }
+
 	    # Handles include-figure, table, and row
 	    if (/^!!\s*(\S+)/) {
 		$tag = $1;
@@ -786,6 +793,16 @@ sub split_lines {
     my $len = length($line);
     print STDERR "${file}:${lnum}: text exceeds $wrapwidth columns ($len)\n";
     return $line;
+}
+
+sub include_file {
+    my($file, $start) = @_;
+
+    open INCLUDE, $file || die "cannot open file '$file'";
+    my(@inc) = <INCLUDE>;
+    close INCLUDE;
+    chomp(@inc);
+    splice(@lines, $start, 1, @inc);
 }
 
 sub include_figure {
