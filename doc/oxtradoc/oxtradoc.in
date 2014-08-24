@@ -391,7 +391,7 @@ sub update {
 }    
 
 sub generate_output {
-    local $last_tag, $line, $tag, $line_number;
+    local $last_tag, $last_sticky_tag, $line, $tag, $line_number;
 
     for ($i = 0; $i <= $#lines; $i++) {
 	$lnum = $i + 1;
@@ -422,6 +422,7 @@ sub generate_output {
 	}
 
 	$last_tag = $tag;
+	$last_sticky_tag = $tag if $tag;
     }
     &emit($last_tag, "end") if $last_tag;
 }
@@ -499,11 +500,14 @@ sub section {
 	print "</front>\n<middle>\n";
     }
 
+    if ($last_sticky_tag eq "section") {
+	list_sections();
+    }
+
     ($stars, $rest) = ($line =~ /^(\*+)\s+(.*)$/);
     ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
 
-    if ($anchor) {
-    } else {
+    unless ($anchor) {
 	my $x = $title;
 	$x =~ tr/A-Z/a-z/;
 	$x =~ tr/ /-/;
@@ -841,6 +845,39 @@ sub include_figure {
 	print "<t>&lt;CODE ENDS></t>\n";
     }
     resume_digress();
+}
+
+sub list_sections {
+    return if $phase eq "end";
+
+    my $i, $x, $len, $ref, $rest, $title;
+
+    return if $depth <= 0;
+    return unless $do_digress;
+
+    print "<t>Section Contents:\n  <list style=\"symbols\">\n";
+    for ($i = $line_number; $i <= $#lines; $i++) {
+	($hdr, $rest) = ($lines[$i] =~ /^(\*+)\s+(.*)$/);
+	next unless $hdr;
+
+	$len = length($hdr);
+	last if $len <= $depth;
+	next if $len > $depth + 1;
+
+	($title, $_, $ref) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+
+	unless ($ref) {
+	    $x = $title;
+	    $x =~ tr/A-Z/a-z/;
+	    $x =~ tr/ /-/;
+	    $x =~ tr/-a-z0-9_//cd;
+	    $ref = $x;
+	}
+	$ref .= "-" . $anchors{$ref} if $ref && $anchors{$ref};
+
+	print "    <t><xref target=\"$ref\"\/></t>\n";
+    }
+    print "  </list>\n</t>\n";
 }
 
 sub start_table {
