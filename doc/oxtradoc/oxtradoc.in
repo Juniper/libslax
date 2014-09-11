@@ -616,13 +616,19 @@ sub end_picture {
 
 sub start_code {
     suspend_digress();
-    print "\t<figure>\n\t    <artwork><![CDATA[\n";
-    print $indent_digress, untabify($line), "\n";
-    $art = 1;
+    if ($line =~ m@^\s*https?://[^ ]+$@) {
+	$line =~ s/(https?:.*)/<eref target=\"$1\"\>$1\<\/eref\>/g;
+	
+	print "\n<t>", $indent_digress, untabify($line), "</t>\n";
+    } else {
+	print "\t<figure>\n\t    <artwork><![CDATA[\n";
+	print $indent_digress, untabify($line), "\n";
+	$art = 1;
+    }
 }
 
 sub end_code {
-    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "\t    ]]></artwork>\n\t</figure>\n" if $art;
     resume_digress();
     $art = 0;
 }
