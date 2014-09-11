@@ -11,6 +11,9 @@
 if SLAX_WARNINGS_HIGH
 SLAX_WARNINGS = HIGH
 endif
+if HAVE_GCC
+GCC_WARNINGS = yes
+endif
 include ${top_srcdir}/warnings.mk
 
 ext_curlincdir = ${includedir}/libslax
