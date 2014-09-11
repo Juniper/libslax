@@ -9,6 +9,9 @@
 if SLAX_WARNINGS_HIGH
 SLAX_WARNINGS = HIGH
 endif
+if HAVE_GCC
+GCC_WARNINGS = yes
+endif
 include ${top_srcdir}/warnings.mk
 
 BISON_COMMAND = ${BISON} -kvd -b slaxparser
@@ -81,7 +84,7 @@ SED_ARGS = \
 -e 's/yyparse (void[^;]*/slaxParse (slax_data_t *slax_data)/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
-slaxparser.h slaxparser.c: slaxparser-out.y
+slaxparser.c: slaxparser-out.y
 	${ECHO_BISON_${V}}${BISON_COMMAND} -o slaxparser.c slaxparser-out.y
 	@${MV} slaxparser.c slaxparser.c.old
 	@${SED} ${SED_ARGS} < slaxparser.c.old  > slaxparser.c
