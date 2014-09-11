@@ -3444,6 +3444,7 @@ json_pair :
 		{
 		    slaxElementClose(slax_data);
 		    $$ = STACK_CLEAR($1);
+		    STACK_UNUSED($3);
 		}
 	;
 
@@ -3711,6 +3712,7 @@ jsonst_array :
 		{
 		    slaxJsonClearMember(slax_data);
 		    $$ = NULL;
+		    STACK_UNUSED($2);
 		}
 	;
 
@@ -3727,6 +3729,7 @@ jsonst_array_top :
 		{
 		    slaxJsonClearMember(slax_data);
 		    $$ = NULL;
+		    STACK_UNUSED($2);
 		}
 	;
 
