@@ -1536,7 +1536,8 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 	goto done;
 
     if (type && *type == 'i') {
-	int value = * (int *) buf;
+	int value;
+	memcpy(&value, buf, sizeof(value));
 	const int int_width = 16;
 	buf = alloca(int_width);
 	snprintf(buf, int_width, "%d", value);
@@ -1867,14 +1868,14 @@ slaxExtTimeCompare (const struct timeval *tvp, double limit)
 static void
 slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
 {
-    char filename[MAXPATHLEN + 1];
-    char new_filename[MAXPATHLEN + 1];
-    char buf[BUFSIZ], *cp, *tag;
+    char *filename;
+    char *new_filename;
+    char buf[1024], *cp, *tag;
     FILE *old_fp = NULL, *new_fp = NULL;
     struct stat sb;
     struct timeval tv, rec_tv, diff;
     int no_of_recs = 0;
-    int fd, rc, max;
+    int fd, rc, max, flen;
     long freq_in_secs;
     double freq_double;
     static const char timefmt[] = "%lu.%06lu\n";
@@ -1905,7 +1906,8 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
      * 'PATH_VAR_RUN_DIR' and by using the tag, and check whether this
      * file is already present
      */
-    snprintf(filename, sizeof(filename), "%s%s-%s.%u", PATH_DAMPEN_DIR,
+    filename = alloca(MAXPATHLEN);
+    snprintf(filename, MAXPATHLEN, "%s%s-%s.%u", PATH_DAMPEN_DIR,
 	     PATH_DAMPEN_FILE, tag, (unsigned) getuid());
 
     xmlFree(tag);
@@ -1928,7 +1930,9 @@ slaxExtDampen (xmlXPathParserContext *ctxt, int nargs)
      * <filename+> and associating a stream with this to write on.
      * We use open/fdopen to allow us to lock it exclusively.
      */
-    snprintf(new_filename, sizeof(new_filename), "%s+", filename);
+    flen = strlen(filename) + 2;
+    new_filename = alloca(flen);
+    snprintf(new_filename, flen, "%s+", filename);
     fd = open(new_filename, DAMPEN_O_FLAGS,
 	      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1) {
