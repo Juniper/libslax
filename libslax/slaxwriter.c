@@ -51,7 +51,7 @@ static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
 static char slaxTernaryPrefix[] = SLAX_TERNARY_PREFIX;
 static char slaxEltArgPrefix[] = SLAX_ELTARG_PREFIX;
 static char slaxEltArgCall[] = EXT_PREFIX ":node-set($" SLAX_ELTARG_PREFIX;
-static char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
+char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
 static char slaxEltArgCallP2[] = EXT_PREFIX ":node-set";
 
 static inline int
