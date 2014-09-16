@@ -215,6 +215,7 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
 	    if (nsp && nsp->href)
 		slaxDataListAddNul(listp, (const char *) nsp->href);
 	}
+	xmlFree(prefixes);
     }
 
     /*
