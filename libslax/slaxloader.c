@@ -213,6 +213,7 @@ slaxAvoidRtf (slax_data_t *sdp)
 	    xmlParserError(sdp->sd_ctxt,
 			   "%s:%d: %s cannot have both select and children\n",
 			   sdp->sd_filename, sdp->sd_line, nodep->name);
+	    xmlFreeAndEasy(sel);
 	    return;
 	}
 
