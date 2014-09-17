@@ -470,6 +470,8 @@ AC_CONFIG_FILES([
   extensions/curl/Makefile
   extensions/exslt/Makefile
   extensions/os/Makefile
+  extensions/db/Makefile
+  extensions/db/sqlite/Makefile
   extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile

@@ -1,0 +1,31 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "test.db";
+}
+
+var $schema = {
+    <collection> "devices";
+    <fields> {
+        <field> {
+            <name> "id";
+            <type> "integer";
+            <primary> "";
+        }
+        <field> {
+            <name> "name";
+            <type> "text";
+            <default> "John";
+        }
+    }
+}
+
+match / {
+    var $handle = db:open($options);
+    var $result = db:create($handle, $schema);
+    copy-of $result;
+    var $close = db:close($handle);
+}

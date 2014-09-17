@@ -1,0 +1,40 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "test.db";
+}
+
+var $data1 = {
+    <collection> "devices";
+    <conditions> {
+        <condition> {
+            <selector> "name";
+            <operator> "like";
+            <value> "name1";
+        }
+        <condition> {
+            <selector> "id";
+            <operator> ">";
+            <value> "4";
+            <or> "";
+        }
+    }
+}
+
+var $data2 = {
+    <collection> "devices";
+    <instance> {
+        <id> "5";
+        <name> "sample";
+    }
+}
+
+match / {
+    var $handle = db:open($options);
+    var $result1 = db:delete($handle, $data1);
+    copy-of $result1;
+    var $close = db:close($handle);
+}

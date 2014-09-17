@@ -665,13 +665,6 @@ slaxExtFirstOf (xmlXPathParserContext *ctxt, int nargs)
 
 /* ---------------------------------------------------------------------- */
 
-typedef struct slax_printf_buffer_s {
-    char *pb_buf;		/* Start of the buffer */
-    int pb_bufsiz;		/* Size of the buffer */
-    char *pb_cur;		/* Current insertion point */
-    char *pb_end;		/* End of the buffer (buf + bufsiz) */
-} slax_printf_buffer_t;
-
 static int
 slaxExtPrintExpand (slax_printf_buffer_t *pbp, int min_add)
 {
@@ -694,7 +687,7 @@ slaxExtPrintExpand (slax_printf_buffer_t *pbp, int min_add)
     return FALSE;
 }
 
-static void
+void
 slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
 {
     if (len == 0)

@@ -248,6 +248,15 @@ slaxExtRegisterOther (const char *namespace);
  */
 void slaxExtRegister (void);
 
+typedef struct slax_printf_buffer_s {
+    char *pb_buf;		/* Start of the buffer */
+    int pb_bufsiz;		/* Size of the buffer */
+    char *pb_cur;		/* Current insertion point */
+    char *pb_end;		/* End of the buffer (buf + bufsiz) */
+} slax_printf_buffer_t;
+
+void
+slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len);
 
 /**
  * Enable logging information internal to the slax library

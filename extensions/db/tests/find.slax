@@ -1,0 +1,21 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "mixer.db";
+}
+
+var $query = {
+    <collection> "devices";
+    <limit> "10";
+}
+
+match / {
+    var $handle = db:open($options);
+    var $cursor = db:find($handle, $query);
+    var $data = db:fetch($cursor);
+    copy-of $data;
+    var $close = db:close($handle);
+}
