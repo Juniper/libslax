@@ -154,40 +154,45 @@ db_sqlite_stmt_free_by_handle (db_sqlite_handle_t *dbsp)
 }
 
 /*
- * Given conditions node and print buffer, appends where clause
+ * Builds and appends conditions
  */
 static void
-db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
+db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
+			   const char *op)
 {
     xmlNodePtr cur, childp;
     const char *selector, *operator, *value, *key;
-    int count, or, i;
+    int count = 0;
 
-    if (conditions && conditions->type == XML_ELEMENT_NODE) {
-	slaxExtPrintAppend(pb, (const xmlChar *) " WHERE", 6);
-	/*
-	 * Count and process all the conditions
-	 */
-	cur = conditions->children;
-	count = 0;
-	while (cur) {
-	    if (cur->type == XML_ELEMENT_NODE) {
-		count++;
-	    }
-	    cur = cur->next;
+    cur = conditions;
+    /*
+     * Count number of valid nodes
+     */
+    while (cur) {
+	if (cur->type == XML_ELEMENT_NODE) {
+	    count++;
 	}
+	cur = cur->next;
+    }
 
-	cur = conditions->children;
-	i = count;
-	while (cur) {
-	    if (cur->type == XML_ELEMENT_NODE) {
-
+    /*
+     * Process conditions
+     */
+    cur = conditions;
+    while (cur) {
+	if (cur->type == XML_ELEMENT_NODE) {
+	    /*
+	     * If we are 'and' or 'or', we have nested condition
+	     */
+	    if (streq(xmlNodeName(cur), "or") 
+		|| streq(xmlNodeName(cur), "and")) {
+		db_sqlite_build_conditions(cur->children, pb, xmlNodeName(cur));
+	    } else if (streq(xmlNodeName(cur), "condition")) {
 		childp = cur->children;
 		selector = NULL;
 		value = NULL;
 		operator = NULL;
-		or = 0;
-		    
+
 		while (childp) {
 		    if (childp->type == XML_ELEMENT_NODE) {
 			key = xmlNodeName(childp);
@@ -197,8 +202,6 @@ db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 			    operator = xmlNodeValue(childp);
 			} else if (streq(key, "value")) {
 			    value = xmlNodeValue(childp);
-			} else if (streq(key, "or")) {
-			    or = 1;
 			}
 		    }
 		    childp = childp->next;
@@ -207,14 +210,6 @@ db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 		if (selector == NULL || operator == NULL || value == NULL)
 		    continue;
 
-		if (i > 0 && i != count) {
-		    if (or) {
-			slaxExtPrintAppend(pb, (const xmlChar *) " OR", 3);
-		    } else {
-			slaxExtPrintAppend(pb, (const xmlChar *) " AND", 4);
-		    }
-		}
-
 		slaxExtPrintAppend(pb, (const xmlChar *) " ", 1);
 		slaxExtPrintAppend(pb, (const xmlChar *) selector, 
 				   strlen(selector));
@@ -222,6 +217,7 @@ db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 		slaxExtPrintAppend(pb, (const xmlChar *) operator, 
 				   strlen(operator));
 		slaxExtPrintAppend(pb, (const xmlChar *) " ", 1);
+
 		/*
 		 * Operator is mostly like, match, regexp and has to be
 		 * enclosed in quotes
@@ -237,10 +233,37 @@ db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 		    slaxExtPrintAppend(pb, (const xmlChar *) "\"", 1);
 		}
 
-		i--;
+		/*
+		 * If we don't have an operator, we can process only one
+		 * condition
+		 */
+		if (op == NULL) {
+		    return;
+		}
 	    }
-	    cur = cur->next;
+
+	    if (op && count > 1) {
+		slaxExtPrintAppend(pb, (const xmlChar *) " ", 1);
+		slaxExtPrintAppend(pb, (const xmlChar *) op, strlen(op));
+	    }
+	    count--;
 	}
+	cur = cur->next;
+    }
+}
+
+/*
+ * Given conditions node and print buffer, appends where clause
+ */
+static void
+db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
+{
+    if (conditions && conditions->type == XML_ELEMENT_NODE 
+	&& conditions->children) {
+	slaxExtPrintAppend(pb, (const xmlChar *) " WHERE", 6);
+
+	/* Build and append conditions */
+	db_sqlite_build_conditions(conditions->children, pb, NULL);
     }
 }
 
