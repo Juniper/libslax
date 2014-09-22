@@ -67,6 +67,8 @@ install-exec-hook:
 	@DLNAME=`sh -c '. ./libext_exslt.la ; echo $$dlname'` ; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
+		if [ "$(build_os)" = "cygwin" ]; \
+		    then DLNAME="../bin/$$DLNAME"; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \
