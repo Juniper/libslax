@@ -5256,17 +5256,16 @@ doing this work.
 This Week: Junos Automation Reference for SLAX 1.0 does not cover any
 of the new SLAX-1.1 material, but is an incredible reference book.
 
-  https://www.juniper.net/us/en/community/junos/
+  www.juniper.net/us/en/community/junos/
       training-certification/day-one/
       automation-series/junos-automation-slax/
 
 This Week: Mastering Junos Automation Programming covers many introductory
 tasks with a tutorial style:
 
-  https://www.juniper.net/us/en/community/junos/
+  www.juniper.net/us/en/community/junos/
       training-certification/day-one/automation-series/
       mastering-junos-automation/
-
 
 Script Library contains a set of scripts that will help get you started:
 
