@@ -92,12 +92,9 @@ db_load_driver (const char *name)
 		(*func)(driver);
 
 		return driver;
-	    } else {
-		dlclose(dlp);
 	    }
-	} else {
-	    dlclose(dlp);
 	}
+	dlclose(dlp);
     }
     slaxLog("extension failed: %s", dlerror() ?: "none");
 
