@@ -4,15 +4,14 @@ ns db extension = "http://xml.libslax.org/db";
 
 var $options = {
     <engine> "sqlite";
-    <database> "mixer.db";
+    <database> "test.db";
 }
 
 var $query = {
     <collection> "devices";
     <project> {
-        <name> "";
+        <id>;
     }
-    <limit> "10";
 }
 
 match / {

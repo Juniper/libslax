@@ -13,16 +13,41 @@ var $data1 = {
         <name> "LOLMAX";
     }
     <conditions> {
-        <condition> {
-            <selector> "name";
-            <operator> "like";
-            <value> "name1";
-        }
-        <condition> {
-            <selector> "id";
-            <operator> ">";
-            <value> "4";
-            <or> "";
+        <or> {
+            <condition> {
+                <selector> "name";
+                <operator> "like";
+                <value> "name1";
+            }
+            <and> {
+                <condition> {
+                    <selector> "id";
+                    <operator> ">";
+                    <value> "4";
+                }
+                <or> {
+                    <condition> {
+                        <selector> "some";
+                        <operator> "in";
+                        <value> "(1,2)";
+                    }
+                    <condition> {
+                        <selector> "some2";
+                        <operator> "in";
+                        <value> "(1,3)";
+                    }
+                }
+                <condition> {
+                    <selector> "id";
+                    <operator> ">";
+                    <value> "4";
+                }
+            }
+            <condition> {
+                <selector> "name";
+                <operator> "like";
+                <value> "name1";
+            }
         }
     }
 }
