@@ -57,9 +57,6 @@ endif
 libext_db_sqlite_la_SOURCES = \
     db_driver_sqlite.c
 
-noinst_HEADERS = \
-    db_driver_sqlite.h
-
 pkglibdir = ${SLAX_EXTDIR}/db
 
 install-exec-hook:
