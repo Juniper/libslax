@@ -180,7 +180,7 @@ db_get_handle_by_name (const char *name)
     do { \
 	if (_v) \
 	    xmlFree(_v); \
-	_v = xmlStrdup2(xmlNodeValue(nodep)); \
+	_v = xmlStrdup2(xmlNodeValue(nodep) ?: ""); \
     } while (0)
 
 #define DB_XML_NODE_SET(_v) \
