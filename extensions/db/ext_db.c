@@ -226,8 +226,8 @@ db_parse_node (db_input_t *input, xmlNodePtr nodep)
 	DB_XML_NODE_SET(input->di_conditions);
     else if (streq(key, "constraints"))
 	DB_XML_NODE_SET(input->di_constraints);
-    else if (streq(key, "modifier"))
-	DB_XML_NODE_SET(input->di_modifier);
+    else if (streq(key, "sort"))
+	DB_XML_NODE_SET(input->di_sort);
     else if (streq(key, "project"))
 	DB_XML_NODE_SET(input->di_project);
 }
@@ -263,7 +263,7 @@ db_input_copy (db_input_t *top, db_input_t *fromp)
     COPY_NODE_SET(di_instances);
     COPY_NODE_SET(di_conditions);
     COPY_NODE_SET(di_constraints);
-    COPY_NODE_SET(di_modifier);
+    COPY_NODE_SET(di_sort);
     COPY_NODE_SET(di_project);
 
     if (fromp->di_buf.pb_buf) {
@@ -349,7 +349,7 @@ db_input_free (db_input_t *input)
     DB_XML_NODE_FREE(input->di_instances);
     DB_XML_NODE_FREE(input->di_conditions);
     DB_XML_NODE_FREE(input->di_constraints);
-    DB_XML_NODE_FREE(input->di_modifier);
+    DB_XML_NODE_FREE(input->di_sort);
     DB_XML_NODE_FREE(input->di_project);
 
     if (input->di_buf.pb_buf) {

@@ -43,7 +43,7 @@ typedef struct db_input_s {
     xmlNodePtr di_instances;    /* Rows that need to be inserted */
     xmlNodePtr di_conditions;   /* Conditions when inserting/finding data */
     xmlNodePtr di_constraints;  /* Constraints when creating sql table */
-    xmlNodePtr di_modifier;     /* Query modifier */
+    xmlNodePtr di_sort;         /* Result sorting order */
     xmlNodePtr di_project;      /* Result projection */
     slax_printf_buffer_t di_buf;/* Hold a string buffer */
 } db_input_t;

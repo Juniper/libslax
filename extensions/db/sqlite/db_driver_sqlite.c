@@ -268,6 +268,52 @@ db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 }
 
 /*
+ * Given sorting information, appends order by clause to query
+ */
+static void
+db_sqlite_build_sort (xmlNodePtr sort, slax_printf_buffer_t *pb)
+{
+    xmlNodePtr cur;
+    int order = 1, more = 0;
+
+    if (sort && sort->type == XML_ELEMENT_NODE) {
+	slaxExtPrintAppend(pb, (const xmlChar *) " ORDER BY", 9);
+
+	cur = sort->children;
+	while (cur) {
+	    if (cur->type == XML_ELEMENT_NODE) {
+		if (streq(xmlNodeName(cur), "by") && xmlNodeValue(cur)) {
+		    if (more == 0) {
+			slaxExtPrintAppend(pb, (const xmlChar *) " ", 1);
+			more = 1;
+		    } else {
+			slaxExtPrintAppend(pb, (const xmlChar *) ", ", 2);
+		    }
+		    slaxExtPrintAppend(pb, 
+				       (const xmlChar *) xmlNodeValue(cur), 
+				       strlen(xmlNodeValue(cur)));
+		} else if (streq(xmlNodeName(cur), "order") 
+			   && xmlNodeValue(cur)) {
+		    /*
+		     * Default order is asc
+		     */
+		    if (streq(xmlNodeValue(cur), "desc")) {
+			order = 0;
+		    }
+		}
+	    }
+	    cur = cur->next;
+	}
+	
+	if (order) {
+	    slaxExtPrintAppend(pb, (const xmlChar *) " ASC", 4);
+	} else {
+	    slaxExtPrintAppend(pb, (const xmlChar *) " DESC", 5);
+	}
+    }
+}
+
+/*
  * Deletes rows filtered with given conditions
  */
 static slax_printf_buffer_t
@@ -288,6 +334,13 @@ db_sqlite_build_delete (db_input_t *in)
 	 */
 	if (in->di_conditions) {
 	    db_sqlite_build_where(in->di_conditions, &pb);
+	}
+
+	/*
+	 * Take care of sorting if any
+	 */
+	if (in->di_sort) {
+	    db_sqlite_build_sort(in->di_sort, &pb);
 	}
 
 	/*
@@ -367,6 +420,13 @@ db_sqlite_build_update (db_input_t *in)
 	 */
 	if (in->di_conditions) {
 	    db_sqlite_build_where(in->di_conditions, &pb);
+	}
+
+	/*
+	 * Take care of sorting if any
+	 */
+	if (in->di_sort) {
+	    db_sqlite_build_sort(in->di_sort, &pb);
 	}
 
 	/*
@@ -678,9 +738,10 @@ db_sqlite_build_select (db_input_t *in)
 	}
 
 	/*
-	 * Take care of modifiers if any
+	 * Take care of sorting if any
 	 */
-	if (in->di_modifier) {
+	if (in->di_sort) {
+	    db_sqlite_build_sort(in->di_sort, &pb);
 	}
 
 	/*
