@@ -228,8 +228,8 @@ db_parse_node (db_input_t *input, xmlNodePtr nodep)
 	DB_XML_NODE_SET(input->di_constraints);
     else if (streq(key, "sort"))
 	DB_XML_NODE_SET(input->di_sort);
-    else if (streq(key, "project"))
-	DB_XML_NODE_SET(input->di_project);
+    else if (streq(key, "retrieve"))
+	DB_XML_NODE_SET(input->di_retrieve);
 }
 
 #define COPY_STRING(_v) \
@@ -264,7 +264,7 @@ db_input_copy (db_input_t *top, db_input_t *fromp)
     COPY_NODE_SET(di_conditions);
     COPY_NODE_SET(di_constraints);
     COPY_NODE_SET(di_sort);
-    COPY_NODE_SET(di_project);
+    COPY_NODE_SET(di_retrieve);
 
     if (fromp->di_buf.pb_buf) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) fromp->di_buf.pb_buf,
@@ -350,7 +350,7 @@ db_input_free (db_input_t *input)
     DB_XML_NODE_FREE(input->di_conditions);
     DB_XML_NODE_FREE(input->di_constraints);
     DB_XML_NODE_FREE(input->di_sort);
-    DB_XML_NODE_FREE(input->di_project);
+    DB_XML_NODE_FREE(input->di_retrieve);
 
     if (input->di_buf.pb_buf) {
 	xmlFree(input->di_buf.pb_buf);

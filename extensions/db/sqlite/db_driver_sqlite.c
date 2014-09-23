@@ -700,8 +700,8 @@ db_sqlite_build_select (db_input_t *in)
 	/*
 	 * Take care of projections
 	 */
-	if (in->di_project && in->di_project->type == XML_ELEMENT_NODE) {
-	    cur = in->di_project->children;
+	if (in->di_retrieve && in->di_retrieve->type == XML_ELEMENT_NODE) {
+	    cur = in->di_retrieve->children;
 	    int count = 0;
 	    slaxExtPrintAppend(&pb, (const xmlChar *) "SELECT ", 7);
 	    while (cur) {
@@ -709,7 +709,7 @@ db_sqlite_build_select (db_input_t *in)
 		    count++;
 		cur = cur->next;
 	    }
-	    cur = in->di_project->children;
+	    cur = in->di_retrieve->children;
 	    while (cur) {
 		if (cur->type == XML_ELEMENT_NODE) {
 		    slaxExtPrintAppend(&pb, (const xmlChar *) cur->name,

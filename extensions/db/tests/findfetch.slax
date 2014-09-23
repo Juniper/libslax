@@ -9,7 +9,7 @@ var $options = {
 
 var $query = {
     <collection> "devices";
-    <project> {
+    <retrieve> {
         <id>;
     }
 }

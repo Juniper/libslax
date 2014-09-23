@@ -4501,12 +4501,12 @@ node. For example,
 
 Above condition set gets translated to "c1 AND c2 AND c3 OR c4"
 
-**** <project>
+**** <retrieve>
 
 This is used to specify only the fields that should appear as part of result
 set when querying the datastore. For example,
 
-    <project> {
+    <retrieve> {
         <id>;
         <name>;
     }
@@ -4710,7 +4710,7 @@ example,
             <by> "id";
             <order> "desc";
         }
-        <project> {
+        <retrieve> {
             <name>;
         }
         <conditions> {

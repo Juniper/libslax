@@ -44,7 +44,7 @@ typedef struct db_input_s {
     xmlNodePtr di_conditions;   /* Conditions when inserting/finding data */
     xmlNodePtr di_constraints;  /* Constraints when creating sql table */
     xmlNodePtr di_sort;         /* Result sorting order */
-    xmlNodePtr di_project;      /* Result projection */
+    xmlNodePtr di_retrieve;     /* Subset of fields to retrieve */
     slax_printf_buffer_t di_buf;/* Hold a string buffer */
 } db_input_t;
 
