@@ -9,7 +9,7 @@ var $options = {
 
 var $query = {
     <collection> "devices";
-    <limit> "10";
+    <limit> 10;
     <sort> {
         <by> "id";
         <order> "asc";
