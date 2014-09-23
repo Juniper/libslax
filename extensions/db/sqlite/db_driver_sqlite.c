@@ -626,7 +626,8 @@ db_sqlite_build_create (db_input_t *in)
 			if (streq(type, "text")) {
 			    slaxExtPrintAppend(&pb, (const xmlChar *) "TEXT", 4);
     			} else if (streq(type, "integer")) {
-			    slaxExtPrintAppend(&pb, (const xmlChar *) "INT", 3);
+			    slaxExtPrintAppend(&pb, 
+					       (const xmlChar *) "INTEGER", 7);
 			} else if (streq(type, "real")) {
 			    slaxExtPrintAppend(&pb, (const xmlChar *) "REAL", 4);
 			} else if (type) {
