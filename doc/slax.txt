@@ -4747,12 +4747,12 @@ db:fetch() also takes an optional second argument that can be used to specify
 additional data. This can be useful when fetching on the cursor returned from
 custom query using db:query().
 
-**** db:findAndFetch()
+**** db:find-and-fetch()
 
 This function call is used to find and read all the instances in one step.
 Usage is as below
 
-    var $result = db:findAndFetch($handle, $query);
+    var $result = db:find-and-fetch($handle, $query);
 
 Returned result contains all the available instances from the query and status
 will be <data/>. status will be <error> with message in case of errors

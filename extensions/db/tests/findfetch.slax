@@ -16,7 +16,7 @@ var $query = {
 
 match / {
     var $handle = db:open($options);
-    var $data = db:findAndFetch($handle, $query);
+    var $data = db:find-and-fetch($handle, $query);
     copy-of $data;
     var $close = db:close($handle);
 }

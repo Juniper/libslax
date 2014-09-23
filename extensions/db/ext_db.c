@@ -774,7 +774,7 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
 
     if (nargs < 2) {
-	LX_ERR("db:findAndFetch: too few arguments. "
+	LX_ERR("db:find-and-fetch: too few arguments. "
 	       "Must provide handle and input\n");
 	return;
     }
@@ -786,13 +786,13 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     name = (char *) xmlXPathCastToString(ostack[0]);
     if (name == NULL) {
-	LX_ERR("db:findAndFetch: missing handle\n");
+	LX_ERR("db:find-and-fetch: missing handle\n");
 	goto fail;
     }
 
     in = db_input_parse(ostack + 1, nargs - 1);
     if (in == NULL) {
-	LX_ERR("db:findAndFetch: unable to parse input\n");
+	LX_ERR("db:find-and-fetch: unable to parse input\n");
 	goto fail;
     }
 
@@ -801,13 +801,13 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
      */
     dbhp = db_get_handle_by_name(name);
     if (dbhp == NULL || dbhp->dh_driver == NULL) {
-	LX_ERR("db:findAndFetch: invalid handle\n");
+	LX_ERR("db:find-and-fetch: invalid handle\n");
 	goto fail;
     }
 
     container = slaxMakeRtf(ctxt);
     if (container == NULL) {
-	LX_ERR("db:findAndFetch: failed to create result container\n");
+	LX_ERR("db:find-and-fetch: failed to create result container\n");
 	goto fail;
     }
 
@@ -818,7 +818,7 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 			    NULL);
 
     if (resultp == NULL || statusp == NULL) {
-	LX_ERR("db:findAndFetch: failed to create result/status nodes\n");
+	LX_ERR("db:find-and-fetch: failed to create result/status nodes\n");
 	goto fail;
     }
 
@@ -830,7 +830,7 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	xmlp = xmlReadMemory(pb.pb_buf, strlen(pb.pb_buf), "raw_data", NULL,
 			     XML_PARSE_NOENT);
 	if (xmlp == NULL) {
-	    slaxLog("db:findAndFetch: failed to read raw data from result");
+	    slaxLog("db:find-and-fetch: failed to read raw data from result");
 	    goto fail;
 	}
 
@@ -1075,7 +1075,7 @@ slax_function_table_t slaxDbTable[] = {
 	"(handle, input)", XPATH_NODESET,
     },
     {
-	"findAndFetch", extDbFindAndFetch,
+	"find-and-fetch", extDbFindAndFetch,
 	"Finds and returns the data that matches given input",
 	"(handle, input)", XPATH_NODESET,
     },

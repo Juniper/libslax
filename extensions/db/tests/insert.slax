@@ -54,7 +54,7 @@ match / {
     copy-of $result1;
     copy-of "\n";
 
-    var $result2 = db:findAndFetch($handle, $query);
+    var $result2 = db:find-and-fetch($handle, $query);
     copy-of $result2;
     copy-of "\n";
 
@@ -62,7 +62,7 @@ match / {
     copy-of $result3;
     copy-of "\n";
 
-    var $result4 = db:findAndFetch($handle, $query);
+    var $result4 = db:find-and-fetch($handle, $query);
     copy-of $result4;
 
     var $close = db:close($handle);
