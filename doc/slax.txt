@@ -1450,6 +1450,7 @@ the libslax software distribution:
 |--------+---------+------------------------------------|
 | bit    | libslax | http://xml.libslax.org/bit         |
 | curl   | libslax | http://xml.libslax.org/curl        |
+| db     | libslax | http://xml.libslax.org/db          |
 | exsl   | exslt   | http://exslt.org/common            |
 | crypto | exslt   | http://exslt.org/crypto            |
 | math   | exslt   | http://exslt.org/math              |
@@ -1461,7 +1462,6 @@ the libslax software distribution:
 | saxon  | libxslt | http://icl.com/saxon               |
 | os     | libslax | http://xml.libslax.org/os          |
 | xutil  | libslax | http://xml.libslax.org/xutil       |
-| db     | libslax | http://xml.libslax.org/db          |
 |--------+---------+------------------------------------|
 
 The libslax extension libraries are documented in this document under
@@ -4724,7 +4724,7 @@ example,
         <skip> "5";
     }
     
-    var $cursor = db:query($handle, $query);
+    var $cursor = db:find($handle, $query);
 
 Above example returns a cursor to result set containing names first 10
 employees skipping first 5 whose id is more than 5 sorted in descending order.
@@ -4761,7 +4761,7 @@ will be <data/>. status will be <error> with message in case of errors
 
 This function can be used to run custom queries. For example,
 
-    var $queryString = "INSERT INTO employee" (id, name) VALUES (@id, @name)";
+    var $queryString = "INSERT INTO employee (id, name) VALUES (@id, @name)";
     var $cursor = db:query($queryString);
 
     var $input = {
