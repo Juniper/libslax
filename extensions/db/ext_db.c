@@ -989,7 +989,7 @@ extDbQuery (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     db_input_t *in = NULL;
     int osi;
     char *name;
-    db_ret_t rc;
+    db_ret_t rc = DB_FAIL;
     slax_printf_buffer_t pb;
     char buf[BUFSIZ];
 
@@ -1037,6 +1037,10 @@ extDbQuery (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     }
 
  fail:
+    if (rc != DB_DATA) {
+	xmlXPathReturnString(ctxt, xmlStrdup((const xmlChar *) ""));
+    }
+
     for (osi = nargs - 1; osi >= 0; osi--) {
 	if (ostack[osi]) {
 	    xmlXPathFreeObject(ostack[osi]);
