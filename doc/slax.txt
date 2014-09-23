@@ -4528,14 +4528,14 @@ the only valid values for order, which defaults to asc.
 
 Used to limit the number of instances that a result can contain.
 
-    <limit> "10";
+    <limit> 10;
 
 **** <skip>
 
 Used to skip over a specified number of instances in the result set before
 returning to the user.
 
-    <skip> "5";
+    <skip> 5;
 
 **** <result>
 
@@ -4690,7 +4690,7 @@ Used to delete instances matching given conditions. For example,
                 <value> "4";
             }
         }
-        <limit> "10";
+        <limit> 10;
     }
 
     var $result = db:delete($handle, $input);
@@ -4720,8 +4720,8 @@ example,
                 <value> "5";
             }
         }
-        <limit> "10";
-        <skip> "5";
+        <limit> 10;
+        <skip> 5;
     }
     
     var $cursor = db:find($handle, $query);
