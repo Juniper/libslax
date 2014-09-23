@@ -4652,9 +4652,6 @@ provided instance. Takes database handle as first argument and input as second
 
     var $input = {
         <collection> "employee";
-        <instance> {
-            <name> "Ross";
-        }
         <conditions> {
             <and> {
                 <condition> {
@@ -4668,6 +4665,9 @@ provided instance. Takes database handle as first argument and input as second
                     <value> "Monica";
                 }
             }
+        }
+        <update> {
+            <name> "Ross";
         }
     }
 

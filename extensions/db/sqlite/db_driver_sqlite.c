@@ -377,14 +377,14 @@ db_sqlite_build_update (db_input_t *in)
     
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && &in->di_collection && in->di_instance 
-	&& in->di_instance->type == XML_ELEMENT_NODE) {
+    if (in && in->di_collection && &in->di_collection && in->di_update 
+	&& in->di_update->type == XML_ELEMENT_NODE) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "UPDATE ", 7);
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
 			   strlen(in->di_collection));
 	slaxExtPrintAppend(&pb, (const xmlChar *) " SET ", 5);
 
-	cur = in->di_instance->children;
+	cur = in->di_update->children;
 	while (cur) {
 	    if (cur->type == XML_ELEMENT_NODE) {
 		count ++;
@@ -392,7 +392,7 @@ db_sqlite_build_update (db_input_t *in)
 	    cur = cur->next;
 	}
 
-	cur = in->di_instance->children;
+	cur = in->di_update->children;
 	while (cur) {
 	    if (cur->type == XML_ELEMENT_NODE) {
 		key = xmlNodeName(cur);

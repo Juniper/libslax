@@ -9,7 +9,7 @@ var $options = {
 
 var $data1 = {
     <collection> "devices";
-    <instance> {
+    <update> {
         <name> "LOLMAX";
     }
     <conditions> {

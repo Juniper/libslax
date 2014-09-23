@@ -39,12 +39,13 @@ typedef struct db_input_s {
     unsigned int di_skip;       /* skip over these number of instances */
     xmlNodePtr di_access;       /* Connection parameters to the database */
     xmlNodePtr di_fields;       /* Fields when creating table */
-    xmlNodePtr di_instance;     /* Row that need to be inserted or updated */
+    xmlNodePtr di_instance;     /* Row that need to be inserted */
     xmlNodePtr di_instances;    /* Rows that need to be inserted */
     xmlNodePtr di_conditions;   /* Conditions when inserting/finding data */
     xmlNodePtr di_constraints;  /* Constraints when creating sql table */
     xmlNodePtr di_sort;         /* Result sorting order */
     xmlNodePtr di_retrieve;     /* Subset of fields to retrieve */
+    xmlNodePtr di_update;       /* New data to update instances with */
     slax_printf_buffer_t di_buf;/* Hold a string buffer */
 } db_input_t;
 
