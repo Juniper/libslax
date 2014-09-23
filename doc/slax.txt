@@ -1461,6 +1461,7 @@ the libslax software distribution:
 | saxon  | libxslt | http://icl.com/saxon               |
 | os     | libslax | http://xml.libslax.org/os          |
 | xutil  | libslax | http://xml.libslax.org/xutil       |
+| db     | libslax | http://xml.libslax.org/db          |
 |--------+---------+------------------------------------|
 
 The libslax extension libraries are documented in this document under
@@ -4341,6 +4342,437 @@ This script sends an email via a server provided as a parameter.
             }
         }
     }
+
+** The "db" Extension Library
+
+The db extension library provides a way to store/retrieve/manipulate/delete
+data stored in a backend database from SLAX scripts
+
+*** db Elements
+
+Following are the elements that can be used in options and data to db 
+extension functions
+
+**** <engine>
+
+Used to specify the backend database engine that is used to access/store data
+    
+    <engine> "sqlite";
+
+sqlite is the currently supported backend engine. <engine> element can also 
+take mysql/mongodb as values once the adapters for corresponding database 
+engines are made available
+
+**** <database>
+
+Used to specify the name of the database to operate on
+
+    <database> "test.db";
+
+**** <collection>
+
+This is used to specify the data collection on which to perform operations. 
+This corresponds to a database table in SQL world.
+
+    <collection> "employee";
+
+**** <fields>
+
+This is used to specify meta data about various fields that a collection
+contain using <field> elements
+
+    <fields> {
+        <field> {
+            ...
+            ...
+        }
+        <field> {
+            ...
+            ...
+        }
+    }
+
+**** <field>
+
+Contains meta data about each field in collection. This corresponds to column
+definition in SQL world and is used when creating a collection.
+
+    <field> {
+        <name> "name";
+        <type> "integer";
+        <primary>;        
+    }
+
+<field> can contain following elements
+
+|----------------+----------------------------------------------------------|
+| Element        | Description                                              |
+|----------------+----------------------------------------------------------|
+| name           | Name of the field                                        |
+| type           | Type of this field. Can take integer/text/real as values |
+| primary        | Empty element that will indicate that this field is      |
+|                | primary key                                              |
+| unique         | Empty element to indicate that values of this field are  |
+|                | unique                                                   |
+| notnull        | Empty element to indicate that value to this field must  |
+|                | be specified                                             |
+| auto-increment | Empty element to indicate that this field value is auto  |
+|                | incremented. This can be used only with integer type     |
+|                | fields                                                   |
+| default        | Used to specify default value that this field will       |
+|                | assume if not specified by the user                      |
+|----------------+----------------------------------------------------------|
+
+**** <instance>
+
+Represents a single instance from collection. Contains fields and their
+corresponding values in that record. Used when inserting/manipulating data in
+the datastore. Example, 
+
+    <instance> {
+        <id> "5";
+        <name> "John";
+    }
+
+
+**** <instances>
+
+Used to hold multiple instances.
+
+    <instances> {
+        <instance> {
+            ...
+            ...
+        }
+        <instance> {
+            ...
+            ...
+        }
+    }
+
+**** <condition>
+
+Used to specify a condition that must to be satisfied when operating with
+data instances from datastore. This forms the condition used with WHERE clause
+when operating with SQL datastore
+
+<condition> will contain following mandatory elements
+
+|----------------+----------------------------------------------------------|
+| Element        | Description                                              |
+|----------------+----------------------------------------------------------|
+| selector       | Name of the field to apply this condition                |
+| operator       | Operator for this condition. Can take one of comparison  |
+|                | or logical operators (<, >, <=, >=, =, LIKE, IN, NOT)    |
+| value          | Value to be used with operator on this field             |
+|----------------+----------------------------------------------------------|
+
+Example,
+
+    <condition> {
+        <selector> "id;
+        <operator> "in";
+        <value> "(1, 10)";
+    }
+
+**** <conditions>
+
+This is used to specify multiple conditions with <and> or <or> as parent
+node. For example,
+
+    <conditions> {
+        <and> {
+            <condition> {
+                ... /* c1 */
+            }
+            <condition> {
+                ... /* c2 */
+            }
+            <or> {
+                <condition> {
+                    ... /* c3 */
+                }
+                <condition> {
+                    ... /* c4 */
+                }
+            }
+        }
+    }
+
+Above condition set gets translated to "c1 AND c2 AND c3 OR c4"
+
+**** <project>
+
+This is used to specify only the fields that should appear as part of result
+set when querying the datastore. For example,
+
+    <project> {
+        <id>;
+        <name>;
+    }
+
+**** <sort>
+
+Used to specify the fields and order by which the result set must be sorted
+before returning. List of fields can be specified using <by> and order using
+<order>. "asc" and "desc", corresponds to ascending and descending order are 
+the only valid values for order, which defaults to asc.
+
+    <sort> {
+        <by> "id";
+        <by> "age";
+        <order> "desc";
+    }
+
+**** <limit>
+
+Used to limit the number of instances that a result can contain.
+
+    <limit> "10";
+
+**** <skip>
+
+Used to skip over a specified number of instances in the result set before
+returning to the user.
+
+    <skip> "5";
+
+**** <result>
+
+This is the output node from most of the extension functions. This contains
+<status> and may contain one or more <instance>s.
+
+<status> can take one of the following values
+
+|---------------+-------------------------------------------------------|
+| Value         | Description                                           |
+|---------------+-------------------------------------------------------|
+| <done/>       | Operation ran to completion. Usually means no more    |
+|               | data to return                                        |
+| <ok/>         | Operation is successful. Returned with insert/update  |
+|               | functions                                             |
+| <data/>       | Data is available in the result as <instance> elements|
+| <error>       | Error has occurred. Error message will be the value of|
+|               | this element                                          |
+|---------------+-------------------------------------------------------|
+
+*** db Extension Functions
+
+The db extension functions require the following ns statement:
+
+    ns db extension = "http://xml.libslax.org/db";
+
+**** db:open()
+
+Used to open a database connection using provided options. Options contain
+backend engine and database name. For example,
+
+    var $options = {
+        <engine> "sqlite";
+        <database> "test.db";
+    }
+
+    var $handle = db:open($options);
+
+db:open() returns database handle (a session cookie), that can be used to
+perform further operations on this opened connection.
+
+**** db:create()
+
+Used to create a collection using opened database handle and  information 
+about the fields that this collection contains. For example,
+
+    var $schema = {
+        <collection> "employee";
+        <fields> {
+            <field> {
+                <name> "id";
+                <type> "integer";
+                <primary>;
+            }
+            <field> {
+                <name> "name";
+                <type> "text";
+                <default> "John";
+            }
+        }
+    }
+
+    var $result = db:create($handle. $schema);
+
+db:create() returns result node which contains status of the operation.
+Status is returned as ok in case of success and has error with message if it
+fails
+
+**** db:insert()
+
+Used to insert data into a collection using a handle and input data. For
+example, to insert one instance into a collection, we use
+
+    var $data = {
+        <collection> "employee";
+        <instance> {
+            <id> "3";
+            <name> "Joey";
+        }
+    }
+
+    var $result = db:insert($handle, $data);
+
+To insert a batch of instances, we use
+
+    var $data = {
+        <collection> "employee";
+        <instances> {
+            <instance> {
+                <id> "1";
+                <name> "Rachael";
+            }
+            <instance> {
+                <id> "2";
+                <name> "Chandler";
+            }
+            <instance> {
+                <id> "3";
+                <name> "Monica";
+            }
+        }
+    }
+
+    var $result = db:insert($handle, $data);
+
+db:insert() returns a result node and includes result of operation in status.
+Status is returned as ok in case of success and error with message in case of
+failure.
+
+**** db:update()
+
+Used to update a set of instances matching given conditions with a new
+provided instance. Takes database handle as first argument and input as second
+
+    var $input = {
+        <collection> "employee";
+        <instance> {
+            <name> "Ross";
+        }
+        <conditions> {
+            <and> {
+                <condition> {
+                    <selector> "id";
+                    <operator> ">";
+                    <value> "2";
+                }
+                <condition> {
+                    <selector> "name";
+                    <operator> "like";
+                    <value> "Monica";
+                }
+            }
+        }
+    }
+
+    var $result = db:update($handle, $input);
+
+Above example will update all the employee instances whose id is greater than
+2 with names Monica to Ross. db:update() returns result set like create/insert
+with status of the operation.
+
+**** db:delete()
+
+Used to delete instances matching given conditions. For example,
+
+    var $input = {
+        <collection "employee";
+        <conditions> {
+            <condition> {
+                <selector> "id";
+                <operator> ">";
+                <value> "4";
+            }
+        }
+        <limit> "10";
+    }
+
+    var $result = db:delete($handle, $input);
+
+Above operation deletes up to 10 employee instances whose id is greater than 4.
+db:delete() returns result set with status similar to insert/update/create
+operations
+
+**** db:find()
+
+This call returns a cursor for instances matching given conditions. For 
+example, 
+
+    var $query = {
+        <collection> "employee";
+        <sort> {
+            <by> "id";
+            <order> "desc";
+        }
+        <project> {
+            <name>;
+        }
+        <conditions> {
+            <condition> {
+                <selector> "id";
+                <operator> ">";
+                <value> "5";
+            }
+        }
+        <limit> "10";
+        <skip> "5";
+    }
+    
+    var $cursor = db:query($handle, $query);
+
+Above example returns a cursor to result set containing names first 10
+employees skipping first 5 whose id is more than 5 sorted in descending order.
+We will have to use db:fetch() call to retrieve each of these result
+instances.
+
+**** db:fetch()
+
+This function call is used to fetch result instance using cursor returned 
+from find/query call. 
+
+    var $result = db:fetch($cursor);
+
+Returned result contains status and <instance> with fields and values if
+available. Status will be returned as <data/> if instance is available. It
+will be <done/> if the query ran to completion and no more data is available
+to be read.
+
+db:fetch() also takes an optional second argument that can be used to specify
+additional data. This can be useful when fetching on the cursor returned from
+custom query using db:query().
+
+**** db:findAndFetch()
+
+This function call is used to find and read all the instances in one step.
+Usage is as below
+
+    var $result = db:findAndFetch($handle, $query);
+
+Returned result contains all the available instances from the query and status
+will be <data/>. status will be <error> with message in case of errors
+
+**** db:query()
+
+This function can be used to run custom queries. For example,
+
+    var $queryString = "INSERT INTO employee" (id, name) VALUES (@id, @name)";
+    var $cursor = db:query($queryString);
+
+    var $input = {
+        <id> "11";
+        <name> "Phoebe";
+    }
+
+    var $result = db:fetch($cursor, $input);
+
+Above example runs a custom query and receives cursor from db:query() and used
+db:fetch() to insert data into employee collection using the previous cursor.
 
 ** The "xutil" Extension Library
 
