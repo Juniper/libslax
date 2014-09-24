@@ -17,6 +17,12 @@ ext_dbincdir = ${includedir}/libslax
 
 EXTRA_DIST = db.txt
 
+SUBDIRS = .
+
+#ifdef HAVE_SQLITE3
+SUBDIRS += sqlite
+#endif
+
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
     -I${top_builddir} \
@@ -37,7 +43,7 @@ LIBS = \
     -lexslt \
     ${LIBXML_LIBS} \
     ${LIBDB_LIBS} \
-    -L${top_builddir}/libslax -lslax -lsqlite3
+    -L${top_builddir}/libslax -lslax
 
 LDADD = ${top_builddir}/libslax/libslax.la
 

@@ -159,6 +159,11 @@ AM_CONDITIONAL([USE_LIBXSLT_TESTS], [test "$WITH_LIBXSLT_TESTS" != ""])
 AC_SUBST(WITH_LIBXSLT_TESTS)
 
 #
+# Check the availability of sqlite3
+#
+AX_LIB_SQLITE3()
+
+#
 # ---- start of noise
 #
 
