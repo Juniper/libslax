@@ -46,6 +46,7 @@ typedef struct db_input_s {
     xmlNodePtr di_sort;         /* Result sorting order */
     xmlNodePtr di_retrieve;     /* Subset of fields to retrieve */
     xmlNodePtr di_update;       /* New data to update instances with */
+    xmlNodePtr di_access;       /* Access details for database engine */
     slax_printf_buffer_t di_buf;/* Hold a string buffer */
 } db_input_t;
 

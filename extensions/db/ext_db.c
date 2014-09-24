@@ -232,6 +232,8 @@ db_parse_node (db_input_t *input, xmlNodePtr nodep)
 	DB_XML_NODE_SET(input->di_retrieve);
     else if (streq(key, "update"))
 	DB_XML_NODE_SET(input->di_update);
+    else if (streq(key, "access"))
+	DB_XML_NODE_SET(input->di_access);
 }
 
 #define COPY_STRING(_v) \
@@ -268,6 +270,7 @@ db_input_copy (db_input_t *top, db_input_t *fromp)
     COPY_NODE_SET(di_sort);
     COPY_NODE_SET(di_retrieve);
     COPY_NODE_SET(di_update);
+    COPY_NODE_SET(di_access);
 
     if (fromp->di_buf.pb_buf) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) fromp->di_buf.pb_buf,
@@ -356,6 +359,7 @@ db_input_free (db_input_t *input)
     DB_XML_NODE_FREE(input->di_sort);
     DB_XML_NODE_FREE(input->di_retrieve);
     DB_XML_NODE_FREE(input->di_update);
+    DB_XML_NODE_FREE(input->di_access);
 
     if (input->di_buf.pb_buf) {
 	xmlFree(input->di_buf.pb_buf);
