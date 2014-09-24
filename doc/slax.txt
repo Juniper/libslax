@@ -4674,7 +4674,7 @@ provided instance. Takes database handle as first argument and input as second
     var $result = db:update($handle, $input);
 
 Above example will update all the employee instances whose id is greater than
-2 with names Monica to Ross. db:update() returns result set like create/insert
+2 with names Monica, to Ross. db:update() returns result set like create/insert
 with status of the operation.
 
 **** db:delete()
