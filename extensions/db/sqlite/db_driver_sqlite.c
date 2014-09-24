@@ -800,6 +800,9 @@ db_sqlite_operate (db_handle_t *db_handle, db_input_t *in,
 		    slaxLog("db:sqlite: preparing - %s", pb.pb_buf);
 		    rc = sqlite3_exec(dbsp->dsh_sqlite_handle, 
 				      pb.pb_buf, 0, 0, 0);
+
+		    xmlFree(pb.pb_buf);
+
 		    if (rc == SQLITE_OK) {
 			return DB_OK;
 		    } else {
@@ -817,6 +820,11 @@ db_sqlite_operate (db_handle_t *db_handle, db_input_t *in,
 	    slaxExtPrintAppend(out, (const xmlChar *) "invalid handle", 14);
 	}
     }
+
+    if (pb.pb_buf) {
+	xmlFree(pb.pb_buf);
+    }
+
     return DB_FAIL;
 }
 
@@ -1001,6 +1009,9 @@ DB_DRIVER_FIND (db_sqlite_find)
 			rc = sqlite3_prepare_v2(dbsp->dsh_sqlite_handle,
 						pb.pb_buf, -1, 
 						&stmtp->dss_stmt, NULL);
+
+			xmlFree(pb.pb_buf);
+
 			if (rc == SQLITE_OK) {
 			    /*
 			     * Save a copy of input data for future use
@@ -1031,6 +1042,11 @@ DB_DRIVER_FIND (db_sqlite_find)
 	} else {
 	}
     }
+    
+    if (pb.pb_buf) {
+	xmlFree(pb.pb_buf);
+    }
+
     return DB_FAIL;
 }
 
@@ -1097,6 +1113,9 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 			rc = sqlite3_prepare_v2(dbsp->dsh_sqlite_handle,
 						pb.pb_buf, -1, 
 						&stmtp->dss_stmt, NULL);
+
+			xmlFree(pb.pb_buf);
+
 			if (rc == SQLITE_OK) {
 			    db_input_t *inc;
 			    inc = xmlMalloc(sizeof(*inc));
@@ -1152,11 +1171,14 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 			}
 		    }
 		}
-	    } else {
 	    }
-	} else {
 	}
     }
+
+    if (pb.pb_buf) {
+	xmlFree(pb.pb_buf);
+    }
+
     return DB_FAIL;
 }
 

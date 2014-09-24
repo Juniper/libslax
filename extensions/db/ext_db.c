@@ -349,6 +349,7 @@ db_input_free (db_input_t *input)
 
     DB_XML_NODE_FREE(input->di_access);
     DB_XML_NODE_FREE(input->di_fields);
+    DB_XML_NODE_FREE(input->di_instance);
     DB_XML_NODE_FREE(input->di_instances);
     DB_XML_NODE_FREE(input->di_conditions);
     DB_XML_NODE_FREE(input->di_constraints);
@@ -505,6 +506,9 @@ extDbOperate (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED,
 	xmlFree(pb.pb_buf);
     }
 
+    if (name) {
+	xmlFree(name);
+    }
 }
 
 /*
@@ -626,6 +630,7 @@ extDbFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 					  &pb);
 	if (rc == DB_DATA) {
 	    xmlDocPtr xmlp;
+	    xmlNodePtr newp;
 
 	    xmlp = xmlReadMemory(pb.pb_buf, strlen(pb.pb_buf), "raw_data", 
 				 NULL, XML_PARSE_NOENT);
@@ -636,11 +641,17 @@ extDbFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
 	    childp = xmlDocGetRootElement(xmlp);
 	    if (childp) {
-		xmlAddChild(resultp, childp);
+		newp = xmlDocCopyNode(childp, container, 1);
+
+		if (newp) {
+		    xmlAddChild(resultp, newp);
+		}
 	    }
 	    
 	    childp = xmlNewDocNode(container, NULL, (const xmlChar *) "data",
 				   NULL);
+
+	    xmlFreeDoc(xmlp);
 	} else if (rc == DB_DONE) {
 	    childp = xmlNewDocNode(container, NULL, (const xmlChar *) "done",
 				   NULL);
@@ -681,6 +692,10 @@ extDbFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (pb.pb_buf) {
 	xmlFree(pb.pb_buf);
+    }
+
+    if (name) {
+	xmlFree(name);
     }
 }
 
@@ -756,6 +771,10 @@ extDbFind (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (pb.pb_buf) {
 	xmlFree(pb.pb_buf);
     }
+
+    if (name) {
+	xmlFree(name);
+    }
 }
 
 /*
@@ -830,6 +849,7 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 					     &pb);
     if (rc == DB_DATA) {
 	xmlDocPtr xmlp;
+	xmlNodePtr newp;
 
 	xmlp = xmlReadMemory(pb.pb_buf, strlen(pb.pb_buf), "raw_data", NULL,
 			     XML_PARSE_NOENT);
@@ -847,11 +867,17 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	    if (streq(xmlNodeName(childp), "output")) {
 		childp = childp->children;
 		while (childp) {
-		    xmlAddChild(resultp, childp);
+		    newp = xmlDocCopyNode(childp, container, 1);
+		    if (newp) {
+			xmlAddChild(resultp, newp);
+		    }
 		    childp = childp->next;
 		}
 	    } else {
-		xmlAddChild(resultp, childp);
+		newp = xmlDocCopyNode(childp, container, 1);
+		if (newp) {
+		    xmlAddChild(resultp, newp);
+		}
 	    }
 	}
 
@@ -860,6 +886,8 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	if (childp) {
 	    xmlAddChild(statusp, childp);
 	}
+
+	xmlFreeDoc(xmlp);
     } else if (rc == DB_DONE) {
 	childp = xmlNewDocNode(container, NULL, (const xmlChar *) "done",
 			       NULL);
@@ -899,6 +927,10 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (pb.pb_buf) {
 	xmlFree(pb.pb_buf);
+    }
+
+    if (name) {
+	xmlFree(name);
     }
 }
 
@@ -1053,6 +1085,10 @@ extDbQuery (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (pb.pb_buf) {
 	xmlFree(pb.pb_buf);
+    }
+
+    if (name) {
+	xmlFree(name);
     }
 }
 
