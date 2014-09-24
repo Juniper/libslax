@@ -4774,6 +4774,13 @@ This function can be used to run custom queries. For example,
 Above example runs a custom query and receives cursor from db:query() and used
 db:fetch() to insert data into employee collection using the previous cursor.
 
+**** db:close()
+
+Used to close the database connection and free all the structures associated
+with previous operations performed on this handle
+
+    var $result = db:close($handle);
+
 ** The "xutil" Extension Library
 
 The xutil extension library provides a number of XML- and XSLT-related
