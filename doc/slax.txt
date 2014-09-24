@@ -4430,7 +4430,7 @@ corresponding values in that record. Used when inserting/manipulating data in
 the datastore. Example, 
 
     <instance> {
-        <id> "5";
+        <id> 5;
         <name> "John";
     }
 
@@ -4612,7 +4612,7 @@ example, to insert one instance into a collection, we use
     var $data = {
         <collection> "employee";
         <instance> {
-            <id> "3";
+            <id> 3;
             <name> "Joey";
         }
     }
@@ -4625,15 +4625,15 @@ To insert a batch of instances, we use
         <collection> "employee";
         <instances> {
             <instance> {
-                <id> "1";
+                <id> 1;
                 <name> "Rachael";
             }
             <instance> {
-                <id> "2";
+                <id> 2;
                 <name> "Chandler";
             }
             <instance> {
-                <id> "3";
+                <id> 3;
                 <name> "Monica";
             }
         }
@@ -4765,7 +4765,7 @@ This function can be used to run custom queries. For example,
     var $cursor = db:query($queryString);
 
     var $input = {
-        <id> "11";
+        <id> 11;
         <name> "Phoebe";
     }
 

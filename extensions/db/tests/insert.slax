@@ -11,27 +11,27 @@ var $data1 = {
     <collection> "devices";
     <instances> {
         <instance> {
-            <id> "1";
+            <id> 1;
             <name> "name1";
         }
         <instance> {
-            <id> "2";
+            <id> 2;
             <name> "Second name";
         }
         <instance> {
-            <id> "3";
+            <id> 3;
             <name> "Third name";
         }
         <instance> {
-            <id> "4";
+            <id> 4;
             <name> "name1";
         }
         <instance> {
-            <id> "5";
+            <id> 5;
             <name> "name9";
         }
         <instance> {
-            <id> "6";
+            <id> 6;
         }
     }
 }
@@ -39,7 +39,7 @@ var $data1 = {
 var $data2 = {
     <collection> "devices";
     <instance> {
-        <id> "7";
+        <id> 7;
         <name> "sample";
     }
 }
