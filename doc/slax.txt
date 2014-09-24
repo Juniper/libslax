@@ -4547,11 +4547,11 @@ This is the output node from most of the extension functions. This contains
 |---------------+-------------------------------------------------------|
 | Value         | Description                                           |
 |---------------+-------------------------------------------------------|
-| <done/>       | Operation ran to completion. Usually means no more    |
+| <done>        | Operation ran to completion. Usually means no more    |
 |               | data to return                                        |
-| <ok/>         | Operation is successful. Returned with insert/update  |
+| <ok>          | Operation is successful. Returned with insert/update  |
 |               | functions                                             |
-| <data/>       | Data is available in the result as <instance> elements|
+| <data>        | Data is available in the result as <instance> elements|
 | <error>       | Error has occurred. Error message will be the value of|
 |               | this element                                          |
 |---------------+-------------------------------------------------------|
@@ -4739,8 +4739,8 @@ from find/query call.
     var $result = db:fetch($cursor);
 
 Returned result contains status and <instance> with fields and values if
-available. Status will be returned as <data/> if instance is available. It
-will be <done/> if the query ran to completion and no more data is available
+available. Status will be returned as <data> if instance is available. It
+will be <done> if the query ran to completion and no more data is available
 to be read.
 
 db:fetch() also takes an optional second argument that can be used to specify
@@ -4755,7 +4755,7 @@ Usage is as below
     var $result = db:find-and-fetch($handle, $query);
 
 Returned result contains all the available instances from the query and status
-will be <data/>. status will be <error> with message in case of errors
+will be <data>. status will be <error> with message in case of errors
 
 **** db:query()
 
