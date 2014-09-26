@@ -699,6 +699,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     }
 
     bzero(&sd, sizeof(sd));
+    sd.sd_line = 1;
 
     /* We want to parse SLAX, either full or partial */
     sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
@@ -782,6 +783,7 @@ slaxLoadBuffer (const char *filename, char *input,
     }
 
     bzero(&sd, sizeof(sd));
+    sd.sd_line = 1;
 
     /* We want to parse SLAX, either full or partial */
     sd.sd_parse = sd.sd_ttype = partial ? M_PARSE_PARTIAL : M_PARSE_FULL;
