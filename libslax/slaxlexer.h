@@ -36,6 +36,7 @@ struct slax_data_s {
     int sd_parse;		/* Parsing mode (M_PARSE_*) */
     int sd_ttype;		/* Token type returned on next lexer call */
     int sd_last;		/* Last token type returned */
+    int sd_ytype;		/* YANG argument type */
     char sd_filename[MAXPATHLEN]; /* Path of current file */
     int sd_line;		/* Line number */
     int sd_col;			/* Column number */
@@ -51,6 +52,7 @@ struct slax_data_s {
     slax_string_t *sd_ns;	/* Namespace stash */
     xmlNodePtr sd_nodep;	/* Node for looking up ternary expressions */
     xmlNodePtr sd_insert;	/* List of nodes to be inserted shortly */
+    void *sd_opaque;		/* Additional opaque data */
 };
 
 /* Flags for sd_flags */
@@ -63,6 +65,11 @@ struct slax_data_s {
 #define SDF_NO_TYPES		(1<<5) /* Do not decorate nodes w/ type info */
 #define SDF_CLEAN_NAMES		(1<<6) /* Clean element names, if needed */
 #define SDF_JSON_NO_MEMBERS	(1<<7) /* Don't use <member>s as json arrays */
+
+#define SDF_SLSH_COMMENTS	(1<<8) /* Allow C++ style comments */
+#define SDF_SLSH_OPEN		(1<<9) /* C++ style comments is open */
+#define SDF_STRING		(1<<10) /* Parse a YANG string argument */
+
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
