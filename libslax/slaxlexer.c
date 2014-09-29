@@ -992,7 +992,7 @@ slaxLexer (slax_data_t *sdp)
      * looking for a string argument, it's pretty easy.
      */
     if ((sdp->sd_flags & SDF_STRING)
-		&& ch1 != '{' && ch1 != '}' && ch1 != ';') {
+		&& ch1 != '{' && ch1 != '}' && ch1 != ';' && ch1 != '+') {
 	if (ch1 == '\'' || ch1 == '"') {
 	    /*
 	     * Found a quoted string.  Scan for the end.  We may
