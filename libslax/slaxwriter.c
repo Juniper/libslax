@@ -40,6 +40,7 @@ struct slax_writer_s {
 /* Flags for sw_flags */
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
+#define SWF_LINENO	(1<<2)	/* Show line numbers */
 
 /* Values for sw_vers */
 #define SWF_VERS_10	10	/* Version 1.0 features only */
@@ -51,7 +52,7 @@ static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
 static char slaxTernaryPrefix[] = SLAX_TERNARY_PREFIX;
 static char slaxEltArgPrefix[] = SLAX_ELTARG_PREFIX;
 static char slaxEltArgCall[] = EXT_PREFIX ":node-set($" SLAX_ELTARG_PREFIX;
-static char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
+char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
 static char slaxEltArgCallP2[] = EXT_PREFIX ":node-set";
 
 static inline int
@@ -3285,8 +3286,15 @@ slaxWriteXslElement (slax_writer_t *swp, xmlDocPtr docp,
 	if ((sftp->sft_flags & SFTF_V11) && !slaxV11(swp))
 	    continue;
 
-	if (streq(sftp->sft_name, name))
+	if (streq(sftp->sft_name, name)) {
 	    func = sftp->sft_func;
+	    break;
+	}
+    }
+
+    if (swp->sw_flags & SWF_LINENO) {
+	/* We want to show line numbers, but there's no pretty way */
+	slaxWrite(swp, "/* line %d */\n", nodep->line);
     }
 
     if (func)

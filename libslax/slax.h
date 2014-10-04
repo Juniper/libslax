@@ -315,6 +315,8 @@ slaxFindIncludeFile (const char *url, char *buf, size_t bufsiz);
  */
 void
 slaxDynAdd (const char *dir);
+void
+slaxDynAddPath (const char *path);
 
 void
 slaxMemDump (const char *title, const char *data,

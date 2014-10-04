@@ -11,6 +11,9 @@
 if SLAX_WARNINGS_HIGH
 SLAX_WARNINGS = HIGH
 endif
+if HAVE_GCC
+GCC_WARNINGS = yes
+endif
 include ${top_srcdir}/warnings.mk
 
 ext_osincdir = ${includedir}/libslax
@@ -58,6 +61,8 @@ install-exec-hook:
 	@DLNAME=`sh -c '. ./libext_os.la ; echo $$dlname'` ; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
+		if [ "$(build_os)" = "cygwin" ]; \
+		    then DLNAME="../bin/$$DLNAME"; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \

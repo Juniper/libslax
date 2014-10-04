@@ -630,11 +630,13 @@ slaxGetInput (slax_data_t *sdp, int final)
 	if (sdp->sd_len == 0)
 	    continue;
 
+#if 0
 	if (sdp->sd_buf[sdp->sd_len - 1] == '\n') {
 	    sdp->sd_line += 1;
 	    if (final && sdp->sd_ctxt->input)
 		sdp->sd_ctxt->input->line = sdp->sd_line;
 	}
+#endif
 
 	if (first_read) {
 	    /*
@@ -653,6 +655,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 		 * then we skip the line.
 		 */
 		sdp->sd_len = 0;
+		sdp->sd_line += 1;
 	    }
 
 	    first_read = FALSE;
@@ -735,15 +738,29 @@ slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
     return res;
 }
 
-static inline int
-slaxIsCommentStart (const char *buf)
+static int
+slaxIsCommentStart (slax_data_t *sdp, const char *buf)
 {
+    if (sdp->sd_flags & SDF_SLSH_COMMENTS) {
+	if (buf[0] == '/' && buf[1] == '/') {
+	    sdp->sd_flags |= SDF_SLSH_OPEN;
+	    return TRUE;
+	}
+    }
+
     return (buf[0] == '/' && buf[1] == '*');
 }
 
-static inline int
-slaxIsCommentEnd (const char *buf)
+static int
+slaxIsCommentEnd (slax_data_t *sdp, const char *buf)
 {
+    if (sdp->sd_flags & SDF_SLSH_OPEN) {
+	if (buf[0] == '\n') {
+	    sdp->sd_flags &= ~SDF_SLSH_OPEN;
+	    return TRUE;
+	}
+    }
+
     return (buf[0] == '*' && buf[1] == '/');
 }
 
@@ -755,14 +772,19 @@ slaxIsCommentEnd (const char *buf)
 static int
 slaxDrainComment (slax_data_t *sdp)
 {
+    unsigned flags = sdp->sd_flags;
+
     for ( ; ; sdp->sd_cur++) {
 	if (sdp->sd_cur >= sdp->sd_len) {
 	    if (slaxGetInput(sdp, 1))
 		return TRUE;
 	}
 
-	if (slaxIsCommentEnd(sdp->sd_buf + sdp->sd_cur)) {
-	    sdp->sd_cur += COMMENT_MARKER_SIZE;	/* Move past "\*\/" */
+	if (slaxIsCommentEnd(sdp, sdp->sd_buf + sdp->sd_cur)) {
+	    if (flags & SDF_SLSH_OPEN)
+		sdp->sd_cur += 1;
+	    else
+		sdp->sd_cur += COMMENT_MARKER_SIZE;	/* Move past "\*\/" */
 	    return FALSE;
 	}
     }
@@ -876,8 +898,15 @@ slaxLexer (slax_data_t *sdp)
 		return -1;
 
 	while (sdp->sd_cur < sdp->sd_len
-	       && isspace((int) sdp->sd_buf[sdp->sd_cur]))
+	       && isspace((int) sdp->sd_buf[sdp->sd_cur])) {
+	    if (sdp->sd_buf[sdp->sd_cur] == '\n') {
+		sdp->sd_line += 1;
+		if (sdp->sd_ctxt->input)
+		    sdp->sd_ctxt->input->line = sdp->sd_line;
+	    }
+
 	    sdp->sd_cur += 1;
+	}
 
 	if (sdp->sd_cur != sdp->sd_len) {
 	    /*
@@ -887,7 +916,7 @@ slaxLexer (slax_data_t *sdp)
 	     * to trigger a comment start.
 	     */
 	    if (SLAX_KEYWORDS_ALLOWED(sdp)
-		    && slaxIsCommentStart(sdp->sd_buf + sdp->sd_cur)) {
+		&& slaxIsCommentStart(sdp, sdp->sd_buf + sdp->sd_cur)) {
 
 		sdp->sd_start = sdp->sd_cur;
 		if (slaxDrainComment(sdp)) {
@@ -957,6 +986,44 @@ slaxLexer (slax_data_t *sdp)
     ch1 = sdp->sd_buf[sdp->sd_cur];
     ch2 = (sdp->sd_cur + 1 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 1] : 0;
     ch3 = (sdp->sd_cur + 2 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 2] : 0;
+
+    /*
+     * The rules for YANG are fairly simple.  But if we're
+     * looking for a string argument, it's pretty easy.
+     */
+    if ((sdp->sd_flags & SDF_STRING)
+		&& ch1 != '{' && ch1 != '}' && ch1 != ';' && ch1 != '+') {
+	if (ch1 == '\'' || ch1 == '"') {
+	    /*
+	     * Found a quoted string.  Scan for the end.  We may
+	     * need to read some more, if the string is long.
+	     */
+	    sdp->sd_cur += 1;	/* Move past the first quote */
+	    while (((unsigned char *) sdp->sd_buf)[sdp->sd_cur] != ch1) {
+		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
+
+		sdp->sd_cur += 1;
+
+		if (sdp->sd_cur == sdp->sd_len) {
+		    if (slaxGetInput(sdp, 0))
+			return -1;
+		}
+
+		if (bump && sdp->sd_cur < sdp->sd_len)
+		    sdp->sd_cur += bump;
+	    }
+
+	    sdp->sd_cur += 1;	/* Move past the end quote */
+	    return T_QUOTED;
+	}
+	
+	for (sdp->sd_cur++; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+	    int ch = sdp->sd_buf[sdp->sd_cur];
+	    if (isspace((int) ch) || ch == ';' || ch == '{' || ch == '}')
+		break;
+	}
+	return (sdp->sd_buf[sdp->sd_start] == '$') ? T_VAR : T_BARE;
+    }
 
     if (ch1 < SLAX_MAX_CHAR) {
 	if (tripleWide[ch1]) {

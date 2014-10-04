@@ -280,6 +280,13 @@ sub first_pass {
 	    $tag = "appendix", last if /^\*! start-appendix/;
 	    $tag = "appendix", last if /^\* Appendices/;
 
+	    # Handle include-file
+	    if (/^!!\s*(include-file)\s+(.*)/) {
+		include_file($2, $i);
+		$i -= 1;
+		last;
+	    }
+
 	    # Handles include-figure, table, and row
 	    if (/^!!\s*(\S+)/) {
 		$tag = $1;
@@ -384,7 +391,7 @@ sub update {
 }    
 
 sub generate_output {
-    local $last_tag, $line, $tag, $line_number;
+    local $last_tag, $last_sticky_tag, $line, $tag, $line_number;
 
     for ($i = 0; $i <= $#lines; $i++) {
 	$lnum = $i + 1;
@@ -415,6 +422,7 @@ sub generate_output {
 	}
 
 	$last_tag = $tag;
+	$last_sticky_tag = $tag if $tag;
     }
     &emit($last_tag, "end") if $last_tag;
 }
@@ -492,8 +500,21 @@ sub section {
 	print "</front>\n<middle>\n";
     }
 
+    if ($last_sticky_tag eq "section") {
+	list_sections();
+    }
+
     ($stars, $rest) = ($line =~ /^(\*+)\s+(.*)$/);
     ($title, $_, $anchor) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+
+    unless ($anchor) {
+	my $x = $title;
+	$x =~ tr/A-Z/a-z/;
+	$x =~ tr/ /-/;
+	$x =~ tr/-a-z0-9_//cd;
+	$anchor = $x;
+    }
+    $anchor .= "-" . $anchors{$anchor} if $anchor && $anchors{$anchor}++;
 
     # The length of the outline-mode header gives us the depth, but
     # if we're doing our appendices as sections under an "Appendix",
@@ -595,13 +616,19 @@ sub end_picture {
 
 sub start_code {
     suspend_digress();
-    print "\t<figure>\n\t    <artwork><![CDATA[\n";
-    print $indent_digress, untabify($line), "\n";
-    $art = 1;
+    if ($line =~ m@^\s*https?://[^ ]+$@) {
+	$line =~ s/(https?:.*)/<eref target=\"$1\"\>$1\<\/eref\>/g;
+	
+	print "\n<t>", $indent_digress, untabify($line), "</t>\n";
+    } else {
+	print "\t<figure>\n\t    <artwork><![CDATA[\n";
+	print $indent_digress, untabify($line), "\n";
+	$art = 1;
+    }
 }
 
 sub end_code {
-    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "\t    ]]></artwork>\n\t</figure>\n" if $art;
     resume_digress();
     $art = 0;
 }
@@ -778,6 +805,16 @@ sub split_lines {
     return $line;
 }
 
+sub include_file {
+    my($file, $start) = @_;
+
+    open INCLUDE, $file || die "cannot open file '$file'";
+    my(@inc) = <INCLUDE>;
+    close INCLUDE;
+    chomp(@inc);
+    splice(@lines, $start, 1, @inc);
+}
+
 sub include_figure {
     my $prefix;
     return if $phase eq "end";
@@ -814,6 +851,39 @@ sub include_figure {
 	print "<t>&lt;CODE ENDS></t>\n";
     }
     resume_digress();
+}
+
+sub list_sections {
+    return if $phase eq "end";
+
+    my $i, $x, $len, $ref, $rest, $title;
+
+    return if $depth <= 0;
+    return unless $do_digress;
+
+    print "<t>Section Contents:\n  <list style=\"symbols\">\n";
+    for ($i = $line_number; $i <= $#lines; $i++) {
+	($hdr, $rest) = ($lines[$i] =~ /^(\*+)\s+(.*)$/);
+	next unless $hdr;
+
+	$len = length($hdr);
+	last if $len <= $depth;
+	next if $len > $depth + 1;
+
+	($title, $_, $ref) = ($rest =~ /^(.*?)(\s+\@(.*?)\@)?$/);
+
+	unless ($ref) {
+	    $x = $title;
+	    $x =~ tr/A-Z/a-z/;
+	    $x =~ tr/ /-/;
+	    $x =~ tr/-a-z0-9_//cd;
+	    $ref = $x;
+	}
+	$ref .= "-" . $anchors{$ref} if $ref && $anchors{$ref};
+
+	print "    <t><xref target=\"$ref\"\/></t>\n";
+    }
+    print "  </list>\n</t>\n";
 }
 
 sub start_table {
