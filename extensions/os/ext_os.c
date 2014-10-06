@@ -1317,9 +1317,6 @@ extUserInfo (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	    xmlNodePtr namep = xmlNewDocNode(container, NULL, 
 					     (const xmlChar *) "name", 
 					     (const xmlChar *) pwd->pw_name);
-	    xmlNodePtr passwdp = xmlNewDocNode(container, NULL, 
-					       (const xmlChar *) "passwd", 
-					       (const xmlChar *) pwd->pw_passwd);
 	    xmlNodePtr gecosp = xmlNewDocNode(container, NULL, 
 					      (const xmlChar *) "gecos", 
 					      (const xmlChar *) pwd->pw_gecos);
@@ -1332,10 +1329,6 @@ extUserInfo (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
 	    if (namep) {
 		xmlAddChild(userp, namep);
-	    }
-
-	    if (passwdp) {
-		xmlAddChild(userp, passwdp);
 	    }
 
 	    if (gecosp) {

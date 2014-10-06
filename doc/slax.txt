@@ -5171,7 +5171,6 @@ This function returns a user element with following information
 | Element  | Description                                      |
 |----------+--------------------------------------------------|
 | name     | Username                                         |
-| passwd   | User password (usually masked)                   |
 | gecos    | User information                                 |
 | dir      | User home directory                              |
 | shell    | User shell program                               |
