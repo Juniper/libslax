@@ -1297,58 +1297,34 @@ static void
 extUserInfo (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 {
     uid_t euid = geteuid();
-    struct passwd *pwd;
+    struct passwd *pwd = getpwuid(euid);
     xmlNodePtr userp = NULL;
 
-    if (euid) {
-	pwd = getpwuid(euid);
-
-	if (pwd) {
-	    xmlDocPtr container = slaxMakeRtf(ctxt);
-	    xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
-
-	    userp = xmlNewDocNode(container, NULL, (const xmlChar *) "user",
-				  NULL);
-	    if (userp == NULL) {
-		slaxLog("os:userinfo: failed to create result node");
-		goto fail;
-	    }
-
-	    xmlNodePtr namep = xmlNewDocNode(container, NULL, 
-					     (const xmlChar *) "name", 
-					     (const xmlChar *) pwd->pw_name);
-	    xmlNodePtr gecosp = xmlNewDocNode(container, NULL, 
-					      (const xmlChar *) "gecos", 
-					      (const xmlChar *) pwd->pw_gecos);
-	    xmlNodePtr dirp = xmlNewDocNode(container, NULL, 
-					    (const xmlChar *) "dir", 
-					    (const xmlChar *) pwd->pw_dir);
-	    xmlNodePtr shellp = xmlNewDocNode(container, NULL, 
-					      (const xmlChar *) "shell", 
-					      (const xmlChar *) pwd->pw_shell);
-
-	    if (namep) {
-		xmlAddChild(userp, namep);
-	    }
-
-	    if (gecosp) {
-		xmlAddChild(userp, gecosp);
-	    }
-
-	    if (dirp) {
-		xmlAddChild(userp, dirp);
-	    }
-
-	    if (shellp) {
-		xmlAddChild(userp, shellp);
-	    }
-	    
-	    xmlXPathNodeSetAdd(results, userp);
-	    xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
-
-	    valuePush(ctxt, ret);
-	    xmlXPathFreeNodeSet(results);
+    if (pwd) {
+	xmlDocPtr container = slaxMakeRtf(ctxt);
+	xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+	
+	userp = xmlNewDocNode(container, NULL, (const xmlChar *) "user",
+			      NULL);
+	if (userp == NULL) {
+	    slaxLog("os:user-info: failed to create result node");
+	    goto fail;
 	}
+
+	slaxAddChildName(container, userp, "name", pwd->pw_name);
+	slaxAddChildName(container, userp, "gecos", pwd->pw_gecos);
+	slaxAddChildName(container, userp, "dir", pwd->pw_dir);
+	slaxAddChildName(container, userp, "shell", pwd->pw_shell);
+
+#if HAVE_PWD_CLASS
+	slaxAddChildName(container, userp, "class", pwd->pw_class);
+#endif	
+
+	xmlXPathNodeSetAdd(results, userp);
+	xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
+
+	valuePush(ctxt, ret);
+	xmlXPathFreeNodeSet(results);
     }
 
 fail:
@@ -1396,7 +1372,7 @@ slax_function_table_t slaxOsTable[] = {
 	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
     },
     {
-	"userinfo", extUserInfo,
+	"user-info", extUserInfo,
 	"Return information about user running the script",
 	"()", XPATH_UNDEFINED,
     },

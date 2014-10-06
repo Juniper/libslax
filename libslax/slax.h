@@ -351,4 +351,18 @@ slaxDynMarkLoaded (const char *);
 void
 slaxDynMarkExslt (void);
 
+static inline void
+slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
+                  const char *value)
+{
+    if (docp == NULL || name == NULL)
+        return;
+
+    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
+                                    (const xmlChar *) value);
+
+    if (newp)
+        xmlAddChild(parent, newp);
+}
+
 #endif /* LIBSLAX_SLAX_H */
