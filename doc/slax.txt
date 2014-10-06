@@ -5159,6 +5159,26 @@ elements.  The following table lists these attributes and values.
 | date        | date      | Seconds since Jan 1, 1970        |
 |-------------+-----------+----------------------------------|
 
+**** os:userinfo
+
+The os:userinfo helps know the details of user running the script.
+
+    var $userinfo = os:userinfo();
+
+This function returns a user element with following information
+
+|----------+--------------------------------------------------|
+| Element  | Description                                      |
+|----------+--------------------------------------------------|
+| name     | Username                                         |
+| passwd   | User password (usually masked)                   |
+| gecos    | User information                                 |
+| dir      | User home directory                              |
+| shell    | User shell program                               |
+|----------+--------------------------------------------------|
+
+This functions returns empty when error
+
 *! start-appendix
 
 * Example Stylesheets
