@@ -1293,6 +1293,77 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
     valuePush(ctxt, xmlXPathWrapNodeSet(results));
 }
 
+static void
+extUserInfo (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+{
+    uid_t euid = geteuid();
+    struct passwd *pwd;
+    xmlNodePtr userp = NULL;
+
+    if (euid) {
+	pwd = getpwuid(euid);
+
+	if (pwd) {
+	    xmlDocPtr container = slaxMakeRtf(ctxt);
+	    xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+
+	    userp = xmlNewDocNode(container, NULL, (const xmlChar *) "user",
+				  NULL);
+	    if (userp == NULL) {
+		slaxLog("os:userinfo: failed to create result node");
+		goto fail;
+	    }
+
+	    xmlNodePtr namep = xmlNewDocNode(container, NULL, 
+					     (const xmlChar *) "name", 
+					     (const xmlChar *) pwd->pw_name);
+	    xmlNodePtr passwdp = xmlNewDocNode(container, NULL, 
+					       (const xmlChar *) "passwd", 
+					       (const xmlChar *) pwd->pw_passwd);
+	    xmlNodePtr gecosp = xmlNewDocNode(container, NULL, 
+					      (const xmlChar *) "gecos", 
+					      (const xmlChar *) pwd->pw_gecos);
+	    xmlNodePtr dirp = xmlNewDocNode(container, NULL, 
+					    (const xmlChar *) "dir", 
+					    (const xmlChar *) pwd->pw_dir);
+	    xmlNodePtr shellp = xmlNewDocNode(container, NULL, 
+					      (const xmlChar *) "shell", 
+					      (const xmlChar *) pwd->pw_shell);
+
+	    if (namep) {
+		xmlAddChild(userp, namep);
+	    }
+
+	    if (passwdp) {
+		xmlAddChild(userp, passwdp);
+	    }
+
+	    if (gecosp) {
+		xmlAddChild(userp, gecosp);
+	    }
+
+	    if (dirp) {
+		xmlAddChild(userp, dirp);
+	    }
+
+	    if (shellp) {
+		xmlAddChild(userp, shellp);
+	    }
+	    
+	    xmlXPathNodeSetAdd(results, userp);
+	    xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
+
+	    valuePush(ctxt, ret);
+	    xmlXPathFreeNodeSet(results);
+	}
+    }
+
+fail:
+    if (userp == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+    }
+}
+
 slax_function_table_t slaxOsTable[] = {
     {
 	"exit-code", extOsExitCode,
@@ -1330,6 +1401,11 @@ slax_function_table_t slaxOsTable[] = {
 	"chown", extOsChown,
 	"Change ownership of a file",
 	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
+    },
+    {
+	"userinfo", extUserInfo,
+	"Return information about user running the script",
+	"()", XPATH_UNDEFINED,
     },
 
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
