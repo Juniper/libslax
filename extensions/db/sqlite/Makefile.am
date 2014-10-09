@@ -41,7 +41,7 @@ LIBS = \
 
 LDADD = ${top_builddir}/libslax/libslax.la
 
-LDFLAGS = \
+AM_LDFLAGS = \
     -Wl, --whole-archive, \
     ${top_builddir}/extensions/db/libext-db.la \
     --no-whole-archive
