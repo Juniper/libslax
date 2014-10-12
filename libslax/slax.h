@@ -248,16 +248,6 @@ slaxExtRegisterOther (const char *namespace);
  */
 void slaxExtRegister (void);
 
-typedef struct slax_printf_buffer_s {
-    char *pb_buf;		/* Start of the buffer */
-    int pb_bufsiz;		/* Size of the buffer */
-    char *pb_cur;		/* Current insertion point */
-    char *pb_end;		/* End of the buffer (buf + bufsiz) */
-} slax_printf_buffer_t;
-
-void
-slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len);
-
 /**
  * Enable logging information internal to the slax library
  */
@@ -350,19 +340,5 @@ slaxDynMarkLoaded (const char *);
 
 void
 slaxDynMarkExslt (void);
-
-static inline void
-slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
-                  const char *value)
-{
-    if (docp == NULL || name == NULL)
-        return;
-
-    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
-                                    (const xmlChar *) value);
-
-    if (newp)
-        xmlAddChild(parent, newp);
-}
 
 #endif /* LIBSLAX_SLAX_H */

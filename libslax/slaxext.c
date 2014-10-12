@@ -53,6 +53,8 @@
 #include <libxml/parserInternals.h>
 #include <libxml/uri.h>
 
+#include "slaxext.h"
+
 #ifdef O_EXLOCK
 #define DAMPEN_O_FLAGS (O_CREAT | O_RDWR | O_EXLOCK)
 #else

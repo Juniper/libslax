@@ -377,6 +377,20 @@ errno_map_t errno_map[] = {
     { err_no: 0, err_name: NULL },
 };
 
+static inline void
+slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
+                  const char *value)
+{
+    if (docp == NULL || name == NULL)
+        return;
+
+    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
+                                    (const xmlChar *) value);
+
+    if (newp)
+        xmlAddChild(parent, newp);
+}
+
 static const char *
 slaxErrnoName (int err)
 {

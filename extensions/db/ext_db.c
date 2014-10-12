@@ -34,6 +34,7 @@
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
 #include <libslax/slaxutil.h>
+#include <libslax/slaxext.h>
 
 #include "ext_db.h"
 
