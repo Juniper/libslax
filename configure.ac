@@ -172,6 +172,11 @@ AM_CONDITIONAL([USE_LIBXSLT_TESTS], [test "$WITH_LIBXSLT_TESTS" != ""])
 AC_SUBST(WITH_LIBXSLT_TESTS)
 
 #
+# Check the availability of sqlite3
+#
+AX_LIB_SQLITE3()
+
+#
 # ---- start of noise
 #
 
@@ -487,6 +492,8 @@ AC_CONFIG_FILES([
   extensions/curl/Makefile
   extensions/exslt/Makefile
   extensions/os/Makefile
+  extensions/db/Makefile
+  extensions/db/sqlite/Makefile
   extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile
