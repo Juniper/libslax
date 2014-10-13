@@ -879,7 +879,7 @@ static int
 db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out, 
 		xmlXPathObjectPtr input)
 {
-    int rc, cols, i, index;
+    int rc, cols, i, idx;
     const char *colName;
     unsigned const char *colVal;
     char buf[BUFSIZ];
@@ -916,21 +916,21 @@ db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out,
 				 * provided with a prefix : or $ or @
 				 */
 				snprintf(buf, sizeof(buf), ":%s", key);
-				index = sqlite3_bind_parameter_index(stmt, buf);
-				if (index == 0) {
+				idx = sqlite3_bind_parameter_index(stmt, buf);
+				if (idx == 0) {
 				    snprintf(buf, sizeof(buf), "$%s", key);
-				    index = sqlite3_bind_parameter_index(stmt,
-									 buf);
-				    if (index == 0) {
+				    idx = sqlite3_bind_parameter_index(stmt, 
+								       buf);
+				    if (idx == 0) {
 					snprintf(buf, sizeof(buf), "@%s",
 						 key);
-					index =
+					idx =
 					    sqlite3_bind_parameter_index(stmt,
 									 buf);
 				    }
 				}
-				if (index > 0) {
-				    rc = sqlite3_bind_text(stmt, index, value,
+				if (idx > 0) {
+				    rc = sqlite3_bind_text(stmt, idx, value,
 							   strlen(value),
 							   SQLITE_TRANSIENT);
 				    if (rc != SQLITE_OK) {
