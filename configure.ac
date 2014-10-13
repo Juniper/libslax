@@ -174,7 +174,7 @@ AC_SUBST(WITH_LIBXSLT_TESTS)
 #
 # Check the availability of sqlite3
 #
-AX_LIB_SQLITE3()
+AX_LIB_SQLITE3([3.7.15])
 
 #
 # ---- start of noise
