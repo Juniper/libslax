@@ -688,14 +688,11 @@ db_sqlite_build_create (db_input_t *in)
 /*
  * Given input structure, forms and returns select statement
  */
-static slax_printf_buffer_t
-db_sqlite_build_select (db_input_t *in)
+static void
+db_sqlite_build_select (slax_printf_buffer_t *pbp, db_input_t *in)
 {
     char buf[BUFSIZ];
     xmlNodePtr cur;
-    slax_printf_buffer_t pb;
-
-    bzero(&pb, sizeof(pb));
 
     if (in && in->di_collection && &in->di_collection) {
 	/*
@@ -704,7 +701,7 @@ db_sqlite_build_select (db_input_t *in)
 	if (in->di_retrieve && in->di_retrieve->type == XML_ELEMENT_NODE) {
 	    cur = in->di_retrieve->children;
 	    int count = 0;
-	    slaxExtPrintAppend(&pb, (const xmlChar *) "SELECT ", 7);
+	    slaxExtPrintAppend(pbp, (const xmlChar *) "SELECT ", 7);
 	    while (cur) {
 		if (cur->type == XML_ELEMENT_NODE)
 		    count++;
@@ -713,37 +710,37 @@ db_sqlite_build_select (db_input_t *in)
 	    cur = in->di_retrieve->children;
 	    while (cur) {
 		if (cur->type == XML_ELEMENT_NODE) {
-		    slaxExtPrintAppend(&pb, (const xmlChar *) cur->name,
+		    slaxExtPrintAppend(pbp, (const xmlChar *) cur->name,
 				       xmlStrlen(cur->name));
 		    count--;
 		}
 		cur = cur->next;
 
 		if (count > 0) {
-		    slaxExtPrintAppend(&pb, (const xmlChar *) ", ", 2);
+		    slaxExtPrintAppend(pbp, (const xmlChar *) ", ", 2);
 		} else {
-		    slaxExtPrintAppend(&pb, (const xmlChar *) " ", 1);
+		    slaxExtPrintAppend(pbp, (const xmlChar *) " ", 1);
 		}
 	    }
-	    slaxExtPrintAppend(&pb, (const xmlChar *) "FROM ", 5);
+	    slaxExtPrintAppend(pbp, (const xmlChar *) "FROM ", 5);
 	} else {
-	    slaxExtPrintAppend(&pb, (const xmlChar *) "SELECT * FROM ", 14);
+	    slaxExtPrintAppend(pbp, (const xmlChar *) "SELECT * FROM ", 14);
 	}
-	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
+	slaxExtPrintAppend(pbp, (const xmlChar *) in->di_collection,
 			   strlen(in->di_collection));
 
 	/*
 	 * Add conditions if any
 	 */
 	if (in->di_conditions) {
-	    db_sqlite_build_where(in->di_conditions, &pb);
+	    db_sqlite_build_where(in->di_conditions, pbp);
 	}
 
 	/*
 	 * Take care of sorting if any
 	 */
 	if (in->di_sort) {
-	    db_sqlite_build_sort(in->di_sort, &pb);
+	    db_sqlite_build_sort(in->di_sort, pbp);
 	}
 
 	/*
@@ -751,7 +748,7 @@ db_sqlite_build_select (db_input_t *in)
 	 */
 	if (in->di_limit) {
 	    snprintf(buf, sizeof(buf), " LIMIT %u", in->di_limit);
-	    slaxExtPrintAppend(&pb, (const xmlChar *) buf, strlen(buf));
+	    slaxExtPrintAppend(pbp, (const xmlChar *) buf, strlen(buf));
 	}
 
 	/*
@@ -759,11 +756,9 @@ db_sqlite_build_select (db_input_t *in)
 	 */
 	if (in->di_skip) {
 	    snprintf(buf, sizeof(buf), " OFFSET %u", in->di_skip);
-	    slaxExtPrintAppend(&pb, (const xmlChar *) buf, strlen(buf));
+	    slaxExtPrintAppend(pbp, (const xmlChar *) buf, strlen(buf));
 	}
     }
-
-    return pb;
 }
 
 /*
@@ -997,7 +992,7 @@ DB_DRIVER_FIND (db_sqlite_find)
 		 * Build, prepare sqlite statement and return sqlite cursor
 		 * identifier
 		 */
-		pb = db_sqlite_build_select(in);
+		db_sqlite_build_select(&pb, in);
 		if (pb.pb_buf) {
 		    db_sqlite_stmt_t *stmtp = xmlMalloc(sizeof(*stmtp));
 		    int rc;
@@ -1101,7 +1096,7 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 		 * Build, prepare sqlite statement and return sqlite cursor
 		 * identifier
 		 */
-		pb = db_sqlite_build_select(in);
+		db_sqlite_build_select(&pb, in);
 		if (pb.pb_buf) {
 		    db_sqlite_stmt_t *stmtp = xmlMalloc(sizeof(*stmtp));
 		    int rc;
