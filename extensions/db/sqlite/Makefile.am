@@ -19,11 +19,10 @@ AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
     -I${top_builddir} \
     -I${top_srcdir} \
-    ${LIBSQLITE_CFLAGS} \
     ${LIBSLAX_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
     ${LIBXML_CFLAGS} \
-    ${LIBSQLITE_CFLAGS} \
+    ${SQLITE3_CFLAGS} \
     ${WARNINGS}
 
 AM_CFLAGS += \
@@ -35,7 +34,7 @@ LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS} \
-    ${LIBSQLITE_LIBS} \
+    ${SQLITE3_LIBS} \
     -L${top_builddir}/libslax -lslax -lsqlite3 \
     -L${top_builddir}/extensions/db
 
