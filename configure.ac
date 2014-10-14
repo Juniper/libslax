@@ -25,6 +25,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LIBXML_REQUIRED_VERSION=2.7.7
 LIBXSLT_REQUIRED_VERSION=1.1.26
 LIBCURL_REQUIRED_VERSION=7.21.3
+    SQLITE3_REQUIRED_VERSION=3.7.15
 
 AC_PROG_CC
 AM_PROG_AR
@@ -174,7 +175,12 @@ AC_SUBST(WITH_LIBXSLT_TESTS)
 #
 # Check the availability of sqlite3
 #
-AX_LIB_SQLITE3([3.7.15])
+AX_LIB_SQLITE3([$SQLITE3_REQUIRED_VERSION])
+AM_CONDITIONAL([HAVE_SQLITE3], [test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)])
+if test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)
+then
+    HAVE_SQLITE3=yes
+fi
 
 #
 # ---- start of noise
@@ -537,6 +543,7 @@ AC_MSG_NOTICE([summary of build options:
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
   bison version:    ${BISON_VERSION}
+  sqlite3 version:  ${SQLITE3_VERSION}
 
   warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
@@ -544,4 +551,5 @@ AC_MSG_NOTICE([summary of build options:
   libedit:          ${HAVE_LIBEDIT:-no}
   printf-like:      ${HAVE_PRINTFLIKE:-no}
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
+  sqlite3:          ${HAVE_SQLITE3:-no}
 ])

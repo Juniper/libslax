@@ -42,7 +42,7 @@ LDADD = ${top_builddir}/libslax/libslax.la
 
 AM_LDFLAGS = \
     -Wl, --whole-archive, \
-    ${top_builddir}/extensions/db/libext-db.la \
+    ../libext-db.la \
     --no-whole-archive
 
 if HAVE_READLINE

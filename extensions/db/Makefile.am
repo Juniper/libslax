@@ -19,9 +19,9 @@ EXTRA_DIST = db.txt
 
 SUBDIRS = .
 
-#ifdef HAVE_SQLITE3
+if HAVE_SQLITE3
 SUBDIRS += sqlite
-#endif
+endif
 
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
