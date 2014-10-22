@@ -9,7 +9,7 @@ Homepage: https://github.com/Juniper/libslax/
 Package: libslax0-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: libslax0
 Description: Alternative syntax for XSLT - development kit
 
 Package: libslax0

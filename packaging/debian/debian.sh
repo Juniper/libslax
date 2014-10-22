@@ -17,7 +17,7 @@ ln -s packaging/debian debian
 dpkg-buildpackage -us -uc -rfakeroot > debian/build.log
 
 # remove all the files dpkg-buildpackage leaves around
-rm -rf debian/files debian/tmp debian/libslax debian/libslax-dev debian/libslax*debhelper* debian/libslax*substvars debian/build.log
+rm -rf debian/files debian/tmp debian/libslax0 debian/libslax0-dev debian/libslax*debhelper* debian/libslax*substvars debian/build.log debian/autoreconf.*
 
 # clean up our symlink
 rm debian

@@ -6,3 +6,8 @@
 
 %:
 	dh $@  --with autoreconf
+
+override_dh_install:
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/libslax0
+	mv $(CURDIR)/debian/tmp/usr/share/doc/libslax/* $(CURDIR)/debian/tmp/usr/share/doc/libslax0
+	dh_install
