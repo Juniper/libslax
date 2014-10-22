@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/libslax-$1\.tar\.gz/ \
+  https://github.com/Juniper/libslax/tags .*/v?(\d\S*)\.tar\.gz
