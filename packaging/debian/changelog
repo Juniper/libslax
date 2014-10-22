@@ -1,4 +1,11 @@
-libslax (0.17.3-1) unstable; urgency=low
+libslax0 (0.20.0-1) unstable; urgency=low
+  
+  * Added dbapi to interface with sqlite3 from slax
+  * Prepared libslax for Debian/Ubuntu repository hosting
+ 
+ -- Rob Johnston <rjohnst@juniper.net>  Wed, 22 Oct 2014 16:44:14 -0400
+
+libslax0 (0.17.3-1) unstable; urgency=low
 
   * Initial release
 

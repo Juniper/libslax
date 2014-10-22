@@ -1,5 +1,5 @@
-Building libslax.deb & libslax-dev.deb
---------------------------------------
+Building libslax0.deb & libslax0-dev.deb
+----------------------------------------
 
 In order to build the debian/ubuntu .deb files, you will need to be running
 under the base line version of debian that you want to support.  If you want to
@@ -27,5 +27,5 @@ the .deb files.  After it is done, the files should be in the `output`
 directory.
 
 If you add any files to the distribution that need to be installed, be sure to
-modify libslax.install and libslax-dev.install respectively.
+modify libslax0.install and libslax0-dev.install respectively.
 

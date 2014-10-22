@@ -25,8 +25,8 @@ cd packaging/debian
 mkdir -p output
 
 # dpkg-buildpackage doesn't support output directory argument
-mv ../../../libslax_* output
-mv ../../../libslax-dev_* output
+mv ../../../libslax0_* output
+mv ../../../libslax0-dev_* output
 
 echo "-----------------------------------------------------------------"
 echo ".deb (and related files) have been created in 'output' directory."
