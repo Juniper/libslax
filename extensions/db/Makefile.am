@@ -36,8 +36,8 @@ AM_CFLAGS = \
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
-LIBNAME = libext-db
-pkglib_LTLIBRARIES = libext-db.la
+LIBNAME = libext_db
+pkglib_LTLIBRARIES = libext_db.la
 LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
@@ -66,7 +66,7 @@ pkglibdir = ${SLAX_EXTDIR}
 UGLY_NAME = db.prefix:http%3A%2F%2Fxml.libslax.org%2Fdb.ext
 
 install-exec-hook:
-	@DLNAME=`sh -c '. ./libext-db.la ; echo $$dlname'`; \
+	@DLNAME=`sh -c '. ./libext_db.la ; echo $$dlname'`; \
 		if [ x"$$DLNAME" = x ]; \
                     then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
 		echo Install link $$DLNAME "->" ${UGLY_NAME} "..." ; \
