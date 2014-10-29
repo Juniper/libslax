@@ -4,6 +4,8 @@ usr/lib/lib*.so.*
 usr/lib/slax/extensions/lib*.so.*
 usr/lib/slax/extensions/*.prefix
 usr/lib/slax/extensions/*.ext
+usr/lib/slax/extensions/*/lib*.so.*
+usr/lib/slax/extensions/*/db_driver_*so
 usr/share/doc/libslax0/*
 usr/bin/slaxproc
 usr/bin/slax-config

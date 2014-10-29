@@ -802,10 +802,10 @@ db_sqlite_operate (db_handle_t *db_handle, db_input_t *in,
 		    if (rc == SQLITE_OK) {
 			return DB_OK;
 		    } else {
-			error = sqlite3_errstr(rc);
+			error = sqlite3_errmsg(dbsp->dsh_sqlite_handle);
 			if (error) {
-			    slaxExtPrintAppend(out, (const xmlChar *) error, 
-					       strlen(error));
+			    slaxExtPrintAppend(out, (const xmlChar *) error,
+				    strlen(error));
 			}
 			return DB_ERROR;
 		    }
@@ -838,7 +838,7 @@ DB_DRIVER_OPEN (db_sqlite_open)
 		return DB_OK;
 	    } else {
 		slaxLog("sqlite:open: db handle creation failed - %s",
-			sqlite3_errstr(rc));
+			sqlite3_errmsg(dbsp->dsh_sqlite_handle));
 		db_sqlite_handle_free(dbsp);
 	    }
 	}
@@ -1026,9 +1026,10 @@ DB_DRIVER_FIND (db_sqlite_find)
 					       strlen(stmtp->dss_name));
 			    return DB_DATA;
 			} else {
-			    const char *errstr = sqlite3_errstr(rc);
-			    slaxExtPrintAppend(out, (const xmlChar *) errstr, 
-					       strlen(errstr));
+			    const char *errstr =
+				sqlite3_errmsg(dbsp->dsh_sqlite_handle);
+			    slaxExtPrintAppend(out, (const xmlChar *) errstr,
+				    strlen(errstr));
 			    return DB_ERROR;
 			}
 		    }
@@ -1065,10 +1066,12 @@ DB_DRIVER_FETCH (db_sqlite_fetch)
 	    } else if (rc == SQLITE_DONE) {
 		return DB_DONE;
 	    } else {
+		const char *errstr =
+		    sqlite3_errmsg(stmtp->dss_handle->dsh_sqlite_handle);
 		slaxLog("db:sqlite:fetch: Unexpected return status - %s",
-			sqlite3_errstr(rc));
-		slaxExtPrintAppend(out, (const xmlChar *) sqlite3_errstr(rc),
-				   strlen(sqlite3_errstr(rc)));
+			errstr);
+		slaxExtPrintAppend(out, (const xmlChar *) errstr,
+			strlen(errstr));
 		return DB_ERROR;
 	    }
 	} else {
@@ -1153,16 +1156,17 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 			    } else if (rc == SQLITE_DONE) {
 				return DB_DATA;
 			    } else {
-				slaxExtPrintAppend(out, 
-					(const xmlChar *) sqlite3_errstr(rc),
-					strlen(sqlite3_errstr(rc)));
+				const char *errstr =
+				    sqlite3_errmsg(stmtp->dss_handle->dsh_sqlite_handle);
+				slaxExtPrintAppend(out, (const xmlChar *)
+					errstr, strlen(errstr));
 				return DB_ERROR;
 			    }
 			} else {
-			    const char *errstr = sqlite3_errstr(rc);
-			    slaxExtPrintAppend(out, 
-					       (const xmlChar *) errstr, 
-					       strlen(errstr));
+			    const char *errstr =
+				sqlite3_errmsg(stmtp->dss_handle->dsh_sqlite_handle);
+			    slaxExtPrintAppend(out, (const xmlChar *) errstr,
+				    strlen(errstr));
 			    return DB_ERROR;
 			}
 		    }
@@ -1222,10 +1226,10 @@ DB_DRIVER_QUERY (db_sqlite_query)
 					strlen(stmtp->dss_name));
 			    return DB_DATA;
 			} else {
-			    const char *errstr = sqlite3_errstr(rc);
-			    slaxExtPrintAppend(out, 
-					       (const xmlChar *) errstr, 
-					       strlen(errstr));
+			    const char *errstr =
+				sqlite3_errmsg(dbsp->dsh_sqlite_handle);
+			    slaxExtPrintAppend(out, (const xmlChar *) errstr,
+				    strlen(errstr));
 			    return DB_ERROR;
 			}
 		    }
@@ -1250,7 +1254,7 @@ DB_DRIVER_CLOSE (db_sqlite_close)
 	    db_sqlite_stmt_free_by_handle(dbsp);
 
 	    /* Close sqlite3 handle */
-	    sqlite3_close_v2(dbsp->dsh_sqlite_handle);
+	    sqlite3_close(dbsp->dsh_sqlite_handle);
 
 	    /* Free the structures */
 	    TAILQ_REMOVE(&db_sqlite_sessions, dbsp, dsh_link);
