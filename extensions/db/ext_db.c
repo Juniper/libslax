@@ -360,7 +360,6 @@ db_input_free (db_input_t *input)
     DB_XML_NODE_FREE(input->di_sort);
     DB_XML_NODE_FREE(input->di_retrieve);
     DB_XML_NODE_FREE(input->di_update);
-    DB_XML_NODE_FREE(input->di_access);
 
     if (input->di_buf.pb_buf) {
 	xmlFree(input->di_buf.pb_buf);

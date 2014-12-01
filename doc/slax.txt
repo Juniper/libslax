@@ -4577,6 +4577,33 @@ backend engine and database name. For example,
 db:open() returns database handle (a session cookie), that can be used to
 perform further operations on this opened connection.
 
+If sqlcipher is available, db:open() also takes an optional <access> config
+where in we can specify the key that can be used to encrypt/decrypt the
+database. In such a case, options will look as below
+
+    var $options = {
+        <engine> "sqlite";
+        <database> "test.db";
+        <access> {
+            <key> "testKey";
+        }
+    }
+
+If the user provides a rekey in access, database key will be changed to the
+valued mentioned in rekey
+
+    var $options = {
+        <engine> "sqlite";
+        <database> "test.db";
+        <access> {
+            <key> "testKey";
+            <rekey> "newTestKey";
+        }
+    }
+
+Above options when used in with db:open() will change test.db key from
+"testKey" to "newTestKey"
+
 **** db:create()
 
 Used to create a collection using opened database handle and  information 

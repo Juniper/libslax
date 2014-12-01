@@ -5,6 +5,9 @@ ns db extension = "http://xml.libslax.org/db";
 var $options = {
     <engine> "sqlite";
     <database> "test.db";
+    <access> {
+        <key> "test";
+    }
 }
 
 var $data1 = {

@@ -21,6 +21,10 @@ SUBDIRS = .
 
 if HAVE_SQLITE3
 SUBDIRS += sqlite
+else 
+if HAVE_SQLCIPHER
+SUBDIRS += sqlite
+endif
 endif
 
 AM_CFLAGS = \

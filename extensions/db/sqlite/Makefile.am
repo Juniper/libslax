@@ -22,8 +22,13 @@ AM_CFLAGS = \
     ${LIBSLAX_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
     ${LIBXML_CFLAGS} \
-    ${SQLITE3_CFLAGS} \
     ${WARNINGS}
+
+if HAVE_SQLCIPHER
+    AM_CFLAGS += $(SQLIPHER_CFLAGS)
+else
+    AM_CFLAGS += ${SQLITE3_CFLAGS}
+endif
 
 AM_CFLAGS += \
  -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
@@ -34,9 +39,14 @@ LIBS = \
     ${LIBXSLT_LIBS} \
     -lexslt \
     ${LIBXML_LIBS} \
-    ${SQLITE3_LIBS} \
-    -L${top_builddir}/libslax -lslax -lsqlite3 \
+    -L${top_builddir}/libslax -lslax \
     -L${top_builddir}/extensions/db
+
+if HAVE_SQLCIPHER
+    LIBS += ${SQLCIPHER_LIBS} -lsqlcipher
+else
+    LIBS += ${SQLITE3_LIBS} -lsqlite3
+endif
 
 LDADD = ${top_builddir}/libslax/libslax.la
 

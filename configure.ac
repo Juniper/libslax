@@ -183,6 +183,20 @@ then
 fi
 
 #
+# Check the availability of sqlcipher
+#
+AC_ARG_WITH(sqlcipher, [ --with-sqlcipher[=DIR] Path to SQLCipher])
+if test "$with_sqlcipher" != ""; then
+    if test -f "$with_sqlcipher/sqlite3.h" ; then
+        USE_SQLCIPHER=$with_sqlcipher
+        AC_DEFINE([HAVE_SQLCIPHER], [1], "Have SQLCipher")
+        HAVE_SQLCIPHER=yes
+        SQLCIPHER_CFLAGS="-I$with_sqlcipher"
+    fi
+fi
+AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
+
+#
 # ---- start of noise
 #
 
@@ -552,4 +566,5 @@ AC_MSG_NOTICE([summary of build options:
   printf-like:      ${HAVE_PRINTFLIKE:-no}
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
   sqlite3:          ${HAVE_SQLITE3:-no}
+  sqlcipher:        ${HAVE_SQLCIPHER:-no}
 ])

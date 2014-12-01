@@ -835,6 +835,38 @@ DB_DRIVER_OPEN (db_sqlite_open)
 	if (dbsp) {
 	    rc = sqlite3_open(in->di_database, &dbsp->dsh_sqlite_handle);
 	    if (rc == SQLITE_OK) {
+#if HAVE_SQLCIPHER
+		xmlNodePtr cur;
+		const char *key = NULL, *rekey = NULL;
+		/*
+		 * If we have key/rekey specified as part of access, we use
+		 * them
+		 */
+		if (in->di_access) {
+		    cur = in->di_access->children;
+		    while (cur && cur->type == XML_ELEMENT_NODE) {
+			if (streq(xmlNodeName(cur), "key"))
+			    key = xmlNodeValue(cur);
+
+			if (streq(xmlNodeName(cur), "rekey"))
+			    rekey = xmlNodeValue(cur);
+
+			cur = cur->next;
+		    }
+
+		    if (key) {
+			sqlite3_key(dbsp->dsh_sqlite_handle,
+				    key, strlen(key));
+			slaxLog("sqlite:open: Used a key");
+		    }
+
+		    if (rekey) {
+			sqlite3_rekey(dbsp->dsh_sqlite_handle,
+				      rekey, strlen(rekey));
+			slaxLog("sqlite:open: Used a rekey");
+		    }
+		}
+#endif
 		return DB_OK;
 	    } else {
 		slaxLog("sqlite:open: db handle creation failed - %s",

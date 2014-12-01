@@ -95,6 +95,9 @@
    and to 0 otherwise. */
 #undef HAVE_REALLOC
 
+/* "Have SQLCipher" */
+#undef HAVE_SQLCIPHER
+
 /* Have the SQLITE3 library */
 #undef HAVE_SQLITE3
 
