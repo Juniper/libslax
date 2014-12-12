@@ -497,7 +497,7 @@ li.indline1 {
  
   } 
   @top-right {
-       content: "October 2014";
+       content: "December 2014";
  
   } 
   @top-center {
@@ -21984,7 +21984,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">October 4, 2014</td>
+<td class="header right">December 12, 2014</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -22678,60 +22678,175 @@ jQuery(function ($) {
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3">8.3   </div>
-<a href="#the-xutil-extension-library">The "xutil" Extension Library</a><ul class="toc"><li class="tocline1">
+<a href="#the-db-extension-library">The "db" Extension Library</a><ul class="toc">
+<li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1">8.3.1   </div>
-<a href="#xutil-extension-functions">"xutil" Extension Functions</a><ul class="toc">
+<a href="#db-elements">db Elements</a><ul class="toc">
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1_1">8.3.1.1   </div>
-<a href="#xutilmax-call-depth">xutil:max-call-depth()</a>
+<a href="#engine">&lt;engine&gt;</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1_2">8.3.1.2   </div>
-<a href="#xutilstring-to-xml">xutil:string-to-xml()</a>
+<a href="#database">&lt;database&gt;</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1_3">8.3.1.3   </div>
-<a href="#xutilxml-to-string">xutil:xml-to-string()</a>
+<a href="#collection">&lt;collection&gt;</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1_4">8.3.1.4   </div>
-<a href="#xutiljson-to-xml">xutil:json-to-xml()</a>
+<a href="#fields">&lt;fields&gt;</a>
 </li>
 <li class="tocline1">
 <div class="section-number" id="toc_doc_section_8_3_1_5">8.3.1.5   </div>
+<a href="#field">&lt;field&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_6">8.3.1.6   </div>
+<a href="#instance">&lt;instance&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_7">8.3.1.7   </div>
+<a href="#instances">&lt;instances&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_8">8.3.1.8   </div>
+<a href="#condition">&lt;condition&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_9">8.3.1.9   </div>
+<a href="#conditions">&lt;conditions&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_10">8.3.1.10   </div>
+<a href="#retrieve">&lt;retrieve&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_11">8.3.1.11   </div>
+<a href="#sort-2">&lt;sort&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_12">8.3.1.12   </div>
+<a href="#limit">&lt;limit&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_13">8.3.1.13   </div>
+<a href="#skip">&lt;skip&gt;</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_1_14">8.3.1.14   </div>
+<a href="#result-2">&lt;result&gt;</a>
+</li>
+</ul>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2">8.3.2   </div>
+<a href="#db-extension-functions">db Extension Functions</a><ul class="toc">
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_1">8.3.2.1   </div>
+<a href="#dbopen">db:open()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_2">8.3.2.2   </div>
+<a href="#dbcreate">db:create()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_3">8.3.2.3   </div>
+<a href="#dbinsert">db:insert()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_4">8.3.2.4   </div>
+<a href="#dbupdate">db:update()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_5">8.3.2.5   </div>
+<a href="#dbdelete">db:delete()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_6">8.3.2.6   </div>
+<a href="#dbfind">db:find()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_7">8.3.2.7   </div>
+<a href="#dbfetch">db:fetch()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_8">8.3.2.8   </div>
+<a href="#dbfind-and-fetch">db:find-and-fetch()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_9">8.3.2.9   </div>
+<a href="#dbquery">db:query()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_3_2_10">8.3.2.10   </div>
+<a href="#dbclose">db:close()</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4">8.4   </div>
+<a href="#the-xutil-extension-library">The "xutil" Extension Library</a><ul class="toc"><li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1">8.4.1   </div>
+<a href="#xutil-extension-functions">"xutil" Extension Functions</a><ul class="toc">
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_1">8.4.1.1   </div>
+<a href="#xutilmax-call-depth">xutil:max-call-depth()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_2">8.4.1.2   </div>
+<a href="#xutilstring-to-xml">xutil:string-to-xml()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_3">8.4.1.3   </div>
+<a href="#xutilxml-to-string">xutil:xml-to-string()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_4">8.4.1.4   </div>
+<a href="#xutiljson-to-xml">xutil:json-to-xml()</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_4_1_5">8.4.1.5   </div>
 <a href="#xutilxml-to-json">xutil:xml-to-json()</a>
 </li>
 </ul>
 </li></ul>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4">8.4   </div>
+<div class="section-number" id="toc_doc_section_8_5">8.5   </div>
 <a href="#the-os-extension-library">The "os" Extension Library</a><ul class="toc"><li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1">8.4.1   </div>
+<div class="section-number" id="toc_doc_section_8_5_1">8.5.1   </div>
 <a href="#os-extension-functions">"os" Extension Functions</a><ul class="toc">
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_1">8.4.1.1   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_1">8.5.1.1   </div>
 <a href="#error-nodes">Error Nodes</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_2">8.4.1.2   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_2">8.5.1.2   </div>
 <a href="#chmod">os:chmod</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_3">8.4.1.3   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_3">8.5.1.3   </div>
 <a href="#oschown">os:chown</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_4">8.4.1.4   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_4">8.5.1.4   </div>
 <a href="#osexit-code">os:exit-code</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_5">8.4.1.5   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_5">8.5.1.5   </div>
 <a href="#osmkdir">os:mkdir</a>
 </li>
 <li class="tocline1">
-<div class="section-number" id="toc_doc_section_8_4_1_6">8.4.1.6   </div>
+<div class="section-number" id="toc_doc_section_8_5_1_6">8.5.1.6   </div>
 <a href="#osstat">os:stat</a>
+</li>
+<li class="tocline1">
+<div class="section-number" id="toc_doc_section_8_5_1_7">8.5.1.7   </div>
+<a href="#osuser-info">os:user-info</a>
 </li>
 </ul>
 </li></ul>
@@ -23843,11 +23958,11 @@ jQuery(function ($) {
 <a id="attribute-sets" href="#attribute-sets">Attribute Sets</a>
 </h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="idp17613312"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17613312">
+<div class="digress tooltip faq" id="idp17613664"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17613664">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17613312'); " onmouseover="popUp(event, 'idp17613312')" onmouseout="popDown(event, 'idp17613312')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17613664'); " onmouseover="popUp(event, 'idp17613664')" onmouseout="popDown(event, 'idp17613664')"><span class="digress digress-anchor">[faq]</span></a><div class="content">
 <h3 id="doc_section_2_4_1">
 <div class="self-section-number">
 <a href="#doc_section_2_4_1">2.4.1</a> </div>
@@ -24025,6 +24140,11 @@ jQuery(function ($) {
 <td>curl</td>
 <td>libslax</td>
 <td>http://xml.libslax.org/curl</td>
+</tr>
+<tr>
+<td>db</td>
+<td>libslax</td>
+<td>http://xml.libslax.org/db</td>
 </tr>
 <tr>
 <td>exsl</td>
@@ -24398,11 +24518,11 @@ jQuery(function ($) {
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="idp17872784"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17872784">
+	    </pre> <div class="digress tooltip note:" id="idp17873280"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp17873280">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17872784'); " onmouseover="popUp(event, 'idp17872784')" onmouseout="popDown(event, 'idp17872784')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp17873280'); " onmouseover="popUp(event, 'idp17873280')" onmouseout="popDown(event, 'idp17873280')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
@@ -27065,75 +27185,664 @@ jQuery(function ($) {
 <h2 id="doc_section_8_3">
 <div class="self-section-number">
 <a href="#doc_section_8_3">8.3</a> </div>
-<a id="the-xutil-extension-library" href="#the-xutil-extension-library">The "xutil" Extension Library</a>
+<a id="the-db-extension-library" href="#the-db-extension-library">The "db" Extension Library</a>
 </h2>
-<p id="doc_section_8_3_p_1">The xutil extension library provides a number of XML- and XSLT-related utility functions.</p>
+<p id="doc_section_8_3_p_1">The db extension library provides a way to store, retrieve, manipulate, and delete data stored in a backend database from SLAX scripts.</p>
 <div class="content">
 <h3 id="doc_section_8_3_1">
 <div class="self-section-number">
 <a href="#doc_section_8_3_1">8.3.1</a> </div>
-<a id="xutil-extension-functions" href="#xutil-extension-functions">"xutil" Extension Functions</a>
+<a id="db-elements" href="#db-elements">db Elements</a>
 </h3>
-<p id="doc_section_8_3_1_p_1">The "xutil" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.234"></div> <pre>
-    ns xutil extension = "http://xml.libslax.org/xutil";
-	    </pre> <div class="content">
+<p id="doc_section_8_3_1_p_1">Following are the elements that can be used in options and data to db extension functions.</p>
+<div class="content">
 <h4 id="doc_section_8_3_1_1">
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_1">8.3.1.1</a> </div>
-<a id="xutilmax-call-depth" href="#xutilmax-call-depth">xutil:max-call-depth()</a>
+<a id="engine" href="#engine">&lt;engine&gt;</a>
 </h4>
-<p id="doc_section_8_3_1_1_p_1">SLAX and XSLT use recursion as a programming tool for iteration, but unlimited recursion can lead to disaster. To avoid this, the libxslt engine limits the depth of recursive calls to 3,000. This limit should be find for almost all uses, but it the value is not suitable, it can be adjusted using the xutil:max-call-depth() function.</p>
-<p id="doc_section_8_3_1_1_p_2">If invoked without an argument, the function returns the current value. If a number is passed as the argument, that number is used as the new max call depth limit.</p>
-<div id="doc_figure_u.235"></div> <pre>
-    EXAMPLE::
-        var $limit = xutil:max-call-depth();
-        expr xutil:max-call-depth($limit * 2);
-	    </pre> </div>
+<p id="doc_section_8_3_1_1_p_1">Use the &lt;engine&gt; element to specify the backend database engine that is used to access/store data:</p>
+<div id="doc_figure_u.234"></div> <pre>
+    &lt;engine&gt; "sqlite";
+	    </pre> <p id="doc_section_8_3_1_1_p_3">"sqlite" is currently the only supported backend engine. &lt;engine&gt; element could also take "mysql" or "mongodb" as values once the adapters for corresponding database engines are made available.</p>
+</div>
 <div class="content">
 <h4 id="doc_section_8_3_1_2">
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_2">8.3.1.2</a> </div>
-<a id="xutilstring-to-xml" href="#xutilstring-to-xml">xutil:string-to-xml()</a>
+<a id="database" href="#database">&lt;database&gt;</a>
 </h4>
-<p id="doc_section_8_3_1_2_p_1">The xutil:string-to-xml() function turns a string containing XML data into the native representation of that data.</p>
-<div id="doc_figure_u.236"></div> <pre>
-    EXAMPLE::
-        var $data = "&lt;doc&gt;&lt;title&gt;fred&lt;/title&gt;&lt;/doc&gt;";
-        var $xml = xutil:string-to-xml($data);
-        message "title is " _ $xml/title;
-	    </pre> <p id="doc_section_8_3_1_2_p_3">Multiple strings can be passed, in which case, they will be concatenated before the XML conversion:</p>
-<div id="doc_figure_u.237"></div> <pre>
-    EXAMPLE::
-        var $xml2 = xutil:string-to-xml("&lt;top&gt;", $content, "&lt;/top");
+<p id="doc_section_8_3_1_2_p_1">Use the &lt;database&gt; element to specify the name of the database to be operated on:</p>
+<div id="doc_figure_u.235"></div> <pre>
+    &lt;database&gt; "test.db";
 	    </pre> </div>
 <div class="content">
 <h4 id="doc_section_8_3_1_3">
 <div class="self-section-number">
 <a href="#doc_section_8_3_1_3">8.3.1.3</a> </div>
+<a id="collection" href="#collection">&lt;collection&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_3_p_1">Use the &lt;collection&gt; element to specify the data collection on which to perform operations. This corresponds to a database table in SQL world.</p>
+<div id="doc_figure_u.236"></div> <pre>
+    &lt;collection&gt; "employee";
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_4">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_4">8.3.1.4</a> </div>
+<a id="fields" href="#fields">&lt;fields&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_4_p_1">Use the &lt;fields&gt; element to specify meta data about various fields that a collection contain using &lt;field&gt; elements:</p>
+<div id="doc_figure_u.237"></div> <pre>
+    &lt;fields&gt; {
+        &lt;field&gt; {
+            ...
+            ...
+        }
+        &lt;field&gt; {
+            ...
+            ...
+        }
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_5">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_5">8.3.1.5</a> </div>
+<a id="field" href="#field">&lt;field&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_5_p_1">Use the &lt;field&gt; element to provide metadata about each field in a collection. This corresponds to column definition in SQL world and is used when creating a collection.</p>
+<div id="doc_figure_u.238"></div> <pre>
+    &lt;field&gt; {
+        &lt;name&gt; "name";
+        &lt;type&gt; "integer";
+        &lt;primary&gt;;        
+    }
+	    </pre> <p id="doc_section_8_3_1_5_p_3">&lt;field&gt; can contain following elements:</p>
+<div id="doc_table_u.22"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Element</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>Name of the field</td>
+</tr>
+<tr>
+<td>type</td>
+<td>Type of this field. Can take integer/text/real as values</td>
+</tr>
+<tr>
+<td>primary</td>
+<td>Empty element that will indicate that this field is</td>
+</tr>
+<tr>
+<td></td>
+<td>primary key</td>
+</tr>
+<tr>
+<td>unique</td>
+<td>Empty element to indicate that values of this field are</td>
+</tr>
+<tr>
+<td></td>
+<td>unique</td>
+</tr>
+<tr>
+<td>notnull</td>
+<td>Empty element to indicate that value to this field must</td>
+</tr>
+<tr>
+<td></td>
+<td>be specified</td>
+</tr>
+<tr>
+<td>auto-increment</td>
+<td>Empty element to indicate that this field value is auto</td>
+</tr>
+<tr>
+<td></td>
+<td>incremented. This can be used only with integer type</td>
+</tr>
+<tr>
+<td></td>
+<td>fields</td>
+</tr>
+<tr>
+<td>default</td>
+<td>Used to specify default value that this field will</td>
+</tr>
+<tr>
+<td></td>
+<td>assume if not specified by the user</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="content">
+<h4 id="doc_section_8_3_1_6">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_6">8.3.1.6</a> </div>
+<a id="instance" href="#instance">&lt;instance&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_6_p_1">Use the &lt;instance&gt; element to represent a single instance from collection. It should contain fields and their corresponding values in a record, and is used when inserting or manipulating data in the datastore.</p>
+<div id="doc_figure_u.239"></div> <pre>
+    &lt;instance&gt; {
+        &lt;id&gt; 5;
+        &lt;name&gt; "John";
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_7">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_7">8.3.1.7</a> </div>
+<a id="instances" href="#instances">&lt;instances&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_7_p_1">Use the &lt;instances&gt; element to hold multiple instances:</p>
+<div id="doc_figure_u.240"></div> <pre>
+    &lt;instances&gt; {
+        &lt;instance&gt; {
+            ...
+            ...
+        }
+        &lt;instance&gt; {
+            ...
+            ...
+        }
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_8">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_8">8.3.1.8</a> </div>
+<a id="condition" href="#condition">&lt;condition&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_8_p_1">Use the &lt;condition&gt; element to specify a condition that must to be satisfied when operating with data instances from datastore. This forms the condition used with WHERE clause when operating with SQL datastore.</p>
+<p id="doc_section_8_3_1_8_p_2">The &lt;condition&gt; can contain following mandatory elements:</p>
+<div id="doc_table_u.23"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Element</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>selector</td>
+<td>Name of the field to apply this condition</td>
+</tr>
+<tr>
+<td>operator</td>
+<td>Operator for this condition. Can take one of comparison</td>
+</tr>
+<tr>
+<td></td>
+<td>or logical operators (&lt;, &gt;, &lt;=, &gt;=, =, LIKE, IN, NOT)</td>
+</tr>
+<tr>
+<td>value</td>
+<td>Value to be used with operator on this field</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_8_3_1_8_p_3">For example:</p>
+<div id="doc_figure_u.241"></div> <pre>
+    &lt;condition&gt; {
+        &lt;selector&gt; "id;
+        &lt;operator&gt; "in";
+        &lt;value&gt; "(1, 10)";
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_9">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_9">8.3.1.9</a> </div>
+<a id="conditions" href="#conditions">&lt;conditions&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_9_p_1">Use the &lt;conditions&gt; element to specify multiple conditions with &lt;and&gt; or &lt;or&gt; as parent node:</p>
+<div id="doc_figure_u.242"></div> <pre>
+    &lt;conditions&gt; {
+        &lt;and&gt; {
+            &lt;condition&gt; {
+                ... /* c1 */
+            }
+            &lt;condition&gt; {
+                ... /* c2 */
+            }
+            &lt;or&gt; {
+                &lt;condition&gt; {
+                    ... /* c3 */
+                }
+                &lt;condition&gt; {
+                    ... /* c4 */
+                }
+            }
+        }
+    }
+	    </pre> <p id="doc_section_8_3_1_9_p_3">Above condition set would be translated to "c1 AND c2 AND c3 OR c4".</p>
+</div>
+<div class="content">
+<h4 id="doc_section_8_3_1_10">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_10">8.3.1.10</a> </div>
+<a id="retrieve" href="#retrieve">&lt;retrieve&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_10_p_1">Use the &lt;retrieve&gt; element to specify only the fields that should appear as part of result set when querying the datastore:</p>
+<div id="doc_figure_u.243"></div> <pre>
+    &lt;retrieve&gt; {
+        &lt;id&gt;;
+        &lt;name&gt;;
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_11">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_11">8.3.1.11</a> </div>
+<a id="sort-2" href="#sort-2">&lt;sort&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_11_p_1">Use the &lt;sort&gt; element to specify the fields and order by which the result set must be sorted before returning. List of fields can be specified using &lt;by&gt; and order using &lt;order&gt;. "asc" and "desc", corresponds to ascending and descending order are the only valid values for order, which defaults to asc.</p>
+<div id="doc_figure_u.244"></div> <pre>
+    &lt;sort&gt; {
+        &lt;by&gt; "id";
+        &lt;by&gt; "age";
+        &lt;order&gt; "desc";
+    }
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_12">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_12">8.3.1.12</a> </div>
+<a id="limit" href="#limit">&lt;limit&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_12_p_1">Used to limit the number of instances that a result can contain.</p>
+<div id="doc_figure_u.245"></div> <pre>
+    &lt;limit&gt; 10;
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_13">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_13">8.3.1.13</a> </div>
+<a id="skip" href="#skip">&lt;skip&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_13_p_1">Used to skip over a specified number of instances in the result set before returning to the user.</p>
+<div id="doc_figure_u.246"></div> <pre>
+    &lt;skip&gt; 5;
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_1_14">
+<div class="self-section-number">
+<a href="#doc_section_8_3_1_14">8.3.1.14</a> </div>
+<a id="result-2" href="#result-2">&lt;result&gt;</a>
+</h4>
+<p id="doc_section_8_3_1_14_p_1">This is the output node from most of the extension functions. This contains &lt;status&gt; and may contain one or more &lt;instance&gt;s.</p>
+<p id="doc_section_8_3_1_14_p_2">&lt;status&gt; can take one of the following values</p>
+<div id="doc_table_u.24"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Value</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>&lt;done&gt;</td>
+<td>Operation ran to completion. Usually means no more</td>
+</tr>
+<tr>
+<td></td>
+<td>data to return</td>
+</tr>
+<tr>
+<td>&lt;ok&gt;</td>
+<td>Operation is successful. Returned with insert/update</td>
+</tr>
+<tr>
+<td></td>
+<td>functions</td>
+</tr>
+<tr>
+<td>&lt;data&gt;</td>
+<td>Data is available in the result as &lt;instance&gt; elements</td>
+</tr>
+<tr>
+<td>&lt;error&gt;</td>
+<td>Error has occurred. Error message will be the value of</td>
+</tr>
+<tr>
+<td></td>
+<td>this element</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<div class="content">
+<h3 id="doc_section_8_3_2">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2">8.3.2</a> </div>
+<a id="db-extension-functions" href="#db-extension-functions">db Extension Functions</a>
+</h3>
+<p id="doc_section_8_3_2_p_1">The db extension functions require the following ns statement:</p>
+<div id="doc_figure_u.247"></div> <pre>
+    ns db extension = "http://xml.libslax.org/db";
+	    </pre> <div class="content">
+<h4 id="doc_section_8_3_2_1">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_1">8.3.2.1</a> </div>
+<a id="dbopen" href="#dbopen">db:open()</a>
+</h4>
+<p id="doc_section_8_3_2_1_p_1">Use db:open to open a database connection using provided options. Options contain backend engine and database name.</p>
+<p id="doc_section_8_3_2_1_p_2">db:open() returns a database handle (a cookie), that can be used to perform further operations on the opened database.</p>
+<div id="doc_figure_u.248"></div> <pre>
+    SYNTAX::
+        handle db:open(options);
+    EXAMPLE::
+        var $options = {
+            &lt;engine&gt; "sqlite";
+            &lt;database&gt; "test.db";
+        }
+
+        var $handle = db:open($options);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_2">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_2">8.3.2.2</a> </div>
+<a id="dbcreate" href="#dbcreate">db:create()</a>
+</h4>
+<p id="doc_section_8_3_2_2_p_1">Use the db:create function to create a collection using opened database handle and information about the fields that this collection contains.</p>
+<p id="doc_section_8_3_2_2_p_2">db:create() returns result node which contains status of the operation. Status is returned as "ok" in case of success or "error" with message if failure.</p>
+<div id="doc_figure_u.249"></div> <pre>
+    SYNTAX::
+        status db:create(handle, schema);
+    EXAMPLE::
+        var $schema = {
+            &lt;collection&gt; "employee";
+            &lt;fields&gt; {
+                &lt;field&gt; {
+                    &lt;name&gt; "id";
+                    &lt;type&gt; "integer";
+                    &lt;primary&gt;;
+                }
+                &lt;field&gt; {
+                    &lt;name&gt; "name";
+                    &lt;type&gt; "text";
+                    &lt;default&gt; "John";
+                }
+            }
+        }
+        var $result = db:create($handle. $schema);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_3">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_3">8.3.2.3</a> </div>
+<a id="dbinsert" href="#dbinsert">db:insert()</a>
+</h4>
+<p id="doc_section_8_3_2_3_p_1">Use the db:insert function to insert data into a collection using a handle and input data.</p>
+<p id="doc_section_8_3_2_3_p_2">db:insert() returns a result node and includes result of operation in status. Status is returned as ok in case of success and error with message in case of failure.</p>
+<div id="doc_figure_u.250"></div> <pre>
+    SYNTAX::
+        status db:insert(handle, data);
+    EXAMPLE::
+        /* Insert one instance into a collection */
+        var $data = {
+            &lt;collection&gt; "employee";
+            &lt;instance&gt; {
+                &lt;id&gt; 3;
+                &lt;name&gt; "Joey";
+            }
+        }
+        var $result = db:insert($handle, $data);
+
+        /* Insert a set of instances */
+        var $data2 = {
+            &lt;collection&gt; "employee";
+            &lt;instances&gt; {
+                &lt;instance&gt; {
+                    &lt;id&gt; 1;
+                    &lt;name&gt; "Rachael";
+                }
+                &lt;instance&gt; {
+                    &lt;id&gt; 2;
+                    &lt;name&gt; "Chandler";
+                }
+                &lt;instance&gt; {
+                    &lt;id&gt; 3;
+                    &lt;name&gt; "Monica";
+                }
+            }
+        }
+
+        var $result2 = db:insert($handle, $data2);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_4">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_4">8.3.2.4</a> </div>
+<a id="dbupdate" href="#dbupdate">db:update()</a>
+</h4>
+<p id="doc_section_8_3_2_4_p_1">Use the db:update function to update a set of instances matching given conditions with a new provided instance. Takes database handle as first argument and input as second.</p>
+<p id="doc_section_8_3_2_4_p_2">The following example updates all the employee instances whose id is greater than 2 named "Monica" to "Ross". db:update() returns result set like the db:create and db:insert functions.</p>
+<div id="doc_figure_u.251"></div> <pre>
+    SYNTAX::
+        node-set db:update(handle, operation);
+    EXAMPLE::
+        var $input = {
+            &lt;collection&gt; "employee";
+            &lt;conditions&gt; {
+                &lt;and&gt; {
+                    &lt;condition&gt; {
+                        &lt;selector&gt; "id";
+                        &lt;operator&gt; "&gt;";
+                        &lt;value&gt; "2";
+                    }
+                    &lt;condition&gt; {
+                        &lt;selector&gt; "name";
+                        &lt;operator&gt; "like";
+                        &lt;value&gt; "Monica";
+                    }
+                }
+            }
+            &lt;update&gt; {
+                &lt;name&gt; "Ross";
+            }
+        }
+
+        var $result = db:update($handle, $input);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_5">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_5">8.3.2.5</a> </div>
+<a id="dbdelete" href="#dbdelete">db:delete()</a>
+</h4>
+<p id="doc_section_8_3_2_5_p_1">Use the db:delete function to delete instances matching given conditions.</p>
+<p id="doc_section_8_3_2_5_p_2">The following example deletes up to 10 employee instances whose id is greater than 4. db:delete() returns result set with status similar to the db:insert, db:update, and db:create functions.</p>
+<div id="doc_figure_u.252"></div> <pre>
+    SYNTAX::
+        node-set db:delete(handle, criteria);
+    EXAMPLE::
+        var $input = {
+            &lt;collection "employee";
+            &lt;conditions&gt; {
+                &lt;condition&gt; {
+                    &lt;selector&gt; "id";
+                    &lt;operator&gt; "&gt;";
+                    &lt;value&gt; "4";
+                }
+            }
+            &lt;limit&gt; 10;
+        }
+
+        var $result = db:delete($handle, $input);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_6">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_6">8.3.2.6</a> </div>
+<a id="dbfind" href="#dbfind">db:find()</a>
+</h4>
+<p id="doc_section_8_3_2_6_p_1">Use the db:find() function to acquire a cursor for instances matching given conditions.</p>
+<p id="doc_section_8_3_2_6_p_2">The following example returns a cursor to result set containing names first 10 employees, skipping the first 5, whose id is more than 5, sorted in descending order. db:fetch() would be used to retrieve each of these result instances.</p>
+<div id="doc_figure_u.253"></div> <pre>
+    EXAMPLE::
+        var $query = {
+            &lt;collection&gt; "employee";
+            &lt;sort&gt; {
+                &lt;by&gt; "id";
+                &lt;order&gt; "desc";
+            }
+            &lt;retrieve&gt; {
+                &lt;name&gt;;
+            }
+            &lt;conditions&gt; {
+                &lt;condition&gt; {
+                    &lt;selector&gt; "id";
+                    &lt;operator&gt; "&gt;";
+                    &lt;value&gt; "5";
+                }
+            }
+            &lt;limit&gt; 10;
+            &lt;skip&gt; 5;
+        }
+
+        var $cursor = db:find($handle, $query);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_7">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_7">8.3.2.7</a> </div>
+<a id="dbfetch" href="#dbfetch">db:fetch()</a>
+</h4>
+<p id="doc_section_8_3_2_7_p_1">Use the db:fetch function to fetch result instance using cursor returned from the db:find or db:query calls.</p>
+<div id="doc_figure_u.254"></div> <pre>
+    EXAMPLE::
+        var $result = db:fetch($cursor);
+	    </pre> <p id="doc_section_8_3_2_7_p_3">The returned result contains status and &lt;instance&gt; with fields and values if available. Status will be returned as &lt;data&gt; if instance is available. It will be &lt;done&gt; if the query ran to completion and no more data is available to be read.</p>
+<p id="doc_section_8_3_2_7_p_4">db:fetch() also takes an optional second argument that can be used to specify additional data. This can be useful when fetching on the cursor returned from custom query using db:query().</p>
+</div>
+<div class="content">
+<h4 id="doc_section_8_3_2_8">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_8">8.3.2.8</a> </div>
+<a id="dbfind-and-fetch" href="#dbfind-and-fetch">db:find-and-fetch()</a>
+</h4>
+<p id="doc_section_8_3_2_8_p_1">Use the db:find-and-fetch function call to find and read all the instances in one step.</p>
+<div id="doc_figure_u.255"></div> <pre>
+    SYNTAX::
+        node-set db:find-and-fetch(handle, query);
+    EXAMPLE::
+        var $result = db:find-and-fetch($handle, $query);
+	    </pre> <p id="doc_section_8_3_2_8_p_3">The returned result contains all the available instances from the query and status will be &lt;data&gt;. status will be "error" with message in case of errors.</p>
+</div>
+<div class="content">
+<h4 id="doc_section_8_3_2_9">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_9">8.3.2.9</a> </div>
+<a id="dbquery" href="#dbquery">db:query()</a>
+</h4>
+<p id="doc_section_8_3_2_9_p_1">The the db:query function to run custom queries.</p>
+<div id="doc_figure_u.256"></div> <pre>
+    SYNTAX::
+        node-set db:query(query);
+	    </pre> <p id="doc_section_8_3_2_9_p_3">The following example runs a custom query and receives cursor from db:query() and used db:fetch() to insert data into employee collection using the previous cursor.</p>
+<div id="doc_figure_u.257"></div> <pre>
+    EXAMPLE::
+        var $queryString =
+            "INSERT INTO employee (id, name) VALUES (@id, @name)";
+        var $cursor = db:query($queryString);
+
+        var $input = {
+            &lt;id&gt; 11;
+            &lt;name&gt; "Phoebe";
+        }
+
+        var $result = db:fetch($cursor, $input);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_3_2_10">
+<div class="self-section-number">
+<a href="#doc_section_8_3_2_10">8.3.2.10</a> </div>
+<a id="dbclose" href="#dbclose">db:close()</a>
+</h4>
+<p id="doc_section_8_3_2_10_p_1">Use the db:close function to close the database connection and free all the structures associated with previous operations performed on this handle.</p>
+<div id="doc_figure_u.258"></div> <pre>
+    EXAMPLE::
+        var $result = db:close($handle);
+	    </pre> </div>
+</div>
+</div>
+<div class="content">
+<h2 id="doc_section_8_4">
+<div class="self-section-number">
+<a href="#doc_section_8_4">8.4</a> </div>
+<a id="the-xutil-extension-library" href="#the-xutil-extension-library">The "xutil" Extension Library</a>
+</h2>
+<p id="doc_section_8_4_p_1">The xutil extension library provides a number of XML- and XSLT-related utility functions.</p>
+<div class="content">
+<h3 id="doc_section_8_4_1">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1">8.4.1</a> </div>
+<a id="xutil-extension-functions" href="#xutil-extension-functions">"xutil" Extension Functions</a>
+</h3>
+<p id="doc_section_8_4_1_p_1">The "xutil" extension functions require the following ns statement:</p>
+<div id="doc_figure_u.259"></div> <pre>
+    ns xutil extension = "http://xml.libslax.org/xutil";
+	    </pre> <div class="content">
+<h4 id="doc_section_8_4_1_1">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>
+<a id="xutilmax-call-depth" href="#xutilmax-call-depth">xutil:max-call-depth()</a>
+</h4>
+<p id="doc_section_8_4_1_1_p_1">SLAX and XSLT use recursion as a programming tool for iteration, but unlimited recursion can lead to disaster. To avoid this, the libxslt engine limits the depth of recursive calls to 3,000. This limit should be find for almost all uses, but it the value is not suitable, it can be adjusted using the xutil:max-call-depth() function.</p>
+<p id="doc_section_8_4_1_1_p_2">If invoked without an argument, the function returns the current value. If a number is passed as the argument, that number is used as the new max call depth limit.</p>
+<div id="doc_figure_u.260"></div> <pre>
+    EXAMPLE::
+        var $limit = xutil:max-call-depth();
+        expr xutil:max-call-depth($limit * 2);
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_4_1_2">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_2">8.4.1.2</a> </div>
+<a id="xutilstring-to-xml" href="#xutilstring-to-xml">xutil:string-to-xml()</a>
+</h4>
+<p id="doc_section_8_4_1_2_p_1">The xutil:string-to-xml() function turns a string containing XML data into the native representation of that data.</p>
+<div id="doc_figure_u.261"></div> <pre>
+    EXAMPLE::
+        var $data = "&lt;doc&gt;&lt;title&gt;fred&lt;/title&gt;&lt;/doc&gt;";
+        var $xml = xutil:string-to-xml($data);
+        message "title is " _ $xml/title;
+	    </pre> <p id="doc_section_8_4_1_2_p_3">Multiple strings can be passed, in which case, they will be concatenated before the XML conversion:</p>
+<div id="doc_figure_u.262"></div> <pre>
+    EXAMPLE::
+        var $xml2 = xutil:string-to-xml("&lt;top&gt;", $content, "&lt;/top");
+	    </pre> </div>
+<div class="content">
+<h4 id="doc_section_8_4_1_3">
+<div class="self-section-number">
+<a href="#doc_section_8_4_1_3">8.4.1.3</a> </div>
 <a id="xutilxml-to-string" href="#xutilxml-to-string">xutil:xml-to-string()</a>
 </h4>
-<p id="doc_section_8_3_1_3_p_1">The xutil:xml-to-string() function turns XML content into a string. This is different than the normal XPath stringification, which discards open and close tag. xml-to-string will encode tags as part of the string.</p>
-<div id="doc_figure_u.238"></div> <pre>
+<p id="doc_section_8_4_1_3_p_1">The xutil:xml-to-string() function turns XML content into a string. This is different than the normal XPath stringification, which discards open and close tag. xml-to-string will encode tags as part of the string.</p>
+<div id="doc_figure_u.263"></div> <pre>
     EXAMPLE::
         var $xml = &lt;dog&gt; "red";
         var $str = xutil:xml-to-string($xml);
         /* str is now the string "&lt;dog&gt;red&lt;/dog&gt;" */
 	    </pre> </div>
 <div class="content">
-<h4 id="doc_section_8_3_1_4">
+<h4 id="doc_section_8_4_1_4">
 <div class="self-section-number">
-<a href="#doc_section_8_3_1_4">8.3.1.4</a> </div>
+<a href="#doc_section_8_4_1_4">8.4.1.4</a> </div>
 <a id="xutiljson-to-xml" href="#xutiljson-to-xml">xutil:json-to-xml()</a>
 </h4>
-<p id="doc_section_8_3_1_4_p_1">The xutil:json-to-xml() function turns a string containing JSON data into the native representation of that data in XML.</p>
-<div id="doc_figure_u.239"></div> <pre>
+<p id="doc_section_8_4_1_4_p_1">The xutil:json-to-xml() function turns a string containing JSON data into the native representation of that data in XML.</p>
+<div id="doc_figure_u.264"></div> <pre>
     EXAMPLE::
         var $data = "[ { "a" : 4, "name": "fish"}, 4, 5]";
         var $xml = xutil:json-to-xml($data);
         message "title is " _ $xml/json/name;
-	    </pre> <p id="doc_section_8_3_1_4_p_3">An optional second parameter contains a node set of the following optional elements:</p>
-<div id="doc_table_u.22"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <p id="doc_section_8_4_1_4_p_3">An optional second parameter contains a node set of the following optional elements:</p>
+<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Value</th>
@@ -27152,31 +27861,31 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.240"></div> <pre>
+<div id="doc_figure_u.265"></div> <pre>
         var $options = {
             &lt;root&gt; "my-top";
             &lt;types&gt; "no";
         }
         var $xml = xutil:json-to-xml($data, $options);
-	    </pre> <p id="doc_section_8_3_1_4_p_5">The XML returned from json-to-xml() is decorated with attributes (including the "type" and "name" attributes) which allow the data to be converted back into JSON using xml-to-json(). Refer to that function for additional information.</p>
-<p id="doc_section_8_3_1_4_p_6">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
+	    </pre> <p id="doc_section_8_4_1_4_p_5">The XML returned from json-to-xml() is decorated with attributes (including the "type" and "name" attributes) which allow the data to be converted back into JSON using xml-to-json(). Refer to that function for additional information.</p>
+<p id="doc_section_8_4_1_4_p_6">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
 </div>
 <div class="content">
-<h4 id="doc_section_8_3_1_5">
+<h4 id="doc_section_8_4_1_5">
 <div class="self-section-number">
-<a href="#doc_section_8_3_1_5">8.3.1.5</a> </div>
+<a href="#doc_section_8_4_1_5">8.4.1.5</a> </div>
 <a id="xutilxml-to-json" href="#xutilxml-to-json">xutil:xml-to-json()</a>
 </h4>
-<p id="doc_section_8_3_1_5_p_1">The xutil:xml-to-json() function turns XML content into a string of JSON data. This is different than the normal XPath stringification, which discards open and close tag. xml-to-json will encode tags as JSON objects inside a string</p>
-<div id="doc_figure_u.241"></div> <pre>
+<p id="doc_section_8_4_1_5_p_1">The xutil:xml-to-json() function turns XML content into a string of JSON data. This is different than the normal XPath stringification, which discards open and close tag. xml-to-json will encode tags as JSON objects inside a string</p>
+<div id="doc_figure_u.266"></div> <pre>
     EXAMPLE::
         var $xml = &lt;json&gt; {
             &lt;color&gt; "red";
         }
         var $str = xutil:xml-to-json($xml);
         /* str is now the string '{ "color": "red" }' */
-	    </pre> <p id="doc_section_8_3_1_5_p_3">An optional second parameter contains a node set of the following optional elements:</p>
-<div id="doc_table_u.23"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <p id="doc_section_8_4_1_5_p_3">An optional second parameter contains a node set of the following optional elements:</p>
+<div id="doc_table_u.26"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Value</th>
@@ -27195,34 +27904,34 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_3_1_5_p_4">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
+<p id="doc_section_8_4_1_5_p_4">For details on the JSON to XML encoding, refer to <a href="#json-attributes" title="Attributes for JSON Elements">Section 2.2.3.1</a>, <a href="#json-arrays" title="Encoding JSON Arrays in XML">Section 2.2.3.2</a>, and <a href="#json-names" title="Encoding Invalid JSON Names">Section 2.2.3.3</a>.</p>
 </div>
 </div>
 </div>
 <div class="content">
-<h2 id="doc_section_8_4">
+<h2 id="doc_section_8_5">
 <div class="self-section-number">
-<a href="#doc_section_8_4">8.4</a> </div>
+<a href="#doc_section_8_5">8.5</a> </div>
 <a id="the-os-extension-library" href="#the-os-extension-library">The "os" Extension Library</a>
 </h2>
-<p id="doc_section_8_4_p_1">The "os" extension library provides a set of functions to invoke operating system-related operations on the local host. Note that these are _not_ run on the remote target, but on the machine where the script is being executed.</p>
+<p id="doc_section_8_5_p_1">The "os" extension library provides a set of functions to invoke operating system-related operations on the local host. Note that these are _not_ run on the remote target, but on the machine where the script is being executed.</p>
 <div class="content">
-<h3 id="doc_section_8_4_1">
+<h3 id="doc_section_8_5_1">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1">8.4.1</a> </div>
+<a href="#doc_section_8_5_1">8.5.1</a> </div>
 <a id="os-extension-functions" href="#os-extension-functions">"os" Extension Functions</a>
 </h3>
-<p id="doc_section_8_4_1_p_1">The "os" extension functions require the following ns statement:</p>
-<div id="doc_figure_u.242"></div> <pre>
+<p id="doc_section_8_5_1_p_1">The "os" extension functions require the following ns statement:</p>
+<div id="doc_figure_u.267"></div> <pre>
     ns os extension = "http://xml.libslax.org/os";
 	    </pre> <div class="content">
-<h4 id="doc_section_8_4_1_1">
+<h4 id="doc_section_8_5_1_1">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_1">8.4.1.1</a> </div>
+<a href="#doc_section_8_5_1_1">8.5.1.1</a> </div>
 <a id="error-nodes" href="#error-nodes">Error Nodes</a>
 </h4>
-<p id="doc_section_8_4_1_1_p_1">The return value of many os:* functions consists of a set of zero or more error nodes. Each node may contain an &lt;error&gt; element, which in turn may contain the following elements:</p>
-<div id="doc_table_u.24"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_5_1_1_p_1">The return value of many os:* functions consists of a set of zero or more error nodes. Each node may contain an &lt;error&gt; element, which in turn may contain the following elements:</p>
+<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27242,31 +27951,31 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_1_p_2">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
-<div id="doc_figure_u.243"></div> <pre>
+<p id="doc_section_8_5_1_1_p_2">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
+<div id="doc_figure_u.268"></div> <pre>
     &lt;error&gt;
       &lt;errno code="ENOENT"&gt;No such file or directory&lt;/errno&gt;
       &lt;message&gt;unknown group: phil&lt;/message&gt;
     &lt;/error&gt;
 	    </pre> </div>
 <div class="content">
-<h4 id="doc_section_8_4_1_2">
+<h4 id="doc_section_8_5_1_2">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_2">8.4.1.2</a> </div>
+<a href="#doc_section_8_5_1_2">8.5.1.2</a> </div>
 <a id="chmod" href="#chmod">os:chmod</a>
 </h4>
-<p id="doc_section_8_4_1_2_p_1">The os:chmod function changes the permissions of one or more files, allowing or preventing different sets of users from accessing those files.</p>
-<p id="doc_section_8_4_1_2_p_2">The first argument is a mode specification similar to the chmod command, with either an octal number to set the permissions to, or an expression consisting of one or more of the letters 'u', 'g', 'o', and 'a' (for user, group, other, and all) followed by '+' or '&#8209;' (for setting or clearing) and one or more of the letters 'r', 'w', and 'x' (for read, write, and execute). The expression "ug+rw" would give read and write permission to the user and group which own the file or directory.</p>
-<p id="doc_section_8_4_1_2_p_3">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements, with the former two contain path for files and directories, and the latter contains shell/glob-style wildcard patterns. The following patterns are permitted:</p>
-<p id="doc_section_8_4_1_2_p_4"> </p>
+<p id="doc_section_8_5_1_2_p_1">The os:chmod function changes the permissions of one or more files, allowing or preventing different sets of users from accessing those files.</p>
+<p id="doc_section_8_5_1_2_p_2">The first argument is a mode specification similar to the chmod command, with either an octal number to set the permissions to, or an expression consisting of one or more of the letters 'u', 'g', 'o', and 'a' (for user, group, other, and all) followed by '+' or '&#8209;' (for setting or clearing) and one or more of the letters 'r', 'w', and 'x' (for read, write, and execute). The expression "ug+rw" would give read and write permission to the user and group which own the file or directory.</p>
+<p id="doc_section_8_5_1_2_p_3">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements, with the former two contain path for files and directories, and the latter contains shell/glob-style wildcard patterns. The following patterns are permitted:</p>
+<p id="doc_section_8_5_1_2_p_4"> </p>
 <ul>
 <li>'*' matches zero or more characters</li>
 <li>'?' matches any single character</li>
 <li>'[...]' matches any of the enclosed characters</li>
 <li>'{...}' matches any of the enclosed comma-separated sequences</li>
 </ul>
-<p id="doc_section_8_4_1_2_p_5">For example, &lt;wildcard&gt; "*.txt" matches all text files.</p>
-<div id="doc_figure_u.244"></div> <pre>
+<p id="doc_section_8_5_1_2_p_5">For example, &lt;wildcard&gt; "*.txt" matches all text files.</p>
+<div id="doc_figure_u.269"></div> <pre>
     SYNTAX::
         void os:chmod(mode, files, ...);
 
@@ -27276,17 +27985,17 @@ jQuery(function ($) {
             &lt;directory&gt; "dir";
             &lt;wildcard&gt; "*.c";
         });
-	    </pre> <p id="doc_section_8_4_1_2_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
+	    </pre> <p id="doc_section_8_5_1_2_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.5.1.1</a> for details.</p>
 </div>
 <div class="content">
-<h4 id="doc_section_8_4_1_3">
+<h4 id="doc_section_8_5_1_3">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_3">8.4.1.3</a> </div>
+<a href="#doc_section_8_5_1_3">8.5.1.3</a> </div>
 <a id="oschown" href="#oschown">os:chown</a>
 </h4>
-<p id="doc_section_8_4_1_3_p_1">The os:chown function changes for owning user and group for one or more files.</p>
-<p id="doc_section_8_4_1_3_p_2">The first argument is the target name and/or group, in either symbolic or numeric format:</p>
-<div id="doc_figure_u.245"></div> <pre>
+<p id="doc_section_8_5_1_3_p_1">The os:chown function changes for owning user and group for one or more files.</p>
+<p id="doc_section_8_5_1_3_p_2">The first argument is the target name and/or group, in either symbolic or numeric format:</p>
+<div id="doc_figure_u.270"></div> <pre>
     SYNTAX::
         [ &lt;user&gt; ]? [ ':' &lt;group&gt; ]
     EXAMPLE:
@@ -27295,8 +28004,8 @@ jQuery(function ($) {
         :eng
         :12
         0:0
-	    </pre> <p id="doc_section_8_4_1_3_p_4">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements. See <a href="#chmod" title="os:chmod">Section 8.4.1.2</a> for details.</p>
-<div id="doc_figure_u.246"></div> <pre>
+	    </pre> <p id="doc_section_8_5_1_3_p_4">The second and subsequent arguments can be either a path name string or a nodeset of &lt;file&gt;, &lt;directory&gt;, and &lt;wildcard&gt; elements. See <a href="#chmod" title="os:chmod">Section 8.5.1.2</a> for details.</p>
+<div id="doc_figure_u.271"></div> <pre>
     SYNTAX::
         void os:chown(owner, files, ...);
 
@@ -27306,16 +28015,16 @@ jQuery(function ($) {
             &lt;directory&gt; "dir";
             &lt;wildcard&gt; "*.c";
         });
-	    </pre> <p id="doc_section_8_4_1_3_p_6">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
+	    </pre> <p id="doc_section_8_5_1_3_p_6">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.5.1.1</a> for details.</p>
 </div>
 <div class="content">
-<h4 id="doc_section_8_4_1_4">
+<h4 id="doc_section_8_5_1_4">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_4">8.4.1.4</a> </div>
+<a href="#doc_section_8_5_1_4">8.5.1.4</a> </div>
 <a id="osexit-code" href="#osexit-code">os:exit-code</a>
 </h4>
-<p id="doc_section_8_4_1_4_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
-<div id="doc_figure_u.247"></div> <pre>
+<p id="doc_section_8_5_1_4_p_1">The os:exit-code function sets the exit code for the process running the script. This can be used to indicate an error to the caller. The argument to the function is the exit code value, in numeric form.</p>
+<div id="doc_figure_u.272"></div> <pre>
     SYNTAX::
         void os:exit-code(number);
 
@@ -27323,13 +28032,13 @@ jQuery(function ($) {
         expr os:exit-code(1);
 	    </pre> </div>
 <div class="content">
-<h4 id="doc_section_8_4_1_5">
+<h4 id="doc_section_8_5_1_5">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_5">8.4.1.5</a> </div>
+<a href="#doc_section_8_5_1_5">8.5.1.5</a> </div>
 <a id="osmkdir" href="#osmkdir">os:mkdir</a>
 </h4>
-<p id="doc_section_8_4_1_5_p_1">The os:mkdir function makes directories, similar to the "mkdir" command or the POSIX "mkdir" library function. These are two arguments; the first is name of the directory to be made and the second is an node-set containing options to be used during the operation. The options can include the values in the following table.</p>
-<div id="doc_table_u.25"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_5_1_5_p_1">The os:mkdir function makes directories, similar to the "mkdir" command or the POSIX "mkdir" library function. These are two arguments; the first is name of the directory to be made and the second is an node-set containing options to be used during the operation. The options can include the values in the following table.</p>
+<div id="doc_table_u.28"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27349,7 +28058,7 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<div id="doc_figure_u.248"></div> <pre>
+<div id="doc_figure_u.273"></div> <pre>
     SYNTAX::
         node-set os:mkdir(path [, options]);
 
@@ -27361,10 +28070,10 @@ jQuery(function ($) {
             &lt;create&gt;;
         }
         var $res2 = os:mkdir("/tmp/foo/a/b/c/d/e/f", $opts);
-	    </pre> <p id="doc_section_8_4_1_5_p_3">If the value for &lt;mode&gt; is a string, it will be converted to an integer using the default numeric base of 8 (octal), so '&lt;mode&gt; "644"' will work, but '&lt;mode&gt; 644' will see 644 as a number with base 10 (decimal), which will result in undesirable results since 644 base 10 is 01204 base 8.</p>
-<p id="doc_section_8_4_1_5_p_4">If the value of &lt;mode&gt; is not a valid mode integer value, it will be ignored.</p>
-<p id="doc_section_8_4_1_5_p_5">The return value of os:mkdir is a node-set which may contain an &lt;error&gt; element is an error occurred. This element may contain the following elements:</p>
-<div id="doc_table_u.26"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <p id="doc_section_8_5_1_5_p_3">If the value for &lt;mode&gt; is a string, it will be converted to an integer using the default numeric base of 8 (octal), so '&lt;mode&gt; "644"' will work, but '&lt;mode&gt; 644' will see 644 as a number with base 10 (decimal), which will result in undesirable results since 644 base 10 is 01204 base 8.</p>
+<p id="doc_section_8_5_1_5_p_4">If the value of &lt;mode&gt; is not a valid mode integer value, it will be ignored.</p>
+<p id="doc_section_8_5_1_5_p_5">The return value of os:mkdir is a node-set which may contain an &lt;error&gt; element is an error occurred. This element may contain the following elements:</p>
+<div id="doc_table_u.29"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27384,18 +28093,18 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_5_p_6">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
-<p id="doc_section_8_4_1_5_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.4.1.1</a> for details.</p>
+<p id="doc_section_8_5_1_5_p_6">In addition, the &lt;errno&gt; element contains a "code" attribute which holds the tag for the errno value, if known.</p>
+<p id="doc_section_8_5_1_5_p_7">If successful, nothing is returned. On failure, a set of error nodes is returned. See <a href="#error-nodes" title="Error Nodes">Section 8.5.1.1</a> for details.</p>
 </div>
 <div class="content">
-<h4 id="doc_section_8_4_1_6">
+<h4 id="doc_section_8_5_1_6">
 <div class="self-section-number">
-<a href="#doc_section_8_4_1_6">8.4.1.6</a> </div>
+<a href="#doc_section_8_5_1_6">8.5.1.6</a> </div>
 <a id="osstat" href="#osstat">os:stat</a>
 </h4>
-<p id="doc_section_8_4_1_6_p_1">The os:stat function returns information about files and directories, similar to the POSIX stat() function, returning a node-set of &lt;entry&gt; elements containing details about each file.</p>
-<p id="doc_section_8_4_1_6_p_2">The arguments to the os:stat() function are either strings or node-sets. os:stat() allows any number of arguments. If the argument is a string, it is used as a path specification and information on matching files is returned. The path specification can include glob-style wildcards (e.g. test*.c, *.slax). If the argument is a node-set, then the node can contains the following elements:</p>
-<div id="doc_table_u.27"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_5_1_6_p_1">The os:stat function returns information about files and directories, similar to the POSIX stat() function, returning a node-set of &lt;entry&gt; elements containing details about each file.</p>
+<p id="doc_section_8_5_1_6_p_2">The arguments to the os:stat() function are either strings or node-sets. os:stat() allows any number of arguments. If the argument is a string, it is used as a path specification and information on matching files is returned. The path specification can include glob-style wildcards (e.g. test*.c, *.slax). If the argument is a node-set, then the node can contains the following elements:</p>
+<div id="doc_table_u.30"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27423,8 +28132,8 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_6_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
-<div id="doc_figure_u.249"></div> <pre>
+<p id="doc_section_8_5_1_6_p_3">Note the &lt;name&gt; element functions identically to the string argument details given above.</p>
+<div id="doc_figure_u.274"></div> <pre>
     var $files = os:stat("/etc/m*");
     var $options = {
         &lt;hidden&gt;;
@@ -27434,8 +28143,8 @@ jQuery(function ($) {
     for-each ($logs) {
         message name _ " is a " _ type;
     }
-	    </pre> <p id="doc_section_8_4_1_6_p_5">The return value is a node-set of &lt;entry&gt; elements. Each entry contains the following elements:</p>
-<div id="doc_table_u.28"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+	    </pre> <p id="doc_section_8_5_1_6_p_5">The return value is a node-set of &lt;entry&gt; elements. Each entry contains the following elements:</p>
+<div id="doc_table_u.31"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Description</th>
@@ -27504,9 +28213,9 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_6_p_6">Only elements tagged "Y" are emitted when the &lt;brief&gt; option is used.</p>
-<p id="doc_section_8_4_1_6_p_7">The &lt;type&gt; element contains one of the following:</p>
-<div id="doc_table_u.29"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_5_1_6_p_6">Only elements tagged "Y" are emitted when the &lt;brief&gt; option is used.</p>
+<p id="doc_section_8_5_1_6_p_7">The &lt;type&gt; element contains one of the following:</p>
+<div id="doc_table_u.32"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Value</th>
 <th class="left">Description</th>
@@ -27546,8 +28255,8 @@ jQuery(function ($) {
 </tr>
 </tbody>
 </table></div>
-<p id="doc_section_8_4_1_6_p_8">In some cases, attributes are used to attach useful information to elements. The following table lists these attributes and values.</p>
-<div id="doc_table_u.30"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<p id="doc_section_8_5_1_6_p_8">In some cases, attributes are used to attach useful information to elements. The following table lists these attributes and values.</p>
+<div id="doc_table_u.33"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
 <thead><tr>
 <th class="left">Element</th>
 <th class="left">Attribute</th>
@@ -27577,6 +28286,46 @@ jQuery(function ($) {
 </tbody>
 </table></div>
 </div>
+<div class="content">
+<h4 id="doc_section_8_5_1_7">
+<div class="self-section-number">
+<a href="#doc_section_8_5_1_7">8.5.1.7</a> </div>
+<a id="osuser-info" href="#osuser-info">os:user-info</a>
+</h4>
+<p id="doc_section_8_5_1_7_p_1">The os:user-info helps know the details of user running the script.</p>
+<div id="doc_figure_u.275"></div> <pre>
+    var $userinfo = os:user-info();
+	    </pre> <p id="doc_section_8_5_1_7_p_3">This function returns a user element with following information</p>
+<div id="doc_table_u.34"><table summary="" class="tt full" cellpadding="3" cellspacing="0">
+<thead><tr>
+<th class="left">Element</th>
+<th class="left">Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>class</td>
+<td>User class (if availalbe)</td>
+</tr>
+<tr>
+<td>dir</td>
+<td>User home directory</td>
+</tr>
+<tr>
+<td>gecos</td>
+<td>User information</td>
+</tr>
+<tr>
+<td>name</td>
+<td>Username</td>
+</tr>
+<tr>
+<td>shell</td>
+<td>User shell program</td>
+</tr>
+</tbody>
+</table></div>
+<p id="doc_section_8_5_1_7_p_4">This functions returns empty when error</p>
+</div>
 </div>
 </div>
 </div>
@@ -27602,7 +28351,7 @@ jQuery(function ($) {
 <a href="#doc_section_A_1">A.1</a> </div>
 <a id="generalitemschoosexsl" href="#generalitemschoosexsl">general/itemschoose.xsl</a>
 </h2>
-<div id="doc_figure_u.250"></div> <pre>
+<div id="doc_figure_u.276"></div> <pre>
     version 1.1;
 
     ns fo = "http://www.w3.org/1999/XSL/Format";
@@ -27642,7 +28391,7 @@ jQuery(function ($) {
 <a href="#doc_section_A_2">A.2</a> </div>
 <a id="rec2svgxsl" href="#rec2svgxsl">REC2/svg.xsl</a>
 </h2>
-<div id="doc_figure_u.251"></div> <pre>
+<div id="doc_figure_u.277"></div> <pre>
     version 1.1;
 
     ns "http://www.w3.org/Graphics/SVG/SVG-19990812.dtd";
@@ -27690,7 +28439,7 @@ jQuery(function ($) {
 <a href="#doc_section_A_3">A.3</a> </div>
 <a id="xsltmarkmetricxsl" href="#xsltmarkmetricxsl">XSLTMark/metric.xsl</a>
 </h2>
-<div id="doc_figure_u.252"></div> <pre>
+<div id="doc_figure_u.278"></div> <pre>
     version 1.1;
 
     output-method html {
@@ -27762,7 +28511,7 @@ jQuery(function ($) {
 <a id="ternary-operator" href="#ternary-operator">The Ternary Conditional Operator</a>
 </h3>
 <p id="doc_section_B_1_2_p_1">As the last touch to SLAX-1.1, I've added the ternary operator from C, allowing expressions like:</p>
-<div id="doc_figure_u.253"></div> <pre>
+<div id="doc_figure_u.279"></div> <pre>
     var $a = $b ? $c : $d;
     var $e = $f ?: $g;
 	    </pre> <p id="doc_section_B_1_2_p_3">The caveat is that this uses an extension function slax:value() which may not be available in all XSLT environments. Coders must consider whether should a restriction deems this operator unusable. Portability considerations are identical to mutable variables (mvars).</p>
@@ -27799,27 +28548,27 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_11">All this works well for immutable objects and RTFs, but does not allow my mutable variables to work cleanly. This is quite annoying.</p>
 <p id="doc_section_B_1_3_p_12">I need to allow a variable to hold a nodeset, a document, or a scalar value, without caring about the previous value. But I need to hold on to the previous values to allow others to refer to them without dangling references. Dangling References</p>
 <p id="doc_section_B_1_3_p_13">Consider the following input document:</p>
-<div id="doc_figure_u.254"></div> <pre>
+<div id="doc_figure_u.280"></div> <pre>
     &lt;top&gt;
         &lt;x1/&gt;
         &lt;x2/&gt; 
         &lt;x3/&gt;
     &lt;/top&gt;
 	    </pre> <p id="doc_section_B_1_3_p_15">The following code makes a nodeset (type XPATH_NODESET) whose nodeTab array points into the input document:</p>
-<div id="doc_figure_u.255"></div> <pre>
+<div id="doc_figure_u.281"></div> <pre>
     var $x = top/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_17">The following code make an RTF/RVT (type XPATH_XSLT_TREE), whose "fake" document contains a root element (type XML_DOCUMENT_NODE) that contains the "top" element node.</p>
-<div id="doc_figure_u.256"></div> <pre>
+<div id="doc_figure_u.282"></div> <pre>
     var $y = &lt;top&gt; {
         &lt;x1&gt;;
         &lt;x2&gt;;
         &lt;x3&gt;;
     }
 	    </pre> <p id="doc_section_B_1_3_p_19">The following code makes a nodeset (type XPATH_NODESET) that refers to nodes in the "fake" document under $y:</p>
-<div id="doc_figure_u.257"></div> <pre>
+<div id="doc_figure_u.283"></div> <pre>
     var $z = $y/*[starts-with("x", name())];
 	    </pre> <p id="doc_section_B_1_3_p_21">Now consider the following code:</p>
-<div id="doc_figure_u.258"></div> <pre>
+<div id="doc_figure_u.284"></div> <pre>
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
     if ($a) {
@@ -27845,17 +28594,17 @@ jQuery(function ($) {
 <p id="doc_section_B_1_3_p_30">But where does the "overhead" live?</p>
 <p id="doc_section_B_1_3_p_31">In classic SLAX style, the overhead is kept in a shadow variable. The shadow variable (svar) holds an RTF/RVT that contains all the nodes ever assigned to the variable, a living history of all values of the variable.</p>
 <p id="doc_section_B_1_3_p_32">We don't need to record scalar values, so:</p>
-<div id="doc_figure_u.259"></div> <pre>
+<div id="doc_figure_u.285"></div> <pre>
     mvar $x = 4;
 	    </pre> <p id="doc_section_B_1_3_p_34">becomes:</p>
-<div id="doc_figure_u.260"></div> <pre>
+<div id="doc_figure_u.286"></div> <pre>
     &lt;xsl:variable name="slax-x"/&gt;
     &lt;xsl:variable name="x" select="4"/&gt;
 	    </pre> <p id="doc_section_B_1_3_p_36">But for RTFs, the content must be preserved, so:</p>
-<div id="doc_figure_u.261"></div> <pre>
+<div id="doc_figure_u.287"></div> <pre>
     mvar $x = &lt;next&gt; "one";
 	    </pre> <p id="doc_section_B_1_3_p_38">becomes:</p>
-<div id="doc_figure_u.262"></div> <pre>
+<div id="doc_figure_u.288"></div> <pre>
     &lt;xsl:variable name="slax-x"&gt;
         &lt;next&gt;one&lt;/next&gt;
     &lt;/xsl:variable&gt;
@@ -27890,7 +28639,7 @@ jQuery(function ($) {
 <p id="doc_section_B_2_1_p_3">In the 2005-2006 timeframe, we started developing on-box script capabilities using XSLT. I like the niche and properties of XSLT, but the syntax makes development and maintenance problematic. First class constructs are buried in attributes, with unreadable encodings. Customers objections were fairly strong, and they asked for a more perl-like syntax. SLAX was our answer.</p>
 <p id="doc_section_B_2_1_p_4">SLAX simplifies the syntax of XSLT, making an encoding that makes scripts more readable, maintainable, and helps the reader to see what's going on. XML escaping is replaced by unix/perl/c-style escaping. Control elements like &lt;xsl:if&gt; are replaced with the familiar "if" statement. Minor details are more transparent.</p>
 <p id="doc_section_B_2_1_p_5">The majority of our scripts are simple, following the pattern:</p>
-<div id="doc_figure_u.263"></div> <pre>
+<div id="doc_figure_u.289"></div> <pre>
     if (find/something/bad) {
         call error($message = "found something bad");
     }
@@ -27933,7 +28682,7 @@ jQuery(function ($) {
 <p id="doc_section_B_3_1_p_2">The prefixes found in the document are translated into namespace URIs, which are then escaped using the URL-escaping algorithm that turns unacceptable characters into three character strings like "%2F".</p>
 <p id="doc_section_B_3_1_p_3">An extension of ".ext" is appended to the URL-escaped URI and this file is searched but in ${SLAX_EXTDIR} and any directories given via the "&#8209;&#8209;lib/&#8209;L" argument.</p>
 <p id="doc_section_B_3_1_p_4">When the extension library is found, we dlopen() it and look for the magic symbol "slaxDynLibInit". This function is called with two arguments, the API version number and a struct that contains information about the extension library.</p>
-<div id="doc_figure_u.264"></div> <pre>
+<div id="doc_figure_u.290"></div> <pre>
     /*
      * This structure is an interface between the libslax main code
      * and the code in the extension library.  This structure should
@@ -27967,7 +28716,7 @@ jQuery(function ($) {
 <a id="example" href="#example">Example</a>
 </h3>
 <p id="doc_section_B_3_3_p_1">Here's a quick example:</p>
-<div id="doc_figure_u.265"></div> <pre>
+<div id="doc_figure_u.291"></div> <pre>
     slax_function_table_t slaxBitTable[] = {
         { "and", extBitAnd },
         { "or", extBitOr },
@@ -27996,12 +28745,12 @@ jQuery(function ($) {
 </h2>
 <p id="doc_section_B_4_p_1">My documentation style tends to be man-page-like, rather than tutorial-ish. But folks at Juniper Networks have made some outrageously great documentation and it's available on the Juniper website. Many thanks for Curtis Call, Jeremy Schulman, and others for doing this work.</p>
 <p id="doc_section_B_4_p_2">This Week: Junos Automation Reference for SLAX 1.0 does not cover any of the new SLAX-1.1 material, but is an incredible reference book.</p>
-<div id="doc_figure_u.266"></div> <pre>
+<div id="doc_figure_u.292"></div> <pre>
   www.juniper.net/us/en/community/junos/
       training-certification/day-one/
       automation-series/junos-automation-slax/
 	    </pre> <p id="doc_section_B_4_p_4">This Week: Mastering Junos Automation Programming covers many introductory tasks with a tutorial style:</p>
-<div id="doc_figure_u.267"></div> <pre>
+<div id="doc_figure_u.293"></div> <pre>
   www.juniper.net/us/en/community/junos/
       training-certification/day-one/automation-series/
       mastering-junos-automation/
