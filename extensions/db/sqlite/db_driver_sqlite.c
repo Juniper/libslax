@@ -1189,14 +1189,14 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 				return DB_DATA;
 			    } else {
 				const char *errstr =
-				    sqlite3_errmsg(stmtp->dss_handle->dsh_sqlite_handle);
+				    sqlite3_errmsg(dbsp->dsh_sqlite_handle);
 				slaxExtPrintAppend(out, (const xmlChar *)
 					errstr, strlen(errstr));
 				return DB_ERROR;
 			    }
 			} else {
 			    const char *errstr =
-				sqlite3_errmsg(stmtp->dss_handle->dsh_sqlite_handle);
+				sqlite3_errmsg(dbsp->dsh_sqlite_handle);
 			    slaxExtPrintAppend(out, (const xmlChar *) errstr,
 				    strlen(errstr));
 			    return DB_ERROR;
