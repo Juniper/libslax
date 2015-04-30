@@ -24,8 +24,6 @@ autoreconf -f -i
 cd $BUILDDIR
 ../../../configure
 make install DESTDIR=$STAGEDIR
-mv $STAGEDIR/usr/local/lib/slax/bin/*.dll $STAGEDIR/usr/local/lib/slax/extensions
-rmdir $STAGEDIR/usr/local/lib/slax/bin
 cd $STAGEDIR && tar -cjf ../../libslax-$VERSION.tar.bz2 *
 cd $STAGEDIR
 echo "libslax-$VERSION.tar.bz2 successfully created."
