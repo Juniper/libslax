@@ -22,7 +22,7 @@ cd ../..
 autoreconf -f -i
 cd $BUILDDIR
 
-VERSION=`grep "PACKAGE_VERSION='" ./configure | cut -d "'" -f 2`
+VERSION=`grep "PACKAGE_VERSION='" ../../../configure | cut -d "'" -f 2`
 
 ../../../configure
 make install DESTDIR=$STAGEDIR
