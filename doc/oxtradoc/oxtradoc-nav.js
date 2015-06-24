@@ -166,6 +166,14 @@ jQuery(function ($) {
         setActive(active.next());
     });
 
+    $("p", $right).each(function (idx, elt) {
+        var $elt = $(elt);
+        var val = $elt.get(0);
+        if (val && val.textContent && val.textContent.startsWith("Section Contents")) {
+            $elt.addClass("section-contents");
+        }
+    });
+
 
     function getMedia () {
         var mediaInspector = document.getElementById('media-inspector');
