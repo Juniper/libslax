@@ -8,6 +8,21 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
+#
+# If you've come here to look to the source that annoying error:
+#
+#    ld: warning: directory not found for option '-L../../libslax'
+#
+# then give it up.  This is an actifact of glibtool, which records
+# each libraries link arguments to pass them to libraries that link
+# against those libraries.  Since we link against ../libext_db.a,
+# we get the "dependency_libs" from that file, which includes the
+# "-L../../libslax" that bites us.  Nothing to do except wait for
+# some glorious future where autotools and glibtool are something
+# we laugh about in the "remember when" category where MS-DOS, TSRs,
+# and other foolish live.
+#
+
 if SLAX_WARNINGS_HIGH
 SLAX_WARNINGS = HIGH
 endif
