@@ -302,7 +302,7 @@ slaxIoStdioErrorCallback (const char *fmt, va_list vap)
 void
 slaxIoUseStdio (unsigned flags)
 {
-    FILE *inst = slaxIoTty;
+    FILE *inst UNUSED = slaxIoTty;
 
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
     inst = rl_instream;
