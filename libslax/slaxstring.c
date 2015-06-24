@@ -148,7 +148,6 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 			slaxError("%s:%d: trailing backslash in string",
 				  sdp->sd_filename, sdp->sd_line);
 			sdp->sd_errors += 1;
-			ch = '\0';
 			break;
 		    }
 
