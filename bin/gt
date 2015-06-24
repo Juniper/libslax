@@ -26,7 +26,7 @@ function check_in_details () {
         /bin/echo "[Checking $file into branch $branch]"
         /bin/echo -n "Commit message: "
 	read comment
-	if [ "$comment" = "==" -o "$comment" = "ditto" ]; then
+	if [ "$comment" = "==" -o  "$comment" = "=" -o "$comment" = "ditto" ]; then
 	    comment="$last"
         fi
 	if [ "$comment" = "" ]; then
