@@ -4788,7 +4788,8 @@ will be <data>. status will be <error> with message in case of errors
 
 This function can be used to run custom queries. For example,
 
-    var $queryString = "INSERT INTO employee (id, name) VALUES (@id, @name)";
+    var $queryString = "INSERT INTO employee (id, name) "
+                       _ "VALUES (@id, @name)";
     var $cursor = db:query($queryString);
 
     var $input = {
