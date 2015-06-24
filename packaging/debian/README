@@ -10,7 +10,7 @@ Prerequisites
 
 The prereqs for building the .deb files are:
 
-apt-get install build-essential autoconf automake autotools-dev dh-make debhelper devscripts fakeroot xutils lintian pbuilder dpkg-dev libtool libxml2-dev libxslt1-dev libcurl4-gnutls-dev bison
+apt-get install build-essential autoconf automake autotools-dev dh-make debhelper devscripts fakeroot xutils lintian pbuilder dpkg-dev libtool libxml2-dev libxslt1-dev libcurl4-gnutls-dev bison dh-autoreconf libreadline-dev pkg-config libsqlite3-dev
 
 Building the .deb files
 -----------------------
