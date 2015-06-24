@@ -194,3 +194,21 @@ pre {
 	color: black;
     }
 }
+
+p.section-contents, p.section-contents + ul {
+    background-color: #f8f8ff;
+    padding: 1em 0px 1em 3em;
+    border: 1px dotted #0000c0;
+}
+
+p.section-contents + ul {
+    margin: 0px 1em 0px 3em;
+    border-top: 0px;
+}
+
+p.section-contents {
+    margin: 3em 1em 0px 3em;
+    font-weight: bold;
+    border-bottom: 0px;
+    padding-bottom: 0px;
+}
