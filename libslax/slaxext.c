@@ -1714,6 +1714,13 @@ slaxExtDecodePriority (const char *priority)
 	    return -1;
 	}
 
+	/*
+	 * Sadly, there's no LOG_NPRIORITIES to test, like:
+	 *   sev = LOG_PRI(pri);
+	 *   if (sev >= LOG_NPRIORITIES) { ... }
+	 * We blindly take what we're given.
+	 */
+
 	return pri;
     }
 
@@ -2310,12 +2317,14 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 	    return;
 
     } else if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
+	if (xop->nodesetval == NULL || xop->nodesetval->nodeTab == NULL)
+	    return;
+
 	xmlNodePtr parent = xop->nodesetval->nodeTab[0];
 	if (parent == NULL || parent->children == NULL)
 	    return;
 
-	xmlNodePtr child = parent->children;
-
+	xmlNodePtr child;
 	for (child = parent->children; child; child = child->next) {
 	    slaxExtDocumentOptionsSet(sdop,
 				      (const xmlChar *) xmlNodeName(child),
