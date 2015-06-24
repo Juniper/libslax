@@ -905,8 +905,8 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	    xmlAddChild(statusp, childp);
 	}
     } else if (rc == DB_ERROR) {
-	childp = xmlNewDocNode(container, NULL, (const xmlChar *) "error",
-			       (const xmlChar *) pb.pb_buf);
+	xmlNewDocNode(container, NULL, (const xmlChar *) "error",
+		      (const xmlChar *) pb.pb_buf);
     }
 
     xmlAddChild(resultp, statusp);
