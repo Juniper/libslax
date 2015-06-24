@@ -15,7 +15,7 @@ include ${top_srcdir}/warnings.mk
 
 ext_dbincdir = ${includedir}/libslax
 
-EXTRA_DIST = db.txt
+#EXTRA_DIST = db.txt
 
 SUBDIRS = .
 
