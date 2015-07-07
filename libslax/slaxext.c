@@ -53,6 +53,8 @@
 #include <libxml/parserInternals.h>
 #include <libxml/uri.h>
 
+#include "slaxext.h"
+
 #ifdef O_EXLOCK
 #define DAMPEN_O_FLAGS (O_CREAT | O_RDWR | O_EXLOCK)
 #else
@@ -665,13 +667,6 @@ slaxExtFirstOf (xmlXPathParserContext *ctxt, int nargs)
 
 /* ---------------------------------------------------------------------- */
 
-typedef struct slax_printf_buffer_s {
-    char *pb_buf;		/* Start of the buffer */
-    int pb_bufsiz;		/* Size of the buffer */
-    char *pb_cur;		/* Current insertion point */
-    char *pb_end;		/* End of the buffer (buf + bufsiz) */
-} slax_printf_buffer_t;
-
 static int
 slaxExtPrintExpand (slax_printf_buffer_t *pbp, int min_add)
 {
@@ -694,7 +689,7 @@ slaxExtPrintExpand (slax_printf_buffer_t *pbp, int min_add)
     return FALSE;
 }
 
-static void
+void
 slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
 {
     if (len == 0)
@@ -1719,6 +1714,13 @@ slaxExtDecodePriority (const char *priority)
 	    return -1;
 	}
 
+	/*
+	 * Sadly, there's no LOG_NPRIORITIES to test, like:
+	 *   sev = LOG_PRI(pri);
+	 *   if (sev >= LOG_NPRIORITIES) { ... }
+	 * We blindly take what we're given.
+	 */
+
 	return pri;
     }
 
@@ -2315,12 +2317,14 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 	    return;
 
     } else if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
+	if (xop->nodesetval == NULL || xop->nodesetval->nodeTab == NULL)
+	    return;
+
 	xmlNodePtr parent = xop->nodesetval->nodeTab[0];
 	if (parent == NULL || parent->children == NULL)
 	    return;
 
-	xmlNodePtr child = parent->children;
-
+	xmlNodePtr child;
 	for (child = parent->children; child; child = child->next) {
 	    slaxExtDocumentOptionsSet(sdop,
 				      (const xmlChar *) xmlNodeName(child),

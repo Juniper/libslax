@@ -1,19 +1,19 @@
 Source: libslax
 Priority: extra
 Maintainer: Rob Johnston <rjohnst@juniper.net>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev
+Build-Depends: debhelper (>= 8), dh-autoreconf, libxml2-dev, libxslt1-dev, libcurl4-gnutls-dev, libreadline-dev
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://github.com/Juniper/libslax/
 
-Package: libslax-dev
+Package: libslax0-dev
 Section: libdevel
-Architecture: amd64
-Depends: libslax (= ${binary:Version})
+Architecture: any
+Depends: libslax0
 Description: Alternative syntax for XSLT - development kit
 
-Package: libslax
+Package: libslax0
 Section: libs
-Architecture: amd64
-Depends: libxml2 (>= 2.7.7), libxslt1.1 (>= 1.1.26), libcurl3-gnutls (>= 7.21.3)
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Alternative syntax for XSLT - runtime library

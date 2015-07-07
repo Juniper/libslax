@@ -623,10 +623,8 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
     while (count < stop) {
 	slaxOutput("%s:%d: %s", cp, count, line);
 
-	if (fgets(line, sizeof(line), fp) == NULL) {
-	    count += 1;
+	if (fgets(line, sizeof(line), fp) == NULL)
 	    break;
-	}
 
 	len = strlen(line);
 	if (len > 0 && line[len - 1] == '\n') {
@@ -749,8 +747,8 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
 	NAME(inst), template ? " in " : "",
 	template ? slaxDebugTemplateInfo(template, buf, sizeof(buf)) : "",
-	(inst->doc && inst->doc->URL) ? inst->doc->URL : slaxNull,
-	(inst->doc && inst->doc->URL) ? ":" : "",
+	(inst && inst->doc && inst->doc->URL) ? inst->doc->URL : slaxNull,
+	(inst && inst->doc && inst->doc->URL) ? ":" : "",
 	inst ? xmlGetLineNo(inst) : 0);
 }
 

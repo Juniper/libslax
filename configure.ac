@@ -12,7 +12,7 @@
 #
 
 AC_PREREQ(2.2)
-AC_INIT([libslax], [0.19.0], [phil@juniper.net])
+AC_INIT([libslax], [0.20.0], [phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 
 # Support silent build rules.  Requires at least automake-1.11.
@@ -25,6 +25,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LIBXML_REQUIRED_VERSION=2.7.7
 LIBXSLT_REQUIRED_VERSION=1.1.26
 LIBCURL_REQUIRED_VERSION=7.21.3
+SQLITE3_REQUIRED_VERSION=3.7.13
 
 AC_PROG_CC
 AM_PROG_AR
@@ -170,6 +171,30 @@ if test "$with_libxslt_tests" != "" ; then
 fi
 AM_CONDITIONAL([USE_LIBXSLT_TESTS], [test "$WITH_LIBXSLT_TESTS" != ""])
 AC_SUBST(WITH_LIBXSLT_TESTS)
+
+#
+# Check the availability of sqlite3
+#
+AX_LIB_SQLITE3([$SQLITE3_REQUIRED_VERSION])
+AM_CONDITIONAL([HAVE_SQLITE3], [test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)])
+if test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)
+then
+    HAVE_SQLITE3=yes
+fi
+
+#
+# Check the availability of sqlcipher
+#
+AC_ARG_WITH(sqlcipher, [ --with-sqlcipher[=DIR] Path to SQLCipher])
+if test "$with_sqlcipher" != ""; then
+    if test -f "$with_sqlcipher/sqlite3.h" ; then
+        USE_SQLCIPHER=$with_sqlcipher
+        AC_DEFINE([HAVE_SQLCIPHER], [1], "Have SQLCipher")
+        HAVE_SQLCIPHER=yes
+        SQLCIPHER_CFLAGS="-I$with_sqlcipher"
+    fi
+fi
+AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
 
 #
 # ---- start of noise
@@ -487,6 +512,8 @@ AC_CONFIG_FILES([
   extensions/curl/Makefile
   extensions/exslt/Makefile
   extensions/os/Makefile
+  extensions/db/Makefile
+  extensions/db/sqlite/Makefile
   extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile
@@ -530,6 +557,7 @@ AC_MSG_NOTICE([summary of build options:
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
   bison version:    ${BISON_VERSION}
+  sqlite3 version:  ${SQLITE3_VERSION}
 
   warnings:         ${SLAX_WARNINGS:-no}
   debug:            ${SLAX_DEBUG:-no}
@@ -537,4 +565,6 @@ AC_MSG_NOTICE([summary of build options:
   libedit:          ${HAVE_LIBEDIT:-no}
   printf-like:      ${HAVE_PRINTFLIKE:-no}
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
+  sqlite3:          ${HAVE_SQLITE3:-no}
+  sqlcipher:        ${HAVE_SQLCIPHER:-no}
 ])

@@ -46,6 +46,8 @@ slaxinc_HEADERS = \
 noinst_HEADERS = \
     jsonlexer.h \
     jsonwriter.h \
+    slaxconfig.h \
+    slaxext.h \
     slaxinternals.h \
     slaxio.h \
     slaxlexer.h \
@@ -148,4 +150,10 @@ install-exec-hook:
                        fpath=${srcdir}/$$file ; \
                     fi ; \
 		    ${CP} $$fpath ${INTERNAL_DIR} ; \
+                done
+
+uninstall-hook:
+	@echo UnInstalling internal header files ... ; \
+		for file in ${INTERNAL_FILES}; do \
+		    ${RM} -f ${INTERNAL_DIR}/`basename $$file`  ; \
                 done

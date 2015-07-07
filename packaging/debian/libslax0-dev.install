@@ -1,5 +1,4 @@
 usr/lib/pkgconfig/*
 usr/lib/lib*.a
-usr/lib/lib*.la
 usr/lib/lib*.so
 usr/include/*

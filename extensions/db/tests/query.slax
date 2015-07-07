@@ -1,0 +1,18 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "test.db";
+}
+
+var $query = "INSERT into devices (id, name) values ('1', 'name1')";
+
+match / {
+    var $handle = db:open($options);
+    var $cursor = db:query($handle, $query);
+    var $data = db:fetch($cursor);
+    copy-of $data;
+    var $close = db:close($handle);
+}

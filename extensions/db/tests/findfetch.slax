@@ -1,0 +1,22 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "test.db";
+}
+
+var $query = {
+    <collection> "devices";
+    <retrieve> {
+        <id>;
+    }
+}
+
+match / {
+    var $handle = db:open($options);
+    var $data = db:find-and-fetch($handle, $query);
+    copy-of $data;
+    var $close = db:close($handle);
+}
