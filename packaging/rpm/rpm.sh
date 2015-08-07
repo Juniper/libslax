@@ -6,10 +6,14 @@
 # This is a somewhat hacky script to use rpmbuild to build a valid .rpm
 # package file for libslax.
 #
+# Note this will make rpmbuild directories under ~/rpmbuild
+#
 # See the README.md file in this directory on steps how to use this script.
 #
 
 PKG_DIR=`pwd`
+
+mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
 cd ../..
 autoreconf -f -i
