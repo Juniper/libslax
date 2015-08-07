@@ -953,7 +953,8 @@ sub org_table {
     }
 
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    my (@fs) = split(/\s*\|\s*/, $rest);
+    my (@fs) = split(/\s*\|\s*/, $rest . "EOL");
+    pop(@fs);
     foreach (@fs) {
 	print "<c>", escf($_), "</c>\n";
     }
