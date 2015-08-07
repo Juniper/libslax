@@ -526,8 +526,8 @@ AC_CONFIG_FILES([
   doc/Makefile
   doc/oxtradoc/oxtradoc
   packaging/libslax.pc
-  packaging/libslax.spec
-  packaging/libslax.space.spec
+  packaging/rpm/libslax.spec
+  packaging/rpm/libslax.space.spec
   packaging/libslax.rb.base
   packaging/freebsd/port-Makefile
 ])

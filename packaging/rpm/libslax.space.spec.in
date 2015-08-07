@@ -1,6 +1,6 @@
 Name:        @PACKAGE_NAME@
 Version:     @PACKAGE_VERSION@
-Release:     1%{?dist}
+Release:     1
 Summary:     The SLAX language (XSLT alternative)
 
 Prefix:      /usr
@@ -12,6 +12,8 @@ License:     BSD
 Group:       Development/Libraries
 URL:         https://github.com/Juniper/libslax
 Source0:     https://github.com/Juniper/@PACKAGE_NAME@/releases/@PACKAGE_VERSION@/@PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz
+
+BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildRequires:  libxml2-devel
 BuildRequires:  libxslt-devel
@@ -26,6 +28,9 @@ syntax for XSLT that follow the patterns of C and Perl. This library
 builds on the most excellent work of Daniel Veillard et al in the
 libxml2 and libxslt libraries, for which I heartily give thanks.
 
+NOTE: This is the spec file used for JUNOS Space, and should not
+be used for other builds;  use libslax.spec instead.
+
 %prep
 %setup -q
 
@@ -35,7 +40,7 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%make_install
+make DESTDIR="$RPM_BUILD_ROOT" install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
