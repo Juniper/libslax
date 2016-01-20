@@ -822,7 +822,7 @@ extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
 	/* Don't care about the signing CA */
 	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	/* Don't care about the common name in the cert */
-	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYHOST, 1L);
+	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYHOST, 0L);
     }
 
     /*
