@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:jcs="http://xml.juniper.net/junos/commit-scripts/1.0" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" version="1.0" extension-element-prefixes="jcs slax-ext">
-  <xsl:param name="how" select="&quot;and&quot;"/>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" version="1.0" extension-element-prefixes="slax-ext">
   <xsl:template match="/">
     <op-script-results>
-      <xsl:value-of select="jcs:output(concat(&quot;This &quot;, $how, &quot; that&quot;))"/>
+      <xsl:variable name="how" select="substring(&quot;and&quot;, 1)"/>
+      <xsl:call-template name="test">
+        <xsl:with-param name="one" select="concat(&quot;This &quot;, $how, &quot; that&quot;)"/>
+      </xsl:call-template>
       <xsl:variable name="slax-temp-arg-1">
         <one/>
       </xsl:variable>
