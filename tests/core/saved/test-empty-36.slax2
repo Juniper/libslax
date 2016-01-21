@@ -1,12 +1,9 @@
 version 1.2;
 
-ns jcs extension = "http://xml.juniper.net/junos/commit-scripts/1.0";
-
-param $how = "and";
-
 main <op-script-results> {
-    expr jcs:output("This " _ $how _ " that");
+    var $how = substring("and", 1);
     
+    call test($one = "This " _ $how _ " that");
     call test($one = <one>);
     call test($one = <one> "two");
     call test($one = <one> {
