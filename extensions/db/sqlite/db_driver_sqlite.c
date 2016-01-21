@@ -325,7 +325,7 @@ db_sqlite_build_delete (db_input_t *in)
     
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && &in->di_collection) {
+    if (in && in->di_collection) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "DELETE FROM ", 12);
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
 			   strlen(in->di_collection));
@@ -378,7 +378,7 @@ db_sqlite_build_update (db_input_t *in)
     
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && &in->di_collection && in->di_update 
+    if (in && in->di_collection && in->di_update 
 	&& in->di_update->type == XML_ELEMENT_NODE) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "UPDATE ", 7);
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
@@ -463,7 +463,7 @@ db_sqlite_build_insert (db_input_t *in)
 
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && &in->di_collection) {
+    if (in && in->di_collection) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "BEGIN TRANSACTION;", 18);
 
 	if (in->di_instance || in->di_instances) {
@@ -566,7 +566,7 @@ db_sqlite_build_create (db_input_t *in)
 
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && &in->di_collection) {
+    if (in && in->di_collection) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "CREATE TABLE IF "
 						  "NOT EXISTS ", 27);
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
@@ -694,7 +694,7 @@ db_sqlite_build_select (slax_printf_buffer_t *pbp, db_input_t *in)
     char buf[BUFSIZ];
     xmlNodePtr cur;
 
-    if (in && in->di_collection && &in->di_collection) {
+    if (in && in->di_collection) {
 	/*
 	 * Take care of projections
 	 */
@@ -777,11 +777,11 @@ db_sqlite_operate (db_handle_t *db_handle, db_input_t *in,
 
     bzero(&pb, sizeof(pb));
 
-    if (db_handle && db_handle->dh_name) {
+    if (db_handle) {
     	dbsp = db_sqlite_handle_find(db_handle->dh_name);
 
 	if (dbsp) {
-	    if (in && in->di_collection && &in->di_collection) {
+	    if (in && in->di_collection) {
 		if (streq(operation, "create")) {
 		    pb = db_sqlite_build_create(in);
 		} else if (streq(operation, "insert")) {
@@ -1015,11 +1015,11 @@ DB_DRIVER_FIND (db_sqlite_find)
 
     bzero(&pb, sizeof(pb));
 
-    if (db_handle && db_handle->dh_name) {
+    if (db_handle) {
     	dbsp = db_sqlite_handle_find(db_handle->dh_name);
 
 	if (dbsp) {
-	    if (in && in->di_collection && &in->di_collection) {
+	    if (in && in->di_collection) {
 		/*
 		 * Build, prepare sqlite statement and return sqlite cursor
 		 * identifier
@@ -1122,11 +1122,11 @@ DB_DRIVER_FIND_FETCH (db_sqlite_find_fetch)
 
     bzero(&pb, sizeof(pb));
 
-    if (db_handle && db_handle->dh_name) {
+    if (db_handle) {
     	dbsp = db_sqlite_handle_find(db_handle->dh_name);
 
 	if (dbsp) {
-	    if (in && in->di_collection && &in->di_collection) {
+	    if (in && in->di_collection) {
 		/*
 		 * Build, prepare sqlite statement and return sqlite cursor
 		 * identifier
@@ -1221,7 +1221,7 @@ DB_DRIVER_QUERY (db_sqlite_query)
 
     bzero(&pb, sizeof(pb));
 
-    if (db_handle && db_handle->dh_name) {
+    if (db_handle) {
     	dbsp = db_sqlite_handle_find(db_handle->dh_name);
 
 	if (dbsp) {
@@ -1278,7 +1278,7 @@ DB_DRIVER_CLOSE (db_sqlite_close)
 {
     db_sqlite_handle_t *dbsp;
 
-    if (db_handle && db_handle->dh_name) {
+    if (db_handle) {
     	dbsp = db_sqlite_handle_find(db_handle->dh_name);
 
 	if (dbsp) {
