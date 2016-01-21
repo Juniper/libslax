@@ -1,0 +1,38 @@
+version 1.2;
+
+param $interface;
+
+<op-script-results> {
+    <jcs:session target="dent"> {
+	<jcs:rpc results="$version"> {
+	    <command> "show version brief";
+	    expr software-information/package[name == 'jroute']/version;
+	}
+	<jcs:rpc results="$desc-list"> {
+	    <get-interface-description>;
+	}
+	<jcs:rpc results=$iflist> {
+	    <get-interface-information> {
+		<interface> $interface;
+	    }
+	    for $ifl (phyical-interface/logical-interface) {
+		<name> name;
+		<mtu> mtu;
+		<description> $desc-list/interface[name == $ifl/name];
+	    }
+	}
+	<xo:container name="results"> {
+	    <xo:list name="user"
+	    	     format="{L:User}: {:user-name}, {L:UID}: {:uid}\n"> {
+		<xo:instance> {
+		    <user> "phil";
+		    <uid> 1089;
+		}
+		<xo:instance> {
+		    <user> "pallavi";
+		    <uid> 2014;
+		}
+	    }
+	}
+    }
+}
