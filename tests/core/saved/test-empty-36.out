@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<op-script-results>
+  <output>
+    <one/>
+  </output>
+  <output>
+    <one>two</one>
+  </output>
+  <output>
+    <one>
+      <two>two</two>
+    </one>
+  </output>
+</op-script-results>
