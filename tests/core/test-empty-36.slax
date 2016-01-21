@@ -1,9 +1,8 @@
 version 1.2;
 
-param $how = "and";
-
 main <op-script-results> {
-    expr jcs:output("This " _ $how _ " that");
+    var $how = substring("a" _ "n" _ "d", 1);
+    call test($one = "This " _ $how _ " that");
 
     call test($one = <one>);
     call test($one = <one> "two");
