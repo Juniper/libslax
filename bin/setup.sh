@@ -11,6 +11,8 @@ if [ ! -f configure ]; then
     vers=`autoreconf --version | head -1`
     echo "Using" $vers
 
+    mkdir -p m4
+
     autoreconf --install
 
     if [ ! -f configure ]; then
@@ -20,7 +22,7 @@ if [ ! -f configure ]; then
 fi
 
 echo "Creating build directory ..."
-mkdir build
+mkdir -p build
 
 echo "Setup is complete.  To build libslax:"
 
