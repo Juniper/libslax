@@ -1,0 +1,27 @@
+version 1.2;
+
+param $max = 100000;
+
+main <top> {
+    mvar $v = 0;
+    var $l := {
+        for $i (1 ... $max) {
+            call foo($i);
+        }
+    }
+    for-each ($l/tag) {
+        set $v = $v + .;
+    }
+    <v> $v;
+
+    set $v = 0;
+    for $i (1 ... $max) {
+        set $v = $v + $i;
+    }
+
+    <v> $v;
+}
+
+template foo ($i) {
+    <tag> $i;
+}
