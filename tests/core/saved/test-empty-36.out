@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <op-script-results>
+  <output>This and that</output>
   <output>
     <one/>
   </output>
