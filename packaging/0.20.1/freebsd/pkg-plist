@@ -1,0 +1,38 @@
+bin/slax-config
+bin/slaxproc
+@exec mkdir -p %D/include/libslax
+include/libslax/slax.h
+include/libslax/slaxconfig.h
+include/libslax/slaxdata.h
+include/libslax/slaxdyn.h
+include/libslax/xmlsoft.h
+lib/libslax.0.dylib
+lib/libslax.a
+lib/libslax.la
+lib/pkgconfig/libslax.pc
+@exec mkdir -p %D/lib/slax/extensions
+lib/slax/extensions/libext_bit.0.dylib
+lib/slax/extensions/libext_bit.a
+lib/slax/extensions/libext_bit.la
+lib/slax/extensions/libext_curl.0.dylib
+lib/slax/extensions/libext_curl.a
+lib/slax/extensions/libext_curl.la
+lib/slax/extensions/libext_os.0.dylib
+lib/slax/extensions/libext_os.a
+lib/slax/extensions/libext_os.la
+lib/slax/extensions/libext_xutil.0.dylib
+lib/slax/extensions/libext_xutil.a
+lib/slax/extensions/libext_xutil.la
+lib/slax/extensions/http%3A%2F%2Fxml.libslax.org%2Fbit.ext
+lib/slax/extensions/http%3A%2F%2Fxml.libslax.org%2Fcurl.ext
+lib/slax/extensions/http%3A%2F%2Fxml.libslax.org%2Fos.ext
+lib/slax/extensions/http%3A%2F%2Fxml.libslax.org%2Fxutil.ext
+@exec mkdir -p share/doc/libslax
+share/doc/libslax/Copyright
+share/doc/libslax/slax.txt
+share/man/man1/slaxdebugger.1x
+share/man/man1/slaxproc.1x
+share/man/man3/libslax.3x
+@dirrmtry lib/slax/extensions
+@dirrm include/libslax
+@dirrm share/doc/libslax
