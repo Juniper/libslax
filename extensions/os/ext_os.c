@@ -377,6 +377,20 @@ errno_map_t errno_map[] = {
     { .err_no = 0, .err_name = NULL },
 };
 
+static inline void
+slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
+                  const char *value)
+{
+    if (docp == NULL || name == NULL)
+        return;
+
+    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
+                                    (const xmlChar *) value);
+
+    if (newp)
+        xmlAddChild(parent, newp);
+}
+
 static const char *
 slaxErrnoName (int err)
 {
@@ -1293,6 +1307,46 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
     valuePush(ctxt, xmlXPathWrapNodeSet(results));
 }
 
+static void
+extUserInfo (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+{
+    uid_t euid = geteuid();
+    struct passwd *pwd = getpwuid(euid);
+    xmlNodePtr userp = NULL;
+
+    if (pwd) {
+	xmlDocPtr container = slaxMakeRtf(ctxt);
+	xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
+	
+	userp = xmlNewDocNode(container, NULL, (const xmlChar *) "user",
+			      NULL);
+	if (userp == NULL) {
+	    slaxLog("os:user-info: failed to create result node");
+	    goto fail;
+	}
+
+	slaxAddChildName(container, userp, "name", pwd->pw_name);
+	slaxAddChildName(container, userp, "gecos", pwd->pw_gecos);
+	slaxAddChildName(container, userp, "dir", pwd->pw_dir);
+	slaxAddChildName(container, userp, "shell", pwd->pw_shell);
+
+#if HAVE_PWD_CLASS
+	slaxAddChildName(container, userp, "class", pwd->pw_class);
+#endif	
+
+	xmlXPathNodeSetAdd(results, userp);
+	xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
+
+	valuePush(ctxt, ret);
+	xmlXPathFreeNodeSet(results);
+    }
+
+fail:
+    if (userp == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+    }
+}
+
 slax_function_table_t slaxOsTable[] = {
     {
 	"exit-code", extOsExitCode,
@@ -1330,6 +1384,11 @@ slax_function_table_t slaxOsTable[] = {
 	"chown", extOsChown,
 	"Change ownership of a file",
 	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
+    },
+    {
+	"user-info", extUserInfo,
+	"Return information about user running the script",
+	"()", XPATH_UNDEFINED,
     },
 
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }

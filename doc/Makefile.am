@@ -104,3 +104,10 @@ install-data-hook:
 	@${CHMOD} a+x ${OXTRADOC_INSTALL_DIR}/oxtradoc
 	@${RM} -f ${DESTDIR}${bindir}/oxtradoc
 	@${LN_S} ${prefix}/share/oxtradoc/oxtradoc ${DESTDIR}${bindir}/oxtradoc
+
+uninstall-hook:
+	@echo "Uninstalling oxtradoc ... "
+	@for file in ${OXTRADOC_INSTALL_FILES} ; do \
+		${RM} -f ${OXTRADOC_INSTALL_DIR}/`basename $$file` ; \
+        done
+	${RM} -f ${DESTDIR}${bindir}/oxtradoc

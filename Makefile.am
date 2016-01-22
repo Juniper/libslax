@@ -19,7 +19,7 @@ EXTRA_DIST = \
     warnings.mk \
     README.md \
     INSTALL.md \
-    packaging/libslax.spec
+    packaging/rpm/libslax.spec
 
 .PHONY: test tests
 

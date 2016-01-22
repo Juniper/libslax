@@ -500,7 +500,7 @@ sub section {
 	print "</front>\n<middle>\n";
     }
 
-    if ($last_sticky_tag eq "section") {
+    if (1 || $last_sticky_tag eq "section") {
 	list_sections();
     }
 
@@ -857,11 +857,11 @@ sub list_sections {
     return if $phase eq "end";
 
     my $i, $x, $len, $ref, $rest, $title;
+    my $output = "", $hit = 0;
 
     return if $depth <= 0;
     return unless $do_digress;
 
-    print "<t>Section Contents:\n  <list style=\"symbols\">\n";
     for ($i = $line_number; $i <= $#lines; $i++) {
 	($hdr, $rest) = ($lines[$i] =~ /^(\*+)\s+(.*)$/);
 	next unless $hdr;
@@ -879,10 +879,16 @@ sub list_sections {
 	    $x =~ tr/-a-z0-9_//cd;
 	    $ref = $x;
 	}
-	$ref .= "-" . $anchors{$ref} if $ref && $anchors{$ref};
+	$ref .= "-" . ($anchors{$ref} + 1) if $ref && $anchors{$ref};
 
-	print "    <t><xref target=\"$ref\"\/></t>\n";
+	$output .= "    <t><xref target=\"$ref\"\/></t>\n";
+	$hit += 1;
     }
+
+    return unless $hit;
+
+    print "<t>Section Contents:\n  <list style=\"symbols\">\n";
+    print $output;
     print "  </list>\n</t>\n";
 }
 
@@ -947,7 +953,8 @@ sub org_table {
     }
 
     ($rest) = ($line =~ /^\|\s*(.*)\s*\|?\s*$/);
-    my (@fs) = split(/\s*\|\s*/, $rest);
+    my (@fs) = split(/\s*\|\s*/, $rest . "EOL");
+    pop(@fs);
     foreach (@fs) {
 	print "<c>", escf($_), "</c>\n";
     }

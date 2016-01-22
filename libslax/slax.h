@@ -248,7 +248,6 @@ slaxExtRegisterOther (const char *namespace);
  */
 void slaxExtRegister (void);
 
-
 /**
  * Enable logging information internal to the slax library
  */

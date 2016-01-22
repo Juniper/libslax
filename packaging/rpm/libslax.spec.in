@@ -19,6 +19,7 @@ BuildRequires:  curl-devel
 BuildRequires:  libedit-devel
 BuildRequires:  bison-devel
 BuildRequires:  bison
+BuildRequires:  sqlite-devel
 
 %description
 Welcome to libslax, an implementation of the SLAX language, an alternate

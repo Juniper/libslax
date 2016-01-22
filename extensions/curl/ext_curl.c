@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
 #include <sys/queue.h>
 #include <curl/curl.h>
@@ -720,18 +721,21 @@ extCurlDoEmail (curl_handle_t *curlp, curl_opts_t *opts UNUSED)
 
     bzero(&cr, sizeof(cr));
     buf = cr.cr_data = extCurlBuildEmail(opts);
-    cr.cr_len = strlen(buf);
-    cr.cr_offset = 0;
+    if (buf) {
+	cr.cr_len = strlen(buf);
+	cr.cr_offset = 0;
 
-    CURL_SET(CURLOPT_READFUNCTION, extCurlReadContents);
-    CURL_SET(CURLOPT_READDATA, &cr);
-    CURL_SET(CURLOPT_UPLOAD, 1L);
+	CURL_SET(CURLOPT_READFUNCTION, extCurlReadContents);
+	CURL_SET(CURLOPT_READDATA, &cr);
+	CURL_SET(CURLOPT_UPLOAD, 1L);
+    }
 
     success = curl_easy_perform(curlp->ch_handle);
 
     CURL_SET(CURLOPT_MAIL_RCPT, NULL);
     curl_slist_free_all(mailto_listp);
-    free(buf);
+    if (buf)
+	free(buf);
 
     /* curl won't send the QUIT command until you call cleanup */
     curl_easy_reset(curlp->ch_handle);
@@ -818,7 +822,7 @@ extCurlDoPerform (curl_handle_t *curlp, curl_opts_t *opts)
 	/* Don't care about the signing CA */
 	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	/* Don't care about the common name in the cert */
-	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYHOST, 1L);
+	curl_easy_setopt(curlp->ch_handle, CURLOPT_SSL_VERIFYHOST, 0L);
     }
 
     /*
@@ -974,6 +978,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 		nbufsiz &= ~(BUFSIZ - 1);
 		nbuf = alloca(nbufsiz);
 	    }
+	    assert(nbuf);
 	    memcpy(nbuf, cp, sp - cp);
 	    nbuf[sp - cp] = '\0';
 
@@ -1024,6 +1029,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 		vbufsiz &= ~(BUFSIZ - 1);
 		vbuf = alloca(vbufsiz);
 	    }
+	    assert(vbuf);
 	    memcpy(vbuf, sp, ep - sp);
 	    vbuf[ep - sp] = '\0';
 

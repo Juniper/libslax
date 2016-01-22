@@ -1,0 +1,72 @@
+version 1.1;
+
+ns db extension = "http://xml.libslax.org/db";
+
+var $options = {
+    <engine> "sqlite";
+    <database> "test.db";
+    <access> {
+        <key> "test";
+    }
+}
+
+var $data1 = {
+    <collection> "devices";
+    <instances> {
+        <instance> {
+            <id> 1;
+            <name> "name1";
+        }
+        <instance> {
+            <id> 2;
+            <name> "Second name";
+        }
+        <instance> {
+            <id> 3;
+            <name> "Third name";
+        }
+        <instance> {
+            <id> 4;
+            <name> "name1";
+        }
+        <instance> {
+            <id> 5;
+            <name> "name9";
+        }
+        <instance> {
+            <id> 6;
+        }
+    }
+}
+
+var $data2 = {
+    <collection> "devices";
+    <instance> {
+        <id> 7;
+        <name> "sample";
+    }
+}
+
+var $query = {
+    <collection> "devices";    
+}
+
+match / {
+    var $handle = db:open($options);
+    var $result1 = db:insert($handle, $data1);
+    copy-of $result1;
+    copy-of "\n";
+
+    var $result2 = db:find-and-fetch($handle, $query);
+    copy-of $result2;
+    copy-of "\n";
+
+    var $result3 = db:insert($handle, $data2);
+    copy-of $result3;
+    copy-of "\n";
+
+    var $result4 = db:find-and-fetch($handle, $query);
+    copy-of $result4;
+
+    var $close = db:close($handle);
+}

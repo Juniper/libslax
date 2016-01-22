@@ -201,7 +201,7 @@ jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
     } else {
 	const char *value = jsonValue(nodep);
 	int vlen = value ? strlen(value) + 1 : 0;
-	char evalue[vlen * 2];
+	char evalue[vlen * 2 + 1];
 	if (value) {
 	    jsonEscape(evalue, sizeof(evalue), value);
 	    value = evalue;

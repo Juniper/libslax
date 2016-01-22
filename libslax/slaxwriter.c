@@ -408,7 +408,7 @@ slaxWriteEscaped (slax_writer_t *swp, const char *str, unsigned flags)
     if (outp == NULL)
 	return;
 
-    for (inp = str; *inp; inp++)
+    for (inp = str; inp && *inp; inp++)
 	inp = slaxWriteEscapedChar(swp, inp, flags);
 }
 

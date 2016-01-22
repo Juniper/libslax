@@ -1,0 +1,18 @@
+version 1.2;
+
+main <op-script-results> {
+    var $how = substring("and", 1);
+    
+    call test($one = "This " _ $how _ " that");
+    call test($one = <one>);
+    call test($one = <one> "two");
+    call test($one = <one> {
+        <two> "two";
+    });
+}
+
+template test ($one = "null") {
+    <output> {
+        copy-of $one;
+    }
+}

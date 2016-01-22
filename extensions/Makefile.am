@@ -6,7 +6,7 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
-SUBDIRS = bit curl exslt os xutil
+SUBDIRS = bit curl exslt os db xutil
 
 svnignore:
 	svn propset svn:ignore -F ${srcdir}/.svnignore ${srcdir}

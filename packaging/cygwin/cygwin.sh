@@ -16,16 +16,16 @@
 CWD=`pwd`
 BUILDDIR="$CWD/build"
 STAGEDIR="$BUILDDIR/stage"
-VERSION=`grep "PACKAGE_VERSION='" ../../configure | cut -d "'" -f 2`
 
 mkdir -p ${STAGEDIR}
 cd ../..
 autoreconf -f -i
 cd $BUILDDIR
+
+VERSION=`grep "PACKAGE_VERSION='" ../../../configure | cut -d "'" -f 2`
+
 ../../../configure
 make install DESTDIR=$STAGEDIR
-mv $STAGEDIR/usr/local/lib/slax/bin/*.dll $STAGEDIR/usr/local/lib/slax/extensions
-rmdir $STAGEDIR/usr/local/lib/slax/bin
 cd $STAGEDIR && tar -cjf ../../libslax-$VERSION.tar.bz2 *
 cd $STAGEDIR
 echo "libslax-$VERSION.tar.bz2 successfully created."

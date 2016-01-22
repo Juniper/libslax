@@ -1345,7 +1345,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords", ssp,
 		  sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
 		  rc, (rc > 0) ? slaxTokenName(rc) : "",
-		  (ssp && ssp->ss_token) ? ssp->ss_token : 0);
+		  ssp ? ssp->ss_token : 0);
 
     /*
      * Disable keywords processing based on the token returned

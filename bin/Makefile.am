@@ -27,3 +27,9 @@ install-data-hook:
 		cp $$rfile $$mdir/ ; \
         done
 	@${CHMOD} a+x ${GT_INSTALL_DIR}/gt
+
+uninstall-hook:
+	@echo "Uninstalling gt ... "
+	@for file in ${GT_INSTALL_FILES} ; do \
+		${RM} -f ${GT_INSTALL_DIR}/$$file ; \
+        done
