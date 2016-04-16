@@ -13,14 +13,25 @@
 #define LIBSLAX_PAGED_ARRAY_H
 
 /**
+ * Glossary:
+ * atom = smallest addressable unit.  You are making an arrray of
+ *     these atoms.  Atom size is determined by the user by
+ *     in the atom_size parameter.
+ * page = a set of atoms.  The number of atom per page is given in
+ *     the shift parameter: a page hold 1<<shift atoms.
+ * page_arrray = an array of atoms, split into pages to avoid
+ *     forcing a large memory footprint for an array that _might_
+ *     be large.
+ * base = the array of pointers to pages
+ *
  * The paged array works like a page table; part of the identifier
- * selects a page of values, while the remainder selects the item off
- * that page.  Note that it's an item array, not a byte array.  The
- * caller sets the bit shift and the number and size of the items,
- * which are recorded in the base paged_array_t structure.  Since the
- * caller knows these values, they can either let us get them from the
- * struct or pass them directly to the inline functions
- * (e.g. pa_item_addr_direct) for better performance.
+ * selects a page of values, while the remainder selects an atom off
+ * that page.  Note that it's an atom array, not a byte array.  The
+ * caller sets the bit shift (page size) and the number and size of
+ * the atoms, which are recorded in the base paged_array_t structure.
+ * Since the caller knows these values, they can either let us get
+ * them from the struct or pass them directly to the inline functions
+ * (e.g. pa_atom_addr_direct) for better performance.
  *
  * These functions are designed to point into memory mapped addresses,
  * so they allow the caller to give us not only allocation and free
@@ -32,23 +43,30 @@
 
 #define PA_ASSERT(_a, _b) assert(_b)
 
+typedef uint32_t pa_atom_t;	/* Type for atom numbers */
+#define PA_NULL_ATOM (pa_atom_t) 0
+typedef uint32_t pa_page_t;	/* Type for page numbers */
+
 typedef void *(*pa_alloc_func_t)(void *, size_t);
 typedef void (*pa_free_func_t)(void *, void *);
-
-typedef uint32_t pa_item_t;	/* Type for item numbers */
-#define PA_NULL_ITEM (pa_item_t) 0
+typedef void *(*pa_page_get_func_t)(void *, void *, pa_page_t);
+typedef void (*pa_page_set_func_t)(void *, void *, pa_page_t, void *);
+typedef void (*pa_base_set_func_t)(void *, void *);
 
 typedef struct paged_array_info_s {
     uint8_t pai_shift;		/* Bits to shift to select the page */
-    uint16_t pai_item_size;	/* Size of each item */
-    pa_item_t pai_max_items;	/* Max number of items */
-    pa_item_t pai_free;		/* First item that is free */
+    uint16_t pai_atom_size;	/* Size of each atom */
+    pa_atom_t pai_max_atoms;	/* Max number of atoms */
+    pa_atom_t pai_free;		/* First atom that is free */
 } paged_array_info_t;
 
 typedef struct paged_array_s {
     paged_array_info_t pa_info_block;
     paged_array_info_t *pa_infop;
-    uint8_t **pa_base;		/* Address of page table */
+    void *pa_base;		/* Address of page table */
+    pa_base_set_func_t pa_base_set_fn; /* Called after setting base address */
+    pa_page_get_func_t pa_page_get_fn; /* Get a page's address */
+    pa_page_set_func_t pa_page_set_fn; /* Get a page's address */
     pa_alloc_func_t pa_alloc_fn; /* Allocate memory */
     pa_free_func_t pa_free_fn;	 /* Free memory */
     void *pa_mem_opaque;	 /* Opaque data passed to pa_{alloc,free}_fn */
@@ -56,101 +74,137 @@ typedef struct paged_array_s {
 
 /* Simplification macros */
 #define pa_shift	pa_infop->pai_shift
-#define pa_item_size	pa_infop->pai_item_size
-#define pa_max_items	pa_infop->pai_max_items
+#define pa_atom_size	pa_infop->pai_atom_size
+#define pa_max_atoms	pa_infop->pai_max_atoms
 #define pa_free		pa_infop->pai_free
 
-/*
- * Return the address of an item in a paged table array
- */
+/* Inlines for common and annoying operations */
+
 static inline void *
-pa_item_addr_direct (uint8_t **base, uint8_t shift, uint16_t item_size,
-	      uint32_t max_items, pa_item_t item)
+pa_page_get (paged_array_t *pap, pa_page_t page)
 {
-    uint8_t *page;
-    if (item == 0 || item >= max_items)
-	return NULL;
+    return pap->pa_page_get_fn(pap->pa_mem_opaque, pap->pa_base, page);
+}
 
-    page = base[item >> shift];
-    if (page == NULL)
-	return NULL;
-
-    return &page[(item & ((1 << shift) - 1)) * item_size];
+static inline void
+pa_page_set (paged_array_t *pap, pa_page_t page, void *addr)
+{
+    pap->pa_page_set_fn(pap->pa_mem_opaque, pap->pa_base, page, addr);
 }
 
 /*
- * Return the address of an item in a paged table array
+ * Return the address of an atom in a paged table array
  */
 static inline void *
-pa_item_addr (paged_array_t *pap, uint32_t item)
+pa_atom_addr_direct (paged_array_t *pap, uint8_t shift, uint16_t atom_size,
+		     uint32_t max_atoms, pa_atom_t atom)
+{
+    uint8_t *page;
+    if (atom == 0 || atom >= max_atoms)
+	return NULL;
+
+    page = pap->pa_page_get_fn(pap->pa_mem_opaque, pap->pa_base, atom >> shift);
+    if (page == NULL)
+	return NULL;
+
+    return &page[(atom & ((1 << shift) - 1)) * atom_size];
+}
+
+/*
+ * Return the address of an atom in a paged table array
+ */
+static inline void *
+pa_atom_addr (paged_array_t *pap, uint32_t atom)
 {
     if (pap->pa_base == NULL)
 	return NULL;
 
-    return pa_item_addr_direct(pap->pa_base, pap->pa_shift, pap->pa_item_size,
-			       pap->pa_max_items, item);
+    return pa_atom_addr_direct(pap, pap->pa_shift, pap->pa_atom_size,
+			       pap->pa_max_atoms, atom);
 }
 
 void
-pa_alloc_page (paged_array_t *pap, pa_item_t item);
+pa_alloc_page (paged_array_t *pap, pa_atom_t atom);
 
 /*
- * Allocate a new item, returning the item number
+ * Cheesy breakpoint for memory allocation failure
  */
-static inline pa_item_t
-pa_alloc_item (paged_array_t *pap)
-{
-    /* free == PA_NULL_ITEM -> nothing available */
-    if (pap->pa_free == PA_NULL_ITEM || pap->pa_base == NULL)
-	return PA_NULL_ITEM;
+void
+pa_alloc_failed (paged_array_t *pap);
 
-    /* Take the next item off the free list and return it */
-    pa_item_t item = pap->pa_free;
-    void *addr = pa_item_addr(pap, item);
+/*
+ * Allocate a new atom, returning the atom number
+ */
+static inline pa_atom_t
+pa_alloc_atom (paged_array_t *pap)
+{
+    /* free == PA_NULL_ATOM -> nothing available */
+    if (pap->pa_free == PA_NULL_ATOM || pap->pa_base == NULL)
+	return PA_NULL_ATOM;
+
+    /* Take the next atom off the free list and return it */
+    pa_atom_t atom = pap->pa_free;
+    void *addr = pa_atom_addr(pap, atom);
     if (addr == NULL) {
-	pa_alloc_page(pap, item);
-	addr = pa_item_addr(pap, item);
+	pa_alloc_page(pap, atom);
+	addr = pa_atom_addr(pap, atom);
     }
 
     /*
-     * Fetch the next free item from the start of this item.  If we
-     * failed, we don't want to change the free item, since it might
+     * Fetch the next free atom from the start of this atom.  If we
+     * failed, we don't want to change the free atom, since it might
      * be a transient memory issue.
      */
     if (addr)
-	pap->pa_free = *(pa_item_t *) addr;
+	pap->pa_free = *(pa_atom_t *) addr;
+    else
+	pa_alloc_failed(pap);
 
-    return item;
+    return atom;
 }
 
 static inline void
-pa_free_item (paged_array_t *pap, pa_item_t item)
+pa_free_atom (paged_array_t *pap, pa_atom_t atom)
 {
-    if (item == PA_NULL_ITEM)
+    if (atom == PA_NULL_ATOM)
 	return;
 
-    pa_item_t *addr = pa_item_addr(pap, item);
+    pa_atom_t *addr = pa_atom_addr(pap, atom);
     if (addr == NULL)
 	return;
 
-    /* Add the item to the front of the free list */
+    /* Add the atom to the front of the free list */
     *addr = pap->pa_free;
-    pap->pa_free = item;
+    pap->pa_free = atom;
 }
 
 void
-pa_init_from_block (paged_array_t *pap, uint8_t **base,
+pa_init_from_block (paged_array_t *pap, void *base,
 		    paged_array_info_t *infop,
+		    pa_base_set_func_t base_set_fn,
+		    pa_page_get_func_t page_get_fn,
+		    pa_page_set_func_t page_set_fn, 
 		    pa_alloc_func_t alloc_fn, pa_free_func_t free_fn,
 		    void *mem_opaque);
 
 void
-pa_init (paged_array_t *pap, uint8_t **base, uint8_t shift,
-	 uint16_t item_size, uint32_t max_items,
+pa_init (paged_array_t *pap, void *base, uint8_t shift,
+	 uint16_t atom_size, uint32_t max_atoms,
+	 pa_base_set_func_t base_set_fn,
+	 pa_page_get_func_t page_get_fn, pa_page_set_func_t page_set_fn, 
 	 pa_alloc_func_t alloc_fn, pa_free_func_t free_fn, void *mem_opaque);
 
 paged_array_t *
-pa_create (uint8_t shift, uint16_t item_size, uint32_t max_items,
+pa_create (uint8_t shift, uint16_t atom_size, uint32_t max_atoms,
+	   pa_base_set_func_t base_set_fn,
+	   pa_page_get_func_t page_get_fn, pa_page_set_func_t page_set_fn, 
 	   pa_alloc_func_t alloc_fn, pa_free_func_t free_fn, void *mem_opaque);
+
+static inline paged_array_t *
+pa_create_simple (uint8_t shift, uint16_t atom_size, uint32_t max_atoms)
+{
+    return pa_create(shift, atom_size, max_atoms,
+		     NULL, NULL, NULL, NULL, NULL, NULL);
+}
 
 #endif /* LIBSLAX_PAGED_ARRAY_H */
