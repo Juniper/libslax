@@ -33,47 +33,69 @@ pa_default_free (void *opaque UNUSED, void *ptr)
     free(ptr);
 }
 
+static void *
+pa_default_page_get (void *opaque UNUSED, void *base, pa_page_t slot)
+{
+    pa_atom_t **real_base = base;
+
+    return real_base[slot];
+}
+
+static void
+pa_default_page_set (void *opaque UNUSED, void *base, pa_page_t slot,
+		     void *addr)
+{
+    pa_atom_t **real_base = base;
+
+    real_base[slot] = addr;
+}
+
+static void
+pa_default_base_set (void *opaque UNUSED, void *base UNUSED)
+{
+    return;			/* Nothing extra we need to do */
+}
+
 /*
- * Allocate the page to which the given item belongs; mark them all free
+ * Allocate the page to which the given atom belongs; mark them all free
  */
 void
-pa_alloc_page (paged_array_t *pap, pa_item_t item)
+pa_alloc_page (paged_array_t *pap, pa_atom_t atom)
 {
-    unsigned slot = item >> pap->pa_shift;
-    PA_ASSERT((return), (pap->pa_base[slot] == NULL));
+    unsigned slot = atom >> pap->pa_shift;
 
-    pa_item_t count = 1 << pap->pa_shift;
-    pa_item_t *addr = pap->pa_alloc_fn(pap->pa_mem_opaque,
-				     count * pap->pa_item_size);
+    pa_atom_t count = 1 << pap->pa_shift;
+    pa_atom_t *addr = pap->pa_alloc_fn(pap->pa_mem_opaque,
+				     count * pap->pa_atom_size);
     if (addr == NULL)
 	return;
 
-    /* Fill in the 'free' value for each item, pointing to the next */
+    /* Fill in the 'free' value for each atom, pointing to the next */
     unsigned i;
-    unsigned mult = pap->pa_item_size / sizeof(addr[0]);
-    pa_item_t first = slot << pap->pa_shift;
+    unsigned mult = pap->pa_atom_size / sizeof(addr[0]);
+    pa_atom_t first = slot << pap->pa_shift;
     for (i = 0; i < count - 1; i++) {
 	addr[i * mult] = first + i + 1;
     }
 
-    pap->pa_base[slot] = (uint8_t *) addr;
+    pa_page_set(pap, slot, addr);
 
     /*
      * For the last entry, we find the next available page and use
      * the first entry for that page.  If there's no page free, we
      * use zero, which will trigger 'out of memory' behavior when
-     * that item is used.
+     * that atom is used.
      *
      * We're taking advantage of the knowledge that we're going
      * to be allocing pages in incremental slot order, since that's
      * how we allocate them.  Don't break this behavior.
      */
-    unsigned max_page = pap->pa_max_items >> pap->pa_shift;
+    unsigned max_page = pap->pa_max_atoms >> pap->pa_shift;
     for (i = slot + 1; i < max_page; i++)
-	if (pap->pa_base[i] == NULL)
+	if (pa_page_get(pap, i) == NULL)
 	    break;
 
-    i = (i < max_page) ? i << pap->pa_shift : PA_NULL_ITEM;
+    i = (i < max_page) ? i << pap->pa_shift : PA_NULL_ATOM;
     addr[(count - 1) * mult] = i;
 }
 
@@ -82,22 +104,31 @@ pa_alloc_page (paged_array_t *pap, pa_item_t item)
  * base and info block for our use.  We just take them.
  */
 void
-pa_init_from_block (paged_array_t *pap, uint8_t **base,
+pa_init_from_block (paged_array_t *pap, void *base,
 		    paged_array_info_t *infop,
+		    pa_base_set_func_t base_set_fn,
+		    pa_page_get_func_t page_get_fn,
+		    pa_page_set_func_t page_set_fn, 
 		    pa_alloc_func_t alloc_fn, pa_free_func_t free_fn,
 		    void *mem_opaque)
 {
     pap->pa_base = base;
     pap->pa_infop = infop;
 
+    /* Set all our functions */
+    pap->pa_base_set_fn = base_set_fn;
+    pap->pa_page_get_fn = page_get_fn;
+    pap->pa_page_set_fn = page_set_fn;
     pap->pa_alloc_fn = alloc_fn;
     pap->pa_free_fn = free_fn;
     pap->pa_mem_opaque = mem_opaque;
 }
 
 void
-pa_init (paged_array_t *pap, uint8_t **base, uint8_t shift,
-	 uint16_t item_size, uint32_t max_items,
+pa_init (paged_array_t *pap, void *base, uint8_t shift,
+	 uint16_t atom_size, uint32_t max_atoms,
+	 pa_base_set_func_t base_set_fn,
+	 pa_page_get_func_t page_get_fn, pa_page_set_func_t page_set_fn, 
 	 pa_alloc_func_t alloc_fn, pa_free_func_t free_fn, void *mem_opaque)
 {
     if (alloc_fn == NULL)
@@ -106,60 +137,89 @@ pa_init (paged_array_t *pap, uint8_t **base, uint8_t shift,
     if (free_fn == NULL)
 	free_fn = pa_default_free;
 
+    if (base_set_fn == NULL)
+	base_set_fn = pa_default_base_set;
+
+    if (page_get_fn == NULL)
+	page_get_fn = pa_default_page_get;
+
+    if (page_set_fn == NULL)
+	page_set_fn = pa_default_page_set;
+
     /* Use our internal info block */
     if (pap->pa_infop == NULL)
 	pap->pa_infop = &pap->pa_info_block;
 
-    /* The item must be able to hold a free node id */
-    if (item_size < sizeof(pa_item_t))
-	item_size = sizeof(pa_item_t);
+    /* The atom must be able to hold a free node id */
+    if (atom_size < sizeof(pa_atom_t))
+	atom_size = sizeof(pa_atom_t);
 
-    /* Must be even multiple of sizeof(pa_item_t) */
-    if (item_size & (sizeof(pa_item_t) - 1))
-	item_size = (item_size + ((1 << sizeof(pa_item_t)) - 1))
-	    & ~((1 << sizeof(pa_item_t)) - 1);
+    /* Must be even multiple of sizeof(pa_atom_t) */
+    if (atom_size & (sizeof(pa_atom_t) - 1))
+	atom_size = (atom_size + ((1 << sizeof(pa_atom_t)) - 1))
+	    & ~((1 << sizeof(pa_atom_t)) - 1);
 
-    /* Round max_items up to the next page size */
-    if (max_items & ((1 << shift) - 1))
-	max_items = (max_items + ((1 << shift) - 1)) & ~((1 << shift) - 1);
+    /* Round max_atoms up to the next page size */
+    if (max_atoms & ((1 << shift) - 1))
+	max_atoms = (max_atoms + ((1 << shift) - 1)) & ~((1 << shift) - 1);
 
     /* No base is NULL, allocate it, zero it and init the free list */
     pap->pa_base = base;
     if (base == NULL) {
-	unsigned size = (max_items >> shift) * sizeof(uint8_t *);
-	pap->pa_base = alloc_fn(mem_opaque, size);
-	if (pap->pa_base == NULL)
+	unsigned size = (max_atoms >> shift) * sizeof(uint8_t *);
+	uint8_t *real_base = alloc_fn(mem_opaque, size);
+	if (real_base == NULL)
 	    return;
-	bzero(pap->pa_base, size);
+	pap->pa_base = real_base;
+	base_set_fn(pap->pa_mem_opaque, pap->pa_base);
+	bzero(real_base, size);
 
-	/* Mark number 1 as our first free item */
+	/* Mark number 1 as our first free atom */
 	pap->pa_free = 1;
     }
 
     /* Fill in the rest of fhe fields from the argument list */
     pap->pa_shift = shift;
-    pap->pa_item_size = item_size;
-    pap->pa_max_items = max_items;
+    pap->pa_atom_size = atom_size;
+    pap->pa_max_atoms = max_atoms;
+
+    /* Set all our functions */
+    pap->pa_base_set_fn = base_set_fn;
+    pap->pa_page_get_fn = page_get_fn;
+    pap->pa_page_set_fn = page_set_fn;
     pap->pa_alloc_fn = alloc_fn;
     pap->pa_free_fn = free_fn;
     pap->pa_mem_opaque = mem_opaque;
 }
 
 paged_array_t *
-pa_create (uint8_t shift, uint16_t item_size, uint32_t max_items,
+pa_create (uint8_t shift, uint16_t atom_size, uint32_t max_atoms,
+	   pa_base_set_func_t base_set_fn,
+	   pa_page_get_func_t page_get_fn, pa_page_set_func_t page_set_fn, 
 	   pa_alloc_func_t alloc_fn, pa_free_func_t free_fn, void *mem_opaque)
 {
     if (alloc_fn == NULL)
 	alloc_fn = pa_default_alloc;
+
     paged_array_t *pap = alloc_fn(mem_opaque, sizeof(*pap));
 
     if (pap) {
 	bzero(pap, sizeof(*pap));
-	pa_init(pap, NULL, shift, item_size, max_items,
+	pa_init(pap, NULL, shift, atom_size, max_atoms,
+		base_set_fn, page_get_fn, page_set_fn,
 		alloc_fn, free_fn, mem_opaque);
     }
 
     return pap;
+}
+
+/*
+ * Cheesy breakpoint for memory allocation failure
+ */
+void
+pa_alloc_failed (paged_array_t *pap UNUSED)
+{
+    return;			/* Just a place to breakpoint */
 }
 
 #ifdef UNIT_TEST
@@ -168,7 +228,7 @@ pa_create (uint8_t shift, uint16_t item_size, uint32_t max_items,
 
 typedef struct test_s {
     unsigned t_magic;
-    pa_item_t t_id;
+    pa_atom_t t_id;
     int t_val[MAX_VAL];
 } test_t;
 
@@ -177,8 +237,8 @@ main (int argc UNUSED, char **argv UNUSED)
 {
     unsigned i;
     test_t *tp;
-    pa_item_t item;
-    unsigned max_items = 1 << 14, shift = 6, count = 100, magic = 0x5e5e5e5e;
+    pa_atom_t atom;
+    unsigned max_atoms = 1 << 14, shift = 6, count = 100, magic = 0x5e5e5e5e;
 
     for (argc = 1; argv[argc]; argc++) {
 	if (strcmp(argv[argc], "shift") == 0) {
@@ -186,7 +246,7 @@ main (int argc UNUSED, char **argv UNUSED)
 		shift = atoi(argv[++argc]);
 	} else if (strcmp(argv[argc], "max") == 0) {
 	    if (argv[argc + 1]) 
-		max_items = atoi(argv[++argc]);
+		max_atoms = atoi(argv[++argc]);
 	} else if (strcmp(argv[argc], "count") == 0) {
 	    if (argv[argc + 1]) 
 		count = atoi(argv[++argc]);
@@ -197,21 +257,20 @@ main (int argc UNUSED, char **argv UNUSED)
     if (trec == NULL)
 	return -1;
 
-    paged_array_t *pap = pa_create(shift, sizeof(test_t), max_items,
-				   NULL, NULL, NULL);
+    paged_array_t *pap = pa_create_simple(shift, sizeof(test_t), max_atoms);
     assert(pap);
 
     for (i = 0; i < count; i++) {
-	item = pa_alloc_item(pap);
-	tp = pa_item_addr(pap, item);
+	atom = pa_alloc_atom(pap);
+	tp = pa_atom_addr(pap, atom);
 	trec[i] = tp;
 	if (tp) {
 	    tp->t_magic = magic;
-	    tp->t_id = item;
+	    tp->t_id = atom;
 	    memset(tp->t_val, -1, sizeof(tp->t_val));
 	}
 
-	printf("in %u : %u -> %p (%u)\n", i, item, tp, pap->pa_free);
+	printf("in %u : %u -> %p (%u)\n", i, atom, tp, pap->pa_free);
     }
 
     for (i = 0; i < count; i++) {
@@ -221,10 +280,10 @@ main (int argc UNUSED, char **argv UNUSED)
 	    continue;
 
 
-	item = trec[i]->t_id;
-	printf("free %u : %u -> %p (%u)\n", i, item, trec[i], pap->pa_free);
+	atom = trec[i]->t_id;
+	printf("free %u : %u -> %p (%u)\n", i, atom, trec[i], pap->pa_free);
 
-	pa_free_item(pap, item);
+	pa_free_atom(pap, atom);
 
 	trec[i] = NULL;
     }
@@ -234,34 +293,40 @@ main (int argc UNUSED, char **argv UNUSED)
 	    continue;
 
 	if (trec[i] == NULL) {
-	    item = pa_alloc_item(pap);
-	    tp = pa_item_addr(pap, item);
+	    atom = pa_alloc_atom(pap);
+	    tp = pa_atom_addr(pap, atom);
 	    trec[i] = tp;
 	    if (tp) {
 		tp->t_magic = magic;
-		tp->t_id = item;
+		tp->t_id = atom;
 		memset(tp->t_val, -1, sizeof(tp->t_val));
 	    }
-	    printf("in2 %u : %u -> %p (%u)\n", i, item, tp, pap->pa_free);
+	    printf("in2 %u : %u -> %p (%u)\n", i, atom, tp, pap->pa_free);
 
 	} else {
-	    item = trec[i]->t_id;
-	    printf("free2 %u : %u -> %p (%u)\n", i, item, trec[i], pap->pa_free);
-	    pa_free_item(pap, item);
+	    atom = trec[i]->t_id;
+	    printf("free2 %u : %u -> %p (%u)\n", i, atom, trec[i], pap->pa_free);
+	    pa_free_atom(pap, atom);
 	    trec[i] = NULL;
 	}
 
 
     }
 
+    uint8_t *check = calloc(count, 1);
+    assert(check);
+
     for (i = 0; i < count; i++) {
 	if (trec[i] == NULL)
 	    continue;
 
-	item = trec[i]->t_id;
-	tp = pa_item_addr(pap, item);
+	atom = trec[i]->t_id;
+	tp = pa_atom_addr(pap, atom);
+	if (check[atom])
+	    printf("EVIL: dup: %u : %u -> %p (%u)\n", i, atom, tp, pap->pa_free);
+	check[atom] = 1;
 
-	printf("out %u : %u -> %p (%u)\n", i, item, tp, pap->pa_free);
+	printf("out %u : %u -> %p (%u)\n", i, atom, tp, pap->pa_free);
     }
 
     return 0;
