@@ -522,6 +522,7 @@ AC_CONFIG_FILES([
   tests/bugs/Makefile
   tests/errors/Makefile
   tests/libxslt/Makefile
+  tests/pa/Makefile
   bin/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc
