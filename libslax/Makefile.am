@@ -46,7 +46,10 @@ slaxinc_HEADERS = \
 noinst_HEADERS = \
     jsonlexer.h \
     jsonwriter.h \
-    paged_array.h \
+    pa_common.h \
+    pa_mmap.h \
+    pa_fixed.h \
+    pa_arb.h \
     slaxconfig.h \
     slaxext.h \
     slaxinternals.h \
@@ -64,7 +67,10 @@ SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 libslax_la_SOURCES = \
     jsonlexer.c \
     jsonwriter.c \
-    paged_array.c \
+    pa_common.c \
+    pa_mmap.c \
+    pa_fixed.c \
+    pa_arb.c \
     slaxdebugger.c \
     slaxdyn.c \
     slaxext.c \
