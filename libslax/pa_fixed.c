@@ -33,9 +33,9 @@ pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
 
     pa_atom_t count = 1 << pfp->pf_shift;
     size_t size = count * pfp->pf_atom_size;
-    pa_atom_t mmap_atom = pa_mmap_alloc(pfp->pf_mmap, size);
+    pa_matom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
 
-    pa_fixed_page_entry_t *addr = pa_mmap_addr(pfp->pf_mmap, mmap_atom);
+    pa_fixed_page_entry_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
     if (addr == NULL)
 	return;
 
@@ -47,7 +47,7 @@ pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
 	addr[i * mult] = first + i + 1;
     }
 
-    pa_fixed_page_set(pfp, slot, mmap_atom, addr);
+    pa_fixed_page_set(pfp, slot, matom, addr);
 
     /*
      * For the last entry, we find the next available page and use
@@ -137,7 +137,6 @@ pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, pa_shift_t shift,
     return pfp;
 }    
 
-
 pa_fixed_t *
 pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 		 uint16_t atom_size, uint32_t max_atoms)
@@ -152,16 +151,7 @@ pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 	}
     }
 
-    pa_fixed_t *pfp = calloc(1, sizeof(*pfp));
-
-    if (pfp) {
-	bzero(pfp, sizeof(*pfp));
-	pfp->pf_infop = pfip;
-
-	pa_fixed_init(pmp, pfp, shift, atom_size, max_atoms);
-    }
-
-    return pfp;
+    return pa_fixed_setup(pmp, pfip, shift, atom_size, max_atoms);
 }
 
 void
