@@ -41,10 +41,32 @@ scan_uint32 (char *cp, uint32_t *valp)
 #define MAX_VAL	100
 
 typedef struct test_s {
-    unsigned t_magic;
+    uint32_t t_magic;
     pa_atom_t t_id;
+    uint32_t t_slot;
     int t_val[MAX_VAL];
 } test_t;
+
+static void
+do_dump (pa_fixed_t *pfp, test_t **trec, unsigned count, unsigned magic)
+{
+    unsigned slot;
+    test_t *tp;
+    pa_atom_t atom;
+
+    printf("dumping: (%u)\n", count);
+    for (slot = 0; slot < count; slot++) {
+	tp = trec[slot];
+	if (tp) {
+	    atom = trec[slot]->t_id;
+	    printf("%u : %u -> %p (%u)%s%s%s\n",
+		   slot, atom, trec[slot], pfp->pf_free,
+		   (tp->t_magic != magic) ? " bad-magic" : "",
+		   (tp->t_slot != slot) ? " bad-slot" : "",
+		   (tp->t_val[5] != -1) ? " bad-value" : "");
+	}
+    }
+}
 
 int
 main (int argc UNUSED, char **argv UNUSED)
@@ -55,7 +77,7 @@ main (int argc UNUSED, char **argv UNUSED)
     unsigned max_atoms = 1 << 14, shift = 6, count = 100, magic = 0x5e5e5e5e;
     const char *filename = NULL;
     const char *input = NULL;
-    int rm = 0, quiet = 0;
+    int opt_clean = 0, opt_quiet = 0, opt_dump = 0;
 
     for (argc = 1; argv[argc]; argc++) {
 	if (strcmp(argv[argc], "shift") == 0) {
@@ -71,21 +93,25 @@ main (int argc UNUSED, char **argv UNUSED)
 	    if (argv[argc + 1]) 
 		filename = argv[++argc];
 	} else if (strcmp(argv[argc], "clean") == 0) {
-	    rm = 1;
+	    opt_clean = 1;
 	} else if (strcmp(argv[argc], "quiet") == 0) {
-	    quiet = 1;
+	    opt_quiet = 1;
+	} else if (strcmp(argv[argc], "dump") == 0) {
+	    opt_dump = 1;
 	} else if (strcmp(argv[argc], "input") == 0) {
 	    if (argv[argc + 1]) 
 		input = argv[++argc];
 	}
     }
 
-    rm = 1;
-    quiet = 1;
+#if 0
+    opt_clean = 1;
+    opt_quiet = 1;
     input = "/tmp/1";
     filename = "/tmp/foo.db";
+#endif
 
-    if (rm && filename)
+    if (opt_clean && filename)
 	unlink(filename);
 
     test_t **trec = calloc(count, sizeof(*tp));
@@ -129,26 +155,19 @@ main (int argc UNUSED, char **argv UNUSED)
 	    if (tp) {
 		tp->t_magic = magic;
 		tp->t_id = atom;
+		tp->t_slot = slot;
 		memset(tp->t_val, -1, sizeof(tp->t_val));
 	    }
 
-	    if (!quiet)
+	    if (!opt_quiet)
 		printf("in %u : %u -> %p (%u)\n", slot, atom, tp, pfp->pf_free);
 	    break;
 
 	case 'd':
-	    if (quiet)
+	    if (opt_quiet)
 		break;
 
-	    printf("dumping: (%u)\n", count);
-	    for (slot = 0; slot < count; slot++) {
-		tp = trec[slot];
-		if (tp) {
-		    atom = trec[slot]->t_id;
-		    printf("%u : %u -> %p (%u)\n",
-			   slot, atom, trec[slot], pfp->pf_free);
-		}
-	    }
+	    do_dump(pfp, trec, count, magic);
 	    break;
 
 	case 'f':
@@ -159,7 +178,7 @@ main (int argc UNUSED, char **argv UNUSED)
 	    tp = trec[slot];
 	    if (tp) {
 		atom = trec[slot]->t_id;
-		if (!quiet)
+		if (!opt_quiet)
 		    printf("free %u : %u -> %p (%u)\n",
 			   slot, atom, trec[slot], pfp->pf_free);
 		pa_fixed_free_atom(pfp, atom);
@@ -177,7 +196,7 @@ main (int argc UNUSED, char **argv UNUSED)
 	    tp = trec[slot];
 	    if (tp) {
 		atom = trec[slot]->t_id;
-		if (!quiet)
+		if (!opt_quiet)
 		    printf("%u : %u -> %p (%u)\n",
 			   slot, atom, trec[slot], pfp->pf_free);
 	    } else {
@@ -187,6 +206,9 @@ main (int argc UNUSED, char **argv UNUSED)
 	    
 	}
     }
+
+    if (opt_dump)
+	do_dump(pfp, trec, count, magic);
 
     pa_fixed_close(pfp);
 
