@@ -68,7 +68,7 @@ typedef struct pa_fixed_info_s {
     uint16_t pfi_atom_size;	/* Size of each atom */
     pa_atom_t pfi_max_atoms;	/* Max number of atoms */
     pa_atom_t pfi_free;		/* First atom that is free */
-    pa_atom_t pfi_base;		/* Offset of page table base (in mmap atoms) */
+    pa_matom_t pfi_base; 	/* Offset of page table base (in mmap atoms) */
 } pa_fixed_info_t;
 
 typedef struct pa_fixed_s {
@@ -108,11 +108,11 @@ pa_fixed_page_set (pa_fixed_t *pfp, pa_page_t page, void *addr)
 #else /* PA_NO_MMAP */
 
 static inline void
-pa_fixed_base_set (pa_fixed_t *pfp, pa_atom_t atom,
+pa_fixed_base_set (pa_fixed_t *pfp, pa_matom_t matom,
 		   pa_fixed_page_entry_t *base)
 {
     pfp->pf_base = base;
-    pfp->pf_infop->pfi_base = atom;
+    pfp->pf_infop->pfi_base = matom;
 }
 
 /*
@@ -130,9 +130,9 @@ pa_fixed_page_get (pa_fixed_t *pfp, pa_page_t page)
 
 static inline void
 pa_fixed_page_set (pa_fixed_t *pfp, pa_page_t page,
-		   pa_atom_t atom, void *addr UNUSED)
+		   pa_matom_t matom, void *addr UNUSED)
 {
-    pfp->pf_base[page] = atom;
+    pfp->pf_base[page] = matom;
 }
 
 #endif /* PA_NO_MMAP */
@@ -167,7 +167,7 @@ pa_fixed_atom_addr_direct (pa_fixed_t *pfp, uint8_t shift, uint16_t atom_size,
  * recorded in our header.
  */
 static inline void *
-pa_fixed_atom_addr (pa_fixed_t *pfp, uint32_t atom)
+pa_fixed_atom_addr (pa_fixed_t *pfp, pa_atom_t atom)
 {
     if (pfp->pf_base == NULL)
 	return NULL;
