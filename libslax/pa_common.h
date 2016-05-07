@@ -36,6 +36,16 @@
 typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
+/*
+ * To distinquish between pa_mmap atoms and higher level atoms, we
+ * call the former "matoms".  The types are equivalent, but the
+ * shifting and meaning are different enough that I need distinct
+ * type to keep them clear.
+ */
+
+typedef uint32_t pa_matom_t;	/* Identical to pa_atom_t; for mmap atoms */
+#define PA_NULL_MATOM	((pa_matom_t) 0)
+
 typedef uint32_t pa_page_t;	/* Type for page numbers */
 
 /* An offset within the database */
