@@ -39,9 +39,6 @@
 #define PA_MAGIC_NUMBER	0xBE1E	/* "Our" endian-ness magic */
 #define PA_MAGIC_WRONG	0x1EBE	/* "Wrong" endian-ness magic */
 
-#define PA_MMAP_ATOM_SHIFT	12
-#define PA_MMAP_ATOM_SIZE	(1ULL << PA_MMAP_ATOM_SHIFT)
-
 /* Default initial mmap file size */
 #define PA_DEFAULT_COUNT	32
 #define PA_DEFAULT_SIZE		(PA_DEFAULT_COUNT << PA_MMAP_ATOM_SHIFT)
@@ -56,27 +53,13 @@ typedef struct pa_mmap_info_s {
     uint32_t pmi_max_size;	/* Maximum size (or 0) */
     uint32_t pmi_num_headers;	/* Number of named headers following ours */
     size_t pmi_len;		/* Current size */
-    pa_atom_t pmi_free;		/* First free memory segment */
+    pa_matom_t pmi_free;		/* First free memory segment */
 } pa_mmap_info_t;
-
-/*
- * This structure defines the in-memory information needed for
- * a mmap'd segment.  pm_addr == pm_infop, just a untyped.
- */
-typedef struct pa_mmap_s {
-    int pm_fd;			/* File descriptor, if used */
-    pa_mmap_flags_t pm_flags;	/* Flags */
-    int pm_mmap_flags;		/* mmap flags parameter */
-    int pm_mmap_prot;		/* mmap prot parameter */
-    void *pm_addr;		/* Base memory address */
-    size_t pm_len;		/* Current mapped len */
-    pa_mmap_info_t *pm_infop;	/* Mmap segment header */
-} pa_mmap_t;
 
 typedef struct pa_mmap_free_s {
     uint32_t pmf_magic;		/* Magic number */
-    pa_atom_t pmf_size;		/* Number of atoms free here */
-    pa_atom_t pmf_next;		/* Free list */
+    pa_matom_t pmf_size;		/* Number of atoms free here */
+    pa_matom_t pmf_next;		/* Free list */
 } pa_mmap_free_t;
 
 typedef struct pa_mmap_header_s {
@@ -91,23 +74,16 @@ typedef struct pa_mmap_header_s {
 static uint8_t *pa_mmap_next_address = (void *) PA_ADDR_DEFAULT;
 static ptrdiff_t pa_mmap_incr_address = PA_ADDR_DEFAULT_INCR;
 
-void *
-pa_mmap_addr (pa_mmap_t *pmp, pa_atom_t atom)
-{
-    return (atom == PA_NULL_ATOM) ? NULL
-	: pa_pointer(pmp->pm_addr, atom, PA_MMAP_ATOM_SHIFT);
-}
-
 #if 0
 /*
  * Remove an item from a free list.
  */
 static void
-pa_mmap_list_remove (pa_mmap_t *pmp, pa_atom_t atom, unsigned count UNUSED)
+pa_mmap_list_remove (pa_mmap_t *pmp, pa_matom_t atom, unsigned count UNUSED)
 {
-    pa_atom_t fa;		/* Free atom number */
+    pa_matom_t fa;		/* Free atom number */
     pa_mmap_free_t *pmfp;
-    pa_atom_t *lastp = &pmp->pm_infop->pmi_free;
+    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
 
     for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
 	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
@@ -125,11 +101,11 @@ pa_mmap_list_remove (pa_mmap_t *pmp, pa_atom_t atom, unsigned count UNUSED)
  * Add an item from a free list.
  */
 static void
-pa_mmap_list_add (pa_mmap_t *pmp, pa_atom_t atom, unsigned size)
+pa_mmap_list_add (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
 {
-    pa_atom_t fa;		/* Free atom number */
+    pa_matom_t fa;		/* Free atom number */
     pa_mmap_free_t *pmfp;
-    pa_atom_t *lastp = &pmp->pm_infop->pmi_free;
+    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
 
     for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
 	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
@@ -151,17 +127,17 @@ pa_mmap_list_add (pa_mmap_t *pmp, pa_atom_t atom, unsigned size)
 /*
  * Allocate a chunk of memory and return its offset.
  */
-pa_atom_t
+pa_matom_t
 pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 {
     if (size == 0)
 	return PA_NULL_ATOM;
 
-    pa_atom_t fa;		/* Free atom number */
+    pa_matom_t fa;		/* Free atom number */
     unsigned count = (size + PA_MMAP_ATOM_SIZE - 1) >> PA_MMAP_ATOM_SHIFT;
     unsigned new_count;
     pa_mmap_free_t *pmfp;
-    pa_atom_t *lastp = &pmp->pm_infop->pmi_free;
+    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
 
     for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
 	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
@@ -227,7 +203,7 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     pmp->pm_len = new_len;	/* Record our new length */
 
     fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
-    pa_atom_t na = fa + count;	    /* And put the rest on the free list */
+    pa_matom_t na = fa + count;	    /* And put the rest on the free list */
 
     pmfp = pa_pointer(pmp->pm_addr, na, PA_MMAP_ATOM_SHIFT);
     pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
@@ -240,7 +216,7 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 }
 
 void
-pa_mmap_free (pa_mmap_t *pmp, pa_atom_t atom, unsigned size)
+pa_mmap_free (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
 {
     if (atom == PA_NULL_ATOM) {
 	pa_warning(0, "pa_mmap_free called with NULL");
