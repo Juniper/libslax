@@ -20,5 +20,27 @@ typedef struct slax_printf_buffer_s {
 void
 slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len);
 
+void
+slaxExtRemoveNonXmlChars (char *input);
+
+void
+slaxExtTraceCallback (const char *str);
+
+void
+slaxExtProgressCallback (const char *str);
+
+int
+slaxExtTimeDiff (const struct timeval *new, const struct timeval *old,
+                 struct timeval *diff);
+
+int
+slaxExtTimeCompare (const struct timeval *tv, double limit);
+
+int
+slaxExtDecodePriority (const char *priority);
+
+char *
+slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv);
+
 #endif /* LIBSLAX_SLAXEXT_H */
 
