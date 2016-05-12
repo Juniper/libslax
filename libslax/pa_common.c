@@ -41,9 +41,11 @@ pa_warning (int errnum, const char *fmt, ...)
 
     va_start(vap, fmt);
 
+    fprintf(stderr, "warning: ");
     vfprintf(stderr, fmt, vap);
     fprintf(stderr, "%s%s\n", (errnum > 0) ? ": " : "",
 	    (errnum > 0) ? strerror(errnum) : "");
+    fflush(stderr);
 
     va_end(vap);
 }
