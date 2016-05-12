@@ -16,7 +16,11 @@ GCC_WARNINGS = yes
 endif
 include ${top_srcdir}/warnings.mk
 
-AM_CFLAGS = -I${top_srcdir} -I${top_srcdir}/libslax -I${top_builddir}
+AM_CFLAGS = \
+    -I${top_srcdir} \
+    -I${top_srcdir}/libslax \
+    -I${top_builddir} \
+    ${WARNINGS}
 
 # Ick: maintained by hand!
 TEST_CASES = \
