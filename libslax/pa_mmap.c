@@ -110,18 +110,18 @@ pa_mmap_list_add (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
     for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
 	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
 
-	if (size <= pmfp->pmf_size) {
-	    /* Insert atom into the chain */
-	    *lastp = atom;
-	    pmfp = pa_pointer(pmp->pm_addr, atom, PA_MMAP_ATOM_SHIFT);
-	    pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
-	    pmfp->pmf_size = size;
-	    pmfp->pmf_next = fa;
-	    return;
-	}
+	if (size <= pmfp->pmf_size)
+	    break;
 
 	lastp = &pmfp->pmf_next; /* Move to next item on free list */
     }
+
+    /* Insert atom into the chain */
+    pmfp = pa_pointer(pmp->pm_addr, atom, PA_MMAP_ATOM_SHIFT);
+    pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
+    pmfp->pmf_size = size;
+    pmfp->pmf_next = *lastp;
+    *lastp = atom;
 }
 
 /*
@@ -185,19 +185,50 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 	    pa_warning(errno, "cannot extend memory file to %d", new_len);
 	    return PA_NULL_ATOM;
 	}
-    }
 
-    /* Re-mmap the segment */
-    void *addr = mmap(pmp->pm_addr, new_len, pmp->pm_mmap_prot,
-		      pmp->pm_mmap_flags | MAP_FIXED, pmp->pm_fd, 0);
-    if (addr == NULL || addr == MAP_FAILED) {
-	pa_warning(errno, "mmap failed");
-	return PA_NULL_ATOM;
-    }
+	/* Re-mmap the segment */
+	void *addr = mmap(pmp->pm_addr, new_len, pmp->pm_mmap_prot,
+			  pmp->pm_mmap_flags | MAP_FIXED, pmp->pm_fd, 0);
+	if (addr == NULL || addr == MAP_FAILED) {
+	    pa_warning(errno, "mmap failed");
+	    return PA_NULL_ATOM;
+	}
 
-    if (addr != pmp->pm_addr) {
-	pa_warning(0, "mmap was moved (%p:%p)", pmp->pm_addr, addr);
-	return PA_NULL_ATOM;
+	if (addr != pmp->pm_addr) {
+	    pa_warning(0, "mmap was moved (%p:%p)", pmp->pm_addr, addr);
+	    return PA_NULL_ATOM;
+	}
+
+    } else {
+	/*
+	 * With mmap and no file, we can't extend our mapping, so
+	 * we map a new segment at the end of our current one and
+	 * record that fact so we can unmap it during close.
+	 */
+
+	uint8_t *target = pmp->pm_addr;
+	target += old_len;
+
+	void *addr = mmap(target, new_len - old_len, pmp->pm_mmap_prot,
+			  pmp->pm_mmap_flags | MAP_FIXED, pmp->pm_fd, 0);
+	if (addr == NULL || addr == MAP_FAILED) {
+	    pa_warning(errno, "mmap failed");
+	    return PA_NULL_ATOM;
+	}
+
+	if (addr != target) {
+	    pa_warning(0, "mmap was moved (%p:%p:%p)",
+		       pmp->pm_addr, target, addr);
+	    return PA_NULL_ATOM;
+	}
+
+	pa_mmap_record_t *pmrp = calloc(1, sizeof(*pmrp));
+	if (pmrp) {
+	    pmrp->pmr_addr = target;
+	    pmrp->pmr_len = new_len - old_len;
+	    pmrp->pmr_next = pmp->pm_record;
+	    pmp->pm_record = pmrp;
+	}
     }
 
     pmp->pm_len = new_len;	/* Record our new length */
@@ -366,6 +397,15 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
     pmp->pm_mmap_flags = mmap_flags;
     pmp->pm_mmap_prot = prot;
 
+    if (fd < 0) {
+	pa_mmap_record_t *pmrp = calloc(1, sizeof(*pmrp));
+	if (pmrp) {
+	    pmrp->pmr_addr = addr;
+	    pmrp->pmr_len = len;
+	    pmp->pm_record = pmrp;
+	}
+    }
+
     return pmp;
 
  fail:
@@ -383,8 +423,17 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
 void
 pa_mmap_close (pa_mmap_t *pmp)
 {
-    if (pmp->pm_addr > 0)
-	munmap(pmp->pm_addr, pmp->pm_len);
+    if (pmp->pm_record) {
+	pa_mmap_record_t *pmrp = pmp->pm_record, *nextp;
+	for (; pmrp; pmrp = nextp) {
+	    munmap(pmrp->pmr_addr, pmrp->pmr_len);
+	    nextp = pmrp->pmr_next;
+	    free(pmrp);
+	}
+    } else {
+	if (pmp->pm_addr > 0)
+	    munmap(pmp->pm_addr, pmp->pm_len);
+    }
 
     if (pmp->pm_fd > 0)
 	close(pmp->pm_fd);
