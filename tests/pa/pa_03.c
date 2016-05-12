@@ -71,7 +71,6 @@ do_dump (pa_fixed_t *pfp, test_t **trec, unsigned count, unsigned magic)
 int
 main (int argc UNUSED, char **argv UNUSED)
 {
-    unsigned i;
     test_t *tp;
     pa_atom_t atom;
     unsigned max_atoms = 1 << 14, shift = 6, count = 100, magic = 0x5e5e5e5e;
