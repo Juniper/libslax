@@ -34,6 +34,13 @@ typedef uint32_t pa_mmap_flags_t; /* Flag values */
 /* Flags for pa_mmap_flags_t */
 #define PMF_READ_ONLY	(1<<0)	/* Open read-only */
 
+/* Record of mmap'd segments */
+typedef struct pa_mmap_record_s {
+    struct pa_mmap_record_s *pmr_next;
+    void *pmr_addr;
+    size_t pmr_len;
+} pa_mmap_record_t;
+
 /*
  * This structure defines the in-memory information needed for
  * a mmap'd segment.  pm_addr == pm_infop, just a untyped.
@@ -46,6 +53,7 @@ typedef struct pa_mmap_s {
     void *pm_addr;		/* Base memory address */
     size_t pm_len;		/* Current mapped len */
     pa_mmap_info_t *pm_infop;	/* Mmap segment header */
+    pa_mmap_record_t *pm_record; /* Record of mmap'd segments */
 } pa_mmap_t;
 
 static inline void *
