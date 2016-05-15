@@ -271,7 +271,7 @@ pa_arb_dump (pa_arb_t *prp)
     pa_arb_header_t *prhp;
     unsigned count;
 
-    printf("begin dumping pa_arb_t at %p\n", prp);
+    printf("begin dumping pa_arb_t\n");
 
     for (slot = 0; slot <= PA_ARB_MAX_POW2; slot++) {
 	saved_atom = atom = prp->pr_infop->pri_free[slot];
@@ -304,5 +304,5 @@ pa_arb_dump (pa_arb_t *prp)
 	    }
 	}
     }
-    printf("end dumping pa_arb_t at %p\n", prp);
+    printf("end dumping pa_arb_t\n");
 }
