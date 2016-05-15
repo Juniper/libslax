@@ -38,7 +38,8 @@ pa_05_test_SOURCES = pa_05.c
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 
-noinst_PROGRAMS = ${TEST_CASES:.c=.test}
+TEST_FILES = ${TEST_CASES:.c=.test}
+noinst_PROGRAMS = ${TEST_FILES}
 
 LDADD = \
     ${top_builddir}/libslax/libslax.la
@@ -88,32 +89,13 @@ TEST_FORMATS = T XP JP HP X J H HIPx
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	-@ ${TEST_TRACE} (for test in ${TEST_CASES} ; do \
-	    base=`${BASENAME} $$test .c` ; \
-            (for fmt in ${TEST_FORMATS}; do \
-	        echo "... $$test ... $$fmt ..."; \
-	        ${TEST_ONE}; \
-                true; \
-            done) ; \
-            (for fmt in E; do \
-	        echo "... $$test ... $$fmt ..."; \
-	        ${TEST_TWO}; \
-                true; \
-            done) \
-	done)
+	sh ${srcdir}/run-tests.sh run ${TEST_FILES}
 
 one:
-	-@(test=${TEST_CASE}; data=${TEST_DATA}; ${TEST_ONE} ; true)
 
 accept:
-	-@(for test in ${TEST_CASES} ; do \
-	    base=`${BASENAME} $$test .c` ; \
-            (for fmt in ${TEST_FORMATS} E; do \
-	        echo "... $$test ... $$fmt ..."; \
-	        ${CP} out/$$base.$$fmt.out ${srcdir}/saved/$$base.$$fmt.out ; \
-	        ${CP} out/$$base.$$fmt.err ${srcdir}/saved/$$base.$$fmt.err ; \
-	    done) \
-	done)
+	@{MKDIR} -p ${srcdir}/saved
+	sh ${srcdir}/run-tests.sh accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<
