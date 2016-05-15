@@ -89,13 +89,13 @@ TEST_FORMATS = T XP JP HP X J H HIPx
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	sh ${srcdir}/run-tests.sh run ${TEST_FILES}
+	@sh ${srcdir}/run-tests.sh run ${TEST_FILES}
 
 one:
 
 accept:
-	@{MKDIR} -p ${srcdir}/saved
-	sh ${srcdir}/run-tests.sh accept ${TEST_FILES}
+	@${MKDIR} -p ${srcdir}/saved
+	@sh ${srcdir}/run-tests.sh accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<
