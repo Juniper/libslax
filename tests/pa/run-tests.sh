@@ -21,6 +21,9 @@ function run {
         ${ECHO} "   - $cmd"
     else
 	# We need to eval to handle "&&" in commands
+        if [ ! -z ${TEST_VERBOSE} ]; then
+            ${ECHO} "   - $cmd"
+	fi
         eval $cmd
     fi
 }
@@ -59,11 +62,18 @@ function do_run_tests {
     done
 }
 
+function accept_file {
+    if ! cmp -s $*; then
+        echo "... $1 ..."
+        run "cp $*"
+    fi
+}
+
 function accept_tests {
     oname=$name.$ds
 
-    run "cp out/$oname.out ${SRCDIR}/saved/$oname.out"
-    run "cp out/$oname.err ${SRCDIR}/saved/$oname.err"
+    accept_file out/$oname.out ${SRCDIR}/saved/$oname.out
+    accept_file out/$oname.err ${SRCDIR}/saved/$oname.err
 }
 
 function do_accept {
