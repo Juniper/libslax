@@ -50,6 +50,7 @@ noinst_HEADERS = \
     pa_mmap.h \
     pa_fixed.h \
     pa_arb.h \
+    pa_pat.h \
     slaxconfig.h \
     slaxext.h \
     slaxinternals.h \
@@ -71,6 +72,7 @@ libslax_la_SOURCES = \
     pa_mmap.c \
     pa_fixed.c \
     pa_arb.c \
+    pa_pat.c \
     slaxdebugger.c \
     slaxdyn.c \
     slaxext.c \
