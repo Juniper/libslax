@@ -233,15 +233,17 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 
     pmp->pm_len = new_len;	/* Record our new length */
 
-    fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
-    pa_matom_t na = fa + count;	    /* And put the rest on the free list */
+    if (new_count > count) {
+	fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
+	pa_matom_t na = fa + count; /* And put the rest on the free list */
 
-    pmfp = pa_pointer(pmp->pm_addr, na, PA_MMAP_ATOM_SHIFT);
-    pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
-    pmfp->pmf_size = new_count - count;
-    pmfp->pmf_next = 0;
+	pmfp = pa_pointer(pmp->pm_addr, na, PA_MMAP_ATOM_SHIFT);
+	pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
+	pmfp->pmf_size = new_count - count;
+	pmfp->pmf_next = 0;
 
-    *lastp = na;		/* Add 'na' to the free list */
+	*lastp = na;		/* Add 'na' to the free list */
+    }
 
     return fa;
 }
