@@ -24,6 +24,10 @@ typedef struct test_s {
     pa_pat_node_t t_pat;
 #endif /* NEED_T_PAT */
 
+#ifdef NEED_T_ATOM
+    pa_atom_t t_atom;
+#endif /* NEED_T_ATOM */
+
     int t_val[0];
 } test_t;
 
@@ -200,7 +204,7 @@ main (int argc UNUSED, char **argv UNUSED)
 	    test_free(slot);
 	    break;
 
-#ifdef NEED_T_PAT
+#ifdef NEED_KEY
 	case 'k':
 	    cp = scan_uint32(cp, &slot);
 	    if (cp == NULL)
@@ -216,7 +220,7 @@ main (int argc UNUSED, char **argv UNUSED)
 
 	    test_key(slot, cp);
 	    break;
-#endif /* NEED_T_PAT */
+#endif /* NEED_KEY */
 
 	case 'p':
 	    cp = scan_uint32(cp, &slot);
