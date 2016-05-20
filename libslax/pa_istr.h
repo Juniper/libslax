@@ -140,7 +140,7 @@ pa_istr_nstring (pa_istr_t *pip, const char *string, size_t len)
     /*
      * Strings that are length 1 are handled specifically
      */
-    if (len == 1)
+    if (len <= 1)
 	return pa_short_string_atom(string);
 
     unsigned num_atoms = pa_items_shift32(len + 1, pip->pi_atom_shift);
