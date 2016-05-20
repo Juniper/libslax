@@ -6,113 +6,56 @@
  * using the SOFTWARE, you agree to be bound by the terms of that
  * LICENSE.
  *
- * Phil Shafer <phil@>, April 2016
+ * Phil Shafer <phil@>, May 2016
  */
 
 #ifndef LIBSLAX_PA_ISTR_H
 #define LIBSLAX_PA_ISTR_H
 
 /**
- * Paged arrays are istr size arrays, allocated piecemeal
- * to reduce their initial memory impact.
+ * pa_istr is an immutable string, a string library based on paged
+ * arrays. They are immutable in the sense that they can only be
+ * allocated, not freed.  All allocations are recorded (in the page
+ * table) so the _entire_ thing can be freed, but not individual
+ * strings.  Refer to pa_fixed.h for additional information.
  *
- * Glossary:
- * atom = smallest addressable unit.  You are making an arrray of
- *     these atoms.  Atom size is determined by the user by
- *     in the atom_size parameter.
- * page = a set of atoms.  The number of atom per page is given in
- *     the shift parameter: a page hold 1<<shift atoms.
- * page_arrray = an array of atoms, split into pages to avoid
- *     forcing a large memory footprint for an array that _might_
- *     be large.
- * base = the array of pointers to pages
- *
- * The paged array works like a page table; part of the identifier
- * selects a page of values, while the remainder selects an atom off
- * that page.  Note that it's an atom array, not a byte array.  The
- * caller sets the bit shift (page size) and the number and size of
- * the atoms, which are recorded in the base pa_istr_t structure.
- * Since the caller knows these values, they can either let us get
- * them from the struct or pass them directly to the inline functions
- * (e.g. pa_atom_addr_direct) for better performance.
- *
- * Be aware that since we're layering our "atoms" on top of mmap's
- * "atoms", we need to keep our thinking clear in terms of whose atoms
- * are whose.  Our "pages" are their "atoms".  We then divide each
- * page into our istr-sized atoms.
+ * In addition to variable strings, there are also a set of fixed
+ * strings with fixed atom numbers, for one-character strings and
+ * other common values.
  */
-
-/*
- * These functions are designed to point into memory mapped addresses,
- * but can be used without one, since I wanted them to be useful in
- * more broad circumstances.  The macros in this section allow us
- * to make both sets of functions off one source file.
- */
-
-#ifdef PA_NO_MMAP
-#define PA_ISTR_MMAP_FIELD_DECLS /* Nothing */
-
-typedef void *pa_istr_page_entry_t;
-
-#else /* PA_NO_MMAP */
-
-#define PA_ISTR_MMAP_FIELD_DECLS pa_mmap_t *pi_mmap
 
 typedef pa_atom_t pa_istr_page_entry_t;
 
-#endif /* PA_NO_MMAP */
-
 typedef struct pa_istr_info_s {
-    pa_shift_t pfi_shift;	/* Bits to shift to select the page */
-    uint8_t pfi_padding;	/* Padding this by hand */
-    uint16_t pfi_atom_size;	/* Size of each atom */
-    pa_atom_t pfi_max_atoms;	/* Max number of atoms */
-    pa_atom_t pfi_free;		/* First atom that is free */
-    pa_matom_t pfi_base; 	/* Offset of page table base (in mmap atoms) */
+    pa_shift_t pii_shift;	/* Bits to shift to select the page */
+    uint8_t pii_padding;	/* Padding this by hand */
+    uint16_t pii_atom_shift;	/* Size of each atom */
+    pa_atom_t pii_max_atoms;	/* Max number of atoms */
+    pa_atom_t pii_free;		/* First atom that is free */
+    pa_atom_t pii_left;		/* Number of atoms left at free */
+    pa_matom_t pii_base; 	/* Offset of page table base (in mmap atoms) */
 } pa_istr_info_t;
 
 typedef struct pa_istr_s {
-    PA_ISTR_MMAP_FIELD_DECLS;	   /* Mmap overhead declarations */
+    pa_mmap_t *pi_mmap;		  /* Mmap pointer */
     pa_istr_info_t pi_info_block; /* Simple block (not used for mmap) */
     pa_istr_info_t *pi_infop;	   /* Pointer to real block */
     pa_istr_page_entry_t *pi_base; /* Base of page table */
 } pa_istr_t;
 
 /* Simplification macros, so we don't need to think about pi_infop */
-#define pi_shift	pi_infop->pfi_shift
-#define pi_atom_size	pi_infop->pfi_atom_size
-#define pi_max_atoms	pi_infop->pfi_max_atoms
-#define pi_free		pi_infop->pfi_free
-
-#ifdef PA_NO_MMAP
-
-static inline void
-pa_istr_set_base (pa_istr_t *pip, pa_atom_t atom UNUSED,
-		   pa_istr_page_entry_t *base)
-{
-    pip->pi_base = base;
-}
-
-static inline void *
-pa_istr_page_get (pa_istr_t *pip, pa_page_t page)
-{
-    return pip->pi_base[page];
-}
-
-static inline void
-pa_istr_page_set (pa_istr_t *pip, pa_page_t page, void *addr)
-{
-    pip->pi_base[page] = addr;
-}
-
-#else /* PA_NO_MMAP */
+#define pi_shift	pi_infop->pii_shift
+#define pi_atom_shift	pi_infop->pii_atom_shift
+#define pi_max_atoms	pi_infop->pii_max_atoms
+#define pi_free		pi_infop->pii_free
+#define pi_left		pi_infop->pii_left
 
 static inline void
 pa_istr_base_set (pa_istr_t *pip, pa_matom_t matom,
 		   pa_istr_page_entry_t *base)
 {
     pip->pi_base = base;
-    pip->pi_infop->pfi_base = matom;
+    pip->pi_infop->pii_base = matom;
 }
 
 /*
@@ -129,13 +72,10 @@ pa_istr_page_get (pa_istr_t *pip, pa_page_t page)
 }
 
 static inline void
-pa_istr_page_set (pa_istr_t *pip, pa_page_t page,
-		   pa_matom_t matom, void *addr UNUSED)
+pa_istr_page_set (pa_istr_t *pip, pa_page_t page, pa_matom_t matom)
 {
     pip->pi_base[page] = matom;
 }
-
-#endif /* PA_NO_MMAP */
 
 /*
  * Return the address of an atom in a paged table array.  This
@@ -144,7 +84,7 @@ pa_istr_page_set (pa_istr_t *pip, pa_page_t page,
  * with constants for any specific pa_istr_t's parameters.
  */
 static inline void *
-pa_istr_atom_addr_direct (pa_istr_t *pip, uint8_t shift, uint16_t atom_size,
+pa_istr_atom_addr_direct (pa_istr_t *pip, uint8_t shift, uint16_t atom_shift,
 			   uint32_t max_atoms, pa_atom_t atom)
 {
     uint8_t *addr;
@@ -159,7 +99,7 @@ pa_istr_atom_addr_direct (pa_istr_t *pip, uint8_t shift, uint16_t atom_size,
      * We have the base address of the page, and need to find the
      * address of our atom inside the page.
      */
-    return &addr[(atom & ((1 << shift) - 1)) * atom_size];
+    return &addr[(atom & ((1 << shift) - 1)) << atom_shift];
 }
 
 /*
@@ -172,67 +112,70 @@ pa_istr_atom_addr (pa_istr_t *pip, pa_atom_t atom)
     if (pip->pi_base == NULL)
 	return NULL;
 
-    return pa_istr_atom_addr_direct(pip, pip->pi_shift, pip->pi_atom_size,
+    return pa_istr_atom_addr_direct(pip, pip->pi_shift, pip->pi_atom_shift,
 			       pip->pi_max_atoms, atom);
 }
 
-void
-pa_istr_alloc_setup_page (pa_istr_t *pip, pa_atom_t atom);
-
-/*
- * Allocate a new atom, returning the atom number
- */
-static inline pa_atom_t
-pa_istr_alloc_atom (pa_istr_t *pip)
+static inline const char *
+pa_istr_atom_string (pa_istr_t *pip, pa_atom_t atom)
 {
-    /* free == PA_NULL_ATOM -> nothing available */
-    if (pip->pi_free == PA_NULL_ATOM || pip->pi_base == NULL)
+    if (atom == PA_NULL_ATOM)
+	return NULL;
+
+    if (atom < PA_SHORT_STRINGS_MAX)
+	return pa_short_string(atom);
+
+    return pa_istr_atom_addr(pip, atom);
+}
+
+pa_atom_t
+pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len);
+
+static inline pa_atom_t
+pa_istr_nstring (pa_istr_t *pip, const char *string, size_t len)
+{
+    if (string == NULL)
 	return PA_NULL_ATOM;
 
-    /* Take the next atom off the free list and return it */
-    pa_atom_t atom = pip->pi_free;
-    void *addr = pa_istr_atom_addr(pip, atom);
-    if (addr == NULL) {
-	/*
-	 * The atom number was on the free list but we got NULL as the
-	 * address.  The only way this happens is when the page is
-	 * freshly unallocated.  So we force it to be allocated and
-	 * re-fetch the address, which may fail again if the underlaying
-	 * allocator (mmap) can't allocate memory.
-	 */
-	pa_istr_alloc_setup_page(pip, atom);
-	addr = pa_istr_atom_addr(pip, atom);
+    /*
+     * Strings that are length 1 are handled specifically
+     */
+    if (len == 1)
+	return pa_short_string_atom(string);
+
+    unsigned num_atoms = pa_items_shift32(len + 1, pip->pi_atom_shift);
+    if (num_atoms <= pip->pi_left) {
+	/* Easy case */
+	pip->pi_left -= num_atoms;
+	pa_atom_t atom = pip->pi_free + pip->pi_left;
+	char *data = pa_istr_atom_addr(pip, atom);
+	if (data) {
+	    memcpy(data, string, len);
+	    data[len] = '\0';
+	}
+	return atom;
     }
 
-    /*
-     * Fetch the next free atom from the start of this atom.  If we
-     * failed, we don't want to change the free atom, since it might
-     * be a transient memory issue.
-     */
-    if (addr)
-	pip->pi_free = *(pa_atom_t *) addr; /* Fetch next item on free list */
-    else
-	pa_alloc_failed(__FUNCTION__);
+    /* Pass it off to the real allocator */
+    return pa_istr_nstring_alloc(pip, string, len);
+}
 
-    return atom;
+static inline pa_atom_t
+pa_istr_string (pa_istr_t *pip, const char *string)
+{
+    return pa_istr_nstring(pip, string, string ? strlen(string) : 0);
 }
 
 /*
- * Put a istr atom on our free list
+ * Shortcut to return both atom and addr
  */
-static inline void
-pa_istr_free_atom (pa_istr_t *pip, pa_atom_t atom)
+static inline const char *
+pa_istr_new (pa_istr_t *pip, const char *string, pa_atom_t *atomp)
 {
-    if (atom == PA_NULL_ATOM)
-	return;
-
-    pa_atom_t *addr = pa_istr_atom_addr(pip, atom);
-    if (addr == NULL)
-	return;
-
-    /* Add the atom to the front of the free list */
-    *addr = pip->pi_free;
-    pip->pi_free = atom;
+    pa_atom_t atom = pa_istr_nstring(pip, string, string ? strlen(string) : 0);
+    if (atomp)
+	*atomp = atom;
+    return pa_istr_atom_string(pip, atom);
 }
 
 void
@@ -241,15 +184,15 @@ pa_istr_init_from_block (pa_istr_t *pip, void *base,
 
 void
 pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
-	       uint16_t atom_size, uint32_t max_atoms);
+	       uint16_t atom_shift, uint32_t max_atoms);
 
 pa_istr_t *
-pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *pfip, pa_shift_t shift,
-		uint16_t atom_size, uint32_t max_atoms);
+pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, pa_shift_t shift,
+		uint16_t atom_shift, uint32_t max_atoms);
 
 pa_istr_t *
 pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
-	       uint16_t atom_size, uint32_t max_atoms);
+	       uint16_t atom_shift, uint32_t max_atoms);
 
 void
 pa_istr_close (pa_istr_t *pip);
