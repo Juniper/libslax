@@ -67,6 +67,12 @@ pa_roundup32 (uint32_t val, uint32_t rnd)
     return (val + rnd - 1) & ~(rnd - 1);
 }
 
+static inline uint32_t
+pa_items_shift32 (uint32_t val, pa_shift_t shift)
+{
+    return (val + (1 << shift) - 1) >> shift;
+}
+
 static inline void *
 pa_pointer (void *base, pa_atom_t atom, pa_shift_t shift)
 {
@@ -94,5 +100,29 @@ pa_alloc_failed (const char *msg);
  */
 void
 pa_warning (int errnum, const char *fmt, ...);
+
+/*
+ * Allocating strings of length zero or one is a waste.  Instead,
+ * we use a simple array containing each byte and a trailing NUL.
+ * Then we can turn "x" in a reference into this table.  We handle
+ * empty strings (len 0).  To handle PA_NULL_ATOM, we start our
+ * numbering at 1, so "(pa_atom_t) 1" is the empty string, etc.
+ */
+#define PA_SHORT_STRINGS_MIN 1
+#define PA_SHORT_STRINGS_MAX 256
+
+extern char pa_short_strings[PA_SHORT_STRINGS_MAX * 2];
+
+static inline pa_atom_t
+pa_short_string_atom (const char *string)
+{
+    return PA_SHORT_STRINGS_MIN + *string;
+}
+
+static inline const char *
+pa_short_string (pa_atom_t atom)
+{
+    return &pa_short_strings[(atom << 1) + 1];
+}
 
 #endif /* LIBSLAX_PA_COMMON_H */
