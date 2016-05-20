@@ -62,8 +62,10 @@ typedef struct pa_mmap_free_s {
     pa_matom_t pmf_next;		/* Free list */
 } pa_mmap_free_t;
 
+#define PA_MMAP_HEADER_NAME_LEN	16 /* Length of name string */
+
 typedef struct pa_mmap_header_s {
-    char pmh_name[8];		/* Simple text name */
+    char pmh_name[PA_MMAP_HEADER_NAME_LEN]; /* Simple text name */
     uint32_t pmh_size;		/* Length of header (bytes) */
     char pmh_content[];		/* Content, inline */
 } pa_mmap_header_t;
