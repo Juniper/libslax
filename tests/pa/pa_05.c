@@ -27,6 +27,7 @@
 #include <libslax/pa_pat.h>
 
 #define NEED_T_PAT
+#define NEED_KEY
 #include "pa_main.h"
 
 pa_pat_root_t pat_root;
