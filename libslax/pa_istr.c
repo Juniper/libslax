@@ -23,49 +23,64 @@
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_istr.h>
 
+
 /*
- * Allocate the page to which the given atom belongs; mark them all free
+ * We need to allocate "len" bytes of space, and return an atom
+ * representing it.  Since we're not holding any information for
+ * freeing that space, we can just pull off the next "n" atoms
+ * and return them.  The inline version handles this for us, so
+ * if we're here, there's not enough free atom to cover "len".
+ * There are two cases: (a) len needs multiple pages, or (b) we
+ * just need a single page.  Either way, we allocate a number of
+ * pages, record the leftovers, and return the first atom.
  */
-void
-pa_istr_alloc_setup_page (pa_istr_t *pip, pa_atom_t atom)
+pa_atom_t
+pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
 {
-    unsigned slot = atom >> pip->pi_shift;
-
-    pa_atom_t count = 1 << pip->pi_shift;
-    size_t size = count * pip->pi_atom_size;
-    pa_matom_t matom = pa_mmap_alloc(pip->pi_mmap, size);
-
-    pa_istr_page_entry_t *addr = pa_mmap_addr(pip->pi_mmap, matom);
-    if (addr == NULL)
-	return;
-
-    /* Fill in the 'free' value for each atom, pointing to the next */
-    unsigned i;
-    unsigned mult = pip->pi_atom_size / sizeof(addr[0]);
-    pa_atom_t first = slot << pip->pi_shift;
-    for (i = 0; i < count - 1; i++) {
-	addr[i * mult] = first + i + 1;
-    }
-
-    pa_istr_page_set(pip, slot, matom, addr);
-
-    /*
-     * For the last entry, we find the next available page and use
-     * the first entry for that page.  If there's no page free, we
-     * use zero, which will trigger 'out of memory' behavior when
-     * that atom is used.
-     *
-     * We're taking advantage of the knowledge that we're going
-     * to be allocing pages in incremental slot order, since that's
-     * how we allocate them.  Don't break this behavior.
-     */
     unsigned max_page = pip->pi_max_atoms >> pip->pi_shift;
-    for (i = slot + 1; i < max_page; i++)
-	if (pa_istr_page_get(pip, i) == NULL)
+    unsigned slot;
+    for (slot = 1; slot < max_page; slot++) /* Skip the first slot */
+	if (pa_istr_page_get(pip, slot) == NULL)
 	    break;
 
-    i = (i < max_page) ? i << pip->pi_shift : PA_NULL_ATOM;
-    addr[(count - 1) * mult] = i;
+    if (slot >= max_page)	/* If we're out of slots, we're done */
+	return PA_NULL_ATOM;
+
+    unsigned len_atoms = pa_items_shift32(len + 1, pip->pi_atom_shift);
+
+    pa_atom_t count = 1 << pip->pi_shift; /* Atoms per page */
+    size_t bytes_per_page = count << pip->pi_atom_shift;
+
+    size_t size = pa_roundup32(len + 1, bytes_per_page);
+
+    /* Make sure we're a full page for the underlaying allocator */
+    if (pip->pi_shift > PA_MMAP_ATOM_SHIFT)
+	size = pa_roundup_shift32(size, PA_MMAP_ATOM_SHIFT);
+
+    /* Number of atoms needed to cover the allocation */
+    unsigned num_atoms = size >> pip->pi_atom_shift;
+
+    pa_matom_t matom = pa_mmap_alloc(pip->pi_mmap, size);
+    if (matom == PA_NULL_ATOM)
+	return PA_NULL_ATOM;
+
+    /* Fill in the page table */
+    pa_istr_page_set(pip, slot, matom);
+
+    pa_atom_t atom = slot << pip->pi_shift; /* Turns matoms to atoms */
+
+    if (size <= bytes_per_page && len_atoms < num_atoms) {
+	pip->pi_left = count - len_atoms;
+	pip->pi_free = atom + len_atoms;
+    }
+
+    char *data = pa_istr_atom_addr(pip, atom);
+    if (data) {
+	memcpy(data, string, len);
+	data[len] = '\0';
+    }
+
+    return atom;
 }
 
 /*
@@ -82,18 +97,11 @@ pa_istr_init_from_block (pa_istr_t *pip, void *base,
 
 void
 pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
-	       uint16_t atom_size, uint32_t max_atoms)
+	       uint16_t atom_shift, uint32_t max_atoms)
 {
     /* Use our internal info block */
     if (pip->pi_infop == NULL)
 	pip->pi_infop = &pip->pi_info_block;
-
-    /* The atom must be able to hold a free node id */
-    if (atom_size < sizeof(pa_atom_t))
-	atom_size = sizeof(pa_atom_t);
-
-    /* Must be even multiple of sizeof(pa_atom_t) */
-    atom_size = pa_roundup32(atom_size, sizeof(pa_atom_t));
 
     /* Round max_atoms up to the next page size */
     max_atoms = pa_roundup_shift32(max_atoms, shift);
@@ -111,27 +119,27 @@ pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
 	pip->pi_base = real_base;
 	pa_istr_base_set(pip, atom, real_base);
 
-	/* Mark number 1 as our first free atom */
-	pip->pi_free = 1;
+	/* Mark us empty */
+	pip->pi_free = PA_NULL_ATOM;
     }
 
     /* Fill in the rest of fhe fields from the argument list */
     pip->pi_shift = shift;
-    pip->pi_atom_size = atom_size;
+    pip->pi_atom_shift = atom_shift;
     pip->pi_max_atoms = max_atoms;
     pip->pi_mmap = pmp;
 }
 
 pa_istr_t *
-pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *pfip, pa_shift_t shift,
-		uint16_t atom_size, uint32_t max_atoms)
+pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, pa_shift_t shift,
+		uint16_t atom_shift, uint32_t max_atoms)
 {
     pa_istr_t *pip = calloc(1, sizeof(*pip));
 
     if (pip) {
 	bzero(pip, sizeof(*pip));
-	pip->pi_infop = pfip;
-	pa_istr_init(pmp, pip, shift, atom_size, max_atoms);
+	pip->pi_infop = piip;
+	pa_istr_init(pmp, pip, shift, atom_shift, max_atoms);
     }
 
     return pip;
@@ -139,19 +147,19 @@ pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *pfip, pa_shift_t shift,
 
 pa_istr_t *
 pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
-		 uint16_t atom_size, uint32_t max_atoms)
+		 uint16_t atom_shift, uint32_t max_atoms)
 {
-    pa_istr_info_t *pfip = NULL;
+    pa_istr_info_t *piip = NULL;
 
     if (name) {
-	pfip = pa_mmap_header(pmp, name, sizeof(*pfip));
-	if (pfip == NULL) {
+	piip = pa_mmap_header(pmp, name, sizeof(*piip));
+	if (piip == NULL) {
 	    pa_warning(0, "pa_istr header not found: %s", name);
 	    return NULL;
 	}
     }
 
-    return pa_istr_setup(pmp, pfip, shift, atom_size, max_atoms);
+    return pa_istr_setup(pmp, piip, shift, atom_shift, max_atoms);
 }
 
 void
