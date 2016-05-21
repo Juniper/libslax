@@ -579,8 +579,8 @@ pa_pat_find_next (pa_pat_root_t *root, pa_pat_node_t *node)
 const pa_pat_node_t *
 pa_pat_cons_find_next (const pa_pat_root_t *root, const pa_pat_node_t *node)
 {
-    pa_pat_root_t *r = const_drop(root);
-    pa_pat_node_t *n = const_drop(node);
+    pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
+    pa_pat_node_t *n = QUIET_CAST(pa_pat_node_t *, node);
 
     /* does not change or modify tree or node */
     return pa_pat_find_next(r, n); 
@@ -589,8 +589,8 @@ pa_pat_cons_find_next (const pa_pat_root_t *root, const pa_pat_node_t *node)
 const pa_pat_node_t *
 pa_pat_cons_find_prev (const pa_pat_root_t *root, const pa_pat_node_t *node)
 {
-    pa_pat_root_t *r = const_drop(root);
-    pa_pat_node_t *n = const_drop(node);
+    pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
+    pa_pat_node_t *n = QUIET_CAST(pa_pat_node_t *, node);
 
     /* does not change or modify tree or node */    
     return pa_pat_find_prev(r, n); 
@@ -600,7 +600,7 @@ const pa_pat_node_t *
 pa_pat_cons_get (const pa_pat_root_t *root, const u_int16_t key_bytes,
 		   const void *key)
 {
-    pa_pat_root_t *r = const_drop(root);
+    pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
 
     /* does not change or modify tree or node */
     return pa_pat_get(r, key_bytes, key); 
@@ -611,7 +611,7 @@ pa_pat_cons_subtree_match (const pa_pat_root_t *root,
 			   const u_int16_t prefix_len,
 			   const void *prefix)
 {
-    pa_pat_root_t *r = const_drop(root);
+    pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
 
     /* does not change or modify tree or node */    
     return pa_pat_subtree_match(r, prefix_len, prefix); 
@@ -622,8 +622,8 @@ pa_pat_cons_subtree_next (const pa_pat_root_t *root,
 			  const pa_pat_node_t *node,
 			  const u_int16_t prefix_len)
 {
-    pa_pat_root_t *r = const_drop(root);
-    pa_pat_node_t *n = const_drop(node);
+    pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
+    pa_pat_node_t *n = QUIET_CAST(pa_pat_node_t *, node);
 
     /* does not change or modify tree or node */    
     return pa_pat_subtree_next(r, n, prefix_len); 
