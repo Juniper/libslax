@@ -41,33 +41,6 @@ typedef unsigned boolean; 	/* XXX */
 #define TRUE 1
 #define FALSE 0
 
-/*
- * See const_* method below
- */
-typedef union {
-    void        *cg_vp;
-    const void  *cg_cvp;
-} const_remove_glue_t;
-
-/*
- * NOTE:
- *     This is EVIL.  The ONLY time you cast from a const is when calling some
- *     legacy function that does not require const:
- *          - you KNOW does not modify the data
- *          - you can't change
- *     That is why this is provided.  In that situation, the legacy API should
- *     have been written to accept const argument.  If you can change the
- *     function you are calling to accept const, do THAT and DO NOT use this
- *     HACK.
- */
-static inline void *
-const_drop (const void *ptr)
-{
-    const_remove_glue_t cg;
-    cg.cg_cvp = ptr;
-    return cg.cg_vp;
-}
-
 static inline unsigned
 grand (unsigned imax)
 {
@@ -75,7 +48,7 @@ grand (unsigned imax)
 }
 
 #define QUIET_CAST(_type, _ptr)         \
-        ((_type) (uintptr_t) (void *) (_ptr)) /**< Internal use only.   */
+        ((_type) (uintptr_t) (const void *) (_ptr)) /**< Internal use only */
 
 #endif /* CARRY_OVER */
 
