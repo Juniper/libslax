@@ -33,6 +33,12 @@ pa_mmap_t *pmp;
 pa_istr_info_t *piip;
 pa_istr_t *pip;
 
+static const char *
+test_pr (const char *str)
+{
+    return pa_is_short_string(str) ? NULL : str;
+}
+
 void
 test_init (void)
 {
@@ -87,8 +93,8 @@ test_key (unsigned slot, const char *key)
     const char *str = pa_istr_atom_string(pip, atom);
 
     if (!opt_quiet)
-	printf("in %u (%u) : %s -> %p (%#x) -> %p/%s\n",
-	       slot, len, key, tp, atom, str, str);
+	printf("in %u (%u) : %s -> (%#x) -> %p/%s\n",
+	       slot, len, key, atom, test_pr(str), str);
 }
 
 void
@@ -108,7 +114,7 @@ test_dump (void)
 	const char *str;
 	str = (atom == PA_NULL_ATOM) ? "" : pa_istr_atom_string(pip, atom);
 
-	printf("%u : %#x -> %p [%s]\n", slot, atom, str, str);
+	printf("%u : %#x -> %p [%s]\n", slot, atom, test_pr(str), str);
     }
 }
 
@@ -129,7 +135,7 @@ test_print (unsigned slot)
 	str = (atom == PA_NULL_ATOM) ? "" : pa_istr_atom_string(pip, atom);
 
 	if (!opt_quiet)
-	    printf("%u : %#x -> %p [%s]\n", slot, atom, str, str);
+	    printf("%u : %#x -> %p [%s]\n", slot, atom, test_pr(str), str);
     } else {
 	printf("%u : free\n", slot);
     }
