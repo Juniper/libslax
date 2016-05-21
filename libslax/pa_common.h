@@ -122,7 +122,14 @@ pa_short_string_atom (const char *string)
 static inline const char *
 pa_short_string (pa_atom_t atom)
 {
-    return &pa_short_strings[(atom << 1) + 1];
+    return &pa_short_strings[(atom - PA_SHORT_STRINGS_MIN) << 1];
+}
+
+static inline int
+pa_is_short_string (const char *string)
+{
+    return (&pa_short_strings[0] <= string
+	    && string < &pa_short_strings[PA_SHORT_STRINGS_MAX * 2]);
 }
 
 #endif /* LIBSLAX_PA_COMMON_H */
