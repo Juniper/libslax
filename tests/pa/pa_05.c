@@ -24,13 +24,14 @@
 #include <libslax/pa_common.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_arb.h>
+#include <libslax/pa_fixed.h>
 #include <libslax/pa_pat.h>
 
 #define NEED_T_PAT
 #define NEED_KEY
 #include "pa_main.h"
 
-pa_pat_root_t pat_root;
+pa_pat_t pat_root;
 
 PATNODE_TO_STRUCT(test_pointer, test_t, t_pat);
 
