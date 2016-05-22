@@ -32,7 +32,7 @@
  * This table contains a one bit mask of the highest order bit
  * set in a byte for each index value.
  */
-const u_int8_t pa_pat_hi_bit_table[256] = {
+const uint8_t pa_pat_hi_bit_table[256] = {
     0x00, 0x01, 0x02, 0x02, 0x04, 0x04, 0x04, 0x04,
     0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
     0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
@@ -71,7 +71,7 @@ const u_int8_t pa_pat_hi_bit_table[256] = {
  * Table to translate from a bit index to the mask part of a patricia
  * bit number.
  */
-const u_int8_t pa_pat_bit_masks[8] = {
+const uint8_t pa_pat_bit_masks[8] = {
     0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe
 };
 
@@ -137,10 +137,10 @@ pa_pat_set_allocator (pa_pat_root_alloc_fn my_alloc,
  * Given the length of a key in bytes (not to exceed 256), return the
  * length in patricia bit format.
  */
-static inline u_int16_t
-pat_plen_to_bit (u_int16_t plen)
+static inline uint16_t
+pat_plen_to_bit (uint16_t plen)
 {
-    u_int16_t result;
+    uint16_t result;
 
     result = (plen & PAT_PLEN_BYTE_MASK) << 5;
     if (plen & PAT_PLEN_BIT_MASK) {
@@ -164,9 +164,9 @@ pat_plen_to_bit (u_int16_t plen)
  * possibility.
  */
 static inline pa_pat_node_t *
-pa_pat_search (pa_pat_node_t *node, u_int16_t keylen, const u_int8_t *key)
+pa_pat_search (pa_pat_node_t *node, uint16_t keylen, const uint8_t *key)
 {
-    u_int16_t bit = PA_PAT_NOBIT;
+    uint16_t bit = PA_PAT_NOBIT;
 
     while (bit < node->ppn_bit) {
 	bit = node->ppn_bit;
@@ -184,10 +184,10 @@ pa_pat_search (pa_pat_node_t *node, u_int16_t keylen, const u_int8_t *key)
  * Given pointers to two keys, and a bit-formatted key length, return
  * the first bit of difference between the keys.
  */
-static inline u_int16_t
-pa_pat_mismatch (const u_int8_t *k1, const u_int8_t *k2, u_int16_t bitlen)
+static inline uint16_t
+pa_pat_mismatch (const uint8_t *k1, const uint8_t *k2, uint16_t bitlen)
 {
-    u_int16_t i, len;
+    uint16_t i, len;
 
     /*
      * Get the length of the key in bytes.
@@ -215,7 +215,7 @@ pa_pat_mismatch (const u_int8_t *k1, const u_int8_t *k2, u_int16_t bitlen)
  * in the (sub)tree.
  */
 static inline pa_pat_node_t *
-pa_pat_find_leftmost (u_int16_t bit, pa_pat_node_t *node)
+pa_pat_find_leftmost (uint16_t bit, pa_pat_node_t *node)
 {
     while (bit < node->ppn_bit) {
 	bit = node->ppn_bit;
@@ -230,7 +230,7 @@ pa_pat_find_leftmost (u_int16_t bit, pa_pat_node_t *node)
  * in the (sub)tree.
  */
 static inline pa_pat_node_t *
-pa_pat_find_rightmost (u_int16_t bit, pa_pat_node_t *node)
+pa_pat_find_rightmost (uint16_t bit, pa_pat_node_t *node)
 {
     while (bit < node->ppn_bit) {
 	bit = node->ppn_bit;
@@ -245,7 +245,7 @@ pa_pat_find_rightmost (u_int16_t bit, pa_pat_node_t *node)
  * Initialize a patricia root node.  Allocate one if not provided.
  */
 pa_pat_root_t *
-pa_pat_root_init (pa_pat_root_t *root, u_int16_t klen, u_int8_t off)
+pa_pat_root_init (pa_pat_root_t *root, uint16_t klen, uint8_t off)
 {
     assert(klen && klen <= PA_PAT_MAXKEY);
 
@@ -294,7 +294,7 @@ pa_pat_node_in_tree (const pa_pat_node_t *node)
  * is easy.
  */
 void
-pa_pat_node_init_length (pa_pat_node_t *node, u_int16_t key_bytes)
+pa_pat_node_init_length (pa_pat_node_t *node, uint16_t key_bytes)
 {
     if (key_bytes) {
 	assert(key_bytes <= PA_PAT_MAXKEY);
@@ -317,9 +317,9 @@ pa_pat_add (pa_pat_root_t *root, pa_pat_node_t *node)
 {
     pa_pat_node_t *current;
     pa_pat_node_t **ptr;
-    u_int16_t bit;
-    u_int16_t diff_bit;
-    const u_int8_t *key;
+    uint16_t bit;
+    uint16_t diff_bit;
+    const uint8_t *key;
 
     /*
      * Make sure this node is not in a tree already.
@@ -405,8 +405,8 @@ pa_pat_add (pa_pat_root_t *root, pa_pat_node_t *node)
 boolean
 pa_pat_delete (pa_pat_root_t *root, pa_pat_node_t *node)
 {
-    u_int16_t bit;
-    const u_int8_t *key;
+    uint16_t bit;
+    const uint8_t *key;
     pa_pat_node_t **downptr, **upptr, **parent, *current;
     
     /*
@@ -521,8 +521,8 @@ pa_pat_delete (pa_pat_root_t *root, pa_pat_node_t *node)
 pa_pat_node_t *
 pa_pat_find_next (pa_pat_root_t *root, pa_pat_node_t *node)
 {
-    u_int16_t bit;
-    const u_int8_t *key;
+    uint16_t bit;
+    const uint8_t *key;
     pa_pat_node_t *current, *lastleft;
 
     /*
@@ -597,7 +597,7 @@ pa_pat_cons_find_prev (const pa_pat_root_t *root, const pa_pat_node_t *node)
 }
 
 const pa_pat_node_t *
-pa_pat_cons_get (const pa_pat_root_t *root, const u_int16_t key_bytes,
+pa_pat_cons_get (const pa_pat_root_t *root, const uint16_t key_bytes,
 		   const void *key)
 {
     pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
@@ -608,7 +608,7 @@ pa_pat_cons_get (const pa_pat_root_t *root, const u_int16_t key_bytes,
 
 const pa_pat_node_t *
 pa_pat_cons_subtree_match (const pa_pat_root_t *root,
-			   const u_int16_t prefix_len,
+			   const uint16_t prefix_len,
 			   const void *prefix)
 {
     pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
@@ -620,7 +620,7 @@ pa_pat_cons_subtree_match (const pa_pat_root_t *root,
 const pa_pat_node_t *
 pa_pat_cons_subtree_next (const pa_pat_root_t *root,
 			  const pa_pat_node_t *node,
-			  const u_int16_t prefix_len)
+			  const uint16_t prefix_len)
 {
     pa_pat_root_t *r = QUIET_CAST(pa_pat_root_t *, root);
     pa_pat_node_t *n = QUIET_CAST(pa_pat_node_t *, node);
@@ -640,8 +640,8 @@ pa_pat_cons_subtree_next (const pa_pat_root_t *root,
 pa_pat_node_t *
 pa_pat_find_prev (pa_pat_root_t *root, pa_pat_node_t *node)
 {
-    u_int16_t bit;
-    const u_int8_t *key;
+    uint16_t bit;
+    const uint8_t *key;
     pa_pat_node_t *current, *lastright;
 
     /*
@@ -694,12 +694,12 @@ pa_pat_find_prev (pa_pat_root_t *root, pa_pat_node_t *node)
  * is a prefix of the node's key.
  */
 pa_pat_node_t *
-pa_pat_subtree_match (pa_pat_root_t *root, u_int16_t plen,
+pa_pat_subtree_match (pa_pat_root_t *root, uint16_t plen,
 		      const void *v_prefix)
 {
-    u_int16_t diff_bit, p_bit;
+    uint16_t diff_bit, p_bit;
     pa_pat_node_t *current;
-    const u_int8_t *prefix = v_prefix;
+    const uint8_t *prefix = v_prefix;
 
     /*
      * If there's nothing in the tree, return NULL.
@@ -744,10 +744,10 @@ pa_pat_subtree_match (pa_pat_root_t *root, u_int16_t plen,
  * subtree.  assert()'s if the node isn't in the tree.
  */
 pa_pat_node_t *
-pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node, u_int16_t plen)
+pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node, uint16_t plen)
 {
-    const u_int8_t *prefix;
-    u_int16_t bit, p_bit;
+    const uint8_t *prefix;
+    uint16_t bit, p_bit;
     pa_pat_node_t *current, *lastleft;
 
     /*
@@ -789,7 +789,7 @@ pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node, u_int16_t plen)
  * Given a key and its length, find a node which matches.
  */
 pa_pat_node_t *
-pa_pat_get (pa_pat_root_t *root, u_int16_t key_bytes, const void *key)
+pa_pat_get (pa_pat_root_t *root, uint16_t key_bytes, const void *key)
 {
     return pa_pat_get_inline(root, key_bytes, key);
 }
@@ -805,11 +805,11 @@ pa_pat_get (pa_pat_root_t *root, u_int16_t key_bytes, const void *key)
  *  Let's see what Doxygen does with it.
  */
 pa_pat_node_t *
-pa_pat_getnext (pa_pat_root_t *root, u_int16_t klen, const void *v_key, boolean eq)
+pa_pat_getnext (pa_pat_root_t *root, uint16_t klen, const void *v_key, boolean eq)
 {
-    u_int16_t bit, bit_len, diff_bit;
+    uint16_t bit, bit_len, diff_bit;
     pa_pat_node_t *current, *lastleft, *lastright;
-    const u_int8_t *key = v_key;
+    const uint8_t *key = v_key;
 
     assert(klen);
 
@@ -913,9 +913,9 @@ int
 pa_pat_compare_nodes (pa_pat_root_t *root, pa_pat_node_t *node1,
 		      pa_pat_node_t *node2)
 {
-    u_int16_t bit;
-    u_int16_t diff_bit;
-    const u_int8_t *key_1, *key_2;
+    uint16_t bit;
+    uint16_t diff_bit;
+    const uint8_t *key_1, *key_2;
     
     bit = (node1->ppn_length < node2->ppn_length)
 	? node1->ppn_length : node2->ppn_length;
