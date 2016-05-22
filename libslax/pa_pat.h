@@ -85,26 +85,43 @@ typedef struct pa_pat_node_s {
  * @brief
  * Patricia tree root.
  */
-typedef struct pa_pat_root_s {
-    pa_pat_node_t *ppr_root;		/**< root patricia node */
-    uint16_t ppr_key_bytes;		/**< (maximum) key length in bytes */
-    uint8_t ppr_key_offset;		/**< offset to key material */
-    uint8_t ppr_key_is_ptr;		/**< keys are not inline */
-} pa_pat_root_t;
+typedef struct pa_pat_info_s {
+    pa_pat_node_t *ppi_root;		/**< root patricia node */
+    uint16_t ppi_key_bytes;		/**< (maximum) key length in bytes */
+    uint8_t ppi_key_offset;		/**< offset to key material */
+    uint8_t ppi_key_is_ptr;		/**< keys are not inline */
+} pa_pat_info_t;
+
+struct pa_pat_s;		/* Forward declaration */
+typedef uint8_t *(*pa_pat_key_func_t)(struct pa_pat_s *, pa_pat_node_t *);
+
+typedef struct pa_pat_s {
+    pa_pat_info_t pp_info;   /* Static root info, if needed */
+    pa_pat_info_t *pp_infop; /* Pointer to root info */
+    pa_mmap_t *pp_mmap;	   /* Underlaying mmap */
+    pa_fixed_t *pp_nodes;	   /* Array of nodes */
+    void *pp_data;		   /* Opaque data tree */
+    pa_pat_key_func_t pp_key_func; /* Find the key for a node */
+} pa_pat_t;
+
+#define pp_root pp_infop->ppi_root
+#define pp_key_bytes pp_infop->ppi_key_bytes
+#define pp_key_offset pp_infop->ppi_key_offset
+#define pp_key_is_ptr pp_infop->ppi_key_is_ptr
 
 /**
  * @brief
- * Typedef for user-specified pa_pat_root_t allocation function.
+ * Typedef for user-specified pa_pat_t allocation function.
  * @sa patricia_set_allocator
  */
- typedef pa_pat_root_t *(*pa_pat_root_alloc_fn)(void);
+ typedef pa_pat_t *(*pa_pat_root_alloc_fn)(void);
  
 /**
  * @brief
- * Typedef for user-specified pa_pat_root_t free function.
+ * Typedef for user-specified pa_pat_t free function.
  * @sa patricia_set_allocator
  */
- typedef void (*pa_pat_root_free_fn)(pa_pat_root_t *);
+ typedef void (*pa_pat_root_free_fn)(pa_pat_t *);
 
 /*
  * Prototypes
@@ -127,8 +144,8 @@ typedef struct pa_pat_root_s {
  * @return 
  *     A pointer to the patricia tree root.
  */
-pa_pat_root_t *
-pa_pat_root_init (pa_pat_root_t *root, uint16_t key_bytes,
+pa_pat_t *
+pa_pat_root_init (pa_pat_t *root, uint16_t key_bytes,
 		  uint8_t key_offset); 
 
 /**
@@ -142,7 +159,7 @@ pa_pat_root_init (pa_pat_root_t *root, uint16_t key_bytes,
  *     Pointer to patricia tree root
  */
 void
-pa_pat_root_delete (pa_pat_root_t *root);
+pa_pat_root_delete (pa_pat_t *root);
 
 /**
  * @brief
@@ -173,7 +190,7 @@ pa_pat_node_init_length (pa_pat_node_t *node, uint16_t key_bytes);
  *      with (variable length keys), something already in the tree.
  */
 boolean
-pa_pat_add (pa_pat_root_t *root, pa_pat_node_t *node);
+pa_pat_add (pa_pat_t *root, pa_pat_node_t *node);
 
 /**
  * @brief
@@ -189,7 +206,7 @@ pa_pat_add (pa_pat_root_t *root, pa_pat_node_t *node);
  *     @c FALSE if the specified node is not in the tree.
  */
 boolean
-pa_pat_delete (pa_pat_root_t *root, pa_pat_node_t *node);
+pa_pat_delete (pa_pat_t *root, pa_pat_node_t *node);
 
 /**
  * @brief
@@ -209,7 +226,7 @@ pa_pat_delete (pa_pat_root_t *root, pa_pat_node_t *node);
  *     otherwise a pointer to the node with the next numerically larger key.
  */
 pa_pat_node_t *
-pa_pat_find_next (pa_pat_root_t *root, pa_pat_node_t *node);
+pa_pat_find_next (pa_pat_t *root, pa_pat_node_t *node);
 
 /**
  * @brief
@@ -237,7 +254,7 @@ pa_pat_find_next (pa_pat_root_t *root, pa_pat_node_t *node);
  *      smaller key.
  */
 pa_pat_node_t *
-pa_pat_find_prev (pa_pat_root_t *root, pa_pat_node_t *node);
+pa_pat_find_prev (pa_pat_t *root, pa_pat_node_t *node);
 
 /**
  * @brief
@@ -257,7 +274,7 @@ pa_pat_find_prev (pa_pat_root_t *root, pa_pat_node_t *node);
  *     numerically smallest key which includes the prefix.
  */
 pa_pat_node_t *
-pa_pat_subtree_match (pa_pat_root_t *root, uint16_t prefix_len,
+pa_pat_subtree_match (pa_pat_t *root, uint16_t prefix_len,
 			const void *prefix);
 
 /**
@@ -277,7 +294,7 @@ pa_pat_subtree_match (pa_pat_root_t *root, uint16_t prefix_len,
  *     A pointer to next numerically larger patricia tree node.
  */
 pa_pat_node_t *
-pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node,
+pa_pat_subtree_next (pa_pat_t *root, pa_pat_node_t *node,
 		     uint16_t prefix_len);
 
 /**
@@ -296,7 +313,7 @@ pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node,
  *     otherwise a pointer to the matching patricia tree node
  */
 pa_pat_node_t *
-pa_pat_get (pa_pat_root_t *root, uint16_t key_bytes, const void *key);
+pa_pat_get (pa_pat_t *root, uint16_t key_bytes, const void *key);
 
 /**
  * @brief
@@ -321,7 +338,7 @@ pa_pat_get (pa_pat_root_t *root, uint16_t key_bytes, const void *key);
  *     A pointer to patricia tree node.
  */
 pa_pat_node_t *
-pa_pat_getnext (pa_pat_root_t *root, uint16_t key_bytes, const void *key,
+pa_pat_getnext (pa_pat_t *root, uint16_t key_bytes, const void *key,
 		  boolean return_eq);
 
 /**
@@ -356,7 +373,7 @@ pa_pat_node_in_tree (const pa_pat_node_t *node);
  *     @li 1 if the left key is numerically greater than the right
  */
 int
-pa_pat_compare_nodes (pa_pat_root_t *root, pa_pat_node_t *left,
+pa_pat_compare_nodes (pa_pat_t *root, pa_pat_node_t *left,
 		      pa_pat_node_t *right);
 
 /**
@@ -402,7 +419,7 @@ pa_pat_set_allocator (pa_pat_root_alloc_fn my_alloc,
  * @sa pa_pat_get
  */
 const pa_pat_node_t *
-pa_pat_cons_get (const pa_pat_root_t *root, const uint16_t key_bytes, 
+pa_pat_cons_get (const pa_pat_t *root, const uint16_t key_bytes, 
 		   const void *key);
 
 /**
@@ -421,7 +438,7 @@ pa_pat_cons_get (const pa_pat_root_t *root, const uint16_t key_bytes,
  * @sa pa_pat_find_next
  */
 const pa_pat_node_t *
-pa_pat_cons_find_next (const pa_pat_root_t *root, const pa_pat_node_t *node);
+pa_pat_cons_find_next (const pa_pat_t *root, const pa_pat_node_t *node);
 
 /**
  * @brief
@@ -439,7 +456,7 @@ pa_pat_cons_find_next (const pa_pat_root_t *root, const pa_pat_node_t *node);
  * @sa pa_pat_find_prev
  */
 const pa_pat_node_t *
-pa_pat_cons_find_prev (const pa_pat_root_t *root, const pa_pat_node_t *node);
+pa_pat_cons_find_prev (const pa_pat_t *root, const pa_pat_node_t *node);
 
 /**
  * @brief
@@ -460,7 +477,7 @@ pa_pat_cons_find_prev (const pa_pat_root_t *root, const pa_pat_node_t *node);
  * @sa pa_pat_subtree_match
  */
 const pa_pat_node_t *
-pa_pat_cons_subtree_match (const pa_pat_root_t *root,
+pa_pat_cons_subtree_match (const pa_pat_t *root,
 			   const uint16_t prefix_len, const void *prefix);
 
 /**
@@ -480,7 +497,7 @@ pa_pat_cons_subtree_match (const pa_pat_root_t *root,
  * @sa pa_pat_subtree_next
  */
 const pa_pat_node_t *
-pa_pat_cons_subtree_next (const pa_pat_root_t *root, const pa_pat_node_t *node,
+pa_pat_cons_subtree_next (const pa_pat_t *root, const pa_pat_node_t *node,
 			  const uint16_t prefix_len);
 
 /*
@@ -522,11 +539,9 @@ pa_pat_node_init (pa_pat_node_t *node) {
  *     A pointer to the start of node key.
  */
 static inline const uint8_t *
-pa_pat_key (pa_pat_root_t *root, pa_pat_node_t *node)
+pa_pat_key (pa_pat_t *root, pa_pat_node_t *node)
 {
-    if (root->ppr_key_is_ptr)
-	return node->ppn_keys.ppn_key_ptr[0] + root->ppr_key_offset;
-    return node->ppn_keys.ppn_key + root->ppr_key_offset;
+    return root->pp_key_func(root, node);
 }
 
 /**
@@ -598,7 +613,7 @@ pa_pat_length_to_bit (uint16_t length)
  *     @c NULL if not found
  */
 static inline pa_pat_node_t *
-pa_pat_get_inline (pa_pat_root_t *root, uint16_t key_bytes, const void *v_key)
+pa_pat_get_inline (pa_pat_t *root, uint16_t key_bytes, const void *v_key)
 {
     pa_pat_node_t *current;
     uint16_t bit, bit_len;
@@ -607,7 +622,7 @@ pa_pat_get_inline (pa_pat_root_t *root, uint16_t key_bytes, const void *v_key)
     if (!key_bytes)
 	abort();
 
-    current = root->ppr_root;
+    current = root->pp_root;
     if (!current)
 	return NULL;
 
@@ -646,9 +661,9 @@ pa_pat_get_inline (pa_pat_root_t *root, uint16_t key_bytes, const void *v_key)
  *     1 if the tree is empty, 0 otherwise.
  */
 static inline uint8_t
-pa_pat_isempty (pa_pat_root_t *root)
+pa_pat_isempty (pa_pat_t *root)
 {
-    return (root->ppr_root == NULL);
+    return (root->pp_root == NULL);
 }
 
 
@@ -745,9 +760,9 @@ procname (pa_pat_node_t *ptr)						\
  * @sa pa_pat_get
  */
 static inline pa_pat_node_t *
-pa_pat_lookup(pa_pat_root_t *root, const void *key)
+pa_pat_lookup(pa_pat_t *root, const void *key)
 {
-    return pa_pat_get(root, root->ppr_key_bytes, key);
+    return pa_pat_get(root, root->pp_key_bytes, key);
 }
 
 /**
@@ -770,9 +785,9 @@ pa_pat_lookup(pa_pat_root_t *root, const void *key)
  *     A pointer to patricia tree node.
  */
 static inline pa_pat_node_t *
-pa_pat_lookup_geq(pa_pat_root_t *root, void *key)
+pa_pat_lookup_geq(pa_pat_t *root, void *key)
 {
-    return pa_pat_getnext(root, root->ppr_key_bytes, key, TRUE);
+    return pa_pat_getnext(root, root->pp_key_bytes, key, TRUE);
 }
 
 /*
