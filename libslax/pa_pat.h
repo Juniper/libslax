@@ -57,8 +57,8 @@ grand (unsigned imax)
  * Patricia tree node.
  */
 typedef struct pa_pat_node_s {
-    u_int16_t ppn_length;     /**< length of key, formated like bit */
-    u_int16_t ppn_bit;	       /**< bit number to test for patricia */
+    uint16_t ppn_length;     /**< length of key, formated like bit */
+    uint16_t ppn_bit;	       /**< bit number to test for patricia */
     struct pa_pat_node_s *ppn_left; /**< left branch for patricia search */
     struct pa_pat_node_s *ppn_right; /**< right branch for same */
     union {
@@ -79,7 +79,7 @@ typedef struct pa_pat_node_s {
  * the length of a key.  Good for the keyword tree.  Note the length
  * must be greater than zero.
  */
-#define	PA_PAT_LEN_TO_BIT(len)  ((u_int16_t) ((((len) - 1) << 8) | 0xff))
+#define	PA_PAT_LEN_TO_BIT(len)  ((uint16_t) ((((len) - 1) << 8) | 0xff))
 
 /**
  * @brief
@@ -117,7 +117,8 @@ typedef struct pa_pat_root_s {
  * @param[in] root
  *     Pointer to patricia tree root
  * @param[in] key_is_ptr
- *     Indicator that the key located at the offset is actually a pointer or not
+ *     Indicator that the key located at the offset is actually a
+ *     pointer or not
  * @param[in] key_bytes
  *     Number of bytes in the key
  * @param[in] key_offset
@@ -127,8 +128,8 @@ typedef struct pa_pat_root_s {
  *     A pointer to the patricia tree root.
  */
 pa_pat_root_t *
-pa_pat_root_init (pa_pat_root_t *root, u_int16_t key_bytes,
-		  u_int8_t key_offset); 
+pa_pat_root_init (pa_pat_root_t *root, uint16_t key_bytes,
+		  uint8_t key_offset); 
 
 /**
  * @brief
@@ -145,9 +146,9 @@ pa_pat_root_delete (pa_pat_root_t *root);
 
 /**
  * @brief
- * Initializes a patricia tree node using the key length specified by @c key_bytes. 
- * If @c key_bytes is zero, then it falls back to the length specified during
- * root initialization (@c patricia_root_init).
+ * Initializes a patricia tree node using the key length specified by
+ * @c key_bytes.  If @c key_bytes is zero, then it falls back to the
+ * length specified during root initialization (@c patricia_root_init).
  *
  * @param[in] node
  *     Pointer to patricia tree node
@@ -155,7 +156,7 @@ pa_pat_root_delete (pa_pat_root_t *root);
  *     Length of the key, in bytes
  */
 void
-pa_pat_node_init_length (pa_pat_node_t *node, u_int16_t key_bytes);   
+pa_pat_node_init_length (pa_pat_node_t *node, uint16_t key_bytes);   
 
 /**
  * @brief
@@ -256,7 +257,7 @@ pa_pat_find_prev (pa_pat_root_t *root, pa_pat_node_t *node);
  *     numerically smallest key which includes the prefix.
  */
 pa_pat_node_t *
-pa_pat_subtree_match (pa_pat_root_t *root, u_int16_t prefix_len,
+pa_pat_subtree_match (pa_pat_root_t *root, uint16_t prefix_len,
 			const void *prefix);
 
 /**
@@ -277,7 +278,7 @@ pa_pat_subtree_match (pa_pat_root_t *root, u_int16_t prefix_len,
  */
 pa_pat_node_t *
 pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node,
-		     u_int16_t prefix_len);
+		     uint16_t prefix_len);
 
 /**
  * @brief
@@ -295,7 +296,7 @@ pa_pat_subtree_next (pa_pat_root_t *root, pa_pat_node_t *node,
  *     otherwise a pointer to the matching patricia tree node
  */
 pa_pat_node_t *
-pa_pat_get (pa_pat_root_t *root, u_int16_t key_bytes, const void *key);
+pa_pat_get (pa_pat_root_t *root, uint16_t key_bytes, const void *key);
 
 /**
  * @brief
@@ -320,7 +321,7 @@ pa_pat_get (pa_pat_root_t *root, u_int16_t key_bytes, const void *key);
  *     A pointer to patricia tree node.
  */
 pa_pat_node_t *
-pa_pat_getnext (pa_pat_root_t *root, u_int16_t key_bytes, const void *key,
+pa_pat_getnext (pa_pat_root_t *root, uint16_t key_bytes, const void *key,
 		  boolean return_eq);
 
 /**
@@ -401,7 +402,7 @@ pa_pat_set_allocator (pa_pat_root_alloc_fn my_alloc,
  * @sa pa_pat_get
  */
 const pa_pat_node_t *
-pa_pat_cons_get (const pa_pat_root_t *root, const u_int16_t key_bytes, 
+pa_pat_cons_get (const pa_pat_root_t *root, const uint16_t key_bytes, 
 		   const void *key);
 
 /**
@@ -460,7 +461,7 @@ pa_pat_cons_find_prev (const pa_pat_root_t *root, const pa_pat_node_t *node);
  */
 const pa_pat_node_t *
 pa_pat_cons_subtree_match (const pa_pat_root_t *root,
-			   const u_int16_t prefix_len, const void *prefix);
+			   const uint16_t prefix_len, const void *prefix);
 
 /**
  * @brief
@@ -480,7 +481,7 @@ pa_pat_cons_subtree_match (const pa_pat_root_t *root,
  */
 const pa_pat_node_t *
 pa_pat_cons_subtree_next (const pa_pat_root_t *root, const pa_pat_node_t *node,
-			  const u_int16_t prefix_len);
+			  const uint16_t prefix_len);
 
 /*
  * Inlines, for performance
@@ -491,8 +492,8 @@ pa_pat_cons_subtree_next (const pa_pat_root_t *root, const pa_pat_node_t *node,
 
 /**
  * @brief
- * Initializes a patricia tree node using the the key length specified during root 
- * initialization (@c pa_pat_root_init).
+ * Initializes a patricia tree node using the the key length specified
+ * during root initialization (@c pa_pat_root_init).
  * 
  * @param[in] node
  *     Pointer to patricia tree node
@@ -520,7 +521,7 @@ pa_pat_node_init (pa_pat_node_t *node) {
  * @return 
  *     A pointer to the start of node key.
  */
-static inline const u_int8_t *
+static inline const uint8_t *
 pa_pat_key (pa_pat_root_t *root, pa_pat_node_t *node)
 {
     if (root->ppr_key_is_ptr)
@@ -540,8 +541,8 @@ pa_pat_key (pa_pat_root_t *root, pa_pat_node_t *node)
  * @return 
  *     1 if the bit was set, 0 otherwise.
  */
-static inline u_int8_t
-pat_key_test (const u_int8_t *key, u_int16_t bit)
+static inline uint8_t
+pat_key_test (const uint8_t *key, uint16_t bit)
 {
     return key[bit >> 8] & (~bit & 0xff);
 }
@@ -556,7 +557,7 @@ pat_key_test (const u_int8_t *key, u_int16_t bit)
  * @return 
  *     The key length, in bytes.
  */
-static inline u_int16_t
+static inline uint16_t
 pa_pat_length (pa_pat_node_t *node)
 {
     return (node->ppn_length >> 8) + 1;
@@ -572,8 +573,8 @@ pa_pat_length (pa_pat_node_t *node)
  * @return 
  *     Patricia bit format or @c PA_PAT_NOBIT if length is 0.
  */
-static inline u_int16_t
-pa_pat_length_to_bit (u_int16_t length)
+static inline uint16_t
+pa_pat_length_to_bit (uint16_t length)
 {
     if (length)
 	return ((length - 1) << 8) | 0xff;
@@ -597,18 +598,18 @@ pa_pat_length_to_bit (u_int16_t length)
  *     @c NULL if not found
  */
 static inline pa_pat_node_t *
-pa_pat_get_inline (pa_pat_root_t *root, u_int16_t key_bytes, const void *v_key)
+pa_pat_get_inline (pa_pat_root_t *root, uint16_t key_bytes, const void *v_key)
 {
     pa_pat_node_t *current;
-    u_int16_t bit, bit_len;
-    const u_int8_t *key = (const u_int8_t *)v_key;
+    uint16_t bit, bit_len;
+    const uint8_t *key = (const uint8_t *)v_key;
 
     if (!key_bytes)
 	abort();
 
     current = root->ppr_root;
     if (!current)
-	return 0;
+	return NULL;
 
     /*
      * Waltz down the tree.  Stop when the bits appear to go backwards.
@@ -629,7 +630,7 @@ pa_pat_get_inline (pa_pat_root_t *root, u_int16_t key_bytes, const void *v_key)
      */
     if (current->ppn_length != bit_len
 	|| bcmp(pa_pat_key(root, current), key, key_bytes))
-	return 0;
+	return NULL;
 
     return current;
 }
@@ -644,7 +645,7 @@ pa_pat_get_inline (pa_pat_root_t *root, u_int16_t key_bytes, const void *v_key)
  * @return 
  *     1 if the tree is empty, 0 otherwise.
  */
-static inline u_int8_t
+static inline uint8_t
 pa_pat_isempty (pa_pat_root_t *root)
 {
     return (root->ppr_root == NULL);
@@ -664,7 +665,7 @@ pa_pat_isempty (pa_pat_root_t *root)
  * Returns the offset of @a _elt2 from the END of @a _elt1 within @a structure.
  */
 
-#define STRUCT_OFFSET(_structure, _elt1, _elt2) \
+#define STRUCT_OFFSET(_structure, _elt1, _elt2)				\
            (offsetof(_structure, _elt2) - (offsetof(_structure, _elt1) + \
                                       STRUCT_SIZEOF(_structure, _elt1)))
 
@@ -683,30 +684,30 @@ pa_pat_isempty (pa_pat_root_t *root)
  * the KEY field instead of the NODE field).  It's harmless.
  */
 #define PATNODE_TO_STRUCT(procname, structname, fieldname)		\
-    static inline structname * procname (pa_pat_node_t *ptr)			\
-    {									\
-        assert(STRUCT_SIZEOF(structname, fieldname) == sizeof(pa_pat_node_t)); \
-	if (ptr)							\
-	    return QUIET_CAST(structname *, ((u_char *) ptr) -		\
+static inline structname * procname (pa_pat_node_t *ptr)		\
+{									\
+    assert(STRUCT_SIZEOF(structname, fieldname) == sizeof(pa_pat_node_t)); \
+    if (ptr)								\
+	return QUIET_CAST(structname *, ((u_char *) ptr) -		\
 				    offsetof(structname, fieldname));	\
-	return NULL;                                                    \
-     }
+    return NULL;							\
+}
 
 /**
  * @brief
- * Constant version of the macro to define an inline to map from a pa_pat_node_t 
- * entry back to the containing data structure.
+ * Constant version of the macro to define an inline to map from a
+ * pa_pat_node_t entry back to the containing data structure.
  */
-#define PATNODE_TO_CONS_STRUCT(procname, structname, fieldname)      \
-static inline const structname *                                     \
-procname (pa_pat_node_t *ptr)                                              \
-{                                                                    \
+#define PATNODE_TO_CONS_STRUCT(procname, structname, fieldname)		\
+static inline const structname *					\
+procname (pa_pat_node_t *ptr)						\
+{									\
     assert(STRUCT_SIZEOF(structname, fieldname) == sizeof(pa_pat_node_t)); \
-    if (ptr) {                                                       \
-        return (const structname *) ((uchar *) ptr) -		     \
-            offsetof(structname, fieldname);                        \
-    }                                                                \
-    return NULL;                                                     \
+    if (ptr) {								\
+        return (const structname *) ((uchar *) ptr) -			\
+            offsetof(structname, fieldname);				\
+    }									\
+    return NULL;							\
 }
 
 
@@ -777,7 +778,7 @@ pa_pat_lookup_geq(pa_pat_root_t *root, void *key)
 /*
  * pat_makebit
  */
-extern const u_int8_t pa_pat_hi_bit_table[];
+extern const uint8_t pa_pat_hi_bit_table[];
 
 /**
  * @interal
@@ -792,8 +793,8 @@ extern const u_int8_t pa_pat_hi_bit_table[];
  * @return 
  *     Bit index value
  */
-static inline u_int16_t
-pa_pat_makebit (u_int16_t offset, u_int8_t bit_in_byte)
+static inline uint16_t
+pa_pat_makebit (uint16_t offset, uint8_t bit_in_byte)
 {
     return ((offset & 0xff) << 8) | (~pa_pat_hi_bit_table[bit_in_byte] & 0xff);
 }
