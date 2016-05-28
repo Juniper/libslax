@@ -23,6 +23,7 @@
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
 #include <libslax/pa_mmap.h>
+#include <libslax/pa_fixed.h>
 #include <libslax/pa_istr.h>
 
 #define NEED_T_ATOM
@@ -57,7 +58,7 @@ test_open (void)
     pmp = pa_mmap_open(opt_filename, 0, 0644);
     assert(pmp);
 
-    piip = pa_mmap_header(pmp, "istr", sizeof(*piip));
+    piip = pa_mmap_header(pmp, "istr", PA_TYPE_ISTR, 0, sizeof(*piip));
     assert(piip);
 
     pip = pa_istr_setup(pmp, piip, opt_shift, 2, opt_max_atoms);
