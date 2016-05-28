@@ -48,7 +48,7 @@ test_open (void)
     pmp = pa_mmap_open(opt_filename, 0, 0644);
     assert(pmp);
 
-    pfip = pa_mmap_header(pmp, "fix1", sizeof(*pfip));
+    pfip = pa_mmap_header(pmp, "fix1", PA_TYPE_FIXED, 0, sizeof(*pfip));
     assert(pfip);
 
     pfp = pa_fixed_setup(pmp, pfip, opt_shift, sizeof(test_t), opt_max_atoms);
