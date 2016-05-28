@@ -66,6 +66,8 @@ typedef struct pa_mmap_free_s {
 
 typedef struct pa_mmap_header_s {
     char pmh_name[PA_MMAP_HEADER_NAME_LEN]; /* Simple text name */
+    uint16_t pmh_type;		/* Type of data (PA_TYPE_*) */
+    uint16_t pmh_flags;		/* Flags for this data (unused) */
     uint32_t pmh_size;		/* Length of header (bytes) */
     char pmh_content[];		/* Content, inline */
 } pa_mmap_header_t;
@@ -450,7 +452,8 @@ pa_mmap_close (pa_mmap_t *pmp)
  * If 'size' == 0, we don't add it; the caller's just checking.
  */
 void *
-pa_mmap_header (pa_mmap_t *pmp, const char *name, size_t size)
+pa_mmap_header (pa_mmap_t *pmp, const char *name,
+		uint16_t type, uint16_t flags, size_t size)
 {
     pa_mmap_header_t *pmhp;
     uint8_t *base = pmp->pm_addr;
@@ -494,6 +497,9 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name, size_t size)
     /* Setup the header and return the content */
     strncpy(pmhp->pmh_name, name, sizeof(pmhp->pmh_name));
     pmhp->pmh_size = size;
+    pmhp->pmh_type = type;
+    pmhp->pmh_flags = flags;
+
     pmp->pm_infop->pmi_num_headers += 1;
 
     return &pmhp->pmh_content[0];
