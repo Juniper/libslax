@@ -44,6 +44,7 @@ slaxinc_HEADERS = \
      xmlsoft.h
 
 noinst_HEADERS = \
+    fbuf.h \
     jsonlexer.h \
     jsonwriter.h \
     pa_common.h \
@@ -67,6 +68,7 @@ noinst_HEADERS = \
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
 libslax_la_SOURCES = \
+    fbuf.c \
     jsonlexer.c \
     jsonwriter.c \
     pa_common.c \
