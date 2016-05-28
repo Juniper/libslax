@@ -49,7 +49,7 @@ test_open (void)
     pmp = pa_mmap_open(opt_filename, 0, 0644);
     assert(pmp);
 
-    prip = pa_mmap_header(pmp, "arb1", sizeof(*prip));
+    prip = pa_mmap_header(pmp, "arb1", PA_TYPE_ARB, 0, sizeof(*prip));
     assert(prip);
 
     prp = pa_arb_setup(pmp, prip);
