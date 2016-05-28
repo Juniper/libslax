@@ -79,6 +79,7 @@ void *
 pa_mmap_addr (pa_mmap_t *pmp, pa_atom_t atom);
 
 void *
-pa_mmap_header (pa_mmap_t *pmp, const char *name, size_t size);
+pa_mmap_header (pa_mmap_t *pmp, const char *name,
+		uint16_t type, uint16_t flags, size_t size);
 
 #endif /* LIBSLAX_PA_MMAP_H */
