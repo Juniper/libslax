@@ -135,7 +135,7 @@ pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, pa_shift_t shift,
     }
 
     return pfp;
-}    
+}
 
 pa_fixed_t *
 pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
@@ -144,7 +144,7 @@ pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
     pa_fixed_info_t *pfip = NULL;
 
     if (name) {
-	pfip = pa_mmap_header(pmp, name, sizeof(*pfip));
+	pfip = pa_mmap_header(pmp, name, PA_TYPE_FIXED, 0, sizeof(*pfip));
 	if (pfip == NULL) {
 	    pa_warning(0, "pa_fixed header not found: %s", name);
 	    return NULL;
