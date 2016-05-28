@@ -11,6 +11,7 @@
 #define LIBSLAX_SLAX_H
 
 #include <libslax/slaxversion.h>
+#include <libslax/slaxdef.h>
 
 #define SLAX_VERSION "1.2"
 #define SLAX_VERSION_NUMBER 12
@@ -34,10 +35,6 @@ void slaxEnable(int enable);
 #define SLAX_ENABLE	1	/**< SLAX is auto-detected */
 #define SLAX_FORCE	2	/**< SLAX is forced on */
 #define SLAX_CLEANUP	3	/**< Clean up and shutdown */
-
-#ifndef UNUSED
-#define UNUSED __attribute__ ((__unused__))
-#endif
 
 /**
  * @typedef A callback used to write data to a destination, typically
