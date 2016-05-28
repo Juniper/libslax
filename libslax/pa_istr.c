@@ -21,6 +21,7 @@
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
 #include <libslax/pa_mmap.h>
+#include <libslax/pa_fixed.h>
 #include <libslax/pa_istr.h>
 
 
@@ -80,7 +81,7 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
 	data[len] = '\0';
     }
 
-    return atom;
+    return pa_istr_atom_to_index(pip, atom);
 }
 
 /*
@@ -99,10 +100,6 @@ void
 pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
 	       uint16_t atom_shift, uint32_t max_atoms)
 {
-    /* Use our internal info block */
-    if (pip->pi_infop == NULL)
-	pip->pi_infop = &pip->pi_info_block;
-
     /* Round max_atoms up to the next page size */
     max_atoms = pa_roundup_shift32(max_atoms, shift);
 
@@ -139,11 +136,23 @@ pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, pa_shift_t shift,
     if (pip) {
 	bzero(pip, sizeof(*pip));
 	pip->pi_infop = piip;
+	pip->pi_datap = &piip->pii_data;
 	pa_istr_init(pmp, pip, shift, atom_shift, max_atoms);
+
+	/*
+	 * Now we build the index, used to turn our externally visible
+	 * index numbers into atoms in our underlaying data store.
+	 */
+	pip->pi_index = pa_fixed_setup(pmp, &piip->pii_index,
+				       shift, sizeof(pa_atom_t), max_atoms);
+	if (pip->pi_index == NULL) {
+	    free(pip);
+	    pip = NULL;
+	}
     }
 
     return pip;
-}    
+}
 
 pa_istr_t *
 pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
@@ -152,7 +161,7 @@ pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
     pa_istr_info_t *piip = NULL;
 
     if (name) {
-	piip = pa_mmap_header(pmp, name, sizeof(*piip));
+	piip = pa_mmap_header(pmp, name, PA_TYPE_ISTR, 0, sizeof(*piip));
 	if (piip == NULL) {
 	    pa_warning(0, "pa_istr header not found: %s", name);
 	    return NULL;
