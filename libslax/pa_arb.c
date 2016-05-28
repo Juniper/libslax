@@ -244,7 +244,7 @@ pa_arb_open (pa_mmap_t *pmp, const char *name)
     pa_arb_info_t *prip = NULL;
 
     if (name) {
-	prip = pa_mmap_header(pmp, name, sizeof(*prip));
+	prip = pa_mmap_header(pmp, name, PA_TYPE_ARB, 0, sizeof(*prip));
 	if (prip == NULL) {
 	    pa_warning(0, "pa_arb header not found: %s", name);
 	    return NULL;
