@@ -25,15 +25,18 @@
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_arb.h>
 #include <libslax/pa_fixed.h>
+#include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
 
 #define NEED_T_PAT
+#define NEED_T_ATOM
 #define NEED_KEY
 #include "pa_main.h"
 
-pa_pat_t pat_root;
-
-PATNODE_TO_STRUCT(test_pointer, test_t, t_pat);
+pa_mmap_t *pmp;
+pa_fixed_t *pfp;
+pa_istr_t *pip;
+pa_pat_t *ppp;
 
 void
 test_init (void)
@@ -47,11 +50,27 @@ test_init (void)
 #endif
 }
 
+static const uint8_t *
+test_key_func (pa_pat_t *root, pa_pat_node_t *node)
+{
+    return (const uint8_t *) pa_istr_atom_string(root->pp_data, node->ppn_data);
+}
+
 void
 test_open (void)
 {
-    pa_pat_root_init(&pat_root, PA_PAT_MAXKEY,
-		     STRUCT_OFFSET(test_t, t_pat, t_val));
+    pmp = pa_mmap_open(opt_filename, 0, 0644);
+    assert(pmp);
+    
+    pfp = pa_fixed_open(pmp, "nodes", opt_shift,
+			sizeof(pa_pat_node_t), opt_max_atoms);
+    assert(pfp);
+
+    pip = pa_istr_open(pmp, "istr", opt_shift, 2, opt_max_atoms);
+    assert(pip);
+
+    ppp = pa_pat_open(pmp, "pat", pfp, pip,
+		     test_key_func, PA_PAT_MAXKEY, 0);
 }
 
 void
@@ -65,6 +84,7 @@ test_key (unsigned slot, const char *key)
 {
     static unsigned id;
     size_t len = key ? strlen(key) : 0;
+    pa_atom_t atom = PA_NULL_ATOM;
 
     if (len == 0)
 	return;
@@ -77,34 +97,50 @@ test_key (unsigned slot, const char *key)
 	tp->t_id = id++;
 	tp->t_slot = slot;
 	memcpy(tp->t_val, key, len + 1);
-	pa_pat_node_init_length(&tp->t_pat, len);
 
-	if (!pa_pat_add(&pat_root, &tp->t_pat))
+	atom = pa_istr_string(ppp->pp_data, key);
+	tp->t_atom = atom;
+
+	if (!pa_pat_add(ppp, atom, len + 1))
 	    pa_warning(0, "duplicate key: %s", key);
     }
 
     if (!opt_quiet)
-	printf("in %u (%lu) : %s -> %p\n", slot, len, key, tp);
+	printf("in %u (%lu) : %s -> %p (%#x)\n", slot, len, key, tp, atom);
 }
 
 void
 test_dump (void)
 {
     test_t *tp;
-    pa_pat_node_t *node = NULL;
+    unsigned slot;
+    pa_atom_t atom;
+    const char *data;
 
-    while ((node = pa_pat_find_next(&pat_root, node)) != NULL) {
-	tp = test_pointer(node);
+    for (slot = 0; slot < opt_count; slot++) {
+	tp = trec[slot];
 	if (tp) {
-	    printf("%u : %#x -> %p (%#x) '%s'\n",
-		   tp->t_slot, tp->t_id, tp, tp->t_magic, (char *) tp->t_val);
+	    atom = trec[slot]->t_atom;
+
+	    data = pa_istr_atom_string(pip, atom);
+
+	    printf("%u : %#x -> %p [%s]\n",
+		   slot, atom, trec[slot], data);
 	}
+    }
+
+    pa_pat_node_t *node = NULL;
+    while ((node = pa_pat_find_next(ppp, node)) != NULL) {
+	atom = pa_pat_node_data(ppp, node);
+	data = pa_istr_atom_string(pip, atom);
+	printf("  %p %#x -> %p [%s]\n", node, atom, data, data ?: "");
     }
 }
 
 void
-test_free (unsigned slot)
+test_free (unsigned slot UNUSED)
 {
+    #if 0
     pa_atom_t atom;
     test_t *tp = trec[slot];
     if (tp) {
@@ -113,7 +149,7 @@ test_free (unsigned slot)
 	    printf("free %u : %#x -> %p\n",
 		   slot, atom, tp);
 
-	if (!pa_pat_delete(&pat_root, &tp->t_pat))
+	if (!pa_pat_delete(ppp, NULL))
 	    pa_warning(0, "delete failed for key: %u", slot);
 	else free(tp);
 
@@ -121,6 +157,7 @@ test_free (unsigned slot)
     } else {
 	printf("%u : free\n", slot);
     }
+    #endif
 }
 
 void
