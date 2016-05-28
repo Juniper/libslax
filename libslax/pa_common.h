@@ -36,6 +36,17 @@
 typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
+/* Type of our trees */
+#define PA_TYPE_UNKNOWN		0
+#define PA_TYPE_MMAP		1
+#define PA_TYPE_FIXED		2
+#define PA_TYPE_ARB		3
+#define PA_TYPE_ISTR		4
+#define PA_TYPE_PAT		5
+
+#define PA_TYPE_MAX		6
+  
+
 /*
  * To distinquish between pa_mmap atoms and higher level atoms, we
  * call the former "matoms".  The types are equivalent, but the
