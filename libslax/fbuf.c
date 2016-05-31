@@ -48,7 +48,7 @@
 
 #include <libslax/fbuf.h>
 
-#ifndef NEED_STR_EXTRA
+#ifndef HAVE_STR_EXTRA
 /*
  * Functions originally defined in libjuise/string/strextra.h
  */
@@ -97,7 +97,7 @@ strtrimtailws (char *input, char *start)
 	input -= 1;
     return input;
 }
-#endif /* NEED_STR_EXTRA */
+#endif /* HAVE_STR_EXTRA */
 
 /*
  * fbuf_realloc: make a bigger buffer for the fbuf. Buffered data is preserved.
@@ -123,7 +123,7 @@ fbuf_realloc (fbuf_t *fbp, size_t add)
 	memcpy(newp, fbp->fb_ptr, fbp->fb_left);
     if (fbp->fb_buf)
 	free(fbp->fb_buf);
-    newp[ size ] = 0;		/* Guarantee null termination */
+    newp[size] = 0;		/* Guarantee null termination */
 
     fbp->fb_buf = fbp->fb_ptr = newp; /* Update fb fields */
     
@@ -689,7 +689,7 @@ fbuf_get_input (fbuf_t *fbp, char **workp, int tries, slax_boolean_t look_ahead)
 
 	    rc = read(fbp->fb_fd, cp, ep - cp);
 	    if (rc > 0) {
-		cp[ rc ] = 0; /* Guarantee null termination */
+		cp[rc] = 0; /* Guarantee null termination */
 		if (fbp->fb_record)
 		    fbuf_record(fbp, cp, rc);
 		if (fbp->fb_trace)
@@ -865,7 +865,7 @@ fbuf_gets_ex (fbuf_t *fbp, const int tries)
  * fbuf_xml_type_names[]: define strings for the types returned by
  * fbuf_get_xml().
  */
-const char *fbuf_xml_type_names[ NUM_XML_TYPE + 1 ] = {
+const char *fbuf_xml_type_names[NUM_XML_TYPE + 1] = {
     "unknown",			/* Unknown or unparsable */
     "error",			/* Error parsing tag/data/etc */
     "proc-insn",		/* Processing instruction */
@@ -889,7 +889,7 @@ const char *
 fbuf_xml_type (int type)
 {
     if (0 <= type && type < NUM_XML_TYPE)
-	return fbuf_xml_type_names[ type ];
+	return fbuf_xml_type_names[type];
     return "strange";
 }
 
@@ -1198,13 +1198,13 @@ fbuf_get_xml_namespace (fbuf_t *fbp, int *typep, char **namespacep,
 	} else if (*cp == '!') { /* Comment */
 	    type = XML_TYPE_ERROR;
 
-	    if (cp[ 1 ] == '-' && cp[ 2 ] == '-') {
+	    if (cp[1] == '-' && cp[2] == '-') {
 		cp = strtrimws(cp + 3);
 		if (cp <= np - 3) {
-		    if (np[ -3 ] == '-' && np[ -2 ] == '-') {
+		    if (np[-3] == '-' && np[-2] == '-') {
 			np = strtrimtailws(np - 4, cp);
-			if (isspace((int) np[ 1 ]))
-			    np[ 1 ] = 0;
+			if (isspace((int) np[1]))
+			    np[1] = 0;
 			else
 			    *++np = 0;
 
@@ -1235,7 +1235,7 @@ fbuf_get_xml_namespace (fbuf_t *fbp, int *typep, char **namespacep,
 			static const char abort_token[] = XMLRPC_ABORT;
 			if (strncmp(cp, abort_token,
 				    sizeof(abort_token) - 1) == 0
-			    && (cp[ sizeof(abort_token) - 1 ] == 0
+			    && (cp[sizeof(abort_token) - 1] == 0
 				|| isspace((int) cp[sizeof(abort_token) - 1]))) {
 			    type = XML_TYPE_ABORT;
 			}
@@ -1426,7 +1426,7 @@ fbuf_has_abort (const char *cp, const char *ep)
 
 	/* Does it match the abort tag? Return seen-abort */
 	if (memcmp(cp, abort_tag, asize) == 0) {
-	    if (cp[ asize ] == '/' || isspace((int) cp[ asize ]))
+	    if (cp[asize] == '/' || isspace((int) cp[asize]))
 		return 1;
 	}
 
@@ -1546,6 +1546,8 @@ fbuf_from_const_string (const char *const_data, int len)
 
     return fbp;
 }
+
+
 
 #ifdef UNIT_TEST
 #include <termios.h>
