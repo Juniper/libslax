@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!-- comment -->
+<top>
+    <second>
+        <a>eh</a>
+        <b>bee</b>
+        <c>sea</c>
+        <d>dee</d>
+    </second>
+     <province id='f0_17462'
+       name='Hainaut'
+       country='f0_162'
+       capital='f0_2345'
+       population='1283252'
+       area='3787'>
+       <city id='f0_2335'
+         country='f0_162'
+         province='f0_17462'>
+         <name >
+           Charleroi
+         </name>
+         <population  year='95'>
+           206491
+         </population>
+       </city>
+       <city id='f0_2345'
+         country='f0_162'
+         province='f0_17462'
+         longitude='3.6'
+         latitude='50.3'>
+         <name >
+           Mons
+         </name>
+         <population  year='87'>
+           90720
+         </population>
+       </city>
+     </province>
+</top>
