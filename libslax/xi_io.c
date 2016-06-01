@@ -162,10 +162,11 @@ xi_parse_read (xi_parse_source_t *srcp, int min)
     seen = srcp->xps_curp - srcp->xps_bufp; /* Refresh 'seen' */
 
     /* If there's not enough room, expand the buffer */
-    if (srcp->xps_size - seen < XI_BUFSIZ_MIN) {
+    xi_offset_t space = srcp->xps_size - srcp->xps_len;
+    if (space < XI_BUFSIZ_MIN) {
 	unsigned size = srcp->xps_size + XI_BUFSIZ;
 	char *cp = realloc(srcp->xps_bufp, size);
-	if (cp) {
+	if (cp != NULL) {
 	    /* Record new buffer pointer values */
 	    srcp->xps_size = size;
 	    srcp->xps_curp = cp + seen;
@@ -246,7 +247,10 @@ xi_parse_find (xi_parse_source_t *srcp, int ch, xi_offset_t offset)
 static inline int
 xi_isspace (int ch)
 {
-    return (ch == 0x20 || ch == 0x09 || ch == 0x0d || ch == 0x0a);
+    static char xi_space_test[256]
+	= { [0x20] = 1, [0x09] = 1, [0x0d] = 1, [0x0a] = 1 };
+
+    return xi_space_test[ch & 0xff];
 }
 
 static char *
@@ -312,6 +316,37 @@ xi_parse_token_comment (xi_parse_source_t *srcp, char **datap UNUSED,
     return XI_TYPE_COMMENT;
 }
 
+static xi_node_type_t
+xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
+{
+    xi_offset_t off = xi_parse_find(srcp, '>', 0);
+    if (off < 0) {
+	xi_parse_failure(srcp, 0, "missing termination of dtd tag");
+	return XI_TYPE_FAIL;
+    }
+
+    char *dp = srcp->xps_curp + 1;
+    char *cp = &srcp->xps_bufp[off];
+    *cp++ = '\0';		/* Whack the '>' */
+    xi_parse_move_curp(srcp, cp); /* Save as next starting point */
+
+    /*
+     * Find the attributes, but don't bother parsing them.  Trim whitespace.
+     */
+    char *rp = memchr(dp, ' ', cp - dp);
+    if (rp != NULL) {
+	*rp++ = '\0';
+	rp = xi_skipws(rp, cp - rp, 1);
+	if (rp != NULL && *rp == '\0')
+	    rp = NULL;
+    }
+
+    *datap = dp;
+    *restp = rp;
+
+    return XI_TYPE_DTD;
+}
+
 /*
  * XML magical happenings!!  Unfortunately, the XML spec create an
  * annoyingly complex set of features.  The most common is the comment
@@ -337,14 +372,12 @@ xi_parse_token_magic (xi_parse_source_t *srcp, char **datap,
 
     } else if (isalpha((int) srcp->xps_curp[2])) {
 	/* <!XXX> tag */
-	return xi_parse_token_directive(srcp, datap, restp);
+	return xi_parse_token_dtd(srcp, datap, restp);
 
     } else {
 	xi_parse_failure(srcp, 0, "unhandled xml magic");
 	return XI_TYPE_FAIL;
     }
-
-    return XI_TYPE_DTD;
 }
 
 static xi_node_type_t
@@ -477,10 +510,10 @@ xi_parse_token_text (xi_parse_source_t *srcp, char **datap, char **restp)
 	if (dp == NULL)
 	    cp = NULL;
 	else {
-	    cp -= 1;
-	    cp = xi_skipws(cp, cp - dp, -1); /* Trim trailing ws */
-	    if (cp != NULL)
-		cp += 1;
+	    char *wp = cp - 1;
+	    wp = xi_skipws(wp, wp - dp, -1); /* Trim trailing ws */
+	    if (wp != NULL)
+		cp = wp + 1;
 	}
     }
 
@@ -497,6 +530,7 @@ xi_node_type_t
 xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp)
 {
     *datap = *restp = NULL;	/* Clear pointers */
+    xi_node_type_t token = XI_TYPE_NONE;
 
     if ((srcp->xps_last == XI_TYPE_OPEN || srcp->xps_last == XI_TYPE_CLOSE)
 	&& (srcp->xps_flags & XPSF_IGNOREWS)) {
@@ -513,24 +547,27 @@ xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp)
 	if (xi_parse_avail(srcp, 2) <= 0) {
 	    /* Failure; premature EOF */
 	    xi_parse_failure(srcp, 0, "premature end-of-file: open-tag");
-	    return XI_TYPE_EOF;
+	    token = XI_TYPE_EOF;
 
 	} else if (srcp->xps_curp[1] == '/') {
 	    /* Close tag */
-	    return xi_parse_token_close(srcp, datap);
+	    token = xi_parse_token_close(srcp, datap);
 
 	} else if (srcp->xps_curp[1] == '!') {
-	    return xi_parse_token_magic(srcp, datap, restp);
+	    token = xi_parse_token_magic(srcp, datap, restp);
 	    
 	} else if (srcp->xps_curp[1] == '?') {
 	    /* Processing instruction */
-	    return xi_parse_token_pi(srcp, datap, restp);
+	    token = xi_parse_token_pi(srcp, datap, restp);
 	} else {
 	    /* Open tag */
-	    return xi_parse_token_open(srcp, datap, restp);
+	    token = xi_parse_token_open(srcp, datap, restp);
 	}
     } else {
 	/* Text data */
-	return xi_parse_token_text(srcp, datap, restp);
+	token = xi_parse_token_text(srcp, datap, restp);
     }
+
+    srcp->xps_last = token;
+    return token;
 }
