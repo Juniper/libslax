@@ -95,6 +95,8 @@ main (int argc, char **argv)
 	    break;
 
 	case XI_TYPE_DTD:	/* DTD nonsense */
+	    if (!opt_quiet)
+		printf("dtd [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_COMMENT:	/* Comment */
