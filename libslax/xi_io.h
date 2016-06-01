@@ -30,7 +30,7 @@ typedef uint32_t xi_parse_flags_t; /* Flags for parser */
 #define XI_TYPE_OPEN	4	/* Open tag */
 #define XI_TYPE_CLOSE	5	/* Close tag */
 #define XI_TYPE_PI	6	/* Processing instruction */
-#define XI_TYPE_DTD	7	/* DTD nonsense */
+#define XI_TYPE_DTD	7	/* <!DTD> nonsense */
 #define XI_TYPE_COMMENT	8	/* Comment */
 #define XI_TYPE_ATTR	9	/* XML attribute */
 #define XI_TYPE_NS	10	/* XML namespace */
