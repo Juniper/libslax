@@ -250,20 +250,6 @@ pa_pat_find_rightmost (pa_pat_t *root, uint16_t bit, pa_pat_node_t *node)
 }
 #endif
 
-#if 0
-static uint8_t *
-pa_pat_key_func (pa_pat_t *root, pa_atom_t atom)
-{
-    pa_pat_node_t *node = pa_pat_node(root, atom);
-    if (node == NULL)
-	return NULL;
-
-    if (root->pp_key_is_ptr)
-	return node->ppn_keys.ppn_key_ptr[0] + root->pp_key_offset;
-    return node->ppn_keys.ppn_key + root->pp_key_offset;
-}
-#endif
-
 /*
  * pa_pat_root_init()
  * Initialize a patricia root node.  Allocate one if not provided.
@@ -271,7 +257,7 @@ pa_pat_key_func (pa_pat_t *root, pa_atom_t atom)
 pa_pat_t *
 pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 		  pa_fixed_t *nodes, void *data_store,
-		  pa_pat_key_func_t key_func, uint16_t klen, uint8_t off)
+		  pa_pat_key_func_t key_func, uint16_t klen)
 {
     assert(klen && klen <= PA_PAT_MAXKEY);
 
@@ -282,7 +268,6 @@ pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 	root->pp_infop = ppip;
 	root->pp_root = PA_NULL_ATOM;
 	root->pp_key_bytes = klen;
-	root->pp_key_offset = off;
 
 	root->pp_mmap = pmp;
 	root->pp_nodes = nodes;
@@ -294,9 +279,9 @@ pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 }
 
 pa_pat_t *
-pa_pat_open (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
-	     void *data_store, pa_pat_key_func_t key_func,
-	     uint16_t klen, uint8_t off)
+pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
+		   void *data_store, pa_pat_key_func_t key_func,
+		   uint16_t klen)
 {
     pa_pat_info_t *ppip;
 
@@ -305,7 +290,28 @@ pa_pat_open (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
 	return NULL;
 
     return pa_pat_root_init(NULL, ppip, pmp, nodes, data_store,
-			    key_func, klen, off);
+			    key_func, klen);
+}
+
+pa_pat_t *
+pa_pat_open (pa_mmap_t *pmp, const char *name,
+	     void *data_store, pa_pat_key_func_t key_func,
+	     uint16_t klen, pa_shift_t shift, uint32_t max_atoms)
+{
+    static char node_suffix[] = ".nodes";
+    size_t len = strlen(name);
+    char *nodes_name = alloca(len + sizeof(node_suffix) + 1);
+
+    memcpy(nodes_name, name, len);
+    memcpy(nodes_name + len, node_suffix, sizeof(node_suffix));
+
+    pa_fixed_t *pfp;
+    pfp = pa_fixed_open(pmp, nodes_name, shift,
+			sizeof(pa_pat_node_t), max_atoms);
+    if (pfp == NULL)
+	return NULL;
+
+    return pa_pat_open_nodes(pmp, name, pfp, data_store, key_func, klen);
 }
 
 #if 0
