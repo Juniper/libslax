@@ -46,6 +46,8 @@ main (int argc, char **argv)
 	    opt_quiet = 1;
 	} else if (strcmp(argv[argc], "trim") == 0) {
 	    flags |= XPSF_TRIMWS;
+	} else if (strcmp(argv[argc], "ignore") == 0) {
+	    flags |= XPSF_IGNOREWS;
 	}
     }
 
