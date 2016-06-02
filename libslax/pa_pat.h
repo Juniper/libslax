@@ -90,8 +90,6 @@ typedef struct pa_pat_node_s {
 typedef struct pa_pat_info_s {
     pa_atom_t ppi_root;			/**< root patricia node (atom) */
     uint16_t ppi_key_bytes;		/**< (maximum) key length in bytes */
-    uint8_t ppi_key_offset;		/**< offset to key material */
-    uint8_t ppi_key_is_ptr;		/**< keys are not inline */
 } pa_pat_info_t;
 
 struct pa_pat_s;		/* Forward declaration */
@@ -108,8 +106,6 @@ typedef struct pa_pat_s {
 /* Shorthand for fields */
 #define pp_root pp_infop->ppi_root
 #define pp_key_bytes pp_infop->ppi_key_bytes
-#define pp_key_offset pp_infop->ppi_key_offset
-#define pp_key_is_ptr pp_infop->ppi_key_is_ptr
 
 /**
  * @brief
@@ -166,7 +162,7 @@ pa_pat_node_data (pa_pat_t *root UNUSED, pa_pat_node_t *node)
 pa_pat_t *
 pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 		  pa_fixed_t *nodes, void *data_store,
-		  pa_pat_key_func_t key_func, uint16_t klen, uint8_t off);
+		  pa_pat_key_func_t key_func, uint16_t klen);
 
 /*
  * Add a node to the patricia tree.
@@ -878,8 +874,13 @@ pa_pat_node_alloc (pa_pat_t *root, pa_atom_t datom, uint16_t key_bytes,
 }
 
 pa_pat_t *
-pa_pat_open (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
+pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
 	     void *data_store, pa_pat_key_func_t key_func,
-	     uint16_t klen, uint8_t off);
+	     uint16_t klen);
+
+pa_pat_t *
+pa_pat_open (pa_mmap_t *pmp, const char *name,
+	      void *data_store, pa_pat_key_func_t key_func,
+	      uint16_t klen, pa_shift_t shift, uint32_t max_atoms);
 
 #endif /* LIBSLAX_PA_PAT_H */
