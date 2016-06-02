@@ -164,7 +164,7 @@ xi_parse_read (xi_parse_source_t *srcp, int min)
     /* If there's not enough room, expand the buffer */
     xi_offset_t space = srcp->xps_size - srcp->xps_len;
     if (space < XI_BUFSIZ_MIN) {
-	unsigned size = srcp->xps_size + XI_BUFSIZ;
+	unsigned size = srcp->xps_size << 1; /* Double the buffer size */
 	char *cp = realloc(srcp->xps_bufp, size);
 	if (cp != NULL) {
 	    /* Record new buffer pointer values */
