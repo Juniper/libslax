@@ -436,6 +436,8 @@ xi_parse_token_pi (xi_parse_source_t *srcp UNUSED, char **datap UNUSED,
 static xi_node_type_t
 xi_parse_token_open (xi_parse_source_t *srcp, char **datap, char **restp)
 {
+    xi_node_type_t token = XI_TYPE_OPEN;
+
     xi_offset_t off = xi_parse_find(srcp, '>', 0);
     if (off < 0) {
 	xi_parse_failure(srcp, 0, "missing termination of open tag");
@@ -444,6 +446,10 @@ xi_parse_token_open (xi_parse_source_t *srcp, char **datap, char **restp)
 
     char *dp = srcp->xps_curp + 1;
     char *cp = &srcp->xps_bufp[off];
+
+    if (dp < cp && cp[-1] == '/') /* Spec says no space between "/>" */
+	token = XI_TYPE_EMPTY;
+
     *cp++ = '\0';		/* Whack the '>' */
     xi_parse_move_curp(srcp, cp); /* Save as next starting point */
 
@@ -461,7 +467,7 @@ xi_parse_token_open (xi_parse_source_t *srcp, char **datap, char **restp)
     *datap = dp;
     *restp = rp;
 
-    return XI_TYPE_OPEN;
+    return token;
 }
 
 static xi_node_type_t
@@ -523,6 +529,29 @@ xi_parse_token_text (xi_parse_source_t *srcp, char **datap, char **restp)
     return XI_TYPE_TEXT;
 }
 
+static void
+xi_parse_ignorews (xi_parse_source_t *srcp)
+{
+    xi_offset_t off = xi_parse_offset(srcp); /* Starting point */
+    xi_offset_t left;
+    char *cp;
+
+    left = xi_parse_left(srcp);
+    for (cp = &srcp->xps_bufp[off]; xi_isspace(*cp); cp++, off++) {
+	if (off >= srcp->xps_len) {
+	    if (xi_parse_read(srcp, 0) < 0)
+		return;
+	    cp = &srcp->xps_bufp[off]; /* Refresh */
+	}
+    }
+
+    if (*cp != '<')
+	return;
+
+    srcp->xps_curp = cp;	/* Skip over whitespace */
+}
+
+
 /*
  * Parse the next token.
  */
@@ -532,9 +561,9 @@ xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp)
     *datap = *restp = NULL;	/* Clear pointers */
     xi_node_type_t token = XI_TYPE_NONE;
 
-    if ((srcp->xps_last == XI_TYPE_OPEN || srcp->xps_last == XI_TYPE_CLOSE)
-	&& (srcp->xps_flags & XPSF_IGNOREWS)) {
-	/* ... */
+    if (srcp->xps_last != XI_TYPE_TEXT && srcp->xps_flags & XPSF_IGNOREWS) {
+	/* Look for the next non-space character; if it's '<', we skip */
+	xi_parse_ignorews(srcp);
     }
 
     /* If we don't have data, go get some data */
