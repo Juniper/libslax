@@ -34,7 +34,6 @@
 #include "pa_main.h"
 
 pa_mmap_t *pmp;
-pa_fixed_t *pfp;
 pa_istr_t *pip;
 pa_pat_t *ppp;
 
@@ -61,16 +60,12 @@ test_open (void)
 {
     pmp = pa_mmap_open(opt_filename, 0, 0644);
     assert(pmp);
-    
-    pfp = pa_fixed_open(pmp, "nodes", opt_shift,
-			sizeof(pa_pat_node_t), opt_max_atoms);
-    assert(pfp);
 
     pip = pa_istr_open(pmp, "istr", opt_shift, 2, opt_max_atoms);
     assert(pip);
 
-    ppp = pa_pat_open(pmp, "pat", pfp, pip,
-		     test_key_func, PA_PAT_MAXKEY, 0);
+    ppp = pa_pat_open(pmp, "pat", pip, test_key_func,
+		      PA_PAT_MAXKEY, opt_shift, opt_max_atoms);
 }
 
 void
@@ -106,7 +101,7 @@ test_key (unsigned slot, const char *key)
     }
 
     if (!opt_quiet)
-	printf("in %u (%lu) : %s -> %p (%#x)\n", slot, len, key, tp, atom);
+	printf("in %u (%lu) : %s -> (%#x)\n", slot, len, key, atom);
 }
 
 void
