@@ -29,11 +29,12 @@ typedef uint32_t xi_parse_flags_t; /* Flags for parser */
 #define XI_TYPE_TEXT	3	/* Text content */
 #define XI_TYPE_OPEN	4	/* Open tag */
 #define XI_TYPE_CLOSE	5	/* Close tag */
-#define XI_TYPE_PI	6	/* Processing instruction */
-#define XI_TYPE_DTD	7	/* <!DTD> nonsense */
-#define XI_TYPE_COMMENT	8	/* Comment */
-#define XI_TYPE_ATTR	9	/* XML attribute */
-#define XI_TYPE_NS	10	/* XML namespace */
+#define XI_TYPE_EMPTY	6	/* Empty tag */
+#define XI_TYPE_PI	7	/* Processing instruction */
+#define XI_TYPE_DTD	8	/* <!DTD> nonsense */
+#define XI_TYPE_COMMENT	9	/* Comment */
+#define XI_TYPE_ATTR	10	/* XML attribute */
+#define XI_TYPE_NS	11	/* XML namespace */
 
 /*
  * Parser source object
@@ -61,26 +62,6 @@ typedef struct xi_parse_source_s {
 #define XPSF_READALL	(1<<4)	/* File is read completely into memory */
 #define XPSF_CLOSEFD	(1<<5)	/* Close fd when cleaning up */
 #define XPSF_TRIMWS	(1<<6)	/* Trim whitespace from data */
-
-/*
- * A node in an XML hierarchy, made as small as possible.
- */
-typedef struct xi_node_s {
-    xi_node_type_t xn_type;	/* Type of this node */
-    xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
-    xi_ns_id_t xn_ns;		/* Namespace of this node (in namespace db) */
-    xi_name_id_t xn_name;	/* Name of this node (in name db) */
-    xi_node_id_t xn_next;	/* Next node (in this tree) */
-    xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
-} xi_node_t;
-
-#define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
-#define XI_DEPTH_MAX	254	/* Max depth of tree */
-
-typedef struct xi_parse_s {
-    xi_node_t *xp_node_stack[XI_DEPTH_MAX];
-    xi_node_t *xp_node_cur;	/* Current node */
-} xi_parse_t;
 
 xi_parse_source_t *
 xi_parse_create (int fd, xi_parse_flags_t flags);
