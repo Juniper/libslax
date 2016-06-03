@@ -58,9 +58,14 @@ xi_parse_failure (xi_parse_source_t *srcp, int errnum, const char *fmt, ...)
     va_start(vap, fmt);
 
     if (srcp) {
-	unsigned offset = srcp->xps_offset + srcp->xps_curp - srcp->xps_bufp;
-	fprintf(stderr, "%s:%u: ",
-		srcp->xps_filename ?: "input", offset);
+	if (srcp->xps_flags & XPSF_LINE_NO) {
+	    fprintf(stderr, "%s:%u:(%u): ",
+		    srcp->xps_filename ?: "input",
+		    srcp->xps_lineno, srcp->xps_offset);
+	} else {
+	    fprintf(stderr, "%s:(%u): ",
+		    srcp->xps_filename ?: "input", srcp->xps_offset);
+	}
     }
 
     fprintf(stderr, "warning: ");
@@ -80,19 +85,20 @@ xi_parse_create (int fd, xi_parse_flags_t flags)
     srcp = calloc(1, sizeof(*srcp));
     if (srcp != NULL) {
 	srcp->xps_fd = fd;
-	srcp->xps_flags = flags & ~XPSF_MMAP;
+	srcp->xps_flags = flags & ~XPSF_MMAP_INPUT;
+	srcp->xps_lineno = 1;	/* Start on line 1 */
 
 	/*
 	 * The mmap flag asks us to try to mmap the file; if it fails,
 	 * we fall back to normal behavior.
 	 */
-	if (flags & XPSF_MMAP) {
+	if (flags & XPSF_MMAP_INPUT) {
 	    struct stat st;
 
 	    if (fstat(fd, &st) >= 0 && st.st_size > 0) {
 		void *addr = mmap(NULL, st.st_size, PROT_READ, 0, fd, 0);
 		if (addr) {
-		    srcp->xps_flags |= XPSF_MMAP | XPSF_NOREAD;
+		    srcp->xps_flags |= XPSF_MMAP_INPUT | XPSF_NO_READ;
 		    srcp->xps_bufp = srcp->xps_curp = addr;
 		    srcp->xps_size = st.st_size;
 		}
@@ -117,7 +123,7 @@ xi_parse_open (const char *filename, xi_parse_flags_t flags)
     if (fd < 0)
 	return NULL;
 
-    xi_parse_source_t *srcp = xi_parse_create(fd, flags | XPSF_CLOSEFD);
+    xi_parse_source_t *srcp = xi_parse_create(fd, flags | XPSF_CLOSE_FD);
     if (srcp)
 	srcp->xps_filename = strdup(filename);
 
@@ -133,7 +139,7 @@ xi_parse_destroy (xi_parse_source_t *srcp)
     if (srcp->xps_curp != NULL)
 	free(srcp->xps_curp);
 
-    if (srcp->xps_flags & XPSF_CLOSEFD)
+    if (srcp->xps_flags & XPSF_CLOSE_FD)
 	close(srcp->xps_fd);
 
     free(srcp);
@@ -170,8 +176,19 @@ xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
 	if (*ep == NULL) {
 	    /* We didn't find the entity; bummer */
 	    xi_parse_failure(srcp, 0, "could not decode entity");
-	    len -= 1;
-	    cur += 1;
+
+	    char *xp = memchr(cur + 1, ';', len);
+	    if (xp != NULL) {
+		/*
+		 * Okay, the entity is trash, but at least we found a
+		 * semi-colon.  Move along, discarding the broken entity.
+		 */
+		ins = cur;
+		cur = from = xp;
+	    } else {
+		len -= 1;	/* Skip single character ('&') */
+		cur += 1;
+	    }
 	    continue;
 
 	}
@@ -205,6 +222,19 @@ xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
 static void
 xi_parse_move_curp (xi_parse_source_t *srcp, char *newp)
 {
+    char *cp = srcp->xps_curp;
+
+    srcp->xps_offset += newp - cp;
+    if (srcp->xps_flags & XPSF_LINE_NO) {
+	while (cp < newp) {
+	    cp = memchr(cp, '\n', newp - cp);
+	    if (cp == NULL)
+		break;
+	    srcp->xps_lineno += 1;
+	    cp += 1;
+	}
+    }
+
     srcp->xps_curp = newp;
 }
 
@@ -215,7 +245,7 @@ xi_parse_move_curp (xi_parse_source_t *srcp, char *newp)
 static int
 xi_parse_read (xi_parse_source_t *srcp, int min)
 {
-    if (srcp->xps_flags & (XPSF_NOREAD | XPSF_EOFSEEN))
+    if (srcp->xps_flags & (XPSF_NO_READ | XPSF_EOF_SEEN))
 	return -1;
 
     unsigned seen = srcp->xps_curp - srcp->xps_bufp;
@@ -260,7 +290,7 @@ xi_parse_read (xi_parse_source_t *srcp, int min)
     int rc = read(srcp->xps_fd, srcp->xps_bufp + srcp->xps_len,
 		  srcp->xps_size - srcp->xps_len);
     if (rc <= 0) {
-	srcp->xps_flags |= XPSF_EOFSEEN;
+	srcp->xps_flags |= XPSF_EOF_SEEN;
 	return -1;
     }
 
@@ -345,7 +375,7 @@ xi_skipws (char *cp, unsigned len, int dir)
 }
 
 static xi_node_type_t
-xi_parse_token_comment (xi_parse_source_t *srcp, char **datap UNUSED,
+xi_parse_token_comment (xi_parse_source_t *srcp, char **datap,
 			char **restp UNUSED)
 {
     char *dp, *cp;
@@ -377,7 +407,10 @@ xi_parse_token_comment (xi_parse_source_t *srcp, char **datap UNUSED,
     cp[-2] = '\0';
     xi_parse_move_curp(srcp, cp + 1);
 
-    if (srcp->xps_flags & XPSF_TRIMWS) {
+    if (srcp->xps_flags & XPSF_IGNORE_COMMENTS)
+	return XI_TYPE_SKIP;
+
+    if (srcp->xps_flags & XPSF_TRIM_WS) {
 	cp -= 2;
 	dp = xi_skipws(dp, cp - dp, 1); /* Trim leading ws */
 	if (dp != NULL) {
@@ -393,6 +426,56 @@ xi_parse_token_comment (xi_parse_source_t *srcp, char **datap UNUSED,
     return XI_TYPE_COMMENT;
 }
 
+/*
+ * Look for the terminating bit of a "<!DOCTYPE name [ ]>".  Returns a
+ * pointer to the tailing '>' character.
+ */
+static char *
+xi_parse_find_brklt1 (xi_parse_source_t *srcp, xi_offset_t off)
+{
+    char *cp, *wp;
+
+    for (;;) {
+	off = xi_parse_find(srcp, '>', off);
+	if (off < 0)
+	    return NULL;
+
+	cp = &srcp->xps_bufp[off];
+	wp = cp - 1;
+	wp = xi_skipws(wp, wp - srcp->xps_bufp, -1); /* Trim trailing ws */
+	if (wp != NULL)
+	    cp = wp + 1;
+
+
+	if (cp[-1] == ']')
+	    return cp;
+
+	off += 1;
+    }
+}
+
+/*
+ * Look for the terminating bit of a "<![CDATA[ ]]>".  Returns a pointer
+ * to the tailing '>' character.
+ */
+static char *
+xi_parse_find_brklt2 (xi_parse_source_t *srcp, xi_offset_t off)
+{
+    char *cp;
+
+    for (;;) {
+	off = xi_parse_find(srcp, '>', off);
+	if (off < 0)
+	    return NULL;
+
+	cp = &srcp->xps_bufp[off];
+	if (cp[-1] == ']' && cp[-2] == ']')
+	    return cp;
+
+	off += 1;
+    }
+}
+
 static xi_node_type_t
 xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
 {
@@ -402,21 +485,44 @@ xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
 	return XI_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 1;
+    char *dp = srcp->xps_curp + 2;
     char *cp = &srcp->xps_bufp[off];
-    *cp++ = '\0';		/* Whack the '>' */
-    xi_parse_move_curp(srcp, cp); /* Save as next starting point */
 
     /*
      * Find the attributes, but don't bother parsing them.  Trim whitespace.
      */
-    char *rp = memchr(dp, ' ', cp - dp);
+    char *rp = memchr(dp, ' ', cp + 1 - dp);
     if (rp != NULL) {
 	*rp++ = '\0';
-	rp = xi_skipws(rp, cp - rp, 1);
+	rp = xi_skipws(rp, cp + 1 - rp, 1);
 	if (rp != NULL && *rp == '\0')
 	    rp = NULL;
+	else if (strcmp(dp, "DOCTYPE") == 0) {
+	    /* <!DOCTYPE> is it's own little bit of hell */
+	    char *xp = memchr(rp, ' ', cp + 1 - rp);
+	    if (xp != NULL) {
+		xp = xi_skipws(xp, strlen(xp), 1);
+		if (xp) {
+		    char *zp = memchr(xp, ' ', cp + 1 - xp);
+		    if (xp[0] == '[' || (zp != NULL && zp[1] == '[')) {
+			/*
+			 * Bad news!  The input has an internal DTD, which
+			 * means finding the ">" wasn't enough.  We need to
+			 * find the terminating "]>".  For details:
+			 * https://www.w3.org/TR/xml/#NT-intSubset
+			 */
+			cp = xi_parse_find_brklt1(srcp, xp - srcp->xps_bufp);
+		    }
+		}
+	    }
+	}
     }
+
+    *cp++ = '\0';		/* Whack the '>' */
+    xi_parse_move_curp(srcp, cp); /* Save as next starting point */
+
+    if (srcp->xps_flags & XPSF_IGNORE_DTD)
+	return XI_TYPE_SKIP;
 
     *datap = dp;
     *restp = rp;
@@ -424,15 +530,47 @@ xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
     return XI_TYPE_DTD;
 }
 
+static xi_node_type_t
+xi_parse_token_bracket (xi_parse_source_t *srcp, char **datap UNUSED,
+			char **restp UNUSED)
+{
+    if (xi_parse_avail(srcp, 4) <= 0) {
+	/* Failure; premature EOF */
+	xi_parse_failure(srcp, 0, "premature end-of-file: bracket");
+	return XI_TYPE_FAIL;
+    }
+
+    char *dp = srcp->xps_curp;
+    int cdata = (strncmp(dp, "<![CDATA[", 9) == 0);
+    dp += 9;
+
+    xi_offset_t off = xi_parse_offset(srcp) + 3; /* Skip "<![" */
+    char *cp = xi_parse_find_brklt2(srcp, off);
+    if (cp == NULL) {
+	xi_parse_failure(srcp, 0, "premature end-of-file: bracket");
+	return XI_TYPE_FAIL;
+    }
+
+    cp[-2] = '\0';
+    xi_parse_move_curp(srcp, cp + 1);
+
+    if (cdata) {
+	*datap = dp;
+	*restp = cp - 2;
+	return XI_TYPE_CDATA;
+    }
+
+    return XI_TYPE_SKIP;
+}
+
 /*
  * XML magical happenings!!  Unfortunately, the XML spec create an
  * annoyingly complex set of features.  The most common is the comment
  * (<!-- comment -->) but there are also <!DOCTYPE>, <!ELEMENT>,
- * <!ATTLIST>, <!IGNORE>, <!INCLUDE>, and everyone's favorite,
- * <!ENTITY>.  Plus <![CDATA []]> just for more fun!  Just don't get
- * me started....
+ * <!ATTLIST>, <![IGNORE[]]>, <![INCLUDE[]]>, and everyone's favorite,
+ * <!ENTITY>.  Don't get me started....
  *
- * Fortunately, most of these can be ignored (for now).
+ * Fortunately, most of these can be (read: will be) ignored (for now).
  */
 static xi_node_type_t
 xi_parse_token_magic (xi_parse_source_t *srcp, char **datap,
@@ -446,6 +584,10 @@ xi_parse_token_magic (xi_parse_source_t *srcp, char **datap,
     } else if (srcp->xps_curp[2] == '-' && srcp->xps_curp[3] == '-') {
 	/* Comment tag */
 	return xi_parse_token_comment(srcp, datap, restp);
+
+    } else if (srcp->xps_curp[2] == '[') {
+	/* 'bracket' == '<![xxx]]>'.  We ignore the conents */
+	return xi_parse_token_bracket(srcp, datap, restp);
 
     } else if (isalpha((int) srcp->xps_curp[2])) {
 	/* <!XXX> tag */
@@ -588,7 +730,7 @@ xi_parse_token_text (xi_parse_source_t *srcp, char **datap, char **restp)
     char *cp = &srcp->xps_bufp[off];
     xi_parse_move_curp(srcp, cp); /* Save as next starting point */
 
-    if (srcp->xps_flags & XPSF_TRIMWS) {
+    if (srcp->xps_flags & XPSF_TRIM_WS) {
 	dp = xi_skipws(dp, cp - dp, 1); /* Trim leading ws */
 	if (dp == NULL)
 	    cp = NULL;
@@ -625,53 +767,68 @@ xi_parse_ignorews (xi_parse_source_t *srcp)
     if (*cp != '<')
 	return;
 
-    srcp->xps_curp = cp;	/* Skip over whitespace */
+    xi_parse_move_curp(srcp, cp);	/* Skip over whitespace */
 }
 
 
 /*
- * Parse the next token.
+ * Parse the next token.  This is really the main entry point of the
+ * parsing functions, functioning as a "pull" parser.
  */
 xi_node_type_t
 xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp)
 {
-    *datap = *restp = NULL;	/* Clear pointers */
-    xi_node_type_t token = XI_TYPE_NONE;
+    xi_node_type_t token;
 
-    if (srcp->xps_last != XI_TYPE_TEXT && srcp->xps_flags & XPSF_IGNOREWS) {
-	/* Look for the next non-space character; if it's '<', we skip */
-	xi_parse_ignorews(srcp);
-    }
+    for (;;) {
+	*datap = *restp = NULL;	/* Clear pointers */
 
-    /* If we don't have data, go get some data */
-    if (xi_parse_left(srcp) == 0) {
-	if (xi_parse_read(srcp, 0) < 0)
-	    return XI_TYPE_EOF;
-    }
-
-    if (srcp->xps_curp[0] == '<') {
-	if (xi_parse_avail(srcp, 2) <= 0) {
-	    /* Failure; premature EOF */
-	    xi_parse_failure(srcp, 0, "premature end-of-file: open-tag");
-	    token = XI_TYPE_EOF;
-
-	} else if (srcp->xps_curp[1] == '/') {
-	    /* Close tag */
-	    token = xi_parse_token_close(srcp, datap);
-
-	} else if (srcp->xps_curp[1] == '!') {
-	    token = xi_parse_token_magic(srcp, datap, restp);
-	    
-	} else if (srcp->xps_curp[1] == '?') {
-	    /* Processing instruction */
-	    token = xi_parse_token_pi(srcp, datap, restp);
-	} else {
-	    /* Open tag */
-	    token = xi_parse_token_open(srcp, datap, restp);
+	if (srcp->xps_last != XI_TYPE_TEXT
+	    && (srcp->xps_flags & XPSF_IGNORE_WS)) {
+	    /* Look for the next non-space character; if it's '<', we skip */
+	    xi_parse_ignorews(srcp);
 	}
-    } else {
-	/* Text data */
-	token = xi_parse_token_text(srcp, datap, restp);
+
+	/* If we don't have data, go get some data */
+	if (xi_parse_left(srcp) == 0) {
+	    if (xi_parse_read(srcp, 0) < 0)
+		return XI_TYPE_EOF;
+	}
+
+	if (srcp->xps_curp[0] == '<') {
+	    if (xi_parse_avail(srcp, 2) <= 0) {
+		/* Failure; premature EOF */
+		xi_parse_failure(srcp, 0, "premature end-of-file: open-tag");
+		token = XI_TYPE_EOF;
+
+	    } else if (srcp->xps_curp[1] == '/') {
+		/* Close tag */
+		token = xi_parse_token_close(srcp, datap);
+
+	    } else if (srcp->xps_curp[1] == '!') {
+		token = xi_parse_token_magic(srcp, datap, restp);
+	    
+	    } else if (srcp->xps_curp[1] == '?') {
+		/* Processing instruction */
+		token = xi_parse_token_pi(srcp, datap, restp);
+	    } else {
+		/* Open tag */
+		token = xi_parse_token_open(srcp, datap, restp);
+	    }
+	} else {
+	    /* Text data */
+	    token = xi_parse_token_text(srcp, datap, restp);
+	}
+
+	/*
+	 * If the parsing functions returned XI_TYPE_SKIP then they
+	 * properly parsed something that we just don't care about.
+	 * Mostly this is from the various XPSF_IGNORE* flags, but
+	 * sometimes it's just from apathy.  Regardless, we repeat the
+	 * loop, and hoping to find something meaningful.
+	 */
+	if (token != XI_TYPE_SKIP)
+	    break;
     }
 
     srcp->xps_last = token;
