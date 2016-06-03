@@ -37,14 +37,15 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
 /* Type of our trees */
-#define PA_TYPE_UNKNOWN		0
-#define PA_TYPE_MMAP		1
-#define PA_TYPE_FIXED		2
-#define PA_TYPE_ARB		3
-#define PA_TYPE_ISTR		4
-#define PA_TYPE_PAT		5
+#define PA_TYPE_UNKNOWN		0 /* No type; bad news */
+#define PA_TYPE_MMAP		1 /* Header for pa_mmap_t */
+#define PA_TYPE_FIXED		2 /* Header for pa_fixed_t */
+#define PA_TYPE_ARB		3 /* Header for pa_arb_t */
+#define PA_TYPE_ISTR		4 /* Header for pa_istr_t */
+#define PA_TYPE_PAT		5 /* Header for pa_pat_t */
+#define PA_TYPE_OPAQUE		6 /* Opaque header */
 
-#define PA_TYPE_MAX		6
+#define PA_TYPE_MAX		7
   
 
 /*
