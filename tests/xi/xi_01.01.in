@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <!-- comment -->
 <top>
+    <hazard>This &amp; is &gt;the&lt; end</hazard>
+    <hazard>&amp;at start and end&quot;</hazard>
     <second>
         <z>1</z>
         <a>eh</a>
