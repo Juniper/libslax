@@ -11,6 +11,20 @@
  * Phil Shafer (phil@) June 2016
  */
 
+/*
+ * An XML tokenizer for a subset of XML.  Yes, it's subset.  It
+ * doesn't parse any of the things I don't like, including the DTD
+ * crap, includes, ignores, entities, CDATA, etc.  XML is about
+ * concise, predictable, precise, extensible, machine-to-machine
+ * communications.  These features are short-cuts for humans.  DTDs
+ * were a mistake and should be rendered "obsolete".  The spec even
+ * admits that "These simple rules may have complex interactions".
+ * A pox on * "<!"!
+ *
+ * The benefit of ignoring those historical oddities is that it allows
+ * us to build a small, high-speed parser.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -123,6 +137,69 @@ xi_parse_destroy (xi_parse_source_t *srcp)
 	close(srcp->xps_fd);
 
     free(srcp);
+}
+
+/*
+ * Unescape XML text data.  This is not done automatically since
+ * if the caller is just copying data from input to output, there's
+ * no reason to unescape data that will need escaping.
+ */
+size_t
+xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
+{
+    /* First byte is the unescaped form; the rest is the entity form */
+    static const char *entities[] = {
+	"&amp;", "<lt;", ">gt;", "'&apos;", "\"quot;", NULL
+    };
+
+    size_t rc = len, elen = 0;
+    char *cur = start, *ins = NULL, *from = NULL;
+    const char **ep;
+
+    while (len > 0) {
+	cur = memchr(cur, '&', len);
+	if (cur == NULL)
+	    break;
+
+	for (ep = entities; *ep; ep++) {
+	    elen = strlen(*ep + 1);
+	    if (memcmp(*ep + 1, cur + 1, elen) == 0)
+		break;
+	}
+
+	if (*ep == NULL) {
+	    /* We didn't find the entity; bummer */
+	    xi_parse_failure(srcp, 0, "could not decode entity");
+	    len -= 1;
+	    cur += 1;
+	    continue;
+
+	}
+
+	if (ins == NULL) {
+	    *cur++ = **ep;	/* Replace '&' with unencoded form */
+	    ins = cur;		/* Point where we'll copy data (next time) */
+
+	} else {
+	    size_t plen = cur - from; /* Length of uncopied data */
+	    memcpy(ins, from, plen);
+	    ins += plen;
+	    *ins++ = **ep;	/* Insert unencoded form */
+	    cur += 1;		/* Skip '&' */
+	}
+
+	/* Pointer maintenance */
+	cur += elen;		/* Skip over the rest of  */
+	from = cur;		/* Point where we'll copy from */
+	len -= elen;
+	rc -= elen;
+    }
+
+    /* If there's anything left over, copy it */
+    if (ins != NULL && len > 0)
+	memcpy(ins, from, len);
+
+    return rc;
 }
 
 static void
