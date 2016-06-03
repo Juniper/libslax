@@ -35,6 +35,8 @@ typedef uint32_t xi_parse_flags_t; /* Flags for parser */
 #define XI_TYPE_COMMENT	9	/* Comment */
 #define XI_TYPE_ATTR	10	/* XML attribute */
 #define XI_TYPE_NS	11	/* XML namespace */
+#define XI_TYPE_SKIP	12	/* Skip/ignored input */
+#define XI_TYPE_CDATA	13	/* Cdata (<![CDATA[ ]]>) */
 
 /*
  * Parser source object
@@ -55,14 +57,17 @@ typedef struct xi_parse_source_s {
 } xi_parse_source_t;
 
 /* Flags for ps_flags: */
-#define XPSF_MMAP	(1<<0)	/* File is mmap'd */
-#define XPSF_IGNOREWS	(1<<1)	/* Ignore whitespace-only mixed content */
-#define XPSF_NOREAD	(1<<2)	/* Don't read() on this fd */
-#define XPSF_EOFSEEN	(1<<3)	/* EOF has been seen; read should fail */
-#define XPSF_READALL	(1<<4)	/* File is read completely into memory */
-#define XPSF_CLOSEFD	(1<<5)	/* Close fd when cleaning up */
-#define XPSF_TRIMWS	(1<<6)	/* Trim whitespace from data */
+#define XPSF_MMAP_INPUT	(1<<0)	/* File is mmap'd */
+#define XPSF_IGNORE_WS	(1<<1)	/* Ignore whitespace-only mixed content */
+#define XPSF_NO_READ	(1<<2)	/* Don't read() on this fd */
+#define XPSF_EOF_SEEN	(1<<3)	/* EOF has been seen; read should fail */
+#define XPSF_READ_ALL	(1<<4)	/* File is read completely into memory */
+#define XPSF_CLOSE_FD	(1<<5)	/* Close fd when cleaning up */
+#define XPSF_TRIM_WS	(1<<6)	/* Trim whitespace from data */
 #define XPSF_VALIDATE	(1<<7)	/* Validate input */
+#define XPSF_LINE_NO	(1<<8)	/* Track line numbers for input */
+#define XPSF_IGNORE_COMMENTS (1<<9) /* Discard comments */
+#define XPSF_IGNORE_DTD (1<<10) /* Discard DTDs */
 
 xi_parse_source_t *
 xi_parse_create (int fd, xi_parse_flags_t flags);
