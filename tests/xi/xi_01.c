@@ -33,6 +33,7 @@ main (int argc, char **argv)
     const char *opt_filename = NULL;
     int opt_read = 0;
     int opt_quiet = 0;
+    int opt_unescape = 0;
     int fd = 0;
     xi_parse_flags_t flags = 0;
 
@@ -44,6 +45,8 @@ main (int argc, char **argv)
 	    opt_read = 1;
 	} else if (strcmp(argv[argc], "quiet") == 0) {
 	    opt_quiet = 1;
+	} else if (strcmp(argv[argc], "unescape") == 0) {
+	    opt_unescape = 1;
 	} else if (strcmp(argv[argc], "trim") == 0) {
 	    flags |= XPSF_TRIMWS;
 	} else if (strcmp(argv[argc], "ignore") == 0) {
@@ -78,8 +81,11 @@ main (int argc, char **argv)
 
 	case XI_TYPE_TEXT:	/* Text content */
 	    if (!opt_quiet) {
-		size_t len = xi_parse_unescape(srcp, data, rest - data);
-		printf("data [%.*s]\n", (int) len, data);
+		int len;
+		if (opt_unescape)
+		    len = xi_parse_unescape(srcp, data, rest - data);
+		else len = rest - data;
+		printf("data [%.*s]\n", len, data);
 	    }
 	    break;
 
