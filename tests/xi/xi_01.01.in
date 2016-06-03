@@ -3,6 +3,7 @@
 <top>
     <hazard>This &amp; is &gt;the&lt; end</hazard>
     <hazard>&amp;at start and end&quot;</hazard>
+    <hazard>&lt;&gt;at start and end&lt;&gt;</hazard>
     <second>
         <z>1</z>
         <a>eh</a>
