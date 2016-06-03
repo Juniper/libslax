@@ -1,7 +1,12 @@
 <?xml version="1.0"?>
 <!-- comment -->
+<!DOCTYPE greeting [
+  <!ELEMENT greeting (#PCDATA)>
+]>
 <top>
-    <hazard>This &amp; is &gt;the&lt; end</hazard>
+    <![CDATA[this is <no> longer <ignored>]]>
+    <hazard>This &&amp; is &gt;the&lt; end</hazard>
+    
     <hazard>&amp;at start and end&quot;</hazard>
     <hazard>&lt;&gt;at start and end&lt;&gt;</hazard>
     <second>
