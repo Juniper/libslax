@@ -47,10 +47,16 @@ main (int argc, char **argv)
 	    opt_quiet = 1;
 	} else if (strcmp(argv[argc], "unescape") == 0) {
 	    opt_unescape = 1;
+	} else if (strcmp(argv[argc], "line") == 0) {
+	    flags |= XPSF_LINE_NO;
 	} else if (strcmp(argv[argc], "trim") == 0) {
-	    flags |= XPSF_TRIMWS;
+	    flags |= XPSF_TRIM_WS;
 	} else if (strcmp(argv[argc], "ignore") == 0) {
-	    flags |= XPSF_IGNOREWS;
+	    flags |= XPSF_IGNORE_WS;
+	} else if (strcmp(argv[argc], "ignore-comments") == 0) {
+	    flags |= XPSF_IGNORE_COMMENTS;
+	} else if (strcmp(argv[argc], "ignore-dtd") == 0) {
+	    flags |= XPSF_IGNORE_DTD;
 	}
     }
 
@@ -112,6 +118,11 @@ main (int argc, char **argv)
 	case XI_TYPE_COMMENT:	/* Comment */
 	    if (!opt_quiet)
 		printf("comment [%s] [%s]\n", data ?: "", rest ?: "");
+	    break;
+
+	case XI_TYPE_CDATA:	/* cdata */
+	    if (!opt_quiet)
+		printf("cdata [%.*s]\n", (int)(rest - data), data);
 	    break;
 
 	case XI_TYPE_ATTR:	/* XML attribute */
