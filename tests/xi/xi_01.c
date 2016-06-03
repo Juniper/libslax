@@ -77,8 +77,10 @@ main (int argc, char **argv)
 	    return -1;
 
 	case XI_TYPE_TEXT:	/* Text content */
-	    if (!opt_quiet)
-		printf("data [%.*s]\n", (int)(rest - data), data);
+	    if (!opt_quiet) {
+		size_t len = xi_parse_unescape(srcp, data, rest - data);
+		printf("data [%.*s]\n", (int) len, data);
+	    }
 	    break;
 
 	case XI_TYPE_OPEN:	/* Open tag */
