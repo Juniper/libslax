@@ -62,6 +62,7 @@ typedef struct xi_parse_source_s {
 #define XPSF_READALL	(1<<4)	/* File is read completely into memory */
 #define XPSF_CLOSEFD	(1<<5)	/* Close fd when cleaning up */
 #define XPSF_TRIMWS	(1<<6)	/* Trim whitespace from data */
+#define XPSF_VALIDATE	(1<<7)	/* Validate input */
 
 xi_parse_source_t *
 xi_parse_create (int fd, xi_parse_flags_t flags);
@@ -74,5 +75,8 @@ xi_parse_destroy (xi_parse_source_t *srcp);
 
 xi_node_type_t
 xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp);
+
+size_t
+xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len);
 
 #endif /* LIBSLAX_XI_IO_H */
