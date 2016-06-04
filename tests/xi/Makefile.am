@@ -65,29 +65,17 @@ valgrind:
 
 #TEST_TRACE = set -x ; 
 
-TEST_JIG = \
-      ${CHECKER} ./$$base.test ${TEST_OPTS} \
-      > out/$$base.$$fmt.out 2> out/$$base.$$fmt.err ; \
- ${DIFF} -Nu ${srcdir}/saved/$$base.$$fmt.out out/$$base.$$fmt.out ${S2O} ; \
- ${DIFF} -Nu ${srcdir}/saved/$$base.$$fmt.err out/$$base.$$fmt.err ${S2O}
-
-TEST_ONE = \
-  LIBXO_OPTIONS=:W$$fmt ${TEST_JIG}
-
-TEST_TWO = \
-  LIBXO_OPTIONS=warn,encoder=test ${TEST_JIG}
-
-TEST_FORMATS = T XP JP HP X J H HIPx
+RUN_TESTS = ${srcdir}/../run-tests.sh ${srcdir}
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	@sh ${srcdir}/run-tests.sh run ${TEST_FILES}
+	@sh ${RUN_TESTS} run ${TEST_FILES}
 
 one:
 
 accept:
 	@${MKDIR} -p ${srcdir}/saved
-	@sh ${srcdir}/run-tests.sh accept ${TEST_FILES}
+	@sh ${RUN_TESTS} accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<
