@@ -89,15 +89,17 @@ TEST_TWO = \
 
 TEST_FORMATS = T XP JP HP X J H HIPx
 
+RUN_TESTS = ${srcdir}/../run-tests.sh ${srcdir}
+
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	@sh ${srcdir}/run-tests.sh run ${TEST_FILES}
+	@sh ${RUN_TESTS} run ${TEST_FILES}
 
 one:
 
 accept:
 	@${MKDIR} -p ${srcdir}/saved
-	@sh ${srcdir}/run-tests.sh accept ${TEST_FILES}
+	@sh ${RUN_TESTS} accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<
