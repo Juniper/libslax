@@ -1,0 +1,131 @@
+pi [xml] [version="1.0"]
+data [
+]
+comment [
+# normal
+# trim
+# trim ignore-ws ignore-dtd
+] []
+data [
+]
+comment [ comment ] []
+data [
+]
+dtd [DOCTYPE] [greeting [
+  <!ELEMENT greeting (#PCDATA)>
+]]
+data [
+]
+open tag [top] []
+data [
+    ]
+cdata [this is <no> longer <ignored>]
+data [
+    ]
+open tag [hazard] []
+data [This &&amp; is &gt;the&lt; end]
+close tag [hazard] []
+data [
+    
+    ]
+open tag [hazard] []
+data [&amp;at start and end&quot;]
+close tag [hazard] []
+data [
+    ]
+open tag [hazard] []
+data [&lt;&gt;at start and end&lt;&gt;]
+close tag [hazard] []
+data [
+    ]
+open tag [second] []
+data [
+        ]
+open tag [z] []
+data [1]
+close tag [z] []
+data [
+        ]
+open tag [a] []
+data [eh]
+close tag [a] []
+data [
+        ]
+open tag [b] []
+data [bee]
+close tag [b] []
+data [
+        ]
+open tag [c] []
+data [sea]
+close tag [c] []
+data [
+        ]
+open tag [d] []
+data [dee]
+close tag [d] []
+data [
+    ]
+close tag [second] []
+data [
+     ]
+open tag [province] [id='f0_17462'
+       name='Hainaut'
+       country='f0_162'
+       capital='f0_2345'
+       population='1283252'
+       area='3787']
+data [
+       ]
+open tag [city] [id='f0_2335'
+         country='f0_162'
+         province='f0_17462']
+data [
+         ]
+open tag [name] []
+data [
+           Charleroi
+         ]
+close tag [name] []
+data [
+         ]
+open tag [population] [year='95']
+data [
+           206491
+         ]
+close tag [population] []
+data [
+       ]
+close tag [city] []
+data [
+       ]
+open tag [city] [id='f0_2345'
+         country='f0_162'
+         province='f0_17462'
+         longitude='3.6'
+         latitude='50.3']
+data [
+         ]
+open tag [name] []
+data [
+           Mons
+         ]
+close tag [name] []
+data [
+         ]
+open tag [population] [year='87']
+data [
+           90720
+         ]
+close tag [population] []
+data [
+       ]
+close tag [city] []
+data [
+     ]
+close tag [province] []
+data [
+]
+close tag [top] []
+data [
+]
