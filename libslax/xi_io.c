@@ -77,6 +77,9 @@ xi_parse_failure (xi_parse_source_t *srcp, int errnum, const char *fmt, ...)
     va_end(vap);
 }
 
+/*
+ * Open an xi_parse_source_t for the given file descriptor.
+ */
 xi_parse_source_t *
 xi_parse_create (int fd, xi_parse_flags_t flags)
 {
@@ -116,6 +119,9 @@ xi_parse_create (int fd, xi_parse_flags_t flags)
     return srcp;
 }
 
+/*
+ * Open an xi_parse_source_t for the given file.
+ */
 xi_parse_source_t *
 xi_parse_open (const char *filename, xi_parse_flags_t flags)
 {
@@ -130,6 +136,11 @@ xi_parse_open (const char *filename, xi_parse_flags_t flags)
     return srcp;
 }
 
+/*
+ * Destroy an xi_parse_source_t, releasing all resource, including the
+ * file descriptor if XPSF_CLOSE_FD is set.  Any further referencing
+ * of the xi_parse_source_t is prohibited by law.
+ */
 void
 xi_parse_destroy (xi_parse_source_t *srcp)
 {
@@ -159,7 +170,7 @@ xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
     };
 
     size_t rc = len, elen = 0;
-    char *cur = start, *ins = NULL, *from = NULL;
+    char *cur = start, *ins = NULL, *from = cur;
     const char **ep;
 
     while (len > 0) {
@@ -167,6 +178,7 @@ xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
 	if (cur == NULL)
 	    break;
 
+	len -= cur - from;
 	for (ep = entities; *ep; ep++) {
 	    elen = strlen(*ep + 1);
 	    if (memcmp(*ep + 1, cur + 1, elen) == 0)
@@ -208,7 +220,7 @@ xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len)
 	/* Pointer maintenance */
 	cur += elen;		/* Skip over the rest of  */
 	from = cur;		/* Point where we'll copy from */
-	len -= elen;
+	len -= elen + 1;
 	rc -= elen;
     }
 
@@ -349,7 +361,10 @@ xi_parse_find (xi_parse_source_t *srcp, int ch, xi_offset_t offset)
 }
 
 /*
- * Whitespace in XML has a small definition: (#x20 | #x9 | #xD | #xA)
+ * Whitespace in XML has a small, specific definition:
+ *     (#x20 | #x9 | #xD | #xA)
+ * We burn 256 bytes to make this a simple quick test because
+ * we make this test a _huge_ number of times.
  */
 static inline int
 xi_isspace (int ch)
@@ -360,6 +375,11 @@ xi_isspace (int ch)
     return xi_space_test[ch & 0xff];
 }
 
+/*
+ * Skip over whitespace.  This is an ambidextrous function, in
+ * that it can move forward or backward, based on the "dir" parameter.
+ * It returns a pointer to the first non-whitespace character.
+ */
 static char *
 xi_skipws (char *cp, unsigned len, int dir)
 {
@@ -374,20 +394,28 @@ xi_skipws (char *cp, unsigned len, int dir)
     return NULL;
 }
 
+/*
+ * Deal with comments.
+ *
+ * XXX We don't enforce the XML prohibition on the use of "--" within
+ * comments.  It makes no sense and is really just a CLR (crummy
+ * little rule).  But we should check this if XPSF_VALIDATE is set.
+ */
 static xi_node_type_t
 xi_parse_token_comment (xi_parse_source_t *srcp, char **datap,
 			char **restp UNUSED)
 {
+    const int SKIP_LEN = 4;	/* strlen("<!--") */
     char *dp, *cp;
     xi_offset_t off;
 
-    if (xi_parse_avail(srcp, 4) <= 0) {
+    if (xi_parse_avail(srcp, SKIP_LEN) <= 0) {
 	/* Failure; premature EOF */
 	xi_parse_failure(srcp, 0, "premature end-of-file: comment");
 	return XI_TYPE_FAIL;
     }
 
-    off = xi_parse_offset(srcp) + 4; /* Skip "<!--" */
+    off = xi_parse_offset(srcp) + SKIP_LEN; /* Skip "<!--" */
 
     for (;;) {
 	off = xi_parse_find(srcp, '>', off);
@@ -403,15 +431,15 @@ xi_parse_token_comment (xi_parse_source_t *srcp, char **datap,
 	off += 1;
     }
 
-    dp = srcp->xps_curp + 4;
-    cp[-2] = '\0';
+    dp = srcp->xps_curp + SKIP_LEN;
+    cp[-2] = '\0';		/* 2 for "--" */
     xi_parse_move_curp(srcp, cp + 1);
 
     if (srcp->xps_flags & XPSF_IGNORE_COMMENTS)
 	return XI_TYPE_SKIP;
 
     if (srcp->xps_flags & XPSF_TRIM_WS) {
-	cp -= 2;
+	cp -= 2;			/* 2 for "--" */
 	dp = xi_skipws(dp, cp - dp, 1); /* Trim leading ws */
 	if (dp != NULL) {
 	    cp -= 1;
@@ -428,7 +456,8 @@ xi_parse_token_comment (xi_parse_source_t *srcp, char **datap,
 
 /*
  * Look for the terminating bit of a "<!DOCTYPE name [ ]>".  Returns a
- * pointer to the tailing '>' character.
+ * pointer to the tailing '>' character.  Note that the spec allows
+ * whitespace between the "]" and the ">", which makes no sense.
  */
 static char *
 xi_parse_find_brklt1 (xi_parse_source_t *srcp, xi_offset_t off)
@@ -456,7 +485,9 @@ xi_parse_find_brklt1 (xi_parse_source_t *srcp, xi_offset_t off)
 
 /*
  * Look for the terminating bit of a "<![CDATA[ ]]>".  Returns a pointer
- * to the tailing '>' character.
+ * to the tailing '>' character.  Note that the spec does not allow
+ * any whitespace between the "]]>" characters, nor between the opening
+ * characters.
  */
 static char *
 xi_parse_find_brklt2 (xi_parse_source_t *srcp, xi_offset_t off)
@@ -476,6 +507,12 @@ xi_parse_find_brklt2 (xi_parse_source_t *srcp, xi_offset_t off)
     }
 }
 
+/*
+ * DTDs are evil.  We don't support them.  But we need to parse them
+ * enough to ignore them, which is not as easy as one would hope.  The
+ * twisty little rules are oddly different for each little featurette.
+ * You are likely to be eaten by a grue.
+ */
 static xi_node_type_t
 xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
 {
@@ -485,7 +522,7 @@ xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
 	return XI_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 2;
+    char *dp = srcp->xps_curp + 2; /* 2 for "<!" */
     char *cp = &srcp->xps_bufp[off];
 
     /*
@@ -498,7 +535,11 @@ xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
 	if (rp != NULL && *rp == '\0')
 	    rp = NULL;
 	else if (strcmp(dp, "DOCTYPE") == 0) {
-	    /* <!DOCTYPE> is it's own little bit of hell */
+	    /*
+	     * <!DOCTYPE> is it's own little bit of hell.  We need to handle
+	     * the case where an internal DTD appears as a chunk of XML
+	     * with the <!DOCTYPE> tag.  Nested tags.  How wonderful.
+	     */
 	    char *xp = memchr(rp, ' ', cp + 1 - rp);
 	    if (xp != NULL) {
 		xp = xi_skipws(xp, strlen(xp), 1);
@@ -530,6 +571,11 @@ xi_parse_token_dtd (xi_parse_source_t *srcp, char **datap, char **restp)
     return XI_TYPE_DTD;
 }
 
+/*
+ * Handle the case where we see "<![".  Don't panic.  We're mostly
+ * ignoring these bits of fluff, but we do handle CDATA, because
+ * it's fairly trivial.
+ */
 static xi_node_type_t
 xi_parse_token_bracket (xi_parse_source_t *srcp, char **datap UNUSED,
 			char **restp UNUSED)
@@ -571,6 +617,9 @@ xi_parse_token_bracket (xi_parse_source_t *srcp, char **datap UNUSED,
  * <!ENTITY>.  Don't get me started....
  *
  * Fortunately, most of these can be (read: will be) ignored (for now).
+ * And since they are chiefly targeted as human writers and IMHO
+ * humans should never need to write XML content, we're really
+ * not losing anything.
  */
 static xi_node_type_t
 xi_parse_token_magic (xi_parse_source_t *srcp, char **datap,
