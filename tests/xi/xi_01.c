@@ -89,7 +89,7 @@ main (int argc, char **argv)
 	case XI_TYPE_TEXT:	/* Text content */
 	    if (!opt_quiet) {
 		int len;
-		if (opt_unescape)
+		if (opt_unescape && data && rest)
 		    len = xi_parse_unescape(srcp, data, rest - data);
 		else len = rest - data;
 		printf("data [%.*s]\n", len, data);
