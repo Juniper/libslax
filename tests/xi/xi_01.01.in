@@ -3,14 +3,29 @@
 # normal
 # trim
 # trim ignore-ws ignore-dtd
+# trim ignore-ws ignore-dtd unescape
 -->
 <!-- comment -->
 <!DOCTYPE greeting [
   <!ELEMENT greeting (#PCDATA)>
 ]>
 <top>
+    <refinfo refid="A91910">
+        <authors>
+            <author>Kagawa, N.</author>
+            <author>Mihara, K.</author>
+            <author>Sato, R.</author>
+        </authors>
+        <citation>J. Biochem.</citation>
+        <volume>101</volume><year>1987</year><pages>1471-1479</pages>
+        <title>Structural analysis of the gene encoding human 3beta-hydroxysteroid dehydrogenase/Delta(5-&gt;4)-isomerase.</title>
+        <xrefs>
+        <xref><db>MUID</db><uid>88032911</uid></xref>
+        </xrefs>
+    </refinfo>
+
     <![CDATA[this is <no> longer <ignored>]]>
-    <hazard>This &&amp; is &gt;the&lt; end</hazard>
+    <hazard>This &amp; that is &gt;the&lt; end</hazard>
     
     <hazard>&amp;at start and end&quot;</hazard>
     <hazard>&lt;&gt;at start and end&lt;&gt;</hazard>
