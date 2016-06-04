@@ -1,4 +1,9 @@
 <?xml version="1.0"?>
+<!--
+# normal
+# trim
+# trim ignore-ws ignore-dtd
+-->
 <!-- comment -->
 <!DOCTYPE greeting [
   <!ELEMENT greeting (#PCDATA)>
