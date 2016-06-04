@@ -38,7 +38,8 @@ main (int argc, char **argv)
     xi_parse_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
-	if (strcmp(argv[argc], "file") == 0) {
+	if (strcmp(argv[argc], "file") == 0
+	    || strcmp(argv[argc], "input") == 0) {
 	    if (argv[argc + 1])
 		opt_filename = argv[++argc];
 	} else if (strcmp(argv[argc], "read") == 0) {
