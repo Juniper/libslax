@@ -39,6 +39,8 @@ typedef uint32_t xi_source_flags_t; /* Flags for parser */
 #define XI_TYPE_SKIP	13	/* Skip/ignored input */
 #define XI_TYPE_CDATA	14	/* Cdata (<![CDATA[ ]]>) */
 
+#define XI_TYPE_ELT	XI_TYPE_OPEN
+
 /*
  * Parser source object
  *
@@ -84,5 +86,8 @@ xi_source_next_token (xi_source_t *srcp, char **datap, char **restp);
 
 size_t
 xi_source_unescape (xi_source_t *srcp, char *start, unsigned len);
+
+void
+xi_source_failure (xi_source_t *srcp, int errnum, const char *fmt, ...);
 
 #endif /* LIBSLAX_XI_SOURCE_H */
