@@ -27,6 +27,8 @@
 #define PA_MMAP_ATOM_SHIFT	12
 #define PA_MMAP_ATOM_SIZE	(1ULL << PA_MMAP_ATOM_SHIFT)
 
+#define PA_MMAP_HEADER_NAME_LEN	16 /* Max length of header name string */
+
 struct pa_mmap_info_s;
 typedef struct pa_mmap_info_s pa_mmap_info_t; /* Opaque type */
 
@@ -81,5 +83,8 @@ pa_mmap_addr (pa_mmap_t *pmp, pa_atom_t atom);
 void *
 pa_mmap_header (pa_mmap_t *pmp, const char *name,
 		uint16_t type, uint16_t flags, size_t size);
+
+void *
+pa_mmap_next_header (pa_mmap_t *pmp, void *header);
 
 #endif /* LIBSLAX_PA_MMAP_H */
