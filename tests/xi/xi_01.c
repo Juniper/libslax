@@ -25,7 +25,7 @@
 
 #include "slaxconfig.h"
 #include <libslax/slax.h>
-#include <libslax/xi_io.h>
+#include <libslax/xi_source.h>
 
 int
 main (int argc, char **argv)
@@ -35,7 +35,7 @@ main (int argc, char **argv)
     int opt_quiet = 0;
     int opt_unescape = 0;
     int fd = 0;
-    xi_parse_flags_t flags = 0;
+    xi_source_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
 	if (strcmp(argv[argc], "file") == 0
@@ -67,14 +67,14 @@ main (int argc, char **argv)
 	    err(1, "could not open file: %s", opt_filename);
     }
 
-    xi_parse_source_t *srcp = xi_parse_create(fd, flags);
+    xi_source_t *srcp = xi_source_create(fd, flags);
     if (srcp == NULL)
 	errx(1, "failed to create source");
 
     char *data, *rest;
     xi_node_type_t type;
     for (;;) {
-	type = xi_parse_next_token(srcp, &data, &rest);
+	type = xi_source_next_token(srcp, &data, &rest);
 
 	switch (type) {
 	case XI_TYPE_NONE:	/* Unknown type */
@@ -90,7 +90,7 @@ main (int argc, char **argv)
 	    if (!opt_quiet) {
 		int len;
 		if (opt_unescape && data && rest)
-		    len = xi_parse_unescape(srcp, data, rest - data);
+		    len = xi_source_unescape(srcp, data, rest - data);
 		else len = rest - data;
 		printf("data [%.*s]\n", len, data);
 	    }
@@ -135,7 +135,7 @@ main (int argc, char **argv)
 	}
     }
 
-    xi_parse_destroy(srcp);
+    xi_source_destroy(srcp);
 
     return 0;
 }
