@@ -50,7 +50,7 @@
 #define XI_BUFSIZ_MIN	4096	/* Minimum space for reading data */
 #define XI_BUFSIZ_FAIL	512	/* Absolute minimum space for reading data */
 
-static void
+void
 xi_source_failure (xi_source_t *srcp, int errnum, const char *fmt, ...)
 {
     va_list vap;
