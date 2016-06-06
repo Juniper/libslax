@@ -134,7 +134,8 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     nodep->xn_contents = PA_NULL_ATOM;
 
     xtp->xt_root = node_atom;
-    xip->xi_stack[xip->xi_depth] = node_atom;
+    xip->xi_atom_stack[xip->xi_depth] = node_atom;
+    xip->xi_stack[xip->xi_depth] = nodep;
 
     return parsep;
 
