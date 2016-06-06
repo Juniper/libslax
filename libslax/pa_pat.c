@@ -22,6 +22,7 @@
 #include <libslax/pa_common.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
+#include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
 
 #if 0
@@ -278,6 +279,12 @@ pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
     return root;
 }
 
+const uint8_t *
+pa_pat_istr_key_func (pa_pat_t *pp, pa_pat_node_t *node)
+{
+    return (const uint8_t *) pa_istr_atom_string(pp->pp_data, node->ppn_data);
+}
+
 pa_pat_t *
 pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
 		   void *data_store, pa_pat_key_func_t key_func,
@@ -313,6 +320,13 @@ pa_pat_open (pa_mmap_t *pmp, const char *name,
 
     return pa_pat_open_nodes(pmp, name, pfp, data_store, key_func, klen);
 }
+
+void
+pa_pat_close (pa_pat_t *ppp UNUSED)
+{
+    return;
+}
+
 
 #if 0
 pa_pat_t *
