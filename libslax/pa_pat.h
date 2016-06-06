@@ -164,6 +164,9 @@ pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 		  pa_fixed_t *nodes, void *data_store,
 		  pa_pat_key_func_t key_func, uint16_t klen);
 
+const uint8_t *
+pa_pat_istr_key_func (pa_pat_t *pp, pa_pat_node_t *node);
+
 /*
  * Add a node to the patricia tree.
  */
@@ -882,5 +885,8 @@ pa_pat_t *
 pa_pat_open (pa_mmap_t *pmp, const char *name,
 	      void *data_store, pa_pat_key_func_t key_func,
 	      uint16_t klen, pa_shift_t shift, uint32_t max_atoms);
+
+void
+pa_pat_close (pa_pat_t *ppp);
 
 #endif /* LIBSLAX_PA_PAT_H */
