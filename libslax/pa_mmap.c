@@ -62,8 +62,6 @@ typedef struct pa_mmap_free_s {
     pa_matom_t pmf_next;		/* Free list */
 } pa_mmap_free_t;
 
-#define PA_MMAP_HEADER_NAME_LEN	16 /* Length of name string */
-
 typedef struct pa_mmap_header_s {
     char pmh_name[PA_MMAP_HEADER_NAME_LEN]; /* Simple text name */
     uint16_t pmh_type;		/* Type of data (PA_TYPE_*) */
@@ -503,4 +501,27 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
     pmp->pm_infop->pmi_num_headers += 1;
 
     return &pmhp->pmh_content[0];
+}
+
+void *
+pa_mmap_next_header (pa_mmap_t *pmp, void *header)
+{
+    pa_mmap_header_t *pmhp;
+    uint8_t *base = pmp->pm_addr;
+    uint32_t i;
+
+    base -= sizeof(*pmhp);
+    base += sizeof(*pmp->pm_infop); /* Named headers start after ours */
+
+    for (i = 0; i < pmp->pm_infop->pmi_num_headers; i++) {
+	pmhp = (void *) base;
+	base += sizeof(*pmhp) + pmhp->pmh_size;
+	if ((header == NULL || header == &pmhp->pmh_content[0])
+	    && i < pmp->pm_infop->pmi_num_headers - 1) {
+	    pmhp = (void *) base;
+	    return &pmhp->pmh_content[0];
+	}
+    }
+
+    return NULL;
 }
