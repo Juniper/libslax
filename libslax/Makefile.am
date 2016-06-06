@@ -64,7 +64,8 @@ noinst_HEADERS = \
     slaxstring.h \
     slaxtree.h \
     slaxutil.h \
-    xi_io.h
+    xi_parse.h \
+    xi_source.h
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
@@ -90,7 +91,8 @@ libslax_la_SOURCES = \
     slaxstring.c \
     slaxtree.c \
     slaxwriter.c \
-    xi_io.c
+    xi_parse.c \
+    xi_source.c
 
 slaxparser.h: slaxparser.c
 ${libslax_la_SOURCES:.c=.o}: ${SLAXHEADERS}
