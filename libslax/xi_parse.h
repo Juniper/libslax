@@ -110,7 +110,8 @@ typedef struct xi_insertion_s {
     xi_tree_t *xi_tree;		/* Tree we are inserted into */
     xi_depth_t xi_depth;	/* Current depth in hierarchy */
     unsigned xi_relation;	/* How to handle the next insertion */
-    xi_node_id_t xi_stack[XI_DEPTH_MAX]; /* Insertion point (via xi_depth) */
+    xi_node_id_t xi_atom_stack[XI_DEPTH_MAX]; /* Insertion point; atoms */
+    xi_node_t *xi_stack[XI_DEPTH_MAX];	      /* Insertion point; pointers */
 } xi_insertion_t;
 
 /* Values for xi_relation */
