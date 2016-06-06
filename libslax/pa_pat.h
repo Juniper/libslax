@@ -55,18 +55,9 @@ grand (unsigned imax)
 typedef struct pa_pat_node_s {
     uint16_t ppn_length;     /**< length of key, formated like bit */
     uint16_t ppn_bit;	       /**< bit number to test for patricia */
-#if 0
-    struct pa_pat_node_s *ppn_left; /**< left branch for patricia search */
-    struct pa_pat_node_s *ppn_right; /**< right branch for same */
-    union {
-	uint8_t ppn_key[0];	 /**< Start of key */
-	uint8_t *ppn_key_ptr[0]; /**< pointer to key */
-    } ppn_keys;
-#else
     pa_atom_t ppn_left;		/* Atom of left node of patricia tree */
     pa_atom_t ppn_right;	/* Atom of right node of patricia tree */
     pa_atom_t ppn_data;		/* Atom of data node (in some other tree) */
-#endif /* 0 */
 } pa_pat_node_t;
 
 /**
@@ -888,5 +879,12 @@ pa_pat_open (pa_mmap_t *pmp, const char *name,
 
 void
 pa_pat_close (pa_pat_t *ppp);
+
+static inline pa_atom_t
+pa_pat_get_atom (pa_pat_t *root, uint16_t key_bytes, const void *key)
+{
+    pa_pat_node_t *nodep = pa_pat_get(root, key_bytes, key);
+    return pa_pat_node_data(root, nodep);
+}
 
 #endif /* LIBSLAX_PA_PAT_H */
