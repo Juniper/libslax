@@ -234,9 +234,9 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     pmp->pm_len = new_len;	/* Record our new length */
+    fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
 
     if (new_count > count) {
-	fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
 	pa_matom_t na = fa + count; /* And put the rest on the free list */
 
 	pmfp = pa_pointer(pmp->pm_addr, na, PA_MMAP_ATOM_SHIFT);
