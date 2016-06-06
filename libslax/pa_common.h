@@ -37,16 +37,16 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
 /* Type of our trees */
-#define PA_TYPE_UNKNOWN		0 /* No type; bad news */
-#define PA_TYPE_MMAP		1 /* Header for pa_mmap_t */
-#define PA_TYPE_FIXED		2 /* Header for pa_fixed_t */
-#define PA_TYPE_ARB		3 /* Header for pa_arb_t */
-#define PA_TYPE_ISTR		4 /* Header for pa_istr_t */
-#define PA_TYPE_PAT		5 /* Header for pa_pat_t */
-#define PA_TYPE_OPAQUE		6 /* Opaque header */
+#define PA_TYPE_UNKNOWN		0 /* No type (bad news) */
+#define PA_TYPE_MMAP		1 /* Memory mapped segment (pa_mmap_t) */
+#define PA_TYPE_FIXED		2 /* Fixed-size malloc pool (pa_fixed_t) */
+#define PA_TYPE_ARB		3 /* Arbitrary-sized malloc pool (pa_arb_t) */
+#define PA_TYPE_ISTR		4 /* Immutable string table (pa_istr_t) */
+#define PA_TYPE_PAT		5 /* Patricia tree (pa_pat_t) */
+#define PA_TYPE_OPAQUE		6 /* Opaque header (can't decode) */
+#define PA_TYPE_TREE		7 /* Tree (xi_tree_t) */
 
-#define PA_TYPE_MAX		7
-  
+#define PA_TYPE_MAX		8
 
 /*
  * To distinquish between pa_mmap atoms and higher level atoms, we
