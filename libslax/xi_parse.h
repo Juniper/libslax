@@ -68,7 +68,7 @@ typedef struct xi_node_s {
     xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
     xi_ns_id_t xn_ns;		/* Namespace of this node (in namespace db) */
     xi_name_id_t xn_name;	/* Name of this node (in name db) */
-    xi_node_id_t xn_next;	/* Next node (in this tree) */
+    xi_node_id_t xn_next;	/* Next node (or parent if last) */
     xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
 } xi_node_t;
 
@@ -95,7 +95,7 @@ typedef struct xi_tree_info_s {
 typedef struct xi_tree_s {
     pa_mmap_t *xt_mmap;	/* Base memory information */
     xi_namepool_t *xt_namepool;	/* Namepool used by this tree */
-    pa_fixed_t *xt_tree;	/* Tree node */
+    pa_fixed_t *xt_nodes;	/* Pool of nodes */
     xi_tree_info_t *xt_infop;	/* Base information */
 } xi_tree_t;
 
@@ -103,16 +103,25 @@ typedef struct xi_tree_s {
 #define xt_max_depth xt_infop->xti_max_depth
 
 /*
+ * The insertion stack
+ */
+typedef struct xi_istack_s {
+    xi_node_id_t xs_atom;	/* Our node (atom) */
+    xi_node_t *xs_node;		/* Our node (pointer) */
+    xi_node_id_t xs_last_atom;	/* Last child we appended (atom) */
+    xi_node_t *xs_last_node;	/* Last child we appended (pointer) */
+} xi_istack_t;
+
+/*
  * An insertion point is all the information we need to add a node to
  * some sort of output tree.
  */
-typedef struct xi_insertion_s {
+typedef struct xi_insert_s {
     xi_tree_t *xi_tree;		/* Tree we are inserted into */
     xi_depth_t xi_depth;	/* Current depth in hierarchy */
     unsigned xi_relation;	/* How to handle the next insertion */
-    xi_node_id_t xi_atom_stack[XI_DEPTH_MAX]; /* Insertion point; atoms */
-    xi_node_t *xi_stack[XI_DEPTH_MAX];	      /* Insertion point; pointers */
-} xi_insertion_t;
+    xi_istack_t xi_stack[XI_DEPTH_MAX]; /* Insertion points */
+} xi_insert_t;
 
 /* Values for xi_relation */
 #define XIR_SIBLING	1	/* Insert as sibling */
@@ -125,7 +134,7 @@ typedef struct xi_insertion_s {
 typedef struct xi_parse_s {
     xi_source_t *xp_srcp;	/* Source of incoming tokens */
     xi_ruleset_t *xp_ruleset;	/* Current set of rules */
-    xi_insertion_t *xp_insertion; /* Insertion point */
+    xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
 
 xi_parse_t *
