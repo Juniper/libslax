@@ -74,6 +74,9 @@ main (int argc, char **argv)
 	}
     }
 
+    if (!opt_quiet)
+	slaxLogEnable(1);
+
     if (opt_clean)
 	unlink(opt_database);
 
@@ -82,7 +85,7 @@ main (int argc, char **argv)
     pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
     assert(pmp);
 
-    xi_parse_t *parsep = xi_parse_open(pmp, "test", opt_filename, 0);
+    xi_parse_t *parsep = xi_parse_open(pmp, "test", opt_filename, flags);
     assert(parsep);
 
     xi_parse(parsep);
