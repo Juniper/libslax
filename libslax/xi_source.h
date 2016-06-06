@@ -20,41 +20,42 @@ typedef uint16_t xi_name_id_t;	/* Element name identifier (index) */
 typedef uint16_t xi_ns_id_t;	/* Namespace identifier (index) */
 typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
 typedef off_t xi_offset_t;	/* Offset in file or buffer */
-typedef uint32_t xi_parse_flags_t; /* Flags for parser */
+typedef uint32_t xi_source_flags_t; /* Flags for parser */
 
 /* Type of XML nodes */
 #define XI_TYPE_NONE	0	/* Unknown type */
 #define XI_TYPE_EOF	1	/* End of file */
 #define XI_TYPE_FAIL	2	/* Failure mode */
-#define XI_TYPE_TEXT	3	/* Text content */
-#define XI_TYPE_OPEN	4	/* Open tag */
-#define XI_TYPE_CLOSE	5	/* Close tag */
-#define XI_TYPE_EMPTY	6	/* Empty tag */
-#define XI_TYPE_PI	7	/* Processing instruction */
-#define XI_TYPE_DTD	8	/* <!DTD> nonsense */
-#define XI_TYPE_COMMENT	9	/* Comment */
-#define XI_TYPE_ATTR	10	/* XML attribute */
-#define XI_TYPE_NS	11	/* XML namespace */
-#define XI_TYPE_SKIP	12	/* Skip/ignored input */
-#define XI_TYPE_CDATA	13	/* Cdata (<![CDATA[ ]]>) */
+#define XI_TYPE_ROOT	3	/* Root node (container); not "root element" */
+#define XI_TYPE_TEXT	4	/* Text content */
+#define XI_TYPE_OPEN	5	/* Open tag */
+#define XI_TYPE_CLOSE	6	/* Close tag */
+#define XI_TYPE_EMPTY	7	/* Empty tag */
+#define XI_TYPE_PI	8	/* Processing instruction */
+#define XI_TYPE_DTD	9	/* <!DTD> nonsense */
+#define XI_TYPE_COMMENT	10	/* Comment */
+#define XI_TYPE_ATTR	11	/* XML attribute */
+#define XI_TYPE_NS	12	/* XML namespace */
+#define XI_TYPE_SKIP	13	/* Skip/ignored input */
+#define XI_TYPE_CDATA	14	/* Cdata (<![CDATA[ ]]>) */
 
 /*
  * Parser source object
  *
  * Note that we return pointers directly into our buffer.
  */
-typedef struct xi_parse_source_s {
+typedef struct xi_source_s {
     int xps_fd;			/* File being read */
     char *xps_filename;		/* Filename */
     unsigned xps_lineno;	/* Line number of input */
     unsigned xps_offset;	/* Offset in the file */
-    xi_parse_flags_t xps_flags;	/* Flags for this source */
+    xi_source_flags_t xps_flags; /* Flags for this source */
     char *xps_bufp;		/* Input buffer */
     char *xps_curp;		/* Current data point */
     unsigned xps_len;		/* Number of bytes in the input buffer */
     unsigned xps_size;		/* Size of the input buffer (max) */
     xi_node_type_t xps_last;	/* Type of last token returned */
-} xi_parse_source_t;
+} xi_source_t;
 
 /* Flags for ps_flags: */
 #define XPSF_MMAP_INPUT	(1<<0)	/* File is mmap'd */
@@ -69,19 +70,19 @@ typedef struct xi_parse_source_s {
 #define XPSF_IGNORE_COMMENTS (1<<9) /* Discard comments */
 #define XPSF_IGNORE_DTD (1<<10) /* Discard DTDs */
 
-xi_parse_source_t *
-xi_parse_create (int fd, xi_parse_flags_t flags);
+xi_source_t *
+xi_source_create (int fd, xi_source_flags_t flags);
 
-xi_parse_source_t *
-xi_parse_open (const char *path, xi_parse_flags_t flags);
+xi_source_t *
+xi_source_open (const char *path, xi_source_flags_t flags);
 
 void
-xi_parse_destroy (xi_parse_source_t *srcp);
+xi_source_destroy (xi_source_t *srcp);
 
 xi_node_type_t
-xi_parse_next_token (xi_parse_source_t *srcp, char **datap, char **restp);
+xi_source_next_token (xi_source_t *srcp, char **datap, char **restp);
 
 size_t
-xi_parse_unescape (xi_parse_source_t *srcp, char *start, unsigned len);
+xi_source_unescape (xi_source_t *srcp, char *start, unsigned len);
 
 #endif /* LIBSLAX_XI_SOURCE_H */
