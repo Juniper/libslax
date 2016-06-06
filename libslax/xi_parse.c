@@ -27,6 +27,7 @@
 
 #include "slaxconfig.h"
 #include <libslax/slaxdef.h>
+#include <libslax/slax.h>
 #include <libslax/pa_common.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
@@ -36,7 +37,7 @@
 #include <libslax/xi_source.h>
 #include <libslax/xi_parse.h>
 
-#define XI_MAX_ATOMS	(1<<24)
+#define XI_MAX_ATOMS	(1<<26)
 #define XI_SHIFT	12
 #define XI_ISTR_SHIFT	2
 
@@ -53,13 +54,13 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
 {
     xi_source_t *srcp = NULL;
     xi_parse_t *parsep = NULL;
-    xi_insertion_t *xip = NULL;
+    xi_insert_t *xip = NULL;
     xi_tree_t *xtp = NULL;
     xi_namepool_t *xnp = NULL;
     pa_istr_t *pip = NULL;
     pa_pat_t *ppp = NULL;
     xi_node_t *nodep = NULL;
-    pa_fixed_t *tree = NULL;
+    pa_fixed_t *nodes = NULL;
     pa_atom_t node_atom;
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
 
@@ -96,18 +97,18 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     if (xtp == NULL)
 	goto fail;
 
-    tree = pa_fixed_open(pmp, xi_mk_name(namebuf, name, ".nodes"), XI_SHIFT,
+    nodes = pa_fixed_open(pmp, xi_mk_name(namebuf, name, ".nodes"), XI_SHIFT,
 			 sizeof(*nodep), XI_MAX_ATOMS);
-    if (tree == NULL)
+    if (nodes == NULL)
 	goto fail;
     xtp->xt_infop = pa_mmap_header(pmp, xi_mk_name(namebuf, name, "tree"),
 				   PA_TYPE_TREE, 0, sizeof(*xtp->xt_infop));
     xtp->xt_mmap = pmp;
     xtp->xt_namepool = xnp;
-    xtp->xt_tree = tree;
+    xtp->xt_nodes = nodes;
     xtp->xt_max_depth = 0;
 
-    /* The xi_insertion_t is the point in the tree at which we are inserting */
+    /* The xi_insert_t is the point in the tree at which we are inserting */
     xip = calloc(1, sizeof(*xip));
     if (xip == NULL)
 	goto fail;
@@ -120,10 +121,10 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     if (parsep == NULL)
 	goto fail;
     parsep->xp_srcp = srcp;
-    parsep->xp_insertion = xip;
+    parsep->xp_insert = xip;
 
-    node_atom = pa_fixed_alloc_atom(tree);
-    nodep = pa_fixed_atom_addr(tree, node_atom);
+    node_atom = pa_fixed_alloc_atom(nodes);
+    nodep = pa_fixed_atom_addr(nodes, node_atom);
     if (nodep == NULL)
 	goto fail;
     nodep->xn_type = XI_TYPE_ROOT;
@@ -134,8 +135,8 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     nodep->xn_contents = PA_NULL_ATOM;
 
     xtp->xt_root = node_atom;
-    xip->xi_atom_stack[xip->xi_depth] = node_atom;
-    xip->xi_stack[xip->xi_depth] = nodep;
+    xip->xi_stack[xip->xi_depth].xs_atom = node_atom;
+    xip->xi_stack[xip->xi_depth].xs_node = nodep;
 
     return parsep;
 
@@ -162,6 +163,120 @@ xi_parse_destroy (xi_parse_t *parsep UNUSED)
 {
     return;
 }
+
+#if 0
+static const char *
+xi_namepool_string (xi_namepool_t *xnp, pa_atom_t atom)
+{
+    return pa_istr_atom_string(xnp->xnp_names, atom);
+}
+#endif /* 0 */
+
+static pa_atom_t
+xi_namepool_atom (xi_namepool_t *xnp, const char *data)
+{
+    uint16_t len = strlen(data) + 1;
+    pa_pat_t *ppp = xnp->xnp_names_index;
+    pa_atom_t atom = pa_pat_get_atom(ppp, len, data);
+    if (atom == PA_NULL_ATOM) {
+	atom = pa_istr_string(ppp->pp_data, data);
+	if (atom == PA_NULL_ATOM)
+	    pa_warning(0, "create key failed: %s", data);
+	else if (!pa_pat_add(ppp, atom, len))
+	    pa_warning(0, "duplicate key: %s", data);
+    }
+
+    return atom;
+}
+
+static void
+xi_insert_push (xi_insert_t *xip, pa_atom_t atom, xi_node_t *nodep)
+{
+    xip->xi_depth += 1;
+    xip->xi_stack[xip->xi_depth].xs_atom = atom;
+    xip->xi_stack[xip->xi_depth].xs_node = nodep;
+}
+
+static void
+xi_insert_open (xi_parse_t *parsep, const char *data)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    xi_namepool_t *xnp = xip->xi_tree->xt_namepool;
+    pa_atom_t name_atom = xi_namepool_atom(xnp, data);
+    if (name_atom == PA_NULL_ATOM)
+	return;
+
+    pa_atom_t node_atom = pa_fixed_alloc_atom(xip->xi_tree->xt_nodes);
+    xi_node_t *nodep = pa_fixed_atom_addr(xip->xi_tree->xt_nodes, node_atom);
+    if (nodep == NULL)
+	return;
+
+    nodep->xn_type = XI_TYPE_ELT;
+    nodep->xn_ns = PA_NULL_ATOM;
+    nodep->xn_name = name_atom;
+    nodep->xn_contents = PA_NULL_ATOM;
+
+    slaxLog("xi_insert_open: [%s] %u (depth %u)", data, name_atom,
+	   xip->xi_depth + 1);
+
+    /*
+     * If we don't have a child, make one.  Otherwise append it.
+     */
+    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
+    if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
+	/* Record us as the child of the current stack node */
+	xsp->xs_node->xn_contents = node_atom;
+
+	/* Set our "parent" as the current node */
+	nodep->xn_next = xsp->xs_atom;
+
+    } else {
+	/* Append our node */
+	nodep->xn_next = xsp->xs_atom;
+	xsp->xs_last_node->xn_next = node_atom;
+    }
+
+    /* Mark the "last" as us */
+    xsp->xs_last_atom = node_atom;
+    xsp->xs_last_node = nodep;
+
+    /* Push our node on the stack */
+    xi_insert_push(xip, node_atom, nodep);
+
+    /* Set our depth */
+    nodep->xn_depth = xip->xi_depth;
+}
+
+static void
+xi_insert_close (xi_parse_t *parsep, const char *data)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    xi_namepool_t *xnp = xip->xi_tree->xt_namepool;
+    pa_atom_t name_atom = xi_namepool_atom(xnp, data);
+    if (name_atom == PA_NULL_ATOM)
+	return;
+    
+    slaxLog("xi_insert_close: [%s] %u (depth %u)", data, name_atom,
+	   xip->xi_depth);
+
+    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
+
+    if (xip->xi_depth == 0 || xsp->xs_node == NULL
+	|| xsp->xs_node->xn_name != name_atom) {
+	xi_source_failure(parsep->xp_srcp, 0, "close doesn't match");
+	return;
+    }
+
+    bzero(xsp, sizeof(*xsp));
+    xip->xi_depth -= 1;
+}
+
+static void
+xi_insert_data (xi_parse_t *parsep UNUSED, const char *data UNUSED,
+		size_t len UNUSED)
+{
+}
+
 
 int
 xi_parse (xi_parse_t *parsep)
@@ -190,38 +305,41 @@ xi_parse (xi_parse_t *parsep)
 		if (opt_unescape && data && rest)
 		    len = xi_source_unescape(srcp, data, rest - data);
 		else len = rest - data;
-		printf("data [%.*s]\n", len, data);
+		slaxLog("data [%.*s]", len, data);
 	    }
+	    xi_insert_data(parsep, data, rest - data);
 	    break;
 
 	case XI_TYPE_OPEN:	/* Open tag */
 	    if (!opt_quiet)
-		printf("open tag [%s] [%s]\n", data ?: "", rest ?: "");
+		slaxLog("open tag [%s] [%s]", data ?: "", rest ?: "");
+	    xi_insert_open(parsep, data);
 	    break;
 
 	case XI_TYPE_CLOSE:	/* Close tag */
 	    if (!opt_quiet)
-		printf("close tag [%s] [%s]\n", data ?: "", rest ?: "");
+		slaxLog("close tag [%s] [%s]", data ?: "", rest ?: "");
+	    xi_insert_close(parsep, data);
 	    break;
 
 	case XI_TYPE_PI:	/* Processing instruction */
 	    if (!opt_quiet)
-		printf("pi [%s] [%s]\n", data ?: "", rest ?: "");
+		slaxLog("pi [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_DTD:	/* DTD nonsense */
 	    if (!opt_quiet)
-		printf("dtd [%s] [%s]\n", data ?: "", rest ?: "");
+		slaxLog("dtd [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_COMMENT:	/* Comment */
 	    if (!opt_quiet)
-		printf("comment [%s] [%s]\n", data ?: "", rest ?: "");
+		slaxLog("comment [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_CDATA:	/* cdata */
 	    if (!opt_quiet)
-		printf("cdata [%.*s]\n", (int)(rest - data), data);
+		slaxLog("cdata [%.*s]", (int)(rest - data), data);
 	    break;
 
 	case XI_TYPE_ATTR:	/* XML attribute */
