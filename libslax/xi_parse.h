@@ -97,6 +97,7 @@ typedef struct xi_tree_s {
     xi_namepool_t *xt_namepool;	/* Namepool used by this tree */
     pa_fixed_t *xt_nodes;	/* Pool of nodes */
     xi_tree_info_t *xt_infop;	/* Base information */
+    pa_arb_t *xt_textpool;	/* Text data values */
 } xi_tree_t;
 
 #define xt_root xt_infop->xti_root
