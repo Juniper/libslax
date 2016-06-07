@@ -58,6 +58,7 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     xi_tree_t *xtp = NULL;
     xi_namepool_t *xnp = NULL;
     pa_istr_t *pip = NULL;
+    pa_arb_t *pap = NULL;
     pa_pat_t *ppp = NULL;
     xi_node_t *nodep = NULL;
     pa_fixed_t *nodes = NULL;
@@ -101,12 +102,18 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
 			 sizeof(*nodep), XI_MAX_ATOMS);
     if (nodes == NULL)
 	goto fail;
+
+    pap = pa_arb_open(pmp, xi_mk_name(namebuf, name, ".data"));
+    if (pap == NULL)
+	goto fail;
+
     xtp->xt_infop = pa_mmap_header(pmp, xi_mk_name(namebuf, name, "tree"),
 				   PA_TYPE_TREE, 0, sizeof(*xtp->xt_infop));
     xtp->xt_mmap = pmp;
     xtp->xt_namepool = xnp;
     xtp->xt_nodes = nodes;
     xtp->xt_max_depth = 0;
+    xtp->xt_textpool = pap;
 
     /* The xi_insert_t is the point in the tree at which we are inserting */
     xip = calloc(1, sizeof(*xip));
@@ -141,6 +148,8 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     return parsep;
 
  fail:
+    if (pap)
+	pa_arb_close(pap);
     if (pip)
 	pa_istr_close(pip);
     if (ppp)
@@ -272,11 +281,60 @@ xi_insert_close (xi_parse_t *parsep, const char *data)
 }
 
 static void
-xi_insert_data (xi_parse_t *parsep UNUSED, const char *data UNUSED,
+xi_insert_text (xi_parse_t *parsep UNUSED, const char *data UNUSED,
 		size_t len UNUSED)
 {
-}
+    xi_insert_t *xip = parsep->xp_insert;
+    pa_arb_t *prp = xip->xi_tree->xt_textpool;
+    pa_atom_t data_atom = pa_arb_alloc(prp, len + 1);
+    char *cp = pa_arb_atom_addr(prp, data_atom);
 
+    if (cp == NULL)
+	return;
+
+    memcpy(cp, data, len);
+    cp[len] = '\0';
+
+    pa_atom_t node_atom = pa_fixed_alloc_atom(xip->xi_tree->xt_nodes);
+    xi_node_t *nodep = pa_fixed_atom_addr(xip->xi_tree->xt_nodes, node_atom);
+    if (nodep == NULL) {
+	pa_arb_free_atom(prp, data_atom);
+	return;
+    }
+
+    nodep->xn_type = XI_TYPE_TEXT;
+    nodep->xn_ns = PA_NULL_ATOM;
+    nodep->xn_name = PA_NULL_ATOM;
+    nodep->xn_contents = data_atom;
+
+    slaxLog("xi_insert_text: [%.*s] %u (depth %u)", len, data, data_atom,
+	   xip->xi_depth + 1);
+
+
+    /*
+     * If we don't have a child, make one.  Otherwise append it.
+     */
+    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
+    if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
+	/* Record us as the child of the current stack node */
+	xsp->xs_node->xn_contents = node_atom;
+
+	/* Set our "parent" as the current node */
+	nodep->xn_next = xsp->xs_atom;
+
+    } else {
+	/* Append our node */
+	nodep->xn_next = xsp->xs_atom;
+	xsp->xs_last_node->xn_next = node_atom;
+    }
+
+    /* Mark the "last" as us */
+    xsp->xs_last_atom = node_atom;
+    xsp->xs_last_node = nodep;
+
+    /* Set our depth */
+    nodep->xn_depth = xip->xi_depth + 1;
+}
 
 int
 xi_parse (xi_parse_t *parsep)
@@ -305,9 +363,9 @@ xi_parse (xi_parse_t *parsep)
 		if (opt_unescape && data && rest)
 		    len = xi_source_unescape(srcp, data, rest - data);
 		else len = rest - data;
-		slaxLog("data [%.*s]", len, data);
+		slaxLog("text [%.*s]", len, data);
 	    }
-	    xi_insert_data(parsep, data, rest - data);
+	    xi_insert_text(parsep, data, rest - data);
 	    break;
 
 	case XI_TYPE_OPEN:	/* Open tag */
@@ -352,4 +410,17 @@ xi_parse (xi_parse_t *parsep)
     }
 
     return 0;
+}
+
+void
+xi_parse_dump (xi_parse_t *parsep)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    pa_arb_t *prp = xip->xi_tree->xt_textpool;
+
+    xi_node_id_t node_atom = xip->xi_tree->xt_root;
+
+    while (node_atom != PA_NULL_ATOM) {
+	
+    }
 }
