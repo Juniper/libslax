@@ -173,14 +173,6 @@ xi_parse_destroy (xi_parse_t *parsep UNUSED)
     return;
 }
 
-#if 0
-static const char *
-xi_namepool_string (xi_namepool_t *xnp, pa_atom_t atom)
-{
-    return pa_istr_atom_string(xnp->xnp_names, atom);
-}
-#endif /* 0 */
-
 static pa_atom_t
 xi_namepool_atom (xi_namepool_t *xnp, const char *data)
 {
@@ -196,6 +188,12 @@ xi_namepool_atom (xi_namepool_t *xnp, const char *data)
     }
 
     return atom;
+}
+
+static const char *
+xi_namepool_string (xi_namepool_t *xnp, pa_atom_t name_atom)
+{
+    return pa_istr_atom_string(xnp->xnp_names, name_atom);
 }
 
 static void
@@ -416,11 +414,39 @@ void
 xi_parse_dump (xi_parse_t *parsep)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    pa_arb_t *prp = xip->xi_tree->xt_textpool;
-
-    xi_node_id_t node_atom = xip->xi_tree->xt_root;
+    xi_tree_t *xtp = xip->xi_tree;
+    const char *cp;
+    pa_atom_t node_atom = xtp->xt_root;
+    xi_node_t *nodep;
 
     while (node_atom != PA_NULL_ATOM) {
-	
+	nodep = pa_fixed_atom_addr(xtp->xt_nodes, node_atom);
+	slaxLog("node: %u -> %p (depth %u)", node_atom, nodep,
+		nodep ? nodep->xn_depth : 0);
+
+	if (nodep == NULL) {
+	    slaxLog("null atom");
+	    break;
+	}
+
+	if (nodep->xn_type == XI_TYPE_ROOT) {
+	    slaxLog("(root)");
+	} else if (nodep->xn_type == XI_TYPE_ELT) {
+	    cp = xi_namepool_string(xtp->xt_namepool, nodep->xn_name);
+	    slaxLog("element: %s", cp ?: "[error]");
+
+	} else if (nodep->xn_type == XI_TYPE_TEXT) {
+	    cp = pa_arb_atom_addr(xtp->xt_textpool, nodep->xn_contents);
+	    slaxLog("text: %s", cp ?: "[error]");
+
+	} else {
+	    slaxLog("unhandled node: %u", nodep->xn_type);
+	}
+
+	if (nodep->xn_contents) {
+	    node_atom = nodep->xn_contents;
+	} else {
+	    node_atom = nodep->xn_next;
+	}
     }
 }
