@@ -92,7 +92,7 @@ main (int argc, char **argv)
 		if (opt_unescape && data && rest)
 		    len = xi_source_unescape(srcp, data, rest - data);
 		else len = rest - data;
-		printf("data [%.*s]\n", len, data);
+		printf("text [%.*s]\n", len, data);
 	    }
 	    break;
 
