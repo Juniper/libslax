@@ -148,4 +148,7 @@ xi_parse_destroy (xi_parse_t *parsep);
 int
 xi_parse (xi_parse_t *parsep);
 
+void
+xi_parse_dump (xi_parse_t *parsep);
+
 #endif /* LIBSLAX_XI_PARSE_H */
