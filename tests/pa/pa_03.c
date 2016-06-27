@@ -22,6 +22,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 
@@ -45,13 +46,15 @@ test_init (void)
 void
 test_open (void)
 {
-    pmp = pa_mmap_open(opt_filename, 0, 0644);
+    pmp = pa_mmap_open(opt_filename, 0,
+		       pa_config_value32("test", "perm", 0644));
     assert(pmp);
 
     pfip = pa_mmap_header(pmp, "fix1", PA_TYPE_FIXED, 0, sizeof(*pfip));
     assert(pfip);
 
-    pfp = pa_fixed_setup(pmp, pfip, opt_shift, sizeof(test_t), opt_max_atoms);
+    pfp = pa_fixed_setup(pmp, pfip, "test",
+			 opt_shift, sizeof(test_t), opt_max_atoms);
     assert(pfp);
 }
 
