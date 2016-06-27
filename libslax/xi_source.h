@@ -34,12 +34,31 @@ typedef uint32_t xi_source_flags_t; /* Flags for parser */
 #define XI_TYPE_PI	8	/* Processing instruction */
 #define XI_TYPE_DTD	9	/* <!DTD> nonsense */
 #define XI_TYPE_COMMENT	10	/* Comment */
-#define XI_TYPE_ATTR	11	/* XML attribute */
+#define XI_TYPE_ATSTR	15	/* A string of all unparsed XML attributes */
+#define XI_TYPE_ATTRIB	11	/* A single, parsed, unescaped XML attribute */
+#define XI_TYPE_ATNAME	16	/* Parsed attribute name */
+#define XI_TYPE_ATVALUE	17	/* Parsed attribute value */
 #define XI_TYPE_NS	12	/* XML namespace */
+#define XI_TYPE_NSPREF	12	/* XML namespace */
+#define XI_TYPE_NSVALUE	12	/* XML namespace */
 #define XI_TYPE_SKIP	13	/* Skip/ignored input */
 #define XI_TYPE_CDATA	14	/* Cdata (<![CDATA[ ]]>) */
 
 #define XI_TYPE_ELT	XI_TYPE_OPEN
+
+/*
+ * A note about attribute encoding: There are two distinct schemes.
+ * Under the first, the complete, unparsed, still-escaped string of
+ * attributes is recorded as an XI_TYPE_ATSTR.  The second handles
+ * parsed attributes by pulling them into name/value pairs and
+ * recording the name as XI_TYPE_ATNAME and the value as
+ * XI_TYPE_ATVALUE under a node of type XI_TYPE_ATTRIB.
+ *
+ * Similarly parsed namespaces are XI_TYPE_NSPREF and XI_TYPE_NSVALUE
+ * under an XI_TYPE_NS node, but the value is a string under the
+ * parser's list of valid namespaces.  When the XI_TYPE_NSPREF is not
+ * present, the namespace is the default one.
+ */
 
 /*
  * Parser source object
