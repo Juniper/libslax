@@ -20,6 +20,7 @@
 
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 #include <libslax/pa_istr.h>
@@ -305,26 +306,22 @@ pa_pat_open (pa_mmap_t *pmp, const char *name,
 	     void *data_store, pa_pat_key_func_t key_func,
 	     uint16_t klen, pa_shift_t shift, uint32_t max_atoms)
 {
-    static char node_suffix[] = ".nodes";
-    size_t len = strlen(name);
-    char *nodes_name = alloca(len + sizeof(node_suffix) + 1);
-
-    memcpy(nodes_name, name, len);
-    memcpy(nodes_name + len, node_suffix, sizeof(node_suffix));
-
+    char namebuf[PA_MMAP_HEADER_NAME_LEN];
     pa_fixed_t *pfp;
-    pfp = pa_fixed_open(pmp, nodes_name, shift,
+
+    pfp = pa_fixed_open(pmp, name, shift,
 			sizeof(pa_pat_node_t), max_atoms);
     if (pfp == NULL)
 	return NULL;
 
-    return pa_pat_open_nodes(pmp, name, pfp, data_store, key_func, klen);
+    pa_config_name(namebuf, sizeof(namebuf), name, "root");
+    return pa_pat_open_nodes(pmp, namebuf, pfp, data_store, key_func, klen);
 }
 
 void
-pa_pat_close (pa_pat_t *ppp UNUSED)
+pa_pat_close (pa_pat_t *ppp)
 {
-    return;
+    alloc_info.pat_root_free(ppp);
 }
 
 
