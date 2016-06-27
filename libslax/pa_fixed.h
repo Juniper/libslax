@@ -240,12 +240,12 @@ pa_fixed_init_from_block (pa_fixed_t *pfp, void *base,
 			  pa_fixed_info_t *infop);
 
 void
-pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, pa_shift_t shift,
-	       uint16_t atom_size, uint32_t max_atoms);
+pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
+	       pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms);
 
 pa_fixed_t *
-pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, pa_shift_t shift,
-		uint16_t atom_size, uint32_t max_atoms);
+pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, const char *name,
+		pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms);
 
 pa_fixed_t *
 pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
