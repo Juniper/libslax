@@ -90,13 +90,33 @@ typedef struct xi_tree_info_s {
 } xi_tree_info_t;
 
 /*
+ * Each node has a prefix mapping that tells us which namespace it's
+ * in.  We want to make this simple and reusable, but since prefixes
+ * can be remapped within any hierarchy, it's only reusable in the
+ * window where that mapping isn't changed.  But this makes finding
+ * the prefix and url a simple lookup.  This means that it two nodes
+ * have the same mapping (xn_ns) then they are in the same namespace,
+ * but if they are different, then those two mappings' xnm_url fields
+ * must be compared to see if they have the same atom number.  Since
+ * they are in a name-pool, "There can be only one!" applies, so
+ * comparing the url atom number is sufficient.
+ */
+typedef struct xi_ns_map_s {
+    pa_atom_t xnm_prefix;	/* Atom of prefix string (in xt_prefix_names)*/
+    pa_atom_t xnm_url;		/* Atom of URL string (in xt_nsurl_names) */
+} xi_ns_map_t;
+
+/*
  * The in-memory representation of a tree
  */
 typedef struct xi_tree_s {
     pa_mmap_t *xt_mmap;	/* Base memory information */
-    xi_namepool_t *xt_namepool;	/* Namepool used by this tree */
-    pa_fixed_t *xt_nodes;	/* Pool of nodes */
     xi_tree_info_t *xt_infop;	/* Base information */
+    pa_fixed_t *xt_nodes;	/* Pool of nodes (xi_node_t) */
+    xi_namepool_t *xt_local_names; /* Namepool for local part of names */
+    xi_namepool_t *xt_prefix_names; /* Namepool for prefix strings */
+    xi_namepool_t *xt_url_names; /* Namepool for namespace URLs */
+    pa_fixed_t *xt_prefix_mapping; /* Map from prefixes to URLs (xi_ns_map_t)*/
     pa_arb_t *xt_textpool;	/* Text data values */
 } xi_tree_t;
 
@@ -138,6 +158,9 @@ typedef struct xi_parse_s {
     xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
 
+typedef int (*xi_parse_emit_fn)(xi_parse_t *, xi_node_type_t, xi_node_t *,
+				const char *, void *);
+
 xi_parse_t *
 xi_parse_open (pa_mmap_t *pmap, const char *name,
 	       const char *filename, xi_source_flags_t flags);
@@ -150,5 +173,11 @@ xi_parse (xi_parse_t *parsep);
 
 void
 xi_parse_dump (xi_parse_t *parsep);
+
+void
+xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque);
+
+void
+xi_parse_emit_xml (xi_parse_t *parsep, FILE *out);
 
 #endif /* LIBSLAX_XI_PARSE_H */
