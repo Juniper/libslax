@@ -26,6 +26,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 #include <libslax/pa_arb.h>
@@ -39,6 +40,7 @@ main (int argc, char **argv)
 {
     const char *opt_filename = NULL;
     const char *opt_database = "test.db";
+    const char *opt_config = NULL;
     int opt_read = 0;
     int opt_quiet = 0;
     int opt_dump = 0;
@@ -51,6 +53,9 @@ main (int argc, char **argv)
 	    || strcmp(argv[argc], "input") == 0) {
 	    if (argv[argc + 1])
 		opt_filename = argv[++argc];
+	} else if (strcmp(argv[argc], "config") == 0) {
+	    if (argv[argc + 1])
+		opt_config = argv[++argc];
 	} else if (strcmp(argv[argc], "database") == 0) {
 	    if (argv[argc + 1])
 		opt_database = argv[++argc];
@@ -85,6 +90,9 @@ main (int argc, char **argv)
 
     assert (opt_database != NULL && opt_filename != NULL);
 
+    if (opt_config)
+	pa_config_read(opt_config);
+
     pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
     assert(pmp);
 
@@ -97,6 +105,7 @@ main (int argc, char **argv)
 	if (!opt_quiet)
 	    slaxLogEnable(1);
 	xi_parse_dump(parsep);
+	xi_parse_emit_xml(parsep, stdout);
     }
 
     xi_parse_destroy(parsep);
