@@ -125,13 +125,6 @@ main (int argc, char **argv)
 	    if (!opt_quiet)
 		printf("cdata [%.*s]\n", (int)(rest - data), data);
 	    break;
-
-	case XI_TYPE_ATTR:	/* XML attribute */
-	    break;
-
-	case XI_TYPE_NS:	/* XML namespace */
-	    break;
-
 	}
     }
 
