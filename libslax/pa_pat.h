@@ -873,6 +873,10 @@ pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
 	     uint16_t klen);
 
 pa_pat_t *
+pa_pat_open_c (pa_mmap_t *pmp, const char *name,
+	     void *data_store, pa_pat_key_func_t key_func, uint16_t klen);
+
+pa_pat_t *
 pa_pat_open (pa_mmap_t *pmp, const char *name,
 	      void *data_store, pa_pat_key_func_t key_func,
 	      uint16_t klen, pa_shift_t shift, uint32_t max_atoms);
