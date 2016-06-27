@@ -22,6 +22,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 
 #define NEED_T_SIZE
