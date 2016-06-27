@@ -22,6 +22,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 #include <libslax/pa_istr.h>
@@ -31,7 +32,6 @@
 #include "pa_main.h"
 
 pa_mmap_t *pmp;
-pa_istr_info_t *piip;
 pa_istr_t *pip;
 
 static const char *
@@ -58,10 +58,7 @@ test_open (void)
     pmp = pa_mmap_open(opt_filename, 0, 0644);
     assert(pmp);
 
-    piip = pa_mmap_header(pmp, "istr", PA_TYPE_ISTR, 0, sizeof(*piip));
-    assert(piip);
-
-    pip = pa_istr_setup(pmp, piip, opt_shift, 2, opt_max_atoms);
+    pip = pa_istr_open(pmp, "istr", opt_shift, 2, opt_max_atoms);
     assert(pip);
 }
 
