@@ -48,6 +48,7 @@ noinst_HEADERS = \
     jsonlexer.h \
     jsonwriter.h \
     pa_common.h \
+    pa_config.h \
     pa_mmap.h \
     pa_fixed.h \
     pa_arb.h \
@@ -74,6 +75,7 @@ libslax_la_SOURCES = \
     jsonlexer.c \
     jsonwriter.c \
     pa_common.c \
+    pa_config.c \
     pa_mmap.c \
     pa_fixed.c \
     pa_arb.c \
