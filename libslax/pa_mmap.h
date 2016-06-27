@@ -27,7 +27,7 @@
 #define PA_MMAP_ATOM_SHIFT	12
 #define PA_MMAP_ATOM_SIZE	(1ULL << PA_MMAP_ATOM_SHIFT)
 
-#define PA_MMAP_HEADER_NAME_LEN	16 /* Max length of header name string */
+#define PA_MMAP_HEADER_NAME_LEN	64 /* Max length of header name string */
 
 struct pa_mmap_info_s;
 typedef struct pa_mmap_info_s pa_mmap_info_t; /* Opaque type */
