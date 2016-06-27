@@ -20,6 +20,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 #include <libslax/pa_istr.h>
@@ -97,9 +98,13 @@ pa_istr_init_from_block (pa_istr_t *pip, void *base,
 }
 
 void
-pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
-	       uint16_t atom_shift, uint32_t max_atoms)
+pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, const char *name,
+	      pa_shift_t shift, uint16_t atom_shift, uint32_t max_atoms)
 {
+    shift = pa_config_value32(name, "shift", shift);
+    atom_shift = pa_config_value32(name, "atom-shift", atom_shift);
+    max_atoms = pa_config_value32(name, "max-atoms", max_atoms);
+
     /* Round max_atoms up to the next page size */
     max_atoms = pa_roundup_shift32(max_atoms, shift);
 
@@ -128,22 +133,26 @@ pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
 }
 
 pa_istr_t *
-pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, pa_shift_t shift,
-		uint16_t atom_shift, uint32_t max_atoms)
+pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, const char *name,
+	       pa_shift_t shift, uint16_t atom_shift, uint32_t max_atoms)
 {
     pa_istr_t *pip = calloc(1, sizeof(*pip));
+    char namebuf[PA_MMAP_HEADER_NAME_LEN];
 
     if (pip) {
 	bzero(pip, sizeof(*pip));
 	pip->pi_infop = piip;
 	pip->pi_datap = &piip->pii_data;
-	pa_istr_init(pmp, pip, shift, atom_shift, max_atoms);
+	
+	pa_config_name(namebuf, sizeof(namebuf), name, "raw");
+	pa_istr_init(pmp, pip, namebuf, shift, atom_shift, max_atoms);
 
 	/*
 	 * Now we build the index, used to turn our externally visible
 	 * index numbers into atoms in our underlaying data store.
 	 */
-	pip->pi_index = pa_fixed_setup(pmp, &piip->pii_index,
+	pa_config_name(namebuf, sizeof(namebuf), name, "index");
+	pip->pi_index = pa_fixed_setup(pmp, &piip->pii_index, namebuf,
 				       shift, sizeof(pa_atom_t), max_atoms);
 	if (pip->pi_index == NULL) {
 	    free(pip);
@@ -168,7 +177,7 @@ pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 	}
     }
 
-    return pa_istr_setup(pmp, piip, shift, atom_shift, max_atoms);
+    return pa_istr_setup(pmp, piip, name, shift, atom_shift, max_atoms);
 }
 
 void
