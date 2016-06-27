@@ -20,6 +20,7 @@
 #include "slaxconfig.h"
 #include <libslax/slax.h>
 #include <libslax/pa_common.h>
+#include <libslax/pa_config.h>
 #include <libslax/pa_mmap.h>
 #include <libslax/pa_fixed.h>
 
@@ -81,12 +82,16 @@ pa_fixed_init_from_block (pa_fixed_t *pfp, void *base,
 }
 
 void
-pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, pa_shift_t shift,
-	       uint16_t atom_size, uint32_t max_atoms)
+pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
+	       pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms)
 {
     /* Use our internal info block */
     if (pfp->pf_infop == NULL)
 	pfp->pf_infop = &pfp->pf_info_block;
+
+    shift = pa_config_value32(name, "shift", shift);
+    atom_size = pa_config_value32(name, "atom-size", atom_size);
+    max_atoms = pa_config_value32(name, "max-atoms", max_atoms);
 
     /* The atom must be able to hold a free node id */
     if (atom_size < sizeof(pa_atom_t))
@@ -123,15 +128,15 @@ pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, pa_shift_t shift,
 }
 
 pa_fixed_t *
-pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, pa_shift_t shift,
-		uint16_t atom_size, uint32_t max_atoms)
+pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, const char *name,
+		pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms)
 {
     pa_fixed_t *pfp = calloc(1, sizeof(*pfp));
 
     if (pfp) {
 	bzero(pfp, sizeof(*pfp));
 	pfp->pf_infop = pfip;
-	pa_fixed_init(pmp, pfp, shift, atom_size, max_atoms);
+	pa_fixed_init(pmp, pfp, name, shift, atom_size, max_atoms);
     }
 
     return pfp;
@@ -151,7 +156,7 @@ pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 	}
     }
 
-    return pa_fixed_setup(pmp, pfip, shift, atom_size, max_atoms);
+    return pa_fixed_setup(pmp, pfip, name, shift, atom_size, max_atoms);
 }
 
 void
