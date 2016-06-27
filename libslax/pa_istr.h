@@ -215,16 +215,15 @@ pa_istr_new (pa_istr_t *pip, const char *string, pa_atom_t *atomp)
 }
 
 void
-pa_istr_init_from_block (pa_istr_t *pip, void *base,
-			  pa_istr_info_t *infop);
+pa_istr_init_from_block (pa_istr_t *pip, void *base, pa_istr_info_t *infop);
 
 void
-pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, pa_shift_t shift,
-	       uint16_t atom_shift, uint32_t max_atoms);
+pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, const char *name,
+	      pa_shift_t shift, uint16_t atom_shift, uint32_t max_atoms);
 
 pa_istr_t *
-pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *pidp, pa_shift_t shift,
-		uint16_t atom_shift, uint32_t max_atoms);
+pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *pidp, const char *name,
+	       pa_shift_t shift, uint16_t atom_shift, uint32_t max_atoms);
 
 pa_istr_t *
 pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
