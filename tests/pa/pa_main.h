@@ -39,6 +39,7 @@ unsigned opt_count = 100;
 unsigned opt_magic = 0x5e5e5e5e;
 const char *opt_filename;
 const char *opt_input;
+const char *opt_config;
 int opt_clean, opt_quiet, opt_dump, opt_full_dump;
 uint32_t opt_size = 8;
 int opt_value = -1;
@@ -89,6 +90,9 @@ main (int argc UNUSED, char **argv UNUSED)
 	} else if (strcmp(argv[argc], "count") == 0) {
 	    if (argv[argc + 1]) 
 		opt_count = atoi(argv[++argc]);
+	} else if (strcmp(argv[argc], "config") == 0) {
+	    if (argv[argc + 1]) 
+		opt_config = argv[++argc];
 	} else if (strcmp(argv[argc], "size") == 0) {
 	    if (argv[argc + 1]) 
 		opt_size = atoi(argv[++argc]);
