@@ -101,9 +101,7 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     xi_parse_t *parsep = NULL;
     xi_insert_t *xip = NULL;
     xi_tree_t *xtp = NULL;
-    xi_namepool_t *local_names = NULL;
-    xi_namepool_t *prefix_names = NULL;
-    xi_namepool_t *url_names = NULL;
+    xi_namepool_t *names = NULL;
     pa_istr_t *pip = NULL;
     pa_arb_t *pap = NULL;
     pa_pat_t *ppp = NULL;
@@ -123,21 +121,9 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
 	goto fail;
 
     /* Holds the names of our elements, attributes, etc */
-    xi_mk_name(namebuf, name, "local-names");
-    local_names = xi_namepool_open(pmp, namebuf);
-    if (local_names == NULL)
-	goto fail;
-
-    /* Holds the names of our prefix strings */
-    xi_mk_name(namebuf, name, "prefix-names");
-    prefix_names = xi_namepool_open(pmp, namebuf);
-    if (prefix_names == NULL)
-	goto fail;
-
-    /* Holds the names of namespace URLs */
-    xi_mk_name(namebuf, name, "url-names");
-    url_names = xi_namepool_open(pmp, namebuf);
-    if (url_names == NULL)
+    xi_mk_name(namebuf, name, "names");
+    names = xi_namepool_open(pmp, namebuf);
+    if (names == NULL)
 	goto fail;
 
     /* The xi_tree_t is the tree we'll be inserting into */
@@ -165,9 +151,7 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     xtp->xt_mmap = pmp;
     xtp->xt_max_depth = 0;
     xtp->xt_nodes = nodes;
-    xtp->xt_local_names = local_names;
-    xtp->xt_prefix_names = prefix_names;
-    xtp->xt_url_names = url_names;
+    xtp->xt_names = names;
     xtp->xt_prefix_mapping = prefix_mapping;
     xtp->xt_textpool = pap;
 
@@ -218,12 +202,8 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
 	pa_fixed_close(nodes);
     if (prefix_mapping)
 	pa_fixed_close(prefix_mapping);
-    if (local_names)
-	xi_namepool_close(local_names);
-    if (prefix_names)
-	xi_namepool_close(prefix_names);
-    if (url_names)
-	xi_namepool_close(url_names);
+    if (names)
+	xi_namepool_close(names);
     if (parsep)
 	free(parsep);
     if (srcp)
@@ -269,11 +249,12 @@ xi_insert_push (xi_insert_t *xip, pa_atom_t atom, xi_node_t *nodep)
 }
 
 static void
-xi_insert_open (xi_parse_t *parsep, const char *data)
+xi_insert_open (xi_parse_t *parsep, const char *prefix UNUSED,
+		const char *name, const char *attribs UNUSED)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    xi_namepool_t *xnp = xip->xi_tree->xt_local_names;
-    pa_atom_t name_atom = xi_namepool_atom(xnp, data);
+    xi_namepool_t *xnp = xip->xi_tree->xt_names;
+    pa_atom_t name_atom = xi_namepool_atom(xnp, name);
     if (name_atom == PA_NULL_ATOM)
 	return;
 
@@ -287,7 +268,7 @@ xi_insert_open (xi_parse_t *parsep, const char *data)
     nodep->xn_name = name_atom;
     nodep->xn_contents = PA_NULL_ATOM;
 
-    slaxLog("xi_insert_open: [%s] %u (depth %u)", data, name_atom,
+    slaxLog("xi_insert_open: [%s] %u (depth %u)", name, name_atom,
 	   xip->xi_depth + 1);
 
     /*
@@ -319,15 +300,15 @@ xi_insert_open (xi_parse_t *parsep, const char *data)
 }
 
 static void
-xi_insert_close (xi_parse_t *parsep, const char *data)
+xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    xi_namepool_t *xnp = xip->xi_tree->xt_local_names;
-    pa_atom_t name_atom = xi_namepool_atom(xnp, data);
+    xi_namepool_t *xnp = xip->xi_tree->xt_names;
+    pa_atom_t name_atom = xi_namepool_atom(xnp, name);
     if (name_atom == PA_NULL_ATOM)
 	return;
     
-    slaxLog("xi_insert_close: [%s] %u (depth %u)", data, name_atom,
+    slaxLog("xi_insert_close: [%s] %u (depth %u)", name, name_atom,
 	   xip->xi_depth);
 
     xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
@@ -456,7 +437,7 @@ int
 xi_parse (xi_parse_t *parsep)
 {
     xi_source_t *srcp = parsep->xp_srcp;
-    char *data, *rest;
+    char *data, *rest, *localp;
     xi_node_type_t type;
     int opt_quiet = 0;
     int opt_unescape = 0;
@@ -488,7 +469,14 @@ xi_parse (xi_parse_t *parsep)
 	case XI_TYPE_OPEN:	/* Open tag */
 	    if (!opt_quiet)
 		slaxLog("open tag [%s] [%s]", data ?: "", rest ?: "");
-	    xi_insert_open(parsep, data);
+	    localp = strchr(data, ':');
+	    if (localp)
+		*localp++ = '\0';
+	    else {
+		localp = data;
+		data = NULL;
+	    }
+	    xi_insert_open(parsep, data, localp, rest);
 	    if (rest)
 		xi_insert_attrs(parsep, rest);
 	    break;
@@ -496,7 +484,14 @@ xi_parse (xi_parse_t *parsep)
 	case XI_TYPE_CLOSE:	/* Close tag */
 	    if (!opt_quiet)
 		slaxLog("close tag [%s] [%s]", data ?: "", rest ?: "");
-	    xi_insert_close(parsep, data);
+	    localp = strchr(data, ':');
+	    if (localp)
+		*localp++ = '\0';
+	    else {
+		localp = data;
+		data = NULL;
+	    }
+	    xi_insert_close(parsep, data, localp);
 	    break;
 
 	case XI_TYPE_PI:	/* Processing instruction */
@@ -617,7 +612,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	}
 
 	if (last_depth && last_depth > nodep->xn_depth) {
-	    cp = xi_namepool_string(xtp->xt_local_names, nodep->xn_name);
+	    cp = xi_namepool_string(xtp->xt_names, nodep->xn_name);
 	    func(parsep, XI_TYPE_CLOSE, nodep, cp, opaque);
 	    node_atom = nodep->xn_next;
 	    last_depth = nodep->xn_depth;
@@ -629,7 +624,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->xn_type, nodep, NULL, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ELT) {
-	    cp = xi_namepool_string(xtp->xt_local_names, nodep->xn_name);
+	    cp = xi_namepool_string(xtp->xt_names, nodep->xn_name);
 	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
 
