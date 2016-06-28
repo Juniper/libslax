@@ -113,9 +113,7 @@ typedef struct xi_tree_s {
     pa_mmap_t *xt_mmap;	/* Base memory information */
     xi_tree_info_t *xt_infop;	/* Base information */
     pa_fixed_t *xt_nodes;	/* Pool of nodes (xi_node_t) */
-    xi_namepool_t *xt_local_names; /* Namepool for local part of names */
-    xi_namepool_t *xt_prefix_names; /* Namepool for prefix strings */
-    xi_namepool_t *xt_url_names; /* Namepool for namespace URLs */
+    xi_namepool_t *xt_names; /* Namepool for local part of names */
     pa_fixed_t *xt_prefix_mapping; /* Map from prefixes to URLs (xi_ns_map_t)*/
     pa_arb_t *xt_textpool;	/* Text data values */
 } xi_tree_t;
