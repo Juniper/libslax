@@ -73,7 +73,6 @@ typedef struct pa_fixed_info_s {
 
 typedef struct pa_fixed_s {
     PA_FIXED_MMAP_FIELD_DECLS;	   /* Mmap overhead declarations */
-    pa_fixed_info_t pf_info_block; /* Simple block (not used for mmap) */
     pa_fixed_info_t *pf_infop;	   /* Pointer to real block */
     pa_fixed_page_entry_t *pf_base; /* Base of page table */
 } pa_fixed_t;
