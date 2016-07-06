@@ -14,138 +14,6 @@
 #ifndef LIBSLAX_XI_PARSE_H
 #define LIBSLAX_XI_PARSE_H
 
-typedef uint8_t xi_action_t;
-
-/*
- * We use bitmasks to indicate which elements are affected by rules.
- * There is a special case where xb_len == 0 implies a match.
- */
-typedef struct xi_bitmask_s {
-    xi_name_id_t xb_base;	/* Base bit number */
-    xi_name_id_t xb_len;	/* Length of bitmask */
-    uint8_t *xb_mask;		/* Bitmask of element ids */
-} xi_bitmask_t;
-
-/*
- * A rule defines a behavior for an incoming token.  A token can be
- * copied, saved, or discarded.  Or a function callback can triggered.
- */
-typedef struct xi_rule_s {
-    struct xi_rule_s *xr_next;	/* Linked list of rules */
-    xi_bitmask_t xr_bitmask;	/* Elements affected by this rule */
-    xi_action_t xr_action;	/* What to do when the rule matches */
-} xi_rule_t;
-
-/* Values for xi_action */
-#define XIA_NONE	0
-#define XIA_DISCARD	1	/* Discard with all due haste */
-#define XIA_SAVE	2	/* Add to the insertion point */
-#define XIA_EMIT	3	/* Emit as output */
-#define XIA_RETURN	4	/* Force return from xi_parse() */
-
-/*
- * A rule set is an optimized set of rules
- */
-typedef struct xi_ruleset_s {
-    xi_rule_t *xrs_base;	/* Base set of rules */
-    xi_action_t xrs_default;	/* Default action */
-    xi_action_t xrs_last;	/* Last action taken */
-} xi_ruleset_t;
-
-/*
- * A node in an XML hierarchy, made as small as possible.  We use the
- * trick where the last sibling points to the parent, allowing us to
- * work back up the hierarchy, guided by xn_depth.
- *
- * If xn_name == PA_NULL_ATOM, the node is the top node in the
- * hierarchy.  We call this the "top" node, as opposed to the "root"
- * node, which appears as a child of the root node.  This scheme
- * allows the hierarchies with multipe root nodes, which is needed for
- * RTFs.
- */
-typedef struct xi_node_s {
-    xi_node_type_t xn_type;	/* Type of this node */
-    xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
-    xi_ns_id_t xn_ns;		/* Namespace of this node (in namespace db) */
-    xi_name_id_t xn_name;	/* Name of this node (in name db) */
-    xi_node_id_t xn_next;	/* Next node (or parent if last) */
-    xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
-} xi_node_t;
-
-#define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
-#define XI_DEPTH_MAX	254	/* Max depth of tree */
-
-typedef struct xi_namepool_s {
-    pa_istr_t *xnp_names;	/* Array of names (element, attr, etc) */
-    pa_pat_t *xnp_names_index;	/* Patricia tree for names */
-} xi_namepool_t;
-
-/*
- * Each tree (document or RTF) is represented as a tree.  The
- * xi_tree_info_t is the information that needs to persist.
- */
-typedef struct xi_tree_info_s {
-    xi_node_id_t xti_root;	/* Number of the root node */
-    xi_depth_t xti_max_depth;	/* Max depth of the tree */
-} xi_tree_info_t;
-
-/*
- * Each node has a prefix mapping that tells us which namespace it's
- * in.  We want to make this simple and reusable, but since prefixes
- * can be remapped within any hierarchy, it's only reusable in the
- * window where that mapping isn't changed.  But this makes finding
- * the prefix and url a simple lookup.  This means that it two nodes
- * have the same mapping (xn_ns) then they are in the same namespace,
- * but if they are different, then those two mappings' xnm_url fields
- * must be compared to see if they have the same atom number.  Since
- * they are in a name-pool, "There can be only one!" applies, so
- * comparing the url atom number is sufficient.
- */
-typedef struct xi_ns_map_s {
-    pa_atom_t xnm_prefix;	/* Atom of prefix string (in xt_prefix_names)*/
-    pa_atom_t xnm_url;		/* Atom of URL string (in xt_nsurl_names) */
-} xi_ns_map_t;
-
-/*
- * The in-memory representation of a tree
- */
-typedef struct xi_tree_s {
-    pa_mmap_t *xt_mmap;	/* Base memory information */
-    xi_tree_info_t *xt_infop;	/* Base information */
-    pa_fixed_t *xt_nodes;	/* Pool of nodes (xi_node_t) */
-    xi_namepool_t *xt_names; /* Namepool for local part of names */
-    pa_fixed_t *xt_prefix_mapping; /* Map from prefixes to URLs (xi_ns_map_t)*/
-    pa_arb_t *xt_textpool;	/* Text data values */
-} xi_tree_t;
-
-#define xt_root xt_infop->xti_root
-#define xt_max_depth xt_infop->xti_max_depth
-
-/*
- * The insertion stack
- */
-typedef struct xi_istack_s {
-    xi_node_id_t xs_atom;	/* Our node (atom) */
-    xi_node_t *xs_node;		/* Our node (pointer) */
-    xi_node_id_t xs_last_atom;	/* Last child we appended (atom) */
-    xi_node_t *xs_last_node;	/* Last child we appended (pointer) */
-} xi_istack_t;
-
-/*
- * An insertion point is all the information we need to add a node to
- * some sort of output tree.
- */
-typedef struct xi_insert_s {
-    xi_tree_t *xi_tree;		/* Tree we are inserted into */
-    xi_depth_t xi_depth;	/* Current depth in hierarchy */
-    unsigned xi_relation;	/* How to handle the next insertion */
-    xi_istack_t xi_stack[XI_DEPTH_MAX]; /* Insertion points */
-} xi_insert_t;
-
-/* Values for xi_relation */
-#define XIR_SIBLING	1	/* Insert as sibling */
-#define XIR_CHILD	2	/* Insert as child */
-
 /*
  * The state of the parser, meant to be both a handle to parsing
  * functionality as well as a means of restarting parsing.
@@ -153,6 +21,7 @@ typedef struct xi_insert_s {
 typedef struct xi_parse_s {
     xi_source_t *xp_srcp;	/* Source of incoming tokens */
     xi_ruleset_t *xp_ruleset;	/* Current set of rules */
+    xi_rule_t xp_default_rule;	/* Default rule for parsing */
     xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
 
@@ -177,5 +46,14 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque);
 
 void
 xi_parse_emit_xml (xi_parse_t *parsep, FILE *out);
+
+void
+xi_parse_set_rules (xi_parse_t *parsep, xi_ruleset_t *rules);
+
+void
+xi_parse_set_default_rule (xi_parse_t *parsep, xi_action_type_t type);
+
+pa_atom_t
+xi_parse_atom (xi_parse_t *parsep, const char *name);
 
 #endif /* LIBSLAX_XI_PARSE_H */
