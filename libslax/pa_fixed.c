@@ -85,10 +85,6 @@ void
 pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
 	       pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms)
 {
-    /* Use our internal info block */
-    if (pfp->pf_infop == NULL)
-	pfp->pf_infop = &pfp->pf_info_block;
-
     shift = pa_config_value32(name, "shift", shift);
     atom_size = pa_config_value32(name, "atom-size", atom_size);
     max_atoms = pa_config_value32(name, "max-atoms", max_atoms);
