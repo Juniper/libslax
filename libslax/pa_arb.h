@@ -189,6 +189,21 @@ pa_arb_addr_to_atom (pa_arb_t *prp, void *addr)
 pa_atom_t
 pa_arb_alloc (pa_arb_t *prp, size_t size);
 
+static inline pa_atom_t
+pa_arb_alloc_string (pa_arb_t *prp, const char *value)
+{
+    size_t len = strlen(value) + 1;
+    pa_atom_t atom = pa_arb_alloc(prp, len + 1);
+    char *dest = pa_arb_atom_addr(prp, atom);
+
+    if (dest == NULL)
+	return PA_NULL_ATOM;
+
+    memcpy(dest, value, len);
+
+    return atom;
+}
+
 void
 pa_arb_free_atom (pa_arb_t *prp, pa_atom_t atom);
 
