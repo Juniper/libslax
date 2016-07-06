@@ -25,10 +25,12 @@ AM_CFLAGS = \
 # Ick: maintained by hand!
 TEST_CASES = \
 xi_01.c \
-xi_02.c
+xi_02.c \
+xi_03.c
 
 xi_01_test_SOURCES = xi_01.c
 xi_02_test_SOURCES = xi_02.c
+xi_03_test_SOURCES = xi_03.c
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 
