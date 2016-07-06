@@ -9,6 +9,11 @@
  * LICENSE.
  *
  * Phil Shafer (phil@) June 2016
+ *
+ * Parsing input means three distinct areas of work: parsing input, deciding
+ * what to do with that input, and then doing it.  Our "xi_source" module
+ * does the parsing, giving us back a "token" of input, which we pass to the
+ * "rules" code to determine what needs done.  
  */
 
 #include <stdio.h>
@@ -35,66 +40,14 @@
 #include <libslax/pa_arb.h>
 #include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
+#include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
+#include <libslax/xi_rules.h>
+#include <libslax/xi_tree.h>
 #include <libslax/xi_parse.h>
 
-#define XI_MAX_ATOMS	(1<<26)
-#define XI_SHIFT	12
-#define XI_ISTR_SHIFT	2
-
-static inline const char *
-xi_mk_name (char *namebuf, const char *name, const char *ext)
-{
-    return pa_config_name(namebuf, PA_MMAP_HEADER_NAME_LEN, name, ext);
-}
-
-static xi_namepool_t *
-xi_namepool_open (pa_mmap_t *pmap, const char *basename)
-{
-    char namebuf[PA_MMAP_HEADER_NAME_LEN];
-    pa_istr_t *pip = NULL;
-    pa_pat_t *ppp = NULL;
-    xi_namepool_t *pool;
-
-    /* The namepool holds the names of our elements, attributes, etc */
-    pip = pa_istr_open(pmap, xi_mk_name(namebuf, basename, "data"),
-		       XI_SHIFT, XI_ISTR_SHIFT, XI_MAX_ATOMS);
-    if (pip == NULL)
-	return NULL;
-
-    ppp = pa_pat_open(pmap, xi_mk_name(namebuf, basename, "index"),
-		      pip, pa_pat_istr_key_func,
-		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
-    if (ppp == NULL) {
-	pa_istr_close(pip);
-	return NULL;
-    }
-
-    pool = calloc(1, sizeof(*pool));
-    if (pool == NULL) {
-	pa_pat_close(ppp);
-	pa_istr_close(pip);
-	return NULL;
-    }
-
-    pool->xnp_names = pip;
-    pool->xnp_names_index = ppp;
-
-    return pool;
-}
-
-static void
-xi_namepool_close (xi_namepool_t *pool)
-{
-    if (pool) {
-	pa_istr_close(pool->xnp_names);
-	pa_pat_close(pool->xnp_names_index);
-	free(pool);
-    }
-}
-
 xi_parse_t *
-xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
+xi_parse_open (pa_mmap_t *pmp, const char *name,
 	       const char *input, xi_source_flags_t flags)
 {
     xi_source_t *srcp = NULL;
@@ -163,15 +116,18 @@ xi_parse_open (pa_mmap_t *pmp, const char *name UNUSED,
     xip->xi_depth = 0;
     xip->xi_relation = XIR_CHILD;
 
-    /* And finally, Fill in the parse structure */
+    /* And finally, fill in the parse structure */
     parsep = calloc(1, sizeof(*parsep));
     if (parsep == NULL)
 	goto fail;
     parsep->xp_srcp = srcp;
     parsep->xp_insert = xip;
 
-    node_atom = pa_fixed_alloc_atom(nodes);
-    nodep = pa_fixed_atom_addr(nodes, node_atom);
+    /* Fill in the default default rule */
+    parsep->xp_default_rule.xr_flags = XRF_MATCH_ALL;
+    parsep->xp_default_rule.xr_action = XIA_SAVE;
+
+    nodep = xi_node_alloc(xtp, &node_atom);
     if (nodep == NULL)
 	goto fail;
     nodep->xn_type = XI_TYPE_ROOT;
@@ -217,27 +173,11 @@ xi_parse_destroy (xi_parse_t *parsep UNUSED)
     return;
 }
 
-static pa_atom_t
-xi_namepool_atom (xi_namepool_t *xnp, const char *data)
+pa_atom_t
+xi_parse_atom (xi_parse_t *parsep, const char *name)
 {
-    uint16_t len = strlen(data) + 1;
-    pa_pat_t *ppp = xnp->xnp_names_index;
-    pa_atom_t atom = pa_pat_get_atom(ppp, len, data);
-    if (atom == PA_NULL_ATOM) {
-	atom = pa_istr_string(ppp->pp_data, data);
-	if (atom == PA_NULL_ATOM)
-	    pa_warning(0, "create key failed: %s", data);
-	else if (!pa_pat_add(ppp, atom, len))
-	    pa_warning(0, "duplicate key: %s", data);
-    }
-
-    return atom;
-}
-
-static const char *
-xi_namepool_string (xi_namepool_t *xnp, pa_atom_t name_atom)
-{
-    return pa_istr_atom_string(xnp->xnp_names, name_atom);
+    xi_insert_t *xip = parsep->xp_insert;
+    return xi_namepool_atom(xip->xi_tree, name, TRUE);
 }
 
 static void
@@ -249,27 +189,34 @@ xi_insert_push (xi_insert_t *xip, pa_atom_t atom, xi_node_t *nodep)
 }
 
 static void
-xi_insert_open (xi_parse_t *parsep, const char *prefix UNUSED,
-		const char *name, const char *attribs UNUSED)
+xi_insert_pop (xi_insert_t *xip)
 {
-    xi_insert_t *xip = parsep->xp_insert;
-    xi_namepool_t *xnp = xip->xi_tree->xt_names;
-    pa_atom_t name_atom = xi_namepool_atom(xnp, name);
-    if (name_atom == PA_NULL_ATOM)
-	return;
+    xip->xi_stack[xip->xi_depth].xs_atom = PA_NULL_ATOM;
+    xip->xi_stack[xip->xi_depth].xs_node = NULL;
+    xip->xi_depth -= 1;
+}
 
-    pa_atom_t node_atom = pa_fixed_alloc_atom(xip->xi_tree->xt_nodes);
-    xi_node_t *nodep = pa_fixed_atom_addr(xip->xi_tree->xt_nodes, node_atom);
+/*
+ * Insert a node into the insertion point
+ */
+static pa_atom_t
+xi_insert_node (xi_insert_t *xip, const char *msg,
+		const char *data, size_t len,
+		xi_node_type_t type, pa_atom_t name_atom, pa_atom_t contents)
+{
+    pa_atom_t node_atom;
+    xi_node_t *nodep = xi_node_alloc(xip->xi_tree, &node_atom);
     if (nodep == NULL)
-	return;
+	return PA_NULL_ATOM;
 
-    nodep->xn_type = XI_TYPE_ELT;
+    /* Initialize our fields */
+    nodep->xn_type = type;
     nodep->xn_ns = PA_NULL_ATOM;
     nodep->xn_name = name_atom;
-    nodep->xn_contents = PA_NULL_ATOM;
+    nodep->xn_contents = contents;
 
-    slaxLog("xi_insert_open: [%s] %u (depth %u)", name, name_atom,
-	   xip->xi_depth + 1);
+    slaxLog("%s: [%.*s] %u / %u (depth %u)", msg, len, data,
+	    name_atom, contents, xip->xi_depth + 1);
 
     /*
      * If we don't have a child, make one.  Otherwise append it.
@@ -283,7 +230,7 @@ xi_insert_open (xi_parse_t *parsep, const char *prefix UNUSED,
 	nodep->xn_next = xsp->xs_atom;
 
     } else {
-	/* Append our node */
+	/* Append our node as the next child */
 	nodep->xn_next = xsp->xs_atom;
 	xsp->xs_last_node->xn_next = node_atom;
     }
@@ -292,35 +239,62 @@ xi_insert_open (xi_parse_t *parsep, const char *prefix UNUSED,
     xsp->xs_last_atom = node_atom;
     xsp->xs_last_node = nodep;
 
+    /* Set our depth */
+    nodep->xn_depth = xip->xi_depth + 1;
+
+    if (nodep->xn_depth > xip->xi_maxdepth)
+	xip->xi_maxdepth = nodep->xn_depth;
+
+    return node_atom;
+}
+
+static void
+xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
+		const char *prefix UNUSED,
+		const char *name, const char *attribs UNUSED)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+
+    if (name_atom == PA_NULL_ATOM)
+	return;
+
+    pa_atom_t node_atom;
+    node_atom = xi_insert_node(xip, "xi_insert_open",
+			       name, strlen(name),
+			       XI_TYPE_ELT, name_atom, PA_NULL_ATOM);
+    if (node_atom == PA_NULL_ATOM)
+	return;
+
+    xi_node_t *nodep = xi_node_addr(xip->xi_tree, node_atom);
+
     /* Push our node on the stack */
     xi_insert_push(xip, node_atom, nodep);
-
-    /* Set our depth */
-    nodep->xn_depth = xip->xi_depth;
 }
 
 static void
 xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    xi_namepool_t *xnp = xip->xi_tree->xt_names;
-    pa_atom_t name_atom = xi_namepool_atom(xnp, name);
-    if (name_atom == PA_NULL_ATOM)
-	return;
+    pa_atom_t name_atom = xi_namepool_atom(xip->xi_tree, name, FALSE);
     
     slaxLog("xi_insert_close: [%s] %u (depth %u)", name, name_atom,
 	   xip->xi_depth);
+
+    if (name_atom == PA_NULL_ATOM) {
+	xi_source_failure(parsep->xp_srcp, 0, "close tag failed: %s", name);
+	return;
+    }
 
     xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
 
     if (xip->xi_depth == 0 || xsp->xs_node == NULL
 	|| xsp->xs_node->xn_name != name_atom) {
-	xi_source_failure(parsep->xp_srcp, 0, "close doesn't match");
+	xi_source_failure(parsep->xp_srcp, 0, "close doesn't match: %s", name);
 	return;
     }
 
     bzero(xsp, sizeof(*xsp));
-    xip->xi_depth -= 1;
+    xi_insert_pop(xip);
 }
 
 static void
@@ -337,45 +311,13 @@ xi_insert_text (xi_parse_t *parsep, const char *data, size_t len)
     memcpy(cp, data, len);
     cp[len] = '\0';
 
-    pa_atom_t node_atom = pa_fixed_alloc_atom(xip->xi_tree->xt_nodes);
-    xi_node_t *nodep = pa_fixed_atom_addr(xip->xi_tree->xt_nodes, node_atom);
-    if (nodep == NULL) {
+    pa_atom_t node_atom;
+    node_atom = xi_insert_node(xip, "xi_insert_text", data, len,
+			       XI_TYPE_TEXT, PA_NULL_ATOM, data_atom);
+    if (node_atom == PA_NULL_ATOM) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
-
-    nodep->xn_type = XI_TYPE_TEXT;
-    nodep->xn_ns = PA_NULL_ATOM;
-    nodep->xn_name = PA_NULL_ATOM;
-    nodep->xn_contents = data_atom;
-
-    slaxLog("xi_insert_text: [%.*s] %u (depth %u)", len, data, data_atom,
-	   xip->xi_depth + 1);
-
-
-    /*
-     * If we don't have a child, make one.  Otherwise append it.
-     */
-    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
-    if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
-	/* Record us as the child of the current stack node */
-	xsp->xs_node->xn_contents = node_atom;
-
-	/* Set our "parent" as the current node */
-	nodep->xn_next = xsp->xs_atom;
-
-    } else {
-	/* Append our node */
-	nodep->xn_next = xsp->xs_atom;
-	xsp->xs_last_node->xn_next = node_atom;
-    }
-
-    /* Mark the "last" as us */
-    xsp->xs_last_atom = node_atom;
-    xsp->xs_last_node = nodep;
-
-    /* Set our depth */
-    nodep->xn_depth = xip->xi_depth + 1;
 }
 
 static void
@@ -393,44 +335,79 @@ xi_insert_attrs (xi_parse_t *parsep, const char *data)
     memcpy(cp, data, len);
     cp[len] = '\0';
 
-    pa_atom_t node_atom = pa_fixed_alloc_atom(xip->xi_tree->xt_nodes);
-    xi_node_t *nodep = pa_fixed_atom_addr(xip->xi_tree->xt_nodes, node_atom);
-    if (nodep == NULL) {
+    pa_atom_t node_atom;
+    node_atom = xi_insert_node(xip, "xi_insert_attrs", data, len,
+			       XI_TYPE_ATSTR, PA_NULL_ATOM, data_atom);
+    if (node_atom == PA_NULL_ATOM) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
+}
 
-    nodep->xn_type = XI_TYPE_ATSTR;
-    nodep->xn_ns = PA_NULL_ATOM;
-    nodep->xn_name = PA_NULL_ATOM;
-    nodep->xn_contents = data_atom;
+static void
+xi_insert_attrs_extract (xi_parse_t *parsep, char *attrib)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    pa_arb_t *prp = xip->xi_tree->xt_textpool;
+    size_t len = strlen(attrib);
+    char *cp = attrib, *name, *value, *ep = cp + len, *sp;
+    char quote;			/* Current quotation mark */
+    pa_atom_t name_atom, value_atom, attrib_atom;
 
-    slaxLog("xi_insert_attrs: [%.*s] %u (depth %u)", len, data, data_atom,
-	   xip->xi_depth + 1);
+    for (;;) {
+	name = xi_skipws(cp, ep - cp, 1);
+	if (name == NULL)		/* End of attributes */
+	    break;
 
-    /*
-     * If we don't have a child, make one.  Otherwise append it.
-     */
-    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
-    if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
-	/* Record us as the child of the current stack node */
-	xsp->xs_node->xn_contents = node_atom;
+	cp = memchr(name, '=', ep - name);
+	if (cp == NULL) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "invalid attribute; missing '='");
+	    break;
+	}
 
-	/* Set our "parent" as the current node */
-	nodep->xn_next = xsp->xs_atom;
+	/* Trim space off end of attribute name */
+	sp = cp - 1;
+	sp = xi_skipws(sp, sp - name, -1); /* Trim trailing ws */
+	if (sp != NULL)
+	    sp[1] = '\0';;
 
-    } else {
-	/* Append our node */
-	nodep->xn_next = xsp->xs_atom;
-	xsp->xs_last_node->xn_next = node_atom;
+	*cp++ = '\0';		/* NUL-terminate name */
+
+	value = xi_skipws(cp, cp - ep, 1);
+	if (value == NULL || value[1] == '\0') {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "invalid attribute; missing name");
+	    break;
+	}
+
+	quote = *value++; /* Record and skip leading quote character */
+	cp = memchr(value, quote, value - ep);
+	if (cp == NULL) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "invalid attribute; missing trailing quote");
+	    break;
+	}
+
+	*cp++ = '\0';		/* NUL-terminate value */
+
+	name_atom = xi_namepool_atom(xip->xi_tree, name, TRUE);
+	if (name_atom == PA_NULL_ATOM)
+	    break;
+
+	value_atom = pa_arb_alloc_string(prp, value);
+	if (value_atom == PA_NULL_ATOM)
+	    break;
+
+	attrib_atom = xi_insert_node(xip, "xi_insert_attrs_extract", "", 0,
+				   XI_TYPE_ATTRIB, name_atom, value_atom);
+	if (attrib_atom == PA_NULL_ATOM) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "attribute create failed");
+	    pa_arb_free_atom(prp, value_atom);
+	    break;
+	}
     }
-
-    /* Mark the "last" as us */
-    xsp->xs_last_atom = node_atom;
-    xsp->xs_last_node = nodep;
-
-    /* Set our depth */
-    nodep->xn_depth = xip->xi_depth + 1;
 }
 
 int
@@ -441,8 +418,12 @@ xi_parse (xi_parse_t *parsep)
     xi_node_type_t type;
     int opt_quiet = 0;
     int opt_unescape = 0;
+    pa_atom_t name_atom;
+    xi_rule_t *rulep;
+    xi_insert_t *xip = parsep->xp_insert;
 
     for (;;) {
+
 	type = xi_source_next_token(srcp, &data, &rest);
 
 	switch (type) {
@@ -476,9 +457,37 @@ xi_parse (xi_parse_t *parsep)
 		localp = data;
 		data = NULL;
 	    }
-	    xi_insert_open(parsep, data, localp, rest);
-	    if (rest)
-		xi_insert_attrs(parsep, rest);
+
+	    /* We need an atom to do the indexing to find rules */
+	    name_atom = xi_namepool_atom(xip->xi_tree, localp, TRUE);
+
+	    /*
+	     * We've got incoming data; find out what to do with it
+	     */
+	    rulep = xi_ruleset_find(parsep, name_atom, data, localp, rest);
+	    switch (rulep->xr_action) {
+
+	    case XIA_SAVE:
+		xi_insert_open(parsep, name_atom, data, localp, rest);
+		break;
+
+	    case XIA_SAVE_ATSTR:
+		xi_insert_open(parsep, name_atom, data, localp, rest);
+		if (rest)
+		    xi_insert_attrs(parsep, rest);
+		break;
+
+	    case XIA_SAVE_ATTRIB:
+		xi_insert_open(parsep, name_atom, data, localp, rest);
+		if (rest)
+		    xi_insert_attrs_extract(parsep, rest);
+		break;
+
+	    case XIA_DISCARD:
+		/* XXX */
+		break;
+	    }
+
 	    break;
 
 	case XI_TYPE_CLOSE:	/* Close tag */
@@ -605,14 +614,14 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
     xi_depth_t last_depth = 0;
 
     while (node_atom != PA_NULL_ATOM) {
-	nodep = pa_fixed_atom_addr(xtp->xt_nodes, node_atom);
+	nodep = xi_node_addr(xtp, node_atom);
 	if (nodep == NULL) {
 	    slaxLog("null atom");
 	    break;
 	}
 
 	if (last_depth && last_depth > nodep->xn_depth) {
-	    cp = xi_namepool_string(xtp->xt_names, nodep->xn_name);
+	    cp = xi_namepool_string(xtp, nodep->xn_name);
 	    func(parsep, XI_TYPE_CLOSE, nodep, cp, opaque);
 	    node_atom = nodep->xn_next;
 	    last_depth = nodep->xn_depth;
@@ -624,7 +633,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->xn_type, nodep, NULL, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ELT) {
-	    cp = xi_namepool_string(xtp->xt_names, nodep->xn_name);
+	    cp = xi_namepool_string(xtp, nodep->xn_name);
 	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
 
@@ -648,4 +657,18 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
     }
 
     func(parsep, XI_TYPE_EOF, NULL, NULL, opaque);
+}
+
+
+void
+xi_parse_set_rules (xi_parse_t *parsep, xi_ruleset_t *rules)
+{
+    parsep->xp_ruleset = rules;
+}
+
+void
+xi_parse_set_default_rule (xi_parse_t *parsep, xi_action_type_t type)
+{
+    parsep->xp_default_rule.xr_flags = XRF_MATCH_ALL;
+    parsep->xp_default_rule.xr_action = type;
 }
