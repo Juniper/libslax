@@ -14,38 +14,6 @@
 #ifndef LIBSLAX_XI_SOURCE_H
 #define LIBSLAX_XI_SOURCE_H
 
-typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
-typedef uint32_t xi_node_id_t;	/* Node identifier (index) */
-typedef uint16_t xi_name_id_t;	/* Element name identifier (index) */
-typedef uint16_t xi_ns_id_t;	/* Namespace identifier (index) */
-typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
-typedef off_t xi_offset_t;	/* Offset in file or buffer */
-typedef uint32_t xi_source_flags_t; /* Flags for parser */
-
-/* Type of XML nodes */
-#define XI_TYPE_NONE	0	/* Unknown type */
-#define XI_TYPE_EOF	1	/* End of file */
-#define XI_TYPE_FAIL	2	/* Failure mode */
-#define XI_TYPE_ROOT	3	/* Root node (container); not "root element" */
-#define XI_TYPE_TEXT	4	/* Text content */
-#define XI_TYPE_OPEN	5	/* Open tag */
-#define XI_TYPE_CLOSE	6	/* Close tag */
-#define XI_TYPE_EMPTY	7	/* Empty tag */
-#define XI_TYPE_PI	8	/* Processing instruction */
-#define XI_TYPE_DTD	9	/* <!DTD> nonsense */
-#define XI_TYPE_COMMENT	10	/* Comment */
-#define XI_TYPE_ATSTR	15	/* A string of all unparsed XML attributes */
-#define XI_TYPE_ATTRIB	11	/* A single, parsed, unescaped XML attribute */
-#define XI_TYPE_ATNAME	16	/* Parsed attribute name */
-#define XI_TYPE_ATVALUE	17	/* Parsed attribute value */
-#define XI_TYPE_NS	12	/* XML namespace */
-#define XI_TYPE_NSPREF	12	/* XML namespace */
-#define XI_TYPE_NSVALUE	12	/* XML namespace */
-#define XI_TYPE_SKIP	13	/* Skip/ignored input */
-#define XI_TYPE_CDATA	14	/* Cdata (<![CDATA[ ]]>) */
-
-#define XI_TYPE_ELT	XI_TYPE_OPEN
-
 /*
  * A note about attribute encoding: There are two distinct schemes.
  * Under the first, the complete, unparsed, still-escaped string of
