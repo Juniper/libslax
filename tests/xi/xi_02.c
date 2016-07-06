@@ -32,7 +32,10 @@
 #include <libslax/pa_arb.h>
 #include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
+#include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
+#include <libslax/xi_rules.h>
+#include <libslax/xi_tree.h>
 #include <libslax/xi_parse.h>
 
 int
