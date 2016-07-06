@@ -25,6 +25,7 @@
 
 #include "slaxconfig.h"
 #include <libslax/slax.h>
+#include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 
 int
