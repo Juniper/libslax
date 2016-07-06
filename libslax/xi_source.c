@@ -41,6 +41,7 @@
 
 #include "slaxconfig.h"
 #include <libslax/slaxdef.h>
+#include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 
 #define XI_PI	"processing instruction"
@@ -49,6 +50,9 @@
 #define XI_BUFSIZ_COPY_WHEN (XI_BUFSIZ - 1024)
 #define XI_BUFSIZ_MIN	4096	/* Minimum space for reading data */
 #define XI_BUFSIZ_FAIL	512	/* Absolute minimum space for reading data */
+
+/* This array is used by xi_isspace to find writespace bytes */
+char xi_space_test[256]	= { [0x20] = 1, [0x09] = 1, [0x0d] = 1, [0x0a] = 1 };
 
 void
 xi_source_failure (xi_source_t *srcp, int errnum, const char *fmt, ...)
@@ -359,40 +363,6 @@ xi_source_find (xi_source_t *srcp, int ch, xi_offset_t offset)
 
 	offset = srcp->xps_len;
     }
-}
-
-/*
- * Whitespace in XML has a small, specific definition:
- *     (#x20 | #x9 | #xD | #xA)
- * We burn 256 bytes to make this a simple quick test because
- * we make this test a _huge_ number of times.
- */
-static inline int
-xi_isspace (int ch)
-{
-    static char xi_space_test[256]
-	= { [0x20] = 1, [0x09] = 1, [0x0d] = 1, [0x0a] = 1 };
-
-    return xi_space_test[ch & 0xff];
-}
-
-/*
- * Skip over whitespace.  This is an ambidextrous function, in
- * that it can move forward or backward, based on the "dir" parameter.
- * It returns a pointer to the first non-whitespace character.
- */
-static char *
-xi_skipws (char *cp, unsigned len, int dir)
-{
-    char ch;
-
-    for (ch = *cp; len-- > 0; ch = *cp) {
-	if (!xi_isspace(ch) || ch == '\0')
-	    return cp;
-	cp += dir;
-    }
-
-    return NULL;
 }
 
 /*
