@@ -34,14 +34,19 @@
 typedef struct xi_node_s {
     xi_node_type_t xn_type;	/* Type of this node */
     xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
-    xi_ns_id_t xn_ns;		/* Namespace of this node (in namespace db) */
-    xi_name_id_t xn_name;	/* Name of this node (in name db) */
+    xi_node_flags_t xn_flags;	/* Flags (XNF_*) */
+    xi_ns_id_t xn_ns:10;	/* Namespace of this node (in namespace db) */
+    xi_name_id_t xn_name:22;	/* Name of this node (in name db) */
     xi_node_id_t xn_next;	/* Next node (or parent if last) */
     xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
 } xi_node_t;
 
 #define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
 #define XI_DEPTH_MAX	254	/* Max depth of tree */
+
+/* Flags for xn_flags */
+#define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
+#define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
 typedef struct xi_namepool_s {
     pa_istr_t *xnp_names;	/* Array of names (element, attr, etc) */
@@ -122,50 +127,11 @@ xi_mk_name (char *namebuf, const char *name, const char *ext)
     return pa_config_name(namebuf, PA_MMAP_HEADER_NAME_LEN, name, ext);
 }
 
-static inline xi_namepool_t *
-xi_namepool_open (pa_mmap_t *pmap, const char *basename)
-{
-    char namebuf[PA_MMAP_HEADER_NAME_LEN];
-    pa_istr_t *pip = NULL;
-    pa_pat_t *ppp = NULL;
-    xi_namepool_t *pool;
+xi_namepool_t *
+xi_namepool_open (pa_mmap_t *pmap, const char *basename);
 
-    /* The namepool holds the names of our elements, attributes, etc */
-    pip = pa_istr_open(pmap, xi_mk_name(namebuf, basename, "data"),
-		       XI_SHIFT, XI_ISTR_SHIFT, XI_MAX_ATOMS);
-    if (pip == NULL)
-	return NULL;
-
-    ppp = pa_pat_open(pmap, xi_mk_name(namebuf, basename, "index"),
-		      pip, pa_pat_istr_key_func,
-		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
-    if (ppp == NULL) {
-	pa_istr_close(pip);
-	return NULL;
-    }
-
-    pool = calloc(1, sizeof(*pool));
-    if (pool == NULL) {
-	pa_pat_close(ppp);
-	pa_istr_close(pip);
-	return NULL;
-    }
-
-    pool->xnp_names = pip;
-    pool->xnp_names_index = ppp;
-
-    return pool;
-}
-
-static inline void
-xi_namepool_close (xi_namepool_t *pool)
-{
-    if (pool) {
-	pa_istr_close(pool->xnp_names);
-	pa_pat_close(pool->xnp_names_index);
-	free(pool);
-    }
-}
+void
+xi_namepool_close (xi_namepool_t *pool);
 
 static inline xi_node_t *
 xi_node_alloc (xi_tree_t *treep, pa_atom_t *atomp)
@@ -186,27 +152,31 @@ xi_node_addr(xi_tree_t *treep, pa_atom_t node_atom)
     return pa_fixed_atom_addr(treep->xt_nodes, node_atom);
 }
 
-static inline pa_atom_t
-xi_namepool_atom (xi_tree_t *treep, const char *data, int createp)
-{
-    uint16_t len = strlen(data) + 1;
-    pa_pat_t *ppp = treep->xt_names->xnp_names_index;
-    pa_atom_t atom = pa_pat_get_atom(ppp, len, data);
-    if (atom == PA_NULL_ATOM && createp) {
-	atom = pa_istr_string(ppp->pp_data, data);
-	if (atom == PA_NULL_ATOM)
-	    pa_warning(0, "create key failed: %s", data);
-	else if (!pa_pat_add(ppp, atom, len))
-	    pa_warning(0, "duplicate key: %s", data);
-    }
+pa_atom_t
+xi_tree_namepool_atom (xi_tree_t *treep, const char *data, int createp);
 
-    return atom;
+static inline const char *
+xi_tree_namepool_string (xi_tree_t *treep, pa_atom_t name_atom)
+{
+    return pa_istr_atom_string(treep->xt_names->xnp_names, name_atom);
+}
+
+pa_atom_t
+xi_tree_get_attrib (xi_tree_t *treep, xi_node_t *nodep, pa_atom_t name_atom);
+
+static inline const char *
+xi_tree_textpool_string (xi_tree_t *treep, pa_atom_t atom)
+{
+    return pa_arb_atom_addr(treep->xt_textpool, atom);
 }
 
 static inline const char *
-xi_namepool_string (xi_tree_t *treep, pa_atom_t name_atom)
+xi_tree_get_attrib_string (xi_tree_t *treep, xi_node_t *nodep,
+			  pa_atom_t name_atom)
 {
-    return pa_istr_atom_string(treep->xt_names->xnp_names, name_atom);
+    pa_atom_t atom = xi_tree_get_attrib(treep, nodep, name_atom);
+    return (atom == PA_NULL_ATOM) ? NULL
+	: xi_tree_textpool_string(treep, atom);
 }
 
 #endif /* LIBSLAX_XI_TREE_H */
