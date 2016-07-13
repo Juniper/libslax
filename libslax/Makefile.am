@@ -97,7 +97,8 @@ libslax_la_SOURCES = \
     slaxwriter.c \
     xi_parse.c \
     xi_rules.c \
-    xi_source.c
+    xi_source.c \
+    xi_tree.c
 
 slaxparser.h: slaxparser.c
 ${libslax_la_SOURCES:.c=.o}: ${SLAXHEADERS}
