@@ -40,6 +40,7 @@
 #include <libslax/pa_arb.h>
 #include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
+#include <libslax/pa_bitmap.h>
 #include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 #include <libslax/xi_rules.h>
@@ -177,7 +178,7 @@ pa_atom_t
 xi_parse_atom (xi_parse_t *parsep, const char *name)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    return xi_namepool_atom(xip->xi_tree, name, TRUE);
+    return xi_tree_namepool_atom(xip->xi_tree, name, TRUE);
 }
 
 static void
@@ -242,6 +243,7 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
     /* Set our depth */
     nodep->xn_depth = xip->xi_depth + 1;
 
+    /* Update xi_maxdepth */
     if (nodep->xn_depth > xip->xi_maxdepth)
 	xip->xi_maxdepth = nodep->xn_depth;
 
@@ -249,9 +251,138 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
 }
 
 static void
+xi_insert_attribs (xi_parse_t *parsep, xi_node_t *nodep, const char *data)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    pa_arb_t *prp = xip->xi_tree->xt_textpool;
+    size_t len = strlen(data);
+    pa_atom_t data_atom = pa_arb_alloc(prp, len + 1);
+    char *cp = pa_arb_atom_addr(prp, data_atom);
+
+    if (cp == NULL)
+	return;
+
+    memcpy(cp, data, len);
+    cp[len] = '\0';
+
+    pa_atom_t node_atom;
+    node_atom = xi_insert_node(xip, "xi_insert_attribs", data, len,
+			       XI_TYPE_ATSTR, PA_NULL_ATOM, data_atom);
+    if (node_atom == PA_NULL_ATOM) {
+	pa_arb_free_atom(prp, data_atom);
+	return;
+    }
+
+    /* Mark the attributes as present (but not extracted) */
+    nodep->xn_flags |= XNF_ATTRIBS_PRESENT;
+}
+
+/*
+ * Returns NULL for success, or static error message text
+ */
+static const char *
+xi_parse_next_attrib (char **content, char *endp,
+		      char **namep, char **valuep)
+{
+    char *cp = *content;
+
+    if (cp == NULL)
+	return NULL;		/* Should not occur */
+
+    char *name = xi_skipws(cp, endp - cp, 1);
+    if (name == NULL) {		/* End of attributes */
+	*content = NULL;	/* Mark end of attributes */
+	return NULL;
+    }
+
+    cp = memchr(name, '=', endp - name);
+    if (cp == NULL)
+	return "invalid attribute; missing '='";
+
+    /*
+     * If valuep is NULL, we're not looking to carve up the buffer,
+     * just scanning it for particular attributes, namely for namespace
+     * attributes, which always start with "xmlns".
+     */
+    if (valuep == NULL) {
+	cp += 1;		/* Skip equals sign */
+    } else {
+	/* Trim space off end of attribute name */
+	char *sp = cp - 1;
+	sp = xi_skipws(sp, sp - name, -1); /* Trim trailing ws */
+	if (sp != NULL)
+	    sp[1] = '\0';
+	*cp++ = '\0';		/* NUL-terminate name */
+    }
+
+    char *value = xi_skipws(cp, cp - endp, 1);
+    if (value == NULL || value[1] == '\0')
+	return "invalid attribute; missing name";
+
+    char quote = *value++; /* Record and skip leading quote character */
+    cp = memchr(value, quote, value - endp);
+    if (cp == NULL)
+	return "invalid attribute; missing trailing quote";
+
+    if (valuep != NULL) {	/* Don't touch buffer if valuep is NULL */
+	*cp++ = '\0';		/* NUL-terminate value */
+	*valuep = value;
+    }
+
+    *content = cp;		/* Record next starting point */
+    *namep = name;
+    return NULL;
+}
+
+static void
+xi_insert_attribs_extract (xi_parse_t *parsep, xi_node_t *nodep, char *attrib)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    pa_arb_t *prp = xip->xi_tree->xt_textpool;
+    size_t len = strlen(attrib);
+    char *content = attrib, *endp = content + len, *name, *value;
+    pa_atom_t name_atom, value_atom, attrib_atom;
+    int hit = FALSE;
+    const char *msg;
+
+    for (;;) {
+	msg = xi_parse_next_attrib(&content, endp, &name, &value);
+	if (msg) {
+	    xi_source_failure(parsep->xp_srcp, 0, msg);
+	    break;
+	}
+	if (content == NULL)
+	    break;		/* Normal end-of-attributes detected */
+
+	name_atom = xi_tree_namepool_atom(xip->xi_tree, name, TRUE);
+	if (name_atom == PA_NULL_ATOM)
+	    break;
+
+	value_atom = pa_arb_alloc_string(prp, value);
+	if (value_atom == PA_NULL_ATOM)
+	    break;
+
+	attrib_atom = xi_insert_node(xip, "xi_insert_attribs_extract", "", 0,
+				     XI_TYPE_ATTRIB, name_atom, value_atom);
+	if (attrib_atom == PA_NULL_ATOM) {
+	    xi_source_failure(parsep->xp_srcp, 0, "attribute insert failed");
+	    pa_arb_free_atom(prp, value_atom);
+	    break;
+	}
+
+	hit = TRUE;
+    }
+
+    /* Mark the attributes as present and extracted */
+    if (hit)
+	nodep->xn_flags |= XNF_ATTRIBS_PRESENT | XNF_ATTRIBS_EXTRACTED;
+}
+
+static void
 xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
-		const char *prefix UNUSED,
-		const char *name, const char *attribs UNUSED)
+		      const char *prefix UNUSED,
+		      const char *name, char *attribs,
+		      xi_action_type_t type)
 {
     xi_insert_t *xip = parsep->xp_insert;
 
@@ -269,13 +400,20 @@ xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
 
     /* Push our node on the stack */
     xi_insert_push(xip, node_atom, nodep);
+
+    if (attribs) {
+	if (type == XIA_SAVE_ATSTR) /* Save as string */
+	    xi_insert_attribs(parsep, nodep, attribs);
+	else if (type == XIA_SAVE_ATTRIB) /* Save as parsed attributes */
+	    xi_insert_attribs_extract(parsep, nodep, attribs);
+    }
 }
 
 static void
 xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
     xi_insert_t *xip = parsep->xp_insert;
-    pa_atom_t name_atom = xi_namepool_atom(xip->xi_tree, name, FALSE);
+    pa_atom_t name_atom = xi_tree_namepool_atom(xip->xi_tree, name, FALSE);
     
     slaxLog("xi_insert_close: [%s] %u (depth %u)", name, name_atom,
 	   xip->xi_depth);
@@ -320,96 +458,6 @@ xi_insert_text (xi_parse_t *parsep, const char *data, size_t len)
     }
 }
 
-static void
-xi_insert_attrs (xi_parse_t *parsep, const char *data)
-{
-    xi_insert_t *xip = parsep->xp_insert;
-    pa_arb_t *prp = xip->xi_tree->xt_textpool;
-    size_t len = strlen(data);
-    pa_atom_t data_atom = pa_arb_alloc(prp, len + 1);
-    char *cp = pa_arb_atom_addr(prp, data_atom);
-
-    if (cp == NULL)
-	return;
-
-    memcpy(cp, data, len);
-    cp[len] = '\0';
-
-    pa_atom_t node_atom;
-    node_atom = xi_insert_node(xip, "xi_insert_attrs", data, len,
-			       XI_TYPE_ATSTR, PA_NULL_ATOM, data_atom);
-    if (node_atom == PA_NULL_ATOM) {
-	pa_arb_free_atom(prp, data_atom);
-	return;
-    }
-}
-
-static void
-xi_insert_attrs_extract (xi_parse_t *parsep, char *attrib)
-{
-    xi_insert_t *xip = parsep->xp_insert;
-    pa_arb_t *prp = xip->xi_tree->xt_textpool;
-    size_t len = strlen(attrib);
-    char *cp = attrib, *name, *value, *ep = cp + len, *sp;
-    char quote;			/* Current quotation mark */
-    pa_atom_t name_atom, value_atom, attrib_atom;
-
-    for (;;) {
-	name = xi_skipws(cp, ep - cp, 1);
-	if (name == NULL)		/* End of attributes */
-	    break;
-
-	cp = memchr(name, '=', ep - name);
-	if (cp == NULL) {
-	    xi_source_failure(parsep->xp_srcp, 0,
-			      "invalid attribute; missing '='");
-	    break;
-	}
-
-	/* Trim space off end of attribute name */
-	sp = cp - 1;
-	sp = xi_skipws(sp, sp - name, -1); /* Trim trailing ws */
-	if (sp != NULL)
-	    sp[1] = '\0';;
-
-	*cp++ = '\0';		/* NUL-terminate name */
-
-	value = xi_skipws(cp, cp - ep, 1);
-	if (value == NULL || value[1] == '\0') {
-	    xi_source_failure(parsep->xp_srcp, 0,
-			      "invalid attribute; missing name");
-	    break;
-	}
-
-	quote = *value++; /* Record and skip leading quote character */
-	cp = memchr(value, quote, value - ep);
-	if (cp == NULL) {
-	    xi_source_failure(parsep->xp_srcp, 0,
-			      "invalid attribute; missing trailing quote");
-	    break;
-	}
-
-	*cp++ = '\0';		/* NUL-terminate value */
-
-	name_atom = xi_namepool_atom(xip->xi_tree, name, TRUE);
-	if (name_atom == PA_NULL_ATOM)
-	    break;
-
-	value_atom = pa_arb_alloc_string(prp, value);
-	if (value_atom == PA_NULL_ATOM)
-	    break;
-
-	attrib_atom = xi_insert_node(xip, "xi_insert_attrs_extract", "", 0,
-				   XI_TYPE_ATTRIB, name_atom, value_atom);
-	if (attrib_atom == PA_NULL_ATOM) {
-	    xi_source_failure(parsep->xp_srcp, 0,
-			      "attribute create failed");
-	    pa_arb_free_atom(prp, value_atom);
-	    break;
-	}
-    }
-}
-
 int
 xi_parse (xi_parse_t *parsep)
 {
@@ -448,6 +496,7 @@ xi_parse (xi_parse_t *parsep)
 	    break;
 
 	case XI_TYPE_OPEN:	/* Open tag */
+	case XI_TYPE_EMPTY:	/* Empty tag */
 	    if (!opt_quiet)
 		slaxLog("open tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
@@ -459,28 +508,25 @@ xi_parse (xi_parse_t *parsep)
 	    }
 
 	    /* We need an atom to do the indexing to find rules */
-	    name_atom = xi_namepool_atom(xip->xi_tree, localp, TRUE);
+	    name_atom = xi_tree_namepool_atom(xip->xi_tree, localp, TRUE);
 
 	    /*
 	     * We've got incoming data; find out what to do with it
 	     */
-	    rulep = xi_ruleset_find(parsep, name_atom, data, localp, rest);
-	    switch (rulep->xr_action) {
+	    rulep = xi_rulebook_find(parsep, name_atom, data, localp, rest);
+	    xi_action_type_t act = rulep->xr_action;
 
+	    switch (act) {
 	    case XIA_SAVE:
-		xi_insert_open(parsep, name_atom, data, localp, rest);
+		xi_insert_open(parsep, name_atom, data, localp, rest, act);
 		break;
 
 	    case XIA_SAVE_ATSTR:
-		xi_insert_open(parsep, name_atom, data, localp, rest);
-		if (rest)
-		    xi_insert_attrs(parsep, rest);
+		xi_insert_open(parsep, name_atom, data, localp, rest, act);
 		break;
 
 	    case XIA_SAVE_ATTRIB:
-		xi_insert_open(parsep, name_atom, data, localp, rest);
-		if (rest)
-		    xi_insert_attrs_extract(parsep, rest);
+		xi_insert_open(parsep, name_atom, data, localp, rest, act);
 		break;
 
 	    case XIA_DISCARD:
@@ -488,6 +534,9 @@ xi_parse (xi_parse_t *parsep)
 		break;
 	    }
 
+	    /* An empty tag is an open and a close */
+	    if (type == XI_TYPE_EMPTY)
+		xi_insert_close(parsep, data, localp);
 	    break;
 
 	case XI_TYPE_CLOSE:	/* Close tag */
@@ -548,6 +597,10 @@ xi_parse_dump_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
     case XI_TYPE_TEXT:
 	slaxLog("text: %s", data ?: "[error]");
 	break;
+
+    case XI_TYPE_ATTRIB:
+	slaxLog("[attrib %s]\n", data ?: "[error]");
+	break;
     }
 
     return 0;
@@ -565,6 +618,7 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 		      const char *data, void *opaque)
 {
     FILE *out = opaque;
+    const char *cp;
 
     switch (type) {
     case XI_TYPE_ROOT:
@@ -586,6 +640,12 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 
     case XI_TYPE_ATSTR:
 	fprintf(out, "<attrib>%s</>", data);
+	break;
+
+    case XI_TYPE_ATTRIB:
+	cp = xi_tree_namepool_string(parsep->xp_insert->xi_tree,
+				     nodep->xn_name);
+	fprintf(out, "[attrib %s=%s]\n", cp, data);
 	break;
 
     case XI_TYPE_EOF:
@@ -621,7 +681,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	}
 
 	if (last_depth && last_depth > nodep->xn_depth) {
-	    cp = xi_namepool_string(xtp, nodep->xn_name);
+	    cp = xi_tree_namepool_string(xtp, nodep->xn_name);
 	    func(parsep, XI_TYPE_CLOSE, nodep, cp, opaque);
 	    node_atom = nodep->xn_next;
 	    last_depth = nodep->xn_depth;
@@ -633,16 +693,21 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->xn_type, nodep, NULL, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ELT) {
-	    cp = xi_namepool_string(xtp, nodep->xn_name);
+	    cp = xi_tree_namepool_string(xtp, nodep->xn_name);
 	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_TEXT) {
-	    cp = pa_arb_atom_addr(xtp->xt_textpool, nodep->xn_contents);
+	    cp = xi_tree_textpool_string(xtp, nodep->xn_contents);
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
+	    cp = pa_arb_atom_addr(xtp->xt_textpool, nodep->xn_contents);
+	    next_node_atom = nodep->xn_next;
+	    func(parsep, nodep->xn_type, nodep, cp, opaque);
+
+	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
 	    cp = pa_arb_atom_addr(xtp->xt_textpool, nodep->xn_contents);
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
@@ -661,9 +726,9 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 
 
 void
-xi_parse_set_rules (xi_parse_t *parsep, xi_ruleset_t *rules)
+xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook)
 {
-    parsep->xp_ruleset = rules;
+    parsep->xp_rulebook = rulebook;
 }
 
 void
