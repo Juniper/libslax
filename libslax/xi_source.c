@@ -686,8 +686,10 @@ xi_source_token_open (xi_source_t *srcp, char **datap, char **restp)
     char *dp = srcp->xps_curp + 1;
     char *cp = &srcp->xps_bufp[off];
 
-    if (dp < cp && cp[-1] == '/') /* Spec says no space between "/>" */
+    if (dp < cp && cp[-1] == '/') { /* Spec says no space between "/>" */
 	token = XI_TYPE_EMPTY;
+	cp[-1] = '\0';		/* Back up over '/' */
+    }
 
     *cp++ = '\0';		/* Whack the '>' */
     xi_source_move_curp(srcp, cp); /* Save as next starting point */
