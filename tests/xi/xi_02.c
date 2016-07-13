@@ -32,6 +32,7 @@
 #include <libslax/pa_arb.h>
 #include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
+#include <libslax/pa_bitmap.h>
 #include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 #include <libslax/xi_rules.h>
