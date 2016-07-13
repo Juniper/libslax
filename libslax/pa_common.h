@@ -33,7 +33,14 @@
  * custom definitions of the "page entry" type.
  */
 
+
+/*
+ * NOTE WELL: There's no way to keep PA_ATOM_SHIFT up-to-date
+ * automatically, but it must be log2(sizeof(pa_atom_t).
+ */
+#define PA_ATOM_SHIFT	2	/* log2(sizeof(pa_atom_t) */
 typedef uint32_t pa_atom_t;	/* Type for atom numbers */
+
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
 /* Type of our trees */
@@ -45,8 +52,9 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 #define PA_TYPE_PAT		5 /* Patricia tree (pa_pat_t) */
 #define PA_TYPE_OPAQUE		6 /* Opaque header (can't decode) */
 #define PA_TYPE_TREE		7 /* Tree (xi_tree_t) */
+#define PA_TYPE_BITMAP		8 /* Bitmap (pa_bitmap_t) */
 
-#define PA_TYPE_MAX		8
+#define PA_TYPE_MAX		9
 
 /*
  * To distinquish between pa_mmap atoms and higher level atoms, we
