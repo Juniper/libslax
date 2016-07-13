@@ -62,14 +62,19 @@ typedef pa_atom_t pa_fixed_page_entry_t;
 
 #endif /* PA_NO_MMAP */
 
+typedef uint8_t pa_fixed_flags_t;
+
 typedef struct pa_fixed_info_s {
     pa_shift_t pfi_shift;	/* Bits to shift to select the page */
-    uint8_t pfi_padding;	/* Padding this by hand */
+    pa_fixed_flags_t pfi_flags;	/* Flags (in the padding) */
     uint16_t pfi_atom_size;	/* Size of each atom */
     pa_atom_t pfi_max_atoms;	/* Max number of atoms */
     pa_atom_t pfi_free;		/* First atom that is free */
     pa_matom_t pfi_base; 	/* Offset of page table base (in mmap atoms) */
 } pa_fixed_info_t;
+
+/* Flags for pfi_flags: */
+#define PFF_INIT_ZERO (1<<0)	/* Initialize memory to zeroes */
 
 typedef struct pa_fixed_s {
     PA_FIXED_MMAP_FIELD_DECLS;	   /* Mmap overhead declarations */
@@ -82,6 +87,13 @@ typedef struct pa_fixed_s {
 #define pf_atom_size	pf_infop->pfi_atom_size
 #define pf_max_atoms	pf_infop->pfi_max_atoms
 #define pf_free		pf_infop->pfi_free
+#define pf_flags	pf_infop->pfi_flags
+
+static inline pa_atom_t
+pa_fixed_max_atoms (pa_fixed_t *pfp)
+{
+    return pfp->pf_max_atoms;
+}
 
 #ifdef PA_NO_MMAP
 
@@ -178,6 +190,9 @@ pa_fixed_atom_addr (pa_fixed_t *pfp, pa_atom_t atom)
 void
 pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom);
 
+void
+pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_atom_t atom);
+
 /*
  * Allocate a new atom, returning the atom number
  */
@@ -208,12 +223,58 @@ pa_fixed_alloc_atom (pa_fixed_t *pfp)
      * failed, we don't want to change the free atom, since it might
      * be a transient memory issue.
      */
-    if (addr)
+    if (addr) {
 	pfp->pf_free = *(pa_atom_t *) addr; /* Fetch next item on free list */
-    else
+
+	/* If needed, initialize the new memory to zero */
+	if (pfp->pf_flags & PFF_INIT_ZERO)
+	    bzero(addr, pfp->pf_atom_size);
+    } else
 	pa_alloc_failed(__FUNCTION__);
 
+
     return atom;
+}
+
+/*
+ * Return the address of a given element on the paged array.  This
+ * is for callers that don't want to use the "alloc/free" style,
+ * but just want a paged array.
+ */
+static inline void *
+pa_fixed_element (pa_fixed_t *pfp, uint32_t num)
+{
+    /* The index is the atom number */
+    pa_atom_t atom = num;
+    void *addr = pa_fixed_atom_addr(pfp, atom);
+    if (addr == NULL) {
+	/*
+	 * Force an allocation and re-fetch the address, which may
+	 * fail again if the underlaying allocator (mmap) can't
+	 * allocate memory.
+	 */
+	pa_fixed_element_setup_page(pfp, atom);
+	addr = pa_fixed_atom_addr(pfp, atom);
+    }
+
+    if (addr == NULL)
+	pa_alloc_failed(__FUNCTION__);
+
+    return addr;
+}
+
+/*
+ * Return the address of a given element on the paged array, if and only
+ * if that page is already allocated.  This allows the caller to avoid
+ * spurious creation/allocation if they are just checking for existance.
+ */
+static inline void *
+pa_fixed_element_if_exists (pa_fixed_t *pfp, uint32_t num)
+{
+    /* The index is the atom number */
+    pa_atom_t atom = num;
+    void *addr = pa_fixed_atom_addr(pfp, atom);
+    return addr;
 }
 
 /*
@@ -252,5 +313,11 @@ pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 
 void
 pa_fixed_close (pa_fixed_t *pfp);
+
+static inline void
+pa_fixed_set_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
+{
+    pfp->pf_flags = flags;
+}
 
 #endif /* LIBSLAX_PA_FIXED_H */
