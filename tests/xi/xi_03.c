@@ -32,6 +32,7 @@
 #include <libslax/pa_arb.h>
 #include <libslax/pa_istr.h>
 #include <libslax/pa_pat.h>
+#include <libslax/pa_bitmap.h>
 #include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 #include <libslax/xi_rules.h>
@@ -43,7 +44,7 @@ main (int argc, char **argv)
 {
     const char *opt_filename = NULL;
     const char *opt_script = "script.xml";
-    const char *opt_rules = "rules.sxb";
+    const char *opt_rulebook = "rulebook.sxb";
     const char *opt_database = "test.sxb";
     const char *opt_config = NULL;
     int opt_read = 0;
@@ -61,9 +62,9 @@ main (int argc, char **argv)
 	} else if (strcmp(argv[argc], "config") == 0) {
 	    if (argv[argc + 1])
 		opt_config = argv[++argc];
-	} else if (strcmp(argv[argc], "rules") == 0) {
+	} else if (strcmp(argv[argc], "rulebook") == 0) {
 	    if (argv[argc + 1])
-		opt_rules = argv[++argc];
+		opt_rulebook = argv[++argc];
 	} else if (strcmp(argv[argc], "database") == 0) {
 	    if (argv[argc + 1])
 		opt_database = argv[++argc];
@@ -97,7 +98,7 @@ main (int argc, char **argv)
 	slaxLogEnable(1);
 
     if (opt_clean) {
-	unlink(opt_rules);
+	unlink(opt_rulebook);
 	unlink(opt_database);
     }
 
@@ -106,18 +107,29 @@ main (int argc, char **argv)
     if (opt_config)
 	pa_config_read(opt_config);
 
-    pa_mmap_t *smap = pa_mmap_open(opt_rules, 0, 0644);
+    pa_mmap_t *smap = pa_mmap_open(opt_rulebook, 0, 0644);
     assert(smap);
 
     xi_parse_t *script = xi_parse_open(smap, "script", opt_script, flags);
     assert(script);
 
+    /* We need to save all attributes */
     xi_parse_set_default_rule(script, XIA_SAVE_ATTRIB);
 
     xi_parse(script);
 
-    xi_ruleset_t *rules = xi_rules_prep(script, "rules");
-    assert(rules);
+    if (opt_dump) {
+	if (!opt_quiet)
+	    slaxLogEnable(1);
+	xi_parse_dump(script);
+	xi_parse_emit_xml(script, stdout);
+    }
+
+    /* We prep the rulebook to build our states and rules */
+    xi_rulebook_t *rb = xi_rulebook_prep(script, "rulebook");
+    assert(rb);
+
+    xi_rulebook_dump(rb);
 
     pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
     assert(pmp);
@@ -125,7 +137,7 @@ main (int argc, char **argv)
     xi_parse_t *parsep = xi_parse_open(pmp, "test", opt_filename, flags);
     assert(parsep);
 
-    xi_parse_set_rules(parsep, rules);
+    xi_parse_set_rulebook(parsep, rb);
 
     xi_parse(parsep);
 
