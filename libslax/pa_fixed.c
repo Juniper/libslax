@@ -69,6 +69,26 @@ pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
     addr[(count - 1) * mult] = i;
 }
 
+void
+pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
+{
+    unsigned slot = atom >> pfp->pf_shift;
+
+    pa_atom_t count = 1 << pfp->pf_shift;
+    size_t size = count * pfp->pf_atom_size;
+    pa_matom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
+    pa_fixed_page_entry_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
+    if (addr == NULL)
+	return;
+
+    /* Set the slot in the page array */
+    pa_fixed_page_set(pfp, slot, matom, addr);
+
+    /* If needed, initialize the new memory to zero */
+    if (pfp->pf_flags & PFF_INIT_ZERO)
+	bzero(addr, size);
+}
+
 /*
  * The most brutal of the initializers: the caller has an existing
  * base and info block for our use.  We just take them.
