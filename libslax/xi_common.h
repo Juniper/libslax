@@ -16,11 +16,12 @@
 
 typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
 typedef uint32_t xi_node_id_t;	/* Node identifier (index) */
-typedef uint16_t xi_name_id_t;	/* Element name identifier (index) */
-typedef uint16_t xi_ns_id_t;	/* Namespace identifier (index) */
+typedef uint32_t xi_name_id_t;	/* Element name identifier (really 22 bits) */
+typedef uint16_t xi_ns_id_t;	/* Namespace identifier (really 10 bits) */
 typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
 typedef off_t xi_offset_t;	/* Offset in file or buffer */
 typedef uint32_t xi_source_flags_t; /* Flags for parser */
+typedef uint16_t xi_node_flags_t;   /* Flags for a node (XNF_*) */
 
 /* Type of XML nodes */
 #define XI_TYPE_NONE	0	/* Unknown type */
@@ -38,6 +39,7 @@ typedef uint32_t xi_source_flags_t; /* Flags for parser */
 #define XI_TYPE_COMMENT	12	/* Comment */
 #define XI_TYPE_ATSTR	13	/* A string of all unparsed XML attributes */
 #define XI_TYPE_ATTRIB	14	/* A single, parsed, unescaped XML attribute */
+
 #define XI_TYPE_NS	15	/* XML namespace */
 #define XI_TYPE_NSPREF	16	/* XML namespace */
 #define XI_TYPE_NSVALUE	17	/* XML namespace */
