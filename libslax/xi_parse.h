@@ -20,7 +20,7 @@
  */
 typedef struct xi_parse_s {
     xi_source_t *xp_srcp;	/* Source of incoming tokens */
-    xi_ruleset_t *xp_ruleset;	/* Current set of rules */
+    xi_rulebook_t *xp_rulebook;	/* Current set of rules */
     xi_rule_t xp_default_rule;	/* Default rule for parsing */
     xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
@@ -48,12 +48,15 @@ void
 xi_parse_emit_xml (xi_parse_t *parsep, FILE *out);
 
 void
-xi_parse_set_rules (xi_parse_t *parsep, xi_ruleset_t *rules);
+xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook);
 
 void
 xi_parse_set_default_rule (xi_parse_t *parsep, xi_action_type_t type);
 
 pa_atom_t
 xi_parse_atom (xi_parse_t *parsep, const char *name);
+
+void
+xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook);
 
 #endif /* LIBSLAX_XI_PARSE_H */
