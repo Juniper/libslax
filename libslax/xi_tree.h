@@ -83,12 +83,8 @@ typedef struct xi_ns_map_s {
  * The in-memory representation of a tree
  */
 typedef struct xi_tree_s {
-    pa_mmap_t *xt_mmap;	/* Base memory information */
     xi_tree_info_t *xt_infop;	/* Base information */
-    pa_fixed_t *xt_nodes;	/* Pool of nodes (xi_node_t) */
-    xi_namepool_t *xt_names; /* Namepool for local part of names */
-    pa_fixed_t *xt_prefix_mapping; /* Map from prefixes to URLs (xi_ns_map_t)*/
-    pa_arb_t *xt_textpool;	/* Text data values */
+    xi_workspace_t *xt_workspace; /* Our workspace */
 } xi_tree_t;
 
 #define xt_root xt_infop->xti_root
@@ -126,58 +122,6 @@ static inline const char *
 xi_mk_name (char *namebuf, const char *name, const char *ext)
 {
     return pa_config_name(namebuf, PA_MMAP_HEADER_NAME_LEN, name, ext);
-}
-
-xi_namepool_t *
-xi_namepool_open (pa_mmap_t *pmap, const char *basename);
-
-void
-xi_namepool_close (xi_namepool_t *pool);
-
-static inline xi_node_t *
-xi_node_alloc (xi_tree_t *treep, pa_atom_t *atomp)
-{
-    if (atomp == NULL)		/* Should not occur */
-	return NULL;
-
-    pa_atom_t node_atom = pa_fixed_alloc_atom(treep->xt_nodes);
-    xi_node_t *nodep = pa_fixed_atom_addr(treep->xt_nodes, node_atom);
-
-    *atomp = node_atom;
-    return nodep;
-}
-
-static inline xi_node_t *
-xi_node_addr(xi_tree_t *treep, pa_atom_t node_atom)
-{
-    return pa_fixed_atom_addr(treep->xt_nodes, node_atom);
-}
-
-pa_atom_t
-xi_tree_namepool_atom (xi_tree_t *treep, const char *data, int createp);
-
-static inline const char *
-xi_tree_namepool_string (xi_tree_t *treep, pa_atom_t name_atom)
-{
-    return pa_istr_atom_string(treep->xt_names->xnp_names, name_atom);
-}
-
-pa_atom_t
-xi_tree_get_attrib (xi_tree_t *treep, xi_node_t *nodep, pa_atom_t name_atom);
-
-static inline const char *
-xi_tree_textpool_string (xi_tree_t *treep, pa_atom_t atom)
-{
-    return pa_arb_atom_addr(treep->xt_textpool, atom);
-}
-
-static inline const char *
-xi_tree_get_attrib_string (xi_tree_t *treep, xi_node_t *nodep,
-			  pa_atom_t name_atom)
-{
-    pa_atom_t atom = xi_tree_get_attrib(treep, nodep, name_atom);
-    return (atom == PA_NULL_ATOM) ? NULL
-	: xi_tree_textpool_string(treep, atom);
 }
 
 #endif /* LIBSLAX_XI_TREE_H */
