@@ -53,6 +53,10 @@ struct xi_insert_s; typedef struct xi_insert_s xi_insert_t;
 struct xi_rstate_s; typedef struct xi_rstate_s xi_rstate_t;
 struct xi_rule_s; typedef struct xi_rule_s xi_rule_t;
 struct xi_node_s; typedef struct xi_node_s xi_node_t;
+struct xi_workspace_s; typedef struct xi_workspace_s xi_workspace_t;
+
+/* Number of elements in a static array */
+#define XI_NUM_ELTS(_arr) (sizeof(_arr) / sizeof(_arr[0]))
 
 /* Used to test whether a byte is white space */
 extern char xi_space_test[256];
