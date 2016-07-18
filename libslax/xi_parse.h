@@ -39,7 +39,7 @@ xi_parse_stack_state (xi_parse_t *parsep)
 }
 
 xi_parse_t *
-xi_parse_open (pa_mmap_t *pmap, const char *name,
+xi_parse_open (pa_mmap_t *pmap, xi_workspace_t *xwp, const char *name,
 	       const char *filename, xi_source_flags_t flags);
 
 void
@@ -62,6 +62,12 @@ xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook);
 
 void
 xi_parse_set_default_rule (xi_parse_t *parsep, xi_action_type_t type);
+
+static inline xi_workspace_t *
+xi_parse_workspace (xi_parse_t *parsep)
+{
+    return parsep->xp_insert->xi_tree->xt_workspace;
+}
 
 pa_atom_t
 xi_parse_namepool_atom (xi_parse_t *parsep, const char *name);
