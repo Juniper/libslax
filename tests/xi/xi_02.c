@@ -37,6 +37,7 @@
 #include <libslax/xi_source.h>
 #include <libslax/xi_rules.h>
 #include <libslax/xi_tree.h>
+#include <libslax/xi_workspace.h>
 #include <libslax/xi_parse.h>
 
 int
@@ -100,7 +101,11 @@ main (int argc, char **argv)
     pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
     assert(pmp);
 
-    xi_parse_t *parsep = xi_parse_open(pmp, "test", opt_filename, flags);
+    xi_workspace_t *workp = xi_workspace_open(pmp, "test");
+    assert(workp);
+
+    xi_parse_t *parsep = xi_parse_open(pmp, workp, "test",
+				       opt_filename, flags);
     assert(parsep);
 
     xi_parse(parsep);
