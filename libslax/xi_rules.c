@@ -44,12 +44,15 @@
 #include <libslax/xi_common.h>
 #include <libslax/xi_rules.h>
 #include <libslax/xi_tree.h>
+#include <libslax/xi_workspace.h>
 #include <libslax/xi_parse.h>
 
 xi_rulebook_t *
-xi_rulebook_setup (pa_mmap_t *pmp, xi_parse_t *script, const char *name)
+xi_rulebook_setup (xi_workspace_t *xwp,
+		   xi_parse_t *script, const char *name)
 {
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
+    pa_mmap_t *pmp = xwp->xw_mmap;
     xi_rulebook_info_t *infop;
     pa_fixed_t *rules;
     pa_fixed_t *states;
@@ -72,7 +75,7 @@ xi_rulebook_setup (pa_mmap_t *pmp, xi_parse_t *script, const char *name)
     xi_rulebook_t *xrbp = calloc(1, sizeof(*rules));
 
     if (xrbp) {
-	xrbp->xrb_mmap = pmp;
+	xrbp->xrb_workspace = xwp;
 	xrbp->xrb_infop = infop;
 	xrbp->xrb_rules = rules;
 	xrbp->xrb_states = states;
@@ -162,12 +165,13 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 		  const char *data, void *opaque)
 {
     xi_tree_t *treep = parsep->xp_insert->xi_tree;
+    xi_workspace_t *xwp = treep->xt_workspace;
     xi_rulebook_prep_t *prep = opaque;
     xi_rulebook_t *xrbp = prep->xrp_rulebook;
     struct xrp_stack_s *stackp = &prep->xrp_stack[prep->xrp_depth];
     const char *id, *action, *tag, *use_tag, *new_state;
 
-#define GET_ATTRIB(_x) xi_tree_get_attrib_string(treep, nodep, prep->_x)
+#define GET_ATTRIB(_x) xi_get_attrib_string(xwp, nodep, prep->_x)
 #define XX(_x) ((_x) ?: "")
 
 #if 0
@@ -257,8 +261,8 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 xi_rulebook_t *
 xi_rulebook_prep (xi_parse_t *input, const char *name)
 {
-    pa_mmap_t *pmp = input->xp_insert->xi_tree->xt_mmap;
-    xi_rulebook_t *xrbp = xi_rulebook_setup(pmp, input, name);
+    xi_workspace_t *xwp = input->xp_insert->xi_tree->xt_workspace;
+    xi_rulebook_t *xrbp = xi_rulebook_setup(xwp, input, name);
     xi_rulebook_prep_t prep;
 
     if (xrbp == NULL)
@@ -378,12 +382,17 @@ xi_rulebook_dump (xi_rulebook_t *xrbp)
 	    if (rulep == NULL)
 		continue;
 
+	    const char *rname = NULL;
+	    if (rulep->xr_action < XI_NUM_ELTS(xi_action_names))
+		rname = xi_action_names[rulep->xr_action];
+
 	    slaxLog("    rule %u:", rid);
 	    slaxLog("        bitmap: %s",
 		    xi_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
-	    slaxLog("        flags %#x, action %d, use-tag %u, new_state %u, "
-		    "next %u",
+	    slaxLog("        flags %#x, action %d%s%s%s, use-tag %u, "
+		    "new_state %u, next %u",
 		    rulep->xr_flags, rulep->xr_action,
+		    rname ? " (" : "", rname ?: "", rname ? ")" : "",
 		    rulep->xr_use_tag, rulep->xr_new_state, rulep->xr_next);
 	}
     }
