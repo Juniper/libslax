@@ -11,8 +11,8 @@
 ]>
 <top>
     <refinfo refid="A91910">
-        <authors>
-            <author>Kagawa, N.</author>
+        <authors x="1" y="2 z="albatross">
+            <author a1="v1" a2="v2" a3="v3">Kagawa, N.</author>
             <author>Mihara, K.</author>
             <author>Sato, R.</author>
         </authors>
