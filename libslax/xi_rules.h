@@ -77,7 +77,7 @@ typedef struct xi_rulebook_info_s {
  * A rule set is an optimized set of rules
  */
 typedef struct xi_rulebook_s {
-    pa_mmap_t *xrb_mmap;	  /* Our memory mapped data */
+    xi_workspace_t *xrb_workspace; /* Our workspace */
     xi_parse_t *xrb_script;	  /* Script we're loading/building */
     xi_rulebook_info_t *xrb_infop; /* Our information the the pa_mmap_t */
     pa_fixed_t *xrb_rules;	  /* List of rules (xi_rule_t) */
@@ -101,7 +101,7 @@ xi_rulebook_t *
 xi_rulebook_open (const char *name);
 
 xi_rulebook_t *
-xi_rulebook_setup (pa_mmap_t *pmap, xi_parse_t *script, const char *name);
+xi_rulebook_setup (xi_workspace_t *xwp, xi_parse_t *script, const char *name);
 
 void
 xi_rulebook_close (xi_rulebook_t *rules);
