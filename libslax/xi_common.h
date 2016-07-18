@@ -47,18 +47,14 @@ typedef uint16_t xi_node_flags_t;   /* Flags for a node (XNF_*) */
 #define XI_TYPE_ELT	XI_TYPE_OPEN
 #define XI_TYPE_CDATA	XI_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
 
-struct xi_source_s;
-typedef struct xi_source_s xi_source_t;
+struct xi_source_s; typedef struct xi_source_s xi_source_t;
+struct xi_parse_s; typedef struct xi_parse_s xi_parse_t;
+struct xi_insert_s; typedef struct xi_insert_s xi_insert_t;
+struct xi_rstate_s; typedef struct xi_rstate_s xi_rstate_t;
+struct xi_rule_s; typedef struct xi_rule_s xi_rule_t;
+struct xi_node_s; typedef struct xi_node_s xi_node_t;
 
-struct xi_parse_s;
-typedef struct xi_parse_s xi_parse_t;
-
-struct xi_insert_s;
-typedef struct xi_insert_s xi_insert_t;
-
-struct xi_node_s;
-typedef struct xi_node_s xi_node_t;
-
+/* Used to test whether a byte is white space */
 extern char xi_space_test[256];
 
 /*
