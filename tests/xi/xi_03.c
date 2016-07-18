@@ -37,6 +37,7 @@
 #include <libslax/xi_source.h>
 #include <libslax/xi_rules.h>
 #include <libslax/xi_tree.h>
+#include <libslax/xi_workspace.h>
 #include <libslax/xi_parse.h>
 
 int
@@ -107,10 +108,14 @@ main (int argc, char **argv)
     if (opt_config)
 	pa_config_read(opt_config);
 
-    pa_mmap_t *smap = pa_mmap_open(opt_rulebook, 0, 0644);
-    assert(smap);
+    pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
+    assert(pmp);
 
-    xi_parse_t *script = xi_parse_open(smap, "script", opt_script, flags);
+    xi_workspace_t *workp = xi_workspace_open(pmp, "test");
+    assert(workp);
+
+    xi_parse_t *script = xi_parse_open(pmp, workp, "script",
+				       opt_script, flags);
     assert(script);
 
     /* We need to save all attributes */
@@ -131,10 +136,8 @@ main (int argc, char **argv)
 
     xi_rulebook_dump(rb);
 
-    pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
-    assert(pmp);
-
-    xi_parse_t *parsep = xi_parse_open(pmp, "test", opt_filename, flags);
+    xi_parse_t *parsep = xi_parse_open(pmp, workp, "test",
+				       opt_filename, flags);
     assert(parsep);
 
     xi_parse_set_rulebook(parsep, rb);
