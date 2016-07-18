@@ -69,8 +69,6 @@ xi_rulebook_setup (pa_mmap_t *pmp, xi_parse_t *script, const char *name)
     if (infop == NULL || rules == NULL || states == NULL || bitmaps == NULL)
 	return NULL;
     
-    pa_fixed_set_flags(bitmaps, PFF_INIT_ZERO);
-
     xi_rulebook_t *xrbp = calloc(1, sizeof(*rules));
 
     if (xrbp) {
@@ -115,7 +113,7 @@ xi_rule_bitmap_add (xi_rulebook_t *xrbp, xi_rule_t *xrp, const char *tag)
     slaxLog("xi_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
 
     /* Find the atom representing the tag */
-    pa_atom_t atom = xi_parse_atom(xrbp->xrb_script, tag);
+    pa_atom_t atom = xi_parse_namepool_atom(xrbp->xrb_script, tag);
     if (atom == PA_NULL_ATOM)
 	return;
 
@@ -239,7 +237,7 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    if (action)
 		xrp->xr_action = xi_rule_action_value(action);
 	    if (use_tag)
-		xrp->xr_use_tag = xi_parse_atom(xrbp->xrb_script, use_tag);
+		xrp->xr_use_tag = xi_parse_namepool_atom(xrbp->xrb_script, use_tag);
 	    if (new_state)
 		xrp->xr_new_state = strtol(new_state, NULL, 0);
 
@@ -273,14 +271,14 @@ xi_rulebook_prep (xi_parse_t *input, const char *name)
 
     /* We need all the atom number for the bits we care about */
     /* XXX rewrite as array/loop */
-    prep.xrp_atom_action = xi_parse_atom(input, "action");
-    prep.xrp_atom_id = xi_parse_atom(input, "id");
-    prep.xrp_atom_new_state = xi_parse_atom(input, "new-state");
-    prep.xrp_atom_rule = xi_parse_atom(input, "rule");
-    prep.xrp_atom_script = xi_parse_atom(input, "script");
-    prep.xrp_atom_state = xi_parse_atom(input, "state");
-    prep.xrp_atom_tag = xi_parse_atom(input, "tag");
-    prep.xrp_atom_use_tag = xi_parse_atom(input, "use-tag");
+    prep.xrp_atom_action = xi_parse_namepool_atom(input, "action");
+    prep.xrp_atom_id = xi_parse_namepool_atom(input, "id");
+    prep.xrp_atom_new_state = xi_parse_namepool_atom(input, "new-state");
+    prep.xrp_atom_rule = xi_parse_namepool_atom(input, "rule");
+    prep.xrp_atom_script = xi_parse_namepool_atom(input, "script");
+    prep.xrp_atom_state = xi_parse_namepool_atom(input, "state");
+    prep.xrp_atom_tag = xi_parse_namepool_atom(input, "tag");
+    prep.xrp_atom_use_tag = xi_parse_namepool_atom(input, "use-tag");
 
     xi_parse_emit(input, xi_rulebook_prep_cb, &prep);
 
@@ -288,31 +286,71 @@ xi_rulebook_prep (xi_parse_t *input, const char *name)
 }
 
 xi_rule_t *
-xi_rulebook_find (xi_parse_t *parsep UNUSED, pa_atom_t name_atom UNUSED,
-		 const char *pref UNUSED, const char *name UNUSED,
-		 const char *attribs UNUSED)
+xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
+		  xi_rstate_t *statep,
+		  pa_atom_t name_atom UNUSED,
+		  const char *pref UNUSED, const char *name UNUSED,
+		  const char *attribs UNUSED)
 {
-    return &parsep->xp_default_rule;
+    if (xrbp == NULL)		/* No rulebook means no rules */
+	return NULL;
+
+    if (statep == NULL)
+	return NULL;
+
+    xi_rule_id_t rid;
+    xi_rule_t *xrp;
+    for (rid = statep->xrbs_first_rule; rid != PA_NULL_ATOM;
+	 rid = xrp->xr_next) {
+	xrp = xi_rulebook_rule(xrbp, rid);
+	if (xrp == NULL)
+	    continue;
+
+	/* See if our tag is in the bitmap for this rule */
+	if (!pa_bitmap_test(xrbp->xrb_bitmaps, xrp->xr_bitmap, name_atom))
+	    continue;
+
+	return xrp;		/* Success! */
+    }
+
+    return NULL;
 }
 
 static const char *
-xr_rule_bitmap_string (xi_rulebook_t *xrbp UNUSED, xi_rule_t *rulep UNUSED,
-			char *buf UNUSED, size_t bufsiz UNUSED)
+xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
+			char *buf, size_t bufsiz)
 {
-    return "insert bitmap here";
-}
+    pa_bitmap_t *pbp = xrbp->xrb_bitmaps;
+    pa_bitmap_id_t bitmap = xrp->xr_bitmap;
+    pa_bitnumber_t num = PA_BITMAP_FIND_START;
+    char *cp = buf;
+    char *ep = buf + bufsiz;
+    int rc;
+    const char *str;
 
+    for (;;) {
+	/* Whiffle thru the set of bits */
+	num = pa_bitmap_find_next(pbp, bitmap, num);
+	if (num == PA_BITMAP_FIND_DONE)
+	    break;
 
-static inline xi_rstate_t *
-xi_rulebook_state (xi_rulebook_t *xrbp, xi_state_id_t sid)
-{
-    return pa_fixed_element(xrbp->xrb_states, sid);
-}
+	/* Turn the bit into a string */
+	str = xi_parse_namepool_string(xrbp->xrb_script, num);
 
-static inline xi_rule_t *
-xi_rulebook_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid)
-{
-    return pa_fixed_atom_addr(xrbp->xrb_rules, rid);
+	/* Make some pretty pretty output */
+	rc = snprintf(cp, ep - cp, "%s%d%s%s%s",
+		      (cp == buf) ? "" : ", ", num,
+		      str ? " (" : "", str ?: "", str ? ")" : "");
+	if (rc >= ep - cp) {
+	    /* Out of room; so sorry */
+	    memcpy(ep - 5, "...", 4);
+	    break;
+	}
+	cp += rc;
+    }
+
+    *cp = '\0';
+    return buf;
 }
 
 void
@@ -342,7 +380,7 @@ xi_rulebook_dump (xi_rulebook_t *xrbp)
 
 	    slaxLog("    rule %u:", rid);
 	    slaxLog("        bitmap: %s",
-		    xr_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
+		    xi_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
 	    slaxLog("        flags %#x, action %d, use-tag %u, new_state %u, "
 		    "next %u",
 		    rulep->xr_flags, rulep->xr_action,
