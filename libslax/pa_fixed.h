@@ -74,7 +74,7 @@ typedef struct pa_fixed_info_s {
 } pa_fixed_info_t;
 
 /* Flags for pfi_flags: */
-#define PFF_INIT_ZERO (1<<0)	/* Initialize memory to zeroes */
+#define PFF_INIT_ZERO	(1<<0)	/* Initialize memory to zeroes */
 
 typedef struct pa_fixed_s {
     PA_FIXED_MMAP_FIELD_DECLS;	   /* Mmap overhead declarations */
