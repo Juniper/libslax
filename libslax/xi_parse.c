@@ -175,10 +175,17 @@ xi_parse_destroy (xi_parse_t *parsep UNUSED)
 }
 
 pa_atom_t
-xi_parse_atom (xi_parse_t *parsep, const char *name)
+xi_parse_namepool_atom (xi_parse_t *parsep, const char *name)
 {
     xi_insert_t *xip = parsep->xp_insert;
     return xi_tree_namepool_atom(xip->xi_tree, name, TRUE);
+}
+
+const char *
+xi_parse_namepool_string (xi_parse_t *parsep, pa_atom_t atom)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    return xi_tree_namepool_string(xip->xi_tree, atom);
 }
 
 static void
@@ -513,7 +520,12 @@ xi_parse (xi_parse_t *parsep)
 	    /*
 	     * We've got incoming data; find out what to do with it
 	     */
-	    rulep = xi_rulebook_find(parsep, name_atom, data, localp, rest);
+	    rulep = xi_rulebook_find(parsep, parsep->xp_rulebook,
+				     xi_parse_stack_state(parsep),
+				     name_atom, data, localp, rest);
+	    if (rulep == NULL)    /* No rule means use the default rule */
+		rulep = &parsep->xp_default_rule;
+
 	    xi_action_type_t act = rulep->xr_action;
 
 	    switch (act) {
@@ -729,6 +741,10 @@ void
 xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook)
 {
     parsep->xp_rulebook = rulebook;
+
+    xi_insert_t *xip = parsep->xp_insert;
+    xip->xi_stack[xip->xi_depth].xs_statep = rulebook
+	? xi_rulebook_state(rulebook, XI_STATE_INITIAL) : NULL;
 }
 
 void
