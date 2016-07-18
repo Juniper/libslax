@@ -68,7 +68,8 @@ noinst_HEADERS = \
     xi_common.h \
     xi_parse.h \
     xi_source.h \
-    xi_tree.h
+    xi_tree.h \
+    xi_workspace.h
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 
@@ -98,7 +99,8 @@ libslax_la_SOURCES = \
     xi_parse.c \
     xi_rules.c \
     xi_source.c \
-    xi_tree.c
+    xi_tree.c \
+    xi_workspace.c
 
 slaxparser.h: slaxparser.c
 ${libslax_la_SOURCES:.c=.o}: ${SLAXHEADERS}
