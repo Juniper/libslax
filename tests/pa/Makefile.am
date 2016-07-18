@@ -29,7 +29,8 @@ pa_02.c \
 pa_03.c \
 pa_04.c \
 pa_05.c \
-pa_06.c
+pa_06.c \
+pa_07.c
 
 pa_01_test_SOURCES = pa_01.c
 pa_02_test_SOURCES = pa_02.c
@@ -37,6 +38,7 @@ pa_03_test_SOURCES = pa_03.c
 pa_04_test_SOURCES = pa_04.c
 pa_05_test_SOURCES = pa_05.c
 pa_06_test_SOURCES = pa_06.c
+pa_07_test_SOURCES = pa_07.c
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 
