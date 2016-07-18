@@ -25,8 +25,18 @@ typedef struct xi_parse_s {
     xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
 
+#define XI_STATE_EOL		0 /* Indicates end-of-list/invalid state */
+#define XI_STATE_INITIAL	1 /* Initial parser state */
+
 typedef int (*xi_parse_emit_fn)(xi_parse_t *, xi_node_type_t, xi_node_t *,
 				const char *, void *);
+
+static inline xi_rstate_t *
+xi_parse_stack_state (xi_parse_t *parsep)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    return xip->xi_stack[xip->xi_depth].xs_statep;
+}
 
 xi_parse_t *
 xi_parse_open (pa_mmap_t *pmap, const char *name,
@@ -54,7 +64,10 @@ void
 xi_parse_set_default_rule (xi_parse_t *parsep, xi_action_type_t type);
 
 pa_atom_t
-xi_parse_atom (xi_parse_t *parsep, const char *name);
+xi_parse_namepool_atom (xi_parse_t *parsep, const char *name);
+
+const char *
+xi_parse_namepool_string (xi_parse_t *parsep, pa_atom_t atom);
 
 void
 xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook);
