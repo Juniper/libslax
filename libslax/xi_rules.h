@@ -85,6 +85,18 @@ typedef struct xi_rulebook_s {
     pa_bitmap_t *xrb_bitmaps;	  /* Pool of bitmaps */
 } xi_rulebook_t;
 
+static inline xi_rstate_t *
+xi_rulebook_state (xi_rulebook_t *xrbp, xi_state_id_t sid)
+{
+    return pa_fixed_element(xrbp->xrb_states, sid);
+}
+
+static inline xi_rule_t *
+xi_rulebook_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid)
+{
+    return pa_fixed_atom_addr(xrbp->xrb_rules, rid);
+}
+
 xi_rulebook_t *
 xi_rulebook_open (const char *name);
 
@@ -95,8 +107,9 @@ void
 xi_rulebook_close (xi_rulebook_t *rules);
 
 xi_rule_t *
-xi_rulebook_find (xi_parse_t *parsep, pa_atom_t name_atom,
-	       const char *pref, const char *name, const char *attribs);
+xi_rulebook_find (xi_parse_t *parsep, xi_rulebook_t *xrbp, xi_rstate_t *statep,
+		  pa_atom_t name_atom, const char *pref, const char *name,
+		  const char *attribs);
 
 xi_rulebook_t *
 xi_rulebook_prep (xi_parse_t *input, const char *name);
