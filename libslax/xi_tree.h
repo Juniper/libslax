@@ -100,6 +100,7 @@ typedef struct xi_istack_s {
     xi_node_t *xs_last_node;	/* Last child we appended (pointer) */
     xi_action_type_t xs_action;	/* Action being taken (XIA_*) */
     xi_rstate_t *xs_statep;	/* Current parser state */
+    pa_atom_t xs_old_name;	/* Old (original) name atom; for use-tag="xxx" */
 } xi_istack_t;
 
 /*
