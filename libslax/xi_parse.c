@@ -394,8 +394,17 @@ xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name
 
     xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
 
-    if (xip->xi_depth == 0 || xsp->xs_node == NULL
-	|| xsp->xs_node->xn_name != name_atom) {
+    if (xip->xi_depth == 0 || xsp->xs_node == NULL) {
+	xi_source_failure(parsep->xp_srcp, 0,
+			  "close for open that doesn't exist: %s", name);
+	return;
+    } else if (xsp->xs_old_name != 0) {
+	if (xsp->xs_old_name != name_atom) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "close doesn't match original: %s", name);
+	    return;
+	}
+    } else if (xsp->xs_node->xn_name != name_atom) {
 	xi_source_failure(parsep->xp_srcp, 0, "close doesn't match: %s", name);
 	return;
     }
@@ -424,6 +433,46 @@ xi_insert_text (xi_parse_t *parsep, const char *data, size_t len)
     if (node_atom == PA_NULL_ATOM) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
+    }
+}
+
+static void
+xi_parse_handle_rule (xi_parse_t *parsep, pa_atom_t name_atom,
+		      const char *prefix UNUSED,
+		      const char *name, char *attribs,
+		      xi_rule_t *xrp)
+{
+    xi_insert_t *xip = parsep->xp_insert;
+    xi_action_type_t act = xrp->xr_action;
+    pa_atom_t use_tag = xrp->xr_use_tag;
+    pa_atom_t save_name_atom = name_atom;
+
+    /* Use a different tag is directed */
+    if (use_tag)
+	name_atom = use_tag;
+
+    switch (act) {
+    case XIA_SAVE:
+	xi_insert_open(parsep, name_atom, prefix, name, attribs, act);
+	break;
+
+    case XIA_SAVE_ATSTR:
+	xi_insert_open(parsep, name_atom, prefix, name, attribs, act);
+	break;
+
+    case XIA_SAVE_ATTRIB:
+	xi_insert_open(parsep, name_atom, prefix, name, attribs, act);
+	break;
+
+    case XIA_EMIT:
+    case XIA_DISCARD:
+	/* XXX */
+	break;
+    }
+
+    if (use_tag) {
+	xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
+	xsp->xs_old_name = save_name_atom;
     }
 }
 
@@ -490,25 +539,7 @@ xi_parse (xi_parse_t *parsep)
 	    if (rulep == NULL)    /* No rule means use the default rule */
 		rulep = &parsep->xp_default_rule;
 
-	    xi_action_type_t act = rulep->xr_action;
-
-	    switch (act) {
-	    case XIA_SAVE:
-		xi_insert_open(parsep, name_atom, data, localp, rest, act);
-		break;
-
-	    case XIA_SAVE_ATSTR:
-		xi_insert_open(parsep, name_atom, data, localp, rest, act);
-		break;
-
-	    case XIA_SAVE_ATTRIB:
-		xi_insert_open(parsep, name_atom, data, localp, rest, act);
-		break;
-
-	    case XIA_DISCARD:
-		/* XXX */
-		break;
-	    }
+	    xi_parse_handle_rule(parsep, name_atom, data, localp, rest, rulep);
 
 	    /* An empty tag is an open and a close */
 	    if (type == XI_TYPE_EMPTY)
@@ -554,10 +585,11 @@ xi_parse (xi_parse_t *parsep)
 }
 
 static int
-xi_parse_dump_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
-		  xi_node_t *nodep UNUSED,
+xi_parse_dump_cb (xi_parse_t *parsep, xi_node_type_t type,
+		  xi_node_t *nodep,
 		  const char *data, void *opaque UNUSED)
 {
+    const char *cp;
     slaxLog("node: [%p] type %u, depth %u",
 	    nodep, nodep ? nodep->xn_type : 0, nodep ? nodep->xn_depth : 0);
 
@@ -567,15 +599,20 @@ xi_parse_dump_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 	break;
 
     case XI_TYPE_ELT:
-	slaxLog("element: %s", data ?: "[error]");
+	slaxLog("element: [%s]", data ?: "[error]");
 	break;
 
     case XI_TYPE_TEXT:
-	slaxLog("text: %s", data ?: "[error]");
+	slaxLog("text: [%s]", data ?: "[error]");
 	break;
 
     case XI_TYPE_ATTRIB:
-	slaxLog("[attrib %s]\n", data ?: "[error]");
+	cp = xi_parse_namepool_string(parsep, nodep->xn_name);
+	slaxLog("attrib: [%s=\"%s\"]", cp, data);
+	break;
+
+    case XI_TYPE_ATSTR:
+	slaxLog("atrstr: [%s]", data ?: "[error]");
 	break;
     }
 
@@ -588,13 +625,22 @@ xi_parse_dump (xi_parse_t *parsep)
     xi_parse_emit(parsep, xi_parse_dump_cb, NULL);
 }
 
+typedef struct xi_xml_output_s {
+    FILE *xx_out;		/* Output file descriptor */
+    unsigned xx_indent;		/* Current indent amount */
+    unsigned xx_incr;		/* Indent increment */
+    xi_node_type_t xx_last_type; /* Last type seen */
+} xi_xml_output_t;
+
 static int
 xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 		      xi_node_t *nodep UNUSED,
 		      const char *data, void *opaque)
 {
-    FILE *out = opaque;
+    xi_xml_output_t *xmlp = opaque;
+    FILE *out = xmlp->xx_out;
     const char *cp;
+    int indent;
 
     switch (type) {
     case XI_TYPE_ROOT:
@@ -602,12 +648,30 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 	break;
 
     case XI_TYPE_OPEN:
-	fprintf(out, "<%s>", data);
+	if (xmlp->xx_last_type != XI_TYPE_ROOT
+	    && xmlp->xx_last_type != XI_TYPE_CLOSE)
+	    fprintf(out, "\n");
+	fprintf(out, "%*s<%s", xmlp->xx_indent, "", data);
+	xmlp->xx_indent += xmlp->xx_incr;
+	break;
+
+    case XI_TYPE_EOL_ATTRIB:
+	fprintf(out, ">");
+	break;
+
+    case XI_TYPE_EOL_EMPTY:
+	fprintf(out, "/>\n");
 	break;
 
     case XI_TYPE_CLOSE:
-	if (data)
-	    fprintf(out, "</%s>\n", data);
+	if (data) {
+	    xmlp->xx_indent -= xmlp->xx_incr;
+	    if (xmlp->xx_last_type != XI_TYPE_EOL_EMPTY) {
+		indent = (xmlp->xx_last_type == XI_TYPE_CLOSE)
+		    ? xmlp->xx_indent : 0;
+		fprintf(out, "%*s</%s>\n", indent, "", data);
+	    }
+	}
 	break;
 
     case XI_TYPE_TEXT:
@@ -615,13 +679,13 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 	break;
 
     case XI_TYPE_ATSTR:
-	fprintf(out, "<attrib>%s</>", data);
+	fprintf(out, " %s", data);
 	break;
 
     case XI_TYPE_ATTRIB:
 	cp = xi_namepool_string(parsep->xp_insert->xi_tree->xt_workspace,
 				     nodep->xn_name);
-	fprintf(out, "[attrib %s=%s]\n", cp, data);
+	fprintf(out, " %s=\"%s\"", cp, data);
 	break;
 
     case XI_TYPE_EOF:
@@ -629,13 +693,20 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep UNUSED, xi_node_type_t type,
 	break;
     }
 
+    xmlp->xx_last_type = type;
     return 0;
 }
 
 void
 xi_parse_emit_xml (xi_parse_t *parsep, FILE *out)
 {
-    xi_parse_emit(parsep, xi_parse_emit_xml_cb, out);
+    xi_xml_output_t xml;
+
+    bzero(&xml, sizeof(xml));
+    xml.xx_out = out;
+    xml.xx_incr = 3;
+
+    xi_parse_emit(parsep, xi_parse_emit_xml_cb, &xml);
 }
 
 void
@@ -649,6 +720,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
     pa_atom_t next_node_atom;
     xi_node_t *nodep;
     xi_depth_t last_depth = 0;
+    unsigned need_eol_attrib = FALSE;
 
     while (node_atom != PA_NULL_ATOM) {
 	nodep = xi_node_addr(xwp, node_atom);
@@ -657,6 +729,20 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    break;
 	}
 
+	/* If this is the first non-attrib, let the emitter know */
+	if (need_eol_attrib && nodep->xn_type != XI_TYPE_ATSTR
+	    && nodep->xn_type != XI_TYPE_ATTRIB) {
+	    if (last_depth && last_depth > nodep->xn_depth) {
+		func(parsep, XI_TYPE_EOL_EMPTY, NULL, NULL, opaque);
+	    } else {
+		func(parsep, XI_TYPE_EOL_ATTRIB, nodep, NULL, opaque);
+	    }
+
+	    /* Clear the need flag in case we hit the "if" below */
+	    need_eol_attrib = FALSE;
+	}
+
+	/* We're looking at the first step out of layer of hierarchy */
 	if (last_depth && last_depth > nodep->xn_depth) {
 	    cp = xi_namepool_string(xwp, nodep->xn_name);
 	    func(parsep, XI_TYPE_CLOSE, nodep, cp, opaque);
@@ -664,6 +750,8 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    last_depth = nodep->xn_depth;
 	    continue;
 	}
+
+	need_eol_attrib = FALSE; /* Don't need it (yet) */
 
 	if (nodep->xn_type == XI_TYPE_ROOT) {
 	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
@@ -673,6 +761,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    cp = xi_namepool_string(xwp, nodep->xn_name);
 	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
+	    need_eol_attrib = TRUE;
 
 	} else if (nodep->xn_type == XI_TYPE_TEXT) {
 	    cp = xi_textpool_string(xwp, nodep->xn_contents);
@@ -683,11 +772,13 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
+	    need_eol_attrib = TRUE;
 
 	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
 	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, nodep, cp, opaque);
+	    need_eol_attrib = TRUE;
 
 	} else {
 	    slaxLog("unhandled node: %u", nodep->xn_type);
