@@ -328,7 +328,8 @@ xi_insert_attribs_extract (xi_parse_t *parsep, xi_node_t *nodep, char *attrib)
 	if (value_atom == PA_NULL_ATOM)
 	    break;
 
-	attrib_atom = xi_insert_node(xip, "xi_insert_attribs_extract", "", 0,
+	attrib_atom = xi_insert_node(xip, "xi_insert_attribs_extract",
+				     name, strlen(name),
 				     XI_TYPE_ATTRIB, name_atom, value_atom);
 	if (attrib_atom == PA_NULL_ATOM) {
 	    xi_source_failure(parsep->xp_srcp, 0, "attribute insert failed");
