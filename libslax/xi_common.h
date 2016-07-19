@@ -39,10 +39,12 @@ typedef uint16_t xi_node_flags_t;   /* Flags for a node (XNF_*) */
 #define XI_TYPE_COMMENT	12	/* Comment */
 #define XI_TYPE_ATSTR	13	/* A string of all unparsed XML attributes */
 #define XI_TYPE_ATTRIB	14	/* A single, parsed, unescaped XML attribute */
+#define XI_TYPE_EOL_ATTRIB 15	/* Pseudo-type: end-of-list for attributes */
+#define XI_TYPE_EOL_EMPTY 16	/* Pseudo-type: end-of-attributes on empty tag */
 
-#define XI_TYPE_NS	15	/* XML namespace */
-#define XI_TYPE_NSPREF	16	/* XML namespace */
-#define XI_TYPE_NSVALUE	17	/* XML namespace */
+#define XI_TYPE_NS	17	/* XML namespace */
+#define XI_TYPE_NSPREF	18	/* XML namespace */
+#define XI_TYPE_NSVALUE	19	/* XML namespace */
 
 #define XI_TYPE_ELT	XI_TYPE_OPEN
 #define XI_TYPE_CDATA	XI_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
