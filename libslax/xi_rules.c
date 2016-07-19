@@ -72,7 +72,7 @@ xi_rulebook_setup (xi_workspace_t *xwp,
     if (infop == NULL || rules == NULL || states == NULL || bitmaps == NULL)
 	return NULL;
     
-    xi_rulebook_t *xrbp = calloc(1, sizeof(*rules));
+    xi_rulebook_t *xrbp = calloc(1, sizeof(*xrbp));
 
     if (xrbp) {
 	xrbp->xrb_workspace = xwp;
@@ -108,6 +108,14 @@ xi_rule_action_value (const char *name)
 
     slaxLog("unknown action: '%s'", name);
     return XIA_NONE;
+}
+
+static const char *
+xi_rule_action_name (xi_action_type_t action)
+{
+    if (action < XI_NUM_ELTS(xi_action_names))
+	return xi_action_names[action];
+    return "[unknown]";
 }
 
 static void
@@ -314,6 +322,12 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 	if (!pa_bitmap_test(xrbp->xrb_bitmaps, xrp->xr_bitmap, name_atom))
 	    continue;
 
+	slaxLog("rule match: %u/'%s' rule %u: action %u/%s, flags %#x, "
+		"use-tag %u, new_state %u",
+		name_atom, name ?: "",
+		rid, xrp->xr_action, xi_rule_action_name(xrp->xr_action),
+		xrp->xr_flags, xrp->xr_use_tag, xrp->xr_new_state);
+
 	return xrp;		/* Success! */
     }
 
@@ -382,17 +396,14 @@ xi_rulebook_dump (xi_rulebook_t *xrbp)
 	    if (rulep == NULL)
 		continue;
 
-	    const char *rname = NULL;
-	    if (rulep->xr_action < XI_NUM_ELTS(xi_action_names))
-		rname = xi_action_names[rulep->xr_action];
+	    const char *rname = xi_rule_action_name(rulep->xr_action);
 
 	    slaxLog("    rule %u:", rid);
 	    slaxLog("        bitmap: %s",
 		    xi_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
-	    slaxLog("        flags %#x, action %d%s%s%s, use-tag %u, "
+	    slaxLog("        flags %#x, action %u/%s, use-tag %u, "
 		    "new_state %u, next %u",
-		    rulep->xr_flags, rulep->xr_action,
-		    rname ? " (" : "", rname ?: "", rname ? ")" : "",
+		    rulep->xr_flags, rulep->xr_action, rname,
 		    rulep->xr_use_tag, rulep->xr_new_state, rulep->xr_next);
 	}
     }
