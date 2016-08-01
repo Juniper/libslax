@@ -19,16 +19,21 @@
  * functionality as well as a means of restarting parsing.
  */
 typedef struct xi_parse_s {
+    unsigned xp_flags;		/* Flags for this parser */
     xi_source_t *xp_srcp;	/* Source of incoming tokens */
     xi_rulebook_t *xp_rulebook;	/* Current set of rules */
     xi_rule_t xp_default_rule;	/* Default rule for parsing */
     xi_insert_t *xp_insert;	/* Insertion point */
 } xi_parse_t;
 
+/* Flags for xp_flags: */
+#define XI_PF_DEBUG		(1<<0) /* Make some debug output */
+
 #define XI_STATE_EOL		0 /* Indicates end-of-list/invalid state */
 #define XI_STATE_INITIAL	1 /* Initial parser state */
 
-typedef int (*xi_parse_emit_fn)(xi_parse_t *, xi_node_type_t, xi_node_t *,
+typedef int (*xi_parse_emit_fn)(xi_parse_t *, xi_node_type_t,
+				pa_atom_t node_atom, xi_node_t *,
 				const char *, void *);
 
 static inline xi_rstate_t *
