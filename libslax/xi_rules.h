@@ -61,7 +61,7 @@ typedef struct xi_rule_s {
  */
 typedef struct xi_rstate_s {
     xi_rule_id_t xrbs_first_rule; /* Number of first rule (in xb_rules) */
-    xi_action_type_t xrbs_action; /* Default action */
+    xi_rule_id_t xrbs_default_rule; /* Number of default rule (in xb_rules) */
     uint16_t xrbs_flags;	/* Flags for this state */
 } xi_rstate_t;
 
