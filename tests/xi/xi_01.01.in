@@ -10,11 +10,16 @@
   <!ELEMENT greeting (#PCDATA)>
 ]>
 <top>
-    <refinfo refid="A91910">
+    <test xmlns="test.one" xmlns:two="test.two" xmlns:three="test.three">
+        <thing1/>
+        <two:thing2/>
+        <three:thing3/>
+    </test>
+    <refinfo refid="A91910" xmlns="test.org" xmlns:foo="foo.org">
         <authors x="1" y="2" z="albatross">
             <author a1="v1" a2="v2" a3="v3">Kagawa, N.</author>
-            <author>Mihara, K.</author>
-            <author>Sato, R.</author>
+            <author this="dropped">Mihara, K.</author>
+            <author also="this">Sato, R.</author>
         </authors>
         <citation>J. Biochem.</citation>
         <volume>101</volume><year>1987</year><pages>1471-1479</pages>
