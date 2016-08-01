@@ -15,13 +15,13 @@
 #define LIBSLAX_XI_COMMON_H
 
 typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
-typedef uint32_t xi_node_id_t;	/* Node identifier (index) */
-typedef uint32_t xi_name_id_t;	/* Element name identifier (really 22 bits) */
-typedef uint16_t xi_ns_id_t;	/* Namespace identifier (really 10 bits) */
+typedef pa_atom_t xi_node_id_t;	/* Node identifier (index) */
+typedef pa_atom_t xi_name_id_t;	/* Element name identifier */
+typedef pa_atom_t xi_ns_id_t;	/* Namespace identifier */
 typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
 typedef off_t xi_offset_t;	/* Offset in file or buffer */
 typedef uint32_t xi_source_flags_t; /* Flags for parser */
-typedef uint16_t xi_node_flags_t;   /* Flags for a node (XNF_*) */
+typedef uint16_t xi_node_flags_t; /* Flags for a node (XNF_*) */
 
 /* Type of XML nodes */
 #define XI_TYPE_NONE	0	/* Unknown type */
@@ -49,6 +49,10 @@ typedef uint16_t xi_node_flags_t;   /* Flags for a node (XNF_*) */
 #define XI_TYPE_ELT	XI_TYPE_OPEN
 #define XI_TYPE_CDATA	XI_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
 
+#define XI_XMLNS_LEADER "xmlns"	/* String that starts namespace attributes */
+
+typedef uint8_t xi_boolean_t;	/* Base boolean type */
+
 struct xi_source_s; typedef struct xi_source_s xi_source_t;
 struct xi_parse_s; typedef struct xi_parse_s xi_parse_t;
 struct xi_insert_s; typedef struct xi_insert_s xi_insert_t;
@@ -62,6 +66,11 @@ struct xi_workspace_s; typedef struct xi_workspace_s xi_workspace_t;
 
 /* Used to test whether a byte is white space */
 extern char xi_space_test[256];
+
+/* Bit operations; required since we made xi_boolean_t 8 bits (or less) */
+#define XI_BIT_CLEAR(_flags, _bit) do { (_flags) &= ~(_bit); } while (0)
+#define XI_BIT_SET(_flags, _bit) do { (_flags) |= (_bit); } while (0)
+#define XI_BIT_TEST(_flags, _bit) (((_flags) & (_bit)) ? TRUE : FALSE)
 
 /*
  * Whitespace in XML has a small, specific definition:
