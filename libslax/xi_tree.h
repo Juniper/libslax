@@ -35,8 +35,8 @@ typedef struct xi_node_s {
     xi_node_type_t xn_type;	/* Type of this node */
     xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
     xi_node_flags_t xn_flags;	/* Flags (XNF_*) */
-    xi_ns_id_t xn_ns:10;	/* Namespace of this node (in namespace db) */
-    xi_name_id_t xn_name:22;	/* Name of this node (in name db) */
+    xi_ns_id_t xn_ns_map;	/* Namespace map for this node (in ns_map) */
+    xi_name_id_t xn_name;	/* Name of this node (in name db) */
     xi_node_id_t xn_next;	/* Next node (or parent if last) */
     xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
 } xi_node_t;
@@ -48,11 +48,6 @@ typedef struct xi_node_s {
 #define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
 #define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
-typedef struct xi_namepool_s {
-    pa_istr_t *xnp_names;	/* Array of names (element, attr, etc) */
-    pa_pat_t *xnp_names_index;	/* Patricia tree for names */
-} xi_namepool_t;
-
 /*
  * Each tree (document or RTF) is represented as a tree.  The
  * xi_tree_info_t is the information that needs to persist.
@@ -61,23 +56,6 @@ typedef struct xi_tree_info_s {
     xi_node_id_t xti_root;	/* Number of the root node */
     xi_depth_t xti_max_depth;	/* Max depth of the tree */
 } xi_tree_info_t;
-
-/*
- * Each node has a prefix mapping that tells us which namespace it's
- * in.  We want to make this simple and reusable, but since prefixes
- * can be remapped within any hierarchy, it's only reusable in the
- * window where that mapping isn't changed.  But this makes finding
- * the prefix and url a simple lookup.  This means that it two nodes
- * have the same mapping (xn_ns) then they are in the same namespace,
- * but if they are different, then those two mappings' xnm_url fields
- * must be compared to see if they have the same atom number.  Since
- * they are in a name-pool, "There can be only one!" applies, so
- * comparing the url atom number is sufficient.
- */
-typedef struct xi_ns_map_s {
-    pa_atom_t xnm_prefix;	/* Atom of prefix string (in xt_prefix_names)*/
-    pa_atom_t xnm_url;		/* Atom of URL string (in xt_nsurl_names) */
-} xi_ns_map_t;
 
 /*
  * The in-memory representation of a tree
@@ -124,5 +102,9 @@ xi_mk_name (char *namebuf, const char *name, const char *ext)
 {
     return pa_config_name(namebuf, PA_MMAP_HEADER_NAME_LEN, name, ext);
 }
+
+void
+xi_node_dump (xi_workspace_t *xwp, xi_node_type_t op,
+	      xi_node_t *nodep, pa_atom_t atom);
 
 #endif /* LIBSLAX_XI_TREE_H */
