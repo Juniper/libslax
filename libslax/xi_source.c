@@ -41,6 +41,7 @@
 
 #include "slaxconfig.h"
 #include <libslax/slaxdef.h>
+#include <libslax/pa_common.h>
 #include <libslax/xi_common.h>
 #include <libslax/xi_source.h>
 
