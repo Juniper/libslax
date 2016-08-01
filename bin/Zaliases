@@ -20,5 +20,8 @@ alias Zconfigure "(cd $top_src/build; ../configure $opts)"
 alias Zbuild "(cd $top_src/build; make \!* )"
 alias mi "(cd $top_src/build; make && make install); ."
 
+alias mm "(cd $top_src/build; make CFLAGS='-O0 -g')"
+alias mmi "(cd $top_src/build; make CFLAGS='-O0 -g' && make install)"
+
 mkdir -p build
 cd build
