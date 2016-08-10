@@ -117,4 +117,7 @@ xi_rulebook_prep (xi_parse_t *input, const char *name);
 void
 xi_rulebook_dump (xi_rulebook_t *xrbp);
 
+PA_FIXED_FUNCTIONS(xi_rule_t, xi_rulebook_t, xrb_rules,
+		   xi_rule_alloc, xi_rule_free, xi_rule_addr);
+
 #endif /* LIBSLAX_XI_RULES_H */
