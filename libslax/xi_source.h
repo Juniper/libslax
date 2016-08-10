@@ -21,11 +21,6 @@
  * parsed attributes by pulling them into name/value pairs and
  * recording the name as XI_TYPE_ATNAME and the value as
  * XI_TYPE_ATVALUE under a node of type XI_TYPE_ATTRIB.
- *
- * Similarly parsed namespaces are XI_TYPE_NSPREF and XI_TYPE_NSVALUE
- * under an XI_TYPE_NS node, but the value is a string under the
- * parser's list of valid namespaces.  When the XI_TYPE_NSPREF is not
- * present, the namespace is the default one.
  */
 
 /*
