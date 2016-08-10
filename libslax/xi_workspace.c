@@ -266,26 +266,22 @@ xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
     }
 
     pa_pat_t *ppp = xwp->xw_ns_map_index;
-    pa_fixed_t *pfp = xwp->xw_ns_map;
     xi_ns_map_t ns = { prefix_atom, uri_atom };
     pa_atom_t atom = pa_pat_get_atom(ppp, sizeof(ns), &ns);
     if (atom == PA_NULL_ATOM && createp) {
-	atom = pa_fixed_alloc_atom(pfp);
-	if (atom == PA_NULL_ATOM) {
+	xi_ns_map_t *nsp = xi_ns_map_alloc(xwp, &atom);
+	if (nsp == NULL) {
 	    pa_warning(0, "namespace create key failed for '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
 	    return PA_NULL_ATOM;
 	}
 
-	xi_ns_map_t *nsp = pa_fixed_atom_addr(pfp, atom);
-	if (nsp == NULL)
-	    return PA_NULL_ATOM; /* Should not occur */
-
 	*nsp = ns;		/* Initialize newly allocated ns_map entry */
 
 	/* Add it to the patricia tree */
 	if (!pa_pat_add(ppp, atom, sizeof(ns))) {
-	    pa_fixed_free_atom(pfp, atom);
+	    xi_ns_map_free(xwp, atom);
+
 	    pa_warning(0, "duplicate key failure for namespace '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
 	    return PA_NULL_ATOM;
