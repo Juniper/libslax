@@ -296,9 +296,9 @@ sub first_pass {
 
 	    # Other modes are detected based on leading string
 	    $tag = "org_table", last if /^\|/;
-	    $tag = "plain", $default = "plain", last if /^{{plain:/;
-	    $tag = "quote", $default = "quote", last if /^{{quote:/;
-	    $tag = "digress", last if /^{{/;
+	    $tag = "plain", $default = "plain", last if /^\{\{plain:/;
+	    $tag = "quote", $default = "quote", last if /^\{\{quote:/;
+	    $tag = "digress", last if /^\{\{/;
 	    $tag = "enddigress", undef $default, last if /^}}/;
 	    $tag = $default, last if $default;
 	    $tag = "section", last if /^\*+\s/;
@@ -322,12 +322,9 @@ sub first_pass {
     }
 }
 
-@sticky = qw(artwork picture nlist code xml question);
-%sticky = ();
-
-for (my $s = 0; $s <= $#sticky; $s++) {
-    $sticky{$sticky[$s]} = 1;
-}
+%sticky = (artwork => 1, picture => 1, nlist => 1,
+	   code => 1, xml => 1,  question => 1);
+%sticky_equiv = ( "code" => "xml", "xml" => "code" );
 
 sub second_pass {
     my $mode, $last_tag, $last_line, $last_real;
@@ -340,7 +337,7 @@ sub second_pass {
 	do {{
 	    # We start in the abstract section, until we see the
 	    # first section header.
-	    if (!$seen_section && ($tag eq "text"|| $tag eq "code")) {
+	    if (!$seen_section && ($tag eq "text" || $tag eq "code")) {
 		$tag = "abstract";
 		next;
 	    }
@@ -356,10 +353,23 @@ sub second_pass {
 	    # If the last line didn't have a tag and the line before
 	    # that had the same tag as our's, claim the blank lines.
 	    # We don't do this behavior for "text" lines.
-	    if ($last_tag eq undef && $last_real eq $tag && $sticky{$tag}) {
-		for (my $j = $i - 1; $j >= 0; $j--) {
-		    last if $tags[$j];	# Stop when we hit a tagged line
-		    $tags[$j] = $tag;	# Claim lines as our's
+	    if ($last_tag eq undef && $sticky{$tag}) {
+		if ($last_real eq $tag) {
+		    for (my $j = $i - 1; $j >= 0; $j--) {
+			last if $tags[$j];	# Stop when we hit a tagged line
+			$tags[$j] = $tag;	# Claim lines as our's
+		    }
+		} elsif ($sticky_equiv{$last_real} eq $tag) {
+		    # Tag blank and following lines with old tag
+		    for (my $j = $i - 1; $j >= 0; $j--) {
+			last if $tags[$j];	# Stop when we hit a tagged line
+			$tags[$j] = $last_real;	# Claim lines as our's
+		    }
+		    for (my $j = $i; $j <= $#lines; $j++) {
+			last if $tags[$j] ne $tag;
+			$tags[$j] = $last_real;
+		    }
+		    $tag = $last_real;
 		}
 	    }
 
@@ -458,7 +468,7 @@ sub esc {
     s/"/&quot;/g; #";
     s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
     s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
-    s/{{(.*?)}}/<digress target=\"$1\"\/>/g;
+    s/\{\{(.*?)}}/<digress target=\"$1\"\/>/g;
     s/ % /&nbsp;/g; # explicit non-breakable space
     s/-%-/&#8209;/g; # explicit non-breakable hyphen
     return $_;
@@ -662,7 +672,7 @@ sub text {
 }
 
 sub plain {
-    return if /^{{/ || /^}}/;
+    return if /^\{\{/ || /^}}/;
     text();
 }
 
@@ -1055,7 +1065,7 @@ sub document_header {
     my $keyword = [];
 
     for ($i = 0; $i <= $#lines; $i++) {
-	last if $lines[$i] =~ /^{{document:/;
+	last if $lines[$i] =~ /^\{\{document:/;
     }
 
     for ($i += 1; $i <= $#lines; $i++) {
