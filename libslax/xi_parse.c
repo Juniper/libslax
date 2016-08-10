@@ -460,8 +460,8 @@ xi_parse_next_attrib (char **content, char *endp,
  *
  * So we're forced to whiffle thru the attributes twice, once to build
  * them and once to ns_map them.  Note: This is sad, since it means that
- * xn_ns_map must be a pa_atom_t, and we can't take advantage of
- * knowing that our mapping number should be relatively small.
+ * we have to allocate a node just to hold our prefix atom until we have
+ * processed all attributes and can safely perform the prefix mapping.
  *
  * With this long a comment, you're sure to realize this is a tricky
  * part, right?
@@ -477,7 +477,7 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
     size_t len = strlen(attrib);
     char *content = attrib, *endp = content + len, *name, *value;
     size_t namelen, valuelen;
-    pa_atom_t name_atom, value_atom, attrib_atom;
+    pa_atom_t name_atom, value_atom, attrib_atom, stash_atom;
     int hit = FALSE;
     const char *msg;
     pa_atom_t *last_nsp = &nodep->xn_contents; /* XXX For freshly made node */
@@ -569,18 +569,25 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 		break;
 	    }
 
-	    /*
-	     * Temporarily stuff our prefix into the xn_ns_map if the
-	     * freshly build attribute node.  After all the attributes
-	     * are processed and all namespaces have been defined,
-	     * we'll loop thru and replace them with real ns_map
-	     * values.
-	     */
-	    xi_node_t *attrib_node = xi_node_addr(xwp, attrib_atom);
-	    if (attrib_node == NULL)
-		continue; /* Should not occur */
-
-	    attrib_node->xn_ns_map = pref_atom;
+	    if (pref_atom != PA_NULL_ATOM) {
+		/*
+		 * We have to stash our prefix atom in a special
+		 * temporary node of type XI_TYPE_NSPREF.  After all
+		 * the attributes are processed and all namespaces
+		 * have been defined, we'll loop thru and set
+		 * real ns_map values.
+		 */
+		stash_atom = xi_insert_node(xip,
+				 "xi_insert_attribs_extract (stash)",
+				 name, strlen(name),
+				 XI_TYPE_NSPREF, PA_NULL_ATOM, pref_atom);
+		if (stash_atom == PA_NULL_ATOM) {
+		    xi_source_failure(parsep->xp_srcp, 0,
+				      "attribute (stash) insert failed");
+		    pa_arb_free_atom(prp, value_atom);
+		    break;
+		}
+	    }
 	}
 
 	hit = TRUE;
@@ -588,36 +595,48 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 
     /*
      * We've parse namespaces as part of the attribute handling, so
-     * now we have to use them.  Any attribute with a xn_ns_map at
-     * this point is a prefix, not an ns_map.  We finish that off,
-     * finding the real mapping and recording it.
+     * now we have to use them.  When we find an XI_TYPE_NSPREF
+     * attribute, the xn_contents are the atom of a prefix string.  We
+     * finish that off, finding the real mapping and recording it,
+     * discarding the NSPREF node.
      */
-    xi_node_t *childp;
+    xi_node_t *childp, *prev = NULL;
     pa_atom_t ns_atom;
 
     for (childp = xi_node_addr(xwp, nodep->xn_contents); childp;
 	 childp = xi_node_addr(xwp, childp->xn_next)) {
-	if (nodep->xn_type == XI_TYPE_NS)
-	    continue;		/* Skip namespace defs */
+	if (nodep->xn_type == XI_TYPE_NS) {
+	    /* Skip namespace defs */
 
-	if (!xi_parse_is_attrib(nodep->xn_type))
+	} else if (!xi_parse_is_attrib(nodep->xn_type)) {
 	    break;		/* End of attributes == done */
 
-	/* No prefix for this attribute; default prefix doesn't apply */
-	if (childp->xn_ns_map == PA_NULL_ATOM)
-	    continue;
+	} else if (prev == NULL) {
+	    /* Can't handle not having a previous node */
 
-	ns_atom = xi_parse_find_ns_atom(parsep, nodep, childp->xn_ns_map);
-	if (ns_atom == PA_NULL_ATOM) {
-	    const char *prefix = xi_namepool_string(xwp, childp->xn_ns_map);
-	    xi_source_failure(parsep->xp_srcp, 0,
-			      "namespace mapping not found for %s:%s",
-			      prefix ?: "", name);
-	    childp->xn_ns_map = PA_NULL_ATOM; /* Broken map; must clear */
-	} else {
+	} else if (childp->xn_type == XI_TYPE_NSPREF) {
+	    /*
+	     * An XI_TYPE_NSPREF node means the previous node needs an
+	     * accurate name mapping.  We'll find one and discard the
+	     * current node.
+	     */
+	    ns_atom = xi_parse_find_ns_atom(parsep, nodep, childp->xn_contents);
+	    if (ns_atom == PA_NULL_ATOM) {
+		const char *prefix = xi_namepool_string(xwp, childp->xn_contents);
+		xi_source_failure(parsep->xp_srcp, 0,
+				  "namespace mapping not found for %s:%s",
+				  prefix ?: "", name);
+	    }
+
 	    /* Set the namespace mapping */
-	    childp->xn_ns_map = ns_atom;
+	    prev->xn_ns_map = ns_atom; /* Assign mapping */
+	    prev->xn_next = childp->xn_next; /* Remove node from list */
+
+	    xi_node_free(xwp, prev->xn_next); /* Free node */
+	    childp = prev;		   /* childp is dead; resume logic */
 	}
+
+	prev = childp;
     }
 
     /* Mark the attributes as present and extracted */
@@ -930,7 +949,6 @@ static const char *xi_type_names[] = {
     "EOL_EMPTY",
     "NS",
     "NSPREF",
-    "NSVALUE",
     NULL
 };
 
