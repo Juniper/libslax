@@ -225,8 +225,8 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 
 		/* If an action was defined, build a default rule */
 		if (action) {
-		    xi_rule_id_t rid = pa_fixed_alloc_atom(xrbp->xrb_rules);
-		    xi_rule_t *xrp = pa_fixed_atom_addr(xrbp->xrb_rules, rid);
+		    xi_rule_id_t rid;
+		    xi_rule_t *xrp = xi_rule_alloc(xrbp, &rid);
 		    if (xrp == NULL)
 			break;
 
@@ -252,8 +252,8 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    slaxLog("prep: open: rule: [%s/%s/%s/%s]",
 		    XX(tag), XX(action), XX(new_state), XX(use_tag));
 
-	    xi_rule_id_t rid = pa_fixed_alloc_atom(xrbp->xrb_rules);
-	    xi_rule_t *xrp = pa_fixed_atom_addr(xrbp->xrb_rules, rid);
+	    xi_rule_id_t rid;
+	    xi_rule_t *xrp = xi_rule_alloc(xrbp, &rid);
 	    if (xrp == NULL)
 		break;
 
