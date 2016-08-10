@@ -44,7 +44,6 @@ typedef uint16_t xi_node_flags_t; /* Flags for a node (XNF_*) */
 
 #define XI_TYPE_NS	17	/* XML namespace */
 #define XI_TYPE_NSPREF	18	/* XML namespace */
-#define XI_TYPE_NSVALUE	19	/* XML namespace */
 
 #define XI_TYPE_ELT	XI_TYPE_OPEN
 #define XI_TYPE_CDATA	XI_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
