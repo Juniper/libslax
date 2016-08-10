@@ -781,7 +781,7 @@ slaxExtPrintFreeArgs (int argc, xmlChar **argv)
  * This is the brutal guts of the printf code.  We pull out each
  * field and format it into a buffer, which we then return.
  */
-static char *
+char *
 slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 {
     slax_printf_buffer_t pb;
@@ -1695,7 +1695,7 @@ slaxExtDecode2 (const char *name, XCODE *codetab)
  * Helper function for slaxExtSyslog() to decode the given priority.
  *
  */
-static int
+int
 slaxExtDecodePriority (const char *priority)
 {
     int pri, sev;
@@ -1828,7 +1828,7 @@ bail:
  * This function calculates the diffrence between times 'new' and 'old'
  * by subtracting 'old' from 'new' and put the result in 'diff'.
  */
-static int
+int
 slaxExtTimeDiff (const struct timeval *new, const struct timeval *old,
 	   struct timeval *diff)
 {
@@ -1847,7 +1847,7 @@ slaxExtTimeDiff (const struct timeval *new, const struct timeval *old,
     return sec - old->tv_sec;
 }
 
-static int
+int
 slaxExtTimeCompare (const struct timeval *tvp, double limit)
 {
     double t = tvp->tv_sec;
@@ -2677,7 +2677,7 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 /*
  * Remove illegal non-XML characters from the input string.
  */
-static void
+void
 slaxExtRemoveNonXmlChars (char *input)
 {
     int len, i, count = 0;
@@ -2804,7 +2804,7 @@ slaxProgressEnable (slaxProgressCallback_t func, void *data)
     slaxProgressCallbackData = data;
 }
 
-static void
+void
 slaxExtProgressCallback (const char *str)
 {
     if (slaxExtEmitProgressMessages) {
@@ -2829,7 +2829,7 @@ slaxExtProgress (xmlXPathParserContextPtr ctxt, int nargs)
     slaxExtMessage(ctxt, nargs, slaxExtProgressCallback);
 }
 
-static void
+void
 slaxExtTraceCallback (const char *str)
 {
     if (slaxTraceCallback)
