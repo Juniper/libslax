@@ -296,9 +296,9 @@ sub first_pass {
 
 	    # Other modes are detected based on leading string
 	    $tag = "org_table", last if /^\|/;
-	    $tag = "plain", $default = "plain", last if /^{{plain:/;
-	    $tag = "quote", $default = "quote", last if /^{{quote:/;
-	    $tag = "digress", last if /^{{/;
+	    $tag = "plain", $default = "plain", last if /^\{\{plain:/;
+	    $tag = "quote", $default = "quote", last if /^\{\{quote:/;
+	    $tag = "digress", last if /^\{\{/;
 	    $tag = "enddigress", undef $default, last if /^}}/;
 	    $tag = $default, last if $default;
 	    $tag = "section", last if /^\*+\s/;
@@ -468,7 +468,7 @@ sub esc {
     s/"/&quot;/g; #";
     s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
     s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
-    s/{{(.*?)}}/<digress target=\"$1\"\/>/g;
+    s/\{\{(.*?)}}/<digress target=\"$1\"\/>/g;
     s/ % /&nbsp;/g; # explicit non-breakable space
     s/-%-/&#8209;/g; # explicit non-breakable hyphen
     return $_;
@@ -672,7 +672,7 @@ sub text {
 }
 
 sub plain {
-    return if /^{{/ || /^}}/;
+    return if /^\{\{/ || /^}}/;
     text();
 }
 
@@ -1065,7 +1065,7 @@ sub document_header {
     my $keyword = [];
 
     for ($i = 0; $i <= $#lines; $i++) {
-	last if $lines[$i] =~ /^{{document:/;
+	last if $lines[$i] =~ /^\{\{document:/;
     }
 
     for ($i += 1; $i <= $#lines; $i++) {
