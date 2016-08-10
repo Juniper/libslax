@@ -320,4 +320,35 @@ pa_fixed_set_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
     pfp->pf_flags = flags;
 }
 
+#define PA_FIXED_FUNCTIONS(_type, _base, _field,                        \
+			   _alloc_fn, _free_fn, _addr_fn)		\
+static inline _type *							\
+_alloc_fn (_base *basep, pa_atom_t *atomp)				\
+{									\
+    if (atomp == NULL)		/* Should not occur */			\
+	return NULL;							\
+									\
+    pa_atom_t atom = pa_fixed_alloc_atom(basep->_field);		\
+    _type *datap = pa_fixed_atom_addr(basep->_field, atom);		\
+									\
+    *atomp = atom;							\
+    return datap;							\
+}									\
+									\
+static inline void							\
+_free_fn (_base *basep, pa_atom_t atom)					\
+{									\
+    if (atom == PA_NULL_ATOM)		/* Should not occur */		\
+	return;								\
+									\
+    pa_fixed_free_atom(basep->_field, atom);				\
+}									\
+									\
+static inline _type *							\
+_addr_fn (_base *basep, pa_atom_t atom)					\
+{									\
+    return pa_fixed_atom_addr(basep->_field, atom);			\
+}
+
+
 #endif /* LIBSLAX_PA_FIXED_H */
