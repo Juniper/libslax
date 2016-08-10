@@ -60,24 +60,8 @@ pa_atom_t
 xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
 	    xi_boolean_t createp);
 
-static inline xi_node_t *
-xi_node_alloc (xi_workspace_t *xwp, pa_atom_t *atomp)
-{
-    if (atomp == NULL)		/* Should not occur */
-	return NULL;
-
-    pa_atom_t node_atom = pa_fixed_alloc_atom(xwp->xw_nodes);
-    xi_node_t *nodep = pa_fixed_atom_addr(xwp->xw_nodes, node_atom);
-
-    *atomp = node_atom;
-    return nodep;
-}
-
-static inline xi_node_t *
-xi_node_addr(xi_workspace_t *xwp, pa_atom_t node_atom)
-{
-    return pa_fixed_atom_addr(xwp->xw_nodes, node_atom);
-}
+PA_FIXED_FUNCTIONS(xi_node_t, xi_workspace_t, xw_nodes,
+		   xi_node_alloc, xi_node_free, xi_node_addr);
 
 pa_atom_t
 xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp);
@@ -105,11 +89,8 @@ xi_get_attrib_string (xi_workspace_t *xwp, xi_node_t *nodep,
     return (atom == PA_NULL_ATOM) ? NULL : xi_textpool_string(xwp, atom);
 }
 
-static inline xi_ns_map_t *
-xi_ns_map_addr (xi_workspace_t *xwp, pa_atom_t atom)
-{
-    return pa_fixed_atom_addr(xwp->xw_ns_map, atom);
-}
+PA_FIXED_FUNCTIONS(xi_ns_map_t, xi_workspace_t, xw_ns_map,
+		   xi_ns_map_alloc, xi_ns_map_free, xi_ns_map_addr);
 
 #endif /* LIBSLAX_XI_WORKSPACE_H */
 
