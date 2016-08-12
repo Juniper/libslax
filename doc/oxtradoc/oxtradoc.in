@@ -322,9 +322,13 @@ sub first_pass {
     }
 }
 
-%sticky = (artwork => 1, picture => 1, nlist => 1,
-	   code => 1, xml => 1,  question => 1);
 %sticky_equiv = ( "code" => "xml", "xml" => "code" );
+@sticky = qw(artwork picture nlist code xml question);
+%sticky = ();
+
+for (my $s = 0; $s <= $#sticky; $s++) {
+    $sticky{$sticky[$s]} = 1;
+}
 
 sub second_pass {
     my $mode, $last_tag, $last_line, $last_real;
@@ -359,7 +363,7 @@ sub second_pass {
 			last if $tags[$j];	# Stop when we hit a tagged line
 			$tags[$j] = $tag;	# Claim lines as our's
 		    }
-		} elsif ($sticky_equiv{$last_real} eq $tag) {
+		} elsif ($tag && $sticky_equiv{$last_real} eq $tag) {
 		    # Tag blank and following lines with old tag
 		    for (my $j = $i - 1; $j >= 0; $j--) {
 			last if $tags[$j];	# Stop when we hit a tagged line
