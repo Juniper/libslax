@@ -43,6 +43,8 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
+typedef uint8_t pa_boolean_t;	/* Simple boolean */
+
 /* Type of our trees */
 #define PA_TYPE_UNKNOWN		0 /* No type (bad news) */
 #define PA_TYPE_MMAP		1 /* Memory mapped segment (pa_mmap_t) */
