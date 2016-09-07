@@ -46,6 +46,7 @@
 #include <libslax/xi_rules.h>
 #include <libslax/xi_tree.h>
 #include <libslax/xi_workspace.h>
+#include <libslax/xi_nodeset.h>
 #include <libslax/xi_parse.h>
 
 xi_workspace_t *
@@ -62,6 +63,7 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     pa_fixed_t *nodes = NULL;
     xi_workspace_t *workp = NULL;
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
+    pa_fixed_t *nodeset_chunks = NULL, *nodeset_info = NULL;
 
     /* Holds the names of our elements, attributes, etc */
     xi_mk_name(namebuf, name, "names");
@@ -83,6 +85,19 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     if (pap == NULL)
 	goto fail;
 
+    nodeset_chunks = pa_fixed_open(pmp,
+			xi_mk_name(namebuf, name, "nodeset-chunks"), XI_SHIFT,
+			sizeof(xi_nodeset_chunk_t), XI_MAX_ATOMS);
+    if (nodeset_chunks == NULL)
+	goto fail;
+    pa_fixed_set_flags(nodeset_chunks, PFF_INIT_ZERO);
+
+    nodeset_info = pa_fixed_open(pmp, xi_mk_name(namebuf, name, "nodeset-info"),
+			XI_SHIFT, sizeof(xi_nodeset_info_t), XI_MAX_ATOMS);
+    if (nodeset_info == NULL)
+	goto fail;
+    pa_fixed_set_flags(nodeset_info, PFF_INIT_ZERO);
+
     workp = calloc(1, sizeof(*workp));
     if (workp == NULL)
 	goto fail;
@@ -98,22 +113,27 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     return workp;
 
  fail:
-    if (pap)
+    if (nodeset_chunks != NULL)
+	pa_fixed_close(nodeset_chunks);
+    if (nodeset_info != NULL)
+	pa_fixed_close(nodeset_info);
+    if (pap != NULL)
 	pa_arb_close(pap);
-    if (pip)
+    if (pip != NULL)
 	pa_istr_close(pip);
-    if (ppp)
+    if (ppp != NULL)
 	pa_pat_close(ppp);
-    if (nodes)
+    if (nodes != NULL)
 	pa_fixed_close(nodes);
-    if (names)
+    if (names != NULL)
 	pa_istr_close(names);
-    if (names_index)
+    if (names_index != NULL)
 	pa_pat_close(names_index);
-    if (ns_map)
+    if (ns_map != NULL)
 	pa_fixed_close(ns_map);
-    if (ns_map_index)
+    if (ns_map_index != NULL)
 	pa_pat_close(ns_map_index);
+
     return NULL;
 }
 
