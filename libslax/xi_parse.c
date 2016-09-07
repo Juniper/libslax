@@ -1287,6 +1287,114 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
     func(parsep, XI_TYPE_EOF, PA_NULL_ATOM, NULL, NULL, opaque);
 }
 
+#if 0
+typedef struct xi_parse_as_source_s {
+    xi_node_type_t xps_type;	/* Current type (XI_TYPE_*) */
+    pa_atom_t xps_atom;		/* Current atom number */
+    pa_atom_t xps_next_atom;	/* Next atom number */
+    xi_node_t *xps_nodep;	/* Current node */
+    const char *xps_string;	/* String value */
+    xi_depth_t xps_last_depth;	/* Previous depth */
+} xi_parse_as_source_t;
+
+{
+    xi_parse_as_source_t data;
+
+    for (type = xi_parse_as_source(parsep, xwp, XI_TYPE_INIT, &data);
+	 type != XI_TYPE_EOF;
+	 type = xi_parse_as_source(parsep, xwp, type, &data)) {
+	continue;
+    }
+}
+
+xi_node_type_t
+xi_parse_as_source (xi_parse_t *parsep, xi_workspace_t *xwp,
+		    xi_node_type_t type, xi_parse_as_source_t *datap)
+{
+    if (type == XI_TYPE_INIT) {
+	bzero(datap, sizeof(*datap));
+	datap->xps_atom = parsep->xp_insert->xi_tree->xt_root;
+    }
+    
+    pa_atom_t node_atom = *datap->xps_atom;
+
+    while (node_atom != PA_NULL_ATOM) {
+	nodep = xi_node_addr(xwp, node_atom);
+	if (nodep == NULL) {
+	    slaxLog("xi_parse_emit sees a null atom!");
+	    break;
+	}
+
+	/* We're looking at the first step out of layer of hierarchy */
+	if (last_depth && last_depth > nodep->xn_depth) {
+	    cp = xi_namepool_string(xwp, nodep->xn_name);
+	    func(parsep, XI_TYPE_CLOSE, node_atom, nodep, cp, opaque);
+	    node_atom = nodep->xn_next;
+	    last_depth = nodep->xn_depth;
+	    continue;
+	}
+
+	need_eol_attrib = FALSE; /* Don't need it (yet) */
+
+	if (nodep->xn_type == XI_TYPE_ROOT) {
+	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
+	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+
+	} else if (nodep->xn_type == XI_TYPE_ELT) {
+	    cp = xi_namepool_string(xwp, nodep->xn_name);
+	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+
+	    /*
+	     * If an ELT's contents are NULL, then this is an empty ELT.
+	     * Otherwise we follow them to visit the children.  We have
+	     * to handle this case explicitly, since there's not depth
+	     * change to trigger the normal EMPTY logic above.
+	     */
+	    if (nodep->xn_contents == PA_NULL_ATOM) {
+		next_node_atom = nodep->xn_next;
+		func(parsep, XI_TYPE_EOL_EMPTY, node_atom, nodep,
+		     NULL, opaque);
+		func(parsep, XI_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
+	    } else {
+		need_eol_attrib = TRUE;
+		next_node_atom = nodep->xn_contents;
+	    }
+
+	} else if (nodep->xn_type == XI_TYPE_TEXT
+		   || nodep->xn_type == XI_TYPE_UNESC) {
+	    cp = xi_textpool_string(xwp, nodep->xn_contents);
+	    next_node_atom = nodep->xn_next;
+	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+
+	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
+	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    next_node_atom = nodep->xn_next;
+	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	    need_eol_attrib = TRUE;
+
+	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
+	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    next_node_atom = nodep->xn_next;
+	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	    need_eol_attrib = TRUE;
+
+	} else if (nodep->xn_type == XI_TYPE_NS) {
+	    next_node_atom = nodep->xn_next;
+	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+	    need_eol_attrib = TRUE;
+
+	} else {
+	    slaxLog("unhandled node: %u", nodep->xn_type);
+	    next_node_atom = PA_NULL_ATOM;
+	}
+
+	node_atom = next_node_atom;
+	last_depth = nodep->xn_depth;
+    }
+
+    func(parsep, XI_TYPE_EOF, PA_NULL_ATOM, NULL, NULL, opaque);
+}
+#endif
 
 void
 xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook)
