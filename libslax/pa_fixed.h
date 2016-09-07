@@ -317,13 +317,25 @@ pa_fixed_close (pa_fixed_t *pfp);
 static inline void
 pa_fixed_set_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
 {
-    pfp->pf_flags = flags;
+    pfp->pf_flags |= flags;
 }
 
-#define PA_FIXED_FUNCTIONS(_type, _base, _field,                        \
+static inline void
+pa_fixed_clear_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
+{
+    pfp->pf_flags &= ~flags;
+}
+
+static inline pa_boolean_t
+pa_fixed_test_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
+{
+    return (pfp->pf_flags & flags) ? 1 : 0;
+}
+
+#define PA_FIXED_FUNCTIONS(_atom_type, _type, _base, _field,		\
 			   _alloc_fn, _free_fn, _addr_fn)		\
 static inline _type *							\
-_alloc_fn (_base *basep, pa_atom_t *atomp)				\
+_alloc_fn (_base *basep, _atom_type *atomp)				\
 {									\
     if (atomp == NULL)		/* Should not occur */			\
 	return NULL;							\
@@ -336,7 +348,7 @@ _alloc_fn (_base *basep, pa_atom_t *atomp)				\
 }									\
 									\
 static inline void							\
-_free_fn (_base *basep, pa_atom_t atom)					\
+_free_fn (_base *basep, _atom_type atom)				\
 {									\
     if (atom == PA_NULL_ATOM)		/* Should not occur */		\
 	return;								\
@@ -345,7 +357,7 @@ _free_fn (_base *basep, pa_atom_t atom)					\
 }									\
 									\
 static inline _type *							\
-_addr_fn (_base *basep, pa_atom_t atom)					\
+_addr_fn (_base *basep, _atom_type atom)				\
 {									\
     return pa_fixed_atom_addr(basep->_field, atom);			\
 }
