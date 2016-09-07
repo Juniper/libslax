@@ -43,6 +43,8 @@ typedef struct xi_workspace_s {
     pa_fixed_t *xw_ns_map; /* Map from prefixes to URLs (xi_ns_map_t)*/
     pa_pat_t *xw_ns_map_index;	/* Index of xw_ns_map entries */
     pa_arb_t *xw_textpool;	/* Text data values */
+    pa_fixed_t *xw_nodeset_chunks; /* Pool of chunks for nodesets node lists */
+    pa_fixed_t *xw_nodeset_info; /* Pool of chunks for nodeset "info" data */
 } xi_workspace_t;
 
 xi_workspace_t *
@@ -60,7 +62,7 @@ pa_atom_t
 xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
 	    xi_boolean_t createp);
 
-PA_FIXED_FUNCTIONS(xi_node_t, xi_workspace_t, xw_nodes,
+PA_FIXED_FUNCTIONS(xi_node_id_t, xi_node_t, xi_workspace_t, xw_nodes,
 		   xi_node_alloc, xi_node_free, xi_node_addr);
 
 pa_atom_t
@@ -89,7 +91,8 @@ xi_get_attrib_string (xi_workspace_t *xwp, xi_node_t *nodep,
     return (atom == PA_NULL_ATOM) ? NULL : xi_textpool_string(xwp, atom);
 }
 
-PA_FIXED_FUNCTIONS(xi_ns_map_t, xi_workspace_t, xw_ns_map,
+typedef pa_atom_t xi_ns_map_id_t;
+PA_FIXED_FUNCTIONS(xi_ns_map_id_t, xi_ns_map_t, xi_workspace_t, xw_ns_map,
 		   xi_ns_map_alloc, xi_ns_map_free, xi_ns_map_addr);
 
 #endif /* LIBSLAX_XI_WORKSPACE_H */
