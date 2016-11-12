@@ -92,6 +92,8 @@ sub main {
 	$opt_mode = "outline-to-xml" if /^-O/;
 	$anchor_prefix = shift @ARGV if /^-p/;
 	$prefix = shift @ARGV if /^-P/;
+	$rfc = 1 if /^-r/;
+	$rfc = 0 if /^-R/;
 	$slaxproc = shift @ARGV if /^-S/;
 	$args{title} = shift @ARGV if /^-t/;
 	$autowrap = 1 if /^-w/;
@@ -136,16 +138,16 @@ sub main {
 	$do_digress = 1;
 	&outline2xml($file, $next);
 	&close_stdout;
-	&xml2html($next, $output);
+	&xml2html($next, $output, $rfc);
 
     } elsif ($opt_mode eq "xml-to-txt") {
 	&xml2text($file, $output);
 
     } elsif ($opt_mode eq "xml-to-html") {
-	&xml2html($file, $output);
+	&xml2html($file, $output, $rfc);
 
     } elsif ($opt_mode eq "rfc") {
-	&xml2html($file, $output, 1);
+	&xml2html($file, $output, $rfc);
 
     } elsif ($opt_mode eq "view-rfc") {
 	if ($file =~ /^https?:/) {
@@ -157,7 +159,7 @@ sub main {
 	$base = "output" unless $base;
 	$base =~ s/\.xml$//;
 	$output = "/tmp/" . $base . ".html" unless $output;
-	&xml2html($file, $output, 1);
+	&xml2html($file, $output, $rfc);
 	system("open $output");
 
     } else {
