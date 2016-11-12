@@ -159,6 +159,7 @@ sub main {
 	$base = "output" unless $base;
 	$base =~ s/\.xml$//;
 	$output = "/tmp/" . $base . ".html" unless $output;
+	$rfc = 1 if $rfc == undef;
 	&xml2html($file, $output, $rfc);
 	system("open $output");
 
