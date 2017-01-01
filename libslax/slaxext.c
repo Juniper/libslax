@@ -699,8 +699,7 @@ slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
 	memcpy(pbp->pb_cur, chr, len);
 
 	/*
-	 * Deal with escape sequences.  Currently the only one
-	 * we care about is '\n', but we may add others.
+	 * Deal with escape sequences, if any
 	 */
 	char *sp, *np, *ep;
 	for (np = pbp->pb_cur, ep = pbp->pb_cur + len; np < ep; ) {
@@ -708,19 +707,24 @@ slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
 	    sp = memchr(np, '\\', ep - np);
 	    if (sp == NULL)
 		break;
-	    
+
+	    /* Avoid going off the end of the input buffer */
+	    if (sp + 2 > ep)
+		break;
+
 	    switch (sp[1]) {
-		case 'n':
-		    *sp = '\n';
-		    shift = TRUE;
-		    break;
-		case 't':
-		    *sp = '\t';
-		    shift = TRUE;
-		    break;
-		case '\\':
-		    shift = TRUE;
-		    *sp = '\\';
+	    case 'n':
+		*sp = '\n';
+		shift = TRUE;
+		break;
+	    case 't':
+		*sp = '\t';
+		shift = TRUE;
+		break;
+	    case '\\':
+		*sp = '\\';
+		shift = TRUE;
+		break;
 	    }
 
 	    /*
