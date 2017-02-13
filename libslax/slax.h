@@ -11,6 +11,7 @@
 #define LIBSLAX_SLAX_H
 
 #include <libslax/slaxversion.h>
+#include <libslax/slaxdef.h>
 
 #define SLAX_VERSION "1.2"
 #define SLAX_VERSION_NUMBER 12
