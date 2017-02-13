@@ -39,6 +39,7 @@ libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 slaxinc_HEADERS = \
      slax.h \
      slaxdata.h \
+     slaxdef.h \
      slaxdyn.h \
      slaxversion.h \
      xmlsoft.h
