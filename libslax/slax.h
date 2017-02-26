@@ -11,7 +11,8 @@
 #define LIBSLAX_SLAX_H
 
 #include <libslax/slaxversion.h>
-#include <libslax/slaxdef.h>
+#include <libslax/slaxconfig.h>
+#include <libpsu/psucommon.h>
 
 #define SLAX_VERSION "1.2"
 #define SLAX_VERSION_NUMBER 12
@@ -35,10 +36,6 @@ void slaxEnable(int enable);
 #define SLAX_ENABLE	1	/**< SLAX is auto-detected */
 #define SLAX_FORCE	2	/**< SLAX is forced on */
 #define SLAX_CLEANUP	3	/**< Clean up and shutdown */
-
-#ifndef UNUSED
-#define UNUSED __attribute__ ((__unused__))
-#endif
 
 /**
  * @typedef A callback used to write data to a destination, typically
@@ -250,31 +247,6 @@ slaxExtRegisterOther (const char *namespace);
 void slaxExtRegister (void);
 
 /**
- * Enable logging information internal to the slax library
- */
-void
-slaxLogEnable (int);
-
-typedef void (*slaxLogCallback_t)(void *opaque, const char *fmt, va_list vap);
-
-/**
- * Enable logging with a callback
- *
- * @func callback function
- * @data opaque data passed to callback
- */
-void
-slaxLogEnableCallback (slaxLogCallback_t func, void *data);
-
-/**
- * Enable logging to a file
- *
- * @filename name of log file
- */
-void
-slaxLogToFile (FILE *fp);
-
-/**
  * Initial the randomizer
  */
 void
@@ -317,15 +289,6 @@ void
 slaxDynAdd (const char *dir);
 void
 slaxDynAddPath (const char *path);
-
-void
-slaxMemDump (const char *title, const char *data,
-	     size_t len, const char *tag, int indent);
-
-char *
-slaxBase64Encode (const char *buf, size_t blen, size_t *olenp);
-char *
-slaxBase64Decode (const char *buf, size_t blen, size_t *olenp);
 
 static inline int
 slaxFilenameIsStd (const char *filename)
