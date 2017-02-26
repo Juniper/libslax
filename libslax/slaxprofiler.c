@@ -31,6 +31,7 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
+#include <libpsu/psutime.h>
 
 typedef struct slax_prof_entry_s {
     unsigned long spe_count; /* Number of times we've hit this line */
@@ -51,7 +52,7 @@ typedef struct slax_prof_s {
 } slax_prof_t;
 
 slax_prof_t *slax_profile;	/* Profiling data */
-time_usecs_t slax_profile_time_user; /* Last user time from getrusage */
+psu_time_usecs_t slax_profile_time_user; /* Last user time from getrusage */
 unsigned long slax_profile_time_system; /* Last system time from getrusage */
 
 static unsigned
@@ -129,8 +130,8 @@ slaxProfEnter (xmlNodePtr inst)
 	return;
 
     if (getrusage(0, &ru) == 0) {
-	slax_profile_time_user = timeval_to_usecs(&ru.ru_utime);
-	slax_profile_time_system = timeval_to_usecs(&ru.ru_stime);
+	slax_profile_time_user = psu_timeval_to_usecs(&ru.ru_utime);
+	slax_profile_time_system = psu_timeval_to_usecs(&ru.ru_stime);
 	spp->sp_inst_line = line;	/* Save instruct line number */
     }
 }
@@ -160,8 +161,8 @@ slaxProfExit (void)
 	return;
 
     if (rc == 0) {
-	time_usecs_t user = timeval_to_usecs(&ru.ru_utime);
-	time_usecs_t syst = timeval_to_usecs(&ru.ru_stime);
+	psu_time_usecs_t user = psu_timeval_to_usecs(&ru.ru_utime);
+	psu_time_usecs_t syst = psu_timeval_to_usecs(&ru.ru_stime);
 
 	spp->sp_data[line].spe_count += 1;
 	user = (user > slax_profile_time_user)
@@ -196,7 +197,7 @@ slaxProfReport (int brief, const char *buffer)
     unsigned num = 0, count;
     char line[BUFSIZ];
     unsigned long tot_count = 0;
-    time_usecs_t tot_user = 0, tot_system = 0;
+    psu_time_usecs_t tot_user = 0, tot_system = 0;
     const char *xp, *last = NULL;
     size_t len;
 
