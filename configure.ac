@@ -463,7 +463,7 @@ AC_ARG_WITH(bin-dir,
         [SLAX_BINDIR=$prefix/bin]
 )
 
-SLAX_LIBS=-lslax
+SLAX_LIBS="-lslax -lpsu"
 SLAX_SRCDIR=${srcdir}
 SLAX_LIBDIR=${libdir}
 SLAX_INCLUDEDIR=${includedir}
@@ -505,6 +505,7 @@ AC_CONFIG_HEADERS([libslax/slaxconfig.h])
 AC_CONFIG_FILES([
   Makefile
   slax-config
+  libpsu/Makefile
   libslax/Makefile
   libslax/slaxversion.h
   extensions/Makefile
