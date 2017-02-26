@@ -37,8 +37,8 @@
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
-#include <libslax/slaxutil.h>
 #include <libslax/slaxnames.h>
+#include <libpsu/psulog.h>
 
 static int extExsltInited;
 
