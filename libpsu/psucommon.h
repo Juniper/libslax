@@ -1,0 +1,179 @@
+/*
+ * Copyright (c) 2010-2013, 2017, Juniper Networks, Inc.
+ * All rights reserved.
+ * This SOFTWARE is licensed under the LICENSE provided in the
+ * ../Copyright file. By downloading, installing, copying, or otherwise
+ * using the SOFTWARE, you agree to be bound by the terms of that
+ * LICENSE.
+ *
+ * Common definitions for libpsu
+ */
+
+#ifndef LIBPSU_PSUCOMMON_H
+#define LIBPSU_PSUCOMMON_H
+
+#include <stdio.h>
+#include <string.h>
+
+#include <libslax/slaxconfig.h>
+
+#ifndef UNUSED
+#define UNUSED __attribute__ ((__unused__))
+#endif
+
+#ifdef HAVE_PRINTFLIKE
+#define PSU_PRINTFLIKE(_a, _b) __printflike(_a, _b)
+#else
+#define PSU_PRINTFLIKE(_a, _b)
+#endif /* HAVE_PRINTFLIKE */
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef HAVE_STREQ
+/**
+ * Given two strings, return true if they are the same.  Tests the
+ * first characters for equality before calling strcmp.
+ *
+ * @param[in] red,blue The strings to be compared
+ * @return Nonzero (true) if the strings are the same
+ */
+static inline int
+streq (const char *red, const char *blue)
+{
+    return (red && blue && *red == *blue && strcmp(red + 1, blue + 1) == 0);
+}
+#endif /* HAVE_STREQ */
+
+#ifndef HAVE_CONST_DROP
+/*
+ * NOTE: This is EVIL.  The ONLY time you cast from a const is when
+ * calling some legacy function that does not allow const and:
+ * - you KNOW it does not modify the data
+ * - you can't change it
+ * That is why this is provided.  In that situation, the legacy API
+ * should have been written to accept const argument.  If you can
+ * change the function you are calling to accept const, do THAT and DO
+ * NOT use this HACK.
+ */
+typedef union {
+    void *cg_vp;
+    const void *cg_cvp;
+} psu_const_remove_glue_t;
+
+/**
+ * Return a (non-writable) non-const pointer from a const pointer.  This
+ * is used to allow const warnings, while supporting older non-const-aware
+ * APIs.
+ * @param[in] ptr const pointer to data
+ * @return non-const value of ptr
+ */
+static inline void *
+const_drop (const void *ptr)
+{
+    psu_const_remove_glue_t cg;
+    cg.cg_cvp = ptr;
+    return cg.cg_vp;
+}
+#endif /* HAVE_CONST_DROP */
+
+#ifndef HAVE_ALLOCADUP
+/*
+ * Helper function for ALLOCADUP
+ */
+static inline char *
+allocadupx (char *to, const char *from)
+{
+    if (to) /* Allow alloca to return NULL, which it won't */
+	strcpy(to, from);
+    return to;
+}
+
+/**
+ * @fn ALLOCADUP(const char *str)
+ * Returns a copy of a string, allocated on the stack. Think of it as
+ * strdup + alloca.  Cause it is.
+ *
+ * @param[in] str String to be duplicated
+ * @return String, copied to the stack
+ */
+#define ALLOCADUP(s) allocadupx((char *) alloca(strlen(s) + 1), s)
+
+/**
+ * @fn ALLOCADUPX(const char *str)
+ * Returns a copy of a string, allocated on the stack. Think of it as
+ * strdup + alloca.  Cause it is.  If the input is NULL, return NULL.
+ *
+ * @param[in] str String to be duplicated, or NULL
+ * @return String, copied to the stack, or NULL
+ */
+#define ALLOCADUPX(s) \
+    ((s) ? allocadupx((char *) alloca(strlen(s) + 1), s) : NULL)
+
+#endif /* HAVE_ALLOCADUP */
+
+#ifndef HAVE_SAFE_SNPRINTF
+/**
+ * @fn SNPRINTF(char *start, char *end, const char *fmt, ...)
+ * A "safe" snprintf that never eats more than it can handle.  Using
+ * a pointer to the start and end of a buffer, SNPRINTF ensures that
+ * the buffer is never overrun.
+ *
+ * @param[in,out] start Start of the buffer
+ * @param[in] end End of the buffer
+ * @param[in] fmt Format string (and arguments), printf-style
+ */
+#define SNPRINTF(_start, _end, _fmt...) \
+    do { \
+	(_start) += snprintf((_start), (_end) - (_start), _fmt); \
+	if ((_start) > (_end)) \
+	    (_start) = (_end); \
+    } while (0)
+#endif /* HAVE_SAFE_SNPRINTF */
+
+#ifndef HAVE_STRLCPY
+/*
+ * strlcpy, for those that don't have it
+ */
+static inline size_t
+strlcpy (char *dst, const char *src, size_t sz)
+{
+    size_t len = strlen(src);
+
+    if (sz > len)
+        sz = len;
+    memmove(dst, src, sz);
+    dst[sz] = '\0';
+
+    return len;
+}
+#endif /* HAVE_STRLCPY */
+
+#ifndef HAVE_STRERROR
+/*
+ * Yes, there are systems without strerror.  Tough luck, eh?
+ */
+static inline const char *
+strerror (int num)
+{
+    return "unknown error";
+}
+#endif /* HAVE_STRERROR */
+
+#ifndef HAVE_ASPRINTF
+/**
+ * An asprintf replacement for systems missing it.  Yes, there are
+ * such.  Worse, some have a <stdio.h> that may have already declared
+ * asprintf() as non-static.  We use a quick #define to get around
+ * that.
+ */
+#define asprintf psu_asprintf
+#endif /* HAVE_ASPRINTF */
+
+int psu_asprintf (char **ret, const char *format, ...);
+
+#endif /* LIBPSU_PSUCOMMON_H */
