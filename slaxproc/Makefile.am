@@ -48,7 +48,8 @@ slaxproc_SOURCES = slaxproc.c
 #slaxproc_LDFLAGS = -static
 
 LDADD = \
-    ${top_builddir}/libslax/libslax.la
+    ${top_builddir}/libslax/libslax.la \
+    ${top_builddir}/libpsu/libpsu.la
 
 man_MANS = slaxproc.1x slaxdebugger.1x
 
