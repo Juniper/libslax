@@ -15,7 +15,6 @@
  */
 #define UNKNOWN_EXPR "<<<<slax error>>>>"
 
-extern int slaxLogIsEnabled;	/* Global logging output switch */
 extern const char *slaxKeywordString[];
 extern const char *slaxTokenNameFancy[];
 
