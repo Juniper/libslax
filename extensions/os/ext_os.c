@@ -36,8 +36,9 @@
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
-#include <libslax/slaxutil.h>
 #include <libslax/slaxnames.h>
+#include <libpsu/psucommon.h>
+#include <libpsu/psulog.h>
 
 #define XML_FULL_NS "http://xml.libslax.org/os"
 
