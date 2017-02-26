@@ -14,6 +14,7 @@
  */
 
 #include "slaxinternals.h"
+#include <libpsu/psutime.h>
 #include <libslax/slax.h>
 #include "slaxparser.h"
 
@@ -52,6 +53,8 @@
 #include <libxml/xpathInternals.h>
 #include <libxml/parserInternals.h>
 #include <libxml/uri.h>
+#include <libpsu/psubase64.h>
+#include <libpsu/psuthread.h>
 
 #include "slaxext.h"
 
@@ -73,7 +76,8 @@
 #define PATH_DAMPEN_FILE "slax.dampen"
 #endif
 
-static xmlChar slax_empty_string[1]; /* A non-const empty string */
+/* A non-const-but-constant empty string, previously known as "" */
+static THREAD_GLOBAL(xmlChar) slax_empty_string[1];
 
 /*
  * Macosx issue: their version of c_name lacks the "const" and
@@ -186,8 +190,8 @@ typedef struct trace_precomp_s {
  * This is the callback function that we use to pass trace data
  * up to the caller.
  */
-static slaxTraceCallback_t slaxTraceCallback;
-static void *slaxTraceCallbackData;
+static THREAD_GLOBAL(slaxTraceCallback_t) slaxTraceCallback;
+static THREAD_GLOBAL(void *) slaxTraceCallbackData;
 
 /**
  * Deallocates a trace_precomp_t
@@ -806,8 +810,8 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
      * had "%j1" turned on.  But if this printf call uses a
      * difference format string, we nuke them.
      */
-    static xmlChar **last_argv;
-    static int last_argc;
+    static THREAD_LOCAL(xmlChar **) last_argv;
+    static THREAD_LOCAL(int) last_argc;
     xmlChar **new_argv = NULL;	/* Build new 'last' here */
 
     if (last_argv && last_argv[0] && !xmlStrEqual(fmtstr, last_argv[0]))
@@ -2501,7 +2505,7 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
      */
     if (sdo.sdo_base64) {
 	size_t dlen;
-	char *dec = slaxBase64Decode(data, len, &dlen);
+	char *dec = psu_base64_decode(data, len, &dlen);
 	if (dec) {
 	    xmlFree(data);
 	    data = dec;
@@ -2558,7 +2562,7 @@ slaxExtBase64Decode (xmlXPathParserContext *ctxt, int nargs)
 
     size_t len = strlen(data), dlen;
 
-    char *dec = slaxBase64Decode(data, len, &dlen);
+    char *dec = psu_base64_decode(data, len, &dlen);
     if (dec) {
 	xmlFree(data);
 	data = dec;
@@ -2591,7 +2595,7 @@ slaxExtBase64Encode (xmlXPathParserContext *ctxt, int nargs)
 
     size_t len = strlen(data), dlen;
 
-    char *dec = slaxBase64Encode(data, len, &dlen);
+    char *dec = psu_base64_encode(data, len, &dlen);
     if (dec) {
 	xmlFree(data);
 	data = dec;
@@ -2782,9 +2786,9 @@ slaxExtOutput (xmlXPathParserContextPtr ctxt, int nargs)
  * This is the callback function that we use to pass trace data
  * up to the caller.
  */
-static slaxProgressCallback_t slaxProgressCallback;
-static void *slaxProgressCallbackData;
-static int slaxExtEmitProgressMessages;
+static THREAD_GLOBAL(slaxProgressCallback_t) slaxProgressCallback;
+static THREAD_GLOBAL(void *) slaxProgressCallbackData;
+static THREAD_GLOBAL(int) slaxExtEmitProgressMessages;
 
 int
 slaxEmitProgressMessages (int allow)
