@@ -31,8 +31,9 @@
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
-#include <libslax/slaxutil.h>
 #include <libslax/slaxinternals.h>
+#include <libpsu/psucommon.h>
+#include <libpsu/psulog.h>
 
 #include "jsonlexer.h"
 #include "jsonwriter.h"
