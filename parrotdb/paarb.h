@@ -14,6 +14,9 @@
 #ifndef PARROTDB_PAARB_H
 #define PARROTDB_PAARB_H
 
+#include <stdint.h>
+#include <sys/param.h>
+
 /**
  * A trivial malloc-like arbitrary-sized memory allocation library
  * built on top of the mmap allocator.  The result is a library that
