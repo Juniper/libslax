@@ -464,6 +464,8 @@ pa_pat_add (pa_pat_t *root, pa_atom_t datom, uint16_t key_bytes)
 
     pa_atom_t atom;
     pa_pat_node_t *node = pa_pat_node_alloc(root, datom, key_bytes, &atom);
+    if (node == NULL)
+	return FALSE;
 
     return pa_pat_add_node(root, atom, node);
 }
