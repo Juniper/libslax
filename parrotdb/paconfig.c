@@ -183,12 +183,12 @@ pa_config_value32 (const char *base, const char *name, uint32_t def)
 
     if (strncmp(value, "1<<", 3) == 0) {
 	ival = strtoul(value + 3, NULL, 0);
-	return (ival == ULONG_MAX || ival > 32 ) ? def : (1 << ival);
+	return (ival == ULONG_MAX || ival > 32 ) ? def : (1UL << ival);
     }
 
     if (strncmp(value, "1 <<", 4) == 0) {
 	ival = strtoul(value + 4, NULL, 0);
-	return (ival == ULONG_MAX || ival > 32 ) ? def : (1 << ival);
+	return (ival == ULONG_MAX || ival > 32 ) ? def : (1UL << ival);
     }
 
     ival = strtoul(value, NULL, 0);
