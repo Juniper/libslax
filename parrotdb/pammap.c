@@ -435,7 +435,7 @@ pa_mmap_close (pa_mmap_t *pmp)
 	    psu_free(pmrp);
 	}
     } else {
-	if (pmp->pm_addr > 0)
+	if (pmp->pm_addr != NULL)
 	    munmap(pmp->pm_addr, pmp->pm_len);
     }
 
