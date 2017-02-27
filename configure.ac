@@ -506,6 +506,7 @@ AC_CONFIG_FILES([
   Makefile
   slax-config
   libpsu/Makefile
+  parrotdb/Makefile
   libslax/Makefile
   libslax/slaxversion.h
   extensions/Makefile
