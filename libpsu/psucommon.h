@@ -16,6 +16,9 @@
 #include <string.h>
 
 #include <libslax/slaxconfig.h>
+#include <libpsu/psucommon.h>
+
+typedef unsigned psu_boolean_t;	/* Simple boolean type */
 
 #ifndef UNUSED
 #define UNUSED __attribute__ ((__unused__))
