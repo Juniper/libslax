@@ -10,7 +10,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = libpsu libslax extensions slaxproc tests doc bin
+SUBDIRS = libpsu parrotdb libslax extensions slaxproc tests doc bin
 bin_SCRIPTS=slax-config
 dist_doc_DATA = Copyright doc/slax.txt
 
