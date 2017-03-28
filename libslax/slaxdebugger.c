@@ -1876,7 +1876,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 	return;
 
     slaxLog("handleFrame: template %p/[%s], node %p/%s/%d, "
-	      "inst %p/%s/%d ctxt %x",
+	      "inst %p/%s/%ld ctxt %p",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      node, NAME(node), node ? node->type : 0,
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0, ctxt);
@@ -2019,7 +2019,7 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     if (statep->ds_flags & DSF_PROFILER)
 	slaxProfExit();
 
-    slaxLog("addFrame: template %p/[%s], inst %p/%s/%d (inst %p/%s)",
+    slaxLog("addFrame: template %p/[%s], inst %p/%s/%ld (inst %p/%s)",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0,
 	      statep->ds_inst, NAME(statep->ds_inst));
@@ -2124,7 +2124,7 @@ slaxDebugDropFrame (void)
     template = stp->st_template;
     inst = stp->st_inst;
 
-    slaxLog("dropFrame: %s (%p), inst <%s%s%s> (%p; line %d%s)",
+    slaxLog("dropFrame: %s (%p), inst <%s%s%s> (%p; line %ld%s)",
 	      slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      template, 
 	      (inst && inst->ns && inst->ns->prefix)
