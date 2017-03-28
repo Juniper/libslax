@@ -27,27 +27,26 @@
  * Allocate the page to which the given atom belongs; mark them all free
  */
 void
-pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
+pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_fixed_atom_t atom)
 {
-    unsigned slot = atom >> pfp->pf_shift;
-
+    pa_page_t page = atom.pfa_atom >> pfp->pf_shift;
     pa_atom_t count = 1 << pfp->pf_shift;
     size_t size = count * pfp->pf_atom_size;
-    pa_matom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
 
-    pa_fixed_page_entry_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
+    pa_mmap_atom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
+    pa_fixed_atom_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
     if (addr == NULL)
 	return;
 
     /* Fill in the 'free' value for each atom, pointing to the next */
     unsigned i;
     unsigned mult = pfp->pf_atom_size / sizeof(addr[0]);
-    pa_atom_t first = slot << pfp->pf_shift;
+    pa_atom_t first = page << pfp->pf_shift;
     for (i = 0; i < count - 1; i++) {
-	addr[i * mult] = first + i + 1;
+	addr[i * mult].pfa_atom = first + i + 1;
     }
 
-    pa_fixed_page_set(pfp, slot, matom, addr);
+    pa_fixed_page_set(pfp, page, matom, addr);
 
     /*
      * For the last entry, we find the next available page and use
@@ -56,32 +55,32 @@ pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
      * that atom is used.
      *
      * We're taking advantage of the knowledge that we're going
-     * to be allocing pages in incremental slot order, since that's
+     * to be allocing pages in incremental page order, since that's
      * how we allocate them.  Don't break this behavior.
      */
-    unsigned max_page = pfp->pf_max_atoms >> pfp->pf_shift;
-    for (i = slot + 1; i < max_page; i++)
+    pa_page_t max_page = pfp->pf_max_atoms >> pfp->pf_shift;
+    for (i = page + 1; i < max_page; i++)
 	if (pa_fixed_page_get(pfp, i) == NULL)
 	    break;
 
     i = (i < max_page) ? i << pfp->pf_shift : PA_NULL_ATOM;
-    addr[(count - 1) * mult] = i;
+    addr[(count - 1) * mult].pfa_atom = i;
 }
 
 void
-pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_atom_t atom)
+pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_fixed_atom_t atom)
 {
-    unsigned slot = atom >> pfp->pf_shift;
-
+    pa_page_t page = atom.pfa_atom >> pfp->pf_shift;
     pa_atom_t count = 1 << pfp->pf_shift;
     size_t size = count * pfp->pf_atom_size;
-    pa_matom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
-    pa_fixed_page_entry_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
+
+    pa_mmap_atom_t matom = pa_mmap_alloc(pfp->pf_mmap, size);
+    pa_fixed_atom_t *addr = pa_mmap_addr(pfp->pf_mmap, matom);
     if (addr == NULL)
 	return;
 
-    /* Set the slot in the page array */
-    pa_fixed_page_set(pfp, slot, matom, addr);
+    /* Set the page in the page array */
+    pa_fixed_page_set(pfp, page, matom, addr);
 
     /* If needed, initialize the new memory to zero */
     if (pfp->pf_flags & PFF_INIT_ZERO)
@@ -104,8 +103,9 @@ void
 pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
 	       pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms)
 {
+    /* Overload the value with config values */
     shift = pa_config_value32(name, "shift", shift);
-    atom_size = pa_config_value32(name, "atom-size", atom_size);
+    atom_size = pa_config_value32_min(name, "atom-size", atom_size);
     max_atoms = pa_config_value32(name, "max-atoms", max_atoms);
 
     /* The atom must be able to hold a free node id */
@@ -122,17 +122,19 @@ pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
     if (pfp->pf_base == NULL) {
 	size_t size = (max_atoms >> shift) * sizeof(uint8_t *);
 
-	pa_atom_t atom = pa_mmap_alloc(pmp, size);
+	pa_mmap_atom_t atom = pa_mmap_alloc(pmp, size);
 	void *real_base = pa_mmap_addr(pmp, atom);
 	if (real_base == NULL)
 	    return;
 
 	bzero(real_base, size); /* New page table must be cleared */
+
+	/* Record the base atom and pointer */
+	pfp->pf_infop->pfi_base = atom;
 	pfp->pf_base = real_base;
-	pa_fixed_base_set(pfp, atom, real_base);
 
 	/* Mark number 1 as our first free atom */
-	pfp->pf_free = 1;
+	pfp->pf_free = pa_fixed_atom(1);
     }
 
     /* Fill in the rest of fhe fields from the argument list */
@@ -146,10 +148,9 @@ pa_fixed_t *
 pa_fixed_setup (pa_mmap_t *pmp, pa_fixed_info_t *pfip, const char *name,
 		pa_shift_t shift, uint16_t atom_size, uint32_t max_atoms)
 {
-    pa_fixed_t *pfp = psu_realloc(NULL, sizeof(*pfp));
+    pa_fixed_t *pfp = psu_calloc(sizeof(*pfp));
 
     if (pfp) {
-	bzero(pfp, sizeof(*pfp));
 	pfp->pf_infop = pfip;
 	pa_fixed_init(pmp, pfp, name, shift, atom_size, max_atoms);
     }
@@ -177,7 +178,5 @@ pa_fixed_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 void
 pa_fixed_close (pa_fixed_t *pfp)
 {
-    pa_mmap_close(pfp->pf_mmap);
-
     psu_free(pfp);
 }
