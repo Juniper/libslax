@@ -1341,11 +1341,11 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     }
 
     if (slaxLogIsEnabled && ssp)
-	slaxLog("slax: lex: (%s) %p '%.*s' -> %d/%s %x",
+	slaxLog("slax: lex: (%s) %p '%.*s' -> %d/%s %p",
 		  SLAX_KEYWORDS_ALLOWED(sdp) ? "keywords" : "nokeywords", ssp,
 		  sdp->sd_cur - sdp->sd_start, sdp->sd_buf + sdp->sd_start,
 		  rc, (rc > 0) ? slaxTokenName(rc) : "",
-		  ssp ? ssp->ss_token : 0);
+		  ssp ? ssp->ss_token : NULL);
 
     /*
      * Disable keywords processing based on the token returned
