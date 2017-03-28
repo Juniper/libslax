@@ -9,8 +9,6 @@
  * A memory allocation construct, built on realloc/free
  */
 
-#include <stdlib.h>
-
 #include <libpsu/psucommon.h>
 #include <libpsu/psualloc.h>
 
