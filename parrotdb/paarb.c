@@ -55,12 +55,29 @@ pa_arb_slot_to_size (pa_arb_t *prp UNUSED, unsigned slot)
     return (val < PA_MMAP_ATOM_SIZE) ? PA_MMAP_ATOM_SIZE : val;
 }
 
+static inline pa_arb_atom_t
+pa_arb_build_atom (pa_arb_t *prp UNUSED, pa_mmap_atom_t matom,
+		      pa_arb_slot_t slot, pa_arb_chunk_t chunk)
+{
+    if (pa_mmap_is_null(matom))
+	return pa_arb_null_atom();
+
+    /* High bits are the mmap atom */
+    pa_atom_t raw = pa_mmap_atom_of(matom) << PA_ARB_OFFSET_SHIFT;
+
+    /* Low bits are the arb atom */
+    uint32_t off = (1 << slot) * chunk;
+    raw |= off;
+
+    return pa_arb_atom(raw);
+}
+
 static void
 pa_arb_make_page (pa_arb_t *prp, unsigned slot)
 {
     size_t real_size = pa_arb_slot_to_size(prp, slot);
-    pa_matom_t matom = pa_mmap_alloc(prp->pr_mmap, real_size);
-    if (matom == PA_NULL_ATOM)
+    pa_mmap_atom_t matom = pa_mmap_alloc(prp->pr_mmap, real_size);
+    if (pa_mmap_is_null(matom))
 	return;
 
     pa_arb_header_t *prhp;
@@ -70,8 +87,8 @@ pa_arb_make_page (pa_arb_t *prp, unsigned slot)
     /*
      * Whiffle thru the page, setting up the chunks
      */
-    pa_atom_t atom = pa_arb_matom_to_atom(prp, matom, slot, 0);
-    pa_atom_t saved_atom = atom;
+    pa_arb_atom_t atom = pa_arb_build_atom(prp, matom, slot, 0);
+    pa_arb_atom_t saved_atom = atom;
 
     for (i = 0; i < imax; i++) {
 	prhp = pa_arb_header(prp, atom);
@@ -79,8 +96,10 @@ pa_arb_make_page (pa_arb_t *prp, unsigned slot)
 	prhp->prh_slot = slot;
 	prhp->prh_chunk = i;
 
-	atom = (i == imax - 1) ? PA_NULL_ATOM
-	    : pa_arb_matom_to_atom(prp, matom, slot, i + 1);
+	if (i == imax - 1)
+	    atom = pa_arb_null_atom(); /* End of the block */
+	else atom = pa_arb_build_atom(prp, matom, slot, i + 1);
+
 	prhp->prh_next_free[0] = atom;
     }
 
@@ -93,27 +112,27 @@ pa_arb_make_page (pa_arb_t *prp, unsigned slot)
  * take at item off the free list for that size.  If the free list is empty,
  * we'll allocate more memory for that size, putting items on the free list.
  */
-pa_atom_t
+pa_arb_atom_t
 pa_arb_alloc (pa_arb_t *prp, size_t size)
 {
     pa_arb_header_t *prhp;
     size_t full_size = size + sizeof(pa_arb_header_t);
     unsigned slot = pa_arb_slot(full_size);
 
-    pa_atom_t atom = PA_NULL_ATOM;
+    pa_arb_atom_t atom = pa_arb_null_atom();
 
     if (slot <= PA_ARB_MAX_POW2) {
 	/* "Small"-style allocation */
 	atom = prp->pr_infop->pri_free[slot];
-	if (atom == PA_NULL_ATOM) {
+	if (pa_arb_is_null(atom)) {
 	    /*
 	     * We're out of chunks at this size, so we go allocate some
 	     * memory, so we can try again to pull off a new chunk.
 	     */
 	    pa_arb_make_page(prp, slot);
 	    atom = prp->pr_infop->pri_free[slot];
-	    if (atom == PA_NULL_ATOM)
-		return PA_NULL_ATOM;
+	    if (pa_arb_is_null(atom))
+		return pa_arb_null_atom();
 	}
 
 	prhp = pa_arb_header(prp, atom);
@@ -126,15 +145,15 @@ pa_arb_alloc (pa_arb_t *prp, size_t size)
 
     } else if (full_size < PA_ARB_MAX_LARGE) {
 	full_size = pa_roundup32(full_size, PA_MMAP_ATOM_SIZE);
-	pa_matom_t matom = pa_mmap_alloc(prp->pr_mmap, full_size);
-	if (matom == PA_NULL_ATOM)
-	    return PA_NULL_ATOM;
+	pa_mmap_atom_t matom = pa_mmap_alloc(prp->pr_mmap, full_size);
+	if (pa_mmap_is_null(matom))
+	    return pa_arb_null_atom();
 
 	/*
 	 * Since our atom numbers are just shifted matoms, we just
 	 * need to zero fill the low bits.
 	 */
-	atom = matom << PA_ARB_OFFSET_SHIFT;
+	atom = pa_arb_atom(pa_mmap_atom_of(matom) << PA_ARB_OFFSET_SHIFT);
 
 	prhp = pa_arb_header(prp, atom);
 	prhp->prh_magic = PRH_MAGIC_LARGE_INUSE;
@@ -154,14 +173,13 @@ pa_arb_alloc (pa_arb_t *prp, size_t size)
 }
 
 static void
-pa_arb_free_atom_addr (pa_arb_t *prp, pa_atom_t atom, void *addr)
+pa_arb_free_atom_addr (pa_arb_t *prp, pa_arb_atom_t atom, void *addr)
 {
     pa_arb_header_t *prhp = addr;
     size_t full_size;
     unsigned slot;
 
     prhp -= 1;	     /* Back up to header, which preceeds user data */
-
     
     switch (prhp->prh_magic) {
     case PRH_MAGIC_SMALL_INUSE:
@@ -174,45 +192,36 @@ pa_arb_free_atom_addr (pa_arb_t *prp, pa_atom_t atom, void *addr)
 	break;
 
     case PRH_MAGIC_SMALL_FREE:
-	pa_warning(0, "attempt to double free atom %#x (%p)", atom, addr);
+	pa_warning(0, "attempt to double free atom %#x (%p)",
+		   pa_arb_atom_of(atom), addr);
 	break;
 
     case PRH_MAGIC_LARGE_INUSE:
 	full_size = prhp->prh_size << PA_MMAP_ATOM_SHIFT;
-	pa_mmap_free(prp->pr_mmap, atom >> PA_ARB_OFFSET_SHIFT, full_size);
+	pa_mmap_free(prp->pr_mmap,
+		     pa_mmap_atom(pa_arb_atom_of(atom) >> PA_ARB_OFFSET_SHIFT),
+		     full_size);
 	break;
 
     case PRH_MAGIC_LARGE_FREE:
-	pa_warning(0, "attempt to double free atom %#x (%p)", atom, addr);
+	pa_warning(0, "attempt to double free atom %#x (%p)",
+		   pa_arb_atom_of(atom), addr);
 	break;
 
     default:
 	pa_warning(0, "bad magic number atom %#x (%p): %#x",
-		   atom, addr, prhp->prh_magic);
+		   pa_arb_atom_of(atom), addr, prhp->prh_magic);
     }
 }
 
 void
-pa_arb_free_atom (pa_arb_t *prp, pa_atom_t atom)
+pa_arb_free_atom (pa_arb_t *prp, pa_arb_atom_t atom)
 {
-    if (atom == PA_NULL_ATOM)
+    if (pa_arb_is_null(atom))
 	return;
 
     void *addr = pa_arb_atom_addr(prp, atom);
-    if (addr == NULL)
-	return;
-
-    pa_arb_free_atom_addr(prp, atom, addr);
-}
-
-void
-pa_arb_free (pa_arb_t *prp, void *addr)
-{
-    if (addr == NULL)
-	return;
-
-    pa_atom_t atom = pa_arb_addr_to_atom(prp, addr);
-    if (atom == PA_NULL_ATOM)
+    if (addr == NULL)		/* Should not occur */
 	return;
 
     pa_arb_free_atom_addr(prp, atom, addr);
@@ -227,10 +236,9 @@ pa_arb_init (pa_mmap_t *pmp, pa_arb_t *prp)
 pa_arb_t *
 pa_arb_setup (pa_mmap_t *pmp, pa_arb_info_t *prip)
 {
-    pa_arb_t *prp = psu_realloc(NULL, sizeof(*prp));
+    pa_arb_t *prp = psu_calloc(sizeof(*prp));
 
     if (prp) {
-	bzero(prp, sizeof(*prp));
 	prp->pr_infop = prip;
 	pa_arb_init(pmp, prp);
     }
@@ -258,8 +266,6 @@ pa_arb_open (pa_mmap_t *pmp, const char *name)
 void
 pa_arb_close (pa_arb_t *prp)
 {
-    pa_mmap_close(prp->pr_mmap);
-
     psu_free(prp);
 }
 
@@ -267,15 +273,15 @@ void
 pa_arb_dump (pa_arb_t *prp)
 {
     pa_arb_slot_t slot;
-    pa_atom_t atom, saved_atom;
+    pa_arb_atom_t atom, saved_atom;
     pa_arb_header_t *prhp;
     unsigned count;
 
-    psu_log("begin dumping pa_arb_t\n");
+    psu_log("begin dumping pa_arb_t");
 
     for (slot = 0; slot <= PA_ARB_MAX_POW2; slot++) {
 	saved_atom = atom = prp->pr_infop->pri_free[slot];
-	if (atom == PA_NULL_ATOM)
+	if (pa_arb_is_null(atom))
 	    continue;
 
 	for (count = 0, prhp = pa_arb_header(prp, atom); prhp != NULL;
@@ -288,21 +294,23 @@ pa_arb_dump (pa_arb_t *prp)
 	}
 	atom = saved_atom;
 
-	psu_log("  slot:%u %#x (%u)\n", slot, atom, count);
+	psu_log("  slot:%u %#x (%u)", slot, pa_arb_atom_of(atom), count);
 	for (prhp = pa_arb_header(prp, atom); prhp != NULL;
 	     prhp = pa_arb_header(prp, atom)) {
 	    if (prhp->prh_magic == PRH_MAGIC_SMALL_FREE) {
-		psu_log("    %#x:%p slot:%u chunk:%u next %#x\n",
-		       atom, prhp, prhp->prh_slot, prhp->prh_chunk,
-		       prhp->prh_next_free[0]);
+		psu_log("    %#x:%p slot:%u chunk:%u next %#x",
+			pa_arb_atom_of(atom), prhp, prhp->prh_slot,
+			prhp->prh_chunk,
+			pa_arb_atom_of(prhp->prh_next_free[0]));
+
 		atom = prhp->prh_next_free[0];
 
 	    } else {
-		psu_log("    %#x:%p bad magic number (%#x)\n",
-		       atom, prhp, prhp->prh_magic);
+		psu_log("    %#x:%p bad magic number (%#x)",
+			pa_arb_atom_of(atom), prhp, prhp->prh_magic);
 		break;
 	    }
 	}
     }
-    psu_log("end dumping pa_arb_t\n");
+    psu_log("end dumping pa_arb_t");
 }
