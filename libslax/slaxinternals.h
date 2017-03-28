@@ -23,6 +23,7 @@
 #include "slaxversion.h"
 
 #include <libpsu/psucommon.h>
+#include <libpsu/psualloc.h>
 #include <libpsu/psulog.h>
 
 #include "xmlsoft.h"
