@@ -29,10 +29,26 @@
 #ifndef PARROTDB_PABITMAP_H
 #define PARROTDB_PABITMAP_H
 
-typedef pa_fixed_t pa_bitmap_t;	/* A pool of bitmaps */
+#include <libpsu/psualloc.h>
+
 typedef uint32_t pa_bitnumber_t;  /* The bit number to test/set */
-typedef pa_atom_t pa_bitmap_id_t; /* An individual bitmap */
 typedef uint32_t pa_bitunit_t;	  /* Bit testing unit (word) */
+
+/* Declare our wrapper type */
+PA_ATOM_TYPE(pa_bitmap_atom_t, pa_bitmap_atom_s, pba_atom,
+	     pa_bitmap_is_null, pa_bitmap_atom, pa_bitmap_null_atom);
+
+/*
+ * An "id" is just an atom, but it's better for users to think of it
+ * as an identifier.  And we use our wrapper so we've got type
+ * protection.
+ */
+typedef pa_bitmap_atom_t pa_bitmap_id_t; /* An individual bitmap */
+
+/* We are essentially a wrapper around a pa_fixed array */
+typedef struct pa_bitmap_s {
+    pa_fixed_t *pb_data;	/* Our real underlaying data */
+} pa_bitmap_t;
 
 /*
  * Blocks are the base size we allocate, for both bit contents and
@@ -82,11 +98,30 @@ pa_bitmap_chunknum (pa_bitmap_t *pfp UNUSED, pa_bitnumber_t num)
 static inline pa_bitmap_id_t
 pa_bitmap_alloc (pa_bitmap_t *pfp)
 {
-    return pa_fixed_alloc_atom(pfp);
+    pa_fixed_atom_t atom = pa_fixed_alloc_atom(pfp->pb_data);
+    return pa_bitmap_atom(pa_fixed_atom_of(atom));
+}
+
+static inline pa_fixed_atom_t
+pa_bitmap_to_fixed (pa_bitmap_atom_t atom)
+{
+    return pa_fixed_atom(pa_bitmap_atom_of(atom));
+}
+
+static inline pa_bitmap_atom_t
+pa_bitmap_from_fixed (pa_fixed_atom_t atom)
+{
+    return pa_bitmap_atom(pa_fixed_atom_of(atom));
+}
+
+static inline pa_fixed_atom_t *
+pa_bitmap_chunk_addr (pa_bitmap_t *pfp, pa_bitmap_atom_t atom)
+{
+    return pa_fixed_atom_addr(pfp->pb_data, pa_bitmap_to_fixed(atom));
 }
 
 static inline uint8_t
-pa_bitmap_test (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
+pa_bitmap_test (pa_bitmap_t *pfp, pa_bitmap_id_t bitmap_id, pa_bitnumber_t num)
 {
     if (num >= PA_BITMAP_MAX_BIT)
 	return FALSE;
@@ -95,15 +130,15 @@ pa_bitmap_test (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
     uint32_t unitnum = pa_bitmap_unitnum(pfp, num);
     uint32_t chunknum = pa_bitmap_chunknum(pfp, num);
 
-    pa_atom_t *chunkp = pa_fixed_atom_addr(pfp, bitmap_id);
+    pa_fixed_atom_t *chunkp = pa_bitmap_chunk_addr(pfp, bitmap_id);
     if (chunkp == NULL)
 	return FALSE;		/* Internal error */
 
-    pa_atom_t atom = chunkp[chunknum];
-    if (atom == PA_NULL_ATOM)
+    pa_fixed_atom_t atom = chunkp[chunknum];
+    if (pa_fixed_is_null(atom))
 	return FALSE;		/* Not allocated == never set */
 
-    pa_bitunit_t *data = pa_fixed_atom_addr(pfp, atom);
+    pa_bitunit_t *data = pa_fixed_atom_addr(pfp->pb_data, atom);
     if (data == NULL)
 	return FALSE;		/* Should not occur */
 
@@ -111,7 +146,7 @@ pa_bitmap_test (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
 }
 
 static inline void
-pa_bitmap_set (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
+pa_bitmap_set (pa_bitmap_t *pfp, pa_bitmap_id_t bitmap_id, pa_bitnumber_t num)
 {
     if (num >= PA_BITMAP_MAX_BIT)
 	return;
@@ -120,20 +155,20 @@ pa_bitmap_set (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
     uint32_t unitnum = pa_bitmap_unitnum(pfp, num);
     uint32_t chunknum = pa_bitmap_chunknum(pfp, num);
 
-    pa_atom_t *chunkp = pa_fixed_atom_addr(pfp, bitmap_id);
+    pa_fixed_atom_t *chunkp = pa_bitmap_chunk_addr(pfp, bitmap_id);
     if (chunkp == NULL)
 	return;			/* Internal error */
 
-    pa_atom_t atom = chunkp[chunknum];
-    if (atom == PA_NULL_ATOM) {
+    pa_fixed_atom_t atom = chunkp[chunknum];
+    if (pa_fixed_is_null(atom)) {
 	/* Need to allocate the chunk */
-	atom = pa_fixed_alloc_atom(pfp);
-	if (atom == PA_NULL_ATOM)
+	atom = pa_fixed_alloc_atom(pfp->pb_data);
+	if (pa_fixed_is_null(atom))
 	    return;
 	chunkp[chunknum] = atom; /* Save into the chunk table */
     }
 
-    pa_bitunit_t *data = pa_fixed_atom_addr(pfp, atom);
+    pa_bitunit_t *data = pa_fixed_atom_addr(pfp->pb_data, atom);
     if (data == NULL)
 	return;		/* Should not occur */
 
@@ -141,7 +176,7 @@ pa_bitmap_set (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
 }
 
 static inline void
-pa_bitmap_clear (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
+pa_bitmap_clear (pa_bitmap_t *pfp, pa_bitmap_id_t bitmap_id, pa_bitnumber_t num)
 {
     if (num >= PA_BITMAP_MAX_BIT)
 	return;
@@ -150,15 +185,15 @@ pa_bitmap_clear (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
     uint32_t unitnum = pa_bitmap_unitnum(pfp, num);
     uint32_t chunknum = pa_bitmap_chunknum(pfp, num);
 
-    pa_atom_t *chunkp = pa_fixed_atom_addr(pfp, bitmap_id);
+    pa_fixed_atom_t *chunkp = pa_bitmap_chunk_addr(pfp, bitmap_id);
     if (chunkp == NULL)
 	return;			/* Internal error */
 
-    pa_atom_t atom = chunkp[chunknum];
-    if (atom == PA_NULL_ATOM)
+    pa_fixed_atom_t atom = chunkp[chunknum];
+    if (pa_fixed_is_null(atom))
 	return;			/* Not allocated yet */
 
-    pa_bitunit_t *data = pa_fixed_atom_addr(pfp, atom);
+    pa_bitunit_t *data = pa_fixed_atom_addr(pfp->pb_data, atom);
     if (data == NULL)
 	return;		/* Should not occur */
 
@@ -166,10 +201,11 @@ pa_bitmap_clear (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
 }
 
 static inline pa_bitnumber_t
-pa_bitmap_find_next (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
+pa_bitmap_find_next (pa_bitmap_t *pfp, pa_bitmap_id_t bitmap_id,
+		     pa_bitnumber_t num)
 {
     uint32_t bitnum, unitnum, chunknum, bitmask;
-    pa_atom_t *chunkp, atom;
+    pa_fixed_atom_t *chunkp, atom;
     pa_bitunit_t *data, value;
 
     if (num == PA_BITMAP_FIND_START) {
@@ -187,24 +223,22 @@ pa_bitmap_find_next (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
     }
 
     /* Fetch the bitmap's chunk table */
-    chunkp = pa_fixed_atom_addr(pfp, bitmap_id);
+    chunkp = pa_bitmap_chunk_addr(pfp, bitmap_id);
     if (chunkp == NULL)
 	return PA_BITMAP_FIND_DONE; /* Should not occur */
-
-
 
  restart:
     chunknum = pa_bitmap_chunknum(pfp, num);
 
     atom = chunkp[chunknum];
-    if (atom == PA_NULL_ATOM) {
+    if (pa_fixed_is_null(atom)) {
 	/*
 	 * Since this chunk hasn't been allocated, we know that
 	 * no bits in this range have been set, so we can skip to
 	 * the next chunk.
 	 */
 	while (++chunknum < PA_BITMAP_CHUNK_SIZE) {
-	    if (chunkp[chunknum] != PA_NULL_ATOM) {
+	    if (!pa_fixed_is_null(chunkp[chunknum])) {
 		num = chunknum * PA_BITMAP_BITS_PER_CHUNK;
 		goto restart;
 	    }
@@ -213,7 +247,7 @@ pa_bitmap_find_next (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
 	return PA_BITMAP_FIND_DONE; /* End of bits */
     }
 
-    data = pa_fixed_atom_addr(pfp, atom);
+    data = pa_fixed_atom_addr(pfp->pb_data, atom);
     if (data == NULL)
 	return PA_BITMAP_FIND_DONE; /* Should not occur */
 
@@ -253,12 +287,15 @@ pa_bitmap_find_next (pa_bitmap_t *pfp, pa_atom_t bitmap_id, pa_bitnumber_t num)
 static inline pa_bitmap_t *
 pa_bitmap_open (pa_mmap_t *pmp, const char *name)
 {
-    pa_bitmap_t *pbp =  pa_fixed_open(pmp, name, PA_BITMAP_BLOCK_SHIFT,
-			      PA_BITMAP_BLOCK_SIZE, PA_BITMAP_MAX_ATOMS);
+    pa_bitmap_t *pbp =  psu_calloc(sizeof(*pbp));
+    if (pbp) {
+	pbp->pb_data = pa_fixed_open(pmp, name, PA_BITMAP_BLOCK_SHIFT,
+			     PA_BITMAP_BLOCK_SIZE, PA_BITMAP_MAX_ATOMS);
 
-    /* bitmaps require init-to-zero behavior */
-    if (pbp != NULL)
-	pa_fixed_set_flags(pbp, PFF_INIT_ZERO);
+	/* bitmaps require init-to-zero behavior */
+	if (pbp != NULL)
+	    pa_fixed_set_flags(pbp->pb_data, PFF_INIT_ZERO);
+    }
 
     return pbp;
 }
@@ -266,7 +303,8 @@ pa_bitmap_open (pa_mmap_t *pmp, const char *name)
 static inline void
 pa_bitmap_close (pa_bitmap_t *pbp)
 {
-    pa_fixed_close(pbp);
+    pa_fixed_close(pbp->pb_data);
+    psu_free(pbp);
 }
 
 #endif /* PARROTDB_PABITMAP_H */
