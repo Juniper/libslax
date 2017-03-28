@@ -120,7 +120,7 @@ slaxRelocateSort (slax_data_t *sdp)
         xmlChar *sel = xmlGetProp(parent, (const xmlChar *) ATT_SELECT);
 
 	if (sel && strncmp((char *) sel, "$slax-dot-", 10) == 0) {
-	    slaxLog("slaxRelocateSort: %s:%d: must relocate",
+	    slaxLog("slaxRelocateSort: %s:%ld: must relocate",
 		      nodep->name, xmlGetLineNo(nodep));
 	    /*
 	     * "parent" is the inner for-each loop, and "parent->parent"
