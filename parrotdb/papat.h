@@ -35,29 +35,24 @@
  * recommended.
  */
 
-#ifndef CARRY_OVER
+/* Wrapper for our "patricia tree node" atom */
+PA_ATOM_TYPE(pa_pat_atom_t, pa_pat_atom_s, ppa_atom,
+	     pa_pat_is_null, pa_pat_atom, pa_pat_null_atom);
 
-static inline unsigned
-grand (unsigned imax)
-{
-    return random() % imax;
-}
-
-#define QUIET_CAST(_type, _ptr)         \
-        ((_type) (uintptr_t) (const void *) (_ptr)) /**< Internal use only */
-
-#endif /* CARRY_OVER */
+/* Wrapper for our "data node" atom */
+PA_ATOM_TYPE(pa_pat_data_atom_t, pa_pat_data_atom_s, ppa_data_atom,
+	     pa_pat_data_is_null, pa_pat_data_atom, pa_pat_data_null_atom);
 
 /**
  * @brief
  * Patricia tree node.
  */
 typedef struct pa_pat_node_s {
-    uint16_t ppn_length;     /**< length of key, formated like bit */
-    uint16_t ppn_bit;	     /**< bit number to test for patricia */
-    pa_atom_t ppn_left;	     /**< Atom of left node of patricia tree */
-    pa_atom_t ppn_right;     /**< Atom of right node of patricia tree */
-    pa_atom_t ppn_data;	     /**< Atom of data node (in some other tree) */
+    uint16_t ppn_length;       /**< length of key, formated like bit */
+    uint16_t ppn_bit;	       /**< bit number to test for patricia */
+    pa_pat_atom_t ppn_left;    /**< Atom of left node of patricia tree */
+    pa_pat_atom_t ppn_right;   /**< Atom of right node of patricia tree */
+    pa_pat_data_atom_t ppn_data; /**< Atom of data node (in some other tree) */
 } pa_pat_node_t;
 
 /**
@@ -79,24 +74,44 @@ typedef struct pa_pat_node_s {
  * Patricia tree root.
  */
 typedef struct pa_pat_info_s {
-    pa_atom_t ppi_root;			/**< root patricia node (atom) */
-    uint16_t ppi_key_bytes;		/**< (maximum) key length in bytes */
+    pa_pat_atom_t ppi_root;	/**< root patricia node (atom) */
+    uint16_t ppi_key_bytes;	/**< (maximum) key length in bytes */
 } pa_pat_info_t;
 
 struct pa_pat_s;		/* Forward declaration */
-typedef const uint8_t *(*pa_pat_key_func_t)(struct pa_pat_s *, pa_pat_node_t *);
+typedef const psu_byte_t *(*pa_pat_key_func_t)(struct pa_pat_s *,
+					       pa_pat_data_atom_t);
 
 typedef struct pa_pat_s {
-    pa_pat_info_t *pp_infop; /* Pointer to root info */
-    pa_mmap_t *pp_mmap;	   /* Underlaying mmap */
-    pa_fixed_t *pp_nodes;	   /* Fixed paged array of nodes */
-    void *pp_data;		   /* Opaque data tree */
+    pa_pat_info_t *pp_infop;	/* Pointer to root info */
+    pa_mmap_t *pp_mmap;		/* Underlaying mmap */
+    pa_fixed_t *pp_nodes;	/* Fixed paged array of nodes */
+    void *pp_data;		/* Opaque data tree */
     pa_pat_key_func_t pp_key_func; /* Find the key for a node */
 } pa_pat_t;
 
 /* Shorthand for fields */
 #define pp_root pp_infop->ppi_root
 #define pp_key_bytes pp_infop->ppi_key_bytes
+
+static inline pa_fixed_atom_t
+pa_pat_to_fixed (pa_pat_atom_t atom)
+{
+    return pa_fixed_atom(pa_pat_atom_of(atom));
+}
+
+static inline pa_pat_atom_t
+pa_pat_from_fixed (pa_fixed_atom_t atom)
+{
+    return pa_pat_atom(pa_fixed_atom_of(atom));
+}
+
+static inline pa_pat_atom_t
+pa_pat_atom_alloc (pa_pat_t *root)
+{
+    pa_fixed_atom_t atom = pa_fixed_alloc_atom(root->pp_nodes);
+    return pa_pat_atom(pa_fixed_atom_of(atom));
+}
 
 /**
  * @brief
@@ -108,15 +123,15 @@ typedef struct pa_pat_s {
  *     Atom within the patricia tree
  */
 static inline pa_pat_node_t *
-pa_pat_node (pa_pat_t *root, pa_atom_t atom)
+pa_pat_node (pa_pat_t *root, pa_pat_atom_t atom)
 {
-    return pa_fixed_atom_addr(root->pp_nodes, atom);
+    return pa_fixed_atom_addr(root->pp_nodes, pa_pat_to_fixed(atom));
 }
 
-static inline pa_atom_t
+static inline pa_pat_data_atom_t
 pa_pat_node_data (pa_pat_t *root UNUSED, pa_pat_node_t *node)
 {
-    return node ? node->ppn_data : PA_NULL_ATOM;
+    return node ? node->ppn_data : pa_pat_data_null_atom();
 }
 
 /**
@@ -141,14 +156,14 @@ pa_pat_root_init (pa_pat_t *root, pa_pat_info_t *ppip, pa_mmap_t *pmp,
 		  pa_fixed_t *nodes, void *data_store,
 		  pa_pat_key_func_t key_func, uint16_t klen);
 
-const uint8_t *
+const psu_byte_t *
 pa_pat_istr_key_func (pa_pat_t *pp, pa_pat_node_t *node);
 
 /*
  * Add a node to the patricia tree.
  */
 psu_boolean_t
-pa_pat_add_node (pa_pat_t *root, pa_atom_t atom, pa_pat_node_t *node);
+pa_pat_add_node (pa_pat_t *root, pa_pat_atom_t atom, pa_pat_node_t *node);
 
 /**
  * @brief
@@ -178,7 +193,7 @@ pa_pat_root_delete (pa_pat_t *root);
  */
 void
 pa_pat_node_init_length (pa_pat_node_t *node, uint16_t key_bytes,
-			 pa_atom_t datom);
+			 pa_pat_data_atom_t datom);
 
 /**
  * @brief
@@ -195,7 +210,7 @@ pa_pat_node_init_length (pa_pat_node_t *node, uint16_t key_bytes,
  *      with (variable length keys), something already in the tree.
  */
 psu_boolean_t
-pa_pat_add (pa_pat_t *root, pa_atom_t datom, uint16_t key_bytes);
+pa_pat_add (pa_pat_t *root, pa_pat_data_atom_t datom, uint16_t key_bytes);
 
 /**
  * @brief
@@ -504,7 +519,7 @@ pa_pat_cons_subtree_next (const pa_pat_t *root, const pa_pat_node_t *node,
 static inline void
 pa_pat_node_init (pa_pat_node_t *node)
 {
-    pa_pat_node_init_length(node, 0, PA_NULL_ATOM);
+    pa_pat_node_init_length(node, 0, pa_pat_data_null_atom());
 } 
 
 /**
@@ -525,20 +540,20 @@ pa_pat_node_init (pa_pat_node_t *node)
  * @return 
  *     A pointer to the start of node key.
  */
-static inline const uint8_t *
+static inline const psu_byte_t *
 pa_pat_key (pa_pat_t *root, pa_pat_node_t *node)
 {
-    return root->pp_key_func(root, node);
+    return root->pp_key_func(root, node->ppn_data);
 }
 
-static inline const uint8_t *
-pa_pat_key_atom (pa_pat_t *root, pa_atom_t atom)
+static inline const psu_byte_t *
+pa_pat_key_atom (pa_pat_t *root, pa_pat_atom_t atom)
 {
     pa_pat_node_t *node = pa_pat_node(root, atom);
     if (node == NULL)
 	return NULL;
 
-    return root->pp_key_func(root, node);
+    return root->pp_key_func(root, node->ppn_data);
 }
 
 /**
@@ -553,10 +568,10 @@ pa_pat_key_atom (pa_pat_t *root, pa_atom_t atom)
  * @return 
  *     1 if the bit was set, 0 otherwise.
  */
-static inline uint8_t
-pat_key_test (const uint8_t *key, uint16_t bit)
+static inline psu_boolean_t
+pat_key_test (const psu_byte_t *key, uint16_t bit)
 {
-    return key[bit >> 8] & (~bit & 0xff);
+    return (key[bit >> 8] & (~bit & 0xff));
 }
 
 /**
@@ -612,15 +627,15 @@ pa_pat_length_to_bit (uint16_t length)
 static inline pa_pat_node_t *
 pa_pat_get_inline (pa_pat_t *root, uint16_t key_bytes, const void *v_key)
 {
-    pa_atom_t current;
+    pa_pat_atom_t current;
     uint16_t bit, bit_len;
-    const uint8_t *key = (const uint8_t *) v_key;
+    const psu_byte_t *key = v_key;
 
     if (key_bytes == 0)
 	abort();
 
     current = root->pp_root;
-    if (current == PA_NULL_ATOM)
+    if (pa_pat_is_null(current))
 	return NULL;
 
     /*
@@ -663,10 +678,10 @@ pa_pat_get_inline (pa_pat_t *root, uint16_t key_bytes, const void *v_key)
  * @return 
  *     1 if the tree is empty, 0 otherwise.
  */
-static inline uint8_t
+static inline psu_boolean_t
 pa_pat_isempty (pa_pat_t *root)
 {
-    return (root->pp_root == PA_NULL_ATOM);
+    return pa_pat_is_null(root->pp_root);
 }
 
 
@@ -763,7 +778,7 @@ procname (pa_pat_node_t *ptr)						\
  * @sa pa_pat_get
  */
 static inline pa_pat_node_t *
-pa_pat_lookup(pa_pat_t *root, const void *key)
+pa_pat_lookup (pa_pat_t *root, const void *key)
 {
     return pa_pat_get(root, root->pp_key_bytes, key);
 }
@@ -788,7 +803,7 @@ pa_pat_lookup(pa_pat_t *root, const void *key)
  *     A pointer to patricia tree node.
  */
 static inline pa_pat_node_t *
-pa_pat_lookup_geq(pa_pat_t *root, void *key)
+pa_pat_lookup_geq (pa_pat_t *root, void *key)
 {
     return pa_pat_getnext(root, root->pp_key_bytes, key, TRUE);
 }
@@ -805,7 +820,7 @@ extern const uint8_t pa_pat_hi_bit_table[];
  *
  * @param[in]  offset
  *     Offset byte number
- * @param[in]  bit_in_byte
+ * @param[in] bit_in_byte
  *     Bit within the byte
  *
  * @return 
@@ -821,37 +836,39 @@ pa_pat_makebit (uint16_t offset, uint8_t bit_in_byte)
  * Allocate and populate a node
  */
 static inline pa_pat_node_t *
-pa_pat_node_alloc (pa_pat_t *root, pa_atom_t datom, uint16_t key_bytes,
-		   pa_atom_t *atomp)
+pa_pat_node_alloc (pa_pat_t *root, pa_pat_data_atom_t datom,
+		   uint16_t key_bytes, pa_pat_atom_t *atomp)
 {
-    pa_atom_t atom = pa_fixed_alloc_atom(root->pp_nodes);
-    pa_pat_node_t *node = pa_pat_node(root, atom);
-    if (node) {
-	pa_pat_node_init_length(node, key_bytes, datom);
-	*atomp = atom;
+    pa_pat_node_t *node = NULL;
+    pa_pat_atom_t atom = pa_pat_atom_alloc(root);
+    if (!pa_pat_is_null(atom)) {
+	node = pa_pat_node(root, atom);
+	if (node != NULL)
+	    pa_pat_node_init_length(node, key_bytes, datom);
     }
 
+    *atomp = atom;
     return node;
 }
 
 pa_pat_t *
 pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
-	     void *data_store, pa_pat_key_func_t key_func,
-	     uint16_t klen);
+		   void *data_store, pa_pat_key_func_t key_func,
+		   uint16_t klen);
 
 pa_pat_t *
 pa_pat_open_c (pa_mmap_t *pmp, const char *name,
-	     void *data_store, pa_pat_key_func_t key_func, uint16_t klen);
+	       void *data_store, pa_pat_key_func_t key_func, uint16_t klen);
 
 pa_pat_t *
 pa_pat_open (pa_mmap_t *pmp, const char *name,
-	      void *data_store, pa_pat_key_func_t key_func,
-	      uint16_t klen, pa_shift_t shift, uint32_t max_atoms);
+	     void *data_store, pa_pat_key_func_t key_func,
+	     uint16_t klen, pa_shift_t shift, uint32_t max_atoms);
 
 void
 pa_pat_close (pa_pat_t *ppp);
 
-static inline pa_atom_t
+static inline pa_pat_data_atom_t
 pa_pat_get_atom (pa_pat_t *root, uint16_t key_bytes, const void *key)
 {
     pa_pat_node_t *nodep = pa_pat_get(root, key_bytes, key);
