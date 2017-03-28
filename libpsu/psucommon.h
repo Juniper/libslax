@@ -19,6 +19,7 @@
 #include <libpsu/psucommon.h>
 
 typedef unsigned psu_boolean_t;	/* Simple boolean type */
+typedef unsigned char psu_byte_t; /* Simple byte (for addressing memory) */
 
 #ifndef UNUSED
 #define UNUSED __attribute__ ((__unused__))
@@ -83,41 +84,6 @@ const_drop (const void *ptr)
     return cg.cg_vp;
 }
 #endif /* HAVE_CONST_DROP */
-
-#ifndef HAVE_ALLOCADUP
-/*
- * Helper function for ALLOCADUP
- */
-static inline char *
-allocadupx (char *to, const char *from)
-{
-    if (to) /* Allow alloca to return NULL, which it won't */
-	strcpy(to, from);
-    return to;
-}
-
-/**
- * @fn ALLOCADUP(const char *str)
- * Returns a copy of a string, allocated on the stack. Think of it as
- * strdup + alloca.  Cause it is.
- *
- * @param[in] str String to be duplicated
- * @return String, copied to the stack
- */
-#define ALLOCADUP(s) allocadupx((char *) alloca(strlen(s) + 1), s)
-
-/**
- * @fn ALLOCADUPX(const char *str)
- * Returns a copy of a string, allocated on the stack. Think of it as
- * strdup + alloca.  Cause it is.  If the input is NULL, return NULL.
- *
- * @param[in] str String to be duplicated, or NULL
- * @return String, copied to the stack, or NULL
- */
-#define ALLOCADUPX(s) \
-    ((s) ? allocadupx((char *) alloca(strlen(s) + 1), s) : NULL)
-
-#endif /* HAVE_ALLOCADUP */
 
 #ifndef HAVE_SAFE_SNPRINTF
 /**
