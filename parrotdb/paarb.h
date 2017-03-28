@@ -49,6 +49,10 @@
 typedef uint8_t pa_arb_chunk_t;
 typedef uint8_t pa_arb_slot_t;
 
+/* Define our wrapper type */
+PA_ATOM_TYPE(pa_arb_atom_t, pa_arb_atom_s, pra_atom,
+	     pa_arb_is_null, pa_arb_atom, pa_arb_null_atom);
+
 typedef struct pa_arb_header_s {
     uint16_t prh_magic;		/* Magic constant so we know we are us */
     union {
@@ -58,7 +62,7 @@ typedef struct pa_arb_header_s {
 	};
 	uint16_t prh_size;	/* Size, in 4k  */
     };
-    pa_atom_t prh_next_free[0]; /* If free, next free atom in list */
+    pa_arb_atom_t prh_next_free[0]; /* If free, next free atom in list */
 } pa_arb_header_t;
 
 #define PRH_MAGIC_SMALL_INUSE	0x5ea1 /* "Small"-style allocation; in use */
@@ -90,7 +94,7 @@ typedef struct pa_arb_header_s {
  * (not implemented yet)
  */
 typedef uint16_t pa_alloc_bits_t;
-    pa_alloc_bits_t ppi_free_bits; /* Which chunks are free */
+pa_alloc_bits_t ppi_free_bits; /* Which chunks are free */
 
 typedef struct pa_page_info_s {
     uint16_t ppi_magic;		/* Magic number */
@@ -100,10 +104,10 @@ typedef struct pa_page_info_s {
 
 /*
  * pa_arb_info_t is the persistent information on the malloc store, in
- * contrast with pa_arb_t which is transient.  
+ * contrast with pa_arb_t which is transient.
  */
 typedef struct pa_arb_info_s {
-    pa_atom_t pri_free[PA_ARB_MAX_POW2 + 1]; /* The free list */
+    pa_arb_atom_t pri_free[PA_ARB_MAX_POW2 + 1]; /* The free list */
 } pa_arb_info_t;
 
 typedef struct pa_arb_s {
@@ -113,7 +117,7 @@ typedef struct pa_arb_s {
 } pa_arb_t;
 
 static inline void *
-pa_arb_matom_addr (pa_arb_t *prp, pa_atom_t matom)
+pa_arb_matom_addr (pa_arb_t *prp, pa_mmap_atom_t matom)
 {
     return pa_mmap_addr(prp->pr_mmap, matom);
 }
@@ -123,16 +127,20 @@ pa_arb_matom_addr (pa_arb_t *prp, pa_atom_t matom)
  * matom, and the low bits are an offset within that matom.
  */
 static inline pa_arb_header_t *
-pa_arb_header (pa_arb_t *prp, pa_atom_t atom)
+pa_arb_header (pa_arb_t *prp, pa_arb_atom_t atom)
 {
-    uint32_t off = atom & ((1 << PA_ARB_OFFSET_SHIFT) - 1);
-    pa_matom_t matom = atom >> PA_ARB_OFFSET_SHIFT;
+    /* Lower bits are the arb atom */
+    uint32_t off = pa_arb_atom_of(atom) & ((1 << PA_ARB_OFFSET_SHIFT) - 1);
 
-    uint8_t *addr = pa_arb_matom_addr(prp, matom);
+    /* Upper bits are the mmap atom */
+    pa_mmap_atom_t matom;
+    matom = pa_mmap_atom(pa_arb_atom_of(atom) >> PA_ARB_OFFSET_SHIFT);
+
+    psu_byte_t *addr = pa_arb_matom_addr(prp, matom);
     if (addr)
 	addr += off << PA_ARB_ATOM_SHIFT;
-    void *vaddr = addr;
 
+    void *vaddr = addr;
     return vaddr;
 }
 
@@ -141,77 +149,36 @@ pa_arb_header (pa_arb_t *prp, pa_atom_t atom)
  * which directly follows the pa_arb_header_t.
  */
 static inline void *
-pa_arb_atom_addr (pa_arb_t *prp, pa_atom_t atom)
+pa_arb_atom_addr (pa_arb_t *prp, pa_arb_atom_t atom)
 {
     pa_arb_header_t *prhp = pa_arb_header(prp, atom);
     return prhp ? &prhp[1] : NULL;
 }
 
-static inline pa_atom_t
-pa_arb_matom_to_atom (pa_arb_t *prp UNUSED, pa_atom_t matom,
-		      pa_arb_slot_t slot, pa_arb_chunk_t chunk)
-{
-    if (matom == PA_NULL_ATOM)
-	return PA_NULL_ATOM;
-
-    uint32_t off = (1 << slot) * chunk;
-    pa_matom_t atom = matom << PA_ARB_OFFSET_SHIFT;
-
-    return atom | off;
-}
-
-static inline pa_atom_t
-pa_arb_addr_to_atom (pa_arb_t *prp, void *addr)
-{
-    if (addr == NULL)
-	return PA_NULL_ATOM;
-
-    pa_arb_header_t *prhp = addr;
-    prhp -= 1; /* Back up to header */
-
-    uint8_t *real_addr = (uint8_t *) prhp;
-    void *base = prp->pr_mmap->pm_addr;
-    ptrdiff_t delta = (uint8_t *) real_addr - (uint8_t *) base;
-
-    if (prhp->prh_magic == PRH_MAGIC_SMALL_FREE
-	|| prhp->prh_magic == PRH_MAGIC_SMALL_INUSE) {
-	delta >>= PA_ARB_ATOM_SHIFT;
-	return (pa_atom_t) delta;
-
-    } else if (prhp->prh_magic == PRH_MAGIC_LARGE_FREE
-	       || prhp->prh_magic == PRH_MAGIC_LARGE_INUSE) {
-	return delta >> PA_ARB_ATOM_SHIFT;
-
-    } else {
-	pa_warning(0, "pa_arg: magic number wrong: %p (%#x)",
-		   addr, prhp->prh_magic);
-	return PA_NULL_ATOM;
-    }
-}
-
-pa_atom_t
+pa_arb_atom_t
 pa_arb_alloc (pa_arb_t *prp, size_t size);
 
-static inline pa_atom_t
+/*
+ * Shorthand for strdup()-like functionality
+ */
+static inline pa_arb_atom_t
 pa_arb_alloc_string (pa_arb_t *prp, const char *value)
 {
     size_t len = strlen(value) + 1;
-    pa_atom_t atom = pa_arb_alloc(prp, len + 1);
-    char *dest = pa_arb_atom_addr(prp, atom);
+    pa_arb_atom_t atom = pa_arb_alloc(prp, len + 1);
+    if (pa_arb_is_null(atom))
+	return pa_arb_null_atom();
 
-    if (dest == NULL)
-	return PA_NULL_ATOM;
+    char *dest = pa_arb_atom_addr(prp, atom);
+    if (dest == NULL)		/* Should not occur */
+	return pa_arb_null_atom();
 
     memcpy(dest, value, len);
-
     return atom;
 }
 
 void
-pa_arb_free_atom (pa_arb_t *prp, pa_atom_t atom);
-
-void
-pa_arb_free (pa_arb_t *prp, void *ptr);
+pa_arb_free_atom (pa_arb_t *prp, pa_arb_atom_t atom);
 
 void
 pa_arb_init (pa_mmap_t *pmp, pa_arb_t *prp);
