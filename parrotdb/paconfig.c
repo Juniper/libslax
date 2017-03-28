@@ -27,9 +27,6 @@
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
 #include <parrotdb/pafixed.h>
-#include <parrotdb/paarb.h>
-#include <parrotdb/paistr.h>
-#include <parrotdb/papat.h>
 #include <libpsu/psulog.h>
 #include <libpsu/psualloc.h>
 
@@ -108,7 +105,7 @@ pa_config_read_file (FILE *file)
 
 	size_t nlen = strlen(name) + 1;
 	size_t vlen = strlen(value) + 1;
-	xcvp = psu_realloc(NULL, sizeof(*xcvp) + nlen + vlen);
+	xcvp = psu_calloc(sizeof(*xcvp) + nlen + vlen);
 	if (xcvp == NULL)
 	    continue;
 
