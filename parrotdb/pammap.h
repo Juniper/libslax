@@ -29,6 +29,9 @@
 
 #define PA_MMAP_HEADER_NAME_LEN	64 /* Max length of header name string */
 
+PA_ATOM_TYPE(pa_mmap_atom_t, pa_mmap_atom_s, pma_atom,
+	     pa_mmap_is_null, pa_mmap_atom, pa_mmap_null_atom);
+
 struct pa_mmap_info_s;
 typedef struct pa_mmap_info_s pa_mmap_info_t; /* Opaque type */
 
@@ -52,33 +55,34 @@ typedef struct pa_mmap_s {
     pa_mmap_flags_t pm_flags;	/* Flags */
     int pm_mmap_flags;		/* mmap flags parameter */
     int pm_mmap_prot;		/* mmap prot parameter */
-    void *pm_addr;		/* Base memory address */
+    psu_byte_t *pm_addr;	/* Base memory address */
     size_t pm_len;		/* Current mapped len */
     pa_mmap_info_t *pm_infop;	/* Mmap segment header */
     pa_mmap_record_t *pm_record; /* Record of mmap'd segments */
 } pa_mmap_t;
 
 static inline void *
-pa_mmap_addr (pa_mmap_t *pmp, pa_matom_t atom)
+pa_mmap_addr (pa_mmap_t *pmp, pa_mmap_atom_t atom)
 {
-    return (atom == PA_NULL_ATOM) ? NULL
-	: pa_pointer(pmp->pm_addr, atom, PA_MMAP_ATOM_SHIFT);
+    return pa_mmap_is_null(atom) ? NULL
+	: pa_pointer(pmp->pm_addr, atom.pma_atom, PA_MMAP_ATOM_SHIFT);
 }
 
-pa_matom_t
+pa_mmap_atom_t
 pa_mmap_alloc (pa_mmap_t *pmp, size_t size);
 
 void
-pa_mmap_free (pa_mmap_t *pmp, pa_atom_t atom, unsigned size);
+pa_mmap_free (pa_mmap_t *pmp, pa_mmap_atom_t atom, unsigned size);
 
 pa_mmap_t *
-pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode);
+pa_mmap_open (const char *filename, const char *base,
+	      pa_mmap_flags_t flags, unsigned mode);
 
 void
 pa_mmap_close (pa_mmap_t *pmp);
 
 void *
-pa_mmap_addr (pa_mmap_t *pmp, pa_atom_t atom);
+pa_mmap_addr (pa_mmap_t *pmp, pa_mmap_atom_t atom);
 
 void *
 pa_mmap_header (pa_mmap_t *pmp, const char *name,
@@ -86,5 +90,8 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
 
 void *
 pa_mmap_next_header (pa_mmap_t *pmp, void *header);
+
+void
+pa_mmap_dump (pa_mmap_t *pmp, psu_boolean_t full);
 
 #endif /* PARROTDB_PAMMAP_H */
