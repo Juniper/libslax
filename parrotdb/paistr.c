@@ -17,12 +17,13 @@
 #include <assert.h>
 #include <stddef.h>
 
+#include <libpsu/psualloc.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
 #include <parrotdb/pafixed.h>
 #include <parrotdb/paistr.h>
-#include <libpsu/psualloc.h>
 
 /*
  * We need to allocate "len" bytes of space, and return an atom
@@ -34,7 +35,7 @@
  * just need a single page.  Either way, we allocate a number of
  * pages, record the leftovers, and return the first atom.
  */
-pa_atom_t
+pa_istr_atom_t
 pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
 {
     unsigned max_page = pip->pi_max_atoms >> pip->pi_shift;
@@ -44,7 +45,7 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
 	    break;
 
     if (slot >= max_page)	/* If we're out of slots, we're done */
-	return PA_NULL_ATOM;
+	return pa_istr_null_atom();
 
     unsigned len_atoms = pa_items_shift32(len + 1, pip->pi_atom_shift);
 
@@ -60,21 +61,23 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
     /* Number of atoms needed to cover the allocation */
     unsigned num_atoms = size >> pip->pi_atom_shift;
 
-    pa_matom_t matom = pa_mmap_alloc(pip->pi_mmap, size);
-    if (matom == PA_NULL_ATOM)
-	return PA_NULL_ATOM;
+    pa_mmap_atom_t matom = pa_mmap_alloc(pip->pi_mmap, size);
+    if (pa_mmap_is_null(matom))
+	return pa_istr_null_atom();
 
     /* Fill in the page table */
     pa_istr_page_set(pip, slot, matom);
 
-    pa_atom_t atom = slot << pip->pi_shift; /* Turns matoms to atoms */
+    pa_istr_data_atom_t atom;
+    atom = pa_istr_data_atom(slot << pip->pi_shift); /* Turn matom to atom */
 
+    /* If we allocated extra space, record it */
     if (size <= bytes_per_page && len_atoms < num_atoms) {
 	pip->pi_left = count - len_atoms;
-	pip->pi_free = atom + len_atoms;
+	pip->pi_free = pa_istr_data_atom(pa_istr_data_atom_of(atom) + len_atoms);
     }
 
-    char *data = pa_istr_atom_addr(pip, atom);
+    char *data = pa_istr_data_atom_addr(pip, atom);
     if (data) {
 	memcpy(data, string, len);
 	data[len] = '\0';
@@ -89,7 +92,7 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
  */
 void
 pa_istr_init_from_block (pa_istr_t *pip, void *base,
-			  pa_istr_info_t *infop)
+			 pa_istr_info_t *infop)
 {
     pip->pi_base = base;
     pip->pi_infop = infop;
@@ -110,17 +113,16 @@ pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, const char *name,
     if (pip->pi_base == NULL) {
 	size_t size = (max_atoms >> shift) * sizeof(uint8_t *);
 
-	pa_atom_t atom = pa_mmap_alloc(pmp, size);
-	void *real_base = pa_mmap_addr(pmp, atom);
+	pa_mmap_atom_t atom = pa_mmap_alloc(pmp, size);
+	pa_mmap_atom_t *real_base = pa_mmap_addr(pmp, atom);
 	if (real_base == NULL)
 	    return;
 
 	bzero(real_base, size); /* New page table must be cleared */
-	pip->pi_base = real_base;
 	pa_istr_base_set(pip, atom, real_base);
 
 	/* Mark us empty */
-	pip->pi_free = PA_NULL_ATOM;
+	pip->pi_free = pa_istr_data_null_atom();
     }
 
     /* Fill in the rest of fhe fields from the argument list */
@@ -134,15 +136,14 @@ pa_istr_t *
 pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, const char *name,
 	       pa_shift_t shift, uint16_t atom_shift, uint32_t max_atoms)
 {
-    pa_istr_t *pip = psu_realloc(NULL, sizeof(*pip));
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
+    pa_istr_t *pip = psu_calloc(sizeof(*pip));
 
     if (pip) {
-	bzero(pip, sizeof(*pip));
 	pip->pi_infop = piip;
 	pip->pi_datap = &piip->pii_data;
 	
-	pa_config_name(namebuf, sizeof(namebuf), name, "raw");
+	pa_config_name(namebuf, sizeof(namebuf), name, "data");
 	pa_istr_init(pmp, pip, namebuf, shift, atom_shift, max_atoms);
 
 	/*
@@ -181,7 +182,25 @@ pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 void
 pa_istr_close (pa_istr_t *pip)
 {
-    pa_mmap_close(pip->pi_mmap);
-
     psu_free(pip);
 }
+
+/**
+ * Dump the contents of the istr table, purely for developer entertainment
+ */
+void
+pa_istr_dump (pa_istr_t *pip, psu_boolean_t full UNUSED)
+{
+    pa_istr_data_info_t *pidp = pip->pi_datap;
+
+    psu_log("begin pa_istr dump of %p", pidp);
+
+    psu_log("shift %u, atom-shift %u, max-atom %u, "
+	    "free %#x, left %d, base-atom %#x",
+	    pidp->pid_shift, pidp->pid_atom_shift, pidp->pid_max_atoms,
+	    pa_istr_data_atom_of(pidp->pid_free), pidp->pid_left,
+	    pa_mmap_atom_of(pidp->pid_base));
+
+    psu_log("end pa_istr dump of %p", pidp);
+}
+
