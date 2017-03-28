@@ -22,7 +22,9 @@
 #include <stddef.h>
 
 #include <libpsu/psualloc.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
+#include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
 #include <libpsu/psualloc.h>
 
@@ -53,13 +55,13 @@ typedef struct pa_mmap_info_s {
     uint32_t pmi_max_size;	/* Maximum size (or 0) */
     uint32_t pmi_num_headers;	/* Number of named headers following ours */
     size_t pmi_len;		/* Current size */
-    pa_matom_t pmi_free;	/* First free memory segment */
+    pa_mmap_atom_t pmi_free;	/* First free memory segment */
 } pa_mmap_info_t;
 
 typedef struct pa_mmap_free_s {
     uint32_t pmf_magic;		/* Magic number */
-    pa_matom_t pmf_size;		/* Number of atoms free here */
-    pa_matom_t pmf_next;		/* Free list */
+    pa_atom_t pmf_size;		/* Number of atoms free here */
+    pa_mmap_atom_t pmf_next;	/* Free list */
 } pa_mmap_free_t;
 
 typedef struct pa_mmap_header_s {
@@ -67,50 +69,28 @@ typedef struct pa_mmap_header_s {
     uint16_t pmh_type;		/* Type of data (PA_TYPE_*) */
     uint16_t pmh_flags;		/* Flags for this data (unused) */
     uint32_t pmh_size;		/* Length of header (bytes) */
-    char pmh_content[];		/* Content, inline */
+    psu_byte_t pmh_content[];	/* Content, inline */
 } pa_mmap_header_t;
 
 #define PA_ADDR_DEFAULT		0x200000000000
 #define PA_ADDR_DEFAULT_INCR	0x020000000000
+#define PA_ADDR_MAX		0x600000000000
 
 static uint8_t *pa_mmap_next_address = (void *) PA_ADDR_DEFAULT;
 static ptrdiff_t pa_mmap_incr_address = PA_ADDR_DEFAULT_INCR;
-
-#if 0
-/*
- * Remove an item from a free list.
- */
-static void
-pa_mmap_list_remove (pa_mmap_t *pmp, pa_matom_t atom, unsigned count UNUSED)
-{
-    pa_matom_t fa;		/* Free atom number */
-    pa_mmap_free_t *pmfp;
-    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
-
-    for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
-	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
-	if (fa == atom) {
-	    *lastp = pmfp->pmf_next; /* Remove it from list */
-	    return;
-	}
-
-	lastp = &pmfp->pmf_next; /* Move to next item on free list */
-    }
-}
-#endif /* 0 */
 
 /*
  * Add an item from a free list.
  */
 static void
-pa_mmap_list_add (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
+pa_mmap_list_add (pa_mmap_t *pmp, pa_mmap_atom_t atom, unsigned size)
 {
-    pa_matom_t fa;		/* Free atom number */
+    pa_mmap_atom_t fa;		/* Free atom number */
     pa_mmap_free_t *pmfp;
-    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
+    pa_mmap_atom_t *lastp = &pmp->pm_infop->pmi_free;
 
-    for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
-	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
+    for (fa = *lastp; !pa_mmap_is_null(fa); fa = *lastp) {
+	pmfp = pa_mmap_addr(pmp, fa);
 
 	if (size <= pmfp->pmf_size)
 	    break;
@@ -119,7 +99,7 @@ pa_mmap_list_add (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
     }
 
     /* Insert atom into the chain */
-    pmfp = pa_pointer(pmp->pm_addr, atom, PA_MMAP_ATOM_SHIFT);
+    pmfp = pa_mmap_addr(pmp, atom);
     pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
     pmfp->pmf_size = size;
     pmfp->pmf_next = *lastp;
@@ -129,20 +109,22 @@ pa_mmap_list_add (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
 /*
  * Allocate a chunk of memory and return its offset.
  */
-pa_matom_t
+pa_mmap_atom_t
 pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 {
-    if (size == 0)
-	return PA_NULL_ATOM;
+    if (size == 0) {
+	pa_warning(0, "pa_mmap_alloc called with zero size");
+	return pa_mmap_null_atom();
+    }
 
-    pa_matom_t fa;		/* Free atom number */
+    pa_mmap_atom_t fa;		/* Free atom number */
     unsigned count = (size + PA_MMAP_ATOM_SIZE - 1) >> PA_MMAP_ATOM_SHIFT;
     unsigned new_count;
     pa_mmap_free_t *pmfp;
-    pa_matom_t *lastp = &pmp->pm_infop->pmi_free;
+    pa_mmap_atom_t *lastp = &pmp->pm_infop->pmi_free;
 
-    for (fa = *lastp; fa != PA_NULL_ATOM; fa = *lastp) {
-	pmfp = pa_pointer(pmp->pm_addr, fa, PA_MMAP_ATOM_SHIFT);
+    for (fa = *lastp; !pa_mmap_is_null(fa); fa = *lastp) {
+	pmfp = pa_mmap_addr(pmp, fa);
 
 	if (pmfp->pmf_size >= count) {
 	    /*
@@ -152,7 +134,7 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 	     */
 	    if (count < pmfp->pmf_size) {
 		pmfp->pmf_size -= count;
-		fa += pmfp->pmf_size; /* Reference end of the chunk */
+		fa.pma_atom += pmfp->pmf_size; /* Reference end of the chunk */
 	    } else
 		*lastp = pmfp->pmf_next; /* Unlink this chunk */
 
@@ -178,27 +160,28 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     if (pmp->pm_infop->pmi_max_size != 0
 	&& new_len > pmp->pm_infop->pmi_max_size) {
 	pa_warning(0, "max size reached");
-	return PA_NULL_ATOM;
+	return pa_mmap_null_atom();
     }
 
     /* If we've got a file attached, we need to extend the file */
     if (pmp->pm_fd > 0) {
 	if (ftruncate(pmp->pm_fd, new_len) < 0) {
 	    pa_warning(errno, "cannot extend memory file to %d", new_len);
-	    return PA_NULL_ATOM;
+	    return pa_mmap_null_atom();
 	}
 
 	/* Re-mmap the segment */
 	void *addr = mmap(pmp->pm_addr, new_len, pmp->pm_mmap_prot,
-			  pmp->pm_mmap_flags | MAP_FIXED, pmp->pm_fd, 0);
+			  pmp->pm_mmap_flags | MAP_FIXED | MAP_SHARED,
+			  pmp->pm_fd, 0);
 	if (addr == NULL || addr == MAP_FAILED) {
 	    pa_warning(errno, "mmap failed");
-	    return PA_NULL_ATOM;
+	    return pa_mmap_null_atom();
 	}
 
 	if (addr != pmp->pm_addr) {
 	    pa_warning(0, "mmap was moved (%p:%p)", pmp->pm_addr, addr);
-	    return PA_NULL_ATOM;
+	    return pa_mmap_null_atom();
 	}
 
     } else {
@@ -212,19 +195,20 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 	target += old_len;
 
 	void *addr = mmap(target, new_len - old_len, pmp->pm_mmap_prot,
-			  pmp->pm_mmap_flags | MAP_FIXED, pmp->pm_fd, 0);
+			  pmp->pm_mmap_flags | MAP_FIXED | MAP_SHARED,
+			  pmp->pm_fd, 0);
 	if (addr == NULL || addr == MAP_FAILED) {
 	    pa_warning(errno, "mmap failed");
-	    return PA_NULL_ATOM;
+	    return pa_mmap_null_atom();
 	}
 
 	if (addr != target) {
 	    pa_warning(0, "mmap was moved (%p:%p:%p)",
 		       pmp->pm_addr, target, addr);
-	    return PA_NULL_ATOM;
+	    return pa_mmap_null_atom();
 	}
 
-	pa_mmap_record_t *pmrp = psu_realloc(NULL, sizeof(*pmrp));
+	pa_mmap_record_t *pmrp = psu_calloc(sizeof(*pmrp));
 	if (pmrp) {
 	    pmrp->pmr_addr = target;
 	    pmrp->pmr_len = new_len - old_len;
@@ -234,15 +218,17 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     pmp->pm_len = new_len;	/* Record our new length */
-    fa = old_len >> PA_MMAP_ATOM_SHIFT; /* We'll use the first chunk */
+    /* We'll use the first chunk for this allocation */
+    fa = pa_mmap_atom(old_len >> PA_MMAP_ATOM_SHIFT);
 
     if (new_count > count) {
-	pa_matom_t na = fa + count; /* And put the rest on the free list */
+	/* Put the rest on the free list */
+	pa_mmap_atom_t na = { fa.pma_atom + count };
 
-	pmfp = pa_pointer(pmp->pm_addr, na, PA_MMAP_ATOM_SHIFT);
+	pmfp = pa_mmap_addr(pmp, na);
 	pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
 	pmfp->pmf_size = new_count - count;
-	pmfp->pmf_next = 0;
+	pmfp->pmf_next = pa_mmap_null_atom();
 
 	*lastp = na;		/* Add 'na' to the free list */
     }
@@ -251,14 +237,14 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 }
 
 void
-pa_mmap_free (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
+pa_mmap_free (pa_mmap_t *pmp, pa_mmap_atom_t atom, unsigned size)
 {
-    if (atom == PA_NULL_ATOM) {
+    if (pa_mmap_is_null(atom)) {
 	pa_warning(0, "pa_mmap_free called with NULL");
 	return;
     }
 
-    unsigned count = (size + PA_MMAP_ATOM_SIZE - 1) >> PA_MMAP_ATOM_SHIFT;
+    unsigned count = pa_items_shift32(size, PA_MMAP_ATOM_SHIFT);
     if (count == 0) {
 	pa_warning(0, "pa_mmap_free called with count 0");
 	return;
@@ -268,28 +254,31 @@ pa_mmap_free (pa_mmap_t *pmp, pa_matom_t atom, unsigned size)
 }
 
 pa_mmap_t *
-pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
+pa_mmap_open (const char *filename, const char *base,
+	      pa_mmap_flags_t flags, unsigned mode)
 {
-    int mmap_flags = MAP_SHARED;
+    int mmap_flags = MAP_SHARED | MAP_FIXED;
     int fd = 0;
-    int oflags = O_RDWR;
+    int oflags;
     int prot = PROT_READ | PROT_WRITE;
     struct stat st;
     pa_mmap_info_t *pmip = NULL;
     pa_mmap_t *pmp = NULL;
     int created = 0;
     unsigned len = 0;
-    void *addr = NULL;
+    psu_byte_t *addr = NULL;
 
     if (flags & PMF_READ_ONLY) {
 	prot = PROT_READ;
 	oflags = O_RDONLY;
+    } else {
+	oflags = O_RDWR;
     }
 
-    if (mode == 0)
-	mode = 0600;
-
     if (filename) {
+	if (mode == 0)
+	    mode = pa_config_value32(base, "perm", 0644);
+
 	fd = open(filename, oflags, mode);
 	if (fd < 0) {
 	    if (flags & PMF_READ_ONLY) {
@@ -304,7 +293,7 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
 		goto fail;
 	    }
 
-	    len = PA_DEFAULT_SIZE;
+	    len = pa_config_value32(base, "size", PA_DEFAULT_SIZE);
 	    if (ftruncate(fd, len) < 0) {
 		pa_warning(errno, "could not extend file length (%d)", len);
 		goto fail;
@@ -331,29 +320,49 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
 	created = 1;
     }
 
-    addr = mmap(pa_mmap_next_address, len, prot, mmap_flags, fd, 0);
-    if (addr == NULL || addr == MAP_FAILED) {
-	pa_warning(errno, "mmap failed");
-	goto fail;
+    for (;;) {
+	if (pa_mmap_next_address > (psu_byte_t *) PA_ADDR_MAX)
+	    goto fail;
+
+	addr = mmap(pa_mmap_next_address, len, prot, mmap_flags | MAP_SHARED,
+		    fd, 0);
+	if (addr == pa_mmap_next_address) /* Success */
+	    break;
+
+	if (addr == NULL || addr == MAP_FAILED) {
+	    pa_warning(errno, "mmap failed (%p.vs.%p)",
+		       addr, pa_mmap_next_address);
+	    if (errno != EINVAL)
+		goto fail;
+
+	    pa_mmap_next_address += pa_mmap_incr_address;
+	    continue;
+	} else if (addr != pa_mmap_next_address) {
+	    pa_warning(errno, "mmap returns wrong address (%p.vs.%p)",
+		       addr, pa_mmap_next_address);
+	    goto fail;
+	}
     }
 
     pa_mmap_next_address += pa_mmap_incr_address;
 
-    pmip = addr;
+    pmip = (void *) addr;
     if (created) {
 	pmip->pmi_magic = PA_MAGIC_NUMBER;
 	pmip->pmi_vers_major = PA_VERS_MAJOR;
 	pmip->pmi_vers_minor = PA_VERS_MINOR;
 	pmip->pmi_len = len;
+	pmip->pmi_max_size = pa_config_value32(base, "max-size", 0);
 
 	/* We waste the rest of the first atom, but we're atom aligned */
-	pmip->pmi_free = 1;
+	pmip->pmi_free = pa_mmap_atom(1);
 
 	/* Make the first entry in the free list */
 	pa_mmap_free_t *pmfp;
 	pmfp = pa_pointer(addr, 1, PA_MMAP_ATOM_SHIFT);
 	pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
 	pmfp->pmf_size = (len >> PA_MMAP_ATOM_SHIFT) - 1;
+
 
     } else {
 	/* Check header fields */
@@ -387,7 +396,7 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
      * All good news.  Now we allocate our "user space" data structure
      * and fill it in.
      */
-    pmp = psu_realloc(NULL, sizeof(*pmp));
+    pmp = psu_calloc(sizeof(*pmp));
     if (pmp == NULL) {
 	pa_warning(errno, "could not allocate memory for pa_mmap_t");
 	goto fail;
@@ -402,7 +411,7 @@ pa_mmap_open (const char *filename, pa_mmap_flags_t flags, unsigned mode)
     pmp->pm_mmap_prot = prot;
 
     if (fd < 0) {
-	pa_mmap_record_t *pmrp = psu_realloc(NULL, sizeof(*pmrp));
+	pa_mmap_record_t *pmrp = psu_calloc(sizeof(*pmrp));
 	if (pmrp) {
 	    pmrp->pmr_addr = addr;
 	    pmrp->pmr_len = len;
@@ -485,7 +494,7 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
 	return NULL;
 
     /* No match; 'base' is at the end of headers, so we append this one */
-    char *endp = ((char *) pmp->pm_addr) + PA_MMAP_ATOM_SIZE;
+    psu_byte_t *endp = pmp->pm_addr + PA_MMAP_ATOM_SIZE;
     pmhp = (void *) base;
     if (&pmhp->pmh_content[size] > endp) {
 	pa_warning(0, "out of header space for '%s' (%d)", name, size);
@@ -525,3 +534,44 @@ pa_mmap_next_header (pa_mmap_t *pmp, void *header)
 
     return NULL;
 }
+
+/**
+ * Dump the internal state of a pa_mmap table
+ */
+void
+pa_mmap_dump (pa_mmap_t *pmp, psu_boolean_t full)
+{
+    pa_mmap_info_t *pmip = pmp->pm_infop;
+
+    psu_log("begin pa_mmap dump of %p", pmip);
+    psu_log("magic %#x, version %d.%03d, max-size %u, len %lu, free %#x",
+	    pmip->pmi_magic, pmip->pmi_vers_major, pmip->pmi_vers_minor,
+	    pmip->pmi_max_size, pmip->pmi_len,
+	    pa_mmap_atom_of(pmip->pmi_free));
+
+    psu_log("dumping headers: (%d)", pmip->pmi_num_headers);
+
+    if (full) {
+	uint32_t i;
+	pa_mmap_header_t *pmhp;
+	psu_byte_t *base = pmp->pm_addr;
+
+	base += sizeof(*pmip); /* Named headers start after ours */
+
+	for (i = 0; i < pmip->pmi_num_headers; i++) {
+	    pmhp = (void *) base;
+	    base += sizeof(*pmhp) + pmhp->pmh_size;
+
+	    if (pmhp->pmh_name[0]) {
+		psu_log("header #%u: [%.*s] type %d, size %u, flags %x, "
+			"start %p",
+			i, (int) sizeof(pmhp->pmh_name), pmhp->pmh_name,
+			pmhp->pmh_type, pmhp->pmh_size, pmhp->pmh_flags,
+			&pmhp->pmh_content[0]);
+	    }
+	}
+    }
+
+    psu_log("end pa_mmap dump of %p", pmip);
+}
+
