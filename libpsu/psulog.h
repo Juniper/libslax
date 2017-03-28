@@ -12,6 +12,8 @@
 #ifndef LIBPSU_PSULOG_H
 #define LIBPSU_PSULOG_H
 
+#include <libpsu/psucommon.h>
+
 /**
  * Enable logging.
  *
@@ -73,6 +75,7 @@ psu_mem_dump (const char *title, const char *data,
  *
  * @param[in] fmt Printf-style format string
  */
+PSU_PRINTFLIKE(1, 2)
 void
 psu_log (const char *fmt, ...);
 
@@ -82,6 +85,7 @@ psu_log (const char *fmt, ...);
  *
  * @param fmt format string plus variadic arguments
  */
+PSU_PRINTFLIKE(2, 3)
 void
 psu_log2 (void *ignore UNUSED, const char *fmt, ...);
 
