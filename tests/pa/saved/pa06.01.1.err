@@ -1,0 +1,7 @@
+config: looking for 'pa06.max-size' (default 0)
+config: looking for 'istr.data.shift' (default 12)
+config: looking for 'istr.data.atom-shift' (default 2)
+config: looking for 'istr.data.max-atoms' (default 20000)
+config: looking for 'istr.index.shift' (default 12)
+config: looking for 'istr.index.atom-size' (default 4)
+config: looking for 'istr.index.max-atoms' (default 20000)
