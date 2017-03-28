@@ -42,25 +42,9 @@
  * page into our fixed-sized atoms.
  */
 
-/*
- * These functions are designed to point into memory mapped addresses,
- * but can be used without one, since I wanted them to be useful in
- * more broad circumstances.  The macros in this section allow us
- * to make both sets of functions off one source file.
- */
-
-#ifdef PA_NO_MMAP
-#define PA_FIXED_MMAP_FIELD_DECLS /* Nothing */
-
-typedef void *pa_fixed_page_entry_t;
-
-#else /* PA_NO_MMAP */
-
-#define PA_FIXED_MMAP_FIELD_DECLS pa_mmap_t *pf_mmap
-
-typedef pa_atom_t pa_fixed_page_entry_t;
-
-#endif /* PA_NO_MMAP */
+/* Declare our wrapper type */
+PA_ATOM_TYPE(pa_fixed_atom_t, pa_fixed_atom_s, pfa_atom,
+	     pa_fixed_is_null, pa_fixed_atom, pa_fixed_null_atom);
 
 typedef uint8_t pa_fixed_flags_t;
 
@@ -69,17 +53,17 @@ typedef struct pa_fixed_info_s {
     pa_fixed_flags_t pfi_flags;	/* Flags (in the padding) */
     uint16_t pfi_atom_size;	/* Size of each atom */
     pa_atom_t pfi_max_atoms;	/* Max number of atoms */
-    pa_atom_t pfi_free;		/* First atom that is free */
-    pa_matom_t pfi_base; 	/* Offset of page table base (in mmap atoms) */
+    pa_fixed_atom_t pfi_free;	/* First atom that is free */
+    pa_mmap_atom_t pfi_base; 	/* Offset of page table base (in mmap atoms) */
 } pa_fixed_info_t;
 
 /* Flags for pfi_flags: */
 #define PFF_INIT_ZERO	(1<<0)	/* Initialize memory to zeroes */
 
 typedef struct pa_fixed_s {
-    PA_FIXED_MMAP_FIELD_DECLS;	   /* Mmap overhead declarations */
+    pa_mmap_t *pf_mmap;		   /* Mmap overhead declarations */
     pa_fixed_info_t *pf_infop;	   /* Pointer to real block */
-    pa_fixed_page_entry_t *pf_base; /* Base of page table */
+    pa_mmap_atom_t *pf_base;	   /* Pointer to base of page table */
 } pa_fixed_t;
 
 /* Simplification macros, so we don't need to think about pf_infop */
@@ -95,37 +79,6 @@ pa_fixed_max_atoms (pa_fixed_t *pfp)
     return pfp->pf_max_atoms;
 }
 
-#ifdef PA_NO_MMAP
-
-static inline void
-pa_fixed_set_base (pa_fixed_t *pfp, pa_atom_t atom UNUSED,
-		   pa_fixed_page_entry_t *base)
-{
-    pfp->pf_base = base;
-}
-
-static inline void *
-pa_fixed_page_get (pa_fixed_t *pfp, pa_page_t page)
-{
-    return pfp->pf_base[page];
-}
-
-static inline void
-pa_fixed_page_set (pa_fixed_t *pfp, pa_page_t page, void *addr)
-{
-    pfp->pf_base[page] = addr;
-}
-
-#else /* PA_NO_MMAP */
-
-static inline void
-pa_fixed_base_set (pa_fixed_t *pfp, pa_matom_t matom,
-		   pa_fixed_page_entry_t *base)
-{
-    pfp->pf_base = base;
-    pfp->pf_infop->pfi_base = matom;
-}
-
 /*
  * Our pages are directly allocated from mmap, so we can use the mmap
  * address function to get a real address.
@@ -133,7 +86,7 @@ pa_fixed_base_set (pa_fixed_t *pfp, pa_matom_t matom,
 static inline void *
 pa_fixed_page_get (pa_fixed_t *pfp, pa_page_t page)
 {
-    if (pfp->pf_base[page] == PA_NULL_ATOM)
+    if (pa_mmap_is_null(pfp->pf_base[page]))
 	return NULL;
 
     return pa_mmap_addr(pfp->pf_mmap, pfp->pf_base[page]);
@@ -141,12 +94,10 @@ pa_fixed_page_get (pa_fixed_t *pfp, pa_page_t page)
 
 static inline void
 pa_fixed_page_set (pa_fixed_t *pfp, pa_page_t page,
-		   pa_matom_t matom, void *addr UNUSED)
+		   pa_mmap_atom_t matom, void *addr UNUSED)
 {
     pfp->pf_base[page] = matom;
 }
-
-#endif /* PA_NO_MMAP */
 
 /*
  * Return the address of an atom in a paged table array.  This
@@ -156,13 +107,13 @@ pa_fixed_page_set (pa_fixed_t *pfp, pa_page_t page,
  */
 static inline void *
 pa_fixed_atom_addr_direct (pa_fixed_t *pfp, uint8_t shift, uint16_t atom_size,
-			   uint32_t max_atoms, pa_atom_t atom)
+			   uint32_t max_atoms, pa_fixed_atom_t atom)
 {
     uint8_t *addr;
-    if (atom == 0 || atom >= max_atoms)
+    if (pa_fixed_is_null(atom) || atom.pfa_atom >= max_atoms)
 	return NULL;
 
-    addr = pa_fixed_page_get(pfp, atom >> shift);
+    addr = pa_fixed_page_get(pfp, atom.pfa_atom >> shift);
     if (addr == NULL)
 	return NULL;
 
@@ -170,7 +121,7 @@ pa_fixed_atom_addr_direct (pa_fixed_t *pfp, uint8_t shift, uint16_t atom_size,
      * We have the base address of the page, and need to find the
      * address of our atom inside the page.
      */
-    return &addr[(atom & ((1 << shift) - 1)) * atom_size];
+    return &addr[(atom.pfa_atom & ((1 << shift) - 1)) * atom_size];
 }
 
 /*
@@ -178,7 +129,7 @@ pa_fixed_atom_addr_direct (pa_fixed_t *pfp, uint8_t shift, uint16_t atom_size,
  * recorded in our header.
  */
 static inline void *
-pa_fixed_atom_addr (pa_fixed_t *pfp, pa_atom_t atom)
+pa_fixed_atom_addr (pa_fixed_t *pfp, pa_fixed_atom_t atom)
 {
     if (pfp->pf_base == NULL)
 	return NULL;
@@ -188,23 +139,26 @@ pa_fixed_atom_addr (pa_fixed_t *pfp, pa_atom_t atom)
 }
 
 void
-pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_atom_t atom);
+pa_fixed_alloc_setup_page (pa_fixed_t *pfp, pa_fixed_atom_t atom);
 
 void
-pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_atom_t atom);
+pa_fixed_element_setup_page (pa_fixed_t *pfp, pa_fixed_atom_t atom);
 
 /*
  * Allocate a new atom, returning the atom number
  */
-static inline pa_atom_t
+static inline pa_fixed_atom_t
 pa_fixed_alloc_atom (pa_fixed_t *pfp)
 {
+    if (pfp->pf_base == NULL)
+	return pa_fixed_null_atom();
+
     /* free == PA_NULL_ATOM -> nothing available */
-    if (pfp->pf_free == PA_NULL_ATOM || pfp->pf_base == NULL)
-	return PA_NULL_ATOM;
+    pa_fixed_atom_t atom = pfp->pf_free;
+    if (pa_fixed_is_null(atom))
+	return pa_fixed_null_atom();
 
     /* Take the next atom off the free list and return it */
-    pa_atom_t atom = pfp->pf_free;
     void *addr = pa_fixed_atom_addr(pfp, atom);
     if (addr == NULL) {
 	/*
@@ -219,19 +173,20 @@ pa_fixed_alloc_atom (pa_fixed_t *pfp)
     }
 
     /*
-     * Fetch the next free atom from the start of this atom.  If we
-     * failed, we don't want to change the free atom, since it might
-     * be a transient memory issue.
+     * If we failed, we don't want to change the free atom, since it
+     * might be a transient memory issue.
      */
-    if (addr) {
-	pfp->pf_free = *(pa_atom_t *) addr; /* Fetch next item on free list */
-
-	/* If needed, initialize the new memory to zero */
-	if (pfp->pf_flags & PFF_INIT_ZERO)
-	    bzero(addr, pfp->pf_atom_size);
-    } else
+    if (addr == NULL) {
 	pa_alloc_failed(__FUNCTION__);
+	return pa_fixed_null_atom();
+    }
 
+    /* Fetch the next free atom, which is stored at the start of this atom */
+    pfp->pf_free = *(pa_fixed_atom_t *) addr;
+
+    /* If needed, initialize the new memory to zero */
+    if (pfp->pf_flags & PFF_INIT_ZERO)
+	bzero(addr, pfp->pf_atom_size);
 
     return atom;
 }
@@ -239,13 +194,13 @@ pa_fixed_alloc_atom (pa_fixed_t *pfp)
 /*
  * Return the address of a given element on the paged array.  This
  * is for callers that don't want to use the "alloc/free" style,
- * but just want a paged array.
+ * but just want a paged array they can treat as a paged array.
  */
 static inline void *
 pa_fixed_element (pa_fixed_t *pfp, uint32_t num)
 {
     /* The index is the atom number */
-    pa_atom_t atom = num;
+    pa_fixed_atom_t atom = pa_fixed_atom(num);
     void *addr = pa_fixed_atom_addr(pfp, atom);
     if (addr == NULL) {
 	/*
@@ -272,21 +227,20 @@ static inline void *
 pa_fixed_element_if_exists (pa_fixed_t *pfp, uint32_t num)
 {
     /* The index is the atom number */
-    pa_atom_t atom = num;
-    void *addr = pa_fixed_atom_addr(pfp, atom);
-    return addr;
+    return pa_fixed_atom_addr(pfp, pa_fixed_atom(num));
 }
 
 /*
  * Put a fixed atom on our free list
  */
 static inline void
-pa_fixed_free_atom (pa_fixed_t *pfp, pa_atom_t atom)
+pa_fixed_free_atom (pa_fixed_t *pfp, pa_fixed_atom_t atom)
 {
-    if (atom == PA_NULL_ATOM)
+    if (pa_fixed_is_null(atom))
 	return;
 
-    pa_atom_t *addr = pa_fixed_atom_addr(pfp, atom);
+    /* The free list is a single-linked list of atoms */
+    pa_fixed_atom_t *addr = pa_fixed_atom_addr(pfp, atom);
     if (addr == NULL)
 	return;
 
