@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <stddef.h>
 
 #include <libpsu/psucommon.h>
 
@@ -46,6 +47,39 @@
 typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 
 #define PA_NULL_ATOM	((pa_atom_t) 0)
+
+/**
+ * Macro to define a type and "is_null" function for that type.
+ *
+ * We make a wrapper for atoms.  We use wrappers like these to help the
+ * compiler enforce type safety and keep us sane.  Otherwise too many
+ * uint32_t-based types will happily be treated identically.
+ */
+#define PA_ATOM_TYPE(_type, _struct, _field, _func, _build, _null)	\
+typedef struct _struct {						\
+    pa_atom_t _field;		/* Atom number */			\
+} _type;								\
+static inline psu_boolean_t						\
+_func (_type atom)							\
+{									\
+    return (atom._field == PA_NULL_ATOM);				\
+}									\
+static inline _type							\
+_build (pa_atom_t atom)							\
+{									\
+    return (_type){ atom };						\
+}									\
+static inline pa_atom_t							\
+ _build##_of (_type atom)						\
+{									\
+    return atom._field;							\
+}									\
+static inline _type							\
+_null (void)								\
+{									\
+    return _build(PA_NULL_ATOM);					\
+}
+    
 
 typedef uint8_t pa_boolean_t;	/* Simple boolean */
 
@@ -63,15 +97,9 @@ typedef uint8_t pa_boolean_t;	/* Simple boolean */
 #define PA_TYPE_MAX		9
 
 /*
- * To distinquish between pa_mmap atoms and higher level atoms, we
- * call the former "matoms".  The types are equivalent, but the
- * shifting and meaning are different enough that I need distinct
- * type to keep them clear.
+ * A page number is the number of the page containing an atom,
+ * essentially an index into the page table.
  */
-
-typedef uint32_t pa_matom_t;	/* Identical to pa_atom_t; for mmap atoms */
-#define PA_NULL_MATOM	((pa_matom_t) 0)
-
 typedef uint32_t pa_page_t;	/* Type for page numbers */
 
 /* An offset within the database */
