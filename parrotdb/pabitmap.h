@@ -19,7 +19,7 @@
  * bits.
  *
  * The formula for max bits for any PA_BITMAP_BLOCK_SHIFT is:
- *    (((1 << shift) * NBBY) * ((1 << shift) / sizeof(pa_atom_t)))
+ *    (((1 << shift) * PA_NBBY) * ((1 << shift) / sizeof(pa_atom_t)))
  * Counter that against needing 2 1<<shift chunks minimum per bitmap.
  * "10" is our current best guess, yielding 2 million bits for 2k.
  * Setting it to "12" yields 33.5 million bits for 8k.  For now, we
@@ -60,12 +60,12 @@ typedef struct pa_bitmap_s {
 #define PA_BITMAP_CHUNK_SHIFT	(PA_BITMAP_BLOCK_SHIFT - PA_ATOM_SHIFT)
 #define PA_BITMAP_CHUNK_SIZE	(1U << PA_BITMAP_CHUNK_SHIFT)
 
-#define PA_BITMAP_BITS_PER_CHUNK (PA_BITMAP_BLOCK_SIZE * NBBY)
-#define PA_BITMAP_BITS_PER_UNIT	(sizeof(pa_bitunit_t) * NBBY)
+#define PA_BITMAP_BITS_PER_CHUNK (PA_BITMAP_BLOCK_SIZE * PA_NBBY)
+#define PA_BITMAP_BITS_PER_UNIT	(sizeof(pa_bitunit_t) * PA_NBBY)
 #define PA_BITMAP_UNITS_PER_CHUNK (PA_BITMAP_BLOCK_SIZE / sizeof(pa_bitunit_t))
 
 #define PA_BITMAP_MAX_BIT \
-    (NBBY * PA_BITMAP_BLOCK_SIZE * PA_BITMAP_CHUNK_SIZE)
+    (PA_NBBY * PA_BITMAP_BLOCK_SIZE * PA_BITMAP_CHUNK_SIZE)
 
 #define PA_BITMAP_MAX_ATOMS (1<<24) /* Mostly random number */
 
@@ -89,7 +89,7 @@ pa_bitmap_unitnum (pa_bitmap_t *pfp UNUSED, pa_bitnumber_t num)
 static inline uint32_t
 pa_bitmap_chunknum (pa_bitmap_t *pfp UNUSED, pa_bitnumber_t num)
 {
-    num /= NBBY;		   /* Think in bytes */
+    num /= PA_NBBY;		   /* Think in bytes */
     num >>= PA_BITMAP_BLOCK_SHIFT; /* Drop bit number */
     num &= PA_BITMAP_CHUNK_SIZE - 1; /* Should be a noop */
     return num;
