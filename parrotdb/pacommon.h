@@ -48,6 +48,12 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
 
 #define PA_NULL_ATOM	((pa_atom_t) 0)
 
+#ifdef NBBY			/* Linux lacks NBBY */
+#define PA_NBBY NBBY
+#else
+#define PA_NBBY 8		/* Of course */
+#endif /* NBBY */
+
 /**
  * Macro to define a type and "is_null" function for that type.
  *
@@ -55,29 +61,30 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
  * compiler enforce type safety and keep us sane.  Otherwise too many
  * uint32_t-based types will happily be treated identically.
  */
-#define PA_ATOM_TYPE(_type, _struct, _field, _func, _build, _null)	\
-typedef struct _struct {						\
+#define PA_ATOM_TYPE(_atom_type, _atom_struct, _field, \
+		     _is_null_fn, _build_fn, _null_atom_fn)		\
+typedef struct _atom_struct {						\
     pa_atom_t _field;		/* Atom number */			\
-} _type;								\
+} _atom_type;								\
 static inline psu_boolean_t						\
-_func (_type atom)							\
+_is_null_fn (_atom_type atom)						\
 {									\
     return (atom._field == PA_NULL_ATOM);				\
 }									\
-static inline _type							\
-_build (pa_atom_t atom)							\
+static inline _atom_type						\
+_build_fn (pa_atom_t atom)						\
 {									\
-    return (_type){ atom };						\
+    return (_atom_type){ atom };					\
 }									\
 static inline pa_atom_t							\
- _build##_of (_type atom)						\
+_build_fn##_of (_atom_type atom)					\
 {									\
     return atom._field;							\
 }									\
-static inline _type							\
-_null (void)								\
+static inline _atom_type						\
+_null_atom_fn (void)							\
 {									\
-    return _build(PA_NULL_ATOM);					\
+    return _build_fn(PA_NULL_ATOM);					\
 }
     
 
