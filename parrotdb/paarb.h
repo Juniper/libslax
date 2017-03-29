@@ -83,7 +83,7 @@ typedef struct pa_arb_header_s {
 
 /* This is the largest power of two that can be handled by "small" */
 #define PA_ARB_MAX_POW2 	PA_ARB_PAGE_SHIFT
-#define PA_ARB_MAX_LARGE	(1 << (PA_MMAP_ATOM_SHIFT + NBBY * 2))
+#define PA_ARB_MAX_LARGE	(1 << (PA_MMAP_ATOM_SHIFT + PA_NBBY * 2))
 
 #if 0
 /*
