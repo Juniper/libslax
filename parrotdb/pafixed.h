@@ -286,35 +286,38 @@ pa_fixed_test_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
     return (pfp->pf_flags & flags) ? 1 : 0;
 }
 
+/*
+ * Define a set of functions for a PA_ATOM_TYPE that call allocate
+ * a free atoms, as well as turn the atom into a typed pointer.
+ */
 #define PA_FIXED_FUNCTIONS(_atom_type, _type, _base, _field,		\
-			   _alloc_fn, _free_fn, _addr_fn)		\
+	   _alloc_fn, _free_fn, _addr_fn, _build_fn, _is_null_fn)	\
 static inline _type *							\
 _alloc_fn (_base *basep, _atom_type *atomp)				\
 {									\
     if (atomp == NULL)		/* Should not occur */			\
 	return NULL;							\
 									\
-    pa_atom_t atom = pa_fixed_alloc_atom(basep->_field);		\
+    pa_fixed_atom_t atom = pa_fixed_alloc_atom(basep->_field);		\
     _type *datap = pa_fixed_atom_addr(basep->_field, atom);		\
 									\
-    *atomp = atom;							\
+    *atomp = _build_fn(atom);						\
     return datap;							\
 }									\
 									\
 static inline void							\
 _free_fn (_base *basep, _atom_type atom)				\
 {									\
-    if (atom == PA_NULL_ATOM)		/* Should not occur */		\
+    if (_is_null_fn(atom))		/* Should not occur */		\
 	return;								\
 									\
-    pa_fixed_free_atom(basep->_field, atom);				\
+    pa_fixed_free_atom(basep->_field, _build_fn##_of(atom));		\
 }									\
 									\
 static inline _type *							\
 _addr_fn (_base *basep, _atom_type atom)				\
 {									\
-    return pa_fixed_atom_addr(basep->_field, atom);			\
+    return pa_fixed_atom_addr(basep->_field, _build_fn##_of(atom));	\
 }
-
 
 #endif /* PARROTDB_PAFIXED_H */
