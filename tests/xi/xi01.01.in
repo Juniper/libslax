@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+# normal
+# trim
+# trim ignore-ws ignore-dtd
+# trim ignore-ws ignore-dtd unescape
+-->
+<!-- comment -->
+<!DOCTYPE greeting [
+  <!ELEMENT greeting (#PCDATA)>
+]>
+<top>
+    <test xmlns="test.one" xmlns:two="test.two" xmlns:three="test.three">
+        <thing1/>
+        <two:thing2/>
+        <three:thing3/>
+    </test>
+    <refinfo refid="A91910" xmlns="test.org" xmlns:foo="foo.org">
+        <authors x="1" y="2" z="albatross">
+            <author a1="v1" a2="v2" a3="v3">Kagawa, N.</author>
+            <author this="dropped">Mihara, K.</author>
+            <author also="this">Sato, R.</author>
+        </authors>
+        <citation>J. Biochem.</citation>
+        <volume>101</volume><year>1987</year><pages>1471-1479</pages>
+        <title>Structural analysis of the gene encoding human 3beta-hydroxysteroid dehydrogenase/Delta(5-&gt;4)-isomerase.</title>
+        <xrefs>
+        <xref><db>MUID</db><uid>88032911</uid></xref>
+        </xrefs>
+    </refinfo>
+
+    <![CDATA[this is <no> longer <ignored>]]>
+    <hazard>This &amp; that is &gt;the&lt; end</hazard>
+    
+    <hazard>&amp;at start and end&quot;</hazard>
+    <hazard>&lt;&gt;at start and end&lt;&gt;</hazard>
+    <second>
+        <z>1</z>
+        <a>eh</a>
+        <b>bee</b>
+        <c>sea</c>
+        <d>dee</d>
+    </second>
+     <province id='f0_17462'
+       name='Hainaut'
+       country='f0_162'
+       capital='f0_2345'
+       population='1283252'
+       area='3787'>
+       <city id='f0_2335'
+         country='f0_162'
+         province='f0_17462'>
+         <name >
+           Charleroi
+         </name>
+         <population  year='95'>
+           206491
+         </population>
+       </city>
+       <city id='f0_2345'
+         country='f0_162'
+         province='f0_17462'
+         longitude='3.6'
+         latitude='50.3'>
+         <name >
+           Mons
+         </name>
+         <population  year='87'>
+           90720
+         </population>
+       </city>
+     </province>
+</top>
