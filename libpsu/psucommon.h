@@ -38,6 +38,14 @@ typedef unsigned char psu_byte_t; /* Simple byte (for addressing memory) */
 #define FALSE 0
 #endif
 
+/* Number of elements in a static array */
+#define PSU_NUM_ELTS(_arr) (sizeof(_arr) / sizeof(_arr[0]))
+
+/* Bit operations; required since we made xi_boolean_t 8 bits (or less) */
+#define PSU_BIT_CLEAR(_flags, _bit) do { (_flags) &= ~(_bit); } while (0)
+#define PSU_BIT_SET(_flags, _bit) do { (_flags) |= (_bit); } while (0)
+#define PSU_BIT_TEST(_flags, _bit) (((_flags) & (_bit)) ? TRUE : FALSE)
+
 #ifndef HAVE_STREQ
 /**
  * Given two strings, return true if they are the same.  Tests the
