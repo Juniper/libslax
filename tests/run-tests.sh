@@ -9,8 +9,6 @@
 # LICENSE.
 #
 
-SRCDIR=$1
-shift
 GOODDIR=${SRCDIR}/saved
 S2O="sed 1,/@@/d"
 ECHO=/bin/echo
@@ -93,6 +91,17 @@ function do_accept {
 	done
     done
 }
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+    -d) SRCDIR=$2; shift;;
+    -v) S2O=cat;;
+    -*) echo "unknown option" >&2; exit;;
+    *) break;;
+    esac
+    shift
+done
 
 verb=$1
 shift
