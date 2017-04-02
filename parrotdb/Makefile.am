@@ -21,7 +21,7 @@ AM_CFLAGS = \
 
 lib_LTLIBRARIES = libparrotdb.la
 
-parrotdbincdir = ${includedir}/libparrotdb
+parrotdbincdir = ${includedir}/parrotdb
 
 parrotdbinc_HEADERS = \
     paarb.h \
