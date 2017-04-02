@@ -92,7 +92,7 @@ TEST_TWO = \
 
 TEST_FORMATS = T XP JP HP X J H HIPx
 
-RUN_TESTS = ${srcdir}/../run-tests.sh ${srcdir}
+RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
