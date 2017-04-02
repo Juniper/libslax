@@ -1,0 +1,11 @@
+<top>
+    <test xmlns="test.one" xmlns:two="test.two" xmlns:three="test.three">
+        <thing1/>
+        <two:thing2/>
+        <three:thing3/>
+	<four xmlns="test.four"/>
+        <five xmlns="test.five">
+	  <six xmlns="test.six">content</six>
+        </five>
+    </test>
+</top>
