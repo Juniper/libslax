@@ -31,7 +31,6 @@ int
 main (int argc, char **argv)
 {
     const char *opt_filename = NULL;
-    int opt_read = FALSE;
     int opt_quiet = FALSE;
     int opt_log = FALSE;
     int opt_unescape = FALSE;
@@ -43,8 +42,6 @@ main (int argc, char **argv)
 	    || strcmp(argv[argc], "input") == 0) {
 	    if (argv[argc + 1])
 		opt_filename = argv[++argc];
-	} else if (strcmp(argv[argc], "read") == 0) {
-	    opt_read = TRUE;
 	} else if (strcmp(argv[argc], "quiet") == 0) {
 	    opt_quiet = TRUE;
 	} else if (strcmp(argv[argc], "unescape") == 0) {
