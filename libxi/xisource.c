@@ -772,10 +772,8 @@ static void
 xi_source_ignorews (xi_source_t *srcp)
 {
     xi_offset_t off = xi_source_offset(srcp); /* Starting point */
-    xi_offset_t left;
     char *cp;
 
-    left = xi_source_left(srcp);
     for (cp = &srcp->xps_bufp[off]; xi_isspace(*cp); cp++, off++) {
 	if (off >= srcp->xps_len) {
 	    if (xi_source_read(srcp, 0) < 0)
