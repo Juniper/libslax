@@ -67,7 +67,6 @@ main (int argc, char **argv)
     const char *opt_filename = NULL;
     const char *opt_database = "test.db";
     const char *opt_config = NULL;
-    int opt_read = 0;
     int opt_quiet = 0;
     int opt_dump = 0;
     int opt_unescape = 0;
@@ -85,8 +84,6 @@ main (int argc, char **argv)
 	} else if (strcmp(argv[argc], "database") == 0) {
 	    if (argv[argc + 1])
 		opt_database = argv[++argc];
-	} else if (strcmp(argv[argc], "read") == 0) {
-	    opt_read = 1;
 	} else if (strcmp(argv[argc], "dump") == 0) {
 	    opt_dump = 1;
 	} else if (strcmp(argv[argc], "quiet") == 0) {
