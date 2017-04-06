@@ -81,7 +81,7 @@ test_dump (void)
     test_t *tp;
     pa_arb_atom_t atom;
 
-    printf("dumping: (%u) len:%lu\n", opt_count, prp->pr_mmap->pm_len);
+    printf("dumping: (%u) len:%zu\n", opt_count, prp->pr_mmap->pm_len);
     for (slot = 0; slot < opt_count; slot++) {
 	tp = trec[slot];
 	if (tp) {
