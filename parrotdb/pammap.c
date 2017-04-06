@@ -48,7 +48,7 @@
 /*
  * This structure defines the header of the mmap'd memory segment.
  */
-typedef struct pa_mmap_info_s {
+struct pa_mmap_info_s {
     uint16_t pmi_magic;		/* Magic number */
     uint8_t pmi_vers_major;	/* Major version number */
     uint8_t pmi_vers_minor;	/* Minor version number */
@@ -56,7 +56,7 @@ typedef struct pa_mmap_info_s {
     uint32_t pmi_num_headers;	/* Number of named headers following ours */
     size_t pmi_len;		/* Current size */
     pa_mmap_atom_t pmi_free;	/* First free memory segment */
-} pa_mmap_info_t;
+}; /* pa_mmap_info_t */
 
 typedef struct pa_mmap_free_s {
     uint32_t pmf_magic;		/* Magic number */
@@ -72,9 +72,9 @@ typedef struct pa_mmap_header_s {
     psu_byte_t pmh_content[];	/* Content, inline */
 } pa_mmap_header_t;
 
-#define PA_ADDR_DEFAULT		0x200000000000
-#define PA_ADDR_DEFAULT_INCR	0x020000000000
-#define PA_ADDR_MAX		0x600000000000
+#define PA_ADDR_DEFAULT		0x200000000000UL
+#define PA_ADDR_DEFAULT_INCR	0x020000000000UL
+#define PA_ADDR_MAX		0x600000000000UL
 
 static uint8_t *pa_mmap_next_address = (void *) PA_ADDR_DEFAULT;
 static ptrdiff_t pa_mmap_incr_address = PA_ADDR_DEFAULT_INCR;
@@ -544,7 +544,7 @@ pa_mmap_dump (pa_mmap_t *pmp, psu_boolean_t full)
     pa_mmap_info_t *pmip = pmp->pm_infop;
 
     psu_log("begin pa_mmap dump of %p", pmip);
-    psu_log("magic %#x, version %d.%03d, max-size %u, len %lu, free %#x",
+    psu_log("magic %#x, version %d.%03d, max-size %u, len %zu, free %#x",
 	    pmip->pmi_magic, pmip->pmi_vers_major, pmip->pmi_vers_minor,
 	    pmip->pmi_max_size, pmip->pmi_len,
 	    pa_mmap_atom_of(pmip->pmi_free));
