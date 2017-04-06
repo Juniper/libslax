@@ -100,7 +100,7 @@ test_key (unsigned slot, const char *key)
     }
 
     if (!opt_quiet)
-	printf("in %u (%lu) : %s -> (%#x)\n",
+	printf("in %u (%zu) : %s -> (%#x)\n",
 	       slot, len, key, pa_istr_atom_of(atom));
 }
 
