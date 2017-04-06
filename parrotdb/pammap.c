@@ -72,9 +72,15 @@ typedef struct pa_mmap_header_s {
     psu_byte_t pmh_content[];	/* Content, inline */
 } pa_mmap_header_t;
 
+#ifdef __LP64__
 #define PA_ADDR_DEFAULT		0x200000000000ULL
 #define PA_ADDR_DEFAULT_INCR	0x020000000000ULL
 #define PA_ADDR_MAX		0x600000000000ULL
+#else /* __LP64__ */
+#define PA_ADDR_DEFAULT		0x20000000UL
+#define PA_ADDR_DEFAULT_INCR	0x02000000UL
+#define PA_ADDR_MAX		0x70000000UL
+#endif /* __LP64__ */
 
 static uint8_t *pa_mmap_next_address = (void *) PA_ADDR_DEFAULT;
 static ptrdiff_t pa_mmap_incr_address = PA_ADDR_DEFAULT_INCR;
