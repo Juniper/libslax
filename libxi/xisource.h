@@ -12,6 +12,8 @@
 #ifndef LIBSLAX_XI_SOURCE_H
 #define LIBSLAX_XI_SOURCE_H
 
+#include <libxi/xicommon.h>
+
 /*
  * A note about attribute encoding: There are two distinct schemes.
  * Under the first, the complete, unparsed, still-escaped string of
@@ -26,7 +28,7 @@
  *
  * Note that we return pointers directly into our buffer.
  */
-typedef struct xi_source_s {
+struct xi_source_s {
     int xps_fd;			/* File being read */
     char *xps_filename;		/* Filename */
     unsigned xps_lineno;	/* Line number of input */
@@ -37,7 +39,7 @@ typedef struct xi_source_s {
     unsigned xps_len;		/* Number of bytes in the input buffer */
     unsigned xps_size;		/* Size of the input buffer (max) */
     xi_node_type_t xps_last;	/* Type of last token returned */
-} xi_source_t;
+}; /* xi_source_t */
 
 /* Flags for ps_flags: */
 #define XPSF_MMAP_INPUT	(1<<0)	/* File is mmap'd */
