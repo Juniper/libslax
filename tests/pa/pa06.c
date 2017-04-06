@@ -88,10 +88,6 @@ test_key (unsigned slot, const char *key)
 
     const char *str = pa_istr_atom_string(pip, atom);
 
-    if (!pa_is_short_string(str)
-	&& (const void *) str < (void *) (caddr_t) 0x200000000000)
-	abort();
-
     if (!opt_quiet)
 	printf("in %u (%u) : %s -> (%#x) -> %p/%s\n",
 	       slot, len, key, pa_istr_atom_of(atom), test_pr(str), str);
@@ -104,7 +100,7 @@ test_dump (void)
     unsigned slot;
     pa_istr_atom_t atom;
 
-    printf("dumping: (%u) len:%lu\n", opt_count, pip->pi_mmap->pm_len);
+    printf("dumping: (%u) len:%zu\n", opt_count, pip->pi_mmap->pm_len);
     for (slot = 0; slot < opt_count; slot++) {
 	tp = trec[slot];
 	if (tp == NULL)
