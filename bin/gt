@@ -10,11 +10,11 @@
 op="$1"
 shift
 
-function set_branch () {
+set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
 }
 
-function check_in_details () {
+check_in_details () {
     set_branch
     files=`git status -s "$@" | awk '{print $2}'`
 
@@ -41,7 +41,7 @@ function check_in_details () {
     done
 }
 
-function push_to_branch () {
+push_to_branch () {
     echo "Pushing to $branch ..."
     git push origin $branch
 }
