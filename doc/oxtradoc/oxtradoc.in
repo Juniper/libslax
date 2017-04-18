@@ -48,7 +48,7 @@
 #     a digress is not present in the text output, but is
 #     present in the XML.
 # '}}' ends the digress
-# '?' at the beginning of a line make the following section an 
+# '?' at the beginning of a line make the following section an
 #     Open Question
 #
 # oxtradoc tries to detect XML, ascii-art, and code.  Each
@@ -63,6 +63,8 @@
 # An anchor can be referenced in any text by enclosing the anchor name
 # within two '^' characters, e.g.:
 #  "see ^intro^"
+# With double-^, the reference will be of type 'counter', e.g.:
+#  "see ^^intro^^"
 
 @lines = ();
 @tags = ();
@@ -298,7 +300,7 @@ sub first_pass {
 	    }
 
 	    # Other modes are detected based on leading string
-	    $tag = "org_table", last if /^\|/;
+	    $tag = "org_table", last if /^\|/ or /^--/;
 	    $tag = "plain", $default = "plain", last if /^\{\{plain:/;
 	    $tag = "quote", $default = "quote", last if /^\{\{quote:/;
 	    $tag = "digress", last if /^\{\{/;
@@ -475,6 +477,7 @@ sub esc {
     s/"/&quot;/g; #";
     s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
     s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
+    s/\^\^(.*?)\^\^/<xref format=\"counter\" target=\"$1\"\/>/g;
     s/\{\{(.*?)}}/<digress target=\"$1\"\/>/g;
     s/ % /&nbsp;/g; # explicit non-breakable space
     s/-%-/&#8209;/g; # explicit non-breakable hyphen
@@ -490,7 +493,8 @@ sub escf {
     s/'/&apos;/g; #';
     s/"/&quot;/g; #";
     s/\^(https?:.*)\^/<eref target=\"$1\"\>$1\<\/eref\>/g;
-    s/\^(.*?)\^/<xref format=\"counter\" target=\"$1\"\/>/g;
+    s/\^(.*?)\^/<xref target=\"$1\"\/>/g;
+    s/\^\^(.*?)\^\^/<xref format=\"counter\" target=\"$1\"\/>/g;
     return $_;
 }
 
@@ -949,7 +953,7 @@ sub start_org_table {
     print " title=\"", esc($title), "\"" if $title;
     print "\>\n";
     $org_header = 0;
-    org_table_header() unless $line =~ /^\|--/;
+    org_table_header() unless $line =~ /^\--/;
 }
 
 sub org_table_header {
