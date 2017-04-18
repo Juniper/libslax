@@ -342,6 +342,22 @@ given a very tiny node size at 16 bytes.  Compare this with ~200 bytes
 for libxml2, and you can see my hope for reducing the memory footprint
 for XML documents.
 
+** xi_source_t
+
+An xi_source_t is a source of XML tokens, typically from a file.  We
+deliver these as return values from xi_source_next_token, which
+presents a vaguely SAX-like API, but as a pull, not a push.  It
+returns a "token type" (XI_TYPE_* from xicommon.h), along with
+filling in two "char *" pointers, one for the token, and one
+for the "rest".   The "rest" varies by token type, from nothing for
+XI_TYPE_CLOSE to attributes for XI_TYPE_OPEN and XI_TYPE_PI.  For
+XI_TYPE_TEXT, it's a pointer to the _end_ of the string, since we
+can't always NUL-terminate text data.
+
+The parser on my aging macbookpro does 0.5G/s of XML parser, which
+isn't too bad.  I need to go optimize it and see what else can be
+trimmed.
+
 ** Future Plans
 
 I'm looking at a libxml2/libxslt replacement, but these libraries
