@@ -153,4 +153,14 @@ strerror (int num)
 
 int psu_asprintf (char **ret, const char *format, ...);
 
+/*
+ * The plan is to come up with something faster, but so
+ * far, the plan is underimplemented.
+ */
+static inline void *
+psu_memchr (void *vsrc, int ch, size_t len)
+{
+    return memchr(vsrc, ch, len);
+}
+
 #endif /* LIBPSU_PSUCOMMON_H */
