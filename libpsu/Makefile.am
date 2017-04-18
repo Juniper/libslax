@@ -25,6 +25,7 @@ psuincdir = ${includedir}/libpsu
 
 psuinc_HEADERS = \
     psualloc.h \
+    psucpu.h \
     psubase64.h \
     psucommon.h \
     psulog.h \
@@ -33,6 +34,7 @@ psuinc_HEADERS = \
 
 libpsu_la_SOURCES = \
     psualloc.c \
+    psucpu.c \
     psuasprintf.c \
     psubase64.c \
     psulog.c \
