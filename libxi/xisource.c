@@ -177,7 +177,7 @@ xi_source_unescape (xi_source_t *srcp, char *start, unsigned len)
     const char **ep;
 
     while (len > 0) {
-	cur = memchr(cur, '&', len);
+	cur = psu_memchr(cur, '&', len);
 	if (cur == NULL)
 	    break;
 
@@ -192,7 +192,7 @@ xi_source_unescape (xi_source_t *srcp, char *start, unsigned len)
 	    /* We didn't find the entity; bummer */
 	    xi_source_failure(srcp, 0, "could not decode entity");
 
-	    char *xp = memchr(cur + 1, ';', len);
+	    char *xp = psu_memchr(cur + 1, ';', len);
 	    if (xp != NULL) {
 		/*
 		 * Okay, the entity is trash, but at least we found a
@@ -242,7 +242,7 @@ xi_source_move_curp (xi_source_t *srcp, char *newp)
     srcp->xps_offset += newp - cp;
     if (srcp->xps_flags & XPSF_LINE_NO) {
 	while (cp < newp) {
-	    cp = memchr(cp, '\n', newp - cp);
+	    cp = psu_memchr(cp, '\n', newp - cp);
 	    if (cp == NULL)
 		break;
 	    srcp->xps_lineno += 1;
@@ -314,20 +314,20 @@ xi_source_read (xi_source_t *srcp, int min)
     return (rc >= min);
 }
 
-static xi_offset_t
+static inline xi_offset_t
 xi_source_offset (xi_source_t *srcp)
 {
     return srcp->xps_curp - srcp->xps_bufp;
 }
 
-static xi_offset_t
+static inline xi_offset_t
 xi_source_left (xi_source_t *srcp)
 {
     xi_offset_t seen = srcp->xps_curp - srcp->xps_bufp;
     return srcp->xps_len - seen;
 }
 
-static xi_offset_t
+static inline xi_offset_t
 xi_source_avail (xi_source_t *srcp, xi_offset_t min)
 {
     xi_offset_t left = xi_source_left(srcp);
@@ -343,9 +343,6 @@ xi_source_find (xi_source_t *srcp, int ch, xi_offset_t offset)
 {
     char *cur;
 
-    if (offset == 0)
-	offset = xi_source_offset(srcp);
-
     for (;;) {
 	if (offset >= srcp->xps_len) {
 	    if (xi_source_read(srcp, 0) < 0)
@@ -353,7 +350,7 @@ xi_source_find (xi_source_t *srcp, int ch, xi_offset_t offset)
 	    offset = xi_source_offset(srcp); /* Recalculate our offset */
 	}
 
-	cur = memchr(srcp->xps_bufp + offset, ch, srcp->xps_len - offset);
+	cur = psu_memchr(srcp->xps_bufp + offset, ch, srcp->xps_len - offset);
 	if (cur != NULL) {
 	    /* We've found it; return the offset */
 	    return cur - srcp->xps_bufp;
@@ -485,7 +482,7 @@ xi_source_find_brklt2 (xi_source_t *srcp, xi_offset_t off)
 static xi_node_type_t
 xi_source_token_dtd (xi_source_t *srcp, char **datap, char **restp)
 {
-    xi_offset_t off = xi_source_find(srcp, '>', 0);
+    xi_offset_t off = xi_source_find(srcp, '>', xi_source_offset(srcp));
     if (off < 0) {
 	xi_source_failure(srcp, 0, "missing termination of dtd tag");
 	return XI_TYPE_FAIL;
@@ -497,7 +494,7 @@ xi_source_token_dtd (xi_source_t *srcp, char **datap, char **restp)
     /*
      * Find the attributes, but don't bother parsing them.  Trim whitespace.
      */
-    char *rp = memchr(dp, ' ', cp + 1 - dp);
+    char *rp = psu_memchr(dp, ' ', cp + 1 - dp);
     if (rp != NULL) {
 	*rp++ = '\0';
 	rp = xi_skipws(rp, cp + 1 - rp, 1);
@@ -509,11 +506,11 @@ xi_source_token_dtd (xi_source_t *srcp, char **datap, char **restp)
 	     * the case where an internal DTD appears as a chunk of XML
 	     * with the <!DOCTYPE> tag.  Nested tags.  How wonderful.
 	     */
-	    char *xp = memchr(rp, ' ', cp + 1 - rp);
+	    char *xp = psu_memchr(rp, ' ', cp + 1 - rp);
 	    if (xp != NULL) {
 		xp = xi_skipws(xp, strlen(xp), 1);
 		if (xp) {
-		    char *zp = memchr(xp, ' ', cp + 1 - xp);
+		    char *zp = psu_memchr(xp, ' ', cp + 1 - xp);
 		    if (xp[0] == '[' || (zp != NULL && zp[1] == '[')) {
 			/*
 			 * Bad news!  The input has an internal DTD, which
@@ -627,7 +624,7 @@ xi_source_token_pi (xi_source_t *srcp, char **datap,
 	return XI_TYPE_FAIL;
     }
 
-    xi_offset_t off = xi_source_find(srcp, '>', 0);
+    xi_offset_t off = xi_source_find(srcp, '>', xi_source_offset(srcp));
     if (off < 0) {
 	xi_source_failure(srcp, 0, "missing termination of " XI_PI);
 	return XI_TYPE_FAIL;
@@ -656,7 +653,7 @@ xi_source_token_pi (xi_source_t *srcp, char **datap,
     /*
      * Find the attributes, but don't bother parsing them.  Trim whitespace.
      */
-    char *rp = memchr(dp, ' ', ep - dp);
+    char *rp = psu_memchr(dp, ' ', ep - dp);
     if (rp != NULL) {
 	*rp++ = '\0';
 	rp = xi_skipws(rp, ep - rp, 1);
@@ -675,7 +672,7 @@ xi_source_token_open (xi_source_t *srcp, char **datap, char **restp)
 {
     xi_node_type_t token = XI_TYPE_OPEN;
 
-    xi_offset_t off = xi_source_find(srcp, '>', 0);
+    xi_offset_t off = xi_source_find(srcp, '>', xi_source_offset(srcp));
     if (off < 0) {
 	xi_source_failure(srcp, 0, "missing termination of open tag");
 	return XI_TYPE_FAIL;
@@ -695,7 +692,7 @@ xi_source_token_open (xi_source_t *srcp, char **datap, char **restp)
     /*
      * Find the attributes, but don't bother parsing them.  Trim whitespace.
      */
-    char *rp = memchr(dp, ' ', cp - dp);
+    char *rp = psu_memchr(dp, ' ', cp - dp);
     if (rp != NULL) {
 	*rp++ = '\0';
 	rp = xi_skipws(rp, cp - rp, 1);
@@ -712,7 +709,7 @@ xi_source_token_open (xi_source_t *srcp, char **datap, char **restp)
 static xi_node_type_t
 xi_source_token_close (xi_source_t *srcp, char **datap)
 {
-    xi_offset_t off = xi_source_find(srcp, '>', 0);
+    xi_offset_t off = xi_source_find(srcp, '>', xi_source_offset(srcp));
     if (off < 0) {
 	xi_source_failure(srcp, 0, "missing termination of close tag");
 	return XI_TYPE_FAIL;
@@ -731,7 +728,7 @@ xi_source_token_close (xi_source_t *srcp, char **datap)
 static xi_node_type_t
 xi_source_token_text (xi_source_t *srcp, char **datap, char **restp)
 {
-    xi_offset_t off = xi_source_find(srcp, '<', 0);
+    xi_offset_t off = xi_source_find(srcp, '<', xi_source_offset(srcp));
     if (off < 0) {
 	xi_offset_t left = xi_source_left(srcp);
 	if (left == 0) {
