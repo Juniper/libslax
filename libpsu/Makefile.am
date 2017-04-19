@@ -29,13 +29,15 @@ psuinc_HEADERS = \
     psubase64.h \
     psucommon.h \
     psulog.h \
+    psustring.h \
     psuthread.h \
     psutime.h
 
 libpsu_la_SOURCES = \
     psualloc.c \
-    psucpu.c \
     psuasprintf.c \
     psubase64.c \
+    psucpu.c \
     psulog.c \
-    psumemdump.c
+    psumemdump.c \
+    psustring.c
