@@ -106,5 +106,7 @@ psu_logv (const char *fmt, int newline, va_list vap);
 #define slaxLogv psu_logv
 #define slaxLogToFile psu_log_to_file
 #define slaxLogIsEnabled psu_log_is_enabled()
+#define slaxLogEnableCallback psu_log_enable_callback
+#define slaxMemDump psu_mem_dump
 
 #endif /* LIBPSU_PSULOG_H */
