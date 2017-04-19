@@ -15,8 +15,27 @@
 #include <stdio.h>
 #include <string.h>
 
+/*
+ * Gnu autoheader makes #defines that conflict with values generated
+ * by autoheader for other software.  I can't find a way to keep
+ * autoheader from making them, but we can undef them.  Feels like
+ * cheating, but we can't win all the wars.
+ */
+#undef PACKAGE
+#undef VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef PACKAGE_STRING
+#undef PACKAGE_BUGREPORT
 #include <libslax/slaxconfig.h>
-#include <libpsu/psucommon.h>
+#undef PACKAGE
+#undef VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef PACKAGE_STRING
+#undef PACKAGE_BUGREPORT
 
 typedef unsigned psu_boolean_t;	/* Simple boolean type */
 typedef unsigned char psu_byte_t; /* Simple byte (for addressing memory) */
