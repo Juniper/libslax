@@ -184,6 +184,10 @@ case "$op" in
 	git push --dry-run origin $branch
 	;;
 
+    ref|reflog)
+        git reflog show
+        ;;
+
     restash)
 	## Untried
 	git stash
