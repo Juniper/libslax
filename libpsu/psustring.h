@@ -28,23 +28,6 @@
  */
 char *strdupf (const char *fmt, ...) PSU_PRINTFLIKE(1, 2);
 
-#ifndef HAVE_STRNDUP
-/**
- * @brief
- * Allocates sufficient memory for a copy of a string, up to the maximum
- * number of characters specified.
- *
- * @param[in] str
- *     String to duplicate
- * @param[in] count
- *     Maximum number of characters to copy
- *
- * @return 
- *     A duplicate string of up to @a count characters of @a str.
- */
-char *strndup (const char *str, size_t count);
-#endif /* HAVE_STRNDUP */
-
 /**
  * @brief
  * Safe form of snprintf(3) that returns the number of characters written,
