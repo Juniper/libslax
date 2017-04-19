@@ -2179,7 +2179,7 @@ slaxDebugInit (void)
 
     slaxDebugDisplayMode = DEBUG_MODE_CLI;
 
-    slaxOutput("sdb: The SLAX Debugger (version %s)", PACKAGE_VERSION);
+    slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
     slaxOutput("Type 'help' for help");
 
     return FALSE;
