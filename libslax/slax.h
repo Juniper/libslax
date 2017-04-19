@@ -11,7 +11,6 @@
 #define LIBSLAX_SLAX_H
 
 #include <libslax/slaxversion.h>
-#include <libslax/slaxconfig.h>
 #include <libpsu/psucommon.h>
 
 #define SLAX_VERSION "1.2"
