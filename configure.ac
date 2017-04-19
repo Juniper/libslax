@@ -70,6 +70,7 @@ AC_CHECK_HEADERS([dlfcn.h])
 AC_CHECK_HEADERS([tzfile.h])
 AC_CHECK_HEADERS([stdtime/tzfile.h])
 AC_CHECK_FUNCS([dlfunc])
+AC_CHECK_FUNCS([strnstr])
 
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h])
