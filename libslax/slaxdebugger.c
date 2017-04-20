@@ -75,6 +75,7 @@
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
+#include <libpsu/psustring.h>
 
 #define MAXARGS	256
 #define DEBUG_LIST_COUNT	12 /* Number of lines "list" shows */
