@@ -13,7 +13,7 @@ GOODDIR=${SRCDIR}/saved
 S2O="sed 1,/@@/d"
 ECHO=/bin/echo
 
-function run {
+run () {
     cmd="$1"
 
     if [ "$DOC" = doc ]; then
@@ -27,11 +27,11 @@ function run {
     fi
 }
 
-function info {
+info () {
     ${ECHO} "$@"
 }
 
-function run_tests {
+run_tests () {
     oname=$name.$ds
     out=out/$oname
     ${ECHO} -n "... $test ... $name ... $ds ..."
@@ -42,7 +42,7 @@ function run_tests {
     run "diff -Nu ${SRCDIR}/saved/$oname.err out/$oname.err | ${S2O}"
 }
 
-function do_run_tests {
+do_run_tests () {
     mkdir -p out
 
     for test in ${TESTS}; do
@@ -61,21 +61,21 @@ function do_run_tests {
     done
 }
 
-function accept_file {
+accept_file () {
     if ! cmp -s $*; then
         echo "... $1 ..."
         run "cp $*"
     fi
 }
 
-function accept_tests {
+accept_tests () {
     oname=$name.$ds
 
     accept_file out/$oname.out ${SRCDIR}/saved/$oname.out
     accept_file out/$oname.err ${SRCDIR}/saved/$oname.err
 }
 
-function do_accept {
+do_accept () {
     for test in ${TESTS}; do
 	base=`basename $test .test`
 
