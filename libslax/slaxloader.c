@@ -21,6 +21,7 @@
 #include <sys/queue.h>
 #include <errno.h>
 
+#include <libpsu/psustring.h>
 #include <libxslt/extensions.h>
 #include <libxslt/documents.h>
 #include <libexslt/exslt.h>
