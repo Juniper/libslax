@@ -90,25 +90,20 @@ strnstr (char *s1,  const char *s2, size_t n)
 #endif /* HAVE_STRNSTR */
 
 #ifndef HAVE_STRLCPY
+/*
+ * strlcpy, for those that don't have it
+ */
 static inline size_t
-strlcpy (char *dst, const char *src, size_t left)
+strlcpy (char *dst, const char *src, size_t sz)
 {
-    const char *save = src;
+    size_t len = strlen(src);
 
-    if (left == 0)
-	return strlen(src);
+    if (sz > len)
+        sz = len;
+    memmove(dst, src, sz);
+    dst[sz] = '\0';
 
-    while (--left != 0)
-	if ((*dst++ = *src++) == '\0')
-	    break;
-
-    if (left == 0) {
-	*dst = '\0';
-	while (*src++)
-	    continue;
-    }
-
-    return src - save - 1;
+    return len;
 }
 #endif /* HAVE_STRLCPY */
 
