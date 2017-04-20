@@ -131,24 +131,6 @@ const_drop (const void *ptr)
     } while (0)
 #endif /* HAVE_SAFE_SNPRINTF */
 
-#ifndef HAVE_STRLCPY
-/*
- * strlcpy, for those that don't have it
- */
-static inline size_t
-strlcpy (char *dst, const char *src, size_t sz)
-{
-    size_t len = strlen(src);
-
-    if (sz > len)
-        sz = len;
-    memmove(dst, src, sz);
-    dst[sz] = '\0';
-
-    return len;
-}
-#endif /* HAVE_STRLCPY */
-
 #ifndef HAVE_STRERROR
 /*
  * Yes, there are systems without strerror.  Tough luck, eh?
