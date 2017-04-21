@@ -957,7 +957,7 @@ sub start_org_table {
     print " title=\"", esc($title), "\"" if $title;
     print "\>\n";
     $org_header = 0;
-    org_table_header() unless $line =~ /^\--/;
+    org_table_header() unless $line =~ /^\|?--/;
 }
 
 sub org_table_header {
