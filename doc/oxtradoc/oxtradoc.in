@@ -165,6 +165,10 @@ sub main {
 	&xml2html($file, $output, $rfc);
 	system("open $output");
 
+    } elsif ($opt_mode eq "mkback") {
+	&open_stdout($output);
+	&mkback($file, $output);
+
     } else {
 	die "unknown mode: " . $opt_mode;
     }
@@ -1107,6 +1111,93 @@ sub document_header {
     $doc{keyword} = $keyword;
 }
 
+# Use to create a references section in a back file w/ oxtradoc.
+#
+# Substitutes any line on the form:
+#   ietf-ref[:<alias>]:RFCXXXX
+#   ietf-ref[:<alias>]:I-D.xxx...
+#   w3c-ref[:<alias>]:W3C.xxx...
+# with the corresponding xml2rfc XML reference element.
+
+sub make_reference {
+    my($field, $value) = @_;
+    my $host = "xml2rfc.tools.ietf.org";
+    my $path = "public/rfc";
+
+    my $file = "";
+    my $alias = "";
+    my $name = "";
+    if ($field eq "ietf-ref" && ($value =~ /((.*):)?RFC(.*)/ )) {
+	$alias = $2;
+	$name = $3;
+	$file = "bibxml/reference.RFC." . $name . ".xml";
+    } elsif ($field eq "ietf-ref" && ($value =~ /((.*):)?(I-D.*)/)) {
+	$alias = $2;
+	$name = $3;
+	$file = "bibxml3/reference." . $name . ".xml";
+    } elsif ($field eq "w3c-ref" && ($field =~ /((.*):)?(.*)/)) {
+	$alias = $2;
+	$name = $3;
+	$file = "bibxml4/reference." . $name . ".xml";
+    } else {
+	return;
+    }
+
+    my $url = "https://" . $host . "/" . $path . "/" . $file;
+    my $res = `curl -L -f -s $url \\
+                   | xmllint --format - \\
+                   | grep -v '\?xml'`;
+    if ($? != 0) {
+	print STDERR "Failed to get " . $url . "\n";
+	return;
+    }
+    if (defined($alias))  {
+	my $anchor1 = "anchor=\"" . $name . "\"";
+	my $anchor2 = "anchor=\"" . $alias . "\"";
+	$res =~ s/$anchor1/$anchor2/;
+    }
+    print $res;
+}
+
+sub generate_references {
+    my $i;
+    my $inrefs = 0;
+
+    for ($i = 0; $i <= $#lines; $i++) {
+	$_ = $lines[$i];
+
+	if (/^\{\{references:/) {
+	    $inrefs = 1;
+	} elsif ($inrefs == 0) {
+	    next;
+	} elsif (/^\}\}/) {
+	    print "</references>\n";
+	    $inrefs = 0;
+	} elsif ($inrefs) {
+	    my ($f, $v) = /^\s*(\S+)\s+(.*);/;
+	    if ($f eq "title") {
+		$v =~ s/\"//g;
+		print "<references title=\"$v\">\n";
+	    } else {
+		make_reference($f, $v);
+	    }
+        }
+    }
+}
+
+sub mkback {
+    my ($file, $output) = @_;
+
+    open(FILE, $file) || die;
+    print STDERR "  [converting $file (back) to $output (xml)]\n";
+
+    @lines = <FILE>;	# Read the entire input file into an array
+    close FILE;
+    chomp(@lines);	# Trim newlines off each input line
+
+    &generate_references();
+}
+
 sub back_matter {
     my ($doc) = @_;
 
@@ -1120,6 +1211,7 @@ sub back_matter {
 	}
 	close BACK;
     }
+    &generate_references();
 }
 
 _main: {
