@@ -41,6 +41,7 @@ pa06_test_SOURCES = pa06.c
 pa07_test_SOURCES = pa07.c
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
+SAVEDDATA := $(shell cd ${srcdir}; echo saved/pa*.out saved/pa*.err)
 
 TEST_FILES = ${TEST_CASES:.c=.test}
 noinst_PROGRAMS = ${TEST_FILES}
@@ -51,22 +52,7 @@ LDADD = \
 
 EXTRA_DIST = \
     ${TEST_CASES} \
-    ${addprefix saved/, ${TEST_CASES:.c=.T.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.T.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.XP.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.XP.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.JP.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.JP.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.HP.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.HP.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.X.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.X.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.J.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.J.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.H.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.H.out}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.HIPx.err}} \
-    ${addprefix saved/, ${TEST_CASES:.c=.HIPx.out}}
+    ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
 
