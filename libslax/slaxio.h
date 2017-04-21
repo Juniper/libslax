@@ -38,22 +38,6 @@ slaxOutputNode (xmlNodePtr);
 void
 slaxOutputNodeset (xmlNodeSetPtr nodeset);
 
-/*
- * Simple trace function that tosses messages to stderr if slaxDebug
- * has been set to non-zero.
- */
-void
-slaxLog (const char *fmt, ...);
-
-/*
- * Simple trace function that tosses messages to stderr if slaxDebug
- * has been set to non-zero.  This one is specific to bison, which
- * makes multiple calls to emit a single line, which means we can't
- * include our implicit newline.
- */
-void
-slaxLog2 (void *, const char *fmt, ...);
-
 #define SLAX_ERROR_DEFAULT	0 /* Default behavior */
 #define SLAX_ERROR_IGNORE	1 /* Ignore errors; discard them */
 #define SLAX_ERROR_RECORD	2 /* Record errors */

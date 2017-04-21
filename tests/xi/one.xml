@@ -1,0 +1,115 @@
+<data>
+  <chassis-inventory>
+    <chassis>
+      <name>Chassis</name>
+      <serial-number>A9673</serial-number>
+      <description>M7I</description>
+      <chassis-module>
+        <name>Midplane</name>
+        <version>REV 05</version>
+        <part-number>710-008761</part-number>
+        <serial-number>DD6541</serial-number>
+        <description>M7i Midplane</description>
+        <model-number>CHAS-MP-M7i-1GE-S</model-number>
+      </chassis-module>
+      <chassis-module>
+        <name>Power Supply 0</name>
+        <version>Rev 05</version>
+        <part-number>740-008537</part-number>
+        <serial-number>QB12508</serial-number>
+        <description>AC Power Supply</description>
+        <model-number>PWR-M10i-M7i-AC-S</model-number>
+      </chassis-module>
+      <chassis-module>
+        <name>Power Supply 1</name>
+        <version>Rev 05</version>
+        <part-number>740-008537</part-number>
+        <serial-number>5218256</serial-number>
+        <description>AC Power Supply</description>
+        <model-number>PWR-M10i-M7i-AC-S</model-number>
+      </chassis-module>
+      <chassis-module>
+        <name>Routing Engine</name>
+        <version>REV 07</version>
+        <part-number>740-011202</part-number>
+        <serial-number>1000724107</serial-number>
+        <description>RE-850</description>
+        <model-number>RE-850-1536-S</model-number>
+      </chassis-module>
+      <chassis-module>
+        <name>CFEB</name>
+        <version>REV 05</version>
+        <part-number>750-015583</part-number>
+        <serial-number>DG0215</serial-number>
+        <description>Internet Processor II</description>
+        <model-number>FEB-M7i-SVCS-S</model-number>
+      </chassis-module>
+      <chassis-module>
+        <name>FPC 0</name>
+        <description>E-FPC</description>
+        <chassis-sub-module>
+          <name>PIC 0</name>
+          <version>REV 12</version>
+          <part-number>750-002992</part-number>
+          <serial-number>RD5829</serial-number>
+          <description>4x F/E, 100 BASE-TX</description>
+          <model-number>PE-4FE-TX</model-number>
+        </chassis-sub-module>
+        <chassis-sub-module>
+          <name>PIC 1</name>
+          <version>REV 09</version>
+          <part-number>750-003750</part-number>
+          <serial-number>RF2292</serial-number>
+          <description>2x OC-3 SONET, MM</description>
+          <model-number>PE-2OC3-SON-MM</model-number>
+        </chassis-sub-module>
+        <chassis-sub-module>
+          <name>PIC 2</name>
+          <version>REV 04</version>
+          <part-number>750-002992</part-number>
+          <serial-number>HE1747</serial-number>
+          <description>4x F/E, 100 BASE-TX</description>
+          <model-number>PE-4FE-TX</model-number>
+        </chassis-sub-module>
+        <chassis-sub-module>
+          <name>PIC 3</name>
+          <version>REV 17</version>
+          <part-number>750-002992</part-number>
+          <serial-number>BBAF9600</serial-number>
+          <description>4x F/E, 100 BASE-TX</description>
+          <model-number>PE-4FE-TX</model-number>
+        </chassis-sub-module>
+      </chassis-module>
+      <chassis-module>
+        <name>FPC 1</name>
+        <description>E-FPC</description>
+        <chassis-sub-module>
+          <name>PIC 2</name>
+          <version>REV 04</version>
+          <part-number>750-015931</part-number>
+          <serial-number>DF4038</serial-number>
+          <description>ASP - Integrated (Layer-2-3)</description>
+        </chassis-sub-module>
+        <chassis-sub-module>
+          <name>PIC 3</name>
+          <version>REV 09</version>
+          <part-number>750-009099</part-number>
+          <serial-number>DF9306</serial-number>
+          <description>1x G/E, 1000 BASE</description>
+          <chassis-sub-sub-module>
+            <name>Xcvr 0</name>
+            <version>REV 01</version>
+            <part-number>740-011782</part-number>
+            <serial-number>PB82AD8</serial-number>
+            <description>SFP-SX</description>
+          </chassis-sub-sub-module>
+        </chassis-sub-module>
+      </chassis-module>
+      <chassis-module>
+        <name>Fan Tray</name>
+        <description>Rear Fan Tray</description>
+        <model-number>FANTRAY-M7i-S</model-number>
+      </chassis-module>
+    </chassis>
+  </chassis-inventory>
+</data>

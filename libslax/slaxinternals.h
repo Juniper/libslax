@@ -21,8 +21,12 @@
 
 #include "slaxconfig.h"
 #include "slaxversion.h"
+
+#include <libpsu/psucommon.h>
+#include <libpsu/psualloc.h>
+#include <libpsu/psulog.h>
+
 #include "xmlsoft.h"
-#include "slaxutil.h"
 #include "slaxdyn.h"
 
 /* Forward declarations for common structures */

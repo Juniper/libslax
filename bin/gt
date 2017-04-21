@@ -10,11 +10,11 @@
 op="$1"
 shift
 
-function set_branch () {
+set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
 }
 
-function check_in_details () {
+check_in_details () {
     set_branch
     files=`git status -s "$@" | awk '{print $2}'`
 
@@ -41,7 +41,7 @@ function check_in_details () {
     done
 }
 
-function push_to_branch () {
+push_to_branch () {
     echo "Pushing to $branch ..."
     git push origin $branch
 }
@@ -95,6 +95,12 @@ case "$op" in
 
     diff|dif|delta)
         git diff "$@"
+	;;
+
+    log)
+       colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
+	git log --graph --abbrev-commit --decorate --all "${colors}" "$@"
+        echo ''
 	;;
 
     make-gh-pages)
@@ -176,6 +182,25 @@ case "$op" in
 	# Push all local changes to the origin/repo server
         set_branch
 	git push --dry-run origin $branch
+	;;
+
+    ref|reflog)
+        git reflog show
+        ;;
+
+    restash)
+	## Untried
+	git stash
+	if [ $? -ne 0 ]; then
+	    echo "stash failed"
+	    exit 1
+	fi
+	git pull --rebase
+        if [ $? -ne 0 ]; then
+            echo "rebase failed"
+            exit 1
+        fi
+	git stash pop
 	;;
 
     st|stat|status)

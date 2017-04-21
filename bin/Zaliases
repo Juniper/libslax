@@ -1,5 +1,5 @@
 set top_src=`pwd`
-set test=~/work/xmlsoft/libxslt-1.1.24/tests/
+set test=$HOME/work/xmlsoft/libxslt-1.1.24/tests/
 alias Zautoreconf "(cd $top_src ; autoreconf --install)"
 
 set opts=' \
@@ -7,10 +7,10 @@ set opts=' \
 --enable-warnings \
 --enable-readline \
 --enable-printflike \
---with-libxslt-tests=/Users/phil/work/xmlsoft/libxslt-1.1.24/tests/ \
---with-libxml-prefix=/Users/phil/work/root \
---with-libxslt-prefix=/Users/phil/work/root \
---prefix /Users/phil/work/root \
+--with-libxslt-tests=$HOME/work/xmlsoft/libxslt-1.1.24/tests/ \
+--with-libxml-prefix=$HOME/work/root \
+--with-libxslt-prefix=$HOME/work/root \
+--prefix $HOME/work/root \
 '
 set opts=`echo $opts`
 
@@ -19,6 +19,9 @@ setenv CONFIGURE_OPTS "$opts"
 alias Zconfigure "(cd $top_src/build; ../configure $opts)"
 alias Zbuild "(cd $top_src/build; make \!* )"
 alias mi "(cd $top_src/build; make && make install); ."
+
+alias mm "(cd $top_src/build; make CFLAGS='-O0 -g')"
+alias mmi "(cd $top_src/build; make CFLAGS='-O0 -g' && make install)"
 
 mkdir -p build
 cd build

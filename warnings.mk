@@ -21,7 +21,6 @@ LOW_WARNINGS?= ${MIN_WARNINGS} \
 MEDIUM_WARNINGS?= ${LOW_WARNINGS} -Werror
 
 HIGH_WARNINGS?= ${MEDIUM_WARNINGS} \
-    -Waggregate-return \
     -Wcast-align \
     -Wcast-qual \
     -Wchar-subscripts \

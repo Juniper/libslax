@@ -34,7 +34,8 @@
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxio.h>
 #include <libslax/xmlsoft.h>
-#include <libslax/slaxutil.h>
+#include <libpsu/psulog.h>
+#include <libpsu/psutime.h>
 
 #include "ext_curl.h"
 
@@ -501,7 +502,7 @@ extCurlVerbose (CURL *handle UNUSED, curl_infotype type,
 	return 0;
     }
  
-    slaxMemDump(text, data, size, dir, 0);
+    psu_mem_dump(text, data, size, dir, 0);
     return 0;
 }
 
@@ -640,7 +641,7 @@ extCurlBuildEmail (curl_opts_t *opts)
     char *to_line, *cc_line;
     time_t now = time(NULL);
     char buf[80];
-    char *date_line = slaxTimeIso(&now, buf, sizeof(buf));
+    char *date_line = psu_iso_time(&now, buf, sizeof(buf));
     char msgid[BUFSIZ];
     size_t len;
     char *cp;

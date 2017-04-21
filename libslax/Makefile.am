@@ -54,8 +54,7 @@ noinst_HEADERS = \
     slaxnames.h \
     slaxprofiler.h \
     slaxstring.h \
-    slaxtree.h \
-    slaxutil.h
+    slaxtree.h
 
 SLAXHEADERS = ${noinst_HEADERS} slaxparser.h
 

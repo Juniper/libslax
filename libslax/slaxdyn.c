@@ -161,7 +161,7 @@ slaxDynLoadNamespace (xmlDocPtr docp UNUSED, xmlNodePtr root UNUSED,
 		    slaxRegisterElementTable(dap->da_uri,
 						dap->da_elements);
 	    } else {
-		slaxLog("%s was not found for %s", SLAX_DYN_VERSION, buf);
+		slaxLog("%u was not found for %s", SLAX_DYN_VERSION, buf);
 		dlclose(dlp);
 	    }
 	} else

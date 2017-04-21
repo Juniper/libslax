@@ -70,6 +70,8 @@ AC_CHECK_HEADERS([dlfcn.h])
 AC_CHECK_HEADERS([tzfile.h])
 AC_CHECK_HEADERS([stdtime/tzfile.h])
 AC_CHECK_FUNCS([dlfunc])
+AC_CHECK_FUNCS([strnstr])
+AC_CHECK_FUNCS([strndup])
 
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([ctype.h errno.h stdio.h stdlib.h])
@@ -463,7 +465,7 @@ AC_ARG_WITH(bin-dir,
         [SLAX_BINDIR=$prefix/bin]
 )
 
-SLAX_LIBS=-lslax
+SLAX_LIBS="-lslax -lpsu"
 SLAX_SRCDIR=${srcdir}
 SLAX_LIBDIR=${libdir}
 SLAX_INCLUDEDIR=${includedir}
@@ -505,6 +507,9 @@ AC_CONFIG_HEADERS([libslax/slaxconfig.h])
 AC_CONFIG_FILES([
   Makefile
   slax-config
+  libpsu/Makefile
+  parrotdb/Makefile
+  libxi/Makefile
   libslax/Makefile
   libslax/slaxversion.h
   extensions/Makefile
@@ -522,6 +527,8 @@ AC_CONFIG_FILES([
   tests/bugs/Makefile
   tests/errors/Makefile
   tests/libxslt/Makefile
+  tests/pa/Makefile
+  tests/xi/Makefile
   bin/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc

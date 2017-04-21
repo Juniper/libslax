@@ -39,6 +39,7 @@
 #include <libxslt/documents.h>
 
 #include <libslax/slax.h>
+#include <libpsu/psustring.h>
 #include "slaxinternals.h"
 #include "slaxparser.h"
 #include "jsonlexer.h"
