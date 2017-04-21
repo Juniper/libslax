@@ -479,7 +479,7 @@ referenced using their name prefixed by the dollar sign.
     match / {
         <outer> {
             apply-templates configuration/system {
-                with $host=configuration/system/host-name;
+                with $host = configuration/system/host-name;
             }
         }
     }
@@ -491,7 +491,7 @@ referenced using their name prefixed by the dollar sign.
      * generated, which contains the value of the host parameter.
      */
     match system {
-        param $name = host;
+        param $host;
         <inner> $host;
     }
 
