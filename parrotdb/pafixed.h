@@ -44,7 +44,8 @@
 
 /* Declare our wrapper type */
 PA_ATOM_TYPE(pa_fixed_atom_t, pa_fixed_atom_s, pfa_atom,
-	     pa_fixed_is_null, pa_fixed_atom, pa_fixed_null_atom);
+	     pa_fixed_is_null, pa_fixed_atom, pa_fixed_atom_of,
+	     pa_fixed_null_atom);
 
 typedef uint8_t pa_fixed_flags_t;
 
