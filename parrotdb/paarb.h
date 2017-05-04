@@ -51,7 +51,7 @@ typedef uint8_t pa_arb_slot_t;
 
 /* Define our wrapper type */
 PA_ATOM_TYPE(pa_arb_atom_t, pa_arb_atom_s, pra_atom,
-	     pa_arb_is_null, pa_arb_atom, pa_arb_null_atom);
+	     pa_arb_is_null, pa_arb_atom, pa_arb_atom_of, pa_arb_null_atom);
 
 typedef struct pa_arb_header_s {
     uint16_t prh_magic;		/* Magic constant so we know we are us */
