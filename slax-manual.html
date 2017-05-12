@@ -515,7 +515,7 @@ li.indline1 {
  
   } 
   @top-right {
-       content: "January 2016";
+       content: "May 2017";
  
   } 
   @top-center {
@@ -22010,7 +22010,7 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td class="header left"></td>
-<td class="header right">January 21, 2016</td>
+<td class="header right">May 12, 2017</td>
 </tr>
 </table></div>
 <p id="title" class="title">The SLAX Scripting Language: An Alternate Syntax for XSLT<br><span class="filename">slax-manual</span></p>
@@ -23256,7 +23256,7 @@ jQuery(function ($) {
     match / {
         &lt;outer&gt; {
             apply-templates configuration/system {
-                with $host=configuration/system/host-name;
+                with $host = configuration/system/host-name;
             }
         }
     }
@@ -23268,7 +23268,7 @@ jQuery(function ($) {
      * generated, which contains the value of the host parameter.
      */
     match system {
-        param $name = host;
+        param $host;
         &lt;inner&gt; $host;
     }
 	    </pre> <p id="doc_section_1_2_3_3_p_3">Parameters can be declares with default values by using the "select" attribute to specify the desired default. If the template is invoked without the parameter, the XPath expression is evaluated and the results are assigned to the parameter.</p>
@@ -24043,11 +24043,11 @@ jQuery(function ($) {
 <a id="attribute-sets" href="#attribute-sets">Attribute Sets</a>
 </h2>
 <p id="doc_section_2_4_p_1">Attribute sets can be used to define sets of attributes that can be used together. An attribute set contains a set of "attribute" statements that define the names and values of attributes. These attributes can then be referred to as a collection rather than repeat the contents in the script.</p>
-<div class="digress tooltip faq" id="idp140702742101840"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp140702742101840">
+<div class="digress tooltip faq" id="idp140200211732928"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp140200211732928">
 <tr><td><div class="fancy-tooltip-header">faq: Do people really use this?</div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>My guess (which could be wildly wrong) is that this is a rarely used feature that are created to cover the condition that a template cannot return a set of attributes. That's my guess anyway.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp140702742101840'); " onmouseover="popUp(event, 'idp140702742101840')" onmouseout="popDown(event, 'idp140702742101840')"><span class="digress digress-anchor">[faq]</span></a><p id="doc_section_2_4_p_2">Section Contents: </p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp140200211732928'); " onmouseover="popUp(event, 'idp140200211732928')" onmouseout="popDown(event, 'idp140200211732928')"><span class="digress digress-anchor">[faq]</span></a><p id="doc_section_2_4_p_2">Section Contents: </p>
 <ul>
 <li><a href="#attribute-set" title='The "attribute&#8209;set" Statement'>Section 2.4.1</a></li>
 <li><a href="#use-attribute-sets" title='The "use&#8209;attribute&#8209;sets" Statement'>Section 2.4.2</a></li>
@@ -24645,11 +24645,11 @@ jQuery(function ($) {
         with $arg4 = 4;
         with $arg2 = 2;
     }
-	    </pre> <div class="digress tooltip note:" id="idp140702742397584"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp140702742397584">
+	    </pre> <div class="digress tooltip note:" id="idp140200212028624"><table class="tooltip" cellpadding="0" cellspacing="0" id="table-idp140200212028624">
 <tr><td><div class="fancy-tooltip-header">note:: </div></td></tr>
 <tr><td><div class="fancy-tooltip-body"> <p>Note that in SLAX parameter names are always prefixed with the dollar sign ("$"). This is not true for XSLT, where the dollar sign is not used when defining variables.</p> </div></td></tr>
 </table></div>
-<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp140702742397584'); " onmouseover="popUp(event, 'idp140702742397584')" onmouseout="popDown(event, 'idp140702742397584')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
+<a href="?" tabindex="9999" class="digress-anchor" onClick="return popClick(event, 'idp140200212028624'); " onmouseover="popUp(event, 'idp140200212028624')" onmouseout="popDown(event, 'idp140200212028624')"><span class="digress digress-anchor">[note:]</span></a><p id="doc_section_3_1_2_1_p_3">The "with" statement is described in more detail below (<a href="#with" title='The "with" Statement'>Section 3.2.7</a>).</p>
 </div>
 <div class="content">
 <h4 id="doc_section_3_1_2_2">
@@ -27582,47 +27582,23 @@ jQuery(function ($) {
 </tr>
 <tr>
 <td>primary</td>
-<td>Empty element that will indicate that this field is</td>
-</tr>
-<tr>
-<td></td>
-<td>primary key</td>
+<td>Field is primary key</td>
 </tr>
 <tr>
 <td>unique</td>
-<td>Empty element to indicate that values of this field are</td>
-</tr>
-<tr>
-<td></td>
-<td>unique</td>
+<td>Field value are unique</td>
 </tr>
 <tr>
 <td>notnull</td>
-<td>Empty element to indicate that value to this field must</td>
-</tr>
-<tr>
-<td></td>
-<td>be specified</td>
+<td>Field value must be specified</td>
 </tr>
 <tr>
 <td>auto-increment</td>
-<td>Empty element to indicate that this field value is auto</td>
-</tr>
-<tr>
-<td></td>
-<td>incremented. This can be used only with integer type</td>
-</tr>
-<tr>
-<td></td>
-<td>fields</td>
+<td>Field value is auto incremented; must be integer type</td>
 </tr>
 <tr>
 <td>default</td>
-<td>Used to specify default value that this field will</td>
-</tr>
-<tr>
-<td></td>
-<td>assume if not specified by the user</td>
+<td>Value field will have if not specified by the user</td>
 </tr>
 </tbody>
 </table></div>
