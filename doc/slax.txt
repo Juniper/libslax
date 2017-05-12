@@ -479,7 +479,7 @@ referenced using their name prefixed by the dollar sign.
     match / {
         <outer> {
             apply-templates configuration/system {
-                with $host=configuration/system/host-name;
+                with $host = configuration/system/host-name;
             }
         }
     }
@@ -491,7 +491,7 @@ referenced using their name prefixed by the dollar sign.
      * generated, which contains the value of the host parameter.
      */
     match system {
-        param $name = host;
+        param $host;
         <inner> $host;
     }
 
@@ -4410,17 +4410,11 @@ definition in SQL world and is used when creating a collection.
 |----------------+----------------------------------------------------------|
 | name           | Name of the field                                        |
 | type           | Type of this field. Can take integer/text/real as values |
-| primary        | Empty element that will indicate that this field is      |
-|                | primary key                                              |
-| unique         | Empty element to indicate that values of this field are  |
-|                | unique                                                   |
-| notnull        | Empty element to indicate that value to this field must  |
-|                | be specified                                             |
-| auto-increment | Empty element to indicate that this field value is auto  |
-|                | incremented. This can be used only with integer type     |
-|                | fields                                                   |
-| default        | Used to specify default value that this field will       |
-|                | assume if not specified by the user                      |
+| primary        | Field is primary key                                     |
+| unique         | Field value are unique                                   |
+| notnull        | Field value must be specified                            |
+| auto-increment | Field value is auto incremented; must be integer type    |
+| default        | Value field will have if not specified by the user       |
 |----------------+----------------------------------------------------------|
 
 **** <instance>

@@ -27,11 +27,13 @@ typedef pa_atom_t xi_ns_id_t;	/* Namespace identifier */
 
 /* Wrapper for our "name" atom */
 PA_ATOM_TYPE(xi_name_atom_t, xi_name_atom_s, xna_atom,
-	     xi_name_is_null, xi_name_atom, xi_name_null_atom);
+	     xi_name_is_null, xi_name_atom, xi_name_atom_of,
+	     xi_name_null_atom);
 
 /* Wrapper for our "namespace" atom */
 PA_ATOM_TYPE(xi_ns_atom_t, xi_ns_atom_s, xns_atom,
-	     xi_ns_is_null, xi_ns_atom, xi_ns_null_atom);
+	     xi_ns_is_null, xi_ns_atom, xi_ns_atom_of,
+	     xi_ns_null_atom);
 
 /* Type of XML nodes (for xi_node_type_t) */
 #define XI_TYPE_NONE	0	/* Unknown type */

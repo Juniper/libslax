@@ -102,6 +102,8 @@ cd $GIT_DIR/build
 run "configure" "../configure $CONFIGURE_OPTS"
 run "build and test" \
     "make clean && make && make install && make test && make dist"
+run "make distcheck" "make distcheck"
+
 run "Commit any changes" "gt commit"
 
 run "upload any documentation changes to gh-pages/" "make upload"

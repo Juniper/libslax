@@ -62,7 +62,7 @@ typedef uint32_t pa_atom_t;	/* Type for atom numbers */
  * uint32_t-based types will happily be treated identically.
  */
 #define PA_ATOM_TYPE(_atom_type, _atom_struct, _field, \
-		     _is_null_fn, _build_fn, _null_atom_fn)		\
+		     _is_null_fn, _build_fn, _atom_of_fn, _null_atom_fn) \
 typedef struct _atom_struct {						\
     pa_atom_t _field;		/* Atom number */			\
 } _atom_type;								\
@@ -77,7 +77,7 @@ _build_fn (pa_atom_t atom)						\
     return (_atom_type){ atom };					\
 }									\
 static inline pa_atom_t							\
-_build_fn##_of (_atom_type atom)					\
+_atom_of_fn (_atom_type atom)						\
 {									\
     return atom._field;							\
 }									\

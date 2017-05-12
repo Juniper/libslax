@@ -97,6 +97,10 @@ case "$op" in
         git diff "$@"
 	;;
 
+    info)
+        git remote show origin
+        ;;
+
     log)
        colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
 	git log --graph --abbrev-commit --decorate --all "${colors}" "$@"
@@ -189,15 +193,15 @@ case "$op" in
         ;;
 
     restash)
-	## Untried
+	set_branch
 	git stash
 	if [ $? -ne 0 ]; then
 	    echo "stash failed"
 	    exit 1
 	fi
-	git pull --rebase
+	git pull -v origin $branch
         if [ $? -ne 0 ]; then
-            echo "rebase failed"
+            echo "'gt pull' failed"
             exit 1
         fi
 	git stash pop
@@ -225,7 +229,7 @@ case "$op" in
 	fi
 	;;
 
-    pull|up|update)
+    up|update|pull)
 	# Update working copy with repo's changes
 	set_branch
 	git pull -v origin $branch

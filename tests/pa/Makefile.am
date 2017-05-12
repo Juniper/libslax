@@ -51,6 +51,7 @@ LDADD = \
     ${top_builddir}/parrotdb/libparrotdb.la
 
 EXTRA_DIST = \
+    pamain.h \
     ${TEST_CASES} \
     ${SAVEDDATA}
 

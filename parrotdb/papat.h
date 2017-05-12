@@ -37,11 +37,12 @@
 
 /* Wrapper for our "patricia tree node" atom */
 PA_ATOM_TYPE(pa_pat_atom_t, pa_pat_atom_s, ppa_atom,
-	     pa_pat_is_null, pa_pat_atom, pa_pat_null_atom);
+	     pa_pat_is_null, pa_pat_atom, pa_pat_atom_of, pa_pat_null_atom);
 
 /* Wrapper for our "data node" atom */
 PA_ATOM_TYPE(pa_pat_data_atom_t, pa_pat_data_atom_s, ppa_data_atom,
-	     pa_pat_data_is_null, pa_pat_data_atom, pa_pat_data_null_atom);
+	     pa_pat_data_is_null, pa_pat_data_atom, pa_pat_data_atom_of,
+	     pa_pat_data_null_atom);
 
 /**
  * @brief
