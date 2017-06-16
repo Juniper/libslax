@@ -101,11 +101,15 @@ case "$op" in
         git remote show origin
         ;;
 
-    log)
+    clog)
        colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
 	git log --graph --abbrev-commit --decorate --all "${colors}" "$@"
         echo ''
 	;;
+
+    log)
+        git log "$@"
+        ;;
 
     make-gh-pages)
         url=`git config --get remote.origin.url`
