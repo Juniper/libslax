@@ -5096,6 +5096,21 @@ holds the tag for the errno value, if known.
 If successful, nothing is returned.  On failure, a set of error nodes
 is returned.  See ^error-nodes^ for details.
 
+**** os:remove
+
+The os:remove function removes files and directories.  The input
+arguments are nodesets containing either strings or XML content.  The
+XML nodes can be either <file>, <directory>, or <wildcard> elements
+containing the name of a file, directory, or glob-style wildcard
+expression to remove.  Directories must be empty.  If an nodeset
+member is a string, it defaults to <file>.
+
+    var $file = <file> { expr "/tmp/some-file"; }
+    var $dir = <directory> { expr "/tmp/some-dir"; }
+    var $wild = <wildcard> { expr "/tmp/some-*-wild"; }
+    var $res = os:remove("/tmp/another-file", $file, $dir, $wild);
+    <results> { copy-of $res; }
+
 **** os:stat
 
 The os:stat function returns information about files and directories,
