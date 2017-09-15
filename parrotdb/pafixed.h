@@ -287,12 +287,41 @@ pa_fixed_test_flags (pa_fixed_t *pfp, pa_fixed_flags_t flags)
     return (pfp->pf_flags & flags) ? 1 : 0;
 }
 
+/**
+ * Macro to wrap a fixed atom with a different name
+ */
+#define PA_FIXED_ATOM_TYPE(_atom_type, _atom_struct, _field, \
+		     _build_fn, _atom_of_fn, _is_null_fn, _null_atom_fn) \
+typedef struct _atom_struct {						\
+    pa_fixed_atom_t _field;	/* Fixed atom */			\
+} _atom_type;								\
+static inline psu_boolean_t						\
+_is_null_fn (_atom_type atom)						\
+{									\
+    return pa_fixed_is_null(atom._field);				\
+}									\
+static inline _atom_type						\
+_build_fn (pa_atom_t atom)						\
+{									\
+    return (_atom_type){ pa_fixed_atom(atom) };				\
+}									\
+static inline pa_fixed_atom_t						\
+_atom_of_fn (_atom_type atom)						\
+{									\
+    return atom._field;							\
+}									\
+static inline _atom_type						\
+_null_atom_fn (void)							\
+{									\
+    return (_atom_type){ pa_fixed_null_atom()};				\
+}
+
 /*
  * Define a set of functions for a PA_ATOM_TYPE that call allocate
  * a free atoms, as well as turn the atom into a typed pointer.
  */
 #define PA_FIXED_FUNCTIONS(_atom_type, _type, _base, _field,		\
-	   _alloc_fn, _free_fn, _addr_fn, _build_fn, _is_null_fn)	\
+    _alloc_fn, _free_fn, _addr_fn, _build_fn, _atom_of_fn, _is_null_fn) \
 static inline _type *							\
 _alloc_fn (_base *basep, _atom_type *atomp)				\
 {									\
@@ -312,13 +341,22 @@ _free_fn (_base *basep, _atom_type atom)				\
     if (_is_null_fn(atom))		/* Should not occur */		\
 	return;								\
 									\
-    pa_fixed_free_atom(basep->_field, _build_fn##_of(atom));		\
+    pa_fixed_free_atom(basep->_field, _atom_of_fn(atom));		\
 }									\
 									\
 static inline _type *							\
 _addr_fn (_base *basep, _atom_type atom)				\
 {									\
-    return pa_fixed_atom_addr(basep->_field, _build_fn##_of(atom));	\
+    return pa_fixed_atom_addr(basep->_field, _atom_of_fn(atom));	\
 }
+
+#define PA_FIXED_ATOM_BASED(_atom_type, _atom_struct, _struct_field,	\
+	    _type, _base, _field, _alloc_fn, _free_fn, _addr_fn,	\
+	    _build_fn, _atom_of_fn, _is_null_fn, _null_atom_fn)		\
+    PA_FIXED_ATOM_TYPE(_atom_type, _atom_struct, _struct_field,		\
+		       _build_fn, _atom_of_fn, _is_null_fn, _null_atom_fn) \
+    PA_FIXED_FUNCTIONS(_atom_type, _type, _base, _field,		\
+		       _alloc_fn, _free_fn, _addr_fn,			\
+		       _build_fn, _atom_of_fn, _is_null_fn)
 
 #endif /* PARROTDB_PAFIXED_H */
