@@ -1,0 +1,395 @@
+#
+# Copyright (c) 2016-2017, Juniper Networks, Inc.
+# All rights reserved.
+# This SOFTWARE is licensed under the LICENSE provided in the
+# ../Copyright file. By downloading, installing, copying, or otherwise
+# using the SOFTWARE, you agree to be bound by the terms of that
+# LICENSE.
+#
+# Phil Shafer <phil@>, March 2017
+
+* Introduction
+
+This is documentation only in that most vague sense of the word.  It's
+more like 1/2 diary, 1/2 stream of consciousness therapy.  I'm not
+even sure it's all true.  But if you're trying to answer the question
+"what the snot was he thinking?", this document might help you.
+
+* Ramblings
+
+** XML
+
+The XML parser grew out of a discussion (one of those loud ones where
+neither side was really listening to the other) about the
+cost/benefits of XML versus JSON.  My contention is that XML has three
+valuable tools:
+
+- hierarchical organization
+- extensibility via namespaces
+- meta-data via attributes
+
+JSON has only the hierarchical organization, but does have the benefit
+of carrying data type encoding.  XML purists will likely think of that
+as meta-data that shouldn't be mixed with data, or repeated on every
+data instance, but in truth, it's a huge advantage, since you don't
+need to parse schema data to know that a data item is a string and not
+a boolean.  One can carry this information in XML attributes, but it's
+far uglier.
+
+But the discussion was more about the "wordiness" of XML and how
+annoying that was.  I pointed out that with compression, this turns
+out to be less than 5% overhead, and a close tag makes error detection
+possible in a way that a dozen close braces does not.
+
+We moved on to parsing, where I pointed out that calling one
+parsing function for JSON and one for XML meant it really wasn't any
+more painful to the programmer, but the counter was that XML parsing
+is much slower.  My own JSON parser (in libslax) is actually a bit
+faster than the libxml2 parser, and I could only argue that one's my
+code and the other's not.  Which didn't win the discussion.
+
+After thinking about it a bit, I realized that even the XML parser in
+JUNOS isn't that efficient (the fbuf code).  So I wanted to see how
+fast I could make one. Turns out when parsing XML, you always "know"
+the next character that you care about, and it's either a '<' or a
+'>'.  That means one should be calling memchr() extensively.  So I
+wrote a parser based on that, and got one an order of magnitude faster
+than the JUNOS code and even more so against the libxml2 code.  2.5GB
+of data per second on my aging laptop.
+
+Yes, I didn't have any real back end to use the XML.  I could have
+built libxml2-compatible structures, but they are fairly ugly.  So I
+went on a reading jaunt, looking at how things were stored in various
+XML implementations, and end up on the papers that described the "tiny
+tree" idea.  It seemed suitably efficient but was based around a large
+array.  In java, that's fine, but in C, large arrays stink.
+
+** Other Projects
+
+A bit about the other projects circling in my head at this time:
+
+- I want a means of pre-parsing large XML datasets, building an
+"index file" (of sorts) so that queries against the data were fast.
+The index file can refer into the original file for content, but all
+the XML parsing/hierarchy/etc needs to be pre-done, so one can open
+the file(s) and immediately start searching.  We have large YANG
+models, and (if we put them on YIN format) can use this for satisfying
+queries on the data model without have to rebuild it.
+
+- I want to build a new XSLT library, since my SLAX project hits on
+a number of performance issues within libxslt and libxml2.
+
+- I want a command line utility to parse XML (XHTML really (sort
+of)) so that libxo output could be filtered in ways like
+grep and awk but with XML awareness.  Imagine writing commands
+like "df | xfind 'avail > 2g'".
+
+- I want to make a new database for the JUNOS management daemon,
+which is currently ancient.  I wrote it as a memory-mapped tree of
+patricia trees, which is insanely fast, but it's not really very
+memory efficient.  It's build on a power-of-two allocator, but most of
+it's data is fixed sizes and we don't take advantage of that.  I
+originally mapped it at a fixed address, placing pointers inside it,
+but that was redone to use offsets, which allows the database to be
+mapped at any address.  Also we're using TLV files for shipping data,
+but something more database-oriented would be faster (assumably).
+
+Which brings us to......
+
+** ParrotDB
+
+ParrotDB's name (at least to "PA" part of it) comes from "paged
+arrays".  The idea is that I wanted an array with a software page
+table, so the index into the array would consist of two halves, one
+that indicated the "page" on which the data lived, and the second half
+indicated the item number within that "page".  Using power-of-two page
+sizes means we can "or" these two halves together into a single 32-bit
+word that gives us that ability to address up to 4G of items in an
+array, with an upfront cost of only a page table.  This means 4G of
+each type of item, not 4G total number of items.
+
+Each page of data items is allocated at once, so the cost of
+allocating a single item can be large, but that incremental cost is
+near zero.  And also blindingly fast.  Like "grab the first idea off a
+queue" fast.
+
+We call these item numbers "atoms", and an atom looks like:
+
+          32                                                0
+          +---------+-------------+-------------------------+
+          | unused  | page number | number-inside-that-page |
+          +---------+-------------+-------------------------+
+                      page-part         item-part
+
+Here's the comment from pafixed.h, which might say it better:
+
+ * Paged arrays are fixed size arrays, allocated piecemeal
+ * to reduce their initial memory impact.
+ *
+ * Glossary:
+ * atom = smallest addressable unit.  You are making an arrray of
+ *     these atoms.  Atom size is determined by the user by
+ *     in the atom_size parameter.
+ * page = a set of atoms.  The number of atom per page is given in
+ *     the shift parameter: a page hold 1<<shift atoms.
+ * page_arrray = an array of atoms, split into pages to avoid
+ *     forcing a large memory footprint for an array that _might_
+ *     be large.
+ * base = the array of pointers to pages
+ *
+ * The paged array works like a page table; part of the identifier
+ * selects a page of values, while the remainder selects an atom off
+ * that page.  Note that it's an atom array, not a byte array.  The
+ * caller sets the bit shift (page size) and the number and size of
+ * the atoms, which are recorded in the base pa_fixed_t structure.
+ * Since the caller knows these values, they can either let us get
+ * them from the struct or pass them directly to the inline functions
+ * (e.g. pa_atom_addr_direct) for better performance.
+ *
+ * Be aware that since we're layering our "atoms" on top of mmap's
+ * "atoms", we need to keep our thinking clear in terms of whose atoms
+ * are whose.  Our "pages" are their "atoms".  We then divide each
+ * page into our fixed-sized atoms.
+
+When the table is opened, it's given the size of the array member,
+page-shift, and the max-count parameters.  These give us that
+number of items on each page and the size of the page-table.
+Depending on the size of the page table, there may be some bits at the
+top of the word that are essentially unused (but must be zero).
+
+It's a pain to hard code these numbers within the application, so a
+config file is available that can override the values, but once set
+for a table, they cannot be changed.
+
+There's an underlaying allocator that allocates memory for pages and
+page tables.  This allocator simply coughs up memory in 8k sizes.  We
+use mmap() to provide the underlaying storage.  With allows us to
+share the database, and allows it to persist, both of which allow the
+code to be used for the projects listed above ("pre-parse" and "new
+JUNOS database").  It also allows us to expand the memory segment by
+mmap()ing adjacent areas.  And I have an unapologetic bromance with
+mmap().
+
+Using 8k allocation means that each 8k chunk gets a single 32-bit
+number, giving a maximum database size of 35,184,372,088,832 bytes
+(32TB).  And each item in a paged array has a 32-bit number, allowing
+up to 4G of each item.
+
+pammap does not release memory to the system, or shrink the database
+when pages are freed.  It's not really worth the time, imho.  Maybe
+later, but not yet.
+
+On top of these two base allocators (pammap is the base, pafixed is
+paged arrays described above), I've built a number of additional
+allocators:
+
+- paarb -- Arbitrary sized allocation using a power-of-two allocator.
+When it's needed, there's no substitute.
+
+- pabitmap -- Bitmaps, in the paged-array style.  Each bitmap is a set
+of page items, so one can make a bitmap of 4g bits with minimal upfront
+costs.  A bitmap table is a set of bitmaps.
+
+- papat -- Patricia trees, which can be attached to any table.
+
+- psistr -- Immutable strings, that are "create only" and persist
+until the table is deleted.  They are indexed by a patricia tree to
+ensure uniqueness, which avoids wasting space and given each string a
+unique atom number.  Extremely useful for XML, where we put namespaces URIs
+and element names in a paistr table and can then compare tags by just
+comparing atom numbers.  Allocate pages are recorded in the page
+table, so they can be freed, but individual strings cannot be freed.
+
+Note well: the conversion from atom number (and table) to memory
+address is strictly a one-way function.  We don't make any attempt
+to reverse this, and probably can't with any hope of performance.
+So hold on to your atom numbers.
+
+One cost is that the caller has to "know" the source of what they are
+allocating.  If you are allocating patricia tree nodes, then you have
+to request them from the patricia tree node allocator.
+
+In the initial implementation, the caller has to track the table with
+each atom; the call to free an atom needs the table from which it was
+allocated.
+
+I've hit two issues that can be solved with the same fix.  The
+second issue that I'm typedefing these 32-bit numbers as uint32_t's
+with table-type-specific typedefs.  But since the compiler "knows"
+they are all "uint32_t"s under the skin, we don't get any protection.
+
+My fix is to use structs.  I normally avoid returning structs in C
+because it's insanely inefficient (lots of copies), but if the struct
+is 32 bits, the compiler optimizes it for us and it's identical to
+returning an int.  This would allow me to make distinct structs for
+each table type and have the compiler enforce type safety in a way
+that I can't get with ints.
+
+And if I'm willing to bite my tongue and return 32bit structs, I can
+make an even better API.  I'll return a 64-bit structure (which the
+compiler will still optimize for me) that contains not only the atom
+number for the table type and a "table number", allowing a single
+cohesive API for all table allocations and references.   Should be
+nice, but it's vapor right now.
+
+[ Okay, this is no longer vapor.  The use of structures makes for
+some noisy code, but it allows the compiler to enforce type safety,
+and that really helps me sleep better at night.  And since all
+the functions are inlined and trivial, the cost is low. ]
+
+In addition, hiding the API behind an array of operation functions
+indexed by the "table type" in the struct, given me the ability to
+push wrappers around table operations, so semaphore or versioning can
+be done in wrappers, invisible to both the caller and the table
+functions.   The downside is that I'm worked hard to make these
+functions inline wherever possible, and that disappear behind the
+common API.  That allows caller to choose deeper knowledge and better
+efficiency or more shallow knowledge and the overhead of a function
+call.  Seems like a reasonable trade-off.
+
+The concern is that lacking stronger type checking, someone passing
+the wrong sort of atom number to the wrong function would be very hard
+to catch and even harder to find.
+
+For performance-oriented use cases, the macro PA_FIXED_FUNCTIONS()
+defines a set of inline functions that make life a bit simpler,
+allowing type checking and hiding a bit of the details.
+
+*** Table Handles
+
+Table handles are broken into two pieces, the part that lives in the
+database file/mmap and the part that doesn't.  Obviously anything that
+needs to persist or be shared has to be placed in the database, but
+process-specific data like pointers cannot be placed in the database.
+We end of with a pa_foo_t handle (allocated in the heap) that in turn
+points to the "in database" information, called the "info pointer".
+Most table implementations will make #defines for individual fields so
+I don't have to think too much about this:
+
+    typedef struct pa_pat_info_s {
+        pa_atom_t ppi_root;
+        uint16_t ppi_key_bytes;
+    } pa_pat_info_t;
+    
+    typedef struct pa_pat_s {
+        pa_pat_info_t *pp_infop; /* Pointer to root info */
+        pa_mmap_t *pp_mmap;    /* Underlaying mmap */
+        /* ... */
+    } pa_pat_t;
+    
+    /* Shorthand for fields */
+    #define pp_root pp_infop->ppi_root
+    #define pp_key_bytes pp_infop->ppi_key_bytes
+
+The handle will also hold the handle of the underlaying mmap handle,
+as demonstrated here with the "pp_mmap" field.
+
+*** Configuration
+
+The configuration system is fairly trivial.  The config file
+holds a series of "name = value;" pairs.  Values are currently all
+integers (uint32_t) and "1<<x" is supported.
+
+The configurables are:
+
+- shift: (pafixed) the number of bits in an atom used to find the item
+with that page, terms "item-part" in the diagram above.
+- atom-size: (pafixed) the number of bytes in the atom.  While it is
+configurable, this is rarely changed from the value given by the
+application. 
+- max-atoms: (pafixed, paistr) number of atoms allowed in the table.
+- atom-shift: (paistr) log2 of the size of block used to allocate data
+for immutable strings.
+
+Since pafixed underlays many other table types, configurables like
+"shift" are used extensively, where "atom-shift" is really paistr
+specific.
+
+The immutable strings table (paistr) uses two tables internally, one
+for raw string data and one to hold indices into that data.  The
+second table allows string to have small monotonically increasing,
+predictable numbers.  The first table is named "raw" and the second
+"index".
+
+The patricia tree table (papat) keeps a table of root nodes called
+"root".
+
+Configurable names are built using a hierarchical set of names,
+separated by periods (".") starting with the table name (as given to
+the various "open" functions) and ending with the names given above
+(e.g. "max-atoms").  So for a simple table called "foo", the config
+file would look like:
+
+    foo.max-atoms = 100000;
+
+For something more complex, you might have:
+
+    goo.root.max-atoms = 4000;
+
+The best way to find the specific names is turning on the debugging
+flags and watch the paconfig name lookups.
+
+* libxi -- XML Input
+
+Yeah, it's a dumb name, but having created "libxo", "libxi" seems like
+the obvious choice.
+
+libxi currently reads XML input into a "tiny tree" data structure.
+The tiny tree's real trick is that each node has two references to
+other nodes: a "next" and a "child".  The next points to the next
+sibling node, but the last sibling, rather than having a NULL,
+references the parent.  This avoids a parent reference per child,
+given a very tiny node size at 16 bytes.  Compare this with ~200 bytes
+for libxml2, and you can see my hope for reducing the memory footprint
+for XML documents.
+
+** xi_source_t
+
+An xi_source_t is a source of XML tokens, typically from a file.  We
+deliver these as return values from xi_source_next_token, which
+presents a vaguely SAX-like API, but as a pull, not a push.  It
+returns a "token type" (XI_TYPE_* from xicommon.h), along with
+filling in two "char *" pointers, one for the token, and one
+for the "rest".   The "rest" varies by token type, from nothing for
+XI_TYPE_CLOSE to attributes for XI_TYPE_OPEN and XI_TYPE_PI.  For
+XI_TYPE_TEXT, it's a pointer to the _end_ of the string, since we
+can't always NUL-terminate text data.
+
+The parser on my aging macbookpro does 0.5G/s of XML parser, which
+isn't too bad.  I need to go optimize it and see what else can be
+trimmed.
+
+** xi_node_t
+
+A node is a compact structure, since we are expecting to make them in
+large numbers.  Based on the "tiny tree" pattern, we have only two
+pointers, xn_next and xn_contents.  The "contents" are our children,
+and the "next" is either our sibling or our parent, which is
+determined based on the node's relative depth.
+
+[ In practice, the lack of a "parent" may become unworkable, since
+the expense of whiffling thru 10,000 nodes to find one's parent is
+too expensive. ]
+
+We compact namespaces by using a pool of "prefix->URL" mappings,
+with the assumption that the number of unique mappings within a
+document is relatively low.
+
+We mash the prefix mapping atom in the top bits of the same uint32_t
+bit field as the node's name, which is an immutable string atom, and
+should also be a relatively small number.
+
+Since the "mapping" and the "name" are really parrotdb atoms, we want
+to expose these as parrotdb uint32_t structures, not raw atoms.  We
+do this to help about numbering bugs.  So we provide accessors for
+these fields.
+
+** Future Plans
+
+I'm looking at a libxml2/libxslt replacement, but these libraries
+expose a large volume of internals, making a plug-compatible
+replacement impossible.
+
+I'm working on the XPath implementation currently, looking at FSA to
+make regex-like state-based pattern matching.  It's still very early
+and, well, it's pretty ugly.  But very interesting......
