@@ -54,10 +54,10 @@ slaxMvarSvarName (const char *varname)
 
     cp = strchr(varname, ':');
     if (cp)
-	snprintf(buf, sizeof(buf), "%*s:slax-%s", (int) (cp - varname),
-		 varname, cp);
+	snprintf(buf, sizeof(buf), "%*s:" SLAX_MVAR_PREFIX "%s",
+		 (int) (cp - varname), varname, cp);
     else
-	snprintf(buf, sizeof(buf), "slax-%s", varname);
+	snprintf(buf, sizeof(buf), SLAX_MVAR_PREFIX "%s", varname);
 
     return xmlStrdup((const xmlChar *) buf);
 }
