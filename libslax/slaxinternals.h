@@ -64,6 +64,8 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...);
 
 /* --- slaxmvar.h --- */
 
+#define SLAX_MVAR_PREFIX "slax-"
+
 void slaxMvarAddSvarName (slax_data_t *sdp, xmlNodePtr nodep);
 
 /**
