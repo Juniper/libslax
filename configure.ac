@@ -105,25 +105,34 @@ AM_CONDITIONAL([SLAX_WARNINGS_HIGH], [test "$SLAX_WARNINGS" != "no"])
 AC_MSG_CHECKING([whether to build with debugging])
 AC_ARG_ENABLE([debug],
     [  --enable-debug    Turn on debugging],
-    [SLAX_DEBUG=yes; AC_DEFINE([SLAX_DEBUG], [1], [Enable debugging])],
+    [SLAX_DEBUG=$enableval],
     [SLAX_DEBUG=no])
 AC_MSG_RESULT([$SLAX_DEBUG])
+if test "$SLAX_DEBUG" != "no"; then
+    AC_DEFINE([SLAX_DEBUG], [1], [Enable debugging])
+fi
 AM_CONDITIONAL([SLAX_DEBUG], [test "$SLAX_DEBUG" != "no"])
 
 AC_MSG_CHECKING([whether to build with readline])
 AC_ARG_ENABLE([readline],
     [  --enable-readline    Enable support for GNU readline],
-    [HAVE_READLINE=yes; AC_DEFINE([HAVE_READLINE], [1], [Support readline])],
+    [HAVE_READLINE=$enableval],
     [HAVE_READLINE=no])
 AC_MSG_RESULT([$HAVE_READLINE])
+if test "$HAVE_READLINE" != "no"; then
+    AC_DEFINE([HAVE_READLINE], [1], [Support readline])
+fi
 AM_CONDITIONAL([HAVE_READLINE], [test "$HAVE_READLINE" != "no"])
 
 AC_MSG_CHECKING([whether to build with libedit])
 AC_ARG_ENABLE([libedit],
     [  --enable-libedit    Enable support for libedit (BSD readline)],
-    [HAVE_LIBEDIT=yes; AC_DEFINE([HAVE_LIBEDIT], [1], [Support libedit])],
+    [HAVE_LIBEDIT=$enableval],
     [HAVE_LIBEDIT=no])
 AC_MSG_RESULT([$HAVE_LIBEDIT])
+if test "$HAVE_LIBEDIT" != "no"; then
+    AC_DEFINE([HAVE_LIBEDIT], [1], [Support libedit])
+fi
 AM_CONDITIONAL([HAVE_LIBEDIT], [test "$HAVE_LIBEDIT" != "no"])
 
 AC_MSG_CHECKING([compiler for gcc])
