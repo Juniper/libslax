@@ -1158,7 +1158,12 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
     int i;
     const char *type, *name;
     char buf[BUFSIZ];
-    
+   
+    if (ctxt == NULL) {
+	slaxOutput("The script is not being run.");
+	return;
+    }
+
     if (ctxt->varsNr <= ctxt->varsBase) {
 	slaxOutput("no local variables");
 	return;
@@ -1209,6 +1214,17 @@ slaxDebugCmdLocals (DC_ARGS)
     slaxDebugContextVariables(statep->ds_ctxt);
 }
 
+static int
+slaxDebugCheckContext (xsltTransformContextPtr ctxt)
+{
+    if (ctxt == NULL) {
+	slaxOutput("The script is not being run.");
+	return TRUE;
+    }
+
+    return FALSE;
+}
+
 /*
  * 'info' command
  */
@@ -1221,6 +1237,9 @@ slaxDebugCmdInfo (DC_ARGS)
 	slaxDebugInfoBreakpoints(statep);
 
     } else if (slaxDebugIsAbbrev("insert", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
 	if (ctxt->insert == NULL) {
 	    slaxOutput("context insertion point is NULL");
 	} else {
@@ -1229,6 +1248,9 @@ slaxDebugCmdInfo (DC_ARGS)
 	}
 
     } else if (slaxDebugIsAbbrev("output", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
 	if (ctxt->output == NULL) {
 	    slaxOutput("context output document is NULL");
 	} else {
@@ -1237,6 +1259,9 @@ slaxDebugCmdInfo (DC_ARGS)
 	}
 
     } else if (slaxDebugIsAbbrev("locals", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
 	slaxDebugContextVariables(ctxt);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
