@@ -8,6 +8,29 @@
    # Phil Shafer, July 2014
    #
 
+===========================
+The SLAX Scripting Language
+===========================
+
+SLAX is an alternate syntax for XSLT, the W3C standard XML-to-XML
+transformation.  XSLT is a powerful language, but uses an XML-based
+syntax that is painful to read and write.  SLAX uses a syntax modeled
+after PERL and C which promotes the basic concepts of XSLT into first
+class language constructs.  The result is scripts that are easier to
+develop and maintain.
+
+This documentation covers the SLAX language, beginning with an
+overview and a reference section listing all SLAX statements.  SLAX
+has a number of built-in functions which are also covered.
+
+An implementation of the SLAX is available in an open source project
+called `libslax`.  Built on top of `libxslt` and `libxml2`, libslax parses
+SLAX files and executes them, and can convert between SLAX and XSLT.
+A debugger and profiler are included.  libslax was originally
+developed as part of the JUNOS Operating System by Juniper Networks
+and is released under a BSD license.  See the "Copyright" file for
+details.
+
 XSLT is a commonly used transformation language for XML.  It is a
 declarative language that uses XPath expressions to inspect an XML
 input document and can generate XML output based on that input
