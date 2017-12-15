@@ -44,26 +44,26 @@ allowing expressions like::
     var $e = $f ?: $g;
 
 The caveat is that this uses an extension function slax:value() which
-may not be available in all XSLT environments. Coders must consider
-whether should a restriction deems this operator unusable. Portability
+may not be available in all XSLT environments.  Coders must consider
+whether should a restriction deems this operator unusable.  Portability
 considerations are identical to mutable variables (mvars).
 
 Mutable Variables
 +++++++++++++++++
 
-XSLT has immutable variables. This was done to support various
-optimizations and advanced streaming functionality. But it remains one
-of the most painful parts of XSLT. We use SLAX in JUNOS and provide
+XSLT has immutable variables.  This was done to support various
+optimizations and advanced streaming functionality.  But it remains one
+of the most painful parts of XSLT.  We use SLAX in JUNOS and provide
 the ability to perform XML-based RPCs to local and remote JUNOS
-boxes. One RPC allows the script to store and retrieve values in an
-SNMP MIB (the jnxUtility MIB). We have users using this to "fake"
+boxes.  One RPC allows the script to store and retrieve values in an
+SNMP MIB (the jnxUtility MIB).  We have users using this to "fake"
 mutable variables, so for our environment, any theoretical arguments
-against the value of mutable variables are lost. They are happening,
+against the value of mutable variables are lost.  They are happening,
 and the question becomes whether we want to force script writers into
 mental anguish to allow them.
 
-Yes, exactly. That was an apologetical defense of the following code,
-which implements mutable variables. Dio, abbi pieta della mia anima.
+Yes, exactly.  That was an apologetical defense of the following code,
+which implements mutable variables.  Dio, abbi pieta della mia anima.
 
 The rest of this section contacts mind-numbing comments on the
 implementation and inner working of mutable variables.
@@ -71,19 +71,19 @@ implementation and inner working of mutable variables.
 For the typical scriptor, the important implications are:
 
 - Non-standard feature: mutable variables are not available outside
-  the libslax environment. This will significantly affect the
-  portability of your scripts. Avoid mutable variables if you want to
+  the libslax environment.  This will significantly affect the
+  portability of your scripts.  Avoid mutable variables if you want to
   use your scripts in other XSLT implementations or without libslax.
 
 - Memory Overhead: Due to the lifespan of XML elements and RTFs inside
   libxslt, mutable variables must retain copies of their previous
   values (when non-scalar values are used) to avoid dangling
-  references. This means that heavy use of mutable variables will
+  references.  This means that heavy use of mutable variables will
   significantly affect memory overhead, until the mutable variables
   fall out of scope.
 
 - Axis Implications: Since values for mutable variables are copied
-  (see above), the operations of axes will be affected. This is a
+  (see above), the operations of axes will be affected.  This is a
   relatively minor issue, but should be noted.
 
 Let's consider the memory issues associated with mutable variables.
@@ -101,27 +101,27 @@ via the nodesetval field
 
 The key is that by having node sets refer to nodes "in situ" where
 they reside on other documents, the idea of refering to nodes in the
-input document is preserved. Node sets don't require an additional
+input document is preserved.  Node sets don't require an additional
 memory hook or a reference count.
 
 The key functions here are xmlXPathNewValueTree() and
-xmlXPathNewNodeSet(). Both return a fresh xmlXPathObject, but
+xmlXPathNewNodeSet().  Both return a fresh xmlXPathObject, but
 xmlXPathNewValueTree will set the xmlXPathObject's "boolval" to 1,
 which tells xmlXPathFreeObject() to free the nodes contained in a
 nodeset, not just the nodeTab that holds the references.
 
 Also note that if one of the nodes in the node set is a document (type
 XML_DOCUMENT_NODE) then xmlFreeDoc() is called to free the
-document. For RTFs, the only member of the nodeset is the root of the
+document.  For RTFs, the only member of the nodeset is the root of the
 document, so freeing that node will free the entire document.
 
 All this works well for immutable objects and RTFs, but does not allow
-my mutable variables to work cleanly. This is quite annoying.
+my mutable variables to work cleanly.  This is quite annoying.
 
 I need to allow a variable to hold a nodeset, a document, or a scalar
-value, without caring about the previous value. But I need to hold on
+value, without caring about the previous value.  But I need to hold on
 to the previous values to allow others to refer to them without
-dangling references.  Dangling References
+dangling references.
 
 Consider the following input document::
 
@@ -168,19 +168,19 @@ Now consider the following code::
     }
 
 In this chunk of code, the changing value of $z cannot change the
-nodes recorded as the values of $a, $b, or $c. Since I can't count on
+nodes recorded as the values of $a, $b, or $c.  Since I can't count on
 the context or variable memory garbage collections, my only choice is
-to roll my own. This is quite annoying.
+to roll my own.  This is quite annoying.
 
 The only means of retaining arbitrary previous values of a mutable
 variable is to have a complete history of previous values.
 
 The "overhead" for an mvar must contain all previous values for the
 mvar, so references to the node in the mvar (from other variables)
-don't become dangling when those values are freed. This is not true
+don't become dangling when those values are freed.  This is not true
 for scalar values that do not set the nodesetval field.
 
-Yes, this is pretty much as ugly as it sounds. After a variable has
+Yes, this is pretty much as ugly as it sounds.  After a variable has
 been made, it cannot be changed without being risking impacting
 existing references to it.
 
@@ -197,7 +197,7 @@ The Rules
 
 But where does the "overhead" live?
 
-In classic SLAX style, the overhead is kept in a shadow variable. The
+In classic SLAX style, the overhead is kept in a shadow variable.  The
 shadow variable (svar) holds an RTF/RVT that contains all the nodes
 ever assigned to the variable, a living history of all values of the
 variable.
@@ -228,22 +228,22 @@ of another variable, either as a straight value or as a nodeset.
 If an mvar is only ever assigned scalar values, the svar will not be
 touched. When a non-scalar value is assigned to an mvar, the content
 is copied to the svar and the mvar is given a nodeset that refers to
-the content inside the svar. Appending to a mvar means adding that
+the content inside the svar.  Appending to a mvar means adding that
 content to the svar and then appending the node pointers to the mvar.
 
-If the mvar has a scalar value, appending discards that value. If the
+If the mvar has a scalar value, appending discards that value.  If the
 appended value is a scalar value, then the value is simply assigned to
-the mvar. This will be hopelessly confusing, but there's little that
+the mvar.  This will be hopelessly confusing, but there's little that
 can be done, since appending to an RTF to a number or a number to an
 RTF makes little sense. We will raise an error for this condition, to
 let the scriptor know what's going on.  Memory
 
 When the mvar is freed, its "boolval" is zero, so the nodes are not
-touched but the nodesetval/nodeTab are freed. When the svar is freed,
+touched but the nodesetval/nodeTab are freed.  When the svar is freed,
 its "boolval" is non-zero, so xmlXPathFreeObject will free the nodes
-referenced in the nodesetval's nodeTab. The only node there will be
+referenced in the nodesetval's nodeTab.  The only node there will be
 the root document of a "fake" RTF document, which will contain all the
-historical values of the mvar. In short, the normal libxslt memory
+historical values of the mvar.  In short, the normal libxslt memory
 management will wipe up after us.  Implications
 
 The chief implications are:
@@ -253,7 +253,7 @@ The chief implications are:
 
 - axis -- since the document that contains the mvar contents is a
   living document, code cannot depend on an axis staying
-  unchanged. I'm not sure of what this means yet, but following::foo
+  unchanged.  I'm not sure of what this means yet, but following::foo
   is a nodeset that may change over time, though it won't change
   once fetched (e.g. into a specific variable).
 
@@ -278,14 +278,14 @@ XSLT implementations.
 
 In the 2005-2006 timeframe, we started developing on-box script
 capabilities using XSLT. I like the niche and properties of XSLT, but
-the syntax makes development and maintenance problematic. First class
+the syntax makes development and maintenance problematic.  First class
 constructs are buried in attributes, with unreadable
 encodings. Customers objections were fairly strong, and they asked for
 a more perl-like syntax. SLAX was our answer.
 
 SLAX simplifies the syntax of XSLT, making an encoding that makes
 scripts more readable, maintainable, and helps the reader to see
-what's going on. XML escaping is replaced by unix/perl/c-style
+what's going on.  XML escaping is replaced by unix/perl/c-style
 escaping. Control elements like <xsl:if> are replaced with the
 familiar "if" statement. Minor details are more transparent.
 
@@ -299,9 +299,9 @@ The integration of XPath into familiar control statements make the
 script writers job fairly trivial.
 
 At the same time, using XSLT constrains our scripting environment and
-limits what scripts can and cannot do. We do not need to worry about
+limits what scripts can and cannot do.  We do not need to worry about
 system access, processes, connections, sockets, or other features that
-are easily available in perl or other scripting languages. The scripts
+are easily available in perl or other scripting languages.  The scripts
 emit XML that instructs our environment on what actions to take, so
 those actions can be controlled.
 
@@ -312,8 +312,8 @@ Why the name conflict?
 ++++++++++++++++++++++
 
 The SLAX language is named for "eXtensible Stylesheet Language Alternate
-syntaX". Juniper started development on SLAX as part of the on-box
-scripting features in the 2004/2005 time frame. The name "SLAX" was
+syntaX".  Juniper started development on SLAX as part of the on-box
+scripting features in the 2004/2005 time frame.  The name "SLAX" was
 adopted after the Juniper management requested that we remove the
 leading "X" from the original internal name.
 
@@ -326,7 +326,7 @@ aware of this name conflict for many years.
 
 When we were made aware of the name conflict, we consulted with
 various parts of the Juniper family, and no one was interested in
-changing the language name. We repeated this procedure as we were
+changing the language name.  We repeated this procedure as we were
 publishing this open source version, but again, no one was interested
 in doing the internal and external work to change the language name,
 since the name conflict was considered minor and not an issue for our
