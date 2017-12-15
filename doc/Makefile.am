@@ -111,3 +111,13 @@ uninstall-hook:
 		${RM} -f ${OXTRADOC_INSTALL_DIR}/`basename $$file` ; \
         done
 	${RM} -f ${DESTDIR}${bindir}/oxtradoc
+
+SPHINX = python3.4 -msphinx
+
+html sphinx sphinx-html:
+	${SPHINX} -M html ${srcdir} sphinx
+
+clean-local: sphinx-clean
+
+sphinx-clean:
+	${SPHINX} -M clean ${srcdir} sphinx
