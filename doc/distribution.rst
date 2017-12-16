@@ -387,7 +387,7 @@ Behavioral Options
 .. option:: -I <dir>
 
   Add a directory to the list of directories searched for
-  :ref:`include-import <include and import>` files.  The environment
+  :ref:`include and import <include-import>` files.  The environment
   variable SLAXPATH can be set to a list of search directories,
   separated by colons.
 
