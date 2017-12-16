@@ -423,7 +423,7 @@ Here's a quick example::
         return SLAX_DYN_VERSION;
     }
 
-External Documentation
+Additional Documentation
 ----------------------
 
 My documentation style tends to be man-page-like, rather than
