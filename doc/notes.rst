@@ -424,7 +424,7 @@ Here's a quick example::
     }
 
 Additional Documentation
-----------------------
+------------------------
 
 My documentation style tends to be man-page-like, rather than
 tutorial-ish. But folks at Juniper Networks have made some
