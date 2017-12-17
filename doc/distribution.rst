@@ -333,8 +333,8 @@ Behavioral Options
 .. option:: --debug
 .. option:: -d
 
-  Enable the SLAX/XSLT debugger.  See :ref:`sdb` for complete details on the
-  operation of the debugger.
+  Enable the SLAX/XSLT debugger.  See :ref:`sdb` for complete details
+  on the operation of the debugger.
 
 .. option:: --empty
 .. option:: -E
