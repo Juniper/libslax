@@ -66,6 +66,7 @@ SLAX can import and include normal XSLT documents.
         <xsl:include href="foo.slax"/>
         <xsl:import href="goo.xsl"/>
 
+.. index:: statements; key
 .. _key:
 
 The `key` Statement
@@ -102,6 +103,7 @@ expression for the value of the key.
 
     https://www.w3.org/TR/1999/REC-xslt-19991116#key
 
+.. index:: statements; decimal-format
 .. _decimal-format:
 
 The `decimal-format` Statement
@@ -162,6 +164,7 @@ Typical scripts work by generating XML content as a result tree, but
 occasionally a script may need to make explicit, immediate output.
 The statements in this section allow for such output.
 
+.. index:: statements; message
 .. _message:
 
 The `message` Statement
@@ -218,6 +221,7 @@ a string using the normal XSLT rules.
           </xsl:when>
         </xsl:choose>
 
+.. index:: statements; terminate
 .. _terminate:
 
 The `terminate` Statement
@@ -242,6 +246,7 @@ block will be converted to a string using the normal XSLT rules.
 
 After emitting the message, the script stops any further processing.
 
+.. index:: statements; trace
 .. _trace:
 
 The `trace` Statement
@@ -285,6 +290,7 @@ the trace file.
 Since `trace` is non-standard, it can only be used when the associated
 extension functions are present, such as with the `libslax` software.
 
+.. index:: statements; output-method
 .. _output-method:
 
 The `output-method` Statement
@@ -332,6 +338,7 @@ The style can be `xml`, `html`, or `text` (without quotes).
     the XSLT <xsl:output> element.
 
 
+.. index:: statements; fallback
 .. _fallback:
 
 The `fallback` Statement
@@ -360,6 +367,7 @@ SLAX includes a means of retaining or removing text nodes that contain
 only whitespace.  Whitespace for XML is the space, tab, newline or
 carriage return characters.
 
+.. index:: statements; strip-space
 .. _strip-space:
 
 The `strip-space` Statement
@@ -388,6 +396,7 @@ whitespace::
 
         <xsl:strip-space elements="section paragraph bullet"/>
 
+.. index:: statements; preserve-space
 .. _preserve-space:
 
 The `preserve-space` Statement
@@ -419,6 +428,7 @@ whitespace.
 
         <xsl:preserve-space elements="art picture line"/>
 
+.. index:: statements; version
 .. _version:
 
 The `version` Statement
