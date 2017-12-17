@@ -72,7 +72,7 @@ OXTRADOC_SRC_FILES = \
 
 EXTRA_DIST += ${OXTRADOC_SRC_FILES}
 
-doc docs: ${OUTPUT}.txt ${OUTPUT}.html
+doc docs: ${OUTPUT}.txt ${OUTPUT}.html html
 
 ${OUTPUT}.txt: ${INPUT} ${OXTRADOC}
 	${OXTRADOC_CMD} -m text -o $@ $<
