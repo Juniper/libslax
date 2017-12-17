@@ -61,6 +61,8 @@ inspected, and what XML should be generated at each point.
 We'll examine each of these technologies in more detail in the
 following sections.
 
+.. index:: XML
+
 XML Concepts
 ++++++++++++
 
@@ -158,6 +160,8 @@ such as the following JUNOS configuration file::
     </configuration>
 
 See also https://www.w3.org/TR/1998/REC-xml-19980210.
+
+.. index:: XPath
 
 XPath Concepts
 ++++++++++++++
@@ -274,6 +278,8 @@ its value into the output tree.
 
 XPath is fully described in the W3C's specification,
 http://w3c.org/TR/xpath.
+
+.. index:: XSLT
 
 XSLT Concepts
 +++++++++++++
