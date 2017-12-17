@@ -438,7 +438,7 @@ Behavioral Options
   Write log data to the given file, rather than the default of
   the standard error stream.
 
-.. index:: mini-templates; option
+.. index:: mini-templates
 .. option:: --mini-template <code> or -m <code>
 
   Allows a simple script to be passed in via the command line using one
