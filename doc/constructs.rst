@@ -9,6 +9,7 @@ use language paradigms and constructs from traditional languages
 But SLAX is built on top of XSLT, and the declarative nature of XSLT
 means that many of its constructs are visible.
 
+.. index:: variables
 .. _main-var:
 
 Variables
@@ -90,6 +91,10 @@ equals sign and an expression::
     SLAX is using the same constucts as XSLT, but packaged in a more
     readable, maintainable syntax.
 
+.. index::
+    pair: immutable; variables
+
+.. index:: statements; var
 .. _var:
 
 The `var` Statement
@@ -113,6 +118,13 @@ statements (enclosed in braces) that emit a set of nodes::
         copy-of $this;
     }
 
+.. index::
+    pair: mutable; variables
+
+.. index:: statements; set
+.. index:: statements; append
+.. index:: statements; mvar
+.. index:: operators; "+="
 .. _mvar:
 
 The `mvar` Statement
@@ -148,6 +160,8 @@ the nodeset::
             <size> $item/size;
         }
     }
+
+.. index:: RTF
 
 Result Tree Fragments
 ---------------------
@@ -210,6 +224,7 @@ value::
 Fortunately for SLAX programmers, the ":=" operator does away with
 these conversion issues, as the following section details.
 
+.. index:: operators; ":="
 .. _colon-equals:
 
 The ":=" Operator
@@ -242,6 +257,8 @@ Control Statements
 This section gives details and examples for each of the control
 statements in SLAX.
 
+.. index:: statements; if
+.. index:: statements; else
 .. _if-else:
 
 The `if` and `else` Statements
@@ -292,6 +309,7 @@ element::
           </xsl:otherwise>
         </xsl:choose>
 
+.. index:: statements; for-each
 .. _for-each:
 
 The `for-each` Statement
@@ -338,6 +356,7 @@ parentheses-delimited select expression, and a block::
             </message>
         </xsl:for-each>
 
+.. index:: statements; for
 .. _for:
 
 The `for` Statement
@@ -366,6 +385,7 @@ pair of nested for-each loops, one to iterate and one to put the
 context back to the previous setting.  This allows the script writer
 to ignore the context change.
 
+.. index:: statements; while
 .. _while:
 
 The `while` Statement
@@ -394,6 +414,7 @@ taken to avoid infinite loops::
         set $count = $count + 1;
     }
 
+.. index:: statements; sort
 .. _sort:
 
 The `sort` Statement
@@ -436,6 +457,7 @@ Multiple `sort` statements can be used to given secondary sorting keys::
           <xsl:copy-of select="."/>
         </xsl:for-each>
 
+.. index:: operators; "..."
 .. _dotdotdot:
 
 The "..." Operator
@@ -458,6 +480,7 @@ nodes in a sequence::
         message "Value: " _ .;
     }
 
+.. index:: operators; "?:"
 .. _question-colon:
 
 The "?:" Operator
@@ -512,6 +535,7 @@ XPath expressions.  Functions have several advantages over templates:
 
 This section describes how functions are defined.
 
+.. index:: statements; function
 .. _function:
 
 The `function` Statement
@@ -539,6 +563,7 @@ defined::
 
 Function parameters can also be defined using the `param` statement.
 
+.. index:: statements; result
 .. _result:
 
 The `result` Statement
