@@ -17,6 +17,10 @@ flexibility in the output generated.
 
 We'll start by examining how SLAX generated these output nodes.
 
+.. index:: operators; "&&"
+.. index:: operators; "||"
+.. index:: operators; "!"
+.. index:: operators; "_"
 .. _expressions:
 
 Expressions
@@ -187,6 +191,8 @@ SLAX code, placed inside braces.
         }
     });
 
+.. index:: statements; expr
+
 The `expr` Statement
 ++++++++++++++++++++
 
@@ -196,6 +202,8 @@ expression is the argument to the statement::
     expr "Test: ";
     expr substring-before(name, ".");
     expr status;
+
+.. index:: statements; uexpr
 
 The `uexpr` Statement
 +++++++++++++++++++++
@@ -242,6 +250,7 @@ slash character ('/'), and the greater than character ('>').
        <index/>
     </doc>
 
+.. index:: elements; creating
 .. _xml-elements:
 
 XML Elements
@@ -302,7 +311,8 @@ This is equivalent to::
         </two>
     </top>
 
-.. _element:
+.. index:: statements; element
+.. index:: elements; by name
 
 The `element` Statement
 +++++++++++++++++++++++
@@ -325,6 +335,9 @@ current context.
         element "from-" _ address;
         element $my-var;
     }
+
+.. index::
+   pair: elements; json
 
 .. _json-elements:
 
@@ -360,6 +373,9 @@ Hierarchical nesting is done using objects::
     }
 
 This would generate XML equivalent to the examples in :ref:`xml-elements`.
+
+.. index::
+   pair: attributes; json
 
 .. _json-attributes:
 
@@ -414,6 +430,7 @@ JSON in XML.
       <real type="false">false</real>
       <cases type="null">null</cases>
 
+.. index:: json; arrays
 .. _json-arrays:
 
 Encoding JSON Arrays in XML
@@ -493,6 +510,7 @@ The equivalent in SLAX elements would be::
           </counts>
         </book>
 
+.. index:: json; invalid names
 .. _json-names:
 
 Encoding Invalid JSON Names
@@ -517,6 +535,8 @@ content with the "name" attribute containing the real name::
             <element name="&lt;&gt;">&lt;&gt;</element>
         </element>
 
+.. index:: attributes
+
 Attributes
 ----------
 
@@ -530,6 +550,8 @@ value of the attribute in quotes::
             <!-- .... content ... -->
         </section>
     </chapter>
+
+.. index:: attributes; concept
 
 XML Attributes
 ++++++++++++++
@@ -594,6 +616,8 @@ The XSLT equivalent::
     <avt sign="{{here}}"/>
 
 
+.. index:: attributes; creating
+.. index:: statements; attribute
 .. _attribute:
 
 The `attribute` Statement
@@ -615,6 +639,8 @@ context.
         expr "from-" _ address;
     }
 
+.. index:: attributes; attribute-set
+
 Attribute Sets
 --------------
 
@@ -631,6 +657,7 @@ the contents in the script.
     template cannot return a set of attributes.  That's my guess
     anyway.
 
+.. index:: statements; attribute-set
 .. _attribute-set:
 
 The `attribute-set` Statement
@@ -648,6 +675,7 @@ the contents are a set of attribute statements.
         attribute "cellspacing" { expr $cellspacing; }
     }
 
+.. index:: statements; use-attribute-sets
 .. _use-attribute-sets:
 
 The `use-attribute-sets` Statement
@@ -665,6 +693,8 @@ set to the current element.
 The use-attribute-sets statement can be used under the `element`,
 `copy-node`, and `attribute-sets` statements, as well as under a
 normal element.
+
+.. index:: namespaces
 
 Namespaces
 ----------
@@ -697,6 +727,7 @@ underlaying namespace.
  svg              <svg:name/>           
 ================ =======================
 
+.. index:: statements; ns
 .. _ns:
 
 The `ns` Statement
@@ -782,6 +813,7 @@ keywords instruct the parser to add the namespace prefix to the
             <!-- ... -->
         </xsl:stylesheet>
 
+.. index:: statements; extension
 .. _extension:
 
 The `extension` Statement
@@ -804,6 +836,7 @@ functions and elements defined within that library.
 
     https://www.w3.org/TR/1999/REC-xslt-19991116#extension-element
 
+.. index:: statements; exclude
 .. _exclude:
 
 The `exclude` Statement
@@ -892,6 +925,7 @@ application-specific information inside an XML document.  The
 application can detect processing instructions and change behaviour
 accordingly.
 
+.. index:: statements; processing-instruction
 .. _processing-instruction:
 
 The `processing-instruction` Statement
@@ -952,6 +986,7 @@ XML output renderer.
          * This is a SLAX comment
          */ -->
 
+.. index:: statements; comment
 .. _comment:
 
 The `comment` Statement
@@ -982,6 +1017,7 @@ that the entire node hierarchy is copied or just the node itself.
 SLAX contains two distinct statements for these two styles of
 copying. 
 
+.. index:: statements; copy-of
 .. _copy-of:
 
 The `copy-of` Statement
@@ -1006,6 +1042,7 @@ See also copy-node (:ref:`copy-node`).
 
        <xsl:copy-of select="configuration/protocols/bgp"/>
 
+.. index:: statements; copy-node
 .. _copy-node:
 
 The `copy-node` Statement
@@ -1032,6 +1069,8 @@ This section contains information about statements that control
 formatting of output.  See also the :ref:`output-method` and
 :ref:`decimal-format`.
 
+.. index:: statements; number
+.. index:: statements; level
 .. _number:
 
 The `number` Statement
