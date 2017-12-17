@@ -17,6 +17,8 @@ follows more traditional procedural languages.  Named templates are
 called like function, returning their XML output nodes to the caller,
 where they can be merged into the caller's XML output tree.
 
+.. index:: templates; named
+.. index:: statements; template
 .. _template:
 
 The `template` Statement
@@ -39,6 +41,8 @@ giving a simple shorthand for passing parameters if common names are
 used.  Additional template parameters can be supplied inside the block
 using the `with` statement.
 
+.. index:: templates; calling
+.. index:: statements; call
 .. _call:
 
 The `call` Statement
@@ -64,6 +68,7 @@ parameter, without using an enclosing set of braces::
 
     var $a = call test($a = 1);
 
+.. index:: statements; with
 .. _with-call:
 
 Using the `with` Statement with `call`
@@ -203,6 +208,8 @@ associated with the rules, builds the XML output nodes, and merges
 those nodes with the XML output nodes from other rules to build the
 XML output nodes.
 
+.. index:: templates; match
+.. index:: statements; match
 .. _match:
 
 The `match` Statement
@@ -232,6 +239,8 @@ in this document.
         }
     }
 
+.. index:: templates; applying
+.. index:: statements; apply-templates
 .. _apply-templates:
 
 The `apply-templates` Statement
@@ -272,6 +281,7 @@ Match templates are applied using the `apply-templates` statement.
           </hello>
         </xsl:template>
 
+.. index:: statements; apply-imports
 .. _apply-imports:
 
 The `apply-imports` Statement
@@ -290,6 +300,8 @@ allowing the script to invoke any imported templates.
 
         <xsl:apply-imports/>
 
+.. index:: templates; mode
+.. index:: statements; mode
 .. _mode:
 
 The `mode` Statement
@@ -358,6 +370,7 @@ In this example, template processing is invoked twice, first for mode
           <xsl:apply-template select="version" mode="two"/>
         </xsl:template>
 
+.. index:: statements; priority
 .. _priority:
 
 The `priority` Statement
@@ -391,6 +404,7 @@ In this example, the template is given a high priority::
           </output>
         </xsl:template>
 
+.. index:: statements; param
 .. _param:
 
 The `param` Statement
@@ -431,6 +445,7 @@ template name::
         <area> $width * $length * $scale;
     }
 
+.. index:: statements; with
 .. _with:
 
 The `with` Statement
@@ -504,6 +519,7 @@ simple shorthand for passing parameters if common names are used.
           </hello>
         </xsl:template>
 
+.. index:: statements; main
 .. _main-template:
 
 The `main` Template
