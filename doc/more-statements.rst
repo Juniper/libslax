@@ -15,8 +15,9 @@ If the first line of a SLAX script begins with the characters "#!",
 the rest of that line is ignored.  This allows scripts to be invoked
 directly by name on a unix command line.
 
-See :ref:`slaxproc-arguments` for details about the slaxproc utility
-argument handling and the "#!" line.
+See :ref:`slaxproc-pound-bang` under :ref:`slaxproc-arguments` for
+details about the slaxproc utility argument handling and the "#!"
+line.
 
 Additional details are available at the following site:
 
