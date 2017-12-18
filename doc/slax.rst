@@ -8,6 +8,8 @@
    # Phil Shafer, July 2014
    #
 
+.. _overview:
+
 ===========================
 The SLAX Scripting Language
 ===========================
@@ -84,6 +86,7 @@ concentrate in the new topics introduced by XSLT.
     more-statements
     functions
     distribution
+    building
     extensions
     examples
     notes
