@@ -75,7 +75,7 @@ general/itemschoose.xsl
         }
     }
 
-.. admonition: XSLT Equivalent
+.. admonition:: XSLT Equivalent
 
    https://raw.githubusercontent.com/GNOME/libxslt/master/tests/general/itemschoose.xsl
 
@@ -123,7 +123,7 @@ REC2/svg.xsl
         }
     }
 
-.. admonition: XSLT Equivalent
+.. admonition:: XSLT Equivalent
 
    https://raw.githubusercontent.com/GNOME/libxslt/master/tests/REC2/svg.xsl
 
@@ -169,6 +169,6 @@ XSLTMark/metric.xsl
         }
     }
 
-.. admonition: XSLT Equivalent
+.. admonition:: XSLT Equivalent
 
    https://raw.githubusercontent.com/GNOME/libxslt/master/tests/XSLTMark/metric.xsl
