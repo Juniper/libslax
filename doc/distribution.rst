@@ -1,3 +1,4 @@
+.. _libslax software:
 
 ========================
 The libslax Distribution
