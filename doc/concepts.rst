@@ -1,3 +1,4 @@
+.. _concepts:
 
 ===============
 SLAX (Overview)
