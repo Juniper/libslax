@@ -454,6 +454,87 @@ following to your `.emacs` file::
 SLAX Version Information
 ------------------------
 
+This section provides details about new changes in each version of the
+SLAX language.
+
+Note that the "--write-version" option to slaxproc can be used
+to convert between versions::
+
+    % cat /tmp/foo.slax
+    version 1.2;
+
+    main <op-script-results> {
+        var $x = {
+            "this": "that",
+            "one": 1
+        }
+        call my-template($rpc = <get-interface-information>);
+    }
+    % slaxproc --format --write-version 1.0 /tmp/foo.slax
+    version 1.0;
+
+    match / {
+        <op-script-results> {
+            var $x = {
+                <this> "that";
+                <one type="number"> "1";
+            }
+            var $slax-temp-arg-1 = <get-interface-information>;
+
+            call my-template($rpc = slax-ext:node-set($slax-temp-arg-1));
+        }
+    }
+
+New Features in SLAX-1.2
+++++++++++++++++++++++++
+
+SLAX-1.2 adds the following new features:
+
+- :ref:`json-elements <JSON-style data> allows code like::
+
+    var $x = {
+        "this": "that",
+        "one": 1
+    }
+
+- Elements can be passed directly as arguments::
+
+    call my-template($rpc = <get-interface-information>);
+
+- The "main" statement that allows a more obvious entry point to the
+  script (as opposed to "match / { ... }".  It also defines the
+  top-level tag::
+
+    main <op-script-results> {
+        call emit-my-output();
+    }
+
+- Namespaces are a bit simplified, so a script does not need to
+  explicitly name a namespace that implements extension functions,
+  since the extension function libraries will record their information
+  when they are installed.
+
+  For example, the "curl" and "bit" namespaces (used to access
+  libraries that ship with libslax) are automatically discovered
+  without the need for an explicit `ns` statement.
+
+  You can see these discovered values using "slaxproc --format"::
+
+    % cat /tmp/foo.slax
+    version 1.2;
+
+    main <op-script-results> {
+        expr bit:from-int(32, 10);
+    }
+    % slaxproc --format /tmp/foo.slax
+    version 1.2;
+
+    ns bit extension = "http://xml.libslax.org/bit";
+
+    main <op-script-results> {
+        expr bit:from-int(32, 10);
+    }
+
 New Features in SLAX-1.1
 ++++++++++++++++++++++++
 
