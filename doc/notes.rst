@@ -423,6 +423,34 @@ Here's a quick example::
         return SLAX_DYN_VERSION;
     }
 
+Tips for Emacs
+--------------
+
+Use "fly-mode" to give immediate indication of syntax errors
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+emacs' `flymake-mode` will indicate errors in source files. It runs
+when a buffer is loaded, after every newline, and after a configurable
+number of seconds have past. To have it handle SLAX files, add the
+following to your `.emacs` file::
+
+    (require 'flymake)
+
+    (defun flymake-slax-init ()
+      (let* ((temp-file (flymake-init-create-temp-buffer-copy
+                         'flymake-create-temp-inplace))
+             (local-file (file-relative-name
+                          temp-file
+                          (file-name-directory buffer-file-name))))
+        (list "slaxproc" (list "--check" local-file))))
+
+    (setq flymake-allowed-file-name-masks
+          (cons '(".+\\.slax$"
+                  flymake-slax-init
+                  flymake-simple-cleanup
+                  flymake-get-real-file-name)
+                flymake-allowed-file-name-masks))
+
 Additional Documentation
 ------------------------
 
@@ -455,6 +483,12 @@ started.
 
 Note these require Juniper-specific permissions, JNet logins, and
 other hurdles. Apologies for the inconvenience.
+
+A `Quick Reference Card`_ is available, along with `assembly
+instructions`_.
+
+.. _Quick Reference Card: https://raw.github.com/Juniper/libslax/master/doc/slax-quick-reference.pdf
+.. _assembly instructions: https://github.com/Juniper/libslax/wiki/QRCPrintHelp
 
 News! The Day One Guides are available for <$2 (some free) on the
 itunes store! Search under books for "juniper".
