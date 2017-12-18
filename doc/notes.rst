@@ -490,20 +490,21 @@ New Features in SLAX-1.2
 
 SLAX-1.2 adds the following new features:
 
-- :ref:`json-elements <JSON-style data> allows code like::
+- :ref:`JSON-style data <json-elements>` allows code like::
 
     var $x = {
         "this": "that",
         "one": 1
     }
 
-- Elements can be passed directly as arguments::
+- Elements can be passed :ref:`directly as arguments
+  <elements-as-arguments>` ::
 
     call my-template($rpc = <get-interface-information>);
 
-- The "main" statement that allows a more obvious entry point to the
-  script (as opposed to "match / { ... }".  It also defines the
-  top-level tag::
+- The :ref:`main <main-template>` statement that allows a more obvious
+  entry point to the script (as opposed to "match / { ... }".  It also
+  defines the top-level tag::
 
     main <op-script-results> {
         call emit-my-output();
@@ -569,7 +570,7 @@ SLAX-1.1 includes complete support for all XSLT elements.
 - The :ref:`decimal-format <decimal-format>` statement defines details
   about the formatting of numbers.
 
-- The :ref:`element <element>` statement creates an element, giving a
+- The :ref:`element <elements>` statement creates an element, giving a
   name and contents for that element.  This is used when the element
   name is not static::
 
@@ -685,7 +686,7 @@ functionality for SLAX scripts.
 New SLAX Operators
 ~~~~~~~~~~~~~~~~~~
 
-- The :ref:`sequence-operator <sequence operator>` ("...") creates a
+- The :ref:`sequence operator <dotdotdot>` ("...") creates a
   sequence of elements between two integer values.  Two values are used,
   with the "..." operator between them.  The values are both included in
   the range.  If the first value is less than the second one, the values
@@ -698,10 +699,10 @@ New SLAX Operators
         }
     }
 
-- The :ref:`colon-equals <node-set assignment operator>` (":=")
-  assigns a node-set while avoiding the evils of RTFs.  This allows the
-  assigned value to be used directly without the need for the node-set()
-  function::
+- The :ref:`colon-equals <colon-equals>` node-set assignment operator
+  (":=") assigns a node-set while avoiding the evils of RTFs.  This
+  allows the assigned value to be used directly without the need for
+  the node-set() function::
 
     var $data := {
         <one> 1;
@@ -712,7 +713,7 @@ New SLAX Operators
 
     var $name = $data/*[. == $count];
 
-- The :ref:`ternary-operator <ternary operator>` ("?:") makes a simple
+- The :ref:`ternary operator <question-colon>` ("?:") makes a simple
   inline if/else test, in the pattern of C/Perl.  Two formats are
   supported.  The first format gives a condition, the value if the
   condition is true, and the value if the condition is false.  The
