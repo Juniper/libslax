@@ -6,6 +6,8 @@ Additional SLAX Statements
 This section contains statements and constructs that don't easily
 fit into other categories.
 
+.. _pound-bang:
+
 The "#!" Line
 -------------
 
