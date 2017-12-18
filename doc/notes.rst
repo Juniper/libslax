@@ -451,6 +451,200 @@ following to your `.emacs` file::
                   flymake-get-real-file-name)
                 flymake-allowed-file-name-masks))
 
+SLAX Version Information
+------------------------
+
+New Features in SLAX-1.1
+++++++++++++++++++++++++
+
+New Statements for Existing XSLT Elements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SLAX-1.1 includes complete support for all XSLT elements.
+
+- The :ref:`apply-imports <apply-imports>` statement applies any
+  templates imported from other files.
+
+- The :ref:`attribute <attribute>` statement creates an attribute,
+  giving the name and value for the attribute.  This is used when the
+  attribute name is not static::
+
+    <data> {
+        attribute $type _ $number {
+            expr value;
+        }
+    }
+
+- The :ref:`attribute-set <attribute-set>` statement defines a set of
+  attributes.
+
+- The :ref:`copy-node <copy-node>` statement copies a node, while
+  allowing additional content to be supplied::
+
+    copy-node . {
+        <new> "content";
+    }
+
+- The :ref:`decimal-format <decimal-format>` statement defines details
+  about the formatting of numbers.
+
+- The :ref:`element <element>` statement creates an element, giving a
+  name and contents for that element.  This is used when the element
+  name is not static::
+
+    element $type _ $number {
+        expr "content";
+    }
+
+- The :ref:`fallback <fallback>` statement is used when an extension
+  element or function is not available.
+
+- The :ref:`key <key>` statement defines a key.
+
+- The :ref:`message <message>` statement generates an output message::
+
+    message "testing " _ this;
+
+- The :ref:`number` statement emits a number.
+
+- The :ref:`output-method <output-method>` statement declares the
+  output method to use when generating the results of the
+  transformation.
+
+- The :ref:`preserve-space <preserve-space>` statement defines
+  elements for which internal whitespace is to be preserved.
+
+- The :ref:`sort <sort>` statement defines the order in which the
+  `for-each` or `apply-templates` statements visit a set of nodes.
+
+- The :ref:`strip-space <strip-space>` statement defines elements for
+  which internal whitespace is to be removed.
+
+- The :ref:`terminate <terminate>` statement terminates a script,
+  giving a message.
+
+- The :ref:`uexpr <uexpr>` statement emits a values which is not escaped.
+
+- The :ref:`use-attribute-sets <use-attribute-sets>` statement uses
+  the set of attributes defined by an `attribute-set` statement.
+
+Mutable Variables
+~~~~~~~~~~~~~~~~~
+
+SLAX-1.1 introduces mutable variables, whose values can be changed.
+Mutable variables are not part of XSLT and their use can make your
+script unportable to other XSLT engines.  See :ref:`mvar` for
+associated issues.
+
+- The `append` statement appends a value to a mutable variable::
+
+    append $mvar += <new> "content";
+
+- The `mvar` statement declares a _mutable_ variable::
+
+    mvar $mvar;
+
+- The `set` statement sets the value of a mutable variable::
+
+    set $mvar = <my> "content";
+
+- The :ref:`while <while>` statement is a control statement that loops
+  until the text expression is false.  Note that this is only possible
+  if the test expression contains a mutable variable::
+
+    while (count($mvar) < 10) {
+        /* do more work */
+    }
+
+New SLAX Statements
+~~~~~~~~~~~~~~~~~~~
+
+SLAX-1.1 defines a new set of statements, providing additional
+functionality for SLAX scripts.
+
+- The :ref:`for <for>` statement is a control statement that iterates
+  thru a set of values, assigning each to a variable before evaluating a
+  block of statements::
+
+    for $i ($min ... $max) {
+        <elt> $i;
+    }
+
+- The :ref:`function <function>` statement defines an extension
+  function, usable in XPath expressions::
+
+    function my:lesser ($a, $b) {
+        if ($a < $b) {
+            result $a;
+        } else {
+            result $b;
+        }
+    }
+
+  Functions use the `EXSLT`_ `function package`_.
+
+.. _EXSLT: http://exslt.org
+.. _function package: http://exslt.org/func/
+
+- The :ref:`result <result>` statement defines the result value for a
+  function.
+
+- The :ref:`trace <trace>` statement allows trace data to be written
+  to the trace file::
+
+    trace "my debug value is " _ $debug;
+    trace {
+        if ($debug/level > 4) {
+            <debug> {
+                copy-of $data;
+            }
+        }
+    }
+
+New SLAX Operators
+~~~~~~~~~~~~~~~~~~
+
+- The :ref:`sequence-operator <sequence operator>` ("...") creates a
+  sequence of elements between two integer values.  Two values are used,
+  with the "..." operator between them.  The values are both included in
+  the range.  If the first value is less than the second one, the values
+  will be in increasing order; otherwise the order is decreasing::
+
+    for $tens (0 ... 9) {
+        message "... " _ tens _ "0 ...";
+        for $ones (0 ... 9) {
+            call test($value = $tens * 10 + $ones);
+        }
+    }
+
+- The :ref:`colon-equals <node-set assignment operator>` (":=")
+  assigns a node-set while avoiding the evils of RTFs.  This allows the
+  assigned value to be used directly without the need for the node-set()
+  function::
+
+    var $data := {
+        <one> 1;
+        <two> 2;
+        <three> 3;
+        <four> 4;
+    }
+
+    var $name = $data/*[. == $count];
+
+- The :ref:`ternary-operator <ternary operator>` ("?:") makes a simple
+  inline if/else test, in the pattern of C/Perl.  Two formats are
+  supported.  The first format gives a condition, the value if the
+  condition is true, and the value if the condition is false.  The
+  second format uses the first value if the condition is true and the
+  second if it is false.
+
+   var $class = (count(items) < 10) ? "small" : "large";
+   var $title = data/title ?: "unknown";
+
+- SLAX supports the use of "#!/path/to/slaxproc" as the first
+  line of a SLAX script.  This allows scripts to be directly
+  executable from the unix shell.
+
 Additional Documentation
 ------------------------
 
