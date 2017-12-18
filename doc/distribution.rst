@@ -136,7 +136,7 @@ but the input and output file names are positional::
 
    slaxproc -i input.xml -o output.xml -g -v script.slax
 
-.. _pound-bang:
+.. _slaxproc-pound-bang:
 
 "#!" Support
 ~~~~~~~~~~~~
