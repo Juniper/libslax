@@ -536,6 +536,34 @@ slaxDebugMakeRelativePath (const char *src_f, const char *dest_f,
     snprintf(relative_path + n, size, "%s", (dest_f + j));
 }
 
+static void
+slaxDebugOutputExpanded (const char *filename, int line,
+			 const char *rawp, int len)
+{
+    char buf[8 * len + 1];
+    char *cp = buf;
+    int i;
+
+    for (i = 0; i < len; i++, rawp++) {
+	if (*rawp == '\r')
+	    continue;
+
+	if (*rawp == '\t') {
+	    do {
+		*cp++ = ' ';
+	    } while ((cp - buf) % 8 != 0);
+
+	} else {
+	    /* Normal character */
+	    *cp++ = *rawp;
+	}
+    }
+    *cp = '\0';
+
+    slaxOutput("%s%s%d: %s", filename ?: "", filename ? ": " : "",
+	       line, buf);
+}
+
 /*
  * Return the line for given linenumber from file.
  *
@@ -574,7 +602,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 
 	while (count < stop) {
 	    len = xp ? xp - last : (int) strlen(last);
-	    slaxOutput("%d: %.*s", count++, len, last);
+	    slaxDebugOutputExpanded(NULL, count++, last, len);
 
 	    if (xp == NULL)
 		break;
@@ -596,7 +624,6 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 
     for (;;) {
 	if (fgets(line, sizeof(line), fp) == NULL) {
-	    count += 1;
 	    break;
 	}
 	/*
@@ -624,7 +651,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	stop = count + 1;
 
     while (count < stop) {
-	slaxOutput("%s:%d: %s", cp, count, line);
+	slaxDebugOutputExpanded(cp, count, line, strlen(line));
 
 	if (fgets(line, sizeof(line), fp) == NULL)
 	    break;
