@@ -1,3 +1,4 @@
+.. _SLAX language:
 
 ==========================
 Building Content with SLAX
