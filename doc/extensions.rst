@@ -1569,3 +1569,62 @@ This function returns a user element with following information
 ========== ==================================================
 
 This functions returns empty when an error occurs.
+
+Crypto Functions (with EXSLT and libgcrypt)
+-------------------------------------------
+
+libexslt defines a set of crypto functions using the namespace::
+
+    ns crypto = "http://exslt.org/crypto"; 
+
+These were added in 2004, but I cannot find suitable documentation
+for them.
+
+Building libxslt with libgcrypt-devel
++++++++++++++++++++++++++++++++++++++
+
+To have libxslt expose the crypto function, the library
+"libgcrypt-devel" must be present when libxslt is
+configured. "libgcrypt" alone is not sufficient, since it does not
+have the header files needed for libxslt to compile.
+
+Under macosx, this library is available in the "Mac Ports" collection
+and can be installed using the command "port install libgcrypt-devel".
+
+Once libgcrypt-devel is installed, run the libxslt "configure" script
+and rebuild using "make".
+
+crypto:md4
+++++++++++
+
+Computes the md4 hash of a string and returns it as a hex string::
+
+    var $hex = crypto:md4($data); 
+
+crypto:md5
+++++++++++
+
+Computes the md5 hash of a string and returns it as a hex string::
+
+    var $hex = crypto:md5($data); 
+
+crypto:sha1
++++++++++++
+
+Computes the sha1 hash of a string and returns it as a hex string::
+
+    var $hex = crypto:sha1($data); 
+
+crypto:rc4_encrypt
+++++++++++++++++++
+
+Encrypts a string and returns it as a hex string::
+
+    var $hex = crypto:rc4_encrypt($key, $data); 
+
+crypto:rc4_decrypt
+++++++++++++++++++
+
+Decrypts a string and returns it as hex::
+
+    var $data = crypto:rc4_decrypt($key, $hex); 
