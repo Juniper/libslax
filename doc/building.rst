@@ -1,8 +1,8 @@
 .. _building:
 
-====================
-How to build libslax
-====================
+======================
+How to Build `libslax`
+======================
 
 Building libslax invokes four steps:
 - installing prerequisite software
@@ -71,27 +71,27 @@ URLs for DIY
 libslax depends on the following software packages:
 
 - libxml2
+
   - home: http://www.xmlsoft.org/index.html
   - download information: http://www.xmlsoft.org/downloads.html
 
 - libxslt
+
   - home: http://xmlsoft.org/XSLT/
   - download information: http://xmlsoft.org/XSLT/downloads.html
 
 - libcurl (optional)
+
   - home: http://curl.haxx.se/libcurl/
   - download information: http://curl.haxx.se/download.html
 
 - libedit (optional)
+
   - note: libreadline can also be used optionally
   - home: http://www.thrysoee.dk/editline/
 
 Retrieving the source code
 --------------------------
-
-[Note: for Solaris users, the "tar" command lacks the "-z" flag,
-so you'll need to substitute "gzip -dc `file` | tar xf -" instead of
-"tar -zxf `file`".]
 
 You can retrieve the source for libslax in two ways:
 
@@ -114,7 +114,14 @@ build libslax from the git repo::
     git clone https://github.com/Juniper/libslax.git
     cd libslax
 
-.. admonition: Be Aware
+.. admonition:: Solaris Users
+
+    The Solaris "tar" command lacks the "-z" flag, so you'll need to
+    substitute "gzip -dc `file` | tar xf -" instead of "tar -zxf
+    `file`".
+
+.. admonition:: Be Aware
+
     The github repository does _not_ contain the files generated
     by "autoreconf", with the notable exception of the "m4" directory.
     Since these files (depcomp, configure, missing, install-sh, etc) are
