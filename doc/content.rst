@@ -167,6 +167,8 @@ differing only in the use of the XPath concat() function::
             <six><xsl:value-of select='results/message'/></six>
         </top>
 
+.. _elements-as-arguments:
+
 Using Elements as Function Arguments
 ++++++++++++++++++++++++++++++++++++
 
@@ -193,6 +195,7 @@ SLAX code, placed inside braces.
     });
 
 .. index:: statements; expr
+.. _expr:
 
 The `expr` Statement
 ++++++++++++++++++++
@@ -205,6 +208,7 @@ expression is the argument to the statement::
     expr status;
 
 .. index:: statements; uexpr
+.. _uexpr:
 
 The `uexpr` Statement
 +++++++++++++++++++++
@@ -221,6 +225,8 @@ respectively), but uexpr avoids this escaping mechanism.
 .. admonition:: XSLT Equivalent
 
     https://www.w3.org/TR/1999/REC-xslt-19991116#disable-output-escaping
+
+.. _elements:
 
 Elements
 --------
