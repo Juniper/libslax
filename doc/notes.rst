@@ -723,9 +723,9 @@ New SLAX Operators
    var $class = (count(items) < 10) ? "small" : "large";
    var $title = data/title ?: "unknown";
 
-- SLAX supports the use of "#!/path/to/slaxproc" as the first
-  line of a SLAX script.  This allows scripts to be directly
-  executable from the unix shell.
+- SLAX supports the use of :ref:`"#!/path/to/slaxproc" <pound-bang>`
+  as the first line of a SLAX script.  This allows scripts to be
+  directly executable from the unix shell.
 
 Additional Documentation
 ------------------------
