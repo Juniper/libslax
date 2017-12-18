@@ -115,6 +115,7 @@ uninstall-hook:
 SPHINX = python3.4 -msphinx
 
 html sphinx sphinx-html:
+	${GREP} '.. admonition: ' ${srcdir}/*rst; true
 	${SPHINX} -M html ${srcdir} sphinx
 
 clean-local: sphinx-clean
