@@ -10,7 +10,9 @@ This documentation includes:
 
 - An :ref:`overview <overview>` of SLAX and the problem is addresses
 - Instructions for :ref:`building <building>` libslax
-- Background information on the :ref:`concepts <concepts>` on which SLAX is based
+- Background information on the :ref:`concepts <concepts>` on which
+  SLAX is based (:ref:`XML <xml-concepts>`, :ref:`XPath
+  <xpath-concepts>`, and :ref:`XSLT <xslt-concepts>`)
 - Documentation for the :ref:`SLAX language <SLAX language>` itself
 - Documentation on the :ref:`libslax software <libslax software>`
 - Documentation on the :ref:`libslax extension library <libslax-extensions>`
