@@ -31,6 +31,9 @@
 #     the line (minus the '@') is not translated.
 # '!! include-figure <filename>' includes the file, and makes
 #    it's content a figure.
+# '!! include-yang <filename>' includes the YANG module in file, and makes
+#    it's content a figure, and adds a proper <CODE ...> instruction.
+#    (requires pyang in the path)
 # '-' at the beginning of the line marks a symbol list item.
 # '_' at the beginning of the line marks an empty list item.
 # '+' at the beginning of the line marks a numbered list item.
@@ -296,7 +299,7 @@ sub first_pass {
 		last;
 	    }
 
-	    # Handles include-figure, table, and row
+	    # Handles include-figure, include-yang, table, and row
 	    if (/^!!\s*(\S+)/) {
 		$tag = $1;
 		$tag =~ s/-/_/g;
@@ -875,6 +878,31 @@ sub include_figure {
     if ($extract_to) {
 	print "<t>&lt;CODE ENDS></t>\n";
     }
+    resume_digress();
+}
+
+sub include_yang {
+    my $prefix;
+    return if $phase eq "end";
+
+    my ($file) = ($line =~ /^!!\s*include-yang (\S+)/);
+
+    my $cmd = "pyang -f name --name-print-revision ${file}";
+    my $extract_to = `${cmd} || echo 1` || die "error invoking: ${cmd}";
+    $extract_to =~ s/\s+$//;
+    !($extract_to eq "1") || die "error invoking: ${cmd}";
+
+    suspend_digress();
+    print "<t>&lt;CODE BEGINS> file \"${extract_to}\"</t>\n";
+    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    open(FD, $file) || die "could not open file: $file";
+    while (<FD>) {
+        $line = untabify($_);
+        print $indent_digress, $prefix, $line;
+    }
+    close FD;
+    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "<t>&lt;CODE ENDS></t>\n";
     resume_digress();
 }
 
