@@ -893,7 +893,7 @@ sub include_yang {
     !($extract_to eq "1") || die "error invoking: ${cmd}";
 
     suspend_digress();
-    print "<t>&lt;CODE BEGINS> file \"${extract_to}\"</t>\n";
+    print "<t>&lt;CODE BEGINS> file \"${extract_to}.yang\"</t>\n";
     print "\t<figure>\n\t    <artwork><![CDATA[\n";
     open(FD, $file) || die "could not open file: $file";
     while (<FD>) {
