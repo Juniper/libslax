@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include <libpsu/psucommon.h>
 #include <libpsu/psulog.h>
