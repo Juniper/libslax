@@ -105,12 +105,14 @@ psu_cpu_get_info (uint32_t which, psu_cpuid_t *pcp)
 {
     bzero(pcp, sizeof(*pcp));
 
+#if !defined(__GCC__) || __GCC__ >= 5 /* Limited gcc support */
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile
 	("cpuid" : "=a" (pcp->pc_ax), "=b" (pcp->pc_bx),
 	 "=c" (pcp->pc_cx), "=d" (pcp->pc_dx)
        : "a" (which), "c" (0));
 #endif /* _X86_ */
+#endif /* !__GCC__ */
 
     psu_log("cpu info(%u): %#x, %#x, %#x, %#x\n",
 	    which, pcp->pc_ax, pcp->pc_bx, pcp->pc_cx, pcp->pc_dx);
