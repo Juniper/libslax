@@ -1415,7 +1415,10 @@ apply_template_sub_stmt_list_optional :
 
 apply_template_sub_stmt_list :
 	apply_template_sub_stmt
-		{ $$ = NULL; }
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
 
 	| apply_template_sub_stmt_list apply_template_sub_stmt
 		{
@@ -1519,10 +1522,16 @@ call_argument_braces_list_optional :
 
 call_argument_braces_list :
 	call_argument_braces_member
-		{ $$ = NULL; }
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
 
 	| call_argument_braces_list call_argument_braces_member
-		{ $$ = STACK_CLEAR($1); }
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = STACK_CLEAR($1);
+		}
 	;
 
 call_argument_braces_member :
@@ -1530,7 +1539,6 @@ call_argument_braces_member :
 		{
 		    xmlNodePtr nodep;
 
-		    ALL_KEYWORDS_ON();
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep) {
@@ -1556,7 +1564,6 @@ call_argument_braces_member :
 		}
 	    initial_value
 		{
-		    ALL_KEYWORDS_ON();
 		    nodePop(slax_data->sd_ctxt);
 
 		    $$ = STACK_CLEAR($1);

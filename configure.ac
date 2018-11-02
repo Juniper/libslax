@@ -424,6 +424,96 @@ AC_COMPILE_IFELSE(
     ]
 )
 
+# Look for "struct clockinfo" for sysctl printing
+AC_MSG_CHECKING([for struct clockinfo])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/time.h>
+]],
+                     [[struct clockinfo ci; ci.hz = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_CLOCKINFO], 1,
+	                   [Define to 1 if you have the `clockinfo' struct.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+    ]
+)
+
+# Look for "struct clockinfo" tickadj for sysctl printing
+AC_MSG_CHECKING([for struct clockinfo.tickadj])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/time.h>
+]],
+                     [[struct clockinfo ci; ci.tickadj = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_CLOCKINFO_TICKADJ], 1,
+	                   [Define to 1 if you have the `clockinfo.tickadj' fiel.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+    ]
+)
+
+# Look for "struct loadavg" for sysctl printing
+AC_MSG_CHECKING([for struct loadavg])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/resource.h>
+#include <sys/sysctl.h>
+]],
+                     [[struct loadavg la; la.fscale = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_LOADAVG], 1,
+	                   [Define to 1 if you have the `loadavg' struct.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+    ]
+)
+
+# Look for "struct xsw_usage" for sysctl printing
+AC_MSG_CHECKING([for struct xsw_usage])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/sysctl.h>
+]],
+                     [[struct xsw_usage xsu; xsu.xsu_total = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_XSW_USAGE], 1,
+	                   [Define to 1 if you have the `xsw_usage' struct.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+    ]
+)
+
+# Look for "dev_t" for sysctl printing
+AC_MSG_CHECKING([for struct dev_t])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+]],
+                     [[dev_t dev; dev = 0;]])],
+    [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE_UNQUOTED([HAVE_DEV_T], 1,
+	                   [Define to 1 if you have the `dev_t' type.])
+    ],
+    [
+        AC_MSG_RESULT([no])
+    ]
+)
+
 case $host_os in
      darwin-13*)
 #        LIBTOOL=libtool

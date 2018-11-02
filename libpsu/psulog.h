@@ -12,6 +12,7 @@
 #ifndef LIBPSU_PSULOG_H
 #define LIBPSU_PSULOG_H
 
+#include <stdarg.h>
 #include <libpsu/psucommon.h>
 #include <stdarg.h>
 
