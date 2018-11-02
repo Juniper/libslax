@@ -112,7 +112,7 @@ uninstall-hook:
         done
 	${RM} -f ${DESTDIR}${bindir}/oxtradoc
 
-SPHINX = python3.4 -msphinx
+SPHINX = python3 -msphinx
 
 html sphinx sphinx-html:
 	${GREP} '.. admonition: ' ${srcdir}/*rst; true
