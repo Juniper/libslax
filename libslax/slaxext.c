@@ -1676,9 +1676,9 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
  *
  */
 static int
-slaxExtDecode (const char *name, CODE *codetab)
+slaxExtDecode (const char *name, const CODE *codetab)
 {
-    CODE *c;
+    const CODE *c;
 
     for (c = codetab; c->c_name; c++)
 	if (!strcasecmp(name, c->c_name))
