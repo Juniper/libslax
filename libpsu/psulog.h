@@ -13,6 +13,7 @@
 #define LIBPSU_PSULOG_H
 
 #include <libpsu/psucommon.h>
+#include <stdarg.h>
 
 /**
  * Enable logging.
