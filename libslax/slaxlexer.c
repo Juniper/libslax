@@ -1099,6 +1099,10 @@ slaxLexer (slax_data_t *sdp)
 	     * need to read some more, if the string is long.
 	     */
 	    sdp->sd_cur += 1;	/* Move past the first quote */
+	    if (sdp->sd_cur == sdp->sd_len) {
+		if (slaxGetInput(sdp, 0))
+		    return -1;
+	    }
 	    while (((unsigned char *) sdp->sd_buf)[sdp->sd_cur] != ch1) {
 		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
 
