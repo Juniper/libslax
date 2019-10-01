@@ -10,6 +10,7 @@
  */
 
 #include <stdarg.h>
+#include <stdarg.h>
 
 #include <libpsu/psucommon.h>
 #include <libpsu/psuthread.h>

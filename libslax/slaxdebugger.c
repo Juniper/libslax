@@ -183,6 +183,7 @@ typedef struct slaxDebugBreakpoint_s {
     char *dbp_where;		/* Text name as given by user */
     xmlNodePtr dbp_inst;	/* Node we are breaking on */
     uint dbp_num;		/* Breakpoint number */
+    char *dbp_condition;	/* Conditional breakpoint expression */
 } slaxDebugBreakpoint_t;
 
 TAILQ_HEAD(slaxDebugBpList_s, slaxDebugBreakpoint_s) slaxDebugBreakpoints;
@@ -458,6 +459,7 @@ slaxDebugClearBreakpoints (void)
 	if (dbp == NULL)
 	    break;
 	xmlFreeAndEasy(dbp->dbp_where);
+	xmlFreeAndEasy(dbp->dbp_condition);
 	TAILQ_REMOVE(&slaxDebugBreakpoints, dbp, dbp_link);
     }
 
@@ -534,6 +536,34 @@ slaxDebugMakeRelativePath (const char *src_f, const char *dest_f,
     snprintf(relative_path + n, size, "%s", (dest_f + j));
 }
 
+static void
+slaxDebugOutputExpanded (const char *filename, int line,
+			 const char *rawp, int len)
+{
+    char buf[8 * len + 1];
+    char *cp = buf;
+    int i;
+
+    for (i = 0; i < len; i++, rawp++) {
+	if (*rawp == '\r')
+	    continue;
+
+	if (*rawp == '\t') {
+	    do {
+		*cp++ = ' ';
+	    } while ((cp - buf) % 8 != 0);
+
+	} else {
+	    /* Normal character */
+	    *cp++ = *rawp;
+	}
+    }
+    *cp = '\0';
+
+    slaxOutput("%s%s%d: %s", filename ?: "", filename ? ": " : "",
+	       line, buf);
+}
+
 /*
  * Return the line for given linenumber from file.
  *
@@ -572,7 +602,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 
 	while (count < stop) {
 	    len = xp ? xp - last : (int) strlen(last);
-	    slaxOutput("%d: %.*s", count++, len, last);
+	    slaxDebugOutputExpanded(NULL, count++, last, len);
 
 	    if (xp == NULL)
 		break;
@@ -594,7 +624,6 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 
     for (;;) {
 	if (fgets(line, sizeof(line), fp) == NULL) {
-	    count += 1;
 	    break;
 	}
 	/*
@@ -622,7 +651,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	stop = count + 1;
 
     while (count < stop) {
-	slaxOutput("%s:%d: %s", cp, count, line);
+	slaxDebugOutputExpanded(cp, count, line, strlen(line));
 
 	if (fgets(line, sizeof(line), fp) == NULL)
 	    break;
@@ -682,35 +711,71 @@ slaxDebugSplitArgs (char *buf, const char **args, int maxargs)
  * Check if the breakpoint is available for curnode being executed
  */
 static int
-slaxDebugCheckBreakpoint (slaxDebugState_t *statep,
-			  xmlNodePtr node, int reached)
+slaxDebugCheckBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
 {
     slaxDebugBreakpoint_t *dbp;
 
     if (statep->ds_stop_at && statep->ds_stop_at == node) {
-	if (reached) {
-	    slaxOutput("Reached stop at %s:%ld",
-			    node->doc->URL, xmlGetLineNo(node));
-	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
-	}
-
 	statep->ds_stop_at = NULL; /* One time only */
 	return TRUE;
     }
 
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
-	if (dbp->dbp_inst && dbp->dbp_inst == node) {
-	    if (reached) {
-		slaxOutput("Reached breakpoint %d, at %s:%ld", 
-				dbp->dbp_num, node->doc->URL,
-				xmlGetLineNo(node));
-		xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
-	    }
+	if (dbp->dbp_inst && dbp->dbp_inst == node)
 	    return TRUE;
-	}
     }
 
     return FALSE;
+}
+
+/*
+ * Find the breakpoint (and return it)
+ */
+static slaxDebugBreakpoint_t *
+slaxDebugFindBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
+{
+    slaxDebugBreakpoint_t *dbp;
+
+    if (statep->ds_stop_at && statep->ds_stop_at == node)
+	return NULL;
+
+    TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	if (dbp->dbp_inst && dbp->dbp_inst == node)
+	    return dbp;
+    }
+
+    return NULL;
+}
+
+/*
+ * Announce the breakpoint found (and return it)
+ */
+static void
+slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
+{
+    slaxDebugBreakpoint_t *dbp;
+
+    if (statep->ds_stop_at && statep->ds_stop_at == node) {
+	slaxOutput("Reached stop at %s:%ld",
+		   node->doc->URL, xmlGetLineNo(node));
+
+	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	statep->ds_stop_at = NULL; /* One time only */
+	return;
+    }
+
+    TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	if (dbp->dbp_inst && dbp->dbp_inst == node) {
+	    slaxOutput("Reached breakpoint %d, at %s:%ld", 
+		       dbp->dbp_num, node->doc->URL,
+		       xmlGetLineNo(node));
+	    if (dbp->dbp_condition)
+		slaxOutput("  Condition: '%s'", dbp->dbp_condition);
+
+	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+	    return;
+	}
+    }
 }
 
 static char *
@@ -834,6 +899,38 @@ slaxDebugClearListInfo (slaxDebugState_t *statep)
 }
 
 /*
+ * Move along the commandline to find the expression.  Allow
+ * the user to say "if" or "when".
+ */
+static char *
+slaxDebugFindCondition (char *input)
+{
+    /* Move over command name */
+    while (*input && !isspace((int) *input))
+	input += 1;
+    while (*input && isspace((int) *input))
+	input += 1;
+
+    /* Move over breakpoint number */
+    while (*input && !isspace((int) *input))
+	input += 1;
+    while (*input && isspace((int) *input))
+	input += 1;
+
+    if (strncmp(input, "if ", 3) == 0) {
+	input += 3;
+	while (*input && isspace((int) *input))
+	    input += 1;
+    } else if (strncmp(input, "when ", 5) == 0) {
+	input += 5;
+	while (*input && isspace((int) *input))
+	    input += 1;
+    }
+
+    return input;
+}
+
+/*
  * 'break' command
  */
 static void
@@ -841,6 +938,7 @@ slaxDebugCmdBreak (DC_ARGS)
 {
     xmlNodePtr node = NULL;
     slaxDebugBreakpoint_t *bp;
+    char *condition = NULL;
 
     node = slaxDebugGetNode(statep, argv[1]);
     if (node == NULL) {
@@ -848,9 +946,34 @@ slaxDebugCmdBreak (DC_ARGS)
 	return;
     }
 
-    if (slaxDebugCheckBreakpoint(statep, node, FALSE)) {
+    if (slaxDebugCheckBreakpoint(statep, node)) {
 	slaxOutput("Duplicate breakpoint");
 	return; 
+    }
+
+    /* If we have a breakpoint, make sure the expression parses */
+    if (argv[2]) {
+	condition = ALLOCADUP(commandline);
+	condition = slaxDebugFindCondition(condition);
+	if (*condition == '\0') {
+	    slaxOutput("Missing expression");
+	    return;
+	}
+
+	condition = slaxSlaxToXpath("sdb", 1, condition, NULL);
+	if (condition == NULL) {
+	    slaxOutput("Invalid expression");
+	    return;
+	}
+
+	xmlXPathCompExprPtr comp;
+	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
+	if (comp == NULL) {
+	    xmlFreeAndEasy(condition);
+	    return;
+	}
+
+	xmlXPathFreeCompExpr(comp);
     }
 
     /*
@@ -864,6 +987,8 @@ slaxDebugCmdBreak (DC_ARGS)
     bp->dbp_where = xmlStrdup2(argv[1]);
     bp->dbp_num = ++slaxDebugBreakpointNumber;
     bp->dbp_inst = node;
+    bp->dbp_condition = condition;
+
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
 
     slaxOutput("Breakpoint %d at file %s, line %ld",
@@ -913,7 +1038,7 @@ slaxDebugCmdContinue (DC_ARGS)
 
     slaxDebugClearListInfo(statep);
 
-    if (argv[1]) {
+    if (argv && argv[1]) {
 	node = slaxDebugGetNode(statep, argv[1]);
 	if (node == NULL) {
 	    slaxOutput("Unknown location: %s", argv[1]);
@@ -966,6 +1091,8 @@ slaxDebugCmdDelete (DC_ARGS)
      */
     TAILQ_FOREACH(dbpp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbpp->dbp_num == num) {
+	    xmlFreeAndEasy(dbpp->dbp_where);
+	    xmlFreeAndEasy(dbpp->dbp_condition);
 	    TAILQ_REMOVE(&slaxDebugBreakpoints, dbpp, dbp_link);
 	    slaxOutput("Deleted breakpoint '%d'", num);
 	    return;
@@ -1010,6 +1137,9 @@ slaxDebugHelpInfo (DH_ARGS)
 {
     slaxOutput("List of commands:");
     slaxOutput("  info breakpoints  Display current breakpoints");
+    slaxOutput("  info insert       Display current insertion point");
+    slaxOutput("  info locals       Display local variables");
+    slaxOutput("  info output       Display output document");
     slaxOutput("  info profile [brief]  Report profiling information");
 }
 
@@ -1029,13 +1159,16 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	tag = (dbp->dbp_inst == statep->ds_node) ? "*" : " ";
 	template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
-	if (dbp->dbp_inst)
-	    slaxOutput("    %s#%d %s at %s:%ld",
+	if (dbp->dbp_inst) {
+	    char *cond = dbp->dbp_condition;
+	    slaxOutput("    %s#%d %s at %s:%ld%s%s%s",
 		       tag, dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : slaxNull,
-		       xmlGetLineNo(dbp->dbp_inst));
-	else
+		       xmlGetLineNo(dbp->dbp_inst),
+		       cond ? " condition: '" : "", cond ?: "",
+		       cond ? "'" : "");
+	} else
 	    slaxOutput("    #%d %s (orphaned)", dbp->dbp_num, dbp->dbp_where);
     }
 
@@ -1044,13 +1177,119 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 }
 
 /*
+ * Dump the variables in a context
+ */
+static void
+slaxDebugContextVariables (xsltTransformContextPtr ctxt)
+{
+    int i;
+    const char *type, *name;
+    char buf[BUFSIZ];
+   
+    if (ctxt == NULL) {
+	slaxOutput("The script is not being run.");
+	return;
+    }
+
+    if (ctxt->varsNr <= ctxt->varsBase) {
+	slaxOutput("no local variables");
+	return;
+    }
+
+    slaxOutput("Local variables:");
+    for (i = ctxt->varsNr; i > ctxt->varsBase; i--) {
+        xsltStackElemPtr cur;
+
+        for (cur = ctxt->varsTab[i - 1]; cur != NULL; cur = cur->next) {
+	    type = "local";
+	    name = "unknown";
+
+	    if (cur->name) {
+		const char mprefix[] = SLAX_MVAR_PREFIX;
+
+		name = (const char *) cur->name;
+		if (strncmp(name, mprefix, sizeof(mprefix) - 1) == 0)
+		    continue;
+	    }
+
+            if (cur->comp == NULL) {
+                type = "invalid";
+
+            } else if (cur->comp->type == XSLT_FUNC_PARAM) {
+                type = "param";
+
+            } else if (cur->comp->type == XSLT_FUNC_VARIABLE) {
+                type = "var";
+            }
+
+	    snprintf(buf, sizeof(buf), "%s $%s%s", type, name,
+		       cur->value ? " = " : " -- null value");
+            if (cur->value)
+                slaxDebugOutputXpath(cur->value, buf, TRUE);
+	    else
+		slaxOutput("%s", buf);
+        }
+    }
+}
+
+/*
+ * Dump the variables in a context
+ */
+static void
+slaxDebugCmdLocals (DC_ARGS)
+{
+    slaxDebugContextVariables(statep->ds_ctxt);
+}
+
+static int
+slaxDebugCheckContext (xsltTransformContextPtr ctxt)
+{
+    if (ctxt == NULL) {
+	slaxOutput("The script is not being run.");
+	return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
  * 'info' command
  */
 static void
 slaxDebugCmdInfo (DC_ARGS)
 {
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+
     if (argv[1] == NULL || slaxDebugIsAbbrev("breakpoints", argv[1])) {
 	slaxDebugInfoBreakpoints(statep);
+
+    } else if (slaxDebugIsAbbrev("insert", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
+	if (ctxt->insert == NULL) {
+	    slaxOutput("context insertion point is NULL");
+	} else {
+	    slaxOutput("[context insertion point]");
+	    slaxOutputNode(ctxt->insert);
+	}
+
+    } else if (slaxDebugIsAbbrev("output", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
+	if (ctxt->output == NULL) {
+	    slaxOutput("context output document is NULL");
+	} else {
+	    slaxOutput("[context output document]");
+	    slaxDumpToFd(1, ctxt->output, FALSE);
+	}
+
+    } else if (slaxDebugIsAbbrev("locals", argv[1])) {
+	if (slaxDebugCheckContext(ctxt))
+	    return;
+
+	slaxDebugContextVariables(ctxt);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
 	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
@@ -1650,6 +1889,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
+
     { "delete",	       1, slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints",
       NULL,
@@ -1674,6 +1914,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
 
     { "list",	       1, slaxDebugCmdList,
       "list [loc]      List contents of the current script",
+      NULL,
+    },
+
+    { "locals",	       2, slaxDebugCmdLocals,
+      "locals          List contents of local variables",
       NULL,
     },
 
@@ -1823,6 +2068,37 @@ slaxDebugShell (slaxDebugState_t *statep)
     return 0;
 }
 
+/*
+ * We've got a conditional breakpoint, which means we need to
+ * (a) compile the expression, (b) evaluate the expression,
+ * (c) turn it into a boolean, and (d) decide whether to skip.
+ * We return FALSE to skip, TRUE to stop.
+ */
+static int
+slaxDebugEvalCondition (slaxDebugState_t *statep,
+			slaxDebugBreakpoint_t *dbp, int print)
+{
+    xmlXPathObjectPtr xpobj;
+    int res = FALSE;
+
+    xpobj = slaxDebugEvalXpath(statep, dbp->dbp_condition);
+    if (xpobj == NULL)
+	return FALSE;		/* Failure means don't stop */
+
+    if (print)
+	slaxDebugOutputXpath(xpobj, NULL, TRUE); /* Debug output */
+
+    if (xpobj->type != XPATH_BOOLEAN)
+	xpobj = xmlXPathConvertBoolean(xpobj);
+
+    if (xpobj->type == XPATH_BOOLEAN) /* Otherwise, it can't be converted */
+	res = xpobj->boolval ? TRUE : FALSE;
+
+    xmlXPathFreeObject(xpobj);
+
+    return res;
+}
+
 /**
  * Are we at the same spot as the last time we stopped?  This is
  * tricky question because (a) a single SLAX statement can turn into
@@ -1945,7 +2221,16 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 	}
     }
 
-    slaxDebugCheckBreakpoint(statep, inst, TRUE);
+    slaxDebugBreakpoint_t *dbp = slaxDebugFindBreakpoint(statep, inst);
+    if (dbp && dbp->dbp_condition) {
+	if (slaxDebugEvalCondition(statep, dbp, FALSE) == FALSE) {
+	    /* Fake a "continue" command */
+	    slaxDebugCmdContinue(statep, NULL, NULL);
+	    return;
+	}
+    }
+
+    slaxDebugAnnounceBreakpoint(statep, inst);
 
 #if 0
     if (statep->ds_flags & DSF_OVER) {

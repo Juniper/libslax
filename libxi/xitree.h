@@ -16,35 +16,8 @@
 
 #define XI_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
 #define XI_SHIFT	12	/* Bit shift for packed array paging */
+
 #define XI_ISTR_SHIFT	2	/* Bit shift for immutable string storage */
-
-/*
- * A node in an XML hierarchy, made as small as possible.  We use the
- * trick where the last sibling points to the parent, allowing us to
- * work back up the hierarchy, guided by xn_depth.
- *
- * If xn_name == PA_NULL_ATOM, the node is the top node in the
- * hierarchy.  We call this the "top" node, as opposed to the "root"
- * node, which appears as a child of the root node.  This scheme
- * allows the hierarchies with multipe root nodes, which is needed for
- * RTFs.
- */
-typedef struct xi_node_s {
-    xi_node_type_t xn_type;	/* Type of this node */
-    xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
-    xi_node_flags_t xn_flags;	/* Flags (XNF_*) */
-    xi_ns_id_t xn_ns_map:12;	/* Namespace map for this node (in ns_map) */
-    xi_name_id_t xn_name:20;	/* Name of this node (in name db) */
-    xi_node_id_t xn_next;	/* Next node (or parent if last) */
-    xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
-} xi_node_t;
-
-#define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
-#define XI_DEPTH_MAX	254	/* Max depth of tree */
-
-/* Flags for xn_flags */
-#define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
-#define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
 /*
  * Each tree (document or RTF) is represented as a tree.  The

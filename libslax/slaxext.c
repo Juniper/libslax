@@ -38,6 +38,7 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <sys/queue.h>
+#include <sys/resource.h>
 
 #ifdef HAVE_STDTIME_TZFILE_H
 #include <stdtime/tzfile.h>
@@ -521,6 +522,13 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 	/* If the user typed 'quit' or 'run' at the debugger prompt, bail */
         if (ctxt->debugStatus == XSLT_DEBUG_QUIT
 			|| ctxt->debugStatus == XSLT_DEBUG_RUN_RESTART)
+	    break;
+
+	/*
+	 * If a "terminate" statement has been executed, the context
+	 * state show us as stopped.  We need to notice this.
+	 */
+        if (ctxt->state == XSLT_STATE_STOPPED)
 	    break;
 
         if (ctxt->debugStatus != XSLT_DEBUG_NONE)
@@ -1504,6 +1512,202 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 }
 
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
+
+/*
+ * This is essentially unportable code, but I've tried to make it as
+ * portable as possible.  Anyone following the style of BSD will have
+ * some level of functionality, hopefully.  Anyone willout it will have
+ * sane behavior and the ability to specify their own format, hopefully.
+ */
+
+/* If these aren't already defined, make our own */
+#ifndef CTLTYPE
+#define CTLTYPE 0x1F		/* Suitable max */
+#endif
+
+#ifdef CTLTYPE_INT
+#define HAS_CTLTYPE_INT		/* Remember that we made this */
+#else
+#undef HAS_CTLTYPE_INT		/* Remember that we didn't make this */
+#define CTLTYPE_INT CTLTYPE + 0
+#endif  /* CTLTYPE_INT */
+
+#ifndef CTLTYPE_UINT
+#define CTLTYPE_UINT (CTLTYPE + 1)
+#endif /* CTLTYPE_UINT */
+#ifndef CTLTYPE_LONG
+#define CTLTYPE_LONG (CTLTYPE + 2)
+#endif /* CTLTYPE_LONG */
+#ifndef CTLTYPE_ULONG
+#define CTLTYPE_ULONG (CTLTYPE + 3)
+#endif /* CTLTYPE_ULONG */
+#ifndef CTLTYPE_S8
+#define CTLTYPE_S8 (CTLTYPE + 4)
+#endif /* CTLTYPE_S8 */
+#ifndef CTLTYPE_S16
+#define CTLTYPE_S16 (CTLTYPE + 5)
+#endif /* CTLTYPE_S16 */
+#ifndef CTLTYPE_S32
+#define CTLTYPE_S32 (CTLTYPE + 6)
+#endif /* CTLTYPE_S32 */
+#ifndef CTLTYPE_S64
+#define CTLTYPE_S64 (CTLTYPE + 7)
+#endif /* CTLTYPE_S64 */
+#ifndef CTLTYPE_U8
+#define CTLTYPE_U8 (CTLTYPE + 8)
+#endif /* CTLTYPE_U8 */
+#ifndef CTLTYPE_U16
+#define CTLTYPE_U16 (CTLTYPE + 9)
+#endif /* CTLTYPE_U16 */
+#ifndef CTLTYPE_U32
+#define CTLTYPE_U32 (CTLTYPE + 10)
+#endif /* CTLTYPE_U32 */
+#ifndef CTLTYPE_U64
+#define CTLTYPE_U64 (CTLTYPE + 11)
+#endif /* CTLTYPE_U64 */
+#ifndef CTLTYPE_STRING
+#define CTLTYPE_STRING (CTLTYPE + 12)
+#endif /* CTLTYPE_STRING */
+#ifndef CTLTYPE_POINTER
+#define CTLTYPE_POINTER (CTLTYPE + 13)
+#endif /* CTLTYPE_POINTER */
+#ifndef CTLTYPE_HEXDUMP
+#define CTLTYPE_HEXDUMP (CTLTYPE + 14)
+#endif /* CTLTYPE_HEXDUMP */
+#ifndef CTLTYPE_STRUCT
+#define CTLTYPE_STRUCT (CTLTYPE + 15)
+#endif /* CTLTYPE_STRUCT */
+
+#define SLAX_SC_MAX_TYPE (CTLTYPE + 16) /* Max of real plus our fake */
+
+typedef struct slax_sc_type_map_s {
+    size_t stm_size;		/* sizeof(type) */
+    int stm_signed;		/* Signed or unsigned */
+    const char *stm_name;	/* More format name */
+    const char *stm_fmt;	/* printf-style format */
+    const char *stm_short;	/* Short name */
+    const char *stm_code;	/* Kernel format code */
+} slax_sc_type_map_t;
+
+/*
+ * The following table is full of our type information, which might
+ * be "real" types mixed in with possibly "fake" types.  Either way,
+ * it gives us a means of finding type information.
+ */
+static slax_sc_type_map_t slax_sc_type_map[SLAX_SC_MAX_TYPE] = {
+    [CTLTYPE_INT] = { sizeof(int), TRUE, "integer", "%d", "d", "I" },
+    [CTLTYPE_UINT] = { sizeof(u_int), FALSE, "unsigned", "%u", "u", "IU" },
+    [CTLTYPE_LONG] = { sizeof(long), TRUE, "long", "%ld", "ld", "L" },
+    [CTLTYPE_ULONG] = { sizeof(u_long), FALSE, "u_long", "%lu", "lu", "LU" },
+    [CTLTYPE_S8] = { sizeof(int8_t), TRUE, "int8_t", "%hhd", "i8", NULL },
+    [CTLTYPE_S16] = { sizeof(int16_t), TRUE, "int16_t", "%hd", "i16", NULL },
+    [CTLTYPE_S32] = { sizeof(int32_t), TRUE, "int32_t", "%d", "i32", NULL },
+    [CTLTYPE_S64] = { sizeof(int64_t), TRUE, "int64_t", "%ld", "i64", "Q" },
+    [CTLTYPE_U8] = { sizeof(uint8_t), FALSE, "uint8_t", "%hhu", "u8", NULL },
+    [CTLTYPE_U16] = { sizeof(uint16_t), FALSE, "uint16_t", "%hu", "u16", NULL },
+    [CTLTYPE_U32] = { sizeof(uint32_t), FALSE, "uint32_t", "%u", "u32", NULL },
+    [CTLTYPE_U64] = { sizeof(uint64_t), FALSE, "uint64_t", "%lu", "u64", "QU" },
+    [CTLTYPE_STRING] = { 0, FALSE, "char *", "%s", "s", "A" },
+    [CTLTYPE_POINTER] = { sizeof(void *), FALSE, "void *", "%p", "p", "X" },
+    [CTLTYPE_HEXDUMP] = { sizeof(char), FALSE, "char", "%02x", "x", "P" },
+    [CTLTYPE_STRUCT] = { sizeof(char), FALSE, "struct", "%02x", "st", "S" },
+};
+
+/*
+ * Fetch the type information associated with a sysctl variable.
+ */
+static int
+slaxExtSysctlType (/*const*/ char *name UNUSED, const char *tname UNUSED,
+		   char *fmt UNUSED, size_t fmt_size UNUSED)
+{
+    slax_sc_type_map_t *stmp;
+    int i;
+
+    if (tname && *tname) {
+	/* Trust the explicit type name */
+	stmp = slax_sc_type_map;
+	for (i = 0; i < SLAX_SC_MAX_TYPE; i++, stmp++) {
+	    if (stmp->stm_short && streq(stmp->stm_short, tname)) {
+		/* Found a match */
+		return i;
+	    }
+	}    
+    }
+
+#if defined(HAS_CTLTYPE_INT)
+#define SC_SIZE 2
+    int sc_name2oid[SC_SIZE] = { 0, 3 }; /* oid to convert name to oid */
+    int sc_oid2type[SC_SIZE] = { 0, 4 }; /* oid to convert oid to type */
+
+    int oid[CTL_MAXNAME + SC_SIZE];
+    size_t size = CTL_MAXNAME * sizeof(oid[0]);
+    int rc;
+
+    rc = sysctl(sc_name2oid, NUM_ARRAY(sc_name2oid),
+		&oid[SC_SIZE], &size, name, strlen(name));
+    if (rc < 0)
+	return rc;
+
+    int oid_size = size / sizeof(oid[0]);
+
+    oid[0] = sc_oid2type[0];	/* Copy sysctl oid */
+    oid[1] = sc_oid2type[1];
+
+    rc = sysctl(oid, oid_size + SC_SIZE, fmt, &fmt_size, 0, 0);
+    if (rc < 0)
+	return rc;
+
+    /*
+     * The results of the sc_oid2type sysctl is as follows:
+     * - first word is the type information (CTLTYPE_*)
+     * - printf-style format string for the type
+     */
+    int type;
+
+    memmove(&type, fmt, sizeof(type));
+    type &= CTLTYPE;
+    memmove(fmt, fmt + sizeof(type), fmt_size - sizeof(type));
+
+    /*
+     * The "struct" formats start with "S," and then add a
+     * suffix, based in the type of the struct.
+     */
+    if (fmt[0] == 'S' && fmt[1] == ',')
+	return CTLTYPE_STRUCT;
+
+    stmp = slax_sc_type_map;
+    for (i = 0; i < SLAX_SC_MAX_TYPE; i++, stmp++) {
+	if (stmp->stm_short && streq(stmp->stm_code, fmt)) {
+	    /* Found a match */
+	    return i;
+	}
+    }    
+
+    if (type > SLAX_SC_MAX_TYPE)
+	return -1;
+
+    /* Make sure we ended up with a valid type */
+    stmp = &slax_sc_type_map[type];
+    return stmp->stm_name ? type : -1;
+
+#else /* HAS_CTLTYPE_INT */
+    return -1;
+#endif /* HAS_CTLTYPE_INT */
+}
+
+/*
+ * Copy some memory if there's enough to copy
+ */
+static int
+slaxExtSysctlMemcpy (void *dst, void *src, size_t size, size_t avail)
+{
+    if (avail < size)
+	return 0;
+
+    memcpy(dst, src, size);
+    return size;
+}
+
 /*
  * Return the value of the given sysctl as a string or integer
  *
@@ -1514,7 +1718,7 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 static void
 slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
 {
-    xmlChar *name, *type = NULL;
+    char *name, *type_name = NULL;
 
     if (nargs == 0 || nargs > 2) {
 	xmlXPathSetArityError(ctxt);
@@ -1522,33 +1726,227 @@ slaxExtSysctl (xmlXPathParserContext *ctxt, int nargs)
     }
 
     if (nargs == 2)
-	type = xmlXPathPopString(ctxt);
-    name = xmlXPathPopString(ctxt);
+	type_name = (char *) xmlXPathPopString(ctxt);
+    name = (char *) xmlXPathPopString(ctxt);
 
     size_t size = 0;
 
+    char fmt[BUFSIZ];
+    fmt[0] = '\0';
+
+    slax_sc_type_map_t *stmp;
+    int type = slaxExtSysctlType(name, type_name, fmt, sizeof(fmt));
+    if (type < 0) 	/* Default to string */
+	type = CTLTYPE_STRING;
+    stmp = &slax_sc_type_map[type];
+
+    slaxLog("sysctl: var '%s' type %s/%d/'%s' fmt '%s'",
+	    name, type_name ?: "", type, stmp->stm_name, fmt);
+
+    /* The "-" format means deprecated */
+    if (fmt[0] == '-')
+	return;
+
     if (sysctlbyname((char *) name, NULL, &size, NULL, 0) || size == 0) {
     done:
-	xsltGenericError(xsltGenericErrorContext,
-			 "sysctl error: %s\n", strerror(errno));
+	switch (errno) {
+	case ENOTDIR:
+	case EISDIR:
+	case ENOENT:
+	    /* Do nothing; no value returned */
+	    slaxLog("sysctl: var '%s' error %d/%s",
+		    name, errno, strerror(errno));
+
+	    xmlXPathReturnEmptyString(ctxt); 
+	    break;
+
+	default:
+	    xsltGenericError(xsltGenericErrorContext,
+			     "sysctl error: %s\n", strerror(errno));
+	}
+
+	xmlFreeAndEasy(name);
+	xmlFreeAndEasy(type_name);
 	return;
     }
 
-    char *buf = alloca(size);
+    char *buf = alloca(size + 1);
+
+    /*
+     * Crazy as it seems, we need to zero out the buffer.  Some kernel
+     * variable-fetching code fails to zero out the buffer for us.
+     * For example, kern.threadname under macosx.  So we have to be
+     * paranoid.  I'm fine with being paranoid, as long as I don't
+     * have to think that _everyone_ is out to get me.
+     */
+    bzero(buf, size + 1);
+
+    /* Finally, we can fetch the actual contents */
     if (sysctlbyname((char *) name, buf, &size, NULL, 0))
 	goto done;
 
-    if (type && *type == 'i') {
-	int value;
-	memcpy(&value, buf, sizeof(value));
-	const int int_width = 16;
-	buf = alloca(int_width);
-	snprintf(buf, int_width, "%d", value);
+    if (type == CTLTYPE_STRING || stmp->stm_size == 0) { /* String */
+	buf[size] = '\0';	/* Ensure NUL termination */
+
+    } else if (type == CTLTYPE_STRUCT) {
+	char *sname = fmt + 2;
+	char *sdata = buf;
+
+	buf = alloca(BUFSIZ);	/* New formatted data buffer */
+	char *cp = buf, *ep = buf + BUFSIZ;
+	buf[0] = '\0';
+	
+
+	if (streq(sname, "timeval")) {
+	    struct timeval tv;
+
+	    if (slaxExtSysctlMemcpy(&tv, sdata, sizeof(tv), size)) {
+		snprintf(cp, ep - cp, "{ sec = %ld, usec = %ld } ",
+			 (long) tv.tv_sec, (long) tv.tv_usec);
+		cp += strlen(cp);
+
+#ifdef HAVE_CTIME
+		time_t t = tv.tv_sec;
+		strlcpy(cp, ctime(&t), ep - cp);
+		cp += strlen(cp);
+
+		/* Nuke ctime's trailing newline */
+		if (cp > buf && cp[-1] == '\n')
+		    cp[-1] = '\0';
+#endif /* HAVE_CTIME */
+	    }
+
+	} else if (streq(sname, "clockinfo")) {
+#ifdef HAVE_CLOCKINFO
+	    struct clockinfo ci;
+
+	    if (slaxExtSysctlMemcpy(&ci, sdata, sizeof(ci), size)) {
+#ifdef HAVE_CLOCKINFO_TICKADJ
+		snprintf(cp, ep - cp,
+			 "{ hz = %d, tick = %d, tickadj = %d, "
+			 "profhz = %d, stathz = %d }",
+			 ci.hz, ci.tick, ci.tickadj, ci.profhz, ci.stathz);
+#else /* HAVE_CLOCKINFO_TICKADJ */
+		snprintf(cp, ep - cp,
+			 "{ hz = %d, tick = %d, profhz = %d, stathz = %d }",
+			 ci.hz, ci.tick, ci.profhz, ci.stathz);
+#endif /* HAVE_CLOCKINFO_TICKADJ */
+	    }
+#endif /* HAVE_CLOCKINFO */
+
+	} else if (streq(sname, "loadavg")) {
+#ifdef HAVE_LOADAVG
+	    struct loadavg la;
+
+	    if (slaxExtSysctlMemcpy(&la, sdata, sizeof(la), size)) {
+		snprintf(cp, ep - cp, "{ %.2f %.2f %.2f }",
+				   (double) la.ldavg[0] / (double) la.fscale,
+				   (double) la.ldavg[1] / (double) la.fscale,
+				   (double) la.ldavg[2] / (double) la.fscale);
+	    }
+#endif /* HAVE_LOADAVG */
+
+	} else if (streq(sname, "xsw_usage")) {
+#ifdef HAVE_XSW_USAGE
+	    struct xsw_usage xsu;
+
+	    if (slaxExtSysctlMemcpy(&xsu, sdata, sizeof(xsu), size)) {
+		double scale = 1024.0 * 1024.0;
+
+		snprintf(cp, ep - cp,
+			 "total = %.2fM  used = %.2fM  free = %.2fM  %s",
+			 ((double) xsu.xsu_total) / scale,
+			 ((double) xsu.xsu_used) / scale,
+			 ((double) xsu.xsu_avail) / scale,
+			 xsu.xsu_encrypted ? "(encrypted)" : "");
+	    }
+#endif /* HAVE_XSW_USAGE */
+
+	} else if (streq(sname, "dev_t")) {
+#ifdef HAVE_DEV_T
+	    dev_t dev;
+
+	    if (slaxExtSysctlMemcpy(&dev, sdata, sizeof(dev), size)) {
+		if ((int) dev != -1) {
+		    if (minor(dev) > 255 || minor(dev) < 0)
+			snprintf(cp, ep - cp, "{ major = %d, minor = 0x%x }",
+			       major(dev), minor(dev));
+		    else
+			snprintf(cp, ep - cp, "{ major = %d, minor = %d }",
+			       major(dev), minor(dev));
+		}
+	    }
+#endif /* HAVE_DEV_T */
+	}
+
+    } else {
+	/* We have an array of integer values */
+	const int per_width = 24; /* Formatted space per value */
+	int i, used;
+	int count = size / stmp->stm_size;
+	size_t newsize = count * per_width;
+	char *newbuf = alloca(newsize), *cp = newbuf, *ep = newbuf + newsize;
+	intmax_t val;
+	uintmax_t uval;
+	char *bp = buf;
+	intmax_t ibuf64;
+	void *ibuf = (char *) &ibuf64;
+	const char *ctlfmt;
+
+	for (i = 0; i < count; i++, bp += stmp->stm_size) {
+	    memcpy(ibuf, bp, stmp->stm_size);
+
+	    ctlfmt = stmp->stm_signed ? "%jd" : "%ju";
+	    val = 0;
+	    uval = 0;
+
+	    switch (type) {
+	    case CTLTYPE_INT: val = * (int *) ibuf; break;
+	    case CTLTYPE_UINT: uval = * (u_int *) ibuf; break;
+	    case CTLTYPE_LONG: val = * (long *) ibuf; break;
+	    case CTLTYPE_ULONG: uval = * (u_long *) ibuf; break;
+	    case CTLTYPE_S8: val = * (int8_t *) ibuf; break;
+	    case CTLTYPE_S16: val = * (int16_t *) ibuf; break;
+	    case CTLTYPE_S32: val = * (int32_t *) ibuf; break;
+	    case CTLTYPE_S64: val = * (int64_t *) ibuf; break;
+	    case CTLTYPE_U8: uval = * (uint8_t *) ibuf; break;
+	    case CTLTYPE_U16: uval = * (uint16_t *) ibuf; break;
+	    case CTLTYPE_U32: uval = * (uint32_t *) ibuf; break;
+	    case CTLTYPE_U64: uval = * (uint64_t *) ibuf; break;
+
+	    case CTLTYPE_POINTER:
+		uval = * (uintptr_t *) ibuf;
+		ctlfmt = "%02jp";
+		break;
+
+	    case CTLTYPE_HEXDUMP:
+		uval = * (char *) ibuf;
+		ctlfmt = "%02jx";
+		break;
+
+	    default:
+		continue;
+	    }
+
+	    if (stmp->stm_signed)
+		used = snprintf(cp, ep - cp, ctlfmt, val);
+	    else used = snprintf(cp, ep - cp, ctlfmt, uval);
+
+	    if (used > per_width) /* Should not occur */
+		break;
+	    cp += used;
+	    *cp++ = ' ';
+	}
+
+	if (cp > newbuf)	/* Back off the last trailing space */
+	    cp -= 1;
+	*cp = '\0';		/* Ensure NUL termination */
+	buf = newbuf;		/* Use our newly formatted data */
     }
 
     xmlFree(name);
-    if (type)
-	xmlFree(type);
+    if (type_name)
+	xmlFree(type_name);
 
     xmlXPathReturnString(ctxt, xmlStrdup((xmlChar *) buf));
 }
@@ -1676,9 +2074,9 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
  *
  */
 static int
-slaxExtDecode (const char *name, CODE *codetab)
+slaxExtDecode (const char *name, const CODE *codetab)
 {
-    CODE *c;
+    const CODE *c;
 
     for (c = codetab; c->c_name; c++)
 	if (!strcasecmp(name, c->c_name))

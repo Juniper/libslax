@@ -359,6 +359,9 @@ sub second_pass {
             # No one can claim the end of a digress
 	    last if /^}}/;
 
+	    # No one can claim a passthru
+ 	    last if $tag eq "passthru";
+
 	    foreach $s (@sticky) {
 		($tag, $mode) = &update($s, $mode, $tag, $_);
 	    }
@@ -424,6 +427,11 @@ sub generate_output {
 
 	if (!$do_digress && $in_digress && !$inline_digress) {
 	    next if $tag ne "enddigress";
+	}
+
+	if ($tag eq "passthru") {
+	    passthru();
+	    next;
 	}
 
 	if ($last_tag ne $tag) {
@@ -560,7 +568,7 @@ sub section {
 
 sub start_picture {
     suspend_digress();
-    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    print "        <figure>\n            <artwork><![CDATA[\n";
     check_line_length($line, $file, $lnum) unless $do_digress;
     print $indent_digress, untabify($line), "\n";
 }
@@ -635,7 +643,7 @@ sub picture {
 }
 
 sub end_picture {
-    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "            ]]></artwork>\n        </figure>\n";
     resume_digress();
 }
 
@@ -646,27 +654,27 @@ sub start_code {
 	
 	print "\n<t>", $indent_digress, untabify($line), "</t>\n";
     } else {
-	print "\t<figure>\n\t    <artwork><![CDATA[\n";
+	print "        <figure>\n            <artwork><![CDATA[\n";
 	print $indent_digress, untabify($line), "\n";
 	$art = 1;
     }
 }
 
 sub end_code {
-    print "\t    ]]></artwork>\n\t</figure>\n" if $art;
+    print "            ]]></artwork>\n        </figure>\n" if $art;
     resume_digress();
     $art = 0;
 }
 
 sub start_xml {
     suspend_digress();
-    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    print "        <figure>\n            <artwork><![CDATA[\n";
     print $indent_digress, untabify($line), "\n";
     $art = 1;
 }
 
 sub end_xml {
-    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "            ]]></artwork>\n        </figure>\n";
     resume_digress();
     $art = 0;
 }
@@ -753,7 +761,7 @@ sub nlist {
     }
 
     if ($type eq "hanging") {
-	    print "\t<t hangText=\"", esc($content), "\">\n";
+	    print "        <t hangText=\"", esc($content), "\">\n";
     } else {
 	print " " x $ndepth, "<t>\n", esc($content), "\n";
     }
@@ -773,11 +781,11 @@ sub end_nlist {
 
 sub start_abstract {
     print "    <abstract>\n" unless &prev_tag() eq "abstract";
-    print "\t<t>\n", esc($line), "\n";
+    print "        <t>\n", esc($line), "\n";
 }
 
 sub end_abstract {
-    print "\t</t>\n";
+    print "        </t>\n";
     print "</abstract>\n" unless &next_tag() eq "abstract";
 }
 
@@ -855,7 +863,7 @@ sub include_figure {
 	print "<t>&lt;CODE BEGINS> file \"${extract_to}\"</t>\n";
     }
 
-    print "\t<figure>\n\t    <artwork><![CDATA[\n";
+    print "        <figure>\n            <artwork><![CDATA[\n";
     open(FD, $file) || die "could not open file: $file";
     while (<FD>) {
 	$lnum += 1;
@@ -871,7 +879,7 @@ sub include_figure {
 	}
     }
     close FD;
-    print "\t    ]]></artwork>\n\t</figure>\n";
+    print "            ]]></artwork>\n        </figure>\n";
     if ($extract_to) {
 	print "<t>&lt;CODE ENDS></t>\n";
     }
@@ -994,11 +1002,11 @@ sub question {
     return if /^$/;
 
     if (/^\? /) {
-	print "\t    </c>\n\t</texttable>\n" if $in_question;
+	print "            </c>\n        </texttable>\n" if $in_question;
 
-	print "\t<?rfc compact=\"yes\"?>\n\t<texttable>\n",
+	print "        <?rfc compact=\"yes\"?>\n        <texttable>\n",
 	    "<ttcol align='left' width='60em'>Open Question</ttcol>\n";
-	print "\t    <c>\n";
+	print "            <c>\n";
 	s/^\?\s+//;
     }
 
@@ -1007,7 +1015,7 @@ sub question {
 }
 
 sub end_question {
-    print "\t    </c>\n\t</texttable>\n\t<?rfc compact=\"no\"?>\n";
+    print "            </c>\n        </texttable>\n        <?rfc compact=\"no\"?>\n";
     $in_question = 0;
 }
 
@@ -1045,9 +1053,9 @@ print "<?rfc private=\"$doc{private}\"?>\n" if $doc{private};
 EOF
 
     print_authors($doc);
-    print "\t<date/>\n";
+    print "        <date/>\n";
     foreach $k (@{$doc{keyword}}) {
-	print "\t<keyword>", $k, "</keyword>\n";
+	print "        <keyword>", $k, "</keyword>\n";
     }
 }
 

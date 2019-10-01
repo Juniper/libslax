@@ -89,12 +89,11 @@ xi_get_attrib_string (xi_workspace_t *xwp, xi_node_t *nodep,
     return (atom == PA_NULL_ATOM) ? NULL : xi_textpool_string(xwp, atom);
 }
 
-PA_ATOM_TYPE(xi_ns_map_id_t, xi_ns_map_id_s, xnm_atom, xi_ns_map_id_is_null,
-	     xi_ns_map_id, xi_ns_map_null_atom);
-
-PA_FIXED_FUNCTIONS(xi_ns_map_id_t, xi_ns_map_t, xi_workspace_t, xw_ns_map,
-		   xi_ns_map_alloc, xi_ns_map_free, xi_ns_map_addr,
-		   xi_ns_map_id_is_null, xi_ns_map_id);
+PA_FIXED_ATOM_BASED(xi_ns_map_id_t, xi_ns_map_id_s, xnm_atom,
+		    xi_ns_map_t, xi_workspace_t, xw_ns_map,
+		    xi_ns_map_alloc, xi_ns_map_free, xi_ns_map_addr,
+		    xi_ns_map_id, xi_ns_map_id_atom_of,
+		    xi_ns_map_id_is_null, xi_ns_map_id_null_atom);
 
 #endif /* LIBSLAX_XI_WORKSPACE_H */
 

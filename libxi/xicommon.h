@@ -7,34 +7,26 @@
  * LICENSE.
  *
  * Phil Shafer (phil@) June 2016
+ *
+ * Definitions common to the parser, storage, and processing of nodes.
  */
 
 #ifndef LIBSLAX_XI_COMMON_H
 #define LIBSLAX_XI_COMMON_H
 
-typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
-typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
-typedef off_t xi_offset_t;	/* Offset in file or buffer */
 typedef uint32_t xi_source_flags_t; /* Flags for parser */
+typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
+
+#define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
+#define XI_DEPTH_MAX	254	/* Max depth of tree */
+
 typedef uint16_t xi_node_flags_t; /* Flags for a node (XNF_*) */
 
-/*
- * Since we're using these as bitfields, we're unable to use
- * atom wrappers.  This will require extra care.
- */
-typedef pa_atom_t xi_name_id_t;	/* Element name identifier */
-typedef pa_atom_t xi_ns_id_t;	/* Namespace identifier */
+/* Flags for xi_node_flags_t */
+#define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
+#define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
-/* Wrapper for our "name" atom */
-PA_ATOM_TYPE(xi_name_atom_t, xi_name_atom_s, xna_atom,
-	     xi_name_is_null, xi_name_atom, xi_name_atom_of,
-	     xi_name_null_atom);
-
-/* Wrapper for our "namespace" atom */
-PA_ATOM_TYPE(xi_ns_atom_t, xi_ns_atom_s, xns_atom,
-	     xi_ns_is_null, xi_ns_atom, xi_ns_atom_of,
-	     xi_ns_null_atom);
-
+typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
 /* Type of XML nodes (for xi_node_type_t) */
 #define XI_TYPE_NONE	0	/* Unknown type */
 #define XI_TYPE_EOF	1	/* End of file */
@@ -62,6 +54,7 @@ PA_ATOM_TYPE(xi_ns_atom_t, xi_ns_atom_s, xns_atom,
 #define XI_XMLNS_LEADER "xmlns"	/* String that starts namespace attributes */
 
 typedef uint8_t xi_boolean_t;	/* Base boolean type */
+typedef off_t xi_offset_t;	/* Offset in file or buffer */
 
 /* Define opaque types for function prototypes */
 struct xi_source_s; typedef struct xi_source_s xi_source_t;

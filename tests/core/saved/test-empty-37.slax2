@@ -1,0 +1,15 @@
+version 1.2;
+
+main <top> {
+    var $tag = "tag";
+    var $indent = "indent";
+    
+    apply-templates {
+        mode "line";
+        with $tag;
+        with $x = @x;
+        sort @order;
+        with $y = @y;
+        with $indent;
+    }
+}

@@ -35,8 +35,13 @@ typedef uint8_t xi_action_type_t;
 #define XIA_EMIT	5	/* Emit as output */
 #define XIA_RETURN	6	/* Force return from xi_parse() */
 
-typedef pa_atom_t xi_rule_id_t; /* Number to represent each rule */
-typedef pa_atom_t xi_state_id_t; /* Number to represent each state */
+/* Number to represent each rule */
+PA_FIXED_ATOM_TYPE(xi_rule_id_t, xi_rule_id_s, xr_atom, xi_rule_id,
+	   xi_rule_id_atom_of, xi_rule_id_is_null, xi_rule_id_null_atom);
+
+/* Number to represent each state */
+PA_FIXED_ATOM_TYPE(xi_rstate_id_t, xi_rstate_id_s, xrs_atom, xi_rstate_id,
+	   xi_rstate_id_atom_of, xi_rstate_id_is_null, xi_rstate_id_null_atom);
 
 /*
  * A rule defines a behavior for an incoming token.  A token can be
@@ -48,7 +53,7 @@ typedef struct xi_rule_s {
     pa_bitmap_id_t xr_bitmap;	/* Elements affected by this rule */
     xi_action_type_t xr_action;	/* What to do when the rule matches */
     pa_atom_t xr_use_tag;	/* Different tag to emit */
-    xi_state_id_t xr_new_state;	/* New state (in the rulebook) to enter */
+    xi_rstate_id_t xr_new_state; /* New state (in the rulebook) to enter */
 } xi_rule_t;
 
 /* Flags for xr_flags */
@@ -67,8 +72,8 @@ typedef struct xi_rstate_s {
 #define XRBSF_INUSE	(1<<0)	/* State is used/defined */
 
 typedef struct xi_rulebook_info_s {
-    xi_state_id_t xrsi_initial_state; /* First state in the rule book */
-    xi_state_id_t xrsi_max_state;     /* Maximum allocated (seen) state */
+    xi_rstate_id_t xrsi_initial_state; /* First state in the rule book */
+    xi_rstate_id_t xrsi_max_state;     /* Maximum allocated (seen) state */
 } xi_rulebook_info_t;
 
 /*
@@ -82,18 +87,6 @@ typedef struct xi_rulebook_s {
     pa_fixed_t *xrb_states;	  /* List of states (xi_rule_state_t) */
     pa_bitmap_t *xrb_bitmaps;	  /* Pool of bitmaps */
 } xi_rulebook_t;
-
-static inline xi_rstate_t *
-xi_rulebook_state (xi_rulebook_t *xrbp, xi_state_id_t sid)
-{
-    return pa_fixed_element(xrbp->xrb_states, sid);
-}
-
-static inline xi_rule_t *
-xi_rulebook_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid)
-{
-    return pa_fixed_atom_addr(xrbp->xrb_rules, rid);
-}
 
 xi_rulebook_t *
 xi_rulebook_open (const char *name);
@@ -116,6 +109,11 @@ void
 xi_rulebook_dump (xi_rulebook_t *xrbp);
 
 PA_FIXED_FUNCTIONS(xi_rule_id_t, xi_rule_t, xi_rulebook_t, xrb_rules,
-		   xi_rule_alloc, xi_rule_free, xi_rule_addr);
+		   xi_rule_alloc, xi_rule_free, xi_rule_addr,
+		   xi_rule_id, xi_rule_id_atom_of, xi_rule_id_is_null);
+
+PA_FIXED_FUNCTIONS(xi_rstate_id_t, xi_rstate_t, xi_rulebook_t, xrb_states,
+		   xi_rstate_alloc, xi_rstate_free, xi_rstate_addr,
+		   xi_rstate_id, xi_rstate_id_atom_of, xi_rstate_id_is_null);
 
 #endif /* LIBSLAX_XI_RULES_H */

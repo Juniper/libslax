@@ -1,0 +1,72 @@
+          +---------------+
+     O    | Creation of a |
+    -|- ->| YANG module   |
+    / \   +---------------+
+                  |
+                  V
+           /-------------\
+          / Standardized  \ yes
+          \ YANG module ? /-------------+
+           \-------------/              |
+                  | no                  |
+                  V                     V
+           /-------------\      +---------------+
+          / Constrained   \ yes | SID range     |
+      +-->\ application ? /---->| registration  |
+      |    \-------------/      +---------------+
+      |           | no                  |
+      |           V                     V
+      |   +---------------+     +---------------+
+      +---| YANG module   |     | SID sub-range |
+          | update        |     | assignment    |
+          +---------------+     +---------------+
+                                        |
+                                        V
+                                +---------------+
+                                | .sid file     |
+                                | generation    |
+                                +---------------+
+                                        |
+                                        V
+                                 /-------------\      +---------------+
+                                /  Publicly     \ yes | YANG module   |
+                                \  available ?  /---->| registration  |
+                                 \-------------/      +---------------+
+                                        | no                  |
+                                        +---------------------+
+                                        |
+                                      [DONE]
+
+
+          +---------------+
+     O    | Update of the |
+    -|- ->| YANG module   |
+    / \   | or include(s) |
+          | or import(s)  |
+          +---------------+
+                  |
+                  V
+           /-------------\      +----------------+
+          /  More SIDs    \ yes | Extra sub-range|
+          \  required ?   /---->| assignment     |
+           \-------------/      +----------------+
+                  | no                  |
+                  +---------------------+
+                  |
+                  V
+          +---------------+
+          | .sid file     |
+          | update based  |
+          | on previous   |
+          | .sid file     |
+          +---------------+
+                  |
+                  V
+           /-------------\      +---------------+
+          /  Publicly     \ yes | YANG module   |
+          \  available ?  /---->| registration  |
+           \-------------/      +---------------+
+                  | no                  |
+                  +---------------------+
+                  |
+                [DONE]
