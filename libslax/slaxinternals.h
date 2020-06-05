@@ -98,6 +98,9 @@ slaxFreeWriter (slax_writer_t *swp);
 void
 slaxWrite (slax_writer_t *swp, const char *fmt, ...);
 
+void
+slaxWriteIndent (slax_writer_t *swp, int change);
+
 int
 slaxWriteNewline (slax_writer_t *swp, int change);
 
