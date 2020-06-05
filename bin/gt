@@ -93,6 +93,11 @@ case "$op" in
 	push_to_branch
 	;;
 
+    timmoc)
+        set_branch
+        git commit "$@"
+        ;;
+
     diff|dif|delta)
         git diff "$@"
 	;;
