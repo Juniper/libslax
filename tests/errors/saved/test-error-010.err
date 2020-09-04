@@ -1,5 +1,8 @@
 ../../../tests/errors/test-error-010.slax:6: unexpected input: '$user'; expected close parentheses (')')
+
 ../../../tests/errors/test-error-010.slax:10: unexpected input: semi-colon (';'); expected close bracket (']')
-../../../tests/errors/test-error-010.slax:19: unexpected end-of-file due to open comment
+
+../../../tests/errors/test-error-010.slax:15: unexpected end-of-file due to open comment
+
 ../../../tests/errors/test-error-010.slax: 3 errors detected during parsing (1)
 slaxproc: cannot parse: '../../../tests/errors/test-error-010.slax'
