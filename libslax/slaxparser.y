@@ -248,7 +248,8 @@
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
 %token M_JSON			/* Parse a JSON document */
 
-%pure-parser
+ /* The modern version of "%pure-parser" */
+%define api.pure
 
 /*
  * %expect is a hack, but adding the JSON-like encoding option
