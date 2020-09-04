@@ -1,0 +1,24 @@
+../../../tests/errors/test-error-012.slax:5: unexpected input: 'itemlist'; expected open brace ('{')
+
+../../../tests/errors/test-error-012.slax:-1: error : string is not in UTF-8
+../../../tests/errors/test-error-012.slax:6: unexpected input: 'list'; expected open brace ('{')
+
+../../../tests/errors/test-error-012.slax:8: error recovery ignores input until this point before '}': 
+
+../../../tests/errors/test-error-012.slax:9: unexpected input: '}'; expected valid top-level statement
+
+../../../tests/errors/test-error-012.slax:14: error recovery ignores input until this point before '}': 
+
+../../../tests/errors/test-error-012.slax:-1: error : string is not in UTF-8
+../../../tests/errors/test-error-012.slax:14: unexpected input: 'if'; expected open brace ('{')
+
+../../../tests/errors/test-error-012.slax:15: error recovery ignores input until this point before '}': 
+
+../../../tests/errors/test-error-012.slax:15: unexpected input: '{'; expected valid top-level statement
+
+../../../tests/errors/test-error-012.slax:16: error recovery ignores input until this point before '}': 
+
+../../../tests/errors/test-error-012.slax:17: unexpected input: 'expr'; expected valid top-level statement
+
+../../../tests/errors/test-error-012.slax: 6 errors detected during parsing (1)
+slaxproc: cannot parse: '../../../tests/errors/test-error-012.slax'
