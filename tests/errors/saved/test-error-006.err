@@ -1,3 +1,4 @@
-../../../tests/errors/test-error-006.slax:9: unexpected end-of-file due to open comment
+../../../tests/errors/test-error-006.slax:4: unexpected end-of-file due to open comment
+
 ../../../tests/errors/test-error-006.slax: 1 error detected during parsing (1)
 slaxproc: cannot parse: '../../../tests/errors/test-error-006.slax'
