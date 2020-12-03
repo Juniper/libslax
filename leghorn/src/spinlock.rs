@@ -29,7 +29,7 @@ impl<T> Mutex<T> {
         }
     }
 
-    pub fn try_lock<'a>(&'a self) -> Result<MutexGuard<'a, T>, MutexErr> {
+    pub fn try_lock(&self) -> Result<MutexGuard<T>, MutexErr> {
         if self.locked.swap(true, Acquire) {
             Err(MutexErr)
         } else {
@@ -37,12 +37,17 @@ impl<T> Mutex<T> {
         }
     }
 
-    pub fn lock<'a>(&'a self) -> MutexGuard<'a, T> {
+    pub fn lock(&self) -> MutexGuard<T> {
         loop {
             if let Ok(m) = self.try_lock() {
                 break m;
             }
         }
+    }
+
+    #[cfg(nightly)]
+    pub fn get_mut(&mut self) -> &mut T {
+        self.inner.get_mut()
     }
 }
 
