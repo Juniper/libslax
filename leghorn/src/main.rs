@@ -3,7 +3,7 @@ use sxd_xpath::{Factory, Context};
 
 use snafu::{Snafu, ResultExt};
 
-use mumble::spinlock;
+use leghorn::spinlock;
 
 #[derive(Debug, Snafu)]
 enum Error {
