@@ -1,5 +1,5 @@
 [package]
-name = "mumble"
+name = "leghorn"
 version = "0.1.0"
 authors = ["Phil Shafer <phil@juise.org>"]
 edition = "2018"
@@ -10,7 +10,7 @@ edition = "2018"
 bench = false
 
 [[bin]]
-name = "mumble"
+name = "leghorn"
 
 [[example]]
 name = "example01"
