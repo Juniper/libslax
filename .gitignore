@@ -47,3 +47,5 @@ target
 .DS_Store
 Cargo.lock
 data
+
+test.mem
