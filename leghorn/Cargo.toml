@@ -20,5 +20,6 @@ sxd-document = "*"
 sxd-xpath = "*"
 snafu = "*"
 libc = "*"
+log = "*"
 toml = "*"
-
+env_logger = "*"
