@@ -23,3 +23,5 @@ libc = "*"
 log = "*"
 toml = "*"
 env_logger = "*"
+clap = "*"
+
