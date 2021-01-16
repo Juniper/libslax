@@ -7,6 +7,8 @@ extern crate libc;
 // use std::ptr::{NonNull};
 // use std::ops::{Deref, DerefMut};
 // use std::cmp::{Ordering,PartialOrd};
+
+use std::cell::RefCell;
 use std::default::Default;
 use std::fmt;
 use std::fmt::Debug;
@@ -23,12 +25,12 @@ use std::path::PathBuf;
 // use std::ptr;
 // use std::slice;
 
-use log::{debug,warn};
+use log::{debug,warn,error};
 use libc::c_int;
 use snafu::{ResultExt, Snafu};
 
 #[cfg(test)]
-use log::error;
+use std::env;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
@@ -56,34 +58,32 @@ const ADDR_DEFAULT: usize = 0x2000_0000_0000;
 const ADDR_DEFAULT_INCR: usize = 0x020000000000;
 const ADDR_ALIGN: OffsetType = mem::size_of::<u64>() as OffsetType;
 
-#[allow(dead_code)]
-pub(crate) const ATOM_SHIFT: u32 = 12;
-#[allow(dead_code)]
-pub(crate) const ATOM_SIZE: usize = 1 << ATOM_SHIFT;
+pub const ATOM_SHIFT: u32 = 12;
+pub const ATOM_SIZE: usize = 1 << ATOM_SHIFT;
 
 /// The basic "null" atom number
-pub(crate) const ATOM_NULL: RawAtom = 0;
+pub const ATOM_NULL: RawAtom = 0;
 
 #[allow(dead_code)]
-pub(crate) const HEADER_NAME_LEN: usize = 64; // Max length of header name string
+pub const HEADER_NAME_LEN: usize = 64; // Max length of header name string
 
 // Default initial mmap file size
-pub(crate) const DEFAULT_COUNT: RawAtom = 32;
-pub(crate) const DEFAULT_SIZE: usize = (DEFAULT_COUNT as usize) << ATOM_SHIFT;
+pub const DEFAULT_COUNT: RawAtom = 32;
+pub const DEFAULT_SIZE: usize = (DEFAULT_COUNT as usize) << ATOM_SHIFT;
 
 type RawAtom = u32; // Base 'atom' type
 
 #[derive(Clone,Copy,Debug)]
-pub(crate) struct Address(usize); // Base address type
+pub struct Address(usize); // Base address type
 
 #[derive(Clone,Copy,Debug)]
 pub struct Atom(RawAtom); // Base atom type
 
 #[derive(Clone,Copy,Debug,PartialEq,PartialOrd)]
-pub(crate) struct AtomCount(u32); // Used for number of atoms
+pub struct AtomCount(u32); // Used for number of atoms
 
 #[derive(Clone,Copy,Debug)]
-pub(crate) struct FreeAtom(RawAtom); // Atom on the free list
+pub struct FreeAtom(RawAtom); // Atom on the free list
 
 const VERS_MAJOR: u8 = 1; // Major numbers are incompatible
 const VERS_MINOR: u8 = 0; // Minor number are compatible
@@ -96,7 +96,7 @@ const FREE_MAGIC: u32 = 0xCABB1E16;  // Denotes free atoms
 /// This header appears at the front of a memory file, helping to
 /// verify that we are looking at a file we have constructed.
 #[repr(C)]
-pub(crate) struct MmapInfo {
+pub struct MmapInfo {
     magic: u16,       // Magic number
     vers_major: u8,   // Major version number
     vers_minor: u8,   // Minor verision number
@@ -110,6 +110,7 @@ const MMAP_INFO_SIZE: OffsetType = mem::size_of::<MmapInfo>() as OffsetType;
 
 #[repr(C)]
 #[allow(dead_code)]
+#[derive(Debug)]
 struct MmapFree {
     magic: u32,          // Magic number (FREE_MAGIC)
     size: AtomCount,     // Number of atoms free here
@@ -132,11 +133,9 @@ struct MmapSegment {
     size: usize,               // Length of mapped object
 }
 
-/// Mmap supports two styles: File, Anonymous.  Unset is used during
-/// building, but has no real meaning.
+/// Mmap supports two styles: File, Anonymous.
 #[allow(dead_code)]
 enum MmapStyle {
-    Unset, // Uninitialized
     File {
         path: PathBuf, // Name of file mapped
         file: FsFile,  // File being mapped
@@ -158,7 +157,7 @@ pub struct Mmap<'a> {
     address: Address,          // Address at which this object is mapped
     size: usize,               // Length of mapped object
     style: MmapStyle,          // Per-style information
-    info: &'a mut MmapInfo,    // Our main 'info' header
+    info: RefCell<&'a mut MmapInfo>,    // Our main 'info' header
     headers: Vec<Offset>,      // Offsets of each of the headers
 }
 
@@ -166,10 +165,12 @@ pub struct Mmap<'a> {
 pub struct MmapBuilder {
     path: Option<PathBuf>, // Name of file mapped
     write: bool,           // Mapped as writable
+    mint: bool,            // Create/reset file (implies 'write')
     private: bool,         // Private contents; not world-readable
     size: usize,           // Desired size of the file
 }
 
+// --- private functions ---
 
 /// Simpliest "round up" function, suitable for any holiday party
 fn round_up_u32(val: u32, to: u32) -> u32 {
@@ -199,12 +200,34 @@ fn align_offset(value: OffsetType) -> OffsetType {
     round_up_u32(value, ADDR_ALIGN)
 }
 
+// Return the number of atoms to needed for a given size of allocation
+fn num_atoms_needed(size: usize, atom_shift: u32) -> AtomCount {
+    let m1: usize = (1 << atom_shift) - 1;
+    let count: usize = (size + m1) >> atom_shift;
+    AtomCount(count as u32)
+}
+
+fn atom_to_addr(addr: Address, atom: RawAtom, shift: u32) -> usize {
+    let uatom = atom as usize;
+    addr.0 + (uatom << shift)
+}
+
+unsafe fn atom_to_data<'a, T>(address: Address, atom: RawAtom, shift: u32)
+                          -> &'a mut T {
+    let uatom = atom as usize;
+    let addr = address.0 + (uatom << shift);
+    let t: &mut T = mem::transmute::<_, _>(addr);
+    t
+}
+
+// --- end of private functions ---
 
 impl MmapBuilder {
     pub fn new() -> MmapBuilder {
         MmapBuilder {
             path: None,
             write: true,
+            mint: false,
             private: true,
             size: DEFAULT_SIZE,
         }
@@ -217,6 +240,11 @@ impl MmapBuilder {
 
     pub fn write(mut self, val: bool) -> Self {
         self.write = val;
+        self
+    }
+
+    pub fn mint(mut self, val: bool) -> Self {
+        self.mint = val;
         self
     }
 
@@ -283,7 +311,15 @@ impl MmapInfo {
     }
 }
 
-impl MmapBuilder {
+fn file_prot(write: bool) -> c_int {
+    let mut prot: c_int = libc::PROT_READ;
+    if write {
+        prot |= libc::PROT_WRITE;
+    }
+    prot
+}
+
+impl<'a> MmapBuilder {
     fn do_map (fd: c_int, size: usize, prot: c_int)
                -> Result<usize,Error> {
 
@@ -344,7 +380,7 @@ impl MmapBuilder {
         vec
     }
 
-    pub fn open<'a>(self) -> Result<Box<Mmap<'a>>, Error> {
+    pub fn open(self) -> Result<Box<Mmap<'a>>, Error> {
         let mut size = self.size;
         let style;
         let fd;
@@ -355,17 +391,12 @@ impl MmapBuilder {
         // object for File or Anonymous.  We also set 'fd' and
         // 'created', based on the style.
         if let Some(path) = self.path {
-            let write = self.write;
+            let write = self.write || self.mint; // mint implies write
 
             // We can set the write bits in the file permissions
             // knowning that it will only matter if the file is
             // created, which only happens if 'write' is true.
             let perm = if self.private { 0o600 } else { 0o644 };
-
-            // XXX Can't find a means of seeing if .open created a
-            // file, so we check before hand, which opens a Window
-            // Of Uncertainty, but .....
-            created = ! fs::metadata(&path).is_ok();
 
             let file = OpenOptions::new()
                 .read(true)
@@ -375,7 +406,21 @@ impl MmapBuilder {
                 .open(&path)
                 .context(BadFile { path: &path })?;
 
-            if self.write {
+            // If the caller asked for a 'mint' database, we reset it
+            // to zero and let the new size recreate it below.
+            if self.mint {
+                if let Err(e) = file.set_len(0) {
+                    return Err(Error::BadMmap { source: e });
+                }
+                created = true;
+            } else {
+                // XXX Can't find a means of seeing if .open created a
+                // file, so we check before hand, which opens a Window
+                // Of Uncertainty, but .....
+                created = ! fs::metadata(&path).is_ok();
+            }
+
+            if write {
                 prot |= libc::PROT_WRITE;
             }
 
@@ -411,42 +456,55 @@ impl MmapBuilder {
 
         // We cast the address into an "info" structure, which is the
         // first header in the memory mapped space.
-        let info: &mut MmapInfo
+        let raw_info: &mut MmapInfo
             = unsafe { mem::transmute::<_, _>(addr) };
+        let info = RefCell::new(raw_info);
 
-        info.validate(addr, size, created)?;
-        let headers = MmapBuilder::do_headers(addr, info);
+        info.borrow_mut().validate(addr, size, created)?;
+        let headers = MmapBuilder::do_headers(addr, &mut info.borrow_mut());
 
         let b = Box::new(Mmap { address, size, style, info, headers});
         Ok(b)
     }
 }
 
-// Return the number of atoms to needed for a given size of allocation
-fn num_atoms_needed(size: usize, atom_shift: u32) -> AtomCount {
-    let m1: usize = (1 << atom_shift) - 1;
-    let count: usize = (size + m1) >> atom_shift;
-    AtomCount(count as u32)
-}
-
-fn atom_to_addr(addr: Address, atom: RawAtom, shift: u32) -> usize {
-    let uatom = atom as usize;
-    addr.0 + (uatom << shift)
-}
-
 impl Mmap<'_> {
-    pub fn alloc(&mut self, size: usize) -> Option<Atom> {
+    pub fn close(&mut self) {
+        let addr = self.address.0;
+
+        match &self.style {
+            MmapStyle::File { ref file, .. } => {
+                
+                let _ = unsafe { libc::munmap(addr as _, self.size)};
+                let _ = file.sync_all();
+            },
+            MmapStyle::Anonymous { .. } => {
+                // XXX need to implement
+            },
+        }
+    }
+
+    pub fn chunk_alloc(&mut self, size: usize) -> Option<Atom> {
         if size == 0 {
             warn!("Mmap::alloc called with zero size");
             return None;
         }
 
-        let count: AtomCount = num_atoms_needed(size, ATOM_SHIFT);
+        let count = num_atoms_needed(size, ATOM_SHIFT);
+        debug!("mmap::alloc: need {:?}", count);
 
-        let info = &mut self.info;
+        let rc = self.chunk_alloc_from_stock(count);
+        if rc.is_none() {
+            self.chunk_alloc_extend(count)
+        } else {
+            rc
+        }
+    }
+
+    fn chunk_alloc_from_stock(&mut self, count: AtomCount) -> Option<Atom> {
+        let mut info = self.info.borrow_mut();
         let mut lastp: &mut FreeAtom = &mut info.free;
 
-        debug!("mmap::alloc: need {:?}", count);
         loop {
             let mut fa = lastp.0;
             if fa == ATOM_NULL {
@@ -458,7 +516,7 @@ impl Mmap<'_> {
             let freep: &mut MmapFree
                 = unsafe { mem::transmute::<_, _>(addr) };
 
-            assert_eq!(freep.magic, FREE_MAGIC);
+            freep.check_magic();
 
             if freep.size < count {
                 // Not enough space; skip
@@ -476,58 +534,243 @@ impl Mmap<'_> {
             return Some(Atom(fa));
         }
 
+        None
+    }
+
+    fn chunk_alloc_extend(&mut self, count: AtomCount) -> Option<Atom> {
+        let mut info = self.info.borrow_mut();
+
         let new_count = AtomCount({
-            if count.0 < DEFAULT_COUNT { DEFAULT_COUNT }
-            else { round_up_atom(count.0, DEFAULT_COUNT) }
+            let goal = count.0 * 2;
+            if goal < DEFAULT_COUNT { DEFAULT_COUNT }
+            else { round_up_atom(goal, DEFAULT_COUNT) }
         });
 
         let old_size = info.size;
-        let new_size = old_size + (new_count.0 as usize) << ATOM_SHIFT;
+        let new_size = old_size + ((new_count.0 as usize) << ATOM_SHIFT);
 
         if info.max_size != 0 && new_size > info.max_size {
             warn!("mmap::alloc: max size reached {}", info.max_size);
             return None;
         }
 
+        debug!("extending to {:?}//{} ({})", new_count, new_size, old_size);
+
         match &self.style {
-            MmapStyle::Unset => (),
             MmapStyle::File { ref file, fd, write, .. } => {
+                if let Err(e) = file.set_len(new_size as u64) {
+                    error!("extend set_len failed {:?}", e);
+                    return None;
+                }
+
+                // Record the new size on our 'info' header 
+                info.size = new_size;
+
+                match MmapBuilder::do_map(*fd, new_size, file_prot(*write)) {
+                    Ok(a) => {
+                        if a != self.address.0 {
+                            error!("extend moved memory {} .vs {}", a,
+                                   self.address.0);
+                            return None;
+                        }
+                    },
+                    Err(e) => {
+                        error!("extend map failed {:?}", e);
+                        return None;
+                    },
+                }
 
             },
-            MmapStyle::Anonymous { ref segments } => {
-
+            MmapStyle::Anonymous { .. } => {
+                // XXX need to implement
+                return None;
             },
         }
 
-        None
+        // We'll return the top chunk of atoms from the newly extended area
+        let ra = (old_size >> ATOM_SHIFT) as RawAtom;
+        let left = new_count.0 - count.0;
+        let na = ra + left; // Atom we will return
+
+        debug!("extend returns {}/{}", ra, na);
+
+        // If there's extra, hang it back on the 'free' list
+        if left != 0 {
+            let freep: &mut MmapFree
+                = unsafe { self.atom_to_addr(ra, ATOM_SHIFT)};
+            freep.magic = FREE_MAGIC;
+            freep.size = AtomCount(left);
+
+            debug!("extend adds to free list {:p}/{}", freep, left);
+
+            // XXX need a lock
+            freep.next = info.free;
+            info.free = FreeAtom(ra);
+            debug!("add to free list {:p}/{:?} {:?}",
+                   freep, freep, info.free);
+        }
+
+        Some(Atom(na))
     }
 
-    #[allow(dead_code)]
-    fn dump(&mut self) {
-        debug!("mmap::dump_free: {:p}", &self);
+    pub unsafe fn atom_to_addr<T>(&self, atom: RawAtom, shift: u32)
+                              -> &mut T {
+        let uatom = atom as usize;
+        let addr = self.address.0 + (uatom << shift);
+        let t: &mut T = mem::transmute::<_, _>(addr);
+        t
+    }
 
-        let mut lastp: &mut FreeAtom = &mut self.info.free;
+    pub fn chunk_free(&mut self, atom: Atom, size: usize) {
+        let mut info = self.info.borrow_mut();
+        let mut fa: &mut FreeAtom = &mut info.free;
+        let count = num_atoms_needed(size, ATOM_SHIFT);
+        debug!("mmap::free: {:?} {:?}", atom, count);
 
-        debug!("  free list");
         loop {
-            let fa = lastp.0;
-            if fa == ATOM_NULL {
+            if fa.is_null() {
                 break;
             }
 
-            let addr = atom_to_addr(self.address, fa, ATOM_SHIFT);
+            let freep: &mut MmapFree
+                = unsafe { atom_to_data(self.address, fa.atom(), ATOM_SHIFT) };
+
+            // Ensure that no one has corrupted our free block
+            freep.check_magic();
+
+            // The free list is kept in "decreasing size" order
+            if count.count() <= freep.size.count() {
+                break;
+            }
+
+            fa = &mut freep.next;
+        }
+
+        // Insert this atom into the list
+        let newp: &mut MmapFree
+            = unsafe { atom_to_data(self.address, atom.atom(), ATOM_SHIFT) };
+        newp.magic = FREE_MAGIC;
+        newp.size = count;
+        newp.next = *fa;
+
+        fa.0 = atom.0;
+    }
+
+    #[allow(dead_code)]
+    pub fn dump(&mut self) {
+        debug!("mmap::dump_free: {:p}", &self);
+
+        let mut prev: &mut FreeAtom = &mut self.info.borrow_mut().free;
+
+        debug!("  free list{}",
+               if prev.0 == ATOM_NULL { " is empty" } else { ":" });
+
+        let mut last = ATOM_NULL;
+        loop {
+            let fa = prev.0;
+            if fa == ATOM_NULL {
+                break;
+            }
+            if fa == last {     // Loop detection
+                panic!("dump: loop detected {}", fa);
+            }
 
             let freep: &mut MmapFree
-                = unsafe { mem::transmute::<_, _>(addr) };
+                = unsafe { self.atom_to_addr(fa, ATOM_SHIFT) };
 
-            debug!("    {:#x} {:p} size {:?}, next {:?}",
-                     addr, freep, freep.size, freep.next);
+            debug!("    {}: {:p} size {:?}, next {:?}",
+                     fa, freep, freep.size, freep.next);
 
-            assert_eq!(freep.magic, FREE_MAGIC);
+            freep.check_magic();
+            assert!(last != fa);
 
-            lastp = &mut freep.next;
+            prev = &mut freep.next;
+            last = fa;
         }
     }
+
+    pub fn chunk_check(&mut self, all_free: bool) {
+        let mut info = self.info.borrow_mut();
+        let max: usize = info.size >> ATOM_SHIFT;
+        let mut mark = Vec::<RawAtom>::with_capacity(max);
+        mark.resize(max, ATOM_NULL);
+
+        let mut prev: &mut FreeAtom = &mut info.free;
+
+        let mut last = ATOM_NULL;
+        let mut errs = 0;
+        loop {
+            let fa = prev.0;
+            if fa == ATOM_NULL {
+                break;
+            }
+            if fa == last {     // Loop detection
+                panic!("dump: loop detected {}", fa);
+            }
+
+            let freep: &mut MmapFree
+                = unsafe { self.atom_to_addr(fa, ATOM_SHIFT) };
+
+            freep.check_magic();
+            assert!(last != fa);
+
+            for i in fa .. fa + freep.size.count() {
+                let j = i as usize;
+                if mark[j] != ATOM_NULL {
+                    error!("chunk_check: double atom {} ({} and {}) {:p}/{:?}",
+                           i, fa, mark[j], freep, freep);
+                    errs += 1;
+                }
+                mark[j] = fa;
+            }
+
+            prev = &mut freep.next;
+            last = fa;
+        }
+
+        if all_free {
+            for i in 1 .. max {
+                if mark[i] == ATOM_NULL {
+                    let fa = i as RawAtom;
+                    let freep: &mut MmapFree
+                        = unsafe { self.atom_to_addr(fa, ATOM_SHIFT) };
+
+                    error!("chunk_check: not free: {} ({}/{:p})",
+                           i, mark[i], freep);
+                    errs += 1;
+                }
+            }
+        }
+
+        if errs != 0 {
+            debug!("chunk_check: end; {} errors", errs);
+        }
+    }
+}
+
+impl MmapFree {
+    fn check_magic(&self) {
+        if self.magic != FREE_MAGIC {
+            panic!("free block {:p} has invalid magic {}/{}",
+                   self, self.magic, FREE_MAGIC);
+        }
+    }          
+}
+
+impl AtomCount {
+    #[inline]
+    pub fn count(&self) -> u32 { self.0 }
+}
+
+impl Atom {
+    #[inline]
+    pub fn atom(&self) -> RawAtom { self.0 }
+}
+
+impl FreeAtom {
+    #[inline]
+    pub fn atom(&self) -> RawAtom { self.0 }
+    pub fn is_null(&self) -> bool { self.0 == ATOM_NULL }
 }
 
 impl AddAssign for AtomCount {
@@ -551,7 +794,6 @@ impl SubAssign<u32> for AtomCount {
 impl Debug for MmapStyle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MmapStyle::Unset => f.debug_struct("MmapStyle::Unset").finish(),
             MmapStyle::File { path, file, fd, write } => {
                 f.debug_struct("MmapStyle::File")
                     .field("path", &path)
@@ -596,32 +838,61 @@ impl Debug for Mmap<'_> {
 }
 
 #[cfg(test)]
-fn init() {
-    let _ = env_logger::builder().is_test(true).try_init();
+fn logger_init() {
+    env::set_var("RUST_LOG", "debug");
+
+    let _ = env_logger::builder()
+        .is_test(true)
+        .format_timestamp(None)
+        .try_init();
 }
 
 #[test]
 fn simple_open() {
-    init();
+    logger_init();
 
-    error!("some failure");
+    error!("starting test...");
 
-    let rc = MmapBuilder::new()
+    let mut m = MmapBuilder::new()
         .path(PathBuf::from("test.mem"))
         .write(true)
         .size(100 * 1024)
-        .open();
+        .open().unwrap();
 
-    debug!("got {:?}", rc);
-    if let Ok(mut m) = rc {
+    debug!("got {:?}", m);
+    m.dump();
+    for _ in 0..10 {
+        let _m1 = test_alloc(&mut m, 30_000);
+        let m2 = test_alloc(&mut m, 60_000);
+        let _m3 = test_alloc(&mut m, 90_000);
+        
         m.dump();
-        let mine = m.alloc(3000);
-        debug!("alloc {:?}", mine);
-        let mine = m.alloc(6000);
-        debug!("alloc {:?}", mine);
-        let mine = m.alloc(9000);
-        debug!("alloc {:?}", mine);
+            
+        if let Some(x) = m2 {
+            m.chunk_free(x, 60_000);
+        }
+
         m.dump();
     }
 }
 
+#[cfg(test)]
+fn test_alloc (m: &mut Mmap, size: usize) -> Option<Atom> {
+    debug!("test: alloc {:?}:", size);
+    let rc = m.chunk_alloc(size);
+    match &rc {
+        Some(a) => {
+            let x: &u32 = unsafe { m.atom_to_addr(a.0, ATOM_SHIFT) };
+            debug!("test: alloc for {:?} got {:?} -> {:p}", size, a, x);
+        },
+        None => {
+            debug!("test: alloc for {:?} fails", size);
+        },
+    }
+    rc
+}
+
+impl Atom {
+    pub fn is_null(&self) -> bool { self.0 == 0 }
+    pub fn make_null() -> Atom { Atom(ATOM_NULL) }
+}
