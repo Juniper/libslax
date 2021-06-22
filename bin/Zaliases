@@ -7,6 +7,7 @@ set opts=' \
 --enable-warnings \
 --enable-readline \
 --enable-printflike \
+--with-sqlite3=/opt/local \
 --with-libxslt-tests=$HOME/work/xmlsoft/libxslt-1.1.24/tests/ \
 --with-libxml-prefix=$HOME/work/root \
 --with-libxslt-prefix=$HOME/work/root \
