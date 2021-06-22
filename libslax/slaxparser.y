@@ -1129,6 +1129,8 @@ named_template_argument_decl :
 function_definition :
 	K_FUNCTION template_name
 		{
+		    slaxCheckForQname(slax_data, "function", $2->ss_token);
+
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_FUNCTION,
 					    ELT_NAME, $2->ss_token);
