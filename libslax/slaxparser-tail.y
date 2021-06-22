@@ -2,7 +2,7 @@
 #line 3 "slaxparser-tail.y"
 
 /*
- * Copyright (c) 2006-2013, Juniper Networks, Inc.
+ * Copyright (c) 2006-2013, 2021, Juniper Networks, Inc.
  * All rights reserved.
  * See ../Copyright for the status of this software
  *
@@ -29,6 +29,10 @@ slaxTokenTranslate (int ttype)
 {
     return YYTRANSLATE(ttype);
 }
+
+#ifndef YYTERROR
+#define YYTERROR YYSYMBOL_YYerror /* the new enum */
+#endif /* YYTERROR */
 
 /*
  * Return a better class of error message
