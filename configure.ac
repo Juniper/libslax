@@ -11,8 +11,8 @@
 # a particular user has the dist or svn release.
 #
 
-AC_PREREQ(2.2)
-AC_INIT([libslax], [0.22.1], [phil@juniper.net])
+AC_PREREQ([2.69])
+AC_INIT([libslax],[0.22.1],[phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 
 # Support silent build rules.  Requires at least automake-1.11.
@@ -46,8 +46,6 @@ AC_PATH_PROG(MKDIR, mkdir, /bin/mkdir)
 AC_PATH_PROG(MV, mv, /bin/mv)
 AC_PATH_PROG(RM, rm, /bin/rm)
 AC_PATH_PROG(SED, sed, /bin/sed)
-
-AC_STDC_HEADERS
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
