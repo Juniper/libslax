@@ -1,0 +1,164 @@
+ element 'stylesheet' line 0
+     attr 'version'
+   element 'comment' line 0
+   element 'variable' line 52
+       attr 'name'
+       attr 'select'
+   element 'comment' line 0
+   element 'variable' line 54
+       attr 'name'
+     element 'argument' line 55
+       element 'name' line 56
+         element 'text' line 56
+       element 'description' line 57
+         element 'text' line 57
+     element 'argument' line 59
+       element 'name' line 60
+         element 'text' line 60
+       element 'description' line 61
+         element 'text' line 61
+   element 'param' line 64
+       attr 'name'
+   element 'param' line 65
+       attr 'name'
+       attr 'select'
+   element 'template' line 67
+       attr 'match'
+     element 'op-script-result' line 68
+       element 'c1' line 69
+         element 'text' line 69
+       element 'c2' line 70
+         element 'text' line 70
+       element 'c3' line 71
+         element 'text' line 71
+       element 'c4' line 72
+         element 'text' line 72
+       element 'c5' line 73
+         element 'text' line 73
+       element 'c6' line 74
+         element 'text' line 74
+       element 'c7' line 75
+         element 'text' line 75
+       element 'c8' line 76
+         element 'text' line 76
+       element 'c9' line 77
+         element 'text' line 77
+       element 'c10' line 78
+         element 'text' line 78
+       element 'c11' line 79
+         element 'text' line 79
+       element 'c12' line 80
+         element 'text' line 80
+       element 'c13' line 81
+         element 'text' line 81
+       element 'c14' line 82
+         element 'text' line 82
+       element 'c15' line 83
+         element 'text' line 83
+       element 'c16' line 84
+         element 'text' line 84
+       element 'c17' line 85
+         element 'text' line 85
+       element 'c18' line 86
+         element 'text' line 86
+       element 'c19' line 87
+         element 'text' line 87
+       element 'c20' line 88
+         element 'text' line 88
+       element 'c21' line 89
+         element 'text' line 89
+       element 'c22' line 90
+         element 'text' line 90
+       element 'c23' line 91
+         element 'text' line 91
+version 1.2;
+
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+
+/*
+This
+is
+a
+multiline
+comment.
+We are
+testing
+a little
+bug where
+the comments
+were not
+advancing
+the line
+count, so we have a long
+comment here.
+
+Lorem ipsum dolor
+sit amet, consectetur
+adipiscing elit, sed
+do eiusmod tempor
+incididunt ut labore
+et dolore magna
+aliqua. Ut enim
+ad minim veniam
+, quis nostrud exercitation
+ullamco laboris nisi
+ut aliquip ex
+ea commodo consequat
+. Duis aute irure
+dolor in reprehenderit
+in voluptate velit
+esse cillum dolore
+eu fugiat nulla
+pariatur. Excepteur sint
+occaecat cupidatat non
+proident, sunt in
+culpa qui officia
+deserunt mollit anim
+id est laborum
+
+enough?
+
+ */
+var $con = "xxx";
+/* jcs:open(); */
+var $arguments = {
+    <argument> {
+        <name> "message";
+        <description> "message to be parsed";
+    }
+    <argument> {
+        <name> "logfile";
+        <description> "logfile name";
+    }
+}
+param $message;
+param $logfile = "/var/log/foo.log";
+
+main <op-script-result> {
+    <c1> "Lorem ipsum dolor";
+    <c2> "sit amet, consectetur";
+    <c3> "adipiscing elit, sed";
+    <c4> "do eiusmod tempor";
+    <c5> "incididunt ut labore";
+    <c6> "et dolore magna";
+    <c7> "aliqua. Ut enim";
+    <c8> "ad minim veniam";
+    <c9> ", quis nostrud exercitation";
+    <c10> "ullamco laboris nisi";
+    <c11> "ut aliquip ex";
+    <c12> "ea commodo consequat";
+    <c13> ". Duis aute irure";
+    <c14> "dolor in reprehenderit";
+    <c15> "in voluptate velit";
+    <c16> "esse cillum dolore";
+    <c17> "eu fugiat nulla";
+    <c18> "pariatur. Excepteur sint";
+    <c19> "occaecat cupidatat non";
+    <c20> "proident, sunt in";
+    <c21> "culpa qui officia";
+    <c22> "deserunt mollit anim";
+    <c23> "id est laborum";
+}
