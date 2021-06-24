@@ -230,3 +230,6 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
 
 xmlNodeSetPtr
 slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr);
+
+void
+slaxDumpTree (xmlNodePtr node, const char *pref, int indent);
