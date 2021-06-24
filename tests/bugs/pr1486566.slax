@@ -1,0 +1,93 @@
+/*
+This
+is
+a
+multiline
+comment.
+We are
+testing
+a little
+bug where
+the comments
+were not
+advancing
+the line
+count, so we have a long
+comment here.
+
+ Lorem ipsum dolor
+ sit amet, consectetur
+ adipiscing elit, sed
+ do eiusmod tempor
+ incididunt ut labore
+ et dolore magna
+ aliqua. Ut enim
+ ad minim veniam
+, quis nostrud exercitation
+ ullamco laboris nisi
+ ut aliquip ex
+ ea commodo consequat
+. Duis aute irure
+ dolor in reprehenderit
+ in voluptate velit
+ esse cillum dolore
+ eu fugiat nulla
+ pariatur. Excepteur sint
+ occaecat cupidatat non
+ proident, sunt in
+ culpa qui officia
+ deserunt mollit anim
+ id est laborum
+
+enough?
+
+*/
+
+version 1.1;
+ 
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+ 
+var $con = "xxx"; /* jcs:open(); */
+ 
+var $arguments = {
+  <argument> {
+    <name> "message";
+    <description> "message to be parsed";
+  }
+  <argument> {
+    <name> "logfile";
+    <description> "logfile name";
+  }
+}
+param $message;                         
+param $logfile="/var/log/foo.log";
+ 
+match / {
+    <op-script-result> {
+	<c1> "Lorem ipsum dolor";
+	<c2> "sit amet, consectetur";
+	<c3> "adipiscing elit, sed";
+	<c4> "do eiusmod tempor";
+	<c5> "incididunt ut labore";
+	<c6> "et dolore magna";
+	<c7> "aliqua. Ut enim";
+	<c8> "ad minim veniam";
+	<c9> ", quis nostrud exercitation";
+	<c10> "ullamco laboris nisi";
+	<c11> "ut aliquip ex";
+	<c12> "ea commodo consequat";
+	<c13> ". Duis aute irure";
+	<c14> "dolor in reprehenderit";
+	<c15> "in voluptate velit";
+	<c16> "esse cillum dolore";
+	<c17> "eu fugiat nulla";
+	<c18> "pariatur. Excepteur sint";
+	<c19> "occaecat cupidatat non";
+	<c20> "proident, sunt in";
+	<c21> "culpa qui officia";
+	<c22> "deserunt mollit anim";
+	<c23> "id est laborum";
+    }
+}
