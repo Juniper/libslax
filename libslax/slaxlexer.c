@@ -727,6 +727,8 @@ slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
 	}
     }
 
+    slaxLog("addchild: '%s' %d", (const char *) cur->name, cur->line);
+
     return xmlAddChild(parent, cur);
 }
 
@@ -818,6 +820,10 @@ slaxDrainComment (slax_data_t *sdp)
 		sdp->sd_cur += COMMENT_MARKER_SIZE;	/* Move past "\*\/" */
 	    return FALSE;
 	}
+
+	/* Keep the line number accurate inside comments */
+	if (sdp->sd_buf[sdp->sd_cur] == '\n')
+	    sdp->sd_line += 1;
     }
 }
 
