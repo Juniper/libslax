@@ -24,6 +24,7 @@
 #include <libslax/slaxdata.h>
 #include <libslax/jsonlexer.h>
 #include <libslax/jsonwriter.h>
+#include <libslax/yamlwriter.h>
 
 #include <err.h>
 #include <time.h>
@@ -291,6 +292,41 @@ do_xml_to_json (const char *name UNUSED, const char *output,
     }
 
     slaxJsonWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
+		     opt_indent ? JWF_PRETTY : 0);
+
+    if (outfile != stdout)
+	fclose(outfile);
+
+    xmlFreeDoc(docp);
+
+    return 0;
+}
+
+static int
+do_xml_to_yaml (const char *name UNUSED, const char *output,
+		 const char *input, char **argv)
+{
+    xmlDocPtr docp;
+    FILE *outfile;
+
+    input = get_filename(input, &argv, 0);
+    output = get_filename(output, &argv, -1);
+
+    docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
+    if (docp == NULL) {
+	errx(1, "cannot parse file: '%s'", input);
+        return -1;
+    }
+
+    if (output == NULL || slaxFilenameIsStd(output))
+	outfile = stdout;
+    else {
+	outfile = fopen(output, "w");
+	if (outfile == NULL)
+	    err(1, "could not open file: '%s'", output);
+    }
+
+    slaxYamlWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
 		     opt_indent ? JWF_PRETTY : 0);
 
     if (outfile != stdout)
@@ -713,6 +749,7 @@ print_help (void)
 "\t--show-variable: show contents of a global variable\n"
 "\t--slax-to-xslt OR -x: turn SLAX into XSLT\n"
 "\t--xml-to-json: turn XML into JSON\n"
+"\t--xml-to-yaml: turn XML into YAML\n"
 "\t--xpath <xpath> OR -X <xpath>: select XPath data from input\n"
 "\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
 "\n"
@@ -843,6 +880,11 @@ main (int argc UNUSED, char **argv)
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_xml_to_json;
+
+	} else if (streq(cp, "--xml-to-yaml")) {
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_xml_to_yaml;
 
 	} else if (streq(cp, "--xslt-to-slax") || streq(cp, "-s")) {
 	    if (func)

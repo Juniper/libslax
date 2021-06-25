@@ -90,6 +90,12 @@ slaxSetSpacesAroundAttributeEquals (int spaces)
     slaxSpacesAroundAttributeEquals = spaces ? " " : "";
 }
 
+void
+slaxWriteIndent (slax_writer_t *swp, int change)
+{
+    swp->sw_indent += change;
+}
+
 int
 slaxWriteNewline (slax_writer_t *swp, int change)
 {
