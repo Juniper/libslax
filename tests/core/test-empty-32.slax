@@ -67,6 +67,9 @@ match / {
 	message "bit:from-int(255) -> " _ bit:from-int(255);
 	message "bit:from-int(255, 16) -> " _ bit:from-int(255, 16);
 
+	message "bit:from-int('11111') -> " _ bit:from-int('11111');
+	message "bit:from-int('255', '16') -> " _ bit:from-int('255', '16');
+
 	message "bit:to-hex(0000) -> " _ bit:to-hex('0000');
 	message "bit:to-hex(0001) -> " _ bit:to-hex('0001');
 	message "bit:to-hex(0010) -> " _ bit:to-hex('0010');
