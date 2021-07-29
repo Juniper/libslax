@@ -60,6 +60,8 @@ case "$op" in
 	    echo $branch
 	elif [ x"$1" = xnew ]; then
 	    git checkout -b "$2" $branch
+	elif [ x"$1" = xls ]; then
+	    git branch --list
 	else
 	    git checkout "$@"
 	fi
@@ -103,7 +105,8 @@ case "$op" in
 	;;
 
     info)
-        git remote show origin
+	git remote -v
+        git remote -v show origin
         ;;
 
     clog)
@@ -155,7 +158,7 @@ case "$op" in
 	fi
         ;;
 
-    merge-from)
+    merge|merge-from)
         set_branch
         from=$1
         if [ x"$from" = x ]; then

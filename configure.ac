@@ -11,8 +11,8 @@
 # a particular user has the dist or svn release.
 #
 
-AC_PREREQ(2.2)
-AC_INIT([libslax], [0.22.1], [phil@juniper.net])
+AC_PREREQ([2.69])
+AC_INIT([libslax],[0.22.2],[phil@juniper.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
 
 # Support silent build rules.  Requires at least automake-1.11.
@@ -46,8 +46,6 @@ AC_PATH_PROG(MKDIR, mkdir, /bin/mkdir)
 AC_PATH_PROG(MV, mv, /bin/mv)
 AC_PATH_PROG(RM, rm, /bin/rm)
 AC_PATH_PROG(SED, sed, /bin/sed)
-
-AC_STDC_HEADERS
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -186,17 +184,23 @@ AC_SUBST(WITH_LIBXSLT_TESTS)
 #
 # Check the availability of sqlite3
 #
-AX_LIB_SQLITE3([$SQLITE3_REQUIRED_VERSION])
-AM_CONDITIONAL([HAVE_SQLITE3], [test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)])
-if test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)
-then
-    HAVE_SQLITE3=yes
+AC_ARG_WITH(sqlite3, [  --with-sqlite3[=DIR]       Include SQLITE3 ])
+if test "$with_sqlite3" != "" ; then
+    AX_LIB_SQLITE3([$SQLITE3_REQUIRED_VERSION])
+    AM_CONDITIONAL([HAVE_SQLITE3], [test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)])
+    if test VERSION_TO_NUMBER(echo $SQLITE3_VERSION) -ge VERSION_TO_NUMBER(echo $SQLITE3_REQUIRED_VERSION)
+    then
+        HAVE_SQLITE3=yes
+    fi
+else
+        HAVE_SQLITE3=no
 fi
+AM_CONDITIONAL([HAVE_SQLITE3], [test "$HAVE_SQLITE3" != "no"])
 
 #
 # Check the availability of sqlcipher
 #
-AC_ARG_WITH(sqlcipher, [ --with-sqlcipher[=DIR] Path to SQLCipher])
+AC_ARG_WITH(sqlcipher, [  --with-sqlcipher[=DIR] Path to SQLCipher])
 if test "$with_sqlcipher" != ""; then
     if test -f "$with_sqlcipher/sqlite3.h" ; then
         USE_SQLCIPHER=$with_sqlcipher
@@ -257,7 +261,7 @@ dnl make sure xml2-config is executable,
 dnl test version and init our variables
 dnl
 
-if ${XML_CONFIG} --libs print > /dev/null 2>&1
+if ${XML_CONFIG} --libs > /dev/null 2>&1
 then
 	XMLVERS=`$XML_CONFIG --version`
 	if test VERSION_TO_NUMBER(echo $XMLVERS) -ge VERSION_TO_NUMBER(echo $LIBXML_REQUIRED_VERSION)
@@ -324,7 +328,7 @@ dnl make sure xslt-config is executable,
 dnl test version and init our variables
 dnl
 
-if ${XSLT_CONFIG} --libs print > /dev/null 2>&1
+if ${XSLT_CONFIG} --libs > /dev/null 2>&1
 then
 	XSLTVERS=`$XSLT_CONFIG --version`
 	if test VERSION_TO_NUMBER(echo $XSLTVERS) -ge VERSION_TO_NUMBER(echo $LIBXSLT_REQUIRED_VERSION)

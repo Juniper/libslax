@@ -281,6 +281,30 @@ Match templates are applied using the `apply-templates` statement.
           </hello>
         </xsl:template>
 
+The `apply-templates` statement can also contain two substatements.
+The :ref:`mode` statement will limit applied templates to those which contain a matching
+`mode` statement::
+
+    main <top> {
+        apply-templates;
+        apply-templates {
+            mode "index";
+        }
+    }
+
+    match catalog {
+        mode "index";
+        /* do index-y stuff */
+    }
+
+The :ref:`with` statement allows parameters to be passed to match templates::
+
+    apply-templates target {
+        with $replace = "some value";
+    }
+
+Match templates need a `param` statement to accept parameters.
+
 .. index:: statements; apply-imports
 .. _apply-imports:
 

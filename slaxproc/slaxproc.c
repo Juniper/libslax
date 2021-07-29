@@ -57,6 +57,7 @@ static int opt_slax_output;	/* Make output in SLAX format */
 static int opt_json_tagging;	/* Tag JSON output */
 static int opt_json_flags;	/* Flags for JSON conversion */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
+static int opt_dump_tree;	/* Dump parsed element tree */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -102,6 +103,9 @@ do_format (const char *name UNUSED, const char *output,
 
 	if (docp == NULL)
 	    errx(1, "cannot parse file: '%s'", input);
+
+	if (opt_dump_tree)
+	    slaxDumpTree(docp->children, "", 0);
     }
 
     if (output == NULL || slaxFilenameIsStd(output))
@@ -161,6 +165,9 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 
 	if (docp == NULL)
 	    errx(1, "cannot parse file: '%s'", input);
+
+	if (opt_dump_tree)
+	    slaxDumpTree(docp->children, "", 0);
     }
 
     if (output == NULL || slaxFilenameIsStd(output))
@@ -887,6 +894,9 @@ main (int argc UNUSED, char **argv)
 /* Non-mode flags start here */
 	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
 	    opt_debugger = TRUE;
+
+	} else if (streq(cp, "--dump-tree")) {
+	    opt_dump_tree = TRUE;
 
 	} else if (streq(cp, "--empty") || streq(cp, "-E")) {
 	    opt_empty_input = TRUE;

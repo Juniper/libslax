@@ -325,6 +325,12 @@ slaxDebugGetNodeByLine (xmlNodePtr node, int lineno)
     return NULL;
 }
 
+static void
+slaxDebugListNodeByLine (xmlNodePtr node)
+{
+    slaxDumpTree(node, "", 0);
+}
+
 /*
  * Return xmlnode for the given line number
  */
@@ -1273,6 +1279,10 @@ slaxDebugCmdInfo (DC_ARGS)
 	    slaxOutput("[context insertion point]");
 	    slaxOutputNode(ctxt->insert);
 	}
+
+    } else if (slaxDebugIsAbbrev("nodes", argv[1])) {
+	if (statep->ds_script && statep->ds_script->doc)
+	    slaxDebugListNodeByLine(statep->ds_script->doc->children);
 
     } else if (slaxDebugIsAbbrev("output", argv[1])) {
 	if (slaxDebugCheckContext(ctxt))

@@ -15,7 +15,9 @@
 #include <libslax/slax.h>
 #include "slaxparser.h"
 #include <ctype.h>
+#include <stdint.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
@@ -418,7 +420,7 @@ slaxKeywordMatch (slax_data_t *sdp, const char *str)
  * ch1 and ch2.  Returns zero if there is none.
  */
 static int
-slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
+slaxDoubleWide (slax_data_t *sdp UNUSED, uint8_t ch1, uint8_t ch2)
 {
 #define DOUBLE_WIDE(ch1, ch2) (((ch1) << 8) | (ch2))
     switch (DOUBLE_WIDE(ch1, ch2)) {
@@ -443,7 +445,7 @@ slaxDoubleWide (slax_data_t *sdp UNUSED, int ch1, int ch2)
  * ch1, ch2 and ch3.  Returns zero if there is none.
  */
 static int
-slaxTripleWide (slax_data_t *sdp UNUSED, int ch1, int ch2, int ch3)
+slaxTripleWide (slax_data_t *sdp UNUSED, uint8_t ch1, uint8_t ch2, uint8_t ch3)
 {
     if (ch1 == '.' && ch2 == '.' && ch3 == '.')
 	return L_DOTDOTDOT;	/* Only one (for now) */
@@ -622,6 +624,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 	     */
 	    if (sdp->sd_cur < sdp->sd_len)
 		return FALSE;
+
 	    return TRUE;
 	}
 
@@ -668,6 +671,34 @@ slaxGetInput (slax_data_t *sdp, int final)
     }
 }
 
+/*
+ * Move the current point by one character, getting more data if needed.
+ */
+static int
+slaxMoveCur (slax_data_t *sdp)
+{
+    slaxLog("slax: move:- %u/%u/%u", sdp->sd_start, sdp->sd_cur, sdp->sd_len);
+
+    int moved;
+    if (sdp->sd_cur < sdp->sd_len) {
+	sdp->sd_cur += 1;
+	moved = TRUE;
+    } else moved = FALSE;
+
+    if (sdp->sd_cur == sdp->sd_len) {
+       if (slaxGetInput(sdp, 0)) {
+           slaxLog("slax: move:! %u/%u/%u",
+                   sdp->sd_start, sdp->sd_cur, sdp->sd_len);
+	   if (moved)
+	       sdp->sd_cur -= 1;
+           return -1;
+       }
+    }
+
+    slaxLog("slax: move:+ %u/%u/%u", sdp->sd_start, sdp->sd_cur, sdp->sd_len);
+    return 0;
+}
+
 #define COMMENT_MARKER_SIZE 2	/* "\/\*" or "\*\/" */
 
 /**
@@ -695,6 +726,8 @@ slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
 		cur->line = 65535;
 	}
     }
+
+    slaxLog("addchild: '%s' %d", (const char *) cur->name, cur->line);
 
     return xmlAddChild(parent, cur);
 }
@@ -787,6 +820,10 @@ slaxDrainComment (slax_data_t *sdp)
 		sdp->sd_cur += COMMENT_MARKER_SIZE;	/* Move past "\*\/" */
 	    return FALSE;
 	}
+
+	/* Keep the line number accurate inside comments */
+	if (sdp->sd_buf[sdp->sd_cur] == '\n')
+	    sdp->sd_line += 1;
     }
 }
 
@@ -887,7 +924,7 @@ slaxCommentMakeValue (xmlChar *input)
 static int
 slaxLexer (slax_data_t *sdp)
 {
-    unsigned ch1, ch2, ch3;
+    uint8_t ch1, ch2, ch3;
     int look, rc;
 
     for (;;) {
@@ -998,22 +1035,30 @@ slaxLexer (slax_data_t *sdp)
 	     * Found a quoted string.  Scan for the end.  We may
 	     * need to read some more, if the string is long.
 	     */
-	    sdp->sd_cur += 1;	/* Move past the first quote */
-	    while (((unsigned char *) sdp->sd_buf)[sdp->sd_cur] != ch1) {
-		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
+	    if (slaxMoveCur(sdp))
+		return -1;
 
-		sdp->sd_cur += 1;
-
-		if (sdp->sd_cur == sdp->sd_len) {
+	    for (;;) {
+		if (sdp->sd_cur == sdp->sd_len)
 		    if (slaxGetInput(sdp, 0))
 			return -1;
-		}
 
-		if (bump && sdp->sd_cur < sdp->sd_len)
+		if ((uint8_t) sdp->sd_buf[sdp->sd_cur] == ch1)
+		    break;
+
+		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
+
+		if (slaxMoveCur(sdp))
+		    return -1;
+
+		if (bump && !slaxParseIsXpath(sdp)
+			&& sdp->sd_cur < sdp->sd_len)
 		    sdp->sd_cur += bump;
 	    }
 
-	    sdp->sd_cur += 1;	/* Move past the end quote */
+	    if (sdp->sd_cur < sdp->sd_len)
+		sdp->sd_cur += 1;	/* Move past the end quote */
+
 	    return T_QUOTED;
 	}
 	
@@ -1098,28 +1143,29 @@ slaxLexer (slax_data_t *sdp)
 	     * Found a quoted string.  Scan for the end.  We may
 	     * need to read some more, if the string is long.
 	     */
-	    sdp->sd_cur += 1;	/* Move past the first quote */
-	    if (sdp->sd_cur == sdp->sd_len) {
-		if (slaxGetInput(sdp, 0))
-		    return -1;
-	    }
+	    if (slaxMoveCur(sdp)) /* Move past the first quote */
+		return -1;
 
-	    while (((unsigned char *) sdp->sd_buf)[sdp->sd_cur] != ch1) {
-		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
-
-		sdp->sd_cur += 1;
-
-		if (sdp->sd_cur == sdp->sd_len) {
+	    for (;;) {
+		if (sdp->sd_cur == sdp->sd_len)
 		    if (slaxGetInput(sdp, 0))
 			return -1;
-		}
+
+		if ((uint8_t) sdp->sd_buf[sdp->sd_cur] == ch1)
+		    break;
+
+		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
+
+		if (slaxMoveCur(sdp))
+		    return -1;
 
 		if (bump && !slaxParseIsXpath(sdp)
 			&& sdp->sd_cur < sdp->sd_len)
 		    sdp->sd_cur += bump;
 	    }
 
-	    sdp->sd_cur += 1;	/* Move past the end quote */
+	    if (sdp->sd_cur < sdp->sd_len)
+		sdp->sd_cur += 1;	/* Move past the end quote */
 	    return T_QUOTED;
 	}
 
@@ -1324,7 +1370,8 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 	 * no good options.  We're going to move the current point
 	 * forward in the hope that we'll see good input eventually.
 	 */
-	sdp->sd_cur += 1;
+	if (sdp->sd_cur < sdp->sd_len)
+	    sdp->sd_cur += 1;
     }
 
     if (yylvalp)

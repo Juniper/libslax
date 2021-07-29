@@ -1175,3 +1175,25 @@ slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr)
 
     return results;
 }
+
+void
+slaxDumpTree (xmlNodePtr node, const char *pref, int indent)
+{
+    int lineno;
+
+    for ( ; node; node = node->next) {
+	lineno = xmlGetLineNo(node);
+
+	slaxOutput("%*s%s element '%s' line %d", indent, "", pref ?: "",
+		   node->name ? (const char *) node->name : "--", lineno);
+
+	xmlAttrPtr attr;
+	for (attr = node->properties; attr; attr = attr->next) {
+	    slaxOutput("%*s%s attr '%s'", indent + 4, "", pref ?: "",
+		   attr->name ? (const char *) attr->name : "--");
+	}
+
+	if (node->children)
+	    slaxDumpTree(node->children, pref, indent + 2);
+    }
+}

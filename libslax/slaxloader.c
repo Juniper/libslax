@@ -105,6 +105,20 @@ slaxVersionMatch (slax_data_t *sdp, const char *vers)
 }
 
 /*
+ * Protest if the given 'tag' is not a proper Qname, meaning that it needs
+ * a prefix (and a colon), not just a raw bare name.
+ */
+void
+slaxCheckForQname (slax_data_t *sdp, const char *info, const char *tag)
+{
+    if (strchr(tag, ':') == NULL) {
+	sdp->sd_errors += 1;
+	xmlParserError(sdp->sd_ctxt, "%s:%d: %s needs a proper Qname '%s'",
+                       sdp->sd_filename, sdp->sd_line, info, tag);
+    }
+}
+
+/*
  * Relocate the most-recent "sort" node, if the parent was a "for"
  * loop.  The "sort" should be at the top of the stack.  If the parent
  * is a "for", then the parser will have built two nested "for-each"
