@@ -51,8 +51,6 @@ bit:from-int(2) -> 10
 bit:from-int(3) -> 11
 bit:from-int(255) -> 11111111
 bit:from-int(255, 16) -> 0000000011111111
-bit:from-int('11111') -> 10101101100111
-bit:from-int('255', '16') -> 0000000011111111
 bit:to-hex(0000) -> 0x0
 bit:to-hex(0001) -> 0x1
 bit:to-hex(0010) -> 0x2
