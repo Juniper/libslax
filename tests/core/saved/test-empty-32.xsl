@@ -162,6 +162,12 @@
         <xsl:value-of select="concat(&quot;bit:from-int(255, 16) -&gt; &quot;, bit:from-int(255, 16))"/>
       </xsl:message>
       <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int('11111') -&gt; &quot;, bit:from-int(&quot;11111&quot;))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-int('255', '16') -&gt; &quot;, bit:from-int(&quot;255&quot;, &quot;16&quot;))"/>
+      </xsl:message>
+      <xsl:message>
         <xsl:value-of select="concat(&quot;bit:to-hex(0000) -&gt; &quot;, bit:to-hex(&quot;0000&quot;))"/>
       </xsl:message>
       <xsl:message>
