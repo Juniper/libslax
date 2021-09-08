@@ -391,6 +391,7 @@ slaxWriteEscapedChar (slax_writer_t *swp, const char *inp, unsigned flags)
     case '\'':
 	if (flags & SEF_SINGLEQ)
 	    goto escape_two;
+	/* fallthru */
 
     default:
     escape_one:
