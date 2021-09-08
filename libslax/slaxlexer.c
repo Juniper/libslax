@@ -1553,7 +1553,7 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
     static const char leader[] = "syntax error, unexpected";
     static const char leader2[] = "error recovery ignores input";
     const char *token = value ? value->ss_token : NULL;
-    char buf[BUFSIZ];
+    char buf[BUFSIZ * 4];
 
     if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
 	sdp->sd_errors += 1;
