@@ -289,7 +289,8 @@ slax:sysctl
     SYNTAX::
         string slax:sysctl(name, format)
 
-Retrieve a sysctl variable.  Format is "i" or "s".
+Retrieve a sysctl variable.  Format is "i" (for integer) or "s" (for
+string), with "s" being the default.
 
 slax:syslog
 +++++++++++
