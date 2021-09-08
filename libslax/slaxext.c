@@ -1459,6 +1459,8 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 
  fail:
     regerror(rc, &reg, buf, sizeof(buf));
+    slaxLog("regex error: '%s' for '%s'\n", buf,
+	    ((const char *) pattern) ?: "(null)");
     xsltGenericError(xsltGenericErrorContext, "regex error: %s\n", buf);
     goto done;
 }
