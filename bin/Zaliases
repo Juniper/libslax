@@ -1,5 +1,6 @@
 set top_src=`pwd`
-set test=$HOME/work/xmlsoft/libxslt-1.1.24/tests/
+#set test=$HOME/work/xmlsoft/libxslt-1.1.24/tests/
+
 alias Zautoreconf "(cd $top_src ; autoreconf --install)"
 
 set opts=' \
@@ -17,12 +18,26 @@ set opts=`echo $opts`
 
 setenv CONFIGURE_OPTS "$opts"
 
-alias Zconfigure "(cd $top_src/build; ../configure $opts)"
-alias Zbuild "(cd $top_src/build; make \!* )"
-alias mi "(cd $top_src/build; make && make install); ."
+set vers=`make --version`
+switch ( "$vers" )
+    case GNU*:
+        set gmake_opts=""
+        set zmake=make
+        breaksw
+    case *:
+        set gmake_opts="env MAKE=gmake"
+        set zmake=gmake
+        breaksw
+endsw
 
-alias mm "(cd $top_src/build; make CFLAGS='-O0 -g')"
-alias mmi "(cd $top_src/build; make CFLAGS='-O0 -g' && make install)"
+alias Zconfigure "(cd $top_src/build; $gmake_opts ../configure $opts)"
+alias Zbuild "(cd $top_src/build; $zmake \!* )"
+alias mi "(cd $top_src/build; $zmake && $zmake install); ."
+
+alias mm "(cd $top_src/build; $zmake CFLAGS='-O0 -g')"
+alias mmi "(cd $top_src/build; $zmake CFLAGS='-O0 -g' && $zmake install)"
 
 mkdir -p build
 cd build
+
+unset vers opts
