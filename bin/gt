@@ -10,6 +10,11 @@
 op="$1"
 shift
 
+origin=`git remote 2>/dev/null`
+if [ -z "$origin" ]; then
+    origin=origin
+fi
+
 set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
 }
@@ -43,7 +48,7 @@ check_in_details () {
 
 push_to_branch () {
     echo "Pushing to $branch ..."
-    git push origin $branch
+    git push $origin $branch
 }
 
 case "$op" in
@@ -106,7 +111,7 @@ case "$op" in
 
     info)
 	git remote -v
-        git remote -v show origin
+        git remote -v show $origin
         ;;
 
     clog)
@@ -152,7 +157,7 @@ case "$op" in
 	    git merge --no-ff $branch
 	    if [ $? -eq 0 ]; then
 		echo "Pushing to $to ..."
-		git push origin $to
+		git push $origin $to
 	    fi
 	    git checkout $branch
 	fi
@@ -185,7 +190,7 @@ case "$op" in
 
     outstanding|out|what)
         set_branch
-        git diff origin/$branch $branch
+        git diff $origin/$branch $branch
 	;;
 
     push|pu|pom|pob)
@@ -197,7 +202,7 @@ case "$op" in
     push-test|pt|ptest)
 	# Push all local changes to the origin/repo server
         set_branch
-	git push --dry-run origin $branch
+	git push --dry-run $origin $branch
 	;;
 
     ref|reflog)
@@ -211,7 +216,7 @@ case "$op" in
 	    echo "stash failed"
 	    exit 1
 	fi
-	git pull -v origin $branch
+	git pull -v $origin $branch
         if [ $? -ne 0 ]; then
             echo "'gt pull' failed"
             exit 1
@@ -237,14 +242,14 @@ case "$op" in
 	DATE=`date "+%Y-%m-%d/%H:%M:%S"`
 	git tag -a -m "[$DATE]" "$@"
 	if [ $? -eq 0 ]; then
-	    git push origin --tags $branch
+	    git push $origin --tags $branch
 	fi
 	;;
 
     up|update|pull)
 	# Update working copy with repo's changes
 	set_branch
-	git pull -v origin $branch
+	git pull -v $origin $branch
 	;;
 
     *)
