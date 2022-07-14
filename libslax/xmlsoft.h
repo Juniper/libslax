@@ -196,9 +196,12 @@ xmlAddChildContent (xmlDocPtr docp, xmlNodePtr parent,
 {
     xmlNodePtr nodep = xmlNewDocRawNode(docp, NULL, name, value);
     if (nodep) {
-	xmlAddChild(parent, nodep);
+        xmlNodePtr addedp = xmlAddChild(parent, nodep);
+        if (addedp == NULL) {
+            xmlFreeNode(nodep);
+            return NULL;
+        }
     }
-
     return nodep;
 }
 

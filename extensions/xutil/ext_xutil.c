@@ -105,8 +105,12 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
     if (childp) {
 	xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
 	if (newp) {
-	    xmlAddChild((xmlNodePtr) container, newp);
-	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
+	    xmlNodePtr addedp = xmlAddChild((xmlNodePtr) container, newp);
+            if (addedp != NULL) {
+                xmlXPathNodeSetAdd(ret->nodesetval, addedp);
+            } else {
+                xmlFreeNode(newp); /* error adding node */
+            }
 	}
     }
 
@@ -455,8 +459,12 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     childp = xmlDocGetRootElement(docp);
     xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
     if (newp) {
-	xmlAddChild((xmlNodePtr) container, newp);
-	xmlXPathNodeSetAdd(ret->nodesetval, newp);
+        xmlNodePtr addedp = xmlAddChild((xmlNodePtr) container, newp);
+        if (addedp != NULL) {
+            xmlXPathNodeSetAdd(ret->nodesetval, addedp);
+        } else {
+            xmlFreeNode(newp); /* error adding node */
+        }
     }
 
 bail:
