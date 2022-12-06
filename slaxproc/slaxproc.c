@@ -50,6 +50,7 @@ static char *opt_xpath;		/* XPath expresion to match on */
 
 static int opt_html;		/* Parse input as HTML */
 static int opt_indent;		/* Indent the output (pretty print) */
+static int opt_indent_width;	/* Number of spaces to indent (format) */
 static int opt_partial;		/* Parse partial contents */
 static int opt_debugger;	/* Invoke the debugger */
 static int opt_empty_input;	/* Use an empty input file */
@@ -763,6 +764,7 @@ print_help (void)
 "\t--ignore-arguments: Do not process any further arguments\n"
 "\t--include <dir> OR -I <dir>: search directory for includes/imports\n"
 "\t--indent OR -g: indent output ala output-method/indent\n"
+"\t--indent-width <num>: Number of spaces to indent (for --format)\n"
 "\t--input <file> OR -i <file>: take input from the given file\n"
 "\t--json-tagging: tag json-style input with the 'json' attribute\n"
 "\t--keep-text: mini-templates should not discard text\n"
@@ -925,6 +927,11 @@ main (int argc UNUSED, char **argv)
 	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
 	    opt_indent = TRUE;
 
+	} else if (streq(cp, "--indent-width")) {
+	    char *str = check_arg("width", &argv);
+	    if (str)
+		opt_indent_width = atoi(str);
+
 	} else if (streq(cp, "--input") || streq(cp, "-i")) {
 	    input = check_arg("input file", &argv);
 
@@ -1048,6 +1055,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
+
+    if (opt_indent_width)
+	slaxSetIndent(opt_indent_width);
 
     if (opt_json_tagging)
 	slaxJsonTagging(TRUE);
