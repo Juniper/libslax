@@ -61,6 +61,7 @@ check syntax.
     --ignore-arguments: Do not process any further arguments
     --include <dir> OR -I <dir>: search dir for includes/imports
     --indent OR -g: indent output ala output-method/indent
+    --indent-width <num>: Number of spaces to indent (for --format)
     --input <file> OR -i <file>: take input from the given file
     --json-tagging: tag json-style input with the 'json' attribute
     --keep-text: mini-templates should not discard text
@@ -405,6 +406,11 @@ Behavioral Options
      output-method {
          indent "true";
      }
+
+.. option:: --indent-width
+
+  Change the default indent level from the default value of 4.  This
+  only affects :option:`--format` mode.
 
 .. option:: --input <file>
 .. option:: -i <file>
