@@ -445,11 +445,21 @@ slaxMakeNode (xmlDocPtr docp, xmlNodePtr parent,
 
     nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) name, NULL);
     if (nodep) {
-	xmlAddChild(parent, nodep);
-	if (textp)
-	    xmlAddChild(nodep, textp);
+	 xmlNodePtr addedp = xmlAddChild(parent, nodep);
+         if (addedp != NULL) {
+             xmlXPathNodeSetAdd(parent, addedp);
+         } else {
+             xmlFreeNode(nodep);
+         }
+	if (textp && addedp)
+	    xmlNodePtr textp_added = xmlAddChild(addedp, textp);
+            if (textp_added != NULL) {
+                xmlXPathNodeSetAdd(addedp, textp_added);
+            } else {
+                xmlFreeNode(textp);
+            }
 	if (attrname)
-	    xmlSetNsProp(nodep, NULL, (const xmlChar *) attrname,
+	    xmlSetNsProp(addedp, NULL, (const xmlChar *) attrname,
 			 (const xmlChar *) attrvalue);
     }
 
@@ -1214,12 +1224,15 @@ extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
     if (nodep == NULL)
 	return;
 
-    xmlAddChild(parent, nodep);
+    xmlNodePtr addedp = xmlAddChild(parent, nodep);
 
-    if (results)
-	xmlXPathNodeSetAdd(results, nodep);
+    if (results && addedp) {
+	xmlXPathNodeSetAdd(results, addedp);
+    } else {
+        xmlFreeNode(nodep); /* error adding node */
+    }
 
-    extOsStatInfo(docp, nodep, path, &st, recurse, sop);
+    extOsStatInfo(docp, addedp, path, &st, recurse, sop);
 }
 
 static void
