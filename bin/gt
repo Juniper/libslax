@@ -71,7 +71,7 @@ case "$op" in
 	elif [ x"$1" = xnew ]; then
 	    git checkout -b "$2" $branch
 	elif [ x"$1" = xls ]; then
-	    git branch --list "$2"
+	    git branch --list $2
 	else
 	    git checkout "$@"
 	fi
