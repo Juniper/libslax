@@ -325,6 +325,14 @@
  */
 #define STACK_UNUSED(_x...) /* nothing */
 
+/*
+ * Sadly, bison 3.8.2 has a variable in the yyparser function that is
+ * set but not used, and clang 14.0.3 detects it.  So we're stuck
+ * turning off the warning flag for the whole file.
+ */
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
+
 %}
 
 /* -------------------------------------------------------------------
