@@ -5,10 +5,11 @@ ns test-ns = "http://xml.juniper.net/test";
 
 match / {
     <test> {
-	expr test-ns:test-func();
+	expr test-ns:test-func("foo");
     }
 }
 
 <func:function name="test-ns:test-func"> {
+    param $x;
     expr "Between " _ $x;
 }
