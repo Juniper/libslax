@@ -365,11 +365,6 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 			  value->boolval ? "true" : "false");
 	break;
 
-    case XPATH_UNDEFINED:
-    case XPATH_POINT:
-    case XPATH_RANGE:
-    case XPATH_LOCATIONSET:
-    case XPATH_USERS:
     default:
 	;
     }
