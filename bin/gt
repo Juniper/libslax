@@ -19,6 +19,20 @@ set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
 }
 
+set_git_top () {
+    dir=`pwd`
+    while [ "$dir" != "/" ]; do
+	if [ -d "$dir/.git" ]; then
+	    GIT_TOP=$dir
+	    return
+	fi
+	dir=`dirname "$dir"`
+    done
+
+    echo "could not find top of git tree" 1>&2
+    exit 1
+}
+
 check_in_details () {
     set_branch
     files=`git status -s "$@" | awk '{print $2}'`
@@ -293,7 +307,9 @@ case "$op" in
     unpatch)
 	## gt unpatch
 	## == Patch -R any changed files, uncommitted reverting changes
-	git diff "$@" | PATCH_VERBOSE=99 patch -R -p1 -d..
+	set_git_top
+	cd $GIT_TOP
+	git diff "$@" | PATCH_VERBOSE=99 patch -R -p1
 	;;
 
     up|update|pull)
