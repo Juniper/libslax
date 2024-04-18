@@ -290,6 +290,12 @@ case "$op" in
 	fi
 	;;
 
+    unpatch)
+	## gt unpatch
+	## == Patch -R any changed files, uncommitted reverting changes
+	git diff "$@" | PATCH_VERBOSE=99 patch -R -p1 -d..
+	;;
+
     up|update|pull)
 	## gt up
 	## == Update working copy with repo's changes
