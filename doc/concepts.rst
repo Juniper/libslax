@@ -197,7 +197,7 @@ axis points from a node up through it's series of parent nodes.  The
 nodes.  The "attribute" axis points through the list of an element
 node's set of attributes.  The "following-sibling" axis points through
 the nodes which follow a node but are under the same parent, while the
-"proceeding-sibling" axis points through the nodes that appear before
+"preceding-sibling" axis points through the nodes that appear before
 a node and are under the parent.  The "descendant" axis contains all
 the descendents of a node.  There are numerous other axes which are
 not detailed here.
