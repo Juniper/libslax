@@ -266,7 +266,7 @@ case "$op" in
 	## gt restash
 	## == Perform a 'stash->pull->pop' operation
 	set_branch
-	git stash
+	git stash -u
 	if [ $? -ne 0 ]; then
 	    echo "stash failed"
 	    exit 1
@@ -308,8 +308,7 @@ case "$op" in
 	## gt unpatch
 	## == Patch -R any changed files, uncommitted reverting changes
 	set_git_top
-	cd $GIT_TOP
-	git diff "$@" | PATCH_VERBOSE=99 patch -R -p1
+	git diff "$@" | (cd $GIT_TOP; PATCH_VERBOSE=99 patch -R -p1 )
 	;;
 
     up|update|pull)
