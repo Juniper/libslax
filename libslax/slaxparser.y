@@ -228,6 +228,7 @@
 %token T_FUNCTION_NAME		/* a function name (bare-word) */
 %token T_NUMBER			/* a number (4) */
 %token T_QUOTED			/* a quoted string ("foo") */
+%token T_UNTERMINATED_STRING	/* an unterminated string (an error) */
 %token T_VAR			/* a variable name ($foo) */
 
 /*
