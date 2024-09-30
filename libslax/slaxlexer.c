@@ -350,6 +350,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { T_FUNCTION_NAME,		"function name" },
     { T_NUMBER,			"number" },
     { T_QUOTED,			"quoted string" },
+    { T_UNTERMINATED_STRING,	"unterminated string" },
     { T_VAR,			"variable name" },
     { 0, NULL }
 };
@@ -1149,7 +1150,7 @@ slaxLexer (slax_data_t *sdp)
 	    for (;;) {
 		if (sdp->sd_cur == sdp->sd_len)
 		    if (slaxGetInput(sdp, 0))
-			return -1;
+			return T_UNTERMINATED_STRING;
 
 		if ((uint8_t) sdp->sd_buf[sdp->sd_cur] == ch1)
 		    break;
@@ -1157,7 +1158,7 @@ slaxLexer (slax_data_t *sdp)
 		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
 
 		if (slaxMoveCur(sdp))
-		    return -1;
+		    return T_UNTERMINATED_STRING;
 
 		if (bump && !slaxParseIsXpath(sdp)
 			&& sdp->sd_cur < sdp->sd_len)
@@ -1554,6 +1555,8 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
     static const char leader2[] = "error recovery ignores input";
     const char *token = value ? value->ss_token : NULL;
     char buf[BUFSIZ * 4];
+    int unterm = (sdp->sd_last == T_UNTERMINATED_STRING);
+    int trunc = FALSE;
 
     if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
 	sdp->sd_errors += 1;
@@ -1568,6 +1571,12 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	memcpy(cp + 1, token, len);
 	cp[len + 1] = '\'';
 	cp[len + 2] = '\0';
+
+	char *np = strchr(cp, '\n');
+	if (np) {
+	    *np = '\0';
+	    trunc = TRUE;
+	}
 
 	token = cp;
     }
@@ -1618,9 +1627,15 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	}
     }
 
-    slaxError("%s:%d: %s%s%s%s%s\n",
+    /* Just trying to give a better error message */
+    if (unterm)
+	strlcat(buf, "possibly unterminated string", sizeof(buf));
+
+    slaxError("%s:%d: %s%s%s%s%s%s\n",
 	      sdp->sd_filename, sdp->sd_line, str,
-	      token ? " before " : "", token, token ? ": " : "", buf);
+	      token ? " before " : "", token ?: "",
+	      token && trunc ? "... " : "",
+	      token ? ": " : "", buf);
 
     return 0;
 }
