@@ -1525,6 +1525,77 @@ slaxDebugCmdPrint (DC_ARGS)
 }
 
 static void
+slaxDebugHelpDump (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  dump var $var   Dump information on a variable");
+    slaxOutput("  dump expr $expr Dump an expression (nodeset)");
+}
+
+/*
+ * 'print' command
+ * @bugs need to be more like "eval" functionality (e.g. "print $x/name")
+ */
+static void
+slaxDebugCmdDump (DC_ARGS)
+{
+    const char *arg = argv[1];
+
+    if (arg) {
+	if (slaxDebugIsAbbrev("var", arg)) {
+	    if (argv[2] == NULL) {
+		slaxOutput("missing variable name");
+		return;
+	    }
+
+	    for (argv += 2; *argv; argv++) {
+		const char *name = *argv;
+		if (name[0] == '$')
+		    name += 1;	/* Skip over leading $var */
+
+		xsltStackElemPtr var
+		    = slaxMvarLookupQname(statep->ds_ctxt,
+					  (const xmlChar *) name, NULL);
+		if (var == NULL) {
+		    slaxOutput("variable not found: $%s", name);
+		    return;
+		}
+
+		slaxOutput("variable: $%s/%p", name, var);
+		slaxDumpVar(var);
+	    }
+
+	} else if (slaxDebugIsAbbrev("expr", arg)) {
+	    /*
+	     * We need to reconstruct the command line by taking the
+	     * raw command, and moving over command name ("dump expr").
+	     */
+	    char *cp = ALLOCADUP(commandline);
+
+	    while (*cp && !isspace((int) *cp))
+		cp += 1;
+	    while (*cp && isspace((int) *cp)) /* "dump" */
+		cp += 1;
+	    while (*cp && !isspace((int) *cp))
+		cp += 1;
+	    while (*cp && isspace((int) *cp)) /* "expr" */
+		cp += 1;
+
+	    xmlXPathObjectPtr res = slaxDebugEvalXpath(statep, cp);
+	    if (res) {
+		slaxDebugOutputXpath(res, NULL, TRUE);
+		slaxDumpObject(res);
+		xmlXPathFreeObject(res);
+	    }
+
+	} else {
+	    slaxOutput("invalid command: %s", arg);
+	    return;
+	}
+    }
+}
+
+static void
 slaxDebugHelpProfile (DH_ARGS)
 {
     slaxOutput("List of commands:");
@@ -1899,10 +1970,14 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
-
     { "delete",	       1, slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints",
       NULL,
+    },
+
+    { "dump",	       1, slaxDebugCmdDump,
+      "dump            Dump internal information about libxml2 objects",
+      slaxDebugHelpDump,
     },
  
     { "finish",	       1, slaxDebugCmdFinish,
