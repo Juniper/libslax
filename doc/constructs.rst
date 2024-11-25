@@ -432,7 +432,7 @@ key, as well as substatements that alter the normal sort behavior.
  language     Not implemented in libxslt
  data-type    "text", "number", or qname
  order        "ascending" or "descending"
- case-order   "upper-first" or "lower-first"
+ case-order   Not implemented in libxslt
 ============ ================================
 
 Multiple `sort` statements can be used to given secondary sorting keys::
