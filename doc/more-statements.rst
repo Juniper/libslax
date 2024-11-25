@@ -262,7 +262,7 @@ the trace template is not evaluated and no trace output is generated.
 The enabling of tracing and the naming of trace files is not covered
 here, since it is typically a feature of the environment in which a
 SLAX script is called.  For example, the `slaxproc` command uses the
-`-t` and `-T file` to enable tracing.
+`-t file` option to enable tracing.
 
 ::
 
