@@ -43,6 +43,12 @@ struct slax_data_s; typedef struct slax_data_s slax_data_t;
 
 extern int slaxYyDebug;
 
+static inline const char *
+slaxIntoString (const xmlChar *xp)
+{
+    return (const char *) xp;
+}
+
 /*
  * The rest of the .c files expose so little we don't bother with
  * distinct header files.
@@ -83,6 +89,25 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *varname);
 
 void
 slaxMvarRegister (void);
+
+void
+slaxDumpObject (xmlXPathObjectPtr xop);
+
+void
+slaxDumpVar (xsltStackElemPtr var);
+
+void
+slaxDumpNode (xmlNodePtr node);
+
+void
+slaxDumpDoc (xmlDocPtr node);
+
+void
+slaxDumpNodeset (xmlNodeSetPtr nsp);
+
+xsltStackElemPtr
+slaxMvarLookupQname (xsltTransformContextPtr tctxt, const xmlChar *svarname,
+		     int *localp);
 
 /* --- slaxwriter.h --- */
 
