@@ -1176,6 +1176,19 @@ slaxExtMakeTextNode (xmlDocPtr docp, xmlNs *nsp, const char *name,
     return newp;
 }
 
+static xmlNode *
+slaxExtMakeChildTextNode (xmlDocPtr docp, xmlNode *parent,
+			  xmlNs *nsp, const char *name,
+			  const char *content, int len)
+{
+    xmlNode *newp = slaxExtMakeTextNode(docp, nsp, name, content, len);
+
+    if (newp)
+	xmlAddChild(parent, newp);
+
+    return newp;
+}
+
 /*
  * Break a string into the set of clone element, with each clone
  * containing one line of text.
@@ -3269,6 +3282,103 @@ slaxExtTrace (xmlXPathParserContextPtr ctxt, int nargs)
 }
 
 /*
+ * Easy access to the C library function call.  Returns information
+ * about the hostname or ip address given.
+ *
+ * Usage:  var $info = slax:get-host($address);
+ */
+static void
+slaxExtGetHost (xmlXPathParserContext *ctxt, int nargs)
+{
+    if (nargs == 0) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *str = (char *) xmlXPathPopString(ctxt);
+    if (str == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int family = AF_UNSPEC;
+    union {
+        struct in6_addr in6;
+        struct in_addr in;
+    } addr;
+
+    if (inet_pton(AF_INET, str, &addr) > 0) {
+        family = AF_INET;
+    } else if (inet_pton(AF_INET6, str, &addr) > 0) {
+        family = AF_INET6;
+    }
+
+    struct hostent *hp = NULL;
+
+    if (family == AF_UNSPEC) {
+	hp = gethostbyname(str);
+
+    } else {
+	int retrans = _res.retrans, retry = _res.retry;
+
+	_res.retrans = 1; /* Store new values */
+	_res.retry = 1;
+
+	int addr_size = (family == AF_INET)
+	    ? sizeof(addr.in) : sizeof(addr.in6);
+
+	hp = gethostbyaddr((char *) &addr, addr_size, family);
+
+	_res.retrans = retrans;     /* Restore old values */
+	_res.retry = retry;
+    }
+
+    if (hp == NULL || hp->h_name == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    xmlDocPtr container = slaxMakeRtf(ctxt);
+    if (container == NULL)
+	return;
+
+    xmlNode *root = xmlNewDocNode(container, NULL,
+				 (const xmlChar *) "host", NULL);
+    if (root == NULL)
+	return;
+
+    slaxExtMakeChildTextNode(container, root,
+			     NULL, "hostname", hp->h_name, strlen(hp->h_name));
+
+    char **ap;
+    for (ap = hp->h_aliases; ap && *ap; ap++) {
+	slaxExtMakeChildTextNode(container, root,
+				 NULL, "alias", *ap, strlen(*ap));
+    }
+
+    const char *address_family = (hp->h_addrtype == AF_INET) ? "inet" :
+	(hp->h_addrtype == AF_INET6) ? "inet6" : "unknown";
+
+    slaxExtMakeChildTextNode(container, root,
+			     NULL, "address-family",
+			     address_family, strlen(address_family));
+
+    char name[MAXHOSTNAMELEN];
+    for (ap = hp->h_addr_list; ap && *ap; ap++) {
+	if (inet_ntop(hp->h_addrtype, *ap, name, sizeof(name)) == NULL)
+	    continue;
+
+	slaxExtMakeChildTextNode(container, root,
+				 NULL, "address", name, strlen(name));
+    }
+
+    xmlNodeSetPtr results = xmlXPathNodeSetCreate(root);
+    xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
+    valuePush(ctxt, ret);
+    xmlXPathFreeNodeSet(results);
+}
+
+/*
  * An ugly attempt to seed the random number generator with the best
  * value possible.  Ugly, but localized ugliness.
  */
@@ -3355,6 +3465,8 @@ slaxExtRegister (void)
     slaxRegisterFunction(SLAX_URI, "document", slaxExtDocument);
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
+
+    slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
 
     slaxExtRegisterOther(NULL);
 
