@@ -177,6 +177,30 @@ readline history keystrokes (Control-P and Control-N).
     EXAMPLE::
         var $response = slax:get-command("# ");
 
+
+slax:get-host
++++++++++++++
+
+Use the slax:get-host() function to return information about a DNS
+hostname or IP address (v4 or v6).
+
+::
+
+    SYNTAX::
+        string slax:get-host(hostname-or-address)
+
+    EXAMPLE::
+        var $response = slax:get-host("localhost");
+        var $response = slax:get-host("127.0.0.1");
+
+    RESULTS::
+        <host>
+            <hostname>localhost</hostname>
+            <alias>1.0.0.127.in-addr.arpa</alias>
+            <address-family>inet</address-family>
+            <address>127.0.0.1</address>
+        </host>
+
 slax:get-input
 ++++++++++++++
 
@@ -254,12 +278,33 @@ values are honored, as are a number of "%j" extensions.
 slax:regex
 ++++++++++
 
+Use the slax:regex() function to return regular expression matches
+inside a string.  
+
+A node set is returning containing the full string matched plus any
+parenthesized matches.
+
+The optional "opts" argument is a string that includes letters from
+the following table:
+
+========= ========= =============================================
+ Option    Flag      Description
+========= ========= =============================================
+ "b"       none      Return a boolean result, not a nodeset
+ "i"       ICASE     Ignore case (upper vs lower)
+ "n"       NEWLINE   Handle newline-sensitive matching
+ "^"       NOTBOL    Not beginning of line ("^" bdoes not match)
+ "$"       NOTEOL    Not end of line ("$" does not match)
+========= ========= =============================================
+
+More information about these flags can be found in
+the :manpage:`regex(3)` documentation.
+
 ::
 
     SYNTAX::
         node-set slax:regex(pattern, string, opts?)
 
-Match a regex, returning a node set of the full string matched plus any parenthesized matches.  Options include "b", "i", "n", "^", and "$", for boolean results, ICASE, NEWLINE, NOTBOL, and NOTEOL.
 
 slax:sleep
 ++++++++++
