@@ -1,5 +1,5 @@
 compilation error: file ../../../tests/core/test-simple-01.slax line 65 element number
 xsl:number : letter-value 'alphabetic' not implemented
-Unimplemented block at ../../libxslt/preproc.c:1481
+Unimplemented block at preproc.c:1478
 before
 This is 'one' is  good
