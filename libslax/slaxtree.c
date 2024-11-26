@@ -456,6 +456,58 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 }
 
 /*
+ * Add a simple data_value, which is a string may or may not be quoted.
+ */
+void
+slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
+			slax_string_t *value)
+{
+    xmlAttrPtr attr;
+    xmlNsPtr ns = NULL;
+    char *buf, *bp;
+    const char *cp;
+
+    buf = slaxStringAsChar(value, 0);
+    if (buf == NULL)
+	return;
+
+    bp = buf;
+    if (*bp == '"') {		/* Trim quotes */
+	bp += 1;
+	char *ep = bp + strlen(bp);
+	if (ep > bp && ep[-1] == '"')
+	    ep[-1] = '\0';
+    }
+
+    /*
+     * Deal with namespaces.  If there's a prefix, we need to find
+     * the definition of this namespace and pass it along.
+     */
+    cp = index(name, ':');
+    if (cp) {
+	const char *prefix = name;
+	int len = cp - prefix;
+
+	name = cp + 1;
+	if (!slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
+        }
+    }
+
+    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
+		      (const xmlChar *) bp);
+    if (attr == NULL)
+	fprintf(stderr, "could not make attribute: @%s=%s\n", name, bp);
+
+    xmlFreeAndEasy(buf);
+}
+
+/*
  * Add a value to an attribute on an XML element.  The value consists of
  * one or more items, each of which can be a string, a variable reference,
  * or an xpath expression.  If the value (any items) does not contain an
