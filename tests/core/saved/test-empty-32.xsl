@@ -294,6 +294,12 @@
       <xsl:message>
         <xsl:value-of select="concat(&quot;bit:to-int(-1) -&gt; &quot;, bit:to-int(- 1))"/>
       </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-hex(0xdeadbeef) -&gt; &quot;, bit:from-hex(3735928559))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:from-hex(0xdeadbeef) -&gt; &quot;, bit:from-hex(&quot;0xdeadbeef&quot;))"/>
+      </xsl:message>
     </op-script-results>
   </xsl:template>
 </xsl:stylesheet>
