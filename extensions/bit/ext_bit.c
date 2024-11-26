@@ -399,7 +399,11 @@ extBitFromHex (xmlXPathParserContextPtr ctxt, int nargs)
     if (res == NULL || xmlXPathCheckError(ctxt))
 	return;
 
-    val = strtoull((char *) res, NULL, 0x10);
+    /* An 'e' means we are seeing a large floating point number */
+    if (strchr((char *) res, 'e') != NULL)
+	val = 0;
+    else
+	val = strtoull((char *) res, NULL, 0);
     
     for (width = 0, v2 = val; v2; width++, v2 /= 2)
 	continue;
