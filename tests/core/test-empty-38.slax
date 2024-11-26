@@ -1,0 +1,14 @@
+version 1.2;
+
+param $host = "localhost";
+
+main <data> {
+    var $x = slax:get-host($host);
+    <localhost> {
+        copy-of $x;
+    }
+    var $y = slax:get-host($x/address[1]);
+    <one-twenty-seven> {
+        copy-of $y;
+    }
+}
