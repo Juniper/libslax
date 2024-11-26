@@ -46,6 +46,7 @@ struct slax_writer_s {
 #define SWF_VERS_10	10	/* Version 1.0 features only */
 #define SWF_VERS_11	11	/* Version 1.1 features only */
 #define SWF_VERS_12	12	/* Version 1.2 features only */
+#define SWF_VERS_13	13	/* Version 1.3 features only */
 
 static const char slaxVarNsCall[] = EXT_PREFIX ":node-set(";
 static char slaxForVariablePrefix[] = FOR_VARIABLE_PREFIX;
@@ -65,6 +66,16 @@ static inline int
 slaxV12 (slax_writer_t *swp)
 {
     return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_12) ? TRUE : FALSE;
+}
+
+static inline int
+slaxV13 (slax_writer_t *swp)
+{
+#if 1
+    return (swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
+#else
+    return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
+#endif
 }
 
 /* Forward function declarations */
@@ -2802,8 +2813,9 @@ static void
 slaxWriteSort (slax_writer_t *swp, xmlDocPtr docp,
 		       xmlNodePtr nodep)
 {
+    int avt = !slaxV13(swp);
     slaxWriteStatementWithAttributes(swp, docp, nodep,
-				     "sort", ATT_SELECT, TRUE, TRUE);
+				     "sort", ATT_SELECT, TRUE, avt);
 }
 
 #define S1A_NONE	0	/* No special processing */
@@ -3545,6 +3557,8 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	    sw.sw_vers = SWF_VERS_11;
 	else if (streq(version, "1.2"))
 	    sw.sw_vers = SWF_VERS_12;
+	else if (streq(version, "1.3"))
+	    sw.sw_vers = SWF_VERS_13;
     }
 
     if (!partial) {
