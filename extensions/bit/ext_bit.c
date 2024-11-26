@@ -32,8 +32,8 @@ extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop,
     if (xop->type == XPATH_NUMBER) {
 	val = xop->floatval;
 
-	if (xop->floatval >= pow(2, 64))
-	    val = ULLONG_MAX;
+	if (xop->floatval < 0 || xop->floatval >= pow(2, 64))
+	    val = ULLONG_MAX;	/* No other error value we can use */
 
     } else if (parse_the_string && xop->type == XPATH_STRING) {
 	const char *s = (const char *) xop->stringval;
