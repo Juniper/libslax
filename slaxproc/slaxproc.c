@@ -723,6 +723,7 @@ build_mini_template (void)
 static void
 print_version (void)
 {
+    printf("version " SLAX_VERSION ";\n");
     printf("libslax version %s%s\n",  LIBSLAX_VERSION, LIBSLAX_VERSION_EXTRA);
     printf("Using libxml %s, libxslt %s and libexslt %s\n",
 	   xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
