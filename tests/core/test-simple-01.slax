@@ -65,7 +65,7 @@ match doc {
 		number $two {
 		    format "001";
 		    /* language "en"; */
-		    letter-value "alphabetic";
+		    letter-value "alphabetic";  /* Unsupported in libxslt */
 		    grouping-separator "/";
 		    grouping-size 100;
 		}
