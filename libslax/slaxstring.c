@@ -117,6 +117,7 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     char *cp;
     const char *start;
     slax_string_t *ssp;
+    char buf[64];
 
     if (ttype == L_EOS)		/* Don't bother for ";" */
 	return NULL;
@@ -127,6 +128,20 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     if (ttype == T_QUOTED) {
 	len -= 2;		/* Strip the quotes */
 	start += 1;
+    } else if (ttype == T_NUMBER && start[0] == '0' && start[1] == 'x') {
+	/*
+	 * If it's a hex number, convert to decimal.  Since we can't "know"
+	 * what's in sd_buf after len bytes, we have to make a local copy.
+	 * Then convert from hex to decimal, and then format it into decimal.
+	 */
+	char *copy = alloca(len + 1);
+	memcpy(copy, start, len);
+	copy[len] = '\0';
+
+	unsigned long long hex = strtoull(copy, NULL, 0x10);
+	snprintf(buf, sizeof(buf), "%llu", hex);
+	len = strlen(buf);
+	start = buf;
     }
 
     ssp = xmlMalloc(sizeof(*ssp) + len + 1);
@@ -135,9 +150,10 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 	ssp->ss_ttype = ttype;
 	ssp->ss_next = ssp->ss_concat = NULL;
 
-	if (ttype != T_QUOTED)
+	if (ttype != T_QUOTED) {
 	    memcpy(ssp->ss_token, start, len);
-	else {
+
+	} else {
 	    cp = ssp->ss_token;
 
 	    for (i = 0; i < len; i++) {
