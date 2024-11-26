@@ -101,4 +101,6 @@ main <op-script-results> {
     message "bit:to-int(3276800123) -> " _ bit:to-int(3276800123);
     message "bit:to-int(32768001234) -> " _ bit:to-int(32768001234);
     message "bit:to-int(-1) -> " _ bit:to-int(- 1);
+    message "bit:from-hex(0xdeadbeef) -> " _ bit:from-hex(3735928559);
+    message "bit:from-hex(0xdeadbeef) -> " _ bit:from-hex("0xdeadbeef");
 }
