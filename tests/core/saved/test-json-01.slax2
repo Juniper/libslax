@@ -26,6 +26,13 @@ var $tests := {
     <nine> "{ \"name\": \"Skip Tracer\",\n              \"location\": \"The city that never sleeps\",\n              \"age\": 5,\n              \"real\": false,\n              \"cases\": null,\n              \"equipment\": [ \"hat\", \"desk\", \"attitude\" ]\n            }";
     <ten> "{ \"the	end\": 1, \"moment of truth\": 2.5e-5, \"3com\": \"dead\" }";
 }
+var $testing2 = <something> {
+    <is-true type="true"> "true";
+    <is-false type="false"> "false";
+    <is-null type="null"> "null";
+    <boring type="number"> "42";
+}
+param $testing = true/false/null;
 param $root = "my-top";
 param $types;
 param $pretty;
