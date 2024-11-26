@@ -2776,15 +2776,15 @@ sort_sub_stmt :
 		     * As of libxslt 1.1.26, the "lang" attribute is
 		     * not implemented.
 		     */
-		    slaxAttribAddValue(slax_data, ATT_LANG, $2);
+		    slaxAttribAddDataValue(slax_data, ATT_LANG, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
-	| K_DATA_TYPE data_value L_EOS
+	| K_DATA_TYPE data_type L_EOS
 		{
 		    /* "text" or "number" or qname-but-not-ncname */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -2792,7 +2792,7 @@ sort_sub_stmt :
 		{
 		    /* "ascending" or "descending" */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -2800,9 +2800,17 @@ sort_sub_stmt :
 		{
 		    /* "upper-first" or "lower-first" */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
+	;
+
+data_type :
+        data_value
+	    { $$ = $1; }
+
+        | K_NUMBER
+   	    { $$ = slaxStringLiteral("number", T_QUOTED); }
 	;
 
 fallback_stmt :
