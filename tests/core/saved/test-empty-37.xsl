@@ -13,4 +13,13 @@
       </xsl:apply-templates>
     </top>
   </xsl:template>
+  <xsl:template match="something">
+    <xsl:for-each select="something/else">
+      <xsl:sort select="@name/last"/>
+      <xsl:sort select="@name/first"/>
+      <xsl:sort select="@iq" order="descending" data-type="number"/>
+      <xsl:sort select="@age" order="descending" data-type="number"/>
+      <xsl:copy-of select="."/>
+    </xsl:for-each>
+  </xsl:template>
 </xsl:stylesheet>
