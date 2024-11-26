@@ -1272,7 +1272,10 @@ block_stmt :
 		{ $$ = NULL; }
 
 	| jsonst_stmt
-		{ $$ = NULL; }
+		{
+		    slax_data->sd_flags &= ~SDF_JSON_KEYWORDS;
+		    $$ = NULL;
+		}
 
 	| message_stmt
 		{ $$ = NULL; }
@@ -3640,6 +3643,7 @@ jsonst_name_and_colon :
 		{
 		    slaxJsonElementOpenName(slax_data, $1->ss_token);
 		    slaxJsonTag(slax_data);
+		    slax_data->sd_flags |= SDF_JSON_KEYWORDS;
 		    $$ = NULL;
 		}
 	;
