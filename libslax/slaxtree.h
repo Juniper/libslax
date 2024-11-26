@@ -112,6 +112,9 @@ void slaxAttribAdd (slax_data_t *sdp, int style,
 void slaxAttribAddValue (slax_data_t *sdp, const char *name,
 			 slax_string_t *value);
 
+void slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
+			 slax_string_t *value);
+
 void
 slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value);
 
