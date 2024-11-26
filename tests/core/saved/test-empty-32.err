@@ -95,3 +95,5 @@ bit:to-int(327680012) -> 327680012
 bit:to-int(3276800123) -> 3.276800123e+09
 bit:to-int(32768001234) -> 3.2768001234e+10
 bit:to-int(-1) -> 1.84467440737096e+19
+bit:from-hex(0xdeadbeef) -> 0
+bit:from-hex(0xdeadbeef) -> 0
