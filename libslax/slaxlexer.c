@@ -1119,6 +1119,7 @@ slaxLexer (slax_data_t *sdp)
                  */
 		if (!slaxIsBareChar(ch2))
 		    return lit1;
+
 	    } else if (sdp->sd_parse == M_JSON
 		       && (lit1 == L_PLUS || lit1 == L_MINUS)) {
 		static const char digits[] = "0123456789.+-eE";
@@ -1185,6 +1186,25 @@ slaxLexer (slax_data_t *sdp)
 	if (rc) {
 	    sdp->sd_cur += strlen(slaxKeywordString[slaxTokenTranslate(rc)]);
 	    return rc;
+	}
+
+	/* Looking to parse hex numbers */
+	if (ch1 == '0' && ch2 == 'x') {
+
+	    sdp->sd_cur += 2;
+	    for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+		int ch4 =  sdp->sd_buf[sdp->sd_cur];
+		if (isdigit(ch4))
+		    continue;
+		if ('a' <= ch4 && ch4 <= 'f')
+		    continue;
+		if ('A' <= ch4 && ch4 <= 'F')
+		    continue;
+
+		break;
+	    }
+
+	    return T_NUMBER;
 	}
 
 	if (isdigit(ch1) || (ch1 == '.' && isdigit(ch2))) {
