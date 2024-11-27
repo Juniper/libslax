@@ -3,6 +3,18 @@
   <xsl:param name="host" select="&quot;localhost&quot;"/>
   <xsl:template match="/">
     <data>
+      <val>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:ends-with(&quot;testing&quot;, &quot;ing&quot;)"/>
+      </val>
+      <val>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:ends-with(&quot;testing&quot;, &quot;ingg&quot;)"/>
+      </val>
+      <val>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:ends-with(&quot;testing&quot;, &quot;g&quot;)"/>
+      </val>
+      <val>
+        <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:ends-with(&quot;testing&quot;, &quot;n&quot;)"/>
+      </val>
       <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x" select="slax:get-host($host)"/>
       <localhost>
         <xsl:copy-of select="$x"/>
