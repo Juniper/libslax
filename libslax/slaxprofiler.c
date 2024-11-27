@@ -200,6 +200,8 @@ slaxProfReport (int brief, const char *buffer)
     psu_time_usecs_t tot_user = 0, tot_system = 0;
     const char *xp, *last = NULL;
     size_t len;
+    char count_buf[12];
+    char user_buf[12];
 
     if (buffer) {
 	last = buffer;
@@ -211,9 +213,54 @@ slaxProfReport (int brief, const char *buffer)
 	}
     }
 
-    slaxOutput("%5s %8s %8s %8s %8s %8s %s",
+    slaxOutput("%5s %8s  %% %9s  %% %9s %8s %8s %s",
 	       "Line", "Hits", "User", "U/Hit", "System", "S/Hit", "Source");
 
+    /* Calculate the "totals" first, so we can emit percentages */
+    for (;;) {
+	if (buffer) {
+	    /* If we were passed an in-memory script, use it */
+	    if (last == NULL)
+		break;
+
+	    xp = strchr(last, '\n'); /* Break a newlines */
+	    len = xp ? (size_t) (xp - last + 1) : strlen(last);
+	    if (len > sizeof(line) - 1)
+		len = sizeof(line) - 1;
+	    memcpy(line, last, len); /* Mimic the fgets functionality */
+	    line[len] = '\0';
+	    last = xp ? xp + 1 : NULL;
+
+	} else {
+	    if (fgets(line, sizeof(line), fp) == NULL) 
+		break;
+	}
+
+	int line_len = strlen(line);
+	if (line[line_len - 1] == '\n') {
+	    line_len -= 1;
+	    num += 1;
+
+	    count = spp->sp_data[num].spe_count;
+
+	    if (num <= spp->sp_lines && spp->sp_data[num].spe_count) {
+		tot_count += spp->sp_data[num].spe_count;
+		tot_user += spp->sp_data[num].spe_user;
+		tot_system += spp->sp_data[num].spe_system;
+	    }
+	}
+    }
+
+    /* Reset all the loop variables */
+    last = NULL;
+    num = 0;
+    if (buffer) {
+	last = buffer;
+    } else {
+	fseek(fp, 0, SEEK_SET);
+    }
+
+    /* Now make output */
     for (;;) {
 	if (buffer) {
 	    /* If we were passed an in-memory script, use it */
@@ -246,30 +293,38 @@ slaxProfReport (int brief, const char *buffer)
 
 	    count = spp->sp_data[num].spe_count;
 
+	    snprintf(count_buf, sizeof(count_buf), "(%lu)", 
+		     (count * 100) / tot_count);
+	    snprintf(user_buf, sizeof(user_buf), "(%lu)", 
+		     (spp->sp_data[num].spe_user * 100) / tot_user);
+
 	    if (num <= spp->sp_lines && spp->sp_data[num].spe_count) {
-		slaxOutput("%5u %8u %8lu %8.2f %8lu %8.2f %.*s",
-			   num, count,
+		slaxOutput("%5u %8u%4s %8lu%4s %8.2f %8lu %8.2f %.*s",
+			   num, count, count_buf,
 			   spp->sp_data[num].spe_user,
+			   user_buf,
 			   doublediv(spp->sp_data[num].spe_user, count),
 			   spp->sp_data[num].spe_system,
 			   doublediv(spp->sp_data[num].spe_system, count),
 			   line_len, line);
 
+#if 0
 		tot_count += spp->sp_data[num].spe_count;
 		tot_user += spp->sp_data[num].spe_user;
 		tot_system += spp->sp_data[num].spe_system;
+#endif
 
 	    } else if (!brief) {
-		slaxOutput("%5u %8s %8s %8s %8s %8s %.*s",
+		slaxOutput("%5u %8s %12s %12s %8s %8s %.*s",
 			   num, "-", "-", "-", "-", "-", line_len, line);
 	    }
 	} else if (!brief) {
-	    slaxOutput("%5s %8s %8s %8s %8s %8s %.*s",
+	    slaxOutput("%5s %8s %12s %12s %8s %8s %.*s",
 		       "-", "-", "-", "-", "-", "-", line_len, line);
 	}
     }
 
-    slaxOutput("%5s %8lu %8lu %8s %8lu   %s", "Total", tot_count,
+    slaxOutput("%5s %8lu %12lu %12s %8lu   %s", "Total", tot_count,
 	       tot_user, " ", tot_system, "Total");
 
 }
