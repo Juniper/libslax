@@ -3,6 +3,11 @@ version 1.2;
 param $host = "localhost";
 
 main <data> {
+    <val> slax:ends-with("testing", "ing");
+    <val> slax:ends-with("testing", "ingg");
+    <val> slax:ends-with("testing", "g");
+    <val> slax:ends-with("testing", "n");
+
     var $x = slax:get-host($host);
     <localhost> {
         copy-of $x;
