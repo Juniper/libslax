@@ -129,6 +129,20 @@ If the <non-xml> value is an empty string, then non-xml characters
 will be removed, otherwise they will be replaced with the given
 string.
 
+slax:ends-with
+++++++++++++++
+
+Use the slax:ends-with() function to determine if one string ends with
+the contents of a second string.
+
+::
+
+    SYNTAX::
+        object slax:ends-with(string, pattern)
+
+    EXAMPLE::
+        var $result = slax:ends-with("this works", "s");
+
 slax:evaluate
 +++++++++++++
 
