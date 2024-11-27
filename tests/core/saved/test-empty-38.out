@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <data>
+  <val>true</val>
+  <val>false</val>
+  <val>true</val>
+  <val>false</val>
   <localhost>
     <host>
       <hostname>localhost</hostname>
