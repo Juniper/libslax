@@ -1116,7 +1116,7 @@ slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
     if (str == NULL) {
 	xmlXPathSetArityError(ctxt);
 	return;
-    }	
+    }
 
     unsigned long arg1 = strtoul(str, &endp, 0);
     xmlFree(str);
@@ -1153,6 +1153,8 @@ slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
     xmlChar *outstr = xmlStrdup(slax_empty_string);
     xmlXPathReturnString(ctxt, outstr);
 }
+
+
 
 /*
  * Build a node containing a text node
@@ -1535,6 +1537,35 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathReturnTrue(ctxt);
     else 
 	xmlXPathReturnFalse(ctxt);
+}
+
+
+/*
+ * Return TRUE if the the given string ends with the given pattern
+ *
+ * Usage:  if (slax:ends-with($var, $str)) { .... }
+ */
+static void
+slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs UNUSED)
+{
+    char *pat = (char *) xmlXPathPopString(ctxt);
+    if (pat == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *str = (char *) xmlXPathPopString(ctxt);
+    if (str == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int plen = strlen(pat);
+    int slen = strlen(str);
+    int delta = slen - plen;
+
+    int bool = (delta >= 0 && strcmp(str + delta, pat) == 0);
+    xmlXPathReturnBoolean(ctxt, bool);
 }
 
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
@@ -3467,6 +3498,7 @@ slaxExtRegister (void)
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
 
     slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
+    slaxRegisterFunction(SLAX_URI, "ends-with", slaxExtEndsWith);
 
     slaxExtRegisterOther(NULL);
 
