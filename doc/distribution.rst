@@ -54,6 +54,7 @@ check syntax.
    Options:
     --debug OR -d: enable the SLAX/XSLT debugger
     --empty OR -E: give an empty document for input
+    --encoding <name>: specifies the input document encoding
     --exslt OR -e: enable the EXSLT library
     --expression <expr>: convert an expression
     --help OR -h: display this help message
@@ -349,6 +350,11 @@ Behavioral Options
     <?xml version="1.0"?>
     <top/>
 
+.. option:: --encoding <name>
+
+  Specifies the text encoding to be used for input documents.  This
+  defaults to "UTF-8".
+
 .. option:: --exslt
 .. option:: -e
 
@@ -485,7 +491,9 @@ Behavioral Options
   Write output into the given file.
 
 .. option:: --param <name> <value>
+.. option:: --param <name>=<value>
 .. option:: -a <name> <value>
+.. option:: -a <name>=<value>
 
   Pass a parameter to the script using the name/value pair provided.
   Note that all values are string parameters, so normal quoting
