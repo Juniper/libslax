@@ -1564,8 +1564,7 @@ slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs UNUSED)
     int slen = strlen(str);
     int delta = slen - plen;
 
-    int bool = (delta >= 0 && strcmp(str + delta, pat) == 0);
-    xmlXPathReturnBoolean(ctxt, bool);
+    xmlXPathReturnBoolean(ctxt, delta >= 0 && strcmp(str + delta, pat) == 0);
 }
 
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
