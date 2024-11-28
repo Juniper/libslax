@@ -30,6 +30,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <getopt.h>             /* Include after xo.h for testing */
 
 static slax_data_list_t plist;
 static int nbparams;
@@ -40,25 +41,101 @@ static xmlDocPtr mini_docp;
 static char *mini_buffer;
 
 static int options = XSLT_PARSE_OPTIONS;
-static char *encoding;		/* Desired document encoding */
-static char *opt_version;	/* Desired SLAX version */
+static int opt_number = -1; 	/* Index into our long options array */
+
+static char *opt_encoding;	/* Desired document encoding */
 static char *opt_expression;	/* Expression to convert */
-static char **opt_args;
-static char *opt_show_variable; /* Variable (in script) to show */
+static char *opt_log_file;	/* Log file name */
 static char *opt_show_select;   /* Expression (in script) to show */
+static char *opt_show_variable; /* Variable (in script) to show */
+static char *opt_trace_file;	/* Trace file name */
+static char *opt_version;	/* Desired SLAX version */
 static char *opt_xpath;		/* XPath expresion to match on */
 
+static int opt_debugger;	/* Invoke the debugger */
+static int opt_dump_tree;	/* Dump parsed element tree */
+static int opt_empty_input;	/* Use an empty input file */
 static int opt_html;		/* Parse input as HTML */
+static int opt_ignore_arguments; /* Done processing arguments */
 static int opt_indent;		/* Indent the output (pretty print) */
 static int opt_indent_width;	/* Number of spaces to indent (format) */
-static int opt_partial;		/* Parse partial contents */
-static int opt_debugger;	/* Invoke the debugger */
-static int opt_empty_input;	/* Use an empty input file */
-static int opt_slax_output;	/* Make output in SLAX format */
-static int opt_json_tagging;	/* Tag JSON output */
 static int opt_json_flags;	/* Flags for JSON conversion */
+static int opt_json_tagging;	/* Tag JSON output */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
-static int opt_dump_tree;	/* Dump parsed element tree */
+static int opt_partial;		/* Parse partial contents */
+static int opt_slax_output;	/* Make output in SLAX format */
+
+static struct opts {
+    int o_do_json_to_xml;
+    int o_do_show_select;
+    int o_do_show_variable;
+    int o_do_xml_to_json;
+    int o_do_xml_to_yaml;
+
+    int o_dump_tree;
+    int o_encoding;
+    int o_expression;
+    int o_ignore_arguments;
+    int o_indent_width;
+    int o_json_tagging;
+    int o_keep_text;
+    int o_log_file;
+    int o_no_json_types;
+    int o_no_randomize;
+    int o_no_tty;
+} opts;
+
+static struct option long_opts[] = {
+    { "check", no_argument, NULL, 'c' },
+    { "xpath", required_argument, NULL, 'X' },
+    { "format", no_argument, NULL, 'F' },
+    { "json-to-xml", no_argument, &opts.o_do_json_to_xml, 1 },
+    { "run", no_argument, NULL, 'r' },
+    { "show-select", required_argument, &opts.o_do_show_select, 1 },
+    { "show-variable", required_argument, &opts.o_do_show_variable, 1 },
+    { "slax-to-xslt", no_argument, NULL, 'x' },
+    { "xml-to-json", no_argument, &opts.o_do_xml_to_json, 1 },
+    { "xml-to-yaml", no_argument, &opts.o_do_xml_to_yaml, 1 },
+    { "xslt-to-slax", no_argument, NULL, 's' },
+
+    { "debug", no_argument, NULL, 'd' },
+    { "dump-tree", no_argument, &opts.o_dump_tree, 1 },
+    { "empty", no_argument, NULL, 'E' },
+    { "encoding", required_argument, &opts.o_encoding, 1 },
+    { "exslt", no_argument, NULL, 'e' },
+    { "expression", required_argument, &opts.o_expression, 1 },
+    { "help", no_argument, NULL, 'h' },
+    { "html", no_argument, NULL, 'H' },
+    { "ignore-arguments", no_argument, &opts.o_ignore_arguments, 1 },
+    { "include", no_argument, NULL, 'I' },
+    { "indent", no_argument, NULL, 'g' },
+    { "indent-width", required_argument, &opts.o_indent_width, 1 },
+    { "input", required_argument, NULL, 'i' },
+    { "json-tagging", no_argument, &opts.o_json_tagging, 1 },
+    { "keep-text", no_argument, NULL, 1 },
+    { "lib", required_argument, NULL, 'L' },
+    { "log", required_argument, NULL, 'l' },
+    { "mini-template", required_argument, NULL, 'm' },
+    { "name", required_argument, NULL, 'n' },
+    { "no-json-types", no_argument, &opts.o_no_json_types, 1 },
+    { "no-randomize", no_argument, &opts.o_no_randomize, 1 },
+    { "no-tty", no_argument, &opts.o_no_tty, 1 },
+    { "output", required_argument, NULL, 'o' },
+    { "param", required_argument, NULL, 'a' },
+    { "partial", no_argument, NULL, 'p' },
+    { "slax-output", no_argument, NULL, 'S' },
+    { "trace", required_argument, NULL, 't' },
+    { "verbose", no_argument, NULL, 'v' },
+    { "version", no_argument, NULL, 'V' },
+    { "write-version", required_argument, NULL, 'w' },
+    { "yydebug", no_argument, NULL, 'y' },
+    { NULL, 0, NULL, 0 }
+};
+
+#define GET_FN_DONT	-1	/* Don't turn names into /dev/std{in,out} */
+#define GET_FN_INPUT	0	/* Turn "-" into /dev/stdin */
+#define GET_FN_OUTPUT	1	/* Turn "-" into /dev/stdout */
+#define GET_FN_SCRIPT	2	/* Script name (can't be stdin) */
 
 static const char *
 get_filename (const char *filename, char ***pargv, int outp)
@@ -67,24 +144,33 @@ get_filename (const char *filename, char ***pargv, int outp)
 	filename = **pargv;
 	if (filename)
 	    *pargv += 1;
-	else filename = "-";
+	else if (outp == GET_FN_SCRIPT)
+	    return NULL;
+	else
+	    filename = "-";
     }
 
-    if (outp >= 0 && slaxFilenameIsStd(filename))
-	filename = outp ? "/dev/stdout" : "/dev/stdin";
+    if (outp != GET_FN_DONT && slaxFilenameIsStd(filename))
+	filename = (outp == GET_FN_OUTPUT) ? "/dev/stdout" : "/dev/stdin";
+
     return filename;
 }
 
 static int
-do_format (const char *name UNUSED, const char *output,
+do_format (const char *name, const char *output,
 		 const char *input, char **argv)
 {
     FILE *infile = NULL, *outfile;
     xmlDocPtr docp;
 
-    if (mini_docp == NULL)
-	input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+    if (mini_docp == NULL) {
+	/* We'll honor "-n" as well as "-i" */
+	if (input == NULL)
+	    input = name;
+	input = get_filename(input, &argv, GET_FN_INPUT);
+    }
+
+    output = get_filename(output, &argv, GET_FN_OUTPUT);
 
     if (mini_docp)
 	docp = mini_docp;
@@ -129,7 +215,7 @@ do_format (const char *name UNUSED, const char *output,
 }
 
 static int
-do_slax_to_xslt (const char *name UNUSED, const char *output,
+do_slax_to_xslt (const char *name, const char *output,
 		 const char *input, char **argv)
 {
     FILE *infile = NULL, *outfile;
@@ -144,9 +230,12 @@ do_slax_to_xslt (const char *name UNUSED, const char *output,
 	return res ? 0 : -1;
     }
 
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
     if (mini_docp == NULL)
-	input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+	input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     if (mini_docp)
 	docp = mini_docp;
@@ -206,8 +295,11 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	return 0;
     }
 
-    input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
+    input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
     if (docp == NULL) {
@@ -235,14 +327,17 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 }
 
 static int
-do_json_to_xml (const char *name UNUSED, const char *output,
+do_json_to_xml (const char *name, const char *output,
 		 const char *input, char **argv)
 {
     xmlDocPtr docp;
     FILE *outfile;
 
-    input = get_filename(input, &argv, 0);
-    output = get_filename(output, &argv, -1);
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
+    input = get_filename(input, &argv, GET_FN_INPUT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     docp = slaxJsonFileToXml(input, NULL, opt_json_flags);
     if (docp == NULL) {
@@ -275,8 +370,11 @@ do_xml_to_json (const char *name UNUSED, const char *output,
     xmlDocPtr docp;
     FILE *outfile;
 
-    input = get_filename(input, &argv, 0);
-    output = get_filename(output, &argv, -1);
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
+    input = get_filename(input, &argv, GET_FN_INPUT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
     if (docp == NULL) {
@@ -310,8 +408,11 @@ do_xml_to_yaml (const char *name UNUSED, const char *output,
     xmlDocPtr docp;
     FILE *outfile;
 
-    input = get_filename(input, &argv, 0);
-    output = get_filename(output, &argv, -1);
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
+    input = get_filename(input, &argv, GET_FN_INPUT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     docp = xmlReadFile(input, NULL, XSLT_PARSE_OPTIONS);
     if (docp == NULL) {
@@ -339,7 +440,7 @@ do_xml_to_yaml (const char *name UNUSED, const char *output,
 }
 
 static int
-do_show_select (const char *name UNUSED, const char *output,
+do_show_select (const char *name, const char *output,
                   const char *input, char **argv)
 {
     FILE *infile, *outfile = NULL;
@@ -350,8 +451,11 @@ do_show_select (const char *name UNUSED, const char *output,
     xmlNodeSetPtr nsp;
     int i;
 
-    input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
+    input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     if (slaxFilenameIsStd(input))
 	infile = stdin;
@@ -473,15 +577,18 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     xmlDocPtr res = NULL;
     char buf[BUFSIZ];
 
-    scriptname = get_filename(name, &argv, -1);
+    scriptname = get_filename(name, &argv, GET_FN_SCRIPT);
     if (!opt_empty_input)
-	input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+	input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     if (mini_docp) {
 	scriptdoc = mini_docp;
 	scriptname = "mini-template";
     } else {
+	if (scriptname == NULL)
+	    errx(1, "missing script filename");
+
 	if (slaxFilenameIsStd(scriptname))
 	    errx(1, "script file cannot be stdin");
 
@@ -504,9 +611,9 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     if (opt_empty_input)
 	indoc = buildEmptyFile();
     else if (opt_html)
-	indoc = htmlReadFile(input, encoding, options);
+	indoc = htmlReadFile(input, opt_encoding, options);
     else
-	indoc = xmlReadFile(input, encoding, options);
+	indoc = xmlReadFile(input, opt_encoding, options);
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
 
@@ -570,9 +677,12 @@ do_xpath (const char *name UNUSED, const char *output,
     char *buf;
     int len;
 
+    if (input == NULL)		/* Allow either -i or -n */
+	input = name;
+
     if (!opt_empty_input)
-	input = get_filename(input, &argv, -1);
-    output = get_filename(output, &argv, -1);
+	input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
 
     len = strlen(xpath_script) + strlen(opt_xpath) + 1;
     buf = malloc(len);
@@ -593,9 +703,9 @@ do_xpath (const char *name UNUSED, const char *output,
     if (opt_empty_input)
 	indoc = buildEmptyFile();
     else if (opt_html)
-	indoc = htmlReadFile(input, encoding, options);
+	indoc = htmlReadFile(input, opt_encoding, options);
     else
-	indoc = xmlReadFile(input, encoding, options);
+	indoc = xmlReadFile(input, opt_encoding, options);
     if (indoc == NULL)
 	errx(1, "unable to parse: '%s'", input);
 
@@ -641,32 +751,38 @@ do_xpath (const char *name UNUSED, const char *output,
 
 static int
 do_check (const char *name, const char *output UNUSED,
-	  const char *input UNUSED, char **argv)
+	  const char *input, char **argv)
 {
     xmlDocPtr scriptdoc;
-    const char *scriptname;
     FILE *scriptfile;
     xsltStylesheetPtr script;
 
-    scriptname = get_filename(name, &argv, -1);
+    /* We'll honor "-i" as well as "-n" */
+    if (name == NULL)
+	name = input;
 
-    if (slaxFilenameIsStd(scriptname))
+    name = get_filename(name, &argv, GET_FN_INPUT);
+
+    if (name == NULL)
+	errx(1, "missing script filename");
+
+    if (slaxFilenameIsStd(name))
 	errx(1, "script file cannot be stdin");
 
-    scriptfile = fopen(scriptname, "r");
+    scriptfile = fopen(name, "r");
     if (scriptfile == NULL)
-	err(1, "file open failed for '%s'", scriptname);
+	err(1, "file open failed for '%s'", name);
 
-    scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
+    scriptdoc = slaxLoadFile(name, scriptfile, NULL, 0);
     if (scriptdoc == NULL)
-	errx(1, "cannot parse: '%s'", scriptname);
+	errx(1, "cannot parse: '%s'", name);
     if (scriptfile != stdin)
 	fclose(scriptfile);
 
     script = xsltParseStylesheetDoc(scriptdoc);
     if (script == NULL || script->errors != 0)
 	errx(1, "%d errors parsing script: '%s'",
-	     script ? script->errors : 1, scriptname);
+	     script ? script->errors : 1, name);
 
     fprintf(stderr, "script check succeeds\n");
 
@@ -758,6 +874,7 @@ print_help (void)
 "    Options:\n"
 "\t--debug OR -d: enable the SLAX/XSLT debugger\n"
 "\t--empty OR -E: give an empty document for input\n"
+"\t--encoding <name>: specifies the input document encoding\n"
 "\t--exslt OR -e: enable the EXSLT library\n"
 "\t--expression <expr>: convert an expression\n"
 "\t--help OR -h: display this help message\n"
@@ -789,25 +906,29 @@ print_help (void)
 }
 
 static char *
-check_arg (const char *name, char ***argvp)
+check_arg (const char *name)
 {
-    char *opt, *arg;
+    char *arg = optarg;
 
-    opt = **argvp;
-    *argvp += 1;
-    arg = **argvp;
+    if (arg)
+	return arg;
 
-    if (arg == NULL)
-	errx(1, "missing %s argument for '%s' option", name, opt);
+    if (opt_number > 0) {
+	struct option *op = long_opts + opt_number;
+	const char *opt = op ? op->name : "valid";
+	errx(1, "missing %s argument for '--%s' option", name, opt);
+    } else {
+	errx(1, "invalid argument for '%s'", name);
+    }
 
-    return arg;
+    return NULL;
 }
 
 int
 main (int argc UNUSED, char **argv)
 {
     const char *cp;
-    const char *input = NULL, *output = NULL, *name = NULL, *trace_file = NULL;
+    const char *input = NULL, *output = NULL, *name = NULL;
     int (*func)(const char *, const char *, const char *, char **) = NULL;
     int use_exslt = FALSE;
     FILE *trace_fp = NULL;
@@ -816,216 +937,272 @@ main (int argc UNUSED, char **argv)
     slax_data_node_t *dnp;
     int i;
     unsigned ioflags = 0;
-    int opt_ignore_arguments = FALSE;
-    char *opt_log_file = NULL;
 
     slaxDataListInit(&plist);
     slaxDataListInit(&mini_templates);
 
-    opt_args = argv;
-
-    for (argv++; *argv; argv++) {
-	cp = *argv;
-
-	if (*cp != '-')
+    int rc;
+    for (;;) {
+	if (opt_ignore_arguments)
 	    break;
 
+	rc = getopt_long(argc, argv,
+			 "a:cdEeFhHI:gi:l:L:m:n:o:prsSt:vVw:xXy",
+			 long_opts, &opt_number);
+	if (rc < 0)
+	    break;
+
+	if (logger) {
+	    fprintf(stderr,
+		    "getopt: rc %d/%02x optind %d, opt_number %d, arg '%s'\n",
+		    rc, rc, optind, opt_number, optarg);
+	}
+
+        switch (rc) {
 	/*
 	 * We mirror the order in print_help() above:
 	 * - first list the modes in alphabetically order
 	 * - then list the options in alphabetically order
 	 */
 
-	if (streq(cp, "--check") || streq(cp, "-c")) {
+	case '?':
+	case ':':
+	    errx(1, "argument processing error");
+
+	case 'c':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_check;
+	    break;
 
-	} else if (streq(cp, "--xpath") || streq(cp, "-X")) {
+	case 'X':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_xpath;
-	    opt_xpath = check_arg("xpath expression", &argv);
+	    opt_xpath = check_arg("xpath expression");
+	    break;
 
-	} else if (streq(cp, "--format") || streq(cp, "-F")) {
+	case 'F':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_format;
+	    break;
 
-	} else if (streq(cp, "--json-to-xml")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_json_to_xml;
-
-	} else if (streq(cp, "--run") || streq(cp, "-r")) {
+	case 'r':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_run;
+	    break;
 
-	} else if (streq(cp, "--show-select")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_show_select;
-            opt_show_select = check_arg("select", &argv);
-
-	} else if (streq(cp, "--show-variable")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_show_variable;
-            opt_show_variable = check_arg("variable name", &argv);
-
-	} else if (streq(cp, "--slax-to-xslt") || streq(cp, "-x")) {
+	case 'x':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_slax_to_xslt;
+	    break;
 
-	} else if (streq(cp, "--xml-to-json")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_xml_to_json;
-
-	} else if (streq(cp, "--xml-to-yaml")) {
-	    if (func)
-		errx(1, "open one action allowed");
-	    func = do_xml_to_yaml;
-
-	} else if (streq(cp, "--xslt-to-slax") || streq(cp, "-s")) {
+	case 's':
 	    if (func)
 		errx(1, "open one action allowed");
 	    func = do_xslt_to_slax;
+	    break;
 
 /* Non-mode flags start here */
-	} else if (streq(cp, "--debug") || streq(cp, "-d")) {
+
+	case 'd':
 	    opt_debugger = TRUE;
+	    break;
 
-	} else if (streq(cp, "--dump-tree")) {
-	    opt_dump_tree = TRUE;
-
-	} else if (streq(cp, "--empty") || streq(cp, "-E")) {
+	case 'E':
 	    opt_empty_input = TRUE;
+	    break;
 
-	} else if (streq(cp, "--exslt") || streq(cp, "-e")) {
+	case 'e' :
 	    use_exslt = TRUE;
+	    break;
 
-	} else if (streq(cp, "--expression")) {
-	    opt_expression = check_arg("expression", &argv);
-
-
-	} else if (streq(cp, "--help") || streq(cp, "-h")) {
+	case 'h':
 	    print_help();
 	    return -1;
 
-	} else if (streq(cp, "--html") || streq(cp, "-H")) {
+	case 'H':
 	    opt_html = TRUE;
-
-	} else if (streq(cp, "--ignore-arguments")) {
-	    opt_ignore_arguments = TRUE;
 	    break;
 
-	} else if (streq(cp, "--include") || streq(cp, "-I")) {
-	    slaxIncludeAdd(check_arg("include path", &argv));
+	case 'I':
+	    slaxIncludeAdd(check_arg("include path"));
+	    break;
 
-	} else if (streq(cp, "--indent") || streq(cp, "-g")) {
+	case 'g':
 	    opt_indent = TRUE;
+	    break;
 
-	} else if (streq(cp, "--indent-width")) {
-	    char *str = check_arg("width", &argv);
-	    if (str)
-		opt_indent_width = atoi(str);
+	case 'i':
+	    input = check_arg("input file");
+	    break;
 
-	} else if (streq(cp, "--input") || streq(cp, "-i")) {
-	    input = check_arg("input file", &argv);
+	case 'L':
+	    slaxDynAdd(check_arg("library path"));
+	    break;
 
-	} else if (streq(cp, "--json-tagging")) {
-	    opt_json_tagging = TRUE;
+	case 'l':
+	    opt_log_file = check_arg("log file name");
+	    break;
 
-	} else if (streq(cp, "--keep-text")) {
-	    opt_keep_text = TRUE;
+	case 'm':
+	    slaxDataListAdd(&mini_templates, check_arg("template"));
+	    break;
 
-	} else if (streq(cp, "--lib") || streq(cp, "-L")) {
-	    slaxDynAdd(check_arg("library path", &argv));
+	case 'n':
+	    name = check_arg("script name");
+	    break;
 
-	} else if (streq(cp, "--log") || streq(cp, "-l")) {
-	    opt_log_file = check_arg("log file name", &argv);
-
-	} else if (streq(cp, "--mini-template") || streq(cp, "-m")) {
-	    slaxDataListAdd(&mini_templates, check_arg("template", &argv));
-
-	} else if (streq(cp, "--name") || streq(cp, "-n")) {
-	    name = check_arg("script name", &argv);
-
-	} else if (streq(cp, "--no-json-types")) {
-	    opt_json_flags |= SDF_NO_TYPES;
-
-	} else if (streq(cp, "--no-randomize")) {
-	    randomize = 0;
-
-	} else if (streq(cp, "--no-tty")) {
-	    ioflags |= SIF_NO_TTY;
-
-	} else if (streq(cp, "--output") || streq(cp, "-o")) {
-	    output = check_arg("output file name", &argv);
-
-	} else if (streq(cp, "--param") || streq(cp, "-a")) {
-	    char *pname = check_arg("parameter name", &argv);
-	    char *pvalue = check_arg("parameter value", &argv);
-	    char *tvalue;
-	    char quote;
-	    int plen;
-
-	    plen = strlen(pvalue);
-	    tvalue = xmlMalloc(plen + 3);
-	    if (tvalue == NULL)
-		errx(1, "out of memory");
-
-	    quote = strrchr(pvalue, '\"') ? '\'' : '\"';
-	    tvalue[0] = quote;
-	    memcpy(tvalue + 1, pvalue, plen);
-	    tvalue[plen + 1] = quote;
-	    tvalue[plen + 2] = '\0';
-
-	    nbparams += 1;
-	    slaxDataListAddNul(&plist, pname);
-	    slaxDataListAddNul(&plist, tvalue);
-
-	} else if (streq(cp, "--partial") || streq(cp, "-p")) {
-	    opt_partial = TRUE;
-
-	} else if (streq(cp, "--slax-output") || streq(cp, "-S")) {
+	case 'o':
+	    output = check_arg("output file name");
+	    break;
+	    
+	case 'S':
 	    opt_slax_output = TRUE;
+	    break;
 
-	} else if (streq(cp, "--trace") || streq(cp, "-t")) {
-	    trace_file = check_arg("trace file name", &argv);
+	case 'a':
+	    {
+		char *pname = check_arg("parameter name");
+		char *eq = strchr(pname, '=');
+		char *pvalue;
+		size_t pnamelen;
 
-	} else if (streq(cp, "--verbose") || streq(cp, "-v")) {
+		if (eq) {
+		    pnamelen = eq - pname;
+		    pvalue = eq + 1;
+
+		} else {
+		    pnamelen = strlen(pname);
+		    optarg = argv[optind++];
+		    pvalue = check_arg("parameter value");
+		}
+
+		char *tvalue;
+		char quote;
+		int plen;
+
+		plen = strlen(pvalue);
+		tvalue = alloca(plen + 3);
+
+		quote = strrchr(pvalue, '\"') ? '\'' : '\"';
+		tvalue[0] = quote;
+		memcpy(tvalue + 1, pvalue, plen);
+		tvalue[plen + 1] = quote;
+		tvalue[plen + 2] = '\0';
+
+		nbparams += 1;
+		slaxDataListAddLenNul(&plist, pname, pnamelen);
+		slaxDataListAddNul(&plist, tvalue);
+
+		break;
+	    }
+
+	case 'p':
+	    opt_partial = TRUE;
+	    break;
+
+	case 't':
+	    opt_trace_file = check_arg("trace file name");
+	    break;
+
+	case 'v':
 	    logger = TRUE;
+	    break;
 
-	} else if (streq(cp, "--version") || streq(cp, "-V")) {
+	case 'V':
 	    print_version();
 	    exit(0);
 
-	} else if (streq(cp, "--write-version") || streq(cp, "-w")) {
-	    opt_version = check_arg("version number", &argv);
+	case 'w':
+	    opt_version = check_arg("version number");
+	    break;
 
-	} else if (streq(cp, "--yydebug") || streq(cp, "-y")) {
+	case 'y':
 	    slaxYyDebug = TRUE;
+	    break;
 
-	} else {
-	    fprintf(stderr, "invalid option: %s\n", cp);
-	    print_help();
-	    return -1;
+	case 0:
+	    if (opts.o_do_json_to_xml) {
+		if (func)
+		    errx(1, "open one action allowed");
+		func = do_json_to_xml;
+
+	    } else if (opts.o_do_show_select) {
+		if (func)
+		    errx(1, "open one action allowed");
+		func = do_show_select;
+		opt_show_select = check_arg("selection");
+
+	    } else if (opts.o_do_show_variable) {
+		if (func)
+		    errx(1, "open one action allowed");
+		func = do_show_variable;
+		opt_show_variable = check_arg("variable name");
+
+	    } else if (opts.o_do_xml_to_json) {
+		if (func)
+		    errx(1, "open one action allowed");
+		func = do_xml_to_json;
+
+	    } else if (opts.o_do_xml_to_yaml) {
+		if (func)
+		    errx(1, "open one action allowed");
+		func = do_xml_to_yaml;
+
+/* Non-mode flags start here */
+
+	    } else if (opts.o_dump_tree) {
+		opt_dump_tree = TRUE;
+
+	    } else if (opts.o_encoding) {
+		opt_encoding = check_arg("text encoding");
+
+	    } else if (opts.o_expression) {
+		opt_expression = check_arg("expression");
+
+	    } else if (opts.o_ignore_arguments) {
+		opt_ignore_arguments = TRUE;
+
+	    } else if (opts.o_indent_width) {
+		char *str = check_arg("width");
+		if (str)
+		    opt_indent_width = atoi(str);
+
+	    } else if (opts.o_json_tagging) {
+		opt_json_tagging = TRUE;
+
+	    } else if (opts.o_keep_text) {
+		opt_keep_text = TRUE;
+
+	    } else if (opts.o_no_json_types) {
+		opt_json_flags |= SDF_NO_TYPES;
+
+	    } else if (opts.o_no_randomize) {
+		randomize = 0;
+
+	    } else if (opts.o_no_tty) {
+		ioflags |= SIF_NO_TTY;
+
+            } else {
+                print_help();
+                return 1;
+            }
+	    break;
+
+	default:
+	    errx(1, "unknown option '%c' (%d)", rc, rc);
 	}
 
-	if (*argv == NULL) {
-	    /*
-	     * The only way we could have a null argv is if we said
-	     * "xxx = *++argv" off the end of argv.  Bail.
-	     */
-	    fprintf(stderr, "missing option value: %s\n", cp);
-	    print_help();
-	    return 1;
-	}
+	bzero(&opts, sizeof(opts));
+	opt_number = -1;
     }
+
+    argc -= optind;
+    argv += optind;
 
     cp = getenv("SLAXPATH");
     if (cp)
@@ -1080,13 +1257,13 @@ main (int argc UNUSED, char **argv)
 	slaxDynMarkExslt();
     }
 
-    if (trace_file) {
-	if (slaxFilenameIsStd(trace_file))
+    if (opt_trace_file) {
+	if (slaxFilenameIsStd(opt_trace_file))
 	    trace_fp = stderr;
 	else {
-	    trace_fp = fopen(trace_file, "w");
+	    trace_fp = fopen(opt_trace_file, "w");
 	    if (trace_fp == NULL)
-		err(1, "could not open trace file: '%s'", trace_file);
+		err(1, "could not open trace file: '%s'", opt_trace_file);
 	}
 	slaxTraceToFile(trace_fp);
     }
