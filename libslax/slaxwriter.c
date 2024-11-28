@@ -85,6 +85,8 @@ static void slaxWriteXslElement(slax_writer_t *swp, xmlDocPtr docp,
 				xmlNodePtr nodep, int *statep);
 static void slaxWriteSort (slax_writer_t *, xmlDocPtr, xmlNodePtr);
 static void slaxWriteCommentStatement (slax_writer_t *, xmlDocPtr, xmlNodePtr);
+static void slaxWriteCallTemplate (slax_writer_t *swp, xmlDocPtr docp,
+				   xmlNodePtr nodep);
 
 static int slaxIndent = 4;
 static const char *slaxSpacesAroundAttributeEquals = "";
@@ -177,6 +179,13 @@ slaxIsXsl (xmlNodePtr nodep)
 		&& streq((const char *) nodep->ns->href, XSL_URI))
 	return TRUE;
     return FALSE;
+}
+
+static inline int
+slaxIsXslElement (xmlNodePtr nodep, const char *name)
+{
+    return nodep && nodep->type == XML_ELEMENT_NODE
+	&& slaxIsXsl(nodep) && streq(xmlNodeName(nodep), name);
 }
 
 void
@@ -2143,6 +2152,13 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    slaxWriteEscaped(swp, (char *) childp->content, SEF_DOUBLEQ);
 	    slaxWrite(swp, "\";");
 	    slaxWriteNewline(swp, 0);
+
+	} else if (childp->next == NULL && slaxV13(swp)
+		   && slaxIsXslElement(childp, ELT_CALL_TEMPLATE)) {
+
+	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
+	    slaxWriteCallTemplate(swp, docp, childp);
+
 
 	} else if (slaxIsSimpleElement(childp)) {
 	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
