@@ -188,6 +188,19 @@ slaxIsXslElement (xmlNodePtr nodep, const char *name)
 	&& slaxIsXsl(nodep) && streq(xmlNodeName(nodep), name);
 }
 
+/*
+ * version 1.2 and earlier required parens for logic statements, but
+ * we aren't needed for 1.3 and later.
+ */
+static const char **
+slaxParens (slax_writer_t *swp)
+{
+    static const char *all_parens[] = { "(", ")", "", "", NULL };
+    const char **parens = slaxV13(swp) ? all_parens + 2 : all_parens;
+
+    return parens;
+}
+
 void
 slaxWrite (slax_writer_t *swp, const char *fmt, ...)
 {
@@ -1855,7 +1868,11 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
     cp = slaxGetAttrib(inner_var, ATT_NAME);
 
     slaxWriteBlankline(swp);
-    slaxWrite(swp, "for $%s (%s) {", cp, expr);
+    if (slaxV13(swp)) {
+	slaxWrite(swp, "for $%s in %s {", cp, expr);
+    } else {
+	slaxWrite(swp, "for $%s (%s) {", cp, expr);
+    }
     slaxWriteNewline(swp, NEWL_INDENT);
 
     xmlFree(cp);
@@ -2291,10 +2308,11 @@ slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 {
     char *tst = slaxGetAttrib(nodep, ATT_TEST);
     char *expr = slaxMakeExpression(swp, nodep, tst);
+    const char **parens = slaxParens(swp);
 
-    slaxWrite(swp, "while (");
+    slaxWrite(swp, "while %s", parens[0]);
     slaxWriteValue(swp, expr);
-    slaxWrite(swp, ") {");
+    slaxWrite(swp, "%s {", parens[1]);
     slaxWriteNewline(swp, NEWL_INDENT);
 
     xmlFreeAndEasy(expr);
@@ -2673,8 +2691,9 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     char *test = slaxGetAttrib(nodep, ATT_TEST);
     char *expr = slaxMakeExpression(swp, nodep, test);
+    const char **parens = slaxParens(swp);
 
-    slaxWrite(swp, "if (%s) {", expr ?: UNKNOWN_EXPR);
+    slaxWrite(swp, "if %s%s%s {", parens[0], expr ?: UNKNOWN_EXPR, parens[1]);
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(test);
 
@@ -2690,6 +2709,7 @@ static void
 slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     char *sel, *expr;
+    const char **parens = slaxParens(swp);
 
     /* If we just rendered a for-each loop as a 'for' loop, then we're done */
     if (swp->sw_flags & SWF_FORLOOP) {
@@ -2701,7 +2721,8 @@ slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     expr = slaxMakeExpression(swp, nodep, sel);
 
     slaxWriteBlankline(swp);
-    slaxWrite(swp, "for-each (%s) {", expr ?: UNKNOWN_EXPR);
+    slaxWrite(swp, "for-each %s%s%s {", parens[0], expr ?: UNKNOWN_EXPR,
+	      parens[1]);
     xmlFreeAndEasy(expr);
     xmlFreeAndEasy(sel);
 
@@ -3109,6 +3130,7 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     xmlNodePtr childp;
     int first = TRUE;
+    const char **parens = slaxParens(swp);
 
     for (childp = nodep->children; childp; childp = childp->next) {
 
@@ -3122,8 +3144,8 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    if (!first)
 		slaxWriteNewline(swp, NEWL_OUTDENT);
 		
-	    slaxWrite(swp, "%sif (%s) {", first ? "" : "} else ",
-		      expr ?: UNKNOWN_EXPR);
+	    slaxWrite(swp, "%sif %s%s%s {", first ? "" : "} else ",
+		      expr ?: UNKNOWN_EXPR, parens[0], parens[1]);
 	    xmlFreeAndEasy(expr);
 	    xmlFreeAndEasy(test);
 
