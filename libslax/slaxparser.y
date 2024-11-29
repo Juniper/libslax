@@ -150,6 +150,7 @@
 %token K_ID			/* 'id' */
 %token K_IF			/* 'if' */
 %token K_IMPORT			/* 'import' */
+%token K_IN			/* 'in' */
 %token K_INCLUDE		/* 'include' */
 %token K_INDENT			/* 'indent' */
 %token K_INFINITY		/* 'infinity' */
@@ -1904,12 +1905,12 @@ ns_template :
 	;
 
 for_each_stmt :
-	K_FOR_EACH L_OPAREN xpath_expr_dotdotdot L_CPAREN
+	K_FOR_EACH xpath_expr_dotdotdot
 		{
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $2);
 
-		    if ($3->ss_ttype == M_SEQUENCE)
+		    if ($2->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
 				      slax_data->sd_ctxt->node, FALSE);
 
@@ -1919,12 +1920,41 @@ for_each_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5);
+		    STACK_UNUSED($3);
+		}
+	;
+
+for_spec :
+	L_OPAREN
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = NULL;
+		}
+	    xpath_expr_dotdotdot L_CPAREN
+		{
+		    $$ = $3;
+		    STACK_UNUSED($2);
+		}
+
+	| K_IN
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = NULL;
+		}
+	    xpath_expr_dotdotdot
+		{
+		    $$ = $3;
+		    STACK_UNUSED($2);
 		}
 	;
 
 for_stmt :
-	K_FOR T_VAR L_OPAREN xpath_expr_dotdotdot L_CPAREN
+	K_FOR T_VAR
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+            for_spec
 		{
 		    /*
 		     * The for loop is a little tricky.  We are creating
@@ -1973,17 +2003,17 @@ for_stmt :
 		    slaxElementPop(slax_data); /* Inner for-each loop */
 		    slaxElementPop(slax_data); /* Outer for-each loop */
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($6);
+		    STACK_UNUSED($3, $5);
 		}
 	;
 
 while_stmt :
-	K_WHILE L_OPAREN xpath_expr L_CPAREN
+	K_WHILE xpath_expr
 		{
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_WHILE,
 					    NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $2);
 
 		    if (nodep)
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
@@ -1994,18 +2024,18 @@ while_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5);
+		    STACK_UNUSED($3);
 		}
 	;
 
 
 
 if_stmt :
-	K_IF L_OPAREN xpath_expr L_CPAREN
+	K_IF xpath_expr
 		{
 		    slaxElementPush(slax_data, ELT_CHOOSE, NULL, NULL);
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $2);
 		    $$ = NULL;
 		}
 	    block
@@ -2019,7 +2049,7 @@ if_stmt :
 		    slaxElementPop(slax_data); /* Pop choose */
 		    slaxCheckIf(slax_data, choosep);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5, $7);
+		    STACK_UNUSED($3, $5);
 		}
 	;
 
@@ -2032,17 +2062,17 @@ elsif_stmt_list :
 	;
 
 elsif_stmt :
-	K_ELSE K_IF L_OPAREN xpath_expr L_CPAREN 
+	K_ELSE K_IF xpath_expr 
 		{
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $4);
+		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
 		    $$ = NULL;
 		}
 	    block
 		{
 		    slaxElementPop(slax_data); /* Pop when */
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($6);
+		    STACK_UNUSED($4);
 		}
 	;
 
@@ -2912,7 +2942,15 @@ xpath_expr_dotdotdot :
 		    $$ = $1;
 		}
 
-	| xpath_expression L_DOTDOTDOT xpath_expression
+	| L_OPAREN xpath_expr_dotdotdot_content L_CPAREN
+		{ $$ = $2; }
+
+	| xpath_expr_dotdotdot_content
+		{ $$ = $1; }
+;
+
+xpath_expr_dotdotdot_content :
+	xpath_expression L_DOTDOTDOT xpath_expression
 		{
 		    slax_string_t *res[7];
 
