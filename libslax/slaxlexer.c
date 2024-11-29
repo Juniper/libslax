@@ -159,6 +159,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_ID, "id", KMF_NODE_TEST }, /* Not really, but... */
     { K_IF, "if", KMF_SLAX_KW },
     { K_IMPORT, "import", KMF_SLAX_KW },
+    { K_IN, "in", KMF_SLAX_KW },
     { K_INCLUDE, "include", KMF_SLAX_KW },
     { K_INDENT, "indent", KMF_SLAX_KW },
     { K_INFINITY, "infinity", KMF_SLAX_KW },
@@ -288,6 +289,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_ID,			"'id'" },
     { K_IF,			"'if'" },
     { K_IMPORT,			"'import'" },
+    { K_IN,			"'in'" },
     { K_INCLUDE,		"'include'" },
     { K_INDENT,			"'indent'" },
     { K_INFINITY,		"'infinity'" },
