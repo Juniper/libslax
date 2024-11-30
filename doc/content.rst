@@ -182,14 +182,14 @@ SLAX code, placed inside braces.
     var $b = my:test({
         <min> 5;
         <max> 15;
-        if ($step) {
+        if $step {
             <step> $step;
         }
     });
     var $c = my:write(<content> {
         <document> "total.txt";
         <size> $file/size;
-        if (node[@type == "full]) {
+        if node[@type == "full] {
             <full>;
         }
     });
