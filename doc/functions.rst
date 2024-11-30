@@ -64,8 +64,8 @@ into multiple elements, each containing a single line of text.
 
     EXAMPLE::
         var $lines = slax:break-lines(.//p);
-        for-each ($lines) {
-            if (start-with("pfe:", .)) {
+        for-each $lines {
+            if start-with("pfe:", .) {
                 <output> .;
             }
         }
@@ -88,7 +88,7 @@ react to this condition.
         boolean slax:dampen(name, max, time-period)
 
     EXAMPLE::
-        if (slax:dampen("reset", 2, 10)) {
+        if slax:dampen("reset", 2, 10) {
             message "reset avoided";
         } else {
             <reset>;
@@ -257,7 +257,7 @@ truly empty.
         boolean slax:is-empty(object)
 
     EXAMPLE::
-        if (slax:is-empty($result)) {
+        if slax:is-empty($result) {
             message "missing result";
         }
 
@@ -282,8 +282,8 @@ values are honored, as are a number of "%j" extensions.
         string slax:printf(format, string*)
 
     EXAMPLE::
-        for-each (article) {
-            for-each (author) {
+        for-each article {
+            for-each author {
                 message  slax:printf("%8j1s%8s%8jcj1s %jt{b:}s",
                                     ../title, name, dept, born);
             }
