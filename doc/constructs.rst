@@ -25,7 +25,7 @@ Recursion allows new values for variables to be set, based on the
 parameters passed in on the recursive call::
 
     template count ($cur = 1, $max = 10) {
-        if ($cur < $max) {
+        if $cur < $max {
             <output> $cur;
             call count($cur = $cur + 1, $max);
         }
@@ -35,11 +35,11 @@ Complex variable assignments allow the use of programming constructs
 inside the variable definition::
 
     var $message = {
-        if ($red > 40) {
+        if $red > 40 {
             expr "Invalid red value";
-        } else if ($blue > 80) {
+        } else if $blue > 80 {
             expr "Invalid red value";
-        } else if ($green > 10) {
+        } else if $green > 10 {
             expr "Invalid green value";
         }
     }
@@ -51,8 +51,8 @@ loop that emits parts of the message::
 
     var $message = {
         <output> "acceptable colors: ";
-        for-each (color) {
-            if (red <= 40 && blue <= 80 && green < 10) {
+        for-each color {
+            if red <= 40 && blue <= 80 && green < 10 {
                 <output> "    " _ name _
                    " (" _ red _ "," _ green _ "," _ blue _ ")";
             }
@@ -154,7 +154,7 @@ the nodeset::
 
     set $test = <block> "start here";
 
-    for $item (list) {
+    for $item in list {
         append $test += <item> {
             <name> $item/name;
             <size> $item/size;
@@ -192,7 +192,7 @@ operations is performed::
     var $rtf = <rtf> {
         <rats> "bad";
     }
-    if ($rtf == "bad") { /* Converts the RTF into a string */
+    if $rtf == "bad" { /* Converts the RTF into a string */
         copy-of $rtf;  /* Emits the RTF to the output tree */
 
         /* Convert RTF to a node set (see discussion below) */
@@ -238,7 +238,7 @@ variables and parameters::
         <that> "one";
         <the-other> "one";
     }
-    if ($this/that == "one") {
+    if $this/that == "one" {
         <output> "not an invalid type error";
     }
 
@@ -257,6 +257,25 @@ Control Statements
 This section gives details and examples for each of the control
 statements in SLAX.
 
+In versions of SLAX prior to 1.3, parentheses are required around the
+XPath espression used in these statements.  These are optional, in
+that we are backward compatible, and scripts that use parens will
+continue to work normally.  The only statement with different behavior
+is the `for` statement, which uses a new `in` keyword.  Either form is
+accepted::
+
+    if condition { <code>; } else if condition { <code>; }
+    if (condition) { <code>; } else if (condition) { <code>; }
+
+    for-each list { <code>; }
+    for-each (list) { <code>; }
+
+    for $var in list { <code>; }
+    for $var (list) { <code>; }
+
+    while condition { <code>; }
+    while (condition) { <code>; }
+
 .. index:: statements; if
 .. index:: statements; else
 .. _if-else:
@@ -270,9 +289,9 @@ expressions, which support the double equal sign ("==") in place of
 XPath's single equal sign ("=").  This allows C programmers to avoid
 slipping into dangerous habits::
 
-    if (this && that || the/other[one]) {
+    if this && that || the/other[one] {
         /* SLAX has a simple "if" statement */
-    } else if (yet[more == "fun"]) {
+    } else if yet[more == "fun"] {
         /* ... and it has "else if" */
     } else {
         /* ... and "else" */
@@ -282,12 +301,12 @@ Depending on the presence of the `else` clause, an `if` statement can
 be transformed into either an <xsl:if> element or an <xsl:choose>
 element::
 
-    if (starts-with(name, "fe-")) {
-        if (mtu < 1500) {
+    if starts-with(name, "fe-") {
+        if mtu < 1500 {
            /* Deal with fast ethernet interfaces with low MTUs */
         }
     } else {
-        if (mtu > 8096) {
+        if mtu > 8096 {
            /* Deal with non-fe interfaces with high MTUs */
         }
     }
@@ -320,7 +339,7 @@ evaluating the contents of the statement with the context set to each
 node::
 
     SYNTAX::
-        'for-each' '(' xpath-expression ')' '{'
+        'for-each' xpath-expression '{'
             contents
         '}'
 
@@ -328,8 +347,8 @@ The XPath expression is evaluated into a set of nodes, and then each
 node is considered as the "context" node, the contents of the
 `for-each` statement are evaluated::
 
-    for-each ($inventory/chassis/chassis-module
-              /chassis-sub-module[part-number == '750-000610']) {
+    for-each $inventory/chassis/chassis-module
+              /chassis-sub-module[part-number == '750-000610'] {
         <message> "Down rev PIC in " _ ../name _ ", "
                      _ name _ ": " _ description;
     }
@@ -338,8 +357,8 @@ The `for-each` statement mimics functionality of the <xsl:for-each>
 element.  The statement consists of the `for-each` keyword, the
 parentheses-delimited select expression, and a block::
 
-    for-each ($inventory/chassis/chassis-module
-              /chassis-sub-module[part-number == '750-000610']) {
+    for-each $inventory/chassis/chassis-module
+              /chassis-sub-module[part-number == '750-000610'] {
         <message> "Down rev PIC in " _ ../name _ ", "
                      _ name _ ": " _ description;
     }
@@ -367,6 +386,9 @@ incorporates a `for` statement that allows iteration through a node
 set without changing the context (".")::
 
     SYNTAX::
+        'for' variable-name 'in' xpath-expression'{'
+            contents
+        '}'
         'for' variable-name '(' xpath-expression ')' '{'
             contents
         '}'
@@ -376,7 +398,7 @@ the expression in sequence, and the contents are then evaluated.
 
 ::
 
-    for $item (item-list) {
+    for $item in item-list {
         <item> $item;
     }
 
@@ -396,7 +418,7 @@ condition is no longer true.  This construct is only useful when
 combined with mutable variables (:ref:`mvar`)::
 
     SYNTAX::
-        'while' '(' xpath-expression ')' '{'
+        'while' xpath-expression '{'
             contents
         '}'
 
@@ -407,8 +429,8 @@ taken to avoid infinite loops::
 
     mvar $seen;
     mvar $count = 1;
-    while (not($seen)) {
-        if (item[$count]/value) {
+    while !$seen {
+        if item[$count]/value {
             set $seen = true();
         }
         set $count = $count + 1;
@@ -437,7 +459,7 @@ key, as well as substatements that alter the normal sort behavior.
 
 Multiple `sort` statements can be used to given secondary sorting keys::
 
-    for-each (author) {
+    for-each author {
         sort name/last;
         sort name/first;
         sort age {
@@ -467,7 +489,7 @@ Often a loop is required to iterator through a range of integer
 values, such a 1 to 10.  SLAX introduces the "..." operator to
 generate sequences of such numbers::
 
-    for $i (1 ... 10) {
+    for $i in 1 ... 10 {
         <player number=$i>;
     }
 
@@ -476,7 +498,7 @@ sequence as a node set, which contains a node for each value.  The
 `for` and `for-each` statements can be used to iterate thru the
 nodes in a sequence::
 
-    for-each ($min ... $max) {
+    for-each $min ... $max {
         message "Value: " _ .;
     }
 
