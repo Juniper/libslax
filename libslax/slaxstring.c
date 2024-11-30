@@ -318,14 +318,42 @@ slaxStringLink (slax_data_t *sdp UNUSED, slax_string_t **start,
  * @param flags indicate how string data is marshalled
  * @return number of bytes required to hold this string
  */
-int
-slaxStringLength (slax_string_t *start, unsigned flags)
+static int
+slaxStringLengthCheck (slax_string_t *start, unsigned flags, int *has_parensp)
 {
     slax_string_t *ssp;
     int len = 0;
     char *cp;
+    int has_parens_so_far = FALSE;
+    int paren_depth = 0;
+    int paren_first = TRUE;
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
+	if (has_parensp) {	/* Only track if we need to */
+	    if (paren_first) {
+		/* First pass: check if the first thing is a paren */
+		has_parens_so_far = (ssp->ss_ttype == L_OPAREN);
+		paren_first = FALSE;
+	    }
+
+	    if (ssp->ss_ttype == L_OPAREN) /* Track opens and closes */
+		paren_depth += 1;
+
+	    else if (ssp->ss_ttype == L_CPAREN) {
+		paren_depth -= 1;
+		/* If all are closed and we're not at the end */
+		if (paren_depth == 0 && ssp->ss_next != NULL)
+		    has_parens_so_far = FALSE;
+	    }
+
+	    if (ssp->ss_next == NULL) {
+		/* We're at the last item in the string */
+		if (ssp->ss_ttype != L_CPAREN)
+		    has_parens_so_far = FALSE;
+		*has_parensp = has_parens_so_far;
+	    }
+	}
+
 	len += strlen(ssp->ss_token);
 
 	if (ssp->ss_ttype != T_AXIS_NAME && ssp->ss_ttype != L_DCOLON)
@@ -354,6 +382,20 @@ slaxStringLength (slax_string_t *start, unsigned flags)
     }
 
     return len + 1;
+}
+
+/**
+ * Calculate the length of the string consisting of the concatenation
+ * of all the string segments hung off "start".
+ *
+ * @param start string (linked via ss_next) to determine length
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes required to hold this string
+ */
+int
+slaxStringLength (slax_string_t *start, unsigned flags)
+{
+    return slaxStringLengthCheck(start, flags, NULL);
 }
 
 /*
@@ -388,8 +430,20 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
     char *bp = buf;
     int squote = 0; /* Single quote string flag */
     int last_ttype = 0;
+    int first = TRUE;
+    int noparens = (flags & SSF_NOPARENS);
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
+	if (first) {
+	    first = FALSE;
+	    if (noparens && ssp->ss_ttype == L_OPAREN)
+		continue;
+
+	} else if (noparens && ssp->ss_next == NULL
+		   && ssp->ss_ttype == L_CPAREN) {
+	    continue;
+	}
+
 	str = ssp->ss_token;
 	slen = strlen(str);
 	len += slen + 1;	/* One for space or NUL */
@@ -559,10 +613,19 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
 {
     int len;
     char *buf;
+    int has_parens = FALSE;
+    int *has_parensp = (flags & SSF_NOPARENS) ? &has_parens : NULL;
 
-    len = slaxStringLength(value, flags);
+    len = slaxStringLengthCheck(value, flags, has_parensp);
     if (len == 0)
 	return NULL;
+
+    /*
+     * If the expression does not have enclosing parens, drop the
+     * SSF_NOPARENS flag, since slaxStringCopy() will honor it.
+     */
+    if (!has_parens)
+	flags &= ~SSF_NOPARENS;
 
     buf = xmlMalloc(len);
     if (buf == NULL)
