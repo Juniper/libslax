@@ -28,6 +28,8 @@ libslax initializer function::
 
     slaxEnable(1);
 
+.. _slaxproc:
+
 slaxproc: The SLAX Processor
 ----------------------------
 
