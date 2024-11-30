@@ -34,6 +34,7 @@ struct slax_string_s {
 #define SSF_ESCAPE	(1<<7)	/* String uses escape ('\\') */
 
 #define SSF_XPATH	(1<<8)	/* Need an XPath expression */
+#define SSF_NOPARENS	(1<<9)	/* Drop outer-most parens, if present */
 
 #define SSF_QUOTE_MASK	(SSF_SINGLEQ | SSF_DOUBLEQ | SSF_BOTHQS)
 
