@@ -184,12 +184,12 @@ without waiting until the script generates its final result tree.
             block-statements
         '}'
 
-    if (not(valid)) {
+    if !valid {
         message name() _ " invalid";
-    } else if (failed) {
+    } else if failed {
         message {
             expr "Failed";
-            if ($count > 1) {
+            if $count > 1 {
                 expr ", again!";
             }
         }
@@ -284,7 +284,7 @@ the trace file.
         <min> $min;
     }
     trace {
-        if ($my-trace-flag) {
+        if $my-trace-flag {
             expr "max " _ $max _ "; min " _ $min;
             copy-of options;
         }
@@ -356,7 +356,7 @@ code when an extension element is invoked which is not supported.
         'fallback' '{' statements '}'
 
     EXAMPLE::
-        if ($working) {
+        if $working {
             <some:fancy> "thing";
             fallback {
                 message "nothing fancy, please";
