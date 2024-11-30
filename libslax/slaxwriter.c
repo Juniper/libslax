@@ -195,7 +195,7 @@ slaxIsXslElement (xmlNodePtr nodep, const char *name)
 static const char **
 slaxParens (slax_writer_t *swp)
 {
-    static const char *all_parens[] = { "(", ")", "", "", NULL };
+    static const char *all_parens[] = { "(", ")", "", "" };
     const char **parens = slaxV13(swp) ? all_parens + 2 : all_parens;
 
     return parens;
@@ -3145,7 +3145,7 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 		slaxWriteNewline(swp, NEWL_OUTDENT);
 		
 	    slaxWrite(swp, "%sif %s%s%s {", first ? "" : "} else ",
-		      expr ?: UNKNOWN_EXPR, parens[0], parens[1]);
+		      parens[0], expr ?: UNKNOWN_EXPR, parens[1]);
 	    xmlFreeAndEasy(expr);
 	    xmlFreeAndEasy(test);
 
