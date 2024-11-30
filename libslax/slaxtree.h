@@ -94,6 +94,7 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
 #define SAS_ATTRIB	2	/* Use <xsl:attribute> if you need it */
 #define SAS_SELECT	3	/* Use concat or (non-attribute) text node */
 #define SAS_VALUE	4	/* Simple value */
+#define SAS_XPATH_NOPARENS 5	/* As SAS_XPATH but no wrapping parens */
 
 /*
  * Add a simple value attribute.
