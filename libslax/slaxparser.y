@@ -1908,7 +1908,8 @@ for_each_stmt :
 	K_FOR_EACH xpath_expr_dotdotdot
 		{
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $2);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS,
+				  ATT_SELECT, $2);
 
 		    if ($2->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
@@ -1981,7 +1982,8 @@ for_stmt :
 
 		    /* Outer for-each loop */
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $4);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS,
+				  ATT_SELECT, $4);
 
 		    if ($4->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
@@ -2013,7 +2015,7 @@ while_stmt :
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_WHILE,
 					    NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $2);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $2);
 
 		    if (nodep)
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
@@ -2035,7 +2037,7 @@ if_stmt :
 		{
 		    slaxElementPush(slax_data, ELT_CHOOSE, NULL, NULL);
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $2);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $2);
 		    $$ = NULL;
 		}
 	    block
@@ -2065,7 +2067,7 @@ elsif_stmt :
 	K_ELSE K_IF xpath_expr 
 		{
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $3);
 		    $$ = NULL;
 		}
 	    block
