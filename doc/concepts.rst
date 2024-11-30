@@ -502,12 +502,12 @@ to node sets.
 ::
 
     mvar $count = 10;
-    if (this < that) {
+    if this < that {
         set $count = that;
     }
 
     mvar $errors;
-    if ($count < 2) {
+    if $count < 2 {
         append $errors += <error> {
             <location> location;
             <message> "Not good, dude.";
@@ -542,17 +542,17 @@ Programming Constructs
 
 XSLT has a number of traditional programming constructs::
 
-    if (xpath-expression) {
+    if xpath-expression {
         /* Code here is evaluated if the expression is true */
     }
 
-    if (xpath-expression) {
+    if xpath-expression {
         /*
          * xsl:choose is similar to a switch statement, but
          * the "test" expression can vary among "when" statements.
          */
     
-    } else if (another-xpath-expression) {
+    } else if another-xpath-expression {
         /*
          * xsl:when is the case of the switch statement.
          * Any number of "when" statements may appear.
@@ -562,7 +562,7 @@ XSLT has a number of traditional programming constructs::
         /* xsl:otherwise is the 'default' of the switch statement */
     }
     
-    for-each (xpath-expression) {
+    for-each xpath-expression {
         /*
          * Code here is evaluated for each node that matches 
          * the xpath expression.  The context is moved to the
@@ -570,7 +570,7 @@ XSLT has a number of traditional programming constructs::
          */
     }
 
-    for $item (items) {
+    for $item in items {
         /* 
          * Code here is evaluated with the variable $item set
          * to each node that matches the xpath expression.
@@ -578,7 +578,7 @@ XSLT has a number of traditional programming constructs::
          */
     }
 
-    for $i (1 ... 20) {
+    for $i in 1 ... 20 {
         /*
          * Code here is evaluated with the variable $i moving
          * thru a sequence of values between 1 and 20.  The
@@ -586,7 +586,7 @@ XSLT has a number of traditional programming constructs::
          */
     }
 
-    while ($count < 10) {
+    while $count < 10 {
         /*
          * Code here is evaluated until the XPath expression is
          * false.  Note that this is normally only useful with
@@ -599,10 +599,10 @@ XSLT is a declarative language, mixing language statements (in the
 example, the following snippet makes a <source> element containing
 the value of the "changed" attribute::
 
-    if (@changed) {
+    if @changed {
         <source> {
             <notify> name();
-            if (@changed == "changed") {
+            if @changed == "changed" {
                 <changed>;
             
             } else {
@@ -610,6 +610,83 @@ the value of the "changed" attribute::
             }
         }
     }
+
+Older syntax is still supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Prior to version 1.3, parentheses were required for these statements,
+but starting in 1.3, they are now optional.  One exception is the
+`for` statement where the parentheses were replaced with the new `in`
+keyword:: 
+
+
+    if (xpath-expression) {
+        <code>;
+    }
+
+    if (xpath-expression) {
+        <code>;
+    
+    } else if (another-xpath-expression) {
+        <code>;
+    
+    } else {
+        <code>;
+    }
+    
+    for-each (xpath-expression) {
+        <code>;
+    }
+
+    for $item (items) {
+        <code>;
+    }
+
+    for $i (1 ... 20) {
+        <code>;
+    }
+
+    while ($count < 10) {
+        <code>;
+    }
+
+The :ref:`slaxproc <slaxproc>` utility can be used to convert between
+the older and newer syntax, using the :ref:`--write-version
+<slaxproc-arguments>` option::
+
+    % head -15 /tmp/goo.slax
+    version 1.3;
+
+    param $min = 4;
+    param $max = 8;
+
+    main <top> {
+        for-each 1 ... 10 {
+            <up> .;
+        }
+
+        for-each 10 ... 1 {
+            <down> .;
+        }
+
+        for $x in $min ... $max {
+    % slaxproc --format --write-version 1.1 -n /tmp/goo.slax | head -15
+    version 1.1;
+
+    param $min = 4;
+    param $max = 8;
+
+    match / {
+        <top> {
+            for-each (1 ... 10) {
+                <up> .;
+            }
+
+            for-each (10 ... 1) {
+                <down> .;
+            }
+
+    %
 
 Recursion
 ~~~~~~~~~
@@ -646,7 +723,7 @@ recursive pass then output the next number and recurses again until
         param $max = "1";
         
         expr "count: " _ $cur;
-        if ($cur < $max) {
+        if $cur < $max {
             call count($cur = $cur + 1, $max);
         }
     }
@@ -667,9 +744,9 @@ current node.
     match system {
         var $system = .;
         
-        for-each (name-server/name[starts-with(., "10.")]) {
+        for-each name-server/name[starts-with(., "10.")] {
             <tag> .;
-            if (. == "10.1.1.1") {
+            if . == "10.1.1.1" {
                 <match> $system/host-name;
             }
         }
