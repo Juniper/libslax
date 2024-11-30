@@ -157,7 +157,7 @@ Now consider the following code::
 
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
-    if ($a) {
+    if $a {
         set $z = <rvt> "a";  /* RVT */
         var $b = $z[1];      /* refers to nodes in "fake" $y doc */
         set $z = <next> "b"; /* RVT */
@@ -291,7 +291,7 @@ familiar "if" statement. Minor details are more transparent.
 
 The majority of our scripts are simple, following the pattern::
 
-    if (find/something/bad) {
+    if find/something/bad {
         call error($message = "found something bad");
     }
 
@@ -634,7 +634,7 @@ associated issues.
   until the text expression is false.  Note that this is only possible
   if the test expression contains a mutable variable::
 
-    while (count($mvar) < 10) {
+    while count($mvar) < 10 {
         /* do more work */
     }
 
@@ -648,7 +648,7 @@ functionality for SLAX scripts.
   thru a set of values, assigning each to a variable before evaluating a
   block of statements::
 
-    for $i ($min ... $max) {
+    for $i in $min ... $max {
         <elt> $i;
     }
 
@@ -656,7 +656,7 @@ functionality for SLAX scripts.
   function, usable in XPath expressions::
 
     function my:lesser ($a, $b) {
-        if ($a < $b) {
+        if $a < $b {
             result $a;
         } else {
             result $b;
@@ -676,7 +676,7 @@ functionality for SLAX scripts.
 
     trace "my debug value is " _ $debug;
     trace {
-        if ($debug/level > 4) {
+        if $debug/level > 4 {
             <debug> {
                 copy-of $data;
             }
@@ -692,9 +692,9 @@ New SLAX Operators
   the range.  If the first value is less than the second one, the values
   will be in increasing order; otherwise the order is decreasing::
 
-    for $tens (0 ... 9) {
+    for $tens in 0 ... 9 {
         message "... " _ tens _ "0 ...";
-        for $ones (0 ... 9) {
+        for $ones in 0 ... 9 {
             call test($value = $tens * 10 + $ones);
         }
     }
