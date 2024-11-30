@@ -167,7 +167,7 @@ will not be present, allowing it to be used as a test for errors::
         <errors> "record";
     }
     var $res = curl:single($opts);
-    if ($res/errors) {
+    if $res/errors {
         terminate "failure: " _ $res/errors;
     }
 
@@ -1494,7 +1494,7 @@ details given above::
         <depth> 3;
     }
     var $logs = os:stat("/var/log/*txt", $options);
-    for-each ($logs) {
+    for-each $logs {
         message name _ " is a " _ type;
     }
 
