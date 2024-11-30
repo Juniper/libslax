@@ -382,6 +382,10 @@ slaxAttribAdd (slax_data_t *sdp, int style,
     if (style != SAS_VALUE)
 	ss_flags |= SSF_QUOTES;	/* Always want the quotes */
 
+    /* Trigger NOPARENS behavior */
+    if (style == SAS_XPATH_NOPARENS)
+	ss_flags |= SSF_NOPARENS;
+
     if (value == NULL)
 	return;
 
