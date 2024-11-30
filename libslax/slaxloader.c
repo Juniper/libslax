@@ -97,7 +97,8 @@ slaxIncludeAddPath (const char *dir)
 void
 slaxVersionMatch (slax_data_t *sdp, const char *vers)
 {
-    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2"))
+    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2")
+	|| streq(vers, "1.3"))
 	return;
 
     fprintf(stderr, "invalid version number: %s\n", vers);
