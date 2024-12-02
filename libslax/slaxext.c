@@ -1041,8 +1041,9 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 
 		    /* Copy the tag into 'tag' */
 		    fmt += 2;	/* Skip 't{' */
+		    tep -= 1;	/* Skip '}' */
 
-		    tlen = tep - fmt;
+		    tlen = tep - fmt + 1;
 		    tag = alloca(tlen + 1);
 		    memcpy(tag, fmt, tlen);
 		    tag[tlen] = '\0';
