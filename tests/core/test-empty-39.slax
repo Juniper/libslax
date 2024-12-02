@@ -11,6 +11,29 @@ var $data := {
 }
 
 main <data> {
+    var $x = concat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(
+"a",
+"b"
+);
+
+
     for-each ($data/*) {
         <test n=.> {
             <out> slax:printf("%jH%12s", .);
