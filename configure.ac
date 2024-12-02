@@ -155,6 +155,23 @@ AC_ARG_ENABLE([printflike],
 AC_MSG_RESULT([$HAVE_PRINTFLIKE])
 AM_CONDITIONAL([HAVE_PRINTFLIKE], [test "$HAVE_PRINTFLIKE" != ""])
 
+dnl humanize_number(3) is a great function, but it's not standard.
+dnl Note Macosx has the function in libutil.a but doesn't ship the
+dnl header file, so I'll need to carry my own implementation.  See:
+dnl    https://devforums.apple.com/thread/271121
+AC_CHECK_HEADERS([libutil.h])
+AC_CHECK_LIB([util], [humanize_number],
+     [HAVE_HUMANIZE_NUMBER=$ac_cv_header_libutil_h],
+     [HAVE_HUMANIZE_NUMBER=no])
+
+AC_MSG_CHECKING([humanize_number results])
+AC_MSG_RESULT(:${HAVE_HUMANIZE_NUMBER}:${ac_cv_header_libutil_h}:)
+
+if test "$HAVE_HUMANIZE_NUMBER" = "yes"; then
+    AC_DEFINE([HAVE_HUMANIZE_NUMBER], [1], [humanize_number(3)])
+fi
+
+AM_CONDITIONAL([HAVE_HUMANIZE_NUMBER], [test "$HAVE_HUMANIZE_NUMBER" = "yes"])
 
 #
 # Allow the reuse of the libxslt tests, if they have the source code
@@ -677,4 +694,5 @@ AC_MSG_NOTICE([summary of build options:
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
   sqlite3:          ${HAVE_SQLITE3:-no}
   sqlcipher:        ${HAVE_SQLCIPHER:-no}
+  humanize:         ${HAVE_HUMANIZE_NUMBER:-no}
 ])
