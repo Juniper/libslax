@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<data>
+  <test n="1.23123123123e+11">
+    <out>        123G</out>
+    <out>123 G       </out>
+    <out>128000 +         115G + 256000</out>
+    <out>128000 + 115 Gcool    + 256000</out>
+  </test>
+  <test n="56456456">
+    <out>         56M</out>
+    <out>56 M        </out>
+    <out>128000 +          54M + 256000</out>
+    <out>128000 + 54 Mcool     + 256000</out>
+  </test>
+  <test n="789789">
+    <out>        790K</out>
+    <out>790 K       </out>
+    <out>128000 +         771K + 256000</out>
+    <out>128000 + 771 Kcool    + 256000</out>
+  </test>
+  <test n="90301">
+    <out>         90K</out>
+    <out>90 K        </out>
+    <out>128000 +          88K + 256000</out>
+    <out>128000 + 88 Kcool     + 256000</out>
+  </test>
+  <test n="987654321">
+    <out>        988M</out>
+    <out>988 M       </out>
+    <out>128000 +         942M + 256000</out>
+    <out>128000 + 942 Mcool    + 256000</out>
+  </test>
+  <test n="8760000">
+    <out>        8.8M</out>
+    <out>8.8 M       </out>
+    <out>128000 +         8.4M + 256000</out>
+    <out>128000 + 8 Mcool      + 256000</out>
+  </test>
+  <out>            </out>
+  <out>            </out>
+  <out>love:          ab</out>
+  <out>more:          ab</out>
+  <out>love:        abcd</out>
+  <out>more:        abcd</out>
+  <out>love:      abcdef</out>
+  <out>more:      abcdef</out>
+</data>
