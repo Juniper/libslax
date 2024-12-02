@@ -142,6 +142,7 @@ the contents of a second string.
 
     EXAMPLE::
         var $result = slax:ends-with("this works", "s");
+        var $ir = verbs/verb[ends-with(infinitive, "ir")];
 
 slax:evaluate
 +++++++++++++
