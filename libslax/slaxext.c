@@ -43,6 +43,16 @@
 #ifdef HAVE_STDTIME_TZFILE_H
 #include <stdtime/tzfile.h>
 #endif /* HAVE_STDTIME_TZFILE_H */
+/*
+ * humanize_number is a great function, unless you don't have it.  So
+ * we carry one in our pocket.
+ */
+#ifdef HAVE_HUMANIZE_NUMBER
+#include <libutil.h>		/* We have the real one! */
+#define slaxHumanizeNumber humanize_number
+#else /* HAVE_HUMANIZE_NUMBER */
+#include "slaxhumanize.h"	/* Use our own version */
+#endif /* HAVE_HUMANIZE_NUMBER */
 
 #include <libslax/slaxdata.h>
 
@@ -804,6 +814,93 @@ slaxExtPrintFreeArgs (int argc, xmlChar **argv)
     return NULL;
 }
 
+static int
+slaxHumanizeProcessOptions (char *options, int flags, char *sbuf, size_t slen)
+{
+    static const char suffix[] = "suffix=";
+
+    for (;;) {
+	char *token = strsep(&options, ",");
+	if (token == NULL)
+	    break;
+
+	if (streq(token, "whole"))
+	    flags &= ~HN_DECIMAL;
+
+	else if (streq(token, "space"))
+	    flags &= ~HN_NOSPACE;
+
+	else if (streq(token, "b"))
+	    flags |= HN_B;
+
+	else if (streq(token, "1000")) /* Aka "%jH" */
+	    flags |= HN_DIVISOR_1000;
+
+#if defined(HN_IEC_PREFIXES)
+	else if (streq(token, "iec"))
+	    flags |= HN_IEC_PREFIXES;
+#endif /* HN_IEC_PREFIXES */
+
+	else if (strncmp(token, suffix, sizeof(suffix) - 1) == 0)
+	    strlcpy(sbuf, token + sizeof(suffix) - 1, slen);
+    }
+
+    return flags;
+}
+
+static int
+slaxHumanizeValue (char *buf, size_t blen, xmlChar *xarg, char *hoptions,
+		   int hflags)
+{
+    char *arg = (char *) xarg;
+    char sbuf[20];
+
+    sbuf[0] = '\0';
+
+    hflags |= HN_NOSPACE | HN_DECIMAL;
+    if (hoptions)
+	hflags = slaxHumanizeProcessOptions(hoptions, hflags,
+					     sbuf, sizeof(sbuf));
+
+    int64_t number = 0;
+
+    if (strchr(arg, 'e') == NULL) {
+	unsigned long long l = strtoull(arg, NULL, 0);	
+	if (l == ULLONG_MAX)
+	    return FALSE;
+
+	number = (int64_t) l;
+
+    } else {
+	char *ep = NULL;
+	double d = strtod(arg, &ep);
+	if (ep && ep == arg)
+	    return FALSE;
+	number = (int64_t) d;
+    }
+
+    int scale = 0;
+
+    if (number) {
+        uint64_t left = number;
+
+        if (hflags & HN_DIVISOR_1000) {
+            for ( ; left; scale++)
+                left /= 1000;
+        } else {
+            for ( ; left; scale++)
+                left /= 1024;
+        }
+        scale -= 1;
+    }
+
+    if (slaxHumanizeNumber(buf, blen, number, sbuf, scale, hflags) <= 0)
+	return FALSE;
+
+    return TRUE;
+
+}
+
 /*
  * This is the brutal guts of the printf code.  We pull out each
  * field and format it into a buffer, which we then return.
@@ -863,6 +960,11 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 	int tlen = 0;
 	int once = FALSE;
 
+	char *options = NULL;
+	int humanize = FALSE;
+	int hflags = 0;
+	char hbuf[20];		/* Humanize buffer */
+
 	fmt += 1;		/* Skip percent */
 
 	/*
@@ -886,13 +988,43 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		break;
 
 	    case 'j':
-		switch (*++fmt) {
+		if (*++fmt == '{') {
+		    /* Handle an "options" field, like "%j{p3}h" */
+		    const xmlChar *oep = xmlStrchr(fmt, '}');
+		    if (oep == NULL) /* Invalid format string */
+			break;
+
+		    /* Copy the tag into 'options' */
+		    fmt += 1;	/* Skip '{' */
+
+		    int olen = oep - fmt;
+		    options = alloca(olen + 1);
+		    memcpy(options, fmt, olen);
+		    options[olen] = '\0';
+
+		    fmt = oep + 1; /* Move past the '}' */
+		}
+
+		switch (*fmt) {
 		case 'c':
 		    /*
 		     * "%jc" turns on the 'capitalize' flag, which
 		     * capitalizes the first letter of the field.
 		     */
 		    capitalize = TRUE;
+		    break;
+
+		case 'H':
+		    hflags = HN_DIVISOR_1000;
+		    /* fallthru */
+
+		case 'h':
+		    /*
+		     * %h and %H make human-readable numbers, similar to
+		     * the df(1) options.  An option field is supported
+		     * here also.
+		     */
+		    humanize = TRUE;
 		    break;
 
 		case 't':
@@ -908,10 +1040,9 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 			break;
 
 		    /* Copy the tag into 'tag' */
-		    fmt += 2;	/* Skip '{' */
-		    tep -= 1;	/* Skip '}' */
+		    fmt += 2;	/* Skip 't{' */
 
-		    tlen = tep - fmt + 1;
+		    tlen = tep - fmt;
 		    tag = alloca(tlen + 1);
 		    memcpy(tag, fmt, tlen);
 		    tag[tlen] = '\0';
@@ -1005,6 +1136,10 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		pb.pb_cur += tlen;
 	    }
 	    left = pb.pb_end - pb.pb_cur;
+
+	} else if (humanize) {
+	    if (slaxHumanizeValue(hbuf, sizeof(hbuf), arg, options, hflags))
+		arg = (xmlChar *)hbuf;/* Use this as the argument */
 	}
 
 	int needed = slaxExtPrintfToBuf(&pb, field, arg,
@@ -1546,8 +1681,13 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
  * Usage:  if (slax:ends-with($var, $str)) { .... }
  */
 static void
-slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs UNUSED)
+slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs)
 {
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
     char *pat = (char *) xmlXPathPopString(ctxt);
     if (pat == NULL) {
 	xmlXPathSetArityError(ctxt);
@@ -1564,8 +1704,8 @@ slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs UNUSED)
     int slen = strlen(str);
     int delta = slen - plen;
 
-    int bool = (delta >= 0 && strcmp(str + delta, pat) == 0);
-    xmlXPathReturnBoolean(ctxt, bool);
+    int result = (delta >= 0 && strcmp(str + delta, pat) == 0);
+    xmlXPathReturnBoolean(ctxt, result);
 }
 
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
