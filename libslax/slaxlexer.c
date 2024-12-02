@@ -928,7 +928,7 @@ static int
 slaxLexer (slax_data_t *sdp)
 {
     uint8_t ch1, ch2, ch3;
-    int look, rc;
+    int rc;
 
     for (;;) {
 	sdp->sd_start = sdp->sd_cur;
@@ -1268,12 +1268,31 @@ slaxLexer (slax_data_t *sdp)
      * So we look ahead for a '('.  If we find one, it's a function;
      * if not it's a q_name.
      */
-    for (look = sdp->sd_cur; look < sdp->sd_len; look++) {
-	ch1 = sdp->sd_buf[look];
-	if (ch1 == '(')
-	    return T_FUNCTION_NAME;
-	if (!isspace(ch1))
+
+    int look = sdp->sd_cur;
+    int looklen = sdp->sd_len;
+    char *lookbuf = sdp->sd_buf;
+
+    for (;;) {
+	for ( ; look < looklen; look++) {
+	    ch1 = lookbuf[look];
+	    if (ch1 == '(')
+		return T_FUNCTION_NAME;
+	    if (!isspace(ch1))
+		break;
+	}
+
+	if (look < looklen)
 	    break;
+
+	if (slaxGetInput(sdp, 0)) /* No more input? */
+	    break;
+
+	if (looklen == sdp->sd_len) /* Unchanged length? */
+	    break;
+
+	looklen = sdp->sd_len;
+	lookbuf = sdp->sd_buf;
     }
 
     if (sdp->sd_cur == sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '#') {
