@@ -24,6 +24,7 @@
   <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="data" select="slax-ext:node-set($data-temp-1)"/>
   <xsl:template match="/">
     <data>
+      <xsl:variable name="x" select="concat(&quot;a&quot;, &quot;b&quot;)"/>
       <xsl:for-each select="$data/*">
         <test n="{.}">
           <out>
