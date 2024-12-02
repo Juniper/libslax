@@ -1,0 +1,27 @@
+version 1.2;
+
+param $first = 123123123123;
+var $data := {
+    <n> $first;
+    <n> 56456456;
+    <n> 789789;
+    <n> 89789 + 512;
+    <n> 987654321;
+    <n> 8760000;
+}
+
+main <data> {
+    for-each ($data/*) {
+        <test n=.> {
+            <out> slax:printf("%jH%12s", .);
+            <out> slax:printf("%j{space}H%-12s", .);
+            <out> slax:printf("%d + %jh%12s + %d", 128000, ., 256000);
+            <out> slax:printf("%d + %j{space,whole,suffix=cool}h%-12s + %d", 128000, ., 256000);
+        }
+    }
+    
+    for-each (0 ... 3) {
+        <out> slax:printf("%jt{love:}%12d", substring("abcdef", 1, . * 2));
+        <out> slax:printf("%jt{more:}%12s", substring("abcdef", 1, . * 2));
+    }
+}
