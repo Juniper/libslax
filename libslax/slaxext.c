@@ -777,8 +777,57 @@ slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
     }
 }
 
+/*
+ * Print content into a print buffer, resizing the buffer as needed
+ */
+int
+slaxExtPrintfToBuf (slax_printf_buffer_t *pbp, const char *fmt, va_list vap)
+{
+    int rc;
+
+    va_list cap;
+    va_copy(cap, vap);		/* Copy vap, in case we need it */
+
+    int left = pbp->pb_end - pbp->pb_cur;
+
+    rc = vsnprintf(pbp->pb_cur, left, fmt, vap);
+    if (rc > left) {
+	if (slaxExtPrintExpand(pbp, rc - left)) {
+	    rc = 0;
+	} else {
+	    /* Retry with new buffer and copy of vap */
+	    left = pbp->pb_end - pbp->pb_cur;
+	    rc = vsnprintf(pbp->pb_cur, left, fmt, cap);
+	}
+    }
+
+    if (rc >= 0)
+	pbp->pb_cur += rc;
+
+    va_end(cap);
+
+    return rc;
+}
+
+int
+slaxExtPrintWriter (void *data, const char *fmt, ...)
+{
+    int rc;
+    va_list vap;
+    slax_printf_buffer_t *pbp = data;
+
+    va_start(vap, fmt);
+
+    rc = slaxExtPrintfToBuf(pbp, fmt, vap);
+
+    va_end(vap);
+
+    return rc;
+}
+
+
 static int
-slaxExtPrintfToBuf (slax_printf_buffer_t *pbp, char *field, xmlChar *arg,
+slaxExtPrintField (slax_printf_buffer_t *pbp, char *field, xmlChar *arg,
 		   int args_used, int width, int precision)
 {
     int left = pbp->pb_end - pbp->pb_cur;
@@ -1143,7 +1192,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		arg = (xmlChar *)hbuf;/* Use this as the argument */
 	}
 
-	int needed = slaxExtPrintfToBuf(&pb, field, arg,
+	int needed = slaxExtPrintField(&pb, field, arg,
 				       args_used, width, precision);
 
 	if (needed > left) {
@@ -1151,7 +1200,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		needed = 0;
 	    else {
 		left = pb.pb_end - pb.pb_cur;
-		needed = slaxExtPrintfToBuf(&pb, field, arg,
+		needed = slaxExtPrintField(&pb, field, arg,
 					   args_used, width, precision);
 	    }
 	}
