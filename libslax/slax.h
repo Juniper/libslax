@@ -48,6 +48,10 @@ int
 slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
 	     int partial, const char *vers);
 
+int
+slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+	       const char *version);
+
 /*
  * Read a SLAX stylesheet from an open file descriptor.
  * Written as a clone of libxml2's xmlCtxtReadFd().
