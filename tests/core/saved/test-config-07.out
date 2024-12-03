@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<data>
+  <string>&lt;configuration&gt; {
+    &lt;system&gt; {
+        &lt;host-name&gt; "puff-the-magic-dragon";
+        &lt;domain-name&gt; "by-the-sea.example.com";
+        &lt;name-server&gt; {
+            &lt;name&gt; "10.1.2.3";
+        }
+    }
+    &lt;protocols&gt; {
+        &lt;bgp&gt; {
+            &lt;metric&gt; "15";
+        }
+    }
+    &lt;interfaces&gt; {
+        &lt;interface&gt; {
+            &lt;name&gt; "xe-1/1/1";
+        }
+        &lt;interface&gt; {
+            &lt;name&gt; "ge-1/1/1";
+        }
+    }
+}
+</string>
+  <unescaped><configuration> {
+    <system> {
+        <host-name> "puff-the-magic-dragon";
+        <domain-name> "by-the-sea.example.com";
+        <name-server> {
+            <name> "10.1.2.3";
+        }
+    }
+    <protocols> {
+        <bgp> {
+            <metric> "15";
+        }
+    }
+    <interfaces> {
+        <interface> {
+            <name> "xe-1/1/1";
+        }
+        <interface> {
+            <name> "ge-1/1/1";
+        }
+    }
+}
+</unescaped>
+</data>
