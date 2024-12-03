@@ -26,11 +26,12 @@
 
 #include <libslax/slaxconfig.h>
 
+#include <libslax/xmlsoft.h>
 #include <libxslt/extensions.h>
 #include <libslax/slaxdata.h>
 #include <libslax/slaxdyn.h>
+#include <libslax/slaxext.h>
 #include <libslax/slaxio.h>
-#include <libslax/xmlsoft.h>
 #include <libslax/slaxinternals.h>
 #include <libpsu/psucommon.h>
 #include <libpsu/psulog.h>
@@ -474,6 +475,60 @@ bail:
 }
 
 /*
+ * Implement xml-to-slax:
+ *
+ *     string slax:xml-to-slax(node, version?);
+ * where:
+ * - node is a hierarchy of XML data
+ * - "version" is a version string (e.g. "1.3"), similar to --write-version
+ */
+static void
+extXutilXmlToSlax (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
+{
+    int i;
+    slax_printf_buffer_t pb;
+    int done = FALSE;
+
+    bzero(&pb, sizeof(pb));
+
+    if (nargs < 1 || nargs > 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *version = NULL;
+
+    if (nargs == 2)
+	version = (char *) xmlXPathPopString(ctxt);
+
+    xmlXPathObjectPtr xop = valuePop(ctxt);
+    if (xop == NULL)
+	return;
+
+    if (xop->nodesetval) {
+	xmlNodeSetPtr tab = xop->nodesetval;
+
+	for (i = 0; !done && i < tab->nodeNr; i++) {
+	    xmlNodePtr nodep = tab->nodeTab[i];
+
+	    if (nodep->type == XML_DOCUMENT_NODE) {
+		if (slaxWriteDoc(slaxExtPrintWriter, &pb, (xmlDocPtr) nodep,
+				 TRUE, version) == 0)
+		    done = TRUE;
+
+	    } else {
+		if (slaxWriteNode(slaxExtPrintWriter, &pb, nodep,
+				  version) == 0)
+		    done = TRUE;
+	    }
+	}
+    }
+
+    xmlFreeAndEasy(version);
+    xmlXPathReturnString(ctxt, (xmlChar *) pb.pb_buf);
+}
+
+/*
  * Adjust the max call depth, the limit of recursion in libxml2:
  *     expr xutil:max-call-depth(5000);
  */
@@ -536,6 +591,11 @@ slax_function_table_t slaxXutilTable[] = {
 	"max-call-depth", extXutilMaxCallDepth,
 	"Sets the maximum call depth for recursion in the XSLT engine",
 	"(call-depth)", XPATH_UNDEFINED,
+    },
+    {
+	"xml-to-slax", extXutilXmlToSlax,
+	"Converts an XML hierarchy into a string of SLAX syntax",
+	"(data, version-string)", XPATH_STRING,
     },
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };
