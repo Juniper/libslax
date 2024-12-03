@@ -3562,6 +3562,22 @@ slaxFreeWriter (slax_writer_t *swp)
     xmlFree(swp);
 }
 
+static void
+slaxWriteSetVersion (slax_writer_t *swp, const char *version)
+{
+    /* If the user asked for version 1.0, we avoid 1.1 features */
+    if (version) {
+	if (streq(version, "1.0"))
+	    swp->sw_vers = SWF_VERS_10;
+	else if (streq(version, "1.1"))
+	    swp->sw_vers = SWF_VERS_11;
+	else if (streq(version, "1.2"))
+	    swp->sw_vers = SWF_VERS_12;
+	else if (streq(version, "1.3"))
+	    swp->sw_vers = SWF_VERS_13;
+    }
+}
+
 /**
  * slaxWriteDoc:
  * Write an XSLT document in SLAX format
@@ -3587,17 +3603,7 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
     if (nodep == NULL || nodep->name == NULL)
 	return 1;
 
-    /* If the user asked for version 1.0, we avoid 1.1 features */
-    if (version) {
-	if (streq(version, "1.0"))
-	    sw.sw_vers = SWF_VERS_10;
-	else if (streq(version, "1.1"))
-	    sw.sw_vers = SWF_VERS_11;
-	else if (streq(version, "1.2"))
-	    sw.sw_vers = SWF_VERS_12;
-	else if (streq(version, "1.3"))
-	    sw.sw_vers = SWF_VERS_13;
-    }
+    slaxWriteSetVersion(&sw, version);
 
     if (!partial) {
 	slaxWrite(&sw, "version %s;", version ?: SLAX_VERSION);
@@ -3641,6 +3647,26 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
     return (sw.sw_errors == 0);
 }
 
+int
+slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+	      const char *version)
+{
+    slax_writer_t sw;
+
+    bzero(&sw, sizeof(sw));
+    sw.sw_write = func;
+    sw.sw_data = data;
+
+    slaxWriteSetVersion(&sw, version);
+
+    slaxWriteAllNs(&sw, NULL, nodep);
+
+    slaxWriteElement(&sw, NULL, nodep);
+
+    slaxWriteCleanup(&sw);
+
+    return (sw.sw_errors == 0);
+}
 
 /**
  * See if we need to rewrite a function call into something else.
