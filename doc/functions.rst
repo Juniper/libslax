@@ -158,7 +158,7 @@ results of the expression are returned.
         object slax:evaluate(expression)
 
     EXAMPLE::
-        var $result = slax:evaluate("expr[name == '&']");
+        var $result = slax:evaluate($node _ "[@" _ $attr _ " == '&']");
 
 slax:first-of
 +++++++++++++
