@@ -1255,6 +1255,38 @@ optional elements:
 For details on the JSON to XML encoding, refer to :ref:`json-attributes`,
 :ref:`json-arrays`, and :ref:`json-names`.
 
+xutil:slax-to-xml()
+~~~~~~~~~~~~~~~~~~~
+
+The xutil:slax-to-xml() function turns a string of SLAX data into an
+XML hierarchy::
+
+    EXAMPLE::
+        var $slax = '<color> "red"; <object> "fish";'
+        var $xml = xutil:slax-to-xml($slax);
+        /* $xml is now an XML hierarchy */
+
+xutil:xml-to-slax()
+~~~~~~~~~~~~~~~~~~~
+
+The xutil:xml-to-slax() function turns XML content into a string of
+SLAX data::
+
+    EXAMPLE::
+        var $xml = <json> {
+            <color> "red";
+        }
+        var $str = xutil:xml-to-slax($xml);
+        /* $str is now the string '<color> "red";' */
+
+Since the returned document requires a root tag and SLAX documents are
+assumably XSLT scripts, the root node of the returned document is an
+`<xsl:stylesheet>` element.  To remove this layer and get a nodeset of
+the nodes inside this element, append a "/\*" to your call::
+
+        var $str = xutil:xml-to-slax($xml-snippet)/*;
+
+
 The "os" Extension Library
 --------------------------
 
