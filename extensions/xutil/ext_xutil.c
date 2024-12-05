@@ -474,6 +474,38 @@ bail:
 	xmlFreeDoc(docp);
 }
 
+
+/*
+ * Implement slax-to-xml:
+ *
+ *     node slax:slax-to-xml(string);
+ * where:
+ * - string is a hierarchy of SLAX data
+ */
+static void
+extXutilSlaxToXml (xmlXPathParserContext *ctxt, int nargs)
+{
+    if (nargs != 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+   
+    char *str = (char *) xmlXPathPopString(ctxt);
+
+    if (str == 0) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+    
+    xmlDocPtr docp = slaxLoadBuffer("slax-to-xml", str, NULL, TRUE);
+    if (docp) {
+	xmlNodePtr nodep;
+
+	nodep = docp->children;
+	valuePush(ctxt, xmlXPathNewNodeSet(nodep));
+    }
+}
+
 /*
  * Implement xml-to-slax:
  *
@@ -596,6 +628,11 @@ slax_function_table_t slaxXutilTable[] = {
 	"xml-to-slax", extXutilXmlToSlax,
 	"Converts an XML hierarchy into a string of SLAX syntax",
 	"(data, version-string)", XPATH_STRING,
+    },
+    {
+	"slax-to-xml", extXutilSlaxToXml,
+	"Converts a string containing a SLAX hierarchy into an XML hierarchy",
+	"(string)", XPATH_STRING,
     },
     { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
 };
