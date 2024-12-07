@@ -18,6 +18,18 @@
         <xsl:value-of select="concat(&quot;bit:and(1, 1) -&gt; &quot;, bit:and(1, 1))"/>
       </xsl:message>
       <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:and(00, 00) -&gt; &quot;, bit:and(&quot;00&quot;, &quot;00&quot;))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:and(10, 11) -&gt; &quot;, bit:and(&quot;10&quot;, &quot;11&quot;))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:and(11, 01) -&gt; &quot;, bit:and(&quot;11&quot;, &quot;01&quot;))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:and(11, 11) -&gt; &quot;, bit:and(&quot;11&quot;, &quot;11&quot;))"/>
+      </xsl:message>
+      <xsl:message>
         <xsl:value-of select="concat(&quot;bit:nand(0011, 0101) -&gt; &quot;, bit:nand(&quot;0011&quot;, &quot;0101&quot;))"/>
       </xsl:message>
       <xsl:message>
@@ -222,22 +234,22 @@
         <xsl:value-of select="concat(&quot;bit:from-hex('0x1') -&gt; &quot;, bit:from-hex(&quot;0x1&quot;))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x2') -&gt; &quot;, bit:from-hex(&quot;0x2&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x2', 4) -&gt; &quot;, bit:from-hex(&quot;0x2&quot;, 4))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x3') -&gt; &quot;, bit:from-hex(&quot;0x3&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x3', 4) -&gt; &quot;, bit:from-hex(&quot;0x3&quot;, 4))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x4') -&gt; &quot;, bit:from-hex(&quot;0x4&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x4', 8) -&gt; &quot;, bit:from-hex(&quot;0x4&quot;, 8))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x5') -&gt; &quot;, bit:from-hex(&quot;0x5&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x5', 8) -&gt; &quot;, bit:from-hex(&quot;0x5&quot;, 8))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x6') -&gt; &quot;, bit:from-hex(&quot;0x6&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x6', 8) -&gt; &quot;, bit:from-hex(&quot;0x6&quot;, 8))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0x7') -&gt; &quot;, bit:from-hex(&quot;0x7&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0x7', 8) -&gt; &quot;, bit:from-hex(&quot;0x7&quot;, 8))"/>
       </xsl:message>
       <xsl:message>
         <xsl:value-of select="concat(&quot;bit:from-hex('0x8') -&gt; &quot;, bit:from-hex(&quot;0x8&quot;))"/>
@@ -252,16 +264,16 @@
         <xsl:value-of select="concat(&quot;bit:from-hex('0xB') -&gt; &quot;, bit:from-hex(&quot;0xB&quot;))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0xC') -&gt; &quot;, bit:from-hex(&quot;0xC&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0xC', 6) -&gt; &quot;, bit:from-hex(&quot;0xC&quot;, 6))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0xD') -&gt; &quot;, bit:from-hex(&quot;0xD&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0xD', 6) -&gt; &quot;, bit:from-hex(&quot;0xD&quot;, 6))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0xE') -&gt; &quot;, bit:from-hex(&quot;0xE&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0xE', 6) -&gt; &quot;, bit:from-hex(&quot;0xE&quot;, 6))"/>
       </xsl:message>
       <xsl:message>
-        <xsl:value-of select="concat(&quot;bit:from-hex('0xF') -&gt; &quot;, bit:from-hex(&quot;0xF&quot;))"/>
+        <xsl:value-of select="concat(&quot;bit:from-hex('0xF', 6) -&gt; &quot;, bit:from-hex(&quot;0xF&quot;, 6))"/>
       </xsl:message>
       <!-- Large numbers -->
       <xsl:message>
@@ -299,6 +311,78 @@
       </xsl:message>
       <xsl:message>
         <xsl:value-of select="concat(&quot;bit:from-hex(0xdeadbeef) -&gt; &quot;, bit:from-hex(&quot;0xdeadbeef&quot;))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-left('10100101', 1) -&gt; &quot;, bit:shift-left(&quot;10100101&quot;, 1))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-left('10100101', 2) -&gt; &quot;, bit:shift-left(&quot;10100101&quot;, 2))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-left('10100101', 3) -&gt; &quot;, bit:shift-left(&quot;10100101&quot;, 3))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-left('10100101', 4) -&gt; &quot;, bit:shift-left(&quot;10100101&quot;, 4))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('10100101', 1) -&gt; &quot;, bit:shift-right(&quot;10100101&quot;, 1))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('10100101', 2) -&gt; &quot;, bit:shift-right(&quot;10100101&quot;, 2))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('10100101', 3) -&gt; &quot;, bit:shift-right(&quot;10100101&quot;, 3))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('10100101', 4) -&gt; &quot;, bit:shift-right(&quot;10100101&quot;, 4))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('010100101', 1) -&gt; &quot;, bit:shift-right(&quot;010100101&quot;, 1))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('010100101', 2) -&gt; &quot;, bit:shift-right(&quot;010100101&quot;, 2))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('010100101', 3) -&gt; &quot;, bit:shift-right(&quot;010100101&quot;, 3))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('010100101', 4) -&gt; &quot;, bit:shift-right(&quot;010100101&quot;, 4))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('10100101', 1) -&gt; &quot;, bit:ashift-right(&quot;10100101&quot;, 1))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('10100101', 2) -&gt; &quot;, bit:ashift-right(&quot;10100101&quot;, 2))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('10100101', 3) -&gt; &quot;, bit:ashift-right(&quot;10100101&quot;, 3))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('10100101', 4) -&gt; &quot;, bit:ashift-right(&quot;10100101&quot;, 4))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('010100101', 1) -&gt; &quot;, bit:ashift-right(&quot;010100101&quot;, 1))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('010100101', 2) -&gt; &quot;, bit:ashift-right(&quot;010100101&quot;, 2))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('010100101', 3) -&gt; &quot;, bit:ashift-right(&quot;010100101&quot;, 3))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('010100101', 4) -&gt; &quot;, bit:ashift-right(&quot;010100101&quot;, 4))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-left('10100101', 10) -&gt; &quot;, bit:shift-left(&quot;10100101&quot;, 10))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:shift-right('10100101', 10) -&gt; &quot;, bit:shift-right(&quot;10100101&quot;, 10))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('10100101', 10) -&gt; &quot;, bit:ashift-right(&quot;10100101&quot;, 10))"/>
+      </xsl:message>
+      <xsl:message>
+        <xsl:value-of select="concat(&quot;bit:ashift-right('010100101', 10) -&gt; &quot;, bit:ashift-right(&quot;010100101&quot;, 10))"/>
       </xsl:message>
     </op-script-results>
   </xsl:template>
