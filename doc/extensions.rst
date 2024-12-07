@@ -34,25 +34,28 @@ The "bit" extension library has functions that interpret a string as a
 series of bit, allowing arbitrary length bit arrays and operations on
 those arrays.
 
-========================= ====================================
- Function and Arguments    Description
-========================= ====================================
- bit:and(b1, b2)           Return AND of two bit strings
- bit:or(b1, b2)            Return OR of two bit strings
- bit:nand(b1, b2)          Return NAND of two bit strings
- bit:nor(b1, b2)           Return NOR of two bit strings
- bit:xor(b1, b2)           Return XOR of two bit strings
- bit:xnor(b1, b2)          Return XNOR of two bit strings
- bit:not(b1)               Return NOT of a bit string
- bit:clear(b, off)         Clear a bit within a bit string
- bit:compare(b1, b2)       Compare two bit strings
- bit:set(b, off)           Set a bit within a bit string
- bit:mask(count, len?)     Return len bits set on
- bit:to-int(bs)            Return integer value of bit string
- bit:from-int(val, len?)   Return bit string of integer value
- bit:to-hex(bs)            Return hex value of a bit string
- bit:from-hex(str, len?)   Return bit string of hex value
-========================= ====================================
+=========================== ====================================
+ Function and Arguments      Description
+=========================== ====================================
+ bit:and(b1, b2)             Return AND of two bit strings
+ bit:or(b1, b2)              Return OR of two bit strings
+ bit:nand(b1, b2)            Return NAND of two bit strings
+ bit:nor(b1, b2)             Return NOR of two bit strings
+ bit:xor(b1, b2)             Return XOR of two bit strings
+ bit:xnor(b1, b2)            Return XNOR of two bit strings
+ bit:not(b1)                 Return NOT of a bit string
+ bit:clear(b, off)           Clear a bit within a bit string
+ bit:compare(b1, b2)         Compare two bit strings
+ bit:set(b, off)             Set a bit within a bit string
+ bit:mask(count, len?)       Return len bits set on
+ bit:to-int(  bs)            Return integer value of bit string
+ bit:from-int(val, len?)     Return bit string of integer value
+ bit:to-hex(bs)              Return hex value of a bit string
+ bit:from-hex(str, len?)     Return bit string of hex value
+ bit:shift-left(b, cnt)      Return logical shift (b << cnt)
+ bit:shift-right(b, cnt)     Return logical shift (b >> cnt)
+ bit:ashift-right(b, cnt)    Return arithmetic shift (b >> cnt)
+=========================== ====================================
 
 The "curl" Extension Library
 ----------------------------
