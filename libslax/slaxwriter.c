@@ -41,6 +41,7 @@ struct slax_writer_s {
 #define SWF_BLANKLINE	(1<<0)	/* Just wrote a blank line */
 #define SWF_FORLOOP	(1<<1)	/* Just wrote a "for" loop */
 #define SWF_LINENO	(1<<2)	/* Show line numbers */
+#define SWF_WANT_PARENS	(1<<3)	/* Don't do the no-parens style (1.3) */
 
 /* Values for sw_vers */
 #define SWF_VERS_10	10	/* Version 1.0 features only */
@@ -71,11 +72,17 @@ slaxV12 (slax_writer_t *swp)
 static inline int
 slaxV13 (slax_writer_t *swp)
 {
-#if 1
+#if 1				/* Nuke when 1.3 is released */
     return (swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
 #else
     return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
 #endif
+}
+
+static inline int
+slaxWantParens (slax_writer_t *swp)
+{
+    return (swp->sw_flags & SWF_WANT_PARENS);
 }
 
 /* Forward function declarations */
@@ -195,8 +202,8 @@ slaxIsXslElement (xmlNodePtr nodep, const char *name)
 static const char **
 slaxParens (slax_writer_t *swp)
 {
-    static const char *all_parens[] = { "(", ")", "", "" };
-    const char **parens = slaxV13(swp) ? all_parens + 2 : all_parens;
+    static const char *all_parens[] = { "", "", "(", ")" };
+    const char **parens = slaxWantParens(swp) ? all_parens + 2 : all_parens;
 
     return parens;
 }
@@ -602,7 +609,7 @@ slaxRewriteEltArgWriter (void *data, const char *fmt, ...)
  * the easy part.
  */
 static slax_string_t *
-slaxRewriteEltArg (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
+slaxRewriteEltArg (slax_writer_t *swp, xmlNodePtr nodep,
 		   slax_string_t *data)
 {
     slax_string_t *results = data;
@@ -625,6 +632,9 @@ slaxRewriteEltArg (slax_writer_t *swp UNUSED, xmlNodePtr nodep,
     /* Use our own writer and write function */
 
     bzero(&sw, sizeof(sw));
+    sw.sw_vers = swp->sw_vers;
+    sw.sw_flags = swp->sw_flags;
+
     sw.sw_write = slaxRewriteEltArgWriter;
 
     for (;; tailp = &ssp->ss_next) {
@@ -1868,7 +1878,7 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
     cp = slaxGetAttrib(inner_var, ATT_NAME);
 
     slaxWriteBlankline(swp);
-    if (slaxV13(swp)) {
+    if (!slaxWantParens(swp)) {
 	slaxWrite(swp, "for $%s in %s {", cp, expr);
     } else {
 	slaxWrite(swp, "for $%s (%s) {", cp, expr);
@@ -2170,7 +2180,7 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    slaxWrite(swp, "\";");
 	    slaxWriteNewline(swp, 0);
 
-	} else if (childp->next == NULL && slaxV13(swp)
+	} else if (childp->next == NULL && !slaxWantParens(swp)
 		   && slaxIsXslElement(childp, ELT_CALL_TEMPLATE)) {
 
 	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
@@ -3579,17 +3589,18 @@ slaxWriteSetVersion (slax_writer_t *swp, const char *version)
 }
 
 /**
- * slaxWriteDoc:
+ * slaxWriteDocParens:
  * Write an XSLT document in SLAX format
  * @param func fprintf-like callback function to write data
  * @param data data passed to callback
  * @param docp source document (XSLT stylesheet)
  * @param partial Should we write partial (snippet) output?
  * @param version Version number to use
+ * @param parens Use the old parens style
  */
 int
-slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
-	      int partial,  const char *version)
+slaxWriteDocParens (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+		    int partial,  const char *version, int want_parens)
 {
     xmlNodePtr nodep;
     xmlNodePtr childp;
@@ -3610,6 +3621,10 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	slaxWriteNewline(&sw, 0);
 	slaxWriteNewline(&sw, 0);
     }
+
+    /* The "new" parens style starts in 1.3 */
+    if (want_parens || sw.sw_vers < SWF_VERS_13)
+	sw.sw_flags |= SWF_WANT_PARENS;
 
     /*
      * Write out all top-level comments before doing anything else
@@ -3647,6 +3662,22 @@ slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
     return (sw.sw_errors == 0);
 }
 
+/**
+ * slaxWriteDoc:
+ * Write an XSLT document in SLAX format
+ * @param func fprintf-like callback function to write data
+ * @param data data passed to callback
+ * @param docp source document (XSLT stylesheet)
+ * @param partial Should we write partial (snippet) output?
+ * @param version Version number to use
+ */
+int
+slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+	      int partial,  const char *version)
+{
+    return slaxWriteDocParens(func, data, docp, partial, version, FALSE);
+}
+
 int
 slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 	      const char *version)
@@ -3658,6 +3689,9 @@ slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
     sw.sw_data = data;
 
     slaxWriteSetVersion(&sw, version);
+
+    if (sw.sw_vers < SWF_VERS_13)
+	sw.sw_flags |= SWF_WANT_PARENS;
 
     slaxWriteAllNs(&sw, NULL, nodep);
 
