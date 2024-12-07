@@ -64,6 +64,7 @@ static int opt_json_tagging;	/* Tag JSON output */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
 static int opt_partial;		/* Parse partial contents */
 static int opt_slax_output;	/* Make output in SLAX format */
+static int opt_want_parens;	/* They really want the parens */
 
 static struct opts {
     int o_do_json_to_xml;
@@ -83,6 +84,7 @@ static struct opts {
     int o_no_json_types;
     int o_no_randomize;
     int o_no_tty;
+    int o_want_parens;
 } opts;
 
 static struct option long_opts[] = {
@@ -127,6 +129,7 @@ static struct option long_opts[] = {
     { "trace", required_argument, NULL, 't' },
     { "verbose", no_argument, NULL, 'v' },
     { "version", no_argument, NULL, 'V' },
+    { "want-parens", no_argument, &opts.o_want_parens, 1 },
     { "write-version", required_argument, NULL, 'w' },
     { "yydebug", no_argument, NULL, 'y' },
     { NULL, 0, NULL, 0 }
@@ -203,8 +206,8 @@ do_format (const char *name, const char *output,
 	    err(1, "could not open output file: '%s'", output);
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
-		 opt_partial, opt_version);
+    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, docp,
+		       opt_partial, opt_version, opt_want_parens);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -315,8 +318,8 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	    err(1, "could not open file: '%s'", output);
     }
 
-    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp,
-		 opt_partial, opt_version);
+    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, docp,
+		       opt_partial, opt_version, opt_want_parens);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -643,8 +646,8 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	}
 
 	if (opt_slax_output)
-	    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, res,
-		 TRUE, opt_version);
+	    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, res,
+			       TRUE, opt_version, opt_want_parens);
 	else
 	    xsltSaveResultToFile(outfile, res, script);
 
@@ -732,8 +735,8 @@ do_xpath (const char *name UNUSED, const char *output,
 	}
 
 	if (opt_slax_output)
-	    slaxWriteDoc((slaxWriterFunc_t) fprintf, outfile, res,
-		 TRUE, opt_version);
+	    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, res,
+			       TRUE, opt_version, opt_want_parens);
 	else
 	    xsltSaveResultToFile(outfile, res, script);
 
@@ -1186,6 +1189,9 @@ main (int argc UNUSED, char **argv)
 
 	    } else if (opts.o_no_tty) {
 		ioflags |= SIF_NO_TTY;
+
+	    } else if (opts.o_want_parens) {
+		opt_want_parens = TRUE;
 
             } else {
                 print_help();
