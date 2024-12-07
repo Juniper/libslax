@@ -46,4 +46,36 @@
     }
 }
 </unescaped>
+  <out>
+    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+      <configuration>
+        <system>
+          <host-name>puff-the-magic-dragon</host-name>
+          <domain-name>by-the-sea.example.com</domain-name>
+          <name-server>
+            <name>10.1.2.3</name>
+          </name-server>
+        </system>
+        <protocols>
+          <bgp>
+            <metric>15</metric>
+          </bgp>
+        </protocols>
+        <interfaces>
+          <interface>
+            <name>xe-1/1/1</name>
+          </interface>
+          <interface>
+            <name>ge-1/1/1</name>
+          </interface>
+        </interfaces>
+      </configuration>
+    </xsl:stylesheet>
+  </out>
+  <more>
+    <hmmm xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+      <xsl:value-of select="10"/>
+    </hmmm>
+    <max xmlns:xsl="http://www.w3.org/1999/XSL/Transform">condition</max>
+  </more>
 </data>
