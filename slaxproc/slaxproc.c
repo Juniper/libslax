@@ -160,6 +160,19 @@ get_filename (const char *filename, char ***pargv, int outp)
 }
 
 static int
+write_doc (FILE *outfile, xmlDocPtr docp, slaxWriterFlags_t flags)
+{
+    if (opt_partial)
+	flags |= SWDF_PARTIAL;
+    if (opt_want_parens)
+	flags |= SWDF_WANT_PARENS;
+
+    return slaxWriteDocFlags((slaxWriterFunc_t) fprintf, outfile, docp,
+			     opt_version, flags);
+
+}
+
+static int
 do_format (const char *name, const char *output,
 		 const char *input, char **argv)
 {
@@ -206,8 +219,7 @@ do_format (const char *name, const char *output,
 	    err(1, "could not open output file: '%s'", output);
     }
 
-    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, docp,
-		       opt_partial, opt_version, opt_want_parens);
+    write_doc(outfile, docp, 0);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -318,8 +330,7 @@ do_xslt_to_slax (const char *name UNUSED, const char *output,
 	    err(1, "could not open file: '%s'", output);
     }
 
-    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, docp,
-		       opt_partial, opt_version, opt_want_parens);
+    write_doc(outfile, docp, 0);
 
     if (outfile != stdout)
 	fclose(outfile);
@@ -646,8 +657,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	}
 
 	if (opt_slax_output)
-	    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, res,
-			       TRUE, opt_version, opt_want_parens);
+	    write_doc(outfile, res, SWDF_PARTIAL);
 	else
 	    xsltSaveResultToFile(outfile, res, script);
 
@@ -735,8 +745,7 @@ do_xpath (const char *name UNUSED, const char *output,
 	}
 
 	if (opt_slax_output)
-	    slaxWriteDocParens((slaxWriterFunc_t) fprintf, outfile, res,
-			       TRUE, opt_version, opt_want_parens);
+	    write_doc(outfile, res, SWDF_PARTIAL);
 	else
 	    xsltSaveResultToFile(outfile, res, script);
 
@@ -903,6 +912,7 @@ print_help (void)
 "\t--trace <file> OR -t <file>: write trace data to a file\n"
 "\t--verbose OR -v: enable debugging output (slaxLog())\n"
 "\t--version OR -V: show version information (and exit)\n"
+"\t--want-parens: emit parens for control statements even for V1.3+\n"
 "\t--write-version <version> OR -w <version>: write in version\n"
 "\nProject libslax home page: https://github.com/Juniper/libslax\n"
 "\n");
