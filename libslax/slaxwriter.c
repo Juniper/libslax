@@ -3594,17 +3594,18 @@ slaxWriteSetVersion (slax_writer_t *swp, const char *version)
  * @param func fprintf-like callback function to write data
  * @param data data passed to callback
  * @param docp source document (XSLT stylesheet)
- * @param partial Should we write partial (snippet) output?
  * @param version Version number to use
- * @param parens Use the old parens style
+ * @param flags Flags for different behaviors (SWDF_*)
  */
 int
-slaxWriteDocParens (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
-		    int partial,  const char *version, int want_parens)
+slaxWriteDocFlags (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+		   const char *version, slaxWriterFlags_t flags)
 {
     xmlNodePtr nodep;
     xmlNodePtr childp;
     slax_writer_t sw;
+    int want_parens = flags & SWDF_WANT_PARENS;
+    int partial = flags & SWDF_PARTIAL;
 
     bzero(&sw, sizeof(sw));
     sw.sw_write = func;
@@ -3675,7 +3676,8 @@ int
 slaxWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 	      int partial,  const char *version)
 {
-    return slaxWriteDocParens(func, data, docp, partial, version, FALSE);
+    slaxWriterFlags_t flags =  partial ? SWDF_PARTIAL : 0;
+    return slaxWriteDocFlags(func, data, docp, version, flags);
 }
 
 int
