@@ -549,11 +549,86 @@ extBitCompare (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathReturnNumber(ctxt, rc);
 }
 
+static void
+extBitShift (xmlXPathParserContextPtr ctxt, int nargs, int fill, int right)
+{
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    int num = (int) xmlXPathPopNumber(ctxt);
+    if (xmlXPathCheckError(ctxt))
+	return;
+
+    if (num < 0) {
+	slaxTransformError(ctxt, "shift value cannot be below 0");
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    xmlXPathObjectPtr xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+
+    xmlChar *val = extBitStringVal(ctxt, xop, FALSE);
+    if (val == NULL)
+	return;
+
+    if (num != 0) {
+	int width = xmlStrlen(val);
+
+	if (num < width) {
+	    char *cp = (char *) val;
+	    int len = width - num;
+
+	    if (right) {
+		int leading = fill ? cp[0] : '0';
+		memmove(cp + num, cp, len);
+		memset(cp, leading, num);
+
+	    } else {
+		memmove(cp, cp + num, len);
+		memset(cp + len, '0', num);
+	    }
+
+	} else {
+	    memset((char *) val, (fill && right) ? val[0] : '0', width);
+	}
+    }
+
+    xmlXPathReturnString(ctxt, val);
+}
+
+static void
+extBitShiftRight (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 0, 1);
+}
+
+static void
+extBitShiftLeft (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 0, 0);
+}
+
+static void
+extBitAShiftRight (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 1, 1);
+}
+
 slax_function_table_t slaxBitTable[] = {
     {
 	"and", extBitAnd,
 	"Bit-wise AND operator",
 	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"ashift-right", extBitAShiftRight,
+	"Arithmentic shift a value to the right",
+	"(bit-string, count)", XPATH_STRING,
     },
     {
 	"clear", extBitClear,
@@ -604,6 +679,16 @@ slax_function_table_t slaxBitTable[] = {
 	"set", extBitSet,
 	"Set a bit within a bit-string",
 	"(bit-string, bit-number)", XPATH_STRING,
+    },
+    {
+	"shift-left", extBitShiftLeft,
+	"Shift a value to the left",
+	"(bit-string, count)", XPATH_STRING,
+    },
+    {
+	"shift-right", extBitShiftRight,
+	"Shift a value to the right",
+	"(bit-string, count)", XPATH_STRING,
     },
     {
 	"to-hex", extBitToHex,
