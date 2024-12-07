@@ -48,6 +48,20 @@ int
 slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
 	     int partial, const char *vers);
 
+/**
+ * slaxWriteDocParens:
+ * Write an XSLT document in SLAX format
+ * @param func fprintf-like callback function to write data
+ * @param data data passed to callback
+ * @param docp source document (XSLT stylesheet)
+ * @param partial Should we write partial (snippet) output?
+ * @param version Version number to use
+ * @param parens Use the old parens style
+ */
+int
+slaxWriteDocParens (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+		    int partial,  const char *version, int want_parens);
+
 int
 slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
 	       const char *version);
