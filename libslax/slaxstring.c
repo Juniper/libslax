@@ -411,6 +411,58 @@ slaxStringNoSpace (int ttype)
     return FALSE;
 }
 
+static int
+slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
+{
+    /*
+     * Decide if we can trim off the last trailing space.  You
+     * would think this was an easy one, but it's not.
+     */
+    int trim = FALSE, comma = FALSE;
+
+    if (last_ttype == L_UNDERSCORE || ssp->ss_ttype == L_UNDERSCORE)
+	trim = FALSE;
+
+    else if (ssp->ss_ttype == L_COMMA) {
+	trim = TRUE;	/* foo(1, 2, 3) */
+	comma = TRUE;
+
+    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
+		|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
+		|| last_ttype == L_QUESTION || last_ttype == L_COLON)
+	       && ssp->ss_ttype == L_OPAREN)
+	trim = FALSE;	/*  */
+
+    else if (last_ttype == L_QUESTION && ssp->ss_ttype == L_COLON)
+	trim = TRUE;
+	    
+    else if (slaxStringNoSpace(last_ttype)
+	     || slaxStringNoSpace(ssp->ss_ttype)) {
+	if (bp - buf >= 2 && bp[-2] != ',')
+	    trim = TRUE;	/* foo/goo[@zoo] */
+
+    } else if (last_ttype == T_NUMBER && ssp->ss_ttype == L_DOT)
+	trim = TRUE;	/* 1.0 (looking at the '.') */
+
+    else if (last_ttype == L_DOT && ssp->ss_ttype == T_NUMBER)
+	trim = TRUE;	/* 1.0 (looking at the '0') */
+
+    else if (bp == &buf[2] && buf[0] == '-')
+	trim = TRUE;	/* Negative number */
+
+    /*
+     * We only want to trim closers if the next thing is a closer
+     * or a slash, so that we handle "foo[goo]/zoo" correctly.
+     */
+    if ((last_ttype == L_CPAREN || last_ttype == L_CBRACK)
+	&& !(ssp->ss_ttype == L_CPAREN
+	     || ssp->ss_ttype == L_CBRACK
+	     || ssp->ss_ttype == L_SLASH
+	     || ssp->ss_ttype == L_DSLASH))
+	trim = comma;
+
+    return trim;
+}
 
 /**
  * Build a single string out of the string segments hung off "start".
@@ -455,54 +507,7 @@ slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 	    break;		/* Tragedy: not enough room */
 
 	if (bp > &buf[1] && bp[-1] == ' ') {
-	    /*
-	     * Decide if we can trim off the last trailing space.  You
-	     * would think this was an easy one, but it's not.
-	     */
-	    int trim = FALSE, comma = FALSE;
-
-	    if (last_ttype == L_UNDERSCORE || ssp->ss_ttype == L_UNDERSCORE)
-		trim = FALSE;
-
-	    else if (ssp->ss_ttype == L_COMMA) {
-		trim = TRUE;	/* foo(1, 2, 3) */
-		comma = TRUE;
-
-	    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
-			|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
-			|| last_ttype == L_QUESTION || last_ttype == L_COLON)
-		     && ssp->ss_ttype == L_OPAREN)
-		trim = FALSE;	/*  */
-
-	    else if (last_ttype == L_QUESTION && ssp->ss_ttype == L_COLON)
-		trim = TRUE;
-	    
-	    else if (slaxStringNoSpace(last_ttype)
-		       || slaxStringNoSpace(ssp->ss_ttype)) {
-		if (bp[-2] != ',')
-		    trim = TRUE;	/* foo/goo[@zoo] */
-
-	    } else if (last_ttype == T_NUMBER && ssp->ss_ttype == L_DOT)
-		trim = TRUE;	/* 1.0 (looking at the '.') */
-
-	    else if (last_ttype == L_DOT && ssp->ss_ttype == T_NUMBER)
-		trim = TRUE;	/* 1.0 (looking at the '0') */
-
-	    else if (bp == &buf[2] && buf[0] == '-')
-		trim = TRUE;	/* Negative number */
-
-	    /*
-	     * We only want to trim closers if the next thing is a closer
-	     * or a slash, so that we handle "foo[goo]/zoo" correctly.
-	     */
-	    if ((last_ttype == L_CPAREN || last_ttype == L_CBRACK)
-		    && !(ssp->ss_ttype == L_CPAREN
-			 || ssp->ss_ttype == L_CBRACK
-			 || ssp->ss_ttype == L_SLASH
-			 || ssp->ss_ttype == L_DSLASH))
-		trim = comma;
-
-	    if (trim) {
+	    if (slaxStringTrimSpace(ssp, last_ttype, buf, bp)) {
 		bp -= 1;
 		len -= 1;
 	    }
