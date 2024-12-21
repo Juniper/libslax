@@ -63,6 +63,7 @@ AC_CHECK_FUNCS([getpass])
 AC_CHECK_FUNCS([sysctlbyname])
 AC_CHECK_FUNCS([flock])
 AC_CHECK_FUNCS([asprintf])
+AC_CHECK_FUNCS([memrchr])
 
 AC_CHECK_HEADERS([dlfcn.h])
 AC_CHECK_HEADERS([tzfile.h])
