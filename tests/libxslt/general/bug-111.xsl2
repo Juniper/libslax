@@ -29,7 +29,7 @@
       <xsl:apply-templates select="/DIRTREE"/>
     </root>
   </xsl:template>
-  <xsl:template match="DIRTREE[d] [f]" priority="100">
+  <xsl:template match="DIRTREE[d][f]" priority="100">
     <xsl:value-of select="name()"/>
     <xsl:text> : </xsl:text>
     <xsl:value-of select="boolean(d)"/>
