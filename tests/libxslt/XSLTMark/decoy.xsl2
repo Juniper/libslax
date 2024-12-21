@@ -27,7 +27,7 @@ to distract the matching process...
   <xsl:template match="/foo/bar/baz/quux">
     <ERROR/>
   </xsl:template>
-  <xsl:template match="text() [*/../*/../foobar]">
+  <xsl:template match="text()[*/../*/../foobar]">
     <ERROR/>
   </xsl:template>
   <xsl:template match="foobar[../*/../*/baz]">
@@ -45,7 +45,7 @@ to distract the matching process...
   <xsl:template match="table/row[id = &quot;abcdefg&quot;]" priority="3">
     <ERROR/>
   </xsl:template>
-  <xsl:template match="text() [contains(., &quot;decoy&quot;)]">
+  <xsl:template match="text()[contains(., &quot;decoy&quot;)]">
     <ERROR/>
   </xsl:template>
   <xsl:template match="table/row[6]" priority="5">
@@ -73,7 +73,7 @@ to distract the matching process...
       <xsl:apply-templates/>
     </row>
   </xsl:template>
-  <xsl:template match="row[id mod 3 = 2] [following-sibling::row[4]/firstname = &quot;Bob&quot;]">
+  <xsl:template match="row[id mod 3 = 2][following-sibling::row[4]/firstname = &quot;Bob&quot;]">
     <crazy>
       <xsl:apply-templates/>
     </crazy>
