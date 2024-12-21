@@ -10,10 +10,10 @@ match top {
     }
 }
 
-match bar[baz || following-sibling::*[1] [self::nar]] {
+match bar[baz || following-sibling::*[1][self::nar]] {
     <BAR> .;
 }
 
-match foo[following-sibling::*[position() <= 2] [self::barg] && following-sibling::*[position() <= 2] [self::nar]] {
+match foo[following-sibling::*[position() <= 2][self::barg] && following-sibling::*[position() <= 2][self::nar]] {
     <FOO> .;
 }
