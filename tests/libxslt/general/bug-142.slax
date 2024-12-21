@@ -102,7 +102,7 @@ match *[lang("ja") && not(ancestor::*[@xml:lang == "ja"])] {
     apply-templates;
 }
 
-match g:span[lang("ja") && not(ancestor::*[@xml:lang == "ja"])] [not(@href)] {
+match g:span[lang("ja") && not(ancestor::*[@xml:lang == "ja"])][not(@href)] {
     mode "日本語";
     
     <span xml:lang="ja"> {
@@ -116,7 +116,7 @@ match *[lang("fr")] {
     apply-templates;
 }
 
-match g:span[lang("fr")] [not(@href)] {
+match g:span[lang("fr")][not(@href)] {
     mode "日本語";
     
     <span xml:lang="fr"> {
