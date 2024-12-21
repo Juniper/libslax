@@ -6,9 +6,9 @@
     <xsl:variable name="lang" select="&quot;en&quot;"/>
     <xsl:variable name="dingbat" select="&quot;nestedstartquote&quot;"/>
     <xsl:text>LOCALES: </xsl:text>
-    <xsl:value-of select="count(($local.l10n.xml//l:i18n/l:l10n[@language = $lang]/l:dingbat[@key = $dingbat]) [1])"/>
+    <xsl:value-of select="count(($local.l10n.xml//l:i18n/l:l10n[@language = $lang]/l:dingbat[@key = $dingbat])[1])"/>
     <xsl:variable name="local.l10n.dingbat">
-      <xsl:value-of select="($local.l10n.xml//l:i18n/l:l10n[@language = $lang]/l:dingbat[@key = $dingbat]) [1]"/>
+      <xsl:value-of select="($local.l10n.xml//l:i18n/l:l10n[@language = $lang]/l:dingbat[@key = $dingbat])[1]"/>
     </xsl:variable>
     <xsl:text>
 LOCALES2: </xsl:text>
