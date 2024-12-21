@@ -1000,7 +1000,7 @@ main (int argc UNUSED, char **argv)
 
 	case '?':
 	case ':':
-	    errx(1, "argument processing error");
+	    errx(1, "Use '--help' for complete help");
 
 	case 'c':
 	    if (func)
