@@ -21,7 +21,7 @@ main <root> {
         copy-node {
             copy-of @*;
             
-            for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD) [generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", . _ ":" _ ../../../@COL_COD))]) {
+            for-each (key("EMPTY_EN_CODE_COLLS", @COL_COD)[generate-id(.) == generate-id(key("EMPTY_EN_CODE_COLRS", . _ ":" _ ../../../@COL_COD))]) {
                 <color> {
                     copy-of ../@TITLE | ../@RU_CODE | .;
                 }
