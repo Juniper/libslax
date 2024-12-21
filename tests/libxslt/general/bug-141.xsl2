@@ -17,10 +17,10 @@ current page : </xsl:text>
     </xsl:for-each>
     <xsl:text>"
   union-last : </xsl:text>
-    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1] |/document) [last()])"/>
+    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1] |/document)[last()])"/>
     <xsl:text>
   union-last (without /root) : </xsl:text>
-    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1]) [last()])"/>
+    <xsl:value-of select="name((preceding-sibling::page[1] | parent::group[1])[last()])"/>
     <xsl:text>
   preceeding-sibling </xsl:text>
     <xsl:value-of select="name(preceding-sibling::page[1])"/>
