@@ -63,6 +63,12 @@ valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	${MAKE} CHECKER='valgrind -q' tests
 
+SCRIBBLE=DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MallocPreScribble=1
+
+scribble:
+	@echo '## Running the regression tests under MallocPreScribble'
+	${MAKE} CHECKER="${SCRIBBLE}" tests
+
 #TEST_TRACE = set -x ; 
 
 TEST_JIG = \
