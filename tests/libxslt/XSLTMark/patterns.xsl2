@@ -26,7 +26,7 @@
       <xsl:apply-templates/>
     </row>
   </xsl:template>
-  <xsl:template match="row[id mod 3 = 2] [following-sibling::row[4]/firstname = &quot;Bob&quot;]">
+  <xsl:template match="row[id mod 3 = 2][following-sibling::row[4]/firstname = &quot;Bob&quot;]">
     <crazy>
       <xsl:apply-templates/>
     </crazy>
