@@ -40,49 +40,52 @@ check syntax.
 
 ::
 
- Usage: slaxproc [mode] [options] [script] [files]
-  Modes:
-    --check OR -c: check syntax and content for a SLAX script
-    --format OR -F: format (pretty print) a SLAX script
-    --json-to-xml: Turn JSON data into XML
-    --run OR -r: run a SLAX script (the default mode)
-    --show-select: show XPath selection from the input document
-    --show-variable: show contents of a global variable
-    --slax-to-xslt OR -x: turn SLAX into XSLT
-    --xml-to-json: turn XML into JSON
-    --xpath <xpath> OR -X <xpath>: select XPath data from input
-    --xslt-to-slax OR -s: turn XSLT into SLAX
+  Usage: slaxproc [mode] [options] [script] [files]
+    Modes:
+        --check OR -c: check syntax and content for a SLAX script
+        --format OR -F: format (pretty print) a SLAX script
+        --json-to-xml: Turn JSON data into XML
+        --run OR -r: run a SLAX script (the default mode)
+        --show-select: show XPath selection from the input document
+        --show-variable: show contents of a global variable
+        --slax-to-xslt OR -x: turn SLAX into XSLT
+        --xml-to-json: turn XML into JSON
+        --xml-to-yaml: turn XML into YAML
+        --xpath <xpath> OR -X <xpath>: select XPath data from input
+        --xslt-to-slax OR -s: turn XSLT into SLAX
 
-   Options:
-    --debug OR -d: enable the SLAX/XSLT debugger
-    --empty OR -E: give an empty document for input
-    --encoding <name>: specifies the input document encoding
-    --exslt OR -e: enable the EXSLT library
-    --expression <expr>: convert an expression
-    --help OR -h: display this help message
-    --html OR -H: Parse input data as HTML
-    --ignore-arguments: Do not process any further arguments
-    --include <dir> OR -I <dir>: search dir for includes/imports
-    --indent OR -g: indent output ala output-method/indent
-    --indent-width <num>: Number of spaces to indent (for --format)
-    --input <file> OR -i <file>: take input from the given file
-    --json-tagging: tag json-style input with the 'json' attribute
-    --keep-text: mini-templates should not discard text
-    --lib <dir> OR -L <dir>: search dir for extension libraries
-    --log <file>: use given log file
-    --mini-template <code> OR -m <code>: wrap template code in script
-    --name <file> OR -n <file>: read the script from the given file
-    --no-randomize: do not initialize the random number generator
-    --no-tty: Do not use tty for sdb and other input needs
-    --no-json-types: do not insert 'type' attribute for --json-to-xml
-    --output <file> OR -o <file>: make output into the given file
-    --param <name> <value> OR -a <name> <value>: pass parameters
-    --partial OR -p: allow partial SLAX input to --slax-to-xslt
-    --slax-output OR -S: emit SLAX-style XML output
-    --trace <file> OR -t <file>: write trace data to a file
-    --verbose OR -v: enable debugging output (slaxLog())
-    --version OR -V: show version information (and exit)
-    --write-version <version> OR -w <version>: write in version
+    Options:
+        --debug OR -d: enable the SLAX/XSLT debugger
+        --empty OR -E: give an empty document for input
+        --encoding <name>: specifies the input document encoding
+        --exslt OR -e: enable the EXSLT library
+        --expression <expr>: convert an expression
+        --help OR -h: display this help message
+        --html OR -H: Parse input data as HTML
+        --ignore-arguments: Do not process any further arguments
+        --include <dir> OR -I <dir>: search directory for includes/imports
+        --indent OR -g: indent output ala output-method/indent
+        --indent-width <num>: Number of spaces to indent (for --format)
+        --input <file> OR -i <file>: take input from the given file
+        --json-tagging: tag json-style input with the 'json' attribute
+        --keep-text: mini-templates should not discard text
+        --lib <dir> OR -L <dir>: search directory for extension libraries
+        --log <file>: use given log file
+        --mini-template <code> OR -m <code>: wrap template code in a script
+        --name <file> OR -n <file>: read the script from the given file
+        --no-json-types: do not insert 'type' attribute for --json-to-xml
+        --no-randomize: do not initialize the random number generator
+        --no-tty: do not fall back to stdin for tty io
+        --output <file> OR -o <file>: make output into the given file
+        --param <name> <value> OR -a <name> <value>: pass parameters
+        --partial OR -p: allow partial SLAX input to --slax-to-xslt
+        --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
+        --trace <file> OR -t <file>: write trace data to a file
+        --verbose OR -v: enable debugging output (slaxLog())
+        --version OR -V: show version information (and exit)
+        --want-parens: emit parens for control statements even for V1.3+
+        --width <num>: Target line length before wrapping (for --format)
+        --write-version <version> OR -w <version>: write in version
 
   Project libslax home page: https://github.com/Juniper/libslax
 
@@ -305,6 +308,17 @@ Modes Options
 
      % echo '<json><a>b</a></json>' | slaxproc --xml-to-json
      { "a": "b" }
+
+.. index:: yaml; xml-to-yaml
+.. option:: --xml-to-yaml
+
+  Transform XML input into YAML.
+
+  ::
+
+     % echo '<json><a>b</a></json>' | slaxproc --xml-to-yaml
+     ---
+     "a": "b"
 
 .. option:: --xpath <xpath-expression>
 .. option:: -X <xpath-expression>
@@ -534,6 +548,22 @@ Behavioral Options
 .. option:: -V
 
   Show version information and exit.
+
+.. option:: --want-parens
+
+Beginning with version 1.3, SLAX no longer requires parentheses around
+the expressions for `if`, `for`, `for-each`, and `while`.  This
+follows the highly addictive style of the `Rust` language.  Users more
+comfortable with the previous parenthetical style can use this option
+to force the use or parens.  This is automatically done with the
+`--write-version` option uses a version number less that 1.3.
+
+.. option:: --width <number>
+
+XPath expressions can become quite long and we want `--format` output
+to be a pretty as reasonably possible.  The `--width` option allows
+the user to specify a particular width for which the formatting will
+aim.  Values less that 40 are considered unreasonable and are ignored.
 
 .. option:: --write-version <version>
 .. option:: -w <version>
