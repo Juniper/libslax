@@ -929,6 +929,7 @@ print_help (void)
 "\t--trace <file> OR -t <file>: write trace data to a file\n"
 "\t--verbose OR -v: enable debugging output (slaxLog())\n"
 "\t--version OR -V: show version information (and exit)\n"
+"\t--version-only: show version information line (and exit)\n"
 "\t--want-parens: emit parens for control statements even for V1.3+\n"
 "\t--width <num>: Target line length before wrapping (for --format)\n"
 "\t--write-version <version> OR -w <version>: write in version\n"
