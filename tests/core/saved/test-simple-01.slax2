@@ -36,7 +36,7 @@ key my-key {
     value @id;
 }
 
-attribute-set one;
+attribute-set one { }
 
 attribute-set two {
     attribute thing {
@@ -87,8 +87,8 @@ match doc {
         
         for-each (*) {
             sort size {
+                language en;
                 data-type "text";
-                lang "en";
                 order "ascending";
                 case-order "upper-first";
             }
