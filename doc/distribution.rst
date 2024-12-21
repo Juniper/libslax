@@ -83,6 +83,7 @@ check syntax.
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
         --version OR -V: show version information (and exit)
+        --version-only: show version information line (and exit)
         --want-parens: emit parens for control statements even for V1.3+
         --width <num>: Target line length before wrapping (for --format)
         --write-version <version> OR -w <version>: write in version
@@ -548,6 +549,10 @@ Behavioral Options
 .. option:: -V
 
   Show version information and exit.
+
+.. option:: --version-only
+
+  Show only the "version information" line and exit.
 
 .. option:: --want-parens
 
