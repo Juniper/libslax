@@ -35,6 +35,7 @@ struct slax_string_s {
 
 #define SSF_XPATH	(1<<8)	/* Need an XPath expression */
 #define SSF_NOPARENS	(1<<9)	/* Drop outer-most parens, if present */
+#define SSF_ATTRIB	(1<<10)	/* Looking at an attribute string */
 
 #define SSF_QUOTE_MASK	(SSF_SINGLEQ | SSF_DOUBLEQ | SSF_BOTHQS)
 
@@ -74,12 +75,36 @@ slaxStringFuse (slax_string_t *);
  */
 slax_string_t *
 slaxStringCreate (struct slax_data_s *sdp, int token);
+/**
+ * Calculate the length of the string consisting of the concatenation
+ * of all the string segments hung off "start".
+ *
+ * @param start string (linked via ss_next) to determine length
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes required to hold this string
+ */
+int
+slaxStringLengthCheck (slax_string_t *start, unsigned flags, int *has_parensp);
 
 /*
  * Build a single string out of the string segments hung off "start".
  */
 int
 slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags);
+
+/**
+ * Build a single string out of the string segments hung off "start".
+ *
+ * @param buf memory buffer to hold built string
+ * @param bufsiz number of bytes available in buffer
+ * @param marks Buffer buffer (same size as buf) to hold line break marks
+ * @param start first link in linked list
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes used to hold this string
+ */
+int
+slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
+		      slax_string_t *start, unsigned flags);
 
 /*
  * Return a string for a literal string constant.
