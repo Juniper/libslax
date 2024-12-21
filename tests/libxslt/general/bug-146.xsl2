@@ -9,7 +9,7 @@
       <xsl:for-each select="/root/colls[key(&quot;EMPTY_EN_CODE_COLLS&quot;, @COL_COD)]">
         <xsl:copy>
           <xsl:copy-of select="@*"/>
-          <xsl:for-each select="key(&quot;EMPTY_EN_CODE_COLLS&quot;, @COL_COD) [generate-id(.) = generate-id(key(&quot;EMPTY_EN_CODE_COLRS&quot;, concat(., &quot;:&quot;, ../../../@COL_COD)))]">
+          <xsl:for-each select="key(&quot;EMPTY_EN_CODE_COLLS&quot;, @COL_COD)[generate-id(.) = generate-id(key(&quot;EMPTY_EN_CODE_COLRS&quot;, concat(., &quot;:&quot;, ../../../@COL_COD)))]">
             <color>
               <xsl:copy-of select="../@TITLE | ../@RU_CODE | ."/>
             </color>
