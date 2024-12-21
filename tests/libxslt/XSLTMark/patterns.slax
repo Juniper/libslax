@@ -38,7 +38,7 @@ match row {
     }
 }
 
-match row[id mod 3 == 2] [following-sibling::row[4]/firstname == "Bob"] {
+match row[id mod 3 == 2][following-sibling::row[4]/firstname == "Bob"] {
     <crazy> {
         apply-templates;
     }
