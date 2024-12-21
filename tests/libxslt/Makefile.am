@@ -357,6 +357,12 @@ valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	${MAKE} CHECKER='valgrind -q' tests
 
+SCRIBBLE=DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MallocPreScribble=1
+
+scribble:
+	@echo '## Running the regression tests under MallocPreScribble'
+	${MAKE} CHECKER="${SCRIBBLE}" tests
+
 if USE_LIBXSLT_TESTS
 test tests:
 	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
