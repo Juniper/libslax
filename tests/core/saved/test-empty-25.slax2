@@ -3,8 +3,6 @@ version 1.2;
 ns redirect extension = "org.apache.xalan.xslt.extensions.Redirect";
 
 main {
-    <redirect:write append="true" href="foo.txt" method="text"> "Hello, World!
-";
-    <redirect:write append="true" href="foo.txt" method="text"> "World goes Boom!
-";
+    <redirect:write append="true" href="foo.txt" method="text"> "Hello, World!\n";
+    <redirect:write append="true" href="foo.txt" method="text"> "World goes Boom!\n";
 }
