@@ -62,6 +62,7 @@ static int opt_indent_width;	/* Number of spaces to indent (format) */
 static int opt_json_flags;	/* Flags for JSON conversion */
 static int opt_json_tagging;	/* Tag JSON output */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
+static int opt_width;		/* Output line width limit */
 static int opt_partial;		/* Parse partial contents */
 static int opt_slax_output;	/* Make output in SLAX format */
 static int opt_want_parens;	/* They really want the parens */
@@ -80,6 +81,7 @@ static struct opts {
     int o_indent_width;
     int o_json_tagging;
     int o_keep_text;
+    int o_width;
     int o_log_file;
     int o_no_json_types;
     int o_no_randomize;
@@ -116,6 +118,7 @@ static struct option long_opts[] = {
     { "json-tagging", no_argument, &opts.o_json_tagging, 1 },
     { "keep-text", no_argument, NULL, 1 },
     { "lib", required_argument, NULL, 'L' },
+    { "width", required_argument, &opts.o_width, 1 },
     { "log", required_argument, NULL, 'l' },
     { "mini-template", required_argument, NULL, 'm' },
     { "name", required_argument, NULL, 'n' },
@@ -167,9 +170,18 @@ write_doc (FILE *outfile, xmlDocPtr docp, slaxWriterFlags_t flags)
     if (opt_want_parens)
 	flags |= SWDF_WANT_PARENS;
 
-    return slaxWriteDocFlags((slaxWriterFunc_t) fprintf, outfile, docp,
-			     opt_version, flags);
+    slax_writer_t *swp = slaxGetWriter((slaxWriterFunc_t) fprintf, outfile);
+    if (swp) {
+	slaxWriteSetFlags(swp, flags);
+	if (opt_version)
+	    slaxWriteSetVersion(swp, opt_version);
+	if (opt_width)
+	    slaxWriteSetWidth(swp, opt_width);
 
+	return slaxWriteDocument(swp, docp);
+    }
+
+    return 0;
 }
 
 static int
@@ -913,6 +925,7 @@ print_help (void)
 "\t--verbose OR -v: enable debugging output (slaxLog())\n"
 "\t--version OR -V: show version information (and exit)\n"
 "\t--want-parens: emit parens for control statements even for V1.3+\n"
+"\t--width <num>: Target line length before wrapping (for --format)\n"
 "\t--write-version <version> OR -w <version>: write in version\n"
 "\nProject libslax home page: https://github.com/Juniper/libslax\n"
 "\n");
@@ -1181,18 +1194,23 @@ main (int argc UNUSED, char **argv)
 		opt_ignore_arguments = TRUE;
 
 	    } else if (opts.o_indent_width) {
-		char *str = check_arg("width");
+		char *str = check_arg("indent width");
 		if (str)
 		    opt_indent_width = atoi(str);
 
 	    } else if (opts.o_json_tagging) {
 		opt_json_tagging = TRUE;
 
+	    } else if (opts.o_no_json_types) {
+		opt_json_flags |= SDF_NO_TYPES;
+
 	    } else if (opts.o_keep_text) {
 		opt_keep_text = TRUE;
 
-	    } else if (opts.o_no_json_types) {
-		opt_json_flags |= SDF_NO_TYPES;
+	    } else if (opts.o_width) {
+		char *str = check_arg("width");
+		if (str)
+		    opt_width = atoi(str);
 
 	    } else if (opts.o_no_randomize) {
 		randomize = 0;
