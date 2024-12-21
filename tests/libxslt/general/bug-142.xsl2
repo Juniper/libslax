@@ -62,7 +62,7 @@
   <xsl:template match="*[lang(&quot;ja&quot;) and not(ancestor::*[@xml:lang = &quot;ja&quot;])]" mode="日本語">
     <xsl:apply-templates/>
   </xsl:template>
-  <xsl:template match="g:span[lang(&quot;ja&quot;) and not(ancestor::*[@xml:lang = &quot;ja&quot;])] [not(@href)]" mode="日本語">
+  <xsl:template match="g:span[lang(&quot;ja&quot;) and not(ancestor::*[@xml:lang = &quot;ja&quot;])][not(@href)]" mode="日本語">
     <span xml:lang="ja">
       <xsl:apply-templates/>
     </span>
@@ -70,7 +70,7 @@
   <xsl:template match="*[lang(&quot;fr&quot;)]" mode="日本語">
     <xsl:apply-templates/>
   </xsl:template>
-  <xsl:template match="g:span[lang(&quot;fr&quot;)] [not(@href)]" mode="日本語">
+  <xsl:template match="g:span[lang(&quot;fr&quot;)][not(@href)]" mode="日本語">
     <span xml:lang="fr">
       <xsl:apply-templates/>
     </span>
