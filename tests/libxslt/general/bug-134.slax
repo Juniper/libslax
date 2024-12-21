@@ -1,7 +1,7 @@
 version 1.2;
 
 key test {
-    match node() [self::sect] [h1 | h2];
+    match node()[self::sect][h1 | h2];
     value "test";
 }
 
