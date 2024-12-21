@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <top>
+  <e1 a1="start{a}before{during}after-{b}-two{c}end"/>
   <e1 a1="before{during}after-{x}-two"/>
   <e2 a1="before-two"/>
 </top>
