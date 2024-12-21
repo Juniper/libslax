@@ -3,6 +3,6 @@ version 1.2;
 ns fo = "http://www.w3.org/1999/XSL/Format";
 
 match procedure {
-    <fo:block> ancestor-or-self::*[@security] [1]/@security;
+    <fo:block> ancestor-or-self::*[@security][1]/@security;
     apply-templates;
 }
