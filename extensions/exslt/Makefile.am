@@ -73,11 +73,26 @@ install-exec-hook:
 		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
 		cd ${DESTDIR}${SLAX_EXTDIR} \
 		&& chmod +w . \
-		&& rm -f ${UGLY_NAMES} \
 		&& for name in ${UGLY_NAMES}; do \
 			prefix=`echo $$name | awk -F: '{ print $$1 }'` \
 			&& url=`echo $$name | awk -F: '{ print $$2 }'` \
 			&& rm -f $$prefix $$url \
 			&& ${LN_S} $$DLNAME $$url \
 			&& ${LN_S} $$url $$prefix; \
+		done
+
+uninstall-hook:
+	@DLNAME=`sh -c '. ./libjuise.la ; echo $$dlname'`; \
+		if [ x"$$DLNAME" = x ]; \
+                    then DLNAME=${LIBNAME}.${SLAX_LIBEXT}; fi ; \
+		if [ "$(build_os)" = "cygwin" ]; \
+		    then DLNAME="../bin/$$DLNAME"; fi ; \
+		echo Uninstall link $$DLNAME "->" ${UGLY_NAME} "..." ; \
+		mkdir -p ${DESTDIR}${SLAX_EXTDIR} ; \
+		cd ${DESTDIR}${SLAX_EXTDIR} \
+		&& chmod +w . \
+		&& for name in ${UGLY_NAMES}; do \
+			prefix=`echo $$name | awk -F: '{ print $$1 }'` \
+			&& url=`echo $$name | awk -F: '{ print $$2 }'` \
+			&& rm -f $$prefix $$url; \
 		done
