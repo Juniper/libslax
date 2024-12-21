@@ -86,6 +86,7 @@ static struct opts {
     int o_no_json_types;
     int o_no_randomize;
     int o_no_tty;
+    int o_version_only;
     int o_want_parens;
 } opts;
 
@@ -132,6 +133,7 @@ static struct option long_opts[] = {
     { "trace", required_argument, NULL, 't' },
     { "verbose", no_argument, NULL, 'v' },
     { "version", no_argument, NULL, 'V' },
+    { "version-only", no_argument, &opts.o_version_only, 1 },
     { "want-parens", no_argument, &opts.o_want_parens, 1 },
     { "write-version", required_argument, NULL, 'w' },
     { "yydebug", no_argument, NULL, 'y' },
@@ -861,9 +863,12 @@ build_mini_template (void)
 }
 
 static void
-print_version (void)
+print_version (int full)
 {
     printf("version " SLAX_VERSION ";\n");
+    if (!full)
+	return;
+
     printf("libslax version %s%s\n",  LIBSLAX_VERSION, LIBSLAX_VERSION_EXTRA);
     printf("Using libxml %s, libxslt %s and libexslt %s\n",
 	   xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
@@ -943,11 +948,9 @@ check_arg (const char *name)
 	struct option *op = long_opts + opt_number;
 	const char *opt = op ? op->name : "valid";
 	errx(1, "missing %s argument for '--%s' option", name, opt);
-    } else {
-	errx(1, "invalid argument for '%s'", name);
     }
 
-    return NULL;
+    errx(1, "invalid argument for '%s'", name);
 }
 
 int
@@ -969,6 +972,9 @@ main (int argc UNUSED, char **argv)
 
     int rc;
     for (;;) {
+	bzero(&opts, sizeof(opts));
+	opt_number = -1;
+
 	if (opt_ignore_arguments)
 	    break;
 
@@ -1140,7 +1146,7 @@ main (int argc UNUSED, char **argv)
 	    break;
 
 	case 'V':
-	    print_version();
+	    print_version(TRUE);
 	    exit(0);
 
 	case 'w':
@@ -1218,6 +1224,10 @@ main (int argc UNUSED, char **argv)
 	    } else if (opts.o_no_tty) {
 		ioflags |= SIF_NO_TTY;
 
+	    } else if (opts.o_version_only) {
+		print_version(FALSE);
+		return 0;
+
 	    } else if (opts.o_want_parens) {
 		opt_want_parens = TRUE;
 
@@ -1230,9 +1240,6 @@ main (int argc UNUSED, char **argv)
 	default:
 	    errx(1, "unknown option '%c' (%d)", rc, rc);
 	}
-
-	bzero(&opts, sizeof(opts));
-	opt_number = -1;
     }
 
     argc -= optind;
