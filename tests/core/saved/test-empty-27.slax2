@@ -22,8 +22,7 @@ main <out> {
             <dec> $dec;
         }
     }
-    <redirect:write href="hello.txt" method="text"> "Hello, World!
-";
+    <redirect:write href="hello.txt" method="text"> "Hello, World!\n";
     <test> slax:document("hello.txt");
     <redirect:write href="hello.txt" method="text"> "TWFuTWFuTWFu";
     var $opts = {
