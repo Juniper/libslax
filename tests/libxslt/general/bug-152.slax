@@ -12,7 +12,7 @@ output-method xml {
 
 main <html> {
     <head> {
-        <style type="text/css" media="all"> "@import\n\"pretty_xhtml.css\";";
+        <style type="text/css" media="all"> '@import\n"pretty_xhtml.css";';
     }
     <body> {
         <h1> "foo";
