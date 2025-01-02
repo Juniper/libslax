@@ -1587,7 +1587,7 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 	xmlAttrPtr attrp;
 
 	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
-	    static char ext_attr[] = "extension-element-prefixes";
+	    static char ext_attr[] = ATT_EXTENSION_ELEMENT_PREFIXES;
 
 	    if (slaxIsXslAttr(attrp)
 		&& streq((const char *) attrp->name, ext_attr))
