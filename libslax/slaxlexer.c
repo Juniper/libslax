@@ -972,7 +972,7 @@ slaxLexer (slax_data_t *sdp)
 		    int start = sdp->sd_start + COMMENT_MARKER_SIZE;
 		    int end = sdp->sd_cur - COMMENT_MARKER_SIZE;
 		    int len = end - start;
-		    xmlChar *buf = alloca(len + 1), *contents;
+		    xmlChar *buf = alloca(len + 3), *contents;
 		    xmlNodePtr nodep;
 
 		    while (isspace((int) sdp->sd_buf[start])) {
