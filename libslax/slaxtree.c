@@ -113,7 +113,7 @@ slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
  */
 static xmlNsPtr
 slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
-	   const char *prefix, const xmlChar *uri, int local)
+	   const char *prefix, const xmlChar *uri, int local, int is_extension)
 {
     xmlNsPtr nsp;
     xmlNodePtr root = xmlDocGetRootElement(sdp->sd_docp);
@@ -131,7 +131,8 @@ slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
 	 * Since we added this namespace, we need to add it to the
 	 * list of extension prefixes.
 	 */
-	slaxNodeAttribExtend(sdp, root,
+	if (is_extension)
+	    slaxNodeAttribExtend(sdp, root,
 			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix, NULL);
     }
 
@@ -157,7 +158,7 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     const char *prefix = FUNC_PREFIX;
     const xmlChar *uri = FUNC_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
+    slaxSetNs(sdp, nodep, prefix, uri, TRUE, TRUE);
 }
 
 void
@@ -166,7 +167,7 @@ slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
     const char *prefix = SLAX_PREFIX;
     const xmlChar *uri = (const xmlChar *) SLAX_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, local);
+    slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
 }
 
 static int
@@ -186,7 +187,7 @@ slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
     const char *prefix = EXT_PREFIX;
     const xmlChar *uri = (const xmlChar *) EXT_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, local);
+    slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
 }
 
 /*
@@ -212,10 +213,11 @@ slaxMakeStdNs (slax_data_t *sdp, const char *name)
 {
     char uri[MAXPATHLEN];
 
-    if (slaxDynFindPrefix(uri, sizeof(uri), name) < 0)
+    int rc = slaxDynFindPrefix(uri, sizeof(uri), name);
+    if (rc < 0)
 	return NULL;
 
-    return slaxSetNs(sdp, NULL, name, (const xmlChar *) uri, FALSE);
+    return slaxSetNs(sdp, NULL, name, (const xmlChar *) uri, FALSE, rc);
 }
 
 /**
