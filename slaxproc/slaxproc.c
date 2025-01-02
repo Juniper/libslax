@@ -1250,7 +1250,7 @@ main (int argc UNUSED, char **argv)
     if (cp)
 	slaxIncludeAddPath(cp);
 
-    params = alloca(nbparams * 2 * sizeof(*params) + 1);
+    params = alloca((nbparams * 2 + 1) * sizeof(*params));
     i = 0;
     SLAXDATALIST_FOREACH(dnp, &plist) {
 	params[i++] = dnp->dn_data;
