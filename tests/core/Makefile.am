@@ -79,9 +79,11 @@ TEST_TWO = \
  ${F13} out/$$base.slax4 out/$$base.slax5 ; \
  ${DIFF} -Nu out/$$base.slax3 out/$$base.slax5 ${S2O}
 
+SH_OPTS= :
+
 test tests: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@(for data in ${TEST_XML} ; do \
+	-@(${SH_OPTS} ; for data in ${TEST_XML} ; do \
 	    basedata=`${BASENAME} $$data .xml` ; \
 	    cases=`cd ${srcdir} ; echo $${basedata}-*.slax`; \
 	    (for test in $$cases ; do \
