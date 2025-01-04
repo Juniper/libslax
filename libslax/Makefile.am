@@ -34,7 +34,9 @@ AM_CFLAGS += \
     -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
 lib_LTLIBRARIES = libslax.la
-libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+libslax_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
+libslax_la_LIBADD += $(top_builddir)/parrotdb/libparrotdb.la
+libslax_la_LIBADD += ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
 slaxinc_HEADERS = \
      slax.h \
