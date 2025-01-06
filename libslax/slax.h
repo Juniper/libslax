@@ -219,6 +219,14 @@ slaxError (const char *fmt, ...);
 int
 slaxDebugInit (void);
 
+typedef unsigned slaxDebugFlags_t;
+#define SDBF_ENABLE		(1<<0) /* Enable debugger */
+#define SDBF_PROFILE_ONLY	(1<<1) /* Just report profile output */
+#define SDBF_PROFILE_BRIEF	(1<<2) /* ... and only brief output */
+
+int
+slaxDebugInitFlags (slaxDebugFlags_t flags);
+
 /**
  * Set the top-most stylesheet
  *
