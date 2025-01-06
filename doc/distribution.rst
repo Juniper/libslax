@@ -79,6 +79,8 @@ check syntax.
         --output <file> OR -o <file>: make output into the given file
         --param <name> <value> OR -a <name> <value>: pass parameters
         --partial OR -p: allow partial SLAX input to --slax-to-xslt
+        --profile <file>: run profiler and save output to given file
+        --profile-mode <mode>: enable profiler mode (e.g. brief)
         --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
@@ -529,6 +531,21 @@ Behavioral Options
         <a> "b";
     }
 
+.. _profile option:
+
+.. option:: --profile <file>
+
+  Enable profiling while the script is executing, writing the profile
+  data to the given file.  This accesses the same functionality as the
+  :ref:`profile <profiler>` command in the :ref:`debugger <sdb>`.
+
+.. option:: --profile-mode <mode>
+
+  Provide additional information to the profiler.  Currently the only
+  supported mode is 'brief', which trims lines that are not executed
+  from the profiler output.  Refer to the :ref:`profiler` for
+  additional information.
+
 .. option:: --slax-output
 .. option:: -S
 
@@ -743,6 +760,9 @@ expectations.
 The profiling is not "Monte Carlo", or clock based, but is based on
 trace data generated as each SLAX instruction is executed, giving
 more precise data.
+
+The profiler can also be accessed using the
+:ref:`--profile <profile option>` option.
 
 .. index
 
