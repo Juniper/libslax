@@ -120,6 +120,9 @@ typedef struct slaxDebugState_s {
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
 
+/* Flags from slaxDebugInitFlags() */
+slaxDebugFlags_t slaxDebugFlags;
+
 /* Arguments to our command functions */
 #define DC_ARGS \
         slaxDebugState_t *statep UNUSED, \
@@ -1877,6 +1880,7 @@ slaxDebugCmdRun (DC_ARGS)
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
     statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
 }
+
 static void
 slaxDebugHelpVerbose (DH_ARGS)
 {
@@ -2114,6 +2118,13 @@ slaxDebugShell (slaxDebugState_t *statep)
     static char prev_input[BUFSIZ];
     char *cp, *input;
     static char prompt[] = "(sdb) ";
+
+    /* If we're in profiler mode, we don't prompt for commands */
+    if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+	statep->ds_flags |= DSF_DISPLAY | DSF_CONTINUE;
+	return 0;
+    }
 
     if ((statep->ds_flags & DSF_DISPLAY) && statep->ds_inst != NULL) {
 	const char *filename = (const char *) statep->ds_inst->doc->URL;
@@ -2528,10 +2539,12 @@ slaxDebugDropFrame (void)
  * Register debugger
  */
 int
-slaxDebugInit (void)
+slaxDebugInitFlags (slaxDebugFlags_t flags)
 {
     static int done_register;
     slaxDebugState_t *statep = slaxDebugGetState();
+
+    slaxDebugFlags = flags;
 
     if (done_register)
 	return FALSE;
@@ -2548,12 +2561,22 @@ slaxDebugInit (void)
     xsltSetDebuggerCallbacksHelper(slaxDebugHandler, slaxDebugAddFrame,
 				   slaxDebugDropFrame);
 
-    slaxDebugDisplayMode = DEBUG_MODE_CLI;
+    if (flags & SDBF_PROFILE_ONLY) {
+	slaxDebugDisplayMode = DEBUG_MODE_PROFILER;
 
-    slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
-    slaxOutput("Type 'help' for help");
+    } else {
+	slaxDebugDisplayMode = DEBUG_MODE_CLI;
+	slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
+	slaxOutput("Type 'help' for help");
+    }
 
     return FALSE;
+}
+
+int
+slaxDebugInit (void)
+{
+    return slaxDebugInitFlags(0);
 }
 
 /**
@@ -2657,7 +2680,21 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
     xsltSetDebuggerStatus(0);
 
-    for (;;) {
+    /* Start up in profiler-only mode */
+    if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	slaxDebugClearListInfo(statep);
+
+	/* Tell the xslt engine to stop */
+	xsltStopEngine(statep->ds_ctxt);
+
+	xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+	statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
+	statep->ds_flags |= DSF_PROFILER;
+    }
+
+    int working = TRUE; 
+
+    while (working) {
 	if (slaxDebugShell(statep) < 0)
 	    break;
 
@@ -2767,8 +2804,18 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 * cleanup, and loop in the shell until something
 	 * interesting happens.
 	 */
-	if (res)
+	if (res && slaxDebugDisplayMode != DEBUG_MODE_PROFILER)
 	    xsltSaveResultToFile(stdout, res, style);
+
+	/*
+	 * If we're in profile-only mode, then we can clean up, make
+	 * the report and then stop the loop.
+	 */
+	if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	    int brief = (slaxDebugFlags & SDBF_PROFILE_BRIEF) ? 1 : 0;
+	    slaxProfReport(brief, statep->ds_script_buffer);
+	    working = FALSE;
+	}
 
 	/* Clean up state pointers (all free'd by now) */
 	statep->ds_ctxt = NULL;
