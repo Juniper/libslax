@@ -48,3 +48,9 @@ slaxCatchErrors (int mode, xmlNodePtr recorder);
 
 int
 slaxErrorValue (const char *name);
+
+int
+slaxIoWriteOutputToFileStart (const char *filename);
+
+int
+slaxIoWriteOutputToFileStop (void);
