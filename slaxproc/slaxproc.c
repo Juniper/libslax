@@ -22,6 +22,7 @@
 #include <libexslt/exslt.h>
 #include <libslax/slaxdyn.h>
 #include <libslax/slaxdata.h>
+#include <libslax/slaxio.h>
 #include <libslax/jsonlexer.h>
 #include <libslax/jsonwriter.h>
 #include <libslax/yamlwriter.h>
@@ -46,13 +47,15 @@ static int opt_number = -1; 	/* Index into our long options array */
 static char *opt_encoding;	/* Desired document encoding */
 static char *opt_expression;	/* Expression to convert */
 static char *opt_log_file;	/* Log file name */
+static char *opt_profile;	/* Profile output file */
 static char *opt_show_select;   /* Expression (in script) to show */
 static char *opt_show_variable; /* Variable (in script) to show */
 static char *opt_trace_file;	/* Trace file name */
 static char *opt_version;	/* Desired SLAX version */
 static char *opt_xpath;		/* XPath expresion to match on */
 
-static int opt_debugger;	/* Invoke the debugger */
+static slaxDebugFlags_t opt_debugger;	/* Invoke the debugger */
+
 static int opt_dump_tree;	/* Dump parsed element tree */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_html;		/* Parse input as HTML */
@@ -86,9 +89,64 @@ static struct opts {
     int o_no_json_types;
     int o_no_randomize;
     int o_no_tty;
+    int o_profile;
+    int o_profile_mode;
     int o_version_only;
     int o_want_parens;
 } opts;
+
+static const char slaxproc_help[] = 
+"Usage: slaxproc [mode] [options] [script] [files]\n"
+"    Modes:\n"
+"\t--check OR -c: check syntax and content for a SLAX script\n"
+"\t--format OR -F: format (pretty print) a SLAX script\n"
+"\t--json-to-xml: Turn JSON data into XML\n"
+"\t--run OR -r: run a SLAX script (the default mode)\n"
+"\t--show-select: show XPath selection from the input document\n"
+"\t--show-variable: show contents of a global variable\n"
+"\t--slax-to-xslt OR -x: turn SLAX into XSLT\n"
+"\t--xml-to-json: turn XML into JSON\n"
+"\t--xml-to-yaml: turn XML into YAML\n"
+"\t--xpath <xpath> OR -X <xpath>: select XPath data from input\n"
+"\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
+"\n"
+"    Options:\n"
+"\t--debug OR -d: enable the SLAX/XSLT debugger\n"
+"\t--empty OR -E: give an empty document for input\n"
+"\t--encoding <name>: specifies the input document encoding\n"
+"\t--exslt OR -e: enable the EXSLT library\n"
+"\t--expression <expr>: convert an expression\n"
+"\t--help OR -h: display this help message\n"
+"\t--html OR -H: Parse input data as HTML\n"
+"\t--ignore-arguments: Do not process any further arguments\n"
+"\t--include <dir> OR -I <dir>: search directory for includes/imports\n"
+"\t--indent OR -g: indent output ala output-method/indent\n"
+"\t--indent-width <num>: Number of spaces to indent (for --format)\n"
+"\t--input <file> OR -i <file>: take input from the given file\n"
+"\t--json-tagging: tag json-style input with the 'json' attribute\n"
+"\t--keep-text: mini-templates should not discard text\n"
+"\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
+"\t--log <file>: use given log file\n"
+"\t--mini-template <code> OR -m <code>: wrap template code in a script\n"
+"\t--name <file> OR -n <file>: read the script from the given file\n"
+"\t--no-json-types: do not insert 'type' attribute for --json-to-xml\n"
+"\t--no-randomize: do not initialize the random number generator\n"
+"\t--no-tty: do not fall back to stdin for tty io\n"
+"\t--output <file> OR -o <file>: make output into the given file\n"
+"\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
+"\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
+"\t--profile <file>: run profiler and save output to given file\n"
+"\t--profile-mode <mode>: enable profiler mode (e.g. 'brief')\n"
+"\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
+"\t--trace <file> OR -t <file>: write trace data to a file\n"
+"\t--verbose OR -v: enable debugging output (slaxLog())\n"
+"\t--version OR -V: show version information (and exit)\n"
+"\t--version-only: show version information line (and exit)\n"
+"\t--want-parens: emit parens for control statements even for V1.3+\n"
+"\t--width <num>: Target line length before wrapping (for --format)\n"
+"\t--write-version <version> OR -w <version>: write in version\n"
+"\nProject libslax home page: https://github.com/Juniper/libslax\n"
+    "\n";
 
 static struct option long_opts[] = {
     { "check", no_argument, NULL, 'c' },
@@ -129,6 +187,8 @@ static struct option long_opts[] = {
     { "output", required_argument, NULL, 'o' },
     { "param", required_argument, NULL, 'a' },
     { "partial", no_argument, NULL, 'p' },
+    { "profile", required_argument, &opts.o_profile, 1 },
+    { "profile-mode", required_argument, &opts.o_profile_mode, 1 },
     { "slax-output", no_argument, NULL, 'S' },
     { "trace", required_argument, NULL, 't' },
     { "verbose", no_argument, NULL, 'v' },
@@ -649,7 +709,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	script->indent = 1;
 
     if (opt_debugger) {
-	slaxDebugInit();
+	slaxDebugInitFlags(opt_debugger);
 	slaxDebugSetStylesheet(script);
 	if (mini_docp)
 	    slaxDebugSetScriptBuffer(mini_buffer);
@@ -885,56 +945,7 @@ print_version (int full)
 static void
 print_help (void)
 {
-    fprintf(stderr,
-"Usage: slaxproc [mode] [options] [script] [files]\n"
-"    Modes:\n"
-"\t--check OR -c: check syntax and content for a SLAX script\n"
-"\t--format OR -F: format (pretty print) a SLAX script\n"
-"\t--json-to-xml: Turn JSON data into XML\n"
-"\t--run OR -r: run a SLAX script (the default mode)\n"
-"\t--show-select: show XPath selection from the input document\n"
-"\t--show-variable: show contents of a global variable\n"
-"\t--slax-to-xslt OR -x: turn SLAX into XSLT\n"
-"\t--xml-to-json: turn XML into JSON\n"
-"\t--xml-to-yaml: turn XML into YAML\n"
-"\t--xpath <xpath> OR -X <xpath>: select XPath data from input\n"
-"\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
-"\n"
-"    Options:\n"
-"\t--debug OR -d: enable the SLAX/XSLT debugger\n"
-"\t--empty OR -E: give an empty document for input\n"
-"\t--encoding <name>: specifies the input document encoding\n"
-"\t--exslt OR -e: enable the EXSLT library\n"
-"\t--expression <expr>: convert an expression\n"
-"\t--help OR -h: display this help message\n"
-"\t--html OR -H: Parse input data as HTML\n"
-"\t--ignore-arguments: Do not process any further arguments\n"
-"\t--include <dir> OR -I <dir>: search directory for includes/imports\n"
-"\t--indent OR -g: indent output ala output-method/indent\n"
-"\t--indent-width <num>: Number of spaces to indent (for --format)\n"
-"\t--input <file> OR -i <file>: take input from the given file\n"
-"\t--json-tagging: tag json-style input with the 'json' attribute\n"
-"\t--keep-text: mini-templates should not discard text\n"
-"\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
-"\t--log <file>: use given log file\n"
-"\t--mini-template <code> OR -m <code>: wrap template code in a script\n"
-"\t--name <file> OR -n <file>: read the script from the given file\n"
-"\t--no-json-types: do not insert 'type' attribute for --json-to-xml\n"
-"\t--no-randomize: do not initialize the random number generator\n"
-"\t--no-tty: do not fall back to stdin for tty io\n"
-"\t--output <file> OR -o <file>: make output into the given file\n"
-"\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
-"\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
-"\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
-"\t--trace <file> OR -t <file>: write trace data to a file\n"
-"\t--verbose OR -v: enable debugging output (slaxLog())\n"
-"\t--version OR -V: show version information (and exit)\n"
-"\t--version-only: show version information line (and exit)\n"
-"\t--want-parens: emit parens for control statements even for V1.3+\n"
-"\t--width <num>: Target line length before wrapping (for --format)\n"
-"\t--write-version <version> OR -w <version>: write in version\n"
-"\nProject libslax home page: https://github.com/Juniper/libslax\n"
-"\n");
+    fprintf(stderr, slaxproc_help);
 }
 
 static char *
@@ -1042,7 +1053,7 @@ main (int argc UNUSED, char **argv)
 /* Non-mode flags start here */
 
 	case 'd':
-	    opt_debugger = TRUE;
+	    opt_debugger = SDBF_ENABLE;
 	    break;
 
 	case 'E':
@@ -1211,6 +1222,19 @@ main (int argc UNUSED, char **argv)
 	    } else if (opts.o_no_json_types) {
 		opt_json_flags |= SDF_NO_TYPES;
 
+	    } else if (opts.o_profile) {
+		opt_debugger |= SDBF_PROFILE_ONLY;
+		opt_profile = check_arg("profile output filename");
+
+	    } else if (opts.o_profile_mode) {
+		const char *mode = check_arg("profile mode");
+		if (streq(mode, "brief")) {
+		    opt_debugger |= SDBF_PROFILE_BRIEF;
+
+		} else {
+		    errx(1, "unknown profile-mode '%s'", mode);
+		}
+
 	    } else if (opts.o_keep_text) {
 		opt_keep_text = TRUE;
 
@@ -1282,6 +1306,9 @@ main (int argc UNUSED, char **argv)
     if (opt_json_tagging)
 	slaxJsonTagging(TRUE);
 
+    if (opt_profile)
+	slaxIoWriteOutputToFileStart(opt_profile);
+
     if (opt_log_file) {
 	FILE *fp = fopen(opt_log_file, "w");
 	if (fp == NULL)
@@ -1322,6 +1349,9 @@ main (int argc UNUSED, char **argv)
 
     if (trace_fp && trace_fp != stderr)
 	fclose(trace_fp);
+
+    if (opt_profile)
+	slaxIoWriteOutputToFileStop();
 
     slaxDynClean();
     xsltCleanupGlobals();
