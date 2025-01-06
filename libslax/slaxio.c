@@ -57,6 +57,8 @@ static slaxErrorCallback_t slaxErrorCallback;
 
 static FILE *slaxIoTty;
 
+static FILE *slaxIoFile;
+
 /**
  * Use the input callback to get data
  * @prompt the prompt to be displayed
@@ -316,6 +318,61 @@ slaxIoUseStdio (unsigned flags)
 
     slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
 		   slaxIoStdioRawwriteCallback, slaxIoStdioErrorCallback);
+}
+
+/*
+ * Called from slaxOutput to write to the currently opened file, or stderr
+ * if the file isn't open (SNO).
+ */
+static void
+slaxIoFileOutputCallback (const char *fmt, ...)
+{
+    va_list vap;
+    FILE *fp = slaxIoFile ?: stderr;
+
+    va_start(vap, fmt);
+    vfprintf(fp, fmt, vap);
+    fflush(fp);
+    va_end(vap);
+}
+
+/*
+ * Start writing slaxOutput() content to the specified file.
+ */
+int
+slaxIoWriteOutputToFileStart (const char *filename)
+{
+    FILE *fp;
+
+    if (filename == NULL || streq(filename, "-"))
+	fp = stderr;
+    else
+	fp = fopen(filename, "w");
+
+    if (fp == NULL)
+	return -1;
+
+    slaxIoFile = fp;
+    slaxOutputCallback = slaxIoFileOutputCallback;
+
+    return 0;
+}
+
+/*
+ * Stop writing slaxOutput() content to our file; reset to stderr
+ */
+int
+slaxIoWriteOutputToFileStop (void)
+{
+    FILE *fp = slaxIoFile;
+
+    if (fp != stderr)
+	fclose(fp);
+
+    slaxIoFile = NULL;
+    slaxOutputCallback = slaxIoStdioOutputCallback;
+
+    return 0;
 }
 
 static void
