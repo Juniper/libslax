@@ -4,6 +4,7 @@ ns exsl exclude extension = "http://exslt.org/common";
 ns set exclude extension = "http://exslt.org/sets";
 
 output-method xml;
+
 /* This works as is.  Comment out the p element and un-comment the error line. */
 main <results> {
     var $n = <p>;
