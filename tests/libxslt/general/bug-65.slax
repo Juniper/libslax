@@ -5,6 +5,7 @@ ns libxslt exclude = "http://xmlsoft.org/XSLT/namespace";
 output-method xml {
     indent "yes";
 }
+
 var $one = {
     copy-of .;
 }
@@ -31,7 +32,6 @@ match * {
     mode "one";
     
     for-each (//content) {
-        
         /* here is the problem (.//content works well, but I need the key
         function) */
         copy-of .;
