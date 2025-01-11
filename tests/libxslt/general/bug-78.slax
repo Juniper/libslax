@@ -5,6 +5,7 @@ ns xi = "http://www.toto.com/xinclude";
 output-method html {
     encoding "ISO-8859-1";
 }
+
 strip-space *;
 
 main {
