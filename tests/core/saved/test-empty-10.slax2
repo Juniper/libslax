@@ -3,6 +3,7 @@ version 1.2;
 output-method xml {
     indent "yes";
 }
+
 /* See https://bugzilla.gnome.org/show_bug.cgi?id=629325 */
 main <op-script-results> {
     <output> format-number(1.15, "####.#");
