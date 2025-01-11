@@ -1,6 +1,7 @@
 version 1.2;
 
 output-method html;
+
 var $var = "\"'\"";
 
 main <html> {
