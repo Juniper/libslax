@@ -4,6 +4,7 @@ output-method xml {
     encoding "windows-1251";
     indent "yes";
 }
+
 strip-space *;
 
 key EMPTY_EN_CODE_COLLS {
