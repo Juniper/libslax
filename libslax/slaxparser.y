@@ -2236,8 +2236,21 @@ output_method_intro :
 	K_OUTPUT_METHOD T_BARE
 		{
 		    ALL_KEYWORDS_ON();
+		    const char *method = $2->ss_token;
+		    int is_json = FALSE;
+
+		    if (streq(method, "json")) {
+			is_json = TRUE;
+			method = "xml";
+		    }
+
 		    slaxElementPush(slax_data, ELT_OUTPUT,
-					   ATT_METHOD, $2->ss_token);
+				    ATT_METHOD, method);
+
+		    if (is_json)
+			slaxAttribAddSimple(slax_data,
+					    "slax:" ATT_MAKE, "json");
+
 		    $$ = STACK_CLEAR($1);
 		}
 
