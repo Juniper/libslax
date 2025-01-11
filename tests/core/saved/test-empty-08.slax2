@@ -1,7 +1,6 @@
 version 1.2;
 
 main {
-    
     /*
      * This turns out to be mostly useless, since libxslt
      * gives an error when a script with an unknown element
