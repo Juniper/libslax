@@ -62,6 +62,7 @@ static int opt_html;		/* Parse input as HTML */
 static int opt_ignore_arguments; /* Done processing arguments */
 static int opt_indent;		/* Indent the output (pretty print) */
 static int opt_indent_width;	/* Number of spaces to indent (format) */
+static int opt_json;		/* Make json output */
 static int opt_json_flags;	/* Flags for JSON conversion */
 static int opt_json_tagging;	/* Tag JSON output */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
@@ -82,6 +83,7 @@ static struct opts {
     int o_expression;
     int o_ignore_arguments;
     int o_indent_width;
+    int o_json;
     int o_json_tagging;
     int o_keep_text;
     int o_width;
@@ -123,6 +125,7 @@ static const char slaxproc_help[] =
 "\t--indent OR -g: indent output ala output-method/indent\n"
 "\t--indent-width <num>: Number of spaces to indent (for --format)\n"
 "\t--input <file> OR -i <file>: take input from the given file\n"
+"\t--json: make json output, similar to  'output-method json'\n"
 "\t--json-tagging: tag json-style input with the 'json' attribute\n"
 "\t--keep-text: mini-templates should not discard text\n"
 "\t--lib <dir> OR -L <dir>: search directory for extension libraries\n"
@@ -174,6 +177,7 @@ static struct option long_opts[] = {
     { "indent", no_argument, NULL, 'g' },
     { "indent-width", required_argument, &opts.o_indent_width, 1 },
     { "input", required_argument, NULL, 'i' },
+    { "json", no_argument, &opts.o_json, 1 },
     { "json-tagging", no_argument, &opts.o_json_tagging, 1 },
     { "keep-text", no_argument, NULL, 1 },
     { "lib", required_argument, NULL, 'L' },
@@ -654,6 +658,60 @@ buildEmptyFile (void)
     return docp;
 }
 
+static xmlNodePtr
+get_output_method (xsltStylesheetPtr script)
+{
+    xmlNodePtr root = xmlDocGetRootElement(script->doc);
+
+    if (root == NULL)
+	return NULL;
+
+    for (xmlNodePtr cur = root->children; cur; cur = cur->next) {
+	if (!slaxNodeIsXsl(cur, ELT_OUTPUT))
+	    continue;
+	return cur;
+    }
+
+    return NULL;
+}
+
+static int
+output_method_is_json (xmlNodePtr output_method)
+{
+    if (output_method == NULL)
+	return FALSE;
+
+    char *val = slaxGetAttrib(output_method, ATT_MAKE);
+    int rc = (val && streq(val, "json"));
+
+    xmlFreeAndEasy(val);
+    return rc;
+}
+
+static int
+output_method_is_indent (xmlNodePtr output_method)
+{
+    if (output_method == NULL)
+	return FALSE;
+
+    char *val = slaxGetAttrib(output_method, ATT_INDENT);
+    return (val && strcasecmp(val, "yes") == 0);
+}
+
+static int
+write_json (FILE *outfile, xmlDocPtr docp, xmlNodePtr output_method)
+{
+    unsigned flags = JWF_ROOT;
+
+    if (opt_indent)
+	flags |= JWF_PRETTY;
+
+    if (output_method_is_indent(output_method))
+	flags |= JWF_PRETTY;
+
+    return slaxJsonWriteDoc((slaxWriterFunc_t) fprintf, outfile, docp, flags);
+}
+
 static int
 do_run (const char *name, const char *output, const char *input, char **argv)
 {
@@ -696,6 +754,12 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	errx(1, "%d errors parsing script: '%s'",
 	     script ? script->errors : 1, scriptname);
 
+    xmlNodePtr output_method = get_output_method(script);
+
+    int need_json = opt_json;
+    if (output_method_is_json(output_method))
+	need_json = TRUE;
+
     if (opt_empty_input)
 	indoc = buildEmptyFile();
     else if (opt_html)
@@ -732,9 +796,13 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 
 	if (opt_slax_output)
 	    write_doc(outfile, res, SWDF_PARTIAL);
+
+	else if (need_json)
+	    write_json(outfile, res, output_method);
+
 	else
 	    xsltSaveResultToFile(outfile, res, script);
-
+	
 	if (outfile != stdout)
 	    fclose(outfile);
 
@@ -1215,6 +1283,9 @@ main (int argc UNUSED, char **argv)
 		char *str = check_arg("indent width");
 		if (str)
 		    opt_indent_width = atoi(str);
+
+	    } else if (opts.o_json) {
+		opt_json = TRUE;
 
 	    } else if (opts.o_json_tagging) {
 		opt_json_tagging = TRUE;
