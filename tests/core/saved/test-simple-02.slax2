@@ -3,6 +3,7 @@ version 1.2;
 output-method {
     indent "yes";
 }
+
 var $one = 1;
 var $two = 2;
 var $global = {
