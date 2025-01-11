@@ -4,6 +4,7 @@ output-method xml {
     indent "yes";
     encoding "iso-8859-1";
 }
+
 decimal-format special {
     decimal-separator "*";
 }
