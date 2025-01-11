@@ -1,6 +1,7 @@
 version 1.2;
 
 output-method html;
+
 /* xsl:import href="test2.xsl"/ */
 main {
     processing-instruction "php" {
