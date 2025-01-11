@@ -1289,6 +1289,74 @@ the nodes inside this element, append a "/\*" to your call::
 
         var $str = xutil:xml-to-slax($xml-snippet)/*;
 
+xutil:common()
+~~~~~~~~~~~~~~
+
+The `xutil:common` function returns the set of nodes that appear in
+the first argument that match nodes appearing in at least one of the
+other arguments, whether those arguments are nodesets or values.
+
+`xutil:common`() returns common nodes based on the contents of the
+nodes.  EXSLT_ has a group of `set`-related functions that return the
+common and different nodes for two nodesets, but these functions look
+at identical nodes, so two nodes with the same name and the same
+contents are not seen as identical.  This function (and
+`xutil:difference`) test for nodes using content, not specific nodes.
+
+.. _EXSLT: https://exslt.github.io/set/index.html
+
+::
+
+    SYNTAX::
+        node-set xutil:common(ns1, ns2, ...)
+    EXAMPLE::
+	<common> {
+	    copy-of xutil:common($s1, $s2);
+	}
+        var $small-odds = xutil:common($list/*, 1, 3, 5, 7, 9);
+
+During the matching process, mixed content that contains only white
+space is ignored, allowing content with differing indentation to
+match.  Only the hierarchy and leaf contents are compared.
+
+For example, consider the following input:
+
+    <data>
+      <first>
+         <one>
+             <two>
+                  <three>   </three>
+             </two>
+         </one>
+      </first>
+      <second>
+         <one><two><three>   </three></two></one>
+      </second>
+    </data>
+
+A script that compares `first` and `second` will find they match,
+since the internal text nodes containing white space are mixed and can
+be ignored, while the three spaces inside the `three` element are not
+mixed content and are considered significant.
+
+xutil:difference
+~~~~~~~~~~~~~~~~
+
+The `xutil:difference` function returns the set of nodes that appear
+in the first node sets that do not match nodes in any of the other
+arguments, whether those arguments are nodesets or values.
+
+This function uses the same criteria as `xutil:common`.
+
+::
+
+    SYNTAX::
+        node-set xutil:difference(ns1, ns2, ...)
+    EXAMPLE::
+	<difference> {
+	    copy-of xutil:difference($s1, $s2);
+	}
+        var $no-small-odds = xutil:common($list/*, 1, 3, 5, 7, 9);
 
 The "os" Extension Library
 --------------------------
