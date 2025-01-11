@@ -1,6 +1,5 @@
 version 1.2;
 
-
 /* This stylesheet will:
 - reorder, indent and normalize a comps file,
 - merge duplicate groups and categories,
