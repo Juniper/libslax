@@ -305,6 +305,7 @@ outputing the result tree.
 ::
 
     SYNTAX::
+        'output-method' [style] ';'
         'output-method' [style] '{'
             'version' data_value ';'
             'encoding' data_value ';'
@@ -317,7 +318,14 @@ outputing the result tree.
             'media-type' data_value ';'
         '}'
 
-The style can be `xml`, `html`, or `text` (without quotes).
+The style can be `xml`, `html`, `text` or `json` (without quotes).
+
+The `json` style is complete slax-specific.  The script should
+generate JSON-compatible XML and the results will be translated to
+JSON in the same manor as the :ref:`xutil-xml-to-json
+<xutil:xml-to-json()>` function in the `xutil` extension library.
+
+The following table describes the substatements of `output-method`:
 
 ======================== ====================================== 
  Statement                Description                           
