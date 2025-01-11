@@ -614,7 +614,7 @@ extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
 static int
 extXutilSetsCheckOneValue (xmlNodePtr nop, xmlXPathObjectPtr xop)
 {
-    slaxOutput("extXutilSetsCheckOneValue: %p %p", nop, xop);
+    slaxLog("extXutilSetsCheckOneValue: %p %p", nop, xop);
 
     if (nop->type != XML_ELEMENT_NODE)
 	return FALSE;
@@ -709,7 +709,7 @@ extXutilSkipWs (xmlNodePtr nop, int ignore_ws)
 static int
 extXutilSetsCheckOneNode (xmlNodePtr n1, xmlNodePtr n2, int ignore_ws)
 {
-    slaxOutput("extXutilSetsCheckOneNode: %p %p %d", n1, n2, ignore_ws);
+    slaxLog("extXutilSetsCheckOneNode: %p %p %d", n1, n2, ignore_ws);
 
     if (n1->type != n2->type)
 	return FALSE;
@@ -754,7 +754,7 @@ static int
 extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 		       xmlXPathObjectPtr *list, int count, int common)
 {
-    slaxOutput("extXutilSetsCheckNode: %p %p %p %d %d",
+    slaxLog("extXutilSetsCheckNode: %p %p %p %d %d",
 	       results, nop, list, count, common);
 
     xmlXPathObjectPtr xop;
@@ -808,14 +808,14 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 	    continue;
 	}
 
-	slaxOutput("extXutilSetsCheckNode: inner %d %d",
+	slaxLog("extXutilSetsCheckNode: inner %d %d",
 		   common, match);
 
 	if (match)
 	    break;
     }
 
-    slaxOutput("extXutilSetsCheckNode: %d %d -> %d",
+    slaxLog("extXutilSetsCheckNode: %d %d -> %d",
 	       common, match, (!common == !match) ? 1 : 0);
 
     if (!common == !match)
