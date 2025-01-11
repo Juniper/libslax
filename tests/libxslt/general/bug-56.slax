@@ -3,6 +3,7 @@ version 1.2;
 ns l exclude = "http://docbook.sourceforge.net/xmlns/l10n/1.0";
 
 output-method xml;
+
 param $local.l10n.xml = document("");
 
 match doc {
