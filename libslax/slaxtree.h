@@ -102,6 +102,9 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
 void slaxAttribAdd (slax_data_t *sdp, int style,
 		    const char *name, slax_string_t *value);
 
+void
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value);
+
 /*
  * Add a value to an attribute on an XML element.  The value consists of
  * one or more items, each of which can be a string, a variable reference,
@@ -160,7 +163,7 @@ void slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib,
 void
 slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 
-void
+xmlNsPtr
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
 
 void
