@@ -3,6 +3,7 @@ version 1.2;
 output-method text {
     encoding "utf-8";
 }
+
 decimal-format default;
 decimal-format funky {
     decimal-separator "&";
