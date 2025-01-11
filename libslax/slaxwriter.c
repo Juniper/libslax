@@ -3255,9 +3255,22 @@ static void
 slaxWriteOutputMethod (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 		       xmlNodePtr nodep)
 {
-    const char *skip[] = { ATT_METHOD, NULL };
-    const char *skip2[] = { ATT_METHOD, ATT_CDATA_SECTION_ELEMENTS, NULL };
+    const char *skip[] = { ATT_METHOD, ATT_MAKE, NULL };
+    const char *skip2[] = { ATT_METHOD, ATT_CDATA_SECTION_ELEMENTS,
+			    ATT_MAKE, NULL };
     char *aval = slaxGetAttrib(nodep, ATT_METHOD);
+
+    if (slaxV13(swp)) {
+	char *sval = slaxGetAttrib(nodep, ATT_MAKE);
+
+	if (sval) {
+	    if (streq(sval, "json") && streq(aval, "xml")) {
+		xmlFreeAndEasy(aval);
+		aval = sval;
+	    } else
+		xmlFreeAndEasy(sval);
+	}
+    }
 
     slaxWrite(swp, "output-method%s%s", aval ? " " : "", aval ?: "");
 
@@ -3275,6 +3288,8 @@ slaxWriteOutputMethod (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 	slaxWrite(swp, ";");
 	slaxWriteNewline(swp, 0);
     }
+
+    slaxWriteBlankline(swp);
 
     xmlFreeAndEasy(aval);
 }
@@ -3666,7 +3681,7 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    *bp = '\0';
 
 	    if (first)
-		slaxWriteNewline(swp, 0);
+		slaxWriteBlankline(swp);
 	    slaxWrite(swp, "%s%s%s", first ? "/*" : "",
 		      (first && *buf) ? " " : "", buf);
 	    slaxWriteNewline(swp, 0);
