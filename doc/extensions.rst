@@ -1230,6 +1230,8 @@ function for additional information.
 For details on the JSON to XML encoding, refer to :ref:`json-attributes`,
 :ref:`json-arrays`, and :ref:`json-names`.
 
+.. _xutil-xml-to-json:
+
 xutil:xml-to-json()
 ~~~~~~~~~~~~~~~~~~~
 
