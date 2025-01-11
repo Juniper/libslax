@@ -31,7 +31,6 @@ main {
                 <TBODY> {
                     <TR> {
                         <TD colSpan="2" height="95"> {
-                            
                             /* webbot bot="ImageMap" startspan
                             rectangle="(0,5) (68,94) index.htm" src="images/ProductsBanner.gif" width="569"
                             height="97" border="0" alt="TFI Technology Products" */
