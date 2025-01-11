@@ -8,6 +8,7 @@ output-method xml {
     encoding "utf-8";
     indent "yes";
 }
+
 strip-space *;
 
 match /adoc {
