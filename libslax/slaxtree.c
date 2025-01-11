@@ -161,13 +161,13 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     slaxSetNs(sdp, nodep, prefix, uri, TRUE, TRUE);
 }
 
-void
+xmlNsPtr
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
 {
     const char *prefix = SLAX_PREFIX;
     const xmlChar *uri = (const xmlChar *) SLAX_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
+    return slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
 }
 
 static int
@@ -365,6 +365,42 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
     }
 }
 
+void
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
+{
+    xmlNsPtr ns = NULL;
+    xmlAttrPtr attr;
+    const char *cp;
+
+    /*
+     * Deal with namespaces.  If there's a prefix, we need to find
+     * the definition of this namespace and pass it along.
+     */
+    cp = index(name, ':');
+    if (cp) {
+	const char *prefix = name;
+	int len = cp - prefix;
+
+	name = cp + 1;
+	if (slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxSetSlaxNs(sdp, sdp->sd_ctxt->node, FALSE);
+
+	} else {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
+        }
+    }
+
+    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
+		      (const xmlChar *) value);
+    if (attr == NULL)
+	fprintf(stderr, "could not make attribute: @%s=%s\n", name, value);
+}
+
 /*
  * Add a simple value attribute.  Our style parameter is limited to
  * SAS_NONE, SAS_XPATH, or SAS_SELECT.  See the other slaxAttribAdd*()
@@ -376,9 +412,6 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 {
     slax_string_t *ssp;
     char *buf;
-    xmlNsPtr ns = NULL;
-    xmlAttrPtr attr;
-    const char *cp;
     unsigned ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
 
     if (style != SAS_VALUE)
@@ -433,30 +466,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
     }
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     free(buf);
 }
@@ -468,10 +478,7 @@ void
 slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
 			slax_string_t *value)
 {
-    xmlAttrPtr attr;
-    xmlNsPtr ns = NULL;
     char *buf, *bp;
-    const char *cp;
 
     buf = slaxStringAsChar(value, 0);
     if (buf == NULL)
@@ -485,30 +492,7 @@ slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
 	    ep[-1] = '\0';
     }
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) bp);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, bp);
+    slaxAttribAddSimple(sdp, name, bp);
 
     xmlFreeAndEasy(buf);
 }
@@ -525,39 +509,13 @@ slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
 void
 slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    xmlAttrPtr attr;
-    xmlNsPtr ns = NULL;
     char *buf;
-    const char *cp;
 
     buf = slaxStringAsValueTemplate(value, SSF_BRACES);
     if (buf == NULL)
 	return;
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     xmlFreeAndEasy(buf);
 }
@@ -574,39 +532,13 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 void
 slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    xmlAttrPtr attr;
-    xmlNsPtr ns = NULL;
     char *buf;
-    const char *cp;
 
     buf = slaxStringAsValueTemplate(value, SSF_XPATH);
     if (buf == NULL)
 	return;
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     xmlFreeAndEasy(buf);
 }
