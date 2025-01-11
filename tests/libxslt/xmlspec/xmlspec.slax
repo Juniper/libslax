@@ -84,6 +84,7 @@ output-method html {
     doctype-public "-//W3C//DTD HTML 4.01 Transitional//EN";
     indent "no";
 }
+
 strip-space author;
 
 /* not handled:
