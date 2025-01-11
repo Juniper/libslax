@@ -3,7 +3,6 @@ version 1.2;
 ns my = "mine";
 ns exsl extension = "http://exslt.org/common";
 
-
 /*
 var $test = {
 "a": "a",
