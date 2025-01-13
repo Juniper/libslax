@@ -67,6 +67,7 @@ check syntax.
         --indent OR -g: indent output ala output-method/indent
         --indent-width <num>: Number of spaces to indent (for --format)
         --input <file> OR -i <file>: take input from the given file
+        --json: make json output, similar to  'output-method json'
         --json-tagging: tag json-style input with the 'json' attribute
         --keep-text: mini-templates should not discard text
         --lib <dir> OR -L <dir>: search directory for extension libraries
@@ -223,6 +224,11 @@ Modes Options
   ::
 
      % slaxproc --format ugly.slax pretty.slax
+
+.. option:: --json
+
+  Emit JSON output, as if the script used the
+  :ref:`output-method <output-method json>` statement.
 
 .. index:: json; json-to-xml
 .. option:: --json-to-xml
@@ -569,7 +575,8 @@ Behavioral Options
 
 .. option:: --version-only
 
-  Show only the "version information" line and exit.
+  Show only the "version information" line and exit.  This is suitable
+  for editors wishing to generate template SLAX scripts for new files.
 
 .. option:: --want-parens
 
