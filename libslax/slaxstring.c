@@ -654,7 +654,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 			 && (last_ttype == L_CPAREN || last_ttype == L_CBRACK))
 		    /* If the last was a close and this wasn't, mark it */
 		    markp = ssp->ss_token[0];
-		else if (ttype == L_COMMA)
+		else if (ttype == L_COMMA || ttype == L_UNDERSCORE)
 		    markp = ssp->ss_token[0];
 	    }
 
