@@ -509,8 +509,7 @@ slaxGenericError (void *opaque, const char *fmt, ...)
 	    }
 	    if (rc > 0) {
 		xmlNodePtr tp = xmlNewText((const xmlChar *) bp);
-		if (tp)
-		    xmlAddChild(sedp->sed_nodep, tp);
+		tp = slaxAddChild(sedp->sed_nodep, tp);
 	    }
 	}
 	break;
