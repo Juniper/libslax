@@ -11,16 +11,16 @@ main <top> {
         <common> {
 	    copy-of xutil:common("seven", $list/*);
         }
-        <difference> {
-            copy-of xutil:difference("seven", $list/*);
+        <distinct> {
+            copy-of xutil:distinct("seven", $list/*);
         }
     }
     <two> {
         <common> {
     	    copy-of xutil:common($list/*, 5, "seven");
         }
-        <difference> {
-            copy-of xutil:difference($list/*, 5, "seven");
+        <distinct> {
+            copy-of xutil:distinct($list/*, 5, "seven");
         }
     }
 
@@ -32,23 +32,23 @@ main <top> {
 		<common> {
 		    copy-of xutil:common(first/*, second/*, third/*, fourth/*);
 		}
-		<difference> {
-		    copy-of xutil:difference(first/*, second/*, third/*,
+		<distinct> {
+		    copy-of xutil:distinct(first/*, second/*, third/*,
 		                             fourth/*);
 		}
 	    } else if third {
 		<common> {
 		    copy-of xutil:common(first/*, second/*, third/*);
 		}
-		<difference> {
-		    copy-of xutil:difference(first/*, second/*, third/*);
+		<distinct> {
+		    copy-of xutil:distinct(first/*, second/*, third/*);
 		}
 	    } else {
 		<common> {
 		    copy-of xutil:common(first/*, second/*);
 		}
-		<difference> {
-		    copy-of xutil:difference(first/*, second/*);
+		<distinct> {
+		    copy-of xutil:distinct(first/*, second/*);
 		}
 	    }
 	}
@@ -61,8 +61,8 @@ main <top> {
 	<common> {
 	    copy-of xutil:common($s1, $s2);
 	}
-	<difference> {
-	    copy-of xutil:difference($s1, $s2);
+	<distinct> {
+	    copy-of xutil:distinct($s1, $s2);
 	}
     }
 
@@ -73,8 +73,8 @@ main <top> {
 	<common> {
 	    copy-of xutil:common($s1, $s2);
 	}
-	<difference> {
-	    copy-of xutil:difference($s1, $s2);
+	<distinct> {
+	    copy-of xutil:distinct($s1, $s2);
 	}
     }
 }
