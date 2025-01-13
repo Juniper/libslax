@@ -1303,7 +1303,7 @@ nodes.  EXSLT_ has a group of `set`-related functions that return the
 common and different nodes for two nodesets, but these functions look
 at identical nodes, so two nodes with the same name and the same
 contents are not seen as identical.  This function (and
-`xutil:difference`) test for nodes using content, not specific nodes.
+`xutil:distinct`) test for nodes using content, not specific nodes.
 
 .. _EXSLT: https://exslt.github.io/set/index.html
 
@@ -1312,9 +1312,9 @@ contents are not seen as identical.  This function (and
     SYNTAX::
         node-set xutil:common(ns1, ns2, ...)
     EXAMPLE::
-	<common> {
-	    copy-of xutil:common($s1, $s2);
-	}
+        <common> {
+            copy-of xutil:common($s1, $s2);
+        }
         var $small-odds = xutil:common($list/*, 1, 3, 5, 7, 9);
 
 During the matching process, mixed content that contains only white
@@ -1341,10 +1341,10 @@ since the internal text nodes containing white space are mixed and can
 be ignored, while the three spaces inside the `three` element are not
 mixed content and are considered significant.
 
-xutil:difference
+xutil:distinct
 ~~~~~~~~~~~~~~~~
 
-The `xutil:difference` function returns the set of nodes that appear
+The `xutil:distinct` function returns the set of nodes that appear
 in the first node sets that do not match nodes in any of the other
 arguments, whether those arguments are nodesets or values.
 
@@ -1353,12 +1353,12 @@ This function uses the same criteria as `xutil:common`.
 ::
 
     SYNTAX::
-        node-set xutil:difference(ns1, ns2, ...)
+        node-set xutil:distinct(ns1, ns2, ...)
     EXAMPLE::
-	<difference> {
-	    copy-of xutil:difference($s1, $s2);
-	}
-        var $no-small-odds = xutil:common($list/*, 1, 3, 5, 7, 9);
+        <distinct> {
+            copy-of xutil:distinct($s1, $s2);
+        }
+        var $no-small-odds = xutil:distinct($list/*, 1, 3, 5, 7, 9);
 
 The "os" Extension Library
 --------------------------
@@ -1619,7 +1619,7 @@ contains the following elements:
  group            Name of the owning group               N
  links            Number of hard links to this entry     N
  size             Number of bytes used by the entry      N
- date             Time and date of last modification	  N
+ date             Time and date of last modification     N
  entry            Directory contents                     N
 ================ ====================================== =======
 
