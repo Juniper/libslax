@@ -2,16 +2,16 @@
 <top>
   <one>
     <common/>
-    <difference/>
+    <distinct/>
   </one>
   <two>
     <common>
       <item>5</item>
       <item>seven</item>
     </common>
-    <difference>
+    <distinct>
       <item>6</item>
-    </difference>
+    </distinct>
   </two>
   <results>
     <common>
@@ -42,7 +42,7 @@
         </interface>
       </in-both>
     </common>
-    <difference>
+    <distinct>
       <only-in-first>
         <mumble>
           <jumble>
@@ -64,7 +64,7 @@
         <a>alpha</a>
         <b>bravo</b>
       </also-not-the-same>
-    </difference>
+    </distinct>
   </results>
   <results>
     <common>
@@ -75,7 +75,7 @@
           <g>12</g>
         </e>
     </common>
-    <difference>
+    <distinct>
       <b>6</b>
       <c>7</c>
       <d>9</d>
@@ -83,7 +83,7 @@
           <f>11</f>
           <g>12</g>
         </e>
-    </difference>
+    </distinct>
   </results>
   <results>
     <common>
@@ -94,7 +94,7 @@
           <g>12</g>
         </e>
     </common>
-    <difference>
+    <distinct>
       <b>6</b>
       <c>7</c>
       <d>9</d>
@@ -102,7 +102,7 @@
           <f>11</f>
           <g>12</g>
         </e>
-    </difference>
+    </distinct>
   </results>
   <more>
     <common>
@@ -133,7 +133,7 @@
         </interface>
       </in-both>
     </common>
-    <difference>
+    <distinct>
       <only-in-first>
         <mumble>
           <jumble>
@@ -155,7 +155,7 @@
         <a>alpha</a>
         <b>bravo</b>
       </also-not-the-same>
-    </difference>
+    </distinct>
   </more>
   <even-more>
     <common>
@@ -185,7 +185,7 @@
         </interface>
       </in-both>
     </common>
-    <difference>
+    <distinct>
       <only-in-first>
         <mumble>
           <jumble>
@@ -207,6 +207,6 @@
         <a>alpha</a>
         <b>bravo</b>
       </also-not-the-same>
-    </difference>
+    </distinct>
   </even-more>
 </top>
