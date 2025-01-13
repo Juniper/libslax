@@ -540,7 +540,7 @@ the old and new syntax.
 output-method json
 ~~~~~~~~~~~~~~~~~~
 
-The output-method_ statement now supports `json` as a style, allowing
+The :ref:`output-method` statement now supports `json` as a style, allowing
 a script to emit JSON encoded data.  The script emits the result in
 XML, which is then converted into JSON using the same logic as the
 :ref:`xutil-xml-to-json <xml-to-json>` function in the `xutil`
@@ -558,7 +558,7 @@ Profiler Option
 
 `slaxproc` has a new :ref;`profile options <--profile>` option to
 invoke the :ref:`profiler` directly, rather than via the
-:ref:`sdb <debugger>` command.
+:ref:`debugger <sdb>` `profile` command.
 
 The `--profile-mode brief` option requests brief output.
 
@@ -795,7 +795,7 @@ SLAX-1.1 includes complete support for all XSLT elements.
 
 - The :ref:`number` statement emits a number.
 
-- The :ref:`output-method <output-method>` statement declares the
+- The :ref:`output-method` statement declares the
   output method to use when generating the results of the
   transformation.
 
