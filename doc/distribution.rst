@@ -228,7 +228,7 @@ Modes Options
 .. option:: --json
 
   Emit JSON output, as if the script used the
-  :ref:`output-method <output-method json>` statement.
+  :ref:`output-method json <output-method>` statement.
 
 .. index:: json; json-to-xml
 .. option:: --json-to-xml
@@ -306,6 +306,8 @@ Modes Options
   ::
 
      % slaxproc --slax-to-xslt my-script.slax your-script.xsl
+
+.. _xml-to-json:
 
 .. index:: json; xml-to-json
 .. option:: --xml-to-json
