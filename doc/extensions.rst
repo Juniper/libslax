@@ -1321,7 +1321,7 @@ During the matching process, mixed content that contains only white
 space is ignored, allowing content with differing indentation to
 match.  Only the hierarchy and leaf contents are compared.
 
-For example, consider the following input:
+For example, consider the following input::
 
     <data>
       <first>
