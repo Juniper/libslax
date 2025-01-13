@@ -108,7 +108,7 @@ slaxJsonElementValue (slax_data_t *sdp, slax_string_t *value)
 
     nodep = xmlNewText((const xmlChar *) cp);
     if (nodep)
-	slaxAddChild(sdp, NULL, nodep);
+	slaxLexerAddChild(sdp, NULL, nodep);
 }
 
 static xmlDocPtr
