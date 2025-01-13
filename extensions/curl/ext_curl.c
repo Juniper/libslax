@@ -952,10 +952,9 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
     if (nodep == NULL)
 	return;
 
-    xmlAddChild(parent, nodep);
-    xmlSetProp(nodep, (const xmlChar *) "format",
-	       (const xmlChar *) opts->co_format);
-
+    nodep = slaxAddChildAttrib(parent, nodep, "format", opts->co_format);
+    if (nodep == NULL)
+	return;
 
     if (opts->co_errors) {
 	if (opts->co_errors == SLAX_ERROR_RECORD)
@@ -1056,8 +1055,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	xmlNodePtr childp = xmlDocGetRootElement(xmlp);
 	if (childp) {
 	    xmlNodePtr newp = xmlDocCopyNode(childp, docp, 1);
-	    if (newp)
-		xmlAddChild(nodep, newp);
+	    slaxAddChild(nodep, newp);
 	}
 
 	xmlFreeDoc(xmlp);
@@ -1073,8 +1071,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	xmlNodePtr childp = xmlDocGetRootElement(xmlp);
 	if (childp) {
 	    xmlNodePtr newp = xmlDocCopyNode(childp, docp, 1);
-	    if (newp)
-		xmlAddChild(nodep, newp);
+	    slaxAddChild(nodep, newp);
 	}
 
 	xmlFreeDoc(xmlp);
@@ -1089,7 +1086,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	     * "errors" node.
 	     */
 	    if (errp->children)
-		xmlAddChild(parent, errp);
+		slaxAddChild(parent, errp);
 	    else
 		xmlFreeNode(errp);
 	}
@@ -1136,10 +1133,8 @@ extCurlBuildData (curl_handle_t *curlp UNUSED, xmlDocPtr docp,
     tp->content = (xmlChar *) buf;
 
     xp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, NULL);
-    if (xp) {
-	xmlAddChild(nodep, xp);
-	xmlAddChild(xp, tp);
-    }
+    xp = slaxAddChild(nodep, xp);
+    slaxAddChild(xp, tp);
 
     return buf;
 }
@@ -1168,7 +1163,9 @@ extCurlBuildReplyHeaders (curl_handle_t *curlp, xmlDocPtr docp,
     if (nodep == NULL)
 	return;
 
-    xmlAddChild(parent, nodep);
+    nodep = slaxAddChild(parent, nodep);
+    if (nodep == NULL)
+	return;
 
     int count = 0;
     size_t len;
@@ -1261,8 +1258,7 @@ extCurlBuildResults (xmlDocPtr docp, curl_handle_t *curlp,
     if (success == 0) {
 	xmlNodePtr xp = xmlNewDocNode(docp, NULL,
 				      (const xmlChar *) "curl-success", NULL);
-	if (xp)
-	    xmlAddChild(nodep, xp);
+	slaxAddChild(nodep, xp);
 
 	/* Add header information, raw and cooked */
 	extCurlBuildData(curlp, docp, nodep,
@@ -1436,7 +1432,10 @@ extCurlPerform (xmlXPathParserContext *ctxt, int nargs)
 
     nodep = extCurlBuildResults(container, curlp, &co, success);
 
-    xmlAddChild((xmlNodePtr) container, nodep);
+    nodep = slaxAddChild((xmlNodePtr) container, nodep);
+    if (nodep == NULL)
+	goto fail;
+
     xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
     xmlXPathNodeSetAdd(results, nodep);
     ret = xmlXPathNewNodeSetList(results);
@@ -1492,7 +1491,10 @@ extCurlSingle (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     nodep = extCurlBuildResults(container, curlp, &curlp->ch_opts, success);
 
-    xmlAddChild((xmlNodePtr) container, nodep);
+    nodep = slaxAddChild((xmlNodePtr) container, nodep);
+    if (nodep == NULL)
+	goto fail;
+
     xmlNodeSet *results = xmlXPathNodeSetCreate(NULL);
     xmlXPathNodeSetAdd(results, nodep);
     ret = xmlXPathNewNodeSetList(results);
