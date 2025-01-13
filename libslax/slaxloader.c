@@ -164,7 +164,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 	    xmlNodePtr tp = xmlNewText((const xmlChar *) value->ss_token);
 
 	    if (tp)
-		slaxAddChild(sdp, nodep, tp);
+		slaxLexerAddChild(sdp, nodep, tp);
 
 	} else {
 	    xmlNodePtr attrp;
@@ -372,11 +372,11 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 
 	    }
 
-	    slaxAddChild(sdp, textp, nodep);
+	    slaxLexerAddChild(sdp, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
 	} else {
-	    slaxAddChild(sdp, NULL, nodep);
+	    slaxLexerAddChild(sdp, NULL, nodep);
 	}
 
 	return;
