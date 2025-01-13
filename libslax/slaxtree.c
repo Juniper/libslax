@@ -318,7 +318,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -444,7 +444,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
 	    if (tp)
-		slaxAddChild(sdp, NULL, tp);
+		slaxLexerAddChild(sdp, NULL, tp);
 
 	    return;
 	}
@@ -641,7 +641,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -750,7 +750,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	char *full = slaxStringAsChar(value, 0);
