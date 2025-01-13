@@ -628,7 +628,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 	nodep = xmlNewDocRawNode(container, NULL,
 				 (const xmlChar *) "item", (xmlChar *) buf);
 	if (nodep) {
-	    xmlAddChild((xmlNodePtr) container, nodep);
+	    nodep = slaxAddChild((xmlNodePtr) container, nodep);
 	    xmlXPathNodeSetAdd(ret->nodesetval, nodep);
 	}
     }
@@ -824,7 +824,6 @@ slaxExtPrintWriter (void *data, const char *fmt, ...)
 
     return rc;
 }
-
 
 static int
 slaxExtPrintField (slax_printf_buffer_t *pbp, char *field, xmlChar *arg,
@@ -1230,7 +1229,6 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
     return pb.pb_buf;
 }
 
-
 /*
  * printf -- C-style printf functionality with some juniper-specific
  * extensions.
@@ -1339,8 +1337,6 @@ slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
     xmlXPathReturnString(ctxt, outstr);
 }
 
-
-
 /*
  * Build a node containing a text node
  */
@@ -1370,10 +1366,7 @@ slaxExtMakeChildTextNode (xmlDocPtr docp, xmlNode *parent,
 {
     xmlNode *newp = slaxExtMakeTextNode(docp, nsp, name, content, len);
 
-    if (newp)
-	xmlAddChild(parent, newp);
-
-    return newp;
+    return slaxAddChild(parent, newp);
 }
 
 /*
@@ -1393,7 +1386,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 	clone = slaxExtMakeTextNode(container, nsp, name, NULL, 0);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	}
 	return;
     }
@@ -1404,7 +1397,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 				    content, strlen(content));
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	}
 	return;
     }
@@ -1426,7 +1419,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 	    if (last)
 		xmlAddSibling(last, clone);
 
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	    last = clone;
 	}
 
@@ -1645,7 +1638,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 		if (last)
 		    xmlAddSibling(last, newp);
 
-		 xmlAddChild((xmlNodePtr) container, newp);
+		newp = slaxAddChild((xmlNodePtr) container, newp);
 		last = newp;
 	    }
 	}
@@ -1723,7 +1716,6 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
     else 
 	xmlXPathReturnFalse(ctxt);
 }
-
 
 /*
  * Return TRUE if the the given string ends with the given pattern
@@ -2279,7 +2271,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 	    if (last)
 		xmlAddSibling(last, newp);
 
-	    xmlAddChild((xmlNodePtr) container, newp);
+	    newp = slaxAddChild((xmlNodePtr) container, newp);
 	    last = newp;
 	}
 
@@ -2296,7 +2288,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 
 	if (last)
 	    xmlAddSibling(last, newp);
-	xmlAddChild((xmlNodePtr) container, newp);
+	newp = slaxAddChild((xmlNodePtr) container, newp);
     }
 
  done:
@@ -2824,7 +2816,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (top == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) container, top);
+    top = slaxAddChild((xmlNodePtr) container, top);
     xmlXPathNodeSetAdd(ret->nodesetval, top);
 
     nodep = xmlNewDocNode(container, NULL,
@@ -2832,14 +2824,14 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (nodep == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) top, nodep);
+    nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
     for (ti = 0, tj = tctxt->templNr - 1; ti < 15 && tj >= 0; ti++, tj--) {
 	child = xmlNewDocNode(container, NULL,
 			      (const xmlChar *) "template", NULL);
 
 	if (child) {
-	    xmlAddChild((xmlNodePtr) nodep, child);
+	    child = slaxAddChild(nodep, child);
 	    if (tctxt->templTab[tj]->name != NULL)
 		xmlAddChildContent(container, child, (const xmlChar *) "name",
 				   tctxt->templTab[tj]->name);
@@ -2857,7 +2849,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (nodep == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) top, nodep);
+    nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
     for (vi = 0, vj = tctxt->varsNr - 1; vi < 15 && vj >= 0; vi++, vj--) {
         xsltStackElemPtr cur;
@@ -2869,7 +2861,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 			      (const xmlChar *) "scope", NULL);
 
 	if (child) {
-	    xmlAddChild(nodep, child);
+	    child = slaxAddChild(nodep, child);
 
 	    cur = tctxt->varsTab[vj];
 	    while (cur != NULL) {
@@ -2883,7 +2875,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 		xmlNodePtr grandchild = xmlNewDocNode(container, NULL,
 					    (const xmlChar *) tag, NULL);
 		if (grandchild) {
-		    xmlAddChild(child, grandchild);
+		    grandchild = slaxAddChild(child, grandchild);
 		    if (cur->name != NULL)
 			xmlAddChildContent(container, grandchild,
 					   (const xmlChar *) "name",
@@ -3071,6 +3063,9 @@ slaxExtRemoveReturns (char *data, size_t *lenp)
     *lenp -= delta;		/* Mark the removed bytes */
 }
 
+/*
+ * slax:document($url [,$options]) returns a string of data from the file.
+ */
 static void
 slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
 {
