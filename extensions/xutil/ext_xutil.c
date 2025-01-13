@@ -106,8 +106,9 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
     if (childp) {
 	xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
 	if (newp) {
-	    xmlAddChild((xmlNodePtr) container, newp);
-	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
+	    newp = slaxAddChild((xmlNodePtr) container, newp);
+	    if (newp)
+		xmlXPathNodeSetAdd(ret->nodesetval, newp);
 	}
     }
 
@@ -456,8 +457,9 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     childp = xmlDocGetRootElement(docp);
     xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
     if (newp) {
-	xmlAddChild((xmlNodePtr) container, newp);
-	xmlXPathNodeSetAdd(ret->nodesetval, newp);
+	newp = xmlAddChild((xmlNodePtr) container, newp);
+	if (newp)
+	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
     }
 
 bail:
@@ -906,13 +908,13 @@ extXutilCommon (xmlXPathParserContext *ctxt, int nargs)
 }
 
 /*
- * difference: return the set of nodes that appear in the first
+ * distinct: return the set of nodes that appear in the first
  * node sets that do not appear in the other nodesets.
  *
- *    node-set xutil:difference(base, ns2, ...)
+ *    node-set xutil:distinct(base, ns2, ...)
  */
 static void
-extXutilDifference (xmlXPathParserContext *ctxt, int nargs)
+extXutilDistinct (xmlXPathParserContext *ctxt, int nargs)
 {
     extXutilCheck(ctxt, nargs, FALSE);
 }
@@ -959,7 +961,7 @@ slax_function_table_t slaxXutilTable[] = {
 	"(ns1, ns2, ...)", XPATH_NODESET,
     },
     {
-	"difference", extXutilDifference,
+	"distinct", extXutilDistinct,
 	"Return the nodes that appear only in the first nodeset",
 	"(ns1, ns2, ...)", XPATH_NODESET,
     },
