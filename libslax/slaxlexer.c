@@ -719,7 +719,8 @@ slaxMoveCur (slax_data_t *sdp)
  * in node.
  */
 xmlNodePtr
-slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
+slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent,
+			 xmlNodePtr cur)
 {
     if (ctxt->linenumbers) { 
 	if (ctxt->input != NULL) { 
@@ -749,14 +750,14 @@ slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep)
 }
 
 xmlNodePtr
-slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
+slaxLexerAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
 {
     xmlNodePtr res;
 
     if (parent == NULL)
 	parent = sdp->sd_ctxt->node;
 
-    res = slaxAddChildLineNo(sdp->sd_ctxt, parent, nodep);
+    res = slaxLexerAddChildLineNo(sdp->sd_ctxt, parent, nodep);
 
     if (sdp->sd_insert) {
 	xmlNodePtr cur, next;
