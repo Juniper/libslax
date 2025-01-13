@@ -16,17 +16,17 @@
         <common>
           <xsl:copy-of select="xutil:common(&quot;seven&quot;, $list/*)"/>
         </common>
-        <difference>
-          <xsl:copy-of select="xutil:difference(&quot;seven&quot;, $list/*)"/>
-        </difference>
+        <distinct>
+          <xsl:copy-of select="xutil:distinct(&quot;seven&quot;, $list/*)"/>
+        </distinct>
       </one>
       <two>
         <common>
           <xsl:copy-of select="xutil:common($list/*, 5, &quot;seven&quot;)"/>
         </common>
-        <difference>
-          <xsl:copy-of select="xutil:difference($list/*, 5, &quot;seven&quot;)"/>
-        </difference>
+        <distinct>
+          <xsl:copy-of select="xutil:distinct($list/*, 5, &quot;seven&quot;)"/>
+        </distinct>
       </two>
       <xsl:variable name="top" select="/data"/>
       <xsl:for-each select="/data/test">
@@ -36,25 +36,25 @@
               <common>
                 <xsl:copy-of select="xutil:common(first/*, second/*, third/*, fourth/*)"/>
               </common>
-              <difference>
-                <xsl:copy-of select="xutil:difference(first/*, second/*, third/*, fourth/*)"/>
-              </difference>
+              <distinct>
+                <xsl:copy-of select="xutil:distinct(first/*, second/*, third/*, fourth/*)"/>
+              </distinct>
             </xsl:when>
             <xsl:when test="third">
               <common>
                 <xsl:copy-of select="xutil:common(first/*, second/*, third/*)"/>
               </common>
-              <difference>
-                <xsl:copy-of select="xutil:difference(first/*, second/*, third/*)"/>
-              </difference>
+              <distinct>
+                <xsl:copy-of select="xutil:distinct(first/*, second/*, third/*)"/>
+              </distinct>
             </xsl:when>
             <xsl:otherwise>
               <common>
                 <xsl:copy-of select="xutil:common(first/*, second/*)"/>
               </common>
-              <difference>
-                <xsl:copy-of select="xutil:difference(first/*, second/*)"/>
-              </difference>
+              <distinct>
+                <xsl:copy-of select="xutil:distinct(first/*, second/*)"/>
+              </distinct>
             </xsl:otherwise>
           </xsl:choose>
         </results>
@@ -65,9 +65,9 @@
         <common>
           <xsl:copy-of select="xutil:common($s1, $s2)"/>
         </common>
-        <difference>
-          <xsl:copy-of select="xutil:difference($s1, $s2)"/>
-        </difference>
+        <distinct>
+          <xsl:copy-of select="xutil:distinct($s1, $s2)"/>
+        </distinct>
       </more>
       <even-more>
         <xsl:variable name="s1">
@@ -79,9 +79,9 @@
         <common>
           <xsl:copy-of select="xutil:common($s1, $s2)"/>
         </common>
-        <difference>
-          <xsl:copy-of select="xutil:difference($s1, $s2)"/>
-        </difference>
+        <distinct>
+          <xsl:copy-of select="xutil:distinct($s1, $s2)"/>
+        </distinct>
       </even-more>
     </top>
   </xsl:template>
