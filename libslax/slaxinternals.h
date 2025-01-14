@@ -93,21 +93,6 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *varname);
 void
 slaxMvarRegister (void);
 
-void
-slaxDumpObject (xmlXPathObjectPtr xop);
-
-void
-slaxDumpVar (xsltStackElemPtr var);
-
-void
-slaxDumpNode (xmlNodePtr node);
-
-void
-slaxDumpDoc (xmlDocPtr node);
-
-void
-slaxDumpNodeset (xmlNodeSetPtr nsp);
-
 xsltStackElemPtr
 slaxMvarLookupQname (xsltTransformContextPtr tctxt, const xmlChar *svarname,
 		     int *localp);
