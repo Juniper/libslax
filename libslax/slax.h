@@ -182,6 +182,9 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxErrorCallback_t error_callback);
 #endif /* XMLCALL */
 
+void
+slaxIoUseReadline (int none);
+
 void slaxIoUseStdio (unsigned flags);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
 
