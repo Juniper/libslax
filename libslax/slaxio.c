@@ -55,6 +55,8 @@ static slaxOutputCallback_t slaxOutputCallback;
 static xmlOutputWriteCallback slaxWriteCallback;
 static slaxErrorCallback_t slaxErrorCallback;
 
+static int slaxIoNoReadline UNUSED; /* If set, don't use readline/libedit */
+
 static FILE *slaxIoTty;
 
 static FILE *slaxIoFile;
@@ -209,6 +211,12 @@ slaxIoRegister (slaxInputCallback_t input_callback,
     slaxErrorCallback = error_callback;
 }
 
+void
+slaxIoUseReadline (int none)
+{
+    slaxIoNoReadline = !none;
+}
+
 static char *
 slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 {
@@ -218,8 +226,8 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	cp = getpass(prompt);
 	return cp ? (char *) xmlStrdup((xmlChar *) cp) : NULL;
 
-    } else {
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
+    } else if (!slaxIoNoReadline) {
 	char *res;
 
 	/*
@@ -248,7 +256,9 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	free(cp);
 	return res;
     
-#else /* HAVE_READLINE || HAVE_LIBEDIT */
+#endif /* HAVE_READLINE || HAVE_LIBEDIT */
+
+    } else {
 	char buf[BUFSIZ];
 	int len;
 
@@ -264,7 +274,6 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	    buf[len - 1] = '\0';
 
 	return (char *) xmlStrdup((xmlChar *) buf);
-#endif /* HAVE_READLINE || HAVE_LIBEDIT */
     }
 }
 
@@ -628,6 +637,10 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 		       indent + 2, tag, node->children);
 	    slaxDumpNodeIndent(node->children, tag, indent + 4);
 	}
+
+	/* RTFs use the "next" pointer as a to-be-freed list; don't follow it */
+	if (XSLT_IS_RES_TREE_FRAG(node))
+	    break;
     }
 }
 
@@ -708,6 +721,7 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
     char buf[BUFSIZ];
     const char *value = buf;
     const char *quote = "";
+    xmlNodeSetPtr nset;
 
     buf[0] = '\0';
 
@@ -716,10 +730,10 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 	value = "(undefined)";
 	break;
 
-    case XPATH_NODESET:
     case XPATH_RANGE:
     case XPATH_LOCATIONSET:
     case XPATH_USERS:
+    case XPATH_NODESET:
     case XPATH_XSLT_TREE:
 	value = NULL;
 	break;
@@ -749,8 +763,10 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 	       value ? ", value " : "", quote, value ?: "", value ? quote : "",
 	       xop->user, xop->user2, xop->index, xop->index2);
 
-    if (xop->type == XPATH_NODESET) {
-	slaxOutput("%*snodeset: %p", indent + 2, tag, xop->nodesetval);
+    if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
+	nset = xop->nodesetval;
+	slaxOutput("%*snodesetval: %p -> &%p/%d", indent + 2, tag,
+		   nset, nset ? nset->nodeTab : NULL, nset ? nset->nodeNr : 0);
 	slaxDumpNodesetIndent(xop->nodesetval, tag, indent + 4);
     }
 }
@@ -774,8 +790,7 @@ slaxDumpVarIndent (xsltStackElemPtr var, const char *tag, int indent)
 		   var->level, var->flags, var->context);
 
 	if (var->tree) {
-	    slaxOutput("%*stree: %p", indent + 2, tag, var->tree);
-	    slaxOutputNode(var->tree);
+	    slaxOutput("%*stree (constructor): %p", indent + 2, tag, var->tree);
 	}
 
         if (var->value) {
