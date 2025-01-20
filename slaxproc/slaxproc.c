@@ -67,6 +67,7 @@ static int opt_json_flags;	/* Flags for JSON conversion */
 static int opt_json_tagging;	/* Tag JSON output */
 static int opt_keep_text;	/* Don't add a rule to discard text values */
 static int opt_width;		/* Output line width limit */
+static int opt_no_readline;	/* Don't use readline/libedit */
 static int opt_partial;		/* Parse partial contents */
 static int opt_slax_output;	/* Make output in SLAX format */
 static int opt_want_parens;	/* They really want the parens */
@@ -90,6 +91,7 @@ static struct opts {
     int o_log_file;
     int o_no_json_types;
     int o_no_randomize;
+    int o_no_readline;
     int o_no_tty;
     int o_profile;
     int o_profile_mode;
@@ -134,6 +136,7 @@ static const char slaxproc_help[] =
 "\t--name <file> OR -n <file>: read the script from the given file\n"
 "\t--no-json-types: do not insert 'type' attribute for --json-to-xml\n"
 "\t--no-randomize: do not initialize the random number generator\n"
+"\t--no-readline: do not use the readline/libedit API (if available)\n"
 "\t--no-tty: do not fall back to stdin for tty io\n"
 "\t--output <file> OR -o <file>: make output into the given file\n"
 "\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
@@ -187,6 +190,7 @@ static struct option long_opts[] = {
     { "name", required_argument, NULL, 'n' },
     { "no-json-types", no_argument, &opts.o_no_json_types, 1 },
     { "no-randomize", no_argument, &opts.o_no_randomize, 1 },
+    { "no-readline", no_argument, &opts.o_no_readline, 1 },
     { "no-tty", no_argument, &opts.o_no_tty, 1 },
     { "output", required_argument, NULL, 'o' },
     { "param", required_argument, NULL, 'a' },
@@ -1317,6 +1321,9 @@ main (int argc UNUSED, char **argv)
 	    } else if (opts.o_no_randomize) {
 		randomize = 0;
 
+	    } else if (opts.o_no_readline) {
+		opt_no_readline = 1;
+
 	    } else if (opts.o_no_tty) {
 		ioflags |= SIF_NO_TTY;
 
@@ -1370,6 +1377,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
+
+    if (opt_no_readline)
+	slaxIoUseReadline(FALSE);
 
     if (opt_indent_width)
 	slaxSetIndent(opt_indent_width);
