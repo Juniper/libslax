@@ -70,6 +70,7 @@ static int opt_width;		/* Output line width limit */
 static int opt_no_readline;	/* Don't use readline/libedit */
 static int opt_partial;		/* Parse partial contents */
 static int opt_slax_output;	/* Make output in SLAX format */
+static int opt_verbose;		/* How verbose do you want it? */
 static int opt_want_parens;	/* They really want the parens */
 
 static struct opts {
@@ -746,11 +747,17 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	if (scriptfile == NULL)
 	    err(1, "file open failed for '%s'", scriptname);
 
+	if (opt_verbose == 1)	/* Tune down the verbosity during parsing */
+	    slaxLogEnable(FALSE);
+
 	scriptdoc = slaxLoadFile(scriptname, scriptfile, NULL, 0);
 	if (scriptdoc == NULL)
 	    errx(1, "cannot parse: '%s'", scriptname);
 	if (scriptfile != stdin)
 	    fclose(scriptfile);
+
+	if (opt_verbose == 1)	/* Parsing is done, turn verbosity back up */
+	    slaxLogEnable(TRUE);
     }
 
     script = xsltParseStylesheetDoc(scriptdoc);
@@ -1046,7 +1053,6 @@ main (int argc UNUSED, char **argv)
     int use_exslt = FALSE;
     FILE *trace_fp = NULL;
     int randomize = 1;
-    int logger = FALSE;
     slax_data_node_t *dnp;
     int i;
     unsigned ioflags = 0;
@@ -1068,7 +1074,7 @@ main (int argc UNUSED, char **argv)
 	if (rc < 0)
 	    break;
 
-	if (logger) {
+	if (opt_verbose) {
 	    fprintf(stderr,
 		    "getopt: rc %d/%02x optind %d, opt_number %d, arg '%s'\n",
 		    rc, rc, optind, opt_number, optarg);
@@ -1226,7 +1232,7 @@ main (int argc UNUSED, char **argv)
 	    break;
 
 	case 'v':
-	    logger = TRUE;
+	    opt_verbose += 1;	/* Increment verbosity level */
 	    break;
 
 	case 'V':
@@ -1398,7 +1404,7 @@ main (int argc UNUSED, char **argv)
 	slaxLogEnable(TRUE);
 	slaxLogToFile(fp);
 
-    } else if (logger) {
+    } else if (opt_verbose) {
 	slaxLogEnable(TRUE);
     }
 
