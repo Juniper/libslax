@@ -611,6 +611,12 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 		       indent + 2, tag, docp->children, docp->last,
 		       docp->parent, docp->next, docp->prev, docp->doc);
 
+	    slaxOutput("%*sstandalong %d, ns %p, dict %p, "
+		       "psvi %p, parseflax %#x, properties %#x",
+		       indent + 2, tag,
+		       docp->standalone, docp->oldNs, docp->dict,
+		       docp->psvi, docp->parseFlags, docp->properties);
+
 	} else {
 	    slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
 		       indent, tag, node, name, node->type, 
@@ -664,6 +670,11 @@ slaxDumpDocIndent (xmlDocPtr node, const char *tag, int indent)
 	       "next %p, prev %p, doc %p",
 	       indent + 2, tag, node->children, node->last, node->parent,
 	       node->next, node->prev, node->doc);
+
+    slaxOutput("%*sstandalong %d, ns %p, dict %p, "
+	       "psvi %p, parseflax %#x, properties %#x",
+	       indent + 2, tag, node->standalone, node->oldNs, node->dict,
+	       node->psvi, node->parseFlags, node->properties);
 
     if (node->children) {
 	slaxOutput("%*schildren %p:",
@@ -765,7 +776,7 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 
     if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
 	nset = xop->nodesetval;
-	slaxOutput("%*snodesetval: %p -> &%p/%d", indent + 2, tag,
+	slaxOutput("%*snodesetval: %p -> %p/%d", indent + 2, tag,
 		   nset, nset ? nset->nodeTab : NULL, nset ? nset->nodeNr : 0);
 	slaxDumpNodesetIndent(xop->nodesetval, tag, indent + 4);
     }
