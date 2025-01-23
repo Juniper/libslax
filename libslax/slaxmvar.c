@@ -1117,11 +1117,6 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	goto fail;
     }
 
-#if 0
-    valuePush(ctxt, xmlXPathNewNodeSet(NULL));
-    return;
-#endif
-
     /*
      * We have to have an initial value, even if the assigned value
      * is a string or number.  So if the value isn't kocher, force it
