@@ -129,6 +129,8 @@ If the <non-xml> value is an empty string, then non-xml characters
 will be removed, otherwise they will be replaced with the given
 string.
 
+.. _ends-with:
+
 slax:ends-with
 ++++++++++++++
 
@@ -192,6 +194,8 @@ readline history keystrokes (Control-P and Control-N).
     EXAMPLE::
         var $response = slax:get-command("# ");
 
+
+.. _get-host:
 
 slax:get-host
 +++++++++++++
@@ -261,6 +265,8 @@ truly empty.
         if slax:is-empty($result) {
             message "missing result";
         }
+
+.. _printf:
 
 slax:printf
 +++++++++++
