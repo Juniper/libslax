@@ -611,7 +611,7 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 		       indent + 2, tag, docp->children, docp->last,
 		       docp->parent, docp->next, docp->prev, docp->doc);
 
-	    slaxOutput("%*sstandalong %d, ns %p, dict %p, "
+	    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 		       "psvi %p, parseflax %#x, properties %#x",
 		       indent + 2, tag,
 		       docp->standalone, docp->oldNs, docp->dict,
@@ -671,7 +671,7 @@ slaxDumpDocIndent (xmlDocPtr node, const char *tag, int indent)
 	       indent + 2, tag, node->children, node->last, node->parent,
 	       node->next, node->prev, node->doc);
 
-    slaxOutput("%*sstandalong %d, ns %p, dict %p, "
+    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 	       "psvi %p, parseflax %#x, properties %#x",
 	       indent + 2, tag, node->standalone, node->oldNs, node->dict,
 	       node->psvi, node->parseFlags, node->properties);
