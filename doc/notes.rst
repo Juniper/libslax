@@ -557,7 +557,7 @@ Profiler Option
 ~~~~~~~~~~~~~~~
 
 `slaxproc` has a new :ref;`profile options <--profile>` option to
-invoke the :ref:`profiler` directly, rather than via the
+invoke the :ref:`profiler <profiler>` directly, rather than via the
 :ref:`debugger <sdb>` `profile` command.
 
 The `--profile-mode brief` option requests brief output.
@@ -591,7 +591,8 @@ specific node-in-document comparison, like the EXSLT set functions.
 New Bit Shift Functions
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Three new functions in the `bit` library support shift operations::
+Three new functions in the :ref:`bit library<bit-library>` support
+shift operations::
 
   bit:shift-left(b, cnt)      Return logical shift (b << cnt)
   bit:shift-right(b, cnt)     Return logical shift (b >> cnt)
@@ -619,28 +620,28 @@ slax:ends-with()
 ~~~~~~~~~~~~~~~~
 
 In parity with the XPath `starts-with()` function, SLAX now has the
-`slax:ends-with()` function, which is useful testing for file
-extensions and other trailing strings::n
+:ref:`slax:ends-with() <ends-with>` function, which is useful testing
+for file extensions and other trailing strings::n
 
     var $ir = verbs/verb[ends-with(infinitive, "ir")];
 
 slax:get-host()
 ~~~~~~~~~~~~~~~
 
-The `slax:get-host()` function returns information about a specific
-DNS hostname or IP address::
+The :ref:`slax:get-host() <get-host>` function returns information
+about a specific DNS hostname or IP address::
 
     string slax:get-host(hostname-or-address)
 
 New slax:printf() Functionality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`slax:printf` gains some new features.  First is the "%jH" and "%jh"
-flags, which cause the next field to use "humanized" output, meaning
-that large numbers are transformed into a more human-readable format
-using a divisor and suffixes to turn a string like "987654321" into
-the more palatable "988M".  "%jh" uses a divisor of 1024, while "%jH"
-using a divisor of 1000.
+:ref:`slax:printf <printf>` gains some new features.  First is the
+"%jH" and "%jh" flags, which cause the next field to use "humanized"
+output, meaning that large numbers are transformed into a more
+human-readable format using a divisor and suffixes to turn a string
+like "987654321" into the more palatable "988M".  "%jh" uses a divisor
+of 1024, while "%jH" using a divisor of 1000.
 
 In addition, the "%j{XXX}" syntax allows new flags that use longer,
 more human-readable values.  These flags affect the new field
