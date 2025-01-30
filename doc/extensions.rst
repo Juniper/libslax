@@ -27,6 +27,8 @@ either:
 
 - one of the directories provided via the --lib/-L argument to "slaxproc"
 
+.. _bit-library:
+
 The "bit" Extension Library
 ---------------------------
 
