@@ -147,6 +147,28 @@ but the input and output file names are positional::
 
    slaxproc -i input.xml -o output.xml -g -v script.slax
 
+`slaxproc` allows multiple options to be combined in a single argument
+and the "--opt=value" and "-ovalue" syntax is supported.
+
+In the following examples, the sets of commands are identical::
+
+  slaxproc -E -g- d --name test-empty-39.slax
+  slaxproc -Egd --name=test-empty-39.slax
+
+  slaxproc -F - p -i test-empty-39.slax --width 70
+  slaxproc -Fpitest-empty-39.slax --width=70
+
+In addition, the "-a" (--param) option accepts parameters in two ways,
+either as distinct arguments or with a "name=value" style.  The
+following arguments are equivalent::
+
+    -a name value
+    -a name=value
+    -aname=value
+    --param aname value
+    --param aname=value
+    --param=aname=value
+
 .. _slaxproc-pound-bang:
 
 "#!" Support
