@@ -64,6 +64,8 @@
 #include <libxml/xpathInternals.h>
 #include <libxml/parserInternals.h>
 #include <libxml/uri.h>
+#include <libxml/xmlstring.h>
+
 #include <libpsu/psubase64.h>
 #include <libpsu/psuthread.h>
 
@@ -1513,6 +1515,109 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
     ret = xmlXPathNewNodeSetList(results);
     valuePush(ctxt, ret);
     xmlXPathFreeNodeSet(results);
+}
+
+static int
+slaxExtJoinAppend (slax_printf_buffer_t *pbp, const xmlChar *buf, int blen,
+		   int need_joiner, const xmlChar *joiner, int jlen)
+{
+    if (need_joiner)
+	slaxExtPrintAppend(pbp, joiner, jlen);
+
+    slaxExtPrintAppend(pbp, buf, blen);
+
+    return TRUE;
+}
+
+#define JAPPEND(_cp) \
+    slaxExtJoinAppend(&pb, _cp, xmlStrlen(_cp), need_joiner, joiner, jlen)
+
+/*
+ * Join a series of strings into a single onek.
+ *
+ * Usage:  var $line = slax:join(":", $x/user, "*", all/those/fields);
+ */
+static void
+slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlXPathObject *stack[nargs];	/* Stack for args as objects */
+    xmlXPathObject *obj;
+    const xmlChar *cp;
+    static const xmlChar null_joiner[1] = { 0 };
+
+    if (nargs < 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int ndx;
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = valuePop(ctxt);
+
+    xmlChar *joiner = xmlXPathCastToString(stack[0]);
+    if (joiner == NULL)
+	joiner = xmlStrdup(null_joiner);
+    int jlen = joiner ? xmlStrlen(joiner) : 0;
+
+    slax_printf_buffer_t pb;
+    bzero(&pb, sizeof(pb));
+
+    int need_joiner = FALSE;
+
+    for (ndx = 1; ndx < nargs; ndx++) {
+	if (stack[ndx] == NULL)	/* Should not occur */
+	    continue;
+
+	obj = stack[ndx];
+	if (obj->nodesetval) {
+	    int i;
+	    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+		xmlNode *nop = obj->nodesetval->nodeTab[i];
+		if (nop == NULL || nop->children == NULL)
+		    continue;
+
+		/*
+		 * If we're handed a fragment, assume they wanted the
+		 * contents.
+		 */
+		if (XSLT_IS_RES_TREE_FRAG(nop))
+		    nop = nop->children;
+
+		/*
+		 * Whiffle thru the children looking for a node
+		 */
+		xmlNode *cop;
+		for ( ; nop; nop = nop->next) {
+		    if (nop->type == XML_TEXT_NODE) {
+			cp = nop->content;
+			if (cp)
+			    need_joiner = JAPPEND(cp);
+
+		    } else if (nop->type == XML_ELEMENT_NODE) {
+			for (cop = nop->children; cop; cop = cop->next) {
+			    if (cop->type == XML_TEXT_NODE) {
+				cp = cop->content;
+				if (cp)
+				    need_joiner = JAPPEND(cp);
+			    }
+			}
+		    }
+		}
+	    }
+
+	} else if (obj->stringval) {
+	    cp = obj->stringval;
+	    need_joiner = JAPPEND(cp);
+	}
+    }
+
+    for (ndx = 0; ndx < nargs; ndx++)
+	xmlXPathFreeObject(stack[ndx]);
+
+    xmlFreeAndEasy(joiner);
+
+    /* Transfer ownership of the buffer in pb to the stack */
+    xmlXPathReturnString(ctxt, (xmlChar *) pb.pb_buf);
 }
 
 /*
@@ -3662,7 +3767,7 @@ slaxExtRegisterOther (const char *namespace)
 /* ---------------------------------------------------------------------- */
 
 /**
- * Registers the SLAX extensions
+ * Registers the SLAX-only (not shared) extension functions
  */
 void
 slaxExtRegister (void)
@@ -3680,6 +3785,7 @@ slaxExtRegister (void)
     slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
     slaxRegisterFunction(SLAX_URI, "document", slaxExtDocument);
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
+    slaxRegisterFunction(SLAX_URI, "join", slaxExtJoin);
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
 
     slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
