@@ -266,6 +266,23 @@ truly empty.
             message "missing result";
         }
 
+.. _slax-join:
+
+slax:join
++++++++++
+
+Use the `slax:join()` function to combine a set of items using a
+separator string.
+
+::
+
+    SYNTAX::
+        boolean slax:join(separator, string...);
+
+    EXAMPLE::
+        var $l1 = slax:join(":", user/name, user/password, user/uid);
+        var $l2 = slax:join("%20", "help", "buils", "a", "url");
+
 .. _printf:
 
 slax:printf
