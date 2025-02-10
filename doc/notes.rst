@@ -633,6 +633,14 @@ about a specific DNS hostname or IP address::
 
     string slax:get-host(hostname-or-address)
 
+slax:join()
+~~~~~~~~~~~
+
+The :ref:`slax-join() <slax-join>` function joins strings together
+using a separator string.
+
+    string slax:join(separator, string...)
+
 New slax:printf() Functionality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
