@@ -81,7 +81,7 @@ check syntax.
         --param <name> <value> OR -a <name> <value>: pass parameters
         --partial OR -p: allow partial SLAX input to --slax-to-xslt
         --profile <file>: run profiler and save output to given file
-        --profile-mode <mode>: enable profiler mode (e.g. brief)
+        --profile-mode <mode>: enable profiler mode (e.g. brief, wall)
         --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
@@ -561,20 +561,23 @@ Behavioral Options
         <a> "b";
     }
 
-.. _profile option:
+.. _profile:
 
-.. option:: --profile <file>
+.. option:: --profile
 
   Enable profiling while the script is executing, writing the profile
   data to the given file.  This accesses the same functionality as the
   :ref:`profile <profiler>` command in the :ref:`debugger <sdb>`.
 
+.. _profile-mode:
+
 .. option:: --profile-mode <mode>
 
-  Provide additional information to the profiler.  Currently the only
-  supported mode is 'brief', which trims lines that are not executed
-  from the profiler output.  Refer to the :ref:`profiler` for
-  additional information.
+  Provide additional information to the profiler.  For `brief` mode,
+  lines that are not executed are trimmed from the profiler output.
+  For `wall` mode, columns for "wall clock" time are added, displaying
+  how much time (in seconds) was used for that line.  Refer to the
+  :ref:`profiler` for additional information.
 
 .. option:: --slax-output
 .. option:: -S
@@ -678,7 +681,7 @@ The `info` command can display the following information:
     info insert       Display current insertion point
     info locals       Display local variables
     info output       Display output document
-    info profile [brief]  Report profiling information
+    info profile [brief | wall]  Report profiling information
 
 Many of these commands follow their "gdb" counterparts, to the extent
 possible.
@@ -733,7 +736,7 @@ Use the `profile` command to access the profiler::
     profile clear   Clear  profiling information
     profile off     Disable profiling
     profile on      Enable profiling
-    profile report [brief]  Report profiling information
+    profile report [brief | wall]  Report profiling information
   (sdb)
 
 The profile report includes the following information:
@@ -788,12 +791,22 @@ execution, but also shows which lines are being executed, which
 can help debug scripts where the execution does not match
 expectations.
 
+The `wall` option reports "wall clock" time, covering actions that
+consume time that aren't accounted for in the system and user time
+numbers, including retrieving a document using a `curl:single()` call
+or performing a NETCONF RPC.  Knowing the actual number of seconds
+spent per line can give valuable profiling information.  The 'Wall
+Clock' total and percentage columns are added to the profiler output,
+showing the time in seconds that was spent executing that line and the
+percentage of the total time this represents.
+
 The profiling is not "Monte Carlo", or clock based, but is based on
 trace data generated as each SLAX instruction is executed, giving
-more precise data.
+more accurate and precise data.
 
-The profiler can also be accessed using the
-:ref:`--profile <profile option>` option.
+The profiler can also be accessed using the :ref:`slaxproc <slaxproc>`
+:ref:`--profile <profile>` option.  The `brief` and `wall` modes can
+be specified using the :ref:`--profile-mode <profile-mode>` option.
 
 .. index
 
