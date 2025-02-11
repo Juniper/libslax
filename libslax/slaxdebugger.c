@@ -1149,7 +1149,7 @@ slaxDebugHelpInfo (DH_ARGS)
     slaxOutput("  info insert       Display current insertion point");
     slaxOutput("  info locals       Display local variables");
     slaxOutput("  info output       Display output document");
-    slaxOutput("  info profile [brief]  Report profiling information");
+    slaxOutput("  info profile [brief | wall]  Report profiling information");
 }
 
 static void
@@ -1305,8 +1305,15 @@ slaxDebugCmdInfo (DC_ARGS)
 	slaxDebugContextVariables(ctxt);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
-	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	slaxProfReport(brief, statep->ds_script_buffer);
+	slaxDebugFlags_t flags = 0;
+
+	if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
+	    flags |= SDBF_PROFILE_BRIEF;
+
+	if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
+	    flags |= SDBF_PROFILE_WALL;
+
+	slaxProfReport(flags, statep->ds_script_buffer);
 
     } else if (slaxDebugIsAbbrev("help", argv[1])) {
 	slaxDebugHelpInfo(statep);
@@ -1605,7 +1612,7 @@ slaxDebugHelpProfile (DH_ARGS)
     slaxOutput("  profile clear   Clear  profiling information");
     slaxOutput("  profile off     Disable profiling");
     slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report [brief]  Report profiling information");
+    slaxOutput("  profile report [brief | wall]  Report profiling information");
 }
 
 /*
@@ -1632,8 +1639,15 @@ slaxDebugCmdProfiler (DC_ARGS)
 	    return;
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
-	    int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	    slaxProfReport(brief, statep->ds_script_buffer);
+	    slaxDebugFlags_t flags = 0;
+
+	    if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
+		flags |= SDBF_PROFILE_BRIEF;
+
+	    if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
+		flags |= SDBF_PROFILE_WALL;
+
+	    slaxProfReport(flags, statep->ds_script_buffer);
 	    return;
 
 	} else if (slaxDebugIsAbbrev("help", arg)) {
@@ -2812,8 +2826,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 * the report and then stop the loop.
 	 */
 	if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
-	    int brief = (slaxDebugFlags & SDBF_PROFILE_BRIEF) ? 1 : 0;
-	    slaxProfReport(brief, statep->ds_script_buffer);
+	    slaxProfReport(slaxDebugFlags, statep->ds_script_buffer);
 	    working = FALSE;
 	}
 
