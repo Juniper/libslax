@@ -226,6 +226,7 @@ typedef unsigned slaxDebugFlags_t;
 #define SDBF_ENABLE		(1<<0) /* Enable debugger */
 #define SDBF_PROFILE_ONLY	(1<<1) /* Just report profile output */
 #define SDBF_PROFILE_BRIEF	(1<<2) /* ... and only brief output */
+#define SDBF_PROFILE_WALL	(1<<3) /* ... and wall-clock output */
 
 int
 slaxDebugInitFlags (slaxDebugFlags_t flags);
