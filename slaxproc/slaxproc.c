@@ -1312,6 +1312,9 @@ main (int argc UNUSED, char **argv)
 		if (streq(mode, "brief")) {
 		    opt_debugger |= SDBF_PROFILE_BRIEF;
 
+		} else if (streq(mode, "wall")) {
+		    opt_debugger |= SDBF_PROFILE_WALL;
+
 		} else {
 		    errx(1, "unknown profile-mode '%s'", mode);
 		}
