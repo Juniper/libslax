@@ -221,8 +221,8 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
     const char *xp, *last = NULL;
     size_t len;
 
-    char count_buf[12];
-    char user_buf[12];
+    char count_buf[16];
+    char user_buf[16];
     char wall_buf[20];
     char wall_val[64];
 
