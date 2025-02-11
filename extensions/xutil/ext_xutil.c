@@ -457,7 +457,7 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     childp = xmlDocGetRootElement(docp);
     xmlNodePtr newp = xmlDocCopyNode(childp, container, 1);
     if (newp) {
-	newp = xmlAddChild((xmlNodePtr) container, newp);
+	newp = slaxAddChild((xmlNodePtr) container, newp);
 	if (newp)
 	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
     }
