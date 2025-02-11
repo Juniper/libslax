@@ -39,7 +39,7 @@ typedef int (*slaxProfCallback_t)(void *, const char *fmt, ...);
  * Report the results
  */
 void
-slaxProfReport (int, const char *buffer);
+slaxProfReport (slaxDebugFlags_t flags, const char *buffer);
 
 /**
  * Clear all values
