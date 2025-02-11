@@ -1194,6 +1194,7 @@ extCurlBuildReplyHeaders (curl_handle_t *curlp, xmlDocPtr docp,
 		continue;
 
 	    *sp++ = '\0';
+
 	    xmlAddChildContent(docp, nodep, (const xmlChar *) "version",
 			       (const xmlChar *) cp);
 
