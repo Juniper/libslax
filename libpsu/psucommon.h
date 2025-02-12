@@ -45,6 +45,9 @@ typedef unsigned char psu_byte_t; /* Simple byte (for addressing memory) */
 #endif
 
 #ifdef HAVE_PRINTFLIKE
+#if defined(__linux) && !defined(__printflike)
+#define __printflike(_x, _y) __attribute__((__format__ (__printf__, _x, _y)))
+#endif
 #define PSU_PRINTFLIKE(_a, _b) __printflike(_a, _b)
 #else
 #define PSU_PRINTFLIKE(_a, _b)
