@@ -1428,10 +1428,10 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     if (rc == T_FUNCTION_NAME) {
 	static const char slax_prefix[] = SLAX_PREFIX ":";
 	const char *start = ssp->ss_token;
-	unsigned len = strlen(ssp->ss_token);
+	unsigned len = strlen(start);
 
 	if (len > sizeof(slax_prefix)
-		&& strncmp(slax_prefix, start, sizeof(slax_prefix) - 1) == 0)
+		&& strncmp(slax_prefix, start, strlen(slax_prefix)) == 0)
 	    ssp->ss_flags |= SSF_SLAXNS;
     }
 
