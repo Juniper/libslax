@@ -137,7 +137,7 @@ AM_CONDITIONAL([HAVE_LIBEDIT], [test "$HAVE_LIBEDIT" != "no"])
 AC_MSG_CHECKING([compiler for gcc])
 HAVE_GCC=no
 if test "${CC}" != ""; then
-    HAVE_GCC=`${CC} --version 2>&1 | grep -i ' GCC'`
+    HAVE_GCC=`${CC} --version 2>&1 | grep -i ' Free Software'`
     if test "${HAVE_GCC}" != ""; then
         HAVE_GCC=yes
     else
