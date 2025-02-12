@@ -509,7 +509,7 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
     }
 
     /* Setup the header and return the content */
-    strncpy(pmhp->pmh_name, name, sizeof(pmhp->pmh_name));
+    strlcpy(pmhp->pmh_name, name, sizeof(pmhp->pmh_name));
     pmhp->pmh_size = size;
     pmhp->pmh_type = type;
     pmhp->pmh_flags = flags;
