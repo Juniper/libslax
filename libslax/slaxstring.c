@@ -264,7 +264,7 @@ slaxStringLiteral (const char *str, int ttype)
     slax_string_t *ssp;
     int len = strlen(str);
 
-    ssp = xmlMalloc(sizeof(*ssp) + len);
+    ssp = xmlMalloc(sizeof(*ssp) + len + 1);
     if (ssp) {
 	memcpy(ssp->ss_token, str, len);
 	ssp->ss_token[len] = 0;
@@ -741,7 +741,7 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
     if (!has_parens)
 	flags &= ~SSF_NOPARENS;
 
-    buf = xmlMalloc(len);
+    buf = xmlMalloc(len + 1);
     if (buf == NULL)
 	return NULL;
 
@@ -1173,7 +1173,7 @@ slaxStringAddTailHelper (slax_string_t ***tailp,
      * Allocate and fill in a slax_string_t; we don't need a +1
      * for bufsiz since the ss_token already has it.
      */
-    ssp = xmlMalloc(sizeof(*ssp) + bufsiz);
+    ssp = xmlMalloc(sizeof(*ssp) + bufsiz + 1);
     if (ssp == NULL)
 	return TRUE;
 
