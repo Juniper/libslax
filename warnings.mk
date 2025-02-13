@@ -52,5 +52,5 @@ WARNINGS += ${LOW_WARNINGS}
 endif
 
 ifeq "${GCC_WARNINGS}" "yes"
-WARNINGS += -fno-inline-functions-called-once
+WARNINGS += -fno-inline-functions-called-once -Wno-stringop-overread
 endif
