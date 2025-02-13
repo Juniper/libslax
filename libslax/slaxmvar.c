@@ -399,7 +399,10 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
 	return NULL;
 
     /* Mark if this context is local of not */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wint-conversion"
     container->psvi = local ? XSLT_RVT_LOCAL : XSLT_RVT_GLOBAL;
+#pragma GCC diagnostic pop
 
     /*
      * The garbage collection list is linked via the next/prev or
