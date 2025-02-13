@@ -394,8 +394,8 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
     buf = slaxStringAsChar(value, SSF_CONCAT | SSF_QUOTES);
     if (buf == NULL) {
 	xmlParserError(sdp->sd_ctxt,
-		       "%s:%d: could not make attribute string: @%s=%s",
-		       sdp->sd_filename, sdp->sd_line, ATT_SELECT, buf);
+		       "%s:%d: could not make attribute string: @%s",
+		       sdp->sd_filename, sdp->sd_line, ATT_SELECT);
 	slaxElementPop(sdp);
 	return;
     }
