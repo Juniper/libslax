@@ -834,9 +834,11 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 {
     slax_string_t *ssp, *next;
     slax_string_t *tsp, *qsp, *csp, *esp;
-    static char varfmt[] = SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
-    char condname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    static const char varfmt[] =
+	SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
+    static const char condfmt[] = "%s-cond";
     char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    char condname[sizeof(varname) + sizeof(condfmt)];
     int no_second_term;
     char *vp;
     unsigned len;
@@ -890,7 +892,7 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 
 	if (no_second_term) {
 	    /* Need a local variable to hold the conditional value */
-	    snprintf(condname, sizeof(condname), "%s-cond", varname);
+	    snprintf(condname, sizeof(condname), condfmt, varname);
 
 	    slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, condname + 1);
 	    slaxAttribAdd(sdp, 0, ATT_SELECT, tsp->ss_next);
