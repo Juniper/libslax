@@ -20,7 +20,8 @@ and finally, line five
 	     * The "BUGS" section of the FreeBSD man page for regexec(3) says:
 	     *     The back-reference code is subtle and doubts linger
 	     *     about its  correctness in complex cases.
-             * I guess this code echoes that since it fails under FB.
+             * Not sure what this means, but this fails under MacOS, while
+             * working correctly under FreeBSD and Linux.  Perl likes it also.
  -->
         <xsl:variable name="pat" select="&quot;([a-z]):\1:\1&quot;"/>
         <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re1" select="slax:regex($pat, &quot;a:a:a&quot;)"/>
