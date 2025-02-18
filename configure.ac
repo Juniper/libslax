@@ -56,7 +56,7 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero memmove strchr strcspn strerror strspn])
-AC_CHECK_FUNCS([sranddev srand strlcpy])
+AC_CHECK_FUNCS([sranddev srand strlcpy strlcat])
 AC_CHECK_FUNCS([fdopen getrusage])
 AC_CHECK_FUNCS([gettimeofday ctime])
 AC_CHECK_FUNCS([getpass])
@@ -644,8 +644,9 @@ AC_CONFIG_FILES([
   slaxproc/Makefile
   tests/Makefile
   tests/art/Makefile
-  tests/core/Makefile
+  tests/base/Makefile
   tests/bugs/Makefile
+  tests/core/Makefile
   tests/errors/Makefile
   tests/libxslt/Makefile
   tests/pa/Makefile
