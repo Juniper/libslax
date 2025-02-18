@@ -15,6 +15,7 @@
 
 #include "slaxinternals.h"
 #include <libpsu/psutime.h>
+#include <libpsu/psustring.h>
 #include <libslax/slax.h>
 #include "slaxparser.h"
 
@@ -24,7 +25,10 @@
 #include <paths.h>
 #include <regex.h>
 #ifdef HAVE_SYS_SYSCTL_H
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
 #include <sys/sysctl.h>
+#pragma GCC diagnostic pop
 #endif
 #include <sys/types.h>
 #include <fcntl.h>
