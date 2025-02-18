@@ -7,6 +7,7 @@
 # LICENSE.
 
 SUBDIRS= \
+    base \
     core \
     bugs \
     errors \
