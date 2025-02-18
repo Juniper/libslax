@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <libpsu/psustring.h>
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
 
