@@ -17,6 +17,7 @@
 
 #include "slaxinternals.h"
 #include <string.h>
+#include <libpsu/psustring.h>
 #include <libslax/slax.h>
 #include <libexslt/exslt.h>
 #include "slaxparser.h"
@@ -286,13 +287,16 @@ slaxWrite (slax_writer_t *swp, const char *fmt, ...)
 	    rc = vsnprintf(cp, len, fmt, vap);
 	    va_end(vap);
 
+	    if (rc < 0)
+		break;
+
 	    if (rc <= len) {
 		swp->sw_cur += rc;
 		break;
 	    }
 	}
 
-	len = swp->sw_cur + rc + BUF_EXTEND;
+	len = swp->sw_cur + BUF_EXTEND;
 	if (slaxWriteRealloc(swp, len) == NULL)
 	    return;
     }
