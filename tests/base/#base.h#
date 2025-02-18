@@ -1,0 +1,12 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "slaxconfig.h"
+#include <libpsu/psustring.h>
+
+int
+main (int argc, char **argv)
+{
+    retu
+}
