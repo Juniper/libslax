@@ -22,7 +22,9 @@
 #include <errno.h>
 #include <stddef.h>
 
+#include <libpsu/psulog.h>
 #include <libpsu/psualloc.h>
+#include <libpsu/psustring.h>
 #include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
