@@ -17,6 +17,13 @@ and finally, line five
 match / {
     <top> {
 	<back-reference> {
+	    /*
+	     * The "BUGS" section of the FreeBSD man page for regexec(3) says:
+	     *     The back-reference code is subtle and doubts linger
+	     *     about its  correctness in complex cases.
+             * I guess this code echoes that since it fails under FB.
+	     */
+
 	    var $pat = "([a-z]):\\1:\\1";
 	    var $re1 = slax:regex($pat, "a:a:a");
 	    <re1> { copy-of $re1; }
