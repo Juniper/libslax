@@ -11,7 +11,8 @@ main <top> {
          * The "BUGS" section of the FreeBSD man page for regexec(3) says:
          *     The back-reference code is subtle and doubts linger
          *     about its  correctness in complex cases.
-         * I guess this code echoes that since it fails under FB.
+         * Not sure what this means, but this fails under MacOS, while
+         * working correctly under FreeBSD and Linux.  Perl likes it also.
          */
         var $pat = "([a-z]):\\1:\\1";
         var $re1 = slax:regex($pat, "a:a:a");
