@@ -1018,7 +1018,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
 	     * what we have in the buffer now and  then indent
 	     * 'starting_length' characters.  Trim the trailing space.
 	     */
-	    if (swp->sw_buf[swp->sw_cur - 1] == ' ') {
+	    if (swp->sw_cur > 0 && swp->sw_buf[swp->sw_cur - 1] == ' ') {
 		swp->sw_cur -= 1; /* Trim trailing space */
 	    }
 
@@ -3441,7 +3441,7 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    if (!first)
 		slaxWriteNewline(swp, NEWL_OUTDENT);
 		
-	    slaxWrite(swp, "%sif %s%", first ? "" : "} else ",
+	    slaxWrite(swp, "%sif %s", first ? "" : "} else ",
 		      parens[0]);
 	    slaxWriteExpression(swp, nodep, test);
 	    slaxWrite(swp, "%s {", parens[1]);
