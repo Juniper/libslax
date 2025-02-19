@@ -324,10 +324,13 @@ slaxDynAdd (const char *dir);
 void
 slaxDynAddPath (const char *path);
 
+int
+slaxFilenameIsStdFile (const char *filename, int fd);
+
 static inline int
 slaxFilenameIsStd (const char *filename)
 {
-    return (filename == NULL || (filename[0] == '-' && filename[1] == '\0'));
+    return slaxFilenameIsStdFile(filename, -1);
 }
 
 void
