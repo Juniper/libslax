@@ -227,9 +227,6 @@ get_filename (const char *filename, char ***pargv, int outp)
 	    filename = "-";
     }
 
-    if (outp != GET_FN_DONT && slaxFilenameIsStd(filename))
-	filename = (outp == GET_FN_OUTPUT) ? "/dev/stdout" : "/dev/stdin";
-
     return filename;
 }
 
@@ -294,7 +291,7 @@ do_format (const char *name, const char *output,
 	    slaxDumpTree(docp->children, "", 0);
     }
 
-    if (output == NULL || slaxFilenameIsStd(output))
+    if (slaxFilenameIsStd(output))
 	outfile = stdout;
     else {
 	outfile = fopen(output, "w");
