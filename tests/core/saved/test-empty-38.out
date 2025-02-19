@@ -12,11 +12,8 @@
     </host>
   </localhost>
   <one-twenty-seven>
-    <host>
-      <hostname>localhost</hostname>
-      <alias>1.0.0.127.in-addr.arpa</alias>
-      <address-family>inet</address-family>
-      <address>127.0.0.1</address>
-    </host>
+    <hostname>localhost</hostname>
+    <address-family>inet</address-family>
+    <address>127.0.0.1</address>
   </one-twenty-seven>
 </data>
