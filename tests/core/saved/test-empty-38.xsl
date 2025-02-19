@@ -21,7 +21,9 @@
       </localhost>
       <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="y" select="slax:get-host($x/address[1])"/>
       <one-twenty-seven>
-        <xsl:copy-of select="$y"/>
+        <xsl:copy-of select="$y/hostname"/>
+        <xsl:copy-of select="$y/address-family"/>
+        <xsl:copy-of select="$y/address[1]"/>
       </one-twenty-seven>
     </data>
   </xsl:template>
