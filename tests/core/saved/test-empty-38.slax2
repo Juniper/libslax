@@ -13,6 +13,8 @@ main <data> {
     }
     var $y = slax:get-host($x/address[1]);
     <one-twenty-seven> {
-        copy-of $y;
+        copy-of $y/hostname;
+        copy-of $y/address-family;
+        copy-of $y/address[1];
     }
 }
