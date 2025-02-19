@@ -61,6 +61,24 @@ static FILE *slaxIoTty;
 
 static FILE *slaxIoFile;
 
+int
+slaxFilenameIsStdFile (const char *filename, int fd)
+{
+    if (filename == NULL)
+	return TRUE;
+
+    if (filename[0] == '-' && filename[1] == '\0')
+	return TRUE;
+
+    if (fd == 0 && streq(filename, "/dev/stdin"))
+	return TRUE;
+
+    if (fd == 1 && streq(filename, "/dev/stdout"))
+	return TRUE;
+
+    return FALSE;
+}
+
 /**
  * Use the input callback to get data
  * @prompt the prompt to be displayed
