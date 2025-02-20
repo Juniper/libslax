@@ -4,16 +4,4 @@
   <val>false</val>
   <val>true</val>
   <val>false</val>
-  <localhost>
-    <host>
-      <hostname>localhost</hostname>
-      <address-family>inet</address-family>
-      <address>127.0.0.1</address>
-    </host>
-  </localhost>
-  <one-twenty-seven>
-    <hostname>localhost</hostname>
-    <address-family>inet</address-family>
-    <address>127.0.0.1</address>
-  </one-twenty-seven>
 </data>
