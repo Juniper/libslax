@@ -340,11 +340,25 @@ CLEANDIRS = out
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 
+WIDTH = 80
+WIDTH_ARG = --width ${WIDTH}
+TEST_VERSION = 1.3
+VERSION_ARG = --write-version ${TEST_VERSION}
+VERSION_ARG12 = --write-version 1.2
+F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
+F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
+
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
+X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
 SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
+
+TEST_TWO = \
+ ${F13} out/$$dir/$$base.slax out/$$dir/$$base.slax3 ; \
+ ${F12} out/$$dir/$$base.slax3 out/$$dir/$$base.slax4 ; \
+ ${F13} out/$$dir/$$base.slax4 out/$$dir/$$base.slax5 ; \
+ ${DIFF} -Nu out/$$dir/$$base.slax3 out/$$dir/$$base.slax5 ${S2O}
 
 testdir = ${WITH_LIBXSLT_TESTS}
 
@@ -380,6 +394,7 @@ test tests:
 			out/$$dir/$$base.slax ${S2O}; \
 	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.xsl2 \
 			out/$$dir/$$base.xsl2 ${S2O}; \
+	  ${TEST_TWO}; \
 	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
 	    input=${srcdir}/$$dir/$$base.xml ; \
           else \
