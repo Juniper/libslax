@@ -381,22 +381,6 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 			  value->boolval ? "true" : "false");
 	break;
 
-	/*
-	 * Some versions have these are #defines, some enums, and we
-	 * want to aboid compiler errors, so we have to test them each
-	 */
-#ifndef XPATH_POINT
-    case XPATH_POINT:
-#endif /* XPATH_POINT */
-#ifndef XPATH_RANGE
-    case XPATH_RANGE:
-#endif /* XPATH_RANGE */
-#ifndef XPATH_LOCATIONSET
-    case XPATH_LOCATIONSET:
-#endif /* XPATH_LOCATIONSET */
-
-    case XPATH_UNDEFINED:
-    case XPATH_USERS:
     default:
 	;
     }
