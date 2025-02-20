@@ -173,6 +173,24 @@ case "$op" in
         git branch -u origin/gh-pages
 	;;
 
+    clone|co)
+        target="$1"
+        shift
+        case "$target" in
+            http*|ssl*|ssh*)
+                ;;
+            github*|gitlab*)
+                target="https://$target"
+                ;;
+            *)
+                target="https://github.com/$target"
+                ;;
+        esac
+
+        echo "Cloning $target ..."
+        git clone "$target" "$@"
+        ;;
+
     create-gh-pages)
 	## gt create-gh-pages
 	## == Create a 'gh-pages' branch
