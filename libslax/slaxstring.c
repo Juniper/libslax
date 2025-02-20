@@ -472,15 +472,18 @@ slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
 /*
  * We "mark" a string that works in parallel to the output buffer,
  * with an 'x' at every place that could be a good line break.
+ * 'pre' != 0 means mark at the start of the token, not the end.
  */
 static char *
-slaxStringMark (char *mp, int markp, int count)
+slaxStringMark (char *mp, int markp, int count, int pre)
 {
     if (mp == NULL)
 	return NULL;
 
+    if (markp && pre)
+	mp[0] = markp;		/* "X" marks the spot */
     mp += count;
-    if (markp && count > 0)
+    if (markp && !pre && count > 0)
 	mp[-1] = markp;		/* "X" marks the spot */
 
     return mp;
@@ -541,7 +544,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	if (bp > &buf[1] && bp[-1] == ' ') {
 	    if (slaxStringTrimSpace(ssp, last_ttype, buf, bp)) {
 		bp -= 1;
-		mp = slaxStringMark(mp, 0, -1);
+		mp = slaxStringMark(mp, 0, -1, 0);
 		len -= 1;
 	    }
 	}
@@ -567,7 +570,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 		*bp++ = '"';
 
 	    /* Either way, this char  isn't marked */
-	    mp = slaxStringMark(mp, 0, 1);
+	    mp = slaxStringMark(mp, 0, 1, 0);
 
 	    slen = strlen(str);
 	    if (flags & SSF_ESCAPE) {
@@ -579,17 +582,17 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 			if (++len < bufsiz) {
 			    *bp++ = '\\';
 			    *bp++ = slaxEscapedTo[cp - slaxEscapedFrom];
-			    mp = slaxStringMark(mp, 0, 2);
+			    mp = slaxStringMark(mp, 0, 2, 0);
 			}
 		    } else {
 			*bp++ = str[i];
-			mp = slaxStringMark(mp, 0, 1);
+			mp = slaxStringMark(mp, 0, 1, 0);
 		    }
 		}
 	    } else {
 		memcpy(bp, str, slen);
 		bp += slen;
-		mp = slaxStringMark(mp, 0, slen);
+		mp = slaxStringMark(mp, 0, slen, 0);
 	    }
 
 	    if (squote) {
@@ -599,12 +602,12 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	    } else
 		*bp++ = '"';
 
-	    mp = slaxStringMark(mp, 0, 1);
+	    mp = slaxStringMark(mp, 0, 1, 0);
 
 	} else if ((flags & SSF_BRACES) && ttype == T_QUOTED) {
 	    for (cp = str; *cp; cp++) {
 		*bp++ = *cp;
-		mp = slaxStringMark(mp, 0, 1);
+		mp = slaxStringMark(mp, 0, 1, 0);
 		if (*cp == '{' || *cp == '}') {
 		    /*
 		     * XSLT uses double open and close braces to escape
@@ -615,7 +618,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 		     * by doubling the character.
 		     */
 		    *bp++ = *cp;
-		    mp = slaxStringMark(mp, 0, 1);
+		    mp = slaxStringMark(mp, 0, 1, 0);
 		    len += 1;
 		}
 	    }
@@ -626,7 +629,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	    bp += slen;
 	    *bp++ = '}';
 	    len += 2;
-	    mp = slaxStringMark(mp, 0, 2 + slen);
+	    mp = slaxStringMark(mp, 0, 2 + slen, 0);
 
 	} else {
 	    /* This is the normal place for elements, etc */
@@ -662,8 +665,8 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	    bp += slen;
 	    if (mp) {
 		if (frontp)
-		    mp = slaxStringMark(mp, ssp->ss_token[0], 1);
-		mp = slaxStringMark(mp, markp, slen - (frontp ? 1 : 0));
+		    mp = slaxStringMark(mp, ssp->ss_token[0], 1, 1);
+		mp = slaxStringMark(mp, markp, slen - (frontp ? 1 : 0), 1);
 
 		/* Don't want to have breaks before close parens */
 		if (ttype == L_CPAREN || ttype == L_CBRACK)
@@ -677,7 +680,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	    len -= 1;
 	else {
 	    *bp++ = ' ';
-	    mp = slaxStringMark(mp, 0, 1);
+	    mp = slaxStringMark(mp, 0, 1, 0);
 	}
 
 	last_ttype = ttype;
