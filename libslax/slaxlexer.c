@@ -917,6 +917,37 @@ slaxCommentMakeValue (xmlChar *input)
     return (xmlChar *) res;
 }
 
+/*
+ * Look ahead in the input buffer for the given token
+ */
+static int
+slaxLexerLookAhead (slax_data_t *sdp, const char *token)
+{
+    int token_len = strlen(token);
+    int cur = sdp->sd_cur;
+    int len = sdp->sd_len;
+    char *buf = sdp->sd_buf;
+
+    for (; isspace((int) buf[cur]); cur++) {
+	if (cur + token_len >= sdp->sd_len) {
+	    if (slaxGetInput(sdp, 0)) {
+		slaxLog("slax: getinput failed: %d/%d/%d",
+                   sdp->sd_start, cur, len);
+		return FALSE;
+	    }
+	}
+
+	len = sdp->sd_len;
+	buf = sdp->sd_buf;
+    }
+
+    if (cur + token_len <= len && buf[cur] == *token
+	    && strncmp(buf + cur, token, token_len) == 0)
+	return TRUE;
+
+    return FALSE;
+}
+
 /**
  * This function is the core of the lexer.
  *
@@ -1252,11 +1283,12 @@ slaxLexer (slax_data_t *sdp)
      * as a special case.
      */
     for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
-	if (sdp->sd_cur + 1 < sdp->sd_len && sdp->sd_buf[sdp->sd_cur] == ':'
-		&& sdp->sd_buf[sdp->sd_cur + 1] == ':')
+	if (slaxLexerLookAhead(sdp, "::"))
 	    return T_AXIS_NAME;
+
 	if (slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
 	    continue;
+
 	if (sdp->sd_cur > sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '*'
 		&& sdp->sd_buf[sdp->sd_cur - 1] == ':')
 	    continue;
