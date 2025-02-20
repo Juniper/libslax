@@ -19,19 +19,20 @@ EXTRA_DIST = \
     ${addprefix saved/, ${TEST_CASES:.slax=.err}} \
     ${addprefix saved/, ${TEST_CASES:.slax=.out}}
 
-SLAXPROC=${top_builddir}/slaxproc/slaxproc
-S2O = | ${SED} '1,/@@/d'
-SPDEBUG=
-S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
-SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
-
 WIDTH = 80
 WIDTH_ARG = --width ${WIDTH}
 TEST_VERSION = 1.3
 VERSION_ARG = --write-version ${TEST_VERSION}
+VERSION_ARG12 = --write-version 1.2
 F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
-F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG}
+F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
+
+SLAXPROC=${top_builddir}/slaxproc/slaxproc
+S2O = | ${SED} '1,/@@/d'
+SPDEBUG=
+S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
+X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
+SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
 
 CLEANDIRS = out
 
@@ -73,7 +74,6 @@ TEST_ONE = \
  ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
 
 TEST_TWO = \
- echo Formatting out/$$base.slax2 into out/$$base.slax3 ... ; \
  ${F13} out/$$base.slax2 out/$$base.slax3 ; \
  ${F12} out/$$base.slax3 out/$$base.slax4 ; \
  ${F13} out/$$base.slax4 out/$$base.slax5 ; \
