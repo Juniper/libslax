@@ -6,13 +6,13 @@ main <top> {
     var $x = /test;
     
     if (not($x) && not(/foo/bar) && not(goo[zoo && not(moo)])) {
-        <not xsl:extension-element-prefixes="goo"> {
+        <not> {
             ns goo extension = "http://example.com/goo";
             
             <goo:this> "oh yeah";
         }
     }
-    <mumble xsl:extension-element-prefixes="zoo yoo"> {
+    <mumble> {
         ns zoo extension = "http://example.com/zoo";
         ns yoo extension = "http://example.com/yoo";
         

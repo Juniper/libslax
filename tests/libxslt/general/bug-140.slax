@@ -8,6 +8,7 @@ output-method xml {
     standalone "yes";
     cdata-section-elements script;
 }
+
 var $foo = "bar";
 
 main <script type="text/ecmascript"> {

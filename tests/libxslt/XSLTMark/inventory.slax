@@ -17,7 +17,7 @@ match tr {
 }
 
 match table {
-    for-each (tr[td[1] [@colspan == "2"]]) {
+    for-each (tr[td[1][@colspan == "2"]]) {
         <factory> {
             <name> td[1];
             <inventory> {

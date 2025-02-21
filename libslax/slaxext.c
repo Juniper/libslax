@@ -15,6 +15,7 @@
 
 #include "slaxinternals.h"
 #include <libpsu/psutime.h>
+#include <libpsu/psustring.h>
 #include <libslax/slax.h>
 #include "slaxparser.h"
 
@@ -24,7 +25,10 @@
 #include <paths.h>
 #include <regex.h>
 #ifdef HAVE_SYS_SYSCTL_H
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
 #include <sys/sysctl.h>
+#pragma GCC diagnostic pop
 #endif
 #include <sys/types.h>
 #include <fcntl.h>
@@ -43,6 +47,16 @@
 #ifdef HAVE_STDTIME_TZFILE_H
 #include <stdtime/tzfile.h>
 #endif /* HAVE_STDTIME_TZFILE_H */
+/*
+ * humanize_number is a great function, unless you don't have it.  So
+ * we carry one in our pocket.
+ */
+#ifdef HAVE_HUMANIZE_NUMBER
+#include <libutil.h>		/* We have the real one! */
+#define slaxHumanizeNumber humanize_number
+#else /* HAVE_HUMANIZE_NUMBER */
+#include "slaxhumanize.h"	/* Use our own version */
+#endif /* HAVE_HUMANIZE_NUMBER */
 
 #include <libslax/slaxdata.h>
 
@@ -54,6 +68,8 @@
 #include <libxml/xpathInternals.h>
 #include <libxml/parserInternals.h>
 #include <libxml/uri.h>
+#include <libxml/xmlstring.h>
+
 #include <libpsu/psubase64.h>
 #include <libpsu/psuthread.h>
 
@@ -365,11 +381,6 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 			  value->boolval ? "true" : "false");
 	break;
 
-    case XPATH_UNDEFINED:
-    case XPATH_POINT:
-    case XPATH_RANGE:
-    case XPATH_LOCATIONSET:
-    case XPATH_USERS:
     default:
 	;
     }
@@ -607,7 +618,7 @@ slaxExtBuildSequence (xmlXPathParserContextPtr ctxt, int nargs)
 	nodep = xmlNewDocRawNode(container, NULL,
 				 (const xmlChar *) "item", (xmlChar *) buf);
 	if (nodep) {
-	    xmlAddChild((xmlNodePtr) container, nodep);
+	    nodep = slaxAddChild((xmlNodePtr) container, nodep);
 	    xmlXPathNodeSetAdd(ret->nodesetval, nodep);
 	}
     }
@@ -756,8 +767,56 @@ slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len)
     }
 }
 
+/*
+ * Print content into a print buffer, resizing the buffer as needed
+ */
+int
+slaxExtPrintfToBuf (slax_printf_buffer_t *pbp, const char *fmt, va_list vap)
+{
+    int rc;
+
+    va_list cap;
+    va_copy(cap, vap);		/* Copy vap, in case we need it */
+
+    int left = pbp->pb_end - pbp->pb_cur;
+
+    rc = vsnprintf(pbp->pb_cur, left, fmt, vap);
+    if (rc > left) {
+	if (slaxExtPrintExpand(pbp, rc - left)) {
+	    rc = 0;
+	} else {
+	    /* Retry with new buffer and copy of vap */
+	    left = pbp->pb_end - pbp->pb_cur;
+	    rc = vsnprintf(pbp->pb_cur, left, fmt, cap);
+	}
+    }
+
+    if (rc >= 0)
+	pbp->pb_cur += rc;
+
+    va_end(cap);
+
+    return rc;
+}
+
+int
+slaxExtPrintWriter (void *data, const char *fmt, ...)
+{
+    int rc;
+    va_list vap;
+    slax_printf_buffer_t *pbp = data;
+
+    va_start(vap, fmt);
+
+    rc = slaxExtPrintfToBuf(pbp, fmt, vap);
+
+    va_end(vap);
+
+    return rc;
+}
+
 static int
-slaxExtPrintfToBuf (slax_printf_buffer_t *pbp, char *field, xmlChar *arg,
+slaxExtPrintField (slax_printf_buffer_t *pbp, char *field, xmlChar *arg,
 		   int args_used, int width, int precision)
 {
     int left = pbp->pb_end - pbp->pb_cur;
@@ -791,6 +850,93 @@ slaxExtPrintFreeArgs (int argc, xmlChar **argv)
     }
 
     return NULL;
+}
+
+static int
+slaxHumanizeProcessOptions (char *options, int flags, char *sbuf, size_t slen)
+{
+    static const char suffix[] = "suffix=";
+
+    for (;;) {
+	char *token = strsep(&options, ",");
+	if (token == NULL)
+	    break;
+
+	if (streq(token, "whole"))
+	    flags &= ~HN_DECIMAL;
+
+	else if (streq(token, "space"))
+	    flags &= ~HN_NOSPACE;
+
+	else if (streq(token, "b"))
+	    flags |= HN_B;
+
+	else if (streq(token, "1000")) /* Aka "%jH" */
+	    flags |= HN_DIVISOR_1000;
+
+#if defined(HN_IEC_PREFIXES)
+	else if (streq(token, "iec"))
+	    flags |= HN_IEC_PREFIXES;
+#endif /* HN_IEC_PREFIXES */
+
+	else if (strncmp(token, suffix, sizeof(suffix) - 1) == 0)
+	    strlcpy(sbuf, token + sizeof(suffix) - 1, slen);
+    }
+
+    return flags;
+}
+
+static int
+slaxHumanizeValue (char *buf, size_t blen, xmlChar *xarg, char *hoptions,
+		   int hflags)
+{
+    char *arg = (char *) xarg;
+    char sbuf[20];
+
+    sbuf[0] = '\0';
+
+    hflags |= HN_NOSPACE | HN_DECIMAL;
+    if (hoptions)
+	hflags = slaxHumanizeProcessOptions(hoptions, hflags,
+					     sbuf, sizeof(sbuf));
+
+    int64_t number = 0;
+
+    if (strchr(arg, 'e') == NULL) {
+	unsigned long long l = strtoull(arg, NULL, 0);	
+	if (l == ULLONG_MAX)
+	    return FALSE;
+
+	number = (int64_t) l;
+
+    } else {
+	char *ep = NULL;
+	double d = strtod(arg, &ep);
+	if (ep && ep == arg)
+	    return FALSE;
+	number = (int64_t) d;
+    }
+
+    int scale = 0;
+
+    if (number) {
+        uint64_t left = number;
+
+        if (hflags & HN_DIVISOR_1000) {
+            for ( ; left; scale++)
+                left /= 1000;
+        } else {
+            for ( ; left; scale++)
+                left /= 1024;
+        }
+        scale -= 1;
+    }
+
+    if (slaxHumanizeNumber(buf, blen, number, sbuf, scale, hflags) <= 0)
+	return FALSE;
+
+    return TRUE;
+
 }
 
 /*
@@ -852,6 +998,11 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 	int tlen = 0;
 	int once = FALSE;
 
+	char *options = NULL;
+	int humanize = FALSE;
+	int hflags = 0;
+	char hbuf[20];		/* Humanize buffer */
+
 	fmt += 1;		/* Skip percent */
 
 	/*
@@ -875,13 +1026,43 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		break;
 
 	    case 'j':
-		switch (*++fmt) {
+		if (*++fmt == '{') {
+		    /* Handle an "options" field, like "%j{p3}h" */
+		    const xmlChar *oep = xmlStrchr(fmt, '}');
+		    if (oep == NULL) /* Invalid format string */
+			break;
+
+		    /* Copy the tag into 'options' */
+		    fmt += 1;	/* Skip '{' */
+
+		    int olen = oep - fmt;
+		    options = alloca(olen + 1);
+		    memcpy(options, fmt, olen);
+		    options[olen] = '\0';
+
+		    fmt = oep + 1; /* Move past the '}' */
+		}
+
+		switch (*fmt) {
 		case 'c':
 		    /*
 		     * "%jc" turns on the 'capitalize' flag, which
 		     * capitalizes the first letter of the field.
 		     */
 		    capitalize = TRUE;
+		    break;
+
+		case 'H':
+		    hflags = HN_DIVISOR_1000;
+		    /* fallthru */
+
+		case 'h':
+		    /*
+		     * %h and %H make human-readable numbers, similar to
+		     * the df(1) options.  An option field is supported
+		     * here also.
+		     */
+		    humanize = TRUE;
 		    break;
 
 		case 't':
@@ -897,7 +1078,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 			break;
 
 		    /* Copy the tag into 'tag' */
-		    fmt += 2;	/* Skip '{' */
+		    fmt += 2;	/* Skip 't{' */
 		    tep -= 1;	/* Skip '}' */
 
 		    tlen = tep - fmt + 1;
@@ -994,9 +1175,13 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		pb.pb_cur += tlen;
 	    }
 	    left = pb.pb_end - pb.pb_cur;
+
+	} else if (humanize) {
+	    if (slaxHumanizeValue(hbuf, sizeof(hbuf), arg, options, hflags))
+		arg = (xmlChar *)hbuf;/* Use this as the argument */
 	}
 
-	int needed = slaxExtPrintfToBuf(&pb, field, arg,
+	int needed = slaxExtPrintField(&pb, field, arg,
 				       args_used, width, precision);
 
 	if (needed > left) {
@@ -1004,7 +1189,7 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 		needed = 0;
 	    else {
 		left = pb.pb_end - pb.pb_cur;
-		needed = slaxExtPrintfToBuf(&pb, field, arg,
+		needed = slaxExtPrintField(&pb, field, arg,
 					   args_used, width, precision);
 	    }
 	}
@@ -1033,7 +1218,6 @@ slaxExtPrintIt (const xmlChar *fmtstr, int argc, xmlChar **argv)
 
     return pb.pb_buf;
 }
-
 
 /*
  * printf -- C-style printf functionality with some juniper-specific
@@ -1105,7 +1289,7 @@ slaxExtSleep (xmlXPathParserContext *ctxt, int nargs)
     if (str == NULL) {
 	xmlXPathSetArityError(ctxt);
 	return;
-    }	
+    }
 
     unsigned long arg1 = strtoul(str, &endp, 0);
     xmlFree(str);
@@ -1165,6 +1349,16 @@ slaxExtMakeTextNode (xmlDocPtr docp, xmlNs *nsp, const char *name,
     return newp;
 }
 
+static xmlNode *
+slaxExtMakeChildTextNode (xmlDocPtr docp, xmlNode *parent,
+			  xmlNs *nsp, const char *name,
+			  const char *content, int len)
+{
+    xmlNode *newp = slaxExtMakeTextNode(docp, nsp, name, content, len);
+
+    return slaxAddChild(parent, newp);
+}
+
 /*
  * Break a string into the set of clone element, with each clone
  * containing one line of text.
@@ -1182,7 +1376,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 	clone = slaxExtMakeTextNode(container, nsp, name, NULL, 0);
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	}
 	return;
     }
@@ -1193,7 +1387,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 				    content, strlen(content));
 	if (clone) {
 	    xmlXPathNodeSetAdd(results, clone);
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	}
 	return;
     }
@@ -1215,7 +1409,7 @@ slaxExtBreakString (xmlDocPtr container, xmlNodeSet *results, char *content,
 	    if (last)
 		xmlAddSibling(last, clone);
 
-	    xmlAddChild((xmlNodePtr) container, clone);
+	    clone = slaxAddChild((xmlNodePtr) container, clone);
 	    last = clone;
 	}
 
@@ -1309,6 +1503,109 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
     ret = xmlXPathNewNodeSetList(results);
     valuePush(ctxt, ret);
     xmlXPathFreeNodeSet(results);
+}
+
+static int
+slaxExtJoinAppend (slax_printf_buffer_t *pbp, const xmlChar *buf, int blen,
+		   int need_joiner, const xmlChar *joiner, int jlen)
+{
+    if (need_joiner)
+	slaxExtPrintAppend(pbp, joiner, jlen);
+
+    slaxExtPrintAppend(pbp, buf, blen);
+
+    return TRUE;
+}
+
+#define JAPPEND(_cp) \
+    slaxExtJoinAppend(&pb, _cp, xmlStrlen(_cp), need_joiner, joiner, jlen)
+
+/*
+ * Join a series of strings into a single onek.
+ *
+ * Usage:  var $line = slax:join(":", $x/user, "*", all/those/fields);
+ */
+static void
+slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
+{
+    xmlXPathObject *stack[nargs];	/* Stack for args as objects */
+    xmlXPathObject *obj;
+    const xmlChar *cp;
+    static const xmlChar null_joiner[1] = { 0 };
+
+    if (nargs < 1) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int ndx;
+    for (ndx = 0; ndx < nargs; ndx++)
+	stack[nargs - 1 - ndx] = valuePop(ctxt);
+
+    xmlChar *joiner = xmlXPathCastToString(stack[0]);
+    if (joiner == NULL)
+	joiner = xmlStrdup(null_joiner);
+    int jlen = joiner ? xmlStrlen(joiner) : 0;
+
+    slax_printf_buffer_t pb;
+    bzero(&pb, sizeof(pb));
+
+    int need_joiner = FALSE;
+
+    for (ndx = 1; ndx < nargs; ndx++) {
+	if (stack[ndx] == NULL)	/* Should not occur */
+	    continue;
+
+	obj = stack[ndx];
+	if (obj->nodesetval) {
+	    int i;
+	    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+		xmlNode *nop = obj->nodesetval->nodeTab[i];
+		if (nop == NULL || nop->children == NULL)
+		    continue;
+
+		/*
+		 * If we're handed a fragment, assume they wanted the
+		 * contents.
+		 */
+		if (XSLT_IS_RES_TREE_FRAG(nop))
+		    nop = nop->children;
+
+		/*
+		 * Whiffle thru the children looking for a node
+		 */
+		xmlNode *cop;
+		for ( ; nop; nop = nop->next) {
+		    if (nop->type == XML_TEXT_NODE) {
+			cp = nop->content;
+			if (cp)
+			    need_joiner = JAPPEND(cp);
+
+		    } else if (nop->type == XML_ELEMENT_NODE) {
+			for (cop = nop->children; cop; cop = cop->next) {
+			    if (cop->type == XML_TEXT_NODE) {
+				cp = cop->content;
+				if (cp)
+				    need_joiner = JAPPEND(cp);
+			    }
+			}
+		    }
+		}
+	    }
+
+	} else if (obj->stringval) {
+	    cp = obj->stringval;
+	    need_joiner = JAPPEND(cp);
+	}
+    }
+
+    for (ndx = 0; ndx < nargs; ndx++)
+	xmlXPathFreeObject(stack[ndx]);
+
+    xmlFreeAndEasy(joiner);
+
+    /* Transfer ownership of the buffer in pb to the stack */
+    xmlXPathReturnString(ctxt, (xmlChar *) pb.pb_buf);
 }
 
 /*
@@ -1434,7 +1731,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 		if (last)
 		    xmlAddSibling(last, newp);
 
-		 xmlAddChild((xmlNodePtr) container, newp);
+		newp = slaxAddChild((xmlNodePtr) container, newp);
 		last = newp;
 	    }
 	}
@@ -1459,6 +1756,8 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 
  fail:
     regerror(rc, &reg, buf, sizeof(buf));
+    slaxLog("regex error: '%s' for '%s'\n", buf,
+	    ((const char *) pattern) ?: "(null)");
     xsltGenericError(xsltGenericErrorContext, "regex error: %s\n", buf);
     goto done;
 }
@@ -1509,6 +1808,39 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	xmlXPathReturnTrue(ctxt);
     else 
 	xmlXPathReturnFalse(ctxt);
+}
+
+/*
+ * Return TRUE if the the given string ends with the given pattern
+ *
+ * Usage:  if (slax:ends-with($var, $str)) { .... }
+ */
+static void
+slaxExtEndsWith (xmlXPathParserContext *ctxt, int nargs)
+{
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *pat = (char *) xmlXPathPopString(ctxt);
+    if (pat == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *str = (char *) xmlXPathPopString(ctxt);
+    if (str == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int plen = strlen(pat);
+    int slen = strlen(str);
+    int delta = slen - plen;
+
+    int result = (delta >= 0 && strcmp(str + delta, pat) == 0);
+    xmlXPathReturnBoolean(ctxt, result);
 }
 
 #if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
@@ -2032,7 +2364,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 	    if (last)
 		xmlAddSibling(last, newp);
 
-	    xmlAddChild((xmlNodePtr) container, newp);
+	    newp = slaxAddChild((xmlNodePtr) container, newp);
 	    last = newp;
 	}
 
@@ -2049,7 +2381,7 @@ slaxExtSplit (xmlXPathParserContext *ctxt, int nargs)
 
 	if (last)
 	    xmlAddSibling(last, newp);
-	xmlAddChild((xmlNodePtr) container, newp);
+	newp = slaxAddChild((xmlNodePtr) container, newp);
     }
 
  done:
@@ -2577,7 +2909,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (top == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) container, top);
+    top = slaxAddChild((xmlNodePtr) container, top);
     xmlXPathNodeSetAdd(ret->nodesetval, top);
 
     nodep = xmlNewDocNode(container, NULL,
@@ -2585,14 +2917,14 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (nodep == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) top, nodep);
+    nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
     for (ti = 0, tj = tctxt->templNr - 1; ti < 15 && tj >= 0; ti++, tj--) {
 	child = xmlNewDocNode(container, NULL,
 			      (const xmlChar *) "template", NULL);
 
 	if (child) {
-	    xmlAddChild((xmlNodePtr) nodep, child);
+	    child = slaxAddChild(nodep, child);
 	    if (tctxt->templTab[tj]->name != NULL)
 		xmlAddChildContent(container, child, (const xmlChar *) "name",
 				   tctxt->templTab[tj]->name);
@@ -2610,7 +2942,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
     if (nodep == NULL)
 	goto fail;
 
-    xmlAddChild((xmlNodePtr) top, nodep);
+    nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
     for (vi = 0, vj = tctxt->varsNr - 1; vi < 15 && vj >= 0; vi++, vj--) {
         xsltStackElemPtr cur;
@@ -2622,7 +2954,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 			      (const xmlChar *) "scope", NULL);
 
 	if (child) {
-	    xmlAddChild(nodep, child);
+	    child = slaxAddChild(nodep, child);
 
 	    cur = tctxt->varsTab[vj];
 	    while (cur != NULL) {
@@ -2636,7 +2968,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 		xmlNodePtr grandchild = xmlNewDocNode(container, NULL,
 					    (const xmlChar *) tag, NULL);
 		if (grandchild) {
-		    xmlAddChild(child, grandchild);
+		    grandchild = slaxAddChild(child, grandchild);
 		    if (cur->name != NULL)
 			xmlAddChildContent(container, grandchild,
 					   (const xmlChar *) "name",
@@ -2824,6 +3156,9 @@ slaxExtRemoveReturns (char *data, size_t *lenp)
     *lenp -= delta;		/* Mark the removed bytes */
 }
 
+/*
+ * slax:document($url [,$options]) returns a string of data from the file.
+ */
 static void
 slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
 {
@@ -3256,6 +3591,103 @@ slaxExtTrace (xmlXPathParserContextPtr ctxt, int nargs)
 }
 
 /*
+ * Easy access to the C library function call.  Returns information
+ * about the hostname or ip address given.
+ *
+ * Usage:  var $info = slax:get-host($address);
+ */
+static void
+slaxExtGetHost (xmlXPathParserContext *ctxt, int nargs)
+{
+    if (nargs == 0) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    char *str = (char *) xmlXPathPopString(ctxt);
+    if (str == NULL) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    int family = AF_UNSPEC;
+    union {
+        struct in6_addr in6;
+        struct in_addr in;
+    } addr;
+
+    if (inet_pton(AF_INET, str, &addr) > 0) {
+        family = AF_INET;
+    } else if (inet_pton(AF_INET6, str, &addr) > 0) {
+        family = AF_INET6;
+    }
+
+    struct hostent *hp = NULL;
+
+    if (family == AF_UNSPEC) {
+	hp = gethostbyname(str);
+
+    } else {
+	int retrans = _res.retrans, retry = _res.retry;
+
+	_res.retrans = 1; /* Store new values */
+	_res.retry = 1;
+
+	int addr_size = (family == AF_INET)
+	    ? sizeof(addr.in) : sizeof(addr.in6);
+
+	hp = gethostbyaddr((char *) &addr, addr_size, family);
+
+	_res.retrans = retrans;     /* Restore old values */
+	_res.retry = retry;
+    }
+
+    if (hp == NULL || hp->h_name == NULL) {
+	xmlXPathReturnEmptyString(ctxt);
+	return;
+    }
+
+    xmlDocPtr container = slaxMakeRtf(ctxt);
+    if (container == NULL)
+	return;
+
+    xmlNode *root = xmlNewDocNode(container, NULL,
+				 (const xmlChar *) "host", NULL);
+    if (root == NULL)
+	return;
+
+    slaxExtMakeChildTextNode(container, root,
+			     NULL, "hostname", hp->h_name, strlen(hp->h_name));
+
+    char **ap;
+    for (ap = hp->h_aliases; ap && *ap; ap++) {
+	slaxExtMakeChildTextNode(container, root,
+				 NULL, "alias", *ap, strlen(*ap));
+    }
+
+    const char *address_family = (hp->h_addrtype == AF_INET) ? "inet" :
+	(hp->h_addrtype == AF_INET6) ? "inet6" : "unknown";
+
+    slaxExtMakeChildTextNode(container, root,
+			     NULL, "address-family",
+			     address_family, strlen(address_family));
+
+    char name[MAXHOSTNAMELEN];
+    for (ap = hp->h_addr_list; ap && *ap; ap++) {
+	if (inet_ntop(hp->h_addrtype, *ap, name, sizeof(name)) == NULL)
+	    continue;
+
+	slaxExtMakeChildTextNode(container, root,
+				 NULL, "address", name, strlen(name));
+    }
+
+    xmlNodeSetPtr results = xmlXPathNodeSetCreate(root);
+    xmlXPathObjectPtr ret = xmlXPathNewNodeSetList(results);
+    valuePush(ctxt, ret);
+    xmlXPathFreeNodeSet(results);
+}
+
+/*
  * An ugly attempt to seed the random number generator with the best
  * value possible.  Ugly, but localized ugliness.
  */
@@ -3323,7 +3755,7 @@ slaxExtRegisterOther (const char *namespace)
 /* ---------------------------------------------------------------------- */
 
 /**
- * Registers the SLAX extensions
+ * Registers the SLAX-only (not shared) extension functions
  */
 void
 slaxExtRegister (void)
@@ -3341,7 +3773,11 @@ slaxExtRegister (void)
     slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
     slaxRegisterFunction(SLAX_URI, "document", slaxExtDocument);
     slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
+    slaxRegisterFunction(SLAX_URI, "join", slaxExtJoin);
     slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
+
+    slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
+    slaxRegisterFunction(SLAX_URI, "ends-with", slaxExtEndsWith);
 
     slaxExtRegisterOther(NULL);
 

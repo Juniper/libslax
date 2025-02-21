@@ -24,38 +24,50 @@
 #define URI_BIT  "http://xml.libslax.org/bit"
 
 static xmlChar *
-extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop)
+extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop,
+		 int parse_the_string)
 {
+    unsigned long long val, v2;
+
     if (xop->type == XPATH_NUMBER) {
-	xmlChar *res;
-	int width;
-	unsigned long long val = xop->floatval, v2;
+	val = xop->floatval;
 
-	if (xop->floatval >= pow(2, 64))
-	    val = (unsigned long long) -1;
+	if (xop->floatval < 0 || xop->floatval >= pow(2, 64))
+	    val = ULLONG_MAX;	/* No other error value we can use */
 
-	xmlXPathFreeObject(xop);
+    } else if (parse_the_string && xop->type == XPATH_STRING) {
+	const char *s = (const char *) xop->stringval;
+	val = strtoull(s, NULL, 10);
 
-	for (width = 0, v2 = val; v2; width++, v2 /= 2)
-	    continue;
-
-	if (width == 0)		/* Gotta have one zero */
-	    width = 1;
-
-	res = xmlMalloc(width + 1);
-	if (res == NULL)
-	    return NULL;
-
-	res[width] = '\0';
-	for (width--, v2 = val; width >= 0; width--, v2 /= 2)
-	    res[width] = (v2 & 1) ? '1' : '0';
-
-	return res;
+    } else {
+	/*
+	 * We just want the string to be a string, so we can make
+	 * libxml do the work for us.
+	 */
+	valuePush(ctxt, xop);
+	return xmlXPathPopString(ctxt);
     }
 
-    /* Make libxml do the work for us */
-    valuePush(ctxt, xop);
-    return xmlXPathPopString(ctxt);
+    xmlXPathFreeObject(xop);
+
+    xmlChar *res;
+    int width;
+
+    for (width = 0, v2 = val; v2; width++, v2 /= 2)
+	continue;
+
+    if (width == 0)		/* Gotta have one zero */
+	width = 1;
+
+    res = xmlMalloc(width + 1);
+    if (res == NULL)
+	return NULL;
+
+    res[width] = '\0';
+    for (width--, v2 = val; width >= 0; width--, v2 /= 2)
+	res[width] = (v2 & 1) ? '1' : '0';
+
+    return res;
 }
 
 typedef xmlChar (*slax_bit_callback_t)(xmlChar, xmlChar);
@@ -77,14 +89,14 @@ extBitOperation (xmlXPathParserContextPtr ctxt, int nargs,
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    rv = extBitStringVal(ctxt, xop);
+    rv = extBitStringVal(ctxt, xop, FALSE);
     if (rv == NULL)
 	return;
 
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    lv = extBitStringVal(ctxt, xop);
+    lv = extBitStringVal(ctxt, xop, FALSE);
     if (lv == NULL) {
 	xmlFree(rv);
 	return;
@@ -200,7 +212,7 @@ extBitNot (xmlXPathParserContextPtr ctxt, int nargs)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res = extBitStringVal(ctxt, xop);
+    res = extBitStringVal(ctxt, xop, FALSE);
     if (res == NULL)
 	return;
 
@@ -267,7 +279,7 @@ extBitToInt (xmlXPathParserContextPtr ctxt, int nargs)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res = extBitStringVal(ctxt, xop);
+    res = extBitStringVal(ctxt, xop, FALSE);
     if (res == NULL)
 	return;
 
@@ -305,7 +317,7 @@ extBitFromInt (xmlXPathParserContextPtr ctxt, int nargs)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res = extBitStringVal(ctxt, xop);
+    res = extBitStringVal(ctxt, xop, TRUE);
     if (res == NULL)
 	return;
 
@@ -339,7 +351,7 @@ extBitToHex (xmlXPathParserContextPtr ctxt, int nargs)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res = extBitStringVal(ctxt, xop);
+    res = extBitStringVal(ctxt, xop, FALSE);
     if (res == NULL)
 	return;
 
@@ -387,7 +399,11 @@ extBitFromHex (xmlXPathParserContextPtr ctxt, int nargs)
     if (res == NULL || xmlXPathCheckError(ctxt))
 	return;
 
-    val = strtoull((char *) res, 0, 0x10);
+    /* An 'e' means we are seeing a large floating point number */
+    if (strchr((char *) res, 'e') != NULL)
+	val = 0;
+    else
+	val = strtoull((char *) res, NULL, 0);
     
     for (width = 0, v2 = val; v2; width++, v2 /= 2)
 	continue;
@@ -437,7 +453,7 @@ extBitClearOrSet (xmlXPathParserContextPtr ctxt, int nargs, xmlChar value)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res = extBitStringVal(ctxt, xop);
+    res = extBitStringVal(ctxt, xop, FALSE);
     if (res == NULL)
 	return;
 
@@ -490,14 +506,14 @@ extBitCompare (xmlXPathParserContextPtr ctxt, int nargs)
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res2 = extBitStringVal(ctxt, xop);
+    res2 = extBitStringVal(ctxt, xop, FALSE);
     if (res2 == NULL)
 	return;
 
     xop = valuePop(ctxt);
     if (xop == NULL || xmlXPathCheckError(ctxt))
 	return;
-    res1 = extBitStringVal(ctxt, xop);
+    res1 = extBitStringVal(ctxt, xop, FALSE);
     if (res1 == NULL)
 	return;
 
@@ -533,11 +549,86 @@ extBitCompare (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathReturnNumber(ctxt, rc);
 }
 
+static void
+extBitShift (xmlXPathParserContextPtr ctxt, int nargs, int fill, int right)
+{
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    /* Pop args in reverse order */
+    int num = (int) xmlXPathPopNumber(ctxt);
+    if (xmlXPathCheckError(ctxt))
+	return;
+
+    if (num < 0) {
+	slaxTransformError(ctxt, "shift value cannot be below 0");
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    xmlXPathObjectPtr xop = valuePop(ctxt);
+    if (xop == NULL || xmlXPathCheckError(ctxt))
+	return;
+
+    xmlChar *val = extBitStringVal(ctxt, xop, FALSE);
+    if (val == NULL)
+	return;
+
+    if (num != 0) {
+	int width = xmlStrlen(val);
+
+	if (num < width) {
+	    char *cp = (char *) val;
+	    int len = width - num;
+
+	    if (right) {
+		int leading = fill ? cp[0] : '0';
+		memmove(cp + num, cp, len);
+		memset(cp, leading, num);
+
+	    } else {
+		memmove(cp, cp + num, len);
+		memset(cp + len, '0', num);
+	    }
+
+	} else {
+	    memset((char *) val, (fill && right) ? val[0] : '0', width);
+	}
+    }
+
+    xmlXPathReturnString(ctxt, val);
+}
+
+static void
+extBitShiftRight (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 0, 1);
+}
+
+static void
+extBitShiftLeft (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 0, 0);
+}
+
+static void
+extBitAShiftRight (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    return extBitShift(ctxt, nargs, 1, 1);
+}
+
 slax_function_table_t slaxBitTable[] = {
     {
 	"and", extBitAnd,
 	"Bit-wise AND operator",
 	"(bit-string, bit-string)", XPATH_STRING,
+    },
+    {
+	"ashift-right", extBitAShiftRight,
+	"Arithmentic shift a value to the right",
+	"(bit-string, count)", XPATH_STRING,
     },
     {
 	"clear", extBitClear,
@@ -588,6 +679,16 @@ slax_function_table_t slaxBitTable[] = {
 	"set", extBitSet,
 	"Set a bit within a bit-string",
 	"(bit-string, bit-number)", XPATH_STRING,
+    },
+    {
+	"shift-left", extBitShiftLeft,
+	"Shift a value to the left",
+	"(bit-string, count)", XPATH_STRING,
+    },
+    {
+	"shift-right", extBitShiftRight,
+	"Shift a value to the right",
+	"(bit-string, count)", XPATH_STRING,
     },
     {
 	"to-hex", extBitToHex,

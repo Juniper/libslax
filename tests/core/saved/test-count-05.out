@@ -18,6 +18,7 @@
   <four>4</four>
   <five>5</five>
 </in>
+      <new>one</new>
     </after>
   </one>
   <two>
@@ -34,6 +35,6 @@
   <three>3</three>
   <four>4</four>
   <five>5</five>
-</after>
+<new>one</new></after>
   </two>
 </top>

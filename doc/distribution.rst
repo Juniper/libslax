@@ -28,6 +28,8 @@ libslax initializer function::
 
     slaxEnable(1);
 
+.. _slaxproc:
+
 slaxproc: The SLAX Processor
 ----------------------------
 
@@ -38,47 +40,56 @@ check syntax.
 
 ::
 
- Usage: slaxproc [mode] [options] [script] [files]
-  Modes:
-    --check OR -c: check syntax and content for a SLAX script
-    --format OR -F: format (pretty print) a SLAX script
-    --json-to-xml: Turn JSON data into XML
-    --run OR -r: run a SLAX script (the default mode)
-    --show-select: show XPath selection from the input document
-    --show-variable: show contents of a global variable
-    --slax-to-xslt OR -x: turn SLAX into XSLT
-    --xml-to-json: turn XML into JSON
-    --xpath <xpath> OR -X <xpath>: select XPath data from input
-    --xslt-to-slax OR -s: turn XSLT into SLAX
+  Usage: slaxproc [mode] [options] [script] [files]
+    Modes:
+        --check OR -c: check syntax and content for a SLAX script
+        --format OR -F: format (pretty print) a SLAX script
+        --json-to-xml: Turn JSON data into XML
+        --run OR -r: run a SLAX script (the default mode)
+        --show-select: show XPath selection from the input document
+        --show-variable: show contents of a global variable
+        --slax-to-xslt OR -x: turn SLAX into XSLT
+        --xml-to-json: turn XML into JSON
+        --xml-to-yaml: turn XML into YAML
+        --xpath <xpath> OR -X <xpath>: select XPath data from input
+        --xslt-to-slax OR -s: turn XSLT into SLAX
 
-   Options:
-    --debug OR -d: enable the SLAX/XSLT debugger
-    --empty OR -E: give an empty document for input
-    --exslt OR -e: enable the EXSLT library
-    --expression <expr>: convert an expression
-    --help OR -h: display this help message
-    --html OR -H: Parse input data as HTML
-    --ignore-arguments: Do not process any further arguments
-    --include <dir> OR -I <dir>: search dir for includes/imports
-    --indent OR -g: indent output ala output-method/indent
-    --input <file> OR -i <file>: take input from the given file
-    --json-tagging: tag json-style input with the 'json' attribute
-    --keep-text: mini-templates should not discard text
-    --lib <dir> OR -L <dir>: search dir for extension libraries
-    --log <file>: use given log file
-    --mini-template <code> OR -m <code>: wrap template code in script
-    --name <file> OR -n <file>: read the script from the given file
-    --no-randomize: do not initialize the random number generator
-    --no-tty: Do not use tty for sdb and other input needs
-    --no-json-types: do not insert 'type' attribute for --json-to-xml
-    --output <file> OR -o <file>: make output into the given file
-    --param <name> <value> OR -a <name> <value>: pass parameters
-    --partial OR -p: allow partial SLAX input to --slax-to-xslt
-    --slax-output OR -S: emit SLAX-style XML output
-    --trace <file> OR -t <file>: write trace data to a file
-    --verbose OR -v: enable debugging output (slaxLog())
-    --version OR -V: show version information (and exit)
-    --write-version <version> OR -w <version>: write in version
+    Options:
+        --debug OR -d: enable the SLAX/XSLT debugger
+        --empty OR -E: give an empty document for input
+        --encoding <name>: specifies the input document encoding
+        --exslt OR -e: enable the EXSLT library
+        --expression <expr>: convert an expression
+        --help OR -h: display this help message
+        --html OR -H: Parse input data as HTML
+        --ignore-arguments: Do not process any further arguments
+        --include <dir> OR -I <dir>: search directory for includes/imports
+        --indent OR -g: indent output ala output-method/indent
+        --indent-width <num>: Number of spaces to indent (for --format)
+        --input <file> OR -i <file>: take input from the given file
+        --json: make json output, similar to  'output-method json'
+        --json-tagging: tag json-style input with the 'json' attribute
+        --keep-text: mini-templates should not discard text
+        --lib <dir> OR -L <dir>: search directory for extension libraries
+        --log <file>: use given log file
+        --mini-template <code> OR -m <code>: wrap template code in a script
+        --name <file> OR -n <file>: read the script from the given file
+        --no-json-types: do not insert 'type' attribute for --json-to-xml
+        --no-randomize: do not initialize the random number generator
+        --no-tty: do not fall back to stdin for tty io
+        --output <file> OR -o <file>: make output into the given file
+        --param <name> <value> OR -a <name> <value>: pass parameters
+        --partial OR -p: allow partial SLAX input to --slax-to-xslt
+        --profile <file>: run profiler and save output to given file
+        --profile-mode <mode>: enable profiler mode (e.g. brief, wall)
+        --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
+        --trace <file> OR -t <file>: write trace data to a file
+        --verbose OR -v: enable debugging output (slaxLog())
+        --version OR -V: show version information (and exit)
+        --version-only: show version information line (and exit)
+        --want-parens: emit parens for control statements even for V1.3+
+        --width <num>: Target line length before wrapping (for --format)
+        --write-version <version> OR -w <version>: write in version
 
   Project libslax home page: https://github.com/Juniper/libslax
 
@@ -135,6 +146,28 @@ parsed positionally.  In this example, the script name is positional
 but the input and output file names are positional::
 
    slaxproc -i input.xml -o output.xml -g -v script.slax
+
+`slaxproc` allows multiple options to be combined in a single argument
+and the "--opt=value" and "-ovalue" syntax is supported.
+
+In the following examples, the sets of commands are identical::
+
+  slaxproc -E -g- d --name test-empty-39.slax
+  slaxproc -Egd --name=test-empty-39.slax
+
+  slaxproc -F - p -i test-empty-39.slax --width 70
+  slaxproc -Fpitest-empty-39.slax --width=70
+
+In addition, the "-a" (--param) option accepts parameters in two ways,
+either as distinct arguments or with a "name=value" style.  The
+following arguments are equivalent::
+
+    -a name value
+    -a name=value
+    -aname=value
+    --param aname value
+    --param aname=value
+    --param=aname=value
 
 .. _slaxproc-pound-bang:
 
@@ -214,6 +247,11 @@ Modes Options
 
      % slaxproc --format ugly.slax pretty.slax
 
+.. option:: --json
+
+  Emit JSON output, as if the script used the
+  :ref:`output-method json <output-method>` statement.
+
 .. index:: json; json-to-xml
 .. option:: --json-to-xml
 
@@ -291,6 +329,8 @@ Modes Options
 
      % slaxproc --slax-to-xslt my-script.slax your-script.xsl
 
+.. _xml-to-json:
+
 .. index:: json; xml-to-json
 .. option:: --xml-to-json
 
@@ -301,6 +341,17 @@ Modes Options
 
      % echo '<json><a>b</a></json>' | slaxproc --xml-to-json
      { "a": "b" }
+
+.. index:: yaml; xml-to-yaml
+.. option:: --xml-to-yaml
+
+  Transform XML input into YAML.
+
+  ::
+
+     % echo '<json><a>b</a></json>' | slaxproc --xml-to-yaml
+     ---
+     "a": "b"
 
 .. option:: --xpath <xpath-expression>
 .. option:: -X <xpath-expression>
@@ -347,6 +398,11 @@ Behavioral Options
     % slaxproc -E -m 'main <top> { copy-of /;} '
     <?xml version="1.0"?>
     <top/>
+
+.. option:: --encoding <name>
+
+  Specifies the text encoding to be used for input documents.  This
+  defaults to "UTF-8".
 
 .. option:: --exslt
 .. option:: -e
@@ -405,6 +461,11 @@ Behavioral Options
      output-method {
          indent "true";
      }
+
+.. option:: --indent-width
+
+  Change the default indent level from the default value of 4.  This
+  only affects :option:`--format` mode.
 
 .. option:: --input <file>
 .. option:: -i <file>
@@ -479,7 +540,9 @@ Behavioral Options
   Write output into the given file.
 
 .. option:: --param <name> <value>
+.. option:: --param <name>=<value>
 .. option:: -a <name> <value>
+.. option:: -a <name>=<value>
 
   Pass a parameter to the script using the name/value pair provided.
   Note that all values are string parameters, so normal quoting
@@ -497,6 +560,24 @@ Behavioral Options
     <top> {
         <a> "b";
     }
+
+.. _profile:
+
+.. option:: --profile
+
+  Enable profiling while the script is executing, writing the profile
+  data to the given file.  This accesses the same functionality as the
+  :ref:`profile <profiler>` command in the :ref:`debugger <sdb>`.
+
+.. _profile-mode:
+
+.. option:: --profile-mode <mode>
+
+  Provide additional information to the profiler.  For `brief` mode,
+  lines that are not executed are trimmed from the profiler output.
+  For `wall` mode, columns for "wall clock" time are added, displaying
+  how much time (in seconds) was used for that line.  Refer to the
+  :ref:`profiler` for additional information.
 
 .. option:: --slax-output
 .. option:: -S
@@ -518,6 +599,27 @@ Behavioral Options
 .. option:: -V
 
   Show version information and exit.
+
+.. option:: --version-only
+
+  Show only the "version information" line and exit.  This is suitable
+  for editors wishing to generate template SLAX scripts for new files.
+
+.. option:: --want-parens
+
+Beginning with version 1.3, SLAX no longer requires parentheses around
+the expressions for `if`, `for`, `for-each`, and `while`.  This
+follows the highly addictive style of the `Rust` language.  Users more
+comfortable with the previous parenthetical style can use this option
+to force the use or parens.  This is automatically done with the
+`--write-version` option uses a version number less that 1.3.
+
+.. option:: --width <number>
+
+XPath expressions can become quite long and we want `--format` output
+to be a pretty as reasonably possible.  The `--width` option allows
+the user to specify a particular width for which the formatting will
+aim.  Values less that 40 are considered unreasonable and are ignored.
 
 .. option:: --write-version <version>
 .. option:: -w <version>
@@ -579,7 +681,7 @@ The `info` command can display the following information:
     info insert       Display current insertion point
     info locals       Display local variables
     info output       Display output document
-    info profile [brief]  Report profiling information
+    info profile [brief | wall]  Report profiling information
 
 Many of these commands follow their "gdb" counterparts, to the extent
 possible.
@@ -634,7 +736,7 @@ Use the `profile` command to access the profiler::
     profile clear   Clear  profiling information
     profile off     Disable profiling
     profile on      Enable profiling
-    profile report [brief]  Report profiling information
+    profile report [brief | wall]  Report profiling information
   (sdb)
 
 The profile report includes the following information:
@@ -689,9 +791,22 @@ execution, but also shows which lines are being executed, which
 can help debug scripts where the execution does not match
 expectations.
 
+The `wall` option reports "wall clock" time, covering actions that
+consume time that aren't accounted for in the system and user time
+numbers, including retrieving a document using a `curl:single()` call
+or performing a NETCONF RPC.  Knowing the actual number of seconds
+spent per line can give valuable profiling information.  The 'Wall
+Clock' total and percentage columns are added to the profiler output,
+showing the time in seconds that was spent executing that line and the
+percentage of the total time this represents.
+
 The profiling is not "Monte Carlo", or clock based, but is based on
 trace data generated as each SLAX instruction is executed, giving
-more precise data.
+more accurate and precise data.
+
+The profiler can also be accessed using the :ref:`slaxproc <slaxproc>`
+:ref:`--profile <profile>` option.  The `brief` and `wall` modes can
+be specified using the :ref:`--profile-mode <profile-mode>` option.
 
 .. index
 

@@ -57,6 +57,15 @@
     <ten>{ "the	end": 1, "moment of truth": 2.5e-5, "3com": "dead" }</ten>
   </xsl:variable>
   <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="tests" select="slax-ext:node-set($tests-temp-1)"/>
+  <xsl:variable name="testing2">
+    <something>
+      <is-true type="true">true</is-true>
+      <is-false type="false">false</is-false>
+      <is-null type="null">null</is-null>
+      <boring type="number">42</boring>
+    </something>
+  </xsl:variable>
+  <xsl:param name="testing" select="true/false/null"/>
   <xsl:param name="root" select="&quot;my-top&quot;"/>
   <xsl:param name="types"/>
   <xsl:param name="pretty"/>

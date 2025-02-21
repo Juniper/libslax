@@ -1,10 +1,19 @@
 <?xml version="1.0"?>
 <top>
-  <back-reference>
-    <re1/>
-    <re2/>
-    <re3/>
-  </back-reference>
+  <multiple>
+    <re1>
+      <match>a:</match>
+      <match>a</match>
+    </re1>
+    <re2>
+      <match>a:</match>
+      <match>a</match>
+    </re2>
+    <re3>
+      <match>a:</match>
+      <match>a</match>
+    </re3>
+  </multiple>
   <sequence>
     <i>1:1</i>
     <i>1:2</i>

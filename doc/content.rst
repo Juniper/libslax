@@ -90,7 +90,28 @@ generate output content.  Expressions contain five constructs:
 
   - Character escaping is allowed
 
-    - Example: '\tthat\'s good\n\tnow what?\n'
+    - Example: '\\tthat\\'s good\\n\\tnow what?\\n'
+
+- Numbers
+
+  - Integer values
+
+    - Example: 5, 10, 20000
+
+  - Floating point values
+
+    - Example: 3.14, 4.3e50, 0.125
+
+  - Hexadecimal numbers (base 16)
+
+    - Example: 0x20, 0xABCD, 0xfefefefe
+
+    - While XSLT does not handle hexadecimal numbers, SLAX handles
+      them, converting them into decimal (base 10) numbers.  Since no
+      indication of the original encoding is kept internally, when
+      writing SLAX content (e.g. using the `--format` or
+      `--xslt-to-slax` options to :ref:`slaxproc <slaxproc>`), numbers
+      are displayed in decimal.
 
 - Calls to functions
 
@@ -182,14 +203,14 @@ SLAX code, placed inside braces.
     var $b = my:test({
         <min> 5;
         <max> 15;
-        if ($step) {
+        if $step {
             <step> $step;
         }
     });
     var $c = my:write(<content> {
         <document> "total.txt";
         <size> $file/size;
-        if (node[@type == "full]) {
+        if node[@type == "full] {
             <full>;
         }
     });

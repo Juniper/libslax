@@ -55,7 +55,29 @@ static slaxOutputCallback_t slaxOutputCallback;
 static xmlOutputWriteCallback slaxWriteCallback;
 static slaxErrorCallback_t slaxErrorCallback;
 
+static int slaxIoNoReadline UNUSED; /* If set, don't use readline/libedit */
+
 static FILE *slaxIoTty;
+
+static FILE *slaxIoFile;
+
+int
+slaxFilenameIsStdFile (const char *filename, int fd)
+{
+    if (filename == NULL)
+	return TRUE;
+
+    if (filename[0] == '-' && filename[1] == '\0')
+	return TRUE;
+
+    if (fd == 0 && streq(filename, "/dev/stdin"))
+	return TRUE;
+
+    if (fd == 1 && streq(filename, "/dev/stdout"))
+	return TRUE;
+
+    return FALSE;
+}
 
 /**
  * Use the input callback to get data
@@ -207,6 +229,12 @@ slaxIoRegister (slaxInputCallback_t input_callback,
     slaxErrorCallback = error_callback;
 }
 
+void
+slaxIoUseReadline (int none)
+{
+    slaxIoNoReadline = !none;
+}
+
 static char *
 slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 {
@@ -216,8 +244,8 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	cp = getpass(prompt);
 	return cp ? (char *) xmlStrdup((xmlChar *) cp) : NULL;
 
-    } else {
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
+    } else if (!slaxIoNoReadline) {
 	char *res;
 
 	/*
@@ -246,7 +274,9 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	free(cp);
 	return res;
     
-#else /* HAVE_READLINE || HAVE_LIBEDIT */
+#endif /* HAVE_READLINE || HAVE_LIBEDIT */
+
+    } else {
 	char buf[BUFSIZ];
 	int len;
 
@@ -262,7 +292,6 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	    buf[len - 1] = '\0';
 
 	return (char *) xmlStrdup((xmlChar *) buf);
-#endif /* HAVE_READLINE || HAVE_LIBEDIT */
     }
 }
 
@@ -316,6 +345,61 @@ slaxIoUseStdio (unsigned flags)
 
     slaxIoRegister(slaxIoStdioInputCallback, slaxIoStdioOutputCallback,
 		   slaxIoStdioRawwriteCallback, slaxIoStdioErrorCallback);
+}
+
+/*
+ * Called from slaxOutput to write to the currently opened file, or stderr
+ * if the file isn't open (SNO).
+ */
+static void
+slaxIoFileOutputCallback (const char *fmt, ...)
+{
+    va_list vap;
+    FILE *fp = slaxIoFile ?: stderr;
+
+    va_start(vap, fmt);
+    vfprintf(fp, fmt, vap);
+    fflush(fp);
+    va_end(vap);
+}
+
+/*
+ * Start writing slaxOutput() content to the specified file.
+ */
+int
+slaxIoWriteOutputToFileStart (const char *filename)
+{
+    FILE *fp;
+
+    if (filename == NULL || streq(filename, "-"))
+	fp = stderr;
+    else
+	fp = fopen(filename, "w");
+
+    if (fp == NULL)
+	return -1;
+
+    slaxIoFile = fp;
+    slaxOutputCallback = slaxIoFileOutputCallback;
+
+    return 0;
+}
+
+/*
+ * Stop writing slaxOutput() content to our file; reset to stderr
+ */
+int
+slaxIoWriteOutputToFileStop (void)
+{
+    FILE *fp = slaxIoFile;
+
+    if (fp != stderr)
+	fclose(fp);
+
+    slaxIoFile = NULL;
+    slaxOutputCallback = slaxIoStdioOutputCallback;
+
+    return 0;
 }
 
 static void
@@ -452,8 +536,7 @@ slaxGenericError (void *opaque, const char *fmt, ...)
 	    }
 	    if (rc > 0) {
 		xmlNodePtr tp = xmlNewText((const xmlChar *) bp);
-		if (tp)
-		    xmlAddChild(sedp->sed_nodep, tp);
+		tp = slaxAddChild(sedp->sed_nodep, tp);
 	    }
 	}
 	break;
@@ -498,4 +581,264 @@ slaxCatchErrors (int mode, xmlNodePtr recorder)
     xmlSetGenericErrorFunc(&slax_error_data, slaxGenericError);
 
     return 0;
+}
+
+static const char *slaxNodeTypeNames[] = {
+    "zero",
+    "XML_ELEMENT_NODE",
+    "XML_ATTRIBUTE_NODE",
+    "XML_TEXT_NODE",
+    "XML_CDATA_SECTION_NODE",
+    "XML_ENTITY_REF_NODE",
+    "XML_ENTITY_NODE",
+    "XML_PI_NODE",
+    "XML_COMMENT_NODE",
+    "XML_DOCUMENT_NODE",
+    "XML_DOCUMENT_TYPE_NODE",
+    "XML_DOCUMENT_FRAG_NODE",
+    "XML_NOTATION_NODE",
+    "XML_HTML_DOCUMENT_NODE",
+    "XML_DTD_NODE",
+    "XML_ELEMENT_DECL",
+    "XML_ATTRIBUTE_DECL",
+    "XML_ENTITY_DECL",
+    "XML_NAMESPACE_DECL",
+    "XML_XINCLUDE_START",
+    "XML_XINCLUDE_END",
+#ifdef LIBXML_DOCB_ENABLED
+    "XML_DOCB_DOCUMENT_NODE",
+#endif
+};
+
+static void
+slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
+{
+    const char *name = (node->type < NUM_ARRAY(slaxNodeTypeNames))
+	? slaxNodeTypeNames[node->type] : "(unknown)";
+
+    for ( ; node; node = node->next) {
+	if (node->type == XML_DOCUMENT_NODE) {
+	    xmlDocPtr docp = (xmlDocPtr) node;
+	    
+	    slaxOutput("%*sdoc %p: type %s/%d, name '%s'/%p",
+		       indent, tag, docp, name, docp->type,
+		       docp->name, docp->name);
+
+	    slaxOutput("%*schildren %p, last %p, parent %p, "
+		       "next %p, prev %p, doc %p",
+		       indent + 2, tag, docp->children, docp->last,
+		       docp->parent, docp->next, docp->prev, docp->doc);
+
+	    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
+		       "psvi %p, parseflax %#x, properties %#x",
+		       indent + 2, tag,
+		       docp->standalone, docp->oldNs, docp->dict,
+		       docp->psvi, docp->parseFlags, docp->properties);
+
+	} else {
+	    slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
+		       indent, tag, node, name, node->type, 
+		       slaxIntoString(node->name), node->name);
+
+	    slaxOutput("%*schildren %p, last %p, parent %p, "
+		       "next %p, prev %p, doc %p",
+		       indent + 2, tag, node->children, node->last,
+		       node->parent, node->next, node->prev, node->doc);
+
+	    slaxOutput("%*sns %p/%p, properties %p, psvi %p, line %d, extra %d",
+		       indent + 2, tag, node->ns, node->nsDef, node->properties,
+		       node->psvi, node->line, node->extra);
+	}
+
+	if (node->content) {
+	    slaxOutput("%*scontent %p: '%s'",
+		       indent + 2, tag,
+		       node->content, slaxIntoString(node->content));
+	}
+
+	if (node->children) {
+	    slaxOutput("%*schildren %p:",
+		       indent + 2, tag, node->children);
+	    slaxDumpNodeIndent(node->children, tag, indent + 4);
+	}
+
+	/* RTFs use the "next" pointer as a to-be-freed list; don't follow it */
+	if (XSLT_IS_RES_TREE_FRAG(node))
+	    break;
+    }
+}
+
+void
+slaxDumpNode (xmlNodePtr node)
+{
+    slaxDumpNodeIndent(node, "", 4);
+}
+
+static void
+slaxDumpDocIndent (xmlDocPtr node, const char *tag, int indent)
+{
+    const char *name = (node->type < NUM_ARRAY(slaxNodeTypeNames))
+	? slaxNodeTypeNames[node->type] : "(unknown)";
+
+    slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
+	       indent, tag, node, name, node->type,
+	       node->name, node->name);
+
+    slaxOutput("%*schildren %p, last %p, parent %p, "
+	       "next %p, prev %p, doc %p",
+	       indent + 2, tag, node->children, node->last, node->parent,
+	       node->next, node->prev, node->doc);
+
+    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
+	       "psvi %p, parseflax %#x, properties %#x",
+	       indent + 2, tag, node->standalone, node->oldNs, node->dict,
+	       node->psvi, node->parseFlags, node->properties);
+
+    if (node->children) {
+	slaxOutput("%*schildren %p:",
+		   indent + 2, tag, node->children);
+	slaxDumpNodeIndent(node->children, tag, indent + 4);
+    }
+
+    /*
+     * "next" is not a doc, just a node, and it most likely just NULL,
+     * but if it's something else, we want to know.
+     */
+    if (node->next)
+	slaxDumpNodeIndent(node->next, tag, indent);
+}
+
+void
+slaxDumpDoc (xmlDocPtr node)
+{
+    slaxDumpDocIndent(node, "", 4);
+}
+
+static void
+slaxDumpNodesetIndent (xmlNodeSetPtr nsp, const char *tag, int indent)
+{
+    for (int i = 0; i < nsp->nodeNr; i++)
+        slaxDumpNodeIndent(nsp->nodeTab[i], tag, indent);
+}
+
+void
+slaxDumpNodeset (xmlNodeSetPtr nsp)
+{
+    slaxDumpNodesetIndent(nsp, "", 4);
+}
+
+
+static void
+slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
+{
+    static const char *names[] = {
+	"XPATH_UNDEFINED",
+	"XPATH_NODESET",
+	"XPATH_BOOLEAN",
+	"XPATH_NUMBER",
+	"XPATH_STRING",
+	"XPATH_POINT",
+	"XPATH_RANGE",
+	"XPATH_LOCATIONSET",
+	"XPATH_USERS",
+	"XPATH_XSLT_TREE",
+    };
+
+    const char *name = (xop->type < NUM_ARRAY(names))
+	? names[xop->type] : "unknown";
+
+    char buf[BUFSIZ];
+    const char *value = buf;
+    const char *quote = "";
+    xmlNodeSetPtr nset;
+
+    buf[0] = '\0';
+
+    switch (xop->type) {
+    case XPATH_UNDEFINED:
+	value = "(undefined)";
+	break;
+
+#ifdef LIBXML_XPTR_LOCS_ENABLED
+    case XPATH_RANGE:
+    case XPATH_LOCATIONSET:
+#endif /* LIBXML_XPTR_LOCS_ENABLED */
+
+    case XPATH_USERS:
+    case XPATH_NODESET:
+    case XPATH_XSLT_TREE:
+	value = NULL;
+	break;
+
+    case XPATH_BOOLEAN:
+	value = xop->boolval ? "true" : "false";
+	break;
+
+    case XPATH_NUMBER:
+	snprintf(buf, sizeof(buf), "%lf", xop->floatval);
+	break;
+
+    case XPATH_STRING:
+	if (xop->stringval) {
+	    quote = "'";
+	    value = (const char *) xop->stringval;
+	} else
+	    value = "(string-null)";
+	break;
+
+    default:
+	value = "(unknown)";
+    }
+
+    slaxOutput("%*sobject %p: type %s/%u%s%s%s%s (user %p/%p, index %u/%u)",
+	       indent, tag, xop, name, xop->type,
+	       value ? ", value " : "", quote, value ?: "", value ? quote : "",
+	       xop->user, xop->user2, xop->index, xop->index2);
+
+    if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
+	nset = xop->nodesetval;
+	slaxOutput("%*snodesetval: %p -> %p/%d", indent + 2, tag,
+		   nset, nset ? nset->nodeTab : NULL, nset ? nset->nodeNr : 0);
+	slaxDumpNodesetIndent(xop->nodesetval, tag, indent + 4);
+    }
+}
+
+void
+slaxDumpObject (xmlXPathObjectPtr xop)
+{
+    slaxDumpObjectIndent(xop, "", 4);
+}
+
+static void
+slaxDumpVarIndent (xsltStackElemPtr var, const char *tag, int indent)
+{
+    for (; var; var = var->next) {
+	slaxOutput("%*svar %p: comp %p, computed %d, name '%s', uri '%s'",
+		   indent, tag, var, var->comp, var->computed,
+		   slaxIntoString(var->name) ?: "",
+		   slaxIntoString(var->nameURI) ?: "");
+	slaxOutput("%*sselect '%s', level %d, flags %#04x, context %p",
+		   indent + 2, tag, slaxIntoString(var->select) ?: "",
+		   var->level, var->flags, var->context);
+
+	if (var->tree) {
+	    slaxOutput("%*stree (constructor): %p", indent + 2, tag, var->tree);
+	}
+
+        if (var->value) {
+	    slaxOutput("%*svalue: %p", indent + 2, tag, var->value);
+	    slaxDumpObjectIndent(var->value, tag, indent + 4);
+	}
+
+	if (var->fragment) {
+	    slaxOutput("%*sfragment %p:", indent + 2, tag, var->fragment);
+	    slaxDump(var->fragment);
+	}
+    }
+}
+
+void
+slaxDumpVar (xsltStackElemPtr var)
+{
+    slaxDumpVarIndent(var, "", 4);
 }

@@ -92,8 +92,8 @@ echo "Current version is $VERS"
 echo "Starting new release::"
 
 run "commit any changes" "gt commit"
-run "move to master branch" "gt br master"
-run "merge development changes into master" "gt merge-from develop"
+run "move to main branch" "gt br main"
+run "merge development changes into main" "gt merge-from develop"
 run "bump version number in configure.ac" "bump_version"
 
 cd $GIT_DIR
@@ -111,7 +111,7 @@ run "add the release tag" "gt tag $NEW_VERSION"
 run "publish packaging data to gh-pages/" "make packages"
 
 run "move back to develop branch" "gt br develop"
-run "pick up changes for configure.ac" "gt merge-from master"
+run "pick up changes for configure.ac" "gt merge-from main"
 
 run "show diffs" "gt diff ${OLD_VERSION}...${NEW_VERSION}"
 get_log_comments $OLD_VERSION $NEW_VERSION

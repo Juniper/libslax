@@ -259,11 +259,15 @@ slaxDynFindPrefix (char *uri, size_t urisiz, const char *name)
 	if (xmlURIUnescapeString(uri, 0, uri) == NULL)
 	    continue;
 
-	len = strlen(uri);
-	if (len > sizeof(ext) && streq(uri + len - sizeof(ext) + 1, ext))
-	    uri[len - sizeof(ext) + 1] = '\0';
+	int rc = 0;
 
-	return 0; /* Success */
+	len = strlen(uri);
+	if (len > sizeof(ext) && streq(uri + len - sizeof(ext) + 1, ext)) {
+	    rc = 1;
+	    uri[len - sizeof(ext) + 1] = '\0';
+	}
+
+	return rc; /* Success */
     }
 
     return -1; /* Failure */

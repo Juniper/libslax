@@ -8,8 +8,8 @@ key next-headings {
 }
 
 key immediate-nodes {
-    match node() [not(self::h1 | self::h2)];
-    value generate-id(preceding-sibling::*[self::h1 || self::h2] [1]);
+    match node()[not(self::h1 | self::h2)];
+    value generate-id(preceding-sibling::*[self::h1 || self::h2][1]);
 }
 
 match h1 | h2 {
@@ -30,6 +30,6 @@ match node() |@* {
 
 match body {
     copy-node {
-        apply-templates (h1 | h2) [1];
+        apply-templates (h1 | h2)[1];
     }
 }

@@ -64,8 +64,8 @@ into multiple elements, each containing a single line of text.
 
     EXAMPLE::
         var $lines = slax:break-lines(.//p);
-        for-each ($lines) {
-            if (start-with("pfe:", .)) {
+        for-each $lines {
+            if start-with("pfe:", .) {
                 <output> .;
             }
         }
@@ -88,7 +88,7 @@ react to this condition.
         boolean slax:dampen(name, max, time-period)
 
     EXAMPLE::
-        if (slax:dampen("reset", 2, 10)) {
+        if slax:dampen("reset", 2, 10) {
             message "reset avoided";
         } else {
             <reset>;
@@ -129,6 +129,23 @@ If the <non-xml> value is an empty string, then non-xml characters
 will be removed, otherwise they will be replaced with the given
 string.
 
+.. _ends-with:
+
+slax:ends-with
+++++++++++++++
+
+Use the slax:ends-with() function to determine if one string ends with
+the contents of a second string.
+
+::
+
+    SYNTAX::
+        object slax:ends-with(string, pattern)
+
+    EXAMPLE::
+        var $result = slax:ends-with("this works", "s");
+        var $ir = verbs/verb[ends-with(infinitive, "ir")];
+
 slax:evaluate
 +++++++++++++
 
@@ -143,7 +160,7 @@ results of the expression are returned.
         object slax:evaluate(expression)
 
     EXAMPLE::
-        var $result = slax:evaluate("expr[name == '&']");
+        var $result = slax:evaluate($node _ "[@" _ $attr _ " == '&']");
 
 slax:first-of
 +++++++++++++
@@ -176,6 +193,32 @@ readline history keystrokes (Control-P and Control-N).
 
     EXAMPLE::
         var $response = slax:get-command("# ");
+
+
+.. _get-host:
+
+slax:get-host
++++++++++++++
+
+Use the slax:get-host() function to return information about a DNS
+hostname or IP address (v4 or v6).
+
+::
+
+    SYNTAX::
+        string slax:get-host(hostname-or-address)
+
+    EXAMPLE::
+        var $response = slax:get-host("localhost");
+        var $response = slax:get-host("127.0.0.1");
+
+    RESULTS::
+        <host>
+            <hostname>localhost</hostname>
+            <alias>1.0.0.127.in-addr.arpa</alias>
+            <address-family>inet</address-family>
+            <address>127.0.0.1</address>
+        </host>
 
 slax:get-input
 ++++++++++++++
@@ -219,9 +262,28 @@ truly empty.
         boolean slax:is-empty(object)
 
     EXAMPLE::
-        if (slax:is-empty($result)) {
+        if slax:is-empty($result) {
             message "missing result";
         }
+
+.. _slax-join:
+
+slax:join
++++++++++
+
+Use the `slax:join()` function to combine a set of items using a
+separator string.
+
+::
+
+    SYNTAX::
+        boolean slax:join(separator, string...);
+
+    EXAMPLE::
+        var $l1 = slax:join(":", user/name, user/password, user/uid);
+        var $l2 = slax:join("%20", "help", "buils", "a", "url");
+
+.. _printf:
 
 slax:printf
 +++++++++++
@@ -244,8 +306,8 @@ values are honored, as are a number of "%j" extensions.
         string slax:printf(format, string*)
 
     EXAMPLE::
-        for-each (article) {
-            for-each (author) {
+        for-each article {
+            for-each author {
                 message  slax:printf("%8j1s%8s%8jcj1s %jt{b:}s",
                                     ../title, name, dept, born);
             }
@@ -254,12 +316,33 @@ values are honored, as are a number of "%j" extensions.
 slax:regex
 ++++++++++
 
+Use the slax:regex() function to return regular expression matches
+inside a string.  
+
+A node set is returning containing the full string matched plus any
+parenthesized matches.
+
+The optional "opts" argument is a string that includes letters from
+the following table:
+
+========= ========= =============================================
+ Option    Flag      Description
+========= ========= =============================================
+ "b"       none      Return a boolean result, not a nodeset
+ "i"       ICASE     Ignore case (upper vs lower)
+ "n"       NEWLINE   Handle newline-sensitive matching
+ "^"       NOTBOL    Not beginning of line ("^" bdoes not match)
+ "$"       NOTEOL    Not end of line ("$" does not match)
+========= ========= =============================================
+
+More information about these flags can be found in
+the :manpage:`regex(3)` documentation.
+
 ::
 
     SYNTAX::
         node-set slax:regex(pattern, string, opts?)
 
-Match a regex, returning a node set of the full string matched plus any parenthesized matches.  Options include "b", "i", "n", "^", and "$", for boolean results, ICASE, NEWLINE, NOTBOL, and NOTEOL.
 
 slax:sleep
 ++++++++++
@@ -289,7 +372,8 @@ slax:sysctl
     SYNTAX::
         string slax:sysctl(name, format)
 
-Retrieve a sysctl variable.  Format is "i" or "s".
+Retrieve a sysctl variable.  Format is "i" (for integer) or "s" (for
+string), with "s" being the default.
 
 slax:syslog
 +++++++++++
@@ -297,6 +381,47 @@ slax:syslog
 ::
 
     SYNTAX::
-        void slax:syslog(priority, string+)
+        void slax:syslog(facility.priority, string+)
 
-Syslog the concatenation of set of arguments.
+    EXAMPLE::
+        expr slax:syslog("user.crit", "Shut 'er down, Clancey");
+
+Syslog the concatenation of set of arguments.  The `facility.priority`
+field is comprised of the values from the following tables, places in
+a string separated by a period, e.g. "user.error".
+
+==========  =============================================
+ Facility    Description
+==========  =============================================
+ auth        authorization system
+ authpriv    auth, but logged to secure file
+ console     written to /dev/console
+ cron        cron daemon: cron(8)
+ daemon      System daemons
+ ftp         The file transfer protocol daemons
+ kern        messages generated by the kernel
+ lpr         line printer system
+ mail        mail system
+ news        network news system
+ ntp         network time protocol system
+ security    security subsystems
+ syslog      messages generated internally by syslogd(8)
+ user        user processes
+ uucp        uucp system
+ local0      reserved for local use
+==========  =============================================
+
+
+==========  ===========================================
+ Priority    Description
+==========  ===========================================
+ emerg       panic condition, broadcast to all users
+ alert       should be corrected immediately
+ crit        critical conditions
+ err         general errors
+ error       alias for "err"
+ warning     warning messages
+ notice      not an error conditions, but worth noting
+ info        informational messages
+ debug       information of use when debugging
+==========  ===========================================

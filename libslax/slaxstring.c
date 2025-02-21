@@ -117,6 +117,7 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     char *cp;
     const char *start;
     slax_string_t *ssp;
+    char buf[64];
 
     if (ttype == L_EOS)		/* Don't bother for ";" */
 	return NULL;
@@ -127,6 +128,20 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
     if (ttype == T_QUOTED) {
 	len -= 2;		/* Strip the quotes */
 	start += 1;
+    } else if (ttype == T_NUMBER && start[0] == '0' && start[1] == 'x') {
+	/*
+	 * If it's a hex number, convert to decimal.  Since we can't "know"
+	 * what's in sd_buf after len bytes, we have to make a local copy.
+	 * Then convert from hex to decimal, and then format it into decimal.
+	 */
+	char *copy = alloca(len + 1);
+	memcpy(copy, start, len);
+	copy[len] = '\0';
+
+	unsigned long long hex = strtoull(copy, NULL, 0x10);
+	snprintf(buf, sizeof(buf), "%llu", hex);
+	len = strlen(buf);
+	start = buf;
     }
 
     ssp = xmlMalloc(sizeof(*ssp) + len + 1);
@@ -135,9 +150,10 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 	ssp->ss_ttype = ttype;
 	ssp->ss_next = ssp->ss_concat = NULL;
 
-	if (ttype != T_QUOTED)
+	if (ttype != T_QUOTED) {
 	    memcpy(ssp->ss_token, start, len);
-	else {
+
+	} else {
 	    cp = ssp->ss_token;
 
 	    for (i = 0; i < len; i++) {
@@ -248,7 +264,7 @@ slaxStringLiteral (const char *str, int ttype)
     slax_string_t *ssp;
     int len = strlen(str);
 
-    ssp = xmlMalloc(sizeof(*ssp) + len);
+    ssp = xmlMalloc(sizeof(*ssp) + len + 1);
     if (ssp) {
 	memcpy(ssp->ss_token, str, len);
 	ssp->ss_token[len] = 0;
@@ -303,13 +319,41 @@ slaxStringLink (slax_data_t *sdp UNUSED, slax_string_t **start,
  * @return number of bytes required to hold this string
  */
 int
-slaxStringLength (slax_string_t *start, unsigned flags)
+slaxStringLengthCheck (slax_string_t *start, unsigned flags, int *has_parensp)
 {
     slax_string_t *ssp;
     int len = 0;
     char *cp;
+    int has_parens_so_far = FALSE;
+    int paren_depth = 0;
+    int paren_first = TRUE;
 
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
+	if (has_parensp) {	/* Only track if we need to */
+	    if (paren_first) {
+		/* First pass: check if the first thing is a paren */
+		has_parens_so_far = (ssp->ss_ttype == L_OPAREN);
+		paren_first = FALSE;
+	    }
+
+	    if (ssp->ss_ttype == L_OPAREN) /* Track opens and closes */
+		paren_depth += 1;
+
+	    else if (ssp->ss_ttype == L_CPAREN) {
+		paren_depth -= 1;
+		/* If all are closed and we're not at the end */
+		if (paren_depth == 0 && ssp->ss_next != NULL)
+		    has_parens_so_far = FALSE;
+	    }
+
+	    if (ssp->ss_next == NULL) {
+		/* We're at the last item in the string */
+		if (ssp->ss_ttype != L_CPAREN)
+		    has_parens_so_far = FALSE;
+		*has_parensp = has_parens_so_far;
+	    }
+	}
+
 	len += strlen(ssp->ss_token);
 
 	if (ssp->ss_ttype != T_AXIS_NAME && ssp->ss_ttype != L_DCOLON)
@@ -340,6 +384,20 @@ slaxStringLength (slax_string_t *start, unsigned flags)
     return len + 1;
 }
 
+/**
+ * Calculate the length of the string consisting of the concatenation
+ * of all the string segments hung off "start".
+ *
+ * @param start string (linked via ss_next) to determine length
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes required to hold this string
+ */
+int
+slaxStringLength (slax_string_t *start, unsigned flags)
+{
+    return slaxStringLengthCheck(start, flags, NULL);
+}
+
 /*
  * Should the character be stripped of surrounding whitespace?
  */
@@ -351,6 +409,297 @@ slaxStringNoSpace (int ttype)
 	|| ttype == L_OBRACK  || ttype == L_CBRACK)
 	return TRUE;
     return FALSE;
+}
+
+static int
+slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
+{
+    /*
+     * Decide if we can trim off the last trailing space.  You
+     * would think this was an easy one, but it's not.
+     */
+    int trim = FALSE, comma = FALSE;
+    int this_ttype = ssp->ss_ttype;
+
+    if (last_ttype == L_UNDERSCORE || this_ttype == L_UNDERSCORE)
+	trim = FALSE;
+
+    else if (this_ttype == L_COMMA) {
+	trim = TRUE;	/* foo(1, 2, 3) */
+	comma = TRUE;
+
+    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
+		|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
+		|| last_ttype == L_QUESTION || last_ttype == L_COLON)
+	       && this_ttype == L_OPAREN)
+	trim = FALSE;	/*  */
+
+    else if (last_ttype == L_CBRACK && this_ttype == L_OBRACK)
+	trim = TRUE;		/* between predicates */
+
+    else if (last_ttype == L_QUESTION && this_ttype == L_COLON)
+	trim = TRUE;
+	    
+    else if (slaxStringNoSpace(last_ttype)
+	     || slaxStringNoSpace(this_ttype)) {
+	if (bp - buf >= 2 && bp[-2] != ',')
+	    trim = TRUE;	/* foo/goo[@zoo] */
+
+    } else if (last_ttype == T_NUMBER && this_ttype == L_DOT)
+	trim = TRUE;	/* 1.0 (looking at the '.') */
+
+    else if (last_ttype == L_DOT && this_ttype == T_NUMBER)
+	trim = TRUE;	/* 1.0 (looking at the '0') */
+
+    else if (bp == &buf[2] && buf[0] == '-')
+	trim = TRUE;	/* Negative number */
+
+    /*
+     * We only want to trim closers if the next thing is a closer
+     * or a slash, so that we handle "foo[goo]/zoo" correctly.
+     */
+    if ((last_ttype == L_CPAREN || last_ttype == L_CBRACK)
+	&& !(this_ttype == L_CPAREN
+	     || this_ttype == L_CBRACK
+	     || this_ttype == L_OBRACK
+	     || this_ttype == L_SLASH
+	     || this_ttype == L_DSLASH))
+	trim = comma;
+
+    return trim;
+}
+
+/*
+ * We "mark" a string that works in parallel to the output buffer,
+ * with an 'x' at every place that could be a good line break.
+ * 'pre' != 0 means mark at the start of the token, not the end.
+ */
+static char *
+slaxStringMark (char *mp, int markp, int count, int pre)
+{
+    if (mp == NULL)
+	return NULL;
+
+    if (markp && pre)
+	mp[0] = markp;		/* "X" marks the spot */
+    mp += count;
+    if (markp && !pre && count > 0)
+	mp[-1] = markp;		/* "X" marks the spot */
+
+    return mp;
+}
+
+/**
+ * Build a single string out of the string segments hung off "start".
+ *
+ * @param buf memory buffer to hold built string
+ * @param bufsiz number of bytes available in buffer
+ * @param marks Buffer buffer (same size as buf) to hold line break marks
+ * @param start first link in linked list
+ * @param flags indicate how string data is marshalled
+ * @return number of bytes used to hold this string
+ */
+int
+slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
+		      slax_string_t *start, unsigned flags)
+{
+    slax_string_t *ssp;
+    int len = 0, slen;
+    const char *str, *cp;
+    char *bp = buf;
+    char *mp = marks;
+    int squote = 0; /* Single quote string flag */
+    int last_ttype = 0;
+    int first = TRUE;
+    int noparens = (flags & SSF_NOPARENS);
+
+    /* Wipe the marks buffer to spaces first */
+    if (mp) {
+	memset(mp, ' ', bufsiz); /* Clear the buffer */
+	mp[bufsiz - 1] = '\0';
+    }
+
+    for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
+	int ttype = ssp->ss_ttype;
+
+	if (first) {
+	    first = FALSE;
+	    if (noparens && ttype == L_OPAREN)
+		continue;
+
+	} else if (noparens && ssp->ss_next == NULL && ttype == L_CPAREN) {
+	    continue;
+	}
+
+	str = ssp->ss_token;
+	slen = strlen(str);
+	len += slen + 1;	/* One for space or NUL */
+
+	if ((flags & SSF_QUOTES) && ttype == T_QUOTED)
+	    len += 2;		/* Two quotes */
+
+	if (len > bufsiz)
+	    break;		/* Tragedy: not enough room */
+
+	if (bp > &buf[1] && bp[-1] == ' ') {
+	    if (slaxStringTrimSpace(ssp, last_ttype, buf, bp)) {
+		bp -= 1;
+		mp = slaxStringMark(mp, 0, -1, 0);
+		len -= 1;
+	    }
+	}
+
+	if ((flags & SSF_QUOTES) && ttype == T_QUOTED) {
+	    /*
+	     * If it's a quoted string, we surround it by quotes, but
+	     * we also have to handle embedded quotes.
+	     */
+	    const char *dqp = strchr(str, '"');
+	    const char *sqp = strchr(str, '\'');
+
+	    if (dqp && sqp) {
+		/* Bad news */
+		slaxLog("warning: both quotes used in string: %s", str);
+		*bp++ = '"';
+
+	    } else if (dqp) {
+		/* double quoted string to be surrounded by single quotes */
+		*bp++ = '\'';
+		squote = 1;
+	    } else
+		*bp++ = '"';
+
+	    /* Either way, this char  isn't marked */
+	    mp = slaxStringMark(mp, 0, 1, 0);
+
+	    slen = strlen(str);
+	    if (flags & SSF_ESCAPE) {
+		int i;
+
+		for (i = 0; i < slen; i++) {
+		    cp = index(slaxEscapedFrom, str[i]);
+		    if (cp) {
+			if (++len < bufsiz) {
+			    *bp++ = '\\';
+			    *bp++ = slaxEscapedTo[cp - slaxEscapedFrom];
+			    mp = slaxStringMark(mp, 0, 2, 0);
+			}
+		    } else {
+			*bp++ = str[i];
+			mp = slaxStringMark(mp, 0, 1, 0);
+		    }
+		}
+	    } else {
+		memcpy(bp, str, slen);
+		bp += slen;
+		mp = slaxStringMark(mp, 0, slen, 0);
+	    }
+
+	    if (squote) {
+		/* double quoted string to be surrounded by single quotes */
+		*bp++ = '\'';
+		squote = 0;
+	    } else
+		*bp++ = '"';
+
+	    mp = slaxStringMark(mp, 0, 1, 0);
+
+	} else if ((flags & SSF_BRACES) && ttype == T_QUOTED) {
+	    for (cp = str; *cp; cp++) {
+		*bp++ = *cp;
+		mp = slaxStringMark(mp, 0, 1, 0);
+		if (*cp == '{' || *cp == '}') {
+		    /*
+		     * XSLT uses double open and close braces to escape
+		     * them inside attributes to allow for attribute
+		     * value templates (AVTs).  SLAX does AVTs with
+		     * normal expression syntax, so if we see a brace,
+		     * we want it to stay a brace.  We make this happen
+		     * by doubling the character.
+		     */
+		    *bp++ = *cp;
+		    mp = slaxStringMark(mp, 0, 1, 0);
+		    len += 1;
+		}
+	    }
+
+	} else if (ttype == T_VAR && (flags & SSF_XPATH)) {
+	    *bp++ = '{';
+	    memcpy(bp, str, slen);
+	    bp += slen;
+	    *bp++ = '}';
+	    len += 2;
+	    mp = slaxStringMark(mp, 0, 2 + slen, 0);
+
+	} else {
+	    /* This is the normal place for elements, etc */
+	    int markp = 0;
+	    int frontp = FALSE;
+	    if (mp) {
+		if (ttype == L_SLASH) /* Slashes are the easy case */
+		    markp = '/';
+
+		else if ((flags & SSF_ATTRIB) && ttype == L_EQUALS)
+		    markp = 0;
+
+		else if (ttype == L_DCOLON || ttype == L_DAMPER
+			 || ttype == L_DEQUALS || ttype == L_DOTDOT
+			 || ttype == L_DSLASH || ttype == L_DVBAR
+			 || ttype == L_GRTREQ || ttype == L_LESSEQ
+			 || ttype == L_NOTEQUALS)
+		    /*
+		     * Put the mark at the front of these
+		     * multi-character tokens.
+		     */
+		    frontp = TRUE;
+
+		else if (!(ttype == L_CPAREN || ttype == L_CBRACK)
+			 && (last_ttype == L_CPAREN || last_ttype == L_CBRACK))
+		    /* If the last was a close and this wasn't, mark it */
+		    markp = ssp->ss_token[0];
+		else if (ttype == L_COMMA || ttype == L_UNDERSCORE)
+		    markp = ssp->ss_token[0];
+	    }
+
+	    memcpy(bp, str, slen);
+	    bp += slen;
+	    if (mp) {
+		if (frontp)
+		    mp = slaxStringMark(mp, ssp->ss_token[0], 1, 1);
+		mp = slaxStringMark(mp, markp, slen - (frontp ? 1 : 0), 1);
+
+		/* Don't want to have breaks before close parens */
+		if (ttype == L_CPAREN || ttype == L_CBRACK)
+		    if (mp > marks && mp[-1] == 'x')
+			mp[-1] = ' ';
+	    }
+	}
+
+	/* We want axis::elt with no spaces */
+	if (ttype == T_AXIS_NAME || ttype == L_DCOLON)
+	    len -= 1;
+	else {
+	    *bp++ = ' ';
+	    mp = slaxStringMark(mp, 0, 1, 0);
+	}
+
+	last_ttype = ttype;
+    }
+
+    if (len <= 0)
+	return 0;
+
+    if (len < bufsiz) {
+	buf[--len] = '\0';
+	if (marks)
+	    marks[len] = '\0';
+	return len;
+    } else {
+	buf[--bufsiz] = '\0';
+	if (marks)
+	    marks[bufsiz] = '\0';
+	return bufsiz;
+    }
 }
 
 
@@ -366,169 +715,7 @@ slaxStringNoSpace (int ttype)
 int
 slaxStringCopy (char *buf, int bufsiz, slax_string_t *start, unsigned flags)
 {
-    slax_string_t *ssp;
-    int len = 0, slen;
-    const char *str, *cp;
-    char *bp = buf;
-    int squote = 0; /* Single quote string flag */
-    int last_ttype = 0;
-
-    for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
-	str = ssp->ss_token;
-	slen = strlen(str);
-	len += slen + 1;	/* One for space or NUL */
-
-	if ((flags & SSF_QUOTES) && ssp->ss_ttype == T_QUOTED)
-	    len += 2;		/* Two quotes */
-
-	if (len > bufsiz)
-	    break;		/* Tragedy: not enough room */
-
-	if (bp > &buf[1] && bp[-1] == ' ') {
-	    /*
-	     * Decide if we can trim off the last trailing space.  You
-	     * would think this was an easy one, but it's not.
-	     */
-	    int trim = FALSE, comma = FALSE;
-
-	    if (last_ttype == L_UNDERSCORE || ssp->ss_ttype == L_UNDERSCORE)
-		trim = FALSE;
-
-	    else if (ssp->ss_ttype == L_COMMA) {
-		trim = TRUE;	/* foo(1, 2, 3) */
-		comma = TRUE;
-
-	    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
-			|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
-			|| last_ttype == L_QUESTION || last_ttype == L_COLON)
-		     && ssp->ss_ttype == L_OPAREN)
-		trim = FALSE;	/*  */
-
-	    else if (last_ttype == L_QUESTION && ssp->ss_ttype == L_COLON)
-		trim = TRUE;
-	    
-	    else if (slaxStringNoSpace(last_ttype)
-		       || slaxStringNoSpace(ssp->ss_ttype)) {
-		if (bp[-2] != ',')
-		    trim = TRUE;	/* foo/goo[@zoo] */
-
-	    } else if (last_ttype == T_NUMBER && ssp->ss_ttype == L_DOT)
-		trim = TRUE;	/* 1.0 (looking at the '.') */
-
-	    else if (last_ttype == L_DOT && ssp->ss_ttype == T_NUMBER)
-		trim = TRUE;	/* 1.0 (looking at the '0') */
-
-	    else if (bp == &buf[2] && buf[0] == '-')
-		trim = TRUE;	/* Negative number */
-
-	    /*
-	     * We only want to trim closers if the next thing is a closer
-	     * or a slash, so that we handle "foo[goo]/zoo" correctly.
-	     */
-	    if ((last_ttype == L_CPAREN || last_ttype == L_CBRACK)
-		    && !(ssp->ss_ttype == L_CPAREN
-			 || ssp->ss_ttype == L_CBRACK
-			 || ssp->ss_ttype == L_SLASH
-			 || ssp->ss_ttype == L_DSLASH))
-		trim = comma;
-
-	    if (trim) {
-		bp -= 1;
-		len -= 1;
-	    }
-	}
-
-	if ((flags & SSF_QUOTES) && ssp->ss_ttype == T_QUOTED) {
-	    /*
-	     * If it's a quoted string, we surround it by quotes, but
-	     * we also have to handle embedded quotes.
-	     */
-	    const char *dqp = strchr(str, '"');
-	    const char *sqp = strchr(str, '\'');
-
-	    if (dqp && sqp) {
-		/* Bad news */
-		slaxLog("warning: both quotes used in string: %s", str);
-		*bp++ = '"';
-	    } else if (dqp) {
-		/* double quoted string to be surrounded by single quotes */
-		*bp++ = '\'';
-		squote = 1;
-	    } else
-		*bp++ = '"';
-
-	    slen = strlen(str);
-	    if (flags & SSF_ESCAPE) {
-		int i;
-
-		for (i = 0; i < slen; i++) {
-		    cp = index(slaxEscapedFrom, str[i]);
-		    if (cp) {
-			if (++len < bufsiz) {
-			    *bp++ = '\\';
-			    *bp++ = slaxEscapedTo[cp - slaxEscapedFrom];
-			}
-		    } else
-			*bp++ = str[i];
-		}
-	    } else {
-		memcpy(bp, str, slen);
-		bp += slen;
-	    }
-
-	    if (squote) {
-		/* double quoted string to be surrounded by single quotes */
-		*bp++ = '\'';
-		squote = 0;
-	    } else
-		*bp++ = '"';
-
-	} else if ((flags & SSF_BRACES) && ssp->ss_ttype == T_QUOTED) {
-	    for (cp = str; *cp; cp++) {
-		*bp++ = *cp;
-		if (*cp == '{' || *cp == '}') {
-		    /*
-		     * XSLT uses double open and close braces to escape
-		     * them inside attributes to allow for attribute
-		     * value templates (AVTs).  SLAX does AVTs with
-		     * normal expression syntax, so if we see a brace,
-		     * we want it to stay a brace.  We make this happen
-		     * by doubling the character.
-		     */
-		    *bp++ = *cp;
-		    len += 1;
-		}
-	    }
-
-	} else if (ssp->ss_ttype == T_VAR && (flags & SSF_XPATH)) {
-	    *bp++ = '{';
-	    memcpy(bp, str, slen);
-	    bp += slen;
-	    *bp++ = '}';
-	    len += 2;
-	} else {
-	    memcpy(bp, str, slen);
-	    bp += slen;
-	}
-
-	/* We want axis::elt with no spaces */
-	if (ssp->ss_ttype == T_AXIS_NAME || ssp->ss_ttype == L_DCOLON)
-	    len -= 1;
-	else *bp++ = ' ';
-
-	last_ttype = ssp->ss_ttype;
-    }
-
-    if (len <= 0)
-	return 0;
-
-    if (len < bufsiz) {
-	buf[--len] = '\0';
-	return len;
-    } else {
-	buf[--bufsiz] = '\0';
-	return bufsiz;
-    }
+    return slaxStringCopyMarked(buf, bufsiz, NULL, start, flags);
 }
 
 /**
@@ -543,12 +730,21 @@ slaxStringAsChar (slax_string_t *value, unsigned flags)
 {
     int len;
     char *buf;
+    int has_parens = FALSE;
+    int *has_parensp = (flags & SSF_NOPARENS) ? &has_parens : NULL;
 
-    len = slaxStringLength(value, flags);
+    len = slaxStringLengthCheck(value, flags, has_parensp);
     if (len == 0)
 	return NULL;
 
-    buf = xmlMalloc(len);
+    /*
+     * If the expression does not have enclosing parens, drop the
+     * SSF_NOPARENS flag, since slaxStringCopy() will honor it.
+     */
+    if (!has_parens)
+	flags &= ~SSF_NOPARENS;
+
+    buf = xmlMalloc(len + 1);
     if (buf == NULL)
 	return NULL;
 
@@ -980,7 +1176,7 @@ slaxStringAddTailHelper (slax_string_t ***tailp,
      * Allocate and fill in a slax_string_t; we don't need a +1
      * for bufsiz since the ss_token already has it.
      */
-    ssp = xmlMalloc(sizeof(*ssp) + bufsiz);
+    ssp = xmlMalloc(sizeof(*ssp) + bufsiz + 1);
     if (ssp == NULL)
 	return TRUE;
 

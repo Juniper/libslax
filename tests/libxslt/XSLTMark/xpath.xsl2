@@ -6,12 +6,12 @@
       <xsl:apply-templates/>
     </TOP>
   </xsl:template>
-  <xsl:template match="bar[baz or following-sibling::*[1] [self::nar]]">
+  <xsl:template match="bar[baz or following-sibling::*[1][self::nar]]">
     <BAR>
       <xsl:value-of select="."/>
     </BAR>
   </xsl:template>
-  <xsl:template match="foo[following-sibling::*[position() &lt;= 2] [self::barg] and following-sibling::*[position() &lt;= 2] [self::nar]]">
+  <xsl:template match="foo[following-sibling::*[position() &lt;= 2][self::barg] and following-sibling::*[position() &lt;= 2][self::nar]]">
     <FOO>
       <xsl:value-of select="."/>
     </FOO>

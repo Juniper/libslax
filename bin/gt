@@ -10,8 +10,27 @@
 op="$1"
 shift
 
+origin=`git remote 2>/dev/null`
+if [ -z "$origin" ]; then
+    origin=origin
+fi
+
 set_branch () {
     branch=`git branch -q | awk '/\*/ {print $2}'`
+}
+
+set_git_top () {
+    dir=`pwd`
+    while [ "$dir" != "/" ]; do
+	if [ -d "$dir/.git" ]; then
+	    GIT_TOP=$dir
+	    return
+	fi
+	dir=`dirname "$dir"`
+    done
+
+    echo "could not find top of git tree" 1>&2
+    exit 1
 }
 
 check_in_details () {
@@ -43,31 +62,38 @@ check_in_details () {
 
 push_to_branch () {
     echo "Pushing to $branch ..."
-    git push origin $branch
+    git push $origin $branch
 }
 
 case "$op" in
     archive)
+	## gt archive [<suffix>]
+	## == create an archive (tarball) using the given suffix (e.g. $git-$suffix.tgz)
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
-        tag=`git tag -l 'v*' | sed 's/^v//'`
+        tag="${1:-archive}"
 	git archive --prefix=$base-$tag --format=tar HEAD | gzip > $base-$tag.tgz
 	;;
 
     br)
+	## gt br [new] [<branch>] | ls [<pattern>]
+	## == Change to a given branch, creating it if the 'new' keyword
+	## == is given, or list branches if the 'ls' keyword is given
         set_branch
         if [ x"$1" = x ]; then
 	    echo $branch
 	elif [ x"$1" = xnew ]; then
 	    git checkout -b "$2" $branch
 	elif [ x"$1" = xls ]; then
-	    git branch --list
+	    git branch --list $2
 	else
 	    git checkout "$@"
 	fi
 	;;
 
     checkin|check|checkpoint)
+	## gt checkpoint
+	## == Check in all files after prompting for a single commit message
         git diff $file
         git status -s "$@"
 
@@ -86,40 +112,59 @@ case "$op" in
 	;;
 
     check-in-details|ci|cid)
+	## gt ci [<files>]
+	## == Check in multiple files, prompting for a commit message for
+	## == each file (after displaying a diff)
         check_in_details "$@"
 	;;
 
     commit)
+	## gt commit [<files>]
+	## == Check in multiple files, prompting for a commit message for
+	## == each file (after displaying a diff).
+	## == Then commit the files by pushing them to the origin branch
         set_branch
         check_in_details "$@"
 	push_to_branch
 	;;
 
     timmoc)
+	## gt timmoc [<args>]
+	## == 'commit' some files
+	## == (commit spelled backwards)
         set_branch
         git commit "$@"
         ;;
 
     diff|dif|delta)
+	## gt diff [<files>]
+	## == Display uncommitted diffs
         git diff "$@"
 	;;
 
     info)
+	## gt info
+	## == Display information about the current git repo
 	git remote -v
-        git remote -v show origin
+        git remote -v show $origin
         ;;
 
     clog)
-       colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
+	## gt clog [<opts>]
+	## == Display a colored log of repo history
+	colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
 	git log --graph --abbrev-commit --decorate --all "${colors}" "$@"
         echo ''
 	;;
 
     log)
+	## gt log [<opts>]
+	## == Display log of repo history
         git log "$@"
         ;;
 
     make-gh-pages)
+	# Deprecated?
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
         mkdir -p gh-pages
@@ -128,7 +173,27 @@ case "$op" in
         git branch -u origin/gh-pages
 	;;
 
+    clone|co)
+        target="$1"
+        shift
+        case "$target" in
+            http*|ssl*|ssh*)
+                ;;
+            github*|gitlab*)
+                target="https://$target"
+                ;;
+            *)
+                target="https://github.com/$target"
+                ;;
+        esac
+
+        echo "Cloning $target ..."
+        git clone "$target" "$@"
+        ;;
+
     create-gh-pages)
+	## gt create-gh-pages
+	## == Create a 'gh-pages' branch
         url=`git config --get remote.origin.url`
 	base=`basename "$url" .git`
         mkdir -p gh-pages
@@ -139,6 +204,8 @@ case "$op" in
         ;;
 
     merge-to)
+	## gt merge-to <branch>
+	## == Merge changes in the current branch into a target branch
         set_branch
         to=$1
         if [ x"$to" = x ]; then
@@ -152,13 +219,15 @@ case "$op" in
 	    git merge --no-ff $branch
 	    if [ $? -eq 0 ]; then
 		echo "Pushing to $to ..."
-		git push origin $to
+		git push $origin $to
 	    fi
 	    git checkout $branch
 	fi
         ;;
 
     merge|merge-from)
+	## gt merge-from <branch>
+	## == Merge changes from the named branch into a current branch
         set_branch
         from=$1
         if [ x"$from" = x ]; then
@@ -173,6 +242,8 @@ case "$op" in
         ;;
 
     merge-softly-from)
+	## gt merge-softly-from <branch>
+	## == Merge changes from a branch without committing those changes
         set_branch
         from=$1
         if [ x"$from" = x ]; then
@@ -184,12 +255,15 @@ case "$op" in
         ;;
 
     outstanding|out|what)
+	## gt out
+	## == Display outstanding changes (committed but not yet pushed)
         set_branch
-        git diff origin/$branch $branch
+        git diff $origin/$branch $branch
 	;;
 
     push|pu|pom|pob)
-	# Push all local changes to the origin/repo server
+	## gt pu
+	## == Push all local changes to the origin/repo server
         set_branch
         push_to_branch
 	;;
@@ -197,21 +271,25 @@ case "$op" in
     push-test|pt|ptest)
 	# Push all local changes to the origin/repo server
         set_branch
-	git push --dry-run origin $branch
+	git push --dry-run $origin $branch
 	;;
 
     ref|reflog)
+	## gt reflog
+	## == Display full commit log
         git reflog show
         ;;
 
     restash)
+	## gt restash
+	## == Perform a 'stash->pull->pop' operation
 	set_branch
-	git stash
+	git stash -u
 	if [ $? -ne 0 ]; then
 	    echo "stash failed"
 	    exit 1
 	fi
-	git pull -v origin $branch
+	git pull -v $origin $branch
         if [ $? -ne 0 ]; then
             echo "'gt pull' failed"
             exit 1
@@ -220,12 +298,15 @@ case "$op" in
 	;;
 
     st|stat|status)
-	# Show status
+	## gt st [<opts>]
+	## == Show status
 	git status -s "$@"
 	;;
 
     tag|add-tag)
-	# Tag source code with revision number
+	## gt tag [<tag>]
+	## Tag source code with revision number, or list all tags if
+	## none is provided
         # If you make a tag like "0.15.0", then you can
         # use an URL like:
         # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
@@ -237,15 +318,34 @@ case "$op" in
 	DATE=`date "+%Y-%m-%d/%H:%M:%S"`
 	git tag -a -m "[$DATE]" "$@"
 	if [ $? -eq 0 ]; then
-	    git push origin --tags $branch
+	    git push $origin --tags $branch
 	fi
 	;;
 
-    up|update|pull)
-	# Update working copy with repo's changes
-	set_branch
-	git pull -v origin $branch
+    unpatch)
+	## gt unpatch
+	## == Patch -R any changed files, uncommitted reverting changes
+	set_git_top
+	git diff "$@" | (cd $GIT_TOP; PATCH_VERBOSE=99 patch -R -p1 )
 	;;
+
+    up|update|pull)
+	## gt up
+	## == Update working copy with repo's changes
+	set_branch
+	git pull -v $origin $branch
+	;;
+
+    self-help)
+        echo " "
+        echo "gt: a better way to git"
+        echo " gt <command> ..."
+        echo " "
+        echo "  list of supported verbs::"
+        echo " "
+        grep -B1 "#\#" $0 | sed -e 's/.*#\#/        /' -e 's/==/    /'
+        echo " "
+        ;;
 
     *)
 	# Anything else get passed on directly

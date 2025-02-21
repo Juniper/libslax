@@ -27,6 +27,8 @@ either:
 
 - one of the directories provided via the --lib/-L argument to "slaxproc"
 
+.. _bit-library:
+
 The "bit" Extension Library
 ---------------------------
 
@@ -34,25 +36,28 @@ The "bit" extension library has functions that interpret a string as a
 series of bit, allowing arbitrary length bit arrays and operations on
 those arrays.
 
-========================= ====================================
- Function and Arguments    Description
-========================= ====================================
- bit:and(b1, b2)           Return AND of two bit strings
- bit:or(b1, b2)            Return OR of two bit strings
- bit:nand(b1, b2)          Return NAND of two bit strings
- bit:nor(b1, b2)           Return NOR of two bit strings
- bit:xor(b1, b2)           Return XOR of two bit strings
- bit:xnor(b1, b2)          Return XNOR of two bit strings
- bit:not(b1)               Return NOT of a bit string
- bit:clear(b, off)         Clear a bit within a bit string
- bit:compare(b1, b2)       Compare two bit strings
- bit:set(b, off)           Set a bit within a bit string
- bit:mask(count, len?)     Return len bits set on
- bit:to-int(bs)            Return integer value of bit string
- bit:from-int(val, len?)   Return bit string of integer value
- bit:to-hex(bs)            Return hex value of a bit string
- bit:from-hex(str, len?)   Return bit string of hex value
-========================= ====================================
+=========================== ====================================
+ Function and Arguments      Description
+=========================== ====================================
+ bit:and(b1, b2)             Return AND of two bit strings
+ bit:or(b1, b2)              Return OR of two bit strings
+ bit:nand(b1, b2)            Return NAND of two bit strings
+ bit:nor(b1, b2)             Return NOR of two bit strings
+ bit:xor(b1, b2)             Return XOR of two bit strings
+ bit:xnor(b1, b2)            Return XNOR of two bit strings
+ bit:not(b1)                 Return NOT of a bit string
+ bit:clear(b, off)           Clear a bit within a bit string
+ bit:compare(b1, b2)         Compare two bit strings
+ bit:set(b, off)             Set a bit within a bit string
+ bit:mask(count, len?)       Return len bits set on
+ bit:to-int(  bs)            Return integer value of bit string
+ bit:from-int(val, len?)     Return bit string of integer value
+ bit:to-hex(bs)              Return hex value of a bit string
+ bit:from-hex(str, len?)     Return bit string of hex value
+ bit:shift-left(b, cnt)      Return logical shift (b << cnt)
+ bit:shift-right(b, cnt)     Return logical shift (b >> cnt)
+ bit:ashift-right(b, cnt)    Return arithmetic shift (b >> cnt)
+=========================== ====================================
 
 The "curl" Extension Library
 ----------------------------
@@ -167,7 +172,7 @@ will not be present, allowing it to be used as a test for errors::
         <errors> "record";
     }
     var $res = curl:single($opts);
-    if ($res/errors) {
+    if $res/errors {
         terminate "failure: " _ $res/errors;
     }
 
@@ -1227,6 +1232,8 @@ function for additional information.
 For details on the JSON to XML encoding, refer to :ref:`json-attributes`,
 :ref:`json-arrays`, and :ref:`json-names`.
 
+.. _xutil-xml-to-json:
+
 xutil:xml-to-json()
 ~~~~~~~~~~~~~~~~~~~
 
@@ -1254,6 +1261,106 @@ optional elements:
 
 For details on the JSON to XML encoding, refer to :ref:`json-attributes`,
 :ref:`json-arrays`, and :ref:`json-names`.
+
+xutil:slax-to-xml()
+~~~~~~~~~~~~~~~~~~~
+
+The xutil:slax-to-xml() function turns a string of SLAX data into an
+XML hierarchy::
+
+    EXAMPLE::
+        var $slax = '<color> "red"; <object> "fish";'
+        var $xml = xutil:slax-to-xml($slax);
+        /* $xml is now an XML hierarchy */
+
+xutil:xml-to-slax()
+~~~~~~~~~~~~~~~~~~~
+
+The xutil:xml-to-slax() function turns XML content into a string of
+SLAX data::
+
+    EXAMPLE::
+        var $xml = <json> {
+            <color> "red";
+        }
+        var $str = xutil:xml-to-slax($xml);
+        /* $str is now the string '<color> "red";' */
+
+Since the returned document requires a root tag and SLAX documents are
+assumably XSLT scripts, the root node of the returned document is an
+`<xsl:stylesheet>` element.  To remove this layer and get a nodeset of
+the nodes inside this element, append a "/\*" to your call::
+
+        var $str = xutil:xml-to-slax($xml-snippet)/*;
+
+xutil:common()
+~~~~~~~~~~~~~~
+
+The `xutil:common` function returns the set of nodes that appear in
+the first argument that match nodes appearing in at least one of the
+other arguments, whether those arguments are nodesets or values.
+
+`xutil:common`() returns common nodes based on the contents of the
+nodes.  EXSLT_ has a group of `set`-related functions that return the
+common and different nodes for two nodesets, but these functions look
+at identical nodes, so two nodes with the same name and the same
+contents are not seen as identical.  This function (and
+`xutil:distinct`) test for nodes using content, not specific nodes.
+
+.. _EXSLT: https://exslt.github.io/set/index.html
+
+::
+
+    SYNTAX::
+        node-set xutil:common(ns1, ns2, ...)
+    EXAMPLE::
+        <common> {
+            copy-of xutil:common($s1, $s2);
+        }
+        var $small-odds = xutil:common($list/*, 1, 3, 5, 7, 9);
+
+During the matching process, mixed content that contains only white
+space is ignored, allowing content with differing indentation to
+match.  Only the hierarchy and leaf contents are compared.
+
+For example, consider the following input::
+
+    <data>
+      <first>
+         <one>
+             <two>
+                  <three>   </three>
+             </two>
+         </one>
+      </first>
+      <second>
+         <one><two><three>   </three></two></one>
+      </second>
+    </data>
+
+A script that compares `first` and `second` will find they match,
+since the internal text nodes containing white space are mixed and can
+be ignored, while the three spaces inside the `three` element are not
+mixed content and are considered significant.
+
+xutil:distinct
+~~~~~~~~~~~~~~~~
+
+The `xutil:distinct` function returns the set of nodes that appear
+in the first node sets that do not match nodes in any of the other
+arguments, whether those arguments are nodesets or values.
+
+This function uses the same criteria as `xutil:common`.
+
+::
+
+    SYNTAX::
+        node-set xutil:distinct(ns1, ns2, ...)
+    EXAMPLE::
+        <distinct> {
+            copy-of xutil:distinct($s1, $s2);
+        }
+        var $no-small-odds = xutil:distinct($list/*, 1, 3, 5, 7, 9);
 
 The "os" Extension Library
 --------------------------
@@ -1494,7 +1601,7 @@ details given above::
         <depth> 3;
     }
     var $logs = os:stat("/var/log/*txt", $options);
-    for-each ($logs) {
+    for-each $logs {
         message name _ " is a " _ type;
     }
 
@@ -1514,7 +1621,7 @@ contains the following elements:
  group            Name of the owning group               N
  links            Number of hard links to this entry     N
  size             Number of bytes used by the entry      N
- date             Time and date of last modification	  N
+ date             Time and date of last modification     N
  entry            Directory contents                     N
 ================ ====================================== =======
 

@@ -7,6 +7,7 @@
 # LICENSE.
 
 SUBDIRS= \
+    base \
     core \
     bugs \
     errors \
@@ -35,4 +36,11 @@ accept:
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	@echo '## Go get a cup of coffee it is gonna take a while ...'
-	${MAKE} VALGRIND='valgrind -q' tests
+	${MAKE} CHECKER="valgrind -q" tests
+
+SCRIBBLE=DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MallocPreScribble=1
+
+scribble:
+	@echo '## Running the regression tests under scribble'
+	@echo '## Go get a cup of coffee it is gonna take a while ...'
+	${MAKE} CHECKER="${SCRIBBLE}" tests

@@ -23,13 +23,21 @@ EXTRA_DIST = \
     ${OTHER_TEST_CASES} \
     ${OTHER_TEST_CASES:.slax=.out}
 
+WIDTH = 80
+WIDTH_ARG = --width ${WIDTH}
+TEST_VERSION = 1.3
+VERSION_ARG = --write-version ${TEST_VERSION}
+VERSION_ARG12 = --write-version 1.2
+F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
+F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
+
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax
+X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
 SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
-SDUMP = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format --dump-tree
+SDUMP = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format --dump-tree ${VERSION_ARG12}
 
 all:
 
@@ -39,6 +47,12 @@ ${SLAXPROC}:
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	${MAKE} CHECKER='valgrind -q' tests
+
+SCRIBBLE=DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MallocPreScribble=1
+
+scribble:
+	@echo '## Running the regression tests under MallocPreScribble'
+	${MAKE} CHECKER="${SCRIBBLE}" tests
 
 test tests: ${SLAXPROC} main-tests other-tests
 

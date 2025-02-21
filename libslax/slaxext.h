@@ -20,6 +20,32 @@ typedef struct slax_printf_buffer_s {
 void
 slaxExtPrintAppend (slax_printf_buffer_t *pbp, const xmlChar *chr, int len);
 
+/*
+ * Append a simple string to the print buffer.
+ */
+static inline void
+slaxExtPrintAppendString (slax_printf_buffer_t *pbp, const char *str)
+{
+    size_t len = strlen(str);
+
+    slaxExtPrintAppend(pbp, (const xmlChar *) str, len);
+}
+
+/*
+ * Print content into a print buffer, resizing the buffer as needed
+ */
+int
+slaxExtPrintfToBuf (slax_printf_buffer_t *pbp, const char *fmt, va_list vap);
+
+int
+slaxExtPrintWriter (void *data, const char *fmt, ...);
+
+static inline void
+slaxExtPrintfClean (slax_printf_buffer_t *pbp)
+{
+    xmlFreeAndEasy(pbp->pb_buf);
+}
+
 void
 slaxExtRemoveNonXmlChars (char *input);
 

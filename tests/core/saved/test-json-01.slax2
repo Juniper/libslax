@@ -7,25 +7,20 @@ var $tests := {
     <two> "[ 1, 2, 3, 4 ]";
     <three> "{ a: 1, b: [ 2, 3 ] }";
     <four> "[ {a: 1}, {b: 2}, {c: 3} ]";
-    <five> "{ a: \"fish\", b: \"tur key\", c: \"mon key suit\" }";
-    <six> "   {
-      "Image": {
-          "Width":  800,
-          "Height": 600,
-          "Title":  "View from 15th Floor",
-          "Thumbnail": {
-              "Url":    "http://www.example.com/image/481989943",
-              "Height": 125,
-              "Width":  "100"
-          },
-          "IDs": [116, 943, 234, 38793]
-        }
-     }";
-    <seven> "\n   [\n      {\n         \"precision\": \"zip\",\n         \"Latitude\":  37.7668,\n         \"Longitude\": -122.3959,\n         \"Address\":   \"\",\n         \"City\":      \"SAN FRANCISCO\",\n         \"State\":     \"CA\",\n         \"Zip\":       \"94107\",\n         \"Country\":   \"US\"\n      },\n      {\n         \"precision\": \"zip\",\n         \"Latitude\":  37.371991,\n         \"Longitude\": -122.026020,\n         \"Address\":   \"\",\n         \"City\":      \"SUNNYVALE\",\n         \"State\":     \"CA\",\n         \"Zip\":       \"94085\",\n         \"Country\":   \"US\"\n      }\n   ]\n";
-    <eight> "[ { a: \"nrt\n\r	nrt\" } ]";
-    <nine> "{ \"name\": \"Skip Tracer\",\n              \"location\": \"The city that never sleeps\",\n              \"age\": 5,\n              \"real\": false,\n              \"cases\": null,\n              \"equipment\": [ \"hat\", \"desk\", \"attitude\" ]\n            }";
-    <ten> "{ \"the	end\": 1, \"moment of truth\": 2.5e-5, \"3com\": \"dead\" }";
+    <five> '{ a: "fish", b: "tur key", c: "mon key suit" }';
+    <six> '   {\n      "Image": {\n          "Width":  800,\n          "Height": 600,\n          "Title":  "View from 15th Floor",\n          "Thumbnail": {\n              "Url":    "http://www.example.com/image/481989943",\n              "Height": 125,\n              "Width":  "100"\n          },\n          "IDs": [116, 943, 234, 38793]\n        }\n     }';
+    <seven> '\n   [\n      {\n         "precision": "zip",\n         "Latitude":  37.7668,\n         "Longitude": -122.3959,\n         "Address":   "",\n         "City":      "SAN FRANCISCO",\n         "State":     "CA",\n         "Zip":       "94107",\n         "Country":   "US"\n      },\n      {\n         "precision": "zip",\n         "Latitude":  37.371991,\n         "Longitude": -122.026020,\n         "Address":   "",\n         "City":      "SUNNYVALE",\n         "State":     "CA",\n         "Zip":       "94085",\n         "Country":   "US"\n      }\n   ]\n';
+    <eight> '[ { a: "nrt\n\r	nrt" } ]';
+    <nine> '{ "name": "Skip Tracer",\n              "location": "The city that never sleeps",\n              "age": 5,\n              "real": false,\n              "cases": null,\n              "equipment": [ "hat", "desk", "attitude" ]\n            }';
+    <ten> '{ "the	end": 1, "moment of truth": 2.5e-5, "3com": "dead" }';
 }
+var $testing2 = <something> {
+    <is-true type="true"> "true";
+    <is-false type="false"> "false";
+    <is-null type="null"> "null";
+    <boring type="number"> "42";
+}
+param $testing = true/false/null;
 param $root = "my-top";
 param $types;
 param $pretty;

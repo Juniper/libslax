@@ -7,6 +7,9 @@
  * LICENSE.
  */
 
+#ifndef SLAX_SLAXINTERNALS_H
+#define SLAX_SLAXINTERNALS_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,6 +45,12 @@ struct slax_data_s; typedef struct slax_data_s slax_data_t;
 #include "slaxprofiler.h"
 
 extern int slaxYyDebug;
+
+static inline const char *
+slaxIntoString (const xmlChar *xp)
+{
+    return (const char *) xp;
+}
 
 /*
  * The rest of the .c files expose so little we don't bother with
@@ -84,6 +93,10 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *varname);
 void
 slaxMvarRegister (void);
 
+xsltStackElemPtr
+slaxMvarLookupQname (xsltTransformContextPtr tctxt, const xmlChar *svarname,
+		     int *localp);
+
 /* --- slaxwriter.h --- */
 
 struct slax_writer_s;
@@ -96,7 +109,19 @@ void
 slaxFreeWriter (slax_writer_t *swp);
 
 void
+slaxWriteSetFlags (slax_writer_t *swp, slaxWriterFlags_t flags);
+
+void
+slaxWriteSetVersion (slax_writer_t *swp, const char *version);
+
+void
+slaxWriteSetWidth (slax_writer_t *swp, int width);
+
+void
 slaxWrite (slax_writer_t *swp, const char *fmt, ...);
+
+int
+slaxWriteDocument (slax_writer_t *swp, xmlDocPtr docp);
 
 void
 slaxWriteIndent (slax_writer_t *swp, int change);
@@ -129,3 +154,5 @@ slaxConvertExpression (const char *opt_expression, int is_slax);
 /* --- slaxloader.h -- */
 void
 slaxDataCleanup (slax_data_t *sdp);
+
+#endif /* SLAX_SLAXINTERNALS_H */

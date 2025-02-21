@@ -1,6 +1,5 @@
 version 1.2;
 
-
 /*
 
 miss lucy had a baby
@@ -32,6 +31,7 @@ with the alligator purse
 output-method {
     indent "yes";
 }
+
 var $verses := {
     <verse action="baby" where="bathtub" test="swim"> 1;
     <verse action="tub"> 2;

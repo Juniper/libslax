@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<data>
+  <string>&lt;configuration&gt; {
+    &lt;system&gt; {
+        &lt;host-name&gt; "puff-the-magic-dragon";
+        &lt;domain-name&gt; "by-the-sea.example.com";
+        &lt;name-server&gt; {
+            &lt;name&gt; "10.1.2.3";
+        }
+    }
+    &lt;protocols&gt; {
+        &lt;bgp&gt; {
+            &lt;metric&gt; "15";
+        }
+    }
+    &lt;interfaces&gt; {
+        &lt;interface&gt; {
+            &lt;name&gt; "xe-1/1/1";
+        }
+        &lt;interface&gt; {
+            &lt;name&gt; "ge-1/1/1";
+        }
+    }
+}
+</string>
+  <unescaped><configuration> {
+    <system> {
+        <host-name> "puff-the-magic-dragon";
+        <domain-name> "by-the-sea.example.com";
+        <name-server> {
+            <name> "10.1.2.3";
+        }
+    }
+    <protocols> {
+        <bgp> {
+            <metric> "15";
+        }
+    }
+    <interfaces> {
+        <interface> {
+            <name> "xe-1/1/1";
+        }
+        <interface> {
+            <name> "ge-1/1/1";
+        }
+    }
+}
+</unescaped>
+  <out>
+    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+      <configuration>
+        <system>
+          <host-name>puff-the-magic-dragon</host-name>
+          <domain-name>by-the-sea.example.com</domain-name>
+          <name-server>
+            <name>10.1.2.3</name>
+          </name-server>
+        </system>
+        <protocols>
+          <bgp>
+            <metric>15</metric>
+          </bgp>
+        </protocols>
+        <interfaces>
+          <interface>
+            <name>xe-1/1/1</name>
+          </interface>
+          <interface>
+            <name>ge-1/1/1</name>
+          </interface>
+        </interfaces>
+      </configuration>
+    </xsl:stylesheet>
+  </out>
+  <more>
+    <hmmm xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+      <xsl:value-of select="10"/>
+    </hmmm>
+    <max xmlns:xsl="http://www.w3.org/1999/XSL/Transform">condition</max>
+  </more>
+</data>

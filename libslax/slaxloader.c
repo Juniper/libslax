@@ -97,7 +97,8 @@ slaxIncludeAddPath (const char *dir)
 void
 slaxVersionMatch (slax_data_t *sdp, const char *vers)
 {
-    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2"))
+    if (streq(vers, "1.0") || streq(vers, "1.1") || streq(vers, "1.2")
+	|| streq(vers, "1.3"))
 	return;
 
     fprintf(stderr, "invalid version number: %s\n", vers);
@@ -163,7 +164,7 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 	    xmlNodePtr tp = xmlNewText((const xmlChar *) value->ss_token);
 
 	    if (tp)
-		slaxAddChild(sdp, nodep, tp);
+		slaxLexerAddChild(sdp, nodep, tp);
 
 	} else {
 	    xmlNodePtr attrp;
@@ -371,11 +372,11 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 
 	    }
 
-	    slaxAddChild(sdp, textp, nodep);
+	    slaxLexerAddChild(sdp, textp, nodep);
 	    xmlAddChild(sdp->sd_ctxt->node, textp);
 
 	} else {
-	    slaxAddChild(sdp, NULL, nodep);
+	    slaxLexerAddChild(sdp, NULL, nodep);
 	}
 
 	return;
@@ -393,8 +394,8 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
     buf = slaxStringAsChar(value, SSF_CONCAT | SSF_QUOTES);
     if (buf == NULL) {
 	xmlParserError(sdp->sd_ctxt,
-		       "%s:%d: could not make attribute string: @%s=%s",
-		       sdp->sd_filename, sdp->sd_line, ATT_SELECT, buf);
+		       "%s:%d: could not make attribute string: @%s",
+		       sdp->sd_filename, sdp->sd_line, ATT_SELECT);
 	slaxElementPop(sdp);
 	return;
     }

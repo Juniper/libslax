@@ -56,6 +56,16 @@ var $tests := {
     <ten> '{ "the\tend": 1, "moment of truth": 2.5e-5, "3com": "dead" }';
 }
 
+var $testing2 = {
+    "something": {
+        "is-true": true,
+        "is-false": false,
+        "is-null": null,
+        "boring": 42
+    }
+}
+
+param $testing = true/false/null;
 param $root = "my-top";
 param $types;
 param $pretty;

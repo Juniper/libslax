@@ -113,7 +113,7 @@ slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
  */
 static xmlNsPtr
 slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
-	   const char *prefix, const xmlChar *uri, int local)
+	   const char *prefix, const xmlChar *uri, int local, int is_extension)
 {
     xmlNsPtr nsp;
     xmlNodePtr root = xmlDocGetRootElement(sdp->sd_docp);
@@ -131,7 +131,8 @@ slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
 	 * Since we added this namespace, we need to add it to the
 	 * list of extension prefixes.
 	 */
-	slaxNodeAttribExtend(sdp, root,
+	if (is_extension)
+	    slaxNodeAttribExtend(sdp, root,
 			     ATT_EXTENSION_ELEMENT_PREFIXES, prefix, NULL);
     }
 
@@ -157,16 +158,16 @@ slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep)
     const char *prefix = FUNC_PREFIX;
     const xmlChar *uri = FUNC_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, TRUE);
+    slaxSetNs(sdp, nodep, prefix, uri, TRUE, TRUE);
 }
 
-void
+xmlNsPtr
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
 {
     const char *prefix = SLAX_PREFIX;
     const xmlChar *uri = (const xmlChar *) SLAX_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, local);
+    return slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
 }
 
 static int
@@ -186,7 +187,7 @@ slaxSetExtNs (slax_data_t *sdp, xmlNodePtr nodep, int local)
     const char *prefix = EXT_PREFIX;
     const xmlChar *uri = (const xmlChar *) EXT_URI;
 
-    slaxSetNs(sdp, nodep, prefix, uri, local);
+    slaxSetNs(sdp, nodep, prefix, uri, local, TRUE);
 }
 
 /*
@@ -212,10 +213,11 @@ slaxMakeStdNs (slax_data_t *sdp, const char *name)
 {
     char uri[MAXPATHLEN];
 
-    if (slaxDynFindPrefix(uri, sizeof(uri), name) < 0)
+    int rc = slaxDynFindPrefix(uri, sizeof(uri), name);
+    if (rc < 0)
 	return NULL;
 
-    return slaxSetNs(sdp, NULL, name, (const xmlChar *) uri, FALSE);
+    return slaxSetNs(sdp, NULL, name, (const xmlChar *) uri, FALSE, rc);
 }
 
 /**
@@ -316,7 +318,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 	return;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
     nodePush(sdp->sd_ctxt, nodep);
 }
 
@@ -363,6 +365,42 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
     }
 }
 
+void
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
+{
+    xmlNsPtr ns = NULL;
+    xmlAttrPtr attr;
+    const char *cp;
+
+    /*
+     * Deal with namespaces.  If there's a prefix, we need to find
+     * the definition of this namespace and pass it along.
+     */
+    cp = index(name, ':');
+    if (cp) {
+	const char *prefix = name;
+	int len = cp - prefix;
+
+	name = cp + 1;
+	if (slaxIsSlaxNs(prefix, len)) {
+	    ns = slaxSetSlaxNs(sdp, sdp->sd_ctxt->node, FALSE);
+
+	} else {
+	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    if (ns == NULL) {
+		sdp->sd_errors += 1;
+		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
+			       len, prefix, prefix);
+	    }
+        }
+    }
+
+    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
+		      (const xmlChar *) value);
+    if (attr == NULL)
+	fprintf(stderr, "could not make attribute: @%s=%s\n", name, value);
+}
+
 /*
  * Add a simple value attribute.  Our style parameter is limited to
  * SAS_NONE, SAS_XPATH, or SAS_SELECT.  See the other slaxAttribAdd*()
@@ -374,13 +412,14 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 {
     slax_string_t *ssp;
     char *buf;
-    xmlNsPtr ns = NULL;
-    xmlAttrPtr attr;
-    const char *cp;
     unsigned ss_flags = (style == SAS_SELECT) ? SSF_CONCAT  : 0;
 
     if (style != SAS_VALUE)
 	ss_flags |= SSF_QUOTES;	/* Always want the quotes */
+
+    /* Trigger NOPARENS behavior */
+    if (style == SAS_XPATH_NOPARENS)
+	ss_flags |= SSF_NOPARENS;
 
     if (value == NULL)
 	return;
@@ -405,7 +444,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
 	    tp = xmlNewText((const xmlChar *) value->ss_token);
 	    if (tp)
-		slaxAddChild(sdp, NULL, tp);
+		slaxLexerAddChild(sdp, NULL, tp);
 
 	    return;
 	}
@@ -427,32 +466,35 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
     }
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     free(buf);
+}
+
+/*
+ * Add a simple data_value, which is a string may or may not be quoted.
+ */
+void
+slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
+			slax_string_t *value)
+{
+    char *buf, *bp;
+
+    buf = slaxStringAsChar(value, 0);
+    if (buf == NULL)
+	return;
+
+    bp = buf;
+    if (*bp == '"') {		/* Trim quotes */
+	bp += 1;
+	char *ep = bp + strlen(bp);
+	if (ep > bp && ep[-1] == '"')
+	    ep[-1] = '\0';
+    }
+
+    slaxAttribAddSimple(sdp, name, bp);
+
+    xmlFreeAndEasy(buf);
 }
 
 /*
@@ -467,39 +509,13 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 void
 slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    xmlAttrPtr attr;
-    xmlNsPtr ns = NULL;
     char *buf;
-    const char *cp;
 
     buf = slaxStringAsValueTemplate(value, SSF_BRACES);
     if (buf == NULL)
 	return;
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     xmlFreeAndEasy(buf);
 }
@@ -516,39 +532,13 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 void
 slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
-    xmlAttrPtr attr;
-    xmlNsPtr ns = NULL;
     char *buf;
-    const char *cp;
 
     buf = slaxStringAsValueTemplate(value, SSF_XPATH);
     if (buf == NULL)
 	return;
 
-    /*
-     * Deal with namespaces.  If there's a prefix, we need to find
-     * the definition of this namespace and pass it along.
-     */
-    cp = index(name, ':');
-    if (cp) {
-	const char *prefix = name;
-	int len = cp - prefix;
-
-	name = cp + 1;
-	if (!slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
-	    if (ns == NULL) {
-		sdp->sd_errors += 1;
-		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
-			       len, prefix, prefix);
-	    }
-        }
-    }
-
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
-		      (const xmlChar *) buf);
-    if (attr == NULL)
-	fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+    slaxAttribAddSimple(sdp, name, buf);
 
     xmlFreeAndEasy(buf);
 }
@@ -651,7 +641,7 @@ slaxElementAdd (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -760,7 +750,7 @@ slaxElementAddString (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    slaxAddChild(sdp, NULL, nodep);
+    slaxLexerAddChild(sdp, NULL, nodep);
 
     if (attrib) {
 	char *full = slaxStringAsChar(value, 0);
@@ -844,9 +834,11 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 {
     slax_string_t *ssp, *next;
     slax_string_t *tsp, *qsp, *csp, *esp;
-    static char varfmt[] = SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
-    char condname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    static const char varfmt[] =
+	SLAX_TERNARY_PREFIX "%s" SLAX_TERNARY_COND_SUFFIX;
+    static const char condfmt[] = "%s-cond";
     char varname[sizeof(varfmt) + SLAX_TERNARY_VAR_FORMAT_WIDTH];
+    char condname[sizeof(varname) + sizeof(condfmt)];
     int no_second_term;
     char *vp;
     unsigned len;
@@ -900,7 +892,7 @@ slaxTernaryExpand (slax_data_t *sdp, slax_string_t *value,
 
 	if (no_second_term) {
 	    /* Need a local variable to hold the conditional value */
-	    snprintf(condname, sizeof(condname), "%s-cond", varname);
+	    snprintf(condname, sizeof(condname), condfmt, varname);
 
 	    slaxElementPush(sdp, ELT_VARIABLE, ATT_NAME, condname + 1);
 	    slaxAttribAdd(sdp, 0, ATT_SELECT, tsp->ss_next);

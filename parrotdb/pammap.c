@@ -22,7 +22,9 @@
 #include <errno.h>
 #include <stddef.h>
 
+#include <libpsu/psulog.h>
 #include <libpsu/psualloc.h>
+#include <libpsu/psustring.h>
 #include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
@@ -509,7 +511,7 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
     }
 
     /* Setup the header and return the content */
-    strncpy(pmhp->pmh_name, name, sizeof(pmhp->pmh_name));
+    strlcpy(pmhp->pmh_name, name, sizeof(pmhp->pmh_name));
     pmhp->pmh_size = size;
     pmhp->pmh_type = type;
     pmhp->pmh_flags = flags;

@@ -3,7 +3,6 @@ version 1.2;
 ns xt exclude extension = "http://www.jclark.com/xt";
 ns doc exclude = "http://nwalsh.com/xsl/documentation/1.0";
 
-
 /* **********************************************
  *
  * dict.xsl: convert dict. of thieving slang into HTML

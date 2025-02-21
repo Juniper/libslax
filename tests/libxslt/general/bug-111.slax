@@ -24,7 +24,7 @@ main <root> {
     apply-templates /DIRTREE;
 }
 
-match DIRTREE[d] [f] {
+match DIRTREE[d][f] {
     priority 100;
     
     expr name();

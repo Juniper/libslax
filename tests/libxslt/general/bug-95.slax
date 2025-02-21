@@ -3,6 +3,7 @@ version 1.2;
 output-method html {
     encoding "ISO-8859-1";
 }
+
 decimal-format czf {
     decimal-separator ",";
     grouping-separator " ";

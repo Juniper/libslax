@@ -3,6 +3,7 @@ version 1.2;
 ns l exclude = "http://docbook.sourceforge.net/xmlns/l10n/1.0";
 
 output-method xml;
+
 param $local.l10n.xml = document("");
 
 match doc {
@@ -10,9 +11,9 @@ match doc {
     var $dingbat = "nestedstartquote";
     
     expr "LOCALES: ";
-    expr count(($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat]) [1]);
+    expr count(($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat])[1]);
     var $local.l10n.dingbat = {
-        expr ($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat]) [1];
+        expr ($local.l10n.xml//l:i18n/l:l10n[@language == $lang]/l:dingbat[@key == $dingbat])[1];
     }
     expr "\nLOCALES2: ";
     expr count($local.l10n.dingbat);

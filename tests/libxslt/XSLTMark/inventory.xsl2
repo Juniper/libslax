@@ -18,7 +18,7 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="table">
-    <xsl:for-each select="tr[td[1] [@colspan = &quot;2&quot;]]">
+    <xsl:for-each select="tr[td[1][@colspan = &quot;2&quot;]]">
       <factory>
         <name>
           <xsl:value-of select="td[1]"/>

@@ -22,7 +22,7 @@
  * A type for holding micro seconds.  This is for comparisons, so the fact
  * that we leak seconds off the top is not a concern.
  */
-typedef unsigned long psu_time_usecs_t;
+typedef unsigned long long psu_time_usecs_t;
 
 /* Useful time-related constants */
 #define NSEC_PER_SEC 1000000000ull
@@ -43,6 +43,20 @@ static inline psu_time_usecs_t
 psu_timeval_to_usecs (struct timeval *tvp)
 {
     return tvp->tv_sec * USEC_PER_SEC + tvp->tv_usec;
+}
+
+/**
+ * Return the current time in microseconds
+ */
+static inline psu_time_usecs_t
+psu_get_time (void)
+{
+    struct timespec tv;
+
+    if (clock_gettime(CLOCK_REALTIME, &tv) < 0)
+	return 0;
+
+    return tv.tv_sec * USEC_PER_SEC + tv.tv_nsec / NSEC_PER_USEC;
 }
 
 /**

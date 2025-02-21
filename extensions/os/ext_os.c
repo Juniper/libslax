@@ -378,20 +378,6 @@ errno_map_t errno_map[] = {
     { .err_no = 0, .err_name = NULL },
 };
 
-static inline void
-slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
-                  const char *value)
-{
-    if (docp == NULL || name == NULL)
-        return;
-
-    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
-                                    (const xmlChar *) value);
-
-    if (newp)
-        xmlAddChild(parent, newp);
-}
-
 static const char *
 slaxErrnoName (int err)
 {
@@ -445,10 +431,10 @@ slaxMakeNode (xmlDocPtr docp, xmlNodePtr parent,
 
     nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) name, NULL);
     if (nodep) {
-	xmlAddChild(parent, nodep);
+	nodep = slaxAddChild(parent, nodep);
 	if (textp)
-	    xmlAddChild(nodep, textp);
-	if (attrname)
+	    textp = slaxAddChild(nodep, textp);
+	if (nodep && attrname)
 	    xmlSetNsProp(nodep, NULL, (const xmlChar *) attrname,
 			 (const xmlChar *) attrvalue);
     }
@@ -1214,7 +1200,9 @@ extOsStatPath (xmlNodeSet *results, xmlDocPtr docp, xmlNodePtr parent,
     if (nodep == NULL)
 	return;
 
-    xmlAddChild(parent, nodep);
+    nodep = slaxAddChild(parent, nodep);
+    if (nodep == NULL)
+	return;
 
     if (results)
 	xmlXPathNodeSetAdd(results, nodep);

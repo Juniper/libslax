@@ -1,0 +1,147 @@
+version 1.2;
+
+output-method xml {
+    indent "yes";
+}
+
+var $test := {
+    <one> {
+        <xml> {
+            <my-top> {
+                <a type="number"> "1";
+                <b type="number"> "2.5e-5";
+            }
+        }
+    }
+    <two> {
+        <xml> {
+            <my-top type="array"> {
+                <member type="number"> "1";
+                <member type="number"> "2";
+                <member type="number"> "3";
+                <member type="number"> "4";
+            }
+        }
+    }
+    <three> {
+        <xml> {
+            <my-top> {
+                <a type="number"> "1";
+                <b type="array"> {
+                    <member type="number"> "2";
+                    <member type="number"> "3";
+                }
+            }
+        }
+    }
+    <four> {
+        <xml> {
+            <my-top type="array"> {
+                <member type="member"> {
+                    <a type="number"> "1";
+                }
+                <member type="member"> {
+                    <b type="number"> "2";
+                }
+                <member type="member"> {
+                    <c type="number"> "3";
+                }
+            }
+        }
+    }
+    <five> {
+        <xml> {
+            <my-top> {
+                <a> "fish";
+                <b> "tur key";
+                <c> "mon key suit";
+            }
+        }
+    }
+    <six> {
+        <xml> {
+            <my-top> {
+                <Image> {
+                    <Width type="number"> "800";
+                    <Height type="number"> "600";
+                    <Title> "View from 15th Floor";
+                    <Thumbnail> {
+                        <Url> "http://www.example.com/image/481989943";
+                        <Height type="number"> "125";
+                        <Width> "100";
+                    }
+                    <IDs type="array"> {
+                        <member type="number"> "116";
+                        <member type="number"> "943";
+                        <member type="number"> "234";
+                        <member type="number"> "38793";
+                    }
+                }
+            }
+        }
+    }
+    <seven> {
+        <xml> {
+            <my-top type="array"> {
+                <member type="member"> {
+                    <precision> "zip";
+                    <Latitude type="number"> "37.7668";
+                    <Longitude type="number"> "-122.3959";
+                    <Address>;
+                    <City> "SAN FRANCISCO";
+                    <State> "CA";
+                    <Zip> "94107";
+                    <Country> "US";
+                }
+                <member type="member"> {
+                    <precision> "zip";
+                    <Latitude type="number"> "37.371991";
+                    <Longitude type="number"> "-122.026020";
+                    <Address>;
+                    <City> "SUNNYVALE";
+                    <State> "CA";
+                    <Zip> "94085";
+                    <Country> "US";
+                }
+            }
+        }
+    }
+    <eight> {
+        <xml> {
+            <my-top type="array"> {
+                <member type="member"> {
+                    <a> "nrt\n\r	nrt";
+                }
+            }
+        }
+    }
+    <nine> {
+        <xml> {
+            <my-top> {
+                <name> "Skip Tracer";
+                <location> "The city that never sleeps";
+                <age type="number"> "5";
+                <real type="false"> "false";
+                <cases type="null"> "null";
+                <equipment type="array"> {
+                    <member type="member"> "hat";
+                    <member type="member"> "desk";
+                    <member type="member"> "attitude";
+                }
+            }
+        }
+    }
+    <ten> {
+        <xml> {
+            <my-top> {
+                <element name="the\tend" type="number"> "1";
+                <element name="moment of truth" type="number"> "2.5e-5";
+                <element name="3com"> "dead";
+            }
+        }
+    }
+}
+
+main <results> {
+    copy-of $test;
+}

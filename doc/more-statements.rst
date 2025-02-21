@@ -184,12 +184,12 @@ without waiting until the script generates its final result tree.
             block-statements
         '}'
 
-    if (not(valid)) {
+    if !valid {
         message name() _ " invalid";
-    } else if (failed) {
+    } else if failed {
         message {
             expr "Failed";
-            if ($count > 1) {
+            if $count > 1 {
                 expr ", again!";
             }
         }
@@ -262,7 +262,7 @@ the trace template is not evaluated and no trace output is generated.
 The enabling of tracing and the naming of trace files is not covered
 here, since it is typically a feature of the environment in which a
 SLAX script is called.  For example, the `slaxproc` command uses the
-`-t` and `-T file` to enable tracing.
+`-t file` option to enable tracing.
 
 ::
 
@@ -284,7 +284,7 @@ the trace file.
         <min> $min;
     }
     trace {
-        if ($my-trace-flag) {
+        if $my-trace-flag {
             expr "max " _ $max _ "; min " _ $min;
             copy-of options;
         }
@@ -305,6 +305,7 @@ outputing the result tree.
 ::
 
     SYNTAX::
+        'output-method' [style] ';'
         'output-method' [style] '{'
             'version' data_value ';'
             'encoding' data_value ';'
@@ -317,7 +318,15 @@ outputing the result tree.
             'media-type' data_value ';'
         '}'
 
-The style can be `xml`, `html`, or `text` (without quotes).
+The style can be `xml`, `html`, `text` or `json` (without quotes).
+
+The `json` style is complete slax-specific.  The script should
+generate JSON-compatible XML and the results will be translated to
+JSON in the same manor as the
+:ref:`xutil:xml-to-json() <xutil-xml-to-json>`
+function in the `xutil` extension library.
+
+The following table describes the substatements of `output-method`:
 
 ======================== ====================================== 
  Statement                Description                           
@@ -356,7 +365,7 @@ code when an extension element is invoked which is not supported.
         'fallback' '{' statements '}'
 
     EXAMPLE::
-        if ($working) {
+        if $working {
             <some:fancy> "thing";
             fallback {
                 message "nothing fancy, please";

@@ -120,6 +120,9 @@ typedef struct slaxDebugState_s {
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
 
+/* Flags from slaxDebugInitFlags() */
+slaxDebugFlags_t slaxDebugFlags;
+
 /* Arguments to our command functions */
 #define DC_ARGS \
         slaxDebugState_t *statep UNUSED, \
@@ -1146,7 +1149,7 @@ slaxDebugHelpInfo (DH_ARGS)
     slaxOutput("  info insert       Display current insertion point");
     slaxOutput("  info locals       Display local variables");
     slaxOutput("  info output       Display output document");
-    slaxOutput("  info profile [brief]  Report profiling information");
+    slaxOutput("  info profile [brief | wall]  Report profiling information");
 }
 
 static void
@@ -1302,8 +1305,15 @@ slaxDebugCmdInfo (DC_ARGS)
 	slaxDebugContextVariables(ctxt);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
-	int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	slaxProfReport(brief, statep->ds_script_buffer);
+	slaxDebugFlags_t flags = 0;
+
+	if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
+	    flags |= SDBF_PROFILE_BRIEF;
+
+	if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
+	    flags |= SDBF_PROFILE_WALL;
+
+	slaxProfReport(flags, statep->ds_script_buffer);
 
     } else if (slaxDebugIsAbbrev("help", argv[1])) {
 	slaxDebugHelpInfo(statep);
@@ -1525,13 +1535,84 @@ slaxDebugCmdPrint (DC_ARGS)
 }
 
 static void
+slaxDebugHelpDump (DH_ARGS)
+{
+    slaxOutput("List of commands:");
+    slaxOutput("  dump var $var   Dump information on a variable");
+    slaxOutput("  dump expr $expr Dump an expression (nodeset)");
+}
+
+/*
+ * 'print' command
+ * @bugs need to be more like "eval" functionality (e.g. "print $x/name")
+ */
+static void
+slaxDebugCmdDump (DC_ARGS)
+{
+    const char *arg = argv[1];
+
+    if (arg) {
+	if (slaxDebugIsAbbrev("var", arg)) {
+	    if (argv[2] == NULL) {
+		slaxOutput("missing variable name");
+		return;
+	    }
+
+	    for (argv += 2; *argv; argv++) {
+		const char *name = *argv;
+		if (name[0] == '$')
+		    name += 1;	/* Skip over leading $var */
+
+		xsltStackElemPtr var
+		    = slaxMvarLookupQname(statep->ds_ctxt,
+					  (const xmlChar *) name, NULL);
+		if (var == NULL) {
+		    slaxOutput("variable not found: $%s", name);
+		    return;
+		}
+
+		slaxOutput("variable: $%s/%p", name, var);
+		slaxDumpVar(var);
+	    }
+
+	} else if (slaxDebugIsAbbrev("expr", arg)) {
+	    /*
+	     * We need to reconstruct the command line by taking the
+	     * raw command, and moving over command name ("dump expr").
+	     */
+	    char *cp = ALLOCADUP(commandline);
+
+	    while (*cp && !isspace((int) *cp))
+		cp += 1;
+	    while (*cp && isspace((int) *cp)) /* "dump" */
+		cp += 1;
+	    while (*cp && !isspace((int) *cp))
+		cp += 1;
+	    while (*cp && isspace((int) *cp)) /* "expr" */
+		cp += 1;
+
+	    xmlXPathObjectPtr res = slaxDebugEvalXpath(statep, cp);
+	    if (res) {
+		slaxDebugOutputXpath(res, NULL, TRUE);
+		slaxDumpObject(res);
+		xmlXPathFreeObject(res);
+	    }
+
+	} else {
+	    slaxOutput("invalid command: %s", arg);
+	    return;
+	}
+    }
+}
+
+static void
 slaxDebugHelpProfile (DH_ARGS)
 {
     slaxOutput("List of commands:");
     slaxOutput("  profile clear   Clear  profiling information");
     slaxOutput("  profile off     Disable profiling");
     slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report [brief]  Report profiling information");
+    slaxOutput("  profile report [brief | wall]  Report profiling information");
 }
 
 /*
@@ -1558,8 +1639,15 @@ slaxDebugCmdProfiler (DC_ARGS)
 	    return;
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
-	    int brief = (argv[2] && slaxDebugIsAbbrev("brief", argv[2]));
-	    slaxProfReport(brief, statep->ds_script_buffer);
+	    slaxDebugFlags_t flags = 0;
+
+	    if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
+		flags |= SDBF_PROFILE_BRIEF;
+
+	    if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
+		flags |= SDBF_PROFILE_WALL;
+
+	    slaxProfReport(flags, statep->ds_script_buffer);
 	    return;
 
 	} else if (slaxDebugIsAbbrev("help", arg)) {
@@ -1806,6 +1894,7 @@ slaxDebugCmdRun (DC_ARGS)
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
     statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
 }
+
 static void
 slaxDebugHelpVerbose (DH_ARGS)
 {
@@ -1899,10 +1988,14 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
-
     { "delete",	       1, slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints",
       NULL,
+    },
+
+    { "dump",	       1, slaxDebugCmdDump,
+      "dump            Dump internal information about libxml2 objects",
+      slaxDebugHelpDump,
     },
  
     { "finish",	       1, slaxDebugCmdFinish,
@@ -2039,6 +2132,13 @@ slaxDebugShell (slaxDebugState_t *statep)
     static char prev_input[BUFSIZ];
     char *cp, *input;
     static char prompt[] = "(sdb) ";
+
+    /* If we're in profiler mode, we don't prompt for commands */
+    if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+	statep->ds_flags |= DSF_DISPLAY | DSF_CONTINUE;
+	return 0;
+    }
 
     if ((statep->ds_flags & DSF_DISPLAY) && statep->ds_inst != NULL) {
 	const char *filename = (const char *) statep->ds_inst->doc->URL;
@@ -2453,10 +2553,12 @@ slaxDebugDropFrame (void)
  * Register debugger
  */
 int
-slaxDebugInit (void)
+slaxDebugInitFlags (slaxDebugFlags_t flags)
 {
     static int done_register;
     slaxDebugState_t *statep = slaxDebugGetState();
+
+    slaxDebugFlags = flags;
 
     if (done_register)
 	return FALSE;
@@ -2473,12 +2575,22 @@ slaxDebugInit (void)
     xsltSetDebuggerCallbacksHelper(slaxDebugHandler, slaxDebugAddFrame,
 				   slaxDebugDropFrame);
 
-    slaxDebugDisplayMode = DEBUG_MODE_CLI;
+    if (flags & SDBF_PROFILE_ONLY) {
+	slaxDebugDisplayMode = DEBUG_MODE_PROFILER;
 
-    slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
-    slaxOutput("Type 'help' for help");
+    } else {
+	slaxDebugDisplayMode = DEBUG_MODE_CLI;
+	slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
+	slaxOutput("Type 'help' for help");
+    }
 
     return FALSE;
+}
+
+int
+slaxDebugInit (void)
+{
+    return slaxDebugInitFlags(0);
 }
 
 /**
@@ -2582,7 +2694,21 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
     xsltSetDebuggerStatus(0);
 
-    for (;;) {
+    /* Start up in profiler-only mode */
+    if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	slaxDebugClearListInfo(statep);
+
+	/* Tell the xslt engine to stop */
+	xsltStopEngine(statep->ds_ctxt);
+
+	xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+	statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
+	statep->ds_flags |= DSF_PROFILER;
+    }
+
+    int working = TRUE; 
+
+    while (working) {
 	if (slaxDebugShell(statep) < 0)
 	    break;
 
@@ -2692,8 +2818,17 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 * cleanup, and loop in the shell until something
 	 * interesting happens.
 	 */
-	if (res)
+	if (res && slaxDebugDisplayMode != DEBUG_MODE_PROFILER)
 	    xsltSaveResultToFile(stdout, res, style);
+
+	/*
+	 * If we're in profile-only mode, then we can clean up, make
+	 * the report and then stop the loop.
+	 */
+	if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
+	    slaxProfReport(slaxDebugFlags, statep->ds_script_buffer);
+	    working = FALSE;
+	}
 
 	/* Clean up state pointers (all free'd by now) */
 	statep->ds_ctxt = NULL;

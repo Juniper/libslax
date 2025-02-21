@@ -3,6 +3,7 @@ version 1.2;
 output-method xml {
     encoding "ISO-8859-1";
 }
+
 var $targetId;
 var $action;
 
@@ -31,7 +32,6 @@ template del () {
 }
 
 match *[attribute::id &&@id == ""] {
-    
     /* attribute::type pour éviter de confondre l'absence d'attibute et
     la valeur nulle */
     if ($action == "del") {

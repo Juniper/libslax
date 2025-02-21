@@ -22,12 +22,12 @@ A simple example script::
     }
 
     template test ($name, $elt = "default") {
-        for $this ($favorites/name) {
-            if ($name == $this && not($this/@hidden)) {
+        for $this in $favorites/name {
+            if $name == $this && !$this/@hidden {
                 element $elt {
                     copy-of .//author[name/last == $this];
                 }
-            } else if ($name == $this) {
+            } else if $name == $this {
                 message "Hidden: " _ $name;
             }
         }
@@ -58,10 +58,10 @@ general/itemschoose.xsl
             <fo:list-item-label> {
                 var $level = count(ancestor::orderedlist) mod 3;
      
-                if ($level=1) {
+                if $level == 1 {
                     <number format="i">;
      
-                } else if ($level=2) {
+                } else if $level == 2 {
                     <number format="a">;
      
                 } else {
@@ -101,7 +101,7 @@ REC2/svg.xsl
             <text x="0" y="10"> "Revenue";
             <text x="150" y="165"> "Division";
 
-            for-each (sales/division) {
+            for-each sales/division {
 
                 /* define some useful variables */
                 /* the bar's x position */
@@ -140,30 +140,30 @@ XSLTMark/metric.xsl
 
     match measurement {
         var $m = {
-            if (@fromunit == 'km') {
+            if @fromunit == 'km' {
                 expr . * 1000;
      
-            } else if (@fromunit == 'm') {
+            } else if @fromunit == 'm' {
                 expr .;
      
-            } else if (@fromunit == 'cm') {
+            } else if @fromunit == 'cm' {
                 expr . * 0.01;
      
-            } else if (@fromunit == 'mm') {
+            } else if @fromunit == 'mm' {
                 expr . * 0.001;
             }
         }
         <measurement unit=@tounit> {
-            if (@tounit == 'mi') {
+            if @tounit == 'mi' {
                 expr 0.00062137 * $m;
      
-            } else if (@tounit == 'yd') {
+            } else if @tounit == 'yd' {
                 expr 1.09361 * $m;
      
-            } else if (@tounit == 'ft') {
+            } else if @tounit == 'ft' {
                 expr 3.2808 * $m;
      
-            } else if (@tounit == 'in') {
+            } else if @tounit == 'in' {
                 expr 39.37 * $m;
             }
         }

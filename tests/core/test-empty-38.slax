@@ -1,0 +1,24 @@
+version 1.2;
+
+param $host = "localhost";
+param $resolve;
+
+main <data> {
+    <val> slax:ends-with("testing", "ing");
+    <val> slax:ends-with("testing", "ingg");
+    <val> slax:ends-with("testing", "g");
+    <val> slax:ends-with("testing", "n");
+
+    if ($resolve) {
+        var $x = slax:get-host($host);
+        <localhost> {
+            copy-of $x;
+        }
+        var $y = slax:get-host($x/address[1]);
+        <one-twenty-seven> {
+            copy-of $y/hostname;
+            copy-of $y/address-family;
+            copy-of $y/address[1];
+        }
+    }
+}

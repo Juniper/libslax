@@ -48,3 +48,24 @@ slaxCatchErrors (int mode, xmlNodePtr recorder);
 
 int
 slaxErrorValue (const char *name);
+
+int
+slaxIoWriteOutputToFileStart (const char *filename);
+
+int
+slaxIoWriteOutputToFileStop (void);
+
+void
+slaxDumpObject (xmlXPathObjectPtr xop);
+
+void
+slaxDumpVar (xsltStackElemPtr var);
+
+void
+slaxDumpNode (xmlNodePtr node);
+
+void
+slaxDumpDoc (xmlDocPtr node);
+
+void
+slaxDumpNodeset (xmlNodeSetPtr nsp);

@@ -118,7 +118,8 @@ slaxExpectingError (const char *token, int yystate, int yychar);
  * Make a child node and assign it proper file/line number info.
  */
 xmlNodePtr
-slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur);
+slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt,
+			 xmlNodePtr parent, xmlNodePtr cur);
 
 /**
  * Add an item to the insert list
@@ -137,7 +138,7 @@ slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep);
  * @param nodep Child node
  */
 xmlNodePtr
-slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep);
+slaxLexerAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep);
 
 /**
  * Issue an error if the axis name is not valid

@@ -48,6 +48,29 @@ int
 slaxWriteDoc(slaxWriterFunc_t func, void *data, struct _xmlDoc *docp,
 	     int partial, const char *vers);
 
+typedef unsigned long slaxWriterFlags_t;
+
+/* Flags for slaxWriterFlags_t */
+#define SWDF_PARTIAL	(1<<0)	/* Partial SLAX document */
+#define SWDF_WANT_PARENS (1<<1)	/* Want parens even for version 1.3+ */
+
+/**
+ * slaxWriteDocFlags:
+ * Write an XSLT document in SLAX format
+ * @param func fprintf-like callback function to write data
+ * @param data data passed to callback
+ * @param docp source document (XSLT stylesheet)
+ * @param version Version number to use
+ * @param flags Flags for different behaviors (SWDF_*)
+ */
+int
+slaxWriteDocFlags (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
+		    const char *version, slaxWriterFlags_t flags);
+
+int
+slaxWriteNode (slaxWriterFunc_t func, void *data, xmlNodePtr nodep,
+	       const char *version);
+
 /*
  * Read a SLAX stylesheet from an open file descriptor.
  * Written as a clone of libxml2's xmlCtxtReadFd().
@@ -159,6 +182,9 @@ slaxIoRegister (slaxInputCallback_t input_callback,
 		slaxErrorCallback_t error_callback);
 #endif /* XMLCALL */
 
+void
+slaxIoUseReadline (int none);
+
 void slaxIoUseStdio (unsigned flags);	/* Use the stock std{in,out} */
 void slaxTraceToFile (FILE *fp);
 
@@ -195,6 +221,15 @@ slaxError (const char *fmt, ...);
  */
 int
 slaxDebugInit (void);
+
+typedef unsigned slaxDebugFlags_t;
+#define SDBF_ENABLE		(1<<0) /* Enable debugger */
+#define SDBF_PROFILE_ONLY	(1<<1) /* Just report profile output */
+#define SDBF_PROFILE_BRIEF	(1<<2) /* ... and only brief output */
+#define SDBF_PROFILE_WALL	(1<<3) /* ... and wall-clock output */
+
+int
+slaxDebugInitFlags (slaxDebugFlags_t flags);
 
 /**
  * Set the top-most stylesheet
@@ -289,10 +324,13 @@ slaxDynAdd (const char *dir);
 void
 slaxDynAddPath (const char *path);
 
+int
+slaxFilenameIsStdFile (const char *filename, int fd);
+
 static inline int
 slaxFilenameIsStd (const char *filename)
 {
-    return (filename == NULL || (filename[0] == '-' && filename[1] == '\0'));
+    return slaxFilenameIsStdFile(filename, -1);
 }
 
 void

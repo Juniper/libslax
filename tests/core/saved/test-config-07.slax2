@@ -1,0 +1,19 @@
+version 1.2;
+
+ns xutil extension = "http://xml.libslax.org/xutil";
+
+main <data> {
+    var $slax = xutil:xml-to-slax(., "1.3");
+    
+    <string> $slax;
+    <unescaped> {
+        uexpr $slax;
+    }
+    var $out = xutil:slax-to-xml($slax);
+    <out> {
+        copy-of $out;
+    }
+    <more> {
+        copy-of xutil:slax-to-xml("<hmmm> 10; <max> 'condition';")/*;
+    }
+}

@@ -20,6 +20,7 @@ AM_CFLAGS = \
     ${WARNINGS}
 
 lib_LTLIBRARIES = libparrotdb.la
+libparrotdb_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
 
 parrotdbincdir = ${includedir}/parrotdb
 

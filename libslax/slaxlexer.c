@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <libpsu/psustring.h>
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
 
@@ -159,6 +160,7 @@ static keyword_mapping_t keywordMap[] = {
     { K_ID, "id", KMF_NODE_TEST }, /* Not really, but... */
     { K_IF, "if", KMF_SLAX_KW },
     { K_IMPORT, "import", KMF_SLAX_KW },
+    { K_IN, "in", KMF_SLAX_KW },
     { K_INCLUDE, "include", KMF_SLAX_KW },
     { K_INDENT, "indent", KMF_SLAX_KW },
     { K_INFINITY, "infinity", KMF_SLAX_KW },
@@ -288,6 +290,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { K_ID,			"'id'" },
     { K_IF,			"'if'" },
     { K_IMPORT,			"'import'" },
+    { K_IN,			"'in'" },
     { K_INCLUDE,		"'include'" },
     { K_INDENT,			"'indent'" },
     { K_INFINITY,		"'infinity'" },
@@ -350,6 +353,7 @@ slaxTtnameMap_t slaxTtnameMap[] = {
     { T_FUNCTION_NAME,		"function name" },
     { T_NUMBER,			"number" },
     { T_QUOTED,			"quoted string" },
+    { T_UNTERMINATED_STRING,	"unterminated string" },
     { T_VAR,			"variable name" },
     { 0, NULL }
 };
@@ -716,7 +720,8 @@ slaxMoveCur (slax_data_t *sdp)
  * in node.
  */
 xmlNodePtr
-slaxAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent, xmlNodePtr cur)
+slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent,
+			 xmlNodePtr cur)
 {
     if (ctxt->linenumbers) { 
 	if (ctxt->input != NULL) { 
@@ -746,14 +751,14 @@ slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep)
 }
 
 xmlNodePtr
-slaxAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
+slaxLexerAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
 {
     xmlNodePtr res;
 
     if (parent == NULL)
 	parent = sdp->sd_ctxt->node;
 
-    res = slaxAddChildLineNo(sdp->sd_ctxt, parent, nodep);
+    res = slaxLexerAddChildLineNo(sdp->sd_ctxt, parent, nodep);
 
     if (sdp->sd_insert) {
 	xmlNodePtr cur, next;
@@ -912,6 +917,37 @@ slaxCommentMakeValue (xmlChar *input)
     return (xmlChar *) res;
 }
 
+/*
+ * Look ahead in the input buffer for the given token
+ */
+static int
+slaxLexerLookAhead (slax_data_t *sdp, const char *token)
+{
+    int token_len = strlen(token);
+    int cur = sdp->sd_cur;
+    int len = sdp->sd_len;
+    char *buf = sdp->sd_buf;
+
+    for (; isspace((int) buf[cur]); cur++) {
+	if (cur + token_len >= sdp->sd_len) {
+	    if (slaxGetInput(sdp, 0)) {
+		slaxLog("slax: getinput failed: %d/%d/%d",
+                   sdp->sd_start, cur, len);
+		return FALSE;
+	    }
+	}
+
+	len = sdp->sd_len;
+	buf = sdp->sd_buf;
+    }
+
+    if (cur + token_len <= len && buf[cur] == *token
+	    && strncmp(buf + cur, token, token_len) == 0)
+	return TRUE;
+
+    return FALSE;
+}
+
 /**
  * This function is the core of the lexer.
  *
@@ -925,7 +961,7 @@ static int
 slaxLexer (slax_data_t *sdp)
 {
     uint8_t ch1, ch2, ch3;
-    int look, rc;
+    int rc;
 
     for (;;) {
 	sdp->sd_start = sdp->sd_cur;
@@ -969,7 +1005,7 @@ slaxLexer (slax_data_t *sdp)
 		    int start = sdp->sd_start + COMMENT_MARKER_SIZE;
 		    int end = sdp->sd_cur - COMMENT_MARKER_SIZE;
 		    int len = end - start;
-		    xmlChar *buf = alloca(len + 1), *contents;
+		    xmlChar *buf = alloca(len + 3), *contents;
 		    xmlNodePtr nodep;
 
 		    while (isspace((int) sdp->sd_buf[start])) {
@@ -1118,6 +1154,7 @@ slaxLexer (slax_data_t *sdp)
                  */
 		if (!slaxIsBareChar(ch2))
 		    return lit1;
+
 	    } else if (sdp->sd_parse == M_JSON
 		       && (lit1 == L_PLUS || lit1 == L_MINUS)) {
 		static const char digits[] = "0123456789.+-eE";
@@ -1149,7 +1186,7 @@ slaxLexer (slax_data_t *sdp)
 	    for (;;) {
 		if (sdp->sd_cur == sdp->sd_len)
 		    if (slaxGetInput(sdp, 0))
-			return -1;
+			return T_UNTERMINATED_STRING;
 
 		if ((uint8_t) sdp->sd_buf[sdp->sd_cur] == ch1)
 		    break;
@@ -1157,7 +1194,7 @@ slaxLexer (slax_data_t *sdp)
 		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
 
 		if (slaxMoveCur(sdp))
-		    return -1;
+		    return T_UNTERMINATED_STRING;
 
 		if (bump && !slaxParseIsXpath(sdp)
 			&& sdp->sd_cur < sdp->sd_len)
@@ -1184,6 +1221,25 @@ slaxLexer (slax_data_t *sdp)
 	if (rc) {
 	    sdp->sd_cur += strlen(slaxKeywordString[slaxTokenTranslate(rc)]);
 	    return rc;
+	}
+
+	/* Looking to parse hex numbers */
+	if (ch1 == '0' && ch2 == 'x') {
+
+	    sdp->sd_cur += 2;
+	    for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
+		int ch4 =  sdp->sd_buf[sdp->sd_cur];
+		if (isdigit(ch4))
+		    continue;
+		if ('a' <= ch4 && ch4 <= 'f')
+		    continue;
+		if ('A' <= ch4 && ch4 <= 'F')
+		    continue;
+
+		break;
+	    }
+
+	    return T_NUMBER;
 	}
 
 	if (isdigit(ch1) || (ch1 == '.' && isdigit(ch2))) {
@@ -1227,11 +1283,12 @@ slaxLexer (slax_data_t *sdp)
      * as a special case.
      */
     for ( ; sdp->sd_cur < sdp->sd_len; sdp->sd_cur++) {
-	if (sdp->sd_cur + 1 < sdp->sd_len && sdp->sd_buf[sdp->sd_cur] == ':'
-		&& sdp->sd_buf[sdp->sd_cur + 1] == ':')
+	if (slaxLexerLookAhead(sdp, "::"))
 	    return T_AXIS_NAME;
+
 	if (slaxIsBareChar(sdp->sd_buf[sdp->sd_cur]))
 	    continue;
+
 	if (sdp->sd_cur > sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '*'
 		&& sdp->sd_buf[sdp->sd_cur - 1] == ':')
 	    continue;
@@ -1245,12 +1302,31 @@ slaxLexer (slax_data_t *sdp)
      * So we look ahead for a '('.  If we find one, it's a function;
      * if not it's a q_name.
      */
-    for (look = sdp->sd_cur; look < sdp->sd_len; look++) {
-	ch1 = sdp->sd_buf[look];
-	if (ch1 == '(')
-	    return T_FUNCTION_NAME;
-	if (!isspace(ch1))
+
+    int look = sdp->sd_cur;
+    int looklen = sdp->sd_len;
+    char *lookbuf = sdp->sd_buf;
+
+    for (;;) {
+	for ( ; look < looklen; look++) {
+	    ch1 = lookbuf[look];
+	    if (ch1 == '(')
+		return T_FUNCTION_NAME;
+	    if (!isspace(ch1))
+		break;
+	}
+
+	if (look < looklen)
 	    break;
+
+	if (slaxGetInput(sdp, 0)) /* No more input? */
+	    break;
+
+	if (looklen == sdp->sd_len) /* Unchanged length? */
+	    break;
+
+	looklen = sdp->sd_len;
+	lookbuf = sdp->sd_buf;
     }
 
     if (sdp->sd_cur == sdp->sd_start && sdp->sd_buf[sdp->sd_cur] == '#') {
@@ -1385,10 +1461,10 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
     if (rc == T_FUNCTION_NAME) {
 	static const char slax_prefix[] = SLAX_PREFIX ":";
 	const char *start = ssp->ss_token;
-	unsigned len = strlen(ssp->ss_token);
+	unsigned len = strlen(start);
 
 	if (len > sizeof(slax_prefix)
-		&& strncmp(slax_prefix, start, sizeof(slax_prefix) - 1) == 0)
+		&& strncmp(slax_prefix, start, strlen(slax_prefix)) == 0)
 	    ssp->ss_flags |= SSF_SLAXNS;
     }
 
@@ -1553,7 +1629,9 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
     static const char leader[] = "syntax error, unexpected";
     static const char leader2[] = "error recovery ignores input";
     const char *token = value ? value->ss_token : NULL;
-    char buf[BUFSIZ];
+    char buf[BUFSIZ * 4];
+    int unterm = (sdp->sd_last == T_UNTERMINATED_STRING);
+    int trunc = FALSE;
 
     if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
 	sdp->sd_errors += 1;
@@ -1568,6 +1646,12 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	memcpy(cp + 1, token, len);
 	cp[len + 1] = '\'';
 	cp[len + 2] = '\0';
+
+	char *np = strchr(cp, '\n');
+	if (np) {
+	    *np = '\0';
+	    trunc = TRUE;
+	}
 
 	token = cp;
     }
@@ -1618,9 +1702,15 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	}
     }
 
-    slaxError("%s:%d: %s%s%s%s%s\n",
+    /* Just trying to give a better error message */
+    if (unterm)
+	strlcat(buf, "possibly unterminated string", sizeof(buf));
+
+    slaxError("%s:%d: %s%s%s%s%s%s\n",
 	      sdp->sd_filename, sdp->sd_line, str,
-	      token ? " before " : "", token, token ? ": " : "", buf);
+	      token ? " before " : "", token ?: "",
+	      token && trunc ? "... " : "",
+	      token ? ": " : "", buf);
 
     return 0;
 }

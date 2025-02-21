@@ -34,7 +34,9 @@ AM_CFLAGS += \
     -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
 
 lib_LTLIBRARIES = libslax.la
-libslax_la_LIBADD = ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
+libslax_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
+libslax_la_LIBADD += $(top_builddir)/parrotdb/libparrotdb.la
+libslax_la_LIBADD += ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
 slaxinc_HEADERS = \
      slax.h \
@@ -83,6 +85,7 @@ ${libslax_la_SOURCES:.c=.lo}: ${SLAXHEADERS}
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
 -e 's/yyparse (void[^;]*/slaxParse (slax_data_t *slax_data)/' \
+-e 's/int yynerrs = 0/int yynerrs UNUSED = 0/' \
 -e 's:yyvs = yyvsa;:yyvs = yyvsa; bzero(yyvsa, sizeof(yyvsa));:'
 
 slaxparser.c: slaxparser-out.y

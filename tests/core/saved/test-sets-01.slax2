@@ -1,0 +1,173 @@
+version 1.2;
+
+ns xutil extension = "http://xml.libslax.org/xutil";
+
+var $list := {
+    <item> 5;
+    <item> 6;
+    <item> "seven";
+}
+
+main <top> {
+    <one> {
+        <common> {
+            copy-of xutil:common("seven", $list/*);
+        }
+        <distinct> {
+            copy-of xutil:distinct("seven", $list/*);
+        }
+    }
+    <two> {
+        <common> {
+            copy-of xutil:common($list/*, 5, "seven");
+        }
+        <distinct> {
+            copy-of xutil:distinct($list/*, 5, "seven");
+        }
+    }
+    var $top = /data;
+    
+    for-each (/data/test) {
+        <results> {
+            if (fourth) {
+                <common> {
+                    copy-of xutil:common(first/*, second/*, third/*, fourth/*);
+                }
+                <distinct> {
+                    copy-of xutil:distinct(first/*, second/*, third/*, fourth/*);
+                }
+            
+            } else if (third) {
+                <common> {
+                    copy-of xutil:common(first/*, second/*, third/*);
+                }
+                <distinct> {
+                    copy-of xutil:distinct(first/*, second/*, third/*);
+                }
+            
+            } else {
+                <common> {
+                    copy-of xutil:common(first/*, second/*);
+                }
+                <distinct> {
+                    copy-of xutil:distinct(first/*, second/*);
+                }
+            }
+        }
+    }
+    <more> {
+        var $s1 = slax-ext:node-set($top/test[1]/first/*);
+        var $s2 = slax-ext:node-set($top/test[1]/second/*);
+        
+        <common> {
+            copy-of xutil:common($s1, $s2);
+        }
+        <distinct> {
+            copy-of xutil:distinct($s1, $s2);
+        }
+    }
+    <even-more> {
+        var $s1 = {
+            call build-first();
+        }
+        var $s2 = {
+            call build-second();
+        }
+        
+        <common> {
+            copy-of xutil:common($s1, $s2);
+        }
+        <distinct> {
+            copy-of xutil:distinct($s1, $s2);
+        }
+    }
+}
+
+template build-first () {
+    <only-in-first> {
+        <mumble> {
+            <jumble> {
+                <gumble> "test";
+            }
+        }
+        <frumble> {
+            <jumble> {
+                <gumble> "test";
+            }
+        }
+    }
+    <not-the-same> {
+        <a> "alpha";
+        <b> "bravo";
+        <c> "charlie";
+    }
+    <also-not-the-same> {
+        <a> "alpha";
+        <b> "bravo";
+    }
+    <has-spaces> {
+        <lots-of-spaces> {
+            <here> "yes";
+        }
+        <lots-of-spaces> {
+            <here> "too";
+        }
+    }
+    <in-both> {
+        <interface> {
+            <name> "ge-1/1/1";
+            <unit> {
+                <name> "1";
+                <vlan-id> "1";
+                <family> {
+                    <inet> {
+                        <address> {
+                            <name> "1.1.1.1/30";
+                        }
+                    }
+                    <mpls>;
+                }
+            }
+        }
+    }
+}
+
+template build-second () {
+    <not-in-first> {
+        <yes> "sure";
+    }
+    <in-both> {
+        <interface> {
+            <name> "ge-1/1/1";
+            <unit> {
+                <name> "1";
+                <vlan-id> "1";
+                <family> {
+                    <inet> {
+                        <address> {
+                            <name> "1.1.1.1/30";
+                        }
+                    }
+                    <mpls>;
+                }
+            }
+        }
+    }
+    <has-spaces> {
+        <lots-of-spaces> {
+            <here> "yes";
+        }
+        <lots-of-spaces> {
+            <here> "too";
+        }
+    }
+    <not-the-same> {
+        <a> "alpha";
+        <b> "bravo";
+    }
+    <also-not-the-same> {
+        <a> "alpha";
+        <b> "bravo";
+        <c> "charlie";
+    }
+}

@@ -103,14 +103,14 @@ a block of SLAX code, placed inside braces::
     call test($params = {
         <min> 5;
         <max> 15;
-        if ($step) {
+        if $step {
             <step> $step;
         }
     }
     call write($content = <content> {
         <document> "total.txt";
         <size> $file/size;
-        if (node[@type == "full"]) {
+        if node[@type == "full"] {
             <full>;
         }
     });

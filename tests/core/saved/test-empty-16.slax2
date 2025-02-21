@@ -5,9 +5,40 @@ var $bad;
 var $good = "first";
 var $data = <data> "\nthis is line one\nand line two\n\nand line three\nand line four\nand finally, line five\n";
 
+/*
+ * Turns out, back references aren't part of the posix standard, so
+ * including them in tests is a Bad Idea (tm).
+ */
+param $force = 0;
+
 main <top> {
-    <back-reference> {
-        var $pat = "([a-z]):\\1:\\1";
+    if ($force) {
+        <back-reference> {
+            /*
+             * The "BUGS" section of the FreeBSD man page for regexec(3) says:
+             *     The back-reference code is subtle and doubts linger
+             *     about its  correctness in complex cases.
+             * Not sure what this means, but this fails under MacOS, while
+             * working correctly under FreeBSD and Linux.  Perl likes it also.
+             */
+            var $pat = "([a-z]):\\1:\\1";
+            var $re1 = slax:regex($pat, "a:a:a");
+            
+            <re1> {
+                copy-of $re1;
+            }
+            var $re2 = slax:regex($pat, "a:b:c");
+            <re2> {
+                copy-of $re2;
+            }
+            var $re3 = slax:regex($pat, "a:b:b:b:a:a");
+            <re3> {
+                copy-of $re3;
+            }
+        }
+    }
+    <multiple> {
+        var $pat = "([a-z]):";
         var $re1 = slax:regex($pat, "a:a:a");
         
         <re1> {

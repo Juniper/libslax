@@ -150,6 +150,7 @@
 %token K_ID			/* 'id' */
 %token K_IF			/* 'if' */
 %token K_IMPORT			/* 'import' */
+%token K_IN			/* 'in' */
 %token K_INCLUDE		/* 'include' */
 %token K_INDENT			/* 'indent' */
 %token K_INFINITY		/* 'infinity' */
@@ -228,6 +229,7 @@
 %token T_FUNCTION_NAME		/* a function name (bare-word) */
 %token T_NUMBER			/* a number (4) */
 %token T_QUOTED			/* a quoted string ("foo") */
+%token T_UNTERMINATED_STRING	/* an unterminated string (an error) */
 %token T_VAR			/* a variable name ($foo) */
 
 /*
@@ -324,6 +326,14 @@
  * our mid-rule actions as UNUSED.
  */
 #define STACK_UNUSED(_x...) /* nothing */
+
+/*
+ * Sadly, bison 3.8.2 has a variable in the yyparser function that is
+ * set but not used, and clang 14.0.3 detects it.  So we're stuck
+ * turning off the warning flag for the whole file.
+ */
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 
 %}
 
@@ -1263,7 +1273,10 @@ block_stmt :
 		{ $$ = NULL; }
 
 	| jsonst_stmt
-		{ $$ = NULL; }
+		{
+		    slax_data->sd_flags &= ~SDF_JSON_KEYWORDS;
+		    $$ = NULL;
+		}
 
 	| message_stmt
 		{ $$ = NULL; }
@@ -1892,12 +1905,13 @@ ns_template :
 	;
 
 for_each_stmt :
-	K_FOR_EACH L_OPAREN xpath_expr_dotdotdot L_CPAREN
+	K_FOR_EACH xpath_expr_dotdotdot
 		{
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS,
+				  ATT_SELECT, $2);
 
-		    if ($3->ss_ttype == M_SEQUENCE)
+		    if ($2->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
 				      slax_data->sd_ctxt->node, FALSE);
 
@@ -1907,12 +1921,41 @@ for_each_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5);
+		    STACK_UNUSED($3);
+		}
+	;
+
+for_spec :
+	L_OPAREN
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = NULL;
+		}
+	    xpath_expr_dotdotdot L_CPAREN
+		{
+		    $$ = $3;
+		    STACK_UNUSED($2);
+		}
+
+	| K_IN
+		{
+		    SLAX_KEYWORDS_OFF();
+		    $$ = NULL;
+		}
+	    xpath_expr_dotdotdot
+		{
+		    $$ = $3;
+		    STACK_UNUSED($2);
 		}
 	;
 
 for_stmt :
-	K_FOR T_VAR L_OPAREN xpath_expr_dotdotdot L_CPAREN
+	K_FOR T_VAR
+		{
+		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+            for_spec
 		{
 		    /*
 		     * The for loop is a little tricky.  We are creating
@@ -1939,7 +1982,8 @@ for_stmt :
 
 		    /* Outer for-each loop */
 		    slaxElementPush(slax_data, ELT_FOR_EACH, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $4);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS,
+				  ATT_SELECT, $4);
 
 		    if ($4->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
@@ -1961,17 +2005,17 @@ for_stmt :
 		    slaxElementPop(slax_data); /* Inner for-each loop */
 		    slaxElementPop(slax_data); /* Outer for-each loop */
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($6);
+		    STACK_UNUSED($3, $5);
 		}
 	;
 
 while_stmt :
-	K_WHILE L_OPAREN xpath_expr L_CPAREN
+	K_WHILE xpath_expr
 		{
 		    xmlNodePtr nodep;
 		    nodep = slaxElementPush(slax_data, ELT_WHILE,
 					    NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $2);
 
 		    if (nodep)
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
@@ -1982,18 +2026,18 @@ while_stmt :
 		{
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5);
+		    STACK_UNUSED($3);
 		}
 	;
 
 
 
 if_stmt :
-	K_IF L_OPAREN xpath_expr L_CPAREN
+	K_IF xpath_expr
 		{
 		    slaxElementPush(slax_data, ELT_CHOOSE, NULL, NULL);
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $3);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $2);
 		    $$ = NULL;
 		}
 	    block
@@ -2007,7 +2051,7 @@ if_stmt :
 		    slaxElementPop(slax_data); /* Pop choose */
 		    slaxCheckIf(slax_data, choosep);
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($5, $7);
+		    STACK_UNUSED($3, $5);
 		}
 	;
 
@@ -2020,17 +2064,17 @@ elsif_stmt_list :
 	;
 
 elsif_stmt :
-	K_ELSE K_IF L_OPAREN xpath_expr L_CPAREN 
+	K_ELSE K_IF xpath_expr 
 		{
 		    slaxElementPush(slax_data, ELT_WHEN, NULL, NULL);
-		    slaxAttribAdd(slax_data, SAS_XPATH, ATT_TEST, $4);
+		    slaxAttribAdd(slax_data, SAS_XPATH_NOPARENS, ATT_TEST, $3);
 		    $$ = NULL;
 		}
 	    block
 		{
 		    slaxElementPop(slax_data); /* Pop when */
 		    $$ = STACK_CLEAR($1);
-		    STACK_UNUSED($6);
+		    STACK_UNUSED($4);
 		}
 	;
 
@@ -2192,8 +2236,21 @@ output_method_intro :
 	K_OUTPUT_METHOD T_BARE
 		{
 		    ALL_KEYWORDS_ON();
+		    const char *method = $2->ss_token;
+		    int is_json = FALSE;
+
+		    if (streq(method, "json")) {
+			is_json = TRUE;
+			method = "xml";
+		    }
+
 		    slaxElementPush(slax_data, ELT_OUTPUT,
-					   ATT_METHOD, $2->ss_token);
+				    ATT_METHOD, method);
+
+		    if (is_json)
+			slaxAttribAddSimple(slax_data,
+					    "slax:" ATT_MAKE, "json");
+
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -2767,15 +2824,15 @@ sort_sub_stmt :
 		     * As of libxslt 1.1.26, the "lang" attribute is
 		     * not implemented.
 		     */
-		    slaxAttribAddValue(slax_data, ATT_LANG, $2);
+		    slaxAttribAddDataValue(slax_data, ATT_LANG, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
-	| K_DATA_TYPE data_value L_EOS
+	| K_DATA_TYPE data_type L_EOS
 		{
 		    /* "text" or "number" or qname-but-not-ncname */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -2783,7 +2840,7 @@ sort_sub_stmt :
 		{
 		    /* "ascending" or "descending" */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
 
@@ -2791,9 +2848,17 @@ sort_sub_stmt :
 		{
 		    /* "upper-first" or "lower-first" */
 		    ALL_KEYWORDS_ON();
-		    slaxAttribAddValue(slax_data, $1->ss_token, $2);
+		    slaxAttribAddDataValue(slax_data, $1->ss_token, $2);
 		    $$ = STACK_CLEAR($1);
 		}
+	;
+
+data_type :
+        data_value
+	    { $$ = $1; }
+
+        | K_NUMBER
+   	    { $$ = slaxStringLiteral("number", T_QUOTED); }
 	;
 
 fallback_stmt :
@@ -2892,7 +2957,15 @@ xpath_expr_dotdotdot :
 		    $$ = $1;
 		}
 
-	| xpath_expression L_DOTDOTDOT xpath_expression
+	| L_OPAREN xpath_expr_dotdotdot_content L_CPAREN
+		{ $$ = $2; }
+
+	| xpath_expr_dotdotdot_content
+		{ $$ = $1; }
+;
+
+xpath_expr_dotdotdot_content :
+	xpath_expression L_DOTDOTDOT xpath_expression
 		{
 		    slax_string_t *res[7];
 
@@ -3623,6 +3696,7 @@ jsonst_name_and_colon :
 		{
 		    slaxJsonElementOpenName(slax_data, $1->ss_token);
 		    slaxJsonTag(slax_data);
+		    slax_data->sd_flags |= SDF_JSON_KEYWORDS;
 		    $$ = NULL;
 		}
 	;

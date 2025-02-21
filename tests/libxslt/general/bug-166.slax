@@ -1,6 +1,5 @@
 version 1.2;
 
-
 /* This stylesheet will:
 - reorder, indent and normalize a comps file,
 - merge duplicate groups and categories,
@@ -46,7 +45,7 @@ key unique-package-entries {
 }
 
 key unique-packages {
-    match /comps/group/packagelist/packagereq[generate-id(.) == generate-id(key("unique-package-entries", ../../id/text() _ "/" _ text()) [1])];
+    match /comps/group/packagelist/packagereq[generate-id(.) == generate-id(key("unique-package-entries", ../../id/text() _ "/" _ text())[1])];
     value text();
 }
 
@@ -87,7 +86,7 @@ match * {
     mode "normalize";
     
     /* Group comments with the logically-following element */
-    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    apply-templates preceding-sibling::node()[normalize-space()][1][self::comment()];
     copy-node {
         apply-templates @* {
             sort count(exsl:node-set($attribute-sort-order)/*[name() = name(current())]/preceding-sibling::*) {
@@ -99,7 +98,7 @@ match * {
 }
 /* Preserve attributes and text nodes */
 match comment() | text() {
-    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    apply-templates preceding-sibling::node()[normalize-space()][1][self::comment()];
     copy-node;
 }
 /* Preserve attributes */
@@ -110,7 +109,7 @@ match @* {
 match comps {
     priority 1;
     
-    apply-templates preceding-sibling::node() [normalize-space()] [1] [self::comment()];
+    apply-templates preceding-sibling::node()[normalize-space()][1][self::comment()];
     copy-node {
         apply-templates group {
             sort translate(id/text(),$lcletters,$ucletters);
@@ -135,7 +134,7 @@ match group[count(key("packages-by-group", id/text())) == 0] {
     }
 }
 /* Warn about duplicate groups being merged */
-match group[generate-id(.) != generate-id(key("unique-groups", id/text()) [1])] {
+match group[generate-id(.) != generate-id(key("unique-groups", id/text())[1])] {
     priority 3;
     
     message {
@@ -158,7 +157,7 @@ match category[count(key("groups-by-category", id/text())) == 0] {
     }
 }
 /* Warn about duplicate categories being merged */
-match category[generate-id(.) != generate-id(key("unique-categories", id/text()) [1])] {
+match category[generate-id(.) != generate-id(key("unique-categories", id/text())[1])] {
     priority 3;
     
     message {
@@ -191,7 +190,7 @@ match category/grouplist {
     }
 }
 /* Kill duplicate package entries */
-match packagereq[generate-id(.) != generate-id(key("unique-package-entries", ../../id/text() _ "/" _ text()) [1])] {
+match packagereq[generate-id(.) != generate-id(key("unique-package-entries", ../../id/text() _ "/" _ text())[1])] {
     priority 2;
     
     message {
@@ -203,12 +202,12 @@ match packagereq[generate-id(.) != generate-id(key("unique-package-entries", ../
     }
     message {
         expr "     ⇒ Only its first reference (";
-        expr key("unique-package-entries", ../../id/text() _ "/" _ text()) [1]/@type;
+        expr key("unique-package-entries", ../../id/text() _ "/" _ text())[1]/@type;
         expr " package) will be kept.";
     }
 }
 /* Kill duplicate group entries */
-match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group-entries", ../../id/text() _ "/" _ text()) [1])] {
+match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group-entries", ../../id/text() _ "/" _ text())[1])] {
     priority 1;
     
     message {

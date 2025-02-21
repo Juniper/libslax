@@ -84,6 +84,7 @@ output-method html {
     doctype-public "-//W3C//DTD HTML 4.01 Transitional//EN";
     indent "no";
 }
+
 strip-space author;
 
 /* not handled:
@@ -336,7 +337,7 @@ match code {
 /* com: formal production comment */
 /* can appear in prod or rhs */
 match com {
-    if (preceding-sibling::*[1] [name() == "rhs"]) {
+    if (preceding-sibling::*[1][name() == "rhs"]) {
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
                 attribute "class" {
@@ -391,7 +392,7 @@ match rhs/com {
 /* constraint: a note in a formal production */
 /* refers to a constraint note */
 match constraint {
-    if (preceding-sibling::*[1] [name() == "rhs"]) {
+    if (preceding-sibling::*[1][name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
                 attribute "class" {
@@ -1035,7 +1036,7 @@ match lhs {
             }
             expr "   ::=   ";
         }
-        apply-templates following-sibling::*[1] [name() == "rhs"];
+        apply-templates following-sibling::*[1][name() == "rhs"];
     }
 }
 /* loc: a Web location */
@@ -1150,12 +1151,12 @@ explicit rules; many different things can start a new row */
 others */
 match prod {
     <tbody> {
-        apply-templates lhs | rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+        apply-templates lhs | rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
     }
 }
 
 match prodgroup/prod {
-    apply-templates lhs | rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+    apply-templates lhs | rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
 }
 /* prodgroup: group of formal productions */
 /* create one <tbody> for each group */
@@ -1229,7 +1230,7 @@ match resolution {
 /* make a table cell; if it's not the first after an LHS, make a
 new row, too */
 match rhs {
-    if (preceding-sibling::*[1] [name() == "lhs"]) {
+    if (preceding-sibling::*[1][name() == "lhs"]) {
         <td> {
             if (ancestor-or-self::*/@diff && $show.diff.markup == "1") {
                 attribute "class" {
@@ -1242,7 +1243,7 @@ match rhs {
             }
         }
         <xsltdebug>;
-        apply-templates following-sibling::*[1] [name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
+        apply-templates following-sibling::*[1][name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
     
     } else {
         <tr valign="baseline"> {
@@ -1260,7 +1261,7 @@ match rhs {
                     apply-templates;
                 }
             }
-            apply-templates following-sibling::*[1] [name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
+            apply-templates following-sibling::*[1][name() == "com" || name() == "constraint" || name() == "vc" || name() == "wfc"];
         }
     }
 }
@@ -1353,7 +1354,7 @@ match spec {
 }
 /* specref: reference to another part of teh current specification */
 match specref {
-    var $target = id(@ref) [1];
+    var $target = id(@ref)[1];
     
     <a> {
         attribute "href" {
@@ -1524,7 +1525,7 @@ match var {
 }
 /* vc: validity check reference in a formal production */
 match vc {
-    if (preceding-sibling::*[1] [name() == "rhs"]) {
+    if (preceding-sibling::*[1][name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
                 attribute "class" {
@@ -1587,7 +1588,7 @@ match vcnote {
 HTML */
 /* wfc: well-formedness check reference in a formal production */
 match wfc {
-    if (preceding-sibling::*[1] [name() == "rhs"]) {
+    if (preceding-sibling::*[1][name() == "rhs"]) {
         <td> {
             if (@diff && $show.diff.markup == "1") {
                 attribute "class" {
@@ -1864,7 +1865,7 @@ match prod[@diff == "add"] {
     mode "number";
     
     expr "[";
-    apply-templates preceding::prod[not(@diff == "add")] [1] {
+    apply-templates preceding::prod[not(@diff == "add")][1] {
         mode "number-simple";
     }
     
@@ -1918,7 +1919,7 @@ match lhs {
             }
             expr "   ::=   ";
         }
-        apply-templates following-sibling::*[1] [name() == "rhs"];
+        apply-templates following-sibling::*[1][name() == "rhs"];
     }
 }
 
@@ -1928,7 +1929,7 @@ match prod {
     apply-templates lhs {
         mode "ref";
     }
-    apply-templates rhs[preceding-sibling::*[1] [name() != "lhs"]] | com[preceding-sibling::*[1] [name() != "rhs"]] | constraint[preceding-sibling::*[1] [name() != "rhs"]] | vc[preceding-sibling::*[1] [name() != "rhs"]] | wfc[preceding-sibling::*[1] [name() != "rhs"]];
+    apply-templates rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
 }
 /* mode: text */
 

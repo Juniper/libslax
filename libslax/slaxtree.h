@@ -94,12 +94,16 @@ slaxCheckAxisName (slax_data_t *sdp, slax_string_t *axis);
 #define SAS_ATTRIB	2	/* Use <xsl:attribute> if you need it */
 #define SAS_SELECT	3	/* Use concat or (non-attribute) text node */
 #define SAS_VALUE	4	/* Simple value */
+#define SAS_XPATH_NOPARENS 5	/* As SAS_XPATH but no wrapping parens */
 
 /*
  * Add a simple value attribute.
  */
 void slaxAttribAdd (slax_data_t *sdp, int style,
 		    const char *name, slax_string_t *value);
+
+void
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value);
 
 /*
  * Add a value to an attribute on an XML element.  The value consists of
@@ -110,6 +114,9 @@ void slaxAttribAdd (slax_data_t *sdp, int style,
  * the attribute.
  */
 void slaxAttribAddValue (slax_data_t *sdp, const char *name,
+			 slax_string_t *value);
+
+void slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
 			 slax_string_t *value);
 
 void
@@ -156,7 +163,7 @@ void slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib,
 void
 slaxSetFuncNs (slax_data_t *sdp, xmlNodePtr nodep);
 
-void
+xmlNsPtr
 slaxSetSlaxNs (slax_data_t *sdp, xmlNodePtr nodep, int local);
 
 void

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<top>
+  <one>alpha:bravo:charlie:delta</one>
+  <two>this%20is%20the%20end%20delta</two>
+  <three>alphabravocharliedelta</three>
+  <four>[alpha] [bravo] [charlie] [delta]</four>
+  <five>fish: one, two, red, blue</five>
+</top>

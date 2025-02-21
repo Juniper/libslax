@@ -9,6 +9,7 @@ import "./bug-130-imp4.imp";
 output-method html {
     indent "no";
 }
+
 var $g.doc.root = document("../docs/bug-130.doc");
 
 main <html> {

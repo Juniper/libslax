@@ -1,6 +1,5 @@
 version 1.2;
 
-
 /* I have tried this with   xmlns:xml="http://www.w3.org/XML/1998/namespace"
 defined above, too
  */

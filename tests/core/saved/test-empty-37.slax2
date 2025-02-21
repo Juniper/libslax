@@ -13,3 +13,19 @@ main <top> {
         with $indent;
     }
 }
+
+match something {
+    for-each (something/else) {
+        sort @name/last;
+        sort @name/first;
+        sort @iq {
+            order "descending";
+            data-type "number";
+        }
+        sort @age {
+            order "descending";
+            data-type "number";
+        }
+        copy-of .;
+    }
+}

@@ -107,4 +107,37 @@ strlcpy (char *dst, const char *src, size_t sz)
 }
 #endif /* HAVE_STRLCPY */
 
+#ifndef HAVE_STRLCAT
+/*
+ * strlcat for those lacking it
+ */
+static inline size_t
+strlcat (char *dst, const char *src, size_t size)
+{
+    char *cp;
+    size_t left = size;
+
+    for (cp = dst; left-- != 0 && *cp != '\0'; cp++)
+        continue;
+
+    size_t used = cp - dst;
+    left = size - used;
+
+    if (left-- == 0)    /* -1 here covers the trailing NUL */
+        return used + strlen(src);
+
+    for (; *src != '\0'; src++, used++) {
+        if (left == 0)
+            continue;
+
+        *cp++ = *src;
+	left -= 1;
+    }
+
+    *cp = '\0';
+
+    return used;
+}
+#endif /* HAVE_STRLCAT */
+
 #endif /* LIBPSU_PSUSTRING_H */

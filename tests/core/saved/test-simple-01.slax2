@@ -6,6 +6,7 @@ ns-alias axsl xsl;
 output-method html {
     version "4.0";
 }
+
 decimal-format name {
     decimal-separator "char";
     grouping-separator "char";
@@ -29,6 +30,7 @@ output-method html {
     media-type "string";
     cdata-section-elements qname1 qname2 qname3;
 }
+
 var $two = "2";
 
 key my-key {
@@ -36,7 +38,7 @@ key my-key {
     value @id;
 }
 
-attribute-set one;
+attribute-set one { }
 
 attribute-set two {
     attribute thing {
@@ -87,8 +89,8 @@ match doc {
         
         for-each (*) {
             sort size {
+                language en;
                 data-type "text";
-                lang "en";
                 order "ascending";
                 case-order "upper-first";
             }

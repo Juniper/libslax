@@ -39,7 +39,7 @@ match /foo/bar/baz/quux {
     <ERROR>;
 }
 
-match text() [*/../*/../foobar] {
+match text()[*/../*/../foobar] {
     <ERROR>;
 }
 
@@ -65,7 +65,7 @@ match table/row[id == "abcdefg"] {
     <ERROR>;
 }
 
-match text() [contains(., "decoy")] {
+match text()[contains(., "decoy")] {
     <ERROR>;
 }
 
@@ -103,7 +103,7 @@ match row {
     }
 }
 
-match row[id mod 3 == 2] [following-sibling::row[4]/firstname == "Bob"] {
+match row[id mod 3 == 2][following-sibling::row[4]/firstname == "Bob"] {
     <crazy> {
         apply-templates;
     }

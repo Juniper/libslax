@@ -190,18 +190,78 @@ xsltStopEngine (xsltTransformContextPtr ctxt)
 	ctxt->state = XSLT_STATE_STOPPED;
 }
 
+/*
+ * Sadly, xmlAddChild can coalesce the item we're adding with other
+ * nodes and free our node.  It returns the new node, so we need to
+ * pay attention.  If it return NULL, something's gone wrong and we
+ * have to free the node ourselves.
+ */
+static inline xmlNodePtr
+slaxAddChild (xmlNodePtr parent, xmlNodePtr child)
+{
+    if (child == NULL)
+	return NULL;
+
+    if (parent == NULL) {
+	xmlFreeNode(child);
+	return NULL;
+    }
+
+    xmlNodePtr added = xmlAddChild(parent, child);
+    if (added == NULL) {
+	xmlFreeNode(child);
+	return NULL;
+    }
+
+    return added;
+}
+
+/*
+ * Similar story....
+ */
+static inline xmlNodePtr
+slaxAddChildAttrib (xmlNodePtr parent, xmlNodePtr child,
+	      const char *attr, const char *value)
+{
+    child = slaxAddChild(parent, child);
+    if (child && attr)
+	xmlSetProp(child, (const xmlChar *) attr, (const xmlChar *) value);
+
+    return child;
+}
+
 static inline xmlNodePtr
 xmlAddChildContent (xmlDocPtr docp, xmlNodePtr parent,
 		    const xmlChar *name, const xmlChar *value)
 {
     xmlNodePtr nodep = xmlNewDocRawNode(docp, NULL, name, value);
-    if (nodep) {
-	xmlAddChild(parent, nodep);
-    }
+    if (nodep == NULL)
+	return NULL;
 
-    return nodep;
+    xmlNodePtr added = xmlAddChild(parent, nodep);
+    if (added == NULL)
+	xmlFreeNode(nodep);
+
+    return added;
 }
 
+/*
+ * Add a child node to the parent with the given name and value.  It's
+ * "fire and forget" in that errors are ignored.  The parent doesn't care
+ * about the success or the value of the child.
+ */
+static inline void
+slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name, 
+                  const char *value)
+{
+    if (docp == NULL || name == NULL)
+        return;
+
+    xmlNodePtr newp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, 
+                                    (const xmlChar *) value);
+
+    slaxAddChild(parent, newp);
+}
 
 /*
  * Return the name of a node

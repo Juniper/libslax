@@ -3,6 +3,7 @@ version 1.2;
 output-method {
     indent "yes";
 }
+
 mvar $indent = "aaa";
 param $test = 1;
 

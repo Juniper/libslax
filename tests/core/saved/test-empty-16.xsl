@@ -13,10 +13,39 @@ and line four
 and finally, line five
 </data>
   </xsl:variable>
+  <!-- 
+ * Turns out, back references aren't part of the posix standard, so
+ * including them in tests is a Bad Idea (tm).
+ -->
+  <xsl:param name="force" select="0"/>
   <xsl:template match="/">
     <top>
-      <back-reference>
-        <xsl:variable name="pat" select="&quot;([a-z]):\1:\1&quot;"/>
+      <xsl:if test="$force">
+        <back-reference>
+          <!-- 
+	         * The "BUGS" section of the FreeBSD man page for regexec(3) says:
+	         *     The back-reference code is subtle and doubts linger
+	         *     about its  correctness in complex cases.
+                 * Not sure what this means, but this fails under MacOS, while
+                 * working correctly under FreeBSD and Linux.  Perl likes it also.
+ -->
+          <xsl:variable name="pat" select="&quot;([a-z]):\1:\1&quot;"/>
+          <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re1" select="slax:regex($pat, &quot;a:a:a&quot;)"/>
+          <re1>
+            <xsl:copy-of select="$re1"/>
+          </re1>
+          <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re2" select="slax:regex($pat, &quot;a:b:c&quot;)"/>
+          <re2>
+            <xsl:copy-of select="$re2"/>
+          </re2>
+          <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re3" select="slax:regex($pat, &quot;a:b:b:b:a:a&quot;)"/>
+          <re3>
+            <xsl:copy-of select="$re3"/>
+          </re3>
+        </back-reference>
+      </xsl:if>
+      <multiple>
+        <xsl:variable name="pat" select="&quot;([a-z]):&quot;"/>
         <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re1" select="slax:regex($pat, &quot;a:a:a&quot;)"/>
         <re1>
           <xsl:copy-of select="$re1"/>
@@ -29,7 +58,7 @@ and finally, line five
         <re3>
           <xsl:copy-of select="$re3"/>
         </re3>
-      </back-reference>
+      </multiple>
       <sequence>
         <xsl:for-each xmlns:slax="http://xml.libslax.org/slax" select="slax:build-sequence(1, 3)">
           <xsl:variable name="slax-dot-1" select="."/>

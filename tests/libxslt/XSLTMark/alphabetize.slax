@@ -3,6 +3,7 @@ version 1.2;
 output-method {
     encoding "utf-8";
 }
+
 /* alphabetizes an xml tree */
 match * {
     copy-node {

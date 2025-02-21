@@ -4,9 +4,9 @@ ns func = "http://exslt.org/functions";
 ns test-ns = "http://xml.juniper.net/test";
 
 main <test> {
-    expr test-ns:test-func();
+    expr test-ns:test-func(0);
 }
 
-function test-ns:test-func () {
-    expr "Between " _ $x;
+function test-ns:test-func ($x) {
+    result "Between " _ $x;
 }

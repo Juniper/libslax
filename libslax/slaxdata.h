@@ -157,7 +157,8 @@ slaxDataListAsChar (char *buf, size_t bufsiz,
 	    break;
 
 	if (cp != buf) {
-	    memcpy(cp, sep, slen);
+	    if (sep)
+		memcpy(cp, sep, slen);
 	    cp += slen;
 	    left -= slen;
 	}

@@ -57,11 +57,19 @@ EXTRA_DIST = \
 
 S2O = | ${SED} '1,/@@/d'
 
+SH_OPTS=
+
 all:
 
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
 	${MAKE} CHECKER='valgrind -q' tests
+
+SCRIBBLE=DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MallocPreScribble=1
+
+scribble:
+	@echo '## Running the regression tests under MallocPreScribble'
+	${MAKE} CHECKER="${SCRIBBLE}" tests
 
 #TEST_TRACE = set -x ; 
 
@@ -83,13 +91,13 @@ RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	@sh ${RUN_TESTS} run ${TEST_FILES}
+	@sh ${SH_OPTS} ${RUN_TESTS} run ${TEST_FILES}
 
 one:
 
 accept:
 	@${MKDIR} -p ${srcdir}/saved
-	@sh ${RUN_TESTS} accept ${TEST_FILES}
+	@$sh ${SH_OPTS} ${RUN_TESTS} accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<

@@ -139,7 +139,7 @@ main (int argc UNUSED, char **argv UNUSED)
     infile = opt_input ? fopen(opt_input, "r") : stdin;
     assert(infile);
 
-    trec = psu_realloc(NULL, opt_count * sizeof(test_t));
+    trec = psu_calloc(opt_count * sizeof(test_t));
     if (trec == NULL)
 	return -1;
 

@@ -157,7 +157,7 @@ Now consider the following code::
 
     mvar $z = $y/*[starts-with("x", name())];
     var $a = $z[1];
-    if ($a) {
+    if $a {
         set $z = <rvt> "a";  /* RVT */
         var $b = $z[1];      /* refers to nodes in "fake" $y doc */
         set $z = <next> "b"; /* RVT */
@@ -291,7 +291,7 @@ familiar "if" statement. Minor details are more transparent.
 
 The majority of our scripts are simple, following the pattern::
 
-    if (find/something/bad) {
+    if find/something/bad {
         call error($message = "found something bad");
     }
 
@@ -485,6 +485,221 @@ to convert between versions::
         }
     }
 
+New Features in SLAX-1.3
+++++++++++++++++++++++++
+
+Improved slaxproc Argument Parsing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`slaxproc` is now using the `getopts_long` function for processing
+arguments, allowing better handling of multiple arguments.  Multiple
+options can be combined in a single argument and the "--opt=value" and
+"-ovalue" syntax is supported.  This change is completely backward
+compatible.
+
+In the following examples, the sets of commands are identical::
+
+  slaxproc -E -g- d --name test-empty-39.slax
+  slaxproc -Egd --name=test-empty-39.slax
+
+  slaxproc -F - p -i test-empty-39.slax --width 70
+  slaxproc -Fpitest-empty-39.slax --width=70
+
+This brings slaxproc option processing inline with modern conventions.
+
+Parentheses are now optional
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+I've become addicted to not typing parentheses for control statements
+and have taught SLAX not to need them.  `if`, `for-each`, and
+`while` can now use expressions directly, thought `for` used an `in`
+to keep the syntax clear::
+
+    for-each $authors/author[life-span/born] {
+        sort life-span/born;
+        sort life-span/died;
+        if life-span/died {
+            <dead>;
+        } else if life-span/born < 1900 {
+            <very-old>
+        }
+
+        for $i in life-span/born ... life-span/died {
+            <lived-in> $i;
+        }
+
+        mvar $count = 0
+        while $count < 10 {
+            <early-years> life-span/born + count;
+        }
+    }
+
+Using `slaxproc`'s `--write-version` option allows conversion between
+the old and new syntax.
+
+output-method json
+~~~~~~~~~~~~~~~~~~
+
+The :ref:`output-method` statement now supports `json` as a style, allowing
+a script to emit JSON encoded data.  The script emits the result in
+XML, which is then converted into JSON using the same logic as the
+:ref:`xutil-xml-to-json <xml-to-json>` function in the `xutil`
+extension library.  `slaxproc` has a new `--json` option to invoke
+similar behavior.
+
+New slaxproc Parameter Syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`slaxproc` now accepts parameters in the style `-a name=value`
+and `--param name=value`.
+
+Profiler Option
+~~~~~~~~~~~~~~~
+
+`slaxproc` has a new :ref;`profile options <--profile>` option to
+invoke the :ref:`profiler <profiler>` directly, rather than via the
+:ref:`debugger <sdb>` `profile` command.
+
+The `--profile-mode brief` option requests brief output.
+
+Format Width
+~~~~~~~~~~~~
+
+`slaxproc` now takes a `--width` option when using the `--format`
+option.  The formatter will attempt to limit line lengths to this
+number of characters, though lengthy tokens might prevent this.
+
+xutil:slax-to-xml() and xutil:xml-to-slax()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Two new functions in the `xutil` library convert between SLAX-style
+encoding and XML, allowing users to make input files using SLAX's
+user-friendly "braces" format::
+
+    var $slax = '<color> "red"; <object> "fish";'
+    var $xml = xutil:slax-to-xml($slax);
+    /* $xml is now an XML hierarchy */
+
+xutil:common() and xutil:distinct()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Two new functions in the `xutil` library compares sets of nodes,
+returning the list of common and distinct nodes.  This is done by
+recursively comparing the contents of the nodes, rather than using a
+specific node-in-document comparison, like the EXSLT set functions.
+
+New Bit Shift Functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Three new functions in the :ref:`bit library<bit-library>` support
+shift operations::
+
+  bit:shift-left(b, cnt)      Return logical shift (b << cnt)
+  bit:shift-right(b, cnt)     Return logical shift (b >> cnt)
+  bit:ashift-right(b, cnt)    Return arithmetic shift (b >> cnt)
+
+New slaxproc Options
+~~~~~~~~~~~~~~~~~~~~
+
+`slaxproc` has a number of new options::
+
+  --xml-to-yaml
+  --encoding
+  --indent-width
+
+Version Information
+~~~~~~~~~~~~~~~~~~~
+
+The `slaxproc` `--version` option now includes the current version of
+the SLAX language (e.g. 1.3).
+
+The `--version-only` emits only this information, suitable for
+building templates of new SLAX files.
+
+slax:ends-with()
+~~~~~~~~~~~~~~~~
+
+In parity with the XPath `starts-with()` function, SLAX now has the
+:ref:`slax:ends-with() <ends-with>` function, which is useful testing
+for file extensions and other trailing strings::n
+
+    var $ir = verbs/verb[ends-with(infinitive, "ir")];
+
+slax:get-host()
+~~~~~~~~~~~~~~~
+
+The :ref:`slax:get-host() <get-host>` function returns information
+about a specific DNS hostname or IP address::
+
+    string slax:get-host(hostname-or-address)
+
+slax:join()
+~~~~~~~~~~~
+
+The :ref:`slax-join() <slax-join>` function joins strings together
+using a separator string.
+
+    string slax:join(separator, string...)
+
+New slax:printf() Functionality
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:ref:`slax:printf <printf>` gains some new features.  First is the
+"%jH" and "%jh" flags, which cause the next field to use "humanized"
+output, meaning that large numbers are transformed into a more
+human-readable format using a divisor and suffixes to turn a string
+like "987654321" into the more palatable "988M".  "%jh" uses a divisor
+of 1024, while "%jH" using a divisor of 1000.
+
+In addition, the "%j{XXX}" syntax allows new flags that use longer,
+more human-readable values.  These flags affect the new field
+emitted:
+
+=========== ====================================================
+ Value       Meaning
+=========== ====================================================
+ whole       Do not display decimal values (e.g. 9.7G)
+ b           Use ‘B’ (bytes) as suffix
+ 1000        Use a 1000 divisor (ala "%jH")
+ suffix=XX   Add the given suffix after the number (e.g. "pps")
+=========== ====================================================
+
+Hex Numbers
+~~~~~~~~~~~
+
+SLAX accepts hex numbers in the form "0x1b4D".  These are converted
+into decimal numbers for XSLT, so::
+
+    var $x = 0x45 + 0xBEEF;
+
+becomes::
+
+    var $x = 69 + 48879;
+
+Note that the SLAX writing code can't know the original form and will
+emit the non-hex value.
+
+Documentation
+~~~~~~~~~~~~~
+
+The older `oxradoc`-based documentation has been deprecated.  Please
+use the documentation on `libslax.readthedocs.io` moving forward.
+
+Missing documentation was added for the `slax:regex()` and
+`slax:syslog` functions.
+
+Documentation on the substatements of `apply-templates` was added.
+Also documented that `match` template can have parameters.
+
+Symbolic Links for Extension Libraries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SLAX 1.2 added automatic detection of namespace based on symbolic
+links in the SLAXEXTDIR directory, SLAX 1.3 adds a new feature where
+if a prefix symlink points to a URL that does not have the `.ext`
+suffix, the library is not considered to be an "extension" library.
+This allows the "xnm" prefix used in JUNOS to be supported.
+
 New Features in SLAX-1.2
 ++++++++++++++++++++++++
 
@@ -589,7 +804,7 @@ SLAX-1.1 includes complete support for all XSLT elements.
 
 - The :ref:`number` statement emits a number.
 
-- The :ref:`output-method <output-method>` statement declares the
+- The :ref:`output-method` statement declares the
   output method to use when generating the results of the
   transformation.
 
@@ -634,7 +849,7 @@ associated issues.
   until the text expression is false.  Note that this is only possible
   if the test expression contains a mutable variable::
 
-    while (count($mvar) < 10) {
+    while count($mvar) < 10 {
         /* do more work */
     }
 
@@ -648,7 +863,7 @@ functionality for SLAX scripts.
   thru a set of values, assigning each to a variable before evaluating a
   block of statements::
 
-    for $i ($min ... $max) {
+    for $i in $min ... $max {
         <elt> $i;
     }
 
@@ -656,7 +871,7 @@ functionality for SLAX scripts.
   function, usable in XPath expressions::
 
     function my:lesser ($a, $b) {
-        if ($a < $b) {
+        if $a < $b {
             result $a;
         } else {
             result $b;
@@ -676,7 +891,7 @@ functionality for SLAX scripts.
 
     trace "my debug value is " _ $debug;
     trace {
-        if ($debug/level > 4) {
+        if $debug/level > 4 {
             <debug> {
                 copy-of $data;
             }
@@ -692,9 +907,9 @@ New SLAX Operators
   the range.  If the first value is less than the second one, the values
   will be in increasing order; otherwise the order is decreasing::
 
-    for $tens (0 ... 9) {
+    for $tens in 0 ... 9 {
         message "... " _ tens _ "0 ...";
-        for $ones (0 ... 9) {
+        for $ones in 0 ... 9 {
             call test($value = $tens * 10 + $ones);
         }
     }
