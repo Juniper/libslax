@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2013, Juniper Networks, Inc.
+ * Copyright (c) 2006-2025, Juniper Networks, Inc.
  * All rights reserved.
  * This SOFTWARE is licensed under the LICENSE provided in the
  * ../Copyright file. By downloading, installing, copying, or otherwise
@@ -13,8 +13,8 @@
 #include <libslax/slaxversion.h>
 #include <libpsu/psucommon.h>
 
-#define SLAX_VERSION "1.2"
-#define SLAX_VERSION_NUMBER 12
+#define SLAX_VERSION "1.3"
+#define SLAX_VERSION_NUMBER 13
 
 /* Forward declarations for libxml2/libxslt structures */
 struct _xmlDoc;

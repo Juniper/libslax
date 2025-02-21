@@ -3,7 +3,7 @@
 %}
 
 /*
- * Copyright (c) 2006-2013, Juniper Networks, Inc.
+ * Copyright (c) 2006-2025, Juniper Networks, Inc.
  * All rights reserved.
  * See ../Copyright for the status of this software
  *
