@@ -1,0 +1,4 @@
+config: looking for 'pa03.max-size' (default 0)
+config: looking for 'test.shift' (default 6)
+config: looking for 'test.atom-size' (default 12)
+config: looking for 'test.max-atoms' (default 16384)
