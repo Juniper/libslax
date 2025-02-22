@@ -31,11 +31,30 @@ info () {
     ${ECHO} "$@"
 }
 
+Exists () {
+    if [ -f $1 ]; then
+	true
+    else
+	false
+    fi
+}
+
 run_tests () {
     oname=$name.$ds
     out=out/$oname
     ${ECHO} -n "... $test ... $name ... $ds ..."
     run "$test $data input $input > $out.out 2> $out.err"
+    ${ECHO} "    done"
+
+    run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
+    run "diff -Nu ${SRCDIR}/saved/$oname.err out/$oname.err | ${S2O}"
+}
+
+run_one_test () {
+    oname=$base
+    out=out/$oname
+    ${ECHO} -n "... $test ... "
+    run "$test $data </dev/null > $out.out 2> $out.err"
     ${ECHO} "    done"
 
     run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
@@ -48,16 +67,21 @@ do_run_tests () {
     for test in ${TESTS}; do
 	base=`basename $test .test`
 
-	for input in `echo ${SRCDIR}/${base}*.in`; do
-            if [ -f $input ]; then
-		name=`basename $input .in`
-		ds=1
-		grep '^#' $input | while read comment data ; do
-		    run_tests
-		    ds=`expr $ds + 1`
-		done
-	    fi
-	done
+	input_files=`echo ${SRCDIR}/${base}*.in`
+	if Exists $input_files; then
+	    for input in $input_files; do
+                if [ -f $input ]; then
+		    name=`basename $input .in`
+		    ds=1
+		    grep '^#' $input | while read comment data ; do
+		        run_tests
+		        ds=`expr $ds + 1`
+		    done
+	        fi
+	    done
+        else
+	    run_one_test
+	fi
     done
 }
 
@@ -69,7 +93,14 @@ accept_file () {
 }
 
 accept_tests () {
-    oname=$name.$ds
+    oname=$1
+
+    accept_file out/$oname.out ${SRCDIR}/saved/$oname.out
+    accept_file out/$oname.err ${SRCDIR}/saved/$oname.err
+}
+
+accept_one_test () {
+    oname=$1
 
     accept_file out/$oname.out ${SRCDIR}/saved/$oname.out
     accept_file out/$oname.err ${SRCDIR}/saved/$oname.err
@@ -79,16 +110,21 @@ do_accept () {
     for test in ${TESTS}; do
 	base=`basename $test .test`
 
-	for input in `echo ${SRCDIR}/${base}*.in`; do
-            if [ -f $input ]; then
-		name=`basename $input .in`
-		ds=1
-		grep '^#' $input | while read comment data ; do
-		    accept_tests
-		    ds=`expr $ds + 1`
-		done
-	    fi
-	done
+	input_files=`echo ${SRCDIR}/${base}*.in`
+	if Exists $input_files; then
+	    for input in $input_files; do
+                if [ -f $input ]; then
+		    name=`basename $input .in`
+		    ds=1
+		    grep '^#' $input | while read comment data ; do
+		        accept_tests $name.$ds
+		        ds=`expr $ds + 1`
+		    done
+	        fi
+	    done
+	else
+	    accept_one_test $base
+	fi
     done
 }
 
