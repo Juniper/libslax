@@ -857,7 +857,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     if (xpath == NULL || *xpath == '\0')
 	return NULL;
 
-    ctxt = xmlNewParserCtxt();
+    ctxt = slaxSetupFakeContext();
     if (ctxt == NULL)
 	return NULL;
 
@@ -873,10 +873,6 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
 
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", swp->sw_filename);
     if (nodep)
 	sd.sd_line = nodep->line;
 
