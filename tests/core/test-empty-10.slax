@@ -14,8 +14,30 @@ match / {
         <output> format-number( "100.15", "####.#" );
         <output> format-number( 1000.15, "####.#" );
 
+        <output> format-number( 10.15, "####.#" );
+        <output> format-number( 100.15, "####.#" );
+        <output> format-number( 10.15, "####.##" );
+        <output> format-number( 100.15, "####.##" );
+        <output> format-number( "10.15", "####.##################" );
+        <output> format-number( "100.15", "####.##################" );
+
+        <output> format-number( 10.151, "####.#" );
+        <output> format-number( 100.151, "####.#" );
+        <output> format-number( 10.151, "####.##" );
+        <output> format-number( 100.151, "####.##" );
+        <output> format-number( "10.151", "####.##################" );
+        <output> format-number( "100.151", "####.##################" );
+
+        <output> format-number( 10.16, "####.#" );
+        <output> format-number( 100.16, "####.#" );
+        <output> format-number( 10.16, "####.##" );
+        <output> format-number( 100.16, "####.##" );
+        <output> format-number( "10.16", "####.##################" );
+        <output> format-number( "100.16", "####.##################" );
+
         <output> format-number( "100.15", "####.################" );
         <output> format-number( 100.15, "####.################" );
+        <output> format-number( 100.15, "####.##################" );
         <output> format-number( number("100.15"), "####.################" );
     }
 }
