@@ -696,7 +696,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     slax_data_t sd;
     xmlDocPtr res;
     int rc;
-    xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
+    xmlParserCtxtPtr ctxt = slaxSetupFakeContext();
 
     if (ctxt == NULL)
 	return NULL;
@@ -727,12 +727,6 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
-
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    if (filename)
-	xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", filename);
 
     sd.sd_docp = slaxBuildDoc(&sd, ctxt);
     if (sd.sd_docp == NULL) {
@@ -780,7 +774,7 @@ slaxLoadBuffer (const char *filename, char *input,
     slax_data_t sd;
     xmlDocPtr res;
     int rc;
-    xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
+    xmlParserCtxtPtr ctxt = slaxSetupFakeContext();
 
     if (ctxt == NULL)
 	return NULL;
@@ -806,11 +800,6 @@ slaxLoadBuffer (const char *filename, char *input,
 
     strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_ctxt = ctxt;
-
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", filename);
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
@@ -859,7 +848,7 @@ slaxLoadBuffer (const char *filename, char *input,
  * allocated string, or NULL.
  */
 char *
-slaxSlaxToXpath (const char *filename, int lineno,
+slaxSlaxToXpath (const char *filename UNUSED, int lineno,
 		 const char *slax_expr, int *errorsp)
 {
     slax_data_t sd;
@@ -874,7 +863,7 @@ slaxSlaxToXpath (const char *filename, int lineno,
     if (slax_expr == NULL || *slax_expr == '\0')
 	return (char *) xmlCharStrdup("\"\"");
 
-    ctxt = xmlNewParserCtxt();
+    ctxt = slaxSetupFakeContext();
     if (ctxt == NULL)
 	return NULL;
 
@@ -886,10 +875,6 @@ slaxSlaxToXpath (const char *filename, int lineno,
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
 
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", filename);
     sd.sd_line = lineno;
 
     fakep = xmlNewNode(NULL, (const xmlChar *) ELT_STYLESHEET);
