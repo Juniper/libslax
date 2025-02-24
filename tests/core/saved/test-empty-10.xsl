@@ -20,10 +20,67 @@
         <xsl:value-of select="format-number(1000.15, &quot;####.#&quot;)"/>
       </output>
       <output>
+        <xsl:value-of select="format-number(10.15, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.15, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.15, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.15, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;10.15&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.151, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.151, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.151, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.151, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;10.151&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.151&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.16, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.16, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.16, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.16, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;10.16&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.16&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
         <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.################&quot;)"/>
       </output>
       <output>
         <xsl:value-of select="format-number(100.15, &quot;####.################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.15, &quot;####.##################&quot;)"/>
       </output>
       <output>
         <xsl:value-of select="format-number(number(&quot;100.15&quot;), &quot;####.################&quot;)"/>
