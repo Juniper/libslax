@@ -362,5 +362,13 @@ xmlIsReserved (const char *name)
     return (name && strlen(name) > 3 && strncasecmp(name, "xml", 3) == 0);
 }
 
+static inline xmlParserCtxtPtr
+slaxSetupFakeContext (void)
+{
+    static const xmlChar just_say_no[] = " ";
+
+    return xmlCreateDocParserCtxt(just_say_no);
+}
+
 #endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */
 #endif /* LIBSLAX_XMLSOFT_H */
