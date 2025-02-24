@@ -1,11 +1,30 @@
 <?xml version="1.0"?>
 <op-script-results>
-  <output>1.2</output>
+  <output>1.1</output>
+  <output>10.2</output>
+  <output>100.1</output>
+  <output>100.1</output>
+  <output>1000.1</output>
+  <output>10.2</output>
+  <output>100.1</output>
+  <output>10.15</output>
+  <output>100.15</output>
+  <output>10.150000000000000362</output>
+  <output>100.150000000000005706</output>
   <output>10.2</output>
   <output>100.2</output>
+  <output>10.15</output>
+  <output>100.15</output>
+  <output>10.150999999999999808</output>
+  <output>100.150999999999996266</output>
+  <output>10.2</output>
   <output>100.2</output>
-  <output>1000.2</output>
+  <output>10.16</output>
+  <output>100.16</output>
+  <output>10.160000000000000128</output>
+  <output>100.159999999999996586</output>
   <output>100.1500000000000057</output>
   <output>100.1500000000000057</output>
+  <output>100.150000000000005706</output>
   <output>100.1500000000000057</output>
 </op-script-results>
