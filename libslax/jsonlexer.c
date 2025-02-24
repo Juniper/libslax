@@ -263,8 +263,7 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 
     slaxSetupLexer();
 
-    xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
-
+    xmlParserCtxtPtr ctxt = slaxSetupFakeContext();
     if (ctxt == NULL)
 	return NULL;
 
@@ -284,11 +283,6 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
-
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", sd.sd_filename);
 
     sd.sd_docp = slaxJsonBuildDoc(&sd, root_name, ctxt);
     if (sd.sd_docp == NULL) {
@@ -325,8 +319,7 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
 
     slaxSetupLexer();
 
-    xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
-
+    xmlParserCtxtPtr ctxt = slaxSetupFakeContext();
     if (ctxt == NULL)
 	return NULL;
 
@@ -350,11 +343,6 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
 	slaxError("%s: cannot open: %s", fname, strerror(errno));
 	return NULL;
     }
-
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", sd.sd_filename);
 
     sd.sd_docp = slaxJsonBuildDoc(&sd, root_name, ctxt);
     if (sd.sd_docp == NULL) {
