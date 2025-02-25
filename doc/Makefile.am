@@ -123,4 +123,4 @@ html sphinx sphinx-html:
 clean-local: sphinx-clean
 
 sphinx-clean:
-	${SPHINX} -M clean ${srcdir} sphinx
+	-${SPHINX} -M clean ${srcdir} sphinx
