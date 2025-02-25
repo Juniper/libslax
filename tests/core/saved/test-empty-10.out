@@ -1,12 +1,7 @@
 <?xml version="1.0"?>
 <op-script-results>
-  <output>1.1</output>
   <output>10.2</output>
-  <output>100.1</output>
-  <output>100.1</output>
-  <output>1000.1</output>
   <output>10.2</output>
-  <output>100.1</output>
   <output>10.15</output>
   <output>100.15</output>
   <output>10.150000000000000362</output>
