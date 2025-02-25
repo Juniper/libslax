@@ -49,16 +49,17 @@ typedef struct mvar_precomp_s {
  * Make the variable name for the shadow variable.
  */
 static xmlChar *
-slaxMvarSvarName (const char *varname)
+slaxMvarSvarName (const char *varname, int init)
 {
     char buf[BUFSIZ], *cp;
+    const char *tag = init ? "init-" : "";
 
     cp = strchr(varname, ':');
     if (cp)
-	snprintf(buf, sizeof(buf), "%*s:" SLAX_MVAR_PREFIX "%s",
-		 (int) (cp - varname), varname, cp);
+	snprintf(buf, sizeof(buf), "%*s:" SLAX_MVAR_PREFIX "%s%s",
+		 (int) (cp - varname), varname, tag, cp);
     else
-	snprintf(buf, sizeof(buf), SLAX_MVAR_PREFIX "%s", varname);
+	snprintf(buf, sizeof(buf), SLAX_MVAR_PREFIX "%s%s", tag, varname);
 
     return xmlStrdup((const xmlChar *) buf);
 }
@@ -76,26 +77,20 @@ slaxMvarSvarName (const char *varname)
 void
 slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 {
-    xmlNodePtr mvar = sdp->sd_ctxt->node, svar;
-    xmlChar *svarname;
+    xmlNodePtr mvar = sdp->sd_ctxt->node, svar, ivar = NULL;
+    xmlChar *ivarname = NULL;
     char buf[BUFSIZ];
     char *sel = NULL;
 
-    svarname = slaxMvarSvarName(mvarname);
+    xmlChar *svarname = slaxMvarSvarName(mvarname, FALSE);
     if (svarname == NULL)
 	return;
 
-    /* Create the shadow variable (svar) as a copy of the mvar*/
-    if (mvar->children) {
-	svar = xmlDocCopyNode(mvar, mvar->doc, 1);
-	if (svar == NULL)
-	    goto fail;
-    } else {
-	svar = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
-			  (const xmlChar *) ELT_VARIABLE, NULL);
-	if (svar == NULL)
-	    goto fail;
-    }
+    /* The "shadow" variable holds old values */
+    svar = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
+			 (const xmlChar *) ELT_VARIABLE, NULL);
+    if (svar == NULL)
+	goto fail;
 
     /* Set the line number so the debugger can find us */
     svar->line = mvar->line;
@@ -105,6 +100,26 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 		 (const xmlChar *) svarname);
     xmlSetNsProp(svar, NULL, (const xmlChar *) ATT_MVARNAME,
 	       (const xmlChar *) mvarname);
+
+    /* Create the shadow variable (svar) as a copy of the mvar*/
+    if (mvar->children) {
+	/*
+	 * We have an initial value; put it in an "init" variable
+	 */
+	ivarname = slaxMvarSvarName(mvarname, TRUE);
+	if (ivarname == NULL)
+	    goto fail;
+
+	ivar = xmlDocCopyNode(mvar, mvar->doc, 1);
+	if (ivar == NULL)
+	    goto fail;
+
+	ivar->line = mvar->line; /* Let the debugger know where we are */
+	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_NAME,
+		     (const xmlChar *) ivarname);
+	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_MVARNAME,
+		     (const xmlChar *) mvarname);
+    }
 
     /*
      * Put some finishing touches on the mvar:
@@ -122,7 +137,7 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 
     snprintf(buf, sizeof(buf),
 	     SLAX_PREFIX ":" FUNC_MVAR_INIT "(\"%s\", \"%s\", $%s%s%s)",
-	     mvarname, svarname, svarname,
+	     mvarname, svarname, ivarname ?: svarname,
 	     sel ? ", " : "", sel ?: "");
 
     xmlFreeAndEasy(sel);
@@ -139,11 +154,18 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
     xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_SVARNAME,
 		 (const xmlChar *) svarname);
 
+    if (ivar)
+	xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_IVARNAME,
+		     (const xmlChar *) ivarname);
+
     /* Add the svar to the tree */
     xmlAddPrevSibling(mvar, svar);
+    if (ivar)
+	xmlAddPrevSibling(mvar, ivar);
 
  fail:
     xmlFreeAndEasy(svarname);
+    xmlFreeAndEasy(ivarname);
 }
 
 /**
@@ -330,8 +352,6 @@ slaxCastValueToString (xmlXPathObjectPtr value, int *freep)
  */
 static xsltStackElemPtr
 slaxMvarGetSvar (xsltTransformContextPtr ctxt,
-		 xsltStackElemPtr var UNUSED,
-		 const xmlChar *mvarname UNUSED,
 		 const xmlChar *svarname, int *localp)
 {
     return slaxMvarLookupQname(ctxt, svarname, localp);
@@ -347,7 +367,7 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlXPathObjectPtr value = svar->value;
     xmlDocPtr container;
 
-    if (value->nodesetval && value->nodesetval->nodeNr > 0
+    if (value && value->nodesetval && value->nodesetval->nodeNr > 0
 	    && value->nodesetval->nodeTab)
 	return (xmlDocPtr) value->nodesetval->nodeTab[0];
 
@@ -363,15 +383,10 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
      */
     xsltRegisterPersistRVT(ctxt, container);
 
-    /*
-     * We build value as a nodeset containing the RTF/RVT.  It's
-     * not pretty, but building it by hand is unavoidable.
-     */
-    xmlFreeAndEasy(value->stringval); /* Discard stringval if any */
+    if (value)
+	xmlXPathFreeObject(value);
 
-    memset(value, 0, sizeof(*value));
-    value->type = XPATH_NODESET;
-    value->nodesetval = xmlXPathNodeSetCreate((xmlNodePtr) container);
+    svar->value = value = xmlXPathNewNodeSet((xmlNodePtr) container);
 
     /* If the nodeset create worked, return the container */
     if (value->nodesetval && value->nodesetval->nodeNr > 0
@@ -390,7 +405,8 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
     xmlNodePtr prev;
 
     /* If this is the first value, make the nodeset */
-    if (value->nodesetval == NULL || value->nodesetval->nodeNr == 0
+    if (value == NULL || value->nodesetval == NULL
+	    || value->nodesetval->nodeNr == 0
 	    || value->nodesetval->nodeTab == NULL)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
@@ -472,6 +488,55 @@ slaxMvarCloneNodeset (xmlDocPtr container, xmlNodeSetPtr nset, int limit)
     return res;
 }
 
+static xmlXPathObjectPtr
+slaxMvarRecord (xsltTransformContextPtr ctxt, const xmlChar *name,
+		const xmlChar *svarname,
+		xmlXPathObjectPtr value)
+{
+    if (!slaxValueIsScalar(value)) {
+	/*
+	 * Value is not a scalar; copy it to our shadow variable's RTF
+	 * and build a node set for the real value.
+	 */
+	xmlDocPtr container;
+	xsltStackElemPtr svar;
+	xmlNodeSetPtr res = NULL;
+	xmlNodeSetPtr nset = value->nodesetval;
+	int local = FALSE;
+
+	svar = slaxMvarGetSvar(ctxt, svarname, &local);
+	if (svar == NULL) {
+	    slaxTransformError2(ctxt,
+				"could not find shadow variable for %s (%s)",
+				name, svarname);
+	    return NULL;
+	}
+
+	container = slaxMvarNewContainer(ctxt, svar, local);
+	if (container == NULL) {
+	    slaxTransformError2(ctxt,
+				"could not find shadow container for %s (%s)",
+				name, svarname);
+	    return NULL;
+	}
+
+	res = slaxMvarCloneNodeset(container, nset, 0);
+	if (res == NULL) {
+	    slaxTransformError2(ctxt,
+				"found not make node set for %s (%s)",
+				name, svarname);
+	    return NULL;
+	}
+
+	/* We need to free the new value, since we've copied its contents */
+	xmlXPathFreeObject(value);
+
+	value = xmlXPathWrapNodeSet(res);
+    }
+
+    return value;
+}
+
 /*
  * Set a mutable variable to the given value
  */
@@ -491,46 +556,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
     slaxDumpObject(value);
 #endif
 
-    if (!slaxValueIsScalar(value)) {
-	/*
-	 * Value is not a scalar; copy it to our shadow variable's RTF
-	 * and build a node set for the real value.
-	 */
-	xmlDocPtr container;
-	xsltStackElemPtr svar;
-	xmlNodeSetPtr res = NULL;
-	xmlNodeSetPtr nset = value->nodesetval;
-	int local = FALSE;
-
-	svar = slaxMvarGetSvar(ctxt, var, name, svarname, &local);
-	if (svar == NULL) {
-	    slaxTransformError2(ctxt,
-				"could not find shadow variable for %s (%s)",
-				name, svarname);
-	    return TRUE;
-	}
-
-	container = slaxMvarNewContainer(ctxt, svar, local);
-	if (container == NULL) {
-	    slaxTransformError2(ctxt,
-				"could not find shadow container for %s (%s)",
-				name, svarname);
-	    return TRUE;
-	}
-
-	res = slaxMvarCloneNodeset(container, nset, 0);
-	if (res == NULL) {
-	    slaxTransformError2(ctxt,
-				"found not make node set for %s (%s)",
-				name, svarname);
-	    return TRUE;
-	}
-
-	/* We need to free the new value, since we've copied its contents */
-	xmlXPathFreeObject(value);
-
-	value = xmlXPathWrapNodeSet(res);
-    }
+    value = slaxMvarRecord(ctxt, name, svarname, value);
 
     /* Substitute our new value into the variable */
     old_value = var->value;
@@ -657,7 +683,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 
     int local = FALSE;
 
-    svar = slaxMvarGetSvar(ctxt, var, name, svarname, &local);
+    svar = slaxMvarGetSvar(ctxt, svarname, &local);
     if (svar == NULL) {
 	slaxTransformError2(ctxt,
 			    "found not find shadow variable for %s (%s)",
@@ -810,7 +836,7 @@ slaxMvarAddSvarName (slax_data_t *sdp UNUSED, xmlNodePtr nodep)
     char *mvarname = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
 
     if (mvarname) {
-	xmlChar *svarname = slaxMvarSvarName(mvarname ?: "bad-svarname");
+	xmlChar *svarname = slaxMvarSvarName(mvarname ?: "bad-svarname", FALSE);
 	if (svarname) {
 	    xmlSetNsProp(nodep, NULL,
 		 (const xmlChar *) ATT_SVARNAME, (const xmlChar *) svarname);
@@ -1048,7 +1074,7 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 	    }
 	}
 
-	/* slaxMvarSet() consumed value and/or table, so don't free them */
+	/* slaxMvarSet() consumes value and/or table, so don't free them */
 	slaxMvarSet(ctxt, comp->mp_localname, comp->mp_svarname,
 		    comp->mp_uri, var, value);
     }
@@ -1099,7 +1125,6 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
     xmlNodePtr nodep;
     xmlXPathObjectPtr xop = NULL;
     xmlXPathObjectPtr varg = NULL;
-    xmlDocPtr container;
 
     if (nargs < 3 || nargs > 4) {
 	xmlXPathSetArityError(ctxt);
@@ -1111,12 +1136,17 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	xop = valuePop(ctxt);
 
     /*
-     * vop is a reference to our shadow variable, used to force libxslt
-     * to evaluate it before we are run.  We can fetch and discard it.
+     * vop is a reference to either our empty shadow variable, or to our
+     * "init" variable, which would contain an RTF of data, which we'll
+     * copy into the shadow variable.
      */
     varg = valuePop(ctxt);
-    if (varg)
-	xmlXPathFreeObject(varg);
+    if (varg) {
+	if (xop)
+	    xmlFree(varg);	/* Should not occur; ignore varg */
+	else
+	    xop = varg;
+    }
 
     /* The first two parameters are the names of our variable and shadow */
     svarname = xmlXPathPopString(ctxt);
@@ -1148,29 +1178,8 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
      * to work, since we have to have the document allocated in the
      * original context.
      */
-
     if (xop) {
-	container = slaxMvarLastContainer(tctxt, svar);
-
-	/*
-	 * xop is the new value that needs assigned to the var.  If
-	 * it is not a scalar, then we need to copy it into the shadow
-	 * variable, which should be initialized since it is one of
-	 * our parameters.
-	 */
-	if (xop->nodesetval == NULL) {
-	    ret = xop;		/* Use the scalar directly */
-
-	} else {
-	    xmlNodeSetPtr res;
-
-	    res = slaxMvarCloneNodeset(container, xop->nodesetval, 0);
-
-	    xmlXPathFreeObject(xop); /* Free xop first */
-	    if (res == NULL)	     /* Then fail if needed */
-		goto fail;
-	    ret = xmlXPathWrapNodeSet(res); /* Then succeed w/ cloned nodeset */
-	}
+	ret = slaxMvarRecord(tctxt, mvarname, svarname, xop);
 
     } else {
 	/*
