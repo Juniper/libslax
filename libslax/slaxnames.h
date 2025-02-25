@@ -41,6 +41,7 @@
 #define ATT_GROUPING_SIZE "grouping-size"
 #define ATT_HREF	"href"
 #define ATT_INDENT	"indent"
+#define ATT_IVARNAME	"ivarname"
 #define ATT_JSON	"json"
 #define ATT_LANG	"lang"
 #define ATT_MAKE	"make"
