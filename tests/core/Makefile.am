@@ -34,6 +34,9 @@ S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
 X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
 SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
 
+# Remove the line numbers that libxslt emits, which breaks our tests
+CLEANLINES = sed -i.bak 's/\(Unimplemented block at preproc.c\):.*/\1/'
+
 CLEANDIRS = out
 
 # For MacOS debugging.  Docs are:
@@ -70,6 +73,7 @@ TEST_ONE = \
  ${DIFF} -Nbu ${srcdir}/saved/$$base.slax2 out/$$base.slax2 ${S2O} ; \
  ${SRUN} ${srcdir}/$$test ${srcdir}/$$data \
    > out/$$base.out 2> out/$$base.err ; \
+ ${CLEANLINES} out/$$base.err ; \
  ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
  ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
 
