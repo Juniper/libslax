@@ -43,7 +43,7 @@ run_tests () {
     oname=$name.$ds
     out=out/$oname
     ${ECHO} -n "... $test ... $name ... $ds ..."
-    run "$test $data input $input > $out.out 2> $out.err"
+    run "./$test $data input $input > $out.out 2> $out.err"
     ${ECHO} "    done"
 
     run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
@@ -54,7 +54,7 @@ run_one_test () {
     oname=$base
     out=out/$oname
     ${ECHO} -n "... $test ... "
-    run "$test $data </dev/null > $out.out 2> $out.err"
+    run "./$test $data </dev/null > $out.out 2> $out.err"
     ${ECHO} "    done"
 
     run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
