@@ -4,18 +4,52 @@ output-method xml {
     indent "yes";
 }
 
+param $full;
+
 /* See https://bugzilla.gnome.org/show_bug.cgi?id=629325 */
 
 match / {
     <op-script-results> {
-        <output> format-number( 1.15, "####.#" );
+	if ($full) {
+	    <output> format-number( 1.15, "####.#" );
+	}
+
         <output> format-number( 10.15, "####.#" );
-        <output> format-number( 100.15, "####.#" );
-        <output> format-number( "100.15", "####.#" );
-        <output> format-number( 1000.15, "####.#" );
+
+	if ($full) {
+	    <output> format-number( 100.15, "####.#" );
+	    <output> format-number( "100.15", "####.#" );
+	    <output> format-number( 1000.15, "####.#" );
+	}
+
+        <output> format-number( 10.15, "####.#" );
+
+	if ($full) {
+	    <output> format-number( 100.15, "####.#" );
+	}
+
+        <output> format-number( 10.15, "####.##" );
+        <output> format-number( 100.15, "####.##" );
+        <output> format-number( "10.15", "####.##################" );
+        <output> format-number( "100.15", "####.##################" );
+
+        <output> format-number( 10.151, "####.#" );
+        <output> format-number( 100.151, "####.#" );
+        <output> format-number( 10.151, "####.##" );
+        <output> format-number( 100.151, "####.##" );
+        <output> format-number( "10.151", "####.##################" );
+        <output> format-number( "100.151", "####.##################" );
+
+        <output> format-number( 10.16, "####.#" );
+        <output> format-number( 100.16, "####.#" );
+        <output> format-number( 10.16, "####.##" );
+        <output> format-number( 100.16, "####.##" );
+        <output> format-number( "10.16", "####.##################" );
+        <output> format-number( "100.16", "####.##################" );
 
         <output> format-number( "100.15", "####.################" );
         <output> format-number( 100.15, "####.################" );
+        <output> format-number( 100.15, "####.##################" );
         <output> format-number( number("100.15"), "####.################" );
     }
 }

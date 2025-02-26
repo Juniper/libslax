@@ -76,11 +76,7 @@ slaxV12 (slax_writer_t *swp)
 static inline int
 slaxV13 (slax_writer_t *swp)
 {
-#if 1				/* Nuke when 1.3 is released */
-    return (swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
-#else
     return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
-#endif
 }
 
 static inline int
@@ -857,7 +853,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     if (xpath == NULL || *xpath == '\0')
 	return NULL;
 
-    ctxt = xmlNewParserCtxt();
+    ctxt = slaxSetupFakeContext();
     if (ctxt == NULL)
 	return NULL;
 
@@ -873,10 +869,6 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
     ctxt->userData = &sd;
 
-    /*
-     * Fake up an inputStream so the error mechanisms will work
-     */
-    xmlSetupParserForBuffer(ctxt, (const xmlChar *) "", swp->sw_filename);
     if (nodep)
 	sd.sd_line = nodep->line;
 
@@ -3913,7 +3905,7 @@ slaxWriteDocument (slax_writer_t *swp, xmlDocPtr docp)
     }
 
     /* The "new" parens style starts in 1.3 */
-    if (want_parens || swp->sw_vers < SWF_VERS_13)
+    if (want_parens || (swp->sw_vers != 0 && swp->sw_vers < SWF_VERS_13))
 	swp->sw_flags |= SWF_WANT_PARENS;
 
     /*

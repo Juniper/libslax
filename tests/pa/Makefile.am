@@ -97,7 +97,7 @@ one:
 
 accept:
 	@${MKDIR} -p ${srcdir}/saved
-	@$sh ${SH_OPTS} ${RUN_TESTS} accept ${TEST_FILES}
+	@sh ${SH_OPTS} ${RUN_TESTS} accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<

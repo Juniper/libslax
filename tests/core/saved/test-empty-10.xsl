@@ -1,29 +1,93 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <xsl:output method="xml" indent="yes"/>
+  <xsl:param name="full"/>
   <!-- See https://bugzilla.gnome.org/show_bug.cgi?id=629325 -->
   <xsl:template match="/">
     <op-script-results>
-      <output>
-        <xsl:value-of select="format-number(1.15, &quot;####.#&quot;)"/>
-      </output>
+      <xsl:if test="$full">
+        <output>
+          <xsl:value-of select="format-number(1.15, &quot;####.#&quot;)"/>
+        </output>
+      </xsl:if>
       <output>
         <xsl:value-of select="format-number(10.15, &quot;####.#&quot;)"/>
       </output>
+      <xsl:if test="$full">
+        <output>
+          <xsl:value-of select="format-number(100.15, &quot;####.#&quot;)"/>
+        </output>
+        <output>
+          <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.#&quot;)"/>
+        </output>
+        <output>
+          <xsl:value-of select="format-number(1000.15, &quot;####.#&quot;)"/>
+        </output>
+      </xsl:if>
       <output>
-        <xsl:value-of select="format-number(100.15, &quot;####.#&quot;)"/>
+        <xsl:value-of select="format-number(10.15, &quot;####.#&quot;)"/>
+      </output>
+      <xsl:if test="$full">
+        <output>
+          <xsl:value-of select="format-number(100.15, &quot;####.#&quot;)"/>
+        </output>
+      </xsl:if>
+      <output>
+        <xsl:value-of select="format-number(10.15, &quot;####.##&quot;)"/>
       </output>
       <output>
-        <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.#&quot;)"/>
+        <xsl:value-of select="format-number(100.15, &quot;####.##&quot;)"/>
       </output>
       <output>
-        <xsl:value-of select="format-number(1000.15, &quot;####.#&quot;)"/>
+        <xsl:value-of select="format-number(&quot;10.15&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.151, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.151, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.151, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.151, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;10.151&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.151&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.16, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.16, &quot;####.#&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(10.16, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.16, &quot;####.##&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;10.16&quot;, &quot;####.##################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(&quot;100.16&quot;, &quot;####.##################&quot;)"/>
       </output>
       <output>
         <xsl:value-of select="format-number(&quot;100.15&quot;, &quot;####.################&quot;)"/>
       </output>
       <output>
         <xsl:value-of select="format-number(100.15, &quot;####.################&quot;)"/>
+      </output>
+      <output>
+        <xsl:value-of select="format-number(100.15, &quot;####.##################&quot;)"/>
       </output>
       <output>
         <xsl:value-of select="format-number(number(&quot;100.15&quot;), &quot;####.################&quot;)"/>

@@ -49,6 +49,7 @@ noinst_HEADERS = \
     jsonlexer.h \
     jsonwriter.h \
     slaxext.h \
+    slaxhumanize.h \
     slaxinternals.h \
     slaxio.h \
     slaxlexer.h \

@@ -6,12 +6,13 @@
     <c>c</c>
   </xsl:variable>
   <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="v1" select="slax-ext:node-set($v1-temp-1)"/>
-  <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-v2" mvarname="v2">
+  <xsl:variable name="slax-v2" mvarname="v2"/>
+  <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-v2" mvarname="v2">
     <a>a</a>
     <b>b</b>
     <c>c</c>
   </xsl:variable>
-  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="v2" mutable="yes" select="slax:mvar-init(&quot;v2&quot;, &quot;slax-v2&quot;, $slax-v2)" svarname="slax-v2"/>
+  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="v2" mutable="yes" select="slax:mvar-init(&quot;v2&quot;, &quot;slax-v2&quot;, $slax-init-v2)" svarname="slax-v2" ivarname="slax-init-v2"/>
   <xsl:variable name="slax-v3" mvarname="v3"/>
   <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="v3" select="slax:mvar-init(&quot;v3&quot;, &quot;slax-v3&quot;, $slax-v3, $v1)" mutable="yes" svarname="slax-v3"/>
   <xsl:variable name="slax-s1" mvarname="s1"/>
