@@ -642,7 +642,7 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 		else if ((flags & SSF_ATTRIB) && ttype == L_EQUALS)
 		    markp = 0;
 
-		else if (ttype == L_DCOLON || ttype == L_DAMPER
+		else if (ttype == L_DAMPER
 			 || ttype == L_DEQUALS || ttype == L_DOTDOT
 			 || ttype == L_DSLASH || ttype == L_DVBAR
 			 || ttype == L_GRTREQ || ttype == L_LESSEQ
