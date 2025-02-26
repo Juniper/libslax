@@ -76,11 +76,7 @@ slaxV12 (slax_writer_t *swp)
 static inline int
 slaxV13 (slax_writer_t *swp)
 {
-#if 1				/* Nuke when 1.3 is released */
-    return (swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
-#else
     return (swp->sw_vers == 0 || swp->sw_vers >= SWF_VERS_13) ? TRUE : FALSE;
-#endif
 }
 
 static inline int
@@ -3909,7 +3905,7 @@ slaxWriteDocument (slax_writer_t *swp, xmlDocPtr docp)
     }
 
     /* The "new" parens style starts in 1.3 */
-    if (want_parens || swp->sw_vers < SWF_VERS_13)
+    if (want_parens || (swp->sw_vers != 0 && swp->sw_vers < SWF_VERS_13))
 	swp->sw_flags |= SWF_WANT_PARENS;
 
     /*
