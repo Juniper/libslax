@@ -13,14 +13,14 @@
     <out>128000 + 54 Mcool     + 256000</out>
   </test>
   <test n="789789">
-    <out>        790K</out>
-    <out>790 K       </out>
+    <out>        790k</out>
+    <out>790 k       </out>
     <out>128000 +         771K + 256000</out>
     <out>128000 + 771 Kcool    + 256000</out>
   </test>
   <test n="90301">
-    <out>         90K</out>
-    <out>90 K        </out>
+    <out>         90k</out>
+    <out>90 k        </out>
     <out>128000 +          88K + 256000</out>
     <out>128000 + 88 Kcool     + 256000</out>
   </test>
