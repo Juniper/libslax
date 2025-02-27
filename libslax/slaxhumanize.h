@@ -47,6 +47,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 /* humanize_number(3) */
 #define HN_DECIMAL		0x01
