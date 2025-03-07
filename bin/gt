@@ -33,6 +33,19 @@ set_git_top () {
     exit 1
 }
 
+git_diff () {
+    diff_args=
+    case "$1" in
+        commit|just|c)
+            shift
+            diff_args="$1"'^!'
+            shift
+            ;;
+    esac
+
+     git diff $diff_args "$@"
+}
+
 check_in_details () {
     set_branch
     files=`git status -s "$@" | awk '{print $2}'`
@@ -118,59 +131,12 @@ case "$op" in
         check_in_details "$@"
 	;;
 
-    commit)
-	## gt commit [<files>]
-	## == Check in multiple files, prompting for a commit message for
-	## == each file (after displaying a diff).
-	## == Then commit the files by pushing them to the origin branch
-        set_branch
-        check_in_details "$@"
-	push_to_branch
-	;;
-
-    timmoc)
-	## gt timmoc [<args>]
-	## == 'commit' some files
-	## == (commit spelled backwards)
-        set_branch
-        git commit "$@"
-        ;;
-
-    diff|dif|delta)
-	## gt diff [<files>]
-	## == Display uncommitted diffs
-        git diff "$@"
-	;;
-
-    info)
-	## gt info
-	## == Display information about the current git repo
-	git remote -v
-        git remote -v show $origin
-        ;;
-
     clog)
 	## gt clog [<opts>]
 	## == Display a colored log of repo history
 	colors='--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)'
 	git log --graph --abbrev-commit --decorate --all "${colors}" "$@"
         echo ''
-	;;
-
-    log)
-	## gt log [<opts>]
-	## == Display log of repo history
-        git log "$@"
-        ;;
-
-    make-gh-pages)
-	# Deprecated?
-        url=`git config --get remote.origin.url`
-	base=`basename "$url" .git`
-        mkdir -p gh-pages
-	git clone $url -b gh-pages gh-pages
-	cd gh-pages
-        git branch -u origin/gh-pages
 	;;
 
     clone|co)
@@ -191,6 +157,16 @@ case "$op" in
         git clone "$target" "$@"
         ;;
 
+    commit)
+	## gt commit [<files>]
+	## == Check in multiple files, prompting for a commit message for
+	## == each file (after displaying a diff).
+	## == Then commit the files by pushing them to the origin branch
+        set_branch
+        check_in_details "$@"
+	push_to_branch
+	;;
+
     create-gh-pages)
 	## gt create-gh-pages
 	## == Create a 'gh-pages' branch
@@ -202,6 +178,36 @@ case "$op" in
         git checkout --orphan gh-pages
         echo "clone gh-pages into gh-page; 'cd gh-pages && gt rm -fr .' to clean it"
         ;;
+
+    diff|dif|delta)
+	## gt diff [<files>]
+	## == Display uncommitted diffs
+	## == To show specific commit: gt diff commit <hex>
+        git_diff "$@"
+	;;
+
+    info)
+	## gt info
+	## == Display information about the current git repo
+	git remote -v
+        git remote -v show $origin
+        ;;
+
+    log)
+	## gt log [<opts>]
+	## == Display log of repo history
+        git log "$@"
+        ;;
+
+    make-gh-pages)
+	# Deprecated?
+        url=`git config --get remote.origin.url`
+	base=`basename "$url" .git`
+        mkdir -p gh-pages
+	git clone $url -b gh-pages gh-pages
+	cd gh-pages
+        git branch -u origin/gh-pages
+	;;
 
     merge-to)
 	## gt merge-to <branch>
@@ -297,6 +303,17 @@ case "$op" in
 	git stash pop
 	;;
 
+    self-help|'')
+        echo " "
+        echo "gt: a better way to git"
+        echo " gt <command> ..."
+        echo " "
+        echo "  list of supported verbs::"
+        echo " "
+        grep -B1 "#\#" $0 | sed -e 's/.*#\#/        /' -e 's/==/    /'
+        echo " "
+        ;;
+
     st|stat|status)
 	## gt st [<opts>]
 	## == Show status
@@ -322,6 +339,14 @@ case "$op" in
 	fi
 	;;
 
+    timmoc)
+	## gt timmoc [<args>]
+	## == Use the normal 'git commit' command to commit files
+	## == (commit spelled backwards)
+        set_branch
+        git commit "$@"
+        ;;
+
     unpatch)
 	## gt unpatch
 	## == Patch -R any changed files, uncommitted reverting changes
@@ -335,17 +360,6 @@ case "$op" in
 	set_branch
 	git pull -v $origin $branch
 	;;
-
-    self-help)
-        echo " "
-        echo "gt: a better way to git"
-        echo " gt <command> ..."
-        echo " "
-        echo "  list of supported verbs::"
-        echo " "
-        grep -B1 "#\#" $0 | sed -e 's/.*#\#/        /' -e 's/==/    /'
-        echo " "
-        ;;
 
     *)
 	# Anything else get passed on directly
