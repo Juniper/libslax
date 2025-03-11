@@ -2147,17 +2147,18 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
     xmlFree(cp);
 
     /* We have all the pieces; now we start writing */
-    cp = slaxGetAttrib(outer_for, ATT_SELECT);
-    expr = slaxMakeExpression(swp, outer_for, cp);
-    xmlFree(cp);
-
     cp = slaxGetAttrib(inner_var, ATT_NAME);
+    expr = slaxGetAttrib(outer_for, ATT_SELECT);
 
     slaxWriteBlankline(swp);
     if (!slaxWantParens(swp)) {
-	slaxWrite(swp, "for $%s in %s {", cp, expr);
+	slaxWrite(swp, "for $%s in ", cp);
+	slaxWriteExpression(swp, outer_for, expr);
+	slaxWrite(swp, " {");
     } else {
-	slaxWrite(swp, "for $%s (%s) {", cp, expr);
+	slaxWrite(swp, "for $%s (", cp);
+	slaxWriteExpression(swp, outer_for, expr);
+	slaxWrite(swp, ") {");
     }
     slaxWriteNewline(swp, NEWL_INDENT);
 
@@ -2590,8 +2591,7 @@ static void
 slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 		    xmlNodePtr nodep)
 {
-    char *tst = slaxGetAttrib(nodep, ATT_TEST);
-    char *expr = slaxMakeExpression(swp, nodep, tst);
+    char *expr = slaxGetAttrib(nodep, ATT_TEST);
     const char **parens = slaxParens(swp);
 
     slaxWrite(swp, "while %s", parens[0]);
@@ -2600,7 +2600,6 @@ slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     slaxWriteNewline(swp, NEWL_INDENT);
 
     xmlFreeAndEasy(expr);
-    xmlFreeAndEasy(tst);
 
     slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
@@ -2790,10 +2789,9 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     slaxWrite(swp, "apply-templates");
     if (sel) {
-	char *expr = slaxMakeExpression(swp, nodep, sel);
-	
-	slaxWrite(swp, " %s", expr ?: UNKNOWN_EXPR);
-	xmlFreeAndEasy(expr);
+	slaxWrite(swp, " ");
+	slaxWriteExpression(swp, nodep, sel);
+
 	xmlFreeAndEasy(sel);
     }
 
@@ -2833,11 +2831,9 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    } else {
 		slaxWrite(swp, "with $%s = ", name);
 		if (sel) {
-		    char *expr = slaxMakeExpression(swp, childp, sel);
-
-		    slaxWrite(swp, "%s;", expr ?: UNKNOWN_EXPR);
+		    slaxWriteExpression(swp, childp, sel);
+		    slaxWrite(swp, ";");
 		    slaxWriteNewline(swp, 0);
-		    xmlFreeAndEasy(expr);
 
 		} else if (childp->children) {
 		    int need_braces = slaxNeedsBlock(childp);
@@ -2988,7 +2984,7 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 static void
 slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
-    char *sel, *expr;
+    char *sel;
     const char **parens = slaxParens(swp);
 
     /* If we just rendered a for-each loop as a 'for' loop, then we're done */
@@ -2998,12 +2994,11 @@ slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     }
 
     sel = slaxGetAttrib(nodep, ATT_SELECT);
-    expr = slaxMakeExpression(swp, nodep, sel);
 
     slaxWriteBlankline(swp);
-    slaxWrite(swp, "for-each %s%s%s {", parens[0], expr ?: UNKNOWN_EXPR,
-	      parens[1]);
-    xmlFreeAndEasy(expr);
+    slaxWrite(swp, "for-each %s", parens[0]);
+    slaxWriteExpression(swp, nodep, sel);
+    slaxWrite(swp, "%s {", parens[1]);
     xmlFreeAndEasy(sel);
 
     slaxWriteNewline(swp, NEWL_INDENT);
@@ -3020,9 +3015,9 @@ slaxWriteCopyOf (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     char *sel = slaxGetAttrib(nodep, ATT_SELECT);
 
     if (sel) {
-	char *expr = slaxMakeExpression(swp, nodep, sel);
-	slaxWrite(swp, "copy-of %s;", expr ?: UNKNOWN_EXPR);
-	xmlFreeAndEasy(expr);
+	slaxWrite(swp, "copy-of ");
+	slaxWriteExpression(swp, nodep, sel);
+	slaxWrite(swp, ";");
 	xmlFree(sel);
 	slaxWriteNewline(swp, 0);
     }
