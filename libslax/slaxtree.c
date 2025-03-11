@@ -511,6 +511,16 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
 {
     char *buf;
 
+    if (slaxIsXmlns(name)) {
+	buf = slaxStringAsChar(value, 0);
+	if (buf) {
+	    name += ATT_XMLNS_LEN;
+	    slaxNsAdd(sdp, *name ? name + 1 : NULL, buf);
+	    xmlFree(buf);
+	}
+	return;
+    }
+
     buf = slaxStringAsValueTemplate(value, SSF_BRACES);
     if (buf == NULL)
 	return;
