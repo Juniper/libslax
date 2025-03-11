@@ -363,6 +363,12 @@ slaxWriteNamespaceAlias (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     xmlFreeAndEasy(results);
 }
 
+static int
+slaxWriteIsXmlns (xmlAttrPtr attrp)
+{
+    return slaxIsXmlns((const char *) attrp->name);
+}
+
 static void
 slaxWriteAllNs (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
@@ -992,8 +998,9 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
     char *bp = buf;
     char *mp = marks;
 
-    int starting_length = swp->sw_cur + slaxIndent;
-    int next_length = starting_length;
+    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent;
+    int continuation = 8;
+    int next_length = starting_length - continuation;
 
     /* If the line is too long already, see what we can do about it */
     if (starting_length > line_width / 2) { /* Half way */
@@ -1016,7 +1023,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
 
 	    slaxWriteNewline(swp, 0);
 	    starting_length = next_length;
-	    slaxWrite(swp, "%*s", starting_length, "");
+	    slaxWrite(swp, "%*s", continuation, "");
 	}
     }
 
@@ -1052,7 +1059,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
 	    if (starting_length > line_width / 2 && count >= remaining) {
 		slaxWriteNewline(swp, 0);
 		starting_length = next_length;
-		slaxWrite(swp, "%*s", starting_length, "");
+		slaxWrite(swp, "%*s", continuation, "");
 		continue;
 	    }
 	}
@@ -1067,7 +1074,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
 
 	slaxWrite(swp, "%*.*s", count, count, bp);
 	slaxWriteNewline(swp, 0);
-	slaxWrite(swp, "%*s", starting_length, "");
+	slaxWrite(swp, "%*s", continuation, "");
 
 	bp += count;
 	mp += count;
@@ -1584,6 +1591,11 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 
 	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
 	    static char ext_attr[] = ATT_EXTENSION_ELEMENT_PREFIXES;
+
+	    if (slaxWriteIsXmlns(attrp)) /* Skip namespaces */ {
+		must_braces = TRUE;
+		continue;
+	    }
 
 	    if (slaxIsXslAttr(attrp)
 		&& streq((const char *) attrp->name, ext_attr))
