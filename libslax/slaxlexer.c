@@ -928,17 +928,22 @@ slaxLexerLookAhead (slax_data_t *sdp, const char *token)
     int len = sdp->sd_len;
     char *buf = sdp->sd_buf;
 
-    for (; isspace((int) buf[cur]); cur++) {
+    for (;;) {
 	if (cur + token_len >= sdp->sd_len) {
 	    if (slaxGetInput(sdp, 0)) {
 		slaxLog("slax: getinput failed: %d/%d/%d",
                    sdp->sd_start, cur, len);
 		return FALSE;
 	    }
+
+	    len = sdp->sd_len;
+	    buf = sdp->sd_buf;
 	}
 
-	len = sdp->sd_len;
-	buf = sdp->sd_buf;
+	if (!isspace((int) buf[cur]))
+	    break;
+
+	cur += 1;
     }
 
     if (cur + token_len <= len && buf[cur] == *token
