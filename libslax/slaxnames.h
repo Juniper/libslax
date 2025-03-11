@@ -66,7 +66,10 @@
 #define ATT_USE		"use"
 #define ATT_USE_ATTRIBUTE_SETS	"use-attribute-sets"
 #define ATT_VALUE	"value"
-#define ATT_VERSION	"version" 
+#define ATT_VERSION	"version"
+#define ATT_XMLNS	"xmlns"
+
+#define ATT_XMLNS_LEN	5
 
 /* Element names */
 #define ELT_APPEND_TO_VARIABLE "append-to-variable"
