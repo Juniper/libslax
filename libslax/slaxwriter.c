@@ -2320,8 +2320,6 @@ slaxVarAssignContents (const char *expr)
 	return NULL;
 
     cp = expr + sizeof(slaxVarNsCall) - 1;
-    if (*cp == '$')		/* Variable reference */
-	return NULL;
 
     endp = cp + strlen(cp) - 1;
     if (*endp != ')')
