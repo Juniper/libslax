@@ -240,3 +240,13 @@ slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr);
 
 void
 slaxDumpTree (xmlNodePtr node, const char *pref, int indent);
+
+static inline int
+slaxIsXmlns (const char *name)
+{
+    if (strncmp(name, ATT_XMLNS, ATT_XMLNS_LEN) != 0)
+	return FALSE;
+
+    char ch = name[ATT_XMLNS_LEN];
+    return (ch == '\0' || ch == ':');
+}
