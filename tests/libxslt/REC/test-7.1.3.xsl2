@@ -8,10 +8,10 @@
       <xsl:attribute name="attr">
         <xsl:text>value</xsl:text>
       </xsl:attribute>
-      <!-- 
-        <xsl:attribute name="a">x
-        y</xsl:attribute>
- -->
+      <!-- * 
+         * <xsl:attribute name="a">x
+         * y</xsl:attribute>
+         * -->
     </doc>
   </xsl:template>
 </xsl:stylesheet>
