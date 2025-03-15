@@ -57,6 +57,7 @@ template explanation match explanation () {
 template show-attributes () {
     <table class="location-type" cellspacing="0" cellpadding="2"> {
         expr "\n";
+        
         if (@paragraph) {
             if (@line) {
                 <tr> {
