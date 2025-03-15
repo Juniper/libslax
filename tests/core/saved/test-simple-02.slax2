@@ -36,6 +36,7 @@ match doc {
 
 template foo ($min, $max) {
     call goo($name = $min);
+    
     if ($min < $max) {
         call foo($min = $min + 1, $max);
     }
