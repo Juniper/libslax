@@ -65,8 +65,7 @@ markup may be inserted in some places to attempt to get proper,
 valid HTML. For example, if a <glist> appears inside a <p> in the
 xmlspec source, this creates a nested <dl> inside a <p> in the
 HTML, which is not valid. If $validity.hacks is "1", then an
-extra </p>, <p> pair is inserted around the <dl>.
- -->
+extra </p>, <p> pair is inserted around the <dl>. -->
   <xsl:param name="validity.hacks" select="&quot;1&quot;"/>
   <xsl:param name="show.diff.markup" select="&quot;0&quot;"/>
   <xsl:param name="additional.css"/>
@@ -102,8 +101,7 @@ typename:    unhandled IDL stuff
 union:       unhandled IDL stuff
 
 Warning!
-Only handles statuses of NOTE, WD, and REC.
- -->
+Only handles statuses of NOTE, WD, and REC. -->
   <!-- Template for the root node.  Creation of <html> element could
 go here, but that doesn't feel right. -->
   <xsl:template match="/">
@@ -991,12 +989,12 @@ pieces in this crazy mixed-up content model -->
           <a name="{../@id}"/>
         </xsl:if>
         <xsl:apply-templates select="ancestor::prod" mode="number"/>
-        <!-- 
-            This could be done right here, but XT goes into deep space when the
-            node to be numbered isn't the current node and level="any":
-            <xsl:number count="prod" level="any" from="spec"
-            format="[1]"/>
- -->
+        <!-- * 
+             * This could be done right here, but XT goes into deep space when the
+             * node to be numbered isn't the current node and level="any":
+             * <xsl:number count="prod" level="any" from="spec"
+             * format="[1]"/>
+             * -->
         <xsl:text>   </xsl:text>
       </td>
       <td>
@@ -1757,11 +1755,11 @@ never know. -->
   </xsl:template>
   <xsl:template match="prod[@diff = &quot;add&quot;]" mode="number">
     <xsl:text>[</xsl:text>
-    <xsl:apply-templates select="preceding::prod[not(@diff = &quot;add&quot;)][1]" mode="number-simple"/>
-    <!-- 
-    Once again, this could be done right here, but XT won't hear of it.
-    <xsl:number level="any" count="prod[not(@diff='add')]"/>
- -->
+    <xsl:apply-templates select="preceding::prod[not((@diff = &quot;add&quot;))][1]" mode="number-simple"/>
+    <!-- * 
+     * Once again, this could be done right here, but XT won't hear of it.
+     * <xsl:number level="any" count="prod[not(@diff='add')]"/>
+     * -->
     <xsl:number level="any" format="a" from="prod[not(@diff = &quot;add&quot;)]" count="prod[@diff = &quot;add&quot;]"/>
     <xsl:text>]</xsl:text>
   </xsl:template>
