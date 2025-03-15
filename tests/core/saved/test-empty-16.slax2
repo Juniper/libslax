@@ -128,6 +128,7 @@ main <top> {
             <sp2 position=position()> .;
         }
     }
+    
     if ($full) {
         <dampen> {
             for-each (1 ... 100) {
