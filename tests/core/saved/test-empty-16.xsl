@@ -13,22 +13,18 @@ and line four
 and finally, line five
 </data>
   </xsl:variable>
-  <!-- 
- * Turns out, back references aren't part of the posix standard, so
- * including them in tests is a Bad Idea (tm).
- -->
+  <!-- Turns out, back references aren't part of the posix standard, so
+including them in tests is a Bad Idea (tm). -->
   <xsl:param name="force" select="0"/>
   <xsl:template match="/">
     <top>
       <xsl:if test="$force">
         <back-reference>
-          <!-- 
-	         * The "BUGS" section of the FreeBSD man page for regexec(3) says:
+          <!-- * The "BUGS" section of the FreeBSD man page for regexec(3) says:
 	         *     The back-reference code is subtle and doubts linger
 	         *     about its  correctness in complex cases.
                  * Not sure what this means, but this fails under MacOS, while
-                 * working correctly under FreeBSD and Linux.  Perl likes it also.
- -->
+                 * working correctly under FreeBSD and Linux.  Perl likes it also. -->
           <xsl:variable name="pat" select="&quot;([a-z]):\1:\1&quot;"/>
           <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="re1" select="slax:regex($pat, &quot;a:a:a&quot;)"/>
           <re1>
