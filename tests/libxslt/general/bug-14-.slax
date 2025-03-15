@@ -3,6 +3,7 @@ version 1.2;
 main {
     apply-templates //processing-instruction();
     apply-templates //comment();
+    
     /* xsl:apply-templates/ */
 }
 
