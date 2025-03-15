@@ -4,38 +4,41 @@ version 1.2;
 /* Stylesheet for @diff markup in XMLspec */
 /* Author: Norman Walsh (Norman.Walsh@East.Sun.COM) */
 /* Date Created: 2000.07.21 */
-
-/* This stylesheet is copyright (c) 2000 by its authors.  Free
-distribution and modification is permitted, including adding to
-the list of authors and copyright holders, as long as this
-copyright notice is maintained. */
-
-/* This stylesheet attempts to implement the XML Specification V2.1
-DTD.  Documents conforming to earlier DTDs may not be correctly
-transformed.
-
-This stylesheet supports the use of change-markup with the @diff
-attribute. If you use @diff, you should always use this stylesheet.
-If you want to turn off the highlighting of differences, use this
-stylesheet, but set show.diff.markup to 0.
-
-Using the original xmlspec stylesheet with @diff markup will cause
-@diff=del text to be presented.
+/*
+ * This stylesheet is copyright (c) 2000 by its authors.  Free
+ * distribution and modification is permitted, including adding to
+ * the list of authors and copyright holders, as long as this
+ * copyright notice is maintained.
  */
-
-/* ChangeLog:
-25 Sep 2000: (Norman.Walsh@East.Sun.COM)
-- Use inline diff markup (as opposed to block) for name and
-affiliation
-- Handle @diff='del' correctly in bibl and other list-contexts.
-14 Aug 2000: (Norman.Walsh@East.Sun.COM)
-- Support additional.title param
-27 Jul 2000: (Norman.Walsh@East.Sun.COM)
-- Fix HTML markup problem with diff'd authors in authlist
-26 Jul 2000: (Norman.Walsh@East.Sun.COM)
-- Update pointer to latest xmlspec-stylesheet.
-21 Jul 2000: (Norman.Walsh@East.Sun.COM)
-- Initial version
+/*
+ * This stylesheet attempts to implement the XML Specification V2.1
+ * DTD.  Documents conforming to earlier DTDs may not be correctly
+ * transformed.
+ * 
+ * This stylesheet supports the use of change-markup with the @diff
+ * attribute. If you use @diff, you should always use this stylesheet.
+ * If you want to turn off the highlighting of differences, use this
+ * stylesheet, but set show.diff.markup to 0.
+ * 
+ * Using the original xmlspec stylesheet with @diff markup will cause
+ * @diff=del text to be presented.
+ * 
+ */
+/*
+ * ChangeLog:
+ * 25 Sep 2000: (Norman.Walsh@East.Sun.COM)
+ * - Use inline diff markup (as opposed to block) for name and
+ * affiliation
+ * - Handle @diff='del' correctly in bibl and other list-contexts.
+ * 14 Aug 2000: (Norman.Walsh@East.Sun.COM)
+ * - Support additional.title param
+ * 27 Jul 2000: (Norman.Walsh@East.Sun.COM)
+ * - Fix HTML markup problem with diff'd authors in authlist
+ * 26 Jul 2000: (Norman.Walsh@East.Sun.COM)
+ * - Update pointer to latest xmlspec-stylesheet.
+ * 21 Jul 2000: (Norman.Walsh@East.Sun.COM)
+ * - Initial version
+ * 
  */
 import "xmlspec.xsl";
 param $show.diff.markup = "0";
@@ -50,6 +53,7 @@ param $additional.title = {
     }
 }
 param $called.by.diffspec = "1";
+
 /* ==================================================================== */
 template diff-markup () {
     param $diff = {
@@ -70,7 +74,7 @@ template diff-markup () {
             apply-imports;
         }
     
-    } else if (ancestor::p && not(self::p)) {
+    } else if (ancestor::p && !(self::p)) {
         <span class="diff-" _ $diff> {
             apply-imports;
         }
@@ -143,6 +147,7 @@ match *[@diff == "off"] {
         apply-imports;
     }
 }
+
 /* ================================================================= */
 match bibl[@diff] {
     priority 1;
@@ -151,6 +156,7 @@ match bibl[@diff] {
         if (@id) {
             <a name=@id>;
         }
+        
         if (@key) {
             expr @key;
         
@@ -160,6 +166,7 @@ match bibl[@diff] {
     }
     var $dd = {
         apply-templates;
+        
         if (@href) {
             expr "  (See ";
             <a href=@href> @href;
@@ -231,15 +238,18 @@ match gitem/def {
         }
     }
 }
-/* authlist: list of authors (editors, really) */
 
-/* called in enforced order from header's template, in <dl>
-context */
+/* authlist: list of authors (editors, really) */
+/*
+ * called in enforced order from header's template, in <dl>
+ * context
+ */
 match authlist[@diff] {
     if ($show.diff.markup == "1") {
         <dt> {
             <span class="diff-" _ ancestor-or-self::*/@diff> {
                 expr "Editor";
+                
                 if (count(author) > 1) {
                     expr "s";
                 }
@@ -253,6 +263,7 @@ match authlist[@diff] {
     } else {
         <dt> {
             expr "Editor";
+            
             if (count(author) > 1) {
                 expr "s";
             }
@@ -261,6 +272,7 @@ match authlist[@diff] {
     }
     apply-templates;
 }
+
 /* author: an editor of a spec */
 /* only appears in authlist */
 /* called in <dl> context */
@@ -271,6 +283,7 @@ match author[@diff] {
         <dd> {
             <span class="diff-" _ ancestor-or-self::*/@diff> {
                 apply-templates;
+                
                 if (@role == "2e") {
                     expr " - Second Edition";
                 }
@@ -283,6 +296,7 @@ match author[@diff] {
     } else {
         <dd> {
             apply-templates;
+            
             if (@role == "2e") {
                 expr " - Second Edition";
             }
