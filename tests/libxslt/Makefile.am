@@ -377,13 +377,15 @@ scribble:
 	@echo '## Running the regression tests under MallocPreScribble'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
+SH_OPTS=
+
 if USE_LIBXSLT_TESTS
 test tests:
 	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
 	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
 	@-${CP} ${testdir}/xinclude/x1.xml out/xinclude/x1.xml
 	@-${CP} ${testdir}/multiple/dict.dtd out/multiple/dict.dtd
-	@-(for test in ${TEST_CASES}; do \
+	@-(${SH_OPTS} for test in ${TEST_CASES}; do \
 	  base=`basename $$test .xsl` ; \
 	  dir=`dirname $$test` ; \
 	  echo ... $$test ... ; \
