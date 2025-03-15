@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax-ext slax">
-  <!-- 
-
-  miss lucy had a baby
+  <!-- miss lucy had a baby
   she named him tiny tim
   she put him in the bathtub
   to see if he could swim
@@ -25,9 +23,7 @@
   out went the doctor
   out went the nurse
   out went the lady
-  with the alligator purse
-
- -->
+  with the alligator purse -->
   <xsl:output indent="yes"/>
   <xsl:variable name="verses-temp-1">
     <verse action="baby" where="bathtub" test="swim">
