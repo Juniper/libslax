@@ -1,6 +1,6 @@
 version 1.2;
 
-var $ACTIONgrid = //GROUP[@type == "REC" && not(@name == preceding::GROUP[@type == "REC"]/@name)]/@name;
+var $ACTIONgrid = //GROUP[@type == "REC" && !(@name == preceding::GROUP[@type == "REC"]/@name)]/@name;
 
 main <html> {
     <head> {
