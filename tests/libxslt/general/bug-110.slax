@@ -9,6 +9,7 @@ main {
     if ($id1 == $id2) {
         expr "SUCCESS\n";
     }
+    
     if ($id1 != $id2) {
         expr "ERROR\n";
     }
