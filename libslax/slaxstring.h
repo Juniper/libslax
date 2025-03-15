@@ -36,6 +36,7 @@ struct slax_string_s {
 #define SSF_XPATH	(1<<8)	/* Need an XPath expression */
 #define SSF_NOPARENS	(1<<9)	/* Drop outer-most parens, if present */
 #define SSF_ATTRIB	(1<<10)	/* Looking at an attribute string */
+#define SSF_NOT		(1<<11)	/* Transform "not(x)" into "!x" */
 
 #define SSF_QUOTE_MASK	(SSF_SINGLEQ | SSF_DOUBLEQ | SSF_BOTHQS)
 
