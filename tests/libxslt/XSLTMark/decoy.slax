@@ -5,8 +5,10 @@ output-method {
 }
 
 /*
-decoy stylesheet is same as patterns.xsl, but has lots of decoy patterns
-to distract the matching process...
+ * 
+ * decoy stylesheet is same as patterns.xsl, but has lots of decoy patterns
+ * to distract the matching process...
+ * 
  */
 match decoy {
     priority 2;
@@ -17,9 +19,11 @@ match decoy {
 }
 
 /*
-<xsl:template match="* / * / * / * / *">
-<ERROR/>
-</xsl:template>
+ * 
+ * <xsl:template match="* / * / * / * / *">
+ * <ERROR/>
+ * </xsl:template>
+ * 
  */
 match decoy2 {
     priority -100;
