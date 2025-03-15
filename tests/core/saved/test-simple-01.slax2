@@ -94,6 +94,7 @@ match doc {
                 order "ascending";
                 case-order "upper-first";
             }
+            
             /* or "number" or qname-but-not-ncname */
             /* or "descending" */
             /* or "lower-first" */
