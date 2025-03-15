@@ -61,6 +61,9 @@ static char slaxEltArgCall[] = EXT_PREFIX ":node-set($" SLAX_ELTARG_PREFIX;
 char slaxEltArgCallPref[] = EXT_PREFIX ":node-set($";
 static char slaxEltArgCallP2[] = EXT_PREFIX ":node-set";
 
+#define SLAX_CONTINUATION 2 /* Multiplier for indent of continuation lines  */
+#define SLAX_FUZZ 10	    /* Fuzz factor for indentation */
+
 static inline int
 slaxV11 (slax_writer_t *swp)
 {
@@ -114,6 +117,23 @@ void
 slaxWriteIndent (slax_writer_t *swp, int change)
 {
     swp->sw_indent += change;
+}
+
+static inline void *
+slaxMemrchr (void *s, int c, size_t n)
+{
+    unsigned char *cp = s;
+    unsigned char ch = (unsigned char) c;
+
+    if (n != 0) {
+	cp += n;
+	do {
+	    if (*(--cp) == ch)
+		return cp;
+	} while (--n != 0);
+    }
+
+    return NULL;
 }
 
 /*
@@ -999,7 +1019,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
     char *mp = marks;
 
     int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent;
-    int continuation = 8;
+    const int continuation = slaxIndent * SLAX_CONTINUATION;
     int next_length = starting_length - continuation;
 
     /* If the line is too long already, see what we can do about it */
@@ -1093,7 +1113,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
 static int
 slaxWriteExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
 {
-    unsigned flags = SSF_QUOTES | SSF_ESCAPE;
+    unsigned flags = SSF_QUOTES | SSF_ESCAPE | SSF_NOT;
     slax_string_t *ssp;
 
     if (xpath == NULL)
@@ -1281,16 +1301,6 @@ slaxMakeAttribValueTemplate (slax_writer_t *swp, xmlNodePtr nodep,
     /* If there's any trailing text, add it */
     
     if (start < endp) {
-
-#if 0
-	/* Look for escaped closing braces */
-	for (cur = start; cur < endp; cur++)
-	    if (cur[0] == '}' && cur[1] == '}') {
-		memmove(cur + 1, cur + 2, endp-- - (cur + 2));
-		cur += 1;	/* Move over the '}' */
-	    }
-#endif
-
 	if (slaxStringAddTail(&tail, first, start, endp - start, T_QUOTED))
 	    goto fail;
     }
@@ -1684,6 +1694,22 @@ slaxWriteImport (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     xmlFreeAndEasy(href);
 }
 
+static int
+slaxWriteTemplateNeedsNewline (slax_writer_t *swp, const char *rname,
+			       const char *sel)
+{
+    int line_width = swp->sw_width;
+    if (line_width == 0)
+	return FALSE;
+
+    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent;
+
+    int my_length = (rname ? strlen(rname) : 0)
+	+ (sel ? strlen(sel) + 3 : 0) + 1;
+
+    return (starting_length + my_length + SLAX_FUZZ >= line_width);
+}
+
 static void
 slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 			      xmlNodePtr nodep, int all, int complex)
@@ -1720,6 +1746,15 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 		slaxWriteNewline(swp, 0);
 
 	    } else {
+		if (slaxWriteTemplateNeedsNewline(swp, rname, sel)) {
+		    if (!first)
+			slaxWrite(swp, ",");
+
+		    first = TRUE; /* Flat out lie, but avoids comma below */
+		    slaxWriteNewline(swp, 0);
+		    slaxWrite(swp, "%*s", slaxIndent * SLAX_CONTINUATION, "");
+		}
+
 		slaxWrite(swp, "%s$%s%s", first ? "" : ", ",
 			  rname, sel ? " = " : "");
 		first = FALSE;
@@ -2902,12 +2937,22 @@ slaxWriteCallTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	name = slaxGetAttrib(childp, ATT_NAME);
 	sel = slaxGetAttrib(childp, ATT_SELECT);
 
-	if (!first)
+	/* Passing byname means "$a = $a", which we abbreviate as just "$a" */
+	int by_name = (name && sel && *sel == '$' && streq(name, sel + 1));
+
+	if (slaxWriteTemplateNeedsNewline(swp, name, by_name ? NULL : sel)) {
+	    if (!first)
+		slaxWrite(swp, ",");
+
+	    slaxWriteNewline(swp, 0);
+	    slaxWrite(swp, "%*s", slaxIndent * SLAX_CONTINUATION, "");
+
+	} else if (!first)
 	    slaxWrite(swp, ", ");
 	first = FALSE;
 
 	slaxWrite(swp, "$%s", name);
-	if (!(name && sel && *sel == '$' && streq(name, sel + 1))) {
+	if (!by_name) {
 	    slaxWrite(swp, " = ");
 	    if (sel) {
 		if (!slaxWriteIsEltArg(swp, sel)
@@ -2967,6 +3012,7 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     char *test = slaxGetAttrib(nodep, ATT_TEST);
     const char **parens = slaxParens(swp);
 
+    slaxWriteBlankline(swp);
     slaxWrite(swp, "if %s", parens[0]);
     slaxWriteExpression(swp, nodep, test);
     slaxWrite(swp, "%s {", parens[1]);
@@ -3427,6 +3473,7 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     int first = TRUE;
     const char **parens = slaxParens(swp);
 
+    slaxWriteBlankline(swp);
     for (childp = nodep->children; childp; childp = childp->next) {
 
 	if (childp->type != XML_ELEMENT_NODE)
@@ -3654,15 +3701,80 @@ slaxWriteXslElement (slax_writer_t *swp, xmlDocPtr docp,
 	(*func)(swp, docp, nodep);
 }
 
+static char *
+slaxWriteCommentSkipLeader (char *start)
+{
+    if (start[0] == '*' && start[1] == ' ')
+	start += 2;
+    else if (start[0] == ' ' && start[1] == '*' && start[2] == ' ')
+	start += 3;
+
+    return start;
+}
+
+static char *
+slaxWriteWrapComment (slax_writer_t *swp, size_t line_width,
+		      char *start, char *endp)
+{
+    char *next_start;
+
+    for ( ;; start = next_start) {
+	for ( ; start < endp && isspace((int) *start); start++)
+	    continue;
+
+	if ((size_t) (endp - start) < line_width)
+	    break;
+
+	next_start = slaxMemrchr(start, ' ', line_width);
+	char *np = next_start;
+	if (np == NULL)
+	    break;
+
+	for ( ; np > start && !isspace((int) *np); np--)
+	    continue;
+
+	start = slaxWriteCommentSkipLeader(start);
+
+	char *ep = np;
+	for ( ; ep > start; ep--)
+	    if (!isspace((int) ep[-1]))
+		break;
+
+	slaxWrite(swp, " * %.*s", ep - start, start);
+	slaxWriteNewline(swp, 0);
+    }
+
+    start = slaxWriteCommentSkipLeader(start);
+
+    return start;
+}
+
+static int
+slaxWriteCommentMustWrap (const char *str, int line_width)
+{
+    int len = strlen(str);
+
+    if (line_width > 0 && len >= line_width)
+	return TRUE;
+
+    if (memchr(str, '\n', len) != NULL)
+	return TRUE;
+
+    return FALSE;
+}
+
 static void
 slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
     char *cp = (char *) nodep->content;
     int first = TRUE;
-    char buf[BUFSIZ], *bp = buf, *ep = buf + sizeof(buf);
+    char *start;
 
     if (cp == NULL || *cp == '\0')
 	return;
+
+    int blen = strlen(cp) + 1;
+    char buf[blen], *bp = buf, *ep = buf + blen;
 
     cp += strspn(cp, " \t");
 
@@ -3671,21 +3783,41 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	cp += strspn(cp, " \t");
     }
 
+    slaxWriteBlankline(swp);	/* Never a bad time for a blank line (almost) */
+
+    int margin = swp->sw_indent * slaxIndent + 3; /* For the leading ' * ' */
+    size_t line_width = swp->sw_width ? swp->sw_width - margin : 0;
+    int must_wrap = slaxWriteCommentMustWrap(cp, line_width);
+
+    if (must_wrap) {
+	slaxWrite(swp, "/*");
+	slaxWriteNewline(swp, 0);
+	first = FALSE;
+    }
+
     for (; *cp; cp++) {
 	if (*cp == '\n' || bp + 1 > ep) {
 	    /*
 	     * Flush the current line out, after trimming any
-	     * trailing whitespace.
+	     * leading and trailing whitespace.
 	     */
 	    while (bp > buf && bp[-1] == ' ')
 		bp -= 1;
 	    *bp = '\0';
 
-	    if (first)
-		slaxWriteBlankline(swp);
-	    slaxWrite(swp, "%s%s%s", first ? "/*" : "",
-		      (first && *buf) ? " " : "", buf);
+	    for (start = buf; start < bp && isspace((int) *start); start++)
+		continue;
+
+	    /* Do we have to wrap the comment? */
+	    if (must_wrap && (size_t) (bp - start) > line_width)
+		start = slaxWriteWrapComment(swp, line_width, start, bp);
+	    else
+		start = slaxWriteCommentSkipLeader(start);
+    
+	    slaxWrite(swp, "%s%s%s", first ? "/*" : must_wrap ? " * " : "",
+		      (first && *start) ? " " : "", start);
 	    slaxWriteNewline(swp, 0);
+
 	    bp = buf;
 	    if (cp[1]) {
 		int move = strspn(cp + 1, " \t");
@@ -3699,22 +3831,26 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 
 	} else if (*cp == '/') {
 	    if (cp[1] == '*') {
+		/* Putting slash-star inside a comment is not permitted */
 		*bp++ = *cp;
 		*bp++ = ' ';
 		continue;
 	    }
+
 	} else if (*cp == '*') {
 	    if (cp[1] == '/') {
-		int len = strlen(cp + 2);
+		/* Putting a star-slash is similar */
+		int tlen = strlen(cp + 2);
 		int wlen = strspn(cp + 2, " \t\n\r");
 
-		if (len == wlen)
+		if (tlen == wlen)
 		    break;
 
 		*bp++ = *cp;
 		*bp++ = ' ';
 		continue;
 	    }
+
 	} else if (*cp == '\r') {
 	    continue;
 	}
@@ -3726,8 +3862,25 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	bp -= 1;
 
     *bp = '\0';
-    slaxWrite(swp, "%s%s */", first ? "/* " : "", buf);
-    slaxWriteNewline(swp, 0);
+
+    start = buf;
+
+    /* Do we have to wrap the comment? */
+    if (must_wrap) {
+	start = slaxWriteWrapComment(swp, line_width, buf, bp);
+	slaxWrite(swp, " * %s", start);
+	slaxWriteNewline(swp, 0);
+
+	slaxWrite(swp, " */");
+	slaxWriteNewline(swp, 0);
+
+    } else {
+	slaxWrite(swp, "%s%s */", first ? "/* " : "", start);
+	slaxWriteNewline(swp, 0);
+    }
+
+    /* Comments count as a blank line, but purposes of whitespace */
+    swp->sw_flags |= SWF_BLANKLINE;
 }
 
 static void
