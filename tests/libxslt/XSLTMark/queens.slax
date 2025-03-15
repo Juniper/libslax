@@ -1,35 +1,38 @@
 version 1.2;
 
 /*
-<?xml version="1.0" encoding="ISO-8859-1"?>
-Copyright (C) 1999 Capella Computers Ltd.
-
-Author: Oren Ben-Kiki
-Date: 1999-06-14
-
-This stylesheet is public domain. However, if you modify it or decide to use
-it as part of an XSLT benchmark/testing suite, I'd appreciate it if you let
-me know at oren@capella.co.il
-
+ * 
+ * <?xml version="1.0" encoding="ISO-8859-1"?>
+ * Copyright (C) 1999 Capella Computers Ltd.
+ * 
+ * Author: Oren Ben-Kiki
+ * Date: 1999-06-14
+ * 
+ * This stylesheet is public domain. However, if you modify it or decide to use
+ * it as part of an XSLT benchmark/testing suite, I'd appreciate it if you let
+ * me know at oren@capella.co.il
+ * 
+ * 
  */
-
 /*
-
-This XSL stylesheet will convert an XML document of the form:
-
-<BoardSize>8</BoardSize>
-
-Into an HTML document listing all 8x8 chess boards containing
-8 queens such that no one threatens another.
-
-It uses the 1999-04-21 XSLT draft version.
-
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/XSL/Transform/1.0"
-xmlns:html="http://www.w3.org/TR/REC-html40"
-default-space="strip"
-indent-results="no"
-result-ns="html">
-
+ * 
+ * 
+ * This XSL stylesheet will convert an XML document of the form:
+ * 
+ * <BoardSize>8</BoardSize>
+ * 
+ * Into an HTML document listing all 8x8 chess boards containing
+ * 8 queens such that no one threatens another.
+ * 
+ * It uses the 1999-04-21 XSLT draft version.
+ * 
+ * <xsl:stylesheet xmlns:xsl="http://www.w3.org/XSL/Transform/1.0"
+ * xmlns:html="http://www.w3.org/TR/REC-html40"
+ * default-space="strip"
+ * indent-results="no"
+ * result-ns="html">
+ * 
+ * 
  */
 output-method {
     encoding "utf-8";
@@ -50,7 +53,7 @@ template PlaceQueenInRow ($BoardSize, $PlacedQueens, $Row) {
 
 template PlaceQueenInColumn ($BoardSize, $PlacedQueens, $Row, $Column) {
     if ($Column < $BoardSize) {
-        if (not(contains("-" _ $PlacedQueens _ "-", "-" _ $Column _ "-"))) {
+        if (!contains("-" _ $PlacedQueens _ "-", "-" _ $Column _ "-")) {
             call TestQueenPosition($BoardSize, $Row, $Column, $TestQueens = substring-after($PlacedQueens, "-"), $Offset = $Row) {
                 with $PlacedQueens = {
                     expr $PlacedQueens;
@@ -64,13 +67,13 @@ template PlaceQueenInColumn ($BoardSize, $PlacedQueens, $Row, $Column) {
 }
 
 template TestQueenPosition ($BoardSize, $PlacedQueens, $Row, $Column, $TestQueens, $Offset) {
-    if (not($TestQueens)) {
+    if (!$TestQueens) {
         call PlaceQueenInRow($BoardSize, $PlacedQueens, $Row = $Row + 1);
     
     } else {
         var $NextQueen = substring-before($TestQueens, "-");
         
-        if (not($Column == $NextQueen + $Offset) && not($Column == $NextQueen - $Offset)) {
+        if (!($Column == $NextQueen + $Offset) && !($Column == $NextQueen - $Offset)) {
             call TestQueenPosition($BoardSize, $PlacedQueens, $Row, $Column, $TestQueens = substring-after($TestQueens, "-"), $Offset = $Offset - 1);
         }
     }
@@ -87,13 +90,14 @@ template PrintBoardRow ($BoardSize, $ColumnInThisRow, $ColumnsInOtherRows) {
     element "TR" {
         call PrintBoardCell($CellsLeft = $BoardSize, $QueenCell = $ColumnInThisRow);
     }
+    
     if ($ColumnsInOtherRows) {
         call PrintBoardRow($BoardSize, $ColumnInThisRow = substring-before($ColumnsInOtherRows, "-"), $ColumnsInOtherRows = substring-after($ColumnsInOtherRows, "-"));
     }
 }
 
 template PrintBoardCell ($CellsLeft, $QueenCell) {
-    if (not($CellsLeft == 0)) {
+    if (!($CellsLeft == 0)) {
         element "TD" {
             if ($QueenCell == 0) {
                 expr "Q";
