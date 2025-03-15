@@ -6,8 +6,10 @@ output-method html {
 
 template element ($indent = 0) {
     expr "\n";
+    
     /* this next one's a real kludge!! */
     expr substring("                                                                                                ", 0, $indent * 3);
+    
     if (self::text()) {
         <span class="text"> normalize-space(.);
     
