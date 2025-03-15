@@ -5,18 +5,21 @@ output-method xml {
 }
 
 param $full;
+
 /* See https://bugzilla.gnome.org/show_bug.cgi?id=629325 */
 main <op-script-results> {
     if ($full) {
         <output> format-number(1.15, "####.#");
     }
     <output> format-number(10.15, "####.#");
+    
     if ($full) {
         <output> format-number(100.15, "####.#");
         <output> format-number("100.15", "####.#");
         <output> format-number(1000.15, "####.#");
     }
     <output> format-number(10.15, "####.#");
+    
     if ($full) {
         <output> format-number(100.15, "####.#");
     }
