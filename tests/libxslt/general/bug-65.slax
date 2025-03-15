@@ -32,8 +32,10 @@ match * {
     mode "one";
     
     for-each (//content) {
-        /* here is the problem (.//content works well, but I need the key
-        function) */
+        /*
+         * here is the problem (.//content works well, but I need the key
+         * function)
+         */
         copy-of .;
     }
 }
