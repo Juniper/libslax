@@ -18,8 +18,8 @@
   </xsl:template>
   <xsl:template match="*" mode="one">
     <xsl:for-each select="//content">
-      <!-- here is the problem (.//content works well, but I need the key
-        function) -->
+      <!-- * here is the problem (.//content works well, but I need the key
+         * function) -->
       <xsl:copy-of select="."/>
     </xsl:for-each>
   </xsl:template>
