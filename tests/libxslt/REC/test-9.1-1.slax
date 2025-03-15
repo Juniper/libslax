@@ -6,7 +6,8 @@ strip-space namelist;
 
 match namelist/name {
     apply-templates;
-    if (not(position() == last())) {
+    
+    if (!(position() == last())) {
         expr ", ";
     }
 }
