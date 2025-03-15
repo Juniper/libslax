@@ -40,6 +40,7 @@ template inventory match inventory () {
             <tr> {
                 <td colspan="4"> "Need to Reorder:";
             }
+            
             /* <xsl:copy-of select="$soldout"/> */
             apply-templates /inventory/warehouse/items/item[qty == 0] {
                 with $pwh = 1;
@@ -90,9 +91,11 @@ template item match item ($pwh = 0) {
 }
 
 /*
-<xsl:variable name="soldout">
-<xsl:apply-templates select="/inventory/warehouse/items/item[qty=0]">
-<xsl:with-param name="pwh" select="1"/>
-</xsl:apply-templates>
-</xsl:variable>
+ * 
+ * <xsl:variable name="soldout">
+ * <xsl:apply-templates select="/inventory/warehouse/items/item[qty=0]">
+ * <xsl:with-param name="pwh" select="1"/>
+ * </xsl:apply-templates>
+ * </xsl:variable>
+ * 
  */
