@@ -1,32 +1,30 @@
 version 1.2;
 
 /*
-
-miss lucy had a baby
-she named him tiny tim
-she put him in the bathtub
-to see if he could swim
-
-he drank up all the water
-he ate up all the soap
-he tried to eat the bathtub
-but is wouldn't go down his throat
-
-miss lucy called the doctor
-miss lucy called the nurse
-miss lucy called the lady
-with the alligator purse
-
-mumps said the doctor
-measles said the nurse
-hiccups said the lady
-with the alligator purse
-
-out went the doctor
-out went the nurse
-out went the lady
-with the alligator purse
-
+ * miss lucy had a baby
+ * she named him tiny tim
+ * she put him in the bathtub
+ * to see if he could swim
+ * 
+ * he drank up all the water
+ * he ate up all the soap
+ * he tried to eat the bathtub
+ * but is wouldn't go down his throat
+ * 
+ * miss lucy called the doctor
+ * miss lucy called the nurse
+ * miss lucy called the lady
+ * with the alligator purse
+ * 
+ * mumps said the doctor
+ * measles said the nurse
+ * hiccups said the lady
+ * with the alligator purse
+ * 
+ * out went the doctor
+ * out went the nurse
+ * out went the lady
+ * with the alligator purse
  */
 output-method {
     indent "yes";
