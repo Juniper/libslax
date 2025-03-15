@@ -71,6 +71,7 @@ main <doc> {
     for-each ($authors/author[life-span/born]) {
         sort life-span/born;
         sort life-span/died;
+        
         if (life-span/died) {
             <life-span age=life-span/died - life-span/born born=life-span/born died=life-span/died> {
                 element "name" {
@@ -86,8 +87,8 @@ main <doc> {
             }
         }
     }
-    /* Show the oldest five deceased authors */
     
+    /* Show the oldest five deceased authors */
     for-each ($authors/author[life-span/born && life-span/died]) {
         sort life-span/died - life-span/born {
             order "descending";
