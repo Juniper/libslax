@@ -1,20 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <xsl:output encoding="utf-8"/>
-  <!-- 
-decoy stylesheet is same as patterns.xsl, but has lots of decoy patterns
-to distract the matching process...
- -->
+  <!-- * decoy stylesheet is same as patterns.xsl, but has lots of decoy patterns
+to distract the matching process... -->
   <xsl:template match="decoy" priority="2">
     <ERROR>
       <xsl:apply-templates/>
     </ERROR>
   </xsl:template>
-  <!-- 
-<xsl:template match="* / * / * / * / *">
+  <!-- * <xsl:template match="* / * / * / * / *">
 <ERROR/>
-</xsl:template>
- -->
+</xsl:template> -->
   <xsl:template match="decoy2" priority="-100">
     <ERROR/>
   </xsl:template>
