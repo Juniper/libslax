@@ -1,19 +1,21 @@
 version 1.2;
 
-/* This stylesheet will:
-- reorder, indent and normalize a comps file,
-- merge duplicate groups and categories,
-- warn about packages referenced by multiple groups,
-- kill multiple references to the same package within a group,
-
-Typical usage is:
-$ xsltproc -o output-file comps-cleanup.xsl original-file
-
-You can use the ‑‑novalid xsltproc switch to kill the warning about
-Fedora not installing the comps DTD anywhere xsltproc can find it.
-However without DTD there is no way to check the files completely.
-
-© Nicolas Mailhot <nim at fedoraproject dot org> 2006 */
+/*
+ * This stylesheet will:
+ * - reorder, indent and normalize a comps file,
+ * - merge duplicate groups and categories,
+ * - warn about packages referenced by multiple groups,
+ * - kill multiple references to the same package within a group,
+ * 
+ * Typical usage is:
+ * $ xsltproc -o output-file comps-cleanup.xsl original-file
+ * 
+ * You can use the ‑‑novalid xsltproc switch to kill the warning about
+ * Fedora not installing the comps DTD anywhere xsltproc can find it.
+ * However without DTD there is no way to check the files completely.
+ * 
+ * © Nicolas Mailhot <nim at fedoraproject dot org> 2006
+ */
 ns exsl extension = "http://exslt.org/common";
 
 strip-space *;
@@ -73,6 +75,7 @@ var $attribute-sort-order = {
     <requires>;
     <basearch>;
 }
+
 /* Preserve most nodes */
 match * {
     priority 0;
@@ -96,15 +99,18 @@ match * {
         apply-templates * | text();
     }
 }
+
 /* Preserve attributes and text nodes */
 match comment() | text() {
     apply-templates preceding-sibling::node()[normalize-space()][1][self::comment()];
     copy-node;
 }
+
 /* Preserve attributes */
 match @* {
     copy-node;
 }
+
 /* Sort groups by id, and categories by display order */
 match comps {
     priority 1;
@@ -120,6 +126,7 @@ match comps {
         }
     }
 }
+
 /* Warn about empty groups */
 match group[count(key("packages-by-group", id/text())) == 0] {
     priority 2;
@@ -133,6 +140,7 @@ match group[count(key("packages-by-group", id/text())) == 0] {
         mode "normalize";
     }
 }
+
 /* Warn about duplicate groups being merged */
 match group[generate-id(.) != generate-id(key("unique-groups", id/text())[1])] {
     priority 3;
@@ -143,6 +151,7 @@ match group[generate-id(.) != generate-id(key("unique-groups", id/text())[1])] {
         expr " will be merged.";
     }
 }
+
 /* Warn about empty categories */
 match category[count(key("groups-by-category", id/text())) == 0] {
     priority 2;
@@ -156,6 +165,7 @@ match category[count(key("groups-by-category", id/text())) == 0] {
         mode "normalize";
     }
 }
+
 /* Warn about duplicate categories being merged */
 match category[generate-id(.) != generate-id(key("unique-categories", id/text())[1])] {
     priority 3;
@@ -166,6 +176,7 @@ match category[generate-id(.) != generate-id(key("unique-categories", id/text())
         expr " will be merged.";
     }
 }
+
 /* Sort packages within a group by class then name */
 match packagelist {
     priority 1;
@@ -179,6 +190,7 @@ match packagelist {
         }
     }
 }
+
 /* Sort groups within a category by name */
 match category/grouplist {
     priority 1;
@@ -189,6 +201,7 @@ match category/grouplist {
         }
     }
 }
+
 /* Kill duplicate package entries */
 match packagereq[generate-id(.) != generate-id(key("unique-package-entries", ../../id/text() _ "/" _ text())[1])] {
     priority 2;
@@ -206,6 +219,7 @@ match packagereq[generate-id(.) != generate-id(key("unique-package-entries", ../
         expr " package) will be kept.";
     }
 }
+
 /* Kill duplicate group entries */
 match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group-entries", ../../id/text() _ "/" _ text())[1])] {
     priority 1;
@@ -219,13 +233,15 @@ match category/grouplist/groupid[generate-id(.) != generate-id(key("unique-group
     }
 }
 
-/* Warn about packages referenced several times
-<xsl:template match="packagereq[generate-id(.) = generate-id(key('unique-packages',text())[2])]" priority="1">
-<xsl:variable name="dupes" select="key('unique-packages',text())"/>
-<xsl:message>  ☹ Package <xsl:value-of select="text()"/> is referenced in <xsl:value-of select="count($dupes)"/> groups:</xsl:message>
-<xsl:for-each select="$dupes">
-<xsl:sort select="translate(../../id/text(),$lcletters,$ucletters)"/>
-<xsl:message>     ✓ <xsl:value-of select="@type"/> package in group <xsl:value-of select="concat(../../_name/text(),' (',../../id/text(),')')"/></xsl:message>
-</xsl:for-each>
-<xsl:apply-templates select="." mode="normalize"/>
-</xsl:template> */
+/*
+ * Warn about packages referenced several times
+ * <xsl:template match="packagereq[generate-id(.) = generate-id(key('unique-packages',text())[2])]" priority="1">
+ * <xsl:variable name="dupes" select="key('unique-packages',text())"/>
+ * <xsl:message>  ☹ Package <xsl:value-of select="text()"/> is referenced in <xsl:value-of select="count($dupes)"/> groups:</xsl:message>
+ * <xsl:for-each select="$dupes">
+ * <xsl:sort select="translate(../../id/text(),$lcletters,$ucletters)"/>
+ * <xsl:message>     ✓ <xsl:value-of select="@type"/> package in group <xsl:value-of select="concat(../../_name/text(),' (',../../id/text(),')')"/></xsl:message>
+ * </xsl:for-each>
+ * <xsl:apply-templates select="." mode="normalize"/>
+ * </xsl:template>
+ */
