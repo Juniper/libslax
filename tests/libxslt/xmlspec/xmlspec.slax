@@ -7,68 +7,71 @@ version 1.2;
 /* Author: Ben Trafford (ben@legendary.org) */
 /* Author: Eve Maler (eve.maler@east.sun.com) */
 /* Date Created: 1999.09.07 */
-
-/* This stylesheet is copyright (c) 2000 by its authors.  Free
-distribution and modification is permitted, including adding to
-the list of authors and copyright holders, as long as this
-copyright notice is maintained. */
-
-/* This stylesheet attempts to implement the XML Specification V2.1
-DTD.  Documents conforming to earlier DTDs may not be correctly
-transformed. */
-
-/* ChangeLog:
-
-25 Sep 2000: (Norman.Walsh@East.Sun.COM)
-- Sync'd with Eve's version:
-o Concatenated each inline element's output all on one line
-to avoid spurious spaces in the output. (This is really an
-IE bug, but...) (15 Sep 2000)
-o Updated crism's email address in header (7 Sep 2000)
-o Changed handling of affiliation to use comma instead of
-parentheses (9 Aug 2000)
-
-14 Aug 2000: (Norman.Walsh@East.Sun.COM)
-
-- Added additional.title param (for diffspec.xsl to change)
-- Fixed URI of W3C home icon
-- Made CSS stylesheet selection depend on the w3c-doctype attribute
-of spec instead of the w3c-doctype element in the header
-
-26 Jul 2000: (Norman.Walsh@East.Sun.COM)
-
-- Improved semantics of specref. Added xsl:message for unsupported
-cases. (I'm by no means confident that I've covered the whole
-list.)
-- Support @role on author.
-- Make lhs/rhs "code" in EBNF.
-- Fixed bug in ID/IDREF linking.
-- More effectively disabled special markup for showing @diffed
-versions
-
-21 Jul 2000: (Norman.Walsh@East.Sun.COM)
-
-- Added support for @diff change tracking, primarily through
-the auxiliary stylesheet diffspec.xsl. However, it was
-impractical to handle some constructions, such as DLs and TABLEs,
-in a completely out-of-band manner. So there is some inline
-support for @diff markup.
-
-- Added $additional.css to allow downstream stylesheets to add
-new markup to the <style> element.
-
-- Added required "type" attribute to the <style> element.
-
-- Fixed pervasive problem with nested <a> elements.
-
-- Added doctype-public to xsl:output.
-
-- Added $validity.hacks. If "1", then additional disable-output-escaping
-markup may be inserted in some places to attempt to get proper,
-valid HTML. For example, if a <glist> appears inside a <p> in the
-xmlspec source, this creates a nested <dl> inside a <p> in the
-HTML, which is not valid. If $validity.hacks is "1", then an
-extra </p>, <p> pair is inserted around the <dl>.
+/*
+ * This stylesheet is copyright (c) 2000 by its authors.  Free
+ * distribution and modification is permitted, including adding to
+ * the list of authors and copyright holders, as long as this
+ * copyright notice is maintained.
+ */
+/*
+ * This stylesheet attempts to implement the XML Specification V2.1
+ * DTD.  Documents conforming to earlier DTDs may not be correctly
+ * transformed.
+ */
+/*
+ * ChangeLog:
+ * 
+ * 25 Sep 2000: (Norman.Walsh@East.Sun.COM)
+ * - Sync'd with Eve's version:
+ * o Concatenated each inline element's output all on one line
+ * to avoid spurious spaces in the output. (This is really an
+ * IE bug, but...) (15 Sep 2000)
+ * o Updated crism's email address in header (7 Sep 2000)
+ * o Changed handling of affiliation to use comma instead of
+ * parentheses (9 Aug 2000)
+ * 
+ * 14 Aug 2000: (Norman.Walsh@East.Sun.COM)
+ * 
+ * - Added additional.title param (for diffspec.xsl to change)
+ * - Fixed URI of W3C home icon
+ * - Made CSS stylesheet selection depend on the w3c-doctype attribute
+ * of spec instead of the w3c-doctype element in the header
+ * 
+ * 26 Jul 2000: (Norman.Walsh@East.Sun.COM)
+ * 
+ * - Improved semantics of specref. Added xsl:message for unsupported
+ * cases. (I'm by no means confident that I've covered the whole
+ * list.)
+ * - Support @role on author.
+ * - Make lhs/rhs "code" in EBNF.
+ * - Fixed bug in ID/IDREF linking.
+ * - More effectively disabled special markup for showing @diffed
+ * versions
+ * 
+ * 21 Jul 2000: (Norman.Walsh@East.Sun.COM)
+ * 
+ * - Added support for @diff change tracking, primarily through
+ * the auxiliary stylesheet diffspec.xsl. However, it was
+ * impractical to handle some constructions, such as DLs and TABLEs,
+ * in a completely out-of-band manner. So there is some inline
+ * support for @diff markup.
+ * 
+ * - Added $additional.css to allow downstream stylesheets to add
+ * new markup to the <style> element.
+ * 
+ * - Added required "type" attribute to the <style> element.
+ * 
+ * - Fixed pervasive problem with nested <a> elements.
+ * 
+ * - Added doctype-public to xsl:output.
+ * 
+ * - Added $validity.hacks. If "1", then additional disable-output-escaping
+ * markup may be inserted in some places to attempt to get proper,
+ * valid HTML. For example, if a <glist> appears inside a <p> in the
+ * xmlspec source, this creates a nested <dl> inside a <p> in the
+ * HTML, which is not valid. If $validity.hacks is "1", then an
+ * extra </p>, <p> pair is inserted around the <dl>.
+ * 
  */
 ns saxon exclude = "http://icl.com/saxon";
 
@@ -87,41 +90,45 @@ output-method html {
 
 strip-space author;
 
-/* not handled:
-attribute:   unhandled IDL stuff
-case:        unhandled IDL stuff
-component:   unhandled IDL stuff
-constant:    unhandled IDL stuff
-copyright:   boilerplate notice always used instead
-definitions: unhandled IDL stuff
-descr:       unhandled IDL stuff
-enum:        unhandled IDL stuff
-enumerator:  unhandled IDL stuff
-exception:   unhandled IDL stuff
-group:       unhandled IDL stuff
-interface:   unhandled IDL stuff
-method:      unhandled IDL stuff
-module:      unhandled IDL stuff
-param:       unhandled IDL stuff
-parameters:  unhandled IDL stuff
-raises:      unhandled IDL stuff
-reference:   unhandled IDL stuff
-returns:     unhandled IDL stuff
-sequence:    unhandled IDL stuff
-struct:      unhandled IDL stuff
-typedef:     unhandled IDL stuff
-typename:    unhandled IDL stuff
-union:       unhandled IDL stuff
-
-Warning!
-Only handles statuses of NOTE, WD, and REC.
+/*
+ * not handled:
+ * attribute:   unhandled IDL stuff
+ * case:        unhandled IDL stuff
+ * component:   unhandled IDL stuff
+ * constant:    unhandled IDL stuff
+ * copyright:   boilerplate notice always used instead
+ * definitions: unhandled IDL stuff
+ * descr:       unhandled IDL stuff
+ * enum:        unhandled IDL stuff
+ * enumerator:  unhandled IDL stuff
+ * exception:   unhandled IDL stuff
+ * group:       unhandled IDL stuff
+ * interface:   unhandled IDL stuff
+ * method:      unhandled IDL stuff
+ * module:      unhandled IDL stuff
+ * param:       unhandled IDL stuff
+ * parameters:  unhandled IDL stuff
+ * raises:      unhandled IDL stuff
+ * reference:   unhandled IDL stuff
+ * returns:     unhandled IDL stuff
+ * sequence:    unhandled IDL stuff
+ * struct:      unhandled IDL stuff
+ * typedef:     unhandled IDL stuff
+ * typename:    unhandled IDL stuff
+ * union:       unhandled IDL stuff
+ * 
+ * Warning!
+ * Only handles statuses of NOTE, WD, and REC.
+ * 
  */
-
-/* Template for the root node.  Creation of <html> element could
-go here, but that doesn't feel right. */
+/*
+ * Template for the root node.  Creation of <html> element could
+ * go here, but that doesn't feel right.
+ */
 main {
     apply-templates;
 }
+
 /* abstract: appears only in header */
 /* format as a second-level div */
 /* called in enforced order from header's template */
@@ -134,26 +141,31 @@ match abstract {
         apply-templates;
     }
 }
+
 /* affiliation: follows a name in author and member */
 /* put it in parens with a leading space */
 match affiliation {
     expr ", ";
     apply-templates;
 }
+
 /* arg: appears only in proto */
 /* argument in function prototype */
-
-/* output argument type, italicized as placeholder; separate the
-list with commas and spaces */
+/*
+ * output argument type, italicized as placeholder; separate the
+ * list with commas and spaces
+ */
 match arg {
     if (preceding-sibling::arg) {
         expr ", ";
     }
     <var> @type;
+    
     if (@occur == "opt") {
         expr "?";
     }
 }
+
 /* att: attribute name */
 /* used lots of places */
 /* format as monospaced code */
@@ -162,6 +174,7 @@ match att {
         apply-templates;
     }
 }
+
 /* attribute: */
 /* IDL stuff isn't handled yet */
 /* attval: attribute name */
@@ -172,13 +185,16 @@ match attval {
     apply-templates;
     expr "\"";
 }
-/* authlist: list of authors (editors, really) */
 
-/* called in enforced order from header's template, in <dl>
-context */
+/* authlist: list of authors (editors, really) */
+/*
+ * called in enforced order from header's template, in <dl>
+ * context
+ */
 match authlist {
     <dt> {
         expr "Editor";
+        
         if (count(author) > 1) {
             expr "s";
         }
@@ -186,17 +202,20 @@ match authlist {
     }
     apply-templates;
 }
+
 /* author: an editor of a spec */
 /* only appears in authlist */
 /* called in <dl> context */
 match author {
     <dd> {
         apply-templates;
+        
         if (@role == "2e") {
             expr " - Second Edition";
         }
     }
 }
+
 /* back: back matter for the spec */
 /* make a <div> for neatness */
 /* affects numbering of div1 children */
@@ -205,6 +224,7 @@ match back {
         apply-templates;
     }
 }
+
 /* bibl: bibliographic entry */
 /* only appears in blist */
 /* called with <dl> context */
@@ -215,6 +235,7 @@ match bibl {
         if (@id) {
             <a name=@id>;
         }
+        
         if (@key) {
             expr @key;
         
@@ -224,6 +245,7 @@ match bibl {
     }
     <dd> {
         apply-templates;
+        
         if (@href) {
             expr "  (See ";
             <a href=@href> @href;
@@ -231,17 +253,20 @@ match bibl {
         }
     }
 }
+
 /* bibref: reference to a bibliographic entry */
 /* make a link to the bibl */
-
-/* if the bibl has a key, put it in square brackets; otherwise use
-the bibl's ID */
+/*
+ * if the bibl has a key, put it in square brackets; otherwise use
+ * the bibl's ID
+ */
 match bibref {
     <a> {
         attribute "href" {
             call href.target($target = id(@ref));
         }
         expr "[";
+        
         if (id(@ref)/@key) {
             expr id(@ref)/@key;
         
@@ -251,6 +276,7 @@ match bibref {
         expr "]";
     }
 }
+
 /* blist: list of bibliographic entries */
 /* set up the list and process children */
 match blist {
@@ -258,6 +284,7 @@ match blist {
         apply-templates;
     }
 }
+
 /* bnf: un-marked-up BNF productions */
 /* preformatted within a table cell */
 /* scrap provides <table> context */
@@ -278,11 +305,13 @@ match bnf {
         }
     }
 }
+
 /* body: the meat of the spec */
 /* create a TOC and then go to work */
-
-/* (don't forget the TOC for the back matter and a pointer to end
-notes) */
+/*
+ * (don't forget the TOC for the back matter and a pointer to end
+ * notes)
+ */
 match body {
     <div class="toc"> {
         expr "\n";
@@ -294,10 +323,12 @@ match body {
                 mode "toc";
             }
         }
+        
         if (../back) {
             expr "\n";
             <h3> {
                 expr "Appendi";
+                
                 if (count(../back/div1 | ../back/inform-div1) > 1) {
                     expr "ces";
                 
@@ -311,6 +342,7 @@ match body {
                 }
             }
         }
+        
         if (//footnote) {
             <p class="toc"> {
                 <a href="#endnotes"> "End Notes";
@@ -322,6 +354,7 @@ match body {
         apply-templates;
     }
 }
+
 /* caption: see table */
 /* case: */
 /* IDL stuff isn't handled yet */
@@ -332,6 +365,7 @@ match code {
         apply-templates;
     }
 }
+
 /* col: see table */
 /* colgroup: see table */
 /* com: formal production comment */
@@ -375,9 +409,11 @@ match com {
     }
 }
 
-/* this could probably be handled better, but given that rhs can
-have arbitrary text and com mixed in, I don't feel like
-spending enough time to figure out how */
+/*
+ * this could probably be handled better, but given that rhs can
+ * have arbitrary text and com mixed in, I don't feel like
+ * spending enough time to figure out how
+ */
 match rhs/com {
     <i> {
         expr "/* ";
@@ -385,6 +421,7 @@ match rhs/com {
         expr " */";
     }
 }
+
 /* component: */
 /* IDL stuff isn't handled yet */
 /* constant: */
@@ -439,6 +476,7 @@ match constraint {
         }
     }
 }
+
 /* constraintnote: note constraining a formal production */
 /* see also constraintnote/head */
 match constraintnote {
@@ -446,10 +484,12 @@ match constraintnote {
         apply-templates;
     }
 }
-/* copyright: notice for this document */
 
-/* right now, a boilerplate copyright notice is inserted by the
-template for header; this may need to be changed */
+/* copyright: notice for this document */
+/*
+ * right now, a boilerplate copyright notice is inserted by the
+ * template for header; this may need to be changed
+ */
 /* day: day of month of spec */
 /* only used in pudate; called directly from header template */
 /* def: glossary definition */
@@ -459,6 +499,7 @@ match def {
         apply-templates;
     }
 }
+
 /* definitions: */
 /* IDL stuff isn't handled yet */
 /* descr: */
@@ -495,12 +536,14 @@ match div5 {
         apply-templates;
     }
 }
+
 /* ednote: editors' note */
 match ednote {
     if ($show.ednotes != 0) {
         <table border="1"> {
             attribute "summary" {
                 expr "Editorial note";
+                
                 if (name) {
                     expr ": ";
                     expr name;
@@ -510,6 +553,7 @@ match ednote {
                 <td align="left" valign="top" width="50%"> {
                     <b> {
                         expr "Editorial note";
+                        
                         if (name) {
                             expr ": ";
                             apply-templates name;
@@ -537,6 +581,7 @@ match ednote {
 match date {
     apply-templates;
 }
+
 /* edtext: text of an editors' note */
 /* ednote is currently hidden */
 /* eg: a literal example */
@@ -558,16 +603,19 @@ match eg {
         }
     }
 }
+
 /* el: an XML element */
 /* present as preformatted text, no markup */
-
-/* Chris's personal preference is to put pointy-brackets around
-this, but he seems to be in the minority */
+/*
+ * Chris's personal preference is to put pointy-brackets around
+ * this, but he seems to be in the minority
+ */
 match el {
     <code> {
         apply-templates;
     }
 }
+
 /* email: an email address for an editor */
 /* only occurs in author */
 match email {
@@ -578,16 +626,19 @@ match email {
         expr ">";
     }
 }
+
 /* emph: in-line emphasis */
 /* equates to HTML <em> */
-
-/* the role attribute could be used for multiple kinds of
-emphasis, but that would not be kind */
+/*
+ * the role attribute could be used for multiple kinds of
+ * emphasis, but that would not be kind
+ */
 match emph {
     <em> {
         apply-templates;
     }
 }
+
 /* enum: */
 /* IDL stuff isn't handled yet */
 /* enumerator: */
@@ -600,6 +651,7 @@ match example {
         apply-templates;
     }
 }
+
 /* exception: */
 /* IDL stuff isn't handled yet */
 /* footnote: format as endnote, actually */
@@ -620,6 +672,7 @@ match footnote {
         }
     }
 }
+
 /* front: front matter for the spec */
 /* make a div for cleanliness */
 match front {
@@ -627,6 +680,7 @@ match front {
         apply-templates;
     }
 }
+
 /* function: name of a function */
 /* format as HTML <code> for monospaced presentation */
 match function {
@@ -634,11 +688,13 @@ match function {
         apply-templates;
     }
 }
+
 /* gitem: glossary list entry */
 /* just pass children through for <dd>/<dt> formatting */
 match gitem {
     apply-templates;
 }
+
 /* glist: glossary list */
 /* create <dl> and handle children */
 match glist {
@@ -648,10 +704,12 @@ match glist {
     <dl> {
         apply-templates;
     }
+    
     if ($validity.hacks && local-name(..) == "p") {
         uexpr "<p>";
     }
 }
+
 /* graphic: external illustration */
 /* reference external graphic file with alt text */
 match graphic {
@@ -663,12 +721,14 @@ match graphic {
         }
     }
 }
+
 /* group: */
 /* IDL stuff isn't handled yet */
 /* head: title for a variety of constructs */
-
-/* constraintnotes have different types, but they're
-non-enumerated; nothing is done with them right now */
+/*
+ * constraintnotes have different types, but they're
+ * non-enumerated; nothing is done with them right now
+ */
 match constraintnote/head {
     <p class="prefix"> {
         if (../@id) {
@@ -848,6 +908,7 @@ match wfcnote/head {
         }
     }
 }
+
 /* header: metadata about the spec */
 /* pull out information into standard W3C layout */
 match header {
@@ -860,11 +921,13 @@ match header {
         expr "\n";
         <h1> {
             apply-templates title;
+            
             if (version) {
                 expr " ";
                 apply-templates version;
             }
         }
+        
         if (subtitle) {
             expr "\n";
             <h2> {
@@ -875,6 +938,7 @@ match header {
         <h2> {
             apply-templates w3c-doctype;
             expr " ";
+            
             if (pubdate/day) {
                 apply-templates pubdate/day;
                 expr " ";
@@ -924,6 +988,7 @@ match header {
     apply-templates abstract;
     apply-templates status;
 }
+
 /* inform-div1: non-normative back matter top-level division */
 /* treat like div1 except add "(Non-Normative)" to title */
 match inform-div1 {
@@ -931,14 +996,16 @@ match inform-div1 {
         apply-templates;
     }
 }
+
 /* interface: */
 /* IDL stuff isn't handled yet */
 /* issue: open issue before the Working Group */
 /* maintain an ID for linking to it */
-
-/* currently generates boilerplate head plus optional head child
-element; this should probably be cleaned up to only use the
-head if it's present */
+/*
+ * currently generates boilerplate head plus optional head child
+ * element; this should probably be cleaned up to only use the
+ * head if it's present
+ */
 match issue {
     <div class="issue"> {
         <p class="prefix"> {
@@ -954,12 +1021,14 @@ match issue {
         apply-templates;
     }
 }
+
 /* item: generic list item */
 match item {
     <li> {
         apply-templates;
     }
 }
+
 /* kw: keyword */
 /* make it bold */
 match kw {
@@ -967,6 +1036,7 @@ match kw {
         apply-templates;
     }
 }
+
 /* label: term for defintion in glossary entry */
 /* already in <dl> context from glist */
 match label {
@@ -977,6 +1047,7 @@ match label {
         apply-templates;
     }
 }
+
 /* language: */
 /* langusage: */
 /* identify language usage within a spec; not actually formatted */
@@ -988,10 +1059,12 @@ match latestloc {
         apply-templates;
     }
 }
-/* lhs: left-hand side of formal productions */
 
-/* make a table row with the lhs and the corresponding other
-pieces in this crazy mixed-up content model */
+/* lhs: left-hand side of formal productions */
+/*
+ * make a table row with the lhs and the corresponding other
+ * pieces in this crazy mixed-up content model
+ */
 match lhs {
     <tr valign="baseline"> {
         <td> {
@@ -1001,6 +1074,7 @@ match lhs {
                     expr ancestor-or-self::*/@diff;
                 }
             }
+            
             if (../@id) {
                 <a name=../@id>;
             }
@@ -1009,10 +1083,12 @@ match lhs {
             }
             
             /*
-            This could be done right here, but XT goes into deep space when the
-            node to be numbered isn't the current node and level="any":
-            <xsl:number count="prod" level="any" from="spec"
-            format="[1]"/>
+             * 
+             * This could be done right here, but XT goes into deep space when the
+             * node to be numbered isn't the current node and level="any":
+             * <xsl:number count="prod" level="any" from="spec"
+             * format="[1]"/>
+             * 
              */
             expr "   ";
         }
@@ -1039,6 +1115,7 @@ match lhs {
         apply-templates following-sibling::*[1][name() == "rhs"];
     }
 }
+
 /* loc: a Web location */
 /* outside the header, it's a normal cross-reference */
 match loc {
@@ -1046,6 +1123,7 @@ match loc {
         apply-templates;
     }
 }
+
 /* member: member of an organization */
 /* appears only in orglist, which creates <ul> context */
 match member {
@@ -1053,6 +1131,7 @@ match member {
         apply-templates;
     }
 }
+
 /* method: */
 /* IDL stuff isn't handled yet */
 /* module: */
@@ -1065,6 +1144,7 @@ match member {
 match name {
     apply-templates;
 }
+
 /* note: a note about the spec */
 match note {
     <div class="note"> {
@@ -1074,6 +1154,7 @@ match note {
         apply-templates;
     }
 }
+
 /* notice: a front-matter advisory about the spec's status */
 /* make sure people notice it */
 match notice {
@@ -1084,6 +1165,7 @@ match notice {
         apply-templates;
     }
 }
+
 /* nt: production non-terminal */
 /* make a link to the non-terminal's definition */
 match nt {
@@ -1094,18 +1176,21 @@ match nt {
         apply-templates;
     }
 }
+
 /* olist: an ordered list */
 match olist {
     <ol> {
         apply-templates;
     }
 }
+
 /* orglist: a list of an organization's members */
 match orglist {
     <ul> {
         apply-templates;
     }
 }
+
 /* p: a standard paragraph */
 match p {
     <p> {
@@ -1114,6 +1199,7 @@ match p {
                 expr @id;
             }
         }
+        
         if (@role) {
             attribute "class" {
                 expr @role;
@@ -1122,17 +1208,20 @@ match p {
         apply-templates;
     }
 }
+
 /* param: */
 /* IDL stuff isn't handled yet */
 /* parameters: */
 /* IDL stuff isn't handled yet */
 /* phrase: semantically meaningless markup hanger */
-
-/* role attributes may be used to request different formatting,
-which isn't currently handled */
+/*
+ * role attributes may be used to request different formatting,
+ * which isn't currently handled
+ */
 match phrase {
     apply-templates;
 }
+
 /* prevlocs: previous locations for this spec */
 /* called in a <dl> context from header */
 match prevlocs {
@@ -1141,14 +1230,17 @@ match prevlocs {
         apply-templates;
     }
 }
+
 /* prod: a formal grammar production */
 /* if not in a prodgroup, needs a <tbody> */
-
-/* has a weird content model; makes a table but there are no
-explicit rules; many different things can start a new row */
-
-/* process the first child in each row, and it will process the
-others */
+/*
+ * has a weird content model; makes a table but there are no
+ * explicit rules; many different things can start a new row
+ */
+/*
+ * process the first child in each row, and it will process the
+ * others
+ */
 match prod {
     <tbody> {
         apply-templates lhs | rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
@@ -1158,6 +1250,7 @@ match prod {
 match prodgroup/prod {
     apply-templates lhs | rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
 }
+
 /* prodgroup: group of formal productions */
 /* create one <tbody> for each group */
 match prodgroup {
@@ -1165,11 +1258,13 @@ match prodgroup {
         apply-templates;
     }
 }
-/* prodrecap: reiteration of a prod */
 
-/* process the prod in another node that will never generate a
-<tbody> or a number, plus links the lhs to the original
-production */
+/* prodrecap: reiteration of a prod */
+/*
+ * process the prod in another node that will never generate a
+ * <tbody> or a number, plus links the lhs to the original
+ * production
+ */
 match prodrecap {
     <tbody> {
         apply-templates id(@ref) {
@@ -1177,6 +1272,7 @@ match prodrecap {
         }
     }
 }
+
 /* proto: function prototype */
 /* type and name of the function, with arguments in parens */
 match proto {
@@ -1189,6 +1285,7 @@ match proto {
         expr ")";
     }
 }
+
 /* pubdate: date of spec */
 /* called directly from header */
 /* publoc: location of current version of spec */
@@ -1199,17 +1296,20 @@ match publoc {
         apply-templates;
     }
 }
+
 /* pubstmt: statement of publication */
 /* not currently output */
 /* quote: a quoted string or phrase */
-
-/* it would be nice to use HTML <q> elements, but browser support
-is abysmal */
+/*
+ * it would be nice to use HTML <q> elements, but browser support
+ * is abysmal
+ */
 match quote {
     expr "\"";
     apply-templates;
     expr "\"";
 }
+
 /* raises: */
 /* IDL stuff isn't handled yet */
 /* reference: */
@@ -1221,14 +1321,16 @@ match resolution {
     }
     apply-templates;
 }
+
 /* returns: */
 /* IDL stuff isn't handled yet */
 /* revisiondesc: description of spec revision */
 /* used for internal tracking; not formatted */
 /* rhs: right-hand side of a formal production */
-
-/* make a table cell; if it's not the first after an LHS, make a
-new row, too */
+/*
+ * make a table cell; if it's not the first after an LHS, make a
+ * new row, too
+ */
 match rhs {
     if (preceding-sibling::*[1][name() == "lhs"]) {
         <td> {
@@ -1265,6 +1367,7 @@ match rhs {
         }
     }
 }
+
 /* role: part played by a member of an organization */
 match role {
     expr " (";
@@ -1273,6 +1376,7 @@ match role {
     }
     expr ") ";
 }
+
 /* scrap: series of formal grammar productions */
 /* set up a <table> and handle children */
 match scrap {
@@ -1281,6 +1385,7 @@ match scrap {
         apply-templates bnf | prod | prodgroup;
     }
 }
+
 /* sequence: */
 /* IDL stuff isn't handled yet */
 /* sitem: simple list item */
@@ -1289,10 +1394,12 @@ match sitem[position() > 1] {
     <br>;
     apply-templates;
 }
-/* slist: simple list */
 
-/* using a <blockquote> to indent the list is very wrong, but it
-works */
+/* slist: simple list */
+/*
+ * using a <blockquote> to indent the list is very wrong, but it
+ * works
+ */
 match slist {
     <blockquote> {
         <p> {
@@ -1300,6 +1407,7 @@ match slist {
         }
     }
 }
+
 /* source: the source of an issue */
 match source {
     <p> {
@@ -1308,6 +1416,7 @@ match source {
         apply-templates;
     }
 }
+
 /* sourcedesc: description of spec preparation */
 /* used for tracking the source, but not formatted */
 /* spec: the specification itself */
@@ -1322,10 +1431,12 @@ match spec {
             <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">;
             <title> {
                 apply-templates header/title;
+                
                 if (header/version) {
                     expr " ";
                     apply-templates header/version;
                 }
+                
                 if ($additional.title != "") {
                     expr " -- ";
                     expr $additional.title;
@@ -1335,6 +1446,7 @@ match spec {
         }
         <body> {
             apply-templates;
+            
             if (//footnote) {
                 <hr>;
                 <div class="endnotes"> {
@@ -1352,6 +1464,7 @@ match spec {
         }
     }
 }
+
 /* specref: reference to another part of teh current specification */
 match specref {
     var $target = id(@ref)[1];
@@ -1360,6 +1473,7 @@ match specref {
         attribute "href" {
             call href.target($target = id(@ref));
         }
+        
         if (starts-with(local-name($target), "div")) {
             <b> {
                 apply-templates id(@ref) {
@@ -1418,6 +1532,7 @@ match specref {
         }
     }
 }
+
 /* status: the status of the spec */
 match status {
     <div id="status"> {
@@ -1428,6 +1543,7 @@ match status {
         apply-templates;
     }
 }
+
 /* struct: */
 /* IDL stuff isn't handled yet */
 /* sub: subscript */
@@ -1436,6 +1552,7 @@ match sub {
         apply-templates;
     }
 }
+
 /* subtitle: secondary title of spec */
 /* handled directly within header */
 /* sup: superscript */
@@ -1444,6 +1561,7 @@ match sup {
         apply-templates;
     }
 }
+
 /* table: the HTML table model adopted wholesale */
 /* tbody: */
 /* td: */
@@ -1460,12 +1578,14 @@ match caption | col | colgroup | table | tbody | td | tfoot | th | thead | tr {
         apply-templates;
     }
 }
+
 /* term: the actual mention of a term within a termdef */
 match term {
     <b> {
         apply-templates;
     }
 }
+
 /* termdef: sentence or phrase defining a term */
 match termdef {
     expr "[";
@@ -1474,6 +1594,7 @@ match termdef {
     apply-templates;
     expr "]";
 }
+
 /* termref: reference to a defined term */
 match termref {
     <a title=id(@def)/@term> {
@@ -1483,6 +1604,7 @@ match termref {
         apply-templates;
     }
 }
+
 /* tfoot: see table */
 /* th: see table */
 /* thead: see table */
@@ -1504,6 +1626,7 @@ match titleref {
         }
     }
 }
+
 /* tr: see table */
 /* typedef: */
 /* IDL stuff isn't handled yet */
@@ -1515,6 +1638,7 @@ match ulist {
         apply-templates;
     }
 }
+
 /* union: */
 /* IDL stuff isn't handled yet */
 /* var: a variable */
@@ -1523,6 +1647,7 @@ match var {
         apply-templates;
     }
 }
+
 /* vc: validity check reference in a formal production */
 match vc {
     if (preceding-sibling::*[1][name() == "rhs"]) {
@@ -1572,20 +1697,23 @@ match vc {
         }
     }
 }
+
 /* vcnote: validity check note after a formal production */
 match vcnote {
     <div class="constraint"> {
         apply-templates;
     }
 }
+
 /* version: version of this spec */
 /* called directly from header */
 /* w3c-designation: canonical name for this spec */
 /* not used for formatting */
 /* w3c-doctype: type of document the specification is */
-
-/* used by header template to select CSS stylesheet for output
-HTML */
+/*
+ * used by header template to select CSS stylesheet for output
+ * HTML
+ */
 /* wfc: well-formedness check reference in a formal production */
 match wfc {
     if (preceding-sibling::*[1][name() == "rhs"]) {
@@ -1635,12 +1763,14 @@ match wfc {
         }
     }
 }
+
 /* wfcnote: well-formedness check note after formal production */
 match wfcnote {
     <div class="constraint"> {
         apply-templates;
     }
 }
+
 /* xnt: external non-terminal */
 /* xspecref: external specification reference */
 /* xtermref: external term reference */
@@ -1650,12 +1780,14 @@ match xnt | xspecref | xtermref {
         apply-templates;
     }
 }
+
 /* year: year of spec */
 /* only used in pudate; called directly from header template */
-
-/* Silly HTML elements used for pasting stuff in; shouldn't ever
-show up in a spec, but they're easy to handle and you just
-never know. */
+/*
+ * Silly HTML elements used for pasting stuff in; shouldn't ever
+ * show up in a spec, but they're easy to handle and you just
+ * never know.
+ */
 match a | div | em | h1 | h2 | h3 | h4 | h5 | h6 | li | ol | pre | ul {
     copy-node {
         for-each (@*) {
@@ -1666,6 +1798,7 @@ match a | div | em | h1 | h2 | h3 | h4 | h5 | h6 | li | ol | pre | ul {
         apply-templates;
     }
 }
+
 /* legacy XML spec stuff */
 match htable {
     <table summary="HTML Table"> {
@@ -1700,6 +1833,7 @@ match statusp {
         apply-templates;
     }
 }
+
 /* legacy DocBook stuff */
 match itemizedlist {
     <ul> {
@@ -1724,6 +1858,7 @@ match para {
         apply-templates;
     }
 }
+
 /* mode: divnum */
 match div1 {
     mode "divnum";
@@ -1825,6 +1960,7 @@ match back//div5 {
         count div1 | div2 | div3 | div4 | div5 | inform-div1;
     }
 }
+
 /* mode: notes */
 match footnote {
     mode "notes";
@@ -1850,6 +1986,7 @@ match footnote {
         apply-templates;
     }
 }
+
 /* mode: number */
 match prod {
     mode "number";
@@ -1865,13 +2002,15 @@ match prod[@diff == "add"] {
     mode "number";
     
     expr "[";
-    apply-templates preceding::prod[not(@diff == "add")][1] {
+    apply-templates preceding::prod[ !(@diff == "add")][1] {
         mode "number-simple";
     }
     
     /*
-    Once again, this could be done right here, but XT won't hear of it.
-    <xsl:number level="any" count="prod[not(@diff='add')]"/>
+     * 
+     * Once again, this could be done right here, but XT won't hear of it.
+     * <xsl:number level="any" count="prod[not(@diff='add')]"/>
+     * 
      */
     number {
         level "any";
@@ -1881,6 +2020,7 @@ match prod[@diff == "add"] {
     }
     expr "]";
 }
+
 /* mode: number-simple */
 match prod {
     mode "number-simple";
@@ -1890,6 +2030,7 @@ match prod {
         count prod[not(@diff == "add")];
     }
 }
+
 /* mode: ref */
 match lhs {
     mode "ref";
@@ -1903,6 +2044,7 @@ match lhs {
                     expr ancestor-or-self::*/@diff;
                 }
             }
+            
             if (../@id) {
                 <a name=../@id>;
             }
@@ -1931,13 +2073,16 @@ match prod {
     }
     apply-templates rhs[preceding-sibling::*[1][name() != "lhs"]] | com[preceding-sibling::*[1][name() != "rhs"]] | constraint[preceding-sibling::*[1][name() != "rhs"]] | vc[preceding-sibling::*[1][name() != "rhs"]] | wfc[preceding-sibling::*[1][name() != "rhs"]];
 }
-/* mode: text */
 
-/* most stuff processes just as text here, but some things should
-be hidden */
+/* mode: text */
+/*
+ * most stuff processes just as text here, but some things should
+ * be hidden
+ */
 match ednote | footnote {
     mode "text";
 }
+
 /* mode: toc */
 match div1 {
     mode "toc";
@@ -2069,6 +2214,7 @@ template css () {
     <link rel="stylesheet" type="text/css"> {
         attribute "href" {
             expr "W3C-";
+            
             if (/spec/@w3c-doctype == "wd") {
                 expr "WD";
             
@@ -2091,6 +2237,7 @@ template css () {
 
 template href.target ($target = .) {
     expr "#";
+    
     if ($target/@id) {
         expr $target/@id;
     
