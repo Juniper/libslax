@@ -18,7 +18,7 @@
   <xsl:template match="*"/>
   <xsl:template match="node">
     <xsl:choose>
-      <xsl:when test="(left and not(right)) or(left/node/@key &lt; right/node/@key)">
+      <xsl:when test="(left and not(right)) or (left/node/@key &lt; right/node/@key)">
         <node key="{left/node/@key}">
           <left>
             <xsl:apply-templates select="left/node"/>
