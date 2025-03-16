@@ -197,10 +197,10 @@ template simple () {
         set $five = <five> "t5";
         
         /*
-        * /
-        append $five += "a5";
-        / *
-        append $five += "a25";
+         * /
+         * append $five += "a5";
+         * / *
+         * append $five += "a25";
          */
         <five> $five;
         <five> {
@@ -242,6 +242,7 @@ template other ($depth = 0) {
         <save> $save;
     }
     set $indent = $save;
+    
     if ($depth < 3) {
         call other($depth = $depth + 1);
     }

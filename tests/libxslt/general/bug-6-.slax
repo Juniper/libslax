@@ -10,6 +10,7 @@ main <html> {
     }
     apply-templates;
 }
+
 /* Header and Body for the Document */
 match my:document {
     <body> {
@@ -18,6 +19,7 @@ match my:document {
         <hr>;
     }
 }
+
 /* Don't display name */
 match my:name {
 }

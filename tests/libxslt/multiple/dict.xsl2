@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xt="http://www.jclark.com/xt" xmlns:doc="http://nwalsh.com/xsl/documentation/1.0" version="1.0" exclude-result-prefixes="xt doc" extension-element-prefixes="xt">
   <!-- **********************************************
- *
- * dict.xsl: convert dict. of thieving slang into HTML
- *
- * Liam Quin, 2001
- *
- * $Id: dict.xsl 825 2003-01-09 13:30:35Z veillard $
- *
- * -->
+*
+dict.xsl: convert dict. of thieving slang into HTML
+*
+Liam Quin, 2001
+*
+$Id: dict.xsl 825 2003-01-09 13:30:35Z veillard $
+*
+* -->
   <!-- * Generate HTML 4 * -->
   <xsl:output method="html" version="4.0" encoding="UTF-8"/>
-  <!-- * strip white space from containers that don't have PCDATA in
- * them; this list may not be complete.
- * XSLT should have a way of doing this based on the DTD.
- * -->
+  <!-- strip white space from containers that don't have PCDATA in
+them; this list may not be complete.
+XSLT should have a way of doing this based on the DTD.
+* -->
   <xsl:strip-space elements="dict titlepage letter entry"/>
   <!-- **********************************************
- *
- * split the input into separate files at
- * titlepage
- * letter
- * -->
+*
+split the input into separate files at
+titlepage
+letter
+* -->
   <!-- * first, a template to make an HTML head, given a title * -->
   <xsl:template name="htmlhead">
     <xsl:param name="title"/>

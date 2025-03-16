@@ -32,8 +32,10 @@ template del () {
 }
 
 match *[attribute::id &&@id == ""] {
-    /* attribute::type pour éviter de confondre l'absence d'attibute et
-    la valeur nulle */
+    /*
+     * attribute::type pour éviter de confondre l'absence d'attibute et
+     * la valeur nulle
+     */
     if ($action == "del") {
         call del();
     
@@ -56,10 +58,11 @@ match *[attribute::id &&@id == ""] {
         }
     }
 }
+
 /* liste des elements qui peuvent être édités, donc attribut id */
 match domain {
     copy-node {
-        if (not(@id)) {
+        if (!@id) {
             attribute "id" {
                 expr generate-id();
             }
@@ -76,7 +79,7 @@ match domain {
 
 match name {
     copy-node {
-        if (not(@id)) {
+        if (!@id) {
             attribute "id" {
                 expr generate-id();
             }
@@ -90,7 +93,7 @@ match name {
 
 match task {
     copy-node {
-        if (not(@id)) {
+        if (!@id) {
             attribute "id" {
                 expr generate-id();
             }

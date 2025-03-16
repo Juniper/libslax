@@ -2,6 +2,37 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:variable name="slax-test" mvarname="test"/>
   <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="test" select="slax:mvar-init(&quot;test&quot;, &quot;slax-test&quot;, $slax-test, &quot;global&quot;)" mutable="yes" svarname="slax-test"/>
+  <xsl:template match="test">
+    <xsl:choose>
+      <xsl:when test="not(a)">
+        <z1/>
+      </xsl:when>
+      <xsl:when test="not(a) and not(b) and not(c) or not(d)">
+        <z/>
+      </xsl:when>
+      <xsl:when test="not((a and b and c))">
+        <y/>
+      </xsl:when>
+      <xsl:when test="not(a and b and c)">
+        <x/>
+      </xsl:when>
+      <xsl:when test="not(a/b/c)">
+        <w/>
+      </xsl:when>
+      <xsl:when test="not(child::b)">
+        <v/>
+      </xsl:when>
+      <xsl:when test="not(a/b/c[d])">
+        <u/>
+      </xsl:when>
+      <xsl:when test="not(a) + b + c">
+        <t/>
+      </xsl:when>
+      <xsl:when test="not(a/b/@c)">
+        <s/>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
   <xsl:template match="/">
     <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="test" svarname="slax-test" select="&quot;-yes&quot;"/>
     <xsl:variable name="t1" select="$test"/>

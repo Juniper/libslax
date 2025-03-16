@@ -19,6 +19,7 @@ match top/*[position() == 2] {
 match top/*[position() == 3] {
     <C> .;
 }
+
 /* bug in jclark's xt: "last()=position()" doesn't equal "position()=last()" */
 match top/*[position() == last()] {
     <LAST> .;

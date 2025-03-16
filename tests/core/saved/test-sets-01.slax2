@@ -56,8 +56,8 @@ main <top> {
         }
     }
     <more> {
-        var $s1 = slax-ext:node-set($top/test[1]/first/*);
-        var $s2 = slax-ext:node-set($top/test[1]/second/*);
+        var $s1 := $top/test[1]/first/*;
+        var $s2 := $top/test[1]/second/*;
         
         <common> {
             copy-of xutil:common($s1, $s2);

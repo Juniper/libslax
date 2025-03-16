@@ -98,11 +98,9 @@
       </xsl:choose>
     </tr>
   </xsl:template>
-  <!-- 
-<xsl:variable name="soldout">
+  <!-- * <xsl:variable name="soldout">
 <xsl:apply-templates select="/inventory/warehouse/items/item[qty=0]">
 <xsl:with-param name="pwh" select="1"/>
 </xsl:apply-templates>
-</xsl:variable>
- -->
+</xsl:variable> -->
 </xsl:stylesheet>

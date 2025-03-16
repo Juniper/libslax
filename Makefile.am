@@ -47,7 +47,7 @@ DIST_FILES_DIR = ~/Dropbox/dist-files/
 GH_PAGES_DIR = gh-pages/
 PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
 
-upload: dist upload-docs
+upload: dist
 	@echo "Remember to run:"
 	@echo "        gt tag ${PACKAGE_VERSION}"
 

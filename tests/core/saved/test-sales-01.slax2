@@ -19,12 +19,16 @@ main <svg version="1" width="3in" height="3in"> {
             /* define some useful variables */
             /* the bar's x position */
             var $pos = (position() * 40) - 30;
+            
             /* the bar's height */
             var $height = revenue * 10;
+            
             /* the rectangle */
             <rect x=$pos y=150 - $height width="20" height=$height>;
+            
             /* the text label */
             <text x=$pos y="165"> @id;
+            
             /* the bar value */
             <text x=$pos y=145 - $height> revenue;
         }

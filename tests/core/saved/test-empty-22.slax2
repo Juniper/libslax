@@ -5,7 +5,7 @@ ns foo extension = "http://example.com/foo";
 main <top> {
     var $x = /test;
     
-    if (not($x) && not(/foo/bar) && not(goo[zoo && not(moo)])) {
+    if (!$x && !/foo/bar && !(goo[zoo && !moo])) {
         <not> {
             ns goo extension = "http://example.com/goo";
             

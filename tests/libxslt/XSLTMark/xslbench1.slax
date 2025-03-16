@@ -31,16 +31,20 @@ main {
                 <TBODY> {
                     <TR> {
                         <TD colSpan="2" height="95"> {
-                            /* webbot bot="ImageMap" startspan
-                            rectangle="(0,5) (68,94) index.htm" src="images/ProductsBanner.gif" width="569"
-                            height="97" border="0" alt="TFI Technology Products" */
+                            /*
+                             * webbot bot="ImageMap" startspan
+                             * rectangle="(0,5) (68,94) index.htm" src="images/ProductsBanner.gif" width="569"
+                             * height="97" border="0" alt="TFI Technology Products"
+                             */
                             <MAP name="FrontPageMap0"> {
                                 <AREA href="http://www.tfi-technology.com/index.htm">;
                             }
                             <IMG alt="TFI Technology Products" border="0" height="97" src="TFI Technology Products_files/ProductsBanner.gif" useMap="#FrontPageMap0" width="569">;
                             
-                            /* webbot bot="ImageMap"
-                            i-checksum="26" endspan */
+                            /*
+                             * webbot bot="ImageMap"
+                             * i-checksum="26" endspan
+                             */
                         }
                     }
                     <TR> {

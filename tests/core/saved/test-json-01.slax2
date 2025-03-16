@@ -29,6 +29,7 @@ var $j2x-opts = {
     if ($root) {
         <root> $root;
     }
+    
     if ($types) {
         <types> $types;
     }
@@ -37,6 +38,7 @@ var $x2j-opts = {
     if ($pretty) {
         <pretty>;
     }
+    
     if ($quotes) {
         <quotes> $quotes;
     }

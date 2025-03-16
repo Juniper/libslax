@@ -12,6 +12,7 @@ match doc {
         } else {
             /* ... and "else" */
         }
+        
         if (starts-with(name, "fe-")) {
             if (mtu < 1500) {
                 /* Deal with fast ethernet interfaces with low MTUs */

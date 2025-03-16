@@ -10,6 +10,7 @@ match table {
         <person> {
             expr firstname _ " " _ lastname;
             expr string-length(firstname);
+            
             /* rot13 */
             expr translate(firstname, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", "nopqrstuvwxyzabcdefghijklmNOPQRSTUVWXYZABCDEFGHIJKLM");
             expr sum(preceding-sibling::row/id);
@@ -21,6 +22,7 @@ match table {
             if (starts-with(id, "001")) {
                 expr zip;
             }
+            
             if (contains(lastname, "k")) {
                 expr substring-after(lastname, "k");
             }

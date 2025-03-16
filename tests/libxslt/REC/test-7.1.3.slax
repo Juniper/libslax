@@ -11,8 +11,10 @@ match doc {
         }
         
         /*
-        <xsl:attribute name="a">x
-        y</xsl:attribute>
+         * 
+         * <xsl:attribute name="a">x
+         * y</xsl:attribute>
+         * 
          */
     }
 }

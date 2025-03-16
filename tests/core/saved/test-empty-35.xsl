@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="mine" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" xmlns:exsl="http://exslt.org/common" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="slax-ext exsl slax-func">
-  <!-- 
-var $test = {
+  <!-- var $test = {
    "a": "a",
    "b": "b",
    "c": {
         "d": 1,
         "e": 2,
    }
-}
- -->
+} -->
   <xsl:template match="/">
     <top>
       <xsl:variable name="slax-temp-arg-1">

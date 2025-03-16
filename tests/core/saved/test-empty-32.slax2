@@ -94,6 +94,7 @@ main <op-script-results> {
     message "bit:from-hex('0xD', 6) -> " _ bit:from-hex("0xD", 6);
     message "bit:from-hex('0xE', 6) -> " _ bit:from-hex("0xE", 6);
     message "bit:from-hex('0xF', 6) -> " _ bit:from-hex("0xF", 6);
+    
     /* Large numbers */
     message "bit:from-int(4.2e20) -> " _ bit:from-int(4.2e10);
     message "bit:from-int(4.2e30) -> " _ bit:from-int(4.2e30);

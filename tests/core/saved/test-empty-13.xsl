@@ -234,12 +234,10 @@
       <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="five" svarname="slax-five">
         <five>t5</five>
       </slax:set-variable>
-      <!-- 
-* /
+      <!-- * /
         append $five += "a5";
         / *
-        append $five += "a25";
- -->
+        append $five += "a25"; -->
       <five>
         <xsl:value-of select="$five"/>
       </five>

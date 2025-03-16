@@ -393,7 +393,7 @@ slaxSetupLexer (void)
 static inline int
 slaxIsFinalChar (int ch)
 {
-    return (ch == ';' || isspace(ch));
+    return (ch == '/' || ch == '}' || ch == ';' || isspace(ch));
 }
 
 /*
@@ -589,6 +589,9 @@ slaxGetInput (slax_data_t *sdp, int final)
 
     for (;;) {
 	if (sdp->sd_len + SD_BUF_FUDGE > sdp->sd_size) {
+
+	repack:
+
 	    if (sdp->sd_start > SD_BUF_FUDGE) {
 		/*
 		 * Shift the data forward to give us some room at the end
@@ -637,13 +640,9 @@ slaxGetInput (slax_data_t *sdp, int final)
 	if (sdp->sd_len == 0)
 	    continue;
 
-#if 0
-	if (sdp->sd_buf[sdp->sd_len - 1] == '\n') {
-	    sdp->sd_line += 1;
-	    if (final && sdp->sd_ctxt->input)
-		sdp->sd_ctxt->input->line = sdp->sd_line;
-	}
-#endif
+	    /* We did a read, but failed to get a complete line */
+	if (sdp->sd_buf[sdp->sd_len - 1] != '\n')
+	    goto repack;
 
 	if (first_read) {
 	    /*
@@ -885,20 +884,33 @@ slaxCommentMakeValue (xmlChar *input)
     static const char dash[] = "&#2d;"; /* XML character entity for dash */
     xmlChar *cp, *out, *res;
     int len = xmlStrlen(input);
-    int hit = FALSE;
 
     for (cp = input; *cp; cp++)
-	if (*cp == '-') {
+	if (*cp == '-')
 	    len += sizeof(dash) - 1; /* Worst case */
-	    hit = TRUE;
-	}
 
-    if (!hit)
-	return NULL;
-
-    res = out = xmlMalloc(len + 1);
+    res = out = xmlMalloc(len + 3); /* Leading and trailing space, plus NUL */
     if (out == NULL)
 	return NULL;
+
+    *out++ = ' ';		/* Leading space */
+
+    /*
+     * Handle the " * " leader from lines
+     */
+    for ( ; *input == ' '; input++) /* Only spaces */
+	continue;
+
+    if (input[0] == '\n' && input[1] == ' ' && input[2] == '*') {
+	if (input[3] == ' ')
+	    input += 3;
+	else if (input[3] == '\n')
+	    input += 2;
+    }
+
+    /* Trim leading whitespace */
+    for ( ; isspace(*input); input++)
+	continue;
 
     for (cp = input; *cp; cp++) {
 
@@ -911,8 +923,24 @@ slaxCommentMakeValue (xmlChar *input)
 		
 	} else
 	    *out++ = *cp;
+
+	/*
+	 * Handle the " * " leader from lines
+	 */
+	if (cp[0] == '\n' && cp[1] == ' ' && cp[2] == '*') {
+	    if (cp[3] == ' ')
+		cp += 3;
+	    else if (cp[3] == '\n')
+		cp += 2;
+	}
     }
-    *out = '\0';
+
+    /* Trim trailing whitespace */
+    for ( ; out > res && isspace(out[-1]); out--)
+	continue;
+
+    *out++ = ' ';		/* Trailing space */
+    *out = '\0';		/* Trim it */
 
     return (xmlChar *) res;
 }
@@ -928,17 +956,22 @@ slaxLexerLookAhead (slax_data_t *sdp, const char *token)
     int len = sdp->sd_len;
     char *buf = sdp->sd_buf;
 
-    for (; isspace((int) buf[cur]); cur++) {
+    for (;;) {
 	if (cur + token_len >= sdp->sd_len) {
 	    if (slaxGetInput(sdp, 0)) {
 		slaxLog("slax: getinput failed: %d/%d/%d",
                    sdp->sd_start, cur, len);
 		return FALSE;
 	    }
+
+	    len = sdp->sd_len;
+	    buf = sdp->sd_buf;
 	}
 
-	len = sdp->sd_len;
-	buf = sdp->sd_buf;
+	if (!isspace((int) buf[cur]))
+	    break;
+
+	cur += 1;
     }
 
     if (cur + token_len <= len && buf[cur] == *token
@@ -1312,6 +1345,7 @@ slaxLexer (slax_data_t *sdp)
 	    ch1 = lookbuf[look];
 	    if (ch1 == '(')
 		return T_FUNCTION_NAME;
+
 	    if (!isspace(ch1))
 		break;
 	}

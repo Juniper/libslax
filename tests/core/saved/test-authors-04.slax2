@@ -14,7 +14,7 @@ main <out> {
 
 template test ($name, $elt = "default") {
     for $this ($favorites/name) {
-        if ($name == $this && not($this/@hidden)) {
+        if ($name == $this && !$this/@hidden) {
             element $elt {
                 copy-of .//author[name/last == $this];
             }

@@ -24,8 +24,8 @@
     <!-- effacer ! -->
   </xsl:template>
   <xsl:template match="*[attribute::id and@id = &quot;&quot;]">
-    <!-- attribute::type pour éviter de confondre l'absence d'attibute et
-    la valeur nulle -->
+    <!-- * attribute::type pour éviter de confondre l'absence d'attibute et
+     * la valeur nulle -->
     <xsl:choose>
       <xsl:when test="$action = &quot;del&quot;">
         <xsl:call-template name="del"/>

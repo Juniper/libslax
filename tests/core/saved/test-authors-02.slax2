@@ -4,6 +4,7 @@ mvar $errors;
 
 main <top> {
     apply-templates;
+    
     if ($errors) {
         <errors> {
             copy-of $errors;
@@ -24,13 +25,16 @@ match author {
     } else if ($age <= 40) {
         set $problem = "died too young";
     }
+    
     if (life-span/died - life-span/born > 65) {
         set $problem = "lived too long";
     }
-    if (not($problem) && life-span/born < 1900) {
+    
+    if (!$problem && life-span/born < 1900) {
         set $problem = "ancient history";
         set $tag = " (c. " _ life-span/born _ ")";
     }
+    
     if ($problem) {
         append $errors += <error> {
             <name> name/first _ " " _ name/last;

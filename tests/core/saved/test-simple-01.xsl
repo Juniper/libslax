@@ -35,10 +35,8 @@
             <!-- Unsupported in libxslt -->
           </xsl:number>
         </two>
-        <!-- 
-	     * The following substatements of 'number' can only appear if
-	     * there is no argument to the number statement.
- -->
+        <!-- * The following substatements of 'number' can only appear if
+	     * there is no argument to the number statement. -->
         <three>
           <xsl:number level="any" from="h1" count="h2 | h3 | h4">
             <!-- or 'single' or 'any' -->

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <!-- 
-<?xml version="1.0" encoding="ISO-8859-1"?>
+  <!-- * <?xml version="1.0" encoding="ISO-8859-1"?>
 Copyright (C) 1999 Capella Computers Ltd.
 
 Author: Oren Ben-Kiki
@@ -9,11 +8,8 @@ Date: 1999-06-14
 
 This stylesheet is public domain. However, if you modify it or decide to use
 it as part of an XSLT benchmark/testing suite, I'd appreciate it if you let
-me know at oren@capella.co.il
-
- -->
-  <!-- 
-
+me know at oren@capella.co.il -->
+  <!-- * 
 This XSL stylesheet will convert an XML document of the form:
 
 <BoardSize>8</BoardSize>
@@ -27,9 +23,7 @@ It uses the 1999-04-21 XSLT draft version.
 xmlns:html="http://www.w3.org/TR/REC-html40"
 default-space="strip"
 indent-results="no"
-result-ns="html">
-
- -->
+result-ns="html"> -->
   <xsl:output encoding="utf-8"/>
   <xsl:template match="BoardSize">
     <xsl:call-template name="PlaceQueenInRow">
@@ -104,7 +98,7 @@ result-ns="html">
       </xsl:when>
       <xsl:otherwise>
         <xsl:variable name="NextQueen" select="substring-before($TestQueens, &quot;-&quot;)"/>
-        <xsl:if test="not($Column = $NextQueen + $Offset) and not($Column = $NextQueen - $Offset)">
+        <xsl:if test="not(($Column = $NextQueen + $Offset)) and not(($Column = $NextQueen - $Offset))">
           <xsl:call-template name="TestQueenPosition">
             <xsl:with-param name="BoardSize" select="$BoardSize"/>
             <xsl:with-param name="PlacedQueens" select="$PlacedQueens"/>
@@ -150,7 +144,7 @@ result-ns="html">
   <xsl:template name="PrintBoardCell">
     <xsl:param name="CellsLeft"/>
     <xsl:param name="QueenCell"/>
-    <xsl:if test="not($CellsLeft = 0)">
+    <xsl:if test="not(($CellsLeft = 0))">
       <xsl:element name="TD">
         <xsl:choose>
           <xsl:when test="$QueenCell = 0">

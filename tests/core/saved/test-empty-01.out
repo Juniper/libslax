@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<one:root xmlns:one="http://one.example.org" xmlns:two="http://two.example.org" xmlns:three="http://three.example.org" xmlns="http://six.example.com">
+<one:root xmlns="http://six.example.com" xmlns:one="http://one.example.org" xmlns:two="http://two.example.org" xmlns:three="http://three.example.org">
   <element1 xmlns="http://four.example.com">
     <element2>Content 2</element2>
   </element1>

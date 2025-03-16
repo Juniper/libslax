@@ -412,6 +412,26 @@ slaxStringNoSpace (int ttype)
 }
 
 static int
+slaxStringIsOperator (int ttype)
+{
+    switch (ttype) {
+    case L_COLON:
+    case L_DAMPER:
+    case L_DVBAR:
+    case L_EQUALS:
+    case L_MINUS:
+    case L_PLUS:
+    case L_QUESTION:
+    case L_STAR:
+    case L_UNDERSCORE:
+	return TRUE;
+
+    default:
+	return FALSE;
+    }
+}
+
+static int
 slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
 {
     /*
@@ -428,11 +448,8 @@ slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
 	trim = TRUE;	/* foo(1, 2, 3) */
 	comma = TRUE;
 
-    } else if ((last_ttype == L_PLUS || last_ttype == L_MINUS
-		|| last_ttype == L_STAR || last_ttype == L_UNDERSCORE
-		|| last_ttype == L_QUESTION || last_ttype == L_COLON)
-	       && this_ttype == L_OPAREN)
-	trim = FALSE;	/*  */
+    } else if (slaxStringIsOperator(last_ttype) && this_ttype == L_OPAREN)
+	trim = FALSE;	/* "&& (" */
 
     else if (last_ttype == L_CBRACK && this_ttype == L_OBRACK)
 	trim = TRUE;		/* between predicates */
@@ -489,6 +506,52 @@ slaxStringMark (char *mp, int markp, int count, int pre)
     return mp;
 }
 
+/*
+ * Wake thru the string looking to decide if we should drop the parens
+ * for a "not(x)" expression.  We're trying to allow "!x" and "!a/b/c"
+ * and "!func(a | b)", etc, but to keep the parens on things like
+ * "not(a | b)".
+ */
+static slax_string_t *
+slaxStringNotSkipParens (slax_string_t *ssp)
+{
+    ssp = ssp->ss_next;		/* Skip the 'not' */
+
+    if (ssp->ss_ttype != L_OPAREN)
+	return NULL;
+
+    int depth = 1;
+    for (ssp = ssp->ss_next; ssp; ssp = ssp->ss_next) {
+	switch (ssp->ss_ttype) {
+
+	case L_OPAREN:
+	    depth += 1;		/* Track our depth */
+	    break;
+
+	case L_CPAREN:
+	    depth -= 1;		/* Track our depth */
+	    if (depth == 0)	/* End of our "not(XXX)" */
+		return ssp;
+	    break;
+
+	case L_AT:
+	case L_SLASH:
+	case T_VAR:
+	case T_BARE:
+	case T_FUNCTION_NAME:
+	    /* The only acceptable tokens at the "top level" */
+	    break;
+
+	default:
+	    /* Anything else at the "top level" needs parens */
+	    if (depth == 1)
+		return NULL;
+	}
+    }
+
+    return NULL;
+}
+
 /**
  * Build a single string out of the string segments hung off "start".
  *
@@ -519,8 +582,20 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 	mp[bufsiz - 1] = '\0';
     }
 
+    slax_string_t *ignore_this_close_paren = NULL;
+
     for (ssp = start; ssp != NULL; ssp = ssp->ss_next) {
 	int ttype = ssp->ss_ttype;
+
+	if (ignore_this_close_paren == ssp) {
+	    /*
+	     * We're looking at the close paren of a "not(x)" that
+	     * we're turning into a "!x", so we need to drop this
+	     * close paren.
+	     */
+	    ignore_this_close_paren = NULL;
+	    continue;
+	}
 
 	if (first) {
 	    first = FALSE;
@@ -533,6 +608,23 @@ slaxStringCopyMarked (char *buf, int bufsiz, char *marks,
 
 	str = ssp->ss_token;
 	slen = strlen(str);
+
+	if ((flags & SSF_NOT) && ttype == T_FUNCTION_NAME
+	    && slen == 3 && streq(str, "not")) {
+	    /* Turn "not(x)" into "!x" and "not(a && b)" into "!(a && b)" */
+	    *bp++ = '!';
+	    len += 1;
+
+	    if (mp)
+		*mp++ = '!';
+
+	    ignore_this_close_paren = slaxStringNotSkipParens(ssp);
+	    if (ignore_this_close_paren)
+		ssp = ssp->ss_next;
+
+	    continue;
+	}
+
 	len += slen + 1;	/* One for space or NUL */
 
 	if ((flags & SSF_QUOTES) && ttype == T_QUOTED)

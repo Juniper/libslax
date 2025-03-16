@@ -8,6 +8,7 @@ main <data> {
     <val> slax:ends-with("testing", "ingg");
     <val> slax:ends-with("testing", "g");
     <val> slax:ends-with("testing", "n");
+    
     if ($resolve) {
         var $x = slax:get-host($host);
         

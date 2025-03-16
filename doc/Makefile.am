@@ -43,7 +43,7 @@ INPUT = slax.txt
 
 QUICKREF = slax-quick-reference
 
-EXTRA_DIST = \
+OLD_EXTRA_DIST = \
     ${INPUT} \
     ${OUTPUT}.html \
     ${OUTPUT}.txt \
@@ -70,7 +70,7 @@ OXTRADOC_SRC_FILES = \
     ${OXTRADOC_COMMON_FILES} \
     oxtradoc/oxtradoc.in
 
-EXTRA_DIST += ${OXTRADOC_SRC_FILES}
+OLD_EXTRA_DIST += ${OXTRADOC_SRC_FILES}
 
 doc docs: html
 
@@ -90,7 +90,7 @@ ${OUTPUT}.html
 
 OXTRADOC_INSTALL_DIR = ${DESTDIR}${prefix}/share/oxtradoc
 
-install-data-hook:
+old-install-data-hook:
 	@echo "Installing oxtradoc ... "
 	@-mkdir -p ${OXTRADOC_INSTALL_DIR}
 	@for file in ${OXTRADOC_INSTALL_FILES} ; do \
@@ -107,7 +107,7 @@ install-data-hook:
 	@${RM} -f ${DESTDIR}${bindir}/oxtradoc
 	@${LN_S} ${prefix}/share/oxtradoc/oxtradoc ${DESTDIR}${bindir}/oxtradoc
 
-uninstall-hook:
+old-uninstall-hook:
 	@echo "Uninstalling oxtradoc ... "
 	@for file in ${OXTRADOC_INSTALL_FILES} ; do \
 		${RM} -f ${OXTRADOC_INSTALL_DIR}/`basename $$file` ; \

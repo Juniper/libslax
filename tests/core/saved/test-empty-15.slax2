@@ -2,12 +2,43 @@ version 1.2;
 
 mvar $test = "global";
 
+match test {
+    if (!a) {
+        <z1>;
+    
+    } else if (!a && !b && !c || !d) {
+        <z>;
+    
+    } else if (!(a && b && c)) {
+        <y>;
+    
+    } else if (!(a && b && c)) {
+        <x>;
+    
+    } else if (!a/b/c) {
+        <w>;
+    
+    } else if (!(child::b)) {
+        <v>;
+    
+    } else if (!(a/b/c[d])) {
+        <u>;
+    
+    } else if (!a + b + c) {
+        <t>;
+    
+    } else if (!a/b/@c) {
+        <s>;
+    }
+}
+
 main {
     append $test += "-yes";
     var $t1 = $test;
     
     <top> {
         <t1> $t1;
+        
         if (true()) {
             mvar $test = "local1";
             append $test += "-yes";
@@ -15,6 +46,7 @@ main {
             
             <t2> $t2;
         }
+        
         if (true()) {
             mvar $test = "local2";
             append $test += "-yes";

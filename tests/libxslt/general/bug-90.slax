@@ -1,14 +1,16 @@
 version 1.2;
 
 /*
-============================================================
-This is a stylesheet that will create, for each input <fruit> element,
-two output elements - <new-fruit1> and <new-fruit2> , each of
-which should wrap the content of the the input fruit/site element
-in a CDATA block.
-<new-fruit1> does this 'properly' via  cdata-section-elements
-<new-fruit2> does it with a workaround named template 'wrap-cdata'
-============================================================
+ * 
+ * ============================================================
+ * This is a stylesheet that will create, for each input <fruit> element,
+ * two output elements - <new-fruit1> and <new-fruit2> , each of
+ * which should wrap the content of the the input fruit/site element
+ * in a CDATA block.
+ * <new-fruit1> does this 'properly' via  cdata-section-elements
+ * <new-fruit2> does it with a workaround named template 'wrap-cdata'
+ * ============================================================
+ * 
  */
 output-method xml {
     indent "yes";
@@ -29,15 +31,20 @@ match fruit-sites/fruit {
         }
     }
 }
+
 /* Wrap $content in a CDATA block */
 template wrap-cdata ($content) {
     uexpr "<![CDATA[";
     
     /*
+     * 
+     * 
      */
     uexpr $content;
     
     /*
+     * 
+     * 
      */
     uexpr "]]>";
 }

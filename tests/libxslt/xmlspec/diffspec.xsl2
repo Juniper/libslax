@@ -18,8 +18,7 @@ If you want to turn off the highlighting of differences, use this
 stylesheet, but set show.diff.markup to 0.
 
 Using the original xmlspec stylesheet with @diff markup will cause
-@diff=del text to be presented.
- -->
+@diff=del text to be presented. -->
   <!-- ChangeLog:
 25 Sep 2000: (Norman.Walsh@East.Sun.COM)
 - Use inline diff markup (as opposed to block) for name and
@@ -32,8 +31,7 @@ affiliation
 26 Jul 2000: (Norman.Walsh@East.Sun.COM)
 - Update pointer to latest xmlspec-stylesheet.
 21 Jul 2000: (Norman.Walsh@East.Sun.COM)
-- Initial version
- -->
+- Initial version -->
   <xsl:import href="xmlspec.xsl"/>
   <xsl:param name="show.diff.markup" select="&quot;0&quot;"/>
   <xsl:param name="additional.css">
@@ -82,7 +80,7 @@ td.diff-off   {  }
           <xsl:apply-imports/>
         </span>
       </xsl:when>
-      <xsl:when test="ancestor::p and not(self::p)">
+      <xsl:when test="ancestor::p and not((self::p))">
         <span class="diff-{$diff}">
           <xsl:apply-imports/>
         </span>

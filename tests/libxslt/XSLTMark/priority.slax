@@ -15,6 +15,7 @@ match node {
                 }
             }
         }
+        
         if (right) {
             <right> {
                 apply-templates right/node {
@@ -28,11 +29,12 @@ match node {
 match * { }
 
 match node {
-    if ((left && not(right)) ||(left/node/@key < right/node/@key)) {
+    if ((left && !right) || (left/node/@key < right/node/@key)) {
         <node key=left/node/@key> {
             <left> {
                 apply-templates left/node;
             }
+            
             if (right) {
                 <right> {
                     apply-templates right/node {
