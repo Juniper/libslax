@@ -281,8 +281,8 @@ slaxIsXslElement (xmlNodePtr nodep, const char *name)
 static const char **
 slaxParens (slax_writer_t *swp)
 {
-    static const char *all_parens[] = { "", "", "(", ")" };
-    const char **parens = slaxWantParens(swp) ? all_parens + 2 : all_parens;
+    static const char *all_parens[] = { "", "", " {", "(", ")", ") {" };
+    const char **parens = slaxWantParens(swp) ? all_parens + 3 : all_parens;
 
     return parens;
 }
@@ -1005,7 +1005,8 @@ fail:
  * continuation lines.
  */
 static int
-slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
+slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
+			 int extra, char *marks)
 {
     int line_width = swp->sw_width;
 
@@ -1018,7 +1019,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
     char *bp = buf;
     char *mp = marks;
 
-    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent;
+    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent - extra;
     const int continuation = slaxIndent * SLAX_CONTINUATION;
     int next_length = starting_length - continuation;
 
@@ -1111,7 +1112,8 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len, char *marks)
  * with proper indentation, etc.
  */
 static int
-slaxWriteExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
+slaxWriteExpression (slax_writer_t *swp, xmlNodePtr nodep,
+		     const char *xpath, const char *trailer, int change)
 {
     unsigned flags = SSF_QUOTES | SSF_ESCAPE | SSF_NOT;
     slax_string_t *ssp;
@@ -1159,7 +1161,13 @@ slaxWriteExpression (slax_writer_t *swp, xmlNodePtr nodep, const char *xpath)
     slaxLog("slax: xpath conversion: '%s'", buf);
     slaxLog("slax: xpath marks.....: '%s'", marks);
 
-    int rc = slaxWriteEmitExpression(swp, buf, len, marks);
+    int extra = trailer ? strlen(trailer) : 0;
+    int rc = slaxWriteEmitExpression(swp, buf, len, extra, marks);
+
+    if (trailer) {
+	slaxWrite(swp, trailer);
+	slaxWriteNewline(swp, change);
+    }
 
     slaxStringFree(ssp);
     xmlFreeAndEasy(marks);
@@ -1367,7 +1375,7 @@ slaxWriteContent (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 		    if (!first)
 			slaxWrite(swp, " _ ");
 		    else first = FALSE;
-		    slaxWriteExpression(swp, nodep, sel);
+		    slaxWriteExpression(swp, nodep, sel, NULL, 0);
 		    xmlFreeAndEasy(sel);
 		}
 
@@ -1740,10 +1748,11 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 		slaxWrite(swp, "param $%s%s", 
 			  rname, sel ? " = " : "");
 		if (sel)
-		    slaxWriteExpression(swp, childp, sel);
-
-		slaxWrite(swp, ";");
-		slaxWriteNewline(swp, 0);
+		    slaxWriteExpression(swp, childp, sel, ";", 0);
+		else {
+		    slaxWrite(swp, ";");
+		    slaxWriteNewline(swp, 0);
+		}
 
 	    } else {
 		if (slaxWriteTemplateNeedsNewline(swp, rname, sel)) {
@@ -1759,7 +1768,7 @@ slaxWriteNamedTemplateParams (slax_writer_t *swp, xmlDocPtr docp,
 			  rname, sel ? " = " : "");
 		first = FALSE;
 		if (sel) {
-		    slaxWriteExpression(swp, childp, sel);
+		    slaxWriteExpression(swp, childp, sel, NULL, 0);
 		}
 	    }
 
@@ -1894,7 +1903,7 @@ slaxWriteTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
 	} else {
 	    slaxWrite(swp, "match ");
-	    slaxWriteExpression(swp, nodep, match);
+	    slaxWriteExpression(swp, nodep, match, NULL, 0);
 	}
 
     } else {
@@ -1947,9 +1956,7 @@ static void
 slaxWriteFunctionResult (slax_writer_t *swp, xmlNodePtr nodep, char *sel)
 {
     slaxWrite(swp, "result ");
-    slaxWriteExpression(swp, nodep, sel);
-    slaxWrite(swp, ";");
-    slaxWriteNewline(swp, 0);
+    slaxWriteExpression(swp, nodep, sel, ";", 0);
 }
 
 static int
@@ -2040,9 +2047,7 @@ slaxWriteValueOf (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
     int disable_escaping = slaxIsDisableOutputEscaping(nodep);
 
     slaxWrite(swp, disable_escaping ? "uexpr " : "expr ");
-    slaxWriteExpression(swp, nodep, sel);
-    slaxWrite(swp, ";");
-    slaxWriteNewline(swp, 0);
+    slaxWriteExpression(swp, nodep, sel, ";", 0);
 
     xmlFreeAndEasy(sel);
 }
@@ -2188,14 +2193,11 @@ slaxWriteForLoop (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr outer_var,
     slaxWriteBlankline(swp);
     if (!slaxWantParens(swp)) {
 	slaxWrite(swp, "for $%s in ", cp);
-	slaxWriteExpression(swp, outer_for, expr);
-	slaxWrite(swp, " {");
+	slaxWriteExpression(swp, outer_for, expr, " {", NEWL_INDENT);
     } else {
 	slaxWrite(swp, "for $%s (", cp);
-	slaxWriteExpression(swp, outer_for, expr);
-	slaxWrite(swp, ") {");
+	slaxWriteExpression(swp, outer_for, expr, ") {", NEWL_INDENT);
     }
-    slaxWriteNewline(swp, NEWL_INDENT);
 
     xmlFree(cp);
     xmlFree(expr);
@@ -2554,15 +2556,17 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    xmlFreeAndEasy(expr);
 	    expr = contents;
 	    operator = ":=";
+
 	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
 	    slaxWriteValue(swp, expr); /* Might be 'contents' */
+	    slaxWrite(swp, ";");
+	    slaxWriteNewline(swp, 0);
+
 	} else {
 	    slaxWrite(swp, "%s $%s %s ", tag, aname, operator);
-	    slaxWriteExpression(swp, nodep, selval);
+	    slaxWriteExpression(swp, nodep, selval, ";", 0);
 	}
 
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
 	xmlFreeAndEasy(expr);
 
     } else {
@@ -2610,9 +2614,7 @@ slaxWriteTraceStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 
     } else if (sel) {
 	slaxWrite(swp, "trace ");
-	slaxWriteExpression(swp, nodep, sel);
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
+	slaxWriteExpression(swp, nodep, sel, ";", 0);
 
     } else {
 	slaxWrite(swp, "trace { }");
@@ -2630,9 +2632,7 @@ slaxWriteWhileStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
     const char **parens = slaxParens(swp);
 
     slaxWrite(swp, "while %s", parens[0]);
-    slaxWriteExpression(swp, nodep, expr);
-    slaxWrite(swp, "%s {", parens[1]);
-    slaxWriteNewline(swp, NEWL_INDENT);
+    slaxWriteExpression(swp, nodep, expr, parens[2], NEWL_INDENT);
 
     xmlFreeAndEasy(expr);
 
@@ -2680,9 +2680,7 @@ slaxWriteMvarStmt (slax_writer_t *swp, xmlDocPtr docp UNUSED,
 
     } else if (sel) {
 	slaxWrite(swp, "%s $%s %s ", sn, name, op);
-	slaxWriteExpression(swp, nodep, sel);
-	slaxWrite(swp, ";");
-	slaxWriteNewline(swp, 0);
+	slaxWriteExpression(swp, nodep, sel, ";", 0);
 
     } else {
 	slaxWrite(swp, "%s $%s %s { }", sn, name, op);
@@ -2821,23 +2819,29 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     char *mode = slaxGetAttrib(nodep, ATT_MODE);
     char *sel = slaxGetAttrib(nodep, ATT_SELECT);
     xmlNodePtr childp;
+    int has_no_contents = (nodep->children == NULL
+			&& mode == NULL && nodep->nsDef == NULL);
+    const char *trailer = has_no_contents ? ";" : " {";
+    int change = has_no_contents ? 0 : NEWL_INDENT;
 
     slaxWrite(swp, "apply-templates");
     if (sel) {
 	slaxWrite(swp, " ");
-	slaxWriteExpression(swp, nodep, sel);
+	slaxWriteExpression(swp, nodep, sel, trailer, change);
 
 	xmlFreeAndEasy(sel);
-    }
 
-    if (nodep->children == NULL && mode == NULL && nodep->nsDef == NULL) {
+    } else if (has_no_contents) {
 	slaxWrite(swp, ";");
 	slaxWriteNewline(swp, 0);
-	return;
+
+    } else {
+	slaxWrite(swp, " {");
+	slaxWriteNewline(swp, NEWL_INDENT);
     }
 
-    slaxWrite(swp, " {");
-    slaxWriteNewline(swp, NEWL_INDENT);
+    if (has_no_contents)
+	return;
 
     if (mode) {
 	slaxWrite(swp, "mode \"%s\";", mode);
@@ -2866,9 +2870,7 @@ slaxWriteApplyTemplates (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	    } else {
 		slaxWrite(swp, "with $%s = ", name);
 		if (sel) {
-		    slaxWriteExpression(swp, childp, sel);
-		    slaxWrite(swp, ";");
-		    slaxWriteNewline(swp, 0);
+		    slaxWriteExpression(swp, childp, sel, ";", 0);
 
 		} else if (childp->children) {
 		    int need_braces = slaxNeedsBlock(childp);
@@ -2958,7 +2960,7 @@ slaxWriteCallTemplate (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 		if (!slaxWriteIsEltArg(swp, sel)
 		    || !slaxWriteEltArg(swp, docp, childp, sel)) {
 
-		    slaxWriteExpression(swp, nodep, sel);
+		    slaxWriteExpression(swp, nodep, sel, NULL, 0);
 		}
 
 	    } else slaxWrite(swp, "''");
@@ -3014,12 +3016,9 @@ slaxWriteIf (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     slaxWriteBlankline(swp);
     slaxWrite(swp, "if %s", parens[0]);
-    slaxWriteExpression(swp, nodep, test);
-    slaxWrite(swp, "%s {", parens[1]);
+    slaxWriteExpression(swp, nodep, test, parens[2], NEWL_INDENT);
 
     xmlFreeAndEasy(test);
-
-    slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
@@ -3043,11 +3042,8 @@ slaxWriteForEach (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 
     slaxWriteBlankline(swp);
     slaxWrite(swp, "for-each %s", parens[0]);
-    slaxWriteExpression(swp, nodep, sel);
-    slaxWrite(swp, "%s {", parens[1]);
+    slaxWriteExpression(swp, nodep, sel, parens[2], NEWL_INDENT);
     xmlFreeAndEasy(sel);
-
-    slaxWriteNewline(swp, NEWL_INDENT);
 
     slaxWriteChildren(swp, docp, nodep, FALSE, TRUE);
 
@@ -3062,10 +3058,8 @@ slaxWriteCopyOf (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 
     if (sel) {
 	slaxWrite(swp, "copy-of ");
-	slaxWriteExpression(swp, nodep, sel);
-	slaxWrite(swp, ";");
+	slaxWriteExpression(swp, nodep, sel, ";", 0);
 	xmlFree(sel);
-	slaxWriteNewline(swp, 0);
     }
 }
 
@@ -3487,12 +3481,9 @@ slaxWriteChoose (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 		
 	    slaxWrite(swp, "%sif %s", first ? "" : "} else ",
 		      parens[0]);
-	    slaxWriteExpression(swp, nodep, test);
-	    slaxWrite(swp, "%s {", parens[1]);
+	    slaxWriteExpression(swp, nodep, test, parens[2], NEWL_INDENT);
 
 	    xmlFreeAndEasy(test);
-
-	    slaxWriteNewline(swp, NEWL_INDENT);
 
 	    slaxWriteChildren(swp, docp, childp, FALSE, TRUE);
 
