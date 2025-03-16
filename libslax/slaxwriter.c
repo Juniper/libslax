@@ -1019,33 +1019,25 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
     char *bp = buf;
     char *mp = marks;
 
-    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent - extra;
+    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent + extra;
     const int continuation = slaxIndent * SLAX_CONTINUATION;
-    int next_length = starting_length - continuation;
+    int next_length = starting_length + continuation;
 
     /* If the line is too long already, see what we can do about it */
-    if (starting_length > line_width / 2) { /* Half way */
-	next_length = 3 * slaxIndent;	    /* 2 is too little, 4 is too much */
+    int too_far = (line_width >> 1) + (line_width >> 2); /* 3/4 of width */
+    if (starting_length > too_far) {
+	/*
+	 * We are running out of space and at risk of making something
+	 * ugly.  We've only got 1/4 of the line free, so we are
+	 * willing to overflow by a bit, rather than end up putting
+	 * one token per line.  It's a desperate choice of bad
+	 * readability.
+	 */
+	if (starting_length > line_width - 3) /* Too close to the end */
+	    goto just_print_it;
 
-	if (starting_length > line_width - 3) { /* Too close to the end */
-	    if (len < line_width) {
-		slaxWriteValue(swp, buf);
-		return TRUE;
-	    }
-
-	    /*
-	     * We are too close to the width limit, so we'll write
-	     * what we have in the buffer now and  then indent
-	     * 'starting_length' characters.  Trim the trailing space.
-	     */
-	    if (swp->sw_cur > 0 && swp->sw_buf[swp->sw_cur - 1] == ' ') {
-		swp->sw_cur -= 1; /* Trim trailing space */
-	    }
-
-	    slaxWriteNewline(swp, 0);
-	    starting_length = next_length;
-	    slaxWrite(swp, "%*s", continuation, "");
-	}
+	/* Shorten next_length to give some hope, but just a little ... */
+	next_length = slaxIndent; /* Minimal additional indentation */
     }
 
     /*
@@ -1067,22 +1059,15 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
 	char *cp = slaxMemrnchr(mp, ' ', this_width);
 	if (cp == NULL || cp == mp) {     /* No breaks?  */
 	    /*
-	     * Okay, not breaks in the first 'this_width' characters
+	     * Okay, no breaks in the first 'this_width' characters
 	     * looking backward, but let's look forward, starting at
 	     * that limit.
 	     */
 	    cp = slaxMemnchr(mp + this_width, ' ', len - this_width);
-	    if (cp == NULL)
-		goto just_print_it;
+	    if (cp == NULL)	/* No spaces remaining in the line */
+		goto just_print_it; /* ... so just print it */
 
-	    count = cp - mp;
-	    int remaining = line_width - starting_length;
-	    if (starting_length > line_width / 2 && count >= remaining) {
-		slaxWriteNewline(swp, 0);
-		starting_length = next_length;
-		slaxWrite(swp, "%*s", continuation, "");
-		continue;
-	    }
+	    count = cp - mp;	/* Update count for new mark */
 	}
 
 	/* We want to break _after_ a comma */
