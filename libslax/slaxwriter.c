@@ -1548,6 +1548,46 @@ slaxWriteJsonElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 }
 
 static void
+slaxWriteAttributes (slax_writer_t *swp, xmlNodePtr nodep, int *must_bracesp)
+{
+    const char *pref = NULL;
+    xmlAttrPtr attrp;
+
+    for (attrp = nodep->properties; attrp; attrp = attrp->next) {
+	static char ext_attr[] = ATT_EXTENSION_ELEMENT_PREFIXES;
+
+	if (slaxWriteIsXmlns(attrp)) /* Skip namespaces */ {
+	    *must_bracesp = TRUE;
+	    continue;
+	}
+
+	if (slaxIsXslAttr(attrp)
+	    && streq((const char *) attrp->name, ext_attr))
+	    continue;
+
+	if (attrp->children && attrp->children->content) {
+	    char *content = (char *) attrp->children->content;
+
+	    /*
+	     * The attribute might be an attribute value template,
+	     * which xslt uses as a simple concatenation and xpath
+	     * interpretation mechanism.  We need to recode it
+	     * according to SLAX syntax.
+	     */
+	    content = slaxMakeAttribValueTemplate(swp, nodep, content);
+
+	    pref = (attrp->ns && attrp->ns->prefix)
+		? (const char *) attrp->ns->prefix : NULL;
+	    slaxWrite(swp, " %s%s%s%s=%s", pref ?: "", pref ? ":" : "",
+		      attrp->name, slaxSpacesAroundAttributeEquals,
+		      slaxSpacesAroundAttributeEquals);
+	    slaxWrite(swp, "%s", content ?: UNKNOWN_EXPR);
+	    xmlFreeAndEasy(content);
+	}
+    }
+}
+
+static void
 slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 		      int trailing_newline, int must_braces)
 {
@@ -1589,42 +1629,8 @@ slaxWriteElementFull (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
 
     slaxWrite(swp, "<%s%s%s", pref ?: "", pref ? ":" : "", nodep->name);
 
-    if (nodep->properties) {
-	xmlAttrPtr attrp;
-
-	for (attrp = nodep->properties; attrp; attrp = attrp->next) {
-	    static char ext_attr[] = ATT_EXTENSION_ELEMENT_PREFIXES;
-
-	    if (slaxWriteIsXmlns(attrp)) /* Skip namespaces */ {
-		must_braces = TRUE;
-		continue;
-	    }
-
-	    if (slaxIsXslAttr(attrp)
-		&& streq((const char *) attrp->name, ext_attr))
-		continue;
-
-	    if (attrp->children && attrp->children->content) {
-		char *content = (char *) attrp->children->content;
-
-		/*
-		 * The attribute might be an attribute value template,
-		 * which xslt uses as a simple concatenation and xpath
-		 * interpretation mechanism.  We need to recode it
-		 * according to SLAX syntax.
-		 */
-		content = slaxMakeAttribValueTemplate(swp, nodep, content);
-
-		pref = (attrp->ns && attrp->ns->prefix)
-		    ? (const char *) attrp->ns->prefix : NULL;
-		slaxWrite(swp, " %s%s%s%s=%s", pref ?: "", pref ? ":" : "",
-			  attrp->name, slaxSpacesAroundAttributeEquals,
-			  slaxSpacesAroundAttributeEquals);
-		slaxWrite(swp, "%s", content ?: UNKNOWN_EXPR);
-		xmlFreeAndEasy(content);
-	    }
-	}
-    }
+    if (nodep->properties)
+	slaxWriteAttributes(swp, nodep, &must_braces);
 
     slaxWrite(swp, ">");
 
