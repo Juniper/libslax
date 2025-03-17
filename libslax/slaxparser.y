@@ -1847,11 +1847,14 @@ attribute :
 	q_name L_EQUALS
 		{
 		    ALL_KEYWORDS_OFF();
+		    slax_data->sd_flags |= SDF_HANDLING_ATTRIB;
 		    $$ = NULL;
 		}
 	    xpath_lite_value
 		{
-		    slaxAttribAddValue(slax_data, $1->ss_token, $4);
+		    if ($4)
+			slaxAttribAddValue(slax_data, $1->ss_token, $4);
+		    slax_data->sd_flags &= ~SDF_HANDLING_ATTRIB;
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
 		}
