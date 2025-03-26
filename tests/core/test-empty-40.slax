@@ -8,6 +8,11 @@ var $mine := {
 }
 
 main <top> {
+    var $two = "two";
+    var $one = $two ?: 10;
+
+    <three four=$one ?: 10>;
+
     <one> slax:join(":", $mine);
     <two> slax:join("%20", "this", "is", "the", "end", $mine/d);
     <three> slax:join(/nothing, $mine);

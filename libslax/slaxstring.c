@@ -1198,16 +1198,6 @@ slaxTernaryRewrite (slax_data_t *sdp UNUSED, slax_string_t *scond,
     slaxLog("slaxTernaryRewrite: %s/%s/%s", scond ? scond->ss_token : "",
 	    strue ? strue->ss_token : "", sfalse ? sfalse->ss_token : "");
 
-    if (sdp->sd_flags & SDF_HANDLING_ATTRIB) {
-	const char *token = scond->ss_token ?: "(unknown)";
-	slaxError("%s:%d: slax: lex: "
-		  "ternary operations are not supported in attributes "
-		  "(near token '%s')",
-		  sdp->sd_filename, sdp->sd_line, token);
-	sdp->sd_errors += 1;
-	return NULL;
-    }
-
     slax_string_t *tsp = slaxStringLiteral(varname, M_TERNARY);
     slax_string_t *esp = slaxStringLiteral(varname, M_TERNARY_END);
     slax_string_t *nsp;
