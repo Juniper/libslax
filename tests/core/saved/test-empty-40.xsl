@@ -9,6 +9,31 @@
   <xsl:variable xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="mine" select="slax-ext:node-set($mine-temp-1)"/>
   <xsl:template match="/">
     <top>
+      <xsl:variable name="two" select="&quot;two&quot;"/>
+      <xsl:variable name="slax-ternary-1">
+        <xsl:variable name="slax-ternary-1-cond" select="$two"/>
+        <xsl:choose>
+          <xsl:when test="$slax-ternary-1-cond">
+            <xsl:copy-of select="$slax-ternary-1-cond"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:copy-of select="10"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="slax:value($slax-ternary-1)"/>
+      <xsl:variable name="slax-ternary-2">
+        <xsl:variable name="slax-ternary-2-cond" select="$one"/>
+        <xsl:choose>
+          <xsl:when test="$slax-ternary-2-cond">
+            <xsl:copy-of select="$slax-ternary-2-cond"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:copy-of select="10"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+      <three four="{slax:value($slax-ternary-2)}"/>
       <one>
         <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:join(&quot;:&quot;, $mine)"/>
       </one>
