@@ -68,7 +68,7 @@ struct slax_data_s {
 #define SDF_SLSH_COMMENTS	(1<<8) /* Allow C++ style comments */
 #define SDF_SLSH_OPEN		(1<<9) /* C++ style comments is open */
 #define SDF_STRING		(1<<10) /* Parse a YANG string argument */
-
+#define SDF_HANDLING_ATTRIB	(1<<11) /* Currently in attribute context */
 
 #define SDF_NO_KEYWORDS (SDF_NO_SLAX_KEYWORDS | SDF_NO_XPATH_KEYWORDS)
 
