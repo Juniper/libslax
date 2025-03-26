@@ -63,6 +63,7 @@ static char slaxEltArgCallP2[] = EXT_PREFIX ":node-set";
 
 #define SLAX_CONTINUATION 2 /* Multiplier for indent of continuation lines  */
 #define SLAX_FUZZ 10	    /* Fuzz factor for indentation */
+#define SLAX_FUZZ_2 4	    /* Another fuzz factor that helps us feel safe */
 
 static inline int
 slaxV11 (slax_writer_t *swp)
@@ -1018,9 +1019,11 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
 
     char *bp = buf;
     char *mp = marks;
+    char *cp;
 
-    int starting_length = swp->sw_cur + swp->sw_indent * slaxIndent + extra;
-    const int continuation = slaxIndent * SLAX_CONTINUATION;
+    int base_length = swp->sw_indent * slaxIndent;
+    int starting_length = swp->sw_cur + base_length + extra;
+    int continuation = slaxIndent * SLAX_CONTINUATION;
     int next_length = starting_length + continuation;
 
     /* If the line is too long already, see what we can do about it */
@@ -1036,8 +1039,24 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
 	if (starting_length > line_width - 3) /* Too close to the end */
 	    goto just_print_it;
 
-	/* Shorten next_length to give some hope, but just a little ... */
-	next_length = slaxIndent; /* Minimal additional indentation */
+	/*
+	 * The minimum continuation has to be adjusted, to shorten
+	 * next_length to give us some hope, if just a little ...
+	 */
+	continuation = slaxIndent;
+	next_length = base_length + continuation;
+
+	cp = slaxMemnchr(mp, ' ', len);
+	int first_length = cp ? cp - mp : 0;
+
+	if (line_width - (swp->sw_cur + first_length) > SLAX_FUZZ_2) {
+	    /*
+	     * Too much already on the line, so we just toss it out and move on
+	     */
+	    slaxWriteNewline(swp, 0);
+	    slaxWrite(swp, "%*s", continuation, "");
+	    starting_length = next_length;
+	}
     }
 
     /*
@@ -1056,7 +1075,7 @@ slaxWriteEmitExpression (slax_writer_t *swp, char *buf, int len,
 	    break;
 	}
 
-	char *cp = slaxMemrnchr(mp, ' ', this_width);
+	cp = slaxMemrnchr(mp, ' ', this_width);
 	if (cp == NULL || cp == mp) {     /* No breaks?  */
 	    /*
 	     * Okay, no breaks in the first 'this_width' characters
@@ -1547,6 +1566,37 @@ slaxWriteJsonElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep,
     }
 }
 
+/*
+ * Check if we need to write a newline; if so, do it.  Returns if we did,
+ * though I can't see anyone caring at this point.
+ */
+static int
+slaxWriteAttribCheckNewline (slax_writer_t *swp, const char *pref,
+			     const xmlChar *rname, const char *content)
+{
+    int line_width = swp->sw_width;
+    if (line_width == 0)
+	return FALSE;
+
+    const char *name = (const char *) rname;
+    int base_length = swp->sw_indent * slaxIndent;
+    int starting_length = swp->sw_cur + base_length;
+    int my_length = 0;
+
+    my_length += name ? strlen(name) : 0;
+    my_length += pref ? strlen(pref) + 1 : 0; /* 1 for colon */
+    my_length += slaxSpacesAroundAttributeEquals[0] ? 2 : 0; /* two spaces */
+    my_length += (content ? strlen(content) + 3 : 0) + 1;    /* quotes */
+
+    if (starting_length + my_length < line_width)
+	return FALSE;
+
+    slaxWriteNewline(swp, 0);
+    slaxWrite(swp, "%*s", slaxIndent * SLAX_CONTINUATION, "");
+
+    return TRUE;
+}
+
 static void
 slaxWriteAttributes (slax_writer_t *swp, xmlNodePtr nodep, int *must_bracesp)
 {
@@ -1578,6 +1628,9 @@ slaxWriteAttributes (slax_writer_t *swp, xmlNodePtr nodep, int *must_bracesp)
 
 	    pref = (attrp->ns && attrp->ns->prefix)
 		? (const char *) attrp->ns->prefix : NULL;
+
+	    slaxWriteAttribCheckNewline(swp, pref, attrp->name, content);
+
 	    slaxWrite(swp, " %s%s%s%s=%s", pref ?: "", pref ? ":" : "",
 		      attrp->name, slaxSpacesAroundAttributeEquals,
 		      slaxSpacesAroundAttributeEquals);
