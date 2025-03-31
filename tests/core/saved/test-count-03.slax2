@@ -14,9 +14,9 @@ var $zero = 0;
 main <out> {
     <count> $count;
     var $variable = "this";
-    var $test = $variable ==("this");
+    var $test = $variable == ("this");
     <test> $test;
-    var $test2 = $variable ==("th" _ $is);
+    var $test2 = $variable == ("th" _ $is);
     <test> $test2;
     <output> slax:evaluate("$variable == ('th' _ 'is')");
     <test> substring("tent", 1, 3) _ 6 - 10;
