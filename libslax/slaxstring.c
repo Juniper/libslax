@@ -398,27 +398,18 @@ slaxStringLength (slax_string_t *start, unsigned flags)
     return slaxStringLengthCheck(start, flags, NULL);
 }
 
-/*
- * Should the character be stripped of surrounding whitespace?
- */
-static int
-slaxStringNoSpace (int ttype)
-{
-    if (ttype == L_AT || ttype == L_SLASH || ttype == L_DSLASH
-	|| ttype == L_OPAREN  || ttype == L_CPAREN
-	|| ttype == L_OBRACK  || ttype == L_CBRACK)
-	return TRUE;
-    return FALSE;
-}
-
 static int
 slaxStringIsOperator (int ttype)
 {
     switch (ttype) {
+    case K_AND:
+    case K_OR:
+    case L_ASSIGN:
     case L_COLON:
     case L_DAMPER:
     case L_DVBAR:
     case L_EQUALS:
+    case L_DEQUALS:
     case L_MINUS:
     case L_PLUS:
     case L_QUESTION:
@@ -429,6 +420,23 @@ slaxStringIsOperator (int ttype)
     default:
 	return FALSE;
     }
+}
+
+/*
+ * Should the character be stripped of surrounding whitespace?
+ */
+static int
+slaxStringNoSpace (int last_ttype, int ttype)
+{
+    /* Check for "one + /two" */
+    if (ttype == L_SLASH && slaxStringIsOperator(last_ttype))
+	return FALSE;
+
+    if (ttype == L_AT || ttype == L_SLASH || ttype == L_DSLASH
+	|| ttype == L_OPAREN  || ttype == L_CPAREN
+	|| ttype == L_OBRACK  || ttype == L_CBRACK)
+	return TRUE;
+    return FALSE;
 }
 
 static int
@@ -457,8 +465,8 @@ slaxStringTrimSpace (slax_string_t *ssp, int last_ttype, char *buf, char *bp)
     else if (last_ttype == L_QUESTION && this_ttype == L_COLON)
 	trim = TRUE;
 	    
-    else if (slaxStringNoSpace(last_ttype)
-	     || slaxStringNoSpace(this_ttype)) {
+    else if (slaxStringNoSpace(0, last_ttype)
+	     || slaxStringNoSpace(last_ttype, this_ttype)) {
 	if (bp - buf >= 2 && bp[-2] != ',')
 	    trim = TRUE;	/* foo/goo[@zoo] */
 
