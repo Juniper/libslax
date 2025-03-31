@@ -113,6 +113,11 @@ run "publish packaging data to gh-pages/" "make packages"
 run "move back to develop branch" "gt br develop"
 run "pick up changes for configure.ac" "gt merge-from main"
 
+run "move back to main branch for a second" "gt br main"
+run "stop github from complaining" "gt merge-from develop"
+
+run "finally move back to develop branch" "gt br develop"
+
 run "show diffs" "gt diff ${OLD_VERSION}...${NEW_VERSION}"
 get_log_comments $OLD_VERSION $NEW_VERSION
 
