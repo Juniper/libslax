@@ -24,11 +24,11 @@
         <xsl:value-of select="$count"/>
       </count>
       <xsl:variable name="variable" select="&quot;this&quot;"/>
-      <xsl:variable name="test" select="($variable =(&quot;this&quot;))"/>
+      <xsl:variable name="test" select="($variable = (&quot;this&quot;))"/>
       <test>
         <xsl:value-of select="$test"/>
       </test>
-      <xsl:variable name="test2" select="($variable =(concat(&quot;th&quot;, $is)))"/>
+      <xsl:variable name="test2" select="($variable = (concat(&quot;th&quot;, $is)))"/>
       <test>
         <xsl:value-of select="$test2"/>
       </test>
