@@ -563,7 +563,7 @@ Behavioral Options
 
 .. _profile:
 
-.. option:: --profile
+.. option:: --profile <file>
 
   Enable profiling while the script is executing, writing the profile
   data to the given file.  This accesses the same functionality as the
@@ -578,6 +578,9 @@ Behavioral Options
   For `wall` mode, columns for "wall clock" time are added, displaying
   how much time (in seconds) was used for that line.  Refer to the
   :ref:`profiler` for additional information.
+
+  When the `--profile-mode` option is used without the `--profile`
+  option, profile output is written to the file `profile.output`.
 
 .. option:: --slax-output
 .. option:: -S
