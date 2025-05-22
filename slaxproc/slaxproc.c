@@ -1305,6 +1305,8 @@ main (int argc UNUSED, char **argv)
 		opt_profile = check_arg("profile output filename");
 
 	    } else if (opts.o_profile_mode) {
+		opt_debugger |= SDBF_PROFILE_ONLY;
+
 		const char *mode = check_arg("profile mode");
 		if (streq(mode, "brief")) {
 		    opt_debugger |= SDBF_PROFILE_BRIEF;
@@ -1393,8 +1395,12 @@ main (int argc UNUSED, char **argv)
     if (opt_json_tagging)
 	slaxJsonTagging(TRUE);
 
+    if (opt_profile == NULL && (opt_debugger & SDBF_PROFILE_ONLY))
+	opt_profile = strdup("profile.output");
+
     if (opt_profile)
 	slaxIoWriteOutputToFileStart(opt_profile);
+
 
     if (opt_log_file) {
 	FILE *fp = fopen(opt_log_file, "w");
