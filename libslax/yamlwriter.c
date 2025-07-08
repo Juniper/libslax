@@ -255,18 +255,72 @@ yamlWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
     xmlNodePtr nodep;
     int rc = 0;
 
-    const char *name = yamlName(parent);
-    const char *type = yamlAttribValue(parent, ATT_TYPE);
-    slaxLog("wc: -> [%s] [%s]", name ?: "", type ?: "");
+    struct name_group {
+        const char *name;
+        xmlNodePtr *nodes;
+        int count;
+        int alloc;
+        struct name_group *next;
+    } *groups = NULL, *grp;
 
     for (nodep = parent->children; nodep; nodep = nodep->next) {
-	if (nodep->type != XML_ELEMENT_NODE)
-	    continue;
+        if (nodep->type != XML_ELEMENT_NODE)
+            continue;
+        const char *name = yamlName(nodep);
+        if (!name)
+            continue;
 
-	yamlWriteNode(swp, nodep, flags);
+        for (grp = groups; grp; grp = grp->next)
+            if (strcmp(grp->name, name) == 0)
+                break;
+
+        if (!grp) {
+            grp = calloc(1, sizeof(*grp));
+            grp->name = name;
+            grp->alloc = 4;
+            grp->nodes = calloc(grp->alloc, sizeof(xmlNodePtr));
+            grp->next = groups;
+            groups = grp;
+        } else if (grp->count >= grp->alloc) {
+            grp->alloc *= 2;
+            grp->nodes = realloc(grp->nodes, grp->alloc * sizeof(xmlNodePtr));
+        }
+
+        grp->nodes[grp->count++] = nodep;
     }
 
-    slaxLog("wc: <- [%s] [%s]", name ?: "", type ?: "");
+    for (grp = groups; grp; grp = grp->next) {
+        const char *quote = yamlNameNeedsQuotes(grp->name, flags);
+
+        if (grp->count == 1) {
+            yamlWriteNode(swp, grp->nodes[0], flags);
+        } else {
+            slaxWrite(swp, "%s%s%s:", quote, grp->name, quote);
+            yamlWriteNewline(swp, NEWL_INDENT, flags);
+
+            for (int i = 0; i < grp->count; i++) {
+                const char *val = yamlValue(grp->nodes[i]);
+                slaxWrite(swp, "- ");
+                if (val && !yamlHasChildNodes(grp->nodes[i])) {
+                    slaxWrite(swp, "\"%s\"", val);
+                } else {
+                    yamlWriteChildren(swp, grp->nodes[i], flags);
+                }
+                yamlWriteNewline(swp, 0, flags);
+            }
+
+            slaxWriteIndent(swp, NEWL_OUTDENT);
+        }
+
+        free(grp->nodes);
+    }
+
+    while (groups) {
+        grp = groups;
+        groups = groups->next;
+        free(grp);
+    }
+
     return rc;
 }
 
