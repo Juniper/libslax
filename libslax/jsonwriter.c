@@ -137,16 +137,15 @@ jsonWriteNewline (slax_writer_t *swp, int delta, unsigned flags)
 }
 
 static int
-jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
-		       unsigned flags)
+jsonWriteNode(slax_writer_t *swp, xmlNodePtr nodep,
+                      unsigned flags)
 {
     const char *type = jsonAttribValue(nodep, ATT_TYPE);
     const char *name = jsonName(nodep);
     const char *quote = jsonNameNeedsQuotes(name, flags);
-    const char *comma = jsonNeedsComma(nodep);
 
     if (name == NULL)
-	return 0;
+        return 0;
 
     int nlen = strlen(name) + 1;
     char ename[nlen * 2];
@@ -154,79 +153,139 @@ jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
     name = ename;
 
     if (type) {
-	if (streq(type, VAL_NUMBER) || streq(type, VAL_TRUE)
-	        || streq(type, VAL_FALSE) || streq(type, VAL_NULL)) {
-	    const char *value = jsonValue(nodep);
-	    int vlen = strlen(value) + 1;
-	    char evalue[vlen * 2];
-	    jsonEscape(evalue, sizeof(evalue), value);
-	    value = evalue;
+        if (streq(type, VAL_NUMBER) || streq(type, VAL_TRUE)
+            || streq(type, VAL_FALSE) || streq(type, VAL_NULL)) {
 
-	    if (!(flags & JWF_ARRAY))
-		slaxWrite(swp, "%s%s%s: ", quote, name, quote);
-	    slaxWrite(swp, "%s%s", value, comma);
+            const char *value = jsonValue(nodep);
+            int vlen = strlen(value) + 1;
+            char evalue[vlen * 2];
+            jsonEscape(evalue, sizeof(evalue), value);
+            value = evalue;
 
-	    jsonWriteNewline(swp, 0, flags);
-	    return 0;
+            if (!(flags & JWF_ARRAY))
+                slaxWrite(swp, "%s%s%s: ", quote, name, quote);
 
-	} else if (streq(type, VAL_ARRAY)) {
-	    if (!(flags & JWF_ARRAY))
-		slaxWrite(swp, "%s%s%s: ", quote, name, quote);
-	    slaxWrite(swp, "[");
-	    jsonWriteNewline(swp, NEWL_INDENT, flags);
+            slaxWrite(swp, "%s", value);
+            return 0;
+        } else if (streq(type, VAL_ARRAY)) {
+            if (!(flags & JWF_ARRAY))
+                slaxWrite(swp, "%s%s%s: ", quote, name, quote);
 
-	    jsonWriteChildren(swp, nodep, JWF_ARRAY | flags);
-
-	    slaxWrite(swp, "]%s", comma );
-	    jsonWriteNewline(swp, NEWL_OUTDENT, flags);
-	    return 0;
-
-	} else if (streq(type, VAL_MEMBER)) {
-	    flags |= JWF_ARRAY;
-	    /* fall thru */
-	}
+            slaxWrite(swp, "[");
+            jsonWriteNewline(swp, NEWL_INDENT, flags);
+            jsonWriteChildren(swp, nodep, JWF_ARRAY | flags);
+            slaxWrite(swp, "]");
+            jsonWriteNewline(swp, NEWL_OUTDENT, flags);
+            return 0;
+        } else if (streq(type, VAL_MEMBER)) {
+            flags |= JWF_ARRAY;
+            // fall through
+        }
     }
 
+    // Object with children
     if (jsonHasChildNodes(nodep)) {
-	if (!(flags & JWF_ARRAY))
-	    slaxWrite(swp, "%s%s%s: ", quote, name, quote);
-	slaxWrite(swp, "{");
-	jsonWriteNewline(swp, NEWL_INDENT, flags);
+        if (!(flags & JWF_ARRAY))
+            slaxWrite(swp, "%s%s%s: ", quote, name, quote);
 
-	jsonWriteChildren(swp, nodep, flags & ~JWF_ARRAY);
+        slaxWrite(swp, "{");
+        jsonWriteNewline(swp, NEWL_INDENT, flags);
 
-	slaxWrite(swp, "}%s", comma);
-	jsonWriteNewline(swp, NEWL_OUTDENT, flags);
+        jsonWriteChildren(swp, nodep, flags & ~JWF_ARRAY);
 
+        slaxWrite(swp, "}");
+        jsonWriteNewline(swp, NEWL_OUTDENT, flags);
     } else {
-	const char *value = jsonValue(nodep);
-	int vlen = value ? strlen(value) + 1 : 0;
-	char evalue[vlen * 2 + 1];
-	if (value) {
-	    jsonEscape(evalue, sizeof(evalue), value);
-	    value = evalue;
-	}
+        // Leaf node
+        const char *value = jsonValue(nodep);
+        int vlen = value ? strlen(value) + 1 : 0;
+        char evalue[vlen * 2 + 1];
 
-	if (!(flags & JWF_ARRAY))
-	    slaxWrite(swp, "%s%s%s: ", quote, name, quote);
+        if (value)
+            jsonEscape(evalue, sizeof(evalue), value);
+        else
+            evalue[0] = '\0';
 
-	slaxWrite(swp, "\"%s\"%s", value ?: "", comma);
-	jsonWriteNewline(swp, 0, flags);
+        if (!(flags & JWF_ARRAY))
+            slaxWrite(swp, "%s%s%s: ", quote, name, quote);
+
+        slaxWrite(swp, "\"%s\"", value ? evalue : "");
     }
 
     return 0;
 }
 
 static int
-jsonWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
-		   unsigned flags)
+jsonWriteChildren(slax_writer_t *swp, xmlNodePtr parent,
+                                         unsigned flags)
 {
     xmlNodePtr nodep;
     int rc = 0;
 
+    struct node_group {
+        const char *name;
+        xmlNodePtr nodes[256];
+        int count;
+    };
+
+    struct node_group groups[256];
+    int group_count = 0;
+
+    // Group children by name
     for (nodep = parent->children; nodep; nodep = nodep->next) {
-	if (nodep->type == XML_ELEMENT_NODE)
-	    jsonWriteNode(swp, nodep, flags);
+        if (nodep->type != XML_ELEMENT_NODE)
+            continue;
+
+        const char *name = jsonName(nodep);
+        int i, found = 0;
+
+        for (i = 0; i < group_count; i++) {
+            if (strcmp(groups[i].name, name) == 0) {
+                groups[i].nodes[groups[i].count++] = nodep;
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found && group_count < 256) {
+            groups[group_count].name = name;
+            groups[group_count].nodes[0] = nodep;
+            groups[group_count].count = 1;
+            group_count++;
+        }
+    }
+
+    for (int i = 0; i < group_count; i++) {
+        struct node_group *grp = &groups[i];
+        const char *quote = jsonNameNeedsQuotes(grp->name, flags);
+
+        if (grp->count == 1) {
+            // Single node
+            jsonWriteNode(swp, grp->nodes[0], flags);
+        } else {
+            // Multiple nodes
+            slaxWrite(swp, "%s%s%s: [", quote, grp->name, quote);
+            jsonWriteNewline(swp, NEWL_INDENT, flags);
+
+            for (int j = 0; j < grp->count; j++) {
+                jsonWriteNode(swp, grp->nodes[j], flags | JWF_ARRAY);
+
+                if (j != grp->count - 1) {
+                    slaxWrite(swp, ",");
+		    slaxWrite(swp, " ");
+		}
+                jsonWriteNewline(swp, 0, flags);
+            }
+
+            slaxWrite(swp, "]");
+            if (i != group_count - 1)
+                slaxWrite(swp, ",");
+            jsonWriteNewline(swp, NEWL_OUTDENT, flags);
+        }
+
+        // Add comma+newline between top-level entries (if not inside array)
+        if (grp->count == 1 && i != group_count - 1)
+            slaxWrite(swp, ",\n");
     }
 
     return rc;
