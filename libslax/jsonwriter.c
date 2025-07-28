@@ -260,7 +260,7 @@ slaxJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 {
     xmlNodePtr nodep = xmlDocGetRootElement(docp);
     if (nodep == NULL) {
-        slaxLog("%s","Error: XML document has no root element.");
+        slaxLog("json-writer: XML document has no root element (ignored)");
         return -1;
     }
     return slaxJsonWriteNode(func, data, nodep, flags | JWF_ROOT);
