@@ -23,3 +23,4 @@ slaxJsonWriteDoc (slaxWriterFunc_t func, void *data, xmlDocPtr docp,
 #define JWF_PRETTY	(1<<3)	/* Pretty print (newlines) */
 
 #define JWF_OPTIONAL_QUOTES (1<<4)	/* Don't use quotes unless needed */
+#define JWF_NOCOMMA	(1<<5)		/* Don't emit a comma */
