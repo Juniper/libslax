@@ -161,6 +161,25 @@ the nodeset::
         }
     }
 
+Be aware that appending to an `mvar` affects and `var`s that may be
+referencing it, since the underlying content will have nodes appended
+to it.  The nature of `mvars` mean that appending is an optimization
+that avoids the cost of copying nodes to build a new hierarchy.  Use
+the `copy-of` statement to make a complete, deep copy::
+
+    mvar $var = <one> "one";
+    <var> { copy-of $var; }
+    append $var += "two";
+    var $save = $var;
+    var $save2 = { copy-of $var; }
+    <var> { copy-of $var; }
+    append $var += "three";
+    <var> { copy-of $var; }
+    append $var += <four> "four";
+    <var> { copy-of $var; }
+    <save> { copy-of $save; }    /* Has one, two, three, and four */
+    <save2> { copy-of $save2; }  /* Has only one and two */
+
 .. index:: RTF
 
 Result Tree Fragments

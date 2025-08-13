@@ -250,3 +250,26 @@ slaxIsXmlns (const char *name)
     char ch = name[ATT_XMLNS_LEN];
     return (ch == '\0' || ch == ':');
 }
+
+/*
+ * At times, we need to reorder a set of nodes, putting matching
+ * elements together (e.g. jsonlint, yamllint).  This structure allows
+ * that to happen.
+ */
+
+typedef struct slax_node_group_s {
+    struct slax_node_group_s *ng_next; /* Next in the linked list */
+    const char *ng_name;	/* Name of this group (or NULL) */
+    xmlNodePtr *ng_nodes;	/* Nodes with this name */
+    int ng_cur;			/* Current index */
+    int ng_size; 		/* Maximum index */
+} slax_node_group_t;
+
+/* Function that return a suitable node name */
+typedef const char *(*slax_node_group_name_fn)(xmlNodePtr);
+
+slax_node_group_t *
+slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn);
+
+void
+slaxNodeGroupFree (slax_node_group_t *groups);

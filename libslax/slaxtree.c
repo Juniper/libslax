@@ -1200,3 +1200,80 @@ slaxDumpTree (xmlNodePtr node, const char *pref, int indent)
 	    slaxDumpTree(node->children, pref, indent + 2);
     }
 }
+
+slax_node_group_t *
+slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn)
+{
+    slax_node_group_t *all_groups = NULL;
+    slax_node_group_t **groups_tail = &all_groups;
+    slax_node_group_t *grp;
+    const int NODE_GROUP_INIT_SIZE = 4;
+
+    for (xmlNodePtr nodep = parent->children; nodep; nodep = nodep->next) {
+	grp = NULL;
+	const char *name = NULL;
+
+        if (nodep->type == XML_ELEMENT_NODE) {
+	    name = name_fn ? name_fn(nodep) : (const char *) nodep->name;
+	    if (name) {
+		/* If we have a name, find a match */
+		for (grp = all_groups; grp; grp = grp->ng_next)
+		    if (strcmp(grp->ng_name, name) == 0)
+			break;
+	    }
+	} else {
+	    continue;
+
+	    /*
+	     * This is probably NULL, but that's ok, since it really
+	     * only matters for elements
+	     */
+	    name = (const char *) nodep->name;
+	}
+
+	/* If we didn't find an existing group, make one */
+	if (!grp) {
+	    grp = xmlMalloc(sizeof(*grp));
+	    if (grp == NULL)
+		continue;
+
+	    grp->ng_name = name;
+	    grp->ng_size = NODE_GROUP_INIT_SIZE;
+	    grp->ng_nodes = xmlMalloc(grp->ng_size * sizeof(xmlNodePtr));
+	    grp->ng_next = NULL;
+
+	    if (grp->ng_nodes == NULL) {
+		xmlFree(grp);
+		continue;
+	    }
+
+	    /* Add to the end of the linked list */
+	    *groups_tail = grp;
+	    groups_tail = &grp->ng_next;
+
+        } else if (grp->ng_cur >= grp->ng_size) {
+            int sz = grp->ng_size * 2;
+	    xmlNodePtr *newp;
+            newp = xmlRealloc(grp->ng_nodes, sz * sizeof(xmlNodePtr));
+	    if (newp) {
+		grp->ng_nodes = newp;
+		grp->ng_size = sz;
+	    }
+        }
+
+        grp->ng_nodes[grp->ng_cur++] = nodep;
+    }
+
+    return all_groups;
+}
+
+void
+slaxNodeGroupFree (slax_node_group_t *groups)
+{
+    while (groups) {
+	slax_node_group_t *grp = groups;
+        groups = groups->ng_next;
+	free(grp->ng_nodes);
+        free(grp);
+    }
+}

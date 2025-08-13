@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<top>
+  <input>
+    <order>
+      <fries type="number">1</fries>
+      <burger>
+        <cheese>pepper jack</cheese>
+        <cheese>american</cheese>
+        <tomato>sliced</tomato>
+      </burger>
+      <fries type="number">2</fries>
+    </order>
+    <tax type="number">4000</tax>
+    <order>
+      <water>flat</water>
+      <sandwich>
+        <fish>grouper</fish>
+      </sandwich>
+    </order>
+  </input>
+  <output>
+    <full>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+      <order>
+        <fries type="number">1</fries>
+        <burger>
+          <cheese>pepper jack</cheese>
+          <cheese>american</cheese>
+          <tomato>sliced</tomato>
+        </burger>
+        <fries type="number">2</fries>
+      </order>
+      <tax type="number">4000</tax>
+      <order>
+        <water>flat</water>
+        <sandwich>
+          <fish>grouper</fish>
+        </sandwich>
+      </order>
+    </full>
+  </output>
+  <json>{ "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }
+</json>
+  <full>{ "order": [ { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } }, { "fries": [ 1, 2 ], "burger": { "cheese": [ "pepper jack", "american" ], "tomato": "sliced" } }, { "water": "flat", "sandwich": { "fish": "grouper" } } ], "tax": [ 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000 ] }
+</full>
+</top>

@@ -252,84 +252,49 @@ static int
 yamlWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
 		   unsigned flags)
 {
-    xmlNodePtr nodep;
     int rc = 0;
 
     /* yamllint wants content grouped by name */
-    typedef struct name_group_s {
-        struct name_group_s *gn_next;
-        const char *gn_name;
-        xmlNodePtr *gn_nodes;
-        int gn_count;
-        int gn_alloc;
-    } name_group_t;
+    slax_node_group_t *groups;
+    slax_node_group_t *grp;
 
-    name_group_t *all_groups = NULL;
-    name_group_t **groups_tail = &all_groups;
-    name_group_t *grp;
+    groups = slaxNodeGroupCreate(parent, yamlName);
 
-    for (nodep = parent->children; nodep; nodep = nodep->next) {
-        if (nodep->type != XML_ELEMENT_NODE)
-            continue;
-        const char *name = yamlName(nodep);
-        if (!name)
-            continue;
+    for (grp = groups; grp; grp = grp->ng_next) {
+        const char *quote = yamlNameNeedsQuotes(grp->ng_name, flags);
 
-        for (grp = all_groups; grp; grp = grp->gn_next)
-            if (strcmp(grp->gn_name, name) == 0)
-                break;
-
-        if (!grp) {
-            grp = calloc(1, sizeof(*grp));
-            grp->gn_name = name;
-            grp->gn_alloc = 4;	/* Starting number of nodes */
-            grp->gn_nodes = calloc(grp->gn_alloc, sizeof(xmlNodePtr));
-            grp->gn_next = NULL;
-
-	    /* Add to the end of the linked list */
-            *groups_tail = grp;
-	    groups_tail = &grp->gn_next;
-
-        } else if (grp->gn_count >= grp->gn_alloc) {
-            grp->gn_alloc *= 2;
-            grp->gn_nodes = realloc(grp->gn_nodes,
-				    grp->gn_alloc * sizeof(xmlNodePtr));
-        }
-
-        grp->gn_nodes[grp->gn_count++] = nodep;
-    }
-
-    for (grp = all_groups; grp; grp = grp->gn_next) {
-        const char *quote = yamlNameNeedsQuotes(grp->gn_name, flags);
-
-        if (grp->gn_count == 1) {
-            yamlWriteNode(swp, grp->gn_nodes[0], flags);
+        if (grp->ng_cur == 1) {
+            yamlWriteNode(swp, grp->ng_nodes[0], flags);
         } else {
-            slaxWrite(swp, "%s%s%s:", quote, grp->gn_name, quote);
+            slaxWrite(swp, "%s%s%s:", quote, grp->ng_name, quote);
             yamlWriteNewline(swp, NEWL_INDENT, flags);
 
-            for (int i = 0; i < grp->gn_count; i++) {
-                const char *val = yamlValue(grp->gn_nodes[i]);
+            for (int i = 0; i < grp->ng_cur; i++) {
+		xmlNodePtr nodep = grp->ng_nodes[i];
+                const char *val = yamlValue(nodep);
                 slaxWrite(swp, "- ");
-                if (val && !yamlHasChildNodes(grp->gn_nodes[i])) {
+
+                if (val && !yamlHasChildNodes(nodep)) {
                     slaxWrite(swp, "\"%s\"", val);
+		    yamlWriteNewline(swp, 0, flags);
+
+		} else if (val == NULL && nodep->children == NULL) {
+                    slaxWrite(swp, "\"\"");
+		    yamlWriteNewline(swp, 0, flags);
+
                 } else {
-                    yamlWriteChildren(swp, grp->gn_nodes[i], flags);
+		    yamlWriteNewline(swp, NEWL_INDENT, flags);
+                    yamlWriteChildren(swp, nodep, flags);
+		    slaxWriteIndent(swp, NEWL_OUTDENT);
                 }
-                yamlWriteNewline(swp, 0, flags);
+
             }
 
             slaxWriteIndent(swp, NEWL_OUTDENT);
         }
-
-        free(grp->gn_nodes);
     }
 
-    while (all_groups) {
-        grp = all_groups;
-        all_groups = all_groups->gn_next;
-        free(grp);
-    }
+    slaxNodeGroupFree(groups);
 
     return rc;
 }

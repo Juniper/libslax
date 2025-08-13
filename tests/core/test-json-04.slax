@@ -1,0 +1,45 @@
+version 1.3;
+
+var $count = 10;
+
+var $input := {
+    <order> {
+	<fries type="number"> 1;
+	<burger> {
+	    <cheese> "pepper jack";
+	    <cheese> "american";
+	    <tomato> "sliced";
+	}
+	<fries type="number"> 2;
+    }
+    <tax type="number"> 4000;
+    <order> {
+	<water> "flat";
+	<sandwich> {
+	    <fish> "grouper";
+	}
+    }
+}
+
+main <top> {
+    var $full := {
+	<full> {
+	    for-each 0 ... $count {
+		copy-of $input;
+	    }
+	}
+    }
+
+    <input> {
+	copy-of $input;
+    }
+    <output> {
+	copy-of $full;
+    }
+    <json> {
+	expr xutil:xml-to-json($input);
+    }
+    <full> {
+	expr xutil:xml-to-json($full);
+    }
+}

@@ -578,6 +578,7 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
     return FALSE;
 }
 
+#if 0
 /*
  * Are we adding to a nodeset that already has the container we are
  * also adding to? This will make the node appear twice so we want to
@@ -595,6 +596,7 @@ slaxMvarAlreadyPresent (xmlNodeSetPtr res, xmlDocPtr container)
 
     return FALSE;
 }
+#endif
 
 /*
  * Append a value to a variable.  There are four possibilities here:
@@ -699,33 +701,29 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	return TRUE;
     }
 
-    /* Make a node set if we need one */
-    res = var->value->nodesetval;
+    /* Make a node set */
+    res = xmlXPathNodeSetCreate(NULL);
     if (res == NULL) {
-	res = xmlXPathNodeSetCreate(NULL);
-	if (res == NULL) {
-	    slaxTransformError2(ctxt,
-				"found not make node set for %s (%s)",
-				name, svarname);
-	    return TRUE;
-	}
+	slaxTransformError2(ctxt,
+			    "found not make node set for %s (%s)",
+			    name, svarname);
+	return TRUE;
+    }
 
-	var->value->nodesetval = res;
-	var->value->type = XPATH_NODESET;
-	var->value->boolval = FALSE;
-	if (var->value->stringval) {
-	    xmlFree(var->value->stringval);
-	    var->value->stringval = NULL;
-	}
+    var->value->nodesetval = res;
+    var->value->type = XPATH_NODESET;
+    var->value->boolval = FALSE;
+    if (var->value->stringval) {
+	xmlFree(var->value->stringval);
+	var->value->stringval = NULL;
     }
 
     /*
-     * 'target' is the place we add new entries, but in some circumstances
-     * it needs to be NULL, since adding to the container is sufficient.
+     * If we are appending to an emtpy set, we need to add the
+     * container to the variable's node set.
      */
-    xmlNodeSetPtr target = res;
-    if (res && slaxMvarAlreadyPresent(res, container))
-	target = NULL;
+    if (res->nodeNr == 0)
+        xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 
     if (newp) {
 	cur = xmlNewDocNode(container, NULL, (const xmlChar *) ELT_TEXT, NULL);
@@ -733,7 +731,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    xmlAddChild(cur, newp);
 
 	    /* Add one node to the variable */
-	    slaxMvarAdd(container, target, cur);
+	    slaxMvarAdd(container, NULL, cur);
 
 	    /*
 	     * Since slaxMvarAdd has copied cur into the container tree,
@@ -746,7 +744,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
     } else if (tree) {
 	/* Add all the nodes in a tree to the show variable and the nodeset */
 	for (cur = tree->children; cur; cur = cur->next) {
-	    slaxMvarAdd(container, target, cur);
+	    slaxMvarAdd(container, NULL, cur);
 	}
 
     } else if (nset) {
@@ -758,10 +756,10 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 
 	    if (XSLT_IS_RES_TREE_FRAG(cur)) {
 		for (cur = cur->children; cur; cur = cur->next)
-		    slaxMvarAdd(container, target, cur);
-		break;		/* RTFs use "next" as a free list */
+		    slaxMvarAdd(container, NULL, cur);
+
 	    } else {
-		slaxMvarAdd(container, target, cur);
+		slaxMvarAdd(container, NULL, cur);
 	    }
 	}
     }
