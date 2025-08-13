@@ -77,6 +77,8 @@
     </var>
     <save>
       <two>two</two>
+      <text>three</text>
+      <four>four</four>
     </save>
   </to-scalars>
   <set/>
