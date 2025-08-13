@@ -41,3 +41,5 @@ mkdir -p build
 cd build
 
 unset vers opts
+
+alias mk "make CFLAGS='-DLIBSLAX_DEBUG -DLIBXO_DEBUG -DYYDEBUG -DSLAX_YYDEBUG -O0 -g' all install"
