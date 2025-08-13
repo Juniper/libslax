@@ -86,6 +86,7 @@ jsonNameNeedsQuotes (const char *str, unsigned flags)
     return "\"";
 }
 
+#if 0
 static const char *
 jsonNeedsComma (xmlNodePtr nodep UNUSED)
 {
@@ -96,6 +97,7 @@ jsonNeedsComma (xmlNodePtr nodep UNUSED)
 
     return "";
 }
+#endif
 
 static void
 jsonEscape (char *buf, int bufsiz, const char *str)
@@ -137,13 +139,14 @@ jsonWriteNewline (slax_writer_t *swp, int delta, unsigned flags)
 }
 
 static int
-jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep,
-		       unsigned flags)
+jsonWriteNode (slax_writer_t *swp, xmlNodePtr nodep, unsigned flags)
 {
     const char *type = jsonAttribValue(nodep, ATT_TYPE);
     const char *name = jsonName(nodep);
     const char *quote = jsonNameNeedsQuotes(name, flags);
-    const char *comma = jsonNeedsComma(nodep);
+    const char *comma = (flags & JWF_NOCOMMA) ? "" : ",";
+
+    flags &= ~JWF_NOCOMMA; 	/* Do not pass this flag along */
 
     if (name == NULL)
 	return 0;
@@ -221,13 +224,44 @@ static int
 jsonWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
 		   unsigned flags)
 {
-    xmlNodePtr nodep;
     int rc = 0;
+    unsigned nocomma = 0;
 
-    for (nodep = parent->children; nodep; nodep = nodep->next) {
-	if (nodep->type == XML_ELEMENT_NODE)
-	    jsonWriteNode(swp, nodep, flags);
+    /* jsonlint wants content grouped by name */
+    slax_node_group_t *groups;
+    slax_node_group_t *grp;
+
+    groups = slaxNodeGroupCreate(parent, jsonName);
+
+    for (grp = groups; grp; grp = grp->ng_next) {
+        const char *quote = jsonNameNeedsQuotes(grp->ng_name, flags);
+	nocomma = 0;
+
+        if (grp->ng_cur == 1) { /* Single node */
+	    nocomma = (grp->ng_next == NULL) ? JWF_NOCOMMA : 0;
+
+            jsonWriteNode(swp, grp->ng_nodes[0], flags | nocomma);
+
+	} else { /* Multiple nodes */
+	    if (!(flags & JWF_ARRAY)) {
+		slaxWrite(swp, "%s%s%s: [", quote, grp->ng_name, quote);
+		jsonWriteNewline(swp, NEWL_INDENT, flags);
+	    }
+
+            for (int i = 0; i < grp->ng_cur; i++) {
+		nocomma = (i == grp->ng_cur - 1) ? JWF_NOCOMMA : 0;
+                jsonWriteNode(swp, grp->ng_nodes[i],
+			      flags | JWF_ARRAY | nocomma);
+            }
+
+	    if (!(flags & JWF_ARRAY)) {
+		slaxWrite(swp, "]%s", (grp->ng_next == NULL) ? "" : ",");
+		jsonWriteNewline(swp, NEWL_OUTDENT, flags);
+	    }
+        }
     }
+
+    slaxNodeGroupFree(groups);
 
     return rc;
 }
