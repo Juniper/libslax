@@ -228,6 +228,14 @@ expression is the argument to the statement::
     expr substring-before(name, ".");
     expr status;
 
+.. admonition:: XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:text>Test: </xsl:text>
+        <xsl:value-of select="substring-before(name, &quot;.&quot;)"/>
+        <xsl:value-of select="status"/>
+
 .. index:: statements; uexpr
 .. _uexpr:
 
@@ -245,7 +253,11 @@ respectively), but uexpr avoids this escaping mechanism.
 
 .. admonition:: XSLT Equivalent
 
-    https://www.w3.org/TR/1999/REC-xslt-19991116#disable-output-escaping
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:text disable-output-escaping="yes">&lt;:-&amp;&gt;</xsl:text>
+
+    See also: https://www.w3.org/TR/1999/REC-xslt-19991116#disable-output-escaping
 
 .. _elements:
 
@@ -267,7 +279,7 @@ tags.  The empty tag consists of the less than character ('<'), the
 element name, a set of optional attributes (discussed later), the
 slash character ('/'), and the greater than character ('>').
 
-::
+An XML Example::
 
     <doc>
         <chapter>
@@ -297,16 +309,29 @@ The contents of the tag appear immediately following the open tag.
 These contents can either be a simple expression, or a more complex
 expression placed inside braces.
 
-The following SLAX is equivalent to the above XML data::
+The following SLAX is equivalent to the above XML example::
 
     <doc> {
-        <chapter>
+        <chapter> {
             <section> {
                 <paragraph> "A brief introduction";
             }
         }
         <index>;
     }
+
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <doc>
+          <chapter>
+            <section>
+              <paragraph>A brief introduction</paragraph>
+            </section>
+          </chapter>
+          <index/>
+        </doc>
 
 Programmers are accustomed to using braces, indentations, and editor support
 to delineate blocks of data.  Using these nesting techniques and
@@ -326,18 +351,20 @@ of code.
         }
     }
 
-This is equivalent to::
+.. admonition::  XSLT Equivalent
 
-    <top>
-        <one>1</one>
-        <two>
-            <three>3</three>
-            <four>4</four>
-            <five>
-                <six>6</six>
-            </five>
-        </two>
-    </top>
+    The following is the XSLT equivalent of the above example::
+
+        <top>
+            <one>1</one>
+            <two>
+                <three>3</three>
+                <four>4</four>
+                <five>
+                    <six>6</six>
+                </five>
+            </two>
+        </top>
 
 .. index:: statements; element
 .. index:: elements; by name
@@ -363,6 +390,15 @@ current context.
         element "from-" _ address;
         element $my-var;
     }
+
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:element name="{name}">
+          <xsl:element name="from-{address}"/>
+          <xsl:element name="{$my-var}"/>
+        </xsl:element>
 
 .. index::
    pair: elements; json
@@ -616,6 +652,16 @@ variable.
         }
     }
 
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <chapter number="{position()}" title="{$title}" ref="{tag}">
+          <section number="{position()}">
+            <!-- .... content ... -->
+          </section>
+        </chapter>
+
 Where XSLT allow attribute value templates using curly braces, SLAX
 uses the normal expression syntax.  Attribute values can be any XPath
 expression, including quoted strings, parameters, variables, and
@@ -626,10 +672,12 @@ numbers, as well as the SLAX concatenation operator ("_").
     <location state=$location/state
               zip=$location/zip5 _ "-" _ $location/zip4>;
 
-The XSLT equivalent::
+.. admonition::  XSLT Equivalent
 
-    <location state="{$location/state}"
-              zip="{concat($location/zip5, "-", $location/zip4}"/>
+    The following is the XSLT equivalent of the above example::
+
+        <location state="{$location/state}"
+                  zip="{concat($location/zip5, "-", $location/zip4}"/>
 
 Note that curly braces placed inside SLAX quoted strings are not
 interpreted as attribute value templates, but as real braces and are
@@ -639,10 +687,11 @@ escaped when translated into XSLT.
 
     <avt sign="{here}">;
 
-The XSLT equivalent::
-   
-    <avt sign="{{here}}"/>
+.. admonition::  XSLT Equivalent
 
+    The following is the XSLT equivalent of the above example::
+
+        <avt sign="{{here}}"/>
 
 .. index:: attributes; creating
 .. index:: statements; attribute
@@ -666,6 +715,14 @@ context.
     attribute name {
         expr "from-" _ address;
     }
+
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:attribute name="{name}">
+          <xsl:value-of select="concat(&quot;from-&quot;, address)"/>
+        </xsl:attribute>
 
 .. index:: attributes; attribute-set
 
@@ -789,10 +846,12 @@ namespace mapped to the "test" prefix::
     ns "http://example.com/main";
     ns test = "http://example.com/test";
 
-The XML equivalent is::
+.. admonition::  XSLT Equivalent
 
-    <some-element xmlns="http://example.com/main"
-            xmlns:test="http://example.com/test"/>
+    The following is the XSLT equivalent of the above example::
+
+        <some-element xmlns="http://example.com/main"
+                xmlns:test="http://example.com/test"/>
 
 Namespace definitions are supplied using the `ns` statement.  This
 consists of either the `ns` keyword, a prefix string, an equal sign
@@ -828,9 +887,7 @@ keywords instruct the parser to add the namespace prefix to the
     ns exclude foo = "http://example.com/foo";
     ns extension jcs = "http://xml.juniper.net/jcs";
 
-.. admonition:: XSLT Equivalent
-
-    https://www.w3.org/TR/1999/REC-xslt-19991116#namespaces
+.. admonition::  XSLT Equivalent
 
     The following is the XSLT equivalent of the above example::
 
@@ -840,6 +897,9 @@ keywords instruct the parser to add the namespace prefix to the
                         extension-element-prefixes="jcs">
             <!-- ... -->
         </xsl:stylesheet>
+
+
+    See also: https://www.w3.org/TR/1999/REC-xslt-19991116#namespaces
 
 .. index:: statements; extension
 .. _extension:
@@ -1063,12 +1123,15 @@ nodes should be copied.
 
 See also copy-node (:ref:`copy-node`).
 
-.. admonition:: XSLT Equivalent
+.. admonition::  XSLT Equivalent
 
-    The `copy-of` statement mimics the functionality of the <xsl:copy-of>
-    element.  The following is the XSLT equivalent of the above example::
+    The `copy-of` statement mimics the functionality of the
+    <xsl:copy-of> element.  The following is the XSLT equivalent of
+    the above example::
 
-       <xsl:copy-of select="configuration/protocols/bgp"/>
+        <xsl:copy-of select="$top/my/stuff"/>
+        <xsl:copy-of select="."/>
+        <xsl:copy-of select="configuration/protocols/bgp"/>
 
 .. index:: statements; copy-node
 .. _copy-node:
@@ -1087,6 +1150,14 @@ the new node.
     copy-node {
         <that> "one";
     }
+
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:copy>
+          <that>one</that>
+        </xsl:copy>
 
 See also copy-of (:ref:`copy-of`).
 
@@ -1174,3 +1245,10 @@ current context value is emitted.
     }
 
 See also the format-number() XPath function.
+
+.. admonition::  XSLT Equivalent
+
+    The following is the XSLT equivalent of the above example::
+
+        <xsl:number value="$this" format="001"/>
+        <xsl:number count="section"/>
