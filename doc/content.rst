@@ -142,9 +142,9 @@ mean this extended syntax.
 
 Strings are encoded using quotes (single or double) in a way that will
 feel natural to C programmers.  The concatenation operator is
-underscore ("_"), which is the new concatenation operator for Perl 6.
-(The use of "+" or "." would have created ambiguities in the SLAX
-language.)
+underscore ("_").  While this may seem an odd choice for the
+concatenation operator, many of the familiar operators like "+" and
+"." have other meanings in XPath expressions and cannot be used.
 
 XPath expression can be added to the result tree using the "expr" and
 "uexpr" statements.
@@ -210,7 +210,7 @@ SLAX code, placed inside braces.
     var $c = my:write(<content> {
         <document> "total.txt";
         <size> $file/size;
-        if node[@type == "full] {
+        if node[@type == "full"] {
             <full>;
         }
     });
@@ -315,6 +315,10 @@ The following SLAX is equivalent to the above XML example::
         <chapter> {
             <section> {
                 <paragraph> "A brief introduction";
+                <paragraph> $title _ ": " _ $subtitle;
+                <paragraph> xpath/to/find/something;
+                <paragraph> my-value * 100 div ( $high - $low );
+                <paragraph> $content;
             }
         }
         <index>;
@@ -328,6 +332,18 @@ The following SLAX is equivalent to the above XML example::
           <chapter>
             <section>
               <paragraph>A brief introduction</paragraph>
+                <paragraph>
+                  <xsl:value-of select="concat($title, &quot;: &quot;, $subtitle)"/>
+                </paragraph>
+                <paragraph>
+                  <xsl:value-of select="xpath/to/find/something"/>
+                </paragraph>
+                <paragraph>
+                  <xsl:value-of select="my-value * 100 div($high - $low)"/>
+                </paragraph>
+                <paragraph>
+                  <xsl:value-of select="$content"/>
+                </paragraph>
             </section>
           </chapter>
           <index/>
@@ -365,6 +381,51 @@ of code.
                 </five>
             </two>
         </top>
+
+Typically `expr` statements are not needed inside elements containing
+values, but maybe be used for more complex values::
+
+    <simple> this/is/simple;
+    <not-so-simple> {
+        expr "you can put ";
+        expr "multiple exprs ";
+        expr "in one element";
+    }
+    <complex> {
+        if ($max > 100) {
+            expr $max - 100;
+        } else if ($default-max > 100) {
+            expr $default-max - 100;
+        } else {
+            expr /document/max;
+        }
+    }
+
+.. admonition:: XSLT Equivalent
+
+    Typically, `expr` translates into XSLT's <xsl:value-of>.  The
+    following is the XSLT equivalent of the above example::
+
+        <simple>
+          <xsl:value-of select="this/is/simple"/>
+        </simple>
+        <not-so-simple>
+          <xsl:text>you can put </xsl:text>
+          <xsl:text>multiple exprs </xsl:text>
+          <xsl:text>in one element</xsl:text>
+        </not-so-simple>        <complex>
+          <xsl:choose>
+            <xsl:when test="$max &gt; 100">
+              <xsl:value-of select="$max - 100"/>
+            </xsl:when>
+            <xsl:when test="$default-max &gt; 100">
+              <xsl:value-of select="$default-max - 100"/>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="/document/max"/>
+            </xsl:otherwise>
+          </xsl:choose>
+        </complex>
 
 .. index:: statements; element
 .. index:: elements; by name
