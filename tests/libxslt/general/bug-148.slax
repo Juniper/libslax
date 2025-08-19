@@ -2,7 +2,9 @@ version 1.2;
 
 ns ns1 exclude = "http://www.example.com/ns1";
 
-<foo>;
+<foo> {
+    ns "http://www.example.com/ns1";
+}
 
 main {
     element "foo";
