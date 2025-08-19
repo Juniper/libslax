@@ -56,6 +56,7 @@ static char *opt_xpath;		/* XPath expresion to match on */
 
 static slaxDebugFlags_t opt_debugger;	/* Invoke the debugger */
 
+static int opt_check_namespaces; /* Check for valid namespace */
 static int opt_dump_tree;	/* Dump parsed element tree */
 static int opt_empty_input;	/* Use an empty input file */
 static int opt_html;		/* Parse input as HTML */
@@ -80,6 +81,7 @@ static struct opts {
     int o_do_xml_to_json;
     int o_do_xml_to_yaml;
 
+    int o_check_namespaces;
     int o_dump_tree;
     int o_encoding;
     int o_expression;
@@ -168,6 +170,7 @@ static struct option long_opts[] = {
     { "xml-to-yaml", no_argument, &opts.o_do_xml_to_yaml, 1 },
     { "xslt-to-slax", no_argument, NULL, 's' },
 
+    { "check-namespaces", no_argument, &opts.o_check_namespaces, 1 },
     { "debug", no_argument, NULL, 'd' },
     { "dump-tree", no_argument, &opts.o_dump_tree, 1 },
     { "empty", no_argument, NULL, 'E' },
@@ -1274,6 +1277,9 @@ main (int argc UNUSED, char **argv)
 
 /* Non-mode flags start here */
 
+	    } else if (opts.o_check_namespaces) {
+		opt_check_namespaces = TRUE;
+
 	    } else if (opts.o_dump_tree) {
 		opt_dump_tree = TRUE;
 
@@ -1385,6 +1391,9 @@ main (int argc UNUSED, char **argv)
     xsltInit();
     slaxEnable(SLAX_ENABLE);
     slaxIoUseStdio(ioflags);
+
+    if (opt_check_namespaces)
+	slaxSetCheckNamespaces(opt_check_namespaces);
 
     if (opt_no_readline)
 	slaxIoUseReadline(FALSE);
