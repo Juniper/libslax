@@ -1,7 +1,9 @@
 version 1.2;
 
 template ns () {
-    <ns>;
+    <ns> {
+        ns ns = "http://whatever";
+    }
 }
 
 match /* {
