@@ -251,6 +251,13 @@ slaxIsXmlns (const char *name)
     return (ch == '\0' || ch == ':');
 }
 
+const char *
+slaxIsValidNamespaceUri (const char *val);
+
+int
+slaxSetCheckNamespaces (int check);
+
+
 /*
  * At times, we need to reorder a set of nodes, putting matching
  * elements together (e.g. jsonlint, yamllint).  This structure allows
