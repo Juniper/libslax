@@ -14,8 +14,19 @@
 #include <errno.h>
 
 #include <libxml/xpathInternals.h>
+#include <libxml/uri.h>
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
+
+static int slax_tree_check_namespaces;
+
+int
+slaxSetCheckNamespaces (int check)
+{
+    int rc = slax_tree_check_namespaces;
+    slax_tree_check_namespaces = check;
+    return rc;
+}
 
 /**
  * Determine if a node's name and namespace match those given.
@@ -48,6 +59,34 @@ slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
     return (nodep->ns && nodep->ns->href
 	    && (name == NULL || streq((const char *) nodep->name, name))
 	    && streq((const char *) nodep->ns->href, XSL_URI));
+}
+
+/**
+ * Decide if a namespace value is suitable
+ */
+const char *
+slaxIsValidNamespaceUri (const char *val)
+{
+    if (!slax_tree_check_namespaces)
+	return NULL;
+
+    if (val == NULL || *val == '\0') /* Empty string == default namespace */
+	return NULL;
+
+    const char *err = NULL;
+
+    xmlURIPtr uri = xmlParseURI(val);
+
+    if (uri == NULL)
+	err = "error parsing URI";
+
+    else if (uri->scheme == NULL)
+	err =  "URI is not absolute";
+
+    if (uri)
+	xmlFreeURI(uri);
+
+    return err;
 }
 
 /*
@@ -342,6 +381,15 @@ void
 slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
 {
     xmlNsPtr ns;
+
+    
+    const char *err = slaxIsValidNamespaceUri(uri);
+    if (err) {
+	xmlParserError(sdp->sd_ctxt, "warning parsing URI '%s'%s%s%s: %s",
+		       uri ?: "", prefix ? " for prefix '" : "",
+		       prefix ?: "", prefix ? "'" : "", err);
+	return;
+    }
 
     ns = xmlNewNs(sdp->sd_ctxt->node, (const xmlChar *) uri,
 		  (const xmlChar *) prefix);
@@ -1237,10 +1285,10 @@ slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn)
 	    if (grp == NULL)
 		continue;
 
+	    bzero(grp, sizeof(*grp));
 	    grp->ng_name = name;
 	    grp->ng_size = NODE_GROUP_INIT_SIZE;
 	    grp->ng_nodes = xmlMalloc(grp->ng_size * sizeof(xmlNodePtr));
-	    grp->ng_next = NULL;
 
 	    if (grp->ng_nodes == NULL) {
 		xmlFree(grp);
@@ -1255,10 +1303,11 @@ slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn)
             int sz = grp->ng_size * 2;
 	    xmlNodePtr *newp;
             newp = xmlRealloc(grp->ng_nodes, sz * sizeof(xmlNodePtr));
-	    if (newp) {
-		grp->ng_nodes = newp;
-		grp->ng_size = sz;
-	    }
+	    if (newp == NULL)
+		continue;
+
+	    grp->ng_nodes = newp;
+	    grp->ng_size = sz;
         }
 
         grp->ng_nodes[grp->ng_cur++] = nodep;
