@@ -1568,14 +1568,17 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 		 * If we're handed a fragment, assume they wanted the
 		 * contents.
 		 */
-		if (XSLT_IS_RES_TREE_FRAG(nop))
+		int follow = FALSE;
+		if (XSLT_IS_RES_TREE_FRAG(nop)) {
 		    nop = nop->children;
+		    follow = TRUE;
+		}
 
 		/*
 		 * Whiffle thru the children looking for a node
 		 */
 		xmlNode *cop;
-		for ( ; nop; nop = nop->next) {
+		for ( ; nop; nop = follow ? nop->next : NULL) {
 		    if (nop->type == XML_TEXT_NODE) {
 			cp = nop->content;
 			if (cp)
