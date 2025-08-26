@@ -867,7 +867,7 @@ functionality for SLAX scripts.
         <elt> $i;
     }
 
-- The :ref:`function <function>` statement defines an extension
+- The function statement defines an extension
   function, usable in XPath expressions::
 
     function my:lesser ($a, $b) {

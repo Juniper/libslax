@@ -577,7 +577,6 @@ XPath expressions.  Functions have several advantages over templates:
 This section describes how functions are defined.
 
 .. index:: statements; function
-.. _function:
 
 The `function` Statement
 ++++++++++++++++++++++++
@@ -623,12 +622,13 @@ value of the function::
 The value can be a simple XPath expression, an XML element, or a set
 of instructions that emit the value to be returned::
 
+    ns my = "https://example.com/mine";
 
-    function size ($width, $length, $scale = 1) {
+    function my:size ($width, $length, $scale = 1) {
         result $width * $length * $scale;
     }
 
-    function box-parts ($width, $height, $depth, $scale = 1) {
+    function my:box-parts ($width, $height, $depth, $scale = 1) {
         result <box> {
             <part count=2> size($width, $depth);
             <part count=2> size($width, $height);
@@ -636,10 +636,31 @@ of instructions that emit the value to be returned::
         }
     }
 
-    function ark () {
+    function my:ark () {
         result {
             <ark> {
                 expr box-parts(2.5, 1.5, 1.5);
             }
         }
     }
+
+.. _function: https://exslt.github.io/func/index.html
+
+.. admonition:: XSLT Equivalent
+
+    The following is the XSLT equivalent of the last example::
+
+        <slax-func:function
+                 xmlns:my="http://example.com/mine">
+                 xmlns:slax-func="http://exslt.org/functions" name="my:ark">
+          <slax-func:result xmlns:slax-func="http://exslt.org/functions">
+            <ark>
+              <xsl:value-of select="box-parts(2.5, 1.5, 1.5)"/>
+            </ark>
+          </slax-func:result>
+        </slax-func:function>
+
+    The `function` and `result` elements in the `slax-func` namespace
+    mirror the functionality of in the EXSLT
+    library's function_ module.
+

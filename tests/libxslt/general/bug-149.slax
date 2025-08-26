@@ -1,6 +1,8 @@
 version 1.2;
 
-<foo>;
+<foo> {
+    ns "http://www.example.com/ns1";
+}
 
 main {
     element "foo";
