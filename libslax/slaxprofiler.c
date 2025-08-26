@@ -329,11 +329,13 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
 		     (count * 100) / tot_count);
             else
                 snprintf(count_buf, sizeof(count_buf), "(-)");
+
             if (tot_user)
 	        snprintf(user_buf, sizeof(user_buf), "(%llu)", 
 		     (spp->sp_data[num].spe_user * 100) / tot_user);
             else
                 snprintf(user_buf, sizeof(user_buf), "(-)");
+
             if (tot_wall)
 	        snprintf(wall_buf, sizeof(wall_buf), "(%llu)", 
 		     (spp->sp_data[num].spe_wall * 100) / tot_wall);
