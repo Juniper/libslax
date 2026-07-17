@@ -112,7 +112,7 @@ pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, const char *name,
 
     /* No base is NULL, allocate it, zero it and init the free list */
     if (pip->pi_base == NULL) {
-	size_t size = (max_atoms >> shift) * sizeof(uint8_t *);
+	size_t size = (max_atoms >> shift) * sizeof(pa_atom_t);
 
 	pa_mmap_atom_t atom = pa_mmap_alloc(pmp, size);
 	pa_mmap_atom_t *real_base = pa_mmap_addr(pmp, atom);
