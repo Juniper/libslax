@@ -12,6 +12,8 @@
 #ifndef PARROTDB_PAMMAP_H
 #define PARROTDB_PAMMAP_H
 
+#include "gen/pammap_gen.h"
+
 /*
  * Support for memory allocation over mmap()'d sections of memory.
  * Since paged arrays use only offset, this is mostly trivial.  In
@@ -28,10 +30,6 @@
 #define PA_MMAP_ATOM_SIZE	(1ULL << PA_MMAP_ATOM_SHIFT)
 
 #define PA_MMAP_HEADER_NAME_LEN	64 /* Max length of header name string */
-
-PA_ATOM_TYPE(pa_mmap_atom_t, pa_mmap_atom_s, pma_atom,
-	     pa_mmap_is_null, pa_mmap_atom, pa_mmap_atom_of,
-	     pa_mmap_null_atom);
 
 struct pa_mmap_info_s;
 typedef struct pa_mmap_info_s pa_mmap_info_t; /* Opaque type */
