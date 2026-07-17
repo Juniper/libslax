@@ -120,7 +120,7 @@ pa_fixed_init (pa_mmap_t *pmp, pa_fixed_t *pfp, const char *name,
 
     /* No base is NULL, allocate it, zero it and init the free list */
     if (pfp->pf_base == NULL) {
-	size_t size = (max_atoms >> shift) * sizeof(uint8_t *);
+	size_t size = (max_atoms >> shift) * sizeof(pa_atom_t);
 
 	pa_mmap_atom_t atom = pa_mmap_alloc(pmp, size);
 	void *real_base = pa_mmap_addr(pmp, atom);
