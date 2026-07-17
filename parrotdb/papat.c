@@ -144,7 +144,7 @@ pa_pat_search (pa_pat_t *root, uint16_t keylen, const uint8_t *key)
     pa_pat_atom_t atom = root->pp_root;
     pa_pat_node_t *node = pa_pat_node(root, atom);
 
-    while (bit < node->ppn_bit) {
+    while (node && bit < node->ppn_bit) {
 	bit = node->ppn_bit;
 	if (bit < keylen && pat_key_test(key, bit)) {
 	    atom = node->ppn_right;
@@ -153,6 +153,9 @@ pa_pat_search (pa_pat_t *root, uint16_t keylen, const uint8_t *key)
 	}
 	node = pa_pat_node(root, atom);
     }
+
+    if (node == NULL)
+	return pa_pat_null_atom();
 
     return atom;
 }
@@ -409,7 +412,7 @@ pa_pat_add_node (pa_pat_t *root, pa_pat_atom_t atom, pa_pat_node_t *node)
     ptr = &root->pp_root;
     cur_node = pa_pat_node(root, current);
 
-    while (bit < cur_node->ppn_bit && cur_node->ppn_bit < diff_bit) {
+    while (cur_node && bit < cur_node->ppn_bit && cur_node->ppn_bit < diff_bit) {
 	bit = cur_node->ppn_bit;
 	if (pat_key_test(key, bit)) {
 	    ptr = &cur_node->ppn_right;
@@ -618,7 +621,7 @@ pa_pat_find_next (pa_pat_t *root, pa_pat_node_t *node)
     lastleft = pa_pat_null_atom();
     key = pa_pat_key(root, node);
     bit = PA_PAT_NOBIT;
-    while (bit < cur_node->ppn_bit) {
+    while (cur_node && bit < cur_node->ppn_bit) {
 	bit = cur_node->ppn_bit;
 	if (bit < node->ppn_length && pat_key_test(key, bit)) {
 	    current = cur_node->ppn_right;
@@ -744,7 +747,7 @@ pa_pat_find_prev (pa_pat_t *root, pa_pat_node_t *node)
     lastright = pa_pat_null_atom();
     key = pa_pat_key(root, node);
     bit = PA_PAT_NOBIT;
-    while (bit < cur_node->ppn_bit) {
+    while (cur_node && bit < cur_node->ppn_bit) {
 	bit = cur_node->ppn_bit;
 	if (bit < node->ppn_length && pat_key_test(key, bit)) {
 	    lastright = current;
@@ -848,7 +851,7 @@ pa_pat_subtree_next (pa_pat_t *root, pa_pat_node_t *node, uint16_t plen)
     bit = PA_PAT_NOBIT;
     lastleft = pa_pat_null_atom();
 
-    while (bit < cur_node->ppn_bit) {
+    while (cur_node && bit < cur_node->ppn_bit) {
 	bit = cur_node->ppn_bit;
 	if (bit < node->ppn_length && pat_key_test(prefix, bit)) {
 	    current = cur_node->ppn_right;
@@ -910,7 +913,7 @@ pa_pat_getnext (pa_pat_t *root, uint16_t klen,
     bit_len = pa_pat_length_to_bit(klen);
     bit = PA_PAT_NOBIT;
     lastright = lastleft = pa_pat_null_atom();
-    while (bit < cur_node->ppn_bit) {
+    while (cur_node && bit < cur_node->ppn_bit) {
 	bit = cur_node->ppn_bit;
 	if (bit < bit_len && pat_key_test(key, bit)) {
 	    lastright = current;
@@ -921,6 +924,9 @@ pa_pat_getnext (pa_pat_t *root, uint16_t klen,
 	}
 	cur_node = pa_pat_node(root, current);
     }
+
+    if (cur_node == NULL)
+	return NULL;
 
     /*
      * So far so good.  Determine where the first mismatch between
@@ -959,7 +965,7 @@ pa_pat_getnext (pa_pat_t *root, uint16_t klen,
 	    bit = PA_PAT_NOBIT;
 	    current = root->pp_root;
 	    lastleft = pa_pat_null_atom();
-	    while (bit < cur_node->ppn_bit && cur_node->ppn_bit < diff_bit) {
+	    while (cur_node && bit < cur_node->ppn_bit && cur_node->ppn_bit < diff_bit) {
 		bit = cur_node->ppn_bit;
 		if (pat_key_test(key, bit)) {
 		    current = cur_node->ppn_right;
