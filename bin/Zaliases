@@ -30,12 +30,14 @@ switch ( "$vers" )
         breaksw
 endsw
 
+set mycflags="-O0 -g -DSLAX_DEBUG -DYYDEBUG -DSLAX_YYDEBUG -DLIBSLAX_DEBUG"
+
 alias Zconfigure "(cd $top_src/build; $gmake_opts ../configure $opts)"
 alias Zbuild "(cd $top_src/build; $zmake \!* )"
 alias mi "(cd $top_src/build; $zmake && $zmake install); ."
 
-alias mm "(cd $top_src/build; $zmake CFLAGS='-O0 -g')"
-alias mmi "(cd $top_src/build; $zmake CFLAGS='-O0 -g' && $zmake install)"
+alias mm "(cd $top_src/build; $zmake CFLAGS='$mycflags')"
+alias mmi "(cd $top_src/build; $zmake CFLAGS='$mycflags' && $zmake install)"
 
 mkdir -p build
 cd build
