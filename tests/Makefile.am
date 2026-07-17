@@ -44,3 +44,5 @@ scribble:
 	@echo '## Running the regression tests under scribble'
 	@echo '## Go get a cup of coffee it is gonna take a while ...'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
+
+EXTRA_DIST = run-tests.sh
