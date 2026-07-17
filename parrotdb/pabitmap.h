@@ -30,14 +30,10 @@
 #define PARROTDB_PABITMAP_H
 
 #include <libpsu/psualloc.h>
+#include "gen/pabitmap_gen.h"
 
 typedef uint32_t pa_bitnumber_t;  /* The bit number to test/set */
 typedef uint32_t pa_bitunit_t;	  /* Bit testing unit (word) */
-
-/* Declare our wrapper type */
-PA_ATOM_TYPE(pa_bitmap_atom_t, pa_bitmap_atom_s, pba_atom,
-	     pa_bitmap_is_null, pa_bitmap_atom, pa_bitmap_atom_of,
-	     pa_bitmap_null_atom);
 
 /*
  * An "id" is just an atom, but it's better for users to think of it
@@ -241,6 +237,7 @@ pa_bitmap_find_next (pa_bitmap_t *pfp, pa_bitmap_id_t bitmap_id,
 	while (++chunknum < PA_BITMAP_CHUNK_SIZE) {
 	    if (!pa_fixed_is_null(chunkp[chunknum])) {
 		num = chunknum * PA_BITMAP_BITS_PER_CHUNK;
+		bitmask = 0;
 		goto restart;
 	    }
 	}
@@ -294,7 +291,7 @@ pa_bitmap_open (pa_mmap_t *pmp, const char *name)
 			     PA_BITMAP_BLOCK_SIZE, PA_BITMAP_MAX_ATOMS);
 
 	/* bitmaps require init-to-zero behavior */
-	if (pbp != NULL)
+	if (pbp->pb_data != NULL)
 	    pa_fixed_set_flags(pbp->pb_data, PFF_INIT_ZERO);
     }
 
