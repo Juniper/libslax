@@ -12,6 +12,9 @@
 #ifndef PARROTDB_PAISTR_H
 #define PARROTDB_PAISTR_H
 
+#include "gen/paistr_gen.h"
+#include "gen/paistr_data_gen.h"
+
 /**
  * pa_istr is an immutable string, a string library based on paged
  * arrays. They are immutable in the sense that they can only be
@@ -27,16 +30,6 @@
  * have also support short strings, where small numbers represent
  * strings of length zero or one.  
  */
-
-/* Declare our wrapper type: istr is the external-facing type */
-PA_ATOM_TYPE(pa_istr_atom_t, pa_istr_atom_s, pia_atom,
-	     pa_istr_is_null, pa_istr_atom, pa_istr_atom_of,
-	     pa_istr_null_atom);
-
-/* Declare our wrapper type: istr_data is the internal-only data atom */
-PA_ATOM_TYPE(pa_istr_data_atom_t, pa_istr_data_atom_s, pida_atom,
-	     pa_istr_data_is_null, pa_istr_data_atom, pa_istr_data_atom_of,
-	     pa_istr_data_null_atom);
 
 /*
  * Since pa_istr_atom_t are really pa_fixed_atom_t, we need an easy way
