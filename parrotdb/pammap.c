@@ -25,11 +25,9 @@
 #include <libpsu/psulog.h>
 #include <libpsu/psualloc.h>
 #include <libpsu/psustring.h>
-#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
-#include <libpsu/psualloc.h>
 
 #define PA_VERS_MAJOR		1 /* Major numbers are mutually incompatible */
 #define PA_VERS_MINOR		0 /* Minor numbers are compatible */
@@ -173,9 +171,9 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     /* If we've got a file attached, we need to extend the file */
-    if (pmp->pm_fd > 0) {
+    if (pmp->pm_fd >= 0) {
 	if (ftruncate(pmp->pm_fd, new_len) < 0) {
-	    pa_warning(errno, "cannot extend memory file to %d", new_len);
+	    pa_warning(errno, "cannot extend memory file to %zu", new_len);
 	    return pa_mmap_null_atom();
 	}
 
@@ -267,7 +265,7 @@ pa_mmap_open (const char *filename, const char *base,
 	      pa_mmap_flags_t flags, unsigned mode)
 {
     int mmap_flags = MAP_SHARED | MAP_FIXED;
-    int fd = 0;
+    int fd = -1;
     int oflags;
     int prot = PROT_READ | PROT_WRITE;
     struct stat st;
@@ -371,12 +369,12 @@ pa_mmap_open (const char *filename, const char *base,
 	pmfp = pa_pointer(addr, 1, PA_MMAP_ATOM_SHIFT);
 	pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
 	pmfp->pmf_size = (len >> PA_MMAP_ATOM_SHIFT) - 1;
-
+	pmfp->pmf_next = pa_mmap_null_atom();
 
     } else {
 	/* Check header fields */
 	if (pmip->pmi_magic != PA_MAGIC_NUMBER) {
-	    if (pmip->pmi_magic != PA_MAGIC_WRONG)
+	    if (pmip->pmi_magic == PA_MAGIC_WRONG)
 		pa_warning(0, "machine is wrong endian type (0x%x:0x%x)",
 			   pmip->pmi_magic, PA_MAGIC_NUMBER);
 	    else
@@ -394,7 +392,7 @@ pa_mmap_open (const char *filename, const char *base,
 		       "ignored", pmip->pmi_vers_minor, PA_VERS_MINOR);
 
 	} else if (pmip->pmi_len != len) {
-	    pa_warning(0, "memory size mismatch (%d:%d); "
+	    pa_warning(0, "memory size mismatch (%zu:%u); "
 		       "ignored", pmip->pmi_len, len);
 	} else {
 	    /* Success!! */
@@ -433,7 +431,7 @@ pa_mmap_open (const char *filename, const char *base,
  fail:
     if (addr != NULL)
 	munmap(addr, len);
-    if (fd > 0)
+    if (fd >= 0)
 	close(fd);
 
     return NULL;
@@ -453,11 +451,13 @@ pa_mmap_close (pa_mmap_t *pmp)
 	    psu_free(pmrp);
 	}
     } else {
+	if (pmp->pm_fd >= 0 && pmp->pm_addr != NULL)
+	    msync(pmp->pm_addr, pmp->pm_len, MS_SYNC);
 	if (pmp->pm_addr != NULL)
 	    munmap(pmp->pm_addr, pmp->pm_len);
     }
 
-    if (pmp->pm_fd > 0)
+    if (pmp->pm_fd >= 0)
 	close(pmp->pm_fd);
 
     psu_free(pmp);
