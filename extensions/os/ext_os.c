@@ -633,6 +633,8 @@ extOsWorkerOne (slax_os_callback_t func, const char *action,
 		}
 	    }
 	}
+
+	globfree(&gl);
     }
 }
 
@@ -1095,7 +1097,7 @@ extOsStatInfo (xmlDocPtr docp, xmlNodePtr parent,
 		buf[0] = '\0';
 	    else if ((size_t) len < sizeof(buf))
 		buf[len] = '\0';
-	    else if ((size_t) len < sizeof(buf))
+	    else
 		buf[sizeof(buf) - 1] = '\0';
 	
 	    if (buf[0])
@@ -1293,6 +1295,7 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
     for (cpp = gl.gl_pathv; *cpp; cpp++)
 	extOsStatPath(results, container, NULL, *cpp, NULL, recurse, &so);
 
+    globfree(&gl);
     valuePush(ctxt, xmlXPathWrapNodeSet(results));
 }
 
