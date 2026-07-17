@@ -20,6 +20,7 @@ AM_CFLAGS = \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     -I${top_builddir} \
+    -I${top_builddir}/parrotdb \
     ${WARNINGS}
 
 # Ick: maintained by hand!
