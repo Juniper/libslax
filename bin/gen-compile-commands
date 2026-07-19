@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""
+Generate compile_commands.json for clangd.
+
+Usage: bin/gen-compile-commands [build-dir [output-file]]
+
+  build-dir   defaults to <repo-root>/build
+  output-file defaults to <repo-root>/compile_commands.json
+
+Strategy:
+  1. Touch all .c source files so they appear newer than their .lo outputs.
+     This causes 'make -n all' to print every compile command.
+  2. Run 'make -n all' from the build directory (single top-level invocation).
+     .la library files must already exist — i.e. run after a successful build.
+     The .la files let make traverse all subdirectory dependencies without
+     stopping (the problem that 'make -n -B' has at the top level).
+  3. Parse the compile commands and write compile_commands.json.
+
+clangd searches upward from each source file for compile_commands.json, so
+placing the file at the repository root covers the whole tree.
+
+Note: run your normal build after this to recompile anything that was touched.
+"""
+
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+
+
+def touch_sources(src_root, build_dir):
+    """Touch all .c files under src_root (excluding the build tree)."""
+    count = 0
+    build_dir = os.path.realpath(build_dir) + os.sep
+    for dirpath, _, filenames in os.walk(src_root):
+        real = os.path.realpath(dirpath) + os.sep
+        if real.startswith(build_dir):
+            continue
+        for name in filenames:
+            if name.endswith('.c'):
+                os.utime(os.path.join(dirpath, name), None)
+                count += 1
+    return count
+
+
+def parse_compile_lines(make_output, build_dir):
+    """Yield (directory, compiler, flags, source_file) for each C compile."""
+    current_dir = build_dir
+
+    for line in make_output.splitlines():
+        m = re.match(r'^Making \S+ in (\S+)', line)
+        if m:
+            subdir = m.group(1)
+            if subdir == '.':
+                pass  # "." means this dir's own targets; current_dir unchanged
+            else:
+                # Walk up from current_dir toward build_dir looking for a
+                # parent whose child named `subdir` actually exists.  This
+                # handles nested subdirectory loops (e.g. extensions/bit
+                # prints "Making all in bit" while current_dir is
+                # build/extensions, not build/).
+                candidate = None
+                check = current_dir
+                while True:
+                    path = os.path.join(check, subdir)
+                    if os.path.isdir(path):
+                        candidate = path
+                        break
+                    if check == build_dir:
+                        break
+                    check = os.path.dirname(check)
+                current_dir = candidate or os.path.join(build_dir, subdir)
+            continue
+
+        # Shared libraries: glibtool --mode=compile gcc ...
+        # Executables:      ; gcc ... -c ...   (no libtool wrapper)
+        m = (re.search(r'(?:g?libtool\b[^;]*?--mode=compile\s+)(gcc|cc|clang)\s+(.*)', line) or
+             re.search(r'(?:;|^)\s*(gcc|cc|clang)\s+([^;]*\s-c\s[^;]*)', line))
+        if not m:
+            continue
+
+        compiler = m.group(1)
+        try:
+            args = shlex.split(m.group(2))
+        except ValueError:
+            continue
+
+        source_file = None
+        filtered = []
+        i = 0
+        while i < len(args):
+            arg = args[i]
+            if arg in ('-MT', '-MF'):
+                i += 2
+                continue
+            if arg in ('-MD', '-MP'):
+                i += 1
+                continue
+            if arg == '-o':
+                i += 2
+                continue
+            if not arg.startswith('-') and arg.endswith('.c'):
+                source_file = arg
+                i += 1
+                continue
+            filtered.append(arg)
+            i += 1
+
+        if not source_file:
+            continue
+        if not os.path.isabs(source_file):
+            source_file = os.path.normpath(os.path.join(current_dir, source_file))
+        if not os.path.exists(source_file):
+            sys.stderr.write(f'warning: not found: {source_file}\n')
+            continue
+
+        yield current_dir, compiler, filtered, source_file
+
+
+def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    src_root = os.path.realpath(os.path.dirname(script_dir))
+
+    build_dir = os.path.realpath(sys.argv[1]) if len(sys.argv) > 1 \
+        else os.path.join(src_root, 'build')
+    output = sys.argv[2] if len(sys.argv) > 2 \
+        else os.path.join(src_root, 'compile_commands.json')
+
+    if not os.path.isdir(build_dir):
+        sys.exit(f'error: build directory not found: {build_dir}')
+
+    # A complete build must exist so that .la library files are present.
+    # 'make -n all' stops when it hits a missing .la dependency (e.g.
+    # libparrotdb.la), so without a prior build only the first few
+    # subdirectories produce output.
+    la_files = [os.path.join(build_dir, d, f)
+                for d, f in [('parrotdb', 'libparrotdb.la'),
+                              ('libslax',  'libslax.la')]]
+    missing = [f for f in la_files if not os.path.exists(f)]
+    if missing:
+        for f in missing:
+            sys.stderr.write(f'error: missing {f}\n')
+        sys.exit('Run the build first, then re-run this script.')
+
+    n = touch_sources(src_root, build_dir)
+    sys.stderr.write(f'touched {n} source files\n')
+
+    result = subprocess.run(
+        ['make', '-n', 'all'],
+        cwd=build_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    entries = []
+    for directory, compiler, flags, source_file in \
+            parse_compile_lines(result.stdout, build_dir):
+        entries.append({
+            'directory': directory,
+            'file': source_file,
+            'arguments': [compiler] + flags + [source_file],
+        })
+
+    with open(output, 'w') as f:
+        json.dump(entries, f, indent=2)
+        f.write('\n')
+
+    sys.stderr.write(f'wrote {len(entries)} entries to {output}\n')
+
+
+if __name__ == '__main__':
+    main()
