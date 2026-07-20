@@ -71,6 +71,7 @@ typedef struct pa_istr_s {
     pa_istr_data_info_t *pi_datap; /* Data header (for pii_data) */
     pa_fixed_t *pi_index;	   /* Index of strings (for pii_index) */
     pa_mmap_atom_t *pi_base;	   /* Base of page table (in mmap atoms) */
+    pa_page_t pi_next_page;	   /* Next free page slot */
 } pa_istr_t;
 
 /* Simplification macros, so we don't need to think about pi_datap */
