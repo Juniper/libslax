@@ -46,3 +46,4 @@ m4/lt~obsolete.m4
 compile_commands.json
 .claude
 .clangd
+.cache
