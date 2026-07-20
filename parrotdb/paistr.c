@@ -40,10 +40,7 @@ pa_istr_atom_t
 pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
 {
     unsigned max_page = pip->pi_max_atoms >> pip->pi_shift;
-    unsigned slot;
-    for (slot = 1; slot < max_page; slot++) /* Skip the first slot */
-	if (pa_istr_page_get(pip, slot) == NULL)
-	    break;
+    unsigned slot = pip->pi_next_page;
 
     if (slot >= max_page)	/* If we're out of slots, we're done */
 	return pa_istr_null_atom();
@@ -66,8 +63,9 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
     if (pa_mmap_is_null(matom))
 	return pa_istr_null_atom();
 
-    /* Fill in the page table */
+    /* Fill in the page table and advance the free-slot counter */
     pa_istr_page_set(pip, slot, matom);
+    pip->pi_next_page += 1;
 
     pa_istr_data_atom_t atom;
     atom = pa_istr_data_atom(slot << pip->pi_shift); /* Turn matom to atom */
@@ -110,27 +108,36 @@ pa_istr_init (pa_mmap_t *pmp, pa_istr_t *pip, const char *name,
     /* Round max_atoms up to the next page size */
     max_atoms = pa_roundup_shift32(max_atoms, shift);
 
-    /* No base is NULL, allocate it, zero it and init the free list */
-    if (pip->pi_base == NULL) {
-	size_t size = (max_atoms >> shift) * sizeof(pa_atom_t);
+    /* Fill in the rest of the fields from the argument list */
+    pip->pi_shift = shift;
+    pip->pi_atom_shift = atom_shift;
+    pip->pi_max_atoms = max_atoms;
+    pip->pi_mmap = pmp;
+
+    if (pa_mmap_is_null(pip->pi_datap->pid_base)) {
+	/* First creation: allocate and zero the page table */
+	size_t size = (max_atoms >> shift) * sizeof(pa_mmap_atom_t);
 
 	pa_mmap_atom_t atom = pa_mmap_alloc(pmp, size);
 	pa_mmap_atom_t *real_base = pa_mmap_addr(pmp, atom);
 	if (real_base == NULL)
 	    return;
 
-	bzero(real_base, size); /* New page table must be cleared */
+	bzero(real_base, size);
 	pa_istr_base_set(pip, atom, real_base);
-
-	/* Mark us empty */
 	pip->pi_free = pa_istr_data_null_atom();
+    } else {
+	/* Reopen: restore the in-memory page-table pointer */
+	pip->pi_base = pa_mmap_addr(pmp, pip->pi_datap->pid_base);
     }
 
-    /* Fill in the rest of fhe fields from the argument list */
-    pip->pi_shift = shift;
-    pip->pi_atom_shift = atom_shift;
-    pip->pi_max_atoms = max_atoms;
-    pip->pi_mmap = pmp;
+    /* Find next free page slot (O(n) once at open; O(1) on each alloc) */
+    unsigned max_page = max_atoms >> shift;
+    pa_page_t pg;
+    for (pg = 1; pg < max_page; pg++)
+	if (pa_istr_page_get(pip, pg) == NULL)
+	    break;
+    pip->pi_next_page = pg;
 }
 
 pa_istr_t *
