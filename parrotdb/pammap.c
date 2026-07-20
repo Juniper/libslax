@@ -55,9 +55,13 @@ struct pa_mmap_info_s {
     uint8_t pmi_vers_minor;	/* Minor version number */
     uint32_t pmi_max_size;	/* Maximum size (or 0) */
     uint32_t pmi_num_headers;	/* Number of named headers following ours */
+    uint32_t pmi_flags;		/* Flags for this header (PMIF_*) */
     size_t pmi_len;		/* Current size */
     pa_mmap_atom_t pmi_free;	/* First free memory segment */
 }; /* pa_mmap_info_t */
+
+/* Flags for pmi_flags */
+#define PMIF_INUSE	(1<<0)	/* Database is/was in use (open|abandoned)  */
 
 typedef struct pa_mmap_free_s {
     uint32_t pmf_magic;		/* Magic number */
@@ -191,6 +195,8 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 	    return pa_mmap_null_atom();
 	}
 
+	pmp->pm_len = new_len;
+
     } else {
 	/*
 	 * With mmap and no file, we can't extend our mapping, so
@@ -225,6 +231,8 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     pmp->pm_len = new_len;	/* Record our new length */
+    pmp->pm_infop->pmi_len = new_len;  /* keep header in sync with file */
+
     /* We'll use the first chunk for this allocation */
     fa = pa_mmap_atom(old_len >> PA_MMAP_ATOM_SHIFT);
 
@@ -360,6 +368,7 @@ pa_mmap_open (const char *filename, const char *base,
 	pmip->pmi_vers_minor = PA_VERS_MINOR;
 	pmip->pmi_len = len;
 	pmip->pmi_max_size = pa_config_value32(base, "max-size", 0);
+	pmip->pmi_flags |= PMIF_INUSE;
 
 	/* We waste the rest of the first atom, but we're atom aligned */
 	pmip->pmi_free = pa_mmap_atom(1);
@@ -394,8 +403,13 @@ pa_mmap_open (const char *filename, const char *base,
 	} else if (pmip->pmi_len != len) {
 	    pa_warning(0, "memory size mismatch (%zu:%u); "
 		       "ignored", pmip->pmi_len, len);
+	} else if (pmip->pmi_flags & PMIF_INUSE) {
+	    pa_warning(0, "database is already in use or perhaps abandoned "
+		       "and/or possibly corrupted");
+
 	} else {
 	    /* Success!! */
+	    pmip->pmi_flags |= PMIF_INUSE;
 	}
     }
 
@@ -443,6 +457,10 @@ pa_mmap_open (const char *filename, const char *base,
 void
 pa_mmap_close (pa_mmap_t *pmp)
 {
+    pa_mmap_info_t *pmip = pmp->pm_infop;
+    if (pmip)
+	pmip->pmi_flags &= ~PMIF_INUSE;
+
     if (pmp->pm_record) {
 	pa_mmap_record_t *pmrp = pmp->pm_record, *nextp;
 	for (; pmrp; pmrp = nextp) {
