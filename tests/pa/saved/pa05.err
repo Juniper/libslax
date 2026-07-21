@@ -1,4 +1,5 @@
 config: looking for 'pa05.max-size' (default 0)
+config: looking for 'pa05.header-atoms' (default 1)
 config: looking for 'istr.data.shift' (default 6)
 config: looking for 'istr.data.atom-shift' (default 2)
 config: looking for 'istr.data.max-atoms' (default 16384)
