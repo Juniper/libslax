@@ -51,7 +51,7 @@ typedef struct xi_node_s {
     xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
     xi_node_flags_t xn_flags;	/* Flags (XNF_*) */
     xi_ns_id_raw_t xn_ns_map_t;	/* Namespace map for this node (in ns_map) */
-    xi_name_id_raw_t xn_name_:20; /* Name of this node (in name db) */
+    xi_name_id_raw_t xn_name;   /* Name of this node (in name db) */
     xi_node_id_t xn_parent;	/* Parent node (NULL if root) */
     xi_node_id_t xn_next;	/* Next node (or parent if last) */
     xi_node_id_t xn_contents;	/* Child node or data (in this tree or data) */
