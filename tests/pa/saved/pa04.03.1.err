@@ -1,4 +1,5 @@
 config: looking for 'pa04.max-size' (default 0)
+config: looking for 'pa04.header-atoms' (default 1)
 begin dumping pa_arb_t
   slot:0 0x1c02 (239)
     0x1c02:0x20000001c020 slot:0 chunk:2 next 0x1c0e
