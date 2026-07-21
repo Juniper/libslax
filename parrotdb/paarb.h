@@ -110,8 +110,7 @@ typedef struct pa_arb_info_s {
 
 typedef struct pa_arb_s {
     pa_mmap_t *pr_mmap;		/* Underlaying memory file */
-    pa_arb_info_t pr_info;	/* Our info structure, if needed */
-    pa_arb_info_t *pr_infop;	/* A pointer to our info structure */
+    pa_arb_info_t *pr_infop;	/* Pointer to persistent info (in mmap header) */
 } pa_arb_t;
 
 static inline void *
