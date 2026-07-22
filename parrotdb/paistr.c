@@ -25,6 +25,7 @@
 #include <parrotdb/pammap.h>
 #include <parrotdb/pafixed.h>
 #include <parrotdb/paistr.h>
+#include <parrotdb/papat.h>
 
 /*
  * We need to allocate "len" bytes of space, and return an atom
@@ -83,6 +84,48 @@ pa_istr_nstring_alloc (pa_istr_t *pip, const char *string, size_t len)
     }
 
     return pa_istr_atom_to_index(pip, atom);
+}
+
+/*
+ * Key function for the intern patricia trie.  Given a pat data atom that
+ * encodes a pa_istr_atom_t, return the stored string bytes as the key.
+ * The key includes the NUL terminator so no string can be a prefix of another.
+ */
+static const psu_byte_t *
+pa_istr_intern_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+{
+    pa_istr_t *pip = pp->pp_data;
+    pa_istr_atom_t iatom = pa_istr_atom(pa_pat_data_atom_of(datom));
+    return (const psu_byte_t *) pa_istr_atom_string(pip, iatom);
+}
+
+/*
+ * Intern (deduplicate) a string: look it up in the patricia trie and return
+ * the existing atom if found, otherwise allocate and register a new one.
+ * Falls back to plain pa_istr_nstring when interning is not enabled.
+ */
+pa_istr_atom_t
+pa_istr_intern_nstring (pa_istr_t *pip, const char *string, size_t len)
+{
+    if (pip->pi_intern == NULL)
+	return pa_istr_nstring(pip, string, len);
+
+    /* Key includes the NUL terminator; cap at PA_PAT_MAXKEY */
+    uint16_t key_bytes = (len + 1 > PA_PAT_MAXKEY)
+	? PA_PAT_MAXKEY : (uint16_t)(len + 1);
+
+    pa_pat_node_t *node = pa_pat_get(pip->pi_intern, key_bytes, string);
+    if (node != NULL) {
+	pa_pat_data_atom_t datom = pa_pat_node_data(pip->pi_intern, node);
+	return pa_istr_atom(pa_pat_data_atom_of(datom));
+    }
+
+    pa_istr_atom_t iatom = pa_istr_nstring(pip, string, len);
+    if (!pa_istr_is_null(iatom)) {
+	pa_pat_data_atom_t datom = pa_pat_data_atom(pa_istr_atom_of(iatom));
+	pa_pat_add(pip->pi_intern, datom, key_bytes);
+    }
+    return iatom;
 }
 
 /*
@@ -163,7 +206,27 @@ pa_istr_setup (pa_mmap_t *pmp, pa_istr_info_t *piip, const char *name,
 				       shift, sizeof(pa_atom_t), max_atoms);
 	if (pip->pi_index == NULL) {
 	    psu_free(pip);
-	    pip = NULL;
+	    return NULL;
+	}
+
+	if (piip->pii_flags & PIIF_INTERN) {
+	    pa_fixed_t *pfp;
+	    pa_config_name(namebuf, sizeof(namebuf), name, "iidx");
+	    pfp = pa_fixed_setup(pmp, &piip->pii_intern_nodes, namebuf,
+				 shift, sizeof(pa_pat_node_t), max_atoms);
+	    if (pfp == NULL) {
+		psu_free(pip);
+		return NULL;
+	    }
+	    pip->pi_intern = pa_pat_root_init(NULL, &piip->pii_intern, pmp,
+					      pfp, pip,
+					      pa_istr_intern_key_func,
+					      PA_PAT_MAXKEY);
+	    if (pip->pi_intern == NULL) {
+		pa_fixed_close(pfp);
+		psu_free(pip);
+		return NULL;
+	    }
 	}
     }
 
@@ -190,7 +253,30 @@ pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 void
 pa_istr_close (pa_istr_t *pip)
 {
+    if (pip->pi_intern) {
+	pa_fixed_t *nodes = pip->pi_intern->pp_nodes;
+	pa_pat_close(pip->pi_intern);
+	pa_fixed_close(nodes);
+    }
     psu_free(pip);
+}
+
+pa_istr_t *
+pa_istr_open_intern (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
+		     uint16_t atom_shift, uint32_t max_atoms)
+{
+    pa_istr_info_t *piip = NULL;
+
+    if (name) {
+	piip = pa_mmap_header(pmp, name, PA_TYPE_ISTR, 0, sizeof(*piip));
+	if (piip == NULL) {
+	    pa_warning(0, "pa_istr header not found: %s", name);
+	    return NULL;
+	}
+    }
+
+    piip->pii_flags |= PIIF_INTERN;
+    return pa_istr_setup(pmp, piip, name, shift, atom_shift, max_atoms);
 }
 
 /**
