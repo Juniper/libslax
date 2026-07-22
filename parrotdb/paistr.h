@@ -14,6 +14,7 @@
 
 #include "gen/paistr_gen.h"
 #include "gen/paistr_data_gen.h"
+#include <parrotdb/papat.h>
 
 /**
  * pa_istr is an immutable string, a string library based on paged
@@ -57,12 +58,20 @@ typedef struct pa_istr_data_info_s {
     pa_mmap_atom_t pid_base; 	/* Offset of page table base (in mmap atoms) */
 } pa_istr_data_info_t;
 
+/* Flags for pii_flags */
+#define PIIF_INTERN	(1<<0)	/* Intern (deduplicate) strings via patricia trie */
+
 /*
- * Our info contains both the info for our strings and the index
+ * Our info contains both the info for our strings and the index.
+ * Optional interning fields are zero when interning is not in use;
+ * existing databases that predate interning will have zeros here.
  */
 typedef struct pa_istr_info_s {
-    pa_fixed_info_t pii_index;	/* Packed array of string atoms */
-    pa_istr_data_info_t pii_data; /* String data */
+    pa_fixed_info_t pii_index;		 /* Packed array of string atoms */
+    pa_istr_data_info_t pii_data;	 /* String data */
+    uint32_t pii_flags;			 /* PIIF_* flags */
+    pa_fixed_info_t pii_intern_nodes;	 /* Patricia node pool (if PIIF_INTERN) */
+    pa_pat_info_t pii_intern;		 /* Patricia trie root (if PIIF_INTERN) */
 } pa_istr_info_t;
 
 typedef struct pa_istr_s {
@@ -72,6 +81,7 @@ typedef struct pa_istr_s {
     pa_fixed_t *pi_index;	   /* Index of strings (for pii_index) */
     pa_mmap_atom_t *pi_base;	   /* Base of page table (in mmap atoms) */
     pa_page_t pi_next_page;	   /* Next free page slot */
+    pa_pat_t *pi_intern;	   /* Intern trie, or NULL if not interning */
 } pa_istr_t;
 
 /* Simplification macros, so we don't need to think about pi_datap */
@@ -278,10 +288,33 @@ pa_istr_t *
 pa_istr_open (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
 	       uint16_t atom_shift, uint32_t max_atoms);
 
+/*
+ * Like pa_istr_open but enables string interning (deduplication).  The
+ * PIIF_INTERN flag is recorded in the persistent header so any subsequent
+ * open of the same database will also enable the intern trie.
+ */
+pa_istr_t *
+pa_istr_open_intern (pa_mmap_t *pmp, const char *name, pa_shift_t shift,
+		     uint16_t atom_shift, uint32_t max_atoms);
+
 void
 pa_istr_close (pa_istr_t *pip);
 
 void
 pa_istr_dump (pa_istr_t *pip, psu_boolean_t full);
+
+/*
+ * Intern (deduplicate) a string of known length.  If the string already
+ * exists in the pool the existing atom is returned without a new allocation.
+ * Falls back to plain pa_istr_nstring when interning is not enabled.
+ */
+pa_istr_atom_t
+pa_istr_intern_nstring (pa_istr_t *pip, const char *string, size_t len);
+
+static inline pa_istr_atom_t
+pa_istr_intern_string (pa_istr_t *pip, const char *string)
+{
+    return pa_istr_intern_nstring(pip, string, string ? strlen(string) : 0);
+}
 
 #endif /* PARROTDB_PAISTR_H */
