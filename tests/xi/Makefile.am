@@ -20,19 +20,27 @@ AM_CFLAGS = \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     -I${top_builddir} \
+    -I${top_builddir}/parrotdb \
     ${WARNINGS}
 
 # Ick: maintained by hand!
 TEST_CASES = \
-xi01.c
+xi01.c \
+xi04.c
 
 XXX= \
 xi02.c \
 xi03.c
 
 xi01_test_SOURCES = xi01.c
+xi04_test_SOURCES = xi04.c
 #xi02_test_SOURCES = xi02.c
 #xi03_test_SOURCES = xi03.c
+
+# xi04 needs parrotdb; xi01 only needs libxi
+xi04_test_LDADD = \
+    ${top_builddir}/libpsu/libpsu.la \
+    ${top_builddir}/parrotdb/libparrotdb.la
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 SAVEDDATA := $(shell cd ${srcdir} ; echo saved/xi*.out saved/xi*.err)
@@ -46,6 +54,9 @@ LDADD = \
 
 EXTRA_DIST = \
     ${TEST_CASES} \
+    xi04.01.in \
+    xi04.02.in \
+    make-xi04-02.py \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
