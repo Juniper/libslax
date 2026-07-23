@@ -45,6 +45,39 @@ libparrotdb_la_SOURCES = \
     papat.c
 
 GEN_CODE = ${top_srcdir}/bin/gen-code.sh
+GEN_STAMP = gen/.stamp
 
-gen_headers:
-	sh ${GEN_CODE}
+GENERATED = \
+    gen/paarb_gen.h \
+    gen/pabitmap_gen.h \
+    gen/pafixed_gen.h \
+    gen/paistr_data_gen.h \
+    gen/paistr_gen.h \
+    gen/pammap_gen.h \
+    gen/papat_data_gen.h \
+    gen/papat_gen.h
+
+BUILT_SOURCES = ${GENERATED}
+
+# Run gen-code.sh once and record it with a stamp file.
+# Touching the stamp AFTER the script ensures the generated headers are
+# always newer than the stamp, so make does not re-run the script on
+# subsequent builds unless gen-code.sh itself has changed.
+$(GEN_STAMP): $(GEN_CODE)
+	$(MKDIR_P) gen
+	sh $(GEN_CODE)
+	touch $(GEN_STAMP)
+
+# Individual headers depend on the stamp; the recipe only fires when a
+# header is missing (e.g. after a partial clean).
+$(GENERATED): $(GEN_STAMP)
+	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) $(GEN_STAMP)
+
+gen_headers: $(GEN_STAMP)
+
+CLEANFILES = $(GEN_STAMP)
+
+CLEANDIRS = gen
+
+clean-local:
+	rm -rf ${CLEANDIRS}
