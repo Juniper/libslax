@@ -1,0 +1,16 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Midterm Exam</title>
+<script><
+	 funtion test() {
+	   var a;
+	   var b;
+
+	   if (a < b) { alert('Hello'); }
+	 }
+
+	 <</script>
+</head>
+<body bgcolor="white"></body>
+</html>

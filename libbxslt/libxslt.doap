@@ -1,0 +1,27 @@
+<Project xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:foaf="http://xmlns.com/foaf/0.1/"
+         xmlns:gnome="http://api.gnome.org/doap-extensions#"
+         xmlns="http://usefulinc.com/ns/doap#">
+
+  <name xml:lang="en">libxslt</name>
+  <shortdesc xml:lang="en">XSLT transformation library</shortdesc>
+  <description>Libxslt is the XSLT C library developed for the GNOME project.
+XSLT itself is a an XML language to define transformation for XML. Libxslt is
+based on libxml2, the XML C library developed for the GNOME project. It also
+implements most of the EXSLT set of processor-portable extensions
+functions and some of Saxon's evaluate and expressions
+extensions.</description>
+  <developer-forum rdf:resource="https://discourse.gnome.org/tag/libxml2" />
+  <download-page rdf:resource="https://download.gnome.org/sources/libxslt/" />
+  <bug-database rdf:resource="https://gitlab.gnome.org/GNOME/libxslt/issues/" />
+  <category rdf:resource="http://api.gnome.org/doap-extensions#infrastructure" />
+  <programming-language>C</programming-language>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Iván Chavero</foaf:name>
+      <gnome:userid>ichavero</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+</Project>
