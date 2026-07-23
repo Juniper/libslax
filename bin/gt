@@ -73,12 +73,57 @@ check_in_details () {
     done
 }
 
+amend_comments () {
+    set_branch
+    files=`git diff --name-only $origin/$branch $branch "$@"`
+
+    # Filenames returned by --name-only are relative to the top
+    set_git_top
+    cd $GIT_TOP
+
+    for file in $files; do
+	git diff $origin/$branch $branch $file
+	log=`git log -n 1 $origin/$branch $branch $file`
+	echo $log
+
+        /bin/echo "[Changing comment for $file into branch $branch]"
+        /bin/echo -n "Commit message: "
+	read comment
+	if [ "$comment" = "==" -o  "$comment" = "=" -o "$comment" = "ditto" ]; then
+	    comment="$last"
+        fi
+	if [ "$comment" = "" ]; then
+	    echo "Skipping file $file";
+	else
+	    if [ "$status" = "?? $file" ]; then
+		git add "$file"
+	    fi
+	    git commit --amend -m "$comment" "$file"
+	fi
+	last="$comment"
+    done
+}
+
 push_to_branch () {
     echo "Pushing to $branch ..."
     git push $origin $branch
 }
 
+run () {
+    if [ ! -z "${GT_TRACE}" ]; then
+        echo + "$@"
+    fi
+    "$@"
+}
+
 case "$op" in
+    amend)
+	## gt amend [<files>]
+	## == Change commit comments for multiple files, prompting for a
+	## commit message for each file (after displaying a diff)
+        amend_comments "$@"
+	;;
+
     archive)
 	## gt archive [<suffix>]
 	## == create an archive (tarball) using the given suffix (e.g. $git-$suffix.tgz)
@@ -358,7 +403,7 @@ case "$op" in
 	## gt up
 	## == Update working copy with repo's changes
 	set_branch
-	git pull -v $origin $branch
+	run git pull -v $origin $branch
 	;;
 
     *)

@@ -12,6 +12,9 @@
 #ifndef PARROTDB_PAPAT_H
 #define PARROTDB_PAPAT_H
 
+#include "gen/papat_gen.h"
+#include "gen/papat_data_gen.h"
+
 /**
  * @file pa_pat.h
  * @brief Patricia tree APIs
@@ -34,15 +37,6 @@
  * the patricia structure from the rest of your code.  This is STRONGLY
  * recommended.
  */
-
-/* Wrapper for our "patricia tree node" atom */
-PA_ATOM_TYPE(pa_pat_atom_t, pa_pat_atom_s, ppa_atom,
-	     pa_pat_is_null, pa_pat_atom, pa_pat_atom_of, pa_pat_null_atom);
-
-/* Wrapper for our "data node" atom */
-PA_ATOM_TYPE(pa_pat_data_atom_t, pa_pat_data_atom_s, ppa_data_atom,
-	     pa_pat_data_is_null, pa_pat_data_atom, pa_pat_data_atom_of,
-	     pa_pat_data_null_atom);
 
 /**
  * @brief
@@ -646,9 +640,8 @@ pa_pat_get_inline (pa_pat_t *root, uint16_t key_bytes, const void *v_key)
     bit_len = pa_pat_length_to_bit(key_bytes);
 
     pa_pat_node_t *node = pa_pat_node(root, current);
-    while (bit < node->ppn_bit) {
-	if (node == NULL)
-	    return NULL;
+
+    while (node && bit < node->ppn_bit) {
 
 	bit = node->ppn_bit;
 	if (bit < bit_len && pat_key_test(key, bit)) {
@@ -658,6 +651,9 @@ pa_pat_get_inline (pa_pat_t *root, uint16_t key_bytes, const void *v_key)
 	}
 	node = pa_pat_node(root, current);
     }
+
+    if (node == NULL)
+	return NULL;
 
     /*
      * If the lengths don't match we're screwed.  Otherwise do a compare.
@@ -738,8 +734,8 @@ procname (pa_pat_node_t *ptr)						\
 {									\
     assert(STRUCT_SIZEOF(structname, fieldname) == sizeof(pa_pat_node_t)); \
     if (ptr) {								\
-        return (const structname *) ((uchar *) ptr) -			\
-            offsetof(structname, fieldname);				\
+        return (const structname *) (((uchar *) ptr) -			\
+				     offsetof(structname, fieldname));	\
     }									\
     return NULL;							\
 }
@@ -856,10 +852,6 @@ pa_pat_t *
 pa_pat_open_nodes (pa_mmap_t *pmp, const char *name, pa_fixed_t *nodes,
 		   void *data_store, pa_pat_key_func_t key_func,
 		   uint16_t klen);
-
-pa_pat_t *
-pa_pat_open_c (pa_mmap_t *pmp, const char *name,
-	       void *data_store, pa_pat_key_func_t key_func, uint16_t klen);
 
 pa_pat_t *
 pa_pat_open (pa_mmap_t *pmp, const char *name,

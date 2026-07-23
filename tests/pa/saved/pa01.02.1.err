@@ -1,4 +1,5 @@
 config: looking for 'pa01.max-size' (default 0)
+config: looking for 'pa01.header-atoms' (default 1)
 config: looking for 'pa_01.shift' (default 6)
 config: looking for 'pa_01.atom-size' (default 100)
 config: looking for 'pa_01.max-atoms' (default 16384)

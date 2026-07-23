@@ -58,7 +58,7 @@ slaxJsonTagging (int tagging)
 void
 slaxJsonElementOpen (slax_data_t *sdp, const char *name)
 {
-    int valid = xmlValidateName((const xmlChar *) name, FALSE);
+    int valid = slaxValidateName(name);
     const char *element = valid ? ELT_ELEMENT : name;
 
     slaxElementOpen(sdp, element);

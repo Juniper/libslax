@@ -1,4 +1,5 @@
 config: looking for 'pa07.max-size' (default 0)
+config: looking for 'pa07.header-atoms' (default 1)
 config: looking for 'pa07.bitmap.shift' (default 10)
 config: looking for 'pa07.bitmap.atom-size' (default 1024)
 config: looking for 'pa07.bitmap.max-atoms' (default 16777216)

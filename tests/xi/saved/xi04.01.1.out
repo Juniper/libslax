@@ -1,0 +1,128 @@
+[ clean file /tmp/xi04.db]
+intern [div] atom 0x101
+intern [span] atom 0x102
+intern [p] atom 0x71
+intern [ul] atom 0x103
+intern [ol] atom 0x104
+intern [li] atom 0x105
+intern [table] atom 0x106
+intern [tr] atom 0x107
+intern [td] atom 0x108
+intern [th] atom 0x109
+intern [a] atom 0x62
+intern [img] atom 0x10a
+intern [h1] atom 0x10b
+intern [h2] atom 0x10c
+intern [class] atom 0x10d
+intern [id] atom 0x10e
+intern [href] atom 0x10f
+intern [src] atom 0x110
+intern [alt] atom 0x111
+intern [type] atom 0x112
+intern [name] atom 0x113
+intern [value] atom 0x114
+intern [style] atom 0x115
+intern [xml] atom 0x116
+intern [xsl] atom 0x117
+intern [xs] atom 0x118
+intern [xmlns] atom 0x119
+intern [text/html] atom 0x11a
+intern [text/xml] atom 0x11b
+intern [UTF-8] atom 0x11c
+intern [onclick] atom 0x11d
+intern [onchange] atom 0x11e
+intern [form] atom 0x11f
+intern [input] atom 0x120
+intern [select] atom 0x121
+[ -- round 2: duplicates from round 1 mixed with new strings]
+intern [div] atom 0x101 (dedup)
+intern [class] atom 0x10d (dedup)
+intern [id] atom 0x10e (dedup)
+intern [href] atom 0x10f (dedup)
+intern [span] atom 0x102 (dedup)
+intern [p] atom 0x71 (dedup)
+intern [li] atom 0x105 (dedup)
+intern [td] atom 0x108 (dedup)
+intern [tr] atom 0x107 (dedup)
+intern [table] atom 0x106 (dedup)
+intern [onclick] atom 0x11d (dedup)
+intern [text/html] atom 0x11a (dedup)
+intern [UTF-8] atom 0x11c (dedup)
+intern [xs] atom 0x118 (dedup)
+intern [xml] atom 0x116 (dedup)
+[ -- round 3: more duplicates, exercise trie lookup paths]
+intern [div] atom 0x101 (dedup)
+intern [span] atom 0x102 (dedup)
+intern [class] atom 0x10d (dedup)
+intern [id] atom 0x10e (dedup)
+intern [li] atom 0x105 (dedup)
+intern [td] atom 0x108 (dedup)
+intern [tr] atom 0x107 (dedup)
+intern [onclick] atom 0x11d (dedup)
+intern [onchange] atom 0x11e (dedup)
+intern [form] atom 0x11f (dedup)
+intern [input] atom 0x120 (dedup)
+intern [select] atom 0x121 (dedup)
+intern [text/html] atom 0x11a (dedup)
+intern [UTF-8] atom 0x11c (dedup)
+intern [xml] atom 0x116 (dedup)
+[ -- round 4: sweep through attribute names and types]
+intern [div] atom 0x101 (dedup)
+intern [class] atom 0x10d (dedup)
+intern [id] atom 0x10e (dedup)
+intern [href] atom 0x10f (dedup)
+intern [src] atom 0x110 (dedup)
+intern [style] atom 0x115 (dedup)
+intern [type] atom 0x112 (dedup)
+intern [name] atom 0x113 (dedup)
+intern [value] atom 0x114 (dedup)
+intern [ul] atom 0x103 (dedup)
+intern [ol] atom 0x104 (dedup)
+intern [th] atom 0x109 (dedup)
+intern [img] atom 0x10a (dedup)
+intern [xsl] atom 0x117 (dedup)
+intern [text/xml] atom 0x11b (dedup)
+[ -- round 5: final pass, interleaving elements and namespaces]
+intern [div] atom 0x101 (dedup)
+intern [span] atom 0x102 (dedup)
+intern [p] atom 0x71 (dedup)
+intern [a] atom 0x62 (dedup)
+intern [h1] atom 0x10b (dedup)
+intern [h2] atom 0x10c (dedup)
+intern [table] atom 0x106 (dedup)
+dump: 35 unique strings
+  [0] atom 0x101 : div
+  [1] atom 0x102 : span
+  [2] atom 0x71 : p
+  [3] atom 0x103 : ul
+  [4] atom 0x104 : ol
+  [5] atom 0x105 : li
+  [6] atom 0x106 : table
+  [7] atom 0x107 : tr
+  [8] atom 0x108 : td
+  [9] atom 0x109 : th
+  [10] atom 0x62 : a
+  [11] atom 0x10a : img
+  [12] atom 0x10b : h1
+  [13] atom 0x10c : h2
+  [14] atom 0x10d : class
+  [15] atom 0x10e : id
+  [16] atom 0x10f : href
+  [17] atom 0x110 : src
+  [18] atom 0x111 : alt
+  [19] atom 0x112 : type
+  [20] atom 0x113 : name
+  [21] atom 0x114 : value
+  [22] atom 0x115 : style
+  [23] atom 0x116 : xml
+  [24] atom 0x117 : xsl
+  [25] atom 0x118 : xs
+  [26] atom 0x119 : xmlns
+  [27] atom 0x11a : text/html
+  [28] atom 0x11b : text/xml
+  [29] atom 0x11c : UTF-8
+  [30] atom 0x11d : onclick
+  [31] atom 0x11e : onchange
+  [32] atom 0x11f : form
+  [33] atom 0x120 : input
+  [34] atom 0x121 : select

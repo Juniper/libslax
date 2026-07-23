@@ -12,6 +12,8 @@
 #ifndef PARROTDB_PAFIXED_H
 #define PARROTDB_PAFIXED_H
 
+#include "gen/pafixed_gen.h"
+
 /**
  * Paged arrays are fixed size arrays, allocated piecemeal
  * to reduce their initial memory impact.
@@ -41,11 +43,6 @@
  * are whose.  Our "pages" are their "atoms".  We then divide each
  * page into our fixed-sized atoms.
  */
-
-/* Declare our wrapper type */
-PA_ATOM_TYPE(pa_fixed_atom_t, pa_fixed_atom_s, pfa_atom,
-	     pa_fixed_is_null, pa_fixed_atom, pa_fixed_atom_of,
-	     pa_fixed_null_atom);
 
 typedef uint8_t pa_fixed_flags_t;
 

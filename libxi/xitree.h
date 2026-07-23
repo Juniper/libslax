@@ -75,4 +75,20 @@ xi_mk_name (char *namebuf, const char *name, const char *ext)
     return pa_config_name(namebuf, PA_MMAP_HEADER_NAME_LEN, name, ext);
 }
 
+/*
+ * Append new_node_atom as the last child of parent_atom.
+ *
+ * last_hint should be the return value of the previous xi_tree_append_child
+ * call on this same parent, giving O(1) append for sequential builds.
+ * Pass PA_NULL_ATOM when the hint is unavailable; the sibling chain will be
+ * scanned to locate the last child (O(n_children)).
+ *
+ * Returns new_node_atom so callers can chain: pass it as last_hint on the
+ * next append to this parent.  Returns PA_NULL_ATOM on error.
+ */
+pa_atom_t
+xi_tree_append_child (xi_workspace_t *xwp,
+		      pa_atom_t parent_atom, pa_atom_t last_hint,
+		      pa_atom_t new_node_atom);
+
 #endif /* LIBSLAX_XI_TREE_H */

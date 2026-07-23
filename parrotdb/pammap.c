@@ -25,11 +25,9 @@
 #include <libpsu/psulog.h>
 #include <libpsu/psualloc.h>
 #include <libpsu/psustring.h>
-#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
-#include <libpsu/psualloc.h>
 
 #define PA_VERS_MAJOR		1 /* Major numbers are mutually incompatible */
 #define PA_VERS_MINOR		0 /* Minor numbers are compatible */
@@ -48,8 +46,23 @@
 #define PA_DEFAULT_COUNT	32
 #define PA_DEFAULT_SIZE		(PA_DEFAULT_COUNT << PA_MMAP_ATOM_SHIFT)
 
+/* Default number of atoms reserved for the header area (atom 0 .. N-1) */
+#define PA_MMAP_HEADER_ATOMS	1
+
 /*
  * This structure defines the header of the mmap'd memory segment.
+ *
+ * Layout on a 64-bit host (all offsets explicit, no hidden padding):
+ *   0  pmi_magic          uint16_t
+ *   2  pmi_vers_major     uint8_t
+ *   3  pmi_vers_minor     uint8_t
+ *   4  pmi_max_size       uint32_t
+ *   8  pmi_num_headers    uint32_t
+ *  12  pmi_flags          uint32_t
+ *  16  pmi_len            size_t   (8 bytes, 8-byte aligned)
+ *  24  pmi_free           uint32_t
+ *  28  pmi_header_atoms   uint32_t  (fills trailing padding; 0 = legacy = 1)
+ * sizeof = 32
  */
 struct pa_mmap_info_s {
     uint16_t pmi_magic;		/* Magic number */
@@ -57,9 +70,14 @@ struct pa_mmap_info_s {
     uint8_t pmi_vers_minor;	/* Minor version number */
     uint32_t pmi_max_size;	/* Maximum size (or 0) */
     uint32_t pmi_num_headers;	/* Number of named headers following ours */
+    uint32_t pmi_flags;		/* Flags for this header (PMIF_*) */
     size_t pmi_len;		/* Current size */
     pa_mmap_atom_t pmi_free;	/* First free memory segment */
+    uint32_t pmi_header_atoms;	/* Atoms reserved for headers (0 = legacy = 1) */
 }; /* pa_mmap_info_t */
+
+/* Flags for pmi_flags */
+#define PMIF_INUSE	(1<<0)	/* Database is/was in use (open|abandoned)  */
 
 typedef struct pa_mmap_free_s {
     uint32_t pmf_magic;		/* Magic number */
@@ -173,9 +191,9 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     /* If we've got a file attached, we need to extend the file */
-    if (pmp->pm_fd > 0) {
+    if (pmp->pm_fd >= 0) {
 	if (ftruncate(pmp->pm_fd, new_len) < 0) {
-	    pa_warning(errno, "cannot extend memory file to %d", new_len);
+	    pa_warning(errno, "cannot extend memory file to %zu", new_len);
 	    return pa_mmap_null_atom();
 	}
 
@@ -192,6 +210,8 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
 	    pa_warning(0, "mmap was moved (%p:%p)", pmp->pm_addr, addr);
 	    return pa_mmap_null_atom();
 	}
+
+	pmp->pm_len = new_len;
 
     } else {
 	/*
@@ -227,6 +247,8 @@ pa_mmap_alloc (pa_mmap_t *pmp, size_t size)
     }
 
     pmp->pm_len = new_len;	/* Record our new length */
+    pmp->pm_infop->pmi_len = new_len;  /* keep header in sync with file */
+
     /* We'll use the first chunk for this allocation */
     fa = pa_mmap_atom(old_len >> PA_MMAP_ATOM_SHIFT);
 
@@ -267,7 +289,7 @@ pa_mmap_open (const char *filename, const char *base,
 	      pa_mmap_flags_t flags, unsigned mode)
 {
     int mmap_flags = MAP_SHARED | MAP_FIXED;
-    int fd = 0;
+    int fd = -1;
     int oflags;
     int prot = PROT_READ | PROT_WRITE;
     struct stat st;
@@ -362,21 +384,28 @@ pa_mmap_open (const char *filename, const char *base,
 	pmip->pmi_vers_minor = PA_VERS_MINOR;
 	pmip->pmi_len = len;
 	pmip->pmi_max_size = pa_config_value32(base, "max-size", 0);
+	pmip->pmi_flags |= PMIF_INUSE;
 
-	/* We waste the rest of the first atom, but we're atom aligned */
-	pmip->pmi_free = pa_mmap_atom(1);
+	uint32_t hdr_atoms = pa_config_value32(base, "header-atoms",
+					       PA_MMAP_HEADER_ATOMS);
+	if (hdr_atoms == 0 || hdr_atoms >= (len >> PA_MMAP_ATOM_SHIFT))
+	    hdr_atoms = PA_MMAP_HEADER_ATOMS;
+	pmip->pmi_header_atoms = hdr_atoms;
+
+	/* Free pool starts after the reserved header atoms */
+	pmip->pmi_free = pa_mmap_atom(hdr_atoms);
 
 	/* Make the first entry in the free list */
 	pa_mmap_free_t *pmfp;
-	pmfp = pa_pointer(addr, 1, PA_MMAP_ATOM_SHIFT);
+	pmfp = pa_pointer(addr, hdr_atoms, PA_MMAP_ATOM_SHIFT);
 	pmfp->pmf_magic = PA_MMAP_FREE_MAGIC;
-	pmfp->pmf_size = (len >> PA_MMAP_ATOM_SHIFT) - 1;
-
+	pmfp->pmf_size = (len >> PA_MMAP_ATOM_SHIFT) - hdr_atoms;
+	pmfp->pmf_next = pa_mmap_null_atom();
 
     } else {
 	/* Check header fields */
 	if (pmip->pmi_magic != PA_MAGIC_NUMBER) {
-	    if (pmip->pmi_magic != PA_MAGIC_WRONG)
+	    if (pmip->pmi_magic == PA_MAGIC_WRONG)
 		pa_warning(0, "machine is wrong endian type (0x%x:0x%x)",
 			   pmip->pmi_magic, PA_MAGIC_NUMBER);
 	    else
@@ -394,10 +423,15 @@ pa_mmap_open (const char *filename, const char *base,
 		       "ignored", pmip->pmi_vers_minor, PA_VERS_MINOR);
 
 	} else if (pmip->pmi_len != len) {
-	    pa_warning(0, "memory size mismatch (%d:%d); "
+	    pa_warning(0, "memory size mismatch (%zu:%u); "
 		       "ignored", pmip->pmi_len, len);
+	} else if (pmip->pmi_flags & PMIF_INUSE) {
+	    pa_warning(0, "database is already in use or perhaps abandoned "
+		       "and/or possibly corrupted");
+
 	} else {
 	    /* Success!! */
+	    pmip->pmi_flags |= PMIF_INUSE;
 	}
     }
 
@@ -433,7 +467,7 @@ pa_mmap_open (const char *filename, const char *base,
  fail:
     if (addr != NULL)
 	munmap(addr, len);
-    if (fd > 0)
+    if (fd >= 0)
 	close(fd);
 
     return NULL;
@@ -445,6 +479,10 @@ pa_mmap_open (const char *filename, const char *base,
 void
 pa_mmap_close (pa_mmap_t *pmp)
 {
+    pa_mmap_info_t *pmip = pmp->pm_infop;
+    if (pmip)
+	pmip->pmi_flags &= ~PMIF_INUSE;
+
     if (pmp->pm_record) {
 	pa_mmap_record_t *pmrp = pmp->pm_record, *nextp;
 	for (; pmrp; pmrp = nextp) {
@@ -453,11 +491,13 @@ pa_mmap_close (pa_mmap_t *pmp)
 	    psu_free(pmrp);
 	}
     } else {
+	if (pmp->pm_fd >= 0 && pmp->pm_addr != NULL)
+	    msync(pmp->pm_addr, pmp->pm_len, MS_SYNC);
 	if (pmp->pm_addr != NULL)
 	    munmap(pmp->pm_addr, pmp->pm_len);
     }
 
-    if (pmp->pm_fd > 0)
+    if (pmp->pm_fd >= 0)
 	close(pmp->pm_fd);
 
     psu_free(pmp);
@@ -503,10 +543,12 @@ pa_mmap_header (pa_mmap_t *pmp, const char *name,
 	return NULL;
 
     /* No match; 'base' is at the end of headers, so we append this one */
-    psu_byte_t *endp = pmp->pm_addr + PA_MMAP_ATOM_SIZE;
+    uint32_t hdr_atoms = pmp->pm_infop->pmi_header_atoms;
+    if (hdr_atoms == 0) hdr_atoms = 1;	/* legacy database */
+    psu_byte_t *endp = pmp->pm_addr + ((size_t)hdr_atoms << PA_MMAP_ATOM_SHIFT);
     pmhp = (void *) base;
     if (&pmhp->pmh_content[size] > endp) {
-	pa_warning(0, "out of header space for '%s' (%d)", name, size);
+	pa_warning(0, "out of header space for '%s' (%zu)", name, size);
 	return NULL;
     }
 

@@ -75,11 +75,10 @@ pa_config_extract (char *bp, char **namep, char **valp)
     for (vp = ep; *ep; ep++)
 	if (isspace((int) *ep) || *ep == ';')
 	    break;
-    if (*ep == '\0')
-	return -1;
-
-    /* name = value ^ ; */
-    *ep++ = '\0';
+    if (*ep != '\0') {
+	/* name = value ^ ; */
+	*ep++ = '\0';
+    }
 
     *namep = bp;
     *valp = vp;

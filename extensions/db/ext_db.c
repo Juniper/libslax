@@ -260,8 +260,8 @@ db_input_copy (db_input_t *top, db_input_t *fromp)
     COPY_STRING(di_database);
     COPY_STRING(di_collection);
 
-    fromp->di_limit = top->di_limit;
-    fromp->di_skip = top->di_skip;
+    top->di_limit = fromp->di_limit;
+    top->di_skip = fromp->di_skip;
 
     COPY_NODE_SET(di_access);
     COPY_NODE_SET(di_fields);
@@ -272,7 +272,6 @@ db_input_copy (db_input_t *top, db_input_t *fromp)
     COPY_NODE_SET(di_sort);
     COPY_NODE_SET(di_retrieve);
     COPY_NODE_SET(di_update);
-    COPY_NODE_SET(di_access);
 
     if (fromp->di_buf.pb_buf) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) fromp->di_buf.pb_buf,

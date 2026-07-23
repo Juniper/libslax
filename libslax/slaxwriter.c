@@ -1227,9 +1227,6 @@ slaxMakeAttribValueTemplate (slax_writer_t *swp, xmlNodePtr nodep,
 	return (char *) xmlCharStrdup("\"\"");
 
     buf = alloca(blen + 1);
-    if (buf == NULL)
-	return NULL;
-
     endp = buf + blen;
     memcpy(buf, value, blen + 1);
 
@@ -1306,13 +1303,13 @@ slaxMakeAttribValueTemplate (slax_writer_t *swp, xmlNodePtr nodep,
 	memcpy(sbuf, start, slen);
 	sbuf[slen] = '\0';
 
-	sbuf = slaxMakeExpression(swp, nodep, sbuf);
+	char *mbuf = slaxMakeExpression(swp, nodep, sbuf);
 
-	if (sbuf == NULL
-	    || slaxStringAddTail(&tail, first, sbuf, strlen(sbuf), M_XPATH))
+	if (mbuf == NULL
+	    || slaxStringAddTail(&tail, first, mbuf, strlen(mbuf), M_XPATH))
 	    goto fail;
 
-	xmlFree(sbuf);
+	xmlFree(mbuf);
 
 	start = cur + 1;
     }
@@ -2042,7 +2039,7 @@ slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	fn = slaxGetAttrib(nodep, ATT_NAME);
 
 	if (fn == NULL) {
-	    slaxLog("slax: function with out a name");
+	    slaxLog("slax: function without a name");
 	    return;
 	}
 
@@ -2054,7 +2051,7 @@ slaxWriteFunctionElement (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	slaxWrite(swp, ") {");
 	slaxWriteNewline(swp, NEWL_INDENT);
 
-	slaxWriteNamedTemplateParams(swp, docp, nodep, fn == NULL, TRUE);
+	slaxWriteNamedTemplateParams(swp, docp, nodep, FALSE, TRUE);
 
 	xmlFree(fn);
 
@@ -3811,6 +3808,14 @@ slaxWriteCommentMustWrap (const char *str, int line_width)
     return FALSE;
 }
 
+static inline char *
+slaxWriteAppend (char *bp, char *ep, char ch)
+{
+    if (bp + 1 < ep)  /* Leave room for trailing NUL */
+        *bp++ = ch;
+    return bp;
+}
+
 static void
 slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 {
@@ -3880,8 +3885,8 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	} else if (*cp == '/') {
 	    if (cp[1] == '*') {
 		/* Putting slash-star inside a comment is not permitted */
-		*bp++ = *cp;
-		*bp++ = ' ';
+		bp = slaxWriteAppend(bp, ep, *cp);
+		bp = slaxWriteAppend(bp, ep, ' ');
 		continue;
 	    }
 
@@ -3894,8 +3899,8 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 		if (tlen == wlen)
 		    break;
 
-		*bp++ = *cp;
-		*bp++ = ' ';
+		bp = slaxWriteAppend(bp, ep, *cp);
+		bp = slaxWriteAppend(bp, ep, ' ');
 		continue;
 	    }
 
@@ -3903,13 +3908,13 @@ slaxWriteComment (slax_writer_t *swp, xmlDocPtr docp UNUSED, xmlNodePtr nodep)
 	    continue;
 	}
 
-	*bp++ = *cp;
+	bp = slaxWriteAppend(bp, ep, *cp);
     }
 
     while (bp > buf && bp[-1] == ' ')
 	bp -= 1;
 
-    *bp = '\0';
+    *bp = '\0';   /* Always room for the trailing NUL */
 
     start = buf;
 

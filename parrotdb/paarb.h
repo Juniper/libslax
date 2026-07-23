@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <sys/param.h>
 
+#include "gen/paarb_gen.h"
+
 /**
  * A trivial malloc-like arbitrary-sized memory allocation library
  * built on top of the mmap allocator.  The result is a library that
@@ -49,10 +51,6 @@
 typedef uint8_t pa_arb_chunk_t;
 typedef uint8_t pa_arb_slot_t;
 
-/* Define our wrapper type */
-PA_ATOM_TYPE(pa_arb_atom_t, pa_arb_atom_s, pra_atom,
-	     pa_arb_is_null, pa_arb_atom, pa_arb_atom_of, pa_arb_null_atom);
-
 typedef struct pa_arb_header_s {
     uint16_t prh_magic;		/* Magic constant so we know we are us */
     union {
@@ -72,7 +70,7 @@ typedef struct pa_arb_header_s {
 
 /** Constants for "small" allocations */
 #define PA_ARB_ATOM_SHIFT	4 /* 1<<4 == 16, size of atom */
-#define PA_ARB_ATOM_SIZE	(1 << PA_ARB_ATOM_SIZE)
+#define PA_ARB_ATOM_SIZE	(1 << PA_ARB_ATOM_SHIFT)
 #define PA_ARB_PAGE_SHIFT	12 /* 1<<12 == 4k atoms per page */
 #define PA_ARB_PAGE_SIZE	(1 << PA_ARB_PAGE_SHIFT)
 
@@ -112,8 +110,7 @@ typedef struct pa_arb_info_s {
 
 typedef struct pa_arb_s {
     pa_mmap_t *pr_mmap;		/* Underlaying memory file */
-    pa_arb_info_t pr_info;	/* Our info structure, if needed */
-    pa_arb_info_t *pr_infop;	/* A pointer to our info structure */
+    pa_arb_info_t *pr_infop;	/* Pointer to persistent info (in mmap header) */
 } pa_arb_t;
 
 static inline void *

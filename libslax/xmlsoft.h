@@ -21,7 +21,16 @@
 
 #include <ctype.h>
 
-#include <libxslt/xsltutils.h>	/* For xsltHandleDebuggerCallback, etc */
+/*
+ * Beginning with libxslt-v1.1.38, xsltutils.h only conditionally
+ * exposes xslt debugger functions, like xsltSetDebuggerCallbacks().
+ * So we have to punt duplicate its declaration here.  Sad, but ...
+ * And you need to hope that the library was built with the debuggger.
+ */
+#include <libxslt/xsltutils.h>  /* For xsltSetDebuggerCallbacks, etc */
+XSLTPUBFUN int XSLTCALL xsltSetDebuggerCallbacks (int no, void *block);
+XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
+
 #include <libxslt/extensions.h>
 #include <libslax/slaxdyn.h>
 
@@ -368,6 +377,27 @@ slaxSetupFakeContext (void)
     static const xmlChar just_say_no[] = " ";
 
     return xmlCreateDocParserCtxt(just_say_no);
+}
+
+/*
+ * Turns out libxml2's xmlValidateName() allows some invalid stuff, so
+ * we enforce our own validity checks.
+ */
+static inline int
+slaxValidateName (const char *name)
+{
+    if (name == NULL || *name == '\0')
+	return FALSE;
+
+    int valid = xmlValidateName((const xmlChar *) name, FALSE);
+    if (!valid)
+	return valid;
+
+    size_t len = strlen(name);
+    if (strspn(name, ":/@\"\'\\") == len)
+	return FALSE;
+
+    return TRUE;
 }
 
 #endif /* LIBSLAX_XMLSOFT_NEED_PRIVATE */

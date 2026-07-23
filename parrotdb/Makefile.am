@@ -43,3 +43,8 @@ libparrotdb_la_SOURCES = \
     paistr.c \
     pammap.c \
     papat.c
+
+GEN_CODE = ${top_srcdir}/bin/gen-code.sh
+
+gen_headers:
+	sh ${GEN_CODE}
