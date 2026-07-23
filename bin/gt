@@ -33,6 +33,21 @@ set_git_top () {
     exit 1
 }
 
+show_top () {
+    set_git_top
+    case "$1" in
+	/*)
+	    echo "${GIT_TOP}$1"
+            ;;
+        ?*)
+	    echo "${GIT_TOP}/$1"
+            ;;
+        *)
+	    echo "${GIT_TOP}"
+            ;;
+    esac
+}
+
 git_diff () {
     diff_args=
     case "$1" in
@@ -390,6 +405,13 @@ case "$op" in
 	## == (commit spelled backwards)
         set_branch
         git commit "$@"
+        ;;
+
+    top)
+	## gt top <path>
+	## == show the top of the current repo
+	## == appending the <path> if given
+        show_top "$@"
         ;;
 
     unpatch)
