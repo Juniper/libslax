@@ -231,6 +231,368 @@ fi
 AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
 
 #
+# ---- captive libxml module selection
+#
+# libxml2 used to have 34 separate --with-XXX/--without-XXX flags plus
+# a tangle of hand-written dependency rules between them.  That's
+# replaced here with a single --with-bxml-modules=LIST option.  LIST is
+# a space-separated set of module names and/or module sets:
+#
+#   --with-bxml-modules='default'                 (the default, if omitted)
+#   --with-bxml-modules='min'                     start from (almost) nothing
+#   --with-bxml-modules='all'                     everything on
+#   --with-bxml-modules='legacy'                  default, plus schematron/zlib
+#   --with-bxml-modules='default -history icu'    default, minus history, plus icu
+#
+# A bare name turns a module on; "-name" or "no-name" turns it off (the
+# leading "+" on a name, e.g. "+icu", is accepted too, but is just a
+# synonym for the bare name -- it's optional).  Unknown names/sets are
+# a hard error.  Run "configure --enable-list-bxml-modules" to see the
+# table.
+#
+# Each table row is name:default:implies:description.  "implies" is a
+# comma-separated list of other modules that get forced on, to a fixed
+# point, whenever this one ends up on -- so turning on "relaxng" also
+# turns on "regexps" and "schemas" without having to spell them out.
+#
+BXML_MODULE_TABLE='
+c14n:on:output,xpath:Canonical XML 1.0 support
+catalog:on::XML Catalogs support
+debug:on::debugging module
+docs:off::Build documentation
+history:off:readline:history support for xmllint shell
+readline:off::use readline for shell history
+html:on::HTML parser
+http:off::ABI compatibility stubs for removed HTTP support
+iconv:on::iconv support
+icu:off::ICU support
+iso8859x:on::ISO-8859-X support if no iconv
+modules:on::dynamic modules support
+output:on::serialization support
+pattern:on::xmlPattern selection interface
+push:on::push parser interfaces
+python:on::Python bindings
+reader:on:push:xmlReader parsing interface
+regexps:on::regular expressions support
+relaxng:on:regexps,schemas:RELAX NG support
+sax1:on::older SAX1 interface
+schemas:on:pattern,regexps:XML Schemas 1.0 support
+schematron:off:pattern,xpath:Schematron support
+threads:on::multithreading support
+thread-alloc:off::per-thread malloc hooks
+valid:on::DTD validation support
+writer:on:output,push:xmlWriter serialization interface
+xinclude:on::XInclude 1.0 support
+xpath:on::XPath 1.0 support
+xptr:on:xpath:XPointer support
+zlib:off::use libz for compression
+tls:off::thread-local storage
+'
+
+BXML_MODULE_NAMES=`echo "$BXML_MODULE_TABLE" | awk -F: 'NF { print $1 }'`
+
+# name -> shell-safe variable fragment ("thread-alloc" -> "thread_alloc")
+bxml_var () {
+    echo "$1" | tr '-' '_'
+}
+
+bxml_known () {
+    for bxml_n in $BXML_MODULE_NAMES; do
+        test "$bxml_n" = "$1" && return 0
+    done
+    return 1
+}
+
+bxml_set () { # name value
+    eval "bxml_mod_`bxml_var $1`=$2"
+}
+
+bxml_get () { # name
+    eval "echo \$bxml_mod_`bxml_var $1`"
+}
+
+# reset every module to its table default (also (re)loads implies/)
+bxml_reset_all () {
+    bxml_old_IFS=$IFS
+    IFS='
+'
+    for bxml_row in $BXML_MODULE_TABLE; do
+        test -z "$bxml_row" && continue
+        bxml_name=`echo "$bxml_row" | cut -d: -f1`
+        bxml_default=`echo "$bxml_row" | cut -d: -f2`
+        bxml_implies=`echo "$bxml_row" | cut -d: -f3`
+        eval "bxml_implies_`bxml_var $bxml_name`=\"$bxml_implies\""
+        bxml_set "$bxml_name" "$bxml_default"
+    done
+    IFS=$bxml_old_IFS
+}
+bxml_reset_all
+
+bxml_apply_min () {
+    for bxml_n in $BXML_MODULE_NAMES; do bxml_set "$bxml_n" off; done
+}
+
+bxml_apply_all () {
+    for bxml_n in $BXML_MODULE_NAMES; do bxml_set "$bxml_n" on; done
+}
+
+bxml_apply_legacy () {
+    bxml_reset_all
+    bxml_set schematron on
+    bxml_set zlib on
+}
+
+AC_ARG_WITH(bxml-modules,
+  [  --with-bxml-modules=LIST   captive libxml modules to build.  LIST is a
+                        space-separated list of module names and/or
+                        module sets (default, min, all, legacy);
+                        prefix a name with - or no- to disable it.
+                        See --enable-list-bxml-modules for the full set.],
+  [BXML_MODULES_ARG=$withval], [BXML_MODULES_ARG=default])
+test "x$BXML_MODULES_ARG" = "xyes" && BXML_MODULES_ARG=default
+
+AC_ARG_ENABLE(list-bxml-modules,
+  [  --enable-list-bxml-modules   List captive libxml modules/sets and exit],
+  [BXML_LIST=$enableval], [BXML_LIST=no])
+
+if test "x$BXML_LIST" != "xno"; then
+    echo "bxml module sets: default min all legacy"
+    echo ""
+    echo "bxml modules:"
+    bxml_old_IFS=$IFS
+    IFS='
+'
+    for bxml_row in $BXML_MODULE_TABLE; do
+        test -z "$bxml_row" && continue
+        bxml_name=`echo "$bxml_row" | cut -d: -f1`
+        bxml_default=`echo "$bxml_row" | cut -d: -f2`
+        bxml_implies=`echo "$bxml_row" | cut -d: -f3`
+        bxml_desc=`echo "$bxml_row" | cut -d: -f4`
+        printf '  %-14s %-4s implies: %-20s %s\n' \
+            "$bxml_name" "$bxml_default" "$bxml_implies" "$bxml_desc"
+    done
+    IFS=$bxml_old_IFS
+    exit 0
+fi
+
+for bxml_tok in $BXML_MODULES_ARG; do
+    case $bxml_tok in
+        default) bxml_reset_all ;;
+        min)     bxml_apply_min ;;
+        all)     bxml_apply_all ;;
+        legacy)  bxml_apply_legacy ;;
+        -*|no-*)
+            bxml_name=`echo "$bxml_tok" | sed -e 's/^-//' -e 's/^no-//'`
+            bxml_known "$bxml_name" || \
+                AC_MSG_ERROR([unknown bxml module: $bxml_name])
+            bxml_set "$bxml_name" off
+            ;;
+        +*)
+            bxml_name=`echo "$bxml_tok" | sed -e 's/^+//'`
+            bxml_known "$bxml_name" || \
+                AC_MSG_ERROR([unknown bxml module: $bxml_name])
+            bxml_set "$bxml_name" on
+            ;;
+        *)
+            bxml_known "$bxml_tok" || \
+                AC_MSG_ERROR([unknown bxml module or set: $bxml_tok])
+            bxml_set "$bxml_tok" on
+            ;;
+    esac
+done
+
+# Force on, to a fixed point, every prerequisite of a module that's on.
+# This is the only direction resolved automatically: turning a module
+# off never reaches out and turns other modules off, so a contradictory
+# request (e.g. "relaxng -regexps") just re-enables regexps and says so,
+# rather than silently dropping relaxng instead.
+bxml_changed=yes
+bxml_pass=0
+while test "$bxml_changed" = yes; do
+    bxml_changed=no
+    bxml_pass=`expr $bxml_pass + 1`
+    test $bxml_pass -gt 10 && \
+        AC_MSG_ERROR([bxml module dependency resolution did not converge])
+    for bxml_name in $BXML_MODULE_NAMES; do
+        test "`bxml_get $bxml_name`" = on || continue
+        eval "bxml_implies=\$bxml_implies_`bxml_var $bxml_name`"
+        test -z "$bxml_implies" && continue
+        for bxml_dep in `echo "$bxml_implies" | tr ',' ' '`; do
+            if test "`bxml_get $bxml_dep`" = off; then
+                AC_MSG_NOTICE([bxml: enabling '$bxml_dep', required by '$bxml_name'])
+                bxml_set "$bxml_dep" on
+                bxml_changed=yes
+            fi
+        done
+    done
+done
+
+BXML_MODULES=
+for bxml_name in $BXML_MODULE_NAMES; do
+    test "`bxml_get $bxml_name`" = on && BXML_MODULES="$BXML_MODULES $bxml_name"
+done
+BXML_MODULES=`echo $BXML_MODULES`
+AC_SUBST(BXML_MODULES)
+AC_MSG_RESULT([bxml modules enabled:${BXML_MODULES}])
+
+# Turn each module's on/off state into a WITH_<NAME> shell variable
+# (1 or 0) so the explicit AC_SUBST/AC_DEFINE_UNQUOTED/AM_CONDITIONAL
+# calls below -- one block per module, matching the WITH_<NAME> and
+# WITH_<NAME>_SOURCES names libbxml's own Makefile.am/xmlversion.h.in
+# already expect -- can pick them up.
+for bxml_name in $BXML_MODULE_NAMES; do
+    bxml_upper=`bxml_var $bxml_name | tr a-z A-Z`
+    if test "`bxml_get $bxml_name`" = on; then
+        eval "WITH_$bxml_upper=1"
+    else
+        eval "WITH_$bxml_upper=0"
+    fi
+done
+
+AC_SUBST(WITH_C14N)
+AC_DEFINE_UNQUOTED([WITH_C14N], [$WITH_C14N], [Canonical XML 1.0 support])
+AM_CONDITIONAL([WITH_C14N], [test "$WITH_C14N" = "1"])
+AM_CONDITIONAL([WITH_C14N_SOURCES], [test "$WITH_C14N" = "1"])
+
+AC_SUBST(WITH_CATALOG)
+AC_DEFINE_UNQUOTED([WITH_CATALOG], [$WITH_CATALOG], [XML Catalogs support])
+AM_CONDITIONAL([WITH_CATALOG], [test "$WITH_CATALOG" = "1"])
+AM_CONDITIONAL([WITH_CATALOG_SOURCES], [test "$WITH_CATALOG" = "1"])
+
+AC_SUBST(WITH_DEBUG)
+AC_DEFINE_UNQUOTED([WITH_DEBUG], [$WITH_DEBUG], [debugging module])
+AM_CONDITIONAL([WITH_DEBUG], [test "$WITH_DEBUG" = "1"])
+AM_CONDITIONAL([WITH_DEBUG_SOURCES], [test "$WITH_DEBUG" = "1"])
+
+AC_SUBST(WITH_DOCS)
+AC_DEFINE_UNQUOTED([WITH_DOCS], [$WITH_DOCS], [Build documentation])
+AM_CONDITIONAL([WITH_DOCS], [test "$WITH_DOCS" = "1"])
+
+AC_SUBST(WITH_HISTORY)
+AC_DEFINE_UNQUOTED([WITH_HISTORY], [$WITH_HISTORY], [history support for xmllint shell])
+AM_CONDITIONAL([WITH_HISTORY], [test "$WITH_HISTORY" = "1"])
+
+AC_SUBST(WITH_READLINE)
+AC_DEFINE_UNQUOTED([WITH_READLINE], [$WITH_READLINE], [use readline for shell history])
+AM_CONDITIONAL([WITH_READLINE], [test "$WITH_READLINE" = "1"])
+
+AC_SUBST(WITH_HTML)
+AC_DEFINE_UNQUOTED([WITH_HTML], [$WITH_HTML], [HTML parser])
+AM_CONDITIONAL([WITH_HTML], [test "$WITH_HTML" = "1"])
+AM_CONDITIONAL([WITH_HTML_SOURCES], [test "$WITH_HTML" = "1"])
+
+AC_SUBST(WITH_HTTP)
+AC_DEFINE_UNQUOTED([WITH_HTTP], [$WITH_HTTP], [ABI compatibility stubs for removed HTTP support])
+AM_CONDITIONAL([WITH_HTTP], [test "$WITH_HTTP" = "1"])
+AM_CONDITIONAL([WITH_HTTP_SOURCES], [test "$WITH_HTTP" = "1"])
+
+AC_SUBST(WITH_ICONV)
+AC_DEFINE_UNQUOTED([WITH_ICONV], [$WITH_ICONV], [iconv support])
+AM_CONDITIONAL([WITH_ICONV], [test "$WITH_ICONV" = "1"])
+
+AC_SUBST(WITH_ICU)
+AC_DEFINE_UNQUOTED([WITH_ICU], [$WITH_ICU], [ICU support])
+AM_CONDITIONAL([WITH_ICU], [test "$WITH_ICU" = "1"])
+
+AC_SUBST(WITH_ISO8859X)
+AC_DEFINE_UNQUOTED([WITH_ISO8859X], [$WITH_ISO8859X], [ISO-8859-X support if no iconv])
+AM_CONDITIONAL([WITH_ISO8859X], [test "$WITH_ISO8859X" = "1"])
+
+AC_SUBST(WITH_MODULES)
+AC_DEFINE_UNQUOTED([WITH_MODULES], [$WITH_MODULES], [dynamic modules support])
+AM_CONDITIONAL([WITH_MODULES], [test "$WITH_MODULES" = "1"])
+AM_CONDITIONAL([WITH_MODULES_SOURCES], [test "$WITH_MODULES" = "1"])
+
+AC_SUBST(WITH_OUTPUT)
+AC_DEFINE_UNQUOTED([WITH_OUTPUT], [$WITH_OUTPUT], [serialization support])
+AM_CONDITIONAL([WITH_OUTPUT], [test "$WITH_OUTPUT" = "1"])
+AM_CONDITIONAL([WITH_OUTPUT_SOURCES], [test "$WITH_OUTPUT" = "1"])
+
+AC_SUBST(WITH_PATTERN)
+AC_DEFINE_UNQUOTED([WITH_PATTERN], [$WITH_PATTERN], [xmlPattern selection interface])
+AM_CONDITIONAL([WITH_PATTERN], [test "$WITH_PATTERN" = "1"])
+AM_CONDITIONAL([WITH_PATTERN_SOURCES], [test "$WITH_PATTERN" = "1"])
+
+AC_SUBST(WITH_PUSH)
+AC_DEFINE_UNQUOTED([WITH_PUSH], [$WITH_PUSH], [push parser interfaces])
+AM_CONDITIONAL([WITH_PUSH], [test "$WITH_PUSH" = "1"])
+
+AC_SUBST(WITH_PYTHON)
+AC_DEFINE_UNQUOTED([WITH_PYTHON], [$WITH_PYTHON], [Python bindings])
+AM_CONDITIONAL([WITH_PYTHON], [test "$WITH_PYTHON" = "1"])
+
+AC_SUBST(WITH_READER)
+AC_DEFINE_UNQUOTED([WITH_READER], [$WITH_READER], [xmlReader parsing interface])
+AM_CONDITIONAL([WITH_READER], [test "$WITH_READER" = "1"])
+AM_CONDITIONAL([WITH_READER_SOURCES], [test "$WITH_READER" = "1"])
+
+AC_SUBST(WITH_REGEXPS)
+AC_DEFINE_UNQUOTED([WITH_REGEXPS], [$WITH_REGEXPS], [regular expressions support])
+AM_CONDITIONAL([WITH_REGEXPS], [test "$WITH_REGEXPS" = "1"])
+AM_CONDITIONAL([WITH_REGEXPS_SOURCES], [test "$WITH_REGEXPS" = "1"])
+
+AC_SUBST(WITH_RELAXNG)
+AC_DEFINE_UNQUOTED([WITH_RELAXNG], [$WITH_RELAXNG], [RELAX NG support])
+AM_CONDITIONAL([WITH_RELAXNG], [test "$WITH_RELAXNG" = "1"])
+AM_CONDITIONAL([WITH_RELAXNG_SOURCES], [test "$WITH_RELAXNG" = "1"])
+
+AC_SUBST(WITH_SAX1)
+AC_DEFINE_UNQUOTED([WITH_SAX1], [$WITH_SAX1], [older SAX1 interface])
+AM_CONDITIONAL([WITH_SAX1], [test "$WITH_SAX1" = "1"])
+AM_CONDITIONAL([WITH_SAX1_SOURCES], [test "$WITH_SAX1" = "1"])
+
+AC_SUBST(WITH_SCHEMAS)
+AC_DEFINE_UNQUOTED([WITH_SCHEMAS], [$WITH_SCHEMAS], [XML Schemas 1.0 support])
+AM_CONDITIONAL([WITH_SCHEMAS], [test "$WITH_SCHEMAS" = "1"])
+AM_CONDITIONAL([WITH_SCHEMAS_SOURCES], [test "$WITH_SCHEMAS" = "1"])
+
+AC_SUBST(WITH_SCHEMATRON)
+AC_DEFINE_UNQUOTED([WITH_SCHEMATRON], [$WITH_SCHEMATRON], [Schematron support])
+AM_CONDITIONAL([WITH_SCHEMATRON], [test "$WITH_SCHEMATRON" = "1"])
+AM_CONDITIONAL([WITH_SCHEMATRON_SOURCES], [test "$WITH_SCHEMATRON" = "1"])
+
+AC_SUBST(WITH_THREADS)
+AC_DEFINE_UNQUOTED([WITH_THREADS], [$WITH_THREADS], [multithreading support])
+AM_CONDITIONAL([WITH_THREADS], [test "$WITH_THREADS" = "1"])
+
+AC_SUBST(WITH_THREAD_ALLOC)
+AC_DEFINE_UNQUOTED([WITH_THREAD_ALLOC], [$WITH_THREAD_ALLOC], [per-thread malloc hooks])
+AM_CONDITIONAL([WITH_THREAD_ALLOC], [test "$WITH_THREAD_ALLOC" = "1"])
+
+AC_SUBST(WITH_VALID)
+AC_DEFINE_UNQUOTED([WITH_VALID], [$WITH_VALID], [DTD validation support])
+AM_CONDITIONAL([WITH_VALID], [test "$WITH_VALID" = "1"])
+AM_CONDITIONAL([WITH_VALID_SOURCES], [test "$WITH_VALID" = "1"])
+
+AC_SUBST(WITH_WRITER)
+AC_DEFINE_UNQUOTED([WITH_WRITER], [$WITH_WRITER], [xmlWriter serialization interface])
+AM_CONDITIONAL([WITH_WRITER], [test "$WITH_WRITER" = "1"])
+AM_CONDITIONAL([WITH_WRITER_SOURCES], [test "$WITH_WRITER" = "1"])
+
+AC_SUBST(WITH_XINCLUDE)
+AC_DEFINE_UNQUOTED([WITH_XINCLUDE], [$WITH_XINCLUDE], [XInclude 1.0 support])
+AM_CONDITIONAL([WITH_XINCLUDE], [test "$WITH_XINCLUDE" = "1"])
+AM_CONDITIONAL([WITH_XINCLUDE_SOURCES], [test "$WITH_XINCLUDE" = "1"])
+
+AC_SUBST(WITH_XPATH)
+AC_DEFINE_UNQUOTED([WITH_XPATH], [$WITH_XPATH], [XPath 1.0 support])
+AM_CONDITIONAL([WITH_XPATH], [test "$WITH_XPATH" = "1"])
+AM_CONDITIONAL([WITH_XPATH_SOURCES], [test "$WITH_XPATH" = "1"])
+
+AC_SUBST(WITH_XPTR)
+AC_DEFINE_UNQUOTED([WITH_XPTR], [$WITH_XPTR], [XPointer support])
+AM_CONDITIONAL([WITH_XPTR], [test "$WITH_XPTR" = "1"])
+AM_CONDITIONAL([WITH_XPTR_SOURCES], [test "$WITH_XPTR" = "1"])
+
+AC_SUBST(WITH_ZLIB)
+AC_DEFINE_UNQUOTED([WITH_ZLIB], [$WITH_ZLIB], [use libz for compression])
+AM_CONDITIONAL([WITH_ZLIB], [test "$WITH_ZLIB" = "1"])
+
+AC_SUBST(WITH_TLS)
+AC_DEFINE_UNQUOTED([WITH_TLS], [$WITH_TLS], [thread-local storage])
+AM_CONDITIONAL([WITH_TLS], [test "$WITH_TLS" = "1"])
+
+#
 # ---- start of noise
 #
 
