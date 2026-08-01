@@ -15,12 +15,18 @@
 #ifndef LIBXI_XINODE_H
 #define LIBXI_XINODE_H
 
+#include <parrotdb/pacommon.h>
+#include <libxi/xicommon.h>
+
 /*
  * Since we're using these as bitfields, we're unable to use
  * atom wrappers.  This will require extra care.
  */
 typedef pa_atom_t xi_name_id_raw_t;	/* Element name identifier */
 typedef pa_atom_t xi_ns_map_id_raw_t;	/* Namespace identifier */
+
+/* Raw atom for node references (parent, next, contents links) */
+typedef pa_atom_t xi_node_id_t;
 
 /* Wrapper for our "name" atom */
 PA_ATOM_TYPE(xi_name_atom_t, xi_name_atom_s, xna_atom,
@@ -50,7 +56,7 @@ typedef struct xi_node_s {
     xi_node_type_t xn_type;	/* Type of this node */
     xi_depth_t xn_depth;	/* Depth of this node (origin XI_DEPTH_MIN) */
     xi_node_flags_t xn_flags;	/* Flags (XNF_*) */
-    xi_ns_id_raw_t xn_ns_map_t;	/* Namespace map for this node (in ns_map) */
+    xi_ns_map_id_raw_t xn_ns_map;	/* Namespace map for this node (in ns_map) */
     xi_name_id_raw_t xn_name;   /* Name of this node (in name db) */
     xi_node_id_t xn_parent;	/* Parent node (NULL if root) */
     xi_node_id_t xn_next;	/* Next node (or parent if last) */
@@ -74,10 +80,5 @@ typedef struct xi_ns_map_s {
     pa_atom_t xnm_uri;          /* Atom of URL string (in namepool) */
 } xi_ns_map_t;
 
-static inline xi_name_t
-xi_node_get_name (xi_node_t *nodep)
-{
-    
-}
 
 #endif /* LIBXI_XINODE_H */
