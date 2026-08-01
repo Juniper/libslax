@@ -16,6 +16,8 @@ include ${top_srcdir}/warnings.mk
 
 AM_CFLAGS = \
     -I${top_builddir} \
+    -I${top_builddir}/parrotdb \
+    -I${top_builddir}/libxi \
     -I${top_srcdir} \
     ${WARNINGS}
 
@@ -35,12 +37,46 @@ libxiinc_HEADERS = \
     xixpath.h
 
 libxi_la_SOURCES = \
-    xisource.c
+    xisource.c \
+    xiworkspace.c \
+    xitree.c \
+    xiparse.c \
+    xirules.c
+
+libxi_la_LIBADD = \
+    $(top_builddir)/libpsu/libpsu.la \
+    $(top_builddir)/parrotdb/libparrotdb.la
 
 XXXX=\
-    xiparse.c \
-    xirules.c \
-    xitree.c \
     xiwhiffle.c \
-    xiworkspace.c \
     xixpath.c
+
+GEN_CODE = ${top_srcdir}/bin/gen-code.sh
+GEN_STAMP = gen/.stamp
+
+GENERATED = \
+    gen/xi_rule_id_gen.h \
+    gen/xi_rstate_id_gen.h \
+    gen/xi_node_gen.h \
+    gen/xi_ns_map_gen.h \
+    gen/xi_nodeset_chunk_gen.h \
+    gen/xi_nodeset_info_gen.h
+
+BUILT_SOURCES = ${GENERATED}
+
+$(GEN_STAMP): $(GEN_CODE)
+	$(MKDIR_P) gen
+	sh $(GEN_CODE) xi
+	touch $(GEN_STAMP)
+
+$(GENERATED): $(GEN_STAMP)
+	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) $(GEN_STAMP)
+
+gen_headers: $(GEN_STAMP)
+
+CLEANFILES = $(GEN_STAMP)
+
+CLEANDIRS = gen
+
+clean-local:
+	rm -rf ${CLEANDIRS}
