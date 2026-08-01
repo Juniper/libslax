@@ -20,6 +20,67 @@ pa_XXX_atom_of \
 pa_XXX_null_atom \
 "
 
+# Generates alloc/free/addr inline functions for pa_atom_t-keyed fixed arrays.
+# Parameters: elem_type, base_type, field, alloc_fn, free_fn, addr_fn.
+PLAIN_FUNCTIONS_CODE='
+static inline $elem_type *
+$alloc_fn ($base_type *basep, pa_atom_t *atomp)
+{
+    if (atomp == NULL)
+	return NULL;
+    pa_fixed_atom_t _fa = pa_fixed_alloc_atom(basep->$field);
+    $elem_type *_datap = pa_fixed_atom_addr(basep->$field, _fa);
+    *atomp = pa_fixed_atom_of(_fa);
+    return _datap;
+}
+
+static inline void
+$free_fn ($base_type *basep, pa_atom_t _atom)
+{
+    if (_atom == PA_NULL_ATOM) return;
+    pa_fixed_free_atom(basep->$field, pa_fixed_atom(_atom));
+}
+
+static inline $elem_type *
+$addr_fn ($base_type *basep, pa_atom_t _atom)
+{
+    if (_atom == PA_NULL_ATOM) return NULL;
+    return ($elem_type *) pa_fixed_atom_addr(basep->$field, pa_fixed_atom(_atom));
+}
+'
+
+# Like atom_generic but wraps pa_fixed_atom_t (for PA_FIXED_ATOM_TYPE style).
+# Used for libxi typed atoms that index into pa_fixed_t arrays.
+FIXED_ATOM_CODE='
+typedef struct $atom_struct {
+    pa_fixed_atom_t $field;		/* Fixed atom number */
+} $atom_type;
+
+static inline psu_boolean_t
+$is_null_fn ($atom_type atom)
+{
+    return pa_fixed_is_null(atom.$field);
+}
+
+static inline $atom_type
+$build_fn (pa_atom_t atom)
+{
+    return ($atom_type){ pa_fixed_atom(atom) };
+}
+
+static inline pa_fixed_atom_t
+$atom_of_fn ($atom_type atom)
+{
+    return atom.$field;
+}
+
+static inline $atom_type
+$null_atom_fn (void)
+{
+    return $build_fn(PA_NULL_ATOM);
+}
+'
+
 base_atoms="\
 arb \
 bitmap \
@@ -44,6 +105,82 @@ field_istr_data=pida_atom
 field_mmap=pma_atom
 field_pat=ppa_atom
 field_pat_data=ppa_data_atom
+
+# libxi fixed-atom typed wrappers: file, type, struct, field, is_null, build, atom_of, null_atom
+atom_xi_rule_id="
+xi_rule_id_gen.h \
+xi_rule_id_t \
+xi_rule_id_s \
+xrid_atom \
+xi_rule_id_is_null \
+xi_rule_id \
+xi_rule_id_atom_of \
+xi_rule_id_null_atom \
+"
+
+atom_xi_rstate_id="
+xi_rstate_id_gen.h \
+xi_rstate_id_t \
+xi_rstate_id_s \
+xrsid_atom \
+xi_rstate_id_is_null \
+xi_rstate_id \
+xi_rstate_id_atom_of \
+xi_rstate_id_null_atom \
+"
+
+xi_fixed_atoms="\
+xi_rule_id \
+xi_rstate_id \
+"
+
+# libxi plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
+plain_xi_node="
+xi_node_gen.h \
+xi_node_t \
+xi_workspace_t \
+xw_nodes \
+xi_node_alloc \
+xi_node_free \
+xi_node_addr \
+"
+
+plain_xi_ns_map="
+xi_ns_map_gen.h \
+xi_ns_map_t \
+xi_workspace_t \
+xw_ns_map \
+xi_ns_map_alloc \
+xi_ns_map_free \
+xi_ns_map_addr \
+"
+
+plain_xi_nodeset_chunk="
+xi_nodeset_chunk_gen.h \
+xi_nodeset_chunk_t \
+xi_nodeset_t \
+xns_workspace->xw_nodeset_chunks \
+xi_nodeset_chunk_alloc \
+xi_nodeset_chunk_free \
+xi_nodeset_chunk_addr \
+"
+
+plain_xi_nodeset_info="
+xi_nodeset_info_gen.h \
+xi_nodeset_info_t \
+xi_workspace_t \
+xw_nodeset_info \
+xi_nodeset_info_alloc \
+xi_nodeset_info_free \
+xi_nodeset_info_addr \
+"
+
+xi_plain_atoms="\
+xi_node \
+xi_ns_map \
+xi_nodeset_chunk \
+xi_nodeset_info \
+"
 
 ATOM_CODE='
 typedef struct $atom_struct {
@@ -170,6 +307,70 @@ make_one_named_atom() {
     make_one_atom $name $args
 }
 
+make_one_fixed_atom() {
+    local name=$1 ; shift
+    local file=$1 ; shift
+    local atom_type=$1 ; shift
+    local atom_struct=$1 ; shift
+    local field=$1 ; shift
+    local is_null_fn=$1 ; shift
+    local build_fn=$1 ; shift
+    local atom_of_fn=$1 ; shift
+    local null_atom_fn=$1 ; shift
+
+    echo "Generating fixed header for $name ( gen/$file ) ..."
+
+    echo "${FIXED_ATOM_CODE}" | sed \
+        -e "s:\$atom_type:$atom_type:g" \
+        -e "s:\$atom_struct:$atom_struct:g" \
+        -e "s:\$field:$field:g" \
+        -e "s:\$is_null_fn:$is_null_fn:g" \
+        -e "s:\$build_fn:$build_fn:g" \
+        -e "s:\$atom_of_fn:$atom_of_fn:g" \
+        -e "s:\$null_atom_fn:$null_atom_fn:g" \
+	| write_to_file gen/$file
+
+    add_open_file gen/$file
+}
+
+make_one_fixed_named_atom() {
+    local name=$1 ; shift
+
+    args=`eval echo '\$atom_'$name`
+    make_one_fixed_atom $name $args
+}
+
+make_one_plain_atom() {
+    local name=$1 ; shift
+    local file=$1 ; shift
+    local elem_type=$1 ; shift
+    local base_type=$1 ; shift
+    local field=$1 ; shift
+    local alloc_fn=$1 ; shift
+    local free_fn=$1 ; shift
+    local addr_fn=$1 ; shift
+
+    echo "Generating plain functions for $name ( gen/$file ) ..."
+
+    echo "${PLAIN_FUNCTIONS_CODE}" | sed \
+        -e "s:\$elem_type:$elem_type:g" \
+        -e "s:\$base_type:$base_type:g" \
+        -e "s:\$field:$field:g" \
+        -e "s:\$alloc_fn:$alloc_fn:g" \
+        -e "s:\$free_fn:$free_fn:g" \
+        -e "s:\$addr_fn:$addr_fn:g" \
+        | write_to_file gen/$file
+
+    add_open_file gen/$file
+}
+
+make_one_plain_named_atom() {
+    local name=$1 ; shift
+
+    args=`eval echo '\$plain_'$name`
+    make_one_plain_atom $name $args
+}
+
 do_work() {
     local name
     for name in $base_atoms; do
@@ -181,6 +382,18 @@ do_work() {
 
 do_one() {
     make_one_named_atom $1
+}
+
+do_xi() {
+    local name
+    for name in $xi_fixed_atoms; do
+	make_one_fixed_named_atom $name
+    done
+    for name in $xi_plain_atoms; do
+	make_one_plain_named_atom $name
+    done
+
+    write_trailers
 }
 
 job=$1 ; shift
