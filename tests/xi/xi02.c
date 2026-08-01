@@ -23,23 +23,22 @@
 #include <ctype.h>
 #include <limits.h>
 
-#include "slaxconfig.h"
-#include <libslax/slax.h>
-#include <libslax/pa_common.h>
-#include <libslax/pa_config.h>
-#include <libslax/pa_mmap.h>
-#include <libslax/pa_fixed.h>
-#include <libslax/pa_arb.h>
-#include <libslax/pa_istr.h>
-#include <libslax/pa_pat.h>
-#include <libslax/pa_bitmap.h>
-#include <libslax/xi_common.h>
-#include <libslax/xi_source.h>
-#include <libslax/xi_rules.h>
-#include <libslax/xi_tree.h>
-#include <libslax/xi_workspace.h>
-#include <libslax/xi_parse.h>
-#include <libslax/xi_nodeset.h>
+#include <libpsu/psulog.h>
+#include <parrotdb/pacommon.h>
+#include <parrotdb/paconfig.h>
+#include <parrotdb/pammap.h>
+#include <parrotdb/pafixed.h>
+#include <parrotdb/paarb.h>
+#include <parrotdb/paistr.h>
+#include <parrotdb/papat.h>
+#include <parrotdb/pabitmap.h>
+#include <libxi/xicommon.h>
+#include <libxi/xisource.h>
+#include <libxi/xirules.h>
+#include <libxi/xitree.h>
+#include <libxi/xiworkspace.h>
+#include <libxi/xiparse.h>
+#include <libxi/xinodeset.h>
 
 typedef struct test_data_s {
     xi_workspace_t *td_workp;
@@ -69,8 +68,8 @@ main (int argc, char **argv)
     const char *opt_config = NULL;
     int opt_quiet = 0;
     int opt_dump = 0;
-    int opt_unescape = 0;
-    int opt_clean = 0;
+    int opt_unescape UNUSED = 0;
+    int opt_clean = 1;
     xi_source_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
@@ -90,6 +89,8 @@ main (int argc, char **argv)
 	    opt_quiet = 1;
 	} else if (strcmp(argv[argc], "clean") == 0) {
 	    opt_clean = 1;
+	} else if (strcmp(argv[argc], "no-clean") == 0) {
+	    opt_clean = 0;
 	} else if (strcmp(argv[argc], "unescape") == 0) {
 	    opt_unescape = 1;
 	} else if (strcmp(argv[argc], "line") == 0) {
@@ -106,7 +107,7 @@ main (int argc, char **argv)
     }
 
     if (!opt_quiet)
-	slaxLogEnable(1);
+	psu_log_enable(TRUE);
 
     if (opt_clean)
 	unlink(opt_database);
@@ -116,7 +117,7 @@ main (int argc, char **argv)
     if (opt_config)
 	pa_config_read(opt_config);
 
-    pa_mmap_t *pmp = pa_mmap_open(opt_database, 0, 0644);
+    pa_mmap_t *pmp = pa_mmap_open(opt_database, "xi02", 0, 0644);
     assert(pmp);
 
     xi_workspace_t *workp = xi_workspace_open(pmp, "test");
