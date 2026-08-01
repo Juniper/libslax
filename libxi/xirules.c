@@ -29,8 +29,7 @@
 #include <limits.h>
 
 #include "slaxconfig.h"
-#include <libslax/slaxdef.h>
-#include <libslax/slax.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
@@ -104,7 +103,7 @@ xi_rule_action_value (const char *name)
 	    return type;
     }
 
-    slaxLog("unknown action: '%s'", name);
+    psu_log("unknown action: '%s'", name);
     return XIA_NONE;
 }
 
@@ -119,7 +118,7 @@ xi_rule_action_name (xi_action_type_t action)
 static void
 xi_rule_bitmap_add (xi_rulebook_t *xrbp, xi_rule_t *xrp, const char *tag)
 {
-    slaxLog("xi_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
+    psu_log("xi_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
 
     /* Find the atom representing the tag */
     pa_atom_t atom = xi_parse_namepool_atom(xrbp->xrb_script, tag);
@@ -127,9 +126,9 @@ xi_rule_bitmap_add (xi_rulebook_t *xrbp, xi_rule_t *xrp, const char *tag)
 	return;
 
     /* We need to allocate a bitmap for this rule, if we haven't already */
-    if (xrp->xr_bitmap == PA_NULL_ATOM) {
+    if (pa_bitmap_is_null(xrp->xr_bitmap)) {
 	xrp->xr_bitmap = pa_bitmap_alloc(xrbp->xrb_bitmaps);
-	if (xrp->xr_bitmap == PA_NULL_ATOM)
+	if (pa_bitmap_is_null(xrp->xr_bitmap))
 	    return;
     }
 
@@ -160,15 +159,15 @@ typedef struct xi_rulebook_prep_s {
     struct xrp_stack_s {
 	pa_atom_t xrps_state;	/* State atom (xi_rstate_t) */
 	xi_rstate_t *xrps_statep; /* State array element */
-	pa_atom_t xrps_rule;	/* Current rule atom (xi_rule_t) */
-	pa_atom_t *xrps_nextp;	/* Location to store next atom */
+	xi_rule_id_t xrps_rule;	/* Current rule atom (xi_rule_t) */
+	xi_rule_id_t *xrps_nextp;	/* Location to store next atom */
     } xrp_stack[XI_DEPTH_MAX_RULES];
 } xi_rulebook_prep_t;
 
 static int
 xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 		     pa_atom_t node_atom UNUSED, xi_node_t *nodep,
-		     const char *data, void *opaque)
+		     const char *data UNUSED, void *opaque)
 {
     xi_tree_t *treep = parsep->xp_insert->xi_tree;
     xi_workspace_t *xwp = treep->xt_workspace;
@@ -187,7 +186,7 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
     pa_fixed_page_entry_t *addr;
     for (i = 0; i < 5; i++) {
 	addr = pa_fixed_atom_addr(pfp, atom);
-	slaxLog("rules: check: %u %p", atom, addr);
+	psu_log("rules: check: %u %p", atom, addr);
 	if (addr == NULL)
 	    break;
 	atom = addr[0];
@@ -197,24 +196,24 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
     switch (type) {
     case XI_TYPE_OPEN:
 	if (nodep->xn_name == prep->xrp_atom_script) {
-	    slaxLog("prep: open: script: %s", data);
+	    psu_log("prep: open: script: %s", data);
 	} else if (nodep->xn_name == prep->xrp_atom_state) {
-	    slaxLog("prep: open: state: %s", data);
+	    psu_log("prep: open: state: %s", data);
 	    id = GET_ATTRIB(xrp_atom_id);
 	    action = GET_ATTRIB(xrp_atom_action);
-	    slaxLog("prep: open: state: [%s/%s]",
+	    psu_log("prep: open: state: [%s/%s]",
 		    XX(id), XX(action));
 
 	    /* Valid input requires a good state id number */
-	    xi_state_id_t sid = strtol(id, NULL, 0);
+	    pa_atom_t sid = (pa_atom_t) strtol(id, NULL, 0);
 	    if (sid > pa_fixed_max_atoms(xrbp->xrb_states)) {
-		slaxLog("state id > max: %u .vs. %u",
+		psu_log("state id > max: %u .vs. %u",
 			sid, pa_fixed_max_atoms(xrbp->xrb_states));
 		break;
 	    }
 
 	    xi_rstate_t *statep;
-	    statep = pa_fixed_element(xrbp->xrb_states, sid);
+	    statep = (xi_rstate_t *) pa_fixed_element(xrbp->xrb_states, sid);
 	    if (statep) {
 		bzero(statep, sizeof(*statep));
 
@@ -242,12 +241,12 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 		xrbp->xrb_infop->xrsi_max_state = sid;
 
 	} else if (nodep->xn_name == prep->xrp_atom_rule) {
-	    slaxLog("prep: open: rule: %s", data);
+	    psu_log("prep: open: rule: %s", data);
 	    tag = GET_ATTRIB(xrp_atom_tag);
 	    action = GET_ATTRIB(xrp_atom_action);
 	    new_state = GET_ATTRIB(xrp_atom_new_state);
 	    use_tag = GET_ATTRIB(xrp_atom_use_tag);
-	    slaxLog("prep: open: rule: [%s/%s/%s/%s]",
+	    psu_log("prep: open: rule: [%s/%s/%s/%s]",
 		    XX(tag), XX(action), XX(new_state), XX(use_tag));
 
 	    xi_rule_id_t rid;
@@ -271,7 +270,7 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    stackp->xrps_nextp = &xrp->xr_next;
 
 	} else {
-	    slaxLog("prep: open: unknown: %s", data);
+	    psu_log("prep: open: unknown: %s", data);
 	}
 	break;
     }
@@ -328,7 +327,7 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 
     xi_rule_id_t rid;
     xi_rule_t *xrp;
-    for (rid = statep->xrbs_first_rule; rid != PA_NULL_ATOM;
+    for (rid = statep->xrbs_first_rule; !xi_rule_id_is_null(rid);
 	 rid = xrp->xr_next) {
 	xrp = xi_rulebook_rule(xrbp, rid);
 	if (xrp == NULL)
@@ -338,10 +337,11 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 	if (!pa_bitmap_test(xrbp->xrb_bitmaps, xrp->xr_bitmap, name_atom))
 	    continue;
 
-	slaxLog("rule match: %u/'%s' rule %u: action %u/%s, flags %#x, "
+	psu_log("rule match: %u/'%s' rule %u: action %u/%s, flags %#x, "
 		"use-tag %u, new_state %u",
 		name_atom, name ?: "",
-		rid, xrp->xr_action, xi_rule_action_name(xrp->xr_action),
+		pa_fixed_atom_of(xi_rule_id_atom_of(rid)),
+		xrp->xr_action, xi_rule_action_name(xrp->xr_action),
 		xrp->xr_flags, xrp->xr_use_tag, xrp->xr_new_state);
 
 	return xrp;		/* Success! */
@@ -353,7 +353,7 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 /*
  * Turn a bitmap in a rule into a string, expanding names
  */
-static const char *
+static const char * UNUSED
 xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
 			char *buf, size_t bufsiz)
 {
@@ -391,22 +391,24 @@ xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
 }
 
 static xi_rule_id_t
-xi_rulebook_dump_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid, const char *tag)
+xi_rulebook_dump_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid, const char *tag UNUSED)
 {
     xi_rule_t *rulep = xi_rulebook_rule(xrbp, rid);
     if (rulep == NULL)
-	return PA_NULL_ATOM;
+	return xi_rule_id_null_atom();
 
-    const char *rname = xi_rule_action_name(rulep->xr_action);
-    char buf[1024];
+    const char *rname UNUSED = xi_rule_action_name(rulep->xr_action);
+    char buf[1024] UNUSED;
 
-    slaxLog("    %srule %u:", tag, rid);
-    slaxLog("        bitmap: %s",
+    psu_log("    %srule %u:", tag,
+	    pa_fixed_atom_of(xi_rule_id_atom_of(rid)));
+    psu_log("        bitmap: %s",
 	    xi_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
-    slaxLog("        flags %#x, action %u/%s, use-tag %u, "
+    psu_log("        flags %#x, action %u/%s, use-tag %u, "
 	    "new_state %u, next %u",
 	    rulep->xr_flags, rulep->xr_action, rname,
-	    rulep->xr_use_tag, rulep->xr_new_state, rulep->xr_next);
+	    rulep->xr_use_tag, rulep->xr_new_state,
+	    pa_fixed_atom_of(xi_rule_id_atom_of(rulep->xr_next)));
 
     return rulep->xr_next;
 }
@@ -417,26 +419,27 @@ xi_rulebook_dump_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid, const char *tag)
 void
 xi_rulebook_dump (xi_rulebook_t *xrbp)
 {
-    xi_state_id_t sid, max_sid = xrbp->xrb_infop->xrsi_max_state;
+    pa_atom_t sid, max_sid = xrbp->xrb_infop->xrsi_max_state;
     xi_rule_id_t rid;
     xi_rstate_t *statep;
 
-    slaxLog("dumping rulebook");
+    psu_log("dumping rulebook");
 
     for (sid = 1; sid <= max_sid; sid++) {
-	statep = xi_rulebook_state(xrbp, sid);
+	statep = (xi_rstate_t *) pa_fixed_element(xrbp->xrb_states, sid);
 	if (statep == NULL)
 	    continue;
 
-	slaxLog("state %u: flags %#x, default rule %u",
-		sid, statep->xrbs_flags, statep->xrbs_default_rule);
+	psu_log("state %u: flags %#x, default rule %u",
+		sid, statep->xrbs_flags,
+		pa_fixed_atom_of(xi_rule_id_atom_of(statep->xrbs_default_rule)));
 
 	/* Dump the full set of rules */
-	for (rid = statep->xrbs_first_rule; rid != PA_NULL_ATOM; )
+	for (rid = statep->xrbs_first_rule; !xi_rule_id_is_null(rid); )
 	    rid = xi_rulebook_dump_rule(xrbp, rid, "");
 
 	/* Dump the default rule */
-	if (statep->xrbs_default_rule != PA_NULL_ATOM)
+	if (!xi_rule_id_is_null(statep->xrbs_default_rule))
 	    xi_rulebook_dump_rule(xrbp, statep->xrbs_default_rule, "default ");
     }
 }
