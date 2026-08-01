@@ -21,6 +21,10 @@
 #ifndef LIBSLAX_XI_NODESET_H
 #define LIBSLAX_XI_NODESET_H
 
+#include "slaxconfig.h"
+#include <libpsu/psulog.h>
+#include <parrotdb/pafixed.h>
+
 typedef uint8_t xi_nodeset_type_t;
 typedef uint8_t xi_nodeset_flags_t;
 typedef pa_atom_t xi_nodeset_chunk_id_t;
@@ -77,15 +81,9 @@ typedef struct xi_nodeset_s {
 #define xns_first xns_infop->xnsi_first
 #define xns_last xns_infop->xnsi_last
 
-PA_FIXED_FUNCTIONS(xi_nodeset_chunk_id_t, xi_nodeset_chunk_t, xi_nodeset_t,
-		   xns_workspace->xw_nodeset_chunks,
-		   xi_nodeset_chunk_alloc, xi_nodeset_chunk_free,
-		   xi_nodeset_chunk_addr);
-
-typedef pa_atom_t xi_nodeset_info_id_t;
-PA_FIXED_FUNCTIONS(xi_nodeset_info_id_t, xi_nodeset_info_t, xi_workspace_t,
-		   xw_nodeset_info, xi_nodeset_info_alloc,
-		   xi_nodeset_info_free, xi_nodeset_info_addr);
+/* These includes need the above types */
+#include "gen/xi_nodeset_chunk_gen.h"
+#include "gen/xi_nodeset_info_gen.h"
 
 /*
  * Create a nodeset in the given workspace with the given type and flags.
@@ -215,15 +213,15 @@ xi_nodeset_dump (xi_nodeset_t *nodeset)
     xi_nodeset_chunk_id_t id = nodeset->xns_first;
     uint32_t j;
 
-    slaxLog("nodeset dump for %u: [%u:%u]",
+    psu_log("nodeset dump for %u: [%u:%u]",
 	    nodeset->xns_info_atom, nodeset->xns_first, nodeset->xns_last);
 
     /* Visit all the chunks inside this nodeset */
     for (chunkp = xi_nodeset_chunk_addr(nodeset, id); chunkp;
 	 chunkp = xi_nodeset_chunk_addr(nodeset, id)) {
-	slaxLog("  nodeset chunk %u: (%d)", id, chunkp->xnsc_count);
+	psu_log("  nodeset chunk %u: (%d)", id, chunkp->xnsc_count);
 	for (j = 0; j < chunkp->xnsc_count; j++)
-	    slaxLog("    member %u", chunkp->xnsc_nodes[j]);
+	    psu_log("    member %u", chunkp->xnsc_nodes[j]);
 	id = chunkp->xnsc_next; /* Fetch before free */
     }
 }
