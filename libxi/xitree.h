@@ -14,6 +14,9 @@
 #ifndef LIBSLAX_XI_TREE_H
 #define LIBSLAX_XI_TREE_H
 
+#include <libxi/xicommon.h>
+#include <libxi/xinode.h>
+
 #define XI_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
 #define XI_SHIFT	12	/* Bit shift for packed array paging */
 
