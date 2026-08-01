@@ -1,0 +1,968 @@
+config: looking for 'xi02.size' (default 131072)
+config: looking for 'xi02.max-size' (default 0)
+config: looking for 'xi02.header-atoms' (default 1)
+config: looking for 'test.names.data.data.shift' (default 12)
+config: looking for 'test.names.data.data.atom-shift' (default 2)
+config: looking for 'test.names.data.data.max-atoms' (default 67108864)
+config: looking for 'test.names.data.index.shift' (default 12)
+config: looking for 'test.names.data.index.atom-size' (default 4)
+config: looking for 'test.names.data.index.max-atoms' (default 67108864)
+config: looking for 'test.names.index.shift' (default 12)
+config: looking for 'test.names.index.atom-size' (default 16)
+config: looking for 'test.names.index.max-atoms' (default 67108864)
+config: looking for 'test.namespaces.data.shift' (default 12)
+config: looking for 'test.namespaces.data.atom-size' (default 8)
+config: looking for 'test.namespaces.data.max-atoms' (default 67108864)
+config: looking for 'test.namespaces.index.shift' (default 12)
+config: looking for 'test.namespaces.index.atom-size' (default 16)
+config: looking for 'test.namespaces.index.max-atoms' (default 67108864)
+config: looking for 'test.nodes.shift' (default 12)
+config: looking for 'test.nodes.atom-size' (default 24)
+config: looking for 'test.nodes.max-atoms' (default 67108864)
+config: looking for 'test.nodeset-chunks.shift' (default 12)
+config: looking for 'test.nodeset-chunks.atom-size' (default 256)
+config: looking for 'test.nodeset-chunks.max-atoms' (default 67108864)
+config: looking for 'test.nodeset-info.shift' (default 12)
+config: looking for 'test.nodeset-info.atom-size' (default 12)
+config: looking for 'test.nodeset-info.max-atoms' (default 67108864)
+pi [xml] [version="1.0"]
+comment [# normal
+# trim
+# trim ignore-ws ignore-dtd
+# trim ignore-ws ignore-dtd unescape] []
+comment [comment] []
+open tag [top] []
+xi_insert_open: [top] 257 / 0 (depth 1)
+open tag [test] [xmlns="test.one" xmlns:two="test.two" xmlns:three="test.three"]
+xi_insert_open: [test] 258 / 0 (depth 2)
+xi_insert_attribs_extract(ns): [] 0 / 1 (depth 3)
+xi_insert_attribs_extract(ns): [two] 0 / 2 (depth 3)
+xi_insert_attribs_extract(ns): [three] 0 / 3 (depth 3)
+open tag [thing1] []
+xi_insert_open: [thing1] 264 / 0 (depth 3)
+xi_insert_close: [thing1] 264 (depth 3)
+open tag [two:thing2] []
+xi_insert_open: [thing2] 265 / 0 (depth 3)
+xi_insert_close: [thing2] 265 (depth 3)
+open tag [three:thing3] []
+xi_insert_open: [thing3] 266 / 0 (depth 3)
+xi_insert_close: [thing3] 266 (depth 3)
+close tag [test] []
+xi_insert_close: [test] 258 (depth 2)
+open tag [refinfo] [refid="A91910" xmlns="test.org" xmlns:foo="foo.org"]
+xi_insert_open: [refinfo] 267 / 0 (depth 2)
+xi_insert_attribs_extract(ns): [] 0 / 4 (depth 3)
+xi_insert_attribs_extract(ns): [foo] 0 / 5 (depth 3)
+open tag [authors] [x="1" y="2" z="albatross"]
+xi_insert_open: [authors] 271 / 0 (depth 3)
+open tag [author] [a1="v1" a2="v2" a3="v3"]
+xi_insert_open: [author] 272 / 0 (depth 4)
+text [Kagawa, N.] (6)
+xi_insert_text: [Kagawa, N.] 0 / 1792 (depth 5)
+close tag [author] []
+xi_insert_close: [author] 272 (depth 4)
+open tag [author] [this="dropped"]
+xi_insert_open: [author] 272 / 0 (depth 4)
+text [Mihara, K.] (6)
+xi_insert_text: [Mihara, K.] 0 / 1793 (depth 5)
+close tag [author] []
+xi_insert_close: [author] 272 (depth 4)
+open tag [author] [also="this"]
+xi_insert_open: [author] 272 / 0 (depth 4)
+text [Sato, R.] (6)
+xi_insert_text: [Sato, R.] 0 / 1794 (depth 5)
+close tag [author] []
+xi_insert_close: [author] 272 (depth 4)
+close tag [authors] []
+xi_insert_close: [authors] 271 (depth 3)
+open tag [citation] []
+xi_insert_open: [citation] 273 / 0 (depth 3)
+text [J. Biochem.] (6)
+xi_insert_text: [J. Biochem.] 0 / 1795 (depth 4)
+close tag [citation] []
+xi_insert_close: [citation] 273 (depth 3)
+open tag [volume] []
+xi_insert_open: [volume] 274 / 0 (depth 3)
+text [101] (6)
+xi_insert_text: [101] 0 / 1796 (depth 4)
+close tag [volume] []
+xi_insert_close: [volume] 274 (depth 3)
+open tag [year] []
+xi_insert_open: [year] 275 / 0 (depth 3)
+text [1987] (6)
+xi_insert_text: [1987] 0 / 1797 (depth 4)
+close tag [year] []
+xi_insert_close: [year] 275 (depth 3)
+open tag [pages] []
+xi_insert_open: [pages] 276 / 0 (depth 3)
+text [1471-1479] (6)
+xi_insert_text: [1471-1479] 0 / 1798 (depth 4)
+close tag [pages] []
+xi_insert_close: [pages] 276 (depth 3)
+open tag [title] []
+xi_insert_open: [title] 277 / 0 (depth 3)
+text [Structural analysis of the gene encoding human 3beta-hydroxysteroid dehydrogenase/Delta(5-&gt;4)-isomerase.] (6)
+xi_insert_text: [Structural analysis of the gene encoding human 3beta-hydroxysteroid dehydrogenase/Delta(5-&gt;4)-isomerase.] 0 / 1536 (depth 4)
+close tag [title] []
+xi_insert_close: [title] 277 (depth 3)
+open tag [xrefs] []
+xi_insert_open: [xrefs] 278 / 0 (depth 3)
+open tag [xref] []
+xi_insert_open: [xref] 279 / 0 (depth 4)
+open tag [db] []
+xi_insert_open: [db] 280 / 0 (depth 5)
+text [MUID] (6)
+xi_insert_text: [MUID] 0 / 1799 (depth 6)
+close tag [db] []
+xi_insert_close: [db] 280 (depth 5)
+open tag [uid] []
+xi_insert_open: [uid] 281 / 0 (depth 5)
+text [88032911] (6)
+xi_insert_text: [88032911] 0 / 1800 (depth 6)
+close tag [uid] []
+xi_insert_close: [uid] 281 (depth 5)
+close tag [xref] []
+xi_insert_close: [xref] 279 (depth 4)
+close tag [xrefs] []
+xi_insert_close: [xrefs] 278 (depth 3)
+close tag [refinfo] []
+xi_insert_close: [refinfo] 267 (depth 2)
+cdata [this is <no> longer <ignored>]
+open tag [hazard] []
+xi_insert_open: [hazard] 282 / 0 (depth 2)
+text [This &amp; that is &gt;the&lt; end] (6)
+xi_insert_text: [This &amp; that is &gt;the&lt; end] 0 / 1280 (depth 3)
+close tag [hazard] []
+xi_insert_close: [hazard] 282 (depth 2)
+open tag [hazard] []
+xi_insert_open: [hazard] 282 / 0 (depth 2)
+text [&amp;at start and end&quot;] (6)
+xi_insert_text: [&amp;at start and end&quot;] 0 / 1024 (depth 3)
+close tag [hazard] []
+xi_insert_close: [hazard] 282 (depth 2)
+open tag [hazard] []
+xi_insert_open: [hazard] 282 / 0 (depth 2)
+text [&lt;&gt;at start and end&lt;&gt;] (6)
+xi_insert_text: [&lt;&gt;at start and end&lt;&gt;] 0 / 1284 (depth 3)
+close tag [hazard] []
+xi_insert_close: [hazard] 282 (depth 2)
+open tag [second] []
+xi_insert_open: [second] 283 / 0 (depth 2)
+open tag [z] []
+xi_insert_open: [z] 123 / 0 (depth 3)
+text [1] (6)
+xi_insert_text: [1] 0 / 1801 (depth 4)
+close tag [z] []
+xi_insert_close: [z] 123 (depth 3)
+open tag [a] []
+xi_insert_open: [a] 98 / 0 (depth 3)
+text [eh] (6)
+xi_insert_text: [eh] 0 / 1802 (depth 4)
+close tag [a] []
+xi_insert_close: [a] 98 (depth 3)
+open tag [b] []
+xi_insert_open: [b] 99 / 0 (depth 3)
+text [bee] (6)
+xi_insert_text: [bee] 0 / 1803 (depth 4)
+close tag [b] []
+xi_insert_close: [b] 99 (depth 3)
+open tag [c] []
+xi_insert_open: [c] 100 / 0 (depth 3)
+text [sea] (6)
+xi_insert_text: [sea] 0 / 1804 (depth 4)
+close tag [c] []
+xi_insert_close: [c] 100 (depth 3)
+open tag [d] []
+xi_insert_open: [d] 101 / 0 (depth 3)
+text [dee] (6)
+xi_insert_text: [dee] 0 / 1805 (depth 4)
+close tag [d] []
+xi_insert_close: [d] 101 (depth 3)
+close tag [second] []
+xi_insert_close: [second] 283 (depth 2)
+open tag [province] [id='f0_17462'
+       name='Hainaut'
+       country='f0_162'
+       capital='f0_2345'
+       population='1283252'
+       area='3787']
+xi_insert_open: [province] 284 / 0 (depth 2)
+open tag [city] [id='f0_2335'
+         country='f0_162'
+         province='f0_17462']
+xi_insert_open: [city] 285 / 0 (depth 3)
+open tag [name] []
+xi_insert_open: [name] 286 / 0 (depth 4)
+text [Charleroi] (6)
+xi_insert_text: [Charleroi] 0 / 1806 (depth 5)
+close tag [name] []
+xi_insert_close: [name] 286 (depth 4)
+open tag [population] [year='95']
+xi_insert_open: [population] 287 / 0 (depth 4)
+text [206491] (6)
+xi_insert_text: [206491] 0 / 1807 (depth 5)
+close tag [population] []
+xi_insert_close: [population] 287 (depth 4)
+close tag [city] []
+xi_insert_close: [city] 285 (depth 3)
+open tag [city] [id='f0_2345'
+         country='f0_162'
+         province='f0_17462'
+         longitude='3.6'
+         latitude='50.3']
+xi_insert_open: [city] 285 / 0 (depth 3)
+open tag [name] []
+xi_insert_open: [name] 286 / 0 (depth 4)
+text [Mons] (6)
+xi_insert_text: [Mons] 0 / 1808 (depth 5)
+close tag [name] []
+xi_insert_close: [name] 286 (depth 4)
+open tag [population] [year='87']
+xi_insert_open: [population] 287 / 0 (depth 4)
+text [90720] (6)
+xi_insert_text: [90720] 0 / 1809 (depth 5)
+close tag [population] []
+xi_insert_close: [population] 287 (depth 4)
+close tag [city] []
+xi_insert_close: [city] 285 (depth 3)
+close tag [province] []
+xi_insert_close: [province] 284 (depth 2)
+close tag [top] []
+xi_insert_close: [top] 257 (depth 1)
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (1)
+    member 2
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (2)
+    member 2
+    member 3
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (3)
+    member 2
+    member 3
+    member 7
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (4)
+    member 2
+    member 3
+    member 7
+    member 8
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (5)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (6)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (7)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (8)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (9)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (10)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (11)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (12)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (13)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (14)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (15)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (16)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (17)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (18)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (19)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (20)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (21)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (22)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (23)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (24)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (25)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (26)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (27)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (28)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (29)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (30)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (31)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (32)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+    member 57
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (33)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+    member 57
+    member 59
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (34)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+    member 57
+    member 59
+    member 60
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (35)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+    member 57
+    member 59
+    member 60
+    member 62
+nodeset dump for 1: [1:1]
+  nodeset chunk 1: (35)
+    member 2
+    member 3
+    member 7
+    member 8
+    member 9
+    member 10
+    member 13
+    member 14
+    member 16
+    member 18
+    member 20
+    member 22
+    member 24
+    member 26
+    member 28
+    member 30
+    member 31
+    member 32
+    member 34
+    member 36
+    member 38
+    member 40
+    member 42
+    member 43
+    member 45
+    member 47
+    member 49
+    member 51
+    member 53
+    member 54
+    member 55
+    member 57
+    member 59
+    member 60
+    member 62
