@@ -18,23 +18,23 @@ include ${top_srcdir}/warnings.mk
 
 AM_CFLAGS = \
     -I${top_srcdir} \
-    -I${top_srcdir}/libslax \
     -I${top_builddir} \
     -I${top_builddir}/parrotdb \
+    -I${top_builddir}/libxi \
     ${WARNINGS}
 
 # Ick: maintained by hand!
 TEST_CASES = \
 xi01.c \
+xi02.c \
 xi04.c
 
 XXX= \
-xi02.c \
 xi03.c
 
 xi01_test_SOURCES = xi01.c
+xi02_test_SOURCES = xi02.c
 xi04_test_SOURCES = xi04.c
-#xi02_test_SOURCES = xi02.c
 #xi03_test_SOURCES = xi03.c
 
 # xi04 needs parrotdb; xi01 only needs libxi
