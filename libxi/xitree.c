@@ -24,8 +24,7 @@
 #include <limits.h>
 
 #include "slaxconfig.h"
-#include <libslax/slaxdef.h>
-#include <libslax/slax.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
@@ -37,6 +36,7 @@
 #include <libxi/xicommon.h>
 #include <libxi/xirules.h>
 #include <libxi/xitree.h>
+#include <libxi/xiworkspace.h>
 
 int xi_dead_code;
 
