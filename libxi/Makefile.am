@@ -57,6 +57,8 @@ GEN_STAMP = gen/.stamp
 GENERATED = \
     gen/xi_rule_id_gen.h \
     gen/xi_rstate_id_gen.h \
+    gen/xi_rule_id_funcs_gen.h \
+    gen/xi_rstate_id_funcs_gen.h \
     gen/xi_node_gen.h \
     gen/xi_ns_map_gen.h \
     gen/xi_nodeset_chunk_gen.h \
