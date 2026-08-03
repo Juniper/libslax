@@ -13,7 +13,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([libslax],[3.1.6],[phil@juniper.net])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability foreign subdir-objects no-dist-gzip dist-xz])
 
 # Support silent build rules.  Requires at least automake-1.11.
 # Disable with "configure --disable-silent-rules" or "make V=1"
@@ -32,9 +32,12 @@ AM_PROG_AR
 AC_PROG_INSTALL
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_LN_S
+AC_PROG_MKDIR_P
+PKG_PROG_PKG_CONFIG
 
 # Must be after AC_PROG_AR
 LT_INIT([dlopen shared])
+LT_LIB_M
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
@@ -84,8 +87,16 @@ AM_CONDITIONAL([HAVE_LIBCRYPTO], [test "$HAVE_LIBCRYPTO" != "no"])
 AC_CHECK_LIB([m], [lrint])
 AM_CONDITIONAL([HAVE_LIBM], [test "$HAVE_LIBM" != "no"])
 
-AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
-AC_CHECK_LIB([xslt], [xsltInit])
+dnl checks for bxml
+AC_CHECK_DECLS([getentropy], [], [], [#include <sys/random.h>])
+AC_CHECK_DECLS([glob], [], [], [#include <glob.h>])
+AC_CHECK_DECLS([mmap], [], [], [#include <sys/mman.h>])
+
+AM_CONDITIONAL(WITH_GLOB, test "$ac_cv_have_decl_glob" = "yes")
+
+dnl old checks for libslax (XXX remove)
+dnl AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
+dnl AC_CHECK_LIB([xslt], [xsltInit])
 
 dnl
 dnl Some packages need to be checked against version numbers so we
@@ -231,34 +242,311 @@ fi
 AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
 
 #
-# ---- captive libxml module selection
+# --- Logic for bxml components
+#
+
+# bxml is versioned identically to libslax itself ($VERSION, from the
+# AC_INIT above) rather than to the upstream libxml2 release it was
+# vendored from.
+LIBXML_MAJOR_VERSION=`echo $VERSION | cut -d . -f 1`
+LIBXML_MINOR_VERSION=`echo $VERSION | cut -d . -f 2`
+LIBXML_MICRO_VERSION=`echo $VERSION | cut -d . -f 3`
+LIBXML_VERSION=$VERSION
+LIBXML_VERSION_NUMBER=`expr $LIBXML_MAJOR_VERSION \* 10000 + $LIBXML_MINOR_VERSION \* 100 + $LIBXML_MICRO_VERSION`
+LIBXML_VERSION_EXTRA=
+# libtool -version-info CURRENT:REVISION:AGE; compatible with every
+# minor release of this major version (i.e. AGE == MINOR_VERSION).
+LIBXML_VERSION_INFO=`expr $LIBXML_MAJOR_VERSION + $LIBXML_MINOR_VERSION`:$LIBXML_MICRO_VERSION:$LIBXML_MINOR_VERSION
+AC_SUBST(LIBXML_MAJOR_VERSION)
+AC_SUBST(LIBXML_MINOR_VERSION)
+AC_SUBST(LIBXML_MICRO_VERSION)
+AC_SUBST(LIBXML_VERSION)
+AC_SUBST(LIBXML_VERSION_NUMBER)
+AC_SUBST(LIBXML_VERSION_EXTRA)
+AC_SUBST(LIBXML_VERSION_INFO)
+
+case "$host" in
+    *-*-cygwin* | *-*-msys* | *-*-mingw*)
+        MODULE_EXTENSION=".dll"
+        ;;
+    *-*-hpux*)
+        MODULE_EXTENSION=".sl"
+        ;;
+    *)
+        MODULE_EXTENSION=".so"
+        ;;
+esac
+AC_SUBST(MODULE_EXTENSION)
+
+XML_LIBDIR='-L${libdir}'
+XML_INCLUDEDIR='-I${includedir}/libxml'
+XML_CFLAGS=""
+XML_STATIC_CFLAGS=""
+XML_PC_CFLAGS_PRIVATE=""
+
+XML_PRIVATE_LIBS=
+XML_PRIVATE_CFLAGS=
+XML_PC_LIBS=
+XML_PC_REQUIRES=
+
+AX_GCC_FUNC_ATTRIBUTE([destructor])
+
+dnl
+dnl Legacy defaults
+dnl
+if test "$with_legacy" = "yes"; then
+    if test "$with_schematron" = ""; then
+        with_schematron=yes
+    fi
+    if test "$with_zlib" = ""; then
+        with_zlib=yes
+    fi
+fi
+
+dnl
+dnl hard dependencies on options
+dnl
+if test "$with_c14n" = "yes"; then
+    if test "$with_output" = "no"; then
+        echo WARNING: --with-c14n overrides --without-output
+    fi
+    with_output=yes
+    if test "$with_xpath" = "no"; then
+        echo WARNING: --with-c14n overrides --without-xpath
+    fi
+    with_xpath=yes
+fi
+if test "$with_relaxng" = "yes"; then
+    if test "$with_regexps" = "no"; then
+        echo WARNING: --with-relaxng overrides --without-regexps
+    fi
+    with_regexps=yes
+    if test "$with_schemas" = "no"; then
+        echo WARNING: --with-relaxng overrides --without-schemas
+    fi
+    with_schemas=yes
+fi
+if test "$with_schemas" = "yes"; then
+    if test "$with_pattern" = "no"; then
+        echo WARNING: --with-schemas overrides --without-pattern
+    fi
+    with_pattern=yes
+    if test "$with_regexps" = "no"; then
+        echo WARNING: --with-schemas overrides --without-regexps
+    fi
+    with_regexps=yes
+fi
+if test "$with_schematron" = "yes"; then
+    if test "$with_pattern" = "no"; then
+        echo WARNING: --with-schematron overrides --without-pattern
+    fi
+    with_pattern=yes
+    if test "$with_xpath" = "no"; then
+        echo WARNING: --with-schematron overrides --without-xpath
+    fi
+    with_xpath=yes
+fi
+if test "$with_reader" = "yes"; then
+    if test "$with_push" = "no"; then
+        echo WARNING: --with-reader overrides --without-push
+    fi
+    with_push=yes
+fi
+if test "$with_writer" = "yes"; then
+    if test "$with_output" = "no"; then
+        echo WARNING: --with-writer overrides --without-output
+    fi
+    with_output=yes
+    if test "$with_push" = "no"; then
+        echo WARNING: --with-writer overrides --without-push
+    fi
+    with_push=yes
+fi
+if test "$with_xptr" = "yes"; then
+    if test "$with_xpath" = "no"; then
+        echo WARNING: --with-xptr overrides --without-xpath
+    fi
+    with_xpath=yes
+fi
+if test "$with_history" = "yes"; then
+    if test "$with_readline" = "no"; then
+        echo WARNING: --with-history overrides --without-readline
+        with_readline=yes
+    fi
+    if test "$with_readline" = ""; then
+        with_readline=yes
+    fi
+fi
+
+if test "$with_http" != "yes" ; then
+    WITH_HTTP=0
+else
+    echo Enabling ABI compatibility stubs for removed HTTP support
+    WITH_HTTP=1
+fi
+
+if test "$with_reader" = "no" ; then
+    echo Disabling the xmlReader parsing interface
+    WITH_READER=0
+else
+    WITH_READER=1
+fi
+
+if test "$with_writer" = "no" ; then
+    echo Disabling the xmlWriter saving interface
+    WITH_WRITER=0
+else
+    WITH_WRITER=1
+fi
+
+if test "$with_pattern" = "no" ; then
+    echo Disabling the xmlPattern parsing interface
+    WITH_PATTERN=0
+else
+    WITH_PATTERN=1
+fi
+
+if test "$with_sax1" = "no" ; then
+    echo Disabling the older SAX1 interface
+    WITH_SAX1=0
+else
+    WITH_SAX1=1
+fi
+
+if test "$with_push" = "no" ; then
+    echo Disabling the PUSH parser interfaces
+    WITH_PUSH=0
+else
+    WITH_PUSH=1
+fi
+
+if test "$with_html" = "no" ; then
+    echo Disabling HTML support
+    WITH_HTML=0
+else
+    WITH_HTML=1
+fi
+
+if test "$with_valid" = "no" ; then
+    echo Disabling DTD validation support
+    WITH_VALID=0
+else
+    WITH_VALID=1
+fi
+
+if test "$with_catalog" = "no" ; then
+    echo Disabling Catalog support
+    WITH_CATALOG=0
+else
+    WITH_CATALOG=1
+fi
+
+if test "$with_xptr" = "no" ; then
+    echo Disabling XPointer support
+    WITH_XPTR=0
+else
+    WITH_XPTR=1
+fi
+
+if test "$with_c14n" = "no" ; then
+    echo Disabling C14N support
+    WITH_C14N=0
+else
+    WITH_C14N=1
+fi
+
+if test "$with_xinclude" = "no" ; then
+    echo Disabling XInclude support
+    WITH_XINCLUDE=0
+else
+    WITH_XINCLUDE=1
+fi
+
+if test "$with_schematron" = "yes" ; then
+    echo "Enabling Schematron support"
+    WITH_SCHEMATRON=1
+else
+    WITH_SCHEMATRON=0
+fi
+
+if test "$with_xpath" = "no" ; then
+    echo Disabling XPATH support
+    WITH_XPATH=0
+else
+    WITH_XPATH=1
+fi
+
+if test "$with_output" = "no" ; then
+    echo Disabling serialization/saving support
+    WITH_OUTPUT=0
+else
+    WITH_OUTPUT=1
+fi
+
+if test "$WITH_ICONV" != "1" && test "$with_iso8859x" = "no" ; then
+    echo Disabling ISO8859X support
+    WITH_ISO8859X=0
+else
+    WITH_ISO8859X=1
+fi
+
+if test "$with_relaxng" = "no" ; then
+    echo "Disabling Relax-NG support"
+    WITH_RELAXNG=0
+else
+    WITH_RELAXNG=1
+fi
+
+if test "$with_schemas" = "no" ; then
+    echo "Disabling Schemas support"
+    WITH_SCHEMAS=0
+else
+    WITH_SCHEMAS=1
+fi
+
+if test "$with_regexps" = "no" ; then
+    echo Disabling Regexps support
+    WITH_REGEXPS=0
+else
+    WITH_REGEXPS=1
+fi
+
+if test "$with_debug" = "no" ; then
+    echo Disabling DEBUG support
+    WITH_DEBUG=0
+else
+    WITH_DEBUG=1
+fi
+
+#
+# ---- captive libxml component selection
 #
 # libxml2 used to have 34 separate --with-XXX/--without-XXX flags plus
 # a tangle of hand-written dependency rules between them.  That's
-# replaced here with a single --with-bxml-modules=LIST option.  LIST is
-# a space-separated set of module names and/or module sets:
+# replaced here with a single --with-bxml-components=LIST option.  LIST is
+# a space-separated set of component names and/or component sets:
 #
-#   --with-bxml-modules='default'                 (the default, if omitted)
-#   --with-bxml-modules='min'                     start from (almost) nothing
-#   --with-bxml-modules='all'                     everything on
-#   --with-bxml-modules='legacy'                  default, plus schematron/zlib
-#   --with-bxml-modules='default -history icu'    default, minus history, plus icu
+#   --with-bxml-components='default'                 (the default, if omitted)
+#   --with-bxml-components='min'                     start from (almost) nothing
+#   --with-bxml-components='all'                     everything on
+#   --with-bxml-components='legacy'                  default, plus schematron/zlib
+#   --with-bxml-components='default -history icu'    default, minus history, plus icu
 #
-# A bare name turns a module on; "-name" or "no-name" turns it off (the
+# A bare name turns a component on; "-name" or "no-name" turns it off (the
 # leading "+" on a name, e.g. "+icu", is accepted too, but is just a
 # synonym for the bare name -- it's optional).  Unknown names/sets are
-# a hard error.  Run "configure --enable-list-bxml-modules" to see the
+# a hard error.  Run "configure --enable-list-bxml-components" to see the
 # table.
 #
 # Each table row is name:default:implies:description.  "implies" is a
-# comma-separated list of other modules that get forced on, to a fixed
+# comma-separated list of other components that get forced on, to a fixed
 # point, whenever this one ends up on -- so turning on "relaxng" also
 # turns on "regexps" and "schemas" without having to spell them out.
 #
-BXML_MODULE_TABLE='
+BXML_COMPONENT_TABLE='
 c14n:on:output,xpath:Canonical XML 1.0 support
 catalog:on::XML Catalogs support
-debug:on::debugging module
+debug:on::debugging component
 docs:off::Build documentation
 history:off:readline:history support for xmllint shell
 readline:off::use readline for shell history
@@ -271,7 +559,7 @@ modules:on::dynamic modules support
 output:on::serialization support
 pattern:on::xmlPattern selection interface
 push:on::push parser interfaces
-python:on::Python bindings
+python:off::Python bindings
 reader:on:push:xmlReader parsing interface
 regexps:on::regular expressions support
 relaxng:on:regexps,schemas:RELAX NG support
@@ -289,7 +577,7 @@ zlib:off::use libz for compression
 tls:off::thread-local storage
 '
 
-BXML_MODULE_NAMES=`echo "$BXML_MODULE_TABLE" | awk -F: 'NF { print $1 }'`
+BXML_COMPONENT_NAMES=`echo "$BXML_COMPONENT_TABLE" | awk -F: 'NF { print $1 }'`
 
 # name -> shell-safe variable fragment ("thread-alloc" -> "thread_alloc")
 bxml_var () {
@@ -297,7 +585,7 @@ bxml_var () {
 }
 
 bxml_known () {
-    for bxml_n in $BXML_MODULE_NAMES; do
+    for bxml_n in $BXML_COMPONENT_NAMES; do
         test "$bxml_n" = "$1" && return 0
     done
     return 1
@@ -311,12 +599,12 @@ bxml_get () { # name
     eval "echo \$bxml_mod_`bxml_var $1`"
 }
 
-# reset every module to its table default (also (re)loads implies/)
+# reset every component to its table default (also (re)loads implies/)
 bxml_reset_all () {
     bxml_old_IFS=$IFS
     IFS='
 '
-    for bxml_row in $BXML_MODULE_TABLE; do
+    for bxml_row in $BXML_COMPONENT_TABLE; do
         test -z "$bxml_row" && continue
         bxml_name=`echo "$bxml_row" | cut -d: -f1`
         bxml_default=`echo "$bxml_row" | cut -d: -f2`
@@ -329,11 +617,11 @@ bxml_reset_all () {
 bxml_reset_all
 
 bxml_apply_min () {
-    for bxml_n in $BXML_MODULE_NAMES; do bxml_set "$bxml_n" off; done
+    for bxml_n in $BXML_COMPONENT_NAMES; do bxml_set "$bxml_n" off; done
 }
 
 bxml_apply_all () {
-    for bxml_n in $BXML_MODULE_NAMES; do bxml_set "$bxml_n" on; done
+    for bxml_n in $BXML_COMPONENT_NAMES; do bxml_set "$bxml_n" on; done
 }
 
 bxml_apply_legacy () {
@@ -342,27 +630,27 @@ bxml_apply_legacy () {
     bxml_set zlib on
 }
 
-AC_ARG_WITH(bxml-modules,
-  [  --with-bxml-modules=LIST   captive libxml modules to build.  LIST is a
-                        space-separated list of module names and/or
-                        module sets (default, min, all, legacy);
+AC_ARG_WITH(bxml-components,
+  [  --with-bxml-components=LIST   captive libxml components to build.  LIST is a
+                        space-separated list of component names and/or
+                        component sets (default, min, all, legacy);
                         prefix a name with - or no- to disable it.
-                        See --enable-list-bxml-modules for the full set.],
-  [BXML_MODULES_ARG=$withval], [BXML_MODULES_ARG=default])
-test "x$BXML_MODULES_ARG" = "xyes" && BXML_MODULES_ARG=default
+                        See --enable-list-bxml-components for the full set.],
+  [BXML_COMPONENTS_ARG=$withval], [BXML_COMPONENTS_ARG=default])
+test "x$BXML_COMPONENTS_ARG" = "xyes" && BXML_COMPONENTS_ARG=default
 
-AC_ARG_ENABLE(list-bxml-modules,
-  [  --enable-list-bxml-modules   List captive libxml modules/sets and exit],
+AC_ARG_ENABLE(list-bxml-components,
+  [  --enable-list-bxml-components   List captive libxml components/sets and exit],
   [BXML_LIST=$enableval], [BXML_LIST=no])
 
 if test "x$BXML_LIST" != "xno"; then
-    echo "bxml module sets: default min all legacy"
+    echo "bxml component sets: default min all legacy"
     echo ""
-    echo "bxml modules:"
+    echo "bxml components:"
     bxml_old_IFS=$IFS
     IFS='
 '
-    for bxml_row in $BXML_MODULE_TABLE; do
+    for bxml_row in $BXML_COMPONENT_TABLE; do
         test -z "$bxml_row" && continue
         bxml_name=`echo "$bxml_row" | cut -d: -f1`
         bxml_default=`echo "$bxml_row" | cut -d: -f2`
@@ -375,7 +663,7 @@ if test "x$BXML_LIST" != "xno"; then
     exit 0
 fi
 
-for bxml_tok in $BXML_MODULES_ARG; do
+for bxml_tok in $BXML_COMPONENTS_ARG; do
     case $bxml_tok in
         default) bxml_reset_all ;;
         min)     bxml_apply_min ;;
@@ -384,26 +672,26 @@ for bxml_tok in $BXML_MODULES_ARG; do
         -*|no-*)
             bxml_name=`echo "$bxml_tok" | sed -e 's/^-//' -e 's/^no-//'`
             bxml_known "$bxml_name" || \
-                AC_MSG_ERROR([unknown bxml module: $bxml_name])
+                AC_MSG_ERROR([unknown bxml component: $bxml_name])
             bxml_set "$bxml_name" off
             ;;
         +*)
             bxml_name=`echo "$bxml_tok" | sed -e 's/^+//'`
             bxml_known "$bxml_name" || \
-                AC_MSG_ERROR([unknown bxml module: $bxml_name])
+                AC_MSG_ERROR([unknown bxml component: $bxml_name])
             bxml_set "$bxml_name" on
             ;;
         *)
             bxml_known "$bxml_tok" || \
-                AC_MSG_ERROR([unknown bxml module or set: $bxml_tok])
+                AC_MSG_ERROR([unknown bxml component or set: $bxml_tok])
             bxml_set "$bxml_tok" on
             ;;
     esac
 done
 
-# Force on, to a fixed point, every prerequisite of a module that's on.
-# This is the only direction resolved automatically: turning a module
-# off never reaches out and turns other modules off, so a contradictory
+# Force on, to a fixed point, every prerequisite of a component that's on.
+# This is the only direction resolved automatically: turning a component
+# off never reaches out and turns other components off, so a contradictory
 # request (e.g. "relaxng -regexps") just re-enables regexps and says so,
 # rather than silently dropping relaxng instead.
 bxml_changed=yes
@@ -412,8 +700,8 @@ while test "$bxml_changed" = yes; do
     bxml_changed=no
     bxml_pass=`expr $bxml_pass + 1`
     test $bxml_pass -gt 10 && \
-        AC_MSG_ERROR([bxml module dependency resolution did not converge])
-    for bxml_name in $BXML_MODULE_NAMES; do
+        AC_MSG_ERROR([bxml component dependency resolution did not converge])
+    for bxml_name in $BXML_COMPONENT_NAMES; do
         test "`bxml_get $bxml_name`" = on || continue
         eval "bxml_implies=\$bxml_implies_`bxml_var $bxml_name`"
         test -z "$bxml_implies" && continue
@@ -427,20 +715,20 @@ while test "$bxml_changed" = yes; do
     done
 done
 
-BXML_MODULES=
-for bxml_name in $BXML_MODULE_NAMES; do
-    test "`bxml_get $bxml_name`" = on && BXML_MODULES="$BXML_MODULES $bxml_name"
+BXML_COMPONENTS=
+for bxml_name in $BXML_COMPONENT_NAMES; do
+    test "`bxml_get $bxml_name`" = on && BXML_COMPONENTS="$BXML_COMPONENTS $bxml_name"
 done
-BXML_MODULES=`echo $BXML_MODULES`
-AC_SUBST(BXML_MODULES)
-AC_MSG_RESULT([bxml modules enabled:${BXML_MODULES}])
+BXML_COMPONENTS=`echo $BXML_COMPONENTS`
+AC_SUBST(BXML_COMPONENTS)
+AC_MSG_RESULT([bxml components enabled:${BXML_COMPONENTS}])
 
-# Turn each module's on/off state into a WITH_<NAME> shell variable
+# Turn each component's on/off state into a WITH_<NAME> shell variable
 # (1 or 0) so the explicit AC_SUBST/AC_DEFINE_UNQUOTED/AM_CONDITIONAL
-# calls below -- one block per module, matching the WITH_<NAME> and
+# calls below -- one block per component, matching the WITH_<NAME> and
 # WITH_<NAME>_SOURCES names libbxml's own Makefile.am/xmlversion.h.in
 # already expect -- can pick them up.
-for bxml_name in $BXML_MODULE_NAMES; do
+for bxml_name in $BXML_COMPONENT_NAMES; do
     bxml_upper=`bxml_var $bxml_name | tr a-z A-Z`
     if test "`bxml_get $bxml_name`" = on; then
         eval "WITH_$bxml_upper=1"
@@ -460,7 +748,7 @@ AM_CONDITIONAL([WITH_CATALOG], [test "$WITH_CATALOG" = "1"])
 AM_CONDITIONAL([WITH_CATALOG_SOURCES], [test "$WITH_CATALOG" = "1"])
 
 AC_SUBST(WITH_DEBUG)
-AC_DEFINE_UNQUOTED([WITH_DEBUG], [$WITH_DEBUG], [debugging module])
+AC_DEFINE_UNQUOTED([WITH_DEBUG], [$WITH_DEBUG], [debugging component])
 AM_CONDITIONAL([WITH_DEBUG], [test "$WITH_DEBUG" = "1"])
 AM_CONDITIONAL([WITH_DEBUG_SOURCES], [test "$WITH_DEBUG" = "1"])
 
@@ -592,9 +880,237 @@ AC_SUBST(WITH_TLS)
 AC_DEFINE_UNQUOTED([WITH_TLS], [$WITH_TLS], [thread-local storage])
 AM_CONDITIONAL([WITH_TLS], [test "$WITH_TLS" = "1"])
 
-#
-# ---- start of noise
-#
+dnl
+dnl bxml's iconv support (WITH_ICONV=1) needs an actual -liconv link
+dnl check, not just the boolean component flag -- on macOS/BSD, iconv()
+dnl lives in libiconv, not libc.
+dnl
+if test "$WITH_ICONV" = "1"; then
+    _libs=$LIBS
+    AC_MSG_CHECKING([for iconv_open])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([#include <iconv.h>], [iconv_open(0,0);])
+    ], [
+        AC_MSG_RESULT([none required])
+    ], [
+        LIBS="$LIBS -liconv"
+        AC_LINK_IFELSE([
+            AC_LANG_PROGRAM([#include <iconv.h>], [iconv_open(0,0);])
+        ], [
+            ICONV_LIBS="-liconv"
+            AC_MSG_RESULT([-liconv])
+        ], [
+            AC_MSG_ERROR([libiconv not found])
+        ])
+    ])
+    LIBS=$_libs
+    XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${ICONV_LIBS}"
+    XML_PC_LIBS="${XML_PC_LIBS} ${ICONV_LIBS}"
+fi
+
+dnl
+dnl bxml's modules component (WITH_MODULES=1) needs dlopen/shl_load
+dnl detection -- xmlmodule.c's platform backend is chosen at compile
+dnl time by HAVE_DLOPEN/HAVE_SHLLOAD.
+dnl
+if test "$WITH_MODULES" = "1"; then
+    _libs=$LIBS
+    AC_SEARCH_LIBS([dlopen], [dl], [
+        if test "$ac_cv_search_dlopen" != "none required"; then
+            MODULE_LIBS=$ac_cv_search_dlopen
+        fi
+        AC_DEFINE([HAVE_DLOPEN], [1], [Have dlopen based dso])
+    ], [
+        AC_SEARCH_LIBS([shl_load], [dld], [
+            if test "$ac_cv_search_shl_load" != "none required"; then
+                MODULE_LIBS=$ac_cv_search_shl_load
+            fi
+            AC_DEFINE([HAVE_SHLLOAD], [1], [Have shl_load based dso])
+        ], [
+            AC_MSG_ERROR([dlopen or equivalent not found])
+        ])
+    ])
+    LIBS=$_libs
+    XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${MODULE_LIBS}"
+    XML_PC_LIBS="${XML_PC_LIBS} ${MODULE_LIBS}"
+fi
+
+dnl
+dnl State of bxml options
+dnl
+
+dnl
+dnl Check for Python
+dnl
+
+AS_IF([test "x$with_python" = "xyes"], [
+    AM_PATH_PYTHON
+    PKG_CHECK_MODULES([PYTHON], [python-${PYTHON_VERSION}])
+])
+
+dnl
+dnl Check for Doxygen
+dnl
+
+if test "$with_python" = "yes" || test "$with_docs" = "yes"; then
+    AC_PATH_PROG(DOXYGEN, doxygen, [no])
+    if test "$DOXYGEN" = "no"; then
+        AC_MSG_ERROR([cannot find doxygen])
+    fi
+    WITH_DOXYGEN=1
+fi
+AM_CONDITIONAL([WITH_DOXYGEN], test "$WITH_DOXYGEN" = "1")
+
+
+dnl
+dnl Extra Python flags
+dnl
+PYTHON_LDFLAGS=
+if test "${PYTHON}" != ""; then
+    case "$host" in
+        *-*-cygwin* | *-*-mingw* | *-*-msys* )
+            PYTHON_LDFLAGS="-no-undefined"
+            ;;
+    esac
+    ext_suffix=`$PYTHON -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX") or sysconfig.get_config_var("SO"))'`
+    PYTHON_LDFLAGS="$PYTHON_LDFLAGS -shrext $ext_suffix"
+fi
+AC_SUBST(PYTHON_LDFLAGS)
+
+
+dnl
+dnl Checks for ICU library.
+dnl
+WITH_ICU=0
+
+if test "$with_icu" != "no" && test "$with_icu" != "" ; then
+    echo Enabling ICU support
+
+    # Try pkg-config first so that static linking works.
+    # If this succeeeds, we ignore the WITH_ICU directory.
+    PKG_CHECK_MODULES([ICU], [icu-uc], [
+        WITH_ICU=1; XML_PC_REQUIRES="${XML_PC_REQUIRES} icu-uc"
+        m4_ifdef([PKG_CHECK_VAR],
+            [PKG_CHECK_VAR([ICU_DEFS], [icu-uc], [DEFS])])
+        if test "x$ICU_DEFS" != "x"; then
+            ICU_CFLAGS="$ICU_CFLAGS $ICU_DEFS"
+        fi],[:])
+
+    if test "$WITH_ICU" = "0"; then
+        ICU_CONFIG=icu-config
+        if ${ICU_CONFIG} --cflags >/dev/null 2>&1
+        then
+            WITH_ICU=1
+            ICU_CFLAGS=`${ICU_CONFIG} --cflags`
+            ICU_LIBS=`${ICU_CONFIG} --ldflags`
+            XML_PC_LIBS="${XML_PC_LIBS} ${ICU_LIBS}"
+        else
+            _cppflags="${CPPFLAGS}"
+            _libs="${LIBS}"
+            if test "$with_icu" != "yes" ; then
+                ICU_DIR=$with_icu
+                CPPFLAGS="${CPPFLAGS} -I$ICU_DIR/include"
+                LIBS="${LIBS} -L$ICU_DIR/lib"
+            fi
+
+            AC_CHECK_HEADER(unicode/ucnv.h, [
+                AC_CHECK_LIB([icucore], [ucnv_open], [
+                    WITH_ICU=1
+                    ICU_LIBS=-licucore
+                    if test "$ICU_DIR" != ""; then
+                        ICU_CFLAGS="-I$ICU_DIR/include"
+                        ICU_LIBS="-L$ICU_DIR/lib $ICU_LIBS"
+                    fi])])
+                    XML_PC_LIBS="${XML_PC_LIBS} ${ICU_LIBS}"
+            CPPFLAGS=$_cppflags
+            LIBS=$_libs
+        fi
+    fi
+
+    if test "$WITH_ICU" = "0"; then
+        AC_MSG_ERROR([ICU not found])
+    fi
+
+    XML_PRIVATE_CFLAGS="${XML_PRIVATE_CFLAGS} ${ICU_CFLAGS}"
+    XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${ICU_LIBS}"
+fi
+AC_SUBST(WITH_ICU)
+
+dnl
+dnl Crypto libraries
+dnl
+case "$host" in
+    *-*-mingw*)
+        CRYPTO_LIBS="-lbcrypt"
+        XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${CRYPTO_LIBS}"
+        XML_PC_LIBS="${XML_PC_LIBS} ${CRYPTO_LIBS}"
+        ;;
+esac
+
+XML_LIBS="-lxml2"
+XML_PC_LIBS="${XML_PC_LIBS} ${LIBM}"
+XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${LIBM}"
+
+dnl When static-only:
+dnl * Duplicate xml-config static --libs into --dynamic.
+dnl * Fold pkg-config private fields into main fields.
+if test "x$enable_shared" = "xno"; then
+  XML_PRIVATE_LIBS_NO_SHARED="${XML_PRIVATE_LIBS}"
+  XML_PC_PRIVATE=
+  XML_PC_LIBS_PRIVATE=
+  BUILD_SHARED_LIBS=0
+else
+  XML_PRIVATE_LIBS_NO_SHARED=
+  XML_PC_PRIVATE=".private"
+  XML_PC_LIBS_PRIVATE="
+Libs.private:"
+  BUILD_SHARED_LIBS=1
+fi
+AC_SUBST(XML_PRIVATE_LIBS_NO_SHARED)
+AC_SUBST(XML_PC_PRIVATE)
+AC_SUBST(XML_PC_LIBS_PRIVATE)
+AC_SUBST(XML_PC_CFLAGS_PRIVATE)
+AC_SUBST(BUILD_SHARED_LIBS)
+AM_SUBST_NOTMAKE(XML_PRIVATE_LIBS_NO_SHARED)
+AM_SUBST_NOTMAKE(XML_PC_PRIVATE)
+AM_SUBST_NOTMAKE(XML_PC_LIBS_PRIVATE)
+AM_SUBST_NOTMAKE(XML_PC_CFLAGS_PRIVATE)
+AM_SUBST_NOTMAKE(BUILD_SHARED_LIBS)
+
+AC_SUBST(XML_PC_LIBS)
+AC_SUBST(XML_PC_REQUIRES)
+AM_SUBST_NOTMAKE(XML_PC_LIBS)
+AM_SUBST_NOTMAKE(XML_PC_REQUIRES)
+
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_LDFLAGS)
+AC_SUBST(XML_CFLAGS)
+AC_SUBST(XML_STATIC_CFLAGS)
+
+AC_SUBST(XML_LIBDIR)
+AC_SUBST(XML_LIBS)
+AC_SUBST(XML_PRIVATE_LIBS)
+AC_SUBST(XML_PRIVATE_CFLAGS)
+AC_SUBST(XML_INCLUDEDIR)
+
+# for libxml2-config.cmake.in
+AX_RECURSIVE_EVAL(["$bindir"], [INSTALL_BINDIR])
+AX_RECURSIVE_EVAL(["$includedir"], [INSTALL_INCLUDEDIR])
+AX_RECURSIVE_EVAL(["$libdir"], [INSTALL_LIBDIR])
+AC_SUBST(INSTALL_BINDIR)
+AC_SUBST(INSTALL_INCLUDEDIR)
+AC_SUBST(INSTALL_LIBDIR)
+AM_SUBST_NOTMAKE(INSTALL_BINDIR)
+AM_SUBST_NOTMAKE(INSTALL_INCLUDEDIR)
+AM_SUBST_NOTMAKE(INSTALL_LIBDIR)
+
+AX_RECURSIVE_EVAL(["$sysconfdir"], [XML_SYSCONFDIR])
+AC_DEFINE_UNQUOTED([XML_SYSCONFDIR], ["$XML_SYSCONFDIR"],
+                   [System configuration directory (/etc)])
+
+dnl
+dnl ---- start of noise
+dnl
 
 #
 # ---- handle libxml2
@@ -975,7 +1491,7 @@ AC_MSG_RESULT(Using configure dir $ac_abs_confdir)
 
 if test -d $ac_abs_confdir/.git ; then
   extra=`git branch | awk '/\*/ { print $2 }'`
-  if test "$extra" != "" -a "$extra" != "master"
+  if test "$extra" != "" -a "$extra" != "main"
   then
       LIBSLAX_VERSION_EXTRA="-git-$extra"
   fi
@@ -993,6 +1509,7 @@ AC_CONFIG_FILES([
   slax-config
   libpsu/Makefile
   parrotdb/Makefile
+  bxslt/Makefile
   libxi/Makefile
   libslax/Makefile
   libslax/slaxversion.h
@@ -1023,6 +1540,26 @@ AC_CONFIG_FILES([
   packaging/libslax.rb.base
   packaging/freebsd/port-Makefile
 ])
+
+AC_CONFIG_HEADERS([bxml/config.h])
+# keep on one line for cygwin c.f. #130896
+AC_CONFIG_FILES([
+    bxml/Makefile
+    bxml/include/Makefile
+    bxml/include/libxml/Makefile
+    bxml/include/private/Makefile
+    bxml/doc/Makefile
+    bxml/example/Makefile
+    bxml/fuzz/Makefile
+    bxml/python/Makefile
+    bxml/python/tests/Makefile
+    bxml/include/libxml/xmlversion.h
+    bxml/libxml-2.0.pc
+    bxml/libxml2-config.cmake
+])
+AC_CONFIG_FILES([bxml/python/setup.py], [chmod +x bxml/python/setup.py])
+AC_CONFIG_FILES([bxml/xml2-config], [chmod +x bxml/xml2-config])
+
 AC_OUTPUT
 
 AC_MSG_NOTICE([summary of build options:
