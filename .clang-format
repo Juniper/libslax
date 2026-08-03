@@ -1,9 +1,44 @@
 ---
-Language:        Cpp
+#Language:        Cpp
 BasedOnStyle:    LLVM
 
+BinPackArguments: true
+AllowAllArgumentsOnNextLine: true
+
+AlignArrayOfStructures: Left
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseColons: false
+AlwaysBreakAfterDefinitionReturnType: All
+BreakAdjacentStringLiterals: false
+BreakAfterReturnType: TopLevelDefinitions
+AlwaysBreakAfterReturnType: AllDefinitions
+#IndentGotoLabels: HalfIndent
+InsertNewlineAtEOF: true
+#InsertTrailingCommas: Wrapped
+JavaScriptQuotes: Double
+#Language: C
+LineEnding: LF
+RemoveParentheses: ReturnStatement
+
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterForeachMacros: true
+  AfterFunctionDeclarationName: true
+  AfterFunctionDefinitionName: true
+  AfterIfMacros: true
+  AfterOverloadedOperator: false
+  AfterPlacementOperator: false
+  AfterRequiresInClause: false
+  AfterRequiresInExpression: false
+  BeforeNonEmptyParentheses: false
+
 IndentWidth:     4
-TabWidth:        4
+TabWidth:        8
 UseTab:          Never
 ColumnLimit:     80
 ContinuationIndentWidth: 4
@@ -34,18 +69,15 @@ ReferenceAlignment: Right
 
 AlignConsecutiveAssignments: None
 AlignConsecutiveDeclarations: None
-AlignConsecutiveMacros: None
+AlignConsecutiveMacros: Consecutive
 AlignConsecutiveBitFields: None
 AlignTrailingComments: true
 AlignOperands: DontAlign
 AlignAfterOpenBracket: Align
 
-AlwaysBreakAfterReturnType: AllDefinitions
 BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true
 
-SpaceBeforeParens: ControlStatements
-SpaceAfterCStyleCast: false
 SpacesInParentheses: false
 SpaceBeforeAssignmentOperators: true
 
