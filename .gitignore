@@ -18,6 +18,8 @@
 *~
 *.orig
 
+py-compile
+
 aclocal.m4
 ar-lib
 autom4te.cache
