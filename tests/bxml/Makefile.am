@@ -73,8 +73,8 @@ runxmlconf_DEPENDENCIES = $(DEPS)
 runxmlconf_LDADD= $(LDADDS)
 
 check-local:
-	[ -d test   ] || $(LN_S) $(srcdir)/input  test
-	[ -d result ] || $(LN_S) $(srcdir)/output result
+	[ -d test   ] || $(LN_S) $(srcdir)/test  test
+	[ -d result ] || $(LN_S) $(srcdir)/result result
 	$(CHECKER) ./runtest$(EXEEXT)
 	$(CHECKER) ./testrecurse$(EXEEXT)
 	$(CHECKER) ./testapi$(EXEEXT)
@@ -83,7 +83,7 @@ check-local:
 	$(CHECKER) ./testdict$(EXEEXT)
 	$(CHECKER) ./testparser$(EXEEXT)
 	$(CHECKER) ./testModule$(EXEEXT)
-	$(CHECKER) ./runxmlconf$(EXEEXT) -d $(srcdir)/input/xmlconf
+	$(CHECKER) ./runxmlconf$(EXEEXT) -d $(srcdir)/test/xmlconf
 	$(CHECKER) ./runsuite$(EXEEXT)
 if WITH_OUTPUT_SOURCES
 if WITH_DEBUG_SOURCES
@@ -102,7 +102,7 @@ test tests: check
 
 accept:
 	@echo "bxml (libxml2) tests have no 'accept' step;" \
-	      "expected output lives under tests/bxml/output and is not auto-regenerated."
+	      "expected output lives under tests/bxml/result and is not auto-regenerated."
 
 VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
 
@@ -112,7 +112,7 @@ check-valgrind valgrind:
 	$(MAKE) check CHECKER="$(LIBTOOL) --mode=execute $(VALGRIND)"
 
 CLEANFILES = missing.lst runsuite.log runxmlconf.log test.out \
-	     *.gcda *.gcno *.res
+	     *.gcda *.gcno *.res test result
 
 dist-hook:
-	(cd $(srcdir) ; tar -cf - --exclude .git input output) | (cd $(distdir); tar xf -)
+	(cd $(srcdir) ; tar -cf - --exclude .git test result) | (cd $(distdir); tar xf -)
