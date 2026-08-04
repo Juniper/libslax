@@ -4,7 +4,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/bxml -I$(top_srcdir)/bxml \
 	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 
-check_PROGRAMS = \
+noinst_PROGRAMS = \
 	runsuite \
 	runtest \
 	runxmlconf \
@@ -56,7 +56,7 @@ testModule_SOURCES=testModule.c
 testModule_DEPENDENCIES = $(DEPS)
 testModule_LDADD= $(LDADDS)
 
-check_LTLIBRARIES = testdso.la
+noinst_LTLIBRARIES = testdso.la
 testdso_la_SOURCES = testdso.c
 testdso_la_LDFLAGS = $(AM_LDFLAGS) \
 		     -module -no-undefined -avoid-version -rpath $(libdir)
@@ -97,8 +97,16 @@ endif
 
 # Compatibility names so the top-level `tests`/`accept` loop (tests/Makefile.am)
 # can drive this directory the same way it drives the other tests/* dirs.
+
 runtests: check
-test tests: check
+
+S2O = | ${SED} '1,/@@/d'
+
+test tests:
+	${MKDIR} -p out
+	$(MAKE) check > out/check.out 2> out/check.err
+	${DIFF} -Nu ${srcdir}/saved/check.out out/check.out ${S2O}
+	${DIFF} -Nu ${srcdir}/saved/check.err out/check.err ${S2O}
 
 accept:
 	@echo "bxml (libxml2) tests have no 'accept' step;" \
