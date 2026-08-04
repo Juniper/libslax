@@ -1526,6 +1526,7 @@ AC_CONFIG_FILES([
   tests/art/Makefile
   tests/base/Makefile
   tests/bugs/Makefile
+  tests/bxml/Makefile
   tests/core/Makefile
   tests/errors/Makefile
   tests/libxslt/Makefile
