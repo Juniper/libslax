@@ -17,19 +17,6 @@ DIST_SUBDIRS = include . doc example fuzz python
 
 AM_CPPFLAGS = -I$(builddir)/include -I$(srcdir)/include
 
-check_PROGRAMS = \
-	runsuite \
-	runtest \
-	runxmlconf \
-	testModule \
-	testapi \
-	testcatalog \
-	testchar \
-	testdict \
-	testlimits \
-	testparser \
-	testrecurse
-
 bin_PROGRAMS = xmllint
 
 bin_SCRIPTS = xml2-config
@@ -109,101 +96,13 @@ endif
 DEPS = libxml2.la
 LDADDS = libxml2.la
 
-runtest_SOURCES=runtest.c
-runtest_DEPENDENCIES = $(DEPS)
-runtest_LDADD= $(THREAD_LIBS) $(Z_LIBS) $(LDADDS)
-
-testrecurse_SOURCES=testrecurse.c
-testrecurse_DEPENDENCIES = $(DEPS)
-testrecurse_LDADD= $(LDADDS)
-
-testlimits_SOURCES=testlimits.c
-testlimits_DEPENDENCIES = $(DEPS)
-testlimits_LDADD= $(LDADDS)
-
-testcatalog_SOURCES=testcatalog.c
-testcatalog_DEPENDENCIES = $(DEPS)
-testcatalog_LDADD= $(LDADDS)
-
-testchar_SOURCES=testchar.c
-testchar_DEPENDENCIES = $(DEPS)
-testchar_LDADD= $(LDADDS)
-
-testdict_SOURCES=testdict.c
-testdict_DEPENDENCIES = $(DEPS)
-testdict_LDADD= $(LDADDS)
-
-testparser_SOURCES=testparser.c
-testparser_DEPENDENCIES = $(DEPS)
-testparser_LDADD= $(LDADDS)
-
-runsuite_SOURCES=runsuite.c
-runsuite_DEPENDENCIES = $(DEPS)
-runsuite_LDADD= $(LDADDS)
-
 xmllint_SOURCES = xmllint.c shell.c lintmain.c
 xmllint_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS) $(Z_CFLAGS)
 xmllint_DEPENDENCIES = $(DEPS)
 xmllint_LDADD = $(RDL_LIBS) $(Z_LIBS) $(LDADDS)
 
-testModule_SOURCES=testModule.c
-testModule_DEPENDENCIES = $(DEPS)
-testModule_LDADD= $(LDADDS)
-
-check_LTLIBRARIES = testdso.la
-testdso_la_SOURCES = testdso.c
-testdso_la_LDFLAGS = $(AM_LDFLAGS) \
-		     -module -no-undefined -avoid-version -rpath $(libdir)
-
-rebuild_testapi:
-	cd $(srcdir) && python3 codegen/genTestApi.py $(abs_builddir)
-
-testapi_SOURCES=testapi.c
-testapi_DEPENDENCIES = $(DEPS)
-testapi_LDADD= $(LDADDS)
-
-runxmlconf_SOURCES=runxmlconf.c
-runxmlconf_DEPENDENCIES = $(DEPS)
-runxmlconf_LDADD= $(LDADDS)
-
-check-local:
-	[ -d test   ] || $(LN_S) $(srcdir)/test   .
-	[ -d result ] || $(LN_S) $(srcdir)/result .
-	$(CHECKER) ./runtest$(EXEEXT)
-	$(CHECKER) ./testrecurse$(EXEEXT)
-	$(CHECKER) ./testapi$(EXEEXT)
-	$(CHECKER) ./testcatalog$(EXEEXT)
-	$(CHECKER) ./testchar$(EXEEXT)
-	$(CHECKER) ./testdict$(EXEEXT)
-	$(CHECKER) ./testparser$(EXEEXT)
-	$(CHECKER) ./testModule$(EXEEXT)
-	$(CHECKER) ./runxmlconf$(EXEEXT) -d $(srcdir)/xmlconf
-	$(CHECKER) ./runsuite$(EXEEXT)
-if WITH_OUTPUT_SOURCES
-if WITH_DEBUG_SOURCES
-	test/scripts/test.sh ./xmllint$(EXEEXT)
-endif
-if WITH_CATALOG_SOURCES
-	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh ./xmlcatalog$(EXEEXT)
-	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh ./xmlcatalog$(EXEEXT)
-endif
-endif
-
-# Compatibility name of the check target
-runtests: check
-
-VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
-
-check-valgrind valgrind:
-	@echo '## Running the regression tests under Valgrind'
-	@echo '## Go get a cup of coffee it is gonna take a while ...'
-	$(MAKE) check CHECKER="$(LIBTOOL) --mode=execute $(VALGRIND)"
-
 dist-hook:
-	(cd $(srcdir) ; tar -cf - --exclude .git win32 test result) | (cd $(distdir); tar xf -)
-
-CLEANFILES = missing.lst runsuite.log runxmlconf.log test.out \
-	     *.gcda *.gcno *.res
+	(cd $(srcdir) ; tar -cf - --exclude .git win32 result) | (cd $(distdir); tar xf -)
 
 EXTRA_DIST = Copyright libxml2-config.cmake.in autogen.sh \
 	     libxml.h \

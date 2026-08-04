@@ -10,6 +10,7 @@ SUBDIRS= \
     base \
     core \
     bugs \
+    bxml \
     errors \
     art \
     pa \

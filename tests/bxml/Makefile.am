@@ -1,0 +1,115 @@
+## Process this file with automake to produce Makefile.in
+
+AM_CPPFLAGS = \
+	-I$(top_builddir)/bxml -I$(top_srcdir)/bxml \
+	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
+
+check_PROGRAMS = \
+	runsuite \
+	runtest \
+	runxmlconf \
+	testModule \
+	testapi \
+	testcatalog \
+	testchar \
+	testdict \
+	testlimits \
+	testparser \
+	testrecurse
+
+DEPS = $(top_builddir)/bxml/libxml2.la
+LDADDS = $(top_builddir)/bxml/libxml2.la
+
+runtest_SOURCES=runtest.c
+runtest_DEPENDENCIES = $(DEPS)
+runtest_LDADD= $(THREAD_LIBS) $(Z_LIBS) $(LDADDS)
+
+testrecurse_SOURCES=testrecurse.c
+testrecurse_DEPENDENCIES = $(DEPS)
+testrecurse_LDADD= $(LDADDS)
+
+testlimits_SOURCES=testlimits.c
+testlimits_DEPENDENCIES = $(DEPS)
+testlimits_LDADD= $(LDADDS)
+
+testcatalog_SOURCES=testcatalog.c
+testcatalog_DEPENDENCIES = $(DEPS)
+testcatalog_LDADD= $(LDADDS)
+
+testchar_SOURCES=testchar.c
+testchar_DEPENDENCIES = $(DEPS)
+testchar_LDADD= $(LDADDS)
+
+testdict_SOURCES=testdict.c
+testdict_DEPENDENCIES = $(DEPS)
+testdict_LDADD= $(LDADDS)
+
+testparser_SOURCES=testparser.c
+testparser_DEPENDENCIES = $(DEPS)
+testparser_LDADD= $(LDADDS)
+
+runsuite_SOURCES=runsuite.c
+runsuite_DEPENDENCIES = $(DEPS)
+runsuite_LDADD= $(LDADDS)
+
+testModule_SOURCES=testModule.c
+testModule_DEPENDENCIES = $(DEPS)
+testModule_LDADD= $(LDADDS)
+
+check_LTLIBRARIES = testdso.la
+testdso_la_SOURCES = testdso.c
+testdso_la_LDFLAGS = $(AM_LDFLAGS) \
+		     -module -no-undefined -avoid-version -rpath $(libdir)
+
+rebuild_testapi:
+	cd $(top_srcdir)/bxml && python3 codegen/genTestApi.py $(abs_builddir)
+
+testapi_SOURCES=testapi.c
+testapi_DEPENDENCIES = $(DEPS)
+testapi_LDADD= $(LDADDS)
+
+runxmlconf_SOURCES=runxmlconf.c
+runxmlconf_DEPENDENCIES = $(DEPS)
+runxmlconf_LDADD= $(LDADDS)
+
+check-local:
+	[ -d test   ] || $(LN_S) $(top_srcdir)/tests/bml test
+	[ -d result ] || $(LN_S) $(top_srcdir)/bxml/result result
+	$(CHECKER) ./runtest$(EXEEXT)
+	$(CHECKER) ./testrecurse$(EXEEXT)
+	$(CHECKER) ./testapi$(EXEEXT)
+	$(CHECKER) ./testcatalog$(EXEEXT)
+	$(CHECKER) ./testchar$(EXEEXT)
+	$(CHECKER) ./testdict$(EXEEXT)
+	$(CHECKER) ./testparser$(EXEEXT)
+	$(CHECKER) ./testModule$(EXEEXT)
+	$(CHECKER) ./runxmlconf$(EXEEXT) -d $(srcdir)/../bml/xmlconf
+	$(CHECKER) ./runsuite$(EXEEXT)
+if WITH_OUTPUT_SOURCES
+if WITH_DEBUG_SOURCES
+	test/scripts/test.sh $(top_builddir)/bxml/xmllint$(EXEEXT)
+endif
+if WITH_CATALOG_SOURCES
+	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh $(top_builddir)/bxml/xmlcatalog$(EXEEXT)
+	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh $(top_builddir)/bxml/xmlcatalog$(EXEEXT)
+endif
+endif
+
+# Compatibility names so the top-level `tests`/`accept` loop (tests/Makefile.am)
+# can drive this directory the same way it drives the other tests/* dirs.
+runtests: check
+test tests: check
+
+accept:
+	@echo "bxml (libxml2) tests have no 'accept' step;" \
+	      "expected output lives under bxml/result and is not auto-regenerated."
+
+VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
+
+check-valgrind valgrind:
+	@echo '## Running the regression tests under Valgrind'
+	@echo '## Go get a cup of coffee it is gonna take a while ...'
+	$(MAKE) check CHECKER="$(LIBTOOL) --mode=execute $(VALGRIND)"
+
+CLEANFILES = missing.lst runsuite.log runxmlconf.log test.out \
+	     *.gcda *.gcno *.res
