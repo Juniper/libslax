@@ -104,13 +104,24 @@ S2O = | ${SED} '1,/@@/d'
 
 test tests:
 	${MKDIR} -p out
-	$(MAKE) check > out/check.out 2> out/check.err
-	${DIFF} -Nu ${srcdir}/saved/check.out out/check.out ${S2O}
-	${DIFF} -Nu ${srcdir}/saved/check.err out/check.err ${S2O}
+	-@(for base in check; do \
+	    echo "... $$base ..." ; \
+	    $(MAKE) $$base > out/check.out 2> out/check.err ; \
+	    ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
+	done);
+
+show-errors:
+	${MKDIR} -p out
+	-@(for base in check; do \
+	    echo "... $$base ..." ; \
+	    ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O} ; \
+	done);
 
 accept:
-	@echo "bxml (libxml2) tests have no 'accept' step;" \
-	      "expected output lives under tests/bxml/result and is not auto-regenerated."
+	-@(for base in check; do \
+	    ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \
+	    ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \
+	done);
 
 VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
 
