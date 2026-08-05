@@ -1,7 +1,7 @@
 /Applications/Xcode.app/Contents/Developer/usr/bin/make  check-local
 [ -d test   ] || ln -s ../../../tests/bxml/test  test
 [ -d result ] || ln -s ../../../tests/bxml/result result
-./runtest
+./runtest 2> /dev/null
 ## XML regression tests
 ## XML regression tests on memory
 ## XML entity subst regression tests
