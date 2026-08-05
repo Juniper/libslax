@@ -75,7 +75,7 @@ runxmlconf_LDADD= $(LDADDS)
 check-local:
 	[ -d test   ] || $(LN_S) $(srcdir)/test  test
 	[ -d result ] || $(LN_S) $(srcdir)/result result
-	$(CHECKER) ./runtest$(EXEEXT)
+	$(CHECKER) ./runtest$(EXEEXT) 2> /dev/null
 	$(CHECKER) ./testrecurse$(EXEEXT)
 	$(CHECKER) ./testapi$(EXEEXT)
 	$(CHECKER) ./testcatalog$(EXEEXT)
@@ -108,12 +108,6 @@ test tests:
 	    echo "... $$base ..." ; \
 	    $(MAKE) $$base > out/check.out 2> out/check.err ; \
 	    ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
-	done);
-
-show-errors:
-	${MKDIR} -p out
-	-@(for base in check; do \
-	    echo "... $$base ..." ; \
 	    ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O} ; \
 	done);
 
