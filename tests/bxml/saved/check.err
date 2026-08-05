@@ -1,0 +1,1373 @@
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:6: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cba.dtd:2: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/acb.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bca.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/acb.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/acb.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.dtd:6: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/cab.xml:5: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/cba.dtd:6: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/cab.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/bca.dtd:2: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/bca.xml:3: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/abc.dtd:2: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+test/threads/abc.dtd:4: I/O warning : failed to load "http://example.org/b/b.dtd": No such file or directory
+%b;
+   ^
+test/threads/abc.xml:4: parser error : Entity 'bent' not defined
+  <b>Let's use a DTD defined entity &bent;</b>
+                                          ^
+test/threads/bca.dtd:4: I/O warning : failed to load "http://example.org/c/c.dtd": No such file or directory
+%c;
+   ^
+test/threads/bac.dtd:4: I/O warning : failed to load "http://example.org/a/a.dtd": No such file or directory
+%a;
+   ^
+I/O warning : failed to load "http://example.invalid/imported.xsd": No such file or directory
+test/schemas/v012-reader-schema-main.xsd:4: element import: Schemas parser warning : Element '{http://www.w3.org/2001/XMLSchema}import': Failed to locate a schema at location 'http://example.invalid/imported.xsd'. Skipping the import.
+test/schemas/v012-reader-schema-main.xsd:5: element element: Schemas parser error : element decl. 'doc', attribute 'type': The QName value '{urn:remote}RemoteType' does not resolve to a(n) type definition.
+doc.xml:2: Schemas validity error : Element 'e': 'not-an-intnot-an-int' is not a valid value of the atomic type 'xs:integer'.
+I/O warning : failed to load "http://example.invalid/imported.rng": No such file or directory
+test/relaxng/v012-reader-main.rng:2: element include: Relax-NG parser error : xmlRelaxNG: could not load http://example.invalid/imported.rng
+test/relaxng/v012-reader-main.rng:2: element include: Relax-NG parser error : Failed to load include http://example.invalid/imported.rng
+test/relaxng/v012-reader-main.rng:3: element ref: Relax-NG parser error : Reference docdef has no matching definition
+test/relaxng/v012-reader-main.rng:3: element ref: Relax-NG parser error : Internal found no define for ref docdef
+../../../tests/bxml/test/xmlconf/xmlconf.xml is missing 
+  you need to fetch and extract the
+  latest XML Conformance Test Suites
+  http://www.w3.org/XML/Test/xmlts20080827.tar.gz
+  see http://www.w3.org/XML/Test/ for information
+Failed to parse xstc/Tests/Metadata/NISTXMLSchemaDatatypes.testSet
+Failed to parse xstc/Tests/Metadata/SunXMLSchema1-0-20020116.testSet
+Failed to parse xstc/Tests/Metadata/MSXMLSchema1-0-20020116.testSet
