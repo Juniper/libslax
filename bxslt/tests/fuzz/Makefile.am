@@ -1,22 +1,23 @@
-LIBXSLT_LIBS = $(top_builddir)/libxslt/libxslt.la \
-               $(top_builddir)/libexslt/libexslt.la
+LIBXSLT_LIBS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+               $(top_builddir)/bxslt/libexslt/libexslt.la
 
 EXTRA_PROGRAMS = genSeed xpath xslt
 check_PROGRAMS = testTargets
 EXTRA_DIST = xpath.dict xslt.dict
 CLEANFILES = $(EXTRA_PROGRAMS)
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt \
+	      -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 DEPENDENCIES = $(LIBXSLT_LIBS)
 LDADD = $(LIBXSLT_LIBS) \
-        $(LIBXML_LIBS) $(EXTRA_LIBS) $(LIBM)
+        $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBM)
 
 testTargets_SOURCES = testTargets.c fuzz.c fuzz.h
 
-$(top_builddir)/libxslt/libxslt.la:
-	cd $(top_builddir)/libxslt && $(MAKE) libxslt.la
+$(top_builddir)/bxslt/libxslt/libxslt.la:
+	cd $(top_builddir)/bxslt/libxslt && $(MAKE) libxslt.la
 
-$(top_builddir)/libexslt/libexslt.la: $(top_builddir)/libxslt/libxslt.la
-	cd $(top_builddir)/libexslt && $(MAKE) libexslt.la
+$(top_builddir)/bxslt/libexslt/libexslt.la: $(top_builddir)/bxslt/libxslt/libxslt.la
+	cd $(top_builddir)/bxslt/libexslt && $(MAKE) libexslt.la
 
 .PHONY: fuzz-xpath fuzz-xslt
 
@@ -32,7 +33,7 @@ genSeed_SOURCES = genSeed.c fuzz.c
 
 seed/xpath.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xpath
-	@./genSeed$(EXEEXT) xpath "$(top_srcdir)/tests"
+	@./genSeed$(EXEEXT) xpath "$(top_srcdir)/bxslt/tests"
 	@touch seed/xpath.stamp
 
 xpath_SOURCES = xpath.c fuzz.c fuzz.h
@@ -48,7 +49,7 @@ fuzz-xpath: xpath$(EXEEXT) seed/xpath.stamp
 
 seed/xslt.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xslt
-	@./genSeed$(EXEEXT) xslt "$(top_srcdir)/tests"
+	@./genSeed$(EXEEXT) xslt "$(top_srcdir)/bxslt/tests"
 	@touch seed/xslt.stamp
 
 xslt_SOURCES = xslt.c fuzz.c fuzz.h
