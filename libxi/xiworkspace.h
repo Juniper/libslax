@@ -16,22 +16,11 @@
 #ifndef LIBSLAX_XI_WORKSPACE_H
 #define LIBSLAX_XI_WORKSPACE_H
 
-/*
- * Each node has a prefix mapping that tells us which namespace it's
- * in.  We want to make this simple and reusable, but since prefixes
- * can be remapped within any hierarchy, it's only reusable in the
- * window where that mapping isn't changed.  But this makes finding
- * the prefix and url a simple lookup.  This means that it two nodes
- * have the same mapping (xi_ns_id_t) then they are in the same
- * namespace, but if they are different, then those two mappings'
- * xnm_uri fields must be compared to see if they have the same atom
- * number.  Since they are in a name-pool, "There can be only one!"
- * applies, so comparing the url atom number is sufficient.
- */
-typedef struct xi_ns_map_s {
-    pa_atom_t xnm_prefix;	/* Atom of prefix string (in namepool) */
-    pa_atom_t xnm_uri;		/* Atom of URL string (in namepool) */
-} xi_ns_map_t;
+#include <parrotdb/pafixed.h>
+#include <parrotdb/paarb.h>
+#include <parrotdb/paistr.h>
+#include <parrotdb/papat.h>
+#include <libxi/xinode.h>
 
 typedef struct xi_workspace_s {
     pa_mmap_t *xw_mmap;	/* Base memory information */
@@ -56,12 +45,11 @@ void
 xi_ns_open (pa_mmap_t *pmap, const char *basename,
 	    pa_fixed_t **nsp, pa_pat_t **ns_indexp);
 
-pa_atom_t
+xi_ns_map_id_t
 xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
 	    xi_boolean_t createp);
 
-PA_FIXED_FUNCTIONS(xi_node_atom_t, xi_node_t, xi_workspace_t, xw_nodes,
-		   xi_node_alloc, xi_node_free, xi_node_addr);
+#include "gen/xi_node_gen.h"
 
 pa_atom_t
 xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp);
@@ -69,7 +57,7 @@ xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp);
 static inline const char *
 xi_namepool_string (xi_workspace_t *xwp, pa_atom_t name_atom)
 {
-    return pa_istr_atom_string(xwp->xw_names, name_atom);
+    return pa_istr_atom_string(xwp->xw_names, pa_istr_atom(name_atom));
 }
 
 pa_atom_t
@@ -78,7 +66,7 @@ xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom);
 static inline const char *
 xi_textpool_string (xi_workspace_t *xwp, pa_atom_t atom)
 {
-    return pa_arb_atom_addr(xwp->xw_textpool, atom);
+    return pa_arb_atom_addr(xwp->xw_textpool, pa_arb_atom(atom));
 }
 
 static inline const char *
@@ -89,11 +77,7 @@ xi_get_attrib_string (xi_workspace_t *xwp, xi_node_t *nodep,
     return (atom == PA_NULL_ATOM) ? NULL : xi_textpool_string(xwp, atom);
 }
 
-PA_FIXED_ATOM_BASED(xi_ns_map_id_t, xi_ns_map_id_s, xnm_atom,
-		    xi_ns_map_t, xi_workspace_t, xw_ns_map,
-		    xi_ns_map_alloc, xi_ns_map_free, xi_ns_map_addr,
-		    xi_ns_map_id, xi_ns_map_id_atom_of,
-		    xi_ns_map_id_is_null, xi_ns_map_id_null_atom);
+#include "gen/xi_ns_map_gen.h"
 
 #endif /* LIBSLAX_XI_WORKSPACE_H */
 
