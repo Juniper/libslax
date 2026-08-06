@@ -267,10 +267,12 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
     if (ctxt == NULL)
 	return NULL;
 
+#if 0
     /*
      * Turn on line number recording in each node
      */
     ctxt->linenumbers = 1;
+#endif
 
     bzero(&sd, sizeof(sd));
 
@@ -323,10 +325,12 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
     if (ctxt == NULL)
 	return NULL;
 
+#if 0
     /*
      * Turn on line number recording in each node
      */
     ctxt->linenumbers = 1;
+#endif
 
     bzero(&sd, sizeof(sd));
 
