@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-$(top_builddir)/xsltproc/xsltproc:
+$(top_builddir)/bxslt/xsltproc/xsltproc:
 	@(cd ../../xsltproc ; $(MAKE) xsltproc)
 
 EXTRA_DIST =		\
@@ -13,14 +13,14 @@ EXTRA_DIST =		\
 
 CLEANFILES = .memdump
 
-check-local: $(top_builddir)/xsltproc/xsltproc
+check-local: $(top_builddir)/bxslt/xsltproc/xsltproc
 	@echo '## Running XInclude test'
 	@(echo > .memdump)
-	@($(CHECKER) $(top_builddir)/xsltproc/xsltproc $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
+	@($(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
 	diff $(srcdir)/normal.out res; \
 	grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
 	rm -f res)
-	@($(CHECKER) $(top_builddir)/xsltproc/xsltproc --xinclude $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
+	@($(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --xinclude $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
 	diff $(srcdir)/xinclude.out res; \
 	grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
 	rm -f res)
