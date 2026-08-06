@@ -10,13 +10,11 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-# bxslt is not yet wired into configure.ac (no AC_CONFIG_FILES for its
-# libxslt/libexslt/xsltproc/doc/tests subdirs) -- left out of SUBDIRS
-# until that's done.
 SUBDIRS = \
     libpsu \
     parrotdb \
     bxml \
+    bxslt \
     libslax \
     libxi \
     extensions \
