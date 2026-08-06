@@ -387,7 +387,7 @@ case "$op" in
         # If you make a tag like "0.15.0", then you can
         # use an URL like:
         # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
-        if [ x"$@" = x"" ]; then
+        if [ "$1" = "" ]; then
 	    git tag -n5
 	    exit 0
         fi
@@ -415,10 +415,21 @@ case "$op" in
         ;;
 
     unpatch)
-	## gt unpatch
+	## gt unpatch [<path>]
 	## == Patch -R any changed files, uncommitted reverting changes
 	set_git_top
 	git diff "$@" | (cd $GIT_TOP; PATCH_VERBOSE=99 patch -R -p1 )
+	;;
+
+    unrm)
+	## gt unrm <path>
+ 	## == Undo a "gt rm"
+	set_git_top
+	if [ -z "$1" ]; then
+	    echo "missing path argument"
+	    exit 1
+	fi
+	git restore --source=HEAD --staged --worktree "$@"
 	;;
 
     up|update|pull)
