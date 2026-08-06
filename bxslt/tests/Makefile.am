@@ -1,21 +1,24 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir) \
+	-I$(top_srcdir)/bxslt -I$(top_builddir)/bxslt \
+	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
 
-DEPENDENCIES = $(top_builddir)/libxslt/libxslt.la \
-               $(top_builddir)/libexslt/libexslt.la
+DEPS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+       $(top_builddir)/bxslt/libexslt/libexslt.la \
+       $(top_builddir)/bxml/libxml2.la
 
-LDADD = $(top_builddir)/libxslt/libxslt.la \
-        $(top_builddir)/libexslt/libexslt.la \
-        $(LIBXML_LIBS)
+DEPENDENCIES = $(DEPS)
+
+LDADD = $(DEPS)
 
 check_PROGRAMS = runtest
 
 runtest_SOURCES = runtest.c
 
-if WITH_MODULES
+if WITH_XSLT_MODULES
 
 check_LTLIBRARIES = xmlsoft_org_xslt_testplugin.la
 
@@ -26,7 +29,7 @@ plugindir = $(abs_builddir)/.libs
 
 xmlsoft_org_xslt_testplugin_la_CFLAGS = $(AM_CFLAGS) -DMODULE_COMPILE
 xmlsoft_org_xslt_testplugin_la_SOURCES = testplugin.c
-xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/libxslt/libxslt.la $(LIBXML_LIBS) $(EXTRA_LIBS)
+xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/bxslt/libxslt/libxslt.la $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS)
 xmlsoft_org_xslt_testplugin_la_LDFLAGS = \
 	$(AM_LDFLAGS) -no-undefined \
 	-module -avoid-version -rpath $(plugindir)
