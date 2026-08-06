@@ -159,9 +159,33 @@ xi_rstate_id_atom_of \
 xi_rstate_id_null_atom \
 "
 
+atom_xi_node_id="
+xi_node_id_gen.h \
+xi_node_id_t \
+xi_node_id_s \
+xnid_atom \
+xi_node_id_is_null \
+xi_node_id \
+xi_node_id_atom_of \
+xi_node_id_null_atom \
+"
+
+atom_xi_ns_map_id="
+xi_ns_map_id_gen.h \
+xi_ns_map_id_t \
+xi_ns_map_id_s \
+xnsid_atom \
+xi_ns_map_id_is_null \
+xi_ns_map_id \
+xi_ns_map_id_atom_of \
+xi_ns_map_id_null_atom \
+"
+
 xi_fixed_atoms="\
 xi_rule_id \
 xi_rstate_id \
+xi_node_id \
+xi_ns_map_id \
 "
 
 # libxi typed-atom function sets: file, atom_type, elem_type, base_type, field,
@@ -194,32 +218,42 @@ xi_rstate_id_atom_of \
 xi_rstate_id_is_null \
 "
 
-xi_fixed_func_atoms="\
-xi_rule \
-xi_rstate \
-"
-
-# libxi plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
-plain_xi_node="
+fixed_funcs_xi_node="
 xi_node_gen.h \
+xi_node_id_t \
 xi_node_t \
 xi_workspace_t \
 xw_nodes \
 xi_node_alloc \
 xi_node_free \
 xi_node_addr \
+xi_node_id \
+xi_node_id_atom_of \
+xi_node_id_is_null \
 "
 
-plain_xi_ns_map="
+fixed_funcs_xi_ns_map="
 xi_ns_map_gen.h \
+xi_ns_map_id_t \
 xi_ns_map_t \
 xi_workspace_t \
 xw_ns_map \
 xi_ns_map_alloc \
 xi_ns_map_free \
 xi_ns_map_addr \
+xi_ns_map_id \
+xi_ns_map_id_atom_of \
+xi_ns_map_id_is_null \
 "
 
+xi_fixed_func_atoms="\
+xi_rule \
+xi_rstate \
+xi_node \
+xi_ns_map \
+"
+
+# libxi plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
 plain_xi_nodeset_chunk="
 xi_nodeset_chunk_gen.h \
 xi_nodeset_chunk_t \
@@ -241,8 +275,6 @@ xi_nodeset_info_addr \
 "
 
 xi_plain_atoms="\
-xi_node \
-xi_ns_map \
 xi_nodeset_chunk \
 xi_nodeset_info \
 "
