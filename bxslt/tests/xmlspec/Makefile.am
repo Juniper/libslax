@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-$(top_builddir)/xsltproc/xsltproc:
+$(top_builddir)/bxslt/xsltproc/xsltproc:
 	@(cd ../../xsltproc ; $(MAKE) xsltproc)
 
 EXTRA_DIST = REC-xml-20001006.xml xmlspec-v21.dtd W3C-REC.css \
@@ -9,10 +9,10 @@ EXTRA_DIST = REC-xml-20001006.xml xmlspec-v21.dtd W3C-REC.css \
 
 CLEANFILES = .memdump debug
 
-check-local: $(top_builddir)/xsltproc/xsltproc
+check-local: $(top_builddir)/bxslt/xsltproc/xsltproc
 	@echo '## Running xmlspec tests'
 	@(echo > .memdump)
-	@log=`$(CHECKER) $(top_builddir)/xsltproc/xsltproc -timing \
+	@log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc -timing \
 		$(srcdir)/REC-xml-2e.xsl $(srcdir)/REC-xml-20001006.xml \
 		> REC-xml-20001006.out 2> debug ; \
 	  diff $(srcdir)/REC-xml-20001006.html REC-xml-20001006.out | \
@@ -25,7 +25,7 @@ check-local: $(top_builddir)/xsltproc/xsltproc
 		echo "$$log" ; \
 	fi
 	@rm -f REC-xml-20001006.out
-	@log=`$(CHECKER) $(top_builddir)/xsltproc/xsltproc  \
+	@log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc  \
 		-timing --param show.diff.markup 1 \
 		$(srcdir)/REC-xml-2e.xsl $(srcdir)/REC-xml-20001006.xml \
 		> REC-xml-20001006-review.out 2> debug ; \
