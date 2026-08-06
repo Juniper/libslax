@@ -233,8 +233,11 @@ extCurlSetContents (curl_opts_t *opts, xmlNodePtr nodep)
 		xmlSaveFlush(handle);
 		xmlSaveClose(handle);
 
-		opts->co_contents = (char *) buf->content;
-		buf->content = NULL;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                opts->co_contents = (char *) buf->content;
+                buf->content = NULL;
+#pragma clang diagnostic pop
 	    }
 
 	    xmlBufferFree(buf);
