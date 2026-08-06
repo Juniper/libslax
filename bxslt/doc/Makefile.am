@@ -3,7 +3,7 @@
 SUBDIRS = devhelp EXSLT/devhelp
 
 # A file in win32 depends upon two of the doc files
-WIN32_DIR=$(top_srcdir)/win32
+WIN32_DIR=$(top_srcdir)/bxslt/win32
 
 nobase_dist_doc_DATA =			\
 	tutorial/images/callouts/1.png	\
