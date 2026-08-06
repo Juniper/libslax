@@ -787,7 +787,13 @@ AC_DEFINE_UNQUOTED([WITH_ISO8859X], [$WITH_ISO8859X], [ISO-8859-X support if no 
 AM_CONDITIONAL([WITH_ISO8859X], [test "$WITH_ISO8859X" = "1"])
 
 AC_SUBST(WITH_MODULES)
-AC_DEFINE_UNQUOTED([WITH_MODULES], [$WITH_MODULES], [dynamic modules support])
+dnl No AC_DEFINE here: WITH_MODULES as a compiled C macro belongs to
+dnl bxslt's own plugin-loading feature (set via its private xsltconfig.h,
+dnl gated by WITH_XSLT_MODULES). bxml's C sources never check WITH_MODULES
+dnl directly (only the @WITH_MODULES@ substitution in xmlversion.h.in and
+dnl the Makefile conditionals below), so defining it here would leak bxml's
+dnl own always-real component state into the shared config header and
+dnl falsely satisfy bxslt's #ifdef WITH_MODULES.
 AM_CONDITIONAL([WITH_MODULES], [test "$WITH_MODULES" = "1"])
 AM_CONDITIONAL([WITH_MODULES_SOURCES], [test "$WITH_MODULES" = "1"])
 
@@ -1107,6 +1113,433 @@ AM_SUBST_NOTMAKE(INSTALL_LIBDIR)
 AX_RECURSIVE_EVAL(["$sysconfdir"], [XML_SYSCONFDIR])
 AC_DEFINE_UNQUOTED([XML_SYSCONFDIR], ["$XML_SYSCONFDIR"],
                    [System configuration directory (/etc)])
+
+#
+# --- Logic for bxslt (captive libxslt/libexslt)
+#
+
+# bxslt is versioned identically to libslax itself ($VERSION, from the
+# AC_INIT above) rather than to the upstream libxslt/libexslt releases
+# it was vendored from.
+LIBXSLT_MAJOR_VERSION=`echo $VERSION | cut -d . -f 1`
+LIBXSLT_MINOR_VERSION=`echo $VERSION | cut -d . -f 2`
+LIBXSLT_MICRO_VERSION=`echo $VERSION | cut -d . -f 3`
+LIBXSLT_VERSION=$VERSION
+LIBXSLT_VERSION_NUMBER=`expr $LIBXSLT_MAJOR_VERSION \* 10000 + $LIBXSLT_MINOR_VERSION \* 100 + $LIBXSLT_MICRO_VERSION`
+LIBXSLT_VERSION_EXTRA=
+LIBXSLT_MAJOR_MINOR_VERSION=$LIBXSLT_MAJOR_VERSION.$LIBXSLT_MINOR_VERSION
+# libtool -version-info CURRENT:REVISION:AGE; compatible with every
+# minor release of this major version (i.e. AGE == MINOR_VERSION).
+LIBXSLT_VERSION_INFO=`expr $LIBXSLT_MAJOR_VERSION + $LIBXSLT_MINOR_VERSION`:$LIBXSLT_MICRO_VERSION:$LIBXSLT_MINOR_VERSION
+AC_SUBST(LIBXSLT_MAJOR_VERSION)
+AC_SUBST(LIBXSLT_MINOR_VERSION)
+AC_SUBST(LIBXSLT_MICRO_VERSION)
+AC_SUBST(LIBXSLT_VERSION)
+AC_SUBST(LIBXSLT_VERSION_NUMBER)
+AC_SUBST(LIBXSLT_VERSION_EXTRA)
+AC_SUBST(LIBXSLT_MAJOR_MINOR_VERSION)
+AC_SUBST(LIBXSLT_VERSION_INFO)
+
+LIBEXSLT_MAJOR_VERSION=`echo $VERSION | cut -d . -f 1`
+LIBEXSLT_MINOR_VERSION=`echo $VERSION | cut -d . -f 2`
+LIBEXSLT_MICRO_VERSION=`echo $VERSION | cut -d . -f 3`
+LIBEXSLT_VERSION=$VERSION
+LIBEXSLT_VERSION_NUMBER=`expr $LIBEXSLT_MAJOR_VERSION \* 10000 + $LIBEXSLT_MINOR_VERSION \* 100 + $LIBEXSLT_MICRO_VERSION`
+LIBEXSLT_VERSION_EXTRA=
+LIBEXSLT_VERSION_INFO=`expr $LIBEXSLT_MAJOR_VERSION + $LIBEXSLT_MINOR_VERSION`:$LIBEXSLT_MICRO_VERSION:$LIBEXSLT_MINOR_VERSION
+AC_SUBST(LIBEXSLT_MAJOR_VERSION)
+AC_SUBST(LIBEXSLT_MINOR_VERSION)
+AC_SUBST(LIBEXSLT_MICRO_VERSION)
+AC_SUBST(LIBEXSLT_VERSION)
+AC_SUBST(LIBEXSLT_VERSION_NUMBER)
+AC_SUBST(LIBEXSLT_VERSION_EXTRA)
+AC_SUBST(LIBEXSLT_VERSION_INFO)
+
+dnl
+dnl if the system support linker version scripts for symbol versioning
+dnl then add it (bxslt uses this for libxslt.syms)
+dnl
+AC_MSG_CHECKING([how to pass version script to the linker ($LD)])
+VERSION_SCRIPT_FLAGS=none
+if $LD --help 2>&1 | grep "version-script" >/dev/null 2>/dev/null; then
+    dnl lld 16 defaults to --no-undefined-version but the version script
+    dnl can contain symbols disabled by configuration options.
+    VERSION_SCRIPT_FLAGS=''
+    AX_APPEND_LINK_FLAGS([-Wl,--undefined-version], [VERSION_SCRIPT_FLAGS])
+    AX_APPEND_FLAG([-Wl,--version-script=], [VERSION_SCRIPT_FLAGS])
+elif $LD --help 2>&1 | grep "M mapfile" >/dev/null 2>/dev/null; then
+    VERSION_SCRIPT_FLAGS="-Wl,-M -Wl,"
+fi
+AC_MSG_RESULT([$VERSION_SCRIPT_FLAGS])
+AC_SUBST(VERSION_SCRIPT_FLAGS)
+AM_CONDITIONAL([USE_VERSION_SCRIPT], [test "$VERSION_SCRIPT_FLAGS" != none])
+
+dnl
+dnl bxslt needs real pthread detection (independent of bxml's own
+dnl WITH_THREADS component flag above, which is a boolean intent only)
+dnl to populate THREAD_LIBS for its testThreads program and for
+dnl tests/bxml's runtest.
+dnl
+case $host in
+  *-mingw*) ;;
+  *)
+    THREAD_LIBS=""
+    AC_CHECK_HEADER(pthread.h,
+        AC_CHECK_LIB(pthread, pthread_join,[
+           AC_DEFINE([HAVE_LIBPTHREAD], [1], [Define if pthread library is there (-lpthread)])
+           AC_DEFINE([HAVE_PTHREAD_H], [1], [Define if <pthread.h> is there])
+           THREAD_LIBS="-lpthread"]))
+    ;;
+esac
+AC_SUBST(THREAD_LIBS)
+
+dnl
+dnl Detect supported locale
+dnl
+AC_CHECK_HEADERS([locale.h xlocale.h])
+AC_CHECK_FUNCS([strxfrm_l])
+
+dnl
+dnl Math detection
+dnl
+AC_CHECK_HEADERS(sys/timeb.h sys/stat.h sys/select.h)
+AC_CHECK_FUNCS(stat _stat)
+AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS(localtime_r gmtime_r ftime)
+
+dnl Checking the standard string functions availability
+AC_CHECK_FUNCS(snprintf vsnprintf,, NEED_TRIO=1)
+
+dnl Checking for POSIX timers
+AC_CHECK_FUNCS(clock_gettime, [], [
+  AC_CHECK_LIB(rt, clock_gettime, [
+    AC_DEFINE(HAVE_CLOCK_GETTIME, 1)
+    EXTRA_LIBS="$EXTRA_LIBS -lrt"
+  ])
+])
+AC_SUBST(EXTRA_LIBS)
+
+dnl
+dnl Check for trio string functions
+dnl
+if test "${NEED_TRIO}" = "1" ; then
+    echo Reusing trio library for string functions
+    WITH_TRIO=1
+else
+    WITH_TRIO=0
+fi
+AC_SUBST(WITH_TRIO)
+
+dnl
+dnl Perl is just needed for generating some data for XSLTmark
+dnl
+AC_CHECK_PROG(PERL, perl, perl, false)
+AM_CONDITIONAL(WITH_PERL, test "$PERL" != "false")
+
+AC_PATH_PROG(XMLLINT, xmllint, /usr/bin/xmllint)
+AC_PATH_PROG(XSLTPROC, xsltproc, /usr/bin/xsltproc)
+
+#
+# ---- captive libxslt component selection
+#
+# Mirrors bxml's --with-bxml-components mechanism above: a single
+# --with-bxslt-components=LIST option replaces the separate
+# --with-crypto/--with-debugger/--with-profiler/--with-debug/--with-plugins/
+# --with-python switches libxslt used to have.
+#
+# Two of these are renamed from their upstream libxslt names to avoid
+# colliding with bxml's own same-named components (both vendored libraries
+# now share one configure.ac):
+#   plugins/modules -> xslt-modules (upstream WITH_MODULES; bxml already
+#                       owns WITH_MODULES for its own dynamic-modules support)
+#   python           -> xslt-python (upstream WITH_PYTHON; bxml already
+#                       owns WITH_PYTHON for its own Python bindings)
+# bxslt/libxslt/xsltconfig.h.in and the bxslt Makefile.am files that used
+# the bare names have been updated to match.
+#
+BXSLT_COMPONENT_TABLE='
+crypto:off::Add crypto support to exslt
+debugger:off::Add debugging (breakpoint/inspection) support
+profiler:on::Add profiling support
+xslt-debug:off::Enable XSLT verbose debug reporting (xsltproc -v)
+xslt-modules:off::Add plugin extension support
+xslt-python:on::Build Python bindings
+'
+
+BXSLT_COMPONENT_NAMES=`echo "$BXSLT_COMPONENT_TABLE" | awk -F: 'NF { print $1 }'`
+
+bxslt_var () {
+    echo "$1" | tr '-' '_'
+}
+
+bxslt_known () {
+    for bxslt_n in $BXSLT_COMPONENT_NAMES; do
+        test "$bxslt_n" = "$1" && return 0
+    done
+    return 1
+}
+
+bxslt_set () { # name value
+    eval "bxslt_mod_`bxslt_var $1`=$2"
+}
+
+bxslt_get () { # name
+    eval "echo \$bxslt_mod_`bxslt_var $1`"
+}
+
+bxslt_reset_all () {
+    bxslt_old_IFS=$IFS
+    IFS='
+'
+    for bxslt_row in $BXSLT_COMPONENT_TABLE; do
+        test -z "$bxslt_row" && continue
+        bxslt_name=`echo "$bxslt_row" | cut -d: -f1`
+        bxslt_default=`echo "$bxslt_row" | cut -d: -f2`
+        bxslt_implies=`echo "$bxslt_row" | cut -d: -f3`
+        eval "bxslt_implies_`bxslt_var $bxslt_name`=\"$bxslt_implies\""
+        bxslt_set "$bxslt_name" "$bxslt_default"
+    done
+    IFS=$bxslt_old_IFS
+}
+bxslt_reset_all
+
+bxslt_apply_min () {
+    for bxslt_n in $BXSLT_COMPONENT_NAMES; do bxslt_set "$bxslt_n" off; done
+}
+
+bxslt_apply_all () {
+    for bxslt_n in $BXSLT_COMPONENT_NAMES; do bxslt_set "$bxslt_n" on; done
+}
+
+AC_ARG_WITH(bxslt-components,
+  [  --with-bxslt-components=LIST  captive libxslt/libexslt components to build.
+                        LIST is a space-separated list of component names
+                        and/or component sets (default, min, all); prefix
+                        a name with - or no- to disable it.
+                        See --enable-list-bxslt-components for the full set.],
+  [BXSLT_COMPONENTS_ARG=$withval], [BXSLT_COMPONENTS_ARG=default])
+test "x$BXSLT_COMPONENTS_ARG" = "xyes" && BXSLT_COMPONENTS_ARG=default
+
+AC_ARG_ENABLE(list-bxslt-components,
+  [  --enable-list-bxslt-components  List captive libxslt components/sets and exit],
+  [BXSLT_LIST=$enableval], [BXSLT_LIST=no])
+
+if test "x$BXSLT_LIST" != "xno"; then
+    echo "bxslt component sets: default min all"
+    echo ""
+    echo "bxslt components:"
+    bxslt_old_IFS=$IFS
+    IFS='
+'
+    for bxslt_row in $BXSLT_COMPONENT_TABLE; do
+        test -z "$bxslt_row" && continue
+        bxslt_name=`echo "$bxslt_row" | cut -d: -f1`
+        bxslt_default=`echo "$bxslt_row" | cut -d: -f2`
+        bxslt_desc=`echo "$bxslt_row" | cut -d: -f4`
+        printf '  %-14s %-4s %s\n' "$bxslt_name" "$bxslt_default" "$bxslt_desc"
+    done
+    IFS=$bxslt_old_IFS
+    exit 0
+fi
+
+for bxslt_tok in $BXSLT_COMPONENTS_ARG; do
+    case $bxslt_tok in
+        default) bxslt_reset_all ;;
+        min)     bxslt_apply_min ;;
+        all)     bxslt_apply_all ;;
+        -*|no-*)
+            bxslt_name=`echo "$bxslt_tok" | sed -e 's/^-//' -e 's/^no-//'`
+            bxslt_known "$bxslt_name" || \
+                AC_MSG_ERROR([unknown bxslt component: $bxslt_name])
+            bxslt_set "$bxslt_name" off
+            ;;
+        +*)
+            bxslt_name=`echo "$bxslt_tok" | sed -e 's/^+//'`
+            bxslt_known "$bxslt_name" || \
+                AC_MSG_ERROR([unknown bxslt component: $bxslt_name])
+            bxslt_set "$bxslt_name" on
+            ;;
+        *)
+            bxslt_known "$bxslt_tok" || \
+                AC_MSG_ERROR([unknown bxslt component or set: $bxslt_tok])
+            bxslt_set "$bxslt_tok" on
+            ;;
+    esac
+done
+
+BXSLT_COMPONENTS=
+for bxslt_name in $BXSLT_COMPONENT_NAMES; do
+    test "`bxslt_get $bxslt_name`" = on && BXSLT_COMPONENTS="$BXSLT_COMPONENTS $bxslt_name"
+done
+BXSLT_COMPONENTS=`echo $BXSLT_COMPONENTS`
+AC_SUBST(BXSLT_COMPONENTS)
+AC_MSG_RESULT([bxslt components enabled:${BXSLT_COMPONENTS}])
+
+for bxslt_name in $BXSLT_COMPONENT_NAMES; do
+    bxslt_upper=`bxslt_var $bxslt_name | tr a-z A-Z`
+    if test "`bxslt_get $bxslt_name`" = on; then
+        eval "WITH_$bxslt_upper=1"
+    else
+        eval "WITH_$bxslt_upper=0"
+    fi
+done
+
+AC_SUBST(WITH_CRYPTO)
+AC_DEFINE_UNQUOTED([WITH_CRYPTO], [$WITH_CRYPTO], [crypto support for exslt])
+AM_CONDITIONAL([WITH_CRYPTO], [test "$WITH_CRYPTO" = "1"])
+
+AC_SUBST(WITH_DEBUGGER)
+AC_DEFINE_UNQUOTED([WITH_DEBUGGER], [$WITH_DEBUGGER], [XSLT debugger support])
+AM_CONDITIONAL([WITH_DEBUGGER], [test "$WITH_DEBUGGER" = "1"])
+
+AC_SUBST(WITH_PROFILER)
+AC_DEFINE_UNQUOTED([WITH_PROFILER], [$WITH_PROFILER], [XSLT profiler support])
+AM_CONDITIONAL([WITH_PROFILER], [test "$WITH_PROFILER" = "1"])
+
+AC_SUBST(WITH_XSLT_DEBUG)
+AC_DEFINE_UNQUOTED([WITH_XSLT_DEBUG], [$WITH_XSLT_DEBUG], [XSLT verbose debug reporting])
+AM_CONDITIONAL([WITH_XSLT_DEBUG], [test "$WITH_XSLT_DEBUG" = "1"])
+
+AC_SUBST(WITH_XSLT_MODULES)
+AC_DEFINE_UNQUOTED([WITH_XSLT_MODULES], [$WITH_XSLT_MODULES], [XSLT plugin extension support])
+AM_CONDITIONAL([WITH_XSLT_MODULES], [test "$WITH_XSLT_MODULES" = "1"])
+
+AC_SUBST(WITH_XSLT_PYTHON)
+AC_DEFINE_UNQUOTED([WITH_XSLT_PYTHON], [$WITH_XSLT_PYTHON], [build libxslt Python bindings])
+AM_CONDITIONAL([WITH_XSLT_PYTHON], [test "$WITH_XSLT_PYTHON" = "1"])
+
+dnl
+dnl bxslt's crypto component (WITH_CRYPTO=1) needs an actual libgcrypt --
+dnl if it's not found, fall the component back off rather than hard-error,
+dnl matching upstream libxslt's own tolerant behavior for this one.
+dnl
+CRYPTO_TESTDIR=
+if test "$WITH_CRYPTO" = "1"; then
+    case $host in
+      *-mingw*)
+        dnl native crypto-API for mingw* hosts
+        CRYPTO_TESTDIR=crypto
+        ;;
+      *)
+        AC_PATH_TOOL(LIBGCRYPT_CONFIG, libgcrypt-config, no)
+        if test "$LIBGCRYPT_CONFIG" != "no" ; then
+            LIBGCRYPT_VERSION=`$LIBGCRYPT_CONFIG --version`
+            if test VERSION_TO_NUMBER(echo $LIBGCRYPT_VERSION) -lt VERSION_TO_NUMBER(echo "1.1.42")
+            then
+                AC_MSG_WARN([gcrypt library version < 1.1.42 - Crypto extensions will not be available.])
+                WITH_CRYPTO=0
+            else
+                LIBGCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
+                LIBGCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
+                AC_DEFINE(HAVE_GCRYPT, 1, [Define if gcrypt library is available.])
+                CRYPTO_TESTDIR=crypto
+            fi
+        else
+            PKG_CHECK_MODULES([LIBGCRYPT], [libgcrypt >= 1.1.42], [
+                AC_DEFINE(HAVE_GCRYPT, 1, [Define if gcrypt library is available.])
+                CRYPTO_TESTDIR=crypto
+            ], [
+                AC_MSG_WARN([Crypto extensions will not be available. Install libgcrypt >= 1.1.42 and reconfigure to make available.])
+                WITH_CRYPTO=0
+            ])
+        fi
+        ;;
+    esac
+fi
+AC_SUBST(CRYPTO_TESTDIR)
+AC_SUBST(LIBGCRYPT_CFLAGS)
+AC_SUBST(LIBGCRYPT_LIBS)
+
+dnl
+dnl bxslt's xslt-modules component (WITH_XSLT_MODULES=1) needs dlopen
+dnl detection, same as bxml's own modules component above -- named
+dnl separately (XSLT_MODULE_LIBS) so the two don't stomp on each other.
+dnl
+LIBXSLT_DEFAULT_PLUGINS_PATH=
+if test "$WITH_XSLT_MODULES" = "1"; then
+    case "$host" in
+        *-*-cygwin* | *-*-mingw* | *-*-msys* )
+            AC_DEFINE([MODULE_EXTENSION], [".dll"], [XSLT plugin file extension])
+            ;;
+        *)
+            AC_DEFINE([MODULE_EXTENSION], [".so"], [XSLT plugin file extension])
+            ;;
+    esac
+    case "$host" in
+        *-*-mingw*) ;;
+        *)
+            _libs=$LIBS
+            AC_SEARCH_LIBS([dlopen], [dl], [
+                if test "$ac_cv_search_dlopen" != "none required"; then
+                    XSLT_MODULE_LIBS=$ac_cv_search_dlopen
+                fi
+            ], [
+                AC_MSG_ERROR([dlopen or equivalent not found])
+            ])
+            LIBS=$_libs
+            ;;
+    esac
+    expanded_libdir=$(
+        test "x$prefix" = xNONE && prefix="$ac_default_prefix"
+        test "x$exec_prefix" = xNONE && exec_prefix="$prefix"
+        while test "$libdir_old" != "$libdir"; do
+          libdir_old="$libdir"
+          eval libdir="$libdir"
+        done
+        echo "$libdir"
+    )
+    LIBXSLT_DEFAULT_PLUGINS_PATH="$expanded_libdir/libxslt-plugins"
+fi
+AC_SUBST(LIBXSLT_DEFAULT_PLUGINS_PATH)
+
+dnl
+dnl bxslt's xslt-python component (WITH_XSLT_PYTHON=1) needs the Python
+dnl dev environment, same as bxml's own python component.
+dnl
+PYTHON_LDFLAGS=
+if test "$WITH_XSLT_PYTHON" = "1"; then
+    AM_PATH_PYTHON
+    PKG_CHECK_MODULES([PYTHON], [python-${PYTHON_VERSION}])
+    case "$host" in
+        *-*-cygwin* | *-*-mingw* | *-*-msys* )
+            PYTHON_LDFLAGS="-no-undefined -shrext .pyd"
+            ;;
+    esac
+fi
+AC_SUBST(PYTHON_LDFLAGS)
+
+XSLT_LIBDIR='-L${libdir}'
+XSLT_INCLUDEDIR='-I${includedir}'
+XSLT_LIBS="-lxslt"
+XSLT_PRIVATE_LIBS="$XSLT_MODULE_LIBS $LIBM"
+AC_SUBST(XSLT_LIBDIR)
+AC_SUBST(XSLT_INCLUDEDIR)
+AC_SUBST(XSLT_LIBS)
+AC_SUBST(XSLT_PRIVATE_LIBS)
+
+LIBXSLT_CFLAGS=
+LIBEXSLT_CFLAGS=
+case ${host} in
+    *-*-mingw* | *-*-cygwin* | *-*-msvc* )
+        if test "x$enable_shared" = "xno"; then
+           LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS -DLIBXSLT_STATIC"
+           LIBEXSLT_CFLAGS="$LIBEXSLT_CFLAGS -DLIBEXSLT_STATIC"
+        fi
+        ;;
+esac
+AC_SUBST(LIBXSLT_CFLAGS)
+AC_SUBST(LIBEXSLT_CFLAGS)
+
+EXSLT_LIBDIR='-L${libdir}'
+EXSLT_INCLUDEDIR='-I${includedir}'
+EXSLT_PRIVATE_LIBS="$XSLT_PRIVATE_LIBS $LIBGCRYPT_LIBS"
+AC_SUBST(EXSLT_LIBDIR)
+AC_SUBST(EXSLT_INCLUDEDIR)
+AC_SUBST(EXSLT_PRIVATE_LIBS)
+
+dnl for the bxslt spec file
+BXSLT_RELDATE=`date +'%a %b %e %Y'`
+AC_SUBST(BXSLT_RELDATE)
 
 dnl
 dnl ---- start of noise
@@ -1503,13 +1936,21 @@ AC_SUBST(LIBSLAX_VERSION)
 AC_SUBST(LIBSLAX_VERSION_NUMBER)
 AC_SUBST(LIBSLAX_VERSION_EXTRA)
 
-AC_CONFIG_HEADERS([libslax/slaxconfig.h])
+dnl A single AC_CONFIG_HEADERS call, one shared template
+dnl (libslax/slaxconfig.h.in): autoheader only ever generates a template for
+dnl the first HEADER name it sees, so bxml/bxslt reuse libslax's template
+dnl explicitly via the "output:input" form rather than each getting their
+dnl own (and their own autoheader-regeneration headaches).
+AC_CONFIG_HEADERS([
+  libslax/slaxconfig.h
+  bxml/bxmlconfig.h:libslax/slaxconfig.h.in
+  bxslt/bxsltconfig.h:libslax/slaxconfig.h.in
+])
 AC_CONFIG_FILES([
   Makefile
   slax-config
   libpsu/Makefile
   parrotdb/Makefile
-  bxslt/Makefile
   libxi/Makefile
   libslax/Makefile
   libslax/slaxversion.h
@@ -1542,7 +1983,6 @@ AC_CONFIG_FILES([
   packaging/freebsd/port-Makefile
 ])
 
-AC_CONFIG_HEADERS([bxml/config.h])
 # keep on one line for cygwin c.f. #130896
 AC_CONFIG_FILES([
     bxml/Makefile
@@ -1560,6 +2000,32 @@ AC_CONFIG_FILES([
 ])
 AC_CONFIG_FILES([bxml/python/setup.py], [chmod +x bxml/python/setup.py])
 AC_CONFIG_FILES([bxml/xml2-config], [chmod +x bxml/xml2-config])
+
+AC_CONFIG_FILES([
+    bxslt/Makefile
+    bxslt/libxslt.pc
+    bxslt/libexslt.pc
+    bxslt/libxslt-config.cmake
+    bxslt/libxslt/Makefile
+    bxslt/libxslt/xsltconfig.h
+    bxslt/libexslt/Makefile
+    bxslt/libexslt/exsltconfig.h
+    bxslt/xsltproc/Makefile
+    bxslt/python/Makefile
+    bxslt/python/tests/Makefile
+    bxslt/tests/Makefile
+    bxslt/tests/xmlspec/Makefile
+    bxslt/tests/multiple/Makefile
+    bxslt/tests/xinclude/Makefile
+    bxslt/tests/XSLTMark/Makefile
+    bxslt/tests/docbook/Makefile
+    bxslt/tests/fuzz/Makefile
+    bxslt/doc/Makefile
+    bxslt/doc/devhelp/Makefile
+    bxslt/doc/EXSLT/devhelp/Makefile
+])
+AC_CONFIG_FILES([bxslt/python/setup.py], [chmod +x bxslt/python/setup.py])
+AC_CONFIG_FILES([bxslt/xslt-config], [chmod +x bxslt/xslt-config])
 
 AC_OUTPUT
 
