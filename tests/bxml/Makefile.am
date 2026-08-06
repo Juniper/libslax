@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 AM_CPPFLAGS = \
+	-I$(top_builddir) -I$(top_srcdir) \
 	-I$(top_builddir)/bxml -I$(top_srcdir)/bxml \
 	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 
