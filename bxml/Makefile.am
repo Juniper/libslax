@@ -15,25 +15,25 @@ endif
 
 DIST_SUBDIRS = include . doc example fuzz python
 
-AM_CPPFLAGS = -I$(builddir)/include -I$(srcdir)/include
+AM_CPPFLAGS = -I$(top_builddir) -I$(builddir)/include -I$(srcdir)/include
 
 bin_PROGRAMS = xmllint
 
-bin_SCRIPTS = xml2-config
+bin_SCRIPTS = bxml-config
 
-lib_LTLIBRARIES = libxml2.la
-libxml2_la_CFLAGS = $(AM_CFLAGS) $(XML_PRIVATE_CFLAGS)
-libxml2_la_LIBADD = $(XML_PRIVATE_LIBS)
+lib_LTLIBRARIES = libbxml.la
+libbxml_la_CFLAGS = $(AM_CFLAGS) $(XML_PRIVATE_CFLAGS)
+libbxml_la_LIBADD = $(XML_PRIVATE_LIBS)
 
-libxml2_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
+libbxml_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
 		     -version-info $(LIBXML_VERSION_INFO)
 
-libxml2_la_SOURCES = buf.c chvalid.c dict.c entities.c encoding.c error.c \
+libbxml_la_SOURCES = buf.c chvalid.c dict.c entities.c encoding.c error.c \
 		     globals.c hash.c list.c parser.c parserInternals.c \
 		     SAX2.c threads.c tree.c uri.c valid.c xmlIO.c \
 		     xmlmemory.c xmlstring.c
 if WITH_C14N_SOURCES
-libxml2_la_SOURCES += c14n.c
+libbxml_la_SOURCES += c14n.c
 endif
 if WITH_CATALOG_SOURCES
 if WITH_OUTPUT_SOURCES
@@ -45,56 +45,56 @@ xmlcatalog_DEPENDENCIES = $(DEPS)
 xmlcatalog_LDADD = $(RDL_LIBS) $(LDADDS)
 endif
 
-libxml2_la_SOURCES += catalog.c
+libbxml_la_SOURCES += catalog.c
 endif
 if WITH_DEBUG_SOURCES
-libxml2_la_SOURCES += debugXML.c
+libbxml_la_SOURCES += debugXML.c
 endif
 if WITH_HTML_SOURCES
-libxml2_la_SOURCES += HTMLparser.c HTMLtree.c
+libbxml_la_SOURCES += HTMLparser.c HTMLtree.c
 endif
 if WITH_HTTP_SOURCES
-libxml2_la_SOURCES += nanohttp.c
+libbxml_la_SOURCES += nanohttp.c
 endif
 if WITH_MODULES_SOURCES
-libxml2_la_SOURCES += xmlmodule.c
+libbxml_la_SOURCES += xmlmodule.c
 endif
 if WITH_OUTPUT_SOURCES
-libxml2_la_SOURCES += xmlsave.c
+libbxml_la_SOURCES += xmlsave.c
 endif
 if WITH_PATTERN_SOURCES
-libxml2_la_SOURCES += pattern.c
+libbxml_la_SOURCES += pattern.c
 endif
 if WITH_READER_SOURCES
-libxml2_la_SOURCES += xmlreader.c
+libbxml_la_SOURCES += xmlreader.c
 endif
 if WITH_REGEXPS_SOURCES
-libxml2_la_SOURCES += xmlregexp.c
+libbxml_la_SOURCES += xmlregexp.c
 endif
 if WITH_RELAXNG_SOURCES
-libxml2_la_SOURCES += relaxng.c
+libbxml_la_SOURCES += relaxng.c
 endif
 if WITH_SCHEMAS_SOURCES
-libxml2_la_SOURCES += xmlschemas.c xmlschemastypes.c
+libbxml_la_SOURCES += xmlschemas.c xmlschemastypes.c
 endif
 if WITH_SCHEMATRON_SOURCES
-libxml2_la_SOURCES += schematron.c
+libbxml_la_SOURCES += schematron.c
 endif
 if WITH_WRITER_SOURCES
-libxml2_la_SOURCES += xmlwriter.c
+libbxml_la_SOURCES += xmlwriter.c
 endif
 if WITH_XINCLUDE_SOURCES
-libxml2_la_SOURCES += xinclude.c
+libbxml_la_SOURCES += xinclude.c
 endif
 if WITH_XPATH_SOURCES
-libxml2_la_SOURCES += xpath.c
+libbxml_la_SOURCES += xpath.c
 endif
 if WITH_XPTR_SOURCES
-libxml2_la_SOURCES += xlink.c xpointer.c
+libbxml_la_SOURCES += xlink.c xpointer.c
 endif
 
-DEPS = libxml2.la
-LDADDS = libxml2.la
+DEPS = libbxml.la
+LDADDS = libbxml.la
 
 xmllint_SOURCES = xmllint.c shell.c lintmain.c
 xmllint_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS) $(Z_CFLAGS)
@@ -104,7 +104,7 @@ xmllint_LDADD = $(RDL_LIBS) $(Z_LIBS) $(LDADDS)
 dist-hook:
 	(cd $(srcdir) ; tar -cf - --exclude .git win32 result) | (cd $(distdir); tar xf -)
 
-EXTRA_DIST = Copyright libxml2-config.cmake.in autogen.sh \
+EXTRA_DIST = Copyright libbxml-config.cmake.in autogen.sh \
 	     libxml.h \
 	     codegen/charset.inc \
 	     codegen/escape.inc \
@@ -123,11 +123,11 @@ EXTRA_DIST = Copyright libxml2-config.cmake.in autogen.sh \
 	     codegen/xmlmod.py \
 	     timsort.h \
 	     README.zOS README.md \
-	     CMakeLists.txt config.h.cmake.in libxml2-config.cmake.cmake.in \
-	     meson.build meson_options.txt xml2-config-meson
+	     CMakeLists.txt config.h.cmake.in libbxml-config.cmake.cmake.in \
+	     meson.build meson_options.txt bxml-config-meson
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxml-2.0.pc
 
-cmakedir = $(libdir)/cmake/libxml2
-cmake_DATA = libxml2-config.cmake
+cmakedir = $(libdir)/cmake/libbxml
+cmake_DATA = libbxml-config.cmake
