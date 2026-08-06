@@ -9,9 +9,7 @@ set opts=' \
 --enable-readline \
 --enable-printflike \
 --with-sqlite3=/opt/local \
---with-libxslt-tests=$HOME/work/xmlsoft/libxslt-1.1.24/tests/ \
---with-libxslt-prefix=$HOME/work/root \
---prefix $HOME/work/root \
+--prefix $HOME/work/root-new-libs \
 '
 set opts=`echo $opts`
 
