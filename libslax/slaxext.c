@@ -3217,7 +3217,10 @@ slaxExtDocument (xmlXPathParserContext *ctxt, int nargs)
     for (;;) {
 	char buf[BUFSIZ];
 	
-        rc = input->readcallback(input->context, buf, sizeof(buf));
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+         rc = input->readcallback(input->context, buf, sizeof(buf));
+#pragma clang diagnostic pop
 	if (rc <= 0)
 	    break;
 	slaxDataListAddLen(&list, buf, rc);
