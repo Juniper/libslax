@@ -24,6 +24,9 @@
 #ifndef LIBSLAX_XI_RULES_H
 #define LIBSLAX_XI_RULES_H
 
+#include <parrotdb/pafixed.h>
+#include <parrotdb/pabitmap.h>
+
 typedef uint8_t xi_action_type_t;
 
 /* Values for xi_action_type_t */
@@ -35,13 +38,9 @@ typedef uint8_t xi_action_type_t;
 #define XIA_EMIT	5	/* Emit as output */
 #define XIA_RETURN	6	/* Force return from xi_parse() */
 
-/* Number to represent each rule */
-PA_FIXED_ATOM_TYPE(xi_rule_id_t, xi_rule_id_s, xr_atom, xi_rule_id,
-	   xi_rule_id_atom_of, xi_rule_id_is_null, xi_rule_id_null_atom);
-
-/* Number to represent each state */
-PA_FIXED_ATOM_TYPE(xi_rstate_id_t, xi_rstate_id_s, xrs_atom, xi_rstate_id,
-	   xi_rstate_id_atom_of, xi_rstate_id_is_null, xi_rstate_id_null_atom);
+/* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
+#include "gen/xi_rule_id_gen.h"
+#include "gen/xi_rstate_id_gen.h"
 
 /*
  * A rule defines a behavior for an incoming token.  A token can be
@@ -53,7 +52,7 @@ typedef struct xi_rule_s {
     pa_bitmap_id_t xr_bitmap;	/* Elements affected by this rule */
     xi_action_type_t xr_action;	/* What to do when the rule matches */
     pa_atom_t xr_use_tag;	/* Different tag to emit */
-    xi_rstate_id_t xr_new_state; /* New state (in the rulebook) to enter */
+    xi_rstate_id_t xr_new_state;/* New state (in the rulebook) to enter */
 } xi_rule_t;
 
 /* Flags for xr_flags */
@@ -108,12 +107,11 @@ xi_rulebook_prep (xi_parse_t *input, const char *name);
 void
 xi_rulebook_dump (xi_rulebook_t *xrbp);
 
-PA_FIXED_FUNCTIONS(xi_rule_id_t, xi_rule_t, xi_rulebook_t, xrb_rules,
-		   xi_rule_alloc, xi_rule_free, xi_rule_addr,
-		   xi_rule_id, xi_rule_id_atom_of, xi_rule_id_is_null);
+#include "gen/xi_rule_id_funcs_gen.h"
+#include "gen/xi_rstate_id_funcs_gen.h"
 
-PA_FIXED_FUNCTIONS(xi_rstate_id_t, xi_rstate_t, xi_rulebook_t, xrb_states,
-		   xi_rstate_alloc, xi_rstate_free, xi_rstate_addr,
-		   xi_rstate_id, xi_rstate_id_atom_of, xi_rstate_id_is_null);
+/* Aliases: xi_rulebook_rule(xrbp, rid) and xi_rulebook_state(xrbp, sid) */
+#define xi_rulebook_rule	xi_rule_addr
+#define xi_rulebook_state(_xrbp, _sid) xi_rstate_addr((_xrbp), (_sid))
 
 #endif /* LIBSLAX_XI_RULES_H */
