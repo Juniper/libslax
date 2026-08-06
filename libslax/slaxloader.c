@@ -268,8 +268,7 @@ slaxAvoidRtf (slax_data_t *sdp)
 	xmlAddChild(nodep->parent, newp);
 
 	/* Use the line number from the original node */
-	if (sdp->sd_ctxt->linenumbers)
-	    newp->line = nodep->line;
+	newp->line = nodep->line;
 
 	xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
 
@@ -589,8 +588,7 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
     }
 
     /* Use the line number from the original node */
-    if (sdp->sd_ctxt->linenumbers)
-	varp->line = nodep->line;
+    varp->line = nodep->line;
 
     snprintf(str, sizeof(str), new_value_format, varname);
     ssp = slaxStringLiteral(str, T_BARE);
@@ -701,10 +699,6 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     if (ctxt == NULL)
 	return NULL;
 
-    /*
-     * Turn on line number recording in each node
-     */
-    ctxt->linenumbers = 1;
 
     if (dict) {
 	if (ctxt->dict)
@@ -779,10 +773,6 @@ slaxLoadBuffer (const char *filename, char *input,
     if (ctxt == NULL)
 	return NULL;
 
-    /*
-     * Turn on line number recording in each node
-     */
-    ctxt->linenumbers = 1;
 
     if (dict) {
 	if (ctxt->dict)
