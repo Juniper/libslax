@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = libxslt libexslt xsltproc doc tests
-if WITH_PYTHON
+if WITH_XSLT_PYTHON
 SUBDIRS += python
 endif
 
