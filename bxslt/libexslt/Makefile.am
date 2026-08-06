@@ -1,6 +1,8 @@
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/libxslt -I$(top_srcdir)/libexslt \
-	      -I$(top_builddir) -I$(top_builddir)/libxslt \
-	      -I$(top_builddir)/libexslt
+AM_CPPFLAGS = -I$(top_builddir) \
+	      -I$(top_srcdir)/bxslt -I$(top_srcdir)/bxslt/libxslt -I$(top_srcdir)/bxslt/libexslt \
+	      -I$(top_builddir)/bxslt -I$(top_builddir)/bxslt/libxslt \
+	      -I$(top_builddir)/bxslt/libexslt \
+	      -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 
 lib_LTLIBRARIES = libexslt.la
 
@@ -26,7 +28,7 @@ libexslt_la_SOURCES =                   \
 	dynamic.c
 
 libexslt_la_CFLAGS = $(AM_CFLAGS) $(LIBGCRYPT_CFLAGS)
-libexslt_la_LIBADD = $(top_builddir)/libxslt/libxslt.la $(LIBXML_LIBS) $(EXTRA_LIBS) $(LIBGCRYPT_LIBS) $(LIBM)
+libexslt_la_LIBADD = $(top_builddir)/bxslt/libxslt/libxslt.la $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBGCRYPT_LIBS) $(LIBM)
 libexslt_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
 		      -version-info $(LIBEXSLT_VERSION_INFO)
 
