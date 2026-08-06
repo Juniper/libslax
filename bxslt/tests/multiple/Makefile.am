@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-$(top_builddir)/xsltproc/xsltproc:
+$(top_builddir)/bxslt/xsltproc/xsltproc:
 	@(cd ../../xsltproc ; $(MAKE) xsltproc)
 
 EXTRA_DIST = dict.dtd  dict.xml  dict.xsl result.xml \
@@ -30,10 +30,10 @@ GENERATED = \
 
 CLEANFILES = .memdump
 
-check-local: $(top_builddir)/xsltproc/xsltproc
+check-local: $(top_builddir)/bxslt/xsltproc/xsltproc
 	@echo '## Running multiple tests'
 	@(echo > .memdump)
-	@($(CHECKER) $(top_builddir)/xsltproc/xsltproc $(srcdir)/dict.xsl $(srcdir)/dict.xml > dict.res ; \
+	@($(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc $(srcdir)/dict.xsl $(srcdir)/dict.xml > dict.res ; \
 	diff $(srcdir)/result.xml dict.res; \
 	for i in out/letter*.html out/titlepage.html ; do \
 	  orig=$(srcdir)/out/`basename $$i .html`.orig ; \
