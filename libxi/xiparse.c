@@ -29,8 +29,7 @@
 #include <limits.h>
 
 #include "slaxconfig.h"
-#include <libslax/slaxdef.h>
-#include <libslax/slax.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
@@ -39,6 +38,7 @@
 #include <parrotdb/paistr.h>
 #include <parrotdb/papat.h>
 #include <parrotdb/pabitmap.h>
+
 #include <libxi/xicommon.h>
 #include <libxi/xisource.h>
 #include <libxi/xirules.h>
@@ -55,7 +55,6 @@ xi_parse_open (pa_mmap_t *pmp, xi_workspace_t *workp, const char *name,
     xi_insert_t *xip = NULL;
     xi_tree_t *xtp = NULL;
     xi_node_t *nodep = NULL;
-    pa_atom_t node_atom;
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
 
     /*
@@ -96,6 +95,7 @@ xi_parse_open (pa_mmap_t *pmp, xi_workspace_t *workp, const char *name,
     parsep->xp_default_rule.xr_flags = XRF_MATCH_ALL;
     parsep->xp_default_rule.xr_action = XIA_SAVE;
 
+    xi_node_id_t node_atom;
     nodep = xi_node_alloc(workp, &node_atom);
     if (nodep == NULL)
 	goto fail;
@@ -103,7 +103,7 @@ xi_parse_open (pa_mmap_t *pmp, xi_workspace_t *workp, const char *name,
     nodep->xn_depth = 0;
     nodep->xn_ns_map = PA_NULL_ATOM;
     nodep->xn_name = PA_NULL_ATOM;
-    nodep->xn_next = PA_NULL_ATOM;
+    nodep->xn_next = xi_node_id_null_atom();
     nodep->xn_contents = PA_NULL_ATOM;
 
     xtp->xt_root = node_atom;
@@ -143,7 +143,7 @@ xi_parse_namepool_string (xi_parse_t *parsep, pa_atom_t atom)
 }
 
 static void
-xi_insert_push (xi_insert_t *xip, pa_atom_t atom, xi_node_t *nodep)
+xi_insert_push (xi_insert_t *xip, xi_node_id_t atom, xi_node_t *nodep)
 {
     /* We reuse the current rule state */
     xi_rstate_t *statep = xip->xi_stack[xip->xi_depth].xs_statep;
@@ -157,7 +157,7 @@ xi_insert_push (xi_insert_t *xip, pa_atom_t atom, xi_node_t *nodep)
 static void
 xi_insert_pop (xi_insert_t *xip)
 {
-    xip->xi_stack[xip->xi_depth].xs_atom = PA_NULL_ATOM;
+    xip->xi_stack[xip->xi_depth].xs_atom = xi_node_id_null_atom();
     xip->xi_stack[xip->xi_depth].xs_node = NULL;
     xip->xi_depth -= 1;
 }
@@ -165,15 +165,15 @@ xi_insert_pop (xi_insert_t *xip)
 /*
  * Insert a node into the insertion point
  */
-static pa_atom_t
+static xi_node_id_t
 xi_insert_node (xi_insert_t *xip, const char *msg,
 		const char *data, size_t len,
 		xi_node_type_t type, pa_atom_t name_atom, pa_atom_t contents)
 {
-    pa_atom_t node_atom;
+    xi_node_id_t node_atom;
     xi_node_t *nodep = xi_node_alloc(xip->xi_tree->xt_workspace, &node_atom);
     if (nodep == NULL)
-	return PA_NULL_ATOM;
+	return xi_node_id_null_atom();
 
     /* Initialize our fields */
     nodep->xn_type = type;
@@ -181,7 +181,7 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
     nodep->xn_name = name_atom;
     nodep->xn_contents = contents;
 
-    slaxLog("%s: [%.*s] %u / %u (depth %u)", msg, len, data,
+    psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
 	    name_atom, contents, xip->xi_depth + 1);
 
     /*
@@ -190,7 +190,7 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
     xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
     if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
 	/* Record us as the child of the current stack node */
-	xsp->xs_node->xn_contents = node_atom;
+	xi_node_set_child(xsp->xs_node, node_atom);
 
 	/* Set our "parent" as the current node */
 	nodep->xn_next = xsp->xs_atom;
@@ -216,16 +216,20 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
 }
 
 /*
- * Insert a namespace node after the given "last" position
+ * Insert a namespace node as the next in the NS chain for parent_atom.
+ * prev_ns_nodep is NULL for the first NS node (sets parent's xn_contents),
+ * or points to the previous NS node (updates its xn_next).
+ * Returns the newly allocated NS node so the caller can pass it as prev on
+ * the next call.
  */
-static pa_atom_t *
+static xi_node_t *
 xi_insert_ns_node (xi_insert_t *xip, const char *msg,
-		   const char *data, size_t len, pa_atom_t parent_atom,
-		   pa_atom_t *lastp,
+		   const char *data, size_t len, xi_node_id_t parent_atom,
+		   xi_node_t *prev_ns_nodep,
 		   xi_node_type_t type, pa_atom_t name_atom,
 		   pa_atom_t contents)
 {
-    pa_atom_t node_atom;
+    xi_node_id_t node_atom;
     xi_node_t *nodep = xi_node_alloc(xip->xi_tree->xt_workspace, &node_atom);
     if (nodep == NULL)
 	return NULL;
@@ -236,15 +240,20 @@ xi_insert_ns_node (xi_insert_t *xip, const char *msg,
     nodep->xn_name = name_atom;
     nodep->xn_contents = contents;
 
-    slaxLog("%s: [%.*s] %u / %u (depth %u)", msg, len, data,
+    psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
 	    name_atom, contents, xip->xi_depth + 1);
 
-    nodep->xn_next = (*lastp == PA_NULL_ATOM) ? parent_atom : *lastp;
-    *lastp = node_atom;
-    lastp = &nodep->xn_next;
+    /* New NS node's xn_next always points to parent (last-sibling sentinel) */
+    nodep->xn_next = parent_atom;
+
+    /* Wire into the chain */
+    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
+    if (prev_ns_nodep == NULL)
+	xi_node_set_child(xsp->xs_node, node_atom); /* first NS: set parent's child */
+    else
+	prev_ns_nodep->xn_next = node_atom;          /* subsequent: chain from prev */
 
     /* Mark the "last" as us */
-    xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
     xsp->xs_last_atom = node_atom;
     xsp->xs_last_node = nodep;
 
@@ -255,7 +264,7 @@ xi_insert_ns_node (xi_insert_t *xip, const char *msg,
     if (nodep->xn_depth > xip->xi_maxdepth)
 	xip->xi_maxdepth = nodep->xn_depth;
 
-    return lastp;
+    return nodep;
 }
 
 /*
@@ -268,7 +277,7 @@ xi_node_parent (xi_workspace_t *xwp, xi_node_t *nodep)
     xi_node_t *nextp;
     xi_depth_t depth = nodep->xn_depth;
 
-    for (; nodep->xn_next != PA_NULL_ATOM; nodep = nextp) {
+    for (; !xi_node_id_is_null(nodep->xn_next); nodep = nextp) {
 	nextp = xi_node_addr(xwp, nodep->xn_next);
 	if (nextp == NULL)
 	    break;		/* Should not occur */
@@ -286,7 +295,7 @@ xi_node_parent (xi_workspace_t *xwp, xi_node_t *nodep)
  * the chain of siblings to find our parent.  If we get to the root,
  * we're done.
  */
-static pa_atom_t
+static xi_ns_map_id_t
 xi_parse_find_ns_atom (xi_parse_t *parsep, xi_node_t *nodep,
 		       pa_atom_t pref_atom)
 {
@@ -295,19 +304,20 @@ xi_parse_find_ns_atom (xi_parse_t *parsep, xi_node_t *nodep,
     xi_ns_map_t *ns_map;
 
     for (curp = nodep; curp; curp = xi_node_parent(xwp, curp)) {
-	for (childp = xi_node_addr(xwp, curp->xn_contents); childp;
+	for (childp = xi_node_addr(xwp, xi_node_child(curp)); childp;
 	     childp = xi_node_addr(xwp, childp->xn_next)) {
 	    if (childp->xn_type != XI_TYPE_NS)
 		break;		/* Done with namespaces */
 
 	    /* The namespace mapping number is in the node's contents */
-	    ns_map = xi_ns_map_addr(xwp, childp->xn_contents);
+	    xi_ns_map_id_t ns_id = xi_node_ns_contents(childp);
+	    ns_map = xi_ns_map_addr(xwp, ns_id);
 	    if (ns_map != NULL && ns_map->xnm_prefix == pref_atom)
-		return childp->xn_contents; /* Match! */
- 	}
+		return ns_id; /* Match! */
+	}
     }
 
-    return PA_NULL_ATOM;
+    return xi_ns_map_id_null_atom();
 }
 
 /*
@@ -317,7 +327,7 @@ xi_parse_find_ns_atom (xi_parse_t *parsep, xi_node_t *nodep,
  * tree is being built, so the number of trailing subling nodes should be
  * very low.
  */
-static pa_atom_t
+static xi_ns_map_id_t
 xi_parse_find_ns (xi_parse_t *parsep, xi_node_t *nodep, const char *prefix)
 {
     xi_workspace_t *xwp = parsep->xp_insert->xi_tree->xt_workspace;
@@ -334,7 +344,7 @@ xi_parse_find_ns (xi_parse_t *parsep, xi_node_t *nodep, const char *prefix)
 	 */
 	pref_atom = xi_namepool_atom(xwp, prefix, FALSE);
 	if (pref_atom == PA_NULL_ATOM)
-	    return PA_NULL_ATOM;
+	    return xi_ns_map_id_null_atom();
     }
 
     return xi_parse_find_ns_atom(parsep, nodep, pref_atom);
@@ -355,7 +365,7 @@ xi_insert_attribs (xi_parse_t *parsep, xi_node_t *nodep, const char *data)
     xi_insert_t *xip = parsep->xp_insert;
     pa_arb_t *prp = xip->xi_tree->xt_workspace->xw_textpool;
     size_t len = strlen(data);
-    pa_atom_t data_atom = pa_arb_alloc(prp, len + 1);
+    pa_arb_atom_t data_atom = pa_arb_alloc(prp, len + 1);
     char *cp = pa_arb_atom_addr(prp, data_atom);
 
     if (cp == NULL)
@@ -364,10 +374,10 @@ xi_insert_attribs (xi_parse_t *parsep, xi_node_t *nodep, const char *data)
     memcpy(cp, data, len);
     cp[len] = '\0';
 
-    pa_atom_t node_atom;
+    xi_node_id_t node_atom;
     node_atom = xi_insert_node(xip, "xi_insert_attribs", data, len,
-			       XI_TYPE_ATSTR, PA_NULL_ATOM, data_atom);
-    if (node_atom == PA_NULL_ATOM) {
+			       XI_TYPE_ATSTR, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
+    if (xi_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
@@ -465,7 +475,7 @@ xi_parse_next_attrib (char **content, char *endp,
  * part, right?
  */
 static void
-xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
+xi_insert_attribs_extract (xi_parse_t *parsep, xi_node_id_t node_atom,
 			   xi_node_t *nodep, char *attrib,
 			   xi_boolean_t only_ns)
 {
@@ -475,10 +485,12 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
     size_t len = strlen(attrib);
     char *content = attrib, *endp = content + len, *name, *value;
     size_t namelen, valuelen;
-    pa_atom_t name_atom, value_atom, attrib_atom, stash_atom;
+    pa_atom_t name_atom;
+    xi_node_id_t attrib_atom;
+    pa_arb_atom_t value_atom;
     int hit = FALSE;
     const char *msg;
-    pa_atom_t *last_nsp = &nodep->xn_contents; /* XXX For freshly made node */
+    xi_node_t *prev_ns_nodep = NULL; /* Previous NS node for chaining */
 
     for (;;) {
 	msg = xi_parse_next_attrib(&content, endp, &name, &namelen,
@@ -514,18 +526,20 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 	    if (*value == '\0')
 		value = NULL;	/* Empty value == the "null" namespace */
 
-	    pa_atom_t ns_atom = xi_ns_find(xwp, name, value, TRUE);
-	    if (ns_atom == PA_NULL_ATOM) {
+	    xi_ns_map_id_t ns_id = xi_ns_find(xwp, name, value, TRUE);
+	    if (xi_ns_map_id_is_null(ns_id)) {
 		xi_source_failure(parsep->xp_srcp, 0,
 				  "namespace create/find failed");
 		break;
 	    }
 
-	    last_nsp = xi_insert_ns_node(xip, "xi_insert_attribs_extract(ns)",
+	    prev_ns_nodep = xi_insert_ns_node(xip,
+					 "xi_insert_attribs_extract(ns)",
 					 name, name ? strlen(name) : 0,
-					 node_atom, last_nsp,
-					 XI_TYPE_NS, PA_NULL_ATOM, ns_atom);
-	    if (last_nsp == PA_NULL_ATOM) {
+					 node_atom, prev_ns_nodep,
+					 XI_TYPE_NS, PA_NULL_ATOM,
+					 pa_fixed_atom_of(xi_ns_map_id_atom_of(ns_id)));
+	    if (prev_ns_nodep == NULL) {
 		xi_source_failure(parsep->xp_srcp, 0,
 				  "attribute insert (ns) failed");
 		break;
@@ -554,13 +568,13 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 		break;
 
 	    value_atom = pa_arb_alloc_string(prp, value);
-	    if (value_atom == PA_NULL_ATOM)
+	    if (pa_arb_is_null(value_atom))
 		break;
 
 	    attrib_atom = xi_insert_node(xip, "xi_insert_attribs_extract",
 				 name, strlen(name),
-				 XI_TYPE_ATTRIB, name_atom, value_atom);
-	    if (attrib_atom == PA_NULL_ATOM) {
+				 XI_TYPE_ATTRIB, name_atom, pa_arb_atom_of(value_atom));
+	    if (xi_node_id_is_null(attrib_atom)) {
 		xi_source_failure(parsep->xp_srcp, 0,
 				  "attribute insert failed");
 		pa_arb_free_atom(prp, value_atom);
@@ -575,11 +589,11 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 		 * have been defined, we'll loop thru and set
 		 * real ns_map values.
 		 */
-		stash_atom = xi_insert_node(xip,
+		xi_node_id_t stash_id = xi_insert_node(xip,
 				 "xi_insert_attribs_extract (stash)",
 				 name, strlen(name),
 				 XI_TYPE_NSPREF, PA_NULL_ATOM, pref_atom);
-		if (stash_atom == PA_NULL_ATOM) {
+		if (xi_node_id_is_null(stash_id)) {
 		    xi_source_failure(parsep->xp_srcp, 0,
 				      "attribute (stash) insert failed");
 		    pa_arb_free_atom(prp, value_atom);
@@ -599,9 +613,8 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
      * discarding the NSPREF node.
      */
     xi_node_t *childp, *prev = NULL;
-    pa_atom_t ns_atom;
 
-    for (childp = xi_node_addr(xwp, nodep->xn_contents); childp;
+    for (childp = xi_node_addr(xwp, xi_node_child(nodep)); childp;
 	 childp = xi_node_addr(xwp, childp->xn_next)) {
 	if (nodep->xn_type == XI_TYPE_NS) {
 	    /* Skip namespace defs */
@@ -618,8 +631,9 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 	     * accurate name mapping.  We'll find one and discard the
 	     * current node.
 	     */
-	    ns_atom = xi_parse_find_ns_atom(parsep, nodep, childp->xn_contents);
-	    if (ns_atom == PA_NULL_ATOM) {
+	    xi_ns_map_id_t ns_id = xi_parse_find_ns_atom(parsep, nodep,
+						childp->xn_contents);
+	    if (xi_ns_map_id_is_null(ns_id)) {
 		const char *prefix = xi_namepool_string(xwp, childp->xn_contents);
 		xi_source_failure(parsep->xp_srcp, 0,
 				  "namespace mapping not found for %s:%s",
@@ -627,11 +641,11 @@ xi_insert_attribs_extract (xi_parse_t *parsep, pa_atom_t node_atom,
 	    }
 
 	    /* Set the namespace mapping */
-	    prev->xn_ns_map = ns_atom; /* Assign mapping */
-	    prev->xn_next = childp->xn_next; /* Remove node from list */
+	    xi_node_set_ns_map(prev, ns_id);        /* Assign mapping */
+	    prev->xn_next = childp->xn_next;        /* Remove node from list */
 
-	    xi_node_free(xwp, prev->xn_next); /* Free node */
-	    childp = prev;		   /* childp is dead; resume logic */
+	    xi_node_free(xwp, prev->xn_next);       /* Free node */
+	    childp = prev;			    /* childp is dead; resume logic */
 	}
 
 	prev = childp;
@@ -652,11 +666,11 @@ xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
     if (name_atom == PA_NULL_ATOM)
 	return;
 
-    pa_atom_t node_atom;
+    xi_node_id_t node_atom;
     node_atom = xi_insert_node(xip, "xi_insert_open",
 			       name, strlen(name),
 			       XI_TYPE_ELT, name_atom, PA_NULL_ATOM);
-    if (node_atom == PA_NULL_ATOM)
+    if (xi_node_id_is_null(node_atom))
 	return;
 
     xi_node_t *nodep = xi_node_addr(xip->xi_tree->xt_workspace, node_atom);
@@ -698,8 +712,9 @@ xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
     }
 
     if (prefix != NULL) {
-	nodep->xn_ns_map = xi_parse_find_ns(parsep, nodep, prefix);
-	if (nodep->xn_ns_map == PA_NULL_ATOM)
+	xi_ns_map_id_t ns_id = xi_parse_find_ns(parsep, nodep, prefix);
+	xi_node_set_ns_map(nodep, ns_id);
+	if (xi_ns_map_id_is_null(ns_id))
 	    xi_source_failure(parsep->xp_srcp, 0,
 			      "namespace mapping not found for %s:%s",
 			      prefix, name);
@@ -714,7 +729,7 @@ xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name
 
     name_atom = xi_namepool_atom(xip->xi_tree->xt_workspace, name, FALSE);
     
-    slaxLog("xi_insert_close: [%s] %u (depth %u)", name, name_atom,
+    psu_log("xi_insert_close: [%s] %u (depth %u)", name, name_atom,
 	   xip->xi_depth);
 
     if (name_atom == PA_NULL_ATOM) {
@@ -749,7 +764,7 @@ xi_insert_text (xi_parse_t *parsep, const char *data, size_t len,
 {
     xi_insert_t *xip = parsep->xp_insert;
     pa_arb_t *prp = xip->xi_tree->xt_workspace->xw_textpool;
-    pa_atom_t data_atom = pa_arb_alloc(prp, len + 1);
+    pa_arb_atom_t data_atom = pa_arb_alloc(prp, len + 1);
     char *cp = pa_arb_atom_addr(prp, data_atom);
 
     if (cp == NULL)
@@ -758,10 +773,10 @@ xi_insert_text (xi_parse_t *parsep, const char *data, size_t len,
     memcpy(cp, data, len);
     cp[len] = '\0';
 
-    pa_atom_t node_atom;
+    xi_node_id_t node_atom;
     node_atom = xi_insert_node(xip, "xi_insert_text", data, len,
-			       type, PA_NULL_ATOM, data_atom);
-    if (node_atom == PA_NULL_ATOM) {
+			       type, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
+    if (xi_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
@@ -828,23 +843,23 @@ xi_parse (xi_parse_t *parsep)
 
 	case XI_TYPE_TEXT:	/* Text content */
 	    type = XI_TYPE_UNESC; /* UNESC (aka CDATA) is unescaped text */
-	    if (!opt_quiet) {
-		int len;
+	    {
+		size_t len;
 		if (opt_unescape && data && rest) {
 		    len = xi_source_unescape(srcp, data, rest - data);
 		    type = XI_TYPE_TEXT; /* TEXT is escaped */
 		} else {
 		    len = rest - data;
 		}
-		slaxLog("text [%.*s] (%u)", len, data, type);
+		psu_log("text [%.*s] (%u)", (int) len, data, type);
+		xi_insert_text(parsep, data, len, type);
 	    }
-	    xi_insert_text(parsep, data, rest - data, type);
 	    break;
 
 	case XI_TYPE_OPEN:	/* Open tag */
 	case XI_TYPE_EMPTY:	/* Empty tag */
 	    if (!opt_quiet)
-		slaxLog("open tag [%s] [%s]", data ?: "", rest ?: "");
+		psu_log("open tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
 	    if (localp)
 		*localp++ = '\0';
@@ -890,7 +905,7 @@ xi_parse (xi_parse_t *parsep)
 
 	case XI_TYPE_CLOSE:	/* Close tag */
 	    if (!opt_quiet)
-		slaxLog("close tag [%s] [%s]", data ?: "", rest ?: "");
+		psu_log("close tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
 	    if (localp)
 		*localp++ = '\0';
@@ -904,22 +919,22 @@ xi_parse (xi_parse_t *parsep)
 
 	case XI_TYPE_PI:	/* Processing instruction */
 	    if (!opt_quiet)
-		slaxLog("pi [%s] [%s]", data ?: "", rest ?: "");
+		psu_log("pi [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_DTD:	/* DTD nonsense */
 	    if (!opt_quiet)
-		slaxLog("dtd [%s] [%s]", data ?: "", rest ?: "");
+		psu_log("dtd [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_COMMENT:	/* Comment */
 	    if (!opt_quiet)
-		slaxLog("comment [%s] [%s]", data ?: "", rest ?: "");
+		psu_log("comment [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
 	case XI_TYPE_UNESC:	/* unescaped/cdata */
 	    if (!opt_quiet)
-		slaxLog("cdata [%.*s]", (int)(rest - data), data);
+		psu_log("cdata [%.*s]", (int)(rest - data), data);
 	    break;
 	}
     }
@@ -954,13 +969,13 @@ void
 xi_node_dump (xi_workspace_t *xwp, xi_node_type_t op,
 	      xi_node_t *nodep, xi_node_id_t atom)
 {
-    if (atom != PA_NULL_ATOM)
+    if (!xi_node_id_is_null(atom))
 	nodep = xi_node_addr(xwp, atom);
     if (nodep == NULL)
 	return;
 
     const char *name = xi_namepool_string(xwp, nodep->xn_name);
-    xi_ns_map_t *ns_map = xi_ns_map_addr(xwp, nodep->xn_ns_map);
+    xi_ns_map_t *ns_map = xi_ns_map_addr(xwp, xi_ns_map_id(nodep->xn_ns_map));
     const char *pref = ns_map ?
 	xi_namepool_string(xwp, ns_map->xnm_prefix) : NULL;
     const char *uri = ns_map ? xi_namepool_string(xwp, ns_map->xnm_uri) : NULL;
@@ -969,20 +984,22 @@ xi_node_dump (xi_workspace_t *xwp, xi_node_type_t op,
     const char *opname = (op < PSU_NUM_ELTS(xi_type_names) - 1)
 	? xi_type_names[op] : "unknown";
 
-    slaxLog("%s%s%snode %u [%p]: type %u(%s), name %u [%s], "
+    psu_log("%s%s%snode %u [%p]: type %u(%s), name %u [%s], "
 	    "depth %u, flags %#x, "
 	    "ns-map %u [%s]=[%s], next %u, contents %u",
 	    (op > 0) ? "Op: " : "", (op > 0) ? opname : "",
 	    (op > 0) ? ", " : "",
-	    atom, nodep, nodep->xn_type, type, nodep->xn_name, name ?: "",
+	    pa_fixed_atom_of(xi_node_id_atom_of(atom)), nodep,
+	    nodep->xn_type, type, nodep->xn_name, name ?: "",
 	    nodep->xn_depth, nodep->xn_flags,
-	    nodep->xn_ns_map, pref ?: "", uri ?: "", 
-	    nodep->xn_next, nodep->xn_contents);
+	    nodep->xn_ns_map, pref ?: "", uri ?: "",
+	    pa_fixed_atom_of(xi_node_id_atom_of(nodep->xn_next)),
+	    nodep->xn_contents);
 }
 
 static int
 xi_parse_dump_cb (xi_parse_t *parsep, xi_node_type_t type,
-		  pa_atom_t node_atom, xi_node_t *nodep,
+		  xi_node_id_t node_atom, xi_node_t *nodep,
 		  const char *data, void *opaque UNUSED)
 {
     xi_workspace_t *xwp = parsep->xp_insert->xi_tree->xt_workspace;
@@ -993,63 +1010,63 @@ xi_parse_dump_cb (xi_parse_t *parsep, xi_node_type_t type,
 
     switch (type) {
     case XI_TYPE_ROOT:
-	slaxLog("(root)");
+	psu_log("(root)");
 	break;
 
     case XI_TYPE_ELT:
-	slaxLog("element: [%s]", data ?: "[error]");
+	psu_log("element: [%s]", data ?: "[error]");
 	if (nodep->xn_ns_map != PA_NULL_ATOM) {
-	    ns_map = xi_ns_map_addr(xwp, nodep->xn_ns_map);
+	    ns_map = xi_ns_map_addr(xwp, xi_ns_map_id(nodep->xn_ns_map));
 	    if (ns_map != NULL) {
 		const char *pref = xi_namepool_string(xwp, ns_map->xnm_prefix);
 		const char *uri = xi_namepool_string(xwp, ns_map->xnm_uri);
 
-		slaxLog("element nsmap: [%s]=[%s]", pref ?: "", uri ?: "");
+		psu_log("element nsmap: [%s]=[%s]", pref ?: "", uri ?: "");
 	    } else {
-		slaxLog("element nsmap: null");
+		psu_log("element nsmap: null");
 	    }
 	}
 	break;
 
     case XI_TYPE_TEXT:
-	slaxLog("text: [%s]", data ?: "[error]");
+	psu_log("text: [%s]", data ?: "[error]");
 	break;
 
     case XI_TYPE_UNESC:		/* Unescaped/cdata */
-	slaxLog("cdata: [%s]", data ?: "[error]");
+	psu_log("cdata: [%s]", data ?: "[error]");
 	break;
 
     case XI_TYPE_ATTRIB:
 	cp = xi_parse_namepool_string(parsep, nodep->xn_name);
-	slaxLog("attrib: [%s=\"%s\"]", cp, data);
+	psu_log("attrib: [%s=\"%s\"]", cp, data);
 	break;
 
     case XI_TYPE_NS:
-	ns_map = xi_ns_map_addr(xwp, nodep->xn_contents);
+	ns_map = xi_ns_map_addr(xwp, xi_node_ns_contents(nodep));
 	if (ns_map != NULL) {
 	    const char *pref = xi_namepool_string(xwp, ns_map->xnm_prefix);
 	    const char *uri = xi_namepool_string(xwp, ns_map->xnm_uri);
 
-	    slaxLog("namespace: [%s]=[%s]", pref ?: "", uri ?: "");
+	    psu_log("namespace: [%s]=[%s]", pref ?: "", uri ?: "");
 	} else {
-	    slaxLog("namespace: null");
+	    psu_log("namespace: null");
 	}
 	break;
 
     case XI_TYPE_ATSTR:
-	slaxLog("atrstr: [%s]", data ?: "[error]");
+	psu_log("atrstr: [%s]", data ?: "[error]");
 	break;
 
     case XI_TYPE_EOL_ATTRIB:
-	slaxLog("eol-attrib: %p", nodep);
+	psu_log("eol-attrib: %p", nodep);
 	break;
 
     case XI_TYPE_EOL_EMPTY:
-	slaxLog("eol-empty: %p", nodep);
+	psu_log("eol-empty: %p", nodep);
 	break;
 
     case XI_TYPE_CLOSE:
-	slaxLog("close: [%s]", data ?: "[error]");
+	psu_log("close: [%s]", data ?: "[error]");
 	break;
     }
 
@@ -1071,7 +1088,7 @@ typedef struct xi_xml_output_s {
 
 static int
 xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
-		      pa_atom_t node_atom UNUSED, xi_node_t *nodep,
+		      xi_node_id_t node_atom UNUSED, xi_node_t *nodep,
 		      const char *data, void *opaque)
 {
     xi_xml_output_t *xmlp = opaque;
@@ -1094,7 +1111,7 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 
 	pref = NULL;
 	if (nodep->xn_ns_map != PA_NULL_ATOM) {
-	    ns_map = xi_ns_map_addr(xwp, nodep->xn_ns_map);
+	    ns_map = xi_ns_map_addr(xwp, xi_ns_map_id(nodep->xn_ns_map));
 	    if (ns_map != NULL)
 		pref = xi_namepool_string(xwp, ns_map->xnm_prefix);
 	}
@@ -1120,7 +1137,7 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 		pref = NULL;
 
 		if (nodep->xn_ns_map != PA_NULL_ATOM) {
-		    ns_map = xi_ns_map_addr(xwp, nodep->xn_ns_map);
+		    ns_map = xi_ns_map_addr(xwp, xi_ns_map_id(nodep->xn_ns_map));
 		    if (ns_map != NULL)
 			pref = xi_namepool_string(xwp, ns_map->xnm_prefix);
 		}
@@ -1149,14 +1166,14 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 	break;
 
     case XI_TYPE_NS:
-	ns_map = xi_ns_map_addr(xwp, nodep->xn_contents);
+	ns_map = xi_ns_map_addr(xwp, xi_node_ns_contents(nodep));
 	if (ns_map) {
 	    pref = xi_namepool_string(xwp, ns_map->xnm_prefix);
 	    uri = xi_namepool_string(xwp, ns_map->xnm_uri);
 	    fprintf(out, " xmlns%s%s=\"%s\"",
 		    pref ? ":" : "", pref ?: "", uri ?: "");
 	} else {
-	    slaxLog("namespace: [null]");
+	    psu_log("namespace: [null]");
 	}
 	break;
 
@@ -1188,16 +1205,16 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
     xi_tree_t *xtp = xip->xi_tree;
     xi_workspace_t *xwp = xtp->xt_workspace;
     const char *cp;
-    pa_atom_t node_atom = xtp->xt_root;
-    pa_atom_t next_node_atom;
+    xi_node_id_t node_atom = xtp->xt_root;
+    xi_node_id_t next_node_atom;
     xi_node_t *nodep;
     xi_depth_t last_depth = 0;
     unsigned need_eol_attrib = FALSE;
 
-    while (node_atom != PA_NULL_ATOM) {
+    while (!xi_node_id_is_null(node_atom)) {
 	nodep = xi_node_addr(xwp, node_atom);
 	if (nodep == NULL) {
-	    slaxLog("xi_parse_emit sees a null atom!");
+	    psu_log("xi_parse_emit sees a null atom!");
 	    break;
 	}
 
@@ -1227,7 +1244,8 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	need_eol_attrib = FALSE; /* Don't need it (yet) */
 
 	if (nodep->xn_type == XI_TYPE_ROOT) {
-	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
+	    next_node_atom = (nodep->xn_contents != PA_NULL_ATOM)
+		? xi_node_id(nodep->xn_contents) : nodep->xn_next;
 	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ELT) {
@@ -1247,7 +1265,7 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 		func(parsep, XI_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
 	    } else {
 		need_eol_attrib = TRUE;
-		next_node_atom = nodep->xn_contents;
+		next_node_atom = xi_node_id(nodep->xn_contents);
 	    }
 
 	} else if (nodep->xn_type == XI_TYPE_TEXT
@@ -1257,13 +1275,15 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    cp = pa_arb_atom_addr(xwp->xw_textpool,
+				  pa_arb_atom(nodep->xn_contents));
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
 	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    cp = pa_arb_atom_addr(xwp->xw_textpool,
+				  pa_arb_atom(nodep->xn_contents));
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
@@ -1274,15 +1294,15 @@ xi_parse_emit (xi_parse_t *parsep, xi_parse_emit_fn func, void *opaque)
 	    need_eol_attrib = TRUE;
 
 	} else {
-	    slaxLog("unhandled node: %u", nodep->xn_type);
-	    next_node_atom = PA_NULL_ATOM;
+	    psu_log("unhandled node: %u", nodep->xn_type);
+	    next_node_atom = xi_node_id_null_atom();
 	}
 
 	node_atom = next_node_atom;
 	last_depth = nodep->xn_depth;
     }
 
-    func(parsep, XI_TYPE_EOF, PA_NULL_ATOM, NULL, NULL, opaque);
+    func(parsep, XI_TYPE_EOF, xi_node_id_null_atom(), NULL, NULL, opaque);
 }
 
 #if 0
@@ -1319,7 +1339,7 @@ xi_parse_as_source (xi_parse_t *parsep, xi_workspace_t *xwp,
     while (node_atom != PA_NULL_ATOM) {
 	nodep = xi_node_addr(xwp, node_atom);
 	if (nodep == NULL) {
-	    slaxLog("xi_parse_emit sees a null atom!");
+	    psu_log("xi_parse_emit sees a null atom!");
 	    break;
 	}
 
@@ -1365,13 +1385,13 @@ xi_parse_as_source (xi_parse_t *parsep, xi_workspace_t *xwp,
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 
 	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    cp = pa_arb_atom_addr(xwp->xw_textpool, pa_arb_atom(nodep->xn_contents));
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
 	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, nodep->xn_contents);
+	    cp = pa_arb_atom_addr(xwp->xw_textpool, pa_arb_atom(nodep->xn_contents));
 	    next_node_atom = nodep->xn_next;
 	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
@@ -1382,7 +1402,7 @@ xi_parse_as_source (xi_parse_t *parsep, xi_workspace_t *xwp,
 	    need_eol_attrib = TRUE;
 
 	} else {
-	    slaxLog("unhandled node: %u", nodep->xn_type);
+	    psu_log("unhandled node: %u", nodep->xn_type);
 	    next_node_atom = PA_NULL_ATOM;
 	}
 
@@ -1401,7 +1421,7 @@ xi_parse_set_rulebook (xi_parse_t *parsep, xi_rulebook_t *rulebook)
 
     xi_insert_t *xip = parsep->xp_insert;
     xip->xi_stack[xip->xi_depth].xs_statep = rulebook
-	? xi_rulebook_state(rulebook, XI_STATE_INITIAL) : NULL;
+	? xi_rulebook_state(rulebook, xi_rstate_id(XI_STATE_INITIAL)) : NULL;
 }
 
 void
