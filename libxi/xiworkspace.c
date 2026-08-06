@@ -29,8 +29,7 @@
 #include <limits.h>
 
 #include "slaxconfig.h"
-#include <libslax/slaxdef.h>
-#include <libslax/slax.h>
+#include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
@@ -142,6 +141,23 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     return NULL;
 }
 
+/* Key function for the namepool patricia tree (istr-backed) */
+static const psu_byte_t *
+xi_namepool_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+{
+    return (const psu_byte_t *)
+	pa_istr_atom_string(pp->pp_data,
+			    pa_istr_atom(pa_pat_data_atom_of(datom)));
+}
+
+/* Key function for the namespace-map patricia tree (fixed-backed) */
+static const uint8_t *
+xi_ns_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+{
+    return pa_fixed_atom_addr(pp->pp_data,
+			      pa_fixed_atom(pa_pat_data_atom_of(datom)));
+}
+
 void
 xi_namepool_open (pa_mmap_t *pmap, const char *basename,
 		  pa_istr_t **namesp, pa_pat_t **names_indexp)
@@ -157,7 +173,7 @@ xi_namepool_open (pa_mmap_t *pmap, const char *basename,
 	return;
 
     ppp = pa_pat_open(pmap, xi_mk_name(namebuf, basename, "index"),
-		      pip, pa_pat_istr_key_func,
+		      pip, xi_namepool_key_func,
 		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
     if (ppp == NULL) {
 	pa_istr_close(pip);
@@ -166,12 +182,6 @@ xi_namepool_open (pa_mmap_t *pmap, const char *basename,
 
     *namesp = pip;
     *names_indexp = ppp;
-}
-
-static const uint8_t *
-xi_ns_key_func (pa_pat_t *pp, pa_pat_node_t *node)
-{
-    return pa_fixed_atom_addr(pp->pp_data, node->ppn_data);
 }
 
 void
@@ -206,7 +216,7 @@ xi_ns_open (pa_mmap_t *pmap, const char *basename,
  * It's some ugly "atom smashing" that keeps us type safe.  Think of it
  * as lead shielding.
  */
-xi_name_atom_t
+pa_atom_t
 xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp)
 {
     uint16_t len = strlen(data) + 1;
@@ -217,21 +227,19 @@ xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp)
 	/* Allocate the name from our pool and add it to the tree */
 	pa_istr_atom_t iatom = pa_istr_string(xwp->xw_names, data);
 	datom = pa_pat_data_atom(pa_istr_atom_of(iatom));
-	if (pa_istr_is_null(atom))
+	if (pa_istr_is_null(iatom))
 	    pa_warning(0, "namepool create key failed for key '%s'", data);
 	else if (!pa_pat_add(ppp, datom, len))
 	    pa_warning(0, "duplicate key: %s", data);
     }
 
-    xi_name_atom_t atom = xi_name_atom_t(pa_pat_data_atom_of(datom));
-    return atom;
+    return pa_pat_data_is_null(datom) ? PA_NULL_ATOM : pa_pat_data_atom_of(datom);
 }
 
 pa_atom_t
 xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
 {
-    pa_atom_t node_atom;
-    int attrib_seen = FALSE;
+    xi_node_id_t node_id;
     xi_depth_t depth = nodep->xn_depth;
 
     if (!(nodep->xn_flags & XNF_ATTRIBS_PRESENT))
@@ -242,9 +250,9 @@ xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
 	xi_node_attrib_extract(xwp, nodep);
 #endif
 
-    for (node_atom = nodep->xn_contents; node_atom != PA_NULL_ATOM;
-	 node_atom = nodep->xn_next) {
-	nodep = xi_node_addr(xwp, node_atom);
+    for (node_id = xi_node_child(nodep); !xi_node_id_is_null(node_id);
+	 node_id = nodep->xn_next) {
+	nodep = xi_node_addr(xwp, node_id);
 	if (nodep == NULL)	/* Should not occur */
 	    break;
 
@@ -253,8 +261,6 @@ xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
 
 	if (nodep->xn_type != XI_TYPE_ATTRIB)
 	    continue;
-
-	attrib_seen = TRUE;
 
 	if (nodep->xn_name == name_atom)
 	    return nodep->xn_contents;
@@ -280,7 +286,7 @@ xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
  * the name pool).  Another fine engineering trade off that's such to
  * bite me in the lower cheeks one day.
  */
-pa_atom_t
+xi_ns_map_id_t
 xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
 	    xi_boolean_t createp)
 {
@@ -289,38 +295,41 @@ xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
     if (prefix != NULL && *prefix != '\0') {
 	prefix_atom = xi_namepool_atom(xwp, prefix, TRUE);
 	if (prefix_atom == PA_NULL_ATOM)
-	    return PA_NULL_ATOM;
+	    return xi_ns_map_id_null_atom();
     }
 
     if (uri != NULL && *uri != '\0') {
 	uri_atom = xi_namepool_atom(xwp, uri, TRUE);
 	if (uri_atom == PA_NULL_ATOM)
-	    return PA_NULL_ATOM;
+	    return xi_ns_map_id_null_atom();
     }
 
     pa_pat_t *ppp = xwp->xw_ns_map_index;
     xi_ns_map_t ns = { prefix_atom, uri_atom };
-    pa_atom_t atom = pa_pat_get_atom(ppp, sizeof(ns), &ns);
-    if (atom == PA_NULL_ATOM && createp) {
-	xi_ns_map_t *nsp = xi_ns_map_alloc(xwp, &atom);
+    pa_pat_data_atom_t datom = pa_pat_get_atom(ppp, sizeof(ns), &ns);
+    if (pa_pat_data_is_null(datom) && createp) {
+	xi_ns_map_id_t ns_id;
+	xi_ns_map_t *nsp = xi_ns_map_alloc(xwp, &ns_id);
 	if (nsp == NULL) {
 	    pa_warning(0, "namespace create key failed for '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
-	    return PA_NULL_ATOM;
+	    return xi_ns_map_id_null_atom();
 	}
 
 	*nsp = ns;		/* Initialize newly allocated ns_map entry */
 
-	/* Add it to the patricia tree */
-	if (!pa_pat_add(ppp, atom, sizeof(ns))) {
-	    xi_ns_map_free(xwp, atom);
+	datom = pa_pat_data_atom(pa_fixed_atom_of(xi_ns_map_id_atom_of(ns_id)));
+	if (!pa_pat_add(ppp, datom, sizeof(ns))) {
+	    xi_ns_map_free(xwp, ns_id);
 
 	    pa_warning(0, "duplicate key failure for namespace '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
-	    return PA_NULL_ATOM;
+	    return xi_ns_map_id_null_atom();
 	}
+
+	return ns_id;
     }
 
-    return atom;
-
+    return pa_pat_data_is_null(datom) ? xi_ns_map_id_null_atom()
+				      : xi_ns_map_id(pa_pat_data_atom_of(datom));
 }
