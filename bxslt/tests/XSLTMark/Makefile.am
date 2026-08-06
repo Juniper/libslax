@@ -56,7 +56,7 @@ ALL_TESTS=	alphabetize attsets avts axis backwards bottles breadth brutal chart 
 dummy $(ALL_TESTS:=.out):
 	$(MAKE) $(@:.out=)
 
-xsltproc = $(top_builddir)/xsltproc/xsltproc
+xsltproc = $(top_builddir)/bxslt/xsltproc/xsltproc
 
 $(xsltproc):
 	cd ../../xsltproc && $(MAKE) xsltproc
