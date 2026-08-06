@@ -83,15 +83,15 @@ xi_mk_name (char *namebuf, const char *name, const char *ext)
  *
  * last_hint should be the return value of the previous xi_tree_append_child
  * call on this same parent, giving O(1) append for sequential builds.
- * Pass PA_NULL_ATOM when the hint is unavailable; the sibling chain will be
- * scanned to locate the last child (O(n_children)).
+ * Pass xi_node_id_null_atom() when the hint is unavailable; the sibling
+ * chain will be scanned to locate the last child (O(n_children)).
  *
  * Returns new_node_atom so callers can chain: pass it as last_hint on the
- * next append to this parent.  Returns PA_NULL_ATOM on error.
+ * next append to this parent.  Returns xi_node_id_null_atom() on error.
  */
-pa_atom_t
+xi_node_id_t
 xi_tree_append_child (xi_workspace_t *xwp,
-		      pa_atom_t parent_atom, pa_atom_t last_hint,
-		      pa_atom_t new_node_atom);
+		      xi_node_id_t parent_atom, xi_node_id_t last_hint,
+		      xi_node_id_t new_node_atom);
 
 #endif /* LIBSLAX_XI_TREE_H */
