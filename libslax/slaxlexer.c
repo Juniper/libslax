@@ -722,13 +722,11 @@ xmlNodePtr
 slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent,
 			 xmlNodePtr cur)
 {
-    if (ctxt->linenumbers) { 
-	if (ctxt->input != NULL) { 
-	    if (ctxt->input->line < 65535) 
-		cur->line = (short) ctxt->input->line;
-	    else 
-		cur->line = 65535;
-	}
+    if (ctxt->input != NULL) {
+	if (ctxt->input->line < 65535)
+	    cur->line = (short) ctxt->input->line;
+	else
+	    cur->line = 65535;
     }
 
     slaxLog("addchild: '%s' %d", (const char *) cur->name, cur->line);
