@@ -47,13 +47,14 @@ typedef struct test_data_s {
 
 static int
 test_node_set (xi_parse_t *parsep UNUSED, xi_node_type_t type,
-	       pa_atom_t node_atom, xi_node_t *nodep UNUSED,
+	       xi_node_id_t node_atom, xi_node_t *nodep UNUSED,
 	       const char *data UNUSED, void *opaque)
 {
     test_data_t *tdp = opaque;
 
     if (type == XI_TYPE_OPEN) {
-	xi_nodeset_add(tdp->td_nsp, node_atom);
+	xi_nodeset_add(tdp->td_nsp,
+		       pa_fixed_atom_of(xi_node_id_atom_of(node_atom)));
 	xi_nodeset_dump(tdp->td_nsp);
     }
 
