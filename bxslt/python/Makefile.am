@@ -17,21 +17,23 @@ EXTRA_DIST = 			\
 	pyproject.toml		\
 	setup.py.in
 
-if WITH_PYTHON
+if WITH_XSLT_PYTHON
 
 pyexec_LTLIBRARIES = libxsltmod.la
 
 libxsltmod_la_CPPFLAGS = \
-	-I$(top_srcdir)/libxslt \
-	-I$(top_srcdir) \
-	-I../libexslt
+	-I$(top_builddir)/bxslt \
+	-I$(top_srcdir)/bxslt/libxslt \
+	-I$(top_srcdir)/bxslt \
+	-I../libexslt \
+	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 libxsltmod_la_CFLAGS = $(AM_CFLAGS) $(PYTHON_CFLAGS)
 libxsltmod_la_SOURCES = libxslt.c types.c
 nodist_libxsltmod_la_SOURCES = libxslt-py.c
 libxsltmod_la_LIBADD = \
-	$(top_builddir)/libxslt/libxslt.la \
-	$(top_builddir)/libexslt/libexslt.la \
-	$(PYTHON_LIBS) $(LIBXML_LIBS)
+	$(top_builddir)/bxslt/libxslt/libxslt.la \
+	$(top_builddir)/bxslt/libexslt/libexslt.la \
+	$(PYTHON_LIBS) $(top_builddir)/bxml/libxml2.la
 libxsltmod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
 
 libxslt.py: $(srcdir)/libxsl.py libxsltclass.py
@@ -40,7 +42,7 @@ libxslt.py: $(srcdir)/libxsl.py libxsltclass.py
 nodist_python_PYTHON = libxslt.py
 
 GENERATE = generator.py
-API_DESC = $(top_srcdir)/doc/libxslt-api.xml $(srcdir)/libxslt-python-api.xml
+API_DESC = $(top_srcdir)/bxslt/doc/libxslt-api.xml $(srcdir)/libxslt-python-api.xml
 GENERATED = libxsltclass.py \
 	   libxslt-export.c \
 	   libxslt-py.c \
