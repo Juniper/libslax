@@ -48,6 +48,17 @@ show_top () {
     esac
 }
 
+save_patch () {
+    mkdir -p ~/patches
+    local ext=`date "+%y%m%d%H%M.%S"`
+    local base=`basename ${GIT_TOP}`
+    local pname=$HOME/patches/$base.$ext
+
+    /bin/echo -n "Saving patch to $pname ... "
+    git diff "$@" > "$pname"
+    echo `wc -l < $pname` lines
+}
+
 git_diff () {
     diff_args=
     case "$1" in
@@ -363,6 +374,13 @@ case "$op" in
 	git stash pop
 	;;
 
+    save)
+	## gt save [<path>]
+	## == Save a diff to ~/patches/
+	set_git_top
+	save_patch "$@"
+	;;
+
     self-help|'')
         echo " "
         echo "gt: a better way to git"
@@ -418,6 +436,7 @@ case "$op" in
 	## gt unpatch [<path>]
 	## == Patch -R any changed files, uncommitted reverting changes
 	set_git_top
+	save_patch "$@"
 	git diff "$@" | (cd $GIT_TOP; PATCH_VERBOSE=99 patch -R -p1 )
 	;;
 
