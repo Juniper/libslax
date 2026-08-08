@@ -48,6 +48,13 @@ $addr_fn ($base_type *basep, $atom_type atom)
 {
     return ($elem_type *) pa_fixed_atom_addr(basep->$field, $atom_of_fn(atom));
 }
+
+static inline $elem_type *
+$elem_fn ($base_type *basep, $atom_type atom)
+{
+    return ($elem_type *) pa_fixed_element(basep->$field,
+					   pa_fixed_atom_of($atom_of_fn(atom)));
+}
 '
 
 # Generates alloc/free/addr inline functions for pa_atom_t-keyed fixed arrays.
@@ -451,6 +458,8 @@ make_one_fixed_funcs_atom() {
     local atom_of_fn=$1 ; shift
     local is_null_fn=$1 ; shift
 
+    local elem_fn="${addr_fn%addr}element"
+
     echo "Generating fixed functions for $name ( gen/$file ) ..."
 
     echo "${FIXED_FUNCTIONS_CODE}" | sed \
@@ -461,6 +470,7 @@ make_one_fixed_funcs_atom() {
         -e "s:\$alloc_fn:$alloc_fn:g" \
         -e "s:\$free_fn:$free_fn:g" \
         -e "s:\$addr_fn:$addr_fn:g" \
+        -e "s:\$elem_fn:$elem_fn:g" \
         -e "s:\$build_fn:$build_fn:g" \
         -e "s:\$atom_of_fn:$atom_of_fn:g" \
         -e "s:\$is_null_fn:$is_null_fn:g" \
