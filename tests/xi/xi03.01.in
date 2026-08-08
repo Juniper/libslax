@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean
+# quiet dump clean trim
+-->
+<top>
+    <one>first element</one>
+    <two>
+        <name>two-name</name>
+        <protocol>tcp</protocol>
+        <ignored>this should be discarded in state 2</ignored>
+    </two>
+    <three>this is discarded</three>
+    <authors x="1" y="2">
+        <author a1="v1" a2="v2">Kagawa, N.</author>
+        <author this="dropped">Mihara, K.</author>
+    </authors>
+    <other>also saved by default</other>
+</top>
