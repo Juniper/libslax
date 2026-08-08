@@ -27,15 +27,13 @@ AM_CFLAGS = \
 TEST_CASES = \
 xi01.c \
 xi02.c \
+xi03.c \
 xi04.c
-
-XXX= \
-xi03.c
 
 xi01_test_SOURCES = xi01.c
 xi02_test_SOURCES = xi02.c
+xi03_test_SOURCES = xi03.c
 xi04_test_SOURCES = xi04.c
-#xi03_test_SOURCES = xi03.c
 
 # xi04 needs parrotdb; xi01 only needs libxi
 xi04_test_LDADD = \
@@ -54,6 +52,8 @@ LDADD = \
 
 EXTRA_DIST = \
     ${TEST_CASES} \
+    script.xml \
+    xi03.01.in \
     xi04.01.in \
     xi04.02.in \
     make-xi04-02.py \
