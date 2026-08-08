@@ -1,0 +1,13 @@
+<script>
+  <state id="1" action="save">
+    <rule tag="one" action="emit"/>
+    <rule tag="authors" action="save-with-attributes"/>
+    <rule tag="author" action="save" use-tag="my-own-author"/>
+    <rule tag="two" action="emit" new-state="2" use-tag="content"/>
+    <rule tag="three" action="discard"/>
+  </state>
+  <state id="2" action="discard">
+    <rule tag="name" action="emit"/>
+    <rule tag="protocol" action="emit"/>
+  </state>
+</script>
