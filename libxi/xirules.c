@@ -213,7 +213,7 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 		break;
 	    }
 
-	    xi_rstate_t *statep = xi_rstate_addr(xrbp, sid);
+	    xi_rstate_t *statep = xi_rstate_element(xrbp, sid);
 	    if (statep) {
 		bzero(statep, sizeof(*statep));
 
@@ -348,6 +348,10 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 
 	return xrp;		/* Success! */
     }
+
+    /* No explicit rule matched; fall back to the state's default rule */
+    if (!xi_rule_id_is_null(statep->xrbs_default_rule))
+	return xi_rulebook_rule(xrbp, statep->xrbs_default_rule);
 
     return NULL;
 }
