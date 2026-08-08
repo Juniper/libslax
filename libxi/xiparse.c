@@ -170,6 +170,11 @@ xi_insert_node (xi_insert_t *xip, const char *msg,
 		const char *data, size_t len,
 		xi_node_type_t type, pa_atom_t name_atom, pa_atom_t contents)
 {
+    /* Inside a phantom discard frame — don't insert anything */
+    xi_istack_t *cur = &xip->xi_stack[xip->xi_depth];
+    if (cur->xs_node == NULL && cur->xs_action == XIA_DISCARD)
+	return xi_node_id_null_atom();
+
     xi_node_id_t node_atom;
     xi_node_t *nodep = xi_node_alloc(xip->xi_tree->xt_workspace, &node_atom);
     if (nodep == NULL)
@@ -666,6 +671,19 @@ xi_insert_open (xi_parse_t *parsep, pa_atom_t name_atom,
     if (name_atom == PA_NULL_ATOM)
 	return;
 
+    /* If inside a discard frame, push another phantom instead of storing */
+    xi_istack_t *cur_frame = &xip->xi_stack[xip->xi_depth];
+    if (cur_frame->xs_node == NULL && cur_frame->xs_action == XIA_DISCARD) {
+	xi_rstate_t *statep = cur_frame->xs_statep;
+	xip->xi_depth += 1;
+	xi_istack_t *new_frame = &xip->xi_stack[xip->xi_depth];
+	bzero(new_frame, sizeof(*new_frame));
+	new_frame->xs_action = XIA_DISCARD;
+	new_frame->xs_old_name = name_atom;
+	new_frame->xs_statep = statep;
+	return;
+    }
+
     xi_node_id_t node_atom;
     node_atom = xi_insert_node(xip, "xi_insert_open",
 			       name, strlen(name),
@@ -739,11 +757,30 @@ xi_insert_close (xi_parse_t *parsep, const char *prefix UNUSED, const char *name
 
     xi_istack_t *xsp = &xip->xi_stack[xip->xi_depth];
 
-    if (xip->xi_depth == 0 || xsp->xs_node == NULL) {
+    if (xip->xi_depth == 0) {
 	xi_source_failure(parsep->xp_srcp, 0,
 			  "close for open that doesn't exist: %s", name);
 	return;
-    } else if (xsp->xs_old_name != 0) {
+    }
+
+    /* Phantom frame pushed for XIA_DISCARD — verify name and pop */
+    if (xsp->xs_node == NULL) {
+	if (xsp->xs_action != XIA_DISCARD) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "close for open that doesn't exist: %s", name);
+	    return;
+	}
+	if (name_atom != PA_NULL_ATOM && xsp->xs_old_name != name_atom) {
+	    xi_source_failure(parsep->xp_srcp, 0,
+			      "close doesn't match: %s", name);
+	    return;
+	}
+	bzero(xsp, sizeof(*xsp));
+	xi_insert_pop(xip);
+	return;
+    }
+
+    if (xsp->xs_old_name != 0) {
 	if (xsp->xs_old_name != name_atom) {
 	    xi_source_failure(parsep->xp_srcp, 0,
 			      "close doesn't match original: %s", name);
@@ -800,12 +837,35 @@ xi_parse_handle_rule (xi_parse_t *parsep, pa_atom_t name_atom,
     case XIA_SAVE:
     case XIA_SAVE_ATSTR:
     case XIA_SAVE_ATTRIB:
+    case XIA_EMIT:
 	xi_insert_open(parsep, name_atom, prefix, name, attribs, act);
+
+	/* Apply rulebook state transition if directed */
+	if (!xi_rstate_id_is_null(xrp->xr_new_state) && parsep->xp_rulebook) {
+	    xi_istack_t *new_frame = &xip->xi_stack[xip->xi_depth];
+	    new_frame->xs_statep = xi_rstate_element(parsep->xp_rulebook,
+						     xrp->xr_new_state);
+	}
 	break;
 
-    case XIA_EMIT:
-    case XIA_DISCARD:
-	/* XXX */
+    case XIA_DISCARD: {
+	/* Push phantom frame (no node) to track depth and close matching */
+	xi_rstate_t *statep = xip->xi_stack[xip->xi_depth].xs_statep;
+	xip->xi_depth += 1;
+	xi_istack_t *new_frame = &xip->xi_stack[xip->xi_depth];
+	bzero(new_frame, sizeof(*new_frame));
+	new_frame->xs_action = XIA_DISCARD;
+	new_frame->xs_old_name = save_name_atom;
+	if (!xi_rstate_id_is_null(xrp->xr_new_state) && parsep->xp_rulebook) {
+	    new_frame->xs_statep = xi_rstate_element(parsep->xp_rulebook,
+						     xrp->xr_new_state);
+	} else {
+	    new_frame->xs_statep = statep;
+	}
+	break;
+    }
+
+    default:
 	break;
     }
 
