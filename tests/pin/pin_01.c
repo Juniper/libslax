@@ -24,8 +24,8 @@
 #include <libpsu/psucommon.h>
 #include <libpsu/psulog.h>
 #include <parrotdb/pacommon.h>
-#include <libxi/xicommon.h>
-#include <libxi/xisource.h>
+#include <libpin/pin_common.h>
+#include <libpin/pin_source.h>
 
 int
 main (int argc, char **argv)
@@ -35,7 +35,7 @@ main (int argc, char **argv)
     int opt_log = FALSE;
     int opt_unescape = FALSE;
     int fd = 0;
-    xi_source_flags_t flags = 0;
+    pin_source_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
 	if (strcmp(argv[argc], "file") == 0
@@ -70,14 +70,14 @@ main (int argc, char **argv)
 	    err(1, "could not open file: %s", opt_filename);
     }
 
-    xi_source_t *srcp = xi_source_create(fd, flags);
+    pin_source_t *srcp = pin_source_create(fd, flags);
     if (srcp == NULL)
 	errx(1, "failed to create source");
 
     char *data, *rest;
-    xi_node_type_t type;
+    pin_node_type_t type;
     for (;;) {
-	type = xi_source_next_token(srcp, &data, &rest);
+	type = pin_source_next_token(srcp, &data, &rest);
 	if (0)
 	    psu_log("new token: %u [%s] [%s]", type, data ?: "", rest ?: "");
 
@@ -95,7 +95,7 @@ main (int argc, char **argv)
 	    if (!opt_quiet) {
 		int len;
 		if (opt_unescape && data && rest)
-		    len = xi_source_unescape(srcp, data, rest - data);
+		    len = pin_source_unescape(srcp, data, rest - data);
 		else len = rest - data;
 		printf("data [%.*s]\n", len, data);
 	    }
@@ -138,7 +138,7 @@ main (int argc, char **argv)
 	}
     }
 
-    xi_source_destroy(srcp);
+    pin_source_destroy(srcp);
 
     return 0;
 }
