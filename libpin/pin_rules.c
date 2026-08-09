@@ -9,7 +9,7 @@
  * Phil Shafer (phil@) June 2016
  *
  * Parsing input means three distinct areas of work: parsing input, deciding
- * what to do with that input, and then doing it.  Our "xi_source" module
+ * what to do with that input, and then doing it.  Our "pin_source" module
  * does the parsing, giving us back a "token" of input, which we pass to the
  * "rules" code to determine what needs done.  
  */
@@ -38,38 +38,38 @@
 #include <parrotdb/paistr.h>
 #include <parrotdb/papat.h>
 #include <parrotdb/pabitmap.h>
-#include <libxi/xicommon.h>
-#include <libxi/xirules.h>
-#include <libxi/xitree.h>
-#include <libxi/xiworkspace.h>
-#include <libxi/xiparse.h>
+#include <libpin/pin_common.h>
+#include <libpin/pin_rules.h>
+#include <libpin/pin_tree.h>
+#include <libpin/pin_workspace.h>
+#include <libpin/pin_parse.h>
 
-xi_rulebook_t *
-xi_rulebook_setup (xi_workspace_t *xwp,
-		   xi_parse_t *script, const char *name)
+pin_rulebook_t *
+pin_rulebook_setup (pin_workspace_t *xwp,
+		   pin_parse_t *script, const char *name)
 {
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
     pa_mmap_t *pmp = xwp->xw_mmap;
-    xi_rulebook_info_t *infop;
+    pin_rulebook_info_t *infop;
     pa_fixed_t *rules;
     pa_fixed_t *states;
     pa_bitmap_t *bitmaps;
 
-    infop = pa_mmap_header(pmp, xi_mk_name(namebuf, name, "rulebook.info"),
+    infop = pa_mmap_header(pmp, pin_mk_name(namebuf, name, "rulebook.info"),
 			  PA_TYPE_OPAQUE, 0, sizeof(*infop));
 
-    rules = pa_fixed_open(pmp, xi_mk_name(namebuf, name, "rules.set"),
-			  XI_SHIFT, sizeof(xi_rule_t), XI_MAX_ATOMS);
+    rules = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rules.set"),
+			  XI_SHIFT, sizeof(pin_rule_t), XI_MAX_ATOMS);
 
-    states = pa_fixed_open(pmp, xi_mk_name(namebuf, name, "rulebook.states"),
-			   XI_SHIFT, sizeof(xi_rstate_t), XI_MAX_ATOMS);
+    states = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.states"),
+			   XI_SHIFT, sizeof(pin_rstate_t), XI_MAX_ATOMS);
 
-    bitmaps = pa_bitmap_open(pmp, xi_mk_name(namebuf, name, "rulebook.bitmaps"));
+    bitmaps = pa_bitmap_open(pmp, pin_mk_name(namebuf, name, "rulebook.bitmaps"));
 
     if (infop == NULL || rules == NULL || states == NULL || bitmaps == NULL)
 	return NULL;
     
-    xi_rulebook_t *xrbp = calloc(1, sizeof(*xrbp));
+    pin_rulebook_t *xrbp = calloc(1, sizeof(*xrbp));
 
     if (xrbp) {
 	xrbp->xrb_workspace = xwp;
@@ -83,7 +83,7 @@ xi_rulebook_setup (xi_workspace_t *xwp,
     return xrbp;
 }
 
-static const char *xi_action_names[] = {
+static const char *pin_action_names[] = {
     "none",			/* XIA_NONE */
     "discard",			/* XIA_DISCARD */
     "save",			/* XIA_SAVE */
@@ -94,12 +94,12 @@ static const char *xi_action_names[] = {
     NULL
 };
 
-static xi_action_type_t
-xi_rule_action_value (const char *name)
+static pin_action_type_t
+pin_rule_action_value (const char *name)
 {
-    xi_action_type_t type;
-    for (type = 0; xi_action_names[type]; type++) {
-	if (strcmp(name, xi_action_names[type]) == 0)
+    pin_action_type_t type;
+    for (type = 0; pin_action_names[type]; type++) {
+	if (strcmp(name, pin_action_names[type]) == 0)
 	    return type;
     }
 
@@ -108,20 +108,20 @@ xi_rule_action_value (const char *name)
 }
 
 static const char *
-xi_rule_action_name (xi_action_type_t action)
+pin_rule_action_name (pin_action_type_t action)
 {
-    if (action < PSU_NUM_ELTS(xi_action_names))
-	return xi_action_names[action];
+    if (action < PSU_NUM_ELTS(pin_action_names))
+	return pin_action_names[action];
     return "[unknown]";
 }
 
 static void
-xi_rule_bitmap_add (xi_rulebook_t *xrbp, xi_rule_t *xrp, const char *tag)
+pin_rule_bitmap_add (pin_rulebook_t *xrbp, pin_rule_t *xrp, const char *tag)
 {
-    psu_log("xi_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
+    psu_log("pin_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
 
     /* Find the atom representing the tag */
-    pa_atom_t atom = xi_parse_namepool_atom(xrbp->xrb_script, tag);
+    pa_atom_t atom = pin_parse_namepool_atom(xrbp->xrb_script, tag);
     if (atom == PA_NULL_ATOM)
 	return;
 
@@ -143,9 +143,9 @@ xi_rule_bitmap_add (xi_rulebook_t *xrbp, xi_rule_t *xrp, const char *tag)
  * is small.
  */
 #define XI_DEPTH_MAX_RULES 4
-typedef struct xi_rulebook_prep_s {
-    xi_rulebook_t *xrp_rulebook; /* Rules we are building */
-    xi_parse_t *xrp_script;	 /* Parsed script "workspace" */
+typedef struct pin_rulebook_prep_s {
+    pin_rulebook_t *xrp_rulebook; /* Rules we are building */
+    pin_parse_t *xrp_script;	 /* Parsed script "workspace" */
     pa_atom_t xrp_atom_action;	/* Cached atom numbers */
     pa_atom_t xrp_atom_id;
     pa_atom_t xrp_atom_new_state;
@@ -157,26 +157,26 @@ typedef struct xi_rulebook_prep_s {
 
     int xrp_depth;		/* Current depth of stack */
     struct xrp_stack_s {
-	pa_atom_t xrps_state;	/* State atom (xi_rstate_t) */
-	xi_rstate_t *xrps_statep; /* State array element */
-	xi_rule_id_t xrps_rule;	/* Current rule atom (xi_rule_t) */
-	xi_rule_id_t *xrps_nextp;	/* Location to store next atom */
+	pa_atom_t xrps_state;	/* State atom (pin_rstate_t) */
+	pin_rstate_t *xrps_statep; /* State array element */
+	pin_rule_id_t xrps_rule;	/* Current rule atom (pin_rule_t) */
+	pin_rule_id_t *xrps_nextp;	/* Location to store next atom */
     } xrp_stack[XI_DEPTH_MAX_RULES];
-} xi_rulebook_prep_t;
+} pin_rulebook_prep_t;
 
 static int
-xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
-		     xi_node_id_t node_atom UNUSED, xi_node_t *nodep,
+pin_rulebook_prep_cb (pin_parse_t *parsep, pin_node_type_t type,
+		     pin_node_id_t node_atom UNUSED, pin_node_t *nodep,
 		     const char *data, void *opaque)
 {
-    xi_tree_t *treep = parsep->xp_insert->xi_tree;
-    xi_workspace_t *xwp = treep->xt_workspace;
-    xi_rulebook_prep_t *prep = opaque;
-    xi_rulebook_t *xrbp = prep->xrp_rulebook;
+    pin_tree_t *treep = parsep->xp_insert->pin_tree;
+    pin_workspace_t *xwp = treep->xt_workspace;
+    pin_rulebook_prep_t *prep = opaque;
+    pin_rulebook_t *xrbp = prep->xrp_rulebook;
     struct xrp_stack_s *stackp = &prep->xrp_stack[prep->xrp_depth];
     const char *id, *action, *tag, *use_tag, *new_state;
 
-#define GET_ATTRIB(_x) xi_get_attrib_string(xwp, nodep, prep->_x)
+#define GET_ATTRIB(_x) pin_get_attrib_string(xwp, nodep, prep->_x)
 #define XX(_x) ((_x) ?: "")
 
 #if 0
@@ -205,15 +205,15 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 		    XX(id), XX(action));
 
 	    /* Valid input requires a good state id number */
-	    xi_rstate_id_t sid = xi_rstate_id(strtol(id, NULL, 0));
-	    pa_atom_t sid_n = pa_fixed_atom_of(xi_rstate_id_atom_of(sid));
+	    pin_rstate_id_t sid = pin_rstate_id(strtol(id, NULL, 0));
+	    pa_atom_t sid_n = pa_fixed_atom_of(pin_rstate_id_atom_of(sid));
 	    if (sid_n > pa_fixed_max_atoms(xrbp->xrb_states)) {
 		psu_log("state id > max: %u .vs. %u",
 			sid_n, pa_fixed_max_atoms(xrbp->xrb_states));
 		break;
 	    }
 
-	    xi_rstate_t *statep = xi_rstate_element(xrbp, sid);
+	    pin_rstate_t *statep = pin_rstate_element(xrbp, sid);
 	    if (statep) {
 		bzero(statep, sizeof(*statep));
 
@@ -222,14 +222,14 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 
 		/* If an action was defined, build a default rule */
 		if (action) {
-		    xi_rule_id_t rid;
-		    xi_rule_t *xrp = xi_rule_alloc(xrbp, &rid);
+		    pin_rule_id_t rid;
+		    pin_rule_t *xrp = pin_rule_alloc(xrbp, &rid);
 		    if (xrp == NULL)
 			break;
 
 		    bzero(xrp, sizeof(*xrp));
 		    xrp->xr_flags = XRF_MATCH_ALL;
-		    xrp->xr_action = xi_rule_action_value(action);
+		    xrp->xr_action = pin_rule_action_value(action);
 
 		    /* Record the rule as the default for this state */
 		    statep->xrbs_default_rule = rid;
@@ -237,7 +237,7 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    }
 
 	    /* Update xrsi_max_state */
-	    if (sid_n > pa_fixed_atom_of(xi_rstate_id_atom_of(
+	    if (sid_n > pa_fixed_atom_of(pin_rstate_id_atom_of(
 					 xrbp->xrb_infop->xrsi_max_state)))
 		xrbp->xrb_infop->xrsi_max_state = sid;
 
@@ -250,21 +250,21 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    psu_log("prep: open: rule: [%s/%s/%s/%s]",
 		    XX(tag), XX(action), XX(new_state), XX(use_tag));
 
-	    xi_rule_id_t rid;
-	    xi_rule_t *xrp = xi_rule_alloc(xrbp, &rid);
+	    pin_rule_id_t rid;
+	    pin_rule_t *xrp = pin_rule_alloc(xrbp, &rid);
 	    if (xrp == NULL)
 		break;
 
 	    bzero(xrp, sizeof(*xrp));
 	    if (tag)
-		xi_rule_bitmap_add(xrbp, xrp, tag);
+		pin_rule_bitmap_add(xrbp, xrp, tag);
 
 	    if (action)
-		xrp->xr_action = xi_rule_action_value(action);
+		xrp->xr_action = pin_rule_action_value(action);
 	    if (use_tag)
-		xrp->xr_use_tag = xi_parse_namepool_atom(xrbp->xrb_script, use_tag);
+		xrp->xr_use_tag = pin_parse_namepool_atom(xrbp->xrb_script, use_tag);
 	    if (new_state)
-		xrp->xr_new_state = xi_rstate_id(strtol(new_state, NULL, 0));
+		xrp->xr_new_state = pin_rstate_id(strtol(new_state, NULL, 0));
 
 	    /* Add rule to linked list of rules */
 	    *stackp->xrps_nextp = stackp->xrps_rule = rid;
@@ -279,12 +279,12 @@ xi_rulebook_prep_cb (xi_parse_t *parsep, xi_node_type_t type,
     return 0;
 }
 
-xi_rulebook_t *
-xi_rulebook_prep (xi_parse_t *input, const char *name)
+pin_rulebook_t *
+pin_rulebook_prep (pin_parse_t *input, const char *name)
 {
-    xi_workspace_t *xwp = input->xp_insert->xi_tree->xt_workspace;
-    xi_rulebook_t *xrbp = xi_rulebook_setup(xwp, input, name);
-    xi_rulebook_prep_t prep;
+    pin_workspace_t *xwp = input->xp_insert->pin_tree->xt_workspace;
+    pin_rulebook_t *xrbp = pin_rulebook_setup(xwp, input, name);
+    pin_rulebook_prep_t prep;
 
     if (xrbp == NULL)
 	return NULL;
@@ -296,16 +296,16 @@ xi_rulebook_prep (xi_parse_t *input, const char *name)
 
     /* We need all the atom number for the bits we care about */
     /* XXX rewrite as array/loop */
-    prep.xrp_atom_action = xi_parse_namepool_atom(input, "action");
-    prep.xrp_atom_id = xi_parse_namepool_atom(input, "id");
-    prep.xrp_atom_new_state = xi_parse_namepool_atom(input, "new-state");
-    prep.xrp_atom_rule = xi_parse_namepool_atom(input, "rule");
-    prep.xrp_atom_script = xi_parse_namepool_atom(input, "script");
-    prep.xrp_atom_state = xi_parse_namepool_atom(input, "state");
-    prep.xrp_atom_tag = xi_parse_namepool_atom(input, "tag");
-    prep.xrp_atom_use_tag = xi_parse_namepool_atom(input, "use-tag");
+    prep.xrp_atom_action = pin_parse_namepool_atom(input, "action");
+    prep.xrp_atom_id = pin_parse_namepool_atom(input, "id");
+    prep.xrp_atom_new_state = pin_parse_namepool_atom(input, "new-state");
+    prep.xrp_atom_rule = pin_parse_namepool_atom(input, "rule");
+    prep.xrp_atom_script = pin_parse_namepool_atom(input, "script");
+    prep.xrp_atom_state = pin_parse_namepool_atom(input, "state");
+    prep.xrp_atom_tag = pin_parse_namepool_atom(input, "tag");
+    prep.xrp_atom_use_tag = pin_parse_namepool_atom(input, "use-tag");
 
-    xi_parse_emit(input, xi_rulebook_prep_cb, &prep);
+    pin_parse_emit(input, pin_rulebook_prep_cb, &prep);
 
     return xrbp;
 }
@@ -313,9 +313,9 @@ xi_rulebook_prep (xi_parse_t *input, const char *name)
 /*
  * Find the appropriate rule to process incoming data
  */
-xi_rule_t *
-xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
-		  xi_rstate_t *statep,
+pin_rule_t *
+pin_rulebook_find (pin_parse_t *parsep UNUSED, pin_rulebook_t *xrbp,
+		  pin_rstate_t *statep,
 		  pa_atom_t name_atom,
 		  const char *pref UNUSED, const char *name,
 		  const char *attribs UNUSED)
@@ -326,11 +326,11 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
     if (statep == NULL)
 	return NULL;
 
-    xi_rule_id_t rid;
-    xi_rule_t *xrp;
-    for (rid = statep->xrbs_first_rule; !xi_rule_id_is_null(rid);
+    pin_rule_id_t rid;
+    pin_rule_t *xrp;
+    for (rid = statep->xrbs_first_rule; !pin_rule_id_is_null(rid);
 	 rid = xrp->xr_next) {
-	xrp = xi_rulebook_rule(xrbp, rid);
+	xrp = pin_rulebook_rule(xrbp, rid);
 	if (xrp == NULL)
 	    continue;
 
@@ -341,17 +341,17 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
 	psu_log("rule match: %u/'%s' rule %u: action %u/%s, flags %#x, "
 		"use-tag %u, new_state %u",
 		name_atom, name ?: "",
-		pa_fixed_atom_of(xi_rule_id_atom_of(rid)),
-		xrp->xr_action, xi_rule_action_name(xrp->xr_action),
+		pa_fixed_atom_of(pin_rule_id_atom_of(rid)),
+		xrp->xr_action, pin_rule_action_name(xrp->xr_action),
 		xrp->xr_flags, xrp->xr_use_tag,
-		pa_fixed_atom_of(xi_rstate_id_atom_of(xrp->xr_new_state)));
+		pa_fixed_atom_of(pin_rstate_id_atom_of(xrp->xr_new_state)));
 
 	return xrp;		/* Success! */
     }
 
     /* No explicit rule matched; fall back to the state's default rule */
-    if (!xi_rule_id_is_null(statep->xrbs_default_rule))
-	return xi_rulebook_rule(xrbp, statep->xrbs_default_rule);
+    if (!pin_rule_id_is_null(statep->xrbs_default_rule))
+	return pin_rulebook_rule(xrbp, statep->xrbs_default_rule);
 
     return NULL;
 }
@@ -360,7 +360,7 @@ xi_rulebook_find (xi_parse_t *parsep UNUSED, xi_rulebook_t *xrbp,
  * Turn a bitmap in a rule into a string, expanding names
  */
 static const char *
-xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
+pin_rule_bitmap_string (pin_rulebook_t *xrbp, pin_rule_t *xrp,
 			char *buf, size_t bufsiz)
 {
     pa_bitmap_t *pbp = xrbp->xrb_bitmaps;
@@ -378,7 +378,7 @@ xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
 	    break;
 
 	/* Turn the bit into a string */
-	str = xi_parse_namepool_string(xrbp->xrb_script, num);
+	str = pin_parse_namepool_string(xrbp->xrb_script, num);
 
 	/* Make some pretty pretty output */
 	rc = snprintf(cp, ep - cp, "%s%d%s%s%s",
@@ -396,26 +396,26 @@ xi_rule_bitmap_string (xi_rulebook_t *xrbp, xi_rule_t *xrp,
     return buf;
 }
 
-static xi_rule_id_t
-xi_rulebook_dump_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid, const char *tag)
+static pin_rule_id_t
+pin_rulebook_dump_rule (pin_rulebook_t *xrbp, pin_rule_id_t rid, const char *tag)
 {
-    xi_rule_t *rulep = xi_rulebook_rule(xrbp, rid);
+    pin_rule_t *rulep = pin_rulebook_rule(xrbp, rid);
     if (rulep == NULL)
-	return xi_rule_id_null_atom();
+	return pin_rule_id_null_atom();
 
-    const char *rname = xi_rule_action_name(rulep->xr_action);
+    const char *rname = pin_rule_action_name(rulep->xr_action);
     char buf[1024];
 
     psu_log("    %srule %u:", tag,
-	    pa_fixed_atom_of(xi_rule_id_atom_of(rid)));
+	    pa_fixed_atom_of(pin_rule_id_atom_of(rid)));
     psu_log("        bitmap: %s",
-	    xi_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
+	    pin_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
     psu_log("        flags %#x, action %u/%s, use-tag %u, "
 	    "new_state %u, next %u",
 	    rulep->xr_flags, rulep->xr_action, rname,
 	    rulep->xr_use_tag,
-	    pa_fixed_atom_of(xi_rstate_id_atom_of(rulep->xr_new_state)),
-	    pa_fixed_atom_of(xi_rule_id_atom_of(rulep->xr_next)));
+	    pa_fixed_atom_of(pin_rstate_id_atom_of(rulep->xr_new_state)),
+	    pa_fixed_atom_of(pin_rule_id_atom_of(rulep->xr_next)));
 
     return rulep->xr_next;
 }
@@ -424,31 +424,31 @@ xi_rulebook_dump_rule (xi_rulebook_t *xrbp, xi_rule_id_t rid, const char *tag)
  * Cause sometimes you just need to see what's really going on....
  */
 void
-xi_rulebook_dump (xi_rulebook_t *xrbp)
+pin_rulebook_dump (pin_rulebook_t *xrbp)
 {
     pa_atom_t sid;
     pa_atom_t max_sid = pa_fixed_atom_of(
-		xi_rstate_id_atom_of(xrbp->xrb_infop->xrsi_max_state));
-    xi_rule_id_t rid;
-    xi_rstate_t *statep;
+		pin_rstate_id_atom_of(xrbp->xrb_infop->xrsi_max_state));
+    pin_rule_id_t rid;
+    pin_rstate_t *statep;
 
     psu_log("dumping rulebook");
 
     for (sid = 1; sid <= max_sid; sid++) {
-	statep = (xi_rstate_t *) pa_fixed_element(xrbp->xrb_states, sid);
+	statep = (pin_rstate_t *) pa_fixed_element(xrbp->xrb_states, sid);
 	if (statep == NULL)
 	    continue;
 
 	psu_log("state %u: flags %#x, default rule %u",
 		sid, statep->xrbs_flags,
-		pa_fixed_atom_of(xi_rule_id_atom_of(statep->xrbs_default_rule)));
+		pa_fixed_atom_of(pin_rule_id_atom_of(statep->xrbs_default_rule)));
 
 	/* Dump the full set of rules */
-	for (rid = statep->xrbs_first_rule; !xi_rule_id_is_null(rid); )
-	    rid = xi_rulebook_dump_rule(xrbp, rid, "");
+	for (rid = statep->xrbs_first_rule; !pin_rule_id_is_null(rid); )
+	    rid = pin_rulebook_dump_rule(xrbp, rid, "");
 
 	/* Dump the default rule */
-	if (!xi_rule_id_is_null(statep->xrbs_default_rule))
-	    xi_rulebook_dump_rule(xrbp, statep->xrbs_default_rule, "default ");
+	if (!pin_rule_id_is_null(statep->xrbs_default_rule))
+	    pin_rulebook_dump_rule(xrbp, statep->xrbs_default_rule, "default ");
     }
 }
