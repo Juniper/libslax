@@ -38,16 +38,16 @@
 #include <parrotdb/paistr.h>
 #include <parrotdb/papat.h>
 #include <parrotdb/pabitmap.h>
-#include <libxi/xicommon.h>
-#include <libxi/xisource.h>
-#include <libxi/xirules.h>
-#include <libxi/xitree.h>
-#include <libxi/xiworkspace.h>
-#include <libxi/xinodeset.h>
-#include <libxi/xiparse.h>
+#include <libpin/pin_common.h>
+#include <libpin/pin_source.h>
+#include <libpin/pin_rules.h>
+#include <libpin/pin_tree.h>
+#include <libpin/pin_workspace.h>
+#include <libpin/pin_nodeset.h>
+#include <libpin/pin_parse.h>
 
-xi_workspace_t *
-xi_workspace_open (pa_mmap_t *pmp, const char *name)
+pin_workspace_t *
+pin_workspace_open (pa_mmap_t *pmp, const char *name)
 {
     pa_istr_t *names = NULL;
     pa_pat_t *names_index = NULL;
@@ -56,34 +56,34 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     pa_istr_t *pip = NULL;
     pa_arb_t *pap = NULL;
     pa_pat_t *ppp = NULL;
-    xi_node_t *nodep = NULL;
+    pin_node_t *nodep = NULL;
     pa_fixed_t *nodes = NULL;
-    xi_workspace_t *workp = NULL;
+    pin_workspace_t *workp = NULL;
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
     pa_fixed_t *nodeset_chunks = NULL, *nodeset_info = NULL;
 
     /* Holds the names of our elements, attributes, etc */
-    xi_mk_name(namebuf, name, "names");
-    xi_namepool_open(pmp, namebuf, &names, &names_index);
+    pin_mk_name(namebuf, name, "names");
+    pin_namepool_open(pmp, namebuf, &names, &names_index);
     if (names == NULL)
 	goto fail;
 
-    xi_mk_name(namebuf, name, "namespaces");
-    xi_ns_open(pmp, namebuf, &ns_map, &ns_map_index);
+    pin_mk_name(namebuf, name, "namespaces");
+    pin_ns_open(pmp, namebuf, &ns_map, &ns_map_index);
     if (ns_map == NULL)
 	goto fail;
 
-    nodes = pa_fixed_open(pmp, xi_mk_name(namebuf, name, "nodes"), XI_SHIFT,
+    nodes = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "nodes"), XI_SHIFT,
 			 sizeof(*nodep), XI_MAX_ATOMS);
     if (nodes == NULL)
 	goto fail;
 
-    pap = pa_arb_open(pmp, xi_mk_name(namebuf, name, "data"));
+    pap = pa_arb_open(pmp, pin_mk_name(namebuf, name, "data"));
     if (pap == NULL)
 	goto fail;
 
     nodeset_chunks = pa_fixed_open(pmp,
-			xi_mk_name(namebuf, name, "nodeset-chunks"), XI_SHIFT,
+			pin_mk_name(namebuf, name, "nodeset-chunks"), XI_SHIFT,
 			XI_NODESET_CHUNK_SIZE, XI_MAX_ATOMS);
     if (nodeset_chunks == NULL)
 	goto fail;
@@ -92,8 +92,8 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
     pa_fixed_set_flags(nodeset_chunks, PFF_INIT_ZERO);
 
     nodeset_info = pa_fixed_open(pmp,
-			xi_mk_name(namebuf, name, "nodeset-info"), XI_SHIFT,
-			sizeof(xi_nodeset_info_t), XI_MAX_ATOMS);
+			pin_mk_name(namebuf, name, "nodeset-info"), XI_SHIFT,
+			sizeof(pin_nodeset_info_t), XI_MAX_ATOMS);
     if (nodeset_info == NULL)
 	goto fail;
 
@@ -143,7 +143,7 @@ xi_workspace_open (pa_mmap_t *pmp, const char *name)
 
 /* Key function for the namepool patricia tree (istr-backed) */
 static const psu_byte_t *
-xi_namepool_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+pin_namepool_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
 {
     return (const psu_byte_t *)
 	pa_istr_atom_string(pp->pp_data,
@@ -152,14 +152,14 @@ xi_namepool_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
 
 /* Key function for the namespace-map patricia tree (fixed-backed) */
 static const uint8_t *
-xi_ns_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+pin_ns_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
 {
     return pa_fixed_atom_addr(pp->pp_data,
 			      pa_fixed_atom(pa_pat_data_atom_of(datom)));
 }
 
 void
-xi_namepool_open (pa_mmap_t *pmap, const char *basename,
+pin_namepool_open (pa_mmap_t *pmap, const char *basename,
 		  pa_istr_t **namesp, pa_pat_t **names_indexp)
 {
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
@@ -167,13 +167,13 @@ xi_namepool_open (pa_mmap_t *pmap, const char *basename,
     pa_pat_t *ppp = NULL;
 
     /* The name pool holds the names of our elements, attributes, etc */
-    pip = pa_istr_open(pmap, xi_mk_name(namebuf, basename, "data"),
+    pip = pa_istr_open(pmap, pin_mk_name(namebuf, basename, "data"),
 		       XI_SHIFT, XI_ISTR_SHIFT, XI_MAX_ATOMS);
     if (pip == NULL)
 	return;
 
-    ppp = pa_pat_open(pmap, xi_mk_name(namebuf, basename, "index"),
-		      pip, xi_namepool_key_func,
+    ppp = pa_pat_open(pmap, pin_mk_name(namebuf, basename, "index"),
+		      pip, pin_namepool_key_func,
 		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
     if (ppp == NULL) {
 	pa_istr_close(pip);
@@ -185,7 +185,7 @@ xi_namepool_open (pa_mmap_t *pmap, const char *basename,
 }
 
 void
-xi_ns_open (pa_mmap_t *pmap, const char *basename,
+pin_ns_open (pa_mmap_t *pmap, const char *basename,
 	    pa_fixed_t **nsp, pa_pat_t **ns_indexp)
 {
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
@@ -193,13 +193,13 @@ xi_ns_open (pa_mmap_t *pmap, const char *basename,
     pa_pat_t *ppp = NULL;
 
     /* The ns pool holds the names of our elements, attributes, etc */
-    pfp = pa_fixed_open(pmap, xi_mk_name(namebuf, basename, "data"),
-			XI_SHIFT, sizeof(xi_ns_map_t), XI_MAX_ATOMS);
+    pfp = pa_fixed_open(pmap, pin_mk_name(namebuf, basename, "data"),
+			XI_SHIFT, sizeof(pin_ns_map_t), XI_MAX_ATOMS);
     if (pfp == NULL)
 	return;
 
-    ppp = pa_pat_open(pmap, xi_mk_name(namebuf, basename, "index"),
-		      pfp, xi_ns_key_func,
+    ppp = pa_pat_open(pmap, pin_mk_name(namebuf, basename, "index"),
+		      pfp, pin_ns_key_func,
 		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
     if (ppp == NULL) {
 	pa_fixed_close(pfp);
@@ -217,7 +217,7 @@ xi_ns_open (pa_mmap_t *pmap, const char *basename,
  * as lead shielding.
  */
 pa_atom_t
-xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp)
+pin_namepool_atom (pin_workspace_t *xwp, const char *data, pin_boolean_t createp)
 {
     uint16_t len = strlen(data) + 1;
     pa_pat_t *ppp = xwp->xw_names_index;
@@ -237,22 +237,22 @@ xi_namepool_atom (xi_workspace_t *xwp, const char *data, xi_boolean_t createp)
 }
 
 pa_atom_t
-xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
+pin_get_attrib (pin_workspace_t *xwp, pin_node_t *nodep, pa_atom_t name_atom)
 {
-    xi_node_id_t node_id;
-    xi_depth_t depth = nodep->xn_depth;
+    pin_node_id_t node_id;
+    pin_depth_t depth = nodep->xn_depth;
 
     if (!(nodep->xn_flags & XNF_ATTRIBS_PRESENT))
 	return PA_NULL_ATOM;
 
 #if 0 /* XXX */
     if (!(nodep->xn_flags & XNF_ATTRIBS_EXTRACTED))
-	xi_node_attrib_extract(xwp, nodep);
+	pin_node_attrib_extract(xwp, nodep);
 #endif
 
-    for (node_id = xi_node_child(nodep); !xi_node_id_is_null(node_id);
+    for (node_id = pin_node_child(nodep); !pin_node_id_is_null(node_id);
 	 node_id = nodep->xn_next) {
-	nodep = xi_node_addr(xwp, node_id);
+	nodep = pin_node_addr(xwp, node_id);
 	if (nodep == NULL)	/* Should not occur */
 	    break;
 
@@ -286,50 +286,50 @@ xi_get_attrib (xi_workspace_t *xwp, xi_node_t *nodep, pa_atom_t name_atom)
  * the name pool).  Another fine engineering trade off that's such to
  * bite me in the lower cheeks one day.
  */
-xi_ns_map_id_t
-xi_ns_find (xi_workspace_t *xwp, const char *prefix, const char *uri,
-	    xi_boolean_t createp)
+pin_ns_map_id_t
+pin_ns_find (pin_workspace_t *xwp, const char *prefix, const char *uri,
+	    pin_boolean_t createp)
 {
     pa_atom_t prefix_atom = PA_NULL_ATOM, uri_atom = PA_NULL_ATOM;
 
     if (prefix != NULL && *prefix != '\0') {
-	prefix_atom = xi_namepool_atom(xwp, prefix, TRUE);
+	prefix_atom = pin_namepool_atom(xwp, prefix, TRUE);
 	if (prefix_atom == PA_NULL_ATOM)
-	    return xi_ns_map_id_null_atom();
+	    return pin_ns_map_id_null_atom();
     }
 
     if (uri != NULL && *uri != '\0') {
-	uri_atom = xi_namepool_atom(xwp, uri, TRUE);
+	uri_atom = pin_namepool_atom(xwp, uri, TRUE);
 	if (uri_atom == PA_NULL_ATOM)
-	    return xi_ns_map_id_null_atom();
+	    return pin_ns_map_id_null_atom();
     }
 
     pa_pat_t *ppp = xwp->xw_ns_map_index;
-    xi_ns_map_t ns = { prefix_atom, uri_atom };
+    pin_ns_map_t ns = { prefix_atom, uri_atom };
     pa_pat_data_atom_t datom = pa_pat_get_atom(ppp, sizeof(ns), &ns);
     if (pa_pat_data_is_null(datom) && createp) {
-	xi_ns_map_id_t ns_id;
-	xi_ns_map_t *nsp = xi_ns_map_alloc(xwp, &ns_id);
+	pin_ns_map_id_t ns_id;
+	pin_ns_map_t *nsp = pin_ns_map_alloc(xwp, &ns_id);
 	if (nsp == NULL) {
 	    pa_warning(0, "namespace create key failed for '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
-	    return xi_ns_map_id_null_atom();
+	    return pin_ns_map_id_null_atom();
 	}
 
 	*nsp = ns;		/* Initialize newly allocated ns_map entry */
 
-	datom = pa_pat_data_atom(pa_fixed_atom_of(xi_ns_map_id_atom_of(ns_id)));
+	datom = pa_pat_data_atom(pa_fixed_atom_of(pin_ns_map_id_atom_of(ns_id)));
 	if (!pa_pat_add(ppp, datom, sizeof(ns))) {
-	    xi_ns_map_free(xwp, ns_id);
+	    pin_ns_map_free(xwp, ns_id);
 
 	    pa_warning(0, "duplicate key failure for namespace '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
-	    return xi_ns_map_id_null_atom();
+	    return pin_ns_map_id_null_atom();
 	}
 
 	return ns_id;
     }
 
-    return pa_pat_data_is_null(datom) ? xi_ns_map_id_null_atom()
-				      : xi_ns_map_id(pa_pat_data_atom_of(datom));
+    return pa_pat_data_is_null(datom) ? pin_ns_map_id_null_atom()
+				      : pin_ns_map_id(pa_pat_data_atom_of(datom));
 }
