@@ -20,43 +20,42 @@ AM_CFLAGS = \
     -I${top_srcdir} \
     -I${top_builddir} \
     -I${top_builddir}/parrotdb \
-    -I${top_builddir}/libxi \
+    -I${top_builddir}/libpin \
     ${WARNINGS}
 
 # Ick: maintained by hand!
 TEST_CASES = \
-xi01.c \
-xi02.c \
-xi03.c \
-xi04.c
+pin_01.c \
+pin_02.c \
+pin_03.c \
+pin_04.c
 
-xi01_test_SOURCES = xi01.c
-xi02_test_SOURCES = xi02.c
-xi03_test_SOURCES = xi03.c
-xi04_test_SOURCES = xi04.c
+pin_01_test_SOURCES = pin_01.c
+pin_02_test_SOURCES = pin_02.c
+pin_03_test_SOURCES = pin_03.c
+pin_04_test_SOURCES = pin_04.c
 
-# xi04 needs parrotdb; xi01 only needs libxi
-xi04_test_LDADD = \
+# pin04 needs parrotdb; pin01 only needs libpin
+pin_04_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/parrotdb/libparrotdb.la
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
-SAVEDDATA := $(shell cd ${srcdir} ; echo saved/xi*.out saved/xi*.err)
+SAVEDDATA := $(shell cd ${srcdir} ; echo saved/pin_*.out saved/pin_*.err)
 
 TEST_FILES = ${TEST_CASES:.c=.test}
 noinst_PROGRAMS = ${TEST_FILES}
 
 LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
-    ${top_builddir}/libxi/libxi.la
+    ${top_builddir}/libpin/libpin.la
 
 EXTRA_DIST = \
     ${TEST_CASES} \
     script.xml \
-    xi03.01.in \
-    xi04.01.in \
-    xi04.02.in \
-    make-xi04-02.py \
+    pin_03.01.in \
+    pin_04.01.in \
+    pin_04.02.in \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'

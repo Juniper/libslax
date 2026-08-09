@@ -631,7 +631,7 @@ AC_CONFIG_FILES([
   slax-config
   libpsu/Makefile
   parrotdb/Makefile
-  libxi/Makefile
+  libpin/Makefile
   libslax/Makefile
   libslax/slaxversion.h
   extensions/Makefile
@@ -651,7 +651,7 @@ AC_CONFIG_FILES([
   tests/errors/Makefile
   tests/libxslt/Makefile
   tests/pa/Makefile
-  tests/xi/Makefile
+  tests/pin/Makefile
   bin/Makefile
   doc/Makefile
   doc/oxtradoc/oxtradoc

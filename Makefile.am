@@ -14,7 +14,7 @@ SUBDIRS = \
     libpsu \
     parrotdb \
     libslax \
-    libxi \
+    libpin \
     extensions \
     slaxproc \
     tests \

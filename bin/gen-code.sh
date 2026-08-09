@@ -87,7 +87,7 @@ $addr_fn ($base_type *basep, pa_atom_t _atom)
 '
 
 # Like atom_generic but wraps pa_fixed_atom_t (for PA_FIXED_ATOM_TYPE style).
-# Used for libxi typed atoms that index into pa_fixed_t arrays.
+# Used for libpin typed atoms that index into pa_fixed_t arrays.
 FIXED_ATOM_CODE='
 typedef struct $atom_struct {
     pa_fixed_atom_t $field;		/* Fixed atom number */
@@ -143,147 +143,147 @@ field_mmap=pma_atom
 field_pat=ppa_atom
 field_pat_data=ppa_data_atom
 
-# libxi fixed-atom typed wrappers: file, type, struct, field, is_null, build, atom_of, null_atom
-atom_xi_rule_id="
-xi_rule_id_gen.h \
-xi_rule_id_t \
-xi_rule_id_s \
+# libpin fixed-atom typed wrappers: file, type, struct, field, is_null, build, atom_of, null_atom
+atom_pin_rule_id="
+pin_rule_id_gen.h \
+pin_rule_id_t \
+pin_rule_id_s \
 xrid_atom \
-xi_rule_id_is_null \
-xi_rule_id \
-xi_rule_id_atom_of \
-xi_rule_id_null_atom \
+pin_rule_id_is_null \
+pin_rule_id \
+pin_rule_id_atom_of \
+pin_rule_id_null_atom \
 "
 
-atom_xi_rstate_id="
-xi_rstate_id_gen.h \
-xi_rstate_id_t \
-xi_rstate_id_s \
+atom_pin_rstate_id="
+pin_rstate_id_gen.h \
+pin_rstate_id_t \
+pin_rstate_id_s \
 xrsid_atom \
-xi_rstate_id_is_null \
-xi_rstate_id \
-xi_rstate_id_atom_of \
-xi_rstate_id_null_atom \
+pin_rstate_id_is_null \
+pin_rstate_id \
+pin_rstate_id_atom_of \
+pin_rstate_id_null_atom \
 "
 
-atom_xi_node_id="
-xi_node_id_gen.h \
-xi_node_id_t \
-xi_node_id_s \
+atom_pin_node_id="
+pin_node_id_gen.h \
+pin_node_id_t \
+pin_node_id_s \
 xnid_atom \
-xi_node_id_is_null \
-xi_node_id \
-xi_node_id_atom_of \
-xi_node_id_null_atom \
+pin_node_id_is_null \
+pin_node_id \
+pin_node_id_atom_of \
+pin_node_id_null_atom \
 "
 
-atom_xi_ns_map_id="
-xi_ns_map_id_gen.h \
-xi_ns_map_id_t \
-xi_ns_map_id_s \
+atom_pin_ns_map_id="
+pin_ns_map_id_gen.h \
+pin_ns_map_id_t \
+pin_ns_map_id_s \
 xnsid_atom \
-xi_ns_map_id_is_null \
-xi_ns_map_id \
-xi_ns_map_id_atom_of \
-xi_ns_map_id_null_atom \
+pin_ns_map_id_is_null \
+pin_ns_map_id \
+pin_ns_map_id_atom_of \
+pin_ns_map_id_null_atom \
 "
 
-xi_fixed_atoms="\
-xi_rule_id \
-xi_rstate_id \
-xi_node_id \
-xi_ns_map_id \
+pin_fixed_atoms="\
+pin_rule_id \
+pin_rstate_id \
+pin_node_id \
+pin_ns_map_id \
 "
 
-# libxi typed-atom function sets: file, atom_type, elem_type, base_type, field,
+# libpin typed-atom function sets: file, atom_type, elem_type, base_type, field,
 #   alloc_fn, free_fn, addr_fn, build_fn, atom_of_fn, is_null_fn
-fixed_funcs_xi_rule="
-xi_rule_id_funcs_gen.h \
-xi_rule_id_t \
-xi_rule_t \
-xi_rulebook_t \
+fixed_funcs_pin_rule="
+pin_rule_id_funcs_gen.h \
+pin_rule_id_t \
+pin_rule_t \
+pin_rulebook_t \
 xrb_rules \
-xi_rule_alloc \
-xi_rule_free \
-xi_rule_addr \
-xi_rule_id \
-xi_rule_id_atom_of \
-xi_rule_id_is_null \
+pin_rule_alloc \
+pin_rule_free \
+pin_rule_addr \
+pin_rule_id \
+pin_rule_id_atom_of \
+pin_rule_id_is_null \
 "
 
-fixed_funcs_xi_rstate="
-xi_rstate_id_funcs_gen.h \
-xi_rstate_id_t \
-xi_rstate_t \
-xi_rulebook_t \
+fixed_funcs_pin_rstate="
+pin_rstate_id_funcs_gen.h \
+pin_rstate_id_t \
+pin_rstate_t \
+pin_rulebook_t \
 xrb_states \
-xi_rstate_alloc \
-xi_rstate_free \
-xi_rstate_addr \
-xi_rstate_id \
-xi_rstate_id_atom_of \
-xi_rstate_id_is_null \
+pin_rstate_alloc \
+pin_rstate_free \
+pin_rstate_addr \
+pin_rstate_id \
+pin_rstate_id_atom_of \
+pin_rstate_id_is_null \
 "
 
-fixed_funcs_xi_node="
-xi_node_gen.h \
-xi_node_id_t \
-xi_node_t \
-xi_workspace_t \
+fixed_funcs_pin_node="
+pin_node_gen.h \
+pin_node_id_t \
+pin_node_t \
+pin_workspace_t \
 xw_nodes \
-xi_node_alloc \
-xi_node_free \
-xi_node_addr \
-xi_node_id \
-xi_node_id_atom_of \
-xi_node_id_is_null \
+pin_node_alloc \
+pin_node_free \
+pin_node_addr \
+pin_node_id \
+pin_node_id_atom_of \
+pin_node_id_is_null \
 "
 
-fixed_funcs_xi_ns_map="
-xi_ns_map_gen.h \
-xi_ns_map_id_t \
-xi_ns_map_t \
-xi_workspace_t \
+fixed_funcs_pin_ns_map="
+pin_ns_map_gen.h \
+pin_ns_map_id_t \
+pin_ns_map_t \
+pin_workspace_t \
 xw_ns_map \
-xi_ns_map_alloc \
-xi_ns_map_free \
-xi_ns_map_addr \
-xi_ns_map_id \
-xi_ns_map_id_atom_of \
-xi_ns_map_id_is_null \
+pin_ns_map_alloc \
+pin_ns_map_free \
+pin_ns_map_addr \
+pin_ns_map_id \
+pin_ns_map_id_atom_of \
+pin_ns_map_id_is_null \
 "
 
-xi_fixed_func_atoms="\
-xi_rule \
-xi_rstate \
-xi_node \
-xi_ns_map \
+pin_fixed_func_atoms="\
+pin_rule \
+pin_rstate \
+pin_node \
+pin_ns_map \
 "
 
-# libxi plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
-plain_xi_nodeset_chunk="
-xi_nodeset_chunk_gen.h \
-xi_nodeset_chunk_t \
-xi_nodeset_t \
+# libpin plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
+plain_pin_nodeset_chunk="
+pin_nodeset_chunk_gen.h \
+pin_nodeset_chunk_t \
+pin_nodeset_t \
 xns_workspace->xw_nodeset_chunks \
-xi_nodeset_chunk_alloc \
-xi_nodeset_chunk_free \
-xi_nodeset_chunk_addr \
+pin_nodeset_chunk_alloc \
+pin_nodeset_chunk_free \
+pin_nodeset_chunk_addr \
 "
 
-plain_xi_nodeset_info="
-xi_nodeset_info_gen.h \
-xi_nodeset_info_t \
-xi_workspace_t \
+plain_pin_nodeset_info="
+pin_nodeset_info_gen.h \
+pin_nodeset_info_t \
+pin_workspace_t \
 xw_nodeset_info \
-xi_nodeset_info_alloc \
-xi_nodeset_info_free \
-xi_nodeset_info_addr \
+pin_nodeset_info_alloc \
+pin_nodeset_info_free \
+pin_nodeset_info_addr \
 "
 
-xi_plain_atoms="\
-xi_nodeset_chunk \
-xi_nodeset_info \
+pin_plain_atoms="\
+pin_nodeset_chunk \
+pin_nodeset_info \
 "
 
 ATOM_CODE='
@@ -530,15 +530,15 @@ do_one() {
     make_one_named_atom $1
 }
 
-do_xi() {
+do_pin() {
     local name
-    for name in $xi_fixed_atoms; do
+    for name in $pin_fixed_atoms; do
 	make_one_fixed_named_atom $name
     done
-    for name in $xi_fixed_func_atoms; do
+    for name in $pin_fixed_func_atoms; do
 	make_one_fixed_funcs_named_atom $name
     done
-    for name in $xi_plain_atoms; do
+    for name in $pin_plain_atoms; do
 	make_one_plain_named_atom $name
     done
 

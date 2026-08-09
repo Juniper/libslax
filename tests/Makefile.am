@@ -13,7 +13,7 @@ SUBDIRS= \
     errors \
     art \
     pa \
-    xi
+    pin
 
 if USE_LIBXSLT_TESTS
 SUBDIRS += libxslt

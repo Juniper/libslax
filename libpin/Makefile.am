@@ -17,60 +17,60 @@ include ${top_srcdir}/warnings.mk
 AM_CFLAGS = \
     -I${top_builddir} \
     -I${top_builddir}/parrotdb \
-    -I${top_builddir}/libxi \
+    -I${top_builddir}/libpin \
     -I${top_srcdir} \
     ${WARNINGS}
 
-lib_LTLIBRARIES = libxi.la
+lib_LTLIBRARIES = libpin.la
 
-libxiincdir = ${includedir}/libxi
+libpinincdir = ${includedir}/libpin
 
-libxiinc_HEADERS = \
-    xicommon.h \
-    xinodeset.h \
-    xiparse.h \
-    xirules.h \
-    xisource.h \
-    xitree.h \
-    xiwhiffle.h \
-    xiworkspace.h \
-    xixpath.h
+libpininc_HEADERS = \
+    pin_common.h \
+    pin_nodeset.h \
+    pin_parse.h \
+    pin_rules.h \
+    pin_source.h \
+    pin_tree.h \
+    pin_whiffle.h \
+    pin_workspace.h \
+    pin_xpath.h
 
-libxi_la_SOURCES = \
-    xisource.c \
-    xiworkspace.c \
-    xitree.c \
-    xiparse.c \
-    xirules.c
+libpin_la_SOURCES = \
+    pin_source.c \
+    pin_workspace.c \
+    pin_tree.c \
+    pin_parse.c \
+    pin_rules.c
 
-libxi_la_LIBADD = \
+libpin_la_LIBADD = \
     $(top_builddir)/libpsu/libpsu.la \
     $(top_builddir)/parrotdb/libparrotdb.la
 
 XXXX=\
-    xiwhiffle.c \
-    xixpath.c
+    pinwhiffle.c \
+    pinxpath.c
 
 GEN_CODE = ${top_srcdir}/bin/gen-code.sh
 GEN_STAMP = gen/.stamp
 
 GENERATED = \
-    gen/xi_rule_id_gen.h \
-    gen/xi_rstate_id_gen.h \
-    gen/xi_node_id_gen.h \
-    gen/xi_ns_map_id_gen.h \
-    gen/xi_rule_id_funcs_gen.h \
-    gen/xi_rstate_id_funcs_gen.h \
-    gen/xi_node_gen.h \
-    gen/xi_ns_map_gen.h \
-    gen/xi_nodeset_chunk_gen.h \
-    gen/xi_nodeset_info_gen.h
+    gen/pin_rule_id_gen.h \
+    gen/pin_rstate_id_gen.h \
+    gen/pin_node_id_gen.h \
+    gen/pin_ns_map_id_gen.h \
+    gen/pin_rule_id_funcs_gen.h \
+    gen/pin_rstate_id_funcs_gen.h \
+    gen/pin_node_gen.h \
+    gen/pin_ns_map_gen.h \
+    gen/pin_nodeset_chunk_gen.h \
+    gen/pin_nodeset_info_gen.h
 
 BUILT_SOURCES = ${GENERATED}
 
 $(GEN_STAMP): $(GEN_CODE)
 	$(MKDIR_P) gen
-	sh $(GEN_CODE) xi
+	sh $(GEN_CODE) pin
 	touch $(GEN_STAMP)
 
 $(GENERATED): $(GEN_STAMP)
