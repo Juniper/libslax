@@ -25,21 +25,21 @@
 #include <libpsu/psulog.h>
 #include <parrotdb/pafixed.h>
 
-typedef uint8_t xi_nodeset_type_t;
-typedef uint8_t xi_nodeset_flags_t;
-typedef pa_atom_t xi_nodeset_chunk_id_t;
+typedef uint8_t pin_nodeset_type_t;
+typedef uint8_t pin_nodeset_flags_t;
+typedef pa_atom_t pin_nodeset_chunk_id_t;
 
 /*
  * Describes a node set, as viewed from the mmap.  first/last work
  * as a tail-queue to allow easy addition of new nodes.
  */
-typedef struct xi_nodeset_info_s {
-    xi_nodeset_type_t xnsi_type;   /* Node set type */
-    xi_nodeset_flags_t xnsi_flags; /* Flags */
+typedef struct pin_nodeset_info_s {
+    pin_nodeset_type_t xnsi_type;   /* Node set type */
+    pin_nodeset_flags_t xnsi_flags; /* Flags */
     uint16_t xnsi_chunk_size;	   /* Size of chunk */
-    xi_nodeset_chunk_id_t xnsi_first; /* Start of chain of chunks */
-    xi_nodeset_chunk_id_t xnsi_last; /* End of chain of chunks */
-} xi_nodeset_info_t;
+    pin_nodeset_chunk_id_t xnsi_first; /* Start of chain of chunks */
+    pin_nodeset_chunk_id_t xnsi_last; /* End of chain of chunks */
+} pin_nodeset_info_t;
 
 #define XI_NSTYPE_NORMAL 0	/* Normal node set */
 #define XI_NSTYPE_RTF	1	/* Result tree fragment */
@@ -49,31 +49,31 @@ typedef struct xi_nodeset_info_s {
 /*
  * The chunk is a page of nodes within a listed list.
  */
-typedef struct xi_nodeset_chunk_s {
-    xi_nodeset_chunk_id_t xnsc_next;		/* Next chunk in the chain */
+typedef struct pin_nodeset_chunk_s {
+    pin_nodeset_chunk_id_t xnsc_next;		/* Next chunk in the chain */
     uint32_t xnsc_count;	/* Number of used nodes in this chunk */
     pa_atom_t xnsc_nodes[0];	/* Member nodes */
-} xi_nodeset_chunk_t;
+} pin_nodeset_chunk_t;
 
 #define XI_NODESET_CHUNK_SHIFT	8
 #define XI_NODESET_CHUNK_SIZE	(1 << XI_NODESET_CHUNK_SHIFT)
 #define XI_NODESET_CHUNK_ALLOC_COUNT(_size) \
-    ((_size - sizeof(xi_nodeset_chunk_t)) / sizeof(pa_atom_t))
+    ((_size - sizeof(pin_nodeset_chunk_t)) / sizeof(pa_atom_t))
 
 /*
  * Number of nodes in a single chunk, meaning a page of node records,
- * minus the "overhead" (xi_nodeset_chunk_t).
+ * minus the "overhead" (pin_nodeset_chunk_t).
  */
 #define XI_NODESET_NUM_PER_CHUNK \
-    ((XI_NODESET_CHUNK_SIZE - sizeof(xi_nodeset_chunk_t)) / sizeof(pa_atom_t))
+    ((XI_NODESET_CHUNK_SIZE - sizeof(pin_nodeset_chunk_t)) / sizeof(pa_atom_t))
 
-typedef pa_atom_t xi_nodeset_info_atom_t; /* Our atom type */
+typedef pa_atom_t pin_nodeset_info_atom_t; /* Our atom type */
 
-typedef struct xi_nodeset_s {
-    xi_workspace_t *xns_workspace; /* Current workspace */
-    xi_nodeset_info_atom_t xns_info_atom;  /* Our info block's atom number */
-    xi_nodeset_info_t *xns_infop;  /* Our info block pointer */
-} xi_nodeset_t;
+typedef struct pin_nodeset_s {
+    pin_workspace_t *xns_workspace; /* Current workspace */
+    pin_nodeset_info_atom_t xns_info_atom;  /* Our info block's atom number */
+    pin_nodeset_info_t *xns_infop;  /* Our info block pointer */
+} pin_nodeset_t;
 
 #define xns_type xns_infop->xnsi_type
 #define xns_flags xns_infop->xnsi_flags
@@ -82,8 +82,8 @@ typedef struct xi_nodeset_s {
 #define xns_last xns_infop->xnsi_last
 
 /* These includes need the above types */
-#include "gen/xi_nodeset_chunk_gen.h"
-#include "gen/xi_nodeset_info_gen.h"
+#include "gen/pin_nodeset_chunk_gen.h"
+#include "gen/pin_nodeset_info_gen.h"
 
 /*
  * Create a nodeset in the given workspace with the given type and flags.
@@ -94,18 +94,18 @@ typedef struct xi_nodeset_s {
  * PFF_INIT_ZERO flag set, so we don't need to explicitly zero them when
  * allocated.
  */
-static inline xi_nodeset_t *
-xi_nodeset_alloc (xi_workspace_t *xwp, xi_nodeset_type_t type,
-		  xi_nodeset_flags_t flags)
+static inline pin_nodeset_t *
+pin_nodeset_alloc (pin_workspace_t *xwp, pin_nodeset_type_t type,
+		  pin_nodeset_flags_t flags)
 {
-    xi_nodeset_info_atom_t info_atom;
-    xi_nodeset_info_t *infop = xi_nodeset_info_alloc(xwp, &info_atom);
+    pin_nodeset_info_atom_t info_atom;
+    pin_nodeset_info_t *infop = pin_nodeset_info_alloc(xwp, &info_atom);
     if (infop == NULL)
 	return NULL;
 
-    xi_nodeset_t *nodeset = calloc(1, sizeof(*nodeset));
+    pin_nodeset_t *nodeset = calloc(1, sizeof(*nodeset));
     if (nodeset == NULL) {
-	xi_nodeset_info_free(xwp, info_atom);
+	pin_nodeset_info_free(xwp, info_atom);
 	return NULL;
     }
 
@@ -132,14 +132,14 @@ xi_nodeset_alloc (xi_workspace_t *xwp, xi_nodeset_type_t type,
  * Add a node to a nodeset, allocating a new chunk if needed
  */
 static inline void
-xi_nodeset_add (xi_nodeset_t *nodeset, pa_atom_t node_atom)
+pin_nodeset_add (pin_nodeset_t *nodeset, pa_atom_t node_atom)
 {
-    xi_nodeset_chunk_t *chunkp;
+    pin_nodeset_chunk_t *chunkp;
     pa_atom_t atom;
 
     if (nodeset->xns_first == PA_NULL_ATOM) {
 	/* Our nodeset is empty, so we allocate the first chunk */
-	chunkp = xi_nodeset_chunk_alloc(nodeset, &atom);
+	chunkp = pin_nodeset_chunk_alloc(nodeset, &atom);
 	if (chunkp == NULL)
 	    return;
 
@@ -151,13 +151,13 @@ xi_nodeset_add (xi_nodeset_t *nodeset, pa_atom_t node_atom)
 
     } else {
 	/* Not empty; determing if the last chunk is full */
-	chunkp = xi_nodeset_chunk_addr(nodeset, nodeset->xns_last);
+	chunkp = pin_nodeset_chunk_addr(nodeset, nodeset->xns_last);
 	if (chunkp == NULL)
 	    return;		/* Should not occur */
 
 	if (chunkp->xnsc_count == nodeset->xns_infop->xnsi_chunk_size) {
 	    /* Full house; make a new chunk */
-	    xi_nodeset_chunk_t *newp = xi_nodeset_chunk_alloc(nodeset, &atom);
+	    pin_nodeset_chunk_t *newp = pin_nodeset_chunk_alloc(nodeset, &atom);
 	    if (newp == NULL)
 		return;		/* Out of memory */
 
@@ -176,49 +176,49 @@ xi_nodeset_add (xi_nodeset_t *nodeset, pa_atom_t node_atom)
  * Free a nodeset, releasing any resources it holds
  */
 static inline void
-xi_nodeset_free (xi_nodeset_t *nodeset)
+pin_nodeset_free (pin_nodeset_t *nodeset)
 {
     if (nodeset == NULL)
 	return;
 
-    xi_workspace_t *xwp = nodeset->xns_workspace;
-    xi_nodeset_chunk_t *chunkp;
-    xi_nodeset_chunk_id_t id, last_id;
+    pin_workspace_t *xwp = nodeset->xns_workspace;
+    pin_nodeset_chunk_t *chunkp;
+    pin_nodeset_chunk_id_t id, last_id;
 
     id = nodeset->xns_first;
     nodeset->xns_first = PA_NULL_ATOM;
 
     /* Free all the chunks inside this nodeset */
-    for (chunkp = xi_nodeset_chunk_addr(nodeset, id); chunkp;
-	 chunkp = xi_nodeset_chunk_addr(nodeset, id)) {
+    for (chunkp = pin_nodeset_chunk_addr(nodeset, id); chunkp;
+	 chunkp = pin_nodeset_chunk_addr(nodeset, id)) {
 	last_id = id;
 	id = chunkp->xnsc_next; /* Fetch before free */
-	xi_nodeset_chunk_free(nodeset, last_id);
+	pin_nodeset_chunk_free(nodeset, last_id);
 	if (id == PA_NULL_ATOM)
 	    break;
     }
 
     /* Free the info and user-space pieces */
-    xi_nodeset_info_free(xwp, nodeset->xns_info_atom);
+    pin_nodeset_info_free(xwp, nodeset->xns_info_atom);
     free(nodeset);
 }
 
 static inline void
-xi_nodeset_dump (xi_nodeset_t *nodeset)
+pin_nodeset_dump (pin_nodeset_t *nodeset)
 {
     if (nodeset == NULL)
 	return;
 
-    xi_nodeset_chunk_t *chunkp;
-    xi_nodeset_chunk_id_t id = nodeset->xns_first;
+    pin_nodeset_chunk_t *chunkp;
+    pin_nodeset_chunk_id_t id = nodeset->xns_first;
     uint32_t j;
 
     psu_log("nodeset dump for %u: [%u:%u]",
 	    nodeset->xns_info_atom, nodeset->xns_first, nodeset->xns_last);
 
     /* Visit all the chunks inside this nodeset */
-    for (chunkp = xi_nodeset_chunk_addr(nodeset, id); chunkp;
-	 chunkp = xi_nodeset_chunk_addr(nodeset, id)) {
+    for (chunkp = pin_nodeset_chunk_addr(nodeset, id); chunkp;
+	 chunkp = pin_nodeset_chunk_addr(nodeset, id)) {
 	psu_log("  nodeset chunk %u: (%d)", id, chunkp->xnsc_count);
 	for (j = 0; j < chunkp->xnsc_count; j++)
 	    psu_log("    member %u", chunkp->xnsc_nodes[j]);
