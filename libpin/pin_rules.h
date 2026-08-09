@@ -27,33 +27,33 @@
 #include <parrotdb/pafixed.h>
 #include <parrotdb/pabitmap.h>
 
-typedef uint8_t xi_action_type_t;
+typedef uint8_t pin_action_type_t;
 
-/* Values for xi_action_type_t */
+/* Values for pin_action_type_t */
 #define XIA_NONE	0
 #define XIA_DISCARD	1	/* Discard with all due haste */
 #define XIA_SAVE	2	/* Save node (at insertion point) */
 #define XIA_SAVE_ATSTR	3	/* Save node and attribute string */
 #define XIA_SAVE_ATTRIB	4	/* Save node and parsed attributes */
 #define XIA_EMIT	5	/* Emit as output */
-#define XIA_RETURN	6	/* Force return from xi_parse() */
+#define XIA_RETURN	6	/* Force return from pin_parse() */
 
 /* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
-#include "gen/xi_rule_id_gen.h"
-#include "gen/xi_rstate_id_gen.h"
+#include "gen/pin_rule_id_gen.h"
+#include "gen/pin_rstate_id_gen.h"
 
 /*
  * A rule defines a behavior for an incoming token.  A token can be
  * copied, saved, or discarded.  Or a function callback can triggered.
  */
-typedef struct xi_rule_s {
-    xi_rule_id_t xr_next;	/* Next rule for this state */
+typedef struct pin_rule_s {
+    pin_rule_id_t xr_next;	/* Next rule for this state */
     uint32_t xr_flags;		/* Flags for this rule */
     pa_bitmap_id_t xr_bitmap;	/* Elements affected by this rule */
-    xi_action_type_t xr_action;	/* What to do when the rule matches */
+    pin_action_type_t xr_action;	/* What to do when the rule matches */
     pa_atom_t xr_use_tag;	/* Different tag to emit */
-    xi_rstate_id_t xr_new_state;/* New state (in the rulebook) to enter */
-} xi_rule_t;
+    pin_rstate_id_t xr_new_state;/* New state (in the rulebook) to enter */
+} pin_rule_t;
 
 /* Flags for xr_flags */
 #define XRF_MATCH_ALL	(1<<0)	/* Wildcard match */
@@ -61,57 +61,57 @@ typedef struct xi_rule_s {
 /*
  * A state represents a set of associated rules
  */
-typedef struct xi_rstate_s {
-    xi_rule_id_t xrbs_first_rule; /* Number of first rule (in xb_rules) */
-    xi_rule_id_t xrbs_default_rule; /* Number of default rule (in xb_rules) */
+typedef struct pin_rstate_s {
+    pin_rule_id_t xrbs_first_rule; /* Number of first rule (in xb_rules) */
+    pin_rule_id_t xrbs_default_rule; /* Number of default rule (in xb_rules) */
     uint16_t xrbs_flags;	/* Flags for this state */
-} xi_rstate_t;
+} pin_rstate_t;
 
 /* Flags for xrbs_flags */
 #define XRBSF_INUSE	(1<<0)	/* State is used/defined */
 
-typedef struct xi_rulebook_info_s {
-    xi_rstate_id_t xrsi_initial_state; /* First state in the rule book */
-    xi_rstate_id_t xrsi_max_state;     /* Maximum allocated (seen) state */
-} xi_rulebook_info_t;
+typedef struct pin_rulebook_info_s {
+    pin_rstate_id_t xrsi_initial_state; /* First state in the rule book */
+    pin_rstate_id_t xrsi_max_state;     /* Maximum allocated (seen) state */
+} pin_rulebook_info_t;
 
 /*
  * A rule set is an optimized set of rules
  */
-typedef struct xi_rulebook_s {
-    xi_workspace_t *xrb_workspace; /* Our workspace */
-    xi_parse_t *xrb_script;	  /* Script we're loading/building */
-    xi_rulebook_info_t *xrb_infop; /* Our information the the pa_mmap_t */
-    pa_fixed_t *xrb_rules;	  /* List of rules (xi_rule_t) */
-    pa_fixed_t *xrb_states;	  /* List of states (xi_rule_state_t) */
+typedef struct pin_rulebook_s {
+    pin_workspace_t *xrb_workspace; /* Our workspace */
+    pin_parse_t *xrb_script;	  /* Script we're loading/building */
+    pin_rulebook_info_t *xrb_infop; /* Our information the the pa_mmap_t */
+    pa_fixed_t *xrb_rules;	  /* List of rules (pin_rule_t) */
+    pa_fixed_t *xrb_states;	  /* List of states (pin_rule_state_t) */
     pa_bitmap_t *xrb_bitmaps;	  /* Pool of bitmaps */
-} xi_rulebook_t;
+} pin_rulebook_t;
 
-xi_rulebook_t *
-xi_rulebook_open (const char *name);
+pin_rulebook_t *
+pin_rulebook_open (const char *name);
 
-xi_rulebook_t *
-xi_rulebook_setup (xi_workspace_t *xwp, xi_parse_t *script, const char *name);
+pin_rulebook_t *
+pin_rulebook_setup (pin_workspace_t *xwp, pin_parse_t *script, const char *name);
 
 void
-xi_rulebook_close (xi_rulebook_t *rules);
+pin_rulebook_close (pin_rulebook_t *rules);
 
-xi_rule_t *
-xi_rulebook_find (xi_parse_t *parsep, xi_rulebook_t *xrbp, xi_rstate_t *statep,
+pin_rule_t *
+pin_rulebook_find (pin_parse_t *parsep, pin_rulebook_t *xrbp, pin_rstate_t *statep,
 		  pa_atom_t name_atom, const char *pref, const char *name,
 		  const char *attribs);
 
-xi_rulebook_t *
-xi_rulebook_prep (xi_parse_t *input, const char *name);
+pin_rulebook_t *
+pin_rulebook_prep (pin_parse_t *input, const char *name);
 
 void
-xi_rulebook_dump (xi_rulebook_t *xrbp);
+pin_rulebook_dump (pin_rulebook_t *xrbp);
 
-#include "gen/xi_rule_id_funcs_gen.h"
-#include "gen/xi_rstate_id_funcs_gen.h"
+#include "gen/pin_rule_id_funcs_gen.h"
+#include "gen/pin_rstate_id_funcs_gen.h"
 
-/* Aliases: xi_rulebook_rule(xrbp, rid) and xi_rulebook_state(xrbp, sid) */
-#define xi_rulebook_rule	xi_rule_addr
-#define xi_rulebook_state(_xrbp, _sid) xi_rstate_addr((_xrbp), (_sid))
+/* Aliases: pin_rulebook_rule(xrbp, rid) and pin_rulebook_state(xrbp, sid) */
+#define pin_rulebook_rule	pin_rule_addr
+#define pin_rulebook_state(_xrbp, _sid) pin_rstate_addr((_xrbp), (_sid))
 
 #endif /* LIBSLAX_XI_RULES_H */
