@@ -12,12 +12,14 @@
 #ifndef LIBSLAX_XI_PARSE_H
 #define LIBSLAX_XI_PARSE_H
 
+typedef unsigned xi_parse_flags_t;
+
 /*
  * The state of the parser, meant to be both a handle to parsing
  * functionality as well as a means of restarting parsing.
  */
 typedef struct xi_parse_s {
-    unsigned xp_flags;		/* Flags for this parser */
+    xi_parse_flags_t xp_flags;  /* Flags for this parser */
     xi_source_t *xp_srcp;	/* Source of incoming tokens */
     xi_rulebook_t *xp_rulebook;	/* Current set of rules */
     xi_rule_t xp_default_rule;	/* Default rule for parsing */
@@ -33,6 +35,30 @@ typedef struct xi_parse_s {
 typedef int (*xi_parse_emit_fn)(xi_parse_t *, xi_node_type_t,
 				xi_node_id_t node_atom, xi_node_t *,
 				const char *, void *);
+
+static inline xi_parse_flags_t
+xi_parse_flags_get (xi_parse_t *pxp)
+{
+    return pxp->xp_flags;
+}
+
+static inline int
+xi_parse_flags_isset (xi_parse_t *pxp, xi_parse_flags_t flags)
+{
+    return (pxp->xp_flags & flags) ? 1 : 0;
+}
+
+static inline void
+xi_parse_flags_set (xi_parse_t *pxp, xi_parse_flags_t flags)
+{
+    pxp->xp_flags |= flags;
+}
+
+static inline void
+xi_parse_flags_clear (xi_parse_t *pxp, xi_parse_flags_t flags)
+{
+    pxp->xp_flags &= ~flags;
+}
 
 static inline xi_rstate_t *
 xi_parse_stack_state (xi_parse_t *parsep)
