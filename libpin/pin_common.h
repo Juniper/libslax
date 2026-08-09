@@ -14,20 +14,20 @@
 #ifndef LIBSLAX_XI_COMMON_H
 #define LIBSLAX_XI_COMMON_H
 
-typedef uint32_t xi_source_flags_t; /* Flags for parser */
-typedef uint8_t xi_depth_t;	/* Depth in the hierarchy */
+typedef uint32_t pin_source_flags_t; /* Flags for parser */
+typedef uint8_t pin_depth_t;	/* Depth in the hierarchy */
 
 #define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
 #define XI_DEPTH_MAX	254	/* Max depth of tree */
 
-typedef uint16_t xi_node_flags_t; /* Flags for a node (XNF_*) */
+typedef uint16_t pin_node_flags_t; /* Flags for a node (XNF_*) */
 
-/* Flags for xi_node_flags_t */
+/* Flags for pin_node_flags_t */
 #define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
 #define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
-typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
-/* Type of XML nodes (for xi_node_type_t) */
+typedef uint8_t pin_node_type_t;	/* Type of node (XI_TYPE_*) */
+/* Type of XML nodes (for pin_node_type_t) */
 #define XI_TYPE_NONE	0	/* Unknown type */
 #define XI_TYPE_EOF	1	/* End of file */
 #define XI_TYPE_SKIP	2	/* Skip/ignored input */
@@ -53,20 +53,20 @@ typedef uint8_t xi_node_type_t;	/* Type of node (XI_TYPE_*) */
 
 #define XI_XMLNS_LEADER "xmlns"	/* String that starts namespace attributes */
 
-typedef uint8_t xi_boolean_t;	/* Base boolean type */
-typedef off_t xi_offset_t;	/* Offset in file or buffer */
+typedef uint8_t pin_boolean_t;	/* Base boolean type */
+typedef off_t pin_offset_t;	/* Offset in file or buffer */
 
 /* Define opaque types for function prototypes */
-struct xi_source_s; typedef struct xi_source_s xi_source_t;
-struct xi_parse_s; typedef struct xi_parse_s xi_parse_t;
-struct xi_insert_s; typedef struct xi_insert_s xi_insert_t;
-struct xi_rstate_s; typedef struct xi_rstate_s xi_rstate_t;
-struct xi_rule_s; typedef struct xi_rule_s xi_rule_t;
-struct xi_node_s; typedef struct xi_node_s xi_node_t;
-struct xi_workspace_s; typedef struct xi_workspace_s xi_workspace_t;
+struct pin_source_s; typedef struct pin_source_s pin_source_t;
+struct pin_parse_s; typedef struct pin_parse_s pin_parse_t;
+struct pin_insert_s; typedef struct pin_insert_s pin_insert_t;
+struct pin_rstate_s; typedef struct pin_rstate_s pin_rstate_t;
+struct pin_rule_s; typedef struct pin_rule_s pin_rule_t;
+struct pin_node_s; typedef struct pin_node_s pin_node_t;
+struct pin_workspace_s; typedef struct pin_workspace_s pin_workspace_t;
 
 /* Used to test whether a byte is white space */
-extern char xi_space_test[256];
+extern char pin_space_test[256];
 
 /*
  * Whitespace in XML has a small, specific definition:
@@ -75,9 +75,9 @@ extern char xi_space_test[256];
  * we make this test a _huge_ number of times.
  */
 static inline int
-xi_isspace (int ch)
+pin_isspace (int ch)
 {
-    return xi_space_test[ch & 0xff];
+    return pin_space_test[ch & 0xff];
 }
 
 /*
@@ -87,12 +87,12 @@ xi_isspace (int ch)
  * the string is entirely whitespace, NULL is returned.
  */
 static inline char *
-xi_skipws (char *cp, unsigned len, int dir)
+pin_skipws (char *cp, unsigned len, int dir)
 {
     char ch;
 
     for (ch = *cp; len-- > 0; ch = *cp) {
-	if (!xi_isspace(ch) || ch == '\0')
+	if (!pin_isspace(ch) || ch == '\0')
 	    return cp;
 	cp += dir;
     }
