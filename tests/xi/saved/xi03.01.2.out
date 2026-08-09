@@ -1,0 +1,25 @@
+<script>
+   <state id="1" action="save">
+      <rule tag="one" action="emit"/>
+      <rule tag="authors" action="save-with-attributes"/>
+      <rule tag="author" action="save" use-tag="my-own-author"/>
+      <rule tag="two" action="emit" new-state="2" use-tag="content"/>
+      <rule tag="three" action="discard"/>
+   </state>
+   <state id="2" action="discard">
+      <rule tag="name" action="emit"/>
+      <rule tag="protocol" action="emit"/>
+   </state>
+</script>
+<top>
+   <one>first element</one>
+   <content>
+      <name>two-name</name>
+      <protocol>tcp</protocol>
+   </content>
+   <authors x="1" y="2">
+      <my-own-author>Kagawa, N.</my-own-author>
+      <my-own-author>Mihara, K.</my-own-author>
+   </authors>
+   <other>also saved by default</other>
+</top>
