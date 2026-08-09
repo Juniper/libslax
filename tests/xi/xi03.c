@@ -92,7 +92,7 @@ main (int argc, char **argv)
     }
 
     if (!opt_quiet)
-	slaxLogEnable(1);
+	psu_log_enable(1);
 
     if (opt_clean) {
 	unlink(opt_rulebook);
@@ -135,8 +135,12 @@ main (int argc, char **argv)
 
     if (opt_dump) {
 	if (!opt_quiet)
-	    slaxLogEnable(1);
+	    psu_log_enable(1);
+
+	psu_log("# dump script");
 	xi_parse_dump(script);
+
+	psu_log("# emit script");
 	xi_parse_emit_xml(script, stdout);
     }
 
@@ -156,8 +160,12 @@ main (int argc, char **argv)
 
     if (opt_dump) {
 	if (!opt_quiet)
-	    slaxLogEnable(1);
+	    psu_log_enable(1);
+
+	psu_log("# dump output");
 	xi_parse_dump(parsep);
+
+	psu_log("# emit output");
 	xi_parse_emit_xml(parsep, stdout);
     }
 
