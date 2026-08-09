@@ -39,6 +39,14 @@
 #include <libxi/xiworkspace.h>
 #include <libxi/xiparse.h>
 
+static char *
+check_arg (char *arg, const char *name)
+{
+    if (arg == NULL)
+	err(1, "missing arg for %s", name);
+    return arg;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -51,43 +59,42 @@ main (int argc, char **argv)
     int opt_dump = 0;
     int opt_unescape UNUSED = 0;
     int opt_clean = 0;
+    int opt_debug = 0;
     xi_source_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
-	if (strcmp(argv[argc], "file") == 0
-	    || strcmp(argv[argc], "input") == 0) {
-	    if (argv[argc + 1])
-		opt_filename = argv[++argc];
-	} else if (strcmp(argv[argc], "config") == 0) {
-	    if (argv[argc + 1])
-		opt_config = argv[++argc];
-	} else if (strcmp(argv[argc], "rulebook") == 0) {
-	    if (argv[argc + 1])
-		opt_rulebook = argv[++argc];
-	} else if (strcmp(argv[argc], "database") == 0) {
-	    if (argv[argc + 1])
-		opt_database = argv[++argc];
-	} else if (strcmp(argv[argc], "script") == 0) {
-	    if (argv[argc + 1])
-		opt_script = argv[++argc];
-	} else if (strcmp(argv[argc], "dump") == 0) {
-	    opt_dump = 1;
-	} else if (strcmp(argv[argc], "quiet") == 0) {
-	    opt_quiet = 1;
-	} else if (strcmp(argv[argc], "clean") == 0) {
+	const char *cp = argv[argc];
+
+	if (strcmp(cp, "clean") == 0) {
 	    opt_clean = 1;
-	} else if (strcmp(argv[argc], "unescape") == 0) {
-	    opt_unescape = 1;
-	} else if (strcmp(argv[argc], "line") == 0) {
-	    flags |= XPSF_LINE_NO;
-	} else if (strcmp(argv[argc], "trim") == 0) {
-	    flags |= XPSF_TRIM_WS;
-	} else if (strcmp(argv[argc], "ignore") == 0) {
+	} else if (strcmp(cp, "config") == 0) {
+	    opt_config = check_arg(argv[++argc], "config file");
+	} else if (strcmp(cp, "database") == 0) {
+	    opt_database = check_arg(argv[++argc], "database filename");
+	} else if (strcmp(cp, "debug") == 0) {
+	    opt_debug = 1;
+	} else if (strcmp(cp, "dump") == 0) {
+	    opt_dump = 1;
+	} else if (strcmp(cp, "file") == 0 || strcmp(cp, "input") == 0) {
+	    opt_filename = check_arg(argv[++argc], "input filename");
+	} else if (strcmp(cp, "ignore") == 0) {
 	    flags |= XPSF_IGNORE_WS;
-	} else if (strcmp(argv[argc], "ignore-comments") == 0) {
+	} else if (strcmp(cp, "ignore-comments") == 0) {
 	    flags |= XPSF_IGNORE_COMMENTS;
-	} else if (strcmp(argv[argc], "ignore-dtd") == 0) {
+	} else if (strcmp(cp, "ignore-dtd") == 0) {
 	    flags |= XPSF_IGNORE_DTD;
+	} else if (strcmp(cp, "line") == 0) {
+	    flags |= XPSF_LINE_NO;
+	} else if (strcmp(cp, "quiet") == 0) {
+	    opt_quiet = 1;
+	} else if (strcmp(cp, "rulebook") == 0) {
+	    opt_rulebook = check_arg(argv[++argc], "rulebook");
+	} else if (strcmp(cp, "script") == 0) {
+	    opt_script = check_arg(argv[++argc], "script file");
+	} else if (strcmp(cp, "trim") == 0) {
+	    flags |= XPSF_TRIM_WS;
+	} else if (strcmp(cp, "unescape") == 0) {
+	    opt_unescape = 1;
 	}
     }
 
@@ -153,6 +160,9 @@ main (int argc, char **argv)
     xi_parse_t *parsep = xi_parse_open(pmp, workp, "test",
 				       opt_filename, flags);
     assert(parsep);
+
+    if (opt_debug)
+	xi_parse_flags_set(parsep, XI_PF_DEBUG);
 
     xi_parse_set_rulebook(parsep, rb);
 
