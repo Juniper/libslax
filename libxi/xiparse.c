@@ -1147,6 +1147,15 @@ typedef struct xi_xml_output_s {
 } xi_xml_output_t;
 
 static int
+xi_parse_is_ws (const char *data)
+{
+    for (const char *cp = data; cp && *cp; cp++)
+	if (!isspace(*cp))
+	    return FALSE;
+    return TRUE;
+}
+
+static int
 xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 		      xi_node_id_t node_atom UNUSED, xi_node_t *nodep,
 		      const char *data, void *opaque)
@@ -1158,10 +1167,16 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
     const char *cp;
     int indent;
     const char *pref, *uri;
+    int is_debug = xi_parse_flags_isset(parsep, XI_PF_DEBUG);
+
+    if (is_debug)
+	fprintf(out, "<!-- [[%d]%s%s%s] -->", type, data ? "[" : "",
+		data ?: "", data ? "]" : "");
 
     switch (type) {
     case XI_TYPE_ROOT:
-	fprintf(out, "<!-- start of output>\n");
+	if (is_debug)
+	    fprintf(out, "<!-- start of output>\n");
 	break;
 
     case XI_TYPE_OPEN:
@@ -1211,8 +1226,16 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 	break;
 
     case XI_TYPE_TEXT:		/* XXX Text needs to be escaped */
+	fprintf(out, "%s%s%s", is_debug ? "[text]" : "", data,
+		is_debug ? "[/text]": "");
+	break;
+
     case XI_TYPE_UNESC:
-	fprintf(out, "%s", data);
+	if (!((xmlp->xx_last_type == XI_TYPE_CLOSE
+	       || xmlp->xx_last_type == XI_TYPE_EMPTY)
+	      && xi_parse_is_ws(data)))
+	    fprintf(out, "%s%s%s", is_debug ? "[unes]" : "", data,
+		    is_debug ? "[/unes]": "");
 	break;
 
     case XI_TYPE_ATSTR:
@@ -1233,12 +1256,14 @@ xi_parse_emit_xml_cb (xi_parse_t *parsep, xi_node_type_t type,
 	    fprintf(out, " xmlns%s%s=\"%s\"",
 		    pref ? ":" : "", pref ?: "", uri ?: "");
 	} else {
-	    psu_log("namespace: [null]");
+	if (is_debug)
+	    fprintf(out, "namespace: [null]\n");
 	}
 	break;
 
     case XI_TYPE_EOF:
-	fprintf(out, "<!-- end of output>\n");
+	if (is_debug)
+	    fprintf(out, "<!-- end of output>\n");
 	break;
     }
 
