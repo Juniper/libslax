@@ -13,6 +13,6 @@
 #define LIBSLAX_XI_WHIFFLE_H
 
 void
-xi_whiffle_test (xi_parse_t *parsep);
+pin_whiffle_test (pin_parse_t *parsep);
 
 #endif /* LIBSLAX_XI_WHIFFLE_H */
