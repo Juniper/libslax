@@ -33,12 +33,12 @@
 #include <parrotdb/paistr.h>
 #include <parrotdb/papat.h>
 #include <parrotdb/pabitmap.h>
-#include <libxi/xicommon.h>
-#include <libxi/xirules.h>
-#include <libxi/xitree.h>
-#include <libxi/xiworkspace.h>
+#include <libpin/pin_common.h>
+#include <libpin/pin_rules.h>
+#include <libpin/pin_tree.h>
+#include <libpin/pin_workspace.h>
 
-int xi_dead_code;
+int pin_dead_code;
 
 /*
  * Append new_node_atom as the last child of parent_atom.
@@ -50,33 +50,33 @@ int xi_dead_code;
  * The caller must have already set all fields of the new node except
  * xn_next; this function wires xn_next and updates xn_contents if needed.
  */
-xi_node_id_t
-xi_tree_append_child (xi_workspace_t *xwp,
-		      xi_node_id_t parent_atom, xi_node_id_t last_hint,
-		      xi_node_id_t new_node_atom)
+pin_node_id_t
+pin_tree_append_child (pin_workspace_t *xwp,
+		      pin_node_id_t parent_atom, pin_node_id_t last_hint,
+		      pin_node_id_t new_node_atom)
 {
-    xi_node_t *parentp = xi_node_addr(xwp, parent_atom);
-    xi_node_t *newp    = xi_node_addr(xwp, new_node_atom);
+    pin_node_t *parentp = pin_node_addr(xwp, parent_atom);
+    pin_node_t *newp    = pin_node_addr(xwp, new_node_atom);
     if (parentp == NULL || newp == NULL)
-	return xi_node_id_null_atom();
+	return pin_node_id_null_atom();
 
     /* New node is always the last child: its xn_next points up to parent */
     newp->xn_next = parent_atom;
 
     if (parentp->xn_contents == PA_NULL_ATOM) {
 	/* No children yet — new node is the first and last */
-	xi_node_set_child(parentp, new_node_atom);
+	pin_node_set_child(parentp, new_node_atom);
 	return new_node_atom;
     }
 
     /* Locate the current last child */
-    xi_node_id_t last_atom = xi_node_id_null_atom();
-    xi_node_t *lastp = NULL;
+    pin_node_id_t last_atom = pin_node_id_null_atom();
+    pin_node_t *lastp = NULL;
 
-    if (!xi_node_id_is_null(last_hint)) {
-	xi_node_t *hintp = xi_node_addr(xwp, last_hint);
+    if (!pin_node_id_is_null(last_hint)) {
+	pin_node_t *hintp = pin_node_addr(xwp, last_hint);
 	/* A last child's xn_next is the parent atom — O(1) validation */
-	if (hintp != NULL && xi_node_id_equal(hintp->xn_next, parent_atom)) {
+	if (hintp != NULL && pin_node_id_equal(hintp->xn_next, parent_atom)) {
 	    lastp = hintp;
 	    last_atom = last_hint;
 	}
@@ -84,14 +84,14 @@ xi_tree_append_child (xi_workspace_t *xwp,
 
     if (lastp == NULL) {
 	/* Scan: walk xn_next until we reach the entry pointing to parent */
-	last_atom = xi_node_child(parentp);
+	last_atom = pin_node_child(parentp);
 	for (;;) {
-	    xi_node_t *childp = xi_node_addr(xwp, last_atom);
-	    if (childp == NULL || xi_node_id_equal(childp->xn_next, parent_atom))
+	    pin_node_t *childp = pin_node_addr(xwp, last_atom);
+	    if (childp == NULL || pin_node_id_equal(childp->xn_next, parent_atom))
 		break;
 	    last_atom = childp->xn_next;
 	}
-	lastp = xi_node_addr(xwp, last_atom);
+	lastp = pin_node_addr(xwp, last_atom);
     }
 
     if (lastp)
