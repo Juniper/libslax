@@ -24,7 +24,7 @@
 #ifndef LIBSLAX_XI_XPATH_H
 #define LIBSLAX_XI_XPATH_H
 
-typedef uint16_t xi_xpath_op_t;	/* Operations */
+typedef uint16_t pin_xpath_op_t;	/* Operations */
 #define XI_OP_UNKNOWN	0	/* Unknown */
 #define XI_OP_NAME	1	/* Location path step name-test */
 #define XI_OP_TYPE	2	/* Node-type test */
@@ -38,10 +38,10 @@ typedef uint16_t xi_xpath_op_t;	/* Operations */
 /*
  * A piece of a compiled XPath
  */
-typedef struct xi_xpath_op_s {
-    xi_xpath_op_t xpo_op;	/* Operation (XI_OP_*) */
+typedef struct pin_xpath_op_s {
+    pin_xpath_op_t xpo_op;	/* Operation (XI_OP_*) */
     pa_atom_t xpo_atom[XI_OPERAND_MAX]; /* Operands */
-} xi_xpath_op_t;
+} pin_xpath_op_t;
 
 /* Conventions for atom fields */
 #define xpo_next xpo_atom[0]
@@ -50,24 +50,24 @@ typedef struct xi_xpath_op_s {
 /*
  * A compiled XPath
  */
-typedef struct xi_xpath_s {
+typedef struct pin_xpath_s {
     pa_atom_t xp_root;		/* Root of the xpath expression */
-} xi_xpath_t;
+} pin_xpath_t;
 
 /*
  * An evaluation context, which includes a set of variables.
  */
-typedef struct xi_xpath_context_s {
+typedef struct pin_xpath_context_s {
     /* nothing yet */
-} xi_xpath_context_t;
+} pin_xpath_context_t;
 
 /*
  * An evaluation result
  */
-typedef struct xi_xpath_result_s {
+typedef struct pin_xpath_result_s {
     uint16_t xpr_type;		/* Type of result */
     pa_atom_t xpr_result;	/* Resulting atom */
-} xi_xpath_result_t;
+} pin_xpath_result_t;
 
 /* Values for xpr_result */
 #define XI_XPR_UNKNOWN	0	/* Unknown */
