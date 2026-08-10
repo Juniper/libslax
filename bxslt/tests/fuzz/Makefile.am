@@ -1,4 +1,4 @@
-LIBXSLT_LIBS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+LIBXSLT_LIBS = $(top_builddir)/bxslt/libxslt/libbxslt.la \
                $(top_builddir)/bxslt/libexslt/libexslt.la
 
 EXTRA_PROGRAMS = genSeed xpath xslt
@@ -9,14 +9,14 @@ AM_CPPFLAGS = -I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt \
 	      -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 DEPENDENCIES = $(LIBXSLT_LIBS)
 LDADD = $(LIBXSLT_LIBS) \
-        $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBM)
+        $(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS) $(LIBM)
 
 testTargets_SOURCES = testTargets.c fuzz.c fuzz.h
 
-$(top_builddir)/bxslt/libxslt/libxslt.la:
-	cd $(top_builddir)/bxslt/libxslt && $(MAKE) libxslt.la
+$(top_builddir)/bxslt/libxslt/libbxslt.la:
+	cd $(top_builddir)/bxslt/libxslt && $(MAKE) libbxslt.la
 
-$(top_builddir)/bxslt/libexslt/libexslt.la: $(top_builddir)/bxslt/libxslt/libxslt.la
+$(top_builddir)/bxslt/libexslt/libexslt.la: $(top_builddir)/bxslt/libxslt/libbxslt.la
 	cd $(top_builddir)/bxslt/libexslt && $(MAKE) libexslt.la
 
 .PHONY: fuzz-xpath fuzz-xslt
