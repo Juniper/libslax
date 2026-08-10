@@ -35,7 +35,7 @@ X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
 SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
 
 # Remove the line numbers that libxslt emits, which breaks our tests
-CLEANLINES = sed -i.bak 's/\(Unimplemented block at preproc.c\):.*/\1/'
+CLEANLINES = sed -i.bak 's/\(Unimplemented block at\).*\(preproc.c\):.*/\1 \2/'
 
 CLEANDIRS = out
 
