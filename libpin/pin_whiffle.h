@@ -9,10 +9,10 @@
  * Phil Shafer <phil@>, September 2016
  */
 
-#ifndef LIBSLAX_XI_WHIFFLE_H
-#define LIBSLAX_XI_WHIFFLE_H
+#ifndef LIBSLAX_PIN_WHIFFLE_H
+#define LIBSLAX_PIN_WHIFFLE_H
 
 void
 pin_whiffle_test (pin_parse_t *parsep);
 
-#endif /* LIBSLAX_XI_WHIFFLE_H */
+#endif /* LIBSLAX_PIN_WHIFFLE_H */
