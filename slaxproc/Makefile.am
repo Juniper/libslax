@@ -22,7 +22,6 @@ AM_CFLAGS = \
 
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS}
 
 if SLAX_DEBUG
