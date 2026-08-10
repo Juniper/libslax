@@ -31,9 +31,9 @@ libxsltmod_la_CFLAGS = $(AM_CFLAGS) $(PYTHON_CFLAGS)
 libxsltmod_la_SOURCES = libxslt.c types.c
 nodist_libxsltmod_la_SOURCES = libxslt-py.c
 libxsltmod_la_LIBADD = \
-	$(top_builddir)/bxslt/libxslt/libxslt.la \
+	$(top_builddir)/bxslt/libxslt/libbxslt.la \
 	$(top_builddir)/bxslt/libexslt/libexslt.la \
-	$(PYTHON_LIBS) $(top_builddir)/bxml/libxml2.la
+	$(PYTHON_LIBS) $(top_builddir)/bxml/libbxml.la
 libxsltmod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
 
 libxslt.py: $(srcdir)/libxsl.py libxsltclass.py
