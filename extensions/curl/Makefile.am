@@ -39,7 +39,6 @@ LIBNAME = libext_curl
 pkglib_LTLIBRARIES = libext_curl.la
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS} \
     ${LIBCURL_LIBS} \
     -L${top_builddir}/libslax -lslax
