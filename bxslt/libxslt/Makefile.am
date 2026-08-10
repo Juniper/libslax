@@ -2,7 +2,7 @@ AM_CPPFLAGS = -I$(top_builddir) \
 	      -I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt -I$(top_srcdir)/bxslt/libxslt \
 	      -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
 
-lib_LTLIBRARIES = libxslt.la
+lib_LTLIBRARIES = libbxslt.la
 
 xsltincdir = $(includedir)/libxslt
 
@@ -31,7 +31,7 @@ xsltinc_HEADERS = 			\
 nodist_xsltinc_HEADERS = 		\
 	xsltconfig.h
 
-libxslt_la_SOURCES = 			\
+libbxslt_la_SOURCES = 			\
 	attrvt.c			\
 	xslt.c				\
 	xsltlocale.c			\
@@ -60,8 +60,8 @@ else
 LIBXSLT_VERSION_SCRIPT =
 endif
 
-libxslt_la_LIBADD = $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBM)
-libxslt_la_LDFLAGS =					\
+libbxslt_la_LIBADD = $(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS) $(LIBM)
+libbxslt_la_LDFLAGS =					\
 		$(AM_LDFLAGS) -no-undefined		\
 		$(LIBXSLT_VERSION_SCRIPT)		\
 		-version-info $(LIBXSLT_VERSION_INFO)
