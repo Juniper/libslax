@@ -47,17 +47,17 @@ main (int argc, char **argv)
 	} else if (strcmp(argv[argc], "unescape") == 0) {
 	    opt_unescape = TRUE;
 	} else if (strcmp(argv[argc], "line") == 0) {
-	    flags |= XPSF_LINE_NO;
+	    flags |= PPSF_LINE_NO;
 	} else if (strcmp(argv[argc], "trim") == 0) {
-	    flags |= XPSF_TRIM_WS;
+	    flags |= PPSF_TRIM_WS;
 	} else if (strcmp(argv[argc], "log") == 0) {
 	    opt_log = TRUE;
 	} else if (strcmp(argv[argc], "ignore") == 0) {
-	    flags |= XPSF_IGNORE_WS;
+	    flags |= PPSF_IGNORE_WS;
 	} else if (strcmp(argv[argc], "ignore-comments") == 0) {
-	    flags |= XPSF_IGNORE_COMMENTS;
+	    flags |= PPSF_IGNORE_COMMENTS;
 	} else if (strcmp(argv[argc], "ignore-dtd") == 0) {
-	    flags |= XPSF_IGNORE_DTD;
+	    flags |= PPSF_IGNORE_DTD;
 	}
     }
 
@@ -82,16 +82,16 @@ main (int argc, char **argv)
 	    psu_log("new token: %u [%s] [%s]", type, data ?: "", rest ?: "");
 
 	switch (type) {
-	case XI_TYPE_NONE:	/* Unknown type */
+	case PIN_TYPE_NONE:	/* Unknown type */
 	    return 1;
 
-	case XI_TYPE_EOF:	/* End of file */
+	case PIN_TYPE_EOF:	/* End of file */
 	    return 0;
 
-	case XI_TYPE_FAIL:	/* Failure mode */
+	case PIN_TYPE_FAIL:	/* Failure mode */
 	    return -1;
 
-	case XI_TYPE_TEXT:	/* Text content */
+	case PIN_TYPE_TEXT:	/* Text content */
 	    if (!opt_quiet) {
 		int len;
 		if (opt_unescape && data && rest)
@@ -101,37 +101,37 @@ main (int argc, char **argv)
 	    }
 	    break;
 
-	case XI_TYPE_OPEN:	/* Open tag */
+	case PIN_TYPE_OPEN:	/* Open tag */
 	    if (!opt_quiet)
 		printf("open tag [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_EMPTY:	/* Empty tag */
+	case PIN_TYPE_EMPTY:	/* Empty tag */
 	    if (!opt_quiet)
 		printf("empty tag [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_CLOSE:	/* Close tag */
+	case PIN_TYPE_CLOSE:	/* Close tag */
 	    if (!opt_quiet)
 		printf("close tag [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_PI:	/* Processing instruction */
+	case PIN_TYPE_PI:	/* Processing instruction */
 	    if (!opt_quiet)
 		printf("pi [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_DTD:	/* DTD nonsense */
+	case PIN_TYPE_DTD:	/* DTD nonsense */
 	    if (!opt_quiet)
 		printf("dtd [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_COMMENT:	/* Comment */
+	case PIN_TYPE_COMMENT:	/* Comment */
 	    if (!opt_quiet)
 		printf("comment [%s] [%s]\n", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_CDATA:	/* cdata */
+	case PIN_TYPE_CDATA:	/* cdata */
 	    if (!opt_quiet)
 		printf("cdata [%.*s]\n", (int)(rest - data), data);
 	    break;
