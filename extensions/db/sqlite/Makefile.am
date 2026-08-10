@@ -52,7 +52,6 @@ LIBNAME = db_driver_sqlite
 pkglib_LTLIBRARIES = libext_db_sqlite.la
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS} \
     -L${top_builddir}/libslax -lslax \
     -L${top_builddir}/extensions/db
