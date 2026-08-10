@@ -35,7 +35,6 @@ LIBNAME = libext_xutil
 pkglib_LTLIBRARIES = libext_xutil.la
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS} \
     -L${top_builddir}/libslax -lslax
 
