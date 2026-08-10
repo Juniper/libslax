@@ -105,9 +105,9 @@ xmlSetDeclaredEncoding(xmlParserCtxt *ctxt, xmlChar *encoding);
 XML_HIDDEN const xmlChar *
 xmlGetActualEncoding(xmlParserCtxt *ctxt);
 
-XML_HIDDEN int
+/*XML_HIDDEN*/ int
 nodePush(xmlParserCtxt *ctxt, xmlNode *value);
-XML_HIDDEN xmlNode *
+/*XML_HIDDEN*/ xmlNode *
 nodePop(xmlParserCtxt *ctxt);
 
 XML_HIDDEN xmlParserNsData *
