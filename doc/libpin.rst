@@ -1,5 +1,5 @@
 libpin -- XML Input Library
-==========================
+===========================
 
 Overview
 --------
@@ -72,7 +72,7 @@ Source Components
 -----------------
 
 pin_source_t -- Tokeniser
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Files:* ``pin_source.h``, ``pin_source.c``
 
@@ -157,7 +157,7 @@ documents that share names).  Multiple trees can share a single workspace.
      - Storage for node sets (see below).
 
 pin_node_t and pin_tree_t -- The Tiny Tree
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Files:* ``pin_node.h``, ``pin_tree.h``, ``pin_tree.c``
 
@@ -235,7 +235,7 @@ default (e.g. to ``PIA_DISCARD`` for a "discard unless explicitly saved"
 policy that complements state-specific rules).
 
 pin_rulebook_t -- Rule-Driven Transformation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Files:* ``pin_rules.h``, ``pin_rules.c``
 
@@ -328,7 +328,7 @@ rulebook compiler is itself built on libpin) and populates the rulebook's
 ``pa_mmap_t`` with the resulting state and rule arrays.
 
 pin_nodeset_t -- Node Sets
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Files:* ``pin_nodeset.h``
 
@@ -354,7 +354,7 @@ evaluation context (``pin_xpath_context_t``) and result type
 (``pin_xpath_result_t``).  No evaluation engine exists yet.
 
 pin_whiffle -- Tree Traversal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Files:* ``pin_whiffle.h``, ``pin_whiffle.c``
 
