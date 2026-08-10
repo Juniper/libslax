@@ -42,12 +42,12 @@
 #include <libpin/pin_common.h>
 #include <libpin/pin_source.h>
 
-#define XI_PI	"processing instruction"
+#define PIN_PI	"processing instruction"
 
-#define XI_BUFSIZ	8192	/* Default buffer size */
-#define XI_BUFSIZ_COPY_WHEN (XI_BUFSIZ - 1024)
-#define XI_BUFSIZ_MIN	4096	/* Minimum space for reading data */
-#define XI_BUFSIZ_FAIL	512	/* Absolute minimum space for reading data */
+#define PIN_BUFSIZ	8192	/* Default buffer size */
+#define PIN_BUFSIZ_COPY_WHEN (PIN_BUFSIZ - 1024)
+#define PIN_BUFSIZ_MIN	4096	/* Minimum space for reading data */
+#define PIN_BUFSIZ_FAIL	512	/* Absolute minimum space for reading data */
 
 /* This array is used by pin_isspace to find writespace bytes */
 char pin_space_test[256]	= { [0x20] = 1, [0x09] = 1, [0x0d] = 1, [0x0a] = 1 };
@@ -60,13 +60,13 @@ pin_source_failure (pin_source_t *srcp, int errnum, const char *fmt, ...)
     va_start(vap, fmt);
 
     if (srcp) {
-	if (srcp->xps_flags & XPSF_LINE_NO) {
+	if (srcp->pps_flags & PPSF_LINE_NO) {
 	    fprintf(stderr, "%s:%u:(%u): ",
-		    srcp->xps_filename ?: "input",
-		    srcp->xps_lineno, srcp->xps_offset);
+		    srcp->pps_filename ?: "input",
+		    srcp->pps_lineno, srcp->pps_offset);
 	} else {
 	    fprintf(stderr, "%s:(%u): ",
-		    srcp->xps_filename ?: "input", srcp->xps_offset);
+		    srcp->pps_filename ?: "input", srcp->pps_offset);
 	}
     }
 
@@ -89,32 +89,32 @@ pin_source_create (int fd, pin_source_flags_t flags)
 
     srcp = calloc(1, sizeof(*srcp));
     if (srcp != NULL) {
-	srcp->xps_fd = fd;
-	srcp->xps_flags = flags & ~XPSF_MMAP_INPUT;
-	srcp->xps_lineno = 1;	/* Start on line 1 */
+	srcp->pps_fd = fd;
+	srcp->pps_flags = flags & ~PPSF_MMAP_INPUT;
+	srcp->pps_lineno = 1;	/* Start on line 1 */
 
 	/*
 	 * The mmap flag asks us to try to mmap the file; if it fails,
 	 * we fall back to normal behavior.
 	 */
-	if (flags & XPSF_MMAP_INPUT) {
+	if (flags & PPSF_MMAP_INPUT) {
 	    struct stat st;
 
 	    if (fstat(fd, &st) >= 0 && st.st_size > 0) {
 		void *addr = mmap(NULL, st.st_size, PROT_READ, 0, fd, 0);
 		if (addr) {
-		    srcp->xps_flags |= XPSF_MMAP_INPUT | XPSF_NO_READ;
-		    srcp->xps_bufp = srcp->xps_curp = addr;
-		    srcp->xps_size = st.st_size;
+		    srcp->pps_flags |= PPSF_MMAP_INPUT | PPSF_NO_READ;
+		    srcp->pps_bufp = srcp->pps_curp = addr;
+		    srcp->pps_size = st.st_size;
 		}
 	    }
 	}
 
 	/* If needed, allocate an initial buffer */
-	if (srcp->xps_bufp == NULL) {
-	    srcp->xps_bufp = srcp->xps_curp = calloc(1, XI_BUFSIZ);
-	    if (srcp->xps_bufp != NULL)
-		srcp->xps_size = XI_BUFSIZ;
+	if (srcp->pps_bufp == NULL) {
+	    srcp->pps_bufp = srcp->pps_curp = calloc(1, PIN_BUFSIZ);
+	    if (srcp->pps_bufp != NULL)
+		srcp->pps_size = PIN_BUFSIZ;
 	}
     }
 
@@ -132,29 +132,29 @@ pin_source_open (const char *filename, pin_source_flags_t flags)
 	return NULL;
 
     pin_source_t *srcp;
-    srcp = pin_source_create(fd, flags | XPSF_CLOSE_FD);
+    srcp = pin_source_create(fd, flags | PPSF_CLOSE_FD);
     if (srcp)
-	srcp->xps_filename = strdup(filename);
+	srcp->pps_filename = strdup(filename);
 
     return srcp;
 }
 
 /*
  * Destroy an pin_source_t, releasing all resource, including the
- * file descriptor if XPSF_CLOSE_FD is set.  Any further referencing
+ * file descriptor if PPSF_CLOSE_FD is set.  Any further referencing
  * of the pin_source_t is prohibited by law.
  */
 void
 pin_source_destroy (pin_source_t *srcp)
 {
-    if (srcp->xps_filename != NULL)
-	free(srcp->xps_filename);
+    if (srcp->pps_filename != NULL)
+	free(srcp->pps_filename);
 
-    if (srcp->xps_curp != NULL)
-	free(srcp->xps_curp);
+    if (srcp->pps_curp != NULL)
+	free(srcp->pps_curp);
 
-    if (srcp->xps_flags & XPSF_CLOSE_FD)
-	close(srcp->xps_fd);
+    if (srcp->pps_flags & PPSF_CLOSE_FD)
+	close(srcp->pps_fd);
 
     free(srcp);
 }
@@ -237,20 +237,20 @@ pin_source_unescape (pin_source_t *srcp, char *start, unsigned len)
 static void
 pin_source_move_curp (pin_source_t *srcp, char *newp)
 {
-    char *cp = srcp->xps_curp;
+    char *cp = srcp->pps_curp;
 
-    srcp->xps_offset += newp - cp;
-    if (srcp->xps_flags & XPSF_LINE_NO) {
+    srcp->pps_offset += newp - cp;
+    if (srcp->pps_flags & PPSF_LINE_NO) {
 	while (cp < newp) {
 	    cp = psu_memchr(cp, '\n', newp - cp);
 	    if (cp == NULL)
 		break;
-	    srcp->xps_lineno += 1;
+	    srcp->pps_lineno += 1;
 	    cp += 1;
 	}
     }
 
-    srcp->xps_curp = newp;
+    srcp->pps_curp = newp;
 }
 
 /*
@@ -260,56 +260,56 @@ pin_source_move_curp (pin_source_t *srcp, char *newp)
 static int
 pin_source_read (pin_source_t *srcp, int min)
 {
-    if (srcp->xps_flags & (XPSF_NO_READ | XPSF_EOF_SEEN))
+    if (srcp->pps_flags & (PPSF_NO_READ | PPSF_EOF_SEEN))
 	return -1;
 
-    unsigned seen = srcp->xps_curp - srcp->xps_bufp;
-    unsigned left = srcp->xps_len - seen;
+    unsigned seen = srcp->pps_curp - srcp->pps_bufp;
+    unsigned left = srcp->pps_len - seen;
 
     if (left == 0) {
 	/* If we've consumed all data, reset it to initial state */
-	srcp->xps_curp = srcp->xps_bufp; /* Reset curp */
-	srcp->xps_len = 0;
+	srcp->pps_curp = srcp->pps_bufp; /* Reset curp */
+	srcp->pps_len = 0;
 
-    } else if (left > 0 && seen > XI_BUFSIZ_COPY_WHEN) {
+    } else if (left > 0 && seen > PIN_BUFSIZ_COPY_WHEN) {
 	/*
 	 * If we've got data left to copy and we're close to the end,
 	 * copy it.
 	 */
-	memcpy(srcp->xps_bufp, srcp->xps_curp, left);
-	srcp->xps_len = left;
-	srcp->xps_curp = srcp->xps_bufp;
+	memcpy(srcp->pps_bufp, srcp->pps_curp, left);
+	srcp->pps_len = left;
+	srcp->pps_curp = srcp->pps_bufp;
     }
 
-    seen = srcp->xps_curp - srcp->xps_bufp; /* Refresh 'seen' */
+    seen = srcp->pps_curp - srcp->pps_bufp; /* Refresh 'seen' */
 
     /* If there's not enough room, expand the buffer */
-    pin_offset_t space = srcp->xps_size - srcp->xps_len;
-    if (space < XI_BUFSIZ_MIN) {
-	unsigned size = srcp->xps_size << 1; /* Double the buffer size */
-	char *cp = realloc(srcp->xps_bufp, size);
+    pin_offset_t space = srcp->pps_size - srcp->pps_len;
+    if (space < PIN_BUFSIZ_MIN) {
+	unsigned size = srcp->pps_size << 1; /* Double the buffer size */
+	char *cp = realloc(srcp->pps_bufp, size);
 	if (cp != NULL) {
 	    /* Record new buffer pointer values */
-	    srcp->xps_size = size;
-	    srcp->xps_curp = cp + seen;
-	    srcp->xps_bufp = cp;
+	    srcp->pps_size = size;
+	    srcp->pps_curp = cp + seen;
+	    srcp->pps_bufp = cp;
 
-	} else if (srcp->xps_size - seen < XI_BUFSIZ_FAIL)
+	} else if (srcp->pps_size - seen < PIN_BUFSIZ_FAIL)
 	    return -1;		/* Not enough room to bother reading */
     }
 
     /*
      * Read as much data as we can, remembering that we may have existing
-     * data already in the buffer.  The first 'xps_len' bytes are precious.
+     * data already in the buffer.  The first 'pps_len' bytes are precious.
      */
-    int rc = read(srcp->xps_fd, srcp->xps_bufp + srcp->xps_len,
-		  srcp->xps_size - srcp->xps_len);
+    int rc = read(srcp->pps_fd, srcp->pps_bufp + srcp->pps_len,
+		  srcp->pps_size - srcp->pps_len);
     if (rc <= 0) {
-	srcp->xps_flags |= XPSF_EOF_SEEN;
+	srcp->pps_flags |= PPSF_EOF_SEEN;
 	return -1;
     }
 
-    srcp->xps_len += rc;
+    srcp->pps_len += rc;
 
     return (rc >= min);
 }
@@ -317,14 +317,14 @@ pin_source_read (pin_source_t *srcp, int min)
 static inline pin_offset_t
 pin_source_offset (pin_source_t *srcp)
 {
-    return srcp->xps_curp - srcp->xps_bufp;
+    return srcp->pps_curp - srcp->pps_bufp;
 }
 
 static inline pin_offset_t
 pin_source_left (pin_source_t *srcp)
 {
-    pin_offset_t seen = srcp->xps_curp - srcp->xps_bufp;
-    return srcp->xps_len - seen;
+    pin_offset_t seen = srcp->pps_curp - srcp->pps_bufp;
+    return srcp->pps_len - seen;
 }
 
 static inline pin_offset_t
@@ -344,19 +344,19 @@ pin_source_find (pin_source_t *srcp, int ch, pin_offset_t offset)
     char *cur;
 
     for (;;) {
-	if (offset >= srcp->xps_len) {
+	if (offset >= srcp->pps_len) {
 	    if (pin_source_read(srcp, 0) < 0)
 		return -1;
 	    offset = pin_source_offset(srcp); /* Recalculate our offset */
 	}
 
-	cur = psu_memchr(srcp->xps_bufp + offset, ch, srcp->xps_len - offset);
+	cur = psu_memchr(srcp->pps_bufp + offset, ch, srcp->pps_len - offset);
 	if (cur != NULL) {
 	    /* We've found it; return the offset */
-	    return cur - srcp->xps_bufp;
+	    return cur - srcp->pps_bufp;
 	}
 
-	offset = srcp->xps_len;
+	offset = srcp->pps_len;
     }
 }
 
@@ -365,7 +365,7 @@ pin_source_find (pin_source_t *srcp, int ch, pin_offset_t offset)
  *
  * XXX We don't enforce the XML prohibition on the use of "--" within
  * comments.  It makes no sense and is really just a CLR (crummy
- * little rule).  But we should check this if XPSF_VALIDATE is set.
+ * little rule).  But we should check this if PPSF_VALIDATE is set.
  */
 static pin_node_type_t
 pin_source_token_comment (pin_source_t *srcp, char **datap,
@@ -378,7 +378,7 @@ pin_source_token_comment (pin_source_t *srcp, char **datap,
     if (pin_source_avail(srcp, SKIP_LEN) <= 0) {
 	/* Failure; premature EOF */
 	pin_source_failure(srcp, 0, "premature end-of-file: comment");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
     off = pin_source_offset(srcp) + SKIP_LEN; /* Skip "<!--" */
@@ -387,24 +387,24 @@ pin_source_token_comment (pin_source_t *srcp, char **datap,
 	off = pin_source_find(srcp, '>', off);
 	if (off < 0) {
 	    pin_source_failure(srcp, 0, "missing termination of comment");
-	    return XI_TYPE_FAIL;
+	    return PIN_TYPE_FAIL;
 	}
 
-	cp = &srcp->xps_bufp[off];
+	cp = &srcp->pps_bufp[off];
 	if (cp[-1] == '-' && cp[-2] == '-')
 	    break;
 
 	off += 1;
     }
 
-    dp = srcp->xps_curp + SKIP_LEN;
+    dp = srcp->pps_curp + SKIP_LEN;
     cp[-2] = '\0';		/* 2 for "--" */
     pin_source_move_curp(srcp, cp + 1);
 
-    if (srcp->xps_flags & XPSF_IGNORE_COMMENTS)
-	return XI_TYPE_SKIP;
+    if (srcp->pps_flags & PPSF_IGNORE_COMMENTS)
+	return PIN_TYPE_SKIP;
 
-    if (srcp->xps_flags & XPSF_TRIM_WS) {
+    if (srcp->pps_flags & PPSF_TRIM_WS) {
 	cp -= 2;			/* 2 for "--" */
 	dp = pin_skipws(dp, cp - dp, 1); /* Trim leading ws */
 	if (dp != NULL) {
@@ -417,7 +417,7 @@ pin_source_token_comment (pin_source_t *srcp, char **datap,
 
     *datap = dp;
 
-    return XI_TYPE_COMMENT;
+    return PIN_TYPE_COMMENT;
 }
 
 /*
@@ -435,9 +435,9 @@ pin_source_find_brklt1 (pin_source_t *srcp, pin_offset_t off)
 	if (off < 0)
 	    return NULL;
 
-	cp = &srcp->xps_bufp[off];
+	cp = &srcp->pps_bufp[off];
 	wp = cp - 1;
-	wp = pin_skipws(wp, wp - srcp->xps_bufp, -1); /* Trim trailing ws */
+	wp = pin_skipws(wp, wp - srcp->pps_bufp, -1); /* Trim trailing ws */
 	if (wp != NULL)
 	    cp = wp + 1;
 
@@ -465,7 +465,7 @@ pin_source_find_brklt2 (pin_source_t *srcp, pin_offset_t off)
 	if (off < 0)
 	    return NULL;
 
-	cp = &srcp->xps_bufp[off];
+	cp = &srcp->pps_bufp[off];
 	if (cp[-1] == ']' && cp[-2] == ']')
 	    return cp;
 
@@ -485,11 +485,11 @@ pin_source_token_dtd (pin_source_t *srcp, char **datap, char **restp)
     pin_offset_t off = pin_source_find(srcp, '>', pin_source_offset(srcp));
     if (off < 0) {
 	pin_source_failure(srcp, 0, "missing termination of dtd tag");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 2; /* 2 for "<!" */
-    char *cp = &srcp->xps_bufp[off];
+    char *dp = srcp->pps_curp + 2; /* 2 for "<!" */
+    char *cp = &srcp->pps_bufp[off];
 
     /*
      * Find the attributes, but don't bother parsing them.  Trim whitespace.
@@ -518,7 +518,7 @@ pin_source_token_dtd (pin_source_t *srcp, char **datap, char **restp)
 			 * find the terminating "]>".  For details:
 			 * https://www.w3.org/TR/xml/#NT-intSubset
 			 */
-			cp = pin_source_find_brklt1(srcp, xp - srcp->xps_bufp);
+			cp = pin_source_find_brklt1(srcp, xp - srcp->pps_bufp);
 		    }
 		}
 	    }
@@ -528,13 +528,13 @@ pin_source_token_dtd (pin_source_t *srcp, char **datap, char **restp)
     *cp++ = '\0';		/* Whack the '>' */
     pin_source_move_curp(srcp, cp); /* Save as next starting point */
 
-    if (srcp->xps_flags & XPSF_IGNORE_DTD)
-	return XI_TYPE_SKIP;
+    if (srcp->pps_flags & PPSF_IGNORE_DTD)
+	return PIN_TYPE_SKIP;
 
     *datap = dp;
     *restp = rp;
 
-    return XI_TYPE_DTD;
+    return PIN_TYPE_DTD;
 }
 
 /*
@@ -549,10 +549,10 @@ pin_source_token_bracket (pin_source_t *srcp, char **datap UNUSED,
     if (pin_source_avail(srcp, 4) <= 0) {
 	/* Failure; premature EOF */
 	pin_source_failure(srcp, 0, "premature end-of-file: bracket");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp;
+    char *dp = srcp->pps_curp;
     int cdata = (strncmp(dp, "<![CDATA[", 9) == 0);
     dp += 9;
 
@@ -560,7 +560,7 @@ pin_source_token_bracket (pin_source_t *srcp, char **datap UNUSED,
     char *cp = pin_source_find_brklt2(srcp, off);
     if (cp == NULL) {
 	pin_source_failure(srcp, 0, "premature end-of-file: bracket");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
     cp[-2] = '\0';
@@ -569,10 +569,10 @@ pin_source_token_bracket (pin_source_t *srcp, char **datap UNUSED,
     if (cdata) {
 	*datap = dp;
 	*restp = cp - 2;
-	return XI_TYPE_CDATA;
+	return PIN_TYPE_CDATA;
     }
 
-    return XI_TYPE_SKIP;
+    return PIN_TYPE_SKIP;
 }
 
 /*
@@ -594,23 +594,23 @@ pin_source_token_magic (pin_source_t *srcp, char **datap,
     if (pin_source_avail(srcp, 4) <= 0) {
 	/* Failure; premature EOF */
 	pin_source_failure(srcp, 0, "premature end-of-file: xml");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
 
-    } else if (srcp->xps_curp[2] == '-' && srcp->xps_curp[3] == '-') {
+    } else if (srcp->pps_curp[2] == '-' && srcp->pps_curp[3] == '-') {
 	/* Comment tag */
 	return pin_source_token_comment(srcp, datap, restp);
 
-    } else if (srcp->xps_curp[2] == '[') {
+    } else if (srcp->pps_curp[2] == '[') {
 	/* 'bracket' == '<![xxx]]>'.  We ignore the conents */
 	return pin_source_token_bracket(srcp, datap, restp);
 
-    } else if (isalpha((int) srcp->xps_curp[2])) {
+    } else if (isalpha((int) srcp->pps_curp[2])) {
 	/* <!XXX> tag */
 	return pin_source_token_dtd(srcp, datap, restp);
 
     } else {
 	pin_source_failure(srcp, 0, "unhandled xml magic");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 }
 
@@ -620,23 +620,23 @@ pin_source_token_pi (pin_source_t *srcp, char **datap,
 {
     if (pin_source_avail(srcp, 4) <= 0) {
 	/* Failure; premature EOF */
-	pin_source_failure(srcp, 0, "premature end-of-file: " XI_PI);
-	return XI_TYPE_FAIL;
+	pin_source_failure(srcp, 0, "premature end-of-file: " PIN_PI);
+	return PIN_TYPE_FAIL;
     }
 
     pin_offset_t off = pin_source_find(srcp, '>', pin_source_offset(srcp));
     if (off < 0) {
-	pin_source_failure(srcp, 0, "missing termination of " XI_PI);
-	return XI_TYPE_FAIL;
+	pin_source_failure(srcp, 0, "missing termination of " PIN_PI);
+	return PIN_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 2;
-    char *cp = &srcp->xps_bufp[off];
+    char *dp = srcp->pps_curp + 2;
+    char *cp = &srcp->pps_bufp[off];
     char *ep = cp;
 
     if (ep < dp + 2 || ep[-1] != '?') {
-	pin_source_failure(srcp, 0, "invalid termination of " XI_PI);
-	return XI_TYPE_FAIL;
+	pin_source_failure(srcp, 0, "invalid termination of " PIN_PI);
+	return PIN_TYPE_FAIL;
     }
 
     *--ep = '\0';		/* Whach the '?' */
@@ -646,8 +646,8 @@ pin_source_token_pi (pin_source_t *srcp, char **datap,
     /* Should not be any sort of whitespace before the target, but .. */
     dp = pin_skipws(dp, ep - dp, 1);
     if (dp == NULL) {
-	pin_source_failure(srcp, 0, "invalid target of " XI_PI);
-	return XI_TYPE_FAIL;
+	pin_source_failure(srcp, 0, "invalid target of " PIN_PI);
+	return PIN_TYPE_FAIL;
     }
 
     /*
@@ -664,25 +664,25 @@ pin_source_token_pi (pin_source_t *srcp, char **datap,
     *datap = dp;
     *restp = rp;
 
-    return XI_TYPE_PI;
+    return PIN_TYPE_PI;
 }
 
 static pin_node_type_t
 pin_source_token_open (pin_source_t *srcp, char **datap, char **restp)
 {
-    pin_node_type_t token = XI_TYPE_OPEN;
+    pin_node_type_t token = PIN_TYPE_OPEN;
 
     pin_offset_t off = pin_source_find(srcp, '>', pin_source_offset(srcp));
     if (off < 0) {
 	pin_source_failure(srcp, 0, "missing termination of open tag");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 1;
-    char *cp = &srcp->xps_bufp[off];
+    char *dp = srcp->pps_curp + 1;
+    char *cp = &srcp->pps_bufp[off];
 
     if (dp < cp && cp[-1] == '/') { /* Spec says no space between "/>" */
-	token = XI_TYPE_EMPTY;
+	token = PIN_TYPE_EMPTY;
 	cp[-1] = '\0';		/* Back up over '/' */
     }
 
@@ -712,17 +712,17 @@ pin_source_token_close (pin_source_t *srcp, char **datap)
     pin_offset_t off = pin_source_find(srcp, '>', pin_source_offset(srcp));
     if (off < 0) {
 	pin_source_failure(srcp, 0, "missing termination of close tag");
-	return XI_TYPE_FAIL;
+	return PIN_TYPE_FAIL;
     }
 
-    char *dp = srcp->xps_curp + 2; /* Skip "</" */
-    char *cp = &srcp->xps_bufp[off];
+    char *dp = srcp->pps_curp + 2; /* Skip "</" */
+    char *cp = &srcp->pps_bufp[off];
     *cp++ = '\0';		/* Whack the '>' */
     pin_source_move_curp(srcp, cp); /* Save as next starting point */
 
     *datap = dp;
 
-    return XI_TYPE_CLOSE;
+    return PIN_TYPE_CLOSE;
 }
 
 static pin_node_type_t
@@ -733,21 +733,21 @@ pin_source_token_text (pin_source_t *srcp, char **datap, char **restp)
 	pin_offset_t left = pin_source_left(srcp);
 	if (left == 0) {
 	    pin_source_failure(srcp, 0, "missing termination of text");
-	    return XI_TYPE_FAIL;
+	    return PIN_TYPE_FAIL;
 	}
 
-	off = srcp->xps_len;
+	off = srcp->pps_len;
     }
 
     /*
      * We can't NUL-terminate our strings, so we use 'restp' to return
      * the end-of-string marker.
      */
-    char *dp = srcp->xps_curp;
-    char *cp = &srcp->xps_bufp[off];
+    char *dp = srcp->pps_curp;
+    char *cp = &srcp->pps_bufp[off];
     pin_source_move_curp(srcp, cp); /* Save as next starting point */
 
-    if (srcp->xps_flags & XPSF_TRIM_WS) {
+    if (srcp->pps_flags & PPSF_TRIM_WS) {
 	dp = pin_skipws(dp, cp - dp, 1); /* Trim leading ws */
 	if (dp == NULL)			/* Nothing but ws */
 	    cp = NULL;
@@ -762,7 +762,7 @@ pin_source_token_text (pin_source_t *srcp, char **datap, char **restp)
     *datap = dp;
     *restp = cp;		/* Restp is the end of text */
 
-    return XI_TYPE_TEXT;
+    return PIN_TYPE_TEXT;
 }
 
 static void
@@ -771,11 +771,11 @@ pin_source_ignorews (pin_source_t *srcp)
     pin_offset_t off = pin_source_offset(srcp); /* Starting point */
     char *cp;
 
-    for (cp = &srcp->xps_bufp[off]; pin_isspace(*cp); cp++, off++) {
-	if (off >= srcp->xps_len) {
+    for (cp = &srcp->pps_bufp[off]; pin_isspace(*cp); cp++, off++) {
+	if (off >= srcp->pps_len) {
 	    if (pin_source_read(srcp, 0) < 0)
 		return;
-	    cp = &srcp->xps_bufp[off]; /* Refresh */
+	    cp = &srcp->pps_bufp[off]; /* Refresh */
 	}
     }
 
@@ -798,8 +798,8 @@ pin_source_next_token (pin_source_t *srcp, char **datap, char **restp)
     for (;;) {
 	*datap = *restp = NULL;	/* Clear pointers */
 
-	if (srcp->xps_last != XI_TYPE_TEXT
-	    && (srcp->xps_flags & XPSF_IGNORE_WS)) {
+	if (srcp->pps_last != PIN_TYPE_TEXT
+	    && (srcp->pps_flags & PPSF_IGNORE_WS)) {
 	    /* Look for the next non-space character; if it's '<', we skip */
 	    pin_source_ignorews(srcp);
 	}
@@ -807,10 +807,10 @@ pin_source_next_token (pin_source_t *srcp, char **datap, char **restp)
 	/* If we don't have data, go get some data */
 	if (pin_source_left(srcp) == 0) {
 	    if (pin_source_read(srcp, 0) < 0)
-		return XI_TYPE_EOF;
+		return PIN_TYPE_EOF;
 	}
 
-	if (srcp->xps_curp[0] != '<') {
+	if (srcp->pps_curp[0] != '<') {
 	    /* Text data */
 	    token = pin_source_token_text(srcp, datap, restp);
 
@@ -821,16 +821,16 @@ pin_source_next_token (pin_source_t *srcp, char **datap, char **restp)
 	} else if (pin_source_avail(srcp, 2) <= 0) {
 	    /* Failure; premature EOF */
 	    pin_source_failure(srcp, 0, "premature end-of-file: open-tag");
-	    token = XI_TYPE_EOF;
+	    token = PIN_TYPE_EOF;
 
-	} else if (srcp->xps_curp[1] == '/') {
+	} else if (srcp->pps_curp[1] == '/') {
 	    /* Close tag */
 	    token = pin_source_token_close(srcp, datap);
 
-	} else if (srcp->xps_curp[1] == '!') {
+	} else if (srcp->pps_curp[1] == '!') {
 	    token = pin_source_token_magic(srcp, datap, restp);
 	    
-	} else if (srcp->xps_curp[1] == '?') {
+	} else if (srcp->pps_curp[1] == '?') {
 	    /* Processing instruction */
 	    token = pin_source_token_pi(srcp, datap, restp);
 	} else {
@@ -839,16 +839,16 @@ pin_source_next_token (pin_source_t *srcp, char **datap, char **restp)
 	}
 
 	/*
-	 * If the parsing functions returned XI_TYPE_SKIP then they
+	 * If the parsing functions returned PIN_TYPE_SKIP then they
 	 * properly parsed something that we just don't care about.
-	 * Mostly this is from the various XPSF_IGNORE* flags, but
+	 * Mostly this is from the various PPSF_IGNORE* flags, but
 	 * sometimes it's just from apathy.  Regardless, we repeat the
 	 * loop, and hoping to find something meaningful.
 	 */
-	if (token != XI_TYPE_SKIP)
+	if (token != PIN_TYPE_SKIP)
 	    break;
     }
 
-    srcp->xps_last = token;
+    srcp->pps_last = token;
     return token;
 }
