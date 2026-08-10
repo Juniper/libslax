@@ -148,7 +148,7 @@ atom_pin_rule_id="
 pin_rule_id_gen.h \
 pin_rule_id_t \
 pin_rule_id_s \
-xrid_atom \
+prid_atom \
 pin_rule_id_is_null \
 pin_rule_id \
 pin_rule_id_atom_of \
@@ -159,7 +159,7 @@ atom_pin_rstate_id="
 pin_rstate_id_gen.h \
 pin_rstate_id_t \
 pin_rstate_id_s \
-xrsid_atom \
+prsid_atom \
 pin_rstate_id_is_null \
 pin_rstate_id \
 pin_rstate_id_atom_of \
@@ -170,7 +170,7 @@ atom_pin_node_id="
 pin_node_id_gen.h \
 pin_node_id_t \
 pin_node_id_s \
-xnid_atom \
+pnid_atom \
 pin_node_id_is_null \
 pin_node_id \
 pin_node_id_atom_of \
@@ -181,7 +181,7 @@ atom_pin_ns_map_id="
 pin_ns_map_id_gen.h \
 pin_ns_map_id_t \
 pin_ns_map_id_s \
-xnsid_atom \
+pnsid_atom \
 pin_ns_map_id_is_null \
 pin_ns_map_id \
 pin_ns_map_id_atom_of \
@@ -202,7 +202,7 @@ pin_rule_id_funcs_gen.h \
 pin_rule_id_t \
 pin_rule_t \
 pin_rulebook_t \
-xrb_rules \
+prb_rules \
 pin_rule_alloc \
 pin_rule_free \
 pin_rule_addr \
@@ -216,7 +216,7 @@ pin_rstate_id_funcs_gen.h \
 pin_rstate_id_t \
 pin_rstate_t \
 pin_rulebook_t \
-xrb_states \
+prb_states \
 pin_rstate_alloc \
 pin_rstate_free \
 pin_rstate_addr \
@@ -230,7 +230,7 @@ pin_node_gen.h \
 pin_node_id_t \
 pin_node_t \
 pin_workspace_t \
-xw_nodes \
+pw_nodes \
 pin_node_alloc \
 pin_node_free \
 pin_node_addr \
@@ -244,7 +244,7 @@ pin_ns_map_gen.h \
 pin_ns_map_id_t \
 pin_ns_map_t \
 pin_workspace_t \
-xw_ns_map \
+pw_ns_map \
 pin_ns_map_alloc \
 pin_ns_map_free \
 pin_ns_map_addr \
@@ -265,7 +265,7 @@ plain_pin_nodeset_chunk="
 pin_nodeset_chunk_gen.h \
 pin_nodeset_chunk_t \
 pin_nodeset_t \
-xns_workspace->xw_nodeset_chunks \
+pns_workspace->pw_nodeset_chunks \
 pin_nodeset_chunk_alloc \
 pin_nodeset_chunk_free \
 pin_nodeset_chunk_addr \
@@ -275,7 +275,7 @@ plain_pin_nodeset_info="
 pin_nodeset_info_gen.h \
 pin_nodeset_info_t \
 pin_workspace_t \
-xw_nodeset_info \
+pw_nodeset_info \
 pin_nodeset_info_alloc \
 pin_nodeset_info_free \
 pin_nodeset_info_addr \
