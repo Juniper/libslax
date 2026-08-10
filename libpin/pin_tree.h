@@ -11,16 +11,16 @@
  * Functions for manipulating trees.
  */
 
-#ifndef LIBSLAX_XI_TREE_H
-#define LIBSLAX_XI_TREE_H
+#ifndef LIBSLAX_PIN_TREE_H
+#define LIBSLAX_PIN_TREE_H
 
 #include <libpin/pin_common.h>
 #include <libpin/pin_node.h>
 
-#define XI_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
-#define XI_SHIFT	12	/* Bit shift for packed array paging */
+#define PIN_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
+#define PIN_SHIFT	12	/* Bit shift for packed array paging */
 
-#define XI_ISTR_SHIFT	2	/* Bit shift for immutable string storage */
+#define PIN_ISTR_SHIFT	2	/* Bit shift for immutable string storage */
 
 /*
  * Each tree (document or RTF) is represented as a tree.  The
@@ -28,32 +28,32 @@
  * the database.
  */
 typedef struct pin_tree_info_s {
-    pin_node_id_t xti_root;	/* Number of the root node */
-    pin_depth_t xti_max_depth;	/* Max depth of the tree */
+    pin_node_id_t pti_root;	/* Number of the root node */
+    pin_depth_t pti_max_depth;	/* Max depth of the tree */
 } pin_tree_info_t;
 
 /*
  * The in-memory representation of a tree
  */
 typedef struct pin_tree_s {
-    pin_tree_info_t *xt_infop;	/* Base information */
-    pin_workspace_t *xt_workspace; /* Our workspace */
+    pin_tree_info_t *pt_infop;	/* Base information */
+    pin_workspace_t *pt_workspace; /* Our workspace */
 } pin_tree_t;
 
-#define xt_root xt_infop->xti_root
-#define xt_max_depth xt_infop->xti_max_depth
+#define pt_root pt_infop->pti_root
+#define pt_max_depth pt_infop->pti_max_depth
 
 /*
  * The insertion stack
  */
 typedef struct pin_istack_s {
-    pin_node_id_t xs_atom;	/* Our node (atom) */
-    pin_node_t *xs_node;		/* Our node (pointer) */
-    pin_node_id_t xs_last_atom;	/* Last child we appended (atom) */
-    pin_node_t *xs_last_node;	/* Last child we appended (pointer) */
-    pin_action_type_t xs_action;	/* Action being taken (XIA_*) */
-    pin_rstate_t *xs_statep;	/* Current parser state */
-    pa_atom_t xs_old_name;	/* Old (original) name atom; for use-tag="x" */
+    pin_node_id_t ps_atom;	/* Our node (atom) */
+    pin_node_t *ps_node;		/* Our node (pointer) */
+    pin_node_id_t ps_last_atom;	/* Last child we appended (atom) */
+    pin_node_t *ps_last_node;	/* Last child we appended (pointer) */
+    pin_action_type_t ps_action;	/* Action being taken (PIA_*) */
+    pin_rstate_t *ps_statep;	/* Current parser state */
+    pa_atom_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
 } pin_istack_t;
 
 /*
@@ -65,12 +65,12 @@ typedef struct pin_insert_s {
     pin_depth_t pin_depth;	/* Current depth in hierarchy */
     pin_depth_t pin_maxdepth;	/* Maximum depth seen */
     unsigned pin_relation;	/* How to handle the next insertion */
-    pin_istack_t pin_stack[XI_DEPTH_MAX]; /* Insertion points */
+    pin_istack_t pin_stack[PIN_DEPTH_MAX]; /* Insertion points */
 } pin_insert_t;
 
 /* Values for pin_relation */
-#define XIR_SIBLING	1	/* Insert as sibling */
-#define XIR_CHILD	2	/* Insert as child */
+#define PIR_SIBLING	1	/* Insert as sibling */
+#define PIR_CHILD	2	/* Insert as child */
 
 static inline const char *
 pin_mk_name (char *namebuf, const char *name, const char *ext)
@@ -90,8 +90,8 @@ pin_mk_name (char *namebuf, const char *name, const char *ext)
  * next append to this parent.  Returns pin_node_id_null_atom() on error.
  */
 pin_node_id_t
-pin_tree_append_child (pin_workspace_t *xwp,
+pin_tree_append_child (pin_workspace_t *pwp,
 		      pin_node_id_t parent_atom, pin_node_id_t last_hint,
 		      pin_node_id_t new_node_atom);
 
-#endif /* LIBSLAX_XI_TREE_H */
+#endif /* LIBSLAX_PIN_TREE_H */
