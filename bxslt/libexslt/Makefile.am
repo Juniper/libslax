@@ -28,7 +28,7 @@ libexslt_la_SOURCES =                   \
 	dynamic.c
 
 libexslt_la_CFLAGS = $(AM_CFLAGS) $(LIBGCRYPT_CFLAGS)
-libexslt_la_LIBADD = $(top_builddir)/bxslt/libxslt/libxslt.la $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBGCRYPT_LIBS) $(LIBM)
+libexslt_la_LIBADD = $(top_builddir)/bxslt/libxslt/libbxslt.la $(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS) $(LIBGCRYPT_LIBS) $(LIBM)
 libexslt_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
 		      -version-info $(LIBEXSLT_VERSION_INFO)
 
