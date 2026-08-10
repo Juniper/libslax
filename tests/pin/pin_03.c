@@ -78,13 +78,13 @@ main (int argc, char **argv)
 	} else if (strcmp(cp, "file") == 0 || strcmp(cp, "input") == 0) {
 	    opt_filename = check_arg(argv[++argc], "input filename");
 	} else if (strcmp(cp, "ignore") == 0) {
-	    flags |= XPSF_IGNORE_WS;
+	    flags |= PPSF_IGNORE_WS;
 	} else if (strcmp(cp, "ignore-comments") == 0) {
-	    flags |= XPSF_IGNORE_COMMENTS;
+	    flags |= PPSF_IGNORE_COMMENTS;
 	} else if (strcmp(cp, "ignore-dtd") == 0) {
-	    flags |= XPSF_IGNORE_DTD;
+	    flags |= PPSF_IGNORE_DTD;
 	} else if (strcmp(cp, "line") == 0) {
-	    flags |= XPSF_LINE_NO;
+	    flags |= PPSF_LINE_NO;
 	} else if (strcmp(cp, "quiet") == 0) {
 	    opt_quiet = 1;
 	} else if (strcmp(cp, "rulebook") == 0) {
@@ -92,7 +92,7 @@ main (int argc, char **argv)
 	} else if (strcmp(cp, "script") == 0) {
 	    opt_script = check_arg(argv[++argc], "script file");
 	} else if (strcmp(cp, "trim") == 0) {
-	    flags |= XPSF_TRIM_WS;
+	    flags |= PPSF_TRIM_WS;
 	} else if (strcmp(cp, "unescape") == 0) {
 	    opt_unescape = 1;
 	}
@@ -136,7 +136,7 @@ main (int argc, char **argv)
     assert(script);
 
     /* We need to save all attributes */
-    pin_parse_set_default_rule(script, XIA_SAVE_ATTRIB);
+    pin_parse_set_default_rule(script, PIA_SAVE_ATTRIB);
 
     pin_parse(script);
 
@@ -162,7 +162,7 @@ main (int argc, char **argv)
     assert(parsep);
 
     if (opt_debug)
-	pin_parse_flags_set(parsep, XI_PF_DEBUG);
+	pin_parse_flags_set(parsep, PIN_PF_DEBUG);
 
     pin_parse_set_rulebook(parsep, rb);
 
