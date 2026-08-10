@@ -24,7 +24,7 @@ AM_CFLAGS = \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
     ${LIBXSLT_CFLAGS} \
-    ${LIBXML_CFLAG} \
+    ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
 AM_CFLAGS += \
@@ -34,7 +34,6 @@ LIBNAME = libext_exslt
 pkglib_LTLIBRARIES = libext_exslt.la
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS} \
     -L${top_builddir}/libslax -lslax
 
