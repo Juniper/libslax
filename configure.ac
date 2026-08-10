@@ -95,7 +95,7 @@ AC_CHECK_DECLS([mmap], [], [], [#include <sys/mman.h>])
 AM_CONDITIONAL(WITH_GLOB, test "$ac_cv_have_decl_glob" = "yes")
 
 dnl old checks for libslax (XXX remove)
-dnl AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
+dnl AC_CHECK_LIB([bxml], [xmlNewParserCtxt])
 dnl AC_CHECK_LIB([xslt], [xsltInit])
 
 dnl
@@ -191,7 +191,7 @@ AM_CONDITIONAL([HAVE_HUMANIZE_NUMBER], [test "$HAVE_HUMANIZE_NUMBER" = "yes"])
 # These are striclty optional and are really only needed for regression
 # testing during development.  Due to numerous issues with libxml and
 # libxslt, there are some platform-specific differences (like rounding
-# errors in libxml2) that may report test failures.
+# errors in bxml) that may report test failures.
 #
 AC_ARG_WITH(libxslt_tests, [  --with-libxslt-tests[=DIR]    Include the libxslt tests])
 if test "$with_libxslt_tests" != "" ; then
@@ -246,7 +246,7 @@ AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
 #
 
 # bxml is versioned identically to libslax itself ($VERSION, from the
-# AC_INIT above) rather than to the upstream libxml2 release it was
+# AC_INIT above) rather than to the upstream bxml release it was
 # vendored from.
 LIBXML_MAJOR_VERSION=`echo $VERSION | cut -d . -f 1`
 LIBXML_MINOR_VERSION=`echo $VERSION | cut -d . -f 2`
@@ -1053,7 +1053,7 @@ case "$host" in
         ;;
 esac
 
-XML_LIBS="-lxml2"
+XML_LIBS="-lbxml"
 XML_PC_LIBS="${XML_PC_LIBS} ${LIBM}"
 XML_PRIVATE_LIBS="${XML_PRIVATE_LIBS} ${LIBM}"
 
@@ -1099,7 +1099,7 @@ AC_SUBST(XML_PRIVATE_LIBS)
 AC_SUBST(XML_PRIVATE_CFLAGS)
 AC_SUBST(XML_INCLUDEDIR)
 
-# for libxml2-config.cmake.in
+# for bxml-config.cmake.in
 AX_RECURSIVE_EVAL(["$bindir"], [INSTALL_BINDIR])
 AX_RECURSIVE_EVAL(["$includedir"], [INSTALL_INCLUDEDIR])
 AX_RECURSIVE_EVAL(["$libdir"], [INSTALL_LIBDIR])
@@ -1510,7 +1510,7 @@ AC_SUBST(PYTHON_LDFLAGS)
 
 XSLT_LIBDIR='-L${libdir}'
 XSLT_INCLUDEDIR='-I${includedir}'
-XSLT_LIBS="-lxslt"
+XSLT_LIBS="-lbxslt"
 XSLT_PRIVATE_LIBS="$XSLT_MODULE_LIBS $LIBM"
 AC_SUBST(XSLT_LIBDIR)
 AC_SUBST(XSLT_INCLUDEDIR)
@@ -1546,134 +1546,30 @@ dnl ---- start of noise
 dnl
 
 #
-# ---- handle libxml2
+# ---- captive bxml (libxml2)
 #
 
-LIBXML_CONFIG_PREFIX=""
-LIBXML_SRC=""
-
-AC_ARG_WITH(libxml-prefix,
-        [  --with-libxml-prefix=[PFX]           Specify location of libxml config],
-        LIBXML_CONFIG_PREFIX=$withval
-)
-        
-AC_ARG_WITH(libxml-include-prefix,
-        [  --with-libxml-include-prefix=[PFX]   Specify location of libxml headers],
-        LIBXML_CFLAGS="-I$withval"
-)
-
-AC_ARG_WITH(libxml-libs-prefix,
-        [  --with-libxml-libs-prefix=[PFX]      Specify location of libxml libs],
-        LIBXML_LIBS="-L$withval"
-)
-
-AC_ARG_WITH(libxml-src,
-        [  --with-libxml-src=[DIR]              For libxml thats not installed yet (sets all three above)],
-        LIBXML_SRC="$withval"
-)
-AC_SUBST(LIBXML_SRC)
-
-dnl
-dnl where is xml2-config
-dnl
-
+dnl bxml is always our own captive source tree (bxml/), never an
+dnl installed/external libxml2 — so there's nothing to search for.
+dnl Point straight at its build-tree headers and library.
 AC_SUBST(LIBXML_REQUIRED_VERSION)
-AC_MSG_CHECKING(for libxml libraries >= $LIBXML_REQUIRED_VERSION) 
-if test "x$LIBXML_CONFIG_PREFIX" != "x"
-then
-        XML_CONFIG=${LIBXML_CONFIG_PREFIX}/bin/xml2-config
-else
-        XML_CONFIG=xml2-config
-fi
-
-dnl
-dnl make sure xml2-config is executable,
-dnl test version and init our variables
-dnl
-
-if ${XML_CONFIG} --libs > /dev/null 2>&1
-then
-	XMLVERS=`$XML_CONFIG --version`
-	if test VERSION_TO_NUMBER(echo $XMLVERS) -ge VERSION_TO_NUMBER(echo $LIBXML_REQUIRED_VERSION)
-	then
-		LIBXML_LIBS="$LIBXML_LIBS `$XML_CONFIG --libs`"
-		LIBXML_CFLAGS="$LIBXML_CFLAGS `$XML_CONFIG --cflags`"
-		AC_MSG_RESULT($XMLVERS found)
-	else
-		AC_MSG_ERROR(Version $XMLVERS found. You need at least libxml2 $LIBXML_REQUIRED_VERSION for this version of libxslt)
-	fi
-else
-	AC_MSG_ERROR([Could not find libxml2 anywhere, check ftp://xmlsoft.org/.])
-fi
-
-AC_SUBST(XML_CONFIG)
-AC_SUBST(LIBXML_LIBS)
+LIBXML_CFLAGS='-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include'
+LIBXML_LIBS='$(top_builddir)/bxml/libbxml.la'
 AC_SUBST(LIBXML_CFLAGS)
-
-
+AC_SUBST(LIBXML_LIBS)
 
 #
-# ---- handle libxslt
+# ---- captive bxslt (libxslt/libexslt)
 #
 
-LIBXSLT_CONFIG_PREFIX=""
-LIBXSLT_SRC=""
-
-AC_ARG_WITH(libxslt-prefix,
-        [  --with-libxslt-prefix=[PFX]           Specify location of libxslt config],
-        LIBXSLT_CONFIG_PREFIX=$withval
-)
-        
-AC_ARG_WITH(libxslt-include-prefix,
-        [  --with-libxslt-include-prefix=[PFX]   Specify location of libxslt headers],
-        LIBXSLT_CFLAGS="-I$withval"
-)
-
-AC_ARG_WITH(libxslt-libs-prefix,
-        [  --with-libxslt-libs-prefix=[PFX]      Specify location of libxslt libs],
-        LIBXSLT_LIBS="-L$withval"
-)
-
-AC_ARG_WITH(libxslt-src,
-        [  --with-libxslt-src=[DIR]              For libxslt thats not installed yet (sets all three above)],
-        LIBXSLT_SRC="$withval"
-)
-AC_SUBST(LIBXSLT_SRC)
-
-dnl
-dnl where is xslt-config
-dnl
-
+dnl Same story for bxslt: always our own captive source tree (bxslt/),
+dnl so link/include paths point straight into the build tree instead of
+dnl being discovered via an installed xslt-config. LIBXSLT_LIBS carries
+dnl both libbxslt.la and libexslt.la, so callers should not also add a
+dnl bare -lexslt.
 AC_SUBST(LIBXSLT_REQUIRED_VERSION)
-AC_MSG_CHECKING(for libxslt libraries >= $LIBXSLT_REQUIRED_VERSION) 
-if test "x$LIBXSLT_CONFIG_PREFIX" != "x"
-then
-        XSLT_CONFIG=${LIBXSLT_CONFIG_PREFIX}/bin/xslt-config
-else
-        XSLT_CONFIG=xslt-config
-fi
-
-dnl
-dnl make sure xslt-config is executable,
-dnl test version and init our variables
-dnl
-
-if ${XSLT_CONFIG} --libs > /dev/null 2>&1
-then
-	XSLTVERS=`$XSLT_CONFIG --version`
-	if test VERSION_TO_NUMBER(echo $XSLTVERS) -ge VERSION_TO_NUMBER(echo $LIBXSLT_REQUIRED_VERSION)
-	then
-		LIBXSLT_LIBS="$LIBXSLT_LIBS `$XSLT_CONFIG --libs`"
-		LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS `$XSLT_CONFIG --cflags`"
-		AC_MSG_RESULT($XSLTVERS found)
-	else
-		AC_MSG_ERROR(Version $XSLTVERS found. You need at least libxslt $LIBXSLT_REQUIRED_VERSION for this version of libxslt)
-	fi
-else
-	AC_MSG_ERROR([Could not find libxslt anywhere, check ftp://xmlsoft.org/.])
-fi
-
-AC_SUBST(XSLT_CONFIG)
+LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS "'-I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include'
+LIBXSLT_LIBS='$(top_builddir)/bxslt/libxslt/libbxslt.la $(top_builddir)/bxslt/libexslt/libexslt.la $(top_builddir)/bxml/libbxml.la'
 AC_SUBST(LIBXSLT_CFLAGS)
 AC_SUBST(LIBXSLT_LIBS)
 
@@ -1996,10 +1892,10 @@ AC_CONFIG_FILES([
     bxml/python/tests/Makefile
     bxml/include/libxml/xmlversion.h
     bxml/libxml-2.0.pc
-    bxml/libxml2-config.cmake
+    bxml/libbxml-config.cmake
 ])
 AC_CONFIG_FILES([bxml/python/setup.py], [chmod +x bxml/python/setup.py])
-AC_CONFIG_FILES([bxml/xml2-config], [chmod +x bxml/xml2-config])
+AC_CONFIG_FILES([bxml/bxml-config], [chmod +x bxml/bxml-config])
 
 AC_CONFIG_FILES([
     bxslt/Makefile
@@ -2043,10 +1939,10 @@ AC_MSG_NOTICE([summary of build options:
   compiler:         ${CC} (${HAVE_GCC:-no})
   compiler flags:   ${CFLAGS}
   library types:    Shared=${enable_shared}, Static=${enable_static}
-  libxml version:   ${XMLVERS}
+  libxml version:   ${LIBXML_VERSION} (captive)
   libxslt cflags:   ${LIBXSLT_CFLAGS}
   libxml libs:      ${LIBXML_LIBS}
-  libxslt version:  ${XSLTVERS}
+  libxslt version:  ${LIBXSLT_VERSION} (captive)
   libxslt cflags:   ${LIBXSLT_CFLAGS}
   libxslt libs:     ${LIBXSLT_LIBS}
   libcurl version:  ${CURLVERS}
