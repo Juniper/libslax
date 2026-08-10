@@ -17,21 +17,21 @@ testThreads_LDFLAGS =
 testThreads_DEPENDENCIES = $(DEPS)
 testThreads_LDADD=  $(THREAD_LIBS) $(LDADDS)
 
-DEPS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+DEPS = $(top_builddir)/bxslt/libxslt/libbxslt.la \
 	$(top_builddir)/bxslt/libexslt/libexslt.la
 
-LDADDS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+LDADDS = $(top_builddir)/bxslt/libxslt/libbxslt.la \
          $(top_builddir)/bxslt/libexslt/libexslt.la \
-	$(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS) $(LIBM)
+	$(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS) $(LIBM)
 
 xsltproc_LDADD = $(LDADDS)
 
 CLEANFILES = .memdump
 
-$(top_builddir)/bxslt/libxslt/libxslt.la:
-	cd $(top_builddir)/bxslt/libxslt && $(MAKE) libxslt.la
+$(top_builddir)/bxslt/libxslt/libbxslt.la:
+	cd $(top_builddir)/bxslt/libxslt && $(MAKE) libbxslt.la
 
-$(top_builddir)/bxslt/libexslt/libexslt.la: $(top_builddir)/bxslt/libxslt/libxslt.la
+$(top_builddir)/bxslt/libexslt/libexslt.la: $(top_builddir)/bxslt/libxslt/libbxslt.la
 	cd $(top_builddir)/bxslt/libexslt && $(MAKE) libexslt.la
 
 check-local:
