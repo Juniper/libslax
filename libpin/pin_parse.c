@@ -52,8 +52,8 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 {
     pin_source_t *srcp = NULL;
     pin_parse_t *parsep = NULL;
-    pin_insert_t *xip = NULL;
-    pin_tree_t *xtp = NULL;
+    pin_insert_t *pip = NULL;
+    pin_tree_t *ptp = NULL;
     pin_node_t *nodep = NULL;
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
 
@@ -67,56 +67,56 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 	goto fail;
 
     /* The pin_tree_t is the tree we'll be inserting into */
-    xtp = calloc(1, sizeof(*xtp));
-    if (xtp == NULL)
+    ptp = calloc(1, sizeof(*ptp));
+    if (ptp == NULL)
 	goto fail;
 
-    xtp->xt_infop = pa_mmap_header(pmp, pin_mk_name(namebuf, name, "tree"),
-				   PA_TYPE_TREE, 0, sizeof(*xtp->xt_infop));
-    xtp->xt_max_depth = 0;
-    xtp->xt_workspace = workp;
+    ptp->pt_infop = pa_mmap_header(pmp, pin_mk_name(namebuf, name, "tree"),
+				   PA_TYPE_TREE, 0, sizeof(*ptp->pt_infop));
+    ptp->pt_max_depth = 0;
+    ptp->pt_workspace = workp;
 
     /* The pin_insert_t is the point in the tree at which we are inserting */
-    xip = calloc(1, sizeof(*xip));
-    if (xip == NULL)
+    pip = calloc(1, sizeof(*pip));
+    if (pip == NULL)
 	goto fail;
-    xip->pin_tree = xtp;
-    xip->pin_depth = 0;
-    xip->pin_relation = XIR_CHILD;
+    pip->pin_tree = ptp;
+    pip->pin_depth = 0;
+    pip->pin_relation = PIR_CHILD;
 
     /* And finally, fill in the parse structure */
     parsep = calloc(1, sizeof(*parsep));
     if (parsep == NULL)
 	goto fail;
-    parsep->xp_srcp = srcp;
-    parsep->xp_insert = xip;
+    parsep->pp_srcp = srcp;
+    parsep->pp_insert = pip;
 
     /* Fill in the default default rule */
-    parsep->xp_default_rule.xr_flags = XRF_MATCH_ALL;
-    parsep->xp_default_rule.xr_action = XIA_SAVE;
+    parsep->pp_default_rule.pr_flags = PRF_MATCH_ALL;
+    parsep->pp_default_rule.pr_action = PIA_SAVE;
 
     pin_node_id_t node_atom;
     nodep = pin_node_alloc(workp, &node_atom);
     if (nodep == NULL)
 	goto fail;
-    nodep->xn_type = XI_TYPE_ROOT;
-    nodep->xn_depth = 0;
-    nodep->xn_ns_map = PA_NULL_ATOM;
-    nodep->xn_name = PA_NULL_ATOM;
-    nodep->xn_next = pin_node_id_null_atom();
-    nodep->xn_contents = PA_NULL_ATOM;
+    nodep->pn_type = PIN_TYPE_ROOT;
+    nodep->pn_depth = 0;
+    nodep->pn_ns_map = PA_NULL_ATOM;
+    nodep->pn_name = PA_NULL_ATOM;
+    nodep->pn_next = pin_node_id_null_atom();
+    nodep->pn_contents = PA_NULL_ATOM;
 
-    xtp->xt_root = node_atom;
-    xip->pin_stack[xip->pin_depth].xs_atom = node_atom;
-    xip->pin_stack[xip->pin_depth].xs_node = nodep;
+    ptp->pt_root = node_atom;
+    pip->pin_stack[pip->pin_depth].ps_atom = node_atom;
+    pip->pin_stack[pip->pin_depth].ps_node = nodep;
 
     return parsep;
 
  fail:
-    if (xip)
-	free(xip);
-    if (xtp)
-	free(xtp);
+    if (pip)
+	free(pip);
+    if (ptp)
+	free(ptp);
     if (parsep)
 	free(parsep);
     if (srcp)
@@ -143,151 +143,151 @@ pin_parse_namepool_string (pin_parse_t *parsep, pa_atom_t atom)
 }
 
 static void
-pin_insert_push (pin_insert_t *xip, pin_node_id_t atom, pin_node_t *nodep)
+pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
 {
     /* We reuse the current rule state */
-    pin_rstate_t *statep = xip->pin_stack[xip->pin_depth].xs_statep;
+    pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
 
-    xip->pin_depth += 1;
-    xip->pin_stack[xip->pin_depth].xs_atom = atom;
-    xip->pin_stack[xip->pin_depth].xs_node = nodep;
-    xip->pin_stack[xip->pin_depth].xs_statep = statep;
+    pip->pin_depth += 1;
+    pip->pin_stack[pip->pin_depth].ps_atom = atom;
+    pip->pin_stack[pip->pin_depth].ps_node = nodep;
+    pip->pin_stack[pip->pin_depth].ps_statep = statep;
 }
 
 static void
-pin_insert_pop (pin_insert_t *xip)
+pin_insert_pop (pin_insert_t *pip)
 {
-    xip->pin_stack[xip->pin_depth].xs_atom = pin_node_id_null_atom();
-    xip->pin_stack[xip->pin_depth].xs_node = NULL;
-    xip->pin_depth -= 1;
+    pip->pin_stack[pip->pin_depth].ps_atom = pin_node_id_null_atom();
+    pip->pin_stack[pip->pin_depth].ps_node = NULL;
+    pip->pin_depth -= 1;
 }
 
 /*
  * Insert a node into the insertion point
  */
 static pin_node_id_t
-pin_insert_node (pin_insert_t *xip, const char *msg,
+pin_insert_node (pin_insert_t *pip, const char *msg,
 		const char *data, size_t len,
 		pin_node_type_t type, pa_atom_t name_atom, pa_atom_t contents)
 {
     /* Inside a phantom discard frame — don't insert anything */
-    pin_istack_t *cur = &xip->pin_stack[xip->pin_depth];
-    if (cur->xs_node == NULL && cur->xs_action == XIA_DISCARD)
+    pin_istack_t *cur = &pip->pin_stack[pip->pin_depth];
+    if (cur->ps_node == NULL && cur->ps_action == PIA_DISCARD)
 	return pin_node_id_null_atom();
 
     pin_node_id_t node_atom;
-    pin_node_t *nodep = pin_node_alloc(xip->pin_tree->xt_workspace, &node_atom);
+    pin_node_t *nodep = pin_node_alloc(pip->pin_tree->pt_workspace, &node_atom);
     if (nodep == NULL)
 	return pin_node_id_null_atom();
 
     /* Initialize our fields */
-    nodep->xn_type = type;
-    nodep->xn_ns_map = PA_NULL_ATOM;
-    nodep->xn_name = name_atom;
-    nodep->xn_contents = contents;
+    nodep->pn_type = type;
+    nodep->pn_ns_map = PA_NULL_ATOM;
+    nodep->pn_name = name_atom;
+    nodep->pn_contents = contents;
 
     psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
-	    name_atom, contents, xip->pin_depth + 1);
+	    name_atom, contents, pip->pin_depth + 1);
 
     /*
      * If we don't have a child, make one.  Otherwise append it.
      */
-    pin_istack_t *xsp = &xip->pin_stack[xip->pin_depth];
-    if (xsp->xs_node->xn_contents == PA_NULL_ATOM) {
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+    if (psp->ps_node->pn_contents == PA_NULL_ATOM) {
 	/* Record us as the child of the current stack node */
-	pin_node_set_child(xsp->xs_node, node_atom);
+	pin_node_set_child(psp->ps_node, node_atom);
 
 	/* Set our "parent" as the current node */
-	nodep->xn_next = xsp->xs_atom;
+	nodep->pn_next = psp->ps_atom;
 
     } else {
 	/* Append our node as the next child */
-	nodep->xn_next = xsp->xs_atom;
-	xsp->xs_last_node->xn_next = node_atom;
+	nodep->pn_next = psp->ps_atom;
+	psp->ps_last_node->pn_next = node_atom;
     }
 
     /* Mark the "last" as us */
-    xsp->xs_last_atom = node_atom;
-    xsp->xs_last_node = nodep;
+    psp->ps_last_atom = node_atom;
+    psp->ps_last_node = nodep;
 
     /* Set our depth */
-    nodep->xn_depth = xip->pin_depth + 1;
+    nodep->pn_depth = pip->pin_depth + 1;
 
     /* Update pin_maxdepth */
-    if (nodep->xn_depth > xip->pin_maxdepth)
-	xip->pin_maxdepth = nodep->xn_depth;
+    if (nodep->pn_depth > pip->pin_maxdepth)
+	pip->pin_maxdepth = nodep->pn_depth;
 
     return node_atom;
 }
 
 /*
  * Insert a namespace node as the next in the NS chain for parent_atom.
- * prev_ns_nodep is NULL for the first NS node (sets parent's xn_contents),
- * or points to the previous NS node (updates its xn_next).
+ * prev_ns_nodep is NULL for the first NS node (sets parent's pn_contents),
+ * or points to the previous NS node (updates its pn_next).
  * Returns the newly allocated NS node so the caller can pass it as prev on
  * the next call.
  */
 static pin_node_t *
-pin_insert_ns_node (pin_insert_t *xip, const char *msg,
+pin_insert_ns_node (pin_insert_t *pip, const char *msg,
 		   const char *data, size_t len, pin_node_id_t parent_atom,
 		   pin_node_t *prev_ns_nodep,
 		   pin_node_type_t type, pa_atom_t name_atom,
 		   pa_atom_t contents)
 {
     pin_node_id_t node_atom;
-    pin_node_t *nodep = pin_node_alloc(xip->pin_tree->xt_workspace, &node_atom);
+    pin_node_t *nodep = pin_node_alloc(pip->pin_tree->pt_workspace, &node_atom);
     if (nodep == NULL)
 	return NULL;
 
     /* Initialize our fields */
-    nodep->xn_type = type;
-    nodep->xn_ns_map = PA_NULL_ATOM;
-    nodep->xn_name = name_atom;
-    nodep->xn_contents = contents;
+    nodep->pn_type = type;
+    nodep->pn_ns_map = PA_NULL_ATOM;
+    nodep->pn_name = name_atom;
+    nodep->pn_contents = contents;
 
     psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
-	    name_atom, contents, xip->pin_depth + 1);
+	    name_atom, contents, pip->pin_depth + 1);
 
-    /* New NS node's xn_next always points to parent (last-sibling sentinel) */
-    nodep->xn_next = parent_atom;
+    /* New NS node's pn_next always points to parent (last-sibling sentinel) */
+    nodep->pn_next = parent_atom;
 
     /* Wire into the chain */
-    pin_istack_t *xsp = &xip->pin_stack[xip->pin_depth];
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
     if (prev_ns_nodep == NULL)
-	pin_node_set_child(xsp->xs_node, node_atom); /* first NS: set parent's child */
+	pin_node_set_child(psp->ps_node, node_atom); /* first NS: set parent's child */
     else
-	prev_ns_nodep->xn_next = node_atom;          /* subsequent: chain from prev */
+	prev_ns_nodep->pn_next = node_atom;          /* subsequent: chain from prev */
 
     /* Mark the "last" as us */
-    xsp->xs_last_atom = node_atom;
-    xsp->xs_last_node = nodep;
+    psp->ps_last_atom = node_atom;
+    psp->ps_last_node = nodep;
 
     /* Set our depth */
-    nodep->xn_depth = xip->pin_depth + 1;
+    nodep->pn_depth = pip->pin_depth + 1;
 
     /* Update pin_maxdepth */
-    if (nodep->xn_depth > xip->pin_maxdepth)
-	xip->pin_maxdepth = nodep->xn_depth;
+    if (nodep->pn_depth > pip->pin_maxdepth)
+	pip->pin_maxdepth = nodep->pn_depth;
 
     return nodep;
 }
 
 /*
- * Find the parent of a node; not cheap.  Search the list of "xn_next"
+ * Find the parent of a node; not cheap.  Search the list of "pn_next"
  * until we find a node of differing depth.
  */
 static inline pin_node_t *
-pin_node_parent (pin_workspace_t *xwp, pin_node_t *nodep)
+pin_node_parent (pin_workspace_t *pwp, pin_node_t *nodep)
 {
     pin_node_t *nextp;
-    pin_depth_t depth = nodep->xn_depth;
+    pin_depth_t depth = nodep->pn_depth;
 
-    for (; !pin_node_id_is_null(nodep->xn_next); nodep = nextp) {
-	nextp = pin_node_addr(xwp, nodep->xn_next);
+    for (; !pin_node_id_is_null(nodep->pn_next); nodep = nextp) {
+	nextp = pin_node_addr(pwp, nodep->pn_next);
 	if (nextp == NULL)
 	    break;		/* Should not occur */
 
-	if (nextp->xn_depth < depth)
+	if (nextp->pn_depth < depth)
 	    return nextp;
     }
 
@@ -304,20 +304,20 @@ static pin_ns_map_id_t
 pin_parse_find_ns_atom (pin_parse_t *parsep, pin_node_t *nodep,
 		       pa_atom_t pref_atom)
 {
-    pin_workspace_t *xwp = parsep->xp_insert->pin_tree->xt_workspace;
+    pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
     pin_node_t *curp, *childp;
     pin_ns_map_t *ns_map;
 
-    for (curp = nodep; curp; curp = pin_node_parent(xwp, curp)) {
-	for (childp = pin_node_addr(xwp, pin_node_child(curp)); childp;
-	     childp = pin_node_addr(xwp, childp->xn_next)) {
-	    if (childp->xn_type != XI_TYPE_NS)
+    for (curp = nodep; curp; curp = pin_node_parent(pwp, curp)) {
+	for (childp = pin_node_addr(pwp, pin_node_child(curp)); childp;
+	     childp = pin_node_addr(pwp, childp->pn_next)) {
+	    if (childp->pn_type != PIN_TYPE_NS)
 		break;		/* Done with namespaces */
 
 	    /* The namespace mapping number is in the node's contents */
 	    pin_ns_map_id_t ns_id = pin_node_ns_contents(childp);
-	    ns_map = pin_ns_map_addr(xwp, ns_id);
-	    if (ns_map != NULL && ns_map->xnm_prefix == pref_atom)
+	    ns_map = pin_ns_map_addr(pwp, ns_id);
+	    if (ns_map != NULL && ns_map->pnm_prefix == pref_atom)
 		return ns_id; /* Match! */
 	}
     }
@@ -335,7 +335,7 @@ pin_parse_find_ns_atom (pin_parse_t *parsep, pin_node_t *nodep,
 static pin_ns_map_id_t
 pin_parse_find_ns (pin_parse_t *parsep, pin_node_t *nodep, const char *prefix)
 {
-    pin_workspace_t *xwp = parsep->xp_insert->pin_tree->xt_workspace;
+    pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
     pa_atom_t pref_atom;
 
     if (prefix == NULL) {
@@ -347,7 +347,7 @@ pin_parse_find_ns (pin_parse_t *parsep, pin_node_t *nodep, const char *prefix)
 	 * Find the atom for the prefix; if there isn't one, then it
 	 * cannot have been defined, which is likely a syntax error.
 	 */
-	pref_atom = pin_namepool_atom(xwp, prefix, FALSE);
+	pref_atom = pin_namepool_atom(pwp, prefix, FALSE);
 	if (pref_atom == PA_NULL_ATOM)
 	    return pin_ns_map_id_null_atom();
     }
@@ -358,8 +358,8 @@ pin_parse_find_ns (pin_parse_t *parsep, pin_node_t *nodep, const char *prefix)
 static inline pin_boolean_t
 pin_parse_is_attrib (pin_node_type_t type)
 {
-    if (type == XI_TYPE_ATSTR || type == XI_TYPE_ATTRIB
-	|| type == XI_TYPE_NS)
+    if (type == PIN_TYPE_ATSTR || type == PIN_TYPE_ATTRIB
+	|| type == PIN_TYPE_NS)
 	return TRUE;
     return FALSE;
 }
@@ -367,8 +367,8 @@ pin_parse_is_attrib (pin_node_type_t type)
 static void
 pin_insert_attribs (pin_parse_t *parsep, pin_node_t *nodep, const char *data)
 {
-    pin_insert_t *xip = parsep->xp_insert;
-    pa_arb_t *prp = xip->pin_tree->xt_workspace->xw_textpool;
+    pin_insert_t *pip = parsep->pp_insert;
+    pa_arb_t *prp = pip->pin_tree->pt_workspace->pw_textpool;
     size_t len = strlen(data);
     pa_arb_atom_t data_atom = pa_arb_alloc(prp, len + 1);
     char *cp = pa_arb_atom_addr(prp, data_atom);
@@ -380,15 +380,15 @@ pin_insert_attribs (pin_parse_t *parsep, pin_node_t *nodep, const char *data)
     cp[len] = '\0';
 
     pin_node_id_t node_atom;
-    node_atom = pin_insert_node(xip, "pin_insert_attribs", data, len,
-			       XI_TYPE_ATSTR, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
+    node_atom = pin_insert_node(pip, "pin_insert_attribs", data, len,
+			       PIN_TYPE_ATSTR, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
 
     /* Mark the attributes as present (but not extracted) */
-    nodep->xn_flags |= XNF_ATTRIBS_PRESENT;
+    nodep->pn_flags |= PNF_ATTRIBS_PRESENT;
 }
 
 /*
@@ -445,13 +445,13 @@ pin_parse_next_attrib (char **content, char *endp,
 /*
  * Extract attributes into proper nodes.  Loop through the input
  * string, parsing out attributes (name=value), and generating
- * namespace and attribute nodes.  Namespaces (XI_TYPE_NS) are handled
- * distinctly from other attributes (XI_TYPE_ATTRIB).  For namespaces,
- * the xn_name is the PA_NULL_ATOM and the xn_contents is the prefix
+ * namespace and attribute nodes.  Namespaces (PIN_TYPE_NS) are handled
+ * distinctly from other attributes (PIN_TYPE_ATTRIB).  For namespaces,
+ * the pn_name is the PA_NULL_ATOM and the pn_contents is the prefix
  * mapping, which is an index into the prefix mapping table, providing
  * some reuse of prefix-to-uri relationships.  For attributes, the
- * xn_name is the name (an index into the namepool) and the
- * xn_contents is the value (an index into the string table).
+ * pn_name is the name (an index into the namepool) and the
+ * pn_contents is the value (an index into the string table).
  *
  * Namespaces are a pain, but a necessary one; they are handled
  * differently from other attributes, in that they use the namepool
@@ -459,7 +459,7 @@ pin_parse_next_attrib (char **content, char *endp,
  * strings will continue to appear.  It also allows us to compare
  * namespace URIs by comparing atom numbers, rather than strcmp.  We
  * record the prefix-to-namespace mapping in the ns_map, and then
- * record that mapping as the value (xn_contents) of the XI_TYPE_NS
+ * record that mapping as the value (pn_contents) of the PIN_TYPE_NS
  * node.
  *
  * For attributes, our "name" can be a prefix:local-name so we need to
@@ -484,9 +484,9 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 			   pin_node_t *nodep, char *attrib,
 			   pin_boolean_t only_ns)
 {
-    pin_insert_t *xip = parsep->xp_insert;
-    pin_workspace_t *xwp = xip->pin_tree->xt_workspace;
-    pa_arb_t *prp = xwp->xw_textpool;
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
+    pa_arb_t *prp = pwp->pw_textpool;
     size_t len = strlen(attrib);
     char *content = attrib, *endp = content + len, *name, *value;
     size_t namelen, valuelen;
@@ -501,7 +501,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	msg = pin_parse_next_attrib(&content, endp, &name, &namelen,
 				   &value, &valuelen);
 	if (msg) {
-	    pin_source_failure(parsep->xp_srcp, 0, msg);
+	    pin_source_failure(parsep->pp_srcp, 0, msg);
 	    break;
 	}
 	if (content == NULL)
@@ -531,21 +531,21 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    if (*value == '\0')
 		value = NULL;	/* Empty value == the "null" namespace */
 
-	    pin_ns_map_id_t ns_id = pin_ns_find(xwp, name, value, TRUE);
+	    pin_ns_map_id_t ns_id = pin_ns_find(pwp, name, value, TRUE);
 	    if (pin_ns_map_id_is_null(ns_id)) {
-		pin_source_failure(parsep->xp_srcp, 0,
+		pin_source_failure(parsep->pp_srcp, 0,
 				  "namespace create/find failed");
 		break;
 	    }
 
-	    prev_ns_nodep = pin_insert_ns_node(xip,
+	    prev_ns_nodep = pin_insert_ns_node(pip,
 					 "pin_insert_attribs_extract(ns)",
 					 name, name ? strlen(name) : 0,
 					 node_atom, prev_ns_nodep,
-					 XI_TYPE_NS, PA_NULL_ATOM,
+					 PIN_TYPE_NS, PA_NULL_ATOM,
 					 pa_fixed_atom_of(pin_ns_map_id_atom_of(ns_id)));
 	    if (prev_ns_nodep == NULL) {
-		pin_source_failure(parsep->xp_srcp, 0,
+		pin_source_failure(parsep->pp_srcp, 0,
 				  "attribute insert (ns) failed");
 		break;
 	    }
@@ -560,7 +560,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    if (localp) {
 		*localp++ = '\0';
 		prefix = name;
-		pref_atom = pin_namepool_atom(xwp, prefix, TRUE);
+		pref_atom = pin_namepool_atom(pwp, prefix, TRUE);
 	    } else {
 		localp = name;
 		prefix = NULL;
@@ -568,7 +568,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    }
 
 	    /* Normal attribute */
-	    name_atom = pin_namepool_atom(xwp, localp, TRUE);
+	    name_atom = pin_namepool_atom(pwp, localp, TRUE);
 	    if (name_atom == PA_NULL_ATOM)
 		break;
 
@@ -576,11 +576,11 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    if (pa_arb_is_null(value_atom))
 		break;
 
-	    attrib_atom = pin_insert_node(xip, "pin_insert_attribs_extract",
+	    attrib_atom = pin_insert_node(pip, "pin_insert_attribs_extract",
 				 name, strlen(name),
-				 XI_TYPE_ATTRIB, name_atom, pa_arb_atom_of(value_atom));
+				 PIN_TYPE_ATTRIB, name_atom, pa_arb_atom_of(value_atom));
 	    if (pin_node_id_is_null(attrib_atom)) {
-		pin_source_failure(parsep->xp_srcp, 0,
+		pin_source_failure(parsep->pp_srcp, 0,
 				  "attribute insert failed");
 		pa_arb_free_atom(prp, value_atom);
 		break;
@@ -589,17 +589,17 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    if (pref_atom != PA_NULL_ATOM) {
 		/*
 		 * We have to stash our prefix atom in a special
-		 * temporary node of type XI_TYPE_NSPREF.  After all
+		 * temporary node of type PIN_TYPE_NSPREF.  After all
 		 * the attributes are processed and all namespaces
 		 * have been defined, we'll loop thru and set
 		 * real ns_map values.
 		 */
-		pin_node_id_t stash_id = pin_insert_node(xip,
+		pin_node_id_t stash_id = pin_insert_node(pip,
 				 "pin_insert_attribs_extract (stash)",
 				 name, strlen(name),
-				 XI_TYPE_NSPREF, PA_NULL_ATOM, pref_atom);
+				 PIN_TYPE_NSPREF, PA_NULL_ATOM, pref_atom);
 		if (pin_node_id_is_null(stash_id)) {
-		    pin_source_failure(parsep->xp_srcp, 0,
+		    pin_source_failure(parsep->pp_srcp, 0,
 				      "attribute (stash) insert failed");
 		    pa_arb_free_atom(prp, value_atom);
 		    break;
@@ -612,44 +612,44 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 
     /*
      * We've parse namespaces as part of the attribute handling, so
-     * now we have to use them.  When we find an XI_TYPE_NSPREF
-     * attribute, the xn_contents are the atom of a prefix string.  We
+     * now we have to use them.  When we find an PIN_TYPE_NSPREF
+     * attribute, the pn_contents are the atom of a prefix string.  We
      * finish that off, finding the real mapping and recording it,
      * discarding the NSPREF node.
      */
     pin_node_t *childp, *prev = NULL;
 
-    for (childp = pin_node_addr(xwp, pin_node_child(nodep)); childp;
-	 childp = pin_node_addr(xwp, childp->xn_next)) {
-	if (nodep->xn_type == XI_TYPE_NS) {
+    for (childp = pin_node_addr(pwp, pin_node_child(nodep)); childp;
+	 childp = pin_node_addr(pwp, childp->pn_next)) {
+	if (nodep->pn_type == PIN_TYPE_NS) {
 	    /* Skip namespace defs */
 
-	} else if (!pin_parse_is_attrib(nodep->xn_type)) {
+	} else if (!pin_parse_is_attrib(nodep->pn_type)) {
 	    break;		/* End of attributes == done */
 
 	} else if (prev == NULL) {
 	    /* Can't handle not having a previous node */
 
-	} else if (childp->xn_type == XI_TYPE_NSPREF) {
+	} else if (childp->pn_type == PIN_TYPE_NSPREF) {
 	    /*
-	     * An XI_TYPE_NSPREF node means the previous node needs an
+	     * An PIN_TYPE_NSPREF node means the previous node needs an
 	     * accurate name mapping.  We'll find one and discard the
 	     * current node.
 	     */
 	    pin_ns_map_id_t ns_id = pin_parse_find_ns_atom(parsep, nodep,
-						childp->xn_contents);
+						childp->pn_contents);
 	    if (pin_ns_map_id_is_null(ns_id)) {
-		const char *prefix = pin_namepool_string(xwp, childp->xn_contents);
-		pin_source_failure(parsep->xp_srcp, 0,
+		const char *prefix = pin_namepool_string(pwp, childp->pn_contents);
+		pin_source_failure(parsep->pp_srcp, 0,
 				  "namespace mapping not found for %s:%s",
 				  prefix ?: "", name);
 	    }
 
 	    /* Set the namespace mapping */
 	    pin_node_set_ns_map(prev, ns_id);        /* Assign mapping */
-	    prev->xn_next = childp->xn_next;        /* Remove node from list */
+	    prev->pn_next = childp->pn_next;        /* Remove node from list */
 
-	    pin_node_free(xwp, prev->xn_next);       /* Free node */
+	    pin_node_free(pwp, prev->pn_next);       /* Free node */
 	    childp = prev;			    /* childp is dead; resume logic */
 	}
 
@@ -658,7 +658,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 
     /* Mark the attributes as present and extracted */
     if (hit)
-	nodep->xn_flags |= XNF_ATTRIBS_PRESENT | XNF_ATTRIBS_EXTRACTED;
+	nodep->pn_flags |= PNF_ATTRIBS_PRESENT | PNF_ATTRIBS_EXTRACTED;
 }
 
 static void
@@ -666,35 +666,35 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
 		const char *prefix, const char *name, char *attribs,
 		pin_action_type_t type)
 {
-    pin_insert_t *xip = parsep->xp_insert;
+    pin_insert_t *pip = parsep->pp_insert;
 
     if (name_atom == PA_NULL_ATOM)
 	return;
 
     /* If inside a discard frame, push another phantom instead of storing */
-    pin_istack_t *cur_frame = &xip->pin_stack[xip->pin_depth];
-    if (cur_frame->xs_node == NULL && cur_frame->xs_action == XIA_DISCARD) {
-	pin_rstate_t *statep = cur_frame->xs_statep;
-	xip->pin_depth += 1;
-	pin_istack_t *new_frame = &xip->pin_stack[xip->pin_depth];
+    pin_istack_t *cur_frame = &pip->pin_stack[pip->pin_depth];
+    if (cur_frame->ps_node == NULL && cur_frame->ps_action == PIA_DISCARD) {
+	pin_rstate_t *statep = cur_frame->ps_statep;
+	pip->pin_depth += 1;
+	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
 	bzero(new_frame, sizeof(*new_frame));
-	new_frame->xs_action = XIA_DISCARD;
-	new_frame->xs_old_name = name_atom;
-	new_frame->xs_statep = statep;
+	new_frame->ps_action = PIA_DISCARD;
+	new_frame->ps_old_name = name_atom;
+	new_frame->ps_statep = statep;
 	return;
     }
 
     pin_node_id_t node_atom;
-    node_atom = pin_insert_node(xip, "pin_insert_open",
+    node_atom = pin_insert_node(pip, "pin_insert_open",
 			       name, strlen(name),
-			       XI_TYPE_ELT, name_atom, PA_NULL_ATOM);
+			       PIN_TYPE_ELT, name_atom, PA_NULL_ATOM);
     if (pin_node_id_is_null(node_atom))
 	return;
 
-    pin_node_t *nodep = pin_node_addr(xip->pin_tree->xt_workspace, node_atom);
+    pin_node_t *nodep = pin_node_addr(pip->pin_tree->pt_workspace, node_atom);
 
     /* Push our node on the stack */
-    pin_insert_push(xip, node_atom, nodep);
+    pin_insert_push(pip, node_atom, nodep);
 
     if (attribs) {
 	enum { SAVE_NONE, SAVE_NS, SAVE_STRING, SAVE_FULL } save = SAVE_NONE;
@@ -708,15 +708,15 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
 	 * not to miss one.
 	 *
 	 * Past that, it depends on the "act", but if we're asked
-	 * to save-attributes-as-string (XIA_SAVE_ATSTR) and we
+	 * to save-attributes-as-string (PIA_SAVE_ATSTR) and we
 	 * see a namespace, we force the full save.
 	 */
-	if (type == XIA_SAVE_ATTRIB) {
+	if (type == PIA_SAVE_ATTRIB) {
 	    save = SAVE_FULL;
-	} else if (strstr(attribs, XI_XMLNS_LEADER) == NULL) {
-	    if (type == XIA_SAVE_ATSTR)
+	} else if (strstr(attribs, PIN_XMLNS_LEADER) == NULL) {
+	    if (type == PIA_SAVE_ATSTR)
 		save = SAVE_STRING;
-	} else if (type == XIA_SAVE_ATSTR) {
+	} else if (type == PIA_SAVE_ATSTR) {
 	    save = SAVE_FULL;
 	} else {
 	    save = SAVE_NS;
@@ -733,7 +733,7 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
 	pin_ns_map_id_t ns_id = pin_parse_find_ns(parsep, nodep, prefix);
 	pin_node_set_ns_map(nodep, ns_id);
 	if (pin_ns_map_id_is_null(ns_id))
-	    pin_source_failure(parsep->xp_srcp, 0,
+	    pin_source_failure(parsep->pp_srcp, 0,
 			      "namespace mapping not found for %s:%s",
 			      prefix, name);
     }
@@ -742,65 +742,65 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
 static void
 pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
-    pin_insert_t *xip = parsep->xp_insert;
+    pin_insert_t *pip = parsep->pp_insert;
     pa_atom_t name_atom;
 
-    name_atom = pin_namepool_atom(xip->pin_tree->xt_workspace, name, FALSE);
+    name_atom = pin_namepool_atom(pip->pin_tree->pt_workspace, name, FALSE);
     
     psu_log("pin_insert_close: [%s] %u (depth %u)", name, name_atom,
-	   xip->pin_depth);
+	   pip->pin_depth);
 
     if (name_atom == PA_NULL_ATOM) {
-	pin_source_failure(parsep->xp_srcp, 0, "close tag failed: %s", name);
+	pin_source_failure(parsep->pp_srcp, 0, "close tag failed: %s", name);
 	return;
     }
 
-    pin_istack_t *xsp = &xip->pin_stack[xip->pin_depth];
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
 
-    if (xip->pin_depth == 0) {
-	pin_source_failure(parsep->xp_srcp, 0,
+    if (pip->pin_depth == 0) {
+	pin_source_failure(parsep->pp_srcp, 0,
 			  "close for open that doesn't exist: %s", name);
 	return;
     }
 
-    /* Phantom frame pushed for XIA_DISCARD — verify name and pop */
-    if (xsp->xs_node == NULL) {
-	if (xsp->xs_action != XIA_DISCARD) {
-	    pin_source_failure(parsep->xp_srcp, 0,
+    /* Phantom frame pushed for PIA_DISCARD — verify name and pop */
+    if (psp->ps_node == NULL) {
+	if (psp->ps_action != PIA_DISCARD) {
+	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close for open that doesn't exist: %s", name);
 	    return;
 	}
-	if (name_atom != PA_NULL_ATOM && xsp->xs_old_name != name_atom) {
-	    pin_source_failure(parsep->xp_srcp, 0,
+	if (name_atom != PA_NULL_ATOM && psp->ps_old_name != name_atom) {
+	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close doesn't match: %s", name);
 	    return;
 	}
-	bzero(xsp, sizeof(*xsp));
-	pin_insert_pop(xip);
+	bzero(psp, sizeof(*psp));
+	pin_insert_pop(pip);
 	return;
     }
 
-    if (xsp->xs_old_name != 0) {
-	if (xsp->xs_old_name != name_atom) {
-	    pin_source_failure(parsep->xp_srcp, 0,
+    if (psp->ps_old_name != 0) {
+	if (psp->ps_old_name != name_atom) {
+	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close doesn't match original: %s", name);
 	    return;
 	}
-    } else if (xsp->xs_node->xn_name != name_atom) {
-	pin_source_failure(parsep->xp_srcp, 0, "close doesn't match: %s", name);
+    } else if (psp->ps_node->pn_name != name_atom) {
+	pin_source_failure(parsep->pp_srcp, 0, "close doesn't match: %s", name);
 	return;
     }
 
-    bzero(xsp, sizeof(*xsp));
-    pin_insert_pop(xip);
+    bzero(psp, sizeof(*psp));
+    pin_insert_pop(pip);
 }
 
 static void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 		pin_node_type_t type)
 {
-    pin_insert_t *xip = parsep->xp_insert;
-    pa_arb_t *prp = xip->pin_tree->xt_workspace->xw_textpool;
+    pin_insert_t *pip = parsep->pp_insert;
+    pa_arb_t *prp = pip->pin_tree->pt_workspace->pw_textpool;
     pa_arb_atom_t data_atom = pa_arb_alloc(prp, len + 1);
     char *cp = pa_arb_atom_addr(prp, data_atom);
 
@@ -811,7 +811,7 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     cp[len] = '\0';
 
     pin_node_id_t node_atom;
-    node_atom = pin_insert_node(xip, "pin_insert_text", data, len,
+    node_atom = pin_insert_node(pip, "pin_insert_text", data, len,
 			       type, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
@@ -822,11 +822,11 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 static void
 pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
 		      const char *prefix UNUSED, const char *name,
-		      char *attribs, pin_rule_t *xrp)
+		      char *attribs, pin_rule_t *prp)
 {
-    pin_insert_t *xip = parsep->xp_insert;
-    pin_action_type_t act = xrp->xr_action;
-    pa_atom_t use_tag = xrp->xr_use_tag;
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_action_type_t act = prp->pr_action;
+    pa_atom_t use_tag = prp->pr_use_tag;
     pa_atom_t save_name_atom = name_atom;
 
     /* Use a different tag is directed */
@@ -834,33 +834,33 @@ pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
 	name_atom = use_tag;
 
     switch (act) {
-    case XIA_SAVE:
-    case XIA_SAVE_ATSTR:
-    case XIA_SAVE_ATTRIB:
-    case XIA_EMIT:
+    case PIA_SAVE:
+    case PIA_SAVE_ATSTR:
+    case PIA_SAVE_ATTRIB:
+    case PIA_EMIT:
 	pin_insert_open(parsep, name_atom, prefix, name, attribs, act);
 
 	/* Apply rulebook state transition if directed */
-	if (!pin_rstate_id_is_null(xrp->xr_new_state) && parsep->xp_rulebook) {
-	    pin_istack_t *new_frame = &xip->pin_stack[xip->pin_depth];
-	    new_frame->xs_statep = pin_rstate_element(parsep->xp_rulebook,
-						     xrp->xr_new_state);
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
+	    pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
+	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
+						     prp->pr_new_state);
 	}
 	break;
 
-    case XIA_DISCARD: {
+    case PIA_DISCARD: {
 	/* Push phantom frame (no node) to track depth and close matching */
-	pin_rstate_t *statep = xip->pin_stack[xip->pin_depth].xs_statep;
-	xip->pin_depth += 1;
-	pin_istack_t *new_frame = &xip->pin_stack[xip->pin_depth];
+	pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
+	pip->pin_depth += 1;
+	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
 	bzero(new_frame, sizeof(*new_frame));
-	new_frame->xs_action = XIA_DISCARD;
-	new_frame->xs_old_name = save_name_atom;
-	if (!pin_rstate_id_is_null(xrp->xr_new_state) && parsep->xp_rulebook) {
-	    new_frame->xs_statep = pin_rstate_element(parsep->xp_rulebook,
-						     xrp->xr_new_state);
+	new_frame->ps_action = PIA_DISCARD;
+	new_frame->ps_old_name = save_name_atom;
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
+	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
+						     prp->pr_new_state);
 	} else {
-	    new_frame->xs_statep = statep;
+	    new_frame->ps_statep = statep;
 	}
 	break;
     }
@@ -870,44 +870,44 @@ pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
     }
 
     if (use_tag) {
-	pin_istack_t *xsp = &xip->pin_stack[xip->pin_depth];
-	xsp->xs_old_name = save_name_atom;
+	pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+	psp->ps_old_name = save_name_atom;
     }
 }
 
 int
 pin_parse (pin_parse_t *parsep)
 {
-    pin_source_t *srcp = parsep->xp_srcp;
+    pin_source_t *srcp = parsep->pp_srcp;
     char *data, *rest, *localp;
     pin_node_type_t type;
-    pin_boolean_t opt_quiet = PSU_BIT_TEST(parsep->xp_flags, XI_PF_DEBUG);
+    pin_boolean_t opt_quiet = PSU_BIT_TEST(parsep->pp_flags, PIN_PF_DEBUG);
     pin_boolean_t opt_unescape = 0;
     pa_atom_t name_atom;
     pin_rule_t *rulep;
-    pin_insert_t *xip = parsep->xp_insert;
+    pin_insert_t *pip = parsep->pp_insert;
 
     for (;;) {
 
 	type = pin_source_next_token(srcp, &data, &rest);
 
 	switch (type) {
-	case XI_TYPE_NONE:	/* Unknown type */
+	case PIN_TYPE_NONE:	/* Unknown type */
 	    return 1;
 
-	case XI_TYPE_EOF:	/* End of file */
+	case PIN_TYPE_EOF:	/* End of file */
 	    return 0;
 
-	case XI_TYPE_FAIL:	/* Failure mode */
+	case PIN_TYPE_FAIL:	/* Failure mode */
 	    return -1;
 
-	case XI_TYPE_TEXT:	/* Text content */
-	    type = XI_TYPE_UNESC; /* UNESC (aka CDATA) is unescaped text */
+	case PIN_TYPE_TEXT:	/* Text content */
+	    type = PIN_TYPE_UNESC; /* UNESC (aka CDATA) is unescaped text */
 	    {
 		size_t len;
 		if (opt_unescape && data && rest) {
 		    len = pin_source_unescape(srcp, data, rest - data);
-		    type = XI_TYPE_TEXT; /* TEXT is escaped */
+		    type = PIN_TYPE_TEXT; /* TEXT is escaped */
 		} else {
 		    len = rest - data;
 		}
@@ -916,8 +916,8 @@ pin_parse (pin_parse_t *parsep)
 	    }
 	    break;
 
-	case XI_TYPE_OPEN:	/* Open tag */
-	case XI_TYPE_EMPTY:	/* Empty tag */
+	case PIN_TYPE_OPEN:	/* Open tag */
+	case PIN_TYPE_EMPTY:	/* Empty tag */
 	    if (!opt_quiet)
 		psu_log("open tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
@@ -929,14 +929,14 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /* We need an atom to do the indexing to find rules */
-	    name_atom = pin_namepool_atom(xip->pin_tree->xt_workspace,
+	    name_atom = pin_namepool_atom(pip->pin_tree->pt_workspace,
 					 localp, TRUE);
 
 	    /*
 	     * We've got incoming data; find out what to do with it
 	     */
 	    pin_rstate_t *statep = pin_parse_stack_state(parsep);
-	    rulep = pin_rulebook_find(parsep, parsep->xp_rulebook,
+	    rulep = pin_rulebook_find(parsep, parsep->pp_rulebook,
 				     statep,
 				     name_atom, data, localp, rest);
 
@@ -945,7 +945,7 @@ pin_parse (pin_parse_t *parsep)
 	     * will likely make us save everything, just in case.
 	     */
 	    if (rulep == NULL)
-		rulep = &parsep->xp_default_rule;
+		rulep = &parsep->pp_default_rule;
 
 	    /*
 	     * This is where the real work is done, performing any
@@ -959,11 +959,11 @@ pin_parse (pin_parse_t *parsep)
 	     * done the parsing, we can't just "fallthru" to the close
 	     * logic, so we call it directly ourselves.
 	     */
-	    if (type == XI_TYPE_EMPTY)
+	    if (type == PIN_TYPE_EMPTY)
 		pin_insert_close(parsep, data, localp);
 	    break;
 
-	case XI_TYPE_CLOSE:	/* Close tag */
+	case PIN_TYPE_CLOSE:	/* Close tag */
 	    if (!opt_quiet)
 		psu_log("close tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
@@ -977,22 +977,22 @@ pin_parse (pin_parse_t *parsep)
 	    pin_insert_close(parsep, data, localp);
 	    break;
 
-	case XI_TYPE_PI:	/* Processing instruction */
+	case PIN_TYPE_PI:	/* Processing instruction */
 	    if (!opt_quiet)
 		psu_log("pi [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_DTD:	/* DTD nonsense */
+	case PIN_TYPE_DTD:	/* DTD nonsense */
 	    if (!opt_quiet)
 		psu_log("dtd [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_COMMENT:	/* Comment */
+	case PIN_TYPE_COMMENT:	/* Comment */
 	    if (!opt_quiet)
 		psu_log("comment [%s] [%s]", data ?: "", rest ?: "");
 	    break;
 
-	case XI_TYPE_UNESC:	/* unescaped/cdata */
+	case PIN_TYPE_UNESC:	/* unescaped/cdata */
 	    if (!opt_quiet)
 		psu_log("cdata [%.*s]", (int)(rest - data), data);
 	    break;
@@ -1026,21 +1026,21 @@ static const char *pin_type_names[] = {
 };
 
 void
-pin_node_dump (pin_workspace_t *xwp, pin_node_type_t op,
+pin_node_dump (pin_workspace_t *pwp, pin_node_type_t op,
 	      pin_node_t *nodep, pin_node_id_t atom)
 {
     if (!pin_node_id_is_null(atom))
-	nodep = pin_node_addr(xwp, atom);
+	nodep = pin_node_addr(pwp, atom);
     if (nodep == NULL)
 	return;
 
-    const char *name = pin_namepool_string(xwp, nodep->xn_name);
-    pin_ns_map_t *ns_map = pin_ns_map_addr(xwp, pin_ns_map_id(nodep->xn_ns_map));
+    const char *name = pin_namepool_string(pwp, nodep->pn_name);
+    pin_ns_map_t *ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
     const char *pref = ns_map ?
-	pin_namepool_string(xwp, ns_map->xnm_prefix) : NULL;
-    const char *uri = ns_map ? pin_namepool_string(xwp, ns_map->xnm_uri) : NULL;
-    const char *type = (nodep->xn_type < PSU_NUM_ELTS(pin_type_names) - 1)
-	? pin_type_names[nodep->xn_type] : "unknown";
+	pin_namepool_string(pwp, ns_map->pnm_prefix) : NULL;
+    const char *uri = ns_map ? pin_namepool_string(pwp, ns_map->pnm_uri) : NULL;
+    const char *type = (nodep->pn_type < PSU_NUM_ELTS(pin_type_names) - 1)
+	? pin_type_names[nodep->pn_type] : "unknown";
     const char *opname = (op < PSU_NUM_ELTS(pin_type_names) - 1)
 	? pin_type_names[op] : "unknown";
 
@@ -1050,11 +1050,11 @@ pin_node_dump (pin_workspace_t *xwp, pin_node_type_t op,
 	    (op > 0) ? "Op: " : "", (op > 0) ? opname : "",
 	    (op > 0) ? ", " : "",
 	    pa_fixed_atom_of(pin_node_id_atom_of(atom)), nodep,
-	    nodep->xn_type, type, nodep->xn_name, name ?: "",
-	    nodep->xn_depth, nodep->xn_flags,
-	    nodep->xn_ns_map, pref ?: "", uri ?: "",
-	    pa_fixed_atom_of(pin_node_id_atom_of(nodep->xn_next)),
-	    nodep->xn_contents);
+	    nodep->pn_type, type, nodep->pn_name, name ?: "",
+	    nodep->pn_depth, nodep->pn_flags,
+	    nodep->pn_ns_map, pref ?: "", uri ?: "",
+	    pa_fixed_atom_of(pin_node_id_atom_of(nodep->pn_next)),
+	    nodep->pn_contents);
 }
 
 static int
@@ -1062,24 +1062,24 @@ pin_parse_dump_cb (pin_parse_t *parsep, pin_node_type_t type,
 		  pin_node_id_t node_atom, pin_node_t *nodep,
 		  const char *data, void *opaque UNUSED)
 {
-    pin_workspace_t *xwp = parsep->xp_insert->pin_tree->xt_workspace;
+    pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
     const char *cp;
     pin_ns_map_t *ns_map;
 
-    pin_node_dump(xwp, type, nodep, node_atom);
+    pin_node_dump(pwp, type, nodep, node_atom);
 
     switch (type) {
-    case XI_TYPE_ROOT:
+    case PIN_TYPE_ROOT:
 	psu_log("(root)");
 	break;
 
-    case XI_TYPE_ELT:
+    case PIN_TYPE_ELT:
 	psu_log("element: [%s]", data ?: "[error]");
-	if (nodep->xn_ns_map != PA_NULL_ATOM) {
-	    ns_map = pin_ns_map_addr(xwp, pin_ns_map_id(nodep->xn_ns_map));
+	if (nodep->pn_ns_map != PA_NULL_ATOM) {
+	    ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
 	    if (ns_map != NULL) {
-		const char *pref = pin_namepool_string(xwp, ns_map->xnm_prefix);
-		const char *uri = pin_namepool_string(xwp, ns_map->xnm_uri);
+		const char *pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
+		const char *uri = pin_namepool_string(pwp, ns_map->pnm_uri);
 
 		psu_log("element nsmap: [%s]=[%s]", pref ?: "", uri ?: "");
 	    } else {
@@ -1088,24 +1088,24 @@ pin_parse_dump_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 	break;
 
-    case XI_TYPE_TEXT:
+    case PIN_TYPE_TEXT:
 	psu_log("text: [%s]", data ?: "[error]");
 	break;
 
-    case XI_TYPE_UNESC:		/* Unescaped/cdata */
+    case PIN_TYPE_UNESC:		/* Unescaped/cdata */
 	psu_log("cdata: [%s]", data ?: "[error]");
 	break;
 
-    case XI_TYPE_ATTRIB:
-	cp = pin_parse_namepool_string(parsep, nodep->xn_name);
+    case PIN_TYPE_ATTRIB:
+	cp = pin_parse_namepool_string(parsep, nodep->pn_name);
 	psu_log("attrib: [%s=\"%s\"]", cp, data);
 	break;
 
-    case XI_TYPE_NS:
-	ns_map = pin_ns_map_addr(xwp, pin_node_ns_contents(nodep));
+    case PIN_TYPE_NS:
+	ns_map = pin_ns_map_addr(pwp, pin_node_ns_contents(nodep));
 	if (ns_map != NULL) {
-	    const char *pref = pin_namepool_string(xwp, ns_map->xnm_prefix);
-	    const char *uri = pin_namepool_string(xwp, ns_map->xnm_uri);
+	    const char *pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
+	    const char *uri = pin_namepool_string(pwp, ns_map->pnm_uri);
 
 	    psu_log("namespace: [%s]=[%s]", pref ?: "", uri ?: "");
 	} else {
@@ -1113,19 +1113,19 @@ pin_parse_dump_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 	break;
 
-    case XI_TYPE_ATSTR:
+    case PIN_TYPE_ATSTR:
 	psu_log("atrstr: [%s]", data ?: "[error]");
 	break;
 
-    case XI_TYPE_EOL_ATTRIB:
+    case PIN_TYPE_EOL_ATTRIB:
 	psu_log("eol-attrib: %p", nodep);
 	break;
 
-    case XI_TYPE_EOL_EMPTY:
+    case PIN_TYPE_EOL_EMPTY:
 	psu_log("eol-empty: %p", nodep);
 	break;
 
-    case XI_TYPE_CLOSE:
+    case PIN_TYPE_CLOSE:
 	psu_log("close: [%s]", data ?: "[error]");
 	break;
     }
@@ -1162,33 +1162,33 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 {
     pin_xml_output_t *xmlp = opaque;
     FILE *out = xmlp->xx_out;
-    pin_workspace_t *xwp = parsep->xp_insert->pin_tree->xt_workspace;
+    pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
     pin_ns_map_t *ns_map;
     const char *cp;
     int indent;
     const char *pref, *uri;
-    int is_debug = pin_parse_flags_isset(parsep, XI_PF_DEBUG);
+    int is_debug = pin_parse_flags_isset(parsep, PIN_PF_DEBUG);
 
     if (is_debug)
 	fprintf(out, "<!-- [[%d]%s%s%s] -->", type, data ? "[" : "",
 		data ?: "", data ? "]" : "");
 
     switch (type) {
-    case XI_TYPE_ROOT:
+    case PIN_TYPE_ROOT:
 	if (is_debug)
 	    fprintf(out, "<!-- start of output>\n");
 	break;
 
-    case XI_TYPE_OPEN:
-	if (xmlp->xx_last_type != XI_TYPE_ROOT
-	    && xmlp->xx_last_type != XI_TYPE_CLOSE)
+    case PIN_TYPE_OPEN:
+	if (xmlp->xx_last_type != PIN_TYPE_ROOT
+	    && xmlp->xx_last_type != PIN_TYPE_CLOSE)
 	    fprintf(out, "\n");
 
 	pref = NULL;
-	if (nodep->xn_ns_map != PA_NULL_ATOM) {
-	    ns_map = pin_ns_map_addr(xwp, pin_ns_map_id(nodep->xn_ns_map));
+	if (nodep->pn_ns_map != PA_NULL_ATOM) {
+	    ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
 	    if (ns_map != NULL)
-		pref = pin_namepool_string(xwp, ns_map->xnm_prefix);
+		pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
 	}
 
 	fprintf(out, "%*s<%s%s%s", xmlp->xx_indent, "",
@@ -1196,28 +1196,28 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	xmlp->xx_indent += xmlp->xx_incr;
 	break;
 
-    case XI_TYPE_EOL_ATTRIB:
+    case PIN_TYPE_EOL_ATTRIB:
 	fprintf(out, ">");
 	break;
 
-    case XI_TYPE_EOL_EMPTY:
+    case PIN_TYPE_EOL_EMPTY:
 	fprintf(out, "/>\n");
 	break;
 
-    case XI_TYPE_CLOSE:
+    case PIN_TYPE_CLOSE:
 	xmlp->xx_indent -= xmlp->xx_incr;
 
 	if (data != NULL) {
-	    if (xmlp->xx_last_type != XI_TYPE_EOL_EMPTY) {
+	    if (xmlp->xx_last_type != PIN_TYPE_EOL_EMPTY) {
 		pref = NULL;
 
-		if (nodep->xn_ns_map != PA_NULL_ATOM) {
-		    ns_map = pin_ns_map_addr(xwp, pin_ns_map_id(nodep->xn_ns_map));
+		if (nodep->pn_ns_map != PA_NULL_ATOM) {
+		    ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
 		    if (ns_map != NULL)
-			pref = pin_namepool_string(xwp, ns_map->xnm_prefix);
+			pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
 		}
 
-		indent = (xmlp->xx_last_type == XI_TYPE_CLOSE)
+		indent = (xmlp->xx_last_type == PIN_TYPE_CLOSE)
 		    ? xmlp->xx_indent : 0;
 		fprintf(out, "%*s</%s%s%s>\n", indent, "",
 			pref ?: "", pref ? ":" : "", data);
@@ -1225,34 +1225,34 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 	break;
 
-    case XI_TYPE_TEXT:		/* XXX Text needs to be escaped */
+    case PIN_TYPE_TEXT:		/* XXX Text needs to be escaped */
 	fprintf(out, "%s%s%s", is_debug ? "[text]" : "", data,
 		is_debug ? "[/text]": "");
 	break;
 
-    case XI_TYPE_UNESC:
-	if (!((xmlp->xx_last_type == XI_TYPE_CLOSE
-	       || xmlp->xx_last_type == XI_TYPE_EMPTY)
+    case PIN_TYPE_UNESC:
+	if (!((xmlp->xx_last_type == PIN_TYPE_CLOSE
+	       || xmlp->xx_last_type == PIN_TYPE_EMPTY)
 	      && pin_parse_is_ws(data)))
 	    fprintf(out, "%s%s%s", is_debug ? "[unes]" : "", data,
 		    is_debug ? "[/unes]": "");
 	break;
 
-    case XI_TYPE_ATSTR:
+    case PIN_TYPE_ATSTR:
 	fprintf(out, " %s", data);
 	break;
 
-    case XI_TYPE_ATTRIB:
-	cp = pin_namepool_string(parsep->xp_insert->pin_tree->xt_workspace,
-				     nodep->xn_name);
+    case PIN_TYPE_ATTRIB:
+	cp = pin_namepool_string(parsep->pp_insert->pin_tree->pt_workspace,
+				     nodep->pn_name);
 	fprintf(out, " %s=\"%s\"", cp, data);
 	break;
 
-    case XI_TYPE_NS:
-	ns_map = pin_ns_map_addr(xwp, pin_node_ns_contents(nodep));
+    case PIN_TYPE_NS:
+	ns_map = pin_ns_map_addr(pwp, pin_node_ns_contents(nodep));
 	if (ns_map) {
-	    pref = pin_namepool_string(xwp, ns_map->xnm_prefix);
-	    uri = pin_namepool_string(xwp, ns_map->xnm_uri);
+	    pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
+	    uri = pin_namepool_string(pwp, ns_map->pnm_uri);
 	    fprintf(out, " xmlns%s%s=\"%s\"",
 		    pref ? ":" : "", pref ?: "", uri ?: "");
 	} else {
@@ -1261,7 +1261,7 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 	break;
 
-    case XI_TYPE_EOF:
+    case PIN_TYPE_EOF:
 	if (is_debug)
 	    fprintf(out, "<!-- end of output>\n");
 	break;
@@ -1286,30 +1286,30 @@ pin_parse_emit_xml (pin_parse_t *parsep, FILE *out)
 void
 pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 {
-    pin_insert_t *xip = parsep->xp_insert;
-    pin_tree_t *xtp = xip->pin_tree;
-    pin_workspace_t *xwp = xtp->xt_workspace;
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_tree_t *ptp = pip->pin_tree;
+    pin_workspace_t *pwp = ptp->pt_workspace;
     const char *cp;
-    pin_node_id_t node_atom = xtp->xt_root;
+    pin_node_id_t node_atom = ptp->pt_root;
     pin_node_id_t next_node_atom;
     pin_node_t *nodep;
     pin_depth_t last_depth = 0;
     unsigned need_eol_attrib = FALSE;
 
     while (!pin_node_id_is_null(node_atom)) {
-	nodep = pin_node_addr(xwp, node_atom);
+	nodep = pin_node_addr(pwp, node_atom);
 	if (nodep == NULL) {
 	    psu_log("pin_parse_emit sees a null atom!");
 	    break;
 	}
 
 	/* If this is the first non-attrib, let the emitter know */
-	if (need_eol_attrib && !pin_parse_is_attrib(nodep->xn_type)) {
-	    if (last_depth && last_depth > nodep->xn_depth) {
-		func(parsep, XI_TYPE_EOL_EMPTY, node_atom, nodep,
+	if (need_eol_attrib && !pin_parse_is_attrib(nodep->pn_type)) {
+	    if (last_depth && last_depth > nodep->pn_depth) {
+		func(parsep, PIN_TYPE_EOL_EMPTY, node_atom, nodep,
 		     NULL, opaque);
 	    } else {
-		func(parsep, XI_TYPE_EOL_ATTRIB, node_atom, nodep,
+		func(parsep, PIN_TYPE_EOL_ATTRIB, node_atom, nodep,
 		     NULL, opaque);
 	    }
 
@@ -1318,24 +1318,24 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 	}
 
 	/* We're looking at the first step out of layer of hierarchy */
-	if (last_depth && last_depth > nodep->xn_depth) {
-	    cp = pin_namepool_string(xwp, nodep->xn_name);
-	    func(parsep, XI_TYPE_CLOSE, node_atom, nodep, cp, opaque);
-	    node_atom = nodep->xn_next;
-	    last_depth = nodep->xn_depth;
+	if (last_depth && last_depth > nodep->pn_depth) {
+	    cp = pin_namepool_string(pwp, nodep->pn_name);
+	    func(parsep, PIN_TYPE_CLOSE, node_atom, nodep, cp, opaque);
+	    node_atom = nodep->pn_next;
+	    last_depth = nodep->pn_depth;
 	    continue;
 	}
 
 	need_eol_attrib = FALSE; /* Don't need it (yet) */
 
-	if (nodep->xn_type == XI_TYPE_ROOT) {
-	    next_node_atom = (nodep->xn_contents != PA_NULL_ATOM)
-		? pin_node_id(nodep->xn_contents) : nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+	if (nodep->pn_type == PIN_TYPE_ROOT) {
+	    next_node_atom = (nodep->pn_contents != PA_NULL_ATOM)
+		? pin_node_id(nodep->pn_contents) : nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 
-	} else if (nodep->xn_type == XI_TYPE_ELT) {
-	    cp = pin_namepool_string(xwp, nodep->xn_name);
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ELT) {
+	    cp = pin_namepool_string(pwp, nodep->pn_name);
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
 	    /*
 	     * If an ELT's contents are NULL, then this is an empty ELT.
@@ -1343,109 +1343,109 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 	     * to handle this case explicitly, since there's not depth
 	     * change to trigger the normal EMPTY logic above.
 	     */
-	    if (nodep->xn_contents == PA_NULL_ATOM) {
-		next_node_atom = nodep->xn_next;
-		func(parsep, XI_TYPE_EOL_EMPTY, node_atom, nodep,
+	    if (nodep->pn_contents == PA_NULL_ATOM) {
+		next_node_atom = nodep->pn_next;
+		func(parsep, PIN_TYPE_EOL_EMPTY, node_atom, nodep,
 		     NULL, opaque);
-		func(parsep, XI_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
+		func(parsep, PIN_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
 	    } else {
 		need_eol_attrib = TRUE;
-		next_node_atom = pin_node_id(nodep->xn_contents);
+		next_node_atom = pin_node_id(nodep->pn_contents);
 	    }
 
-	} else if (nodep->xn_type == XI_TYPE_TEXT
-		   || nodep->xn_type == XI_TYPE_UNESC) {
-	    cp = pin_textpool_string(xwp, nodep->xn_contents);
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_TEXT
+		   || nodep->pn_type == PIN_TYPE_UNESC) {
+	    cp = pin_textpool_string(pwp, nodep->pn_contents);
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
-	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool,
-				  pa_arb_atom(nodep->xn_contents));
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ATSTR) {
+	    cp = pa_arb_atom_addr(pwp->pw_textpool,
+				  pa_arb_atom(nodep->pn_contents));
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
-	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool,
-				  pa_arb_atom(nodep->xn_contents));
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ATTRIB) {
+	    cp = pa_arb_atom_addr(pwp->pw_textpool,
+				  pa_arb_atom(nodep->pn_contents));
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
-	} else if (nodep->xn_type == XI_TYPE_NS) {
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_NS) {
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 	    need_eol_attrib = TRUE;
 
 	} else {
-	    psu_log("unhandled node: %u", nodep->xn_type);
+	    psu_log("unhandled node: %u", nodep->pn_type);
 	    next_node_atom = pin_node_id_null_atom();
 	}
 
 	node_atom = next_node_atom;
-	last_depth = nodep->xn_depth;
+	last_depth = nodep->pn_depth;
     }
 
-    func(parsep, XI_TYPE_EOF, pin_node_id_null_atom(), NULL, NULL, opaque);
+    func(parsep, PIN_TYPE_EOF, pin_node_id_null_atom(), NULL, NULL, opaque);
 }
 
 #if 0
 typedef struct pin_parse_as_source_s {
-    pin_node_type_t xps_type;	/* Current type (XI_TYPE_*) */
-    pa_atom_t xps_atom;		/* Current atom number */
-    pa_atom_t xps_next_atom;	/* Next atom number */
-    pin_node_t *xps_nodep;	/* Current node */
-    const char *xps_string;	/* String value */
-    pin_depth_t xps_last_depth;	/* Previous depth */
+    pin_node_type_t pps_type;	/* Current type (PIN_TYPE_*) */
+    pa_atom_t pps_atom;		/* Current atom number */
+    pa_atom_t pps_next_atom;	/* Next atom number */
+    pin_node_t *pps_nodep;	/* Current node */
+    const char *pps_string;	/* String value */
+    pin_depth_t pps_last_depth;	/* Previous depth */
 } pin_parse_as_source_t;
 
 {
     pin_parse_as_source_t data;
 
-    for (type = pin_parse_as_source(parsep, xwp, XI_TYPE_INIT, &data);
-	 type != XI_TYPE_EOF;
-	 type = pin_parse_as_source(parsep, xwp, type, &data)) {
+    for (type = pin_parse_as_source(parsep, pwp, PIN_TYPE_INIT, &data);
+	 type != PIN_TYPE_EOF;
+	 type = pin_parse_as_source(parsep, pwp, type, &data)) {
 	continue;
     }
 }
 
 pin_node_type_t
-pin_parse_as_source (pin_parse_t *parsep, pin_workspace_t *xwp,
+pin_parse_as_source (pin_parse_t *parsep, pin_workspace_t *pwp,
 		    pin_node_type_t type, pin_parse_as_source_t *datap)
 {
-    if (type == XI_TYPE_INIT) {
+    if (type == PIN_TYPE_INIT) {
 	bzero(datap, sizeof(*datap));
-	datap->xps_atom = parsep->xp_insert->pin_tree->xt_root;
+	datap->pps_atom = parsep->pp_insert->pin_tree->pt_root;
     }
     
-    pa_atom_t node_atom = *datap->xps_atom;
+    pa_atom_t node_atom = *datap->pps_atom;
 
     while (node_atom != PA_NULL_ATOM) {
-	nodep = pin_node_addr(xwp, node_atom);
+	nodep = pin_node_addr(pwp, node_atom);
 	if (nodep == NULL) {
 	    psu_log("pin_parse_emit sees a null atom!");
 	    break;
 	}
 
 	/* We're looking at the first step out of layer of hierarchy */
-	if (last_depth && last_depth > nodep->xn_depth) {
-	    cp = pin_namepool_string(xwp, nodep->xn_name);
-	    func(parsep, XI_TYPE_CLOSE, node_atom, nodep, cp, opaque);
-	    node_atom = nodep->xn_next;
-	    last_depth = nodep->xn_depth;
+	if (last_depth && last_depth > nodep->pn_depth) {
+	    cp = pin_namepool_string(pwp, nodep->pn_name);
+	    func(parsep, PIN_TYPE_CLOSE, node_atom, nodep, cp, opaque);
+	    node_atom = nodep->pn_next;
+	    last_depth = nodep->pn_depth;
 	    continue;
 	}
 
 	need_eol_attrib = FALSE; /* Don't need it (yet) */
 
-	if (nodep->xn_type == XI_TYPE_ROOT) {
-	    next_node_atom = nodep->xn_contents ?: nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+	if (nodep->pn_type == PIN_TYPE_ROOT) {
+	    next_node_atom = nodep->pn_contents ?: nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 
-	} else if (nodep->xn_type == XI_TYPE_ELT) {
-	    cp = pin_namepool_string(xwp, nodep->xn_name);
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ELT) {
+	    cp = pin_namepool_string(pwp, nodep->pn_name);
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
 	    /*
 	     * If an ELT's contents are NULL, then this is an empty ELT.
@@ -1453,65 +1453,65 @@ pin_parse_as_source (pin_parse_t *parsep, pin_workspace_t *xwp,
 	     * to handle this case explicitly, since there's not depth
 	     * change to trigger the normal EMPTY logic above.
 	     */
-	    if (nodep->xn_contents == PA_NULL_ATOM) {
-		next_node_atom = nodep->xn_next;
-		func(parsep, XI_TYPE_EOL_EMPTY, node_atom, nodep,
+	    if (nodep->pn_contents == PA_NULL_ATOM) {
+		next_node_atom = nodep->pn_next;
+		func(parsep, PIN_TYPE_EOL_EMPTY, node_atom, nodep,
 		     NULL, opaque);
-		func(parsep, XI_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
+		func(parsep, PIN_TYPE_CLOSE, node_atom, nodep, NULL, opaque);
 	    } else {
 		need_eol_attrib = TRUE;
-		next_node_atom = nodep->xn_contents;
+		next_node_atom = nodep->pn_contents;
 	    }
 
-	} else if (nodep->xn_type == XI_TYPE_TEXT
-		   || nodep->xn_type == XI_TYPE_UNESC) {
-	    cp = pin_textpool_string(xwp, nodep->xn_contents);
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_TEXT
+		   || nodep->pn_type == PIN_TYPE_UNESC) {
+	    cp = pin_textpool_string(pwp, nodep->pn_contents);
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
-	} else if (nodep->xn_type == XI_TYPE_ATSTR) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, pa_arb_atom(nodep->xn_contents));
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ATSTR) {
+	    cp = pa_arb_atom_addr(pwp->pw_textpool, pa_arb_atom(nodep->pn_contents));
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
-	} else if (nodep->xn_type == XI_TYPE_ATTRIB) {
-	    cp = pa_arb_atom_addr(xwp->xw_textpool, pa_arb_atom(nodep->xn_contents));
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, cp, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_ATTRIB) {
+	    cp = pa_arb_atom_addr(pwp->pw_textpool, pa_arb_atom(nodep->pn_contents));
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 	    need_eol_attrib = TRUE;
 
-	} else if (nodep->xn_type == XI_TYPE_NS) {
-	    next_node_atom = nodep->xn_next;
-	    func(parsep, nodep->xn_type, node_atom, nodep, NULL, opaque);
+	} else if (nodep->pn_type == PIN_TYPE_NS) {
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 	    need_eol_attrib = TRUE;
 
 	} else {
-	    psu_log("unhandled node: %u", nodep->xn_type);
+	    psu_log("unhandled node: %u", nodep->pn_type);
 	    next_node_atom = PA_NULL_ATOM;
 	}
 
 	node_atom = next_node_atom;
-	last_depth = nodep->xn_depth;
+	last_depth = nodep->pn_depth;
     }
 
-    func(parsep, XI_TYPE_EOF, PA_NULL_ATOM, NULL, NULL, opaque);
+    func(parsep, PIN_TYPE_EOF, PA_NULL_ATOM, NULL, NULL, opaque);
 }
 #endif
 
 void
 pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook)
 {
-    parsep->xp_rulebook = rulebook;
+    parsep->pp_rulebook = rulebook;
 
-    pin_insert_t *xip = parsep->xp_insert;
-    xip->pin_stack[xip->pin_depth].xs_statep = rulebook
-	? pin_rulebook_state(rulebook, pin_rstate_id(XI_STATE_INITIAL)) : NULL;
+    pin_insert_t *pip = parsep->pp_insert;
+    pip->pin_stack[pip->pin_depth].ps_statep = rulebook
+	? pin_rulebook_state(rulebook, pin_rstate_id(PIN_STATE_INITIAL)) : NULL;
 }
 
 void
 pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type)
 {
-    parsep->xp_default_rule.xr_flags = XRF_MATCH_ALL;
-    parsep->xp_default_rule.xr_action = type;
+    parsep->pp_default_rule.pr_flags = PRF_MATCH_ALL;
+    parsep->pp_default_rule.pr_action = type;
 }
