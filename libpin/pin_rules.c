@@ -45,11 +45,11 @@
 #include <libpin/pin_parse.h>
 
 pin_rulebook_t *
-pin_rulebook_setup (pin_workspace_t *xwp,
+pin_rulebook_setup (pin_workspace_t *pwp,
 		   pin_parse_t *script, const char *name)
 {
     char namebuf[PA_MMAP_HEADER_NAME_LEN];
-    pa_mmap_t *pmp = xwp->xw_mmap;
+    pa_mmap_t *pmp = pwp->pw_mmap;
     pin_rulebook_info_t *infop;
     pa_fixed_t *rules;
     pa_fixed_t *states;
@@ -59,38 +59,38 @@ pin_rulebook_setup (pin_workspace_t *xwp,
 			  PA_TYPE_OPAQUE, 0, sizeof(*infop));
 
     rules = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rules.set"),
-			  XI_SHIFT, sizeof(pin_rule_t), XI_MAX_ATOMS);
+			  PIN_SHIFT, sizeof(pin_rule_t), PIN_MAX_ATOMS);
 
     states = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.states"),
-			   XI_SHIFT, sizeof(pin_rstate_t), XI_MAX_ATOMS);
+			   PIN_SHIFT, sizeof(pin_rstate_t), PIN_MAX_ATOMS);
 
     bitmaps = pa_bitmap_open(pmp, pin_mk_name(namebuf, name, "rulebook.bitmaps"));
 
     if (infop == NULL || rules == NULL || states == NULL || bitmaps == NULL)
 	return NULL;
     
-    pin_rulebook_t *xrbp = calloc(1, sizeof(*xrbp));
+    pin_rulebook_t *prbp = calloc(1, sizeof(*prbp));
 
-    if (xrbp) {
-	xrbp->xrb_workspace = xwp;
-	xrbp->xrb_infop = infop;
-	xrbp->xrb_rules = rules;
-	xrbp->xrb_states = states;
-	xrbp->xrb_bitmaps = bitmaps;
-	xrbp->xrb_script = script;
+    if (prbp) {
+	prbp->prb_workspace = pwp;
+	prbp->prb_infop = infop;
+	prbp->prb_rules = rules;
+	prbp->prb_states = states;
+	prbp->prb_bitmaps = bitmaps;
+	prbp->prb_script = script;
     }
 
-    return xrbp;
+    return prbp;
 }
 
 static const char *pin_action_names[] = {
-    "none",			/* XIA_NONE */
-    "discard",			/* XIA_DISCARD */
-    "save",			/* XIA_SAVE */
-    "save-simple",		/* XIA_SAVE_ATSTR */
-    "save-with-attributes",	/* XIA_SAVE_ATTRIB */
-    "emit",			/* XIA_EMIT */
-    "return",			/* XIA_RETURN */
+    "none",			/* PIA_NONE */
+    "discard",			/* PIA_DISCARD */
+    "save",			/* PIA_SAVE */
+    "save-simple",		/* PIA_SAVE_ATSTR */
+    "save-with-attributes",	/* PIA_SAVE_ATTRIB */
+    "emit",			/* PIA_EMIT */
+    "return",			/* PIA_RETURN */
     NULL
 };
 
@@ -104,7 +104,7 @@ pin_rule_action_value (const char *name)
     }
 
     psu_log("unknown action: '%s'", name);
-    return XIA_NONE;
+    return PIA_NONE;
 }
 
 static const char *
@@ -116,24 +116,24 @@ pin_rule_action_name (pin_action_type_t action)
 }
 
 static void
-pin_rule_bitmap_add (pin_rulebook_t *xrbp, pin_rule_t *xrp, const char *tag)
+pin_rule_bitmap_add (pin_rulebook_t *prbp, pin_rule_t *prp, const char *tag)
 {
-    psu_log("pin_rule_bitmap_add: %p/%p/%s", xrbp, xrp, tag);
+    psu_log("pin_rule_bitmap_add: %p/%p/%s", prbp, prp, tag);
 
     /* Find the atom representing the tag */
-    pa_atom_t atom = pin_parse_namepool_atom(xrbp->xrb_script, tag);
+    pa_atom_t atom = pin_parse_namepool_atom(prbp->prb_script, tag);
     if (atom == PA_NULL_ATOM)
 	return;
 
     /* We need to allocate a bitmap for this rule, if we haven't already */
-    if (pa_bitmap_is_null(xrp->xr_bitmap)) {
-	xrp->xr_bitmap = pa_bitmap_alloc(xrbp->xrb_bitmaps);
-	if (pa_bitmap_is_null(xrp->xr_bitmap))
+    if (pa_bitmap_is_null(prp->pr_bitmap)) {
+	prp->pr_bitmap = pa_bitmap_alloc(prbp->prb_bitmaps);
+	if (pa_bitmap_is_null(prp->pr_bitmap))
 	    return;
     }
 
     /* Finally, we can set the atom's bit in the map */
-    pa_bitmap_set(xrbp->xrb_bitmaps, xrp->xr_bitmap, atom);
+    pa_bitmap_set(prbp->prb_bitmaps, prp->pr_bitmap, atom);
 }
 
 /*
@@ -142,26 +142,26 @@ pin_rule_bitmap_add (pin_rulebook_t *xrbp, pin_rule_t *xrp, const char *tag)
  * tags.  Fortunately our input is simple (trivial) so the stack depth
  * is small.
  */
-#define XI_DEPTH_MAX_RULES 4
+#define PIN_DEPTH_MAX_RULES 4
 typedef struct pin_rulebook_prep_s {
-    pin_rulebook_t *xrp_rulebook; /* Rules we are building */
-    pin_parse_t *xrp_script;	 /* Parsed script "workspace" */
-    pa_atom_t xrp_atom_action;	/* Cached atom numbers */
-    pa_atom_t xrp_atom_id;
-    pa_atom_t xrp_atom_new_state;
-    pa_atom_t xrp_atom_rule;
-    pa_atom_t xrp_atom_script;
-    pa_atom_t xrp_atom_state;
-    pa_atom_t xrp_atom_tag;
-    pa_atom_t xrp_atom_use_tag;
+    pin_rulebook_t *prp_rulebook; /* Rules we are building */
+    pin_parse_t *prp_script;	 /* Parsed script "workspace" */
+    pa_atom_t prp_atom_action;	/* Cached atom numbers */
+    pa_atom_t prp_atom_id;
+    pa_atom_t prp_atom_new_state;
+    pa_atom_t prp_atom_rule;
+    pa_atom_t prp_atom_script;
+    pa_atom_t prp_atom_state;
+    pa_atom_t prp_atom_tag;
+    pa_atom_t prp_atom_use_tag;
 
-    int xrp_depth;		/* Current depth of stack */
-    struct xrp_stack_s {
-	pa_atom_t xrps_state;	/* State atom (pin_rstate_t) */
-	pin_rstate_t *xrps_statep; /* State array element */
-	pin_rule_id_t xrps_rule;	/* Current rule atom (pin_rule_t) */
-	pin_rule_id_t *xrps_nextp;	/* Location to store next atom */
-    } xrp_stack[XI_DEPTH_MAX_RULES];
+    int prp_depth;		/* Current depth of stack */
+    struct prp_stack_s {
+	pa_atom_t prps_state;	/* State atom (pin_rstate_t) */
+	pin_rstate_t *prps_statep; /* State array element */
+	pin_rule_id_t prps_rule;	/* Current rule atom (pin_rule_t) */
+	pin_rule_id_t *prps_nextp;	/* Location to store next atom */
+    } prp_stack[PIN_DEPTH_MAX_RULES];
 } pin_rulebook_prep_t;
 
 static int
@@ -169,19 +169,19 @@ pin_rulebook_prep_cb (pin_parse_t *parsep, pin_node_type_t type,
 		     pin_node_id_t node_atom UNUSED, pin_node_t *nodep,
 		     const char *data, void *opaque)
 {
-    pin_tree_t *treep = parsep->xp_insert->pin_tree;
-    pin_workspace_t *xwp = treep->xt_workspace;
+    pin_tree_t *treep = parsep->pp_insert->pin_tree;
+    pin_workspace_t *pwp = treep->pt_workspace;
     pin_rulebook_prep_t *prep = opaque;
-    pin_rulebook_t *xrbp = prep->xrp_rulebook;
-    struct xrp_stack_s *stackp = &prep->xrp_stack[prep->xrp_depth];
+    pin_rulebook_t *prbp = prep->prp_rulebook;
+    struct prp_stack_s *stackp = &prep->prp_stack[prep->prp_depth];
     const char *id, *action, *tag, *use_tag, *new_state;
 
-#define GET_ATTRIB(_x) pin_get_attrib_string(xwp, nodep, prep->_x)
+#define GET_ATTRIB(_x) pin_get_attrib_string(pwp, nodep, prep->_x)
 #define XX(_x) ((_x) ?: "")
 
 #if 0
     int i;
-    pa_fixed_t *pfp = xrbp->xrb_rules;
+    pa_fixed_t *pfp = prbp->prb_rules;
     pa_atom_t atom = pfp->pf_free;
     pa_fixed_page_entry_t *addr;
     for (i = 0; i < 5; i++) {
@@ -194,81 +194,81 @@ pin_rulebook_prep_cb (pin_parse_t *parsep, pin_node_type_t type,
 #endif /* 0 */
 
     switch (type) {
-    case XI_TYPE_OPEN:
-	if (nodep->xn_name == prep->xrp_atom_script) {
+    case PIN_TYPE_OPEN:
+	if (nodep->pn_name == prep->prp_atom_script) {
 	    psu_log("prep: open: script: %s", data);
-	} else if (nodep->xn_name == prep->xrp_atom_state) {
+	} else if (nodep->pn_name == prep->prp_atom_state) {
 	    psu_log("prep: open: state: %s", data);
-	    id = GET_ATTRIB(xrp_atom_id);
-	    action = GET_ATTRIB(xrp_atom_action);
+	    id = GET_ATTRIB(prp_atom_id);
+	    action = GET_ATTRIB(prp_atom_action);
 	    psu_log("prep: open: state: [%s/%s]",
 		    XX(id), XX(action));
 
 	    /* Valid input requires a good state id number */
 	    pin_rstate_id_t sid = pin_rstate_id(strtol(id, NULL, 0));
 	    pa_atom_t sid_n = pa_fixed_atom_of(pin_rstate_id_atom_of(sid));
-	    if (sid_n > pa_fixed_max_atoms(xrbp->xrb_states)) {
+	    if (sid_n > pa_fixed_max_atoms(prbp->prb_states)) {
 		psu_log("state id > max: %u .vs. %u",
-			sid_n, pa_fixed_max_atoms(xrbp->xrb_states));
+			sid_n, pa_fixed_max_atoms(prbp->prb_states));
 		break;
 	    }
 
-	    pin_rstate_t *statep = pin_rstate_element(xrbp, sid);
+	    pin_rstate_t *statep = pin_rstate_element(prbp, sid);
 	    if (statep) {
 		bzero(statep, sizeof(*statep));
 
 		/* Set the stack "next" point to the first rule of the state */
-		stackp->xrps_nextp = &statep->xrbs_first_rule;
+		stackp->prps_nextp = &statep->prbs_first_rule;
 
 		/* If an action was defined, build a default rule */
 		if (action) {
 		    pin_rule_id_t rid;
-		    pin_rule_t *xrp = pin_rule_alloc(xrbp, &rid);
-		    if (xrp == NULL)
+		    pin_rule_t *prp = pin_rule_alloc(prbp, &rid);
+		    if (prp == NULL)
 			break;
 
-		    bzero(xrp, sizeof(*xrp));
-		    xrp->xr_flags = XRF_MATCH_ALL;
-		    xrp->xr_action = pin_rule_action_value(action);
+		    bzero(prp, sizeof(*prp));
+		    prp->pr_flags = PRF_MATCH_ALL;
+		    prp->pr_action = pin_rule_action_value(action);
 
 		    /* Record the rule as the default for this state */
-		    statep->xrbs_default_rule = rid;
+		    statep->prbs_default_rule = rid;
 		}
 	    }
 
-	    /* Update xrsi_max_state */
+	    /* Update prsi_max_state */
 	    if (sid_n > pa_fixed_atom_of(pin_rstate_id_atom_of(
-					 xrbp->xrb_infop->xrsi_max_state)))
-		xrbp->xrb_infop->xrsi_max_state = sid;
+					 prbp->prb_infop->prsi_max_state)))
+		prbp->prb_infop->prsi_max_state = sid;
 
-	} else if (nodep->xn_name == prep->xrp_atom_rule) {
+	} else if (nodep->pn_name == prep->prp_atom_rule) {
 	    psu_log("prep: open: rule: %s", data);
-	    tag = GET_ATTRIB(xrp_atom_tag);
-	    action = GET_ATTRIB(xrp_atom_action);
-	    new_state = GET_ATTRIB(xrp_atom_new_state);
-	    use_tag = GET_ATTRIB(xrp_atom_use_tag);
+	    tag = GET_ATTRIB(prp_atom_tag);
+	    action = GET_ATTRIB(prp_atom_action);
+	    new_state = GET_ATTRIB(prp_atom_new_state);
+	    use_tag = GET_ATTRIB(prp_atom_use_tag);
 	    psu_log("prep: open: rule: [%s/%s/%s/%s]",
 		    XX(tag), XX(action), XX(new_state), XX(use_tag));
 
 	    pin_rule_id_t rid;
-	    pin_rule_t *xrp = pin_rule_alloc(xrbp, &rid);
-	    if (xrp == NULL)
+	    pin_rule_t *prp = pin_rule_alloc(prbp, &rid);
+	    if (prp == NULL)
 		break;
 
-	    bzero(xrp, sizeof(*xrp));
+	    bzero(prp, sizeof(*prp));
 	    if (tag)
-		pin_rule_bitmap_add(xrbp, xrp, tag);
+		pin_rule_bitmap_add(prbp, prp, tag);
 
 	    if (action)
-		xrp->xr_action = pin_rule_action_value(action);
+		prp->pr_action = pin_rule_action_value(action);
 	    if (use_tag)
-		xrp->xr_use_tag = pin_parse_namepool_atom(xrbp->xrb_script, use_tag);
+		prp->pr_use_tag = pin_parse_namepool_atom(prbp->prb_script, use_tag);
 	    if (new_state)
-		xrp->xr_new_state = pin_rstate_id(strtol(new_state, NULL, 0));
+		prp->pr_new_state = pin_rstate_id(strtol(new_state, NULL, 0));
 
 	    /* Add rule to linked list of rules */
-	    *stackp->xrps_nextp = stackp->xrps_rule = rid;
-	    stackp->xrps_nextp = &xrp->xr_next;
+	    *stackp->prps_nextp = stackp->prps_rule = rid;
+	    stackp->prps_nextp = &prp->pr_next;
 
 	} else {
 	    psu_log("prep: open: unknown: %s", data);
@@ -282,76 +282,76 @@ pin_rulebook_prep_cb (pin_parse_t *parsep, pin_node_type_t type,
 pin_rulebook_t *
 pin_rulebook_prep (pin_parse_t *input, const char *name)
 {
-    pin_workspace_t *xwp = input->xp_insert->pin_tree->xt_workspace;
-    pin_rulebook_t *xrbp = pin_rulebook_setup(xwp, input, name);
+    pin_workspace_t *pwp = input->pp_insert->pin_tree->pt_workspace;
+    pin_rulebook_t *prbp = pin_rulebook_setup(pwp, input, name);
     pin_rulebook_prep_t prep;
 
-    if (xrbp == NULL)
+    if (prbp == NULL)
 	return NULL;
 
     bzero(&prep, sizeof(prep));
 
-    prep.xrp_rulebook = xrbp;
-    prep.xrp_script = input;
+    prep.prp_rulebook = prbp;
+    prep.prp_script = input;
 
     /* We need all the atom number for the bits we care about */
     /* XXX rewrite as array/loop */
-    prep.xrp_atom_action = pin_parse_namepool_atom(input, "action");
-    prep.xrp_atom_id = pin_parse_namepool_atom(input, "id");
-    prep.xrp_atom_new_state = pin_parse_namepool_atom(input, "new-state");
-    prep.xrp_atom_rule = pin_parse_namepool_atom(input, "rule");
-    prep.xrp_atom_script = pin_parse_namepool_atom(input, "script");
-    prep.xrp_atom_state = pin_parse_namepool_atom(input, "state");
-    prep.xrp_atom_tag = pin_parse_namepool_atom(input, "tag");
-    prep.xrp_atom_use_tag = pin_parse_namepool_atom(input, "use-tag");
+    prep.prp_atom_action = pin_parse_namepool_atom(input, "action");
+    prep.prp_atom_id = pin_parse_namepool_atom(input, "id");
+    prep.prp_atom_new_state = pin_parse_namepool_atom(input, "new-state");
+    prep.prp_atom_rule = pin_parse_namepool_atom(input, "rule");
+    prep.prp_atom_script = pin_parse_namepool_atom(input, "script");
+    prep.prp_atom_state = pin_parse_namepool_atom(input, "state");
+    prep.prp_atom_tag = pin_parse_namepool_atom(input, "tag");
+    prep.prp_atom_use_tag = pin_parse_namepool_atom(input, "use-tag");
 
     pin_parse_emit(input, pin_rulebook_prep_cb, &prep);
 
-    return xrbp;
+    return prbp;
 }
 
 /*
  * Find the appropriate rule to process incoming data
  */
 pin_rule_t *
-pin_rulebook_find (pin_parse_t *parsep UNUSED, pin_rulebook_t *xrbp,
+pin_rulebook_find (pin_parse_t *parsep UNUSED, pin_rulebook_t *prbp,
 		  pin_rstate_t *statep,
 		  pa_atom_t name_atom,
 		  const char *pref UNUSED, const char *name,
 		  const char *attribs UNUSED)
 {
-    if (xrbp == NULL)		/* No rulebook means no rules */
+    if (prbp == NULL)		/* No rulebook means no rules */
 	return NULL;
 
     if (statep == NULL)
 	return NULL;
 
     pin_rule_id_t rid;
-    pin_rule_t *xrp;
-    for (rid = statep->xrbs_first_rule; !pin_rule_id_is_null(rid);
-	 rid = xrp->xr_next) {
-	xrp = pin_rulebook_rule(xrbp, rid);
-	if (xrp == NULL)
+    pin_rule_t *prp;
+    for (rid = statep->prbs_first_rule; !pin_rule_id_is_null(rid);
+	 rid = prp->pr_next) {
+	prp = pin_rulebook_rule(prbp, rid);
+	if (prp == NULL)
 	    continue;
 
 	/* See if our tag is in the bitmap for this rule */
-	if (!pa_bitmap_test(xrbp->xrb_bitmaps, xrp->xr_bitmap, name_atom))
+	if (!pa_bitmap_test(prbp->prb_bitmaps, prp->pr_bitmap, name_atom))
 	    continue;
 
 	psu_log("rule match: %u/'%s' rule %u: action %u/%s, flags %#x, "
 		"use-tag %u, new_state %u",
 		name_atom, name ?: "",
 		pa_fixed_atom_of(pin_rule_id_atom_of(rid)),
-		xrp->xr_action, pin_rule_action_name(xrp->xr_action),
-		xrp->xr_flags, xrp->xr_use_tag,
-		pa_fixed_atom_of(pin_rstate_id_atom_of(xrp->xr_new_state)));
+		prp->pr_action, pin_rule_action_name(prp->pr_action),
+		prp->pr_flags, prp->pr_use_tag,
+		pa_fixed_atom_of(pin_rstate_id_atom_of(prp->pr_new_state)));
 
-	return xrp;		/* Success! */
+	return prp;		/* Success! */
     }
 
     /* No explicit rule matched; fall back to the state's default rule */
-    if (!pin_rule_id_is_null(statep->xrbs_default_rule))
-	return pin_rulebook_rule(xrbp, statep->xrbs_default_rule);
+    if (!pin_rule_id_is_null(statep->prbs_default_rule))
+	return pin_rulebook_rule(prbp, statep->prbs_default_rule);
 
     return NULL;
 }
@@ -360,11 +360,11 @@ pin_rulebook_find (pin_parse_t *parsep UNUSED, pin_rulebook_t *xrbp,
  * Turn a bitmap in a rule into a string, expanding names
  */
 static const char *
-pin_rule_bitmap_string (pin_rulebook_t *xrbp, pin_rule_t *xrp,
+pin_rule_bitmap_string (pin_rulebook_t *prbp, pin_rule_t *prp,
 			char *buf, size_t bufsiz)
 {
-    pa_bitmap_t *pbp = xrbp->xrb_bitmaps;
-    pa_bitmap_id_t bitmap = xrp->xr_bitmap;
+    pa_bitmap_t *pbp = prbp->prb_bitmaps;
+    pa_bitmap_id_t bitmap = prp->pr_bitmap;
     pa_bitnumber_t num = PA_BITMAP_FIND_START;
     char *cp = buf;
     char *ep = buf + bufsiz;
@@ -378,7 +378,7 @@ pin_rule_bitmap_string (pin_rulebook_t *xrbp, pin_rule_t *xrp,
 	    break;
 
 	/* Turn the bit into a string */
-	str = pin_parse_namepool_string(xrbp->xrb_script, num);
+	str = pin_parse_namepool_string(prbp->prb_script, num);
 
 	/* Make some pretty pretty output */
 	rc = snprintf(cp, ep - cp, "%s%d%s%s%s",
@@ -397,58 +397,58 @@ pin_rule_bitmap_string (pin_rulebook_t *xrbp, pin_rule_t *xrp,
 }
 
 static pin_rule_id_t
-pin_rulebook_dump_rule (pin_rulebook_t *xrbp, pin_rule_id_t rid, const char *tag)
+pin_rulebook_dump_rule (pin_rulebook_t *prbp, pin_rule_id_t rid, const char *tag)
 {
-    pin_rule_t *rulep = pin_rulebook_rule(xrbp, rid);
+    pin_rule_t *rulep = pin_rulebook_rule(prbp, rid);
     if (rulep == NULL)
 	return pin_rule_id_null_atom();
 
-    const char *rname = pin_rule_action_name(rulep->xr_action);
+    const char *rname = pin_rule_action_name(rulep->pr_action);
     char buf[1024];
 
     psu_log("    %srule %u:", tag,
 	    pa_fixed_atom_of(pin_rule_id_atom_of(rid)));
     psu_log("        bitmap: %s",
-	    pin_rule_bitmap_string(xrbp, rulep, buf, sizeof(buf)));
+	    pin_rule_bitmap_string(prbp, rulep, buf, sizeof(buf)));
     psu_log("        flags %#x, action %u/%s, use-tag %u, "
 	    "new_state %u, next %u",
-	    rulep->xr_flags, rulep->xr_action, rname,
-	    rulep->xr_use_tag,
-	    pa_fixed_atom_of(pin_rstate_id_atom_of(rulep->xr_new_state)),
-	    pa_fixed_atom_of(pin_rule_id_atom_of(rulep->xr_next)));
+	    rulep->pr_flags, rulep->pr_action, rname,
+	    rulep->pr_use_tag,
+	    pa_fixed_atom_of(pin_rstate_id_atom_of(rulep->pr_new_state)),
+	    pa_fixed_atom_of(pin_rule_id_atom_of(rulep->pr_next)));
 
-    return rulep->xr_next;
+    return rulep->pr_next;
 }
 
 /*
  * Cause sometimes you just need to see what's really going on....
  */
 void
-pin_rulebook_dump (pin_rulebook_t *xrbp)
+pin_rulebook_dump (pin_rulebook_t *prbp)
 {
     pa_atom_t sid;
     pa_atom_t max_sid = pa_fixed_atom_of(
-		pin_rstate_id_atom_of(xrbp->xrb_infop->xrsi_max_state));
+		pin_rstate_id_atom_of(prbp->prb_infop->prsi_max_state));
     pin_rule_id_t rid;
     pin_rstate_t *statep;
 
     psu_log("dumping rulebook");
 
     for (sid = 1; sid <= max_sid; sid++) {
-	statep = (pin_rstate_t *) pa_fixed_element(xrbp->xrb_states, sid);
+	statep = (pin_rstate_t *) pa_fixed_element(prbp->prb_states, sid);
 	if (statep == NULL)
 	    continue;
 
 	psu_log("state %u: flags %#x, default rule %u",
-		sid, statep->xrbs_flags,
-		pa_fixed_atom_of(pin_rule_id_atom_of(statep->xrbs_default_rule)));
+		sid, statep->prbs_flags,
+		pa_fixed_atom_of(pin_rule_id_atom_of(statep->prbs_default_rule)));
 
 	/* Dump the full set of rules */
-	for (rid = statep->xrbs_first_rule; !pin_rule_id_is_null(rid); )
-	    rid = pin_rulebook_dump_rule(xrbp, rid, "");
+	for (rid = statep->prbs_first_rule; !pin_rule_id_is_null(rid); )
+	    rid = pin_rulebook_dump_rule(prbp, rid, "");
 
 	/* Dump the default rule */
-	if (!pin_rule_id_is_null(statep->xrbs_default_rule))
-	    pin_rulebook_dump_rule(xrbp, statep->xrbs_default_rule, "default ");
+	if (!pin_rule_id_is_null(statep->prbs_default_rule))
+	    pin_rulebook_dump_rule(prbp, statep->prbs_default_rule, "default ");
     }
 }
