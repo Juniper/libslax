@@ -52,7 +52,7 @@ test_node_set (pin_parse_t *parsep UNUSED, pin_node_type_t type,
 {
     test_data_t *tdp = opaque;
 
-    if (type == XI_TYPE_OPEN) {
+    if (type == PIN_TYPE_OPEN) {
 	pin_nodeset_add(tdp->td_nsp,
 		       pa_fixed_atom_of(pin_node_id_atom_of(node_atom)));
 	pin_nodeset_dump(tdp->td_nsp);
@@ -95,15 +95,15 @@ main (int argc, char **argv)
 	} else if (strcmp(argv[argc], "unescape") == 0) {
 	    opt_unescape = 1;
 	} else if (strcmp(argv[argc], "line") == 0) {
-	    flags |= XPSF_LINE_NO;
+	    flags |= PPSF_LINE_NO;
 	} else if (strcmp(argv[argc], "trim") == 0) {
-	    flags |= XPSF_TRIM_WS;
+	    flags |= PPSF_TRIM_WS;
 	} else if (strcmp(argv[argc], "ignore") == 0) {
-	    flags |= XPSF_IGNORE_WS;
+	    flags |= PPSF_IGNORE_WS;
 	} else if (strcmp(argv[argc], "ignore-comments") == 0) {
-	    flags |= XPSF_IGNORE_COMMENTS;
+	    flags |= PPSF_IGNORE_COMMENTS;
 	} else if (strcmp(argv[argc], "ignore-dtd") == 0) {
-	    flags |= XPSF_IGNORE_DTD;
+	    flags |= PPSF_IGNORE_DTD;
 	}
     }
 
@@ -138,7 +138,7 @@ main (int argc, char **argv)
     }
 
     /* Test nodesets */
-    pin_nodeset_t *nsp = pin_nodeset_alloc(workp, XI_NSTYPE_NORMAL, 0);
+    pin_nodeset_t *nsp = pin_nodeset_alloc(workp, PIN_NSTYPE_NORMAL, 0);
     if (nsp) {
 	test_data_t test_data = { workp, nsp };
 	pin_parse_emit(parsep, test_node_set, &test_data);
