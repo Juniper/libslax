@@ -21,37 +21,37 @@
  * possibilities "hopes".
  */
 
-#ifndef LIBSLAX_XI_XPATH_H
-#define LIBSLAX_XI_XPATH_H
+#ifndef LIBSLAX_PIN_XPATH_H
+#define LIBSLAX_PIN_XPATH_H
 
 typedef uint16_t pin_xpath_op_t;	/* Operations */
-#define XI_OP_UNKNOWN	0	/* Unknown */
-#define XI_OP_NAME	1	/* Location path step name-test */
-#define XI_OP_TYPE	2	/* Node-type test */
-#define XI_OP_PREDICATE	3	/* Predicate expression */
-#define XI_OP_OR	4	/* Logical "OR" */
-#define XI_OP_AND	5	/* Logical "AND" */
-#define XI_OP_NOT	6	/* Logical "NOT" */
+#define PIN_OP_UNKNOWN	0	/* Unknown */
+#define PIN_OP_NAME	1	/* Location path step name-test */
+#define PIN_OP_TYPE	2	/* Node-type test */
+#define PIN_OP_PREDICATE	3	/* Predicate expression */
+#define PIN_OP_OR	4	/* Logical "OR" */
+#define PIN_OP_AND	5	/* Logical "AND" */
+#define PIN_OP_NOT	6	/* Logical "NOT" */
 
-#define XI_OPERAND_MAX	2	/* Number of operands per operator */
+#define PIN_OPERAND_MAX	2	/* Number of operands per operator */
 
 /*
  * A piece of a compiled XPath
  */
 typedef struct pin_xpath_op_s {
-    pin_xpath_op_t xpo_op;	/* Operation (XI_OP_*) */
-    pa_atom_t xpo_atom[XI_OPERAND_MAX]; /* Operands */
+    pin_xpath_op_t ppo_op;	/* Operation (PIN_OP_*) */
+    pa_atom_t ppo_atom[PIN_OPERAND_MAX]; /* Operands */
 } pin_xpath_op_t;
 
 /* Conventions for atom fields */
-#define xpo_next xpo_atom[0]
-#define xpo_child xpo_atom[1]
+#define ppo_next ppo_atom[0]
+#define ppo_child ppo_atom[1]
 
 /*
  * A compiled XPath
  */
 typedef struct pin_xpath_s {
-    pa_atom_t xp_root;		/* Root of the xpath expression */
+    pa_atom_t pp_root;		/* Root of the xpath expression */
 } pin_xpath_t;
 
 /*
@@ -65,14 +65,14 @@ typedef struct pin_xpath_context_s {
  * An evaluation result
  */
 typedef struct pin_xpath_result_s {
-    uint16_t xpr_type;		/* Type of result */
-    pa_atom_t xpr_result;	/* Resulting atom */
+    uint16_t ppr_type;		/* Type of result */
+    pa_atom_t ppr_result;	/* Resulting atom */
 } pin_xpath_result_t;
 
-/* Values for xpr_result */
-#define XI_XPR_UNKNOWN	0	/* Unknown */
-#define XI_XPR_NODESET	1	/* Creating a nodeset */
-#define XI_XPR_STRING	2	/* Building a string */
-#define XI_XPR_BOOLEAN	3	/* Boolean result */
+/* Values for ppr_result */
+#define PIN_XPR_UNKNOWN	0	/* Unknown */
+#define PIN_XPR_NODESET	1	/* Creating a nodeset */
+#define PIN_XPR_STRING	2	/* Building a string */
+#define PIN_XPR_BOOLEAN	3	/* Boolean result */
 
-#endif /* LIBSLAX_XI_XPATH_H */
+#endif /* LIBSLAX_PIN_XPATH_H */
