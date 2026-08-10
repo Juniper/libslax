@@ -6,9 +6,9 @@ AM_CPPFLAGS = -I$(top_builddir) \
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
 
-DEPS = $(top_builddir)/bxslt/libxslt/libxslt.la \
+DEPS = $(top_builddir)/bxslt/libxslt/libbxslt.la \
        $(top_builddir)/bxslt/libexslt/libexslt.la \
-       $(top_builddir)/bxml/libxml2.la
+       $(top_builddir)/bxml/libbxml.la
 
 DEPENDENCIES = $(DEPS)
 
@@ -29,7 +29,7 @@ plugindir = $(abs_builddir)/.libs
 
 xmlsoft_org_xslt_testplugin_la_CFLAGS = $(AM_CFLAGS) -DMODULE_COMPILE
 xmlsoft_org_xslt_testplugin_la_SOURCES = testplugin.c
-xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/bxslt/libxslt/libxslt.la $(top_builddir)/bxml/libxml2.la $(EXTRA_LIBS)
+xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/bxslt/libxslt/libbxslt.la $(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS)
 xmlsoft_org_xslt_testplugin_la_LDFLAGS = \
 	$(AM_LDFLAGS) -no-undefined \
 	-module -avoid-version -rpath $(plugindir)
