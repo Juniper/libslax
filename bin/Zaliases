@@ -9,7 +9,7 @@ set opts=' \
 --enable-readline \
 --enable-printflike \
 --with-sqlite3=/opt/local \
---prefix $HOME/work/root-new-libs \
+--prefix $HOME/work/root/new-libs \
 '
 set opts=`echo $opts`
 
