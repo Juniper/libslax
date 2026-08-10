@@ -16,57 +16,57 @@ typedef pin_node_type_t (*pin_whiffle_dest_next_token_func_t)
 	(void *opaque_state, pin_node_type_t type);
 
 typedef struct pin_whiffle_s {
-    void *xwf_source_state;
-    pin_whiffle_source_next_token_func_t xwf_source_func;
-    void *xwf_dest_state;
-    pin_whiffle_dest_next_token_func_t xwf_dest_func;
+    void *pwf_source_state;
+    pin_whiffle_source_next_token_func_t pwf_source_func;
+    void *pwf_dest_state;
+    pin_whiffle_dest_next_token_func_t pwf_dest_func;
 } pin_whiffle_t;
 
 static inline void
-pin_whiffle_set_source (pin_whiffle_t *xwfp,
+pin_whiffle_set_source (pin_whiffle_t *pwfp,
 		       pin_whiffle_source_next_token_func_t func, void *data)
 {
-    xwfp->xwf_source_func = func;
-    xwfp->xwf_source_state = data;
+    pwfp->pwf_source_func = func;
+    pwfp->pwf_source_state = data;
 }
 
 static inline void
-pin_whiffle_set_dest (pin_whiffle_t *xwfp,
+pin_whiffle_set_dest (pin_whiffle_t *pwfp,
 		     pin_whiffle_dest_next_token_func_t func, void *data)
 {
-    xwfp->xwf_dest_func = func;
-    xwfp->xwf_dest_state = data;
+    pwfp->pwf_dest_func = func;
+    pwfp->pwf_dest_state = data;
 }
 
 static void
-pin_whiffle_process_token (pin_whiffle_t *xwfp, pin_node_type_t type)
+pin_whiffle_process_token (pin_whiffle_t *pwfp, pin_node_type_t type)
 {
     ;
 }
 
 static inline pin_node_type_t
-pin_whiffle_next_token (pin_whiffle_t *xwfp)
+pin_whiffle_next_token (pin_whiffle_t *pwfp)
 {
-    return xwfp->xwf_source_func(xwfp->xwf_source_state, xwfp);
+    return pwfp->pwf_source_func(pwfp->pwf_source_state, pwfp);
 }
 
 static void
-pin_whiffle_process (pin_whiffle_t *xwfp)
+pin_whiffle_process (pin_whiffle_t *pwfp)
 {
     pin_node_type_t type;
 
-    for (type = pin_whiffle_next_token(xwfp); type != XI_TYPE_EOF;
-	 type = pin_whiffle_next_token(xwfp)) {
-	pin_whiffle_process_token(xwfp, type);
+    for (type = pin_whiffle_next_token(pwfp); type != PIN_TYPE_EOF;
+	 type = pin_whiffle_next_token(pwfp)) {
+	pin_whiffle_process_token(pwfp, type);
     }
 }
 
 static inline pin_boolean_t
 pin_whiffle_ignore_child (pin_node_t *nodep)
 {
-    switch (nodep->xn_type) {
-    case XI_TYPE_ROOT:
-    case XI_TYPE_ELT:
+    switch (nodep->pn_type) {
+    case PIN_TYPE_ROOT:
+    case PIN_TYPE_ELT:
 	return FALSE;
     }
 
@@ -74,100 +74,100 @@ pin_whiffle_ignore_child (pin_node_t *nodep)
 }
 
 typedef struct pin_whiffle_parse_as_source_s {
-    pa_atom_t xwps_first_atom;	/* First atom returned */
-    pa_atom_t xwps_last_atom;	/* Last atom returned */
-    pin_depth_t xwps_last_depth;	/* Depth of last node */
-    uint8_t xwps_direction;	/* Direction to proceed */
-    pin_node_t *xwps_last_nodep;	/* Last results */
+    pa_atom_t pwps_first_atom;	/* First atom returned */
+    pa_atom_t pwps_last_atom;	/* Last atom returned */
+    pin_depth_t pwps_last_depth;	/* Depth of last node */
+    uint8_t pwps_direction;	/* Direction to proceed */
+    pin_node_t *pwps_last_nodep;	/* Last results */
 } pin_whiffle_parse_as_source_t;
 
-/* Values for xwps_direction */
-#define XI_DIR_INIT	0	/* Fresh source */
-#define XI_DIR_SELF	1	/* Return self */
-#define XI_DIR_CHILD	2	/* Return child atom */
-#define XI_DIR_NEXT	3	/* Return next atom */
-#define XI_DIR_EOF	4	/* Return EOF */
+/* Values for pwps_direction */
+#define PIN_DIR_INIT	0	/* Fresh source */
+#define PIN_DIR_SELF	1	/* Return self */
+#define PIN_DIR_CHILD	2	/* Return child atom */
+#define PIN_DIR_NEXT	3	/* Return next atom */
+#define PIN_DIR_EOF	4	/* Return EOF */
 
 static pin_node_type_t
-pin_whiffle_parse_as_source (void *opaque, pin_whiffle_t *xwfp,
-			    pin_workspace_t *xwp)
+pin_whiffle_parse_as_source (void *opaque, pin_whiffle_t *pwfp,
+			    pin_workspace_t *pwp)
 {
-    pin_whiffle_parse_as_source_t *xwpsp = opaque;
+    pin_whiffle_parse_as_source_t *pwpsp = opaque;
 
     /* If we're at EOF, then we're done (and boring) */
-    if (xwpsp->xwps_direction = XI_TYPE_EOF) 
-	return XI_TYPE_EOF;
+    if (pwpsp->pwps_direction = PIN_TYPE_EOF) 
+	return PIN_TYPE_EOF;
 
-    pin_node_type_t type = XI_TYPE_EOF;
-    uint8_t new_dir = XI_DIR_CHILD;
-    pa_atom_t atom = xwpsp->xwps_last_atom, new_atom = PA_NULL_ATOM;
-    pin_depth_t new_depth = xwpsp->xwps_last_depth;
-    pin_node_t *nodep = xwpsp->xwps_last_nodep;
+    pin_node_type_t type = PIN_TYPE_EOF;
+    uint8_t new_dir = PIN_DIR_CHILD;
+    pa_atom_t atom = pwpsp->pwps_last_atom, new_atom = PA_NULL_ATOM;
+    pin_depth_t new_depth = pwpsp->pwps_last_depth;
+    pin_node_t *nodep = pwpsp->pwps_last_nodep;
     pin_node_t *new_nodep = NULL;
 
     if (nodep == NULL) {
 	/* Should not occur, but if it does ... */
-	new_dir = XI_DIR_EOF;
-	return XI_DIR_EOF;
+	new_dir = PIN_DIR_EOF;
+	return PIN_DIR_EOF;
     }
 
     /* The direction tells us our state and where we are heading next */
-    switch (xwpsp->xwps_direction) {
-    case XI_DIR_INIT:
-    case XI_DIR_SELF:
-	new_atom = xwpsp->xwps_first_atom;
+    switch (pwpsp->pwps_direction) {
+    case PIN_DIR_INIT:
+    case PIN_DIR_SELF:
+	new_atom = pwpsp->pwps_first_atom;
 	break;
 
-    case XI_DIR_CHILD:
-	if (nodep->xn_contents != PA_NULL_ATOM) {
-	    new_atom = nodep->xn_contents;
-	    new_dir = XI_DIR_CHILD;
-	    type = XI_TYPE_OPEN;
+    case PIN_DIR_CHILD:
+	if (nodep->pn_contents != PA_NULL_ATOM) {
+	    new_atom = nodep->pn_contents;
+	    new_dir = PIN_DIR_CHILD;
+	    type = PIN_TYPE_OPEN;
 	    break;
 	}
 	/* fallthru */
 
-    case XI_DIR_NEXT:
-	if (nodep->xn_next == PA_NULL_ATOM
-	    || nodep->xn_next == xwpsp->xwps_last_atom) {
+    case PIN_DIR_NEXT:
+	if (nodep->pn_next == PA_NULL_ATOM
+	    || nodep->pn_next == pwpsp->pwps_last_atom) {
 	    new_atom = PA_NULL_ATOM;
 	    break;
 	}
 
-	new_atom = nodep->xn_next;
+	new_atom = nodep->pn_next;
 	break;
     }
 
-    new_nodep = pin_node_addr(xwp, new_atom);
+    new_nodep = pin_node_addr(pwp, new_atom);
     if (new_nodep == NULL)
 	new_depth = 0;
     else {
-	if (new_dir == XI_DIR_CHILD && pin_whiffle_ignore_child(new_nodep))
-	    new_dir = XI_DIR_NEXT;
+	if (new_dir == PIN_DIR_CHILD && pin_whiffle_ignore_child(new_nodep))
+	    new_dir = PIN_DIR_NEXT;
 
-	new_depth = new_nodep->xn_depth;
-	if (new_depth < xwpsp->xwps_last_depth) {
+	new_depth = new_nodep->pn_depth;
+	if (new_depth < pwpsp->pwps_last_depth) {
 	    /*
 	     * We're done with our parent's children; send a close event and
 	     * move to the next item;
 	     */
-	    new_dir = XI_DIR_NEXT;
-	    type = XI_TYPE_CLOSE;
+	    new_dir = PIN_DIR_NEXT;
+	    type = PIN_TYPE_CLOSE;
 	} else {
-	    type = new_nodep->xn_type;
+	    type = new_nodep->pn_type;
 	}
     }
 
     slaxLog("parse-as-source: last: %d/%d/%p(%d) -> new: %d/%d/%p(%d) -> %d",
-	    xwpsp->xwps_direction, atom, nodep, xwpsp->xwps_last_depth,
+	    pwpsp->pwps_direction, atom, nodep, pwpsp->pwps_last_depth,
 	    new_dir, new_atom, new_nodep, new_depth,
 	    type);
 
     /* Record results */
-    xwpsp->xwps_direction = new_dir;
-    xwpsp->xwps_last_atom = new_atom;
-    xwpsp->xwps_last_nodep = new_nodep;
-    xwpsp->xwps_last_depth = new_depth;
+    pwpsp->pwps_direction = new_dir;
+    pwpsp->pwps_last_atom = new_atom;
+    pwpsp->pwps_last_nodep = new_nodep;
+    pwpsp->pwps_last_depth = new_depth;
     return type;
 }
 
