@@ -11,47 +11,47 @@
  * Definitions common to the parser, storage, and processing of nodes.
  */
 
-#ifndef LIBSLAX_XI_COMMON_H
-#define LIBSLAX_XI_COMMON_H
+#ifndef LIBSLAX_PIN_COMMON_H
+#define LIBSLAX_PIN_COMMON_H
 
 typedef uint32_t pin_source_flags_t; /* Flags for parser */
 typedef uint8_t pin_depth_t;	/* Depth in the hierarchy */
 
-#define XI_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
-#define XI_DEPTH_MAX	254	/* Max depth of tree */
+#define PIN_DEPTH_MIN	1	/* Depth of top of tree (origin 1) */
+#define PIN_DEPTH_MAX	254	/* Max depth of tree */
 
-typedef uint16_t pin_node_flags_t; /* Flags for a node (XNF_*) */
+typedef uint16_t pin_node_flags_t; /* Flags for a node (PNF_*) */
 
 /* Flags for pin_node_flags_t */
-#define XNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
-#define XNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
+#define PNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
+#define PNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
 
-typedef uint8_t pin_node_type_t;	/* Type of node (XI_TYPE_*) */
+typedef uint8_t pin_node_type_t;	/* Type of node (PIN_TYPE_*) */
 /* Type of XML nodes (for pin_node_type_t) */
-#define XI_TYPE_NONE	0	/* Unknown type */
-#define XI_TYPE_EOF	1	/* End of file */
-#define XI_TYPE_SKIP	2	/* Skip/ignored input */
-#define XI_TYPE_FAIL	3	/* Failure mode */
-#define XI_TYPE_ROOT	4	/* Root node (container); not "root element" */
-#define XI_TYPE_TEXT	5	/* Escaped text content */
-#define XI_TYPE_UNESC	6	/* Unescaped text content */
-#define XI_TYPE_OPEN	7	/* Open tag */
-#define XI_TYPE_CLOSE	8	/* Close tag */
-#define XI_TYPE_EMPTY	9	/* Empty tag */
-#define XI_TYPE_PI	10	/* Processing instruction */
-#define XI_TYPE_DTD	11	/* <!DTD> nonsense */
-#define XI_TYPE_COMMENT	12	/* Comment */
-#define XI_TYPE_ATSTR	13	/* A string of all unparsed XML attributes */
-#define XI_TYPE_ATTRIB	14	/* A single, parsed, unescaped XML attribute */
-#define XI_TYPE_EOL_ATTRIB 15	/* Pseudo-type: end-of-list for attributes */
-#define XI_TYPE_EOL_EMPTY 16	/* PT: end-of-attributes on empty tag */
-#define XI_TYPE_NS	17	/* XML namespace */
-#define XI_TYPE_NSPREF	18	/* XML namespace */
+#define PIN_TYPE_NONE	0	/* Unknown type */
+#define PIN_TYPE_EOF	1	/* End of file */
+#define PIN_TYPE_SKIP	2	/* Skip/ignored input */
+#define PIN_TYPE_FAIL	3	/* Failure mode */
+#define PIN_TYPE_ROOT	4	/* Root node (container); not "root element" */
+#define PIN_TYPE_TEXT	5	/* Escaped text content */
+#define PIN_TYPE_UNESC	6	/* Unescaped text content */
+#define PIN_TYPE_OPEN	7	/* Open tag */
+#define PIN_TYPE_CLOSE	8	/* Close tag */
+#define PIN_TYPE_EMPTY	9	/* Empty tag */
+#define PIN_TYPE_PI	10	/* Processing instruction */
+#define PIN_TYPE_DTD	11	/* <!DTD> nonsense */
+#define PIN_TYPE_COMMENT	12	/* Comment */
+#define PIN_TYPE_ATSTR	13	/* A string of all unparsed XML attributes */
+#define PIN_TYPE_ATTRIB	14	/* A single, parsed, unescaped XML attribute */
+#define PIN_TYPE_EOL_ATTRIB 15	/* Pseudo-type: end-of-list for attributes */
+#define PIN_TYPE_EOL_EMPTY 16	/* PT: end-of-attributes on empty tag */
+#define PIN_TYPE_NS	17	/* XML namespace */
+#define PIN_TYPE_NSPREF	18	/* XML namespace */
 
-#define XI_TYPE_ELT	XI_TYPE_OPEN
-#define XI_TYPE_CDATA	XI_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
+#define PIN_TYPE_ELT	PIN_TYPE_OPEN
+#define PIN_TYPE_CDATA	PIN_TYPE_UNESC	/* Cdata (<![CDATA[ ]]>) */
 
-#define XI_XMLNS_LEADER "xmlns"	/* String that starts namespace attributes */
+#define PIN_XMLNS_LEADER "xmlns"	/* String that starts namespace attributes */
 
 typedef uint8_t pin_boolean_t;	/* Base boolean type */
 typedef off_t pin_offset_t;	/* Offset in file or buffer */
@@ -100,4 +100,4 @@ pin_skipws (char *cp, unsigned len, int dir)
     return NULL;
 }
 
-#endif /* LIBSLAX_XI_COMMON_H */
+#endif /* LIBSLAX_PIN_COMMON_H */
