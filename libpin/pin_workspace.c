@@ -73,8 +73,8 @@ pin_workspace_open (pa_mmap_t *pmp, const char *name)
     if (ns_map == NULL)
 	goto fail;
 
-    nodes = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "nodes"), XI_SHIFT,
-			 sizeof(*nodep), XI_MAX_ATOMS);
+    nodes = pa_fixed_open(pmp, pin_mk_name(namebuf, name, "nodes"), PIN_SHIFT,
+			 sizeof(*nodep), PIN_MAX_ATOMS);
     if (nodes == NULL)
 	goto fail;
 
@@ -83,8 +83,8 @@ pin_workspace_open (pa_mmap_t *pmp, const char *name)
 	goto fail;
 
     nodeset_chunks = pa_fixed_open(pmp,
-			pin_mk_name(namebuf, name, "nodeset-chunks"), XI_SHIFT,
-			XI_NODESET_CHUNK_SIZE, XI_MAX_ATOMS);
+			pin_mk_name(namebuf, name, "nodeset-chunks"), PIN_SHIFT,
+			PIN_NODESET_CHUNK_SIZE, PIN_MAX_ATOMS);
     if (nodeset_chunks == NULL)
 	goto fail;
 
@@ -92,8 +92,8 @@ pin_workspace_open (pa_mmap_t *pmp, const char *name)
     pa_fixed_set_flags(nodeset_chunks, PFF_INIT_ZERO);
 
     nodeset_info = pa_fixed_open(pmp,
-			pin_mk_name(namebuf, name, "nodeset-info"), XI_SHIFT,
-			sizeof(pin_nodeset_info_t), XI_MAX_ATOMS);
+			pin_mk_name(namebuf, name, "nodeset-info"), PIN_SHIFT,
+			sizeof(pin_nodeset_info_t), PIN_MAX_ATOMS);
     if (nodeset_info == NULL)
 	goto fail;
 
@@ -104,15 +104,15 @@ pin_workspace_open (pa_mmap_t *pmp, const char *name)
     if (workp == NULL)
 	goto fail;
 
-    workp->xw_mmap = pmp;
-    workp->xw_nodes = nodes;
-    workp->xw_names = names;
-    workp->xw_names_index = names_index;
-    workp->xw_ns_map = ns_map;
-    workp->xw_ns_map_index = ns_map_index;
-    workp->xw_textpool = pap;
-    workp->xw_nodeset_chunks = nodeset_chunks;
-    workp->xw_nodeset_info = nodeset_info;
+    workp->pw_mmap = pmp;
+    workp->pw_nodes = nodes;
+    workp->pw_names = names;
+    workp->pw_names_index = names_index;
+    workp->pw_ns_map = ns_map;
+    workp->pw_ns_map_index = ns_map_index;
+    workp->pw_textpool = pap;
+    workp->pw_nodeset_chunks = nodeset_chunks;
+    workp->pw_nodeset_info = nodeset_info;
 
     return workp;
 
@@ -168,13 +168,13 @@ pin_namepool_open (pa_mmap_t *pmap, const char *basename,
 
     /* The name pool holds the names of our elements, attributes, etc */
     pip = pa_istr_open(pmap, pin_mk_name(namebuf, basename, "data"),
-		       XI_SHIFT, XI_ISTR_SHIFT, XI_MAX_ATOMS);
+		       PIN_SHIFT, PIN_ISTR_SHIFT, PIN_MAX_ATOMS);
     if (pip == NULL)
 	return;
 
     ppp = pa_pat_open(pmap, pin_mk_name(namebuf, basename, "index"),
 		      pip, pin_namepool_key_func,
-		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
+		      PA_PAT_MAXKEY, PIN_SHIFT, PIN_MAX_ATOMS);
     if (ppp == NULL) {
 	pa_istr_close(pip);
 	return;
@@ -194,13 +194,13 @@ pin_ns_open (pa_mmap_t *pmap, const char *basename,
 
     /* The ns pool holds the names of our elements, attributes, etc */
     pfp = pa_fixed_open(pmap, pin_mk_name(namebuf, basename, "data"),
-			XI_SHIFT, sizeof(pin_ns_map_t), XI_MAX_ATOMS);
+			PIN_SHIFT, sizeof(pin_ns_map_t), PIN_MAX_ATOMS);
     if (pfp == NULL)
 	return;
 
     ppp = pa_pat_open(pmap, pin_mk_name(namebuf, basename, "index"),
 		      pfp, pin_ns_key_func,
-		      PA_PAT_MAXKEY, XI_SHIFT, XI_MAX_ATOMS);
+		      PA_PAT_MAXKEY, PIN_SHIFT, PIN_MAX_ATOMS);
     if (ppp == NULL) {
 	pa_fixed_close(pfp);
 	return;
@@ -217,15 +217,15 @@ pin_ns_open (pa_mmap_t *pmap, const char *basename,
  * as lead shielding.
  */
 pa_atom_t
-pin_namepool_atom (pin_workspace_t *xwp, const char *data, pin_boolean_t createp)
+pin_namepool_atom (pin_workspace_t *pwp, const char *data, pin_boolean_t createp)
 {
     uint16_t len = strlen(data) + 1;
-    pa_pat_t *ppp = xwp->xw_names_index;
+    pa_pat_t *ppp = pwp->pw_names_index;
 
     pa_pat_data_atom_t datom = pa_pat_get_atom(ppp, len, data);
     if (pa_pat_data_is_null(datom) && createp) {
 	/* Allocate the name from our pool and add it to the tree */
-	pa_istr_atom_t iatom = pa_istr_string(xwp->xw_names, data);
+	pa_istr_atom_t iatom = pa_istr_string(pwp->pw_names, data);
 	datom = pa_pat_data_atom(pa_istr_atom_of(iatom));
 	if (pa_istr_is_null(iatom))
 	    pa_warning(0, "namepool create key failed for key '%s'", data);
@@ -237,33 +237,33 @@ pin_namepool_atom (pin_workspace_t *xwp, const char *data, pin_boolean_t createp
 }
 
 pa_atom_t
-pin_get_attrib (pin_workspace_t *xwp, pin_node_t *nodep, pa_atom_t name_atom)
+pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pa_atom_t name_atom)
 {
     pin_node_id_t node_id;
-    pin_depth_t depth = nodep->xn_depth;
+    pin_depth_t depth = nodep->pn_depth;
 
-    if (!(nodep->xn_flags & XNF_ATTRIBS_PRESENT))
+    if (!(nodep->pn_flags & PNF_ATTRIBS_PRESENT))
 	return PA_NULL_ATOM;
 
 #if 0 /* XXX */
-    if (!(nodep->xn_flags & XNF_ATTRIBS_EXTRACTED))
-	pin_node_attrib_extract(xwp, nodep);
+    if (!(nodep->pn_flags & PNF_ATTRIBS_EXTRACTED))
+	pin_node_attrib_extract(pwp, nodep);
 #endif
 
     for (node_id = pin_node_child(nodep); !pin_node_id_is_null(node_id);
-	 node_id = nodep->xn_next) {
-	nodep = pin_node_addr(xwp, node_id);
+	 node_id = nodep->pn_next) {
+	nodep = pin_node_addr(pwp, node_id);
 	if (nodep == NULL)	/* Should not occur */
 	    break;
 
-	if (nodep->xn_depth <= depth)
+	if (nodep->pn_depth <= depth)
 	    break;		/* Found end of children */
 
-	if (nodep->xn_type != XI_TYPE_ATTRIB)
+	if (nodep->pn_type != PIN_TYPE_ATTRIB)
 	    continue;
 
-	if (nodep->xn_name == name_atom)
-	    return nodep->xn_contents;
+	if (nodep->pn_name == name_atom)
+	    return nodep->pn_contents;
     }
 
     return PA_NULL_ATOM;
@@ -281,35 +281,35 @@ pin_get_attrib (pin_workspace_t *xwp, pin_node_t *nodep, pa_atom_t name_atom)
  * distinct prefixes to access same namespace, like:
  *    <a xmlns="a.men"><amen:b xmlns:amen="a.men"/></a>
  * Retaining this information allows us to emit XML identical to the
- * original input.  The cost is an extra lookup in xw_ns_map to see
+ * original input.  The cost is an extra lookup in pw_ns_map to see
  * the underlaying atom numbers of the URI strings (which reside in
  * the name pool).  Another fine engineering trade off that's such to
  * bite me in the lower cheeks one day.
  */
 pin_ns_map_id_t
-pin_ns_find (pin_workspace_t *xwp, const char *prefix, const char *uri,
+pin_ns_find (pin_workspace_t *pwp, const char *prefix, const char *uri,
 	    pin_boolean_t createp)
 {
     pa_atom_t prefix_atom = PA_NULL_ATOM, uri_atom = PA_NULL_ATOM;
 
     if (prefix != NULL && *prefix != '\0') {
-	prefix_atom = pin_namepool_atom(xwp, prefix, TRUE);
+	prefix_atom = pin_namepool_atom(pwp, prefix, TRUE);
 	if (prefix_atom == PA_NULL_ATOM)
 	    return pin_ns_map_id_null_atom();
     }
 
     if (uri != NULL && *uri != '\0') {
-	uri_atom = pin_namepool_atom(xwp, uri, TRUE);
+	uri_atom = pin_namepool_atom(pwp, uri, TRUE);
 	if (uri_atom == PA_NULL_ATOM)
 	    return pin_ns_map_id_null_atom();
     }
 
-    pa_pat_t *ppp = xwp->xw_ns_map_index;
+    pa_pat_t *ppp = pwp->pw_ns_map_index;
     pin_ns_map_t ns = { prefix_atom, uri_atom };
     pa_pat_data_atom_t datom = pa_pat_get_atom(ppp, sizeof(ns), &ns);
     if (pa_pat_data_is_null(datom) && createp) {
 	pin_ns_map_id_t ns_id;
-	pin_ns_map_t *nsp = pin_ns_map_alloc(xwp, &ns_id);
+	pin_ns_map_t *nsp = pin_ns_map_alloc(pwp, &ns_id);
 	if (nsp == NULL) {
 	    pa_warning(0, "namespace create key failed for '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
@@ -320,7 +320,7 @@ pin_ns_find (pin_workspace_t *xwp, const char *prefix, const char *uri,
 
 	datom = pa_pat_data_atom(pa_fixed_atom_of(pin_ns_map_id_atom_of(ns_id)));
 	if (!pa_pat_add(ppp, datom, sizeof(ns))) {
-	    pin_ns_map_free(xwp, ns_id);
+	    pin_ns_map_free(pwp, ns_id);
 
 	    pa_warning(0, "duplicate key failure for namespace '%s%s%s'",
 		       prefix ?: "", prefix ? ":" : "", uri ?: "");
