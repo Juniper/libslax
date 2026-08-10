@@ -7,8 +7,8 @@ EXTRA_DIST = html.dict regexp.dict schema.dict xml.dict xpath.dict \
 	     static_seed/uri static_seed/regexp fuzz.h
 CLEANFILES = $(EXTRA_PROGRAMS)
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-DEPENDENCIES = $(top_builddir)/libxml2.la
-LDADD = $(top_builddir)/libxml2.la
+DEPENDENCIES = $(top_builddir)/libbxml.la
+LDADD = $(top_builddir)/libbxml.la
 
 XML_MAX_LEN = 80000
 # Single quotes to avoid wildcard expansion by the shell
