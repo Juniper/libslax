@@ -44,7 +44,6 @@ LIBNAME = libext_db
 pkglib_LTLIBRARIES = libext_db.la
 LIBS = \
     ${LIBXSLT_LIBS} \
-    -lexslt \
     ${LIBXML_LIBS} \
     ${LIBDB_LIBS} \
     -L${top_builddir}/libslax -lslax
