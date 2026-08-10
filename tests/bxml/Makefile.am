@@ -76,7 +76,7 @@ runxmlconf_LDADD= $(LDADDS)
 check-local:
 	[ -d test   ] || $(LN_S) $(srcdir)/test  test
 	[ -d result ] || $(LN_S) $(srcdir)/result result
-	$(CHECKER) ./runtest$(EXEEXT) 2> /dev/null
+	$(CHECKER) ./runtest$(EXEEXT)
 	$(CHECKER) ./testrecurse$(EXEEXT)
 	$(CHECKER) ./testapi$(EXEEXT)
 	$(CHECKER) ./testcatalog$(EXEEXT)
@@ -106,7 +106,7 @@ S2O = | ${SED} '1,/@@/d'
 test tests:
 	@${MKDIR} -p out
 	-@(for base in check; do \
-	    echo "... $$base ..." ; \
+	    echo "... bxml ... $$base ..." ; \
 	    $(MAKE) $$base > out/check.out 2> out/check.err ; \
 	    ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
 	    ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O} ; \
@@ -130,3 +130,5 @@ CLEANFILES = missing.lst runsuite.log runxmlconf.log test.out \
 
 dist-hook:
 	(cd $(srcdir) ; tar -cf - --exclude .git test result) | (cd $(distdir); tar xf -)
+
+.PHONY: tests test
