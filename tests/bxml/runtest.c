@@ -297,6 +297,9 @@ testStructuredErrorHandler(void *ctx ATTRIBUTE_UNUSED, const xmlError *err) {
     xmlFormatError(err, testErrorHandler, NULL);
 }
 
+/* httploader.c */
+void httpTestLoaderInit(void);
+
 static void
 initializeLibxml2(void) {
     /*
@@ -309,6 +312,7 @@ initializeLibxml2(void) {
     xmlMemStrdup = NULL;
     xmlInitParser();
     xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
+    httpTestLoaderInit();
 #ifdef LIBXML_CATALOG_ENABLED
     /*
      * Disable system catalog which could cause lazy memory allocations
