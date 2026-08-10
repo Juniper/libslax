@@ -21,8 +21,8 @@
  * rules
  */
 
-#ifndef LIBSLAX_XI_RULES_H
-#define LIBSLAX_XI_RULES_H
+#ifndef LIBSLAX_PIN_RULES_H
+#define LIBSLAX_PIN_RULES_H
 
 #include <parrotdb/pafixed.h>
 #include <parrotdb/pabitmap.h>
@@ -30,13 +30,13 @@
 typedef uint8_t pin_action_type_t;
 
 /* Values for pin_action_type_t */
-#define XIA_NONE	0
-#define XIA_DISCARD	1	/* Discard with all due haste */
-#define XIA_SAVE	2	/* Save node (at insertion point) */
-#define XIA_SAVE_ATSTR	3	/* Save node and attribute string */
-#define XIA_SAVE_ATTRIB	4	/* Save node and parsed attributes */
-#define XIA_EMIT	5	/* Emit as output */
-#define XIA_RETURN	6	/* Force return from pin_parse() */
+#define PIA_NONE	0
+#define PIA_DISCARD	1	/* Discard with all due haste */
+#define PIA_SAVE	2	/* Save node (at insertion point) */
+#define PIA_SAVE_ATSTR	3	/* Save node and attribute string */
+#define PIA_SAVE_ATTRIB	4	/* Save node and parsed attributes */
+#define PIA_EMIT	5	/* Emit as output */
+#define PIA_RETURN	6	/* Force return from pin_parse() */
 
 /* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
 #include "gen/pin_rule_id_gen.h"
@@ -47,57 +47,57 @@ typedef uint8_t pin_action_type_t;
  * copied, saved, or discarded.  Or a function callback can triggered.
  */
 typedef struct pin_rule_s {
-    pin_rule_id_t xr_next;	/* Next rule for this state */
-    uint32_t xr_flags;		/* Flags for this rule */
-    pa_bitmap_id_t xr_bitmap;	/* Elements affected by this rule */
-    pin_action_type_t xr_action;	/* What to do when the rule matches */
-    pa_atom_t xr_use_tag;	/* Different tag to emit */
-    pin_rstate_id_t xr_new_state;/* New state (in the rulebook) to enter */
+    pin_rule_id_t pr_next;	/* Next rule for this state */
+    uint32_t pr_flags;		/* Flags for this rule */
+    pa_bitmap_id_t pr_bitmap;	/* Elements affected by this rule */
+    pin_action_type_t pr_action;	/* What to do when the rule matches */
+    pa_atom_t pr_use_tag;	/* Different tag to emit */
+    pin_rstate_id_t pr_new_state;/* New state (in the rulebook) to enter */
 } pin_rule_t;
 
-/* Flags for xr_flags */
-#define XRF_MATCH_ALL	(1<<0)	/* Wildcard match */
+/* Flags for pr_flags */
+#define PRF_MATCH_ALL	(1<<0)	/* Wildcard match */
 
 /*
  * A state represents a set of associated rules
  */
 typedef struct pin_rstate_s {
-    pin_rule_id_t xrbs_first_rule; /* Number of first rule (in xb_rules) */
-    pin_rule_id_t xrbs_default_rule; /* Number of default rule (in xb_rules) */
-    uint16_t xrbs_flags;	/* Flags for this state */
+    pin_rule_id_t prbs_first_rule; /* Number of first rule (in xb_rules) */
+    pin_rule_id_t prbs_default_rule; /* Number of default rule (in xb_rules) */
+    uint16_t prbs_flags;	/* Flags for this state */
 } pin_rstate_t;
 
-/* Flags for xrbs_flags */
-#define XRBSF_INUSE	(1<<0)	/* State is used/defined */
+/* Flags for prbs_flags */
+#define PRBSF_INUSE	(1<<0)	/* State is used/defined */
 
 typedef struct pin_rulebook_info_s {
-    pin_rstate_id_t xrsi_initial_state; /* First state in the rule book */
-    pin_rstate_id_t xrsi_max_state;     /* Maximum allocated (seen) state */
+    pin_rstate_id_t prsi_initial_state; /* First state in the rule book */
+    pin_rstate_id_t prsi_max_state;     /* Maximum allocated (seen) state */
 } pin_rulebook_info_t;
 
 /*
  * A rule set is an optimized set of rules
  */
 typedef struct pin_rulebook_s {
-    pin_workspace_t *xrb_workspace; /* Our workspace */
-    pin_parse_t *xrb_script;	  /* Script we're loading/building */
-    pin_rulebook_info_t *xrb_infop; /* Our information the the pa_mmap_t */
-    pa_fixed_t *xrb_rules;	  /* List of rules (pin_rule_t) */
-    pa_fixed_t *xrb_states;	  /* List of states (pin_rule_state_t) */
-    pa_bitmap_t *xrb_bitmaps;	  /* Pool of bitmaps */
+    pin_workspace_t *prb_workspace; /* Our workspace */
+    pin_parse_t *prb_script;	  /* Script we're loading/building */
+    pin_rulebook_info_t *prb_infop; /* Our information the the pa_mmap_t */
+    pa_fixed_t *prb_rules;	  /* List of rules (pin_rule_t) */
+    pa_fixed_t *prb_states;	  /* List of states (pin_rule_state_t) */
+    pa_bitmap_t *prb_bitmaps;	  /* Pool of bitmaps */
 } pin_rulebook_t;
 
 pin_rulebook_t *
 pin_rulebook_open (const char *name);
 
 pin_rulebook_t *
-pin_rulebook_setup (pin_workspace_t *xwp, pin_parse_t *script, const char *name);
+pin_rulebook_setup (pin_workspace_t *pwp, pin_parse_t *script, const char *name);
 
 void
 pin_rulebook_close (pin_rulebook_t *rules);
 
 pin_rule_t *
-pin_rulebook_find (pin_parse_t *parsep, pin_rulebook_t *xrbp, pin_rstate_t *statep,
+pin_rulebook_find (pin_parse_t *parsep, pin_rulebook_t *prbp, pin_rstate_t *statep,
 		  pa_atom_t name_atom, const char *pref, const char *name,
 		  const char *attribs);
 
@@ -105,13 +105,13 @@ pin_rulebook_t *
 pin_rulebook_prep (pin_parse_t *input, const char *name);
 
 void
-pin_rulebook_dump (pin_rulebook_t *xrbp);
+pin_rulebook_dump (pin_rulebook_t *prbp);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
 
-/* Aliases: pin_rulebook_rule(xrbp, rid) and pin_rulebook_state(xrbp, sid) */
+/* Aliases: pin_rulebook_rule(prbp, rid) and pin_rulebook_state(prbp, sid) */
 #define pin_rulebook_rule	pin_rule_addr
 #define pin_rulebook_state(_xrbp, _sid) pin_rstate_addr((_xrbp), (_sid))
 
-#endif /* LIBSLAX_XI_RULES_H */
+#endif /* LIBSLAX_PIN_RULES_H */
