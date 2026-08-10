@@ -18,10 +18,10 @@ noinst_PROGRAMS = \
 	testparser \
 	testrecurse
 
-DEPS = $(top_builddir)/bxml/libxml2.la
-LDADDS = $(top_builddir)/bxml/libxml2.la
+DEPS = $(top_builddir)/bxml/libbxml.la
+LDADDS = $(top_builddir)/bxml/libbxml.la
 
-runtest_SOURCES=runtest.c
+runtest_SOURCES=runtest.c httploader.c
 runtest_DEPENDENCIES = $(DEPS)
 runtest_LDADD= $(THREAD_LIBS) $(Z_LIBS) $(LDADDS)
 
@@ -104,7 +104,7 @@ runtests: check
 S2O = | ${SED} '1,/@@/d'
 
 test tests:
-	${MKDIR} -p out
+	@${MKDIR} -p out
 	-@(for base in check; do \
 	    echo "... $$base ..." ; \
 	    $(MAKE) $$base > out/check.out 2> out/check.err ; \
