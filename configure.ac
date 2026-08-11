@@ -1892,7 +1892,6 @@ AC_CONFIG_FILES([
     bxml/python/tests/Makefile
     bxml/include/libxml/xmlversion.h
     bxml/libxml-2.0.pc
-    bxml/libbxml-config.cmake
 ])
 AC_CONFIG_FILES([bxml/python/setup.py], [chmod +x bxml/python/setup.py])
 AC_CONFIG_FILES([bxml/bxml-config], [chmod +x bxml/bxml-config])
@@ -1901,7 +1900,6 @@ AC_CONFIG_FILES([
     bxslt/Makefile
     bxslt/libxslt.pc
     bxslt/libexslt.pc
-    bxslt/libxslt-config.cmake
     bxslt/libxslt/Makefile
     bxslt/libxslt/xsltconfig.h
     bxslt/libexslt/Makefile
