@@ -379,7 +379,6 @@ scribble:
 
 SH_OPTS=
 
-if USE_LIBXSLT_TESTS
 test tests:
 	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
 	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
@@ -421,7 +420,6 @@ test tests:
 	    fi ; \
 	  fi ; \
 	done)
-endif
 
 accept:
 	@-(for test in ${TEST_CASES}; do \
