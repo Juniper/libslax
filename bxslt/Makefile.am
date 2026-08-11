@@ -19,8 +19,7 @@ dist-hook: cleanup
 	(cd $(srcdir) ; tar -cf - win32 vms examples) | (cd $(distdir); tar xf -)
 
 EXTRA_DIST = xsltConf.sh.in \
-             FEATURES TODO Copyright \
-	     CMakeLists.txt config.h.cmake.in libxslt-config.cmake.in libxslt-config.cmake.cmake.in
+             FEATURES TODO Copyright
 
 ## We create xsltConf.sh here and not from configure because we want
 ## to get the paths expanded correctly.  Macros like srcdir are given
