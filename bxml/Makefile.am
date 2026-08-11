@@ -122,9 +122,7 @@ EXTRA_DIST = Copyright libbxml-config.cmake.in autogen.sh \
 	     codegen/unicode.inc \
 	     codegen/xmlmod.py \
 	     timsort.h \
-	     README.zOS README.md \
-	     CMakeLists.txt config.h.cmake.in libbxml-config.cmake.cmake.in \
-	     meson.build meson_options.txt bxml-config-meson
+	     README.zOS README.md
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxml-2.0.pc
