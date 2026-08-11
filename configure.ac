@@ -1866,7 +1866,6 @@ AC_CONFIG_FILES([
   tests/bxml/Makefile
   tests/core/Makefile
   tests/errors/Makefile
-  tests/bxslt/Makefile
   tests/pa/Makefile
   tests/xi/Makefile
   bin/Makefile
@@ -1907,16 +1906,16 @@ AC_CONFIG_FILES([
     bxslt/xsltproc/Makefile
     bxslt/python/Makefile
     bxslt/python/tests/Makefile
-    bxslt/tests/Makefile
-    bxslt/tests/xmlspec/Makefile
-    bxslt/tests/multiple/Makefile
-    bxslt/tests/xinclude/Makefile
-    bxslt/tests/XSLTMark/Makefile
-    bxslt/tests/docbook/Makefile
-    bxslt/tests/fuzz/Makefile
     bxslt/doc/Makefile
     bxslt/doc/devhelp/Makefile
     bxslt/doc/EXSLT/devhelp/Makefile
+    tests/bxslt/Makefile
+    tests/bxslt/xmlspec/Makefile
+    tests/bxslt/multiple/Makefile
+    tests/bxslt/xinclude/Makefile
+    tests/bxslt/XSLTMark/Makefile
+    tests/bxslt/docbook/Makefile
+    tests/bxslt/fuzz/Makefile
 ])
 AC_CONFIG_FILES([bxslt/python/setup.py], [chmod +x bxslt/python/setup.py])
 AC_CONFIG_FILES([bxslt/xslt-config], [chmod +x bxslt/xslt-config])
