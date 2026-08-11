@@ -135,6 +135,11 @@ push_to_branch () {
     git push $origin $branch
 }
 
+big_push_to_branch () {
+    echo "Pushing (big) to $branch ..."
+    git -c http.postBuffer=524288000  push $origin $branch
+}
+
 run () {
     if [ ! -z "${GT_TRACE}" ]; then
         echo + "$@"
@@ -146,7 +151,7 @@ case "$op" in
     amend)
 	## gt amend [<files>]
 	## == Change commit comments for multiple files, prompting for a
-	## commit message for each file (after displaying a diff)
+	## == commit message for each file (after displaying a diff)
         amend_comments "$@"
 	;;
 
@@ -157,6 +162,16 @@ case "$op" in
 	base=`basename "$url" .git`
         tag="${1:-archive}"
 	git archive --prefix=$base-$tag --format=tar HEAD | gzip > $base-$tag.tgz
+	;;
+
+    big-push)
+	## gt big-push
+	## == Push all local changes to the origin/repo server using
+	## == crazy large buffers to avoid the annoying error message:
+	## == "error: RPC failed; HTTP 400 curl 22
+	## ==     The requested URL returned error: 400 Bad Request"
+        set_branch
+        big_push_to_branch
 	;;
 
     br)
@@ -400,8 +415,8 @@ case "$op" in
 
     tag|add-tag)
 	## gt tag [<tag>]
-	## Tag source code with revision number, or list all tags if
-	## none is provided
+	## == Tag source code with revision number, or list all tags if
+	## == none is provided
         # If you make a tag like "0.15.0", then you can
         # use an URL like:
         # https://github.com/Juniper/libslax/archive/0.15.0.tar.gz
