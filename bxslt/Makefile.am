@@ -1,11 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = libxslt libexslt xsltproc doc tests
+SUBDIRS = libxslt libexslt xsltproc doc
 if WITH_XSLT_PYTHON
 SUBDIRS += python
 endif
 
-DIST_SUBDIRS = libxslt libexslt xsltproc python doc tests
+DIST_SUBDIRS = libxslt libexslt xsltproc python doc
 
 confexecdir=$(libdir)
 confexec_DATA = xsltConf.sh
