@@ -17,7 +17,7 @@ SUBDIRS= \
     xi
 
 if USE_LIBXSLT_TESTS
-SUBDIRS += libxslt
+SUBDIRS += bxslt
 endif
 
 test tests:

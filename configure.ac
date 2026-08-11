@@ -1866,7 +1866,7 @@ AC_CONFIG_FILES([
   tests/bxml/Makefile
   tests/core/Makefile
   tests/errors/Makefile
-  tests/libxslt/Makefile
+  tests/bxslt/Makefile
   tests/pa/Makefile
   tests/xi/Makefile
   bin/Makefile
@@ -1938,11 +1938,11 @@ AC_MSG_NOTICE([summary of build options:
   compiler flags:   ${CFLAGS}
   library types:    Shared=${enable_shared}, Static=${enable_static}
   libxml version:   ${LIBXML_VERSION} (captive)
-  libxslt cflags:   ${LIBXSLT_CFLAGS}
-  libxml libs:      ${LIBXML_LIBS}
-  libxslt version:  ${LIBXSLT_VERSION} (captive)
-  libxslt cflags:   ${LIBXSLT_CFLAGS}
-  libxslt libs:     ${LIBXSLT_LIBS}
+  libbxslt cflags:   ${LIBXSLT_CFLAGS}
+  libbxml libs:      ${LIBXML_LIBS}
+  libbxslt version:  ${LIBXSLT_VERSION} (captive)
+  libbxslt cflags:   ${LIBXSLT_CFLAGS}
+  libbxslt libs:     ${LIBXSLT_LIBS}
   libcurl version:  ${CURLVERS}
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
