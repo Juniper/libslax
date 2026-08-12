@@ -41,6 +41,14 @@ all:
 check-local:
 	cd $(srcdir) && LIBXSLT_PLUGINS_PATH=$(plugindir) $(abs_builddir)/runtest
 
+# runtest has its own built-in "update results in place" mode (-u),
+# which overwrites the .out/.err baselines next to each test case in
+# $(srcdir) with freshly generated output -- exactly the "copy generated
+# files from the build tree to the source side" accept step, so there's
+# no separate out/saved indirection to maintain here.
+accept:
+	cd $(srcdir) && LIBXSLT_PLUGINS_PATH=$(plugindir) $(abs_builddir)/runtest -u
+
 docbook_tests:
 	@(cd docbook ; $(MAKE) full)
 
