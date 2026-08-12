@@ -22,7 +22,7 @@ single:
 	@$(MKDIR_P) result/fo
 	@$(MKDIR_P) result/xhtml
 	@(echo > .memdump)
-	@(for i in $(srcdir)/test/gdp-handbook.xml ; do \
+	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  out=result/html/`basename $$i .xml`.tst; \
 	  html=result/html/`basename $$i .xml`.html; \
 	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
@@ -85,7 +85,7 @@ xtchunk:
 	@$(MKDIR_P) result/html
 	@$(MKDIR_P) result/xtchunk
 	@(echo > .memdump)
-	@(for i in $(srcdir)/test/gdp-handbook.xml ; do \
+	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  base=`basename $$i .xml` ; \
 	  html=result/html/$$base.html; \
 	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc \
@@ -113,6 +113,58 @@ xtchunk:
 		echo result ; \
 		echo "$$log" ; \
 	  fi ; \
+	  rm -f result/xtchunk/html/gdp-handbook ; \
+	  done )
+
+#
+# accept: like "single"/"xtchunk" above, but instead of diffing the
+# freshly generated output against the saved baseline under
+# $(srcdir)/result, just copy it over -- i.e. "copy generated files
+# from the build tree to the source side".
+#
+accept: accept-single accept-xtchunk
+
+accept-single:
+	@$(MKDIR_P) result/html
+	@$(MKDIR_P) result/fo
+	@$(MKDIR_P) result/xhtml
+	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
+	  out=result/html/`basename $$i .xml`.tst; \
+	  html=result/html/`basename $$i .xml`.html; \
+	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+		$(srcdir)/html/docbook.xsl $$i > $$out ; \
+	  cp $$out $(srcdir)/$$html ; \
+	  rm -f $$out ; \
+	  out=result/fo/`basename $$i .xml`.tst; \
+	  fo=result/fo/`basename $$i .xml`.fo; \
+	  msg=result/fo/`basename $$i .xml`.msg; \
+	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+		$(srcdir)/fo/docbook.xsl $$i > $$out 2> $$msg ; \
+	  cp $$out $(srcdir)/$$fo ; \
+	  rm -f $$out $$msg ; \
+	  out=result/xhtml/`basename $$i .xml`.tst; \
+	  xhtml=result/xhtml/`basename $$i .xml`.xhtml; \
+	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+		$(srcdir)/xhtml/docbook.xsl $$i > $$out ; \
+	  cp $$out $(srcdir)/$$xhtml ; \
+	  rm -f $$out ; \
+	  done )
+
+accept-xtchunk:
+	@$(MKDIR_P) result/html
+	@$(MKDIR_P) result/xtchunk
+	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
+	  base=`basename $$i .xml` ; \
+	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc \
+		-o result/xtchunk/html/gdp-handbook \
+		$(srcdir)/html/xtchunk.xsl $$i 2> $$base.err ; \
+	  cp $$base.err $(srcdir)/result/html/$$base.err ; \
+	  rm -f $$base.err ; \
+	  for html in result/xtchunk/html/*.html ; do \
+	    orig=result/xtchunk/html/`basename $$html .html`.orig ;\
+	    cp $$html $(srcdir)/$$orig ; \
+	    rm -f $$html; \
+	  done ; \
 	  rm -f result/xtchunk/html/gdp-handbook ; \
 	  done )
 
