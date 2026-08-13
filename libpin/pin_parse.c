@@ -46,6 +46,10 @@
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
 
+#include <libxo/xo.h>
+#include "xo_filter.h"
+#include <libpin/pin_filter.h>
+
 pin_parse_t *
 pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 	       const char *input, pin_source_flags_t flags)
@@ -933,34 +937,46 @@ pin_parse (pin_parse_t *parsep)
 					 localp, TRUE);
 
 	    /*
-	     * We've got incoming data; find out what to do with it
+	     * Advance the filter FSM (always, to keep depth in sync).
+	     * If the filter says DEAD, the pattern cannot match anywhere
+	     * under this subtree; synthesize a discard rule so the
+	     * rulebook is not consulted and no tree nodes are allocated.
 	     */
-	    pin_rstate_t *statep = pin_parse_stack_state(parsep);
-	    rulep = pin_rulebook_find(parsep, parsep->pp_rulebook,
-				     statep,
-				     name_atom, data, localp, rest);
+	    xo_filter_t *filter = parsep->pp_filter;
+	    if (filter) {
+		pin_filter_set_attribs(filter, rest);
+		xo_filter_walk_open(NULL, filter, localp, -1);
+	    }
+
+	    if (filter && xo_filter_walk_status(NULL, filter) == XO_STATUS_DEAD) {
+		pin_rule_t dead_rule;
+		bzero(&dead_rule, sizeof(dead_rule));
+		dead_rule.pr_action = PIA_DISCARD;
+		pin_parse_handle_rule(parsep, name_atom, data, localp,
+				     rest, &dead_rule);
+	    } else {
+		/*
+		 * Filter passes (or no filter): consult the rulebook.
+		 */
+		pin_rstate_t *statep = pin_parse_stack_state(parsep);
+		rulep = pin_rulebook_find(parsep, parsep->pp_rulebook,
+					 statep,
+					 name_atom, data, localp, rest);
+		if (rulep == NULL)
+		    rulep = &parsep->pp_default_rule;
+		pin_parse_handle_rule(parsep, name_atom, data, localp,
+				     rest, rulep);
+	    }
 
 	    /*
-	     * No rule (or no rulebook) means use the default rule, which
-	     * will likely make us save everything, just in case.
+	     * An empty tag is an open and a close.  Close both the tree
+	     * frame and the filter frame.
 	     */
-	    if (rulep == NULL)
-		rulep = &parsep->pp_default_rule;
-
-	    /*
-	     * This is where the real work is done, performing any
-	     * action described in the rule.
-	     */
-	    pin_parse_handle_rule(parsep, name_atom, data, localp,
-				 rest, rulep);
-
-	    /*
-	     * An empty tag is an open and a close, since we've already
-	     * done the parsing, we can't just "fallthru" to the close
-	     * logic, so we call it directly ourselves.
-	     */
-	    if (type == PIN_TYPE_EMPTY)
+	    if (type == PIN_TYPE_EMPTY) {
 		pin_insert_close(parsep, data, localp);
+		if (filter)
+		    xo_filter_walk_close(NULL, filter, localp, -1);
+	    }
 	    break;
 
 	case PIN_TYPE_CLOSE:	/* Close tag */
@@ -974,6 +990,9 @@ pin_parse (pin_parse_t *parsep)
 		data = NULL;
 	    }
 
+	    /* Pop the filter frame before popping the tree frame */
+	    if (parsep->pp_filter)
+		xo_filter_walk_close(NULL, parsep->pp_filter, localp, -1);
 	    pin_insert_close(parsep, data, localp);
 	    break;
 
@@ -1514,4 +1533,10 @@ pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type)
 {
     parsep->pp_default_rule.pr_flags = PRF_MATCH_ALL;
     parsep->pp_default_rule.pr_action = type;
+}
+
+void
+pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp)
+{
+    parsep->pp_filter = xfp;
 }
