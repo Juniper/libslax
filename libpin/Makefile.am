@@ -19,6 +19,8 @@ AM_CFLAGS = \
     -I${top_builddir}/parrotdb \
     -I${top_builddir}/libpin \
     -I${top_srcdir} \
+    -I${top_builddir}/libxo \
+    -I${top_builddir}/libxo/filter \
     ${WARNINGS}
 
 lib_LTLIBRARIES = libpin.la
@@ -27,6 +29,7 @@ libpinincdir = ${includedir}/libpin
 
 libpininc_HEADERS = \
     pin_common.h \
+    pin_filter.h \
     pin_nodeset.h \
     pin_parse.h \
     pin_rules.h \
@@ -37,6 +40,7 @@ libpininc_HEADERS = \
     pin_xpath.h
 
 libpin_la_SOURCES = \
+    pin_filter.c \
     pin_source.c \
     pin_workspace.c \
     pin_tree.c \
