@@ -948,15 +948,33 @@ pin_parse (pin_parse_t *parsep)
 		xo_filter_walk_open(NULL, filter, localp, -1);
 	    }
 
-	    if (filter && xo_filter_walk_status(NULL, filter) == XO_STATUS_DEAD) {
+	    xo_filter_status_t fstatus = filter
+		? xo_filter_walk_status(NULL, filter) : XO_STATUS_ZERO;
+
+	    if (filter && fstatus == XO_STATUS_DEAD) {
+		/* No match possible: discard without touching the rulebook. */
 		pin_rule_t dead_rule;
 		bzero(&dead_rule, sizeof(dead_rule));
 		dead_rule.pr_action = PIA_DISCARD;
 		pin_parse_handle_rule(parsep, name_atom, data, localp,
 				     rest, &dead_rule);
+	    } else if (filter && fstatus == XO_STATUS_FULL) {
+		/*
+		 * Trie matched fully: the terminal node carries the rule id.
+		 * Retrieve it directly, avoiding a full rulebook traversal.
+		 */
+		uint32_t action_id = xo_filter_walk_get_action(NULL, filter);
+		if (action_id != PA_NULL_ATOM && parsep->pp_rulebook != NULL) {
+		    pin_rule_id_t rid = pin_rule_id(action_id);
+		    rulep = pin_rulebook_rule(parsep->pp_rulebook, rid);
+		}
+		if (rulep == NULL)
+		    rulep = &parsep->pp_default_rule;
+		pin_parse_handle_rule(parsep, name_atom, data, localp,
+				     rest, rulep);
 	    } else {
 		/*
-		 * Filter passes (or no filter): consult the rulebook.
+		 * TRACK/PRED or no filter: walk the rulebook state machine.
 		 */
 		pin_rstate_t *statep = pin_parse_stack_state(parsep);
 		rulep = pin_rulebook_find(parsep, parsep->pp_rulebook,
