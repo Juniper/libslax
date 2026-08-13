@@ -21,6 +21,7 @@
 
 #include <libxo/xo.h>
 #include <libpin/pin_workspace.h>
+#include <libpin/pin_rules.h>
 
 struct xo_filter_s;
 typedef struct xo_filter_s xo_filter_t;
@@ -46,6 +47,15 @@ pin_filter_create (xo_handle_t *xop, pin_workspace_t *pwp);
  */
 int
 pin_filter_add (xo_filter_t *xfp, const char *xpath);
+
+/*
+ * Like pin_filter_add but records 'rid' in the terminal trie node so that
+ * when the filter reports XO_STATUS_FULL, the matching rule can be retrieved
+ * directly via xo_filter_walk_get_action without a secondary rulebook lookup.
+ */
+int
+pin_filter_add_with_action (xo_filter_t *xfp, const char *xpath,
+			     pin_rule_id_t rid);
 
 /*
  * Set the raw XML attribute string for the element about to be walked open.
