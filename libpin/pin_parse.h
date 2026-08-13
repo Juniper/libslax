@@ -15,6 +15,13 @@
 typedef unsigned pin_parse_flags_t;
 
 /*
+ * Forward declaration so xo_filter_t * can appear in pin_parse_t
+ * without requiring callers to pull in the full xo_filter.h header.
+ */
+struct xo_filter_s;
+typedef struct xo_filter_s xo_filter_t;
+
+/*
  * The state of the parser, meant to be both a handle to parsing
  * functionality as well as a means of restarting parsing.
  */
@@ -24,6 +31,7 @@ typedef struct pin_parse_s {
     pin_rulebook_t *pp_rulebook;	/* Current set of rules */
     pin_rule_t pp_default_rule;	/* Default rule for parsing */
     pin_insert_t *pp_insert;	/* Insertion point */
+    xo_filter_t *pp_filter;	/* Optional XPath filter (pin_filter_create) */
 } pin_parse_t;
 
 /* Flags for pp_flags: */
@@ -91,6 +99,15 @@ pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);
 
 void
 pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type);
+
+/*
+ * Attach an XPath filter to the parser.  When set, the filter FSM is
+ * advanced on every element open/close; elements whose subtree cannot
+ * match any pattern are discarded without consulting the rulebook.
+ * Pass NULL to detach.  The caller retains ownership of xfp.
+ */
+void
+pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp);
 
 static inline pin_workspace_t *
 pin_parse_workspace (pin_parse_t *parsep)
