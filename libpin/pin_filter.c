@@ -30,6 +30,7 @@
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
+#include <parrotdb/pafixed.h>
 
 #include <libxo/xo.h>
 #include "xo_filter.h"
@@ -184,6 +185,14 @@ int
 pin_filter_add (xo_filter_t *xfp, const char *xpath)
 {
     return xo_filter_walk_add(NULL, xfp, xpath);
+}
+
+int
+pin_filter_add_with_action (xo_filter_t *xfp, const char *xpath,
+			     pin_rule_id_t rid)
+{
+    uint32_t action = pa_fixed_atom_of(pin_rule_id_atom_of(rid));
+    return xo_filter_walk_add_with_action(NULL, xfp, xpath, action);
 }
 
 xo_filter_t *
