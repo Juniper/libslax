@@ -15,7 +15,10 @@ endif
 
 DIST_SUBDIRS = include . doc example fuzz python
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(builddir)/include -I$(srcdir)/include
+AM_CPPFLAGS = \
+    -I$(top_builddir) \
+    -I$(builddir)/include \
+    -I$(srcdir)/include
 
 bin_PROGRAMS = xmllint
 
@@ -25,13 +28,33 @@ lib_LTLIBRARIES = libbxml.la
 libbxml_la_CFLAGS = $(AM_CFLAGS) $(XML_PRIVATE_CFLAGS)
 libbxml_la_LIBADD = $(XML_PRIVATE_LIBS)
 
-libbxml_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
-		     -version-info $(LIBXML_VERSION_INFO)
+libbxml_la_LDFLAGS = \
+    $(AM_LDFLAGS) \
+    -no-undefined \
+    -version-info \
+    $(LIBXML_VERSION_INFO)
 
-libbxml_la_SOURCES = buf.c chvalid.c dict.c entities.c encoding.c error.c \
-		     globals.c hash.c list.c parser.c parserInternals.c \
-		     SAX2.c threads.c tree.c uri.c valid.c xmlIO.c \
-		     xmlmemory.c xmlstring.c
+libbxml_la_SOURCES = \
+    buf.c \
+    chvalid.c \
+    dict.c \
+    entities.c \
+    encoding.c \
+    error.c \
+    globals.c \
+    hash.c \
+    list.c \
+    parser.c \
+    parserInternals.c \
+    SAX2.c \
+    threads.c \
+    tree.c \
+    uri.c \
+    valid.c \
+    xmlIO.c \
+    xmlmemory.c \
+    xmlstring.c
+
 if WITH_C14N_SOURCES
 libbxml_la_SOURCES += c14n.c
 endif
@@ -102,27 +125,32 @@ xmllint_DEPENDENCIES = $(DEPS)
 xmllint_LDADD = $(RDL_LIBS) $(Z_LIBS) $(LDADDS)
 
 dist-hook:
-	(cd $(srcdir) ; tar -cf - --exclude .git win32 result) | (cd $(distdir); tar xf -)
+	(cd $(srcdir) ; \
+	    tar -cf - --exclude .git win32 result) | (cd $(distdir); tar xf -)
 
-EXTRA_DIST = Copyright libbxml-config.cmake.in autogen.sh \
-	     libxml.h \
-	     codegen/charset.inc \
-	     codegen/escape.inc \
-	     codegen/genCharset.py \
-	     codegen/genEscape.py \
-	     codegen/genHtml5Ent.py \
-	     codegen/genHtml5LibTests.py \
-	     codegen/genRanges.py \
-	     codegen/genTestApi.py \
-	     codegen/genUnicode.py \
-	     codegen/html5ent.inc \
-	     codegen/ranges.def \
-	     codegen/ranges.inc \
-	     codegen/rangetab.py \
-	     codegen/unicode.inc \
-	     codegen/xmlmod.py \
-	     timsort.h \
-	     README.zOS README.md
+EXTRA_DIST = \
+    Copyright \
+    libbxml-config.cmake.in \
+    autogen.sh \
+    libxml.h \
+    codegen/charset.inc \
+    codegen/escape.inc \
+    codegen/genCharset.py \
+    codegen/genEscape.py \
+    codegen/genHtml5Ent.py \
+    codegen/genHtml5LibTests.py \
+    codegen/genRanges.py \
+    codegen/genTestApi.py \
+    codegen/genUnicode.py \
+    codegen/html5ent.inc \
+    codegen/ranges.def \
+    codegen/ranges.inc \
+    codegen/rangetab.py \
+    codegen/unicode.inc \
+    codegen/xmlmod.py \
+    timsort.h \
+    README.zOS \
+    README.md
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxml-2.0.pc
