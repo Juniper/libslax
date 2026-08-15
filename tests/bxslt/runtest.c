@@ -4,7 +4,7 @@
  * See Copyright for the status of this software.
  */
 
-#include "bxslt/bxsltconfig.h"
+#include "libxslt/xsltconfig.h"
 
 #include <stdlib.h>
 #include <stdio.h>

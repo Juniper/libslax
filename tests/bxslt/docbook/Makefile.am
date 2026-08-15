@@ -4,8 +4,8 @@ check-local:
 	@$(MAKE) single
 	@$(MAKE) xtchunk
 
-$(top_builddir)/bxslt/xsltproc/xsltproc:
-	@(cd ../../xsltproc ; $(MAKE) xsltproc)
+$(top_builddir)/libbxslt/xsltproc/xsltproc:
+	@(cd ../../libbxslt/xsltproc ; $(MAKE) xsltproc)
 
 EXTRA_DIST = README VERSION
 
@@ -25,7 +25,7 @@ single:
 	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  out=result/html/`basename $$i .xml`.tst; \
 	  html=result/html/`basename $$i .xml`.html; \
-	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  log=`$(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/html/docbook.xsl $$i > $$out ; \
 	    if [ -f $(srcdir)/$$html ] ; then \
 		grep -v id < $(srcdir)/$$html > $$html.noid ; \
@@ -44,7 +44,7 @@ single:
 	  out=result/fo/`basename $$i .xml`.tst; \
 	  fo=result/fo/`basename $$i .xml`.fo; \
 	  msg=result/fo/`basename $$i .xml`.msg; \
-	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  log=`$(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/fo/docbook.xsl $$i > $$out 2> $$msg ; \
 	  if [ -f $(srcdir)/$$fo ] ; then \
 	      grep -v id < $(srcdir)/$$fo > $$fo.noid ; \
@@ -62,7 +62,7 @@ single:
 	  rm -f $$out $$msg ; \
 	  out=result/xhtml/`basename $$i .xml`.tst; \
 	  xhtml=result/xhtml/`basename $$i .xml`.xhtml; \
-	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  log=`$(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/xhtml/docbook.xsl $$i > $$out ; \
 	  if [ -f $(srcdir)/$$xhtml ] ; then \
 	      grep -v id < $(srcdir)/$$xhtml > $$xhtml.noid ; \
@@ -88,7 +88,7 @@ xtchunk:
 	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  base=`basename $$i .xml` ; \
 	  html=result/html/$$base.html; \
-	  log=`$(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc \
+	  log=`$(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc \
 		-o result/xtchunk/html/gdp-handbook \
 		$(srcdir)/html/xtchunk.xsl $$i 2> $$base.err ; \
 	    if [ -f $(srcdir)/result/html/$$base.err ] ; then \
@@ -131,20 +131,20 @@ accept-single:
 	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  out=result/html/`basename $$i .xml`.tst; \
 	  html=result/html/`basename $$i .xml`.html; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/html/docbook.xsl $$i > $$out ; \
 	  cp $$out $(srcdir)/$$html ; \
 	  rm -f $$out ; \
 	  out=result/fo/`basename $$i .xml`.tst; \
 	  fo=result/fo/`basename $$i .xml`.fo; \
 	  msg=result/fo/`basename $$i .xml`.msg; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/fo/docbook.xsl $$i > $$out 2> $$msg ; \
 	  cp $$out $(srcdir)/$$fo ; \
 	  rm -f $$out $$msg ; \
 	  out=result/xhtml/`basename $$i .xml`.tst; \
 	  xhtml=result/xhtml/`basename $$i .xml`.xhtml; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet \
 		$(srcdir)/xhtml/docbook.xsl $$i > $$out ; \
 	  cp $$out $(srcdir)/$$xhtml ; \
 	  rm -f $$out ; \
@@ -155,7 +155,7 @@ accept-xtchunk:
 	@$(MKDIR_P) result/xtchunk
 	@(${SH_OPTS} for i in $(srcdir)/test/gdp-handbook.xml ; do \
 	  base=`basename $$i .xml` ; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc \
 		-o result/xtchunk/html/gdp-handbook \
 		$(srcdir)/html/xtchunk.xsl $$i 2> $$base.err ; \
 	  cp $$base.err $(srcdir)/result/html/$$base.err ; \
@@ -171,7 +171,7 @@ accept-xtchunk:
 #
 # The full set of tests
 #
-htmltests: $(top_builddir)/bxslt/xsltproc/xsltproc
+htmltests: $(top_builddir)/libbxslt/xsltproc/xsltproc
 	@$(MKDIR_P) result/html
 	@(echo > .memdump)
 	@echo "##"
@@ -181,7 +181,7 @@ htmltests: $(top_builddir)/bxslt/xsltproc/xsltproc
 	  echo $$i ; \
 	  out=result/html/`basename $$i .xml`.tst; \
 	  html=result/html/`basename $$i .xml`.html; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet $(srcdir)/html/docbook.xsl $$i > $$out ; \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet $(srcdir)/html/docbook.xsl $$i > $$out ; \
 	  if [ -f $(srcdir)/$$html ] ; then \
 	      grep -v id < $(srcdir)/$$html > $$html.noid ; \
 	      grep -v id < $$out > $$out.noid ; \
@@ -191,7 +191,7 @@ htmltests: $(top_builddir)/bxslt/xsltproc/xsltproc
 	  grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
 	  rm -f $$out ; done )
 
-fotests: $(top_builddir)/bxslt/xsltproc/xsltproc
+fotests: $(top_builddir)/libbxslt/xsltproc/xsltproc
 	@$(MKDIR_P) result/fo
 	@(echo > .memdump)
 	@echo "##"
@@ -202,7 +202,7 @@ fotests: $(top_builddir)/bxslt/xsltproc/xsltproc
 	  out=result/fo/`basename $$i .xml`.tst; \
 	  fo=result/fo/`basename $$i .xml`.fo; \
 	  msg=result/fo/`basename $$i .xml`.msg; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet $(srcdir)/fo/docbook.xsl $$i > $$out  2> $$msg ; \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet $(srcdir)/fo/docbook.xsl $$i > $$out  2> $$msg ; \
 	  if [ -f $(srcdir)/$$fo ] ; then \
 	      grep -v id < $(srcdir)/$$fo > $$fo.noid ; \
 	      grep -v id < $$out > $$out.noid ; \
@@ -213,7 +213,7 @@ fotests: $(top_builddir)/bxslt/xsltproc/xsltproc
 	  rm -f $$out $$msg ; \
 	  done )
 
-xhtmltests: $(top_builddir)/bxslt/xsltproc/xsltproc
+xhtmltests: $(top_builddir)/libbxslt/xsltproc/xsltproc
 	@$(MKDIR_P) result/xhtml
 	@(echo > .memdump)
 	@echo "##"
@@ -223,7 +223,7 @@ xhtmltests: $(top_builddir)/bxslt/xsltproc/xsltproc
 	  echo $$i ; \
 	  out=result/xhtml/`basename $$i .xml`.tst; \
 	  xhtml=result/xhtml/`basename $$i .xml`.xhtml; \
-	  $(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --nonet $(srcdir)/xhtml/docbook.xsl $$i > $$out ; \
+	  $(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --nonet $(srcdir)/xhtml/docbook.xsl $$i > $$out ; \
 	  if [ -f $(srcdir)/$$xhtml ] ; then \
 	      grep -v id < $(srcdir)/$$xhtml > $$xhtml.noid ; \
 	      grep -v id < $$out > $$out.noid ; \

@@ -1,0 +1,23 @@
+## Running REC2 tests
+## Running REC tests
+## Running REC tests (standalone)
+## Running REC tests without dictionaries
+## Running REC tests without dictionaries (standalone)
+## Running general tests
+## Running general tests without dictionaries
+## Running encoding tests
+## Running documents tests
+## Running numbers tests
+## Running keys tests
+## Running namespaces tests
+## Running extensions tests
+## Running reports tests
+## Running exslt common tests
+## Running exslt date tests
+## Running exslt dynamic tests
+## Running exslt functions tests
+## Running exslt math tests
+## Running exslt saxon tests
+## Running exslt sets tests
+## Running exslt strings tests
+Total 748 tests, no errors

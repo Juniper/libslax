@@ -11,6 +11,7 @@ SUBDIRS= \
     core \
     bugs \
     bxml \
+    bxslt \
     errors \
     art \
     pa \

@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-$(top_builddir)/bxslt/xsltproc/xsltproc:
-	@(cd ../../xsltproc ; $(MAKE) xsltproc)
+$(top_builddir)/libbxslt/xsltproc/xsltproc:
+	@(cd ../../libbxslt/xsltproc ; $(MAKE) xsltproc)
 
 EXTRA_DIST =		\
 	e.xml		\
@@ -13,14 +13,14 @@ EXTRA_DIST =		\
 
 CLEANFILES = .memdump
 
-check-local: $(top_builddir)/bxslt/xsltproc/xsltproc
+check-local: $(top_builddir)/libbxslt/xsltproc/xsltproc
 	@echo '## Running XInclude test'
 	@(echo > .memdump)
-	@($(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
+	@($(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
 	diff $(srcdir)/normal.out res; \
 	grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
 	rm -f res)
-	@($(CHECKER) $(top_builddir)/bxslt/xsltproc/xsltproc --xinclude $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
+	@($(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc --xinclude $(srcdir)/e.xsl $(srcdir)/e.xml > res ; \
 	diff $(srcdir)/xinclude.out res; \
 	grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
 	rm -f res)
