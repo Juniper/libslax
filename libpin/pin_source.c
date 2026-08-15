@@ -150,8 +150,13 @@ pin_source_destroy (pin_source_t *srcp)
     if (srcp->pps_filename != NULL)
 	free(srcp->pps_filename);
 
-    if (srcp->pps_curp != NULL)
-	free(srcp->pps_curp);
+    if (srcp->pps_flags & PPSF_MMAP_INPUT) {
+	if (srcp->pps_bufp != NULL)
+	    munmap(srcp->pps_bufp, srcp->pps_size);
+    } else {
+	if (srcp->pps_bufp != NULL)
+	    free(srcp->pps_bufp);
+    }
 
     if (srcp->pps_flags & PPSF_CLOSE_FD)
 	close(srcp->pps_fd);
