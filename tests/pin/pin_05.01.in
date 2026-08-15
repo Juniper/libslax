@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean discard 'item[@type="skip"]'
+# quiet dump clean save 'item[@type="keep"]' discard 'item[@type="skip"]'
+-->
+<top>
+    <item type="keep">alpha</item>
+    <item type="skip">beta</item>
+    <item type="other">gamma</item>
+</top>

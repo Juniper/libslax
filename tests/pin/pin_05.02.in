@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean discard 'container/item[@type="drop"]'
+-->
+<root>
+    <container>
+        <item type="keep">kept-one</item>
+        <item type="drop">dropped</item>
+        <item type="other">kept-two</item>
+    </container>
+    <other>saved-by-default</other>
+</root>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean discard a
+# quiet dump clean discard a discard b
+-->
+<top>
+    <a>element-a</a>
+    <b>element-b</b>
+    <c>element-c</c>
+</top>
