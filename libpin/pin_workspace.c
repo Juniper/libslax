@@ -333,3 +333,33 @@ pin_ns_find (pin_workspace_t *pwp, const char *prefix, const char *uri,
     return pa_pat_data_is_null(datom) ? pin_ns_map_id_null_atom()
 				      : pin_ns_map_id(pa_pat_data_atom_of(datom));
 }
+
+void
+pin_namepool_close (pa_istr_t *names, pa_pat_t *names_index)
+{
+    pa_pat_close(names_index);
+    pa_istr_close(names);
+}
+
+void
+pin_ns_close (pa_fixed_t *ns_map, pa_pat_t *ns_map_index)
+{
+    pa_pat_close(ns_map_index);
+    pa_fixed_close(ns_map);
+}
+
+void
+pin_workspace_close (pin_workspace_t *workp)
+{
+    if (workp == NULL)
+	return;
+
+    pa_fixed_close(workp->pw_nodeset_info);
+    pa_fixed_close(workp->pw_nodeset_chunks);
+    pa_arb_close(workp->pw_textpool);
+    pin_ns_close(workp->pw_ns_map, workp->pw_ns_map_index);
+    pin_namepool_close(workp->pw_names, workp->pw_names_index);
+    pa_fixed_close(workp->pw_nodes);
+
+    free(workp);
+}
