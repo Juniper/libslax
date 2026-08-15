@@ -129,9 +129,9 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 }
 
 void
-pin_parse_destroy (pin_parse_t *parsep UNUSED)
+pin_parse_destroy (pin_parse_t *parsep)
 {
-    return;
+    pin_source_destroy(parsep->pp_srcp);
 }
 
 pa_atom_t
@@ -888,7 +888,7 @@ pin_parse (pin_parse_t *parsep)
     pin_boolean_t opt_quiet = PSU_BIT_TEST(parsep->pp_flags, PIN_PF_DEBUG);
     pin_boolean_t opt_unescape = 0;
     pa_atom_t name_atom;
-    pin_rule_t *rulep;
+    pin_rule_t *rulep = NULL;
     pin_insert_t *pip = parsep->pp_insert;
 
     for (;;) {
@@ -1205,6 +1205,7 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
     int indent;
     const char *pref, *uri;
     int is_debug = pin_parse_flags_isset(parsep, PIN_PF_DEBUG);
+    int skipped = 0;
 
     if (is_debug)
 	fprintf(out, "<!-- [[%d]%s%s%s] -->", type, data ? "[" : "",
@@ -1218,7 +1219,8 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 
     case PIN_TYPE_OPEN:
 	if (xmlp->xx_last_type != PIN_TYPE_ROOT
-	    && xmlp->xx_last_type != PIN_TYPE_CLOSE)
+	    && xmlp->xx_last_type != PIN_TYPE_CLOSE
+	    && xmlp->xx_last_type != PIN_TYPE_EMPTY)
 	    fprintf(out, "\n");
 
 	pref = NULL;
@@ -1229,7 +1231,7 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 
 	fprintf(out, "%*s<%s%s%s", xmlp->xx_indent, "",
-		pref ?: "", pref ? ":" : "", data);
+ 		pref ?: "", pref ? ":" : "", data);
 	xmlp->xx_indent += xmlp->xx_incr;
 	break;
 
@@ -1254,10 +1256,15 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 			pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
 		}
 
-		indent = (xmlp->xx_last_type == PIN_TYPE_CLOSE)
-		    ? xmlp->xx_indent : 0;
-		fprintf(out, "%*s</%s%s%s>\n", indent, "",
-			pref ?: "", pref ? ":" : "", data);
+		if (xmlp->xx_last_type == PIN_TYPE_UNESC
+			|| xmlp->xx_last_type == PIN_TYPE_TEXT) {
+		    fprintf(out, "</%s%s%s>\n",
+			    pref ?: "", pref ? ":" : "", data);
+		} else {
+		    indent = xmlp->xx_indent;
+		    fprintf(out, "%*s</%s%s%s>\n", indent, "",
+			    pref ?: "", pref ? ":" : "", data);
+		}
 	    }
 	}
 	break;
@@ -1268,11 +1275,12 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	break;
 
     case PIN_TYPE_UNESC:
-	if (!((xmlp->xx_last_type == PIN_TYPE_CLOSE
-	       || xmlp->xx_last_type == PIN_TYPE_EMPTY)
-	      && pin_parse_is_ws(data)))
+	if (pin_parse_is_ws(data)) {
+	    skipped = 1;
+	} else {
 	    fprintf(out, "%s%s%s", is_debug ? "[unes]" : "", data,
 		    is_debug ? "[/unes]": "");
+	}
 	break;
 
     case PIN_TYPE_ATSTR:
@@ -1304,7 +1312,8 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	break;
     }
 
-    xmlp->xx_last_type = type;
+    if (!skipped)
+	xmlp->xx_last_type = type;
     return 0;
 }
 
