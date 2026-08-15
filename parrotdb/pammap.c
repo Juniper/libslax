@@ -427,7 +427,7 @@ pa_mmap_open (const char *filename, const char *base,
 		       "ignored", pmip->pmi_len, len);
 	} else if (pmip->pmi_flags & PMIF_INUSE) {
 	    pa_warning(0, "database is already in use or perhaps abandoned "
-		       "and/or possibly corrupted");
+		       "and/or possibly corrupted: '%s'", filename);
 
 	} else {
 	    /* Success!! */
