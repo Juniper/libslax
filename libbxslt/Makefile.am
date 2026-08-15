@@ -10,7 +10,7 @@ DIST_SUBDIRS = libxslt libexslt xsltproc python doc
 confexecdir=$(libdir)
 confexec_DATA = xsltConf.sh
 
-bin_SCRIPTS = xslt-config
+bin_SCRIPTS = bxslt-config
 
 dist-hook: cleanup
 	touch $(distdir)/doc/*.xml
@@ -43,8 +43,4 @@ cleanup:
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = libxslt.pc libexslt.pc
-
-cmakedir = $(libdir)/cmake/libxslt
-dist_cmake_DATA = FindGcrypt.cmake
-cmake_DATA = libxslt-config.cmake
 

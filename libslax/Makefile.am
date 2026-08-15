@@ -25,6 +25,8 @@ slaxincdir = ${includedir}/libslax
 AM_CFLAGS = \
     -I${top_builddir} \
     -I${top_srcdir} \
+    -I${top_srcdir}/libbxml/include \
+    -I${top_srcdir}/libbxslt \
     ${LIBXSLT_CFLAGS} \
     ${LIBXML_CFLAGS} \
     ${WARNINGS}

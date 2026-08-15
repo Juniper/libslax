@@ -130,7 +130,6 @@ dist-hook:
 
 EXTRA_DIST = \
     Copyright \
-    libbxml-config.cmake.in \
     autogen.sh \
     libxml.h \
     codegen/charset.inc \
@@ -154,6 +153,3 @@ EXTRA_DIST = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxml-2.0.pc
-
-cmakedir = $(libdir)/cmake/libbxml
-cmake_DATA = libbxml-config.cmake

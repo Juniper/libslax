@@ -97,9 +97,9 @@ Ran 0 tests (0 schemata), no errors
 Ran 0 tests (0 schemata), no errors
 Ran 0 tests (0 schemata), no errors
 Total 1471 tests, no errors
-test/scripts/test.sh ../../bxml/xmllint
+test/scripts/test.sh ../../libbxml/xmllint
 ## Scripts regression tests
-ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh ../../bxml/xmlcatalog
+ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh ../../libbxml/xmlcatalog
 ## Catalog regression tests
-ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh ../../bxml/xmlcatalog
+ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh ../../libbxml/xmlcatalog
 ## SGML catalog regression tests

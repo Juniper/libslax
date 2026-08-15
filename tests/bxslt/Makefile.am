@@ -1,14 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 
 AM_CPPFLAGS = -I$(top_builddir) \
-	-I$(top_srcdir)/bxslt -I$(top_builddir)/bxslt \
-	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
+	-I$(top_srcdir)/libbxslt -I$(top_builddir)/libbxslt \
+	-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
 
-DEPS = $(top_builddir)/bxslt/libxslt/libbxslt.la \
-       $(top_builddir)/bxslt/libexslt/libexslt.la \
-       $(top_builddir)/bxml/libbxml.la
+DEPS = $(top_builddir)/libbxslt/libxslt/libbxslt.la \
+       $(top_builddir)/libbxslt/libexslt/libexslt.la \
+       $(top_builddir)/libbxml/libbxml.la
 
 DEPENDENCIES = $(DEPS)
 
@@ -29,7 +29,7 @@ plugindir = $(abs_builddir)/.libs
 
 xmlsoft_org_xslt_testplugin_la_CFLAGS = $(AM_CFLAGS) -DMODULE_COMPILE
 xmlsoft_org_xslt_testplugin_la_SOURCES = testplugin.c
-xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/bxslt/libxslt/libbxslt.la $(top_builddir)/bxml/libbxml.la $(EXTRA_LIBS)
+xmlsoft_org_xslt_testplugin_la_LIBADD = $(top_builddir)/libbxslt/libxslt/libbxslt.la $(top_builddir)/libbxml/libbxml.la $(EXTRA_LIBS)
 xmlsoft_org_xslt_testplugin_la_LDFLAGS = \
 	$(AM_LDFLAGS) -no-undefined \
 	-module -avoid-version -rpath $(plugindir)

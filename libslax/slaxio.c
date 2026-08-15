@@ -759,7 +759,7 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 	value = "(undefined)";
 	break;
 
-#ifdef LIBXML_XPTR_LOCS_ENABLED
+#if 0 /* def LIBXML_XPTR_LOCS_ENABLED */
     case XPATH_RANGE:
     case XPATH_LOCATIONSET:
 #endif /* LIBXML_XPTR_LOCS_ENABLED */

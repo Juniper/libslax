@@ -1553,8 +1553,8 @@ dnl bxml is always our own captive source tree (bxml/), never an
 dnl installed/external libxml2 — so there's nothing to search for.
 dnl Point straight at its build-tree headers and library.
 AC_SUBST(LIBXML_REQUIRED_VERSION)
-LIBXML_CFLAGS='-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include'
-LIBXML_LIBS='$(top_builddir)/bxml/libbxml.la'
+LIBXML_CFLAGS='-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include'
+LIBXML_LIBS='$(top_builddir)/libbxml/libbxml.la'
 AC_SUBST(LIBXML_CFLAGS)
 AC_SUBST(LIBXML_LIBS)
 
@@ -1568,8 +1568,8 @@ dnl being discovered via an installed xslt-config. LIBXSLT_LIBS carries
 dnl both libbxslt.la and libexslt.la, so callers should not also add a
 dnl bare -lexslt.
 AC_SUBST(LIBXSLT_REQUIRED_VERSION)
-LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS "'-I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt -I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include'
-LIBXSLT_LIBS='$(top_builddir)/bxslt/libxslt/libbxslt.la $(top_builddir)/bxslt/libexslt/libexslt.la $(top_builddir)/bxml/libbxml.la'
+LIBXSLT_CFLAGS="$LIBXSLT_CFLAGS "'-I$(top_builddir)/libbxslt -I$(top_srcdir)/libbxslt -I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include'
+LIBXSLT_LIBS='$(top_builddir)/libbxslt/libxslt/libbxslt.la $(top_builddir)/libbxslt/libexslt/libexslt.la $(top_builddir)/libbxml/libbxml.la'
 AC_SUBST(LIBXSLT_CFLAGS)
 AC_SUBST(LIBXSLT_LIBS)
 
@@ -1834,13 +1834,13 @@ AC_SUBST(LIBSLAX_VERSION_EXTRA)
 
 dnl A single AC_CONFIG_HEADERS call, one shared template
 dnl (libslax/slaxconfig.h.in): autoheader only ever generates a template for
-dnl the first HEADER name it sees, so bxml/bxslt reuse libslax's template
+dnl the first HEADER name it sees, so libbxml/libbxslt reuse libslax's template
 dnl explicitly via the "output:input" form rather than each getting their
 dnl own (and their own autoheader-regeneration headaches).
 AC_CONFIG_HEADERS([
   libslax/slaxconfig.h
-  bxml/bxmlconfig.h:libslax/slaxconfig.h.in
-  bxslt/bxsltconfig.h:libslax/slaxconfig.h.in
+  bxml/libbxmlconfig.h:libslax/slaxconfig.h.in
+  bxslt/libbxsltconfig.h:libslax/slaxconfig.h.in
 ])
 AC_CONFIG_FILES([
   Makefile
@@ -1880,35 +1880,35 @@ AC_CONFIG_FILES([
 
 # keep on one line for cygwin c.f. #130896
 AC_CONFIG_FILES([
-    bxml/Makefile
-    bxml/include/Makefile
-    bxml/include/libxml/Makefile
-    bxml/include/private/Makefile
-    bxml/doc/Makefile
-    bxml/example/Makefile
-    bxml/fuzz/Makefile
-    bxml/python/Makefile
-    bxml/python/tests/Makefile
-    bxml/include/libxml/xmlversion.h
-    bxml/libxml-2.0.pc
+    libbxml/Makefile
+    libbxml/include/Makefile
+    libbxml/include/libxml/Makefile
+    libbxml/include/private/Makefile
+    libbxml/doc/Makefile
+    libbxml/example/Makefile
+    libbxml/fuzz/Makefile
+    libbxml/python/Makefile
+    libbxml/python/tests/Makefile
+    libbxml/include/libxml/xmlversion.h
+    libbxml/libxml-2.0.pc
 ])
-AC_CONFIG_FILES([bxml/python/setup.py], [chmod +x bxml/python/setup.py])
-AC_CONFIG_FILES([bxml/bxml-config], [chmod +x bxml/bxml-config])
+AC_CONFIG_FILES([libbxml/python/setup.py], [chmod +x libbxml/python/setup.py])
+AC_CONFIG_FILES([libbxml/bxml-config], [chmod +x libbxml/bxml-config])
 
 AC_CONFIG_FILES([
-    bxslt/Makefile
-    bxslt/libxslt.pc
-    bxslt/libexslt.pc
-    bxslt/libxslt/Makefile
-    bxslt/libxslt/xsltconfig.h
-    bxslt/libexslt/Makefile
-    bxslt/libexslt/exsltconfig.h
-    bxslt/xsltproc/Makefile
-    bxslt/python/Makefile
-    bxslt/python/tests/Makefile
-    bxslt/doc/Makefile
-    bxslt/doc/devhelp/Makefile
-    bxslt/doc/EXSLT/devhelp/Makefile
+    libbxslt/Makefile
+    libbxslt/libxslt.pc
+    libbxslt/libexslt.pc
+    libbxslt/libxslt/Makefile
+    libbxslt/libxslt/xsltconfig.h
+    libbxslt/libexslt/Makefile
+    libbxslt/libexslt/exsltconfig.h
+    libbxslt/xsltproc/Makefile
+    libbxslt/python/Makefile
+    libbxslt/python/tests/Makefile
+    libbxslt/doc/Makefile
+    libbxslt/doc/devhelp/Makefile
+    libbxslt/doc/EXSLT/devhelp/Makefile
     tests/bxslt/Makefile
     tests/bxslt/xmlspec/Makefile
     tests/bxslt/multiple/Makefile
@@ -1917,8 +1917,8 @@ AC_CONFIG_FILES([
     tests/bxslt/docbook/Makefile
     tests/bxslt/fuzz/Makefile
 ])
-AC_CONFIG_FILES([bxslt/python/setup.py], [chmod +x bxslt/python/setup.py])
-AC_CONFIG_FILES([bxslt/xslt-config], [chmod +x bxslt/xslt-config])
+AC_CONFIG_FILES([libbxslt/python/setup.py], [chmod +x libbxslt/python/setup.py])
+AC_CONFIG_FILES([libbxslt/bxslt-config], [chmod +x libbxslt/bxslt-config])
 
 AC_OUTPUT
 
@@ -1936,7 +1936,7 @@ AC_MSG_NOTICE([summary of build options:
   compiler:         ${CC} (${HAVE_GCC:-no})
   compiler flags:   ${CFLAGS}
   library types:    Shared=${enable_shared}, Static=${enable_static}
-  libxml version:   ${LIBXML_VERSION} (captive)
+  libbxml version:   ${LIBXML_VERSION} (captive)
   libbxslt cflags:   ${LIBXSLT_CFLAGS}
   libbxml libs:      ${LIBXML_LIBS}
   libbxslt version:  ${LIBXSLT_VERSION} (captive)

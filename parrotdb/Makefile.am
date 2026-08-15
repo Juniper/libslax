@@ -48,3 +48,16 @@ GEN_CODE = ${top_srcdir}/bin/gen-code.sh
 
 gen_headers:
 	sh ${GEN_CODE}
+
+auto_gen: ${GEN_CODE} gen/tstamp
+
+gen/tstamp:
+	${MKDIR_P} gen
+	sh ${GEN_CODE}
+	touch gen/tstamp
+
+${libparrotdb_la_SOURCES}: auto_gen
+
+clean-local:
+	rm -fr gen
+

@@ -13,8 +13,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
     libpsu \
     parrotdb \
-    bxml \
-    bxslt \
+    libbxml \
+    libbxslt \
     libslax \
     libxi \
     extensions \

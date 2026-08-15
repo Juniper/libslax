@@ -22,18 +22,21 @@ if WITH_XSLT_PYTHON
 pyexec_LTLIBRARIES = libxsltmod.la
 
 libxsltmod_la_CPPFLAGS = \
-	-I$(top_builddir)/bxslt \
-	-I$(top_srcdir)/bxslt/libxslt \
-	-I$(top_srcdir)/bxslt \
+	-I$(top_builddir)/libbxslt \
+	-I$(top_srcdir)/libbxslt/libxslt \
+	-I$(top_srcdir)/libbxslt \
 	-I../libexslt \
-	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
+	-I$(top_builddir)/libbxml/include \
+	-I$(top_srcdir)/libbxml/include
+
 libxsltmod_la_CFLAGS = $(AM_CFLAGS) $(PYTHON_CFLAGS)
 libxsltmod_la_SOURCES = libxslt.c types.c
 nodist_libxsltmod_la_SOURCES = libxslt-py.c
 libxsltmod_la_LIBADD = \
-	$(top_builddir)/bxslt/libxslt/libbxslt.la \
-	$(top_builddir)/bxslt/libexslt/libexslt.la \
-	$(PYTHON_LIBS) $(top_builddir)/bxml/libbxml.la
+	$(top_builddir)/libbxslt/libxslt/libbxslt.la \
+	$(top_builddir)/libbxslt/libexslt/libexslt.la \
+	$(PYTHON_LIBS) $(top_builddir)/libbxml/libbxml.la
+
 libxsltmod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
 
 libxslt.py: $(srcdir)/libxsl.py libxsltclass.py
@@ -42,7 +45,10 @@ libxslt.py: $(srcdir)/libxsl.py libxsltclass.py
 nodist_python_PYTHON = libxslt.py
 
 GENERATE = generator.py
-API_DESC = $(top_srcdir)/bxslt/doc/libxslt-api.xml $(srcdir)/libxslt-python-api.xml
+API_DESC = \
+    $(top_srcdir)/libbxslt/doc/libxslt-api.xml \
+    $(srcdir)/libxslt-python-api.xml
+
 GENERATED = libxsltclass.py \
 	   libxslt-export.c \
 	   libxslt-py.c \

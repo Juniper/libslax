@@ -2,8 +2,8 @@
 
 AM_CPPFLAGS = \
 	-I$(top_builddir) -I$(top_srcdir) \
-	-I$(top_builddir)/bxml -I$(top_srcdir)/bxml \
-	-I$(top_builddir)/bxml/include -I$(top_srcdir)/bxml/include
+	-I$(top_builddir)/libbxml -I$(top_srcdir)/libbxml \
+	-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
 
 noinst_PROGRAMS = \
 	runsuite \
@@ -18,8 +18,8 @@ noinst_PROGRAMS = \
 	testparser \
 	testrecurse
 
-DEPS = $(top_builddir)/bxml/libbxml.la
-LDADDS = $(top_builddir)/bxml/libbxml.la
+DEPS = $(top_builddir)/libbxml/libbxml.la
+LDADDS = $(top_builddir)/libbxml/libbxml.la
 
 runtest_SOURCES=runtest.c httploader.c
 runtest_DEPENDENCIES = $(DEPS)
@@ -63,7 +63,7 @@ testdso_la_LDFLAGS = $(AM_LDFLAGS) \
 		     -module -no-undefined -avoid-version -rpath $(libdir)
 
 rebuild_testapi:
-	cd $(top_srcdir)/bxml && python3 codegen/genTestApi.py $(abs_builddir)
+	cd $(top_srcdir)/libbxml && python3 codegen/genTestApi.py $(abs_builddir)
 
 testapi_SOURCES=testapi.c
 testapi_DEPENDENCIES = $(DEPS)
@@ -88,11 +88,11 @@ check-local:
 	$(CHECKER) ./runsuite$(EXEEXT)
 if WITH_OUTPUT_SOURCES
 if WITH_DEBUG_SOURCES
-	test/scripts/test.sh $(top_builddir)/bxml/xmllint$(EXEEXT)
+	test/scripts/test.sh $(top_builddir)/libbxml/xmllint$(EXEEXT)
 endif
 if WITH_CATALOG_SOURCES
-	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh $(top_builddir)/bxml/xmlcatalog$(EXEEXT)
-	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh $(top_builddir)/bxml/xmlcatalog$(EXEEXT)
+	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test.sh $(top_builddir)/libbxml/xmlcatalog$(EXEEXT)
+	ASAN_OPTIONS=detect_leaks=0 test/catalogs/test_sgml.sh $(top_builddir)/libbxml/xmlcatalog$(EXEEXT)
 endif
 endif
 
