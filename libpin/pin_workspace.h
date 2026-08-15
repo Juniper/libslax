@@ -38,12 +38,21 @@ pin_workspace_t *
 pin_workspace_open (pa_mmap_t *pmp, const char *name);
 
 void
+pin_workspace_close (pin_workspace_t *workp);
+
+void
 pin_namepool_open (pa_mmap_t *pmap, const char *basename,
 		  pa_istr_t **namesp, pa_pat_t **names_indexp);
 
 void
+pin_namepool_close (pa_istr_t *names, pa_pat_t *names_index);
+
+void
 pin_ns_open (pa_mmap_t *pmap, const char *basename,
 	    pa_fixed_t **nsp, pa_pat_t **ns_indexp);
+
+void
+pin_ns_close (pa_fixed_t *ns_map, pa_pat_t *ns_map_index);
 
 pin_ns_map_id_t
 pin_ns_find (pin_workspace_t *pwp, const char *prefix, const char *uri,
