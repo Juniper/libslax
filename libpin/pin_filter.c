@@ -74,13 +74,13 @@ static xo_name_id_t
 pin_filter_data_name_intern (xo_filter_data_t *dp,
 			     const char *name, ssize_t len UNUSED)
 {
-    xo_name_id_t nid = { .id = PA_NULL_ATOM };
+    xo_name_id_t nid = { .ni_id = PA_NULL_ATOM };
 
     if (name == NULL)
 	return nid;
 
     pa_atom_t atom = pin_namepool_atom(dp->xfd_workspace, name, TRUE);
-    nid.id = atom;
+    nid.ni_id = atom;
     return nid;
 }
 
@@ -97,11 +97,11 @@ static int
 pin_filter_data_name_eq (xo_filter_data_t *dp, xo_name_id_t id,
 			 const char *tag, ssize_t len UNUSED)
 {
-    if (tag == NULL || id.id == PA_NULL_ATOM)
+    if (tag == NULL || id.ni_id == PA_NULL_ATOM)
 	return 0;
 
     pa_atom_t atom = pin_namepool_atom(dp->xfd_workspace, tag, FALSE);
-    return (atom != PA_NULL_ATOM && atom == id.id);
+    return (atom != PA_NULL_ATOM && atom == id.ni_id);
 }
 
 /*
