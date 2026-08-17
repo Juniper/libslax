@@ -846,6 +846,13 @@ struct _xmlDoc {
     int             properties;
 };
 
+/*
+ * Field accessors for the structs above (xmlNode, xmlNs, xmlAttr,
+ * xmlDoc, xmlDtd). See xmlaccessors.h itself for the rationale; briefly,
+ * this lets consumers stop touching struct internals directly so the
+ * in-memory layout can change later without a tree-wide rewrite.
+ */
+#include <libxml/xmlaccessors.h>
 
 /** Context for DOM wrapper operations */
 typedef struct _xmlDOMWrapCtxt xmlDOMWrapCtxt;
