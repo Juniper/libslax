@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_06.02.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!-- named template has no match=; should be silently skipped -->
+  <xsl:template name="skip-me"/>
+  <xsl:template match="a"/>
+  <xsl:template match="b"/>
+</xsl:stylesheet>
