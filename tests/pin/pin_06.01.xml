@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<top>
+    <item type="keep">alpha</item>
+    <item type="skip">beta</item>
+    <item type="other">gamma</item>
+    <extra>extra-element</extra>
+</top>
