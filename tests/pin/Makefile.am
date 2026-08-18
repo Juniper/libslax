@@ -22,6 +22,7 @@ AM_CFLAGS = \
     -I${top_builddir}/parrotdb \
     -I${top_builddir}/libpin \
     -I${top_builddir}/libxo \
+    ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
 # Ick: maintained by hand!
@@ -30,13 +31,15 @@ pin_01.c \
 pin_02.c \
 pin_03.c \
 pin_04.c \
-pin_05.c
+pin_05.c \
+pin_06.c
 
 pin_01_test_SOURCES = pin_01.c
 pin_02_test_SOURCES = pin_02.c
 pin_03_test_SOURCES = pin_03.c
 pin_04_test_SOURCES = pin_04.c
 pin_05_test_SOURCES = pin_05.c
+pin_06_test_SOURCES = pin_06.c
 
 # pin04 needs parrotdb; pin01 only needs libpin
 pin_04_test_LDADD = \
@@ -49,6 +52,14 @@ pin_05_test_LDADD = \
     ${top_builddir}/libpin/libpin.la \
     ${libdir}/libxo/libxo_filter.la \
     ${libdir}/libxo.la
+
+# pin06 also calls xmlReadFile directly, so it needs libxml2
+pin_06_test_LDADD = \
+    ${top_builddir}/libpsu/libpsu.la \
+    ${top_builddir}/libpin/libpin.la \
+    ${libdir}/libxo/libxo_filter.la \
+    ${libdir}/libxo.la \
+    ${LIBXML_LIBS}
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 SAVEDDATA := $(shell cd ${srcdir} ; echo saved/pin_*.out saved/pin_*.err)
@@ -69,6 +80,10 @@ EXTRA_DIST = \
     pin_05.01.in \
     pin_05.02.in \
     pin_05.03.in \
+    pin_06.01.in \
+    pin_06.01.xml \
+    pin_06.02.in \
+    pin_06.02.xml \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
