@@ -33,6 +33,7 @@ libpininc_HEADERS = \
     pin_nodeset.h \
     pin_parse.h \
     pin_rules.h \
+    pin_slax.h \
     pin_source.h \
     pin_tree.h \
     pin_whiffle.h \
@@ -41,6 +42,7 @@ libpininc_HEADERS = \
 
 libpin_la_SOURCES = \
     pin_filter.c \
+    pin_slax.c \
     pin_source.c \
     pin_workspace.c \
     pin_tree.c \
