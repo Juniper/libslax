@@ -33,10 +33,10 @@ static const char *
 jsonAttribValue (xmlNodePtr nodep, const char *name)
 {
     xmlAttrPtr attr = xmlHasProp(nodep, (const xmlChar *) name);
+    xmlNodePtr child = attr ? xmlAttrGetChildren(attr) : NULL;
 
-    if (attr && attr->children
-	    && attr->children->type == XML_TEXT_NODE)
-	return (const char *) attr->children->content;
+    if (child && xmlNodeGetType(child) == XML_TEXT_NODE)
+	return (const char *) xmlNodeGetContentRaw(child);
 
     return NULL;
 }
@@ -47,8 +47,9 @@ jsonHasChildNodes (xmlNodePtr nodep)
     if (nodep == NULL)
 	return FALSE;
 
-    for (nodep = nodep->children; nodep; nodep = nodep->next)
-	if (nodep->type != XML_TEXT_NODE)
+    for (nodep = xmlNodeGetChildren(nodep); nodep;
+	 nodep = xmlNodeGetNext(nodep))
+	if (xmlNodeGetType(nodep) != XML_TEXT_NODE)
 	    return TRUE;
 
     return FALSE;
@@ -59,7 +60,7 @@ jsonName (xmlNodePtr nodep)
 {
     const char *name = jsonAttribValue(nodep, ATT_NAME);
     if (name == NULL)
-	name = (const char *) nodep->name;
+	name = (const char *) xmlNodeGetName(nodep);
 
     return name;
 }
@@ -67,8 +68,10 @@ jsonName (xmlNodePtr nodep)
 static const char *
 jsonValue (xmlNodePtr nodep)
 {
-    if (nodep && nodep->children && nodep->children->type == XML_TEXT_NODE)
-	return (const char *) nodep->children->content;
+    xmlNodePtr child = nodep ? xmlNodeGetChildren(nodep) : NULL;
+
+    if (child && xmlNodeGetType(child) == XML_TEXT_NODE)
+	return (const char *) xmlNodeGetContentRaw(child);
 
     return NULL;
 }
