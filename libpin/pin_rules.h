@@ -51,6 +51,7 @@ typedef struct pin_rule_s {
     uint32_t pr_flags;		/* Flags for this rule */
     pa_bitmap_id_t pr_bitmap;	/* Elements affected by this rule */
     pin_action_type_t pr_action;	/* What to do when the rule matches */
+    pa_atom_t pr_mode;		/* Mode (namepool atom; PA_NULL_ATOM = default mode) */
     pa_atom_t pr_use_tag;	/* Different tag to emit */
     pin_rstate_id_t pr_new_state;/* New state (in the rulebook) to enter */
 } pin_rule_t;
