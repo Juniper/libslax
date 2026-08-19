@@ -823,6 +823,30 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     }
 }
 
+/*
+ * Return TRUE if rulep's mode (pr_mode) matches the context's current mode.
+ * Both NULL/PA_NULL_ATOM → default-mode match.
+ */
+static int
+pin_parse_mode_matches (pin_parse_t *parsep, pin_rule_t *rulep)
+{
+    const char *ctx_mode = parsep->pp_context.pctx_mode;
+    pa_atom_t rule_mode = rulep->pr_mode;
+
+    if (ctx_mode == NULL || ctx_mode[0] == '\0') {
+	/* Context is default mode: match only default-mode rules */
+	return (rule_mode == PA_NULL_ATOM);
+    }
+
+    if (rule_mode == PA_NULL_ATOM)
+	return FALSE;	/* Rule is default mode; context is not */
+
+    /* Look up context mode in namepool without creating it */
+    pa_atom_t ctx_atom = pin_namepool_atom(pin_parse_workspace(parsep),
+					   ctx_mode, FALSE);
+    return (ctx_atom != PA_NULL_ATOM && ctx_atom == rule_mode);
+}
+
 static void
 pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
 		      const char *prefix UNUSED, const char *name,
@@ -936,6 +960,8 @@ pin_parse (pin_parse_t *parsep)
 	    name_atom = pin_namepool_atom(pip->pin_tree->pt_workspace,
 					 localp, TRUE);
 
+	    rulep = NULL;		/* Reset for each element */
+
 	    /*
 	     * Advance the filter FSM (always, to keep depth in sync).
 	     * If the filter says DEAD, the pattern cannot match anywhere
@@ -962,11 +988,14 @@ pin_parse (pin_parse_t *parsep)
 		/*
 		 * Trie matched fully: the terminal node carries the rule id.
 		 * Retrieve it directly, avoiding a full rulebook traversal.
+		 * Then verify the rule's mode matches the execution context.
 		 */
 		uint32_t action_id = xo_filter_walk_get_action(NULL, filter);
 		if (action_id != PA_NULL_ATOM && parsep->pp_rulebook != NULL) {
 		    pin_rule_id_t rid = pin_rule_id(action_id);
-		    rulep = pin_rulebook_rule(parsep->pp_rulebook, rid);
+		    pin_rule_t *candidate = pin_rulebook_rule(parsep->pp_rulebook, rid);
+		    if (candidate != NULL && pin_parse_mode_matches(parsep, candidate))
+			rulep = candidate;
 		}
 		if (rulep == NULL)
 		    rulep = &parsep->pp_default_rule;
@@ -1566,4 +1595,10 @@ void
 pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp)
 {
     parsep->pp_filter = xfp;
+}
+
+void
+pin_parse_set_mode (pin_parse_t *parsep, const char *mode)
+{
+    parsep->pp_context.pctx_mode = mode;
 }
