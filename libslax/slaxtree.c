@@ -38,9 +38,15 @@ slaxSetCheckNamespaces (int check)
 int
 slaxNodeIs (xmlNodePtr nodep, const char *uri, const char *name)
 {
-    return (nodep && nodep->name && streq((const char *) nodep->name, name)
-	    && nodep->ns && nodep->ns->href
-	    && streq((const char *) nodep->ns->href, uri));
+    if (nodep == NULL)
+	return FALSE;
+
+    const xmlChar *nname = xmlNodeGetName(nodep);
+    xmlNsPtr ns = xmlNodeGetNs(nodep);
+
+    return (nname && streq((const char *) nname, name)
+	    && ns && xmlNsGetHref(ns)
+	    && streq((const char *) xmlNsGetHref(ns), uri));
 }
 
 /**
@@ -53,12 +59,14 @@ slaxNodeIs (xmlNodePtr nodep, const char *uri, const char *name)
 int
 slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
 {
-    if (nodep == NULL || nodep->type == XML_DOCUMENT_NODE)
+    if (nodep == NULL || xmlNodeGetType(nodep) == XML_DOCUMENT_NODE)
 	return FALSE;
 
-    return (nodep->ns && nodep->ns->href
-	    && (name == NULL || streq((const char *) nodep->name, name))
-	    && streq((const char *) nodep->ns->href, XSL_URI));
+    xmlNsPtr ns = xmlNodeGetNs(nodep);
+
+    return (ns && xmlNsGetHref(ns)
+	    && (name == NULL || streq((const char *) xmlNodeGetName(nodep), name))
+	    && streq((const char *) xmlNsGetHref(ns), XSL_URI));
 }
 
 /**
@@ -179,7 +187,7 @@ slaxSetNs (slax_data_t *sdp, xmlNodePtr nodep,
 	/* Add a distinct namespace to the current node */
 	nsp = xmlNewNs(nodep, uri, (const xmlChar *) prefix);
 	if (local)
-	    nodep->ns = nsp;
+	    xmlNodeSetNs(nodep, nsp);
     }
 
     return nsp;
@@ -239,9 +247,9 @@ slaxFindDefaultNs (slax_data_t *sdp UNUSED)
     xmlNsPtr ns = NULL;
     xmlNodePtr nodep;
 
-    for (nodep = sdp->sd_ctxt->node; nodep; nodep = nodep->parent)
-	for (ns = nodep->nsDef; ns; ns = ns->next)
-	    if (ns->prefix == NULL)
+    for (nodep = sdp->sd_ctxt->node; nodep; nodep = xmlNodeGetParent(nodep))
+	for (ns = xmlNodeGetNsDef(nodep); ns; ns = xmlNsGetNext(ns))
+	    if (xmlNsGetPrefix(ns) == NULL)
 		return ns;
 
     return NULL;
@@ -283,7 +291,7 @@ slaxFindNs (slax_data_t *sdp, xmlNodePtr nodep, const char *prefix, int len)
 
     memcpy(name, prefix, len);
     name[len] = '\0';
-    ns = xmlSearchNs(nodep->doc, nodep, (xmlChar *) name);
+    ns = xmlSearchNs(xmlNodeGetDoc(nodep), nodep, (xmlChar *) name);
     if (ns == NULL)
 	ns = slaxMakeStdNs(sdp, name);
 
@@ -399,15 +407,15 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
      * is unbound on a parent we simply keep it NULL
      */
     if (ns) {
-	xmlNsPtr cur = sdp->sd_ctxt->node->ns;
+	xmlNsPtr cur = xmlNodeGetNs(sdp->sd_ctxt->node);
 	if (cur) {
-	    if ((cur->prefix == NULL && ns->prefix == NULL)
-		|| (cur->prefix && ns->prefix
-		    && streq((const char *) cur->prefix,
-			     (const char *) ns->prefix)))
+	    if ((xmlNsGetPrefix(cur) == NULL && xmlNsGetPrefix(ns) == NULL)
+		|| (xmlNsGetPrefix(cur) && xmlNsGetPrefix(ns)
+		    && streq((const char *) xmlNsGetPrefix(cur),
+			     (const char *) xmlNsGetPrefix(ns))))
 		xmlSetNs(sdp->sd_ctxt->node, ns);
 	} else {
-	    if (ns->prefix == NULL)
+	    if (xmlNsGetPrefix(ns) == NULL)
 		xmlSetNs(sdp->sd_ctxt->node, ns);
 	}
     }
@@ -762,7 +770,7 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
      */
     sib = sdp->sd_ctxt->node;
     if (slaxNodeIsXsl(sib, ELT_WITH_PARAM))
-	sib = sib->parent;
+	sib = xmlNodeGetParent(sib);
 
     /*
      * Templates limit their initial children to params, so if
@@ -770,7 +778,7 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
      * hidden params.
      */
     if (slaxNodeIsXsl(sib, ELT_PARAM)
-		&& slaxNodeIsXsl(sib->parent, ELT_TEMPLATE))
+		&& slaxNodeIsXsl(xmlNodeGetParent(sib), ELT_TEMPLATE))
 	tag = ELT_PARAM;
 
     nodep = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
@@ -781,7 +789,7 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
     }
 
     xmlAddPrevSibling(sib, nodep);
-    nodep->line = sdp->sd_ctxt->node->line;
+    xmlNodeSetLine(nodep, xmlNodeGetLine(sdp->sd_ctxt->node));
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -1059,8 +1067,8 @@ slaxSetPreserveFlag (xsltTransformContextPtr tctxt, xmlXPathObjectPtr ret)
 	if (tctxt == NULL || tctxt->inst == NULL)
 	    return;
 
-	parent = tctxt->inst->parent;
-	if (parent == NULL || parent->type != XML_ELEMENT_NODE)
+	parent = xmlNodeGetParent(tctxt->inst);
+	if (parent == NULL || xmlNodeGetType(parent) != XML_ELEMENT_NODE)
 	    return;
 	
 	if (!slaxNodeIsXsl(parent, ELT_STYLESHEET))
@@ -1080,16 +1088,16 @@ slaxMoveImport (slax_data_t *sdp UNUSED, xmlNodePtr curp)
 {
     xmlNodePtr nodep, prev = NULL;
 
-    for (nodep = curp; nodep; nodep = nodep->prev) {
-	if (nodep->type == XML_COMMENT_NODE)
+    for (nodep = curp; nodep; nodep = xmlNodeGetPrev(nodep)) {
+	if (xmlNodeGetType(nodep) == XML_COMMENT_NODE)
 	    continue;
-	if (nodep->prev == NULL)
+	if (xmlNodeGetPrev(nodep) == NULL)
 	    break;
-	if (nodep->prev->type == XML_COMMENT_NODE)
+	if (xmlNodeGetType(xmlNodeGetPrev(nodep)) == XML_COMMENT_NODE)
 	    continue;;
-	prev = nodep->prev;
+	prev = xmlNodeGetPrev(nodep);
 	if (slaxNodeIsXsl(prev, ELT_IMPORT)) {
-	    prev = prev->next;
+	    prev = xmlNodeGetNext(prev);
 	    break;
 	}
     }
@@ -1131,7 +1139,7 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
 	return NULL;
     }
 
-    nsList = xmlGetNsList(inst->doc, inst);
+    nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     for (nscount = 0; nsList && nsList[nscount]; nscount++)
 	continue;
     
@@ -1196,11 +1204,11 @@ slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr)
     nsList = xmlGetNsList(docp, nodep);
     for (nscount = 0; nsList && nsList[nscount]; nscount++) {
 	nsp = nsList[nscount];
-	if (nsp->href == NULL)
+	if (xmlNsGetHref(nsp) == NULL)
 	    continue;
-	if (streq((const char *) nsp->href, XSL_URI))
+	if (streq((const char *) xmlNsGetHref(nsp), XSL_URI))
 	    continue;
-	xmlXPathRegisterNs(xpath_context, nsp->prefix, nsp->href);
+	xmlXPathRegisterNs(xpath_context, xmlNsGetPrefix(nsp), xmlNsGetHref(nsp));
     }
 
     if (nodep == NULL)
@@ -1232,20 +1240,21 @@ slaxDumpTree (xmlNodePtr node, const char *pref, int indent)
 {
     int lineno;
 
-    for ( ; node; node = node->next) {
+    for ( ; node; node = xmlNodeGetNext(node)) {
 	lineno = xmlGetLineNo(node);
 
 	slaxOutput("%*s%s element '%s' line %d", indent, "", pref ?: "",
-		   node->name ? (const char *) node->name : "--", lineno);
+		   xmlNodeGetName(node) ? (const char *) xmlNodeGetName(node) : "--",
+		   lineno);
 
 	xmlAttrPtr attr;
-	for (attr = node->properties; attr; attr = attr->next) {
+	for (attr = xmlNodeGetProperties(node); attr; attr = xmlAttrGetNext(attr)) {
 	    slaxOutput("%*s%s attr '%s'", indent + 4, "", pref ?: "",
-		   attr->name ? (const char *) attr->name : "--");
+		   xmlAttrGetName(attr) ? (const char *) xmlAttrGetName(attr) : "--");
 	}
 
-	if (node->children)
-	    slaxDumpTree(node->children, pref, indent + 2);
+	if (xmlNodeGetChildren(node))
+	    slaxDumpTree(xmlNodeGetChildren(node), pref, indent + 2);
     }
 }
 
@@ -1257,12 +1266,13 @@ slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn)
     slax_node_group_t *grp;
     const int NODE_GROUP_INIT_SIZE = 4;
 
-    for (xmlNodePtr nodep = parent->children; nodep; nodep = nodep->next) {
+    for (xmlNodePtr nodep = xmlNodeGetChildren(parent); nodep;
+	 nodep = xmlNodeGetNext(nodep)) {
 	grp = NULL;
 	const char *name = NULL;
 
-        if (nodep->type == XML_ELEMENT_NODE) {
-	    name = name_fn ? name_fn(nodep) : (const char *) nodep->name;
+        if (xmlNodeGetType(nodep) == XML_ELEMENT_NODE) {
+	    name = name_fn ? name_fn(nodep) : (const char *) xmlNodeGetName(nodep);
 	    if (name) {
 		/* If we have a name, find a match */
 		for (grp = all_groups; grp; grp = grp->ng_next)
@@ -1276,7 +1286,7 @@ slaxNodeGroupCreate (xmlNodePtr parent, slax_node_group_name_fn name_fn)
 	     * This is probably NULL, but that's ok, since it really
 	     * only matters for elements
 	     */
-	    name = (const char *) nodep->name;
+	    name = (const char *) xmlNodeGetName(nodep);
 	}
 
 	/* If we didn't find an existing group, make one */
