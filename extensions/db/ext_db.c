@@ -309,11 +309,11 @@ db_input_parse (xmlXPathObject *ostack[], int nargs)
 		for (i = 0; i < nodeset->nodeNr; i++) {
 		    nop = nodeset->nodeTab[i];
 
-		    if (nop->type == XML_ELEMENT_NODE)
+		    if (xmlNodeGetType(nop) == XML_ELEMENT_NODE)
 			db_parse_node(input, nop);
 
-		    for (cop = nop->children; cop; cop = cop->next) {
-			if (cop->type != XML_ELEMENT_NODE)
+		    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+			if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 			    continue;
 
 			db_parse_node(input, cop);
@@ -869,13 +869,13 @@ extDbFindAndFetch (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	     * output and append it to result
 	     */
 	    if (streq(xmlNodeName(childp), "output")) {
-		childp = childp->children;
+		childp = xmlNodeGetChildren(childp);
 		while (childp) {
 		    newp = xmlDocCopyNode(childp, container, 1);
 		    if (newp) {
 			xmlAddChild(resultp, newp);
 		    }
-		    childp = childp->next;
+		    childp = xmlNodeGetNext(childp);
 		}
 	    } else {
 		newp = xmlDocCopyNode(childp, container, 1);
