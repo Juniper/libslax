@@ -60,7 +60,7 @@ save_patch () {
 }
 
 git_diff () {
-    diff_args=
+    local diff_args=
     case "$1" in
         commit|just|c)
             shift
@@ -69,7 +69,12 @@ git_diff () {
             ;;
     esac
 
-     git diff $diff_args "$@"
+    if [ -t 1 ]; then
+	git diff $diff_args "$@" | more
+    else
+	git diff $diff_args "$@"
+    fi
+
 }
 
 check_in_details () {
