@@ -12,17 +12,17 @@
  *
  * Scans the top-level children of an xsl:stylesheet for xsl:template
  * elements that carry a match= attribute (match-pattern templates).
- * For each one, allocates a pin_rule_t in the provided rulebook and
- * registers the match pattern with the filter via
- * pin_filter_add_with_action.  The result is a filter that, when driven
- * by pin_parse, fires the associated rule id for every subtree that
- * matches a compiled template pattern.
+ * For each one, allocates a pin_rule_t in the provided rulebook (with
+ * pr_mode set to the template's mode= as a namepool atom) and registers
+ * the match pattern with the filter via pin_filter_add_with_action.
+ * All modes are compiled in one pass; the parser's execution context
+ * selects which rules fire at runtime based on the current mode.
  *
  * What is NOT handled here (deferred to later items):
- *   - template modes (item 12)
  *   - named templates / call-template (item 15)
  *   - variables and parameters (item 14)
  *   - template body expression language (item 17)
+ *   - apply-templates body / frame stack (item 16)
  */
 
 #include <stdio.h>
@@ -90,6 +90,15 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	if (match == NULL)
 	    continue;		/* named template without match=; skip */
 
+	/* Intern the mode string as a namepool atom (PA_NULL_ATOM = default) */
+	xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
+	pa_atom_t mode_atom = PA_NULL_ATOM;
+	if (tmode && tmode[0])
+	    mode_atom = pin_namepool_atom(rb->prb_workspace,
+					 (const char *) tmode, TRUE);
+	if (tmode)
+	    xmlFree(tmode);
+
 	pin_rule_id_t rid;
 	pin_rule_t *prp = pin_rule_alloc(rb, &rid);
 	if (prp == NULL) {
@@ -100,6 +109,7 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 
 	bzero(prp, sizeof(*prp));
 	prp->pr_action = action;
+	prp->pr_mode = mode_atom;
 
 	int rc = pin_filter_add_with_action(xfp, (const char *) match, rid);
 	xmlFree(match);
@@ -113,4 +123,68 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
     }
 
     return count;
+}
+
+#define PIN_SLAX_MAX_MODES 64
+
+int
+pin_slax_for_each_mode (xmlDocPtr docp, pin_slax_mode_fn fn, void *opaque)
+{
+    xmlNodePtr root = xmlDocGetRootElement(docp);
+    if (!pin_slax_is_xsl(root, NULL))
+	return -1;
+
+    struct { xmlChar *mode; int count; } seen[PIN_SLAX_MAX_MODES];
+    int nseen = 0;
+    int default_count = 0;
+
+    for (xmlNodePtr child = root->children; child; child = child->next) {
+	if (!pin_slax_is_xsl(child, "template"))
+	    continue;
+
+	xmlChar *match = xmlGetProp(child, (const xmlChar *) "match");
+	if (match == NULL)
+	    continue;		/* named template, skip */
+	xmlFree(match);
+
+	xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
+
+	if (tmode == NULL || tmode[0] == '\0') {
+	    if (tmode)
+		xmlFree(tmode);
+	    default_count++;
+	    continue;
+	}
+
+	int found = FALSE;
+	for (int i = 0; i < nseen; i++) {
+	    if (strcmp((const char *) seen[i].mode, (const char *) tmode) == 0) {
+		seen[i].count++;
+		found = TRUE;
+		break;
+	    }
+	}
+
+	if (!found && nseen < PIN_SLAX_MAX_MODES) {
+	    seen[nseen].mode = tmode;	/* retained for dedup; freed below */
+	    seen[nseen].count = 1;
+	    nseen++;
+	} else {
+	    xmlFree(tmode);
+	}
+    }
+
+    int total = (default_count > 0 ? 1 : 0) + nseen;
+
+    if (fn) {
+	if (default_count > 0)
+	    fn(opaque, NULL, default_count);
+	for (int i = 0; i < nseen; i++)
+	    fn(opaque, (const char *) seen[i].mode, seen[i].count);
+    }
+
+    for (int i = 0; i < nseen; i++)
+	xmlFree(seen[i].mode);
+
+    return total;
 }
