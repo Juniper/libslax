@@ -22,6 +22,15 @@ struct xo_filter_s;
 typedef struct xo_filter_s xo_filter_t;
 
 /*
+ * XSLT execution context.  Tracks the current mode and, in future,
+ * variable bindings, the current input node, and a frame stack for
+ * recursive xsl:apply-templates invocations.
+ */
+typedef struct pin_context_s {
+    const char *pctx_mode;	/* Current XSLT mode (NULL = default mode) */
+} pin_context_t;
+
+/*
  * The state of the parser, meant to be both a handle to parsing
  * functionality as well as a means of restarting parsing.
  */
@@ -32,6 +41,7 @@ typedef struct pin_parse_s {
     pin_rule_t pp_default_rule;	/* Default rule for parsing */
     pin_insert_t *pp_insert;	/* Insertion point */
     xo_filter_t *pp_filter;	/* Optional XPath filter (pin_filter_create) */
+    pin_context_t pp_context;	/* Execution context (mode, etc.) */
 } pin_parse_t;
 
 /* Flags for pp_flags: */
@@ -108,6 +118,14 @@ pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type);
  */
 void
 pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp);
+
+/*
+ * Set the current XSLT execution mode on the parser context.
+ * Dispatch will only fire rules whose compiled mode matches 'mode'.
+ * Pass NULL to select default-mode (no mode= attribute) templates.
+ */
+void
+pin_parse_set_mode (pin_parse_t *parsep, const char *mode);
 
 static inline pin_workspace_t *
 pin_parse_workspace (pin_parse_t *parsep)
