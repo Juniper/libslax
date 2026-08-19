@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<top>
+    <keep>keep me</keep>
+    <skip>skip me (default mode)</skip>
+    <ignore>ignore me (default mode)</ignore>
+    <raw>raw content (html mode)</raw>
+    <binary>binary data (text mode)</binary>
+    <encoded>encoded data (text mode)</encoded>
+</top>
