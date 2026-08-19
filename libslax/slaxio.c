@@ -425,7 +425,7 @@ slaxProcTrace (void *vfp, xmlNodePtr nodep, const char *fmt, ...)
     if (nodep) {
 	xmlSaveCtxt *handle;
 
-	fprintf(fp, "XML Content (%d)\n", nodep->type);
+	fprintf(fp, "XML Content (%d)\n", xmlNodeGetType(nodep));
 	fflush(fp);
 	handle = xmlSaveToFd(fileno(fp), NULL,
 			     XML_SAVE_FORMAT | XML_SAVE_NO_DECL);
@@ -469,10 +469,10 @@ slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
     else {
 	xmlNodePtr nodep = xmlDocGetRootElement(docp);
 	if (nodep)
-	    nodep = nodep->children;
+	    nodep = xmlNodeGetChildren(nodep);
 
-	for ( ; nodep; nodep = nodep->next) {
-	    if (nodep->type == XML_ELEMENT_NODE) {
+	for ( ; nodep; nodep = xmlNodeGetNext(nodep)) {
+	    if (xmlNodeGetType(nodep) == XML_ELEMENT_NODE) {
 		xmlSaveTree(handle, nodep);
 		xmlSaveFlush(handle);
 		int rc = write(fd, "\n", 1);
@@ -613,53 +613,62 @@ static const char *slaxNodeTypeNames[] = {
 static void
 slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 {
-    const char *name = (node->type < NUM_ARRAY(slaxNodeTypeNames))
-	? slaxNodeTypeNames[node->type] : "(unknown)";
+    xmlElementType type0 = xmlNodeGetType(node);
+    const char *name = (type0 < NUM_ARRAY(slaxNodeTypeNames))
+	? slaxNodeTypeNames[type0] : "(unknown)";
 
-    for ( ; node; node = node->next) {
-	if (node->type == XML_DOCUMENT_NODE) {
+    for ( ; node; node = xmlNodeGetNext(node)) {
+	if (xmlNodeGetType(node) == XML_DOCUMENT_NODE) {
 	    xmlDocPtr docp = (xmlDocPtr) node;
-	    
+
 	    slaxOutput("%*sdoc %p: type %s/%d, name '%s'/%p",
-		       indent, tag, docp, name, docp->type,
-		       docp->name, docp->name);
+		       indent, tag, docp, name, xmlDocGetType(docp),
+		       xmlDocGetName(docp), xmlDocGetName(docp));
 
 	    slaxOutput("%*schildren %p, last %p, parent %p, "
 		       "next %p, prev %p, doc %p",
-		       indent + 2, tag, docp->children, docp->last,
-		       docp->parent, docp->next, docp->prev, docp->doc);
+		       indent + 2, tag, xmlDocGetChildren(docp),
+		       xmlDocGetLast(docp), xmlDocGetParent(docp),
+		       xmlDocGetNext(docp), xmlDocGetPrev(docp),
+		       xmlDocGetDoc(docp));
 
 	    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 		       "psvi %p, parseflax %#x, properties %#x",
 		       indent + 2, tag,
 		       docp->standalone, docp->oldNs, docp->dict,
-		       docp->psvi, docp->parseFlags, docp->properties);
+		       xmlDocGetPsvi(docp), docp->parseFlags, docp->properties);
 
 	} else {
 	    slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
-		       indent, tag, node, name, node->type, 
-		       slaxIntoString(node->name), node->name);
+		       indent, tag, node, name, xmlNodeGetType(node),
+		       slaxIntoString(xmlNodeGetName(node)),
+		       xmlNodeGetName(node));
 
 	    slaxOutput("%*schildren %p, last %p, parent %p, "
 		       "next %p, prev %p, doc %p",
-		       indent + 2, tag, node->children, node->last,
-		       node->parent, node->next, node->prev, node->doc);
+		       indent + 2, tag, xmlNodeGetChildren(node),
+		       xmlNodeGetLast(node), xmlNodeGetParent(node),
+		       xmlNodeGetNext(node), xmlNodeGetPrev(node),
+		       xmlNodeGetDoc(node));
 
 	    slaxOutput("%*sns %p/%p, properties %p, psvi %p, line %d, extra %d",
-		       indent + 2, tag, node->ns, node->nsDef, node->properties,
-		       node->psvi, node->line, node->extra);
+		       indent + 2, tag, xmlNodeGetNs(node),
+		       xmlNodeGetNsDef(node), xmlNodeGetProperties(node),
+		       xmlNodeGetPsvi(node), xmlNodeGetLine(node),
+		       xmlNodeGetExtra(node));
 	}
 
-	if (node->content) {
+	if (xmlNodeGetContentRaw(node)) {
 	    slaxOutput("%*scontent %p: '%s'",
 		       indent + 2, tag,
-		       node->content, slaxIntoString(node->content));
+		       xmlNodeGetContentRaw(node),
+		       slaxIntoString(xmlNodeGetContentRaw(node)));
 	}
 
-	if (node->children) {
+	if (xmlNodeGetChildren(node)) {
 	    slaxOutput("%*schildren %p:",
-		       indent + 2, tag, node->children);
-	    slaxDumpNodeIndent(node->children, tag, indent + 4);
+		       indent + 2, tag, xmlNodeGetChildren(node));
+	    slaxDumpNodeIndent(xmlNodeGetChildren(node), tag, indent + 4);
 	}
 
 	/* RTFs use the "next" pointer as a to-be-freed list; don't follow it */
@@ -677,35 +686,37 @@ slaxDumpNode (xmlNodePtr node)
 static void
 slaxDumpDocIndent (xmlDocPtr node, const char *tag, int indent)
 {
-    const char *name = (node->type < NUM_ARRAY(slaxNodeTypeNames))
-	? slaxNodeTypeNames[node->type] : "(unknown)";
+    xmlElementType type0 = xmlDocGetType(node);
+    const char *name = (type0 < NUM_ARRAY(slaxNodeTypeNames))
+	? slaxNodeTypeNames[type0] : "(unknown)";
 
     slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
-	       indent, tag, node, name, node->type,
-	       node->name, node->name);
+	       indent, tag, node, name, xmlDocGetType(node),
+	       xmlDocGetName(node), xmlDocGetName(node));
 
     slaxOutput("%*schildren %p, last %p, parent %p, "
 	       "next %p, prev %p, doc %p",
-	       indent + 2, tag, node->children, node->last, node->parent,
-	       node->next, node->prev, node->doc);
+	       indent + 2, tag, xmlDocGetChildren(node), xmlDocGetLast(node),
+	       xmlDocGetParent(node), xmlDocGetNext(node), xmlDocGetPrev(node),
+	       xmlDocGetDoc(node));
 
     slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 	       "psvi %p, parseflax %#x, properties %#x",
 	       indent + 2, tag, node->standalone, node->oldNs, node->dict,
-	       node->psvi, node->parseFlags, node->properties);
+	       xmlDocGetPsvi(node), node->parseFlags, node->properties);
 
-    if (node->children) {
+    if (xmlDocGetChildren(node)) {
 	slaxOutput("%*schildren %p:",
-		   indent + 2, tag, node->children);
-	slaxDumpNodeIndent(node->children, tag, indent + 4);
+		   indent + 2, tag, xmlDocGetChildren(node));
+	slaxDumpNodeIndent(xmlDocGetChildren(node), tag, indent + 4);
     }
 
     /*
      * "next" is not a doc, just a node, and it most likely just NULL,
      * but if it's something else, we want to know.
      */
-    if (node->next)
-	slaxDumpNodeIndent(node->next, tag, indent);
+    if (xmlDocGetNext(node))
+	slaxDumpNodeIndent(xmlDocGetNext(node), tag, indent);
 }
 
 void
