@@ -93,7 +93,7 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 	goto fail;
 
     /* Set the line number so the debugger can find us */
-    svar->line = mvar->line;
+    xmlNodeSetLine(svar, xmlNodeGetLine(mvar));
 
     /* Set the name of the shadow variable */
     xmlSetNsProp(svar, NULL, (const xmlChar *) ATT_NAME,
@@ -102,7 +102,7 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 	       (const xmlChar *) mvarname);
 
     /* Create the shadow variable (svar) as a copy of the mvar*/
-    if (mvar->children) {
+    if (xmlNodeGetChildren(mvar)) {
 	/*
 	 * We have an initial value; put it in an "init" variable
 	 */
@@ -110,11 +110,12 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 	if (ivarname == NULL)
 	    goto fail;
 
-	ivar = xmlDocCopyNode(mvar, mvar->doc, 1);
+	ivar = xmlDocCopyNode(mvar, xmlNodeGetDoc(mvar), 1);
 	if (ivar == NULL)
 	    goto fail;
 
-	ivar->line = mvar->line; /* Let the debugger know where we are */
+	/* Let the debugger know where we are */
+	xmlNodeSetLine(ivar, xmlNodeGetLine(mvar));
 	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_NAME,
 		     (const xmlChar *) ivarname);
 	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_MVARNAME,
@@ -130,7 +131,7 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
     slaxAttribAddLiteral(sdp, ATT_MUTABLE, "yes");
 
     /* Set the 'select' attribute to our init function */
-    if (mvar->children == NULL)
+    if (xmlNodeGetChildren(mvar) == NULL)
 	sel = (char *) xmlGetNsProp(mvar,
 				    (const xmlChar *) ATT_SELECT, NULL);
     
@@ -147,8 +148,8 @@ slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
     slaxSetSlaxNs(sdp, mvar, FALSE);
 
     /* Remove the children (copies are under the svar) */
-    xmlFreeNodeList(mvar->children);
-    mvar->children = NULL;
+    xmlFreeNodeList(xmlNodeGetChildren(mvar));
+    xmlNodeSetChildren(mvar, NULL);
 
     /* Leave a pointer to our svar's name */
     xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_SVARNAME,
@@ -417,7 +418,7 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
     /* Mark if this context is local of not */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wint-conversion"
-    container->psvi = local ? XSLT_RVT_LOCAL : XSLT_RVT_GLOBAL;
+    xmlDocSetPsvi(container, local ? XSLT_RVT_LOCAL : XSLT_RVT_GLOBAL);
 #pragma GCC diagnostic pop
 
     /*
@@ -425,7 +426,7 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
      * RTFs.
      */
     prev = value->nodesetval->nodeTab[value->nodesetval->nodeNr - 1];
-    prev->next = (xmlNodePtr) container;
+    xmlNodeSetNext(prev, (xmlNodePtr) container);
 
     xmlXPathNodeSetAdd(value->nodesetval, (xmlNodePtr) container);
 
@@ -476,7 +477,7 @@ slaxMvarCloneNodeset (xmlDocPtr container, xmlNodeSetPtr nset, int limit)
 	    continue;
 
 	if (XSLT_IS_RES_TREE_FRAG(cur)) {
-	    for (cur = cur->children; cur; cur = cur->next)
+	    for (cur = xmlNodeGetChildren(cur); cur; cur = xmlNodeGetNext(cur))
 		slaxMvarAdd(container, NULL, cur);
 	    xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 	    break;		/* RTFs use "next" as a free list */
@@ -743,7 +744,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 
     } else if (tree) {
 	/* Add all the nodes in a tree to the show variable and the nodeset */
-	for (cur = tree->children; cur; cur = cur->next) {
+	for (cur = xmlDocGetChildren(tree); cur; cur = xmlNodeGetNext(cur)) {
 	    slaxMvarAdd(container, NULL, cur);
 	}
 
@@ -755,7 +756,8 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 		continue;
 
 	    if (XSLT_IS_RES_TREE_FRAG(cur)) {
-		for (cur = cur->children; cur; cur = cur->next)
+		for (cur = xmlNodeGetChildren(cur); cur;
+		     cur = xmlNodeGetNext(cur))
 		    slaxMvarAdd(container, NULL, cur);
 
 	    } else {
@@ -774,24 +776,27 @@ slaxFindVariable (xsltStylesheetPtr style UNUSED, xmlNodePtr inst,
     xmlNodePtr parent, child;
     xmlChar *vname, *local;
 
-    for (parent = inst; parent; parent = parent->parent) {
-	for (child = parent->children; child; child = child->next) {
-	    if (child->type != XML_ELEMENT_NODE)
+    for (parent = inst; parent; parent = xmlNodeGetParent(parent)) {
+	for (child = xmlNodeGetChildren(parent); child;
+	     child = xmlNodeGetNext(child)) {
+	    if (xmlNodeGetType(child) != XML_ELEMENT_NODE)
 		continue;
+
+	    xmlNsPtr child_ns = xmlNodeGetNs(child);
 
 	    slaxLog("findVariable: %s:%s -> %s:%s (%d)",
 		      uri ?: slaxNull, name,
-		      (child->ns && child->ns->prefix)
-		      	? child->ns->prefix : slaxNull,
-		      child->name, child->type);
+		      (child_ns && xmlNsGetPrefix(child_ns))
+		      	? xmlNsGetPrefix(child_ns) : slaxNull,
+		      xmlNodeGetName(child), xmlNodeGetType(child));
 
-	    if (!streq((const char *) child->name, ELT_VARIABLE))
+	    if (!streq((const char *) xmlNodeGetName(child), ELT_VARIABLE))
 		continue;
 
-	    if (child->ns == NULL || child->ns->href == NULL)
+	    if (child_ns == NULL || xmlNsGetHref(child_ns) == NULL)
 		continue;
 
-	    if (!streq((const char *) child->ns->href, XSL_URI))
+	    if (!streq((const char *) xmlNsGetHref(child_ns), XSL_URI))
 		continue;
 
 	    vname = xmlGetNsProp(child, (const xmlChar *) ATT_NAME, NULL);
@@ -924,7 +929,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	    style->errors += 1;
 	}
 
-	if (inst->children != NULL) {
+	if (xmlNodeGetChildren(inst) != NULL) {
 	    xsltTransformError(NULL, style, inst,
 		"mvar cannot have child nodes when the "
 		"attribute 'select' is used.\n");
@@ -943,7 +948,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
     }
 
     /* Prebuild the namespace list */
-    comp->mp_nslist = xmlGetNsList(inst->doc, inst);
+    comp->mp_nslist = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     if (comp->mp_nslist != NULL) {
 	int i = 0;
 	while (comp->mp_nslist[i] != NULL)
@@ -1005,7 +1010,7 @@ slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
     ctxt->insert = (xmlNodePtr) container;
 
     /* Apply the template code inside the element */
-    xsltApplyOneTemplate(ctxt, node, inst->children, NULL, NULL);
+    xsltApplyOneTemplate(ctxt, node, xmlNodeGetChildren(inst), NULL, NULL);
 
     ctxt->insert = save_insert;
 
@@ -1037,7 +1042,7 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 	if (value == NULL)
 	    return;
 
-    } else if (inst->children) {
+    } else if (xmlNodeGetChildren(inst)) {
 	tree = slaxMvarEvalBlock(ctxt, node, inst);
 	if (tree == NULL)
 	    return;
@@ -1189,7 +1194,7 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	    && svar->value->nodesetval->nodeTab[0])
 	    nodep = svar->value->nodesetval->nodeTab[0];
 
-	if (nodep == NULL || nodep->children == NULL) {
+	if (nodep == NULL || xmlNodeGetChildren(nodep) == NULL) {
 	    xmlFreeAndEasy(mvarname);
 	    xmlFreeAndEasy(svarname);
 	    xmlXPathReturnEmptyString(ctxt);
