@@ -1,0 +1,7 @@
+<root>
+   <container>
+      <item>kept-one</item>
+      <item>kept-two</item>
+   </container>
+   <other>saved-by-default</other>
+</root>
