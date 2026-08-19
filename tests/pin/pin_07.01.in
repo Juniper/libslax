@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+# quiet modes clean
+# quiet dump clean xml pin_07.01.xml
+# quiet dump clean xml pin_07.01.xml mode html
+# quiet dump clean xml pin_07.01.xml mode text
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!-- default mode: two discard patterns -->
+  <xsl:template match="skip"/>
+  <xsl:template match="ignore"/>
+  <!-- html mode: one discard pattern -->
+  <xsl:template match="raw" mode="html"/>
+  <!-- text mode: two discard patterns -->
+  <xsl:template match="binary" mode="text"/>
+  <xsl:template match="encoded" mode="text"/>
+  <!-- named template, no match=: always skipped -->
+  <xsl:template name="helper"/>
+</xsl:stylesheet>
