@@ -502,11 +502,11 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 	    xmlNodePtr nop, cop;
 
 	    nop = xop->nodesetval->nodeTab[i];
-	    if (nop->children == NULL)
+	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
-	    for (cop = nop->children; cop; cop = cop->next) {
-		if (cop->type != XML_ELEMENT_NODE)
+	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 		    continue;
 
 		key = xmlNodeName(cop);
@@ -665,11 +665,11 @@ extOsWorker (slax_os_callback_t func, const char *action, void *opaque,
 	    xmlNodePtr nop, cop;
 
 	    nop = xop->nodesetval->nodeTab[i];
-	    if (nop->children == NULL)
+	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
-	    for (cop = nop->children; cop; cop = cop->next) {
-		if (cop->type != XML_ELEMENT_NODE)
+	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 		    continue;
 
 		key = xmlNodeName(cop);
@@ -1252,11 +1252,11 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
 		const char *value, *key;
 
 		nop = xop->nodesetval->nodeTab[i];
-		if (nop->children == NULL)
+		if (xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
-		for (cop = nop->children; cop; cop = cop->next) {
-		    if (cop->type != XML_ELEMENT_NODE)
+		for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		    if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 			continue;
 
 		    key = xmlNodeName(cop);
