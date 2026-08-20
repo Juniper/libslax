@@ -223,13 +223,13 @@ extCurlSetContents (curl_opts_t *opts, xmlNodePtr nodep)
 	opts->co_contents = NULL;
     }
 
-    if (nodep && nodep->type == XML_ELEMENT_NODE && nodep->children
-		&& nodep->children->next == NULL) {
+    if (nodep && xmlNodeGetType(nodep) == XML_ELEMENT_NODE && xmlNodeGetChildren(nodep)
+		&& xmlNodeGetNext(xmlNodeGetChildren(nodep)) == NULL) {
 	xmlBufferPtr buf = xmlBufferCreate();
 	if (buf) {
 	    xmlSaveCtxtPtr handle = xmlSaveToBuffer(buf, NULL, 0);
 	    if (handle) {
-		xmlSaveTree(handle, nodep->children);
+		xmlSaveTree(handle, xmlNodeGetChildren(nodep));
 		xmlSaveFlush(handle);
 		xmlSaveClose(handle);
 
@@ -1088,7 +1088,7 @@ extCurlBuildDataParsed (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	     * If we have errors, record them; otherwise free the empty
 	     * "errors" node.
 	     */
-	    if (errp->children)
+	    if (xmlNodeGetChildren(errp))
 		slaxAddChild(parent, errp);
 	    else
 		xmlFreeNode(errp);
@@ -1133,7 +1133,7 @@ extCurlBuildData (curl_handle_t *curlp UNUSED, xmlDocPtr docp,
     }
     *cp = '\0';			/* NUL terminate content */
 
-    tp->content = (xmlChar *) buf;
+    xmlNodeSetContentRaw(tp, (xmlChar *) buf);
 
     xp = xmlNewDocNode(docp, NULL, (const xmlChar *) name, NULL);
     xp = slaxAddChild(nodep, xp);
@@ -1310,14 +1310,14 @@ extCurlOptionsParse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	    for (i = 0; i < nodeset->nodeNr; i++) {
 		nop = nodeset->nodeTab[i];
 
-		if (nop->type == XML_ELEMENT_NODE)
+		if (xmlNodeGetType(nop) == XML_ELEMENT_NODE)
 		    extCurlParseNode(opts, nop);
 
-		if (nop->children == NULL)
+		if (xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
-		for (cop = nop->children; cop; cop = cop->next) {
-		    if (cop->type != XML_ELEMENT_NODE)
+		for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		    if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 			continue;
 
 		    extCurlParseNode(opts, cop);
