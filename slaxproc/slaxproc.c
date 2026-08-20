@@ -291,7 +291,7 @@ do_format (const char *name, const char *output,
 	    errx(1, "cannot parse file: '%s'", input);
 
 	if (opt_dump_tree)
-	    slaxDumpTree(docp->children, "", 0);
+	    slaxDumpTree(xmlDocGetChildren(docp), "", 0);
     }
 
     if (slaxFilenameIsStd(output))
@@ -355,7 +355,7 @@ do_slax_to_xslt (const char *name, const char *output,
 	    errx(1, "cannot parse file: '%s'", input);
 
 	if (opt_dump_tree)
-	    slaxDumpTree(docp->children, "", 0);
+	    slaxDumpTree(xmlDocGetChildren(docp), "", 0);
     }
 
     if (output == NULL || slaxFilenameIsStd(output))
@@ -671,7 +671,7 @@ get_output_method (xsltStylesheetPtr script)
     if (root == NULL)
 	return NULL;
 
-    for (xmlNodePtr cur = root->children; cur; cur = cur->next) {
+    for (xmlNodePtr cur = xmlNodeGetChildren(root); cur; cur = xmlNodeGetNext(cur)) {
 	if (!slaxNodeIsXsl(cur, ELT_OUTPUT))
 	    continue;
 	return cur;
