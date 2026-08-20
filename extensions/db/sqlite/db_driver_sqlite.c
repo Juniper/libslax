@@ -171,10 +171,10 @@ db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
      * Count number of valid nodes
      */
     while (cur) {
-	if (cur->type == XML_ELEMENT_NODE) {
+	if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 	    count++;
 	}
-	cur = cur->next;
+	cur = xmlNodeGetNext(cur);
     }
 
     /*
@@ -182,21 +182,21 @@ db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
      */
     cur = conditions;
     while (cur) {
-	if (cur->type == XML_ELEMENT_NODE) {
+	if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 	    /*
 	     * If we are 'and' or 'or', we have nested condition
 	     */
-	    if (streq(xmlNodeName(cur), "or") 
+	    if (streq(xmlNodeName(cur), "or")
 		|| streq(xmlNodeName(cur), "and")) {
-		db_sqlite_build_conditions(cur->children, pb, xmlNodeName(cur));
+		db_sqlite_build_conditions(xmlNodeGetChildren(cur), pb, xmlNodeName(cur));
 	    } else if (streq(xmlNodeName(cur), "condition")) {
-		childp = cur->children;
+		childp = xmlNodeGetChildren(cur);
 		selector = NULL;
 		value = NULL;
 		operator = NULL;
 
 		while (childp) {
-		    if (childp->type == XML_ELEMENT_NODE) {
+		    if (xmlNodeGetType(childp) == XML_ELEMENT_NODE) {
 			key = xmlNodeName(childp);
 			if (streq(key, "selector")) {
 			    selector = xmlNodeValue(childp);
@@ -206,7 +206,7 @@ db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
 			    value = xmlNodeValue(childp);
 			}
 		    }
-		    childp = childp->next;
+		    childp = xmlNodeGetNext(childp);
 		}
 
 		if (selector == NULL || operator == NULL || value == NULL)
@@ -250,7 +250,7 @@ db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
 	    }
 	    count--;
 	}
-	cur = cur->next;
+	cur = xmlNodeGetNext(cur);
     }
 }
 
@@ -260,12 +260,12 @@ db_sqlite_build_conditions (xmlNodePtr conditions, slax_printf_buffer_t *pb,
 static void
 db_sqlite_build_where (xmlNodePtr conditions, slax_printf_buffer_t *pb)
 {
-    if (conditions && conditions->type == XML_ELEMENT_NODE 
-	&& conditions->children) {
+    if (conditions && xmlNodeGetType(conditions) == XML_ELEMENT_NODE
+	&& xmlNodeGetChildren(conditions)) {
 	slaxExtPrintAppend(pb, (const xmlChar *) " WHERE", 6);
 
 	/* Build and append conditions */
-	db_sqlite_build_conditions(conditions->children, pb, NULL);
+	db_sqlite_build_conditions(xmlNodeGetChildren(conditions), pb, NULL);
     }
 }
 
@@ -278,12 +278,12 @@ db_sqlite_build_sort (xmlNodePtr sort, slax_printf_buffer_t *pb)
     xmlNodePtr cur;
     int order = 1, more = 0;
 
-    if (sort && sort->type == XML_ELEMENT_NODE) {
+    if (sort && xmlNodeGetType(sort) == XML_ELEMENT_NODE) {
 	slaxExtPrintAppend(pb, (const xmlChar *) " ORDER BY", 9);
 
-	cur = sort->children;
+	cur = xmlNodeGetChildren(sort);
 	while (cur) {
-	    if (cur->type == XML_ELEMENT_NODE) {
+	    if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 		if (streq(xmlNodeName(cur), "by") && xmlNodeValue(cur)) {
 		    if (more == 0) {
 			slaxExtPrintAppend(pb, (const xmlChar *) " ", 1);
@@ -304,9 +304,9 @@ db_sqlite_build_sort (xmlNodePtr sort, slax_printf_buffer_t *pb)
 		    }
 		}
 	    }
-	    cur = cur->next;
+	    cur = xmlNodeGetNext(cur);
 	}
-	
+
 	if (order) {
 	    slaxExtPrintAppend(pb, (const xmlChar *) " ASC", 4);
 	} else {
@@ -379,24 +379,24 @@ db_sqlite_build_update (db_input_t *in)
     
     bzero(&pb, sizeof(pb));
 
-    if (in && in->di_collection && in->di_update 
-	&& in->di_update->type == XML_ELEMENT_NODE) {
+    if (in && in->di_collection && in->di_update
+	&& xmlNodeGetType(in->di_update) == XML_ELEMENT_NODE) {
 	slaxExtPrintAppend(&pb, (const xmlChar *) "UPDATE ", 7);
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
 			   strlen(in->di_collection));
 	slaxExtPrintAppend(&pb, (const xmlChar *) " SET ", 5);
 
-	cur = in->di_update->children;
+	cur = xmlNodeGetChildren(in->di_update);
 	while (cur) {
-	    if (cur->type == XML_ELEMENT_NODE) {
+	    if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 		count ++;
 	    }
-	    cur = cur->next;
+	    cur = xmlNodeGetNext(cur);
 	}
 
-	cur = in->di_update->children;
+	cur = xmlNodeGetChildren(in->di_update);
 	while (cur) {
-	    if (cur->type == XML_ELEMENT_NODE) {
+	    if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 		key = xmlNodeName(cur);
 		value = xmlNodeValue(cur);
 
@@ -414,7 +414,7 @@ db_sqlite_build_update (db_input_t *in)
 		slaxExtPrintAppend(&pb, (const xmlChar *) ", ", 2);
 	    }
 
-	    cur = cur->next;
+	    cur = xmlNodeGetNext(cur);
 	}
 
 	/*
@@ -468,36 +468,36 @@ db_sqlite_build_insert (db_input_t *in)
 	slaxExtPrintAppend(&pb, (const xmlChar *) "BEGIN TRANSACTION;", 18);
 
 	if (in->di_instance || in->di_instances) {
-	    if (in->di_instance && in->di_instance->type == XML_ELEMENT_NODE) {
+	    if (in->di_instance && xmlNodeGetType(in->di_instance) == XML_ELEMENT_NODE) {
 		cur = in->di_instance;
 	    } else {
-		cur = in->di_instances->children;
+		cur = xmlNodeGetChildren(in->di_instances);
 	    }
 
 	    while (cur) {
 		/*
 		 * Extract instance values and build insert statements
 		 */
-		if (cur->type == XML_ELEMENT_NODE) {
-		    slaxExtPrintAppend(&pb, (const xmlChar *) " INSERT INTO ", 
+		if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
+		    slaxExtPrintAppend(&pb, (const xmlChar *) " INSERT INTO ",
 				       13);
 		    slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
 				       strlen(in->di_collection));
 		    slaxExtPrintAppend(&pb, (const xmlChar *) " (", 2);
-		    childp = cur->children;
+		    childp = xmlNodeGetChildren(cur);
 		    count = 0;
 		    while (childp) {
-			if (childp->type == XML_ELEMENT_NODE) count++;
-			childp = childp->next;
+			if (xmlNodeGetType(childp) == XML_ELEMENT_NODE) count++;
+			childp = xmlNodeGetNext(childp);
 		    }
 
 		    /*
 		     * Get all column names
 		     */
-		    childp = cur->children;
+		    childp = xmlNodeGetChildren(cur);
 		    i = count;
 		    while (childp) {
-			if (childp->type == XML_ELEMENT_NODE) {
+			if (xmlNodeGetType(childp) == XML_ELEMENT_NODE) {
 			    key = xmlNodeName(childp);
 			    i--;
 
@@ -512,16 +512,16 @@ db_sqlite_build_insert (db_input_t *in)
 					(const xmlChar *) ") VALUES (", 10);
 			    }
 			}
-			childp = childp->next;
+			childp = xmlNodeGetNext(childp);
 		    }
 
 		    /*
 		     * Get values assigned to each of these columns
 		     */
-		    childp = cur->children;
+		    childp = xmlNodeGetChildren(cur);
 		    i = count;
 		    while (childp) {
-			if (childp->type == XML_ELEMENT_NODE) {
+			if (xmlNodeGetType(childp) == XML_ELEMENT_NODE) {
 			    value = xmlNodeValue(childp);
 			    i--;
 			    if (value) {
@@ -541,10 +541,10 @@ db_sqlite_build_insert (db_input_t *in)
 						   (const xmlChar *) ");", 2);
 			    }
 			}
-			childp = childp->next;
+			childp = xmlNodeGetNext(childp);
 		    }
 		}
-		cur = cur->next;
+		cur = xmlNodeGetNext(cur);
 	    }
 	}
 	slaxExtPrintAppend(&pb, (const xmlChar *) " COMMIT TRANSACTION;", 20);
@@ -573,23 +573,23 @@ db_sqlite_build_create (db_input_t *in)
 	slaxExtPrintAppend(&pb, (const xmlChar *) in->di_collection,
 			   strlen(in->di_collection));
 
-	if (in->di_fields->type == XML_ELEMENT_NODE) {
+	if (xmlNodeGetType(in->di_fields) == XML_ELEMENT_NODE) {
 	    slaxExtPrintAppend(&pb, (const xmlChar *) " (", 2);
-	    cur = in->di_fields->children;
+	    cur = xmlNodeGetChildren(in->di_fields);
 	    int count = 0;
 	    while (cur) {
-		if (cur->type == XML_ELEMENT_NODE)
+		if (xmlNodeGetType(cur) == XML_ELEMENT_NODE)
 		    count++;
-		cur = cur->next;
+		cur = xmlNodeGetNext(cur);
 	    }
-	    cur = in->di_fields->children;
+	    cur = xmlNodeGetChildren(in->di_fields);
 
 	    while (cur) {
 		/*
 		 * Extract field details and insert into create statement
 		 */
-		if (cur->type == XML_ELEMENT_NODE) {
-		    childp = cur->children;
+		if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
+		    childp = xmlNodeGetChildren(cur);
 		    name = NULL;
 		    type = NULL;
 		    def = NULL;
@@ -599,7 +599,7 @@ db_sqlite_build_create (db_input_t *in)
 		    notnull = 0;
 
 		    while (childp) {
-			if (childp->type == XML_ELEMENT_NODE) {
+			if (xmlNodeGetType(childp) == XML_ELEMENT_NODE) {
 			    key = xmlNodeName(childp);
 
 			    if (streq(key, "name")) {
@@ -618,7 +618,7 @@ db_sqlite_build_create (db_input_t *in)
 				notnull = 1;
 			    }
 			}
-			childp = childp->next;
+			childp = xmlNodeGetNext(childp);
 		    }
 
 		    if (name) {
@@ -672,7 +672,7 @@ db_sqlite_build_create (db_input_t *in)
 		    }
 		    count--;
 		}
-		cur = cur->next;
+		cur = xmlNodeGetNext(cur);
 
 		if (count > 0) {
 		    slaxExtPrintAppend(&pb, (const xmlChar *) ", ", 2);
@@ -699,23 +699,23 @@ db_sqlite_build_select (slax_printf_buffer_t *pbp, db_input_t *in)
 	/*
 	 * Take care of projections
 	 */
-	if (in->di_retrieve && in->di_retrieve->type == XML_ELEMENT_NODE) {
-	    cur = in->di_retrieve->children;
+	if (in->di_retrieve && xmlNodeGetType(in->di_retrieve) == XML_ELEMENT_NODE) {
+	    cur = xmlNodeGetChildren(in->di_retrieve);
 	    int count = 0;
 	    slaxExtPrintAppend(pbp, (const xmlChar *) "SELECT ", 7);
 	    while (cur) {
-		if (cur->type == XML_ELEMENT_NODE)
+		if (xmlNodeGetType(cur) == XML_ELEMENT_NODE)
 		    count++;
-		cur = cur->next;
+		cur = xmlNodeGetNext(cur);
 	    }
-	    cur = in->di_retrieve->children;
+	    cur = xmlNodeGetChildren(in->di_retrieve);
 	    while (cur) {
-		if (cur->type == XML_ELEMENT_NODE) {
-		    slaxExtPrintAppend(pbp, (const xmlChar *) cur->name,
-				       xmlStrlen(cur->name));
+		if (xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
+		    slaxExtPrintAppend(pbp, (const xmlChar *) xmlNodeGetName(cur),
+				       xmlStrlen(xmlNodeGetName(cur)));
 		    count--;
 		}
-		cur = cur->next;
+		cur = xmlNodeGetNext(cur);
 
 		if (count > 0) {
 		    slaxExtPrintAppend(pbp, (const xmlChar *) ", ", 2);
@@ -844,15 +844,15 @@ DB_DRIVER_OPEN (db_sqlite_open)
 		 * them
 		 */
 		if (in->di_access) {
-		    cur = in->di_access->children;
-		    while (cur && cur->type == XML_ELEMENT_NODE) {
+		    cur = xmlNodeGetChildren(in->di_access);
+		    while (cur && xmlNodeGetType(cur) == XML_ELEMENT_NODE) {
 			if (streq(xmlNodeName(cur), "key"))
 			    key = xmlNodeValue(cur);
 
 			if (streq(xmlNodeName(cur), "rekey"))
 			    rekey = xmlNodeValue(cur);
 
-			cur = cur->next;
+			cur = xmlNodeGetNext(cur);
 		    }
 
 		    if (key) {
@@ -928,14 +928,14 @@ db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out,
 		&& sqlite3_clear_bindings(stmt) == SQLITE_OK) {
 
 		nodeset = input->nodesetval;
-		if (nodeset->nodeNr > 0 && nodeset->nodeTab[0]->children) {
-		    nop = nodeset->nodeTab[0]->children;
+		if (nodeset->nodeNr > 0 && xmlNodeGetChildren(nodeset->nodeTab[0])) {
+		    nop = xmlNodeGetChildren(nodeset->nodeTab[0]);
 
 		    while (nop) {
 			/*
 			 * Find index of this variable and bind the value
 			 */
-			if (nop->type == XML_ELEMENT_NODE) {
+			if (xmlNodeGetType(nop) == XML_ELEMENT_NODE) {
 			    key = xmlNodeName(nop);
 			    value = xmlNodeValue(nop);
 			    if (key && value) {
@@ -969,7 +969,7 @@ db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out,
 				}
 			    }
 			}
-			nop = nop->next;
+			nop = xmlNodeGetNext(nop);
 		    }
 		}
 	    }
