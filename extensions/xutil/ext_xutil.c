@@ -301,11 +301,11 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	    xmlNodePtr nop, cop;
 
 	    nop = xop->nodesetval->nodeTab[i];
-	    if (nop->children == NULL)
+	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
-	    for (cop = nop->children; cop; cop = cop->next) {
-		if (cop->type != XML_ELEMENT_NODE)
+	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 		    continue;
 
 		key = xmlNodeName(cop);
@@ -338,9 +338,9 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	xmlNodePtr nop;
 
 	nop = xop->nodesetval->nodeTab[i];
-	if (nop->type == XML_DOCUMENT_NODE)
-	    nop = nop->children;
-	if (nop->type != XML_ELEMENT_NODE)
+	if (xmlNodeGetType(nop) == XML_DOCUMENT_NODE)
+	    nop = xmlNodeGetChildren(nop);
+	if (xmlNodeGetType(nop) != XML_ELEMENT_NODE)
 	    continue;
 
 	slaxJsonWriteNode(extXutilWriteCallback, &list, nop, flags);
@@ -407,11 +407,11 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	    xmlNodePtr nop, cop;
 
 	    nop = xop->nodesetval->nodeTab[i];
-	    if (nop->children == NULL)
+	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
-	    for (cop = nop->children; cop; cop = cop->next) {
-		if (cop->type != XML_ELEMENT_NODE)
+	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		if (xmlNodeGetType(cop) != XML_ELEMENT_NODE)
 		    continue;
 
 		key = xmlNodeName(cop);
@@ -503,7 +503,7 @@ extXutilSlaxToXml (xmlXPathParserContext *ctxt, int nargs)
     if (docp) {
 	xmlNodePtr nodep;
 
-	nodep = docp->children;
+	nodep = xmlDocGetChildren(docp);
 	valuePush(ctxt, xmlXPathNewNodeSet(nodep));
     }
 }
@@ -545,7 +545,7 @@ extXutilXmlToSlax (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 	for (i = 0; !done && i < tab->nodeNr; i++) {
 	    xmlNodePtr nodep = tab->nodeTab[i];
 
-	    if (nodep->type == XML_DOCUMENT_NODE) {
+	    if (xmlNodeGetType(nodep) == XML_DOCUMENT_NODE) {
 		if (slaxWriteDoc(slaxExtPrintWriter, &pb, (xmlDocPtr) nodep,
 				 TRUE, version) == 0)
 		    done = TRUE;
@@ -618,16 +618,16 @@ extXutilSetsCheckOneValue (xmlNodePtr nop, xmlXPathObjectPtr xop)
 {
     slaxLog("extXutilSetsCheckOneValue: %p %p", nop, xop);
 
-    if (nop->type != XML_ELEMENT_NODE)
+    if (xmlNodeGetType(nop) != XML_ELEMENT_NODE)
 	return FALSE;
 
-    xmlNodePtr cop = nop->children;
-    if (cop == NULL || cop->prev != NULL
-	|| cop->next != NULL || cop->content == NULL
-	|| cop->type != XML_TEXT_NODE)
+    xmlNodePtr cop = xmlNodeGetChildren(nop);
+    if (cop == NULL || xmlNodeGetPrev(cop) != NULL
+	|| xmlNodeGetNext(cop) != NULL || xmlNodeGetContentRaw(cop) == NULL
+	|| xmlNodeGetType(cop) != XML_TEXT_NODE)
 	return FALSE;
 
-    const char *cp = (const char *) cop->content;
+    const char *cp = (const char *) xmlNodeGetContentRaw(cop);
     char buf[64];
 
     switch (xop->type) {
@@ -668,20 +668,20 @@ extXutilEqual (const xmlChar *a1, const xmlChar *a2)
 static int
 extXutilIsWsNode (xmlNodePtr nop)
 {
-    if (nop == NULL || nop->type != XML_TEXT_NODE)
+    if (nop == NULL || xmlNodeGetType(nop) != XML_TEXT_NODE)
 	return FALSE;
 
     /* Detect the case where we're the only text node of an element */
-    if (nop->next == NULL) {
-	if (nop->prev == NULL)
+    if (xmlNodeGetNext(nop) == NULL) {
+	if (xmlNodeGetPrev(nop) == NULL)
 	    return FALSE;	/* A text node that is the only child */
 
-	xmlElementType type = nop->prev->type;
+	xmlElementType type = xmlNodeGetType(xmlNodeGetPrev(nop));
 	if (type != XML_ELEMENT_NODE)
 	    return FALSE;	/* Only ns/attr/etc in front of us */
     }
 
-    const char *cp = (const char *) nop->content;
+    const char *cp = (const char *) xmlNodeGetContentRaw(nop);
     if (cp == NULL)
 	return FALSE;
 
@@ -702,7 +702,7 @@ extXutilSkipWs (xmlNodePtr nop, int ignore_ws)
 	if (!extXutilIsWsNode(nop))
 	    break;
 
-	nop = nop->next;
+	nop = xmlNodeGetNext(nop);
     }
 
     return nop;
@@ -713,35 +713,37 @@ extXutilSetsCheckOneNode (xmlNodePtr n1, xmlNodePtr n2, int ignore_ws)
 {
     slaxLog("extXutilSetsCheckOneNode: %p %p %d", n1, n2, ignore_ws);
 
-    if (n1->type != n2->type)
+    if (xmlNodeGetType(n1) != xmlNodeGetType(n2))
 	return FALSE;
 
-    if (!extXutilEqual(n1->name, n2->name))
+    if (!extXutilEqual(xmlNodeGetName(n1), xmlNodeGetName(n2)))
 	return FALSE;
 
-    if (n1->type == XML_TEXT_NODE && !extXutilEqual(n1->content, n2->content))
+    if (xmlNodeGetType(n1) == XML_TEXT_NODE
+	&& !extXutilEqual(xmlNodeGetContentRaw(n1), xmlNodeGetContentRaw(n2)))
 	return FALSE;
 
-    if ((n1->ns == NULL) != (n2->ns == NULL))
+    if ((xmlNodeGetNs(n1) == NULL) != (xmlNodeGetNs(n2) == NULL))
 	return FALSE;
 
-    if (n1->type && XML_ELEMENT_NODE) {
-	if (n1->ns && !extXutilEqual(n1->ns->href, n2->ns->href))
+    if (xmlNodeGetType(n1) && XML_ELEMENT_NODE) {
+	if (xmlNodeGetNs(n1)
+	    && !extXutilEqual(xmlNsGetHref(xmlNodeGetNs(n1)), xmlNsGetHref(xmlNodeGetNs(n2))))
 	    return FALSE;
-    
-	if ((n1->children == NULL) != (n2->children == NULL))
+
+	if ((xmlNodeGetChildren(n1) == NULL) != (xmlNodeGetChildren(n2) == NULL))
 	    return FALSE;
 
-	if (n1->children) {
-	    xmlNodePtr c1 = extXutilSkipWs(n1->children, ignore_ws);
-	    xmlNodePtr c2 = extXutilSkipWs(n2->children, ignore_ws);
+	if (xmlNodeGetChildren(n1)) {
+	    xmlNodePtr c1 = extXutilSkipWs(xmlNodeGetChildren(n1), ignore_ws);
+	    xmlNodePtr c2 = extXutilSkipWs(xmlNodeGetChildren(n2), ignore_ws);
 
 	    for ( ; c1 && c2; ) {
 		if (!extXutilSetsCheckOneNode(c1, c2, ignore_ws))
 		    return FALSE;
 
-		c1 = extXutilSkipWs(c1->next, ignore_ws);
-		c2 = extXutilSkipWs(c2->next, ignore_ws);
+		c1 = extXutilSkipWs(xmlNodeGetNext(c1), ignore_ws);
+		c2 = extXutilSkipWs(xmlNodeGetNext(c2), ignore_ws);
 	    }
 
 	    if (c1 != c2)	/* Leftover on one side or the other */
@@ -792,7 +794,7 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 	    tab = xop->nodesetval;
 	    for (i = 0; i < tab->nodeNr; i++) {
 		xmlNode *gop, *cop =  tab->nodeTab[i];
-		for (gop = cop->children; gop; gop = gop->next) {
+		for (gop = xmlNodeGetChildren(cop); gop; gop = xmlNodeGetNext(gop)) {
 		    match = extXutilSetsCheckOneNode(nop, gop, TRUE);
 		    if (match)
 			break;
@@ -883,7 +885,7 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
 	tab = base->nodesetval;
 	for (i = 0; i < tab->nodeNr; i++) {
 	    xmlNode *cop, *nop =  tab->nodeTab[i];
-	    for (cop = nop->children; cop; cop = cop->next)
+	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop))
 		extXutilSetsCheckNode(results, cop, objstack, count, common);
 	}
 	break;
