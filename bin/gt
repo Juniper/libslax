@@ -70,7 +70,7 @@ git_diff () {
     esac
 
     if [ -t 1 ]; then
-	git diff $diff_args "$@" | more
+	git diff $diff_args "$@" | MORE=-e more
     else
 	git diff $diff_args "$@"
     fi
