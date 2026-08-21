@@ -60,17 +60,17 @@ pin_ns_find (pin_workspace_t *pwp, const char *prefix, const char *uri,
 
 #include "gen/pin_node_gen.h"
 
-pa_atom_t
+pin_name_id_t
 pin_namepool_atom (pin_workspace_t *pwp, const char *data, pin_boolean_t createp);
 
 static inline const char *
-pin_namepool_string (pin_workspace_t *pwp, pa_atom_t name_atom)
+pin_namepool_string (pin_workspace_t *pwp, pin_name_id_t name_id)
 {
-    return pa_istr_atom_string(pwp->pw_names, pa_istr_atom(name_atom));
+    return pa_istr_atom_string(pwp->pw_names, pa_istr_atom(name_id.pnid_atom));
 }
 
-pa_atom_t
-pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pa_atom_t name_atom);
+pa_arb_atom_t
+pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pin_name_id_t name_id);
 
 static inline const char *
 pin_textpool_string (pin_workspace_t *pwp, pa_atom_t atom)
@@ -80,10 +80,10 @@ pin_textpool_string (pin_workspace_t *pwp, pa_atom_t atom)
 
 static inline const char *
 pin_get_attrib_string (pin_workspace_t *pwp, pin_node_t *nodep,
-		      pa_atom_t name_atom)
+		      pin_name_id_t name_id)
 {
-    pa_atom_t atom = pin_get_attrib(pwp, nodep, name_atom);
-    return (atom == PA_NULL_ATOM) ? NULL : pin_textpool_string(pwp, atom);
+    pa_arb_atom_t atom = pin_get_attrib(pwp, nodep, name_id);
+    return pa_arb_is_null(atom) ? NULL : pin_textpool_string(pwp, pa_arb_atom_of(atom));
 }
 
 #include "gen/pin_ns_map_gen.h"
