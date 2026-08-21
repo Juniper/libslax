@@ -240,8 +240,8 @@ xsltParseStylesheetInclude(xsltStylesheetPtr style, xmlNodePtr cur) {
 	goto error;
     }
 #ifdef XSLT_REFACTORED
-    if (IS_XSLT_ELEM_FAST(cur) && (cur->psvi != NULL)) {
-	((xsltStyleItemIncludePtr) cur->psvi)->include = include;
+    if (IS_XSLT_ELEM_FAST(cur) && (xmlNodeGetPsvi(cur) != NULL)) {
+	((xsltStyleItemIncludePtr) xmlNodeGetPsvi(cur))->include = include;
     } else {
 	xsltTransformError(NULL, style, cur,
 	    "Internal error: (xsltParseStylesheetInclude) "
@@ -354,17 +354,18 @@ xsltFindElemSpaceHandling(xsltTransformContextPtr ctxt, xmlNodePtr node) {
 	return(0);
     style = ctxt->style;
     while (style != NULL) {
-	if (node->ns != NULL) {
+	if (xmlNodeGetNs(node) != NULL) {
 	    val = (const xmlChar *)
-	      xmlHashLookup2(style->stripSpaces, node->name, node->ns->href);
+	      xmlHashLookup2(style->stripSpaces, xmlNodeGetName(node),
+			      xmlNsGetHref(xmlNodeGetNs(node)));
             if (val == NULL) {
                 val = (const xmlChar *)
                     xmlHashLookup2(style->stripSpaces, BAD_CAST "*",
-                                   node->ns->href);
+                                   xmlNsGetHref(xmlNodeGetNs(node)));
             }
 	} else {
 	    val = (const xmlChar *)
-		  xmlHashLookup2(style->stripSpaces, node->name, NULL);
+		  xmlHashLookup2(style->stripSpaces, xmlNodeGetName(node), NULL);
 	}
 	if (val != NULL) {
 	    if (xmlStrEqual(val, (xmlChar *) "strip"))
