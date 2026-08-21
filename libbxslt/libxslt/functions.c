@@ -318,14 +318,14 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
             xmlNodePtr target;
 
             target = obj2->nodesetval->nodeTab[0];
-            if ((target->type == XML_ATTRIBUTE_NODE) ||
-	        (target->type == XML_PI_NODE)) {
-                target = ((xmlAttrPtr) target)->parent;
+            if ((xmlNodeGetType(target) == XML_ATTRIBUTE_NODE) ||
+	        (xmlNodeGetType(target) == XML_PI_NODE)) {
+                target = xmlAttrGetParent((xmlAttrPtr) target);
             }
-            base = xmlNodeGetBase(target->doc, target);
+            base = xmlNodeGetBase(xmlNodeGetDoc(target), target);
         } else {
             if ((tctxt != NULL) && (tctxt->inst != NULL)) {
-                base = xmlNodeGetBase(tctxt->inst->doc, tctxt->inst);
+                base = xmlNodeGetBase(xmlNodeGetDoc(tctxt->inst), tctxt->inst);
             } else if ((tctxt != NULL) && (tctxt->style != NULL) &&
                        (tctxt->style->doc != NULL)) {
                 base = xmlNodeGetBase(tctxt->style->doc,
@@ -495,21 +495,21 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	* FUTURE INFO: In XSLT 2.0 the key() function takes an additional
 	* argument indicating the doc to use.
 	*/
-	if (xpctxt->node->type == XML_NAMESPACE_DECL) {
+	if (xmlNodeGetType(xpctxt->node) == XML_NAMESPACE_DECL) {
 	    /*
 	    * REVISIT: This is a libxml hack! Check xpath.c for details.
 	    * The XPath module sets the owner element of a ns-node on
 	    * the ns->next field.
 	    */
-	    if ((((xmlNsPtr) xpctxt->node)->next != NULL) &&
-		(((xmlNsPtr) xpctxt->node)->next->type == XML_ELEMENT_NODE))
+	    if ((xmlNsGetNext((xmlNsPtr) xpctxt->node) != NULL) &&
+		(xmlNsGetType(xmlNsGetNext((xmlNsPtr) xpctxt->node)) == XML_ELEMENT_NODE))
 	    {
-		tmpNode = (xmlNodePtr) ((xmlNsPtr) xpctxt->node)->next;
+		tmpNode = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) xpctxt->node);
 	    }
 	} else
 	    tmpNode = xpctxt->node;
 
-	if ((tmpNode == NULL) || (tmpNode->doc == NULL)) {
+	if ((tmpNode == NULL) || (xmlNodeGetDoc(tmpNode) == NULL)) {
 	    xsltTransformError(tctxt, NULL, tctxt->inst,
 		"Internal error in xsltKeyFunction(): "
 		"Couldn't get the doc of the XPath context node.\n");
@@ -517,24 +517,26 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	}
 
 	if ((tctxt->document == NULL) ||
-	    (tctxt->document->doc != tmpNode->doc))
+	    (tctxt->document->doc != xmlNodeGetDoc(tmpNode)))
 	{
-	    if (tmpNode->doc->name && (tmpNode->doc->name[0] == ' ')) {
+	    if (xmlDocGetName(xmlNodeGetDoc(tmpNode)) &&
+		(xmlDocGetName(xmlNodeGetDoc(tmpNode))[0] == ' ')) {
 		/*
 		* This is a Result Tree Fragment.
 		*/
-		if (tmpNode->doc->_private == NULL) {
-		    tmpNode->doc->_private = xsltNewDocument(tctxt, tmpNode->doc);
-		    if (tmpNode->doc->_private == NULL)
+		if (xmlDocGetPrivate(xmlNodeGetDoc(tmpNode)) == NULL) {
+		    xmlDocSetPrivate(xmlNodeGetDoc(tmpNode),
+			xsltNewDocument(tctxt, xmlNodeGetDoc(tmpNode)));
+		    if (xmlDocGetPrivate(xmlNodeGetDoc(tmpNode)) == NULL)
 			goto error;
 		}
-		tctxt->document = (xsltDocumentPtr) tmpNode->doc->_private;
+		tctxt->document = (xsltDocumentPtr) xmlDocGetPrivate(xmlNodeGetDoc(tmpNode));
 	    } else {
 		/*
 		* May be the initial source doc or a doc acquired via the
 		* document() function.
 		*/
-		tctxt->document = xsltFindDocument(tctxt, tmpNode->doc);
+		tctxt->document = xsltFindDocument(tctxt, xmlNodeGetDoc(tmpNode));
 	    }
 	    if (tctxt->document == NULL) {
 		xsltTransformError(tctxt, NULL, tctxt->inst,
@@ -647,7 +649,7 @@ xsltFormatNumberFunction(xmlXPathParserContextPtr ctxt, int nargs)
 	decimalObj = valuePop(ctxt);
         ncname = xsltSplitQName(sheet->dict, decimalObj->stringval, &prefix);
         if (prefix != NULL) {
-            xmlNsPtr ns = xmlSearchNs(tctxt->inst->doc, tctxt->inst, prefix);
+            xmlNsPtr ns = xmlSearchNs(xmlNodeGetDoc(tctxt->inst), tctxt->inst, prefix);
             if (ns == NULL) {
                 xsltTransformError(tctxt, NULL, NULL,
                     "format-number : No namespace found for QName '%s:%s'\n",
@@ -656,7 +658,7 @@ xsltFormatNumberFunction(xmlXPathParserContextPtr ctxt, int nargs)
                 ncname = NULL;
             }
             else {
-                nsUri = ns->href;
+                nsUri = xmlNsGetHref(ns);
             }
         }
         if (ncname != NULL) {
@@ -751,10 +753,10 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
 
     size = 30; /* for "id%lu" */
 
-    if (cur->type == XML_NAMESPACE_DECL) {
+    if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
         xmlNsPtr ns = (xmlNsPtr) cur;
 
-        nsPrefix = ns->prefix;
+        nsPrefix = xmlNsGetPrefix(ns);
         if (nsPrefix == NULL)
             nsPrefix = BAD_CAST "";
         nsPrefixSize = xmlStrlen(nsPrefix);
@@ -762,13 +764,13 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
         size += nsPrefixSize * 2 + 2;
 
         /* Parent is stored in 'next'. */
-        cur = (xmlNodePtr) ns->next;
+        cur = (xmlNodePtr) xmlNsGetNext(ns);
     }
 
     psviPtr = xsltGetPSVIPtr(cur);
     if (psviPtr == NULL) {
         xsltTransformError(tctxt, NULL, NULL,
-                "generate-id(): invalid node type %d\n", cur->type);
+                "generate-id(): invalid node type %d\n", xmlNodeGetType(cur));
         ctxt->error = XPATH_INVALID_TYPE;
         goto out;
     }
@@ -776,9 +778,9 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (xsltGetSourceNodeFlags(cur) & XSLT_SOURCE_NODE_HAS_ID) {
         id = (unsigned long) (size_t) *psviPtr;
     } else {
-        if (cur->type == XML_TEXT_NODE && cur->line == USHRT_MAX) {
+        if (xmlNodeGetType(cur) == XML_TEXT_NODE && xmlNodeGetLine(cur) == USHRT_MAX) {
             /* Text nodes store big line numbers in psvi. */
-            cur->line = 0;
+            xmlNodeSetLine(cur, 0);
         } else if (*psviPtr != NULL) {
             xsltTransformError(tctxt, NULL, NULL,
                     "generate-id(): psvi already set\n");
@@ -881,9 +883,9 @@ xsltSystemPropertyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 
 		tctxt = xsltXPathGetTransformContext(ctxt);
 		if ((tctxt != NULL) && (tctxt->inst != NULL) &&
-		    (xmlStrEqual(tctxt->inst->name, BAD_CAST "variable")) &&
-		    (tctxt->inst->parent != NULL) &&
-		    (xmlStrEqual(tctxt->inst->parent->name,
+		    (xmlStrEqual(xmlNodeGetName(tctxt->inst), BAD_CAST "variable")) &&
+		    (xmlNodeGetParent(tctxt->inst) != NULL) &&
+		    (xmlStrEqual(xmlNodeGetName(xmlNodeGetParent(tctxt->inst)),
 				 BAD_CAST "template")))
 		    sheet = tctxt->style;
 		else
@@ -970,8 +972,8 @@ xsltElementAvailableFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	xmlNsPtr ns;
 
 	name = xmlStrdup(obj->stringval);
-	ns = xmlSearchNs(tctxt->inst->doc, tctxt->inst, NULL);
-	if (ns != NULL) nsURI = ns->href;
+	ns = xmlSearchNs(xmlNodeGetDoc(tctxt->inst), tctxt->inst, NULL);
+	if (ns != NULL) nsURI = xmlNsGetHref(ns);
     } else {
 	nsURI = xmlXPathNsLookup(ctxt->context, prefix);
 	if (nsURI == NULL) {
