@@ -20,29 +20,18 @@
 #include <parrotdb/paarb.h>
 #include <libpin/pin_common.h>
 
-/* Generated strongly-typed atoms for nodes and namespace map entries */
+/* Generated strongly-typed atoms for nodes, namespace map entries, and names */
 #include "gen/pin_node_id_gen.h"
 #include "gen/pin_ns_map_id_gen.h"
+#include "gen/pin_name_id_gen.h"
 
-/*
- * Since we're using these as bitfields, we're unable to use
- * atom wrappers.  This will require extra care.
- */
-typedef pa_atom_t pin_name_id_raw_t;	/* Element name identifier */
 typedef pa_atom_t pin_ns_map_id_raw_t;	/* Namespace identifier (raw) */
 
-/* Wrapper for our "name" atom */
-PA_ATOM_TYPE(pin_name_atom_t, pin_name_atom_s, pna_atom,
-	     pin_name_is_null, pin_name_atom, pin_name_atom_of,
-	     pin_name_null_atom);
-
-/*
- * Wrapper for our "namespace" mapping atom, which is really a "prefix
- * mapping", since we use this as an index into prefix->namespace mappings.
- */
-PA_ATOM_TYPE(pin_ns_map_atom_t, pin_ns_map_atom_s, pnsm_atom,
-	     pin_ns_map_is_null, pin_ns_map_atom, pin_ns_map_atom_of,
-	     pin_ns_map_null_atom);
+static inline psu_boolean_t
+pin_name_id_equal (pin_name_id_t a, pin_name_id_t b)
+{
+    return a.pnid_atom == b.pnid_atom;
+}
 
 /*
  * A node in an XML hierarchy, made as small as possible.  We use the
@@ -67,7 +56,7 @@ typedef struct pin_node_s {
     pin_depth_t pn_depth;	/* Depth of this node (origin PIN_DEPTH_MIN) */
     pin_node_flags_t pn_flags;	/* Flags (PNF_*) */
     pin_ns_map_id_raw_t pn_ns_map;	/* Namespace map for this node (raw) */
-    pin_name_id_raw_t pn_name;	/* Name of this node (in name db) */
+    pin_name_id_t pn_name;	/* Name of this node (in name db) */
     pin_node_id_t pn_parent;	/* Parent node (NULL if root) */
     pin_node_id_t pn_next;	/* Next node (or parent if last) */
     pa_atom_t pn_contents;	/* First child, text, or ns_map atom (overloaded) */
@@ -86,8 +75,8 @@ typedef struct pin_node_s {
  * applies, so comparing the url atom number is sufficient.
  */
 typedef struct pin_ns_map_s {
-    pa_atom_t pnm_prefix;       /* Atom of prefix string (in namepool) */
-    pa_atom_t pnm_uri;          /* Atom of URL string (in namepool) */
+    pin_name_id_t pnm_prefix;   /* Atom of prefix string (in namepool) */
+    pin_name_id_t pnm_uri;      /* Atom of URL string (in namepool) */
 } pin_ns_map_t;
 
 /* Type-checked read accessors for pn_contents */
