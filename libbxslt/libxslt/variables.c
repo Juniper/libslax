@@ -78,10 +78,10 @@ xsltCreateRVT(xsltTransformContextPtr ctxt)
     */
     if (ctxt->cache->RVT) {
 	container = ctxt->cache->RVT;
-	ctxt->cache->RVT = (xmlDocPtr) container->next;
+	ctxt->cache->RVT = (xmlDocPtr) xmlDocGetNext(container);
 	/* clear the internal pointers */
-	container->next = NULL;
-	container->prev = NULL;
+	xmlDocSetNext(container, NULL);
+	xmlDocSetPrev(container, NULL);
 	if (ctxt->cache->nbRVT > 0)
 	    ctxt->cache->nbRVT--;
 #ifdef XSLT_DEBUG_PROFILE_CACHE
@@ -96,8 +96,8 @@ xsltCreateRVT(xsltTransformContextPtr ctxt)
     container->dict = ctxt->dict;
     xmlDictReference(container->dict);
     XSLT_MARK_RES_TREE_FRAG(container);
-    container->doc = container;
-    container->parent = NULL;
+    xmlDocSetDoc(container, container);
+    xmlDocSetParent(container, NULL);
     return(container);
 }
 
@@ -122,7 +122,7 @@ xsltRegisterTmpRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
     if ((ctxt == NULL) || (RVT == NULL))
 	return(-1);
 
-    RVT->prev = NULL;
+    xmlDocSetPrev(RVT, NULL);
     RVT->compression = XSLT_RVT_LOCAL;
 
     /*
@@ -131,14 +131,14 @@ xsltRegisterTmpRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
     * var/param itself.
     */
     if (ctxt->contextVariable != NULL) {
-	RVT->next = (xmlNodePtr) XSLT_TCTXT_VARIABLE(ctxt)->fragment;
+	xmlDocSetNext(RVT, (xmlNodePtr) XSLT_TCTXT_VARIABLE(ctxt)->fragment);
 	XSLT_TCTXT_VARIABLE(ctxt)->fragment = RVT;
 	return(0);
     }
 
-    RVT->next = (xmlNodePtr) ctxt->tmpRVT;
+    xmlDocSetNext(RVT, (xmlNodePtr) ctxt->tmpRVT);
     if (ctxt->tmpRVT != NULL)
-	ctxt->tmpRVT->prev = (xmlNodePtr) RVT;
+	xmlDocSetPrev(ctxt->tmpRVT, (xmlNodePtr) RVT);
     ctxt->tmpRVT = RVT;
     return(0);
 }
@@ -162,7 +162,7 @@ xsltRegisterLocalRVT(xsltTransformContextPtr ctxt,
     if ((ctxt == NULL) || (RVT == NULL))
 	return(-1);
 
-    RVT->prev = NULL;
+    xmlDocSetPrev(RVT, NULL);
     RVT->compression = XSLT_RVT_LOCAL;
 
     /*
@@ -174,7 +174,7 @@ xsltRegisterLocalRVT(xsltTransformContextPtr ctxt,
     if ((ctxt->contextVariable != NULL) &&
 	(XSLT_TCTXT_VARIABLE(ctxt)->flags & XSLT_VAR_IN_SELECT))
     {
-	RVT->next = (xmlNodePtr) XSLT_TCTXT_VARIABLE(ctxt)->fragment;
+	xmlDocSetNext(RVT, (xmlNodePtr) XSLT_TCTXT_VARIABLE(ctxt)->fragment);
 	XSLT_TCTXT_VARIABLE(ctxt)->fragment = RVT;
 	return(0);
     }
@@ -183,9 +183,9 @@ xsltRegisterLocalRVT(xsltTransformContextPtr ctxt,
     * If not reference by a returning instruction (like EXSLT's function),
     * then this fragment will be freed, when the instruction exits.
     */
-    RVT->next = (xmlNodePtr) ctxt->localRVT;
+    xmlDocSetNext(RVT, (xmlNodePtr) ctxt->localRVT);
     if (ctxt->localRVT != NULL)
-	ctxt->localRVT->prev = (xmlNodePtr) RVT;
+	xmlDocSetPrev(ctxt->localRVT, (xmlNodePtr) RVT);
     ctxt->localRVT = RVT;
     return(0);
 }
@@ -276,16 +276,16 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 
     for (i = 0; i < obj->nodesetval->nodeNr; i++) {
 	cur = obj->nodesetval->nodeTab[i];
-	if (cur->type == XML_NAMESPACE_DECL) {
+	if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
 	    /*
 	    * The XPath module sets the owner element of a ns-node on
 	    * the ns->next field.
 	    */
-	    if ((((xmlNsPtr) cur)->next != NULL) &&
-		(((xmlNsPtr) cur)->next->type == XML_ELEMENT_NODE))
+	    if ((xmlNsGetNext((xmlNsPtr) cur) != NULL) &&
+		(xmlNodeGetType((xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur)) == XML_ELEMENT_NODE))
 	    {
-		cur = (xmlNodePtr) ((xmlNsPtr) cur)->next;
-		doc = cur->doc;
+		cur = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur);
+		doc = xmlNodeGetDoc(cur);
 	    } else {
 		xsltTransformError(ctxt, NULL, ctxt->inst,
 		    "Internal error in xsltFlagRVTs(): "
@@ -293,7 +293,7 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 		return(-1);
 	    }
 	} else {
-	    doc = cur->doc;
+	    doc = xmlNodeGetDoc(cur);
 	}
 	if (doc == NULL) {
 	    xsltTransformError(ctxt, NULL, ctxt->inst,
@@ -301,7 +301,7 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 		"Cannot retrieve the doc of a node.\n");
 	    return(-1);
 	}
-	if (doc->name && (doc->name[0] == ' ') &&
+	if (xmlDocGetName(doc) && (xmlDocGetName(doc)[0] == ' ') &&
             doc->compression != XSLT_RVT_GLOBAL) {
 	    /*
 	    * This is a result tree fragment.
@@ -358,18 +358,18 @@ xsltReleaseRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 	* Store the Result Tree Fragment.
 	* Free the document info.
 	*/
-	if (RVT->_private != NULL) {
-	    xsltFreeDocumentKeys((xsltDocumentPtr) RVT->_private);
-	    xmlFree(RVT->_private);
-	    RVT->_private = NULL;
+	if (xmlDocGetPrivate(RVT) != NULL) {
+	    xsltFreeDocumentKeys((xsltDocumentPtr) xmlDocGetPrivate(RVT));
+	    xmlFree(xmlDocGetPrivate(RVT));
+	    xmlDocSetPrivate(RVT, NULL);
 	}
 	/*
 	* Clear the document tree.
 	*/
-	if (RVT->children != NULL) {
-	    xmlFreeNodeList(RVT->children);
-	    RVT->children = NULL;
-	    RVT->last = NULL;
+	if (xmlDocGetChildren(RVT) != NULL) {
+	    xmlFreeNodeList(xmlDocGetChildren(RVT));
+	    xmlDocSetChildren(RVT, NULL);
+	    xmlDocSetLast(RVT, NULL);
 	}
 	if (RVT->ids != NULL) {
 	    xmlFreeIDTable((xmlIDTablePtr) RVT->ids);
@@ -381,7 +381,7 @@ xsltReleaseRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 	*/
 	RVT->compression = 0;
 
-	RVT->next = (xmlNodePtr) ctxt->cache->RVT;
+	xmlDocSetNext(RVT, (xmlNodePtr) ctxt->cache->RVT);
 	ctxt->cache->RVT = RVT;
 
 	ctxt->cache->nbRVT++;
@@ -394,9 +394,9 @@ xsltReleaseRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
     /*
     * Free it.
     */
-    if (RVT->_private != NULL) {
-	xsltFreeDocumentKeys((xsltDocumentPtr) RVT->_private);
-	xmlFree(RVT->_private);
+    if (xmlDocGetPrivate(RVT) != NULL) {
+	xsltFreeDocumentKeys((xsltDocumentPtr) xmlDocGetPrivate(RVT));
+	xmlFree(xmlDocGetPrivate(RVT));
     }
     xmlFreeDoc(RVT);
 }
@@ -419,10 +419,10 @@ xsltRegisterPersistRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
     if ((ctxt == NULL) || (RVT == NULL)) return(-1);
 
     RVT->compression = XSLT_RVT_GLOBAL;
-    RVT->prev = NULL;
-    RVT->next = (xmlNodePtr) ctxt->persistRVT;
+    xmlDocSetPrev(RVT, NULL);
+    xmlDocSetNext(RVT, (xmlNodePtr) ctxt->persistRVT);
     if (ctxt->persistRVT != NULL)
-	ctxt->persistRVT->prev = (xmlNodePtr) RVT;
+	xmlDocSetPrev(ctxt->persistRVT, (xmlNodePtr) RVT);
     ctxt->persistRVT = RVT;
     return(0);
 }
@@ -447,10 +447,10 @@ xsltFreeRVTs(xsltTransformContextPtr ctxt)
     */
     cur = ctxt->localRVT;
     while (cur != NULL) {
-        next = (xmlDocPtr) cur->next;
-	if (cur->_private != NULL) {
-	    xsltFreeDocumentKeys(cur->_private);
-	    xmlFree(cur->_private);
+        next = (xmlDocPtr) xmlDocGetNext(cur);
+	if (xmlDocGetPrivate(cur) != NULL) {
+	    xsltFreeDocumentKeys(xmlDocGetPrivate(cur));
+	    xmlFree(xmlDocGetPrivate(cur));
 	}
 	xmlFreeDoc(cur);
 	cur = next;
@@ -461,10 +461,10 @@ xsltFreeRVTs(xsltTransformContextPtr ctxt)
     */
     cur = ctxt->tmpRVT;
     while (cur != NULL) {
-        next = (xmlDocPtr) cur->next;
-	if (cur->_private != NULL) {
-	    xsltFreeDocumentKeys(cur->_private);
-	    xmlFree(cur->_private);
+        next = (xmlDocPtr) xmlDocGetNext(cur);
+	if (xmlDocGetPrivate(cur) != NULL) {
+	    xsltFreeDocumentKeys(xmlDocGetPrivate(cur));
+	    xmlFree(xmlDocGetPrivate(cur));
 	}
 	xmlFreeDoc(cur);
 	cur = next;
@@ -475,10 +475,10 @@ xsltFreeRVTs(xsltTransformContextPtr ctxt)
     */
     cur = ctxt->persistRVT;
     while (cur != NULL) {
-        next = (xmlDocPtr) cur->next;
-	if (cur->_private != NULL) {
-	    xsltFreeDocumentKeys(cur->_private);
-	    xmlFree(cur->_private);
+        next = (xmlDocPtr) xmlDocGetNext(cur);
+	if (xmlDocGetPrivate(cur) != NULL) {
+	    xsltFreeDocumentKeys(xmlDocGetPrivate(cur));
+	    xmlFree(xmlDocGetPrivate(cur));
 	}
 	xmlFreeDoc(cur);
 	cur = next;
@@ -575,7 +575,7 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
 
 	while (elem->fragment != NULL) {
 	    cur = elem->fragment;
-	    elem->fragment = (xmlDocPtr) cur->next;
+	    elem->fragment = (xmlDocPtr) xmlDocGetNext(cur);
 
             if (cur->compression == XSLT_RVT_LOCAL) {
 		xsltReleaseRVT(elem->context, cur);
@@ -857,9 +857,9 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 	* OPTIMIZE TODO: Lame try to set the context doc.
 	*   Get rid of this somehow in xpath.c.
 	*/
-	if ((ctxt->node->type != XML_NAMESPACE_DECL) &&
-	    ctxt->node->doc)
-	    xpctxt->doc = ctxt->node->doc;
+	if ((xmlNodeGetType(ctxt->node) != XML_NAMESPACE_DECL) &&
+	    xmlNodeGetDoc(ctxt->node))
+	    xpctxt->doc = xmlNodeGetDoc(ctxt->node);
 	/*
 	* BUG TODO: The proximity position and the context size will
 	*  potentially be wrong.
@@ -1325,7 +1325,7 @@ xsltEvalGlobalVariables(xsltTransformContextPtr ctxt) {
 		 */
 		if ((elem->comp->inst != NULL) &&
 		    (def->comp != NULL) && (def->comp->inst != NULL) &&
-		    (elem->comp->inst->doc == def->comp->inst->doc))
+		    (xmlNodeGetDoc(elem->comp->inst) == xmlNodeGetDoc(def->comp->inst)))
 		{
 		    xsltTransformError(ctxt, style, elem->comp->inst,
 			"Global variable %s already defined\n", elem->name);
@@ -1516,7 +1516,7 @@ xsltProcessUserParamInternal(xsltTransformContextPtr ctxt,
                 "user param : no namespace bound to prefix %s\n", prefix);
                 href = NULL;
             } else {
-                href = ns->href;
+                href = xmlNsGetHref(ns);
             }
         }
     }
@@ -1996,13 +1996,13 @@ xsltParseStylesheetCallerParam(xsltTransformContextPtr ctxt, xmlNodePtr inst)
                                the instruction itself. */
     xsltStackElemPtr param = NULL;
 
-    if ((ctxt == NULL) || (inst == NULL) || (inst->type != XML_ELEMENT_NODE))
+    if ((ctxt == NULL) || (inst == NULL) || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return(NULL);
 
 #ifdef XSLT_REFACTORED
-    comp = (xsltStyleBasicItemVariablePtr) inst->psvi;
+    comp = (xsltStyleBasicItemVariablePtr) xmlNodeGetPsvi(inst);
 #else
-    comp = (xsltStylePreCompPtr) inst->psvi;
+    comp = (xsltStylePreCompPtr) xmlNodeGetPsvi(inst);
 #endif
 
     if (comp == NULL) {
@@ -2024,7 +2024,7 @@ xsltParseStylesheetCallerParam(xsltTransformContextPtr ctxt, xmlNodePtr inst)
 #endif
 
     if (comp->select == NULL) {
-	tree = inst->children;
+	tree = xmlNodeGetChildren(inst);
     } else {
 #ifdef WITH_XSLT_DEBUG_VARIABLE
 	XSLT_TRACE(ctxt,XSLT_TRACE_VARIABLES,xsltGenericDebug(xsltGenericDebugContext,
@@ -2055,7 +2055,7 @@ xsltParseGlobalVariable(xsltStylesheetPtr style, xmlNodePtr cur)
     xsltStylePreCompPtr comp;
 #endif
 
-    if ((cur == NULL) || (style == NULL) || (cur->type != XML_ELEMENT_NODE))
+    if ((cur == NULL) || (style == NULL) || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
 	return;
 
 #ifdef XSLT_REFACTORED
@@ -2063,10 +2063,10 @@ xsltParseGlobalVariable(xsltStylesheetPtr style, xmlNodePtr cur)
     * Note that xsltStylePreCompute() will be called from
     * xslt.c only.
     */
-    comp = (xsltStyleItemVariablePtr) cur->psvi;
+    comp = (xsltStyleItemVariablePtr) xmlNodeGetPsvi(cur);
 #else
     xsltStylePreCompute(style, cur);
-    comp = (xsltStylePreCompPtr) cur->psvi;
+    comp = (xsltStylePreCompPtr) xmlNodeGetPsvi(cur);
 #endif
     if (comp == NULL) {
 	xsltTransformError(NULL, style, cur,
@@ -2083,9 +2083,9 @@ xsltParseGlobalVariable(xsltStylesheetPtr style, xmlNodePtr cur)
     /*
     * Parse the content (a sequence constructor) of xsl:variable.
     */
-    if (cur->children != NULL) {
+    if (xmlNodeGetChildren(cur) != NULL) {
 #ifdef XSLT_REFACTORED
-        xsltParseSequenceConstructor(XSLT_CCTXT(style), cur->children);
+        xsltParseSequenceConstructor(XSLT_CCTXT(style), xmlNodeGetChildren(cur));
 #else
         xsltParseTemplateContent(style, cur);
 #endif
@@ -2096,7 +2096,7 @@ xsltParseGlobalVariable(xsltStylesheetPtr style, xmlNodePtr cur)
 #endif
 
     xsltRegisterGlobalVariable(style, comp->name, comp->ns,
-	comp->select, cur->children, (xsltStylePreCompPtr) comp,
+	comp->select, xmlNodeGetChildren(cur), (xsltStylePreCompPtr) comp,
 	NULL);
 }
 
@@ -2117,7 +2117,7 @@ xsltParseGlobalParam(xsltStylesheetPtr style, xmlNodePtr cur) {
     xsltStylePreCompPtr comp;
 #endif
 
-    if ((cur == NULL) || (style == NULL) || (cur->type != XML_ELEMENT_NODE))
+    if ((cur == NULL) || (style == NULL) || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
 	return;
 
 #ifdef XSLT_REFACTORED
@@ -2125,10 +2125,10 @@ xsltParseGlobalParam(xsltStylesheetPtr style, xmlNodePtr cur) {
     * Note that xsltStylePreCompute() will be called from
     * xslt.c only.
     */
-    comp = (xsltStyleItemParamPtr) cur->psvi;
+    comp = (xsltStyleItemParamPtr) xmlNodeGetPsvi(cur);
 #else
     xsltStylePreCompute(style, cur);
-    comp = (xsltStylePreCompPtr) cur->psvi;
+    comp = (xsltStylePreCompPtr) xmlNodeGetPsvi(cur);
 #endif
     if (comp == NULL) {
 	xsltTransformError(NULL, style, cur,
@@ -2145,9 +2145,9 @@ xsltParseGlobalParam(xsltStylesheetPtr style, xmlNodePtr cur) {
     /*
     * Parse the content (a sequence constructor) of xsl:param.
     */
-    if (cur->children != NULL) {
+    if (xmlNodeGetChildren(cur) != NULL) {
 #ifdef XSLT_REFACTORED
-        xsltParseSequenceConstructor(XSLT_CCTXT(style), cur->children);
+        xsltParseSequenceConstructor(XSLT_CCTXT(style), xmlNodeGetChildren(cur));
 #else
         xsltParseTemplateContent(style, cur);
 #endif
@@ -2159,7 +2159,7 @@ xsltParseGlobalParam(xsltStylesheetPtr style, xmlNodePtr cur) {
 #endif
 
     xsltRegisterGlobalVariable(style, comp->name, comp->ns,
-	comp->select, cur->children, (xsltStylePreCompPtr) comp,
+	comp->select, xmlNodeGetChildren(cur), (xsltStylePreCompPtr) comp,
 	NULL);
 }
 
@@ -2180,10 +2180,10 @@ xsltParseStylesheetVariable(xsltTransformContextPtr ctxt, xmlNodePtr inst)
     xsltStylePreCompPtr comp;
 #endif
 
-    if ((inst == NULL) || (ctxt == NULL) || (inst->type != XML_ELEMENT_NODE))
+    if ((inst == NULL) || (ctxt == NULL) || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return;
 
-    comp = inst->psvi;
+    comp = xmlNodeGetPsvi(inst);
     if (comp == NULL) {
         xsltTransformError(ctxt, NULL, inst,
 	    "Internal error in xsltParseStylesheetVariable(): "
@@ -2202,7 +2202,7 @@ xsltParseStylesheetVariable(xsltTransformContextPtr ctxt, xmlNodePtr inst)
 	"Registering variable '%s'\n", comp->name));
 #endif
 
-    xsltRegisterVariable(ctxt, (xsltStylePreCompPtr) comp, inst->children, 0);
+    xsltRegisterVariable(ctxt, (xsltStylePreCompPtr) comp, xmlNodeGetChildren(inst), 0);
 }
 
 /**
@@ -2222,10 +2222,10 @@ xsltParseStylesheetParam(xsltTransformContextPtr ctxt, xmlNodePtr cur)
     xsltStylePreCompPtr comp;
 #endif
 
-    if ((cur == NULL) || (ctxt == NULL) || (cur->type != XML_ELEMENT_NODE))
+    if ((cur == NULL) || (ctxt == NULL) || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
 	return;
 
-    comp = cur->psvi;
+    comp = xmlNodeGetPsvi(cur);
     if ((comp == NULL) || (comp->name == NULL)) {
 	xsltTransformError(ctxt, NULL, cur,
 	    "Internal error in xsltParseStylesheetParam(): "
@@ -2238,7 +2238,7 @@ xsltParseStylesheetParam(xsltTransformContextPtr ctxt, xmlNodePtr cur)
 	"Registering param %s\n", comp->name));
 #endif
 
-    xsltRegisterVariable(ctxt, (xsltStylePreCompPtr) comp, cur->children, 1);
+    xsltRegisterVariable(ctxt, (xsltStylePreCompPtr) comp, xmlNodeGetChildren(cur), 1);
 }
 
 /**
