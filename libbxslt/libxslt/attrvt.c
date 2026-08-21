@@ -183,28 +183,28 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
     xsltAttrVTPtr avt, tmp;
     int i = 0, lastavt = 0;
 
-    if ((style == NULL) || (attr == NULL) || (attr->children == NULL))
+    if ((style == NULL) || (attr == NULL) || (xmlAttrGetChildren(attr) == NULL))
         return;
-    if ((attr->children->type != XML_TEXT_NODE) ||
-        (attr->children->next != NULL)) {
-        xsltTransformError(NULL, style, attr->parent,
+    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
+        (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
 	    "Attribute '%s': The content is expected to be a single text "
-	    "node when compiling an AVT.\n", attr->name);
+	    "node when compiling an AVT.\n", xmlAttrGetName(attr));
 	style->errors++;
 	return;
     }
-    str = attr->children->content;
+    str = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
     if ((xmlStrchr(str, '{') == NULL) &&
         (xmlStrchr(str, '}') == NULL)) return;
 
 #ifdef WITH_XSLT_DEBUG_AVT
     xsltGenericDebug(xsltGenericDebugContext,
-		    "Found AVT %s: %s\n", attr->name, str);
+		    "Found AVT %s: %s\n", xmlAttrGetName(attr), str);
 #endif
-    if (attr->psvi != NULL) {
+    if (xmlAttrGetPsvi(attr) != NULL) {
 #ifdef WITH_XSLT_DEBUG_AVT
 	xsltGenericDebug(xsltGenericDebugContext,
-			"AVT %s: already compiled\n", attr->name);
+			"AVT %s: already compiled\n", xmlAttrGetName(attr));
 #endif
         return;
     }
@@ -214,9 +214,9 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
     avt = xsltNewAttrVT(style);
     if (avt == NULL)
 	return;
-    attr->psvi = avt;
+    xmlAttrSetPsvi(attr, avt);
 
-    avt->nsList = xmlGetNsList(attr->doc, attr->parent);
+    avt->nsList = xmlGetNsList(xmlAttrGetDoc(attr), xmlAttrGetParent(attr));
     if (avt->nsList != NULL) {
 	while (avt->nsList[i] != NULL)
 	    i++;
@@ -264,9 +264,9 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 		    cur++;
 	    }
 	    if (*cur == 0) {
-	        xsltTransformError(NULL, style, attr->parent,
+	        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
 		     "Attribute '%s': The AVT has an unmatched '{'.\n",
-		     attr->name);
+		     xmlAttrGetName(attr));
 		style->errors++;
 		goto error;
 	    }
@@ -281,9 +281,9 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 	    } else {
 		comp = xsltXPathCompile(style, expr);
 		if (comp == NULL) {
-		    xsltTransformError(NULL, style, attr->parent,
+		    xsltTransformError(NULL, style, xmlAttrGetParent(attr),
 			 "Attribute '%s': Failed to compile the expression "
-			 "'%s' in the AVT.\n", attr->name, expr);
+			 "'%s' in the AVT.\n", xmlAttrGetName(attr), expr);
 		    style->errors++;
 		    goto error;
 		}
@@ -291,14 +291,14 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 		    avt->strstart = 0;
 		if (lastavt == 1) {
 		    if ((tmp = xsltSetAttrVTsegment(avt, NULL)) == NULL) {
-                        xsltTransformError(NULL, style, attr->parent,
+                        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
                                            "out of memory\n");
 		        goto error;
                     }
                     avt = tmp;
 		}
 		if ((tmp = xsltSetAttrVTsegment(avt, (void *) comp)) == NULL) {
-                    xsltTransformError(NULL, style, attr->parent,
+                    xsltTransformError(NULL, style, xmlAttrGetParent(attr),
                                        "out of memory\n");
 		    goto error;
                 }
@@ -318,9 +318,9 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 		str = cur;
 		continue;
 	    } else {
-	        xsltTransformError(NULL, style, attr->parent,
+	        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
 		     "Attribute '%s': The AVT has an unmatched '}'.\n",
-		     attr->name);
+		     xmlAttrGetName(attr));
 		goto error;
 	    }
 	} else
@@ -339,11 +339,11 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 
 error:
     if (avt == NULL) {
-        xsltTransformError(NULL, style, attr->parent,
+        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
 		"xsltCompileAttr: malloc problem\n");
     } else {
-        if (attr->psvi != avt) {  /* may have changed from realloc */
-            attr->psvi = avt;
+        if (xmlAttrGetPsvi(attr) != avt) {  /* may have changed from realloc */
+            xmlAttrSetPsvi(attr, avt);
 	    /*
 	     * This is a "hack", but I can't see any clean method of
 	     * doing it.  If a re-alloc has taken place, then the pointer
