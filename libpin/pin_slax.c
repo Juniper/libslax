@@ -67,6 +67,101 @@ pin_slax_is_xsl (xmlNodePtr nodep, const char *name)
 	&& strcmp((const char *) nodep->ns->href, PIN_SLAX_XSL_URI) == 0;
 }
 
+/*
+ * Inspect a for-each body to determine what action to emit for each
+ * selected element.  Returns one of:
+ *   PIA_SAVE    — body is empty, or contains <xsl:copy-of select="."/>
+ *   PIA_LITERAL — body contains a non-XSL literal element
+ *
+ * For PIA_LITERAL, *out_tag and *out_text are set to the (xmlChar *)
+ * values that the caller must xmlFree().  For other returns they are NULL.
+ */
+static pin_action_type_t
+pin_slax_foreach_body_action (xmlNodePtr foreach_node,
+			      xmlChar **out_tag, xmlChar **out_text)
+{
+    *out_tag = NULL;
+    *out_text = NULL;
+
+    for (xmlNodePtr b = foreach_node->children; b; b = b->next) {
+	if (b->type == XML_TEXT_NODE)
+	    continue;			/* skip whitespace/text */
+	if (b->type != XML_ELEMENT_NODE)
+	    continue;
+
+	if (pin_slax_is_xsl(b, "copy-of")) {
+	    /* <xsl:copy-of select="."/> — copy the selected element as-is */
+	    return PIA_SAVE;
+	}
+
+	if (!pin_slax_is_xsl(b, NULL)) {
+	    /* Non-XSL element — emit a static literal node */
+	    *out_tag = xmlStrdup(b->name);
+	    /* Collect the first text child as the literal content */
+	    for (xmlNodePtr t = b->children; t; t = t->next) {
+		if (t->type == XML_TEXT_NODE && t->content && t->content[0]) {
+		    *out_text = xmlStrdup(t->content);
+		    break;
+		}
+	    }
+	    return PIA_LITERAL;
+	}
+    }
+
+    return PIA_SAVE;			/* empty body: copy selected elements */
+}
+
+/*
+ * Scan a template body for the first simple xsl:for-each select="name".
+ * Returns a new rulebook state (select_name→body_action, default→DISCARD),
+ * or the null id if none was found or the select is too complex to
+ * handle as a streaming rule.
+ */
+static pin_rstate_id_t
+pin_slax_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
+{
+    for (xmlNodePtr child = template_node->children; child; child = child->next) {
+	if (!pin_slax_is_xsl(child, "for-each"))
+	    continue;
+
+	xmlChar *select = xmlGetProp(child, (const xmlChar *) "select");
+	if (select == NULL)
+	    continue;
+
+	const char *sel = (const char *) select;
+
+	/* Only handle simple element-name selects (no path, no predicates) */
+	int simple = (strpbrk(sel, "/@[]*.:") == NULL && sel[0] != '\0');
+	if (!simple) {
+	    psu_log("pin_slax: skipping complex for-each select: %s", sel);
+	    xmlFree(select);
+	    continue;
+	}
+
+	xmlChar *lit_tag = NULL, *lit_text = NULL;
+	pin_action_type_t body_action =
+	    pin_slax_foreach_body_action(child, &lit_tag, &lit_text);
+
+	pin_rstate_id_t sid;
+	if (body_action == PIA_LITERAL) {
+	    sid = pin_rulebook_add_foreach_literal_state(rb, sel,
+		    (const char *) lit_tag,
+		    (const char *) lit_text,
+		    PIA_DISCARD);
+	} else {
+	    sid = pin_rulebook_add_foreach_state(rb, sel, body_action, PIA_DISCARD);
+	}
+
+	if (lit_tag)  xmlFree(lit_tag);
+	if (lit_text) xmlFree(lit_text);
+	xmlFree(select);
+
+	if (!pin_rstate_id_is_null(sid))
+	    return sid;
+    }
+    return pin_rstate_id_null_atom();
+}
+
 int
 pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		  pin_action_type_t action)
@@ -90,12 +185,12 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	if (match == NULL)
 	    continue;		/* named template without match=; skip */
 
-	/* Intern the mode string as a namepool atom (PA_NULL_ATOM = default) */
+	/* Intern the mode string as a namepool atom (null = default mode) */
 	xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
-	pa_atom_t mode_atom = PA_NULL_ATOM;
+	pin_name_id_t mode_id = pin_name_id_null_atom();
 	if (tmode && tmode[0])
-	    mode_atom = pin_namepool_atom(rb->prb_workspace,
-					 (const char *) tmode, TRUE);
+	    mode_id = pin_namepool_atom(rb->prb_workspace,
+				       (const char *) tmode, TRUE);
 	if (tmode)
 	    xmlFree(tmode);
 
@@ -108,8 +203,17 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	}
 
 	bzero(prp, sizeof(*prp));
-	prp->pr_action = action;
-	prp->pr_mode = mode_atom;
+	prp->pr_mode = mode_id;
+
+	/* Check template body for for-each constructs */
+	pin_rstate_id_t foreach_sid = pin_slax_compile_foreach(child, rb);
+	if (!pin_rstate_id_is_null(foreach_sid)) {
+	    /* Template contains a for-each: save the container, enter foreach state */
+	    prp->pr_action = PIA_SAVE;
+	    prp->pr_new_state = foreach_sid;
+	} else {
+	    prp->pr_action = action;
+	}
 
 	int rc = pin_filter_add_with_action(xfp, (const char *) match, rid);
 	xmlFree(match);
