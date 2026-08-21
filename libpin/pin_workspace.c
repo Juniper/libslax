@@ -216,7 +216,7 @@ pin_ns_open (pa_mmap_t *pmap, const char *basename,
  * It's some ugly "atom smashing" that keeps us type safe.  Think of it
  * as lead shielding.
  */
-pa_atom_t
+pin_name_id_t
 pin_namepool_atom (pin_workspace_t *pwp, const char *data, pin_boolean_t createp)
 {
     uint16_t len = strlen(data) + 1;
@@ -233,17 +233,18 @@ pin_namepool_atom (pin_workspace_t *pwp, const char *data, pin_boolean_t createp
 	    pa_warning(0, "duplicate key: %s", data);
     }
 
-    return pa_pat_data_is_null(datom) ? PA_NULL_ATOM : pa_pat_data_atom_of(datom);
+    return pin_name_id(pa_pat_data_is_null(datom) ? PA_NULL_ATOM
+					           : pa_pat_data_atom_of(datom));
 }
 
-pa_atom_t
-pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pa_atom_t name_atom)
+pa_arb_atom_t
+pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pin_name_id_t name_id)
 {
     pin_node_id_t node_id;
     pin_depth_t depth = nodep->pn_depth;
 
     if (!(nodep->pn_flags & PNF_ATTRIBS_PRESENT))
-	return PA_NULL_ATOM;
+	return pa_arb_atom(PA_NULL_ATOM);
 
 #if 0 /* XXX */
     if (!(nodep->pn_flags & PNF_ATTRIBS_EXTRACTED))
@@ -262,11 +263,11 @@ pin_get_attrib (pin_workspace_t *pwp, pin_node_t *nodep, pa_atom_t name_atom)
 	if (nodep->pn_type != PIN_TYPE_ATTRIB)
 	    continue;
 
-	if (nodep->pn_name == name_atom)
-	    return nodep->pn_contents;
+	if (pin_name_id_equal(nodep->pn_name, name_id))
+	    return pin_node_text(nodep);
     }
 
-    return PA_NULL_ATOM;
+    return pa_arb_atom(PA_NULL_ATOM);
 }
 
 /*
@@ -290,17 +291,18 @@ pin_ns_map_id_t
 pin_ns_find (pin_workspace_t *pwp, const char *prefix, const char *uri,
 	    pin_boolean_t createp)
 {
-    pa_atom_t prefix_atom = PA_NULL_ATOM, uri_atom = PA_NULL_ATOM;
+    pin_name_id_t prefix_atom = pin_name_id_null_atom();
+    pin_name_id_t uri_atom = pin_name_id_null_atom();
 
     if (prefix != NULL && *prefix != '\0') {
 	prefix_atom = pin_namepool_atom(pwp, prefix, TRUE);
-	if (prefix_atom == PA_NULL_ATOM)
+	if (pin_name_id_is_null(prefix_atom))
 	    return pin_ns_map_id_null_atom();
     }
 
     if (uri != NULL && *uri != '\0') {
 	uri_atom = pin_namepool_atom(pwp, uri, TRUE);
-	if (uri_atom == PA_NULL_ATOM)
+	if (pin_name_id_is_null(uri_atom))
 	    return pin_ns_map_id_null_atom();
     }
 
