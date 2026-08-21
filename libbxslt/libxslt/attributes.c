@@ -46,7 +46,7 @@
                      ((c) == 0x0D))
 
 #define IS_BLANK_NODE(n)						\
-    (((n)->type == XML_TEXT_NODE) && (xsltIsBlank((n)->content)))
+    ((xmlNodeGetType(n) == XML_TEXT_NODE) && (xsltIsBlank(xmlNodeGetContentRaw(n))))
 
 #define ATTRSET_UNRESOLVED 0
 #define ATTRSET_RESOLVING  1
@@ -325,8 +325,8 @@ xsltMergeAttrSets(xsltAttrSetPtr set, xsltAttrSetPtr other) {
 	cur = set->attrs;
 	add = 1;
 	while (cur != NULL) {
-            xsltStylePreCompPtr curComp = cur->attr->psvi;
-            xsltStylePreCompPtr oldComp = old->attr->psvi;
+            xsltStylePreCompPtr curComp = xmlNodeGetPsvi(cur->attr);
+            xsltStylePreCompPtr oldComp = xmlNodeGetPsvi(old->attr);
 
             if ((curComp->name == oldComp->name) &&
                 (curComp->ns == oldComp->ns)) {
@@ -373,7 +373,7 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     xmlNodePtr child;
     xsltAttrSetPtr set;
 
-    if ((cur == NULL) || (style == NULL) || (cur->type != XML_ELEMENT_NODE))
+    if ((cur == NULL) || (style == NULL) || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
 	return;
 
     value = xmlGetNsProp(cur, (const xmlChar *)"name", NULL);
@@ -406,7 +406,7 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
             style->errors++;
             return;
         }
-        nsUri = ns->href;
+        nsUri = xmlNsGetHref(ns);
     }
 
     if (style->attributeSets == NULL) {
@@ -433,51 +433,51 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     /*
     * Parse the content. Only xsl:attribute elements are allowed.
     */
-    child = cur->children;
+    child = xmlNodeGetChildren(cur);
     while (child != NULL) {
 	/*
 	* Report invalid nodes.
 	*/
-	if ((child->type != XML_ELEMENT_NODE) ||
-	    (child->ns == NULL) ||
+	if ((xmlNodeGetType(child) != XML_ELEMENT_NODE) ||
+	    (xmlNodeGetNs(child) == NULL) ||
 	    (! IS_XSLT_ELEM(child)))
 	{
-	    if (child->type == XML_ELEMENT_NODE)
+	    if (xmlNodeGetType(child) == XML_ELEMENT_NODE)
 		xsltTransformError(NULL, style, child,
 			"xsl:attribute-set : unexpected child %s\n",
-		                 child->name);
+		                 xmlNodeGetName(child));
 	    else
 		xsltTransformError(NULL, style, child,
 			"xsl:attribute-set : child of unexpected type\n");
 	} else if (!IS_XSLT_NAME(child, "attribute")) {
 	    xsltTransformError(NULL, style, child,
 		"xsl:attribute-set : unexpected child xsl:%s\n",
-		child->name);
+		xmlNodeGetName(child));
 	} else {
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
 	    xsltGenericDebug(xsltGenericDebugContext,
 		"add attribute to list %s\n", ncname);
 #endif
             xsltStylePreCompute(style, child);
-            if (child->children != NULL) {
+            if (xmlNodeGetChildren(child) != NULL) {
 #ifdef XSLT_REFACTORED
                 xsltParseSequenceConstructor(XSLT_CCTXT(style),
-                                             child->children);
+                                             xmlNodeGetChildren(child));
 #else
                 xsltParseTemplateContent(style, child);
 #endif
             }
-            if (child->psvi == NULL) {
+            if (xmlNodeGetPsvi(child) == NULL) {
                 xsltTransformError(NULL, style, child,
                     "xsl:attribute-set : internal error, attribute %s not "
-                    "compiled\n", child->name);
+                    "compiled\n", xmlNodeGetName(child));
             }
             else {
 	        set->attrs = xsltAddAttrElemList(set->attrs, child);
             }
 	}
 
-	child = child->next;
+	child = xmlNodeGetNext(child);
     }
 
     /*
@@ -525,7 +525,7 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
                         xmlFree(value);
                         return;
                     }
-                    nsUri2 = ns2->href;
+                    nsUri2 = xmlNsGetHref(ns2);
                 }
                 set->useAttrSets = xsltAddUseAttrSetList(set->useAttrSets,
                                                          ncname2, nsUri2);
@@ -764,7 +764,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     xmlAttrPtr attr;
 
     if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL) ||
-        (inst->type != XML_ELEMENT_NODE) )
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE) )
         return;
 
     /*
@@ -807,7 +807,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     *  provide an option to ignore such errors.
     */
     targetElem = ctxt->insert;
-    if (targetElem->type != XML_ELEMENT_NODE)
+    if (xmlNodeGetType(targetElem) != XML_ELEMENT_NODE)
 	return;
 
     /*
@@ -820,7 +820,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     *  to ignore them; note that we *ignore* if the parent is not an
     *  element, but here we report an error.
     */
-    if (targetElem->children != NULL) {
+    if (xmlNodeGetChildren(targetElem) != NULL) {
 	/*
 	* NOTE: Ah! This seems to be intended to support streamed
 	*  result generation!.
@@ -938,7 +938,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	*  in effect for the xsl:attribute element, *not* including any
 	*  default namespace declaration."
 	*/
-	ns = xmlSearchNs(inst->doc, inst, prefix);
+	ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
 	if (ns == NULL) {
 	    /*
 	    * Note that this is treated as an error now (checked with
@@ -950,7 +950,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 		"this is an error, since the namespace was not "
 		"specified by the instruction itself.\n", prefix, name);
 	} else
-	    nsName = ns->href;
+	    nsName = xmlNsGetHref(ns);
     }
 
     /*
@@ -1013,15 +1013,15 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     * Construction of the value
     * -------------------------
     */
-    if (inst->children == NULL) {
+    if (xmlNodeGetChildren(inst) == NULL) {
 	/*
 	* No content.
 	* TODO: Do we need to put the empty string in ?
 	*/
 	attr = xmlSetNsProp(ctxt->insert, ns, name, (const xmlChar *) "");
-    } else if ((inst->children->next == NULL) &&
-	    ((inst->children->type == XML_TEXT_NODE) ||
-	     (inst->children->type == XML_CDATA_SECTION_NODE)))
+    } else if ((xmlNodeGetNext(xmlNodeGetChildren(inst)) == NULL) &&
+	    ((xmlNodeGetType(xmlNodeGetChildren(inst)) == XML_TEXT_NODE) ||
+	     (xmlNodeGetType(xmlNodeGetChildren(inst)) == XML_CDATA_SECTION_NODE)))
     {
 	xmlNodePtr copyTxt;
 
@@ -1035,8 +1035,8 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	* This was taken over from xsltCopyText() (transform.c).
 	*/
 	if (ctxt->internalized &&
-	    (ctxt->insert->doc != NULL) &&
-	    (ctxt->insert->doc->dict == ctxt->dict))
+	    (xmlNodeGetDoc(ctxt->insert) != NULL) &&
+	    (xmlNodeGetDoc(ctxt->insert)->dict == ctxt->dict))
 	{
 	    copyTxt = xmlNewText(NULL);
 	    if (copyTxt == NULL) /* TODO: report error */
@@ -1045,40 +1045,41 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	    * This is a safe scenario where we don't need to lookup
 	    * the dict.
 	    */
-	    copyTxt->content = inst->children->content;
+	    xmlNodeSetContentRaw(copyTxt, xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
 	    /*
 	    * Copy "disable-output-escaping" information.
 	    * TODO: Does this have any effect for attribute values
 	    *  anyway?
 	    */
-	    if (inst->children->name == xmlStringTextNoenc)
-		copyTxt->name = xmlStringTextNoenc;
+	    if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
+		xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
 	} else {
 	    /*
 	    * Copy the value.
 	    */
-	    copyTxt = xmlNewText(inst->children->content);
+	    copyTxt = xmlNewText(xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
 	    if (copyTxt == NULL) /* TODO: report error */
 		goto error;
 	}
-	attr->children = attr->last = copyTxt;
-	copyTxt->parent = (xmlNodePtr) attr;
-	copyTxt->doc = attr->doc;
+	xmlAttrSetChildren(attr, copyTxt);
+	xmlAttrSetLast(attr, copyTxt);
+	xmlNodeSetParent(copyTxt, (xmlNodePtr) attr);
+	xmlNodeSetDocRaw(copyTxt, xmlAttrGetDoc(attr));
 	/*
 	* Copy "disable-output-escaping" information.
 	* TODO: Does this have any effect for attribute values
 	*  anyway?
 	*/
-	if (inst->children->name == xmlStringTextNoenc)
-	    copyTxt->name = xmlStringTextNoenc;
+	if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
+	    xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
 
         /*
          * since we create the attribute without content IDness must be
          * asserted as a second step
          */
-        if ((copyTxt->content != NULL) &&
-            (xmlIsID(attr->doc, attr->parent, attr)))
-            xmlAddID(NULL, attr->doc, copyTxt->content, attr);
+        if ((xmlNodeGetContentRaw(copyTxt) != NULL) &&
+            (xmlIsID(xmlAttrGetDoc(attr), xmlAttrGetParent(attr), attr)))
+            xmlAddID(NULL, xmlAttrGetDoc(attr), xmlNodeGetContentRaw(copyTxt), attr);
     } else {
 	/*
 	* The sequence constructor might be complex, so instantiate it.
@@ -1132,9 +1133,10 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    /*
 	    * Extract the value from @inst.
 	    */
-	    if (inst->type == XML_ATTRIBUTE_NODE) {
-		if ( ((xmlAttrPtr) inst)->children != NULL)
-		    attrSets = ((xmlAttrPtr) inst)->children->content;
+	    if (xmlNodeGetType(inst) == XML_ATTRIBUTE_NODE) {
+		if (xmlAttrGetChildren((xmlAttrPtr) inst) != NULL)
+		    attrSets = xmlNodeGetContentRaw(
+			xmlAttrGetChildren((xmlAttrPtr) inst));
 
 	    }
 	    if (attrSets == NULL) {
@@ -1176,14 +1178,14 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 
             ncname = xsltSplitQName(ctxt->dict, curstr, &prefix);
             if (prefix != NULL) {
-	        ns = xmlSearchNs(inst->doc, inst, prefix);
+	        ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
                 if (ns == NULL) {
                     xsltTransformError(ctxt, NULL, inst,
                         "use-attribute-set : No namespace found for QName "
                         "'%s:%s'\n", prefix, ncname);
                     return;
                 }
-                nsUri = ns->href;
+                nsUri = xmlNsGetHref(ns);
             }
 
             style = ctxt->style;
@@ -1196,8 +1198,8 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
                 set = xmlHashLookup2(style->attributeSets, ncname, nsUri);
                 if ((set != NULL) && (set->attrs != NULL) &&
                     (set->attrs->attr != NULL))
-                    xslHandleDebugger(set->attrs->attr->parent, node, NULL,
-			ctxt);
+                    xslHandleDebugger(xmlNodeGetParent(set->attrs->attr),
+			node, NULL, ctxt);
             }
 #endif
 	    /*
@@ -1211,7 +1213,7 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
                 while (cur != NULL) {
                     if (cur->attr != NULL) {
                         xsltAttribute(ctxt, node, cur->attr,
-                            cur->attr->psvi);
+                            xmlNodeGetPsvi(cur->attr));
                     }
                     cur = cur->next;
                 }
