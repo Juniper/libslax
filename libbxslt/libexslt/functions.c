@@ -327,7 +327,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	return;
     }
     if (func->content != NULL) {
-	paramNode = func->content->prev;
+	paramNode = xmlNodeGetPrev(func->content);
     }
     else
 	paramNode = NULL;
@@ -400,9 +400,9 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	 * the beginning of the param chain.
 	 */
 	for (i = 1; i <= func->nargs; i++) {
-	    if (paramNode->prev == NULL)
+	    if (xmlNodeGetPrev(paramNode) == NULL)
 	        break;
-	    paramNode = paramNode->prev;
+	    paramNode = xmlNodeGetPrev(paramNode);
 	}
 	/*
 	 * i has total # params found, nargs is number which are present
@@ -427,7 +427,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	    xsltLocalVariablePush(tctxt, param, -1);
 	    param->next = params;
 	    params = param;
-	    paramNode = paramNode->next;
+	    paramNode = xmlNodeGetNext(paramNode);
 	}
     }
     /*
@@ -472,7 +472,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
      * It is an error if the instantiation of the template results in
      * the generation of result nodes.
      */
-    if (fake->children != NULL) {
+    if (xmlNodeGetChildren(fake) != NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "{%s}%s: cannot write to result tree while "
 			 "executing a function\n",
@@ -496,7 +496,8 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst) {
     xmlHashTablePtr data;
     exsltFuncFunctionData *func;
 
-    if ((style == NULL) || (inst == NULL) || (inst->type != XML_ELEMENT_NODE))
+    if ((style == NULL) || (inst == NULL) ||
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return;
 
     {
@@ -514,7 +515,7 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst) {
 	return;
     }
     /* namespace lookup */
-    ns = xmlSearchNs (inst->doc, inst, prefix);
+    ns = xmlSearchNs (xmlNodeGetDoc(inst), inst, prefix);
     if (ns == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "func:function: undeclared prefix %s\n",
@@ -535,10 +536,10 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst) {
         xmlFree(name);
         return;
     }
-    func->content = inst->children;
+    func->content = xmlNodeGetChildren(inst);
     while (IS_XSLT_ELEM(func->content) &&
 	   IS_XSLT_NAME(func->content, "param")) {
-	func->content = func->content->next;
+	func->content = xmlNodeGetNext(func->content);
 	func->nargs++;
     }
 
@@ -567,16 +568,16 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst) {
 	return;
     }
 
-    if (xmlHashAddEntry2 (data, ns->href, name, func) < 0) {
+    if (xmlHashAddEntry2 (data, xmlNsGetHref(ns), name, func) < 0) {
 	xsltTransformError(NULL, style, inst,
 	    "Failed to register function {%s}%s\n",
-			 ns->href, name);
+			 xmlNsGetHref(ns), name);
 	style->errors++;
         xmlFree(func);
     } else {
 	xsltGenericDebug(xsltGenericDebugContext,
 			 "exsltFuncFunctionComp: register {%s}%s\n",
-			 ns->href, name);
+			 xmlNsGetHref(ns), name);
     }
     xmlFree(name);
 }
@@ -588,7 +589,8 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
     xmlChar *sel;
     exsltFuncResultPreComp *ret;
 
-    if ((style == NULL) || (inst == NULL) || (inst->type != XML_ELEMENT_NODE))
+    if ((style == NULL) || (inst == NULL) ||
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
         return (NULL);
 
     /*
@@ -597,8 +599,8 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
     /* it is an error to have any following sibling elements aside
      * from the xsl:fallback element.
      */
-    for (test = inst->next; test != NULL; test = test->next) {
-	if (test->type != XML_ELEMENT_NODE)
+    for (test = xmlNodeGetNext(inst); test != NULL; test = xmlNodeGetNext(test)) {
+	if (xmlNodeGetType(test) != XML_ELEMENT_NODE)
 	    continue;
 	if (IS_XSLT_ELEM(test) && IS_XSLT_NAME(test, "fallback"))
 	    continue;
@@ -616,10 +618,10 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
      * binding element (i.e. xsl:variable, xsl:param) results in the
      * instanciation of a func:result element.
      */
-    for (test = inst->parent; test != NULL; test = test->parent) {
+    for (test = xmlNodeGetParent(inst); test != NULL; test = xmlNodeGetParent(test)) {
 	if (/* Traversal has reached the top-level document without
          * finding a func:function ancestor. */
-        (test != NULL && test->type == XML_DOCUMENT_NODE) ||
+        (test != NULL && xmlNodeGetType(test) == XML_DOCUMENT_NODE) ||
         /* Traversal reached a stylesheet-namespace node,
          * and has left the function namespace. */
         (IS_XSLT_ELEM(test) &&
@@ -630,12 +632,12 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
 	    style->errors++;
 	    return (NULL);
 	}
-	if ((test->ns != NULL) &&
-	    (xmlStrEqual(test->ns->href, EXSLT_FUNCTIONS_NAMESPACE))) {
-	    if (xmlStrEqual(test->name, (const xmlChar *) "function")) {
+	if ((xmlNodeGetNs(test) != NULL) &&
+	    (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(test)), EXSLT_FUNCTIONS_NAMESPACE))) {
+	    if (xmlStrEqual(xmlNodeGetName(test), (const xmlChar *) "function")) {
 		break;
 	    }
-	    if (xmlStrEqual(test->name, (const xmlChar *) "result")) {
+	    if (xmlStrEqual(xmlNodeGetName(test), (const xmlChar *) "result")) {
 		xsltGenericError(xsltGenericErrorContext,
 				 "func:result element not allowed within"
 				 " another func:result element\n");
@@ -683,7 +685,7 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
     /*
      * Precompute the namespace list
      */
-    ret->nsList = xmlGetNsList(inst->doc, inst);
+    ret->nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     if (ret->nsList != NULL) {
         int i = 0;
         while (ret->nsList[i] != NULL)
@@ -735,7 +737,7 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
 	 * returned value is the object that results from evaluating
 	 * the expression. In this case, the content must be empty.
 	 */
-	if (inst->children != NULL) {
+	if (xmlNodeGetChildren(inst) != NULL) {
 	    xsltGenericError(xsltGenericErrorContext,
 			     "func:result content must be empty if"
 			     " the function has a select attribute\n");
@@ -766,7 +768,7 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
 	* collecting of tree fragments before the function exits.
 	*/
 	xsltFlagRVTs(ctxt, ret, XSLT_RVT_FUNC_RESULT);
-    } else if (inst->children != NULL) {
+    } else if (xmlNodeGetChildren(inst) != NULL) {
 	/* If the func:result element does not have a select attribute
 	 * and has non-empty content (i.e. the func:result element has
 	 * one or more child nodes), then the content of the
@@ -789,7 +791,7 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
 	oldInsert = ctxt->insert;
 	ctxt->insert = (xmlNodePtr) container;
 	xsltApplyOneTemplate (ctxt, ctxt->node,
-			      inst->children, NULL, NULL);
+			      xmlNodeGetChildren(inst), NULL, NULL);
 	ctxt->insert = oldInsert;
 
 	ret = xmlXPathNewValueTree((xmlNodePtr) container);
