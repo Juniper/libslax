@@ -133,11 +133,11 @@ pin_parse_workspace (pin_parse_t *parsep)
     return parsep->pp_insert->pin_tree->pt_workspace;
 }
 
-pa_atom_t
+pin_name_id_t
 pin_parse_namepool_atom (pin_parse_t *parsep, const char *name);
 
 const char *
-pin_parse_namepool_string (pin_parse_t *parsep, pa_atom_t atom);
+pin_parse_namepool_string (pin_parse_t *parsep, pin_name_id_t name_id);
 
 void
 pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);
