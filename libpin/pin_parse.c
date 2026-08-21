@@ -106,7 +106,7 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
     nodep->pn_type = PIN_TYPE_ROOT;
     nodep->pn_depth = 0;
     nodep->pn_ns_map = PA_NULL_ATOM;
-    nodep->pn_name = PA_NULL_ATOM;
+    nodep->pn_name = pin_name_id_null_atom();
     nodep->pn_next = pin_node_id_null_atom();
     nodep->pn_contents = PA_NULL_ATOM;
 
@@ -134,16 +134,16 @@ pin_parse_destroy (pin_parse_t *parsep)
     pin_source_destroy(parsep->pp_srcp);
 }
 
-pa_atom_t
+pin_name_id_t
 pin_parse_namepool_atom (pin_parse_t *parsep, const char *name)
 {
     return pin_namepool_atom(pin_parse_workspace(parsep), name, TRUE);
 }
 
 const char *
-pin_parse_namepool_string (pin_parse_t *parsep, pa_atom_t atom)
+pin_parse_namepool_string (pin_parse_t *parsep, pin_name_id_t name_id)
 {
-    return pin_namepool_string(pin_parse_workspace(parsep), atom);
+    return pin_namepool_string(pin_parse_workspace(parsep), name_id);
 }
 
 static void
@@ -172,7 +172,7 @@ pin_insert_pop (pin_insert_t *pip)
 static pin_node_id_t
 pin_insert_node (pin_insert_t *pip, const char *msg,
 		const char *data, size_t len,
-		pin_node_type_t type, pa_atom_t name_atom, pa_atom_t contents)
+		pin_node_type_t type, pin_name_id_t name_id, pa_atom_t contents)
 {
     /* Inside a phantom discard frame — don't insert anything */
     pin_istack_t *cur = &pip->pin_stack[pip->pin_depth];
@@ -187,11 +187,11 @@ pin_insert_node (pin_insert_t *pip, const char *msg,
     /* Initialize our fields */
     nodep->pn_type = type;
     nodep->pn_ns_map = PA_NULL_ATOM;
-    nodep->pn_name = name_atom;
+    nodep->pn_name = name_id;
     nodep->pn_contents = contents;
 
     psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
-	    name_atom, contents, pip->pin_depth + 1);
+	    pin_name_id_atom_of(name_id), contents, pip->pin_depth + 1);
 
     /*
      * If we don't have a child, make one.  Otherwise append it.
@@ -235,7 +235,7 @@ static pin_node_t *
 pin_insert_ns_node (pin_insert_t *pip, const char *msg,
 		   const char *data, size_t len, pin_node_id_t parent_atom,
 		   pin_node_t *prev_ns_nodep,
-		   pin_node_type_t type, pa_atom_t name_atom,
+		   pin_node_type_t type, pin_name_id_t name_id,
 		   pa_atom_t contents)
 {
     pin_node_id_t node_atom;
@@ -246,11 +246,11 @@ pin_insert_ns_node (pin_insert_t *pip, const char *msg,
     /* Initialize our fields */
     nodep->pn_type = type;
     nodep->pn_ns_map = PA_NULL_ATOM;
-    nodep->pn_name = name_atom;
+    nodep->pn_name = name_id;
     nodep->pn_contents = contents;
 
     psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
-	    name_atom, contents, pip->pin_depth + 1);
+	    pin_name_id_atom_of(name_id), contents, pip->pin_depth + 1);
 
     /* New NS node's pn_next always points to parent (last-sibling sentinel) */
     nodep->pn_next = parent_atom;
@@ -306,7 +306,7 @@ pin_node_parent (pin_workspace_t *pwp, pin_node_t *nodep)
  */
 static pin_ns_map_id_t
 pin_parse_find_ns_atom (pin_parse_t *parsep, pin_node_t *nodep,
-		       pa_atom_t pref_atom)
+		       pin_name_id_t pref_id)
 {
     pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
     pin_node_t *curp, *childp;
@@ -321,7 +321,7 @@ pin_parse_find_ns_atom (pin_parse_t *parsep, pin_node_t *nodep,
 	    /* The namespace mapping number is in the node's contents */
 	    pin_ns_map_id_t ns_id = pin_node_ns_contents(childp);
 	    ns_map = pin_ns_map_addr(pwp, ns_id);
-	    if (ns_map != NULL && ns_map->pnm_prefix == pref_atom)
+	    if (ns_map != NULL && pin_name_id_equal(ns_map->pnm_prefix, pref_id))
 		return ns_id; /* Match! */
 	}
     }
@@ -340,23 +340,23 @@ static pin_ns_map_id_t
 pin_parse_find_ns (pin_parse_t *parsep, pin_node_t *nodep, const char *prefix)
 {
     pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
-    pa_atom_t pref_atom;
+    pin_name_id_t pref_id;
 
     if (prefix == NULL) {
 	/* If the prefix is NULL, we're looking for the default prefix */
-	pref_atom = PA_NULL_ATOM;
+	pref_id = pin_name_id_null_atom();
 
     } else {
 	/*
 	 * Find the atom for the prefix; if there isn't one, then it
 	 * cannot have been defined, which is likely a syntax error.
 	 */
-	pref_atom = pin_namepool_atom(pwp, prefix, FALSE);
-	if (pref_atom == PA_NULL_ATOM)
+	pref_id = pin_namepool_atom(pwp, prefix, FALSE);
+	if (pin_name_id_is_null(pref_id))
 	    return pin_ns_map_id_null_atom();
     }
 
-    return pin_parse_find_ns_atom(parsep, nodep, pref_atom);
+    return pin_parse_find_ns_atom(parsep, nodep, pref_id);
 }
 
 static inline pin_boolean_t
@@ -385,7 +385,7 @@ pin_insert_attribs (pin_parse_t *parsep, pin_node_t *nodep, const char *data)
 
     pin_node_id_t node_atom;
     node_atom = pin_insert_node(pip, "pin_insert_attribs", data, len,
-			       PIN_TYPE_ATSTR, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
+			       PIN_TYPE_ATSTR, pin_name_id_null_atom(), pa_arb_atom_of(data_atom));
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
@@ -494,7 +494,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
     size_t len = strlen(attrib);
     char *content = attrib, *endp = content + len, *name, *value;
     size_t namelen, valuelen;
-    pa_atom_t name_atom;
+    pin_name_id_t name_id;
     pin_node_id_t attrib_atom;
     pa_arb_atom_t value_atom;
     int hit = FALSE;
@@ -546,7 +546,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 					 "pin_insert_attribs_extract(ns)",
 					 name, name ? strlen(name) : 0,
 					 node_atom, prev_ns_nodep,
-					 PIN_TYPE_NS, PA_NULL_ATOM,
+					 PIN_TYPE_NS, pin_name_id_null_atom(),
 					 pa_fixed_atom_of(pin_ns_map_id_atom_of(ns_id)));
 	    if (prev_ns_nodep == NULL) {
 		pin_source_failure(parsep->pp_srcp, 0,
@@ -559,21 +559,21 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 
 	} else {
 	    char *prefix;
-	    pa_atom_t pref_atom;
+	    pin_name_id_t pref_id;
 	    char *localp = strchr(name, ':');
 	    if (localp) {
 		*localp++ = '\0';
 		prefix = name;
-		pref_atom = pin_namepool_atom(pwp, prefix, TRUE);
+		pref_id = pin_namepool_atom(pwp, prefix, TRUE);
 	    } else {
 		localp = name;
 		prefix = NULL;
-		pref_atom = PA_NULL_ATOM;
+		pref_id = pin_name_id_null_atom();
 	    }
 
 	    /* Normal attribute */
-	    name_atom = pin_namepool_atom(pwp, localp, TRUE);
-	    if (name_atom == PA_NULL_ATOM)
+	    name_id = pin_namepool_atom(pwp, localp, TRUE);
+	    if (pin_name_id_is_null(name_id))
 		break;
 
 	    value_atom = pa_arb_alloc_string(prp, value);
@@ -582,7 +582,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 
 	    attrib_atom = pin_insert_node(pip, "pin_insert_attribs_extract",
 				 name, strlen(name),
-				 PIN_TYPE_ATTRIB, name_atom, pa_arb_atom_of(value_atom));
+				 PIN_TYPE_ATTRIB, name_id, pa_arb_atom_of(value_atom));
 	    if (pin_node_id_is_null(attrib_atom)) {
 		pin_source_failure(parsep->pp_srcp, 0,
 				  "attribute insert failed");
@@ -590,7 +590,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 		break;
 	    }
 
-	    if (pref_atom != PA_NULL_ATOM) {
+	    if (!pin_name_id_is_null(pref_id)) {
 		/*
 		 * We have to stash our prefix atom in a special
 		 * temporary node of type PIN_TYPE_NSPREF.  After all
@@ -601,7 +601,8 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 		pin_node_id_t stash_id = pin_insert_node(pip,
 				 "pin_insert_attribs_extract (stash)",
 				 name, strlen(name),
-				 PIN_TYPE_NSPREF, PA_NULL_ATOM, pref_atom);
+				 PIN_TYPE_NSPREF, pin_name_id_null_atom(),
+				 pin_name_id_atom_of(pref_id));
 		if (pin_node_id_is_null(stash_id)) {
 		    pin_source_failure(parsep->pp_srcp, 0,
 				      "attribute (stash) insert failed");
@@ -640,10 +641,11 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	     * accurate name mapping.  We'll find one and discard the
 	     * current node.
 	     */
+	    pin_name_id_t stashed_pref = pin_name_id(childp->pn_contents);
 	    pin_ns_map_id_t ns_id = pin_parse_find_ns_atom(parsep, nodep,
-						childp->pn_contents);
+						stashed_pref);
 	    if (pin_ns_map_id_is_null(ns_id)) {
-		const char *prefix = pin_namepool_string(pwp, childp->pn_contents);
+		const char *prefix = pin_namepool_string(pwp, stashed_pref);
 		pin_source_failure(parsep->pp_srcp, 0,
 				  "namespace mapping not found for %s:%s",
 				  prefix ?: "", name);
@@ -666,13 +668,13 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 }
 
 static void
-pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
+pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		const char *prefix, const char *name, char *attribs,
 		pin_action_type_t type)
 {
     pin_insert_t *pip = parsep->pp_insert;
 
-    if (name_atom == PA_NULL_ATOM)
+    if (pin_name_id_is_null(name_id))
 	return;
 
     /* If inside a discard frame, push another phantom instead of storing */
@@ -683,7 +685,7 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
 	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
 	bzero(new_frame, sizeof(*new_frame));
 	new_frame->ps_action = PIA_DISCARD;
-	new_frame->ps_old_name = name_atom;
+	new_frame->ps_old_name = name_id;
 	new_frame->ps_statep = statep;
 	return;
     }
@@ -691,7 +693,7 @@ pin_insert_open (pin_parse_t *parsep, pa_atom_t name_atom,
     pin_node_id_t node_atom;
     node_atom = pin_insert_node(pip, "pin_insert_open",
 			       name, strlen(name),
-			       PIN_TYPE_ELT, name_atom, PA_NULL_ATOM);
+			       PIN_TYPE_ELT, name_id, PA_NULL_ATOM);
     if (pin_node_id_is_null(node_atom))
 	return;
 
@@ -747,14 +749,14 @@ static void
 pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
     pin_insert_t *pip = parsep->pp_insert;
-    pa_atom_t name_atom;
+    pin_name_id_t name_id;
 
-    name_atom = pin_namepool_atom(pip->pin_tree->pt_workspace, name, FALSE);
-    
-    psu_log("pin_insert_close: [%s] %u (depth %u)", name, name_atom,
-	   pip->pin_depth);
+    name_id = pin_namepool_atom(pip->pin_tree->pt_workspace, name, FALSE);
 
-    if (name_atom == PA_NULL_ATOM) {
+    psu_log("pin_insert_close: [%s] %u (depth %u)", name,
+	   pin_name_id_atom_of(name_id), pip->pin_depth);
+
+    if (pin_name_id_is_null(name_id)) {
 	pin_source_failure(parsep->pp_srcp, 0, "close tag failed: %s", name);
 	return;
     }
@@ -774,7 +776,8 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 			      "close for open that doesn't exist: %s", name);
 	    return;
 	}
-	if (name_atom != PA_NULL_ATOM && psp->ps_old_name != name_atom) {
+	if (!pin_name_id_is_null(name_id)
+	        && !pin_name_id_equal(psp->ps_old_name, name_id)) {
 	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close doesn't match: %s", name);
 	    return;
@@ -784,13 +787,13 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
-    if (psp->ps_old_name != 0) {
-	if (psp->ps_old_name != name_atom) {
+    if (!pin_name_id_is_null(psp->ps_old_name)) {
+	if (!pin_name_id_equal(psp->ps_old_name, name_id)) {
 	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close doesn't match original: %s", name);
 	    return;
 	}
-    } else if (psp->ps_node->pn_name != name_atom) {
+    } else if (!pin_name_id_equal(psp->ps_node->pn_name, name_id)) {
 	pin_source_failure(parsep->pp_srcp, 0, "close doesn't match: %s", name);
 	return;
     }
@@ -816,7 +819,7 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 
     pin_node_id_t node_atom;
     node_atom = pin_insert_node(pip, "pin_insert_text", data, len,
-			       type, PA_NULL_ATOM, pa_arb_atom_of(data_atom));
+			       type, pin_name_id_null_atom(), pa_arb_atom_of(data_atom));
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
@@ -831,42 +834,42 @@ static int
 pin_parse_mode_matches (pin_parse_t *parsep, pin_rule_t *rulep)
 {
     const char *ctx_mode = parsep->pp_context.pctx_mode;
-    pa_atom_t rule_mode = rulep->pr_mode;
+    pin_name_id_t rule_mode = rulep->pr_mode;
 
     if (ctx_mode == NULL || ctx_mode[0] == '\0') {
 	/* Context is default mode: match only default-mode rules */
-	return (rule_mode == PA_NULL_ATOM);
+	return pin_name_id_is_null(rule_mode);
     }
 
-    if (rule_mode == PA_NULL_ATOM)
+    if (pin_name_id_is_null(rule_mode))
 	return FALSE;	/* Rule is default mode; context is not */
 
     /* Look up context mode in namepool without creating it */
-    pa_atom_t ctx_atom = pin_namepool_atom(pin_parse_workspace(parsep),
-					   ctx_mode, FALSE);
-    return (ctx_atom != PA_NULL_ATOM && ctx_atom == rule_mode);
+    pin_name_id_t ctx_id = pin_namepool_atom(pin_parse_workspace(parsep),
+					     ctx_mode, FALSE);
+    return (!pin_name_id_is_null(ctx_id) && pin_name_id_equal(ctx_id, rule_mode));
 }
 
 static void
-pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
+pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 		      const char *prefix UNUSED, const char *name,
 		      char *attribs, pin_rule_t *prp)
 {
     pin_insert_t *pip = parsep->pp_insert;
     pin_action_type_t act = prp->pr_action;
-    pa_atom_t use_tag = prp->pr_use_tag;
-    pa_atom_t save_name_atom = name_atom;
+    pin_name_id_t use_tag = prp->pr_use_tag;
+    pin_name_id_t save_name_id = name_id;
 
-    /* Use a different tag is directed */
-    if (use_tag)
-	name_atom = use_tag;
+    /* Use a different tag if directed */
+    if (!pin_name_id_is_null(use_tag))
+	name_id = use_tag;
 
     switch (act) {
     case PIA_SAVE:
     case PIA_SAVE_ATSTR:
     case PIA_SAVE_ATTRIB:
     case PIA_EMIT:
-	pin_insert_open(parsep, name_atom, prefix, name, attribs, act);
+	pin_insert_open(parsep, name_id, prefix, name, attribs, act);
 
 	/* Apply rulebook state transition if directed */
 	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
@@ -883,7 +886,7 @@ pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
 	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
 	bzero(new_frame, sizeof(*new_frame));
 	new_frame->ps_action = PIA_DISCARD;
-	new_frame->ps_old_name = save_name_atom;
+	new_frame->ps_old_name = save_name_id;
 	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
 	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
 						     prp->pr_new_state);
@@ -893,13 +896,52 @@ pin_parse_handle_rule (pin_parse_t *parsep, pa_atom_t name_atom,
 	break;
     }
 
+    case PIA_LITERAL: {
+	/*
+	 * name_id is already the literal element tag (substituted from
+	 * pr_use_tag at the top of this function).  Emit <tag>text</tag>
+	 * and then push a phantom DISCARD frame to swallow the matched
+	 * element's content and closing tag from the input stream.
+	 */
+	const char *emit_tag_str = pin_parse_namepool_string(parsep, name_id);
+	if (emit_tag_str == NULL)
+	    break;
+
+	/* Capture parent state before pin_insert_open increments depth */
+	pin_rstate_t *parent_statep = pip->pin_stack[pip->pin_depth].ps_statep;
+
+	pin_insert_open(parsep, name_id, NULL, emit_tag_str, NULL, PIA_SAVE);
+
+	if (!pin_name_id_is_null(prp->pr_literal_text)) {
+	    const char *text = pin_parse_namepool_string(parsep, prp->pr_literal_text);
+	    if (text && *text)
+		pin_insert_text(parsep, text, strlen(text), PIN_TYPE_TEXT);
+	}
+
+	pin_insert_close(parsep, NULL, emit_tag_str);
+
+	/* Push phantom DISCARD frame to absorb the matched element's subtree */
+	pip->pin_depth += 1;
+	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
+	bzero(new_frame, sizeof(*new_frame));
+	new_frame->ps_action = PIA_DISCARD;
+	new_frame->ps_old_name = save_name_id;
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
+	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
+						     prp->pr_new_state);
+	} else {
+	    new_frame->ps_statep = parent_statep;
+	}
+	break;
+    }
+
     default:
 	break;
     }
 
-    if (use_tag) {
+    if (!pin_name_id_is_null(use_tag)) {
 	pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
-	psp->ps_old_name = save_name_atom;
+	psp->ps_old_name = save_name_id;
     }
 }
 
@@ -911,7 +953,7 @@ pin_parse (pin_parse_t *parsep)
     pin_node_type_t type;
     pin_boolean_t opt_quiet = PSU_BIT_TEST(parsep->pp_flags, PIN_PF_DEBUG);
     pin_boolean_t opt_unescape = 0;
-    pa_atom_t name_atom;
+    pin_name_id_t name_id;
     pin_rule_t *rulep = NULL;
     pin_insert_t *pip = parsep->pp_insert;
 
@@ -957,8 +999,7 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /* We need an atom to do the indexing to find rules */
-	    name_atom = pin_namepool_atom(pip->pin_tree->pt_workspace,
-					 localp, TRUE);
+	    name_id = pin_namepool_atom(pip->pin_tree->pt_workspace, localp, TRUE);
 
 	    rulep = NULL;		/* Reset for each element */
 
@@ -978,41 +1019,64 @@ pin_parse (pin_parse_t *parsep)
 		? xo_filter_walk_status(NULL, filter) : XO_STATUS_ZERO;
 
 	    if (filter && fstatus == XO_STATUS_DEAD) {
-		/* No match possible: discard without touching the rulebook. */
-		pin_rule_t dead_rule;
-		bzero(&dead_rule, sizeof(dead_rule));
-		dead_rule.pr_action = PIA_DISCARD;
-		pin_parse_handle_rule(parsep, name_atom, data, localp,
-				     rest, &dead_rule);
+		/*
+		 * Filter says no registered pattern can match in this subtree.
+		 * An active rulebook state (e.g. a for-each) may still apply.
+		 */
+		pin_rstate_t *statep = pin_parse_stack_state(parsep);
+		if (statep != NULL && parsep->pp_rulebook != NULL) {
+		    rulep = pin_rulebook_find(parsep, parsep->pp_rulebook, statep,
+					     name_id, data, localp, rest);
+		}
+		if (rulep == NULL) {
+		    pin_rule_t dead_rule;
+		    bzero(&dead_rule, sizeof(dead_rule));
+		    dead_rule.pr_action = PIA_DISCARD;
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, &dead_rule);
+		} else {
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, rulep);
+		}
 	    } else if (filter && fstatus == XO_STATUS_FULL) {
 		/*
-		 * Trie matched fully: the terminal node carries the rule id.
-		 * Retrieve it directly, avoiding a full rulebook traversal.
-		 * Then verify the rule's mode matches the execution context.
+		 * Filter says a registered pattern fully matched.  But the
+		 * filter may carry a stale action_id from an earlier sibling
+		 * match (e.g. "header" action leaking into "item").  Check
+		 * the rulebook state machine first: if an active state (for-each,
+		 * etc.) has rules, they take precedence over the filter action.
 		 */
-		uint32_t action_id = xo_filter_walk_get_action(NULL, filter);
-		if (action_id != PA_NULL_ATOM && parsep->pp_rulebook != NULL) {
-		    pin_rule_id_t rid = pin_rule_id(action_id);
-		    pin_rule_t *candidate = pin_rulebook_rule(parsep->pp_rulebook, rid);
-		    if (candidate != NULL && pin_parse_mode_matches(parsep, candidate))
-			rulep = candidate;
+		pin_rstate_t *statep = pin_parse_stack_state(parsep);
+		if (statep != NULL && parsep->pp_rulebook != NULL) {
+		    rulep = pin_rulebook_find(parsep, parsep->pp_rulebook, statep,
+					     name_id, data, localp, rest);
 		}
-		if (rulep == NULL)
-		    rulep = &parsep->pp_default_rule;
-		pin_parse_handle_rule(parsep, name_atom, data, localp,
-				     rest, rulep);
+		if (rulep == NULL) {
+		    /*
+		     * No rulebook-state rule; use the filter's terminal action_id.
+		     * This is the common case: no active for-each context.
+		     */
+		    uint32_t action_id = xo_filter_walk_get_action(NULL, filter);
+		    if (action_id != PA_NULL_ATOM && parsep->pp_rulebook != NULL) {
+			pin_rule_id_t rid = pin_rule_id(action_id);
+			pin_rule_t *candidate = pin_rulebook_rule(parsep->pp_rulebook, rid);
+			if (candidate != NULL && pin_parse_mode_matches(parsep, candidate))
+			    rulep = candidate;
+		    }
+		    if (rulep == NULL)
+			rulep = &parsep->pp_default_rule;
+		}
+		pin_parse_handle_rule(parsep, name_id, data, localp, rest, rulep);
 	    } else {
 		/*
 		 * TRACK/PRED or no filter: walk the rulebook state machine.
 		 */
 		pin_rstate_t *statep = pin_parse_stack_state(parsep);
 		rulep = pin_rulebook_find(parsep, parsep->pp_rulebook,
-					 statep,
-					 name_atom, data, localp, rest);
+					 statep, name_id, data, localp, rest);
 		if (rulep == NULL)
 		    rulep = &parsep->pp_default_rule;
-		pin_parse_handle_rule(parsep, name_atom, data, localp,
-				     rest, rulep);
+		pin_parse_handle_rule(parsep, name_id, data, localp, rest, rulep);
 	    }
 
 	    /*
@@ -1116,7 +1180,7 @@ pin_node_dump (pin_workspace_t *pwp, pin_node_type_t op,
 	    (op > 0) ? "Op: " : "", (op > 0) ? opname : "",
 	    (op > 0) ? ", " : "",
 	    pa_fixed_atom_of(pin_node_id_atom_of(atom)), nodep,
-	    nodep->pn_type, type, nodep->pn_name, name ?: "",
+	    nodep->pn_type, type, pin_name_id_atom_of(nodep->pn_name), name ?: "",
 	    nodep->pn_depth, nodep->pn_flags,
 	    nodep->pn_ns_map, pref ?: "", uri ?: "",
 	    pa_fixed_atom_of(pin_node_id_atom_of(nodep->pn_next)),
