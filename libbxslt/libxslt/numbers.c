@@ -596,22 +596,22 @@ xsltTestCompMatchCount(xsltTransformContextPtr context,
          * current node and, if the current node has an expanded-name, with
          * the same expanded-name as the current node.
          */
-        if (node->type != cur->type)
+        if (xmlNodeGetType(node) != xmlNodeGetType(cur))
             return 0;
-        if (node->type == XML_NAMESPACE_DECL)
+        if (xmlNodeGetType(node) == XML_NAMESPACE_DECL)
             /*
              * Namespace nodes have no preceding siblings and no parents
              * that are namespace nodes. This means that node == cur.
              */
             return 1;
         /* TODO: Skip node types without expanded names like text nodes. */
-        if (!xmlStrEqual(node->name, cur->name))
+        if (!xmlStrEqual(xmlNodeGetName(node), xmlNodeGetName(cur)))
             return 0;
-        if (node->ns == cur->ns)
+        if (xmlNodeGetNs(node) == xmlNodeGetNs(cur))
             return 1;
-        if ((node->ns == NULL) || (cur->ns == NULL))
+        if ((xmlNodeGetNs(node) == NULL) || (xmlNodeGetNs(cur) == NULL))
             return 0;
-        return (xmlStrEqual(node->ns->href, cur->ns->href));
+        return (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)), xmlNsGetHref(xmlNodeGetNs(cur))));
     }
 }
 
@@ -636,30 +636,30 @@ xsltNumberFormatGetAnyLevel(xsltTransformContextPtr context,
 	}
 
 	/* Skip to next preceding or ancestor */
-	if ((cur->type == XML_DOCUMENT_NODE) ||
+	if ((xmlNodeGetType(cur) == XML_DOCUMENT_NODE) ||
 #ifdef LIBXML_DOCB_ENABLED
-            (cur->type == XML_DOCB_DOCUMENT_NODE) ||
+            (xmlNodeGetType(cur) == XML_DOCB_DOCUMENT_NODE) ||
 #endif
-            (cur->type == XML_HTML_DOCUMENT_NODE))
+            (xmlNodeGetType(cur) == XML_HTML_DOCUMENT_NODE))
 	    break; /* while */
 
-        if (cur->type == XML_NAMESPACE_DECL) {
+        if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
             /*
             * The XPath module stores the parent of a namespace node in
             * the ns->next field.
             */
-            cur = (xmlNodePtr) ((xmlNsPtr) cur)->next;
-        } else if (cur->type == XML_ATTRIBUTE_NODE) {
-            cur = cur->parent;
+            cur = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur);
+        } else if (xmlNodeGetType(cur) == XML_ATTRIBUTE_NODE) {
+            cur = xmlNodeGetParent(cur);
         } else {
-            while ((cur->prev != NULL) && ((cur->prev->type == XML_DTD_NODE) ||
-                   (cur->prev->type == XML_XINCLUDE_START) ||
-                   (cur->prev->type == XML_XINCLUDE_END)))
-                cur = cur->prev;
-            if (cur->prev != NULL) {
-                for (cur = cur->prev; cur->last != NULL; cur = cur->last);
+            while ((xmlNodeGetPrev(cur) != NULL) && ((xmlNodeGetType(xmlNodeGetPrev(cur)) == XML_DTD_NODE) ||
+                   (xmlNodeGetType(xmlNodeGetPrev(cur)) == XML_XINCLUDE_START) ||
+                   (xmlNodeGetType(xmlNodeGetPrev(cur)) == XML_XINCLUDE_END)))
+                cur = xmlNodeGetPrev(cur);
+            if (xmlNodeGetPrev(cur) != NULL) {
+                for (cur = xmlNodeGetPrev(cur); xmlNodeGetLast(cur) != NULL; cur = xmlNodeGetLast(cur));
             } else {
-                cur = cur->parent;
+                cur = xmlNodeGetParent(cur);
             }
         }
     }
@@ -685,7 +685,7 @@ xsltNumberFormatGetMultipleLevel(xsltTransformContextPtr context,
     /* ancestor-or-self::*[count] */
     ancestor = node;
 
-    while ((ancestor != NULL) && (ancestor->type != XML_DOCUMENT_NODE)) {
+    while ((ancestor != NULL) && (xmlNodeGetType(ancestor) != XML_DOCUMENT_NODE)) {
         if ((fromPat != NULL) &&
             xsltTestCompMatchList(context, ancestor, fromPat))
             break;
@@ -693,31 +693,31 @@ xsltNumberFormatGetMultipleLevel(xsltTransformContextPtr context,
         if (xsltTestCompMatchCount(context, ancestor, countPat, node)) {
             /* count(preceding-sibling::*) */
             cnt = 1;
-            if (ancestor->type != XML_NAMESPACE_DECL)
-                preceding = ancestor->prev;
+            if (xmlNodeGetType(ancestor) != XML_NAMESPACE_DECL)
+                preceding = xmlNodeGetPrev(ancestor);
             else
                 preceding = NULL;
             while (preceding != NULL) {
                 if (xsltTestCompMatchCount(context, preceding, countPat,
                                            node))
                     cnt++;
-                preceding = preceding->prev;
+                preceding = xmlNodeGetPrev(preceding);
             }
             array[amount++] = (double)cnt;
             if (amount >= max)
                 break;
         }
 
-        if ((ancestor != NULL) && (ancestor->type == XML_NAMESPACE_DECL)) {
+        if ((ancestor != NULL) && (xmlNodeGetType(ancestor) == XML_NAMESPACE_DECL)) {
             xmlNsPtr ns = (xmlNsPtr) ancestor;
 
-            if ((ns->next != NULL) &&
-                (ns->next->type != XML_NAMESPACE_DECL))
-                ancestor = (xmlNodePtr) ns->next;
+            if ((xmlNsGetNext(ns) != NULL) &&
+                (xmlNsGetType(xmlNsGetNext(ns)) != XML_NAMESPACE_DECL))
+                ancestor = (xmlNodePtr) xmlNsGetNext(ns);
             else
                 ancestor = NULL;
         } else {
-            ancestor = ancestor->parent;
+            ancestor = xmlNodeGetParent(ancestor);
         }
     }
 
