@@ -26,6 +26,7 @@
 
 #include <parrotdb/pafixed.h>
 #include <parrotdb/pabitmap.h>
+#include <libpin/pin_node.h>
 
 typedef uint8_t pin_action_type_t;
 
@@ -37,6 +38,7 @@ typedef uint8_t pin_action_type_t;
 #define PIA_SAVE_ATTRIB	4	/* Save node and parsed attributes */
 #define PIA_EMIT	5	/* Emit as output */
 #define PIA_RETURN	6	/* Force return from pin_parse() */
+#define PIA_LITERAL	7	/* Emit a static literal node, discard matched element */
 
 /* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
 #include "gen/pin_rule_id_gen.h"
@@ -51,9 +53,10 @@ typedef struct pin_rule_s {
     uint32_t pr_flags;		/* Flags for this rule */
     pa_bitmap_id_t pr_bitmap;	/* Elements affected by this rule */
     pin_action_type_t pr_action;	/* What to do when the rule matches */
-    pa_atom_t pr_mode;		/* Mode (namepool atom; PA_NULL_ATOM = default mode) */
-    pa_atom_t pr_use_tag;	/* Different tag to emit */
+    pin_name_id_t pr_mode;	/* Mode (namepool atom; null = default mode) */
+    pin_name_id_t pr_use_tag;	/* For PIA_LITERAL: namepool atom of literal element name */
     pin_rstate_id_t pr_new_state;/* New state (in the rulebook) to enter */
+    pin_name_id_t pr_literal_text; /* For PIA_LITERAL: namepool atom of literal text content */
 } pin_rule_t;
 
 /* Flags for pr_flags */
@@ -99,11 +102,34 @@ pin_rulebook_close (pin_rulebook_t *rules);
 
 pin_rule_t *
 pin_rulebook_find (pin_parse_t *parsep, pin_rulebook_t *prbp, pin_rstate_t *statep,
-		  pa_atom_t name_atom, const char *pref, const char *name,
+		  pin_name_id_t name_id, const char *pref, const char *name,
 		  const char *attribs);
 
 pin_rulebook_t *
 pin_rulebook_prep (pin_parse_t *input, const char *name);
+
+/*
+ * Create a new rulebook state suitable for a for-each context:
+ *   - One rule with 'select_name' in its bitmap → select_action (e.g. SAVE)
+ *   - A catch-all default rule → default_action (e.g. DISCARD)
+ * Returns the new state's id, or the null id on failure.
+ * Uses the workspace namepool in prbp->prb_workspace for atom lookup.
+ */
+pin_rstate_id_t
+pin_rulebook_add_foreach_state (pin_rulebook_t *prbp, const char *select_name,
+				pin_action_type_t select_action,
+				pin_action_type_t default_action);
+
+/*
+ * Create a foreach state where the selected element emits a static literal
+ * node (PIA_LITERAL) with the given tag name and text content.
+ */
+pin_rstate_id_t
+pin_rulebook_add_foreach_literal_state (pin_rulebook_t *prbp,
+					const char *select_name,
+					const char *literal_tag,
+					const char *literal_text,
+					pin_action_type_t default_action);
 
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
