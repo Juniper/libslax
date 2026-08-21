@@ -144,6 +144,17 @@ field_pat=ppa_atom
 field_pat_data=ppa_data_atom
 
 # libpin fixed-atom typed wrappers: file, type, struct, field, is_null, build, atom_of, null_atom
+atom_pin_name_id="
+pin_name_id_gen.h \
+pin_name_id_t \
+pin_name_id_s \
+pnid_atom \
+pin_name_id_is_null \
+pin_name_id \
+pin_name_id_atom_of \
+pin_name_id_null_atom \
+"
+
 atom_pin_rule_id="
 pin_rule_id_gen.h \
 pin_rule_id_t \
@@ -193,6 +204,11 @@ pin_rule_id \
 pin_rstate_id \
 pin_node_id \
 pin_ns_map_id \
+"
+
+# libpin plain (pa_atom_t) typed wrappers
+pin_plain_typed_atoms="\
+pin_name_id \
 "
 
 # libpin typed-atom function sets: file, atom_type, elem_type, base_type, field,
@@ -540,6 +556,9 @@ do_pin() {
     done
     for name in $pin_plain_atoms; do
 	make_one_plain_named_atom $name
+    done
+    for name in $pin_plain_typed_atoms; do
+	make_one_named_atom $name
     done
 
     write_trailers
