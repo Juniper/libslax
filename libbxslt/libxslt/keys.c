@@ -299,7 +299,7 @@ xsltAddKey(xsltStylesheetPtr style, const xmlChar *name,
     key->match = xmlStrdup(match);
     key->use = xmlStrdup(use);
     key->inst = inst;
-    key->nsList = xmlGetNsList(inst->doc, inst);
+    key->nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     if (key->nsList != NULL) {
         while (key->nsList[i] != NULL)
 	    i++;
