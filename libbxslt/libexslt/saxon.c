@@ -268,13 +268,13 @@ exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
 	return;
     }
 
-    if ((cur != NULL) && (cur->type == XML_NAMESPACE_DECL)) {
+    if ((cur != NULL) && (xmlNodeGetType(cur) == XML_NAMESPACE_DECL)) {
         /*
         * The XPath module sets the owner element of a ns-node on
         * the ns->next field.
         */
-        cur = (xmlNodePtr) ((xmlNsPtr) cur)->next;
-        if (cur == NULL || cur->type != XML_ELEMENT_NODE) {
+        cur = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur);
+        if (cur == NULL || xmlNodeGetType(cur) != XML_ELEMENT_NODE) {
             xsltGenericError(xsltGenericErrorContext,
                 "Internal error in exsltSaxonLineNumberFunction: "
                 "Cannot retrieve the doc of a namespace node.\n");
