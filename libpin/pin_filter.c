@@ -79,8 +79,8 @@ pin_filter_data_name_intern (xo_filter_data_t *dp,
     if (name == NULL)
 	return nid;
 
-    pa_atom_t atom = pin_namepool_atom(dp->xfd_workspace, name, TRUE);
-    nid.ni_id = atom;
+    pin_name_id_t name_id = pin_namepool_atom(dp->xfd_workspace, name, TRUE);
+    nid.ni_id = pin_name_id_atom_of(name_id);
     return nid;
 }
 
@@ -100,8 +100,8 @@ pin_filter_data_name_eq (xo_filter_data_t *dp, xo_name_id_t id,
     if (tag == NULL || id.ni_id == PA_NULL_ATOM)
 	return 0;
 
-    pa_atom_t atom = pin_namepool_atom(dp->xfd_workspace, tag, FALSE);
-    return (atom != PA_NULL_ATOM && atom == id.ni_id);
+    pin_name_id_t tag_id = pin_namepool_atom(dp->xfd_workspace, tag, FALSE);
+    return (!pin_name_id_is_null(tag_id) && pin_name_id_atom_of(tag_id) == id.ni_id);
 }
 
 /*
