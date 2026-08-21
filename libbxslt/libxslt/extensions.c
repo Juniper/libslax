@@ -1599,13 +1599,15 @@ xsltPreComputeExtModuleElement(xsltStylesheetPtr style, xmlNodePtr inst)
     xsltElemPreCompPtr comp = NULL;
 
     if ((style == NULL) || (inst == NULL) ||
-        (inst->type != XML_ELEMENT_NODE) || (inst->ns == NULL))
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE) ||
+        (xmlNodeGetNs(inst) == NULL))
         return (NULL);
 
     xmlMutexLock(xsltExtMutex);
 
     ext = (xsltExtElementPtr)
-        xmlHashLookup2(xsltElementsHash, inst->name, inst->ns->href);
+        xmlHashLookup2(xsltElementsHash, xmlNodeGetName(inst),
+			xmlNsGetHref(xmlNodeGetNs(inst)));
 
     xmlMutexUnlock(xsltExtMutex);
 
