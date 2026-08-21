@@ -412,10 +412,28 @@ xmlAttrSetPsvi (xmlAttrPtr attr, void *psvi)
  * extSubset is deferred, see accessor-plan.md)
  */
 
+static inline void *
+xmlDocGetPrivate (const xmlDocPtr doc)
+{
+    return doc->_private;
+}
+
+static inline void
+xmlDocSetPrivate (xmlDocPtr doc, void *priv)
+{
+    doc->_private = priv;
+}
+
 static inline xmlElementType
 xmlDocGetType (const xmlDocPtr doc)
 {
     return doc->type;
+}
+
+static inline void
+xmlDocSetType (xmlDocPtr doc, xmlElementType type)
+{
+    doc->type = type;
 }
 
 static inline const char *
@@ -454,6 +472,12 @@ xmlDocGetNext (const xmlDocPtr doc)
     return doc->next;
 }
 
+static inline void
+xmlDocSetNext (xmlDocPtr doc, xmlNodePtr next)
+{
+    doc->next = next;
+}
+
 static inline void *
 xmlDocGetPsvi (const xmlDocPtr doc)
 {
@@ -472,10 +496,22 @@ xmlDocGetPrev (const xmlDocPtr doc)
     return doc->prev;
 }
 
+static inline void
+xmlDocSetPrev (xmlDocPtr doc, xmlNodePtr prev)
+{
+    doc->prev = prev;
+}
+
 static inline xmlNodePtr
 xmlDocGetParent (const xmlDocPtr doc)
 {
     return doc->parent;
+}
+
+static inline void
+xmlDocSetParent (xmlDocPtr doc, xmlNodePtr parent)
+{
+    doc->parent = parent;
 }
 
 /* `doc` field on xmlDoc is a self-reference (a doc's containing doc is
@@ -485,6 +521,12 @@ static inline xmlDocPtr
 xmlDocGetDoc (const xmlDocPtr doc)
 {
     return doc->doc;
+}
+
+static inline void
+xmlDocSetDoc (xmlDocPtr doc, xmlDocPtr self)
+{
+    doc->doc = self;
 }
 
 /* ----------------------------------------------------------------------
