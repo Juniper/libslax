@@ -217,10 +217,10 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     int oldLastTextSize, oldLastTextUse;
 
     if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL) ||
-        (inst->type != XML_ELEMENT_NODE))
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return(NULL);
 
-    if (inst->children == NULL)
+    if (xmlNodeGetChildren(inst) == NULL)
 	return(NULL);
 
     /*
@@ -244,7 +244,7 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     /*
     * OPTIMIZE TODO: if inst->children consists only of text-nodes.
     */
-    xsltApplyOneTemplate(ctxt, contextNode, inst->children, NULL, NULL);
+    xsltApplyOneTemplate(ctxt, contextNode, xmlNodeGetChildren(inst), NULL, NULL);
 
     ctxt->insert = oldInsert;
     ctxt->lasttext = oldLastText;
@@ -336,7 +336,7 @@ xsltAttrTemplateValueProcessNode(xsltTransformContextPtr ctxt,
 		if ((nsList == NULL) && (inst != NULL)) {
 		    int i = 0;
 
-		    nsList = xmlGetNsList(inst->doc, inst);
+		    nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
 		    if (nsList != NULL) {
 			while (nsList[i] != NULL)
 			    i++;
@@ -417,7 +417,7 @@ xsltEvalAttrValueTemplate(xsltTransformContextPtr ctxt, xmlNodePtr inst,
     xmlChar *expr;
 
     if ((ctxt == NULL) || (inst == NULL) || (name == NULL) ||
-        (inst->type != XML_ELEMENT_NODE))
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return(NULL);
 
     expr = xsltGetNsProp(inst, name, ns);
@@ -462,7 +462,7 @@ xsltEvalStaticAttrValueTemplate(xsltStylesheetPtr style, xmlNodePtr inst,
     xmlChar *expr;
 
     if ((style == NULL) || (inst == NULL) || (name == NULL) ||
-        (inst->type != XML_ELEMENT_NODE))
+        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
 	return(NULL);
 
     expr = xsltGetNsProp(inst, name, ns);
@@ -504,35 +504,36 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
     xmlAttrPtr ret;
 
     if ((ctxt == NULL) || (attr == NULL) || (target == NULL) ||
-        (target->type != XML_ELEMENT_NODE))
+        (xmlNodeGetType(target) != XML_ELEMENT_NODE))
 	return(NULL);
 
-    if (attr->type != XML_ATTRIBUTE_NODE)
+    if (xmlAttrGetType(attr) != XML_ATTRIBUTE_NODE)
 	return(NULL);
 
     /*
     * Skip all XSLT attributes.
     */
 #ifdef XSLT_REFACTORED
-    if (attr->psvi == xsltXSLTAttrMarker)
+    if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
 	return(NULL);
 #else
-    if ((attr->ns != NULL) && xmlStrEqual(attr->ns->href, XSLT_NAMESPACE))
+    if ((xmlAttrGetNs(attr) != NULL) &&
+        xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
 	return(NULL);
 #endif
     /*
     * Get the value.
     */
-    if (attr->children != NULL) {
-	if ((attr->children->type != XML_TEXT_NODE) ||
-	    (attr->children->next != NULL))
+    if (xmlAttrGetChildren(attr) != NULL) {
+	if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
+	    (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL))
 	{
-	    xsltTransformError(ctxt, NULL, attr->parent,
+	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		"Internal error: The children of an attribute node of a "
 		"literal result element are not in the expected form.\n");
 	    return(NULL);
 	}
-	value = attr->children->content;
+	value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
 	if (value == NULL)
 	    value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
     } else
@@ -540,36 +541,42 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
     /*
     * Overwrite duplicates.
     */
-    ret = target->properties;
+    ret = xmlNodeGetProperties(target);
     while (ret != NULL) {
-        if (((attr->ns != NULL) == (ret->ns != NULL)) &&
-	    xmlStrEqual(ret->name, attr->name) &&
-	    ((attr->ns == NULL) || xmlStrEqual(ret->ns->href, attr->ns->href)))
+        if (((xmlAttrGetNs(attr) != NULL) == (xmlAttrGetNs(ret) != NULL)) &&
+	    xmlStrEqual(xmlAttrGetName(ret), xmlAttrGetName(attr)) &&
+	    ((xmlAttrGetNs(attr) == NULL) ||
+	     xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(ret)),
+	                 xmlNsGetHref(xmlAttrGetNs(attr)))))
 	{
 	    break;
 	}
-        ret = ret->next;
+        ret = xmlAttrGetNext(ret);
     }
     if (ret != NULL) {
         /* free the existing value */
-	xmlFreeNodeList(ret->children);
-	ret->children = ret->last = NULL;
+	xmlFreeNodeList(xmlAttrGetChildren(ret));
+	xmlAttrSetChildren(ret, NULL);
+	xmlAttrSetLast(ret, NULL);
 	/*
 	* Adjust ns-prefix if needed.
 	*/
-	if ((ret->ns != NULL) &&
-	    (! xmlStrEqual(ret->ns->prefix, attr->ns->prefix)))
+	if ((xmlAttrGetNs(ret) != NULL) &&
+	    (! xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(ret)),
+	                   xmlNsGetPrefix(xmlAttrGetNs(attr)))))
 	{
-	    ret->ns = xsltGetNamespace(ctxt, attr->parent, attr->ns, target);
+	    xmlAttrSetNs(ret, xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+	        xmlAttrGetNs(attr), target));
 	}
     } else {
         /* create a new attribute */
-	if (attr->ns != NULL)
+	if (xmlAttrGetNs(attr) != NULL)
 	    ret = xmlNewNsProp(target,
-		xsltGetNamespace(ctxt, attr->parent, attr->ns, target),
-		    attr->name, NULL);
+		xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+		    xmlAttrGetNs(attr), target),
+		    xmlAttrGetName(attr), NULL);
 	else
-	    ret = xmlNewNsProp(target, NULL, attr->name, NULL);
+	    ret = xmlNewNsProp(target, NULL, xmlAttrGetName(attr), NULL);
     }
     /*
     * Set the value.
@@ -579,54 +586,57 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
 
         text = xmlNewText(NULL);
 	if (text != NULL) {
-	    ret->last = ret->children = text;
-	    text->parent = (xmlNodePtr) ret;
-	    text->doc = ret->doc;
+	    xmlAttrSetLast(ret, text);
+	    xmlAttrSetChildren(ret, text);
+	    xmlNodeSetParent(text, (xmlNodePtr) ret);
+	    xmlNodeSetDocRaw(text, xmlAttrGetDoc(ret));
 
-	    if (attr->psvi != NULL) {
+	    if (xmlAttrGetPsvi(attr) != NULL) {
 		/*
 		* Evaluate the Attribute Value Template.
 		*/
 		xmlChar *val;
-		val = xsltEvalAVT(ctxt, attr->psvi, attr->parent);
+		val = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
+		    xmlAttrGetParent(attr));
 		if (val == NULL) {
 		    /*
 		    * TODO: Damn, we need an easy mechanism to report
 		    * qualified names!
 		    */
-		    if (attr->ns) {
-			xsltTransformError(ctxt, NULL, attr->parent,
+		    if (xmlAttrGetNs(attr)) {
+			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 			    "Internal error: Failed to evaluate the AVT "
 			    "of attribute '{%s}%s'.\n",
-			    attr->ns->href, attr->name);
+			    xmlNsGetHref(xmlAttrGetNs(attr)),
+			    xmlAttrGetName(attr));
 		    } else {
-			xsltTransformError(ctxt, NULL, attr->parent,
+			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 			    "Internal error: Failed to evaluate the AVT "
 			    "of attribute '%s'.\n",
-			    attr->name);
+			    xmlAttrGetName(attr));
 		    }
-		    text->content = xmlStrdup(BAD_CAST "");
+		    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
 		} else {
-		    text->content = val;
+		    xmlNodeSetContentRaw(text, val);
 		}
 	    } else if ((ctxt->internalized) && (target != NULL) &&
-	               (target->doc != NULL) &&
-		       (target->doc->dict == ctxt->dict) &&
+	               (xmlNodeGetDoc(target) != NULL) &&
+		       (xmlNodeGetDoc(target)->dict == ctxt->dict) &&
 		       xmlDictOwns(ctxt->dict, value)) {
-		text->content = (xmlChar *) value;
+		xmlNodeSetContentRaw(text, (xmlChar *) value);
 	    } else {
-		text->content = xmlStrdup(value);
+		xmlNodeSetContentRaw(text, xmlStrdup(value));
 	    }
 	}
     } else {
-	if (attr->ns) {
-	    xsltTransformError(ctxt, NULL, attr->parent,
+	if (xmlAttrGetNs(attr)) {
+	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		"Internal error: Failed to create attribute '{%s}%s'.\n",
-		attr->ns->href, attr->name);
+		xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
 	} else {
-	    xsltTransformError(ctxt, NULL, attr->parent,
+	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		"Internal error: Failed to create attribute '%s'.\n",
-		attr->name);
+		xmlAttrGetName(attr));
 	}
     }
     return(ret);
@@ -664,7 +674,7 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
     int hasAttr = 0;
 
     if ((ctxt == NULL) || (target == NULL) || (attrs == NULL) ||
-        (target->type != XML_ELEMENT_NODE))
+        (xmlNodeGetType(target) != XML_ELEMENT_NODE))
 	return(NULL);
 
     oldInsert = ctxt->insert;
@@ -676,23 +686,23 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
     attr = attrs;
     do {
 #ifdef XSLT_REFACTORED
-	if ((attr->psvi == xsltXSLTAttrMarker) &&
-	    xmlStrEqual(attr->name, (const xmlChar *)"use-attribute-sets"))
+	if ((xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) &&
+	    xmlStrEqual(xmlAttrGetName(attr), (const xmlChar *)"use-attribute-sets"))
 	{
 	    xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
 	}
 #else
-	if ((attr->ns != NULL) &&
-	    xmlStrEqual(attr->name, (const xmlChar *)"use-attribute-sets") &&
-	    xmlStrEqual(attr->ns->href, XSLT_NAMESPACE))
+	if ((xmlAttrGetNs(attr) != NULL) &&
+	    xmlStrEqual(xmlAttrGetName(attr), (const xmlChar *)"use-attribute-sets") &&
+	    xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
 	{
 	    xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
 	}
 #endif
-	attr = attr->next;
+	attr = xmlAttrGetNext(attr);
     } while (attr != NULL);
 
-    if (target->properties != NULL) {
+    if (xmlNodeGetProperties(target) != NULL) {
         hasAttr = 1;
     }
 
@@ -705,12 +715,12 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
 	* Skip XSLT attributes.
 	*/
 #ifdef XSLT_REFACTORED
-	if (attr->psvi == xsltXSLTAttrMarker) {
+	if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) {
 	    goto next_attribute;
 	}
 #else
-	if ((attr->ns != NULL) &&
-	    xmlStrEqual(attr->ns->href, XSLT_NAMESPACE))
+	if ((xmlAttrGetNs(attr) != NULL) &&
+	    xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
 	{
 	    goto next_attribute;
 	}
@@ -718,16 +728,16 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
 	/*
 	* Get the value.
 	*/
-	if (attr->children != NULL) {
-	    if ((attr->children->type != XML_TEXT_NODE) ||
-		(attr->children->next != NULL))
+	if (xmlAttrGetChildren(attr) != NULL) {
+	    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
+		(xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL))
 	    {
-		xsltTransformError(ctxt, NULL, attr->parent,
+		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		    "Internal error: The children of an attribute node of a "
 		    "literal result element are not in the expected form.\n");
 		goto error;
 	    }
-	    value = attr->children->content;
+	    value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
 	    if (value == NULL)
 		value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
 	} else
@@ -736,15 +746,16 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
 	/*
 	* Get the namespace. Avoid lookups of same namespaces.
 	*/
-	if (attr->ns != origNs) {
-	    origNs = attr->ns;
-	    if (attr->ns != NULL) {
+	if (xmlAttrGetNs(attr) != origNs) {
+	    origNs = xmlAttrGetNs(attr);
+	    if (xmlAttrGetNs(attr) != NULL) {
 #ifdef XSLT_REFACTORED
-		copyNs = xsltGetSpecialNamespace(ctxt, attr->parent,
-		    attr->ns->href, attr->ns->prefix, target);
+		copyNs = xsltGetSpecialNamespace(ctxt, xmlAttrGetParent(attr),
+		    xmlNsGetHref(xmlAttrGetNs(attr)),
+		    xmlNsGetPrefix(xmlAttrGetNs(attr)), target);
 #else
-		copyNs = xsltGetNamespace(ctxt, attr->parent,
-		    attr->ns, target);
+		copyNs = xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+		    xmlAttrGetNs(attr), target);
 #endif
 		if (copyNs == NULL)
 		    goto error;
@@ -755,40 +766,40 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
 	* Create a new attribute.
 	*/
         if (hasAttr) {
-	    copy = xmlSetNsProp(target, copyNs, attr->name, NULL);
+	    copy = xmlSetNsProp(target, copyNs, xmlAttrGetName(attr), NULL);
         } else {
             /*
             * Avoid checking for duplicate attributes if there aren't
             * any attribute sets.
             */
-	    copy = xmlNewDocProp(target->doc, attr->name, NULL);
+	    copy = xmlNewDocProp(xmlNodeGetDoc(target), xmlAttrGetName(attr), NULL);
 
 	    if (copy != NULL) {
-                copy->ns = copyNs;
+                xmlAttrSetNs(copy, copyNs);
 
                 /*
                 * Attach it to the target element.
                 */
-                copy->parent = target;
+                xmlAttrSetParent(copy, target);
                 if (last == NULL) {
-                    target->properties = copy;
+                    xmlNodeSetProperties(target, copy);
                     last = copy;
                 } else {
-                    last->next = copy;
-                    copy->prev = last;
+                    xmlAttrSetNext(last, copy);
+                    xmlAttrSetPrev(copy, last);
                     last = copy;
                 }
             }
         }
 	if (copy == NULL) {
-	    if (attr->ns) {
-		xsltTransformError(ctxt, NULL, attr->parent,
+	    if (xmlAttrGetNs(attr)) {
+		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		    "Internal error: Failed to create attribute '{%s}%s'.\n",
-		    attr->ns->href, attr->name);
+		    xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
 	    } else {
-		xsltTransformError(ctxt, NULL, attr->parent,
+		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 		    "Internal error: Failed to create attribute '%s'.\n",
-		    attr->name);
+		    xmlAttrGetName(attr));
 	    }
 	    goto error;
 	}
@@ -798,56 +809,60 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
 	*/
 	text = xmlNewText(NULL);
 	if (text != NULL) {
-	    copy->last = copy->children = text;
-	    text->parent = (xmlNodePtr) copy;
-	    text->doc = copy->doc;
+	    xmlAttrSetLast(copy, text);
+	    xmlAttrSetChildren(copy, text);
+	    xmlNodeSetParent(text, (xmlNodePtr) copy);
+	    xmlNodeSetDocRaw(text, xmlAttrGetDoc(copy));
 
-	    if (attr->psvi != NULL) {
+	    if (xmlAttrGetPsvi(attr) != NULL) {
 		/*
 		* Evaluate the Attribute Value Template.
 		*/
-		valueAVT = xsltEvalAVT(ctxt, attr->psvi, attr->parent);
+		valueAVT = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
+		    xmlAttrGetParent(attr));
 		if (valueAVT == NULL) {
 		    /*
 		    * TODO: Damn, we need an easy mechanism to report
 		    * qualified names!
 		    */
-		    if (attr->ns) {
-			xsltTransformError(ctxt, NULL, attr->parent,
+		    if (xmlAttrGetNs(attr)) {
+			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 			    "Internal error: Failed to evaluate the AVT "
 			    "of attribute '{%s}%s'.\n",
-			    attr->ns->href, attr->name);
+			    xmlNsGetHref(xmlAttrGetNs(attr)),
+			    xmlAttrGetName(attr));
 		    } else {
-			xsltTransformError(ctxt, NULL, attr->parent,
+			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
 			    "Internal error: Failed to evaluate the AVT "
 			    "of attribute '%s'.\n",
-			    attr->name);
+			    xmlAttrGetName(attr));
 		    }
-		    text->content = xmlStrdup(BAD_CAST "");
+		    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
 		    goto error;
 		} else {
-		    text->content = valueAVT;
+		    xmlNodeSetContentRaw(text, valueAVT);
 		}
 	    } else if ((ctxt->internalized) &&
-		(target->doc != NULL) &&
-		(target->doc->dict == ctxt->dict) &&
+		(xmlNodeGetDoc(target) != NULL) &&
+		(xmlNodeGetDoc(target)->dict == ctxt->dict) &&
 		xmlDictOwns(ctxt->dict, value))
 	    {
-		text->content = (xmlChar *) value;
+		xmlNodeSetContentRaw(text, (xmlChar *) value);
 	    } else {
-		text->content = xmlStrdup(value);
+		xmlNodeSetContentRaw(text, xmlStrdup(value));
 	    }
             if ((copy != NULL) && (text != NULL) &&
-                (xmlIsID(copy->doc, copy->parent, copy)))
-                xmlAddID(NULL, copy->doc, text->content, copy);
+                (xmlIsID(xmlAttrGetDoc(copy), xmlAttrGetParent(copy), copy)))
+                xmlAddID(NULL, xmlAttrGetDoc(copy),
+                    xmlNodeGetContentRaw(text), copy);
 	}
 
 next_attribute:
-	attr = attr->next;
+	attr = xmlAttrGetNext(attr);
     } while (attr != NULL);
 
     ctxt->insert = oldInsert;
-    return(target->properties);
+    return(xmlNodeGetProperties(target));
 
 error:
     ctxt->insert = oldInsert;
