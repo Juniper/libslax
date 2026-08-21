@@ -53,7 +53,7 @@ typedef struct pin_istack_s {
     pin_node_t *ps_last_node;	/* Last child we appended (pointer) */
     pin_action_type_t ps_action;	/* Action being taken (PIA_*) */
     pin_rstate_t *ps_statep;	/* Current parser state */
-    pa_atom_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
+    pin_name_id_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
 } pin_istack_t;
 
 /*
