@@ -87,10 +87,10 @@ xsltGetCNsProp(xsltStylesheetPtr style, xmlNodePtr node,
     if (nameSpace == NULL)
         return xmlGetProp(node, name);
 
-    if (node->type == XML_NAMESPACE_DECL)
+    if (xmlNodeGetType(node) == XML_NAMESPACE_DECL)
         return(NULL);
-    if (node->type == XML_ELEMENT_NODE)
-	prop = node->properties;
+    if (xmlNodeGetType(node) == XML_ELEMENT_NODE)
+	prop = xmlNodeGetProperties(node);
     else
 	prop = NULL;
     while (prop != NULL) {
@@ -99,13 +99,13 @@ xsltGetCNsProp(xsltStylesheetPtr style, xmlNodePtr node,
 	 *   - same attribute names
 	 *   - and the attribute carrying that namespace
 	 */
-        if ((xmlStrEqual(prop->name, name)) &&
-	    (((prop->ns == NULL) && (node->ns != NULL) &&
-	      (xmlStrEqual(node->ns->href, nameSpace))) ||
-	     ((prop->ns != NULL) &&
-	      (xmlStrEqual(prop->ns->href, nameSpace))))) {
+        if ((xmlStrEqual(xmlAttrGetName(prop), name)) &&
+	    (((xmlAttrGetNs(prop) == NULL) && (xmlNodeGetNs(node) != NULL) &&
+	      (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)), nameSpace))) ||
+	     ((xmlAttrGetNs(prop) != NULL) &&
+	      (xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(prop)), nameSpace))))) {
 
-	    tmp = xmlNodeListGetString(node->doc, prop->children, 1);
+	    tmp = xmlNodeListGetString(xmlNodeGetDoc(node), xmlAttrGetChildren(prop), 1);
 	    if (tmp == NULL)
 	        ret = xmlDictLookup(style->dict, BAD_CAST "", 0);
 	    else {
@@ -114,28 +114,28 @@ xsltGetCNsProp(xsltStylesheetPtr style, xmlNodePtr node,
 	    }
 	    return ret;
         }
-	prop = prop->next;
+	prop = xmlAttrGetNext(prop);
     }
     tmp = NULL;
     /*
      * Check if there is a default declaration in the internal
      * or external subsets
      */
-    doc =  node->doc;
+    doc =  xmlNodeGetDoc(node);
     if (doc != NULL) {
         if (doc->intSubset != NULL) {
 	    xmlAttributePtr attrDecl;
 
-	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, node->name, name);
+	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, xmlNodeGetName(node), name);
 	    if ((attrDecl == NULL) && (doc->extSubset != NULL))
-		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, node->name, name);
+		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, xmlNodeGetName(node), name);
 
 	    if ((attrDecl != NULL) && (attrDecl->prefix != NULL)) {
 	        /*
 		 * The DTD declaration only allows a prefix search
 		 */
 		ns = xmlSearchNs(doc, node, attrDecl->prefix);
-		if ((ns != NULL) && (xmlStrEqual(ns->href, nameSpace)))
+		if ((ns != NULL) && (xmlStrEqual(xmlNsGetHref(ns), nameSpace)))
 		    return(xmlDictLookup(style->dict,
 		                         attrDecl->defaultValue, -1));
 	    }
@@ -174,10 +174,10 @@ xsltGetNsProp(xmlNodePtr node, const xmlChar *name, const xmlChar *nameSpace) {
     if (nameSpace == NULL)
         return xmlGetProp(node, name);
 
-    if (node->type == XML_NAMESPACE_DECL)
+    if (xmlNodeGetType(node) == XML_NAMESPACE_DECL)
         return(NULL);
-    if (node->type == XML_ELEMENT_NODE)
-	prop = node->properties;
+    if (xmlNodeGetType(node) == XML_ELEMENT_NODE)
+	prop = xmlNodeGetProperties(node);
     else
 	prop = NULL;
     /*
@@ -195,39 +195,39 @@ xsltGetNsProp(xmlNodePtr node, const xmlChar *name, const xmlChar *nameSpace) {
 	 *   - same attribute names
 	 *   - and the attribute carrying that namespace
 	 */
-        if ((xmlStrEqual(prop->name, name)) &&
-	    (((prop->ns == NULL) && (node->ns != NULL) &&
-	      (xmlStrEqual(node->ns->href, nameSpace))) ||
-	     ((prop->ns != NULL) &&
-	      (xmlStrEqual(prop->ns->href, nameSpace))))) {
+        if ((xmlStrEqual(xmlAttrGetName(prop), name)) &&
+	    (((xmlAttrGetNs(prop) == NULL) && (xmlNodeGetNs(node) != NULL) &&
+	      (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)), nameSpace))) ||
+	     ((xmlAttrGetNs(prop) != NULL) &&
+	      (xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(prop)), nameSpace))))) {
 	    xmlChar *ret;
 
-	    ret = xmlNodeListGetString(node->doc, prop->children, 1);
+	    ret = xmlNodeListGetString(xmlNodeGetDoc(node), xmlAttrGetChildren(prop), 1);
 	    if (ret == NULL) return(xmlStrdup((xmlChar *)""));
 	    return(ret);
         }
-	prop = prop->next;
+	prop = xmlAttrGetNext(prop);
     }
 
     /*
      * Check if there is a default declaration in the internal
      * or external subsets
      */
-    doc =  node->doc;
+    doc =  xmlNodeGetDoc(node);
     if (doc != NULL) {
         if (doc->intSubset != NULL) {
 	    xmlAttributePtr attrDecl;
 
-	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, node->name, name);
+	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, xmlNodeGetName(node), name);
 	    if ((attrDecl == NULL) && (doc->extSubset != NULL))
-		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, node->name, name);
+		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, xmlNodeGetName(node), name);
 
 	    if ((attrDecl != NULL) && (attrDecl->prefix != NULL)) {
 	        /*
 		 * The DTD declaration only allows a prefix search
 		 */
 		ns = xmlSearchNs(doc, node, attrDecl->prefix);
-		if ((ns != NULL) && (xmlStrEqual(ns->href, nameSpace)))
+		if ((ns != NULL) && (xmlStrEqual(xmlNsGetHref(ns), nameSpace)))
 		    return(xmlStrdup(attrDecl->defaultValue));
 	    }
 	}
@@ -685,17 +685,17 @@ xsltPrintErrorContext(xsltTransformContextPtr ctxt,
 	node = ctxt->inst;
 
     if (node != NULL)  {
-	if ((node->type == XML_DOCUMENT_NODE) ||
-	    (node->type == XML_HTML_DOCUMENT_NODE)) {
+	if ((xmlNodeGetType(node) == XML_DOCUMENT_NODE) ||
+	    (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE)) {
 	    xmlDocPtr doc = (xmlDocPtr) node;
 
 	    file = doc->URL;
 	} else {
 	    line = xmlGetLineNo(node);
-	    if ((node->doc != NULL) && (node->doc->URL != NULL))
-		file = node->doc->URL;
-	    if (node->name != NULL)
-		name = node->name;
+	    if ((xmlNodeGetDoc(node) != NULL) && (xmlNodeGetDoc(node)->URL != NULL))
+		file = xmlNodeGetDoc(node)->URL;
+	    if (xmlNodeGetName(node) != NULL)
+		name = xmlNodeGetName(node);
 	}
     }
 
@@ -881,7 +881,7 @@ xsltGetQNameURI(xmlNodePtr node, xmlChar ** name)
     }
 
     qname[len] = 0;
-    ns = xmlSearchNs(node->doc, node, qname);
+    ns = xmlSearchNs(xmlNodeGetDoc(node), node, qname);
     if (ns == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 		"%s:%s : no namespace bound to prefix %s\n",
@@ -892,7 +892,7 @@ xsltGetQNameURI(xmlNodePtr node, xmlChar ** name)
     }
     *name = xmlStrdup(&qname[len + 1]);
     xmlFree(qname);
-    return(ns->href);
+    return(xmlNsGetHref(ns));
 }
 
 /**
@@ -949,7 +949,7 @@ xsltGetQNameURI2(xsltStylesheetPtr style, xmlNodePtr node,
     }
 
     qname = xmlStrndup(*name, len);
-    ns = xmlSearchNs(node->doc, node, qname);
+    ns = xmlSearchNs(xmlNodeGetDoc(node), node, qname);
     if (ns == NULL) {
 	if (style) {
 	    xsltTransformError(NULL, style, node,
@@ -967,7 +967,7 @@ xsltGetQNameURI2(xsltStylesheetPtr style, xmlNodePtr node,
     }
     *name = xmlDictLookup(style->dict, (*name)+len+1, -1);
     xmlFree(qname);
-    return(ns->href);
+    return(xmlNsGetHref(ns));
 }
 
 /************************************************************************
@@ -1038,7 +1038,7 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
     int oldNsNr;
     xmlNsPtr *oldNamespaces;
 
-    comp = sort->psvi;
+    comp = xmlNodeGetPsvi(sort);
     if (comp == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 	     "xsl:sort : compilation failed\n");
@@ -1159,7 +1159,7 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
  */
 xmlXPathObjectPtr *
 xsltComputeSortResult(xsltTransformContextPtr ctxt, xmlNodePtr sort) {
-    const xsltStylePreComp *comp = sort->psvi;
+    const xsltStylePreComp *comp = xmlNodeGetPsvi(sort);
     int number = 0;
 
     if (comp != NULL)
@@ -1202,7 +1202,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 	return;
     if (sorts[0] == NULL)
 	return;
-    comp = sorts[0]->psvi;
+    comp = xmlNodeGetPsvi(sorts[0]);
     if (comp == NULL)
 	return;
 
@@ -1213,7 +1213,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
     for (j = 0; j < nbsorts; j++) {
         xmlChar *lang;
 
-	comp = sorts[j]->psvi;
+	comp = xmlNodeGetPsvi(sorts[j]);
 	if ((comp->stype == NULL) && (comp->has_stype != 0)) {
 	    xmlChar *stype =
 		xsltEvalAttrValueTemplate(ctxt, sorts[j],
@@ -1278,7 +1278,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 
     results = resultsTab[0];
 
-    comp = sorts[0]->psvi;
+    comp = xmlNodeGetPsvi(sorts[0]);
     if (results == NULL)
 	goto cleanup;
 
@@ -1325,7 +1325,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 		    while (depth < nbsorts) {
 			if (sorts[depth] == NULL)
 			    break;
-			comp = sorts[depth]->psvi;
+			comp = xmlNodeGetPsvi(sorts[depth]);
 			if (comp == NULL)
 			    break;
 
@@ -1570,9 +1570,9 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
 
     if ((buf == NULL) || (result == NULL) || (style == NULL))
 	return(-1);
-    if ((result->children == NULL) ||
-	((result->children->type == XML_DTD_NODE) &&
-	 (result->children->next == NULL)))
+    if ((xmlDocGetChildren(result) == NULL) ||
+	((xmlNodeGetType(xmlDocGetChildren(result)) == XML_DTD_NODE) &&
+	 (xmlNodeGetNext(xmlDocGetChildren(result)) == NULL)))
 	return(0);
 
     if ((style->methodURI != NULL) &&
@@ -1589,7 +1589,7 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
     XSLT_GET_IMPORT_PTR(encoding, style, encoding)
     XSLT_GET_IMPORT_INT(indent, style, indent);
 
-    if ((method == NULL) && (result->type == XML_HTML_DOCUMENT_NODE))
+    if ((method == NULL) && (xmlDocGetType(result) == XML_HTML_DOCUMENT_NODE))
 	method = (const xmlChar *) "html";
 
     if ((method != NULL) &&
@@ -1617,37 +1617,37 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
 	       (xmlStrEqual(method, (const xmlChar *) "text"))) {
 	xmlNodePtr cur;
 
-	cur = result->children;
+	cur = xmlDocGetChildren(result);
 	while (cur != NULL) {
-	    if (cur->type == XML_TEXT_NODE)
-		xmlOutputBufferWriteString(buf, (const char *) cur->content);
+	    if (xmlNodeGetType(cur) == XML_TEXT_NODE)
+		xmlOutputBufferWriteString(buf, (const char *) xmlNodeGetContentRaw(cur));
 
 	    /*
 	     * Skip to next node
 	     */
-	    if (cur->children != NULL) {
-		if ((cur->children->type != XML_ENTITY_DECL) &&
-		    (cur->children->type != XML_ENTITY_REF_NODE) &&
-		    (cur->children->type != XML_ENTITY_NODE)) {
-		    cur = cur->children;
+	    if (xmlNodeGetChildren(cur) != NULL) {
+		if ((xmlNodeGetType(xmlNodeGetChildren(cur)) != XML_ENTITY_DECL) &&
+		    (xmlNodeGetType(xmlNodeGetChildren(cur)) != XML_ENTITY_REF_NODE) &&
+		    (xmlNodeGetType(xmlNodeGetChildren(cur)) != XML_ENTITY_NODE)) {
+		    cur = xmlNodeGetChildren(cur);
 		    continue;
 		}
 	    }
-	    if (cur->next != NULL) {
-		cur = cur->next;
+	    if (xmlNodeGetNext(cur) != NULL) {
+		cur = xmlNodeGetNext(cur);
 		continue;
 	    }
 
 	    do {
-		cur = cur->parent;
+		cur = xmlNodeGetParent(cur);
 		if (cur == NULL)
 		    break;
 		if (cur == (xmlNodePtr) style->doc) {
 		    cur = NULL;
 		    break;
 		}
-		if (cur->next != NULL) {
-		    cur = cur->next;
+		if (xmlNodeGetNext(cur) != NULL) {
+		    cur = xmlNodeGetNext(cur);
 		    break;
 		}
 	    } while (cur != NULL);
@@ -1694,8 +1694,8 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
 	    }
 	    xmlOutputBufferWriteString(buf, "?>\n");
 	}
-	if (result->children != NULL) {
-            xmlNodePtr children = result->children;
+	if (xmlDocGetChildren(result) != NULL) {
+            xmlNodePtr children = xmlDocGetChildren(result);
 	    xmlNodePtr child = children;
 
             /*
@@ -1703,21 +1703,21 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
              * result->children in xmlGetIntSubset called by
              * xmlNodeDumpOutput.
              */
-            result->children = NULL;
+            xmlDocSetChildren(result, NULL);
 
 	    while (child != NULL) {
 		xmlNodeDumpOutput(buf, result, child, 0, (indent == 1),
 			          (const char *) encoding);
-		if (indent && ((child->type == XML_DTD_NODE) ||
-		    ((child->type == XML_COMMENT_NODE) &&
-		     (child->next != NULL))))
+		if (indent && ((xmlNodeGetType(child) == XML_DTD_NODE) ||
+		    ((xmlNodeGetType(child) == XML_COMMENT_NODE) &&
+		     (xmlNodeGetNext(child) != NULL))))
 		    xmlOutputBufferWriteString(buf, "\n");
-		child = child->next;
+		child = xmlNodeGetNext(child);
 	    }
 	    if (indent)
 			xmlOutputBufferWriteString(buf, "\n");
 
-            result->children = children;
+            xmlDocSetChildren(result, children);
 	}
 	xmlOutputBufferFlush(buf);
     }
@@ -1745,7 +1745,7 @@ xsltSaveResultToFilename(const char *URL, xmlDocPtr result,
 
     if ((URL == NULL) || (result == NULL) || (style == NULL))
 	return(-1);
-    if (result->children == NULL)
+    if (xmlDocGetChildren(result) == NULL)
 	return(0);
 
     XSLT_GET_IMPORT_PTR(encoding, style, encoding)
@@ -1787,7 +1787,7 @@ xsltSaveResultToFile(FILE *file, xmlDocPtr result, xsltStylesheetPtr style) {
 
     if ((file == NULL) || (result == NULL) || (style == NULL))
 	return(-1);
-    if (result->children == NULL)
+    if (xmlDocGetChildren(result) == NULL)
 	return(0);
 
     XSLT_GET_IMPORT_PTR(encoding, style, encoding)
@@ -1830,7 +1830,7 @@ xsltSaveResultToFd(int fd, xmlDocPtr result, xsltStylesheetPtr style) {
 
     if ((fd < 0) || (result == NULL) || (style == NULL))
 	return(-1);
-    if (result->children == NULL)
+    if (xmlDocGetChildren(result) == NULL)
 	return(0);
 
     XSLT_GET_IMPORT_PTR(encoding, style, encoding)
@@ -1872,7 +1872,7 @@ xsltSaveResultToString(xmlChar **doc_txt_ptr, int * doc_txt_len,
 
     *doc_txt_ptr = NULL;
     *doc_txt_len = 0;
-    if (result->children == NULL)
+    if (xmlDocGetChildren(result) == NULL)
 	return(0);
 
     XSLT_GET_IMPORT_PTR(encoding, style, encoding)
@@ -1926,20 +1926,20 @@ xsltGetSourceNodeFlags(xmlNodePtr node) {
      * - 'xmlAttributeType atype' member in struct _xmlAttr
      * - 'unsigned short extra' member in struct _xmlNode
      */
-    switch (node->type) {
+    switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
             return ((xmlDocPtr) node)->properties >> 27;
 
         case XML_ATTRIBUTE_NODE:
-            return ((xmlAttrPtr) node)->atype >> 27;
+            return xmlAttrGetAtype((xmlAttrPtr) node) >> 27;
 
         case XML_ELEMENT_NODE:
         case XML_TEXT_NODE:
         case XML_CDATA_SECTION_NODE:
         case XML_PI_NODE:
         case XML_COMMENT_NODE:
-            return node->extra >> 12;
+            return xmlNodeGetExtra(node) >> 12;
 
         default:
             return 0;
@@ -1958,17 +1958,18 @@ xsltGetSourceNodeFlags(xmlNodePtr node) {
 int
 xsltSetSourceNodeFlags(xsltTransformContextPtr ctxt, xmlNodePtr node,
                        int flags) {
-    if (node->doc == ctxt->initialContextDoc)
+    if (xmlNodeGetDoc(node) == ctxt->initialContextDoc)
         ctxt->sourceDocDirty = 1;
 
-    switch (node->type) {
+    switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
             ((xmlDocPtr) node)->properties |= flags << 27;
             return 0;
 
         case XML_ATTRIBUTE_NODE:
-            ((xmlAttrPtr) node)->atype |= flags << 27;
+            xmlAttrSetAtype((xmlAttrPtr) node,
+                             xmlAttrGetAtype((xmlAttrPtr) node) | (flags << 27));
             return 0;
 
         case XML_ELEMENT_NODE:
@@ -1976,7 +1977,7 @@ xsltSetSourceNodeFlags(xsltTransformContextPtr ctxt, xmlNodePtr node,
         case XML_CDATA_SECTION_NODE:
         case XML_PI_NODE:
         case XML_COMMENT_NODE:
-            node->extra |= flags << 12;
+            xmlNodeSetExtra(node, xmlNodeGetExtra(node) | (flags << 12));
             return 0;
 
         default:
@@ -1995,14 +1996,15 @@ xsltSetSourceNodeFlags(xsltTransformContextPtr ctxt, xmlNodePtr node,
  */
 int
 xsltClearSourceNodeFlags(xmlNodePtr node, int flags) {
-    switch (node->type) {
+    switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
             ((xmlDocPtr) node)->properties &= ~(flags << 27);
             return 0;
 
         case XML_ATTRIBUTE_NODE:
-            ((xmlAttrPtr) node)->atype &= ~(flags << 27);
+            xmlAttrSetAtype((xmlAttrPtr) node,
+                             xmlAttrGetAtype((xmlAttrPtr) node) & ~(flags << 27));
             return 0;
 
         case XML_ELEMENT_NODE:
@@ -2010,7 +2012,7 @@ xsltClearSourceNodeFlags(xmlNodePtr node, int flags) {
         case XML_CDATA_SECTION_NODE:
         case XML_PI_NODE:
         case XML_COMMENT_NODE:
-            node->extra &= ~(flags << 12);
+            xmlNodeSetExtra(node, xmlNodeGetExtra(node) & ~(flags << 12));
             return 0;
 
         default:
@@ -2026,7 +2028,7 @@ xsltClearSourceNodeFlags(xmlNodePtr node, int flags) {
  */
 void **
 xsltGetPSVIPtr(xmlNodePtr cur) {
-    switch (cur->type) {
+    switch (xmlNodeGetType(cur)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
             return &((xmlDocPtr) cur)->psvi;
@@ -2401,7 +2403,7 @@ xsltSaveProfiling(xsltTransformContextPtr ctxt, FILE *output) {
         templ1 = templates[i];
         fprintf(output, "[%d] %s (%s:%d)\n",
             i, templ1->name?(char *)templ1->name:pretty_templ_match(templ1),
-            templ1->style->doc->URL,templ1->elem->line);
+            templ1->style->doc->URL, xmlNodeGetLine(templ1->elem));
     }
 
     fprintf(output, "\f\n");
