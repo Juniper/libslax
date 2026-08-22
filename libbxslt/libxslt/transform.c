@@ -82,7 +82,7 @@ int xsltMaxVars = 15000;
 #endif
 
 #define IS_BLANK_NODE(n)						\
-    (((n)->type == XML_TEXT_NODE) && (xsltIsBlank((n)->content)))
+    ((xmlNodeGetType(n) == XML_TEXT_NODE) && (xsltIsBlank(xmlNodeGetContentRaw(n))))
 
 
 /*
