@@ -40,6 +40,12 @@ xmlNodeGetType (const xmlNodePtr node)
     return node->type;
 }
 
+static inline void
+xmlNodeSetType (xmlNodePtr node, xmlElementType type)
+{
+    node->type = type;
+}
+
 static inline const xmlChar *
 xmlNodeGetName (const xmlNodePtr node)
 {
@@ -244,6 +250,12 @@ static inline xmlNsType
 xmlNsGetType (const xmlNsPtr ns)
 {
     return ns->type;
+}
+
+static inline void
+xmlNsSetType (xmlNsPtr ns, xmlNsType type)
+{
+    ns->type = type;
 }
 
 static inline const xmlChar *
@@ -527,6 +539,18 @@ static inline void
 xmlDocSetDoc (xmlDocPtr doc, xmlDocPtr self)
 {
     doc->doc = self;
+}
+
+static inline xmlNsPtr
+xmlDocGetOldNs (const xmlDocPtr doc)
+{
+    return doc->oldNs;
+}
+
+static inline void
+xmlDocSetOldNs (xmlDocPtr doc, xmlNsPtr oldNs)
+{
+    doc->oldNs = oldNs;
 }
 
 /* ----------------------------------------------------------------------
