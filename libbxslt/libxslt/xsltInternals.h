@@ -35,8 +35,8 @@ extern "C" {
  * check if the argument is a text node
  */
 #define XSLT_IS_TEXT_NODE(n) ((n != NULL) && \
-    (((n)->type == XML_TEXT_NODE) || \
-     ((n)->type == XML_CDATA_SECTION_NODE)))
+    ((xmlNodeGetType(n) == XML_TEXT_NODE) || \
+     (xmlNodeGetType(n) == XML_CDATA_SECTION_NODE)))
 
 
 /**
@@ -45,7 +45,7 @@ extern "C" {
  * internal macro to set up tree fragments
  */
 #define XSLT_MARK_RES_TREE_FRAG(n) \
-    (n)->name = (char *) xmlStrdup(BAD_CAST " fake node libxslt");
+    xmlNodeSetNameRaw((n), xmlStrdup(BAD_CAST " fake node libxslt"));
 
 /**
  * XSLT_IS_RES_TREE_FRAG:
@@ -53,8 +53,8 @@ extern "C" {
  * internal macro to test tree fragments
  */
 #define XSLT_IS_RES_TREE_FRAG(n) \
-    ((n != NULL) && ((n)->type == XML_DOCUMENT_NODE) && \
-     ((n)->name != NULL) && ((n)->name[0] == ' '))
+    ((n != NULL) && (xmlNodeGetType(n) == XML_DOCUMENT_NODE) && \
+     (xmlNodeGetName(n) != NULL) && (xmlNodeGetName(n)[0] == ' '))
 
 /**
  * XSLT_REFACTORED_KEYCOMP:
@@ -114,8 +114,8 @@ extern const xmlChar *xsltConstNamespaceNameXSLT;
  * quick test to detect XSLT elements
  */
 #define IS_XSLT_ELEM_FAST(n) \
-    (((n) != NULL) && ((n)->ns != NULL) && \
-    ((n)->ns->href == xsltConstNamespaceNameXSLT))
+    (((n) != NULL) && (xmlNodeGetNs(n) != NULL) && \
+    (xmlNsGetHref(xmlNodeGetNs(n)) == xsltConstNamespaceNameXSLT))
 
 /**
  * IS_XSLT_ATTR_FAST:
@@ -123,8 +123,8 @@ extern const xmlChar *xsltConstNamespaceNameXSLT;
  * quick test to detect XSLT attributes
  */
 #define IS_XSLT_ATTR_FAST(a) \
-    (((a) != NULL) && ((a)->ns != NULL) && \
-    ((a)->ns->href == xsltConstNamespaceNameXSLT))
+    (((a) != NULL) && (xmlAttrGetNs(a) != NULL) && \
+    (xmlNsGetHref(xmlAttrGetNs(a)) == xsltConstNamespaceNameXSLT))
 
 /**
  * XSLT_HAS_INTERNAL_NSMAP:
@@ -151,8 +151,8 @@ extern const xmlChar *xsltConstNamespaceNameXSLT;
  * quick check whether this is an xslt element
  */
 #define IS_XSLT_ELEM_FAST(n) \
-    (((n) != NULL) && ((n)->ns != NULL) && \
-     (xmlStrEqual((n)->ns->href, XSLT_NAMESPACE)))
+    (((n) != NULL) && (xmlNodeGetNs(n) != NULL) && \
+     (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(n)), XSLT_NAMESPACE)))
 
 /**
  * IS_XSLT_ATTR_FAST:
@@ -160,8 +160,8 @@ extern const xmlChar *xsltConstNamespaceNameXSLT;
  * quick check for xslt namespace attribute
  */
 #define IS_XSLT_ATTR_FAST(a) \
-    (((a) != NULL) && ((a)->ns != NULL) && \
-     (xmlStrEqual((a)->ns->href, XSLT_NAMESPACE)))
+    (((a) != NULL) && (xmlAttrGetNs(a) != NULL) && \
+     (xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(a)), XSLT_NAMESPACE)))
 
 
 #endif /* XSLT_REFACTORED_XSLT_NSCOMP */
