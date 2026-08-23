@@ -45,7 +45,7 @@ extern "C" {
  * internal macro to set up tree fragments
  */
 #define XSLT_MARK_RES_TREE_FRAG(n) \
-    xmlNodeSetNameRaw((n), xmlStrdup(BAD_CAST " fake node libxslt"));
+    xmlNodeSetNameRaw((xmlNodePtr) (n), xmlStrdup(BAD_CAST " fake node libxslt"));
 
 /**
  * XSLT_IS_RES_TREE_FRAG:
@@ -53,8 +53,9 @@ extern "C" {
  * internal macro to test tree fragments
  */
 #define XSLT_IS_RES_TREE_FRAG(n) \
-    ((n != NULL) && (xmlNodeGetType(n) == XML_DOCUMENT_NODE) && \
-     (xmlNodeGetName(n) != NULL) && (xmlNodeGetName(n)[0] == ' '))
+    ((n != NULL) && (xmlNodeGetType((xmlNodePtr) (n)) == XML_DOCUMENT_NODE) && \
+     (xmlNodeGetName((xmlNodePtr) (n)) != NULL) && \
+     (xmlNodeGetName((xmlNodePtr) (n))[0] == ' '))
 
 /**
  * XSLT_REFACTORED_KEYCOMP:
