@@ -49,8 +49,9 @@ extern "C" {
  * Checks that the element pertains to XSLT namespace.
  */
 #define IS_XSLT_ELEM(n)							\
-    (((n) != NULL) && ((n)->type == XML_ELEMENT_NODE) &&                \
-     ((n)->ns != NULL) && (xmlStrEqual((n)->ns->href, XSLT_NAMESPACE)))
+    (((n) != NULL) && (xmlNodeGetType(n) == XML_ELEMENT_NODE) &&        \
+     (xmlNodeGetNs(n) != NULL) &&					\
+     (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(n)), XSLT_NAMESPACE)))
 
 /**
  * IS_XSLT_NAME:
@@ -58,7 +59,7 @@ extern "C" {
  * Checks the value of an element in XSLT namespace.
  */
 #define IS_XSLT_NAME(n, val)						\
-    (xmlStrEqual((n)->name, (const xmlChar *) (val)))
+    (xmlStrEqual(xmlNodeGetName(n), (const xmlChar *) (val)))
 
 /**
  * IS_XSLT_REAL_NODE:
@@ -67,14 +68,14 @@ extern "C" {
  */
 #define IS_XSLT_REAL_NODE(n)						\
     (((n) != NULL) &&							\
-     (((n)->type == XML_ELEMENT_NODE) ||				\
-      ((n)->type == XML_TEXT_NODE) ||					\
-      ((n)->type == XML_CDATA_SECTION_NODE) ||				\
-      ((n)->type == XML_ATTRIBUTE_NODE) ||				\
-      ((n)->type == XML_DOCUMENT_NODE) ||				\
-      ((n)->type == XML_HTML_DOCUMENT_NODE) ||				\
-      ((n)->type == XML_COMMENT_NODE) ||				\
-      ((n)->type == XML_PI_NODE)))
+     ((xmlNodeGetType(n) == XML_ELEMENT_NODE) ||			\
+      (xmlNodeGetType(n) == XML_TEXT_NODE) ||				\
+      (xmlNodeGetType(n) == XML_CDATA_SECTION_NODE) ||			\
+      (xmlNodeGetType(n) == XML_ATTRIBUTE_NODE) ||			\
+      (xmlNodeGetType(n) == XML_DOCUMENT_NODE) ||			\
+      (xmlNodeGetType(n) == XML_HTML_DOCUMENT_NODE) ||			\
+      (xmlNodeGetType(n) == XML_COMMENT_NODE) ||			\
+      (xmlNodeGetType(n) == XML_PI_NODE)))
 
 /*
  * Our own version of namespaced attributes lookup.
