@@ -66,9 +66,14 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 
     bitmaps = pa_bitmap_open(pmp, pin_mk_name(namebuf, name, "rulebook.bitmaps"));
 
-    if (infop == NULL || rules == NULL || states == NULL || bitmaps == NULL)
+    pa_fixed_t *body_instrs =
+	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.body"),
+		      PIN_SHIFT, sizeof(pin_body_instr_t), PIN_MAX_ATOMS);
+
+    if (infop == NULL || rules == NULL || states == NULL
+	    || bitmaps == NULL || body_instrs == NULL)
 	return NULL;
-    
+
     pin_rulebook_t *prbp = calloc(1, sizeof(*prbp));
 
     if (prbp) {
@@ -77,6 +82,7 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	prbp->prb_rules = rules;
 	prbp->prb_states = states;
 	prbp->prb_bitmaps = bitmaps;
+	prbp->prb_body_instrs = body_instrs;
 	prbp->prb_script = script;
 
 	/*
@@ -108,6 +114,7 @@ static const char *pin_action_names[] = {
     "emit",			/* PIA_EMIT */
     "return",			/* PIA_RETURN */
     "literal",			/* PIA_LITERAL */
+    "wrap",			/* PIA_WRAP */
     NULL
 };
 
@@ -245,6 +252,114 @@ pin_rulebook_add_foreach_literal_state (pin_rulebook_t *prbp,
     }
 
     return sid;
+}
+
+pin_rstate_id_t
+pin_rulebook_add_foreach_wrap_state (pin_rulebook_t *prbp,
+				     const char *select_name,
+				     const char *wrap_tag,
+				     const char *pre_tag,
+				     const char *pre_text,
+				     pin_action_type_t default_action)
+{
+    pin_rstate_id_t sid;
+    pin_rstate_t *statep = pin_rstate_alloc(prbp, &sid);
+    if (statep == NULL)
+	return pin_rstate_id_null_atom();
+
+    bzero(statep, sizeof(*statep));
+
+    if (default_action != PIA_NONE) {
+	pin_rule_id_t def_rid;
+	pin_rule_t *def_prp = pin_rule_alloc(prbp, &def_rid);
+	if (def_prp) {
+	    bzero(def_prp, sizeof(*def_prp));
+	    def_prp->pr_flags = PRF_MATCH_ALL;
+	    def_prp->pr_action = default_action;
+	    statep->prbs_default_rule = def_rid;
+	}
+    }
+
+    pin_name_id_t name_id = pin_namepool_atom(prbp->prb_workspace, select_name, TRUE);
+    if (!pin_name_id_is_null(name_id)) {
+	pin_rule_id_t rid;
+	pin_rule_t *prp = pin_rule_alloc(prbp, &rid);
+	if (prp) {
+	    bzero(prp, sizeof(*prp));
+	    prp->pr_action = PIA_WRAP;
+	    prp->pr_use_tag = wrap_tag
+		? pin_namepool_atom(prbp->prb_workspace, wrap_tag, TRUE)
+		: pin_name_id_null_atom();
+	    prp->pr_pre_tag = pre_tag
+		? pin_namepool_atom(prbp->prb_workspace, pre_tag, TRUE)
+		: pin_name_id_null_atom();
+	    prp->pr_literal_text = pre_text
+		? pin_namepool_atom(prbp->prb_workspace, pre_text, TRUE)
+		: pin_name_id_null_atom();
+	    prp->pr_bitmap = pa_bitmap_alloc(prbp->prb_bitmaps);
+	    if (!pa_bitmap_is_null(prp->pr_bitmap))
+		pa_bitmap_set(prbp->prb_bitmaps, prp->pr_bitmap,
+			      pin_name_id_atom_of(name_id));
+	    statep->prbs_first_rule = rid;
+	}
+    }
+
+    return sid;
+}
+
+pin_rstate_id_t
+pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
+				     const char *select_name,
+				     pin_body_instr_id_t body_head,
+				     pin_body_retain_t retain,
+				     pin_action_type_t default_action)
+{
+    pin_rstate_id_t sid;
+    pin_rstate_t *statep = pin_rstate_alloc(prbp, &sid);
+    if (statep == NULL)
+	return pin_rstate_id_null_atom();
+
+    bzero(statep, sizeof(*statep));
+
+    if (default_action != PIA_NONE) {
+	pin_rule_id_t def_rid;
+	pin_rule_t *def_prp = pin_rule_alloc(prbp, &def_rid);
+	if (def_prp) {
+	    bzero(def_prp, sizeof(*def_prp));
+	    def_prp->pr_flags = PRF_MATCH_ALL;
+	    def_prp->pr_action = default_action;
+	    statep->prbs_default_rule = def_rid;
+	}
+    }
+
+    pin_name_id_t name_id = pin_namepool_atom(prbp->prb_workspace, select_name, TRUE);
+    if (!pin_name_id_is_null(name_id)) {
+	pin_rule_id_t rid;
+	pin_rule_t *prp = pin_rule_alloc(prbp, &rid);
+	if (prp) {
+	    bzero(prp, sizeof(*prp));
+	    prp->pr_body = body_head;
+	    prp->pr_body_retain = retain;
+	    prp->pr_bitmap = pa_bitmap_alloc(prbp->prb_bitmaps);
+	    if (!pa_bitmap_is_null(prp->pr_bitmap))
+		pa_bitmap_set(prbp->prb_bitmaps, prp->pr_bitmap,
+			      pin_name_id_atom_of(name_id));
+	    statep->prbs_first_rule = rid;
+	}
+    }
+
+    return sid;
+}
+
+pin_rulebook_t *
+pin_rulebook_open (const char *name UNUSED)
+{
+    return NULL;
+}
+
+void
+pin_rulebook_close (pin_rulebook_t *rules UNUSED)
+{
 }
 
 /*
