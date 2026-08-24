@@ -27,6 +27,7 @@
 #include <parrotdb/pafixed.h>
 #include <parrotdb/pabitmap.h>
 #include <libpin/pin_node.h>
+#include <libpin/pin_body.h>
 
 typedef uint8_t pin_action_type_t;
 
@@ -39,6 +40,7 @@ typedef uint8_t pin_action_type_t;
 #define PIA_EMIT	5	/* Emit as output */
 #define PIA_RETURN	6	/* Force return from pin_parse() */
 #define PIA_LITERAL	7	/* Emit a static literal node, discard matched element */
+#define PIA_WRAP	8	/* Wrap matched element in a synthetic outer tag */
 
 /* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
 #include "gen/pin_rule_id_gen.h"
@@ -56,7 +58,10 @@ typedef struct pin_rule_s {
     pin_name_id_t pr_mode;	/* Mode (namepool atom; null = default mode) */
     pin_name_id_t pr_use_tag;	/* For PIA_LITERAL: namepool atom of literal element name */
     pin_rstate_id_t pr_new_state;/* New state (in the rulebook) to enter */
-    pin_name_id_t pr_literal_text; /* For PIA_LITERAL: namepool atom of literal text content */
+    pin_name_id_t pr_literal_text; /* For PIA_LITERAL/PIA_WRAP: text of pre-emit literal content */
+    pin_name_id_t pr_pre_tag;	/* For PIA_WRAP: pre-emit element name (before the wrap) */
+    pin_body_instr_id_t pr_body; /* First body instruction; null = use pr_action */
+    pin_body_retain_t pr_body_retain; /* Retention class for the matched element */
 } pin_rule_t;
 
 /* Flags for pr_flags */
@@ -89,6 +94,7 @@ typedef struct pin_rulebook_s {
     pa_fixed_t *prb_rules;	  /* List of rules (pin_rule_t) */
     pa_fixed_t *prb_states;	  /* List of states (pin_rule_state_t) */
     pa_bitmap_t *prb_bitmaps;	  /* Pool of bitmaps */
+    pa_fixed_t *prb_body_instrs;  /* Pool of body instructions (pin_body_instr_t) */
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -131,11 +137,39 @@ pin_rulebook_add_foreach_literal_state (pin_rulebook_t *prbp,
 					const char *literal_text,
 					pin_action_type_t default_action);
 
+/*
+ * Create a foreach state where the selected element is wrapped in a new
+ * outer tag (PIA_WRAP).  The matched element is saved as a child of the
+ * wrapper.  Optionally, a static pre-emit literal (<pre_tag>pre_text</pre_tag>)
+ * is emitted before the wrapper for each matched element.
+ */
+pin_rstate_id_t
+pin_rulebook_add_foreach_wrap_state (pin_rulebook_t *prbp,
+				     const char *select_name,
+				     const char *wrap_tag,
+				     const char *pre_tag,
+				     const char *pre_text,
+				     pin_action_type_t default_action);
+
+/*
+ * Create a foreach state where the selected element is processed by a
+ * compiled body instruction list.  body_head is the first instruction
+ * (from pin_slax_compile_body); retain describes how much of the matched
+ * element must be buffered.
+ */
+pin_rstate_id_t
+pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
+				     const char *select_name,
+				     pin_body_instr_id_t body_head,
+				     pin_body_retain_t retain,
+				     pin_action_type_t default_action);
+
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
+#include "gen/pin_body_instr_id_funcs_gen.h"
 
 /* Aliases: pin_rulebook_rule(prbp, rid) and pin_rulebook_state(prbp, sid) */
 #define pin_rulebook_rule	pin_rule_addr
