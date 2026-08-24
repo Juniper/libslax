@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<store>
+  <catalog>
+    <header>Ignore this header</header>
+    <item>First item</item>
+    <item>Second item</item>
+    <extra>Extra content</extra>
+  </catalog>
+  <inventory>
+    <product>Widget A</product>
+    <product>Widget B</product>
+  </inventory>
+  <section>
+    <entry>Entry 1</entry>
+    <entry>Entry 2</entry>
+  </section>
+  <other>Other store content</other>
+</store>
