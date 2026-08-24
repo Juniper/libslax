@@ -1,0 +1,7 @@
+compiled 5 patterns (mode: (default))
+<top>
+   <keep>keep me</keep>
+   <raw>raw content (html mode)</raw>
+   <binary>binary data (text mode)</binary>
+   <encoded>encoded data (text mode)</encoded>
+</top>
