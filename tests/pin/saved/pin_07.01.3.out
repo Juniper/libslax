@@ -1,0 +1,8 @@
+compiled 5 patterns (mode: html)
+<top>
+   <keep>keep me</keep>
+   <skip>skip me (default mode)</skip>
+   <ignore>ignore me (default mode)</ignore>
+   <binary>binary data (text mode)</binary>
+   <encoded>encoded data (text mode)</encoded>
+</top>
