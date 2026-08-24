@@ -16,6 +16,7 @@
 
 #include <libpin/pin_common.h>
 #include <libpin/pin_node.h>
+#include <libpin/pin_body.h>
 
 #define PIN_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
 #define PIN_SHIFT	12	/* Bit shift for packed array paging */
@@ -66,6 +67,7 @@ typedef struct pin_insert_s {
     pin_depth_t pin_maxdepth;	/* Maximum depth seen */
     unsigned pin_relation;	/* How to handle the next insertion */
     pin_istack_t pin_stack[PIN_DEPTH_MAX]; /* Insertion points */
+    pin_body_exec_t pin_body;	/* Body FSM execution state */
 } pin_insert_t;
 
 /* Values for pin_relation */
