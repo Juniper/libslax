@@ -28,6 +28,7 @@ lib_LTLIBRARIES = libpin.la
 libpinincdir = ${includedir}/libpin
 
 libpininc_HEADERS = \
+    pin_body.h \
     pin_common.h \
     pin_filter.h \
     pin_nodeset.h \
@@ -65,12 +66,14 @@ GENERATED = \
     gen/pin_rstate_id_gen.h \
     gen/pin_node_id_gen.h \
     gen/pin_ns_map_id_gen.h \
+    gen/pin_body_instr_id_gen.h \
     gen/pin_rule_id_funcs_gen.h \
     gen/pin_rstate_id_funcs_gen.h \
     gen/pin_node_gen.h \
     gen/pin_ns_map_gen.h \
     gen/pin_nodeset_chunk_gen.h \
-    gen/pin_nodeset_info_gen.h
+    gen/pin_nodeset_info_gen.h \
+    gen/pin_body_instr_id_funcs_gen.h
 
 BUILT_SOURCES = ${GENERATED}
 
