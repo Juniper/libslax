@@ -1,0 +1,8 @@
+compiled 2 patterns
+<store>
+   <catalog>
+      <item>First item</item>
+      <item>Second item</item>
+   </catalog>
+   <other>Other store content</other>
+</store>
