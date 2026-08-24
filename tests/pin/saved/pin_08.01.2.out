@@ -1,8 +1,26 @@
-compiled 2 patterns
+compiled 4 patterns
 <store>
    <catalog>
       <item>First item</item>
       <item>Second item</item>
    </catalog>
+   <inventory>
+      <new-node>foo</new-node>
+      <newer-node>
+         <product>Widget A</product>
+      </newer-node>
+      <new-node>foo</new-node>
+      <newer-node>
+         <product>Widget B</product>
+      </newer-node>
+   </inventory>
+   <section>
+      <my-entry>
+         <entry>Entry 1</entry>
+      </my-entry>
+      <my-entry>
+         <entry>Entry 2</entry>
+      </my-entry>
+   </section>
    <other>Other store content</other>
 </store>
