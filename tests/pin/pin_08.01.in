@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+# quiet modes clean
+# quiet dump clean xml pin_08.01.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="catalog">
+    <xsl:for-each select="item">
+    </xsl:for-each>
+  </xsl:template>
+  <xsl:template match="inventory">
+    <xsl:for-each select="product">
+      <new-node>foo</new-node>
+      <newer-node>
+         <xsl:copy-of select="."/>
+      </newer-node>
+    </xsl:for-each>
+  </xsl:template>
+  <xsl:template match="section">
+    <xsl:for-each select="entry">
+      <my-entry>
+        <xsl:copy-of select="."/>
+      </my-entry>
+    </xsl:for-each>
+  </xsl:template>
+  <xsl:template match="header"/>
+</xsl:stylesheet>
