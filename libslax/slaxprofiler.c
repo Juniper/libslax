@@ -211,7 +211,7 @@ void
 slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
 {
     slax_prof_t *spp = slax_profile;
-    const char *filename = (const char *) spp->sp_docp->URL;
+    const char *filename = (const char *) xmlDocGetURL(spp->sp_docp);
     FILE *fp = NULL;
     unsigned num = 0, count;
     char line[BUFSIZ];

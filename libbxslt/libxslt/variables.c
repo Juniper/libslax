@@ -93,8 +93,8 @@ xsltCreateRVT(xsltTransformContextPtr ctxt)
     container = xmlNewDoc(NULL);
     if (container == NULL)
 	return(NULL);
-    container->dict = ctxt->dict;
-    xmlDictReference(container->dict);
+    xmlDocSetDict(container, ctxt->dict);
+    xmlDictReference(xmlDocGetDict(container));
     XSLT_MARK_RES_TREE_FRAG(container);
     xmlDocSetDoc(container, container);
     xmlDocSetParent(container, NULL);
@@ -123,7 +123,7 @@ xsltRegisterTmpRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 	return(-1);
 
     xmlDocSetPrev(RVT, NULL);
-    RVT->compression = XSLT_RVT_LOCAL;
+    xmlDocSetCompression(RVT, XSLT_RVT_LOCAL);
 
     /*
     * We'll restrict the lifetime of user-created fragments
@@ -163,7 +163,7 @@ xsltRegisterLocalRVT(xsltTransformContextPtr ctxt,
 	return(-1);
 
     xmlDocSetPrev(RVT, NULL);
-    RVT->compression = XSLT_RVT_LOCAL;
+    xmlDocSetCompression(RVT, XSLT_RVT_LOCAL);
 
     /*
     * When evaluating "select" expressions of xsl:variable
@@ -302,7 +302,7 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 	    return(-1);
 	}
 	if (xmlDocGetName(doc) && (xmlDocGetName(doc)[0] == ' ') &&
-            doc->compression != XSLT_RVT_GLOBAL) {
+            xmlDocGetCompression(doc) != XSLT_RVT_GLOBAL) {
 	    /*
 	    * This is a result tree fragment.
 	    * We store ownership information in the @compression field.
@@ -313,25 +313,25 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
             XSLT_TRACE(ctxt, XSLT_TRACE_VARIABLES,
                        xsltGenericDebug(xsltGenericDebugContext,
                        "Flagging RVT %p: %d -> %d\n",
-                       (void *) doc, doc->compression, val));
+                       (void *) doc, xmlDocGetCompression(doc), val));
 #endif
 
             if (val == XSLT_RVT_LOCAL) {
-                if (doc->compression == XSLT_RVT_FUNC_RESULT)
-                    doc->compression = XSLT_RVT_LOCAL;
+                if (xmlDocGetCompression(doc) == XSLT_RVT_FUNC_RESULT)
+                    xmlDocSetCompression(doc, XSLT_RVT_LOCAL);
             } else if (val == XSLT_RVT_GLOBAL) {
-                if (doc->compression != XSLT_RVT_LOCAL) {
+                if (xmlDocGetCompression(doc) != XSLT_RVT_LOCAL) {
 		    xmlGenericError(xmlGenericErrorContext,
                             "xsltFlagRVTs: Invalid transition %d => GLOBAL\n",
-                            doc->compression);
-                    doc->compression = XSLT_RVT_GLOBAL;
+                            xmlDocGetCompression(doc));
+                    xmlDocSetCompression(doc, XSLT_RVT_GLOBAL);
                     return(-1);
                 }
 
                 /* Will be registered as persistant in xsltReleaseLocalRVTs. */
-                doc->compression = XSLT_RVT_GLOBAL;
+                xmlDocSetCompression(doc, XSLT_RVT_GLOBAL);
             } else if (val == XSLT_RVT_FUNC_RESULT) {
-	        doc->compression = val;
+	        xmlDocSetCompression(doc, val);
             }
 	}
     }
@@ -371,15 +371,15 @@ xsltReleaseRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 	    xmlDocSetChildren(RVT, NULL);
 	    xmlDocSetLast(RVT, NULL);
 	}
-	if (RVT->ids != NULL) {
-	    xmlFreeIDTable((xmlIDTablePtr) RVT->ids);
-	    RVT->ids = NULL;
+	if (xmlDocGetIds(RVT) != NULL) {
+	    xmlFreeIDTable((xmlIDTablePtr) xmlDocGetIds(RVT));
+	    xmlDocSetIds(RVT, NULL);
 	}
 
 	/*
 	* Reset the ownership information.
 	*/
-	RVT->compression = 0;
+	xmlDocSetCompression(RVT, 0);
 
 	xmlDocSetNext(RVT, (xmlNodePtr) ctxt->cache->RVT);
 	ctxt->cache->RVT = RVT;
@@ -418,7 +418,7 @@ xsltRegisterPersistRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 {
     if ((ctxt == NULL) || (RVT == NULL)) return(-1);
 
-    RVT->compression = XSLT_RVT_GLOBAL;
+    xmlDocSetCompression(RVT, XSLT_RVT_GLOBAL);
     xmlDocSetPrev(RVT, NULL);
     xmlDocSetNext(RVT, (xmlNodePtr) ctxt->persistRVT);
     if (ctxt->persistRVT != NULL)
@@ -577,15 +577,15 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
 	    cur = elem->fragment;
 	    elem->fragment = (xmlDocPtr) xmlDocGetNext(cur);
 
-            if (cur->compression == XSLT_RVT_LOCAL) {
+            if (xmlDocGetCompression(cur) == XSLT_RVT_LOCAL) {
 		xsltReleaseRVT(elem->context, cur);
-            } else if (cur->compression == XSLT_RVT_FUNC_RESULT) {
+            } else if (xmlDocGetCompression(cur) == XSLT_RVT_FUNC_RESULT) {
                 xsltRegisterLocalRVT(elem->context, cur);
-                cur->compression = XSLT_RVT_FUNC_RESULT;
+                xmlDocSetCompression(cur, XSLT_RVT_FUNC_RESULT);
             } else {
                 xmlGenericError(xmlGenericErrorContext,
                         "xsltFreeStackElem: Unexpected RVT flag %d\n",
-                        cur->compression);
+                        xmlDocGetCompression(cur));
             }
 	}
     }
@@ -969,7 +969,7 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 		* the Result Tree Fragment.
 		*/
 		variable->fragment = container;
-                container->compression = XSLT_RVT_LOCAL;
+                xmlDocSetCompression(container, XSLT_RVT_LOCAL);
 
 		oldOutput = ctxt->output;
 		oldInsert = ctxt->insert;
@@ -1289,10 +1289,10 @@ xsltEvalGlobalVariables(xsltTransformContextPtr ctxt) {
 	elem = style->variables;
 
 #ifdef WITH_XSLT_DEBUG_VARIABLE
-	if ((style->doc != NULL) && (style->doc->URL != NULL)) {
+	if ((style->doc != NULL) && (xmlDocGetURL(style->doc) != NULL)) {
 	    XSLT_TRACE(ctxt,XSLT_TRACE_VARIABLES,xsltGenericDebug(xsltGenericDebugContext,
 			     "Registering global variables from %s\n",
-		             style->doc->URL));
+		             xmlDocGetURL(style->doc)));
 	}
 #endif
 

@@ -121,7 +121,7 @@ xsltDocumentFunctionLoadDocument(xmlXPathParserContextPtr ctxt,
 	if ((URI == NULL) ||
 	    (URI[0] == '#') ||
 	    ((tctxt->style->doc != NULL) &&
-	    (xmlStrEqual(tctxt->style->doc->URL, URI))))
+	    (xmlStrEqual(xmlDocGetURL(tctxt->style->doc), URI))))
 	{
 	    /*
 	    * This selects the stylesheet's doc itself.
@@ -339,7 +339,7 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
         if (URI == NULL) {
             if ((tctxt != NULL) && (tctxt->style != NULL) &&
                 (tctxt->style->doc != NULL) &&
-                (xmlStrEqual(URI, tctxt->style->doc->URL))) {
+                (xmlStrEqual(URI, xmlDocGetURL(tctxt->style->doc)))) {
                 /* This selects the stylesheet's doc itself. */
                 valuePush(ctxt, xmlXPathNewNodeSet((xmlNodePtr) tctxt->style->doc));
             } else {
@@ -891,8 +891,8 @@ xsltSystemPropertyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 		else
 		    sheet = NULL;
 		if ((sheet != NULL) && (sheet->doc != NULL) &&
-		    (sheet->doc->URL != NULL) &&
-		    (xmlStrstr(sheet->doc->URL,
+		    (xmlDocGetURL(sheet->doc) != NULL) &&
+		    (xmlStrstr(xmlDocGetURL(sheet->doc),
 			       (const xmlChar *)"chunk") != NULL)) {
 		    valuePush(ctxt, xmlXPathNewString(
 			(const xmlChar *)"libxslt (SAXON 6.2 compatible)"));

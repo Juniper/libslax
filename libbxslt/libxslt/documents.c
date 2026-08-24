@@ -314,8 +314,8 @@ xsltLoadDocument(xsltTransformContextPtr ctxt, const xmlChar *URI) {
      */
     ret = ctxt->docList;
     while (ret != NULL) {
-	if ((ret->doc != NULL) && (ret->doc->URL != NULL) &&
-	    (xmlStrEqual(ret->doc->URL, URI)))
+	if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL) &&
+	    (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
 	    return(ret);
 	ret = ret->next;
     }
@@ -391,8 +391,8 @@ xsltLoadStyleDocument(xsltStylesheetPtr style, const xmlChar *URI) {
      */
     ret = style->docList;
     while (ret != NULL) {
-	if ((ret->doc != NULL) && (ret->doc->URL != NULL) &&
-	    (xmlStrEqual(ret->doc->URL, URI)))
+	if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL) &&
+	    (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
 	    return(ret);
 	ret = ret->next;
     }

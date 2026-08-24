@@ -588,8 +588,8 @@ do_show_select (const char *name, const char *output,
     if (newdocp == NULL)
         err(1, "document context creation failed");
 
-    newdocp->standalone = 1;
-    newdocp->dict = xmlDictCreate();
+    xmlDocSetStandalone(newdocp, 1);
+    xmlDocSetDict(newdocp, xmlDictCreate());
 
     newroot = xmlNewDocNode(newdocp, NULL, (const xmlChar *) "select", NULL);
     if (newroot == NULL)
@@ -657,7 +657,7 @@ buildEmptyFile (void)
 
     docp = xmlNewDoc((const xmlChar *) XML_DEFAULT_VERSION);
     if (docp) {
-	docp->standalone = 1;
+	xmlDocSetStandalone(docp, 1);
     }
 
     return docp;

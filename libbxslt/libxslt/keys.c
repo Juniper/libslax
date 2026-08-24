@@ -899,9 +899,9 @@ fprintf(stderr, "xsltInitCtxtKeys on document\n");
 #endif
 
 #ifdef WITH_XSLT_DEBUG_KEYS
-    if ((idoc->doc != NULL) && (idoc->doc->URL != NULL))
+    if ((idoc->doc != NULL) && (xmlDocGetURL(idoc->doc) != NULL))
 	XSLT_TRACE(ctxt,XSLT_TRACE_KEYS,xsltGenericDebug(xsltGenericDebugContext, "Initializing keys on %s\n",
-		     idoc->doc->URL));
+		     xmlDocGetURL(idoc->doc)));
 #endif
     style = ctxt->style;
     while (style != NULL) {

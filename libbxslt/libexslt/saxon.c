@@ -206,8 +206,8 @@ exsltSaxonSystemIdFunction(xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     if ((ctxt->context) && (ctxt->context->doc) &&
-        (ctxt->context->doc->URL))
-	valuePush(ctxt, xmlXPathNewString(ctxt->context->doc->URL));
+        (xmlDocGetURL(ctxt->context->doc)))
+	valuePush(ctxt, xmlXPathNewString(xmlDocGetURL(ctxt->context->doc)));
     else
 	valuePush(ctxt, xmlXPathNewString(BAD_CAST ""));
 }

@@ -635,8 +635,9 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 	    slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 		       "psvi %p, parseflax %#x, properties %#x",
 		       indent + 2, tag,
-		       docp->standalone, docp->oldNs, docp->dict,
-		       xmlDocGetPsvi(docp), docp->parseFlags, docp->properties);
+		       xmlDocGetStandalone(docp), xmlDocGetOldNs(docp),
+		       xmlDocGetDict(docp), xmlDocGetPsvi(docp),
+		       xmlDocGetParseFlags(docp), xmlDocGetProperties(docp));
 
 	} else {
 	    slaxOutput("%*snode %p: type %s/%d, name '%s'/%p",
@@ -702,8 +703,9 @@ slaxDumpDocIndent (xmlDocPtr node, const char *tag, int indent)
 
     slaxOutput("%*sstandalone %d, ns %p, dict %p, "
 	       "psvi %p, parseflax %#x, properties %#x",
-	       indent + 2, tag, node->standalone, node->oldNs, node->dict,
-	       xmlDocGetPsvi(node), node->parseFlags, node->properties);
+	       indent + 2, tag, xmlDocGetStandalone(node), xmlDocGetOldNs(node),
+	       xmlDocGetDict(node), xmlDocGetPsvi(node),
+	       xmlDocGetParseFlags(node), xmlDocGetProperties(node));
 
     if (xmlDocGetChildren(node)) {
 	slaxOutput("%*schildren %p:",

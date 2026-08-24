@@ -786,7 +786,7 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
 	}
         /* Mark as function result. */
         xsltRegisterLocalRVT(ctxt, container);
-        container->compression = XSLT_RVT_FUNC_RESULT;
+        xmlDocSetCompression(container, XSLT_RVT_FUNC_RESULT);
 
 	oldInsert = ctxt->insert;
 	ctxt->insert = (xmlNodePtr) container;

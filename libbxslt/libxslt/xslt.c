@@ -1843,8 +1843,8 @@ xsltTreeEnsureXMLDecl(xmlDocPtr doc)
 	* URGENT TODO: revisit this.
 	*/
 #ifdef LIBXML_NAMESPACE_DICT
-	if (doc->dict)
-	    xmlNsSetHref(ns, xmlDictLookup(doc->dict, XML_XML_NAMESPACE, -1));
+	if (xmlDocGetDict(doc))
+	    xmlNsSetHref(ns, xmlDictLookup(xmlDocGetDict(doc), XML_XML_NAMESPACE, -1));
 	else
 	    xmlNsSetHref(ns, xmlStrdup(XML_XML_NAMESPACE));
 #else
@@ -4994,10 +4994,10 @@ xsltParseTemplateContent(xsltStylesheetPtr style, xmlNodePtr templ) {
 				/*
 				 * internalize the text string
 				 */
-				if (xmlNodeGetDoc(text)->dict != NULL) {
+				if (xmlDocGetDict(xmlNodeGetDoc(text)) != NULL) {
 				    const xmlChar *tmp;
 
-				    tmp = xmlDictLookup(xmlNodeGetDoc(text)->dict,
+				    tmp = xmlDictLookup(xmlDocGetDict(xmlNodeGetDoc(text)),
 				                        xmlNodeGetContentRaw(text), -1);
 				    if (tmp != xmlNodeGetContentRaw(text)) {
 				        xmlNodeSetContent(text, NULL);
@@ -5992,7 +5992,7 @@ exit:
 #ifdef WITH_XSLT_DEBUG_PARSING
     xsltGenericDebug(xsltGenericDebugContext,
 	"### END of parsing top-level elements of doc '%s'.\n",
-	xmlNodeGetDoc(node)->URL);
+	xmlDocGetURL(xmlNodeGetDoc(node)));
     xsltGenericDebug(xsltGenericDebugContext,
 	"### Templates: %d\n", templates);
 #ifdef XSLT_REFACTORED
@@ -6600,13 +6600,13 @@ xsltParseStylesheetUser(xsltStylesheetPtr style, xmlDocPtr doc) {
     /*
     * Adjust the string dict.
     */
-    if (doc->dict != NULL) {
+    if (xmlDocGetDict(doc) != NULL) {
         xmlDictFree(style->dict);
-	style->dict = doc->dict;
+	style->dict = xmlDocGetDict(doc);
 #ifdef WITH_XSLT_DEBUG
         xsltGenericDebug(xsltGenericDebugContext,
 	    "reusing dictionary from %s for stylesheet\n",
-	    doc->URL);
+	    xmlDocGetURL(doc));
 #endif
 	xmlDictReference(style->dict);
     }
@@ -6989,7 +6989,7 @@ xsltLoadStylesheetPI(xmlDocPtr doc) {
 #ifdef WITH_XSLT_DEBUG
 		xsltGenericDebug(xsltGenericDebugContext,
 		    "creating new document from %s for embedded stylesheet\n",
-		    doc->URL);
+		    xmlDocGetURL(doc));
 #endif
 		/*
 		 * move the subtree in a new document passed to
@@ -7002,21 +7002,21 @@ xsltLoadStylesheetPI(xmlDocPtr doc) {
 		    * Should the dictionary still be shared even though
 		    * the nodes are being copied rather than moved?
 		    */
-		    fake->dict = doc->dict;
-		    xmlDictReference(doc->dict);
+		    xmlDocSetDict(fake, xmlDocGetDict(doc));
+		    xmlDictReference(xmlDocGetDict(doc));
 #ifdef WITH_XSLT_DEBUG
 		    xsltGenericDebug(xsltGenericDebugContext,
 			"reusing dictionary from %s for embedded stylesheet\n",
-			doc->URL);
+			xmlDocGetURL(doc));
 #endif
 
 		    newtree = xmlDocCopyNode(subtree, fake, 1);
 
-		    fake->URL = xmlNodeGetBase(doc, xmlNodeGetParent(subtree));
+		    xmlDocSetURL(fake, xmlNodeGetBase(doc, xmlNodeGetParent(subtree)));
 #ifdef WITH_XSLT_DEBUG
 		    xsltGenericDebug(xsltGenericDebugContext,
 			"set base URI for embedded stylesheet as %s\n",
-			fake->URL);
+			xmlDocGetURL(fake));
 #endif
 
 		    /*

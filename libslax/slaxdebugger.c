@@ -246,19 +246,19 @@ slaxDebugGetFile (xsltStylesheetPtr style, const char *filename)
     const char **inc;
 
     for ( ; style; style = style->next) {
-	if (streq((const char *) style->doc->URL, filename))
+	if (streq((const char *) xmlDocGetURL(style->doc), filename))
 	    return style;
 
 	for (inc = slaxDebugIncludes; inc && *inc; inc++) {
 	    snprintf(buf, sizeof(buf), "%s%s", *inc, filename);
-	    if (streq((const char *) style->doc->URL, buf))
+	    if (streq((const char *) xmlDocGetURL(style->doc), buf))
 		return style;
 	}
     
 	/*
 	 * Just the filname match
 	 */
-	slash = strrchr((const char *) style->doc->URL, '/');
+	slash = strrchr((const char *) xmlDocGetURL(style->doc), '/');
 	if (slash && streq(slash + 1, filename))
 	    return style;
 
@@ -679,7 +679,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	 * In emacs path should be relative to remote default directory,
 	 * so print the relative path of the current file from main stylesheet
 	 */
-	cp = (const char *) statep->ds_script->doc->URL;
+	cp = (const char *) xmlDocGetURL(statep->ds_script->doc);
 	slaxDebugMakeRelativePath(cp, filename, rel_path, sizeof(rel_path));
 	
 	slaxOutput("%c%c%s:%d:0", 26, 26, rel_path, start);
@@ -766,7 +766,7 @@ slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
 
     if (statep->ds_stop_at && statep->ds_stop_at == node) {
 	slaxOutput("Reached stop at %s:%ld",
-		   node->doc->URL, xmlGetLineNo(node));
+		   xmlDocGetURL(node->doc), xmlGetLineNo(node));
 
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	statep->ds_stop_at = NULL; /* One time only */
@@ -775,8 +775,8 @@ slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
 
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbp->dbp_inst && dbp->dbp_inst == node) {
-	    slaxOutput("Reached breakpoint %d, at %s:%ld", 
-		       dbp->dbp_num, node->doc->URL,
+	    slaxOutput("Reached breakpoint %d, at %s:%ld",
+		       dbp->dbp_num, xmlDocGetURL(node->doc),
 		       xmlGetLineNo(node));
 	    if (dbp->dbp_condition)
 		slaxOutput("  Condition: '%s'", dbp->dbp_condition);
@@ -822,8 +822,8 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
 	NAME(inst), template ? " in " : "",
 	template ? slaxDebugTemplateInfo(template, buf, sizeof(buf)) : "",
-	(inst && inst->doc && inst->doc->URL) ? inst->doc->URL : slaxNull,
-	(inst && inst->doc && inst->doc->URL) ? ":" : "",
+	(inst && inst->doc && xmlDocGetURL(inst->doc)) ? xmlDocGetURL(inst->doc) : slaxNull,
+	(inst && inst->doc && xmlDocGetURL(inst->doc)) ? ":" : "",
 	inst ? xmlGetLineNo(inst) : 0);
 }
 
@@ -857,7 +857,7 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
     if ((lineno = atoi(spec)) > 0) {
 	xmlDocPtr docp = statep->ds_inst
 	    ? statep->ds_inst->doc : statep->ds_script->doc;
-	const char *fname =  (const char *) docp->URL;
+	const char *fname =  (const char *) xmlDocGetURL(docp);
 	return slaxDebugGetNodeByFilename(statep, fname, lineno);
     }
 
@@ -1002,7 +1002,7 @@ slaxDebugCmdBreak (DC_ARGS)
 
     slaxOutput("Breakpoint %d at file %s, line %ld",
 		    bp->dbp_num, 
-		    node->doc->URL, xmlGetLineNo(node));  
+		    xmlDocGetURL(node->doc), xmlGetLineNo(node));  
 }
 
 static int
@@ -1173,7 +1173,7 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	    slaxOutput("    %s#%d %s at %s:%ld%s%s%s",
 		       tag, dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		       dbp->dbp_inst->doc ? dbp->dbp_inst->doc->URL : slaxNull,
+		       dbp->dbp_inst->doc ? xmlDocGetURL(dbp->dbp_inst->doc) : slaxNull,
 		       xmlGetLineNo(dbp->dbp_inst),
 		       cond ? " condition: '" : "", cond ?: "",
 		       cond ? "'" : "");
@@ -1375,7 +1375,7 @@ slaxDebugCmdList (DC_ARGS)
     }
 
     if (node && node->doc) {
-	slaxDebugOutputScriptLines(statep, (const char *) node->doc->URL,
+	slaxDebugOutputScriptLines(statep, (const char *) xmlDocGetURL(node->doc),
 				   line_no, line_no + DEBUG_LIST_COUNT);
 	statep->ds_list_node = node;
 	statep->ds_list_line = line_no + DEBUG_LIST_COUNT;
@@ -1725,8 +1725,8 @@ slaxDebugCmdWhere (DC_ARGS)
 
 	caller = stp->st_caller ?: stp->st_inst;
 
-	filename = strrchr((const char *) caller->doc->URL, '/');
-	filename = filename ? filename + 1 : (const char *) caller->doc->URL;
+	filename = strrchr((const char *) xmlDocGetURL(caller->doc), '/');
+	filename = filename ? filename + 1 : (const char *) xmlDocGetURL(caller->doc);
 
 	if (stp->st_template && stp->st_template->match)
 	    snprintf(from_info, sizeof(from_info),
@@ -2141,7 +2141,7 @@ slaxDebugShell (slaxDebugState_t *statep)
     }
 
     if ((statep->ds_flags & DSF_DISPLAY) && statep->ds_inst != NULL) {
-	const char *filename = (const char *) statep->ds_inst->doc->URL;
+	const char *filename = (const char *) xmlDocGetURL(statep->ds_inst->doc);
 	int line_no = xmlGetLineNo(statep->ds_inst);
 	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
 	statep->ds_flags &= ~DSF_DISPLAY;

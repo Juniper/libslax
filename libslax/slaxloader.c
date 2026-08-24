@@ -624,13 +624,13 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
     if (docp == NULL)
 	return NULL;
 
-    docp->standalone = 1;
+    xmlDocSetStandalone(docp, 1);
     if (ctxt->dict)
-	docp->dict = ctxt->dict;
+	xmlDocSetDict(docp, ctxt->dict);
     else {
-	docp->dict = xmlDictCreate();
+	xmlDocSetDict(docp, xmlDictCreate());
 	if (ctxt->dict == NULL)
-	    ctxt->dict = docp->dict;
+	    ctxt->dict = xmlDocGetDict(docp);
     }
 
     nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) ELT_STYLESHEET, NULL);
@@ -650,8 +650,8 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
     }
 
     if (ctxt->dict) {
-	docp->dict = ctxt->dict;
-	xmlDictReference(docp->dict);
+	xmlDocSetDict(docp, ctxt->dict);
+	xmlDictReference(xmlDocGetDict(docp));
     }
 
     return docp;
@@ -735,7 +735,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     }
 
     if (filename != NULL)
-        sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) filename);
+        xmlDocSetURL(sd.sd_docp, (xmlChar *) xmlStrdup((const xmlChar *) filename));
 
     rc = slaxParse(&sd);
 
@@ -822,7 +822,7 @@ slaxLoadBuffer (const char *filename, char *input,
     sd.sd_line = 1;
 
     if (filename != NULL)
-        sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) filename);
+        xmlDocSetURL(sd.sd_docp, (xmlChar *) xmlStrdup((const xmlChar *) filename));
 
     rc = slaxParse(&sd);
 

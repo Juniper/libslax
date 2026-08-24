@@ -72,7 +72,7 @@ xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
                "maximum nesting depth exceeded: %s\n", URI);
             return(-1);
         }
-	if (xmlStrEqual(ancestor->doc->URL, URI)) {
+	if (xmlStrEqual(xmlDocGetURL(ancestor->doc), URI)) {
             xsltTransformError(NULL, style, cur,
                "recursion detected on imported URL %s\n", URI);
 	    return(-1);
@@ -88,7 +88,7 @@ xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
                    "maximum nesting depth exceeded: %s\n", URI);
                 return(-1);
             }
-            if (xmlStrEqual(docptr->doc->URL, URI)) {
+            if (xmlStrEqual(xmlDocGetURL(docptr->doc), URI)) {
                 xsltTransformError(NULL, style, cur,
                    "recursion detected on included URL %s\n", URI);
                 return(-1);

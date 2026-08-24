@@ -122,13 +122,13 @@ slaxJsonBuildDoc (slax_data_t *sdp UNUSED, const char *root_name,
     if (docp == NULL)
 	return NULL;
 
-    docp->standalone = 1;
+    xmlDocSetStandalone(docp, 1);
     if (ctxt->dict)
-	docp->dict = ctxt->dict;
+	xmlDocSetDict(docp, ctxt->dict);
     else {
-	docp->dict = xmlDictCreate();
+	xmlDocSetDict(docp, xmlDictCreate());
 	if (ctxt->dict == NULL)
-	    ctxt->dict = docp->dict;
+	    ctxt->dict = xmlDocGetDict(docp);
     }
 
     if (root_name == NULL)
@@ -141,8 +141,8 @@ slaxJsonBuildDoc (slax_data_t *sdp UNUSED, const char *root_name,
     }
 
     if (ctxt->dict) {
-	docp->dict = ctxt->dict;
-	xmlDictReference(docp->dict);
+	xmlDocSetDict(docp, ctxt->dict);
+	xmlDictReference(xmlDocGetDict(docp));
     }
 
     return docp;
@@ -292,7 +292,7 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
 	return NULL;
     }
 
-    sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) "json.input");
+    xmlDocSetURL(sd.sd_docp, (xmlChar *) xmlStrdup((const xmlChar *) "json.input"));
 
     slaxParse(&sd);
 
@@ -354,7 +354,7 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
 	return NULL;
     }
 
-    sd.sd_docp->URL = (xmlChar *) xmlStrdup((const xmlChar *) "json.input");
+    xmlDocSetURL(sd.sd_docp, (xmlChar *) xmlStrdup((const xmlChar *) "json.input"));
 
     slaxParse(&sd);
 

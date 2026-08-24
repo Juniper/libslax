@@ -1069,7 +1069,7 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	goto exit;
     } else if ((interned) && (target != NULL) &&
 	(xmlNodeGetDoc(target) != NULL) &&
-	(xmlNodeGetDoc(target)->dict == ctxt->dict))
+	(xmlDocGetDict(xmlNodeGetDoc(target)) == ctxt->dict))
     {
 	/*
 	* TODO: DO we want to use this also for "text" output?
@@ -1223,10 +1223,10 @@ xsltShallowCopyAttr(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 	if (txtNode == NULL)
 	    return(NULL);
 	if ((target->doc != NULL) &&
-	    (target->doc->dict != NULL))
+	    (xmlDocGetDict(target->doc) != NULL))
 	{
 	    txtNode->content =
-		(xmlChar *) xmlDictLookup(target->doc->dict,
+		(xmlChar *) xmlDictLookup(xmlDocGetDict(target->doc),
 		    BAD_CAST value, -1);
 	    xmlFree(value);
 	} else
@@ -2283,17 +2283,17 @@ xsltReleaseLocalRVTs(xsltTransformContextPtr ctxt, xmlDocPtr base)
     do {
         tmp = cur;
         cur = (xmlDocPtr) xmlDocGetNext(cur);
-        if (tmp->compression == XSLT_RVT_LOCAL) {
+        if (xmlDocGetCompression(tmp) == XSLT_RVT_LOCAL) {
             xsltReleaseRVT(ctxt, tmp);
-        } else if (tmp->compression == XSLT_RVT_GLOBAL) {
+        } else if (xmlDocGetCompression(tmp) == XSLT_RVT_GLOBAL) {
             xsltRegisterPersistRVT(ctxt, tmp);
-        } else if (tmp->compression == XSLT_RVT_FUNC_RESULT) {
+        } else if (xmlDocGetCompression(tmp) == XSLT_RVT_FUNC_RESULT) {
             /*
              * This will either register the RVT again or move it to the
              * context variable.
              */
             xsltRegisterLocalRVT(ctxt, tmp);
-            tmp->compression = XSLT_RVT_FUNC_RESULT;
+            xmlDocSetCompression(tmp, XSLT_RVT_FUNC_RESULT);
         } else {
             xmlGenericError(xmlGenericErrorContext,
                     "xsltReleaseLocalRVTs: Unexpected RVT flag %p\n",
@@ -3698,8 +3698,8 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    }
 	    if (res == NULL)
 		goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 	} else if (xmlStrEqual(method, (const xmlChar *) "xhtml")) {
 	    xsltTransformError(ctxt, NULL, inst,
 	     "xsltDocumentElem: unsupported method xhtml\n");
@@ -3707,15 +3707,15 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    res = htmlNewDocNoDtD(doctypeSystem, doctypePublic);
 	    if (res == NULL)
 		goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 	} else if (xmlStrEqual(method, (const xmlChar *) "text")) {
 	    ctxt->type = XSLT_OUTPUT_TEXT;
 	    res = xmlNewDoc(style->version);
 	    if (res == NULL)
 		goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 #ifdef WITH_XSLT_DEBUG
 	    xsltGenericDebug(xsltGenericDebugContext,
                      "reusing transformation dict for output\n");
@@ -3731,16 +3731,16 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	res = xmlNewDoc(style->version);
 	if (res == NULL)
 	    goto error;
-	res->dict = ctxt->dict;
-	xmlDictReference(res->dict);
+	xmlDocSetDict(res, ctxt->dict);
+	xmlDictReference(xmlDocGetDict(res));
 #ifdef WITH_XSLT_DEBUG
 	xsltGenericDebug(xsltGenericDebugContext,
                      "reusing transformation dict for output\n");
 #endif
     }
-    res->charset = XML_CHAR_ENCODING_UTF8;
+    xmlDocSetCharset(res, XML_CHAR_ENCODING_UTF8);
     if (encoding != NULL)
-	res->encoding = xmlStrdup(encoding);
+	xmlDocSetEncoding(res, xmlStrdup(encoding));
     ctxt->output = res;
     ctxt->insert = (xmlNodePtr) res;
     xsltApplySequenceConstructor(ctxt, node, xmlNodeGetChildren(inst), NULL);
@@ -3777,18 +3777,18 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
                 ctxt->type = XSLT_OUTPUT_HTML;
                 xmlDocSetType(res, XML_HTML_DOCUMENT_NODE);
                 if (((doctypePublic != NULL) || (doctypeSystem != NULL))) {
-                    res->intSubset = xmlCreateIntSubset(res, doctype,
+                    xmlDocSetIntSubset(res, xmlCreateIntSubset(res, doctype,
                                                         doctypePublic,
-                                                        doctypeSystem);
+                                                        doctypeSystem));
 #ifdef XSLT_GENERATE_HTML_DOCTYPE
 		} else if (version != NULL) {
                     xsltGetHTMLIDs(version, &doctypePublic,
                                    &doctypeSystem);
                     if (((doctypePublic != NULL) || (doctypeSystem != NULL)))
-                        res->intSubset =
+                        xmlDocSetIntSubset(res,
                             xmlCreateIntSubset(res, doctype,
                                                doctypePublic,
-                                               doctypeSystem);
+                                               doctypeSystem));
 #endif
                 }
             }
@@ -3798,9 +3798,9 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
             XSLT_GET_IMPORT_PTR(doctypePublic, style, doctypePublic)
                 XSLT_GET_IMPORT_PTR(doctypeSystem, style, doctypeSystem)
                 if (((doctypePublic != NULL) || (doctypeSystem != NULL)))
-                res->intSubset = xmlCreateIntSubset(res, doctype,
+                xmlDocSetIntSubset(res, xmlCreateIntSubset(res, doctype,
                                                     doctypePublic,
-                                                    doctypeSystem);
+                                                    doctypeSystem));
         }
     }
 
@@ -4117,7 +4117,7 @@ xsltElement(xsltTransformContextPtr ctxt, xmlNodePtr node,
     /*
      * Create the new element
      */
-    if (ctxt->output->dict == ctxt->dict) {
+    if (xmlDocGetDict(ctxt->output) == ctxt->dict) {
 	copy = xmlNewDocNodeEatName(ctxt->output, NULL, (xmlChar *)name, NULL);
     } else {
 	copy = xmlNewDocNode(ctxt->output, NULL, (xmlChar *)name, NULL);
@@ -5840,12 +5840,12 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
 			 "Stylesheet was not fully internalized !\n");
 #endif
     }
-    if (doc->intSubset != NULL) {
+    if (xmlDocGetIntSubset(doc) != NULL) {
 	/*
 	 * Avoid hitting the DTD when scanning nodes
 	 * but keep it linked as doc->intSubset
 	 */
-	xmlNodePtr cur = (xmlNodePtr) doc->intSubset;
+	xmlNodePtr cur = (xmlNodePtr) xmlDocGetIntSubset(doc);
 	if (xmlNodeGetNext(cur) != NULL)
 	    xmlNodeSetPrev(xmlNodeGetNext(cur), xmlNodeGetPrev(cur));
 	if (xmlNodeGetPrev(cur) != NULL)
@@ -5932,8 +5932,8 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
 			    xmlUnlinkNode((xmlNodePtr) dtd);
 			    xmlFreeDtd(dtd);
 			}
-			res->intSubset = NULL;
-			res->extSubset = NULL;
+			xmlDocSetIntSubset(res, NULL);
+			xmlDocSetExtSubset(res, NULL);
 		    }
 		} else {
 
@@ -5945,8 +5945,8 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
             }
             if (res == NULL)
                 goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 
 #ifdef WITH_XSLT_DEBUG
 	    xsltGenericDebug(xsltGenericDebugContext,
@@ -5959,8 +5959,8 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
             res = htmlNewDoc(doctypeSystem, doctypePublic);
             if (res == NULL)
                 goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 
 #ifdef WITH_XSLT_DEBUG
 	    xsltGenericDebug(xsltGenericDebugContext,
@@ -5971,8 +5971,8 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
             res = xmlNewDoc(style->version);
             if (res == NULL)
                 goto error;
-	    res->dict = ctxt->dict;
-	    xmlDictReference(res->dict);
+	    xmlDocSetDict(res, ctxt->dict);
+	    xmlDictReference(xmlDocGetDict(res));
 
 #ifdef WITH_XSLT_DEBUG
 	    xsltGenericDebug(xsltGenericDebugContext,
@@ -5989,16 +5989,16 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
         res = xmlNewDoc(style->version);
         if (res == NULL)
             goto error;
-	res->dict = ctxt->dict;
+	xmlDocSetDict(res, ctxt->dict);
 	xmlDictReference(ctxt->dict);
 #ifdef WITH_XSLT_DEBUG
 	xsltGenericDebug(xsltGenericDebugContext,
 			 "reusing transformation dict for output\n");
 #endif
     }
-    res->charset = XML_CHAR_ENCODING_UTF8;
+    xmlDocSetCharset(res, XML_CHAR_ENCODING_UTF8);
     if (encoding != NULL)
-        res->encoding = xmlStrdup(encoding);
+        xmlDocSetEncoding(res, xmlStrdup(encoding));
     variables = style->variables;
 
     ctxt->node = (xmlNodePtr) doc;
@@ -6120,18 +6120,18 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
 		*/
                 xmlDocSetType(res, XML_HTML_DOCUMENT_NODE);
                 if (((doctypePublic != NULL) || (doctypeSystem != NULL))) {
-                    res->intSubset = xmlCreateIntSubset(res, doctype,
+                    xmlDocSetIntSubset(res, xmlCreateIntSubset(res, doctype,
                                                         doctypePublic,
-                                                        doctypeSystem);
+                                                        doctypeSystem));
 #ifdef XSLT_GENERATE_HTML_DOCTYPE
 		} else if (version != NULL) {
                     xsltGetHTMLIDs(version, &doctypePublic,
                                    &doctypeSystem);
                     if (((doctypePublic != NULL) || (doctypeSystem != NULL)))
-                        res->intSubset =
+                        xmlDocSetIntSubset(res,
                             xmlCreateIntSubset(res, doctype,
                                                doctypePublic,
-                                               doctypeSystem);
+                                               doctypeSystem));
 #endif
                 }
             }
@@ -6148,9 +6148,9 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
 		last = xmlDocGetLast(res);
 		xmlDocSetChildren(res, NULL);
 		xmlDocSetLast(res, NULL);
-                res->intSubset = xmlCreateIntSubset(res, doctype,
+                xmlDocSetIntSubset(res, xmlCreateIntSubset(res, doctype,
                                                     doctypePublic,
-                                                    doctypeSystem);
+                                                    doctypeSystem));
 		if (xmlDocGetChildren(res) != NULL) {
 		    xmlNodeSetNext(xmlDocGetChildren(res), node);
 		    xmlNodeSetPrev(node, xmlDocGetChildren(res));

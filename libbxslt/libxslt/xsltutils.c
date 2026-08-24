@@ -123,12 +123,12 @@ xsltGetCNsProp(xsltStylesheetPtr style, xmlNodePtr node,
      */
     doc =  xmlNodeGetDoc(node);
     if (doc != NULL) {
-        if (doc->intSubset != NULL) {
+        if (xmlDocGetIntSubset(doc) != NULL) {
 	    xmlAttributePtr attrDecl;
 
-	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, xmlNodeGetName(node), name);
-	    if ((attrDecl == NULL) && (doc->extSubset != NULL))
-		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, xmlNodeGetName(node), name);
+	    attrDecl = xmlGetDtdAttrDesc(xmlDocGetIntSubset(doc), xmlNodeGetName(node), name);
+	    if ((attrDecl == NULL) && (xmlDocGetExtSubset(doc) != NULL))
+		attrDecl = xmlGetDtdAttrDesc(xmlDocGetExtSubset(doc), xmlNodeGetName(node), name);
 
 	    if ((attrDecl != NULL) && (attrDecl->prefix != NULL)) {
 	        /*
@@ -215,12 +215,12 @@ xsltGetNsProp(xmlNodePtr node, const xmlChar *name, const xmlChar *nameSpace) {
      */
     doc =  xmlNodeGetDoc(node);
     if (doc != NULL) {
-        if (doc->intSubset != NULL) {
+        if (xmlDocGetIntSubset(doc) != NULL) {
 	    xmlAttributePtr attrDecl;
 
-	    attrDecl = xmlGetDtdAttrDesc(doc->intSubset, xmlNodeGetName(node), name);
-	    if ((attrDecl == NULL) && (doc->extSubset != NULL))
-		attrDecl = xmlGetDtdAttrDesc(doc->extSubset, xmlNodeGetName(node), name);
+	    attrDecl = xmlGetDtdAttrDesc(xmlDocGetIntSubset(doc), xmlNodeGetName(node), name);
+	    if ((attrDecl == NULL) && (xmlDocGetExtSubset(doc) != NULL))
+		attrDecl = xmlGetDtdAttrDesc(xmlDocGetExtSubset(doc), xmlNodeGetName(node), name);
 
 	    if ((attrDecl != NULL) && (attrDecl->prefix != NULL)) {
 	        /*
@@ -689,11 +689,11 @@ xsltPrintErrorContext(xsltTransformContextPtr ctxt,
 	    (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE)) {
 	    xmlDocPtr doc = (xmlDocPtr) node;
 
-	    file = doc->URL;
+	    file = xmlDocGetURL(doc);
 	} else {
 	    line = xmlGetLineNo(node);
-	    if ((xmlNodeGetDoc(node) != NULL) && (xmlNodeGetDoc(node)->URL != NULL))
-		file = xmlNodeGetDoc(node)->URL;
+	    if ((xmlNodeGetDoc(node) != NULL) && (xmlDocGetURL(xmlNodeGetDoc(node)) != NULL))
+		file = xmlDocGetURL(xmlNodeGetDoc(node));
 	    if (xmlNodeGetName(node) != NULL)
 		name = xmlNodeGetName(node);
 	}
@@ -1662,19 +1662,19 @@ xsltSaveResultTo(xmlOutputBufferPtr buf, xmlDocPtr result,
 
 	if (omitXmlDecl != 1) {
 	    xmlOutputBufferWriteString(buf, "<?xml version=");
-	    if (result->version != NULL) {
+	    if (xmlDocGetVersion(result) != NULL) {
 		xmlOutputBufferWriteString(buf, "\"");
-		xmlOutputBufferWriteString(buf, (const char *)result->version);
+		xmlOutputBufferWriteString(buf, (const char *)xmlDocGetVersion(result));
 		xmlOutputBufferWriteString(buf, "\"");
 	    } else
 		xmlOutputBufferWriteString(buf, "\"1.0\"");
 	    if (encoding == NULL) {
-		if (result->encoding != NULL)
-		    encoding = result->encoding;
-		else if (result->charset != XML_CHAR_ENCODING_UTF8)
+		if (xmlDocGetEncoding(result) != NULL)
+		    encoding = xmlDocGetEncoding(result);
+		else if (xmlDocGetCharset(result) != XML_CHAR_ENCODING_UTF8)
 		    encoding = (const xmlChar *)
 			       xmlGetCharEncodingName((xmlCharEncoding)
-			                              result->charset);
+			                              xmlDocGetCharset(result));
 	    }
 	    if (encoding != NULL) {
 		xmlOutputBufferWriteString(buf, " encoding=");
@@ -1929,7 +1929,7 @@ xsltGetSourceNodeFlags(xmlNodePtr node) {
     switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
-            return ((xmlDocPtr) node)->properties >> 27;
+            return xmlDocGetProperties((xmlDocPtr) node) >> 27;
 
         case XML_ATTRIBUTE_NODE:
             return xmlAttrGetAtype((xmlAttrPtr) node) >> 27;
@@ -1964,7 +1964,8 @@ xsltSetSourceNodeFlags(xsltTransformContextPtr ctxt, xmlNodePtr node,
     switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
-            ((xmlDocPtr) node)->properties |= flags << 27;
+            xmlDocSetProperties((xmlDocPtr) node,
+                xmlDocGetProperties((xmlDocPtr) node) | (flags << 27));
             return 0;
 
         case XML_ATTRIBUTE_NODE:
@@ -1999,7 +2000,8 @@ xsltClearSourceNodeFlags(xmlNodePtr node, int flags) {
     switch (xmlNodeGetType(node)) {
         case XML_DOCUMENT_NODE:
         case XML_HTML_DOCUMENT_NODE:
-            ((xmlDocPtr) node)->properties &= ~(flags << 27);
+            xmlDocSetProperties((xmlDocPtr) node,
+                xmlDocGetProperties((xmlDocPtr) node) & ~(flags << 27));
             return 0;
 
         case XML_ATTRIBUTE_NODE:
@@ -2403,7 +2405,7 @@ xsltSaveProfiling(xsltTransformContextPtr ctxt, FILE *output) {
         templ1 = templates[i];
         fprintf(output, "[%d] %s (%s:%d)\n",
             i, templ1->name?(char *)templ1->name:pretty_templ_match(templ1),
-            templ1->style->doc->URL, xmlNodeGetLine(templ1->elem));
+            xmlDocGetURL(templ1->style->doc), xmlNodeGetLine(templ1->elem));
     }
 
     fprintf(output, "\f\n");

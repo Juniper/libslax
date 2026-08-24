@@ -26,6 +26,15 @@
 #ifndef __XML_ACCESSORS_H__
 #define __XML_ACCESSORS_H__
 
+/*
+ * xmlDocGetDict/xmlDocSetDict below need xmlDictPtr. tree.h's real
+ * struct-definition branch (entered via XML_TREE_INTERNALS from
+ * parser.h) includes this header before parser.h gets to its own
+ * `#include <libxml/dict.h>`, so xmlDictPtr isn't visible yet unless
+ * pulled in here explicitly.
+ */
+#include <libxml/dict.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -419,9 +428,7 @@ xmlAttrSetPsvi (xmlAttrPtr attr, void *psvi)
 }
 
 /* ----------------------------------------------------------------------
- * xmlDoc accessors (structural fields only; scalar metadata like
- * compression/standalone/encoding/version/URL/charset/intSubset/
- * extSubset is deferred, see accessor-plan.md)
+ * xmlDoc accessors
  */
 
 static inline void *
@@ -551,6 +558,150 @@ static inline void
 xmlDocSetOldNs (xmlDocPtr doc, xmlNsPtr oldNs)
 {
     doc->oldNs = oldNs;
+}
+
+static inline int
+xmlDocGetCompression (const xmlDocPtr doc)
+{
+    return doc->compression;
+}
+
+static inline void
+xmlDocSetCompression (xmlDocPtr doc, int compression)
+{
+    doc->compression = compression;
+}
+
+static inline int
+xmlDocGetStandalone (const xmlDocPtr doc)
+{
+    return doc->standalone;
+}
+
+static inline void
+xmlDocSetStandalone (xmlDocPtr doc, int standalone)
+{
+    doc->standalone = standalone;
+}
+
+static inline xmlDtdPtr
+xmlDocGetIntSubset (const xmlDocPtr doc)
+{
+    return doc->intSubset;
+}
+
+static inline void
+xmlDocSetIntSubset (xmlDocPtr doc, xmlDtdPtr intSubset)
+{
+    doc->intSubset = intSubset;
+}
+
+static inline xmlDtdPtr
+xmlDocGetExtSubset (const xmlDocPtr doc)
+{
+    return doc->extSubset;
+}
+
+static inline void
+xmlDocSetExtSubset (xmlDocPtr doc, xmlDtdPtr extSubset)
+{
+    doc->extSubset = extSubset;
+}
+
+static inline const xmlChar *
+xmlDocGetVersion (const xmlDocPtr doc)
+{
+    return doc->version;
+}
+
+static inline void
+xmlDocSetVersion (xmlDocPtr doc, xmlChar *version)
+{
+    doc->version = version;
+}
+
+static inline const xmlChar *
+xmlDocGetEncoding (const xmlDocPtr doc)
+{
+    return doc->encoding;
+}
+
+static inline void
+xmlDocSetEncoding (xmlDocPtr doc, xmlChar *encoding)
+{
+    doc->encoding = encoding;
+}
+
+static inline void *
+xmlDocGetIds (const xmlDocPtr doc)
+{
+    return doc->ids;
+}
+
+static inline void
+xmlDocSetIds (xmlDocPtr doc, void *ids)
+{
+    doc->ids = ids;
+}
+
+static inline const xmlChar *
+xmlDocGetURL (const xmlDocPtr doc)
+{
+    return doc->URL;
+}
+
+static inline void
+xmlDocSetURL (xmlDocPtr doc, xmlChar *URL)
+{
+    doc->URL = URL;
+}
+
+static inline int
+xmlDocGetCharset (const xmlDocPtr doc)
+{
+    return doc->charset;
+}
+
+static inline void
+xmlDocSetCharset (xmlDocPtr doc, int charset)
+{
+    doc->charset = charset;
+}
+
+static inline xmlDictPtr
+xmlDocGetDict (const xmlDocPtr doc)
+{
+    return doc->dict;
+}
+
+static inline void
+xmlDocSetDict (xmlDocPtr doc, xmlDictPtr dict)
+{
+    doc->dict = dict;
+}
+
+static inline int
+xmlDocGetParseFlags (const xmlDocPtr doc)
+{
+    return doc->parseFlags;
+}
+
+static inline void
+xmlDocSetParseFlags (xmlDocPtr doc, int parseFlags)
+{
+    doc->parseFlags = parseFlags;
+}
+
+static inline int
+xmlDocGetProperties (const xmlDocPtr doc)
+{
+    return doc->properties;
+}
+
+static inline void
+xmlDocSetProperties (xmlDocPtr doc, int properties)
+{
+    doc->properties = properties;
 }
 
 /* ----------------------------------------------------------------------
