@@ -42,9 +42,13 @@
 #include <libpin/pin_common.h>
 #include <libpin/pin_source.h>
 #include <libpin/pin_rules.h>
+#include <libpin/pin_body.h>
 #include <libpin/pin_tree.h>
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
+
+/* Forward declaration: defined after pin_insert_text */
+static void pin_body_exec_advance(pin_parse_t *parsep);
 
 #include <libxo/xo.h>
 #include "xo_filter.h"
@@ -153,9 +157,12 @@ pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
     pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
 
     pip->pin_depth += 1;
-    pip->pin_stack[pip->pin_depth].ps_atom = atom;
-    pip->pin_stack[pip->pin_depth].ps_node = nodep;
-    pip->pin_stack[pip->pin_depth].ps_statep = statep;
+    pin_istack_t *frame = &pip->pin_stack[pip->pin_depth];
+    frame->ps_atom = atom;
+    frame->ps_node = nodep;
+    frame->ps_statep = statep;
+    frame->ps_action = PIA_NONE;
+    frame->ps_old_name = pin_name_id_null_atom();
 }
 
 static void
@@ -798,8 +805,31 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
+    pin_action_type_t popped_action = psp->ps_action;
     bzero(psp, sizeof(*psp));
     pin_insert_pop(pip);
+
+    /* PIA_WRAP: also close the synthetic wrapper node */
+    if (popped_action == PIA_WRAP) {
+	psp = &pip->pin_stack[pip->pin_depth];
+	bzero(psp, sizeof(*psp));
+	pin_insert_pop(pip);
+    }
+
+    /*
+     * Body FSM: detect when the matched element (opened by BIA_COPY) closes.
+     * pbf_copy_depth is the depth AFTER pin_insert_open(match_name); after the
+     * pop above depth is pbf_copy_depth - 1.
+     */
+    pin_body_exec_t *body = &pip->pin_body;
+    if (body->pbe_depth > 0) {
+	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
+	if (bfp->pbf_mode == PBMODE_COPY
+		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
+	    bfp->pbf_mode = PBMODE_EXEC;
+	    pin_body_exec_advance(parsep);
+	}
+    }
 }
 
 static void
@@ -823,6 +853,78 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
+    }
+}
+
+/*
+ * Execute body instructions while in PBMODE_EXEC mode.
+ * Returns when the instruction list is exhausted (body frame popped) or
+ * when a BIA_COPY instruction is reached (mode switches to PBMODE_COPY).
+ */
+static void
+pin_body_exec_advance (pin_parse_t *parsep)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_body_exec_t *body = &pip->pin_body;
+
+    while (body->pbe_depth > 0) {
+	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
+
+	if (bfp->pbf_mode != PBMODE_EXEC)
+	    break;
+
+	pin_body_instr_id_t pc = bfp->pbf_pc;
+	if (pin_body_instr_id_is_null(pc)) {
+	    /* End of instruction list; body complete */
+	    body->pbe_depth -= 1;
+	    continue;		/* Check for parent body frame */
+	}
+
+	pin_body_instr_t *instr = pin_body_instr_addr(parsep->pp_rulebook, pc);
+	if (instr == NULL) {
+	    body->pbe_depth -= 1;
+	    break;
+	}
+
+	bfp->pbf_pc = instr->bi_next;	/* Advance PC before executing */
+
+	switch (instr->bi_type) {
+	case BIA_EMIT_OPEN: {
+	    const char *tag = pin_parse_namepool_string(parsep, instr->bi_tag);
+	    if (tag)
+		pin_insert_open(parsep, instr->bi_tag, NULL, tag, NULL, PIA_SAVE);
+	    break;
+	}
+	case BIA_EMIT_TEXT: {
+	    const char *text = pin_parse_namepool_string(parsep, instr->bi_text);
+	    if (text)
+		pin_insert_text(parsep, text, strlen(text), PIN_TYPE_TEXT);
+	    break;
+	}
+	case BIA_EMIT_CLOSE: {
+	    const char *tag = pin_parse_namepool_string(parsep, instr->bi_tag);
+	    if (tag)
+		pin_insert_close(parsep, NULL, tag);
+	    break;
+	}
+	case BIA_COPY: {
+	    /* Open the matched element in the output now */
+	    const char *match_str = pin_parse_namepool_string(parsep,
+							      bfp->pbf_match_name);
+	    if (match_str) {
+		pin_insert_open(parsep, bfp->pbf_match_name,
+				bfp->pbf_match_prefix, match_str,
+				bfp->pbf_match_attribs, PIA_SAVE_ATTRIB);
+		/* Null out the state so children use the parser default (PIA_SAVE) */
+		pip->pin_stack[pip->pin_depth].ps_statep = NULL;
+		bfp->pbf_copy_depth = pip->pin_depth;
+	    }
+	    bfp->pbf_mode = PBMODE_COPY;
+	    return;		/* Pause; resume on matched element CLOSE */
+	}
+	default:
+	    break;
+	}
     }
 }
 
@@ -859,6 +961,46 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
     pin_action_type_t act = prp->pr_action;
     pin_name_id_t use_tag = prp->pr_use_tag;
     pin_name_id_t save_name_id = name_id;
+
+    /*
+     * Body FSM path: if the rule has a compiled body instruction list,
+     * push a body frame, run the FSM, and return.  The simple pr_action
+     * dispatch below is bypassed.
+     */
+    if (!pin_body_instr_id_is_null(prp->pr_body)) {
+	pin_body_exec_t *body = &pip->pin_body;
+	int initial_depth = body->pbe_depth;
+
+	if (body->pbe_depth < PIN_BODY_DEPTH_MAX) {
+	    pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth];
+	    bzero(bfp, sizeof(*bfp));
+	    bfp->pbf_pc = prp->pr_body;
+	    bfp->pbf_mode = PBMODE_EXEC;
+	    bfp->pbf_match_name = name_id;
+	    bfp->pbf_match_prefix = prefix;
+	    bfp->pbf_match_attribs = attribs;
+	    body->pbe_depth += 1;
+	}
+
+	pin_body_exec_advance(parsep);
+
+	/*
+	 * If the body completed without hitting BIA_COPY (e.g. pure
+	 * EMIT_* literal body), push a phantom DISCARD frame so the
+	 * matched element's content and close tag are absorbed.
+	 */
+	if (body->pbe_depth == initial_depth) {
+	    pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
+	    pip->pin_depth += 1;
+	    pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
+	    bzero(new_frame, sizeof(*new_frame));
+	    new_frame->ps_action = PIA_DISCARD;
+	    new_frame->ps_old_name = save_name_id;
+	    new_frame->ps_statep = statep;
+	}
+
+	return;
+    }
 
     /* Use a different tag if directed */
     if (!pin_name_id_is_null(use_tag))
@@ -935,11 +1077,56 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	break;
     }
 
+    case PIA_WRAP: {
+	/*
+	 * Open a synthetic wrapper tag, save the matched element inside it,
+	 * and mark the element's frame PIA_WRAP so pin_insert_close also
+	 * pops the wrapper when the element closes.
+	 *
+	 * name_id is already pr_use_tag (the wrapper tag name) from above.
+	 * save_name_id is the original matched element name.
+	 *
+	 * If pr_pre_tag is set, emit <pre_tag>pr_literal_text</pre_tag>
+	 * before opening the wrapper.
+	 */
+	const char *wrap_str = pin_parse_namepool_string(parsep, name_id);
+	if (wrap_str == NULL)
+	    break;
+
+	if (!pin_name_id_is_null(prp->pr_pre_tag)) {
+	    const char *pre_str = pin_parse_namepool_string(parsep, prp->pr_pre_tag);
+	    if (pre_str) {
+		pin_insert_open(parsep, prp->pr_pre_tag, NULL, pre_str, NULL, PIA_SAVE);
+		if (!pin_name_id_is_null(prp->pr_literal_text)) {
+		    const char *text = pin_parse_namepool_string(parsep, prp->pr_literal_text);
+		    if (text && *text)
+			pin_insert_text(parsep, text, strlen(text), PIN_TYPE_TEXT);
+		}
+		pin_insert_close(parsep, NULL, pre_str);
+	    }
+	}
+
+	/* Open the wrapper node */
+	pin_insert_open(parsep, name_id, NULL, wrap_str, NULL, PIA_SAVE);
+
+	/* Open the matched element inside the wrapper */
+	pin_insert_open(parsep, save_name_id, prefix, name, attribs, PIA_SAVE);
+
+	/* Mark the element frame so pin_insert_close triggers a wrapper close */
+	pip->pin_stack[pip->pin_depth].ps_action = PIA_WRAP;
+
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
+	    pip->pin_stack[pip->pin_depth].ps_statep =
+		pin_rstate_element(parsep->pp_rulebook, prp->pr_new_state);
+	}
+	break;
+    }
+
     default:
 	break;
     }
 
-    if (!pin_name_id_is_null(use_tag)) {
+    if (!pin_name_id_is_null(use_tag) && act != PIA_WRAP) {
 	pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
 	psp->ps_old_name = save_name_id;
     }
@@ -1002,6 +1189,36 @@ pin_parse (pin_parse_t *parsep)
 	    name_id = pin_namepool_atom(pip->pin_tree->pt_workspace, localp, TRUE);
 
 	    rulep = NULL;		/* Reset for each element */
+
+	    /*
+	     * PBMODE_COPY bypass: while a BIA_COPY is consuming a matched
+	     * element, all incoming children must be copied to output.
+	     * Skip filter/rulebook dispatch; use a local PIA_SAVE_ATTRIB rule.
+	     * Still advance the filter FSM to keep its depth counter in sync.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			   == PBMODE_COPY) {
+		    xo_filter_t *cpy_filter = parsep->pp_filter;
+		    if (cpy_filter) {
+			pin_filter_set_attribs(cpy_filter, rest);
+			xo_filter_walk_open(NULL, cpy_filter, localp, -1);
+		    }
+		    pin_rule_t copy_rule;
+		    bzero(&copy_rule, sizeof(copy_rule));
+		    copy_rule.pr_action = PIA_SAVE_ATTRIB;
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, &copy_rule);
+		    if (type == PIN_TYPE_EMPTY) {
+			pin_insert_close(parsep, data, localp);
+			if (cpy_filter)
+			    xo_filter_walk_close(NULL, cpy_filter, localp, -1);
+		    }
+		    break;
+		}
+	    }
 
 	    /*
 	     * Advance the filter FSM (always, to keep depth in sync).
