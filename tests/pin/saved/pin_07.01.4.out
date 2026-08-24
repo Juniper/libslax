@@ -1,0 +1,7 @@
+compiled 5 patterns (mode: text)
+<top>
+   <keep>keep me</keep>
+   <skip>skip me (default mode)</skip>
+   <ignore>ignore me (default mode)</ignore>
+   <raw>raw content (html mode)</raw>
+</top>
