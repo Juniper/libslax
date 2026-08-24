@@ -76,46 +76,118 @@ pin_slax_is_xsl (xmlNodePtr nodep, const char *name)
  * For PIA_LITERAL, *out_tag and *out_text are set to the (xmlChar *)
  * values that the caller must xmlFree().  For other returns they are NULL.
  */
-static pin_action_type_t
-pin_slax_foreach_body_action (xmlNodePtr foreach_node,
-			      xmlChar **out_tag, xmlChar **out_text)
+/*
+ * Allocate one body instruction, chain it onto the linked list via *nextp,
+ * and advance *nextp to point at the new instruction's bi_next field.
+ * Returns a pointer to the new (zeroed) instruction, or NULL on failure.
+ */
+static pin_body_instr_t *
+pin_slax_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp)
 {
-    *out_tag = NULL;
-    *out_text = NULL;
+    pin_body_instr_id_t bid;
+    pin_body_instr_t *bip = pin_body_instr_alloc(rb, &bid);
+    if (bip == NULL)
+	return NULL;
+    bzero(bip, sizeof(*bip));
+    **nextp = bid;
+    *nextp = &bip->bi_next;
+    return bip;
+}
 
-    for (xmlNodePtr b = foreach_node->children; b; b = b->next) {
-	if (b->type == XML_TEXT_NODE)
-	    continue;			/* skip whitespace/text */
-	if (b->type != XML_ELEMENT_NODE)
+/*
+ * Compile the children of body_node into a linked list of body instructions.
+ * *nextp is a pointer-to-pointer cursor that always points at the id field
+ * where the next instruction's id should be written; recursive calls share
+ * the same cursor so instructions are appended in source order.
+ */
+static void
+pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
+			  pin_body_instr_id_t **nextp)
+{
+    for (xmlNodePtr child = body_node->children; child; child = child->next) {
+	if (child->type == XML_TEXT_NODE) {
+	    /* Skip whitespace-only text (XSLT template formatting, not output) */
+	    if (child->content && child->content[0] && !xmlIsBlankNode(child)) {
+		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+		if (bip == NULL) return;
+		bip->bi_type = BIA_EMIT_TEXT;
+		bip->bi_text = pin_namepool_atom(rb->prb_workspace,
+						 (const char *) child->content, TRUE);
+	    }
+	    continue;
+	}
+	if (child->type != XML_ELEMENT_NODE)
 	    continue;
 
-	if (pin_slax_is_xsl(b, "copy-of")) {
-	    /* <xsl:copy-of select="."/> — copy the selected element as-is */
-	    return PIA_SAVE;
+	/* xsl:copy-of → BIA_COPY (streaming copy of matched input element) */
+	if (pin_slax_is_xsl(child, "copy-of")) {
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    if (bip == NULL) return;
+	    bip->bi_type = BIA_COPY;
+	    continue;
 	}
 
-	if (!pin_slax_is_xsl(b, NULL)) {
-	    /* Non-XSL element — emit a static literal node */
-	    *out_tag = xmlStrdup(b->name);
-	    /* Collect the first text child as the literal content */
-	    for (xmlNodePtr t = b->children; t; t = t->next) {
-		if (t->type == XML_TEXT_NODE && t->content && t->content[0]) {
-		    *out_text = xmlStrdup(t->content);
-		    break;
-		}
-	    }
-	    return PIA_LITERAL;
+	/* Other xsl:* instructions not yet handled */
+	if (pin_slax_is_xsl(child, NULL))
+	    continue;
+
+	/* Literal element: open, recurse into children, close */
+	pin_name_id_t tag_id = pin_namepool_atom(rb->prb_workspace,
+						 (const char *) child->name, TRUE);
+	{
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    if (bip == NULL) return;
+	    bip->bi_type = BIA_EMIT_OPEN;
+	    bip->bi_tag = tag_id;
+	}
+	pin_slax_compile_body_r(child, rb, nextp);
+	{
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    if (bip == NULL) return;
+	    bip->bi_type = BIA_EMIT_CLOSE;
+	    bip->bi_tag = tag_id;
 	}
     }
+}
 
-    return PIA_SAVE;			/* empty body: copy selected elements */
+/*
+ * Compile the template body rooted at body_node into a body instruction
+ * list stored in the rulebook.  Returns the id of the first instruction,
+ * or the null id for an empty body.
+ */
+static pin_body_instr_id_t
+pin_slax_compile_body (xmlNodePtr body_node, pin_rulebook_t *rb)
+{
+    pin_body_instr_id_t head = pin_body_instr_id_null_atom();
+    pin_body_instr_id_t *nextp = &head;
+    pin_slax_compile_body_r(body_node, rb, &nextp);
+    return head;
+}
+
+/*
+ * Scan a compiled body instruction list and determine how much of the
+ * matched input element must be retained in memory.
+ */
+static pin_body_retain_t
+pin_slax_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
+{
+    pin_body_retain_t retain = BRETAIN_DISCARD;
+    for (pin_body_instr_id_t cur = head; !pin_body_instr_id_is_null(cur); ) {
+	pin_body_instr_t *bip = pin_body_instr_addr(rb, cur);
+	if (bip == NULL) break;
+	if (bip->bi_type == BIA_COPY || bip->bi_type == BIA_COPY_SELECT
+		|| bip->bi_type == BIA_APPLY)
+	    retain = BRETAIN_NONE;
+	cur = bip->bi_next;
+    }
+    return retain;
 }
 
 /*
  * Scan a template body for the first simple xsl:for-each select="name".
- * Returns a new rulebook state (select_name→body_action, default→DISCARD),
- * or the null id if none was found or the select is too complex to
- * handle as a streaming rule.
+ * Compiles the for-each body into a body instruction list and returns a
+ * new rulebook state (select_name→body, default→DISCARD), or the null id
+ * if none was found or the select is too complex.
  */
 static pin_rstate_id_t
 pin_slax_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
@@ -138,22 +210,18 @@ pin_slax_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
 	    continue;
 	}
 
-	xmlChar *lit_tag = NULL, *lit_text = NULL;
-	pin_action_type_t body_action =
-	    pin_slax_foreach_body_action(child, &lit_tag, &lit_text);
-
+	pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
 	pin_rstate_id_t sid;
-	if (body_action == PIA_LITERAL) {
-	    sid = pin_rulebook_add_foreach_literal_state(rb, sel,
-		    (const char *) lit_tag,
-		    (const char *) lit_text,
-		    PIA_DISCARD);
+
+	if (pin_body_instr_id_is_null(body_head)) {
+	    /* Empty body: stream selected elements through (copy them) */
+	    sid = pin_rulebook_add_foreach_state(rb, sel, PIA_SAVE, PIA_DISCARD);
 	} else {
-	    sid = pin_rulebook_add_foreach_state(rb, sel, body_action, PIA_DISCARD);
+	    pin_body_retain_t retain = pin_slax_body_retain(body_head, rb);
+	    sid = pin_rulebook_add_foreach_body_state(rb, sel, body_head,
+						      retain, PIA_DISCARD);
 	}
 
-	if (lit_tag)  xmlFree(lit_tag);
-	if (lit_text) xmlFree(lit_text);
 	xmlFree(select);
 
 	if (!pin_rstate_id_is_null(sid))
