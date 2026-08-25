@@ -67,13 +67,15 @@ GENERATED = \
     gen/pin_node_id_gen.h \
     gen/pin_ns_map_id_gen.h \
     gen/pin_body_instr_id_gen.h \
+    gen/pin_apply_id_gen.h \
     gen/pin_rule_id_funcs_gen.h \
     gen/pin_rstate_id_funcs_gen.h \
     gen/pin_node_gen.h \
     gen/pin_ns_map_gen.h \
     gen/pin_nodeset_chunk_gen.h \
     gen/pin_nodeset_info_gen.h \
-    gen/pin_body_instr_id_funcs_gen.h
+    gen/pin_body_instr_id_funcs_gen.h \
+    gen/pin_apply_id_funcs_gen.h
 
 BUILT_SOURCES = ${GENERATED}
 
