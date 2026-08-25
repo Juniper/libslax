@@ -817,14 +817,15 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     }
 
     /*
-     * Body FSM: detect when the matched element (opened by BIA_COPY) closes.
-     * pbf_copy_depth is the depth AFTER pin_insert_open(match_name); after the
-     * pop above depth is pbf_copy_depth - 1.
+     * Body FSM: detect when the matched element (opened by BIA_COPY or
+     * BIA_APPLY) closes.  pbf_copy_depth is the output depth set when
+     * pin_insert_open(match_name) was called; after the pop above it is
+     * pbf_copy_depth - 1.
      */
     pin_body_exec_t *body = &pip->pin_body;
     if (body->pbe_depth > 0) {
 	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
-	if (bfp->pbf_mode == PBMODE_COPY
+	if ((bfp->pbf_mode == PBMODE_COPY || bfp->pbf_mode == PBMODE_APPLY)
 		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
 	    bfp->pbf_mode = PBMODE_EXEC;
 	    pin_body_exec_advance(parsep);
@@ -920,6 +921,25 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		bfp->pbf_copy_depth = pip->pin_depth;
 	    }
 	    bfp->pbf_mode = PBMODE_COPY;
+	    return;		/* Pause; resume on matched element CLOSE */
+	}
+	case BIA_APPLY: {
+	    /*
+	     * Open the matched element in the output.  Children are dispatched
+	     * through the apply-templates patricia tree (prb_apply_pat) via the
+	     * PBMODE_APPLY bypass in pin_parse, not through a rulebook state.
+	     * ps_statep is left NULL so the for-each default rule does not fire.
+	     */
+	    const char *match_str = pin_parse_namepool_string(parsep,
+							      bfp->pbf_match_name);
+	    if (match_str) {
+		pin_insert_open(parsep, bfp->pbf_match_name,
+				bfp->pbf_match_prefix, match_str,
+				bfp->pbf_match_attribs, PIA_SAVE_ATTRIB);
+		pip->pin_stack[pip->pin_depth].ps_statep = NULL;
+		bfp->pbf_copy_depth = pip->pin_depth;
+	    }
+	    bfp->pbf_mode = PBMODE_APPLY;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
 	default:
@@ -1215,6 +1235,57 @@ pin_parse (pin_parse_t *parsep)
 			pin_insert_close(parsep, data, localp);
 			if (cpy_filter)
 			    xo_filter_walk_close(NULL, cpy_filter, localp, -1);
+		    }
+		    break;
+		}
+	    }
+
+	    /*
+	     * PBMODE_APPLY bypass: while a BIA_APPLY is waiting for its element
+	     * to close, dispatch each child through the apply-templates patricia
+	     * tree rather than through the normal filter+rulebook path.  The
+	     * patricia tree maps element name atoms directly to template rules.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			   == PBMODE_APPLY) {
+		    xo_filter_t *apl_filter = parsep->pp_filter;
+		    if (apl_filter) {
+			pin_filter_set_attribs(apl_filter, rest);
+			xo_filter_walk_open(NULL, apl_filter, localp, -1);
+		    }
+		    pin_rule_t *apl_rule = NULL;
+		    pin_rulebook_t *rb = parsep->pp_rulebook;
+		    if (rb && rb->prb_apply_pat) {
+			pa_pat_node_t *pat_node = pa_pat_get(rb->prb_apply_pat,
+							     sizeof(pin_name_id_t),
+							     &name_id);
+			if (pat_node) {
+			    pa_pat_data_atom_t datom =
+				pa_pat_node_data(rb->prb_apply_pat, pat_node);
+			    if (!pa_pat_data_is_null(datom)) {
+				pin_apply_id_t aid = pin_apply_id(
+				    pa_pat_data_atom_of(datom));
+				pin_apply_entry_t *ep = pin_apply_addr(rb, aid);
+				if (ep)
+				    apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
+			    }
+			}
+		    }
+		    if (apl_rule == NULL) {
+			pin_rule_t discard_rule;
+			bzero(&discard_rule, sizeof(discard_rule));
+			discard_rule.pr_action = PIA_DISCARD;
+			apl_rule = &discard_rule;
+		    }
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, apl_rule);
+		    if (type == PIN_TYPE_EMPTY) {
+			pin_insert_close(parsep, data, localp);
+			if (apl_filter)
+			    xo_filter_walk_close(NULL, apl_filter, localp, -1);
 		    }
 		    break;
 		}
