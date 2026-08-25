@@ -40,6 +40,7 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_COPY        4   /* Copy current input element (streaming or retained) */
 #define BIA_COPY_SELECT 5   /* Copy named children from retained subtree */
 #define BIA_APPLY       6   /* Apply-templates to current element's children */
+#define BIA_VALUE_OF    7   /* Emit text content of current element (no element tags) */
 
 /*
  * Retention requirement for the matched element.  Computed at compile time
@@ -76,10 +77,11 @@ typedef struct pin_body_instr_s {
  */
 typedef uint8_t pin_body_mode_t;
 
-#define PBMODE_NONE  0   /* Not executing a body */
-#define PBMODE_EXEC  1   /* Running EMIT_* instructions; no input consumed */
-#define PBMODE_COPY  2   /* Consuming input subtree via BIA_COPY */
-#define PBMODE_APPLY 3   /* Dispatching children through the rulebook (BIA_APPLY) */
+#define PBMODE_NONE      0   /* Not executing a body */
+#define PBMODE_EXEC      1   /* Running EMIT_* instructions; no input consumed */
+#define PBMODE_COPY      2   /* Consuming input subtree via BIA_COPY */
+#define PBMODE_APPLY     3   /* Dispatching children through the rulebook (BIA_APPLY) */
+#define PBMODE_VALUE_OF  4   /* Collecting text content of current element (BIA_VALUE_OF) */
 
 /*
  * One frame on the body execution stack.
@@ -94,6 +96,7 @@ typedef struct pin_body_frame_s {
     const char *pbf_match_prefix;       /* Namespace prefix of matched element */
     char *pbf_match_attribs;            /* Attribute string from matched element open */
     pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
+    int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
 } pin_body_frame_t;
 
 /*
