@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.03.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    value-of: emit the text content of the matched element without its
+    element tags.  The <item> element is replaced by <name> containing
+    only the text value.
+  -->
+  <xsl:template match="item">
+    <name><xsl:value-of select="."/></name>
+  </xsl:template>
+</xsl:stylesheet>
