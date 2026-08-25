@@ -825,7 +825,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     pin_body_exec_t *body = &pip->pin_body;
     if (body->pbe_depth > 0) {
 	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
-	if ((bfp->pbf_mode == PBMODE_COPY || bfp->pbf_mode == PBMODE_APPLY)
+	if (bfp->pbf_mode == PBMODE_COPY
 		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
 	    bfp->pbf_mode = PBMODE_EXEC;
 	    pin_body_exec_advance(parsep);
@@ -925,20 +925,12 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	}
 	case BIA_APPLY: {
 	    /*
-	     * Open the matched element in the output.  Children are dispatched
-	     * through the apply-templates patricia tree (prb_apply_pat) via the
-	     * PBMODE_APPLY bypass in pin_parse, not through a rulebook state.
-	     * ps_statep is left NULL so the for-each default rule does not fire.
+	     * xsl:apply-templates dispatches the CHILDREN of the current
+	     * element, not the element itself.  Do NOT open the matched element
+	     * in the output.  Record the current output depth so the CLOSE
+	     * bypass in pin_parse can detect when the element closes.
 	     */
-	    const char *match_str = pin_parse_namepool_string(parsep,
-							      bfp->pbf_match_name);
-	    if (match_str) {
-		pin_insert_open(parsep, bfp->pbf_match_name,
-				bfp->pbf_match_prefix, match_str,
-				bfp->pbf_match_attribs, PIA_SAVE_ATTRIB);
-		pip->pin_stack[pip->pin_depth].ps_statep = NULL;
-		bfp->pbf_copy_depth = pip->pin_depth;
-	    }
+	    bfp->pbf_copy_depth = pip->pin_depth;
 	    bfp->pbf_mode = PBMODE_APPLY;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
@@ -1392,6 +1384,32 @@ pin_parse (pin_parse_t *parsep)
 	    /* Pop the filter frame before popping the tree frame */
 	    if (parsep->pp_filter)
 		xo_filter_walk_close(NULL, parsep->pp_filter, localp, -1);
+
+	    /*
+	     * PBMODE_APPLY bypass: the element that triggered apply-templates
+	     * was never opened in the output tree, so its close must be
+	     * intercepted here.  We match on name and output depth (which
+	     * returns to pbf_copy_depth after all children are processed).
+	     */
+	    {
+		pin_body_exec_t *abody = &pip->pin_body;
+		if (abody->pbe_depth > 0) {
+		    pin_body_frame_t *abfp =
+			&abody->pbe_stack[abody->pbe_depth - 1];
+		    if (abfp->pbf_mode == PBMODE_APPLY) {
+			pin_name_id_t close_id = pin_namepool_atom(
+			    pip->pin_tree->pt_workspace, localp, FALSE);
+			if (!pin_name_id_is_null(close_id)
+				&& pin_name_id_equal(close_id,
+						     abfp->pbf_match_name)
+				&& pip->pin_depth == abfp->pbf_copy_depth) {
+			    abfp->pbf_mode = PBMODE_EXEC;
+			    pin_body_exec_advance(parsep);
+			    break;
+			}
+		    }
+		}
+	    }
 	    pin_insert_close(parsep, data, localp);
 	    break;
 
