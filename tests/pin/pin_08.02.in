@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.02.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    For each category selected by the for-each, emit a <group> wrapper and
+    dispatch the category's children through apply-templates.  The category
+    element itself is opened in output by BIA_APPLY so children have a home.
+    Items are matched by the second template: wrapped in <entry> with a
+    streaming copy of the element.
+  -->
+  <xsl:template match="catalog">
+    <xsl:for-each select="category">
+      <group>
+        <xsl:apply-templates/>
+      </group>
+    </xsl:for-each>
+  </xsl:template>
+  <xsl:template match="item">
+    <entry><xsl:copy-of select="."/></entry>
+  </xsl:template>
+</xsl:stylesheet>
