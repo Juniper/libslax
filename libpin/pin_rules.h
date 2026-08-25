@@ -42,9 +42,10 @@ typedef uint8_t pin_action_type_t;
 #define PIA_LITERAL	7	/* Emit a static literal node, discard matched element */
 #define PIA_WRAP	8	/* Wrap matched element in a synthetic outer tag */
 
-/* Generated typed atoms for rule and state ids (wraps pa_fixed_atom_t) */
+/* Generated typed atoms for rule, state, and apply-entry ids */
 #include "gen/pin_rule_id_gen.h"
 #include "gen/pin_rstate_id_gen.h"
+#include "gen/pin_apply_id_gen.h"
 
 /*
  * A rule defines a behavior for an incoming token.  A token can be
@@ -85,6 +86,15 @@ typedef struct pin_rulebook_info_s {
 } pin_rulebook_info_t;
 
 /*
+ * One entry in the apply-templates dispatch patricia tree.
+ * Keyed by pae_name (the element name atom, 4 bytes).
+ */
+typedef struct pin_apply_entry_s {
+    pin_name_id_t pae_name;   /* Element name atom (patricia tree key) */
+    pin_rule_id_t pae_rule;   /* Rule to dispatch to via apply-templates */
+} pin_apply_entry_t;
+
+/*
  * A rule set is an optimized set of rules
  */
 typedef struct pin_rulebook_s {
@@ -95,6 +105,8 @@ typedef struct pin_rulebook_s {
     pa_fixed_t *prb_states;	  /* List of states (pin_rule_state_t) */
     pa_bitmap_t *prb_bitmaps;	  /* Pool of bitmaps */
     pa_fixed_t *prb_body_instrs;  /* Pool of body instructions (pin_body_instr_t) */
+    pa_fixed_t *prb_apply_entries; /* Pool of apply-dispatch entries */
+    pa_pat_t *prb_apply_pat;	  /* Patricia tree: name_id → apply entry */
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -164,12 +176,22 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
 				     pin_body_retain_t retain,
 				     pin_action_type_t default_action);
 
+/*
+ * Add one (name, rule) pair to the apply-templates patricia tree.
+ * name_id must already be interned in the workspace namepool.
+ * Returns 0 on success, -1 on failure (e.g. tree not open, duplicate name).
+ */
+int
+pin_rulebook_apply_add (pin_rulebook_t *prbp,
+			pin_name_id_t name_id, pin_rule_id_t rid);
+
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
 #include "gen/pin_body_instr_id_funcs_gen.h"
+#include "gen/pin_apply_id_funcs_gen.h"
 
 /* Aliases: pin_rulebook_rule(prbp, rid) and pin_rulebook_state(prbp, sid) */
 #define pin_rulebook_rule	pin_rule_addr
