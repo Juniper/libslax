@@ -44,6 +44,8 @@
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
 
+static const psu_byte_t *pin_apply_key_func (pa_pat_t *, pa_pat_data_atom_t);
+
 pin_rulebook_t *
 pin_rulebook_setup (pin_workspace_t *pwp,
 		   pin_parse_t *script, const char *name)
@@ -70,8 +72,20 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.body"),
 		      PIN_SHIFT, sizeof(pin_body_instr_t), PIN_MAX_ATOMS);
 
+    pa_fixed_t *apply_entries =
+	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "apply.entries"),
+		      PIN_SHIFT, sizeof(pin_apply_entry_t), PIN_MAX_ATOMS);
+
     if (infop == NULL || rules == NULL || states == NULL
-	    || bitmaps == NULL || body_instrs == NULL)
+	    || bitmaps == NULL || body_instrs == NULL || apply_entries == NULL)
+	return NULL;
+
+    pa_pat_t *apply_pat = pa_pat_open(pmp,
+				      pin_mk_name(namebuf, name, "apply.index"),
+				      apply_entries, pin_apply_key_func,
+				      sizeof(pin_name_id_t),
+				      PIN_SHIFT, PIN_MAX_ATOMS);
+    if (apply_pat == NULL)
 	return NULL;
 
     pin_rulebook_t *prbp = calloc(1, sizeof(*prbp));
@@ -83,6 +97,8 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	prbp->prb_states = states;
 	prbp->prb_bitmaps = bitmaps;
 	prbp->prb_body_instrs = body_instrs;
+	prbp->prb_apply_entries = apply_entries;
+	prbp->prb_apply_pat = apply_pat;
 	prbp->prb_script = script;
 
 	/*
@@ -349,6 +365,48 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
     }
 
     return sid;
+}
+
+/*
+ * Key function for the apply-templates patricia tree.
+ * The key is the pae_name field (a pin_name_id_t, 4 bytes) of the entry.
+ */
+static const psu_byte_t *
+pin_apply_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+{
+    pin_apply_entry_t *ep = pa_fixed_atom_addr(
+	(pa_fixed_t *) pp->pp_data,
+	pa_fixed_atom(pa_pat_data_atom_of(datom)));
+    return ep ? (const psu_byte_t *) &ep->pae_name : NULL;
+}
+
+int
+pin_rulebook_apply_add (pin_rulebook_t *prbp,
+			pin_name_id_t name_id, pin_rule_id_t rid)
+{
+    if (prbp->prb_apply_pat == NULL || prbp->prb_apply_entries == NULL)
+	return -1;
+    if (pin_name_id_is_null(name_id) || pin_rule_id_is_null(rid))
+	return -1;
+
+    pin_apply_id_t aid;
+    pin_apply_entry_t *ep = pin_apply_alloc(prbp, &aid);
+    if (ep == NULL)
+	return -1;
+
+    ep->pae_name = name_id;
+    ep->pae_rule = rid;
+
+    pa_pat_data_atom_t datom = pa_pat_data_atom(
+	pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
+
+    if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
+	psu_log("pin_rulebook_apply_add: duplicate name atom %u",
+		pin_name_id_atom_of(name_id));
+	return -1;
+    }
+
+    return 0;
 }
 
 pin_rulebook_t *
