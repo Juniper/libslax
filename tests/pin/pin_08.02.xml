@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<catalog>
+  <category>
+    <item>Alpha</item>
+    <item>Beta</item>
+  </category>
+  <category>
+    <item>Gamma</item>
+  </category>
+</catalog>
