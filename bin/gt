@@ -7,6 +7,12 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 
+if [ ! -z "${BASH}" ]; then
+    # Use our own history file
+    HISTFILE=$HOME/.gt_history
+    set -o history
+fi
+
 op="$1"
 shift
 
@@ -87,8 +93,7 @@ check_in_details () {
 	echo $status
 
         /bin/echo "[Checking $file into branch $branch]"
-        /bin/echo -n "Commit message: "
-	read comment
+	read -e -p "Commit message: " comment
 	if [ "$comment" = "==" -o  "$comment" = "=" -o "$comment" = "ditto" ]; then
 	    comment="$last"
         fi
