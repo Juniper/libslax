@@ -934,6 +934,18 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    bfp->pbf_mode = PBMODE_APPLY;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
+	case BIA_VALUE_OF: {
+	    /*
+	     * xsl:value-of select=".": collect text content of the matched
+	     * element and emit it in place.  The matched element's tags are
+	     * not opened in the output.  Child element open/close events are
+	     * tracked via pbf_depth_counter so we know when the element ends.
+	     */
+	    bfp->pbf_copy_depth = pip->pin_depth;
+	    bfp->pbf_depth_counter = 0;
+	    bfp->pbf_mode = PBMODE_VALUE_OF;
+	    return;		/* Pause; resume on matched element CLOSE */
+	}
 	default:
 	    break;
 	}
@@ -1233,6 +1245,33 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /*
+	     * PBMODE_VALUE_OF bypass: collecting text from the matched element.
+	     * Child element open/close events are suppressed from the output
+	     * tree; only text content flows through.  Advance the filter to
+	     * keep its depth counter in sync, and track nesting via the counter.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			   == PBMODE_VALUE_OF) {
+		    pin_body_frame_t *vbfp = &body->pbe_stack[body->pbe_depth - 1];
+		    xo_filter_t *vof_filter = parsep->pp_filter;
+		    if (vof_filter) {
+			pin_filter_set_attribs(vof_filter, rest);
+			xo_filter_walk_open(NULL, vof_filter, localp, -1);
+		    }
+		    vbfp->pbf_depth_counter++;
+		    if (type == PIN_TYPE_EMPTY) {
+			if (vof_filter)
+			    xo_filter_walk_close(NULL, vof_filter, localp, -1);
+			vbfp->pbf_depth_counter--;
+		    }
+		    break;
+		}
+	    }
+
+	    /*
 	     * PBMODE_APPLY bypass: while a BIA_APPLY is waiting for its element
 	     * to close, dispatch each child through the apply-templates patricia
 	     * tree rather than through the normal filter+rulebook path.  The
@@ -1384,6 +1423,30 @@ pin_parse (pin_parse_t *parsep)
 	    /* Pop the filter frame before popping the tree frame */
 	    if (parsep->pp_filter)
 		xo_filter_walk_close(NULL, parsep->pp_filter, localp, -1);
+
+	    /*
+	     * PBMODE_VALUE_OF bypass: child element closes decrement the
+	     * counter; when it reaches zero the matched element itself is
+	     * closing, so we exit the mode and resume body execution.
+	     * The matched element was never opened in the output tree.
+	     */
+	    {
+		pin_body_exec_t *vbody = &pip->pin_body;
+		if (vbody->pbe_depth > 0) {
+		    pin_body_frame_t *vbfp =
+			&vbody->pbe_stack[vbody->pbe_depth - 1];
+		    if (vbfp->pbf_mode == PBMODE_VALUE_OF) {
+			if (vbfp->pbf_depth_counter > 0) {
+			    vbfp->pbf_depth_counter--;
+			    break; /* Child element closing — skip pin_insert_close */
+			}
+			/* The matched element itself is closing */
+			vbfp->pbf_mode = PBMODE_EXEC;
+			pin_body_exec_advance(parsep);
+			break;
+		    }
+		}
+	    }
 
 	    /*
 	     * PBMODE_APPLY bypass: the element that triggered apply-templates
