@@ -127,6 +127,26 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
+	/* xsl:apply-templates → BIA_APPLY (dispatch children through rules) */
+	if (pin_slax_is_xsl(child, "apply-templates")) {
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    if (bip == NULL) return;
+	    bip->bi_type = BIA_APPLY;
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    if (sel) {
+		bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						   (const char *) sel, TRUE);
+		xmlFree(sel);
+	    }
+	    xmlChar *mode = xmlGetProp(child, (const xmlChar *) "mode");
+	    if (mode) {
+		bip->bi_mode = pin_namepool_atom(rb->prb_workspace,
+						 (const char *) mode, TRUE);
+		xmlFree(mode);
+	    }
+	    continue;
+	}
+
 	/* Other xsl:* instructions not yet handled */
 	if (pin_slax_is_xsl(child, NULL))
 	    continue;
@@ -280,17 +300,40 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    prp->pr_action = PIA_SAVE;
 	    prp->pr_new_state = foreach_sid;
 	} else {
-	    prp->pr_action = action;
+	    /*
+	     * No for-each: compile the template body as a body instruction list
+	     * so it can be executed via BIA_APPLY dispatch.
+	     */
+	    pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
+	    if (!pin_body_instr_id_is_null(body_head)) {
+		prp->pr_body = body_head;
+		prp->pr_body_retain = pin_slax_body_retain(body_head, rb);
+	    } else {
+		prp->pr_action = action;
+	    }
 	}
 
-	int rc = pin_filter_add_with_action(xfp, (const char *) match, rid);
-	xmlFree(match);
-
+	/*
+	 * Register the rule with the filter for top-level element dispatch,
+	 * and add it to the apply-templates patricia tree if the match pattern
+	 * is a simple element name (no path, predicates, or wildcards).
+	 */
+	const char *match_str = (const char *) match;
+	int rc = pin_filter_add_with_action(xfp, match_str, rid);
 	if (rc < 0) {
 	    psu_log("pin_slax_compile: pin_filter_add_with_action failed");
+	    xmlFree(match);
 	    return -1;
 	}
 
+	if (strpbrk(match_str, "/@[]*.:") == NULL) {
+	    pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
+						       match_str, TRUE);
+	    if (!pin_name_id_is_null(match_id))
+		pin_rulebook_apply_add(rb, match_id, rid);
+	}
+
+	xmlFree(match);
 	count++;
     }
 
