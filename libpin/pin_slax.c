@@ -127,6 +127,22 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
+	/* xsl:value-of → BIA_VALUE_OF (emit text content of current element) */
+	if (pin_slax_is_xsl(child, "value-of")) {
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    /* Only handle select="." (current node); skip complex expressions */
+	    if (sel == NULL || strcmp((const char *) sel, ".") == 0) {
+		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+		if (bip != NULL)
+		    bip->bi_type = BIA_VALUE_OF;
+	    } else {
+		psu_log("pin_slax: skipping value-of with complex select: %s", sel);
+	    }
+	    if (sel)
+		xmlFree(sel);
+	    continue;
+	}
+
 	/* xsl:apply-templates → BIA_APPLY (dispatch children through rules) */
 	if (pin_slax_is_xsl(child, "apply-templates")) {
 	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
@@ -196,7 +212,7 @@ pin_slax_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
 	pin_body_instr_t *bip = pin_body_instr_addr(rb, cur);
 	if (bip == NULL) break;
 	if (bip->bi_type == BIA_COPY || bip->bi_type == BIA_COPY_SELECT
-		|| bip->bi_type == BIA_APPLY)
+		|| bip->bi_type == BIA_APPLY || bip->bi_type == BIA_VALUE_OF)
 	    retain = BRETAIN_NONE;
 	cur = bip->bi_next;
     }
