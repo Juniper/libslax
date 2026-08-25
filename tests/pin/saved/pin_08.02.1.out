@@ -1,0 +1,16 @@
+compiled 2 patterns
+<catalog>
+   <group>
+      <entry>
+         <item>Alpha</item>
+      </entry>
+      <entry>
+         <item>Beta</item>
+      </entry>
+   </group>
+   <group>
+      <entry>
+         <item>Gamma</item>
+      </entry>
+   </group>
+</catalog>
