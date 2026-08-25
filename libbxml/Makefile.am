@@ -55,6 +55,32 @@ libbxml_la_SOURCES = \
     xmlmemory.c \
     xmlstring.c
 
+#
+# xmlNode/xmlNs/xmlAttr/xmlDoc/xmlDtd accessor functions, generated
+# from the field table in gen-xmlaccessors.sh in both inline
+# and non-inline
+#
+XML_ACCESSORS_GEN = $(top_srcdir)/bin/gen-xmlaccessors.sh
+
+GENACC_H_DIR = include/libxml/gen
+GENACC_C_FILES = \
+	gen/xmlaccessors.c
+
+GENACC_H_FILES = \
+	$(GENACC_H_DIR)/xmlaccessors-inline.h \
+	$(GENACC_H_DIR)/xmlaccessors-decl.h
+
+GENACC_FILES = ${GENACC_H_FILES} ${GENACC_C_FILES}
+
+${GENACC_FILES}: $(XML_ACCESSORS_GEN)
+	@$(AM_V_GEN)$(SHELL) $(XML_ACCESSORS_GEN) $(top_srcdir) $(top_builddir)
+
+BUILT_SOURCES = ${GENACC_FILES}
+
+nodist_libbxml_la_SOURCES = $(GENACC_C_FILES)
+
+CLEANFILES = ${GENACC_FILES}
+
 if WITH_C14N_SOURCES
 libbxml_la_SOURCES += c14n.c
 endif
