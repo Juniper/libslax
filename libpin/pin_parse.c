@@ -54,6 +54,85 @@ static void pin_body_exec_advance(pin_parse_t *parsep);
 #include "xo_filter.h"
 #include <libpin/pin_filter.h>
 
+/*
+ * Parse the raw XML attribute string and feed each name=value pair to
+ * the filter via xo_filter_walk_attr.  Called on demand from BIA_IF
+ * evaluation — attributes are only parsed when a condition check needs them.
+ */
+static void
+pin_body_feed_attribs (xo_filter_t *xfp, const char *attribs)
+{
+    if (xfp == NULL || attribs == NULL || *attribs == '\0')
+	return;
+
+    const char *cp = attribs;
+    while (*cp) {
+	while (isspace((unsigned char) *cp))
+	    cp++;
+	if (*cp == '\0')
+	    break;
+
+	const char *name = cp;
+	while (*cp && *cp != '=' && !isspace((unsigned char) *cp))
+	    cp++;
+	size_t nlen = cp - name;
+	if (nlen == 0)
+	    break;
+
+	while (isspace((unsigned char) *cp))
+	    cp++;
+	if (*cp != '=')
+	    break;
+	cp++;
+
+	while (isspace((unsigned char) *cp))
+	    cp++;
+	if (*cp != '"' && *cp != '\'')
+	    break;
+	char q = *cp++;
+	const char *val = cp;
+	while (*cp && *cp != q)
+	    cp++;
+	size_t vlen = cp - val;
+	if (*cp == q)
+	    cp++;
+
+	xo_filter_walk_attr(NULL, xfp, name, (ssize_t) nlen,
+			    val, (ssize_t) vlen);
+    }
+}
+
+/*
+ * Evaluate a BIA_IF condition by walking the matched element + attributes
+ * through its pre-compiled per-instruction filter.
+ * Returns 1 if the condition is true, 0 if false.
+ */
+static int
+pin_body_eval_if (pin_parse_t *parsep, pin_body_instr_t *instr,
+		  pin_body_frame_t *bfp)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (rb == NULL || instr->bi_filter_idx >= rb->prb_if_filter_count)
+	return 0;
+
+    xo_filter_t *xfp = rb->prb_if_filters[instr->bi_filter_idx];
+    if (xfp == NULL)
+	return 0;
+
+    const char *elt = pin_parse_namepool_string(parsep, bfp->pbf_match_name);
+    if (elt == NULL)
+	return 0;
+
+    xo_filter_walk_open(NULL, xfp, elt, -1);
+    pin_body_feed_attribs(xfp, bfp->pbf_match_attribs);
+
+    int result = (xo_filter_walk_status(NULL, xfp) == XO_STATUS_FULL);
+
+    xo_filter_walk_close(NULL, xfp, elt, -1);
+
+    return result;
+}
+
 pin_parse_t *
 pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 	       const char *input, pin_source_flags_t flags)
@@ -946,6 +1025,23 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    bfp->pbf_mode = PBMODE_VALUE_OF;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
+	case BIA_JUMP:
+	    /* Unconditional join point; PC already set to bi_next above. */
+	    break;
+	case BIA_GOTO:
+	    /* Unconditional jump to bi_else (used to skip else-branches). */
+	    bfp->pbf_pc = instr->bi_else;
+	    break;
+	case BIA_IF: {
+	    /*
+	     * Evaluate the pre-compiled per-instruction filter against the
+	     * matched element and its attributes (on demand).  On false, jump
+	     * to bi_else (the BIA_JUMP join point after the true-body).
+	     */
+	    if (!pin_body_eval_if(parsep, instr, bfp))
+		bfp->pbf_pc = instr->bi_else;
+	    break;
+	}
 	default:
 	    break;
 	}
@@ -1319,6 +1415,40 @@ pin_parse (pin_parse_t *parsep)
 			    xo_filter_walk_close(NULL, apl_filter, localp, -1);
 		    }
 		    break;
+		}
+	    }
+
+	    /*
+	     * Root template (match="/"): fires exactly once for the first
+	     * depth-0 element (the document root's direct child).  The rule
+	     * is not registered with the element filter (no document-root
+	     * streaming event), so we intercept it here before the normal
+	     * filter dispatch.
+	     */
+	    {
+		pin_rulebook_t *rb = parsep->pp_rulebook;
+		if (rb && !pin_rule_id_is_null(rb->prb_root_rule)
+			&& !parsep->pp_root_rule_fired
+			&& pip->pin_depth == 0) {
+		    parsep->pp_root_rule_fired = 1;
+		    pin_rule_t *root_rulep =
+			pin_rulebook_rule(rb, rb->prb_root_rule);
+		    if (root_rulep != NULL) {
+			if (parsep->pp_filter) {
+			    pin_filter_set_attribs(parsep->pp_filter, rest);
+			    xo_filter_walk_open(NULL, parsep->pp_filter,
+					       localp, -1);
+			}
+			pin_parse_handle_rule(parsep, name_id, data,
+					      localp, rest, root_rulep);
+			if (type == PIN_TYPE_EMPTY) {
+			    pin_insert_close(parsep, data, localp);
+			    if (parsep->pp_filter)
+				xo_filter_walk_close(NULL, parsep->pp_filter,
+						     localp, -1);
+			}
+			break;
+		    }
 		}
 	    }
 
