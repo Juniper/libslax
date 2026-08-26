@@ -29,6 +29,8 @@
 #include <libpin/pin_node.h>
 #include <libpin/pin_body.h>
 
+typedef struct xo_filter_s xo_filter_t;
+
 typedef uint8_t pin_action_type_t;
 
 /* Values for pin_action_type_t */
@@ -107,6 +109,10 @@ typedef struct pin_rulebook_s {
     pa_fixed_t *prb_body_instrs;  /* Pool of body instructions (pin_body_instr_t) */
     pa_fixed_t *prb_apply_entries; /* Pool of apply-dispatch entries */
     pa_pat_t *prb_apply_pat;	  /* Patricia tree: name_id → apply entry */
+    xo_filter_t **prb_if_filters; /* Per-BIA_IF compiled condition filters */
+    uint32_t prb_if_filter_count; /* Number of entries in prb_if_filters */
+    uint32_t prb_if_filter_cap;   /* Allocated capacity of prb_if_filters */
+    pin_rule_id_t prb_root_rule;  /* Rule for match="/" (null if none) */
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -187,6 +193,14 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
 
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
+
+/*
+ * Append a compiled per-BIA_IF condition filter to the rulebook's
+ * prb_if_filters array.  Returns the index (for storage in bi_filter_idx),
+ * or UINT32_MAX on allocation failure.
+ */
+uint32_t
+pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
