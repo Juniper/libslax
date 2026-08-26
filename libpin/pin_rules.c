@@ -43,6 +43,8 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
+#include <libxo/xo.h>
+#include "xo_filter.h"
 
 static const psu_byte_t *pin_apply_key_func (pa_pat_t *, pa_pat_data_atom_t);
 
@@ -401,9 +403,11 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
 	pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
 
     if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
-	psu_log("pin_rulebook_apply_add: duplicate name atom %u",
-		pin_name_id_atom_of(name_id));
-	return -1;
+	/* Duplicate: later template takes precedence (XSLT last-wins). */
+	pa_pat_node_t *existing = pa_pat_get(prbp->prb_apply_pat,
+					     sizeof(pin_name_id_t), &name_id);
+	if (existing)
+	    existing->ppn_data = datom;
     }
 
     return 0;
@@ -416,8 +420,36 @@ pin_rulebook_open (const char *name UNUSED)
 }
 
 void
-pin_rulebook_close (pin_rulebook_t *rules UNUSED)
+pin_rulebook_close (pin_rulebook_t *rules)
 {
+    if (rules == NULL)
+	return;
+    if (rules->prb_if_filters) {
+	for (uint32_t i = 0; i < rules->prb_if_filter_count; i++)
+	    xo_filter_destroy_standalone(rules->prb_if_filters[i]);
+	free(rules->prb_if_filters);
+	rules->prb_if_filters = NULL;
+	rules->prb_if_filter_count = 0;
+	rules->prb_if_filter_cap = 0;
+    }
+}
+
+uint32_t
+pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp)
+{
+    if (prbp->prb_if_filter_count >= prbp->prb_if_filter_cap) {
+	uint32_t newcap = prbp->prb_if_filter_cap
+			  ? prbp->prb_if_filter_cap * 2 : 8;
+	xo_filter_t **newp = realloc(prbp->prb_if_filters,
+				     newcap * sizeof(*newp));
+	if (newp == NULL)
+	    return UINT32_MAX;
+	prbp->prb_if_filters = newp;
+	prbp->prb_if_filter_cap = newcap;
+    }
+    uint32_t idx = prbp->prb_if_filter_count++;
+    prbp->prb_if_filters[idx] = xfp;
+    return idx;
 }
 
 /*
