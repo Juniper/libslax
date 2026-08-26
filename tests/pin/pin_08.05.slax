@@ -1,0 +1,31 @@
+version 1.3;
+
+/* 
+# quiet dump clean xml pin_08.04.xml
+*/
+
+main <data> {
+    apply-templates;
+}
+
+match socket {
+    <s> {
+        apply-templates;
+    }
+}
+
+match socket {
+    if (@type == "hex") {
+        <hex> {
+            copy-of .;
+        }
+    } else {
+        <more> {
+            <than> {
+                <enough> {
+                    copy-of .;
+                }
+            }
+        }
+    }
+}
