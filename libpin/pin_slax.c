@@ -82,7 +82,8 @@ pin_slax_is_xsl (xmlNodePtr nodep, const char *name)
  * Returns a pointer to the new (zeroed) instruction, or NULL on failure.
  */
 static pin_body_instr_t *
-pin_slax_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp)
+pin_slax_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp,
+			  pin_body_instr_id_t *bidp)
 {
     pin_body_instr_id_t bid;
     pin_body_instr_t *bip = pin_body_instr_alloc(rb, &bid);
@@ -91,6 +92,8 @@ pin_slax_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp)
     bzero(bip, sizeof(*bip));
     **nextp = bid;
     *nextp = &bip->bi_next;
+    if (bidp)
+	*bidp = bid;
     return bip;
 }
 
@@ -108,7 +111,7 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	if (child->type == XML_TEXT_NODE) {
 	    /* Skip whitespace-only text (XSLT template formatting, not output) */
 	    if (child->content && child->content[0] && !xmlIsBlankNode(child)) {
-		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 		if (bip == NULL) return;
 		bip->bi_type = BIA_EMIT_TEXT;
 		bip->bi_text = pin_namepool_atom(rb->prb_workspace,
@@ -121,7 +124,7 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 
 	/* xsl:copy-of → BIA_COPY (streaming copy of matched input element) */
 	if (pin_slax_is_xsl(child, "copy-of")) {
-	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 	    if (bip == NULL) return;
 	    bip->bi_type = BIA_COPY;
 	    continue;
@@ -132,7 +135,7 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    /* Only handle select="." (current node); skip complex expressions */
 	    if (sel == NULL || strcmp((const char *) sel, ".") == 0) {
-		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 		if (bip != NULL)
 		    bip->bi_type = BIA_VALUE_OF;
 	    } else {
@@ -143,9 +146,78 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
+	/*
+	 * xsl:if → BIA_IF + BIA_JUMP join point.
+	 *
+	 * Compiled layout in the instruction list:
+	 *   [BIA_IF] bi_next→[true-body...] bi_else→[BIA_JUMP]
+	 *   [true-body instructions, last bi_next→BIA_JUMP]
+	 *   [BIA_JUMP] bi_next→[first after-if instruction]
+	 *   [after-if instructions...]
+	 *
+	 * BIA_JUMP is a stable join point whose ID is known at compile time,
+	 * avoiding the need for forward-reference backpatching.
+	 */
+	if (pin_slax_is_xsl(child, "if")) {
+	    xmlChar *test = xmlGetProp(child, (const xmlChar *) "test");
+	    if (test == NULL || test[0] == '\0') {
+		if (test) xmlFree(test);
+		continue;	/* Empty test skips the whole if */
+	    }
+
+	    /*
+	     * Build a standalone filter for this condition.  The pattern
+	     * is `*[@condition]` — wildcard element so the same compiled
+	     * filter works regardless of which element name fires the rule.
+	     */
+	    char xpath_buf[1024];
+	    snprintf(xpath_buf, sizeof(xpath_buf),
+		     "*[%s]", (const char *) test);
+	    xmlFree(test);
+
+	    xo_filter_t *cond_filter = xo_filter_create_standalone();
+	    if (cond_filter == NULL) return;
+	    if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+		xo_filter_destroy_standalone(cond_filter);
+		return;
+	    }
+	    uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
+	    if (fidx == UINT32_MAX) {
+		xo_filter_destroy_standalone(cond_filter);
+		return;
+	    }
+
+	    /* Create BIA_IF; save its id so we can set bi_else later */
+	    pin_body_instr_id_t bid_if;
+	    pin_body_instr_t *bip_if =
+		pin_slax_body_instr_new(rb, nextp, &bid_if);
+	    if (bip_if == NULL) return;
+	    bip_if->bi_type = BIA_IF;
+	    bip_if->bi_filter_idx = fidx;
+
+	    /* Compile the true-body; bi_next of BIA_IF is filled in here */
+	    pin_slax_compile_body_r(child, rb, nextp);
+
+	    /*
+	     * Create BIA_JUMP after the true-body.  This fills in bi_next of
+	     * the last true-body instruction and provides a stable ID for
+	     * BIA_IF.bi_else.  The false branch lands here and falls through
+	     * to whatever instruction is wired into BIA_JUMP.bi_next next.
+	     */
+	    pin_body_instr_id_t bid_jump;
+	    pin_body_instr_t *bip_jump =
+		pin_slax_body_instr_new(rb, nextp, &bid_jump);
+	    if (bip_jump == NULL) return;
+	    bip_jump->bi_type = BIA_JUMP;
+
+	    /* Wire the false branch: BIA_IF.bi_else → BIA_JUMP */
+	    bip_if->bi_else = bid_jump;
+	    continue;
+	}
+
 	/* xsl:apply-templates → BIA_APPLY (dispatch children through rules) */
 	if (pin_slax_is_xsl(child, "apply-templates")) {
-	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 	    if (bip == NULL) return;
 	    bip->bi_type = BIA_APPLY;
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
@@ -163,6 +235,113 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
+	/*
+	 * xsl:choose → chain of BIA_IF (one per xsl:when) + optional
+	 * BIA_JUMP else-entry + BIA_JUMP join point.
+	 *
+	 * Each xsl:when produces:
+	 *   BIA_IF(cond) → when_body → BIA_GOTO(→join)
+	 * The last BIA_IF's bi_else points to the else-entry BIA_JUMP (if
+	 * there is an xsl:otherwise) or directly to the join BIA_JUMP.
+	 * All BIA_GOTOs are backpatched with bid_join once it is known.
+	 */
+	if (pin_slax_is_xsl(child, "choose")) {
+	    pin_body_instr_id_t bid_gotos[16];
+	    int n_gotos = 0;
+	    pin_body_instr_id_t bid_last_if = pin_body_instr_id_null_atom();
+	    xmlNodePtr otherwise_node = NULL;
+
+	    for (xmlNodePtr wc = child->children; wc; wc = wc->next) {
+		if (wc->type != XML_ELEMENT_NODE)
+		    continue;
+		if (pin_slax_is_xsl(wc, "otherwise")) {
+		    otherwise_node = wc;
+		    continue;
+		}
+		if (!pin_slax_is_xsl(wc, "when"))
+		    continue;
+
+		xmlChar *test = xmlGetProp(wc, (const xmlChar *) "test");
+		if (test == NULL || test[0] == '\0') {
+		    if (test) xmlFree(test);
+		    continue;
+		}
+		char xpath_buf[1024];
+		snprintf(xpath_buf, sizeof(xpath_buf),
+			 "*[%s]", (const char *) test);
+		xmlFree(test);
+
+		xo_filter_t *cond_filter = xo_filter_create_standalone();
+		if (cond_filter == NULL) return;
+		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+		    xo_filter_destroy_standalone(cond_filter);
+		    return;
+		}
+		uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
+		if (fidx == UINT32_MAX) {
+		    xo_filter_destroy_standalone(cond_filter);
+		    return;
+		}
+
+		pin_body_instr_id_t bid_if;
+		pin_body_instr_t *bip_if =
+		    pin_slax_body_instr_new(rb, nextp, &bid_if);
+		if (bip_if == NULL) return;
+		bip_if->bi_type = BIA_IF;
+		bip_if->bi_filter_idx = fidx;
+
+		/* Backpatch previous BIA_IF's bi_else to chain to this one */
+		if (!pin_body_instr_id_is_null(bid_last_if)) {
+		    pin_body_instr_t *prev_if =
+			pin_body_instr_addr(rb, bid_last_if);
+		    if (prev_if) prev_if->bi_else = bid_if;
+		}
+		bid_last_if = bid_if;
+
+		pin_slax_compile_body_r(wc, rb, nextp);
+
+		if (n_gotos < 16) {
+		    pin_body_instr_id_t bid_goto;
+		    pin_body_instr_t *bip_goto =
+			pin_slax_body_instr_new(rb, nextp, &bid_goto);
+		    if (bip_goto == NULL) return;
+		    bip_goto->bi_type = BIA_GOTO;
+		    bid_gotos[n_gotos++] = bid_goto;
+		}
+	    }
+
+	    if (otherwise_node != NULL) {
+		pin_body_instr_id_t bid_oth;
+		pin_body_instr_t *bip_oth =
+		    pin_slax_body_instr_new(rb, nextp, &bid_oth);
+		if (bip_oth == NULL) return;
+		bip_oth->bi_type = BIA_JUMP;
+		if (!pin_body_instr_id_is_null(bid_last_if)) {
+		    pin_body_instr_t *last_if =
+			pin_body_instr_addr(rb, bid_last_if);
+		    if (last_if) last_if->bi_else = bid_oth;
+		}
+		pin_slax_compile_body_r(otherwise_node, rb, nextp);
+	    }
+
+	    pin_body_instr_id_t bid_join;
+	    pin_body_instr_t *bip_join =
+		pin_slax_body_instr_new(rb, nextp, &bid_join);
+	    if (bip_join == NULL) return;
+	    bip_join->bi_type = BIA_JUMP;
+
+	    if (otherwise_node == NULL && !pin_body_instr_id_is_null(bid_last_if)) {
+		pin_body_instr_t *last_if =
+		    pin_body_instr_addr(rb, bid_last_if);
+		if (last_if) last_if->bi_else = bid_join;
+	    }
+	    for (int i = 0; i < n_gotos; i++) {
+		pin_body_instr_t *bip_g = pin_body_instr_addr(rb, bid_gotos[i]);
+		if (bip_g) bip_g->bi_else = bid_join;
+	    }
+	    continue;
+	}
+
 	/* Other xsl:* instructions not yet handled */
 	if (pin_slax_is_xsl(child, NULL))
 	    continue;
@@ -171,14 +350,14 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	pin_name_id_t tag_id = pin_namepool_atom(rb->prb_workspace,
 						 (const char *) child->name, TRUE);
 	{
-	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 	    if (bip == NULL) return;
 	    bip->bi_type = BIA_EMIT_OPEN;
 	    bip->bi_tag = tag_id;
 	}
 	pin_slax_compile_body_r(child, rb, nextp);
 	{
-	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp);
+	    pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 	    if (bip == NULL) return;
 	    bip->bi_type = BIA_EMIT_CLOSE;
 	    bip->bi_tag = tag_id;
@@ -333,8 +512,18 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	 * Register the rule with the filter for top-level element dispatch,
 	 * and add it to the apply-templates patricia tree if the match pattern
 	 * is a simple element name (no path, predicates, or wildcards).
+	 *
+	 * match="/" is special: no element filter event fires for the document
+	 * root, so store the rule id in prb_root_rule and fire it manually in
+	 * pin_parse when the first depth-0 element opens.
 	 */
 	const char *match_str = (const char *) match;
+	if (match_str[0] == '/' && match_str[1] == '\0') {
+	    rb->prb_root_rule = rid;
+	    xmlFree(match);
+	    count++;
+	    continue;
+	}
 	int rc = pin_filter_add_with_action(xfp, match_str, rid);
 	if (rc < 0) {
 	    psu_log("pin_slax_compile: pin_filter_add_with_action failed");
