@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.04.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="item">
+    <xsl:if test="@type = 'special'">
+      <special/>
+    </xsl:if>
+    <name><xsl:value-of select="."/></name>
+  </xsl:template>
+</xsl:stylesheet>
