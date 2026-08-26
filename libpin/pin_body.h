@@ -41,6 +41,9 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_COPY_SELECT 5   /* Copy named children from retained subtree */
 #define BIA_APPLY       6   /* Apply-templates to current element's children */
 #define BIA_VALUE_OF    7   /* Emit text content of current element (no element tags) */
+#define BIA_JUMP        8   /* Unconditional fall-through join point (follows bi_next) */
+#define BIA_IF          9   /* Conditional: if true, follow bi_next; if false, bi_else */
+#define BIA_GOTO       10   /* Unconditional jump to bi_else (used for else-branch skip) */
 
 /*
  * Retention requirement for the matched element.  Computed at compile time
@@ -65,11 +68,13 @@ typedef uint8_t pin_body_retain_t;
  */
 typedef struct pin_body_instr_s {
     pin_body_instr_id_t bi_next;    /* Next instruction; null = end of list */
+    pin_body_instr_id_t bi_else;    /* BIA_IF: first instruction after the true-body */
     pin_body_instr_type_t bi_type;
     pin_name_id_t bi_tag;           /* BIA_EMIT_OPEN / BIA_EMIT_CLOSE: tag name atom */
     pin_name_id_t bi_text;          /* BIA_EMIT_TEXT: text content atom */
-    pin_name_id_t bi_select;        /* BIA_COPY_SELECT / BIA_APPLY: select= atom */
+    pin_name_id_t bi_select;        /* BIA_COPY_SELECT / BIA_APPLY / BIA_IF: select/test atom */
     pin_name_id_t bi_mode;          /* BIA_APPLY: mode= atom */
+    uint32_t bi_filter_idx;         /* BIA_IF: index into prb_if_filters[] */
 } pin_body_instr_t;
 
 /*
