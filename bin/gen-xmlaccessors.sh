@@ -302,6 +302,7 @@ EOF
     {
         printf '\n%s' "$comment_block"
         cat <<EOF
+PSU_ALWAYS_INLINE
 $gtype
 $getter (const $ptr $var)
 {
@@ -311,6 +312,7 @@ EOF
         if [[ $have_setter -eq 1 ]]; then
             cat <<EOF
 
+PSU_ALWAYS_INLINE
 void
 $setter ($ptr $var, $stype_decl)
 {
@@ -367,6 +369,7 @@ cat > "$impl_c" <<EOF
 #define LIBXML_ACCESSORS_NOINLINE
 #endif
 #include "libxml.h"
+#include <libpsu/psulto.h>
 #include <libxml/tree.h>
 EOF
 
