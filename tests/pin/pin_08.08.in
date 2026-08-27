@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.08.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="/">
+    <library>
+      <xsl:apply-templates mode="summary"/>
+    </library>
+  </xsl:template>
+  <xsl:template match="book" mode="summary">
+    <entry>
+      <xsl:copy-of select="."/>
+    </entry>
+  </xsl:template>
+  <xsl:template match="book">
+    <volume>
+      <xsl:copy-of select="."/>
+    </volume>
+  </xsl:template>
+</xsl:stylesheet>
