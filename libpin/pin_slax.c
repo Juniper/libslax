@@ -535,7 +535,7 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
 						       match_str, TRUE);
 	    if (!pin_name_id_is_null(match_id))
-		pin_rulebook_apply_add(rb, match_id, rid);
+		pin_rulebook_apply_add(rb, match_id, mode_id, rid);
 	}
 
 	xmlFree(match);
