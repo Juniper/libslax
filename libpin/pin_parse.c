@@ -1008,9 +1008,12 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	     * element, not the element itself.  Do NOT open the matched element
 	     * in the output.  Record the current output depth so the CLOSE
 	     * bypass in pin_parse can detect when the element closes.
+	     *
+	     * If bi_mode is set, record the mode atom for mode-aware dispatch.
 	     */
 	    bfp->pbf_copy_depth = pip->pin_depth;
 	    bfp->pbf_mode = PBMODE_APPLY;
+	    bfp->pbf_apply_mode_id = instr->bi_mode;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
 	case BIA_VALUE_OF: {
@@ -1384,25 +1387,43 @@ pin_parse (pin_parse_t *parsep)
 			xo_filter_walk_open(NULL, apl_filter, localp, -1);
 		    }
 		    pin_rule_t *apl_rule = NULL;
+		    pin_rule_t discard_rule;
 		    pin_rulebook_t *rb = parsep->pp_rulebook;
-		    if (rb && rb->prb_apply_pat) {
-			pa_pat_node_t *pat_node = pa_pat_get(rb->prb_apply_pat,
-							     sizeof(pin_name_id_t),
-							     &name_id);
-			if (pat_node) {
-			    pa_pat_data_atom_t datom =
-				pa_pat_node_data(rb->prb_apply_pat, pat_node);
-			    if (!pa_pat_data_is_null(datom)) {
-				pin_apply_id_t aid = pin_apply_id(
-				    pa_pat_data_atom_of(datom));
-				pin_apply_entry_t *ep = pin_apply_addr(rb, aid);
-				if (ep)
+		    pin_body_frame_t *abfp = &body->pbe_stack[body->pbe_depth - 1];
+		    pin_name_id_t apply_mode = abfp->pbf_apply_mode_id;
+		    if (rb) {
+			if (!pin_name_id_is_null(apply_mode)) {
+			    /* Mode dispatch: scan linked list for (name, mode) match */
+			    for (pin_apply_id_t scan_aid = rb->prb_apply_list;
+				 !pin_apply_id_is_null(scan_aid); ) {
+				pin_apply_entry_t *ep = pin_apply_addr(rb, scan_aid);
+				if (ep == NULL) break;
+				if (pin_name_id_equal(ep->pae_name, name_id)
+					&& pin_name_id_equal(ep->pae_mode, apply_mode)) {
 				    apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
+				    break;
+				}
+				scan_aid = ep->pae_next;
+			    }
+			} else if (rb->prb_apply_pat) {
+			    /* Default-mode dispatch: fast Patricia tree lookup */
+			    pa_pat_node_t *pat_node = pa_pat_get(rb->prb_apply_pat,
+								 sizeof(pin_name_id_t),
+								 &name_id);
+			    if (pat_node) {
+				pa_pat_data_atom_t datom =
+				    pa_pat_node_data(rb->prb_apply_pat, pat_node);
+				if (!pa_pat_data_is_null(datom)) {
+				    pin_apply_id_t aid = pin_apply_id(
+					pa_pat_data_atom_of(datom));
+				    pin_apply_entry_t *ep = pin_apply_addr(rb, aid);
+				    if (ep)
+					apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
+				}
 			    }
 			}
 		    }
 		    if (apl_rule == NULL) {
-			pin_rule_t discard_rule;
 			bzero(&discard_rule, sizeof(discard_rule));
 			discard_rule.pr_action = PIA_DISCARD;
 			apl_rule = &discard_rule;
