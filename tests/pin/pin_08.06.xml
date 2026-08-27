@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<items>
+  <item kind="special">Alpha</item>
+  <item>Beta</item>
+  <item kind="special">Gamma</item>
+  <item kind="normal">Delta</item>
+  <item kind="special">Epsilon</item>
+</items>
