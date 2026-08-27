@@ -93,7 +93,9 @@ typedef struct pin_rulebook_info_s {
  */
 typedef struct pin_apply_entry_s {
     pin_name_id_t pae_name;   /* Element name atom (patricia tree key) */
+    pin_name_id_t pae_mode;   /* Mode atom (null = default mode) */
     pin_rule_id_t pae_rule;   /* Rule to dispatch to via apply-templates */
+    pin_apply_id_t pae_next;  /* Next entry in all-entries linked list */
 } pin_apply_entry_t;
 
 /*
@@ -113,6 +115,7 @@ typedef struct pin_rulebook_s {
     uint32_t prb_if_filter_count; /* Number of entries in prb_if_filters */
     uint32_t prb_if_filter_cap;   /* Allocated capacity of prb_if_filters */
     pin_rule_id_t prb_root_rule;  /* Rule for match="/" (null if none) */
+    pin_apply_id_t prb_apply_list; /* Head of all apply-entry linked list */
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -189,7 +192,8 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
  */
 int
 pin_rulebook_apply_add (pin_rulebook_t *prbp,
-			pin_name_id_t name_id, pin_rule_id_t rid);
+			pin_name_id_t name_id, pin_name_id_t mode_id,
+			pin_rule_id_t rid);
 
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
