@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.07.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="/">
+    <work>
+      <xsl:apply-templates/>
+    </work>
+  </xsl:template>
+  <xsl:template match="task">
+    <xsl:choose>
+      <xsl:when test="@priority = &quot;high&quot;">
+        <high>
+          <xsl:copy-of select="."/>
+        </high>
+      </xsl:when>
+      <xsl:when test="@priority = &quot;medium&quot;">
+        <medium>
+          <xsl:copy-of select="."/>
+        </medium>
+      </xsl:when>
+      <xsl:otherwise>
+        <normal>
+          <xsl:copy-of select="."/>
+        </normal>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+</xsl:stylesheet>
