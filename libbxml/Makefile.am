@@ -17,6 +17,7 @@ DIST_SUBDIRS = include . doc example fuzz python
 
 AM_CPPFLAGS = \
     -I$(top_builddir) \
+    -I$(top_srcdir) \
     -I$(builddir)/include \
     -I$(srcdir)/include
 
@@ -72,14 +73,31 @@ GENACC_H_FILES = \
 
 GENACC_FILES = ${GENACC_H_FILES} ${GENACC_C_FILES}
 
-${GENACC_FILES}: $(XML_ACCESSORS_GEN)
-	@$(AM_V_GEN)$(SHELL) $(XML_ACCESSORS_GEN) $(top_srcdir) $(top_builddir)
+#
+# GENACC_FILES lists three files produced by one recipe. Under parallel
+# make, giving that recipe directly to "${GENACC_FILES}:" lets each of
+# the three targets independently decide it's out of date and race to
+# run the script concurrently, corrupting the output. Routing through a
+# single stamp file means only one target ever carries the recipe, so
+# make's own per-target serialization keeps it from running twice.
+#
+GENACC_STAMP = gen/xmlaccessors-stamp
 
-BUILT_SOURCES = ${GENACC_FILES}
+$(GENACC_STAMP): $(XML_ACCESSORS_GEN)
+	@$(AM_V_GEN)$(SHELL) $(XML_ACCESSORS_GEN) $(top_srcdir) $(top_builddir)
+	@touch $@
+
+${GENACC_FILES}: $(GENACC_STAMP)
+	@if test -f $@; then :; else \
+	    rm -f $(GENACC_STAMP); \
+	    $(MAKE) $(AM_MAKEFLAGS) $(GENACC_STAMP); \
+	fi
+
+BUILT_SOURCES = $(GENACC_STAMP) ${GENACC_FILES}
 
 nodist_libbxml_la_SOURCES = $(GENACC_C_FILES)
 
-CLEANFILES = ${GENACC_FILES}
+CLEANFILES = ${GENACC_FILES} $(GENACC_STAMP)
 
 if WITH_C14N_SOURCES
 libbxml_la_SOURCES += c14n.c
