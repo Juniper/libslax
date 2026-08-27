@@ -102,6 +102,7 @@ typedef struct pin_body_frame_s {
     char *pbf_match_attribs;            /* Attribute string from matched element open */
     pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
     int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
+    pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
 } pin_body_frame_t;
 
 /*
