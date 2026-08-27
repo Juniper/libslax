@@ -384,7 +384,8 @@ pin_apply_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
 
 int
 pin_rulebook_apply_add (pin_rulebook_t *prbp,
-			pin_name_id_t name_id, pin_rule_id_t rid)
+			pin_name_id_t name_id, pin_name_id_t mode_id,
+			pin_rule_id_t rid)
 {
     if (prbp->prb_apply_pat == NULL || prbp->prb_apply_entries == NULL)
 	return -1;
@@ -397,17 +398,29 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
 	return -1;
 
     ep->pae_name = name_id;
+    ep->pae_mode = mode_id;
     ep->pae_rule = rid;
 
-    pa_pat_data_atom_t datom = pa_pat_data_atom(
-	pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
+    /* Prepend to linked list (last wins: new head is searched first) */
+    ep->pae_next = prbp->prb_apply_list;
+    prbp->prb_apply_list = aid;
 
-    if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
-	/* Duplicate: later template takes precedence (XSLT last-wins). */
-	pa_pat_node_t *existing = pa_pat_get(prbp->prb_apply_pat,
-					     sizeof(pin_name_id_t), &name_id);
-	if (existing)
-	    existing->ppn_data = datom;
+    /*
+     * For default-mode entries, also register in the Patricia tree so
+     * the O(log n) fast path in PBMODE_APPLY (no mode= on the
+     * apply-templates instruction) keeps working.
+     */
+    if (pin_name_id_is_null(mode_id)) {
+	pa_pat_data_atom_t datom = pa_pat_data_atom(
+	    pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
+
+	if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
+	    /* Duplicate: later template takes precedence (XSLT last-wins). */
+	    pa_pat_node_t *existing = pa_pat_get(prbp->prb_apply_pat,
+						 sizeof(pin_name_id_t), &name_id);
+	    if (existing)
+		existing->ppn_data = datom;
+	}
     }
 
     return 0;
