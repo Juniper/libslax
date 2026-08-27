@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<catalog>
+  <book id="1">Programming in C</book>
+  <book id="2">Advanced Algorithms</book>
+  <article id="3">Quick Sort Review</article>
+</catalog>
