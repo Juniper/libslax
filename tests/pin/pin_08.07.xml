@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<queue>
+  <task priority="high">Fix bug</task>
+  <task priority="medium">Review PR</task>
+  <task>Write docs</task>
+  <task priority="high">Deploy</task>
+  <task priority="low">Clean up</task>
+</queue>
