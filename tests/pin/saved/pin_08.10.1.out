@@ -1,0 +1,24 @@
+compiled 2 patterns
+<result>
+   <entry>
+      <id>1</id>
+      <title>Programming in C</title>
+   </entry>
+   <second>
+      <name>Part 1: Programming in C</name>
+   </second>
+   <entry>
+      <id>2</id>
+      <title>Advanced Algorithms</title>
+   </entry>
+   <second>
+      <name>Part 2: Advanced Algorithms</name>
+   </second>
+   <entry>
+      <id>3</id>
+      <title>Design Patterns</title>
+   </entry>
+   <second>
+      <name>Part 3: Design Patterns</name>
+   </second>
+</result>
