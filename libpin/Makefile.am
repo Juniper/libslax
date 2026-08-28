@@ -30,6 +30,7 @@ libpinincdir = ${includedir}/libpin
 libpininc_HEADERS = \
     pin_body.h \
     pin_common.h \
+    pin_exec.h \
     pin_filter.h \
     pin_nodeset.h \
     pin_parse.h \
@@ -37,11 +38,13 @@ libpininc_HEADERS = \
     pin_slax.h \
     pin_source.h \
     pin_tree.h \
+    pin_value.h \
     pin_whiffle.h \
     pin_workspace.h \
     pin_xpath.h
 
 libpin_la_SOURCES = \
+    pin_exec.c \
     pin_filter.c \
     pin_slax.c \
     pin_source.c \
@@ -52,7 +55,8 @@ libpin_la_SOURCES = \
 
 libpin_la_LIBADD = \
     $(top_builddir)/libpsu/libpsu.la \
-    $(top_builddir)/parrotdb/libparrotdb.la
+    $(top_builddir)/parrotdb/libparrotdb.la \
+    $(libdir)/libxo.la
 
 XXXX=\
     pinwhiffle.c \
@@ -68,6 +72,7 @@ GENERATED = \
     gen/pin_ns_map_id_gen.h \
     gen/pin_body_instr_id_gen.h \
     gen/pin_apply_id_gen.h \
+    gen/pin_op_id_gen.h \
     gen/pin_rule_id_funcs_gen.h \
     gen/pin_rstate_id_funcs_gen.h \
     gen/pin_node_gen.h \
@@ -75,7 +80,8 @@ GENERATED = \
     gen/pin_nodeset_chunk_gen.h \
     gen/pin_nodeset_info_gen.h \
     gen/pin_body_instr_id_funcs_gen.h \
-    gen/pin_apply_id_funcs_gen.h
+    gen/pin_apply_id_funcs_gen.h \
+    gen/pin_op_id_funcs_gen.h
 
 BUILT_SOURCES = ${GENERATED}
 
