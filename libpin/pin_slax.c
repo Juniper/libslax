@@ -354,6 +354,32 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    if (bip == NULL) return;
 	    bip->bi_type = BIA_EMIT_OPEN;
 	    bip->bi_tag = tag_id;
+
+	    /* Capture static attributes from the literal element, if any. */
+	    if (child->properties) {
+		char abuf[4096];
+		size_t apos = 0;
+		for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
+		    const char *aname = (const char *) ap->name;
+		    const char *aval = (ap->children && ap->children->content)
+				       ? (const char *) ap->children->content : "";
+		    /* Skip attribute value templates ({expr}) — not yet supported. */
+		    if (strchr(aval, '{'))
+			continue;
+		    if (apos > 0 && apos < sizeof(abuf) - 1)
+			abuf[apos++] = ' ';
+		    apos += (size_t) snprintf(abuf + apos, sizeof(abuf) - apos,
+					     "%s=\"%s\"", aname, aval);
+		    if (apos >= sizeof(abuf)) {
+			apos = sizeof(abuf) - 1;
+			break;
+		    }
+		}
+		abuf[apos] = '\0';
+		if (apos > 0)
+		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						       abuf, TRUE);
+	    }
 	}
 	pin_slax_compile_body_r(child, rb, nextp);
 	{
