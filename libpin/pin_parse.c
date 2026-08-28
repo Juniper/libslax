@@ -54,6 +54,68 @@ static void pin_body_exec_advance(pin_parse_t *parsep);
 #include "xo_filter.h"
 #include <libpin/pin_filter.h>
 
+
+/*
+ * Find 'name' in the raw attribute string (format: name="value" ...).
+ * Returns a pointer to the value and sets *lenp to its length, or
+ * returns NULL if the attribute is not found.  The returned pointer
+ * points into 'attribs'; it is NOT NUL-terminated.
+ */
+static const char *
+pin_body_find_attrib (const char *attribs, const char *name, size_t *lenp)
+{
+    if (attribs == NULL || name == NULL)
+	return NULL;
+
+    size_t nlen = strlen(name);
+    const char *cp = attribs;
+
+    while (*cp) {
+	/* Skip whitespace between attributes */
+	while (isspace((unsigned char) *cp))
+	    cp += 1;
+	if (*cp == '\0')
+	    break;
+
+	/* Read attribute name */
+	const char *aname = cp;
+	while (*cp && *cp != '=' && !isspace((unsigned char) *cp))
+	    cp += 1;
+	size_t alen = cp - aname;
+
+	/* Skip whitespace and '=' */
+	while (isspace((unsigned char) *cp))
+	    cp += 1;
+	if (*cp != '=')
+	    break;
+	cp += 1;
+
+	/* Skip whitespace before quoted value */
+	while (isspace((unsigned char) *cp))
+	    cp += 1;
+	if (*cp != '"' && *cp != '\'')
+	    break;
+
+	/* Read quoted value */
+	char q = *cp;
+	cp += 1;
+	const char *aval = cp;
+	while (*cp && *cp != q)
+	    cp += 1;
+	size_t vlen = cp - aval;
+	if (*cp == q)
+	    cp += 1;
+
+	/* Check for a match */
+	if (alen == nlen && strncmp(aname, name, nlen) == 0) {
+	    if (lenp)
+		*lenp = vlen;
+	    return aval;
+	}
+    }
+    return NULL;
+}
+
 /*
  * Parse the raw XML attribute string and feed each name=value pair to
  * the filter via xo_filter_walk_attr.  Called on demand from BIA_IF
@@ -956,12 +1018,14 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	pin_body_instr_id_t pc = bfp->pbf_pc;
 	if (pin_body_instr_id_is_null(pc)) {
 	    /* End of instruction list; body complete */
+	    xo_buf_cleanup(&bfp->pbf_value_cache);
 	    body->pbe_depth -= 1;
 	    continue;		/* Check for parent body frame */
 	}
 
 	pin_body_instr_t *instr = pin_body_instr_addr(parsep->pp_rulebook, pc);
 	if (instr == NULL) {
+	    xo_buf_cleanup(&bfp->pbf_value_cache);
 	    body->pbe_depth -= 1;
 	    break;
 	}
@@ -1029,12 +1093,42 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
 	case BIA_VALUE_OF: {
+	    if (!pin_name_id_is_null(instr->bi_select)) {
+		/*
+		 * select="@attr": emit the named attribute value from the
+		 * matched element as text.  No streaming pause needed.
+		 */
+		const char *aname = pin_parse_namepool_string(parsep,
+							      instr->bi_select);
+		if (aname) {
+		    size_t vlen = 0;
+		    const char *aval = pin_body_find_attrib(bfp->pbf_match_attribs,
+							    aname, &vlen);
+		    if (aval && vlen > 0)
+			pin_insert_text(parsep, aval, vlen, PIN_TYPE_TEXT);
+		}
+		break;		/* Synchronous: no pause */
+	    }
 	    /*
-	     * xsl:value-of select=".": collect text content of the matched
-	     * element and emit it in place.  The matched element's tags are
-	     * not opened in the output.  Child element open/close events are
-	     * tracked via pbf_depth_counter so we know when the element ends.
+	     * select=".": if this is not the first use in this body frame,
+	     * the matched element's content was already consumed and cached.
+	     * Emit the cache synchronously rather than re-streaming.
 	     */
+	    if (xo_buf_data(&bfp->pbf_value_cache, 0) != NULL) {
+		if (!xo_buf_is_empty(&bfp->pbf_value_cache))
+		    pin_insert_text(parsep,
+				    xo_buf_data(&bfp->pbf_value_cache, 0),
+				    xo_buf_offset(&bfp->pbf_value_cache),
+				    PIN_TYPE_TEXT);
+		break;		/* Synchronous: no pause */
+	    }
+	    /*
+	     * First use of select=".": collect text content of the matched
+	     * element and emit it in place.  Child element open/close events
+	     * are tracked via pbf_depth_counter so we know when the element ends.
+	     * Text is also accumulated into pbf_value_cache for later reuse.
+	     */
+	    xo_buf_init(&bfp->pbf_value_cache);
 	    bfp->pbf_copy_depth = pip->pin_depth;
 	    bfp->pbf_depth_counter = 0;
 	    bfp->pbf_mode = PBMODE_VALUE_OF;
@@ -1305,6 +1399,16 @@ pin_parse (pin_parse_t *parsep)
 		}
 		psu_log("text [%.*s] (%u)", (int) len, data, type);
 		pin_insert_text(parsep, data, len, type);
+		/* If in VALUE_OF mode, also cache text for subsequent select="." reuse */
+		{
+		    pin_body_exec_t *vbody = &pip->pin_body;
+		    if (vbody->pbe_depth > 0) {
+			pin_body_frame_t *vbfp =
+			    &vbody->pbe_stack[vbody->pbe_depth - 1];
+			if (vbfp->pbf_mode == PBMODE_VALUE_OF)
+			    xo_buf_append(&vbfp->pbf_value_cache, data, (ssize_t) len);
+		    }
+		}
 	    }
 	    break;
 
@@ -1372,11 +1476,11 @@ pin_parse (pin_parse_t *parsep)
 			pin_filter_set_attribs(vof_filter, rest);
 			xo_filter_walk_open(NULL, vof_filter, localp, -1);
 		    }
-		    vbfp->pbf_depth_counter++;
+		    vbfp->pbf_depth_counter += 1;
 		    if (type == PIN_TYPE_EMPTY) {
 			if (vof_filter)
 			    xo_filter_walk_close(NULL, vof_filter, localp, -1);
-			vbfp->pbf_depth_counter--;
+			vbfp->pbf_depth_counter -= 1;
 		    }
 		    break;
 		}
@@ -1600,8 +1704,8 @@ pin_parse (pin_parse_t *parsep)
 			&vbody->pbe_stack[vbody->pbe_depth - 1];
 		    if (vbfp->pbf_mode == PBMODE_VALUE_OF) {
 			if (vbfp->pbf_depth_counter > 0) {
-			    vbfp->pbf_depth_counter--;
-			    break; /* Child element closing — skip pin_insert_close */
+			    vbfp->pbf_depth_counter -= 1;
+			    break;
 			}
 			/* The matched element itself is closing */
 			vbfp->pbf_mode = PBMODE_EXEC;
