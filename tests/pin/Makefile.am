@@ -122,6 +122,8 @@ EXTRA_DIST = \
     pin_08.07.xml \
     pin_08.08.in \
     pin_08.08.xml \
+    pin_08.09.in \
+    pin_08.09.xml \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
