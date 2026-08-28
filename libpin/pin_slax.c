@@ -130,16 +130,26 @@ pin_slax_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
-	/* xsl:value-of → BIA_VALUE_OF (emit text content of current element) */
+	/* xsl:value-of → BIA_VALUE_OF (emit text content or attribute value) */
 	if (pin_slax_is_xsl(child, "value-of")) {
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
-	    /* Only handle select="." (current node); skip complex expressions */
-	    if (sel == NULL || strcmp((const char *) sel, ".") == 0) {
+	    const char *sstr = sel ? (const char *) sel : NULL;
+	    if (sstr == NULL || strcmp(sstr, ".") == 0) {
+		/* select="." — pause and collect text children */
 		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
 		if (bip != NULL)
 		    bip->bi_type = BIA_VALUE_OF;
+	    } else if (sstr[0] == '@' && sstr[1] != '\0'
+		       && strpbrk(sstr + 1, "/@[]()*") == NULL) {
+		/* select="@attr" — emit attribute value synchronously */
+		pin_body_instr_t *bip = pin_slax_body_instr_new(rb, nextp, NULL);
+		if (bip != NULL) {
+		    bip->bi_type = BIA_VALUE_OF;
+		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						       sstr + 1, TRUE);
+		}
 	    } else {
-		psu_log("pin_slax: skipping value-of with complex select: %s", sel);
+		psu_log("pin_slax: skipping value-of with complex select: %s", sstr);
 	    }
 	    if (sel)
 		xmlFree(sel);
