@@ -971,8 +971,20 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	switch (instr->bi_type) {
 	case BIA_EMIT_OPEN: {
 	    const char *tag = pin_parse_namepool_string(parsep, instr->bi_tag);
-	    if (tag)
-		pin_insert_open(parsep, instr->bi_tag, NULL, tag, NULL, PIA_SAVE);
+	    if (tag) {
+		char *attribs = NULL;
+		pin_action_type_t act = PIA_SAVE;
+		if (!pin_name_id_is_null(instr->bi_select)) {
+		    const char *astr = pin_parse_namepool_string(parsep,
+							    instr->bi_select);
+		    if (astr && *astr) {
+			attribs = strdup(astr);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		}
+		pin_insert_open(parsep, instr->bi_tag, NULL, tag, attribs, act);
+		free(attribs);
+	    }
 	    break;
 	}
 	case BIA_EMIT_TEXT: {
