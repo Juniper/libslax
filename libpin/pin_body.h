@@ -24,6 +24,8 @@
 #include <parrotdb/pafixed.h>
 #include <libpin/pin_common.h>
 #include <libpin/pin_node.h>
+#include <libxo/xo.h>
+#include <libxo/xo_buf.h>
 
 /* Generated typed atom for body instruction ids (wraps pa_fixed_atom_t) */
 #include "gen/pin_body_instr_id_gen.h"
@@ -103,6 +105,7 @@ typedef struct pin_body_frame_s {
     pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
     int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
     pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
+    xo_buffer_t pbf_value_cache;        /* Cached text from select="." (non-null after first collect) */
 } pin_body_frame_t;
 
 /*
