@@ -1,0 +1,18 @@
+compiled 2 patterns
+<work>
+   <high>
+      <task priority="high">Fix bug</task>
+   </high>
+   <medium>
+      <task priority="medium">Review PR</task>
+   </medium>
+   <normal>
+      <task>Write docs</task>
+   </normal>
+   <high>
+      <task priority="high">Deploy</task>
+   </high>
+   <normal>
+      <task priority="low">Clean up</task>
+   </normal>
+</work>
