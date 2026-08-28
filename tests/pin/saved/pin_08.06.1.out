@@ -1,0 +1,18 @@
+compiled 2 patterns
+<result>
+   <special>
+      <item kind="special">Alpha</item>
+   </special>
+   <plain>
+      <item>Beta</item>
+   </plain>
+   <special>
+      <item kind="special">Gamma</item>
+   </special>
+   <plain>
+      <item kind="normal">Delta</item>
+   </plain>
+   <special>
+      <item kind="special">Epsilon</item>
+   </special>
+</result>
