@@ -221,6 +221,17 @@ pin_apply_id_atom_of \
 pin_apply_id_null_atom \
 "
 
+atom_pin_op_id="
+pin_op_id_gen.h \
+pin_op_id_t \
+pin_op_id_s \
+poid_atom \
+pin_op_id_is_null \
+pin_op_id \
+pin_op_id_atom_of \
+pin_op_id_null_atom \
+"
+
 pin_fixed_atoms="\
 pin_rule_id \
 pin_rstate_id \
@@ -228,6 +239,7 @@ pin_node_id \
 pin_ns_map_id \
 pin_body_instr_id \
 pin_apply_id \
+pin_op_id \
 "
 
 # libpin plain (pa_atom_t) typed wrappers
@@ -321,6 +333,20 @@ pin_apply_id_atom_of \
 pin_apply_id_is_null \
 "
 
+fixed_funcs_pin_op="
+pin_op_id_funcs_gen.h \
+pin_op_id_t \
+pin_op_t \
+pin_rulebook_t \
+prb_ops \
+pin_op_alloc \
+pin_op_free \
+pin_op_addr \
+pin_op_id \
+pin_op_id_atom_of \
+pin_op_id_is_null \
+"
+
 pin_fixed_func_atoms="\
 pin_rule \
 pin_rstate \
@@ -328,6 +354,7 @@ pin_node \
 pin_ns_map \
 pin_body_instr \
 pin_apply \
+pin_op \
 "
 
 # libpin plain-atom function sets: file, elem_type, base_type, field, alloc_fn, free_fn, addr_fn
