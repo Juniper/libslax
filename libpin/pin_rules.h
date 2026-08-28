@@ -28,6 +28,7 @@
 #include <parrotdb/pabitmap.h>
 #include <libpin/pin_node.h>
 #include <libpin/pin_body.h>
+#include <libpin/pin_exec.h>
 
 typedef struct xo_filter_s xo_filter_t;
 
@@ -43,6 +44,7 @@ typedef uint8_t pin_action_type_t;
 #define PIA_RETURN	6	/* Force return from pin_parse() */
 #define PIA_LITERAL	7	/* Emit a static literal node, discard matched element */
 #define PIA_WRAP	8	/* Wrap matched element in a synthetic outer tag */
+#define PIA_SAVE_ALL	9	/* Save node and entire subtree unconditionally */
 
 /* Generated typed atoms for rule, state, and apply-entry ids */
 #include "gen/pin_rule_id_gen.h"
@@ -59,8 +61,16 @@ typedef struct pin_rule_s {
     pa_bitmap_id_t pr_bitmap;	/* Elements affected by this rule */
     pin_action_type_t pr_action;	/* What to do when the rule matches */
     pin_name_id_t pr_mode;	/* Mode (namepool atom; null = default mode) */
+
+    /* New op-dispatch fields (Phase 1+) */
+    pin_rstate_id_t pr_child_state; /* Rulebook state for children (replaces pr_new_state) */
+    pin_op_id_t pr_close_ops;	/* Op sequence to run on CLOSE; null = use pr_action */
+    pin_name_id_t pr_src_file;	/* Namepool atom: source XSLT filename (for debugging) */
+    uint32_t pr_src_line;	/* Source line number (for debugging) */
+
+    /* Legacy fields: kept through Phase 5, removed in Phase 6 */
     pin_name_id_t pr_use_tag;	/* For PIA_LITERAL: namepool atom of literal element name */
-    pin_rstate_id_t pr_new_state;/* New state (in the rulebook) to enter */
+    pin_rstate_id_t pr_new_state;/* Old: new state to enter (superseded by pr_child_state) */
     pin_name_id_t pr_literal_text; /* For PIA_LITERAL/PIA_WRAP: text of pre-emit literal content */
     pin_name_id_t pr_pre_tag;	/* For PIA_WRAP: pre-emit element name (before the wrap) */
     pin_body_instr_id_t pr_body; /* First body instruction; null = use pr_action */
@@ -107,6 +117,7 @@ typedef struct pin_rulebook_s {
     pin_rulebook_info_t *prb_infop; /* Our information the the pa_mmap_t */
     pa_fixed_t *prb_rules;	  /* List of rules (pin_rule_t) */
     pa_fixed_t *prb_states;	  /* List of states (pin_rule_state_t) */
+    pa_fixed_t *prb_ops;	  /* Pool of op sequence nodes (pin_op_t) */
     pa_bitmap_t *prb_bitmaps;	  /* Pool of bitmaps */
     pa_fixed_t *prb_body_instrs;  /* Pool of body instructions (pin_body_instr_t) */
     pa_fixed_t *prb_apply_entries; /* Pool of apply-dispatch entries */
@@ -210,6 +221,7 @@ pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp);
 #include "gen/pin_rstate_id_funcs_gen.h"
 #include "gen/pin_body_instr_id_funcs_gen.h"
 #include "gen/pin_apply_id_funcs_gen.h"
+#include "gen/pin_op_id_funcs_gen.h"
 
 /* Aliases: pin_rulebook_rule(prbp, rid) and pin_rulebook_state(prbp, sid) */
 #define pin_rulebook_rule	pin_rule_addr
