@@ -1,0 +1,12 @@
+compiled 3 patterns
+<library class="collection" type="books">
+   <entry kind="book" status="available">
+      <book id="1">Programming in C</book>
+   </entry>
+   <entry kind="article">
+      <article id="2">Quick Sort Review</article>
+   </entry>
+   <entry kind="book" status="available">
+      <book id="3">Advanced Algorithms</book>
+   </entry>
+</library>
