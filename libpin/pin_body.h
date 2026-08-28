@@ -72,7 +72,7 @@ typedef struct pin_body_instr_s {
     pin_body_instr_type_t bi_type;
     pin_name_id_t bi_tag;           /* BIA_EMIT_OPEN / BIA_EMIT_CLOSE: tag name atom */
     pin_name_id_t bi_text;          /* BIA_EMIT_TEXT: text content atom */
-    pin_name_id_t bi_select;        /* BIA_COPY_SELECT / BIA_APPLY / BIA_IF: select/test atom */
+    pin_name_id_t bi_select;        /* BIA_EMIT_OPEN: attribute string; BIA_COPY_SELECT / BIA_APPLY / BIA_IF: select/test atom */
     pin_name_id_t bi_mode;          /* BIA_APPLY: mode= atom */
     uint32_t bi_filter_idx;         /* BIA_IF: index into prb_if_filters[] */
 } pin_body_instr_t;
