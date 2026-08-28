@@ -78,8 +78,13 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "apply.entries"),
 		      PIN_SHIFT, sizeof(pin_apply_entry_t), PIN_MAX_ATOMS);
 
+    pa_fixed_t *ops =
+	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.ops"),
+		      PIN_SHIFT, sizeof(pin_op_t), PIN_MAX_ATOMS);
+
     if (infop == NULL || rules == NULL || states == NULL
-	    || bitmaps == NULL || body_instrs == NULL || apply_entries == NULL)
+	    || bitmaps == NULL || body_instrs == NULL || apply_entries == NULL
+	    || ops == NULL)
 	return NULL;
 
     pa_pat_t *apply_pat = pa_pat_open(pmp,
@@ -99,6 +104,7 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	prbp->prb_states = states;
 	prbp->prb_bitmaps = bitmaps;
 	prbp->prb_body_instrs = body_instrs;
+	prbp->prb_ops = ops;
 	prbp->prb_apply_entries = apply_entries;
 	prbp->prb_apply_pat = apply_pat;
 	prbp->prb_script = script;
