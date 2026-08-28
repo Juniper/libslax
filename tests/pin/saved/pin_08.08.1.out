@@ -1,0 +1,9 @@
+compiled 3 patterns
+<library>
+   <entry>
+      <book id="1">Programming in C</book>
+   </entry>
+   <entry>
+      <book id="2">Advanced Algorithms</book>
+   </entry>
+</library>
