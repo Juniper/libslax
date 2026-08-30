@@ -481,6 +481,342 @@ pin_slax_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
     return pin_rstate_id_null_atom();
 }
 
+/*
+ * Walking cursor for the op-sequence compiler.  poc_nextp always points to
+ * the pin_op_id_t field where the next allocated op's id should be written;
+ * recursive calls share the same cursor so ops are chained in source order.
+ */
+typedef struct pin_op_cursor_s {
+    pin_op_id_t    *poc_nextp;    /* field to fill with next op's id */
+    pin_rulebook_t *poc_rb;       /* rulebook receiving the new ops */
+    pin_name_id_t   poc_src_file; /* namepool atom for the source filename */
+    uint32_t        poc_src_line; /* line number of the node being compiled */
+} pin_op_cursor_t;
+
+/*
+ * Allocate one op node, chain it at *poc_nextp, advance the cursor,
+ * zero-fill the new node, and record source location.
+ * If oidp is non-NULL, *oidp receives the new op's id (used for backpatching).
+ */
+static pin_op_t *
+pin_slax_op_new (pin_op_cursor_t *cur, pin_op_id_t *oidp)
+{
+    pin_op_id_t oid;
+    pin_op_t *opp = pin_op_alloc(cur->poc_rb, &oid);
+    if (opp == NULL)
+	return NULL;
+
+    bzero(opp, sizeof(*opp));
+    if (oidp)
+	*oidp = oid;
+
+    *cur->poc_nextp = oid;
+    cur->poc_nextp = &opp->po_next;
+
+    opp->po_src_file = cur->poc_src_file;
+    opp->po_src_line = cur->poc_src_line;
+    return opp;
+}
+
+/*
+ * Emit the PUSH_* op that best represents an xsl:if / xsl:when test
+ * expression, leaving the result on the value stack for a following
+ * PUSH_BOOL + IF to consume.
+ *
+ * Supported forms:
+ *   @attr        → PUSH_ATTR  (non-null string → true)
+ *   .            → PUSH_TEXT  (non-empty string → true)
+ *   simple-name  → PUSH_NODES (non-empty nodeset → true)
+ *
+ * Anything more complex is stubbed as PUSH_BOOL (always false).
+ */
+static pin_op_t *
+pin_slax_op_push_for_test (pin_op_cursor_t *cur, const char *test)
+{
+    pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
+
+    pin_op_t *push = pin_slax_op_new(cur, NULL);
+    if (push == NULL)
+	return NULL;
+
+    if (test[0] == '@' && test[1] != '\0') {
+	push->po_type = PIN_OP_PUSH_ATTR;
+	push->po_name = pin_namepool_atom(pwp, test + 1, TRUE);
+    } else if (strcmp(test, ".") == 0) {
+	push->po_type = PIN_OP_PUSH_TEXT;
+	push->po_name = pin_namepool_atom(pwp, ".", TRUE);
+    } else if (strpbrk(test, "/@[]()*") == NULL) {
+	push->po_type = PIN_OP_PUSH_NODES;
+	push->po_name = pin_namepool_atom(pwp, test, TRUE);
+    } else {
+	psu_log("pin_slax: complex test not yet supported in ops: %s", test);
+	push->po_type = PIN_OP_PUSH_BOOL;   /* always false; body is skipped */
+    }
+    return push;
+}
+
+/*
+ * Recursively compile the children of body_node into PIN_OP_* sequences,
+ * appended at the cursor position.  The layout mirrors the BIA_ compiler
+ * above but uses pin_op_t nodes for the op-dispatch engine.
+ */
+static void
+pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
+{
+    pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
+
+    for (xmlNodePtr child = body_node->children; child; child = child->next) {
+	cur->poc_src_line = (uint32_t) xmlGetLineNo(child);
+
+	if (child->type == XML_TEXT_NODE) {
+	    if (!child->content || xmlIsBlankNode(child))
+		continue;
+
+	    pin_op_t *push = pin_slax_op_new(cur, NULL);
+	    if (push == NULL) return;
+	    push->po_type = PIN_OP_PUSH_STRING;
+	    push->po_name = pin_namepool_atom(pwp,
+		    (const char *) child->content, TRUE);
+
+	    pin_op_t *emit = pin_slax_op_new(cur, NULL);
+	    if (emit == NULL) return;
+	    emit->po_type = PIN_OP_EMIT;
+	    continue;
+	}
+
+	if (child->type != XML_ELEMENT_NODE)
+	    continue;
+
+	if (pin_slax_is_xsl(child, "copy-of")) {
+	    pin_op_t *push = pin_slax_op_new(cur, NULL);
+	    if (push == NULL) return;
+	    push->po_type = PIN_OP_PUSH_NODE;
+	    continue;
+	}
+
+	if (pin_slax_is_xsl(child, "value-of")) {
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    const char *s = sel ? (const char *) sel : ".";
+
+	    pin_op_t *push = pin_slax_op_new(cur, NULL);
+	    if (push == NULL) { if (sel) xmlFree(sel); return; }
+
+	    if (strcmp(s, ".") == 0) {
+		push->po_type = PIN_OP_PUSH_TEXT;
+		push->po_name = pin_namepool_atom(pwp, ".", TRUE);
+	    } else if (s[0] == '@' && s[1] != '\0') {
+		push->po_type = PIN_OP_PUSH_ATTR;
+		push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+	    } else {
+		push->po_type = PIN_OP_PUSH_TEXT;
+		push->po_name = pin_namepool_atom(pwp, s, TRUE);
+	    }
+	    if (sel) xmlFree(sel);
+
+	    pin_op_t *emit = pin_slax_op_new(cur, NULL);
+	    if (emit == NULL) return;
+	    emit->po_type = PIN_OP_EMIT;
+	    continue;
+	}
+
+	if (pin_slax_is_xsl(child, "apply-templates")) {
+	    pin_op_t *apply = pin_slax_op_new(cur, NULL);
+	    if (apply == NULL) return;
+	    apply->po_type = PIN_OP_APPLY;
+	    xmlChar *mode = xmlGetProp(child, (const xmlChar *) "mode");
+	    if (mode) {
+		apply->po_name = pin_namepool_atom(pwp, (const char *) mode, TRUE);
+		xmlFree(mode);
+	    }
+	    continue;
+	}
+
+	/*
+	 * xsl:if → PUSH_* + PUSH_BOOL + IF + body + JUMP (join point).
+	 *
+	 *   IF  po_next → [first body op]   po_alt → JUMP
+	 *   [body ops]  last po_next → JUMP
+	 *   JUMP po_next → [continuation]
+	 *
+	 * The JUMP is allocated after the body so the cursor naturally
+	 * chains the last body op to it.  IF.po_alt is backpatched here.
+	 */
+	if (pin_slax_is_xsl(child, "if")) {
+	    xmlChar *test = xmlGetProp(child, (const xmlChar *) "test");
+	    if (test == NULL || test[0] == '\0') {
+		if (test) xmlFree(test);
+		continue;
+	    }
+
+	    if (pin_slax_op_push_for_test(cur, (const char *) test) == NULL) {
+		xmlFree(test);
+		return;
+	    }
+	    xmlFree(test);
+
+	    pin_op_t *push_bool = pin_slax_op_new(cur, NULL);
+	    if (push_bool == NULL) return;
+	    push_bool->po_type = PIN_OP_PUSH_BOOL;
+
+	    pin_op_id_t bid_if;
+	    pin_op_t *bip_if = pin_slax_op_new(cur, &bid_if);
+	    if (bip_if == NULL) return;
+	    bip_if->po_type = PIN_OP_IF;
+
+	    pin_slax_compile_ops_r(child, cur);
+
+	    pin_op_id_t bid_jump;
+	    pin_op_t *bip_jump = pin_slax_op_new(cur, &bid_jump);
+	    if (bip_jump == NULL) return;
+	    bip_jump->po_type = PIN_OP_JUMP;
+
+	    bip_if->po_alt = bid_jump;
+	    continue;
+	}
+
+	/*
+	 * xsl:choose → chain of (PUSH_* + PUSH_BOOL + IF + when-body + GOTO),
+	 * optional JUMP + otherwise-body, and a final JUMP join point.
+	 *
+	 * Each IF.po_alt is backpatched to the next IF (false chain).
+	 * The last IF.po_alt points to the otherwise entry or the join JUMP.
+	 * All GOTO.po_alt fields are backpatched to the join JUMP.
+	 */
+	if (pin_slax_is_xsl(child, "choose")) {
+	    pin_op_id_t gotos[16];
+	    int n_gotos = 0;
+	    pin_op_id_t bid_last_if = pin_op_id_null_atom();
+	    xmlNodePtr otherwise_node = NULL;
+
+	    for (xmlNodePtr wc = child->children; wc; wc = wc->next) {
+		if (wc->type != XML_ELEMENT_NODE)
+		    continue;
+		if (pin_slax_is_xsl(wc, "otherwise")) {
+		    otherwise_node = wc;
+		    continue;
+		}
+		if (!pin_slax_is_xsl(wc, "when"))
+		    continue;
+
+		xmlChar *test = xmlGetProp(wc, (const xmlChar *) "test");
+		if (test == NULL || test[0] == '\0') {
+		    if (test) xmlFree(test);
+		    continue;
+		}
+
+		cur->poc_src_line = (uint32_t) xmlGetLineNo(wc);
+		if (pin_slax_op_push_for_test(cur, (const char *) test) == NULL) {
+		    xmlFree(test);
+		    return;
+		}
+		xmlFree(test);
+
+		pin_op_t *push_bool = pin_slax_op_new(cur, NULL);
+		if (push_bool == NULL) return;
+		push_bool->po_type = PIN_OP_PUSH_BOOL;
+
+		pin_op_id_t bid_if;
+		pin_op_t *bip_if = pin_slax_op_new(cur, &bid_if);
+		if (bip_if == NULL) return;
+		bip_if->po_type = PIN_OP_IF;
+
+		/* Backpatch previous IF's false chain to this IF */
+		if (!pin_op_id_is_null(bid_last_if)) {
+		    pin_op_t *prev_if = pin_op_addr(cur->poc_rb, bid_last_if);
+		    if (prev_if)
+			prev_if->po_alt = bid_if;
+		}
+		bid_last_if = bid_if;
+
+		pin_slax_compile_ops_r(wc, cur);
+
+		if (n_gotos < 16) {
+		    pin_op_id_t bid_goto;
+		    pin_op_t *bip_goto = pin_slax_op_new(cur, &bid_goto);
+		    if (bip_goto == NULL) return;
+		    bip_goto->po_type = PIN_OP_GOTO;
+		    gotos[n_gotos] = bid_goto;
+		    n_gotos += 1;
+		}
+	    }
+
+	    if (otherwise_node != NULL) {
+		cur->poc_src_line = (uint32_t) xmlGetLineNo(otherwise_node);
+		pin_op_id_t bid_oth;
+		pin_op_t *bip_oth = pin_slax_op_new(cur, &bid_oth);
+		if (bip_oth == NULL) return;
+		bip_oth->po_type = PIN_OP_JUMP;
+
+		if (!pin_op_id_is_null(bid_last_if)) {
+		    pin_op_t *last_if = pin_op_addr(cur->poc_rb, bid_last_if);
+		    if (last_if)
+			last_if->po_alt = bid_oth;
+		}
+		pin_slax_compile_ops_r(otherwise_node, cur);
+	    }
+
+	    pin_op_id_t bid_join;
+	    pin_op_t *bip_join = pin_slax_op_new(cur, &bid_join);
+	    if (bip_join == NULL) return;
+	    bip_join->po_type = PIN_OP_JUMP;
+
+	    if (otherwise_node == NULL && !pin_op_id_is_null(bid_last_if)) {
+		pin_op_t *last_if = pin_op_addr(cur->poc_rb, bid_last_if);
+		if (last_if)
+		    last_if->po_alt = bid_join;
+	    }
+	    for (int i = 0; i < n_gotos; i++) {
+		pin_op_t *bip_g = pin_op_addr(cur->poc_rb, gotos[i]);
+		if (bip_g)
+		    bip_g->po_alt = bid_join;
+	    }
+	    continue;
+	}
+
+	/* Other xsl:* instructions not yet handled */
+	if (pin_slax_is_xsl(child, NULL))
+	    continue;
+
+	/* Literal element: EMIT_OPEN, recurse into children, EMIT_CLOSE */
+	{
+	    pin_name_id_t tag_id = pin_namepool_atom(pwp,
+		    (const char *) child->name, TRUE);
+
+	    pin_op_t *open_op = pin_slax_op_new(cur, NULL);
+	    if (open_op == NULL) return;
+	    open_op->po_type = PIN_OP_EMIT_OPEN;
+	    open_op->po_name = tag_id;
+
+	    pin_slax_compile_ops_r(child, cur);
+
+	    pin_op_t *close_op = pin_slax_op_new(cur, NULL);
+	    if (close_op == NULL) return;
+	    close_op->po_type = PIN_OP_EMIT_CLOSE;
+	    close_op->po_name = tag_id;
+	}
+    }
+}
+
+/*
+ * Compile the template body rooted at body_node into a PIN_OP_* sequence
+ * in the rulebook's prb_ops pool.
+ * Returns the id of the first op, or the null id for an empty body.
+ */
+static pin_op_id_t
+pin_slax_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
+		      pin_name_id_t src_file_id)
+{
+    pin_op_id_t head = pin_op_id_null_atom();
+    pin_op_cursor_t cur = {
+	.poc_nextp = &head,
+	.poc_rb = rb,
+	.poc_src_file = src_file_id,
+	.poc_src_line = 0,
+    };
+    pin_slax_compile_ops_r(body_node, &cur);
+    return head;
+}
+
 int
 pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		  pin_action_type_t action)
@@ -542,6 +878,20 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    } else {
 		prp->pr_action = action;
 	    }
+	}
+
+	/*
+	 * Phase 4: also compile to PIN_OP_* sequences (dual-path; active in
+	 * Phase 5).  The op sequence lives alongside the BIA_ instructions
+	 * until the BIA_ path is removed in Phase 6.
+	 */
+	{
+	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
+	    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
+		    url, TRUE);
+	    prp->pr_src_file = src_file_id;
+	    prp->pr_src_line = (uint32_t) xmlGetLineNo(child);
+	    prp->pr_close_ops = pin_slax_compile_ops(child, rb, src_file_id);
 	}
 
 	/*
