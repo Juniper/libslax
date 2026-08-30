@@ -17,6 +17,7 @@
 #include <libpin/pin_common.h>
 #include <libpin/pin_node.h>
 #include <libpin/pin_body.h>
+#include <libpin/pin_exec.h>
 
 #define PIN_MAX_ATOMS	(1<<26)	/* Max number of nodes in a document */
 #define PIN_SHIFT	12	/* Bit shift for packed array paging */
@@ -55,6 +56,8 @@ typedef struct pin_istack_s {
     pin_action_type_t ps_action;	/* Action being taken (PIA_*) */
     pin_rstate_t *ps_statep;	/* Current parser state */
     pin_name_id_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
+    pin_op_id_t ps_close_ops;	/* Op sequence to run when this element closes */
+    int ps_context_retain;	/* Non-zero: new children are marked PNF_TRANSIENT */
 } pin_istack_t;
 
 /*
