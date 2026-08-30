@@ -25,6 +25,7 @@ typedef uint16_t pin_node_flags_t; /* Flags for a node (PNF_*) */
 /* Flags for pin_node_flags_t */
 #define PNF_ATTRIBS_PRESENT	(1<<0) /* Attributes available */
 #define PNF_ATTRIBS_EXTRACTED	(1<<1) /* Attributes aleady extracted */
+#define PNF_TRANSIENT		(1<<2) /* Retained for op-dispatch context; suppressed from emit */
 
 typedef uint8_t pin_node_type_t;	/* Type of node (PIN_TYPE_*) */
 /* Type of XML nodes (for pin_node_type_t) */
