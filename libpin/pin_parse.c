@@ -815,7 +815,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	nodep->pn_flags |= PNF_ATTRIBS_PRESENT | PNF_ATTRIBS_EXTRACTED;
 }
 
-static void
+void
 pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		const char *prefix, const char *name, char *attribs,
 		pin_action_type_t type)
@@ -893,7 +893,7 @@ pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
     }
 }
 
-static void
+void
 pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
     pin_insert_t *pip = parsep->pp_insert;
@@ -974,7 +974,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     }
 }
 
-static void
+void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 		pin_node_type_t type)
 {
