@@ -50,9 +50,9 @@ struct pin_parse_s;
 /* Forward typedef so pin_op_func_t can use pin_exec_state_t * */
 typedef struct pin_exec_state_s pin_exec_state_t;
 
-/* ------------------------------------------------------------------ */
-/* Op type                                                             */
-/* ------------------------------------------------------------------ */
+/*
+ * Operation types
+ */
 
 typedef uint16_t pin_op_type_t;
 
@@ -79,9 +79,9 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_LOAD_VAR   20   /* Push value of variable named po_name */
 #define PIN_OP_MAX        21   /* Sentinel: number of defined op codes */
 
-/* ------------------------------------------------------------------ */
-/* Compiled op node (stored in prb_ops pa_fixed pool)                 */
-/* ------------------------------------------------------------------ */
+/*
+ * Compiled op node (stored in prb_ops pa_fixed pool)
+ */
 
 typedef struct pin_op_s {
     pin_op_id_t    po_next;      /* Next op in sequence; null = end of list */
@@ -93,9 +93,9 @@ typedef struct pin_op_s {
     uint32_t       po_src_line;  /* Source line number */
 } pin_op_t;
 
-/* ------------------------------------------------------------------ */
-/* Op dispatch table                                                   */
-/* ------------------------------------------------------------------ */
+/*
+ * Op dispatch table
+ */
 
 typedef uint32_t pin_op_flags_t;
 
@@ -111,9 +111,9 @@ typedef struct pin_op_def_s {
 
 extern pin_op_def_t pin_op_table[PIN_OP_MAX];
 
-/* ------------------------------------------------------------------ */
-/* Execution state (heap-allocated, one per parse session)            */
-/* ------------------------------------------------------------------ */
+/*
+ * Execution state (heap-allocated, one per parse session)
+ */
 
 /*
  * One frame on the rulebook stack.
@@ -160,10 +160,6 @@ typedef struct pin_exec_state_s {
     uint32_t           pes_var_count;
     uint32_t           pes_var_cap;
 } pin_exec_state_t;
-
-/* ------------------------------------------------------------------ */
-/* Public API                                                          */
-/* ------------------------------------------------------------------ */
 
 /*
  * Execute the op sequence starting at 'start' against 'context_node'.
