@@ -881,9 +881,9 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	}
 
 	/*
-	 * Phase 4: also compile to PIN_OP_* sequences (dual-path; active in
-	 * Phase 5).  The op sequence lives alongside the BIA_ instructions
-	 * until the BIA_ path is removed in Phase 6.
+	 * Compile to PIN_OP_* sequences for op-dispatch execution on CLOSE.
+	 * These run alongside the BIA_ body instructions; the parser selects
+	 * the active path based on pr_close_ops being non-null.
 	 */
 	{
 	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
