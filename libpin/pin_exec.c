@@ -9,7 +9,6 @@
  * Phil Shafer, August 2026
  *
  * Op-dispatch execution engine for libpin template bodies.
- * Phase 2+: real implementations replace these stubs.
  */
 
 #include <stdio.h>
