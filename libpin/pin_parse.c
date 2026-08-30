@@ -294,8 +294,9 @@ pin_parse_namepool_string (pin_parse_t *parsep, pin_name_id_t name_id)
 static void
 pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
 {
-    /* We reuse the current rule state */
-    pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
+    pin_istack_t *parent = &pip->pin_stack[pip->pin_depth];
+    pin_rstate_t *statep = parent->ps_statep;
+    int parent_retain = parent->ps_context_retain;
 
     pip->pin_depth += 1;
     pin_istack_t *frame = &pip->pin_stack[pip->pin_depth];
@@ -304,6 +305,7 @@ pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
     frame->ps_statep = statep;
     frame->ps_action = PIA_NONE;
     frame->ps_old_name = pin_name_id_null_atom();
+    frame->ps_context_retain = parent_retain;
 }
 
 static void
@@ -368,6 +370,9 @@ pin_insert_node (pin_insert_t *pip, const char *msg,
     /* Update pin_maxdepth */
     if (nodep->pn_depth > pip->pin_maxdepth)
 	pip->pin_maxdepth = nodep->pn_depth;
+
+    if (psp->ps_context_retain)
+	nodep->pn_flags |= PNF_TRANSIENT;
 
     return node_atom;
 }
@@ -946,6 +951,8 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
+    pin_op_id_t close_ops = psp->ps_close_ops;
+    pin_node_id_t context_node = psp->ps_atom;
     pin_action_type_t popped_action = psp->ps_action;
     bzero(psp, sizeof(*psp));
     pin_insert_pop(pip);
@@ -955,6 +962,16 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	psp = &pip->pin_stack[pip->pin_depth];
 	bzero(psp, sizeof(*psp));
 	pin_insert_pop(pip);
+    }
+
+    /*
+     * Op-dispatch: execute the compiled op sequence against the retained
+     * element.  Ops emit into the output at the current (post-pop) depth,
+     * so emitted nodes are siblings of the retained element and not transient.
+     */
+    if (!pin_op_id_is_null(close_ops)) {
+	pin_exec_run(&parsep->pp_exec, parsep, close_ops, context_node);
+	return;
     }
 
     /*
@@ -1190,6 +1207,49 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
     pin_action_type_t act = prp->pr_action;
     pin_name_id_t use_tag = prp->pr_use_tag;
     pin_name_id_t save_name_id = name_id;
+
+    /*
+     * Inside a context-retain frame: save the element without template
+     * dispatch.  The frame's ps_context_retain propagates to the child
+     * frame via pin_insert_push, so all descendants are also retained.
+     */
+    if (pip->pin_stack[pip->pin_depth].ps_context_retain) {
+	pin_insert_open(parsep, name_id, prefix, name, attribs, PIA_SAVE_ATTRIB);
+	return;
+    }
+
+    /*
+     * Op-dispatch path: retain the element as context for the op sequence
+     * that executes on CLOSE.  The retained element and all descendants are
+     * marked PNF_TRANSIENT so they are suppressed from the emitted output.
+     * Op-emitted nodes go at parent depth after the pop and are not transient.
+     */
+    if (!pin_op_id_is_null(prp->pr_close_ops)
+	    && pin_body_instr_id_is_null(prp->pr_body)
+	    && pin_rstate_id_is_null(prp->pr_new_state)) {
+	pin_insert_open(parsep, name_id, prefix, name, attribs, PIA_SAVE_ATTRIB);
+	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
+	new_frame->ps_close_ops = prp->pr_close_ops;
+	new_frame->ps_context_retain = 1;
+
+	if (new_frame->ps_node != NULL) {
+	    new_frame->ps_node->pn_flags |= PNF_TRANSIENT;
+
+	    /* Attribute children are already inserted by pin_insert_open;
+	     * mark them transient now since ps_context_retain was not yet
+	     * set when they were created. */
+	    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
+	    pin_node_id_t cid = pin_node_child(new_frame->ps_node);
+	    while (!pin_node_id_is_null(cid)) {
+		pin_node_t *child = pin_node_addr(pwp, cid);
+		if (child == NULL || child->pn_depth <= new_frame->ps_node->pn_depth)
+		    break;
+		child->pn_flags |= PNF_TRANSIENT;
+		cid = child->pn_next;
+	    }
+	}
+	return;
+    }
 
     /*
      * Body FSM path: if the rule has a compiled body instruction list,
@@ -2109,6 +2169,12 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 
 	} else if (nodep->pn_type == PIN_TYPE_ELT) {
+	    if (nodep->pn_flags & PNF_TRANSIENT) {
+		last_depth = nodep->pn_depth;
+		node_atom = nodep->pn_next;
+		continue;
+	    }
+
 	    cp = pin_namepool_string(pwp, nodep->pn_name);
 	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
