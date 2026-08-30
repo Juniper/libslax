@@ -43,7 +43,7 @@ typedef struct pin_parse_s {
     xo_filter_t *pp_filter;	/* Optional XPath filter (pin_filter_create) */
     pin_context_t pp_context;	/* Execution context (mode, etc.) */
     int pp_root_rule_fired;	/* Non-zero after match="/" rule has fired */
-    pin_exec_state_t pp_exec;	/* Op-dispatch execution state (Phase 2+) */
+    pin_exec_state_t pp_exec;	/* Op-dispatch execution state */
 } pin_parse_t;
 
 /* Flags for pp_flags: */
