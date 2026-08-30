@@ -115,9 +115,14 @@ extern pin_op_def_t pin_op_table[PIN_OP_MAX];
 /* Execution state (heap-allocated, one per parse session)            */
 /* ------------------------------------------------------------------ */
 
-#define PIN_EXEC_RB_MAX   32   /* Max rulebook nesting depth */
-#define PIN_EXEC_VAL_MAX  64   /* Max value stack depth */
-#define PIN_EXEC_SEQ_MAX  16   /* Max op-sequence nesting depth */
+/*
+ * One frame on the rulebook stack.
+ * Pushed when the parser descends into a child element that switches state.
+ */
+typedef struct pin_exec_rb_frame_s {
+    pin_rstate_id_t prf_sid;    /* State to restore on pop */
+    pin_depth_t     prf_depth;  /* Input depth at which this state was pushed */
+} pin_exec_rb_frame_t;
 
 /*
  * One frame on the op-sequence stack.
@@ -130,18 +135,20 @@ typedef struct pin_exec_seq_frame_s {
 } pin_exec_seq_frame_t;
 
 typedef struct pin_exec_state_s {
-    /* Rulebook stack */
-    pin_rstate_id_t pes_rb[PIN_EXEC_RB_MAX];
-    pin_depth_t     pes_rb_depth[PIN_EXEC_RB_MAX];
-    int             pes_rb_top;
+    /* Rulebook stack (growable; pes_rb may be reallocated) */
+    pin_exec_rb_frame_t *pes_rb;
+    int                  pes_rb_top;
+    int                  pes_rb_cap;
 
-    /* Value stack */
-    pin_value_t     pes_val[PIN_EXEC_VAL_MAX];
-    int             pes_val_top;
+    /* Value stack (growable; pes_val may be reallocated) */
+    pin_value_t *pes_val;
+    int          pes_val_top;
+    int          pes_val_cap;
 
-    /* Op-sequence stack */
-    pin_exec_seq_frame_t pes_seq[PIN_EXEC_SEQ_MAX];
-    int                  pes_seq_top;
+    /* Op-sequence stack (growable; pes_seq may be reallocated) */
+    pin_exec_seq_frame_t *pes_seq;
+    int                   pes_seq_top;
+    int                   pes_seq_cap;
 
     /* Nodeset table: indexed by PVT_NODESET pv_atom */
     pin_ns_entry_t *pes_nodesets;
@@ -172,6 +179,11 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
  */
 void
 pin_exec_dump (struct pin_rulebook_s *rbp, struct pin_parse_s *parsep, FILE *out);
+
+/* Rulebook stack helpers */
+int pin_exec_rb_push (pin_exec_state_t *esp, pin_rstate_id_t sid,
+		      pin_depth_t depth);
+void pin_exec_rb_pop (pin_exec_state_t *esp);
 
 /* Value stack helpers */
 int pin_exec_push (pin_exec_state_t *esp, pin_value_t val);
