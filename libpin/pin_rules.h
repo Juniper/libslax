@@ -62,15 +62,14 @@ typedef struct pin_rule_s {
     pin_action_type_t pr_action;	/* What to do when the rule matches */
     pin_name_id_t pr_mode;	/* Mode (namepool atom; null = default mode) */
 
-    /* New op-dispatch fields (Phase 1+) */
-    pin_rstate_id_t pr_child_state; /* Rulebook state for children (replaces pr_new_state) */
+    pin_rstate_id_t pr_child_state; /* Rulebook state for children */
     pin_op_id_t pr_close_ops;	/* Op sequence to run on CLOSE; null = use pr_action */
     pin_name_id_t pr_src_file;	/* Namepool atom: source XSLT filename (for debugging) */
     uint32_t pr_src_line;	/* Source line number (for debugging) */
 
-    /* Legacy fields: kept through Phase 5, removed in Phase 6 */
+    /* BIA_ (body instruction) fields: used by the streaming body executor */
     pin_name_id_t pr_use_tag;	/* For PIA_LITERAL: namepool atom of literal element name */
-    pin_rstate_id_t pr_new_state;/* Old: new state to enter (superseded by pr_child_state) */
+    pin_rstate_id_t pr_new_state;/* New state to enter on OPEN (for-each containers) */
     pin_name_id_t pr_literal_text; /* For PIA_LITERAL/PIA_WRAP: text of pre-emit literal content */
     pin_name_id_t pr_pre_tag;	/* For PIA_WRAP: pre-emit element name (before the wrap) */
     pin_body_instr_id_t pr_body; /* First body instruction; null = use pr_action */
