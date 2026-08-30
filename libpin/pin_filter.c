@@ -50,9 +50,9 @@ struct xo_filter_data_s {
     char xfd_value_buf[512];        /* scratch space for xfdo_value_of result */
 };
 
-/* ------------------------------------------------------------------ */
-/* Data vtable implementation                                          */
-/* ------------------------------------------------------------------ */
+/*
+ * Data vtable implementation
+ */
 
 static void *
 pin_filter_data_realloc (xo_filter_data_t *dp UNUSED, void *ptr, size_t sz)
@@ -177,9 +177,9 @@ static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_value_of    = pin_filter_data_value_of,
 };
 
-/* ------------------------------------------------------------------ */
-/* Public API                                                          */
-/* ------------------------------------------------------------------ */
+/*
+ * Public API
+ */
 
 int
 pin_filter_add (xo_filter_t *xfp, const char *xpath)
