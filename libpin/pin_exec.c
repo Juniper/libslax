@@ -34,10 +34,104 @@
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
 
-/* ------------------------------------------------------------------ */
-/* Op dispatch table                                                   */
-/* ------------------------------------------------------------------ */
+/*
+ * Helpers used by multiple op functions
+ */
 
+/*
+ * Collect all direct text children of the node at nid, concatenate them,
+ * intern the result in the namepool, and return the atom.
+ * Returns the null atom when the node has no text content.
+ */
+static pin_name_id_t
+pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
+{
+    pin_node_t *nodep = pin_node_addr(pwp, nid);
+    if (nodep == NULL)
+        return pin_name_id_null_atom();
+
+    pin_depth_t depth = nodep->pn_depth;
+    xo_buffer_t buf;
+    xo_buf_init(&buf);
+
+    for (pin_node_id_t cid = pin_node_child(nodep); !pin_node_id_is_null(cid); ) {
+        pin_node_t *child = pin_node_addr(pwp, cid);
+        if (child == NULL || child->pn_depth <= depth)
+            break;
+
+        if (child->pn_type == PIN_TYPE_TEXT || child->pn_type == PIN_TYPE_UNESC) {
+            const char *text = pin_textpool_string(pwp,
+                    pa_arb_atom_of(pin_node_text(child)));
+            if (text)
+                xo_buf_append(&buf, text, (ssize_t) strlen(text));
+        }
+
+        cid = child->pn_next;
+    }
+
+    pin_name_id_t result = pin_name_id_null_atom();
+    if (xo_buf_offset(&buf) > 0) {
+        xo_buf_append(&buf, "", 1);
+        result = pin_namepool_atom(pwp, xo_buf_data(&buf, 0), TRUE);
+    }
+    xo_buf_cleanup(&buf);
+    return result;
+}
+
+/*
+ * Check whether a node is truly a boolean-true nodeset value
+ * (non-null index AND that slot has at least one node).
+ */
+static int
+pin_exec_nodeset_is_true (pin_exec_state_t *esp, pin_value_t v)
+{
+    return v.pv_type == PVT_NODESET
+        && v.pv_atom < (uint32_t) esp->pes_nodeset_count
+        && esp->pes_nodesets[v.pv_atom].pne_count > 0;
+}
+
+/*
+ * Variable bindings: find an existing slot by name atom, or allocate a new one.
+ */
+static pin_var_binding_t *
+pin_exec_var_find (pin_exec_state_t *esp, uint32_t name_atom)
+{
+    for (uint32_t i = 0; i < esp->pes_var_count; i++) {
+        if (esp->pes_vars[i].pvb_name == name_atom)
+            return &esp->pes_vars[i];
+    }
+    return NULL;
+}
+
+static pin_var_binding_t *
+pin_exec_var_alloc (pin_exec_state_t *esp, uint32_t name_atom)
+{
+    pin_var_binding_t *vp = pin_exec_var_find(esp, name_atom);
+    if (vp)
+        return vp;
+
+    if (esp->pes_var_count >= esp->pes_var_cap) {
+        int newcap = esp->pes_var_cap ? esp->pes_var_cap * 2 : 8;
+        vp = realloc(esp->pes_vars, newcap * sizeof(*vp));
+        if (vp == NULL)
+            return NULL;
+
+        esp->pes_vars = vp;
+        esp->pes_var_cap = newcap;
+    }
+
+    vp = &esp->pes_vars[esp->pes_var_count];
+    vp->pvb_name = name_atom;
+    vp->pvb_value = pin_value_null();
+    esp->pes_var_count += 1;
+    return vp;
+}
+
+/*
+ * Op functions
+ */
+
+/* Stub for ops not yet implemented: logs the op name */
 static pin_value_t
 pin_op_stub (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep UNUSED,
 	     pin_op_t *opp)
@@ -48,33 +142,243 @@ pin_op_stub (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep UNUSED,
     return pin_value_null();
 }
 
+static pin_value_t
+pin_op_emit_open (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep,
+		  pin_op_t *opp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    const char *tag = pin_namepool_string(pwp, opp->po_name);
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    pin_insert_open(parsep, opp->po_name, NULL, tag, NULL, act);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_emit_close (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep,
+		   pin_op_t *opp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    const char *tag = pin_namepool_string(pwp, opp->po_name);
+    pin_insert_close(parsep, NULL, tag);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_emit (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+	     pin_op_t *opp UNUSED)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    if (v.pv_type == PVT_STRING) {
+        pin_workspace_t *pwp = pin_parse_workspace(parsep);
+        const char *str = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+        if (str)
+            pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+    }
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_string (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		    pin_op_t *opp)
+{
+    pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(opp->po_name)));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_attr (pin_exec_state_t *esp, struct pin_parse_s *parsep, pin_op_t *opp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_t *nodep = pin_node_addr(pwp,
+            esp->pes_seq[esp->pes_seq_top - 1].psf_context);
+
+    pin_name_id_t result = pin_name_id_null_atom();
+    if (nodep) {
+        const char *str = pin_get_attrib_string(pwp, nodep, opp->po_name);
+        if (str)
+            result = pin_namepool_atom(pwp, str, TRUE);
+    }
+
+    pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(result)));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_text (pin_exec_state_t *esp, struct pin_parse_s *parsep, pin_op_t *opp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_id_t target = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
+
+    /* po_name == "." → text of context node; any other name → first matching child */
+    const char *sel = pin_namepool_string(pwp, opp->po_name);
+    if (sel && strcmp(sel, ".") != 0) {
+        pin_node_t *parent = pin_node_addr(pwp, target);
+        if (parent) {
+            pin_depth_t depth = parent->pn_depth;
+            for (pin_node_id_t cid = pin_node_child(parent);
+                    !pin_node_id_is_null(cid); ) {
+                pin_node_t *child = pin_node_addr(pwp, cid);
+                if (child == NULL || child->pn_depth <= depth)
+                    break;
+                if (child->pn_type == PIN_TYPE_ELT
+                        && pin_name_id_equal(child->pn_name, opp->po_name)) {
+                    target = cid;
+                    break;
+                }
+                cid = child->pn_next;
+            }
+        }
+    }
+
+    pin_name_id_t result = pin_exec_text_of(pwp, target);
+    pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(result)));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_nodes (pin_exec_state_t *esp, struct pin_parse_s *parsep, pin_op_t *opp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_t *parent = pin_node_addr(pwp,
+            esp->pes_seq[esp->pes_seq_top - 1].psf_context);
+
+    uint32_t ns_idx = pin_exec_nodeset_alloc(esp);
+    if (ns_idx == UINT32_MAX) {
+        pin_exec_push(esp, pin_value_null());
+        return pin_value_null();
+    }
+
+    if (parent) {
+        pin_depth_t depth = parent->pn_depth;
+        for (pin_node_id_t cid = pin_node_child(parent);
+                !pin_node_id_is_null(cid); ) {
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= depth)
+                break;
+            if (child->pn_type == PIN_TYPE_ELT
+                    && pin_name_id_equal(child->pn_name, opp->po_name))
+                pin_exec_nodeset_append(esp, ns_idx,
+                        pa_fixed_atom_of(pin_node_id_atom_of(cid)));
+            cid = child->pn_next;
+        }
+    }
+
+    pin_exec_push(esp, pin_value_nodeset(ns_idx));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_bool (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		  pin_op_t *opp UNUSED)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    int truth = (v.pv_type == PVT_NODESET)
+        ? pin_exec_nodeset_is_true(esp, v)
+        : pin_value_is_true(v);
+    pin_exec_push(esp, pin_value_bool(truth));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_push_node (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		  pin_op_t *opp UNUSED)
+{
+    pin_node_id_t ctx = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
+    pin_exec_push(esp, pin_value_node(pa_fixed_atom_of(pin_node_id_atom_of(ctx))));
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_if (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED, pin_op_t *opp)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    int truth = (v.pv_type == PVT_NODESET)
+        ? pin_exec_nodeset_is_true(esp, v)
+        : pin_value_is_true(v);
+
+    if (!truth && esp->pes_seq_top > 0)
+        esp->pes_seq[esp->pes_seq_top - 1].psf_pc = opp->po_alt;
+
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_goto (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED, pin_op_t *opp)
+{
+    if (esp->pes_seq_top > 0)
+        esp->pes_seq[esp->pes_seq_top - 1].psf_pc = opp->po_alt;
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_jump (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep UNUSED,
+	     pin_op_t *opp UNUSED)
+{
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_discard (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		pin_op_t *opp UNUSED)
+{
+    pin_exec_pop(esp);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_store_var (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		  pin_op_t *opp)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    pin_var_binding_t *vp = pin_exec_var_alloc(esp,
+            pin_name_id_atom_of(opp->po_name));
+    if (vp)
+        vp->pvb_value = v;
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_load_var (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		 pin_op_t *opp)
+{
+    pin_var_binding_t *vp = pin_exec_var_find(esp,
+            pin_name_id_atom_of(opp->po_name));
+    pin_exec_push(esp, vp ? vp->pvb_value : pin_value_null());
+    return pin_value_null();
+}
+
+/*
+ * Op dispatch table
+ */
+
 pin_op_def_t pin_op_table[PIN_OP_MAX] = {
-    [PIN_OP_NONE]        = { "none",        pin_op_stub, 0 },
-    [PIN_OP_EMIT_OPEN]   = { "emit-open",   pin_op_stub, 0 },
-    [PIN_OP_EMIT_CLOSE]  = { "emit-close",  pin_op_stub, 0 },
-    [PIN_OP_EMIT_ATTRIB] = { "emit-attrib", pin_op_stub, 0 },
-    [PIN_OP_EMIT]        = { "emit",        pin_op_stub, 0 },
-    [PIN_OP_PUSH_STRING] = { "push-string", pin_op_stub, 0 },
-    [PIN_OP_PUSH_ATTR]   = { "push-attr",   pin_op_stub, 0 },
-    [PIN_OP_PUSH_TEXT]   = { "push-text",   pin_op_stub, 0 },
-    [PIN_OP_PUSH_NODES]  = { "push-nodes",  pin_op_stub, 0 },
-    [PIN_OP_PUSH_BOOL]   = { "push-bool",   pin_op_stub, 0 },
-    [PIN_OP_PUSH_NODE]   = { "push-node",   pin_op_stub, 0 },
-    [PIN_OP_CONVERT]     = { "convert",     pin_op_stub, 0 },
-    [PIN_OP_IF]          = { "if",          pin_op_stub, 0 },
-    [PIN_OP_GOTO]        = { "goto",        pin_op_stub, 0 },
-    [PIN_OP_JUMP]        = { "jump",        pin_op_stub, 0 },
-    [PIN_OP_APPLY]       = { "apply",       pin_op_stub, 0 },
-    [PIN_OP_CALL]        = { "call",        pin_op_stub, 0 },
-    [PIN_OP_RETURN]      = { "return",      pin_op_stub, 0 },
-    [PIN_OP_DISCARD]     = { "discard",     pin_op_stub, 0 },
-    [PIN_OP_STORE_VAR]   = { "store-var",   pin_op_stub, 0 },
-    [PIN_OP_LOAD_VAR]    = { "load-var",    pin_op_stub, 0 },
+    [PIN_OP_NONE]        = { "none",        pin_op_stub,        0 },
+    [PIN_OP_EMIT_OPEN]   = { "emit-open",   pin_op_emit_open,   0 },
+    [PIN_OP_EMIT_CLOSE]  = { "emit-close",  pin_op_emit_close,  0 },
+    [PIN_OP_EMIT_ATTRIB] = { "emit-attrib", pin_op_stub,        0 },
+    [PIN_OP_EMIT]        = { "emit",        pin_op_emit,        0 },
+    [PIN_OP_PUSH_STRING] = { "push-string", pin_op_push_string, 0 },
+    [PIN_OP_PUSH_ATTR]   = { "push-attr",   pin_op_push_attr,   0 },
+    [PIN_OP_PUSH_TEXT]   = { "push-text",   pin_op_push_text,   0 },
+    [PIN_OP_PUSH_NODES]  = { "push-nodes",  pin_op_push_nodes,  0 },
+    [PIN_OP_PUSH_BOOL]   = { "push-bool",   pin_op_push_bool,   0 },
+    [PIN_OP_PUSH_NODE]   = { "push-node",   pin_op_push_node,   0 },
+    [PIN_OP_CONVERT]     = { "convert",     pin_op_stub,        0 },
+    [PIN_OP_IF]          = { "if",          pin_op_if,          0 },
+    [PIN_OP_GOTO]        = { "goto",        pin_op_goto,        0 },
+    [PIN_OP_JUMP]        = { "jump",        pin_op_jump,        0 },
+    [PIN_OP_APPLY]       = { "apply",       pin_op_stub,        0 },
+    [PIN_OP_CALL]        = { "call",        pin_op_stub,        0 },
+    [PIN_OP_RETURN]      = { "return",      pin_op_stub,        0 },
+    [PIN_OP_DISCARD]     = { "discard",     pin_op_discard,     0 },
+    [PIN_OP_STORE_VAR]   = { "store-var",   pin_op_store_var,   0 },
+    [PIN_OP_LOAD_VAR]    = { "load-var",    pin_op_load_var,    0 },
 };
 
-/* ------------------------------------------------------------------ */
-/* Dispatch loop                                                       */
-/* ------------------------------------------------------------------ */
+/*
+ * Dispatch loop
+ */
 
 static int
 pin_exec_seq_grow (pin_exec_state_t *esp)
@@ -134,9 +438,9 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     return 0;
 }
 
-/* ------------------------------------------------------------------ */
-/* Rulebook stack helpers                                              */
-/* ------------------------------------------------------------------ */
+/*
+ * Rulebook stack helpers
+ */
 
 static int
 pin_exec_rb_grow (pin_exec_state_t *esp)
@@ -173,9 +477,9 @@ pin_exec_rb_pop (pin_exec_state_t *esp)
         esp->pes_rb_top -= 1;
 }
 
-/* ------------------------------------------------------------------ */
-/* Dump helpers                                                        */
-/* ------------------------------------------------------------------ */
+/*
+ * Dump helpers
+ */
 
 static void
 pin_exec_dump_ops (pin_rulebook_t *prbp, pin_op_id_t oid, FILE *out)
