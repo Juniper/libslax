@@ -1,3 +1,5 @@
+include ${top_srcdir}/lto.mk
+
 AM_CPPFLAGS = \
     -I$(top_builddir) \
     -I$(top_srcdir)/libbxslt \
@@ -9,12 +11,14 @@ AM_CPPFLAGS = \
     -I$(top_builddir)/libbxml/include \
     -I$(top_srcdir)/libbxml/include
 
+AM_CFLAGS = $(LTO_CFLAGS)
+
 bin_PROGRAMS = xsltproc
 
 check_PROGRAMS = testThreads
 
 xsltproc_SOURCES = xsltproc.c
-xsltproc_LDFLAGS = 
+xsltproc_LDFLAGS = $(LTO_LDFLAGS) $(LTO_STATIC_LDFLAGS)
 xsltproc_DEPENDENCIES = $(DEPS)
 
 testThreads_SOURCES=testThreads.c
