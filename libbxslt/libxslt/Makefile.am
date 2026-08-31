@@ -1,8 +1,11 @@
+include ${top_srcdir}/lto.mk
+
 AM_CPPFLAGS = -I$(top_builddir) \
 	      -I$(top_builddir)/bxslt -I$(top_srcdir)/bxslt -I$(top_srcdir)/bxslt/libxslt \
 	      -I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
 
 AM_CPPFLAGS += -DMODULE_EXTENSION='"@MODULE_EXTENSION@"'
+AM_CFLAGS = $(LTO_CFLAGS)
 
 lib_LTLIBRARIES = libbxslt.la
 
@@ -64,7 +67,7 @@ endif
 
 libbxslt_la_LIBADD = $(top_builddir)/libbxml/libbxml.la $(EXTRA_LIBS) $(LIBM)
 libbxslt_la_LDFLAGS =					\
-		$(AM_LDFLAGS) -no-undefined		\
+		$(AM_LDFLAGS) $(LTO_LDFLAGS) -no-undefined	\
 		$(LIBXSLT_VERSION_SCRIPT)		\
 		-version-info $(LIBXSLT_VERSION_INFO)
 
