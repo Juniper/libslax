@@ -29,6 +29,7 @@ dist_doc_DATA = Copyright doc/slax.txt
 EXTRA_DIST = \
     slax-config.in \
     warnings.mk \
+    lto.mk \
     README.md \
     INSTALL.md \
     packaging/rpm/libslax.spec
