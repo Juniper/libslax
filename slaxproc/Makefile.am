@@ -10,6 +10,7 @@ if SLAX_WARNINGS_HIGH
 SLAX_WARNINGS = HIGH
 endif
 include ${top_srcdir}/warnings.mk
+include ${top_srcdir}/lto.mk
 
 AM_CFLAGS = \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
@@ -18,7 +19,8 @@ AM_CFLAGS = \
     -I${top_srcdir}/libslax \
     ${LIBXML_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
-    ${WARNINGS}
+    ${WARNINGS} \
+    $(LTO_CFLAGS)
 
 LIBS = \
     ${LIBXSLT_LIBS} \
@@ -45,8 +47,7 @@ LIBS += -lutil
 bin_PROGRAMS = slaxproc
 
 slaxproc_SOURCES = slaxproc.c
-#slaxproc_LDADD = ../libslax/libslax.la
-#slaxproc_LDFLAGS = -static
+slaxproc_LDFLAGS = $(LTO_LDFLAGS) $(LTO_STATIC_LDFLAGS)
 
 LDADD = \
     ${top_builddir}/libslax/libslax.la \
