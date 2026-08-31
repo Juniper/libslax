@@ -173,6 +173,18 @@ fi
 AC_MSG_RESULT([$HAVE_CLANG])
 AM_CONDITIONAL([HAVE_CLANG], [test "$HAVE_CLANG" = "yes"])
 
+# ENABLE_LTO only sets the default baked into lto.mk via "ENABLE_LTO
+# ?= @ENABLE_LTO@"; it's a plain make variable (not an AM_CONDITIONAL),
+# so it can still be overridden per invocation without reconfiguring,
+# e.g. "make ENABLE_LTO=yes clean all".
+AC_MSG_CHECKING([whether to build with link-time optimization (LTO)])
+AC_ARG_ENABLE([lto],
+    [  --enable-lto    Build with link-time optimization (-flto)],
+    [ENABLE_LTO=$enableval],
+    [ENABLE_LTO=no])
+AC_MSG_RESULT([$ENABLE_LTO])
+AC_SUBST(ENABLE_LTO)
+
 AC_MSG_CHECKING([whether to build with printflike])
 AC_ARG_ENABLE([printflike],
     [  --enable-printflike    Enable use of GCC __printflike attribute],
@@ -1971,4 +1983,5 @@ AC_MSG_NOTICE([summary of build options:
   sqlite3:          ${HAVE_SQLITE3:-no}
   sqlcipher:        ${HAVE_SQLCIPHER:-no}
   humanize:         ${HAVE_HUMANIZE_NUMBER:-no}
+  clang LTO:        ${ENABLE_LTO:-no}
 ])
