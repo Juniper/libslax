@@ -2,6 +2,8 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
+include ${top_srcdir}/lto.mk
+
 SUBDIRS = include . example
 if WITH_DOXYGEN
 SUBDIRS += doc
@@ -26,11 +28,12 @@ bin_PROGRAMS = xmllint
 bin_SCRIPTS = bxml-config
 
 lib_LTLIBRARIES = libbxml.la
-libbxml_la_CFLAGS = $(AM_CFLAGS) $(XML_PRIVATE_CFLAGS)
+libbxml_la_CFLAGS = $(AM_CFLAGS) $(XML_PRIVATE_CFLAGS) $(LTO_CFLAGS)
 libbxml_la_LIBADD = $(XML_PRIVATE_LIBS)
 
 libbxml_la_LDFLAGS = \
     $(AM_LDFLAGS) \
+    $(LTO_LDFLAGS) \
     -no-undefined \
     -version-info \
     $(LIBXML_VERSION_INFO)
@@ -107,9 +110,10 @@ if WITH_OUTPUT_SOURCES
 bin_PROGRAMS += xmlcatalog
 
 xmlcatalog_SOURCES = xmlcatalog.c
-xmlcatalog_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS)
+xmlcatalog_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS) $(LTO_CFLAGS)
 xmlcatalog_DEPENDENCIES = $(DEPS)
 xmlcatalog_LDADD = $(RDL_LIBS) $(LDADDS)
+xmlcatalog_LDFLAGS = $(LTO_LDFLAGS) $(LTO_STATIC_LDFLAGS)
 endif
 
 libbxml_la_SOURCES += catalog.c
@@ -164,9 +168,10 @@ DEPS = libbxml.la
 LDADDS = libbxml.la
 
 xmllint_SOURCES = xmllint.c shell.c lintmain.c
-xmllint_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS) $(Z_CFLAGS)
+xmllint_CFLAGS = $(AM_CFLAGS) $(RDL_CFLAGS) $(Z_CFLAGS) $(LTO_CFLAGS)
 xmllint_DEPENDENCIES = $(DEPS)
 xmllint_LDADD = $(RDL_LIBS) $(Z_LIBS) $(LDADDS)
+xmllint_LDFLAGS = $(LTO_LDFLAGS) $(LTO_STATIC_LDFLAGS)
 
 dist-hook:
 	(cd $(srcdir) ; \
