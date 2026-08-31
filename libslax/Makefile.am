@@ -13,6 +13,7 @@ if HAVE_GCC
 GCC_WARNINGS = yes
 endif
 include ${top_srcdir}/warnings.mk
+include ${top_srcdir}/lto.mk
 
 BISON_COMMAND = ${BISON} -kvd -b slaxparser
 ECHO_BISON_0 = @echo "  BISON " $@;
@@ -33,9 +34,11 @@ AM_CFLAGS = \
 
 AM_CFLAGS += \
     -DLIBSLAX_XMLSOFT_NEED_PRIVATE \
-    -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\"
+    -DSLAX_EXTDIR=\"${SLAX_EXTDIR}\" \
+    $(LTO_CFLAGS)
 
 lib_LTLIBRARIES = libslax.la
+libslax_la_LDFLAGS = $(LTO_LDFLAGS)
 libslax_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
 libslax_la_LIBADD += $(top_builddir)/parrotdb/libparrotdb.la
 libslax_la_LIBADD += ${LIBXSLT_LIBS} ${LIBXML_LIBS}
