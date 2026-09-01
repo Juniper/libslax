@@ -288,6 +288,15 @@ pin_op_push_node (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
     return pin_value_null();
 }
 
+/* Stub for complex test expressions not yet supported; always evaluates false */
+static pin_value_t
+pin_op_complex_expr (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
+		     pin_op_t *opp UNUSED)
+{
+    pin_exec_push(esp, pin_value_bool(0));
+    return pin_value_null();
+}
+
 static pin_value_t
 pin_op_if (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED, pin_op_t *opp)
 {
@@ -352,27 +361,31 @@ pin_op_load_var (pin_exec_state_t *esp, struct pin_parse_s *parsep UNUSED,
  */
 
 pin_op_def_t pin_op_table[PIN_OP_MAX] = {
-    [PIN_OP_NONE]        = { "none",        pin_op_stub,        0 },
-    [PIN_OP_EMIT_OPEN]   = { "emit-open",   pin_op_emit_open,   0 },
-    [PIN_OP_EMIT_CLOSE]  = { "emit-close",  pin_op_emit_close,  0 },
-    [PIN_OP_EMIT_ATTRIB] = { "emit-attrib", pin_op_stub,        0 },
-    [PIN_OP_EMIT]        = { "emit",        pin_op_emit,        0 },
-    [PIN_OP_PUSH_STRING] = { "push-string", pin_op_push_string, 0 },
-    [PIN_OP_PUSH_ATTR]   = { "push-attr",   pin_op_push_attr,   0 },
-    [PIN_OP_PUSH_TEXT]   = { "push-text",   pin_op_push_text,   0 },
-    [PIN_OP_PUSH_NODES]  = { "push-nodes",  pin_op_push_nodes,  0 },
-    [PIN_OP_PUSH_BOOL]   = { "push-bool",   pin_op_push_bool,   0 },
-    [PIN_OP_PUSH_NODE]   = { "push-node",   pin_op_push_node,   0 },
-    [PIN_OP_CONVERT]     = { "convert",     pin_op_stub,        0 },
-    [PIN_OP_IF]          = { "if",          pin_op_if,          0 },
-    [PIN_OP_GOTO]        = { "goto",        pin_op_goto,        0 },
-    [PIN_OP_JUMP]        = { "jump",        pin_op_jump,        0 },
-    [PIN_OP_APPLY]       = { "apply",       pin_op_stub,        0 },
-    [PIN_OP_CALL]        = { "call",        pin_op_stub,        0 },
-    [PIN_OP_RETURN]      = { "return",      pin_op_stub,        0 },
-    [PIN_OP_DISCARD]     = { "discard",     pin_op_discard,     0 },
-    [PIN_OP_STORE_VAR]   = { "store-var",   pin_op_store_var,   0 },
-    [PIN_OP_LOAD_VAR]    = { "load-var",    pin_op_load_var,    0 },
+    /* complex ops (types < PIN_OP_MAX_COMPLEX) */
+    [PIN_OP_NONE]         = { "none",         pin_op_stub,         0 },
+    [PIN_OP_APPLY]        = { "apply",        pin_op_stub,         0 },
+    [PIN_OP_PUSH_NODE]    = { "push-node",    pin_op_push_node,    0 },
+    [PIN_OP_COMPLEX_EXPR] = { "complex-expr", pin_op_complex_expr, 0 },
+    /* slots 4-7: reserved for future complex ops (NULL handler → skipped) */
+    /* non-complex ops (types >= PIN_OP_MAX_COMPLEX) */
+    [PIN_OP_EMIT_OPEN]    = { "emit-open",    pin_op_emit_open,    0 },
+    [PIN_OP_EMIT_CLOSE]   = { "emit-close",   pin_op_emit_close,   0 },
+    [PIN_OP_EMIT_ATTRIB]  = { "emit-attrib",  pin_op_stub,         0 },
+    [PIN_OP_EMIT]         = { "emit",         pin_op_emit,         0 },
+    [PIN_OP_PUSH_STRING]  = { "push-string",  pin_op_push_string,  0 },
+    [PIN_OP_PUSH_ATTR]    = { "push-attr",    pin_op_push_attr,    0 },
+    [PIN_OP_PUSH_TEXT]    = { "push-text",    pin_op_push_text,    0 },
+    [PIN_OP_PUSH_NODES]   = { "push-nodes",   pin_op_push_nodes,   0 },
+    [PIN_OP_PUSH_BOOL]    = { "push-bool",    pin_op_push_bool,    0 },
+    [PIN_OP_CONVERT]      = { "convert",      pin_op_stub,         0 },
+    [PIN_OP_IF]           = { "if",           pin_op_if,           0 },
+    [PIN_OP_GOTO]         = { "goto",         pin_op_goto,         0 },
+    [PIN_OP_JUMP]         = { "jump",         pin_op_jump,         0 },
+    [PIN_OP_CALL]         = { "call",         pin_op_stub,         0 },
+    [PIN_OP_RETURN]       = { "return",       pin_op_stub,         0 },
+    [PIN_OP_DISCARD]      = { "discard",      pin_op_discard,      0 },
+    [PIN_OP_STORE_VAR]    = { "store-var",    pin_op_store_var,    0 },
+    [PIN_OP_LOAD_VAR]     = { "load-var",     pin_op_load_var,     0 },
 };
 
 /*
