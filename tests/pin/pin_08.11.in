@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.11.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="item">
+    <row>
+      <label><xsl:value-of select="."/></label>
+      <xsl:if test="@featured">
+        <tag>featured</tag>
+      </xsl:if>
+    </row>
+  </xsl:template>
+</xsl:stylesheet>
