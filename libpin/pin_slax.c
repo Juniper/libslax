@@ -491,6 +491,7 @@ typedef struct pin_op_cursor_s {
     pin_rulebook_t *poc_rb;       /* rulebook receiving the new ops */
     pin_name_id_t   poc_src_file; /* namepool atom for the source filename */
     uint32_t        poc_src_line; /* line number of the node being compiled */
+    uint64_t        poc_complexity;  /* bitmask: bit (1<<type) set for each complex op present */
 } pin_op_cursor_t;
 
 /*
@@ -539,7 +540,8 @@ pin_slax_op_push_for_test (pin_op_cursor_t *cur, const char *test)
     if (push == NULL)
 	return NULL;
 
-    if (test[0] == '@' && test[1] != '\0') {
+    if (test[0] == '@' && test[1] != '\0'
+	    && strpbrk(test + 1, " \t=<>'\"/@[]()*") == NULL) {
 	push->po_type = PIN_OP_PUSH_ATTR;
 	push->po_name = pin_namepool_atom(pwp, test + 1, TRUE);
     } else if (strcmp(test, ".") == 0) {
@@ -550,7 +552,8 @@ pin_slax_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 	push->po_name = pin_namepool_atom(pwp, test, TRUE);
     } else {
 	psu_log("pin_slax: complex test not yet supported in ops: %s", test);
-	push->po_type = PIN_OP_PUSH_BOOL;   /* always false; body is skipped */
+	push->po_type = PIN_OP_COMPLEX_EXPR;
+	cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
     }
     return push;
 }
@@ -588,6 +591,7 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    continue;
 
 	if (pin_slax_is_xsl(child, "copy-of")) {
+	    cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
 	    pin_op_t *push = pin_slax_op_new(cur, NULL);
 	    if (push == NULL) return;
 	    push->po_type = PIN_OP_PUSH_NODE;
@@ -620,6 +624,7 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	}
 
 	if (pin_slax_is_xsl(child, "apply-templates")) {
+	    cur->poc_complexity |= (1ULL << PIN_OP_APPLY);
 	    pin_op_t *apply = pin_slax_op_new(cur, NULL);
 	    if (apply == NULL) return;
 	    apply->po_type = PIN_OP_APPLY;
@@ -804,7 +809,7 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
  */
 static pin_op_id_t
 pin_slax_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
-		      pin_name_id_t src_file_id)
+		      pin_name_id_t src_file_id, uint64_t *complexity_out)
 {
     pin_op_id_t head = pin_op_id_null_atom();
     pin_op_cursor_t cur = {
@@ -812,8 +817,11 @@ pin_slax_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 	.poc_rb = rb,
 	.poc_src_file = src_file_id,
 	.poc_src_line = 0,
+	.poc_complexity = 0,
     };
     pin_slax_compile_ops_r(body_node, &cur);
+    if (complexity_out)
+	*complexity_out = cur.poc_complexity;
     return head;
 }
 
@@ -860,30 +868,10 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	bzero(prp, sizeof(*prp));
 	prp->pr_mode = mode_id;
 
-	/* Check template body for for-each constructs */
-	pin_rstate_id_t foreach_sid = pin_slax_compile_foreach(child, rb);
-	if (!pin_rstate_id_is_null(foreach_sid)) {
-	    /* Template contains a for-each: save the container, enter foreach state */
-	    prp->pr_action = PIA_SAVE;
-	    prp->pr_new_state = foreach_sid;
-	} else {
-	    /*
-	     * No for-each: compile the template body as a body instruction list
-	     * so it can be executed via BIA_APPLY dispatch.
-	     */
-	    pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
-	    if (!pin_body_instr_id_is_null(body_head)) {
-		prp->pr_body = body_head;
-		prp->pr_body_retain = pin_slax_body_retain(body_head, rb);
-	    } else {
-		prp->pr_action = action;
-	    }
-	}
-
 	/*
-	 * Compile to PIN_OP_* sequences for op-dispatch execution on CLOSE.
-	 * These run alongside the BIA_ body instructions; the parser selects
-	 * the active path based on pr_close_ops being non-null.
+	 * Compile to PIN_OP_* sequences first.  If all ops are simple (no
+	 * apply-templates, no copy-of), op-dispatch can execute the full body
+	 * without BIA_.  Complex ops set bits in complexity, which triggers BIA_ instead.
 	 */
 	{
 	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
@@ -891,7 +879,33 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		    url, TRUE);
 	    prp->pr_src_file = src_file_id;
 	    prp->pr_src_line = (uint32_t) xmlGetLineNo(child);
-	    prp->pr_close_ops = pin_slax_compile_ops(child, rb, src_file_id);
+	    uint64_t complexity = 0;
+	    prp->pr_close_ops = pin_slax_compile_ops(child, rb, src_file_id,
+		    &complexity);
+
+	    /* Check for for-each constructs and BIA_ fallback */
+	    pin_rstate_id_t foreach_sid = pin_slax_compile_foreach(child, rb);
+	    if (!pin_rstate_id_is_null(foreach_sid)) {
+		/* For-each uses state machine dispatch; op-dispatch does not apply */
+		prp->pr_action = PIA_SAVE;
+		prp->pr_new_state = foreach_sid;
+		prp->pr_close_ops = pin_op_id_null_atom();
+	    } else if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
+		/*
+		 * Template uses constructs that ops cannot yet handle
+		 * (apply-templates, copy-of), or produced no ops at all.
+		 * Fall back to the BIA_ body executor.
+		 */
+		pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
+		if (!pin_body_instr_id_is_null(body_head)) {
+		    prp->pr_body = body_head;
+		    prp->pr_body_retain = pin_slax_body_retain(body_head, rb);
+		} else {
+		    prp->pr_action = action;
+		}
+	    }
+	    /* else: simple ops cover the full body; pr_body stays null and
+	     * op-dispatch fires on CLOSE. */
 	}
 
 	/*
