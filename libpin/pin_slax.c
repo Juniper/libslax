@@ -710,11 +710,14 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		}
 
 		cur->poc_src_line = (uint32_t) xmlGetLineNo(wc);
+		/* Save nextp so we can recover the id of the first push op below */
+		pin_op_id_t *saved_nextp = cur->poc_nextp;
 		if (pin_slax_op_push_for_test(cur, (const char *) test) == NULL) {
 		    xmlFree(test);
 		    return;
 		}
 		xmlFree(test);
+		pin_op_id_t bid_when_start = *saved_nextp; /* id of the push op */
 
 		pin_op_t *push_bool = pin_slax_op_new(cur, NULL);
 		if (push_bool == NULL) return;
@@ -725,11 +728,16 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		if (bip_if == NULL) return;
 		bip_if->po_type = PIN_OP_IF;
 
-		/* Backpatch previous IF's false chain to this IF */
+		/*
+		 * Backpatch previous IF's false chain to the START of this
+		 * when-branch evaluation (the push op), not to the IF itself.
+		 * Jumping directly to the IF would skip the push and leave a
+		 * stale value on the stack.
+		 */
 		if (!pin_op_id_is_null(bid_last_if)) {
 		    pin_op_t *prev_if = pin_op_addr(cur->poc_rb, bid_last_if);
 		    if (prev_if)
-			prev_if->po_alt = bid_if;
+			prev_if->po_alt = bid_when_start;
 		}
 		bid_last_if = bid_if;
 
