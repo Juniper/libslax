@@ -52,32 +52,48 @@ typedef struct pin_exec_state_s pin_exec_state_t;
 
 /*
  * Operation types
+ *
+ * Complex ops (types 1 .. PIN_OP_MAX_COMPLEX-1) require BIA_ fallback when
+ * present in a compiled sequence.  Their type numbers are also bit indices in
+ * pin_op_cursor_t.poc_complexity: bit N set means op-type N is present.
+ *
+ * Non-complex ops start at PIN_OP_MAX_COMPLEX.  They never set bits in
+ * poc_complexity, so the full 64-bit mask can encode up to 63 distinct
+ * complex-op types (bit 0 is PIN_OP_NONE, which is never emitted).
  */
 
 typedef uint16_t pin_op_type_t;
 
-#define PIN_OP_NONE        0   /* Sentinel / null op */
-#define PIN_OP_EMIT_OPEN   1   /* Emit static open tag to output */
-#define PIN_OP_EMIT_CLOSE  2   /* Emit static close tag to output */
-#define PIN_OP_EMIT_ATTRIB 3   /* Push name/value pair for next EMIT_OPEN */
-#define PIN_OP_EMIT        4   /* Emit (pop + output) top of value stack as text */
-#define PIN_OP_PUSH_STRING 5   /* Push literal string atom → PVT_STRING */
-#define PIN_OP_PUSH_ATTR   6   /* Push attribute value from context node → PVT_STRING */
-#define PIN_OP_PUSH_TEXT   7   /* Push text content of context or named child → PVT_STRING */
-#define PIN_OP_PUSH_NODES  8   /* Push all children matching po_name → PVT_NODESET */
-#define PIN_OP_PUSH_BOOL   9   /* Convert top of stack to PVT_BOOLEAN and push */
-#define PIN_OP_PUSH_NODE  10   /* Push context node itself → PVT_NODE */
-#define PIN_OP_CONVERT    11   /* Convert top of stack to type encoded in po_name */
-#define PIN_OP_IF         12   /* Pop PVT_BOOLEAN; if false jump to po_alt */
-#define PIN_OP_GOTO       13   /* Unconditional jump to po_alt */
-#define PIN_OP_JUMP       14   /* Join point — falls through po_next */
-#define PIN_OP_APPLY      15   /* Apply-templates to retained children (po_name = mode) */
-#define PIN_OP_CALL       16   /* Invoke named template (future) */
-#define PIN_OP_RETURN     17   /* Return from named template (future) */
-#define PIN_OP_DISCARD    18   /* Pop and discard top of value stack */
-#define PIN_OP_STORE_VAR  19   /* Pop top; bind to variable named po_name */
-#define PIN_OP_LOAD_VAR   20   /* Push value of variable named po_name */
-#define PIN_OP_MAX        21   /* Sentinel: number of defined op codes */
+#define PIN_OP_NONE         0   /* Sentinel / null op — never emitted */
+
+/* --- complex ops: bit (1 << type) set in poc_complexity when present --- */
+#define PIN_OP_APPLY        1   /* Apply-templates to retained children (po_name = mode) */
+#define PIN_OP_PUSH_NODE    2   /* Push context node itself → PVT_NODE */
+#define PIN_OP_COMPLEX_EXPR 3   /* Stub: unsupported test expression, always false */
+/* 4-7: reserved for future complex ops */
+
+#define PIN_OP_MAX_COMPLEX  8   /* First non-complex op number */
+
+/* --- non-complex ops: numbered from PIN_OP_MAX_COMPLEX --- */
+#define PIN_OP_EMIT_OPEN   (PIN_OP_MAX_COMPLEX +  0) /* Emit static open tag to output */
+#define PIN_OP_EMIT_CLOSE  (PIN_OP_MAX_COMPLEX +  1) /* Emit static close tag to output */
+#define PIN_OP_EMIT_ATTRIB (PIN_OP_MAX_COMPLEX +  2) /* Push name/value pair for next EMIT_OPEN */
+#define PIN_OP_EMIT        (PIN_OP_MAX_COMPLEX +  3) /* Emit (pop + output) top of value stack */
+#define PIN_OP_PUSH_STRING (PIN_OP_MAX_COMPLEX +  4) /* Push literal string atom → PVT_STRING */
+#define PIN_OP_PUSH_ATTR   (PIN_OP_MAX_COMPLEX +  5) /* Push attribute value → PVT_STRING */
+#define PIN_OP_PUSH_TEXT   (PIN_OP_MAX_COMPLEX +  6) /* Push text content → PVT_STRING */
+#define PIN_OP_PUSH_NODES  (PIN_OP_MAX_COMPLEX +  7) /* Push matching children → PVT_NODESET */
+#define PIN_OP_PUSH_BOOL   (PIN_OP_MAX_COMPLEX +  8) /* Convert top of stack to PVT_BOOLEAN */
+#define PIN_OP_CONVERT     (PIN_OP_MAX_COMPLEX +  9) /* Convert top to type in po_name */
+#define PIN_OP_IF          (PIN_OP_MAX_COMPLEX + 10) /* Pop PVT_BOOLEAN; if false jump to po_alt */
+#define PIN_OP_GOTO        (PIN_OP_MAX_COMPLEX + 11) /* Unconditional jump to po_alt */
+#define PIN_OP_JUMP        (PIN_OP_MAX_COMPLEX + 12) /* Join point — falls through po_next */
+#define PIN_OP_CALL        (PIN_OP_MAX_COMPLEX + 13) /* Invoke named template (future) */
+#define PIN_OP_RETURN      (PIN_OP_MAX_COMPLEX + 14) /* Return from named template (future) */
+#define PIN_OP_DISCARD     (PIN_OP_MAX_COMPLEX + 15) /* Pop and discard top of value stack */
+#define PIN_OP_STORE_VAR   (PIN_OP_MAX_COMPLEX + 16) /* Pop top; bind to variable named po_name */
+#define PIN_OP_LOAD_VAR    (PIN_OP_MAX_COMPLEX + 17) /* Push value of variable named po_name */
+#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 18) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
