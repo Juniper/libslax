@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.12.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="item">
+    <row>
+      <label><xsl:value-of select="."/></label>
+      <xsl:choose>
+        <xsl:when test="@featured">
+          <kind>featured</kind>
+        </xsl:when>
+        <xsl:when test="@new">
+          <kind>new</kind>
+        </xsl:when>
+        <xsl:otherwise>
+          <kind>regular</kind>
+        </xsl:otherwise>
+      </xsl:choose>
+    </row>
+  </xsl:template>
+</xsl:stylesheet>
