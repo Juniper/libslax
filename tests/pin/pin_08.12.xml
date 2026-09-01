@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<catalog>
+  <item featured="yes">Alpha</item>
+  <item new="yes">Beta</item>
+  <item>Gamma</item>
+  <item featured="yes" new="yes">Delta</item>
+</catalog>
