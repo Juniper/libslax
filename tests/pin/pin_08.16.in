@@ -23,10 +23,10 @@
     same template.
 
     Code paths hit:
-      PIN_OP_PUSH_NODES — child element presence for each of five names
-      PIN_OP_PUSH_ATTR  — @id and @name value output
-      xsl:choose on @type — three branches (person/org/otherwise)
-      sequential xsl:if — five child-element presence gates
+      PIN_OP_PUSH_NODES - child element presence for each of five names
+      PIN_OP_PUSH_ATTR  - @id and @name value output
+      xsl:choose on @type - three branches (person/org/otherwise)
+      sequential xsl:if - five child-element presence gates
   -->
   <xsl:template match="/">
     <result>
