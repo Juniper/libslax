@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <!-- Library catalog: 30 books covering every combination of nine attributes -->
 <library>
-  <!-- No attributes at all — all nine IF branches take false path -->
+  <!-- No attributes at all - all nine IF branches take false path -->
   <book>Introduction to Algorithms</book>
 
-  <!-- Single value-output attributes only — badges all false -->
+  <!-- Single value-output attributes only - badges all false -->
   <book author="Kernighan">The C Programming Language</book>
   <book isbn="978-0201896831">The Art of Computer Programming Vol 1</book>
   <book year="1996">The Mythical Man Month</book>
   <book edition="4th">The Unix Programming Environment</book>
 
-  <!-- Single badge attributes only — value outputs all absent -->
+  <!-- Single badge attributes only - value outputs all absent -->
   <book featured="yes">Structure and Interpretation of Computer Programs</book>
   <book sale="yes">Operating Systems: Three Easy Pieces</book>
   <book new="yes">A Philosophy of Software Design</book>
