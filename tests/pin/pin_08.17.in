@@ -23,9 +23,9 @@
     <detail> block to test EMIT_OPEN depth tracking over many elements.
 
     Attributes:
-      @id, @source, @code — value output (always)
-      @critical / @error / @warn / @info — xsl:choose severity
-      @retry, @sampled, @masked, @synthetic — sequential xsl:if flags
+      @id, @source, @code - value output (always)
+      @critical / @error / @warn / @info - xsl:choose severity
+      @retry, @sampled, @masked, @synthetic - sequential xsl:if flags
   -->
   <xsl:template match="/">
     <result>
