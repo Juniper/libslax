@@ -185,6 +185,20 @@ AC_ARG_ENABLE([lto],
 AC_MSG_RESULT([$ENABLE_LTO])
 AC_SUBST(ENABLE_LTO)
 
+# ENABLE_ACCESSOR_INLINES
+AC_MSG_CHECKING([whether to build with inline accessors (libbxml)])
+AC_ARG_ENABLE([accessor-inlines],
+    [  --enable-accessor-inlines    Build with inline accessors (libbxml)],
+    [ENABLE_ACCESSOR_INLINES=$enableval],
+    [ENABLE_ACCESSOR_INLINES=yes])
+AC_MSG_RESULT([$ENABLE_ACCESSOR_INLINES])
+AC_SUBST(ENABLE_ACCESSOR_INLINES)
+AM_CONDITIONAL([ENABLE_ACCESSOR_INLINES], [test "$ENABLE_ACCESSOR_INLINES" = "yes"])
+if test "$ENABLE_ACCESSOR_INLINES" = "yes"; then
+    AC_DEFINE([ENABLE_ACCESSOR_INLINES], [1],
+        [Build with inline accessors (libbxml)])
+fi
+
 AC_MSG_CHECKING([whether to build with printflike])
 AC_ARG_ENABLE([printflike],
     [  --enable-printflike    Enable use of GCC __printflike attribute],
@@ -1863,10 +1877,15 @@ dnl (libslax/slaxconfig.h.in): autoheader only ever generates a template for
 dnl the first HEADER name it sees, so libbxml/libbxslt reuse libslax's template
 dnl explicitly via the "output:input" form rather than each getting their
 dnl own (and their own autoheader-regeneration headaches).
+dnl
+dnl libbxmlconfig.h lands under libbxml/include/libxml/ (not bare
+dnl libbxml/) so it's reachable via LIBXML_CFLAGS's existing
+dnl -I$(top_builddir)/libbxml/include, which every consumer of
+dnl <libxml/tree.h> already has -- tree.h includes it directly.
 AC_CONFIG_HEADERS([
   libslax/slaxconfig.h
-  bxml/libbxmlconfig.h:libslax/slaxconfig.h.in
-  bxslt/libbxsltconfig.h:libslax/slaxconfig.h.in
+  libbxml/include/libxml/libbxmlconfig.h:libslax/slaxconfig.h.in
+  libbxslt/libbxsltconfig.h:libslax/slaxconfig.h.in
 ])
 AC_CONFIG_FILES([
   Makefile
@@ -1983,5 +2002,5 @@ AC_MSG_NOTICE([summary of build options:
   sqlite3:          ${HAVE_SQLITE3:-no}
   sqlcipher:        ${HAVE_SQLCIPHER:-no}
   humanize:         ${HAVE_HUMANIZE_NUMBER:-no}
-  clang LTO:        ${ENABLE_LTO:-no}
+  clang LTO:        ${ENABLE_LTO:-no} (inlines: ${ENABLE_ACCESSOR_INLINES:-no})
 ])
