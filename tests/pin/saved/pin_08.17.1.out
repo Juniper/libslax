@@ -218,7 +218,7 @@ compiled 2 patterns
       <id>e0024</id>
       <source>auth</source>
       <code>AUT003</code>
-      <message>Failed login attempt — account not locked</message>
+      <message>Failed login attempt - account not locked</message>
       <detail>
          <severity>WARN</severity>
       </detail>
@@ -329,7 +329,7 @@ compiled 2 patterns
       <id>e0036</id>
       <source>queue</source>
       <code>QUE002</code>
-      <message>Message processing failed — DLQ overflow</message>
+      <message>Message processing failed - DLQ overflow</message>
       <detail>
          <severity>ERROR</severity>
       </detail>
@@ -376,7 +376,7 @@ compiled 2 patterns
       <id>e0041</id>
       <source>cert</source>
       <code>CRT002</code>
-      <message>TLS handshake failed — certificate mismatch</message>
+      <message>TLS handshake failed - certificate mismatch</message>
       <detail>
          <severity>ERROR</severity>
       </detail>
@@ -424,7 +424,7 @@ compiled 2 patterns
       <id>e0046</id>
       <source>auth</source>
       <code>AUT005</code>
-      <message>Auth service down — all logins failing</message>
+      <message>Auth service down - all logins failing</message>
       <detail>
          <severity>CRITICAL</severity>
       </detail>
@@ -442,7 +442,7 @@ compiled 2 patterns
       <id>e0048</id>
       <source>storage</source>
       <code>STR002</code>
-      <message>RAID array degraded — data at risk</message>
+      <message>RAID array degraded - data at risk</message>
       <detail>
          <severity>CRITICAL</severity>
       </detail>
@@ -451,7 +451,7 @@ compiled 2 patterns
       <id>e0049</id>
       <source>network</source>
       <code>NET003</code>
-      <message>Core switch failure — datacenter isolated</message>
+      <message>Core switch failure - datacenter isolated</message>
       <detail>
          <severity>CRITICAL</severity>
       </detail>
@@ -469,7 +469,7 @@ compiled 2 patterns
    <log-entry>
       <id>e0051</id>
       <source>api</source>
-      <message>Security breach attempt — PII access masked</message>
+      <message>Security breach attempt - PII access masked</message>
       <detail>
          <severity>CRITICAL</severity>
          <flag>masked</flag>
@@ -488,7 +488,7 @@ compiled 2 patterns
    <log-entry>
       <id>e0053</id>
       <source>test</source>
-      <message>All severity flags — critical wins</message>
+      <message>All severity flags - critical wins</message>
       <detail>
          <severity>CRITICAL</severity>
       </detail>
@@ -496,7 +496,7 @@ compiled 2 patterns
    <log-entry>
       <id>e0054</id>
       <source>test</source>
-      <message>Error+warn+info — error wins</message>
+      <message>Error+warn+info - error wins</message>
       <detail>
          <severity>ERROR</severity>
       </detail>
@@ -504,7 +504,7 @@ compiled 2 patterns
    <log-entry>
       <id>e0055</id>
       <source>test</source>
-      <message>Warn+info — warn wins</message>
+      <message>Warn+info - warn wins</message>
       <detail>
          <severity>WARN</severity>
       </detail>
