@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.17.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    High-volume event log transformation.
+
+    Runs 60+ event elements through a moderately complex op-dispatch
+    template, stressing the engine for throughput and correctness across
+    a large number of retained-context cycles.  Each event open/retain/
+    close/exec cycle exercises:
+
+      - PNF_TRANSIENT marking and emit-skip for the retained element
+      - pin_exec_run invocation (one per element close)
+      - Value stack push/pop over many iterations
+      - Context node retention and attribute lookup across different attrs
+
+    The template emits structured output for every event, including
+    unconditional attribute value output, a four-branch xsl:choose for
+    @severity, four sequential xsl:if for event modifiers, and a nested
+    <detail> block to test EMIT_OPEN depth tracking over many elements.
+
+    Attributes:
+      @id, @source, @code — value output (always)
+      @critical / @error / @warn / @info — xsl:choose severity
+      @retry, @sampled, @masked, @synthetic — sequential xsl:if flags
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="event">
+    <log-entry>
+      <id><xsl:value-of select="@id"/></id>
+      <source><xsl:value-of select="@source"/></source>
+      <xsl:if test="@code">
+        <code><xsl:value-of select="@code"/></code>
+      </xsl:if>
+      <message><xsl:value-of select="."/></message>
+      <detail>
+        <severity>
+          <xsl:choose>
+            <xsl:when test="@critical">CRITICAL</xsl:when>
+            <xsl:when test="@error">ERROR</xsl:when>
+            <xsl:when test="@warn">WARN</xsl:when>
+            <xsl:when test="@info">INFO</xsl:when>
+            <xsl:otherwise>DEBUG</xsl:otherwise>
+          </xsl:choose>
+        </severity>
+        <xsl:if test="@retry">
+          <flag>retry</flag>
+        </xsl:if>
+        <xsl:if test="@sampled">
+          <flag>sampled</flag>
+        </xsl:if>
+        <xsl:if test="@masked">
+          <flag>masked</flag>
+        </xsl:if>
+        <xsl:if test="@synthetic">
+          <flag>synthetic</flag>
+        </xsl:if>
+      </detail>
+    </log-entry>
+  </xsl:template>
+</xsl:stylesheet>
