@@ -1,7 +1,56 @@
 <?xml version="1.0"?>
-<catalog>
-  <item featured="yes">Alpha</item>
-  <item>Beta</item>
-  <item featured="yes">Gamma</item>
-  <item>Delta</item>
-</catalog>
+<!-- Library catalog: 30 books covering every combination of nine attributes -->
+<library>
+  <!-- No attributes at all — all nine IF branches take false path -->
+  <book>Introduction to Algorithms</book>
+
+  <!-- Single value-output attributes only — badges all false -->
+  <book author="Kernighan">The C Programming Language</book>
+  <book isbn="978-0201896831">The Art of Computer Programming Vol 1</book>
+  <book year="1996">The Mythical Man Month</book>
+  <book edition="4th">The Unix Programming Environment</book>
+
+  <!-- Single badge attributes only — value outputs all absent -->
+  <book featured="yes">Structure and Interpretation of Computer Programs</book>
+  <book sale="yes">Operating Systems: Three Easy Pieces</book>
+  <book new="yes">A Philosophy of Software Design</book>
+  <book recommended="yes">The Pragmatic Programmer</book>
+  <book clearance="yes">Advanced CORBA Programming with C++</book>
+
+  <!-- Multiple value outputs, no badges -->
+  <book author="Stroustrup" isbn="978-0321563842" year="2013">The C++ Programming Language</book>
+  <book author="Knuth" isbn="978-0201896831" year="1968" edition="3rd">The Art of Computer Programming Vol 2</book>
+  <book author="Aho" isbn="978-0201100884" year="1986">Compilers: Principles, Techniques and Tools</book>
+
+  <!-- One value output combined with one badge -->
+  <book author="Fowler" featured="yes">Refactoring</book>
+  <book author="Martin" isbn="978-0132350884" sale="yes">Clean Code</book>
+  <book year="2003" new="yes">Domain-Driven Design</book>
+  <book author="Gamma" isbn="978-0201633610" recommended="yes">Design Patterns</book>
+
+  <!-- Two badge flags -->
+  <book author="Beck" featured="yes" sale="yes">Test Driven Development</book>
+  <book author="Hunt" new="yes" recommended="yes">The Pragmatic Programmer</book>
+  <book sale="yes" clearance="yes">Legacy Mainframe Programming Guide</book>
+  <book featured="yes" new="yes">Designing Data-Intensive Applications</book>
+
+  <!-- Three badge flags -->
+  <book author="Evans" isbn="978-0321125217" featured="yes" sale="yes" new="yes">Domain-Driven Design</book>
+  <book author="Nygard" recommended="yes" sale="yes" clearance="yes">Release It!</book>
+
+  <!-- Full value metadata plus multiple badges -->
+  <book author="McConnell" isbn="978-0735619678" year="2004" edition="2nd"
+        featured="yes" recommended="yes">Code Complete</book>
+  <book author="Kleppmann" isbn="978-1491903100" year="2017"
+        featured="yes" sale="yes" new="yes" recommended="yes">Designing Data-Intensive Applications</book>
+
+  <!-- All nine attributes present -->
+  <book author="Tanenbaum" isbn="978-0136006633" year="2014" edition="4th"
+        featured="yes" sale="yes" new="yes" recommended="yes" clearance="yes">Modern Operating Systems</book>
+
+  <!-- Edge cases: empty-string title, multiple badges, partial metadata -->
+  <book author="Wirth" isbn="978-0130380975" clearance="yes">Algorithms and Data Structures</book>
+  <book isbn="978-0596517748" new="yes" recommended="yes">JavaScript: The Good Parts</book>
+  <book year="1979" edition="1st" sale="yes" clearance="yes">The AWK Programming Language</book>
+  <book author="Sedgewick" isbn="978-0321573513" year="2011" featured="yes" new="yes">Algorithms</book>
+</library>
