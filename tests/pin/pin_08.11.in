@@ -4,12 +4,63 @@
 -->
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:template match="item">
-    <row>
-      <label><xsl:value-of select="."/></label>
-      <xsl:if test="@featured">
-        <tag>featured</tag>
+  <!--
+    Library catalog annotation template.
+
+    Exercises the sequential PIN_OP_IF path in the op-dispatch engine:
+    nine independent xsl:if blocks fire in sequence on the same element,
+    covering every attribute individually and in combination.  Because
+    all tests are simple @attr presence checks and no apply-templates or
+    copy-of appears, poc_complexity stays zero and pr_body is never
+    compiled — the template runs entirely through op-dispatch.
+
+    Attribute value output (PIN_OP_PUSH_ATTR + PIN_OP_EMIT) is exercised
+    for @author, @isbn, @year, and @edition.
+
+    Code paths hit:
+      PIN_OP_EMIT_OPEN / EMIT_CLOSE    — literal element wrappers
+      PIN_OP_PUSH_ATTR + PIN_OP_EMIT   — attribute value output
+      PIN_OP_PUSH_TEXT + PIN_OP_EMIT   — text content output (.)
+      PIN_OP_PUSH_BOOL + PIN_OP_IF     — attribute presence gate
+      PIN_OP_JUMP                      — join point at end of each if
+      (all nine xsl:if false branches) — PIN_OP_IF.po_alt to JUMP
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="book">
+    <entry>
+      <title><xsl:value-of select="."/></title>
+      <xsl:if test="@author">
+        <author><xsl:value-of select="@author"/></author>
       </xsl:if>
-    </row>
+      <xsl:if test="@isbn">
+        <isbn><xsl:value-of select="@isbn"/></isbn>
+      </xsl:if>
+      <xsl:if test="@year">
+        <year><xsl:value-of select="@year"/></year>
+      </xsl:if>
+      <xsl:if test="@edition">
+        <edition><xsl:value-of select="@edition"/></edition>
+      </xsl:if>
+      <xsl:if test="@featured">
+        <badge>featured</badge>
+      </xsl:if>
+      <xsl:if test="@sale">
+        <badge>sale</badge>
+      </xsl:if>
+      <xsl:if test="@new">
+        <badge>new</badge>
+      </xsl:if>
+      <xsl:if test="@recommended">
+        <badge>recommended</badge>
+      </xsl:if>
+      <xsl:if test="@clearance">
+        <badge>clearance</badge>
+      </xsl:if>
+    </entry>
   </xsl:template>
 </xsl:stylesheet>
