@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!-- Infrastructure inventory: servers, databases, and network interfaces interleaved -->
+<inventory>
+  <!-- Servers -->
+  <server id="srv-001" hostname="web01.dc1.example.com" ip="10.0.1.1" rack="A1"
+          primary="yes" active="yes" monitored="yes"/>
+  <server id="srv-002" hostname="web02.dc1.example.com" ip="10.0.1.2" rack="A1"
+          standby="yes" active="yes" monitored="yes"/>
+  <server id="srv-003" hostname="web03.dc2.example.com" ip="10.0.2.1" rack="B1"
+          primary="yes" active="yes" locked="yes" monitored="yes"/>
+  <server id="srv-004" hostname="db01.dc1.example.com" ip="10.0.1.10" rack="A2"
+          primary="yes" active="yes" monitored="yes"/>
+  <server id="srv-005" hostname="db02.dc1.example.com" ip="10.0.1.11" rack="A2"
+          standby="yes" active="yes" monitored="yes"/>
+  <server id="srv-006" hostname="db03.dc2.example.com" ip="10.0.2.10" rack="B2"
+          witness="yes" active="yes"/>
+  <server id="srv-007" hostname="old-app.dc1.example.com" ip="10.0.1.50" rack="A5"
+          decommissioned="yes" locked="yes"/>
+  <server id="srv-008" hostname="build01.dc1.example.com" ip="10.0.1.20" rack="A3"
+          active="yes" monitored="yes"/>
+  <server id="srv-009" ip="10.0.3.1" rack="C1" standby="yes"/>
+  <server id="srv-010" hostname="spare.dc3.example.com"/>
+
+  <!-- Databases interleaved with servers -->
+  <database id="db-001" host="db01.dc1.example.com" port="5432" schema="appdb"
+            postgres="yes" encrypted="yes" monitored="yes"/>
+  <database id="db-002" host="db02.dc1.example.com" port="5432" schema="appdb"
+            postgres="yes" replica="yes" encrypted="yes" monitored="yes"/>
+  <database id="db-003" host="mysql01.dc1.example.com" port="3306" schema="legacydb"
+            mysql="yes" encrypted="yes"/>
+  <database id="db-004" host="cache01.dc1.example.com" port="6379"
+            redis="yes" sharded="yes" monitored="yes"/>
+  <database id="db-005" host="cache02.dc1.example.com" port="6379"
+            redis="yes" replica="yes" sharded="yes"/>
+  <database id="db-006" host="shard01.dc2.example.com" port="5432" schema="shards"
+            postgres="yes" sharded="yes" encrypted="yes" replica="yes" monitored="yes"/>
+  <database id="db-007" host="local.test" port="0" sqlite="yes"/>
+  <database id="db-008" host="unknown-host" port="3306"/>
+  <database id="db-009" host="analytics.dc2.example.com" port="5432" schema="metrics"
+            postgres="yes" encrypted="yes" sharded="yes" monitored="yes"/>
+  <database id="db-010" host="mongo01.dc1.example.com" port="27017" schema="docs"/>
+
+  <!-- Network interfaces -->
+  <network-interface id="nic-001" mac="00:1a:2b:3c:4d:5e" speed="10G"
+                     active="yes" monitored="yes" bonded="yes"/>
+  <network-interface id="nic-002" mac="00:1a:2b:3c:4d:5f" speed="10G"
+                     standby="yes" monitored="yes" bonded="yes"/>
+  <network-interface id="nic-003" mac="00:1a:2b:3c:4d:60" speed="1G"
+                     active="yes" vlan="yes"/>
+  <network-interface id="nic-004" mac="00:1a:2b:3c:4d:61" speed="1G"
+                     monitored="yes" vlan="yes"/>
+  <network-interface id="nic-005" mac="00:1a:2b:3c:4d:62" speed="25G"
+                     active="yes" monitored="yes" bonded="yes" vlan="yes"/>
+  <network-interface id="nic-006" speed="10G" standby="yes" bonded="yes"/>
+  <network-interface id="nic-007" mac="de:ad:be:ef:00:01"/>
+  <network-interface id="nic-008" mac="de:ad:be:ef:00:02" speed="100M" active="yes"/>
+</inventory>
