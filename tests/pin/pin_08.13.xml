@@ -44,7 +44,7 @@
   <employee id="U002" name="Robin Singh" title="Consultant" contractor="yes" parttime="yes"/>
   <employee id="U003" name="Morgan Lee" dept="Facilities"/>
 
-  <!-- Multiple bands set — first match wins -->
+  <!-- Multiple bands set - first match wins -->
   <employee id="X001" name="Test Executive-Senior" executive="yes" senior="yes" mid="yes" manager="yes"/>
   <employee id="X002" name="Test Senior-Mid" dept="Engineering" senior="yes" mid="yes" junior="yes"/>
   <employee id="X003" name="Test Mid-Junior" dept="QA" mid="yes" junior="yes" contractor="yes"/>
@@ -53,7 +53,7 @@
   <employee id="X004" name="Quirky Edge Case" dept="Engineering" title="Wizard"
             senior="yes" manager="yes" remote="yes" contractor="yes" parttime="yes"/>
 
-  <!-- Minimal records — no dept, no title, no band -->
+  <!-- Minimal records - no dept, no title, no band -->
   <employee id="X005" name="No Band Worker"/>
   <employee id="X006" name="Remote Only Worker" remote="yes"/>
   <employee id="X007" name="Contractor Only" contractor="yes"/>
