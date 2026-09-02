@@ -17,12 +17,12 @@
     (not to the IF itself) when its condition is false.
 
     Code paths hit:
-      xsl:choose — four-branch false chain backpatch (IF.po_alt → push start)
-      xsl:otherwise — taken when no @critical/@high/@medium/@low present
-      xsl:choose — GOTO.po_alt → join backpatch for each taken branch
-      xsl:if — four independent status gates after the choose block
-      first-match semantics — element with two priority flags takes first
-      all-false — element with no priority flags → otherwise fires
+      xsl:choose - four-branch false chain backpatch (IF.po_alt → push start)
+      xsl:otherwise - taken when no @critical/@high/@medium/@low present
+      xsl:choose - GOTO.po_alt → join backpatch for each taken branch
+      xsl:if - four independent status gates after the choose block
+      first-match semantics - element with two priority flags takes first
+      all-false - element with no priority flags → otherwise fires
   -->
   <xsl:template match="/">
     <result>
