@@ -800,6 +800,30 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    open_op->po_type = PIN_OP_EMIT_OPEN;
 	    open_op->po_name = tag_id;
 
+	    /* Capture static attributes, same logic as the BIA_ path. */
+	    if (child->properties) {
+		char abuf[4096];
+		size_t apos = 0;
+		for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
+		    const char *aname = (const char *) ap->name;
+		    const char *aval = (ap->children && ap->children->content)
+			? (const char *) ap->children->content : "";
+		    if (strchr(aval, '{'))
+			continue;
+		    if (apos > 0 && apos < sizeof(abuf) - 1)
+			abuf[apos++] = ' ';
+		    apos += (size_t) snprintf(abuf + apos, sizeof(abuf) - apos,
+					     "%s=\"%s\"", aname, aval);
+		    if (apos >= sizeof(abuf)) {
+			apos = sizeof(abuf) - 1;
+			break;
+		    }
+		}
+		abuf[apos] = '\0';
+		if (apos > 0)
+		    open_op->po_name2 = pin_namepool_atom(pwp, abuf, TRUE);
+	    }
+
 	    pin_slax_compile_ops_r(child, cur);
 
 	    pin_op_t *close_op = pin_slax_op_new(cur, NULL);
