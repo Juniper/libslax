@@ -1,6 +1,6 @@
 compiled 4 patterns
 <result>
-   <node>
+   <node type="server">
       <id>srv-001</id>
       <hostname>web01.dc1.example.com</hostname>
       <ip>10.0.1.1</ip>
@@ -9,7 +9,7 @@ compiled 4 patterns
       <flag>active</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-002</id>
       <hostname>web02.dc1.example.com</hostname>
       <ip>10.0.1.2</ip>
@@ -18,7 +18,7 @@ compiled 4 patterns
       <flag>active</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-003</id>
       <hostname>web03.dc2.example.com</hostname>
       <ip>10.0.2.1</ip>
@@ -28,7 +28,7 @@ compiled 4 patterns
       <flag>locked</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-004</id>
       <hostname>db01.dc1.example.com</hostname>
       <ip>10.0.1.10</ip>
@@ -37,7 +37,7 @@ compiled 4 patterns
       <flag>active</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-005</id>
       <hostname>db02.dc1.example.com</hostname>
       <ip>10.0.1.11</ip>
@@ -46,7 +46,7 @@ compiled 4 patterns
       <flag>active</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-006</id>
       <hostname>db03.dc2.example.com</hostname>
       <ip>10.0.2.10</ip>
@@ -54,7 +54,7 @@ compiled 4 patterns
       <role>witness</role>
       <flag>active</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-007</id>
       <hostname>old-app.dc1.example.com</hostname>
       <ip>10.0.1.50</ip>
@@ -62,7 +62,7 @@ compiled 4 patterns
       <role>decommissioned</role>
       <flag>locked</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-008</id>
       <hostname>build01.dc1.example.com</hostname>
       <ip>10.0.1.20</ip>
@@ -71,18 +71,18 @@ compiled 4 patterns
       <flag>active</flag>
       <flag>monitored</flag>
    </node>
-   <node>
+   <node type="server">
       <id>srv-009</id>
       <ip>10.0.3.1</ip>
       <rack>C1</rack>
       <role>standby</role>
    </node>
-   <node>
+   <node type="server">
       <id>srv-010</id>
       <hostname>spare.dc3.example.com</hostname>
       <role>unknown</role>
    </node>
-   <node>
+   <node type="database">
       <id>db-001</id>
       <host>db01.dc1.example.com</host>
       <port>5432</port>
@@ -90,7 +90,7 @@ compiled 4 patterns
       <engine>postgresql</engine>
       <flag>encrypted</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-002</id>
       <host>db02.dc1.example.com</host>
       <port>5432</port>
@@ -99,7 +99,7 @@ compiled 4 patterns
       <flag>replica</flag>
       <flag>encrypted</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-003</id>
       <host>mysql01.dc1.example.com</host>
       <port>3306</port>
@@ -107,14 +107,14 @@ compiled 4 patterns
       <engine>mysql</engine>
       <flag>encrypted</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-004</id>
       <host>cache01.dc1.example.com</host>
       <port>6379</port>
       <engine>redis</engine>
       <flag>sharded</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-005</id>
       <host>cache02.dc1.example.com</host>
       <port>6379</port>
@@ -122,7 +122,7 @@ compiled 4 patterns
       <flag>replica</flag>
       <flag>sharded</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-006</id>
       <host>shard01.dc2.example.com</host>
       <port>5432</port>
@@ -132,19 +132,19 @@ compiled 4 patterns
       <flag>encrypted</flag>
       <flag>sharded</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-007</id>
       <host>local.test</host>
       <port>0</port>
       <engine>sqlite</engine>
    </node>
-   <node>
+   <node type="database">
       <id>db-008</id>
       <host>unknown-host</host>
       <port>3306</port>
       <engine>unknown</engine>
    </node>
-   <node>
+   <node type="database">
       <id>db-009</id>
       <host>analytics.dc2.example.com</host>
       <port>5432</port>
@@ -153,14 +153,14 @@ compiled 4 patterns
       <flag>encrypted</flag>
       <flag>sharded</flag>
    </node>
-   <node>
+   <node type="database">
       <id>db-010</id>
       <host>mongo01.dc1.example.com</host>
       <port>27017</port>
       <schema>docs</schema>
       <engine>unknown</engine>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-001</id>
       <mac>00:1a:2b:3c:4d:5e</mac>
       <speed>10G</speed>
@@ -168,7 +168,7 @@ compiled 4 patterns
       <flag>monitored</flag>
       <flag>bonded</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-002</id>
       <mac>00:1a:2b:3c:4d:5f</mac>
       <speed>10G</speed>
@@ -176,14 +176,14 @@ compiled 4 patterns
       <flag>monitored</flag>
       <flag>bonded</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-003</id>
       <mac>00:1a:2b:3c:4d:60</mac>
       <speed>1G</speed>
       <link>up</link>
       <flag>vlan</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-004</id>
       <mac>00:1a:2b:3c:4d:61</mac>
       <speed>1G</speed>
@@ -191,7 +191,7 @@ compiled 4 patterns
       <flag>monitored</flag>
       <flag>vlan</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-005</id>
       <mac>00:1a:2b:3c:4d:62</mac>
       <speed>25G</speed>
@@ -200,18 +200,18 @@ compiled 4 patterns
       <flag>bonded</flag>
       <flag>vlan</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-006</id>
       <speed>10G</speed>
       <link>standby</link>
       <flag>bonded</flag>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-007</id>
       <mac>de:ad:be:ef:00:01</mac>
       <link>down</link>
    </node>
-   <node>
+   <node type="nic">
       <id>nic-008</id>
       <mac>de:ad:be:ef:00:02</mac>
       <speed>100M</speed>
