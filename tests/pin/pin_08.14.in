@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.14.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Service health monitoring: xsl:choose WITHOUT xsl:otherwise.
+
+    When no xsl:otherwise is present the last xsl:when IF's po_alt points
+    directly to the join JUMP instead of an otherwise-entry JUMP.  This
+    test specifically exercises that code path.
+
+    Services are classified by alert level via attribute presence flags
+    (@critical, @warning, @info).  Healthy services have none of these
+    flags; for them the choose block emits nothing — the join JUMP is
+    reached directly through the last IF's false branch.
+
+    Additional sequential xsl:if blocks test independent status annotations
+    (@maintenance, @deprecated, @experimental) that are orthogonal to the
+    alert level.  These always evaluate even when the choose emits nothing,
+    confirming that op execution continues correctly after a no-output choose.
+
+    Code paths hit:
+      xsl:choose (no otherwise) — final IF.po_alt → join JUMP directly
+      all-false choose — join reached without emitting the inner block
+      @critical alone / @warning alone / @info alone
+      @info false after @warning true — second IF never reached (GOTO fires)
+      sequential xsl:if after choose — always evaluated regardless of choose
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="service">
+    <check>
+      <name><xsl:value-of select="@name"/></name>
+      <xsl:if test="@host">
+        <host><xsl:value-of select="@host"/></host>
+      </xsl:if>
+      <xsl:if test="@port">
+        <port><xsl:value-of select="@port"/></port>
+      </xsl:if>
+      <xsl:choose>
+        <xsl:when test="@critical">
+          <alert>CRITICAL</alert>
+          <action>page-oncall</action>
+        </xsl:when>
+        <xsl:when test="@warning">
+          <alert>WARNING</alert>
+          <action>notify-team</action>
+        </xsl:when>
+        <xsl:when test="@info">
+          <alert>INFO</alert>
+          <action>log-only</action>
+        </xsl:when>
+      </xsl:choose>
+      <xsl:if test="@maintenance">
+        <flag>maintenance</flag>
+      </xsl:if>
+      <xsl:if test="@deprecated">
+        <flag>deprecated</flag>
+      </xsl:if>
+      <xsl:if test="@experimental">
+        <flag>experimental</flag>
+      </xsl:if>
+    </check>
+  </xsl:template>
+</xsl:stylesheet>
