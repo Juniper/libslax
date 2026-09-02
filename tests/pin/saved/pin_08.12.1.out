@@ -1,0 +1,298 @@
+compiled 2 patterns
+<result>
+   <issue>
+      <id>1001</id>
+      <summary>Login fails for LDAP users after session timeout</summary>
+      <component>auth</component>
+      <reporter>alice</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1002</id>
+      <summary>Data corruption on concurrent writes to user table</summary>
+      <component>db</component>
+      <reporter>bob</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1003</id>
+      <summary>API gateway returns 500 for all POST requests</summary>
+      <component>api</component>
+      <reporter>carol</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>assigned</status>
+      <status>blocked</status>
+   </issue>
+   <issue>
+      <id>1004</id>
+      <summary>Memory leak causes OOM after 48 hours uptime</summary>
+      <reporter>dave</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+   </issue>
+   <issue>
+      <id>1005</id>
+      <summary>Disk quota enforcement silently fails</summary>
+      <component>storage</component>
+      <reporter>eve</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1006</id>
+      <summary>Dashboard renders blank on Firefox 118</summary>
+      <component>ui</component>
+      <reporter>frank</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1007</id>
+      <summary>Password reset emails go to spam</summary>
+      <component>auth</component>
+      <reporter>grace</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1008</id>
+      <summary>Rate limiting not applied to admin endpoints</summary>
+      <component>api</component>
+      <reporter>hank</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>assigned</status>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1009</id>
+      <summary>Search indexer falls behind under load</summary>
+      <reporter>ivy</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>blocked</status>
+   </issue>
+   <issue>
+      <id>1010</id>
+      <summary>Invoice totals wrong for multi-currency accounts</summary>
+      <component>billing</component>
+      <reporter>jack</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+   </issue>
+   <issue>
+      <id>1011</id>
+      <summary>Email notifications sent in wrong timezone</summary>
+      <component>notify</component>
+      <reporter>kate</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1012</id>
+      <summary>Tooltip flickers on hover in dark mode</summary>
+      <component>ui</component>
+      <reporter>leo</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1013</id>
+      <summary>CSV export truncates fields over 255 chars</summary>
+      <component>export</component>
+      <reporter>mia</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+   </issue>
+   <issue>
+      <id>1014</id>
+      <summary>Pagination cursor invalid after record deletion</summary>
+      <component>api</component>
+      <reporter>ned</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>assigned</status>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1015</id>
+      <summary>Report generation slow with large date ranges</summary>
+      <reporter>ora</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>blocked</status>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1016</id>
+      <summary>Session not invalidated on role change</summary>
+      <component>auth</component>
+      <reporter>paul</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+   </issue>
+   <issue>
+      <id>1017</id>
+      <summary>Sidebar collapsed state not persisted</summary>
+      <component>ui</component>
+      <reporter>quinn</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1018</id>
+      <summary>File upload progress bar shows 0% until complete</summary>
+      <component>storage</component>
+      <reporter>rose</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1019</id>
+      <summary>Footer links use http instead of https</summary>
+      <component>ui</component>
+      <reporter>sam</reporter>
+      <priority>low</priority>
+      <action>backlog</action>
+   </issue>
+   <issue>
+      <id>1020</id>
+      <summary>Help text grammatical errors on settings page</summary>
+      <reporter>tina</reporter>
+      <priority>low</priority>
+      <action>backlog</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1021</id>
+      <summary>PDF export ignores custom fonts</summary>
+      <component>export</component>
+      <reporter>uma</reporter>
+      <priority>low</priority>
+      <action>backlog</action>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1022</id>
+      <summary>Swagger docs out of date for v2 endpoints</summary>
+      <component>api</component>
+      <reporter>vic</reporter>
+      <priority>low</priority>
+      <action>backlog</action>
+   </issue>
+   <issue>
+      <id>1023</id>
+      <summary>Welcome email has broken image link</summary>
+      <component>notify</component>
+      <reporter>will</reporter>
+      <priority>low</priority>
+      <action>backlog</action>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1024</id>
+      <summary>Button color does not match brand guidelines</summary>
+      <component>ui</component>
+      <reporter>xena</reporter>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+   </issue>
+   <issue>
+      <id>1025</id>
+      <summary>New feature request: keyboard shortcut for search</summary>
+      <reporter>yuri</reporter>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1026</id>
+      <summary>Consider adding GraphQL support</summary>
+      <component>api</component>
+      <reporter>zara</reporter>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+      <status>blocked</status>
+   </issue>
+   <issue>
+      <id>1027</id>
+      <summary>Undocumented behavior in edge case with empty arrays</summary>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+   </issue>
+   <issue>
+      <id>1028</id>
+      <summary>Critical+high: should emit critical</summary>
+      <component>auth</component>
+      <reporter>alice</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>assigned</status>
+   </issue>
+   <issue>
+      <id>1029</id>
+      <summary>High+medium: should emit high</summary>
+      <component>db</component>
+      <reporter>bob</reporter>
+      <priority>high</priority>
+      <action>fix-this-sprint</action>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1030</id>
+      <summary>Medium+low: should emit medium</summary>
+      <component>api</component>
+      <reporter>carol</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1031</id>
+      <summary>All status flags set</summary>
+      <component>billing</component>
+      <reporter>dave</reporter>
+      <priority>critical</priority>
+      <action>escalate-immediately</action>
+      <status>assigned</status>
+      <status>verified</status>
+      <status>blocked</status>
+      <status>stale</status>
+   </issue>
+   <issue>
+      <id>1032</id>
+      <summary>Two status flags, medium priority</summary>
+      <component>ui</component>
+      <reporter>eve</reporter>
+      <priority>medium</priority>
+      <action>schedule-next-sprint</action>
+      <status>assigned</status>
+      <status>verified</status>
+   </issue>
+   <issue>
+      <id>1033</id>
+      <summary>Minimal bug report, no component, no reporter, no priority</summary>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+   </issue>
+   <issue>
+      <id>1034</id>
+      <summary>Component and reporter but no priority or status</summary>
+      <component>api</component>
+      <reporter>frank</reporter>
+      <priority>unset</priority>
+      <action>triage-needed</action>
+   </issue>
+</result>
