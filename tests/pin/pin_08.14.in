@@ -13,7 +13,7 @@
 
     Services are classified by alert level via attribute presence flags
     (@critical, @warning, @info).  Healthy services have none of these
-    flags; for them the choose block emits nothing — the join JUMP is
+    flags; for them the choose block emits nothing - the join JUMP is
     reached directly through the last IF's false branch.
 
     Additional sequential xsl:if blocks test independent status annotations
@@ -22,11 +22,11 @@
     confirming that op execution continues correctly after a no-output choose.
 
     Code paths hit:
-      xsl:choose (no otherwise) — final IF.po_alt → join JUMP directly
-      all-false choose — join reached without emitting the inner block
+      xsl:choose (no otherwise) - final IF.po_alt → join JUMP directly
+      all-false choose - join reached without emitting the inner block
       @critical alone / @warning alone / @info alone
-      @info false after @warning true — second IF never reached (GOTO fires)
-      sequential xsl:if after choose — always evaluated regardless of choose
+      @info false after @warning true - second IF never reached (GOTO fires)
+      sequential xsl:if after choose - always evaluated regardless of choose
   -->
   <xsl:template match="/">
     <result>
