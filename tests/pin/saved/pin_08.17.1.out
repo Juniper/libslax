@@ -1,0 +1,564 @@
+compiled 2 patterns
+<result>
+   <log-entry>
+      <id>e0001</id>
+      <source>scheduler</source>
+      <code>SCH001</code>
+      <message>Scheduled task started</message>
+      <detail>
+         <severity>DEBUG</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0002</id>
+      <source>scheduler</source>
+      <code>SCH002</code>
+      <message>Scheduled task completed</message>
+      <detail>
+         <severity>DEBUG</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0003</id>
+      <source>cache</source>
+      <code>CAC001</code>
+      <message>Cache warmed successfully</message>
+      <detail>
+         <severity>DEBUG</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0004</id>
+      <source>db</source>
+      <code>DB001</code>
+      <message>Connection pool initialized</message>
+      <detail>
+         <severity>DEBUG</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0005</id>
+      <source>api</source>
+      <code>API001</code>
+      <message>Server listening on port 8080</message>
+      <detail>
+         <severity>DEBUG</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0006</id>
+      <source>sampler</source>
+      <code>SMP001</code>
+      <message>Sampled request trace</message>
+      <detail>
+         <severity>DEBUG</severity>
+         <flag>sampled</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0007</id>
+      <source>synth</source>
+      <code>SYN001</code>
+      <message>Synthetic health check</message>
+      <detail>
+         <severity>DEBUG</severity>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0008</id>
+      <source>sampler</source>
+      <message>Sampled synthetic probe</message>
+      <detail>
+         <severity>DEBUG</severity>
+         <flag>sampled</flag>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0009</id>
+      <source>retry</source>
+      <code>RET001</code>
+      <message>Retrying failed operation</message>
+      <detail>
+         <severity>DEBUG</severity>
+         <flag>retry</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0010</id>
+      <source>privacy</source>
+      <code>PRI001</code>
+      <message>PII field access logged</message>
+      <detail>
+         <severity>DEBUG</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0011</id>
+      <source>auth</source>
+      <code>AUT001</code>
+      <message>User login successful</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0012</id>
+      <source>auth</source>
+      <code>AUT002</code>
+      <message>User logout recorded</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0013</id>
+      <source>api</source>
+      <code>API002</code>
+      <message>Request rate within limits</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0014</id>
+      <source>db</source>
+      <code>DB002</code>
+      <message>Slow query threshold exceeded by 10ms</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0015</id>
+      <source>deploy</source>
+      <code>DEP001</code>
+      <message>Deployment started for v2.4.1</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0016</id>
+      <source>deploy</source>
+      <code>DEP002</code>
+      <message>Deployment completed for v2.4.1</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0017</id>
+      <source>gc</source>
+      <message>Minor GC completed in 12ms</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0018</id>
+      <source>backup</source>
+      <code>BAK001</code>
+      <message>Backup snapshot taken</message>
+      <detail>
+         <severity>INFO</severity>
+         <flag>sampled</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0019</id>
+      <source>cron</source>
+      <code>CRN001</code>
+      <message>Cron health pulse</message>
+      <detail>
+         <severity>INFO</severity>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0020</id>
+      <source>audit</source>
+      <code>AUD001</code>
+      <message>Audit record written with PII masked</message>
+      <detail>
+         <severity>INFO</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0021</id>
+      <source>db</source>
+      <code>DB003</code>
+      <message>Connection pool at 80% capacity</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0022</id>
+      <source>cache</source>
+      <code>CAC002</code>
+      <message>Cache hit ratio dropped below 60%</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0023</id>
+      <source>api</source>
+      <code>API003</code>
+      <message>Response time p99 exceeded 500ms</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0024</id>
+      <source>auth</source>
+      <code>AUT003</code>
+      <message>Failed login attempt — account not locked</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0025</id>
+      <source>disk</source>
+      <code>DSK001</code>
+      <message>Disk usage above 75% on /var</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0026</id>
+      <source>queue</source>
+      <code>QUE001</code>
+      <message>Queue depth growing: 1500 pending</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0027</id>
+      <source>cert</source>
+      <code>CRT001</code>
+      <message>TLS certificate expires in 30 days</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0028</id>
+      <source>db</source>
+      <code>DB004</code>
+      <message>Transient connection error, retrying</message>
+      <detail>
+         <severity>WARN</severity>
+         <flag>retry</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0029</id>
+      <source>api</source>
+      <code>API004</code>
+      <message>Sampled slow request captured</message>
+      <detail>
+         <severity>WARN</severity>
+         <flag>sampled</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0030</id>
+      <source>ratelimit</source>
+      <message>Rate limit approaching for masked client</message>
+      <detail>
+         <severity>WARN</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0031</id>
+      <source>net</source>
+      <code>NET001</code>
+      <message>Packet loss detected, retry in progress</message>
+      <detail>
+         <severity>WARN</severity>
+         <flag>retry</flag>
+         <flag>sampled</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0032</id>
+      <source>config</source>
+      <message>Deprecated configuration key still in use</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0033</id>
+      <source>db</source>
+      <code>DB005</code>
+      <message>Query timed out after 30s</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0034</id>
+      <source>auth</source>
+      <code>AUT004</code>
+      <message>Authentication service unreachable</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0035</id>
+      <source>api</source>
+      <code>API005</code>
+      <message>Downstream service returned 503</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0036</id>
+      <source>queue</source>
+      <code>QUE002</code>
+      <message>Message processing failed — DLQ overflow</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0037</id>
+      <source>storage</source>
+      <code>STR001</code>
+      <message>File write failed: disk full</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0038</id>
+      <source>deploy</source>
+      <code>DEP003</code>
+      <message>Deployment rollback triggered</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0039</id>
+      <source>db</source>
+      <code>DB006</code>
+      <message>Replica lag critical, retrying on primary</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>retry</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0040</id>
+      <source>api</source>
+      <code>API006</code>
+      <message>Error response included PII, masked in log</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0041</id>
+      <source>cert</source>
+      <code>CRT002</code>
+      <message>TLS handshake failed — certificate mismatch</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0042</id>
+      <source>backup</source>
+      <code>BAK002</code>
+      <message>Backup failed, retry scheduled</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>retry</flag>
+         <flag>sampled</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0043</id>
+      <source>net</source>
+      <code>NET002</code>
+      <message>Network partition detected on subnet 10.0.2.0/24</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0044</id>
+      <source>job</source>
+      <message>Batch job failed on masked dataset</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>retry</flag>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0045</id>
+      <source>db</source>
+      <code>DB007</code>
+      <message>Primary database unreachable</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0046</id>
+      <source>auth</source>
+      <code>AUT005</code>
+      <message>Auth service down — all logins failing</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0047</id>
+      <source>payment</source>
+      <code>PAY001</code>
+      <message>Payment processor connection lost</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0048</id>
+      <source>storage</source>
+      <code>STR002</code>
+      <message>RAID array degraded — data at risk</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0049</id>
+      <source>network</source>
+      <code>NET003</code>
+      <message>Core switch failure — datacenter isolated</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0050</id>
+      <source>db</source>
+      <code>DB008</code>
+      <message>Failover initiated after primary crash</message>
+      <detail>
+         <severity>CRITICAL</severity>
+         <flag>retry</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0051</id>
+      <source>api</source>
+      <message>Security breach attempt — PII access masked</message>
+      <detail>
+         <severity>CRITICAL</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0052</id>
+      <source>job</source>
+      <code>JOB001</code>
+      <message>Critical synthetic test detected failure</message>
+      <detail>
+         <severity>CRITICAL</severity>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0053</id>
+      <source>test</source>
+      <message>All severity flags — critical wins</message>
+      <detail>
+         <severity>CRITICAL</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0054</id>
+      <source>test</source>
+      <message>Error+warn+info — error wins</message>
+      <detail>
+         <severity>ERROR</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0055</id>
+      <source>test</source>
+      <message>Warn+info — warn wins</message>
+      <detail>
+         <severity>WARN</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0056</id>
+      <source>chaos</source>
+      <code>CHS001</code>
+      <message>All flags set simultaneously</message>
+      <detail>
+         <severity>CRITICAL</severity>
+         <flag>retry</flag>
+         <flag>sampled</flag>
+         <flag>masked</flag>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0057</id>
+      <source>chaos</source>
+      <code>CHS002</code>
+      <message>All flags with error severity</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>retry</flag>
+         <flag>sampled</flag>
+         <flag>masked</flag>
+         <flag>synthetic</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0058</id>
+      <source>legacy</source>
+      <message>Warning with no event code</message>
+      <detail>
+         <severity>WARN</severity>
+         <flag>retry</flag>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0059</id>
+      <source>legacy</source>
+      <message>Info with no event code</message>
+      <detail>
+         <severity>INFO</severity>
+      </detail>
+   </log-entry>
+   <log-entry>
+      <id>e0060</id>
+      <source>legacy</source>
+      <message>Error with no code, masked</message>
+      <detail>
+         <severity>ERROR</severity>
+         <flag>masked</flag>
+      </detail>
+   </log-entry>
+</result>
