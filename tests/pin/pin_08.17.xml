@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<!-- Event log: 60 events spanning all severity levels and flag combinations -->
+<events>
+  <!-- DEBUG (no severity flag) — otherwise branch, no flags -->
+  <event id="e0001" source="scheduler" code="SCH001">Scheduled task started</event>
+  <event id="e0002" source="scheduler" code="SCH002">Scheduled task completed</event>
+  <event id="e0003" source="cache" code="CAC001">Cache warmed successfully</event>
+  <event id="e0004" source="db" code="DB001">Connection pool initialized</event>
+  <event id="e0005" source="api" code="API001">Server listening on port 8080</event>
+
+  <!-- DEBUG with flags -->
+  <event id="e0006" source="sampler" code="SMP001" sampled="yes">Sampled request trace</event>
+  <event id="e0007" source="synth" code="SYN001" synthetic="yes">Synthetic health check</event>
+  <event id="e0008" source="sampler" sampled="yes" synthetic="yes">Sampled synthetic probe</event>
+  <event id="e0009" source="retry" code="RET001" retry="yes">Retrying failed operation</event>
+  <event id="e0010" source="privacy" code="PRI001" masked="yes">PII field access logged</event>
+
+  <!-- INFO level -->
+  <event id="e0011" source="auth" code="AUT001" info="yes">User login successful</event>
+  <event id="e0012" source="auth" code="AUT002" info="yes">User logout recorded</event>
+  <event id="e0013" source="api" code="API002" info="yes">Request rate within limits</event>
+  <event id="e0014" source="db" code="DB002" info="yes">Slow query threshold exceeded by 10ms</event>
+  <event id="e0015" source="deploy" code="DEP001" info="yes">Deployment started for v2.4.1</event>
+  <event id="e0016" source="deploy" code="DEP002" info="yes">Deployment completed for v2.4.1</event>
+  <event id="e0017" source="gc" info="yes">Minor GC completed in 12ms</event>
+  <event id="e0018" source="backup" code="BAK001" info="yes" sampled="yes">Backup snapshot taken</event>
+  <event id="e0019" source="cron" code="CRN001" info="yes" synthetic="yes">Cron health pulse</event>
+  <event id="e0020" source="audit" code="AUD001" info="yes" masked="yes">Audit record written with PII masked</event>
+
+  <!-- WARN level -->
+  <event id="e0021" source="db" code="DB003" warn="yes">Connection pool at 80% capacity</event>
+  <event id="e0022" source="cache" code="CAC002" warn="yes">Cache hit ratio dropped below 60%</event>
+  <event id="e0023" source="api" code="API003" warn="yes">Response time p99 exceeded 500ms</event>
+  <event id="e0024" source="auth" code="AUT003" warn="yes">Failed login attempt — account not locked</event>
+  <event id="e0025" source="disk" code="DSK001" warn="yes">Disk usage above 75% on /var</event>
+  <event id="e0026" source="queue" code="QUE001" warn="yes">Queue depth growing: 1500 pending</event>
+  <event id="e0027" source="cert" code="CRT001" warn="yes">TLS certificate expires in 30 days</event>
+  <event id="e0028" source="db" code="DB004" warn="yes" retry="yes">Transient connection error, retrying</event>
+  <event id="e0029" source="api" code="API004" warn="yes" sampled="yes">Sampled slow request captured</event>
+  <event id="e0030" source="ratelimit" warn="yes" masked="yes">Rate limit approaching for masked client</event>
+  <event id="e0031" source="net" code="NET001" warn="yes" retry="yes" sampled="yes">Packet loss detected, retry in progress</event>
+  <event id="e0032" source="config" warn="yes">Deprecated configuration key still in use</event>
+
+  <!-- ERROR level -->
+  <event id="e0033" source="db" code="DB005" error="yes">Query timed out after 30s</event>
+  <event id="e0034" source="auth" code="AUT004" error="yes">Authentication service unreachable</event>
+  <event id="e0035" source="api" code="API005" error="yes">Downstream service returned 503</event>
+  <event id="e0036" source="queue" code="QUE002" error="yes">Message processing failed — DLQ overflow</event>
+  <event id="e0037" source="storage" code="STR001" error="yes">File write failed: disk full</event>
+  <event id="e0038" source="deploy" code="DEP003" error="yes">Deployment rollback triggered</event>
+  <event id="e0039" source="db" code="DB006" error="yes" retry="yes">Replica lag critical, retrying on primary</event>
+  <event id="e0040" source="api" code="API006" error="yes" masked="yes">Error response included PII, masked in log</event>
+  <event id="e0041" source="cert" code="CRT002" error="yes">TLS handshake failed — certificate mismatch</event>
+  <event id="e0042" source="backup" code="BAK002" error="yes" retry="yes" sampled="yes">Backup failed, retry scheduled</event>
+  <event id="e0043" source="net" code="NET002" error="yes">Network partition detected on subnet 10.0.2.0/24</event>
+  <event id="e0044" source="job" error="yes" retry="yes" masked="yes">Batch job failed on masked dataset</event>
+
+  <!-- CRITICAL level -->
+  <event id="e0045" source="db" code="DB007" critical="yes">Primary database unreachable</event>
+  <event id="e0046" source="auth" code="AUT005" critical="yes">Auth service down — all logins failing</event>
+  <event id="e0047" source="payment" code="PAY001" critical="yes">Payment processor connection lost</event>
+  <event id="e0048" source="storage" code="STR002" critical="yes">RAID array degraded — data at risk</event>
+  <event id="e0049" source="network" code="NET003" critical="yes">Core switch failure — datacenter isolated</event>
+  <event id="e0050" source="db" code="DB008" critical="yes" retry="yes">Failover initiated after primary crash</event>
+  <event id="e0051" source="api" critical="yes" masked="yes">Security breach attempt — PII access masked</event>
+  <event id="e0052" source="job" code="JOB001" critical="yes" synthetic="yes">Critical synthetic test detected failure</event>
+
+  <!-- First-match: multiple severity flags — first wins -->
+  <event id="e0053" source="test" critical="yes" error="yes" warn="yes" info="yes">All severity flags — critical wins</event>
+  <event id="e0054" source="test" error="yes" warn="yes" info="yes">Error+warn+info — error wins</event>
+  <event id="e0055" source="test" warn="yes" info="yes">Warn+info — warn wins</event>
+
+  <!-- All flags set -->
+  <event id="e0056" source="chaos" code="CHS001" critical="yes"
+         retry="yes" sampled="yes" masked="yes" synthetic="yes">All flags set simultaneously</event>
+  <event id="e0057" source="chaos" code="CHS002" error="yes"
+         retry="yes" sampled="yes" masked="yes" synthetic="yes">All flags with error severity</event>
+
+  <!-- No code attribute -->
+  <event id="e0058" source="legacy" warn="yes" retry="yes">Warning with no event code</event>
+  <event id="e0059" source="legacy" info="yes">Info with no event code</event>
+  <event id="e0060" source="legacy" error="yes" masked="yes">Error with no code, masked</event>
+</events>
