@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.15.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Infrastructure inventory: three independent op-dispatch templates.
+
+    Each template matches a different element type (server, database,
+    network-interface) and compiles a separate pr_close_ops sequence.
+    This exercises the op-dispatch engine across multiple concurrent
+    rulebook entries and verifies that:
+      - each template's retained context holds its own element correctly
+      - op sequences from different templates do not interfere
+      - the rulebook lookup correctly dispatches to the right template
+
+    server template:
+      xsl:if @hostname (attr value), xsl:if @ip (attr value)
+      xsl:choose: @primary / @standby / @witness / @decommissioned / otherwise
+      xsl:if @active, @locked, @monitored
+
+    database template:
+      xsl:if @host (attr value), xsl:if @port (attr value)
+      xsl:choose: @postgres / @mysql / @sqlite / @redis / otherwise=unknown
+      xsl:if @replica, @encrypted, @sharded
+
+    network-interface template:
+      xsl:if @mac (attr value)
+      xsl:choose: @active / @standby / otherwise=down
+      xsl:if @monitored, @bonded, @vlan
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="server">
+    <node type="server">
+      <id><xsl:value-of select="@id"/></id>
+      <xsl:if test="@hostname">
+        <hostname><xsl:value-of select="@hostname"/></hostname>
+      </xsl:if>
+      <xsl:if test="@ip">
+        <ip><xsl:value-of select="@ip"/></ip>
+      </xsl:if>
+      <xsl:if test="@rack">
+        <rack><xsl:value-of select="@rack"/></rack>
+      </xsl:if>
+      <role>
+        <xsl:choose>
+          <xsl:when test="@primary">primary</xsl:when>
+          <xsl:when test="@standby">standby</xsl:when>
+          <xsl:when test="@witness">witness</xsl:when>
+          <xsl:when test="@decommissioned">decommissioned</xsl:when>
+          <xsl:otherwise>unknown</xsl:otherwise>
+        </xsl:choose>
+      </role>
+      <xsl:if test="@active">
+        <flag>active</flag>
+      </xsl:if>
+      <xsl:if test="@locked">
+        <flag>locked</flag>
+      </xsl:if>
+      <xsl:if test="@monitored">
+        <flag>monitored</flag>
+      </xsl:if>
+    </node>
+  </xsl:template>
+
+  <xsl:template match="database">
+    <node type="database">
+      <id><xsl:value-of select="@id"/></id>
+      <xsl:if test="@host">
+        <host><xsl:value-of select="@host"/></host>
+      </xsl:if>
+      <xsl:if test="@port">
+        <port><xsl:value-of select="@port"/></port>
+      </xsl:if>
+      <xsl:if test="@schema">
+        <schema><xsl:value-of select="@schema"/></schema>
+      </xsl:if>
+      <engine>
+        <xsl:choose>
+          <xsl:when test="@postgres">postgresql</xsl:when>
+          <xsl:when test="@mysql">mysql</xsl:when>
+          <xsl:when test="@sqlite">sqlite</xsl:when>
+          <xsl:when test="@redis">redis</xsl:when>
+          <xsl:otherwise>unknown</xsl:otherwise>
+        </xsl:choose>
+      </engine>
+      <xsl:if test="@replica">
+        <flag>replica</flag>
+      </xsl:if>
+      <xsl:if test="@encrypted">
+        <flag>encrypted</flag>
+      </xsl:if>
+      <xsl:if test="@sharded">
+        <flag>sharded</flag>
+      </xsl:if>
+    </node>
+  </xsl:template>
+
+  <xsl:template match="network-interface">
+    <node type="nic">
+      <id><xsl:value-of select="@id"/></id>
+      <xsl:if test="@mac">
+        <mac><xsl:value-of select="@mac"/></mac>
+      </xsl:if>
+      <xsl:if test="@speed">
+        <speed><xsl:value-of select="@speed"/></speed>
+      </xsl:if>
+      <link>
+        <xsl:choose>
+          <xsl:when test="@active">up</xsl:when>
+          <xsl:when test="@standby">standby</xsl:when>
+          <xsl:otherwise>down</xsl:otherwise>
+        </xsl:choose>
+      </link>
+      <xsl:if test="@monitored">
+        <flag>monitored</flag>
+      </xsl:if>
+      <xsl:if test="@bonded">
+        <flag>bonded</flag>
+      </xsl:if>
+      <xsl:if test="@vlan">
+        <flag>vlan</flag>
+      </xsl:if>
+    </node>
+  </xsl:template>
+</xsl:stylesheet>
