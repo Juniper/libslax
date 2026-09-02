@@ -12,18 +12,18 @@
     covering every attribute individually and in combination.  Because
     all tests are simple @attr presence checks and no apply-templates or
     copy-of appears, poc_complexity stays zero and pr_body is never
-    compiled — the template runs entirely through op-dispatch.
+    compiled - the template runs entirely through op-dispatch.
 
     Attribute value output (PIN_OP_PUSH_ATTR + PIN_OP_EMIT) is exercised
     for @author, @isbn, @year, and @edition.
 
     Code paths hit:
-      PIN_OP_EMIT_OPEN / EMIT_CLOSE    — literal element wrappers
-      PIN_OP_PUSH_ATTR + PIN_OP_EMIT   — attribute value output
-      PIN_OP_PUSH_TEXT + PIN_OP_EMIT   — text content output (.)
-      PIN_OP_PUSH_BOOL + PIN_OP_IF     — attribute presence gate
-      PIN_OP_JUMP                      — join point at end of each if
-      (all nine xsl:if false branches) — PIN_OP_IF.po_alt to JUMP
+      PIN_OP_EMIT_OPEN / EMIT_CLOSE    - literal element wrappers
+      PIN_OP_PUSH_ATTR + PIN_OP_EMIT   - attribute value output
+      PIN_OP_PUSH_TEXT + PIN_OP_EMIT   - text content output (.)
+      PIN_OP_PUSH_BOOL + PIN_OP_IF     - attribute presence gate
+      PIN_OP_JUMP                      - join point at end of each if
+      (all nine xsl:if false branches) - PIN_OP_IF.po_alt to JUMP
   -->
   <xsl:template match="/">
     <result>
