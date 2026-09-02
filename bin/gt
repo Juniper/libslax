@@ -356,6 +356,15 @@ case "$op" in
 	git -c core.editor=/usr/bin/true merge --no-ff $from
         ;;
 
+    name)
+	## gt name
+	## == Display the name of the repo
+	set_git_top
+	if [ ! -z "${GIT_TOP}" ]; then
+	    echo `basename ${GIT_TOP}`
+	fi
+	;;
+
     outstanding|out|what)
 	## gt out
 	## == Display outstanding changes (committed but not yet pushed)
@@ -406,21 +415,43 @@ case "$op" in
 	save_patch "$@"
 	;;
 
-    self-help|'')
+    self-help|selfhelp|help|h)
         echo " "
         echo "gt: a better way to git"
-        echo " gt <command> ..."
+        echo "  gt <command> ..."
         echo " "
-        echo "  list of supported verbs::"
+        echo "  list of supported commands::"
         echo " "
         grep -B1 "#\#" $0 | sed -e 's/.*#\#/        /' -e 's/==/    /'
         echo " "
+        echo "And remember: there's no 'I' in 'gt'"
         ;;
+
+    sname)
+	## gt sname
+	## == Display the name of the repo
+	set_git_top >/dev/null 2>&1
+	if [ ! -z "${GIT_TOP}" ]; then
+	    base=`basename ${GIT_TOP}`
+	    echo "[$base] "
+	fi
+	;;
 
     st|stat|status)
 	## gt st [<opts>]
 	## == Show status
 	git status -s "$@"
+	;;
+
+    '')
+	## gt st [<opts>]
+	## == Show status
+	status=`git status -s "$@"`
+	if [ -z "$status" ]; then
+	    echo "status: nothing changed"
+	else
+	    echo "$status"
+	fi
 	;;
 
     tag|add-tag)
