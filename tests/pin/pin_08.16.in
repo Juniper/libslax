@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.16.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Contact records: child element presence via PIN_OP_PUSH_NODES.
+
+    When an xsl:if test expression is a bare element name with no special
+    characters, pin_slax_op_push_for_test emits PIN_OP_PUSH_NODES rather
+    than PIN_OP_PUSH_ATTR.  PUSH_NODES walks the retained element's
+    children looking for elements matching po_name and builds a nodeset;
+    PUSH_BOOL converts the non-empty nodeset to true.
+
+    This test specifically exercises that code path.  Each contact element
+    contains zero or more child elements (email, phone, address, website,
+    social) as sub-elements rather than attributes.  The template gates
+    output on which children are present.
+
+    Attribute value output is also exercised for @id and @name (via
+    PIN_OP_PUSH_ATTR), giving a mix of PUSH_ATTR and PUSH_NODES in the
+    same template.
+
+    Code paths hit:
+      PIN_OP_PUSH_NODES — child element presence for each of five names
+      PIN_OP_PUSH_ATTR  — @id and @name value output
+      xsl:choose on @type — three branches (person/org/otherwise)
+      sequential xsl:if — five child-element presence gates
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="contact">
+    <entry>
+      <id><xsl:value-of select="@id"/></id>
+      <name><xsl:value-of select="@name"/></name>
+      <xsl:choose>
+        <xsl:when test="@person">
+          <kind>person</kind>
+        </xsl:when>
+        <xsl:when test="@org">
+          <kind>organization</kind>
+        </xsl:when>
+        <xsl:otherwise>
+          <kind>unknown</kind>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:if test="email">
+        <has-email/>
+      </xsl:if>
+      <xsl:if test="phone">
+        <has-phone/>
+      </xsl:if>
+      <xsl:if test="address">
+        <has-address/>
+      </xsl:if>
+      <xsl:if test="website">
+        <has-website/>
+      </xsl:if>
+      <xsl:if test="social">
+        <has-social/>
+      </xsl:if>
+    </entry>
+  </xsl:template>
+</xsl:stylesheet>
