@@ -147,9 +147,14 @@ pin_op_emit_open (pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep,
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
     const char *tag = pin_namepool_string(pwp, opp->po_name);
+    const char *astr = pin_namepool_string(pwp, opp->po_name2);
+    char *attribs = astr ? strdup(astr) : NULL;
     pin_insert_t *pip = parsep->pp_insert;
     pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
-    pin_insert_open(parsep, opp->po_name, NULL, tag, NULL, act);
+    if (attribs)
+	act = PIA_SAVE_ATTRIB;
+    pin_insert_open(parsep, opp->po_name, NULL, tag, attribs, act);
+    free(attribs);
     return pin_value_null();
 }
 
