@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<!-- Contact records: 28 contacts with various child element combinations -->
+<contacts>
+  <!-- Person contacts: no children at all -->
+  <contact id="p001" name="Alice Nguyen" person="yes"/>
+  <contact id="p002" name="Bob Okafor" person="yes"/>
+
+  <!-- Person with single child type -->
+  <contact id="p003" name="Carol Schmidt" person="yes">
+    <email>carol@example.com</email>
+  </contact>
+  <contact id="p004" name="David Kim" person="yes">
+    <phone>+1-555-0104</phone>
+  </contact>
+  <contact id="p005" name="Eve Petrov" person="yes">
+    <address>123 Main St, Springfield</address>
+  </contact>
+  <contact id="p006" name="Frank Hassan" person="yes">
+    <website>https://frank.example.com</website>
+  </contact>
+  <contact id="p007" name="Grace Andersen" person="yes">
+    <social>@grace_andersen</social>
+  </contact>
+
+  <!-- Person with two child types -->
+  <contact id="p008" name="Hank Torres" person="yes">
+    <email>hank@example.com</email>
+    <phone>+1-555-0108</phone>
+  </contact>
+  <contact id="p009" name="Ivy Müller" person="yes">
+    <email>ivy@example.com</email>
+    <website>https://ivy.example.com</website>
+  </contact>
+  <contact id="p010" name="Jack Sato" person="yes">
+    <phone>+1-555-0110</phone>
+    <address>456 Oak Ave, Portland</address>
+  </contact>
+  <contact id="p011" name="Kate Li" person="yes">
+    <address>789 Pine Rd, Seattle</address>
+    <social>@kate_li</social>
+  </contact>
+
+  <!-- Person with three child types -->
+  <contact id="p012" name="Leo Rossi" person="yes">
+    <email>leo@example.com</email>
+    <phone>+1-555-0112</phone>
+    <address>321 Elm St, Boston</address>
+  </contact>
+  <contact id="p013" name="Mia Burke" person="yes">
+    <email>mia@example.com</email>
+    <website>https://mia.example.com</website>
+    <social>@mia_burke</social>
+  </contact>
+
+  <!-- Person with all five child types -->
+  <contact id="p014" name="Ned Patel" person="yes">
+    <email>ned@example.com</email>
+    <phone>+1-555-0114</phone>
+    <address>654 Maple Dr, Chicago</address>
+    <website>https://ned.example.com</website>
+    <social>@ned_patel</social>
+  </contact>
+  <contact id="p015" name="Ora Wilson" person="yes">
+    <email>ora@work.com</email>
+    <email>ora@personal.com</email>
+    <phone>+1-555-0115</phone>
+    <phone>+1-555-0116</phone>
+    <address>987 Cedar Ln, Austin</address>
+    <website>https://ora.example.com</website>
+    <social>@ora_w</social>
+  </contact>
+
+  <!-- Organization contacts -->
+  <contact id="o001" name="Acme Corporation" org="yes">
+    <email>info@acme.example.com</email>
+    <phone>+1-800-555-2626</phone>
+    <address>1 Industry Way, Metropolis</address>
+    <website>https://acme.example.com</website>
+  </contact>
+  <contact id="o002" name="Globex Systems" org="yes">
+    <email>contact@globex.example.com</email>
+    <website>https://globex.example.com</website>
+    <social>@GlobexSystems</social>
+  </contact>
+  <contact id="o003" name="Initech Ltd" org="yes">
+    <phone>+1-555-0300</phone>
+    <address>4000 Business Park Dr, Dallas</address>
+  </contact>
+  <contact id="o004" name="Umbrella Corp" org="yes">
+    <email>pr@umbrella.example.com</email>
+    <phone>+1-555-0400</phone>
+    <address>1 Raccoon City Plaza</address>
+    <website>https://umbrella.example.com</website>
+    <social>@UmbrellaCorp</social>
+  </contact>
+  <contact id="o005" name="Vandelay Industries" org="yes"/>
+
+  <!-- Unknown type (otherwise branch) -->
+  <contact id="u001" name="Unknown Entity">
+    <email>unknown@example.com</email>
+    <phone>+1-555-0000</phone>
+  </contact>
+  <contact id="u002" name="Ambiguous Contact" person="yes" org="yes">
+    <email>both@example.com</email>
+    <website>https://both.example.com</website>
+  </contact>
+  <contact id="u003" name="Bare Contact"/>
+
+  <!-- Edge: multiple of same child type -->
+  <contact id="p016" name="Paul Multi-Email" person="yes">
+    <email>work@example.com</email>
+    <email>home@example.com</email>
+    <email>other@example.com</email>
+  </contact>
+  <contact id="p017" name="Quinn Multi-Phone" person="yes">
+    <phone>+1-555-0200</phone>
+    <phone>+1-555-0201</phone>
+    <address>200 Test Blvd, Testville</address>
+  </contact>
+  <contact id="p018" name="Rose Full House" person="yes">
+    <email>rose@example.com</email>
+    <phone>+1-555-0300</phone>
+    <address>300 Sample St</address>
+    <website>https://rose.example.com</website>
+    <social>@rose</social>
+  </contact>
+</contacts>
