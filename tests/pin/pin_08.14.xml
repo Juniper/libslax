@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!-- Service monitoring: 32 services covering all alert levels and status flags -->
+<monitoring>
+  <!-- Healthy services — no alert flags, choose emits nothing -->
+  <service name="web-frontend" host="web01.internal" port="443"/>
+  <service name="api-gateway" host="api01.internal" port="8080"/>
+  <service name="cdn-origin" host="cdn01.internal" port="80"/>
+  <service name="load-balancer" host="lb01.internal" port="443"/>
+  <service name="dns-primary" host="ns01.internal" port="53"/>
+
+  <!-- Healthy but with status flags — choose still emits nothing -->
+  <service name="legacy-auth" host="auth01.internal" port="8443" deprecated="yes"/>
+  <service name="beta-search" host="search02.internal" port="9200" experimental="yes"/>
+  <service name="cache-cluster" host="cache01.internal" port="6379" maintenance="yes"/>
+  <service name="old-billing" host="billing01.internal" deprecated="yes" maintenance="yes"/>
+  <service name="staging-api" host="staging.internal" port="8080" experimental="yes" maintenance="yes"/>
+
+  <!-- INFO level only — third when branch taken -->
+  <service name="metrics-collector" host="metrics01.internal" port="9090" info="yes"/>
+  <service name="audit-log" host="audit01.internal" port="5514" info="yes"/>
+  <service name="backup-runner" host="backup01.internal" info="yes" experimental="yes"/>
+  <service name="report-gen" host="report01.internal" port="3000" info="yes" deprecated="yes"/>
+
+  <!-- WARNING level only — second when taken, third (info) never reached -->
+  <service name="db-replica" host="db02.internal" port="5432" warning="yes"/>
+  <service name="queue-worker" host="worker01.internal" warning="yes"/>
+  <service name="search-primary" host="search01.internal" port="9200" warning="yes" maintenance="yes"/>
+  <service name="email-sender" host="smtp01.internal" port="587" warning="yes" deprecated="yes"/>
+  <service name="file-storage" host="fs01.internal" warning="yes" experimental="yes"/>
+  <service name="session-store" host="redis01.internal" port="6379" warning="yes"/>
+
+  <!-- CRITICAL level only — first when taken immediately -->
+  <service name="auth-service" host="auth02.internal" port="8443" critical="yes"/>
+  <service name="payment-gw" host="pay01.internal" port="443" critical="yes" maintenance="yes"/>
+  <service name="primary-db" host="db01.internal" port="5432" critical="yes"/>
+  <service name="user-service" host="user01.internal" port="8080" critical="yes" deprecated="yes"/>
+
+  <!-- First-match semantics: multiple alert flags — first wins -->
+  <service name="thrashing-svc" host="bad01.internal" critical="yes" warning="yes" info="yes"/>
+  <service name="degraded-svc" host="bad02.internal" port="8080" warning="yes" info="yes"/>
+
+  <!-- Critical with all status flags -->
+  <service name="disaster-zone" host="fire01.internal" port="443"
+           critical="yes" maintenance="yes" deprecated="yes" experimental="yes"/>
+
+  <!-- Info with all status flags -->
+  <service name="watch-svc" host="watch01.internal" port="9090"
+           info="yes" maintenance="yes" deprecated="yes" experimental="yes"/>
+
+  <!-- No host or port — just name -->
+  <service name="orphan-svc" warning="yes"/>
+  <service name="unknown-svc"/>
+  <service name="bare-critical" critical="yes"/>
+  <service name="bare-maintenance" maintenance="yes"/>
+</monitoring>
