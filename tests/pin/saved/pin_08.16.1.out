@@ -1,0 +1,188 @@
+compiled 2 patterns
+<result>
+   <entry>
+      <id>p001</id>
+      <name>Alice Nguyen</name>
+      <kind>person</kind>
+   </entry>
+   <entry>
+      <id>p002</id>
+      <name>Bob Okafor</name>
+      <kind>person</kind>
+   </entry>
+   <entry>
+      <id>p003</id>
+      <name>Carol Schmidt</name>
+      <kind>person</kind>
+      <has-email/>
+   </entry>
+   <entry>
+      <id>p004</id>
+      <name>David Kim</name>
+      <kind>person</kind>
+      <has-phone/>
+   </entry>
+   <entry>
+      <id>p005</id>
+      <name>Eve Petrov</name>
+      <kind>person</kind>
+      <has-address/>
+   </entry>
+   <entry>
+      <id>p006</id>
+      <name>Frank Hassan</name>
+      <kind>person</kind>
+      <has-website/>
+   </entry>
+   <entry>
+      <id>p007</id>
+      <name>Grace Andersen</name>
+      <kind>person</kind>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>p008</id>
+      <name>Hank Torres</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-phone/>
+   </entry>
+   <entry>
+      <id>p009</id>
+      <name>Ivy Müller</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-website/>
+   </entry>
+   <entry>
+      <id>p010</id>
+      <name>Jack Sato</name>
+      <kind>person</kind>
+      <has-phone/>
+      <has-address/>
+   </entry>
+   <entry>
+      <id>p011</id>
+      <name>Kate Li</name>
+      <kind>person</kind>
+      <has-address/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>p012</id>
+      <name>Leo Rossi</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+   </entry>
+   <entry>
+      <id>p013</id>
+      <name>Mia Burke</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-website/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>p014</id>
+      <name>Ned Patel</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+      <has-website/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>p015</id>
+      <name>Ora Wilson</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+      <has-website/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>o001</id>
+      <name>Acme Corporation</name>
+      <kind>organization</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+      <has-website/>
+   </entry>
+   <entry>
+      <id>o002</id>
+      <name>Globex Systems</name>
+      <kind>organization</kind>
+      <has-email/>
+      <has-website/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>o003</id>
+      <name>Initech Ltd</name>
+      <kind>organization</kind>
+      <has-phone/>
+      <has-address/>
+   </entry>
+   <entry>
+      <id>o004</id>
+      <name>Umbrella Corp</name>
+      <kind>organization</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+      <has-website/>
+      <has-social/>
+   </entry>
+   <entry>
+      <id>o005</id>
+      <name>Vandelay Industries</name>
+      <kind>organization</kind>
+   </entry>
+   <entry>
+      <id>u001</id>
+      <name>Unknown Entity</name>
+      <kind>unknown</kind>
+      <has-email/>
+      <has-phone/>
+   </entry>
+   <entry>
+      <id>u002</id>
+      <name>Ambiguous Contact</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-website/>
+   </entry>
+   <entry>
+      <id>u003</id>
+      <name>Bare Contact</name>
+      <kind>unknown</kind>
+   </entry>
+   <entry>
+      <id>p016</id>
+      <name>Paul Multi-Email</name>
+      <kind>person</kind>
+      <has-email/>
+   </entry>
+   <entry>
+      <id>p017</id>
+      <name>Quinn Multi-Phone</name>
+      <kind>person</kind>
+      <has-phone/>
+      <has-address/>
+   </entry>
+   <entry>
+      <id>p018</id>
+      <name>Rose Full House</name>
+      <kind>person</kind>
+      <has-email/>
+      <has-phone/>
+      <has-address/>
+      <has-website/>
+      <has-social/>
+   </entry>
+</result>
