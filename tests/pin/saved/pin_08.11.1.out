@@ -1,0 +1,178 @@
+compiled 2 patterns
+<result>
+   <entry>
+      <title>Introduction to Algorithms</title>
+   </entry>
+   <entry>
+      <title>The C Programming Language</title>
+      <author>Kernighan</author>
+   </entry>
+   <entry>
+      <title>The Art of Computer Programming Vol 1</title>
+      <isbn>978-0201896831</isbn>
+   </entry>
+   <entry>
+      <title>The Mythical Man Month</title>
+      <year>1996</year>
+   </entry>
+   <entry>
+      <title>The Unix Programming Environment</title>
+      <edition>4th</edition>
+   </entry>
+   <entry>
+      <title>Structure and Interpretation of Computer Programs</title>
+      <badge>featured</badge>
+   </entry>
+   <entry>
+      <title>Operating Systems: Three Easy Pieces</title>
+      <badge>sale</badge>
+   </entry>
+   <entry>
+      <title>A Philosophy of Software Design</title>
+      <badge>new</badge>
+   </entry>
+   <entry>
+      <title>The Pragmatic Programmer</title>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>Advanced CORBA Programming with C++</title>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>The C++ Programming Language</title>
+      <author>Stroustrup</author>
+      <isbn>978-0321563842</isbn>
+      <year>2013</year>
+   </entry>
+   <entry>
+      <title>The Art of Computer Programming Vol 2</title>
+      <author>Knuth</author>
+      <isbn>978-0201896831</isbn>
+      <year>1968</year>
+      <edition>3rd</edition>
+   </entry>
+   <entry>
+      <title>Compilers: Principles, Techniques and Tools</title>
+      <author>Aho</author>
+      <isbn>978-0201100884</isbn>
+      <year>1986</year>
+   </entry>
+   <entry>
+      <title>Refactoring</title>
+      <author>Fowler</author>
+      <badge>featured</badge>
+   </entry>
+   <entry>
+      <title>Clean Code</title>
+      <author>Martin</author>
+      <isbn>978-0132350884</isbn>
+      <badge>sale</badge>
+   </entry>
+   <entry>
+      <title>Domain-Driven Design</title>
+      <year>2003</year>
+      <badge>new</badge>
+   </entry>
+   <entry>
+      <title>Design Patterns</title>
+      <author>Gamma</author>
+      <isbn>978-0201633610</isbn>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>Test Driven Development</title>
+      <author>Beck</author>
+      <badge>featured</badge>
+      <badge>sale</badge>
+   </entry>
+   <entry>
+      <title>The Pragmatic Programmer</title>
+      <author>Hunt</author>
+      <badge>new</badge>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>Legacy Mainframe Programming Guide</title>
+      <badge>sale</badge>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>Designing Data-Intensive Applications</title>
+      <badge>featured</badge>
+      <badge>new</badge>
+   </entry>
+   <entry>
+      <title>Domain-Driven Design</title>
+      <author>Evans</author>
+      <isbn>978-0321125217</isbn>
+      <badge>featured</badge>
+      <badge>sale</badge>
+      <badge>new</badge>
+   </entry>
+   <entry>
+      <title>Release It!</title>
+      <author>Nygard</author>
+      <badge>sale</badge>
+      <badge>recommended</badge>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>Code Complete</title>
+      <author>McConnell</author>
+      <isbn>978-0735619678</isbn>
+      <year>2004</year>
+      <edition>2nd</edition>
+      <badge>featured</badge>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>Designing Data-Intensive Applications</title>
+      <author>Kleppmann</author>
+      <isbn>978-1491903100</isbn>
+      <year>2017</year>
+      <badge>featured</badge>
+      <badge>sale</badge>
+      <badge>new</badge>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>Modern Operating Systems</title>
+      <author>Tanenbaum</author>
+      <isbn>978-0136006633</isbn>
+      <year>2014</year>
+      <edition>4th</edition>
+      <badge>featured</badge>
+      <badge>sale</badge>
+      <badge>new</badge>
+      <badge>recommended</badge>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>Algorithms and Data Structures</title>
+      <author>Wirth</author>
+      <isbn>978-0130380975</isbn>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>JavaScript: The Good Parts</title>
+      <isbn>978-0596517748</isbn>
+      <badge>new</badge>
+      <badge>recommended</badge>
+   </entry>
+   <entry>
+      <title>The AWK Programming Language</title>
+      <year>1979</year>
+      <edition>1st</edition>
+      <badge>sale</badge>
+      <badge>clearance</badge>
+   </entry>
+   <entry>
+      <title>Algorithms</title>
+      <author>Sedgewick</author>
+      <isbn>978-0321573513</isbn>
+      <year>2011</year>
+      <badge>featured</badge>
+      <badge>new</badge>
+   </entry>
+</result>
