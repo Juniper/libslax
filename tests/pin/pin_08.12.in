@@ -4,20 +4,76 @@
 -->
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:template match="item">
-    <row>
-      <label><xsl:value-of select="."/></label>
+  <!--
+    Bug tracker priority and status template.
+
+    Exercises xsl:choose with five branches (four xsl:when + xsl:otherwise)
+    combined with four sequential xsl:if for status flags.  The xsl:choose
+    selects a priority tier from attribute-presence flags; the sequential
+    xsl:if independently annotates status regardless of priority.
+
+    The false-branch backpatch fix is exercised heavily: each IF in the
+    choose chain must jump to the START of the next when's push sequence
+    (not to the IF itself) when its condition is false.
+
+    Code paths hit:
+      xsl:choose — four-branch false chain backpatch (IF.po_alt → push start)
+      xsl:otherwise — taken when no @critical/@high/@medium/@low present
+      xsl:choose — GOTO.po_alt → join backpatch for each taken branch
+      xsl:if — four independent status gates after the choose block
+      first-match semantics — element with two priority flags takes first
+      all-false — element with no priority flags → otherwise fires
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="bug">
+    <issue>
+      <id><xsl:value-of select="@id"/></id>
+      <summary><xsl:value-of select="."/></summary>
+      <xsl:if test="@component">
+        <component><xsl:value-of select="@component"/></component>
+      </xsl:if>
+      <xsl:if test="@reporter">
+        <reporter><xsl:value-of select="@reporter"/></reporter>
+      </xsl:if>
       <xsl:choose>
-        <xsl:when test="@featured">
-          <kind>featured</kind>
+        <xsl:when test="@critical">
+          <priority>critical</priority>
+          <action>escalate-immediately</action>
         </xsl:when>
-        <xsl:when test="@new">
-          <kind>new</kind>
+        <xsl:when test="@high">
+          <priority>high</priority>
+          <action>fix-this-sprint</action>
+        </xsl:when>
+        <xsl:when test="@medium">
+          <priority>medium</priority>
+          <action>schedule-next-sprint</action>
+        </xsl:when>
+        <xsl:when test="@low">
+          <priority>low</priority>
+          <action>backlog</action>
         </xsl:when>
         <xsl:otherwise>
-          <kind>regular</kind>
+          <priority>unset</priority>
+          <action>triage-needed</action>
         </xsl:otherwise>
       </xsl:choose>
-    </row>
+      <xsl:if test="@assigned">
+        <status>assigned</status>
+      </xsl:if>
+      <xsl:if test="@verified">
+        <status>verified</status>
+      </xsl:if>
+      <xsl:if test="@blocked">
+        <status>blocked</status>
+      </xsl:if>
+      <xsl:if test="@stale">
+        <status>stale</status>
+      </xsl:if>
+    </issue>
   </xsl:template>
 </xsl:stylesheet>
