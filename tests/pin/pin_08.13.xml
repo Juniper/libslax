@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!-- Employee directory: 40 records covering all band levels and role modifier combinations -->
+<directory>
+  <!-- Executive band -->
+  <employee id="E001" name="Alexandra Chen" dept="Engineering" title="CTO" executive="yes" manager="yes"/>
+  <employee id="E002" name="Robert Walsh" dept="Product" title="CPO" executive="yes" manager="yes" remote="yes"/>
+  <employee id="E003" name="Sandra Kim" dept="Finance" title="CFO" executive="yes"/>
+  <employee id="E004" name="Marcus Torres" dept="Sales" title="CRO" executive="yes" manager="yes"/>
+
+  <!-- Senior band, manager role -->
+  <employee id="S001" name="Priya Patel" dept="Engineering" title="Principal Engineer" senior="yes" manager="yes"/>
+  <employee id="S002" name="James Liu" dept="Engineering" title="Staff Engineer" senior="yes" manager="yes" remote="yes"/>
+  <employee id="S003" name="Fatima Al-Hassan" dept="Design" title="Design Director" senior="yes" manager="yes"/>
+  <employee id="S004" name="Colin Burke" dept="Engineering" title="Engineering Manager" senior="yes" manager="yes"/>
+
+  <!-- Senior band, individual contributor -->
+  <employee id="S005" name="Yuki Tanaka" dept="Engineering" title="Principal Engineer" senior="yes" remote="yes"/>
+  <employee id="S006" name="Amara Osei" dept="Data" title="Principal Data Scientist" senior="yes"/>
+  <employee id="S007" name="Viktor Petrov" dept="Security" title="Principal Security Engineer" senior="yes" remote="yes"/>
+  <employee id="S008" name="Lena Müller" dept="Engineering" title="Staff Engineer" senior="yes"/>
+
+  <!-- Mid band -->
+  <employee id="M001" name="Tom Jackson" dept="Engineering" title="Senior Engineer" mid="yes" remote="yes"/>
+  <employee id="M002" name="Sarah Kim" dept="Engineering" title="Senior Engineer" mid="yes"/>
+  <employee id="M003" name="Ahmed Hassan" dept="Product" title="Senior Product Manager" mid="yes" manager="yes"/>
+  <employee id="M004" name="Julia Rossi" dept="Design" title="Senior Designer" mid="yes" remote="yes"/>
+  <employee id="M005" name="Chen Wei" dept="Data" title="Senior Data Engineer" mid="yes"/>
+  <employee id="M006" name="Anna Schmidt" dept="Engineering" title="Senior Engineer" mid="yes" contractor="yes"/>
+  <employee id="M007" name="Luis Gomez" dept="QA" title="Senior QA Engineer" mid="yes" parttime="yes"/>
+  <employee id="M008" name="Mei Lin" dept="Engineering" title="Senior Engineer" mid="yes" remote="yes" contractor="yes"/>
+
+  <!-- Junior band -->
+  <employee id="J001" name="Alex Murphy" dept="Engineering" title="Engineer" junior="yes"/>
+  <employee id="J002" name="Sam Okafor" dept="Engineering" title="Engineer" junior="yes" remote="yes"/>
+  <employee id="J003" name="Rina Sato" dept="Design" title="Designer" junior="yes" parttime="yes"/>
+  <employee id="J004" name="David Park" dept="QA" title="QA Engineer" junior="yes"/>
+  <employee id="J005" name="Emma Wilson" dept="Engineering" title="Engineer" junior="yes" contractor="yes"/>
+  <employee id="J006" name="Kai Andersen" dept="Data" title="Data Analyst" junior="yes" parttime="yes" remote="yes"/>
+  <employee id="J007" name="Fatou Diallo" dept="Engineering" title="Engineer" junior="yes"/>
+  <employee id="J008" name="Oliver Brown" dept="Support" title="Support Engineer" junior="yes" contractor="yes"/>
+
+  <!-- Unclassified (otherwise branch) -->
+  <employee id="U001" name="Pat Casey" dept="Intern" title="Software Intern"/>
+  <employee id="U002" name="Robin Singh" title="Consultant" contractor="yes" parttime="yes"/>
+  <employee id="U003" name="Morgan Lee" dept="Facilities"/>
+
+  <!-- Multiple bands set — first match wins -->
+  <employee id="X001" name="Test Executive-Senior" executive="yes" senior="yes" mid="yes" manager="yes"/>
+  <employee id="X002" name="Test Senior-Mid" dept="Engineering" senior="yes" mid="yes" junior="yes"/>
+  <employee id="X003" name="Test Mid-Junior" dept="QA" mid="yes" junior="yes" contractor="yes"/>
+
+  <!-- All role modifiers set -->
+  <employee id="X004" name="Quirky Edge Case" dept="Engineering" title="Wizard"
+            senior="yes" manager="yes" remote="yes" contractor="yes" parttime="yes"/>
+
+  <!-- Minimal records — no dept, no title, no band -->
+  <employee id="X005" name="No Band Worker"/>
+  <employee id="X006" name="Remote Only Worker" remote="yes"/>
+  <employee id="X007" name="Contractor Only" contractor="yes"/>
+  <employee id="X008" name="Part-time Remote" parttime="yes" remote="yes"/>
+</directory>
