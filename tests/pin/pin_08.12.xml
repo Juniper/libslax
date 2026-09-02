@@ -1,7 +1,55 @@
 <?xml version="1.0"?>
-<catalog>
-  <item featured="yes">Alpha</item>
-  <item new="yes">Beta</item>
-  <item>Gamma</item>
-  <item featured="yes" new="yes">Delta</item>
-</catalog>
+<!-- Bug tracker: 35 issues covering all priority branches and status combinations -->
+<tracker>
+  <!-- Critical priority — first branch taken immediately -->
+  <bug id="1001" component="auth" reporter="alice" critical="yes" assigned="yes">Login fails for LDAP users after session timeout</bug>
+  <bug id="1002" component="db" reporter="bob" critical="yes" verified="yes">Data corruption on concurrent writes to user table</bug>
+  <bug id="1003" component="api" reporter="carol" critical="yes" assigned="yes" blocked="yes">API gateway returns 500 for all POST requests</bug>
+  <bug id="1004" reporter="dave" critical="yes">Memory leak causes OOM after 48 hours uptime</bug>
+  <bug id="1005" component="storage" reporter="eve" critical="yes" stale="yes">Disk quota enforcement silently fails</bug>
+
+  <!-- High priority — second branch; first (critical) false, second true -->
+  <bug id="1006" component="ui" reporter="frank" high="yes" assigned="yes">Dashboard renders blank on Firefox 118</bug>
+  <bug id="1007" component="auth" reporter="grace" high="yes" verified="yes">Password reset emails go to spam</bug>
+  <bug id="1008" component="api" reporter="hank" high="yes" assigned="yes" verified="yes">Rate limiting not applied to admin endpoints</bug>
+  <bug id="1009" reporter="ivy" high="yes" blocked="yes">Search indexer falls behind under load</bug>
+  <bug id="1010" component="billing" reporter="jack" high="yes">Invoice totals wrong for multi-currency accounts</bug>
+  <bug id="1011" component="notify" reporter="kate" high="yes" stale="yes">Email notifications sent in wrong timezone</bug>
+
+  <!-- Medium priority — first two false, third true -->
+  <bug id="1012" component="ui" reporter="leo" medium="yes" assigned="yes">Tooltip flickers on hover in dark mode</bug>
+  <bug id="1013" component="export" reporter="mia" medium="yes">CSV export truncates fields over 255 chars</bug>
+  <bug id="1014" component="api" reporter="ned" medium="yes" verified="yes" assigned="yes">Pagination cursor invalid after record deletion</bug>
+  <bug id="1015" reporter="ora" medium="yes" blocked="yes" stale="yes">Report generation slow with large date ranges</bug>
+  <bug id="1016" component="auth" reporter="paul" medium="yes">Session not invalidated on role change</bug>
+  <bug id="1017" component="ui" reporter="quinn" medium="yes" stale="yes">Sidebar collapsed state not persisted</bug>
+  <bug id="1018" component="storage" reporter="rose" medium="yes" assigned="yes">File upload progress bar shows 0% until complete</bug>
+
+  <!-- Low priority — first three false, fourth true -->
+  <bug id="1019" component="ui" reporter="sam" low="yes">Footer links use http instead of https</bug>
+  <bug id="1020" reporter="tina" low="yes" assigned="yes">Help text grammatical errors on settings page</bug>
+  <bug id="1021" component="export" reporter="uma" low="yes" stale="yes">PDF export ignores custom fonts</bug>
+  <bug id="1022" component="api" reporter="vic" low="yes">Swagger docs out of date for v2 endpoints</bug>
+  <bug id="1023" component="notify" reporter="will" low="yes" verified="yes">Welcome email has broken image link</bug>
+
+  <!-- No priority set — otherwise branch fires (all four when conditions false) -->
+  <bug id="1024" component="ui" reporter="xena">Button color does not match brand guidelines</bug>
+  <bug id="1025" reporter="yuri" assigned="yes">New feature request: keyboard shortcut for search</bug>
+  <bug id="1026" component="api" reporter="zara" blocked="yes">Consider adding GraphQL support</bug>
+  <bug id="1027">Undocumented behavior in edge case with empty arrays</bug>
+
+  <!-- First-match semantics: multiple priority flags → first wins -->
+  <bug id="1028" component="auth" reporter="alice" critical="yes" high="yes" assigned="yes">Critical+high: should emit critical</bug>
+  <bug id="1029" component="db" reporter="bob" high="yes" medium="yes" verified="yes">High+medium: should emit high</bug>
+  <bug id="1030" component="api" reporter="carol" medium="yes" low="yes" stale="yes">Medium+low: should emit medium</bug>
+
+  <!-- Full metadata with all status flags -->
+  <bug id="1031" component="billing" reporter="dave" critical="yes"
+       assigned="yes" verified="yes" blocked="yes" stale="yes">All status flags set</bug>
+  <bug id="1032" component="ui" reporter="eve" medium="yes"
+       assigned="yes" verified="yes">Two status flags, medium priority</bug>
+
+  <!-- No metadata at all -->
+  <bug id="1033">Minimal bug report, no component, no reporter, no priority</bug>
+  <bug id="1034" component="api" reporter="frank">Component and reporter but no priority or status</bug>
+</tracker>
