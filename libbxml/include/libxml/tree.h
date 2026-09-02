@@ -852,7 +852,21 @@ struct _xmlDoc {
  * flavors: this lets consumers stop touching struct internals
  * directly so the in-memory layout can change later without a
  * tree-wide rewrite.
+ *
+ * ENABLE_ACCESSOR_INLINES (--enable-accessor-inlines, on by default)
+ * picks the flavor: defined means "static inline" (today's
+ * behavior); undefined means LIBXML_ACCESSORS_NOINLINE, which
+ * switches every TU that includes this header over to the
+ * non-inline flavor, so an -flto build can be checked for whether
+ * it re-inlines the cross-library calls at link time with no
+ * measurable cost.
  */
+#include <libxml/libbxmlconfig.h>
+
+#ifndef ENABLE_ACCESSOR_INLINES
+#define LIBXML_ACCESSORS_NOINLINE
+#endif /* ENABLE_ACCESSOR_INLINES */
+
 #ifdef LIBXML_ACCESSORS_NOINLINE
 #include <libxml/gen/xmlaccessors-decl.h>
 #else
