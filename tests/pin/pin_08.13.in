@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.13.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Employee directory: combined attribute-value output and conditional
+    formatting in a single op-dispatch template.
+
+    This test exercises:
+      - Multiple PIN_OP_PUSH_ATTR + EMIT sequences for @id, @name, @dept,
+        @title, @level (unconditional attribute value output)
+      - xsl:choose with four branches + otherwise, keyed on presence of
+        @executive, @senior, @mid, @junior flag attributes
+      - Four independent sequential xsl:if for role modifiers:
+        @manager, @remote, @contractor, @parttime
+      - Nested EMIT_OPEN/CLOSE structure (the <metadata> wrapper around
+        the choose output tests that literal element depth tracking is
+        correct when a GOTO skips past nested ops)
+
+    No BIA_ is compiled; poc_complexity is zero throughout.
+  -->
+  <xsl:template match="/">
+    <result>
+      <xsl:apply-templates/>
+    </result>
+  </xsl:template>
+
+  <xsl:template match="employee">
+    <record>
+      <id><xsl:value-of select="@id"/></id>
+      <name><xsl:value-of select="@name"/></name>
+      <xsl:if test="@dept">
+        <dept><xsl:value-of select="@dept"/></dept>
+      </xsl:if>
+      <xsl:if test="@title">
+        <title><xsl:value-of select="@title"/></title>
+      </xsl:if>
+      <metadata>
+        <xsl:choose>
+          <xsl:when test="@executive">
+            <band>executive</band>
+            <grade>E</grade>
+          </xsl:when>
+          <xsl:when test="@senior">
+            <band>senior</band>
+            <grade>S</grade>
+          </xsl:when>
+          <xsl:when test="@mid">
+            <band>mid</band>
+            <grade>M</grade>
+          </xsl:when>
+          <xsl:when test="@junior">
+            <band>junior</band>
+            <grade>J</grade>
+          </xsl:when>
+          <xsl:otherwise>
+            <band>unclassified</band>
+            <grade>U</grade>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:if test="@manager">
+          <role>manager</role>
+        </xsl:if>
+        <xsl:if test="@remote">
+          <location>remote</location>
+        </xsl:if>
+        <xsl:if test="@contractor">
+          <employment>contractor</employment>
+        </xsl:if>
+        <xsl:if test="@parttime">
+          <hours>part-time</hours>
+        </xsl:if>
+      </metadata>
+    </record>
+  </xsl:template>
+</xsl:stylesheet>
