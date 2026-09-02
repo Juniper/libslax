@@ -1,0 +1,415 @@
+compiled 2 patterns
+<result>
+   <record>
+      <id>E001</id>
+      <name>Alexandra Chen</name>
+      <dept>Engineering</dept>
+      <title>CTO</title>
+      <metadata>
+         <band>executive</band>
+         <grade>E</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>E002</id>
+      <name>Robert Walsh</name>
+      <dept>Product</dept>
+      <title>CPO</title>
+      <metadata>
+         <band>executive</band>
+         <grade>E</grade>
+         <role>manager</role>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>E003</id>
+      <name>Sandra Kim</name>
+      <dept>Finance</dept>
+      <title>CFO</title>
+      <metadata>
+         <band>executive</band>
+         <grade>E</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>E004</id>
+      <name>Marcus Torres</name>
+      <dept>Sales</dept>
+      <title>CRO</title>
+      <metadata>
+         <band>executive</band>
+         <grade>E</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>S001</id>
+      <name>Priya Patel</name>
+      <dept>Engineering</dept>
+      <title>Principal Engineer</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>S002</id>
+      <name>James Liu</name>
+      <dept>Engineering</dept>
+      <title>Staff Engineer</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <role>manager</role>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>S003</id>
+      <name>Fatima Al-Hassan</name>
+      <dept>Design</dept>
+      <title>Design Director</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>S004</id>
+      <name>Colin Burke</name>
+      <dept>Engineering</dept>
+      <title>Engineering Manager</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>S005</id>
+      <name>Yuki Tanaka</name>
+      <dept>Engineering</dept>
+      <title>Principal Engineer</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>S006</id>
+      <name>Amara Osei</name>
+      <dept>Data</dept>
+      <title>Principal Data Scientist</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>S007</id>
+      <name>Viktor Petrov</name>
+      <dept>Security</dept>
+      <title>Principal Security Engineer</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>S008</id>
+      <name>Lena Müller</name>
+      <dept>Engineering</dept>
+      <title>Staff Engineer</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>M001</id>
+      <name>Tom Jackson</name>
+      <dept>Engineering</dept>
+      <title>Senior Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>M002</id>
+      <name>Sarah Kim</name>
+      <dept>Engineering</dept>
+      <title>Senior Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>M003</id>
+      <name>Ahmed Hassan</name>
+      <dept>Product</dept>
+      <title>Senior Product Manager</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>M004</id>
+      <name>Julia Rossi</name>
+      <dept>Design</dept>
+      <title>Senior Designer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>M005</id>
+      <name>Chen Wei</name>
+      <dept>Data</dept>
+      <title>Senior Data Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>M006</id>
+      <name>Anna Schmidt</name>
+      <dept>Engineering</dept>
+      <title>Senior Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>M007</id>
+      <name>Luis Gomez</name>
+      <dept>QA</dept>
+      <title>Senior QA Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+   <record>
+      <id>M008</id>
+      <name>Mei Lin</name>
+      <dept>Engineering</dept>
+      <title>Senior Engineer</title>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <location>remote</location>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>J001</id>
+      <name>Alex Murphy</name>
+      <dept>Engineering</dept>
+      <title>Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>J002</id>
+      <name>Sam Okafor</name>
+      <dept>Engineering</dept>
+      <title>Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>J003</id>
+      <name>Rina Sato</name>
+      <dept>Design</dept>
+      <title>Designer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+   <record>
+      <id>J004</id>
+      <name>David Park</name>
+      <dept>QA</dept>
+      <title>QA Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>J005</id>
+      <name>Emma Wilson</name>
+      <dept>Engineering</dept>
+      <title>Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>J006</id>
+      <name>Kai Andersen</name>
+      <dept>Data</dept>
+      <title>Data Analyst</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+         <location>remote</location>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+   <record>
+      <id>J007</id>
+      <name>Fatou Diallo</name>
+      <dept>Engineering</dept>
+      <title>Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>J008</id>
+      <name>Oliver Brown</name>
+      <dept>Support</dept>
+      <title>Support Engineer</title>
+      <metadata>
+         <band>junior</band>
+         <grade>J</grade>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>U001</id>
+      <name>Pat Casey</name>
+      <dept>Intern</dept>
+      <title>Software Intern</title>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>U002</id>
+      <name>Robin Singh</name>
+      <title>Consultant</title>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+         <employment>contractor</employment>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+   <record>
+      <id>U003</id>
+      <name>Morgan Lee</name>
+      <dept>Facilities</dept>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>X001</id>
+      <name>Test Executive-Senior</name>
+      <metadata>
+         <band>executive</band>
+         <grade>E</grade>
+         <role>manager</role>
+      </metadata>
+   </record>
+   <record>
+      <id>X002</id>
+      <name>Test Senior-Mid</name>
+      <dept>Engineering</dept>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>X003</id>
+      <name>Test Mid-Junior</name>
+      <dept>QA</dept>
+      <metadata>
+         <band>mid</band>
+         <grade>M</grade>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>X004</id>
+      <name>Quirky Edge Case</name>
+      <dept>Engineering</dept>
+      <title>Wizard</title>
+      <metadata>
+         <band>senior</band>
+         <grade>S</grade>
+         <role>manager</role>
+         <location>remote</location>
+         <employment>contractor</employment>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+   <record>
+      <id>X005</id>
+      <name>No Band Worker</name>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+      </metadata>
+   </record>
+   <record>
+      <id>X006</id>
+      <name>Remote Only Worker</name>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+         <location>remote</location>
+      </metadata>
+   </record>
+   <record>
+      <id>X007</id>
+      <name>Contractor Only</name>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+         <employment>contractor</employment>
+      </metadata>
+   </record>
+   <record>
+      <id>X008</id>
+      <name>Part-time Remote</name>
+      <metadata>
+         <band>unclassified</band>
+         <grade>U</grade>
+         <location>remote</location>
+         <hours>part-time</hours>
+      </metadata>
+   </record>
+</result>
