@@ -475,7 +475,7 @@ libxml_xmlXPathParserContextPtrWrap(xmlXPathParserContextPtr ctxt)
  */
 #if PY_VERSION_HEX < 0x02070000
 static void
-libxml_xmlXPathDestructNsNode(void *cap, void *desc ATTRIBUTE_UNUSED)
+libxml_xmlXPathDestructNsNode(void *cap, void *desc UNUSED)
 #else
 static void
 libxml_xmlXPathDestructNsNode(PyObject *cap)
