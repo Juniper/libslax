@@ -139,8 +139,8 @@ typedef struct
 } glob_t;
 
 #define GLOB_DOOFFS 0
-static int glob(const char *pattern, ATTRIBUTE_UNUSED int flags,
-                ATTRIBUTE_UNUSED int errfunc(const char *epath, int eerrno),
+static int glob(const char *pattern, UNUSED int flags,
+                UNUSED int errfunc(const char *epath, int eerrno),
                 glob_t *pglob) {
     glob_t *ret;
     WIN32_FIND_DATA FindFileData;
@@ -232,8 +232,8 @@ typedef struct {
 } glob_t;
 
 static int
-glob(const char *pattern ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
-     int errfunc(const char *epath, int eerrno) ATTRIBUTE_UNUSED,
+glob(const char *pattern UNUSED, int flags UNUSED,
+     int errfunc(const char *epath, int eerrno) UNUSED,
      glob_t *pglob) {
     pglob->gl_pathc = 0;
     pglob->gl_pathv = NULL;
@@ -242,7 +242,7 @@ glob(const char *pattern ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
 }
 
 static void
-globfree(glob_t *pglob ATTRIBUTE_UNUSED) {
+globfree(glob_t *pglob UNUSED) {
 }
 
 #endif /* _WIN32, HAVE_DECL_GLOB */
@@ -271,7 +271,7 @@ static char testErrors[32769];
 static int testErrorsSize = 0;
 
 static void
-testErrorHandler(void *ctx  ATTRIBUTE_UNUSED, const char *msg, ...) {
+testErrorHandler(void *ctx  UNUSED, const char *msg, ...) {
     va_list args;
     int res;
 
@@ -293,7 +293,7 @@ testErrorHandler(void *ctx  ATTRIBUTE_UNUSED, const char *msg, ...) {
 }
 
 static void
-testStructuredErrorHandler(void *ctx ATTRIBUTE_UNUSED, const xmlError *err) {
+testStructuredErrorHandler(void *ctx UNUSED, const xmlError *err) {
     xmlFormatError(err, testErrorHandler, NULL);
 }
 
@@ -622,7 +622,7 @@ static int quiet = 0;
  * @returns 1 if true
  */
 static int
-isStandaloneDebug(void *ctx ATTRIBUTE_UNUSED)
+isStandaloneDebug(void *ctx UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -638,7 +638,7 @@ isStandaloneDebug(void *ctx ATTRIBUTE_UNUSED)
  * @returns 1 if true
  */
 static int
-hasInternalSubsetDebug(void *ctx ATTRIBUTE_UNUSED)
+hasInternalSubsetDebug(void *ctx UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -654,7 +654,7 @@ hasInternalSubsetDebug(void *ctx ATTRIBUTE_UNUSED)
  * @returns 1 if true
  */
 static int
-hasExternalSubsetDebug(void *ctx ATTRIBUTE_UNUSED)
+hasExternalSubsetDebug(void *ctx UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -669,7 +669,7 @@ hasExternalSubsetDebug(void *ctx ATTRIBUTE_UNUSED)
  * @param ctxt  An XML parser context
  */
 static void
-internalSubsetDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
+internalSubsetDebug(void *ctx UNUSED, const xmlChar *name,
 	       const xmlChar *ExternalID, const xmlChar *SystemID)
 {
     callbacks++;
@@ -694,7 +694,7 @@ internalSubsetDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
  * @param ctxt  An XML parser context
  */
 static void
-externalSubsetDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
+externalSubsetDebug(void *ctx UNUSED, const xmlChar *name,
 	       const xmlChar *ExternalID, const xmlChar *SystemID)
 {
     callbacks++;
@@ -724,7 +724,7 @@ externalSubsetDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
  * @returns the xmlParserInput if inlined or NULL for DOM behaviour.
  */
 static xmlParserInputPtr
-resolveEntityDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *publicId, const xmlChar *systemId)
+resolveEntityDebug(void *ctx UNUSED, const xmlChar *publicId, const xmlChar *systemId)
 {
     callbacks++;
     if (quiet)
@@ -840,7 +840,7 @@ entityDeclDebug(void *ctx, const xmlChar *name, int type,
  * @param type  the attribute type
  */
 static void
-attributeDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar * elem,
+attributeDeclDebug(void *ctx UNUSED, const xmlChar * elem,
                    const xmlChar * name, int type, int def,
                    const xmlChar * defaultValue, xmlEnumerationPtr tree)
 {
@@ -865,8 +865,8 @@ attributeDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar * elem,
  * @param content  the element value (without processing).
  */
 static void
-elementDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, int type,
-	    xmlElementContentPtr content ATTRIBUTE_UNUSED)
+elementDeclDebug(void *ctx UNUSED, const xmlChar *name, int type,
+	    xmlElementContentPtr content UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -884,7 +884,7 @@ elementDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, int type,
  * @param systemId  The system ID of the entity
  */
 static void
-notationDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
+notationDeclDebug(void *ctx UNUSED, const xmlChar *name,
 	     const xmlChar *publicId, const xmlChar *systemId)
 {
     callbacks++;
@@ -904,7 +904,7 @@ notationDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
  * @param notationName  the name of the notation
  */
 static void
-unparsedEntityDeclDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name,
+unparsedEntityDeclDebug(void *ctx UNUSED, const xmlChar *name,
 		   const xmlChar *publicId, const xmlChar *systemId,
 		   const xmlChar *notationName)
 {
@@ -932,7 +932,7 @@ const xmlChar *nullstr = BAD_CAST "(null)";
  * @param loc  A SAX Locator
  */
 static void
-setDocumentLocatorDebug(void *ctx ATTRIBUTE_UNUSED, xmlSAXLocatorPtr loc ATTRIBUTE_UNUSED)
+setDocumentLocatorDebug(void *ctx UNUSED, xmlSAXLocatorPtr loc UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -946,7 +946,7 @@ setDocumentLocatorDebug(void *ctx ATTRIBUTE_UNUSED, xmlSAXLocatorPtr loc ATTRIBU
  * @param ctxt  An XML parser context
  */
 static void
-startDocumentDebug(void *ctx ATTRIBUTE_UNUSED)
+startDocumentDebug(void *ctx UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -960,7 +960,7 @@ startDocumentDebug(void *ctx ATTRIBUTE_UNUSED)
  * @param ctxt  An XML parser context
  */
 static void
-endDocumentDebug(void *ctx ATTRIBUTE_UNUSED)
+endDocumentDebug(void *ctx UNUSED)
 {
     callbacks++;
     if (quiet)
@@ -975,7 +975,7 @@ endDocumentDebug(void *ctx ATTRIBUTE_UNUSED)
  * @param name  The element name
  */
 static void
-startElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, const xmlChar **atts)
+startElementDebug(void *ctx UNUSED, const xmlChar *name, const xmlChar **atts)
 {
     int i;
 
@@ -1000,7 +1000,7 @@ startElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, const xmlChar
  * @param name  The element name
  */
 static void
-endElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name)
+endElementDebug(void *ctx UNUSED, const xmlChar *name)
 {
     callbacks++;
     if (quiet)
@@ -1017,7 +1017,7 @@ endElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name)
  * @param len  the number of xmlChar
  */
 static void
-charactersDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
+charactersDebug(void *ctx UNUSED, const xmlChar *ch, int len)
 {
     char output[40];
     int i;
@@ -1039,7 +1039,7 @@ charactersDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
  * @param name  The entity name
  */
 static void
-referenceDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name)
+referenceDebug(void *ctx UNUSED, const xmlChar *name)
 {
     callbacks++;
     if (quiet)
@@ -1057,7 +1057,7 @@ referenceDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name)
  * @param len  the number of xmlChar
  */
 static void
-ignorableWhitespaceDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
+ignorableWhitespaceDebug(void *ctx UNUSED, const xmlChar *ch, int len)
 {
     char output[40];
     int i;
@@ -1080,7 +1080,7 @@ ignorableWhitespaceDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
  * @param len  the number of xmlChar
  */
 static void
-processingInstructionDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *target,
+processingInstructionDebug(void *ctx UNUSED, const xmlChar *target,
                       const xmlChar *data)
 {
     callbacks++;
@@ -1102,7 +1102,7 @@ processingInstructionDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *target,
  * @param len  the block length
  */
 static void
-cdataBlockDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *value, int len)
+cdataBlockDebug(void *ctx UNUSED, const xmlChar *value, int len)
 {
     callbacks++;
     if (quiet)
@@ -1118,7 +1118,7 @@ cdataBlockDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *value, int len)
  * @param value  the comment content
  */
 static void
-commentDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *value)
+commentDebug(void *ctx UNUSED, const xmlChar *value)
 {
     callbacks++;
     if (quiet)
@@ -1135,7 +1135,7 @@ commentDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *value)
  * @param ...  extra parameters for the message display
  */
 static void
-warningDebug(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...)
+warningDebug(void *ctx UNUSED, const char *msg, ...)
 {
     va_list args;
 
@@ -1157,7 +1157,7 @@ warningDebug(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...)
  * @param ...  extra parameters for the message display
  */
 static void
-errorDebug(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...)
+errorDebug(void *ctx UNUSED, const char *msg, ...)
 {
     va_list args;
 
@@ -1179,7 +1179,7 @@ errorDebug(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...)
  * @param ...  extra parameters for the message display
  */
 static void
-fatalErrorDebug(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...)
+fatalErrorDebug(void *ctx UNUSED, const char *msg, ...)
 {
     va_list args;
 
@@ -1239,7 +1239,7 @@ static xmlSAXHandlerPtr debugSAXHandler = &debugSAXHandlerStruct;
  * @param name  The element name
  */
 static void
-startElementNsDebug(void *ctx ATTRIBUTE_UNUSED,
+startElementNsDebug(void *ctx UNUSED,
                     const xmlChar *localname,
                     const xmlChar *prefix,
                     const xmlChar *URI,
@@ -1295,7 +1295,7 @@ startElementNsDebug(void *ctx ATTRIBUTE_UNUSED,
  * @param name  The element name
  */
 static void
-endElementNsDebug(void *ctx ATTRIBUTE_UNUSED,
+endElementNsDebug(void *ctx UNUSED,
                   const xmlChar *localname,
                   const xmlChar *prefix,
                   const xmlChar *URI)
@@ -1359,7 +1359,7 @@ static xmlSAXHandlerPtr debugSAX2Handler = &debugSAX2HandlerStruct;
  * @param name  The element name
  */
 static void
-htmlstartElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, const xmlChar **atts)
+htmlstartElementDebug(void *ctx UNUSED, const xmlChar *name, const xmlChar **atts)
 {
     int i;
 
@@ -1395,7 +1395,7 @@ htmlstartElementDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *name, const xml
  * @param len  the number of xmlChar
  */
 static void
-htmlcharactersDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
+htmlcharactersDebug(void *ctx UNUSED, const xmlChar *ch, int len)
 {
     unsigned char output[40];
     int inlen = len, outlen = 30;
@@ -1415,7 +1415,7 @@ htmlcharactersDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
  * @param len  the number of xmlChar
  */
 static void
-htmlcdataDebug(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch, int len)
+htmlcdataDebug(void *ctx UNUSED, const xmlChar *ch, int len)
 {
     unsigned char output[40];
     int inlen = len, outlen = 30;
@@ -1465,7 +1465,7 @@ static xmlSAXHandlerPtr debugHTMLSAXHandler = &debugHTMLSAXHandlerStruct;
 #endif /* LIBXML_HTML_ENABLED */
 
 static void
-hashFreeEntity(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+hashFreeEntity(void *payload, const xmlChar *name UNUSED) {
     xmlEntityPtr ent = payload;
 
     xmlFreeEntity(ent);
@@ -1481,7 +1481,7 @@ hashFreeEntity(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
  */
 static int
 saxParseTest(const char *filename, const char *result,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *err UNUSED,
              int options) {
     int ret;
     char *temp;
@@ -1721,7 +1721,7 @@ static xmlSAXHandler tokenizeHtmlSAXHandler = {
  */
 static int
 htmlTokenizerTest(const char *filename, const char *result,
-                  const char *err ATTRIBUTE_UNUSED,
+                  const char *err UNUSED,
                   int options) {
     xmlTokenizerConfig config;
     char startTag[31];
@@ -1816,8 +1816,8 @@ htmlTokenizerTest(const char *filename, const char *result,
  */
 static int
 oldParseTest(const char *filename, const char *result,
-             const char *err ATTRIBUTE_UNUSED,
-	     int options ATTRIBUTE_UNUSED) {
+             const char *err UNUSED,
+	     int options UNUSED) {
     xmlDocPtr doc;
     char *temp;
     int res = 0;
@@ -1884,7 +1884,7 @@ oldParseTest(const char *filename, const char *result,
  */
 static int
 pushParseTest(const char *filename, const char *result,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *err UNUSED,
 	     int options) {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -2069,7 +2069,7 @@ endElementNsBnd(void *ctx, const xmlChar *localname, const xmlChar *prefix,
  */
 static int
 pushBoundaryTest(const char *filename, const char *result,
-                 const char *err ATTRIBUTE_UNUSED,
+                 const char *err UNUSED,
                  int options) {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -2383,7 +2383,7 @@ testParseContent(xmlParserCtxtPtr ctxt, xmlDocPtr doc, const char *filename) {
  */
 static int
 memParseTest(const char *filename, const char *result,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *err UNUSED,
 	     int options) {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -2436,7 +2436,7 @@ memParseTest(const char *filename, const char *result,
  */
 static int
 noentParseTest(const char *filename, const char *result,
-               const char *err  ATTRIBUTE_UNUSED,
+               const char *err  UNUSED,
 	       int options) {
     xmlDocPtr doc;
     char *temp;
@@ -2676,7 +2676,7 @@ static void processNode(FILE *out, xmlTextReaderPtr reader) {
 static int
 streamProcessTest(const char *filename, const char *result, const char *err,
                   xmlTextReaderPtr reader, const char *rng,
-                  int options ATTRIBUTE_UNUSED) {
+                  int options UNUSED) {
     int ret;
     char *temp = NULL;
     FILE *t = NULL;
@@ -2765,8 +2765,8 @@ streamProcessTest(const char *filename, const char *result, const char *err,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-xmlReaderForFdTest(const char *filename, const char *result ATTRIBUTE_UNUSED,
-                   const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+xmlReaderForFdTest(const char *filename, const char *result UNUSED,
+                   const char *err UNUSED, int options UNUSED) {
     xmlTextReaderPtr reader;
     int fd = 0;
     int ret;
@@ -2836,8 +2836,8 @@ xmllintGzClose(void *ctxt) {
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-xmlReaderForFdGzTest(const char *filename, const char *result ATTRIBUTE_UNUSED,
-                     const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+xmlReaderForFdGzTest(const char *filename, const char *result UNUSED,
+                     const char *err UNUSED, int options UNUSED) {
     /** Gzip the file and test again to verify the zipper branch */
     char tmp[500] = {0};
     gzFile gz = NULL;
@@ -3094,8 +3094,8 @@ xpathCommonTest(const char *filename, const char *result,
  */
 static int
 xpathExprTest(const char *filename, const char *result,
-              const char *err ATTRIBUTE_UNUSED,
-              int options ATTRIBUTE_UNUSED) {
+              const char *err UNUSED,
+              int options UNUSED) {
     return(xpathCommonTest(filename, result, 0, 1));
 }
 
@@ -3110,8 +3110,8 @@ xpathExprTest(const char *filename, const char *result,
  */
 static int
 xpathDocTest(const char *filename,
-             const char *resul ATTRIBUTE_UNUSED,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *resul UNUSED,
+             const char *err UNUSED,
              int options) {
 
     char pattern[500];
@@ -3160,9 +3160,9 @@ xpathDocTest(const char *filename,
  */
 static int
 xptrDocTest(const char *filename,
-            const char *resul ATTRIBUTE_UNUSED,
-            const char *err ATTRIBUTE_UNUSED,
-            int options ATTRIBUTE_UNUSED) {
+            const char *resul UNUSED,
+            const char *err UNUSED,
+            int options UNUSED) {
 
     char pattern[500];
     char result[500];
@@ -3406,7 +3406,7 @@ static int
 uriParseTest(const char *filename,
              const char *result,
              const char *err,
-             int options ATTRIBUTE_UNUSED) {
+             int options UNUSED) {
     return(uriCommonTest(filename, result, err, NULL));
 }
 
@@ -3423,7 +3423,7 @@ static int
 uriBaseTest(const char *filename,
              const char *result,
              const char *err,
-             int options ATTRIBUTE_UNUSED) {
+             int options UNUSED) {
     return(uriCommonTest(filename, result, err,
                          "http://foo.com/path/to/index.html?orig#help"));
 }
@@ -3561,10 +3561,10 @@ urip_checkURL(const char *URL) {
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-uriPathTest(const char *filename ATTRIBUTE_UNUSED,
-             const char *result ATTRIBUTE_UNUSED,
-             const char *err ATTRIBUTE_UNUSED,
-             int options ATTRIBUTE_UNUSED) {
+uriPathTest(const char *filename UNUSED,
+             const char *result UNUSED,
+             const char *err UNUSED,
+             int options UNUSED) {
     int parsed;
     int failures = 0;
 
@@ -3673,8 +3673,8 @@ schemasOneTest(const char *sch,
  */
 static int
 schemasTest(const char *filename,
-            const char *resul ATTRIBUTE_UNUSED,
-            const char *errr ATTRIBUTE_UNUSED,
+            const char *resul UNUSED,
+            const char *errr UNUSED,
             int options) {
     const char *base = baseFilename(filename);
     const char *base2;
@@ -3775,8 +3775,8 @@ schemasTest(const char *filename,
  */
 static int
 schemasXsiTest(const char *filename,
-               const char *resul ATTRIBUTE_UNUSED,
-               const char *errr ATTRIBUTE_UNUSED,
+               const char *resul UNUSED,
+               const char *errr UNUSED,
                int options) {
     const char *base = baseFilename(filename);
     int len, ret;
@@ -3846,8 +3846,8 @@ rngOneTest(const char *sch,
  */
 static int
 rngTest(const char *filename,
-            const char *resul ATTRIBUTE_UNUSED,
-            const char *errr ATTRIBUTE_UNUSED,
+            const char *resul UNUSED,
+            const char *errr UNUSED,
             int options) {
     const char *base = baseFilename(filename);
     const char *base2;
@@ -3935,9 +3935,9 @@ rngTest(const char *filename,
  */
 static int
 rngIncludeTest(const char *filename,
-               const char *resul ATTRIBUTE_UNUSED,
-               const char *errr ATTRIBUTE_UNUSED,
-               int options ATTRIBUTE_UNUSED) {
+               const char *resul UNUSED,
+               const char *errr UNUSED,
+               int options UNUSED) {
     xmlRelaxNGParserCtxtPtr ctxt;
     xmlRelaxNGPtr schemas;
     int ret = 0;
@@ -4000,8 +4000,8 @@ done:
  */
 static int
 rngStreamTest(const char *filename,
-            const char *resul ATTRIBUTE_UNUSED,
-            const char *errr ATTRIBUTE_UNUSED,
+            const char *resul UNUSED,
+            const char *errr UNUSED,
             int options) {
     const char *base = baseFilename(filename);
     const char *base2;
@@ -4135,8 +4135,8 @@ schematronOneTest(const char *sch, const char *filename, int options,
  */
 static int
 schematronTest(const char *filename,
-               const char *resul ATTRIBUTE_UNUSED,
-               const char *errr ATTRIBUTE_UNUSED,
+               const char *resul UNUSED,
+               const char *errr UNUSED,
                int options) {
     const char *base = baseFilename(filename);
     const char *base2;
@@ -4292,8 +4292,8 @@ static void patternNode(FILE *out, xmlTextReaderPtr reader,
  */
 static int
 patternTest(const char *filename,
-            const char *resul ATTRIBUTE_UNUSED,
-            const char *err ATTRIBUTE_UNUSED,
+            const char *resul UNUSED,
+            const char *err UNUSED,
             int options) {
     xmlPatternPtr patternc = NULL;
     xmlStreamCtxtPtr patstream = NULL;
@@ -4707,30 +4707,30 @@ c14nCommonTest(const char *filename, int with_comments, int mode,
 
 static int
 c14nWithCommentTest(const char *filename,
-                    const char *resul ATTRIBUTE_UNUSED,
-		    const char *err ATTRIBUTE_UNUSED,
-		    int options ATTRIBUTE_UNUSED) {
+                    const char *resul UNUSED,
+		    const char *err UNUSED,
+		    int options UNUSED) {
     return(c14nCommonTest(filename, 1, XML_C14N_1_0, "with-comments"));
 }
 static int
 c14nWithoutCommentTest(const char *filename,
-                    const char *resul ATTRIBUTE_UNUSED,
-		    const char *err ATTRIBUTE_UNUSED,
-		    int options ATTRIBUTE_UNUSED) {
+                    const char *resul UNUSED,
+		    const char *err UNUSED,
+		    int options UNUSED) {
     return(c14nCommonTest(filename, 0, XML_C14N_1_0, "without-comments"));
 }
 static int
 c14nExcWithoutCommentTest(const char *filename,
-                    const char *resul ATTRIBUTE_UNUSED,
-		    const char *err ATTRIBUTE_UNUSED,
-		    int options ATTRIBUTE_UNUSED) {
+                    const char *resul UNUSED,
+		    const char *err UNUSED,
+		    int options UNUSED) {
     return(c14nCommonTest(filename, 0, XML_C14N_EXCLUSIVE_1_0, "exc-without-comments"));
 }
 static int
 c14n11WithoutCommentTest(const char *filename,
-                    const char *resul ATTRIBUTE_UNUSED,
-		    const char *err ATTRIBUTE_UNUSED,
-		    int options ATTRIBUTE_UNUSED) {
+                    const char *resul UNUSED,
+		    const char *err UNUSED,
+		    int options UNUSED) {
     return(c14nCommonTest(filename, 0, XML_C14N_1_1, "1-1-without-comments"));
 }
 #endif
@@ -4914,10 +4914,10 @@ testThread(void)
 }
 #endif
 static int
-threadsTest(const char *filename ATTRIBUTE_UNUSED,
-	    const char *resul ATTRIBUTE_UNUSED,
-	    const char *err ATTRIBUTE_UNUSED,
-	    int options ATTRIBUTE_UNUSED) {
+threadsTest(const char *filename UNUSED,
+	    const char *resul UNUSED,
+	    const char *err UNUSED,
+	    int options UNUSED) {
     return(testThread());
 }
 #endif
@@ -4943,7 +4943,7 @@ static void testRegexp(FILE *output, xmlRegexpPtr comp, const char *value) {
 
 static int
 regexpTest(const char *filename, const char *result, const char *err,
-	   int options ATTRIBUTE_UNUSED) {
+	   int options UNUSED) {
     xmlRegexpPtr comp = NULL;
     FILE *input, *output;
     char *temp;
@@ -5059,7 +5059,7 @@ static int scanNumber(char **ptr) {
 
 static int
 automataTest(const char *filename, const char *result,
-             const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+             const char *err UNUSED, int options UNUSED) {
     FILE *input, *output;
     char *temp;
     char expr[5000];
@@ -5282,10 +5282,10 @@ automataTest(const char *filename, const char *result,
  *                                                                      *
  ************************************************************************/
 static int
-xmlCopyEntityTest(const char *filename ATTRIBUTE_UNUSED,
-                  const char *result ATTRIBUTE_UNUSED,
-                  const char *err ATTRIBUTE_UNUSED,
-                  int options ATTRIBUTE_UNUSED) {
+xmlCopyEntityTest(const char *filename UNUSED,
+                  const char *result UNUSED,
+                  const char *err UNUSED,
+                  int options UNUSED) {
 
     int ret = 0;
     xmlDocPtr doc = NULL;
@@ -5718,7 +5718,7 @@ runtest(int i) {
 }
 
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     int i, a, ret = 0;
     int subset = 0;
 
@@ -5772,7 +5772,7 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
 
 #else /* ! LIBXML_OUTPUT_ENABLED */
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     fprintf(stderr, "runtest requires output to be enabled in libxml2\n");
     return(0);
 }
