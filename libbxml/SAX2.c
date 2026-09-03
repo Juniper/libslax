@@ -137,7 +137,7 @@ xmlNsWarnMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
  * @returns a xmlChar *
  */
 const xmlChar *
-xmlSAX2GetPublicId(void *ctx ATTRIBUTE_UNUSED)
+xmlSAX2GetPublicId(void *ctx UNUSED)
 {
     /* xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx; */
     return(NULL);
@@ -779,7 +779,7 @@ xmlSAX2UnparsedEntityDecl(void *ctx, const xmlChar *name,
  * @param loc  A SAX Locator
  */
 void
-xmlSAX2SetDocumentLocator(void *ctx ATTRIBUTE_UNUSED, xmlSAXLocator *loc ATTRIBUTE_UNUSED)
+xmlSAX2SetDocumentLocator(void *ctx UNUSED, xmlSAXLocator *loc UNUSED)
 {
 }
 
@@ -1744,7 +1744,7 @@ xmlSAX2StartElement(void *ctx, const xmlChar *fullname, const xmlChar **atts) {
  * @param name  The element name
  */
 void
-xmlSAX2EndElement(void *ctx, const xmlChar *name ATTRIBUTE_UNUSED)
+xmlSAX2EndElement(void *ctx, const xmlChar *name UNUSED)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
 
@@ -2415,9 +2415,9 @@ have_attr:
  */
 void
 xmlSAX2EndElementNs(void *ctx,
-                    const xmlChar * localname ATTRIBUTE_UNUSED,
-                    const xmlChar * prefix ATTRIBUTE_UNUSED,
-		    const xmlChar * URI ATTRIBUTE_UNUSED)
+                    const xmlChar * localname UNUSED,
+                    const xmlChar * prefix UNUSED,
+		    const xmlChar * URI UNUSED)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
 
@@ -2616,7 +2616,7 @@ xmlSAX2Characters(void *ctx, const xmlChar *ch, int len)
  * @param len  the number of xmlChar
  */
 void
-xmlSAX2IgnorableWhitespace(void *ctx ATTRIBUTE_UNUSED, const xmlChar *ch ATTRIBUTE_UNUSED, int len ATTRIBUTE_UNUSED)
+xmlSAX2IgnorableWhitespace(void *ctx UNUSED, const xmlChar *ch UNUSED, int len UNUSED)
 {
 }
 
