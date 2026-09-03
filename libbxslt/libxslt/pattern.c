@@ -220,7 +220,7 @@ xsltFreeCompMatchList(xsltCompMatchPtr comp) {
 
 static void
 xsltFreeCompMatchListEntry(void *payload,
-                           const xmlChar *name ATTRIBUTE_UNUSED) {
+                           const xmlChar *name UNUSED) {
     xsltFreeCompMatchList((xsltCompMatchPtr) payload);
 }
 
@@ -234,7 +234,7 @@ xsltFreeCompMatchListEntry(void *payload,
  * steps of an imported stylesheet.
  */
 void xsltNormalizeCompSteps(void *payload,
-        void *data, const xmlChar *name ATTRIBUTE_UNUSED) {
+        void *data, const xmlChar *name UNUSED) {
     xsltCompMatchPtr comp = payload;
     xsltStylesheetPtr style = data;
     int ix;
@@ -2499,7 +2499,7 @@ error:
  * the ones it imports.
  */
 void
-xsltCleanupTemplates(xsltStylesheetPtr style ATTRIBUTE_UNUSED) {
+xsltCleanupTemplates(xsltStylesheetPtr style UNUSED) {
 }
 
 /**
