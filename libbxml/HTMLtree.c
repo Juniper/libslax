@@ -466,7 +466,7 @@ htmlFindOutputEncoder(const char *encoding, xmlCharEncodingHandler **out) {
  * @returns the number of bytes written or -1 in case of error
  */
 static size_t
-htmlBufNodeDumpFormat(xmlBufPtr buf, xmlDocPtr doc ATTRIBUTE_UNUSED,
+htmlBufNodeDumpFormat(xmlBufPtr buf, xmlDocPtr doc UNUSED,
                       xmlNodePtr cur, int format) {
     size_t use;
     size_t ret;
@@ -545,7 +545,7 @@ htmlNodeDump(xmlBuffer *buf, xmlDoc *doc, xmlNode *cur) {
  * @returns the number of bytes written or -1 in case of failure.
  */
 int
-htmlNodeDumpFileFormat(FILE *out, xmlDoc *doc ATTRIBUTE_UNUSED,
+htmlNodeDumpFileFormat(FILE *out, xmlDoc *doc UNUSED,
 	               xmlNode *cur, const char *encoding, int format) {
     xmlOutputBufferPtr buf;
     xmlCharEncodingHandlerPtr handler;
@@ -670,7 +670,7 @@ htmlDocDumpMemory(xmlDoc *cur, xmlChar**mem, int *size) {
  */
 static void
 htmlDtdDumpOutput(xmlOutputBufferPtr buf, xmlDocPtr doc,
-	          const char *encoding ATTRIBUTE_UNUSED) {
+	          const char *encoding UNUSED) {
     xmlDtdPtr cur = doc->intSubset;
 
     if (cur == NULL)
@@ -1126,8 +1126,8 @@ htmlNodeDumpInternal(xmlOutputBuffer *buf, xmlNode *cur,
  */
 void
 htmlNodeDumpFormatOutput(xmlOutputBuffer *buf,
-                         xmlDoc *doc ATTRIBUTE_UNUSED, xmlNode *cur,
-                         const char *encoding ATTRIBUTE_UNUSED, int format) {
+                         xmlDoc *doc UNUSED, xmlNode *cur,
+                         const char *encoding UNUSED, int format) {
     htmlNodeDumpInternal(buf, cur, NULL, format);
 }
 
@@ -1142,8 +1142,8 @@ htmlNodeDumpFormatOutput(xmlOutputBuffer *buf,
  * @param encoding  the encoding string (unused)
  */
 void
-htmlNodeDumpOutput(xmlOutputBuffer *buf, xmlDoc *doc ATTRIBUTE_UNUSED,
-                   xmlNode *cur, const char *encoding ATTRIBUTE_UNUSED) {
+htmlNodeDumpOutput(xmlOutputBuffer *buf, xmlDoc *doc UNUSED,
+                   xmlNode *cur, const char *encoding UNUSED) {
     htmlNodeDumpInternal(buf, cur, NULL, 1);
 }
 
@@ -1157,7 +1157,7 @@ htmlNodeDumpOutput(xmlOutputBuffer *buf, xmlDoc *doc ATTRIBUTE_UNUSED,
  */
 void
 htmlDocContentDumpFormatOutput(xmlOutputBuffer *buf, xmlDoc *cur,
-	                       const char *encoding ATTRIBUTE_UNUSED,
+	                       const char *encoding UNUSED,
                                int format) {
     htmlNodeDumpInternal(buf, (xmlNodePtr) cur, NULL, format);
 }
@@ -1173,7 +1173,7 @@ htmlDocContentDumpFormatOutput(xmlOutputBuffer *buf, xmlDoc *cur,
  */
 void
 htmlDocContentDumpOutput(xmlOutputBuffer *buf, xmlDoc *cur,
-	                 const char *encoding ATTRIBUTE_UNUSED) {
+	                 const char *encoding UNUSED) {
     htmlNodeDumpInternal(buf, (xmlNodePtr) cur, NULL, 1);
 }
 
