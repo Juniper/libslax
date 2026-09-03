@@ -787,8 +787,8 @@ xmlXPathErr(xmlXPathParserContext *ctxt, int code) {
  * @param no  the error number
  */
 void
-xmlXPatherror(xmlXPathParserContext *ctxt, const char *file ATTRIBUTE_UNUSED,
-              int line ATTRIBUTE_UNUSED, int no) {
+xmlXPatherror(xmlXPathParserContext *ctxt, const char *file UNUSED,
+              int line UNUSED, int no) {
     xmlXPathErr(ctxt, no);
 }
 
@@ -4241,7 +4241,7 @@ xmlXPathFreeObject(xmlXPathObject *obj) {
 }
 
 static void
-xmlXPathFreeObjectEntry(void *obj, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlXPathFreeObjectEntry(void *obj, const xmlChar *name UNUSED) {
     xmlXPathFreeObject((xmlXPathObjectPtr) obj);
 }
 
@@ -12146,7 +12146,7 @@ xmlXPathEvalExpression(const xmlChar *str, xmlXPathContext *ctxt) {
  * @param ctxt  the XPath context
  */
 void
-xmlXPathRegisterAllFunctions(xmlXPathContext *ctxt ATTRIBUTE_UNUSED)
+xmlXPathRegisterAllFunctions(xmlXPathContext *ctxt UNUSED)
 {
 }
 
