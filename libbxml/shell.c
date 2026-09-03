@@ -260,8 +260,8 @@ xmllintLsOneNode(FILE *output, xmlNodePtr node) {
  */
 static int
 xmllintShellList(xmllintShellCtxtPtr ctxt,
-             char *arg ATTRIBUTE_UNUSED, xmlNodePtr node,
-             xmlNodePtr node2 ATTRIBUTE_UNUSED)
+             char *arg UNUSED, xmlNodePtr node,
+             xmlNodePtr node2 UNUSED)
 {
     xmlNodePtr cur;
     if (!ctxt)
@@ -301,8 +301,8 @@ xmllintShellList(xmllintShellCtxtPtr ctxt,
  */
 static int
 xmllintShellBase(xmllintShellCtxtPtr ctxt,
-             char *arg ATTRIBUTE_UNUSED, xmlNodePtr node,
-             xmlNodePtr node2 ATTRIBUTE_UNUSED)
+             char *arg UNUSED, xmlNodePtr node,
+             xmlNodePtr node2 UNUSED)
 {
     xmlChar *base;
     if (!ctxt)
@@ -334,9 +334,9 @@ xmllintShellBase(xmllintShellCtxtPtr ctxt,
  * @returns 0
  */
 static int
-xmllintShellSetBase(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
-             char *arg ATTRIBUTE_UNUSED, xmlNodePtr node,
-             xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellSetBase(xmllintShellCtxtPtr ctxt UNUSED,
+             char *arg UNUSED, xmlNodePtr node,
+             xmlNodePtr node2 UNUSED)
 {
     xmlNodeSetBase(node, (xmlChar*) arg);
     return (0);
@@ -356,7 +356,7 @@ xmllintShellSetBase(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
  */
 static int
 xmllintShellRegisterNamespace(xmllintShellCtxtPtr ctxt, char *arg,
-      xmlNodePtr node ATTRIBUTE_UNUSED, xmlNodePtr node2 ATTRIBUTE_UNUSED)
+      xmlNodePtr node UNUSED, xmlNodePtr node2 UNUSED)
 {
     xmlChar* nsListDup;
     xmlChar* prefix;
@@ -409,8 +409,8 @@ xmllintShellRegisterNamespace(xmllintShellCtxtPtr ctxt, char *arg,
  * @returns 0 on success and a negative value otherwise.
  */
 static int
-xmllintShellRegisterRootNamespaces(xmllintShellCtxtPtr ctxt, char *arg ATTRIBUTE_UNUSED,
-      xmlNodePtr root, xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellRegisterRootNamespaces(xmllintShellCtxtPtr ctxt, char *arg UNUSED,
+      xmlNodePtr root, xmlNodePtr node2 UNUSED)
 {
     xmlNsPtr ns;
 
@@ -440,8 +440,8 @@ xmllintShellRegisterRootNamespaces(xmllintShellCtxtPtr ctxt, char *arg ATTRIBUTE
  * @returns 0
  */
 static int
-xmllintShellGrep(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
-            char *arg, xmlNodePtr node, xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellGrep(xmllintShellCtxtPtr ctxt UNUSED,
+            char *arg, xmlNodePtr node, xmlNodePtr node2 UNUSED)
 {
     if (!ctxt)
         return (0);
@@ -514,9 +514,9 @@ xmllintShellGrep(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
  * @returns 0
  */
 static int
-xmllintShellDir(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
-            char *arg ATTRIBUTE_UNUSED, xmlNodePtr node,
-            xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellDir(xmllintShellCtxtPtr ctxt UNUSED,
+            char *arg UNUSED, xmlNodePtr node,
+            xmlNodePtr node2 UNUSED)
 {
     if (!ctxt)
         return (0);
@@ -548,9 +548,9 @@ xmllintShellDir(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
  * @returns 0
  */
 static int
-xmllintShellSetContent(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED,
+xmllintShellSetContent(xmllintShellCtxtPtr ctxt UNUSED,
             char *value, xmlNodePtr node,
-            xmlNodePtr node2 ATTRIBUTE_UNUSED)
+            xmlNodePtr node2 UNUSED)
 {
     xmlNodePtr results;
     xmlParserErrors ret;
@@ -605,8 +605,8 @@ xmllintShellPrintf(void *ctx, const char *msg, ...) {
  */
 static int
 xmllintShellRNGValidate(xmllintShellCtxtPtr sctxt, char *schemas,
-            xmlNodePtr node ATTRIBUTE_UNUSED,
-	    xmlNodePtr node2 ATTRIBUTE_UNUSED)
+            xmlNodePtr node UNUSED,
+	    xmlNodePtr node2 UNUSED)
 {
     xmlRelaxNGPtr relaxngschemas;
     xmlRelaxNGParserCtxtPtr ctxt;
@@ -652,8 +652,8 @@ xmllintShellRNGValidate(xmllintShellCtxtPtr sctxt, char *schemas,
  * @returns 0
  */
 static int
-xmllintShellCat(xmllintShellCtxtPtr ctxt, char *arg ATTRIBUTE_UNUSED,
-            xmlNodePtr node, xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellCat(xmllintShellCtxtPtr ctxt, char *arg UNUSED,
+            xmlNodePtr node, xmlNodePtr node2 UNUSED)
 {
     if (!ctxt)
         return (0);
@@ -696,8 +696,8 @@ xmllintShellCat(xmllintShellCtxtPtr ctxt, char *arg ATTRIBUTE_UNUSED,
  */
 static int
 xmllintShellLoad(xmllintShellCtxtPtr ctxt, char *filename,
-             xmlNodePtr node ATTRIBUTE_UNUSED,
-             xmlNodePtr node2 ATTRIBUTE_UNUSED)
+             xmlNodePtr node UNUSED,
+             xmlNodePtr node2 UNUSED)
 {
     xmlDocPtr doc;
     int html = 0;
@@ -750,7 +750,7 @@ xmllintShellLoad(xmllintShellCtxtPtr ctxt, char *filename,
  */
 static int
 xmllintShellWrite(xmllintShellCtxtPtr ctxt, char *filename, xmlNodePtr node,
-              xmlNodePtr node2 ATTRIBUTE_UNUSED)
+              xmlNodePtr node2 UNUSED)
 {
     if (node == NULL)
         return (-1);
@@ -808,8 +808,8 @@ xmllintShellWrite(xmllintShellCtxtPtr ctxt, char *filename, xmlNodePtr node,
  */
 static int
 xmllintShellSave(xmllintShellCtxtPtr ctxt, char *filename,
-             xmlNodePtr node ATTRIBUTE_UNUSED,
-             xmlNodePtr node2 ATTRIBUTE_UNUSED)
+             xmlNodePtr node UNUSED,
+             xmlNodePtr node2 UNUSED)
 {
     if ((ctxt == NULL) || (ctxt->doc == NULL))
         return (-1);
@@ -861,8 +861,8 @@ xmllintShellSave(xmllintShellCtxtPtr ctxt, char *filename,
  */
 static int
 xmllintShellValidate(xmllintShellCtxtPtr ctxt, char *dtd,
-                 xmlNodePtr node ATTRIBUTE_UNUSED,
-                 xmlNodePtr node2 ATTRIBUTE_UNUSED)
+                 xmlNodePtr node UNUSED,
+                 xmlNodePtr node2 UNUSED)
 {
     xmlValidCtxt vctxt;
     int res = -1;
@@ -902,8 +902,8 @@ xmllintShellValidate(xmllintShellCtxtPtr ctxt, char *dtd,
  */
 static int
 xmllintShellDu(xmllintShellCtxtPtr ctxt,
-           char *arg ATTRIBUTE_UNUSED, xmlNodePtr tree,
-           xmlNodePtr node2 ATTRIBUTE_UNUSED)
+           char *arg UNUSED, xmlNodePtr tree,
+           xmlNodePtr node2 UNUSED)
 {
     xmlNodePtr node;
     int indent = 0, i;
@@ -984,8 +984,8 @@ xmllintShellDu(xmllintShellCtxtPtr ctxt,
  * @returns 0 or -1 in case of error
  */
 static int
-xmllintShellPwd(xmllintShellCtxtPtr ctxt ATTRIBUTE_UNUSED, char *buffer,
-            xmlNodePtr node, xmlNodePtr node2 ATTRIBUTE_UNUSED)
+xmllintShellPwd(xmllintShellCtxtPtr ctxt UNUSED, char *buffer,
+            xmlNodePtr node, xmlNodePtr node2 UNUSED)
 {
     xmlChar *path;
 
