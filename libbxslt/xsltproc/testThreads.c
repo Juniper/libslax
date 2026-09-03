@@ -11,7 +11,7 @@
  *       command line to test specifics, also add exslt
  */
 
-#include "bxslt/bxsltconfig.h"
+#include "libbxslt/libbxsltconfig.h"
 #include "libexslt/exslt.h"
 #include <stdlib.h>
 #include <stdio.h>
