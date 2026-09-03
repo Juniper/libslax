@@ -952,9 +952,9 @@ xmlFreeElementContent(xmlElementContent *cur) {
  * @param englob  1 if one must print the englobing parenthesis, 0 otherwise
  */
 void
-xmlSprintfElementContent(char *buf ATTRIBUTE_UNUSED,
-	                 xmlElementContent *content ATTRIBUTE_UNUSED,
-			 int englob ATTRIBUTE_UNUSED) {
+xmlSprintfElementContent(char *buf UNUSED,
+	                 xmlElementContent *content UNUSED,
+			 int englob UNUSED) {
 }
 #endif /* LIBXML_OUTPUT_ENABLED */
 
@@ -1269,7 +1269,7 @@ mem_error:
 }
 
 static void
-xmlFreeElementTableEntry(void *elem, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeElementTableEntry(void *elem, const xmlChar *name UNUSED) {
     xmlFreeElement((xmlElementPtr) elem);
 }
 
@@ -1293,7 +1293,7 @@ xmlFreeElementTable(xmlElementTable *table) {
  * @returns the new xmlElement or NULL in case of error.
  */
 static void *
-xmlCopyElement(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlCopyElement(void *payload, const xmlChar *name UNUSED) {
     xmlElementPtr elem = (xmlElementPtr) payload;
     xmlElementPtr cur;
 
@@ -1373,7 +1373,7 @@ xmlDumpElementDecl(xmlBuffer *buf, xmlElement *elem) {
  */
 static void
 xmlDumpElementDeclScan(void *elem, void *save,
-                       const xmlChar *name ATTRIBUTE_UNUSED) {
+                       const xmlChar *name UNUSED) {
     xmlSaveTree(save, elem);
 }
 
@@ -1747,7 +1747,7 @@ mem_error:
 }
 
 static void
-xmlFreeAttributeTableEntry(void *attr, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeAttributeTableEntry(void *attr, const xmlChar *name UNUSED) {
     xmlFreeAttribute((xmlAttributePtr) attr);
 }
 
@@ -1771,7 +1771,7 @@ xmlFreeAttributeTable(xmlAttributeTable *table) {
  * @returns the new xmlAttribute or NULL in case of error.
  */
 static void *
-xmlCopyAttribute(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlCopyAttribute(void *payload, const xmlChar *name UNUSED) {
     xmlAttributePtr attr = (xmlAttributePtr) payload;
     xmlAttributePtr cur;
 
@@ -1861,7 +1861,7 @@ xmlDumpAttributeDecl(xmlBuffer *buf, xmlAttribute *attr) {
  */
 static void
 xmlDumpAttributeDeclScan(void *attr, void *save,
-                         const xmlChar *name ATTRIBUTE_UNUSED) {
+                         const xmlChar *name UNUSED) {
     xmlSaveTree(save, attr);
 }
 
@@ -2000,7 +2000,7 @@ mem_error:
 }
 
 static void
-xmlFreeNotationTableEntry(void *nota, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeNotationTableEntry(void *nota, const xmlChar *name UNUSED) {
     xmlFreeNotation((xmlNotationPtr) nota);
 }
 
@@ -2024,7 +2024,7 @@ xmlFreeNotationTable(xmlNotationTable *table) {
  * @returns the new xmlNotation or NULL in case of error.
  */
 static void *
-xmlCopyNotation(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlCopyNotation(void *payload, const xmlChar *name UNUSED) {
     xmlNotationPtr nota = (xmlNotationPtr) payload;
     xmlNotationPtr cur;
 
@@ -2296,7 +2296,7 @@ xmlAddID(xmlValidCtxt *ctxt, xmlDoc *doc, const xmlChar *value,
 }
 
 static void
-xmlFreeIDTableEntry(void *id, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeIDTableEntry(void *id, const xmlChar *name UNUSED) {
     xmlFreeID((xmlIDPtr) id);
 }
 
@@ -2489,7 +2489,7 @@ xmlFreeRef(xmlLinkPtr lk) {
  * @param name  unused
  */
 static void
-xmlFreeRefTableEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeRefTableEntry(void *payload, const xmlChar *name UNUSED) {
     xmlListPtr list_ref = (xmlListPtr) payload;
     if (list_ref == NULL) return;
     xmlListDelete(list_ref);
@@ -2522,8 +2522,8 @@ xmlWalkRemoveRef(const void *data, void *user)
  * @returns 0
  */
 static int
-xmlDummyCompare(const void *data0 ATTRIBUTE_UNUSED,
-                const void *data1 ATTRIBUTE_UNUSED)
+xmlDummyCompare(const void *data0 UNUSED,
+                const void *data1 UNUSED)
 {
     return (0);
 }
@@ -3262,8 +3262,8 @@ xmlValidateNmtokensValue(const xmlChar *value) {
  */
 
 int
-xmlValidateNotationDecl(xmlValidCtxt *ctxt ATTRIBUTE_UNUSED, xmlDoc *doc ATTRIBUTE_UNUSED,
-                         xmlNotation *nota ATTRIBUTE_UNUSED) {
+xmlValidateNotationDecl(xmlValidCtxt *ctxt UNUSED, xmlDoc *doc UNUSED,
+                         xmlNotation *nota UNUSED) {
     int ret = 1;
 
     return(ret);
@@ -3611,7 +3611,7 @@ xmlValidNormalizeAttributeValue(xmlDoc *doc, xmlNode *elem,
 
 static void
 xmlValidateAttributeIdCallback(void *payload, void *data,
-	                       const xmlChar *name ATTRIBUTE_UNUSED) {
+	                       const xmlChar *name UNUSED) {
     xmlAttributePtr attr = (xmlAttributePtr) payload;
     int *count = (int *) data;
     if (attr->atype == XML_ATTRIBUTE_ID) (*count)++;
@@ -5375,9 +5375,9 @@ done:
  * @returns 1 if no validation problem was found or 0 otherwise.
  */
 int
-xmlValidatePopElement(xmlValidCtxt *ctxt, xmlDoc *doc ATTRIBUTE_UNUSED,
-                      xmlNode *elem ATTRIBUTE_UNUSED,
-		      const xmlChar *qname ATTRIBUTE_UNUSED) {
+xmlValidatePopElement(xmlValidCtxt *ctxt, xmlDoc *doc UNUSED,
+                      xmlNode *elem UNUSED,
+		      const xmlChar *qname UNUSED) {
     int ret = 1;
 
     if (ctxt == NULL)
@@ -6114,7 +6114,7 @@ xmlCtxtValidateDtd(xmlParserCtxt *ctxt, xmlDoc *doc, xmlDtd *dtd) {
 
 static void
 xmlValidateNotationCallback(void *payload, void *data,
-	                    const xmlChar *name ATTRIBUTE_UNUSED) {
+	                    const xmlChar *name UNUSED) {
     xmlEntityPtr cur = (xmlEntityPtr) payload;
     xmlValidCtxtPtr ctxt = (xmlValidCtxtPtr) data;
     if (cur == NULL)
@@ -6135,7 +6135,7 @@ xmlValidateNotationCallback(void *payload, void *data,
 
 static void
 xmlValidateAttributeCallback(void *payload, void *data,
-	                     const xmlChar *name ATTRIBUTE_UNUSED) {
+	                     const xmlChar *name UNUSED) {
     xmlAttributePtr cur = (xmlAttributePtr) payload;
     xmlValidCtxtPtr ctxt = (xmlValidCtxtPtr) data;
     xmlDocPtr doc;
@@ -6427,8 +6427,8 @@ xmlValidGetPotentialChildren(xmlElementContent *ctree,
 /*
  * Dummy function to suppress messages while we try out valid elements
  */
-static void xmlNoValidityErr(void *ctx ATTRIBUTE_UNUSED,
-                                const char *msg ATTRIBUTE_UNUSED, ...) {
+static void xmlNoValidityErr(void *ctx UNUSED,
+                                const char *msg UNUSED, ...) {
 }
 
 /**
