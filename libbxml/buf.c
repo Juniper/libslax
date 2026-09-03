@@ -625,7 +625,7 @@ xmlBufUpdateInput(xmlBuf *buf, xmlParserInput *input, size_t pos) {
  * @param scheme  allocation method to use
  */
 void
-xmlSetBufferAllocationScheme(xmlBufferAllocationScheme scheme ATTRIBUTE_UNUSED) {
+xmlSetBufferAllocationScheme(xmlBufferAllocationScheme scheme UNUSED) {
 }
 
 /**
@@ -769,8 +769,8 @@ xmlBufferCreateStatic(void *mem, size_t size) {
  * @param scheme  allocation scheme to use
  */
 void
-xmlBufferSetAllocationScheme(xmlBuffer *buf ATTRIBUTE_UNUSED,
-                             xmlBufferAllocationScheme scheme ATTRIBUTE_UNUSED) {
+xmlBufferSetAllocationScheme(xmlBuffer *buf UNUSED,
+                             xmlBufferAllocationScheme scheme UNUSED) {
 }
 
 /**
