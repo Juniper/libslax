@@ -64,19 +64,19 @@ const char *doc = "<doc>Failed</doc>";
 const char *expect = "<?xml version=\"1.0\"?>\nSuccess foo\n";
 
 static void fooFunction(xmlXPathParserContextPtr ctxt,
-                        int nargs ATTRIBUTE_UNUSED) {
+                        int nargs UNUSED) {
     xmlXPathReturnString(ctxt, xmlStrdup(BAD_CAST "foo"));
 }
 
 static
-void * registerFooExtensions(ATTRIBUTE_UNUSED xsltTransformContextPtr ctxt,
-                             ATTRIBUTE_UNUSED const xmlChar *URI) {
+void * registerFooExtensions(UNUSED xsltTransformContextPtr ctxt,
+                             UNUSED const xmlChar *URI) {
     xsltRegisterExtModuleFunction(BAD_CAST "foo", EXT_NS, fooFunction);
     return((void *)EXT_DATA);
 }
 
 static
-void shutdownFooExtensions(xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
+void shutdownFooExtensions(xsltTransformContextPtr ctxt UNUSED,
                            const xmlChar *URI, void *data) {
     const char *str = (const char *) data;
     if (!xmlStrEqual(URI, EXT_NS)) {
