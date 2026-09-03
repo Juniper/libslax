@@ -1410,7 +1410,7 @@ xmlNodeListGetString(xmlDoc *doc, const xmlNode *list, int inLine)
  * @returns a string or NULL if a memory allocation failed.
  */
 xmlChar *
-xmlNodeListGetRawString(const xmlDoc *doc ATTRIBUTE_UNUSED,
+xmlNodeListGetRawString(const xmlDoc *doc UNUSED,
                         const xmlNode *list, int inLine)
 {
     int escape = 0;
@@ -5506,7 +5506,7 @@ xmlTextMerge(xmlNode *first, xmlNode *second) {
  * memory allocation failed.
  */
 int
-xmlGetNsListSafe(const xmlDoc *doc ATTRIBUTE_UNUSED, const xmlNode *node,
+xmlGetNsListSafe(const xmlDoc *doc UNUSED, const xmlNode *node,
                  xmlNs ***out)
 {
     xmlNsPtr cur;
@@ -5733,7 +5733,7 @@ xmlSearchNsSafe(xmlNode *node, const xmlChar *prefix,
  * namespace is queried.
  */
 xmlNs *
-xmlSearchNs(xmlDoc *doc ATTRIBUTE_UNUSED, xmlNode *node,
+xmlSearchNs(xmlDoc *doc UNUSED, xmlNode *node,
             const xmlChar *nameSpace) {
     xmlNsPtr cur;
 
@@ -5752,7 +5752,7 @@ xmlSearchNs(xmlDoc *doc ATTRIBUTE_UNUSED, xmlNode *node,
  * @returns 1 if true, 0 if false and -1 in case of error.
  */
 static int
-xmlNsInScope(xmlDocPtr doc ATTRIBUTE_UNUSED, xmlNodePtr node,
+xmlNsInScope(xmlDocPtr doc UNUSED, xmlNodePtr node,
              xmlNodePtr ancestor, const xmlChar * prefix)
 {
     xmlNsPtr tst;
@@ -5882,7 +5882,7 @@ xmlSearchNsByHrefSafe(xmlNode *node, const xmlChar *href,
  * namespace is queried.
  */
 xmlNs *
-xmlSearchNsByHref(xmlDoc *doc ATTRIBUTE_UNUSED, xmlNode *node,
+xmlSearchNsByHref(xmlDoc *doc UNUSED, xmlNode *node,
                   const xmlChar * href) {
     xmlNsPtr cur;
 
@@ -7086,7 +7086,7 @@ xmlDOMWrapNSNormAddNsMapItem2(xmlNsPtr **list, int *size, int *number,
  */
 int
 xmlDOMWrapRemoveNode(xmlDOMWrapCtxt *ctxt, xmlDoc *doc,
-		     xmlNode *node, int options ATTRIBUTE_UNUSED)
+		     xmlNode *node, int options UNUSED)
 {
     xmlNsPtr *list = NULL;
     int sizeList = 0, nbList = 0, ret = 0, i, j;
@@ -7599,7 +7599,7 @@ typedef enum {
  * @returns 0 if succeeded, -1 otherwise and on API/internal errors.
  */
 int
-xmlDOMWrapReconcileNamespaces(xmlDOMWrapCtxt *ctxt ATTRIBUTE_UNUSED,
+xmlDOMWrapReconcileNamespaces(xmlDOMWrapCtxt *ctxt UNUSED,
 			      xmlNode *elem,
 			      int options)
 {
@@ -7859,11 +7859,11 @@ next_sibling:
  */
 static int
 xmlDOMWrapAdoptBranch(xmlDOMWrapCtxtPtr ctxt,
-		      xmlDocPtr sourceDoc ATTRIBUTE_UNUSED,
+		      xmlDocPtr sourceDoc UNUSED,
 		      xmlNodePtr node,
 		      xmlDocPtr destDoc,
 		      xmlNodePtr destParent,
-		      int options ATTRIBUTE_UNUSED)
+		      int options UNUSED)
 {
     int ret = 0;
     xmlNodePtr cur, curElem = NULL;
@@ -8151,7 +8151,7 @@ xmlDOMWrapCloneNode(xmlDOMWrapCtxt *ctxt,
 		      xmlDoc *destDoc,
 		      xmlNode *destParent,
 		      int deep,
-		      int options ATTRIBUTE_UNUSED)
+		      int options UNUSED)
 {
     int ret = 0;
     xmlNodePtr cur, cloneElem = NULL;
@@ -8671,11 +8671,11 @@ exit:
  */
 static int
 xmlDOMWrapAdoptAttr(xmlDOMWrapCtxtPtr ctxt,
-		    xmlDocPtr sourceDoc ATTRIBUTE_UNUSED,
+		    xmlDocPtr sourceDoc UNUSED,
 		    xmlAttrPtr attr,
 		    xmlDocPtr destDoc,
 		    xmlNodePtr destParent,
-		    int options ATTRIBUTE_UNUSED)
+		    int options UNUSED)
 {
     int ret = 0;
 
