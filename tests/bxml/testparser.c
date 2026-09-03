@@ -21,8 +21,8 @@
 
 #ifdef LIBXML_SAX1_ENABLED
 static void
-ignoreError(void *ctxt ATTRIBUTE_UNUSED,
-            const xmlError *error ATTRIBUTE_UNUSED) {
+ignoreError(void *ctxt UNUSED,
+            const xmlError *error UNUSED) {
 }
 #endif
 
@@ -274,9 +274,9 @@ testCtxtInputGetters(void) {
 
 #ifdef LIBXML_VALID_ENABLED
 static void
-testSwitchDtdExtSubset(void *vctxt, const xmlChar *name ATTRIBUTE_UNUSED,
-                       const xmlChar *externalId ATTRIBUTE_UNUSED,
-                       const xmlChar *systemId ATTRIBUTE_UNUSED) {
+testSwitchDtdExtSubset(void *vctxt, const xmlChar *name UNUSED,
+                       const xmlChar *externalId UNUSED,
+                       const xmlChar *systemId UNUSED) {
     xmlParserCtxtPtr ctxt = vctxt;
 
     ctxt->myDoc->extSubset = ctxt->_private;
@@ -1056,8 +1056,8 @@ typedef struct {
 #ifdef LIBXML_SCHEMAS_ENABLED
 static xmlParserErrors
 testReaderResourceLoader(void *ctxt, const char *url,
-                         const char *publicId ATTRIBUTE_UNUSED,
-                         xmlResourceType type ATTRIBUTE_UNUSED,
+                         const char *publicId UNUSED,
+                         xmlResourceType type UNUSED,
                          xmlParserInputFlags flags,
                          xmlParserInputPtr *out) {
     testReaderResourceLoaderCtxt *loaderCtxt = ctxt;
@@ -1178,8 +1178,8 @@ testReaderSchemaEntityExpansion(void) {
 #ifdef LIBXML_RELAXNG_ENABLED
 static xmlParserErrors
 testReaderRelaxNGResourceLoader(void *ctxt, const char *url,
-                                const char *publicId ATTRIBUTE_UNUSED,
-                                xmlResourceType type ATTRIBUTE_UNUSED,
+                                const char *publicId UNUSED,
+                                xmlResourceType type UNUSED,
                                 xmlParserInputFlags flags,
                                 xmlParserInputPtr *out) {
     testReaderResourceLoaderCtxt *loaderCtxt = ctxt;
@@ -1251,8 +1251,8 @@ typedef struct {
 
 static void
 testReaderError(void *arg, const char *msg,
-                xmlParserSeverities severity ATTRIBUTE_UNUSED,
-                xmlTextReaderLocatorPtr locator ATTRIBUTE_UNUSED) {
+                xmlParserSeverities severity UNUSED,
+                xmlTextReaderLocatorPtr locator UNUSED) {
     testReaderErrorCtxt *ctxt = arg;
 
     if (ctxt->message != NULL)
@@ -1651,7 +1651,7 @@ static int charEncConvImplError;
 static xmlCharEncError
 rot13Convert(void *vctxt, unsigned char *out, int *outlen,
              const unsigned char *in, int *inlen,
-             int flush ATTRIBUTE_UNUSED) {
+             int flush UNUSED) {
     int *ctxt = vctxt;
     int inSize = *inlen;
     int outSize = *outlen;
@@ -1682,7 +1682,7 @@ rot13ConvCtxtDtor(void *vctxt) {
 }
 
 static xmlParserErrors
-rot13ConvImpl(void *vctxt ATTRIBUTE_UNUSED, const char *name,
+rot13ConvImpl(void *vctxt UNUSED, const char *name,
               xmlCharEncFlags flags, xmlCharEncodingHandler **out) {
     int *inputCtxt;
 
