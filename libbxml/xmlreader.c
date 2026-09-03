@@ -4110,7 +4110,7 @@ static int
 xmlTextReaderRelaxNGValidateInternal(xmlTextReaderPtr reader,
 				     const char *rng,
 				     xmlRelaxNGValidCtxtPtr ctxt,
-				     int options ATTRIBUTE_UNUSED)
+				     int options UNUSED)
 {
     if (reader == NULL)
 	return(-1);
@@ -4201,7 +4201,7 @@ static int
 xmlTextReaderSchemaValidateInternal(xmlTextReaderPtr reader,
 				    const char *xsd,
 				    xmlSchemaValidCtxtPtr ctxt,
-				    int options ATTRIBUTE_UNUSED)
+				    int options UNUSED)
 {
     if (reader == NULL)
         return(-1);
