@@ -33,7 +33,7 @@ xmlNanoHTTPCleanup(void) {
  * @param URL  The proxy URL used to initialize the proxy context
  */
 void
-xmlNanoHTTPScanProxy(const char *URL ATTRIBUTE_UNUSED) {
+xmlNanoHTTPScanProxy(const char *URL UNUSED) {
 }
 
 /**
@@ -45,7 +45,7 @@ xmlNanoHTTPScanProxy(const char *URL ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 void*
-xmlNanoHTTPOpen(const char *URL ATTRIBUTE_UNUSED, char **contentType) {
+xmlNanoHTTPOpen(const char *URL UNUSED, char **contentType) {
     if (contentType != NULL) *contentType = NULL;
     return(NULL);
 }
@@ -60,7 +60,7 @@ xmlNanoHTTPOpen(const char *URL ATTRIBUTE_UNUSED, char **contentType) {
  * @returns NULL.
  */
 void*
-xmlNanoHTTPOpenRedir(const char *URL ATTRIBUTE_UNUSED, char **contentType,
+xmlNanoHTTPOpenRedir(const char *URL UNUSED, char **contentType,
                      char **redir) {
     if (contentType != NULL) *contentType = NULL;
     if (redir != NULL) *redir = NULL;
@@ -76,8 +76,8 @@ xmlNanoHTTPOpenRedir(const char *URL ATTRIBUTE_UNUSED, char **contentType,
  * @returns -1.
  */
 int
-xmlNanoHTTPRead(void *ctx ATTRIBUTE_UNUSED, void *dest ATTRIBUTE_UNUSED,
-                int len ATTRIBUTE_UNUSED) {
+xmlNanoHTTPRead(void *ctx UNUSED, void *dest UNUSED,
+                int len UNUSED) {
     return(-1);
 }
 
@@ -86,7 +86,7 @@ xmlNanoHTTPRead(void *ctx ATTRIBUTE_UNUSED, void *dest ATTRIBUTE_UNUSED,
  * @param ctx  the HTTP context
  */
 void
-xmlNanoHTTPClose(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPClose(void *ctx UNUSED) {
 }
 
 /**
@@ -102,12 +102,12 @@ xmlNanoHTTPClose(void *ctx ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 void*
-xmlNanoHTTPMethodRedir(const char *URL ATTRIBUTE_UNUSED,
-                       const char *method ATTRIBUTE_UNUSED,
-                       const char *input ATTRIBUTE_UNUSED,
+xmlNanoHTTPMethodRedir(const char *URL UNUSED,
+                       const char *method UNUSED,
+                       const char *input UNUSED,
                        char **contentType, char **redir,
-                       const char *headers ATTRIBUTE_UNUSED,
-                       int ilen ATTRIBUTE_UNUSED) {
+                       const char *headers UNUSED,
+                       int ilen UNUSED) {
     if (contentType != NULL) *contentType = NULL;
     if (redir != NULL) *redir = NULL;
     return(NULL);
@@ -125,11 +125,11 @@ xmlNanoHTTPMethodRedir(const char *URL ATTRIBUTE_UNUSED,
  * @returns NULL.
  */
 void*
-xmlNanoHTTPMethod(const char *URL ATTRIBUTE_UNUSED,
-                  const char *method ATTRIBUTE_UNUSED,
-                  const char *input ATTRIBUTE_UNUSED,
-                  char **contentType, const char *headers ATTRIBUTE_UNUSED,
-                  int ilen ATTRIBUTE_UNUSED) {
+xmlNanoHTTPMethod(const char *URL UNUSED,
+                  const char *method UNUSED,
+                  const char *input UNUSED,
+                  char **contentType, const char *headers UNUSED,
+                  int ilen UNUSED) {
     if (contentType != NULL) *contentType = NULL;
     return(NULL);
 }
@@ -144,8 +144,8 @@ xmlNanoHTTPMethod(const char *URL ATTRIBUTE_UNUSED,
  * @returns -1.
  */
 int
-xmlNanoHTTPFetch(const char *URL ATTRIBUTE_UNUSED,
-                 const char *filename ATTRIBUTE_UNUSED, char **contentType) {
+xmlNanoHTTPFetch(const char *URL UNUSED,
+                 const char *filename UNUSED, char **contentType) {
     if (contentType != NULL) *contentType = NULL;
     return(-1);
 }
@@ -159,8 +159,8 @@ xmlNanoHTTPFetch(const char *URL ATTRIBUTE_UNUSED,
  * @returns -1.
  */
 int
-xmlNanoHTTPSave(void *ctxt ATTRIBUTE_UNUSED,
-                const char *filename ATTRIBUTE_UNUSED) {
+xmlNanoHTTPSave(void *ctxt UNUSED,
+                const char *filename UNUSED) {
     return(-1);
 }
 #endif /* LIBXML_OUTPUT_ENABLED */
@@ -172,7 +172,7 @@ xmlNanoHTTPSave(void *ctxt ATTRIBUTE_UNUSED,
  * @returns -1.
  */
 int
-xmlNanoHTTPReturnCode(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPReturnCode(void *ctx UNUSED) {
     return(-1);
 }
 
@@ -183,7 +183,7 @@ xmlNanoHTTPReturnCode(void *ctx ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 const char *
-xmlNanoHTTPAuthHeader(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPAuthHeader(void *ctx UNUSED) {
     return(NULL);
 }
 
@@ -194,7 +194,7 @@ xmlNanoHTTPAuthHeader(void *ctx ATTRIBUTE_UNUSED) {
  * @returns -1.
  */
 int
-xmlNanoHTTPContentLength(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPContentLength(void *ctx UNUSED) {
     return(-1);
 }
 
@@ -205,7 +205,7 @@ xmlNanoHTTPContentLength(void *ctx ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 const char *
-xmlNanoHTTPRedir(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPRedir(void *ctx UNUSED) {
     return(NULL);
 }
 
@@ -216,7 +216,7 @@ xmlNanoHTTPRedir(void *ctx ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 const char *
-xmlNanoHTTPEncoding(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPEncoding(void *ctx UNUSED) {
     return(NULL);
 }
 
@@ -227,7 +227,7 @@ xmlNanoHTTPEncoding(void *ctx ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 const char *
-xmlNanoHTTPMimeType(void *ctx ATTRIBUTE_UNUSED) {
+xmlNanoHTTPMimeType(void *ctx UNUSED) {
     return(NULL);
 }
 
@@ -238,7 +238,7 @@ xmlNanoHTTPMimeType(void *ctx ATTRIBUTE_UNUSED) {
  * @returns 0.
  */
 int
-xmlIOHTTPMatch(const char *filename ATTRIBUTE_UNUSED) {
+xmlIOHTTPMatch(const char *filename UNUSED) {
     return(0);
 }
 
@@ -249,7 +249,7 @@ xmlIOHTTPMatch(const char *filename ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 void *
-xmlIOHTTPOpen(const char *filename ATTRIBUTE_UNUSED) {
+xmlIOHTTPOpen(const char *filename UNUSED) {
     return(NULL);
 }
 
@@ -262,8 +262,8 @@ xmlIOHTTPOpen(const char *filename ATTRIBUTE_UNUSED) {
  * @returns NULL.
  */
 void *
-xmlIOHTTPOpenW(const char *post_uri ATTRIBUTE_UNUSED,
-               int compression ATTRIBUTE_UNUSED)
+xmlIOHTTPOpenW(const char *post_uri UNUSED,
+               int compression UNUSED)
 {
     return(NULL);
 }
@@ -278,8 +278,8 @@ xmlIOHTTPOpenW(const char *post_uri ATTRIBUTE_UNUSED,
  * @returns -1.
  */
 int
-xmlIOHTTPRead(void *context ATTRIBUTE_UNUSED, char *buffer ATTRIBUTE_UNUSED,
-              int len ATTRIBUTE_UNUSED) {
+xmlIOHTTPRead(void *context UNUSED, char *buffer UNUSED,
+              int len UNUSED) {
     return(-1);
 }
 
@@ -290,7 +290,7 @@ xmlIOHTTPRead(void *context ATTRIBUTE_UNUSED, char *buffer ATTRIBUTE_UNUSED,
  * @returns 0
  */
 int
-xmlIOHTTPClose (void *context ATTRIBUTE_UNUSED) {
+xmlIOHTTPClose (void *context UNUSED) {
     return 0;
 }
 
