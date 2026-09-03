@@ -362,10 +362,10 @@ def print_function_wrapper(name, output, export, include):
         return 1
 
     output.write("PyObject *\n")
-    output.write("libxslt_%s(PyObject *self ATTRIBUTE_UNUSED," % (name))
+    output.write("libxslt_%s(PyObject *self UNUSED," % (name))
     output.write(" PyObject *args")
     if format == "":
-        output.write(" ATTRIBUTE_UNUSED")
+        output.write(" UNUSED")
     output.write(") {\n")
     if ret[0] != 'void':
         output.write("    PyObject *py_retval;\n")
@@ -434,6 +434,9 @@ def buildStubs():
     wrapper = open("libxslt-py.c", "w")
     wrapper.write("/* Generated */\n\n")
 #    wrapper.write("#include \"config.h\"\n")
+    wrapper.write("#include <libbxslt/libbxsltconfig.h>\n")
+    wrapper.write("#include <libpsu/psucommon.h>\n")
+    wrapper.write("#include <libxslt/xsltconfig.h>\n")
     wrapper.write("#include <libxslt/xsltconfig.h>\n")
     wrapper.write("#include \"libxslt_wrap.h\"\n")
     wrapper.write("#include \"libxslt-py.h\"\n\n")
