@@ -211,9 +211,9 @@ xsltSetCtxtSecurityPrefs(xsltSecurityPrefsPtr sec,
  * Returns 1 always
  */
 int
-xsltSecurityAllow(xsltSecurityPrefsPtr sec ATTRIBUTE_UNUSED,
-	          xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		  const char *value ATTRIBUTE_UNUSED) {
+xsltSecurityAllow(xsltSecurityPrefsPtr sec UNUSED,
+	          xsltTransformContextPtr ctxt UNUSED,
+		  const char *value UNUSED) {
     return(1);
 }
 
@@ -228,9 +228,9 @@ xsltSecurityAllow(xsltSecurityPrefsPtr sec ATTRIBUTE_UNUSED,
  * Returns 0 always
  */
 int
-xsltSecurityForbid(xsltSecurityPrefsPtr sec ATTRIBUTE_UNUSED,
-	          xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		  const char *value ATTRIBUTE_UNUSED) {
+xsltSecurityForbid(xsltSecurityPrefsPtr sec UNUSED,
+	          xsltTransformContextPtr ctxt UNUSED,
+		  const char *value UNUSED) {
     return(0);
 }
 
