@@ -67,7 +67,7 @@ static xmlChar *testStyleData = NULL;
  */
 static void
 xsltExtFunctionTest(xmlXPathParserContextPtr ctxt,
-                    int nargs ATTRIBUTE_UNUSED)
+                    int nargs UNUSED)
 {
     xsltTransformContextPtr tctxt;
     void *data = NULL;
@@ -162,7 +162,7 @@ xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
 static void
 xsltExtElementTest(xsltTransformContextPtr ctxt, xmlNodePtr node,
                    xmlNodePtr inst,
-                   xsltElemPreCompPtr comp ATTRIBUTE_UNUSED)
+                   xsltElemPreCompPtr comp UNUSED)
 {
     xmlNodePtr commentNode;
 
@@ -273,7 +273,7 @@ xsltExtShutdownTest(xsltTransformContextPtr ctxt,
  * Returns a pointer to the module specific data for this transformation
  */
 static void *
-xsltExtStyleInitTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
+xsltExtStyleInitTest(xsltStylesheetPtr style UNUSED,
                      const xmlChar * URI)
 {
     if (testStyleData != NULL) {
@@ -297,7 +297,7 @@ xsltExtStyleInitTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
  * A function called at shutdown time of an XSLT extension module
  */
 static void
-xsltExtStyleShutdownTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
+xsltExtStyleShutdownTest(xsltStylesheetPtr style UNUSED,
                          const xmlChar * URI, void *data)
 {
     if (testStyleData == NULL) {
