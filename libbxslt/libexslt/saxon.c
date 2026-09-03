@@ -23,14 +23,14 @@
  * Returns the data for this transformation
  */
 static void *
-exsltSaxonInit (xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		const xmlChar *URI ATTRIBUTE_UNUSED) {
+exsltSaxonInit (xsltTransformContextPtr ctxt UNUSED,
+		const xmlChar *URI UNUSED) {
     return xmlHashCreate(1);
 }
 
 static void
 exsltSaxonFreeCompExprEntry(void *payload,
-                            const xmlChar *name ATTRIBUTE_UNUSED) {
+                            const xmlChar *name UNUSED) {
     xmlXPathFreeCompExpr((xmlXPathCompExprPtr) payload);
 }
 
@@ -43,8 +43,8 @@ exsltSaxonFreeCompExprEntry(void *payload,
  * Shutdown the SAXON extension module
  */
 static void
-exsltSaxonShutdown (xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		    const xmlChar *URI ATTRIBUTE_UNUSED,
+exsltSaxonShutdown (xsltTransformContextPtr ctxt UNUSED,
+		    const xmlChar *URI UNUSED,
 		    void *vdata) {
     xmlHashTablePtr data = (xmlHashTablePtr) vdata;
     xmlHashFree(data, exsltSaxonFreeCompExprEntry);
