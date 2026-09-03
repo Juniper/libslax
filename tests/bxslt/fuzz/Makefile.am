@@ -5,8 +5,15 @@ EXTRA_PROGRAMS = genSeed xpath xslt
 noinst_PROGRAMS = testTargets
 EXTRA_DIST = xpath.dict xslt.dict
 CLEANFILES = $(EXTRA_PROGRAMS)
-AM_CPPFLAGS = -I$(top_builddir)/libbxslt -I$(top_srcdir)/libbxslt \
-	      -I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
+
+AM_CPPFLAGS = \
+-I$(top_builddir) \
+-I$(top_srcdir) \
+-I$(top_builddir)/libbxslt \
+-I$(top_srcdir)/libbxslt \
+-I$(top_builddir)/libbxml/include \
+-I$(top_srcdir)/libbxml/include
+
 DEPENDENCIES = $(LIBXSLT_LIBS)
 LDADD = $(LIBXSLT_LIBS) \
         $(top_builddir)/libbxml/libbxml.la $(EXTRA_LIBS) $(LIBM)
