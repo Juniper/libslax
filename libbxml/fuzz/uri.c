@@ -8,8 +8,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc ATTRIBUTE_UNUSED,
-                     char ***argv ATTRIBUTE_UNUSED) {
+LLVMFuzzerInitialize(int *argc UNUSED,
+                     char ***argv UNUSED) {
     xmlFuzzMemSetup();
 
     return 0;
