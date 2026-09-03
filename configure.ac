@@ -1909,7 +1909,6 @@ AC_CONFIG_FILES([
   parrotdb/Makefile
   libxi/Makefile
   libslax/Makefile
-  libslax/slaxversion.h
   extensions/Makefile
   extensions/bit/Makefile
   extensions/curl/Makefile
