@@ -44,21 +44,21 @@
 #endif
 
 /**
- * ATTRIBUTE_UNUSED:
+ * UNUSED:
  *
  * Macro used to signal to GCC unused function parameters
  * Repeated here since the definition is not available when
  * compiled outside the libxml2 build tree.
  */
 #if defined(__GNUC__) || defined(__clang__)
-#ifdef ATTRIBUTE_UNUSED
-#undef ATTRIBUTE_UNUSED
+#ifdef UNUSED
+#undef UNUSED
 #endif
-#ifndef ATTRIBUTE_UNUSED
-#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-#endif /* ATTRIBUTE_UNUSED */
+#ifndef UNUSED
+#define UNUSED __attribute__ ((__unused__))
+#endif /* UNUSED */
 #else
-#define ATTRIBUTE_UNUSED
+#define UNUSED
 #endif
 
 /*
