@@ -64,9 +64,9 @@ xmlCtxtDumpInitCtxt(xmlDebugCtxtPtr ctxt)
 }
 
 static void
-xmlCtxtDumpCleanCtxt(xmlDebugCtxtPtr ctxt ATTRIBUTE_UNUSED)
+xmlCtxtDumpCleanCtxt(xmlDebugCtxtPtr ctxt UNUSED)
 {
- /* remove the ATTRIBUTE_UNUSED when this is added */
+ /* remove the UNUSED when this is added */
 }
 
 /**
@@ -1177,7 +1177,7 @@ xmlCtxtDumpDocument(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
 
 static void
 xmlCtxtDumpEntityCallback(void *payload, void *data,
-                          const xmlChar *name ATTRIBUTE_UNUSED)
+                          const xmlChar *name UNUSED)
 {
     xmlEntityPtr cur = (xmlEntityPtr) payload;
     xmlDebugCtxtPtr ctxt = (xmlDebugCtxtPtr) data;
