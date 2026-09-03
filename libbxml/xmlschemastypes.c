@@ -473,7 +473,7 @@ xmlSchemaAddParticle(void)
 }
 
 static void
-xmlSchemaFreeTypeEntry(void *type, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlSchemaFreeTypeEntry(void *type, const xmlChar *name UNUSED) {
     xmlSchemaFreeType((xmlSchemaTypePtr) type);
 }
 
@@ -1997,7 +1997,7 @@ error:
  *         and -1 in case of internal or API error.
  */
 static int
-xmlSchemaValidateDuration (xmlSchemaTypePtr type ATTRIBUTE_UNUSED,
+xmlSchemaValidateDuration (xmlSchemaTypePtr type UNUSED,
 	                   const xmlChar *duration, xmlSchemaValPtr *val,
 			   int collapse) {
     const xmlChar  *cur = duration;
