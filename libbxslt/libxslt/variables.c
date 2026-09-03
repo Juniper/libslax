@@ -206,7 +206,7 @@ xsltRegisterLocalRVT(xsltTransformContextPtr ctxt,
  */
 int
 xsltExtensionInstructionResultFinalize(
-        xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED)
+        xsltTransformContextPtr ctxt UNUSED)
 {
     xmlGenericError(xmlGenericErrorContext,
             "xsltExtensionInstructionResultFinalize is unsupported "
@@ -232,8 +232,8 @@ xsltExtensionInstructionResultFinalize(
  */
 int
 xsltExtensionInstructionResultRegister(
-        xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-	xmlXPathObjectPtr obj ATTRIBUTE_UNUSED)
+        xsltTransformContextPtr ctxt UNUSED,
+	xmlXPathObjectPtr obj UNUSED)
 {
     return(0);
 }
@@ -611,7 +611,7 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
 }
 
 static void
-xsltFreeStackElemEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xsltFreeStackElemEntry(void *payload, const xmlChar *name UNUSED) {
     xsltFreeStackElem((xsltStackElemPtr) payload);
 }
 
