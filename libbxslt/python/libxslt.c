@@ -111,7 +111,7 @@ libxslt_xsltElemPreCompPtrWrap(xsltElemPreCompPtr ctxt) {
 }
 
 PyObject *
-libxslt_xsltGetTransformContextHashCode(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltGetTransformContextHashCode(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_tctxt;
     PyObject *ret;
     long hash_code;
@@ -129,7 +129,7 @@ libxslt_xsltGetTransformContextHashCode(PyObject *self ATTRIBUTE_UNUSED, PyObjec
 }
 
 PyObject *
-libxslt_xsltCompareTransformContextsEqual(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltCompareTransformContextsEqual(PyObject *self UNUSED, PyObject *args) {
 
     PyObject *py_tctxt1, *py_tctxt2;
     xsltTransformContextPtr tctxt1, tctxt2;
@@ -148,7 +148,7 @@ libxslt_xsltCompareTransformContextsEqual(PyObject *self ATTRIBUTE_UNUSED, PyObj
 }
 
 PyObject *
-libxslt_xsltGetStylesheetHashCode(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltGetStylesheetHashCode(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_style;
     PyObject *ret;
     long hash_code;
@@ -167,7 +167,7 @@ libxslt_xsltGetStylesheetHashCode(PyObject *self ATTRIBUTE_UNUSED, PyObject *arg
 
 
 PyObject *
-libxslt_xsltCompareStylesheetsEqual(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltCompareStylesheetsEqual(PyObject *self UNUSED, PyObject *args) {
 
     PyObject *py_style1, *py_style2;
     xsltStylesheetPtr style1, style2;
@@ -196,7 +196,7 @@ static xmlHashTablePtr libxslt_extModuleElements = NULL;
 static xmlHashTablePtr libxslt_extModuleElementPreComp = NULL;
 
 static void
-deallocateCallback(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+deallocateCallback(void *payload, const xmlChar *name UNUSED) {
     PyObject *function = (PyObject *) payload;
 
 #ifdef DEBUG_EXTENSIONS
@@ -207,7 +207,7 @@ deallocateCallback(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
 }
 
 static void
-deallocateClasse(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+deallocateClasse(void *payload, const xmlChar *name UNUSED) {
     PyObject *class = (PyObject *) payload;
 
 #ifdef DEBUG_EXTENSIONS
@@ -364,7 +364,7 @@ libxslt_xsltElementTransformCallback(xsltTransformContextPtr ctxt,
 }
 
 PyObject *
-libxslt_xsltRegisterExtModuleElement(PyObject *self ATTRIBUTE_UNUSED,
+libxslt_xsltRegisterExtModuleElement(PyObject *self UNUSED,
 	                              PyObject *args) {
     PyObject *py_retval;
     int ret = 0;
@@ -477,7 +477,7 @@ libxslt_xmlXPathFuncCallback(xmlXPathParserContextPtr ctxt, int nargs) {
 }
 
 PyObject *
-libxslt_xsltRegisterExtModuleFunction(PyObject *self ATTRIBUTE_UNUSED,
+libxslt_xsltRegisterExtModuleFunction(PyObject *self UNUSED,
 	                              PyObject *args) {
     PyObject *py_retval;
     int ret = 0;
@@ -529,8 +529,8 @@ static PyObject *pythonDocLoaderObject = NULL;
 
 static xmlDocPtr
 pythonDocLoaderFuncWrapper(const xmlChar * URI, xmlDictPtr dict, int options,
-                           void *ctxt ATTRIBUTE_UNUSED,
-                           xsltLoadType type ATTRIBUTE_UNUSED)
+                           void *ctxt UNUSED,
+                           xsltLoadType type UNUSED)
 {
     xmlParserCtxtPtr pctxt;
     xmlDocPtr doc=NULL;
@@ -604,7 +604,7 @@ pythonDocLoaderFuncWrapper(const xmlChar * URI, xmlDictPtr dict, int options,
 
 
 PyObject *
-libxslt_xsltSetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltSetLoaderFunc(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     PyObject *loader;
 
@@ -620,8 +620,8 @@ libxslt_xsltSetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 PyObject *
-libxslt_xsltGetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED,
-	                  PyObject *args ATTRIBUTE_UNUSED) {
+libxslt_xsltGetLoaderFunc(PyObject *self UNUSED,
+	                  PyObject *args UNUSED) {
     PyObject *py_retval;
 
     py_retval = pythonDocLoaderObject;
@@ -636,7 +636,7 @@ libxslt_xsltGetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED,
  ************************************************************************/
 
 PyObject *
-libxslt_xsltNewTransformContext(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltNewTransformContext(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     PyObject *pyobj_style;
     PyObject *pyobj_doc;
@@ -657,7 +657,7 @@ libxslt_xsltNewTransformContext(PyObject *self ATTRIBUTE_UNUSED, PyObject *args)
 }
 
 PyObject *
-libxslt_xsltFreeTransformContext(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltFreeTransformContext(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_tctxt;
     xsltTransformContextPtr tctxt;
 
@@ -673,7 +673,7 @@ libxslt_xsltFreeTransformContext(PyObject *self ATTRIBUTE_UNUSED, PyObject *args
 }
 
 PyObject *
-libxslt_xsltApplyStylesheetUser(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltApplyStylesheetUser(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     xmlDocPtr c_retval;
     xsltStylesheetPtr style;
@@ -763,7 +763,7 @@ libxslt_xsltApplyStylesheetUser(PyObject *self ATTRIBUTE_UNUSED, PyObject *args)
 }
 
 PyObject *
-libxslt_xsltApplyStylesheet(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltApplyStylesheet(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     xmlDocPtr c_retval;
     xsltStylesheetPtr style;
@@ -850,7 +850,7 @@ libxslt_xsltApplyStylesheet(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 PyObject *
-libxslt_xsltSaveResultToString(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxslt_xsltSaveResultToString(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;        /* our final return value, a python string   */
     xmlChar  *buffer;
     int       size    = 0;
@@ -908,8 +908,8 @@ libxslt_xsltSaveResultToString(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) 
 static PyObject *libxslt_xsltPythonErrorFuncHandler = NULL;
 static PyObject *libxslt_xsltPythonErrorFuncCtxt = NULL;
 
-static void LIBXSLT_ATTR_FORMAT(2,3)
-libxslt_xsltErrorFuncHandler(void *ctx ATTRIBUTE_UNUSED, const char *msg,
+static void PSU_PRINTFLIKE(2,3)
+libxslt_xsltErrorFuncHandler(void *ctx UNUSED, const char *msg,
                            ...)
 {
     int size;
@@ -976,7 +976,7 @@ libxslt_xsltErrorInitialize(void)
 }
 
 PyObject *
-libxslt_xsltRegisterErrorHandler(PyObject * self ATTRIBUTE_UNUSED,
+libxslt_xsltRegisterErrorHandler(PyObject * self UNUSED,
                                PyObject * args)
 {
     PyObject *py_retval;
@@ -1143,7 +1143,7 @@ libxslt_xsltPythonExtModuleCtxtShutdown(xsltTransformContextPtr ctxt,
 }
 
 PyObject *
-libxslt_xsltRegisterExtensionClass(PyObject *self ATTRIBUTE_UNUSED,
+libxslt_xsltRegisterExtensionClass(PyObject *self UNUSED,
 	                           PyObject *args) {
     PyObject *py_retval;
     int ret = 0;
@@ -1195,8 +1195,8 @@ libxslt_xsltRegisterExtensionClass(PyObject *self ATTRIBUTE_UNUSED,
  ************************************************************************/
 
 PyObject *
-libxslt_xsltPythonCleanup(PyObject *self ATTRIBUTE_UNUSED,
-	                  PyObject *args ATTRIBUTE_UNUSED) {
+libxslt_xsltPythonCleanup(PyObject *self UNUSED,
+	                  PyObject *args UNUSED) {
 
     if (libxslt_extModuleFunctions != NULL) {
 	xmlHashFree(libxslt_extModuleFunctions, deallocateCallback);
