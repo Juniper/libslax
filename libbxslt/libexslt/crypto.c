@@ -354,7 +354,7 @@ exsltCryptoGcryptInit (void) {
  * using gcrypt
  */
 static void
-exsltCryptoGcryptHash (xmlXPathParserContextPtr ctxt ATTRIBUTE_UNUSED,
+exsltCryptoGcryptHash (xmlXPathParserContextPtr ctxt UNUSED,
 /* changed the enum to int */
 		       int algorithm, const char *msg,
 		       unsigned long msglen,
