@@ -64,8 +64,8 @@ typedef struct memnod {
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMallocLoc(size_t size, const char *file ATTRIBUTE_UNUSED,
-             int line ATTRIBUTE_UNUSED)
+xmlMallocLoc(size_t size, const char *file UNUSED,
+             int line UNUSED)
 {
     return(xmlMemMalloc(size));
 }
@@ -79,8 +79,8 @@ xmlMallocLoc(size_t size, const char *file ATTRIBUTE_UNUSED,
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMallocAtomicLoc(size_t size, const char *file ATTRIBUTE_UNUSED,
-                   int line ATTRIBUTE_UNUSED)
+xmlMallocAtomicLoc(size_t size, const char *file UNUSED,
+                   int line UNUSED)
 {
     return(xmlMemMalloc(size));
 }
@@ -125,8 +125,8 @@ xmlMemMalloc(size_t size)
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlReallocLoc(void *ptr, size_t size, const char *file ATTRIBUTE_UNUSED,
-              int line ATTRIBUTE_UNUSED)
+xmlReallocLoc(void *ptr, size_t size, const char *file UNUSED,
+              int line UNUSED)
 {
     return(xmlMemRealloc(ptr, size));
 }
@@ -219,8 +219,8 @@ xmlMemFree(void *ptr)
  * @returns a pointer to the new string or NULL if allocation error occurred.
  */
 char *
-xmlMemStrdupLoc(const char *str, const char *file ATTRIBUTE_UNUSED,
-                int line ATTRIBUTE_UNUSED)
+xmlMemStrdupLoc(const char *str, const char *file UNUSED,
+                int line UNUSED)
 {
     return(xmlMemoryStrdup(str));
 }
@@ -312,7 +312,7 @@ xmlMemBlocks(void) {
  * @param nbBytes  the amount of memory to dump
  */
 void
-xmlMemDisplayLast(FILE *fp ATTRIBUTE_UNUSED, long nbBytes ATTRIBUTE_UNUSED)
+xmlMemDisplayLast(FILE *fp UNUSED, long nbBytes UNUSED)
 {
 }
 
@@ -321,7 +321,7 @@ xmlMemDisplayLast(FILE *fp ATTRIBUTE_UNUSED, long nbBytes ATTRIBUTE_UNUSED)
  * @param fp  a FILE descriptor
  */
 void
-xmlMemDisplay(FILE *fp ATTRIBUTE_UNUSED)
+xmlMemDisplay(FILE *fp UNUSED)
 {
 }
 
@@ -331,7 +331,7 @@ xmlMemDisplay(FILE *fp ATTRIBUTE_UNUSED)
  * @param nr  number of entries to dump
  */
 void
-xmlMemShow(FILE *fp ATTRIBUTE_UNUSED, int nr ATTRIBUTE_UNUSED)
+xmlMemShow(FILE *fp UNUSED, int nr UNUSED)
 {
 }
 
