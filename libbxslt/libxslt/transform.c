@@ -3317,7 +3317,7 @@ void
 xsltApplyOneTemplate(xsltTransformContextPtr ctxt,
 		     xmlNodePtr contextNode,
                      xmlNodePtr list,
-		     xsltTemplatePtr templ ATTRIBUTE_UNUSED,
+		     xsltTemplatePtr templ UNUSED,
                      xsltStackElemPtr params)
 {
     if ((ctxt == NULL) || (list == NULL))
@@ -3881,7 +3881,7 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
  */
 void
 xsltSort(xsltTransformContextPtr ctxt,
-	xmlNodePtr node ATTRIBUTE_UNUSED, xmlNodePtr inst,
+	xmlNodePtr node UNUSED, xmlNodePtr inst,
 	xsltElemPreCompPtr comp) {
     if (comp == NULL) {
 	xsltTransformError(ctxt, NULL, inst,
@@ -4021,8 +4021,8 @@ xsltCopy(xsltTransformContextPtr ctxt, xmlNodePtr node,
  * Process the xslt text node on the source node
  */
 void
-xsltText(xsltTransformContextPtr ctxt, xmlNodePtr node ATTRIBUTE_UNUSED,
-	    xmlNodePtr inst, xsltElemPreCompPtr comp ATTRIBUTE_UNUSED) {
+xsltText(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
+	    xmlNodePtr inst, xsltElemPreCompPtr comp UNUSED) {
     if ((xmlNodeGetChildren(inst) != NULL) && (comp != NULL)) {
 	xmlNodePtr text = xmlNodeGetChildren(inst);
 	xmlNodePtr copy;
@@ -4267,7 +4267,7 @@ error:
  */
 void
 xsltComment(xsltTransformContextPtr ctxt, xmlNodePtr node,
-	           xmlNodePtr inst, xsltElemPreCompPtr comp ATTRIBUTE_UNUSED) {
+	           xmlNodePtr inst, xsltElemPreCompPtr comp UNUSED) {
     xmlChar *value = NULL;
     xmlNodePtr commentNode;
     int len;
@@ -4653,7 +4653,7 @@ xsltNumber(xsltTransformContextPtr ctxt, xmlNodePtr node,
 void
 xsltApplyImports(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
 	         xmlNodePtr inst,
-		 xsltElemPreCompPtr comp ATTRIBUTE_UNUSED)
+		 xsltElemPreCompPtr comp UNUSED)
 {
     xsltTemplatePtr templ;
 
@@ -5138,7 +5138,7 @@ error:
  */
 void
 xsltChoose(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
-	   xmlNodePtr inst, xsltElemPreCompPtr comp ATTRIBUTE_UNUSED)
+	   xmlNodePtr inst, xsltElemPreCompPtr comp UNUSED)
 {
     xmlNodePtr cur;
 
@@ -6385,7 +6385,7 @@ xsltRunStylesheet(xsltStylesheetPtr style, xmlDocPtr doc,
 
 static void
 xsltMessageWrapper(xsltTransformContextPtr ctxt, xmlNodePtr node,
-                   xmlNodePtr inst, xsltElemPreCompPtr comp ATTRIBUTE_UNUSED) {
+                   xmlNodePtr inst, xsltElemPreCompPtr comp UNUSED) {
     xsltMessage(ctxt, node, inst);
 }
 
