@@ -49,3 +49,4 @@ compile_commands.json
 .claude
 .clangd
 .cache
+.coderlm
