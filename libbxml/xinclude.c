@@ -918,7 +918,7 @@ struct _xmlXIncludeMergeData {
  */
 static void
 xmlXIncludeMergeEntity(void *payload, void *vdata,
-	               const xmlChar *name ATTRIBUTE_UNUSED) {
+	               const xmlChar *name UNUSED) {
     xmlEntityPtr ent = (xmlEntityPtr) payload;
     xmlXIncludeMergeDataPtr data = (xmlXIncludeMergeDataPtr) vdata;
     xmlEntityPtr ret, prev;
