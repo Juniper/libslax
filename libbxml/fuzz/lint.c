@@ -102,8 +102,8 @@ pushArg(const char *str) {
 }
 
 int
-LLVMFuzzerInitialize(int *argc ATTRIBUTE_UNUSED,
-                     char ***argv ATTRIBUTE_UNUSED) {
+LLVMFuzzerInitialize(int *argc UNUSED,
+                     char ***argv UNUSED) {
     int fd;
 
     /* Redirect stdout to /dev/null */
