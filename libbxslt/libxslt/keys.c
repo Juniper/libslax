@@ -145,7 +145,7 @@ xsltNewKeyTable(const xmlChar *name, const xmlChar *nameURI) {
 }
 
 static void
-xsltFreeNodeSetEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xsltFreeNodeSetEntry(void *payload, const xmlChar *name UNUSED) {
     xmlXPathFreeNodeSet((xmlNodeSetPtr) payload);
 }
 
