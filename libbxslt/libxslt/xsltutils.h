@@ -12,7 +12,8 @@
 #ifndef __XML_XSLTUTILS_H__
 #define __XML_XSLTUTILS_H__
 
-#include <libxslt/xsltconfig.h>
+#include <libbxslt/libbxsltconfig.h>
+#include <libpsu/psucommon.h>
 #include <libxml/xpath.h>
 #include <libxml/dict.h>
 #include <libxml/xmlerror.h>
@@ -170,7 +171,7 @@ XSLTPUBFUN void XSLTCALL
 						 xsltStylesheetPtr style,
 						 xmlNodePtr node,
 						 const char *msg,
-						 ...) LIBXSLT_ATTR_FORMAT(4,5);
+						 ...) PSU_PRINTFLIKE(4,5);
 
 XSLTPUBFUN int XSLTCALL
 		xsltSetCtxtParseOptions		(xsltTransformContextPtr ctxt,
