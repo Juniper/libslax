@@ -844,7 +844,7 @@ attributeDeclDebug(void *ctx, const xmlChar * elem,
 
 static void
 elementDeclDebug(void *ctx, const xmlChar *name, int type,
-	    xmlElementContentPtr content ATTRIBUTE_UNUSED)
+	    xmlElementContentPtr content UNUSED)
 {
     xmllintState *lint = ctx;
 
@@ -891,7 +891,7 @@ unparsedEntityDeclDebug(void *ctx, const xmlChar *name,
 }
 
 static void
-setDocumentLocatorDebug(void *ctx, xmlSAXLocatorPtr loc ATTRIBUTE_UNUSED)
+setDocumentLocatorDebug(void *ctx, xmlSAXLocatorPtr loc UNUSED)
 {
     xmllintState *lint = ctx;
 
