@@ -43,7 +43,7 @@
 
 typedef int (*hello_world_t)(void);
 
-int main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+int main(int argc UNUSED, char **argv UNUSED) {
     xmlChar filename[PATH_MAX];
     xmlModulePtr module = NULL;
     hello_world_t hello_world = NULL;
@@ -77,7 +77,7 @@ int main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
 }
 
 #else
-int main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+int main(int argc UNUSED, char **argv UNUSED) {
     printf("%s : Module support not compiled in\n", argv[0]);
     return(0);
 }
