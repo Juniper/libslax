@@ -370,7 +370,7 @@ xmlFreeCatalogEntryList(xmlCatalogEntryPtr ret);
  * @param name  unused
  */
 static void
-xmlFreeCatalogEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeCatalogEntry(void *payload, const xmlChar *name UNUSED) {
     xmlCatalogEntryPtr ret = (xmlCatalogEntryPtr) payload;
     if (ret == NULL)
 	return;
@@ -427,7 +427,7 @@ xmlFreeCatalogEntryList(xmlCatalogEntryPtr ret) {
  */
 static void
 xmlFreeCatalogHashEntryList(void *payload,
-                            const xmlChar *name ATTRIBUTE_UNUSED) {
+                            const xmlChar *name UNUSED) {
     xmlCatalogEntryPtr catal = (xmlCatalogEntryPtr) payload;
     xmlCatalogEntryPtr children, next;
 
@@ -512,7 +512,7 @@ xmlFreeCatalog(xmlCatalog *catal) {
  */
 static void
 xmlCatalogDumpEntry(void *payload, void *data,
-                    const xmlChar *name ATTRIBUTE_UNUSED) {
+                    const xmlChar *name UNUSED) {
     xmlCatalogEntryPtr entry = (xmlCatalogEntryPtr) payload;
     FILE *out = (FILE *) data;
     if ((entry == NULL) || (out == NULL))
@@ -780,7 +780,7 @@ xmlDumpXMLCatalog(FILE *out, xmlCatalogEntryPtr catal) {
  */
 static void
 xmlCatalogConvertEntry(void *payload, void *data,
-                       const xmlChar *name ATTRIBUTE_UNUSED) {
+                       const xmlChar *name UNUSED) {
     xmlCatalogEntryPtr entry = (xmlCatalogEntryPtr) payload;
     xmlCatalogPtr catal = (xmlCatalogPtr) data;
     if ((entry == NULL) || (catal == NULL) || (catal->sgml == NULL) ||
