@@ -1231,7 +1231,7 @@ typedef struct {
 static xmlCharEncError
 xmlIconvConvert(void *vctxt, unsigned char *out, int *outlen,
                 const unsigned char *in, int *inlen,
-                int flush ATTRIBUTE_UNUSED) {
+                int flush UNUSED) {
     xmlIconvCtxt *ctxt = vctxt;
     size_t icv_inlen, icv_outlen;
     const char *icv_in = (const char *) in;
@@ -2272,10 +2272,10 @@ xmlByteConsumed(xmlParserCtxt *ctxt) {
  ************************************************************************/
 
 static xmlCharEncError
-asciiToAscii(void *vctxt ATTRIBUTE_UNUSED,
+asciiToAscii(void *vctxt UNUSED,
              unsigned char* out, int *poutlen,
              const unsigned char* in, int *pinlen,
-             int flush ATTRIBUTE_UNUSED) {
+             int flush UNUSED) {
     const unsigned char *inend;
     const unsigned char *instart = in;
     int inlen, outlen, ret;
@@ -2317,10 +2317,10 @@ asciiToAscii(void *vctxt ATTRIBUTE_UNUSED,
 }
 
 static xmlCharEncError
-latin1ToUTF8(void *vctxt ATTRIBUTE_UNUSED,
+latin1ToUTF8(void *vctxt UNUSED,
              unsigned char* out, int *outlen,
              const unsigned char* in, int *inlen,
-             int flush ATTRIBUTE_UNUSED) {
+             int flush UNUSED) {
     unsigned char* outstart = out;
     const unsigned char* instart = in;
     unsigned char* outend;
@@ -2379,10 +2379,10 @@ xmlIsolat1ToUTF8(unsigned char* out, int *outlen,
 }
 
 static xmlCharEncError
-UTF8ToUTF8(void *vctxt ATTRIBUTE_UNUSED,
+UTF8ToUTF8(void *vctxt UNUSED,
            unsigned char* out, int *outlen,
            const unsigned char* in, int *inlen,
-           int flush ATTRIBUTE_UNUSED) {
+           int flush UNUSED) {
     int len;
     int ret;
 
@@ -2410,10 +2410,10 @@ UTF8ToUTF8(void *vctxt ATTRIBUTE_UNUSED,
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static xmlCharEncError
-UTF8ToLatin1(void *vctxt ATTRIBUTE_UNUSED,
+UTF8ToLatin1(void *vctxt UNUSED,
              unsigned char* out, int *outlen,
              const unsigned char* in, int *inlen,
-             int flush ATTRIBUTE_UNUSED) {
+             int flush UNUSED) {
     const unsigned char* outend;
     const unsigned char* outstart = out;
     const unsigned char* instart = in;
@@ -2486,10 +2486,10 @@ xmlUTF8ToIsolat1(unsigned char* out, int *outlen,
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 static xmlCharEncError
-UTF16LEToUTF8(void *vctxt ATTRIBUTE_UNUSED,
+UTF16LEToUTF8(void *vctxt UNUSED,
               unsigned char *out, int *outlen,
               const unsigned char *in, int *inlen,
-              int flush ATTRIBUTE_UNUSED) {
+              int flush UNUSED) {
     const unsigned char *instart = in;
     const unsigned char *inend = in + (*inlen & ~1);
     unsigned char *outstart = out;
@@ -2556,10 +2556,10 @@ done:
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static xmlCharEncError
-UTF8ToUTF16LE(void *vctxt ATTRIBUTE_UNUSED,
+UTF8ToUTF16LE(void *vctxt UNUSED,
               unsigned char *out, int *outlen,
               const unsigned char *in, int *inlen,
-              int flush ATTRIBUTE_UNUSED) {
+              int flush UNUSED) {
     const unsigned char *instart = in;
     const unsigned char *inend;
     unsigned char *outstart = out;
@@ -2683,10 +2683,10 @@ UTF8ToUTF16(void *vctxt,
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 static xmlCharEncError
-UTF16BEToUTF8(void *vctxt ATTRIBUTE_UNUSED,
+UTF16BEToUTF8(void *vctxt UNUSED,
               unsigned char *out, int *outlen,
               const unsigned char *in, int *inlen,
-              int flush ATTRIBUTE_UNUSED) {
+              int flush UNUSED) {
     const unsigned char *instart = in;
     const unsigned char *inend = in + (*inlen & ~1);
     unsigned char *outstart = out;
@@ -2753,10 +2753,10 @@ done:
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static xmlCharEncError
-UTF8ToUTF16BE(void *vctxt ATTRIBUTE_UNUSED,
+UTF8ToUTF16BE(void *vctxt UNUSED,
               unsigned char *out, int *outlen,
               const unsigned char *in, int *inlen,
-              int flush ATTRIBUTE_UNUSED) {
+              int flush UNUSED) {
     const unsigned char *instart = in;
     const unsigned char *inend;
     unsigned char *outstart = out;
@@ -2857,10 +2857,10 @@ done:
 
 #if defined(LIBXML_OUTPUT_ENABLED) && defined(LIBXML_HTML_ENABLED)
 static xmlCharEncError
-UTF8ToHtmlWrapper(void *vctxt ATTRIBUTE_UNUSED,
+UTF8ToHtmlWrapper(void *vctxt UNUSED,
                   unsigned char *out, int *outlen,
                   const unsigned char *in, int *inlen,
-                  int flush ATTRIBUTE_UNUSED) {
+                  int flush UNUSED) {
     return(htmlUTF8ToHtml(out, outlen, in, inlen));
 }
 #endif
@@ -2869,7 +2869,7 @@ static xmlCharEncError
 Utf8ToEightBit(void *vctxt,
                unsigned char *out, int *outlen,
                const unsigned char *in, int *inlen,
-               int flush ATTRIBUTE_UNUSED) {
+               int flush UNUSED) {
     const unsigned char *xlattable = vctxt;
     const unsigned char *instart = in;
     const unsigned char *inend;
@@ -2951,7 +2951,7 @@ static xmlCharEncError
 EightBitToUtf8(void *vctxt,
                unsigned char* out, int *outlen,
                const unsigned char* in, int *inlen,
-               int flush ATTRIBUTE_UNUSED) {
+               int flush UNUSED) {
     unsigned short const *unicodetable = vctxt;
     const unsigned char* instart = in;
     const unsigned char* inend;
