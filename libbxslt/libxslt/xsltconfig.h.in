@@ -16,34 +16,6 @@ extern "C" {
 #endif
 
 /**
- * LIBXSLT_DOTTED_VERSION:
- *
- * the version string like "1.2.3"
- */
-#define LIBXSLT_DOTTED_VERSION "@VERSION@"
-
-/**
- * LIBXSLT_VERSION:
- *
- * the version number: 1.2.3 value is 10203
- */
-#define LIBXSLT_VERSION @LIBXSLT_VERSION_NUMBER@
-
-/**
- * LIBXSLT_VERSION_STRING:
- *
- * the version number string, 1.2.3 value is "10203"
- */
-#define LIBXSLT_VERSION_STRING "@LIBXSLT_VERSION_NUMBER@"
-
-/**
- * LIBXSLT_VERSION_EXTRA:
- *
- * extra version information, used to show a Git commit description
- */
-#define	LIBXSLT_VERSION_EXTRA "@LIBXSLT_VERSION_EXTRA@"
-
-/**
  * WITH_XSLT_DEBUG:
  *
  * Activate the compilation of the debug reporting. Speed penalty
@@ -86,19 +58,6 @@ extern "C" {
 #if @WITH_DEBUGGER@
 #ifndef WITH_DEBUGGER
 #define WITH_DEBUGGER
-#endif
-#endif
-
-/**
- * WITH_PROFILER:
- *
- * Activate the compilation of the profiler. Speed penalty
- * is insignifiant.
- * On by default unless --without-profiler is passed to configure
- */
-#if @WITH_PROFILER@
-#ifndef WITH_PROFILER
-#define WITH_PROFILER
 #endif
 #endif
 
