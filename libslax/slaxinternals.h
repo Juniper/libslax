@@ -23,7 +23,6 @@
 #include <libxslt/documents.h>
 
 #include "slaxconfig.h"
-#include "slaxversion.h"
 
 #include <libpsu/psucommon.h>
 #include <libpsu/psualloc.h>
