@@ -214,7 +214,7 @@ xsltFreeExtModule(xsltExtModulePtr ext)
 }
 
 static void
-xsltFreeExtModuleEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xsltFreeExtModuleEntry(void *payload, const xmlChar *name UNUSED) {
     xsltFreeExtModule((xsltExtModulePtr) payload);
 }
 
@@ -260,7 +260,7 @@ xsltFreeExtData(xsltExtDataPtr ext)
 }
 
 static void
-xsltFreeExtDataEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xsltFreeExtDataEntry(void *payload, const xmlChar *name UNUSED) {
     xsltFreeExtData((xsltExtDataPtr) payload);
 }
 
@@ -309,7 +309,7 @@ xsltFreeExtElement(xsltExtElementPtr ext)
 }
 
 static void
-xsltFreeExtElementEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xsltFreeExtElementEntry(void *payload, const xmlChar *name UNUSED) {
     xsltFreeExtElement((xsltExtElementPtr) payload);
 }
 
@@ -491,7 +491,7 @@ xsltExtModuleRegisterDynamic(const xmlChar * URI)
 }
 #else
 static int
-xsltExtModuleRegisterDynamic(const xmlChar * URI ATTRIBUTE_UNUSED)
+xsltExtModuleRegisterDynamic(const xmlChar * URI UNUSED)
 {
   return -1;
 }
@@ -2009,7 +2009,7 @@ static xmlChar *testStyleData = NULL;
  */
 static void
 xsltExtFunctionTest(xmlXPathParserContextPtr ctxt,
-                    int nargs ATTRIBUTE_UNUSED)
+                    int nargs UNUSED)
 {
     xsltTransformContextPtr tctxt;
     void *data = NULL;
@@ -2104,7 +2104,7 @@ xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
 static void
 xsltExtElementTest(xsltTransformContextPtr ctxt, xmlNodePtr node,
                    xmlNodePtr inst,
-                   xsltElemPreCompPtr comp ATTRIBUTE_UNUSED)
+                   xsltElemPreCompPtr comp UNUSED)
 {
     xmlNodePtr commentNode;
 
@@ -2215,7 +2215,7 @@ xsltExtShutdownTest(xsltTransformContextPtr ctxt,
  * Returns a pointer to the module specific data for this transformation
  */
 static void *
-xsltExtStyleInitTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
+xsltExtStyleInitTest(xsltStylesheetPtr style UNUSED,
                      const xmlChar * URI)
 {
     if (testStyleData != NULL) {
@@ -2239,7 +2239,7 @@ xsltExtStyleInitTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
  * A function called at shutdown time of an XSLT extension module
  */
 static void
-xsltExtStyleShutdownTest(xsltStylesheetPtr style ATTRIBUTE_UNUSED,
+xsltExtStyleShutdownTest(xsltStylesheetPtr style UNUSED,
                          const xmlChar * URI, void *data)
 {
     if (testStyleData == NULL) {
@@ -2280,8 +2280,8 @@ xsltRegisterTestModule(void)
 
 static void
 xsltHashScannerModuleFree(void *payload,
-                          void *data ATTRIBUTE_UNUSED,
-                          const xmlChar *name ATTRIBUTE_UNUSED)
+                          void *data UNUSED,
+                          const xmlChar *name UNUSED)
 {
 #ifdef WITH_MODULES
 #ifdef _WIN32
@@ -2336,10 +2336,10 @@ xsltCleanupGlobals(void)
 }
 
 static void
-xsltDebugDumpExtensionsCallback(void *function ATTRIBUTE_UNUSED,
+xsltDebugDumpExtensionsCallback(void *function UNUSED,
                                 void *data, const xmlChar * name,
                                 const xmlChar * URI,
-                                const xmlChar * not_used ATTRIBUTE_UNUSED)
+                                const xmlChar * not_used UNUSED)
 {
     FILE *output = (FILE *) data;
     if (!name || !URI)
@@ -2348,10 +2348,10 @@ xsltDebugDumpExtensionsCallback(void *function ATTRIBUTE_UNUSED,
 }
 
 static void
-xsltDebugDumpExtModulesCallback(void *function ATTRIBUTE_UNUSED,
+xsltDebugDumpExtModulesCallback(void *function UNUSED,
                                 void *data, const xmlChar * URI,
-                                const xmlChar * not_used ATTRIBUTE_UNUSED,
-                                const xmlChar * not_used2 ATTRIBUTE_UNUSED)
+                                const xmlChar * not_used UNUSED,
+                                const xmlChar * not_used2 UNUSED)
 {
     FILE *output = (FILE *) data;
     if (!URI)
