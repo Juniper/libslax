@@ -431,7 +431,7 @@ xmlFreeGlobalState(void *state)
 
 #if defined(USE_WAIT_DTOR)
 static void WINAPI
-xmlGlobalStateDtor(void *ctxt, unsigned char timedOut ATTRIBUTE_UNUSED) {
+xmlGlobalStateDtor(void *ctxt, unsigned char timedOut UNUSED) {
     xmlGlobalStatePtr gs = ctxt;
 
     UnregisterWait(gs->waitHandle);
@@ -529,7 +529,7 @@ xmlGetThreadLocalStorage(int allowFailure) {
 #else /* LIBXML_THREAD_ENABLED */
 
 static xmlGlobalStatePtr
-xmlGetThreadLocalStorage(int allowFailure ATTRIBUTE_UNUSED) {
+xmlGetThreadLocalStorage(int allowFailure UNUSED) {
     return(&globalState);
 }
 
@@ -776,8 +776,8 @@ xmlGetLastErrorInternal(void) {
  */
 #if defined(LIBXML_STATIC_FOR_DLL)
 int
-xmlDllMain(ATTRIBUTE_UNUSED void *hinstDLL, unsigned long fdwReason,
-           ATTRIBUTE_UNUSED void *lpvReserved)
+xmlDllMain(UNUSED void *hinstDLL, unsigned long fdwReason,
+           UNUSED void *lpvReserved)
 #else
 
 /*
@@ -796,8 +796,8 @@ DllMain (HINSTANCE hinstDLL,
          LPVOID    lpvReserved);
 
 BOOL WINAPI
-DllMain(ATTRIBUTE_UNUSED HINSTANCE hinstDLL, DWORD fdwReason,
-        ATTRIBUTE_UNUSED LPVOID lpvReserved)
+DllMain(UNUSED HINSTANCE hinstDLL, DWORD fdwReason,
+        UNUSED LPVOID lpvReserved)
 #endif
 {
     if ((fdwReason == DLL_THREAD_DETACH) ||
@@ -981,7 +981,7 @@ int xmlThrDefKeepBlanksDefaultValue(int v) {
  * @param v  unused
  * @returns 1
  */
-int xmlThrDefLineNumbersDefaultValue(int v ATTRIBUTE_UNUSED) {
+int xmlThrDefLineNumbersDefaultValue(int v UNUSED) {
     return 1;
 }
 
