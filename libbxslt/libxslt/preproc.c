@@ -530,7 +530,7 @@ xsltFreeStylePreComp(xsltStylePreCompPtr comp) {
  */
 xsltElemPreCompPtr
 xsltDocumentComp(xsltStylesheetPtr style, xmlNodePtr inst,
-		 xsltTransformFunction function ATTRIBUTE_UNUSED) {
+		 xsltTransformFunction function UNUSED) {
 #ifdef XSLT_REFACTORED
     xsltStyleItemDocumentPtr comp;
 #else
