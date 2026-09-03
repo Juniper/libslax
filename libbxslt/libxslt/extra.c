@@ -50,9 +50,9 @@
  * Process an debug node
  */
 void
-xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node ATTRIBUTE_UNUSED,
-          xmlNodePtr inst ATTRIBUTE_UNUSED,
-          xsltElemPreCompPtr comp ATTRIBUTE_UNUSED)
+xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
+          xmlNodePtr inst UNUSED,
+          xsltElemPreCompPtr comp UNUSED)
 {
     int i, j;
 
@@ -154,7 +154,7 @@ xsltFunctionNodeSet(xmlXPathParserContextPtr ctxt, int nargs){
  * xsltRegisterAllExtras instead.
  */
 void
-xsltRegisterExtras(xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED) {
+xsltRegisterExtras(xsltTransformContextPtr ctxt UNUSED) {
     xsltRegisterAllExtras();
 }
 
