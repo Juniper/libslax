@@ -662,7 +662,7 @@ int main(int argc, char **argv) {
     return(exit_value);
 }
 #else
-int main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+int main(int argc UNUSED, char **argv UNUSED) {
     fprintf(stderr, "libxml was not compiled with catalog and output support\n");
     return(1);
 }
