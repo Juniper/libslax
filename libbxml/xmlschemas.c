@@ -2379,7 +2379,7 @@ static void LIBXML_ATTR_FORMAT(5,0)
 xmlSchemaCustomWarning(xmlSchemaAbstractCtxtPtr actxt,
 		   xmlParserErrors error,
 		   xmlNodePtr node,
-		   xmlSchemaTypePtr type ATTRIBUTE_UNUSED,
+		   xmlSchemaTypePtr type UNUSED,
 		   const char *message,
 		   const xmlChar *str1,
 		   const xmlChar *str2,
@@ -2404,7 +2404,7 @@ static void LIBXML_ATTR_FORMAT(5,0)
 xmlSchemaKeyrefErr(xmlSchemaValidCtxtPtr vctxt,
 		   xmlParserErrors error,
 		   xmlSchemaPSVIIDCNodePtr idcNode,
-		   xmlSchemaTypePtr type ATTRIBUTE_UNUSED,
+		   xmlSchemaTypePtr type UNUSED,
 		   const char *message,
 		   const xmlChar *str1,
 		   const xmlChar *str2)
@@ -2555,7 +2555,7 @@ static void LIBXML_ATTR_FORMAT(5,0)
 xmlSchemaComplexTypeErr(xmlSchemaAbstractCtxtPtr actxt,
 		        xmlParserErrors error,
 		        xmlNodePtr node,
-			xmlSchemaTypePtr type ATTRIBUTE_UNUSED,
+			xmlSchemaTypePtr type UNUSED,
 			const char *message,
 			int nbval,
 			int nbneg,
@@ -2909,7 +2909,7 @@ xmlSchemaPCustomAttrErr(xmlSchemaParserCtxtPtr ctxt,
 static void
 xmlSchemaPIllegalAttrErr(xmlSchemaParserCtxtPtr ctxt,
 			 xmlParserErrors error,
-			 xmlSchemaBasicItemPtr ownerComp ATTRIBUTE_UNUSED,
+			 xmlSchemaBasicItemPtr ownerComp UNUSED,
 			 xmlAttrPtr attr)
 {
     xmlChar *strA = NULL, *strB = NULL;
@@ -3119,7 +3119,7 @@ xmlSchemaPMutualExclAttrErr(xmlSchemaParserCtxtPtr ctxt,
 static void LIBXML_ATTR_FORMAT(8,0)
 xmlSchemaPSimpleTypeErr(xmlSchemaParserCtxtPtr ctxt,
 			xmlParserErrors error,
-			xmlSchemaBasicItemPtr ownerItem ATTRIBUTE_UNUSED,
+			xmlSchemaBasicItemPtr ownerItem UNUSED,
 			xmlNodePtr node,
 			xmlSchemaTypePtr type,
 			const char *expected,
@@ -3487,7 +3487,7 @@ xmlSchemaBucketFree(xmlSchemaBucketPtr bucket)
 }
 
 static void
-xmlSchemaBucketFreeEntry(void *bucket, const xmlChar *name ATTRIBUTE_UNUSED)
+xmlSchemaBucketFreeEntry(void *bucket, const xmlChar *name UNUSED)
 {
     xmlSchemaBucketFree((xmlSchemaBucketPtr) bucket);
 }
@@ -4104,9 +4104,9 @@ xmlSchemaTypeDump(xmlSchemaTypePtr type, FILE * output); /* forward */
  */
 static void
 xmlSchemaElementDump(void *payload, void *data,
-                     const xmlChar * name ATTRIBUTE_UNUSED,
-		     const xmlChar * namespace ATTRIBUTE_UNUSED,
-                     const xmlChar * context ATTRIBUTE_UNUSED)
+                     const xmlChar * name UNUSED,
+		     const xmlChar * namespace UNUSED,
+                     const xmlChar * context UNUSED)
 {
     xmlSchemaElementPtr elem = (xmlSchemaElementPtr) payload;
     FILE *output = (FILE *) data;
@@ -4422,7 +4422,7 @@ xmlSchemaTypeDump(xmlSchemaTypePtr type, FILE * output)
 
 static void
 xmlSchemaTypeDumpEntry(void *type, void *output,
-                       const xmlChar *name ATTRIBUTE_UNUSED)
+                       const xmlChar *name UNUSED)
 {
     xmlSchemaTypeDump((xmlSchemaTypePtr) type, (FILE *) output);
 }
@@ -4918,7 +4918,7 @@ subschemas:
 static xmlSchemaNotationPtr
 xmlSchemaAddNotation(xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
                      const xmlChar *name, const xmlChar *nsName,
-		     xmlNodePtr node ATTRIBUTE_UNUSED)
+		     xmlNodePtr node UNUSED)
 {
     xmlSchemaNotationPtr ret = NULL;
 
@@ -5058,7 +5058,7 @@ xmlSchemaAddRedef(xmlSchemaParserCtxtPtr pctxt,
  */
 static xmlSchemaAttributeGroupPtr
 xmlSchemaAddAttributeGroupDefinition(xmlSchemaParserCtxtPtr pctxt,
-                           xmlSchemaPtr schema ATTRIBUTE_UNUSED,
+                           xmlSchemaPtr schema UNUSED,
 			   const xmlChar *name,
 			   const xmlChar *nsName,
 			   xmlNodePtr node)
@@ -5455,7 +5455,7 @@ xmlSchemaSubstGroupFree(xmlSchemaSubstGroupPtr group)
 }
 
 static void
-xmlSchemaSubstGroupFreeEntry(void *group, const xmlChar *name ATTRIBUTE_UNUSED)
+xmlSchemaSubstGroupFreeEntry(void *group, const xmlChar *name UNUSED)
 {
     xmlSchemaSubstGroupFree((xmlSchemaSubstGroupPtr) group);
 }
@@ -6177,7 +6177,7 @@ xmlSchemaPValAttr(xmlSchemaParserCtxtPtr ctxt,
 
 static int
 xmlSchemaCheckReference(xmlSchemaParserCtxtPtr pctxt,
-		  xmlSchemaPtr schema ATTRIBUTE_UNUSED,
+		  xmlSchemaPtr schema UNUSED,
 		  xmlNodePtr node,
 		  xmlAttrPtr attr,
 		  const xmlChar *namespaceName)
@@ -6487,7 +6487,7 @@ xmlSchemaParseFacet(xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
  */
 static int
 xmlSchemaParseWildcardNs(xmlSchemaParserCtxtPtr ctxt,
-			 xmlSchemaPtr schema ATTRIBUTE_UNUSED,
+			 xmlSchemaPtr schema UNUSED,
 			 xmlSchemaWildcardPtr wildc,
 			 xmlNodePtr node)
 {
@@ -6599,7 +6599,7 @@ xmlSchemaParseWildcardNs(xmlSchemaParserCtxtPtr ctxt,
 
 static int
 xmlSchemaPCheckParticleCorrect_2(xmlSchemaParserCtxtPtr ctxt,
-				 xmlSchemaParticlePtr item ATTRIBUTE_UNUSED,
+				 xmlSchemaParticlePtr item UNUSED,
 				 xmlNodePtr node,
 				 int minOccurs,
 				 int maxOccurs) {
@@ -18233,7 +18233,7 @@ int
 xmlSchemaCheckFacet(xmlSchemaFacet *facet,
                     xmlSchemaType *typeDecl,
                     xmlSchemaParserCtxt *pctxt,
-		    const xmlChar * name ATTRIBUTE_UNUSED)
+		    const xmlChar * name UNUSED)
 {
     int ret = 0, ctxtGiven;
 
@@ -18590,7 +18590,7 @@ xmlSchemaCheckGroupDefCircular(xmlSchemaModelGroupDefPtr item,
  */
 static void
 xmlSchemaModelGroupToModelGroupDefFixup(
-    xmlSchemaParserCtxtPtr ctxt ATTRIBUTE_UNUSED,
+    xmlSchemaParserCtxtPtr ctxt UNUSED,
     xmlSchemaModelGroupPtr mg)
 {
     xmlSchemaParticlePtr particle = WXS_MODELGROUP_PARTICLE(mg);
@@ -21574,7 +21574,7 @@ xmlSchemaVAddNodeQName(xmlSchemaValidCtxtPtr vctxt,
  */
 static void
 xmlSchemaAugmentIDC(void *payload, void *data,
-                    const xmlChar *name ATTRIBUTE_UNUSED)
+                    const xmlChar *name UNUSED)
 {
     xmlSchemaIDCPtr idcDef = (xmlSchemaIDCPtr) payload;
     xmlSchemaValidCtxtPtr vctxt = (xmlSchemaValidCtxtPtr) data;
@@ -21611,7 +21611,7 @@ xmlSchemaAugmentIDC(void *payload, void *data,
  */
 static void
 xmlSchemaAugmentImportedIDC(void *payload, void *data,
-                            const xmlChar *name ATTRIBUTE_UNUSED) {
+                            const xmlChar *name UNUSED) {
     xmlSchemaImportPtr imported = (xmlSchemaImportPtr) payload;
     xmlSchemaValidCtxtPtr vctxt = (xmlSchemaValidCtxtPtr) data;
     if (imported->schema->idcDef != NULL) {
@@ -21852,7 +21852,7 @@ xmlSchemaIDCFreeIDCTable(xmlSchemaPSVIIDCBindingPtr bind)
 }
 
 static void
-xmlFreeIDCHashEntry (void *payload, const xmlChar *name ATTRIBUTE_UNUSED)
+xmlFreeIDCHashEntry (void *payload, const xmlChar *name UNUSED)
 {
     xmlIDCHashEntryPtr e = payload, n;
     while (e) {
@@ -25541,8 +25541,8 @@ xmlSchemaCheckCOSValidDefault(xmlSchemaValidCtxtPtr vctxt,
 }
 
 static void
-xmlSchemaVContentModelCallback(xmlRegExecCtxtPtr exec ATTRIBUTE_UNUSED,
-			       const xmlChar * name ATTRIBUTE_UNUSED,
+xmlSchemaVContentModelCallback(xmlRegExecCtxtPtr exec UNUSED,
+			       const xmlChar * name UNUSED,
 			       void *transdata, void *inputdata)
 {
     xmlSchemaElementPtr item = (xmlSchemaElementPtr) transdata;
@@ -26811,8 +26811,8 @@ xmlSchemaSAXHandleCDataSection(void *ctx,
 }
 
 static void
-xmlSchemaSAXHandleReference(void *ctx ATTRIBUTE_UNUSED,
-			    const xmlChar * name ATTRIBUTE_UNUSED)
+xmlSchemaSAXHandleReference(void *ctx UNUSED,
+			    const xmlChar * name UNUSED)
 {
     xmlSchemaValidCtxtPtr vctxt = (xmlSchemaValidCtxtPtr) ctx;
 
@@ -26826,12 +26826,12 @@ xmlSchemaSAXHandleReference(void *ctx ATTRIBUTE_UNUSED,
 static void
 xmlSchemaSAXHandleStartElementNs(void *ctx,
 				 const xmlChar * localname,
-				 const xmlChar * prefix ATTRIBUTE_UNUSED,
+				 const xmlChar * prefix UNUSED,
 				 const xmlChar * URI,
 				 int nb_namespaces,
 				 const xmlChar ** namespaces,
 				 int nb_attributes,
-				 int nb_defaulted ATTRIBUTE_UNUSED,
+				 int nb_defaulted UNUSED,
 				 const xmlChar ** attributes)
 {
     xmlSchemaValidCtxtPtr vctxt = (xmlSchemaValidCtxtPtr) ctx;
@@ -26983,9 +26983,9 @@ internal_error:
 
 static void
 xmlSchemaSAXHandleEndElementNs(void *ctx,
-			       const xmlChar * localname ATTRIBUTE_UNUSED,
-			       const xmlChar * prefix ATTRIBUTE_UNUSED,
-			       const xmlChar * URI ATTRIBUTE_UNUSED)
+			       const xmlChar * localname UNUSED,
+			       const xmlChar * prefix UNUSED,
+			       const xmlChar * URI UNUSED)
 {
     xmlSchemaValidCtxtPtr vctxt = (xmlSchemaValidCtxtPtr) ctx;
     int res;
@@ -27985,7 +27985,7 @@ commentSplit(void *ctx, const xmlChar *value)
  */
 
 static void
-warningSplit(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...) {
+warningSplit(void *ctx, const char *msg UNUSED, ...) {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if ((ctxt != NULL) && (ctxt->user_sax != NULL) &&
         (ctxt->user_sax->warning != NULL)) {
@@ -27993,7 +27993,7 @@ warningSplit(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...) {
     }
 }
 static void
-errorSplit(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...) {
+errorSplit(void *ctx, const char *msg UNUSED, ...) {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if ((ctxt != NULL) && (ctxt->user_sax != NULL) &&
         (ctxt->user_sax->error != NULL)) {
@@ -28001,7 +28001,7 @@ errorSplit(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...) {
     }
 }
 static void
-fatalErrorSplit(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...) {
+fatalErrorSplit(void *ctx, const char *msg UNUSED, ...) {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if ((ctxt != NULL) && (ctxt->user_sax != NULL) &&
         (ctxt->user_sax->fatalError != NULL)) {
@@ -28455,7 +28455,7 @@ done:
 int
 xmlSchemaValidateFile(xmlSchemaValidCtxt *ctxt,
                       const char * filename,
-		      int options ATTRIBUTE_UNUSED)
+		      int options UNUSED)
 {
     int ret;
     xmlParserCtxtPtr pctxt = NULL;
