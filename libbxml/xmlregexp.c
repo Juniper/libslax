@@ -5464,8 +5464,8 @@ xmlFAParseRegExp(xmlRegParserCtxtPtr ctxt, int top) {
  * @param regexp  the compiled regexp
  */
 void
-xmlRegexpPrint(FILE *output ATTRIBUTE_UNUSED,
-               xmlRegexp *regexp ATTRIBUTE_UNUSED) {
+xmlRegexpPrint(FILE *output UNUSED,
+               xmlRegexp *regexp UNUSED) {
 }
 
 /**
