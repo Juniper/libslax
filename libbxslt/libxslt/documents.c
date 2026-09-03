@@ -59,8 +59,8 @@
  */
 static xmlDocPtr
 xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
-                         void *ctxt ATTRIBUTE_UNUSED,
-			 xsltLoadType type ATTRIBUTE_UNUSED)
+                         void *ctxt UNUSED,
+			 xsltLoadType type UNUSED)
 {
     xmlParserCtxtPtr pctxt;
     xmlParserInputPtr inputStream;
