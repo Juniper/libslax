@@ -878,7 +878,7 @@ xmlFdClose (void * context) {
  * @returns 1 if matches, 0 otherwise
  */
 int
-xmlFileMatch (const char *filename ATTRIBUTE_UNUSED) {
+xmlFileMatch (const char *filename UNUSED) {
     return(1);
 }
 
@@ -1141,7 +1141,7 @@ xmlGzfileClose (void * context) {
  ************************************************************************/
 
 static int
-xmlIODefaultMatch(const char *filename ATTRIBUTE_UNUSED) {
+xmlIODefaultMatch(const char *filename UNUSED) {
     return(1);
 }
 
@@ -1725,7 +1725,7 @@ error:
 xmlOutputBuffer *
 xmlOutputBufferCreateFilename(const char *URI,
                               xmlCharEncodingHandler *encoder,
-                              int compression ATTRIBUTE_UNUSED) {
+                              int compression UNUSED) {
     if ((xmlOutputBufferCreateFilenameValue)) {
 		return xmlOutputBufferCreateFilenameValue(URI, encoder, compression);
 	}
@@ -2268,9 +2268,9 @@ xmlParserInputBufferPush(xmlParserInputBuffer *in,
  * don't reread from it again.
  */
 static int
-endOfInput (void * context ATTRIBUTE_UNUSED,
-	    char * buffer ATTRIBUTE_UNUSED,
-	    int len ATTRIBUTE_UNUSED) {
+endOfInput (void * context UNUSED,
+	    char * buffer UNUSED,
+	    int len UNUSED) {
     return(0);
 }
 
