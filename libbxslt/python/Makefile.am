@@ -21,7 +21,9 @@ if WITH_XSLT_PYTHON
 
 pyexec_LTLIBRARIES = libxsltmod.la
 
-libxsltmod_la_CPPFLAGS = \
+AM_CPPFLAGS = \
+	-I$(top_builddir) \
+	-I$(top_srcdir) \
 	-I$(top_builddir)/libbxslt \
 	-I$(top_srcdir)/libbxslt/libxslt \
 	-I$(top_srcdir)/libbxslt \
