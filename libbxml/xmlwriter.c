@@ -256,7 +256,7 @@ xmlNewTextWriterFilename(const char *uri, int compression)
  * @returns the new xmlTextWriter or NULL in case of error
  */
 xmlTextWriter *
-xmlNewTextWriterMemory(xmlBuffer *buf, int compression ATTRIBUTE_UNUSED)
+xmlNewTextWriterMemory(xmlBuffer *buf, int compression UNUSED)
 {
     xmlTextWriterPtr ret;
     xmlOutputBufferPtr out;
@@ -293,7 +293,7 @@ xmlNewTextWriterMemory(xmlBuffer *buf, int compression ATTRIBUTE_UNUSED)
  */
 xmlTextWriter *
 xmlNewTextWriterPushParser(xmlParserCtxt *ctxt,
-                           int compression ATTRIBUTE_UNUSED)
+                           int compression UNUSED)
 {
     xmlTextWriterPtr ret;
     xmlOutputBufferPtr out;
