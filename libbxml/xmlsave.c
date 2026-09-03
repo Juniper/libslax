@@ -296,7 +296,7 @@ xmlBufDumpNotationDecl(xmlOutputBufferPtr buf, xmlNotationPtr nota) {
  */
 static void
 xmlBufDumpNotationDeclScan(void *nota, void *buf,
-                           const xmlChar *name ATTRIBUTE_UNUSED) {
+                           const xmlChar *name UNUSED) {
     xmlBufDumpNotationDecl((xmlOutputBufferPtr) buf, (xmlNotationPtr) nota);
 }
 
@@ -2117,7 +2117,7 @@ xmlSaveSetEscape(xmlSaveCtxt *ctxt, xmlCharEncodingOutputFunc escape)
  */
 int
 xmlSaveSetAttrEscape(xmlSaveCtxt *ctxt,
-                     xmlCharEncodingOutputFunc escape ATTRIBUTE_UNUSED)
+                     xmlCharEncodingOutputFunc escape UNUSED)
 {
     if (ctxt == NULL) return(-1);
     return(0);
@@ -2157,7 +2157,7 @@ xmlBufAttrSerializeTxtContent(xmlOutputBuffer *buf, xmlDoc *doc,
  */
 void
 xmlAttrSerializeTxtContent(xmlBuffer *buf, xmlDoc *doc,
-                           xmlAttr *attr ATTRIBUTE_UNUSED,
+                           xmlAttr *attr UNUSED,
                            const xmlChar *string)
 {
     xmlOutputBufferPtr out;
