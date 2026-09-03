@@ -661,7 +661,7 @@ xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
 static void
 xsltResolveSASCallback(void *payload, void *data,
 	               const xmlChar *name, const xmlChar *ns,
-		       ATTRIBUTE_UNUSED const xmlChar *ignored) {
+		       UNUSED const xmlChar *ignored) {
     xsltAttrSetPtr set = (xsltAttrSetPtr) payload;
     xsltAttrSetContextPtr asctx = (xsltAttrSetContextPtr) data;
     xsltStylesheetPtr topStyle = asctx->topStyle;
@@ -1225,7 +1225,7 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 
 static void
 xsltFreeAttributeSetsEntry(void *payload,
-                           const xmlChar *name ATTRIBUTE_UNUSED) {
+                           const xmlChar *name UNUSED) {
     xsltFreeAttrSet((xsltAttrSetPtr) payload);
 }
 
