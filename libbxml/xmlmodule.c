@@ -57,7 +57,7 @@ static int xmlModulePlatformSymbol(void *handle, const char *name, void **result
  * @returns a handle for the module or NULL in case of error
  */
 xmlModule *
-xmlModuleOpen(const char *name, int options ATTRIBUTE_UNUSED)
+xmlModuleOpen(const char *name, int options UNUSED)
 {
     xmlModulePtr module;
 
