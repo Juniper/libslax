@@ -68,8 +68,8 @@ typedef struct
 } glob_t;
 
 #define GLOB_DOOFFS 0
-static int glob(const char *pattern, ATTRIBUTE_UNUSED int flags,
-                ATTRIBUTE_UNUSED int errfunc(const char *epath, int eerrno),
+static int glob(const char *pattern, UNUSED int flags,
+                UNUSED int errfunc(const char *epath, int eerrno),
                 glob_t *pglob) {
     glob_t *ret;
     WIN32_FIND_DATA FindFileData;
@@ -170,7 +170,7 @@ static char testErrors[32769];
 static int testErrorsSize = 0;
 
 static void XMLCDECL
-testErrorHandler(void *ctx  ATTRIBUTE_UNUSED, const char *msg, ...) {
+testErrorHandler(void *ctx  UNUSED, const char *msg, ...) {
     va_list args;
     int res;
 
@@ -250,7 +250,7 @@ xmlParserPrintFileContextInternal(xmlParserInputPtr input ,
 }
 
 static void
-testStructuredErrorHandler(void *ctx ATTRIBUTE_UNUSED, const xmlError *err) {
+testStructuredErrorHandler(void *ctx UNUSED, const xmlError *err) {
     char *file = NULL;
     int line = 0;
     int code = -1;
@@ -434,7 +434,7 @@ testStructuredErrorHandler(void *ctx ATTRIBUTE_UNUSED, const xmlError *err) {
 #else /* LIBXML_VERSION */
 
 static void
-testStructuredErrorHandler(void *ctx ATTRIBUTE_UNUSED, const xmlError *err) {
+testStructuredErrorHandler(void *ctx UNUSED, const xmlError *err) {
     xmlFormatError(err, testErrorHandler, NULL);
 }
 
@@ -843,7 +843,7 @@ runtest(int i) {
 }
 
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     int i, a, ret = 0;
     int subset = 0;
 
