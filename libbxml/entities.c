@@ -545,7 +545,7 @@ xmlEncodeEntitiesReentrant(xmlDoc *doc, const xmlChar *input) {
  * @returns a newly allocated string with substitutions.
  */
 xmlChar *
-xmlEncodeSpecialChars(const xmlDoc *doc ATTRIBUTE_UNUSED,
+xmlEncodeSpecialChars(const xmlDoc *doc UNUSED,
                       const xmlChar *input) {
     if (input == NULL)
         return(NULL);
@@ -572,7 +572,7 @@ xmlCreateEntitiesTable(void) {
  * @param name  its name
  */
 static void
-xmlFreeEntityWrapper(void *entity, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeEntityWrapper(void *entity, const xmlChar *name UNUSED) {
     if (entity != NULL)
 	xmlFreeEntity((xmlEntityPtr) entity);
 }
@@ -597,7 +597,7 @@ xmlFreeEntitiesTable(xmlEntitiesTable *table) {
  * @returns the new xmlEntities or NULL in case of error.
  */
 static void *
-xmlCopyEntity(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlCopyEntity(void *payload, const xmlChar *name UNUSED) {
     xmlEntityPtr ent = (xmlEntityPtr) payload;
     xmlEntityPtr cur;
 
@@ -700,7 +700,7 @@ xmlDumpEntityDecl(xmlBuffer *buf, xmlEntity *ent) {
  */
 static void
 xmlDumpEntityDeclScan(void *ent, void *save,
-                      const xmlChar *name ATTRIBUTE_UNUSED) {
+                      const xmlChar *name UNUSED) {
     xmlSaveTree(save, ent);
 }
 
