@@ -1399,8 +1399,8 @@ xmlSchematronGetNode(xmlSchematronValidCtxtPtr ctxt,
  * @param msg  the message output
  */
 static void
-xmlSchematronReportOutput(xmlSchematronValidCtxtPtr ctxt ATTRIBUTE_UNUSED,
-                          xmlNodePtr cur ATTRIBUTE_UNUSED,
+xmlSchematronReportOutput(xmlSchematronValidCtxtPtr ctxt UNUSED,
+                          xmlNodePtr cur UNUSED,
                           const char *msg) {
     /* TODO */
     xmlPrintErrorMessage("%s", msg);
