@@ -12,7 +12,7 @@
 #if defined(_WIN32) && !defined (__MINGW32__)
 #include <win32config.h>
 #else
-#include "bxslt/bxsltconfig.h"
+#include "libbxslt/libbxsltconfig.h"
 #endif
 
 #include <libxslt/xsltconfig.h>
