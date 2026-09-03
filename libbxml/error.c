@@ -229,7 +229,7 @@ xmlVUpdateError(xmlError *err,
  * @param ...  arguments to format
  */
 void
-xmlGenericErrorDefaultFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg, ...) {
+xmlGenericErrorDefaultFunc(void *ctx UNUSED, const char *msg, ...) {
     va_list args;
 
     if (xmlGenericErrorContext == NULL)
@@ -838,7 +838,7 @@ xmlVFormatLegacyError(void *ctx, const char *level,
  * @param ...  arguments to format
  */
 void
-xmlParserError(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
+xmlParserError(void *ctx, const char *msg UNUSED, ...)
 {
     va_list ap;
 
@@ -862,7 +862,7 @@ xmlParserError(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
  * @param ...  arguments to format
  */
 void
-xmlParserWarning(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
+xmlParserWarning(void *ctx, const char *msg UNUSED, ...)
 {
     va_list ap;
 
@@ -886,7 +886,7 @@ xmlParserWarning(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
  * @param ...  arguments to format
  */
 void
-xmlParserValidityError(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
+xmlParserValidityError(void *ctx, const char *msg UNUSED, ...)
 {
     va_list ap;
 
@@ -910,7 +910,7 @@ xmlParserValidityError(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
  * @param ...  arguments to format
  */
 void
-xmlParserValidityWarning(void *ctx, const char *msg ATTRIBUTE_UNUSED, ...)
+xmlParserValidityWarning(void *ctx, const char *msg UNUSED, ...)
 {
     va_list ap;
 
