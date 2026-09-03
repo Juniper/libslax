@@ -589,7 +589,7 @@ xmlHashUpdateInternal(xmlHashTable *hash, const xmlChar *key,
  * @param key  the entry's string key
  */
 void
-xmlHashDefaultDeallocator(void *entry, const xmlChar *key ATTRIBUTE_UNUSED) {
+xmlHashDefaultDeallocator(void *entry, const xmlChar *key UNUSED) {
     xmlFree(entry);
 }
 
@@ -942,8 +942,8 @@ typedef struct {
 
 static void
 stubHashScannerFull(void *payload, void *data, const xmlChar *key,
-                    const xmlChar *key2 ATTRIBUTE_UNUSED,
-                    const xmlChar *key3 ATTRIBUTE_UNUSED) {
+                    const xmlChar *key2 UNUSED,
+                    const xmlChar *key3 UNUSED) {
     stubData *sdata = (stubData *) data;
     sdata->scan(payload, sdata->data, key);
 }
