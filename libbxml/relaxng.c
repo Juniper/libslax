@@ -616,7 +616,7 @@ static void xmlRelaxNGFreeDefine(xmlRelaxNGDefinePtr define);
 static void xmlRelaxNGNormExtSpace(xmlChar * value);
 static void xmlRelaxNGFreeInnerSchema(xmlRelaxNGPtr schema);
 static int xmlRelaxNGEqualValidState(xmlRelaxNGValidCtxtPtr ctxt
-                                     ATTRIBUTE_UNUSED,
+                                     UNUSED,
                                      xmlRelaxNGValidStatePtr state1,
                                      xmlRelaxNGValidStatePtr state2);
 static void xmlRelaxNGFreeValidState(xmlRelaxNGValidCtxtPtr ctxt,
@@ -1266,7 +1266,7 @@ xmlRelaxNGCopyValidState(xmlRelaxNGValidCtxtPtr ctxt,
  * @returns 1 if equal, 0 otherwise
  */
 static int
-xmlRelaxNGEqualValidState(xmlRelaxNGValidCtxtPtr ctxt ATTRIBUTE_UNUSED,
+xmlRelaxNGEqualValidState(xmlRelaxNGValidCtxtPtr ctxt UNUSED,
                           xmlRelaxNGValidStatePtr state1,
                           xmlRelaxNGValidStatePtr state2)
 {
@@ -1496,7 +1496,7 @@ xmlRelaxNGIncludePop(xmlRelaxNGParserCtxtPtr ctxt)
  */
 static int
 xmlRelaxNGRemoveRedefine(xmlRelaxNGParserCtxtPtr ctxt,
-                         const xmlChar * URL ATTRIBUTE_UNUSED,
+                         const xmlChar * URL UNUSED,
                          xmlNodePtr target, const xmlChar * name)
 {
     int found = 0;
@@ -2340,7 +2340,7 @@ static xmlChar *xmlRelaxNGNormalize(xmlRelaxNGValidCtxtPtr ctxt,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGSchemaTypeHave(void *data ATTRIBUTE_UNUSED, const xmlChar * type)
+xmlRelaxNGSchemaTypeHave(void *data UNUSED, const xmlChar * type)
 {
     xmlSchemaTypePtr typ;
 
@@ -2366,7 +2366,7 @@ xmlRelaxNGSchemaTypeHave(void *data ATTRIBUTE_UNUSED, const xmlChar * type)
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGSchemaTypeCheck(void *data ATTRIBUTE_UNUSED,
+xmlRelaxNGSchemaTypeCheck(void *data UNUSED,
                           const xmlChar * type,
                           const xmlChar * value,
                           void **result, xmlNodePtr node)
@@ -2404,7 +2404,7 @@ xmlRelaxNGSchemaTypeCheck(void *data ATTRIBUTE_UNUSED,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGSchemaFacetCheck(void *data ATTRIBUTE_UNUSED,
+xmlRelaxNGSchemaFacetCheck(void *data UNUSED,
                            const xmlChar * type, const xmlChar * facetname,
                            const xmlChar * val, const xmlChar * strval,
                            void *value)
@@ -2474,7 +2474,7 @@ xmlRelaxNGSchemaFacetCheck(void *data ATTRIBUTE_UNUSED,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static void
-xmlRelaxNGSchemaFreeValue(void *data ATTRIBUTE_UNUSED, void *value)
+xmlRelaxNGSchemaFreeValue(void *data UNUSED, void *value)
 {
     xmlSchemaFreeValue(value);
 }
@@ -2493,7 +2493,7 @@ xmlRelaxNGSchemaFreeValue(void *data ATTRIBUTE_UNUSED, void *value)
  * @returns 1 if equal, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGSchemaTypeCompare(void *data ATTRIBUTE_UNUSED,
+xmlRelaxNGSchemaTypeCompare(void *data UNUSED,
                             const xmlChar * type,
                             const xmlChar * value1,
                             xmlNodePtr ctxt1,
@@ -2546,7 +2546,7 @@ xmlRelaxNGSchemaTypeCompare(void *data ATTRIBUTE_UNUSED,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGDefaultTypeHave(void *data ATTRIBUTE_UNUSED,
+xmlRelaxNGDefaultTypeHave(void *data UNUSED,
                           const xmlChar * type)
 {
     if (type == NULL)
@@ -2570,11 +2570,11 @@ xmlRelaxNGDefaultTypeHave(void *data ATTRIBUTE_UNUSED,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGDefaultTypeCheck(void *data ATTRIBUTE_UNUSED,
-                           const xmlChar * type ATTRIBUTE_UNUSED,
-                           const xmlChar * value ATTRIBUTE_UNUSED,
-                           void **result ATTRIBUTE_UNUSED,
-                           xmlNodePtr node ATTRIBUTE_UNUSED)
+xmlRelaxNGDefaultTypeCheck(void *data UNUSED,
+                           const xmlChar * type UNUSED,
+                           const xmlChar * value UNUSED,
+                           void **result UNUSED,
+                           xmlNodePtr node UNUSED)
 {
     if (value == NULL)
         return (-1);
@@ -2601,13 +2601,13 @@ xmlRelaxNGDefaultTypeCheck(void *data ATTRIBUTE_UNUSED,
  * @returns 1 if yes, 0 if no and -1 in case of error.
  */
 static int
-xmlRelaxNGDefaultTypeCompare(void *data ATTRIBUTE_UNUSED,
+xmlRelaxNGDefaultTypeCompare(void *data UNUSED,
                              const xmlChar * type,
                              const xmlChar * value1,
-                             xmlNodePtr ctxt1 ATTRIBUTE_UNUSED,
-                             void *comp1 ATTRIBUTE_UNUSED,
+                             xmlNodePtr ctxt1 UNUSED,
+                             void *comp1 UNUSED,
                              const xmlChar * value2,
-                             xmlNodePtr ctxt2 ATTRIBUTE_UNUSED)
+                             xmlNodePtr ctxt2 UNUSED)
 {
     int ret = -1;
 
@@ -2651,7 +2651,7 @@ static xmlHashTablePtr xmlRelaxNGRegisteredTypes = NULL;
  */
 static void
 xmlRelaxNGFreeTypeLibrary(void *payload,
-                          const xmlChar * namespace ATTRIBUTE_UNUSED)
+                          const xmlChar * namespace UNUSED)
 {
     xmlRelaxNGTypeLibraryPtr lib = (xmlRelaxNGTypeLibraryPtr) payload;
     if (lib == NULL)
@@ -3338,7 +3338,7 @@ xmlRelaxNGIsBlank(xmlChar * str)
  * @returns the datatypeLibrary value or NULL if not found
  */
 static xmlChar *
-xmlRelaxNGGetDataTypeLibrary(xmlRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED,
+xmlRelaxNGGetDataTypeLibrary(xmlRelaxNGParserCtxtPtr ctxt UNUSED,
                              xmlNodePtr node)
 {
     xmlChar *ret, *escape;
@@ -3743,7 +3743,7 @@ xmlRelaxNGCompareNameClasses(xmlRelaxNGDefinePtr def1,
  */
 static int
 xmlRelaxNGCompareElemDefLists(xmlRelaxNGParserCtxtPtr ctxt
-                              ATTRIBUTE_UNUSED, xmlRelaxNGDefinePtr * def1,
+                              UNUSED, xmlRelaxNGDefinePtr * def1,
                               xmlRelaxNGDefinePtr * def2)
 {
     xmlRelaxNGDefinePtr *basedef2 = def2;
@@ -4174,7 +4174,7 @@ xmlRelaxNGCheckGroupAttrs(xmlRelaxNGParserCtxtPtr ctxt,
  */
 static void
 xmlRelaxNGComputeInterleaves(void *payload, void *data,
-                             const xmlChar * name ATTRIBUTE_UNUSED)
+                             const xmlChar * name UNUSED)
 {
     xmlRelaxNGDefinePtr def = (xmlRelaxNGDefinePtr) payload;
     xmlRelaxNGParserCtxtPtr ctxt = (xmlRelaxNGParserCtxtPtr) data;
@@ -5807,7 +5807,7 @@ xmlRelaxNGCheckCycles(xmlRelaxNGParserCtxtPtr ctxt,
  * @returns the new prev definition
  */
 static xmlRelaxNGDefinePtr
-xmlRelaxNGTryUnlink(xmlRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED,
+xmlRelaxNGTryUnlink(xmlRelaxNGParserCtxtPtr ctxt UNUSED,
                     xmlRelaxNGDefinePtr cur,
                     xmlRelaxNGDefinePtr parent, xmlRelaxNGDefinePtr prev)
 {
@@ -7775,7 +7775,7 @@ static int xmlRelaxNGValidateDefinition(xmlRelaxNGValidCtxtPtr ctxt,
  * @param inputdata  callback data, the Relax NG validation context
  */
 static void
-xmlRelaxNGValidateCompiledCallback(xmlRegExecCtxtPtr exec ATTRIBUTE_UNUSED,
+xmlRelaxNGValidateCompiledCallback(xmlRegExecCtxtPtr exec UNUSED,
                                    const xmlChar * token,
                                    void *transdata, void *inputdata)
 {
@@ -7975,7 +7975,7 @@ xmlRelaxNGElemPop(xmlRelaxNGValidCtxtPtr ctxt)
  */
 static void
 xmlRelaxNGValidateProgressiveCallback(xmlRegExecCtxtPtr exec
-                                      ATTRIBUTE_UNUSED,
+                                      UNUSED,
                                       const xmlChar * token,
                                       void *transdata, void *inputdata)
 {
@@ -8107,7 +8107,7 @@ xmlRelaxNGValidateProgressiveCallback(xmlRegExecCtxtPtr exec
  */
 int
 xmlRelaxNGValidatePushElement(xmlRelaxNGValidCtxt *ctxt,
-                              xmlDoc *doc ATTRIBUTE_UNUSED,
+                              xmlDoc *doc UNUSED,
                               xmlNode *elem)
 {
     int ret = 1;
@@ -8189,7 +8189,7 @@ Recovery:
  */
 int
 xmlRelaxNGValidatePushCData(xmlRelaxNGValidCtxt *ctxt,
-                            const xmlChar * data, int len ATTRIBUTE_UNUSED)
+                            const xmlChar * data, int len UNUSED)
 {
     int ret = 1;
 
@@ -8223,7 +8223,7 @@ xmlRelaxNGValidatePushCData(xmlRelaxNGValidCtxt *ctxt,
  */
 int
 xmlRelaxNGValidatePopElement(xmlRelaxNGValidCtxt *ctxt,
-                             xmlDoc *doc ATTRIBUTE_UNUSED,
+                             xmlDoc *doc UNUSED,
                              xmlNode *elem)
 {
     int ret;
@@ -8262,7 +8262,7 @@ xmlRelaxNGValidatePopElement(xmlRelaxNGValidCtxt *ctxt,
  */
 int
 xmlRelaxNGValidateFullElement(xmlRelaxNGValidCtxt *ctxt,
-                              xmlDoc *doc ATTRIBUTE_UNUSED,
+                              xmlDoc *doc UNUSED,
                               xmlNode *elem)
 {
     int ret;
@@ -8320,7 +8320,7 @@ static int xmlRelaxNGValidateValue(xmlRelaxNGValidCtxtPtr ctxt,
  * @returns the new sibling or NULL in case of error.
  */
 static xmlNodePtr
-xmlRelaxNGSkipIgnored(xmlRelaxNGValidCtxtPtr ctxt ATTRIBUTE_UNUSED,
+xmlRelaxNGSkipIgnored(xmlRelaxNGValidCtxtPtr ctxt UNUSED,
                       xmlNodePtr node)
 {
     /*
