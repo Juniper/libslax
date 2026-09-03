@@ -16,9 +16,9 @@ extern "C" {
 #endif
 
 #if __GNUC__ * 100 + __GNUC_MINOR__ >= 207 || defined(__clang__)
-  #define ATTRIBUTE_UNUSED __attribute__((unused))
+  #define UNUSED __attribute__((unused))
 #else
-  #define ATTRIBUTE_UNUSED
+  #define UNUSED
 #endif
 
 #if defined(LIBXML_HTML_ENABLED)
