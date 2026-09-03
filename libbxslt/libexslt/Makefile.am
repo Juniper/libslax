@@ -1,5 +1,6 @@
 AM_CPPFLAGS = \
     -I$(top_builddir) \
+    -I$(top_srcdir) \
     -I$(top_srcdir)/libbxslt \
     -I$(top_srcdir)/libbxslt/libxslt \
     -I$(top_srcdir)/libbxslt/libexslt \
