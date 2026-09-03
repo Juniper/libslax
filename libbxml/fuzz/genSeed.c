@@ -55,9 +55,9 @@ static struct {
  * single file in the format expected by xmlFuzzResourceLoader.
  */
 static xmlParserErrors
-fuzzResourceRecorder(void *data ATTRIBUTE_UNUSED, const char *URL,
-                     const char *ID ATTRIBUTE_UNUSED,
-                     xmlResourceType type ATTRIBUTE_UNUSED,
+fuzzResourceRecorder(void *data UNUSED, const char *URL,
+                     const char *ID UNUSED,
+                     xmlResourceType type UNUSED,
                      xmlParserInputFlags flags,
                      xmlParserInputPtr *out) {
     *out = NULL;
