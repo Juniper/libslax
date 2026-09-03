@@ -2855,8 +2855,8 @@ error:
  * @returns NULL.
  */
 const htmlEntityDesc *
-htmlParseEntityRef(htmlParserCtxt *ctxt ATTRIBUTE_UNUSED,
-                   const xmlChar **str ATTRIBUTE_UNUSED) {
+htmlParseEntityRef(htmlParserCtxt *ctxt UNUSED,
+                   const xmlChar **str UNUSED) {
     return(NULL);
 }
 
@@ -3411,7 +3411,7 @@ htmlParseComment(htmlParserCtxtPtr ctxt, int bogus) {
  * @returns 0
  */
 int
-htmlParseCharRef(htmlParserCtxt *ctxt ATTRIBUTE_UNUSED) {
+htmlParseCharRef(htmlParserCtxt *ctxt UNUSED) {
     return(0);
 }
 
@@ -5427,8 +5427,8 @@ htmlHandleOmittedElem(int val) {
  * @returns 1
  */
 int
-htmlElementAllowedHere(const htmlElemDesc* parent ATTRIBUTE_UNUSED,
-                       const xmlChar* elt ATTRIBUTE_UNUSED) {
+htmlElementAllowedHere(const htmlElemDesc* parent UNUSED,
+                       const xmlChar* elt UNUSED) {
     return(1);
 }
 
@@ -5440,8 +5440,8 @@ htmlElementAllowedHere(const htmlElemDesc* parent ATTRIBUTE_UNUSED,
  * @returns HTML_VALID
  */
 htmlStatus
-htmlElementStatusHere(const htmlElemDesc* parent ATTRIBUTE_UNUSED,
-                      const htmlElemDesc* elt ATTRIBUTE_UNUSED) {
+htmlElementStatusHere(const htmlElemDesc* parent UNUSED,
+                      const htmlElemDesc* elt UNUSED) {
     return(HTML_VALID);
 }
 
@@ -5454,9 +5454,9 @@ htmlElementStatusHere(const htmlElemDesc* parent ATTRIBUTE_UNUSED,
  * @returns HTML_VALID
  */
 htmlStatus
-htmlAttrAllowed(const htmlElemDesc* elt ATTRIBUTE_UNUSED,
-                const xmlChar* attr ATTRIBUTE_UNUSED,
-                int legacy ATTRIBUTE_UNUSED) {
+htmlAttrAllowed(const htmlElemDesc* elt UNUSED,
+                const xmlChar* attr UNUSED,
+                int legacy UNUSED) {
     return(HTML_VALID);
 }
 
@@ -5469,8 +5469,8 @@ htmlAttrAllowed(const htmlElemDesc* elt ATTRIBUTE_UNUSED,
  * @returns HTML_VALID
  */
 htmlStatus
-htmlNodeStatus(xmlNode *node ATTRIBUTE_UNUSED,
-               int legacy ATTRIBUTE_UNUSED) {
+htmlNodeStatus(xmlNode *node UNUSED,
+               int legacy UNUSED) {
     return(HTML_VALID);
 }
 
