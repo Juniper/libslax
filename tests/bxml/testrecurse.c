@@ -68,8 +68,8 @@ typedef struct
 } glob_t;
 
 #define GLOB_DOOFFS 0
-static int glob(const char *pattern, ATTRIBUTE_UNUSED int flags,
-                ATTRIBUTE_UNUSED int errfunc(const char *epath, int eerrno),
+static int glob(const char *pattern, UNUSED int flags,
+                UNUSED int errfunc(const char *epath, int eerrno),
                 glob_t *pglob) {
     glob_t *ret;
     WIN32_FIND_DATA FindFileData;
@@ -160,8 +160,8 @@ typedef struct {
 } glob_t;
 
 static int
-glob(const char *pattern ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
-     int errfunc(const char *epath, int eerrno) ATTRIBUTE_UNUSED,
+glob(const char *pattern UNUSED, int flags UNUSED,
+     int errfunc(const char *epath, int eerrno) UNUSED,
      glob_t *pglob) {
     pglob->gl_pathc = 0;
     pglob->gl_pathv = NULL;
@@ -170,7 +170,7 @@ glob(const char *pattern ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
 }
 
 static void
-globfree(glob_t *pglob ATTRIBUTE_UNUSED) {
+globfree(glob_t *pglob UNUSED) {
 }
 
 #endif /* _WIN32, HAVE_DECL_GLOB */
@@ -468,8 +468,8 @@ static int checkTestFile(const char *filename) {
  */
 static int
 recursiveDetectTest(const char *filename,
-             const char *result ATTRIBUTE_UNUSED,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *result UNUSED,
+             const char *err UNUSED,
 	     int options) {
     xmlDocPtr doc;
     xmlParserCtxtPtr ctxt;
@@ -514,8 +514,8 @@ recursiveDetectTest(const char *filename,
  */
 static int
 notRecursiveDetectTest(const char *filename,
-             const char *result ATTRIBUTE_UNUSED,
-             const char *err ATTRIBUTE_UNUSED,
+             const char *result UNUSED,
+             const char *err UNUSED,
 	     int options) {
     xmlDocPtr doc;
     xmlParserCtxtPtr ctxt;
@@ -554,9 +554,9 @@ notRecursiveDetectTest(const char *filename,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-notRecursiveHugeTest(const char *filename ATTRIBUTE_UNUSED,
-             const char *result ATTRIBUTE_UNUSED,
-             const char *err ATTRIBUTE_UNUSED,
+notRecursiveHugeTest(const char *filename UNUSED,
+             const char *result UNUSED,
+             const char *err UNUSED,
 	     int options) {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -654,9 +654,9 @@ notRecursiveHugeTest(const char *filename ATTRIBUTE_UNUSED,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-hugeDtdTest(const char *filename ATTRIBUTE_UNUSED,
-            const char *result ATTRIBUTE_UNUSED,
-            const char *err ATTRIBUTE_UNUSED,
+hugeDtdTest(const char *filename UNUSED,
+            const char *result UNUSED,
+            const char *err UNUSED,
             int options) {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -890,7 +890,7 @@ runtest(int i) {
 }
 
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     int i, a, ret = 0;
     int subset = 0;
 
