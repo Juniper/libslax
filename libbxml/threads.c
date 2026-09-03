@@ -262,7 +262,7 @@ xmlRMutexLock(xmlRMutex *tok)
  * @param tok  the reentrant mutex
  */
 void
-xmlRMutexUnlock(xmlRMutex *tok ATTRIBUTE_UNUSED)
+xmlRMutexUnlock(xmlRMutex *tok UNUSED)
 {
     if (tok == NULL)
         return;
@@ -382,9 +382,9 @@ xmlInitParserInternal(void) {
 
 #if defined(HAVE_WIN32_THREADS)
 static BOOL WINAPI
-xmlInitParserWinWrapper(INIT_ONCE *initOnce ATTRIBUTE_UNUSED,
-                        void *parameter ATTRIBUTE_UNUSED,
-                        void **context ATTRIBUTE_UNUSED) {
+xmlInitParserWinWrapper(INIT_ONCE *initOnce UNUSED,
+                        void *parameter UNUSED,
+                        void **context UNUSED) {
     xmlInitParserInternal();
     return(TRUE);
 }
