@@ -7,7 +7,7 @@
  */
 
 #include "libxslt/libxslt.h"
-#include "libxslt/xsltconfig.h"
+#include "libbxslt/libbxsltconfig.h"
 #include "libexslt/exslt.h"
 
 #include <stdio.h>
@@ -226,7 +226,7 @@ my_gettimeofday(struct timeval *tvp, void *tzp)
 #endif /* HAVE_SYS_TIMEB_H */
 #endif /* !HAVE_GETTIMEOFDAY */
 
-static void endTimer(const char *format, ...) LIBXSLT_ATTR_FORMAT(1,2);
+static void endTimer(const char *format, ...) PSU_PRINTFLIKE(1,2);
 
 #if defined(HAVE_GETTIMEOFDAY)
 static struct timeval begin, endtime;
@@ -294,9 +294,9 @@ static void endTimer(const char *format, ...)
  * allow writes only on a subtree specified on the command line
  */
 static int
-xsltSubtreeCheck(xsltSecurityPrefsPtr sec ATTRIBUTE_UNUSED,
-	          xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		  const char *value ATTRIBUTE_UNUSED) {
+xsltSubtreeCheck(xsltSecurityPrefsPtr sec UNUSED,
+	          xsltTransformContextPtr ctxt UNUSED,
+		  const char *value UNUSED) {
     int len, ret;
 
     if (writesubtree == NULL)
