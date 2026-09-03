@@ -55,7 +55,7 @@ int fuzzIoFailed;
  * An error function that simply discards all errors.
  */
 void
-xmlFuzzErrorFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
+xmlFuzzErrorFunc(void *ctx UNUSED, const char *msg UNUSED,
                  ...) {
 }
 
@@ -65,8 +65,8 @@ xmlFuzzErrorFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
  * A structured error function that simply discards all errors.
  */
 void
-xmlFuzzSErrorFunc(void *ctx ATTRIBUTE_UNUSED,
-                  const xmlError *error ATTRIBUTE_UNUSED) {
+xmlFuzzSErrorFunc(void *ctx UNUSED,
+                  const xmlError *error UNUSED) {
 }
 
 /*
@@ -458,10 +458,10 @@ xmlFuzzSecondaryEntity(size_t *size) {
  * The resource loader for fuzz data.
  */
 xmlParserErrors
-xmlFuzzResourceLoader(void *data ATTRIBUTE_UNUSED, const char *URL,
-                      const char *ID ATTRIBUTE_UNUSED,
-                      xmlResourceType type ATTRIBUTE_UNUSED,
-                      xmlParserInputFlags flags ATTRIBUTE_UNUSED,
+xmlFuzzResourceLoader(void *data UNUSED, const char *URL,
+                      const char *ID UNUSED,
+                      xmlResourceType type UNUSED,
+                      xmlParserInputFlags flags UNUSED,
                       xmlParserInputPtr *out) {
     xmlParserInputPtr input;
     xmlFuzzEntityInfo *entity;
@@ -514,8 +514,8 @@ xmlSlurpFile(const char *path, size_t *sizeRet) {
 }
 
 int
-xmlFuzzOutputWrite(void *ctxt ATTRIBUTE_UNUSED,
-                   const char *buffer ATTRIBUTE_UNUSED, int len) {
+xmlFuzzOutputWrite(void *ctxt UNUSED,
+                   const char *buffer UNUSED, int len) {
     if (xmlFuzzTryIo() < 0)
         return -XML_IO_EIO;
 
@@ -523,7 +523,7 @@ xmlFuzzOutputWrite(void *ctxt ATTRIBUTE_UNUSED,
 }
 
 int
-xmlFuzzOutputClose(void *ctxt ATTRIBUTE_UNUSED) {
+xmlFuzzOutputClose(void *ctxt UNUSED) {
     if (xmlFuzzTryIo() < 0)
         return XML_IO_EIO;
 
