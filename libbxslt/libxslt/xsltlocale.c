@@ -109,7 +109,7 @@ xsltFreeLocales(void) {
  * Returns the locale or NULL on error or if no matching locale was found
  */
 void *
-xsltNewLocale(const xmlChar *languageTag, int lowerFirst ATTRIBUTE_UNUSED) {
+xsltNewLocale(const xmlChar *languageTag, int lowerFirst UNUSED) {
 #ifdef XSLT_LOCALE_POSIX
     locale_t locale;
     char localeName[XSLTMAX_LANGTAGLEN+7]; /* 7 chars for ".UTF-8\0" */
