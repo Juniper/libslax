@@ -15,7 +15,7 @@
 #include "libbxslt/libbxsltconfig.h"
 #endif
 
-#include <libxslt/xsltconfig.h>
+#include <libbxslt/libbxsltconfig.h>
 #include <libxml/xmlversion.h>
 
 #if !defined LIBEXSLT_PUBLIC
@@ -27,9 +27,9 @@
 #endif
 
 #ifdef __GNUC__
-#define ATTRIBUTE_UNUSED __attribute__((unused))
+#define UNUSED __attribute__((unused))
 #else
-#define ATTRIBUTE_UNUSED
+#define UNUSED
 #endif
 
 #endif /* ! __XSLT_LIBEXSLT_H__ */
