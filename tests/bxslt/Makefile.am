@@ -1,8 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_builddir) \
-	-I$(top_srcdir)/libbxslt -I$(top_builddir)/libbxslt \
-	-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
+AM_CPPFLAGS = \
+-I$(top_builddir) \
+-I$(top_srcdir) \
+-I$(top_srcdir)/libbxslt \
+-I$(top_builddir)/libbxslt \
+-I$(top_builddir)/libbxml/include \
+-I$(top_srcdir)/libbxml/include
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
 
