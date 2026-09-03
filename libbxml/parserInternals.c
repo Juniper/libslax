@@ -74,14 +74,14 @@ xmlCheckVersion(int version) {
 
     xmlInitParser();
 
-    if ((myversion / 10000) != (version / 10000)) {
+    if ((myversion / 1000000) != (version / 1000000)) {
 	xmlPrintErrorMessage(
 		"Fatal: program compiled against libxml %d using libxml %d\n",
-		(version / 10000), (myversion / 10000));
-    } else if ((myversion / 100) < (version / 100)) {
+		(version / 1000000), (myversion / 1000000));
+    } else if ((myversion / 1000) < (version / 1000)) {
 	xmlPrintErrorMessage(
 		"Warning: program compiled against libxml %d using older %d\n",
-		(version / 100), (myversion / 100));
+		(version / 1000), (myversion / 1000));
     }
 }
 
@@ -602,7 +602,7 @@ xmlIsLetter(int c) {
  * @returns -1 as this is an error to use it.
  */
 int
-xmlParserInputRead(xmlParserInput *in ATTRIBUTE_UNUSED, int len ATTRIBUTE_UNUSED) {
+xmlParserInputRead(xmlParserInput *in UNUSED, int len UNUSED) {
     return(-1);
 }
 
@@ -1059,7 +1059,7 @@ incomplete_sequence:
  */
 
 int
-xmlStringCurrentChar(xmlParserCtxt *ctxt ATTRIBUTE_UNUSED,
+xmlStringCurrentChar(xmlParserCtxt *ctxt UNUSED,
                      const xmlChar *cur, int *len) {
     int c;
 
@@ -1126,7 +1126,7 @@ xmlCopyCharMultiByte(xmlChar *out, int val) {
  */
 
 int
-xmlCopyChar(int len ATTRIBUTE_UNUSED, xmlChar *out, int val) {
+xmlCopyChar(int len UNUSED, xmlChar *out, int val) {
     if ((out == NULL) || (val < 0)) return(0);
     /* the len parameter is ignored */
     if  (val >= 0x80) {
@@ -1815,7 +1815,7 @@ xmlNewInputStream(xmlParserCtxt *ctxt) {
 xmlParserInput *
 xmlCtxtNewInputFromUrl(xmlParserCtxt *ctxt, const char *url,
                        const char *publicId, const char *encoding,
-                       xmlParserInputFlags flags ATTRIBUTE_UNUSED) {
+                       xmlParserInputFlags flags UNUSED) {
     xmlParserInputPtr input;
 
     if ((ctxt == NULL) || (url == NULL))
@@ -2090,7 +2090,7 @@ xmlCtxtNewInputFromFd(xmlParserCtxt *ctxt, const char *url,
 xmlParserInput *
 xmlNewInputFromIO(const char *url, xmlInputReadCallback ioRead,
                   xmlInputCloseCallback ioClose, void *ioCtxt,
-                  xmlParserInputFlags flags ATTRIBUTE_UNUSED) {
+                  xmlParserInputFlags flags UNUSED) {
     xmlParserInputBufferPtr buf;
 
     if (ioRead == NULL)
@@ -2412,8 +2412,8 @@ xmlCtxtResolveFromCatalog(xmlParserCtxtPtr ctxt, const char *url,
  * @returns NULL.
  */
 xmlParserInput *
-xmlCheckHTTPInput(xmlParserCtxt *ctxt ATTRIBUTE_UNUSED,
-                  xmlParserInput *ret ATTRIBUTE_UNUSED) {
+xmlCheckHTTPInput(xmlParserCtxt *ctxt UNUSED,
+                  xmlParserInput *ret UNUSED) {
     return(NULL);
 }
 
@@ -3704,7 +3704,7 @@ xmlPedanticParserDefault(int val) {
  */
 
 int
-xmlLineNumbersDefault(int val ATTRIBUTE_UNUSED) {
+xmlLineNumbersDefault(int val UNUSED) {
     return(1);
 }
 
