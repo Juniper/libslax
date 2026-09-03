@@ -1174,7 +1174,7 @@ mem_error:
 static void
 xmlCleanSpecialAttrCallback(void *payload, void *data,
                             const xmlChar *fullname, const xmlChar *fullattr,
-                            const xmlChar *unused ATTRIBUTE_UNUSED) {
+                            const xmlChar *unused UNUSED) {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) data;
 
     if (XML_PTR_TO_INT(payload) == XML_ATTRIBUTE_CDATA) {
@@ -2758,7 +2758,7 @@ xmlParserHandlePEReference(xmlParserCtxt *ctxt) {
  */
 xmlChar *
 xmlStringLenDecodeEntities(xmlParserCtxt *ctxt, const xmlChar *str, int len,
-                           int what ATTRIBUTE_UNUSED,
+                           int what UNUSED,
                            xmlChar end, xmlChar end2, xmlChar end3) {
     if ((ctxt == NULL) || (str == NULL) || (len < 0))
         return(NULL);
@@ -2784,7 +2784,7 @@ xmlStringLenDecodeEntities(xmlParserCtxt *ctxt, const xmlChar *str, int len,
  */
 xmlChar *
 xmlStringDecodeEntities(xmlParserCtxt *ctxt, const xmlChar *str,
-                        int what ATTRIBUTE_UNUSED,
+                        int what UNUSED,
 		        xmlChar end, xmlChar  end2, xmlChar end3) {
     if ((ctxt == NULL) || (str == NULL))
         return(NULL);
@@ -4725,7 +4725,7 @@ xmlParseCharDataComplex(xmlParserCtxtPtr ctxt, int partial) {
  * @param cdata  unused
  */
 void
-xmlParseCharData(xmlParserCtxt *ctxt, ATTRIBUTE_UNUSED int cdata) {
+xmlParseCharData(xmlParserCtxt *ctxt, UNUSED int cdata) {
     xmlParseCharDataInternal(ctxt, 0);
 }
 
