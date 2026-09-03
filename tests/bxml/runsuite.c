@@ -96,7 +96,7 @@ static void test_log(const char *msg, ...) {
 }
 
 static void
-testErrorHandler(void *ctx  ATTRIBUTE_UNUSED, const char *msg, ...) {
+testErrorHandler(void *ctx  UNUSED, const char *msg, ...) {
     va_list args;
     int res;
 
@@ -244,10 +244,10 @@ static int addEntity(char *name, char *content) {
 }
 
 static xmlParserErrors
-testResourceLoader(void *vctxt ATTRIBUTE_UNUSED, const char *URL,
-                   const char *ID ATTRIBUTE_UNUSED,
-                   xmlResourceType type ATTRIBUTE_UNUSED,
-                   xmlParserInputFlags flags ATTRIBUTE_UNUSED,
+testResourceLoader(void *vctxt UNUSED, const char *URL,
+                   const char *ID UNUSED,
+                   xmlResourceType type UNUSED,
+                   xmlParserInputFlags flags UNUSED,
                    xmlParserInputPtr *out) {
     int i;
 
@@ -1202,7 +1202,7 @@ done:
  ************************************************************************/
 
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     int ret = 0;
     int old_errors, old_tests, old_leaks;
 #ifdef LIBXML_RELAXNG_ENABLED
@@ -1347,7 +1347,7 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
 }
 #else /* !RELAXNG && !SCHEMAS */
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc UNUSED, char **argv UNUSED) {
     fprintf(stderr, "runsuite requires support for schemas and xpath in libxml2\n");
 }
 #endif
