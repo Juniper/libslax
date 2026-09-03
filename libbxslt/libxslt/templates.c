@@ -880,7 +880,7 @@ error:
  * Returns NULL.
  */
 xmlNodePtr *
-xsltTemplateProcess(xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED, xmlNodePtr node) {
+xsltTemplateProcess(xsltTransformContextPtr ctxt UNUSED, xmlNodePtr node) {
     if (node == NULL)
 	return(NULL);
 
