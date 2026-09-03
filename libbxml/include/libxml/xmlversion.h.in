@@ -14,26 +14,6 @@
 #define __XML_VERSION_H__
 
 /**
- * the version string like "1.2.3"
- */
-#define LIBXML_DOTTED_VERSION "@VERSION@"
-
-/**
- * the version number: 1.2.3 value is 10203
- */
-#define LIBXML_VERSION @LIBXML_VERSION_NUMBER@
-
-/**
- * the version number string, 1.2.3 value is "10203"
- */
-#define LIBXML_VERSION_STRING "@LIBXML_VERSION_NUMBER@"
-
-/**
- * extra version information, used to show a git commit description
- */
-#define LIBXML_VERSION_EXTRA "@LIBXML_VERSION_EXTRA@"
-
-/**
  * Macro to check that the libxml version in use is compatible with
  * the version the software has been compiled against
  */
