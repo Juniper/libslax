@@ -109,7 +109,7 @@ static void test_log(const char *msg, ...) {
 }
 
 static void
-testErrorHandler(void *userData ATTRIBUTE_UNUSED, const xmlError *error) {
+testErrorHandler(void *userData UNUSED, const xmlError *error) {
     int res;
 
     if (testErrorsSize >= 32768)
@@ -606,7 +606,7 @@ main(int argc, char **argv) {
 
 #else /* ! LIBXML_XPATH_ENABLED */
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv) {
+main(int argc UNUSED, char **argv) {
     fprintf(stderr, "%s need XPath and validation support\n", argv[0]);
     return(0);
 }
