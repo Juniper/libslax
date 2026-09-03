@@ -25,11 +25,10 @@
 
 #if defined(_WIN32) && !defined (__MINGW32__)
 #include <win32config.h>
-#else
-#include "libbxslt/libbxsltconfig.h"
 #endif
 
-#include <libxslt/xsltconfig.h>
+#include <libbxslt/libbxsltconfig.h>
+#include <libpsu/psucommon.h>
 #include <libxml/xmlversion.h>
 
 #if !defined LIBXSLT_PUBLIC
@@ -44,12 +43,6 @@
 #include <io.h>
 #include <direct.h>
 #define mkdir(p,m) _mkdir(p)
-#endif
-
-#ifdef __GNUC__
-#define ATTRIBUTE_UNUSED __attribute__((unused))
-#else
-#define ATTRIBUTE_UNUSED
 #endif
 
 #endif /* ! __XSLT_LIBXSLT_H__ */
