@@ -65,7 +65,7 @@ static exsltFuncFunctionData *exsltFuncNewFunctionData(void);
 static void
 exsltFuncRegisterFunc (void *payload, void *vctxt,
 		       const xmlChar *URI, const xmlChar *name,
-		       ATTRIBUTE_UNUSED const xmlChar *ignored) {
+		       UNUSED const xmlChar *ignored) {
     exsltFuncFunctionData *data = (exsltFuncFunctionData *) payload;
     xsltTransformContextPtr ctxt = (xsltTransformContextPtr) vctxt;
 
@@ -92,7 +92,7 @@ exsltFuncRegisterFunc (void *payload, void *vctxt,
 static void
 exsltFuncRegisterImportFunc (void *payload, void *vctxt,
 			     const xmlChar *URI, const xmlChar *name,
-			     ATTRIBUTE_UNUSED const xmlChar *ignored) {
+			     UNUSED const xmlChar *ignored) {
     exsltFuncFunctionData *data = (exsltFuncFunctionData *) payload;
     exsltFuncImportRegData *ch = (exsltFuncImportRegData *) vctxt;
     exsltFuncFunctionData *func=NULL;
@@ -181,8 +181,8 @@ exsltFuncInit (xsltTransformContextPtr ctxt, const xmlChar *URI) {
  * Called at transformation-time.
  */
 static void
-exsltFuncShutdown (xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
-		   const xmlChar *URI ATTRIBUTE_UNUSED,
+exsltFuncShutdown (xsltTransformContextPtr ctxt UNUSED,
+		   const xmlChar *URI UNUSED,
 		   void *vdata) {
     exsltFuncData *data = (exsltFuncData *) vdata;
 
@@ -204,13 +204,13 @@ exsltFuncShutdown (xsltTransformContextPtr ctxt ATTRIBUTE_UNUSED,
  * Returns the allocated data
  */
 static void *
-exsltFuncStyleInit (xsltStylesheetPtr style ATTRIBUTE_UNUSED,
-		    const xmlChar *URI ATTRIBUTE_UNUSED) {
+exsltFuncStyleInit (xsltStylesheetPtr style UNUSED,
+		    const xmlChar *URI UNUSED) {
     return xmlHashCreate(1);
 }
 
 static void
-exsltFuncFreeDataEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+exsltFuncFreeDataEntry(void *payload, const xmlChar *name UNUSED) {
     xmlFree(payload);
 }
 
@@ -224,8 +224,8 @@ exsltFuncFreeDataEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
  * Called at compile-time.
  */
 static void
-exsltFuncStyleShutdown (xsltStylesheetPtr style ATTRIBUTE_UNUSED,
-			const xmlChar *URI ATTRIBUTE_UNUSED,
+exsltFuncStyleShutdown (xsltStylesheetPtr style UNUSED,
+			const xmlChar *URI UNUSED,
 			void *vdata) {
     xmlHashTablePtr data = (xmlHashTablePtr) vdata;
     xmlHashFree(data, exsltFuncFreeDataEntry);
@@ -697,7 +697,7 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
 
 static void
 exsltFuncResultElem (xsltTransformContextPtr ctxt,
-	             xmlNodePtr node ATTRIBUTE_UNUSED, xmlNodePtr inst,
+	             xmlNodePtr node UNUSED, xmlNodePtr inst,
 		     xsltElemPreCompPtr ecomp) {
     exsltFuncResultPreComp *comp = (exsltFuncResultPreComp *) ecomp;
     exsltFuncData *data;
