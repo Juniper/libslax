@@ -917,8 +917,8 @@ xsltFreeStylesheetList(xsltStylesheetPtr style) {
  * Returns 0 if OK, -1 on API or internal errors.
  */
 static int
-xsltCleanupStylesheetTree(xmlDocPtr doc ATTRIBUTE_UNUSED,
-			  xmlNodePtr rootElem ATTRIBUTE_UNUSED)
+xsltCleanupStylesheetTree(xmlDocPtr doc UNUSED,
+			  xmlNodePtr rootElem UNUSED)
 {
 #if 0 /* TODO: Currently disabled, since probably not needed. */
     xmlNodePtr cur;
