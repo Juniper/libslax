@@ -96,8 +96,8 @@ static void
 libxml_xmlErrorInitialize(void); /* forward declare */
 
 PyObject *
-libxml_xmlMemoryUsed(PyObject * self ATTRIBUTE_UNUSED, 
-        PyObject * args ATTRIBUTE_UNUSED)
+libxml_xmlMemoryUsed(PyObject * self UNUSED, 
+        PyObject * args UNUSED)
 {
     long ret;
     PyObject *py_retval;
@@ -109,7 +109,7 @@ libxml_xmlMemoryUsed(PyObject * self ATTRIBUTE_UNUSED,
 }
 
 PyObject *
-libxml_xmlDebugMemory(PyObject * self ATTRIBUTE_UNUSED, PyObject * args)
+libxml_xmlDebugMemory(PyObject * self UNUSED, PyObject * args)
 {
     int activate;
     PyObject *py_retval;
@@ -160,8 +160,8 @@ libxml_xmlDebugMemory(PyObject * self ATTRIBUTE_UNUSED, PyObject * args)
 }
 
 PyObject *
-libxml_xmlPythonCleanupParser(PyObject *self ATTRIBUTE_UNUSED,
-                              PyObject *args ATTRIBUTE_UNUSED) {
+libxml_xmlPythonCleanupParser(PyObject *self UNUSED,
+                              PyObject *args UNUSED) {
 
 #ifdef LIBXML_XPATH_ENABLED
     int ix;
@@ -469,7 +469,7 @@ xmlOutputBufferCreatePythonFile(PyObject *file,
 }
 
 PyObject *
-libxml_xmlCreateOutputBuffer(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlCreateOutputBuffer(UNUSED PyObject *self, PyObject *args) {
     PyObject *py_retval;
     PyObject *file;
     xmlChar  *encoding;
@@ -499,7 +499,7 @@ libxml_xmlCreateOutputBuffer(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
  * Returns the new parser output or NULL
  */
 static PyObject *
-libxml_outputBufferGetPythonFile(ATTRIBUTE_UNUSED PyObject *self,
+libxml_outputBufferGetPythonFile(UNUSED PyObject *self,
                                     PyObject *args) {
     PyObject *buffer;
     PyObject *file;
@@ -534,7 +534,7 @@ XML_POP_WARNINGS
 }
 
 static PyObject *
-libxml_xmlOutputBufferClose(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_xmlOutputBufferClose(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     int c_retval;
     xmlOutputBufferPtr out;
@@ -555,7 +555,7 @@ libxml_xmlOutputBufferClose(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 static PyObject *
-libxml_xmlOutputBufferFlush(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_xmlOutputBufferFlush(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     int c_retval;
     xmlOutputBufferPtr out;
@@ -571,7 +571,7 @@ libxml_xmlOutputBufferFlush(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 static PyObject *
-libxml_xmlSaveFileTo(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_xmlSaveFileTo(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     int c_retval;
     xmlOutputBufferPtr buf;
@@ -594,7 +594,7 @@ libxml_xmlSaveFileTo(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 static PyObject *
-libxml_xmlSaveFormatFileTo(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_xmlSaveFormatFileTo(PyObject *self UNUSED, PyObject *args) {
     PyObject *py_retval;
     int c_retval;
     xmlOutputBufferPtr buf;
@@ -643,7 +643,7 @@ xmlParserInputBufferCreatePythonFile(PyObject *file,
 }
 
 PyObject *
-libxml_xmlCreateInputBuffer(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlCreateInputBuffer(UNUSED PyObject *self, PyObject *args) {
     PyObject *py_retval;
     PyObject *file;
     xmlChar  *encoding;
@@ -719,7 +719,7 @@ pythonExternalEntityLoader(const char *URL, const char *ID,
 }
 
 PyObject *
-libxml_xmlSetEntityLoader(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlSetEntityLoader(UNUSED PyObject *self, PyObject *args) {
     PyObject *py_retval;
     PyObject *loader;
 
@@ -753,7 +753,7 @@ static PyObject *pythonInputOpenCallbackObject;
 static int pythonInputCallbackID = -1;
 
 static int
-pythonInputMatchCallback(ATTRIBUTE_UNUSED const char *URI)
+pythonInputMatchCallback(UNUSED const char *URI)
 {
     /* Always return success, real decision whether URI is supported will be
      * made in open callback.  */
@@ -775,7 +775,7 @@ pythonInputOpenCallback(const char *URI)
 }
 
 PyObject *
-libxml_xmlRegisterInputCallback(ATTRIBUTE_UNUSED PyObject *self,
+libxml_xmlRegisterInputCallback(UNUSED PyObject *self,
                                 PyObject *args) {
     PyObject *cb;
 
@@ -807,8 +807,8 @@ libxml_xmlRegisterInputCallback(ATTRIBUTE_UNUSED PyObject *self,
 }
 
 PyObject *
-libxml_xmlUnregisterInputCallback(ATTRIBUTE_UNUSED PyObject *self,
-                                ATTRIBUTE_UNUSED PyObject *args) {
+libxml_xmlUnregisterInputCallback(UNUSED PyObject *self,
+                                UNUSED PyObject *args) {
     int ret;
 
     ret = xmlPopInputCallbacks();
@@ -1231,7 +1231,7 @@ XML_POP_WARNINGS
 static void
 pythonElementDecl(void *user_data,
                   const xmlChar * name,
-                  int type, ATTRIBUTE_UNUSED xmlElementContentPtr content)
+                  int type, UNUSED xmlElementContentPtr content)
 {
     PyObject *handler;
     PyObject *obj;
@@ -1332,7 +1332,7 @@ static xmlSAXHandler pythonSaxHandler = {
 
 #ifdef LIBXML_PUSH_ENABLED
 PyObject *
-libxml_xmlCreatePushParser(ATTRIBUTE_UNUSED PyObject * self,
+libxml_xmlCreatePushParser(UNUSED PyObject * self,
                            PyObject * args)
 {
     const char *chunk;
@@ -1360,7 +1360,7 @@ libxml_xmlCreatePushParser(ATTRIBUTE_UNUSED PyObject * self,
 
 #ifdef LIBXML_HTML_ENABLED
 PyObject *
-libxml_htmlCreatePushParser(ATTRIBUTE_UNUSED PyObject * self,
+libxml_htmlCreatePushParser(UNUSED PyObject * self,
                             PyObject * args)
 {
     const char *chunk;
@@ -1391,7 +1391,7 @@ libxml_htmlCreatePushParser(ATTRIBUTE_UNUSED PyObject * self,
 
 #ifdef LIBXML_SAX1_ENABLED
 PyObject *
-libxml_xmlSAXParseFile(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlSAXParseFile(UNUSED PyObject * self, PyObject * args)
 {
     int recover;
     const char *URI;
@@ -1420,7 +1420,7 @@ libxml_xmlSAXParseFile(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 
 #ifdef LIBXML_HTML_ENABLED
 PyObject *
-libxml_htmlSAXParseFile(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_htmlSAXParseFile(UNUSED PyObject * self, PyObject * args)
 {
     const char *URI;
     const char *encoding;
@@ -1479,7 +1479,7 @@ libxml_buildMessage(const char *msg, va_list ap)
 }
 
 static void
-libxml_xmlErrorFuncHandler(ATTRIBUTE_UNUSED void *ctx, const char *msg,
+libxml_xmlErrorFuncHandler(UNUSED void *ctx, const char *msg,
                            ...)
 {
     va_list ap;
@@ -1518,7 +1518,7 @@ XML_POP_WARNINGS
 }
 
 static PyObject *
-libxml_xmlRegisterErrorHandler(ATTRIBUTE_UNUSED PyObject * self,
+libxml_xmlRegisterErrorHandler(UNUSED PyObject * self,
                                PyObject * args)
 {
     PyObject *py_retval;
@@ -1605,7 +1605,7 @@ libxml_xmlParserCtxtErrorHandler(void *ctx, const xmlError *error)
 }
 
 static PyObject *
-libxml_xmlParserCtxtSetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) 
+libxml_xmlParserCtxtSetErrorHandler(UNUSED PyObject *self, PyObject *args) 
 {
     PyObject *py_retval;
     xmlParserCtxtPtr ctxt;
@@ -1650,7 +1650,7 @@ libxml_xmlParserCtxtSetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *a
 }
 
 static PyObject *
-libxml_xmlParserCtxtGetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) 
+libxml_xmlParserCtxtGetErrorHandler(UNUSED PyObject *self, PyObject *args) 
 {
     PyObject *py_retval;
     xmlParserCtxtPtr ctxt;
@@ -1681,7 +1681,7 @@ libxml_xmlParserCtxtGetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *a
 }
 
 static PyObject *
-libxml_xmlFreeParserCtxt(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlFreeParserCtxt(UNUSED PyObject *self, PyObject *args) {
     xmlParserCtxtPtr ctxt;
     PyObject *pyobj_ctxt;
     xmlParserCtxtPyCtxtPtr pyCtxt;
@@ -1718,7 +1718,7 @@ typedef struct
 typedef xmlValidCtxtPyCtxt *xmlValidCtxtPyCtxtPtr;
 
 static void
-libxml_xmlValidCtxtGenericErrorFuncHandler(void *ctx, ATTRIBUTE_UNUSED int severity, char *str)
+libxml_xmlValidCtxtGenericErrorFuncHandler(void *ctx, UNUSED int severity, char *str)
 {
     PyObject *list;
     PyObject *result;
@@ -1741,7 +1741,7 @@ libxml_xmlValidCtxtGenericErrorFuncHandler(void *ctx, ATTRIBUTE_UNUSED int sever
 }
 
 static void
-libxml_xmlValidCtxtGenericWarningFuncHandler(void *ctx, ATTRIBUTE_UNUSED int severity, char *str)
+libxml_xmlValidCtxtGenericWarningFuncHandler(void *ctx, UNUSED int severity, char *str)
 {
     PyObject *list;
     PyObject *result;
@@ -1784,7 +1784,7 @@ libxml_xmlValidCtxtWarningFuncHandler(void *ctx, const char *msg, ...)
 }
 
 static PyObject *
-libxml_xmlSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlSetValidErrors(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     PyObject *pyobj_error;
@@ -1830,7 +1830,7 @@ libxml_xmlSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 
 
 static PyObject *
-libxml_xmlFreeValidCtxt(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_xmlFreeValidCtxt(PyObject *self UNUSED, PyObject *args) {
     xmlValidCtxtPtr cur;
     xmlValidCtxtPyCtxtPtr pyCtxt;
     PyObject *pyobj_cur;
@@ -1895,7 +1895,7 @@ libxml_xmlTextReaderErrorCallback(void *arg,
 }
 
 static PyObject *
-libxml_xmlTextReaderSetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *args)
+libxml_xmlTextReaderSetErrorHandler(UNUSED PyObject *self, PyObject *args)
 {
     xmlTextReaderPtr reader;
     xmlTextReaderPyCtxtPtr pyCtxt;
@@ -1952,7 +1952,7 @@ libxml_xmlTextReaderSetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *a
 }
 
 static PyObject *
-libxml_xmlTextReaderGetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *args)
+libxml_xmlTextReaderGetErrorHandler(UNUSED PyObject *self, PyObject *args)
 {
     xmlTextReaderPtr reader;
     xmlTextReaderPyCtxtPtr pyCtxt;
@@ -1986,7 +1986,7 @@ libxml_xmlTextReaderGetErrorHandler(ATTRIBUTE_UNUSED PyObject *self, PyObject *a
 }
 
 static PyObject *
-libxml_xmlFreeTextReader(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlFreeTextReader(UNUSED PyObject *self, PyObject *args) {
     xmlTextReaderPtr reader;
     PyObject *pyobj_reader;
     xmlTextReaderPyCtxtPtr pyCtxt;
@@ -2126,7 +2126,7 @@ libxml_xpathCallbacksInitialize(void)
 }
 
 PyObject *
-libxml_xmlRegisterXPathFunction(ATTRIBUTE_UNUSED PyObject * self,
+libxml_xmlRegisterXPathFunction(UNUSED PyObject * self,
                                 PyObject * args)
 {
     PyObject *py_retval;
@@ -2183,7 +2183,7 @@ libxml_xmlRegisterXPathFunction(ATTRIBUTE_UNUSED PyObject * self,
 }
 
 PyObject *
-libxml_xmlXPathRegisterVariable(ATTRIBUTE_UNUSED PyObject * self,
+libxml_xmlXPathRegisterVariable(UNUSED PyObject * self,
                                 PyObject * args)
 {
     PyObject *py_retval;
@@ -2215,7 +2215,7 @@ libxml_xmlXPathRegisterVariable(ATTRIBUTE_UNUSED PyObject * self,
  *									*
  ************************************************************************/
 static PyObject *
-libxml_name(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_name(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2255,7 +2255,7 @@ libxml_name(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_doc(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_doc(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2288,7 +2288,7 @@ libxml_doc(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_properties(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_properties(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2306,7 +2306,7 @@ libxml_properties(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_next(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_next(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2343,7 +2343,7 @@ libxml_next(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_prev(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_prev(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2376,7 +2376,7 @@ libxml_prev(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_children(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_children(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2412,7 +2412,7 @@ libxml_children(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_last(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_last(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2448,7 +2448,7 @@ libxml_last(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_parent(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_parent(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2484,7 +2484,7 @@ libxml_parent(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_type(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_type(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *resultobj, *obj;
     xmlNodePtr cur;
@@ -2571,7 +2571,7 @@ libxml_type(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
  *									*
  ************************************************************************/
 PyObject *
-libxml_xmlNodeGetNsDefs(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlNodeGetNsDefs(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     xmlNsPtr c_retval;
@@ -2593,7 +2593,7 @@ libxml_xmlNodeGetNsDefs(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 PyObject *
-libxml_xmlNodeRemoveNsDef(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlNodeRemoveNsDef(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     xmlNsPtr ns, prev;
@@ -2642,7 +2642,7 @@ libxml_xmlNodeRemoveNsDef(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 PyObject *
-libxml_xmlNodeGetNs(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlNodeGetNs(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     xmlNsPtr c_retval;
@@ -2672,7 +2672,7 @@ libxml_xmlNodeGetNs(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
  ************************************************************************/
 
 static PyObject *
-libxml_serializeNode(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_serializeNode(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval = NULL;
     xmlChar *c_retval;
@@ -2745,7 +2745,7 @@ libxml_serializeNode(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 }
 
 static PyObject *
-libxml_saveNodeTo(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_saveNodeTo(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_file = NULL;
     FILE *output;
@@ -2823,7 +2823,7 @@ libxml_saveNodeTo(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
  *									*
  ************************************************************************/
 PyObject *
-libxml_xmlNewNode(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlNewNode(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     xmlChar *name;
@@ -2850,7 +2850,7 @@ libxml_xmlNewNode(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
 
 #ifdef LIBXML_CATALOG_ENABLED
 static PyObject *
-libxml_addLocalCatalog(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_addLocalCatalog(UNUSED PyObject * self, PyObject * args)
 {
     xmlChar *URL;
     xmlParserCtxtPtr ctxt;
@@ -2953,7 +2953,7 @@ libxml_xmlRelaxNGValidityWarningFunc(void *ctx, const char *msg, ...)
 }
 
 static PyObject *
-libxml_xmlRelaxNGSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlRelaxNGSetValidErrors(UNUSED PyObject * self, PyObject * args)
 {
     PyObject *py_retval;
     PyObject *pyobj_error;
@@ -3005,7 +3005,7 @@ libxml_xmlRelaxNGSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * arg
 }
 
 static PyObject *
-libxml_xmlRelaxNGFreeValidCtxt(ATTRIBUTE_UNUSED PyObject *self, PyObject *args) {
+libxml_xmlRelaxNGFreeValidCtxt(UNUSED PyObject *self, PyObject *args) {
     xmlRelaxNGValidCtxtPtr ctxt;
     xmlRelaxNGValidCtxtPyCtxtPtr pyCtxt;
     PyObject *pyobj_ctxt;
@@ -3107,7 +3107,7 @@ libxml_xmlSchemaValidityWarningFunc(void *ctx, const char *msg, ...)
 }
 
 PyObject *
-libxml_xmlSchemaSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlSchemaSetValidErrors(UNUSED PyObject * self, PyObject * args)
 {
 	PyObject *py_retval;
 	PyObject *pyobj_error;
@@ -3159,7 +3159,7 @@ libxml_xmlSchemaSetValidErrors(ATTRIBUTE_UNUSED PyObject * self, PyObject * args
 }
 
 static PyObject *
-libxml_xmlSchemaFreeValidCtxt(ATTRIBUTE_UNUSED PyObject * self, PyObject * args)
+libxml_xmlSchemaFreeValidCtxt(UNUSED PyObject * self, PyObject * args)
 {
 	xmlSchemaValidCtxtPtr ctxt;
 	xmlSchemaValidCtxtPyCtxtPtr pyCtxt;
@@ -3312,7 +3312,7 @@ PystringSet_Convert(PyObject *py_strings, xmlChar *** result)
 }
 
 static PyObject *
-libxml_C14NDocDumpMemory(ATTRIBUTE_UNUSED PyObject * self,
+libxml_C14NDocDumpMemory(UNUSED PyObject * self,
                          PyObject * args)
 {
     PyObject *py_retval = NULL;
@@ -3389,7 +3389,7 @@ libxml_C14NDocDumpMemory(ATTRIBUTE_UNUSED PyObject * self,
 }
 
 static PyObject *
-libxml_C14NDocSaveTo(ATTRIBUTE_UNUSED PyObject * self,
+libxml_C14NDocSaveTo(UNUSED PyObject * self,
                      PyObject * args)
 {
     PyObject *pyobj_doc;
@@ -3481,7 +3481,7 @@ libxml_C14NDocSaveTo(ATTRIBUTE_UNUSED PyObject * self,
 #endif
 
 static PyObject *
-libxml_getObjDesc(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_getObjDesc(PyObject *self UNUSED, PyObject *args) {
 
     PyObject *obj;
     char *str;
@@ -3493,7 +3493,7 @@ libxml_getObjDesc(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 static PyObject *
-libxml_compareNodesEqual(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_compareNodesEqual(PyObject *self UNUSED, PyObject *args) {
     
     PyObject *py_node1, *py_node2;
     xmlNodePtr node1, node2;
@@ -3512,7 +3512,7 @@ libxml_compareNodesEqual(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 static PyObject *
-libxml_nodeHash(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
+libxml_nodeHash(PyObject *self UNUSED, PyObject *args) {
 
     PyObject *py_node1;
     xmlNodePtr node1;
