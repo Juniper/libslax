@@ -1,9 +1,5 @@
 compiled 4 patterns
 <store>
-   <catalog>
-      <item>First item</item>
-      <item>Second item</item>
-   </catalog>
    <inventory>
       <new-node>foo</new-node>
       <newer-node>
