@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.18.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Basic for-each test: document-order iteration, no sort.
+
+    Template matches <catalog> and uses xsl:for-each select="book"
+    to emit a summary <entry> for each book in document order.
+    The body references child elements (title, author) via PUSH_TEXT.
+
+    Verifies:
+      - PIN_OP_FOR_EACH compilation and execution in op-dispatch
+      - Body sub-sequence pushed as LIFO frames (correct order)
+      - psf_context switch: each frame sees its own book node
+      - PUSH_TEXT resolves child element text content per frame
+      - Document order preserved when no sort spec is present
+  -->
+  <xsl:template match="catalog">
+    <result>
+      <xsl:for-each select="book">
+        <entry>
+          <t><xsl:value-of select="title"/></t>
+          <a><xsl:value-of select="author"/></a>
+        </entry>
+      </xsl:for-each>
+    </result>
+  </xsl:template>
+</xsl:stylesheet>
