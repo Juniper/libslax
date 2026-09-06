@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.22.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    for-each + sort by child element text content (path expression).
+
+    Template matches <contacts> and sorts <person> children by the
+    text content of their <name> child element.
+
+    Verifies:
+      - pin_for_each_eval_expr for simple child-element-name paths
+      - pin_exec_text_of correctly extracts text from a child element
+      - Sort by element text (not attribute) works end-to-end
+  -->
+  <xsl:template match="contacts">
+    <directory>
+      <xsl:for-each select="person">
+        <xsl:sort select="name"/>
+        <entry>
+          <n><xsl:value-of select="name"/></n>
+          <c><xsl:value-of select="city"/></c>
+        </entry>
+      </xsl:for-each>
+    </directory>
+  </xsl:template>
+</xsl:stylesheet>
