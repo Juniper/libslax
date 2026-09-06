@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.20.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    for-each + descending sort by attribute.
+
+    Template matches <scores> and iterates over <player> children sorted
+    descending by @name (alphabetical, so z before a).
+
+    Verifies:
+      - '-' flag prefix in sort-key spec produces descending walk
+      - Frames pushed in ascending order (LIFO → descending output)
+  -->
+  <xsl:template match="scores">
+    <ranking>
+      <xsl:for-each select="player">
+        <xsl:sort select="@name" order="descending"/>
+        <row>
+          <n><xsl:value-of select="@name"/></n>
+          <s><xsl:value-of select="@score"/></s>
+        </row>
+      </xsl:for-each>
+    </ranking>
+  </xsl:template>
+</xsl:stylesheet>
