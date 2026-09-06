@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.26.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Two-level for-each on real dent.xml network data: interfaces -> units.
+
+    Outer for-each <interface> sorted by child element <name> ascending.
+    Inner for-each <unit> sorted by child element <name> ascending.
+    All sort keys use child element text paths (not attributes).
+
+    Outer body: xsl:if test="description" (child element presence).
+    Inner body: xsl:if test="tunnel", xsl:if test="family",
+                xsl:if test="description"; three child element presence
+                tests in a sorted for-each body.
+
+    Verifies:
+      - Sorted for-each on real-world deeply-nested network config data
+      - Child-element text path sort at both levels
+      - Child element presence tests inside a sorted for-each body
+      - Nested for-each where most outer elements have exactly one inner
+        element (unit) but gr-1/2/0 has five units; stresses the
+        frame stack across heterogeneous iteration counts
+      - LIFO ordering: inner unit frames fully drain before interface
+        EMIT_CLOSE fires for each interface
+  -->
+  <xsl:template match="interfaces">
+    <interface-report>
+      <xsl:for-each select="interface">
+        <xsl:sort select="name"/>
+        <iface>
+          <n><xsl:value-of select="name"/></n>
+          <xsl:if test="description">
+            <has-desc/>
+          </xsl:if>
+          <xsl:for-each select="unit">
+            <xsl:sort select="name"/>
+            <unit>
+              <n><xsl:value-of select="name"/></n>
+              <xsl:if test="tunnel">
+                <has-tunnel/>
+              </xsl:if>
+              <xsl:if test="family">
+                <has-family/>
+              </xsl:if>
+              <xsl:if test="description">
+                <has-desc/>
+              </xsl:if>
+            </unit>
+          </xsl:for-each>
+        </iface>
+      </xsl:for-each>
+    </interface-report>
+  </xsl:template>
+</xsl:stylesheet>
