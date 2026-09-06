@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.24.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Nested for-each: outer iterates depts, inner iterates teams.
+
+    Template matches <company> and emits two levels of for-each.
+    The outer for-each body contains an inner for-each that uses
+    the outer context (a <dept> node) to walk its <team> children.
+
+    Verifies:
+      - Body sub-sequence of outer for-each contains inner FOR_EACH op
+      - LIFO frame nesting: team frames pushed between outer dept frame's
+        EMIT_OPEN and EMIT_CLOSE, so EMIT_CLOSE fires after all team frames
+      - psf_context correctly switches for each nested frame level
+      - pin_op_for_each uses pes_seq top frame's context (dept node)
+        to find team children — not the original company context
+  -->
+  <xsl:template match="company">
+    <output>
+      <xsl:for-each select="dept">
+        <dept>
+          <dn><xsl:value-of select="@name"/></dn>
+          <xsl:for-each select="team">
+            <team>
+              <tn><xsl:value-of select="@name"/></tn>
+            </team>
+          </xsl:for-each>
+        </dept>
+      </xsl:for-each>
+    </output>
+  </xsl:template>
+</xsl:stylesheet>
