@@ -1,0 +1,23 @@
+compiled 1 pattern
+<directory>
+   <entry>
+      <n>Anderson</n>
+      <c>Portland</c>
+   </entry>
+   <entry>
+      <n>Baker</n>
+      <c>Austin</c>
+   </entry>
+   <entry>
+      <n>Chen</n>
+      <c>Phoenix</c>
+   </entry>
+   <entry>
+      <n>Torres</n>
+      <c>Denver</c>
+   </entry>
+   <entry>
+      <n>Wilson</n>
+      <c>Seattle</c>
+   </entry>
+</directory>
