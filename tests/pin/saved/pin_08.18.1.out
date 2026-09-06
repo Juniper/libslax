@@ -1,0 +1,23 @@
+compiled 1 pattern
+<result>
+   <entry>
+      <t>Practical XML</t>
+      <a>A. Smith</a>
+   </entry>
+   <entry>
+      <t>Transformations</t>
+      <a>B. Jones</a>
+   </entry>
+   <entry>
+      <t>Pattern Matching</t>
+      <a>C. Brown</a>
+   </entry>
+   <entry>
+      <t>Advanced Indexing</t>
+      <a>D. White</a>
+   </entry>
+   <entry>
+      <t>Stream Processing</t>
+      <a>E. Green</a>
+   </entry>
+</result>
