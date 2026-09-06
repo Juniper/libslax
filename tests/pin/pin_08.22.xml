@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!-- Contact list: sort using child element text path -->
+<contacts>
+  <person>
+    <name>Wilson</name>
+    <city>Seattle</city>
+  </person>
+  <person>
+    <name>Anderson</name>
+    <city>Portland</city>
+  </person>
+  <person>
+    <name>Torres</name>
+    <city>Denver</city>
+  </person>
+  <person>
+    <name>Baker</name>
+    <city>Austin</city>
+  </person>
+  <person>
+    <name>Chen</name>
+    <city>Phoenix</city>
+  </person>
+</contacts>
