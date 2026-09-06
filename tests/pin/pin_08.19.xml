@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- Package list: sort by @name attribute ascending -->
+<packages>
+  <pkg name="zebra" version="1.0"/>
+  <pkg name="alpha" version="3.2"/>
+  <pkg name="mango" version="2.1"/>
+  <pkg name="delta" version="1.5"/>
+  <pkg name="bravo" version="4.0"/>
+</packages>
