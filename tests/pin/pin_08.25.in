@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.25.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Three-level nested for-each stress test: region -> site -> device.
+
+    Data: 4 regions x 3 sites x 5 devices = 60 devices, all attribute-based.
+
+    Outer for-each <region>: sorted descending by @name.
+      Body: xsl:if @active.
+    Middle for-each <site>: sorted ascending by @name.
+      Body: xsl:if @managed.
+    Inner for-each <device>: two-key sort ascending by @type then @name.
+      Body: value-of @type, xsl:if @active, xsl:if @managed.
+
+    Verifies:
+      - Three-level LIFO frame stack: inner frames drain before middle
+        EMIT_CLOSE fires; middle drains before outer EMIT_CLOSE fires
+      - Two-key sort at innermost level (devices with same type sorted by name)
+      - Descending sort at outer level, ascending at inner levels
+      - Sequential xsl:if inside a sorted for-each body
+      - psf_context correctly switches at each nesting level
+      - 60-element dataset stresses sort pool allocation across all levels
+  -->
+  <xsl:template match="network">
+    <report>
+      <xsl:for-each select="region">
+        <xsl:sort select="@name" order="descending"/>
+        <region>
+          <n><xsl:value-of select="@name"/></n>
+          <xsl:if test="@active">
+            <status>active</status>
+          </xsl:if>
+          <xsl:for-each select="site">
+            <xsl:sort select="@name"/>
+            <site>
+              <n><xsl:value-of select="@name"/></n>
+              <xsl:if test="@managed">
+                <flag>managed</flag>
+              </xsl:if>
+              <xsl:for-each select="device">
+                <xsl:sort select="@type"/>
+                <xsl:sort select="@name"/>
+                <dev>
+                  <n><xsl:value-of select="@name"/></n>
+                  <t><xsl:value-of select="@type"/></t>
+                  <xsl:if test="@active">
+                    <flag>active</flag>
+                  </xsl:if>
+                  <xsl:if test="@managed">
+                    <flag>managed</flag>
+                  </xsl:if>
+                </dev>
+              </xsl:for-each>
+            </site>
+          </xsl:for-each>
+        </region>
+      </xsl:for-each>
+    </report>
+  </xsl:template>
+</xsl:stylesheet>
