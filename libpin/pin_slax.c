@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
@@ -786,6 +787,98 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    continue;
 	}
 
+	if (pin_slax_is_xsl(child, "for-each")) {
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    if (sel == NULL)
+		continue;
+	    const char *s = (const char *) sel;
+
+	    /* Only simple element-name selects (no path, predicates, wildcards) */
+	    if (strpbrk(s, "/@[]*.:") != NULL) {
+		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		xmlFree(sel);
+		continue;
+	    }
+
+	    /* Collect xsl:sort children into a newline-separated spec string */
+	    char spec[1024];
+	    size_t spos = 0;
+	    bool sort_ok = true;
+	    for (xmlNodePtr sp = child->children; sp; sp = sp->next) {
+		if (!pin_slax_is_xsl(sp, "sort"))
+		    continue;
+
+		xmlChar *order  = xmlGetProp(sp, (const xmlChar *) "order");
+		xmlChar *corder = xmlGetProp(sp, (const xmlChar *) "case-order");
+		xmlChar *dtype  = xmlGetProp(sp, (const xmlChar *) "data-type");
+		xmlChar *kexpr  = xmlGetProp(sp, (const xmlChar *) "select");
+
+		/* data-type="number" not yet supported in op-dispatch */
+		if (dtype && strcmp((char *) dtype, "number") == 0)
+		    sort_ok = false;
+
+		const char *kstr = kexpr ? (const char *) kexpr : ".";
+		if (sort_ok && strpbrk(kstr, "[()*") != NULL)
+		    sort_ok = false;
+
+		if (sort_ok) {
+		    if (spos > 0 && spos < sizeof(spec) - 1)
+			spec[spos++] = '\n';
+
+		    bool desc  = order  && strcmp((char *) order,  "descending") == 0;
+		    bool upper = corder && strcmp((char *) corder, "upper-first") == 0;
+		    if (desc  && spos < sizeof(spec) - 1) spec[spos++] = '-';
+		    if (upper && spos < sizeof(spec) - 1) spec[spos++] = '^';
+
+		    spos += (size_t) snprintf(spec + spos, sizeof(spec) - spos,
+					     "%s", kstr);
+		    if (spos >= sizeof(spec) - 4)
+			sort_ok = false;
+		}
+
+		if (order)  xmlFree(order);
+		if (corder) xmlFree(corder);
+		if (dtype)  xmlFree(dtype);
+		if (kexpr)  xmlFree(kexpr);
+	    }
+	    spec[spos < sizeof(spec) ? spos : sizeof(spec) - 1] = '\0';
+
+	    if (!sort_ok) {
+		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		xmlFree(sel);
+		continue;
+	    }
+
+	    /* Allocate PIN_OP_FOR_EACH op */
+	    pin_op_t *fe = pin_slax_op_new(cur, NULL);
+	    if (fe == NULL) {
+		xmlFree(sel);
+		continue;
+	    }
+	    fe->po_type = PIN_OP_FOR_EACH;
+	    fe->po_name = pin_namepool_atom(pwp, s, TRUE);
+	    if (spos > 0)
+		fe->po_name2 = pin_namepool_atom(pwp, spec, TRUE);
+	    xmlFree(sel);
+
+	    /* Compile body into independent sub-sequence at fe->po_alt */
+	    pin_op_cursor_t sub = {
+		.poc_nextp    = &fe->po_alt,
+		.poc_rb       = cur->poc_rb,
+		.poc_src_file = cur->poc_src_file,
+		.poc_src_line = cur->poc_src_line,
+		.poc_complexity = 0,
+	    };
+	    pin_slax_compile_ops_r(child, &sub);
+
+	    if (sub.poc_complexity) {
+		/* Body too complex for op-dispatch; neutralise and fall back */
+		cur->poc_complexity |= sub.poc_complexity;
+		fe->po_type = PIN_OP_NONE;
+	    }
+	    continue;
+	}
+
 	/* Other xsl:* instructions not yet handled */
 	if (pin_slax_is_xsl(child, NULL))
 	    continue;
@@ -915,25 +1008,30 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    prp->pr_close_ops = pin_slax_compile_ops(child, rb, src_file_id,
 		    &complexity);
 
-	    /* Check for for-each constructs and BIA_ fallback */
-	    pin_rstate_id_t foreach_sid = pin_slax_compile_foreach(child, rb);
-	    if (!pin_rstate_id_is_null(foreach_sid)) {
-		/* For-each uses state machine dispatch; op-dispatch does not apply */
-		prp->pr_action = PIA_SAVE;
-		prp->pr_new_state = foreach_sid;
-		prp->pr_close_ops = pin_op_id_null_atom();
-	    } else if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
-		/*
-		 * Template uses constructs that ops cannot yet handle
-		 * (apply-templates, copy-of), or produced no ops at all.
-		 * Fall back to the BIA_ body executor.
-		 */
-		pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
-		if (!pin_body_instr_id_is_null(body_head)) {
-		    prp->pr_body = body_head;
-		    prp->pr_body_retain = pin_slax_body_retain(body_head, rb);
+	    /*
+	     * Check for for-each and BIA_ fallback.
+	     * Only when op-dispatch did not claim the full body (complexity == 0
+	     * and close_ops non-null means op-dispatch succeeded).
+	     */
+	    if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
+		pin_rstate_id_t foreach_sid = pin_slax_compile_foreach(child, rb);
+		if (!pin_rstate_id_is_null(foreach_sid)) {
+		    /* For-each uses state machine dispatch */
+		    prp->pr_action = PIA_SAVE;
+		    prp->pr_new_state = foreach_sid;
+		    prp->pr_close_ops = pin_op_id_null_atom();
 		} else {
-		    prp->pr_action = action;
+		    /*
+		     * Template uses constructs that ops cannot handle, or produced
+		     * no ops at all.  Fall back to the BIA_ body executor.
+		     */
+		    pin_body_instr_id_t body_head = pin_slax_compile_body(child, rb);
+		    if (!pin_body_instr_id_is_null(body_head)) {
+			prp->pr_body = body_head;
+			prp->pr_body_retain = pin_slax_body_retain(body_head, rb);
+		    } else {
+			prp->pr_action = action;
+		    }
 		}
 	    }
 	    /* else: simple ops cover the full body; pr_body stays null and
