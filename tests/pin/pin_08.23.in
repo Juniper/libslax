@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.23.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    for-each + upper-first case order.
+
+    Sorts <w> elements by @val with case-order="upper-first".
+    In raw ASCII, uppercase (65-90) < lowercase (97-122), so
+    upper-first encoding is simply raw bytes — no transformation needed.
+
+    Expected order: Banana Date Fig apple cherry elderberry
+    (uppercase initials B D F sort before lowercase a c e).
+
+    Verifies:
+      - '^' flag prefix in sort-key spec selects upper-first encoding
+      - pin_stree_encode_key upper=true path (raw bytes, no two-byte encoding)
+  -->
+  <xsl:template match="words">
+    <sorted>
+      <xsl:for-each select="w">
+        <xsl:sort select="@val" case-order="upper-first"/>
+        <v><xsl:value-of select="@val"/></v>
+      </xsl:for-each>
+    </sorted>
+  </xsl:template>
+</xsl:stylesheet>
