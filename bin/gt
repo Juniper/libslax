@@ -97,13 +97,18 @@ check_in_details () {
 	if [ "$comment" = "==" -o  "$comment" = "=" -o "$comment" = "ditto" ]; then
 	    comment="$last"
         fi
+
+	use_comment="$comment"
+	if [ "$comment" = "uu" -o  "$comment" = "tt" ]; then
+	    use_comment="update test cases"
+        fi
 	if [ "$comment" = "" ]; then
 	    echo "Skipping file $file";
 	else
 	    if [ "$status" = "?? $file" ]; then
 		git add "$file"
 	    fi
-	    git commit -m "$comment" "$file"
+	    git commit -m "$use_comment" "$file"
 	fi
 	last="$comment"
     done
