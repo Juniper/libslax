@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- Department roster: nested for-each (departments contain teams) -->
+<company>
+  <dept name="eng">
+    <team name="backend"/>
+    <team name="frontend"/>
+    <team name="devops"/>
+  </dept>
+  <dept name="mkt">
+    <team name="brand"/>
+    <team name="demand"/>
+  </dept>
+  <dept name="ops">
+    <team name="infra"/>
+    <team name="support"/>
+    <team name="sre"/>
+  </dept>
+</company>
