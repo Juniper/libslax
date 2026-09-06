@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.19.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    for-each + single ascending sort by attribute.
+
+    Template matches <packages> and iterates over <pkg> children sorted
+    ascending by @name (lower-first case order, default).
+
+    Verifies:
+      - PIN_OP_FOR_EACH with a sort-key spec (@name, ascending)
+      - pin_stree_t creation, insertion, and sorted walk
+      - pin_for_each_eval_expr for @attr expressions
+      - pin_stree_encode_key lower-first encoding
+      - Frames pushed in reverse ascending order (LIFO → correct order)
+  -->
+  <xsl:template match="packages">
+    <sorted>
+      <xsl:for-each select="pkg">
+        <xsl:sort select="@name"/>
+        <item>
+          <n><xsl:value-of select="@name"/></n>
+          <v><xsl:value-of select="@version"/></v>
+        </item>
+      </xsl:for-each>
+    </sorted>
+  </xsl:template>
+</xsl:stylesheet>
