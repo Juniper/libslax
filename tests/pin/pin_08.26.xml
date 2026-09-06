@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<!--
+  Network interface inventory modeled after dent.xml conventions.
+  Uses child elements (not attributes) for all data, including sort keys.
+  Interfaces in document order (unsorted); units within each interface
+  are also in document order (unsorted).
+
+  Verifies real-world data patterns:
+    - gr-1/2/0 has 5 units: exercises heterogeneous inner iteration count
+    - Most interfaces have exactly 1 unit: exercises the common single case
+    - Some units have tunnel, some have family, some have both, some neither
+    - Some units have description, some do not
+    - lo0 has two addresses in the family (but we only look at unit level)
+-->
+<interfaces>
+  <interface>
+    <name>so-0/1/0</name>
+    <description>Link to RDU (10.5.22.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.22.1/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/3/2</name>
+    <description>Link to ORD (10.5.18.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.18.1/24</name></address>
+        </inet>
+        <mpls/>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>gr-1/2/0</name>
+    <unit>
+      <name>3</name>
+      <description>Link from dent to rdu</description>
+      <tunnel>
+        <source>10.5.1.2</source>
+        <destination>10.5.16.2</destination>
+      </tunnel>
+      <family>
+        <inet>
+          <address><name>10.11.22.1/30</name></address>
+        </inet>
+      </family>
+    </unit>
+    <unit>
+      <name>0</name>
+      <description>Link from dent to rdu</description>
+      <tunnel>
+        <source>10.5.13.1</source>
+        <destination>10.5.20.1</destination>
+      </tunnel>
+      <family>
+        <inet>
+          <address><name>10.3.2.1/30</name></address>
+        </inet>
+      </family>
+    </unit>
+    <unit>
+      <name>4</name>
+      <description>Link from dent to ord</description>
+      <tunnel>
+        <source>10.5.1.2</source>
+        <destination>10.5.17.1</destination>
+      </tunnel>
+    </unit>
+    <unit>
+      <name>2</name>
+      <description>Link from dent to rdu</description>
+      <tunnel>
+        <source>10.5.10.1</source>
+        <destination>10.5.120.1</destination>
+      </tunnel>
+      <family>
+        <inet>
+          <address><name>10.3.222.1/30</name></address>
+        </inet>
+      </family>
+    </unit>
+    <unit>
+      <name>1</name>
+      <description>Link from dent to rdu</description>
+      <tunnel>
+        <source>10.5.13.1</source>
+        <destination>10.5.120.1</destination>
+      </tunnel>
+      <family>
+        <inet>
+          <address><name>10.6.5.5/30</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/0/1</name>
+    <description>Link to SJC (10.5.10.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.10.1/24</name></address>
+        </inet>
+        <mpls/>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>lo0</name>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>127.0.0.1/32</name></address>
+          <address><name>10.254.254.7/32</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/0/3</name>
+    <description>Link to carolina-gw</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.1.2/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fxp0</name>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>152.14.12.56/28</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/3/0</name>
+    <description>Link to IAD (10.5.14.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.14.1/24</name></address>
+        </inet>
+        <mpls/>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>so-0/1/1</name>
+    <description>Second link to IAD (10.5.114.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.114.1/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>ip-1/2/0</name>
+    <unit>
+      <name>0</name>
+      <description>Link from dent to rdu</description>
+      <tunnel>
+        <source>10.5.13.1</source>
+        <destination>10.5.20.1</destination>
+      </tunnel>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/2/3</name>
+    <description>Second link to IAD (10.5.150.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.140.1/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/3/1</name>
+    <description>Link to AUS (10.5.12.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.12.1/24</name></address>
+        </inet>
+        <mpls/>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/0/2</name>
+    <description>Link to LAX (10.5.13.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.13.1/24</name></address>
+        </inet>
+        <mpls/>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/3/3</name>
+    <description>Second link to ORD (10.5.118.2)</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.5.118.1/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+  <interface>
+    <name>fe-0/0/0</name>
+    <description>RLab Mgmt interface</description>
+    <unit>
+      <name>0</name>
+      <family>
+        <inet>
+          <address><name>10.0.0.7/24</name></address>
+        </inet>
+      </family>
+    </unit>
+  </interface>
+</interfaces>
