@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.21.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    for-each + two sort keys: primary @dept ascending, secondary @name ascending.
+
+    Verifies:
+      - Multi-key sort-key spec (newline-separated fields)
+      - NUL-separated key concatenation in pin_for_each_build_key
+      - Patricia tree correctly orders by first key, breaks ties with second
+  -->
+  <xsl:template match="employees">
+    <roster>
+      <xsl:for-each select="emp">
+        <xsl:sort select="@dept"/>
+        <xsl:sort select="@name"/>
+        <e>
+          <d><xsl:value-of select="@dept"/></d>
+          <n><xsl:value-of select="@name"/></n>
+        </e>
+      </xsl:for-each>
+    </roster>
+  </xsl:template>
+</xsl:stylesheet>
