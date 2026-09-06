@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- Employee list: sort by department then by name -->
+<employees>
+  <emp dept="eng" name="zara"/>
+  <emp dept="mkt" name="alice"/>
+  <emp dept="eng" name="bob"/>
+  <emp dept="mkt" name="carol"/>
+  <emp dept="eng" name="alice"/>
+  <emp dept="ops" name="dan"/>
+  <emp dept="ops" name="alice"/>
+  <emp dept="mkt" name="zara"/>
+</employees>
