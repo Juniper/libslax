@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- Score list: sort by @score attribute descending -->
+<scores>
+  <player name="alice" score="72"/>
+  <player name="bob" score="95"/>
+  <player name="carol" score="58"/>
+  <player name="dan" score="88"/>
+  <player name="eve" score="63"/>
+</scores>
