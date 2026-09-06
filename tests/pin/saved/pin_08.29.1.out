@@ -1,0 +1,92 @@
+compiled 1 pattern
+<inventory>
+   <cat>
+      <n>compute</n>
+      <item>
+         <id>c01</id>
+         <vendor>Dell</vendor>
+         <model>PowerEdge R750</model>
+      </item>
+      <item>
+         <id>c02</id>
+         <vendor>Dell</vendor>
+         <model>PowerEdge R450</model>
+      </item>
+      <item>
+         <id>c03</id>
+         <vendor>HP</vendor>
+         <model>ProLiant DL360</model>
+      </item>
+      <item>
+         <id>c05</id>
+         <vendor>HP</vendor>
+         <model>ProLiant DL20</model>
+      </item>
+      <item>
+         <id>c04</id>
+         <vendor>Supermicro</vendor>
+         <model>SYS-6029P</model>
+      </item>
+   </cat>
+   <cat>
+      <n>networking</n>
+      <item>
+         <id>n04</id>
+         <vendor>Aruba</vendor>
+         <model>6300M</model>
+      </item>
+      <item>
+         <id>n05</id>
+         <vendor>Aruba</vendor>
+         <model>2930F</model>
+      </item>
+      <item>
+         <id>n02</id>
+         <vendor>Cisco</vendor>
+         <model>Catalyst 9200</model>
+      </item>
+      <item>
+         <id>n03</id>
+         <vendor>Cisco</vendor>
+         <model>ISR 4331</model>
+      </item>
+      <item>
+         <id>n01</id>
+         <vendor>Ubiquiti</vendor>
+         <model>USW-48-POE</model>
+      </item>
+      <item>
+         <id>n06</id>
+         <vendor>Ubiquiti</vendor>
+         <model>UDM-Pro</model>
+      </item>
+   </cat>
+   <cat>
+      <n>storage</n>
+      <item>
+         <id>s02</id>
+         <vendor>Crucial</vendor>
+         <model>MX500</model>
+      </item>
+      <item>
+         <id>s04</id>
+         <vendor>Samsung</vendor>
+         <model>870 QVO</model>
+      </item>
+      <item>
+         <id>s03</id>
+         <vendor>Seagate</vendor>
+         <model>Exos X18</model>
+      </item>
+      <item>
+         <id>s01</id>
+         <vendor>WD</vendor>
+         <model>Blue SN570</model>
+      </item>
+      <item>
+         <id>s05</id>
+         <vendor>WD</vendor>
+         <model>Gold 18TB</model>
+      </item>
+   </cat>
+</inventory>
