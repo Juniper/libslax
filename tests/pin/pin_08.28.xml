@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+  Organization roster: 5 departments x 10 employees = 50 employees.
+  Each employee has @name, @level (for sorting), a boolean level flag
+  (@executive, @senior, @mid, or @junior), and optional @manager,
+  @remote, @contractor flags.
+  Each department has @name, @code, a boolean division flag (@eng,
+  @fin, @mkt, @ops, or @sup), and optional @offshore, @critical flags.
+  Departments and employees are in document order (unsorted).
+-->
+<org>
+  <dept name="operations" code="OPS" ops="yes" critical="yes">
+    <employee id="e47" name="Torres"    level="senior"    senior="yes"    manager="yes"/>
+    <employee id="e12" name="Okafor"    level="mid"       mid="yes"       remote="yes"/>
+    <employee id="e33" name="Chandra"   level="mid"       mid="yes"       manager="yes" remote="yes"/>
+    <employee id="e08" name="Petrov"    level="junior"    junior="yes"    contractor="yes"/>
+    <employee id="e55" name="Yamamoto"  level="senior"    senior="yes"    manager="yes" remote="yes"/>
+    <employee id="e21" name="Klein"     level="junior"    junior="yes"    remote="yes"/>
+    <employee id="e39" name="Fernandez" level="mid"       mid="yes"/>
+    <employee id="e03" name="Nwosu"     level="executive" executive="yes" manager="yes"/>
+    <employee id="e67" name="Rajan"     level="junior"    junior="yes"    contractor="yes" remote="yes"/>
+    <employee id="e14" name="Aberg"     level="senior"    senior="yes"/>
+  </dept>
+  <dept name="engineering" code="ENG" eng="yes" critical="yes" offshore="yes">
+    <employee id="e72" name="Walsh"     level="senior"    senior="yes"    manager="yes" remote="yes"/>
+    <employee id="e05" name="Lim"       level="mid"       mid="yes"       remote="yes"/>
+    <employee id="e88" name="Andersen"  level="executive" executive="yes" manager="yes"/>
+    <employee id="e19" name="Patel"     level="senior"    senior="yes"/>
+    <employee id="e44" name="Ibarra"    level="junior"    junior="yes"    contractor="yes"/>
+    <employee id="e61" name="Nakamura"  level="mid"       mid="yes"       manager="yes"/>
+    <employee id="e27" name="Gustafsson" level="junior"   junior="yes"    remote="yes"/>
+    <employee id="e93" name="Mensah"    level="mid"       mid="yes"       contractor="yes" remote="yes"/>
+    <employee id="e36" name="Kowalski"  level="senior"    senior="yes"    manager="yes"/>
+    <employee id="e10" name="Diallo"    level="junior"    junior="yes"/>
+  </dept>
+  <dept name="finance" code="FIN" fin="yes">
+    <employee id="e52" name="Johansson" level="executive" executive="yes" manager="yes"/>
+    <employee id="e17" name="Park"      level="senior"    senior="yes"    manager="yes"/>
+    <employee id="e83" name="Russo"     level="mid"       mid="yes"/>
+    <employee id="e29" name="Hassan"    level="junior"    junior="yes"    remote="yes"/>
+    <employee id="e41" name="Eriksson"  level="senior"    senior="yes"    remote="yes"/>
+    <employee id="e06" name="Mwangi"    level="mid"       mid="yes"       manager="yes"/>
+    <employee id="e74" name="Svensson"  level="junior"    junior="yes"    contractor="yes"/>
+    <employee id="e58" name="Zhao"      level="senior"    senior="yes"/>
+    <employee id="e22" name="Gonzalez"  level="mid"       mid="yes"       remote="yes"/>
+    <employee id="e95" name="Ali"       level="junior"    junior="yes"/>
+  </dept>
+  <dept name="marketing" code="MKT" mkt="yes" offshore="yes">
+    <employee id="e31" name="Becker"    level="senior"    senior="yes"    manager="yes" remote="yes"/>
+    <employee id="e64" name="Silva"     level="mid"       mid="yes"       contractor="yes"/>
+    <employee id="e09" name="Nguyen"    level="junior"    junior="yes"    remote="yes"/>
+    <employee id="e76" name="Petersen"  level="senior"    senior="yes"/>
+    <employee id="e48" name="Alabi"     level="mid"       mid="yes"       manager="yes"/>
+    <employee id="e13" name="Magnusson" level="junior"    junior="yes"    contractor="yes" remote="yes"/>
+    <employee id="e87" name="Kim"       level="executive" executive="yes" manager="yes"/>
+    <employee id="e25" name="Ferrari"   level="mid"       mid="yes"       remote="yes"/>
+    <employee id="e99" name="Osei"      level="junior"    junior="yes"/>
+    <employee id="e37" name="Ivanova"   level="senior"    senior="yes"    manager="yes"/>
+  </dept>
+  <dept name="support" code="SUP" sup="yes" critical="yes" offshore="yes">
+    <employee id="e56" name="Nakamura"  level="senior"    senior="yes"    manager="yes"/>
+    <employee id="e18" name="Dos Santos" level="mid"      mid="yes"       remote="yes"/>
+    <employee id="e82" name="Lindgren"  level="junior"    junior="yes"    contractor="yes"/>
+    <employee id="e43" name="Abubakar"  level="mid"       mid="yes"       manager="yes" remote="yes"/>
+    <employee id="e07" name="Reyes"     level="senior"    senior="yes"    remote="yes"/>
+    <employee id="e69" name="Balogun"   level="junior"    junior="yes"    contractor="yes" remote="yes"/>
+    <employee id="e34" name="Tanaka"    level="mid"       mid="yes"/>
+    <employee id="e91" name="Olsson"    level="senior"    senior="yes"    manager="yes"/>
+    <employee id="e15" name="Weber"     level="executive" executive="yes" manager="yes"/>
+    <employee id="e78" name="Carvalho"  level="junior"    junior="yes"/>
+  </dept>
+</org>
