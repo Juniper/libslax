@@ -36,6 +36,7 @@ libpininc_HEADERS = \
     pin_parse.h \
     pin_rules.h \
     pin_slax.h \
+    pin_sort.h \
     pin_source.h \
     pin_tree.h \
     pin_value.h \
@@ -47,6 +48,7 @@ libpin_la_SOURCES = \
     pin_exec.c \
     pin_filter.c \
     pin_slax.c \
+    pin_sort.c \
     pin_source.c \
     pin_workspace.c \
     pin_tree.c \
