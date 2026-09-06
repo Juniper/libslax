@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- Book catalog: for-each iteration test -->
+<catalog>
+  <book>
+    <title>Practical XML</title>
+    <author>A. Smith</author>
+    <year>2020</year>
+  </book>
+  <book>
+    <title>Transformations</title>
+    <author>B. Jones</author>
+    <year>2018</year>
+  </book>
+  <book>
+    <title>Pattern Matching</title>
+    <author>C. Brown</author>
+    <year>2022</year>
+  </book>
+  <book>
+    <title>Advanced Indexing</title>
+    <author>D. White</author>
+    <year>2019</year>
+  </book>
+  <book>
+    <title>Stream Processing</title>
+    <author>E. Green</author>
+    <year>2021</year>
+  </book>
+</catalog>
