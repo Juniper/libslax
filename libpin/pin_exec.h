@@ -93,7 +93,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_DISCARD     (PIN_OP_MAX_COMPLEX + 15) /* Pop and discard top of value stack */
 #define PIN_OP_STORE_VAR   (PIN_OP_MAX_COMPLEX + 16) /* Pop top; bind to variable named po_name */
 #define PIN_OP_LOAD_VAR    (PIN_OP_MAX_COMPLEX + 17) /* Push value of variable named po_name */
-#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 18) /* Sentinel: number of defined op codes */
+#define PIN_OP_FOR_EACH    (PIN_OP_MAX_COMPLEX + 18) /* Iterate matching children (po_name=tag, po_alt=body, po_name2=sort-spec) */
+#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 19) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -115,12 +116,14 @@ typedef struct pin_op_s {
 
 typedef uint32_t pin_op_flags_t;
 
-typedef pin_value_t (*pin_op_func_t)(pin_exec_state_t *esp,
-                                     struct pin_parse_s *parsep,
-                                     pin_op_t *opp);
+#define PIN_OP_FUNC_ARGS \
+        pin_exec_state_t *esp UNUSED, struct pin_parse_s *parsep UNUSED, \
+	pin_op_t *opp UNUSED
+
+typedef pin_value_t (*pin_op_func_t)(PIN_OP_FUNC_ARGS);
 
 typedef struct pin_op_def_s {
-    const char    *pod_name;    /* Human-readable mnemonic for psu_log() / dump */
+    const char    *pod_name;   /* Human-readable mnemonic for psu_log()/dump */
     pin_op_func_t  pod_func;   /* Dispatch function */
     pin_op_flags_t pod_flags;  /* POF_* */
 } pin_op_def_t;
@@ -196,6 +199,10 @@ pin_exec_dump (struct pin_rulebook_s *rbp, struct pin_parse_s *parsep, FILE *out
 int pin_exec_rb_push (pin_exec_state_t *esp, pin_rstate_id_t sid,
 		      pin_depth_t depth);
 void pin_exec_rb_pop (pin_exec_state_t *esp);
+
+/* Seq-frame stack helpers */
+int pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
+			     pin_node_id_t ctx);
 
 /* Value stack helpers */
 int pin_exec_push (pin_exec_state_t *esp, pin_value_t val);
