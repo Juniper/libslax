@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<!--
+  Inventory of products with 3-level category hierarchy.
+  Sort keys exercised: product/vendor/name (3-step), product/id (2-step),
+  product/price (2-step).  All values are child element text.
+
+  categories in document order (shuffled); products within each
+  category in document order (shuffled).
+-->
+<catalog>
+  <category>
+    <name>storage</name>
+    <product>
+      <id>s03</id>
+      <vendor><name>Seagate</name><tier>enterprise</tier></vendor>
+      <model>Exos X18</model>
+      <price>280</price>
+    </product>
+    <product>
+      <id>s01</id>
+      <vendor><name>WD</name><tier>consumer</tier></vendor>
+      <model>Blue SN570</model>
+      <price>65</price>
+    </product>
+    <product>
+      <id>s04</id>
+      <vendor><name>Samsung</name><tier>enterprise</tier></vendor>
+      <model>870 QVO</model>
+      <price>90</price>
+    </product>
+    <product>
+      <id>s02</id>
+      <vendor><name>Crucial</name><tier>consumer</tier></vendor>
+      <model>MX500</model>
+      <price>55</price>
+    </product>
+    <product>
+      <id>s05</id>
+      <vendor><name>WD</name><tier>enterprise</tier></vendor>
+      <model>Gold 18TB</model>
+      <price>380</price>
+    </product>
+  </category>
+  <category>
+    <name>networking</name>
+    <product>
+      <id>n02</id>
+      <vendor><name>Cisco</name><tier>enterprise</tier></vendor>
+      <model>Catalyst 9200</model>
+      <price>1200</price>
+    </product>
+    <product>
+      <id>n04</id>
+      <vendor><name>Aruba</name><tier>enterprise</tier></vendor>
+      <model>6300M</model>
+      <price>3500</price>
+    </product>
+    <product>
+      <id>n01</id>
+      <vendor><name>Ubiquiti</name><tier>prosumer</tier></vendor>
+      <model>USW-48-POE</model>
+      <price>650</price>
+    </product>
+    <product>
+      <id>n03</id>
+      <vendor><name>Cisco</name><tier>enterprise</tier></vendor>
+      <model>ISR 4331</model>
+      <price>2200</price>
+    </product>
+    <product>
+      <id>n05</id>
+      <vendor><name>Aruba</name><tier>enterprise</tier></vendor>
+      <model>2930F</model>
+      <price>800</price>
+    </product>
+    <product>
+      <id>n06</id>
+      <vendor><name>Ubiquiti</name><tier>prosumer</tier></vendor>
+      <model>UDM-Pro</model>
+      <price>380</price>
+    </product>
+  </category>
+  <category>
+    <name>compute</name>
+    <product>
+      <id>c03</id>
+      <vendor><name>HP</name><tier>enterprise</tier></vendor>
+      <model>ProLiant DL360</model>
+      <price>4200</price>
+    </product>
+    <product>
+      <id>c01</id>
+      <vendor><name>Dell</name><tier>enterprise</tier></vendor>
+      <model>PowerEdge R750</model>
+      <price>5800</price>
+    </product>
+    <product>
+      <id>c04</id>
+      <vendor><name>Supermicro</name><tier>enterprise</tier></vendor>
+      <model>SYS-6029P</model>
+      <price>3100</price>
+    </product>
+    <product>
+      <id>c02</id>
+      <vendor><name>Dell</name><tier>enterprise</tier></vendor>
+      <model>PowerEdge R450</model>
+      <price>3400</price>
+    </product>
+    <product>
+      <id>c05</id>
+      <vendor><name>HP</name><tier>enterprise</tier></vendor>
+      <model>ProLiant DL20</model>
+      <price>1900</price>
+    </product>
+  </category>
+</catalog>
