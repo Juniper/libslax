@@ -1,0 +1,35 @@
+compiled 1 pattern
+<roster>
+   <e>
+      <d>eng</d>
+      <n>alice</n>
+   </e>
+   <e>
+      <d>eng</d>
+      <n>bob</n>
+   </e>
+   <e>
+      <d>eng</d>
+      <n>zara</n>
+   </e>
+   <e>
+      <d>mkt</d>
+      <n>alice</n>
+   </e>
+   <e>
+      <d>mkt</d>
+      <n>carol</n>
+   </e>
+   <e>
+      <d>mkt</d>
+      <n>zara</n>
+   </e>
+   <e>
+      <d>ops</d>
+      <n>alice</n>
+   </e>
+   <e>
+      <d>ops</d>
+      <n>dan</n>
+   </e>
+</roster>
