@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.27.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    BIA root dispatch + op-dispatch section template with sorted for-each.
+
+    Root template: match "/" (BIA via apply-templates).
+    Section template: match "section" (op-dispatch, no apply-templates).
+      Body: xsl:if @featured, then for-each "book" sorted by @author then @id,
+      with xsl:choose on @genre (4 branches + otherwise) and xsl:if @featured,
+      xsl:if @award in the book body.
+
+    This exercises the interaction between:
+      - BIA apply-templates dispatch (root fires, walks tree, matches sections)
+      - Op-dispatch section template body (complexity stays 0 because the
+        section template itself has no apply-templates or copy-of)
+      - Sorted for-each inside a template body that was invoked by BIA dispatch
+      - psf_context set from BIA-retained section node used by FOR_EACH op
+
+    Three sections (23 books total), sorted ascending by @name:
+      fiction (8 books), history (7 books), science (8 books).
+    Books within each section sorted by @author then @id (two-key).
+
+    Verifies:
+      - for-each with sorted body inside a BIA-dispatched op-dispatch template
+      - Two-key attribute sort interacts correctly with conditional body
+      - xsl:choose (4 branches) + 2x sequential xsl:if per book
+      - xsl:if @featured at section level (outer body conditional)
+      - genre xsl:choose fires correct branch for each book (presence flags)
+  -->
+  <xsl:template match="/">
+    <catalog-report>
+      <xsl:apply-templates/>
+    </catalog-report>
+  </xsl:template>
+
+  <xsl:template match="section">
+    <section>
+      <n><xsl:value-of select="@name"/></n>
+      <xsl:if test="@featured">
+        <flag>featured</flag>
+      </xsl:if>
+      <xsl:for-each select="book">
+        <xsl:sort select="@author"/>
+        <xsl:sort select="@id"/>
+        <book>
+          <a><xsl:value-of select="@author"/></a>
+          <y><xsl:value-of select="@year"/></y>
+          <xsl:choose>
+            <xsl:when test="@fiction">
+              <kind>fiction</kind>
+            </xsl:when>
+            <xsl:when test="@history">
+              <kind>history</kind>
+            </xsl:when>
+            <xsl:when test="@science">
+              <kind>science</kind>
+            </xsl:when>
+            <xsl:when test="@tech">
+              <kind>tech</kind>
+            </xsl:when>
+            <xsl:otherwise>
+              <kind>other</kind>
+            </xsl:otherwise>
+          </xsl:choose>
+          <xsl:if test="@featured">
+            <flag>featured</flag>
+          </xsl:if>
+          <xsl:if test="@award">
+            <flag>award</flag>
+          </xsl:if>
+        </book>
+      </xsl:for-each>
+    </section>
+  </xsl:template>
+</xsl:stylesheet>
