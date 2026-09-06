@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!--
+  Network topology: 4 regions x 3 sites x 5 devices = 60 devices.
+  Attribute-based: @name, @type (firewall/router/server/switch), @active, @managed.
+  Regions in document order: apac, east, emea, west (unsorted).
+  Sites within each region in document order (unsorted).
+  Devices within each site in document order (unsorted).
+  The stylesheet sorts regions descending, sites and devices ascending.
+-->
+<network>
+  <region name="apac" active="yes">
+    <site name="tokyo" managed="yes">
+      <device name="tyo-rtr-02" type="router" active="yes"/>
+      <device name="tyo-sw-01" type="switch" active="yes" managed="yes"/>
+      <device name="tyo-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="tyo-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="tyo-srv-01" type="server" managed="yes"/>
+    </site>
+    <site name="singapore">
+      <device name="sin-srv-01" type="server" active="yes"/>
+      <device name="sin-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="sin-sw-01" type="switch" managed="yes"/>
+      <device name="sin-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="sin-srv-02" type="server" active="yes" managed="yes"/>
+    </site>
+    <site name="seoul" managed="yes">
+      <device name="sel-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="sel-sw-02" type="switch" active="yes"/>
+      <device name="sel-sw-01" type="switch" managed="yes"/>
+      <device name="sel-srv-01" type="server" active="yes"/>
+      <device name="sel-fw-01" type="firewall" active="yes" managed="yes"/>
+    </site>
+  </region>
+  <region name="east">
+    <site name="nyc" managed="yes">
+      <device name="nyc-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="nyc-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="nyc-srv-02" type="server" managed="yes"/>
+      <device name="nyc-sw-01" type="switch" active="yes" managed="yes"/>
+      <device name="nyc-srv-01" type="server" active="yes"/>
+    </site>
+    <site name="miami">
+      <device name="mia-sw-01" type="switch" active="yes"/>
+      <device name="mia-rtr-01" type="router" managed="yes"/>
+      <device name="mia-srv-01" type="server" active="yes" managed="yes"/>
+      <device name="mia-fw-01" type="firewall" active="yes"/>
+      <device name="mia-sw-02" type="switch" active="yes" managed="yes"/>
+    </site>
+    <site name="boston" managed="yes">
+      <device name="bos-srv-01" type="server" active="yes" managed="yes"/>
+      <device name="bos-fw-01" type="firewall" managed="yes"/>
+      <device name="bos-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="bos-sw-01" type="switch" active="yes"/>
+      <device name="bos-srv-02" type="server" active="yes"/>
+    </site>
+  </region>
+  <region name="emea" active="yes">
+    <site name="london" managed="yes">
+      <device name="lon-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="lon-sw-01" type="switch" active="yes"/>
+      <device name="lon-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="lon-srv-01" type="server" managed="yes"/>
+      <device name="lon-sw-02" type="switch" active="yes" managed="yes"/>
+    </site>
+    <site name="frankfurt" managed="yes">
+      <device name="fra-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="fra-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="fra-srv-01" type="server" active="yes"/>
+      <device name="fra-sw-01" type="switch" managed="yes"/>
+      <device name="fra-rtr-02" type="router" active="yes"/>
+    </site>
+    <site name="amsterdam">
+      <device name="ams-srv-01" type="server" active="yes" managed="yes"/>
+      <device name="ams-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="ams-rtr-01" type="router" active="yes"/>
+      <device name="ams-sw-01" type="switch" active="yes" managed="yes"/>
+      <device name="ams-srv-02" type="server" managed="yes"/>
+    </site>
+  </region>
+  <region name="west" active="yes">
+    <site name="sf" managed="yes">
+      <device name="sf-srv-01" type="server" managed="yes"/>
+      <device name="sf-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="sf-sw-01" type="switch" active="yes" managed="yes"/>
+      <device name="sf-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="sf-rtr-02" type="router" active="yes"/>
+    </site>
+    <site name="seattle">
+      <device name="sea-sw-02" type="switch" managed="yes"/>
+      <device name="sea-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="sea-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="sea-sw-01" type="switch" active="yes"/>
+      <device name="sea-srv-01" type="server" active="yes"/>
+    </site>
+    <site name="portland" managed="yes">
+      <device name="pdx-srv-02" type="server" active="yes" managed="yes"/>
+      <device name="pdx-fw-01" type="firewall" active="yes" managed="yes"/>
+      <device name="pdx-sw-01" type="switch" active="yes"/>
+      <device name="pdx-rtr-01" type="router" active="yes" managed="yes"/>
+      <device name="pdx-srv-01" type="server" active="yes"/>
+    </site>
+  </region>
+</network>
