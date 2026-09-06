@@ -1,0 +1,36 @@
+compiled 1 pattern
+<output>
+   <dept>
+      <dn>eng</dn>
+      <team>
+         <tn>backend</tn>
+      </team>
+      <team>
+         <tn>frontend</tn>
+      </team>
+      <team>
+         <tn>devops</tn>
+      </team>
+   </dept>
+   <dept>
+      <dn>mkt</dn>
+      <team>
+         <tn>brand</tn>
+      </team>
+      <team>
+         <tn>demand</tn>
+      </team>
+   </dept>
+   <dept>
+      <dn>ops</dn>
+      <team>
+         <tn>infra</tn>
+      </team>
+      <team>
+         <tn>support</tn>
+      </team>
+      <team>
+         <tn>sre</tn>
+      </team>
+   </dept>
+</output>
