@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!--
+  Book catalog: 3 sections with 7-8 books each = 23 books total.
+  Sections in document order (unsorted); books within each section
+  in document order (unsorted).  The stylesheet sorts sections
+  ascending by @name and books within each section ascending by
+  @author then @id.
+
+  Genre is encoded as a boolean presence flag attribute (@fiction,
+  @history, @science, @tech) so xsl:choose can test with PUSH_ATTR.
+  @featured: present on selected books (triggers xsl:if)
+  @award: present on some books (triggers xsl:if)
+-->
+<catalog>
+  <section name="science" featured="yes">
+    <book id="s07" author="Sagan"     year="1980" science="yes"/>
+    <book id="s03" author="Dawkins"   year="1976" science="yes" featured="yes"/>
+    <book id="s01" author="Asimov"    year="1955" science="yes" award="yes"/>
+    <book id="s05" author="Feynman"   year="1988" science="yes" featured="yes" award="yes"/>
+    <book id="s02" author="Darwin"    year="1859" science="yes" award="yes"/>
+    <book id="s04" author="Einstein"  year="1916" science="yes"/>
+    <book id="s06" author="Hawking"   year="1988" science="yes" featured="yes"/>
+    <book id="s08" author="Weinberg"  year="1977" science="yes"/>
+  </section>
+  <section name="history">
+    <book id="h04" author="McNeill"   year="1976" history="yes"/>
+    <book id="h01" author="Braudel"   year="1949" history="yes" award="yes"/>
+    <book id="h06" author="Norwich"   year="1988" history="yes"/>
+    <book id="h02" author="Gibbon"    year="1776" history="yes" featured="yes"/>
+    <book id="h05" author="Morris"    year="2010" history="yes"/>
+    <book id="h03" author="Kennedy"   year="1987" history="yes" featured="yes" award="yes"/>
+    <book id="h07" author="Tuchman"   year="1962" history="yes" award="yes"/>
+  </section>
+  <section name="fiction" featured="yes">
+    <book id="f06" author="Tolkien"   year="1954" fiction="yes" featured="yes" award="yes"/>
+    <book id="f02" author="Camus"     year="1942" fiction="yes"/>
+    <book id="f04" author="Marquez"   year="1967" fiction="yes" award="yes"/>
+    <book id="f01" author="Borges"    year="1944" fiction="yes" featured="yes"/>
+    <book id="f07" author="Woolf"     year="1927" fiction="yes"/>
+    <book id="f05" author="Morrison"  year="1987" fiction="yes" award="yes"/>
+    <book id="f03" author="Kafka"     year="1925" fiction="yes"/>
+    <book id="f08" author="Zola"      year="1880" fiction="yes"/>
+    <book id="f09" author="Gibson"    year="1984" tech="yes" award="yes"/>
+  </section>
+</catalog>
