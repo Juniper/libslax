@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!-- Mixed-case word list: tests case-order encoding -->
+<words>
+  <w val="apple"/>
+  <w val="Banana"/>
+  <w val="cherry"/>
+  <w val="Date"/>
+  <w val="elderberry"/>
+  <w val="Fig"/>
+</words>
