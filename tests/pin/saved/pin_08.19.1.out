@@ -1,0 +1,23 @@
+compiled 1 pattern
+<sorted>
+   <item>
+      <n>alpha</n>
+      <v>3.2</v>
+   </item>
+   <item>
+      <n>bravo</n>
+      <v>4.0</v>
+   </item>
+   <item>
+      <n>delta</n>
+      <v>1.5</v>
+   </item>
+   <item>
+      <n>mango</n>
+      <v>2.1</v>
+   </item>
+   <item>
+      <n>zebra</n>
+      <v>1.0</v>
+   </item>
+</sorted>
