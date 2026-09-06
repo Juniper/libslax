@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.28.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Large org roster: 2-level for-each with 50 employees across 5 depts.
+
+    Outer for-each <dept>: sorted ascending by @name.
+      Body: xsl:choose on division flags (@eng/@fin/@mkt/@ops/@sup),
+            xsl:if @critical, xsl:if @offshore.
+    Inner for-each <employee>: two-key sort (@level ascending, so
+      executive, junior, mid, senior), then @name ascending.
+      Body: xsl:choose on level flags (@executive/@senior/@mid/@junior),
+            xsl:if @manager, xsl:if @remote, xsl:if @contractor.
+
+    Tests the full feature matrix for sorted for-each:
+      - Two-key sort at inner level with 10 elements per iteration
+      - xsl:choose (5 branches + otherwise) at BOTH levels via PUSH_ATTR
+      - Three sequential xsl:if at inner level
+      - Two sequential xsl:if at outer level
+      - 50 retained-context cycles total across all inner iterations
+      - Frame stack depth: outer dept frame + 10 inner employee frames
+        all pushed in reverse, draining before outer EMIT_CLOSE fires
+
+    Departments sorted: engineering, finance, marketing, operations, support.
+    Within each dept, employees sorted by @level then @name:
+      executive < junior < mid < senior (alphabetical by level string).
+  -->
+  <xsl:template match="org">
+    <report>
+      <xsl:for-each select="dept">
+        <xsl:sort select="@name"/>
+        <dept>
+          <n><xsl:value-of select="@name"/></n>
+          <xsl:choose>
+            <xsl:when test="@eng">
+              <division>engineering</division>
+            </xsl:when>
+            <xsl:when test="@fin">
+              <division>finance</division>
+            </xsl:when>
+            <xsl:when test="@mkt">
+              <division>marketing</division>
+            </xsl:when>
+            <xsl:when test="@ops">
+              <division>operations</division>
+            </xsl:when>
+            <xsl:when test="@sup">
+              <division>support</division>
+            </xsl:when>
+            <xsl:otherwise>
+              <division>other</division>
+            </xsl:otherwise>
+          </xsl:choose>
+          <xsl:if test="@critical">
+            <flag>critical</flag>
+          </xsl:if>
+          <xsl:if test="@offshore">
+            <flag>offshore</flag>
+          </xsl:if>
+          <xsl:for-each select="employee">
+            <xsl:sort select="@level"/>
+            <xsl:sort select="@name"/>
+            <emp>
+              <n><xsl:value-of select="@name"/></n>
+              <xsl:choose>
+                <xsl:when test="@executive">
+                  <band>E</band>
+                </xsl:when>
+                <xsl:when test="@senior">
+                  <band>S</band>
+                </xsl:when>
+                <xsl:when test="@mid">
+                  <band>M</band>
+                </xsl:when>
+                <xsl:when test="@junior">
+                  <band>J</band>
+                </xsl:when>
+                <xsl:otherwise>
+                  <band>U</band>
+                </xsl:otherwise>
+              </xsl:choose>
+              <xsl:if test="@manager">
+                <flag>mgr</flag>
+              </xsl:if>
+              <xsl:if test="@remote">
+                <flag>remote</flag>
+              </xsl:if>
+              <xsl:if test="@contractor">
+                <flag>contract</flag>
+              </xsl:if>
+            </emp>
+          </xsl:for-each>
+        </dept>
+      </xsl:for-each>
+    </report>
+  </xsl:template>
+</xsl:stylesheet>
