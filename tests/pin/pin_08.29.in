@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.29.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Multi-step sort key test: sort products by vendor/name (2-step path),
+    then by id (1-step) within each vendor.
+
+    The outer for-each iterates categories sorted by child element <name>.
+    The inner for-each iterates products sorted by vendor/name (a 2-step
+    child element path) then by id (1-step).
+
+    This directly exercises pin_for_each_eval_expr with a multi-step path.
+    The loop refactor must walk both the vendor step and the name step to
+    reach the vendor name text, rather than stopping at depth 2.
+
+    Verifies:
+      - 2-step child element path as a sort key (vendor/name)
+      - Mix of 1-step and 2-step sort keys in the same for-each
+      - Correct secondary sort within same vendor (by id)
+      - Output of 3-level nested child element values (vendor/tier, model)
+  -->
+  <xsl:template match="catalog">
+    <inventory>
+      <xsl:for-each select="category">
+        <xsl:sort select="name"/>
+        <cat>
+          <n><xsl:value-of select="name"/></n>
+          <xsl:for-each select="product">
+            <xsl:sort select="vendor/name"/>
+            <xsl:sort select="id"/>
+            <item>
+              <id><xsl:value-of select="id"/></id>
+              <vendor><xsl:value-of select="vendor/name"/></vendor>
+              <model><xsl:value-of select="model"/></model>
+            </item>
+          </xsl:for-each>
+        </cat>
+      </xsl:for-each>
+    </inventory>
+  </xsl:template>
+</xsl:stylesheet>
