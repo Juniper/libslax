@@ -76,7 +76,7 @@ exsltStrTokenizeFunction(xmlXPathParserContextPtr ctxt, int nargs)
                     node = xmlNewDocRawNode(container, NULL,
                                        (const xmlChar *) "token", cur);
 		    xmlAddChild((xmlNodePtr) container, node);
-		    xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+		    xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
                     *(cur+clen) = ctmp; /* restore the changed byte */
                     token = cur + clen;
                 } else for (delimiter = delimiters; *delimiter != 0;
@@ -91,7 +91,7 @@ exsltStrTokenizeFunction(xmlXPathParserContextPtr ctxt, int nargs)
                         node = xmlNewDocRawNode(container, NULL,
                                            (const xmlChar *) "token", token);
 			xmlAddChild((xmlNodePtr) container, node);
-			xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+			xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
                         *cur = *delimiter; /* restore the changed byte */
                         token = cur + clen;
                         break;
@@ -102,7 +102,7 @@ exsltStrTokenizeFunction(xmlXPathParserContextPtr ctxt, int nargs)
 		node = xmlNewDocRawNode(container, NULL,
 				    (const xmlChar *) "token", token);
                 xmlAddChild((xmlNodePtr) container, node);
-	        xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+	        xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
             }
         }
     }
@@ -182,7 +182,7 @@ exsltStrSplitFunction(xmlXPathParserContextPtr ctxt, int nargs) {
                         node = xmlNewDocRawNode(container, NULL,
                                            (const xmlChar *) "token", token);
 			xmlAddChild((xmlNodePtr) container, node);
-			xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+			xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
 			*cur = tmp;
 			token++;
 		    }
@@ -198,7 +198,7 @@ exsltStrSplitFunction(xmlXPathParserContextPtr ctxt, int nargs) {
 		    node = xmlNewDocRawNode(container, NULL,
 				       (const xmlChar *) "token", token);
 		    xmlAddChild((xmlNodePtr) container, node);
-		    xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+		    xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
 		    *cur = *delimiter;
 		    cur = cur + delimiterLength - 1;
 		    token = cur + 1;
@@ -208,7 +208,7 @@ exsltStrSplitFunction(xmlXPathParserContextPtr ctxt, int nargs) {
 		node = xmlNewDocRawNode(container, NULL,
 				   (const xmlChar *) "token", token);
 		xmlAddChild((xmlNodePtr) container, node);
-		xmlXPathNodeSetAddUnique(ret->nodesetval, node);
+		xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret), node);
 	    }
         }
     }
@@ -514,7 +514,7 @@ exsltStrConcatFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 
     obj = valuePop (ctxt);
 
-    if (xmlXPathNodeSetIsEmpty(obj->nodesetval)) {
+    if (xmlXPathNodeSetIsEmpty(xmlXPathObjectGetNodesetval(obj))) {
         xmlXPathFreeObject(obj);
 	xmlXPathReturnEmptyString(ctxt);
 	return;
@@ -528,9 +528,9 @@ exsltStrConcatFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
     xmlBufferSetAllocationScheme(buf, XML_BUFFER_ALLOC_DOUBLEIT);
 
-    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
 	xmlChar *tmp;
-	tmp = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(obj->nodesetval, i));
+	tmp = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i));
 
         xmlBufferCat(buf, tmp);
 
