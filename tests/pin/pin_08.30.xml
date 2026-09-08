@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<store>
+  <product id="p01" available="yes">
+    <name>Widget Alpha</name>
+    <vendor><name>Acme</name><tier>premium</tier></vendor>
+  </product>
+  <product id="p02">
+    <name>Widget Beta</name>
+    <vendor><name>Globex</name><tier>standard</tier></vendor>
+  </product>
+  <product id="p03" available="yes">
+    <name>Gadget Gamma</name>
+    <vendor><name>Initech</name><tier>budget</tier></vendor>
+  </product>
+  <order id="O-1001" urgent="yes">
+    <customer>Alice</customer>
+  </order>
+  <order id="O-1002">
+    <customer>Bob</customer>
+  </order>
+  <order id="O-1003" urgent="yes">
+    <customer>Carol</customer>
+  </order>
+  <catalog>
+    <entry key="color" active="yes"><value>blue</value></entry>
+    <entry key="size"><value>medium</value></entry>
+    <entry key="weight" active="yes"><value>1.2kg</value></entry>
+    <entry key="material"><value>steel</value></entry>
+    <entry key="finish" active="yes"><value>matte</value></entry>
+  </catalog>
+</store>
