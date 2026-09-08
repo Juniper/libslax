@@ -1,0 +1,18 @@
+compiled 3 patterns
+<root>
+   <copy>
+      <record id="r1">
+         <field name="x">hello</field>
+         <field name="y">world</field>
+      </record>
+   </copy>
+   <wrapped>
+      <body>
+         <p>first paragraph</p>
+         <p>second paragraph</p>
+      </body>
+   </wrapped>
+   <result>
+      <title>Annual Summary</title>
+   </result>
+</root>
