@@ -50,7 +50,7 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_parse.h>
 #include <libpin/pin_filter.h>
-#include <libpin/pin_slax.h>
+#include <libpin/pin_compile.h>
 
 #define PIN08_DB_FILE	"/tmp/pin08.sxb"
 
@@ -132,7 +132,7 @@ main (int argc, char **argv)
 
     if (opt_modes) {
 	pin08_modes_ctx_t ctx = { 0 };
-	int n = pin_slax_for_each_mode(docp, pin08_mode_cb, &ctx);
+	int n = pin_for_each_mode(docp, pin08_mode_cb, &ctx);
 	printf("total: %d mode%s\n", n, n == 1 ? "" : "s");
 	xmlFreeDoc(docp);
 	return 0;
@@ -162,11 +162,11 @@ main (int argc, char **argv)
     xo_filter_t *xfp = pin_filter_create(NULL, workp);
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin08");
 
-    int count = pin_slax_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action);
     xmlFreeDoc(docp);
 
     if (count < 0)
-	errx(1, "pin_slax_compile failed");
+	errx(1, "pin_compile failed");
 
     printf("compiled %d pattern%s\n", count, count == 1 ? "" : "s");
 
