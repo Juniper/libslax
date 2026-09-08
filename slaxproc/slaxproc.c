@@ -607,8 +607,8 @@ do_show_select (const char *name, const char *output,
 
     objp = xmlXPathEvalExpression((const xmlChar *) opt_show_select,
                                   xpath_context);
-    if (objp->type == XPATH_NODESET) {
-        nsp = objp->nodesetval;
+    if (xmlXPathObjectGetType(objp) == XPATH_NODESET) {
+        nsp = xmlXPathObjectGetNodesetval(objp);
         if (nsp && xmlNodeSetGetNodeNr(nsp) > 0) {
 
             for (i = 0; i < xmlNodeSetGetNodeNr(nsp); i++) {
