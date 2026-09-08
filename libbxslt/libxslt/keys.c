@@ -715,7 +715,7 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
 	    if (matchList != NULL)
 		XSLT_TRACE(ctxt,XSLT_TRACE_KEYS,xsltGenericDebug(xsltGenericDebugContext,
 		     "xsltInitCtxtKey: %s evaluates to %d nodes\n",
-				 keyDef->match, matchList->nodeNr));
+				 keyDef->match, xmlNodeSetGetNodeNr(matchList)));
 #endif
 	} else {
 	    /*
@@ -731,7 +731,7 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
 	    goto error;
 	}
     }
-    if ((matchList == NULL) || (matchList->nodeNr <= 0))
+    if ((matchList == NULL) || (xmlNodeSetGetNodeNr(matchList) <= 0))
 	goto exit;
 
     /**
@@ -768,8 +768,8 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
     xpctxt->contextSize = 1;
     xpctxt->proximityPosition = 1;
 
-    for (i = 0; i < matchList->nodeNr; i++) {
-	cur = matchList->nodeTab[i];
+    for (i = 0; i < xmlNodeSetGetNodeNr(matchList); i++) {
+	cur = xmlNodeSetGetNodeEntry(matchList, i);
 	if (! IS_XSLT_REAL_NODE(cur))
 	    continue;
         ctxt->node = cur;
@@ -792,10 +792,10 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
 	}
 	if (useRes->type == XPATH_NODESET) {
 	    if ((useRes->nodesetval != NULL) &&
-		(useRes->nodesetval->nodeNr != 0))
+		(xmlNodeSetGetNodeNr(useRes->nodesetval) != 0))
 	    {
-		len = useRes->nodesetval->nodeNr;
-		str = xmlXPathCastNodeToString(useRes->nodesetval->nodeTab[0]);
+		len = xmlNodeSetGetNodeNr(useRes->nodesetval);
+		str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(useRes->nodesetval, 0));
 	    } else {
 		continue;
 	    }
@@ -847,7 +847,7 @@ next_string:
 	    k++;
 	    if (k >= len)
 		break;
-	    str = xmlXPathCastNodeToString(useRes->nodesetval->nodeTab[k]);
+	    str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(useRes->nodesetval, k));
 	}
     }
 
