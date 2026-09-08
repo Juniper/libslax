@@ -192,8 +192,8 @@ slaxOutputNodeset (xmlNodeSetPtr nodeset)
 {
     int i;
 
-    for (i = 0; i < nodeset->nodeNr; i++)
-	slaxOutputNode(nodeset->nodeTab[i]);
+    for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++)
+	slaxOutputNode(xmlNodeSetGetNodeEntry(nodeset, i));
 }
 
 /*
@@ -673,7 +673,7 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 	}
 
 	/* RTFs use the "next" pointer as a to-be-freed list; don't follow it */
-	if (XSLT_IS_RES_TREE_FRAG(node))
+	if (slaxIsResultTreeFragment(node))
 	    break;
     }
 }
@@ -730,8 +730,8 @@ slaxDumpDoc (xmlDocPtr node)
 static void
 slaxDumpNodesetIndent (xmlNodeSetPtr nsp, const char *tag, int indent)
 {
-    for (int i = 0; i < nsp->nodeNr; i++)
-        slaxDumpNodeIndent(nsp->nodeTab[i], tag, indent);
+    for (int i = 0; i < xmlNodeSetGetNodeNr(nsp); i++)
+        slaxDumpNodeIndent(xmlNodeSetGetNodeEntry(nsp, i), tag, indent);
 }
 
 void
@@ -810,8 +810,8 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 
     if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
 	nset = xop->nodesetval;
-	slaxOutput("%*snodesetval: %p -> %p/%d", indent + 2, tag,
-		   nset, nset ? nset->nodeTab : NULL, nset ? nset->nodeNr : 0);
+	slaxOutput("%*snodesetval: %p -> %d", indent + 2, tag,
+		   nset, nset ? xmlNodeSetGetNodeNr(nset) : 0);
 	slaxDumpNodesetIndent(xop->nodesetval, tag, indent + 4);
     }
 }
@@ -825,27 +825,31 @@ slaxDumpObject (xmlXPathObjectPtr xop)
 static void
 slaxDumpVarIndent (xsltStackElemPtr var, const char *tag, int indent)
 {
-    for (; var; var = var->next) {
+    for (; var; var = xsltStackElemGetNext(var)) {
 	slaxOutput("%*svar %p: comp %p, computed %d, name '%s', uri '%s'",
-		   indent, tag, var, var->comp, var->computed,
-		   slaxIntoString(var->name) ?: "",
-		   slaxIntoString(var->nameURI) ?: "");
+		   indent, tag, var, xsltStackElemGetComp(var),
+		   xsltStackElemGetComputed(var),
+		   slaxIntoString(xsltStackElemGetName(var)) ?: "",
+		   slaxIntoString(xsltStackElemGetNameURI(var)) ?: "");
 	slaxOutput("%*sselect '%s', level %d, flags %#04x, context %p",
-		   indent + 2, tag, slaxIntoString(var->select) ?: "",
-		   var->level, var->flags, var->context);
+		   indent + 2, tag, slaxIntoString(xsltStackElemGetSelect(var)) ?: "",
+		   xsltStackElemGetLevel(var), xsltStackElemGetFlags(var),
+		   xsltStackElemGetContext(var));
 
-	if (var->tree) {
-	    slaxOutput("%*stree (constructor): %p", indent + 2, tag, var->tree);
+	if (xsltStackElemGetTree(var)) {
+	    slaxOutput("%*stree (constructor): %p", indent + 2, tag,
+		       xsltStackElemGetTree(var));
 	}
 
-        if (var->value) {
-	    slaxOutput("%*svalue: %p", indent + 2, tag, var->value);
-	    slaxDumpObjectIndent(var->value, tag, indent + 4);
+        if (xsltStackElemGetValue(var)) {
+	    slaxOutput("%*svalue: %p", indent + 2, tag, xsltStackElemGetValue(var));
+	    slaxDumpObjectIndent(xsltStackElemGetValue(var), tag, indent + 4);
 	}
 
-	if (var->fragment) {
-	    slaxOutput("%*sfragment %p:", indent + 2, tag, var->fragment);
-	    slaxDump(var->fragment);
+	if (xsltStackElemGetFragment(var)) {
+	    slaxOutput("%*sfragment %p:", indent + 2, tag,
+		       xsltStackElemGetFragment(var));
+	    slaxDump(xsltStackElemGetFragment(var));
 	}
     }
 }
