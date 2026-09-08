@@ -406,23 +406,25 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
     if (tag == NULL)
 	tag = "";
 
-    switch (xpath->type) {
+    switch (xmlXPathObjectGetType(xpath)) {
     case XPATH_BOOLEAN:
-	slaxOutput("%s[boolean] %s", tag, xpath->boolval ? "true" : "false");
+	slaxOutput("%s[boolean] %s", tag,
+		   xmlXPathObjectGetBoolval(xpath) ? "true" : "false");
 	break;
 
     case XPATH_NUMBER:
-	slaxOutput("%s[number] %lf", tag, xpath->floatval);
+	slaxOutput("%s[number] %lf", tag, xmlXPathObjectGetFloatval(xpath));
 	break;
 
     case XPATH_STRING:
-	if (xpath->stringval)
-	    slaxOutput("%s[string] \"%s\"", tag, xpath->stringval);
+	if (xmlXPathObjectGetStringval(xpath))
+	    slaxOutput("%s[string] \"%s\"", tag,
+		       xmlXPathObjectGetStringval(xpath));
 	break;
 
     case XPATH_NODESET:
 	if (full) {
-	    xmlNodeSetPtr ns = xpath->nodesetval;
+	    xmlNodeSetPtr ns = xmlXPathObjectGetNodesetval(xpath);
 	    const char *frag = "";
 
 	    if (ns && xmlNodeSetGetNodeNr(ns) == 1
@@ -430,19 +432,19 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 		frag = " rtf-doc";
 
 	    slaxOutput("%s[node-set]%s (%d)%s", tag,
-		       xpath->nodesetval ? "" : " [null]",
-		       xpath->nodesetval ? xmlNodeSetGetNodeNr(xpath->nodesetval) : 0,
+		       ns ? "" : " [null]",
+		       ns ? xmlNodeSetGetNodeNr(ns) : 0,
 		       frag);
 
-	    if (xpath->nodesetval)
-		slaxOutputNodeset(xpath->nodesetval);
+	    if (ns)
+		slaxOutputNodeset(ns);
 	} else {
-	    xmlNodeSetPtr ns = xpath->nodesetval;
+	    xmlNodeSetPtr ns = xmlXPathObjectGetNodesetval(xpath);
 	    if (ns && xmlNodeSetGetNodeNr(ns) == 0)
 		ns = NULL;
 
 	    slaxOutput("%s[node-set]%s (%d)%s%s%s", tag,
-		       xpath->nodesetval ? "" : " [null]",
+		       xmlXPathObjectGetNodesetval(xpath) ? "" : " [null]",
 		       ns ? xmlNodeSetGetNodeNr(ns) : 0,
 		       ns ? " <" : "",
 		       ns ? xmlNodeGetName(xmlNodeSetGetNodeEntry(ns, 0)) : slaxNull,
@@ -450,13 +452,16 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 	}
 	break;
 
-    case XPATH_XSLT_TREE:
+    case XPATH_XSLT_TREE: {
+	xmlNodeSetPtr ns = xmlXPathObjectGetNodesetval(xpath);
+
 	slaxOutput("%s[rtf]%s (%d)", tag,
-			xpath->nodesetval ? "" : " [null]",
-			xpath->nodesetval ? xmlNodeSetGetNodeNr(xpath->nodesetval) : 0);
-	if (xpath->nodesetval)
-	    slaxOutputNodeset(xpath->nodesetval);
+			ns ? "" : " [null]",
+			ns ? xmlNodeSetGetNodeNr(ns) : 0);
+	if (ns)
+	    slaxOutputNodeset(ns);
 	break;
+    }
 
     default:
 	break;
@@ -2224,11 +2229,11 @@ slaxDebugEvalCondition (slaxDebugState_t *statep,
     if (print)
 	slaxDebugOutputXpath(xpobj, NULL, TRUE); /* Debug output */
 
-    if (xpobj->type != XPATH_BOOLEAN)
+    if (xmlXPathObjectGetType(xpobj) != XPATH_BOOLEAN)
 	xpobj = xmlXPathConvertBoolean(xpobj);
 
-    if (xpobj->type == XPATH_BOOLEAN) /* Otherwise, it can't be converted */
-	res = xpobj->boolval ? TRUE : FALSE;
+    if (xmlXPathObjectGetType(xpobj) == XPATH_BOOLEAN) /* Otherwise, it can't be converted */
+	res = xmlXPathObjectGetBoolval(xpobj) ? TRUE : FALSE;
 
     xmlXPathFreeObject(xpobj);
 
