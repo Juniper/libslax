@@ -582,7 +582,7 @@ do_show_select (const char *name, const char *output,
                        (const xmlChar *) XSL_URI);
 
     /* Evaluate with our document's root node as "." */
-    xpath_context->node = root;
+    xmlXPathContextSetNode(xpath_context, root);
 
     newdocp = xmlNewDoc((const xmlChar *) XML_DEFAULT_VERSION);
     if (newdocp == NULL)
@@ -609,10 +609,10 @@ do_show_select (const char *name, const char *output,
                                   xpath_context);
     if (objp->type == XPATH_NODESET) {
         nsp = objp->nodesetval;
-        if (nsp && nsp->nodeNr > 0) {
+        if (nsp && xmlNodeSetGetNodeNr(nsp) > 0) {
 
-            for (i = 0; i < nsp->nodeNr; i++) {
-		xmlNodePtr newp = xmlDocCopyNode(nsp->nodeTab[i], newdocp, 1);
+            for (i = 0; i < xmlNodeSetGetNodeNr(nsp); i++) {
+		xmlNodePtr newp = xmlDocCopyNode(xmlNodeSetGetNodeEntry(nsp, i), newdocp, 1);
 		if (newp)
 		    xmlAddChild(newroot, newp);
             }
@@ -761,9 +761,9 @@ do_run (const char *name, const char *output, const char *input, char **argv)
     }
 
     script = xsltParseStylesheetDoc(scriptdoc);
-    if (script == NULL || script->errors != 0)
+    if (script == NULL || xsltStylesheetGetErrors(script) != 0)
 	errx(1, "%d errors parsing script: '%s'",
-	     script ? script->errors : 1, scriptname);
+	     script ? xsltStylesheetGetErrors(script) : 1, scriptname);
 
     xmlNodePtr output_method = get_output_method(script);
 
@@ -781,7 +781,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 	errx(1, "unable to parse: '%s'", input);
 
     if (opt_indent)
-	script->indent = 1;
+	xsltStylesheetSetIndent(script, 1);
 
     if (opt_debugger) {
 	slaxDebugInitFlags(opt_debugger);
@@ -862,9 +862,9 @@ do_xpath (const char *name UNUSED, const char *output,
 	errx(1, "cannot parse: '%s'", opt_xpath);
 
     script = xsltParseStylesheetDoc(scriptdoc);
-    if (script == NULL || script->errors != 0)
+    if (script == NULL || xsltStylesheetGetErrors(script) != 0)
 	errx(1, "%d errors parsing script: '%s'",
-	     script ? script->errors : 1, opt_xpath);
+	     script ? xsltStylesheetGetErrors(script) : 1, opt_xpath);
 
     if (opt_empty_input)
 	indoc = buildEmptyFile();
@@ -876,7 +876,7 @@ do_xpath (const char *name UNUSED, const char *output,
 	errx(1, "unable to parse: '%s'", input);
 
     if (opt_indent)
-	script->indent = 1;
+	xsltStylesheetSetIndent(script, 1);
 
     if (opt_debugger) {
 	slaxDebugInit();
@@ -945,9 +945,9 @@ do_check (const char *name, const char *output UNUSED,
 	fclose(scriptfile);
 
     script = xsltParseStylesheetDoc(scriptdoc);
-    if (script == NULL || script->errors != 0)
+    if (script == NULL || xsltStylesheetGetErrors(script) != 0)
 	errx(1, "%d errors parsing script: '%s'",
-	     script ? script->errors : 1, name);
+	     script ? xsltStylesheetGetErrors(script) : 1, name);
 
     fprintf(stderr, "script check succeeds\n");
 
