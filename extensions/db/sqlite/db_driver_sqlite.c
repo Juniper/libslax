@@ -928,8 +928,9 @@ db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out,
 		&& sqlite3_clear_bindings(stmt) == SQLITE_OK) {
 
 		nodeset = input->nodesetval;
-		if (nodeset->nodeNr > 0 && xmlNodeGetChildren(nodeset->nodeTab[0])) {
-		    nop = xmlNodeGetChildren(nodeset->nodeTab[0]);
+		if (xmlNodeSetGetNodeNr(nodeset) > 0
+			&& xmlNodeGetChildren(xmlNodeSetGetNodeEntry(nodeset, 0))) {
+		    nop = xmlNodeGetChildren(xmlNodeSetGetNodeEntry(nodeset, 0));
 
 		    while (nop) {
 			/*
