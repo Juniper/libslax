@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<root>
+  <record id="r1">
+    <field name="x">hello</field>
+    <field name="y">world</field>
+  </record>
+  <section>
+    <header>ignored header</header>
+    <body>
+      <p>first paragraph</p>
+      <p>second paragraph</p>
+    </body>
+  </section>
+  <report>
+    <meta>
+      <title>Annual Summary</title>
+      <author>Smith</author>
+    </meta>
+    <data>ignored data</data>
+  </report>
+</root>
