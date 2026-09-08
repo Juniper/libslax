@@ -208,10 +208,12 @@ slaxMvarGlobalLookup (xsltTransformContextPtr ctxt,
     /*
      * Lookup the global variables in XPath global variable hash table
      */
-    if (ctxt->xpathCtxt == NULL || ctxt->globalVars == NULL)
+    if (xsltTransformContextGetXpathCtxt(ctxt) == NULL
+	|| xsltTransformContextGetGlobalVars(ctxt) == NULL)
 	return NULL;
 
-    elem = (xsltStackElemPtr) xmlHashLookup2(ctxt->globalVars, name, uri);
+    elem = (xsltStackElemPtr)
+	xmlHashLookup2(xsltTransformContextGetGlobalVars(ctxt), name, uri);
     return elem;
 }
 
@@ -230,7 +232,8 @@ slaxMvarLocalLookup (xsltTransformContextPtr ctxt,
     xsltStackElemPtr cur;
     int i;
 
-    if (ctxt == NULL || name == NULL || ctxt->varsNr == 0)
+    if (ctxt == NULL || name == NULL
+	|| xsltTransformContextGetVarsNr(ctxt) == 0)
 	return NULL;
 
     /*
@@ -239,11 +242,15 @@ slaxMvarLocalLookup (xsltTransformContextPtr ctxt,
      * name and URI strings to come from the dictionary and hence
      * pointer comparison.
      */
-    slaxLog("local lookup: ctxt %p %d..%d %p", ctxt, ctxt->varsNr,
-	      ctxt->varsBase, ctxt->varsTab);
-    for (i = ctxt->varsNr; i > ctxt->varsBase; i--) {
-	for (cur = ctxt->varsTab[i - 1]; cur != NULL; cur = cur->next) {
-	    if (cur->name == name && cur->nameURI == uri)
+    slaxLog("local lookup: ctxt %p %d..%d", ctxt,
+	      xsltTransformContextGetVarsNr(ctxt),
+	      xsltTransformContextGetVarsBase(ctxt));
+    for (i = xsltTransformContextGetVarsNr(ctxt);
+	 i > xsltTransformContextGetVarsBase(ctxt); i--) {
+	for (cur = xsltTransformContextGetVarsEntry(ctxt, i - 1); cur != NULL;
+	     cur = xsltStackElemGetNext(cur)) {
+	    if (xsltStackElemGetName(cur) == name
+		&& xsltStackElemGetNameURI(cur) == uri)
 		return cur;
 	}
     }
@@ -264,8 +271,10 @@ static xsltStackElemPtr
 slaxMvarLookup (xsltTransformContextPtr ctxt, const xmlChar *name,
 		const xmlChar *uri, int *localp)
 {
-    const xmlChar *dname = xmlDictLookup(ctxt->dict, name, -1);
-    const xmlChar *duri = uri ? xmlDictLookup(ctxt->dict, uri, -1) : NULL;
+    const xmlChar *dname = xmlDictLookup(xsltTransformContextGetDict(ctxt),
+					  name, -1);
+    const xmlChar *duri = uri
+	? xmlDictLookup(xsltTransformContextGetDict(ctxt), uri, -1) : NULL;
     xsltStackElemPtr res;
 
     res = slaxMvarLocalLookup(ctxt, dname, duri);
@@ -365,12 +374,11 @@ slaxMvarGetSvar (xsltTransformContextPtr ctxt,
 static xmlDocPtr
 slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
 {
-    xmlXPathObjectPtr value = svar->value;
+    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
     xmlDocPtr container;
 
-    if (value && value->nodesetval && value->nodesetval->nodeNr > 0
-	    && value->nodesetval->nodeTab)
-	return (xmlDocPtr) value->nodesetval->nodeTab[0];
+    if (value && value->nodesetval && xmlNodeSetGetNodeNr(value->nodesetval) > 0)
+	return (xmlDocPtr) xmlNodeSetGetNodeEntry(value->nodesetval, 0);
 
     container = xsltCreateRVT(ctxt);
     if (container == NULL)
@@ -387,12 +395,12 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     if (value)
 	xmlXPathFreeObject(value);
 
-    svar->value = value = xmlXPathNewNodeSet((xmlNodePtr) container);
+    value = xmlXPathNewNodeSet((xmlNodePtr) container);
+    xsltStackElemSetValue(svar, value);
 
     /* If the nodeset create worked, return the container */
-    if (value->nodesetval && value->nodesetval->nodeNr > 0
-	    && value->nodesetval->nodeTab)
-	return (xmlDocPtr) value->nodesetval->nodeTab[0];
+    if (value->nodesetval && xmlNodeSetGetNodeNr(value->nodesetval) > 0)
+	return (xmlDocPtr) xmlNodeSetGetNodeEntry(value->nodesetval, 0);
 
     return NULL;
 }
@@ -401,14 +409,13 @@ static xmlDocPtr
 slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
 		      int local)
 {
-    xmlXPathObjectPtr value = svar->value;
+    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
     xmlDocPtr container;
     xmlNodePtr prev;
 
     /* If this is the first value, make the nodeset */
     if (value == NULL || value->nodesetval == NULL
-	    || value->nodesetval->nodeNr == 0
-	    || value->nodesetval->nodeTab == NULL)
+	    || xmlNodeSetGetNodeNr(value->nodesetval) == 0)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
     container = xsltCreateRVT(ctxt);
@@ -425,7 +432,8 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
      * The garbage collection list is linked via the next/prev or
      * RTFs.
      */
-    prev = value->nodesetval->nodeTab[value->nodesetval->nodeNr - 1];
+    prev = xmlNodeSetGetNodeEntry(value->nodesetval,
+				   xmlNodeSetGetNodeNr(value->nodesetval) - 1);
     xmlNodeSetNext(prev, (xmlNodePtr) container);
 
     xmlXPathNodeSetAdd(value->nodesetval, (xmlNodePtr) container);
@@ -436,15 +444,15 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
 static xmlDocPtr
 slaxMvarLastContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
 {
-    xmlXPathObjectPtr value = svar->value;
+    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
     xmlNodePtr nodep;
 
     /* If this is the first value, make the nodeset */
-    if (value->nodesetval == NULL || value->nodesetval->nodeNr == 0
-	    || value->nodesetval->nodeTab == NULL)
+    if (value->nodesetval == NULL || xmlNodeSetGetNodeNr(value->nodesetval) == 0)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
-    nodep = value->nodesetval->nodeTab[value->nodesetval->nodeNr - 1];
+    nodep = xmlNodeSetGetNodeEntry(value->nodesetval,
+				    xmlNodeSetGetNodeNr(value->nodesetval) - 1);
     return (xmlDocPtr) nodep;
 }
 
@@ -468,15 +476,15 @@ slaxMvarCloneNodeset (xmlDocPtr container, xmlNodeSetPtr nset, int limit)
     if (res == NULL)
 	return NULL;
 
-    for (int i = 0; nset && i < nset->nodeNr; i++) {
+    for (int i = 0; nset && i < xmlNodeSetGetNodeNr(nset); i++) {
 	if (limit && i >= limit)
 	    break;
 
-	xmlNodePtr cur = nset->nodeTab[i];
+	xmlNodePtr cur = xmlNodeSetGetNodeEntry(nset, i);
 	if (cur == NULL)
 	    continue;
 
-	if (XSLT_IS_RES_TREE_FRAG(cur)) {
+	if (slaxIsResultTreeFragment(cur)) {
 	    for (cur = xmlNodeGetChildren(cur); cur; cur = xmlNodeGetNext(cur))
 		slaxMvarAdd(container, NULL, cur);
 	    xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
@@ -548,7 +556,8 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
 {
     xmlXPathObjectPtr old_value;
 
-    slaxLog("mvar: set: %s --> %p (%p)", name, value, var->value);
+    slaxLog("mvar: set: %s --> %p (%p)", name, value,
+	    xsltStackElemGetValue(var));
 
 #if 0
     slaxOutput("slaxMvarSet: enter: variable '%s'", name);
@@ -560,9 +569,9 @@ slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
     value = slaxMvarRecord(ctxt, name, svarname, value);
 
     /* Substitute our new value into the variable */
-    old_value = var->value;
-    var->value = value;
-    var->computed = 1;
+    old_value = xsltStackElemGetValue(var);
+    xsltStackElemSetValue(var, value);
+    xsltStackElemSetComputed(var, 1);
 
     /*
      * The old value is never an RTF, so we can free it without worrying
@@ -590,8 +599,8 @@ slaxMvarAlreadyPresent (xmlNodeSetPtr res, xmlDocPtr container)
 {
     xmlNodePtr nodep = (xmlNodePtr) container; /* Force conversion */
 
-    for (int i = 0; i < res->nodeNr; i++) {
-	if (res->nodeTab[i] == nodep)
+    for (int i = 0; i < xmlNodeSetGetNodeNr(res); i++) {
+	if (xmlNodeSetGetNodeEntry(res, i) == nodep)
 	    return TRUE;
     }
 
@@ -626,14 +635,14 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	return TRUE;
 
     slaxLog("mvar: append: %s, old %p --> new %p, tree %p",
-	    name, var->value, value, tree);
+	    name, xsltStackElemGetValue(var), value, tree);
 
-    if (slaxValueIsScalar(var->value)) {
+    if (slaxValueIsScalar(xsltStackElemGetValue(var))) {
 	if (value && slaxValueIsScalar(value)) {
 	    /*
 	     * case #1: [ scalar var / scalar value ] -> string concatenation
 	     */
-	    xmlChar *old_str = xmlXPathCastToString(var->value);
+	    xmlChar *old_str = xmlXPathCastToString(xsltStackElemGetValue(var));
 	    xmlChar *new_str = xmlXPathCastToString(value);
 	    int old_len = old_str ? xmlStrlen(old_str) : 0;
 	    int new_len = new_str ? xmlStrlen(new_str) : 0;
@@ -644,8 +653,8 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 		memcpy(buf + old_len, new_str, new_len);
 		buf[old_len + new_len] = '\0';
 
-		xmlXPathFreeObject(var->value);
-		var->value = xmlXPathWrapString(buf);
+		xmlXPathFreeObject(xsltStackElemGetValue(var));
+		xsltStackElemSetValue(var, xmlXPathWrapString(buf));
 	    }
 
 	    /* Free the values if we allocated them */
@@ -711,19 +720,20 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	return TRUE;
     }
 
-    var->value->nodesetval = res;
-    var->value->type = XPATH_NODESET;
-    var->value->boolval = FALSE;
-    if (var->value->stringval) {
-	xmlFree(var->value->stringval);
-	var->value->stringval = NULL;
+    xmlXPathObjectPtr val = xsltStackElemGetValue(var);
+    val->nodesetval = res;
+    val->type = XPATH_NODESET;
+    val->boolval = FALSE;
+    if (val->stringval) {
+	xmlFree(val->stringval);
+	val->stringval = NULL;
     }
 
     /*
      * If we are appending to an emtpy set, we need to add the
      * container to the variable's node set.
      */
-    if (res->nodeNr == 0)
+    if (xmlNodeSetGetNodeNr(res) == 0)
         xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 
     if (newp) {
@@ -750,12 +760,12 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 
     } else if (nset) {
 	/* Add everything in the node set to the variable */
-	for (i = 0; i < nset->nodeNr; i++) {
-	    cur = nset->nodeTab[i];
+	for (i = 0; i < xmlNodeSetGetNodeNr(nset); i++) {
+	    cur = xmlNodeSetGetNodeEntry(nset, i);
 	    if (cur == NULL)
 		continue;
 
-	    if (XSLT_IS_RES_TREE_FRAG(cur)) {
+	    if (slaxIsResultTreeFragment(cur)) {
 		for (cur = xmlNodeGetChildren(cur); cur;
 		     cur = xmlNodeGetNext(cur))
 		    slaxMvarAdd(container, NULL, cur);
@@ -882,7 +892,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	comp->mp_name = name;
     else {
 	xsltTransformError(NULL, style, inst, "mvar: missing variable name\n");
-	style->errors += 1;
+	xsltStylesheetIncrementErrors(style);
     }
 
     /* Deal with setting mp_uri */
@@ -907,12 +917,12 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	    xsltTransformError(NULL, style, inst,
 			 "immutable variable cannot be changed (var): '%s'.\n",
 			       comp->mp_localname);
-	    style->errors += 1;
+	    xsltStylesheetIncrementErrors(style);
 	} else {
 	    if (!streq((const char *) mutable, "yes")) {
 		xsltTransformError(NULL, style, inst,
 		    "immutable variable cannot be changed: '%s'.\n", name);
-		style->errors += 1;
+		xsltStylesheetIncrementErrors(style);
 	    }
 
 	    xmlFree(mutable);
@@ -926,14 +936,14 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	if (comp->mp_select == NULL) {
 	    xsltTransformError(NULL, style, inst,
 	       "invalid XPath expression for mvar '%s': '%s'.\n", name, sel);
-	    style->errors += 1;
+	    xsltStylesheetIncrementErrors(style);
 	}
 
 	if (xmlNodeGetChildren(inst) != NULL) {
 	    xsltTransformError(NULL, style, inst,
 		"mvar cannot have child nodes when the "
 		"attribute 'select' is used.\n");
-	    style->errors += 1;
+	    xsltStylesheetIncrementErrors(style);
 	}
 
 	xmlFree(sel);
@@ -944,7 +954,7 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
     if (comp->mp_svarname == NULL) {
 	xsltTransformError(NULL, style, inst,
 	   "missing 'svarname' attribute for mvar: '%s'.\n", name);
-	style->errors += 1;
+	xsltStylesheetIncrementErrors(style);
     }
 
     /* Prebuild the namespace list */
@@ -971,19 +981,20 @@ slaxMvarEvalString (xsltTransformContextPtr ctxt, xmlNodePtr node,
      * install fake ones, eval the expression, then restore
      * the saved values.
      */
-    xmlNsPtr *save_nslist = ctxt->xpathCtxt->namespaces;
-    int save_nscount = ctxt->xpathCtxt->nsNr;
-    xmlNodePtr save_context = ctxt->xpathCtxt->node;
+    xmlXPathContextPtr xpathCtxt = xsltTransformContextGetXpathCtxt(ctxt);
+    xmlNsPtr *save_nslist = xmlXPathContextGetNamespaces(xpathCtxt);
+    int save_nscount = xmlXPathContextGetNsNr(xpathCtxt);
+    xmlNodePtr save_context = xmlXPathContextGetNode(xpathCtxt);
 
-    ctxt->xpathCtxt->namespaces = nslist;
-    ctxt->xpathCtxt->nsNr = nscount;
-    ctxt->xpathCtxt->node = node;
+    xmlXPathContextSetNamespaces(xpathCtxt, nslist);
+    xmlXPathContextSetNsNr(xpathCtxt, nscount);
+    xmlXPathContextSetNode(xpathCtxt, node);
 
-    value = xmlXPathCompiledEval(expr, ctxt->xpathCtxt);
+    value = xmlXPathCompiledEval(expr, xpathCtxt);
 
-    ctxt->xpathCtxt->node = save_context;
-    ctxt->xpathCtxt->nsNr = save_nscount;
-    ctxt->xpathCtxt->namespaces = save_nslist;
+    xmlXPathContextSetNode(xpathCtxt, save_context);
+    xmlXPathContextSetNsNr(xpathCtxt, save_nscount);
+    xmlXPathContextSetNamespaces(xpathCtxt, save_nslist);
 
     return value;
 }
@@ -1006,13 +1017,13 @@ slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
 	return NULL;
     }
 
-    save_insert = ctxt->insert;
-    ctxt->insert = (xmlNodePtr) container;
+    save_insert = xsltTransformContextGetInsert(ctxt);
+    xsltTransformContextSetInsert(ctxt, (xmlNodePtr) container);
 
     /* Apply the template code inside the element */
     xsltApplyOneTemplate(ctxt, node, xmlNodeGetChildren(inst), NULL, NULL);
 
-    ctxt->insert = save_insert;
+    xsltTransformContextSetInsert(ctxt, save_insert);
 
     return container;
 }
@@ -1189,10 +1200,12 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	 * If we don't have an initial value, do not give outselves
 	 * an empty RTF.  Use an empty string instead.
 	 */
+	xmlXPathObjectPtr svarValue = xsltStackElemGetValue(svar);
+
 	nodep = NULL;
-	if (svar->value && svar->value->nodesetval
-	    && svar->value->nodesetval->nodeTab[0])
-	    nodep = svar->value->nodesetval->nodeTab[0];
+	if (svarValue && svarValue->nodesetval
+	    && xmlNodeSetGetNodeEntry(svarValue->nodesetval, 0))
+	    nodep = xmlNodeSetGetNodeEntry(svarValue->nodesetval, 0);
 
 	if (nodep == NULL || xmlNodeGetChildren(nodep) == NULL) {
 	    xmlFreeAndEasy(mvarname);
