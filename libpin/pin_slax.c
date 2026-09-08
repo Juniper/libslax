@@ -521,6 +521,46 @@ pin_slax_op_new (pin_op_cursor_t *cur, pin_op_id_t *oidp)
 }
 
 /*
+ * Classify a select/test expression at compile time.
+ *
+ * SELK_DOWN covers "a", "a/b", "a/b/c" — all steps descend from context.
+ * Everything that does not fit a simpler category and is not a clean
+ * downward path is SELK_COMPLEX and causes a BIA_ complexity fallback.
+ */
+typedef enum {
+    SELK_EMPTY,     /* null or empty string */
+    SELK_SELF,      /* "." */
+    SELK_ATTR,      /* "@name" */
+    SELK_LITERAL,   /* "'string'" */
+    SELK_VAR,       /* "$name" */
+    SELK_DOWN,      /* "a", "a/b/c" — descending element path */
+    SELK_COMPLEX,   /* "..", "/abs", "//", predicates, functions, etc. */
+} pin_sel_kind_t;
+
+static pin_sel_kind_t
+pin_slax_classify_select (const char *s)
+{
+    if (s == NULL || s[0] == '\0')
+	return SELK_EMPTY;
+    if (strcmp(s, ".") == 0)
+	return SELK_SELF;
+    if (s[0] == '@')
+	return (s[1] != '\0' && strpbrk(s + 1, " \t=<>'\"/@[]()*") == NULL)
+	    ? SELK_ATTR : SELK_COMPLEX;
+    if (s[0] == '\'')
+	return (strlen(s) >= 2 && s[strlen(s) - 1] == '\'')
+	    ? SELK_LITERAL : SELK_COMPLEX;
+    if (s[0] == '$')
+	return (s[1] != '\0' && strpbrk(s + 1, " \t=<>'\"/@[]()*") == NULL)
+	    ? SELK_VAR : SELK_COMPLEX;
+    /* Downward: no absolute prefix, no upward steps, no predicates/funcs */
+    if (s[0] != '/' && strstr(s, "..") == NULL
+	    && strpbrk(s, " \t=<>'\"@[]()*") == NULL)
+	return SELK_DOWN;
+    return SELK_COMPLEX;
+}
+
+/*
  * Emit the PUSH_* op that best represents an xsl:if / xsl:when test
  * expression, leaving the result on the value stack for a following
  * PUSH_BOOL + IF to consume.
@@ -541,20 +581,28 @@ pin_slax_op_push_for_test (pin_op_cursor_t *cur, const char *test)
     if (push == NULL)
 	return NULL;
 
-    if (test[0] == '@' && test[1] != '\0'
-	    && strpbrk(test + 1, " \t=<>'\"/@[]()*") == NULL) {
+    switch (pin_slax_classify_select(test)) {
+    case SELK_ATTR:
 	push->po_type = PIN_OP_PUSH_ATTR;
 	push->po_name = pin_namepool_atom(pwp, test + 1, TRUE);
-    } else if (strcmp(test, ".") == 0) {
+	break;
+    case SELK_SELF:
 	push->po_type = PIN_OP_PUSH_TEXT;
 	push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-    } else if (strpbrk(test, "/@[]()*") == NULL) {
+	break;
+    case SELK_VAR:
+	push->po_type = PIN_OP_LOAD_VAR;
+	push->po_name = pin_namepool_atom(pwp, test + 1, TRUE);
+	break;
+    case SELK_DOWN:
 	push->po_type = PIN_OP_PUSH_NODES;
 	push->po_name = pin_namepool_atom(pwp, test, TRUE);
-    } else {
+	break;
+    default:
 	psu_log("pin_slax: complex test not yet supported in ops: %s", test);
 	push->po_type = PIN_OP_COMPLEX_EXPR;
 	cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+	break;
     }
     return push;
 }
@@ -592,10 +640,32 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    continue;
 
 	if (pin_slax_is_xsl(child, "copy-of")) {
-	    cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
-	    pin_op_t *push = pin_slax_op_new(cur, NULL);
-	    if (push == NULL) return;
-	    push->po_type = PIN_OP_PUSH_NODE;
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    const char *s = sel ? (const char *) sel : ".";
+	    pin_sel_kind_t kind = pin_slax_classify_select(s);
+
+	    if (kind == SELK_COMPLEX || kind == SELK_LITERAL || kind == SELK_EMPTY) {
+		/* Fall back to stub */
+		cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
+		pin_op_t *push = pin_slax_op_new(cur, NULL);
+		if (push) push->po_type = PIN_OP_PUSH_NODE;
+		if (sel) xmlFree(sel);
+		continue;
+	    }
+
+	    pin_op_t *op = pin_slax_op_new(cur, NULL);
+	    if (op == NULL) { if (sel) xmlFree(sel); return; }
+	    op->po_type = PIN_OP_COPY_OF;
+
+	    if (kind == SELK_SELF) {
+		op->po_name = pin_name_id_null_atom();   /* null = context node */
+	    } else if (kind == SELK_VAR) {
+		op->po_name = pin_namepool_atom(pwp, s, TRUE);  /* "$varname" */
+	    } else {  /* SELK_DOWN */
+		op->po_name = pin_namepool_atom(pwp, s, TRUE);
+	    }
+
+	    if (sel) xmlFree(sel);
 	    continue;
 	}
 
@@ -606,15 +676,24 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    pin_op_t *push = pin_slax_op_new(cur, NULL);
 	    if (push == NULL) { if (sel) xmlFree(sel); return; }
 
-	    if (strcmp(s, ".") == 0) {
+	    switch (pin_slax_classify_select(s)) {
+	    case SELK_SELF:
 		push->po_type = PIN_OP_PUSH_TEXT;
 		push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-	    } else if (s[0] == '@' && s[1] != '\0') {
+		break;
+	    case SELK_ATTR:
 		push->po_type = PIN_OP_PUSH_ATTR;
 		push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-	    } else {
+		break;
+	    case SELK_VAR:
+		push->po_type = PIN_OP_LOAD_VAR;
+		push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		break;
+	    default:
+		/* SELK_DOWN, SELK_LITERAL, SELK_COMPLEX: fall back to text */
 		push->po_type = PIN_OP_PUSH_TEXT;
 		push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		break;
 	    }
 	    if (sel) xmlFree(sel);
 
@@ -876,6 +955,86 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		cur->poc_complexity |= sub.poc_complexity;
 		fe->po_type = PIN_OP_NONE;
 	    }
+	    continue;
+	}
+
+	/*
+	 * xsl:variable name="x" select="expr"  — compile expr, emit STORE_VAR.
+	 * xsl:variable name="x">text body</xsl:variable> — push literal text.
+	 *
+	 * Supported select forms: @attr, ., 'literal', $var, child-path.
+	 * Complex expressions (predicates, functions) fall back to BIA_.
+	 */
+	if (pin_slax_is_xsl(child, "variable")) {
+	    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (vname == NULL || vname[0] == '\0') {
+		if (vname) xmlFree(vname);
+		continue;
+	    }
+
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    pin_op_t *push = pin_slax_op_new(cur, NULL);
+	    if (push == NULL) { xmlFree(vname); if (sel) xmlFree(sel); return; }
+
+	    if (sel != NULL) {
+		const char *s = (const char *) sel;
+		size_t slen = strlen(s);
+
+		switch (pin_slax_classify_select(s)) {
+		case SELK_LITERAL: {
+		    /* 'value' — strip enclosing single quotes */
+		    char litbuf[512];
+		    size_t litlen = slen - 2 < sizeof(litbuf) - 1
+			? slen - 2 : sizeof(litbuf) - 1;
+		    memcpy(litbuf, s + 1, litlen);
+		    litbuf[litlen] = '\0';
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, litbuf, TRUE);
+		    break;
+		}
+		case SELK_ATTR:
+		    push->po_type = PIN_OP_PUSH_ATTR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_VAR:
+		    push->po_type = PIN_OP_LOAD_VAR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_SELF:
+		    push->po_type = PIN_OP_PUSH_TEXT;
+		    push->po_name = pin_namepool_atom(pwp, ".", TRUE);
+		    break;
+		case SELK_DOWN:
+		    /* Downward path: collect matching nodes as a nodeset */
+		    push->po_type = PIN_OP_PUSH_NODES;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		default:
+		    psu_log("pin_slax: complex variable select, falling back: %s", s);
+		    push->po_type = PIN_OP_COMPLEX_EXPR;
+		    cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		    break;
+		}
+		xmlFree(sel);
+	    } else {
+		/* Body form: use first non-blank text child as literal value */
+		const char *text = NULL;
+		for (xmlNodePtr gc = child->children; gc; gc = gc->next) {
+		    if (gc->type == XML_TEXT_NODE && gc->content
+			    && !xmlIsBlankNode(gc)) {
+			text = (const char *) gc->content;
+			break;
+		    }
+		}
+		push->po_type = PIN_OP_PUSH_STRING;
+		push->po_name = pin_namepool_atom(pwp, text ? text : "", TRUE);
+	    }
+
+	    pin_op_t *store = pin_slax_op_new(cur, NULL);
+	    if (store == NULL) { xmlFree(vname); return; }
+	    store->po_type = PIN_OP_STORE_VAR;
+	    store->po_name = pin_namepool_atom(pwp, (const char *) vname, TRUE);
+	    xmlFree(vname);
 	    continue;
 	}
 
