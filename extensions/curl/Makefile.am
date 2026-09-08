@@ -25,7 +25,6 @@ AM_CFLAGS = \
     -DCURL_DISABLE_TYPECHECK \
     -I${top_builddir} \
     -I${top_srcdir} \
-    ${LIBCURL_CFLAGS} \
     ${LIBSLAX_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
     ${LIBXML_CFLAGS} \
