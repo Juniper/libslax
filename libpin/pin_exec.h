@@ -152,6 +152,9 @@ typedef struct pin_exec_rb_frame_s {
 typedef struct pin_exec_seq_frame_s {
     pin_op_id_t   psf_pc;        /* Next op to execute */
     pin_node_id_t psf_context;   /* Retained matched element node */
+    uint32_t      psf_saved_var_count;     /* CALL frame: caller's var watermark */
+    uint32_t      psf_saved_nodeset_count; /* CALL frame: caller's nodeset watermark */
+    uint8_t       psf_is_call;             /* 1 = CALL frame; restore scope on pop */
 } pin_exec_seq_frame_t;
 
 typedef struct pin_exec_state_s {
