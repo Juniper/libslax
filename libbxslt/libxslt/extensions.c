@@ -1404,9 +1404,9 @@ xsltUnregisterAllExtModules(void)
 xsltTransformContextPtr
 xsltXPathGetTransformContext(xmlXPathParserContextPtr ctxt)
 {
-    if ((ctxt == NULL) || (ctxt->context == NULL))
+    if ((ctxt == NULL) || (xmlXPathParserContextGetContext(ctxt) == NULL))
         return (NULL);
-    return (xmlXPathContextGetExtra(ctxt->context));
+    return (xmlXPathContextGetExtra(xmlXPathParserContextGetContext(ctxt)));
 }
 
 /**
