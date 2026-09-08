@@ -569,22 +569,22 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
         Py_INCREF(Py_None);
         return (Py_None);
     }
-    switch (obj->type) {
+    switch (xmlXPathObjectGetType(obj)) {
         case XPATH_XSLT_TREE: {
-            if ((obj->nodesetval == NULL) ||
-		(xmlNodeSetGetNodeNr(obj->nodesetval) == 0)) {
+            if ((xmlXPathObjectGetNodesetval(obj) == NULL) ||
+		(xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)) == 0)) {
                 ret = PyList_New(0);
 	    } else {
 		int i, len = 0;
 		xmlNodePtr node;
 
-		node = xmlNodeSetGetNodeEntry(obj->nodesetval, 0)->children;
+		node = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), 0)->children;
 		while (node != NULL) {
 		    len++;
 		    node = node->next;
 		}
 		ret = PyList_New(len);
-		node = xmlNodeSetGetNodeEntry(obj->nodesetval, 0)->children;
+		node = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), 0)->children;
 		for (i = 0;i < len;i++) {
                     PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
 		    node = node->next;
@@ -596,16 +596,16 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
 	    return (ret);
 	}
         case XPATH_NODESET:
-            if ((obj->nodesetval == NULL)
-                || (xmlNodeSetGetNodeNr(obj->nodesetval) == 0)) {
+            if ((xmlXPathObjectGetNodesetval(obj) == NULL)
+                || (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)) == 0)) {
                 ret = PyList_New(0);
 	    } else {
                 int i;
                 xmlNodePtr node;
 
-                ret = PyList_New(xmlNodeSetGetNodeNr(obj->nodesetval));
-                for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
-                    node = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
+                ret = PyList_New(xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)));
+                for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
+                    node = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i);
                     if (node->type == XML_NAMESPACE_DECL) {
 		        PyObject *ns =
 			    PyCapsule_New((void *) node,
@@ -613,7 +613,7 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
 				     libxml_xmlXPathDestructNsNode);
 			PyList_SetItem(ret, i, ns);
 			/* make sure the xmlNsPtr is not destroyed now */
-			xmlNodeSetSetNodeEntry(obj->nodesetval, i, NULL);
+			xmlNodeSetSetNodeEntry(xmlXPathObjectGetNodesetval(obj), i, NULL);
 		    } else {
 			PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
 		    }
@@ -621,17 +621,17 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
             }
             break;
         case XPATH_BOOLEAN:
-            ret = PY_IMPORT_INT((long) obj->boolval);
+            ret = PY_IMPORT_INT((long) xmlXPathObjectGetBoolval(obj));
             break;
         case XPATH_NUMBER:
-            ret = PyFloat_FromDouble(obj->floatval);
+            ret = PyFloat_FromDouble(xmlXPathObjectGetFloatval(obj));
             break;
         case XPATH_STRING:
-            ret = PY_IMPORT_STRING((char *) obj->stringval);
+            ret = PY_IMPORT_STRING((char *) xmlXPathObjectGetStringval(obj));
             break;
         default:
 #ifdef DEBUG
-            printf("Unable to convert XPath object type %d\n", obj->type);
+            printf("Unable to convert XPath object type %d\n", xmlXPathObjectGetType(obj));
 #endif
             Py_INCREF(Py_None);
             ret = Py_None;
