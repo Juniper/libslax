@@ -469,6 +469,9 @@ pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
     int top = esp->pes_seq_top;
     esp->pes_seq[top].psf_pc = pc;
     esp->pes_seq[top].psf_context = ctx;
+    esp->pes_seq[top].psf_is_call = 0;
+    esp->pes_seq[top].psf_saved_var_count = 0;
+    esp->pes_seq[top].psf_saved_nodeset_count = 0;
     esp->pes_seq_top += 1;
     return 0;
 }
@@ -763,6 +766,28 @@ pin_op_copy_of (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
+static pin_value_t
+pin_op_call (PIN_OP_FUNC_ARGS)
+{
+    pin_rulebook_t *prbp = parsep->pp_rulebook;
+    pin_op_id_t callee_ops = pin_rulebook_named_find(prbp, opp->po_name);
+    if (pin_op_id_is_null(callee_ops))
+        return pin_value_null();
+
+    if (pin_exec_seq_grow(esp) < 0)
+        return pin_value_null();
+
+    int top = esp->pes_seq_top;
+    pin_node_id_t ctx = esp->pes_seq[top > 0 ? top - 1 : 0].psf_context;
+    esp->pes_seq[top].psf_pc = callee_ops;
+    esp->pes_seq[top].psf_context = ctx;
+    esp->pes_seq[top].psf_is_call = 1;
+    esp->pes_seq[top].psf_saved_var_count = esp->pes_var_count;
+    esp->pes_seq[top].psf_saved_nodeset_count = esp->pes_nodeset_count;
+    esp->pes_seq_top += 1;
+    return pin_value_null();
+}
+
 /*
  * Op dispatch table
  */
@@ -788,7 +813,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_IF]           = { "if",           pin_op_if,           0 },
     [PIN_OP_GOTO]         = { "goto",         pin_op_goto,         0 },
     [PIN_OP_JUMP]         = { "jump",         pin_op_jump,         0 },
-    [PIN_OP_CALL]         = { "call",         pin_op_stub,         0 },
+    [PIN_OP_CALL]         = { "call",         pin_op_call,         0 },
     [PIN_OP_RETURN]       = { "return",       pin_op_stub,         0 },
     [PIN_OP_DISCARD]      = { "discard",      pin_op_discard,      0 },
     [PIN_OP_STORE_VAR]    = { "store-var",    pin_op_store_var,    0 },
@@ -837,6 +862,9 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     int top = esp->pes_seq_top;
     esp->pes_seq[top].psf_pc = start;
     esp->pes_seq[top].psf_context = context_node;
+    esp->pes_seq[top].psf_is_call = 0;
+    esp->pes_seq[top].psf_saved_var_count = 0;
+    esp->pes_seq[top].psf_saved_nodeset_count = 0;
     esp->pes_seq_top += 1;
 
     while (esp->pes_seq_top > 0) {
@@ -844,6 +872,14 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 
         pin_op_id_t pc = esp->pes_seq[top].psf_pc;
         if (pin_op_id_is_null(pc)) {
+            if (esp->pes_seq[top].psf_is_call) {
+                uint32_t svc = esp->pes_seq[top].psf_saved_var_count;
+                uint32_t snc = esp->pes_seq[top].psf_saved_nodeset_count;
+                for (uint32_t i = snc; i < esp->pes_nodeset_count; i++)
+                    pin_exec_nodeset_free(esp, i);
+                esp->pes_var_count = svc;
+                esp->pes_nodeset_count = snc;
+            }
             esp->pes_seq_top -= 1;
             continue;
         }
