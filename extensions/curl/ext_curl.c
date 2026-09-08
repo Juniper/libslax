@@ -1307,8 +1307,8 @@ extCurlOptionsParse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
 	    int i;
 
 	    nodeset = xop->nodesetval;
-	    for (i = 0; i < nodeset->nodeNr; i++) {
-		nop = nodeset->nodeTab[i];
+	    for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
+		nop = xmlNodeSetGetNodeEntry(nodeset, i);
 
 		if (xmlNodeGetType(nop) == XML_ELEMENT_NODE)
 		    extCurlParseNode(opts, nop);
