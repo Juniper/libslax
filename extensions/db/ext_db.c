@@ -300,12 +300,12 @@ db_input_parse (xmlXPathObject *ostack[], int nargs)
 	for (osi = nargs - 1; osi >= 0; osi--) {
 	    xmlXPathObject *xop = ostack[osi];
 
-	    if (xop->nodesetval) {
+	    if (xmlXPathObjectGetNodesetval(xop)) {
 		xmlNodeSetPtr nodeset;
 		xmlNodePtr nop, cop;
 		int i;
 
-		nodeset = xop->nodesetval;
+		nodeset = xmlXPathObjectGetNodesetval(xop);
 		for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
 		    nop = xmlNodeSetGetNodeEntry(nodeset, i);
 
@@ -319,9 +319,9 @@ db_input_parse (xmlXPathObject *ostack[], int nargs)
 			db_parse_node(input, cop);
 		    }
 		}
-	    } else if (xop->stringval) {
-		slaxExtPrintAppend(&input->di_buf, xop->stringval,
-				   xmlStrlen(xop->stringval));
+	    } else if (xmlXPathObjectGetStringval(xop)) {
+		slaxExtPrintAppend(&input->di_buf, xmlXPathObjectGetStringval(xop),
+				   xmlStrlen(xmlXPathObjectGetStringval(xop)));
 	    }
 	}
     }
