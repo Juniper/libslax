@@ -571,7 +571,7 @@ xsltTestCompMatchDirect(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
 	xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldProximityPosition);
 	if (newlist == NULL)
 	    return(-1);
-	if (newlist->type != XPATH_NODESET) {
+	if (xmlXPathObjectGetType(newlist) != XPATH_NODESET) {
 	    xmlXPathFreeObject(newlist);
 	    return(-1);
 	}
@@ -596,16 +596,16 @@ xsltTestCompMatchDirect(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
 	} else
 	    list = newlist;
     }
-    if ((list->nodesetval == NULL) ||
-	(xmlNodeSetGetNodeNr(list->nodesetval) <= 0)) {
+    if ((xmlXPathObjectGetNodesetval(list) == NULL) ||
+	(xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(list)) <= 0)) {
 	if (nocache == 1)
 	    xmlXPathFreeObject(list);
 	return(0);
     }
     /* TODO: store the index and use it for the scan */
     if (ix == 0) {
-	for (j = 0;j < xmlNodeSetGetNodeNr(list->nodesetval);j++) {
-	    if (xmlNodeSetGetNodeEntry(list->nodesetval, j) == node) {
+	for (j = 0;j < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(list));j++) {
+	    if (xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(list), j) == node) {
 		if (nocache == 1)
 		    xmlXPathFreeObject(list);
 		return(1);
