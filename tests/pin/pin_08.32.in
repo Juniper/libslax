@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.32.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    xsl:copy-of in op-dispatch.
+
+    Tests:
+      select="."       -> copy context node's subtree (null po_name)
+      select="child"   -> copy a single named child subtree
+      select="a/b"     -> copy a multi-step path result
+  -->
+
+  <!-- copy-of "." copies the matched <record> element completely -->
+  <xsl:template match="record">
+    <copy>
+      <xsl:copy-of select="."/>
+    </copy>
+  </xsl:template>
+
+  <!-- copy-of a named child element -->
+  <xsl:template match="section">
+    <wrapped>
+      <xsl:copy-of select="body"/>
+    </wrapped>
+  </xsl:template>
+
+  <!-- copy-of a nested path -->
+  <xsl:template match="report">
+    <result>
+      <xsl:copy-of select="meta/title"/>
+    </result>
+  </xsl:template>
+
+</xsl:stylesheet>
