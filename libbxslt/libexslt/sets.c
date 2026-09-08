@@ -99,11 +99,11 @@ exsltSetsDistinctFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	return;
     }
 
-    if (ctxt->value != NULL) {
-        boolval = ctxt->value->boolval;
-	user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = NULL;
+    if (xmlXPathParserContextGetValue(ctxt) != NULL) {
+        boolval = xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt));
+	user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
     }
     ns = xmlXPathPopNodeSet(ctxt);
     if (xmlXPathCheckError(ctxt))
@@ -117,8 +117,8 @@ exsltSetsDistinctFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 
     obj = xmlXPathWrapNodeSet(ret);
     if (obj != NULL) {
-        obj->user = user;
-        obj->boolval = boolval;
+        xmlXPathObjectSetUser(obj, user);
+        xmlXPathObjectSetBoolval(obj, boolval);
     }
     valuePush(ctxt, obj);
 }
