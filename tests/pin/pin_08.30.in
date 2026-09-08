@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.30.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    xsl:variable tests in op-dispatch.
+
+    Tests all supported variable binding forms:
+      select="@attr"     -> PUSH_ATTR + STORE_VAR
+      select="child"     -> PUSH_TEXT + STORE_VAR
+      select="'literal'" -> PUSH_STRING + STORE_VAR
+      select="$other"    -> LOAD_VAR + STORE_VAR (copy)
+      body form          -> PUSH_STRING + STORE_VAR (first text child)
+
+    Tests variable reference forms:
+      xsl:value-of select="$var"   -> LOAD_VAR + EMIT
+      xsl:if test="$var"           -> LOAD_VAR + PUSH_BOOL + IF
+
+    All templates use op-dispatch (no apply-templates / copy-of).
+  -->
+
+  <!-- Template for <product>: covers @attr and child variables. -->
+  <xsl:template match="product">
+    <xsl:variable name="pid"    select="@id"/>
+    <xsl:variable name="pname"  select="name"/>
+    <xsl:variable name="pvendor" select="vendor/name"/>
+    <xsl:variable name="avail"  select="@available"/>
+    <item>
+      <id><xsl:value-of select="$pid"/></id>
+      <n><xsl:value-of select="$pname"/></n>
+      <v><xsl:value-of select="$pvendor"/></v>
+      <xsl:if test="$avail">
+        <flag>available</flag>
+      </xsl:if>
+    </item>
+  </xsl:template>
+
+  <!-- Template for <order>: literal string and copy variables. -->
+  <xsl:template match="order">
+    <xsl:variable name="prefix"  select="'ORDER'"/>
+    <xsl:variable name="oid"     select="@id"/>
+    <xsl:variable name="display" select="$prefix"/>
+    <xsl:variable name="status">pending</xsl:variable>
+    <rec>
+      <label><xsl:value-of select="$display"/></label>
+      <ref><xsl:value-of select="$oid"/></ref>
+      <state><xsl:value-of select="$status"/></state>
+      <xsl:variable name="urgent" select="@urgent"/>
+      <xsl:if test="$urgent">
+        <flag>urgent</flag>
+      </xsl:if>
+    </rec>
+  </xsl:template>
+
+  <!-- Template for <catalog>: for-each with per-iteration variable. -->
+  <xsl:template match="catalog">
+    <list>
+      <xsl:for-each select="entry">
+        <xsl:variable name="key"   select="@key"/>
+        <xsl:variable name="val"   select="value"/>
+        <xsl:variable name="active" select="@active"/>
+        <row>
+          <k><xsl:value-of select="$key"/></k>
+          <v><xsl:value-of select="$val"/></v>
+          <xsl:if test="$active">
+            <flag>active</flag>
+          </xsl:if>
+        </row>
+      </xsl:for-each>
+    </list>
+  </xsl:template>
+
+</xsl:stylesheet>
