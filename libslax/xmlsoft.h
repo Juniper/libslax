@@ -196,7 +196,18 @@ static inline void
 xsltStopEngine (xsltTransformContextPtr ctxt)
 {
     if (ctxt)
-	ctxt->state = XSLT_STATE_STOPPED;
+	xsltTransformContextSetState(ctxt, XSLT_STATE_STOPPED);
+}
+
+/*
+ * XSLT_IS_RES_TREE_FRAG is an internal libxslt macro (not part of the
+ * public XSLTPUBFUN API); wrap it so callers outside libxslt don't
+ * reach into internals directly.
+ */
+static inline int
+slaxIsResultTreeFragment (xmlNodePtr node)
+{
+    return XSLT_IS_RES_TREE_FRAG(node);
 }
 
 /*
