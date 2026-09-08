@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.31.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    xsl:variable bound to a nodeset (PUSH_NODES + STORE_VAR).
+
+    Tests:
+      select="child"  -> PUSH_NODES + STORE_VAR  (PVT_NODESET)
+      xsl:if test="$v"  -> boolean of nodeset (true when non-empty)
+      xsl:value-of select="$v"  -> text content of first node in nodeset
+  -->
+
+  <xsl:template match="item">
+    <xsl:variable name="d" select="detail"/>
+    <out>
+      <name><xsl:value-of select="@name"/></name>
+      <xsl:if test="$d">
+        <has-detail>yes</has-detail>
+        <detail-text><xsl:value-of select="$d"/></detail-text>
+      </xsl:if>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
