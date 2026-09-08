@@ -138,8 +138,8 @@ slaxTransformError (xmlXPathParserContextPtr ctxt, const char *fmt, ...)
     va_end(vap);
     buf[sizeof(buf) - 1] = '\0'; /* Ensure NUL terminated string */
 
-    xsltTransformError(tctxt, tctxt ? tctxt->style : NULL,
-		       tctxt? tctxt->inst : NULL, "%s\n", buf);
+    xsltTransformError(tctxt, tctxt ? xsltTransformContextGetStyle(tctxt) : NULL,
+		       tctxt? xsltTransformContextGetInst(tctxt) : NULL, "%s\n", buf);
 }
 
 /*
@@ -156,8 +156,8 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...)
     va_end(vap);
     buf[sizeof(buf) - 1] = '\0'; /* Ensure NUL terminated string */
 
-    xsltTransformError(tctxt, tctxt ? tctxt->style : NULL,
-		       tctxt? tctxt->inst : NULL, "%s\n", buf);
+    xsltTransformError(tctxt, tctxt ? xsltTransformContextGetStyle(tctxt) : NULL,
+		       tctxt? xsltTransformContextGetInst(tctxt) : NULL, "%s\n", buf);
 }
 
 /*
@@ -299,19 +299,20 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	 * install fake ones, eval the expression, then restore
 	 * the saved values.
 	 */
-	xmlNsPtr *save_nslist = ctxt->xpathCtxt->namespaces;
-	int save_nscount = ctxt->xpathCtxt->nsNr;
-	xmlNodePtr save_context = ctxt->xpathCtxt->node;
+	xmlXPathContextPtr xpathCtxt = xsltTransformContextGetXpathCtxt(ctxt);
+	xmlNsPtr *save_nslist = xmlXPathContextGetNamespaces(xpathCtxt);
+	int save_nscount = xmlXPathContextGetNsNr(xpathCtxt);
+	xmlNodePtr save_context = xmlXPathContextGetNode(xpathCtxt);
 
-	ctxt->xpathCtxt->namespaces = comp->tp_nslist;
-	ctxt->xpathCtxt->nsNr = comp->tp_nscount;
-	ctxt->xpathCtxt->node = node;
+	xmlXPathContextSetNamespaces(xpathCtxt, comp->tp_nslist);
+	xmlXPathContextSetNsNr(xpathCtxt, comp->tp_nscount);
+	xmlXPathContextSetNode(xpathCtxt, node);
 
-	value = xmlXPathCompiledEval(comp->tp_select, ctxt->xpathCtxt);
+	value = xmlXPathCompiledEval(comp->tp_select, xpathCtxt);
 
-	ctxt->xpathCtxt->node = save_context;
-	ctxt->xpathCtxt->nsNr = save_nscount;
-	ctxt->xpathCtxt->namespaces = save_nslist;
+	xmlXPathContextSetNode(xpathCtxt, save_context);
+	xmlXPathContextSetNsNr(xpathCtxt, save_nscount);
+	xmlXPathContextSetNamespaces(xpathCtxt, save_nslist);
 
     } else if (inst->children) {
 	/*
@@ -331,13 +332,13 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	xsltRegisterLocalRVT(ctxt, container);	
 
 	/* Set up the insertion point for new output */
-	save_insert = ctxt->insert;
-	ctxt->insert = (xmlNodePtr) container;
+	save_insert = xsltTransformContextGetInsert(ctxt);
+	xsltTransformContextSetInsert(ctxt, (xmlNodePtr) container);
 
 	/* Apply the template code inside the element */
 	xsltApplyOneTemplate(ctxt, node,
 			      inst->children, NULL, NULL);
-	ctxt->insert = save_insert;
+	xsltTransformContextSetInsert(ctxt, save_insert);
 
 	value = xmlXPathNewValueTree((xmlNodePtr) container);
 
@@ -369,9 +370,9 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	if (value->nodesetval) {
 	    int i;
 	    xmlNodeSetPtr tab = value->nodesetval;
-	    for (i = 0; i < tab->nodeNr; i++) {
+	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 		slaxTraceCallback(slaxTraceCallbackData,
-				  tab->nodeTab[i], NULL);
+				  xmlNodeSetGetNodeEntry(tab, i), NULL);
 	    }
 	}
 	break;
@@ -522,34 +523,35 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 	 * install fake ones, eval the expression, then restore
 	 * the saved values.
 	 */
-	xmlNsPtr *save_nslist = ctxt->xpathCtxt->namespaces;
-	int save_nscount = ctxt->xpathCtxt->nsNr;
-	xmlNodePtr save_context = ctxt->xpathCtxt->node;
+	xmlXPathContextPtr xpathCtxt = xsltTransformContextGetXpathCtxt(ctxt);
+	xmlNsPtr *save_nslist = xmlXPathContextGetNamespaces(xpathCtxt);
+	int save_nscount = xmlXPathContextGetNsNr(xpathCtxt);
+	xmlNodePtr save_context = xmlXPathContextGetNode(xpathCtxt);
 
-	ctxt->xpathCtxt->namespaces = comp->wp_nslist;
-	ctxt->xpathCtxt->nsNr = comp->wp_nscount;
-	ctxt->xpathCtxt->node = node;
+	xmlXPathContextSetNamespaces(xpathCtxt, comp->wp_nslist);
+	xmlXPathContextSetNsNr(xpathCtxt, comp->wp_nscount);
+	xmlXPathContextSetNode(xpathCtxt, node);
 
 	/* If the user typed 'quit' or 'run' at the debugger prompt, bail */
-        if (ctxt->debugStatus == XSLT_DEBUG_QUIT
-			|| ctxt->debugStatus == XSLT_DEBUG_RUN_RESTART)
+        if (xsltTransformContextGetDebugStatus(ctxt) == XSLT_DEBUG_QUIT
+		|| xsltTransformContextGetDebugStatus(ctxt) == XSLT_DEBUG_RUN_RESTART)
 	    break;
 
 	/*
 	 * If a "terminate" statement has been executed, the context
 	 * state show us as stopped.  We need to notice this.
 	 */
-        if (ctxt->state == XSLT_STATE_STOPPED)
+        if (xsltTransformContextGetState(ctxt) == XSLT_STATE_STOPPED)
 	    break;
 
-        if (ctxt->debugStatus != XSLT_DEBUG_NONE)
-            xslHandleDebugger(inst, node, ctxt->templ, ctxt);
+        if (xsltTransformContextGetDebugStatus(ctxt) != XSLT_DEBUG_NONE)
+            xslHandleDebugger(inst, node, xsltTransformContextGetTempl(ctxt), ctxt);
 
-	value = xmlXPathCompiledEvalToBoolean(comp->wp_test, ctxt->xpathCtxt);
+	value = xmlXPathCompiledEvalToBoolean(comp->wp_test, xpathCtxt);
 
-	ctxt->xpathCtxt->node = save_context;
-	ctxt->xpathCtxt->nsNr = save_nscount;
-	ctxt->xpathCtxt->namespaces = save_nslist;
+	xmlXPathContextSetNode(xpathCtxt, save_context);
+	xmlXPathContextSetNsNr(xpathCtxt, save_nscount);
+	xmlXPathContextSetNamespaces(xpathCtxt, save_nslist);
 
 	if (value < 0) {
 	    xsltGenericError(xsltGenericErrorContext, "while: test fails\n");
@@ -656,7 +658,7 @@ slaxExtFirstOf (xmlXPathParserContext *ctxt, int nargs)
 	    continue;
 	}
 	
-	if (xop->nodesetval && xop->nodesetval->nodeNr == 0) {
+	if (xop->nodesetval && xmlNodeSetGetNodeNr(xop->nodesetval) == 0) {
 	    xmlXPathFreeObject(xop);
 	    continue;
 	}
@@ -1464,8 +1466,8 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 	obj = stack[ndx];
 	if (obj->nodesetval) {
 	    int i;
-	    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-		xmlNode *nop = obj->nodesetval->nodeTab[i];
+	    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+		xmlNode *nop = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
 		if (nop == NULL || nop->children == NULL)
 		    continue;
 
@@ -1473,7 +1475,7 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 		 * If we're handed a fragment, assume they wanted the
 		 * contents.
 		 */
-		if (XSLT_IS_RES_TREE_FRAG(nop))
+		if (slaxIsResultTreeFragment(nop))
 		    nop = nop->children;
 
 		/*
@@ -1559,8 +1561,8 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 	obj = stack[ndx];
 	if (obj->nodesetval) {
 	    int i;
-	    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-		xmlNode *nop = obj->nodesetval->nodeTab[i];
+	    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+		xmlNode *nop = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
 		if (nop == NULL || nop->children == NULL)
 		    continue;
 
@@ -1569,7 +1571,7 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 		 * contents.
 		 */
 		int follow = FALSE;
-		if (XSLT_IS_RES_TREE_FRAG(nop)) {
+		if (slaxIsResultTreeFragment(nop)) {
 		    nop = nop->children;
 		    follow = TRUE;
 		}
@@ -1787,12 +1789,12 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	     */
 
 	} else if (xop->nodesetval) {
-	    if (xop->nodesetval->nodeNr > 1) {
+	    if (xmlNodeSetGetNodeNr(xop->nodesetval) > 1) {
 		empty = FALSE;
 
-	    } else if (xop->nodesetval->nodeNr == 1) {
-		xmlNodePtr nop = xop->nodesetval->nodeTab[0];
-		if (XSLT_IS_RES_TREE_FRAG(nop)) {
+	    } else if (xmlNodeSetGetNodeNr(xop->nodesetval) == 1) {
+		xmlNodePtr nop = xmlNodeSetGetNodeEntry(xop->nodesetval, 0);
+		if (slaxIsResultTreeFragment(nop)) {
 		    if (nop->children != NULL)
 			empty = FALSE;
 		} else 
@@ -2922,21 +2924,24 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 
     nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
-    for (ti = 0, tj = tctxt->templNr - 1; ti < 15 && tj >= 0; ti++, tj--) {
+    for (ti = 0, tj = xsltTransformContextGetTemplNr(tctxt) - 1;
+	 ti < 15 && tj >= 0; ti++, tj--) {
+	xsltTemplatePtr tp = xsltTransformContextGetTemplEntry(tctxt, tj);
+
 	child = xmlNewDocNode(container, NULL,
 			      (const xmlChar *) "template", NULL);
 
 	if (child) {
 	    child = slaxAddChild(nodep, child);
-	    if (tctxt->templTab[tj]->name != NULL)
+	    if (xsltTemplateGetName(tp) != NULL)
 		xmlAddChildContent(container, child, (const xmlChar *) "name",
-				   tctxt->templTab[tj]->name);
-	    if (tctxt->templTab[tj]->match != NULL)
+				   xsltTemplateGetName(tp));
+	    if (xsltTemplateGetMatch(tp) != NULL)
 		xmlAddChildContent(container, child, (const xmlChar *) "match",
-				   tctxt->templTab[tj]->match);
-	    if (tctxt->templTab[tj]->mode != NULL)
+				   xsltTemplateGetMatch(tp));
+	    if (xsltTemplateGetMode(tp) != NULL)
 		xmlAddChildContent(container, child, (const xmlChar *) "mode",
-				   tctxt->templTab[tj]->mode);
+				   xsltTemplateGetMode(tp));
 	}
     }
 
@@ -2947,10 +2952,11 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 
     nodep = slaxAddChild((xmlNodePtr) top, nodep);
 
-    for (vi = 0, vj = tctxt->varsNr - 1; vi < 15 && vj >= 0; vi++, vj--) {
+    for (vi = 0, vj = xsltTransformContextGetVarsNr(tctxt) - 1;
+	 vi < 15 && vj >= 0; vi++, vj--) {
         xsltStackElemPtr cur;
 
-        if (tctxt->varsTab[vj] == NULL)
+        if (xsltTransformContextGetVarsEntry(tctxt, vj) == NULL)
             continue;
 
 	child = xmlNewDocNode(container, NULL,
@@ -2959,31 +2965,32 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 	if (child) {
 	    child = slaxAddChild(nodep, child);
 
-	    cur = tctxt->varsTab[vj];
+	    cur = xsltTransformContextGetVarsEntry(tctxt, vj);
 	    while (cur != NULL) {
+		xsltStylePreCompPtr comp = xsltStackElemGetComp(cur);
 		const char *tag =
-		    (cur == NULL || cur->comp == NULL) ? "unknown"
-		    : (cur->comp->type == XSLT_FUNC_PARAM) ? "param"
-		    : (cur->comp->type == XSLT_FUNC_WITHPARAM) ? "with"
-		    : (cur->comp->type == XSLT_FUNC_VARIABLE) ? "var"
+		    (cur == NULL || comp == NULL) ? "unknown"
+		    : (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM) ? "param"
+		    : (xsltStylePreCompGetType(comp) == XSLT_FUNC_WITHPARAM) ? "with"
+		    : (xsltStylePreCompGetType(comp) == XSLT_FUNC_VARIABLE) ? "var"
 		    : "other";
 
 		xmlNodePtr grandchild = xmlNewDocNode(container, NULL,
 					    (const xmlChar *) tag, NULL);
 		if (grandchild) {
 		    grandchild = slaxAddChild(child, grandchild);
-		    if (cur->name != NULL)
+		    if (xsltStackElemGetName(cur) != NULL)
 			xmlAddChildContent(container, grandchild,
 					   (const xmlChar *) "name",
-					   cur->name);
+					   xsltStackElemGetName(cur));
 
-		    if (cur->select)
+		    if (xsltStackElemGetSelect(cur))
 			xmlAddChildContent(container, grandchild,
 					   (const xmlChar *) "select",
-					   cur->select);
+					   xsltStackElemGetSelect(cur));
 
-		    if (cur->value) {
-			xmlChar *val = xmlXPathCastToString(cur->value);
+		    if (xsltStackElemGetValue(cur)) {
+			xmlChar *val = xmlXPathCastToString(xsltStackElemGetValue(cur));
 			if (val) {
 			    xmlAddChildContent(container, grandchild,
 					       (const xmlChar *) "string",
@@ -2993,7 +3000,7 @@ slaxExtDebug (xmlXPathParserContext *ctxt, int nargs)
 		    }
 		}
 
-		cur = cur->next;
+		cur = xsltStackElemGetNext(cur);
 	    }
 	}
     }
@@ -3050,7 +3057,7 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
     if (xop->type == XPATH_NODESET && xop->nodesetval == NULL)
 	return;
 
-    if (xop->nodesetval && xop->nodesetval->nodeNr == 0)
+    if (xop->nodesetval && xmlNodeSetGetNodeNr(xop->nodesetval) == 0)
 	return;
 
     if (xop->type == XPATH_STRING) {
@@ -3058,10 +3065,10 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 	    return;
 
     } else if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
-	if (xop->nodesetval == NULL || xop->nodesetval->nodeTab == NULL)
+	if (xop->nodesetval == NULL)
 	    return;
 
-	xmlNodePtr parent = xop->nodesetval->nodeTab[0];
+	xmlNodePtr parent = xmlNodeSetGetNodeEntry(xop->nodesetval, 0);
 	if (parent == NULL || parent->children == NULL)
 	    return;
 
@@ -3370,10 +3377,10 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	valuePush(ctxt, xmlXPathNewString(xop->stringval));
  
     else if (xop->type == XPATH_XSLT_TREE) {
-	if (xop->nodesetval == NULL || xop->nodesetval->nodeNr == 0)
+	if (xop->nodesetval == NULL || xmlNodeSetGetNodeNr(xop->nodesetval) == 0)
 	    goto fail;
 
-	parent = xop->nodesetval->nodeTab[0];
+	parent = xmlNodeSetGetNodeEntry(xop->nodesetval, 0);
 	if (parent == NULL || parent->children == NULL)
 	    goto fail;
 
