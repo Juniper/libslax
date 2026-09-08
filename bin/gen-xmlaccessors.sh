@@ -26,14 +26,15 @@
 # has -I$(top_builddir)/libbxml/include. The .c file lands alongside
 # at $(top_builddir)/libbxml/gen/xmlaccessors.c.
 #
-# xmlNodeSet and xmlXPathContext are declared in xpath.h, not tree.h,
-# so their accessors can't live in the same generated header: tree.h
-# includes the tree-struct accessors before xpath.h even exists, and
-# neither struct is defined until partway through xpath.h. A second,
-# separately included file group -- xmlaccessors-xpath-{inline,decl}.h
-# and xmlaccessors-xpath.c -- covers both, included from xpath.h right
-# after the xmlXPathContext struct definition, same NOINLINE-flavor
-# switch as tree.h.
+# xmlNodeSet, xmlXPathContext, xmlXPathObject and xmlXPathParserContext
+# are declared in xpath.h, not tree.h, so their accessors can't live in
+# the same generated header: tree.h includes the tree-struct accessors
+# before xpath.h even exists, and none of the four structs are defined
+# until partway through xpath.h. A second, separately included file
+# group -- xmlaccessors-xpath-{inline,decl}.h and xmlaccessors-xpath.c
+# -- covers all four, included from xpath.h right after
+# xmlXPathParserContext's struct definition (the last of the four to
+# appear in the file), same NOINLINE-flavor switch as tree.h.
 #
 # Table format, one field per row, colon-separated ("field:ctype:getter:
 # setter:param:comment"). A field left empty between colons means
@@ -238,7 +239,63 @@ opCount:unsigned long
 depth:int
 '
 
-xpath_structs="nodeset xpathcontext"
+# xmlXPathObject has 9 fields; all 9 are touched by consumers outside
+# libbxml, so all 9 get accessors (unlike xmlNodeSet/xmlXPathContext,
+# nothing here is deferred). type/nodesetval/boolval/stringval/user/
+# index get a setter because real call sites write them directly
+# (e.g. slaxmvar.c's `val->type = XPATH_NODESET;`, libbxslt/libxslt/
+# functions.c's `ret->nodesetval = ...`, libbxslt/libexslt/sets.c's
+# `obj->user =`/`obj->boolval =`, xsltutils.c's `res->index =`/
+# `res->stringval =`) -- this is why `type` gets a setter here even
+# though xmlNode.type is getter-only: the precedent is "does a real
+# call site write it", and here one does. floatval/user2/index2 are
+# getter-only: floatval is read-only in every consumer, and user2/
+# index2 are touched only by slaxio.c's debug dump (read-only).
+xpathobject_tag=XPathObject ; xpathobject_ptr=xmlXPathObjectPtr ; xpathobject_var=obj
+xpathobject_fields='
+type:xmlXPathObjectType
+nodesetval:xmlNodeSetPtr
+boolval:int
+floatval:double::none
+stringval:xmlChar *
+user:void *
+index:int
+user2:void *::none
+index2:int::none
+'
+
+# xmlXPathParserContext has 12 fields; only 3 are touched by consumers
+# outside libbxml, so the "touched-only" rule applies here too. The
+# other 9 -- cur, base, valueNr, valueMax, valueTab (array), comp,
+# xptr, ancestor, valueFrame -- are confirmed zero-hit and deferred.
+#
+# context is get-only: it's set internally by the XPath engine when
+# the parser context is created, never reassigned by a consumer, but
+# is read constantly (ctxt->context->doc, etc, at essentially every
+# extension-function call site) -- so unlike the other two, this one
+# needed a get-only accessor purely because of read volume, not
+# because it was previously overlooked as a candidate for deferral.
+#
+# error is get+set: consumers both read it (to check whether a prior
+# step already raised an error) and set it directly (bypassing the
+# public xmlXPathSetError()/xmlXPathSetArityError() macros in
+# xpathInternals.h, which also call xmlXPatherror() -- those macros
+# are untouched by this migration and keep working as before; this
+# accessor only covers the raw `ctxt->error = X` assignment pattern
+# used throughout libxslt/libexslt's extension functions).
+#
+# value is get-only: consumers read through it (ctxt->value->type,
+# ctxt->value->user, etc, i.e. accessing the xmlXPathObject it points
+# to -- already covered by the xpathobject_fields group above) but no
+# call site outside libbxml ever reassigns ctxt->value itself.
+xpathparsercontext_tag=XPathParserContext ; xpathparsercontext_ptr=xmlXPathParserContextPtr ; xpathparsercontext_var=ctxt
+xpathparsercontext_fields='
+context:xmlXPathContextPtr::none
+error:int
+value:xmlXPathObjectPtr::none
+'
+
+xpath_structs="nodeset xpathcontext xpathobject xpathparsercontext"
 
 # ----------------------------------------------------------------------
 # Helpers
