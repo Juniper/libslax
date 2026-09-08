@@ -1038,6 +1038,20 @@ pin_slax_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    continue;
 	}
 
+	if (pin_slax_is_xsl(child, "call-template")) {
+	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (tname == NULL || tname[0] == '\0') {
+		if (tname) xmlFree(tname);
+		continue;
+	    }
+	    pin_op_t *call_op = pin_slax_op_new(cur, NULL);
+	    if (call_op == NULL) { xmlFree(tname); return; }
+	    call_op->po_type = PIN_OP_CALL;
+	    call_op->po_name = pin_namepool_atom(pwp, (const char *) tname, TRUE);
+	    xmlFree(tname);
+	    continue;
+	}
+
 	/* Other xsl:* instructions not yet handled */
 	if (pin_slax_is_xsl(child, NULL))
 	    continue;
@@ -1129,8 +1143,28 @@ pin_slax_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    continue;
 
 	xmlChar *match = xmlGetProp(child, (const xmlChar *) "match");
-	if (match == NULL)
-	    continue;		/* named template without match=; skip */
+	if (match == NULL) {
+	    /* Named template (name= but no match=): compile body as op sequence */
+	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (tname == NULL || tname[0] == '\0') {
+		if (tname) xmlFree(tname);
+		continue;
+	    }
+	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
+	    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
+		    url, TRUE);
+	    uint64_t complexity = 0;
+	    pin_op_id_t ops = pin_slax_compile_ops(child, rb, src_file_id,
+		    &complexity);
+	    if (!pin_op_id_is_null(ops) && complexity == 0) {
+		pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
+			(const char *) tname, TRUE);
+		pin_rulebook_named_add(rb, nid, ops);
+		count += 1;
+	    }
+	    xmlFree(tname);
+	    continue;
+	}
 
 	/* Intern the mode string as a namepool atom (null = default mode) */
 	xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
