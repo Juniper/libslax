@@ -245,26 +245,29 @@ slaxDebugGetFile (xsltStylesheetPtr style, const char *filename)
     char *slash;
     const char **inc;
 
-    for ( ; style; style = style->next) {
-	if (streq((const char *) xmlDocGetURL(style->doc), filename))
+    for ( ; style; style = xsltStylesheetGetNext(style)) {
+	if (streq((const char *) xmlDocGetURL(xsltStylesheetGetDoc(style)),
+		  filename))
 	    return style;
 
 	for (inc = slaxDebugIncludes; inc && *inc; inc++) {
 	    snprintf(buf, sizeof(buf), "%s%s", *inc, filename);
-	    if (streq((const char *) xmlDocGetURL(style->doc), buf))
+	    if (streq((const char *) xmlDocGetURL(xsltStylesheetGetDoc(style)),
+		      buf))
 		return style;
 	}
-    
+
 	/*
 	 * Just the filname match
 	 */
-	slash = strrchr((const char *) xmlDocGetURL(style->doc), '/');
+	slash = strrchr((const char *)
+			 xmlDocGetURL(xsltStylesheetGetDoc(style)), '/');
 	if (slash && streq(slash + 1, filename))
 	    return style;
 
-	if (style->imports) {
+	if (xsltStylesheetGetImports(style)) {
 	    xsltStylesheetPtr answer;
-	    answer = slaxDebugGetFile(style->imports, filename);
+	    answer = slaxDebugGetFile(xsltStylesheetGetImports(style), filename);
 	    if (answer)
 		return answer;
 	}
@@ -281,10 +284,13 @@ slaxDebugGetTemplateNodebyName (slaxDebugState_t *statep, const char *name)
 {
     xsltTemplatePtr tmp;
 
-    for (tmp = statep->ds_script->templates; tmp; tmp = tmp->next) {
-	if ((tmp->match && streq((const char *) tmp->match, name))
-	    || (tmp->name && streq((const char *) tmp->name, name)))
-	    return tmp->elem;
+    for (tmp = xsltStylesheetGetTemplates(statep->ds_script); tmp;
+	 tmp = xsltTemplateGetNext(tmp)) {
+	if ((xsltTemplateGetMatch(tmp)
+	     && streq((const char *) xsltTemplateGetMatch(tmp), name))
+	    || (xsltTemplateGetName(tmp)
+		&& streq((const char *) xsltTemplateGetName(tmp), name)))
+	    return xsltTemplateGetElem(tmp);
     }
 
     return NULL;
@@ -297,9 +303,10 @@ slaxDebugGetTemplate (slaxDebugState_t *statep, xmlNodePtr inst)
 
     for ( ; inst; inst = inst->parent) {
 	if (slaxNodeIsXsl(inst, ELT_TEMPLATE)) {
-	    
-	    for (tmp = statep->ds_script->templates; tmp; tmp = tmp->next) {
-		if (tmp->elem == inst)
+
+	    for (tmp = xsltStylesheetGetTemplates(statep->ds_script); tmp;
+		 tmp = xsltTemplateGetNext(tmp)) {
+		if (xsltTemplateGetElem(tmp) == inst)
 		    return tmp;
 	    }
 
@@ -348,7 +355,7 @@ slaxDebugGetNodeByFilename (slaxDebugState_t *statep,
     if (style == NULL)
 	return NULL;
 
-    node = slaxDebugGetNodeByLine(style->doc->children, lineno);
+    node = slaxDebugGetNodeByLine(xsltStylesheetGetDoc(style)->children, lineno);
 
     return node;
 }
@@ -381,7 +388,8 @@ slaxDebugGetScriptNode (slaxDebugState_t *statep, const char *arg)
     /*
      * Get the node for the given linenumber from the stylesheet
      */
-    node = slaxDebugGetNodeByLine((xmlNodePtr) style->doc, lineno);
+    node = slaxDebugGetNodeByLine((xmlNodePtr) xsltStylesheetGetDoc(style),
+				  lineno);
 
     return node;
 }
@@ -417,27 +425,27 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 	    xmlNodeSetPtr ns = xpath->nodesetval;
 	    const char *frag = "";
 
-	    if (ns && ns->nodeNr == 1 && ns->nodeTab
-		    && XSLT_IS_RES_TREE_FRAG(ns->nodeTab[0]))
+	    if (ns && xmlNodeSetGetNodeNr(ns) == 1
+		    && slaxIsResultTreeFragment(xmlNodeSetGetNodeEntry(ns, 0)))
 		frag = " rtf-doc";
 
 	    slaxOutput("%s[node-set]%s (%d)%s", tag,
 		       xpath->nodesetval ? "" : " [null]",
-		       xpath->nodesetval ? xpath->nodesetval->nodeNr : 0,
+		       xpath->nodesetval ? xmlNodeSetGetNodeNr(xpath->nodesetval) : 0,
 		       frag);
 
 	    if (xpath->nodesetval)
 		slaxOutputNodeset(xpath->nodesetval);
 	} else {
 	    xmlNodeSetPtr ns = xpath->nodesetval;
-	    if (ns && ns->nodeNr == 0)
+	    if (ns && xmlNodeSetGetNodeNr(ns) == 0)
 		ns = NULL;
 
 	    slaxOutput("%s[node-set]%s (%d)%s%s%s", tag,
 		       xpath->nodesetval ? "" : " [null]",
-		       ns ? ns->nodeNr : 0,
+		       ns ? xmlNodeSetGetNodeNr(ns) : 0,
 		       ns ? " <" : "",
-		       ns ? ns->nodeTab[0]->name : slaxNull,
+		       ns ? xmlNodeGetName(xmlNodeSetGetNodeEntry(ns, 0)) : slaxNull,
 		       ns ? "> ...." : "");
 	}
 	break;
@@ -445,7 +453,7 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
     case XPATH_XSLT_TREE:
 	slaxOutput("%s[rtf]%s (%d)", tag,
 			xpath->nodesetval ? "" : " [null]",
-			xpath->nodesetval ? xpath->nodesetval->nodeNr : 0);
+			xpath->nodesetval ? xmlNodeSetGetNodeNr(xpath->nodesetval) : 0);
 	if (xpath->nodesetval)
 	    slaxOutputNodeset(xpath->nodesetval);
 	break;
@@ -679,7 +687,7 @@ slaxDebugOutputScriptLines (slaxDebugState_t *statep, const char *filename,
 	 * In emacs path should be relative to remote default directory,
 	 * so print the relative path of the current file from main stylesheet
 	 */
-	cp = (const char *) xmlDocGetURL(statep->ds_script->doc);
+	cp = (const char *) xmlDocGetURL(xsltStylesheetGetDoc(statep->ds_script));
 	slaxDebugMakeRelativePath(cp, filename, rel_path, sizeof(rel_path));
 	
 	slaxOutput("%c%c%s:%d:0", 26, 26, rel_path, start);
@@ -797,11 +805,11 @@ slaxDebugTemplateInfo (xsltTemplatePtr template, char *buf, int bufsiz)
 	return buf;
     }
 
-    if (template->name)
-	SNPRINTF(cp, ep, "template %s ", template->name);
+    if (xsltTemplateGetName(template))
+	SNPRINTF(cp, ep, "template %s ", xsltTemplateGetName(template));
 
-    if (template->match)
-	SNPRINTF(cp, ep, "match %s", template->match);
+    if (xsltTemplateGetMatch(template))
+	SNPRINTF(cp, ep, "match %s", xsltTemplateGetMatch(template));
 
     /* Trim trailing space */
     if (cp > buf && cp[-1] == ' ')
@@ -856,7 +864,7 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
      */
     if ((lineno = atoi(spec)) > 0) {
 	xmlDocPtr docp = statep->ds_inst
-	    ? statep->ds_inst->doc : statep->ds_script->doc;
+	    ? statep->ds_inst->doc : xsltStylesheetGetDoc(statep->ds_script);
 	const char *fname =  (const char *) xmlDocGetURL(docp);
 	return slaxDebugGetNodeByFilename(statep, fname, lineno);
     }
@@ -1194,47 +1202,56 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
     int i;
     const char *type, *name;
     char buf[BUFSIZ];
-   
+    int varsNr, varsBase;
+
     if (ctxt == NULL) {
 	slaxOutput("The script is not being run.");
 	return;
     }
 
-    if (ctxt->varsNr <= ctxt->varsBase) {
+    varsNr = xsltTransformContextGetVarsNr(ctxt);
+    varsBase = xsltTransformContextGetVarsBase(ctxt);
+
+    if (varsNr <= varsBase) {
 	slaxOutput("no local variables");
 	return;
     }
 
     slaxOutput("Local variables:");
-    for (i = ctxt->varsNr; i > ctxt->varsBase; i--) {
+    for (i = varsNr; i > varsBase; i--) {
         xsltStackElemPtr cur;
 
-        for (cur = ctxt->varsTab[i - 1]; cur != NULL; cur = cur->next) {
+        for (cur = xsltTransformContextGetVarsEntry(ctxt, i - 1); cur != NULL;
+	     cur = xsltStackElemGetNext(cur)) {
+	    xmlXPathObjectPtr value = xsltStackElemGetValue(cur);
+	    xsltStylePreCompPtr comp = xsltStackElemGetComp(cur);
+	    const xmlChar *curName = xsltStackElemGetName(cur);
+
 	    type = "local";
 	    name = "unknown";
 
-	    if (cur->name) {
+	    if (curName) {
 		const char mprefix[] = SLAX_MVAR_PREFIX;
 
-		name = (const char *) cur->name;
+		name = (const char *) curName;
 		if (strncmp(name, mprefix, sizeof(mprefix) - 1) == 0)
 		    continue;
 	    }
 
-            if (cur->comp == NULL) {
+            if (comp == NULL) {
                 type = "invalid";
 
-            } else if (cur->comp->type == XSLT_FUNC_PARAM) {
+            } else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM) {
                 type = "param";
 
-            } else if (cur->comp->type == XSLT_FUNC_VARIABLE) {
+            } else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_VARIABLE) {
                 type = "var";
             }
 
 	    snprintf(buf, sizeof(buf), "%s $%s%s", type, name,
-		       cur->value ? " = " : " -- null value");
-            if (cur->value)
-                slaxDebugOutputXpath(cur->value, buf, TRUE);
+		       value ? " = " : " -- null value");
+            if (value)
+                slaxDebugOutputXpath(value, buf, TRUE);
 	    else
 		slaxOutput("%s", buf);
         }
@@ -1276,26 +1293,27 @@ slaxDebugCmdInfo (DC_ARGS)
 	if (slaxDebugCheckContext(ctxt))
 	    return;
 
-	if (ctxt->insert == NULL) {
+	if (xsltTransformContextGetInsert(ctxt) == NULL) {
 	    slaxOutput("context insertion point is NULL");
 	} else {
 	    slaxOutput("[context insertion point]");
-	    slaxOutputNode(ctxt->insert);
+	    slaxOutputNode(xsltTransformContextGetInsert(ctxt));
 	}
 
     } else if (slaxDebugIsAbbrev("nodes", argv[1])) {
-	if (statep->ds_script && statep->ds_script->doc)
-	    slaxDebugListNodeByLine(statep->ds_script->doc->children);
+	if (statep->ds_script && xsltStylesheetGetDoc(statep->ds_script))
+	    slaxDebugListNodeByLine(
+		xsltStylesheetGetDoc(statep->ds_script)->children);
 
     } else if (slaxDebugIsAbbrev("output", argv[1])) {
 	if (slaxDebugCheckContext(ctxt))
 	    return;
 
-	if (ctxt->output == NULL) {
+	if (xsltTransformContextGetOutput(ctxt) == NULL) {
 	    slaxOutput("context output document is NULL");
 	} else {
 	    slaxOutput("[context output document]");
-	    slaxDumpToFd(1, ctxt->output, FALSE);
+	    slaxDumpToFd(1, xsltTransformContextGetOutput(ctxt), FALSE);
 	}
 
     } else if (slaxDebugIsAbbrev("locals", argv[1])) {
@@ -1349,8 +1367,8 @@ slaxDebugCmdList (DC_ARGS)
 	    else if (statep->ds_inst)
 		node = statep->ds_inst;
 
-	    else if (statep->ds_script->doc)
-		node = xmlDocGetRootElement(statep->ds_script->doc);
+	    else if (xsltStylesheetGetDoc(statep->ds_script))
+		node = xmlDocGetRootElement(xsltStylesheetGetDoc(statep->ds_script));
 
 	    else {
 		slaxOutput("unknown location");
@@ -1366,8 +1384,8 @@ slaxDebugCmdList (DC_ARGS)
 	node = statep->ds_inst;
 	line_no = xmlGetLineNo(node);
 
-    } else if (statep->ds_script->doc) {
-	node = statep->ds_script->doc->children;
+    } else if (xsltStylesheetGetDoc(statep->ds_script)) {
+	node = xsltStylesheetGetDoc(statep->ds_script)->children;
 	line_no = xmlGetLineNo(node) ?: 1;
     } else {
 	slaxOutput("no target");
@@ -1502,7 +1520,7 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (ctxt == NULL)
 	return NULL;
 
-    xpctxt = ctxt->xpathCtxt;
+    xpctxt = xsltTransformContextGetXpathCtxt(ctxt);
     if (xpctxt == NULL)
 	return NULL;
 
@@ -1700,10 +1718,10 @@ slaxDebugCmdWhere (DC_ARGS)
 	tag = "";
 
 	if (stp->st_template) {
-	    if (stp->st_template->match) {
-		name = (const char *) stp->st_template->match;
-	    } else if (stp->st_template->name) {
-		name = (const char *) stp->st_template->name;
+	    if (xsltTemplateGetMatch(stp->st_template)) {
+		name = (const char *) xsltTemplateGetMatch(stp->st_template);
+	    } else if (xsltTemplateGetName(stp->st_template)) {
+		name = (const char *) xsltTemplateGetName(stp->st_template);
 		tag = "()";
 	    }
 	}
@@ -1728,7 +1746,7 @@ slaxDebugCmdWhere (DC_ARGS)
 	filename = strrchr((const char *) xmlDocGetURL(caller->doc), '/');
 	filename = filename ? filename + 1 : (const char *) xmlDocGetURL(caller->doc);
 
-	if (stp->st_template && stp->st_template->match)
+	if (stp->st_template && xsltTemplateGetMatch(stp->st_template))
 	    snprintf(from_info, sizeof(from_info),
 		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
 	else from_info[0] = '\0';
@@ -1748,20 +1766,28 @@ slaxDebugCmdWhere (DC_ARGS)
 	     */
 	    start = (stp->st_locals_start > 0) ? stp->st_locals_start : 0;
 	    stop = stp->st_locals_stop ?:
-		stp->st_locals_start ? ctxt->varsNr : 0;
+		stp->st_locals_start ? xsltTransformContextGetVarsNr(ctxt) : 0;
 	    for (i = start; i < stop; i++) {
-		cur = ctxt->varsTab[i];
+		const xmlChar *curName;
+		xmlXPathObjectPtr curValue;
+		int curLevel;
+
+		cur = xsltTransformContextGetVarsEntry(ctxt, i);
 		if (cur == NULL)
 		    continue;
 
-		if (!full && cur->level >= 0)
+		curLevel = xsltStackElemGetLevel(cur);
+		if (!full && curLevel >= 0)
 		    continue;
 
-		slaxLog("    $%s (%d)", cur->name, cur->level);
-		snprintf(tbuf, sizeof(tbuf), "    $%s = ", cur->name);
+		curName = xsltStackElemGetName(cur);
+		curValue = xsltStackElemGetValue(cur);
 
-		if (cur->value) {
-		    slaxDebugOutputXpath(cur->value, tbuf, FALSE);
+		slaxLog("    $%s (%d)", curName, curLevel);
+		snprintf(tbuf, sizeof(tbuf), "    $%s = ", curName);
+
+		if (curValue) {
+		    slaxDebugOutputXpath(curValue, tbuf, FALSE);
 		} else {
 		    slaxOutput("%sNULL", tbuf);
 		}
@@ -1960,7 +1986,7 @@ slaxDebugCmdQuit (DC_ARGS)
      */
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
     if (statep->ds_ctxt)
-	statep->ds_ctxt->debugStatus = XSLT_DEBUG_QUIT;
+	xsltTransformContextSetDebugStatus(statep->ds_ctxt, XSLT_DEBUG_QUIT);
 
     slaxDebugClearListInfo(statep);
 
@@ -2313,20 +2339,21 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 	stp = TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s);
 	if (stp) {
 	    stp->st_ctxt = ctxt;
-	    stp->st_locals_start = ctxt->varsNr;
+	    stp->st_locals_start = xsltTransformContextGetVarsNr(ctxt);
 
 	    stp = TAILQ_PREV(stp, slaxDebugStack_s, st_link);
 	    if (stp) {
 		stp->st_ctxt = ctxt;
-		stp->st_locals_start = ctxt->varsBase;
-		stp->st_locals_stop = ctxt->varsNr;
+		stp->st_locals_start = xsltTransformContextGetVarsBase(ctxt);
+		stp->st_locals_stop = xsltTransformContextGetVarsNr(ctxt);
 
 		/*
 		 * Record the last local index for the previous stack frame.
 		 */
 		stp = TAILQ_PREV(stp, slaxDebugStack_s, st_link);
 		if (stp && stp->st_ctxt == ctxt)
-		    stp->st_locals_stop = ctxt->varsBase;
+		    stp->st_locals_stop
+			= xsltTransformContextGetVarsBase(ctxt);
 	    }
 	}
     }
@@ -2651,11 +2678,11 @@ slaxDebugReload (const char *scriptname)
 	    slaxOutput("could not parse file '%s'", scriptname);
 	} else {
 	    newp = xsltParseStylesheetDoc(docp);
-	    if (newp && newp->errors == 0)
+	    if (newp && xsltStylesheetGetErrors(newp) == 0)
 		return newp;
-		
+
 	    slaxOutput("%d errors parsing script: '%s'",
-		       newp ? newp->errors : 1, scriptname);
+		       newp ? xsltStylesheetGetErrors(newp) : 1, scriptname);
 	    if (newp) {
 		xsltFreeStylesheet(newp);
 		newp = NULL;
@@ -2686,10 +2713,10 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     xmlDocPtr res = NULL;
     int status;
     xsltStylesheetPtr new_style, save_style = NULL;
-    int indent = style->indent;	/* Save indent value */
+    int indent = xsltStylesheetGetIndent(style); /* Save indent value */
 
     slaxDebugSetStylesheet(style);
-    slaxProfOpen(style->doc);
+    slaxProfOpen(xsltStylesheetGetDoc(style));
     statep->ds_flags |= DSF_PROFILER;
 
     xsltSetDebuggerStatus(0);
@@ -2759,11 +2786,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 		/* In with the new */
 		style = new_style;
-		style->indent = indent; /* Restore indent value */
+		xsltStylesheetSetIndent(style, indent); /* Restore indent value */
 		slaxDebugSetStylesheet(style);
 		slaxDebugReloadBreakpoints(statep);
 
-		slaxProfOpen(style->doc);
+		slaxProfOpen(xsltStylesheetGetDoc(style));
 
 		statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
 		xsltSetDebuggerStatus(0);
