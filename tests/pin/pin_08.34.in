@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.34.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!-- Named template: wrap content in <field> -->
+  <xsl:template name="make-field">
+    <field><xsl:value-of select="."/></field>
+  </xsl:template>
+
+  <!-- Match template: process each <item> and call the named template -->
+  <xsl:template match="item">
+    <out>
+      <xsl:call-template name="make-field"/>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
