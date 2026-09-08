@@ -708,8 +708,8 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
 	ctxt->state = XSLT_STATE_STOPPED;
 	goto error;
     } else {
-	if (matchRes->type == XPATH_NODESET) {
-	    matchList = matchRes->nodesetval;
+	if (xmlXPathObjectGetType(matchRes) == XPATH_NODESET) {
+	    matchList = xmlXPathObjectGetNodesetval(matchRes);
 
 #ifdef WITH_XSLT_DEBUG_KEYS
 	    if (matchList != NULL)
@@ -790,23 +790,23 @@ fprintf(stderr, "xsltInitCtxtKey %s : %d\n", keyDef->name, ctxt->keyInitLevel);
 	    ctxt->state = XSLT_STATE_STOPPED;
 	    break;
 	}
-	if (useRes->type == XPATH_NODESET) {
-	    if ((useRes->nodesetval != NULL) &&
-		(xmlNodeSetGetNodeNr(useRes->nodesetval) != 0))
+	if (xmlXPathObjectGetType(useRes) == XPATH_NODESET) {
+	    if ((xmlXPathObjectGetNodesetval(useRes) != NULL) &&
+		(xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(useRes)) != 0))
 	    {
-		len = xmlNodeSetGetNodeNr(useRes->nodesetval);
-		str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(useRes->nodesetval, 0));
+		len = xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(useRes));
+		str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(useRes), 0));
 	    } else {
 		continue;
 	    }
 	} else {
 	    len = 1;
-	    if (useRes->type == XPATH_STRING) {
+	    if (xmlXPathObjectGetType(useRes) == XPATH_STRING) {
 		/*
 		* Consume the string value.
 		*/
-		str = useRes->stringval;
-		useRes->stringval = NULL;
+		str = xmlXPathObjectGetStringval(useRes);
+		xmlXPathObjectSetStringval(useRes, NULL);
 	    } else {
 		str = xmlXPathCastToString(useRes);
 	    }
@@ -847,7 +847,7 @@ next_string:
 	    k++;
 	    if (k >= len)
 		break;
-	    str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(useRes->nodesetval, k));
+	    str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(useRes), k));
 	}
     }
 
