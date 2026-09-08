@@ -1296,17 +1296,17 @@ extCurlOptionsParse (curl_handle_t *curlp UNUSED, curl_opts_t *opts,
     for (osi = nargs - 1; osi >= 0; osi--) {
 	xmlXPathObject *xop = ostack[osi];
 
-	if (xop->stringval) {
+	if (xmlXPathObjectGetStringval(xop)) {
 	    if (opts->co_url)
 		xmlFree(opts->co_url);
-	    opts->co_url = (char *) xmlStrdup(xop->stringval);
+	    opts->co_url = (char *) xmlStrdup(xmlXPathObjectGetStringval(xop));
 
-	} else if (xop->nodesetval) {
+	} else if (xmlXPathObjectGetNodesetval(xop)) {
 	    xmlNodeSetPtr nodeset;
 	    xmlNodePtr nop, cop;
 	    int i;
 
-	    nodeset = xop->nodesetval;
+	    nodeset = xmlXPathObjectGetNodesetval(xop);
 	    for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
 		nop = xmlNodeSetGetNodeEntry(nodeset, i);
 
