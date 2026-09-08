@@ -552,23 +552,23 @@ xsltTestCompMatchDirect(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
 	int oldNsNr, oldContextSize, oldProximityPosition;
 	xmlNsPtr *oldNamespaces;
 
-	oldnode = ctxt->xpathCtxt->node;
-	olddoc = ctxt->xpathCtxt->doc;
-	oldNsNr = ctxt->xpathCtxt->nsNr;
-	oldNamespaces = ctxt->xpathCtxt->namespaces;
-	oldContextSize = ctxt->xpathCtxt->contextSize;
-	oldProximityPosition = ctxt->xpathCtxt->proximityPosition;
-	ctxt->xpathCtxt->node = node;
-	ctxt->xpathCtxt->doc = doc;
-	ctxt->xpathCtxt->namespaces = nsList;
-	ctxt->xpathCtxt->nsNr = nsNr;
+	oldnode = xmlXPathContextGetNode(ctxt->xpathCtxt);
+	olddoc = xmlXPathContextGetDoc(ctxt->xpathCtxt);
+	oldNsNr = xmlXPathContextGetNsNr(ctxt->xpathCtxt);
+	oldNamespaces = xmlXPathContextGetNamespaces(ctxt->xpathCtxt);
+	oldContextSize = xmlXPathContextGetContextSize(ctxt->xpathCtxt);
+	oldProximityPosition = xmlXPathContextGetProximityPosition(ctxt->xpathCtxt);
+	xmlXPathContextSetNode(ctxt->xpathCtxt, node);
+	xmlXPathContextSetDoc(ctxt->xpathCtxt, doc);
+	xmlXPathContextSetNamespaces(ctxt->xpathCtxt, nsList);
+	xmlXPathContextSetNsNr(ctxt->xpathCtxt, nsNr);
 	newlist = xmlXPathEval(comp->pattern, ctxt->xpathCtxt);
-	ctxt->xpathCtxt->node = oldnode;
-	ctxt->xpathCtxt->doc = olddoc;
-	ctxt->xpathCtxt->namespaces = oldNamespaces;
-	ctxt->xpathCtxt->nsNr = oldNsNr;
-	ctxt->xpathCtxt->contextSize = oldContextSize;
-	ctxt->xpathCtxt->proximityPosition = oldProximityPosition;
+	xmlXPathContextSetNode(ctxt->xpathCtxt, oldnode);
+	xmlXPathContextSetDoc(ctxt->xpathCtxt, olddoc);
+	xmlXPathContextSetNamespaces(ctxt->xpathCtxt, oldNamespaces);
+	xmlXPathContextSetNsNr(ctxt->xpathCtxt, oldNsNr);
+	xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldContextSize);
+	xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldProximityPosition);
 	if (newlist == NULL)
 	    return(-1);
 	if (newlist->type != XPATH_NODESET) {
@@ -597,15 +597,15 @@ xsltTestCompMatchDirect(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
 	    list = newlist;
     }
     if ((list->nodesetval == NULL) ||
-	(list->nodesetval->nodeNr <= 0)) {
+	(xmlNodeSetGetNodeNr(list->nodesetval) <= 0)) {
 	if (nocache == 1)
 	    xmlXPathFreeObject(list);
 	return(0);
     }
     /* TODO: store the index and use it for the scan */
     if (ix == 0) {
-	for (j = 0;j < list->nodesetval->nodeNr;j++) {
-	    if (list->nodesetval->nodeTab[j] == node) {
+	for (j = 0;j < xmlNodeSetGetNodeNr(list->nodesetval);j++) {
+	    if (xmlNodeSetGetNodeEntry(list->nodesetval, j) == node) {
 		if (nocache == 1)
 		    xmlXPathFreeObject(list);
 		return(1);
@@ -701,10 +701,10 @@ xsltTestStepMatch(xsltTransformContextPtr ctxt, xmlNodePtr node,
                               step->value3, step->value2);
             if (list == NULL)
                 return(0);
-            for (indx = 0;indx < list->nodeNr;indx++)
-                if (list->nodeTab[indx] == node)
+            for (indx = 0;indx < xmlNodeSetGetNodeNr(list);indx++)
+                if (xmlNodeSetGetNodeEntry(list, indx) == node)
                     break;
-            if (indx >= list->nodeNr)
+            if (indx >= xmlNodeSetGetNodeNr(list))
                 return(0);
             break;
         }
@@ -810,8 +810,8 @@ xsltTestPredicateMatch(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
      *   or an unused member in xmlNode.
      * - Store node test results in a bitmap to avoid computing them twice.
      */
-    oldCS = ctxt->xpathCtxt->contextSize;
-    oldCP = ctxt->xpathCtxt->proximityPosition;
+    oldCS = xmlXPathContextGetContextSize(ctxt->xpathCtxt);
+    oldCP = xmlXPathContextGetProximityPosition(ctxt->xpathCtxt);
     {
         xmlNodePtr previous;
         int nocache = 0;
@@ -892,8 +892,8 @@ xsltTestPredicateMatch(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
             }
         }
         if (pos != 0) {
-            ctxt->xpathCtxt->contextSize = len;
-            ctxt->xpathCtxt->proximityPosition = pos;
+            xmlXPathContextSetContextSize(ctxt->xpathCtxt, len);
+            xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, pos);
             /*
              * If the node is in a Value Tree we cannot
              * cache it !
@@ -913,8 +913,8 @@ xsltTestPredicateMatch(xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
     match = xsltEvalXPathPredicate(ctxt, step->comp, comp->nsList, comp->nsNr);
 
     if (pos != 0) {
-        ctxt->xpathCtxt->contextSize = oldCS;
-        ctxt->xpathCtxt->proximityPosition = oldCP;
+        xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldCS);
+        xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldCP);
     }
     ctxt->node = oldNode;
 
