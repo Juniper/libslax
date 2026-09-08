@@ -28,6 +28,7 @@ psuinc_HEADERS = \
     psucpu.h \
     psubase64.h \
     psucommon.h \
+    psuerror.h \
     psulog.h \
     psustring.h \
     psuthread.h \
@@ -38,6 +39,7 @@ libpsu_la_SOURCES = \
     psuasprintf.c \
     psubase64.c \
     psucpu.c \
+    psuerror.c \
     psulog.c \
     psumemdump.c \
     psustring.c
