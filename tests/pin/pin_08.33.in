@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!--
+# quiet dump clean xml pin_08.33.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Nodeset variable round-trip with xsl:copy-of.
+
+    Tests:
+      xsl:variable select="child"  -> PVT_NODESET stored in var
+      xsl:copy-of select="$v"      -> deep-copy each node in nodeset
+      mixed: variable from path, copy-of from variable
+  -->
+
+  <xsl:template match="container">
+    <xsl:variable name="n" select="node"/>
+    <out>
+      <xsl:copy-of select="$n"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="group">
+    <xsl:variable name="item" select="member"/>
+    <result>
+      <xsl:copy-of select="$item"/>
+    </result>
+  </xsl:template>
+
+</xsl:stylesheet>
