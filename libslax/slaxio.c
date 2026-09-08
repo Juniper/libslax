@@ -757,8 +757,8 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 	"XPATH_XSLT_TREE",
     };
 
-    const char *name = (xop->type < NUM_ARRAY(names))
-	? names[xop->type] : "unknown";
+    const char *name = (xmlXPathObjectGetType(xop) < NUM_ARRAY(names))
+	? names[xmlXPathObjectGetType(xop)] : "unknown";
 
     char buf[BUFSIZ];
     const char *value = buf;
@@ -767,7 +767,7 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 
     buf[0] = '\0';
 
-    switch (xop->type) {
+    switch (xmlXPathObjectGetType(xop)) {
     case XPATH_UNDEFINED:
 	value = "(undefined)";
 	break;
@@ -784,17 +784,17 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
 	break;
 
     case XPATH_BOOLEAN:
-	value = xop->boolval ? "true" : "false";
+	value = xmlXPathObjectGetBoolval(xop) ? "true" : "false";
 	break;
 
     case XPATH_NUMBER:
-	snprintf(buf, sizeof(buf), "%lf", xop->floatval);
+	snprintf(buf, sizeof(buf), "%lf", xmlXPathObjectGetFloatval(xop));
 	break;
 
     case XPATH_STRING:
-	if (xop->stringval) {
+	if (xmlXPathObjectGetStringval(xop)) {
 	    quote = "'";
-	    value = (const char *) xop->stringval;
+	    value = (const char *) xmlXPathObjectGetStringval(xop);
 	} else
 	    value = "(string-null)";
 	break;
@@ -804,15 +804,15 @@ slaxDumpObjectIndent (xmlXPathObjectPtr xop, const char *tag, int indent)
     }
 
     slaxOutput("%*sobject %p: type %s/%u%s%s%s%s (user %p/%p, index %u/%u)",
-	       indent, tag, xop, name, xop->type,
+	       indent, tag, xop, name, xmlXPathObjectGetType(xop),
 	       value ? ", value " : "", quote, value ?: "", value ? quote : "",
-	       xop->user, xop->user2, xop->index, xop->index2);
+	       xmlXPathObjectGetUser(xop), xmlXPathObjectGetUser2(xop), xmlXPathObjectGetIndex(xop), xmlXPathObjectGetIndex2(xop));
 
-    if (xop->type == XPATH_NODESET || xop->type == XPATH_XSLT_TREE) {
-	nset = xop->nodesetval;
+    if (xmlXPathObjectGetType(xop) == XPATH_NODESET || xmlXPathObjectGetType(xop) == XPATH_XSLT_TREE) {
+	nset = xmlXPathObjectGetNodesetval(xop);
 	slaxOutput("%*snodesetval: %p -> %d", indent + 2, tag,
 		   nset, nset ? xmlNodeSetGetNodeNr(nset) : 0);
-	slaxDumpNodesetIndent(xop->nodesetval, tag, indent + 4);
+	slaxDumpNodesetIndent(xmlXPathObjectGetNodesetval(xop), tag, indent + 4);
     }
 }
 
