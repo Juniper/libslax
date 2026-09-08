@@ -32,6 +32,7 @@ typedef struct pin_workspace_s {
     pa_arb_t *pw_textpool;	/* Text data values */
     pa_fixed_t *pw_nodeset_chunks; /* Pool of chunks for nodesets node lists */
     pa_fixed_t *pw_nodeset_info; /* Pool of chunks for nodeset "info" data */
+    int pw_errors;		/* Count of compile errors; non-zero aborts execution */
 } pin_workspace_t;
 
 pin_workspace_t *
