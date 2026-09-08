@@ -1,0 +1,17 @@
+compiled 2 patterns
+<doc>
+   <out>
+      <node id="n1">
+         <value>apple</value>
+      </node>
+      <node id="n2">
+         <value>banana</value>
+         <tag>fruit</tag>
+      </node>
+   </out>
+   <result>
+      <member role="lead">Alice</member>
+      <member role="support">Bob</member>
+      <member role="support">Carol</member>
+   </result>
+</doc>
