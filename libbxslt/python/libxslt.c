@@ -436,7 +436,7 @@ libxslt_xmlXPathFuncCallback(xmlXPathParserContextPtr ctxt, int nargs) {
 
     if (ctxt == NULL)
 	return;
-    rctxt = ctxt->context;
+    rctxt = xmlXPathParserContextGetContext(ctxt);
     if (rctxt == NULL)
 	return;
     name = xmlXPathContextGetFunction(rctxt);
