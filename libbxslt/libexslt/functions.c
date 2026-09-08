@@ -305,13 +305,14 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     data->result = NULL;
 
     func = (exsltFuncFunctionData*) xmlHashLookup2 (data->funcs,
-						    ctxt->context->functionURI,
-						    ctxt->context->function);
+						    xmlXPathContextGetFunctionURI(ctxt->context),
+						    xmlXPathContextGetFunction(ctxt->context));
     if (func == NULL) {
         /* Should never happen */
         xsltGenericError(xsltGenericErrorContext,
                          "{%s}%s: not found\n",
-                         ctxt->context->functionURI, ctxt->context->function);
+                         xmlXPathContextGetFunctionURI(ctxt->context),
+                         xmlXPathContextGetFunction(ctxt->context));
         ctxt->error = XPATH_UNKNOWN_FUNC_ERROR;
         return;
     }
@@ -322,7 +323,8 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     if (nargs > func->nargs) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "{%s}%s: called with too many arguments\n",
-			 ctxt->context->functionURI, ctxt->context->function);
+			 xmlXPathContextGetFunctionURI(ctxt->context),
+			 xmlXPathContextGetFunction(ctxt->context));
 	ctxt->error = XPATH_INVALID_ARITY;
 	return;
     }
@@ -347,14 +349,15 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
         xsltTransformError(tctxt, NULL, NULL,
             "exsltFuncFunctionFunction: Potentially infinite recursion "
             "detected in function {%s}%s.\n",
-            ctxt->context->functionURI, ctxt->context->function);
+            xmlXPathContextGetFunctionURI(ctxt->context),
+            xmlXPathContextGetFunction(ctxt->context));
         tctxt->state = XSLT_STATE_STOPPED;
         return;
     }
     tctxt->depth++;
 
     /* Evaluating templates can change the XPath context node. */
-    oldXPNode = tctxt->xpathCtxt->node;
+    oldXPNode = xmlXPathContextGetNode(tctxt->xpathCtxt);
 
     fake = xmlNewDocNode(tctxt->output, NULL,
 			 (const xmlChar *)"fake", NULL);
@@ -450,7 +453,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     data->ctxtVar = oldCtxtVar;
     if (params != NULL)
 	xsltFreeStackElemList(params);
-    tctxt->xpathCtxt->node = oldXPNode;
+    xmlXPathContextSetNode(tctxt->xpathCtxt, oldXPNode);
 
     if (data->error != 0)
         goto error;
@@ -476,7 +479,8 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "{%s}%s: cannot write to result tree while "
 			 "executing a function\n",
-			 ctxt->context->functionURI, ctxt->context->function);
+			 xmlXPathContextGetFunctionURI(ctxt->context),
+			 xmlXPathContextGetFunction(ctxt->context));
         xmlXPathFreeObject(ret);
 	goto error;
     }
@@ -744,19 +748,19 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
 	    data->error = 1;
 	    return;
 	}
-	oldXPNsList = ctxt->xpathCtxt->namespaces;
-	oldXPNsNr = ctxt->xpathCtxt->nsNr;
-	oldXPContextNode = ctxt->xpathCtxt->node;
+	oldXPNsList = xmlXPathContextGetNamespaces(ctxt->xpathCtxt);
+	oldXPNsNr = xmlXPathContextGetNsNr(ctxt->xpathCtxt);
+	oldXPContextNode = xmlXPathContextGetNode(ctxt->xpathCtxt);
 
-	ctxt->xpathCtxt->namespaces = comp->nsList;
-	ctxt->xpathCtxt->nsNr = comp->nsNr;
-        ctxt->xpathCtxt->node = ctxt->node;
+	xmlXPathContextSetNamespaces(ctxt->xpathCtxt, comp->nsList);
+	xmlXPathContextSetNsNr(ctxt->xpathCtxt, comp->nsNr);
+        xmlXPathContextSetNode(ctxt->xpathCtxt, ctxt->node);
 
 	ret = xmlXPathCompiledEval(comp->select, ctxt->xpathCtxt);
 
-	ctxt->xpathCtxt->node = oldXPContextNode;
-	ctxt->xpathCtxt->nsNr = oldXPNsNr;
-	ctxt->xpathCtxt->namespaces = oldXPNsList;
+	xmlXPathContextSetNode(ctxt->xpathCtxt, oldXPContextNode);
+	xmlXPathContextSetNsNr(ctxt->xpathCtxt, oldXPNsNr);
+	xmlXPathContextSetNamespaces(ctxt->xpathCtxt, oldXPNsList);
 
 	if (ret == NULL) {
 	    xsltGenericError(xsltGenericErrorContext,
