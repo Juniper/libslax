@@ -271,11 +271,11 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 
     if ((obj->type != XPATH_NODESET) && (obj->type != XPATH_XSLT_TREE))
 	return(0);
-    if ((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr == 0))
+    if ((obj->nodesetval == NULL) || (xmlNodeSetGetNodeNr(obj->nodesetval) == 0))
 	return(0);
 
-    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-	cur = obj->nodesetval->nodeTab[i];
+    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+	cur = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
 	if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
 	    /*
 	    * The XPath module sets the owner element of a ns-node on
@@ -1210,18 +1210,18 @@ xsltEvalGlobalVariable(xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
 	    oldOutput = ctxt->output;
 	    oldInsert = ctxt->insert;
 
-	    oldXPDoc = ctxt->xpathCtxt->doc;
+	    oldXPDoc = xmlXPathContextGetDoc(ctxt->xpathCtxt);
 
 	    ctxt->output = container;
 	    ctxt->insert = (xmlNodePtr) container;
 
-	    ctxt->xpathCtxt->doc = ctxt->initialContextDoc;
+	    xmlXPathContextSetDoc(ctxt->xpathCtxt, ctxt->initialContextDoc);
 	    /*
 	    * Process the sequence constructor.
 	    */
 	    xsltApplyOneTemplate(ctxt, ctxt->node, elem->tree, NULL, NULL);
 
-	    ctxt->xpathCtxt->doc = oldXPDoc;
+	    xmlXPathContextSetDoc(ctxt->xpathCtxt, oldXPDoc);
 
 	    ctxt->insert = oldInsert;
 	    ctxt->output = oldOutput;
