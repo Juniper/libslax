@@ -108,7 +108,7 @@ extXutilStringToXml (xmlXPathParserContext *ctxt, int nargs)
 	if (newp) {
 	    newp = slaxAddChild((xmlNodePtr) container, newp);
 	    if (newp)
-		xmlXPathNodeSetAdd(ret->nodesetval, newp);
+		xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), newp);
 	}
     }
 
@@ -190,8 +190,8 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 	if (xop == NULL)
 	    continue;
 
-	if (xop->nodesetval) {
-	    xmlNodeSetPtr tab = xop->nodesetval;
+	if (xmlXPathObjectGetNodesetval(xop)) {
+	    xmlNodeSetPtr tab = xmlXPathObjectGetNodesetval(xop);
 	    int i;
 	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 		xmlNodePtr node = xmlNodeSetGetNodeEntry(tab, i);
@@ -290,17 +290,17 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (nargs == 2) {
 	xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
+	if (!xmlXPathObjectGetNodesetval(xop) || !xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop))) {
 	    LX_ERR("xml-to-json: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+	    nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -325,7 +325,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     }
 
     xop = valuePop(ctxt);
-    if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
+    if (!xmlXPathObjectGetNodesetval(xop) || !xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop))) {
 	LX_ERR("xml-to-json: invalid parameter\n");
 	xmlXPathFreeObject(xop);
 	xmlXPathReturnEmptyString(ctxt);
@@ -334,10 +334,10 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     slaxDataListInit(&list);
 
-    for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 	xmlNodePtr nop;
 
-	nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+	nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 	if (xmlNodeGetType(nop) == XML_DOCUMENT_NODE)
 	    nop = xmlNodeGetChildren(nop);
 	if (xmlNodeGetType(nop) != XML_ELEMENT_NODE)
@@ -396,17 +396,17 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (nargs == 2) {
 	xmlXPathObject *xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
+	if (!xmlXPathObjectGetNodesetval(xop) || !xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop))) {
 	    LX_ERR("json-to-xml: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+	    nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -459,7 +459,7 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (newp) {
 	newp = slaxAddChild((xmlNodePtr) container, newp);
 	if (newp)
-	    xmlXPathNodeSetAdd(ret->nodesetval, newp);
+	    xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), newp);
     }
 
 bail:
@@ -539,8 +539,8 @@ extXutilXmlToSlax (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (xop == NULL)
 	return;
 
-    if (xop->nodesetval) {
-	xmlNodeSetPtr tab = xop->nodesetval;
+    if (xmlXPathObjectGetNodesetval(xop)) {
+	xmlNodeSetPtr tab = xmlXPathObjectGetNodesetval(xop);
 
 	for (i = 0; !done && i < xmlNodeSetGetNodeNr(tab); i++) {
 	    xmlNodePtr nodep = xmlNodeSetGetNodeEntry(tab, i);
@@ -630,16 +630,16 @@ extXutilSetsCheckOneValue (xmlNodePtr nop, xmlXPathObjectPtr xop)
     const char *cp = (const char *) xmlNodeGetContentRaw(cop);
     char buf[64];
 
-    switch (xop->type) {
+    switch (xmlXPathObjectGetType(xop)) {
     case XPATH_BOOLEAN:
-	return streq(cp, xop->floatval ? "true" : "false");
+	return streq(cp, xmlXPathObjectGetFloatval(xop) ? "true" : "false");
 
     case XPATH_NUMBER:
-	snprintf(buf, sizeof(buf), "%ld", (long) xop->floatval);
+	snprintf(buf, sizeof(buf), "%ld", (long) xmlXPathObjectGetFloatval(xop));
 	return streq(cp, buf);
 
     case XPATH_STRING:
-	return streq(cp, (const char *) xop->stringval);
+	return streq(cp, (const char *) xmlXPathObjectGetStringval(xop));
 
     default:
 	return FALSE;
@@ -769,12 +769,12 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
     for (int ndx = 0; ndx < count; ndx++) {
 	xop = list[ndx];
 
-	switch (xop->type) {
+	switch (xmlXPathObjectGetType(xop)) {
 	case XPATH_NODESET:
-	    if (xop->nodesetval == NULL)
+	    if (xmlXPathObjectGetNodesetval(xop) == NULL)
 		break;
 
-	    tab = xop->nodesetval;
+	    tab = xmlXPathObjectGetNodesetval(xop);
 	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 		match = extXutilSetsCheckOneNode(nop, xmlNodeSetGetNodeEntry(tab, i), TRUE);
 		if (match)
@@ -784,14 +784,14 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 	    break;
 
 	case XPATH_XSLT_TREE:
-	    if (xop->nodesetval == NULL)
+	    if (xmlXPathObjectGetNodesetval(xop) == NULL)
 		break;
 
 	    /* It's a tree, so there should only be one node, but...
 	     * We need to look at the children of the tree, not the
 	     * root
 	     */
-	    tab = xop->nodesetval;
+	    tab = xmlXPathObjectGetNodesetval(xop);
 	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 		xmlNode *gop, *cop =  xmlNodeSetGetNodeEntry(tab, i);
 		for (gop = xmlNodeGetChildren(cop); gop; gop = xmlNodeGetNext(gop)) {
@@ -862,12 +862,12 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
     /* First argument (last popped) is the 'base' we compare against */
     xmlXPathObjectPtr base = valuePop(ctxt);
 
-    switch (base->type) {
+    switch (xmlXPathObjectGetType(base)) {
     case XPATH_NODESET:
-	if (base->nodesetval == NULL)
+	if (xmlXPathObjectGetNodesetval(base) == NULL)
 	    break;
 
-	tab = base->nodesetval;
+	tab = xmlXPathObjectGetNodesetval(base);
 	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 	    extXutilSetsCheckNode(results, xmlNodeSetGetNodeEntry(tab, i),
 				  objstack, count, common);
@@ -875,14 +875,14 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
 	break;
 
     case XPATH_XSLT_TREE:
-	if (base->nodesetval == NULL)
+	if (xmlXPathObjectGetNodesetval(base) == NULL)
 	    break;
 
 	/* It's a tree, so there should only be one node, but...
 	 * We need to look at the children of the tree, not the
 	 * root
 	 */
-	tab = base->nodesetval;
+	tab = xmlXPathObjectGetNodesetval(base);
 	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
 	    xmlNode *cop, *nop =  xmlNodeSetGetNodeEntry(tab, i);
 	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop))
