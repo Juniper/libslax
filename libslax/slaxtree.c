@@ -1063,11 +1063,11 @@ slaxSetPreserveFlag (xsltTransformContextPtr tctxt, xmlXPathObjectPtr ret)
 {
     xmlNodePtr parent;
 
-    if (tctxt->vars) {
-	if (tctxt == NULL || tctxt->inst == NULL)
+    if (xsltTransformContextGetVars(tctxt)) {
+	if (tctxt == NULL || xsltTransformContextGetInst(tctxt) == NULL)
 	    return;
 
-	parent = xmlNodeGetParent(tctxt->inst);
+	parent = xmlNodeGetParent(xsltTransformContextGetInst(tctxt));
 	if (parent == NULL || xmlNodeGetType(parent) != XML_ELEMENT_NODE)
 	    return;
 	
@@ -1214,7 +1214,7 @@ slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr)
     if (nodep == NULL)
         nodep = xmlDocGetRootElement(docp);
 
-    xpath_context->node = nodep;
+    xmlXPathContextSetNode(xpath_context, nodep);
 
     objp = xmlXPathEvalExpression((const xmlChar *) expr, xpath_context);
     if (objp == NULL) {
