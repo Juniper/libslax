@@ -74,8 +74,8 @@ pin_is_xsl (xmlNodePtr nodep, const char *name)
  * The filename comes from the node's owning document URL; the line number
  * from libxml2's node annotation.  Either may be absent.
  */
-static void PSU_PRINTFLIKE(2, 3)
-pin_error (xmlNodePtr nodep, const char *fmt, ...)
+static void PSU_PRINTFLIKE(3, 4)
+pin_error (pin_rulebook_t *rb, xmlNodePtr nodep, const char *fmt, ...)
 {
     const char *fn = (nodep && nodep->doc && nodep->doc->URL)
         ? (const char *) nodep->doc->URL : NULL;
@@ -84,6 +84,8 @@ pin_error (xmlNodePtr nodep, const char *fmt, ...)
     va_start(vap, fmt);
     psu_errorv(fn, line, fmt, vap);
     va_end(vap);
+    if (rb && rb->prb_workspace)
+        rb->prb_workspace->pw_errors += 1;
 }
 
 static void PSU_PRINTFLIKE(2, 3)
@@ -99,22 +101,13 @@ pin_warn (xmlNodePtr nodep, const char *fmt, ...)
 }
 
 /*
- * Inspect a for-each body to determine what action to emit for each
- * selected element.  Returns one of:
- *   PIA_SAVE    — body is empty, or contains <xsl:copy-of select="."/>
- *   PIA_LITERAL — body contains a non-XSL literal element
- *
- * For PIA_LITERAL, *out_tag and *out_text are set to the (xmlChar *)
- * values that the caller must xmlFree().  For other returns they are NULL.
- */
-/*
  * Allocate one body instruction, chain it onto the linked list via *nextp,
  * and advance *nextp to point at the new instruction's bi_next field.
  * Returns a pointer to the new (zeroed) instruction, or NULL on failure.
  */
 static pin_body_instr_t *
 pin_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp,
-			  pin_body_instr_id_t *bidp)
+		      pin_body_instr_id_t *bidp)
 {
     pin_body_instr_id_t bid;
     pin_body_instr_t *bip = pin_body_instr_alloc(rb, &bid);
@@ -136,14 +129,15 @@ pin_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp,
  */
 static void
 pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
-			  pin_body_instr_id_t **nextp)
+		      pin_body_instr_id_t **nextp)
 {
     for (xmlNodePtr child = body_node->children; child; child = child->next) {
 	if (child->type == XML_TEXT_NODE) {
 	    /* Skip whitespace-only text (XSLT template formatting, not output) */
 	    if (child->content && child->content[0] && !xmlIsBlankNode(child)) {
 		pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
-		if (bip == NULL) return;
+		if (bip == NULL)
+		    return;
 		bip->bi_type = BIA_EMIT_TEXT;
 		bip->bi_text = pin_namepool_atom(rb->prb_workspace,
 						 (const char *) child->content, TRUE);
@@ -156,7 +150,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	/* xsl:copy-of → BIA_COPY (streaming copy of matched input element) */
 	if (pin_is_xsl(child, "copy-of")) {
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
-	    if (bip == NULL) return;
+	    if (bip == NULL)
+		return;
 	    bip->bi_type = BIA_COPY;
 	    continue;
 	}
@@ -203,8 +198,10 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	if (pin_is_xsl(child, "if")) {
 	    xmlChar *test = xmlGetProp(child, (const xmlChar *) "test");
 	    if (test == NULL || test[0] == '\0') {
-		if (test) xmlFree(test);
-		continue;	/* Empty test skips the whole if */
+		pin_error(rb, child, "xsl:if: missing or empty test attribute");
+		if (test)
+		    xmlFree(test);
+		continue;
 	    }
 
 	    /*
@@ -218,7 +215,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    xmlFree(test);
 
 	    xo_filter_t *cond_filter = xo_filter_create_standalone();
-	    if (cond_filter == NULL) return;
+	    if (cond_filter == NULL)
+		return;
 	    if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
 		xo_filter_destroy_standalone(cond_filter);
 		return;
@@ -233,7 +231,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_id_t bid_if;
 	    pin_body_instr_t *bip_if =
 		pin_body_instr_new(rb, nextp, &bid_if);
-	    if (bip_if == NULL) return;
+	    if (bip_if == NULL)
+		return;
 	    bip_if->bi_type = BIA_IF;
 	    bip_if->bi_filter_idx = fidx;
 
@@ -249,7 +248,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_id_t bid_jump;
 	    pin_body_instr_t *bip_jump =
 		pin_body_instr_new(rb, nextp, &bid_jump);
-	    if (bip_jump == NULL) return;
+	    if (bip_jump == NULL)
+		return;
 	    bip_jump->bi_type = BIA_JUMP;
 
 	    /* Wire the false branch: BIA_IF.bi_else → BIA_JUMP */
@@ -260,7 +260,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	/* xsl:apply-templates → BIA_APPLY (dispatch children through rules) */
 	if (pin_is_xsl(child, "apply-templates")) {
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
-	    if (bip == NULL) return;
+	    if (bip == NULL)
+		return;
 	    bip->bi_type = BIA_APPLY;
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    if (sel) {
@@ -305,7 +306,9 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 
 		xmlChar *test = xmlGetProp(wc, (const xmlChar *) "test");
 		if (test == NULL || test[0] == '\0') {
-		    if (test) xmlFree(test);
+		    pin_error(rb, wc, "xsl:when: missing or empty test attribute");
+		    if (test)
+			xmlFree(test);
 		    continue;
 		}
 		char xpath_buf[1024];
@@ -314,7 +317,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		xmlFree(test);
 
 		xo_filter_t *cond_filter = xo_filter_create_standalone();
-		if (cond_filter == NULL) return;
+		if (cond_filter == NULL)
+		    return;
 		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
 		    xo_filter_destroy_standalone(cond_filter);
 		    return;
@@ -328,7 +332,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		pin_body_instr_id_t bid_if;
 		pin_body_instr_t *bip_if =
 		    pin_body_instr_new(rb, nextp, &bid_if);
-		if (bip_if == NULL) return;
+		if (bip_if == NULL)
+		    return;
 		bip_if->bi_type = BIA_IF;
 		bip_if->bi_filter_idx = fidx;
 
@@ -336,7 +341,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		if (!pin_body_instr_id_is_null(bid_last_if)) {
 		    pin_body_instr_t *prev_if =
 			pin_body_instr_addr(rb, bid_last_if);
-		    if (prev_if) prev_if->bi_else = bid_if;
+		    if (prev_if)
+			prev_if->bi_else = bid_if;
 		}
 		bid_last_if = bid_if;
 
@@ -346,7 +352,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		    pin_body_instr_id_t bid_goto;
 		    pin_body_instr_t *bip_goto =
 			pin_body_instr_new(rb, nextp, &bid_goto);
-		    if (bip_goto == NULL) return;
+		    if (bip_goto == NULL)
+			return;
 		    bip_goto->bi_type = BIA_GOTO;
 		    bid_gotos[n_gotos++] = bid_goto;
 		}
@@ -356,12 +363,14 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		pin_body_instr_id_t bid_oth;
 		pin_body_instr_t *bip_oth =
 		    pin_body_instr_new(rb, nextp, &bid_oth);
-		if (bip_oth == NULL) return;
+		if (bip_oth == NULL)
+		    return;
 		bip_oth->bi_type = BIA_JUMP;
 		if (!pin_body_instr_id_is_null(bid_last_if)) {
 		    pin_body_instr_t *last_if =
 			pin_body_instr_addr(rb, bid_last_if);
-		    if (last_if) last_if->bi_else = bid_oth;
+		    if (last_if)
+			last_if->bi_else = bid_oth;
 		}
 		pin_compile_body_r(otherwise_node, rb, nextp);
 	    }
@@ -369,17 +378,20 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_id_t bid_join;
 	    pin_body_instr_t *bip_join =
 		pin_body_instr_new(rb, nextp, &bid_join);
-	    if (bip_join == NULL) return;
+	    if (bip_join == NULL)
+		return;
 	    bip_join->bi_type = BIA_JUMP;
 
 	    if (otherwise_node == NULL && !pin_body_instr_id_is_null(bid_last_if)) {
 		pin_body_instr_t *last_if =
 		    pin_body_instr_addr(rb, bid_last_if);
-		if (last_if) last_if->bi_else = bid_join;
+		if (last_if)
+		    last_if->bi_else = bid_join;
 	    }
 	    for (int i = 0; i < n_gotos; i++) {
 		pin_body_instr_t *bip_g = pin_body_instr_addr(rb, bid_gotos[i]);
-		if (bip_g) bip_g->bi_else = bid_join;
+		if (bip_g)
+		    bip_g->bi_else = bid_join;
 	    }
 	    continue;
 	}
@@ -393,7 +405,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 						 (const char *) child->name, TRUE);
 	{
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
-	    if (bip == NULL) return;
+	    if (bip == NULL)
+		return;
 	    bip->bi_type = BIA_EMIT_OPEN;
 	    bip->bi_tag = tag_id;
 
@@ -426,7 +439,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	pin_compile_body_r(child, rb, nextp);
 	{
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
-	    if (bip == NULL) return;
+	    if (bip == NULL)
+		return;
 	    bip->bi_type = BIA_EMIT_CLOSE;
 	    bip->bi_tag = tag_id;
 	}
@@ -457,7 +471,8 @@ pin_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
     pin_body_retain_t retain = BRETAIN_DISCARD;
     for (pin_body_instr_id_t cur = head; !pin_body_instr_id_is_null(cur); ) {
 	pin_body_instr_t *bip = pin_body_instr_addr(rb, cur);
-	if (bip == NULL) break;
+	if (bip == NULL)
+	    break;
 	if (bip->bi_type == BIA_COPY || bip->bi_type == BIA_COPY_SELECT
 		|| bip->bi_type == BIA_APPLY || bip->bi_type == BIA_VALUE_OF)
 	    retain = BRETAIN_NONE;
@@ -480,8 +495,10 @@ pin_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
 	    continue;
 
 	xmlChar *select = xmlGetProp(child, (const xmlChar *) "select");
-	if (select == NULL)
+	if (select == NULL) {
+	    pin_error(rb, child, "xsl:for-each: missing select attribute");
 	    continue;
+	}
 
 	const char *sel = (const char *) select;
 
@@ -672,13 +689,15 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		continue;
 
 	    pin_op_t *push = pin_op_new(cur, NULL);
-	    if (push == NULL) return;
+	    if (push == NULL)
+		return;
 	    push->po_type = PIN_OP_PUSH_STRING;
 	    push->po_name = pin_namepool_atom(pwp,
 		    (const char *) child->content, TRUE);
 
 	    pin_op_t *emit = pin_op_new(cur, NULL);
-	    if (emit == NULL) return;
+	    if (emit == NULL)
+		return;
 	    emit->po_type = PIN_OP_EMIT;
 	    continue;
 	}
@@ -695,13 +714,19 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		/* Fall back to stub */
 		cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
 		pin_op_t *push = pin_op_new(cur, NULL);
-		if (push) push->po_type = PIN_OP_PUSH_NODE;
-		if (sel) xmlFree(sel);
+		if (push)
+		    push->po_type = PIN_OP_PUSH_NODE;
+		if (sel)
+		    xmlFree(sel);
 		continue;
 	    }
 
 	    pin_op_t *op = pin_op_new(cur, NULL);
-	    if (op == NULL) { if (sel) xmlFree(sel); return; }
+	    if (op == NULL) {
+		if (sel)
+		    xmlFree(sel);
+		return;
+	    }
 	    op->po_type = PIN_OP_COPY_OF;
 
 	    if (kind == SELK_SELF) {
@@ -712,7 +737,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		op->po_name = pin_namepool_atom(pwp, s, TRUE);
 	    }
 
-	    if (sel) xmlFree(sel);
+	    if (sel)
+		xmlFree(sel);
 	    continue;
 	}
 
@@ -721,7 +747,11 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    const char *s = sel ? (const char *) sel : ".";
 
 	    pin_op_t *push = pin_op_new(cur, NULL);
-	    if (push == NULL) { if (sel) xmlFree(sel); return; }
+	    if (push == NULL) {
+		if (sel)
+		    xmlFree(sel);
+		return;
+	    }
 
 	    switch (pin_classify_select(s)) {
 	    case SELK_SELF:
@@ -742,10 +772,12 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		push->po_name = pin_namepool_atom(pwp, s, TRUE);
 		break;
 	    }
-	    if (sel) xmlFree(sel);
+	    if (sel)
+		xmlFree(sel);
 
 	    pin_op_t *emit = pin_op_new(cur, NULL);
-	    if (emit == NULL) return;
+	    if (emit == NULL)
+		return;
 	    emit->po_type = PIN_OP_EMIT;
 	    continue;
 	}
@@ -753,7 +785,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (pin_is_xsl(child, "apply-templates")) {
 	    cur->poc_complexity |= (1ULL << PIN_OP_APPLY);
 	    pin_op_t *apply = pin_op_new(cur, NULL);
-	    if (apply == NULL) return;
+	    if (apply == NULL)
+		return;
 	    apply->po_type = PIN_OP_APPLY;
 	    xmlChar *mode = xmlGetProp(child, (const xmlChar *) "mode");
 	    if (mode) {
@@ -776,7 +809,9 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (pin_is_xsl(child, "if")) {
 	    xmlChar *test = xmlGetProp(child, (const xmlChar *) "test");
 	    if (test == NULL || test[0] == '\0') {
-		if (test) xmlFree(test);
+		pin_error(cur->poc_rb, child, "xsl:if: missing or empty test attribute");
+		if (test)
+		    xmlFree(test);
 		continue;
 	    }
 
@@ -787,19 +822,22 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    xmlFree(test);
 
 	    pin_op_t *push_bool = pin_op_new(cur, NULL);
-	    if (push_bool == NULL) return;
+	    if (push_bool == NULL)
+		return;
 	    push_bool->po_type = PIN_OP_PUSH_BOOL;
 
 	    pin_op_id_t bid_if;
 	    pin_op_t *bip_if = pin_op_new(cur, &bid_if);
-	    if (bip_if == NULL) return;
+	    if (bip_if == NULL)
+		return;
 	    bip_if->po_type = PIN_OP_IF;
 
 	    pin_compile_ops_r(child, cur);
 
 	    pin_op_id_t bid_jump;
 	    pin_op_t *bip_jump = pin_op_new(cur, &bid_jump);
-	    if (bip_jump == NULL) return;
+	    if (bip_jump == NULL)
+		return;
 	    bip_jump->po_type = PIN_OP_JUMP;
 
 	    bip_if->po_alt = bid_jump;
@@ -832,7 +870,9 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		xmlChar *test = xmlGetProp(wc, (const xmlChar *) "test");
 		if (test == NULL || test[0] == '\0') {
-		    if (test) xmlFree(test);
+		    pin_error(cur->poc_rb, wc, "xsl:when: missing or empty test attribute");
+		    if (test)
+			xmlFree(test);
 		    continue;
 		}
 
@@ -847,12 +887,14 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		pin_op_id_t bid_when_start = *saved_nextp; /* id of the push op */
 
 		pin_op_t *push_bool = pin_op_new(cur, NULL);
-		if (push_bool == NULL) return;
+		if (push_bool == NULL)
+		    return;
 		push_bool->po_type = PIN_OP_PUSH_BOOL;
 
 		pin_op_id_t bid_if;
 		pin_op_t *bip_if = pin_op_new(cur, &bid_if);
-		if (bip_if == NULL) return;
+		if (bip_if == NULL)
+		    return;
 		bip_if->po_type = PIN_OP_IF;
 
 		/*
@@ -873,7 +915,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		if (n_gotos < 16) {
 		    pin_op_id_t bid_goto;
 		    pin_op_t *bip_goto = pin_op_new(cur, &bid_goto);
-		    if (bip_goto == NULL) return;
+		    if (bip_goto == NULL)
+			return;
 		    bip_goto->po_type = PIN_OP_GOTO;
 		    gotos[n_gotos] = bid_goto;
 		    n_gotos += 1;
@@ -884,7 +927,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		cur->poc_src_line = (uint32_t) xmlGetLineNo(otherwise_node);
 		pin_op_id_t bid_oth;
 		pin_op_t *bip_oth = pin_op_new(cur, &bid_oth);
-		if (bip_oth == NULL) return;
+		if (bip_oth == NULL)
+		    return;
 		bip_oth->po_type = PIN_OP_JUMP;
 
 		if (!pin_op_id_is_null(bid_last_if)) {
@@ -897,7 +941,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 	    pin_op_id_t bid_join;
 	    pin_op_t *bip_join = pin_op_new(cur, &bid_join);
-	    if (bip_join == NULL) return;
+	    if (bip_join == NULL)
+		return;
 	    bip_join->po_type = PIN_OP_JUMP;
 
 	    if (otherwise_node == NULL && !pin_op_id_is_null(bid_last_if)) {
@@ -915,8 +960,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 	if (pin_is_xsl(child, "for-each")) {
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
-	    if (sel == NULL)
+	    if (sel == NULL) {
+		pin_error(cur->poc_rb, child, "xsl:for-each: missing select attribute");
 		continue;
+	    }
 	    const char *s = (const char *) sel;
 
 	    /* Only simple element-name selects (no path, predicates, wildcards) */
@@ -953,8 +1000,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		    bool desc  = order  && strcmp((char *) order,  "descending") == 0;
 		    bool upper = corder && strcmp((char *) corder, "upper-first") == 0;
-		    if (desc  && spos < sizeof(spec) - 1) spec[spos++] = '-';
-		    if (upper && spos < sizeof(spec) - 1) spec[spos++] = '^';
+		    if (desc && spos < sizeof(spec) - 1)
+			spec[spos++] = '-';
+		    if (upper && spos < sizeof(spec) - 1)
+			spec[spos++] = '^';
 
 		    spos += (size_t) snprintf(spec + spos, sizeof(spec) - spos,
 					     "%s", kstr);
@@ -962,10 +1011,14 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 			sort_ok = false;
 		}
 
-		if (order)  xmlFree(order);
-		if (corder) xmlFree(corder);
-		if (dtype)  xmlFree(dtype);
-		if (kexpr)  xmlFree(kexpr);
+		if (order)
+		    xmlFree(order);
+		if (corder)
+		    xmlFree(corder);
+		if (dtype)
+		    xmlFree(dtype);
+		if (kexpr)
+		    xmlFree(kexpr);
 	    }
 	    spec[spos < sizeof(spec) ? spos : sizeof(spec) - 1] = '\0';
 
@@ -1015,13 +1068,21 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (pin_is_xsl(child, "variable")) {
 	    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
 	    if (vname == NULL || vname[0] == '\0') {
-		if (vname) xmlFree(vname);
+		pin_error(cur->poc_rb, child,
+			  "xsl:variable: missing or empty name attribute");
+		if (vname)
+		    xmlFree(vname);
 		continue;
 	    }
 
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    pin_op_t *push = pin_op_new(cur, NULL);
-	    if (push == NULL) { xmlFree(vname); if (sel) xmlFree(sel); return; }
+	    if (push == NULL) {
+		xmlFree(vname);
+		if (sel)
+		    xmlFree(sel);
+		return;
+	    }
 
 	    if (sel != NULL) {
 		const char *s = (const char *) sel;
@@ -1079,7 +1140,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    pin_op_t *store = pin_op_new(cur, NULL);
-	    if (store == NULL) { xmlFree(vname); return; }
+	    if (store == NULL) {
+		xmlFree(vname);
+		return;
+	    }
 	    store->po_type = PIN_OP_STORE_VAR;
 	    store->po_name = pin_namepool_atom(pwp, (const char *) vname, TRUE);
 	    xmlFree(vname);
@@ -1099,55 +1163,86 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (pin_is_xsl(child, "param")) {
 	    xmlChar *pname = xmlGetProp(child, (const xmlChar *) "name");
 	    if (pname == NULL || pname[0] == '\0') {
-		pin_error(child, "xsl:param: missing or empty name attribute");
-		if (pname) xmlFree(pname);
+		pin_error(cur->poc_rb, child, "xsl:param: missing or empty name attribute");
+		if (pname)
+		    xmlFree(pname);
 		continue;
 	    }
 	    pin_name_id_t pnid = pin_namepool_atom(pwp, (const char *) pname, TRUE);
 	    xmlChar *psel = xmlGetProp(child, (const xmlChar *) "select");
 
 	    pin_op_t *load = pin_op_new(cur, NULL);
-	    if (load == NULL) { xmlFree(pname); if (psel) xmlFree(psel); return; }
+	    if (load == NULL) {
+		xmlFree(pname);
+		if (psel)
+		    xmlFree(psel);
+		return;
+	    }
 	    load->po_type = PIN_OP_LOAD_PARAM;
 	    load->po_name = pnid;
 
 	    if (psel && psel[0] != '\0') {
 		/* With default: IF + true-branch + GOTO + false-branch + JUMP */
 		pin_op_t *bip_bool = pin_op_new(cur, NULL);
-		if (bip_bool == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (bip_bool == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		bip_bool->po_type = PIN_OP_PUSH_BOOL;
 
 		pin_op_id_t bid_if;
 		pin_op_t *bip_if = pin_op_new(cur, &bid_if);
-		if (bip_if == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (bip_if == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		bip_if->po_type = PIN_OP_IF;
 
 		/* True branch: param was provided, value is top of stack */
 		pin_op_t *store_true = pin_op_new(cur, NULL);
-		if (store_true == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (store_true == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		store_true->po_type = PIN_OP_STORE_VAR;
 		store_true->po_name = pnid;
 
 		pin_op_id_t bid_goto;
 		pin_op_t *bip_goto = pin_op_new(cur, &bid_goto);
-		if (bip_goto == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (bip_goto == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		bip_goto->po_type = PIN_OP_GOTO;
 
 		/* False branch: discard null, evaluate default, bind */
 		pin_op_t *discard = pin_op_new(cur, NULL);
-		if (discard == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (discard == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		discard->po_type = PIN_OP_DISCARD;
 
 		/* Compile default select expression */
 		const char *s = (const char *) psel;
 		pin_op_t *push_def = pin_op_new(cur, NULL);
-		if (push_def == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (push_def == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		switch (pin_classify_select(s)) {
 		case SELK_LITERAL: {
 		    size_t slen = strlen(s);
 		    char litbuf[512];
 		    size_t litlen = slen > 2 ? slen - 2 : 0;
-		    if (litlen >= sizeof(litbuf)) litlen = sizeof(litbuf) - 1;
+		    if (litlen >= sizeof(litbuf))
+			litlen = sizeof(litbuf) - 1;
 		    memcpy(litbuf, s + 1, litlen);
 		    litbuf[litlen] = '\0';
 		    push_def->po_type = PIN_OP_PUSH_STRING;
@@ -1177,13 +1272,21 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		}
 
 		pin_op_t *store_def = pin_op_new(cur, NULL);
-		if (store_def == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (store_def == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		store_def->po_type = PIN_OP_STORE_VAR;
 		store_def->po_name = pnid;
 
 		pin_op_id_t bid_join;
 		pin_op_t *bip_join = pin_op_new(cur, &bid_join);
-		if (bip_join == NULL) { xmlFree(pname); xmlFree(psel); return; }
+		if (bip_join == NULL) {
+		    xmlFree(pname);
+		    xmlFree(psel);
+		    return;
+		}
 		bip_join->po_type = PIN_OP_JUMP;
 
 		/*
@@ -1199,17 +1302,28 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    } else {
 		/* No default: DISCARD bool, STORE_VAR("x") with whatever was found (or null) */
 		pin_op_t *discard = pin_op_new(cur, NULL);
-		if (discard == NULL) { xmlFree(pname); if (psel) xmlFree(psel); return; }
+		if (discard == NULL) {
+		    xmlFree(pname);
+		    if (psel)
+			xmlFree(psel);
+		    return;
+		}
 		discard->po_type = PIN_OP_DISCARD;
 
 		pin_op_t *store = pin_op_new(cur, NULL);
-		if (store == NULL) { xmlFree(pname); if (psel) xmlFree(psel); return; }
+		if (store == NULL) {
+		    xmlFree(pname);
+		    if (psel)
+			xmlFree(psel);
+		    return;
+		}
 		store->po_type = PIN_OP_STORE_VAR;
 		store->po_name = pnid;
 	    }
 
 	    xmlFree(pname);
-	    if (psel) xmlFree(psel);
+	    if (psel)
+		xmlFree(psel);
 	    continue;
 	}
 
@@ -1221,8 +1335,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (pin_is_xsl(child, "call-template")) {
 	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
 	    if (tname == NULL || tname[0] == '\0') {
-		pin_error(child, "xsl:call-template: missing or empty name attribute");
-		if (tname) xmlFree(tname);
+		pin_error(cur->poc_rb, child,
+			  "xsl:call-template: missing or empty name attribute");
+		if (tname)
+		    xmlFree(tname);
 		continue;
 	    }
 
@@ -1233,9 +1349,12 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		xmlChar *wpname = xmlGetProp(wpc, (const xmlChar *) "name");
 		xmlChar *wpsel  = xmlGetProp(wpc, (const xmlChar *) "select");
 		if (wpname == NULL || wpname[0] == '\0') {
-		    pin_error(wpc, "xsl:with-param: missing or empty name attribute");
-		    if (wpname) xmlFree(wpname);
-		    if (wpsel)  xmlFree(wpsel);
+		    pin_error(cur->poc_rb, wpc,
+			      "xsl:with-param: missing or empty name attribute");
+		    if (wpname)
+			xmlFree(wpname);
+		    if (wpsel)
+			xmlFree(wpsel);
 		    continue;
 		}
 
@@ -1243,8 +1362,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		const char *s = wpsel ? (const char *) wpsel : ".";
 		pin_op_t *push = pin_op_new(cur, NULL);
 		if (push == NULL) {
-		    if (wpname) xmlFree(wpname);
-		    if (wpsel)  xmlFree(wpsel);
+		    if (wpname)
+			xmlFree(wpname);
+		    if (wpsel)
+			xmlFree(wpsel);
 		    xmlFree(tname);
 		    return;
 		}
@@ -1253,7 +1374,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    size_t slen = strlen(s);
 		    char litbuf[512];
 		    size_t litlen = slen > 2 ? slen - 2 : 0;
-		    if (litlen >= sizeof(litbuf)) litlen = sizeof(litbuf) - 1;
+		    if (litlen >= sizeof(litbuf))
+			litlen = sizeof(litbuf) - 1;
 		    memcpy(litbuf, s + 1, litlen);
 		    litbuf[litlen] = '\0';
 		    push->po_type = PIN_OP_PUSH_STRING;
@@ -1284,8 +1406,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		pin_op_t *wp = pin_op_new(cur, NULL);
 		if (wp == NULL) {
-		    if (wpname) xmlFree(wpname);
-		    if (wpsel)  xmlFree(wpsel);
+		    if (wpname)
+			xmlFree(wpname);
+		    if (wpsel)
+			xmlFree(wpsel);
 		    xmlFree(tname);
 		    return;
 		}
@@ -1293,12 +1417,17 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		wp->po_name = pin_namepool_atom(pwp, (const char *) wpname, TRUE);
 		nparam++;
 
-		if (wpname) xmlFree(wpname);
-		if (wpsel)  xmlFree(wpsel);
+		if (wpname)
+		    xmlFree(wpname);
+		if (wpsel)
+		    xmlFree(wpsel);
 	    }
 
 	    pin_op_t *call_op = pin_op_new(cur, NULL);
-	    if (call_op == NULL) { xmlFree(tname); return; }
+	    if (call_op == NULL) {
+		xmlFree(tname);
+		return;
+	    }
 	    call_op->po_type  = PIN_OP_CALL;
 	    call_op->po_name  = pin_namepool_atom(pwp, (const char *) tname, TRUE);
 	    call_op->po_count = nparam;
@@ -1316,7 +1445,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    (const char *) child->name, TRUE);
 
 	    pin_op_t *open_op = pin_op_new(cur, NULL);
-	    if (open_op == NULL) return;
+	    if (open_op == NULL)
+		return;
 	    open_op->po_type = PIN_OP_EMIT_OPEN;
 	    open_op->po_name = tag_id;
 
@@ -1347,7 +1477,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    pin_compile_ops_r(child, cur);
 
 	    pin_op_t *close_op = pin_op_new(cur, NULL);
-	    if (close_op == NULL) return;
+	    if (close_op == NULL)
+		return;
 	    close_op->po_type = PIN_OP_EMIT_CLOSE;
 	    close_op->po_name = tag_id;
 	}
@@ -1402,16 +1533,16 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    /* Named template (name= but no match=): compile body as op sequence */
 	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
 	    if (tname == NULL || tname[0] == '\0') {
-		pin_error(child, "xsl:template: missing or empty name attribute");
-		if (tname) xmlFree(tname);
+		pin_error(rb, child, "xsl:template: missing or empty name attribute");
+		if (tname)
+		    xmlFree(tname);
 		continue;
 	    }
 	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
 	    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
 		    url, TRUE);
 	    uint64_t complexity = 0;
-	    pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id,
-		    &complexity);
+	    pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity);
 	    if (!pin_op_id_is_null(ops) && complexity == 0) {
 		pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
 			(const char *) tname, TRUE);
@@ -1454,8 +1585,7 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    prp->pr_src_file = src_file_id;
 	    prp->pr_src_line = (uint32_t) xmlGetLineNo(child);
 	    uint64_t complexity = 0;
-	    prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id,
-		    &complexity);
+	    prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id, &complexity);
 
 	    /*
 	     * Check for for-each and BIA_ fallback.
@@ -1505,7 +1635,7 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	}
 	int rc = pin_filter_add_with_action(xfp, match_str, rid);
 	if (rc < 0) {
-	    pin_error(child, "xsl:template: unsupported match pattern: %s",
+	    pin_error(rb, child, "xsl:template: unsupported match pattern: %s",
 			  match_str);
 	    xmlFree(match);
 	    return -1;
@@ -1522,6 +1652,8 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	count++;
     }
 
+    if (rb->prb_workspace->pw_errors)
+	return -1;
     return count;
 }
 
