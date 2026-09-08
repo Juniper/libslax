@@ -491,17 +491,17 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 
     if (nargs == 2) {
 	xmlXPathObject *xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
+	if (!xmlXPathObjectGetNodesetval(xop) || !xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop))) {
 	    LX_ERR("os:mkdir invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+	    nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -649,22 +649,22 @@ extOsWorker (slax_os_callback_t func, const char *action, void *opaque,
 
     while (nargs-- > 0) {
 	xmlXPathObject *xop = valuePop(ctxt);
-	if (xop->stringval) {
+	if (xmlXPathObjectGetStringval(xop)) {
 	    extOsWorkerOne(func, action, opaque, results, ctxt,
-			   "file", (const char *) xop->stringval);
+			   "file", (const char *) xmlXPathObjectGetStringval(xop));
 	    xmlXPathFreeObject(xop);
 	    continue;
 	}
 
-	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
+	if (!xmlXPathObjectGetNodesetval(xop) || !xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop))) {
 	    xmlXPathFreeObject(xop);
 	    continue;
 	}
 
-	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+	    nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -766,8 +766,8 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
 
     bzero(&eoc, sizeof(eoc));
 
-    if (xop->stringval) {
-	const char *cp = (const char *) xop->stringval;
+    if (xmlXPathObjectGetStringval(xop)) {
+	const char *cp = (const char *) xmlXPathObjectGetStringval(xop);
 	char *sp = NULL;
 
 	eoc.eoc_off = S_MODE_ALL;
@@ -818,8 +818,8 @@ extOsChmod (xmlXPathParserContext *ctxt, int nargs)
 	    }
 	}
 
-    } else if (xop->floatval) {
-	eoc.eoc_on = xop->floatval;
+    } else if (xmlXPathObjectGetFloatval(xop)) {
+	eoc.eoc_on = xmlXPathObjectGetFloatval(xop);
 	eoc.eoc_off = S_MODE_ALL;
 
     } else {
@@ -878,8 +878,8 @@ extOsChown (xmlXPathParserContext *ctxt, int nargs)
     unsigned long ul;
     char *np;
 
-    if (xop->stringval) {
-	const char *cp = (const char *) xop->stringval;
+    if (xmlXPathObjectGetStringval(xop)) {
+	const char *cp = (const char *) xmlXPathObjectGetStringval(xop);
 	char *sp = NULL;
 
 	ul = strtoul(cp, &sp, 10);
@@ -964,8 +964,8 @@ extOsChown (xmlXPathParserContext *ctxt, int nargs)
 	    }
 	}
 
-    } else if (xop->floatval) {
-	eoc.eoc_uid = xop->floatval;
+    } else if (xmlXPathObjectGetFloatval(xop)) {
+	eoc.eoc_uid = xmlXPathObjectGetFloatval(xop);
 
     } else {
 	LX_ERR("invalid argument\n");
@@ -1238,20 +1238,20 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
 
 	xop = stack[ndx];
 
-	if (xop->stringval) {
-	    rc = glob((const char *) xop->stringval, gflags, NULL, &gl);
+	if (xmlXPathObjectGetStringval(xop)) {
+	    rc = glob((const char *) xmlXPathObjectGetStringval(xop), gflags, NULL, &gl);
 	    if (rc) {
 		slaxLog("glob returned %d (%d) for %s",
-			rc, errno, (const char *) xop->stringval);
+			rc, errno, (const char *) xmlXPathObjectGetStringval(xop));
 		/* XXX But we otherwise ignore and continue */
 	    }
 
-	} else if (xop->nodesetval) {
-	    for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
+	} else if (xmlXPathObjectGetNodesetval(xop)) {
+	    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)); i++) {
 		xmlNodePtr nop, cop;
 		const char *value, *key;
 
-		nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
+		nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), i);
 		if (xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
