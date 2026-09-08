@@ -1,0 +1,62 @@
+compiled 3 patterns
+<store>
+   <item>
+      <id>p01</id>
+      <n>Widget Alpha</n>
+      <v>Acme</v>
+      <flag>available</flag>
+   </item>
+   <item>
+      <id>p02</id>
+      <n>Widget Beta</n>
+      <v>Globex</v>
+   </item>
+   <item>
+      <id>p03</id>
+      <n>Gadget Gamma</n>
+      <v>Initech</v>
+      <flag>available</flag>
+   </item>
+   <rec>
+      <label>ORDER</label>
+      <ref>O-1001</ref>
+      <state>pending</state>
+      <flag>urgent</flag>
+   </rec>
+   <rec>
+      <label>ORDER</label>
+      <ref>O-1002</ref>
+      <state>pending</state>
+   </rec>
+   <rec>
+      <label>ORDER</label>
+      <ref>O-1003</ref>
+      <state>pending</state>
+      <flag>urgent</flag>
+   </rec>
+   <list>
+      <row>
+         <k>color</k>
+         <v>blue</v>
+         <flag>active</flag>
+      </row>
+      <row>
+         <k>size</k>
+         <v>medium</v>
+      </row>
+      <row>
+         <k>weight</k>
+         <v>1.2kg</v>
+         <flag>active</flag>
+      </row>
+      <row>
+         <k>material</k>
+         <v>steel</v>
+      </row>
+      <row>
+         <k>finish</k>
+         <v>matte</v>
+         <flag>active</flag>
+      </row>
+   </list>
+</store>
