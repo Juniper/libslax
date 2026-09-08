@@ -54,7 +54,7 @@ exsltDynEvaluateFunction(xmlXPathParserContextPtr ctxt, int nargs) {
 		xsltPrintErrorContext(xsltXPathGetTransformContext(ctxt), NULL, NULL);
         xsltGenericError(xsltGenericErrorContext,
 			"dyn:evalute() : invalid number of args %d\n", nargs);
-		ctxt->error = XPATH_INVALID_ARITY;
+		xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 		return;
 	}
 	str = xmlXPathPopString(ctxt);
@@ -68,11 +68,11 @@ exsltDynEvaluateFunction(xmlXPathParserContextPtr ctxt, int nargs) {
         /*
          * Recursive evaluation can grow the call stack quickly.
          */
-        xmlXPathContextSetDepth(ctxt->context, xmlXPathContextGetDepth(ctxt->context) + 5);
+        xmlXPathContextSetDepth(xmlXPathParserContextGetContext(ctxt), xmlXPathContextGetDepth(xmlXPathParserContextGetContext(ctxt)) + 5);
 #endif
-	ret = xmlXPathEval(str,ctxt->context);
+	ret = xmlXPathEval(str,xmlXPathParserContextGetContext(ctxt));
 #if LIBXML_VERSION >= 20911
-        xmlXPathContextSetDepth(ctxt->context, xmlXPathContextGetDepth(ctxt->context) - 5);
+        xmlXPathContextSetDepth(xmlXPathParserContextGetContext(ctxt), xmlXPathContextGetDepth(xmlXPathParserContextGetContext(ctxt)) - 5);
 #endif
 	if (ret)
 		valuePush(ctxt,ret);
@@ -140,10 +140,10 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
         !(comp = xmlXPathCtxtCompile(tctxt->xpathCtxt, str)))
         goto cleanup;
 
-    oldDoc = xmlXPathContextGetDoc(ctxt->context);
-    oldNode = xmlXPathContextGetNode(ctxt->context);
-    oldContextSize = xmlXPathContextGetContextSize(ctxt->context);
-    oldProximityPosition = xmlXPathContextGetProximityPosition(ctxt->context);
+    oldDoc = xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt));
+    oldNode = xmlXPathContextGetNode(xmlXPathParserContextGetContext(ctxt));
+    oldContextSize = xmlXPathContextGetContextSize(xmlXPathParserContextGetContext(ctxt));
+    oldProximityPosition = xmlXPathContextGetProximityPosition(xmlXPathParserContextGetContext(ctxt));
 
         /**
 	 * since we really don't know we're going to be adding node(s)
@@ -158,15 +158,15 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
     xsltRegisterLocalRVT(tctxt, container);
     if (nodeset && xmlNodeSetGetNodeNr(nodeset) > 0) {
         xmlXPathNodeSetSort(nodeset);
-        xmlXPathContextSetContextSize(ctxt->context, xmlNodeSetGetNodeNr(nodeset));
-        xmlXPathContextSetProximityPosition(ctxt->context, 0);
+        xmlXPathContextSetContextSize(xmlXPathParserContextGetContext(ctxt), xmlNodeSetGetNodeNr(nodeset));
+        xmlXPathContextSetProximityPosition(xmlXPathParserContextGetContext(ctxt), 0);
         for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
             xmlXPathObjectPtr subResult = NULL;
             xmlNodePtr cur = xmlNodeSetGetNodeEntry(nodeset, i);
 
-            xmlXPathContextSetProximityPosition(ctxt->context,
-                xmlXPathContextGetProximityPosition(ctxt->context) + 1);
-            xmlXPathContextSetNode(ctxt->context, cur);
+            xmlXPathContextSetProximityPosition(xmlXPathParserContextGetContext(ctxt),
+                xmlXPathContextGetProximityPosition(xmlXPathParserContextGetContext(ctxt)) + 1);
+            xmlXPathContextSetNode(xmlXPathParserContextGetContext(ctxt), cur);
 
             if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
                 /*
@@ -180,37 +180,37 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                         "Cannot retrieve the doc of a namespace node.\n");
                     continue;
                 }
-                xmlXPathContextSetDoc(ctxt->context, xmlNodeGetDoc(cur));
+                xmlXPathContextSetDoc(xmlXPathParserContextGetContext(ctxt), xmlNodeGetDoc(cur));
             } else {
-                xmlXPathContextSetDoc(ctxt->context, xmlNodeGetDoc(cur));
+                xmlXPathContextSetDoc(xmlXPathParserContextGetContext(ctxt), xmlNodeGetDoc(cur));
             }
 
-            subResult = xmlXPathCompiledEval(comp, ctxt->context);
+            subResult = xmlXPathCompiledEval(comp, xmlXPathParserContextGetContext(ctxt));
             if (subResult != NULL) {
-                switch (subResult->type) {
+                switch (xmlXPathObjectGetType(subResult)) {
                     case XPATH_NODESET:
-                        if (subResult->nodesetval != NULL)
+                        if (xmlXPathObjectGetNodesetval(subResult) != NULL)
                             for (j = 0;
-                                 j < xmlNodeSetGetNodeNr(subResult->nodesetval);
+                                 j < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(subResult));
                                  j++)
-                                xmlXPathNodeSetAdd(ret->nodesetval,
+                                xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret),
                                                    xmlNodeSetGetNodeEntry(
-                                                   subResult->nodesetval, j));
+                                                   xmlXPathObjectGetNodesetval(subResult), j));
                         break;
                     case XPATH_BOOLEAN:
                         if (container != NULL) {
                             xmlNodePtr newChildNode =
                                 xmlNewTextChild((xmlNodePtr) container, NULL,
                                                 BAD_CAST "boolean",
-                                                BAD_CAST (subResult->
-                                                boolval ? "true" : ""));
+                                                BAD_CAST (xmlXPathObjectGetBoolval(subResult)
+                                                ? "true" : ""));
                             if (newChildNode != NULL) {
                                 xmlNodeSetNs(newChildNode,
                                     xmlNewNs(newChildNode,
                                              BAD_CAST
                                              "http://exslt.org/common",
                                              BAD_CAST "exsl"));
-                                xmlXPathNodeSetAddUnique(ret->nodesetval,
+                                xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret),
                                                          newChildNode);
                             }
                         }
@@ -218,8 +218,8 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                     case XPATH_NUMBER:
                         if (container != NULL) {
                             xmlChar *val =
-                                xmlXPathCastNumberToString(subResult->
-                                                           floatval);
+                                xmlXPathCastNumberToString(
+                                    xmlXPathObjectGetFloatval(subResult));
                             xmlNodePtr newChildNode =
                                 xmlNewTextChild((xmlNodePtr) container, NULL,
                                                 BAD_CAST "number", val);
@@ -232,7 +232,7 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                                              BAD_CAST
                                              "http://exslt.org/common",
                                              BAD_CAST "exsl"));
-                                xmlXPathNodeSetAddUnique(ret->nodesetval,
+                                xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret),
                                                          newChildNode);
                             }
                         }
@@ -242,14 +242,14 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                             xmlNodePtr newChildNode =
                                 xmlNewTextChild((xmlNodePtr) container, NULL,
                                                 BAD_CAST "string",
-                                                subResult->stringval);
+                                                xmlXPathObjectGetStringval(subResult));
                             if (newChildNode != NULL) {
                                 xmlNodeSetNs(newChildNode,
                                     xmlNewNs(newChildNode,
                                              BAD_CAST
                                              "http://exslt.org/common",
                                              BAD_CAST "exsl"));
-                                xmlXPathNodeSetAddUnique(ret->nodesetval,
+                                xmlXPathNodeSetAddUnique(xmlXPathObjectGetNodesetval(ret),
                                                          newChildNode);
                             }
                         }
@@ -261,10 +261,10 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
             }
         }
     }
-    xmlXPathContextSetDoc(ctxt->context, oldDoc);
-    xmlXPathContextSetNode(ctxt->context, oldNode);
-    xmlXPathContextSetContextSize(ctxt->context, oldContextSize);
-    xmlXPathContextSetProximityPosition(ctxt->context, oldProximityPosition);
+    xmlXPathContextSetDoc(xmlXPathParserContextGetContext(ctxt), oldDoc);
+    xmlXPathContextSetNode(xmlXPathParserContextGetContext(ctxt), oldNode);
+    xmlXPathContextSetContextSize(xmlXPathParserContextGetContext(ctxt), oldContextSize);
+    xmlXPathContextSetProximityPosition(xmlXPathParserContextGetContext(ctxt), oldProximityPosition);
 
 
   cleanup:
