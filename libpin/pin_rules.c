@@ -451,6 +451,41 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_if_filter_count = 0;
 	rules->prb_if_filter_cap = 0;
     }
+    if (rules->prb_named) {
+	free(rules->prb_named);
+	rules->prb_named = NULL;
+	rules->prb_named_count = 0;
+	rules->prb_named_cap = 0;
+    }
+}
+
+int
+pin_rulebook_named_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
+                        pin_op_id_t ops_id)
+{
+    if (prbp->prb_named_count >= prbp->prb_named_cap) {
+	uint32_t newcap = prbp->prb_named_cap ? prbp->prb_named_cap * 2 : 8;
+	pin_named_template_t *np = realloc(prbp->prb_named,
+	                                   newcap * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	prbp->prb_named = np;
+	prbp->prb_named_cap = newcap;
+    }
+    prbp->prb_named[prbp->prb_named_count].pnt_name = name_id;
+    prbp->prb_named[prbp->prb_named_count].pnt_ops  = ops_id;
+    prbp->prb_named_count += 1;
+    return 0;
+}
+
+pin_op_id_t
+pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    for (uint32_t i = 0; i < prbp->prb_named_count; i++) {
+	if (pin_name_id_equal(prbp->prb_named[i].pnt_name, name_id))
+	    return prbp->prb_named[i].pnt_ops;
+    }
+    return pin_op_id_null_atom();
 }
 
 uint32_t
