@@ -29,14 +29,16 @@ extBitStringVal (xmlXPathParserContextPtr ctxt, xmlXPathObjectPtr xop,
 {
     unsigned long long val, v2;
 
-    if (xop->type == XPATH_NUMBER) {
-	val = xop->floatval;
+    if (xmlXPathObjectGetType(xop) == XPATH_NUMBER) {
+	val = xmlXPathObjectGetFloatval(xop);
 
-	if (xop->floatval < 0 || xop->floatval >= pow(2, 64))
+	if (xmlXPathObjectGetFloatval(xop) < 0
+		|| xmlXPathObjectGetFloatval(xop) >= pow(2, 64))
 	    val = ULLONG_MAX;	/* No other error value we can use */
 
-    } else if (parse_the_string && xop->type == XPATH_STRING) {
-	const char *s = (const char *) xop->stringval;
+    } else if (parse_the_string
+	    && xmlXPathObjectGetType(xop) == XPATH_STRING) {
+	const char *s = (const char *) xmlXPathObjectGetStringval(xop);
 	val = strtoull(s, NULL, 10);
 
     } else {
