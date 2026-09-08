@@ -920,14 +920,14 @@ db_sqlite_step (sqlite3_stmt *stmt, slax_printf_buffer_t *out,
      * step
      */
     if (input) {
-	if (input->nodesetval) {
+	if (xmlXPathObjectGetNodesetval(input)) {
 	    /*
 	     * Reset prepared statement and clear previous bindings
 	     */
 	    if (sqlite3_reset(stmt) == SQLITE_OK 
 		&& sqlite3_clear_bindings(stmt) == SQLITE_OK) {
 
-		nodeset = input->nodesetval;
+		nodeset = xmlXPathObjectGetNodesetval(input);
 		if (xmlNodeSetGetNodeNr(nodeset) > 0
 			&& xmlNodeGetChildren(xmlNodeSetGetNodeEntry(nodeset, 0))) {
 		    nop = xmlNodeGetChildren(xmlNodeSetGetNodeEntry(nodeset, 0));
