@@ -4424,7 +4424,7 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
     res = xsltPreCompEval(ctxt, node, comp);
 
     if (res != NULL) {
-	if (res->type == XPATH_NODESET) {
+	if (xmlXPathObjectGetType(res) == XPATH_NODESET) {
 	    /*
 	    * Node-set
 	    * --------
@@ -4433,7 +4433,7 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    XSLT_TRACE(ctxt,XSLT_TRACE_COPY_OF,xsltGenericDebug(xsltGenericDebugContext,
 		 "xsltCopyOf: result is a node set\n"));
 #endif
-	    list = res->nodesetval;
+	    list = xmlXPathObjectGetNodesetval(res);
 	    if (list != NULL) {
 		xmlNodePtr cur;
 		/*
@@ -4457,7 +4457,7 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		    }
 		}
 	    }
-	} else if (res->type == XPATH_XSLT_TREE) {
+	} else if (xmlXPathObjectGetType(res) == XPATH_XSLT_TREE) {
 	    /*
 	    * Result tree fragment
 	    * --------------------
@@ -4468,7 +4468,7 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    XSLT_TRACE(ctxt,XSLT_TRACE_COPY_OF,xsltGenericDebug(xsltGenericDebugContext,
 		 "xsltCopyOf: result is a result tree fragment\n"));
 #endif
-	    list = res->nodesetval;
+	    list = xmlXPathObjectGetNodesetval(res);
 	    if ((list != NULL) && (xmlNodeSetGetNodeNr(list) > 0) &&
 		(xmlNodeSetGetNodeEntry(list, 0) != NULL) &&
 		(IS_XSLT_REAL_NODE(xmlNodeSetGetNodeEntry(list, 0))))
@@ -4498,7 +4498,7 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 
 #ifdef WITH_XSLT_DEBUG_PROCESS
 		XSLT_TRACE(ctxt,XSLT_TRACE_COPY_OF,xsltGenericDebug(xsltGenericDebugContext,
-		    "xsltCopyOf: result %s\n", res->stringval));
+		    "xsltCopyOf: result %s\n", xmlXPathObjectGetStringval(res)));
 #endif
 	    }
 	}
@@ -4897,9 +4897,9 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	res = xsltPreCompEval(ctxt, node, comp);
 
 	if (res != NULL) {
-	    if (res->type == XPATH_NODESET) {
-		list = res->nodesetval; /* consume the node set */
-		res->nodesetval = NULL;
+	    if (xmlXPathObjectGetType(res) == XPATH_NODESET) {
+		list = xmlXPathObjectGetNodesetval(res); /* consume the node set */
+		xmlXPathObjectSetNodesetval(res, NULL);
 	    } else {
 		xsltTransformError(ctxt, NULL, inst,
 		    "The 'select' expression did not evaluate to a "
@@ -5359,10 +5359,10 @@ xsltIf(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
 	*/
 	xmlXPathObjectPtr xpobj = xsltPreCompEval(ctxt, contextNode, comp);
 	if (xpobj != NULL) {
-	    if (xpobj->type != XPATH_BOOLEAN)
+	    if (xmlXPathObjectGetType(xpobj) != XPATH_BOOLEAN)
 		xpobj = xmlXPathConvertBoolean(xpobj);
-	    if (xpobj->type == XPATH_BOOLEAN) {
-		res = xpobj->boolval;
+	    if (xmlXPathObjectGetType(xpobj) == XPATH_BOOLEAN) {
+		res = xmlXPathObjectGetBoolval(xpobj);
 
 #ifdef WITH_XSLT_DEBUG_PROCESS
 		XSLT_TRACE(ctxt,XSLT_TRACE_IF,xsltGenericDebug(xsltGenericDebugContext,
@@ -5471,8 +5471,8 @@ xsltForEach(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     res = xsltPreCompEval(ctxt, contextNode, comp);
 
     if (res != NULL) {
-	if (res->type == XPATH_NODESET)
-	    list = res->nodesetval;
+	if (xmlXPathObjectGetType(res) == XPATH_NODESET)
+	    list = xmlXPathObjectGetNodesetval(res);
 	else {
 	    xsltTransformError(ctxt, NULL, inst,
 		"The 'select' expression does not evaluate to a node set.\n");
