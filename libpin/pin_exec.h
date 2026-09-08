@@ -95,7 +95,9 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_LOAD_VAR    (PIN_OP_MAX_COMPLEX + 17) /* Push value of variable named po_name */
 #define PIN_OP_FOR_EACH    (PIN_OP_MAX_COMPLEX + 18) /* Iterate matching children (po_name=tag, po_alt=body, po_name2=sort-spec) */
 #define PIN_OP_COPY_OF     (PIN_OP_MAX_COMPLEX + 19) /* Deep copy selected nodes to output (po_name=path or null for ".") */
-#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 20) /* Sentinel: number of defined op codes */
+#define PIN_OP_WITH_PARAM  (PIN_OP_MAX_COMPLEX + 20) /* Pop top; stage as named param for next CALL (po_name=param-name) */
+#define PIN_OP_LOAD_PARAM  (PIN_OP_MAX_COMPLEX + 21) /* Push [value, bool]: param value (or null) then provided-flag */
+#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 22) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -105,6 +107,7 @@ typedef struct pin_op_s {
     pin_op_id_t    po_next;      /* Next op in sequence; null = end of list */
     pin_op_id_t    po_alt;       /* Branch target: IF false / GOTO / join */
     pin_op_type_t  po_type;      /* Opcode — index into pin_op_table[] */
+    uint16_t       po_count;     /* CALL: number of preceding WITH_PARAM ops */
     pin_name_id_t  po_name;      /* Primary operand: tag / attr / string atom */
     pin_name_id_t  po_name2;     /* Secondary operand (e.g. attribute value) */
     pin_name_id_t  po_src_file;  /* Namepool atom: source XSLT filename */
@@ -136,6 +139,16 @@ extern pin_op_def_t pin_op_table[PIN_OP_MAX];
  */
 
 /*
+ * One entry in the pending-parameter staging buffer.
+ * WITH_PARAM pops a value and appends here; CALL captures a range;
+ * LOAD_PARAM reads from the nearest CALL frame's range.
+ */
+typedef struct pin_pending_param_s {
+    uint32_t    ppp_name;   /* namepool pa_atom_t of the parameter name */
+    pin_value_t ppp_value;  /* parameter value (any PVT_*) */
+} pin_pending_param_t;
+
+/*
  * One frame on the rulebook stack.
  * Pushed when the parser descends into a child element that switches state.
  */
@@ -154,6 +167,8 @@ typedef struct pin_exec_seq_frame_s {
     pin_node_id_t psf_context;   /* Retained matched element node */
     uint32_t      psf_saved_var_count;     /* CALL frame: caller's var watermark */
     uint32_t      psf_saved_nodeset_count; /* CALL frame: caller's nodeset watermark */
+    uint32_t      psf_param_base;          /* CALL frame: index of first pending param */
+    uint32_t      psf_param_count;         /* CALL frame: number of pending params */
     uint8_t       psf_is_call;             /* 1 = CALL frame; restore scope on pop */
 } pin_exec_seq_frame_t;
 
@@ -182,6 +197,11 @@ typedef struct pin_exec_state_s {
     pin_var_binding_t *pes_vars;
     uint32_t           pes_var_count;
     uint32_t           pes_var_cap;
+
+    /* Pending params staged by WITH_PARAM before a CALL */
+    pin_pending_param_t *pes_pending;
+    uint32_t             pes_pending_count;
+    uint32_t             pes_pending_cap;
 } pin_exec_state_t;
 
 /*
