@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.35.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!-- Named template: emit <label> with context text -->
+  <xsl:template name="emit-label">
+    <label><xsl:value-of select="."/></label>
+  </xsl:template>
+
+  <!-- Named template: emit a <row> and call emit-label inside it -->
+  <xsl:template name="emit-row">
+    <row>
+      <xsl:call-template name="emit-label"/>
+    </row>
+  </xsl:template>
+
+  <!-- Match template: for each <entry>, call emit-row -->
+  <xsl:template match="entry">
+    <xsl:call-template name="emit-row"/>
+  </xsl:template>
+
+</xsl:stylesheet>
