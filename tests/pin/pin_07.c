@@ -11,7 +11,7 @@
  * pin_07.c -- test multi-mode dispatch via runtime execution context.
  *
  * Loads an XSLT stylesheet, compiles ALL templates (all modes) into a
- * single filter+rulebook via pin_slax_compile, then sets the execution
+ * single filter+rulebook via pin_compile, then sets the execution
  * context mode via pin_parse_set_mode before parsing.  Only templates
  * whose mode matches the context mode will fire; others fall through to
  * the default rule.
@@ -52,7 +52,7 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_parse.h>
 #include <libpin/pin_filter.h>
-#include <libpin/pin_slax.h>
+#include <libpin/pin_compile.h>
 
 #define PIN07_DB_FILE	"/tmp/pin07.sxb"
 
@@ -137,7 +137,7 @@ main (int argc, char **argv)
 
     if (opt_modes) {
 	pin07_modes_ctx_t ctx = { 0 };
-	int n = pin_slax_for_each_mode(docp, pin07_mode_cb, &ctx);
+	int n = pin_for_each_mode(docp, pin07_mode_cb, &ctx);
 	printf("total: %d mode%s\n", n, n == 1 ? "" : "s");
 	xmlFreeDoc(docp);
 	return 0;
@@ -168,11 +168,11 @@ main (int argc, char **argv)
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin07");
 
     /* Compile all templates (all modes) into one filter+rulebook */
-    int count = pin_slax_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action);
     xmlFreeDoc(docp);
 
     if (count < 0)
-	errx(1, "pin_slax_compile failed");
+	errx(1, "pin_compile failed");
 
     printf("compiled %d pattern%s (mode: %s)\n",
 	   count, count == 1 ? "" : "s", opt_mode ?: "(default)");
