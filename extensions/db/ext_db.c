@@ -306,8 +306,8 @@ db_input_parse (xmlXPathObject *ostack[], int nargs)
 		int i;
 
 		nodeset = xop->nodesetval;
-		for (i = 0; i < nodeset->nodeNr; i++) {
-		    nop = nodeset->nodeTab[i];
+		for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
+		    nop = xmlNodeSetGetNodeEntry(nodeset, i);
 
 		    if (xmlNodeGetType(nop) == XML_ELEMENT_NODE)
 			db_parse_node(input, nop);
