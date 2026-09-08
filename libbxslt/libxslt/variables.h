@@ -32,7 +32,7 @@ extern "C" {
 	       xsltXPathVariableLookup,	(void *)(ctxt));	\
     xsltRegisterAllFunctions((ctxt)->xpathCtxt);		\
     xsltRegisterAllElement(ctxt);				\
-    (ctxt)->xpathCtxt->extra = ctxt
+    xmlXPathContextSetExtra((ctxt)->xpathCtxt, ctxt)
 
 /*
  * Flags for memory management of RVTs
