@@ -197,7 +197,7 @@ pin_rulebook_add_foreach_wrap_state (pin_rulebook_t *prbp,
 /*
  * Create a foreach state where the selected element is processed by a
  * compiled body instruction list.  body_head is the first instruction
- * (from pin_slax_compile_body); retain describes how much of the matched
+ * (from pin_compile_body); retain describes how much of the matched
  * element must be buffered.
  */
 pin_rstate_id_t
