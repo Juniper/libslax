@@ -1,0 +1,19 @@
+compiled 1 pattern
+<catalog>
+   <out>
+      <name>alpha</name>
+      <has-detail>yes</has-detail>
+      <detail-text>first detail</detail-text>
+   </out>
+   <out>
+      <name>beta</name>
+   </out>
+   <out>
+      <name>gamma</name>
+      <has-detail>yes</has-detail>
+      <detail-text>third detail</detail-text>
+   </out>
+   <out>
+      <name>delta</name>
+   </out>
+</catalog>
