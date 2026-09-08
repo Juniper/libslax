@@ -737,12 +737,12 @@ xsltNumberFormatGetValue(xmlXPathContextPtr context,
 
     pattern = xmlBufferCreate();
     if (pattern != NULL) {
-        oldNode = context->node;
+        oldNode = xmlXPathContextGetNode(context);
 
 	xmlBufferCCat(pattern, "number(");
 	xmlBufferCat(pattern, value);
 	xmlBufferCCat(pattern, ")");
-	context->node = node;
+	xmlXPathContextSetNode(context, node);
 	obj = xmlXPathEvalExpression(xmlBufferContent(pattern),
 				     context);
 	if (obj != NULL) {
@@ -752,7 +752,7 @@ xsltNumberFormatGetValue(xmlXPathContextPtr context,
 	}
 	xmlBufferFree(pattern);
 
-        context->node = oldNode;
+        xmlXPathContextSetNode(context, oldNode);
     }
     return amount;
 }
