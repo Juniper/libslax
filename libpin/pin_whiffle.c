@@ -158,7 +158,7 @@ pin_whiffle_parse_as_source (void *opaque, pin_whiffle_t *pwfp,
 	}
     }
 
-    slaxLog("parse-as-source: last: %d/%d/%p(%d) -> new: %d/%d/%p(%d) -> %d",
+    psu_log("parse-as-source: last: %d/%d/%p(%d) -> new: %d/%d/%p(%d) -> %d",
 	    pwpsp->pwps_direction, atom, nodep, pwpsp->pwps_last_depth,
 	    new_dir, new_atom, new_nodep, new_depth,
 	    type);
