@@ -328,7 +328,8 @@ slaxValueIsScalar (xmlXPathObjectPtr value)
     if (value == NULL)
 	return TRUE;		/* Odd, but.... */
 
-    if (value->type == XPATH_NODESET || value->type == XPATH_XSLT_TREE)
+    if (xmlXPathObjectGetType(value) == XPATH_NODESET
+	    || xmlXPathObjectGetType(value) == XPATH_XSLT_TREE)
 	return FALSE;		/* Node sets are not scalar */
 
     return TRUE;
@@ -341,19 +342,19 @@ slaxValueIsScalar (xmlXPathObjectPtr value)
 static xmlChar *
 slaxCastValueToString (xmlXPathObjectPtr value, int *freep)
 {
-    if (value->type == XPATH_NUMBER) {
+    if (xmlXPathObjectGetType(value) == XPATH_NUMBER) {
 	if (freep)
 	    *freep = TRUE;
-	return xmlXPathCastNumberToString(value->floatval);
+	return xmlXPathCastNumberToString(xmlXPathObjectGetFloatval(value));
     }
 
-    if (value->type == XPATH_BOOLEAN) {
+    if (xmlXPathObjectGetType(value) == XPATH_BOOLEAN) {
 	if (freep)
 	    *freep = TRUE;
-	return xmlXPathCastBooleanToString(value->boolval);
+	return xmlXPathCastBooleanToString(xmlXPathObjectGetBoolval(value));
     }
 
-    return value->stringval;
+    return xmlXPathObjectGetStringval(value);
 }
 #endif
 
@@ -377,8 +378,9 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
     xmlDocPtr container;
 
-    if (value && value->nodesetval && xmlNodeSetGetNodeNr(value->nodesetval) > 0)
-	return (xmlDocPtr) xmlNodeSetGetNodeEntry(value->nodesetval, 0);
+    if (value && xmlXPathObjectGetNodesetval(value)
+	    && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) > 0)
+	return (xmlDocPtr) xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value), 0);
 
     container = xsltCreateRVT(ctxt);
     if (container == NULL)
@@ -399,8 +401,9 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xsltStackElemSetValue(svar, value);
 
     /* If the nodeset create worked, return the container */
-    if (value->nodesetval && xmlNodeSetGetNodeNr(value->nodesetval) > 0)
-	return (xmlDocPtr) xmlNodeSetGetNodeEntry(value->nodesetval, 0);
+    if (xmlXPathObjectGetNodesetval(value)
+	    && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) > 0)
+	return (xmlDocPtr) xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value), 0);
 
     return NULL;
 }
@@ -414,8 +417,8 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
     xmlNodePtr prev;
 
     /* If this is the first value, make the nodeset */
-    if (value == NULL || value->nodesetval == NULL
-	    || xmlNodeSetGetNodeNr(value->nodesetval) == 0)
+    if (value == NULL || xmlXPathObjectGetNodesetval(value) == NULL
+	    || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) == 0)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
     container = xsltCreateRVT(ctxt);
@@ -432,11 +435,11 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
      * The garbage collection list is linked via the next/prev or
      * RTFs.
      */
-    prev = xmlNodeSetGetNodeEntry(value->nodesetval,
-				   xmlNodeSetGetNodeNr(value->nodesetval) - 1);
+    prev = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value),
+				   xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) - 1);
     xmlNodeSetNext(prev, (xmlNodePtr) container);
 
-    xmlXPathNodeSetAdd(value->nodesetval, (xmlNodePtr) container);
+    xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(value), (xmlNodePtr) container);
 
     return container;
 }
@@ -448,11 +451,12 @@ slaxMvarLastContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
     xmlNodePtr nodep;
 
     /* If this is the first value, make the nodeset */
-    if (value->nodesetval == NULL || xmlNodeSetGetNodeNr(value->nodesetval) == 0)
+    if (xmlXPathObjectGetNodesetval(value) == NULL
+	    || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) == 0)
 	return slaxMvarGetSvarRoot(ctxt, svar);
 
-    nodep = xmlNodeSetGetNodeEntry(value->nodesetval,
-				    xmlNodeSetGetNodeNr(value->nodesetval) - 1);
+    nodep = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value),
+				    xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) - 1);
     return (xmlDocPtr) nodep;
 }
 
@@ -510,7 +514,7 @@ slaxMvarRecord (xsltTransformContextPtr ctxt, const xmlChar *name,
 	xmlDocPtr container;
 	xsltStackElemPtr svar;
 	xmlNodeSetPtr res = NULL;
-	xmlNodeSetPtr nset = value->nodesetval;
+	xmlNodeSetPtr nset = xmlXPathObjectGetNodesetval(value);
 	int local = FALSE;
 
 	svar = slaxMvarGetSvar(ctxt, svarname, &local);
@@ -668,7 +672,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	     * case #2: [ scalar var / non-scalar value ] -> discard var
 	     */
 
-	    nset = value ? value->nodesetval : NULL;
+	    nset = value ? xmlXPathObjectGetNodesetval(value) : NULL;
 	}
 
     } else {
@@ -689,7 +693,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	     * case #4: [ non-scalar var / non-scalar value ] ->
 	     * append to node set
 	     */
-	    nset = value ? value->nodesetval : NULL;
+	    nset = value ? xmlXPathObjectGetNodesetval(value) : NULL;
 	}
     }
 
@@ -721,12 +725,12 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
     }
 
     xmlXPathObjectPtr val = xsltStackElemGetValue(var);
-    val->nodesetval = res;
-    val->type = XPATH_NODESET;
-    val->boolval = FALSE;
-    if (val->stringval) {
-	xmlFree(val->stringval);
-	val->stringval = NULL;
+    xmlXPathObjectSetNodesetval(val, res);
+    xmlXPathObjectSetType(val, XPATH_NODESET);
+    xmlXPathObjectSetBoolval(val, FALSE);
+    if (xmlXPathObjectGetStringval(val)) {
+	xmlFree(xmlXPathObjectGetStringval(val));
+	xmlXPathObjectSetStringval(val, NULL);
     }
 
     /*
@@ -1203,9 +1207,9 @@ slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
 	xmlXPathObjectPtr svarValue = xsltStackElemGetValue(svar);
 
 	nodep = NULL;
-	if (svarValue && svarValue->nodesetval
-	    && xmlNodeSetGetNodeEntry(svarValue->nodesetval, 0))
-	    nodep = xmlNodeSetGetNodeEntry(svarValue->nodesetval, 0);
+	if (svarValue && xmlXPathObjectGetNodesetval(svarValue)
+	    && xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(svarValue), 0))
+	    nodep = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(svarValue), 0);
 
 	if (nodep == NULL || xmlNodeGetChildren(nodep) == NULL) {
 	    xmlFreeAndEasy(mvarname);
