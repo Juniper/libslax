@@ -746,7 +746,7 @@ xsltNumberFormatGetValue(xmlXPathContextPtr context,
 	obj = xmlXPathEvalExpression(xmlBufferContent(pattern),
 				     context);
 	if (obj != NULL) {
-	    *number = obj->floatval;
+	    *number = xmlXPathObjectGetFloatval(obj);
 	    amount++;
 	    xmlXPathFreeObject(obj);
 	}
