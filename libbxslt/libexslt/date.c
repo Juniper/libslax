@@ -2852,10 +2852,10 @@ exsltDateSumFunction (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     /* We need to delay the freeing of value->user */
-    if ((ctxt->value != NULL) && ctxt->value->boolval != 0) {
-	user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = NULL;
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0) {
+	user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
     }
 
     ns = xmlXPathPopNodeSet (ctxt);
