@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<catalog>
+  <item name="alpha">
+    <detail>first detail</detail>
+  </item>
+  <item name="beta"/>
+  <item name="gamma">
+    <detail>third detail</detail>
+    <extra>ignored</extra>
+  </item>
+  <item name="delta"/>
+</catalog>
