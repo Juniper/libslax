@@ -1,0 +1,12 @@
+compiled 2 patterns
+<catalog>
+   <out>
+      <field>alpha</field>
+   </out>
+   <out>
+      <field>beta</field>
+   </out>
+   <out>
+      <field>gamma</field>
+   </out>
+</catalog>
