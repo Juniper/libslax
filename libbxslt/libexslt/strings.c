@@ -528,9 +528,9 @@ exsltStrConcatFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
     xmlBufferSetAllocationScheme(buf, XML_BUFFER_ALLOC_DOUBLEIT);
 
-    for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
 	xmlChar *tmp;
-	tmp = xmlXPathCastNodeToString(obj->nodesetval->nodeTab[i]);
+	tmp = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(obj->nodesetval, i));
 
         xmlBufferCat(buf, tmp);
 
@@ -626,7 +626,7 @@ exsltStrReplaceFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
     else {
         search_set = xmlXPathPopNodeSet(ctxt);
-        n = search_set != NULL ? search_set->nodeNr : 0;
+        n = search_set != NULL ? xmlNodeSetGetNodeNr(search_set) : 0;
     }
 
     if (xmlXPathCheckError(ctxt))
@@ -671,7 +671,7 @@ exsltStrReplaceFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 
     for (i=0; i<n; ++i) {
         if (search_set != NULL) {
-            search[i] = xmlXPathCastNodeToString(search_set->nodeTab[i]);
+            search[i] = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(search_set, i));
             if (search[i] == NULL) {
                 n = i;
                 goto fail_process_args;
@@ -683,8 +683,8 @@ exsltStrReplaceFunction (xmlXPathParserContextPtr ctxt, int nargs) {
             i_empty = i;
 
         if (replace_set != NULL) {
-            if (i < replace_set->nodeNr) {
-                replace[i] = xmlXPathCastNodeToString(replace_set->nodeTab[i]);
+            if (i < xmlNodeSetGetNodeNr(replace_set)) {
+                replace[i] = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(replace_set, i));
                 if (replace[i] == NULL) {
                     n = i + 1;
                     goto fail_process_args;
