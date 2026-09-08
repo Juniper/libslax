@@ -193,8 +193,8 @@ extXutilXmlToString (xmlXPathParserContext *ctxt, int nargs)
 	if (xop->nodesetval) {
 	    xmlNodeSetPtr tab = xop->nodesetval;
 	    int i;
-	    for (i = 0; i < tab->nodeNr; i++) {
-		xmlNodePtr node = tab->nodeTab[i];
+	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
+		xmlNodePtr node = xmlNodeSetGetNodeEntry(tab, i);
 
 		xmlSaveTree(handle, node);
 		xmlSaveFlush(handle);
@@ -290,17 +290,17 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (nargs == 2) {
 	xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
 	    LX_ERR("xml-to-json: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xop->nodesetval->nodeTab[i];
+	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -325,7 +325,7 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     }
 
     xop = valuePop(ctxt);
-    if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+    if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
 	LX_ERR("xml-to-json: invalid parameter\n");
 	xmlXPathFreeObject(xop);
 	xmlXPathReturnEmptyString(ctxt);
@@ -334,10 +334,10 @@ extXutilXmlToJson (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     slaxDataListInit(&list);
 
-    for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+    for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 	xmlNodePtr nop;
 
-	nop = xop->nodesetval->nodeTab[i];
+	nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 	if (xmlNodeGetType(nop) == XML_DOCUMENT_NODE)
 	    nop = xmlNodeGetChildren(nop);
 	if (xmlNodeGetType(nop) != XML_ELEMENT_NODE)
@@ -396,17 +396,17 @@ extXutilJsonToXml (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
 
     if (nargs == 2) {
 	xmlXPathObject *xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
 	    LX_ERR("json-to-xml: invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xop->nodesetval->nodeTab[i];
+	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -542,8 +542,8 @@ extXutilXmlToSlax (xmlXPathParserContext *ctxt UNUSED, int nargs UNUSED)
     if (xop->nodesetval) {
 	xmlNodeSetPtr tab = xop->nodesetval;
 
-	for (i = 0; !done && i < tab->nodeNr; i++) {
-	    xmlNodePtr nodep = tab->nodeTab[i];
+	for (i = 0; !done && i < xmlNodeSetGetNodeNr(tab); i++) {
+	    xmlNodePtr nodep = xmlNodeSetGetNodeEntry(tab, i);
 
 	    if (xmlNodeGetType(nodep) == XML_DOCUMENT_NODE) {
 		if (slaxWriteDoc(slaxExtPrintWriter, &pb, (xmlDocPtr) nodep,
@@ -587,7 +587,7 @@ extXutilMaxCallDepth (xmlXPathParserContext *ctxt, int nargs)
 	/* Set the value for _our_ transform context */
 	tctxt = xsltXPathGetTransformContext(ctxt);
 	if (tctxt)
-	    tctxt->maxTemplateDepth = value;
+	    xsltTransformContextSetMaxTemplateDepth(tctxt, value);
 #endif /* LIBXSLT_VERSION >= 10127 */
 
 	/* Set the value globally */
@@ -775,8 +775,8 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 		break;
 
 	    tab = xop->nodesetval;
-	    for (i = 0; i < tab->nodeNr; i++) {
-		match = extXutilSetsCheckOneNode(nop, tab->nodeTab[i], TRUE);
+	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
+		match = extXutilSetsCheckOneNode(nop, xmlNodeSetGetNodeEntry(tab, i), TRUE);
 		if (match)
 		    break;
 	    }
@@ -792,8 +792,8 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 	     * root
 	     */
 	    tab = xop->nodesetval;
-	    for (i = 0; i < tab->nodeNr; i++) {
-		xmlNode *gop, *cop =  tab->nodeTab[i];
+	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
+		xmlNode *gop, *cop =  xmlNodeSetGetNodeEntry(tab, i);
 		for (gop = xmlNodeGetChildren(cop); gop; gop = xmlNodeGetNext(gop)) {
 		    match = extXutilSetsCheckOneNode(nop, gop, TRUE);
 		    if (match)
@@ -868,8 +868,8 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
 	    break;
 
 	tab = base->nodesetval;
-	for (i = 0; i < tab->nodeNr; i++) {
-	    extXutilSetsCheckNode(results, tab->nodeTab[i],
+	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
+	    extXutilSetsCheckNode(results, xmlNodeSetGetNodeEntry(tab, i),
 				  objstack, count, common);
 	}
 	break;
@@ -883,8 +883,8 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
 	 * root
 	 */
 	tab = base->nodesetval;
-	for (i = 0; i < tab->nodeNr; i++) {
-	    xmlNode *cop, *nop =  tab->nodeTab[i];
+	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
+	    xmlNode *cop, *nop =  xmlNodeSetGetNodeEntry(tab, i);
 	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop))
 		extXutilSetsCheckNode(results, cop, objstack, count, common);
 	}
