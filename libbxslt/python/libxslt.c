@@ -439,8 +439,8 @@ libxslt_xmlXPathFuncCallback(xmlXPathParserContextPtr ctxt, int nargs) {
     rctxt = ctxt->context;
     if (rctxt == NULL)
 	return;
-    name = rctxt->function;
-    ns_uri = rctxt->functionURI;
+    name = xmlXPathContextGetFunction(rctxt);
+    ns_uri = xmlXPathContextGetFunctionURI(rctxt);
 #ifdef DEBUG_XPATH
     printf("libxslt_xmlXPathFuncCallback called name %s URI %s\n", name, ns_uri);
 #endif
