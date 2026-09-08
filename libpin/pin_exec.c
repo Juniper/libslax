@@ -472,6 +472,8 @@ pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
     esp->pes_seq[top].psf_is_call = 0;
     esp->pes_seq[top].psf_saved_var_count = 0;
     esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_param_base = 0;
+    esp->pes_seq[top].psf_param_count = 0;
     esp->pes_seq_top += 1;
     return 0;
 }
@@ -767,6 +769,66 @@ pin_op_copy_of (PIN_OP_FUNC_ARGS)
 }
 
 static pin_value_t
+pin_op_with_param (PIN_OP_FUNC_ARGS)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
+
+    if (esp->pes_pending_count >= esp->pes_pending_cap) {
+        uint32_t newcap = esp->pes_pending_cap ? esp->pes_pending_cap * 2 : 8;
+        pin_pending_param_t *np = realloc(esp->pes_pending,
+                                          newcap * sizeof(*np));
+        if (np == NULL)
+            return pin_value_null();
+        esp->pes_pending = np;
+        esp->pes_pending_cap = newcap;
+    }
+    esp->pes_pending[esp->pes_pending_count].ppp_name  = name_atom;
+    esp->pes_pending[esp->pes_pending_count].ppp_value = v;
+    esp->pes_pending_count += 1;
+    return pin_value_null();
+}
+
+/*
+ * Find the nearest CALL frame on the seq stack (search backwards from top).
+ * Returns NULL if no CALL frame is found.
+ */
+static pin_exec_seq_frame_t *
+pin_exec_find_call_frame (pin_exec_state_t *esp)
+{
+    for (int i = esp->pes_seq_top - 1; i >= 0; i--) {
+        if (esp->pes_seq[i].psf_is_call)
+            return &esp->pes_seq[i];
+    }
+    return NULL;
+}
+
+static pin_value_t
+pin_op_load_param (PIN_OP_FUNC_ARGS)
+{
+    uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
+    pin_exec_seq_frame_t *frame = pin_exec_find_call_frame(esp);
+
+    pin_value_t val = pin_value_null();
+    int found = 0;
+
+    if (frame != NULL) {
+        for (uint32_t i = frame->psf_param_base;
+                i < frame->psf_param_base + frame->psf_param_count; i++) {
+            if (esp->pes_pending[i].ppp_name == name_atom) {
+                val = esp->pes_pending[i].ppp_value;
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    pin_exec_push(esp, val);
+    pin_exec_push(esp, pin_value_bool(found));
+    return pin_value_null();
+}
+
+static pin_value_t
 pin_op_call (PIN_OP_FUNC_ARGS)
 {
     pin_rulebook_t *prbp = parsep->pp_rulebook;
@@ -777,6 +839,10 @@ pin_op_call (PIN_OP_FUNC_ARGS)
     if (pin_exec_seq_grow(esp) < 0)
         return pin_value_null();
 
+    uint32_t nparams = opp->po_count;
+    uint32_t param_base = (esp->pes_pending_count >= nparams)
+        ? esp->pes_pending_count - nparams : 0;
+
     int top = esp->pes_seq_top;
     pin_node_id_t ctx = esp->pes_seq[top > 0 ? top - 1 : 0].psf_context;
     esp->pes_seq[top].psf_pc = callee_ops;
@@ -784,6 +850,8 @@ pin_op_call (PIN_OP_FUNC_ARGS)
     esp->pes_seq[top].psf_is_call = 1;
     esp->pes_seq[top].psf_saved_var_count = esp->pes_var_count;
     esp->pes_seq[top].psf_saved_nodeset_count = esp->pes_nodeset_count;
+    esp->pes_seq[top].psf_param_base = param_base;
+    esp->pes_seq[top].psf_param_count = nparams;
     esp->pes_seq_top += 1;
     return pin_value_null();
 }
@@ -820,6 +888,8 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_LOAD_VAR]     = { "load-var",     pin_op_load_var,     0 },
     [PIN_OP_FOR_EACH]     = { "for-each",     pin_op_for_each,     0 },
     [PIN_OP_COPY_OF]      = { "copy-of",      pin_op_copy_of,      0 },
+    [PIN_OP_WITH_PARAM]   = { "with-param",   pin_op_with_param,   0 },
+    [PIN_OP_LOAD_PARAM]   = { "load-param",   pin_op_load_param,   0 },
 };
 
 /*
@@ -865,6 +935,8 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     esp->pes_seq[top].psf_is_call = 0;
     esp->pes_seq[top].psf_saved_var_count = 0;
     esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_param_base = 0;
+    esp->pes_seq[top].psf_param_count = 0;
     esp->pes_seq_top += 1;
 
     while (esp->pes_seq_top > 0) {
@@ -879,6 +951,7 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
                     pin_exec_nodeset_free(esp, i);
                 esp->pes_var_count = svc;
                 esp->pes_nodeset_count = snc;
+                esp->pes_pending_count = esp->pes_seq[top].psf_param_base;
             }
             esp->pes_seq_top -= 1;
             continue;
