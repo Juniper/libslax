@@ -130,19 +130,19 @@ xsltFunctionNodeSet(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 1) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"node-set() : expects one result-tree arg\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
-    if ((ctxt->value == NULL) ||
-	((ctxt->value->type != XPATH_XSLT_TREE) &&
-	 (ctxt->value->type != XPATH_NODESET))) {
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL) ||
+	((xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_XSLT_TREE) &&
+	 (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NODESET))) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 	    "node-set() invalid arg expecting a result tree\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	return;
     }
-    if (ctxt->value->type == XPATH_XSLT_TREE) {
-	ctxt->value->type = XPATH_NODESET;
+    if (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) == XPATH_XSLT_TREE) {
+	xmlXPathObjectSetType(xmlXPathParserContextGetValue(ctxt), XPATH_NODESET);
     }
 }
 
