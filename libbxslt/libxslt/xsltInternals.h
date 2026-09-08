@@ -1802,6 +1802,33 @@ struct _xsltTransformContext {
     xsltGenSortKeyFunc genSortKey;
 };
 
+/*
+ * Field accessors for the structs above (xsltStylesheet,
+ * xsltTransformContext, xsltTemplate, xsltStackElem, xsltStylePreComp,
+ * xsltDocument, xsltKeyDef, xsltKeyTable, xsltDecimalFormat), generated
+ * by bin/gen-xsltaccessors.sh in two flavors: this lets consumers stop
+ * touching struct internals directly so the in-memory layout can
+ * change later without a tree-wide rewrite.
+ *
+ * ENABLE_ACCESSOR_INLINES (--enable-accessor-inlines, on by default)
+ * picks the flavor: defined means "static inline" (today's behavior);
+ * undefined means LIBXSLT_ACCESSORS_NOINLINE, which switches every TU
+ * that includes this header over to the non-inline flavor, so an
+ * -flto build can be checked for whether it re-inlines the
+ * cross-library calls at link time with no measurable cost.
+ */
+#include <libbxslt/libbxsltconfig.h>
+
+#ifndef ENABLE_ACCESSOR_INLINES
+#define LIBXSLT_ACCESSORS_NOINLINE
+#endif /* ENABLE_ACCESSOR_INLINES */
+
+#ifdef LIBXSLT_ACCESSORS_NOINLINE
+#include <libxslt/gen/xsltaccessors-decl.h>
+#else
+#include <libxslt/gen/xsltaccessors-inline.h>
+#endif
+
 /**
  * CHECK_STOPPED:
  *
