@@ -61,14 +61,14 @@ exsltMathMinFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     if (nargs != 1) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "math:min: invalid number of arguments\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     /* We need to delay the freeing of value->user */
-    if ((ctxt->value != NULL) && (ctxt->value->boolval != 0)) {
-        user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = NULL;
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0)) {
+        user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
     }
     ns = xmlXPathPopNodeSet(ctxt);
     if (xmlXPathCheckError(ctxt))
@@ -133,10 +133,10 @@ exsltMathMaxFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
 
     /* We need to delay the freeing of value->user */
-    if ((ctxt->value != NULL) && (ctxt->value->boolval != 0)) {
-	user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = 0;
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0)) {
+	user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), 0);
     }
     ns = xmlXPathPopNodeSet(ctxt);
     if (xmlXPathCheckError(ctxt))
@@ -213,10 +213,10 @@ exsltMathHighestFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
 
     /* We need to delay the freeing of value->user */
-    if ((ctxt->value != NULL) && ctxt->value->boolval != 0) {
-        user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = NULL;
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0) {
+        user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
     }
     ns = xmlXPathPopNodeSet(ctxt);
     if (xmlXPathCheckError(ctxt))
@@ -294,10 +294,10 @@ exsltMathLowestFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
 
     /* We need to delay the freeing of value->user */
-    if ((ctxt->value != NULL) && (ctxt->value->boolval != 0)) {
-        user = ctxt->value->user;
-	ctxt->value->boolval = 0;
-	ctxt->value->user = NULL;
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0)) {
+        user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
+	xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
+	xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
     }
     ns = xmlXPathPopNodeSet(ctxt);
     if (xmlXPathCheckError(ctxt))
