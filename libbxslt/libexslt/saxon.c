@@ -93,7 +93,7 @@ exsltSaxonExpressionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     }
 
     hash = (xmlHashTablePtr) xsltGetExtData(tctxt,
-					    ctxt->context->functionURI);
+					    xmlXPathContextGetFunctionURI(ctxt->context));
 
     ret = xmlHashLookup(hash, arg);
 
@@ -205,9 +205,9 @@ exsltSaxonSystemIdFunction(xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
 
-    if ((ctxt->context) && (ctxt->context->doc) &&
-        (xmlDocGetURL(ctxt->context->doc)))
-	valuePush(ctxt, xmlXPathNewString(xmlDocGetURL(ctxt->context->doc)));
+    if ((ctxt->context) && (xmlXPathContextGetDoc(ctxt->context)) &&
+        (xmlDocGetURL(xmlXPathContextGetDoc(ctxt->context))))
+	valuePush(ctxt, xmlXPathNewString(xmlDocGetURL(xmlXPathContextGetDoc(ctxt->context))));
     else
 	valuePush(ctxt, xmlXPathNewString(BAD_CAST ""));
 }
@@ -238,7 +238,7 @@ exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
     long lineNo = -1;
 
     if (nargs == 0) {
-	cur = ctxt->context->node;
+	cur = xmlXPathContextGetNode(ctxt->context);
     } else if (nargs == 1) {
 	xmlNodeSetPtr nodelist;
 	int i;
@@ -252,12 +252,12 @@ exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
 
 	obj = valuePop(ctxt);
 	nodelist = obj->nodesetval;
-	if ((nodelist != NULL) && (nodelist->nodeNr > 0)) {
-            cur = nodelist->nodeTab[0];
-            for (i = 1;i < nodelist->nodeNr;i++) {
-                int ret = xmlXPathCmpNodes(cur, nodelist->nodeTab[i]);
+	if ((nodelist != NULL) && (xmlNodeSetGetNodeNr(nodelist) > 0)) {
+            cur = xmlNodeSetGetNodeEntry(nodelist, 0);
+            for (i = 1;i < xmlNodeSetGetNodeNr(nodelist);i++) {
+                int ret = xmlXPathCmpNodes(cur, xmlNodeSetGetNodeEntry(nodelist, i));
                 if (ret == -1)
-                    cur = nodelist->nodeTab[i];
+                    cur = xmlNodeSetGetNodeEntry(nodelist, i);
             }
         }
     } else {
