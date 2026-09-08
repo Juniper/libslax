@@ -152,11 +152,11 @@ xsltEvalXPathStringNs(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     xmlXPathContextSetNsNr(ctxt->xpathCtxt, nsNr);
     res = xmlXPathCompiledEval(comp, ctxt->xpathCtxt);
     if (res != NULL) {
-	if (res->type != XPATH_STRING)
+	if (xmlXPathObjectGetType(res) != XPATH_STRING)
 	    res = xmlXPathConvertString(res);
-	if ((res != NULL) && (res->type == XPATH_STRING)) {
-            ret = res->stringval;
-	    res->stringval = NULL;
+	if ((res != NULL) && (xmlXPathObjectGetType(res) == XPATH_STRING)) {
+            ret = xmlXPathObjectGetStringval(res);
+	    xmlXPathObjectSetStringval(res, NULL);
 	} else {
 	    xsltTransformError(ctxt, NULL, NULL,
 		 "xpath : string() function didn't return a String\n");
