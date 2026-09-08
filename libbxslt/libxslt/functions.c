@@ -162,13 +162,13 @@ xsltDocumentFunctionLoadDocument(xmlXPathParserContextPtr ctxt,
 
 #if LIBXML_VERSION >= 20911 || \
     defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-    xmlXPathContextSetOpLimit(xptrctxt, xmlXPathContextGetOpLimit(ctxt->context));
-    xmlXPathContextSetOpCount(xptrctxt, xmlXPathContextGetOpCount(ctxt->context));
-    xmlXPathContextSetDepth(xptrctxt, xmlXPathContextGetDepth(ctxt->context));
+    xmlXPathContextSetOpLimit(xptrctxt, xmlXPathContextGetOpLimit(xmlXPathParserContextGetContext(ctxt)));
+    xmlXPathContextSetOpCount(xptrctxt, xmlXPathContextGetOpCount(xmlXPathParserContextGetContext(ctxt)));
+    xmlXPathContextSetDepth(xptrctxt, xmlXPathContextGetDepth(xmlXPathParserContextGetContext(ctxt)));
 
     resObj = xmlXPtrEval(fragment, xptrctxt);
 
-    xmlXPathContextSetOpCount(ctxt->context, xmlXPathContextGetOpCount(xptrctxt));
+    xmlXPathContextSetOpCount(xmlXPathParserContextGetContext(ctxt), xmlXPathContextGetOpCount(xptrctxt));
 #else
     resObj = xmlXPtrEval(fragment, xptrctxt);
 #endif
@@ -176,7 +176,7 @@ xsltDocumentFunctionLoadDocument(xmlXPathParserContextPtr ctxt,
     xmlXPathFreeContext(xptrctxt);
 #endif /* LIBXML_XPTR_ENABLED */
 
-    if ((resObj != NULL) && (resObj->type != XPATH_NODESET)) {
+    if ((resObj != NULL) && (xmlXPathObjectGetType(resObj) != XPATH_NODESET)) {
         xsltTransformError(tctxt, NULL, NULL,
             "document() : XPointer does not select a node set: #%s\n",
             fragment);
@@ -210,53 +210,54 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
         xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
                          "document() : invalid number of args %d\n",
                          nargs);
-        ctxt->error = XPATH_INVALID_ARITY;
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
         return;
     }
-    if (ctxt->value == NULL) {
+    if (xmlXPathParserContextGetValue(ctxt) == NULL) {
         xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
                          "document() : invalid arg value\n");
-        ctxt->error = XPATH_INVALID_TYPE;
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
         return;
     }
 
     if (nargs == 2) {
-        if (ctxt->value->type != XPATH_NODESET) {
+        if (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NODESET) {
             xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
                              "document() : invalid arg expecting a nodeset\n");
-            ctxt->error = XPATH_INVALID_TYPE;
+            xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
             return;
         }
 
         obj2 = valuePop(ctxt);
     }
 
-    if ((ctxt->value != NULL) && (ctxt->value->type == XPATH_NODESET)) {
+    if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) == XPATH_NODESET)) {
         int i;
         xmlXPathObjectPtr newobj, ret;
 
         obj = valuePop(ctxt);
         ret = xmlXPathNewNodeSet(NULL);
 
-        if ((obj != NULL) && (obj->nodesetval != NULL) && (ret != NULL)) {
-            for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+        if ((obj != NULL) && (xmlXPathObjectGetNodesetval(obj) != NULL) && (ret != NULL)) {
+            for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
                 valuePush(ctxt,
-                          xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(obj->nodesetval, i)));
+                          xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i)));
                 xmlXPathStringFunction(ctxt, 1);
                 if (nargs == 2) {
                     valuePush(ctxt, xmlXPathObjectCopy(obj2));
                 } else {
                     valuePush(ctxt,
                               xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(
-                                                 obj->nodesetval, i)));
+                                                 xmlXPathObjectGetNodesetval(obj), i)));
                 }
-                if (ctxt->error)
+                if (xmlXPathParserContextGetError(ctxt))
                     break;
                 xsltDocumentFunction(ctxt, 2);
                 newobj = valuePop(ctxt);
                 if (newobj != NULL) {
-                    ret->nodesetval = xmlXPathNodeSetMerge(ret->nodesetval,
-                                                           newobj->nodesetval);
+                    xmlXPathObjectSetNodesetval(ret,
+                        xmlXPathNodeSetMerge(xmlXPathObjectGetNodesetval(ret),
+                                          xmlXPathObjectGetNodesetval(newobj)));
                     xmlXPathFreeObject(newobj);
                 }
             }
@@ -273,16 +274,16 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
      * Make sure it's converted to a string
      */
     xmlXPathStringFunction(ctxt, 1);
-    if ((ctxt->value == NULL) || (ctxt->value->type != XPATH_STRING)) {
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING)) {
         xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
                          "document() : invalid arg expecting a string\n");
-        ctxt->error = XPATH_INVALID_TYPE;
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
         if (obj2 != NULL)
             xmlXPathFreeObject(obj2);
         return;
     }
     obj = valuePop(ctxt);
-    if (obj->stringval == NULL) {
+    if (xmlXPathObjectGetStringval(obj) == NULL) {
         valuePush(ctxt, xmlXPathNewNodeSet(NULL));
     } else {
         xsltTransformContextPtr tctxt;
@@ -291,7 +292,7 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
 
         tctxt = xsltXPathGetTransformContext(ctxt);
 
-        url = obj->stringval;
+        url = xmlXPathObjectGetStringval(obj);
 
         uri = xmlParseURI((const char *) url);
         if (uri == NULL) {
@@ -312,12 +313,12 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
         }
         xmlFreeURI(uri);
 
-        if ((obj2 != NULL) && (obj2->nodesetval != NULL) &&
-            (xmlNodeSetGetNodeNr(obj2->nodesetval) > 0) &&
-            IS_XSLT_REAL_NODE(xmlNodeSetGetNodeEntry(obj2->nodesetval, 0))) {
+        if ((obj2 != NULL) && (xmlXPathObjectGetNodesetval(obj2) != NULL) &&
+            (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj2)) > 0) &&
+            IS_XSLT_REAL_NODE(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj2), 0))) {
             xmlNodePtr target;
 
-            target = xmlNodeSetGetNodeEntry(obj2->nodesetval, 0);
+            target = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj2), 0);
             if ((xmlNodeGetType(target) == XML_ATTRIBUTE_NODE) ||
 	        (xmlNodeGetType(target) == XML_PI_NODE)) {
                 target = xmlAttrGetParent((xmlAttrPtr) target);
@@ -374,7 +375,7 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 2) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"key() : expects two arguments\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
 
@@ -384,10 +385,10 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
     obj2 = valuePop(ctxt);
     xmlXPathStringFunction(ctxt, 1);
     if ((obj2 == NULL) ||
-	(ctxt->value == NULL) || (ctxt->value->type != XPATH_STRING)) {
+	(xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING)) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 	    "key() : invalid arg expecting a string\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	xmlXPathFreeObject(obj2);
 
 	return;
@@ -397,29 +398,30 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
     */
     obj1 = valuePop(ctxt);
 
-    if ((obj2->type == XPATH_NODESET) || (obj2->type == XPATH_XSLT_TREE)) {
+    if ((xmlXPathObjectGetType(obj2) == XPATH_NODESET) || (xmlXPathObjectGetType(obj2) == XPATH_XSLT_TREE)) {
 	int i;
 	xmlXPathObjectPtr newobj, ret;
 
 	ret = xmlXPathNewNodeSet(NULL);
         if (ret == NULL) {
-            ctxt->error = XPATH_MEMORY_ERROR;
+            xmlXPathParserContextSetError(ctxt, XPATH_MEMORY_ERROR);
             xmlXPathFreeObject(obj1);
             xmlXPathFreeObject(obj2);
             return;
         }
 
-	if (obj2->nodesetval != NULL) {
-	    for (i = 0; i < xmlNodeSetGetNodeNr(obj2->nodesetval); i++) {
+	if (xmlXPathObjectGetNodesetval(obj2) != NULL) {
+	    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj2)); i++) {
 		valuePush(ctxt, xmlXPathObjectCopy(obj1));
 		valuePush(ctxt,
-			  xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(obj2->nodesetval, i)));
+			  xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj2), i)));
 		xmlXPathStringFunction(ctxt, 1);
 		xsltKeyFunction(ctxt, 2);
 		newobj = valuePop(ctxt);
                 if (newobj != NULL)
-		    ret->nodesetval = xmlXPathNodeSetMerge(ret->nodesetval,
-						           newobj->nodesetval);
+		    xmlXPathObjectSetNodesetval(ret,
+			xmlXPathNodeSetMerge(xmlXPathObjectGetNodesetval(ret),
+					  xmlXPathObjectGetNodesetval(newobj)));
 		xmlXPathFreeObject(newobj);
 	    }
 	}
@@ -430,7 +432,7 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	const xmlChar *keyURI;
 	xsltTransformContextPtr tctxt;
 	xmlChar *qname, *prefix;
-	xmlXPathContextPtr xpctxt = ctxt->context;
+	xmlXPathContextPtr xpctxt = xmlXPathParserContextGetContext(ctxt);
 	xmlNodePtr tmpNode = NULL;
 	xsltDocumentPtr oldDocInfo;
 
@@ -448,10 +450,10 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	/*
 	 * Get the associated namespace URI if qualified name
 	 */
-	qname = obj1->stringval;
+	qname = xmlXPathObjectGetStringval(obj1);
 	key = xmlSplitQName2(qname, &prefix);
 	if (key == NULL) {
-	    key = xmlStrdup(obj1->stringval);
+	    key = xmlStrdup(xmlXPathObjectGetStringval(obj1));
 	    keyURI = NULL;
 	    if (prefix != NULL)
 		xmlFree(prefix);
@@ -477,13 +479,13 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	valuePush(ctxt, obj2);
 	xmlXPathStringFunction(ctxt, 1);
 	obj2 = valuePop(ctxt);
-	if ((obj2 == NULL) || (obj2->type != XPATH_STRING)) {
+	if ((obj2 == NULL) || (xmlXPathObjectGetType(obj2) != XPATH_STRING)) {
 	    xsltTransformError(tctxt, NULL, tctxt->inst,
 		"key() : invalid arg expecting a string\n");
-	    ctxt->error = XPATH_INVALID_TYPE;
+	    xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	    goto error;
 	}
-	value = obj2->stringval;
+	value = xmlXPathObjectGetStringval(obj2);
 
 	/*
 	* We need to ensure that ctxt->document is available for
@@ -578,14 +580,14 @@ xsltUnparsedEntityURIFunction(xmlXPathParserContextPtr ctxt, int nargs){
     xmlXPathObjectPtr obj;
     xmlChar *str;
 
-    if ((nargs != 1) || (ctxt->value == NULL)) {
+    if ((nargs != 1) || (xmlXPathParserContextGetValue(ctxt) == NULL)) {
         xsltGenericError(xsltGenericErrorContext,
 		"unparsed-entity-uri() : expects one string arg\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     obj = valuePop(ctxt);
-    if (obj->type != XPATH_STRING) {
+    if (xmlXPathObjectGetType(obj) != XPATH_STRING) {
 	obj = xmlXPathConvertString(obj);
         if (obj == NULL) {
             xmlXPathErr(ctxt, XPATH_MEMORY_ERROR);
@@ -593,13 +595,13 @@ xsltUnparsedEntityURIFunction(xmlXPathParserContextPtr ctxt, int nargs){
         }
     }
 
-    str = obj->stringval;
+    str = xmlXPathObjectGetStringval(obj);
     if (str == NULL) {
 	valuePush(ctxt, xmlXPathNewString((const xmlChar *)""));
     } else {
 	xmlEntityPtr entity;
 
-	entity = xmlGetDocEntity(xmlXPathContextGetDoc(ctxt->context), str);
+	entity = xmlGetDocEntity(xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)), str);
 	if (entity == NULL) {
 	    valuePush(ctxt, xmlXPathNewString((const xmlChar *)""));
 	} else {
@@ -644,10 +646,10 @@ xsltFormatNumberFunction(xmlXPathParserContextPtr ctxt, int nargs)
 
     switch (nargs) {
     case 3:
-        if ((ctxt->value != NULL) && (ctxt->value->type != XPATH_STRING))
+        if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING))
             xmlXPathStringFunction(ctxt, 1);
 	decimalObj = valuePop(ctxt);
-        ncname = xsltSplitQName(sheet->dict, decimalObj->stringval, &prefix);
+        ncname = xsltSplitQName(sheet->dict, xmlXPathObjectGetStringval(decimalObj), &prefix);
         if (prefix != NULL) {
             xmlNsPtr ns = xmlSearchNs(xmlNodeGetDoc(tctxt->inst), tctxt->inst, prefix);
             if (ns == NULL) {
@@ -667,14 +669,14 @@ xsltFormatNumberFunction(xmlXPathParserContextPtr ctxt, int nargs)
 	if (formatValues == NULL) {
 	    xsltTransformError(tctxt, NULL, NULL,
 		    "format-number() : undeclared decimal format '%s'\n",
-		    decimalObj->stringval);
+		    xmlXPathObjectGetStringval(decimalObj));
 	}
 	/* Intentional fall-through */
     case 2:
-        if ((ctxt->value != NULL) && (ctxt->value->type != XPATH_STRING))
+        if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING))
             xmlXPathStringFunction(ctxt, 1);
 	formatObj = valuePop(ctxt);
-        if ((ctxt->value != NULL) && (ctxt->value->type != XPATH_NUMBER))
+        if ((xmlXPathParserContextGetValue(ctxt) != NULL) && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NUMBER))
             xmlXPathNumberFunction(ctxt, 1);
 	numberObj = valuePop(ctxt);
 	break;
@@ -683,11 +685,11 @@ xsltFormatNumberFunction(xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
 
-    if ((ctxt->error == 0) &&
+    if ((xmlXPathParserContextGetError(ctxt) == 0) &&
         (formatValues != NULL) && (formatObj != NULL) && (numberObj != NULL)) {
 	if (xsltFormatNumberConversion(formatValues,
-				       formatObj->stringval,
-				       numberObj->floatval,
+				       xmlXPathObjectGetStringval(formatObj),
+				       xmlXPathObjectGetFloatval(numberObj),
 				       &result) == XPATH_EXPRESSION_OK) {
 	    valuePush(ctxt, xmlXPathNewString(result));
 	    xmlFree(result);
@@ -721,19 +723,19 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     tctxt = xsltXPathGetTransformContext(ctxt);
 
     if (nargs == 0) {
-	cur = xmlXPathContextGetNode(ctxt->context);
+	cur = xmlXPathContextGetNode(xmlXPathParserContextGetContext(ctxt));
     } else if (nargs == 1) {
 	xmlNodeSetPtr nodelist;
 	int i, ret;
 
-	if ((ctxt->value == NULL) || (ctxt->value->type != XPATH_NODESET)) {
-	    ctxt->error = XPATH_INVALID_TYPE;
+	if ((xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NODESET)) {
+	    xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	    xsltTransformError(tctxt, NULL, NULL,
 		"generate-id() : invalid arg expecting a node-set\n");
             goto out;
 	}
 	obj = valuePop(ctxt);
-	nodelist = obj->nodesetval;
+	nodelist = xmlXPathObjectGetNodesetval(obj);
 	if ((nodelist == NULL) || (xmlNodeSetGetNodeNr(nodelist) <= 0)) {
 	    valuePush(ctxt, xmlXPathNewCString(""));
 	    goto out;
@@ -747,7 +749,7 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     } else {
 	xsltTransformError(tctxt, NULL, NULL,
 		"generate-id() : invalid number of args %d\n", nargs);
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	goto out;
     }
 
@@ -771,7 +773,7 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (psviPtr == NULL) {
         xsltTransformError(tctxt, NULL, NULL,
                 "generate-id(): invalid node type %d\n", xmlNodeGetType(cur));
-        ctxt->error = XPATH_INVALID_TYPE;
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
         goto out;
     }
 
@@ -784,14 +786,14 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
         } else if (*psviPtr != NULL) {
             xsltTransformError(tctxt, NULL, NULL,
                     "generate-id(): psvi already set\n");
-            ctxt->error = XPATH_MEMORY_ERROR;
+            xmlXPathParserContextSetError(ctxt, XPATH_MEMORY_ERROR);
             goto out;
         }
 
         if (tctxt->currentId == ULONG_MAX) {
             xsltTransformError(tctxt, NULL, NULL,
                     "generate-id(): id overflow\n");
-            ctxt->error = XPATH_MEMORY_ERROR;
+            xmlXPathParserContextSetError(ctxt, XPATH_MEMORY_ERROR);
             goto out;
         }
 
@@ -804,7 +806,7 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (str == NULL) {
         xsltTransformError(tctxt, NULL, NULL,
                 "generate-id(): out of memory\n");
-        ctxt->error = XPATH_MEMORY_ERROR;
+        xmlXPathParserContextSetError(ctxt, XPATH_MEMORY_ERROR);
         goto out;
     }
     if (nsPrefix == NULL) {
@@ -851,24 +853,24 @@ xsltSystemPropertyFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 1) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"system-property() : expects one string arg\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
-    if ((ctxt->value == NULL) || (ctxt->value->type != XPATH_STRING)) {
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING)) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 	    "system-property() : invalid arg expecting a string\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	return;
     }
     obj = valuePop(ctxt);
-    if (obj->stringval == NULL) {
+    if (xmlXPathObjectGetStringval(obj) == NULL) {
 	valuePush(ctxt, xmlXPathNewString((const xmlChar *)""));
     } else {
-	name = xmlSplitQName2(obj->stringval, &prefix);
+	name = xmlSplitQName2(xmlXPathObjectGetStringval(obj), &prefix);
 	if (name == NULL) {
-	    name = xmlStrdup(obj->stringval);
+	    name = xmlStrdup(xmlXPathObjectGetStringval(obj));
 	} else {
-	    nsURI = xmlXPathNsLookup(ctxt->context, prefix);
+	    nsURI = xmlXPathNsLookup(xmlXPathParserContextGetContext(ctxt), prefix);
 	    if (nsURI == NULL) {
 		xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		    "system-property() : prefix %s is not bound\n", prefix);
@@ -946,14 +948,14 @@ xsltElementAvailableFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 1) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"element-available() : expects one string arg\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     xmlXPathStringFunction(ctxt, 1);
-    if ((ctxt->value == NULL) || (ctxt->value->type != XPATH_STRING)) {
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING)) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 	    "element-available() : invalid arg expecting a string\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	return;
     }
     obj = valuePop(ctxt);
@@ -967,15 +969,15 @@ xsltElementAvailableFunction(xmlXPathParserContextPtr ctxt, int nargs){
     }
 
 
-    name = xmlSplitQName2(obj->stringval, &prefix);
+    name = xmlSplitQName2(xmlXPathObjectGetStringval(obj), &prefix);
     if (name == NULL) {
 	xmlNsPtr ns;
 
-	name = xmlStrdup(obj->stringval);
+	name = xmlStrdup(xmlXPathObjectGetStringval(obj));
 	ns = xmlSearchNs(xmlNodeGetDoc(tctxt->inst), tctxt->inst, NULL);
 	if (ns != NULL) nsURI = xmlNsGetHref(ns);
     } else {
-	nsURI = xmlXPathNsLookup(ctxt->context, prefix);
+	nsURI = xmlXPathNsLookup(xmlXPathParserContextGetContext(ctxt), prefix);
 	if (nsURI == NULL) {
 	    xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"element-available() : prefix %s is not bound\n", prefix);
@@ -1012,30 +1014,30 @@ xsltFunctionAvailableFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 1) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"function-available() : expects one string arg\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     xmlXPathStringFunction(ctxt, 1);
-    if ((ctxt->value == NULL) || (ctxt->value->type != XPATH_STRING)) {
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL) || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_STRING)) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 	    "function-available() : invalid arg expecting a string\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	return;
     }
     obj = valuePop(ctxt);
 
-    name = xmlSplitQName2(obj->stringval, &prefix);
+    name = xmlSplitQName2(xmlXPathObjectGetStringval(obj), &prefix);
     if (name == NULL) {
-	name = xmlStrdup(obj->stringval);
+	name = xmlStrdup(xmlXPathObjectGetStringval(obj));
     } else {
-	nsURI = xmlXPathNsLookup(ctxt->context, prefix);
+	nsURI = xmlXPathNsLookup(xmlXPathParserContextGetContext(ctxt), prefix);
 	if (nsURI == NULL) {
 	    xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"function-available() : prefix %s is not bound\n", prefix);
 	}
     }
 
-    if (xmlXPathFunctionLookupNS(ctxt->context, name, nsURI) != NULL) {
+    if (xmlXPathFunctionLookupNS(xmlXPathParserContextGetContext(ctxt), name, nsURI) != NULL) {
 	valuePush(ctxt, xmlXPathNewBoolean(1));
     } else {
 	valuePush(ctxt, xmlXPathNewBoolean(0));
@@ -1063,7 +1065,7 @@ xsltCurrentFunction(xmlXPathParserContextPtr ctxt, int nargs){
     if (nargs != 0) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
 		"current() : function uses no argument\n");
-	ctxt->error = XPATH_INVALID_ARITY;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     tctxt = xsltXPathGetTransformContext(ctxt);
