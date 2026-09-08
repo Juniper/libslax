@@ -572,20 +572,19 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
     switch (obj->type) {
         case XPATH_XSLT_TREE: {
             if ((obj->nodesetval == NULL) ||
-		(obj->nodesetval->nodeNr == 0) ||
-		(obj->nodesetval->nodeTab == NULL)) {
+		(xmlNodeSetGetNodeNr(obj->nodesetval) == 0)) {
                 ret = PyList_New(0);
 	    } else {
 		int i, len = 0;
 		xmlNodePtr node;
 
-		node = obj->nodesetval->nodeTab[0]->children;
+		node = xmlNodeSetGetNodeEntry(obj->nodesetval, 0)->children;
 		while (node != NULL) {
 		    len++;
 		    node = node->next;
 		}
 		ret = PyList_New(len);
-		node = obj->nodesetval->nodeTab[0]->children;
+		node = xmlNodeSetGetNodeEntry(obj->nodesetval, 0)->children;
 		for (i = 0;i < len;i++) {
                     PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
 		    node = node->next;
@@ -598,15 +597,15 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
 	}
         case XPATH_NODESET:
             if ((obj->nodesetval == NULL)
-                || (obj->nodesetval->nodeNr == 0)) {
+                || (xmlNodeSetGetNodeNr(obj->nodesetval) == 0)) {
                 ret = PyList_New(0);
 	    } else {
                 int i;
                 xmlNodePtr node;
 
-                ret = PyList_New(obj->nodesetval->nodeNr);
-                for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-                    node = obj->nodesetval->nodeTab[i];
+                ret = PyList_New(xmlNodeSetGetNodeNr(obj->nodesetval));
+                for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
+                    node = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
                     if (node->type == XML_NAMESPACE_DECL) {
 		        PyObject *ns =
 			    PyCapsule_New((void *) node,
@@ -614,7 +613,7 @@ libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
 				     libxml_xmlXPathDestructNsNode);
 			PyList_SetItem(ret, i, ns);
 			/* make sure the xmlNsPtr is not destroyed now */
-			obj->nodesetval->nodeTab[i] = NULL;
+			xmlNodeSetSetNodeEntry(obj->nodesetval, i, NULL);
 		    } else {
 			PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
 		    }
