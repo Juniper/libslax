@@ -30,13 +30,13 @@ exsltMathMin (xmlNodeSetPtr ns) {
     double ret, cur;
     int i;
 
-    if ((ns == NULL) || (ns->nodeNr == 0))
+    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
 	return(NAN);
-    ret = xmlXPathCastNodeToNumber(ns->nodeTab[0]);
+    ret = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(ret))
 	return(NAN);
-    for (i = 1; i < ns->nodeNr; i++) {
-	cur = xmlXPathCastNodeToNumber(ns->nodeTab[i]);
+    for (i = 1; i < xmlNodeSetGetNodeNr(ns); i++) {
+	cur = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, i));
 	if (xmlXPathIsNaN(cur))
 	    return(NAN);
 	if (cur < ret)
@@ -99,13 +99,13 @@ exsltMathMax (xmlNodeSetPtr ns) {
     double ret, cur;
     int i;
 
-    if ((ns == NULL) || (ns->nodeNr == 0))
+    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
 	return(NAN);
-    ret = xmlXPathCastNodeToNumber(ns->nodeTab[0]);
+    ret = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(ret))
 	return(NAN);
-    for (i = 1; i < ns->nodeNr; i++) {
-	cur = xmlXPathCastNodeToNumber(ns->nodeTab[i]);
+    for (i = 1; i < xmlNodeSetGetNodeNr(ns); i++) {
+	cur = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, i));
 	if (xmlXPathIsNaN(cur))
 	    return(NAN);
 	if (cur > ret)
@@ -167,17 +167,17 @@ exsltMathHighest (xmlNodeSetPtr ns) {
     double max, cur;
     int i;
 
-    if ((ns == NULL) || (ns->nodeNr == 0))
+    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
 	return(ret);
 
-    max = xmlXPathCastNodeToNumber(ns->nodeTab[0]);
+    max = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(max))
 	return(ret);
     else
-	xmlXPathNodeSetAddUnique(ret, ns->nodeTab[0]);
+	xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, 0));
 
-    for (i = 1; i < ns->nodeNr; i++) {
-	cur = xmlXPathCastNodeToNumber(ns->nodeTab[i]);
+    for (i = 1; i < xmlNodeSetGetNodeNr(ns); i++) {
+	cur = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, i));
 	if (xmlXPathIsNaN(cur)) {
 	    xmlXPathEmptyNodeSet(ret);
 	    return(ret);
@@ -187,10 +187,10 @@ exsltMathHighest (xmlNodeSetPtr ns) {
 	if (cur > max) {
 	    max = cur;
 	    xmlXPathEmptyNodeSet(ret);
-	    xmlXPathNodeSetAddUnique(ret, ns->nodeTab[i]);
+	    xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, i));
 	    continue;
 	}
-	xmlXPathNodeSetAddUnique(ret, ns->nodeTab[i]);
+	xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, i));
     }
     return(ret);
 }
@@ -247,17 +247,17 @@ exsltMathLowest (xmlNodeSetPtr ns) {
     double min, cur;
     int i;
 
-    if ((ns == NULL) || (ns->nodeNr == 0))
+    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
 	return(ret);
 
-    min = xmlXPathCastNodeToNumber(ns->nodeTab[0]);
+    min = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(min))
 	return(ret);
     else
-	xmlXPathNodeSetAddUnique(ret, ns->nodeTab[0]);
+	xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, 0));
 
-    for (i = 1; i < ns->nodeNr; i++) {
-	cur = xmlXPathCastNodeToNumber(ns->nodeTab[i]);
+    for (i = 1; i < xmlNodeSetGetNodeNr(ns); i++) {
+	cur = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, i));
 	if (xmlXPathIsNaN(cur)) {
 	    xmlXPathEmptyNodeSet(ret);
 	    return(ret);
@@ -267,10 +267,10 @@ exsltMathLowest (xmlNodeSetPtr ns) {
 	if (cur < min) {
 	    min = cur;
 	    xmlXPathEmptyNodeSet(ret);
-	    xmlXPathNodeSetAddUnique(ret, ns->nodeTab[i]);
+	    xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, i));
             continue;
 	}
-	xmlXPathNodeSetAddUnique(ret, ns->nodeTab[i]);
+	xmlXPathNodeSetAddUnique(ret, xmlNodeSetGetNodeEntry(ns, i));
     }
     return(ret);
 }
