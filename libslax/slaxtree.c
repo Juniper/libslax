@@ -1223,9 +1223,9 @@ slaxXpathSelect (xmlDocPtr docp, xmlNodePtr nodep, const char *expr)
         return NULL;
     }
 
-    if (objp->type == XPATH_NODESET) {
-        results = objp->nodesetval;
-        objp->nodesetval = NULL; /* Prevent double free */
+    if (xmlXPathObjectGetType(objp) == XPATH_NODESET) {
+        results = xmlXPathObjectGetNodesetval(objp);
+        xmlXPathObjectSetNodesetval(objp, NULL); /* Prevent double free */
     }
 
     xmlXPathFreeContext(xpath_context);
