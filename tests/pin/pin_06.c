@@ -8,10 +8,10 @@
  *
  * Phil Shafer, August 2026
  *
- * pin_06.c -- test pin_slax_compile: build filter+rulebook from XSLT doc.
+ * pin_06.c -- test pin_compile: build filter+rulebook from XSLT doc.
  *
  * Loads an XSLT stylesheet, compiles every <xsl:template match="..."> into
- * a pin filter via pin_slax_compile, then runs the resulting filter over
+ * a pin filter via pin_compile, then runs the resulting filter over
  * a separate XML document with pin_parse.
  *
  * Command-line args (one set per '#' line in each .in file):
@@ -48,7 +48,7 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_parse.h>
 #include <libpin/pin_filter.h>
-#include <libpin/pin_slax.h>
+#include <libpin/pin_compile.h>
 
 #define PIN06_DB_FILE	"/tmp/pin06.sxb"
 
@@ -138,11 +138,11 @@ main (int argc, char **argv)
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin06");
     assert(rb);
 
-    int count = pin_slax_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action);
     xmlFreeDoc(docp);
 
     if (count < 0)
-	errx(1, "pin_slax_compile failed");
+	errx(1, "pin_compile failed");
 
     printf("compiled %d patterns\n", count);
 
