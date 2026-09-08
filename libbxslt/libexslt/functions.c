@@ -305,15 +305,15 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     data->result = NULL;
 
     func = (exsltFuncFunctionData*) xmlHashLookup2 (data->funcs,
-						    xmlXPathContextGetFunctionURI(ctxt->context),
-						    xmlXPathContextGetFunction(ctxt->context));
+						    xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)),
+						    xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
     if (func == NULL) {
         /* Should never happen */
         xsltGenericError(xsltGenericErrorContext,
                          "{%s}%s: not found\n",
-                         xmlXPathContextGetFunctionURI(ctxt->context),
-                         xmlXPathContextGetFunction(ctxt->context));
-        ctxt->error = XPATH_UNKNOWN_FUNC_ERROR;
+                         xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)),
+                         xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
+        xmlXPathParserContextSetError(ctxt, XPATH_UNKNOWN_FUNC_ERROR);
         return;
     }
 
@@ -323,9 +323,9 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     if (nargs > func->nargs) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "{%s}%s: called with too many arguments\n",
-			 xmlXPathContextGetFunctionURI(ctxt->context),
-			 xmlXPathContextGetFunction(ctxt->context));
-	ctxt->error = XPATH_INVALID_ARITY;
+			 xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)),
+			 xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
 	return;
     }
     if (func->content != NULL) {
@@ -349,8 +349,8 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
         xsltTransformError(tctxt, NULL, NULL,
             "exsltFuncFunctionFunction: Potentially infinite recursion "
             "detected in function {%s}%s.\n",
-            xmlXPathContextGetFunctionURI(ctxt->context),
-            xmlXPathContextGetFunction(ctxt->context));
+            xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)),
+            xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
         tctxt->state = XSLT_STATE_STOPPED;
         return;
     }
@@ -479,8 +479,8 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "{%s}%s: cannot write to result tree while "
 			 "executing a function\n",
-			 xmlXPathContextGetFunctionURI(ctxt->context),
-			 xmlXPathContextGetFunction(ctxt->context));
+			 xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)),
+			 xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
         xmlXPathFreeObject(ret);
 	goto error;
     }
@@ -808,7 +808,7 @@ exsltFuncResultElem (xsltTransformContextPtr ctxt,
              * This stops older libxml2 versions from freeing the nodes
              * in the tree.
              */
-	    ret->boolval = 0;
+	    xmlXPathObjectSetBoolval(ret, 0);
 	}
     } else {
 	/* If the func:result element has empty content and does not
