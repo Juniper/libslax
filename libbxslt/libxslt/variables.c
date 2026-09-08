@@ -269,13 +269,15 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
     * objects for tree fragments.
     */
 
-    if ((obj->type != XPATH_NODESET) && (obj->type != XPATH_XSLT_TREE))
+    if ((xmlXPathObjectGetType(obj) != XPATH_NODESET)
+	    && (xmlXPathObjectGetType(obj) != XPATH_XSLT_TREE))
 	return(0);
-    if ((obj->nodesetval == NULL) || (xmlNodeSetGetNodeNr(obj->nodesetval) == 0))
+    if ((xmlXPathObjectGetNodesetval(obj) == NULL)
+	    || (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)) == 0))
 	return(0);
 
-    for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
-	cur = xmlNodeSetGetNodeEntry(obj->nodesetval, i);
+    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
+	cur = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i);
 	if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
 	    /*
 	    * The XPath module sets the owner element of a ns-node on
@@ -1003,7 +1005,7 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
                  * This stops older libxml2 versions from freeing the nodes
                  * in the tree.
                  */
-	        result->boolval = 0;
+	        xmlXPathObjectSetBoolval(result, 0);
 	    }
 #ifdef WITH_XSLT_DEBUG_VARIABLE
 #ifdef LIBXML_DEBUG_ENABLED
@@ -1234,7 +1236,7 @@ xsltEvalGlobalVariable(xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
                  * This stops older libxml2 versions from freeing the nodes
                  * in the tree.
                  */
-	        result->boolval = 0;
+	        xmlXPathObjectSetBoolval(result, 0);
 	    }
 #ifdef WITH_XSLT_DEBUG_VARIABLE
 #ifdef LIBXML_DEBUG_ENABLED
