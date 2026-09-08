@@ -991,17 +991,18 @@ xsltDocumentSortFunction(xmlNodeSetPtr list) {
 
     if (list == NULL)
 	return;
-    len = list->nodeNr;
+    len = xmlNodeSetGetNodeNr(list);
     if (len <= 1)
 	return;
     /* TODO: sort is really not optimized, does it needs to ? */
     for (i = 0;i < len -1;i++) {
 	for (j = i + 1; j < len; j++) {
-	    tst = xmlXPathCmpNodes(list->nodeTab[i], list->nodeTab[j]);
+	    tst = xmlXPathCmpNodes(xmlNodeSetGetNodeEntry(list, i),
+	                            xmlNodeSetGetNodeEntry(list, j));
 	    if (tst == -1) {
-		node = list->nodeTab[i];
-		list->nodeTab[i] = list->nodeTab[j];
-		list->nodeTab[j] = node;
+		node = xmlNodeSetGetNodeEntry(list, i);
+		xmlNodeSetSetNodeEntry(list, i, xmlNodeSetGetNodeEntry(list, j));
+		xmlNodeSetSetNodeEntry(list, j, node);
 	    }
 	}
     }
@@ -1049,10 +1050,10 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
 	return(NULL);
 
     list = ctxt->nodeList;
-    if ((list == NULL) || (list->nodeNr <= 1))
+    if ((list == NULL) || (xmlNodeSetGetNodeNr(list) <= 1))
 	return(NULL);
 
-    len = list->nodeNr;
+    len = xmlNodeSetGetNodeNr(list);
 
     /* TODO: xsl:sort lang attribute */
     /* TODO: xsl:sort case-order attribute */
@@ -1066,28 +1067,28 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
     }
 
     oldInst = ctxt->inst;
-    oldNode = ctxt->xpathCtxt->node;
-    oldPos = ctxt->xpathCtxt->proximityPosition;
-    oldSize = ctxt->xpathCtxt->contextSize;
-    oldNsNr = ctxt->xpathCtxt->nsNr;
-    oldNamespaces = ctxt->xpathCtxt->namespaces;
+    oldNode = xmlXPathContextGetNode(ctxt->xpathCtxt);
+    oldPos = xmlXPathContextGetProximityPosition(ctxt->xpathCtxt);
+    oldSize = xmlXPathContextGetContextSize(ctxt->xpathCtxt);
+    oldNsNr = xmlXPathContextGetNsNr(ctxt->xpathCtxt);
+    oldNamespaces = xmlXPathContextGetNamespaces(ctxt->xpathCtxt);
     for (i = 0;i < len;i++) {
 	ctxt->inst = sort;
-	ctxt->xpathCtxt->contextSize = len;
-	ctxt->xpathCtxt->proximityPosition = i + 1;
-	ctxt->node = list->nodeTab[i];
-	ctxt->xpathCtxt->node = ctxt->node;
+	xmlXPathContextSetContextSize(ctxt->xpathCtxt, len);
+	xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, i + 1);
+	ctxt->node = xmlNodeSetGetNodeEntry(list, i);
+	xmlXPathContextSetNode(ctxt->xpathCtxt, ctxt->node);
 #ifdef XSLT_REFACTORED
 	if (comp->inScopeNs != NULL) {
-	    ctxt->xpathCtxt->namespaces = comp->inScopeNs->list;
-	    ctxt->xpathCtxt->nsNr = comp->inScopeNs->xpathNumber;
+	    xmlXPathContextSetNamespaces(ctxt->xpathCtxt, comp->inScopeNs->list);
+	    xmlXPathContextSetNsNr(ctxt->xpathCtxt, comp->inScopeNs->xpathNumber);
 	} else {
-	    ctxt->xpathCtxt->namespaces = NULL;
-	    ctxt->xpathCtxt->nsNr = 0;
+	    xmlXPathContextSetNamespaces(ctxt->xpathCtxt, NULL);
+	    xmlXPathContextSetNsNr(ctxt->xpathCtxt, 0);
 	}
 #else
-	ctxt->xpathCtxt->namespaces = comp->nsList;
-	ctxt->xpathCtxt->nsNr = comp->nsNr;
+	xmlXPathContextSetNamespaces(ctxt->xpathCtxt, comp->nsList);
+	xmlXPathContextSetNsNr(ctxt->xpathCtxt, comp->nsNr);
 #endif
 	res = xmlXPathCompiledEval(comp->comp, ctxt->xpathCtxt);
 	if (res != NULL) {
@@ -1138,11 +1139,11 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
 	}
     }
     ctxt->inst = oldInst;
-    ctxt->xpathCtxt->node = oldNode;
-    ctxt->xpathCtxt->contextSize = oldSize;
-    ctxt->xpathCtxt->proximityPosition = oldPos;
-    ctxt->xpathCtxt->nsNr = oldNsNr;
-    ctxt->xpathCtxt->namespaces = oldNamespaces;
+    xmlXPathContextSetNode(ctxt->xpathCtxt, oldNode);
+    xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldSize);
+    xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldPos);
+    xmlXPathContextSetNsNr(ctxt->xpathCtxt, oldNsNr);
+    xmlXPathContextSetNamespaces(ctxt->xpathCtxt, oldNamespaces);
 
     return(results);
 }
@@ -1207,7 +1208,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 	return;
 
     list = ctxt->nodeList;
-    if ((list == NULL) || (list->nodeNr <= 1))
+    if ((list == NULL) || (xmlNodeSetGetNodeNr(list) <= 1))
 	return; /* nothing to do */
 
     for (j = 0; j < nbsorts; j++) {
@@ -1269,7 +1270,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
         }
     }
 
-    len = list->nodeNr;
+    len = xmlNodeSetGetNodeNr(list);
 
     resultsTab[0] = xsltComputeSortResultInternal(ctxt, sorts[0], number[0],
                                                   locale[0]);
@@ -1391,9 +1392,9 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 		    tmp = results[j];
 		    results[j] = results[j + incr];
 		    results[j + incr] = tmp;
-		    node = list->nodeTab[j];
-		    list->nodeTab[j] = list->nodeTab[j + incr];
-		    list->nodeTab[j + incr] = node;
+		    node = xmlNodeSetGetNodeEntry(list, j);
+		    xmlNodeSetSetNodeEntry(list, j, xmlNodeSetGetNodeEntry(list, j + incr));
+		    xmlNodeSetSetNodeEntry(list, j + incr, node);
 		    depth = 1;
 		    while (depth < nbsorts) {
 			if (sorts[depth] == NULL)
@@ -2557,13 +2558,13 @@ xsltXPathCompileFlags(xsltStylesheetPtr style, const xmlChar *str, int flags) {
         xpathCtxt = style->principal->xpathCtxt;
 	if (xpathCtxt == NULL)
 	    return NULL;
-	xpathCtxt->dict = style->dict;
+	xmlXPathContextSetDict(xpathCtxt, style->dict);
     } else {
 	xpathCtxt = xmlXPathNewContext(NULL);
 	if (xpathCtxt == NULL)
 	    return NULL;
     }
-    xpathCtxt->flags = flags;
+    xmlXPathContextSetFlags(xpathCtxt, flags);
 
     /*
     * Compile the expression.
