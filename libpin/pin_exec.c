@@ -170,9 +170,22 @@ pin_op_emit_close (PIN_OP_FUNC_ARGS)
 static pin_value_t
 pin_op_emit (PIN_OP_FUNC_ARGS)
 {
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
     pin_value_t v = pin_exec_pop(esp);
-    if (v.pv_type == PVT_STRING) {
-        pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    if (v.pv_type == PVT_NODESET) {
+        /* Emit string value of first node in the nodeset */
+        if (v.pv_atom < (uint32_t) esp->pes_nodeset_count) {
+            pin_ns_entry_t *nsp = &esp->pes_nodesets[v.pv_atom];
+            if (nsp->pne_count > 0) {
+                pin_node_id_t nid = pin_node_id(nsp->pne_nodes[0]);
+                pin_name_id_t tid = pin_exec_text_of(pwp, nid);
+                const char *str = pin_namepool_string(pwp, tid);
+                if (str)
+                    pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+            }
+        }
+    } else if (v.pv_type == PVT_STRING) {
         const char *str = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
         if (str)
             pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
@@ -278,12 +291,70 @@ pin_op_push_text (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
+/*
+ * Collect all nodes reachable from 'start' by descending the slash-separated
+ * 'path', appending each terminal node to nodeset 'ns_idx'.
+ * Only direct children are visited at each step (child:: axis).
+ * A "." step leaves the current node unchanged; an empty step is a no-op.
+ */
+static void
+pin_exec_collect_path (pin_workspace_t *pwp, pin_exec_state_t *esp,
+                       pin_node_id_t start, const char *path, size_t plen,
+                       uint32_t ns_idx)
+{
+    const char *slash = memchr(path, '/', plen);
+    size_t step_len = slash ? (size_t)(slash - path) : plen;
+    int last_step = (slash == NULL);
+    const char *rest = slash ? slash + 1 : NULL;
+    size_t rest_len = slash ? plen - step_len - 1 : 0;
+
+    /* "." or empty step: current node is the anchor */
+    if (step_len == 0 || (step_len == 1 && path[0] == '.')) {
+        if (last_step)
+            pin_exec_nodeset_append(esp, ns_idx,
+                    pa_fixed_atom_of(pin_node_id_atom_of(start)));
+        else
+            pin_exec_collect_path(pwp, esp, start, rest, rest_len, ns_idx);
+        return;
+    }
+
+    /* Named step: intern the name, then walk direct children only */
+    char stepbuf[step_len + 1];
+    memcpy(stepbuf, path, step_len);
+    stepbuf[step_len] = '\0';
+
+    pin_name_id_t step_name = pin_namepool_atom(pwp, stepbuf, FALSE);
+    if (pin_name_id_is_null(step_name))
+        return;  /* name not in pool → no such elements exist */
+
+    pin_node_t *node = pin_node_addr(pwp, start);
+    if (node == NULL)
+        return;
+
+    pin_depth_t target_depth = node->pn_depth + 1;
+    for (pin_node_id_t cid = pin_node_child(node);
+            !pin_node_id_is_null(cid); ) {
+        pin_node_t *child = pin_node_addr(pwp, cid);
+        if (child == NULL || child->pn_depth < target_depth)
+            break;
+        if (child->pn_depth == target_depth
+                && child->pn_type == PIN_TYPE_ELT
+                && pin_name_id_equal(child->pn_name, step_name)) {
+            if (last_step)
+                pin_exec_nodeset_append(esp, ns_idx,
+                        pa_fixed_atom_of(pin_node_id_atom_of(cid)));
+            else
+                pin_exec_collect_path(pwp, esp, cid, rest, rest_len, ns_idx);
+        }
+        cid = child->pn_next;
+    }
+}
+
 static pin_value_t
 pin_op_push_nodes (PIN_OP_FUNC_ARGS)
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
-    pin_node_t *parent = pin_node_addr(pwp,
-            esp->pes_seq[esp->pes_seq_top - 1].psf_context);
+    pin_node_id_t ctx = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
 
     uint32_t ns_idx = pin_exec_nodeset_alloc(esp);
     if (ns_idx == UINT32_MAX) {
@@ -291,20 +362,9 @@ pin_op_push_nodes (PIN_OP_FUNC_ARGS)
         return pin_value_null();
     }
 
-    if (parent) {
-        pin_depth_t depth = parent->pn_depth;
-        for (pin_node_id_t cid = pin_node_child(parent);
-                !pin_node_id_is_null(cid); ) {
-            pin_node_t *child = pin_node_addr(pwp, cid);
-            if (child == NULL || child->pn_depth <= depth)
-                break;
-            if (child->pn_type == PIN_TYPE_ELT
-                    && pin_name_id_equal(child->pn_name, opp->po_name))
-                pin_exec_nodeset_append(esp, ns_idx,
-                        pa_fixed_atom_of(pin_node_id_atom_of(cid)));
-            cid = child->pn_next;
-        }
-    }
+    const char *path = pin_namepool_string(pwp, opp->po_name);
+    if (path && path[0] != '\0')
+        pin_exec_collect_path(pwp, esp, ctx, path, strlen(path), ns_idx);
 
     pin_exec_push(esp, pin_value_nodeset(ns_idx));
     return pin_value_null();
@@ -575,6 +635,135 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
 }
 
 /*
+ * Recursively emit one node and its full subtree to the output stream as new
+ * non-transient nodes.  Children are walked via pin_node_child + pn_next
+ * (sibling chain), never pn_next of the root, which links to siblings.
+ */
+static void
+pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
+                    pin_node_id_t nid)
+{
+    pin_node_t *nodep = pin_node_addr(pwp, nid);
+    if (nodep == NULL)
+        return;
+
+    pin_insert_t *pip = parsep->pp_insert;
+
+    if (nodep->pn_type == PIN_TYPE_ELT) {
+        char abuf[4096];
+        size_t apos = 0;
+        pin_depth_t elt_depth = nodep->pn_depth;
+        const char *tag = pin_namepool_string(pwp, nodep->pn_name);
+
+        for (pin_node_id_t aid = pin_node_child(nodep);
+                !pin_node_id_is_null(aid); ) {
+            pin_node_t *ap = pin_node_addr(pwp, aid);
+            if (ap == NULL || ap->pn_depth <= elt_depth)
+                break;
+            if (ap->pn_type == PIN_TYPE_ATTRIB) {
+                const char *aname = pin_namepool_string(pwp, ap->pn_name);
+                const char *aval = pin_textpool_string(pwp,
+                        pa_arb_atom_of(pin_node_text(ap)));
+                if (aname && aval) {
+                    if (apos > 0 && apos < sizeof(abuf) - 1)
+                        abuf[apos++] = ' ';
+                    int n = snprintf(abuf + apos, sizeof(abuf) - apos,
+                            "%s=\"%s\"", aname, aval);
+                    if (n > 0)
+                        apos += (size_t) n;
+                }
+            }
+            aid = ap->pn_next;
+        }
+
+        char *attribs = apos > 0 ? strndup(abuf, apos) : NULL;
+        pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+        if (attribs)
+            act = PIA_SAVE_ATTRIB;
+        pin_insert_open(parsep, nodep->pn_name, NULL, tag, attribs, act);
+        free(attribs);
+
+        for (pin_node_id_t cid = pin_node_child(nodep);
+                !pin_node_id_is_null(cid); ) {
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= elt_depth)
+                break;
+            if (child->pn_type != PIN_TYPE_ATTRIB)
+                pin_exec_emit_node(parsep, pwp, cid);
+            cid = child->pn_next;
+        }
+
+        pin_insert_close(parsep, NULL, tag);
+
+    } else if (nodep->pn_type == PIN_TYPE_TEXT
+            || nodep->pn_type == PIN_TYPE_UNESC) {
+        const char *text = pin_textpool_string(pwp,
+                pa_arb_atom_of(pin_node_text(nodep)));
+        if (text)
+            pin_insert_text(parsep, text, strlen(text), nodep->pn_type);
+    }
+}
+
+static void
+pin_exec_emit_subtree (pin_parse_t *parsep, pin_node_id_t src_id,
+                       pin_depth_t stop_depth UNUSED)
+{
+    if (pin_node_id_is_null(src_id))
+        return;
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_exec_emit_node(parsep, pwp, src_id);
+}
+
+static pin_value_t
+pin_op_copy_of (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_id_t ctx = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
+    pin_node_t *ctx_node = pin_node_addr(pwp, ctx);
+    pin_depth_t stop_depth = ctx_node ? ctx_node->pn_depth - 1 : 0;
+
+    /* Build the source nodeset */
+    const char *path = pin_namepool_string(pwp, opp->po_name);
+    uint32_t ns_idx = UINT32_MAX;
+    int free_ns = 0;
+
+    if (path && path[0] == '$') {
+        /* Variable reference: resolve from var table */
+        pin_name_id_t vname = pin_namepool_atom(pwp, path + 1, FALSE);
+        pin_var_binding_t *vp = pin_exec_var_find(esp,
+                pin_name_id_atom_of(vname));
+        if (vp && vp->pvb_value.pv_type == PVT_NODESET)
+            ns_idx = vp->pvb_value.pv_atom;
+    } else {
+        /* Path or null (meaning "."): collect into ephemeral nodeset */
+        ns_idx = pin_exec_nodeset_alloc(esp);
+        if (ns_idx != UINT32_MAX) {
+            free_ns = 1;
+            if (path && path[0] != '\0' && strcmp(path, ".") != 0) {
+                pin_exec_collect_path(pwp, esp, ctx,
+                        path, strlen(path), ns_idx);
+            } else {
+                pin_exec_nodeset_append(esp, ns_idx,
+                        pa_fixed_atom_of(pin_node_id_atom_of(ctx)));
+            }
+        }
+    }
+
+    if (ns_idx != UINT32_MAX && ns_idx < (uint32_t) esp->pes_nodeset_count) {
+        pin_ns_entry_t *nsp = &esp->pes_nodesets[ns_idx];
+        for (uint32_t i = 0; i < nsp->pne_count; i++) {
+            pin_node_id_t nid = pin_node_id(nsp->pne_nodes[i]);
+            pin_exec_emit_subtree(parsep, nid, stop_depth);
+        }
+    }
+
+    if (free_ns && ns_idx != UINT32_MAX)
+        pin_exec_nodeset_free(esp, ns_idx);
+
+    return pin_value_null();
+}
+
+/*
  * Op dispatch table
  */
 
@@ -605,6 +794,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_STORE_VAR]    = { "store-var",    pin_op_store_var,    0 },
     [PIN_OP_LOAD_VAR]     = { "load-var",     pin_op_load_var,     0 },
     [PIN_OP_FOR_EACH]     = { "for-each",     pin_op_for_each,     0 },
+    [PIN_OP_COPY_OF]      = { "copy-of",      pin_op_copy_of,      0 },
 };
 
 /*
@@ -632,6 +822,14 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 	      pin_op_id_t start, pin_node_id_t context_node)
 {
     pin_rulebook_t *prbp = parsep->pp_rulebook;
+
+    /*
+     * Save variable and nodeset watermarks so bindings made in this
+     * template invocation are discarded on return, keeping variables
+     * scoped to one template body.
+     */
+    uint32_t saved_var_count = esp->pes_var_count;
+    uint32_t saved_nodeset_count  = esp->pes_nodeset_count;
 
     if (pin_exec_seq_grow(esp) < 0)
         return -1;
@@ -665,6 +863,13 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
         if (type < PIN_OP_MAX && pin_op_table[type].pod_func)
             pin_op_table[type].pod_func(esp, parsep, opp);
     }
+
+    /* Free nodesets allocated during this invocation */
+    for (uint32_t i = saved_nodeset_count; i < esp->pes_nodeset_count; i++) {
+        pin_exec_nodeset_free(esp, i);
+    }
+    esp->pes_var_count = saved_var_count;
+    esp->pes_nodeset_count = saved_nodeset_count;
 
     return 0;
 }
