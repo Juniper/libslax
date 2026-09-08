@@ -62,17 +62,22 @@ libbxml_la_SOURCES = \
 #
 # xmlNode/xmlNs/xmlAttr/xmlDoc/xmlDtd accessor functions, generated
 # from the field table in gen-xmlaccessors.sh in both inline
-# and non-inline
+# and non-inline; plus a second group for xmlNodeSet (declared in
+# xpath.h, not tree.h -- see the banner comment in the script) sharing
+# the same generator, stamp, and driving rules.
 #
 XML_ACCESSORS_GEN = $(top_srcdir)/bin/gen-xmlaccessors.sh
 
 GENACC_H_DIR = include/libxml/gen
 GENACC_C_FILES = \
-	gen/xmlaccessors.c
+	gen/xmlaccessors.c \
+	gen/xmlaccessors-xpath.c
 
 GENACC_H_FILES = \
 	$(GENACC_H_DIR)/xmlaccessors-inline.h \
-	$(GENACC_H_DIR)/xmlaccessors-decl.h
+	$(GENACC_H_DIR)/xmlaccessors-decl.h \
+	$(GENACC_H_DIR)/xmlaccessors-xpath-inline.h \
+	$(GENACC_H_DIR)/xmlaccessors-xpath-decl.h
 
 GENACC_FILES = ${GENACC_H_FILES} ${GENACC_C_FILES}
 
