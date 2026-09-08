@@ -94,7 +94,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_STORE_VAR   (PIN_OP_MAX_COMPLEX + 16) /* Pop top; bind to variable named po_name */
 #define PIN_OP_LOAD_VAR    (PIN_OP_MAX_COMPLEX + 17) /* Push value of variable named po_name */
 #define PIN_OP_FOR_EACH    (PIN_OP_MAX_COMPLEX + 18) /* Iterate matching children (po_name=tag, po_alt=body, po_name2=sort-spec) */
-#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 19) /* Sentinel: number of defined op codes */
+#define PIN_OP_COPY_OF     (PIN_OP_MAX_COMPLEX + 19) /* Deep copy selected nodes to output (po_name=path or null for ".") */
+#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 20) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
