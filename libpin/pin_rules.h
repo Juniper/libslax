@@ -97,6 +97,15 @@ typedef struct pin_rulebook_info_s {
 } pin_rulebook_info_t;
 
 /*
+ * One entry in the named-template registry.
+ * Registered by pin_rulebook_named_add; looked up at runtime by PIN_OP_CALL.
+ */
+typedef struct pin_named_template_s {
+    pin_name_id_t pnt_name;   /* template name atom */
+    pin_op_id_t   pnt_ops;    /* first op in the body sequence */
+} pin_named_template_t;
+
+/*
  * One entry in the apply-templates dispatch patricia tree.
  * Keyed by pae_name (the element name atom, 4 bytes).
  */
@@ -126,6 +135,9 @@ typedef struct pin_rulebook_s {
     uint32_t prb_if_filter_cap;   /* Allocated capacity of prb_if_filters */
     pin_rule_id_t prb_root_rule;  /* Rule for match="/" (null if none) */
     pin_apply_id_t prb_apply_list; /* Head of all apply-entry linked list */
+    pin_named_template_t *prb_named;      /* Array of named templates */
+    uint32_t              prb_named_count;
+    uint32_t              prb_named_cap;
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -215,6 +227,22 @@ pin_rulebook_dump (pin_rulebook_t *prbp);
  */
 uint32_t
 pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp);
+
+/*
+ * Register a named template (xsl:template name="...") with the rulebook.
+ * name_id is the namepool atom for the template name; ops_id is the first
+ * op of its compiled body.  Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_named_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
+                        pin_op_id_t ops_id);
+
+/*
+ * Look up a named template by name atom.
+ * Returns the first op id of the template body, or the null id if not found.
+ */
+pin_op_id_t
+pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
