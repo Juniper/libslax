@@ -668,7 +668,7 @@ xsltNewTransformContext(xsltStylesheetPtr style, xmlDocPtr doc) {
 
     XSLT_REGISTER_VARIABLE_LOOKUP(cur);
     XSLT_REGISTER_FUNCTION_LOOKUP(cur);
-    cur->xpathCtxt->nsHash = style->nsHash;
+    xmlXPathContextSetNsHash(cur->xpathCtxt, style->nsHash);
     /*
      * Initialize the registered external modules
      */
@@ -730,7 +730,7 @@ xsltFreeTransformContext(xsltTransformContextPtr ctxt) {
     xsltShutdownCtxtExts(ctxt);
 
     if (ctxt->xpathCtxt != NULL) {
-	ctxt->xpathCtxt->nsHash = NULL;
+	xmlXPathContextSetNsHash(ctxt->xpathCtxt, NULL);
 	xmlXPathFreeContext(ctxt->xpathCtxt);
     }
     if (ctxt->templTab != NULL)
@@ -1984,8 +1984,8 @@ xsltDefaultProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr node,
      * Note that params are passed to the next template. This matches
      * XSLT 2.0 behavior but doesn't conform to XSLT 1.0.
      */
-    oldSize = ctxt->xpathCtxt->contextSize;
-    oldPos = ctxt->xpathCtxt->proximityPosition;
+    oldSize = xmlXPathContextGetContextSize(ctxt->xpathCtxt);
+    oldPos = xmlXPathContextGetProximityPosition(ctxt->xpathCtxt);
     cur = xmlNodeGetChildren(node);
     while (cur != NULL) {
 	childno++;
@@ -1993,8 +1993,8 @@ xsltDefaultProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    case XML_DOCUMENT_NODE:
 	    case XML_HTML_DOCUMENT_NODE:
 	    case XML_ELEMENT_NODE:
-		ctxt->xpathCtxt->contextSize = nbchild;
-		ctxt->xpathCtxt->proximityPosition = childno;
+		xmlXPathContextSetContextSize(ctxt->xpathCtxt, nbchild);
+		xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, childno);
 
                 if (ctxt->depth >= ctxt->maxTemplateDepth) {
                     xsltTransformError(ctxt, NULL, cur,
@@ -2045,8 +2045,8 @@ xsltDefaultProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	     "xsltDefaultProcessOneNode: applying template for text %s\n",
 				     xmlNodeGetContentRaw(cur)));
 #endif
-		    ctxt->xpathCtxt->contextSize = nbchild;
-		    ctxt->xpathCtxt->proximityPosition = childno;
+		    xmlXPathContextSetContextSize(ctxt->xpathCtxt, nbchild);
+		    xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, childno);
 		    /*
 		    * Instantiate the xsl:template.
 		    */
@@ -2084,8 +2084,8 @@ xsltDefaultProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		     "xsltDefaultProcessOneNode: template found for comment\n"));
                     }
 #endif
-		    ctxt->xpathCtxt->contextSize = nbchild;
-		    ctxt->xpathCtxt->proximityPosition = childno;
+		    xmlXPathContextSetContextSize(ctxt->xpathCtxt, nbchild);
+		    xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, childno);
 		    /*
 		    * Instantiate the xsl:template.
 		    */
@@ -2098,8 +2098,8 @@ xsltDefaultProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	}
 	cur = xmlNodeGetNext(cur);
     }
-    ctxt->xpathCtxt->contextSize = oldSize;
-    ctxt->xpathCtxt->proximityPosition = oldPos;
+    xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldSize);
+    xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldPos);
 }
 
 /**
@@ -4440,8 +4440,8 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		* The list is already sorted in document order by XPath.
 		* Append everything in this order under ctxt->insert.
 		*/
-		for (i = 0;i < list->nodeNr;i++) {
-		    cur = list->nodeTab[i];
+		for (i = 0;i < xmlNodeSetGetNodeNr(list);i++) {
+		    cur = xmlNodeSetGetNodeEntry(list, i);
 		    if (cur == NULL)
 			continue;
 		    if ((xmlNodeGetType(cur) == XML_DOCUMENT_NODE) ||
@@ -4469,12 +4469,12 @@ xsltCopyOf(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		 "xsltCopyOf: result is a result tree fragment\n"));
 #endif
 	    list = res->nodesetval;
-	    if ((list != NULL) && (list->nodeTab != NULL) &&
-		(list->nodeTab[0] != NULL) &&
-		(IS_XSLT_REAL_NODE(list->nodeTab[0])))
+	    if ((list != NULL) && (xmlNodeSetGetNodeNr(list) > 0) &&
+		(xmlNodeSetGetNodeEntry(list, 0) != NULL) &&
+		(IS_XSLT_REAL_NODE(xmlNodeSetGetNodeEntry(list, 0))))
 	    {
 		xsltCopyTreeList(ctxt, inst,
-		    xmlNodeGetChildren(list->nodeTab[0]), ctxt->insert, 0, 0);
+		    xmlNodeGetChildren(xmlNodeSetGetNodeEntry(list, 0)), ctxt->insert, 0, 0);
 	    }
 	} else {
 	    xmlChar *value = NULL;
@@ -4943,16 +4943,16 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	*/
 #if 0
 	if ((ctxt->nbKeys > 0) &&
-	    (list->nodeNr != 0) &&
-	    (list->nodeTab[0]->doc != NULL) &&
-	    XSLT_IS_RES_TREE_FRAG(list->nodeTab[0]->doc))
+	    (xmlNodeSetGetNodeNr(list) != 0) &&
+	    (xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0)) != NULL) &&
+	    XSLT_IS_RES_TREE_FRAG(xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0))))
 	{
 	    /*
 	    * NOTE that it's also OK if @effectiveDocInfo will be
 	    * set to NULL.
 	    */
 	    isRTF = 1;
-	    effectiveDocInfo = list->nodeTab[0]->doc->_private;
+	    effectiveDocInfo = xmlDocGetPrivate(xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0)));
 	}
 #endif
     } else {
@@ -4976,10 +4976,10 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 #ifdef WITH_XSLT_DEBUG_PROCESS
     if (list != NULL)
     XSLT_TRACE(ctxt,XSLT_TRACE_APPLY_TEMPLATES,xsltGenericDebug(xsltGenericDebugContext,
-	"xsltApplyTemplates: list of %d nodes\n", list->nodeNr));
+	"xsltApplyTemplates: list of %d nodes\n", xmlNodeSetGetNodeNr(list)));
 #endif
 
-    if ((list == NULL) || (list->nodeNr == 0))
+    if ((list == NULL) || (xmlNodeSetGetNodeNr(list) == 0))
 	goto exit;
 
     /*
@@ -5079,12 +5079,12 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	    cur = xmlNodeGetNext(cur);
 	}
     }
-    xpctxt->contextSize = list->nodeNr;
+    xpctxt->contextSize = xmlNodeSetGetNodeNr(list);
     /*
     * Apply templates for all selected source nodes.
     */
-    for (i = 0; i < list->nodeNr; i++) {
-	cur = list->nodeTab[i];
+    for (i = 0; i < xmlNodeSetGetNodeNr(list); i++) {
+	cur = xmlNodeSetGetNodeEntry(list, i);
 	/*
 	* The node becomes the "current node".
 	*/
@@ -5490,12 +5490,12 @@ xsltForEach(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
 	goto error;
     }
 
-    if ((list == NULL) || (list->nodeNr <= 0))
+    if ((list == NULL) || (xmlNodeSetGetNodeNr(list) <= 0))
 	goto exit;
 
 #ifdef WITH_XSLT_DEBUG_PROCESS
     XSLT_TRACE(ctxt,XSLT_TRACE_FOR_EACH,xsltGenericDebug(xsltGenericDebugContext,
-	"xsltForEach: select evaluates to %d nodes\n", list->nodeNr));
+	"xsltForEach: select evaluates to %d nodes\n", xmlNodeSetGetNodeNr(list)));
 #endif
 
     /*
@@ -5539,12 +5539,12 @@ xsltForEach(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
 	}
 	xsltDoSortFunction(ctxt, sorts, nbsorts);
     }
-    xpctxt->contextSize = list->nodeNr;
+    xpctxt->contextSize = xmlNodeSetGetNodeNr(list);
     /*
     * Instantiate the sequence constructor for each selected node.
     */
-    for (i = 0; i < list->nodeNr; i++) {
-	cur = list->nodeTab[i];
+    for (i = 0; i < xmlNodeSetGetNodeNr(list); i++) {
+	cur = xmlNodeSetGetNodeEntry(list, i);
 	/*
 	* The selected node becomes the "current node".
 	*/
@@ -6004,9 +6004,9 @@ xsltApplyStylesheetInternal(xsltStylesheetPtr style, xmlDocPtr doc,
     ctxt->node = (xmlNodePtr) doc;
     ctxt->output = res;
 
-    ctxt->xpathCtxt->contextSize = 1;
-    ctxt->xpathCtxt->proximityPosition = 1;
-    ctxt->xpathCtxt->node = NULL; /* TODO: Set the context node here? */
+    xmlXPathContextSetContextSize(ctxt->xpathCtxt, 1);
+    xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, 1);
+    xmlXPathContextSetNode(ctxt->xpathCtxt, NULL); /* TODO: Set the context node here? */
 
     /*
      * Start the evaluation, evaluate the params, the stylesheets globals
