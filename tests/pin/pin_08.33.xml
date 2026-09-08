@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<doc>
+  <container>
+    <node id="n1">
+      <value>apple</value>
+    </node>
+    <node id="n2">
+      <value>banana</value>
+      <tag>fruit</tag>
+    </node>
+  </container>
+  <group>
+    <member role="lead">Alice</member>
+    <member role="support">Bob</member>
+    <member role="support">Carol</member>
+  </group>
+</doc>
