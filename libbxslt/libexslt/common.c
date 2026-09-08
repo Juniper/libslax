@@ -72,7 +72,7 @@ exsltObjectTypeFunction (xmlXPathParserContextPtr ctxt, int nargs) {
 
     obj = valuePop(ctxt);
 
-    switch (obj->type) {
+    switch (xmlXPathObjectGetType(obj)) {
     case XPATH_STRING:
 	ret = xmlXPathNewCString("string");
 	break;
@@ -94,7 +94,7 @@ exsltObjectTypeFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     default:
 	xsltGenericError(xsltGenericErrorContext,
 		"object-type() invalid arg\n");
-	ctxt->error = XPATH_INVALID_TYPE;
+	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
 	xmlXPathFreeObject(obj);
 	return;
     }
