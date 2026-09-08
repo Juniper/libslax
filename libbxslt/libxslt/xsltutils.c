@@ -1092,15 +1092,15 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
 #endif
 	res = xmlXPathCompiledEval(comp->comp, ctxt->xpathCtxt);
 	if (res != NULL) {
-	    if (res->type != XPATH_STRING)
+	    if (xmlXPathObjectGetType(res) != XPATH_STRING)
 		res = xmlXPathConvertString(res);
 	    if (number)
 		res = xmlXPathConvertNumber(res);
         }
         if (res != NULL) {
-	    res->index = i;	/* Save original pos for dupl resolv */
+	    xmlXPathObjectSetIndex(res, i);	/* Save original pos for dupl resolv */
 	    if (number) {
-		if (res->type == XPATH_NUMBER) {
+		if (xmlXPathObjectGetType(res) == XPATH_NUMBER) {
 		    results[i] = res;
 		} else {
 #ifdef WITH_XSLT_DEBUG_PROCESS
@@ -1110,16 +1110,16 @@ xsltComputeSortResultInternal(xsltTransformContextPtr ctxt, xmlNodePtr sort,
 		    results[i] = NULL;
 		}
 	    } else {
-		if (res->type == XPATH_STRING) {
+		if (xmlXPathObjectGetType(res) == XPATH_STRING) {
 		    if (locale != NULL) {
-			xmlChar *str = res->stringval;
+			xmlChar *str = xmlXPathObjectGetStringval(res);
                         xmlChar *sortKey = ctxt->genSortKey(locale, str);
 
                         if (sortKey == NULL) {
                             xsltTransformError(ctxt, NULL, sort,
                                 "xsltComputeSortResult: sort key is null\n");
                         } else {
-                            res->stringval = sortKey;
+                            xmlXPathObjectSetStringval(res, sortKey);
                             xmlFree(str);
                         }
 		    }
@@ -1297,23 +1297,23 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 		    if (number[0]) {
 			/* We make NaN smaller than number in accordance
 			   with XSLT spec */
-			if (xmlXPathIsNaN(results[j]->floatval)) {
-			    if (xmlXPathIsNaN(results[j + incr]->floatval))
+			if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(results[j]))) {
+			    if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(results[j + incr])))
 				tst = 0;
 			    else
 				tst = -1;
-			} else if (xmlXPathIsNaN(results[j + incr]->floatval))
+			} else if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(results[j + incr])))
 			    tst = 1;
-			else if (results[j]->floatval ==
-				results[j + incr]->floatval)
+			else if (xmlXPathObjectGetFloatval(results[j]) ==
+				xmlXPathObjectGetFloatval(results[j + incr]))
 			    tst = 0;
-			else if (results[j]->floatval >
-				results[j + incr]->floatval)
+			else if (xmlXPathObjectGetFloatval(results[j]) >
+				xmlXPathObjectGetFloatval(results[j + incr]))
 			    tst = 1;
 			else tst = -1;
 		    } else {
-			tst = xmlStrcmp(results[j]->stringval,
-				     results[j + incr]->stringval);
+			tst = xmlStrcmp(xmlXPathObjectGetStringval(results[j]),
+				     xmlXPathObjectGetStringval(results[j + incr]));
 		    }
 		    if (desc[0])
 			tst = -tst;
@@ -1352,25 +1352,23 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 			    if (number[depth]) {
 				/* We make NaN smaller than number in
 				   accordance with XSLT spec */
-				if (xmlXPathIsNaN(res[j]->floatval)) {
-				    if (xmlXPathIsNaN(res[j +
-						incr]->floatval))
+				if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(res[j]))) {
+				    if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(res[j + incr])))
 					tst = 0;
 				    else
 				        tst = -1;
-				} else if (xmlXPathIsNaN(res[j + incr]->
-						floatval))
+				} else if (xmlXPathIsNaN(xmlXPathObjectGetFloatval(res[j + incr])))
 				    tst = 1;
-				else if (res[j]->floatval == res[j + incr]->
-						floatval)
+				else if (xmlXPathObjectGetFloatval(res[j]) ==
+						xmlXPathObjectGetFloatval(res[j + incr]))
 				    tst = 0;
-				else if (res[j]->floatval >
-					res[j + incr]->floatval)
+				else if (xmlXPathObjectGetFloatval(res[j]) >
+					xmlXPathObjectGetFloatval(res[j + incr]))
 				    tst = 1;
 				else tst = -1;
 			    } else {
-				tst = xmlStrcmp(res[j]->stringval,
-					     res[j + incr]->stringval);
+				tst = xmlStrcmp(xmlXPathObjectGetStringval(res[j]),
+					     xmlXPathObjectGetStringval(res[j + incr]));
 			    }
 			    if (desc[depth])
 				tst = -tst;
@@ -1386,7 +1384,7 @@ xsltDefaultSortFunction(xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
 		    }
 		}
 		if (tst == 0) {
-		    tst = results[j]->index > results[j + incr]->index;
+		    tst = xmlXPathObjectGetIndex(results[j]) > xmlXPathObjectGetIndex(results[j + incr]);
 		}
 		if (tst > 0) {
 		    tmp = results[j];
