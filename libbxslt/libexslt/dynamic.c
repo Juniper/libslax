@@ -68,11 +68,11 @@ exsltDynEvaluateFunction(xmlXPathParserContextPtr ctxt, int nargs) {
         /*
          * Recursive evaluation can grow the call stack quickly.
          */
-        ctxt->context->depth += 5;
+        xmlXPathContextSetDepth(ctxt->context, xmlXPathContextGetDepth(ctxt->context) + 5);
 #endif
 	ret = xmlXPathEval(str,ctxt->context);
 #if LIBXML_VERSION >= 20911
-        ctxt->context->depth -= 5;
+        xmlXPathContextSetDepth(ctxt->context, xmlXPathContextGetDepth(ctxt->context) - 5);
 #endif
 	if (ret)
 		valuePush(ctxt,ret);
@@ -140,10 +140,10 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
         !(comp = xmlXPathCtxtCompile(tctxt->xpathCtxt, str)))
         goto cleanup;
 
-    oldDoc = ctxt->context->doc;
-    oldNode = ctxt->context->node;
-    oldContextSize = ctxt->context->contextSize;
-    oldProximityPosition = ctxt->context->proximityPosition;
+    oldDoc = xmlXPathContextGetDoc(ctxt->context);
+    oldNode = xmlXPathContextGetNode(ctxt->context);
+    oldContextSize = xmlXPathContextGetContextSize(ctxt->context);
+    oldProximityPosition = xmlXPathContextGetProximityPosition(ctxt->context);
 
         /**
 	 * since we really don't know we're going to be adding node(s)
@@ -156,16 +156,17 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
 	goto cleanup;
     }
     xsltRegisterLocalRVT(tctxt, container);
-    if (nodeset && nodeset->nodeNr > 0) {
+    if (nodeset && xmlNodeSetGetNodeNr(nodeset) > 0) {
         xmlXPathNodeSetSort(nodeset);
-        ctxt->context->contextSize = nodeset->nodeNr;
-        ctxt->context->proximityPosition = 0;
-        for (i = 0; i < nodeset->nodeNr; i++) {
+        xmlXPathContextSetContextSize(ctxt->context, xmlNodeSetGetNodeNr(nodeset));
+        xmlXPathContextSetProximityPosition(ctxt->context, 0);
+        for (i = 0; i < xmlNodeSetGetNodeNr(nodeset); i++) {
             xmlXPathObjectPtr subResult = NULL;
-            xmlNodePtr cur = nodeset->nodeTab[i];
+            xmlNodePtr cur = xmlNodeSetGetNodeEntry(nodeset, i);
 
-            ctxt->context->proximityPosition++;
-            ctxt->context->node = cur;
+            xmlXPathContextSetProximityPosition(ctxt->context,
+                xmlXPathContextGetProximityPosition(ctxt->context) + 1);
+            xmlXPathContextSetNode(ctxt->context, cur);
 
             if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
                 /*
@@ -179,9 +180,9 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                         "Cannot retrieve the doc of a namespace node.\n");
                     continue;
                 }
-                ctxt->context->doc = xmlNodeGetDoc(cur);
+                xmlXPathContextSetDoc(ctxt->context, xmlNodeGetDoc(cur));
             } else {
-                ctxt->context->doc = xmlNodeGetDoc(cur);
+                xmlXPathContextSetDoc(ctxt->context, xmlNodeGetDoc(cur));
             }
 
             subResult = xmlXPathCompiledEval(comp, ctxt->context);
@@ -189,11 +190,12 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
                 switch (subResult->type) {
                     case XPATH_NODESET:
                         if (subResult->nodesetval != NULL)
-                            for (j = 0; j < subResult->nodesetval->nodeNr;
+                            for (j = 0;
+                                 j < xmlNodeSetGetNodeNr(subResult->nodesetval);
                                  j++)
                                 xmlXPathNodeSetAdd(ret->nodesetval,
-                                                   subResult->nodesetval->
-                                                   nodeTab[j]);
+                                                   xmlNodeSetGetNodeEntry(
+                                                   subResult->nodesetval, j));
                         break;
                     case XPATH_BOOLEAN:
                         if (container != NULL) {
@@ -259,10 +261,10 @@ exsltDynMapFunction(xmlXPathParserContextPtr ctxt, int nargs)
             }
         }
     }
-    ctxt->context->doc = oldDoc;
-    ctxt->context->node = oldNode;
-    ctxt->context->contextSize = oldContextSize;
-    ctxt->context->proximityPosition = oldProximityPosition;
+    xmlXPathContextSetDoc(ctxt->context, oldDoc);
+    xmlXPathContextSetNode(ctxt->context, oldNode);
+    xmlXPathContextSetContextSize(ctxt->context, oldContextSize);
+    xmlXPathContextSetProximityPosition(ctxt->context, oldProximityPosition);
 
 
   cleanup:
