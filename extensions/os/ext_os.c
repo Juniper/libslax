@@ -491,17 +491,17 @@ extOsMkdir (xmlXPathParserContext *ctxt, int nargs)
 
     if (nargs == 2) {
 	xmlXPathObject *xop = valuePop(ctxt);
-	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
 	    LX_ERR("os:mkdir invalid second parameter\n");
 	    xmlXPathFreeObject(xop);
 	    xmlXPathReturnEmptyString(ctxt);
 	    return;
 	}
 
-	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xop->nodesetval->nodeTab[i];
+	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -656,15 +656,15 @@ extOsWorker (slax_os_callback_t func, const char *action, void *opaque,
 	    continue;
 	}
 
-	if (!xop->nodesetval || !xop->nodesetval->nodeNr) {
+	if (!xop->nodesetval || !xmlNodeSetGetNodeNr(xop->nodesetval)) {
 	    xmlXPathFreeObject(xop);
 	    continue;
 	}
 
-	for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 	    xmlNodePtr nop, cop;
 
-	    nop = xop->nodesetval->nodeTab[i];
+	    nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 	    if (xmlNodeGetChildren(nop) == NULL)
 		continue;
 
@@ -1247,11 +1247,11 @@ extOsStat (xmlXPathParserContext *ctxt, int nargs)
 	    }
 
 	} else if (xop->nodesetval) {
-	    for (i = 0; i < xop->nodesetval->nodeNr; i++) {
+	    for (i = 0; i < xmlNodeSetGetNodeNr(xop->nodesetval); i++) {
 		xmlNodePtr nop, cop;
 		const char *value, *key;
 
-		nop = xop->nodesetval->nodeTab[i];
+		nop = xmlNodeSetGetNodeEntry(xop->nodesetval, i);
 		if (xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
