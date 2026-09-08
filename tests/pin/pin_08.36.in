@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.36.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!-- Named template with label parameter; default is "item" -->
+  <xsl:template name="emit-field">
+    <xsl:param name="label" select="'item'"/>
+    <field>
+      <name><xsl:value-of select="$label"/></name>
+      <value><xsl:value-of select="."/></value>
+    </field>
+  </xsl:template>
+
+  <!-- Call with explicit label from attribute -->
+  <xsl:template match="named">
+    <xsl:call-template name="emit-field">
+      <xsl:with-param name="label" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- Call without param; label uses default "item" -->
+  <xsl:template match="plain">
+    <xsl:call-template name="emit-field"/>
+  </xsl:template>
+
+</xsl:stylesheet>
