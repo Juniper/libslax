@@ -162,13 +162,13 @@ xsltDocumentFunctionLoadDocument(xmlXPathParserContextPtr ctxt,
 
 #if LIBXML_VERSION >= 20911 || \
     defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-    xptrctxt->opLimit = ctxt->context->opLimit;
-    xptrctxt->opCount = ctxt->context->opCount;
-    xptrctxt->depth = ctxt->context->depth;
+    xmlXPathContextSetOpLimit(xptrctxt, xmlXPathContextGetOpLimit(ctxt->context));
+    xmlXPathContextSetOpCount(xptrctxt, xmlXPathContextGetOpCount(ctxt->context));
+    xmlXPathContextSetDepth(xptrctxt, xmlXPathContextGetDepth(ctxt->context));
 
     resObj = xmlXPtrEval(fragment, xptrctxt);
 
-    ctxt->context->opCount = xptrctxt->opCount;
+    xmlXPathContextSetOpCount(ctxt->context, xmlXPathContextGetOpCount(xptrctxt));
 #else
     resObj = xmlXPtrEval(fragment, xptrctxt);
 #endif
@@ -239,16 +239,16 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
         ret = xmlXPathNewNodeSet(NULL);
 
         if ((obj != NULL) && (obj->nodesetval != NULL) && (ret != NULL)) {
-            for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+            for (i = 0; i < xmlNodeSetGetNodeNr(obj->nodesetval); i++) {
                 valuePush(ctxt,
-                          xmlXPathNewNodeSet(obj->nodesetval->nodeTab[i]));
+                          xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(obj->nodesetval, i)));
                 xmlXPathStringFunction(ctxt, 1);
                 if (nargs == 2) {
                     valuePush(ctxt, xmlXPathObjectCopy(obj2));
                 } else {
                     valuePush(ctxt,
-                              xmlXPathNewNodeSet(obj->nodesetval->
-                                                 nodeTab[i]));
+                              xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(
+                                                 obj->nodesetval, i)));
                 }
                 if (ctxt->error)
                     break;
@@ -313,11 +313,11 @@ xsltDocumentFunction(xmlXPathParserContextPtr ctxt, int nargs)
         xmlFreeURI(uri);
 
         if ((obj2 != NULL) && (obj2->nodesetval != NULL) &&
-            (obj2->nodesetval->nodeNr > 0) &&
-            IS_XSLT_REAL_NODE(obj2->nodesetval->nodeTab[0])) {
+            (xmlNodeSetGetNodeNr(obj2->nodesetval) > 0) &&
+            IS_XSLT_REAL_NODE(xmlNodeSetGetNodeEntry(obj2->nodesetval, 0))) {
             xmlNodePtr target;
 
-            target = obj2->nodesetval->nodeTab[0];
+            target = xmlNodeSetGetNodeEntry(obj2->nodesetval, 0);
             if ((xmlNodeGetType(target) == XML_ATTRIBUTE_NODE) ||
 	        (xmlNodeGetType(target) == XML_PI_NODE)) {
                 target = xmlAttrGetParent((xmlAttrPtr) target);
@@ -410,10 +410,10 @@ xsltKeyFunction(xmlXPathParserContextPtr ctxt, int nargs){
         }
 
 	if (obj2->nodesetval != NULL) {
-	    for (i = 0; i < obj2->nodesetval->nodeNr; i++) {
+	    for (i = 0; i < xmlNodeSetGetNodeNr(obj2->nodesetval); i++) {
 		valuePush(ctxt, xmlXPathObjectCopy(obj1));
 		valuePush(ctxt,
-			  xmlXPathNewNodeSet(obj2->nodesetval->nodeTab[i]));
+			  xmlXPathNewNodeSet(xmlNodeSetGetNodeEntry(obj2->nodesetval, i)));
 		xmlXPathStringFunction(ctxt, 1);
 		xsltKeyFunction(ctxt, 2);
 		newobj = valuePop(ctxt);
@@ -599,7 +599,7 @@ xsltUnparsedEntityURIFunction(xmlXPathParserContextPtr ctxt, int nargs){
     } else {
 	xmlEntityPtr entity;
 
-	entity = xmlGetDocEntity(ctxt->context->doc, str);
+	entity = xmlGetDocEntity(xmlXPathContextGetDoc(ctxt->context), str);
 	if (entity == NULL) {
 	    valuePush(ctxt, xmlXPathNewString((const xmlChar *)""));
 	} else {
@@ -721,7 +721,7 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
     tctxt = xsltXPathGetTransformContext(ctxt);
 
     if (nargs == 0) {
-	cur = ctxt->context->node;
+	cur = xmlXPathContextGetNode(ctxt->context);
     } else if (nargs == 1) {
 	xmlNodeSetPtr nodelist;
 	int i, ret;
@@ -734,15 +734,15 @@ xsltGenerateIdFunction(xmlXPathParserContextPtr ctxt, int nargs){
 	}
 	obj = valuePop(ctxt);
 	nodelist = obj->nodesetval;
-	if ((nodelist == NULL) || (nodelist->nodeNr <= 0)) {
+	if ((nodelist == NULL) || (xmlNodeSetGetNodeNr(nodelist) <= 0)) {
 	    valuePush(ctxt, xmlXPathNewCString(""));
 	    goto out;
 	}
-	cur = nodelist->nodeTab[0];
-	for (i = 1;i < nodelist->nodeNr;i++) {
-	    ret = xmlXPathCmpNodes(cur, nodelist->nodeTab[i]);
+	cur = xmlNodeSetGetNodeEntry(nodelist, 0);
+	for (i = 1;i < xmlNodeSetGetNodeNr(nodelist);i++) {
+	    ret = xmlXPathCmpNodes(cur, xmlNodeSetGetNodeEntry(nodelist, i));
 	    if (ret == -1)
-	        cur = nodelist->nodeTab[i];
+	        cur = xmlNodeSetGetNodeEntry(nodelist, i);
 	}
     } else {
 	xsltTransformError(tctxt, NULL, NULL,
