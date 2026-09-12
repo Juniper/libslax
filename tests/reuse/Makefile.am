@@ -328,11 +328,13 @@ reports/undefvar.xsl
 
 TEST_CASES = ${TEST_CASES_WITH_INPUT} ${TEST_CASES_WITH_NO_INPUT}
 
-EXTRA_DIST_FILES = \
+EXTRA_DIST_FILES_BASE = \
     ${TEST_CASES:.xsl=.xsl2} \
     ${TEST_CASES:.xsl=.slax} \
     ${TEST_CASES_WITH_INPUT:.xsl=.out} \
     ${TEST_CASES_WITH_INPUT:.xsl=.err} 
+
+EXTRA_DIST_FILES = $(addprefix f, ${EXTRA_DIST_FILES_BASE}, saved/${f})
 
 EXTRA_DIST = ${EXTRA_DIST_FILES}
 
@@ -360,7 +362,7 @@ TEST_TWO = \
  ${F13} out/$$dir/$$base.slax4 out/$$dir/$$base.slax5 ; \
  ${DIFF} -Nu out/$$dir/$$base.slax3 out/$$dir/$$base.slax5 ${S2O}
 
-testdir = ${WITH_LIBXSLT_TESTS}
+testdir = ${top_srcdir}/tests/bxslt
 
 all:
 
@@ -391,9 +393,9 @@ test tests:
 	  ${MKDIR} -p out/$$dir ; \
 	  ${X2S} ${testdir}/$$test out/$$dir/$$base.slax ; \
 	  ${S2X} out/$$dir/$$base.slax out/$$dir/$$base.xsl2 ; \
-	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.slax \
+	  ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.slax \
 			out/$$dir/$$base.slax ${S2O}; \
-	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.xsl2 \
+	  ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.xsl2 \
 			out/$$dir/$$base.xsl2 ${S2O}; \
 	  ${TEST_TWO}; \
 	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
@@ -404,15 +406,15 @@ test tests:
 	  if [ -f $$input ]; then \
 	    ${SRUN} out/$$dir/$$base.slax $$input \
 			> out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
-	    if [ -f ${srcdir}/$$dir/$$base.out ]; then \
-	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.out \
+	    if [ -f ${srcdir}/saved/$$dir/$$base.out ]; then \
+	      ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.out \
 			out/$$dir/$$base.out ${S2O} ; \
             else  \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.out \
 			out/$$dir/$$base.out ${S2O} ; \
 	    fi ; \
-	    if [ -f ${srcdir}/$$dir/$$base.err ]; then \
-	    ${DIFF} -Nu ${srcdir}/$$dir/$$base.err \
+	    if [ -f ${srcdir}/saved/$$dir/$$base.err ]; then \
+	    ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.err \
 			out/$$dir/$$base.err ${S2O} ; \
 	    else \
 	      ${DIFF} -Nu ${testdir}/$$dir/$$base.err \
@@ -425,12 +427,12 @@ accept:
 	@-(for test in ${TEST_CASES}; do \
 	  base=`basename $$test .xsl` ; \
 	  dir=`dirname $$test` ; \
-	  ${MKDIR} -p ${srcdir}/$$dir ; \
-	  ${CP} out/$$dir/$$base.slax ${srcdir}/$$dir/$$base.slax ; \
-	  ${CP} out/$$dir/$$base.xsl2 ${srcdir}/$$dir/$$base.xsl2 ; \
+	  ${MKDIR} -p ${srcdir}/saved/$$dir ; \
+	  ${CP} out/$$dir/$$base.slax ${srcdir}/saved/$$dir/$$base.slax ; \
+	  ${CP} out/$$dir/$$base.xsl2 ${srcdir}/saved/$$dir/$$base.xsl2 ; \
 	  if [ -f out/$$dir/$$base.out ]; then \
-	    ${CP} out/$$dir/$$base.out ${srcdir}/$$dir/$$base.out ; \
-	    ${CP} out/$$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
+	    ${CP} out/$$dir/$$base.out ${srcdir}/saved/$$dir/$$base.out ; \
+	    ${CP} out/$$dir/$$base.err ${srcdir}/saved/$$dir/$$base.err ; \
 	  fi ; \
 	done)
 
