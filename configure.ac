@@ -1926,6 +1926,7 @@ AC_CONFIG_FILES([
   tests/core/Makefile
   tests/errors/Makefile
   tests/pa/Makefile
+  tests/reuse/Makefile
   tests/xi/Makefile
   bin/Makefile
   doc/Makefile
