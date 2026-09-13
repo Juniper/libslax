@@ -123,12 +123,12 @@ slaxJsonBuildDoc (slax_data_t *sdp UNUSED, const char *root_name,
 	return NULL;
 
     xmlDocSetStandalone(docp, 1);
-    if (ctxt->dict)
-	xmlDocSetDict(docp, ctxt->dict);
+    if (xmlCtxtGetDict(ctxt))
+	xmlDocSetDict(docp, xmlCtxtGetDict(ctxt));
     else {
 	xmlDocSetDict(docp, xmlDictCreate());
-	if (ctxt->dict == NULL)
-	    ctxt->dict = xmlDocGetDict(docp);
+	if (xmlCtxtGetDict(ctxt) == NULL)
+	    xmlCtxtSetDict(ctxt, xmlDocGetDict(docp));
     }
 
     if (root_name == NULL)
@@ -140,8 +140,8 @@ slaxJsonBuildDoc (slax_data_t *sdp UNUSED, const char *root_name,
 	nodePush(ctxt, nodep);
     }
 
-    if (ctxt->dict) {
-	xmlDocSetDict(docp, ctxt->dict);
+    if (xmlCtxtGetDict(ctxt)) {
+	xmlDocSetDict(docp, xmlCtxtGetDict(ctxt));
 	xmlDictReference(xmlDocGetDict(docp));
     }
 
@@ -152,7 +152,7 @@ void
 slaxJsonAddTypeInfo (slax_data_t *sdp, const char *value)
 {
     if (!(sdp->sd_flags & SDF_NO_TYPES)) {
-	xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) ATT_TYPE,
+	xmlSetProp(xmlParserCtxtGetNode(sdp->sd_ctxt), (const xmlChar *) ATT_TYPE,
 	       (const xmlChar *) value);
     }
 }
@@ -160,11 +160,11 @@ slaxJsonAddTypeInfo (slax_data_t *sdp, const char *value)
 void
 slaxJsonClearMember (slax_data_t *sdp)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
 
     slaxElementClose(sdp);
 
-    if (nodep->children == NULL) {
+    if (xmlNodeGetChildren(nodep) == NULL) {
 	/* Discard empty member */
 	xmlUnlinkNode(nodep);
 	xmlFreeNode(nodep);
@@ -176,10 +176,10 @@ slaxJsonClearMember (slax_data_t *sdp)
      * and remove the parent.
      */
     if (sdp->sd_flags & SDF_JSON_NO_MEMBERS) {
-	xmlNodePtr parent = sdp->sd_ctxt->node, childp, nextp;
+	xmlNodePtr parent = xmlParserCtxtGetNode(sdp->sd_ctxt), childp, nextp;
 
-	for (childp = parent->children; childp; childp = nextp) {
-	    nextp = childp->next;
+	for (childp = xmlNodeGetChildren(parent); childp; childp = nextp) {
+	    nextp = xmlNodeGetNext(childp);
 	    /* XXX Underimplemented */
 	}
 
@@ -193,15 +193,16 @@ slaxJsonIsTaggedNode (xmlNodePtr nodep)
     const char *json = NULL;
     xmlAttrPtr attrp;
 
-    for (attrp = nodep->properties; attrp; attrp = attrp->next) {
-	if (attrp->children && attrp->children->content) {
-	    char *content = (char *) attrp->children->content;
+    for (attrp = xmlNodeGetProperties(nodep); attrp;
+	 attrp = xmlAttrGetNext(attrp)) {
+	if (xmlAttrGetChildren(attrp) && xmlNodeGetContentRaw(xmlAttrGetChildren(attrp))) {
+	    char *content = (char *) xmlNodeGetContentRaw(xmlAttrGetChildren(attrp));
 
-	    if (streq((const char *) attrp->name, ATT_JSON)) {
+	    if (streq((const char *) xmlAttrGetName(attrp), ATT_JSON)) {
 		json = content;
-	    } else if (streq((const char *) attrp->name, ATT_TYPE)) {
+	    } else if (streq((const char *) xmlAttrGetName(attrp), ATT_TYPE)) {
 		/* nothing; skip */
-	    } else if (streq((const char *) attrp->name, ATT_NAME)) {
+	    } else if (streq((const char *) xmlAttrGetName(attrp), ATT_NAME)) {
 		/* nothing; skip */
 	    } else {
 		return FALSE;
@@ -215,7 +216,7 @@ slaxJsonIsTaggedNode (xmlNodePtr nodep)
 int
 slaxJsonIsTagged (slax_data_t *sdp)
 {
-    return slaxJsonIsTaggedNode(sdp->sd_ctxt->node);
+    return slaxJsonIsTaggedNode(xmlParserCtxtGetNode(sdp->sd_ctxt));
 }
 
 void
@@ -283,8 +284,8 @@ slaxJsonDataToXml (const char *data, const char *root_name, unsigned flags)
     sd.sd_ctxt = ctxt;
     sd.sd_parse = sd.sd_ttype = M_JSON;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     sd.sd_docp = slaxJsonBuildDoc(&sd, root_name, ctxt);
     if (sd.sd_docp == NULL) {
@@ -339,8 +340,8 @@ slaxJsonFileToXml (const char *fname, const char *root_name,
     sd.sd_ctxt = ctxt;
     sd.sd_parse = sd.sd_ttype = M_JSON;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     sd.sd_file = fopen(fname, "r");
     if (sd.sd_file == NULL) {
