@@ -140,7 +140,7 @@ slaxNodeAttribExtend (slax_data_t *sdp, xmlNodePtr nodep,
 void
 slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 {
-    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, NULL);
+    slaxNodeAttribExtend(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), attrib, value, NULL);
 }
 
 /*
@@ -149,7 +149,7 @@ slaxAttribExtend (slax_data_t *sdp, const char *attrib, const char *value)
 void
 slaxAttribExtendXsl (slax_data_t *sdp, const char *attrib, const char *value)
 {
-    slaxNodeAttribExtend(sdp, sdp->sd_ctxt->node, attrib, value, XSL_URI);
+    slaxNodeAttribExtend(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), attrib, value, XSL_URI);
 }
 
 /*
@@ -247,7 +247,7 @@ slaxFindDefaultNs (slax_data_t *sdp UNUSED)
     xmlNsPtr ns = NULL;
     xmlNodePtr nodep;
 
-    for (nodep = sdp->sd_ctxt->node; nodep; nodep = xmlNodeGetParent(nodep))
+    for (nodep = xmlParserCtxtGetNode(sdp->sd_ctxt); nodep; nodep = xmlNodeGetParent(nodep))
 	for (ns = xmlNodeGetNsDef(nodep); ns; ns = xmlNsGetNext(ns))
 	    if (xmlNsGetPrefix(ns) == NULL)
 		return ns;
@@ -301,7 +301,7 @@ slaxFindNs (slax_data_t *sdp, xmlNodePtr nodep, const char *prefix, int len)
 void
 slaxCheckFunction (slax_data_t *sdp, const char *fname)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
     xmlNsPtr ns = NULL;
     const char *cp;
 
@@ -331,7 +331,7 @@ slaxCheckFunction (slax_data_t *sdp, const char *fname)
 void
 slaxElementOpen (slax_data_t *sdp, const char *tag)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
     xmlNsPtr ns = NULL;
     const char *cp;
 
@@ -399,7 +399,7 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
 	return;
     }
 
-    ns = xmlNewNs(sdp->sd_ctxt->node, (const xmlChar *) uri,
+    ns = xmlNewNs(xmlParserCtxtGetNode(sdp->sd_ctxt), (const xmlChar *) uri,
 		  (const xmlChar *) prefix);
 
     /*
@@ -407,16 +407,16 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
      * is unbound on a parent we simply keep it NULL
      */
     if (ns) {
-	xmlNsPtr cur = xmlNodeGetNs(sdp->sd_ctxt->node);
+	xmlNsPtr cur = xmlNodeGetNs(xmlParserCtxtGetNode(sdp->sd_ctxt));
 	if (cur) {
 	    if ((xmlNsGetPrefix(cur) == NULL && xmlNsGetPrefix(ns) == NULL)
 		|| (xmlNsGetPrefix(cur) && xmlNsGetPrefix(ns)
 		    && streq((const char *) xmlNsGetPrefix(cur),
 			     (const char *) xmlNsGetPrefix(ns))))
-		xmlSetNs(sdp->sd_ctxt->node, ns);
+		xmlSetNs(xmlParserCtxtGetNode(sdp->sd_ctxt), ns);
 	} else {
 	    if (xmlNsGetPrefix(ns) == NULL)
-		xmlSetNs(sdp->sd_ctxt->node, ns);
+		xmlSetNs(xmlParserCtxtGetNode(sdp->sd_ctxt), ns);
 	}
     }
 }
@@ -439,10 +439,10 @@ slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
 
 	name = cp + 1;
 	if (slaxIsSlaxNs(prefix, len)) {
-	    ns = slaxSetSlaxNs(sdp, sdp->sd_ctxt->node, FALSE);
+	    ns = slaxSetSlaxNs(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), FALSE);
 
 	} else {
-	    ns = slaxFindNs(sdp, sdp->sd_ctxt->node, prefix, len);
+	    ns = slaxFindNs(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), prefix, len);
 	    if (ns == NULL) {
 		sdp->sd_errors += 1;
 		xmlParserError(sdp->sd_ctxt, "unknown prefix '%.*s' in %s",
@@ -451,7 +451,7 @@ slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
         }
     }
 
-    attr = xmlNewNsProp(sdp->sd_ctxt->node, ns, (const xmlChar *) name,
+    attr = xmlNewNsProp(xmlParserCtxtGetNode(sdp->sd_ctxt), ns, (const xmlChar *) name,
 		      (const xmlChar *) value);
     if (attr == NULL)
 	fprintf(stderr, "could not make attribute: @%s=%s\n", name, value);
@@ -486,7 +486,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 
     /* If we need the "slax" namespace, add it to the parent node */
     if (slaxNeedsSlaxNs(value))
-	slaxSetSlaxNs(sdp, sdp->sd_ctxt->node, FALSE);
+	slaxSetSlaxNs(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), FALSE);
 
     if (value->ss_next == NULL) {
 	if (style == SAS_SELECT && value->ss_ttype == T_QUOTED
@@ -631,7 +631,7 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
 	
     buf = slaxStringAsChar(value, flags);
     if (buf) {
-	attr = xmlNewProp(sdp->sd_ctxt->node, (const xmlChar *) name,
+	attr = xmlNewProp(xmlParserCtxtGetNode(sdp->sd_ctxt), (const xmlChar *) name,
 			  (const xmlChar *) buf);
 	if (attr == NULL)
 	    fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
@@ -648,7 +648,7 @@ slaxAttribAddLiteral (slax_data_t *sdp, const char *name, const char *val)
 {
     xmlAttrPtr attr;
 
-    attr = xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) name,
+    attr = xmlSetProp(xmlParserCtxtGetNode(sdp->sd_ctxt), (const xmlChar *) name,
 		      (const xmlChar *) val);
     if (attr == NULL)
 	fprintf(stderr, "could not make attribute: @%s=%s\n", name, val);
@@ -768,7 +768,7 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
      * Check if we're inside a with-param.  If so, we need to move
      * any temporary variables up one level, since we're in a call.
      */
-    sib = sdp->sd_ctxt->node;
+    sib = xmlParserCtxtGetNode(sdp->sd_ctxt);
     if (slaxNodeIsXsl(sib, ELT_WITH_PARAM))
 	sib = xmlNodeGetParent(sib);
 
@@ -789,7 +789,7 @@ slaxElementAddVar (slax_data_t *sdp, const char *attrib, const char *value)
     }
 
     xmlAddPrevSibling(sib, nodep);
-    xmlNodeSetLine(nodep, xmlNodeGetLine(sdp->sd_ctxt->node));
+    xmlNodeSetLine(nodep, xmlNodeGetLine(xmlParserCtxtGetNode(sdp->sd_ctxt)));
 
     if (attrib) {
 	xmlAttrPtr attr = xmlNewProp(nodep, (const xmlChar *) attrib,
@@ -1144,28 +1144,28 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
 	continue;
     
     /* Save old values */
-    old.o_doc = xpctxt->doc;
-    old.o_node = xpctxt->node;
-    old.o_position = xpctxt->proximityPosition;
-    old.o_contextsize = xpctxt->contextSize;
-    old.o_nscount = xpctxt->nsNr;
-    old.o_nslist = xpctxt->namespaces;
+    old.o_doc = xmlXPathContextGetDoc(xpctxt);
+    old.o_node = xmlXPathContextGetNode(xpctxt);
+    old.o_position = xmlXPathContextGetProximityPosition(xpctxt);
+    old.o_contextsize = xmlXPathContextGetContextSize(xpctxt);
+    old.o_nscount = xmlXPathContextGetNsNr(xpctxt);
+    old.o_nslist = xmlXPathContextGetNamespaces(xpctxt);
 
     /* Fill in context */
-    xpctxt->node = node;
-    xpctxt->namespaces = nsList;
-    xpctxt->nsNr = nscount;
+    xmlXPathContextSetNode(xpctxt, node);
+    xmlXPathContextSetNamespaces(xpctxt, nsList);
+    xmlXPathContextSetNsNr(xpctxt, nscount);
 
     /* Run the compiled expression */
     res = xmlXPathCompiledEval(comp, xpctxt);
 
     /* Restore saved values */
-    xpctxt->doc = old.o_doc;
-    xpctxt->node = old.o_node;
-    xpctxt->contextSize = old.o_contextsize;
-    xpctxt->proximityPosition = old.o_position;
-    xpctxt->nsNr = old.o_nscount;
-    xpctxt->namespaces = old.o_nslist;
+    xmlXPathContextSetDoc(xpctxt, old.o_doc);
+    xmlXPathContextSetNode(xpctxt, old.o_node);
+    xmlXPathContextSetContextSize(xpctxt, old.o_contextsize);
+    xmlXPathContextSetProximityPosition(xpctxt, old.o_position);
+    xmlXPathContextSetNsNr(xpctxt, old.o_nscount);
+    xmlXPathContextSetNamespaces(xpctxt, old.o_nslist);
 
     xmlFreeAndEasy(sexpr);
     xmlXPathFreeCompExpr(comp);
