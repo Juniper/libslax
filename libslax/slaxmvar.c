@@ -77,7 +77,7 @@ slaxMvarSvarName (const char *varname, int init)
 void
 slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
 {
-    xmlNodePtr mvar = sdp->sd_ctxt->node, svar, ivar = NULL;
+    xmlNodePtr mvar = xmlParserCtxtGetNode(sdp->sd_ctxt), svar, ivar = NULL;
     xmlChar *ivarname = NULL;
     char buf[BUFSIZ];
     char *sel = NULL;
