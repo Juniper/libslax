@@ -17,10 +17,6 @@ SUBDIRS= \
     pa \
     xi
 
-if USE_LIBXSLT_TESTS
-SUBDIRS += bxslt
-endif
-
 test tests:
 	@(cur=`pwd` ; for dir in $(SUBDIRS) ; do \
 		cd $$dir ; \
