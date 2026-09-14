@@ -69,13 +69,8 @@ xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
     pctxt = xmlNewParserCtxt();
     if (pctxt == NULL)
         return(NULL);
-    if ((dict != NULL) && (pctxt->dict != NULL)) {
-        xmlDictFree(pctxt->dict);
-	pctxt->dict = NULL;
-    }
     if (dict != NULL) {
-	pctxt->dict = dict;
-	xmlDictReference(pctxt->dict);
+	xmlCtxtSetDict(pctxt, dict);
 #ifdef WITH_XSLT_DEBUG
 	xsltGenericDebug(xsltGenericDebugContext,
                      "Reusing dictionary for document\n");
@@ -95,13 +90,13 @@ xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
 
     xmlParseDocument(pctxt);
 
-    if (pctxt->wellFormed) {
-        doc = pctxt->myDoc;
+    if (xmlParserCtxtGetWellFormed(pctxt)) {
+        doc = xmlParserCtxtGetMyDoc(pctxt);
     }
     else {
         doc = NULL;
-        xmlFreeDoc(pctxt->myDoc);
-        pctxt->myDoc = NULL;
+        xmlFreeDoc(xmlParserCtxtGetMyDoc(pctxt));
+        xmlParserCtxtSetMyDoc(pctxt, NULL);
     }
 #endif
 
