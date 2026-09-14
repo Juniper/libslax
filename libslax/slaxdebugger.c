@@ -201,7 +201,7 @@ int slaxDebugDisplayMode;
 #define DEBUG_MODE_EMACS	2 /* gdb/emacs mode */
 #define DEBUG_MODE_PROFILER	3 /* Profiler only */
 
-#define NAME(_x) (((_x) && (_x)->name) ? (_x)->name : slaxNull)
+#define NAME(_x) (((_x) && xmlNodeGetName(_x)) ? xmlNodeGetName(_x) : slaxNull)
 
 /**
  * Return the current debugger state object.  This is currently
@@ -301,7 +301,7 @@ slaxDebugGetTemplate (slaxDebugState_t *statep, xmlNodePtr inst)
 {
     xsltTemplatePtr tmp;
 
-    for ( ; inst; inst = inst->parent) {
+    for ( ; inst; inst = xmlNodeGetParent(inst)) {
 	if (slaxNodeIsXsl(inst, ELT_TEMPLATE)) {
 
 	    for (tmp = xsltStylesheetGetTemplates(statep->ds_script); tmp;
@@ -320,13 +320,13 @@ slaxDebugGetTemplate (slaxDebugState_t *statep, xmlNodePtr inst)
 static xmlNodePtr
 slaxDebugGetNodeByLine (xmlNodePtr node, int lineno)
 {
-    for ( ; node; node = node->next) {
+    for ( ; node; node = xmlNodeGetNext(node)) {
 	if (lineno == xmlGetLineNo(node))
 	    return node;
 
-	if (node->children) {
+	if (xmlNodeGetChildren(node)) {
 	    xmlNodePtr answer;
-	    answer = slaxDebugGetNodeByLine(node->children, lineno);
+	    answer = slaxDebugGetNodeByLine(xmlNodeGetChildren(node), lineno);
 	    if (answer)
 		return answer;
 	}
@@ -355,7 +355,7 @@ slaxDebugGetNodeByFilename (slaxDebugState_t *statep,
     if (style == NULL)
 	return NULL;
 
-    node = slaxDebugGetNodeByLine(xsltStylesheetGetDoc(style)->children, lineno);
+    node = slaxDebugGetNodeByLine(xmlDocGetChildren(xsltStylesheetGetDoc(style)), lineno);
 
     return node;
 }
@@ -779,7 +779,7 @@ slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
 
     if (statep->ds_stop_at && statep->ds_stop_at == node) {
 	slaxOutput("Reached stop at %s:%ld",
-		   xmlDocGetURL(node->doc), xmlGetLineNo(node));
+		   xmlDocGetURL(xmlNodeGetDoc(node)), xmlGetLineNo(node));
 
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	statep->ds_stop_at = NULL; /* One time only */
@@ -789,7 +789,7 @@ slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
     TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbp->dbp_inst && dbp->dbp_inst == node) {
 	    slaxOutput("Reached breakpoint %d, at %s:%ld",
-		       dbp->dbp_num, xmlDocGetURL(node->doc),
+		       dbp->dbp_num, xmlDocGetURL(xmlNodeGetDoc(node)),
 		       xmlGetLineNo(node));
 	    if (dbp->dbp_condition)
 		slaxOutput("  Condition: '%s'", dbp->dbp_condition);
@@ -831,12 +831,14 @@ slaxDebugCallFlow (slaxDebugState_t *statep, xsltTemplatePtr template,
 
     slaxOutput("callflow: %u: %s <%s%s%s>%s%s at %s%s%ld",
 	statep->ds_stackdepth, tag,
-	(inst && inst->ns && inst->ns->prefix) ? inst->ns->prefix : slaxNull,
-	(inst && inst->ns && inst->ns->prefix) ? ":" : "",
+	(inst && xmlNodeGetNs(inst) && xmlNsGetPrefix(xmlNodeGetNs(inst)))
+		? xmlNsGetPrefix(xmlNodeGetNs(inst)) : slaxNull,
+	(inst && xmlNodeGetNs(inst) && xmlNsGetPrefix(xmlNodeGetNs(inst))) ? ":" : "",
 	NAME(inst), template ? " in " : "",
 	template ? slaxDebugTemplateInfo(template, buf, sizeof(buf)) : "",
-	(inst && inst->doc && xmlDocGetURL(inst->doc)) ? xmlDocGetURL(inst->doc) : slaxNull,
-	(inst && inst->doc && xmlDocGetURL(inst->doc)) ? ":" : "",
+	(inst && xmlNodeGetDoc(inst) && xmlDocGetURL(xmlNodeGetDoc(inst)))
+		? xmlDocGetURL(xmlNodeGetDoc(inst)) : slaxNull,
+	(inst && xmlNodeGetDoc(inst) && xmlDocGetURL(xmlNodeGetDoc(inst))) ? ":" : "",
 	inst ? xmlGetLineNo(inst) : 0);
 }
 
@@ -869,7 +871,7 @@ slaxDebugGetNode (slaxDebugState_t *statep, const char *spec)
      */
     if ((lineno = atoi(spec)) > 0) {
 	xmlDocPtr docp = statep->ds_inst
-	    ? statep->ds_inst->doc : xsltStylesheetGetDoc(statep->ds_script);
+	    ? xmlNodeGetDoc(statep->ds_inst) : xsltStylesheetGetDoc(statep->ds_script);
 	const char *fname =  (const char *) xmlDocGetURL(docp);
 	return slaxDebugGetNodeByFilename(statep, fname, lineno);
     }
@@ -1015,7 +1017,7 @@ slaxDebugCmdBreak (DC_ARGS)
 
     slaxOutput("Breakpoint %d at file %s, line %ld",
 		    bp->dbp_num, 
-		    xmlDocGetURL(node->doc), xmlGetLineNo(node));  
+		    xmlDocGetURL(xmlNodeGetDoc(node)), xmlGetLineNo(node));
 }
 
 static int
@@ -1186,7 +1188,7 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	    slaxOutput("    %s#%d %s at %s:%ld%s%s%s",
 		       tag, dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-		       dbp->dbp_inst->doc ? xmlDocGetURL(dbp->dbp_inst->doc) : slaxNull,
+		       xmlNodeGetDoc(dbp->dbp_inst) ? xmlDocGetURL(xmlNodeGetDoc(dbp->dbp_inst)) : slaxNull,
 		       xmlGetLineNo(dbp->dbp_inst),
 		       cond ? " condition: '" : "", cond ?: "",
 		       cond ? "'" : "");
@@ -1308,7 +1310,7 @@ slaxDebugCmdInfo (DC_ARGS)
     } else if (slaxDebugIsAbbrev("nodes", argv[1])) {
 	if (statep->ds_script && xsltStylesheetGetDoc(statep->ds_script))
 	    slaxDebugListNodeByLine(
-		xsltStylesheetGetDoc(statep->ds_script)->children);
+		xmlDocGetChildren(xsltStylesheetGetDoc(statep->ds_script)));
 
     } else if (slaxDebugIsAbbrev("output", argv[1])) {
 	if (slaxDebugCheckContext(ctxt))
@@ -1390,15 +1392,15 @@ slaxDebugCmdList (DC_ARGS)
 	line_no = xmlGetLineNo(node);
 
     } else if (xsltStylesheetGetDoc(statep->ds_script)) {
-	node = xsltStylesheetGetDoc(statep->ds_script)->children;
+	node = xmlDocGetChildren(xsltStylesheetGetDoc(statep->ds_script));
 	line_no = xmlGetLineNo(node) ?: 1;
     } else {
 	slaxOutput("no target");
 	return;
     }
 
-    if (node && node->doc) {
-	slaxDebugOutputScriptLines(statep, (const char *) xmlDocGetURL(node->doc),
+    if (node && xmlNodeGetDoc(node)) {
+	slaxDebugOutputScriptLines(statep, (const char *) xmlDocGetURL(xmlNodeGetDoc(node)),
 				   line_no, line_no + DEBUG_LIST_COUNT);
 	statep->ds_list_node = node;
 	statep->ds_list_line = line_no + DEBUG_LIST_COUNT;
@@ -1739,17 +1741,17 @@ slaxDebugCmdWhere (DC_ARGS)
 				  template_info, sizeof(template_info));
 	else snprintf(template_info, sizeof(template_info),
 		      "<%s%s%s>",
-		      (stp->st_inst && stp->st_inst->ns
-		       && stp->st_inst->ns->prefix)
-		      ? stp->st_inst->ns->prefix : slaxNull,
-		      (stp->st_inst && stp->st_inst->ns
-		       && stp->st_inst->ns->prefix) ? ":" : "",
+		      (stp->st_inst && xmlNodeGetNs(stp->st_inst)
+		       && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)))
+		      ? xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)) : slaxNull,
+		      (stp->st_inst && xmlNodeGetNs(stp->st_inst)
+		       && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst))) ? ":" : "",
 		      NAME(stp->st_inst));
 
 	caller = stp->st_caller ?: stp->st_inst;
 
-	filename = strrchr((const char *) xmlDocGetURL(caller->doc), '/');
-	filename = filename ? filename + 1 : (const char *) xmlDocGetURL(caller->doc);
+	filename = strrchr((const char *) xmlDocGetURL(xmlNodeGetDoc(caller)), '/');
+	filename = filename ? filename + 1 : (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
 
 	if (stp->st_template && xsltTemplateGetMatch(stp->st_template))
 	    snprintf(from_info, sizeof(from_info),
@@ -2172,7 +2174,7 @@ slaxDebugShell (slaxDebugState_t *statep)
     }
 
     if ((statep->ds_flags & DSF_DISPLAY) && statep->ds_inst != NULL) {
-	const char *filename = (const char *) xmlDocGetURL(statep->ds_inst->doc);
+	const char *filename = (const char *) xmlDocGetURL(xmlNodeGetDoc(statep->ds_inst));
 	int line_no = xmlGetLineNo(statep->ds_inst);
 	slaxDebugOutputScriptLines(statep, filename, line_no, line_no + 1);
 	statep->ds_flags &= ~DSF_DISPLAY;
@@ -2260,7 +2262,7 @@ slaxDebugSameSlax (slaxDebugState_t *statep, xmlNodePtr inst)
     if (statep->ds_inst == inst)
 	return TRUE;
 
-    if (statep->ds_inst->doc && statep->ds_inst->doc == inst->doc) {
+    if (xmlNodeGetDoc(statep->ds_inst) && xmlNodeGetDoc(statep->ds_inst) == xmlNodeGetDoc(inst)) {
 	int lineno = xmlGetLineNo(inst);
 	if (lineno > 0 && lineno == xmlGetLineNo(statep->ds_inst))
 	    return TRUE;
@@ -2296,13 +2298,13 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     slaxLog("handleFrame: template %p/[%s], node %p/%s/%d, "
 	      "inst %p/%s/%ld ctxt %p",
 	      template, slaxDebugTemplateInfo(template, buf, sizeof(buf)),
-	      node, NAME(node), node ? node->type : 0,
+	      node, NAME(node), node ? xmlNodeGetType(node) : 0,
 	      inst, NAME(inst), inst ? xmlGetLineNo(inst) : 0, ctxt);
 
     /*
      * We do not debug text nodes
      */
-    if (inst && inst->type == XML_TEXT_NODE)
+    if (inst && xmlNodeGetType(inst) == XML_TEXT_NODE)
 	return;
 
     /*
@@ -2477,8 +2479,8 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
      * instruction is the same one we recorded in Handler.
      */
     if (inst == statep->ds_inst
-	&& (streq((const char *) inst->name, ELT_CALL_TEMPLATE)
-	    || streq((const char *) inst->name, ELT_TEMPLATE)))
+	&& (streq((const char *) xmlNodeGetName(inst), ELT_CALL_TEMPLATE)
+	    || streq((const char *) xmlNodeGetName(inst), ELT_TEMPLATE)))
 	return 0;
 
     if (statep->ds_flags & DSF_CALLFLOW)
@@ -2499,9 +2501,9 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     stp->st_inst = inst;
     stp->st_caller = statep->ds_inst;
 
-    if (inst->ns && inst->ns->href && inst->name
-	&& streq((const char *) inst->ns->href, XSL_URI)) {
-	if (streq((const char *) inst->name, ELT_WITH_PARAM))
+    if (xmlNodeGetNs(inst) && xmlNsGetHref(xmlNodeGetNs(inst)) && xmlNodeGetName(inst)
+	&& streq((const char *) xmlNsGetHref(xmlNodeGetNs(inst)), XSL_URI)) {
+	if (streq((const char *) xmlNodeGetName(inst), ELT_WITH_PARAM))
 	    stp->st_flags |= STF_PARAM;
     }
 
@@ -2555,9 +2557,9 @@ slaxDebugDropFrame (void)
     slaxLog("dropFrame: %s (%p), inst <%s%s%s> (%p; line %ld%s)",
 	      slaxDebugTemplateInfo(template, buf, sizeof(buf)),
 	      template, 
-	      (inst && inst->ns && inst->ns->prefix)
-	    		? inst->ns->prefix : slaxNull,
-	      (inst && inst->ns && inst->ns->prefix) ? ":" : "",
+	      (inst && xmlNodeGetNs(inst) && xmlNsGetPrefix(xmlNodeGetNs(inst)))
+	    		? xmlNsGetPrefix(xmlNodeGetNs(inst)) : slaxNull,
+	      (inst && xmlNodeGetNs(inst) && xmlNsGetPrefix(xmlNodeGetNs(inst))) ? ":" : "",
 	      NAME(stp->st_inst), inst,
 	      stp->st_inst ? xmlGetLineNo(stp->st_inst) : 0,
 	      (stp->st_flags & STF_STOPWHENPOP) ? " stopwhenpop" : "");
