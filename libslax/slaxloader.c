@@ -129,22 +129,22 @@ slaxCheckForQname (slax_data_t *sdp, const char *info, const char *tag)
 void
 slaxRelocateSort (slax_data_t *sdp)
 {
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
 
-    if (nodep && nodep->parent) {
-	xmlNodePtr parent = nodep->parent;
+    if (nodep && xmlNodeGetParent(nodep)) {
+	xmlNodePtr parent = xmlNodeGetParent(nodep);
         xmlChar *sel = xmlGetProp(parent, (const xmlChar *) ATT_SELECT);
 
 	if (sel && strncmp((char *) sel, "$slax-dot-", 10) == 0) {
 	    slaxLog("slaxRelocateSort: %s:%ld: must relocate",
-		      nodep->name, xmlGetLineNo(nodep));
+		      xmlNodeGetName(nodep), xmlGetLineNo(nodep));
 	    /*
 	     * "parent" is the inner for-each loop, and "parent->parent"
 	     * is the outer for-each loop.  Add the sort as the first
 	     * child of the outer loop.  xmlAddPrevSibling will unlink
 	     * nodep from its current location.
 	     */
-	    xmlAddPrevSibling(parent->parent->children, nodep);
+	    xmlAddPrevSibling(xmlNodeGetChildren(xmlNodeGetParent(parent)), nodep);
 	}
 
 	xmlFreeAndEasy(sel);
@@ -205,7 +205,7 @@ slaxAvoidRtf (slax_data_t *sdp)
 
     static unsigned temp_count;
 
-    xmlNodePtr nodep = sdp->sd_ctxt->node;
+    xmlNodePtr nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
     xmlNodePtr newp;
     xmlChar *name;
     char *temp_name, *value, *old_value;
@@ -225,10 +225,10 @@ slaxAvoidRtf (slax_data_t *sdp)
      */
     sel = xmlGetProp(nodep, (const xmlChar *) ATT_SELECT);
     if (sel) {
-	if (nodep->children != NULL) {
+	if (xmlNodeGetChildren(nodep) != NULL) {
 	    xmlParserError(sdp->sd_ctxt,
 			   "%s:%d: %s cannot have both select and children\n",
-			   sdp->sd_filename, sdp->sd_line, nodep->name);
+			   sdp->sd_filename, sdp->sd_line, xmlNodeGetName(nodep));
 	    xmlFreeAndEasy(sel);
 	    return;
 	}
@@ -251,24 +251,24 @@ slaxAvoidRtf (slax_data_t *sdp)
 	temp_name = alloca(vlen);
 	snprintf(temp_name, vlen, temp_name_format, name, ++temp_count);
 
-	(void) xmlSetProp(sdp->sd_ctxt->node, (const xmlChar *) ATT_NAME,
+	(void) xmlSetProp(xmlParserCtxtGetNode(sdp->sd_ctxt), (const xmlChar *) ATT_NAME,
 			  (xmlChar *) temp_name);
 
 	/*
 	 * Now generate the new element, using the original, user-provided
 	 * name and a call to "slax:node-set" function.
 	 */
-	newp = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns, nodep->name, NULL);
+	newp = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns, xmlNodeGetName(nodep), NULL);
 	if (newp == NULL) {
-	    fprintf(stderr, "could not make node: %s\n", nodep->name);
+	    fprintf(stderr, "could not make node: %s\n", xmlNodeGetName(nodep));
 	    xmlFreeAndEasy(name);
 	    return;
 	}
 
-	xmlAddChild(nodep->parent, newp);
+	xmlAddChild(xmlNodeGetParent(nodep), newp);
 
 	/* Use the line number from the original node */
-	newp->line = nodep->line;
+	xmlNodeSetLine(newp, xmlNodeGetLine(nodep));
 
 	xmlNewProp(newp, (const xmlChar *) ATT_NAME, (const xmlChar *) name);
 
@@ -372,7 +372,7 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	    }
 
 	    slaxLexerAddChild(sdp, textp, nodep);
-	    xmlAddChild(sdp->sd_ctxt->node, textp);
+	    xmlAddChild(xmlParserCtxtGetNode(sdp->sd_ctxt), textp);
 
 	} else {
 	    slaxLexerAddChild(sdp, NULL, nodep);
@@ -434,14 +434,14 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
     if (choosep == NULL)
 	return;
 
-    for (nodep = choosep->children; nodep; nodep = nodep->next) {
+    for (nodep = xmlNodeGetChildren(choosep); nodep; nodep = xmlNodeGetNext(nodep)) {
 	if (count++ > 0)
 	    return;
 
-	if (nodep->type != XML_ELEMENT_NODE)
+	if (xmlNodeGetType(nodep) != XML_ELEMENT_NODE)
 	    return;
 
-	if (!streq((const char *) nodep->name, ELT_WHEN))
+	if (!streq((const char *) xmlNodeGetName(nodep), ELT_WHEN))
 	    return;
     }
 
@@ -450,20 +450,20 @@ slaxCheckIf (slax_data_t *sdp, xmlNodePtr choosep)
      * an "xsl:when".  We need to turn the "when" into an "if"
      * and re-parent it under the current context node.
      */
-    nodep = choosep->children;
+    nodep = xmlNodeGetChildren(choosep);
 
     xmlUnlinkNode(nodep);
-    if (!xmlDictOwns(sdp->sd_ctxt->dict, nodep->name))
-	xmlFree(const_drop(nodep->name));
+    if (!xmlDictOwns(xmlCtxtGetDict(sdp->sd_ctxt), xmlNodeGetName(nodep)))
+	xmlFree(const_drop(xmlNodeGetName(nodep)));
 
-    nodep->name = xmlDictLookup(sdp->sd_ctxt->dict,
-				(const xmlChar *) ELT_IF, -1);
-    if (nodep->name == NULL)
+    xmlNodeSetNameRaw(nodep, xmlDictLookup(xmlCtxtGetDict(sdp->sd_ctxt),
+				(const xmlChar *) ELT_IF, -1));
+    if (xmlNodeGetName(nodep) == NULL)
 	return;
 
     xmlUnlinkNode(choosep);
     xmlFreeNode(choosep);
-    xmlAddChild(sdp->sd_ctxt->node, nodep);
+    xmlAddChild(xmlParserCtxtGetNode(sdp->sd_ctxt), nodep);
 }
 
 void 
@@ -486,11 +486,11 @@ slaxHandleEltArgSafeInsert (xmlNodePtr base)
     const char *name;
     xmlNodePtr nodep = base;
 
-    for ( ; nodep; nodep = nodep->parent) {
+    for ( ; nodep; nodep = xmlNodeGetParent(nodep)) {
 	if (!slaxNodeIsXsl(base, NULL))
 	    break;
 
-	name = (const char *) nodep->name;
+	name = (const char *) xmlNodeGetName(nodep);
 
 	if (streq(name, ELT_VARIABLE))
 	    return nodep;
@@ -511,14 +511,14 @@ slaxHandleEltArgSafeInsert (xmlNodePtr base)
 static void
 slaxPrintNode (const char *txt, xmlNodePtr nodep)
 {
-    const char *localname = (const char *) nodep->name;
-    xmlNodePtr parent = nodep->parent;
+    const char *localname = (const char *) xmlNodeGetName(nodep);
+    xmlNodePtr parent = xmlNodeGetParent(nodep);
     const char *plocalname = NULL;
     char *name = slaxGetAttrib(nodep, ATT_NAME);
     char *pname = NULL;
 
     if (parent) {
-	plocalname = (const char *) parent->name;
+	plocalname = (const char *) xmlNodeGetName(parent);
 	pname = slaxGetAttrib(parent, ATT_NAME);
     }
 
@@ -555,7 +555,7 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
     slaxPrintNode("slaxHandleEltArg: varp", varp);
 
     if (var_on_stack) {
-	nodep = sdp->sd_ctxt->node;
+	nodep = xmlParserCtxtGetNode(sdp->sd_ctxt);
 	if (nodep == NULL)
 	    return NULL;
 
@@ -568,15 +568,15 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
 	xmlAddChild(varp, nodep);
     }
 
-    insert = slaxHandleEltArgSafeInsert(sdp->sd_ctxt->node);
+    insert = slaxHandleEltArgSafeInsert(xmlParserCtxtGetNode(sdp->sd_ctxt));
 
     slaxLog("slaxHandleEltArg: insert of '%s' is '%s'",
-	    (const char *) sdp->sd_ctxt->node->name,
-	    insert ? (const char *) insert->name : "");
+	    (const char *) xmlNodeGetName(xmlParserCtxtGetNode(sdp->sd_ctxt)),
+	    insert ? (const char *) xmlNodeGetName(insert) : "");
 
     if (insert) {
 	slaxPrintNode("slaxHandleEltArg: insert", insert);
-	slaxSetExtNs(sdp, sdp->sd_ctxt->node, FALSE);
+	slaxSetExtNs(sdp, xmlParserCtxtGetNode(sdp->sd_ctxt), FALSE);
 	xmlAddPrevSibling(insert, varp);
 
     } else {
@@ -588,7 +588,7 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
     }
 
     /* Use the line number from the original node */
-    varp->line = nodep->line;
+    xmlNodeSetLine(varp, xmlNodeGetLine(nodep));
 
     snprintf(str, sizeof(str), new_value_format, varname);
     ssp = slaxStringLiteral(str, T_BARE);
@@ -606,7 +606,7 @@ slaxMainElement (slax_data_t *sdp)
 {
     slaxLog("slaxMainElement: %p", sdp);
 
-    if (!slaxNodeIsXsl(sdp->sd_ctxt->node, ELT_TEMPLATE))
+    if (!slaxNodeIsXsl(xmlParserCtxtGetNode(sdp->sd_ctxt), ELT_TEMPLATE))
 	slaxElementPop(sdp);
     slaxElementPop(sdp);
 }
@@ -625,12 +625,12 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	return NULL;
 
     xmlDocSetStandalone(docp, 1);
-    if (ctxt->dict)
-	xmlDocSetDict(docp, ctxt->dict);
+    if (xmlCtxtGetDict(ctxt))
+	xmlDocSetDict(docp, xmlCtxtGetDict(ctxt));
     else {
 	xmlDocSetDict(docp, xmlDictCreate());
-	if (ctxt->dict == NULL)
-	    ctxt->dict = xmlDocGetDict(docp);
+	if (xmlCtxtGetDict(ctxt) == NULL)
+	    xmlCtxtSetDict(ctxt, xmlDocGetDict(docp));
     }
 
     nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) ELT_STYLESHEET, NULL);
@@ -649,8 +649,8 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	    xmlAddProp(nodep, attr);
     }
 
-    if (ctxt->dict) {
-	xmlDocSetDict(docp, ctxt->dict);
+    if (xmlCtxtGetDict(ctxt)) {
+	xmlDocSetDict(docp, xmlCtxtGetDict(ctxt));
 	xmlDictReference(xmlDocGetDict(docp));
     }
 
@@ -706,13 +706,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     ctxt->linenumbers = 1;
 #endif
 
-    if (dict) {
-	if (ctxt->dict)
-	    xmlDictFree(ctxt->dict);
-
-    	ctxt->dict = dict;
- 	xmlDictReference(ctxt->dict);
-    }
+    if (dict)
+	xmlCtxtSetDict(ctxt, dict);
 
     bzero(&sd, sizeof(sd));
     sd.sd_line = 1;
@@ -725,8 +720,8 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
 
     sd.sd_ctxt = ctxt;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     sd.sd_docp = slaxBuildDoc(&sd, ctxt);
     if (sd.sd_docp == NULL) {
@@ -786,13 +781,8 @@ slaxLoadBuffer (const char *filename, char *input,
     ctxt->linenumbers = 1;
 #endif
 
-    if (dict) {
-	if (ctxt->dict)
-	    xmlDictFree(ctxt->dict);
-
-    	ctxt->dict = dict;
- 	xmlDictReference(ctxt->dict);
-    }
+    if (dict)
+	xmlCtxtSetDict(ctxt, dict);
 
     bzero(&sd, sizeof(sd));
     sd.sd_line = 1;
@@ -803,8 +793,8 @@ slaxLoadBuffer (const char *filename, char *input,
     strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_ctxt = ctxt;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     sd.sd_docp = slaxBuildDoc(&sd, ctxt);
     if (sd.sd_docp == NULL) {
@@ -874,8 +864,8 @@ slaxSlaxToXpath (const char *filename UNUSED, int lineno,
     sd.sd_ctxt = ctxt;
     sd.sd_flags |= SDF_NO_SLAX_KEYWORDS;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     sd.sd_line = lineno;
 
@@ -1121,7 +1111,7 @@ slaxCtxtReadFd(xmlParserCtxtPtr ctxt, int fd, const char *URL,
 	}
     }
 
-    docp = slaxLoadFile(URL, file, ctxt->dict, 0);
+    docp = slaxLoadFile(URL, file, xmlCtxtGetDict(ctxt), 0);
 
     if (file != stdin)
 	fclose(file);
