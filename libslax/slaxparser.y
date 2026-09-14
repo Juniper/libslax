@@ -1916,7 +1916,7 @@ for_each_stmt :
 
 		    if ($2->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
-				      slax_data->sd_ctxt->node, FALSE);
+				      xmlParserCtxtGetNode(slax_data->sd_ctxt), FALSE);
 
 		    $$ = NULL;
 		}
@@ -1990,7 +1990,7 @@ for_stmt :
 
 		    if ($4->ss_ttype == M_SEQUENCE)
 			slaxSetSlaxNs(slax_data,
-				      slax_data->sd_ctxt->node, FALSE);
+				      xmlParserCtxtGetNode(slax_data->sd_ctxt), FALSE);
 
 		    /* Inner variable */
 		    slaxElementPush(slax_data, ELT_VARIABLE,
@@ -2050,7 +2050,7 @@ if_stmt :
 		}
 	    elsif_stmt_list else_stmt
 		{
-		    xmlNodePtr choosep = slax_data->sd_ctxt->node;
+		    xmlNodePtr choosep = xmlParserCtxtGetNode(slax_data->sd_ctxt);
 		    slaxElementPop(slax_data); /* Pop choose */
 		    slaxCheckIf(slax_data, choosep);
 		    $$ = STACK_CLEAR($1);
@@ -3592,7 +3592,7 @@ json_array :
 		{
 		    const char *member = ELT_MEMBER;
 		    if (slax_data->sd_flags & SDF_JSON_NO_MEMBERS)
-			member = (const char *) slax_data->sd_ctxt->node->name;
+			member = (const char *) xmlNodeGetName(xmlParserCtxtGetNode(slax_data->sd_ctxt));
 
 		    slaxJsonAddTypeInfo(slax_data, VAL_ARRAY);
 		    slaxElementOpen(slax_data, member);
