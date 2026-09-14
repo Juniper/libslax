@@ -94,8 +94,8 @@ static const char *
 jsonNeedsComma (xmlNodePtr nodep UNUSED)
 {
     xmlNodePtr nextp;
-    for (nextp = nodep->next; nextp; nextp = nextp->next)
-	if (nextp->type != XML_TEXT_NODE)
+    for (nextp = xmlNodeGetNext(nodep); nextp; nextp = xmlNodeGetNext(nextp))
+	if (xmlNodeGetType(nextp) != XML_TEXT_NODE)
 	    return ",";
 
     return "";
