@@ -722,14 +722,17 @@ xmlNodePtr
 slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent,
 			 xmlNodePtr cur)
 {
-    if (ctxt->input != NULL) { 
-        if (ctxt->input->line < 65535) 
-	    cur->line = (short) ctxt->input->line;
-	else 
-	    cur->line = 65535;
+    xmlParserInputPtr input = xmlParserCtxtGetInput(ctxt);
+
+    if (input != NULL) {
+        if (input->line < 65535)
+	    xmlNodeSetLine(cur, (short) input->line);
+	else
+	    xmlNodeSetLine(cur, 65535);
     }
 
-    slaxLog("addchild: '%s' %d", (const char *) cur->name, cur->line);
+    slaxLog("addchild: '%s' %d", (const char *) xmlNodeGetName(cur),
+	    xmlNodeGetLine(cur));
 
     return xmlAddChild(parent, cur);
 }
@@ -737,14 +740,21 @@ slaxLexerAddChildLineNo (xmlParserCtxtPtr ctxt, xmlNodePtr parent,
 void
 slaxAddInsert (slax_data_t *sdp, xmlNodePtr nodep)
 {
-    xmlNodePtr *nextp = &sdp->sd_insert;
+    xmlNodePtr cur = sdp->sd_insert;
 
-    while (*nextp != NULL) {
-	nextp = &(*nextp)->next;
+    xmlNodeSetNext(nodep, NULL);
+    xmlNodeSetPrev(nodep, NULL);
+    xmlNodeSetParent(nodep, NULL);
+
+    if (cur == NULL) {
+	sdp->sd_insert = nodep;
+	return;
     }
 
-    nodep->next = nodep->prev = nodep->parent = NULL;
-    *nextp = nodep;
+    while (xmlNodeGetNext(cur) != NULL)
+	cur = xmlNodeGetNext(cur);
+
+    xmlNodeSetNext(cur, nodep);
 }
 
 xmlNodePtr
@@ -753,7 +763,7 @@ slaxLexerAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
     xmlNodePtr res;
 
     if (parent == NULL)
-	parent = sdp->sd_ctxt->node;
+	parent = xmlParserCtxtGetNode(sdp->sd_ctxt);
 
     res = slaxLexerAddChildLineNo(sdp->sd_ctxt, parent, nodep);
 
@@ -764,8 +774,10 @@ slaxLexerAddChild (slax_data_t *sdp, xmlNodePtr parent, xmlNodePtr nodep)
 	sdp->sd_insert = NULL;
 
 	for ( ; cur; cur = next) {
-	    next = cur->next;
-	    cur->next = cur->prev = cur->parent = NULL;
+	    next = xmlNodeGetNext(cur);
+	    xmlNodeSetNext(cur, NULL);
+	    xmlNodeSetPrev(cur, NULL);
+	    xmlNodeSetParent(cur, NULL);
 	    xmlAddPrevSibling(nodep, cur);
 	}
     }
@@ -1005,8 +1017,9 @@ slaxLexer (slax_data_t *sdp)
 	       && isspace((int) sdp->sd_buf[sdp->sd_cur])) {
 	    if (sdp->sd_buf[sdp->sd_cur] == '\n') {
 		sdp->sd_line += 1;
-		if (sdp->sd_ctxt->input)
-		    sdp->sd_ctxt->input->line = sdp->sd_line;
+		xmlParserInputPtr input = xmlParserCtxtGetInput(sdp->sd_ctxt);
+		if (input)
+		    input->line = sdp->sd_line;
 	    }
 
 	    sdp->sd_cur += 1;
@@ -1069,9 +1082,9 @@ slaxLexer (slax_data_t *sdp)
 			     * so we may need to move the comment up one
 			     * level in the output document
 			     */
-			    xmlNodePtr par = sdp->sd_ctxt->node;
+			    xmlNodePtr par = xmlParserCtxtGetNode(sdp->sd_ctxt);
 			    if (slaxNodeIsXsl(par, ELT_SORT))
-				par = par->parent;
+				par = xmlNodeGetParent(par);
 			    xmlAddChild(par, nodep);
 			}
 			xmlFreeAndEasy(contents);
@@ -1580,7 +1593,7 @@ slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp)
 static xmlNodePtr
 slaxFindOpenNode (slax_data_t *sdp)
 {
-    return sdp->sd_ctxt->node;
+    return xmlParserCtxtGetNode(sdp->sd_ctxt);
 }
 
 /*
@@ -1621,14 +1634,14 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
 	    int lineno = xmlGetLineNo(nodep);
 
 	    if (lineno > 0) {
-		if (nodep->ns && nodep->ns->href
-			&& streq((const char *)nodep->ns->href, XSL_URI)) {
+		if (xmlNodeGetNs(nodep) && xmlNsGetHref(xmlNodeGetNs(nodep))
+			&& streq((const char *)xmlNsGetHref(xmlNodeGetNs(nodep)), XSL_URI)) {
 		    SNPRINTF(cp, ep,
 			     "; unterminated statement (<xsl:%s>) on line %d",
-			     nodep->name, lineno);
+			     xmlNodeGetName(nodep), lineno);
 		} else {
 		    SNPRINTF(cp, ep, "; open element (<%s>) on line %d",
-			     nodep->name, lineno);
+			     xmlNodeGetName(nodep), lineno);
 		}
 	    }
 	}
