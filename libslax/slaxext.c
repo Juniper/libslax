@@ -262,7 +262,7 @@ slaxTraceCompile (xsltStylesheetPtr style, xmlNodePtr inst,
     }
 
     /* Prebuild the namespace list */
-    comp->tp_nslist = xmlGetNsList(inst->doc, inst);
+    comp->tp_nslist = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     if (comp->tp_nslist != NULL) {
 	int i = 0;
 	while (comp->tp_nslist[i] != NULL)
@@ -314,7 +314,7 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 	xmlXPathContextSetNsNr(xpathCtxt, save_nscount);
 	xmlXPathContextSetNamespaces(xpathCtxt, save_nslist);
 
-    } else if (inst->children) {
+    } else if (xmlNodeGetChildren(inst)) {
 	/*
 	 * The content of the element is a template that generates
 	 * the value.
@@ -337,7 +337,7 @@ slaxTraceElement (xsltTransformContextPtr ctxt,
 
 	/* Apply the template code inside the element */
 	xsltApplyOneTemplate(ctxt, node,
-			      inst->children, NULL, NULL);
+			      xmlNodeGetChildren(inst), NULL, NULL);
 	xsltTransformContextSetInsert(ctxt, save_insert);
 
 	value = xmlXPathNewValueTree((xmlNodePtr) container);
@@ -458,7 +458,7 @@ slaxWhileCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 			 (xsltElemPreCompDeallocator) slaxWhileFreeComp);
     comp->wp_test = NULL;
 
-    if (inst->children == NULL) {
+    if (xmlNodeGetChildren(inst) == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "warning: tight while loop was detected\n");
     }
@@ -483,7 +483,7 @@ slaxWhileCompile (xsltStylesheetPtr style, xmlNodePtr inst,
     xmlFree(test);
 
     /* Prebuild the namespace list */
-    comp->wp_nslist = xmlGetNsList(inst->doc, inst);
+    comp->wp_nslist = xmlGetNsList(xmlNodeGetDoc(inst), inst);
     if (comp->wp_nslist != NULL) {
 	int i = 0;
 	while (comp->wp_nslist[i] != NULL)
@@ -561,7 +561,7 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 
 	/* Apply the template code inside the element */
 	xsltApplyOneTemplate(ctxt, node,
-			      inst->children, NULL, NULL);
+			      xmlNodeGetChildren(inst), NULL, NULL);
     }
 }
 
@@ -1468,7 +1468,7 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 	    int i;
 	    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
 		xmlNode *nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i);
-		if (nop == NULL || nop->children == NULL)
+		if (nop == NULL || xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
 		/*
@@ -1476,19 +1476,19 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 		 * contents.
 		 */
 		if (slaxIsResultTreeFragment(nop))
-		    nop = nop->children;
+		    nop = xmlNodeGetChildren(nop);
 
 		/*
 		 * Whiffle thru the children looking for a node
 		 */
 		xmlNode *cop;
-		for (cop = nop->children; cop; cop = cop->next) {
-		    if (cop->type != XML_TEXT_NODE)
+		for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		    if (xmlNodeGetType(cop) != XML_TEXT_NODE)
 			continue;
 
 		    slaxExtBreakString(container, results,
-				       (char *) cop->content,
-				       nop->ns, (const char *) nop->name);
+				       (char *) xmlNodeGetContentRaw(cop),
+				       xmlNodeGetNs(nop), (const char *) xmlNodeGetName(nop));
 		}
 	    }
 
@@ -1563,7 +1563,7 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 	    int i;
 	    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
 		xmlNode *nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i);
-		if (nop == NULL || nop->children == NULL)
+		if (nop == NULL || xmlNodeGetChildren(nop) == NULL)
 		    continue;
 
 		/*
@@ -1572,7 +1572,7 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 		 */
 		int follow = FALSE;
 		if (slaxIsResultTreeFragment(nop)) {
-		    nop = nop->children;
+		    nop = xmlNodeGetChildren(nop);
 		    follow = TRUE;
 		}
 
@@ -1580,16 +1580,16 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 		 * Whiffle thru the children looking for a node
 		 */
 		xmlNode *cop;
-		for ( ; nop; nop = follow ? nop->next : NULL) {
-		    if (nop->type == XML_TEXT_NODE) {
-			cp = nop->content;
+		for ( ; nop; nop = follow ? xmlNodeGetNext(nop) : NULL) {
+		    if (xmlNodeGetType(nop) == XML_TEXT_NODE) {
+			cp = xmlNodeGetContentRaw(nop);
 			if (cp)
 			    need_joiner = JAPPEND(cp);
 
-		    } else if (nop->type == XML_ELEMENT_NODE) {
-			for (cop = nop->children; cop; cop = cop->next) {
-			    if (cop->type == XML_TEXT_NODE) {
-				cp = cop->content;
+		    } else if (xmlNodeGetType(nop) == XML_ELEMENT_NODE) {
+			for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+			    if (xmlNodeGetType(cop) == XML_TEXT_NODE) {
+				cp = xmlNodeGetContentRaw(cop);
 				if (cp)
 				    need_joiner = JAPPEND(cp);
 			    }
@@ -1795,7 +1795,7 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 	    } else if (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)) == 1) {
 		xmlNodePtr nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0);
 		if (slaxIsResultTreeFragment(nop)) {
-		    if (nop->children != NULL)
+		    if (xmlNodeGetChildren(nop) != NULL)
 			empty = FALSE;
 		} else 
 		    empty = FALSE;
@@ -3069,11 +3069,11 @@ slaxExtDocumentOptions (struct slaxDocumentOptions *sdop,
 	    return;
 
 	xmlNodePtr parent = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0);
-	if (parent == NULL || parent->children == NULL)
+	if (parent == NULL || xmlNodeGetChildren(parent) == NULL)
 	    return;
 
 	xmlNodePtr child;
-	for (child = parent->children; child; child = child->next) {
+	for (child = xmlNodeGetChildren(parent); child; child = xmlNodeGetNext(child)) {
 	    slaxExtDocumentOptionsSet(sdop,
 				      (const xmlChar *) xmlNodeName(child),
 				      (const xmlChar *) xmlNodeValue(child));
@@ -3381,13 +3381,13 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	    goto fail;
 
 	parent = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0);
-	if (parent == NULL || parent->children == NULL)
+	if (parent == NULL || xmlNodeGetChildren(parent) == NULL)
 	    goto fail;
 
 	/* If there's one TEXT child, use it directly */
-	child = parent->children;
-	if (child && child->next == NULL && child->type == XML_TEXT_NODE)
-	    xmlXPathReturnString(ctxt, xmlStrdup(child->content));
+	child = xmlNodeGetChildren(parent);
+	if (child && xmlNodeGetNext(child) == NULL && xmlNodeGetType(child) == XML_TEXT_NODE)
+	    xmlXPathReturnString(ctxt, xmlStrdup(xmlNodeGetContentRaw(child)));
 	else {
 	    ret = xmlXPathNewNodeSet(NULL);
 	    if (ret == NULL)
@@ -3395,7 +3395,7 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 
 #if THIS_FIX_DOES_NOT_WORK
             /* For an RTF, we want the child nodes, not the parent */
-            for (child = parent->children; child; child = child->next)
+            for (child = xmlNodeGetChildren(parent); child; child = xmlNodeGetNext(child))
                 xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), child);
 #else
 	    xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), parent);
