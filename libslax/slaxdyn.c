@@ -212,8 +212,8 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
 
 	    /* Find the associated namespace and add it */
 	    nsp = xmlSearchNs(docp, nodep, (const xmlChar *) cp);
-	    if (nsp && nsp->href)
-		slaxDataListAddNul(listp, (const char *) nsp->href);
+	    if (nsp && xmlNsGetHref(nsp))
+		slaxDataListAddNul(listp, (const char *) xmlNsGetHref(nsp));
 	}
 	xmlFree(prefixes);
     }
@@ -222,8 +222,9 @@ slaxDynFindNamespaces (slax_data_list_t *listp, xmlDocPtr docp,
      * Since any element can be tagged with <xsl:extension-element-prefixes>,
      * we need to recurse through all our descendents.
      */
-    for (childp = nodep->children; childp; childp = childp->next) {
-	if (childp->type == XML_ELEMENT_NODE)
+    for (childp = xmlNodeGetChildren(nodep); childp;
+	 childp = xmlNodeGetNext(childp)) {
+	if (xmlNodeGetType(childp) == XML_ELEMENT_NODE)
 	    slaxDynFindNamespaces(listp, docp, childp, FALSE);
     }
 }
