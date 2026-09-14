@@ -129,6 +129,7 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
 			     xmlParserCtxtPtr ctxt) {
     xmlParserInputPtr ret = NULL;
     warningSAXFunc warning = NULL;
+    xmlSAXHandlerPtr sax = ctxt != NULL ? xmlCtxtGetSaxHandler(ctxt) : NULL;
 
     int i;
     const char *lastsegment = URL;
@@ -142,16 +143,16 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
 	}
     }
 
-    if ((ctxt != NULL) && (ctxt->sax != NULL)) {
-	warning = ctxt->sax->warning;
-	ctxt->sax->warning = NULL;
+    if (sax != NULL) {
+	warning = xmlSAXHandlerGetWarning(sax);
+	xmlSAXHandlerSetWarning(sax, NULL);
     }
 
     if (defaultEntityLoader != NULL) {
 	ret = defaultEntityLoader(URL, ID, ctxt);
 	if (ret != NULL) {
 	    if (warning != NULL)
-		ctxt->sax->warning = warning;
+		xmlSAXHandlerSetWarning(sax, warning);
 	    if (load_trace) {
 		fprintf \
 			(stderr,
@@ -173,7 +174,7 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
 		ret = defaultEntityLoader((const char *)newURL, ID, ctxt);
 	    if (ret != NULL) {
 		if (warning != NULL)
-		    ctxt->sax->warning = warning;
+		    xmlSAXHandlerSetWarning(sax, warning);
 		if (load_trace) {
 		    fprintf \
 			(stderr,
@@ -188,7 +189,7 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
 	}
     }
     if (warning != NULL) {
-	ctxt->sax->warning = warning;
+	xmlSAXHandlerSetWarning(sax, warning);
 	if (URL != NULL)
 	    warning(ctxt, "failed to load external entity \"%s\"\n", URL);
 	else if (ID != NULL)
