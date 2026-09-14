@@ -36,9 +36,9 @@ yamlAttribValue (xmlNodePtr nodep, const char *name)
 {
     xmlAttrPtr attr = xmlHasProp(nodep, (const xmlChar *) name);
 
-    if (attr && attr->children
-	    && attr->children->type == XML_TEXT_NODE)
-	return (const char *) attr->children->content;
+    if (attr && xmlAttrGetChildren(attr)
+	    && xmlNodeGetType(xmlAttrGetChildren(attr)) == XML_TEXT_NODE)
+	return (const char *) xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
 
     return NULL;
 }
@@ -49,8 +49,8 @@ yamlHasChildNodes (xmlNodePtr nodep)
     if (nodep == NULL)
 	return FALSE;
 
-    for (nodep = nodep->children; nodep; nodep = nodep->next)
-	if (nodep->type != XML_TEXT_NODE)
+    for (nodep = xmlNodeGetChildren(nodep); nodep; nodep = xmlNodeGetNext(nodep))
+	if (xmlNodeGetType(nodep) != XML_TEXT_NODE)
 	    return TRUE;
 
     return FALSE;
@@ -61,7 +61,7 @@ yamlName (xmlNodePtr nodep)
 {
     const char *name = yamlAttribValue(nodep, ATT_NAME);
     if (name == NULL)
-	name = (const char *) nodep->name;
+	name = (const char *) xmlNodeGetName(nodep);
 
     return name;
 }
@@ -69,8 +69,8 @@ yamlName (xmlNodePtr nodep)
 static const char *
 yamlValue (xmlNodePtr nodep)
 {
-    if (nodep && nodep->children && nodep->children->type == XML_TEXT_NODE)
-	return (const char *) nodep->children->content;
+    if (nodep && xmlNodeGetChildren(nodep) && xmlNodeGetType(xmlNodeGetChildren(nodep)) == XML_TEXT_NODE)
+	return (const char *) xmlNodeGetContentRaw(xmlNodeGetChildren(nodep));
 
     return NULL;
 }
@@ -217,13 +217,13 @@ yamlWriteArray (slax_writer_t *swp UNUSED, xmlNodePtr arrayp,
     
     yamlWriteNewline(swp, NEWL_INDENT, flags);
 
-    for (memberp = arrayp->children; memberp; memberp = memberp->next) {
-	if (memberp->type != XML_ELEMENT_NODE)
+    for (memberp = xmlNodeGetChildren(arrayp); memberp; memberp = xmlNodeGetNext(memberp)) {
+	if (xmlNodeGetType(memberp) != XML_ELEMENT_NODE)
 	    continue;
 
 	unsigned first = TRUE;
-	for (nodep = memberp->children; nodep; nodep = nodep->next) {
-	    if (nodep->type != XML_ELEMENT_NODE)
+	for (nodep = xmlNodeGetChildren(memberp); nodep; nodep = xmlNodeGetNext(nodep)) {
+	    if (xmlNodeGetType(nodep) != XML_ELEMENT_NODE)
 		continue;
 
 	    if (first) {
@@ -278,7 +278,7 @@ yamlWriteChildren (slax_writer_t *swp UNUSED, xmlNodePtr parent,
                     slaxWrite(swp, "\"%s\"", val);
 		    yamlWriteNewline(swp, 0, flags);
 
-		} else if (val == NULL && nodep->children == NULL) {
+		} else if (val == NULL && xmlNodeGetChildren(nodep) == NULL) {
                     slaxWrite(swp, "\"\"");
 		    yamlWriteNewline(swp, 0, flags);
 
