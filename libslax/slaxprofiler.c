@@ -64,10 +64,10 @@ slaxProfCountLines (xmlDocPtr docp)
     xmlNodePtr next;
     xmlNodePtr prev = NULL;
 
-    for (cur = docp->children; cur; prev = cur, cur = next) {
-	next = cur->next;
+    for (cur = xmlDocGetChildren(docp); cur; prev = cur, cur = next) {
+	next = xmlNodeGetNext(cur);
 	if (next == NULL)
-	    next = cur->children;
+	    next = xmlNodeGetChildren(cur);
     }
 
     return prev ? xmlGetLineNo(prev) : 1;
@@ -116,7 +116,7 @@ slaxProfEnter (xmlNodePtr inst)
     unsigned line;
     struct rusage ru;
 
-    slaxLog("profile:enter for %s", inst->name);
+    slaxLog("profile:enter for %s", xmlNodeGetName(inst));
 
     if (spp->sp_inst_line)
 	slaxLog("profile: warning: enter while still set");
@@ -126,7 +126,7 @@ slaxProfEnter (xmlNodePtr inst)
 
     spp->sp_wall = psu_get_time();
 
-    if (inst->doc != spp->sp_docp)
+    if (xmlNodeGetDoc(inst) != spp->sp_docp)
 	return;
 
     line = xmlGetLineNo(inst);
