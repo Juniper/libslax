@@ -36,6 +36,11 @@
 # xmlXPathParserContext's struct definition (the last of the four to
 # appear in the file), same NOINLINE-flavor switch as tree.h.
 #
+# A third file group -- xmlaccessors-parser-{inline,decl}.h and
+# xmlaccessors-parser.c -- covers xmlParserCtxt, declared in parser.h.
+# It is included right after _xmlParserCtxt's closing brace, same
+# NOINLINE-flavor switch.
+#
 # Table format, one field per row, colon-separated ("field:ctype:getter:
 # setter:param:comment"). A field left empty between colons means
 # "derive the default"; trailing fields can just be omitted instead of
@@ -184,6 +189,13 @@ xpath_inline_h="$xpath_incdir/xmlaccessors-xpath-inline.h"
 xpath_decl_h="$xpath_incdir/xmlaccessors-xpath-decl.h"
 xpath_impl_c="$xpath_srcdir/xmlaccessors-xpath.c"
 
+parser_incdir="$top_builddir/libbxml/include/libxml/gen"
+parser_srcdir="$top_builddir/libbxml/gen"
+
+parser_inline_h="$parser_incdir/xmlaccessors-parser-inline.h"
+parser_decl_h="$parser_incdir/xmlaccessors-parser-decl.h"
+parser_impl_c="$parser_srcdir/xmlaccessors-parser.c"
+
 nodeset_tag=NodeSet ; nodeset_ptr=xmlNodeSetPtr ; nodeset_var=ns
 nodeset_fields='
 nodeNr:int::none
@@ -296,6 +308,58 @@ value:xmlXPathObjectPtr::none
 '
 
 xpath_structs="nodeset xpathcontext xpathobject xpathparsercontext"
+
+# ----------------------------------------------------------------------
+# Third file group: xmlParserCtxt and xmlSAXHandler, both declared in
+# parser.h. Most of xmlParserCtxt's fields are XML_DEPRECATED_MEMBER,
+# each pointing at a libxml2-provided xmlCtxtGet*/xmlCtxtSet*
+# replacement -- but several of those replacements have different
+# semantics than a raw field access (see below), so they cannot be
+# substituted in wholesale. Two fields have a safe,
+# semantically-identical upstream replacement and so are left out of
+# this table entirely; callers use the upstream function directly
+# instead of a duplicate generated one:
+#
+#   dict  -- xmlCtxtGetDict()/xmlCtxtSetDict() match exactly, including
+#            the free-old/reference-new dance SetDict does internally.
+#   sax   -- xmlCtxtGetSaxHandler() is a plain return of ctxt->sax; the
+#            one real call site (xsltproc.c) only reads the outer
+#            pointer, then mutates the xmlSAXHandler it points to
+#            (->warning) -- that inner field IS covered below, by the
+#            saxhandler_fields table.
+#
+# Same "touched-only" coverage rule as the other groups: of the
+# remaining ~50 fields, only the 6 below are ever touched by a
+# consumer outside libbxml (libslax/extensions/slaxproc/libbxslt); the
+# rest are deferred. linenumbers is also skipped despite one match --
+# its only references are inside #if 0'd dead code in jsonlexer.c/
+# slaxloader.c, and the field itself is upstream-flagged unused.
+parsercontext_tag=ParserCtxt ; parsercontext_ptr=xmlParserCtxtPtr ; parsercontext_var=ctxt
+parsercontext_fields='
+node:xmlNodePtr::none::xmlCtxtGetNode (libxml2 2.14+) is not a safe substitute: it falls back to returning ctxt->myDoc cast as a node when ctxt->node is NULL, which no consumer here wants. Get-only because every call site outside libbxml only reads it -- ctxt->node is otherwise only ever changed through the already-opaque nodePush()/nodePop().
+userData:void *::::no consumer outside libbxml reads this field, only writes it (jsonlexer.c, slaxwriter.c, slaxloader.c all do ctxt->userData = ...); a getter is still generated for symmetry, duplicating the plain-return semantics of libxml2 own xmlCtxtGetUserData().
+version:xmlChar *::::no consumer outside libbxml reads this field, only writes it; a getter is still generated for symmetry, duplicating the plain-return semantics of libxml2 own xmlCtxtGetVersion().
+input:xmlParserInputPtr::none::only the outer pointer is touched by a consumer (slaxlexer.c, further dereferencing the still-out-of-scope xmlParserInput struct own line field); libxml2 provides no accessor for this field at all. Get-only since no call site reassigns it.
+myDoc:xmlDocPtr::::xmlCtxtGetDocument (libxml2 2.14+) is not a safe substitute: on a failed/non-well-formed parse it frees ctxt->myDoc and resets it to NULL as a side effect of being called, unlike a raw field read. Both libbxslt/libxslt/documents.c and libbxslt/python/libxslt.c read and write this field directly.
+wellFormed:int::none::xmlCtxtGetStatus (libxml2 2.14+) is not a safe substitute: it returns a combined bitmask across wellFormed/nsWellFormed/DTD validity, not the raw boolean. Get-only since no call site outside libbxml assigns it.
+'
+
+# xmlSAXHandler has ~30 fields, all but two (initialized, _private) a
+# function-pointer callback slot. Recon found exactly one touched by a
+# consumer outside libbxml: xsltproc.c temporarily swaps warning to
+# NULL and back around a callback it doesn't want warnings during, via
+# a handle obtained from xmlCtxtGetSaxHandler(). Every other field
+# (including startElement/endElement/characters/error/etc.) is either
+# never touched outside libbxml, or only ever assigned wholesale as
+# part of populating a whole xmlSAXHandler struct passed into libbxml
+# (which doesn't need an accessor -- it's a single struct literal, not
+# a field-by-field touch).
+saxhandler_tag=SAXHandler ; saxhandler_ptr=xmlSAXHandlerPtr ; saxhandler_var=sax
+saxhandler_fields='
+warning:warningSAXFunc::::xsltproc.c is the one call site outside libbxml, saving the callback aside, NULLing it out for the duration of a nested parse, then restoring it.
+'
+
+parser_structs="parsercontext saxhandler"
 
 # ----------------------------------------------------------------------
 # Helpers
@@ -693,6 +757,57 @@ done
 write_trailer "$inline_h" __XML_ACCESSORS_XPATH_INLINE_H__
 write_trailer "$decl_h" __XML_ACCESSORS_XPATH_DECL_H__
 
+# ----------------------------------------------------------------------
+# Drive the third (parser.h) file group, same retargeting trick as the
+# xpath group above.
+# ----------------------------------------------------------------------
+
+xpath_inline_h=$inline_h
+xpath_decl_h=$decl_h
+xpath_impl_c=$impl_c
+
+inline_h=$parser_inline_h
+decl_h=$parser_decl_h
+impl_c=$parser_impl_c
+
+write_banner "$inline_h" __XML_ACCESSORS_PARSER_INLINE_H__ \
+    "Inline accessor functions for libxml2 parser.h structs (generated)."
+write_banner "$decl_h" __XML_ACCESSORS_PARSER_DECL_H__ \
+    "Non-inline accessor declarations for libxml2 parser.h structs (generated)."
+
+cat > "$impl_c" <<EOF
+/*
+ * This file is generated automatically by bin/gen-xmlaccessors.sh;
+ * do not edit. Edit the field table in that script instead.
+ */
+
+/**
+ * @file
+ *
+ * @brief Non-inline accessor definitions for libxml2 parser.h structs (generated).
+ */
+
+/*
+ * This TU always provides the real (non-inline) definitions, no
+ * matter which flavor the rest of the library is built with, so it
+ * needs parser.h to declare rather than inline them here -- otherwise
+ * these definitions collide with parser.h's static inline ones.
+ */
+#ifndef LIBXML_ACCESSORS_NOINLINE
+#define LIBXML_ACCESSORS_NOINLINE
+#endif
+#include "libxml.h"
+#include <libpsu/psulto.h>
+#include <libxml/parser.h>
+EOF
+
+for s in $parser_structs; do
+    process_struct "$s"
+done
+
+write_trailer "$inline_h" __XML_ACCESSORS_PARSER_INLINE_H__
+write_trailer "$decl_h" __XML_ACCESSORS_PARSER_DECL_H__
+
 echo "Generated:"
 echo "  $tree_inline_h"
 echo "  $tree_decl_h"
@@ -700,3 +815,6 @@ echo "  $tree_impl_c"
 echo "  $xpath_inline_h"
 echo "  $xpath_decl_h"
 echo "  $xpath_impl_c"
+echo "  $parser_inline_h"
+echo "  $parser_decl_h"
+echo "  $parser_impl_c"
