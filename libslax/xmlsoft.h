@@ -289,9 +289,9 @@ slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name,
 static inline const char *
 xmlNodeName (xmlNodePtr np)
 {
-    if (np == NULL || np->name == NULL)
+    if (np == NULL || xmlNodeGetName(np) == NULL)
 	return NULL;
-    return (const char *) np->name;
+    return (const char *) xmlNodeGetName(np);
 }
 
 static inline int
@@ -311,11 +311,11 @@ xmlNodeValue (xmlNodePtr np)
 {
     xmlNodePtr gp;
   
-    if (np->type == XML_ELEMENT_NODE) {
-	for (gp = np->children; gp; gp = gp->next)
-	    if (gp->type == XML_TEXT_NODE
-		    && !slaxStringIsWhitespace((char *) gp->content))
-		return (char *) gp->content;
+    if (xmlNodeGetType(np) == XML_ELEMENT_NODE) {
+	for (gp = xmlNodeGetChildren(np); gp; gp = xmlNodeGetNext(gp))
+	    if (xmlNodeGetType(gp) == XML_TEXT_NODE
+		    && !slaxStringIsWhitespace((char *) xmlNodeGetContentRaw(gp)))
+		return (char *) xmlNodeGetContentRaw(gp);
 	/*
 	 * If we found the element but not a valid text node,
 	 * return an empty string to the caller can see
@@ -351,16 +351,16 @@ xmlAddProp (xmlNodePtr nodep, xmlAttrPtr newp)
     if (nodep == NULL)
 	return;
 
-    newp->parent = nodep;
-    if (nodep->properties == NULL) {
-	nodep->properties = newp;
+    xmlAttrSetParent(newp, nodep);
+    if (xmlNodeGetProperties(nodep) == NULL) {
+	xmlNodeSetProperties(nodep, newp);
     } else {
-	xmlAttrPtr prev = nodep->properties;
+	xmlAttrPtr prev = xmlNodeGetProperties(nodep);
 
-	while (prev->next != NULL)
-	    prev = prev->next;
-	prev->next = newp;
-	newp->prev = prev;
+	while (xmlAttrGetNext(prev) != NULL)
+	    prev = xmlAttrGetNext(prev);
+	xmlAttrSetNext(prev, newp);
+	xmlAttrSetPrev(newp, prev);
     }
 }
 
