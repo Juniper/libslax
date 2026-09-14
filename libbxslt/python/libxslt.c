@@ -538,13 +538,8 @@ pythonDocLoaderFuncWrapper(const xmlChar * URI, xmlDictPtr dict, int options,
     pctxt = xmlNewParserCtxt();
     if (pctxt == NULL)
         return(NULL);
-    if ((dict != NULL) && (pctxt->dict != NULL)) {
-        xmlDictFree(pctxt->dict);
-	pctxt->dict = NULL;
-    }
     if (dict != NULL) {
-	pctxt->dict = dict;
-	xmlDictReference(pctxt->dict);
+	xmlCtxtSetDict(pctxt, dict);
 #ifdef WITH_XSLT_DEBUG
 	xsltGenericDebug(xsltGenericDebugContext,
                      "Reusing dictionary for document\n");
@@ -584,14 +579,14 @@ pythonDocLoaderFuncWrapper(const xmlChar * URI, xmlDictPtr dict, int options,
         }
     }
 
-    if (! pctxt->wellFormed) {
+    if (! xmlParserCtxtGetWellFormed(pctxt)) {
         if (doc != NULL) {
             xmlFreeDoc(doc);
 	    doc = NULL;
         }
-        if (pctxt->myDoc != NULL) {
-            xmlFreeDoc(pctxt->myDoc);
-            pctxt->myDoc = NULL;
+        if (xmlParserCtxtGetMyDoc(pctxt) != NULL) {
+            xmlFreeDoc(xmlParserCtxtGetMyDoc(pctxt));
+            xmlParserCtxtSetMyDoc(pctxt, NULL);
         }
     }
     /*
