@@ -904,8 +904,8 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
     if (slaxV11(swp))
 	sd.sd_nodep = nodep;
 
-    ctxt->version = xmlCharStrdup(XML_DEFAULT_VERSION);
-    ctxt->userData = &sd;
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
 
     if (nodep)
 	sd.sd_line = xmlNodeGetLine(nodep);
