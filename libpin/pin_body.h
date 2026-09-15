@@ -46,6 +46,20 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_JUMP        8   /* Unconditional fall-through join point (follows bi_next) */
 #define BIA_IF          9   /* Conditional: if true, follow bi_next; if false, bi_else */
 #define BIA_GOTO       10   /* Unconditional jump to bi_else (used for else-branch skip) */
+#define BIA_FOR_EACH   11   /* Iterate nodes: bi_select=path, bi_text=sort-spec, bi_else=body-head */
+#define BIA_IF_POSITION 12  /* position()-based test: bi_filter_idx=N, bi_tag.pnid_atom=PCMP_* */
+#define BIA_VARIABLE   13   /* xsl:variable: bi_tag=var-name, bi_select=select-expr */
+#define BIA_ELEMENT_OPEN  14  /* xsl:element open: bi_select=name-AVT, bi_text=attrs-AVT */
+#define BIA_ELEMENT_CLOSE 15  /* close the last BIA_ELEMENT_OPEN element */
+#define BIA_ATTRIB        16  /* xsl:attribute: bi_tag=name, bi_text=value-AVT */
+
+/* Comparison operators for BIA_IF_POSITION (stored in bi_tag.pnid_atom) */
+#define PCMP_EQ  0   /* position() = N */
+#define PCMP_NE  1   /* position() != N */
+#define PCMP_LT  2   /* position() < N */
+#define PCMP_LE  3   /* position() <= N */
+#define PCMP_GT  4   /* position() > N */
+#define PCMP_GE  5   /* position() >= N */
 
 /*
  * Retention requirement for the matched element.  Computed at compile time
@@ -84,18 +98,17 @@ typedef struct pin_body_instr_s {
  */
 typedef uint8_t pin_body_mode_t;
 
-#define PBMODE_NONE      0   /* Not executing a body */
-#define PBMODE_EXEC      1   /* Running EMIT_* instructions; no input consumed */
-#define PBMODE_COPY      2   /* Consuming input subtree via BIA_COPY */
-#define PBMODE_APPLY     3   /* Dispatching children through the rulebook (BIA_APPLY) */
-#define PBMODE_VALUE_OF  4   /* Collecting text content of current element (BIA_VALUE_OF) */
+#define PBMODE_NONE          0   /* Not executing a body */
+#define PBMODE_EXEC          1   /* Running EMIT_* instructions; no input consumed */
+#define PBMODE_COPY          2   /* Consuming input subtree via BIA_COPY */
+#define PBMODE_APPLY         3   /* Dispatching children through the rulebook (BIA_APPLY) */
+#define PBMODE_VALUE_OF      4   /* Collecting text content of current element (BIA_VALUE_OF) */
+#define PBMODE_FOR_EACH_WAIT 5   /* Retaining matched element; defer BIA_FOR_EACH until closed */
 
 /*
  * One frame on the body execution stack.
  * A new frame is pushed each time a rule with pr_body fires.
  */
-#define PIN_BODY_DEPTH_MAX 16
-
 typedef struct pin_body_frame_s {
     pin_body_instr_id_t pbf_pc;         /* Next instruction to run on resume */
     pin_body_mode_t pbf_mode;           /* Current body execution mode */
@@ -106,6 +119,15 @@ typedef struct pin_body_frame_s {
     int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
     pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
     xo_buffer_t pbf_value_cache;        /* Cached text from select="." (non-null after first collect) */
+    /* For-each iteration context (valid inside pin_body_foreach_body calls) */
+    pin_node_id_t pbf_ctx_node;         /* Current for-each context node (null = none) */
+    uint32_t pbf_position;              /* 1-based position in for-each (0 outside) */
+    uint32_t pbf_last;                  /* Total node count for last() */
+    /* xsl:variable bindings scoped to this body frame; grown as needed */
+    pin_name_id_t *pbf_var_names;
+    pin_name_id_t *pbf_var_values;
+    int pbf_var_count;
+    int pbf_var_size;
 } pin_body_frame_t;
 
 /*
@@ -113,8 +135,9 @@ typedef struct pin_body_frame_s {
  * pbe_depth is the number of active body frames (0 = idle).
  */
 typedef struct pin_body_exec_s {
-    pin_body_frame_t pbe_stack[PIN_BODY_DEPTH_MAX];
+    pin_body_frame_t *pbe_stack;   /* heap-allocated frame stack, pbe_size entries */
     int pbe_depth;
+    int pbe_size;
 } pin_body_exec_t;
 
 #endif /* LIBSLAX_PIN_BODY_H */
