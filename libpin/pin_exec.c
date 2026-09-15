@@ -44,7 +44,7 @@
  * intern the result in the namepool, and return the atom.
  * Returns the null atom when the node has no text content.
  */
-static pin_name_id_t
+pin_name_id_t
 pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
 {
     pin_node_t *nodep = pin_node_addr(pwp, nid);
@@ -111,14 +111,14 @@ pin_exec_var_alloc (pin_exec_state_t *esp, uint32_t name_atom)
     if (vp)
         return vp;
 
-    if (esp->pes_var_count >= esp->pes_var_cap) {
-        int newcap = esp->pes_var_cap ? esp->pes_var_cap * 2 : 8;
-        vp = realloc(esp->pes_vars, newcap * sizeof(*vp));
+    if (esp->pes_var_count >= esp->pes_var_size) {
+        int newsize = esp->pes_var_size ? esp->pes_var_size * 2 : 8;
+        vp = realloc(esp->pes_vars, newsize * sizeof(*vp));
         if (vp == NULL)
             return NULL;
 
         esp->pes_vars = vp;
-        esp->pes_var_cap = newcap;
+        esp->pes_var_size = newsize;
     }
 
     vp = &esp->pes_vars[esp->pes_var_count];
@@ -164,6 +164,72 @@ pin_op_emit_close (PIN_OP_FUNC_ARGS)
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
     const char *tag = pin_namepool_string(pwp, opp->po_name);
     pin_insert_close(parsep, NULL, tag);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_emit_attrib (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    const char *aname = pin_namepool_string(pwp, opp->po_name);
+    if (!aname)
+        return pin_value_null();
+    pin_value_t v = pin_exec_pop(esp);
+    char valbuf[512];
+    valbuf[0] = '\0';
+    if (v.pv_type == PVT_STRING) {
+        const char *str = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+        if (str)
+            snprintf(valbuf, sizeof(valbuf), "%s", str);
+    }
+    pin_insert_attrib_pair(parsep, aname, valbuf);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_element_open (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_insert_t *pip = parsep->pp_insert;
+    const char *tag;
+    pin_name_id_t tag_id;
+
+    if (!pin_name_id_is_null(opp->po_name)) {
+        /* Static element name */
+        tag = pin_namepool_string(pwp, opp->po_name);
+        tag_id = opp->po_name;
+    } else {
+        /* Computed element name: pop string from value stack */
+        pin_value_t v = pin_exec_pop(esp);
+        if (v.pv_type != PVT_STRING)
+            return pin_value_null();
+        tag = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+        if (!tag)
+            return pin_value_null();
+        tag_id = pin_name_id(v.pv_atom);
+    }
+
+    const char *astr = pin_namepool_string(pwp, opp->po_name2);
+    char *attribs = astr ? strdup(astr) : NULL;
+    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    if (attribs)
+        act = PIA_SAVE_ATTRIB;
+    pin_insert_open(parsep, tag_id, NULL, tag, attribs, act);
+    free(attribs);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_element_close (PIN_OP_FUNC_ARGS)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+    if (psp->ps_node != NULL) {
+        const char *tag = pin_namepool_string(pwp, psp->ps_node->pn_name);
+        if (tag)
+            pin_insert_close(parsep, NULL, tag);
+    }
     return pin_value_null();
 }
 
@@ -224,7 +290,7 @@ pin_op_push_attr (PIN_OP_FUNC_ARGS)
  * element with that name; a "." step leaves the current node unchanged.
  * Returns null_atom if any non-trivial step is not found.
  */
-static pin_node_id_t
+pin_node_id_t
 pin_exec_node_at_path (pin_workspace_t *pwp, pin_node_id_t start,
                        const char *path, size_t plen)
 {
@@ -479,11 +545,93 @@ pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
 }
 
 /*
+ * Evaluate a simple arithmetic binary expression of the form
+ * "lhs OP rhs" where OP is + - * / surrounded by single spaces.
+ * Hyphens within element names (like "life-span") do NOT contain spaces
+ * so they are never mistaken for minus operators.
+ * Returns 1 on success with result in *outp; 0 if not arithmetic.
+ */
+static int
+pin_eval_arith (pin_workspace_t *pwp, pin_node_id_t cid,
+                const char *expr, size_t elen, long *outp)
+{
+    /* Scan for " OP " pattern (spaces required around operator) */
+    for (size_t i = 1; i + 2 < elen; i++) {
+        if (expr[i] != ' ')
+            continue;
+
+        char op = expr[i + 1];
+        if ((op != '+' && op != '-' && op != '*' && op != '/')
+	    	|| expr[i + 2] != ' ')
+            continue;
+
+        /* Found: lhs is expr[0..i-1], rhs is expr[i+3..] */
+        size_t llen = i;
+        const char *rhs = expr + i + 3;
+        size_t rlen = elen - i - 3;
+        if (llen == 0 || rlen == 0)
+            continue;
+
+        /* Evaluate both sides: first try arithmetic (recursive), then path */
+        long lval = 0, rval = 0;
+        char lbuf[64] = "", rbuf[64] = "";
+
+        /* Left side */
+        long tmp;
+        if (pin_eval_arith(pwp, cid, expr, llen, &tmp))
+            lval = tmp;
+        else {
+            pin_node_id_t tgt = pin_exec_node_at_path(pwp, cid, expr, llen);
+            if (pin_node_id_is_null(tgt))
+                return 0;
+            pin_name_id_t tid = pin_exec_text_of(pwp, tgt);
+            const char *tx = pin_namepool_string(pwp, tid);
+            if (!tx || !tx[0])
+                return 0;
+            snprintf(lbuf, sizeof(lbuf), "%s", tx);
+            char *endp;
+            lval = strtol(lbuf, &endp, 10);
+            if (endp == lbuf)
+                return 0;
+        }
+
+        /* Right side */
+        if (pin_eval_arith(pwp, cid, rhs, rlen, &tmp))
+            rval = tmp;
+        else {
+            pin_node_id_t tgt = pin_exec_node_at_path(pwp, cid, rhs, rlen);
+            if (pin_node_id_is_null(tgt))
+                return 0;
+            pin_name_id_t tid = pin_exec_text_of(pwp, tgt);
+            const char *tx = pin_namepool_string(pwp, tid);
+            if (!tx || !tx[0])
+                return 0;
+            snprintf(rbuf, sizeof(rbuf), "%s", tx);
+            char *endp;
+            rval = strtol(rbuf, &endp, 10);
+            if (endp == rbuf)
+                return 0;
+        }
+
+        switch (op) {
+        case '+': *outp = lval + rval; break;
+        case '-': *outp = lval - rval; break;
+        case '*': *outp = lval * rval; break;
+        case '/': *outp = rval ? lval / rval : 0; break;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/*
  * Evaluate a single sort-key expression against child_id, writing the
  * raw value into valbuf[vcap].  Supported forms:
- *   @attr     — attribute value
- *   .         — text content of context node itself
- *   a/b/c/... — text content of node reached by walking the path steps
+ *   @attr            — attribute value
+ *   .                — text content of context node itself
+ *   a/b/c/...        — text content of node reached by walking the path steps
+ *   path1 OP path2   — arithmetic on text values (OP = + - * /)
+ * Arithmetic results are zero-padded to 6 digits for lexicographic sort.
  * Unknown forms write an empty string.
  */
 static void
@@ -494,6 +642,13 @@ pin_for_each_eval_expr (pin_workspace_t *pwp, pin_node_id_t cid,
     valbuf[0] = '\0';
     if (elen == 0 || vcap == 0)
         return;
+
+    /* Arithmetic expression: format with leading zeros for sort correctness */
+    long arith_result;
+    if (pin_eval_arith(pwp, cid, expr, elen, &arith_result)) {
+        snprintf(valbuf, vcap, "%06ld", arith_result);
+        return;
+    }
 
     if (expr[0] == '@') {
         size_t n = elen - 1;
@@ -522,11 +677,40 @@ pin_for_each_eval_expr (pin_workspace_t *pwp, pin_node_id_t cid,
 }
 
 /*
+ * Evaluate a general expression (path or arithmetic) against ctx_node.
+ * Writes the result as a natural string (no zero-padding) into buf[bufsz].
+ * Used for xsl:variable and attribute-value expressions.
+ */
+void
+pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
+                           const char *expr, size_t elen,
+                           char *buf, size_t bufsz)
+{
+    buf[0] = '\0';
+    if (elen == 0 || bufsz == 0 || pin_node_id_is_null(ctx_node))
+        return;
+
+    long arith_result;
+    if (pin_eval_arith(pwp, ctx_node, expr, elen, &arith_result)) {
+        snprintf(buf, bufsz, "%ld", arith_result);
+        return;
+    }
+
+    pin_node_id_t target = pin_exec_node_at_path(pwp, ctx_node, expr, elen);
+    if (!pin_node_id_is_null(target)) {
+        pin_name_id_t tid = pin_exec_text_of(pwp, target);
+        const char *text = pin_namepool_string(pwp, tid);
+        if (text)
+            snprintf(buf, bufsz, "%s", text);
+    }
+}
+
+/*
  * Build the sort key for child element child_id using the sort-key spec
  * string spec.  Writes the encoded, NUL-separated key into keybuf[keycap].
  * Returns the total key length in bytes.
  */
-static uint16_t
+uint16_t
 pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
                         const char *spec,
                         char *keybuf, size_t keycap)
@@ -588,7 +772,7 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
     pin_stree_t *tree = has_sort ? pin_stree_create() : NULL;
 
     pin_node_id_t *doc = NULL;
-    int doc_count = 0, doc_cap = 0;
+    int doc_count = 0, doc_size = 0;
 
     pin_depth_t depth = parent->pn_depth;
     for (pin_node_id_t cid = pin_node_child(parent);
@@ -606,13 +790,13 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
 		/* XXX deal with failure (klen < 0?) */
                 pin_stree_insert(tree, keybuf, klen, cid);
             } else {
-                if (doc_count >= doc_cap) {
-                    int newcap = doc_cap ? doc_cap * 2 : 8;
-                    pin_node_id_t *nd = realloc(doc, newcap * sizeof(*nd));
+                if (doc_count >= doc_size) {
+                    int newsize = doc_size ? doc_size * 2 : 8;
+                    pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
                     if (nd == NULL)
                         break;
                     doc = nd;
-                    doc_cap = newcap;
+                    doc_size = newsize;
                 }
                 doc[doc_count++] = cid;
             }
@@ -644,7 +828,7 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
  * non-transient nodes.  Children are walked via pin_node_child + pn_next
  * (sibling chain), never pn_next of the root, which links to siblings.
  */
-static void
+void
 pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
                     pin_node_id_t nid)
 {
@@ -774,14 +958,14 @@ pin_op_with_param (PIN_OP_FUNC_ARGS)
     pin_value_t v = pin_exec_pop(esp);
     uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
 
-    if (esp->pes_pending_count >= esp->pes_pending_cap) {
-        uint32_t newcap = esp->pes_pending_cap ? esp->pes_pending_cap * 2 : 8;
+    if (esp->pes_pending_count >= esp->pes_pending_size) {
+        uint32_t newsize = esp->pes_pending_size ? esp->pes_pending_size * 2 : 8;
         pin_pending_param_t *np = realloc(esp->pes_pending,
-                                          newcap * sizeof(*np));
+                                          newsize * sizeof(*np));
         if (np == NULL)
             return pin_value_null();
         esp->pes_pending = np;
-        esp->pes_pending_cap = newcap;
+        esp->pes_pending_size = newsize;
     }
     esp->pes_pending[esp->pes_pending_count].ppp_name  = name_atom;
     esp->pes_pending[esp->pes_pending_count].ppp_value = v;
@@ -870,7 +1054,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     /* non-complex ops (types >= PIN_OP_MAX_COMPLEX) */
     [PIN_OP_EMIT_OPEN]    = { "emit-open",    pin_op_emit_open,    0 },
     [PIN_OP_EMIT_CLOSE]   = { "emit-close",   pin_op_emit_close,   0 },
-    [PIN_OP_EMIT_ATTRIB]  = { "emit-attrib",  pin_op_stub,         0 },
+    [PIN_OP_EMIT_ATTRIB]  = { "emit-attrib",  pin_op_emit_attrib,  0 },
     [PIN_OP_EMIT]         = { "emit",         pin_op_emit,         0 },
     [PIN_OP_PUSH_STRING]  = { "push-string",  pin_op_push_string,  0 },
     [PIN_OP_PUSH_ATTR]    = { "push-attr",    pin_op_push_attr,    0 },
@@ -890,6 +1074,8 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_COPY_OF]      = { "copy-of",      pin_op_copy_of,      0 },
     [PIN_OP_WITH_PARAM]   = { "with-param",   pin_op_with_param,   0 },
     [PIN_OP_LOAD_PARAM]   = { "load-param",   pin_op_load_param,   0 },
+    [PIN_OP_ELEMENT_OPEN]  = { "element-open",  pin_op_element_open,  0 },
+    [PIN_OP_ELEMENT_CLOSE] = { "element-close", pin_op_element_close, 0 },
 };
 
 /*
@@ -899,16 +1085,16 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
 static int
 pin_exec_seq_grow (pin_exec_state_t *esp)
 {
-    if (esp->pes_seq_top < esp->pes_seq_cap)
+    if (esp->pes_seq_top < esp->pes_seq_size)
         return 0;
 
-    int newcap = esp->pes_seq_cap ? esp->pes_seq_cap * 2 : 8;
-    pin_exec_seq_frame_t *seq = realloc(esp->pes_seq, newcap * sizeof(*seq));
+    int newsize = esp->pes_seq_size ? esp->pes_seq_size * 2 : 8;
+    pin_exec_seq_frame_t *seq = realloc(esp->pes_seq, newsize * sizeof(*seq));
     if (seq == NULL)
         return -1;
 
     esp->pes_seq = seq;
-    esp->pes_seq_cap = newcap;
+    esp->pes_seq_size = newsize;
     return 0;
 }
 
@@ -990,16 +1176,16 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 static int
 pin_exec_rb_grow (pin_exec_state_t *esp)
 {
-    if (esp->pes_rb_top < esp->pes_rb_cap)
+    if (esp->pes_rb_top < esp->pes_rb_size)
         return 0;
 
-    int newcap = esp->pes_rb_cap ? esp->pes_rb_cap * 2 : 8;
-    pin_exec_rb_frame_t *rb = realloc(esp->pes_rb, newcap * sizeof(*rb));
+    int newsize = esp->pes_rb_size ? esp->pes_rb_size * 2 : 8;
+    pin_exec_rb_frame_t *rb = realloc(esp->pes_rb, newsize * sizeof(*rb));
     if (rb == NULL)
         return -1;
 
     esp->pes_rb = rb;
-    esp->pes_rb_cap = newcap;
+    esp->pes_rb_size = newsize;
     return 0;
 }
 
@@ -1114,16 +1300,16 @@ pin_exec_dump (struct pin_rulebook_s *rbp, struct pin_parse_s *parsep UNUSED,
 static int
 pin_exec_val_grow (pin_exec_state_t *esp)
 {
-    if (esp->pes_val_top < esp->pes_val_cap)
+    if (esp->pes_val_top < esp->pes_val_size)
         return 0;
 
-    int newcap = esp->pes_val_cap ? esp->pes_val_cap * 2 : 16;
-    pin_value_t *val = realloc(esp->pes_val, newcap * sizeof(*val));
+    int newsize = esp->pes_val_size ? esp->pes_val_size * 2 : 16;
+    pin_value_t *val = realloc(esp->pes_val, newsize * sizeof(*val));
     if (val == NULL)
         return -1;
 
     esp->pes_val = val;
-    esp->pes_val_cap = newcap;
+    esp->pes_val_size = newsize;
     return 0;
 }
 
@@ -1158,16 +1344,16 @@ pin_exec_peek (pin_exec_state_t *esp)
 uint32_t
 pin_exec_nodeset_alloc (pin_exec_state_t *esp)
 {
-    if (esp->pes_nodeset_count >= esp->pes_nodeset_cap) {
-	uint32_t newcap = esp->pes_nodeset_cap ? esp->pes_nodeset_cap * 2 : 8;
-	pin_ns_entry_t *nsp = realloc(esp->pes_nodesets, newcap * sizeof(*nsp));
+    if (esp->pes_nodeset_count >= esp->pes_nodeset_size) {
+	uint32_t newsize = esp->pes_nodeset_size ? esp->pes_nodeset_size * 2 : 8;
+	pin_ns_entry_t *nsp = realloc(esp->pes_nodesets, newsize * sizeof(*nsp));
 	if (nsp == NULL)
 	    return UINT32_MAX;
 
-	memset(nsp + esp->pes_nodeset_cap, 0,
-	       (newcap - esp->pes_nodeset_cap) * sizeof(*nsp));
+	memset(nsp + esp->pes_nodeset_size, 0,
+	       (newsize - esp->pes_nodeset_size) * sizeof(*nsp));
 	esp->pes_nodesets = nsp;
-	esp->pes_nodeset_cap = newcap;
+	esp->pes_nodeset_size = newsize;
     }
 
     return esp->pes_nodeset_count++;
@@ -1184,7 +1370,7 @@ pin_exec_nodeset_free (pin_exec_state_t *esp, uint32_t idx)
 
     nsp->pne_nodes = NULL;
     nsp->pne_count = 0;
-    nsp->pne_cap = 0;
+    nsp->pne_size = 0;
 }
 
 int
@@ -1195,14 +1381,14 @@ pin_exec_nodeset_append (pin_exec_state_t *esp, uint32_t idx,
 	return -1;
 
     pin_ns_entry_t *nsp = &esp->pes_nodesets[idx];
-    if (nsp->pne_count >= nsp->pne_cap) {
-	uint32_t newcap = nsp->pne_cap ? nsp->pne_cap * 2 : 8;
-	uint32_t *nodes = realloc(nsp->pne_nodes, newcap * sizeof(*nodes));
+    if (nsp->pne_count >= nsp->pne_size) {
+	uint32_t newsize = nsp->pne_size ? nsp->pne_size * 2 : 8;
+	uint32_t *nodes = realloc(nsp->pne_nodes, newsize * sizeof(*nodes));
 	if (nodes == NULL)
 	    return -1;
 
 	nsp->pne_nodes = nodes;
-	nsp->pne_cap = newcap;
+	nsp->pne_size = newsize;
     }
 
     nsp->pne_nodes[nsp->pne_count++] = node_atom;
