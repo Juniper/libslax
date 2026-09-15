@@ -132,12 +132,12 @@ typedef struct pin_rulebook_s {
     pa_pat_t *prb_apply_pat;	  /* Patricia tree: name_id → apply entry */
     xo_filter_t **prb_if_filters; /* Per-BIA_IF compiled condition filters */
     uint32_t prb_if_filter_count; /* Number of entries in prb_if_filters */
-    uint32_t prb_if_filter_cap;   /* Allocated capacity of prb_if_filters */
+    uint32_t prb_if_filter_size;   /* Allocated capacity of prb_if_filters */
     pin_rule_id_t prb_root_rule;  /* Rule for match="/" (null if none) */
     pin_apply_id_t prb_apply_list; /* Head of all apply-entry linked list */
     pin_named_template_t *prb_named;      /* Array of named templates */
     uint32_t              prb_named_count;
-    uint32_t              prb_named_cap;
+    uint32_t              prb_named_size;
 } pin_rulebook_t;
 
 pin_rulebook_t *
