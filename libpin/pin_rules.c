@@ -449,13 +449,13 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	free(rules->prb_if_filters);
 	rules->prb_if_filters = NULL;
 	rules->prb_if_filter_count = 0;
-	rules->prb_if_filter_cap = 0;
+	rules->prb_if_filter_size = 0;
     }
     if (rules->prb_named) {
 	free(rules->prb_named);
 	rules->prb_named = NULL;
 	rules->prb_named_count = 0;
-	rules->prb_named_cap = 0;
+	rules->prb_named_size = 0;
     }
 }
 
@@ -463,14 +463,14 @@ int
 pin_rulebook_named_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
                         pin_op_id_t ops_id)
 {
-    if (prbp->prb_named_count >= prbp->prb_named_cap) {
-	uint32_t newcap = prbp->prb_named_cap ? prbp->prb_named_cap * 2 : 8;
+    if (prbp->prb_named_count >= prbp->prb_named_size) {
+	uint32_t newsize = prbp->prb_named_size ? prbp->prb_named_size * 2 : 8;
 	pin_named_template_t *np = realloc(prbp->prb_named,
-	                                   newcap * sizeof(*np));
+	                                   newsize * sizeof(*np));
 	if (np == NULL)
 	    return -1;
 	prbp->prb_named = np;
-	prbp->prb_named_cap = newcap;
+	prbp->prb_named_size = newsize;
     }
     prbp->prb_named[prbp->prb_named_count].pnt_name = name_id;
     prbp->prb_named[prbp->prb_named_count].pnt_ops  = ops_id;
@@ -491,15 +491,15 @@ pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
 uint32_t
 pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp)
 {
-    if (prbp->prb_if_filter_count >= prbp->prb_if_filter_cap) {
-	uint32_t newcap = prbp->prb_if_filter_cap
-			  ? prbp->prb_if_filter_cap * 2 : 8;
+    if (prbp->prb_if_filter_count >= prbp->prb_if_filter_size) {
+	uint32_t newsize = prbp->prb_if_filter_size
+			  ? prbp->prb_if_filter_size * 2 : 8;
 	xo_filter_t **newp = realloc(prbp->prb_if_filters,
-				     newcap * sizeof(*newp));
+				     newsize * sizeof(*newp));
 	if (newp == NULL)
 	    return UINT32_MAX;
 	prbp->prb_if_filters = newp;
-	prbp->prb_if_filter_cap = newcap;
+	prbp->prb_if_filter_size = newsize;
     }
     uint32_t idx = prbp->prb_if_filter_count++;
     prbp->prb_if_filters[idx] = xfp;
@@ -509,10 +509,15 @@ pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp)
 /*
  * Structure used to retain data while reversing the script input
  * hierarchy.  We save atom numbers here, as well as a stack of open
- * tags.  Fortunately our input is simple (trivial) so the stack depth
- * is small.
+ * tags.
  */
-#define PIN_DEPTH_MAX_RULES 4
+struct prp_stack_s {
+    pa_atom_t prps_state;	/* State atom (pin_rstate_t) */
+    pin_rstate_t *prps_statep;	/* State array element */
+    pin_rule_id_t prps_rule;	/* Current rule atom (pin_rule_t) */
+    pin_rule_id_t *prps_nextp;	/* Location to store next atom */
+};
+
 typedef struct pin_rulebook_prep_s {
     pin_rulebook_t *prp_rulebook; /* Rules we are building */
     pin_parse_t *prp_script;	 /* Parsed script "workspace" */
@@ -526,12 +531,8 @@ typedef struct pin_rulebook_prep_s {
     pin_name_id_t prp_atom_use_tag;
 
     int prp_depth;		/* Current depth of stack */
-    struct prp_stack_s {
-	pa_atom_t prps_state;	/* State atom (pin_rstate_t) */
-	pin_rstate_t *prps_statep; /* State array element */
-	pin_rule_id_t prps_rule;	/* Current rule atom (pin_rule_t) */
-	pin_rule_id_t *prps_nextp;	/* Location to store next atom */
-    } prp_stack[PIN_DEPTH_MAX_RULES];
+    int prp_size;		/* Allocated entries in prp_stack */
+    struct prp_stack_s *prp_stack; /* Heap-allocated stack entries */
 } pin_rulebook_prep_t;
 
 static int
@@ -543,8 +544,21 @@ pin_rulebook_prep_cb (pin_parse_t *parsep, pin_node_type_t type,
     pin_workspace_t *pwp = treep->pt_workspace;
     pin_rulebook_prep_t *prep = opaque;
     pin_rulebook_t *prbp = prep->prp_rulebook;
-    struct prp_stack_s *stackp = &prep->prp_stack[prep->prp_depth];
     const char *id, *action, *tag, *use_tag, *new_state;
+
+    if (prep->prp_depth >= prep->prp_size) {
+	int newsize = prep->prp_size ? prep->prp_size * 2 : 4;
+	struct prp_stack_s *ns = xo_realloc(prep->prp_stack,
+					    newsize * sizeof(*prep->prp_stack));
+	if (ns == NULL)
+	    return -1;
+	bzero(ns + prep->prp_size,
+	      (newsize - prep->prp_size) * sizeof(*ns));
+	prep->prp_stack = ns;
+	prep->prp_size = newsize;
+    }
+
+    struct prp_stack_s *stackp = &prep->prp_stack[prep->prp_depth];
 
 #define GET_ATTRIB(_x) pin_get_attrib_string(pwp, nodep, prep->_x)
 #define XX(_x) ((_x) ?: "")
@@ -676,6 +690,7 @@ pin_rulebook_prep (pin_parse_t *input, const char *name)
     prep.prp_atom_use_tag = pin_parse_namepool_atom(input, "use-tag");
 
     pin_parse_emit(input, pin_rulebook_prep_cb, &prep);
+    xo_free(prep.prp_stack);
 
     return prbp;
 }
