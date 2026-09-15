@@ -30,6 +30,7 @@
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
+#include <libpsu/psuerror.h>
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
 #include <parrotdb/pammap.h>
@@ -46,6 +47,8 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
+#include <libpin/pin_exec.h>
+#include <libpin/pin_sort.h>
 
 /* Forward declaration: defined after pin_insert_text */
 static void pin_body_exec_advance(pin_parse_t *parsep);
@@ -130,34 +133,34 @@ pin_body_feed_attribs (xo_filter_t *xfp, const char *attribs)
     const char *cp = attribs;
     while (*cp) {
 	while (isspace((unsigned char) *cp))
-	    cp++;
+	    cp += 1;
 	if (*cp == '\0')
 	    break;
 
 	const char *name = cp;
 	while (*cp && *cp != '=' && !isspace((unsigned char) *cp))
-	    cp++;
+	    cp += 1;
 	size_t nlen = cp - name;
 	if (nlen == 0)
 	    break;
 
 	while (isspace((unsigned char) *cp))
-	    cp++;
+	    cp += 1;
 	if (*cp != '=')
 	    break;
-	cp++;
+	cp += 1;
 
 	while (isspace((unsigned char) *cp))
-	    cp++;
+	    cp += 1;
 	if (*cp != '"' && *cp != '\'')
 	    break;
 	char q = *cp++;
 	const char *val = cp;
 	while (*cp && *cp != q)
-	    cp++;
+	    cp += 1;
 	size_t vlen = cp - val;
 	if (*cp == q)
-	    cp++;
+	    cp += 1;
 
 	xo_filter_walk_attr(NULL, xfp, name, (ssize_t) nlen,
 			    val, (ssize_t) vlen);
@@ -213,12 +216,14 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 
     srcp = pin_source_open(input, flags);
     if (srcp == NULL)
-	goto fail;
+	goto fail;	/* pin_source_open already reported the error */
 
     /* The pin_tree_t is the tree we'll be inserting into */
     ptp = calloc(1, sizeof(*ptp));
-    if (ptp == NULL)
+    if (ptp == NULL) {
+	psu_error(input, 0, "out of memory (pin_tree_t)");
 	goto fail;
+    }
 
     ptp->pt_infop = pa_mmap_header(pmp, pin_mk_name(namebuf, name, "tree"),
 				   PA_TYPE_TREE, 0, sizeof(*ptp->pt_infop));
@@ -227,16 +232,20 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 
     /* The pin_insert_t is the point in the tree at which we are inserting */
     pip = calloc(1, sizeof(*pip));
-    if (pip == NULL)
+    if (pip == NULL) {
+	psu_error(input, 0, "out of memory (pin_insert_t)");
 	goto fail;
+    }
     pip->pin_tree = ptp;
     pip->pin_depth = 0;
     pip->pin_relation = PIR_CHILD;
 
     /* And finally, fill in the parse structure */
     parsep = calloc(1, sizeof(*parsep));
-    if (parsep == NULL)
+    if (parsep == NULL) {
+	psu_error(input, 0, "out of memory (pin_parse_t)");
 	goto fail;
+    }
     parsep->pp_srcp = srcp;
     parsep->pp_insert = pip;
 
@@ -246,8 +255,10 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 
     pin_node_id_t node_atom;
     nodep = pin_node_alloc(workp, &node_atom);
-    if (nodep == NULL)
+    if (nodep == NULL) {
+	psu_error(input, 0, "node pool exhausted");
 	goto fail;
+    }
     nodep->pn_type = PIN_TYPE_ROOT;
     nodep->pn_depth = 0;
     nodep->pn_ns_map = PA_NULL_ATOM;
@@ -983,7 +994,8 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     pin_body_exec_t *body = &pip->pin_body;
     if (body->pbe_depth > 0) {
 	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
-	if (bfp->pbf_mode == PBMODE_COPY
+	if ((bfp->pbf_mode == PBMODE_COPY
+		    || bfp->pbf_mode == PBMODE_FOR_EACH_WAIT)
 		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
 	    bfp->pbf_mode = PBMODE_EXEC;
 	    pin_body_exec_advance(parsep);
@@ -1016,6 +1028,526 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 }
 
 /*
+ * For-each helpers
+ */
+
+/*
+ * Append one node id to a dynamically-grown array.
+ */
+static void
+pin_body_collect_append (pin_node_id_t nid,
+			 pin_node_id_t **outp, int *cntp, int *capp)
+{
+    if (*cntp >= *capp) {
+	int newsize = *capp ? *capp * 2 : 8;
+	pin_node_id_t *nd = realloc(*outp, (size_t) newsize * sizeof(**outp));
+	if (nd == NULL)
+	    return;
+	*outp = nd;
+	*capp = newsize;
+    }
+    (*outp)[(*cntp)++] = nid;
+}
+
+/*
+ * Collect all terminal nodes reachable from start by walking slash-separated
+ * path steps.  Each step descends to ALL direct children with that name.
+ * Results are appended to *outp / *cntp / *capp (caller must free *outp).
+ */
+static void
+pin_body_collect_path (pin_workspace_t *pwp, pin_node_id_t start,
+		       const char *path, size_t plen,
+		       pin_node_id_t **outp, int *cntp, int *capp)
+{
+    const char *slash = memchr(path, '/', plen);
+    size_t step_len = slash ? (size_t)(slash - path) : plen;
+    int last_step = (slash == NULL);
+    const char *rest = slash ? slash + 1 : NULL;
+    size_t rest_len = slash ? plen - step_len - 1 : 0;
+
+    if (step_len == 0 || (step_len == 1 && path[0] == '.')) {
+	if (last_step)
+	    pin_body_collect_append(start, outp, cntp, capp);
+	else
+	    pin_body_collect_path(pwp, start, rest, rest_len, outp, cntp, capp);
+	return;
+    }
+
+    char stepbuf[step_len + 1];
+    memcpy(stepbuf, path, step_len);
+    stepbuf[step_len] = '\0';
+
+    pin_name_id_t step_name = pin_namepool_atom(pwp, stepbuf, FALSE);
+    if (pin_name_id_is_null(step_name))
+	return;
+
+    pin_node_t *node = pin_node_addr(pwp, start);
+    if (node == NULL)
+	return;
+
+    pin_depth_t target_depth = node->pn_depth + 1;
+    for (pin_node_id_t cid = pin_node_child(node);
+	    !pin_node_id_is_null(cid); ) {
+	pin_node_t *child = pin_node_addr(pwp, cid);
+	if (child == NULL || child->pn_depth < target_depth)
+	    break;
+	if (child->pn_depth == target_depth
+		&& child->pn_type == PIN_TYPE_ELT
+		&& pin_name_id_equal(child->pn_name, step_name)) {
+	    if (last_step)
+		pin_body_collect_append(cid, outp, cntp, capp);
+	    else
+		pin_body_collect_path(pwp, cid, rest, rest_len,
+				      outp, cntp, capp);
+	}
+	cid = child->pn_next;
+    }
+}
+
+/*
+ * Look up a variable value (as a namepool string atom) from a body frame.
+ * name/nlen are the variable name (without leading '$').
+ * Returns a string or NULL if not found.
+ */
+static const char *
+pin_body_var_get (pin_parse_t *parsep, pin_body_frame_t *bfp,
+		  const char *name, size_t nlen)
+{
+    char nbuf[nlen + 1];
+    memcpy(nbuf, name, nlen);
+    nbuf[nlen] = '\0';
+
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_name_id_t nid = pin_namepool_atom(pwp, nbuf, FALSE);
+    if (pin_name_id_is_null(nid))
+	return NULL;
+
+    for (int i = 0; i < bfp->pbf_var_count; i++) {
+	if (pin_name_id_equal(bfp->pbf_var_names[i], nid))
+	    return pin_namepool_string(pwp, bfp->pbf_var_values[i]);
+    }
+    return NULL;
+}
+
+/*
+ * Free heap storage owned by a body frame.  Called before pbe_depth is
+ * decremented so the frame can be reused (zeroed) on the next push.
+ */
+static void
+pin_body_frame_cleanup (pin_body_frame_t *bfp)
+{
+    xo_buf_cleanup(&bfp->pbf_value_cache);
+    xo_free(bfp->pbf_var_names);
+    xo_free(bfp->pbf_var_values);
+    bfp->pbf_var_names = NULL;
+    bfp->pbf_var_values = NULL;
+    bfp->pbf_var_count = 0;
+    bfp->pbf_var_size = 0;
+}
+
+/*
+ * Store a variable binding in the body frame, growing the arrays as needed.
+ */
+static void
+pin_body_var_set (pin_body_frame_t *bfp, pin_name_id_t name, pin_name_id_t value)
+{
+    for (int i = 0; i < bfp->pbf_var_count; i++) {
+	if (pin_name_id_equal(bfp->pbf_var_names[i], name)) {
+	    bfp->pbf_var_values[i] = value;
+	    return;
+	}
+    }
+    if (bfp->pbf_var_count >= bfp->pbf_var_size) {
+	int newsize = bfp->pbf_var_size ? bfp->pbf_var_size * 2 : 4;
+	pin_name_id_t *nn = xo_realloc(bfp->pbf_var_names,
+				       newsize * sizeof(*bfp->pbf_var_names));
+	pin_name_id_t *nv = xo_realloc(bfp->pbf_var_values,
+				       newsize * sizeof(*bfp->pbf_var_values));
+	if (nn)
+	    bfp->pbf_var_names = nn;
+	if (nv)
+	    bfp->pbf_var_values = nv;
+	if (nn == NULL || nv == NULL)
+	    return;
+	bfp->pbf_var_size = newsize;
+    }
+    bfp->pbf_var_names[bfp->pbf_var_count] = name;
+    bfp->pbf_var_values[bfp->pbf_var_count] = value;
+    bfp->pbf_var_count += 1;
+}
+
+/*
+ * Expand an attribute value template (AVT) string, substituting {$var}
+ * with the bound variable's value.  Returns a newly-allocated string
+ * (caller must free), or NULL on allocation failure.
+ */
+static char *
+pin_body_avt_expand (pin_parse_t *parsep, pin_body_frame_t *bfp,
+		     const char *tmpl)
+{
+    char buf[4096];
+    size_t pos = 0;
+    const char *p = tmpl;
+
+    while (*p && pos < sizeof(buf) - 1) {
+	/* Escaped {{ → single '{' */
+	if (p[0] == '{' && p[1] == '{') {
+	    buf[pos++] = '{';
+	    p += 2;
+	    continue;
+	}
+	/* Escaped }} → single '}' */
+	if (p[0] == '}' && p[1] == '}') {
+	    buf[pos++] = '}';
+	    p += 2;
+	    continue;
+	}
+	/* AVT expression: {expr} */
+	if (p[0] == '{') {
+	    const char *close = strchr(p + 1, '}');
+	    if (close) {
+		const char *expr = p + 1;
+		size_t elen = (size_t)(close - expr);
+		if (elen > 0) {
+		    char valbuf[256];
+		    valbuf[0] = '\0';
+		    if (expr[0] == '$') {
+			const char *val = pin_body_var_get(parsep, bfp,
+							   expr + 1, elen - 1);
+			if (val)
+			    snprintf(valbuf, sizeof(valbuf), "%s", val);
+		    } else if (!pin_node_id_is_null(bfp->pbf_ctx_node)) {
+			pin_workspace_t *pwp = pin_parse_workspace(parsep);
+			pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
+						  expr, elen,
+						  valbuf, sizeof(valbuf));
+		    }
+		    if (valbuf[0] != '\0') {
+			size_t vlen = strlen(valbuf);
+			if (pos + vlen < sizeof(buf)) {
+			    memcpy(buf + pos, valbuf, vlen);
+			    pos += vlen;
+			}
+		    }
+		}
+		p = close + 1;
+		continue;
+	    }
+	}
+	buf[pos++] = *p++;
+    }
+    buf[pos] = '\0';
+    return strdup(buf);
+}
+
+/*
+ * Evaluate a BIA_IF condition against a specific context node rather than
+ * the matched element stored in the body frame.
+ */
+static int
+pin_body_eval_if_ctx (pin_parse_t *parsep, pin_body_instr_t *instr,
+		      pin_node_id_t ctx_node)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (rb == NULL || instr->bi_filter_idx >= rb->prb_if_filter_count)
+	return 0;
+
+    xo_filter_t *xfp = rb->prb_if_filters[instr->bi_filter_idx];
+    if (xfp == NULL)
+	return 0;
+
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_t *nodep = pin_node_addr(pwp, ctx_node);
+    if (nodep == NULL)
+	return 0;
+
+    const char *elt = pin_namepool_string(pwp, nodep->pn_name);
+    if (elt == NULL)
+	return 0;
+
+    /* Build attribute string from ctx_node's extracted attributes */
+    char abuf[4096];
+    size_t apos = 0;
+    pin_depth_t elt_depth = nodep->pn_depth;
+
+    for (pin_node_id_t aid = pin_node_child(nodep);
+	    !pin_node_id_is_null(aid); ) {
+	pin_node_t *ap = pin_node_addr(pwp, aid);
+	if (ap == NULL || ap->pn_depth <= elt_depth)
+	    break;
+	if (ap->pn_type == PIN_TYPE_ATTRIB) {
+	    const char *aname = pin_namepool_string(pwp, ap->pn_name);
+	    const char *aval = pin_textpool_string(pwp,
+					pa_arb_atom_of(pin_node_text(ap)));
+	    if (aname && aval) {
+		if (apos > 0 && apos < sizeof(abuf) - 1)
+		    abuf[apos++] = ' ';
+		int n = snprintf(abuf + apos, sizeof(abuf) - apos,
+				 "%s=\"%s\"", aname, aval);
+		if (n > 0)
+		    apos += (size_t) n;
+	    }
+	}
+	aid = ap->pn_next;
+    }
+    abuf[apos] = '\0';
+
+    xo_filter_walk_open(NULL, xfp, elt, -1);
+    pin_body_feed_attribs(xfp, apos > 0 ? abuf : NULL);
+    int result = (xo_filter_walk_status(NULL, xfp) == XO_STATUS_FULL);
+    xo_filter_walk_close(NULL, xfp, elt, -1);
+
+    return result;
+}
+
+/*
+ * Add a single name=value attribute node to the current element in the tree.
+ * Must be called while the element is on top of the insert stack (i.e., after
+ * pin_insert_open and before any non-attribute children are added).
+ */
+void
+pin_insert_attrib_pair (pin_parse_t *parsep, const char *name, const char *value)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
+
+    pin_name_id_t name_id = pin_namepool_atom(pwp, name, TRUE);
+    if (pin_name_id_is_null(name_id))
+	return;
+
+    size_t vlen = strlen(value);
+    pa_arb_t *prp = pwp->pw_textpool;
+    pa_arb_atom_t val_atom = pa_arb_alloc(prp, vlen + 1);
+    char *cp = pa_arb_atom_addr(prp, val_atom);
+    if (cp == NULL)
+	return;
+    memcpy(cp, value, vlen);
+    cp[vlen] = '\0';
+
+    pin_node_id_t node_atom = pin_insert_node(pip, "pin_insert_attrib_pair",
+					      name, strlen(name),
+					      PIN_TYPE_ATTRIB, name_id,
+					      pa_arb_atom_of(val_atom));
+    if (pin_node_id_is_null(node_atom)) {
+	pa_arb_free_atom(prp, val_atom);
+	return;
+    }
+
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+    if (psp->ps_node)
+	psp->ps_node->pn_flags |= PNF_ATTRIBS_PRESENT;
+}
+
+/*
+ * Execute a for-each body instruction sub-list synchronously.
+ * All data is read from the retained tree; this function never pauses for
+ * streaming events.  bfp->pbf_ctx_node / pbf_position / pbf_last must be
+ * set by the caller before each invocation.
+ */
+static void
+pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
+		       pin_body_frame_t *bfp)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    for (pin_body_instr_id_t pc = head; !pin_body_instr_id_is_null(pc); ) {
+	pin_body_instr_t *instr = pin_body_instr_addr(rb, pc);
+	if (instr == NULL)
+	    break;
+
+	pc = instr->bi_next;
+
+	switch (instr->bi_type) {
+	case BIA_EMIT_OPEN: {
+	    const char *tag = pin_namepool_string(pwp, instr->bi_tag);
+	    if (tag) {
+		char *attribs = NULL;
+		pin_action_type_t act = PIA_SAVE;
+
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    /* AVT template: expand {$var} references */
+		    const char *avt = pin_namepool_string(pwp, instr->bi_text);
+		    if (avt && *avt) {
+			attribs = pin_body_avt_expand(parsep, bfp, avt);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		} else if (!pin_name_id_is_null(instr->bi_select)) {
+		    const char *astr = pin_namepool_string(pwp, instr->bi_select);
+		    if (astr && *astr) {
+			attribs = strdup(astr);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		}
+		pin_insert_open(parsep, instr->bi_tag, NULL, tag, attribs, act);
+		free(attribs);
+	    }
+	    break;
+	}
+	case BIA_EMIT_TEXT: {
+	    const char *text = pin_namepool_string(pwp, instr->bi_text);
+	    if (text)
+		pin_insert_text(parsep, text, strlen(text), PIN_TYPE_TEXT);
+	    break;
+	}
+	case BIA_EMIT_CLOSE: {
+	    const char *tag = pin_namepool_string(pwp, instr->bi_tag);
+	    if (tag)
+		pin_insert_close(parsep, NULL, tag);
+	    break;
+	}
+	case BIA_COPY: {
+	    /* Emit the context node from the retained tree (no streaming) */
+	    if (!pin_node_id_is_null(bfp->pbf_ctx_node))
+		pin_exec_emit_node(parsep, pwp, bfp->pbf_ctx_node);
+	    break;
+	}
+	case BIA_VALUE_OF: {
+	    if (!pin_name_id_is_null(instr->bi_text)) {
+		/* select="path/or/expr" — evaluate against context node */
+		const char *path = pin_namepool_string(pwp, instr->bi_text);
+		if (path && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		    char vbuf[512];
+		    pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
+					     path, strlen(path),
+					     vbuf, sizeof(vbuf));
+		    if (vbuf[0])
+			pin_insert_text(parsep, vbuf, strlen(vbuf), PIN_TYPE_TEXT);
+		}
+	    } else if (!pin_name_id_is_null(instr->bi_select)) {
+		/* select="@attr": get attribute from context node */
+		const char *aname = pin_namepool_string(pwp, instr->bi_select);
+		if (aname && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		    pin_node_t *ctx = pin_node_addr(pwp, bfp->pbf_ctx_node);
+		    pin_name_id_t aid = pin_namepool_atom(pwp, aname, FALSE);
+		    if (ctx && !pin_name_id_is_null(aid)) {
+			const char *val = pin_get_attrib_string(pwp, ctx, aid);
+			if (val)
+			    pin_insert_text(parsep, val, strlen(val),
+					    PIN_TYPE_TEXT);
+		    }
+		}
+	    } else {
+		/* select=".": get text of context node */
+		if (!pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		    pin_name_id_t tid = pin_exec_text_of(pwp, bfp->pbf_ctx_node);
+		    const char *text = pin_namepool_string(pwp, tid);
+		    if (text)
+			pin_insert_text(parsep, text, strlen(text),
+					PIN_TYPE_TEXT);
+		}
+	    }
+	    break;
+	}
+	case BIA_IF: {
+	    int truth = pin_body_eval_if_ctx(parsep, instr, bfp->pbf_ctx_node);
+	    if (!truth)
+		pc = instr->bi_else;
+	    break;
+	}
+	case BIA_IF_POSITION: {
+	    uint32_t N = instr->bi_filter_idx;
+	    uint32_t op = pin_name_id_atom_of(instr->bi_tag);
+	    uint32_t pos = bfp->pbf_position;
+	    int truth;
+	    switch (op) {
+	    case PCMP_LT: truth = (pos <  N); break;
+	    case PCMP_LE: truth = (pos <= N); break;
+	    case PCMP_EQ: truth = (pos == N); break;
+	    case PCMP_NE: truth = (pos != N); break;
+	    case PCMP_GT: truth = (pos >  N); break;
+	    case PCMP_GE: truth = (pos >= N); break;
+	    default:      truth = 0;
+	    }
+	    if (!truth)
+		pc = instr->bi_else;
+	    break;
+	}
+	case BIA_VARIABLE: {
+	    /* Evaluate select (path or arithmetic) and store in pbf_vars */
+	    const char *sel = !pin_name_id_is_null(instr->bi_select)
+			      ? pin_namepool_string(pwp, instr->bi_select) : NULL;
+	    pin_name_id_t val = pin_name_id_null_atom();
+
+	    if (sel && sel[0] != '\0' && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		char vbuf[128];
+		pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
+					  sel, strlen(sel), vbuf, sizeof(vbuf));
+		if (vbuf[0] != '\0')
+		    val = pin_namepool_atom(pwp, vbuf, TRUE);
+	    }
+
+	    if (!pin_name_id_is_null(instr->bi_tag))
+		pin_body_var_set(bfp, instr->bi_tag, val);
+	    break;
+	}
+	case BIA_ELEMENT_OPEN: {
+	    const char *name_expr = !pin_name_id_is_null(instr->bi_select)
+				    ? pin_namepool_string(pwp, instr->bi_select) : NULL;
+	    if (name_expr) {
+		char *tagname = pin_body_avt_expand(parsep, bfp, name_expr);
+		const char *tag = tagname ? tagname : name_expr;
+		pin_name_id_t tag_id = pin_namepool_atom(pwp, tag, TRUE);
+		char *attribs = NULL;
+		pin_action_type_t act = PIA_SAVE;
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    const char *avt = pin_namepool_string(pwp, instr->bi_text);
+		    if (avt && *avt) {
+			attribs = pin_body_avt_expand(parsep, bfp, avt);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		}
+		pin_insert_open(parsep, tag_id, NULL, tag, attribs, act);
+		free(attribs);
+		free(tagname);
+	    }
+	    break;
+	}
+	case BIA_ELEMENT_CLOSE: {
+	    pin_insert_t *pip = parsep->pp_insert;
+	    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+	    if (psp->ps_node != NULL) {
+		const char *tag = pin_namepool_string(pwp, psp->ps_node->pn_name);
+		if (tag)
+		    pin_insert_close(parsep, NULL, tag);
+	    }
+	    break;
+	}
+	case BIA_ATTRIB: {
+	    const char *aname = !pin_name_id_is_null(instr->bi_tag)
+				? pin_namepool_string(pwp, instr->bi_tag) : NULL;
+	    if (aname) {
+		char valbuf[512];
+		valbuf[0] = '\0';
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    const char *avt = pin_namepool_string(pwp, instr->bi_text);
+		    if (avt && *avt) {
+			char *expanded = pin_body_avt_expand(parsep, bfp, avt);
+			if (expanded) {
+			    snprintf(valbuf, sizeof(valbuf), "%s", expanded);
+			    free(expanded);
+			}
+		    }
+		}
+		pin_insert_attrib_pair(parsep, aname, valbuf);
+	    }
+	    break;
+	}
+	case BIA_FOR_EACH:
+	    /* Nested for-each: not yet supported in foreach body */
+	    break;
+	case BIA_JUMP:
+	    break;
+	case BIA_GOTO:
+	    pc = instr->bi_else;
+	    break;
+	default:
+	    break;
+	}
+    }
+}
+
+/*
  * Execute body instructions while in PBMODE_EXEC mode.
  * Returns when the instruction list is exhausted (body frame popped) or
  * when a BIA_COPY instruction is reached (mode switches to PBMODE_COPY).
@@ -1035,14 +1567,14 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	pin_body_instr_id_t pc = bfp->pbf_pc;
 	if (pin_body_instr_id_is_null(pc)) {
 	    /* End of instruction list; body complete */
-	    xo_buf_cleanup(&bfp->pbf_value_cache);
+	    pin_body_frame_cleanup(bfp);
 	    body->pbe_depth -= 1;
 	    continue;		/* Check for parent body frame */
 	}
 
 	pin_body_instr_t *instr = pin_body_instr_addr(parsep->pp_rulebook, pc);
 	if (instr == NULL) {
-	    xo_buf_cleanup(&bfp->pbf_value_cache);
+	    pin_body_frame_cleanup(bfp);
 	    body->pbe_depth -= 1;
 	    break;
 	}
@@ -1055,7 +1587,14 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    if (tag) {
 		char *attribs = NULL;
 		pin_action_type_t act = PIA_SAVE;
-		if (!pin_name_id_is_null(instr->bi_select)) {
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    /* AVT template: expand {$var} references */
+		    const char *avt = pin_parse_namepool_string(parsep, instr->bi_text);
+		    if (avt && *avt) {
+			attribs = pin_body_avt_expand(parsep, bfp, avt);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		} else if (!pin_name_id_is_null(instr->bi_select)) {
 		    const char *astr = pin_parse_namepool_string(parsep,
 							    instr->bi_select);
 		    if (astr && *astr) {
@@ -1168,6 +1707,209 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		bfp->pbf_pc = instr->bi_else;
 	    break;
 	}
+	case BIA_IF_POSITION: {
+	    uint32_t N = instr->bi_filter_idx;
+	    uint32_t op = pin_name_id_atom_of(instr->bi_tag);
+	    uint32_t pos = bfp->pbf_position;
+	    int truth;
+	    switch (op) {
+	    case PCMP_LT: truth = (pos <  N); break;
+	    case PCMP_LE: truth = (pos <= N); break;
+	    case PCMP_EQ: truth = (pos == N); break;
+	    case PCMP_NE: truth = (pos != N); break;
+	    case PCMP_GT: truth = (pos >  N); break;
+	    case PCMP_GE: truth = (pos >= N); break;
+	    default:      truth = 0;
+	    }
+	    if (!truth)
+		bfp->pbf_pc = instr->bi_else;
+	    break;
+	}
+	case BIA_VARIABLE: {
+	    /* No-op in the outer body: variables are only bound in for-each */
+	    break;
+	}
+	case BIA_ELEMENT_OPEN: {
+	    const char *name_expr = !pin_name_id_is_null(instr->bi_select)
+				    ? pin_parse_namepool_string(parsep, instr->bi_select) : NULL;
+	    if (name_expr) {
+		pin_body_frame_t *abfp = (body->pbe_depth > 0)
+					 ? &body->pbe_stack[body->pbe_depth - 1] : NULL;
+		char *tagname = abfp ? pin_body_avt_expand(parsep, abfp, name_expr)
+				     : strdup(name_expr);
+		const char *tag = tagname ? tagname : name_expr;
+		pin_name_id_t tag_id = pin_parse_namepool_atom(parsep, tag);
+		char *attribs = NULL;
+		pin_action_type_t act = PIA_SAVE;
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    const char *avt = pin_parse_namepool_string(parsep, instr->bi_text);
+		    if (avt && *avt && abfp) {
+			attribs = pin_body_avt_expand(parsep, abfp, avt);
+			act = PIA_SAVE_ATTRIB;
+		    }
+		}
+		pin_insert_open(parsep, tag_id, NULL, tag, attribs, act);
+		free(attribs);
+		free(tagname);
+	    }
+	    break;
+	}
+	case BIA_ELEMENT_CLOSE: {
+	    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+	    if (psp->ps_node != NULL) {
+		pin_workspace_t *pwp = pin_parse_workspace(parsep);
+		const char *tag = pin_namepool_string(pwp, psp->ps_node->pn_name);
+		if (tag)
+		    pin_insert_close(parsep, NULL, tag);
+	    }
+	    break;
+	}
+	case BIA_ATTRIB: {
+	    const char *aname = !pin_name_id_is_null(instr->bi_tag)
+				? pin_parse_namepool_string(parsep, instr->bi_tag) : NULL;
+	    if (aname) {
+		char valbuf[512];
+		valbuf[0] = '\0';
+		if (!pin_name_id_is_null(instr->bi_text)) {
+		    const char *avt = pin_parse_namepool_string(parsep, instr->bi_text);
+		    if (avt && *avt) {
+			pin_body_frame_t *abfp = (body->pbe_depth > 0)
+						 ? &body->pbe_stack[body->pbe_depth - 1] : NULL;
+			if (abfp) {
+			    char *expanded = pin_body_avt_expand(parsep, abfp, avt);
+			    if (expanded) {
+				snprintf(valbuf, sizeof(valbuf), "%s", expanded);
+				free(expanded);
+			    }
+			}
+		    }
+		}
+		pin_insert_attrib_pair(parsep, aname, valbuf);
+	    }
+	    break;
+	}
+	case BIA_FOR_EACH: {
+	    /*
+	     * Phase 1 (pbf_depth_counter == 0): The matched element hasn't
+	     * been retained yet.  Open it in the tree (to capture children)
+	     * and switch to PBMODE_FOR_EACH_WAIT.  Children flow through the
+	     * PBMODE_FOR_EACH_WAIT open-bypass and are saved as PIA_SAVE_ATTRIB.
+	     * When the matched element closes, pin_insert_close resumes here.
+	     *
+	     * Phase 2 (pbf_depth_counter == 1): Matched element and all its
+	     * children are now in the retained tree; execute the for-each.
+	     */
+	    if (bfp->pbf_depth_counter == 0) {
+		/* Save the current output node so Phase 2 can use it as the
+		 * navigation root for absolute paths.  For /authors/author the
+		 * retained <authors> is a child of this node, so navigating
+		 * authors/author from here finds the right nodes. */
+		bfp->pbf_ctx_node = pip->pin_stack[pip->pin_depth].ps_atom;
+		const char *match_str = pin_parse_namepool_string(parsep,
+							      bfp->pbf_match_name);
+		if (match_str) {
+		    pin_insert_open(parsep, bfp->pbf_match_name,
+				    bfp->pbf_match_prefix, match_str,
+				    bfp->pbf_match_attribs, PIA_SAVE_ATTRIB);
+		    pip->pin_stack[pip->pin_depth].ps_statep = NULL;
+		    bfp->pbf_copy_depth = pip->pin_depth;
+		    /* Mark as transient: retained for navigation only, not output */
+		    if (pip->pin_stack[pip->pin_depth].ps_node)
+			pip->pin_stack[pip->pin_depth].ps_node->pn_flags |= PNF_TRANSIENT;
+		}
+		bfp->pbf_depth_counter = 1;
+		bfp->pbf_pc = pc;		/* Re-run BIA_FOR_EACH on resume */
+		bfp->pbf_mode = PBMODE_FOR_EACH_WAIT;
+		return;
+	    }
+	    bfp->pbf_depth_counter = 0;
+	    /* fe_root: the output node that contains the retained matched element;
+	     * used as the navigation root for absolute paths in Phase 2. */
+	    pin_node_id_t fe_root = bfp->pbf_ctx_node;
+
+	    /*
+	     * Collect all nodes matching the select path, sort them, then
+	     * execute the body sub-list synchronously for each node.
+	     */
+	    const char *sel = !pin_name_id_is_null(instr->bi_select)
+			      ? pin_parse_namepool_string(parsep, instr->bi_select) : NULL;
+	    if (sel == NULL || sel[0] == '\0' || pin_body_instr_id_is_null(instr->bi_else))
+		break;
+
+	    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+	    pin_tree_t *ptp = pip->pin_tree;
+
+	    /* Determine start node for path navigation.
+	     * Absolute paths: the retained matched element was opened inside
+	     * fe_root (the output node current when Phase 1 ran), so navigating
+	     * the stripped path from fe_root finds the right subtree.
+	     * Relative paths: start from the current output stack top. */
+	    pin_node_id_t start;
+	    const char *path = sel;
+	    if (sel[0] == '/') {
+		start = !pin_node_id_is_null(fe_root) ? fe_root : ptp->pt_root;
+		path = sel + 1;		/* strip leading '/' */
+	    } else {
+		start = pip->pin_stack[pip->pin_depth].ps_atom;
+	    }
+
+	    /* Collect matching nodes */
+	    pin_node_id_t *nodes = NULL;
+	    int node_count = 0, node_size = 0;
+	    if (path[0] != '\0')
+		pin_body_collect_path(pwp, start, path, strlen(path),
+				      &nodes, &node_count, &node_size);
+
+	    /* Sort if a sort spec is present */
+	    const char *sort_spec = !pin_name_id_is_null(instr->bi_text)
+				    ? pin_parse_namepool_string(parsep, instr->bi_text) : NULL;
+
+	    if (sort_spec && *sort_spec && node_count > 1) {
+		bool primary_desc = (*sort_spec == '-');
+		pin_stree_t *tree = pin_stree_create();
+		if (tree) {
+		    for (int i = 0; i < node_count; i++) {
+			char keybuf[512];
+			uint16_t klen = pin_for_each_build_key(pwp, nodes[i],
+							       sort_spec,
+							       keybuf, sizeof(keybuf));
+			pin_stree_insert(tree, keybuf, klen, nodes[i]);
+		    }
+		    int k = 0;
+		    pin_stree_entry_t *e;
+		    if (primary_desc) {
+			for (e = pin_stree_last(tree); e && k < node_count;
+				e = pin_stree_prev(tree, e))
+			    nodes[k++] = e->pse_node;
+		    } else {
+			for (e = pin_stree_first(tree); e && k < node_count;
+				e = pin_stree_next(tree, e))
+			    nodes[k++] = e->pse_node;
+		    }
+		    pin_stree_free(tree);
+		}
+	    }
+
+	    /* Execute body for each node with updated context */
+	    uint32_t save_pos = bfp->pbf_position;
+	    uint32_t save_last = bfp->pbf_last;
+	    int save_var_count = bfp->pbf_var_count;
+
+	    bfp->pbf_last = (uint32_t) node_count;
+	    for (int i = 0; i < node_count; i++) {
+		bfp->pbf_ctx_node = nodes[i];
+		bfp->pbf_position = (uint32_t)(i + 1);
+		bfp->pbf_var_count = save_var_count;
+		pin_body_foreach_body(parsep, instr->bi_else, bfp);
+	    }
+
+	    bfp->pbf_ctx_node = pin_node_id_null_atom();
+	    bfp->pbf_position = save_pos;
+	    bfp->pbf_last = save_last;
+	    bfp->pbf_var_count = save_var_count;
+	    free(nodes);
+	    break;
+	}
 	default:
 	    break;
 	}
@@ -1260,7 +2002,16 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	pin_body_exec_t *body = &pip->pin_body;
 	int initial_depth = body->pbe_depth;
 
-	if (body->pbe_depth < PIN_BODY_DEPTH_MAX) {
+	if (body->pbe_depth >= body->pbe_size) {
+	    int newsize = body->pbe_size ? body->pbe_size * 2 : 4;
+	    pin_body_frame_t *ns = xo_realloc(body->pbe_stack,
+					      newsize * sizeof(*body->pbe_stack));
+	    if (ns != NULL) {
+		body->pbe_stack = ns;
+		body->pbe_size = newsize;
+	    }
+	}
+	if (body->pbe_depth < body->pbe_size) {
 	    pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth];
 	    bzero(bfp, sizeof(*bfp));
 	    bfp->pbf_pc = prp->pr_body;
@@ -1573,7 +2324,8 @@ pin_parse (pin_parse_t *parsep)
 			    for (pin_apply_id_t scan_aid = rb->prb_apply_list;
 				 !pin_apply_id_is_null(scan_aid); ) {
 				pin_apply_entry_t *ep = pin_apply_addr(rb, scan_aid);
-				if (ep == NULL) break;
+				if (ep == NULL)
+				    break;
 				if (pin_name_id_equal(ep->pae_name, name_id)
 					&& pin_name_id_equal(ep->pae_mode, apply_mode)) {
 				    apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
@@ -1610,6 +2362,35 @@ pin_parse (pin_parse_t *parsep)
 			pin_insert_close(parsep, data, localp);
 			if (apl_filter)
 			    xo_filter_walk_close(NULL, apl_filter, localp, -1);
+		    }
+		    break;
+		}
+	    }
+
+	    /*
+	     * PBMODE_FOR_EACH_WAIT bypass: BIA_FOR_EACH is waiting for the
+	     * matched element to be fully retained before executing.  Save all
+	     * children to the tree, exactly like PBMODE_COPY.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			   == PBMODE_FOR_EACH_WAIT) {
+		    xo_filter_t *fe_filter = parsep->pp_filter;
+		    if (fe_filter) {
+			pin_filter_set_attribs(fe_filter, rest);
+			xo_filter_walk_open(NULL, fe_filter, localp, -1);
+		    }
+		    pin_rule_t save_rule;
+		    bzero(&save_rule, sizeof(save_rule));
+		    save_rule.pr_action = PIA_SAVE_ATTRIB;
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, &save_rule);
+		    if (type == PIN_TYPE_EMPTY) {
+			pin_insert_close(parsep, data, localp);
+			if (fe_filter)
+			    xo_filter_walk_close(NULL, fe_filter, localp, -1);
 		    }
 		    break;
 		}
