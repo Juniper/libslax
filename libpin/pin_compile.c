@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
@@ -122,6 +123,62 @@ pin_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp,
 }
 
 /*
+ * Try to parse test as a position()-based comparison.
+ * Recognises: position() OP N  where OP is <, <=, =, !=, >, >= and N >= 0.
+ * Returns 1 and fills op_out/n_out on success; 0 on no match.
+ */
+static int
+pin_parse_position_test (const char *test, uint32_t *op_out, uint32_t *n_out)
+{
+    while (isspace((unsigned char) *test))
+	test += 1;
+
+    if (strncmp(test, "position()", 10) != 0)
+	return 0;
+    test += 10;
+
+    while (isspace((unsigned char) *test))
+	test += 1;
+
+    uint32_t op;
+    if (test[0] == '<' && test[1] == '=') {
+	op = PCMP_LE;
+	test += 2;
+    } else if (test[0] == '>' && test[1] == '=') {
+	op = PCMP_GE;
+	test += 2;
+    } else if (test[0] == '!' && test[1] == '=') {
+	op = PCMP_NE;
+	test += 2;
+    } else if (test[0] == '<') {
+	op = PCMP_LT;
+	test += 1;
+    } else if (test[0] == '>') {
+	op = PCMP_GT;
+	test += 1;
+    } else if (test[0] == '=') {
+	op = PCMP_EQ;
+	test += 1;
+    } else
+	return 0;
+
+    while (isspace((unsigned char) *test))
+	test += 1;
+
+    if (!isdigit((unsigned char) *test))
+	return 0;
+
+    char *endp = NULL;
+    unsigned long n = strtoul(test, &endp, 10);
+    if (endp == test)
+	return 0;
+
+    *op_out = op;
+    *n_out = (uint32_t) n;
+    return 1;
+}
+
+/*
  * Compile the children of body_node into a linked list of body instructions.
  * *nextp is a pointer-to-pointer cursor that always points at the id field
  * where the next instruction's id should be written; recursive calls share
@@ -160,7 +217,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	if (pin_is_xsl(child, "value-of")) {
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    const char *sstr = sel ? (const char *) sel : NULL;
-	    if (sstr == NULL || strcmp(sstr, ".") == 0) {
+	    if (sstr == NULL || sstr[0] == '\0' || strcmp(sstr, ".") == 0) {
 		/* select="." — pause and collect text children */
 		pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
 		if (bip != NULL)
@@ -174,9 +231,25 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
 						       sstr + 1, TRUE);
 		}
+	    } else if (sstr[0] == '\'' || sstr[0] == '"') {
+		/* select="'literal'" or select='"literal"' — static text */
+		char q = sstr[0];
+		size_t slen = strlen(sstr);
+		if (slen >= 2 && sel[slen - 1] == q) {
+		    sel[slen - 1] = '\0'; /* strip trailing quote in-place; sel freed below */
+		    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+		    if (bip != NULL) {
+			bip->bi_type = BIA_EMIT_TEXT;
+			bip->bi_text = pin_namepool_atom(rb->prb_workspace, sstr + 1, TRUE);
+		    }
+		}
 	    } else {
-		pin_warn(child, "xsl:value-of: complex select not supported: %s",
-			      sstr);
+		/* General path or expression: evaluate against context node */
+		pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+		if (bip != NULL) {
+		    bip->bi_type = BIA_VALUE_OF;
+		    bip->bi_text = pin_namepool_atom(rb->prb_workspace, sstr, TRUE);
+		}
 	    }
 	    if (sel)
 		xmlFree(sel);
@@ -204,47 +277,53 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		continue;
 	    }
 
-	    /*
-	     * Build a standalone filter for this condition.  The pattern
-	     * is `*[@condition]` — wildcard element so the same compiled
-	     * filter works regardless of which element name fires the rule.
-	     */
-	    char xpath_buf[1024];
-	    snprintf(xpath_buf, sizeof(xpath_buf),
-		     "*[%s]", (const char *) test);
-	    xmlFree(test);
-
-	    xo_filter_t *cond_filter = xo_filter_create_standalone();
-	    if (cond_filter == NULL)
-		return;
-	    if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
-		xo_filter_destroy_standalone(cond_filter);
-		return;
-	    }
-	    uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
-	    if (fidx == UINT32_MAX) {
-		xo_filter_destroy_standalone(cond_filter);
-		return;
-	    }
-
-	    /* Create BIA_IF; save its id so we can set bi_else later */
 	    pin_body_instr_id_t bid_if;
-	    pin_body_instr_t *bip_if =
-		pin_body_instr_new(rb, nextp, &bid_if);
-	    if (bip_if == NULL)
-		return;
-	    bip_if->bi_type = BIA_IF;
-	    bip_if->bi_filter_idx = fidx;
+	    pin_body_instr_t *bip_if;
 
-	    /* Compile the true-body; bi_next of BIA_IF is filled in here */
+	    uint32_t pcmp_op = 0, pcmp_n = 0;
+	    if (pin_parse_position_test((const char *) test, &pcmp_op, &pcmp_n)) {
+		/* position()-based test: emit BIA_IF_POSITION */
+		xmlFree(test);
+		bip_if = pin_body_instr_new(rb, nextp, &bid_if);
+		if (bip_if == NULL)
+		    return;
+		bip_if->bi_type = BIA_IF_POSITION;
+		bip_if->bi_tag = pin_name_id(pcmp_op); /* operator in tag atom */
+		bip_if->bi_filter_idx = pcmp_n;         /* comparison value N */
+	    } else {
+		/*
+		 * General test: build a standalone xo_filter.  The pattern
+		 * is `*[condition]` — wildcard so the filter fires regardless
+		 * of which element name fires the rule.
+		 */
+		char xpath_buf[1024];
+		snprintf(xpath_buf, sizeof(xpath_buf),
+			 "*[%s]", (const char *) test);
+		xmlFree(test);
+
+		xo_filter_t *cond_filter = xo_filter_create_standalone();
+		if (cond_filter == NULL)
+		    return;
+		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+		    xo_filter_destroy_standalone(cond_filter);
+		    return;
+		}
+		uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
+		if (fidx == UINT32_MAX) {
+		    xo_filter_destroy_standalone(cond_filter);
+		    return;
+		}
+		bip_if = pin_body_instr_new(rb, nextp, &bid_if);
+		if (bip_if == NULL)
+		    return;
+		bip_if->bi_type = BIA_IF;
+		bip_if->bi_filter_idx = fidx;
+	    }
+
+	    /* Compile the true-body; bi_next of bip_if is filled in here */
 	    pin_compile_body_r(child, rb, nextp);
 
-	    /*
-	     * Create BIA_JUMP after the true-body.  This fills in bi_next of
-	     * the last true-body instruction and provides a stable ID for
-	     * BIA_IF.bi_else.  The false branch lands here and falls through
-	     * to whatever instruction is wired into BIA_JUMP.bi_next next.
-	     */
+	    /* Create BIA_JUMP join point after the true-body */
 	    pin_body_instr_id_t bid_jump;
 	    pin_body_instr_t *bip_jump =
 		pin_body_instr_new(rb, nextp, &bid_jump);
@@ -289,8 +368,8 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	 * All BIA_GOTOs are backpatched with bid_join once it is known.
 	 */
 	if (pin_is_xsl(child, "choose")) {
-	    pin_body_instr_id_t bid_gotos[16];
-	    int n_gotos = 0;
+	    pin_body_instr_id_t *bid_gotos = NULL;
+	    int n_gotos = 0, gotos_size = 0;
 	    pin_body_instr_id_t bid_last_if = pin_body_instr_id_null_atom();
 	    xmlNodePtr otherwise_node = NULL;
 
@@ -311,18 +390,26 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 			xmlFree(test);
 		    continue;
 		}
-		char xpath_buf[1024];
-		snprintf(xpath_buf, sizeof(xpath_buf),
-			 "*[%s]", (const char *) test);
+		size_t tlen = strlen((const char *) test);
+		char *xpath_buf = xo_realloc(NULL, tlen + 4); /* "*[" + test + "]" + NUL */
+		if (xpath_buf == NULL) {
+		    xmlFree(test);
+		    return;
+		}
+		snprintf(xpath_buf, tlen + 4, "*[%s]", (const char *) test);
 		xmlFree(test);
 
 		xo_filter_t *cond_filter = xo_filter_create_standalone();
-		if (cond_filter == NULL)
-		    return;
-		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
-		    xo_filter_destroy_standalone(cond_filter);
+		if (cond_filter == NULL) {
+		    xo_free(xpath_buf);
 		    return;
 		}
+		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+		    xo_filter_destroy_standalone(cond_filter);
+		    xo_free(xpath_buf);
+		    return;
+		}
+		xo_free(xpath_buf);
 		uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
 		if (fidx == UINT32_MAX) {
 		    xo_filter_destroy_standalone(cond_filter);
@@ -348,15 +435,26 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 
 		pin_compile_body_r(wc, rb, nextp);
 
-		if (n_gotos < 16) {
-		    pin_body_instr_id_t bid_goto;
-		    pin_body_instr_t *bip_goto =
-			pin_body_instr_new(rb, nextp, &bid_goto);
-		    if (bip_goto == NULL)
+		if (n_gotos >= gotos_size) {
+		    int newsize = gotos_size ? gotos_size * 2 : 4;
+		    pin_body_instr_id_t *ng = xo_realloc(bid_gotos,
+					     newsize * sizeof(*bid_gotos));
+		    if (ng == NULL) {
+			xo_free(bid_gotos);
 			return;
-		    bip_goto->bi_type = BIA_GOTO;
-		    bid_gotos[n_gotos++] = bid_goto;
+		    }
+		    bid_gotos = ng;
+		    gotos_size = newsize;
 		}
+		pin_body_instr_id_t bid_goto;
+		pin_body_instr_t *bip_goto =
+		    pin_body_instr_new(rb, nextp, &bid_goto);
+		if (bip_goto == NULL) {
+		    xo_free(bid_gotos);
+		    return;
+		}
+		bip_goto->bi_type = BIA_GOTO;
+		bid_gotos[n_gotos++] = bid_goto;
 	    }
 
 	    if (otherwise_node != NULL) {
@@ -378,8 +476,10 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_id_t bid_join;
 	    pin_body_instr_t *bip_join =
 		pin_body_instr_new(rb, nextp, &bid_join);
-	    if (bip_join == NULL)
+	    if (bip_join == NULL) {
+		xo_free(bid_gotos);
 		return;
+	    }
 	    bip_join->bi_type = BIA_JUMP;
 
 	    if (otherwise_node == NULL && !pin_body_instr_id_is_null(bid_last_if)) {
@@ -393,12 +493,199 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		if (bip_g)
 		    bip_g->bi_else = bid_join;
 	    }
+	    xo_free(bid_gotos);
+	    continue;
+	}
+
+	/* xsl:sort is processed by the enclosing xsl:for-each compiler;
+	 * silently skip it here when encountered during body compilation. */
+	if (pin_is_xsl(child, "sort")) {
+	    continue;
+	}
+
+	/* xsl:variable → BIA_VARIABLE */
+	if (pin_is_xsl(child, "variable")) {
+	    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (vname == NULL || vname[0] == '\0') {
+		pin_error(rb, child, "xsl:variable: missing or empty name attribute");
+		if (vname)
+		    xmlFree(vname);
+		continue;
+	    }
+	    xmlChar *vsel = xmlGetProp(child, (const xmlChar *) "select");
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip) {
+		bip->bi_type = BIA_VARIABLE;
+		bip->bi_tag = pin_namepool_atom(rb->prb_workspace,
+					        (const char *) vname, TRUE);
+		if (vsel && vsel[0] != '\0')
+		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						       (const char *) vsel, TRUE);
+	    }
+	    xmlFree(vname);
+	    if (vsel)
+		xmlFree(vsel);
+	    continue;
+	}
+
+	/*
+	 * xsl:for-each -> BIA_FOR_EACH.
+	 *
+	 * bi_select = select path (may be absolute "/a/b" or relative "a/b")
+	 * bi_text   = multi-key sort spec (newline-separated, "-" prefix = desc)
+	 * bi_else   = head of the for-each body sub-list (compiled separately)
+	 * bi_next   = first instruction after the for-each
+	 */
+	if (pin_is_xsl(child, "for-each")) {
+	    xmlChar *fsel = xmlGetProp(child, (const xmlChar *) "select");
+	    if (fsel == NULL || fsel[0] == '\0') {
+		pin_error(rb, child, "xsl:for-each: missing or empty select attribute");
+		if (fsel)
+		    xmlFree(fsel);
+		continue;
+	    }
+
+	    /* Build multi-key sort spec from xsl:sort children */
+	    xo_buffer_t sortbuf;
+	    xo_buf_init(&sortbuf);
+	    for (xmlNodePtr sc = child->children; sc; sc = sc->next) {
+		if (!pin_is_xsl(sc, "sort"))
+		    continue;
+		xmlChar *skey = xmlGetProp(sc, (const xmlChar *) "select");
+		xmlChar *sord = xmlGetProp(sc, (const xmlChar *) "order");
+		const char *kstr = skey ? (const char *) skey : ".";
+		bool desc = sord && strcmp((const char *) sord, "descending") == 0;
+
+		if (!xo_buf_is_empty(&sortbuf))
+		    xo_buf_append(&sortbuf, "\n", 1);
+		if (desc)
+		    xo_buf_append(&sortbuf, "-", 1);
+		xo_buf_append_str(&sortbuf, kstr);
+
+		if (skey)
+		    xmlFree(skey);
+		if (sord)
+		    xmlFree(sord);
+	    }
+
+	    pin_body_instr_id_t bid_fe;
+	    pin_body_instr_t *bip_fe = pin_body_instr_new(rb, nextp, &bid_fe);
+	    if (bip_fe == NULL) {
+		xmlFree(fsel);
+		xo_buf_cleanup(&sortbuf);
+		return;
+	    }
+	    bip_fe->bi_type = BIA_FOR_EACH;
+	    bip_fe->bi_select = pin_namepool_atom(rb->prb_workspace,
+						   (const char *) fsel, TRUE);
+	    if (!xo_buf_is_empty(&sortbuf)) {
+		xo_buf_force_nul(&sortbuf);
+		bip_fe->bi_text = pin_namepool_atom(rb->prb_workspace,
+						     xo_buf_data(&sortbuf, 0), TRUE);
+	    }
+	    xo_buf_cleanup(&sortbuf);
+	    xmlFree(fsel);
+
+	    /* Compile for-each body as an independent sub-list via bi_else */
+	    pin_body_instr_id_t body_head = pin_body_instr_id_null_atom();
+	    pin_body_instr_id_t *body_nextp = &body_head;
+	    pin_compile_body_r(child, rb, &body_nextp);
+	    bip_fe->bi_else = body_head;
+	    continue;
+	}
+
+	/* xsl:element → BIA_ELEMENT_OPEN + children + BIA_ELEMENT_CLOSE */
+	if (pin_is_xsl(child, "element")) {
+	    xmlChar *ename = xmlGetProp(child, (const xmlChar *) "name");
+	    if (ename == NULL) {
+		pin_warn(child, "xsl:element: missing name attribute");
+		continue;
+	    }
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip == NULL) {
+		xmlFree(ename);
+		return;
+	    }
+	    bip->bi_type = BIA_ELEMENT_OPEN;
+	    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+					      (const char *) ename, TRUE);
+	    xmlFree(ename);
+	    pin_compile_body_r(child, rb, nextp);
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip == NULL)
+		return;
+	    cbip->bi_type = BIA_ELEMENT_CLOSE;
+	    continue;
+	}
+
+	/* xsl:attribute → BIA_ATTRIB: bi_tag=name, bi_text=value-AVT */
+	if (pin_is_xsl(child, "attribute")) {
+	    xmlChar *aname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (aname == NULL) {
+		pin_warn(child, "xsl:attribute: missing name attribute");
+		continue;
+	    }
+	    /* Build value AVT from child nodes */
+	    xo_buffer_t vbuf;
+	    xo_buf_init(&vbuf);
+	    for (xmlNodePtr vc = child->children; vc; vc = vc->next) {
+		if (vc->type == XML_TEXT_NODE && vc->content && vc->content[0]) {
+		    xo_buf_append_str(&vbuf, (const char *) vc->content);
+		} else if (pin_is_xsl(vc, "value-of")) {
+		    xmlChar *sel = xmlGetProp(vc, (const xmlChar *) "select");
+		    if (sel) {
+			xo_buf_append(&vbuf, "{", 1);
+			xo_buf_append_str(&vbuf, (const char *) sel);
+			xo_buf_append(&vbuf, "}", 1);
+			xmlFree(sel);
+		    }
+		}
+	    }
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip == NULL) {
+		xmlFree(aname);
+		xo_buf_cleanup(&vbuf);
+		return;
+	    }
+	    bip->bi_type = BIA_ATTRIB;
+	    bip->bi_tag = pin_namepool_atom(rb->prb_workspace,
+					   (const char *) aname, TRUE);
+	    if (!xo_buf_is_empty(&vbuf)) {
+		xo_buf_force_nul(&vbuf);
+		bip->bi_text = pin_namepool_atom(rb->prb_workspace,
+						 xo_buf_data(&vbuf, 0), TRUE);
+	    }
+	    xo_buf_cleanup(&vbuf);
+	    xmlFree(aname);
+	    continue;
+	}
+
+	/* xsl:text → BIA_EMIT_TEXT (preserves whitespace; no xsl:text child elements) */
+	if (pin_is_xsl(child, "text")) {
+	    xo_buffer_t tbuf;
+	    xo_buf_init(&tbuf);
+	    for (xmlNodePtr tc = child->children; tc; tc = tc->next) {
+		if (tc->type == XML_TEXT_NODE && tc->content)
+		    xo_buf_append_str(&tbuf, (const char *) tc->content);
+	    }
+	    if (!xo_buf_is_empty(&tbuf)) {
+		xo_buf_force_nul(&tbuf);
+		pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+		if (bip != NULL) {
+		    bip->bi_type = BIA_EMIT_TEXT;
+		    bip->bi_text = pin_namepool_atom(rb->prb_workspace,
+						     xo_buf_data(&tbuf, 0), TRUE);
+		}
+	    }
+	    xo_buf_cleanup(&tbuf);
 	    continue;
 	}
 
 	/* Other xsl:* instructions not yet handled */
-	if (pin_is_xsl(child, NULL))
+	if (pin_is_xsl(child, NULL)) {
+	    pin_warn(child, "xsl:%s: element not supported", child->name);
 	    continue;
+	}
 
 	/* Literal element: open, recurse into children, close */
 	pin_name_id_t tag_id = pin_namepool_atom(rb->prb_workspace,
@@ -410,30 +697,57 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    bip->bi_type = BIA_EMIT_OPEN;
 	    bip->bi_tag = tag_id;
 
-	    /* Capture static attributes from the literal element, if any. */
+	    /*
+	     * Capture attributes from the literal element.
+	     * Static-only attributes go in bi_select (existing path).
+	     * If any attribute has an AVT ({expr}), the full attribute set
+	     * is stored in bi_text for runtime expansion; bi_select is left
+	     * null in that case so the executor uses bi_text instead.
+	     */
 	    if (child->properties) {
-		char abuf[4096];
-		size_t apos = 0;
+		xo_buffer_t abuf, avtbuf;
+		xo_buf_init(&abuf);
+		xo_buf_init(&avtbuf);
+		bool has_avt = false;
+
 		for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
 		    const char *aname = (const char *) ap->name;
 		    const char *aval = (ap->children && ap->children->content)
 				       ? (const char *) ap->children->content : "";
-		    /* Skip attribute value templates ({expr}) — not yet supported. */
+
 		    if (strchr(aval, '{'))
-			continue;
-		    if (apos > 0 && apos < sizeof(abuf) - 1)
-			abuf[apos++] = ' ';
-		    apos += (size_t) snprintf(abuf + apos, sizeof(abuf) - apos,
-					     "%s=\"%s\"", aname, aval);
-		    if (apos >= sizeof(abuf)) {
-			apos = sizeof(abuf) - 1;
-			break;
+			has_avt = true;
+
+		    /* Always add to AVT buffer */
+		    if (!xo_buf_is_empty(&avtbuf))
+			xo_buf_append(&avtbuf, " ", 1);
+		    xo_buf_append_str(&avtbuf, aname);
+		    xo_buf_append(&avtbuf, "=\"", 2);
+		    xo_buf_append_str(&avtbuf, aval);
+		    xo_buf_append(&avtbuf, "\"", 1);
+
+		    /* Only add pure-static attributes to static buffer */
+		    if (!strchr(aval, '{')) {
+			if (!xo_buf_is_empty(&abuf))
+			    xo_buf_append(&abuf, " ", 1);
+			xo_buf_append_str(&abuf, aname);
+			xo_buf_append(&abuf, "=\"", 2);
+			xo_buf_append_str(&abuf, aval);
+			xo_buf_append(&abuf, "\"", 1);
 		    }
 		}
-		abuf[apos] = '\0';
-		if (apos > 0)
+
+		if (has_avt && !xo_buf_is_empty(&avtbuf)) {
+		    xo_buf_force_nul(&avtbuf);
+		    bip->bi_text = pin_namepool_atom(rb->prb_workspace,
+						     xo_buf_data(&avtbuf, 0), TRUE);
+		} else if (!xo_buf_is_empty(&abuf)) {
+		    xo_buf_force_nul(&abuf);
 		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
-						       abuf, TRUE);
+						       xo_buf_data(&abuf, 0), TRUE);
+		}
+		xo_buf_cleanup(&abuf);
+		xo_buf_cleanup(&avtbuf);
 	    }
 	}
 	pin_compile_body_r(child, rb, nextp);
@@ -476,6 +790,8 @@ pin_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
 	if (bip->bi_type == BIA_COPY || bip->bi_type == BIA_COPY_SELECT
 		|| bip->bi_type == BIA_APPLY || bip->bi_type == BIA_VALUE_OF)
 	    retain = BRETAIN_NONE;
+	if (bip->bi_type == BIA_FOR_EACH)
+	    retain = BRETAIN_DOCUMENT;
 	cur = bip->bi_next;
     }
     return retain;
@@ -661,8 +977,6 @@ pin_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 	push->po_name = pin_namepool_atom(pwp, test, TRUE);
 	break;
     default:
-	pin_cursor_warn(cur, "test expression not supported (always false): %s",
-			     test);
 	push->po_type = PIN_OP_COMPLEX_EXPR;
 	cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
 	break;
@@ -754,6 +1068,7 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    switch (pin_classify_select(s)) {
+	    case SELK_EMPTY:
 	    case SELK_SELF:
 		push->po_type = PIN_OP_PUSH_TEXT;
 		push->po_name = pin_namepool_atom(pwp, ".", TRUE);
@@ -766,10 +1081,24 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		push->po_type = PIN_OP_LOAD_VAR;
 		push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
 		break;
-	    default:
-		/* SELK_DOWN, SELK_LITERAL, SELK_COMPLEX: fall back to text */
+	    case SELK_DOWN:
 		push->po_type = PIN_OP_PUSH_TEXT;
 		push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		break;
+	    case SELK_LITERAL: {
+		/* Strip the enclosing quotes in-place; sel is freed below */
+		char q = s[0];
+		size_t slen = strlen(s);
+		if (slen >= 2 && sel[slen - 1] == q) {
+		    sel[slen - 1] = '\0';
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		}
+		break;
+	    }
+	    default:  /* SELK_COMPLEX */
+		push->po_type = PIN_OP_COMPLEX_EXPR;
+		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
 		break;
 	    }
 	    if (sel)
@@ -853,8 +1182,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	 * All GOTO.po_alt fields are backpatched to the join JUMP.
 	 */
 	if (pin_is_xsl(child, "choose")) {
-	    pin_op_id_t gotos[16];
-	    int n_gotos = 0;
+	    pin_op_id_t *gotos = NULL;
+	    int n_gotos = 0, gotos_size = 0;
 	    pin_op_id_t bid_last_if = pin_op_id_null_atom();
 	    xmlNodePtr otherwise_node = NULL;
 
@@ -912,15 +1241,25 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		pin_compile_ops_r(wc, cur);
 
-		if (n_gotos < 16) {
-		    pin_op_id_t bid_goto;
-		    pin_op_t *bip_goto = pin_op_new(cur, &bid_goto);
-		    if (bip_goto == NULL)
+		if (n_gotos >= gotos_size) {
+		    int newsize = gotos_size ? gotos_size * 2 : 4;
+		    pin_op_id_t *ng = xo_realloc(gotos, newsize * sizeof(*gotos));
+		    if (ng == NULL) {
+			xo_free(gotos);
 			return;
-		    bip_goto->po_type = PIN_OP_GOTO;
-		    gotos[n_gotos] = bid_goto;
-		    n_gotos += 1;
+		    }
+		    gotos = ng;
+		    gotos_size = newsize;
 		}
+		pin_op_id_t bid_goto;
+		pin_op_t *bip_goto = pin_op_new(cur, &bid_goto);
+		if (bip_goto == NULL) {
+		    xo_free(gotos);
+		    return;
+		}
+		bip_goto->po_type = PIN_OP_GOTO;
+		gotos[n_gotos] = bid_goto;
+		n_gotos += 1;
 	    }
 
 	    if (otherwise_node != NULL) {
@@ -941,8 +1280,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 	    pin_op_id_t bid_join;
 	    pin_op_t *bip_join = pin_op_new(cur, &bid_join);
-	    if (bip_join == NULL)
+	    if (bip_join == NULL) {
+		xo_free(gotos);
 		return;
+	    }
 	    bip_join->po_type = PIN_OP_JUMP;
 
 	    if (otherwise_node == NULL && !pin_op_id_is_null(bid_last_if)) {
@@ -955,6 +1296,7 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		if (bip_g)
 		    bip_g->po_alt = bid_join;
 	    }
+	    xo_free(gotos);
 	    continue;
 	}
 
@@ -974,8 +1316,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    /* Collect xsl:sort children into a newline-separated spec string */
-	    char spec[1024];
-	    size_t spos = 0;
+	    xo_buffer_t spec;
+	    xo_buf_init(&spec);
 	    bool sort_ok = true;
 	    for (xmlNodePtr sp = child->children; sp; sp = sp->next) {
 		if (!pin_is_xsl(sp, "sort"))
@@ -995,20 +1337,15 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    sort_ok = false;
 
 		if (sort_ok) {
-		    if (spos > 0 && spos < sizeof(spec) - 1)
-			spec[spos++] = '\n';
-
 		    bool desc  = order  && strcmp((char *) order,  "descending") == 0;
 		    bool upper = corder && strcmp((char *) corder, "upper-first") == 0;
-		    if (desc && spos < sizeof(spec) - 1)
-			spec[spos++] = '-';
-		    if (upper && spos < sizeof(spec) - 1)
-			spec[spos++] = '^';
-
-		    spos += (size_t) snprintf(spec + spos, sizeof(spec) - spos,
-					     "%s", kstr);
-		    if (spos >= sizeof(spec) - 4)
-			sort_ok = false;
+		    if (!xo_buf_is_empty(&spec))
+			xo_buf_append(&spec, "\n", 1);
+		    if (desc)
+			xo_buf_append(&spec, "-", 1);
+		    if (upper)
+			xo_buf_append(&spec, "^", 1);
+		    xo_buf_append_str(&spec, kstr);
 		}
 
 		if (order)
@@ -1020,10 +1357,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		if (kexpr)
 		    xmlFree(kexpr);
 	    }
-	    spec[spos < sizeof(spec) ? spos : sizeof(spec) - 1] = '\0';
 
 	    if (!sort_ok) {
 		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		xo_buf_cleanup(&spec);
 		xmlFree(sel);
 		continue;
 	    }
@@ -1031,13 +1368,17 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    /* Allocate PIN_OP_FOR_EACH op */
 	    pin_op_t *fe = pin_op_new(cur, NULL);
 	    if (fe == NULL) {
+		xo_buf_cleanup(&spec);
 		xmlFree(sel);
 		continue;
 	    }
 	    fe->po_type = PIN_OP_FOR_EACH;
 	    fe->po_name = pin_namepool_atom(pwp, s, TRUE);
-	    if (spos > 0)
-		fe->po_name2 = pin_namepool_atom(pwp, spec, TRUE);
+	    if (!xo_buf_is_empty(&spec)) {
+		xo_buf_force_nul(&spec);
+		fe->po_name2 = pin_namepool_atom(pwp, xo_buf_data(&spec, 0), TRUE);
+	    }
+	    xo_buf_cleanup(&spec);
 	    xmlFree(sel);
 
 	    /* Compile body into independent sub-sequence at fe->po_alt */
@@ -1090,14 +1431,13 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		switch (pin_classify_select(s)) {
 		case SELK_LITERAL: {
-		    /* 'value' — strip enclosing single quotes */
-		    char litbuf[512];
-		    size_t litlen = slen - 2 < sizeof(litbuf) - 1
-			? slen - 2 : sizeof(litbuf) - 1;
-		    memcpy(litbuf, s + 1, litlen);
-		    litbuf[litlen] = '\0';
-		    push->po_type = PIN_OP_PUSH_STRING;
-		    push->po_name = pin_namepool_atom(pwp, litbuf, TRUE);
+		    /* Strip enclosing quotes in-place; sel is freed below */
+		    char q = s[0];
+		    if (slen >= 2 && sel[slen - 1] == q) {
+			sel[slen - 1] = '\0';
+			push->po_type = PIN_OP_PUSH_STRING;
+			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
 		    break;
 		}
 		case SELK_ATTR:
@@ -1238,15 +1578,14 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		}
 		switch (pin_classify_select(s)) {
 		case SELK_LITERAL: {
+		    /* Strip enclosing quotes in-place; psel is freed below */
+		    char q = s[0];
 		    size_t slen = strlen(s);
-		    char litbuf[512];
-		    size_t litlen = slen > 2 ? slen - 2 : 0;
-		    if (litlen >= sizeof(litbuf))
-			litlen = sizeof(litbuf) - 1;
-		    memcpy(litbuf, s + 1, litlen);
-		    litbuf[litlen] = '\0';
-		    push_def->po_type = PIN_OP_PUSH_STRING;
-		    push_def->po_name = pin_namepool_atom(pwp, litbuf, TRUE);
+		    if (slen >= 2 && psel[slen - 1] == q) {
+			psel[slen - 1] = '\0';
+			push_def->po_type = PIN_OP_PUSH_STRING;
+			push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
 		    break;
 		}
 		case SELK_ATTR:
@@ -1371,15 +1710,14 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		}
 		switch (pin_classify_select(s)) {
 		case SELK_LITERAL: {
+		    /* Strip enclosing quotes in-place; wpsel is freed below */
+		    char q = s[0];
 		    size_t slen = strlen(s);
-		    char litbuf[512];
-		    size_t litlen = slen > 2 ? slen - 2 : 0;
-		    if (litlen >= sizeof(litbuf))
-			litlen = sizeof(litbuf) - 1;
-		    memcpy(litbuf, s + 1, litlen);
-		    litbuf[litlen] = '\0';
-		    push->po_type = PIN_OP_PUSH_STRING;
-		    push->po_name = pin_namepool_atom(pwp, litbuf, TRUE);
+		    if (slen >= 2 && wpsel[slen - 1] == q) {
+			wpsel[slen - 1] = '\0';
+			push->po_type = PIN_OP_PUSH_STRING;
+			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
 		    break;
 		}
 		case SELK_ATTR:
@@ -1435,9 +1773,138 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    continue;
 	}
 
-	/* Other xsl:* instructions not yet handled */
-	if (pin_is_xsl(child, NULL))
+	/* xsl:element → [optional push] + ELEMENT_OPEN + body + ELEMENT_CLOSE */
+	if (pin_is_xsl(child, "element")) {
+	    xmlChar *ename = xmlGetProp(child, (const xmlChar *) "name");
+	    if (ename == NULL) {
+		pin_warn(child, "xsl:element: missing name attribute");
+		continue;
+	    }
+	    const char *estr = (const char *) ename;
+	    pin_name_id_t tag_id = pin_name_id_null_atom();
+	    if (estr[0] != '{') {
+		/* Literal name: store directly in ELEMENT_OPEN, no push needed */
+		tag_id = pin_namepool_atom(pwp, estr, TRUE);
+	    } else {
+		/* AVT name: emit a push op first, ELEMENT_OPEN pops the name */
+		size_t elen = strlen(estr);
+		if (elen >= 4 && estr[1] == '$' && estr[elen - 1] == '}') {
+		    /* {$varname} — strip braces in-place; ename is freed below */
+		    ename[elen - 1] = '\0';
+		    pin_op_t *lv = pin_op_new(cur, NULL);
+		    if (lv != NULL) {
+			lv->po_type = PIN_OP_LOAD_VAR;
+			lv->po_name = pin_namepool_atom(pwp, estr + 2, TRUE);
+		    }
+		} else {
+		    /* Other AVT expression: push as literal string */
+		    pin_op_t *ps = pin_op_new(cur, NULL);
+		    if (ps != NULL) {
+			ps->po_type = PIN_OP_PUSH_STRING;
+			ps->po_name = pin_namepool_atom(pwp, estr, TRUE);
+		    }
+		}
+		/* tag_id remains null → ELEMENT_OPEN pops name from stack */
+	    }
+	    pin_op_t *open_op = pin_op_new(cur, NULL);
+	    if (open_op == NULL) {
+		xmlFree(ename);
+		return;
+	    }
+	    open_op->po_type = PIN_OP_ELEMENT_OPEN;
+	    open_op->po_name = tag_id;
+	    pin_compile_ops_r(child, cur);
+	    pin_op_t *close_op = pin_op_new(cur, NULL);
+	    if (close_op == NULL) {
+		xmlFree(ename);
+		return;
+	    }
+	    close_op->po_type = PIN_OP_ELEMENT_CLOSE;
+	    xmlFree(ename);
 	    continue;
+	}
+
+	/* xsl:attribute → value expr on stack + EMIT_ATTRIB(name) */
+	if (pin_is_xsl(child, "attribute")) {
+	    xmlChar *aname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (aname == NULL) {
+		pin_warn(child, "xsl:attribute: missing name attribute");
+		continue;
+	    }
+	    /* Collect value from children: build PUSH ops then EMIT_ATTRIB */
+	    for (xmlNodePtr vc = child->children; vc; vc = vc->next) {
+		if (vc->type == XML_TEXT_NODE && vc->content && vc->content[0]) {
+		    pin_op_t *ps_op = pin_op_new(cur, NULL);
+		    if (ps_op == NULL) {
+		xmlFree(aname);
+		return;
+	    }
+		    ps_op->po_type = PIN_OP_PUSH_STRING;
+		    ps_op->po_name = pin_namepool_atom(pwp,
+						       (const char *) vc->content, TRUE);
+		} else if (pin_is_xsl(vc, "value-of")) {
+		    xmlChar *sel = xmlGetProp(vc, (const xmlChar *) "select");
+		    if (sel) {
+			const char *sstr = (const char *) sel;
+			pin_op_t *lv_op = pin_op_new(cur, NULL);
+			if (lv_op != NULL) {
+			    if (sstr[0] == '$') {
+				lv_op->po_type = PIN_OP_LOAD_VAR;
+				lv_op->po_name = pin_namepool_atom(pwp, sstr + 1, TRUE);
+			    } else {
+				lv_op->po_type = PIN_OP_PUSH_TEXT;
+				lv_op->po_name = pin_namepool_atom(pwp, sstr, TRUE);
+			    }
+			}
+			xmlFree(sel);
+		    }
+		}
+	    }
+	    pin_op_t *ea_op = pin_op_new(cur, NULL);
+	    if (ea_op == NULL) {
+		xmlFree(aname);
+		return;
+	    }
+	    ea_op->po_type = PIN_OP_EMIT_ATTRIB;
+	    ea_op->po_name = pin_namepool_atom(pwp, (const char *) aname, TRUE);
+	    xmlFree(aname);
+	    continue;
+	}
+
+	/* xsl:text → PUSH_STRING + EMIT */
+	if (pin_is_xsl(child, "text")) {
+	    xo_buffer_t tbuf;
+	    xo_buf_init(&tbuf);
+	    for (xmlNodePtr tc = child->children; tc; tc = tc->next) {
+		if (tc->type == XML_TEXT_NODE && tc->content)
+		    xo_buf_append_str(&tbuf, (const char *) tc->content);
+	    }
+	    if (!xo_buf_is_empty(&tbuf)) {
+		xo_buf_force_nul(&tbuf);
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL) {
+		    xo_buf_cleanup(&tbuf);
+		    return;
+		}
+		push->po_type = PIN_OP_PUSH_STRING;
+		push->po_name = pin_namepool_atom(pwp, xo_buf_data(&tbuf, 0), TRUE);
+
+		pin_op_t *emit = pin_op_new(cur, NULL);
+		if (emit == NULL) {
+		    xo_buf_cleanup(&tbuf);
+		    return;
+		}
+		emit->po_type = PIN_OP_EMIT;
+	    }
+	    xo_buf_cleanup(&tbuf);
+	    continue;
+	}
+
+	/* Other xsl:* instructions not yet handled */
+	if (pin_is_xsl(child, NULL)) {
+	    pin_warn(child, "xsl:%s: element not supported", child->name);
+	    continue;
+	}
 
 	/* Literal element: EMIT_OPEN, recurse into children, EMIT_CLOSE */
 	{
@@ -1452,26 +1919,27 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 	    /* Capture static attributes, same logic as the BIA_ path. */
 	    if (child->properties) {
-		char abuf[4096];
-		size_t apos = 0;
+		xo_buffer_t abuf;
+		xo_buf_init(&abuf);
 		for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
 		    const char *aname = (const char *) ap->name;
 		    const char *aval = (ap->children && ap->children->content)
 			? (const char *) ap->children->content : "";
 		    if (strchr(aval, '{'))
 			continue;
-		    if (apos > 0 && apos < sizeof(abuf) - 1)
-			abuf[apos++] = ' ';
-		    apos += (size_t) snprintf(abuf + apos, sizeof(abuf) - apos,
-					     "%s=\"%s\"", aname, aval);
-		    if (apos >= sizeof(abuf)) {
-			apos = sizeof(abuf) - 1;
-			break;
-		    }
+		    if (!xo_buf_is_empty(&abuf))
+			xo_buf_append(&abuf, " ", 1);
+		    xo_buf_append_str(&abuf, aname);
+		    xo_buf_append(&abuf, "=\"", 2);
+		    xo_buf_append_str(&abuf, aval);
+		    xo_buf_append(&abuf, "\"", 1);
 		}
-		abuf[apos] = '\0';
-		if (apos > 0)
-		    open_op->po_name2 = pin_namepool_atom(pwp, abuf, TRUE);
+		if (!xo_buf_is_empty(&abuf)) {
+		    xo_buf_force_nul(&abuf);
+		    open_op->po_name2 = pin_namepool_atom(pwp,
+						 xo_buf_data(&abuf, 0), TRUE);
+		}
+		xo_buf_cleanup(&abuf);
 	    }
 
 	    pin_compile_ops_r(child, cur);
@@ -1657,8 +2125,6 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
     return count;
 }
 
-#define PIN_MAX_MODES 64
-
 int
 pin_for_each_mode (xmlDocPtr docp, pin_mode_fn fn, void *opaque)
 {
@@ -1666,8 +2132,9 @@ pin_for_each_mode (xmlDocPtr docp, pin_mode_fn fn, void *opaque)
     if (!pin_is_xsl(root, NULL))
 	return -1;
 
-    struct { xmlChar *mode; int count; } seen[PIN_MAX_MODES];
-    int nseen = 0;
+    struct seen_mode_s { xmlChar *mode; int count; };
+    struct seen_mode_s *seen = NULL;
+    int nseen = 0, seen_size = 0;
     int default_count = 0;
 
     for (xmlNodePtr child = root->children; child; child = child->next) {
@@ -1697,8 +2164,19 @@ pin_for_each_mode (xmlDocPtr docp, pin_mode_fn fn, void *opaque)
 	    }
 	}
 
-	if (!found && nseen < PIN_MAX_MODES) {
-	    seen[nseen].mode = tmode;	/* retained for dedup; freed below */
+	if (!found) {
+	    if (nseen >= seen_size) {
+		int newsize = seen_size ? seen_size * 2 : 4;
+		struct seen_mode_s *ns = xo_realloc(seen,
+					 newsize * sizeof(*seen));
+		if (ns == NULL) {
+		    xmlFree(tmode);
+		    continue;
+		}
+		seen = ns;
+		seen_size = newsize;
+	    }
+	    seen[nseen].mode = tmode;   /* retained for dedup; freed below */
 	    seen[nseen].count = 1;
 	    nseen++;
 	} else {
@@ -1717,6 +2195,7 @@ pin_for_each_mode (xmlDocPtr docp, pin_mode_fn fn, void *opaque)
 
     for (int i = 0; i < nseen; i++)
 	xmlFree(seen[i].mode);
+    xo_free(seen);
 
     return total;
 }
