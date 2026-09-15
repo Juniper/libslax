@@ -34,10 +34,12 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <errno.h>
 #include <ctype.h>
 #include <limits.h>
 
 #include <libpsu/psucommon.h>
+#include <libpsu/psuerror.h>
 #include <parrotdb/pacommon.h>
 #include <libpin/pin_common.h>
 #include <libpin/pin_source.h>
@@ -128,8 +130,10 @@ pin_source_t *
 pin_source_open (const char *filename, pin_source_flags_t flags)
 {
     int fd = open(filename, O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
+	psu_error(filename, 0, "%s", strerror(errno));
 	return NULL;
+    }
 
     pin_source_t *srcp;
     srcp = pin_source_create(fd, flags | PPSF_CLOSE_FD);
