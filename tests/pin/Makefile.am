@@ -216,3 +216,32 @@ CLEANDIRS = out
 
 clean-local:
 	rm -rf ${CLEANDIRS}
+
+SLAXPROC=${top_builddir}/slaxproc/slaxproc
+BASEDIR=${top_srcdir}/tests/core
+
+SKIP_FILES = \
+test-authors-02.slax \
+test-count-02.slax \
+test-count-05.slax \
+test-empty-11.slax \
+test-empty-12.slax \
+test-empty-13.slax \
+test-empty-15.slax \
+test-empty-16.slax \
+test-empty-29.slax \
+test-empty-31.slax
+
+slax-convert:
+	-echo "... converting slax files to xsl ..."
+	-mkdir -p out/core
+	-(cd ${BASEDIR}; ls *.slax) > out/core/all.files
+	-comm -13 ${srcdir}/skip-slax-files.txt out/core/all.files > out/core/work.files
+	-for i in `cat out/core/work.files` ; do \
+		base=`basename $$i .slax` ; \
+		${SLAXPROC} -x ${BASEDIR}/$$i > out/core/$$base.xsl ; \
+		done
+
+slax-test: slax-convert
+	BASEDIR=${BASEDIR} sh ${RUN_TESTS} \
+		run-slax out/core/*.xsl
