@@ -34,7 +34,6 @@
 #include <string.h>
 #include <err.h>
 #include <sys/types.h>
-#include <assert.h>
 #include <limits.h>
 
 #include <libxml/parser.h>
@@ -141,9 +140,14 @@ main (int argc, char **argv)
     if (opt_xml == NULL)
 	errx(1, "missing required 'xml' argument");
 
-    /* Resolve xml path relative to the XSLT file's directory if not absolute */
+    /*
+     * Resolve a bare xml filename (no slashes) relative to the XSLT file's
+     * directory, so tests can name their XML file without a path and have it
+     * found alongside the stylesheet.  Paths that already contain a '/' —
+     * whether absolute or relative-to-cwd — are used unchanged.
+     */
     char xml_path[PATH_MAX];
-    if (opt_xml[0] != '/') {
+    if (strchr(opt_xml, '/') == NULL) {
 	const char *slash = strrchr(opt_xslt, '/');
 	if (slash) {
 	    size_t dirlen = slash - opt_xslt + 1;
@@ -154,10 +158,12 @@ main (int argc, char **argv)
     }
 
     pa_mmap_t *pmp = pa_mmap_open(opt_db, "pin08", 0, 0644);
-    assert(pmp);
+    if (pmp == NULL)
+	errx(1, "%s: pa_mmap_open failed", opt_db);
 
     pin_workspace_t *workp = pin_workspace_open(pmp, "pin08");
-    assert(workp);
+    if (workp == NULL)
+	errx(1, "%s: pin_workspace_open failed", opt_db);
 
     xo_filter_t *xfp = pin_filter_create(NULL, workp);
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin08");
@@ -171,7 +177,8 @@ main (int argc, char **argv)
     printf("compiled %d pattern%s\n", count, count == 1 ? "" : "s");
 
     pin_parse_t *parsep = pin_parse_open(pmp, workp, "pin08", opt_xml, 0);
-    assert(parsep);
+    if (parsep == NULL)
+	errx(1, "%s: pin_parse_open failed", opt_xml);
 
     if (opt_debug)
 	pin_parse_flags_set(parsep, PIN_PF_DEBUG);
