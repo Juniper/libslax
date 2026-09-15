@@ -97,7 +97,9 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_COPY_OF     (PIN_OP_MAX_COMPLEX + 19) /* Deep copy selected nodes to output (po_name=path or null for ".") */
 #define PIN_OP_WITH_PARAM  (PIN_OP_MAX_COMPLEX + 20) /* Pop top; stage as named param for next CALL (po_name=param-name) */
 #define PIN_OP_LOAD_PARAM  (PIN_OP_MAX_COMPLEX + 21) /* Push [value, bool]: param value (or null) then provided-flag */
-#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 22) /* Sentinel: number of defined op codes */
+#define PIN_OP_ELEMENT_OPEN  (PIN_OP_MAX_COMPLEX + 22) /* Open computed-name element; po_name=static or pop string from stack */
+#define PIN_OP_ELEMENT_CLOSE (PIN_OP_MAX_COMPLEX + 23) /* Close last computed-name element */
+#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 24) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -176,32 +178,32 @@ typedef struct pin_exec_state_s {
     /* Rulebook stack (growable; pes_rb may be reallocated) */
     pin_exec_rb_frame_t *pes_rb;
     int                  pes_rb_top;
-    int                  pes_rb_cap;
+    int                  pes_rb_size;
 
     /* Value stack (growable; pes_val may be reallocated) */
     pin_value_t *pes_val;
     int          pes_val_top;
-    int          pes_val_cap;
+    int          pes_val_size;
 
     /* Op-sequence stack (growable; pes_seq may be reallocated) */
     pin_exec_seq_frame_t *pes_seq;
     int                   pes_seq_top;
-    int                   pes_seq_cap;
+    int                   pes_seq_size;
 
     /* Nodeset table: indexed by PVT_NODESET pv_atom */
     pin_ns_entry_t *pes_nodesets;
     uint32_t        pes_nodeset_count;
-    uint32_t        pes_nodeset_cap;
+    uint32_t        pes_nodeset_size;
 
     /* Variable bindings (xsl:variable / mutable variables) */
     pin_var_binding_t *pes_vars;
     uint32_t           pes_var_count;
-    uint32_t           pes_var_cap;
+    uint32_t           pes_var_size;
 
     /* Pending params staged by WITH_PARAM before a CALL */
     pin_pending_param_t *pes_pending;
     uint32_t             pes_pending_count;
-    uint32_t             pes_pending_cap;
+    uint32_t             pes_pending_size;
 } pin_exec_state_t;
 
 /*
@@ -241,5 +243,19 @@ int pin_exec_nodeset_append (pin_exec_state_t *esp, uint32_t idx,
 
 /* pin_op_id_funcs_gen.h (alloc/free/addr into prb_ops) is included
  * at the bottom of pin_rules.h, after pin_rulebook_t is defined.    */
+
+/* Shared tree-walking utilities called from both pin_exec.c and pin_parse.c */
+#include <libpin/pin_workspace.h>
+
+pin_name_id_t pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid);
+pin_node_id_t pin_exec_node_at_path (pin_workspace_t *pwp, pin_node_id_t start,
+                                     const char *path, size_t plen);
+void pin_exec_emit_node (struct pin_parse_s *parsep, pin_workspace_t *pwp,
+                         pin_node_id_t nid);
+uint16_t pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
+                                 const char *spec, char *keybuf, size_t keycap);
+void pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
+                                const char *expr, size_t elen,
+                                char *buf, size_t bufsz);
 
 #endif /* LIBSLAX_PIN_EXEC_H */
