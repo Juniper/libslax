@@ -158,6 +158,9 @@ void
 pin_insert_close (pin_parse_t *parsep, const char *prefix, const char *name);
 
 void
+pin_insert_attrib_pair (pin_parse_t *parsep, const char *name, const char *value);
+
+void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 		 pin_node_type_t type);
 
