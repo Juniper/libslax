@@ -1,0 +1,11 @@
+compiled 3 patterns
+<catalog>
+   <field>
+      <name>alpha</name>
+      <value>first</value>
+   </field>
+   <field>
+      <name>item</name>
+      <value>second</value>
+   </field>
+</catalog>
