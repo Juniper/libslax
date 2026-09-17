@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.48.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:import test.
+    The imported stylesheet has templates for both "entry" and "item".
+    This stylesheet overrides "entry" — main-entry must appear in output,
+    not imp-entry.  The imported "item" template has no override and fires.
+  -->
+
+  <xsl:import href="pin_08.48_imp.xsl"/>
+
+  <xsl:template match="entry">
+    <main-entry><xsl:value-of select="@name"/></main-entry>
+  </xsl:template>
+
+</xsl:stylesheet>
