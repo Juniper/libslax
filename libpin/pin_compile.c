@@ -681,6 +681,91 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    continue;
 	}
 
+	/* xsl:copy → BIA_COPY_OPEN + children + BIA_ELEMENT_CLOSE */
+	if (pin_is_xsl(child, "copy")) {
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip == NULL)
+		continue;
+	    bip->bi_type = BIA_COPY_OPEN;
+	    pin_compile_body_r(child, rb, nextp);
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip == NULL)
+		continue;
+	    cbip->bi_type = BIA_ELEMENT_CLOSE;
+	    continue;
+	}
+
+	/* xsl:message → BIA_MESSAGE_OPEN + children + BIA_MESSAGE_CLOSE */
+	if (pin_is_xsl(child, "message")) {
+	    xmlChar *term = xmlGetProp(child, (const xmlChar *) "terminate");
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip != NULL)
+		bip->bi_type = BIA_MESSAGE_OPEN;
+	    pin_compile_body_r(child, rb, nextp);
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip != NULL) {
+		cbip->bi_type = BIA_MESSAGE_CLOSE;
+		if (term && xmlStrcmp(term, (const xmlChar *) "yes") == 0)
+		    cbip->bi_tag = pin_namepool_atom(rb->prb_workspace, "yes", TRUE);
+	    }
+	    if (term)
+		xmlFree(term);
+	    continue;
+	}
+
+	/* xsl:comment → BIA_COMMENT_OPEN + children + BIA_COMMENT_CLOSE */
+	if (pin_is_xsl(child, "comment")) {
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip != NULL)
+		bip->bi_type = BIA_COMMENT_OPEN;
+	    pin_compile_body_r(child, rb, nextp);
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip != NULL)
+		cbip->bi_type = BIA_COMMENT_CLOSE;
+	    continue;
+	}
+
+	/* xsl:processing-instruction → BIA_PI_OPEN + children + BIA_PI_CLOSE */
+	if (pin_is_xsl(child, "processing-instruction")) {
+	    xmlChar *piname = xmlGetProp(child, (const xmlChar *) "name");
+	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+	    if (bip != NULL) {
+		bip->bi_type = BIA_PI_OPEN;
+		if (piname && piname[0])
+		    bip->bi_tag = pin_namepool_atom(rb->prb_workspace,
+						    (const char *) piname, TRUE);
+	    }
+	    if (piname)
+		xmlFree(piname);
+	    pin_compile_body_r(child, rb, nextp);
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip != NULL)
+		cbip->bi_type = BIA_PI_CLOSE;
+	    continue;
+	}
+
+	/* xsl:number → BIA_NUMBER */
+	if (pin_is_xsl(child, "number")) {
+	    xmlChar *val = xmlGetProp(child, (const xmlChar *) "value");
+	    xmlChar *fmt = xmlGetProp(child, (const xmlChar *) "format");
+	    if (val && val[0]) {
+		pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
+		if (bip != NULL) {
+		    bip->bi_type = BIA_NUMBER;
+		    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						       (const char *) val, TRUE);
+		    if (fmt && fmt[0])
+			bip->bi_text = pin_namepool_atom(rb->prb_workspace,
+							 (const char *) fmt, TRUE);
+		}
+	    }
+	    if (val)
+		xmlFree(val);
+	    if (fmt)
+		xmlFree(fmt);
+	    continue;
+	}
+
 	/* Other xsl:* instructions not yet handled */
 	if (pin_is_xsl(child, NULL)) {
 	    pin_warn(child, "xsl:%s: element not supported", child->name);
@@ -1904,6 +1989,91 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		emit->po_type = PIN_OP_EMIT;
 	    }
 	    xo_buf_cleanup(&tbuf);
+	    continue;
+	}
+
+	/* xsl:copy → PIN_OP_COPY_OPEN + children + PIN_OP_ELEMENT_CLOSE */
+	if (pin_is_xsl(child, "copy")) {
+	    pin_op_t *op = pin_op_new(cur, NULL);
+	    if (op == NULL)
+		return;
+	    op->po_type = PIN_OP_COPY_OPEN;
+	    pin_compile_ops_r(child, cur);
+	    pin_op_t *cop = pin_op_new(cur, NULL);
+	    if (cop == NULL)
+		return;
+	    cop->po_type = PIN_OP_ELEMENT_CLOSE;
+	    continue;
+	}
+
+	/* xsl:message → PIN_OP_MESSAGE_OPEN + children + PIN_OP_MESSAGE_CLOSE */
+	if (pin_is_xsl(child, "message")) {
+	    xmlChar *term = xmlGetProp(child, (const xmlChar *) "terminate");
+	    pin_op_t *op = pin_op_new(cur, NULL);
+	    if (op != NULL)
+		op->po_type = PIN_OP_MESSAGE_OPEN;
+	    pin_compile_ops_r(child, cur);
+	    pin_op_t *cop = pin_op_new(cur, NULL);
+	    if (cop != NULL) {
+		cop->po_type = PIN_OP_MESSAGE_CLOSE;
+		if (term && xmlStrcmp(term, (const xmlChar *) "yes") == 0)
+		    cop->po_name = pin_namepool_atom(pwp, "yes", TRUE);
+	    }
+	    if (term)
+		xmlFree(term);
+	    continue;
+	}
+
+	/* xsl:comment → PIN_OP_COMMENT_OPEN + children + PIN_OP_COMMENT_CLOSE */
+	if (pin_is_xsl(child, "comment")) {
+	    pin_op_t *op = pin_op_new(cur, NULL);
+	    if (op != NULL)
+		op->po_type = PIN_OP_COMMENT_OPEN;
+	    pin_compile_ops_r(child, cur);
+	    pin_op_t *cop = pin_op_new(cur, NULL);
+	    if (cop != NULL)
+		cop->po_type = PIN_OP_COMMENT_CLOSE;
+	    continue;
+	}
+
+	/* xsl:processing-instruction → PIN_OP_PI_OPEN + children + PIN_OP_PI_CLOSE */
+	if (pin_is_xsl(child, "processing-instruction")) {
+	    xmlChar *piname = xmlGetProp(child, (const xmlChar *) "name");
+	    pin_op_t *op = pin_op_new(cur, NULL);
+	    if (op != NULL) {
+		op->po_type = PIN_OP_PI_OPEN;
+		if (piname && piname[0])
+		    op->po_name = pin_namepool_atom(pwp,
+						    (const char *) piname, TRUE);
+	    }
+	    if (piname)
+		xmlFree(piname);
+	    pin_compile_ops_r(child, cur);
+	    pin_op_t *cop = pin_op_new(cur, NULL);
+	    if (cop != NULL)
+		cop->po_type = PIN_OP_PI_CLOSE;
+	    continue;
+	}
+
+	/* xsl:number → PIN_OP_NUMBER */
+	if (pin_is_xsl(child, "number")) {
+	    xmlChar *val = xmlGetProp(child, (const xmlChar *) "value");
+	    xmlChar *fmt = xmlGetProp(child, (const xmlChar *) "format");
+	    if (val && val[0]) {
+		pin_op_t *op = pin_op_new(cur, NULL);
+		if (op != NULL) {
+		    op->po_type = PIN_OP_NUMBER;
+		    op->po_name = pin_namepool_atom(pwp,
+						    (const char *) val, TRUE);
+		    if (fmt && fmt[0])
+			op->po_name2 = pin_namepool_atom(pwp,
+							 (const char *) fmt, TRUE);
+		}
+	    }
+	    if (val)
+		xmlFree(val);
+	    if (fmt)
+		xmlFree(fmt);
 	    continue;
 	}
 
