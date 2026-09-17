@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.43.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Top-level xsl:param with a default value.
+    Same lookup path as xsl:variable; override mechanism is not yet supported.
+  -->
+
+  <xsl:param name="separator" select="'-'"/>
+
+  <xsl:template match="entry">
+    <out>
+      <xsl:value-of select="@name"/>
+      <xsl:value-of select="$separator"/>
+      <xsl:value-of select="@id"/>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
