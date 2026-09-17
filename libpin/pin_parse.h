@@ -112,6 +112,9 @@ pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);
 void
 pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type);
 
+void
+pin_parse_passthru (pin_parse_t *parsep, int enable);
+
 /*
  * Attach an XPath filter to the parser.  When set, the filter FSM is
  * advanced on every element open/close; elements whose subtree cannot
