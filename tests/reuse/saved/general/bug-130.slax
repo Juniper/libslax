@@ -10,7 +10,7 @@ output-method html {
     indent "no";
 }
 
-var $g.doc.root = document("../docs/bug-130.doc");
+var $g.doc.root = document("bug-130.doc");
 
 main <html> {
     <head>;
