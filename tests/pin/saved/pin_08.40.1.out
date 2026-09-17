@@ -1,0 +1,8 @@
+compiled 1 pattern
+<catalog>
+<?item-pi alpha?>
+   <out>alpha</out>
+
+<?item-pi beta?>
+   <out>beta</out>
+</catalog>
