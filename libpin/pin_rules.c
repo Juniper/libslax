@@ -457,6 +457,12 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_named_count = 0;
 	rules->prb_named_size = 0;
     }
+    if (rules->prb_globals) {
+	free(rules->prb_globals);
+	rules->prb_globals = NULL;
+	rules->prb_global_count = 0;
+	rules->prb_global_size = 0;
+    }
 }
 
 int
@@ -486,6 +492,44 @@ pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
 	    return prbp->prb_named[i].pnt_ops;
     }
     return pin_op_id_null_atom();
+}
+
+int
+pin_rulebook_global_add (pin_rulebook_t *prbp,
+                         pin_name_id_t name_id, pin_name_id_t value_id)
+{
+    /* Update in place if already registered */
+    for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
+	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id)) {
+	    prbp->prb_globals[i].pgv_value = value_id;
+	    return 0;
+	}
+    }
+    if (prbp->prb_global_count >= prbp->prb_global_size) {
+	uint32_t newsize = prbp->prb_global_size ? prbp->prb_global_size * 2 : 8;
+	pin_global_var_t *np = realloc(prbp->prb_globals,
+	                               newsize * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	prbp->prb_globals = np;
+	prbp->prb_global_size = newsize;
+    }
+    prbp->prb_globals[prbp->prb_global_count].pgv_name  = name_id;
+    prbp->prb_globals[prbp->prb_global_count].pgv_value = value_id;
+    prbp->prb_global_count += 1;
+    return 0;
+}
+
+pin_name_id_t
+pin_rulebook_global_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    if (prbp == NULL)
+	return pin_name_id_null_atom();
+    for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
+	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id))
+	    return prbp->prb_globals[i].pgv_value;
+    }
+    return pin_name_id_null_atom();
 }
 
 uint32_t
