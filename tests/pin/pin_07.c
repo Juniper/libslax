@@ -173,7 +173,7 @@ main (int argc, char **argv)
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin07");
 
     /* Compile all templates (all modes) into one filter+rulebook */
-    int count = pin_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action, 0);
     xmlFreeDoc(docp);
 
     if (count < 0)
