@@ -836,6 +836,9 @@ pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		const char *prefix, const char *name, char *attribs,
 		pin_action_type_t type)
 {
+    if (parsep->pp_capture > 0)
+	return;
+
     pin_insert_t *pip = parsep->pp_insert;
 
     if (pin_name_id_is_null(name_id))
@@ -912,6 +915,9 @@ pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 void
 pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *name)
 {
+    if (parsep->pp_capture > 0)
+	return;
+
     pin_insert_t *pip = parsep->pp_insert;
     pin_name_id_t name_id;
 
@@ -1007,6 +1013,25 @@ void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 		pin_node_type_t type)
 {
+    if (parsep->pp_capture > 0) {
+	/* Redirect text to capture buffer (for comment/PI/message bodies) */
+	int newlen = parsep->pp_cap_len + (int) len;
+	if (newlen >= parsep->pp_cap_size) {
+	    int newsize = parsep->pp_cap_size ? parsep->pp_cap_size * 2 : 64;
+	    while (newsize <= newlen)
+		newsize *= 2;
+	    char *nd = realloc(parsep->pp_cap_data, (size_t) newsize);
+	    if (nd == NULL)
+		return;
+	    parsep->pp_cap_data = nd;
+	    parsep->pp_cap_size = newsize;
+	}
+	memcpy(parsep->pp_cap_data + parsep->pp_cap_len, data, len);
+	parsep->pp_cap_len += (int) len;
+	parsep->pp_cap_data[parsep->pp_cap_len] = '\0';
+	return;
+    }
+
     pin_insert_t *pip = parsep->pp_insert;
     pa_arb_t *prp = pip->pin_tree->pt_workspace->pw_textpool;
     pa_arb_atom_t data_atom = pa_arb_alloc(prp, len + 1);
@@ -1024,6 +1049,52 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
+    }
+}
+
+void
+pin_capture_start (pin_parse_t *parsep, int mode, unsigned name_atom)
+{
+    parsep->pp_capture = mode;
+    parsep->pp_cap_name = name_atom;
+    parsep->pp_cap_len = 0;
+    /* Re-use existing buffer if already allocated */
+}
+
+void
+pin_capture_flush (pin_parse_t *parsep)
+{
+    int mode = parsep->pp_capture;
+    const char *data = parsep->pp_cap_data ? parsep->pp_cap_data : "";
+    int len = parsep->pp_cap_len;
+
+    parsep->pp_capture = 0;
+    parsep->pp_cap_len = 0;
+
+    if (mode == 1) {
+	/* xsl:message: write to stderr */
+	fprintf(stderr, "%.*s\n", len, data);
+    } else if (mode == 2) {
+	/* xsl:comment: insert as XML comment node */
+	pin_insert_text(parsep, data, (size_t) len, PIN_TYPE_COMMENT);
+    } else if (mode == 3) {
+	/* xsl:processing-instruction: "target\ncontent" format */
+	pin_workspace_t *pwp = pin_parse_workspace(parsep);
+	pin_name_id_t nid = pin_name_id(parsep->pp_cap_name);
+	const char *target = pin_namepool_string(pwp, nid);
+	if (target) {
+	    size_t tlen = strlen(target);
+	    size_t total = tlen + 1 + (size_t) len;
+	    char *buf = malloc(total + 1);
+	    if (buf) {
+		memcpy(buf, target, tlen);
+		buf[tlen] = '\n';
+		memcpy(buf + tlen + 1, data, (size_t) len);
+		buf[total] = '\0';
+		pin_insert_text(parsep, buf, total, PIN_TYPE_PI);
+		free(buf);
+	    }
+	}
     }
 }
 
@@ -1536,6 +1607,55 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 	case BIA_FOR_EACH:
 	    /* Nested for-each: not yet supported in foreach body */
 	    break;
+	case BIA_COPY_OPEN: {
+	    /* Shallow copy: emit open tag of context node */
+	    if (!pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		pin_node_t *ctx = pin_node_addr(pwp, bfp->pbf_ctx_node);
+		if (ctx != NULL) {
+		    const char *tag = pin_namepool_string(pwp, ctx->pn_name);
+		    if (tag)
+			pin_insert_open(parsep, ctx->pn_name, NULL, tag, NULL, PIA_SAVE);
+		}
+	    }
+	    break;
+	}
+	case BIA_MESSAGE_OPEN:
+	    pin_capture_start(parsep, 1, 0);
+	    break;
+	case BIA_MESSAGE_CLOSE:
+	    pin_capture_flush(parsep);
+	    if (!pin_name_id_is_null(instr->bi_tag))
+		exit(1);
+	    break;
+	case BIA_COMMENT_OPEN:
+	    pin_capture_start(parsep, 2, 0);
+	    break;
+	case BIA_COMMENT_CLOSE:
+	    pin_capture_flush(parsep);
+	    break;
+	case BIA_PI_OPEN:
+	    pin_capture_start(parsep, 3,
+			      (unsigned) pin_name_id_atom_of(instr->bi_tag));
+	    break;
+	case BIA_PI_CLOSE:
+	    pin_capture_flush(parsep);
+	    break;
+	case BIA_NUMBER: {
+	    const char *expr = !pin_name_id_is_null(instr->bi_select)
+			       ? pin_namepool_string(pwp, instr->bi_select) : NULL;
+	    if (expr && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		char vbuf[64];
+		pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
+					  expr, strlen(expr), vbuf, sizeof(vbuf));
+		if (vbuf[0]) {
+		    long n = strtol(vbuf, NULL, 10);
+		    char nbuf[32];
+		    snprintf(nbuf, sizeof(nbuf), "%ld", n);
+		    pin_insert_text(parsep, nbuf, strlen(nbuf), PIN_TYPE_TEXT);
+		}
+	    }
+	    break;
+	}
 	case BIA_JUMP:
 	    break;
 	case BIA_GOTO:
@@ -1908,6 +2028,54 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    bfp->pbf_last = save_last;
 	    bfp->pbf_var_count = save_var_count;
 	    free(nodes);
+	    break;
+	}
+	case BIA_COPY_OPEN: {
+	    const char *match_str = pin_parse_namepool_string(parsep, bfp->pbf_match_name);
+	    if (match_str)
+		pin_insert_open(parsep, bfp->pbf_match_name,
+				bfp->pbf_match_prefix, match_str, NULL, PIA_SAVE);
+	    break;
+	}
+	case BIA_MESSAGE_OPEN:
+	    pin_capture_start(parsep, 1, 0);
+	    break;
+	case BIA_MESSAGE_CLOSE:
+	    pin_capture_flush(parsep);
+	    if (!pin_name_id_is_null(instr->bi_tag))
+		exit(1);
+	    break;
+	case BIA_COMMENT_OPEN:
+	    pin_capture_start(parsep, 2, 0);
+	    break;
+	case BIA_COMMENT_CLOSE:
+	    pin_capture_flush(parsep);
+	    break;
+	case BIA_PI_OPEN:
+	    pin_capture_start(parsep, 3,
+			      (unsigned) pin_name_id_atom_of(instr->bi_tag));
+	    break;
+	case BIA_PI_CLOSE:
+	    pin_capture_flush(parsep);
+	    break;
+	case BIA_NUMBER: {
+	    const char *expr = !pin_name_id_is_null(instr->bi_select)
+			       ? pin_parse_namepool_string(parsep, instr->bi_select) : NULL;
+	    if (expr) {
+		pin_node_id_t ctx = pip->pin_stack[pip->pin_depth].ps_atom;
+		if (!pin_node_id_is_null(ctx)) {
+		    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+		    char vbuf[64];
+		    pin_exec_eval_expr_string(pwp, ctx, expr, strlen(expr),
+					     vbuf, sizeof(vbuf));
+		    if (vbuf[0]) {
+			long n = strtol(vbuf, NULL, 10);
+			char nbuf[32];
+			snprintf(nbuf, sizeof(nbuf), "%ld", n);
+			pin_insert_text(parsep, nbuf, strlen(nbuf), PIN_TYPE_TEXT);
+		    }
+		}
+	    }
 	    break;
 	}
 	default:
@@ -2839,6 +3007,22 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 	}
 	break;
 
+    case PIN_TYPE_COMMENT:
+	if (data)
+	    fprintf(out, "\n<!--%s-->", data);
+	break;
+
+    case PIN_TYPE_PI: {
+	if (data) {
+	    const char *nl = strchr(data, '\n');
+	    if (nl)
+		fprintf(out, "\n<?%.*s %s?>", (int)(nl - data), data, nl + 1);
+	    else
+		fprintf(out, "\n<?%s?>", data);
+	}
+	break;
+    }
+
     case PIN_TYPE_TEXT:		/* XXX Text needs to be escaped */
 	fprintf(out, "%s%s%s", is_debug ? "[text]" : "", data,
 		is_debug ? "[/text]": "");
@@ -2977,6 +3161,12 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 
 	} else if (nodep->pn_type == PIN_TYPE_TEXT
 		   || nodep->pn_type == PIN_TYPE_UNESC) {
+	    cp = pin_textpool_string(pwp, nodep->pn_contents);
+	    next_node_atom = nodep->pn_next;
+	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
+
+	} else if (nodep->pn_type == PIN_TYPE_COMMENT
+		   || nodep->pn_type == PIN_TYPE_PI) {
 	    cp = pin_textpool_string(pwp, nodep->pn_contents);
 	    next_node_atom = nodep->pn_next;
 	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
