@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.38.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:message: write diagnostic text to stderr.
+    The content of the message element (text + xsl:value-of) is
+    flushed to stderr; it does not appear in the output tree.
+  -->
+
+  <xsl:template match="item">
+    <xsl:message>item: <xsl:value-of select="@name"/></xsl:message>
+    <out><xsl:value-of select="@name"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>
