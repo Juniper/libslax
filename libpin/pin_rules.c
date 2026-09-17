@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -391,13 +392,58 @@ pin_apply_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
 int
 pin_rulebook_apply_add (pin_rulebook_t *prbp,
 			pin_name_id_t name_id, pin_name_id_t mode_id,
-			pin_rule_id_t rid)
+			pin_rule_id_t rid,
+			float priority, int16_t import_prec)
 {
     if (prbp->prb_apply_pat == NULL || prbp->prb_apply_entries == NULL)
 	return -1;
     if (pin_name_id_is_null(name_id) || pin_rule_id_is_null(rid))
 	return -1;
 
+    /*
+     * Scan for an existing (name, mode) entry.  If one is found, resolve the
+     * conflict by priority and import precedence rather than "last wins".
+     * We update the existing entry in-place so the list and Patricia tree
+     * both automatically reflect the winner without relinking.
+     *
+     * Resolution order (XSLT §5.5):
+     *   1. Higher import_prec wins.
+     *   2. Same import_prec: higher priority wins.
+     *   3. Tie: emit a warning; treat new entry as winner.
+     */
+    for (pin_apply_id_t cur = prbp->prb_apply_list;
+	 !pin_apply_id_is_null(cur); ) {
+	pin_apply_entry_t *ep = pin_apply_addr(prbp, cur);
+	cur = ep->pae_next;
+	if (!pin_name_id_equal(ep->pae_name, name_id))
+	    continue;
+	if (!pin_name_id_equal(ep->pae_mode, mode_id))
+	    continue;
+
+	/* Found a conflict */
+	bool new_wins;
+	if (import_prec != ep->pae_import_prec)
+	    new_wins = (import_prec > ep->pae_import_prec);
+	else if (priority != ep->pae_priority)
+	    new_wins = (priority > ep->pae_priority);
+	else {
+	    psu_log("template conflict for '%s': same priority %.2f and "
+		    "import precedence %d; later definition wins",
+		    pin_namepool_string(prbp->prb_workspace, name_id),
+		    (double) priority, (int) import_prec);
+	    new_wins = true;
+	}
+
+	if (!new_wins)
+	    return 0;	/* Discard new; keep existing (pa_fixed slot wasted) */
+
+	ep->pae_rule = rid;
+	ep->pae_priority = priority;
+	ep->pae_import_prec = import_prec;
+	return 0;
+    }
+
+    /* No existing entry: allocate and prepend */
     pin_apply_id_t aid;
     pin_apply_entry_t *ep = pin_apply_alloc(prbp, &aid);
     if (ep == NULL)
@@ -406,22 +452,20 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
     ep->pae_name = name_id;
     ep->pae_mode = mode_id;
     ep->pae_rule = rid;
-
-    /* Prepend to linked list (last wins: new head is searched first) */
+    ep->pae_priority = priority;
+    ep->pae_import_prec = import_prec;
     ep->pae_next = prbp->prb_apply_list;
     prbp->prb_apply_list = aid;
 
     /*
      * For default-mode entries, also register in the Patricia tree so
-     * the O(log n) fast path in PBMODE_APPLY (no mode= on the
-     * apply-templates instruction) keeps working.
+     * the O(log n) fast path in PBMODE_APPLY keeps working.
      */
     if (pin_name_id_is_null(mode_id)) {
 	pa_pat_data_atom_t datom = pa_pat_data_atom(
 	    pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
 
 	if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
-	    /* Duplicate: later template takes precedence (XSLT last-wins). */
 	    pa_pat_node_t *existing = pa_pat_get(prbp->prb_apply_pat,
 						 sizeof(pin_name_id_t), &name_id);
 	    if (existing)
