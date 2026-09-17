@@ -86,6 +86,7 @@ main (int argc, char **argv)
     int opt_dump = 0;
     int opt_clean = 0;
     int opt_debug = 0;
+    int opt_passthru = 1;
     pin_source_flags_t flags = 0;
 
     for (argc = 1; argv[argc]; argc++) {
@@ -107,6 +108,10 @@ main (int argc, char **argv)
 	    opt_clean = 1;
 	} else if (strcmp(cp, "debug") == 0) {
 	    opt_debug = 1;
+	} else if (strcmp(cp, "passthru") == 0) {
+	    opt_passthru = 1;
+	} else if (strcmp(cp, "nopassthru") == 0) {
+	    opt_passthru = 0;
 	} else if (strcmp(cp, "db") == 0) {
 	    opt_db = check_arg(argv[++argc], "db filename");
 	}
@@ -168,7 +173,7 @@ main (int argc, char **argv)
     if (opt_debug)
 	pin_parse_flags_set(parsep, PIN_PF_DEBUG);
 
-    pin_parse_set_default_rule(parsep, PIA_SAVE);
+    pin_parse_passthru(parsep, opt_passthru);
 
     if (xfp)
 	pin_parse_set_filter(parsep, xfp);
