@@ -1,6 +1,6 @@
 version 1.2;
 
-/* Version: $Id: diffspec.xsl 140 2001-03-07 12:36:39Z veillard $ */
+/* Version: $Id$ */
 /* Stylesheet for @diff markup in XMLspec */
 /* Author: Norman Walsh (Norman.Walsh@East.Sun.COM) */
 /* Date Created: 2000.07.21 */
