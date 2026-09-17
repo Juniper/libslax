@@ -1019,6 +1019,13 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	if (child->type != XML_ELEMENT_NODE)
 	    continue;
 
+	/*
+         * xsl:sort is processed by the enclosing xsl:for-each compiler;
+	 * silently skip it here when encountered during body compilation.
+         */
+	if (pin_is_xsl(child, "sort"))
+	    continue;
+
 	if (pin_is_xsl(child, "copy-of")) {
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    const char *s = sel ? (const char *) sel : ".";
