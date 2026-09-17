@@ -70,8 +70,6 @@ REC/test-7.7-5.xsl \
 REC/test-8-1.xsl \
 REC/test-9.1-1.xsl \
 REC/test-9.1-2.xsl \
-REC1/doc.xsl \
-REC2/svg.xsl \
 XSLTMark/alphabetize.xsl \
 XSLTMark/avts.xsl \
 XSLTMark/axis.xsl \
@@ -218,7 +216,6 @@ general/bug-81.xsl \
 general/bug-82.xsl \
 general/bug-83.xsl \
 general/bug-84.xsl \
-general/bug-86.xsl \
 general/bug-87.xsl \
 general/bug-88.xsl \
 general/bug-89.xsl \
@@ -279,7 +276,6 @@ general/bug-142.xsl \
 general/bug-143.xsl \
 general/bug-144.xsl \
 general/bug-145.xsl \
-general/bug-146.xsl \
 general/bug-147.xsl \
 general/bug-148.xsl \
 general/bug-149.xsl \
@@ -300,9 +296,7 @@ general/bug-164.xsl \
 general/bug-165.xsl \
 general/bug-166.xsl \
 general/character.xsl \
-general/character2.xsl \
 general/inner.xsl \
-general/itemschoose.xsl \
 xmlspec/REC-xml-2e.xsl \
 xmlspec/diffspec.xsl \
 xmlspec/xmlspec.xsl
@@ -313,6 +307,7 @@ REC2/html.xsl \
 XSLTMark/tower2.xsl \
 documents/test.xsl \
 extensions/module.xsl \
+general/bug-86.xsl \
 general/bug-114.xsl \
 general/bug-167.xsl \
 keys/month.xsl \
@@ -325,6 +320,10 @@ reports/reclocvar.xsl \
 reports/tst-1.xsl \
 reports/tst-2.xsl \
 reports/undefvar.xsl
+
+TEST_CASES_REC1 = \
+REC1/doc.xsl \
+REC2/svg.xsl
 
 TEST_CASES = ${TEST_CASES_WITH_INPUT} ${TEST_CASES_WITH_NO_INPUT}
 
@@ -343,24 +342,8 @@ CLEANDIRS = out
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
 
 WIDTH = 80
-WIDTH_ARG = --width ${WIDTH}
 TEST_VERSION = 1.3
-VERSION_ARG = --write-version ${TEST_VERSION}
-VERSION_ARG12 = --write-version 1.2
-F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
-F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
-
-S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
-S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
-SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
-
-TEST_TWO = \
- ${F13} out/$$dir/$$base.slax out/$$dir/$$base.slax3 ; \
- ${F12} out/$$dir/$$base.slax3 out/$$dir/$$base.slax4 ; \
- ${F13} out/$$dir/$$base.slax4 out/$$dir/$$base.slax5 ; \
- ${DIFF} -Nu out/$$dir/$$base.slax3 out/$$dir/$$base.slax5 ${S2O}
 
 testdir = ${top_srcdir}/tests/bxslt
 
@@ -381,49 +364,53 @@ scribble:
 
 SH_OPTS=
 
-test tests:
-	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
-	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
-	@-${CP} ${testdir}/xinclude/x1.xml out/xinclude/x1.xml
-	@-${CP} ${testdir}/multiple/dict.dtd out/multiple/dict.dtd
-	@-(${SH_OPTS} for test in ${TEST_CASES}; do \
-	  base=`basename $$test .xsl` ; \
-	  dir=`dirname $$test` ; \
-	  echo ... $$test ... ; \
-	  ${MKDIR} -p out/$$dir ; \
-	  ${X2S} ${testdir}/$$test out/$$dir/$$base.slax ; \
-	  ${S2X} out/$$dir/$$base.slax out/$$dir/$$base.xsl2 ; \
-	  ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.slax \
-			out/$$dir/$$base.slax ${S2O}; \
-	  ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.xsl2 \
-			out/$$dir/$$base.xsl2 ${S2O}; \
-	  ${TEST_TWO}; \
-	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
-	    input=${srcdir}/$$dir/$$base.xml ; \
-          else \
-	    input=${testdir}/$$dir/$$base.xml ; \
-	  fi ; \
-	  if [ -f $$input ]; then \
-	    ${SRUN} out/$$dir/$$base.slax $$input \
-			> out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
-	    if [ -f ${srcdir}/saved/$$dir/$$base.out ]; then \
-	      ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.out \
-			out/$$dir/$$base.out ${S2O} ; \
-            else  \
-	      ${DIFF} -Nu ${testdir}/$$dir/$$base.out \
-			out/$$dir/$$base.out ${S2O} ; \
-	    fi ; \
-	    if [ -f ${srcdir}/saved/$$dir/$$base.err ]; then \
-	    ${DIFF} -Nu ${srcdir}/saved/$$dir/$$base.err \
-			out/$$dir/$$base.err ${S2O} ; \
-	    else \
-	      ${DIFF} -Nu ${testdir}/$$dir/$$base.err \
-			out/$$dir/$$base.err ${S2O} ; \
-	    fi ; \
-	  fi ; \
-	done)
+RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
-accept:
+
+test tests: ${SLAXPROC} copy-files
+	@SLAXPROC=${SLAXPROC} CHECKER="${CHECKER}" SPDEBUG="${SPDEBUG}" \
+	    WIDTH=${WIDTH} TEST_VERSION=${TEST_VERSION} TESTDIR=${testdir} \
+	    sh ${SH_OPTS} ${RUN_TESTS} run-reuse ${TEST_CASES}
+
+COPY_FILES= \
+documents/fragment2.xml \
+documents/menu.xml \
+general/inner.xsl \
+general/bug-36-inc.xsl \
+general/bug-37-inc.xsl \
+general/bug-65.ent \
+general/bug-93-inc.xsl \
+general/bug-102-inc.xsl \
+general/bug-131-imp.imp \
+general/bug-137.imp \
+general/bug-147-1.imp \
+general/bug-147-2.imp \
+general/bug-147-3.imp \
+general/bug-147-4.imp \
+general/bug-147-5.imp \
+general/bug-147-6.imp \
+general/bug-156.imp1.imp \
+general/bug-156.imp2.imp \
+general/bug-158.doc \
+xinclude/x1.xml \
+multiple/dict.dtd
+
+OUT_DIRS= \
+out/documents \
+out/keys \
+out/xinclude \
+out/multiple \
+out/general
+
+copy-files:
+	@${MKDIR} -p ${OUT_DIRS}
+	@for file in ${COPY_FILES}; do \
+		if [ ! -e $$file ]; then \
+			${CP} ${testdir}/$$file out/$$file; \
+		fi; \
+	done
+
+accept-old:
 	@-(for test in ${TEST_CASES}; do \
 	  base=`basename $$test .xsl` ; \
 	  dir=`dirname $$test` ; \
@@ -435,6 +422,13 @@ accept:
 	    ${CP} out/$$dir/$$base.err ${srcdir}/saved/$$dir/$$base.err ; \
 	  fi ; \
 	done)
+
+# Accepts the out/ files for TEST_CASES, or for just the cases named in
+# ACCEPT_CASES, e.g. "make accept-reuse ACCEPT_CASES=XSLTMark/identity.xsl".
+ACCEPT_CASES = ${TEST_CASES}
+
+accept:
+	@sh ${SH_OPTS} ${RUN_TESTS} accept-reuse ${ACCEPT_CASES}
 
 test-input:
 	@echo TEST_CASES_WITH_INPUT =
