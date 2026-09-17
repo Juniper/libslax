@@ -52,6 +52,14 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_ELEMENT_OPEN  14  /* xsl:element open: bi_select=name-AVT, bi_text=attrs-AVT */
 #define BIA_ELEMENT_CLOSE 15  /* close the last BIA_ELEMENT_OPEN element */
 #define BIA_ATTRIB        16  /* xsl:attribute: bi_tag=name, bi_text=value-AVT */
+#define BIA_COPY_OPEN     17  /* xsl:copy: emit open tag of context node */
+#define BIA_MESSAGE_OPEN  18  /* xsl:message: start text capture */
+#define BIA_MESSAGE_CLOSE 19  /* xsl:message: flush capture to stderr; bi_tag != null → terminate */
+#define BIA_COMMENT_OPEN  20  /* xsl:comment: start text capture */
+#define BIA_COMMENT_CLOSE 21  /* xsl:comment: flush capture as XML comment */
+#define BIA_PI_OPEN       22  /* xsl:processing-instruction: start capture; bi_tag=target atom */
+#define BIA_PI_CLOSE      23  /* xsl:processing-instruction: flush capture as XML PI */
+#define BIA_NUMBER        24  /* xsl:number: bi_select=value-expr, bi_text=format */
 
 /* Comparison operators for BIA_IF_POSITION (stored in bi_tag.pnid_atom) */
 #define PCMP_EQ  0   /* position() = N */
