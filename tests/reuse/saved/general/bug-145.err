@@ -1,0 +1,2 @@
+runtime error: file out/general/bug-145.slax line 6 element call-template
+The called template '{a}a' was not found.
