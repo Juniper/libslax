@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.45.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Priority test: two templates match "entry".
+    The first has default priority 0.0; the second has priority="1".
+    The second (higher priority) must always win regardless of order.
+  -->
+
+  <xsl:template match="entry">
+    <low><xsl:value-of select="@name"/></low>
+  </xsl:template>
+
+  <xsl:template match="entry" priority="1">
+    <high><xsl:value-of select="@name"/></high>
+  </xsl:template>
+
+</xsl:stylesheet>
