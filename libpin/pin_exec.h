@@ -107,7 +107,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_PI_OPEN       (PIN_OP_MAX_COMPLEX + 29) /* xsl:processing-instruction: start capture; po_name=target or null→pop */
 #define PIN_OP_PI_CLOSE      (PIN_OP_MAX_COMPLEX + 30) /* xsl:processing-instruction: flush as XML PI */
 #define PIN_OP_NUMBER        (PIN_OP_MAX_COMPLEX + 31) /* xsl:number: po_name=value-expr, po_name2=format */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 32) /* Sentinel: number of defined op codes */
+#define PIN_OP_PUSH_AVT      (PIN_OP_MAX_COMPLEX + 32) /* Eval AVT in po_name2 against context; push result string */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 33) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
