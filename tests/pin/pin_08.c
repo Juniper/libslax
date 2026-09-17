@@ -175,7 +175,7 @@ main (int argc, char **argv)
     xo_filter_t *xfp = pin_filter_create(NULL, workp);
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin08");
 
-    int count = pin_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action, 0);
     xmlFreeDoc(docp);
 
     if (count < 0)
