@@ -99,7 +99,15 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_LOAD_PARAM  (PIN_OP_MAX_COMPLEX + 21) /* Push [value, bool]: param value (or null) then provided-flag */
 #define PIN_OP_ELEMENT_OPEN  (PIN_OP_MAX_COMPLEX + 22) /* Open computed-name element; po_name=static or pop string from stack */
 #define PIN_OP_ELEMENT_CLOSE (PIN_OP_MAX_COMPLEX + 23) /* Close last computed-name element */
-#define PIN_OP_MAX         (PIN_OP_MAX_COMPLEX + 24) /* Sentinel: number of defined op codes */
+#define PIN_OP_COPY_OPEN     (PIN_OP_MAX_COMPLEX + 24) /* xsl:copy: emit open tag of context node */
+#define PIN_OP_MESSAGE_OPEN  (PIN_OP_MAX_COMPLEX + 25) /* xsl:message: start text capture */
+#define PIN_OP_MESSAGE_CLOSE (PIN_OP_MAX_COMPLEX + 26) /* xsl:message: flush to stderr; po_name != null → terminate */
+#define PIN_OP_COMMENT_OPEN  (PIN_OP_MAX_COMPLEX + 27) /* xsl:comment: start text capture */
+#define PIN_OP_COMMENT_CLOSE (PIN_OP_MAX_COMPLEX + 28) /* xsl:comment: flush as XML comment */
+#define PIN_OP_PI_OPEN       (PIN_OP_MAX_COMPLEX + 29) /* xsl:processing-instruction: start capture; po_name=target or null→pop */
+#define PIN_OP_PI_CLOSE      (PIN_OP_MAX_COMPLEX + 30) /* xsl:processing-instruction: flush as XML PI */
+#define PIN_OP_NUMBER        (PIN_OP_MAX_COMPLEX + 31) /* xsl:number: po_name=value-expr, po_name2=format */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 32) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
