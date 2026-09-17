@@ -1,0 +1,7 @@
+compiled 2 patterns
+<catalog>
+   <main-out>e1</main-out>
+   <inc-out>i1</inc-out>
+   <main-out>e2</main-out>
+   <inc-out>i2</inc-out>
+</catalog>
