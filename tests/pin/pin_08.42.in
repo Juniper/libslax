@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.42.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Top-level xsl:variable: string literal and integer.
+    Templates reference global vars via $name in select= and AVT {$name}.
+  -->
+
+  <xsl:variable name="prefix" select="'item'"/>
+  <xsl:variable name="version" select="42"/>
+
+  <xsl:template match="entry">
+    <out label="{$prefix}">
+      <xsl:value-of select="$version"/>
+      <xsl:text>:</xsl:text>
+      <xsl:value-of select="@name"/>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
