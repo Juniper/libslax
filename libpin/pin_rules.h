@@ -121,10 +121,12 @@ typedef struct pin_global_var_s {
  * Keyed by pae_name (the element name atom, 4 bytes).
  */
 typedef struct pin_apply_entry_s {
-    pin_name_id_t pae_name;   /* Element name atom (patricia tree key) */
-    pin_name_id_t pae_mode;   /* Mode atom (null = default mode) */
-    pin_rule_id_t pae_rule;   /* Rule to dispatch to via apply-templates */
-    pin_apply_id_t pae_next;  /* Next entry in all-entries linked list */
+    pin_name_id_t  pae_name;         /* Element name atom (patricia tree key) */
+    pin_name_id_t  pae_mode;         /* Mode atom (null = default mode) */
+    pin_rule_id_t  pae_rule;         /* Rule to dispatch to via apply-templates */
+    pin_apply_id_t pae_next;         /* Next entry in all-entries linked list */
+    float          pae_priority;     /* Explicit or default priority (XSLT §5.5) */
+    int16_t        pae_import_prec;  /* 0 = main; -1,-2,... = imported depth */
 } pin_apply_entry_t;
 
 /*
@@ -229,7 +231,8 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
 int
 pin_rulebook_apply_add (pin_rulebook_t *prbp,
 			pin_name_id_t name_id, pin_name_id_t mode_id,
-			pin_rule_id_t rid);
+			pin_rule_id_t rid,
+			float priority, int16_t import_prec);
 
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
