@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.41.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:number: format a numeric value.
+    value="@seq" evaluates the seq attribute as a number
+    and emits its integer representation.
+  -->
+
+  <xsl:template match="item">
+    <out>
+      <xsl:number value="@seq"/>
+      <xsl:text>:</xsl:text>
+      <xsl:value-of select="@name"/>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
