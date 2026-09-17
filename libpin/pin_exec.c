@@ -234,6 +234,104 @@ pin_op_element_close (PIN_OP_FUNC_ARGS)
 }
 
 static pin_value_t
+pin_op_copy_open (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    int top = esp->pes_seq_top;
+    if (top <= 0)
+        return pin_value_null();
+    pin_node_id_t ctx = esp->pes_seq[top - 1].psf_context;
+    pin_node_t *ctx_node = pin_node_addr(pwp, ctx);
+    if (ctx_node == NULL)
+        return pin_value_null();
+
+    const char *tag = pin_namepool_string(pwp, ctx_node->pn_name);
+    if (tag == NULL)
+        return pin_value_null();
+
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    pin_insert_open(parsep, ctx_node->pn_name, NULL, tag, NULL, act);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_message_open (PIN_OP_FUNC_ARGS)
+{
+    pin_capture_start(parsep, 1, 0);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_message_close (PIN_OP_FUNC_ARGS)
+{
+    pin_capture_flush(parsep);
+    if (!pin_name_id_is_null(opp->po_name))
+        exit(1);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_comment_open (PIN_OP_FUNC_ARGS)
+{
+    pin_capture_start(parsep, 2, 0);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_comment_close (PIN_OP_FUNC_ARGS)
+{
+    pin_capture_flush(parsep);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_pi_open (PIN_OP_FUNC_ARGS)
+{
+    unsigned name_atom = (unsigned) pin_name_id_atom_of(opp->po_name);
+    pin_capture_start(parsep, 3, name_atom);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_pi_close (PIN_OP_FUNC_ARGS)
+{
+    pin_capture_flush(parsep);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_number (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    int top = esp->pes_seq_top;
+    pin_node_id_t ctx = (top > 0) ? esp->pes_seq[top - 1].psf_context
+                                   : pin_node_id_null_atom();
+
+    const char *expr = pin_namepool_string(pwp, opp->po_name);
+    if (expr == NULL || expr[0] == '\0')
+        return pin_value_null();
+
+    char vbuf[64];
+    pin_exec_eval_expr_string(pwp, ctx, expr, strlen(expr), vbuf, sizeof(vbuf));
+    if (vbuf[0] == '\0')
+        return pin_value_null();
+
+    /* Format: "1" (default) = decimal integer; just emit the string value */
+    const char *fmt = pin_namepool_string(pwp, opp->po_name2);
+    if (fmt == NULL || strcmp(fmt, "1") == 0) {
+        /* Convert to integer and back to strip ".0" suffix from floats */
+        long n = strtol(vbuf, NULL, 10);
+        char nbuf[32];
+        snprintf(nbuf, sizeof(nbuf), "%ld", n);
+        pin_insert_text(parsep, nbuf, strlen(nbuf), PIN_TYPE_TEXT);
+    } else {
+        pin_insert_text(parsep, vbuf, strlen(vbuf), PIN_TYPE_TEXT);
+    }
+    return pin_value_null();
+}
+
+static pin_value_t
 pin_op_emit (PIN_OP_FUNC_ARGS)
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
@@ -696,6 +794,22 @@ pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
         return;
     }
 
+    if (elen > 1 && expr[0] == '@') {
+        pin_node_t *nodep = pin_node_addr(pwp, ctx_node);
+        if (nodep) {
+            char aname[elen];
+            memcpy(aname, expr + 1, elen - 1);
+            aname[elen - 1] = '\0';
+            pin_name_id_t anid = pin_namepool_atom(pwp, aname, FALSE);
+            if (!pin_name_id_is_null(anid)) {
+                const char *val = pin_get_attrib_string(pwp, nodep, anid);
+                if (val)
+                    snprintf(buf, bufsz, "%s", val);
+            }
+        }
+        return;
+    }
+
     pin_node_id_t target = pin_exec_node_at_path(pwp, ctx_node, expr, elen);
     if (!pin_node_id_is_null(target)) {
         pin_name_id_t tid = pin_exec_text_of(pwp, target);
@@ -890,6 +1004,11 @@ pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
                 pa_arb_atom_of(pin_node_text(nodep)));
         if (text)
             pin_insert_text(parsep, text, strlen(text), nodep->pn_type);
+    } else if (nodep->pn_type == PIN_TYPE_COMMENT
+            || nodep->pn_type == PIN_TYPE_PI) {
+        const char *text = pin_textpool_string(pwp, nodep->pn_contents);
+        if (text)
+            pin_insert_text(parsep, text, strlen(text), nodep->pn_type);
     }
 }
 
@@ -1076,6 +1195,14 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_LOAD_PARAM]   = { "load-param",   pin_op_load_param,   0 },
     [PIN_OP_ELEMENT_OPEN]  = { "element-open",  pin_op_element_open,  0 },
     [PIN_OP_ELEMENT_CLOSE] = { "element-close", pin_op_element_close, 0 },
+    [PIN_OP_COPY_OPEN]     = { "copy-open",     pin_op_copy_open,     0 },
+    [PIN_OP_MESSAGE_OPEN]  = { "message-open",  pin_op_message_open,  0 },
+    [PIN_OP_MESSAGE_CLOSE] = { "message-close", pin_op_message_close, 0 },
+    [PIN_OP_COMMENT_OPEN]  = { "comment-open",  pin_op_comment_open,  0 },
+    [PIN_OP_COMMENT_CLOSE] = { "comment-close", pin_op_comment_close, 0 },
+    [PIN_OP_PI_OPEN]       = { "pi-open",       pin_op_pi_open,       0 },
+    [PIN_OP_PI_CLOSE]      = { "pi-close",      pin_op_pi_close,      0 },
+    [PIN_OP_NUMBER]        = { "number",        pin_op_number,        0 },
 };
 
 /*
