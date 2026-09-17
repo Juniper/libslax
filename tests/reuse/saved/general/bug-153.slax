@@ -5,7 +5,7 @@ match cp {
 }
 
 match c {
-    <p> document("../docs/bug-153.doc")/ch/v[@name == current()/v];
+    <p> document("bug-153.doc")/ch/v[@name == current()/v];
 }
 
 key k {
