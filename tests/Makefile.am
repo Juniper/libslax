@@ -12,6 +12,7 @@ SUBDIRS= \
     bugs \
     bxml \
     bxslt \
+    reuse \
     errors \
     art \
     pa \
