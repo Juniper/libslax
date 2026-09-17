@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.37.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:copy: shallow copy of the matched element.
+    The element tag is copied but no attributes are copied unless
+    explicitly emitted.  The template body runs inside the copy.
+  -->
+
+  <xsl:template match="item">
+    <xsl:copy>
+      <xsl:value-of select="@name"/>
+    </xsl:copy>
+  </xsl:template>
+
+</xsl:stylesheet>
