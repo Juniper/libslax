@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.44.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:variable with text-body content (no select= attribute).
+  -->
+
+  <xsl:variable name="greeting">Hello</xsl:variable>
+
+  <xsl:template match="entry">
+    <out><xsl:value-of select="$greeting"/>, <xsl:value-of select="@name"/>!</out>
+  </xsl:template>
+
+</xsl:stylesheet>
