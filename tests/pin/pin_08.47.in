@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.47.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:include test: the include brings in a template for "item";
+    the main stylesheet provides a template for "entry".
+    Both must fire on their respective elements.
+  -->
+
+  <xsl:include href="pin_08.47_inc.xsl"/>
+
+  <xsl:template match="entry">
+    <main-out><xsl:value-of select="@name"/></main-out>
+  </xsl:template>
+
+</xsl:stylesheet>
