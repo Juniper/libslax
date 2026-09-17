@@ -6,7 +6,7 @@ ns layout = "http://www.decisionsoft.com/website-layout";
 ns "http://www.w3.org/1999/xhtml";
 
 var $myPath = /dsl:page/@path;
-var $layout = document("../docs/bug-158.doc");
+var $layout = document("bug-158.doc");
 var $root = {
     expr $layout//layout:page[@path == $myPath];
 }
