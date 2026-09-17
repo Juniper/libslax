@@ -143,7 +143,7 @@ main (int argc, char **argv)
     pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "pin06");
     assert(rb);
 
-    int count = pin_compile(docp, xfp, rb, opt_action);
+    int count = pin_compile(docp, xfp, rb, opt_action, 0);
     xmlFreeDoc(docp);
 
     if (count < 0)
