@@ -1,6 +1,6 @@
 version 1.2;
 
-/* Version: $Id: xmlspec.xsl 91 2001-02-14 14:45:10Z veillard $ */
+/* Version: $Id$ */
 /* Stylesheet for XMLspec */
 /* Author: Norman Walsh (Norman.Walsh@East.Sun.COM) */
 /* Author: Chris Maden (crism@lexica.net) */
