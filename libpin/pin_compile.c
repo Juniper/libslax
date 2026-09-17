@@ -30,11 +30,14 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
 #include <libpsu/psuerror.h>
 #include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/uri.h>
 
 #include <parrotdb/pacommon.h>
 #include <parrotdb/paconfig.h>
@@ -2189,6 +2192,101 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 }
 
 /*
+ * Compute the default priority for a single (already-split) match pattern.
+ * Rules from XSLT spec §5.5, applied in order:
+ *   No special chars         -> QName or NCName -> 0.0
+ *   Exactly "*"              -> -0.5
+ *   NCName:*                 -> -0.25
+ *   text(), comment(), etc.  -> -0.5
+ *   Everything else          -> 0.5
+ */
+static float
+pin_default_priority (const char *match_str)
+{
+    /* Bare QName or NCName: no special characters at all */
+    if (strpbrk(match_str, "/@[]*.:|(") == NULL)
+	return 0.0f;
+
+    /* Exactly "*" */
+    if (strcmp(match_str, "*") == 0)
+	return -0.5f;
+
+    /* NCName:* — one colon, ends with ":*", no other special chars before colon */
+    const char *colon = strchr(match_str, ':');
+    if (colon && strcmp(colon, ":*") == 0) {
+	size_t pre = (size_t)(colon - match_str);
+	if (pre > 0 && strpbrk(match_str, "/@[]*.(|") == NULL)
+	    return -0.25f;
+    }
+
+    /* Node-type tests */
+    if (strncmp(match_str, "text(", 5) == 0
+	    || strncmp(match_str, "comment(", 8) == 0
+	    || strncmp(match_str, "node(", 5) == 0
+	    || strncmp(match_str, "processing-instruction(", 23) == 0)
+	return -0.5f;
+
+    return 0.5f;
+}
+
+/*
+ * Register one (already-split, trimmed) match token with the apply-templates
+ * dispatch list.  Only tokens that are bare element names (no path, predicate,
+ * wildcard, or function syntax) are registered; everything else is silently
+ * skipped (the filter handles it for streaming dispatch).
+ */
+static void
+pin_compile_apply_add_split (pin_rulebook_t *rb, const char *match_str,
+			     pin_name_id_t mode_id, pin_rule_id_t rid,
+			     float base_priority, int16_t import_prec)
+{
+    char *buf = strdup(match_str);
+    if (buf == NULL)
+	return;
+
+    char *tok = buf;
+    int depth = 0;
+    char *start = tok;
+
+    for (;; tok++) {
+	char c = *tok;
+	if (c == '[')
+	    depth += 1;
+	else if (c == ']' && depth > 0)
+	    depth -= 1;
+	else if ((c == '|' && depth == 0) || c == '\0') {
+	    char saved = *tok;
+	    *tok = '\0';
+
+	    /* Trim leading whitespace */
+	    while (*start == ' ' || *start == '\t')
+		start += 1;
+	    /* Trim trailing whitespace */
+	    char *end = tok - 1;
+	    while (end > start && (*end == ' ' || *end == '\t'))
+		*end-- = '\0';
+
+	    if (*start != '\0' && strpbrk(start, "/@[]*.:|(") == NULL) {
+		float pri = base_priority;
+		if (isnan((double) pri))
+		    pri = pin_default_priority(start);
+		pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
+							   start, TRUE);
+		if (!pin_name_id_is_null(match_id))
+		    pin_rulebook_apply_add(rb, match_id, mode_id, rid,
+					  pri, import_prec);
+	    }
+
+	    if (saved == '\0')
+		break;
+	    start = tok + 1;
+	}
+    }
+
+    free(buf);
+}
+
+/*
  * Compile a top-level xsl:variable or xsl:param node into a global binding
  * in the rulebook.  Supported value forms: string literal ('x' or "x"),
  * bare integer, or text body content.  Complex expressions store an empty
@@ -2260,7 +2358,8 @@ pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
  */
 static int
 pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
-		      pin_rulebook_t *rb, pin_action_type_t action)
+		      pin_rulebook_t *rb, pin_action_type_t action,
+		      int16_t import_prec)
 {
     const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
     pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
@@ -2270,7 +2369,8 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
 	/* Named template (name= but no match=): compile body as op sequence */
 	xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
 	if (tname == NULL || tname[0] == '\0') {
-	    pin_error(rb, child, "xsl:template: missing or empty name attribute");
+	    pin_error(rb, child,
+		      "xsl:template: missing or empty name attribute");
 	    if (tname)
 		xmlFree(tname);
 	    return 0;
@@ -2336,11 +2436,26 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
     }
 
     /*
+     * Read explicit priority= or compute the default from the pattern.
+     * For | alternatives, each token gets its own default, but a single
+     * explicit priority= applies uniformly to all alternatives.
+     * NAN signals "compute per token" in pin_compile_apply_add_split.
+     */
+    xmlChar *tpri = xmlGetProp(child, (const xmlChar *) "priority");
+    float priority;
+    const char *match_str = (const char *) match;
+    if (tpri && tpri[0])
+	priority = (float) atof((const char *) tpri);
+    else
+	priority = pin_default_priority(match_str);
+    if (tpri)
+	xmlFree(tpri);
+
+    /*
      * Register the rule with the filter.
      * match="/" is special: the document root fires no element event, so
      * store the rule id in prb_root_rule and fire it manually in pin_parse.
      */
-    const char *match_str = (const char *) match;
     if (match_str[0] == '/' && match_str[1] == '\0') {
 	rb->prb_root_rule = rid;
 	xmlFree(match);
@@ -2355,20 +2470,72 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
 	return -1;
     }
 
-    if (strpbrk(match_str, "/@[]*.:") == NULL) {
-	pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
-						   match_str, TRUE);
-	if (!pin_name_id_is_null(match_id))
-	    pin_rulebook_apply_add(rb, match_id, mode_id, rid);
-    }
+    /*
+     * Register in the apply-templates dispatch list, splitting | alternatives.
+     * Each simple name token is registered separately with its priority.
+     */
+    pin_compile_apply_add_split(rb, match_str, mode_id, rid,
+				priority, import_prec);
 
     xmlFree(match);
     return 1;
 }
 
+/*
+ * Compile an xsl:include: load the referenced document and compile it at
+ * the same import precedence as the including stylesheet.
+ */
+static int
+pin_compile_include (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
+		     pin_rulebook_t *rb, pin_action_type_t action,
+		     int16_t import_prec)
+{
+    xmlChar *href = xmlGetProp(child, (const xmlChar *) "href");
+    if (href == NULL)
+	return 0;
+    xmlChar *url = xmlBuildURI(href, docp->URL);
+    xmlFree(href);
+    if (url == NULL)
+	return 0;
+    xmlDocPtr inc = xmlReadFile((const char *) url, NULL,
+				XML_PARSE_NOENT | XML_PARSE_NONET);
+    xmlFree(url);
+    if (inc == NULL)
+	return 0;
+    int count = pin_compile(inc, xfp, rb, action, import_prec);
+    xmlFreeDoc(inc);
+    return (count > 0) ? count : 0;
+}
+
+/*
+ * Compile an xsl:import: load the referenced document and compile it at
+ * one lower import precedence than the importing stylesheet.
+ */
+static int
+pin_compile_import (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
+		    pin_rulebook_t *rb, pin_action_type_t action,
+		    int16_t import_prec)
+{
+    xmlChar *href = xmlGetProp(child, (const xmlChar *) "href");
+    if (href == NULL)
+	return 0;
+    xmlChar *url = xmlBuildURI(href, docp->URL);
+    xmlFree(href);
+    if (url == NULL)
+	return 0;
+    xmlDocPtr imp = xmlReadFile((const char *) url, NULL,
+				XML_PARSE_NOENT | XML_PARSE_NONET);
+    xmlFree(url);
+    if (imp == NULL)
+	return 0;
+    int count = pin_compile(imp, xfp, rb, action, (int16_t)(import_prec - 1));
+    xmlFreeDoc(imp);
+    return (count > 0) ? count : 0;
+}
+
 int
 pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
-		  pin_action_type_t action)
+		  pin_action_type_t action, int16_t import_prec)
 {
     if (docp == NULL || xfp == NULL || rb == NULL)
 	return -1;
@@ -2387,7 +2554,11 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	if (pin_is_xsl(child, "variable") || pin_is_xsl(child, "param"))
 	    rc = pin_compile_global_var(child, rb);
 	else if (pin_is_xsl(child, "template"))
-	    rc = pin_compile_template(child, docp, xfp, rb, action);
+	    rc = pin_compile_template(child, docp, xfp, rb, action, import_prec);
+	else if (pin_is_xsl(child, "include"))
+	    rc = pin_compile_include(child, docp, xfp, rb, action, import_prec);
+	else if (pin_is_xsl(child, "import"))
+	    rc = pin_compile_import(child, docp, xfp, rb, action, import_prec);
 	else
 	    continue;
 	if (rc < 0)
