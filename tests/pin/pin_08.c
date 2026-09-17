@@ -20,6 +20,8 @@
  *   xml <xml_file>       XML document to parse
  *   modes                enumerate modes in the stylesheet, then exit
  *   action save|discard  action for non-foreach matched templates (default: discard)
+ *   passthru             pass unmatched elements through to output (default)
+ *   nopassthru           discard unmatched elements instead of passing through
  *   dump                 emit parsed tree as XML to stdout after parsing
  *   quiet                suppress debug logging
  *   clean                delete the mmap backing file before opening
@@ -86,6 +88,7 @@ main (int argc, char **argv)
     int opt_clean = 0;
     int opt_debug = 0;
     int opt_modes = 0;
+    int opt_passthru = 1;
 
     argc = xo_parse_args(argc, argv);
     if (argc < 0)
@@ -111,6 +114,10 @@ main (int argc, char **argv)
 	    opt_clean = 1;
 	} else if (strcmp(cp, "debug") == 0) {
 	    opt_debug = 1;
+	} else if (strcmp(cp, "passthru") == 0) {
+	    opt_passthru = 1;
+	} else if (strcmp(cp, "nopassthru") == 0) {
+	    opt_passthru = 0;
 	} else if (strcmp(cp, "db") == 0) {
 	    opt_db = check_arg(argv[++i], "db filename");
 	}
@@ -183,7 +190,7 @@ main (int argc, char **argv)
     if (opt_debug)
 	pin_parse_flags_set(parsep, PIN_PF_DEBUG);
 
-    pin_parse_set_default_rule(parsep, PIA_SAVE);
+    pin_parse_passthru(parsep, opt_passthru);
     pin_parse_set_filter(parsep, xfp);
     pin_parse_set_rulebook(parsep, rb);
 
