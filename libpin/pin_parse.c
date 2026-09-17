@@ -1197,6 +1197,13 @@ pin_body_var_get (pin_parse_t *parsep, pin_body_frame_t *bfp,
 	if (pin_name_id_equal(bfp->pbf_var_names[i], nid))
 	    return pin_namepool_string(pwp, bfp->pbf_var_values[i]);
     }
+    /* Fall back to global variables registered in the rulebook */
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (rb) {
+	pin_name_id_t gval = pin_rulebook_global_find(rb, nid);
+	if (!pin_name_id_is_null(gval))
+	    return pin_namepool_string(pwp, gval);
+    }
     return NULL;
 }
 
@@ -1846,7 +1853,41 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    break;
 	}
 	case BIA_VARIABLE: {
-	    /* No-op in the outer body: variables are only bound in for-each */
+	    /*
+	     * Local variable in a streaming template body.  Only constant
+	     * select= values can be evaluated here (no context node).
+	     * $var references within the same body will find this binding
+	     * via pin_body_var_get on the current body frame (bfp).
+	     */
+	    if (!pin_name_id_is_null(instr->bi_tag)
+		    && !pin_name_id_is_null(instr->bi_select)) {
+		pin_workspace_t *swp = pin_parse_workspace(parsep);
+		const char *sel = pin_parse_namepool_string(parsep,
+							    instr->bi_select);
+		pin_name_id_t val = pin_name_id_null_atom();
+		if (sel && sel[0]) {
+		    size_t slen = strlen(sel);
+		    /* String literal: 'x' or "x" */
+		    if (slen >= 2
+			    && ((sel[0] == '\'' && sel[slen - 1] == '\'')
+				|| (sel[0] == '"' && sel[slen - 1] == '"'))) {
+			char *inner = strndup(sel + 1, slen - 2);
+			if (inner) {
+			    val = pin_namepool_atom(swp, inner, TRUE);
+			    free(inner);
+			}
+		    } else {
+			/* Arithmetic expression (no context node needed) */
+				pin_node_id_t ctx = pip->pin_stack[pip->pin_depth].ps_atom;
+			char vbuf[128];
+			pin_exec_eval_expr_string(swp, ctx, sel, slen,
+						  vbuf, sizeof(vbuf));
+			if (vbuf[0])
+			    val = pin_namepool_atom(swp, vbuf, TRUE);
+		    }
+		}
+		pin_body_var_set(bfp, instr->bi_tag, val);
+	    }
 	    break;
 	}
 	case BIA_ELEMENT_OPEN: {
