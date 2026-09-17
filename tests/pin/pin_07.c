@@ -90,6 +90,7 @@ main (int argc, char **argv)
     int opt_clean = 0;
     int opt_debug = 0;
     int opt_modes = 0;
+    int opt_passthru = 1;
 
     argc = xo_parse_args(argc, argv);
     if (argc < 0)
@@ -117,6 +118,10 @@ main (int argc, char **argv)
 	    opt_clean = 1;
 	} else if (strcmp(cp, "debug") == 0) {
 	    opt_debug = 1;
+	} else if (strcmp(cp, "passthru") == 0) {
+	    opt_passthru = 1;
+	} else if (strcmp(cp, "nopassthru") == 0) {
+	    opt_passthru = 0;
 	} else if (strcmp(cp, "db") == 0) {
 	    opt_db = check_arg(argv[++i], "db filename");
 	}
@@ -183,7 +188,7 @@ main (int argc, char **argv)
     if (opt_debug)
 	pin_parse_flags_set(parsep, PIN_PF_DEBUG);
 
-    pin_parse_set_default_rule(parsep, PIA_SAVE);
+    pin_parse_passthru(parsep, opt_passthru);
     pin_parse_set_filter(parsep, xfp);
     pin_parse_set_rulebook(parsep, rb);
     pin_parse_set_mode(parsep, opt_mode);
