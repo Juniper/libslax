@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.40.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:processing-instruction: emit an XML PI node in the output.
+    The name attribute is the PI target; the content (text + value-of)
+    becomes the PI body.
+  -->
+
+  <xsl:template match="item">
+    <xsl:processing-instruction name="item-pi"><xsl:value-of select="@name"/></xsl:processing-instruction>
+    <out><xsl:value-of select="@name"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>
