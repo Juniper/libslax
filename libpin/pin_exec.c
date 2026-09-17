@@ -151,7 +151,7 @@ pin_op_emit_open (PIN_OP_FUNC_ARGS)
     char *attribs = astr ? strdup(astr) : NULL;
     pin_insert_t *pip = parsep->pp_insert;
     pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
-    if (attribs)
+    if (attribs || opp->po_count)
 	act = PIA_SAVE_ATTRIB;
     pin_insert_open(parsep, opp->po_name, NULL, tag, attribs, act);
     free(attribs);
@@ -612,7 +612,102 @@ pin_op_load_var (PIN_OP_FUNC_ARGS)
 {
     pin_var_binding_t *vp = pin_exec_var_find(esp,
             pin_name_id_atom_of(opp->po_name));
-    pin_exec_push(esp, vp ? vp->pvb_value : pin_value_null());
+    if (vp) {
+        pin_exec_push(esp, vp->pvb_value);
+    } else {
+        /* Fall back to global variables registered in the rulebook */
+        pin_rulebook_t *rb = parsep->pp_rulebook;
+        pin_name_id_t gval = pin_rulebook_global_find(rb, opp->po_name);
+        pin_exec_push(esp, !pin_name_id_is_null(gval)
+                           ? pin_value_string(pin_name_id_atom_of(gval))
+                           : pin_value_null());
+    }
+    return pin_value_null();
+}
+
+/*
+ * Evaluate an AVT (Attribute Value Template) string stored in po_name2.
+ * Text outside braces is copied literally; {$var} and {@attr} are expanded.
+ * {{ and }} are escapes for literal braces.  The result is pushed as a string.
+ */
+static pin_value_t
+pin_op_push_avt (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    const char *tmpl = pin_namepool_string(pwp, opp->po_name2);
+    if (tmpl == NULL) {
+        pin_exec_push(esp, pin_value_null());
+        return pin_value_null();
+    }
+
+    int top = esp->pes_seq_top;
+    pin_node_id_t ctx = (top > 0) ? esp->pes_seq[top - 1].psf_context
+                                   : pin_node_id_null_atom();
+    xo_buffer_t buf;
+    xo_buf_init(&buf);
+
+    for (const char *p = tmpl; *p; ) {
+        if (p[0] == '{' && p[1] == '{') {
+            xo_buf_append(&buf, "{", 1);
+            p += 2;
+        } else if (p[0] == '}' && p[1] == '}') {
+            xo_buf_append(&buf, "}", 1);
+            p += 2;
+        } else if (p[0] == '{') {
+            const char *end = strchr(p + 1, '}');
+            if (end == NULL)
+                break;
+            size_t elen = (size_t)(end - (p + 1));
+            char expr[elen + 1];
+            memcpy(expr, p + 1, elen);
+            expr[elen] = '\0';
+
+            char vbuf[512];
+            vbuf[0] = '\0';
+            if (expr[0] == '$') {
+                /* Variable reference: look up in exec vars then globals */
+                pin_name_id_t nid = pin_namepool_atom(pwp, expr + 1, FALSE);
+                if (!pin_name_id_is_null(nid)) {
+                    pin_var_binding_t *vp = pin_exec_var_find(esp,
+                            pin_name_id_atom_of(nid));
+                    if (vp) {
+                        const char *vs = pin_namepool_string(pwp,
+                                pin_name_id(vp->pvb_value.pv_atom));
+                        if (vs)
+                            snprintf(vbuf, sizeof(vbuf), "%s", vs);
+                    } else {
+                        pin_rulebook_t *rb = parsep->pp_rulebook;
+                        pin_name_id_t gval = pin_rulebook_global_find(rb, nid);
+                        if (!pin_name_id_is_null(gval)) {
+                            const char *gs = pin_namepool_string(pwp, gval);
+                            if (gs)
+                                snprintf(vbuf, sizeof(vbuf), "%s", gs);
+                        }
+                    }
+                }
+            } else {
+                pin_exec_eval_expr_string(pwp, ctx, expr, elen,
+                                          vbuf, sizeof(vbuf));
+            }
+            if (vbuf[0])
+                xo_buf_append_str(&buf, vbuf);
+            p = end + 1;
+        } else {
+            xo_buf_append(&buf, p, 1);
+            p += 1;
+        }
+    }
+
+    pin_name_id_t result = pin_name_id_null_atom();
+    if (xo_buf_offset(&buf) > 0) {
+        xo_buf_append(&buf, "", 1);
+        result = pin_namepool_atom(pwp, xo_buf_data(&buf, 0), TRUE);
+    }
+    xo_buf_cleanup(&buf);
+
+    pin_exec_push(esp, !pin_name_id_is_null(result)
+                       ? pin_value_string(pin_name_id_atom_of(result))
+                       : pin_value_null());
     return pin_value_null();
 }
 
@@ -1203,6 +1298,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_PI_OPEN]       = { "pi-open",       pin_op_pi_open,       0 },
     [PIN_OP_PI_CLOSE]      = { "pi-close",      pin_op_pi_close,      0 },
     [PIN_OP_NUMBER]        = { "number",        pin_op_number,        0 },
+    [PIN_OP_PUSH_AVT]      = { "push-avt",      pin_op_push_avt,      0 },
 };
 
 /*
