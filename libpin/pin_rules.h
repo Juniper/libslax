@@ -106,6 +106,17 @@ typedef struct pin_named_template_s {
 } pin_named_template_t;
 
 /*
+ * One global variable or parameter binding.
+ * Registered at compile time from top-level xsl:variable / xsl:param.
+ * The value is a namepool atom for the string value; null atom = empty string.
+ * For xsl:param the same slot is used; runtime override is not yet supported.
+ */
+typedef struct pin_global_var_s {
+    pin_name_id_t pgv_name;   /* variable name atom */
+    pin_name_id_t pgv_value;  /* string value atom (null = empty) */
+} pin_global_var_t;
+
+/*
  * One entry in the apply-templates dispatch patricia tree.
  * Keyed by pae_name (the element name atom, 4 bytes).
  */
@@ -138,6 +149,9 @@ typedef struct pin_rulebook_s {
     pin_named_template_t *prb_named;      /* Array of named templates */
     uint32_t              prb_named_count;
     uint32_t              prb_named_size;
+    pin_global_var_t     *prb_globals;    /* Array of global variables/params */
+    uint32_t              prb_global_count;
+    uint32_t              prb_global_size;
 } pin_rulebook_t;
 
 pin_rulebook_t *
@@ -243,6 +257,23 @@ pin_rulebook_named_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
  */
 pin_op_id_t
 pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
+
+/*
+ * Register a global variable or parameter.
+ * value_id is the namepool atom for the string value (null atom = empty).
+ * If a binding for name_id already exists it is overwritten.
+ * Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_global_add (pin_rulebook_t *prbp,
+                         pin_name_id_t name_id, pin_name_id_t value_id);
+
+/*
+ * Look up a global variable by name atom.
+ * Returns the value namepool atom, or the null atom if not found.
+ */
+pin_name_id_t
+pin_rulebook_global_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
