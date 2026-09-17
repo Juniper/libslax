@@ -2094,16 +2094,24 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    open_op->po_type = PIN_OP_EMIT_OPEN;
 	    open_op->po_name = tag_id;
 
-	    /* Capture static attributes, same logic as the BIA_ path. */
+	    /*
+	     * Capture attributes.  Static attrs go in open_op->po_name2.
+	     * AVT attrs become PUSH_AVT + EMIT_ATTRIB op pairs after EMIT_OPEN.
+	     * po_count is set to 1 on EMIT_OPEN when any AVT attrs follow so
+	     * that pin_op_emit_open forces PIA_SAVE_ATTRIB mode.
+	     */
 	    if (child->properties) {
 		xo_buffer_t abuf;
 		xo_buf_init(&abuf);
+		bool has_avt = false;
 		for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
-		    const char *aname = (const char *) ap->name;
 		    const char *aval = (ap->children && ap->children->content)
 			? (const char *) ap->children->content : "";
-		    if (strchr(aval, '{'))
+		    if (strchr(aval, '{')) {
+			has_avt = true;
 			continue;
+		    }
+		    const char *aname = (const char *) ap->name;
 		    if (!xo_buf_is_empty(&abuf))
 			xo_buf_append(&abuf, " ", 1);
 		    xo_buf_append_str(&abuf, aname);
@@ -2116,7 +2124,34 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    open_op->po_name2 = pin_namepool_atom(pwp,
 						 xo_buf_data(&abuf, 0), TRUE);
 		}
+		if (has_avt)
+		    open_op->po_count = 1;
 		xo_buf_cleanup(&abuf);
+
+		/* Emit PUSH_AVT + EMIT_ATTRIB for each AVT attribute */
+		if (has_avt) {
+		    for (xmlAttrPtr ap = child->properties; ap; ap = ap->next) {
+			const char *aval = (ap->children && ap->children->content)
+			    ? (const char *) ap->children->content : "";
+			if (!strchr(aval, '{'))
+			    continue;
+			pin_name_id_t avt_id = pin_namepool_atom(pwp, aval, TRUE);
+			pin_name_id_t aname_id = pin_namepool_atom(pwp,
+							(const char *) ap->name, TRUE);
+
+			pin_op_t *push_op = pin_op_new(cur, NULL);
+			if (push_op == NULL)
+			    return;
+			push_op->po_type = PIN_OP_PUSH_AVT;
+			push_op->po_name2 = avt_id;
+
+			pin_op_t *attr_op = pin_op_new(cur, NULL);
+			if (attr_op == NULL)
+			    return;
+			attr_op->po_type = PIN_OP_EMIT_ATTRIB;
+			attr_op->po_name = aname_id;
+		    }
+		}
 	    }
 
 	    pin_compile_ops_r(child, cur);
@@ -2153,6 +2188,184 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
     return head;
 }
 
+/*
+ * Compile a top-level xsl:variable or xsl:param node into a global binding
+ * in the rulebook.  Supported value forms: string literal ('x' or "x"),
+ * bare integer, or text body content.  Complex expressions store an empty
+ * value and evaluate to "" at runtime.
+ * Returns 0 (no count contribution, never a fatal error).
+ */
+static int
+pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
+{
+    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
+    if (vname == NULL || vname[0] == '\0') {
+	if (vname)
+	    xmlFree(vname);
+	return 0;
+    }
+
+    pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
+					  (const char *) vname, TRUE);
+    pin_name_id_t vid = pin_name_id_null_atom();
+    xmlChar *vsel = xmlGetProp(child, (const xmlChar *) "select");
+    if (vsel && vsel[0]) {
+	const char *s = (const char *) vsel;
+	size_t slen = strlen(s);
+	/* String literal: 'value' or "value" */
+	if (slen >= 2
+		&& ((s[0] == '\'' && s[slen - 1] == '\'')
+		    || (s[0] == '"' && s[slen - 1] == '"'))) {
+	    char *inner = strndup(s + 1, slen - 2);
+	    if (inner) {
+		vid = pin_namepool_atom(rb->prb_workspace, inner, TRUE);
+		free(inner);
+	    }
+	} else {
+	    /* Numeric literal (optional leading '-') */
+	    const char *p = s;
+	    if (*p == '-')
+		p += 1;
+	    int is_num = (*p != '\0');
+	    for (; *p; p++) {
+		if (*p < '0' || *p > '9') {
+		    is_num = 0;
+		    break;
+		}
+	    }
+	    if (is_num)
+		vid = pin_namepool_atom(rb->prb_workspace, s, TRUE);
+	}
+    } else {
+	/* Text body: <xsl:variable name="x">value</xsl:variable> */
+	xmlChar *content = xmlNodeGetContent(child);
+	if (content && content[0])
+	    vid = pin_namepool_atom(rb->prb_workspace,
+				   (const char *) content, TRUE);
+	if (content)
+	    xmlFree(content);
+    }
+    if (vsel)
+	xmlFree(vsel);
+    if (!pin_name_id_is_null(nid))
+	pin_rulebook_global_add(rb, nid, vid);
+    xmlFree(vname);
+    return 0;
+}
+
+/*
+ * Compile one xsl:template node (either named or match-based).
+ * Returns 1 if a rule or named template was registered, 0 if the template
+ * was skipped or rejected without error, or -1 on a fatal error.
+ */
+static int
+pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
+		      pin_rulebook_t *rb, pin_action_type_t action)
+{
+    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
+    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
+						  url, TRUE);
+    xmlChar *match = xmlGetProp(child, (const xmlChar *) "match");
+    if (match == NULL) {
+	/* Named template (name= but no match=): compile body as op sequence */
+	xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
+	if (tname == NULL || tname[0] == '\0') {
+	    pin_error(rb, child, "xsl:template: missing or empty name attribute");
+	    if (tname)
+		xmlFree(tname);
+	    return 0;
+	}
+	uint64_t complexity = 0;
+	pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity);
+	int count = 0;
+	if (!pin_op_id_is_null(ops) && complexity == 0) {
+	    pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
+		    (const char *) tname, TRUE);
+	    pin_rulebook_named_add(rb, nid, ops);
+	    count = 1;
+	}
+	xmlFree(tname);
+	return count;
+    }
+
+    /* Intern the mode string as a namepool atom (null = default mode) */
+    xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
+    pin_name_id_t mode_id = pin_name_id_null_atom();
+    if (tmode && tmode[0])
+	mode_id = pin_namepool_atom(rb->prb_workspace,
+				   (const char *) tmode, TRUE);
+    if (tmode)
+	xmlFree(tmode);
+
+    pin_rule_id_t rid;
+    pin_rule_t *prp = pin_rule_alloc(rb, &rid);
+    if (prp == NULL) {
+	psu_log("pin_compile: pin_rule_alloc failed");
+	xmlFree(match);
+	return -1;
+    }
+
+    bzero(prp, sizeof(*prp));
+    prp->pr_mode = mode_id;
+    prp->pr_src_file = src_file_id;
+    prp->pr_src_line = (uint32_t) xmlGetLineNo(child);
+
+    /*
+     * Compile to PIN_OP_* sequences first.  If all ops are simple (no
+     * apply-templates, no copy-of), op-dispatch executes the full body
+     * without BIA_.  Complex ops set bits in complexity, triggering BIA_.
+     */
+    uint64_t complexity = 0;
+    prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id, &complexity);
+
+    if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
+	pin_rstate_id_t foreach_sid = pin_compile_foreach(child, rb);
+	if (!pin_rstate_id_is_null(foreach_sid)) {
+	    prp->pr_action = PIA_SAVE;
+	    prp->pr_new_state = foreach_sid;
+	    prp->pr_close_ops = pin_op_id_null_atom();
+	} else {
+	    pin_body_instr_id_t body_head = pin_compile_body(child, rb);
+	    if (!pin_body_instr_id_is_null(body_head)) {
+		prp->pr_body = body_head;
+		prp->pr_body_retain = pin_body_retain(body_head, rb);
+	    } else {
+		prp->pr_action = action;
+	    }
+	}
+    }
+
+    /*
+     * Register the rule with the filter.
+     * match="/" is special: the document root fires no element event, so
+     * store the rule id in prb_root_rule and fire it manually in pin_parse.
+     */
+    const char *match_str = (const char *) match;
+    if (match_str[0] == '/' && match_str[1] == '\0') {
+	rb->prb_root_rule = rid;
+	xmlFree(match);
+	return 1;
+    }
+
+    int rc = pin_filter_add_with_action(xfp, match_str, rid);
+    if (rc < 0) {
+	pin_error(rb, child, "xsl:template: unsupported match pattern: %s",
+		  match_str);
+	xmlFree(match);
+	return -1;
+    }
+
+    if (strpbrk(match_str, "/@[]*.:") == NULL) {
+	pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
+						   match_str, TRUE);
+	if (!pin_name_id_is_null(match_id))
+	    pin_rulebook_apply_add(rb, match_id, mode_id, rid);
+    }
+
+    xmlFree(match);
+    return 1;
+}
+
 int
 pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		  pin_action_type_t action)
@@ -2170,131 +2383,16 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
     int count = 0;
 
     for (xmlNodePtr child = root->children; child; child = child->next) {
-	if (!pin_is_xsl(child, "template"))
+	int rc;
+	if (pin_is_xsl(child, "variable") || pin_is_xsl(child, "param"))
+	    rc = pin_compile_global_var(child, rb);
+	else if (pin_is_xsl(child, "template"))
+	    rc = pin_compile_template(child, docp, xfp, rb, action);
+	else
 	    continue;
-
-	xmlChar *match = xmlGetProp(child, (const xmlChar *) "match");
-	if (match == NULL) {
-	    /* Named template (name= but no match=): compile body as op sequence */
-	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
-	    if (tname == NULL || tname[0] == '\0') {
-		pin_error(rb, child, "xsl:template: missing or empty name attribute");
-		if (tname)
-		    xmlFree(tname);
-		continue;
-	    }
-	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
-	    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
-		    url, TRUE);
-	    uint64_t complexity = 0;
-	    pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity);
-	    if (!pin_op_id_is_null(ops) && complexity == 0) {
-		pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
-			(const char *) tname, TRUE);
-		pin_rulebook_named_add(rb, nid, ops);
-		count += 1;
-	    }
-	    xmlFree(tname);
-	    continue;
-	}
-
-	/* Intern the mode string as a namepool atom (null = default mode) */
-	xmlChar *tmode = xmlGetProp(child, (const xmlChar *) "mode");
-	pin_name_id_t mode_id = pin_name_id_null_atom();
-	if (tmode && tmode[0])
-	    mode_id = pin_namepool_atom(rb->prb_workspace,
-				       (const char *) tmode, TRUE);
-	if (tmode)
-	    xmlFree(tmode);
-
-	pin_rule_id_t rid;
-	pin_rule_t *prp = pin_rule_alloc(rb, &rid);
-	if (prp == NULL) {
-	    psu_log("pin_compile: pin_rule_alloc failed");
-	    xmlFree(match);
+	if (rc < 0)
 	    return -1;
-	}
-
-	bzero(prp, sizeof(*prp));
-	prp->pr_mode = mode_id;
-
-	/*
-	 * Compile to PIN_OP_* sequences first.  If all ops are simple (no
-	 * apply-templates, no copy-of), op-dispatch can execute the full body
-	 * without BIA_.  Complex ops set bits in complexity, which triggers BIA_ instead.
-	 */
-	{
-	    const char *url = docp->URL ? (const char *) docp->URL : "(unknown)";
-	    pin_name_id_t src_file_id = pin_namepool_atom(rb->prb_workspace,
-		    url, TRUE);
-	    prp->pr_src_file = src_file_id;
-	    prp->pr_src_line = (uint32_t) xmlGetLineNo(child);
-	    uint64_t complexity = 0;
-	    prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id, &complexity);
-
-	    /*
-	     * Check for for-each and BIA_ fallback.
-	     * Only when op-dispatch did not claim the full body (complexity == 0
-	     * and close_ops non-null means op-dispatch succeeded).
-	     */
-	    if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
-		pin_rstate_id_t foreach_sid = pin_compile_foreach(child, rb);
-		if (!pin_rstate_id_is_null(foreach_sid)) {
-		    /* For-each uses state machine dispatch */
-		    prp->pr_action = PIA_SAVE;
-		    prp->pr_new_state = foreach_sid;
-		    prp->pr_close_ops = pin_op_id_null_atom();
-		} else {
-		    /*
-		     * Template uses constructs that ops cannot handle, or produced
-		     * no ops at all.  Fall back to the BIA_ body executor.
-		     */
-		    pin_body_instr_id_t body_head = pin_compile_body(child, rb);
-		    if (!pin_body_instr_id_is_null(body_head)) {
-			prp->pr_body = body_head;
-			prp->pr_body_retain = pin_body_retain(body_head, rb);
-		    } else {
-			prp->pr_action = action;
-		    }
-		}
-	    }
-	    /* else: simple ops cover the full body; pr_body stays null and
-	     * op-dispatch fires on CLOSE. */
-	}
-
-	/*
-	 * Register the rule with the filter for top-level element dispatch,
-	 * and add it to the apply-templates patricia tree if the match pattern
-	 * is a simple element name (no path, predicates, or wildcards).
-	 *
-	 * match="/" is special: no element filter event fires for the document
-	 * root, so store the rule id in prb_root_rule and fire it manually in
-	 * pin_parse when the first depth-0 element opens.
-	 */
-	const char *match_str = (const char *) match;
-	if (match_str[0] == '/' && match_str[1] == '\0') {
-	    rb->prb_root_rule = rid;
-	    xmlFree(match);
-	    count++;
-	    continue;
-	}
-	int rc = pin_filter_add_with_action(xfp, match_str, rid);
-	if (rc < 0) {
-	    pin_error(rb, child, "xsl:template: unsupported match pattern: %s",
-			  match_str);
-	    xmlFree(match);
-	    return -1;
-	}
-
-	if (strpbrk(match_str, "/@[]*.:") == NULL) {
-	    pin_name_id_t match_id = pin_namepool_atom(rb->prb_workspace,
-						       match_str, TRUE);
-	    if (!pin_name_id_is_null(match_id))
-		pin_rulebook_apply_add(rb, match_id, mode_id, rid);
-	}
-
-	xmlFree(match);
-	count++;
+	count += rc;
     }
 
     if (rb->prb_workspace->pw_errors)
