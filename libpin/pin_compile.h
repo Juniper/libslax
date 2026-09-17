@@ -43,7 +43,7 @@
  */
 int
 pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
-		  pin_action_type_t action);
+		  pin_action_type_t action, int16_t import_prec);
 
 /*
  * Callback type for pin_for_each_mode.
