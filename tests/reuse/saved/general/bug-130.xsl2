@@ -5,7 +5,7 @@
   <xsl:import href="./bug-130-imp3.imp"/>
   <xsl:import href="./bug-130-imp4.imp"/>
   <xsl:output method="html" indent="no"/>
-  <xsl:variable name="g.doc.root" select="document(&quot;../docs/bug-130.doc&quot;)"/>
+  <xsl:variable name="g.doc.root" select="document(&quot;bug-130.doc&quot;)"/>
   <xsl:template match="/">
     <html>
       <head/>
