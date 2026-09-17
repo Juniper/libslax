@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.46.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Phase 2 test: | alternative in match=.
+    Both "entry" and "item" match the same template via the | union pattern.
+  -->
+
+  <xsl:template match="entry|item">
+    <out><xsl:value-of select="@name"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>
