@@ -44,6 +44,11 @@ typedef struct pin_parse_s {
     pin_context_t pp_context;	/* Execution context (mode, etc.) */
     int pp_root_rule_fired;	/* Non-zero after match="/" rule has fired */
     pin_exec_state_t pp_exec;	/* Op-dispatch execution state */
+    int pp_capture;            /* 1=message, 2=comment, 3=PI: text capture active */
+    unsigned pp_cap_name;      /* PI target name atom */
+    char *pp_cap_data;         /* Heap-allocated capture buffer */
+    int pp_cap_len;
+    int pp_cap_size;
 } pin_parse_t;
 
 /* Flags for pp_flags: */
@@ -156,6 +161,17 @@ void
 pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		 const char *prefix, const char *name, char *attribs,
 		 pin_action_type_t type);
+
+/*
+ * Capture helpers: redirect pin_insert_text to an internal buffer.
+ * mode: 1=message, 2=comment, 3=PI.  name_atom: PI target (for mode 3).
+ * pin_capture_flush ends the capture and acts on the buffer.
+ */
+void
+pin_capture_start (pin_parse_t *parsep, int mode, unsigned name_atom);
+
+void
+pin_capture_flush (pin_parse_t *parsep);
 
 void
 pin_insert_close (pin_parse_t *parsep, const char *prefix, const char *name);
