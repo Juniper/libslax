@@ -3139,6 +3139,13 @@ pin_parse_set_default_rule (pin_parse_t *parsep, pin_action_type_t type)
 }
 
 void
+pin_parse_passthru (pin_parse_t *parsep, int enable)
+{
+    pin_parse_set_default_rule(parsep,
+                               enable ? PIA_SAVE : PIA_DISCARD);
+}
+
+void
 pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp)
 {
     parsep->pp_filter = xfp;
