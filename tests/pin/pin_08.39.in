@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.39.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:comment: emit an XML comment node in the output tree.
+    Text content (including xsl:value-of expansions) becomes
+    the comment body.
+  -->
+
+  <xsl:template match="item">
+    <xsl:comment>name=<xsl:value-of select="@name"/></xsl:comment>
+    <out><xsl:value-of select="@name"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>
