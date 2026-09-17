@@ -1,0 +1,13 @@
+I/O warning : failed to load "out/general/bug-130-imp1.imp": No such file or directory
+compilation error: file out/general/bug-130.slax line 5 element import
+xsl:import : unable to load out/general/bug-130-imp1.imp
+I/O warning : failed to load "out/general/bug-130-imp2.imp": No such file or directory
+compilation error: file out/general/bug-130.slax line 6 element import
+xsl:import : unable to load out/general/bug-130-imp2.imp
+I/O warning : failed to load "out/general/bug-130-imp3.imp": No such file or directory
+compilation error: file out/general/bug-130.slax line 7 element import
+xsl:import : unable to load out/general/bug-130-imp3.imp
+I/O warning : failed to load "out/general/bug-130-imp4.imp": No such file or directory
+compilation error: file out/general/bug-130.slax line 8 element import
+xsl:import : unable to load out/general/bug-130-imp4.imp
+slaxproc: 1 errors parsing script: 'out/general/bug-130.slax'
