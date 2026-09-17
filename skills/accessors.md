@@ -286,3 +286,95 @@ be using the field.
    change. Don't bundle multiple files' conversions into one commit.
 7. Never run `make accept` yourself if your change touches test output —
    that's a manual, hand-inspected step reserved for the repo owner.
+
+## Moving other software onto libbxml/libbxslt
+
+If you're porting an external tool, or adding a new module to this tree,
+so it uses our captive `libbxml`/`libbxslt` instead of a system-installed
+libxml2/libxslt, the accessor rules above are necessary but not
+sufficient. You also need to get the build wiring right, or you'll either
+fail to link or — worse — silently link against the *system* libxml2/
+libxslt and get two incompatible copies of the same structs in one
+process.
+
+### Include paths and link flags: use the substituted variables, never rediscover them
+
+The top-level `configure.ac` already resolves everything for you:
+
+```
+LIBXML_CFLAGS='-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include'
+LIBXML_LIBS='$(top_builddir)/libbxml/libbxml.la'
+
+LIBXSLT_CFLAGS="... "'-I$(top_builddir)/libbxslt -I$(top_srcdir)/libbxslt -I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include'
+LIBXSLT_LIBS='$(top_builddir)/libbxslt/libxslt/libbxslt.la $(top_builddir)/libbxslt/libexslt/libexslt.la $(top_builddir)/libbxml/libbxml.la'
+```
+
+In your new module's `Makefile.am`, add both sets to `AM_CFLAGS`/`LIBS`
+(or `LDADD`), matching the existing pattern (`slaxproc/Makefile.am`,
+`libslax/Makefile.am`):
+
+```makefile
+AM_CFLAGS = \
+    -I${top_builddir} \
+    -I${top_srcdir} \
+    ${LIBXML_CFLAGS} \
+    ${LIBXSLT_CFLAGS} \
+    ${WARNINGS}
+
+LIBS = \
+    ${LIBXSLT_LIBS} \
+    ${LIBXML_LIBS}
+```
+
+`LIBXSLT_CFLAGS`/`LIBXSLT_LIBS` already include libbxml's include path and
+`libbxml.la` transitively — listing both is the established convention
+here (libtool dedups the shared dependency at link time), not a mistake
+to "clean up."
+
+**Do not** add a `PKG_CHECK_MODULES([LIBXML], [libxml-2.0 ...])`,
+`AC_PATH_PROG(XML2_CONFIG, xml2-config, ...)`, or any other autodetection
+for libxml2/libxslt in a new module's `configure.ac` fragment. There is
+none anywhere in this tree's own top-level `configure.ac` — confirmed by
+grep — and adding one reintroduces exactly the problem the captive fork
+exists to prevent: a second, ABI-incompatible copy of `xmlNode`/etc. from
+whatever libxml2 happens to be installed on the build machine, silently
+linked alongside ours. If your new code needs libxml/libxslt at all, it
+needs `${LIBXML_CFLAGS}`/`${LIBXSLT_CFLAGS}` and nothing else.
+
+### `#include` lines don't change
+
+Source stays exactly as upstream libxml2/libxslt code would write it —
+`#include <libxml/tree.h>`, `#include <libxslt/extensions.h>`,
+`#include <libexslt/exslt.h>` (real examples from `libslax/slaxtree.c`).
+The `-I` flags above make these resolve into `libbxml/include/`/
+`libbxslt/` instead of a system path; nothing about the `#include` syntax
+itself is captive-specific. Don't add a `libxml2/` or `libbxml/`
+directory prefix to the include path yourself — the existing headers
+already expect to be reached as `<libxml/...>`.
+
+### Build order
+
+`libbxml` must build before `libbxslt`, which must build before any new
+consumer — the top-level `Makefile.am`'s `SUBDIRS` already enforces this
+(`libpsu, parrotdb, libbxml, libbxslt, libslax, libxi, extensions,
+slaxproc, ...`). A new module's directory needs:
+
+- An entry in `SUBDIRS`, positioned after `libbxslt` (or after `libbxml`
+  alone, if it only touches libxml and never libxslt).
+- An `AC_CONFIG_FILES([yourdir/Makefile])` entry in `configure.ac`.
+
+If you ever build a subdirectory directly (`cd yourdir && make`) instead
+of from the top level, the generated accessor headers
+(`libbxml/include/libxml/gen/xmlaccessors-inline.h`, etc.) and libbxml/
+libbxslt's own generated build files may not exist yet — build from the
+top level at least once first, or `make -C libbxml -C libbxslt` before
+your subdirectory.
+
+### Everything from the accessor sections above still applies
+
+Once includes and link flags are correct, the struct-opacity rules
+earlier in this document are exactly what makes your new code portable
+across a future `libbxml`/`libbxslt` internal storage change: no direct
+`node->field`/`ctxt->field` access, go through the generated accessors,
+watch for false-friend struct names sharing a field name, and don't
+hand-edit any file under a `gen/` directory.
