@@ -1,0 +1,5 @@
+compiled 1 pattern
+<catalog>
+   <out label="item">42:alpha</out>
+   <out label="item">42:beta</out>
+</catalog>
