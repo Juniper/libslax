@@ -117,6 +117,22 @@ typedef struct pin_global_var_s {
 } pin_global_var_t;
 
 /*
+ * Settings from xsl:output.  Stored in the rulebook; read by the
+ * emit functions to control XML declaration and indentation.
+ */
+typedef struct pin_output_settings_s {
+    pin_name_id_t pos_method;           /* "xml", "html", "text" (null=xml) */
+    pin_name_id_t pos_encoding;         /* e.g. "UTF-8" (null=UTF-8) */
+    pin_name_id_t pos_doctype_public;
+    pin_name_id_t pos_doctype_system;
+    pin_name_id_t pos_media_type;
+    unsigned      pos_omit_xml_decl : 1;     /* omit-xml-declaration="yes" */
+    unsigned      pos_omit_xml_decl_set : 1; /* was omit-xml-declaration given? */
+    unsigned      pos_indent : 1;            /* indent="yes" */
+    unsigned      pos_indent_set : 1;        /* was indent= given? */
+} pin_output_settings_t;
+
+/*
  * One entry in the apply-templates dispatch patricia tree.
  * Keyed by pae_name (the element name atom, 4 bytes).
  */
@@ -154,6 +170,7 @@ typedef struct pin_rulebook_s {
     pin_global_var_t     *prb_globals;    /* Array of global variables/params */
     uint32_t              prb_global_count;
     uint32_t              prb_global_size;
+    pin_output_settings_t prb_output;    /* Settings from xsl:output */
 } pin_rulebook_t;
 
 pin_rulebook_t *
