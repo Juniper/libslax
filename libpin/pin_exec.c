@@ -534,14 +534,32 @@ pin_op_push_nodes (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
+/*
+ * XPath boolean() of any value type (XPath §4.3).
+ * For strings: "a string is true if and only if its length is non-zero."
+ * Requires pwp to resolve the namepool atom for PVT_STRING.
+ */
+static int
+pin_exec_value_is_true (pin_exec_state_t *esp, pin_value_t v,
+			pin_workspace_t *pwp)
+{
+    if (v.pv_type == PVT_NODESET)
+	return pin_exec_nodeset_is_true(esp, v);
+    if (v.pv_type == PVT_STRING) {
+	if (v.pv_atom == 0)
+	    return 0;
+	const char *s = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+	return s != NULL && s[0] != '\0';
+    }
+    return pin_value_is_true(v);
+}
+
 static pin_value_t
 pin_op_push_bool (PIN_OP_FUNC_ARGS)
 {
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
     pin_value_t v = pin_exec_pop(esp);
-    int truth = (v.pv_type == PVT_NODESET)
-        ? pin_exec_nodeset_is_true(esp, v)
-        : pin_value_is_true(v);
-    pin_exec_push(esp, pin_value_bool(truth));
+    pin_exec_push(esp, pin_value_bool(pin_exec_value_is_true(esp, v, pwp)));
     return pin_value_null();
 }
 
@@ -564,10 +582,9 @@ pin_op_complex_expr (PIN_OP_FUNC_ARGS)
 static pin_value_t
 pin_op_if (PIN_OP_FUNC_ARGS)
 {
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
     pin_value_t v = pin_exec_pop(esp);
-    int truth = (v.pv_type == PVT_NODESET)
-        ? pin_exec_nodeset_is_true(esp, v)
-        : pin_value_is_true(v);
+    int truth = pin_exec_value_is_true(esp, v, pwp);
 
     if (!truth && esp->pes_seq_top > 0)
         esp->pes_seq[esp->pes_seq_top - 1].psf_pc = opp->po_alt;
@@ -616,11 +633,29 @@ pin_op_load_var (PIN_OP_FUNC_ARGS)
         pin_exec_push(esp, vp->pvb_value);
     } else {
         /* Fall back to global variables registered in the rulebook */
+        pin_workspace_t *pwp = pin_parse_workspace(parsep);
         pin_rulebook_t *rb = parsep->pp_rulebook;
         pin_name_id_t gval = pin_rulebook_global_find(rb, opp->po_name);
-        pin_exec_push(esp, !pin_name_id_is_null(gval)
-                           ? pin_value_string(pin_name_id_atom_of(gval))
-                           : pin_value_null());
+        if (!pin_name_id_is_null(gval)) {
+            pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(gval)));
+        } else {
+            /*
+             * No static value: check for a deferred expression (e.g. "$other").
+             * Only $varname references are resolved; other expressions stay null.
+             */
+            pin_name_id_t expr = pin_rulebook_global_expr_find(rb, opp->po_name);
+            pin_value_t result = pin_value_null();
+            if (!pin_name_id_is_null(expr)) {
+                const char *estr = pin_namepool_string(pwp, expr);
+                if (estr && estr[0] == '$') {
+                    pin_name_id_t ref = pin_namepool_atom(pwp, estr + 1, FALSE);
+                    pin_name_id_t rval = pin_rulebook_global_find(rb, ref);
+                    if (!pin_name_id_is_null(rval))
+                        result = pin_value_string(pin_name_id_atom_of(rval));
+                }
+            }
+            pin_exec_push(esp, result);
+        }
     }
     return pin_value_null();
 }
