@@ -695,7 +695,6 @@ xsltNewTransformContext(xsltStylesheetPtr style, xmlDocPtr doc) {
     cur->inst = NULL;
     cur->outputFile = NULL;
     cur->sec = xsltGetDefaultSecurityPrefs();
-    cur->debugStatus = xslDebugStatus;
     cur->traceCode = (unsigned long*) &xsltDefaultTrace;
     cur->xinclude = xsltGetXIncludeDefault();
     cur->keyInitLevel = 0;
@@ -2195,13 +2194,13 @@ xsltDebuggerStartSequenceConstructor(xsltTransformContextPtr ctxt,
 {
     xmlNodePtr debugedNode = NULL;
 
-    if (ctxt->debugStatus != XSLT_DEBUG_NONE) {
+    if (xslDebugStatus != XSLT_DEBUG_NONE) {
         if (templ) {
             *addCallResult = xslAddCall(templ, templ->elem);
         } else {
             *addCallResult = xslAddCall(NULL, list);
         }
-        switch (ctxt->debugStatus) {
+        switch (xslDebugStatus) {
             case XSLT_DEBUG_RUN_RESTART:
             case XSLT_DEBUG_QUIT:
                 if (*addCallResult)
@@ -2340,7 +2339,7 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
 	return;
 
 #ifdef WITH_DEBUGGER
-    if (ctxt->debugStatus != XSLT_DEBUG_NONE) {
+    if (xslDebugStatus != XSLT_DEBUG_NONE) {
 	debuggedNode =
 	    xsltDebuggerStartSequenceConstructor(ctxt, contextNode,
 		list, templ, &addCallResult);
@@ -2399,7 +2398,7 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
         ctxt->inst = cur;
 
 #ifdef WITH_DEBUGGER
-        switch (ctxt->debugStatus) {
+        switch (xslDebugStatus) {
             case XSLT_DEBUG_RUN_RESTART:
             case XSLT_DEBUG_QUIT:
                 break;
@@ -2419,7 +2418,8 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
         }
 
 #ifdef WITH_DEBUGGER
-        if ((ctxt->debugStatus != XSLT_DEBUG_NONE) && (debuggedNode != cur))
+        if ((xslDebugStatus != XSLT_DEBUG_NONE)
+	    && (debuggedNode != cur))
             xslHandleDebugger(cur, contextNode, templ, ctxt);
 #endif
 
@@ -3044,7 +3044,7 @@ error:
     ctxt->depth--;
 
 #ifdef WITH_DEBUGGER
-    if ((ctxt->debugStatus != XSLT_DEBUG_NONE) && (addCallResult)) {
+    if ((xslDebugStatus != XSLT_DEBUG_NONE) && (addCallResult)) {
         xslDropCall();
     }
 #endif
@@ -3100,7 +3100,7 @@ xsltApplyXSLTTemplate(xsltTransformContextPtr ctxt,
     }
 
 #ifdef WITH_DEBUGGER
-    if (ctxt->debugStatus != XSLT_DEBUG_NONE) {
+    if (xslDebugStatus != XSLT_DEBUG_NONE) {
 	if (xsltDebuggerStartSequenceConstructor(ctxt, contextNode,
 		list, templ, &addCallResult) == NULL)
 	    return;
@@ -3276,7 +3276,7 @@ xsltApplyXSLTTemplate(xsltTransformContextPtr ctxt,
 #endif
 
 #ifdef WITH_DEBUGGER
-    if ((ctxt->debugStatus != XSLT_DEBUG_NONE) && (addCallResult)) {
+    if ((xslDebugStatus != XSLT_DEBUG_NONE) && (addCallResult)) {
         xslDropCall();
     }
 #endif
@@ -4771,7 +4771,7 @@ xsltCallTemplate(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	cur = xmlNodeGetChildren(inst);
 	while (cur != NULL) {
 #ifdef WITH_DEBUGGER
-	    if (ctxt->debugStatus != XSLT_DEBUG_NONE)
+	    if (xslDebugStatus != XSLT_DEBUG_NONE)
 		xslHandleDebugger(cur, node, comp->templ, ctxt);
 #endif
 	    if (ctxt->state == XSLT_STATE_STOPPED) break;
@@ -5001,7 +5001,7 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 	while (cur) {
 
 #ifdef WITH_DEBUGGER
-	    if (ctxt->debugStatus != XSLT_DEBUG_NONE)
+	    if (xslDebugStatus != XSLT_DEBUG_NONE)
 		xslHandleDebugger(cur, node, NULL, ctxt);
 #endif
 	    if (ctxt->state == XSLT_STATE_STOPPED)
@@ -5031,7 +5031,7 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		while (cur) {
 
 #ifdef WITH_DEBUGGER
-		    if (ctxt->debugStatus != XSLT_DEBUG_NONE)
+		    if (xslDebugStatus != XSLT_DEBUG_NONE)
 			xslHandleDebugger(cur, node, NULL, ctxt);
 #endif
 		    if (ctxt->state == XSLT_STATE_STOPPED)
