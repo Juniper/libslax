@@ -1760,10 +1760,6 @@ struct _xsltTransformContext {
     const xmlChar  *lasttext;		/* last text node content */
     int             lasttsize;		/* last text node size */
     int             lasttuse;		/* last text node use */
-    /*
-     * Per Context Debugging
-     */
-    int debugStatus;			/* the context level debug status */
     unsigned long* traceCode;		/* pointer to the variable holding the mask */
 
     int parserOptions;			/* parser options xmlParserOption */
@@ -1828,6 +1824,15 @@ struct _xsltTransformContext {
 #else
 #include <libxslt/gen/xsltaccessors-inline.h>
 #endif
+
+/*
+ * A handful of accessors aren't a plain generated field get/set: their
+ * true storage lives somewhere other than the field a caller might
+ * expect. Those are hand-written, not generated, and live in
+ * xsltaccessors-custom.h instead of a gen/ file -- see that header's
+ * top comment for why each one exists.
+ */
+#include "xsltaccessors-custom.h"
 
 /**
  * CHECK_STOPPED:
