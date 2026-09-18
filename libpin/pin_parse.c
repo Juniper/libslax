@@ -50,8 +50,9 @@
 #include <libpin/pin_exec.h>
 #include <libpin/pin_sort.h>
 
-/* Forward declaration: defined after pin_insert_text */
+/* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
+static int pin_is_ws_only(const char *data, size_t len);
 
 #include <libxo/xo.h>
 #include "xo_filter.h"
@@ -288,6 +289,10 @@ void
 pin_parse_destroy (pin_parse_t *parsep)
 {
     pin_source_destroy(parsep->pp_srcp);
+    if (parsep->pp_ws_pending) {
+	free(parsep->pp_ws_pending);
+	parsep->pp_ws_pending = NULL;
+    }
 }
 
 pin_name_id_t
@@ -2418,6 +2423,37 @@ pin_parse (pin_parse_t *parsep)
 		    len = rest - data;
 		}
 		psu_log("text [%.*s] (%u)", (int) len, data, type);
+		{
+		    uint8_t smode = parsep->pp_strip_sp > 0
+				    ? parsep->pp_strip_stack[parsep->pp_strip_sp - 1]
+				    : PIN_STRIP_NONE;
+		    if (pin_is_ws_only(data, len)) {
+			if (smode == PIN_STRIP_DEEP)
+			    break;
+			if (smode == PIN_STRIP_SHALLOW) {
+			    if (parsep->pp_last_structural == PIN_TYPE_CLOSE)
+				break;
+			    if (parsep->pp_last_structural == PIN_TYPE_OPEN) {
+				free(parsep->pp_ws_pending);
+				parsep->pp_ws_pending = malloc(len + 1);
+				if (parsep->pp_ws_pending) {
+				    memcpy(parsep->pp_ws_pending, data, len);
+				    parsep->pp_ws_pending[len] = '\0';
+				    parsep->pp_ws_pending_len = (int) len;
+				}
+				break;
+			    }
+			}
+		    }
+		    if (parsep->pp_ws_pending) {
+			pin_insert_text(parsep, parsep->pp_ws_pending,
+					(size_t) parsep->pp_ws_pending_len,
+					PIN_TYPE_TEXT);
+			free(parsep->pp_ws_pending);
+			parsep->pp_ws_pending = NULL;
+			parsep->pp_ws_pending_len = 0;
+		    }
+		}
 		pin_insert_text(parsep, data, len, type);
 		/* If in VALUE_OF mode, also cache text for subsequent select="." reuse */
 		{
@@ -2434,6 +2470,15 @@ pin_parse (pin_parse_t *parsep)
 
 	case PIN_TYPE_OPEN:	/* Open tag */
 	case PIN_TYPE_EMPTY:	/* Empty tag */
+	    {
+		if (parsep->pp_ws_pending) {
+		    free(parsep->pp_ws_pending);
+		    parsep->pp_ws_pending = NULL;
+		    parsep->pp_ws_pending_len = 0;
+		}
+		parsep->pp_last_structural = (type == PIN_TYPE_EMPTY)
+		    ? PIN_TYPE_CLOSE : PIN_TYPE_OPEN;
+	    }
 	    if (!opt_quiet)
 		psu_log("open tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
@@ -2446,6 +2491,15 @@ pin_parse (pin_parse_t *parsep)
 
 	    /* We need an atom to do the indexing to find rules */
 	    name_id = pin_namepool_atom(pip->pin_tree->pt_workspace, localp, TRUE);
+
+	    /* Push the strip mode for non-EMPTY elements */
+	    if (type != PIN_TYPE_EMPTY && parsep->pp_strip_sp < PIN_DEPTH_MAX) {
+		pin_rulebook_t *srb = parsep->pp_rulebook;
+		uint8_t smode = srb
+		    ? pin_rulebook_strip_mode(srb, name_id) : PIN_STRIP_NONE;
+		parsep->pp_strip_stack[parsep->pp_strip_sp] = smode;
+		parsep->pp_strip_sp += 1;
+	    }
 
 	    rulep = NULL;		/* Reset for each element */
 
@@ -2727,6 +2781,19 @@ pin_parse (pin_parse_t *parsep)
 	    break;
 
 	case PIN_TYPE_CLOSE:	/* Close tag */
+	    {
+		if (parsep->pp_ws_pending) {
+		    pin_insert_text(parsep, parsep->pp_ws_pending,
+				    (size_t) parsep->pp_ws_pending_len,
+				    PIN_TYPE_TEXT);
+		    free(parsep->pp_ws_pending);
+		    parsep->pp_ws_pending = NULL;
+		    parsep->pp_ws_pending_len = 0;
+		}
+		parsep->pp_last_structural = PIN_TYPE_CLOSE;
+		if (parsep->pp_strip_sp > 0)
+		    parsep->pp_strip_sp -= 1;
+	    }
 	    if (!opt_quiet)
 		psu_log("close tag [%s] [%s]", data ?: "", rest ?: "");
 	    localp = strchr(data, ':');
@@ -2962,6 +3029,15 @@ typedef struct pin_xml_output_s {
     pin_node_type_t xx_last_type; /* Last type seen */
     const char *xx_encoding;	/* Encoding for XML declaration (NULL=omit) */
 } pin_xml_output_t;
+
+static int
+pin_is_ws_only (const char *data, size_t len)
+{
+    for (size_t i = 0; i < len; i++)
+	if (!isspace((unsigned char) data[i]))
+	    return 0;
+    return 1;
+}
 
 static int
 pin_parse_is_ws (const char *data)
