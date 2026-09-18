@@ -2350,7 +2350,21 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
 
     if (list == NULL)
         return;
-    CHECK_STOPPED;
+    /*
+     * Not CHECK_STOPPED here: xsltDebuggerStartSequenceConstructor() above
+     * may have added a debugger call-stack frame (addCallResult), and a
+     * "quit" typed at that debugger prompt sets ctxt->state == STOPPED
+     * synchronously, before we get here. A bare CHECK_STOPPED return would
+     * leak that frame -- drop it first. (Nothing else below this point has
+     * been touched yet, so there's nothing else to unwind.)
+     */
+    if (ctxt->state == XSLT_STATE_STOPPED) {
+#ifdef WITH_DEBUGGER
+        if ((xslDebugStatus != XSLT_DEBUG_NONE) && (addCallResult))
+            xslDropCall();
+#endif
+        return;
+    }
 
     /*
     * Check for infinite recursion: stop if the maximum of nested templates
@@ -3109,7 +3123,21 @@ xsltApplyXSLTTemplate(xsltTransformContextPtr ctxt,
 
     if (list == NULL)
         return;
-    CHECK_STOPPED;
+    /*
+     * Not CHECK_STOPPED here: xsltDebuggerStartSequenceConstructor() above
+     * may have added a debugger call-stack frame (addCallResult), and a
+     * "quit" typed at that debugger prompt sets ctxt->state == STOPPED
+     * synchronously, before we get here. A bare CHECK_STOPPED return would
+     * leak that frame -- drop it first. (Nothing else below this point has
+     * been touched yet, so there's nothing else to unwind.)
+     */
+    if (ctxt->state == XSLT_STATE_STOPPED) {
+#ifdef WITH_DEBUGGER
+        if ((xslDebugStatus != XSLT_DEBUG_NONE) && (addCallResult))
+            xslDropCall();
+#endif
+        return;
+    }
 
     if (ctxt->varsNr >= ctxt->maxTemplateVars)
 	{
