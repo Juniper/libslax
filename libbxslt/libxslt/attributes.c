@@ -838,7 +838,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     */
 
 #ifdef WITH_DEBUGGER
-    if (ctxt->debugStatus != XSLT_DEBUG_NONE)
+    if (xslDebugStatus != XSLT_DEBUG_NONE)
         xslHandleDebugger(inst, contextNode, NULL, ctxt);
 #endif
 
@@ -1193,7 +1193,7 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 #ifdef WITH_DEBUGGER
             if ((style != NULL) &&
 		(style->attributeSets != NULL) &&
-		(ctxt->debugStatus != XSLT_DEBUG_NONE))
+		(xslDebugStatus != XSLT_DEBUG_NONE))
 	    {
                 set = xmlHashLookup2(style->attributeSets, ncname, nsUri);
                 if ((set != NULL) && (set->attrs != NULL) &&
