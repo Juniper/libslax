@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.51.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Baseline (no strip-space): inter-element whitespace text nodes survive
+    in the input stream and appear inside the value-of result.
+  -->
+
+  <xsl:output method="xml" omit-xml-declaration="yes" indent="no"/>
+
+  <xsl:template match="section">
+    <result><xsl:value-of select="."/></result>
+  </xsl:template>
+
+</xsl:stylesheet>
