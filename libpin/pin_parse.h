@@ -49,6 +49,11 @@ typedef struct pin_parse_s {
     char *pp_cap_data;         /* Heap-allocated capture buffer */
     int pp_cap_len;
     int pp_cap_size;
+    pin_node_type_t pp_last_structural; /* Last OPEN or CLOSE token (0=none) */
+    char *pp_ws_pending;       /* Buffered whitespace from open/? context */
+    int pp_ws_pending_len;     /* Length of pp_ws_pending */
+    uint8_t pp_strip_stack[PIN_DEPTH_MAX]; /* per-depth strip mode (PIN_STRIP_*) */
+    uint8_t pp_strip_sp;                   /* strip stack depth */
 } pin_parse_t;
 
 /* Flags for pp_flags: */
