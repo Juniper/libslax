@@ -137,6 +137,15 @@ pin_parse_set_filter (pin_parse_t *parsep, xo_filter_t *xfp);
 void
 pin_parse_set_mode (pin_parse_t *parsep, const char *mode);
 
+/*
+ * Override a top-level parameter by name=value strings.
+ * The parameter must already be declared in the compiled rulebook
+ * (via xsl:param); a warning is emitted if it is not.
+ * Returns 0 on success, -1 if the parameter was not declared.
+ */
+int
+pin_parse_set_param (pin_parse_t *parsep, const char *name, const char *value);
+
 static inline pin_workspace_t *
 pin_parse_workspace (pin_parse_t *parsep)
 {
