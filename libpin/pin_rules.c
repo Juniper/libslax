@@ -542,10 +542,11 @@ int
 pin_rulebook_global_add (pin_rulebook_t *prbp,
                          pin_name_id_t name_id, pin_name_id_t value_id)
 {
-    /* Update in place if already registered */
+    /* Update in place if already registered; clear any deferred expression */
     for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
 	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id)) {
 	    prbp->prb_globals[i].pgv_value = value_id;
+	    prbp->prb_globals[i].pgv_expr  = pin_name_id_null_atom();
 	    return 0;
 	}
     }
@@ -560,8 +561,50 @@ pin_rulebook_global_add (pin_rulebook_t *prbp,
     }
     prbp->prb_globals[prbp->prb_global_count].pgv_name  = name_id;
     prbp->prb_globals[prbp->prb_global_count].pgv_value = value_id;
+    prbp->prb_globals[prbp->prb_global_count].pgv_expr  = pin_name_id_null_atom();
     prbp->prb_global_count += 1;
     return 0;
+}
+
+int
+pin_rulebook_global_set_expr (pin_rulebook_t *prbp,
+                               pin_name_id_t name_id, pin_name_id_t expr_id)
+{
+    for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
+	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id)) {
+	    /* Only set the expression if no explicit value has been stored */
+	    if (pin_name_id_is_null(prbp->prb_globals[i].pgv_value))
+		prbp->prb_globals[i].pgv_expr = expr_id;
+	    return 0;
+	}
+    }
+    /* Not yet registered: allocate a new entry with null value + expression */
+    if (prbp->prb_global_count >= prbp->prb_global_size) {
+	uint32_t newsize = prbp->prb_global_size ? prbp->prb_global_size * 2 : 8;
+	pin_global_var_t *np = realloc(prbp->prb_globals,
+	                               newsize * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	prbp->prb_globals = np;
+	prbp->prb_global_size = newsize;
+    }
+    prbp->prb_globals[prbp->prb_global_count].pgv_name  = name_id;
+    prbp->prb_globals[prbp->prb_global_count].pgv_value = pin_name_id_null_atom();
+    prbp->prb_globals[prbp->prb_global_count].pgv_expr  = expr_id;
+    prbp->prb_global_count += 1;
+    return 0;
+}
+
+pin_name_id_t
+pin_rulebook_global_expr_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    if (prbp == NULL)
+	return pin_name_id_null_atom();
+    for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
+	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id))
+	    return prbp->prb_globals[i].pgv_expr;
+    }
+    return pin_name_id_null_atom();
 }
 
 pin_name_id_t
@@ -574,6 +617,18 @@ pin_rulebook_global_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
 	    return prbp->prb_globals[i].pgv_value;
     }
     return pin_name_id_null_atom();
+}
+
+int
+pin_rulebook_global_defined (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    if (prbp == NULL)
+	return 0;
+    for (uint32_t i = 0; i < prbp->prb_global_count; i++) {
+	if (pin_name_id_equal(prbp->prb_globals[i].pgv_name, name_id))
+	    return 1;
+    }
+    return 0;
 }
 
 uint32_t
