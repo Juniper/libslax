@@ -533,8 +533,8 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
 	xmlXPathContextSetNode(xpathCtxt, node);
 
 	/* If the user typed 'quit' or 'run' at the debugger prompt, bail */
-        if (xsltTransformContextGetDebugStatus(ctxt) == XSLT_DEBUG_QUIT
-		|| xsltTransformContextGetDebugStatus(ctxt) == XSLT_DEBUG_RUN_RESTART)
+        if (xslDebugStatus == XSLT_DEBUG_QUIT
+		|| xslDebugStatus == XSLT_DEBUG_RUN_RESTART)
 	    break;
 
 	/*
@@ -544,7 +544,7 @@ slaxWhileElement (xsltTransformContextPtr ctxt,
         if (xsltTransformContextGetState(ctxt) == XSLT_STATE_STOPPED)
 	    break;
 
-        if (xsltTransformContextGetDebugStatus(ctxt) != XSLT_DEBUG_NONE)
+        if (xslDebugStatus != XSLT_DEBUG_NONE)
             xslHandleDebugger(inst, node, xsltTransformContextGetTempl(ctxt), ctxt);
 
 	value = xmlXPathCompiledEvalToBoolean(comp->wp_test, xpathCtxt);
