@@ -113,7 +113,8 @@ typedef struct pin_named_template_s {
  */
 typedef struct pin_global_var_s {
     pin_name_id_t pgv_name;   /* variable name atom */
-    pin_name_id_t pgv_value;  /* string value atom (null = empty) */
+    pin_name_id_t pgv_value;  /* string value atom (null = use pgv_expr) */
+    pin_name_id_t pgv_expr;   /* raw select= expression (null = no expression) */
 } pin_global_var_t;
 
 /*
@@ -290,10 +291,37 @@ pin_rulebook_global_add (pin_rulebook_t *prbp,
 
 /*
  * Look up a global variable by name atom.
- * Returns the value namepool atom, or the null atom if not found.
+ * Returns the value namepool atom, or the null atom if not found or
+ * if the variable has only a deferred expression (pgv_expr is set).
+ * Note: the null atom is also a valid value (empty string), so use
+ * pin_rulebook_global_defined() when you need to distinguish the two.
  */
 pin_name_id_t
 pin_rulebook_global_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
+
+/*
+ * Register an expression-valued global: the select= text is stored in
+ * pgv_expr and evaluated lazily at load time.  Used when the expression
+ * cannot be resolved to a static string at compile time (e.g. "$other").
+ * If the entry already has an explicit pgv_value (set by pin_rulebook_global_add)
+ * the expression is ignored — the explicit value takes priority.
+ */
+int
+pin_rulebook_global_set_expr (pin_rulebook_t *prbp,
+                               pin_name_id_t name_id, pin_name_id_t expr_id);
+
+/*
+ * Return the pgv_expr atom for name_id, or the null atom if none.
+ */
+pin_name_id_t
+pin_rulebook_global_expr_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
+
+/*
+ * Return non-zero if a global variable or parameter with name_id is
+ * registered in prbp, regardless of its value.
+ */
+int
+pin_rulebook_global_defined (pin_rulebook_t *prbp, pin_name_id_t name_id);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
