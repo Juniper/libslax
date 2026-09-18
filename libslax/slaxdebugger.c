@@ -1986,14 +1986,7 @@ slaxDebugCmdQuit (DC_ARGS)
 	    return;
     }
 
-    /*
-     * Some parts of libxslt tests the global debug status value and
-     * other parts use the context variable, so we have to set them
-     * both.  If we've "quit", then there's no context to set.
-     */
     xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
-    if (statep->ds_ctxt)
-	xsltTransformContextSetDebugStatus(statep->ds_ctxt, XSLT_DEBUG_QUIT);
 
     slaxDebugClearListInfo(statep);
 
