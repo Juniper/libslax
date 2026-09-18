@@ -90,6 +90,11 @@ main (int argc, char **argv)
     int opt_modes = 0;
     int opt_passthru = 1;
 
+    /* Collected param name=value overrides */
+    const char *opt_param_names[64];
+    const char *opt_param_values[64];
+    int opt_param_count = 0;
+
     argc = xo_parse_args(argc, argv);
     if (argc < 0)
 	xo_err(1, "pin_08: argument issue");
@@ -120,6 +125,19 @@ main (int argc, char **argv)
 	    opt_passthru = 0;
 	} else if (strcmp(cp, "db") == 0) {
 	    opt_db = check_arg(argv[++i], "db filename");
+	} else if (strcmp(cp, "param") == 0) {
+	    const char *nv = check_arg(argv[++i], "param name=value");
+	    const char *eq = strchr(nv, '=');
+	    if (eq == NULL)
+		errx(1, "param argument must be name=value, got '%s'", nv);
+	    if (opt_param_count >= (int)(sizeof(opt_param_names) / sizeof(*opt_param_names)))
+		errx(1, "too many param arguments");
+	    char *namebuf = strndup(nv, (size_t)(eq - nv));
+	    if (namebuf == NULL)
+		err(1, "strndup");
+	    opt_param_names[opt_param_count] = namebuf;
+	    opt_param_values[opt_param_count] = eq + 1;
+	    opt_param_count += 1;
 	}
     }
 
@@ -193,6 +211,9 @@ main (int argc, char **argv)
     pin_parse_passthru(parsep, opt_passthru);
     pin_parse_set_filter(parsep, xfp);
     pin_parse_set_rulebook(parsep, rb);
+
+    for (int i = 0; i < opt_param_count; i++)
+	pin_parse_set_param(parsep, opt_param_names[i], opt_param_values[i]);
 
     pin_parse(parsep);
 
