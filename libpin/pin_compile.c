@@ -2533,6 +2533,74 @@ pin_compile_import (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
     return (count > 0) ? count : 0;
 }
 
+static void
+pin_compile_output_attribute (pin_workspace_t *pwp, xmlNodePtr child,
+			      const char *name, pin_name_id_t *idp)
+{
+    if (!pin_name_id_is_null(*idp)) /* Already set */
+	return;
+
+    xmlChar *value = xmlGetProp(child, (const xmlChar *) name);
+    if (value == NULL)
+	return;
+
+    *idp = pin_namepool_atom(pwp, (const char *) value, TRUE);
+    xmlFree(value);
+}
+
+static int
+pin_compile_output_yes (xmlNodePtr child, const char *name, int *valuep)
+{
+    xmlChar *value = xmlGetProp(child, (const xmlChar *) name);
+    if (value) {
+	*valuep = (strcmp((const char *) value, "yes") == 0) ? 1 : 0;
+	xmlFree(value);
+	return 1;
+    }
+
+    *valuep = 0;		/* Just to be safe */
+    return 0;
+}
+
+/*
+ * Compile an xsl:output element: read its attributes and store them
+ * in rb->prb_output.  Higher import-precedence sheets' output settings
+ * take priority; since pin_compile calls us outermost-first, later
+ * calls are from lower-precedence included/imported sheets, so we only
+ * overwrite settings that have not been set yet.
+ */
+static int
+pin_compile_output (xmlNodePtr child, pin_rulebook_t *rb)
+{
+    pin_workspace_t *pwp = rb->prb_workspace;
+    pin_output_settings_t *op = &rb->prb_output;
+
+    pin_compile_output_attribute(pwp, child, "method", &op->pos_method);
+    pin_compile_output_attribute(pwp, child, "encoding", &op->pos_encoding);
+
+    int val;
+
+    if (!op->pos_omit_xml_decl_set
+	    && pin_compile_output_yes(child, "omit-xml-declaration", &val)) {
+	op->pos_omit_xml_decl = val;
+	op->pos_omit_xml_decl_set = 1;
+    }
+
+    if (!op->pos_indent_set
+	    && pin_compile_output_yes(child, "indent", &val)) {
+	op->pos_indent = val;
+	op->pos_indent_set = 1;
+    }
+
+    pin_compile_output_attribute(pwp, child, "doctype-public",
+				 &op->pos_doctype_public);
+    pin_compile_output_attribute(pwp, child, "doctype-system",
+				 &op->pos_doctype_system);
+    pin_compile_output_attribute(pwp, child, "media-type", &op->pos_media_type);
+
+    return 0;
+}
+
 int
 pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		  pin_action_type_t action, int16_t import_prec)
@@ -2559,6 +2627,8 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    rc = pin_compile_include(child, docp, xfp, rb, action, import_prec);
 	else if (pin_is_xsl(child, "import"))
 	    rc = pin_compile_import(child, docp, xfp, rb, action, import_prec);
+	else if (pin_is_xsl(child, "output"))
+	    rc = pin_compile_output(child, rb);
 	else
 	    continue;
 	if (rc < 0)
