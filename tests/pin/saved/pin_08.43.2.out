@@ -1,0 +1,5 @@
+compiled 1 pattern
+<catalog>
+   <out>[test]alpha-1[/test]</out>
+   <out>[test]beta-2[/test]</out>
+</catalog>
