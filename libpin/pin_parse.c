@@ -3419,7 +3419,7 @@ pin_parse_set_param (pin_parse_t *parsep, const char *name, const char *value)
     pin_workspace_t *pwp = rb->prb_workspace;
     pin_name_id_t name_id = pin_namepool_atom(pwp, name, TRUE);
 
-    if (pin_name_id_is_null(pin_rulebook_global_find(rb, name_id))) {
+    if (!pin_rulebook_global_defined(rb, name_id)) {
 	psu_warning(NULL, 0, "parameter '%s' is not defined in the stylesheet", name);
 	return -1;
     }
