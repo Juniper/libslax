@@ -1060,7 +1060,7 @@ xsltEvalGlobalVariable(xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
 #endif
 
 #ifdef WITH_DEBUGGER
-    if ((ctxt->debugStatus != XSLT_DEBUG_NONE) &&
+    if ((xslDebugStatus != XSLT_DEBUG_NONE) &&
         elem->comp && elem->comp->inst)
         xslHandleDebugger(elem->comp->inst, NULL, NULL, ctxt);
 #endif
