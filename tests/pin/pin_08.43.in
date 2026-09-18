@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 # quiet dump clean xml pin_08.43.xml
+# quiet dump clean xml pin_08.43.xml param starter=test
+# quiet dump clean xml pin_08.43.xml param closer=mash
+# quiet dump clean xml pin_08.43.xml param starter=fish param closer=tune
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -9,13 +12,26 @@
     Same lookup path as xsl:variable; override mechanism is not yet supported.
   -->
 
+  <xsl:param name="starter" select=""/>
   <xsl:param name="separator" select="'-'"/>
+  <xsl:param name="closer" select="$starter"/>
+
 
   <xsl:template match="entry">
     <out>
+      <xsl:if test="$starter">
+          <xsl:value-of select="'['"/>
+          <xsl:value-of select="$starter"/>
+          <xsl:value-of select="']'"/>
+      </xsl:if>
       <xsl:value-of select="@name"/>
       <xsl:value-of select="$separator"/>
       <xsl:value-of select="@id"/>
+      <xsl:if test="$closer">
+          <xsl:value-of select="'[/'"/>
+          <xsl:value-of select="$closer"/>
+          <xsl:value-of select="']'"/>
+      </xsl:if>
     </out>
   </xsl:template>
 
