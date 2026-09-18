@@ -75,6 +75,12 @@ stylesheet_increment_field=errors
 stylesheet_increment_ctype=int
 
 transformcontext_tag=TransformContext ; transformcontext_ptr=xsltTransformContextPtr ; transformcontext_var=ctxt
+# Note: xsltTransformContext has no "debugStatus" field -- debug status
+# is process-wide (xslDebugStatus, xsltutils.c), not per-context.
+# xsltTransformContextGetDebugStatus()/SetDebugStatus() are hand-written
+# in libbxslt/libxslt/xsltaccessors-custom.h, redirecting straight to
+# that global. Don't add a debugStatus row here; there's no field to
+# generate an accessor for.
 transformcontext_fields='
 style:xsltStylesheetPtr::none
 inst:xmlNodePtr::none
@@ -86,7 +92,6 @@ varsBase:int::none
 insert:xmlNodePtr
 output:xmlDocPtr::none
 xpathCtxt:xmlXPathContextPtr::none
-debugStatus:int
 state:xsltTransformState
 globalVars:xmlHashTablePtr::none
 dict:xmlDictPtr::none
