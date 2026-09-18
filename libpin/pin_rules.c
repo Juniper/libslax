@@ -507,6 +507,68 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_global_count = 0;
 	rules->prb_global_size = 0;
     }
+    if (rules->prb_strip_names) {
+	free(rules->prb_strip_names);
+	rules->prb_strip_names = NULL;
+	rules->prb_strip_name_count = 0;
+	rules->prb_strip_name_size = 0;
+    }
+    if (rules->prb_shallow_names) {
+	free(rules->prb_shallow_names);
+	rules->prb_shallow_names = NULL;
+	rules->prb_shallow_name_count = 0;
+	rules->prb_shallow_name_size = 0;
+    }
+}
+
+int
+pin_rulebook_strip_name_add (pin_rulebook_t *prbp,
+                              pin_name_id_t name_id, int shallow)
+{
+    pin_name_id_t **listp;
+    uint32_t *countp, *sizep;
+
+    if (shallow) {
+	listp  = &prbp->prb_shallow_names;
+	countp = &prbp->prb_shallow_name_count;
+	sizep  = &prbp->prb_shallow_name_size;
+    } else {
+	listp  = &prbp->prb_strip_names;
+	countp = &prbp->prb_strip_name_count;
+	sizep  = &prbp->prb_strip_name_size;
+    }
+
+    for (uint32_t i = 0; i < *countp; i++)
+	if (pin_name_id_equal((*listp)[i], name_id))
+	    return 0;
+
+    if (*countp >= *sizep) {
+	uint32_t newsize = *sizep ? *sizep * 2 : 8;
+	pin_name_id_t *np = realloc(*listp, newsize * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	*listp = np;
+	*sizep = newsize;
+    }
+    (*listp)[*countp] = name_id;
+    *countp += 1;
+    return 0;
+}
+
+uint8_t
+pin_rulebook_strip_mode (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    for (uint32_t i = 0; i < prbp->prb_strip_name_count; i++)
+	if (pin_name_id_equal(prbp->prb_strip_names[i], name_id))
+	    return PIN_STRIP_DEEP;
+    for (uint32_t i = 0; i < prbp->prb_shallow_name_count; i++)
+	if (pin_name_id_equal(prbp->prb_shallow_names[i], name_id))
+	    return PIN_STRIP_SHALLOW;
+    if (prbp->prb_strip_all)
+	return PIN_STRIP_DEEP;
+    if (prbp->prb_shallow_all)
+	return PIN_STRIP_SHALLOW;
+    return PIN_STRIP_NONE;
 }
 
 int
