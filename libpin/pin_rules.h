@@ -172,7 +172,20 @@ typedef struct pin_rulebook_s {
     uint32_t              prb_global_count;
     uint32_t              prb_global_size;
     pin_output_settings_t prb_output;    /* Settings from xsl:output */
+    unsigned              prb_strip_all : 1;    /* xsl:strip-space elements="*" (deep) */
+    unsigned              prb_shallow_all : 1;  /* xsl:strip-space elements="*" shallow="yes" */
+    pin_name_id_t        *prb_strip_names;       /* deep strip per-element list */
+    uint32_t              prb_strip_name_count;
+    uint32_t              prb_strip_name_size;
+    pin_name_id_t        *prb_shallow_names;     /* shallow/exterior strip per-element list */
+    uint32_t              prb_shallow_name_count;
+    uint32_t              prb_shallow_name_size;
 } pin_rulebook_t;
+
+/* Values for the per-depth strip-mode stack (pin_parse_t::pp_strip_stack) */
+#define PIN_STRIP_NONE    0  /* no whitespace stripping */
+#define PIN_STRIP_SHALLOW 1  /* exterior: strip inter-element whitespace only */
+#define PIN_STRIP_DEEP    2  /* full: strip all whitespace-only text nodes */
 
 pin_rulebook_t *
 pin_rulebook_open (const char *name);
@@ -322,6 +335,23 @@ pin_rulebook_global_expr_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
  */
 int
 pin_rulebook_global_defined (pin_rulebook_t *prbp, pin_name_id_t name_id);
+
+/*
+ * Add name_id to the deep (shallow=0) or shallow/exterior (shallow=1)
+ * strip-space element list.  Duplicates are silently ignored.
+ * Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_strip_name_add (pin_rulebook_t *prbp,
+                              pin_name_id_t name_id, int shallow);
+
+/*
+ * Return the strip mode (PIN_STRIP_*) for name_id given the rulebook's
+ * strip-space directives.  Per-element entries take precedence over the
+ * elements="*" wildcards; deep takes precedence over shallow.
+ */
+uint8_t
+pin_rulebook_strip_mode (pin_rulebook_t *prbp, pin_name_id_t name_id);
 
 #include "gen/pin_rule_id_funcs_gen.h"
 #include "gen/pin_rstate_id_funcs_gen.h"
