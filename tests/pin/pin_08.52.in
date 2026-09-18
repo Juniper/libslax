@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.51.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    strip-space shallow="yes": whitespace-only text nodes between open/open,
+    close/open and close/close element boundaries are discarded from the
+    input stream, so value-of sees no inter-element whitespace.
+  -->
+
+  <xsl:output method="xml" omit-xml-declaration="yes" indent="no"/>
+  <xsl:strip-space elements="*" shallow="yes"/>
+
+  <xsl:template match="section">
+    <result><xsl:value-of select="."/></result>
+  </xsl:template>
+
+</xsl:stylesheet>
