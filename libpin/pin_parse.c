@@ -2960,6 +2960,7 @@ typedef struct pin_xml_output_s {
     unsigned xx_indent;		/* Current indent amount */
     unsigned xx_incr;		/* Indent increment */
     pin_node_type_t xx_last_type; /* Last type seen */
+    const char *xx_encoding;	/* Encoding for XML declaration (NULL=omit) */
 } pin_xml_output_t;
 
 static int
@@ -2992,6 +2993,9 @@ pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
 
     switch (type) {
     case PIN_TYPE_ROOT:
+	if (xmlp->xx_encoding)
+	    fprintf(out, "<?xml version=\"1.0\" encoding=\"%s\"?>\n",
+		    xmlp->xx_encoding);
 	if (is_debug)
 	    fprintf(out, "<!-- start of output>\n");
 	break;
@@ -3120,6 +3124,21 @@ pin_parse_emit_xml (pin_parse_t *parsep, FILE *out)
     bzero(&xml, sizeof(xml));
     xml.xx_out = out;
     xml.xx_incr = 3;
+
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (rb) {
+	pin_output_settings_t *op = &rb->prb_output;
+
+	if (op->pos_omit_xml_decl_set && !op->pos_omit_xml_decl) {
+	    const char *enc = NULL;
+	    if (!pin_name_id_is_null(op->pos_encoding))
+		enc = pin_namepool_string(rb->prb_workspace, op->pos_encoding);
+	    xml.xx_encoding = enc ? enc : "UTF-8";
+	}
+
+	if (op->pos_indent_set && !op->pos_indent)
+	    xml.xx_incr = 0;
+    }
 
     pin_parse_emit(parsep, pin_parse_emit_xml_cb, &xml);
 }
@@ -3386,4 +3405,26 @@ void
 pin_parse_set_mode (pin_parse_t *parsep, const char *mode)
 {
     parsep->pp_context.pctx_mode = mode;
+}
+
+int
+pin_parse_set_param (pin_parse_t *parsep, const char *name, const char *value)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (rb == NULL) {
+	psu_warning(NULL, 0, "pin_parse_set_param: no rulebook attached");
+	return -1;
+    }
+
+    pin_workspace_t *pwp = rb->prb_workspace;
+    pin_name_id_t name_id = pin_namepool_atom(pwp, name, TRUE);
+
+    if (pin_name_id_is_null(pin_rulebook_global_find(rb, name_id))) {
+	psu_warning(NULL, 0, "parameter '%s' is not defined in the stylesheet", name);
+	return -1;
+    }
+
+    pin_name_id_t value_id = pin_namepool_atom(pwp, value, TRUE);
+    pin_rulebook_global_add(rb, name_id, value_id);
+    return 0;
 }
