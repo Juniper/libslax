@@ -5112,6 +5112,9 @@ xsltApplyTemplates(xsltTransformContextPtr ctxt, xmlNodePtr node,
     * Apply templates for all selected source nodes.
     */
     for (i = 0; i < xmlNodeSetGetNodeNr(list); i++) {
+	if (ctxt->state == XSLT_STATE_STOPPED)
+	    break;
+
 	cur = xmlNodeSetGetNodeEntry(list, i);
 	/*
 	* The node becomes the "current node".
@@ -5572,6 +5575,9 @@ xsltForEach(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     * Instantiate the sequence constructor for each selected node.
     */
     for (i = 0; i < xmlNodeSetGetNodeNr(list); i++) {
+	if (ctxt->state == XSLT_STATE_STOPPED)
+	    break;
+
 	cur = xmlNodeSetGetNodeEntry(list, i);
 	/*
 	* The selected node becomes the "current node".
