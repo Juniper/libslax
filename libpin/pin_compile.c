@@ -2589,6 +2589,55 @@ pin_compile_output_yes (xmlNodePtr child, const char *name, int *valuep)
  * overwrite settings that have not been set yet.
  */
 static int
+pin_compile_strip_space (xmlNodePtr child, pin_rulebook_t *rb)
+{
+    int val;
+    int shallow = pin_compile_output_yes(child, "shallow", &val) && val;
+
+    xmlChar *elements = xmlGetProp(child, (const xmlChar *) "elements");
+    if (elements == NULL)
+	return 0;
+
+    if (strcmp((const char *) elements, "*") == 0) {
+	if (shallow)
+	    rb->prb_shallow_all = 1;
+	else
+	    rb->prb_strip_all = 1;
+    } else {
+	const char *p = (const char *) elements;
+	while (*p) {
+	    while (*p && isspace((unsigned char) *p))
+		p += 1;
+	    if (*p == '\0')
+		break;
+	    const char *start = p;
+	    while (*p && !isspace((unsigned char) *p))
+		p += 1;
+	    size_t namelen = (size_t) (p - start);
+	    char buf[256];
+	    if (namelen < sizeof(buf)) {
+		memcpy(buf, start, namelen);
+		buf[namelen] = '\0';
+		pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace, buf, TRUE);
+		pin_rulebook_strip_name_add(rb, nid, shallow);
+	    }
+	}
+    }
+    xmlFree(elements);
+    return 0;
+}
+
+/*
+ * xsl:preserve-space: for now only logs a note; full element-list tracking
+ * can be added when needed.
+ */
+static int
+pin_compile_preserve_space (xmlNodePtr child UNUSED, pin_rulebook_t *rb UNUSED)
+{
+    return 0;
+}
+
+static int
 pin_compile_output (xmlNodePtr child, pin_rulebook_t *rb)
 {
     pin_workspace_t *pwp = rb->prb_workspace;
@@ -2648,6 +2697,10 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    rc = pin_compile_import(child, docp, xfp, rb, action, import_prec);
 	else if (pin_is_xsl(child, "output"))
 	    rc = pin_compile_output(child, rb);
+	else if (pin_is_xsl(child, "strip-space"))
+	    rc = pin_compile_strip_space(child, rb);
+	else if (pin_is_xsl(child, "preserve-space"))
+	    rc = pin_compile_preserve_space(child, rb);
 	else
 	    continue;
 	if (rc < 0)
