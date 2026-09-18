@@ -2331,22 +2331,41 @@ pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
 		    break;
 		}
 	    }
-	    if (is_num)
+	    if (is_num) {
 		vid = pin_namepool_atom(rb->prb_workspace, s, TRUE);
+	    } else {
+		/* Expression (e.g. "$varname"): register name now, set expr below */
+		vid = pin_name_id_null_atom();
+	    }
 	}
     } else {
-	/* Text body: <xsl:variable name="x">value</xsl:variable> */
+	/*
+	 * No select= (or select=""):
+	 * The value is the text content of the element, which may be empty.
+	 * Empty string is a valid distinct value; we always intern it so
+	 * pin_rulebook_global_find can return a non-null atom even for
+	 * parameters whose value is "".
+	 *
+	 * Text body: <xsl:variable name="x">value</xsl:variable>
+	 * Empty:     <xsl:param name="p"/>  or  <xsl:param name="p"></xsl:param>
+	 */
 	xmlChar *content = xmlNodeGetContent(child);
-	if (content && content[0])
-	    vid = pin_namepool_atom(rb->prb_workspace,
-				   (const char *) content, TRUE);
+	const char *cstr = (content && content[0]) ? (const char *) content : "";
+	vid = pin_namepool_atom(rb->prb_workspace, cstr, TRUE);
 	if (content)
 	    xmlFree(content);
     }
+    if (!pin_name_id_is_null(nid)) {
+	pin_rulebook_global_add(rb, nid, vid);
+	/* If the select= was an unresolvable expression, store it for runtime */
+	if (vsel && vsel[0] && pin_name_id_is_null(vid)) {
+	    pin_name_id_t eid = pin_namepool_atom(rb->prb_workspace,
+						  (const char *) vsel, TRUE);
+	    pin_rulebook_global_set_expr(rb, nid, eid);
+	}
+    }
     if (vsel)
 	xmlFree(vsel);
-    if (!pin_name_id_is_null(nid))
-	pin_rulebook_global_add(rb, nid, vid);
     xmlFree(vname);
     return 0;
 }
