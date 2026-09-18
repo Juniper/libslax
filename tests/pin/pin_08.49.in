@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.49.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:output test: omit-xml-declaration="no" must produce an XML declaration
+    at the start of the output document.
+  -->
+
+  <xsl:output method="xml" omit-xml-declaration="no" encoding="UTF-8"/>
+
+  <xsl:template match="entry">
+    <out><xsl:value-of select="@name"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>
