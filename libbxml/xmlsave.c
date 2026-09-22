@@ -952,6 +952,44 @@ htmlNodeDumpOutputInternal(xmlSaveCtxtPtr ctxt, xmlNodePtr cur) {
 #endif
 
 /**
+ * Recursively drop blank (whitespace-only) text-node children from
+ * @node, in place, but only where the whitespace is leftover
+ * indentation rather than a legitimate element value. A blank text
+ * node is dropped when it sits between two open tags, two close
+ * tags, or a close tag and an open tag (i.e. it has a preceding
+ * and/or following sibling); it is kept when it is the sole child
+ * of its parent, i.e. sitting directly between that parent's own
+ * open tag and close tag (e.g. "<a>   </a>"), since there it is the
+ * element's actual value rather than reformattable padding. Used to
+ * give #XML_SAVE_FORCE_INDENT a tree with no leftover insignificant
+ * whitespace to conflict with, so the normal formatter can re-indent
+ * it cleanly.
+ *
+ * @param node  the node whose descendants should be stripped
+ */
+static void
+xmlSaveStripBlankText(xmlNodePtr node) {
+    xmlNodePtr cur, next;
+
+    if (node == NULL)
+        return;
+
+    cur = node->children;
+    while (cur != NULL) {
+        next = cur->next;
+        if ((cur->type == XML_TEXT_NODE) && (xmlIsBlankNode(cur))) {
+            if ((cur->prev != NULL) || (cur->next != NULL)) {
+                xmlUnlinkNode(cur);
+                xmlFreeNode(cur);
+            }
+        } else if (cur->type == XML_ELEMENT_NODE) {
+            xmlSaveStripBlankText(cur);
+        }
+        cur = next;
+    }
+}
+
+/**
  * Dump an XML node, recursive behaviour, children are printed too.
  *
  * @param ctxt  the save context
@@ -964,9 +1002,19 @@ xmlNodeDumpOutputInternal(xmlSaveCtxtPtr ctxt, xmlNodePtr cur) {
     xmlAttrPtr attr;
     xmlChar *start, *end;
     xmlOutputBufferPtr buf;
+    xmlNodePtr stripped = NULL;
 
     if (cur == NULL) return;
     buf = ctxt->buf;
+
+    if ((ctxt->format == 1) && (cur->type == XML_ELEMENT_NODE) &&
+        (ctxt->options & XML_SAVE_FORCE_INDENT)) {
+        stripped = xmlDocCopyNode(cur, cur->doc, 1);
+        if (stripped != NULL) {
+            xmlSaveStripBlankText(stripped);
+            cur = stripped;
+        }
+    }
 
     root = cur;
     parent = cur->parent;
@@ -1174,7 +1222,7 @@ xmlNodeDumpOutputInternal(xmlSaveCtxtPtr ctxt, xmlNodePtr cur) {
 
         while (1) {
             if (cur == root)
-                return;
+                goto done;
             if ((ctxt->format == 1) &&
                 (cur->type != XML_XINCLUDE_START) &&
                 (cur->type != XML_XINCLUDE_END))
@@ -1212,6 +1260,10 @@ xmlNodeDumpOutputInternal(xmlSaveCtxtPtr ctxt, xmlNodePtr cur) {
             }
         }
     }
+
+done:
+    if (stripped != NULL)
+        xmlFreeNode(stripped);
 }
 
 /**
