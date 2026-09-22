@@ -1293,7 +1293,8 @@ slaxDebugCmdInfo (DC_ARGS)
 {
     xsltTransformContextPtr ctxt = statep->ds_ctxt;
 
-    if (argv[1] == NULL || slaxDebugIsAbbrev("breakpoints", argv[1])) {
+    if (argv[1] == NULL || argv[1][0] == '\0'
+		|| slaxDebugIsAbbrev("breakpoints", argv[1])) {
 	slaxDebugInfoBreakpoints(statep);
 
     } else if (slaxDebugIsAbbrev("insert", argv[1])) {
@@ -1750,10 +1751,12 @@ slaxDebugCmdWhere (DC_ARGS)
 
 	caller = stp->st_caller ?: stp->st_inst;
 
-	filename = strrchr((const char *) xmlDocGetURL(xmlNodeGetDoc(caller)), '/');
-	filename = filename ? filename + 1 : (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
+	const char *url = (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
+	filename = strrchr(url, '/');
+	filename = filename ? filename + 1
+	    : (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
 
-	if (stp->st_template && xsltTemplateGetMatch(stp->st_template))
+	if (caller)
 	    snprintf(from_info, sizeof(from_info),
 		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
 	else from_info[0] = '\0';
@@ -1997,6 +2000,11 @@ slaxDebugCmdQuit (DC_ARGS)
 /* ---------------------------------------------------------------------- */
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
+    { "backtrace",     2, slaxDebugCmdWhere,
+      "backtrace [full] Show the backtrace of template calls (alias: bt)",
+      NULL,
+    },
+
     { "break",	       1, slaxDebugCmdBreak,
       "break [loc]     Add a breakpoint at [file:]line or template",
       NULL,
@@ -2094,7 +2102,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "where",	       1, slaxDebugCmdWhere,
-      "where           Show the backtrace of template calls",
+      "where           Show the backtrace of template calls (alias: bt)",
       NULL,
     },
 
