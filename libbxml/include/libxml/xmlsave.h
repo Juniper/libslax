@@ -83,7 +83,20 @@ typedef enum {
      *
      * @since 2.14
      */
-    XML_SAVE_INDENT     = 1<<10
+    XML_SAVE_INDENT     = 1<<10,
+    /**
+     * Force re-indenting of a subtree even when it already contains
+     * text-node children, as long as those text nodes are blank
+     * (whitespace-only). Normally #XML_SAVE_FORMAT refuses to
+     * reformat any element that has a text-node child, since that
+     * child may carry significant mixed content; this flag treats
+     * whitespace-only text children as leftover, re-creatable
+     * indentation (e.g. carried over verbatim by an XSLT
+     * `xsl:copy-of`/`copy-node` from a differently-nested source
+     * document) rather than as significant content, and drops them
+     * from a private copy of the tree before formatting it cleanly.
+     */
+    XML_SAVE_FORCE_INDENT = 1<<11
 } xmlSaveOption;
 
 /** XML and HTML serializer */
