@@ -284,7 +284,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	fflush(stderr);
 
 	buf[0] = '\0';
-	if (fgets(buf, sizeof(buf), slaxIoTty) == NULL)
+	if (fgets(buf, sizeof(buf), slaxIoTty ?: stdin) == NULL)
 	    return NULL;
 
 	len = strlen(buf);
@@ -462,7 +462,7 @@ slaxDumpToFd (int fd, xmlDocPtr docp, int partial)
 {
     xmlSaveCtxtPtr handle;
 
-    handle = xmlSaveToFd(fd, "UTF-8", XML_SAVE_FORMAT);
+    handle = xmlSaveToFd(fd, "UTF-8", XML_SAVE_FORMAT | XML_SAVE_FORCE_INDENT);
 
     if (!partial)
 	xmlSaveDoc(handle, docp);
