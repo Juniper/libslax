@@ -293,6 +293,10 @@ pin_parse_destroy (pin_parse_t *parsep)
 	free(parsep->pp_ws_pending);
 	parsep->pp_ws_pending = NULL;
     }
+    if (parsep->pp_strip_stack) {
+	free(parsep->pp_strip_stack);
+	parsep->pp_strip_stack = NULL;
+    }
 }
 
 pin_name_id_t
@@ -2424,8 +2428,8 @@ pin_parse (pin_parse_t *parsep)
 		}
 		psu_log("text [%.*s] (%u)", (int) len, data, type);
 		{
-		    uint8_t smode = parsep->pp_strip_sp > 0
-				    ? parsep->pp_strip_stack[parsep->pp_strip_sp - 1]
+		    uint8_t smode = parsep->pp_strip_len > 0
+				    ? parsep->pp_strip_stack[parsep->pp_strip_len - 1]
 				    : PIN_STRIP_NONE;
 		    if (pin_is_ws_only(data, len)) {
 			if (smode == PIN_STRIP_DEEP)
@@ -2493,12 +2497,24 @@ pin_parse (pin_parse_t *parsep)
 	    name_id = pin_namepool_atom(pip->pin_tree->pt_workspace, localp, TRUE);
 
 	    /* Push the strip mode for non-EMPTY elements */
-	    if (type != PIN_TYPE_EMPTY && parsep->pp_strip_sp < PIN_DEPTH_MAX) {
+	    if (type != PIN_TYPE_EMPTY) {
 		pin_rulebook_t *srb = parsep->pp_rulebook;
 		uint8_t smode = srb
 		    ? pin_rulebook_strip_mode(srb, name_id) : PIN_STRIP_NONE;
-		parsep->pp_strip_stack[parsep->pp_strip_sp] = smode;
-		parsep->pp_strip_sp += 1;
+		if (parsep->pp_strip_len >= parsep->pp_strip_size) {
+		    uint32_t newsize = parsep->pp_strip_size
+			? parsep->pp_strip_size * 2 : 32;
+		    uint8_t *np = realloc(parsep->pp_strip_stack,
+					  newsize * sizeof(*np));
+		    if (np != NULL) {
+			parsep->pp_strip_stack = np;
+			parsep->pp_strip_size = newsize;
+		    }
+		}
+		if (parsep->pp_strip_len < parsep->pp_strip_size) {
+		    parsep->pp_strip_stack[parsep->pp_strip_len] = smode;
+		    parsep->pp_strip_len += 1;
+		}
 	    }
 
 	    rulep = NULL;		/* Reset for each element */
@@ -2791,8 +2807,8 @@ pin_parse (pin_parse_t *parsep)
 		    parsep->pp_ws_pending_len = 0;
 		}
 		parsep->pp_last_structural = PIN_TYPE_CLOSE;
-		if (parsep->pp_strip_sp > 0)
-		    parsep->pp_strip_sp -= 1;
+		if (parsep->pp_strip_len > 0)
+		    parsep->pp_strip_len -= 1;
 	    }
 	    if (!opt_quiet)
 		psu_log("close tag [%s] [%s]", data ?: "", rest ?: "");
