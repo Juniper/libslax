@@ -27,6 +27,17 @@
 #include <libslax/jsonwriter.h>
 #include <libslax/yamlwriter.h>
 
+#include <parrotdb/pacommon.h>
+#include <parrotdb/paconfig.h>
+#include <parrotdb/pammap.h>
+#include <libpin/pin_common.h>
+#include <libpin/pin_workspace.h>
+#include <libpin/pin_rules.h>
+#include <libpin/pin_tree.h>
+#include <libpin/pin_parse.h>
+#include <libpin/pin_filter.h>
+#include <libpin/pin_compile.h>
+
 #include <err.h>
 #include <time.h>
 #include <sys/time.h>
@@ -44,6 +55,7 @@ static char *mini_buffer;
 static int options = XSLT_PARSE_OPTIONS;
 static int opt_number = -1; 	/* Index into our long options array */
 
+static char *opt_datastore;	/* Pin datastore file (NULL = anonymous mmap) */
 static char *opt_encoding;	/* Desired document encoding */
 static char *opt_expression;	/* Expression to convert */
 static char *opt_log_file;	/* Log file name */
@@ -102,12 +114,13 @@ static struct opts {
     int o_want_parens;
 } opts;
 
-static const char slaxproc_help[] = 
+static const char slaxproc_help[] =
 "Usage: slaxproc [mode] [options] [script] [files]\n"
 "    Modes:\n"
 "\t--check OR -c: check syntax and content for a SLAX script\n"
 "\t--format OR -F: format (pretty print) a SLAX script\n"
 "\t--json-to-xml: Turn JSON data into XML\n"
+"\t--pin OR -P: run a script through the pin streaming engine\n"
 "\t--run OR -r: run a SLAX script (the default mode)\n"
 "\t--show-select: show XPath selection from the input document\n"
 "\t--show-variable: show contents of a global variable\n"
@@ -118,6 +131,7 @@ static const char slaxproc_help[] =
 "\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
 "\n"
 "    Options:\n"
+"\t--datastore <file> OR -D <file>: pin datastore file (default: anonymous)\n"
 "\t--debug OR -d: enable the SLAX/XSLT debugger\n"
 "\t--empty OR -E: give an empty document for input\n"
 "\t--encoding <name>: specifies the input document encoding\n"
@@ -162,6 +176,7 @@ static struct option long_opts[] = {
     { "xpath", required_argument, NULL, 'X' },
     { "format", no_argument, NULL, 'F' },
     { "json-to-xml", no_argument, &opts.o_do_json_to_xml, 1 },
+    { "pin", no_argument, NULL, 'P' },
     { "run", no_argument, NULL, 'r' },
     { "show-select", required_argument, &opts.o_do_show_select, 1 },
     { "show-variable", required_argument, &opts.o_do_show_variable, 1 },
@@ -171,6 +186,7 @@ static struct option long_opts[] = {
     { "xslt-to-slax", no_argument, NULL, 's' },
 
     { "check-namespaces", no_argument, &opts.o_check_namespaces, 1 },
+    { "datastore", required_argument, NULL, 'D' },
     { "debug", no_argument, NULL, 'd' },
     { "dump-tree", no_argument, &opts.o_dump_tree, 1 },
     { "empty", no_argument, NULL, 'E' },
@@ -718,6 +734,92 @@ write_json (FILE *outfile, xmlDocPtr docp, xmlNodePtr output_method)
 }
 
 static int
+do_pin (const char *name, const char *output, const char *input, char **argv)
+{
+    const char *scriptname;
+    FILE *scriptfile, *outfile;
+    char buf[BUFSIZ];
+
+    scriptname = get_filename(name, &argv, GET_FN_SCRIPT);
+    if (!opt_empty_input)
+        input = get_filename(input, &argv, GET_FN_DONT);
+    output = get_filename(output, &argv, GET_FN_DONT);
+
+    if (scriptname == NULL)
+        errx(1, "missing script filename");
+    if (input == NULL || slaxFilenameIsStd(input))
+        errx(1, "--pin requires an input XML file");
+
+    scriptfile = slaxFindIncludeFile(scriptname, buf, sizeof(buf));
+    if (scriptfile == NULL)
+	err(1, "file open failed for '%s'", scriptname);
+#if 1
+    xmlDocPtr docp = slaxLoadFile(scriptname, scriptfile, NULL, 0);
+#else
+    xmlDocPtr docp = xmlReadFile(scriptname, NULL, 0);
+#endif
+    if (docp == NULL)
+        errx(1, "xmlReadFile failed for '%s'", scriptname);
+
+    /*
+     * Use a file-backed datastore when -D/--datastore is given, otherwise
+     * fall back to an anonymous mmap segment (pa_mmap_open with NULL filename).
+     */
+    const char *db = opt_datastore;
+    if (db != NULL)
+        unlink(db);
+
+    pa_mmap_t *pmp = pa_mmap_open(db, "slaxproc", 0, 0644);
+    if (pmp == NULL)
+        errx(1, "%s: pa_mmap_open failed", db ?: "(anonymous)");
+
+    pin_workspace_t *workp = pin_workspace_open(pmp, "slaxproc");
+    if (workp == NULL)
+        errx(1, "pin_workspace_open failed");
+
+    xo_filter_t *xfp = pin_filter_create(NULL, workp);
+    pin_rulebook_t *rb = pin_rulebook_setup(workp, NULL, "slaxproc");
+
+    int count = pin_compile(docp, xfp, rb, PIA_DISCARD, 0);
+    xmlFreeDoc(docp);
+
+    if (count < 0)
+        errx(1, "pin_compile failed for '%s'", scriptname);
+
+    pin_parse_t *parsep = pin_parse_open(pmp, workp, "slaxproc", input, 0);
+    if (parsep == NULL)
+        errx(1, "%s: pin_parse_open failed", input);
+
+    pin_parse_passthru(parsep, 1);
+    pin_parse_set_filter(parsep, xfp);
+    pin_parse_set_rulebook(parsep, rb);
+
+    pin_parse(parsep);
+
+    if (output == NULL || slaxFilenameIsStd(output))
+        outfile = stdout;
+    else {
+        outfile = fopen(output, "w");
+        if (outfile == NULL)
+            err(1, "could not open file: '%s'", output);
+    }
+
+    pin_parse_emit_xml(parsep, outfile);
+
+    if (outfile != stdout)
+        fclose(outfile);
+
+    pin_workspace_close(workp);
+    pa_mmap_close(pmp);
+    pin_parse_destroy(parsep);
+
+    if (db != NULL)
+        unlink(db);
+
+    return 0;
+}
+
+static int
 do_run (const char *name, const char *output, const char *input, char **argv)
 {
     xmlDocPtr scriptdoc;
@@ -1069,7 +1171,7 @@ main (int argc UNUSED, char **argv)
 	    break;
 
 	rc = getopt_long(argc, argv,
-			 "a:cdEeFhHI:gi:l:L:m:n:o:prsSt:vVw:xXy",
+			 "a:cdD:EeFhHI:gi:l:L:m:n:o:pPrsSt:vVw:xXy",
 			 long_opts, &opt_number);
 	if (rc < 0)
 	    break;
@@ -1110,6 +1212,12 @@ main (int argc UNUSED, char **argv)
 	    func = do_format;
 	    break;
 
+	case 'P':
+	    if (func)
+		errx(1, "open one action allowed");
+	    func = do_pin;
+	    break;
+
 	case 'r':
 	    if (func)
 		errx(1, "open one action allowed");
@@ -1132,6 +1240,10 @@ main (int argc UNUSED, char **argv)
 
 	case 'd':
 	    opt_debugger = SDBF_ENABLE;
+	    break;
+
+	case 'D':
+	    opt_datastore = check_arg("datastore file");
 	    break;
 
 	case 'E':
