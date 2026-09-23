@@ -16,6 +16,9 @@ AM_CFLAGS = \
     -I${top_builddir} \
     -I${top_srcdir} \
     -I${top_srcdir}/libslax \
+    -I${top_builddir}/parrotdb \
+    -I${top_builddir}/libpin \
+    -I${top_builddir}/libxo \
     ${LIBXML_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
     ${WARNINGS}
@@ -51,7 +54,11 @@ slaxproc_SOURCES = slaxproc.c
 
 LDADD = \
     ${top_builddir}/libslax/libslax.la \
-    ${top_builddir}/libpsu/libpsu.la
+    ${top_builddir}/libpsu/libpsu.la \
+    ${top_builddir}/libpin/libpin.la \
+    ${top_builddir}/parrotdb/libparrotdb.la \
+    ${libdir}/libxo/libxo_filter.la \
+    ${libdir}/libxo.la
 
 man_MANS = slaxproc.1x slaxdebugger.1x
 
