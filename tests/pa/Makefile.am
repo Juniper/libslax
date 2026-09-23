@@ -92,7 +92,7 @@ RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
 test tests: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	@sh ${SH_OPTS} ${RUN_TESTS} run ${TEST_FILES}
+	@sh ${SH_OPTS} ${RUN_TESTS} $(if $(CHECKER),-C "$(CHECKER)") run ${TEST_FILES}
 
 one:
 
