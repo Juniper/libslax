@@ -27,6 +27,32 @@ run () {
     fi
 }
 
+find_binary () {
+    local bin=$1
+    local alt
+
+    case "$bin" in
+         */*)
+            alt=`echo "$bin" | sed -E -e 's:/([^/]*)$:/.libs/\1:'`
+            ;;
+    
+        *)
+            alt=".libs/$bin"
+            ;;
+    esac
+
+    if [ -x "$alt" ]; then
+        bin="$alt"
+    fi
+    echo "$bin"
+}
+
+run_binary () {
+    local prog=$1 ; shift
+    prog=`find_binary $prog`
+    run "${CHECKER:+$CHECKER }$prog $@"
+}
+
 info () {
     ${ECHO} "$@"
 }
@@ -43,7 +69,7 @@ run_tests () {
     oname=$name.$ds
     out=out/$oname
     ${ECHO} -n "... $test ... $name ... $ds ..."
-    run "./$test $data input $input > $out.out 2> $out.err"
+    run_binary "./$test" "$data input $input > $out.out 2> $out.err"
     ${ECHO} "    done"
 
     run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
@@ -54,7 +80,7 @@ run_one_test () {
     oname=$base
     out=out/$oname
     ${ECHO} -n "... $test ... "
-    run "./$test $data </dev/null > $out.out 2> $out.err"
+    run_binary "./$test" "$data </dev/null > $out.out 2> $out.err"
     ${ECHO} "    done"
 
     run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
@@ -159,7 +185,7 @@ do_run_slax () {
 	out=out/${oname}
 
 	${ECHO} -n "... ${base} ..."
-	run "./pin_08.test input ${file} xml ${xmlfile} quiet dump clean \
+	run_binary "./pin_08.test" "input ${file} xml ${xmlfile} quiet dump clean \
 	    > ${out}.out 2> ${out}.err"
 	${ECHO} "    done"
 
@@ -180,6 +206,96 @@ do_accept_slax () {
     done
 }
 
+do_run_core () {
+    mkdir -p out
+
+    for xmlfile in ${SRCDIR}/*.xml; do
+        [ -f "$xmlfile" ] || continue
+        basedata=`basename "$xmlfile" .xml`
+        for slaxfile in ${SRCDIR}/${basedata}-*.slax; do
+            [ -f "$slaxfile" ] || continue
+            base=`basename "$slaxfile" .slax`
+            info "... $base ..."
+            run_binary "${SLAXPROC}" "${SLAXOPTS} --slax-to-xslt $slaxfile out/$base.xsl"
+            run "diff -Nbu ${SRCDIR}/saved/$base.xsl out/$base.xsl | ${S2O}"
+            run_binary "${SLAXPROC}" "${SLAXOPTS} --xslt-to-slax --write-version 1.2 out/$base.xsl out/$base.slax2"
+            run "diff -Nbu ${SRCDIR}/saved/$base.slax2 out/$base.slax2 | ${S2O}"
+            run_binary "${SLAXPROC}" "${SLAXOPTS} --run --indent --exslt $slaxfile $xmlfile > out/$base.out 2> out/$base.err"
+            run "sed -i.bak 's/\(Unimplemented block at preproc.c\):.*/\1/' out/$base.err"
+            run "diff -Nu ${SRCDIR}/saved/$base.out out/$base.out | ${S2O}"
+            run "diff -Nu ${SRCDIR}/saved/$base.err out/$base.err | ${S2O}"
+        done
+    done
+}
+
+do_accept_core () {
+    mkdir -p ${SRCDIR}/saved
+
+    for xmlfile in ${SRCDIR}/*.xml; do
+        [ -f "$xmlfile" ] || continue
+        basedata=`basename "$xmlfile" .xml`
+        for slaxfile in ${SRCDIR}/${basedata}-*.slax; do
+            [ -f "$slaxfile" ] || continue
+            base=`basename "$slaxfile" .slax`
+            accept_file out/$base.xsl ${SRCDIR}/saved/$base.xsl
+            accept_file out/$base.slax2 ${SRCDIR}/saved/$base.slax2
+            accept_file out/$base.out ${SRCDIR}/saved/$base.out
+            accept_file out/$base.err ${SRCDIR}/saved/$base.err
+        done
+    done
+}
+
+do_run_pin () {
+    mkdir -p out
+
+    for xmlfile in ${SRCDIR}/*.xml; do
+        [ -f "$xmlfile" ] || continue
+        basedata=`basename "$xmlfile" .xml`
+        for slaxfile in ${SRCDIR}/${basedata}-*.slax; do
+            [ -f "$slaxfile" ] || continue
+            base=`basename "$slaxfile" .slax`
+            info "... $base (pin) ..."
+            run_binary "${SLAXPROC}" "${SLAXOPTS} --pin $slaxfile $xmlfile > out/$base.pin.out 2> out/$base.pin.err"
+            run "diff -Nu ${SRCDIR}/saved/$base.pin.out out/$base.pin.out | ${S2O}"
+            run "diff -Nu ${SRCDIR}/saved/$base.pin.err out/$base.pin.err | ${S2O}"
+        done
+    done
+}
+
+do_accept_pin () {
+    mkdir -p ${SRCDIR}/saved
+
+    for xmlfile in ${SRCDIR}/*.xml; do
+        [ -f "$xmlfile" ] || continue
+        basedata=`basename "$xmlfile" .xml`
+        for slaxfile in ${SRCDIR}/${basedata}-*.slax; do
+            [ -f "$slaxfile" ] || continue
+            base=`basename "$slaxfile" .slax`
+            accept_file out/$base.pin.out ${SRCDIR}/saved/$base.pin.out
+            accept_file out/$base.pin.err ${SRCDIR}/saved/$base.pin.err
+        done
+    done
+}
+
+do_run_one_core () {
+    slaxfile=$1
+    [ -f "$slaxfile" ] || slaxfile=${SRCDIR}/$1
+    [ -f "$slaxfile" ] || { echo "not found: $1" >&2; return 1; }
+    base=`basename "$slaxfile" .slax`
+    basedata=`echo "$base" | sed 's/-[0-9]*$//'`
+    xmlfile=${SRCDIR}/${basedata}.xml
+    mkdir -p out
+    info "... $base ..."
+    run_binary "${SLAXPROC}" "${SLAXOPTS} --slax-to-xslt $slaxfile out/$base.xsl"
+    run "diff -Nbu ${SRCDIR}/saved/$base.xsl out/$base.xsl | ${S2O}"
+    run_binary "${SLAXPROC}" "${SLAXOPTS} --xslt-to-slax --write-version 1.2 out/$base.xsl out/$base.slax2"
+    run "diff -Nbu ${SRCDIR}/saved/$base.slax2 out/$base.slax2 | ${S2O}"
+    run_binary "${SLAXPROC}" "${SLAXOPTS} --run --indent --exslt $slaxfile $xmlfile > out/$base.out 2> out/$base.err"
+    run "sed -i.bak 's/\(Unimplemented block at preproc.c\):.*/\1/' out/$base.err"
+    run "diff -Nu ${SRCDIR}/saved/$base.out out/$base.out | ${S2O}"
+    run "diff -Nu ${SRCDIR}/saved/$base.err out/$base.err | ${S2O}"
+}
+
 do_run_one_slax () {
     local slaxproc=${SLAXPROC:-../../slaxproc/slaxproc}
     for file in "$@"; do
@@ -195,7 +311,7 @@ do_run_one_slax () {
 	rfile=${file}
 
 	if [ "$EXT" = "slax" ]; then
-	    run "$slaxproc -x $file > $out.xsl"
+	    run_binary "$SLAXPROC}" "${SLAXOPTS} -x $file > $out.xsl"
 	    rfile=$out.xsl
 	fi
 
@@ -221,9 +337,13 @@ do
     case "$1" in
     -b) BASEDIR=$2; shift;;
     -d) SRCDIR=$2; shift;;
+    -D) DOC=doc;;
     -o) OUTDIR=$2; shift;;
+    -C) CHECKER=$2; shift;;
     -s) SLAXPROC=$2; shift;;
+    -S) SLAXOPTS=$2; shift;;
     -v) S2O=cat;;
+    -V) TEST_VERBOSE=1;;
     -*) echo "unknown option" >&2; exit;;
     *) break;;
     esac
@@ -251,6 +371,26 @@ case $verb in
     accept-all)
         TESTS=`echo *test`
         do_accept
+    ;;
+
+    run-core)
+        do_run_core
+    ;;
+
+    accept-core)
+        do_accept_core
+    ;;
+
+    run-pin)
+        do_run_pin
+    ;;
+
+    accept-pin)
+        do_accept_pin
+    ;;
+
+    run-one-core)
+        do_run_one_core "$1"
     ;;
 
     run-one-slax)
