@@ -28,6 +28,7 @@ F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
 F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
+RUN_TESTS = sh ${srcdir}/../run-tests.sh -d ${srcdir} -s ${SLAXPROC}
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
@@ -87,15 +88,7 @@ SH_OPTS= :
 
 test tests: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@(${SH_OPTS} ; for data in ${TEST_XML} ; do \
-	    basedata=`${BASENAME} $$data .xml` ; \
-	    cases=`cd ${srcdir} ; echo $${basedata}-*.slax`; \
-	    (for test in $$cases ; do \
-	      echo "... $$test ..."; \
-	      ${TEST_ONE}; \
-              true; \
-	    done); \
-	done)
+	@${RUN_TESTS} ${RUN_OPTS} run-core
 
 two: ${SLAXPROC}
 	@${MKDIR} -p out
@@ -110,19 +103,25 @@ two: ${SLAXPROC}
 	    done); \
 	done)
 
+
+## make -C tests/core tests — run-core, no regression 
+## make -C tests/core one TEST_CASE=test-list-01.slax — run-one-core 
+## make -C tests/core CHECKER='echo'
+## sh tests/run-tests.sh -d tests/core -s slaxproc/slaxproc \
+##    run-one-core test-list-01.slax
+## make -C tests/pa tests
+
 one:
-	-@(test=${TEST_CASE}; data=${TEST_DATA}; ${TEST_ONE} ; true)
+	@${RUN_TESTS} ${RUN_OPTS} run-one-core $(TEST_CASE)
 
 accept:
-	-@(for data in ${TEST_XML} ; do \
-	    basedata=`${BASENAME} $$data .xml` ; \
-	    cases=`cd ${srcdir} ; echo $${basedata}-*.slax`; \
-	    (for test in $$cases ; do \
-	      echo "... $$test ..."; \
-	      base=`${BASENAME} $$test .slax` ; \
-	      ${CP} out/$$base.xsl ${srcdir}/saved/$$base.xsl ; \
-	      ${CP} out/$$base.slax2 ${srcdir}/saved/$$base.slax2 ; \
-	      ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \
-	      ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \
-	    done); \
-	done)
+	@${MKDIR} -p ${srcdir}/saved
+	@${RUN_TESTS} accept-core
+
+test-pin: ${SLAXPROC}
+	@${MKDIR} -p out
+	@${RUN_TESTS} ${RUN_OPTS} run-pin
+
+accept-pin:
+	@${MKDIR} -p ${srcdir}/saved
+	@${RUN_TESTS} accept-pin
