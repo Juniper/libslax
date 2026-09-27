@@ -2411,14 +2411,6 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
 
         ctxt->inst = cur;
 
-#ifdef WITH_DEBUGGER
-        switch (xslDebugStatus) {
-            case XSLT_DEBUG_RUN_RESTART:
-            case XSLT_DEBUG_QUIT:
-                break;
-
-        }
-#endif
         /*
          * Test; we must have a valid insertion point.
          */
