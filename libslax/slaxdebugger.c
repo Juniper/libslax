@@ -1508,8 +1508,13 @@ slaxDebugCmdOver (DC_ARGS)
 
     slaxDebugClearListInfo(statep);
 
-    xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
-    statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
+    if (slaxNodeIsXsl(statep->ds_inst, ELT_CALL_TEMPLATE)) {
+	xsltSetDebuggerStatus(XSLT_DEBUG_OVER);
+	statep->ds_flags |= DSF_OVER | DSF_DISPLAY;
+    } else {
+	xsltSetDebuggerStatus(XSLT_DEBUG_STEP);
+	statep->ds_flags |= DSF_DISPLAY;
+    }
 }
 
 /**
