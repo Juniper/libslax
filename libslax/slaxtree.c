@@ -1119,6 +1119,7 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
 	int o_position;
 	int o_contextsize;
 	int o_nscount;
+	unsigned long o_opcount;
     } old;
 
     xmlNsPtr *nsList;
@@ -1150,6 +1151,7 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
     old.o_contextsize = xmlXPathContextGetContextSize(xpctxt);
     old.o_nscount = xmlXPathContextGetNsNr(xpctxt);
     old.o_nslist = xmlXPathContextGetNamespaces(xpctxt);
+    old.o_opcount = xmlXPathContextGetOpCount(xpctxt);
 
     /* Fill in context */
     xmlXPathContextSetNode(xpctxt, node);
@@ -1166,6 +1168,13 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
     xmlXPathContextSetProximityPosition(xpctxt, old.o_position);
     xmlXPathContextSetNsNr(xpctxt, old.o_nscount);
     xmlXPathContextSetNamespaces(xpctxt, old.o_nslist);
+    /*
+     * opCount is a running counter against the script's own opLimit;
+     * without restoring it, debugger evals (print, breakpoint
+     * conditions) permanently consume from the script's budget and
+     * can trip a spurious "Operation limit exceeded" abort.
+     */
+    xmlXPathContextSetOpCount(xpctxt, old.o_opcount);
 
     xmlFreeAndEasy(sexpr);
     xmlXPathFreeCompExpr(comp);
