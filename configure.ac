@@ -226,6 +226,45 @@ fi
 
 AM_CONDITIONAL([HAVE_HUMANIZE_NUMBER], [test "$HAVE_HUMANIZE_NUMBER" = "yes"])
 
+dnl Looking for how to do thread-local variables
+AC_ARG_WITH(threads,
+        [  --with-threads=[STYLE]           Specify style of thread-local support (none)],
+        [THREAD_LOCAL=$withval],
+	[THREAD_LOCAL=unknown],
+)
+
+AC_MSG_CHECKING([thread-locals are ${THREAD_LOCAL}])
+
+if test "$THREAD_LOCAL" = "unknown"; then
+     AC_LINK_IFELSE([AC_LANG_SOURCE([[]
+           [__thread int foo; int main() { foo++; return foo; }]])],
+           [THREAD_LOCAL=before],
+           [THREAD_LOCAL=unknown])
+
+    AC_MSG_RESULT([$THREAD_LOCAL])
+fi
+
+if test "$THREAD_LOCAL" = "unknown"; then
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[]
+           [int __thread foo; int main() { foo++; return foo; }]])],
+           [THREAD_LOCAL=after],
+           [THREAD_LOCAL=unknown])
+    AC_MSG_RESULT([$THREAD_LOCAL])
+fi
+
+if test "$THREAD_LOCAL" = "unknown"; then
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[]
+           [__declspec(int) foo; int main() { foo++; return foo; }]])],
+           [THREAD_LOCAL=declspec],
+           [THREAD_LOCAL=unknown])
+    AC_MSG_RESULT([$THREAD_LOCAL])
+fi
+
+if test "$THREAD_LOCAL" != "unknown"; then
+    AC_DEFINE_UNQUOTED([HAVE_THREAD_LOCAL],
+              THREAD_LOCAL_${THREAD_LOCAL}, [thread-local setting])
+fi
+
 #
 # Allow the reuse of the libxslt tests, if they have the source code
 # These are striclty optional and are really only needed for regression
