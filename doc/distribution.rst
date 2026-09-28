@@ -656,8 +656,9 @@ debugger resembles `gdb` command syntax and operation.
 
   (sdb) help
   List of commands:
-    break [loc]     Add a breakpoint at [file:]line or template
+    break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
     callflow [val]  Enable call flow tracing
+    condition <num> [expr]  Set, change, or clear a breakpoint's condition
     continue [loc]  Continue running the script
     delete [num]    Delete all (or one) breakpoints
     finish          Finish the current template
@@ -706,6 +707,28 @@ number, separated by a colon, or the name of a template.
       #1 template one at ../tests/core/test-empty-21.slax:14
       #2 template two at ../tests/core/test-empty-21.slax:19
       #3 template three at ../tests/core/test-empty-21.slax:24
+  (sdb)
+
+A breakpoint can be made conditional by following the location with
+`if` (or `when`) and a SLAX expression.  The breakpoint is only hit
+when the expression evaluates true; otherwise execution continues
+without stopping.  The `condition` command sets, changes, or clears
+the condition on a breakpoint that already exists, without needing to
+delete and recreate it.  Giving `condition` a breakpoint number with
+no expression clears that breakpoint's condition, making it
+unconditional again.
+
+::
+
+  (sdb) b loopbody if $x > 3
+  Breakpoint 1 at file test.slax, line 13
+  (sdb) info br
+  List of breakpoints:
+      #1 template loopbody at test.slax:13 condition: '$x > 3'
+  (sdb) condition 1 $x > 4
+  Breakpoint 1 now conditional on '$x > 4'
+  (sdb) condition 1
+  Breakpoint 1 is now unconditional
   (sdb)
 
 Information on the profiler is in the next section (:ref:`profiler`).
