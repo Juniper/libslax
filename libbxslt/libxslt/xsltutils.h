@@ -315,7 +315,7 @@ typedef enum {
     XSLT_DEBUG_QUIT
 } xsltDebugStatusCodes;
 
-XSLTPUBVAR THREAD_LOCAL(int) xslDebugStatus;
+XSLTPUBVAR PSU_THREAD_LOCAL(int) xslDebugStatus;
 
 typedef void (*xsltHandleDebuggerCallback) (xmlNodePtr cur, xmlNodePtr node,
 			xsltTemplatePtr templ, xsltTransformContextPtr ctxt);
