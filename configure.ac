@@ -261,8 +261,8 @@ if test "$THREAD_LOCAL" = "unknown"; then
 fi
 
 if test "$THREAD_LOCAL" != "unknown"; then
-    AC_DEFINE_UNQUOTED([HAVE_THREAD_LOCAL],
-              THREAD_LOCAL_${THREAD_LOCAL}, [thread-local setting])
+    AC_DEFINE_UNQUOTED([PSU_HAVE_THREAD_LOCAL],
+              PSU_THREAD_LOCAL_${THREAD_LOCAL}, [thread-local setting])
 fi
 
 #
