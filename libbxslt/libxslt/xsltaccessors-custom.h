@@ -48,7 +48,7 @@ extern "C" {
  * e.g. transform.c, documents.c, attributes.c, variables.c, slaxext.c.
  * ---------------------------------------------------------------------- */
 
-extern THREAD_LOCAL(int) xslDebugStatus;
+extern PSU_THREAD_LOCAL(int) xslDebugStatus;
 
 static inline int
 xsltTransformContextGetDebugStatus (const xsltTransformContextPtr ctxt UNUSED)
