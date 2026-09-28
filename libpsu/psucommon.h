@@ -62,18 +62,18 @@ typedef unsigned char psu_byte_t; /* Simple byte (for addressing memory) */
 
 /* Thread-local storage macros */
 
-#define THREAD_LOCAL_before 1
-#define THREAD_LOCAL_after 2
-#define THREAD_LOCAL_declspec 3
+#define PSU_THREAD_LOCAL_before 1
+#define PSU_THREAD_LOCAL_after 2
+#define PSU_THREAD_LOCAL_declspec 3
 
-#ifndef HAVE_THREAD_LOCAL
-#define THREAD_LOCAL(_x) _x
-#elif HAVE_THREAD_LOCAL == THREAD_LOCAL_before
-#define THREAD_LOCAL(_x) __thread _x
-#elif HAVE_THREAD_LOCAL == THREAD_LOCAL_after
-#define THREAD_LOCAL(_x) _x __thread
-#elif HAVE_THREAD_LOCAL == THREAD_LOCAL_declspec
-#define THREAD_LOCAL(_x) __declspec(_x)
+#ifndef PSU_HAVE_THREAD_LOCAL
+#define PSU_THREAD_LOCAL(_x) _x
+#elif PSU_HAVE_THREAD_LOCAL == PSU_THREAD_LOCAL_before
+#define PSU_THREAD_LOCAL(_x) __thread _x
+#elif PSU_HAVE_THREAD_LOCAL == PSU_THREAD_LOCAL_after
+#define PSU_THREAD_LOCAL(_x) _x __thread
+#elif PSU_HAVE_THREAD_LOCAL == PSU_THREAD_LOCAL_declspec
+#define PSU_THREAD_LOCAL(_x) __declspec(_x)
 #endif
 
 /* Number of elements in a static array */
