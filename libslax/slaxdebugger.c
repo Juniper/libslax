@@ -1127,6 +1127,76 @@ slaxDebugCmdDelete (DC_ARGS)
 }
 
 /*
+ * 'condition' command -- add, change, or clear the condition on an
+ * existing breakpoint, without deleting and recreating it.
+ */
+static void
+slaxDebugCmdCondition (DC_ARGS)
+{
+    slaxDebugBreakpoint_t *dbp;
+    uint num;
+    char *condition = NULL;
+    int found = FALSE;
+
+    if (argv[1] == NULL) {
+	slaxOutput("Missing breakpoint number");
+	return;
+    }
+
+    num = atoi(argv[1]);
+    if (num <= 0) {
+	slaxOutput("Invalid breakpoint number");
+	return;
+    }
+
+    TAILQ_FOREACH(dbp, &slaxDebugBreakpoints, dbp_link) {
+	if (dbp->dbp_num == num) {
+	    found = TRUE;
+	    break;
+	}
+    }
+
+    if (!found) {
+	slaxOutput("Breakpoint '%d' not found", num);
+	return;
+    }
+
+    /* If a new condition was given, make sure it parses */
+    if (argv[2]) {
+	condition = ALLOCADUP(commandline);
+	condition = slaxDebugFindCondition(condition);
+	if (*condition == '\0') {
+	    slaxOutput("Missing expression");
+	    return;
+	}
+
+	condition = slaxSlaxToXpath("sdb", 1, condition, NULL);
+	if (condition == NULL) {
+	    slaxOutput("Invalid expression");
+	    return;
+	}
+
+	xmlXPathCompExprPtr comp;
+	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
+	if (comp == NULL) {
+	    slaxOutput("Invalid expression");
+	    xmlFreeAndEasy(condition);
+	    return;
+	}
+
+	xmlXPathFreeCompExpr(comp);
+    }
+
+    xmlFreeAndEasy(dbp->dbp_condition);
+    dbp->dbp_condition = condition;
+
+    if (condition)
+	slaxOutput("Breakpoint %d now conditional on '%s'", num, condition);
+    else
+	slaxOutput("Breakpoint %d is now unconditional", num);
+}
+
+/*
  * 'help' command
  */
 static void
@@ -2011,7 +2081,8 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "break",	       1, slaxDebugCmdBreak,
-      "break [loc]     Add a breakpoint at [file:]line or template",
+      "break [loc] [if expr]  Add a breakpoint, optionally conditional "
+      "(also: when expr)",
       NULL,
     },
 
@@ -2020,6 +2091,12 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "callflow",      2, slaxDebugCmdCallFlow,
       "callflow [val]  Enable call flow tracing",
       slaxDebugHelpCallFlow,
+    },
+
+    { "condition",     4, slaxDebugCmdCondition,
+      "condition <num> [expr]  Set, change, or clear a breakpoint's "
+      "condition",
+      NULL,
     },
 
     { "continue",      1, slaxDebugCmdContinue,
