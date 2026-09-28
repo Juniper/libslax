@@ -2601,7 +2601,7 @@ xsltXPathCompile(xsltStylesheetPtr style, const xmlChar *str) {
  *									*
  ************************************************************************/
 
-THREAD_LOCAL(int) xslDebugStatus;
+PSU_THREAD_LOCAL(int) xslDebugStatus;
 
 /**
  * xsltGetDebuggerStatus:
