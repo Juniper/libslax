@@ -173,17 +173,6 @@ xsltStopEngine (xsltTransformContextPtr ctxt)
 }
 
 /*
- * XSLT_IS_RES_TREE_FRAG is an internal libxslt macro (not part of the
- * public XSLTPUBFUN API); wrap it so callers outside libxslt don't
- * reach into internals directly.
- */
-static inline int
-slaxIsResultTreeFragment (xmlNodePtr node)
-{
-    return XSLT_IS_RES_TREE_FRAG(node);
-}
-
-/*
  * Sadly, xmlAddChild can coalesce the item we're adding with other
  * nodes and free our node.  It returns the new node, so we need to
  * pay attention.  If it return NULL, something's gone wrong and we
