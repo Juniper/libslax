@@ -168,15 +168,15 @@ slaxCommentAdd (slax_data_t *sdp, slax_string_t *value)
 
 	} else {
 	    xmlNodePtr attrp;
-	    nodePush(sdp->sd_ctxt, nodep);
+	    xmlParserPushNode(sdp->sd_ctxt, nodep);
 
 	    attrp = slaxElementAdd(sdp, ELT_VALUE_OF, NULL, NULL);
 	    if (attrp) {
-		nodePush(sdp->sd_ctxt, attrp);
+		xmlParserPushNode(sdp->sd_ctxt, attrp);
 		slaxAttribAdd(sdp, SAS_SELECT, ATT_SELECT, value);
-		nodePop(sdp->sd_ctxt);
+		xmlParserPopNode(sdp->sd_ctxt);
 	    }
-	    nodePop(sdp->sd_ctxt);
+	    xmlParserPopNode(sdp->sd_ctxt);
 	}
     }
 
@@ -543,7 +543,7 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
     if (!var_on_stack) {
 	slaxHandleEltArgPrep(sdp);
     }
-    varp = nodePop(sdp->sd_ctxt);
+    varp = xmlParserPopNode(sdp->sd_ctxt);
     if (varp == NULL)
 	return NULL;
 
@@ -560,7 +560,7 @@ slaxHandleEltArg (slax_data_t *sdp, int var_on_stack)
 	    return NULL;
 
     } else {
-	nodep = nodePop(sdp->sd_ctxt);
+	nodep = xmlParserPopNode(sdp->sd_ctxt);
 	if (nodep == NULL)
 	    return NULL;
 
@@ -641,7 +641,7 @@ slaxBuildDoc (slax_data_t *sdp, xmlParserCtxtPtr ctxt)
 	xmlSetNs(nodep, sdp->sd_xsl_ns); /* Noop if NULL */
 
 	xmlDocSetRootElement(docp, nodep);
-	nodePush(ctxt, nodep);
+	xmlParserPushNode(ctxt, nodep);
 
 	xmlAttrPtr attr = xmlNewDocProp(docp, (const xmlChar *) ATT_VERSION,
 			  (const xmlChar *) XSL_VERSION);
@@ -877,7 +877,7 @@ slaxSlaxToXpath (const char *filename UNUSED, int lineno,
 			    (const xmlChar *) XSL_PREFIX);
     xmlSetNs(fakep, sd.sd_xsl_ns); /* Noop if NULL */
 
-    nodePush(ctxt, fakep);
+    xmlParserPushNode(ctxt, fakep);
 
     sd.sd_len = strlen(slax_expr);
     buf = alloca(sd.sd_len + 1);
@@ -888,7 +888,7 @@ slaxSlaxToXpath (const char *filename UNUSED, int lineno,
 
     rc = slaxParse(&sd);
 
-    fakep = nodePop(ctxt);
+    fakep = xmlParserPopNode(ctxt);
     if (fakep)
 	xmlFreeNode(fakep);
 
