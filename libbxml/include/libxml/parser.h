@@ -1434,6 +1434,18 @@ XMLPUBFUN int
 		xmlKeepBlanksDefault	(int val);
 XMLPUBFUN void
 		xmlStopParser		(xmlParserCtxt *ctxt);
+
+/*
+ * Public wrappers around the internal (deprecated, unprototyped)
+ * nodePush()/nodePop(), for callers outside libxml2 that need to
+ * manipulate a parser context's node stack.
+ */
+XMLPUBFUN int
+		xmlParserPushNode	(xmlParserCtxt *ctxt,
+					 xmlNode *value);
+XMLPUBFUN xmlNode *
+		xmlParserPopNode	(xmlParserCtxt *ctxt);
+
 XML_DEPRECATED
 XMLPUBFUN int
 		xmlPedanticParserDefault(int val);
