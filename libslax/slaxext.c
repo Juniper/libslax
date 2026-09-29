@@ -1475,7 +1475,7 @@ slaxExtBreakLines (xmlXPathParserContext *ctxt, int nargs)
 		 * If we're handed a fragment, assume they wanted the
 		 * contents.
 		 */
-		if (slaxIsResultTreeFragment(nop))
+		if (xsltIsResultTreeFragment(nop))
 		    nop = xmlNodeGetChildren(nop);
 
 		/*
@@ -1571,7 +1571,7 @@ slaxExtJoin (xmlXPathParserContext *ctxt, int nargs)
 		 * contents.
 		 */
 		int follow = FALSE;
-		if (slaxIsResultTreeFragment(nop)) {
+		if (xsltIsResultTreeFragment(nop)) {
 		    nop = xmlNodeGetChildren(nop);
 		    follow = TRUE;
 		}
@@ -1794,7 +1794,7 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 
 	    } else if (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)) == 1) {
 		xmlNodePtr nop = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0);
-		if (slaxIsResultTreeFragment(nop)) {
+		if (xsltIsResultTreeFragment(nop)) {
 		    if (xmlNodeGetChildren(nop) != NULL)
 			empty = FALSE;
 		} else 
