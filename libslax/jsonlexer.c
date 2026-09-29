@@ -137,7 +137,7 @@ slaxJsonBuildDoc (slax_data_t *sdp UNUSED, const char *root_name,
     nodep = xmlNewDocNode(docp, NULL, (const xmlChar *) root_name, NULL);
     if (nodep) {
 	xmlDocSetRootElement(docp, nodep);
-	nodePush(ctxt, nodep);
+	xmlParserPushNode(ctxt, nodep);
     }
 
     if (xmlCtxtGetDict(ctxt)) {
