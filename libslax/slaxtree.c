@@ -366,7 +366,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
     }
 
     slaxLexerAddChild(sdp, NULL, nodep);
-    nodePush(sdp->sd_ctxt, nodep);
+    xmlParserPushNode(sdp->sd_ctxt, nodep);
 }
 
 /*
@@ -375,7 +375,7 @@ slaxElementOpen (slax_data_t *sdp, const char *tag)
 void
 slaxElementClose (slax_data_t *sdp)
 {
-    nodePop(sdp->sd_ctxt);
+    xmlParserPopNode(sdp->sd_ctxt);
 }
 
 /**
@@ -848,7 +848,7 @@ slaxElementPush (slax_data_t *sdp, const char *tag,
 	return NULL;
     }
 
-    nodePush(sdp->sd_ctxt, nodep);
+    xmlParserPushNode(sdp->sd_ctxt, nodep);
     return nodep;
 }
 
@@ -867,7 +867,7 @@ slaxElementPushVar (slax_data_t *sdp, const char *attrib, const char *value)
 	return NULL;
     }
 
-    nodePush(sdp->sd_ctxt, nodep);
+    xmlParserPushNode(sdp->sd_ctxt, nodep);
     return nodep;
 }
 
@@ -877,7 +877,7 @@ slaxElementPushVar (slax_data_t *sdp, const char *attrib, const char *value)
 void
 slaxElementPop (slax_data_t *sdp)
 {
-    nodePop(sdp->sd_ctxt);
+    xmlParserPopNode(sdp->sd_ctxt);
 }
 
 /*
