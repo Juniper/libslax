@@ -7,7 +7,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/bxslt \
 -I$(top_srcdir)/bxslt/libxslt \
 -I$(top_builddir)/libbxml/include \
--I$(top_srcdir)/libbxml/include
+-I$(top_srcdir)/libbxml/include \
+-I$(top_srcdir)/libbxslt
 
 AM_CPPFLAGS += -DMODULE_EXTENSION='"@MODULE_EXTENSION@"'
 AM_CFLAGS = $(LTO_CFLAGS)
