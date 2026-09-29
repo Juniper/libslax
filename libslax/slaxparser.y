@@ -1128,9 +1128,9 @@ named_template_argument_decl :
 		    nodep = slaxElementAdd(slax_data, ELT_PARAM,
 					   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 			slaxAttribAdd(slax_data, SAS_SELECT, ATT_SELECT, $4);
-			nodePop(slax_data->sd_ctxt);
+			xmlParserPopNode(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
@@ -1489,9 +1489,9 @@ call_argument_member :
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $1->ss_token + 1);
 		    if (nodep) {
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $1);
-			nodePop(slax_data->sd_ctxt);
+			xmlParserPopNode(slax_data->sd_ctxt);
 		    }
 		    $$ = STACK_CLEAR($1);
 		}
@@ -1504,14 +1504,14 @@ call_argument_member :
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $1->ss_token + 1);
 		    if (nodep)
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 		    $$ = NULL;
 		}
 	    initial_argument_value
 		{
 		    ALL_KEYWORDS_ON();
 
-		    nodePop(slax_data->sd_ctxt);
+		    xmlParserPopNode(slax_data->sd_ctxt);
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($3);
 		}
@@ -1560,9 +1560,9 @@ call_argument_braces_member :
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep) {
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 			slaxAttribAdd(slax_data, SAS_NONE, ATT_SELECT, $2);
-			nodePop(slax_data->sd_ctxt);
+			xmlParserPopNode(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
@@ -1576,13 +1576,13 @@ call_argument_braces_member :
 		    nodep = slaxElementAdd(slax_data, ELT_WITH_PARAM,
 				   ATT_NAME, $2->ss_token + 1);
 		    if (nodep)
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 
 		    $$ = NULL;
 		}
 	    initial_value
 		{
-		    nodePop(slax_data->sd_ctxt);
+		    xmlParserPopNode(slax_data->sd_ctxt);
 
 		    $$ = STACK_CLEAR($1);
 		    STACK_UNUSED($4);
@@ -1617,9 +1617,9 @@ copy_of_stmt :
 
 		    nodep = slaxElementAdd(slax_data, ELT_COPY_OF, NULL, NULL);
 		    if (nodep) {
-			nodePush(slax_data->sd_ctxt, nodep);
+			xmlParserPushNode(slax_data->sd_ctxt, nodep);
 			slaxAttribAdd(slax_data, SAS_XPATH, ATT_SELECT, $2);
-			nodePop(slax_data->sd_ctxt);
+			xmlParserPopNode(slax_data->sd_ctxt);
 		    }
 		    /* XXX else error */
 		    $$ = STACK_CLEAR($1);
