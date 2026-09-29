@@ -428,7 +428,7 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 	    const char *frag = "";
 
 	    if (ns && xmlNodeSetGetNodeNr(ns) == 1
-		    && slaxIsResultTreeFragment(xmlNodeSetGetNodeEntry(ns, 0)))
+		    && xsltIsResultTreeFragment(xmlNodeSetGetNodeEntry(ns, 0)))
 		frag = " rtf-doc";
 
 	    slaxOutput("%s[node-set]%s (%d)%s", tag,
