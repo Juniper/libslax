@@ -2045,6 +2045,33 @@ nodePop(xmlParserCtxt *ctxt)
 }
 
 /**
+ * Public wrapper around nodePush(), for callers outside libxml2 that
+ * need to push a node onto the parser's node stack.
+ *
+ * @param ctxt  an XML parser context
+ * @param value  the element node
+ * @returns -1 in case of error, the index in the stack otherwise
+ */
+int
+xmlParserPushNode(xmlParserCtxt *ctxt, xmlNode *value)
+{
+    return nodePush(ctxt, value);
+}
+
+/**
+ * Public wrapper around nodePop(), for callers outside libxml2 that
+ * need to pop a node from the parser's node stack.
+ *
+ * @param ctxt  an XML parser context
+ * @returns the node just removed
+ */
+xmlNode *
+xmlParserPopNode(xmlParserCtxt *ctxt)
+{
+    return nodePop(ctxt);
+}
+
+/**
  * Pushes a new element name/prefix/URL on top of the name stack
  *
  * @param ctxt  an XML parser context
