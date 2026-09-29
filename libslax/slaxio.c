@@ -673,7 +673,7 @@ slaxDumpNodeIndent (xmlNodePtr node, const char *tag, int indent)
 	}
 
 	/* RTFs use the "next" pointer as a to-be-freed list; don't follow it */
-	if (slaxIsResultTreeFragment(node))
+	if (xsltIsResultTreeFragment(node))
 	    break;
     }
 }
