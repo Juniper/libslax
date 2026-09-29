@@ -488,7 +488,7 @@ slaxMvarCloneNodeset (xmlDocPtr container, xmlNodeSetPtr nset, int limit)
 	if (cur == NULL)
 	    continue;
 
-	if (slaxIsResultTreeFragment(cur)) {
+	if (xsltIsResultTreeFragment(cur)) {
 	    for (cur = xmlNodeGetChildren(cur); cur; cur = xmlNodeGetNext(cur))
 		slaxMvarAdd(container, NULL, cur);
 	    xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
@@ -769,7 +769,7 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    if (cur == NULL)
 		continue;
 
-	    if (slaxIsResultTreeFragment(cur)) {
+	    if (xsltIsResultTreeFragment(cur)) {
 		for (cur = xmlNodeGetChildren(cur); cur;
 		     cur = xmlNodeGetNext(cur))
 		    slaxMvarAdd(container, NULL, cur);
