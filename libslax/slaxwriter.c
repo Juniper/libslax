@@ -918,7 +918,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
 			    (const xmlChar *) XSL_PREFIX);
     xmlSetNs(fakep, sd.sd_xsl_ns); /* Noop if NULL */
 
-    nodePush(ctxt, fakep);
+    xmlParserPushNode(ctxt, fakep);
 
     sd.sd_len = strlen(xpath);
     buf = alloca(sd.sd_len + 1);
@@ -929,7 +929,7 @@ slaxMakeExpressionString (slax_writer_t *swp, xmlNodePtr nodep,
 
     rc = slaxParse(&sd);
 
-    fakep = nodePop(ctxt);
+    fakep = xmlParserPopNode(ctxt);
     if (fakep)
 	xmlFreeNode(fakep);
 
