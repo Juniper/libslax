@@ -430,6 +430,26 @@ xsltRegisterPersistRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 }
 
 /**
+ * xsltIsResultTreeFragment:
+ * @node:  a node
+ *
+ * Tests whether @node is a Result Tree Fragment (RTF), i.e. a document
+ * node created via xsltCreateRVT(). RTFs are tagged internally by giving
+ * their (otherwise unused, since a document node has no element name)
+ * name a leading space; this function is the real, callable form of the
+ * internal XSLT_IS_RES_TREE_FRAG() macro, for callers that shouldn't
+ * need to reach into libxslt's internal headers just to ask this
+ * question.
+ *
+ * Returns 1 if @node is a Result Tree Fragment, 0 otherwise.
+ */
+int
+xsltIsResultTreeFragment(xmlNodePtr node)
+{
+    return XSLT_IS_RES_TREE_FRAG(node) ? 1 : 0;
+}
+
+/**
  * xsltFreeRVTs:
  * @ctxt:  an XSLT transformation context
  *
