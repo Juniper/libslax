@@ -1951,6 +1951,8 @@ XSLTPUBFUN int XSLTCALL
 			xsltRegisterPersistRVT	(xsltTransformContextPtr ctxt,
 						 xmlDocPtr RVT);
 XSLTPUBFUN int XSLTCALL
+			xsltIsResultTreeFragment(xmlNodePtr node);
+XSLTPUBFUN int XSLTCALL
 			xsltExtensionInstructionResultRegister(
 						 xsltTransformContextPtr ctxt,
 						 xmlXPathObjectPtr obj);
