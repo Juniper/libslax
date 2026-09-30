@@ -410,11 +410,10 @@ slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
 
 static xmlDocPtr
 slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
-		      int local)
+		      int local UNUSED)
 {
     xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
     xmlDocPtr container;
-    xmlNodePtr prev;
 
     /* If this is the first value, make the nodeset */
     if (value == NULL || xmlXPathObjectGetNodesetval(value) == NULL
@@ -425,19 +424,24 @@ slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
     if (container == NULL)
 	return NULL;
 
-    /* Mark if this context is local of not */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wint-conversion"
-    xmlDocSetPsvi(container, local ? XSLT_RVT_LOCAL : XSLT_RVT_GLOBAL);
-#pragma GCC diagnostic pop
-
     /*
-     * The garbage collection list is linked via the next/prev or
-     * RTFs.
+     * Register the container with the context's persist-RVT list, the
+     * same way slaxMvarGetSvarRoot() does for a shadow variable's first
+     * container, so it's freed when the context is and so its
+     * "compression" field is tagged XSLT_RVT_GLOBAL like every other
+     * persist RVT. This container is NOT linked via next/prev into our
+     * own shadow variable's chain: those fields are libxslt's own
+     * persist-RVT free-list linkage (see xsltRegisterPersistRVT() and
+     * xsltFreeRVTs() in variables.c), and overwriting them here would
+     * corrupt that list. The ordered list of every container we've ever
+     * created for this shadow variable is already the value's own
+     * nodeset, appended to below; slaxMvarLastContainer() already reads
+     * it back that way, not via next/prev.
+     *
+     * "local" isn't used to tag the container, since the lifetime
+     * issue with mvars means things have to last forever.
      */
-    prev = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value),
-				   xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) - 1);
-    xmlNodeSetNext(prev, (xmlNodePtr) container);
+    xsltRegisterPersistRVT(ctxt, container);
 
     xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(value), (xmlNodePtr) container);
 
