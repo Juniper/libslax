@@ -112,6 +112,10 @@ typedef uint8_t pin_body_mode_t;
 #define PBMODE_APPLY         3   /* Dispatching children through the rulebook (BIA_APPLY) */
 #define PBMODE_VALUE_OF      4   /* Collecting text content of current element (BIA_VALUE_OF) */
 #define PBMODE_FOR_EACH_WAIT 5   /* Retaining matched element; defer BIA_FOR_EACH until closed */
+#define PBMODE_APPLY_WAIT    6   /* Retaining an apply-templates child whose dispatch is
+				    ambiguous (xo_filter status PRED); defer the rule
+				    decision until the child closes and its predicate,
+				    if any, force-resolves against the retained subtree */
 
 /*
  * One frame on the body execution stack.
@@ -126,6 +130,14 @@ typedef struct pin_body_frame_s {
     pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
     int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
     pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
+    uint32_t pbf_apply_fallback_rid;    /* PBMODE_APPLY_WAIT: rule atom to use if the pending
+					    predicate resolves false (PA_NULL_ATOM = discard) */
+    uint32_t pbf_apply_winner_rid;      /* PBMODE_APPLY_WAIT: rule atom latched the moment the
+					    filter reports FULL while a descendant is being
+					    walked; the FSM pops back to TRACK once that
+					    descendant closes, so the close-time resume code
+					    cannot re-derive this from a fresh status check
+					    (PA_NULL_ATOM = none latched yet) */
     xo_buffer_t pbf_value_cache;        /* Cached text from select="." (non-null after first collect) */
     /* For-each iteration context (valid inside pin_body_foreach_body calls) */
     pin_node_id_t pbf_ctx_node;         /* Current for-each context node (null = none) */
