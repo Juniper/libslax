@@ -27,6 +27,12 @@ LIBXSLT_REQUIRED_VERSION=1.1.26
 LIBCURL_REQUIRED_VERSION=7.21.3
 SQLITE3_REQUIRED_VERSION=3.7.13
 
+#
+# macOS still ships bison 2.3 in /usr/bin; require a modern one (e.g.
+# from macports or homebrew) instead.
+#
+BISON_REQUIRED_VERSION=3.8
+
 AC_PROG_CC
 AM_PROG_AR
 AC_PROG_INSTALL
@@ -435,6 +441,10 @@ if test "$BISON_VERSION_NUMBER" -ge 3000000 ; then
     AC_DEFINE([HAVE_BISON30], [1], [Bison version >= 3.0])
 fi
 AC_MSG_RESULT($BISON_VERSION)
+
+if test "$BISON_VERSION_NUMBER" -lt VERSION_TO_NUMBER(echo $BISON_REQUIRED_VERSION) ; then
+    AC_MSG_ERROR([Version $BISON_VERSION found ($BISON). You need at least bison $BISON_REQUIRED_VERSION for this version of libslax])
+fi
 
 #
 # ---- end of noise
