@@ -53,6 +53,8 @@
 /* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
 static int pin_is_ws_only(const char *data, size_t len);
+static void pin_body_foreach_body(pin_parse_t *parsep, pin_body_instr_id_t head,
+				  pin_body_frame_t *bfp);
 
 #include <libxo/xo.h>
 #include "xo_filter.h"
@@ -840,6 +842,44 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	nodep->pn_flags |= PNF_ATTRIBS_PRESENT | PNF_ATTRIBS_EXTRACTED;
 }
 
+/*
+ * Returns the xo_filter_t that should be used for the currently active
+ * body frame: if the innermost frame is dispatching apply-templates
+ * children under a named mode, that mode's own filter (looked up in
+ * pp_rulebook); else if a parse-wide mode was set via pin_parse_set_mode(),
+ * that mode's filter; otherwise parsep->pp_filter, the default-mode filter.
+ */
+static xo_filter_t *
+pin_parse_current_filter (pin_parse_t *parsep)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_body_exec_t *body = &pip->pin_body;
+
+    if (body->pbe_depth > 0) {
+	pin_body_frame_t *bfp = &body->pbe_stack[body->pbe_depth - 1];
+	if (!pin_name_id_is_null(bfp->pbf_apply_mode_id) && parsep->pp_rulebook) {
+	    xo_filter_t *xfp = pin_rulebook_get_mode_filter(parsep->pp_rulebook,
+							    bfp->pbf_apply_mode_id);
+	    if (xfp)
+		return xfp;
+	}
+    }
+
+    const char *ctx_mode = parsep->pp_context.pctx_mode;
+    if (ctx_mode != NULL && ctx_mode[0] != '\0' && parsep->pp_rulebook) {
+	pin_name_id_t mode_id = pin_namepool_atom(pin_parse_workspace(parsep),
+						  ctx_mode, FALSE);
+	if (!pin_name_id_is_null(mode_id)) {
+	    xo_filter_t *xfp = pin_rulebook_get_mode_filter(parsep->pp_rulebook,
+							    mode_id);
+	    if (xfp)
+		return xfp;
+	}
+    }
+
+    return parsep->pp_filter;
+}
+
 void
 pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		const char *prefix, const char *name, char *attribs,
@@ -877,6 +917,10 @@ pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 
     /* Push our node on the stack */
     pin_insert_push(pip, node_atom, nodep);
+
+    xo_filter_t *cur_filter = pin_parse_current_filter(parsep);
+    if (cur_filter)
+	pin_filter_set_cur_node(cur_filter, node_atom);
 
     if (attribs) {
 	enum { SAVE_NONE, SAVE_NS, SAVE_STRING, SAVE_FULL } save = SAVE_NONE;
@@ -1014,6 +1058,55 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
 	    bfp->pbf_mode = PBMODE_EXEC;
 	    pin_body_exec_advance(parsep);
+	} else if (bfp->pbf_mode == PBMODE_APPLY_WAIT
+		&& pip->pin_depth == (pin_depth_t)(bfp->pbf_copy_depth - 1)) {
+	    /*
+	     * The apply-templates child whose dispatch was pending on a
+	     * predicate has just closed; its retained subtree is complete.
+	     * Prefer the winner latched while its descendants were walked
+	     * (see the PBMODE_APPLY_WAIT bypass): FULL is only "live" in the
+	     * filter FSM while inside the matched subtree, so by the time we
+	     * get here the FSM has already popped back out (typically to
+	     * TRACK) and a fresh status check can no longer see it.  Fall back
+	     * to the remembered Patricia rule (predicate resolved false, or no
+	     * predicate ever went FULL) otherwise.
+	     */
+	    pin_rulebook_t *rb = parsep->pp_rulebook;
+	    pin_rule_t *winner = NULL;
+
+	    if (rb != NULL && bfp->pbf_apply_winner_rid != PA_NULL_ATOM) {
+		winner = pin_rulebook_rule(rb,
+		    pin_rule_id(bfp->pbf_apply_winner_rid));
+	    }
+	    if (winner == NULL && rb != NULL
+		    && bfp->pbf_apply_fallback_rid != PA_NULL_ATOM) {
+		winner = pin_rulebook_rule(rb,
+		    pin_rule_id(bfp->pbf_apply_fallback_rid));
+	    }
+
+	    /*
+	     * Reset the mode before running the winner's body/emit: both
+	     * pin_body_foreach_body and pin_exec_emit_node call pin_insert_open
+	     * / pin_insert_close for the same element being closed here, and if
+	     * pbf_mode were still PBMODE_APPLY_WAIT, that nested pin_insert_close
+	     * would re-enter this exact branch on the same node, recursing
+	     * forever.
+	     */
+	    bfp->pbf_apply_winner_rid = PA_NULL_ATOM;
+	    bfp->pbf_apply_fallback_rid = PA_NULL_ATOM;
+	    bfp->pbf_mode = PBMODE_APPLY;
+
+	    if (winner != NULL) {
+		pin_workspace_t *pwp = pin_parse_workspace(parsep);
+		if (!pin_body_instr_id_is_null(winner->pr_body)) {
+		    pin_body_frame_t tmp_bfp;
+		    bzero(&tmp_bfp, sizeof(tmp_bfp));
+		    tmp_bfp.pbf_ctx_node = context_node;
+		    pin_body_foreach_body(parsep, winner->pr_body, &tmp_bfp);
+		} else if (winner->pr_action != PIA_DISCARD) {
+		    pin_exec_emit_node(parsep, pwp, context_node);
+		}
+	    }
 	}
     }
 }
@@ -2530,7 +2623,7 @@ pin_parse (pin_parse_t *parsep)
 		if (body->pbe_depth > 0
 			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
 			   == PBMODE_COPY) {
-		    xo_filter_t *cpy_filter = parsep->pp_filter;
+		    xo_filter_t *cpy_filter = pin_parse_current_filter(parsep);
 		    if (cpy_filter) {
 			pin_filter_set_attribs(cpy_filter, rest);
 			xo_filter_walk_open(NULL, cpy_filter, localp, -1);
@@ -2561,7 +2654,7 @@ pin_parse (pin_parse_t *parsep)
 			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
 			   == PBMODE_VALUE_OF) {
 		    pin_body_frame_t *vbfp = &body->pbe_stack[body->pbe_depth - 1];
-		    xo_filter_t *vof_filter = parsep->pp_filter;
+		    xo_filter_t *vof_filter = pin_parse_current_filter(parsep);
 		    if (vof_filter) {
 			pin_filter_set_attribs(vof_filter, rest);
 			xo_filter_walk_open(NULL, vof_filter, localp, -1);
@@ -2587,49 +2680,92 @@ pin_parse (pin_parse_t *parsep)
 		if (body->pbe_depth > 0
 			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
 			   == PBMODE_APPLY) {
-		    xo_filter_t *apl_filter = parsep->pp_filter;
+		    xo_filter_t *apl_filter = pin_parse_current_filter(parsep);
 		    if (apl_filter) {
 			pin_filter_set_attribs(apl_filter, rest);
 			xo_filter_walk_open(NULL, apl_filter, localp, -1);
 		    }
 		    pin_rule_t *apl_rule = NULL;
 		    pin_rule_t discard_rule;
+		    pin_rule_id_t apl_rid = pin_rule_id_null_atom();
 		    pin_rulebook_t *rb = parsep->pp_rulebook;
 		    pin_body_frame_t *abfp = &body->pbe_stack[body->pbe_depth - 1];
 		    pin_name_id_t apply_mode = abfp->pbf_apply_mode_id;
-		    if (rb) {
-			if (!pin_name_id_is_null(apply_mode)) {
-			    /* Mode dispatch: scan linked list for (name, mode) match */
-			    for (pin_apply_id_t scan_aid = rb->prb_apply_list;
-				 !pin_apply_id_is_null(scan_aid); ) {
-				pin_apply_entry_t *ep = pin_apply_addr(rb, scan_aid);
-				if (ep == NULL)
-				    break;
-				if (pin_name_id_equal(ep->pae_name, name_id)
-					&& pin_name_id_equal(ep->pae_mode, apply_mode)) {
-				    apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
-				    break;
-				}
-				scan_aid = ep->pae_next;
-			    }
-			} else if (rb->prb_apply_pat) {
-			    /* Default-mode dispatch: fast Patricia tree lookup */
-			    pa_pat_node_t *pat_node = pa_pat_get(rb->prb_apply_pat,
-								 sizeof(pin_name_id_t),
-								 &name_id);
-			    if (pat_node) {
-				pa_pat_data_atom_t datom =
-				    pa_pat_node_data(rb->prb_apply_pat, pat_node);
-				if (!pa_pat_data_is_null(datom)) {
-				    pin_apply_id_t aid = pin_apply_id(
-					pa_pat_data_atom_of(datom));
-				    pin_apply_entry_t *ep = pin_apply_addr(rb, aid);
-				    if (ep)
-					apl_rule = pin_rulebook_rule(rb, ep->pae_rule);
+		    if (rb && rb->prb_apply_pat) {
+			/* (mode, name) Patricia lookup -- covers every mode */
+			pin_apply_key2_t apply_key;
+			pin_apply_key2_build(&apply_key, apply_mode, name_id);
+			pa_pat_node_t *pat_node = pa_pat_get(rb->prb_apply_pat,
+							     sizeof(apply_key),
+							     &apply_key);
+			if (pat_node) {
+			    pa_pat_data_atom_t datom =
+				pa_pat_node_data(rb->prb_apply_pat, pat_node);
+			    if (!pa_pat_data_is_null(datom)) {
+				pin_apply_id_t aid = pin_apply_id(
+				    pa_pat_data_atom_of(datom));
+				pin_apply_entry_t *ep = pin_apply_addr(rb, aid);
+				if (ep) {
+				    apl_rid = ep->pae_rule;
+				    apl_rule = pin_rulebook_rule(rb, apl_rid);
 				}
 			    }
 			}
 		    }
+
+		    /*
+		     * Remember the Patricia-resolved rule as the fallback to use
+		     * if a pending predicate (below) resolves false, and prefer
+		     * the filter's own resolved action when it has one: predicate
+		     * patterns are always higher default-priority than the bare
+		     * element names the Patricia tree indexes.
+		     */
+		    uint32_t apl_fallback_rid = !pin_rule_id_is_null(apl_rid)
+			? pa_fixed_atom_of(pin_rule_id_atom_of(apl_rid))
+			: PA_NULL_ATOM;
+
+		    xo_filter_status_t apl_fstatus = apl_filter
+			? xo_filter_walk_status(NULL, apl_filter)
+			: XO_STATUS_ZERO;
+
+		    if (apl_filter && apl_fstatus == XO_STATUS_PRED) {
+			/*
+			 * A predicate-bearing apply-templates candidate might
+			 * match, but its predicate needs data (e.g. a child
+			 * element) that hasn't streamed in yet.  Retain the
+			 * whole subtree, transiently, and defer the dispatch
+			 * decision to close time, when xo_filter_walk_close's
+			 * internal force-resolve can consult the completed
+			 * retained tree (see pin_filter_data_value_of_tree).
+			 */
+			pin_insert_open(parsep, name_id, data, localp,
+					rest, PIA_SAVE_ATTRIB);
+			abfp->pbf_copy_depth = pip->pin_depth;
+			if (pip->pin_stack[pip->pin_depth].ps_node)
+			    pip->pin_stack[pip->pin_depth].ps_node->pn_flags
+				|= PNF_TRANSIENT;
+			abfp->pbf_apply_fallback_rid = apl_fallback_rid;
+			abfp->pbf_apply_winner_rid = PA_NULL_ATOM;
+			abfp->pbf_mode = PBMODE_APPLY_WAIT;
+			if (type == PIN_TYPE_EMPTY) {
+			    /* No children at all: force-resolve now rather
+			     * than waiting, since none is coming. */
+			    pin_insert_close(parsep, data, localp);
+			    xo_filter_walk_close(NULL, apl_filter, localp, -1);
+			}
+			break;
+		    }
+
+		    if (apl_filter && apl_fstatus == XO_STATUS_FULL) {
+			uint32_t action_id = xo_filter_walk_get_action(NULL, apl_filter);
+			if (action_id != PA_NULL_ATOM && rb != NULL) {
+			    pin_rule_t *candidate =
+				pin_rulebook_rule(rb, pin_rule_id(action_id));
+			    if (candidate != NULL)
+				apl_rule = candidate;
+			}
+		    }
+
 		    if (apl_rule == NULL) {
 			bzero(&discard_rule, sizeof(discard_rule));
 			discard_rule.pr_action = PIA_DISCARD;
@@ -2641,6 +2777,57 @@ pin_parse (pin_parse_t *parsep)
 			pin_insert_close(parsep, data, localp);
 			if (apl_filter)
 			    xo_filter_walk_close(NULL, apl_filter, localp, -1);
+		    }
+		    break;
+		}
+	    }
+
+	    /*
+	     * PBMODE_APPLY_WAIT bypass: an apply-templates child's dispatch
+	     * decision is pending on a predicate (see the PBMODE_APPLY bypass
+	     * above).  Save all of its descendants to the tree unconditionally,
+	     * exactly like PBMODE_FOR_EACH_WAIT does, so the retained subtree
+	     * is complete by the time the element closes.  The filter is still
+	     * walked (open/close must stay balanced with the unconditional
+	     * xo_filter_walk_close in the CLOSE case below), but its status is
+	     * ignored here.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			   == PBMODE_APPLY_WAIT) {
+		    pin_body_frame_t *awbfp = &body->pbe_stack[body->pbe_depth - 1];
+		    xo_filter_t *aw_filter = pin_parse_current_filter(parsep);
+		    if (aw_filter) {
+			pin_filter_set_attribs(aw_filter, rest);
+			xo_filter_walk_open(NULL, aw_filter, localp, -1);
+
+			/*
+			 * The predicate may resolve to FULL transiently, right
+			 * here while its last required descendant opens; the FSM
+			 * pops back to TRACK once that descendant closes (FULL is
+			 * only "live" while inside the matched subtree), so latch
+			 * the winning action now or it will be lost by the time
+			 * the WAIT element itself closes.
+			 */
+			if (awbfp->pbf_apply_winner_rid == PA_NULL_ATOM
+				&& xo_filter_walk_status(NULL, aw_filter)
+				   == XO_STATUS_FULL) {
+			    uint32_t won = xo_filter_walk_get_action(NULL, aw_filter);
+			    if (won != PA_NULL_ATOM)
+				awbfp->pbf_apply_winner_rid = won;
+			}
+		    }
+		    pin_rule_t save_rule;
+		    bzero(&save_rule, sizeof(save_rule));
+		    save_rule.pr_action = PIA_SAVE_ATTRIB;
+		    pin_parse_handle_rule(parsep, name_id, data, localp,
+					 rest, &save_rule);
+		    if (type == PIN_TYPE_EMPTY) {
+			pin_insert_close(parsep, data, localp);
+			if (aw_filter)
+			    xo_filter_walk_close(NULL, aw_filter, localp, -1);
 		    }
 		    break;
 		}
@@ -2686,7 +2873,9 @@ pin_parse (pin_parse_t *parsep)
 		pin_rulebook_t *rb = parsep->pp_rulebook;
 		if (rb && !pin_rule_id_is_null(rb->prb_root_rule)
 			&& !parsep->pp_root_rule_fired
-			&& pip->pin_depth == 0) {
+			&& pip->pin_depth == 0
+			&& (pin_name_id_is_null(rb->prb_root_name)
+			    || pin_name_id_equal(rb->prb_root_name, name_id))) {
 		    parsep->pp_root_rule_fired = 1;
 		    pin_rule_t *root_rulep =
 			pin_rulebook_rule(rb, rb->prb_root_rule);
@@ -2715,7 +2904,7 @@ pin_parse (pin_parse_t *parsep)
 	     * under this subtree; synthesize a discard rule so the
 	     * rulebook is not consulted and no tree nodes are allocated.
 	     */
-	    xo_filter_t *filter = parsep->pp_filter;
+	    xo_filter_t *filter = pin_parse_current_filter(parsep);
 	    if (filter) {
 		pin_filter_set_attribs(filter, rest);
 		xo_filter_walk_open(NULL, filter, localp, -1);
@@ -2820,9 +3009,43 @@ pin_parse (pin_parse_t *parsep)
 		data = NULL;
 	    }
 
-	    /* Pop the filter frame before popping the tree frame */
-	    if (parsep->pp_filter)
-		xo_filter_walk_close(NULL, parsep->pp_filter, localp, -1);
+	    /*
+	     * Pop the filter frame before popping the tree frame.
+	     *
+	     * xo_filter_walk_close force-resolves any predicate still
+	     * pending (XO_STATUS_PRED) on the frame being closed, using the
+	     * completed retained subtree (see pin_filter_data_value_of_tree).
+	     * That resolution -- and the resulting FULL status -- is only
+	     * visible in this call's return value: xo_filter_close pops the
+	     * trie frame in the same call, and the FSM's status reverts to
+	     * whatever the parent frame implies (typically TRACK) once the
+	     * pop completes.  If we're inside a PBMODE_APPLY_WAIT frame
+	     * (an apply-templates child whose dispatch was pending on this
+	     * predicate) and haven't already latched a winner, latch it now
+	     * or it's lost by the time the WAIT element's own close runs the
+	     * dispatch decision.
+	     */
+	    {
+		xo_filter_t *close_filter = pin_parse_current_filter(parsep);
+		if (close_filter) {
+		    xo_filter_status_t wstat =
+			xo_filter_walk_close(NULL, close_filter, localp, -1);
+
+		    pin_body_exec_t *wbody = &pip->pin_body;
+		    if (wbody->pbe_depth > 0) {
+			pin_body_frame_t *wbfp =
+			    &wbody->pbe_stack[wbody->pbe_depth - 1];
+			if (wbfp->pbf_mode == PBMODE_APPLY_WAIT
+				&& wbfp->pbf_apply_winner_rid == PA_NULL_ATOM
+				&& wstat == XO_STATUS_FULL) {
+			    uint32_t won =
+				xo_filter_walk_get_action(NULL, close_filter);
+			    if (won != PA_NULL_ATOM)
+				wbfp->pbf_apply_winner_rid = won;
+			}
+		    }
+		}
+	    }
 
 	    /*
 	     * PBMODE_VALUE_OF bypass: child element closes decrement the
