@@ -27,6 +27,14 @@ run () {
     fi
 }
 
+#
+# Resolve a libtool-wrapped program to the real binary under .libs/.
+# The wrapper script sets up the library path so an uninstalled shared
+# library is found; a checker like valgrind needs to run against the
+# real binary instead, or it just checks the shell running the wrapper.
+# Only used when -B is given, since running the wrapper directly is
+# otherwise the safer default (see run_binary).
+#
 find_binary () {
     local bin=$1
     local alt
@@ -49,7 +57,9 @@ find_binary () {
 
 run_binary () {
     local prog=$1 ; shift
-    prog=`find_binary $prog`
+    if [ -n "${USE_LIBS_BINARY}" ]; then
+        prog=`find_binary $prog`
+    fi
     run "${CHECKER:+$CHECKER }$prog $@"
 }
 
@@ -336,6 +346,7 @@ while [ $# -gt 0 ]
 do
     case "$1" in
     -b) BASEDIR=$2; shift;;
+    -B) USE_LIBS_BINARY=1;;
     -d) SRCDIR=$2; shift;;
     -D) DOC=doc;;
     -o) OUTDIR=$2; shift;;
