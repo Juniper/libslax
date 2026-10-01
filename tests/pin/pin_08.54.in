@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.54.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!-- Named template with a bare numeric literal as the param default -->
+  <xsl:template name="emit-count">
+    <xsl:param name="n" select="0"/>
+    <count><xsl:value-of select="$n"/></count>
+  </xsl:template>
+
+  <!-- Call without with-param; param default "0" applies -->
+  <xsl:template match="withdefault">
+    <xsl:call-template name="emit-count"/>
+  </xsl:template>
+
+  <!-- Call with a bare numeric with-param, overriding the default -->
+  <xsl:template match="withvalue">
+    <xsl:call-template name="emit-count">
+      <xsl:with-param name="n" select="3.14"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- xsl:value-of with a bare numeric select -->
+  <xsl:template match="direct">
+    <literal><xsl:value-of select="42"/></literal>
+  </xsl:template>
+
+  <!-- xsl:variable with a signed numeric select -->
+  <xsl:template match="neg">
+    <xsl:variable name="offset" select="-2"/>
+    <var><xsl:value-of select="$offset"/></var>
+  </xsl:template>
+
+</xsl:stylesheet>
