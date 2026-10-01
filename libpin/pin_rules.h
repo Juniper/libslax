@@ -134,17 +134,87 @@ typedef struct pin_output_settings_s {
 } pin_output_settings_t;
 
 /*
+ * Patricia-tree key for pin_apply_entry_t: (mode, name), mode leading.
+ * Every entry is indexed by this key, not just default-mode ones; the
+ * mode-scoped apply-templates dispatch in pin_parse.c looks entries up
+ * directly by (apply_mode, name) instead of scanning the linked list.
+ */
+typedef struct pin_apply_key2_s {
+    uint32_t pak_mode_be;   /* Mode atom (0 = default mode) */
+    uint32_t pak_name_be;   /* Element name atom */
+} pin_apply_key2_t;
+
+/*
+ * Builds the (mode, name) Patricia key used both by pin_rulebook_apply_add
+ * (when inserting) and by pin_parse.c's apply-templates dispatch (when
+ * looking a candidate up via pa_pat_get); the two must agree byte-for-byte.
+ */
+void pin_apply_key2_build (pin_apply_key2_t *key, pin_name_id_t mode_id,
+			   pin_name_id_t name_id);
+
+/*
  * One entry in the apply-templates dispatch patricia tree.
- * Keyed by pae_name (the element name atom, 4 bytes).
+ * Keyed by pae_key2 (mode, name); see pin_apply_key2_t.
  */
 typedef struct pin_apply_entry_s {
-    pin_name_id_t  pae_name;         /* Element name atom (patricia tree key) */
+    pin_name_id_t  pae_name;         /* Element name atom */
     pin_name_id_t  pae_mode;         /* Mode atom (null = default mode) */
+    pin_apply_key2_t pae_key2;       /* Patricia tree key: (pae_mode, pae_name) */
     pin_rule_id_t  pae_rule;         /* Rule to dispatch to via apply-templates */
     pin_apply_id_t pae_next;         /* Next entry in all-entries linked list */
     float          pae_priority;     /* Explicit or default priority (XSLT §5.5) */
     int16_t        pae_import_prec;  /* 0 = main; -1,-2,... = imported depth */
 } pin_apply_entry_t;
+
+/* Fixed-point scale/clamp for folding a float priority into pmk_priority_inv_be */
+#define PIN_PRI_SCALE	100.0	/* two decimal digits of precision */
+#define PIN_PRI_MAX	300.0	/* clamp range: [-PIN_PRI_MAX, PIN_PRI_MAX] */
+
+/*
+ * Patricia-tree key for pin_mode_entry_t (prb_mode_pat).  Partitions
+ * xsl:template match patterns by mode (the leading field, so ascending
+ * pa_pat_find_next traversal visits all of one mode's entries together,
+ * with the default mode's atom 0 sorting first) and, within a mode, orders
+ * them by decreasing priority, then decreasing import precedence, then
+ * insertion order -- the same order pin_compile_build_mode_filters replays
+ * them into pin_filter_add_with_action, so its own last-wins tie-break
+ * reproduces "later definition wins" on an exact priority/import_prec tie.
+ * All fields are stored big-endian so ascending traversal order matches
+ * the numeric order described above.
+ */
+typedef struct pin_mode_key_s {
+    uint32_t pmk_mode_be;             /* Mode atom (0 = default mode) */
+    uint16_t pmk_priority_inv_be;     /* UINT16_MAX - scaled/biased priority */
+    uint16_t pmk_import_prec_inv_be;  /* UINT16_MAX - biased import_prec */
+    uint32_t pmk_uniq_be;             /* Insertion-order uniquifier: final tiebreak */
+} pin_mode_key_t;
+
+/*
+ * One xsl:template match pattern registered by pin_rulebook_mode_register,
+ * awaiting batch-compilation into a mode-specific filter by
+ * pin_compile_build_mode_filters.  pme_xpath_id interns the match= string
+ * as a namepool atom at registration time: the caller (pin_compile_template)
+ * frees its own copy right after registering, so a raw pointer would dangle.
+ */
+typedef struct pin_mode_entry_s {
+    pin_mode_key_t pme_key;        /* Patricia tree key (see pin_mode_key_t) */
+    pin_name_id_t  pme_mode;       /* Mode atom (0 = default mode) */
+    pin_name_id_t  pme_xpath_id;   /* Namepool atom: xpath match pattern string */
+    pin_rule_id_t  pme_rule;       /* Rule to fire when this pattern matches */
+    float          pme_priority;   /* Explicit or default priority (XSLT §5.5) */
+    int16_t        pme_import_prec; /* 0 = main; -1,-2,... = imported depth */
+} pin_mode_entry_t;
+
+/*
+ * One compiled filter for a non-default mode.  The default mode never
+ * needs an entry here: it reuses the caller-supplied filter threaded
+ * through pin_compile (see pin_compile_build_mode_filters and
+ * pin_parse_current_filter).
+ */
+typedef struct pin_mode_filter_s {
+    pin_name_id_t pmf_mode;    /* Mode atom this filter serves (never 0) */
+    xo_filter_t  *pmf_xfp;     /* Compiled filter for this mode */
+} pin_mode_filter_t;
 
 /*
  * A rule set is an optimized set of rules
@@ -159,11 +229,22 @@ typedef struct pin_rulebook_s {
     pa_bitmap_t *prb_bitmaps;	  /* Pool of bitmaps */
     pa_fixed_t *prb_body_instrs;  /* Pool of body instructions (pin_body_instr_t) */
     pa_fixed_t *prb_apply_entries; /* Pool of apply-dispatch entries */
-    pa_pat_t *prb_apply_pat;	  /* Patricia tree: name_id → apply entry */
+    pa_pat_t *prb_apply_pat;	  /* Patricia tree: (mode,name) key -> apply entry */
+    pa_fixed_t *prb_mode_entries; /* Pool of mode-partition entries (pin_mode_entry_t) */
+    pa_pat_t *prb_mode_pat;	  /* Patricia tree: pin_mode_key_t -> mode entry */
+    uint32_t prb_mode_uniq;	  /* Next uniquifier for prb_mode_pat keys */
+    pin_mode_filter_t *prb_mode_filters; /* Array of per-(non-default)-mode filters */
+    uint32_t prb_mode_filters_len;
+    uint32_t prb_mode_filters_cap;
     xo_filter_t **prb_if_filters; /* Per-BIA_IF compiled condition filters */
     uint32_t prb_if_filter_count; /* Number of entries in prb_if_filters */
     uint32_t prb_if_filter_size;   /* Allocated capacity of prb_if_filters */
-    pin_rule_id_t prb_root_rule;  /* Rule for match="/" (null if none) */
+    pin_rule_id_t prb_root_rule;  /* Rule for match="/" or a simple absolute
+				     single-step path like match="/foo" (null
+				     if none) */
+    pin_name_id_t prb_root_name;  /* Expected root element name for
+				     prb_root_rule; null means "any name"
+				     (plain match="/") */
     pin_apply_id_t prb_apply_list; /* Head of all apply-entry linked list */
     pin_named_template_t *prb_named;      /* Array of named templates */
     uint32_t              prb_named_count;
@@ -255,15 +336,59 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
 				     pin_action_type_t default_action);
 
 /*
- * Add one (name, rule) pair to the apply-templates patricia tree.
+ * Add one (name, mode, rule) entry to the apply-templates patricia tree,
+ * keyed by (mode, name); see pin_apply_key2_t.
  * name_id must already be interned in the workspace namepool.
  * Returns 0 on success, -1 on failure (e.g. tree not open, duplicate name).
+ *
+ * XXX Is this no longer needed?  pin_compile_template now registers every
+ * template with pin_rulebook_mode_register instead, so the mode-scoped
+ * apply-templates dispatch in pin_parse.c could look entries up directly
+ * from prb_mode_pat rather than via this separate (mode,name) index.  Kept
+ * for now because pin_parse.c's PBMODE_APPLY dispatch still calls it.
  */
 int
 pin_rulebook_apply_add (pin_rulebook_t *prbp,
 			pin_name_id_t name_id, pin_name_id_t mode_id,
 			pin_rule_id_t rid,
 			float priority, int16_t import_prec);
+
+/*
+ * Register one xsl:template match pattern for later batch-compilation into
+ * a mode-specific filter (see pin_compile_build_mode_filters in
+ * pin_compile.c).  match_str is interned into the workspace namepool
+ * immediately, so the caller's copy may be freed right after this call
+ * returns.  Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_mode_register (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			    const char *match_str, pin_rule_id_t rid,
+			    float priority, int16_t import_prec);
+
+/*
+ * Iterate all registered mode-partition entries in key order (grouped by
+ * mode, since mode is the leading key field; see pin_mode_key_t).  Pass
+ * prev = NULL to get the first entry; pass a previously returned entry to
+ * get the next one.  Returns NULL once iteration is exhausted.
+ */
+pin_mode_entry_t *
+pin_rulebook_mode_next (pin_rulebook_t *prbp, pin_mode_entry_t *prev);
+
+/*
+ * Look up the compiled filter registered for a non-default mode, or NULL
+ * if pin_rulebook_set_mode_filter has not been called for mode_id yet.
+ */
+xo_filter_t *
+pin_rulebook_get_mode_filter (pin_rulebook_t *prbp, pin_name_id_t mode_id);
+
+/*
+ * Record the compiled filter for a non-default mode.  Called once per
+ * mode by pin_compile_build_mode_filters; does not check for duplicates.
+ * Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_set_mode_filter (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			      xo_filter_t *xfp);
 
 void
 pin_rulebook_dump (pin_rulebook_t *prbp);
