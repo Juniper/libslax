@@ -161,9 +161,9 @@ main (int argc, char **argv)
 	    if (pats[i].type == PAT_FILTER)
 		pin_filter_add(xfp, pats[i].xpath);
 	    else if (pats[i].type == PAT_SAVE)
-		pin_filter_add_with_action(xfp, pats[i].xpath, save_rid);
+		pin_filter_add_with_action(xfp, pats[i].xpath, save_rid, 0.0, 0);
 	    else
-		pin_filter_add_with_action(xfp, pats[i].xpath, discard_rid);
+		pin_filter_add_with_action(xfp, pats[i].xpath, discard_rid, 0.0, 0);
 	}
     }
 
