@@ -998,10 +998,39 @@ typedef enum {
     SELK_SELF,      /* "." */
     SELK_ATTR,      /* "@name" */
     SELK_LITERAL,   /* "'string'" */
+    SELK_NUMBER,    /* "123", "3.14", "-2" */
     SELK_VAR,       /* "$name" */
     SELK_DOWN,      /* "a", "a/b/c" — descending element path */
     SELK_COMPLEX,   /* "..", "/abs", "//", predicates, functions, etc. */
 } pin_sel_kind_t;
+
+/*
+ * A bare numeric literal has no quotes to mark it, so it must be
+ * distinguished from an element name (SELK_DOWN) by shape: an optional
+ * leading sign, digits, and at most one decimal point.
+ */
+static int
+pin_is_numeric_literal (const char *s)
+{
+    if (*s == '-')
+        s += 1;
+
+    if (*s == '\0')
+        return 0;
+
+    int seen_dot = 0;
+
+    for ( ; *s != '\0'; s++) {
+        if (*s == '.' && !seen_dot) {
+            seen_dot = 1;
+            continue;
+        }
+        if (!isdigit((unsigned char) *s))
+            return 0;
+    }
+
+    return 1;
+}
 
 static pin_sel_kind_t
 pin_classify_select (const char *s)
@@ -1019,6 +1048,8 @@ pin_classify_select (const char *s)
     if (s[0] == '$')
 	return (s[1] != '\0' && strpbrk(s + 1, " \t=<>'\"/@[]()*") == NULL)
 	    ? SELK_VAR : SELK_COMPLEX;
+    if (pin_is_numeric_literal(s))
+        return SELK_NUMBER;
     /* Downward: no absolute prefix, no upward steps, no predicates/funcs */
     if (s[0] != '/' && strstr(s, "..") == NULL
 	    && strpbrk(s, " \t=<>'\"@[]()*") == NULL)
@@ -1062,6 +1093,10 @@ pin_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 	break;
     case SELK_DOWN:
 	push->po_type = PIN_OP_PUSH_NODES;
+	push->po_name = pin_namepool_atom(pwp, test, TRUE);
+	break;
+    case SELK_NUMBER:
+	push->po_type = PIN_OP_PUSH_STRING;
 	push->po_name = pin_namepool_atom(pwp, test, TRUE);
 	break;
     default:
@@ -1119,7 +1154,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    const char *s = sel ? (const char *) sel : ".";
 	    pin_sel_kind_t kind = pin_classify_select(s);
 
-	    if (kind == SELK_COMPLEX || kind == SELK_LITERAL || kind == SELK_EMPTY) {
+	    if (kind == SELK_COMPLEX || kind == SELK_LITERAL || kind == SELK_EMPTY
+		    || kind == SELK_NUMBER) {
 		/* Fall back to stub */
 		cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
 		pin_op_t *push = pin_op_new(cur, NULL);
@@ -1191,6 +1227,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		}
 		break;
 	    }
+	    case SELK_NUMBER:
+		push->po_type = PIN_OP_PUSH_STRING;
+		push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		break;
 	    default:  /* SELK_COMPLEX */
 		push->po_type = PIN_OP_COMPLEX_EXPR;
 		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
@@ -1552,6 +1592,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    push->po_type = PIN_OP_PUSH_NODES;
 		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
 		    break;
+		case SELK_NUMBER:
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
 		default:
 		    pin_cursor_warn(cur,
 			"xsl:variable: complex select not supported: %s", s);
@@ -1699,6 +1743,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    push_def->po_type = PIN_OP_PUSH_NODES;
 		    push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
 		    break;
+		case SELK_NUMBER:
+		    push_def->po_type = PIN_OP_PUSH_STRING;
+		    push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
 		default:
 		    push_def->po_type = PIN_OP_COMPLEX_EXPR;
 		    cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
@@ -1829,6 +1877,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    break;
 		case SELK_DOWN:
 		    push->po_type = PIN_OP_PUSH_NODES;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		case SELK_NUMBER:
+		    push->po_type = PIN_OP_PUSH_STRING;
 		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
 		    break;
 		default:
@@ -2376,7 +2428,7 @@ pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
  * was skipped or rejected without error, or -1 on a fatal error.
  */
 static int
-pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
+pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 		      pin_rulebook_t *rb, pin_action_type_t action,
 		      int16_t import_prec)
 {
@@ -2474,16 +2526,59 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
      * Register the rule with the filter.
      * match="/" is special: the document root fires no element event, so
      * store the rule id in prb_root_rule and fire it manually in pin_parse.
+     *
+     * A simple absolute single-step path (e.g. match="/authors") is an
+     * anchored pattern too: it can only ever match the document's single
+     * root element, so it must never be added to the shared per-element
+     * xo_filter alongside unanchored apply-templates candidate patterns
+     * (e.g. "author[life-span/born]").  That filter reports XO_STATUS_FULL
+     * for "the whole matched subtree", and once an absolute-path pattern
+     * like "/authors" goes FULL at depth 0, that status (and its action id)
+     * would incorrectly persist for every descendant element, masking the
+     * real per-name/per-predicate dispatch decisions apply-templates needs
+     * to make for its children.  So treat it the same as match="/": store
+     * it (plus the expected root name) in prb_root_rule/prb_root_name and
+     * fire it manually in pin_parse, rather than registering it as a
+     * streaming filter pattern.
      */
     if (match_str[0] == '/' && match_str[1] == '\0') {
 	rb->prb_root_rule = rid;
+	rb->prb_root_name = pin_name_id_null_atom();
 	xmlFree(match);
 	return 1;
     }
 
-    int rc = pin_filter_add_with_action(xfp, match_str, rid);
+    if (match_str[0] == '/' && match_str[1] != '\0') {
+	const char *namep = match_str + 1;
+	size_t i;
+	psu_boolean_t simple = TRUE;
+	for (i = 0; namep[i] != '\0'; i++) {
+	    int ch = (unsigned char) namep[i];
+	    if (ch == '/' || ch == '[' || ch == ']' || ch == '|'
+		    || ch == '@' || ch == '*' || ch == '(' || ch == ')') {
+		simple = FALSE;
+		break;
+	    }
+	}
+	if (simple && i > 0) {
+	    rb->prb_root_rule = rid;
+	    rb->prb_root_name = pin_namepool_atom(rb->prb_workspace, namep, TRUE);
+	    xmlFree(match);
+	    return 1;
+	}
+    }
+
+    /*
+     * Register the pattern by (mode, priority, import_prec) instead of
+     * compiling it into a filter directly; actual xpath syntax validation
+     * is deferred to pin_compile_build_mode_filters, once every template in
+     * the stylesheet (and its includes/imports) has been walked and modes
+     * are fully known.
+     */
+    int rc = pin_rulebook_mode_register(rb, mode_id, match_str, rid,
+					priority, import_prec);
     if (rc < 0) {
-	pin_error(rb, child, "xsl:template: unsupported match pattern: %s",
+	pin_error(rb, child, "xsl:template: could not register match pattern: %s",
 		  match_str);
 	xmlFree(match);
 	return -1;
@@ -2499,6 +2594,19 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
     xmlFree(match);
     return 1;
 }
+
+/*
+ * Walks one stylesheet document's top-level children, compiling templates,
+ * variables, includes/imports (recursively), and output-related elements.
+ * This is the shared body used both by the public pin_compile entry point
+ * and by pin_compile_include/pin_compile_import for nested documents; only
+ * the outermost pin_compile call goes on to call
+ * pin_compile_build_mode_filters, once every include/import in the whole
+ * compilation unit has contributed its match patterns.
+ */
+static int
+pin_compile_walk (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
+		  pin_action_type_t action, int16_t import_prec);
 
 /*
  * Compile an xsl:include: load the referenced document and compile it at
@@ -2521,7 +2629,7 @@ pin_compile_include (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
     xmlFree(url);
     if (inc == NULL)
 	return 0;
-    int count = pin_compile(inc, xfp, rb, action, import_prec);
+    int count = pin_compile_walk(inc, xfp, rb, action, import_prec);
     xmlFreeDoc(inc);
     return (count > 0) ? count : 0;
 }
@@ -2547,7 +2655,7 @@ pin_compile_import (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp,
     xmlFree(url);
     if (imp == NULL)
 	return 0;
-    int count = pin_compile(imp, xfp, rb, action, (int16_t)(import_prec - 1));
+    int count = pin_compile_walk(imp, xfp, rb, action, (int16_t)(import_prec - 1));
     xmlFreeDoc(imp);
     return (count > 0) ? count : 0;
 }
@@ -2669,13 +2777,10 @@ pin_compile_output (xmlNodePtr child, pin_rulebook_t *rb)
     return 0;
 }
 
-int
-pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
+static int
+pin_compile_walk (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 		  pin_action_type_t action, int16_t import_prec)
 {
-    if (docp == NULL || xfp == NULL || rb == NULL)
-	return -1;
-
     xmlNodePtr root = xmlDocGetRootElement(docp);
     if (!pin_is_xsl(root, NULL)) {
 	psu_error(docp->URL ? (const char *) docp->URL : NULL, 0,
@@ -2707,6 +2812,81 @@ pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
 	    return -1;
 	count += rc;
     }
+
+    return count;
+}
+
+/*
+ * Drains rb->prb_mode_entries (populated by pin_rulebook_mode_register while
+ * walking xsl:template match= patterns) into actual xo_filter_t instances:
+ * default-mode entries go into the caller-supplied default_xfp, and each
+ * distinct named mode gets its own freshly created filter, reused across all
+ * entries that share that mode and recorded via pin_rulebook_set_mode_filter
+ * so pin_parse can find it later by mode id.
+ *
+ * xpath syntax validation was deferred until now (pin_rulebook_mode_register
+ * itself does not validate); a bad pattern is reported here via pin_error
+ * (which increments pw_errors) and compilation continues so that every bad
+ * pattern in the stylesheet is reported, not just the first. Allocation
+ * failures (out of memory) are fatal and return -1 immediately.
+ */
+static int
+pin_compile_build_mode_filters (pin_rulebook_t *rb, pin_workspace_t *pwp,
+				xo_filter_t *default_xfp)
+{
+    pin_mode_entry_t *ep = NULL;
+
+    while ((ep = pin_rulebook_mode_next(rb, ep)) != NULL) {
+	xo_filter_t *xfp;
+
+	if (pin_name_id_is_null(ep->pme_mode)) {
+	    xfp = default_xfp;
+	} else {
+	    xfp = pin_rulebook_get_mode_filter(rb, ep->pme_mode);
+	    if (xfp == NULL) {
+		xfp = pin_filter_create(NULL, pwp);
+		if (xfp == NULL) {
+		    psu_log("pin_compile: pin_filter_create failed for mode '%s'",
+			    pin_namepool_string(pwp, ep->pme_mode));
+		    return -1;
+		}
+		if (pin_rulebook_set_mode_filter(rb, ep->pme_mode, xfp) < 0) {
+		    xo_filter_destroy_standalone(xfp);
+		    return -1;
+		}
+	    }
+	}
+
+	const char *xpath = pin_namepool_string(pwp, ep->pme_xpath_id);
+	int rc = pin_filter_add_with_action(xfp, xpath, ep->pme_rule,
+					    (double) ep->pme_priority,
+					    ep->pme_import_prec);
+	if (rc < 0) {
+	    pin_rule_t *prp = pin_rulebook_rule(rb, ep->pme_rule);
+	    pin_error(rb, NULL,
+		     "xsl:template: unsupported match pattern: %s (%s:%u)",
+		     xpath,
+		     prp ? pin_namepool_string(pwp, prp->pr_src_file) : "?",
+		     prp ? prp->pr_src_line : 0);
+	}
+    }
+
+    return 0;
+}
+
+int
+pin_compile (xmlDocPtr docp, xo_filter_t *xfp, pin_rulebook_t *rb,
+		  pin_action_type_t action, int16_t import_prec)
+{
+    if (docp == NULL || xfp == NULL || rb == NULL)
+	return -1;
+
+    int count = pin_compile_walk(docp, xfp, rb, action, import_prec);
+    if (count < 0)
+	return -1;
+
+    if (pin_compile_build_mode_filters(rb, rb->prb_workspace, xfp) < 0)
+	return -1;
 
     if (rb->prb_workspace->pw_errors)
 	return -1;
