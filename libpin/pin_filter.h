@@ -52,10 +52,20 @@ pin_filter_add (xo_filter_t *xfp, const char *xpath);
  * Like pin_filter_add but records 'rid' in the terminal trie node so that
  * when the filter reports XO_STATUS_FULL, the matching rule can be retrieved
  * directly via xo_filter_walk_get_action without a secondary rulebook lookup.
+ *
+ * 'priority' is the pattern's XSLT priority (explicit priority= or the
+ * computed default); 'import_prec' is its import precedence (see
+ * pin_rulebook_apply_add).  Two templates can register patterns that land on
+ * the same trie node (e.g. "author" and "author[life-span/born]" both
+ * terminate on the "author" node, or the same pattern redefined by an
+ * importing stylesheet); import_prec and priority decide which one's
+ * action/predicate the node keeps, in the same order and with the same
+ * precedence as pin_rulebook_apply_add's Patricia-tree conflict resolution.
  */
 int
 pin_filter_add_with_action (xo_filter_t *xfp, const char *xpath,
-			     pin_rule_id_t rid);
+			     pin_rule_id_t rid, double priority,
+			     int16_t import_prec);
 
 /*
  * Set the raw XML attribute string for the element about to be walked open.
@@ -65,5 +75,15 @@ pin_filter_add_with_action (xo_filter_t *xfp, const char *xpath,
  */
 void
 pin_filter_set_attribs (xo_filter_t *xfp, const char *attribs);
+
+/*
+ * Record the retained-tree node id for the element currently open at the
+ * filter's current depth, so that multi-element predicate paths (e.g.
+ * "life-span/born") can be resolved against the mmap tree.  Call this
+ * once the caller has created (or reused) the node for the element most
+ * recently passed to pin_filter_walk_open/xo_filter_walk_open.
+ */
+void
+pin_filter_set_cur_node (xo_filter_t *xfp, pin_node_id_t node);
 
 #endif /* LIBSLAX_PIN_FILTER_H */
