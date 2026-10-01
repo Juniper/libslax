@@ -48,6 +48,80 @@
 #include "xo_filter.h"
 
 static const psu_byte_t *pin_apply_key_func (pa_pat_t *, pa_pat_data_atom_t);
+static const psu_byte_t *pin_mode_key_func (pa_pat_t *, pa_pat_data_atom_t);
+
+/*
+ * Portable big-endian helpers.  htobe16/32/64 aren't available on every
+ * platform (notably Darwin, without extra headers), and nothing else in
+ * this codebase depends on endian.h, so we just byte-swap by hand.
+ */
+static inline uint16_t
+pin_hton16 (uint16_t v)
+{
+    return (uint16_t) ((v << 8) | (v >> 8));
+}
+
+static inline uint32_t
+pin_hton32 (uint32_t v)
+{
+    return ((v & 0x000000ffu) << 24) | ((v & 0x0000ff00u) << 8)
+	 | ((v & 0x00ff0000u) >> 8)  | ((v & 0xff000000u) >> 24);
+}
+
+/*
+ * Fold a float priority into a 16-bit descending sort key: higher priority
+ * produces a smaller value, so ascending Patricia traversal visits the
+ * highest-priority entries first.  Values outside [-PIN_PRI_MAX, PIN_PRI_MAX]
+ * are clamped rather than allowed to overflow the fixed-point range.
+ */
+static uint16_t
+pin_priority_inv_be (float priority)
+{
+    double scaled = (double) priority * PIN_PRI_SCALE;
+    double limit = PIN_PRI_MAX * PIN_PRI_SCALE;
+
+    if (scaled > limit)
+	scaled = limit;
+    else if (scaled < -limit)
+	scaled = -limit;
+
+    int32_t iscaled = (int32_t) scaled;
+    uint16_t biased = (uint16_t) (iscaled - INT16_MIN);
+    return (uint16_t) (UINT16_MAX - biased);
+}
+
+/*
+ * Fold an import_prec (0 = main; -1,-2,... = imported depth) into a 16-bit
+ * descending sort key, the same way pin_priority_inv_be does for priority.
+ * Biasing into the full unsigned range before inverting avoids overflow for
+ * any negative import_prec, since -INT16_MIN alone would already overflow
+ * an int16_t accumulator.
+ */
+static uint16_t
+pin_import_prec_inv_be (int16_t import_prec)
+{
+    uint16_t biased = (uint16_t) ((int32_t) import_prec - INT16_MIN);
+    return (uint16_t) (UINT16_MAX - biased);
+}
+
+static void
+pin_mode_key_build (pin_mode_key_t *key, pin_name_id_t mode_id,
+		    float priority, int16_t import_prec, uint32_t uniq)
+{
+    key->pmk_mode_be = pin_hton32(pin_name_id_atom_of(mode_id));
+    key->pmk_priority_inv_be = pin_hton16(pin_priority_inv_be(priority));
+    key->pmk_import_prec_inv_be = pin_hton16(pin_import_prec_inv_be(import_prec));
+    key->pmk_uniq_be = pin_hton32(uniq);
+}
+
+void
+pin_apply_key2_build (pin_apply_key2_t *key, pin_name_id_t mode_id,
+		      pin_name_id_t name_id)
+{
+    key->pak_mode_be = pin_hton32(pin_name_id_atom_of(mode_id));
+    key->pak_name_be = pin_hton32(pin_name_id_atom_of(name_id));
+}
+
 
 pin_rulebook_t *
 pin_rulebook_setup (pin_workspace_t *pwp,
@@ -79,22 +153,35 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "apply.entries"),
 		      PIN_SHIFT, sizeof(pin_apply_entry_t), PIN_MAX_ATOMS);
 
+    pa_fixed_t *mode_entries =
+	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "mode.entries"),
+		      PIN_SHIFT, sizeof(pin_mode_entry_t), PIN_MAX_ATOMS);
+
     pa_fixed_t *ops =
 	pa_fixed_open(pmp, pin_mk_name(namebuf, name, "rulebook.ops"),
 		      PIN_SHIFT, sizeof(pin_op_t), PIN_MAX_ATOMS);
 
     if (infop == NULL || rules == NULL || states == NULL
 	    || bitmaps == NULL || body_instrs == NULL || apply_entries == NULL
-	    || ops == NULL)
+	    || mode_entries == NULL || ops == NULL)
 	return NULL;
 
     pa_pat_t *apply_pat = pa_pat_open(pmp,
 				      pin_mk_name(namebuf, name, "apply.index"),
 				      apply_entries, pin_apply_key_func,
-				      sizeof(pin_name_id_t),
+				      sizeof(pin_apply_key2_t),
 				      PIN_SHIFT, PIN_MAX_ATOMS);
     if (apply_pat == NULL)
 	return NULL;
+
+    pa_pat_t *mode_pat = pa_pat_open(pmp,
+				     pin_mk_name(namebuf, name, "mode.index"),
+				     mode_entries, pin_mode_key_func,
+				     sizeof(pin_mode_key_t),
+				     PIN_SHIFT, PIN_MAX_ATOMS);
+    if (mode_pat == NULL)
+	return NULL;
+
 
     pin_rulebook_t *prbp = calloc(1, sizeof(*prbp));
 
@@ -108,6 +195,8 @@ pin_rulebook_setup (pin_workspace_t *pwp,
 	prbp->prb_ops = ops;
 	prbp->prb_apply_entries = apply_entries;
 	prbp->prb_apply_pat = apply_pat;
+	prbp->prb_mode_entries = mode_entries;
+	prbp->prb_mode_pat = mode_pat;
 	prbp->prb_script = script;
 
 	/*
@@ -378,7 +467,7 @@ pin_rulebook_add_foreach_body_state (pin_rulebook_t *prbp,
 
 /*
  * Key function for the apply-templates patricia tree.
- * The key is the pae_name field (a pin_name_id_t, 4 bytes) of the entry.
+ * The key is pae_key2, a (mode, name) pair; see pin_apply_key2_t.
  */
 static const psu_byte_t *
 pin_apply_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
@@ -386,7 +475,20 @@ pin_apply_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
     pin_apply_entry_t *ep = pa_fixed_atom_addr(
 	(pa_fixed_t *) pp->pp_data,
 	pa_fixed_atom(pa_pat_data_atom_of(datom)));
-    return ep ? (const psu_byte_t *) &ep->pae_name : NULL;
+    return ep ? (const psu_byte_t *) &ep->pae_key2 : NULL;
+}
+
+/*
+ * Key function for the mode-partition patricia tree.
+ * The key is pme_key; see pin_mode_key_t.
+ */
+static const psu_byte_t *
+pin_mode_key_func (pa_pat_t *pp, pa_pat_data_atom_t datom)
+{
+    pin_mode_entry_t *ep = pa_fixed_atom_addr(
+	(pa_fixed_t *) pp->pp_data,
+	pa_fixed_atom(pa_pat_data_atom_of(datom)));
+    return ep ? (const psu_byte_t *) &ep->pme_key : NULL;
 }
 
 int
@@ -451,6 +553,7 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
 
     ep->pae_name = name_id;
     ep->pae_mode = mode_id;
+    pin_apply_key2_build(&ep->pae_key2, mode_id, name_id);
     ep->pae_rule = rid;
     ep->pae_priority = priority;
     ep->pae_import_prec = import_prec;
@@ -458,21 +561,126 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
     prbp->prb_apply_list = aid;
 
     /*
-     * For default-mode entries, also register in the Patricia tree so
-     * the O(log n) fast path in PBMODE_APPLY keeps working.
+     * Register every entry in the Patricia tree, keyed by (mode, name), so
+     * the O(log n) fast path in PBMODE_APPLY works for named modes too, not
+     * just the default mode.
      */
-    if (pin_name_id_is_null(mode_id)) {
+    {
 	pa_pat_data_atom_t datom = pa_pat_data_atom(
 	    pa_fixed_atom_of(pin_apply_id_atom_of(aid)));
 
-	if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_name_id_t))) {
+	if (!pa_pat_add(prbp->prb_apply_pat, datom, sizeof(pin_apply_key2_t))) {
 	    pa_pat_node_t *existing = pa_pat_get(prbp->prb_apply_pat,
-						 sizeof(pin_name_id_t), &name_id);
+						 sizeof(pin_apply_key2_t),
+						 &ep->pae_key2);
 	    if (existing)
 		existing->ppn_data = datom;
 	}
     }
 
+    return 0;
+}
+
+int
+pin_rulebook_mode_register (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			    const char *match_str, pin_rule_id_t rid,
+			    float priority, int16_t import_prec)
+{
+    if (prbp->prb_mode_pat == NULL || prbp->prb_mode_entries == NULL)
+	return -1;
+    if (match_str == NULL || pin_rule_id_is_null(rid))
+	return -1;
+
+    /*
+     * Intern match_str now: the caller (pin_compile_template) frees its own
+     * copy right after this call returns, long before the deferred batch
+     * compile (pin_compile_build_mode_filters) reads it back.
+     */
+    pin_name_id_t xpath_id = pin_namepool_atom(prbp->prb_workspace,
+					       match_str, TRUE);
+
+    pa_fixed_atom_t atom = pa_fixed_alloc_atom(prbp->prb_mode_entries);
+    if (pa_fixed_is_null(atom))
+	return -1;
+
+    pin_mode_entry_t *ep = pa_fixed_atom_addr(prbp->prb_mode_entries, atom);
+    if (ep == NULL)
+	return -1;
+
+    ep->pme_mode = mode_id;
+    ep->pme_xpath_id = xpath_id;
+    ep->pme_rule = rid;
+    ep->pme_priority = priority;
+    ep->pme_import_prec = import_prec;
+    pin_mode_key_build(&ep->pme_key, mode_id, priority, import_prec,
+		       prbp->prb_mode_uniq++);
+
+    pa_pat_data_atom_t datom = pa_pat_data_atom(pa_fixed_atom_of(atom));
+    if (!pa_pat_add(prbp->prb_mode_pat, datom, sizeof(pin_mode_key_t))) {
+	/* prb_mode_uniq makes every key unique; a collision is real corruption */
+	psu_log("pin_rulebook_mode_register: patricia insert failed for '%s'",
+		match_str);
+	return -1;
+    }
+
+    return 0;
+}
+
+pin_mode_entry_t *
+pin_rulebook_mode_next (pin_rulebook_t *prbp, pin_mode_entry_t *prev)
+{
+    if (prbp->prb_mode_pat == NULL)
+	return NULL;
+
+    pa_pat_node_t *node;
+    if (prev == NULL) {
+	node = pa_pat_find_next(prbp->prb_mode_pat, NULL);
+    } else {
+	pa_pat_node_t *cur = pa_pat_get(prbp->prb_mode_pat,
+					sizeof(pin_mode_key_t), &prev->pme_key);
+	if (cur == NULL)
+	    return NULL;
+	node = pa_pat_find_next(prbp->prb_mode_pat, cur);
+    }
+
+    if (node == NULL)
+	return NULL;
+
+    pa_pat_data_atom_t datom = pa_pat_node_data(prbp->prb_mode_pat, node);
+    if (pa_pat_data_is_null(datom))
+	return NULL;
+
+    return pa_fixed_atom_addr(prbp->prb_mode_entries,
+			      pa_fixed_atom(pa_pat_data_atom_of(datom)));
+}
+
+xo_filter_t *
+pin_rulebook_get_mode_filter (pin_rulebook_t *prbp, pin_name_id_t mode_id)
+{
+    for (uint32_t i = 0; i < prbp->prb_mode_filters_len; i++)
+	if (pin_name_id_equal(prbp->prb_mode_filters[i].pmf_mode, mode_id))
+	    return prbp->prb_mode_filters[i].pmf_xfp;
+    return NULL;
+}
+
+int
+pin_rulebook_set_mode_filter (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			      xo_filter_t *xfp)
+{
+    if (prbp->prb_mode_filters_len >= prbp->prb_mode_filters_cap) {
+	uint32_t newcap = prbp->prb_mode_filters_cap
+	    ? prbp->prb_mode_filters_cap * 2 : 8;
+	pin_mode_filter_t *np = realloc(prbp->prb_mode_filters,
+					newcap * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	prbp->prb_mode_filters = np;
+	prbp->prb_mode_filters_cap = newcap;
+    }
+
+    prbp->prb_mode_filters[prbp->prb_mode_filters_len].pmf_mode = mode_id;
+    prbp->prb_mode_filters[prbp->prb_mode_filters_len].pmf_xfp = xfp;
+    prbp->prb_mode_filters_len += 1;
     return 0;
 }
 
@@ -494,6 +702,14 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_if_filters = NULL;
 	rules->prb_if_filter_count = 0;
 	rules->prb_if_filter_size = 0;
+    }
+    if (rules->prb_mode_filters) {
+	for (uint32_t i = 0; i < rules->prb_mode_filters_len; i++)
+	    xo_filter_destroy_standalone(rules->prb_mode_filters[i].pmf_xfp);
+	free(rules->prb_mode_filters);
+	rules->prb_mode_filters = NULL;
+	rules->prb_mode_filters_len = 0;
+	rules->prb_mode_filters_cap = 0;
     }
     if (rules->prb_named) {
 	free(rules->prb_named);
