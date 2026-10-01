@@ -40,7 +40,7 @@ slaxTokenTranslate (int ttype)
 char *
 slaxExpectingError (const char *token, int yystate, int yychar UNUSED)
 {
-    const int MAX_EXPECT = 5;
+#define MAX_EXPECT 5
     char buf[BUFSIZ], *cp = buf, *ep = buf + sizeof(buf);
     int expect = 0, expecting[MAX_EXPECT + 1];
     int yyn = yypact[yystate];
