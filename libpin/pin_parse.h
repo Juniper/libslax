@@ -40,7 +40,10 @@ typedef struct pin_parse_s {
     pin_rulebook_t *pp_rulebook;	/* Current set of rules */
     pin_rule_t pp_default_rule;	/* Default rule for parsing */
     pin_insert_t *pp_insert;	/* Insertion point */
-    xo_filter_t *pp_filter;	/* Optional XPath filter (pin_filter_create) */
+    xo_filter_t *pp_filter;	/* Optional default-mode XPath filter (pin_filter_create);
+				 * named modes have their own filters, stored in
+				 * pp_rulebook and looked up by mode id -- see
+				 * pin_parse_current_filter() in pin_parse.c */
     pin_context_t pp_context;	/* Execution context (mode, etc.) */
     int pp_root_rule_fired;	/* Non-zero after match="/" rule has fired */
     pin_exec_state_t pp_exec;	/* Op-dispatch execution state */
