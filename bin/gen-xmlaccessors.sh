@@ -160,6 +160,7 @@ charset:int
 dict:xmlDictPtr
 parseFlags:int
 properties:int
+mvarRefcount:int::::the reference count for a doc owned by an mvar container; see libslax mvars-redo plan.
 '
 
 dtd_tag=Dtd ; dtd_ptr=xmlDtdPtr ; dtd_var=dtd
