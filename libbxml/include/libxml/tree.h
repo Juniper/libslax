@@ -844,6 +844,8 @@ struct _xmlDoc {
     int             parseFlags;
     /** xmlDocProperties of the document */
     int             properties;
+    /** reference count for docs owned by an mvar (see libslax mvars-redo) */
+    int             mvarRefcount;
 };
 
 /*
