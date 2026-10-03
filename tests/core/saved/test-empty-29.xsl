@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:app="http://xml.juniper.net/wonder/app" xmlns:slax="http://xml.libslax.org/slax" xmlns:slax-func="http://exslt.org/functions" version="1.0" extension-element-prefixes="slax slax-func">
-  <xsl:variable name="slax-book" mvarname="book"/>
-  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="book" mutable="yes" select="slax:mvar-init(&quot;book&quot;, &quot;slax-book&quot;, $slax-book)" svarname="slax-book"/>
-  <xsl:variable name="slax-ref" mvarname="ref"/>
-  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="ref" mutable="yes" select="slax:mvar-init(&quot;ref&quot;, &quot;slax-ref&quot;, $slax-ref)" svarname="slax-ref"/>
+  <xsl:variable name="book" mutable="yes"/>
+  <xsl:variable name="ref" mutable="yes"/>
   <xsl:template match="/">
     <top>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book" svarname="slax-book">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book">
         <book>one</book>
         <book x="1">two</book>
         <book>three</book>
@@ -22,15 +20,15 @@
           <xsl:value-of select="."/>
         </found-y>
       </xsl:for-each>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book" svarname="slax-book">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book">
         <book>five</book>
         <book x="1">six</book>
         <book>seven</book>
         <book y="1">eight</book>
       </slax:set-variable>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" svarname="slax-ref" select="$book"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" svarname="slax-ref" select="$book/*[@y]"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" svarname="slax-ref" select="$book"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" select="$book"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" select="$book/*[@y]"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" select="$book"/>
       <xsl:for-each select="$ref/*">
         <found-x>
           <xsl:value-of select="."/>
@@ -41,8 +39,8 @@
           <xsl:value-of select="."/>
         </found-y>
       </xsl:for-each>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book" svarname="slax-book" select="app:get()"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" svarname="slax-ref" select="$book"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="book" select="app:get()"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ref" select="$book"/>
       <xsl:for-each select="$ref/*">
         <found-x>
           <xsl:value-of select="."/>
@@ -56,9 +54,6 @@
       <book>
         <xsl:copy-of select="$book"/>
       </book>
-      <slax-book>
-        <xsl:copy-of select="$slax-book"/>
-      </slax-book>
     </top>
   </xsl:template>
   <slax-func:function xmlns:slax-func="http://exslt.org/functions" name="app:get">
