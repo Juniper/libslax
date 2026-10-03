@@ -18,18 +18,4 @@
     <book>eleven</book>
     <book y="1">twelve</book>
   </book>
-  <slax-book>
-    <book>one</book>
-    <book x="1">two</book>
-    <book>three</book>
-    <book y="1">four</book>
-    <book>five</book>
-    <book x="1">six</book>
-    <book>seven</book>
-    <book y="1">eight</book>
-    <book>nine</book>
-    <book x="1">ten</book>
-    <book>eleven</book>
-    <book y="1">twelve</book>
-  </slax-book>
 </top>
