@@ -72,22 +72,19 @@ slaxTransformError2 (xsltTransformContextPtr tctxt, const char *fmt, ...);
 
 /* --- slaxmvar.h --- */
 
-#define SLAX_MVAR_PREFIX "slax-"
-
-void slaxMvarAddSvarName (slax_data_t *sdp, xmlNodePtr nodep);
-
 /**
- * Called from the parser grammar to rewrite a variable definition into
- * a mutable variable (mvar) and its shadow variable (svar).  The shadow
- * variable is used as a "history" mechanism, keeping previous values
- * of the mvar so references to those contents don't dangle when the
- * mvar value changes.
+ * Called from the parser grammar for a "mvar $foo ...;" declaration to
+ * mark the resulting <xsl:variable> as mutable. Old values used to be
+ * kept alive via a compiler-synthesized "shadow" variable; that history
+ * mechanism is gone now that RVT refcounting (mvars-redo.md, Section 6)
+ * keeps a value's docs alive for as long as anything still references
+ * them, so all that's left here is the "mutable" marker that
+ * slaxMvarCompile() checks at compile time for `set`/`append`.
  *
  * @sdp: main slax parsing data structure
- * @varname: variable name (mvar)
  */
 void
-slaxMvarCreateSvar (slax_data_t *sdp, const char *varname);
+slaxMvarMarkMutable (slax_data_t *sdp);
 
 void
 slaxMvarRegister (void);

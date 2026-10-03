@@ -342,6 +342,336 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 }
 
 /**
+ * xsltMvarDocsRelease:
+ * @elem: an XSLT stack element whose mvarDocsTab holds the docs to
+ *        release (entries previously recorded via
+ *        xsltStackElemAttachMvarDocs())
+ * @nr: the number of entries at the front of @elem's mvarDocsTab to
+ *      release -- not necessarily all of elem->mvarDocsNr; see
+ *      xsltStackElemReplaceValue(), which releases only its old value's
+ *      leading entries while new ones already follow them in the array
+ *
+ * Drops one reference from each of the first @nr docs in
+ * @elem->mvarDocsTab, releasing (or caching, via xsltReleaseRVT()) any
+ * that reach zero. Does not touch the array's allocation -- callers keep
+ * it (and its mvarDocsMax capacity) for reuse, to avoid a malloc/free
+ * pair on every mvar reassignment. See mvars-redo.md, Section 6 step 2.
+ */
+static void
+xsltMvarDocsRelease(xsltStackElemPtr elem, int nr)
+{
+    int i;
+
+    for (i = 0; i < nr; i++) {
+	xmlDocPtr doc = elem->mvarDocsTab[i];
+	int refs = xmlDocGetMvarRefcount(doc) - 1;
+
+	xmlDocSetMvarRefcount(doc, refs);
+	if (refs <= 0)
+	    xsltReleaseRVT(elem->context, doc);
+    }
+}
+
+/**
+ * xsltStackElemDetachMvarDocs:
+ * @elem: an XSLT stack element
+ *
+ * Drops @elem's counted references into any mvar-owned RVT docs its
+ * current value holds, and empties @elem's mvarDocsTab (mvarDocsNr = 0)
+ * without freeing the array itself. See xsltFreeStackElem(), the only
+ * caller, for what becomes of the array's allocation afterward. See
+ * mvars-redo.md, Section 6 step 2.
+ */
+static void
+xsltStackElemDetachMvarDocs(xsltStackElemPtr elem)
+{
+    if ((elem == NULL) || (elem->mvarDocsNr == 0))
+	return;
+
+    xsltMvarDocsRelease(elem, elem->mvarDocsNr);
+    elem->mvarDocsNr = 0;
+}
+
+/**
+ * xsltStackElemAttachMvarDocs:
+ * @elem: an XSLT stack element
+ * @obj: the value about to become (or already) @elem's current value
+ *       (may be NULL)
+ * @from: the index in @elem's mvarDocsTab (at most elem->mvarDocsNr) at
+ *        which newly attached entries start; entries before @from are
+ *        left untouched and are not considered live duplicates (used by
+ *        xsltStackElemReplaceValue() to keep a prior value's entries
+ *        around, unreleased, while attaching a new value's)
+ *
+ * Walks @obj's nodeset (a no-op for scalars, and for empty or missing
+ * nodesets) and, for every distinct mvar-owned RVT doc found -- i.e.
+ * one with xmlDocGetMvarRefcount() > 0 -- bumps its refcount and records
+ * it in @elem's mvarDocsTab, growing the array (via realloc) only if its
+ * existing capacity is exhausted. Modeled directly on xsltFlagRVTs()
+ * above. See mvars-redo.md, Section 6 step 2.
+ */
+static void
+xsltStackElemAttachMvarDocs(xsltStackElemPtr elem, xmlXPathObjectPtr obj,
+	int from)
+{
+    int i, j;
+    xmlNodePtr cur;
+    xmlDocPtr doc;
+
+    if ((elem == NULL) || (obj == NULL))
+	return;
+
+    if ((xmlXPathObjectGetType(obj) != XPATH_NODESET)
+	    && (xmlXPathObjectGetType(obj) != XPATH_XSLT_TREE))
+	return;
+    if ((xmlXPathObjectGetNodesetval(obj) == NULL)
+	    || (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)) == 0))
+	return;
+
+    for (i = 0; i < xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(obj)); i++) {
+	cur = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(obj), i);
+	if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
+	    /*
+	    * The XPath module sets the owner element of a ns-node on
+	    * the ns->next field.
+	    */
+	    if ((xmlNsGetNext((xmlNsPtr) cur) != NULL) &&
+		(xmlNodeGetType((xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur)) == XML_ELEMENT_NODE))
+	    {
+		doc = xmlNodeGetDoc((xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur));
+	    } else {
+		continue;
+	    }
+	} else {
+	    doc = xmlNodeGetDoc(cur);
+	}
+
+	if ((doc == NULL) || (xmlDocGetMvarRefcount(doc) <= 0))
+	    continue;
+
+	/* One entry per distinct doc among those attached so far in
+	 * this call; entries before @from belong to a value this elem
+	 * held previously, not to this attach. */
+	for (j = from; j < elem->mvarDocsNr; j++) {
+	    if (elem->mvarDocsTab[j] == doc)
+		break;
+	}
+	if (j < elem->mvarDocsNr)
+	    continue;
+
+	if (elem->mvarDocsNr >= elem->mvarDocsMax) {
+	    int newMax = elem->mvarDocsMax ? elem->mvarDocsMax * 2 : 4;
+	    xmlDocPtr *newTab = (xmlDocPtr *) xmlRealloc(elem->mvarDocsTab,
+		    newMax * sizeof(xmlDocPtr));
+
+	    if (newTab == NULL) {
+		xsltTransformError(NULL, NULL, NULL,
+			"xsltStackElemAttachMvarDocs: realloc failed\n");
+		return;
+	    }
+	    elem->mvarDocsTab = newTab;
+	    elem->mvarDocsMax = newMax;
+	}
+
+	xmlDocSetMvarRefcount(doc, xmlDocGetMvarRefcount(doc) + 1);
+	elem->mvarDocsTab[elem->mvarDocsNr++] = doc;
+    }
+}
+
+/**
+ * xsltStackElemReplaceValue:
+ * @elem: an XSLT stack element
+ * @value: the new value for @elem (may be NULL)
+ *
+ * Safely replaces @elem's current value with @value, adjusting mvar
+ * refcounts on both sides and freeing the old value. @value's docs are
+ * attached (appended into mvarDocsTab, after the old value's own
+ * entries) before the old value's docs are released, so self-assignment
+ * (e.g. SLAX's "set $foo = $foo;") never drops a doc shared by both
+ * values to zero before the new reference to it is counted; the old
+ * entries are then released and the new ones slid down to the front of
+ * the same array, which is kept (not freed) for the next reassignment.
+ * This is the one safe way to change an already-computed xsltStackElem's
+ * value; direct "elem->value = ..." is only correct for a freshly
+ * allocated elem (see the call sites in this file). See mvars-redo.md,
+ * Section 6 steps 2 and 4.
+ */
+void
+xsltStackElemReplaceValue(xsltStackElemPtr elem, xmlXPathObjectPtr value)
+{
+    xmlXPathObjectPtr old;
+    int oldNr, newNr;
+
+    if (elem == NULL)
+	return;
+
+    old = elem->value;
+    oldNr = elem->mvarDocsNr;
+
+    xsltStackElemAttachMvarDocs(elem, value, oldNr);
+    xsltMvarDocsRelease(elem, oldNr);
+
+    newNr = elem->mvarDocsNr - oldNr;
+    if (newNr > 0)
+	memmove(elem->mvarDocsTab, elem->mvarDocsTab + oldNr,
+		newNr * sizeof(xmlDocPtr));
+    elem->mvarDocsNr = newNr;
+
+    if (old != NULL)
+	xmlXPathFreeObject(old);
+    elem->value = value;
+}
+
+/**
+ * xsltMvarUnlinkRVT:
+ * @ctxt: an XSLT transformation context
+ * @doc: an RVT doc that is about to be promoted to mvar-owned
+ *
+ * Removes @doc from whichever RVT garbage-collector list it currently
+ * sits on (ctxt->localRVT for XSLT_RVT_LOCAL/XSLT_RVT_FUNC_RESULT,
+ * ctxt->persistRVT for XSLT_RVT_GLOBAL) and clears its compression tag.
+ * Those lists and the mvar refcounting system both reuse the same
+ * xmlDoc next/prev fields to link docs, so a doc must never be on one
+ * of those lists AND be live in an elem->mvarDocsTab at the same time --
+ * the next list walk (or xsltReleaseRVT() re-pushing it onto
+ * ctxt->cache->RVT when its refcount later hits zero) would corrupt
+ * whichever chain still threads through it. Called once, at the moment
+ * a doc is first promoted to mvar-owned in xsltStackElemReplaceMvarValue(),
+ * so that from then on the mvar refcount is its only owner. See
+ * mvars-redo.md, Section 6 step 2.
+ */
+static void
+xsltMvarUnlinkRVT(xsltTransformContextPtr ctxt, xmlDocPtr doc)
+{
+    xmlDocPtr prev, next;
+    xmlDocPtr *head;
+
+    if (ctxt == NULL)
+	return;
+
+    prev = (xmlDocPtr) xmlDocGetPrev(doc);
+    next = (xmlDocPtr) xmlDocGetNext(doc);
+
+    switch (xmlDocGetCompression(doc)) {
+    case XSLT_RVT_GLOBAL:
+	head = &ctxt->persistRVT;
+	break;
+    case XSLT_RVT_LOCAL:
+    case XSLT_RVT_FUNC_RESULT:
+	head = &ctxt->localRVT;
+	break;
+    default:
+	/* Not currently linked on any GC list we manage this way. */
+	return;
+    }
+
+    if (prev != NULL)
+	xmlDocSetNext(prev, (xmlNodePtr) next);
+    else if (*head == doc)
+	*head = next;
+
+    if (next != NULL)
+	xmlDocSetPrev(next, (xmlNodePtr) prev);
+
+    xmlDocSetNext(doc, NULL);
+    xmlDocSetPrev(doc, NULL);
+    xmlDocSetCompression(doc, 0);
+}
+
+/**
+ * xsltStackElemReplaceMvarValue:
+ * @elem: an mvar's own XSLT stack element
+ * @value: its new value (may be NULL)
+ *
+ * Like xsltStackElemReplaceValue(), but for a variable that is itself an
+ * mvar: any Result Tree Fragment doc (xsltIsResultTreeFragment(), i.e. one
+ * created via xsltCreateRVT() -- never a node from the source document or
+ * from document(), which must never be refcounted or freed by us) that
+ * @value's nodeset touches and that is not yet mvar-owned (i.e.
+ * xmlDocGetMvarRefcount() == 0) is promoted to mvar-owned here -- this is
+ * the one place "an mvar-owned RVT is first created" (mvars-redo.md,
+ * Section 4.2) actually happens. A freshly promoted doc is credited with
+ * exactly the one reference @elem's new mvarDocsTab entry represents, not
+ * two: xsltStackElemAttachMvarDocs() (driven by the xsltStackElemReplaceValue()
+ * call below) only recognizes a doc once its refcount is already positive,
+ * so it would otherwise double-count a doc we had simply set to 1
+ * ourselves. We instead set it to 1, let that call attach and bump it to
+ * 2, then immediately subtract the 1 we primed it with. Docs @value
+ * touches that were already mvar-owned (e.g. "set $foo = $foo/node();")
+ * are left alone here and counted normally by that same call. Every mvar
+ * mutation site (initial value, set, append's new-container case) should
+ * go through this function rather than touching xmlDocSetMvarRefcount()
+ * directly. See mvars-redo.md, Section 6 step 4.
+ */
+void
+xsltStackElemReplaceMvarValue(xsltStackElemPtr elem, xmlXPathObjectPtr value)
+{
+    xmlDocPtr *newDocs = NULL;
+    int newNr = 0, newMax = 0;
+    int i, j;
+
+    if ((value != NULL)
+	    && ((xmlXPathObjectGetType(value) == XPATH_NODESET)
+		|| (xmlXPathObjectGetType(value) == XPATH_XSLT_TREE))
+	    && (xmlXPathObjectGetNodesetval(value) != NULL)) {
+	xmlNodeSetPtr set = xmlXPathObjectGetNodesetval(value);
+	int n = xmlNodeSetGetNodeNr(set);
+
+	for (i = 0; i < n; i++) {
+	    xmlNodePtr cur = xmlNodeSetGetNodeEntry(set, i);
+	    xmlDocPtr doc;
+
+	    if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
+		if ((xmlNsGetNext((xmlNsPtr) cur) != NULL) &&
+			(xmlNodeGetType((xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur))
+			 == XML_ELEMENT_NODE))
+		    doc = xmlNodeGetDoc((xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur));
+		else
+		    continue;
+	    } else {
+		doc = xmlNodeGetDoc(cur);
+	    }
+
+	    if ((doc == NULL) || (xmlDocGetMvarRefcount(doc) != 0)
+		    || !xsltIsResultTreeFragment((xmlNodePtr) doc))
+		continue;
+
+	    for (j = 0; j < newNr; j++)
+		if (newDocs[j] == doc)
+		    break;
+	    if (j < newNr)
+		continue;
+
+	    if (newNr >= newMax) {
+		int grownMax = newMax ? newMax * 2 : 4;
+		xmlDocPtr *grown = (xmlDocPtr *) xmlRealloc(newDocs,
+			grownMax * sizeof(xmlDocPtr));
+
+		if (grown == NULL) {
+		    xsltTransformError(NULL, NULL, NULL,
+			    "xsltStackElemReplaceMvarValue: realloc failed\n");
+		    continue;
+		}
+		newDocs = grown;
+		newMax = grownMax;
+	    }
+
+	    xsltMvarUnlinkRVT(elem->context, doc);
+	    xmlDocSetMvarRefcount(doc, 1);
+	    newDocs[newNr++] = doc;
+	}
+    }
+
+    xsltStackElemReplaceValue(elem, value);
+
+    for (i = 0; i < newNr; i++)
+	xmlDocSetMvarRefcount(newDocs[i], xmlDocGetMvarRefcount(newDocs[i]) - 1);
+
+    if (newDocs != NULL)
+	xmlFree(newDocs);
+}
+
+/**
  * xsltReleaseRVT:
  * @ctxt:  an XSLT transformation context
  * @RVT:  a result value tree (Result Tree Fragment)
@@ -587,6 +917,12 @@ static void
 xsltFreeStackElem(xsltStackElemPtr elem) {
     if (elem == NULL)
 	return;
+    /*
+    * Drop elem's counted references to any mvar-owned RVTs before
+    * elem is possibly memset() and cached below (xsltNewStackElem()'s
+    * cache path does not re-zero a reused item).
+    */
+    xsltStackElemDetachMvarDocs(elem);
     if (elem->value != NULL)
 	xmlXPathFreeObject(elem->value);
     /*
@@ -616,11 +952,18 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
     */
     if (elem->context && (elem->context->cache->nbStackItems < 50)) {
 	/*
-	* Store the item in the cache.
+	* Store the item in the cache. Keep the (now-empty) mvarDocsTab
+	* array across the memset() below so it's ready to reuse next
+	* time this cached item picks up an mvar-owned value.
 	*/
 	xsltTransformContextPtr ctxt = elem->context;
+	xmlDocPtr *mvarDocsTab = elem->mvarDocsTab;
+	int mvarDocsMax = elem->mvarDocsMax;
+
 	memset(elem, 0, sizeof(xsltStackElem));
 	elem->context = ctxt;
+	elem->mvarDocsTab = mvarDocsTab;
+	elem->mvarDocsMax = mvarDocsMax;
 	elem->next = ctxt->cache->stackItems;
 	ctxt->cache->stackItems = elem;
 	ctxt->cache->nbStackItems++;
@@ -629,6 +972,7 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
 #endif
 	return;
     }
+    xmlFree(elem->mvarDocsTab);
     xmlFree(elem);
 }
 
@@ -1041,7 +1385,20 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 
 error:
     ctxt->inst = oldInst;
-    return(result);
+
+    /*
+     * Route through xsltStackElemReplaceValue() so that any mvar-owned
+     * RTF docs referenced by "result" get their refcounts attached to
+     * "variable" (e.g. "var $save = $x;" must bump $x's container's
+     * refcount). A raw "variable->value = result" assignment here would
+     * skip that attach step; the three call sites of xsltEvalVariable()
+     * still do their own "elem->value = xsltEvalVariable(...)" afterward,
+     * but that's a harmless reassignment of the same pointer already
+     * stored by xsltStackElemReplaceValue() below. See mvars-redo.md,
+     * Section 6 steps 2 and 4.
+     */
+    xsltStackElemReplaceValue(variable, result);
+    return(variable->value);
 }
 
 /**
@@ -1275,7 +1632,7 @@ error:
     elem->name = oldVarName;
     ctxt->inst = oldInst;
     if (result != NULL) {
-	elem->value = result;
+	xsltStackElemReplaceValue(elem, result);
 	elem->computed = 1;
     }
     return(result);
@@ -1330,6 +1687,16 @@ xsltEvalGlobalVariables(xsltTransformContextPtr ctxt) {
 	    if (def == NULL) {
 
 		def = xsltCopyStackElem(elem);
+		/*
+		 * elem (from style->variables) is a compile-time copy with
+		 * context == NULL; def is the live, per-transform instance
+		 * that mvar refcounting (xsltMvarDocsRelease(),
+		 * xsltMvarUnlinkRVT()) and fragment cleanup
+		 * (xsltFreeStackElem()) act on via elem->context, so it must
+		 * carry the real transform context, not the NULL it was
+		 * copied with. See mvars-redo.md, Section 6 step 2.
+		 */
+		def->context = ctxt;
 		if (xmlHashAddEntry2(ctxt->globalVars,
 				     elem->name, elem->nameURI, def) < 0) {
                     xmlGenericError(xmlGenericErrorContext,
@@ -1442,7 +1809,7 @@ xsltRegisterGlobalVariable(xsltStylesheetPtr style, const xmlChar *name,
     style->variables = elem;
     if (value != NULL) {
 	elem->computed = 1;
-	elem->value = xmlXPathNewString(value);
+	xsltStackElemReplaceValue(elem, xmlXPathNewString(value));
     }
     return(0);
 }
@@ -1668,10 +2035,10 @@ xsltProcessUserParamInternal(xsltTransformContextPtr ctxt,
 	elem->tree = NULL;
 	elem->computed = 1;
 	if (eval == 0) {
-	    elem->value = xmlXPathNewString(value);
+	    xsltStackElemReplaceValue(elem, xmlXPathNewString(value));
 	}
 	else {
-	    elem->value = result;
+	    xsltStackElemReplaceValue(elem, result);
 	}
     }
 
@@ -1837,6 +2204,8 @@ xsltBuildVariable(xsltTransformContextPtr ctxt,
     elem->select = comp->select;
     elem->nameURI = comp->ns;
     elem->tree = tree;
+    /* xsltEvalVariable() already stored this value on elem via
+       xsltStackElemReplaceValue(); don't call it again here. */
     elem->value = xsltEvalVariable(ctxt, elem,
 	(xsltStylePreCompPtr) comp);
     elem->computed = 1;
@@ -1981,6 +2350,8 @@ xsltVariableLookup(xsltTransformContextPtr ctxt, const xmlChar *name,
 	XSLT_TRACE(ctxt,XSLT_TRACE_VARIABLES,xsltGenericDebug(xsltGenericDebugContext,
 		         "uncomputed variable %s\n", name));
 #endif
+	/* xsltEvalVariable() already stored this value on elem via
+	   xsltStackElemReplaceValue(); don't call it again here. */
         elem->value = xsltEvalVariable(ctxt, elem, NULL);
 	elem->computed = 1;
     }
@@ -2354,6 +2725,9 @@ local_variable_found:
 		XSLT_TRACE(tctxt,XSLT_TRACE_VARIABLES,xsltGenericDebug(xsltGenericDebugContext,
 		    "uncomputed variable '%s'\n", name));
 #endif
+		/* xsltEvalVariable() already stored this value on
+		   variable via xsltStackElemReplaceValue(); don't call
+		   it again here. */
 		variable->value = xsltEvalVariable(tctxt, variable, NULL);
 		variable->computed = 1;
 	    }

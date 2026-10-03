@@ -20,6 +20,21 @@
  * Yes, exactly.  That was an apologetical defense of the following
  * code, which implements mutable variables.  Dio, abbi piet della mia
  * anima.
+ *
+ * mvars are backed by ordinary RVT (Result Tree Fragment) documents,
+ * the same kind xsl:variable uses, except that xmlDoc now carries a
+ * small refcount (see mvars-redo.md, Section 6) that keeps a value's
+ * docs alive for as long as anything still references them -- a plain
+ * variable that captured an mvar's value, or the mvar itself before a
+ * reassignment finishes. That refcounting (xsltStackElemReplaceValue()
+ * and friends, in libbxslt/libxslt/variables.c) is what makes a
+ * reassignment safe without first copying the old value somewhere else
+ * "just in case": there's no second variable to find or maintain, and
+ * no explicit "retire" call needed. This file used to also maintain a
+ * compiler-synthesized "shadow" variable as a history mechanism for
+ * exactly that purpose; it's gone now, along with any ability to look
+ * at an mvar's past values (there isn't one -- $book only ever yields
+ * $book's current value).
  */
 
 #include "slaxinternals.h"
@@ -42,131 +57,19 @@ typedef struct mvar_precomp_s {
     xmlChar *mp_name;		   /* Name of the variable */
     xmlChar *mp_localname;	   /* Pointer to localname _in_ mp_name */
     xmlChar *mp_uri;		   /* Namespace of the variable */
-    xmlChar *mp_svarname;	   /* Name of the shadow variable */
 } mvar_precomp_t;
 
-/*
- * Make the variable name for the shadow variable.
- */
-static xmlChar *
-slaxMvarSvarName (const char *varname, int init)
-{
-    char buf[BUFSIZ], *cp;
-    const char *tag = init ? "init-" : "";
-
-    cp = strchr(varname, ':');
-    if (cp)
-	snprintf(buf, sizeof(buf), "%*s:" SLAX_MVAR_PREFIX "%s%s",
-		 (int) (cp - varname), varname, tag, cp);
-    else
-	snprintf(buf, sizeof(buf), SLAX_MVAR_PREFIX "%s%s", tag, varname);
-
-    return xmlStrdup((const xmlChar *) buf);
-}
-
 /**
- * Called from the parser grammar to rewrite a variable definition into
- * a mutable variable (mvar) and its shadow variable (svar).  The shadow
- * variable is used as a "history" mechanism, keeping previous values
- * of the mvar so references to those contents don't dangle when the
- * mvar value changes.
+ * Called from the parser grammar for a "mvar $foo ...;" declaration to
+ * mark the resulting <xsl:variable> as mutable. See the file header for
+ * why there's no shadow variable to synthesize any more.
  *
  * @sdp: main slax parsing data structure
- * @varname: variable name (mvar)
  */
 void
-slaxMvarCreateSvar (slax_data_t *sdp, const char *mvarname)
+slaxMvarMarkMutable (slax_data_t *sdp)
 {
-    xmlNodePtr mvar = xmlParserCtxtGetNode(sdp->sd_ctxt), svar, ivar = NULL;
-    xmlChar *ivarname = NULL;
-    char buf[BUFSIZ];
-    char *sel = NULL;
-
-    xmlChar *svarname = slaxMvarSvarName(mvarname, FALSE);
-    if (svarname == NULL)
-	return;
-
-    /* The "shadow" variable holds old values */
-    svar = xmlNewDocNode(sdp->sd_docp, sdp->sd_xsl_ns,
-			 (const xmlChar *) ELT_VARIABLE, NULL);
-    if (svar == NULL)
-	goto fail;
-
-    /* Set the line number so the debugger can find us */
-    xmlNodeSetLine(svar, xmlNodeGetLine(mvar));
-
-    /* Set the name of the shadow variable */
-    xmlSetNsProp(svar, NULL, (const xmlChar *) ATT_NAME,
-		 (const xmlChar *) svarname);
-    xmlSetNsProp(svar, NULL, (const xmlChar *) ATT_MVARNAME,
-	       (const xmlChar *) mvarname);
-
-    /* Create the shadow variable (svar) as a copy of the mvar*/
-    if (xmlNodeGetChildren(mvar)) {
-	/*
-	 * We have an initial value; put it in an "init" variable
-	 */
-	ivarname = slaxMvarSvarName(mvarname, TRUE);
-	if (ivarname == NULL)
-	    goto fail;
-
-	ivar = xmlDocCopyNode(mvar, xmlNodeGetDoc(mvar), 1);
-	if (ivar == NULL)
-	    goto fail;
-
-	/* Let the debugger know where we are */
-	xmlNodeSetLine(ivar, xmlNodeGetLine(mvar));
-	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_NAME,
-		     (const xmlChar *) ivarname);
-	xmlSetNsProp(ivar, NULL, (const xmlChar *) ATT_MVARNAME,
-		     (const xmlChar *) mvarname);
-    }
-
-    /*
-     * Put some finishing touches on the mvar:
-     * - Mark it as mutable
-     * - Add select attribute
-     * - Clear children
-     */
     slaxAttribAddLiteral(sdp, ATT_MUTABLE, "yes");
-
-    /* Set the 'select' attribute to our init function */
-    if (xmlNodeGetChildren(mvar) == NULL)
-	sel = (char *) xmlGetNsProp(mvar,
-				    (const xmlChar *) ATT_SELECT, NULL);
-    
-
-    snprintf(buf, sizeof(buf),
-	     SLAX_PREFIX ":" FUNC_MVAR_INIT "(\"%s\", \"%s\", $%s%s%s)",
-	     mvarname, svarname, ivarname ?: svarname,
-	     sel ? ", " : "", sel ?: "");
-
-    xmlFreeAndEasy(sel);
-
-    xmlSetNsProp(mvar, NULL,
-		 (const xmlChar *) ATT_SELECT, (const xmlChar *) buf);
-    slaxSetSlaxNs(sdp, mvar, FALSE);
-
-    /* Remove the children (copies are under the svar) */
-    xmlFreeNodeList(xmlNodeGetChildren(mvar));
-    xmlNodeSetChildren(mvar, NULL);
-
-    /* Leave a pointer to our svar's name */
-    xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_SVARNAME,
-		 (const xmlChar *) svarname);
-
-    if (ivar)
-	xmlSetNsProp(mvar, NULL, (const xmlChar *) ATT_IVARNAME,
-		     (const xmlChar *) ivarname);
-
-    /* Add the svar to the tree */
-    xmlAddPrevSibling(mvar, svar);
-    if (ivar)
-	xmlAddPrevSibling(mvar, ivar);
-
- fail:
-    xmlFreeAndEasy(svarname);
-    xmlFreeAndEasy(ivarname);
 }
 
 /**
@@ -183,7 +86,6 @@ slaxMvarFreeComp (mvar_precomp_t *comp)
     if (comp->mp_select)
 	xmlXPathFreeCompExpr(comp->mp_select);
 
-    xmlFreeAndEasy(comp->mp_svarname);
     xmlFreeAndEasy(comp->mp_uri);
     xmlFreeAndEasy(comp->mp_name);
     xmlFreeAndEasy(comp->mp_nslist);
@@ -335,286 +237,124 @@ slaxValueIsScalar (xmlXPathObjectPtr value)
     return TRUE;
 }
 
-#if 0
 /*
- * Returns an allocated strings _OR_ stringval.
+ * Set a mutable variable to the given value. @value becomes @var's new
+ * value outright -- xsltStackElemReplaceMvarValue() takes care of
+ * promoting any brand-new RTF @value introduces to mvar-owned, and of
+ * releasing whatever @var held before (down to zero and freed, unless
+ * something else -- e.g. a plain variable that captured $foo's old
+ * value -- still references it).
  */
-static xmlChar *
-slaxCastValueToString (xmlXPathObjectPtr value, int *freep)
+static int
+slaxMvarSet (const xmlChar *name, xsltStackElemPtr var,
+	     xmlXPathObjectPtr value)
 {
-    if (xmlXPathObjectGetType(value) == XPATH_NUMBER) {
-	if (freep)
-	    *freep = TRUE;
-	return xmlXPathCastNumberToString(xmlXPathObjectGetFloatval(value));
-    }
+    slaxLog("mvar: set: %s --> %p (%p)", name, value,
+	    xsltStackElemGetValue(var));
 
-    if (xmlXPathObjectGetType(value) == XPATH_BOOLEAN) {
-	if (freep)
-	    *freep = TRUE;
-	return xmlXPathCastBooleanToString(xmlXPathObjectGetBoolval(value));
-    }
+    xsltStackElemReplaceMvarValue(var, value);
 
-    return xmlXPathObjectGetStringval(value);
-}
-#endif
-
-/*
- * Return the root document for a shadow variable (svar)
- */
-static xsltStackElemPtr
-slaxMvarGetSvar (xsltTransformContextPtr ctxt,
-		 const xmlChar *svarname, int *localp)
-{
-    return slaxMvarLookupQname(ctxt, svarname, localp);
+    return FALSE;
 }
 
 /*
- * Return the root document of the shadow variable's value.  If
- * there isn't one, make it by hand.
+ * Deep-copies @cur into @container and appends the copy as a new child.
  */
-static xmlDocPtr
-slaxMvarGetSvarRoot (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
-{
-    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
-    xmlDocPtr container;
-
-    if (value && xmlXPathObjectGetNodesetval(value)
-	    && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) > 0)
-	return (xmlDocPtr) xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value), 0);
-
-    container = xsltCreateRVT(ctxt);
-    if (container == NULL)
-	return NULL;
-
-    /*
-     * We need to register the new RVT with the context to allow
-     * for garbage collection.  This means the context passed in
-     * MUST be the context the variable appears in.  We force this
-     * by having every mvar initialized (via slax:mvar-init()).
-     */
-    xsltRegisterPersistRVT(ctxt, container);
-
-    if (value)
-	xmlXPathFreeObject(value);
-
-    value = xmlXPathNewNodeSet((xmlNodePtr) container);
-    xsltStackElemSetValue(svar, value);
-
-    /* If the nodeset create worked, return the container */
-    if (xmlXPathObjectGetNodesetval(value)
-	    && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) > 0)
-	return (xmlDocPtr) xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value), 0);
-
-    return NULL;
-}
-
-static xmlDocPtr
-slaxMvarNewContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar,
-		      int local UNUSED)
-{
-    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
-    xmlDocPtr container;
-
-    /* If this is the first value, make the nodeset */
-    if (value == NULL || xmlXPathObjectGetNodesetval(value) == NULL
-	    || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) == 0)
-	return slaxMvarGetSvarRoot(ctxt, svar);
-
-    container = xsltCreateRVT(ctxt);
-    if (container == NULL)
-	return NULL;
-
-    /*
-     * Register the container with the context's persist-RVT list, the
-     * same way slaxMvarGetSvarRoot() does for a shadow variable's first
-     * container, so it's freed when the context is and so its
-     * "compression" field is tagged XSLT_RVT_GLOBAL like every other
-     * persist RVT. This container is NOT linked via next/prev into our
-     * own shadow variable's chain: those fields are libxslt's own
-     * persist-RVT free-list linkage (see xsltRegisterPersistRVT() and
-     * xsltFreeRVTs() in variables.c), and overwriting them here would
-     * corrupt that list. The ordered list of every container we've ever
-     * created for this shadow variable is already the value's own
-     * nodeset, appended to below; slaxMvarLastContainer() already reads
-     * it back that way, not via next/prev.
-     *
-     * "local" isn't used to tag the container, since the lifetime
-     * issue with mvars means things have to last forever.
-     */
-    xsltRegisterPersistRVT(ctxt, container);
-
-    xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(value), (xmlNodePtr) container);
-
-    return container;
-}
-
-static xmlDocPtr
-slaxMvarLastContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr svar)
-{
-    xmlXPathObjectPtr value = xsltStackElemGetValue(svar);
-    xmlNodePtr nodep;
-
-    /* If this is the first value, make the nodeset */
-    if (xmlXPathObjectGetNodesetval(value) == NULL
-	    || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) == 0)
-	return slaxMvarGetSvarRoot(ctxt, svar);
-
-    nodep = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(value),
-				    xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(value)) - 1);
-    return (xmlDocPtr) nodep;
-}
-
 static void
-slaxMvarAdd (xmlDocPtr container, xmlNodeSetPtr res, xmlNodePtr cur)
+slaxMvarAddChild (xmlDocPtr container, xmlNodePtr cur)
 {
-    xmlNodePtr newp;
+    xmlNodePtr newp = xmlDocCopyNode(cur, container, 1);
 
-    newp = xmlDocCopyNode(cur, container, 1);
-    if (newp) {
+    if (newp)
 	xmlAddChild((xmlNodePtr) container, newp);
-	if (res)
-	    xmlXPathNodeSetAdd(res, newp);
-    }
 }
 
-static xmlNodeSetPtr
-slaxMvarCloneNodeset (xmlDocPtr container, xmlNodeSetPtr nset, int limit)
+/*
+ * Deep-copies every node in @nset as new children of @container. Used
+ * only when slaxMvarAppendContainer() must start a fresh container but
+ * needs to carry forward content from a value it can no longer safely
+ * grow in place (see there for why). RTF entries are copied by their
+ * children, since RTFs use "next" as a free list.
+ */
+static void
+slaxMvarCopyInto (xmlDocPtr container, xmlNodeSetPtr nset)
 {
-    xmlNodeSetPtr res = xmlXPathNodeSetCreate(NULL);
-    if (res == NULL)
-	return NULL;
+    int i;
 
-    for (int i = 0; nset && i < xmlNodeSetGetNodeNr(nset); i++) {
-	if (limit && i >= limit)
-	    break;
-
+    for (i = 0; nset && i < xmlNodeSetGetNodeNr(nset); i++) {
 	xmlNodePtr cur = xmlNodeSetGetNodeEntry(nset, i);
+
 	if (cur == NULL)
 	    continue;
 
 	if (xsltIsResultTreeFragment(cur)) {
 	    for (cur = xmlNodeGetChildren(cur); cur; cur = xmlNodeGetNext(cur))
-		slaxMvarAdd(container, NULL, cur);
-	    xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
-	    break;		/* RTFs use "next" as a free list */
+		slaxMvarAddChild(container, cur);
 	} else {
-	    slaxMvarAdd(container, res, cur);
+	    slaxMvarAddChild(container, cur);
 	}
     }
-
-    return res;
-}
-
-static xmlXPathObjectPtr
-slaxMvarRecord (xsltTransformContextPtr ctxt, const xmlChar *name,
-		const xmlChar *svarname,
-		xmlXPathObjectPtr value)
-{
-    if (!slaxValueIsScalar(value)) {
-	/*
-	 * Value is not a scalar; copy it to our shadow variable's RTF
-	 * and build a node set for the real value.
-	 */
-	xmlDocPtr container;
-	xsltStackElemPtr svar;
-	xmlNodeSetPtr res = NULL;
-	xmlNodeSetPtr nset = xmlXPathObjectGetNodesetval(value);
-	int local = FALSE;
-
-	svar = slaxMvarGetSvar(ctxt, svarname, &local);
-	if (svar == NULL) {
-	    slaxTransformError2(ctxt,
-				"could not find shadow variable for %s (%s)",
-				name, svarname);
-	    return NULL;
-	}
-
-	container = slaxMvarNewContainer(ctxt, svar, local);
-	if (container == NULL) {
-	    slaxTransformError2(ctxt,
-				"could not find shadow container for %s (%s)",
-				name, svarname);
-	    return NULL;
-	}
-
-	res = slaxMvarCloneNodeset(container, nset, 0);
-	if (res == NULL) {
-	    slaxTransformError2(ctxt,
-				"found not make node set for %s (%s)",
-				name, svarname);
-	    return NULL;
-	}
-
-	/* We need to free the new value, since we've copied its contents */
-	xmlXPathFreeObject(value);
-
-	value = xmlXPathWrapNodeSet(res);
-    }
-
-    return value;
 }
 
 /*
- * Set a mutable variable to the given value
+ * Returns the RTF container that new content should be appended into
+ * for @var's current (non-scalar) value, creating one if needed.
+ *
+ * If that value's nodeset already ends in an RTF we exclusively own
+ * (mvarRefcount == 1, meaning nothing else -- e.g. a plain variable
+ * that captured $foo's value -- references it), we grow it in place:
+ * new content becomes new children, with nothing new to refcount, since
+ * the container itself isn't changing.
+ *
+ * Otherwise -- this is the first append, or @var's value is shared
+ * (refcount > 1) or isn't an owned RTF at all (e.g. fresh off
+ * "set $foo = some/xpath;") -- growing it in place would risk
+ * corrupting whatever else references it, or isn't even ours to grow.
+ * A fresh, exclusively-owned container is created instead, any existing
+ * content is carried forward into it, and it's installed as @var's new
+ * value via xsltStackElemReplaceMvarValue().
  */
-static int
-slaxMvarSet (xsltTransformContextPtr ctxt, const xmlChar *name,
-	     const xmlChar *svarname, const xmlChar *uri UNUSED,
-	     xsltStackElemPtr var, xmlXPathObjectPtr value)
+static xmlDocPtr
+slaxMvarAppendContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr var)
 {
-    xmlXPathObjectPtr old_value;
+    xmlXPathObjectPtr val = xsltStackElemGetValue(var);
+    xmlNodeSetPtr nset = val ? xmlXPathObjectGetNodesetval(val) : NULL;
+    int nr = nset ? xmlNodeSetGetNodeNr(nset) : 0;
+    xmlDocPtr container;
+    xmlNodeSetPtr res;
 
-    slaxLog("mvar: set: %s --> %p (%p)", name, value,
-	    xsltStackElemGetValue(var));
+    if (nr > 0) {
+	xmlNodePtr last = xmlNodeSetGetNodeEntry(nset, nr - 1);
 
-#if 0
-    slaxOutput("slaxMvarSet: enter: variable '%s'", name);
-    slaxDumpVar(var);
-    slaxOutput("slaxMvarSet: enter: value");
-    slaxDumpObject(value);
-#endif
+	if (xsltIsResultTreeFragment(last)
+		&& xmlDocGetMvarRefcount((xmlDocPtr) last) == 1)
+	    return (xmlDocPtr) last;
+    }
 
-    value = slaxMvarRecord(ctxt, name, svarname, value);
-
-    /* Substitute our new value into the variable */
-    old_value = xsltStackElemGetValue(var);
-    xsltStackElemSetValue(var, value);
-    xsltStackElemSetComputed(var, 1);
+    container = xsltCreateRVT(ctxt);
+    if (container == NULL)
+	return NULL;
 
     /*
-     * The old value is never an RTF, so we can free it without worrying
-     * leaving someone with dangling references to our value.  The real
-     * value lies in the shadow variable.
+     * Deliberately not registered on ctxt's persist-RVT list: this
+     * container's lifetime is governed entirely by mvar refcounting from
+     * the moment xsltStackElemReplaceMvarValue() below attaches it, and
+     * that machinery frees a doc early (via xsltReleaseRVT(), which
+     * reuses its "next" field for an unrelated free list) as soon as its
+     * refcount reaches zero. A doc can't safely be on both lists at
+     * once.
      */
-    xmlXPathFreeObject(old_value);
+    if (nset != NULL)
+	slaxMvarCopyInto(container, nset);
 
-#if 0
-    slaxOutput("slaxMvarSet: exit: variable '%s'", name);
-    slaxDumpVar(var);
-#endif
+    res = xmlXPathNodeSetCreate((xmlNodePtr) container);
+    if (res == NULL)
+	return NULL;
 
-    return FALSE;
+    xsltStackElemReplaceMvarValue(var, xmlXPathWrapNodeSet(res));
+
+    return container;
 }
-
-#if 0
-/*
- * Are we adding to a nodeset that already has the container we are
- * also adding to? This will make the node appear twice so we want to
- * avoid it.
- */
-static int
-slaxMvarAlreadyPresent (xmlNodeSetPtr res, xmlDocPtr container)
-{
-    xmlNodePtr nodep = (xmlNodePtr) container; /* Force conversion */
-
-    for (int i = 0; i < xmlNodeSetGetNodeNr(res); i++) {
-	if (xmlNodeSetGetNodeEntry(res, i) == nodep)
-	    return TRUE;
-    }
-
-    return FALSE;
-}
-#endif
 
 /*
  * Append a value to a variable.  There are four possibilities here:
@@ -629,21 +369,18 @@ slaxMvarAlreadyPresent (xmlNodeSetPtr res, xmlDocPtr container)
  */
 static int
 slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
-		const xmlChar *svarname UNUSED, const xmlChar *uri UNUSED,
-		xsltStackElemPtr var, xmlXPathObjectPtr value, xmlDocPtr tree)
+		xsltStackElemPtr var, xmlXPathObjectPtr value)
 {
     xmlNodePtr newp = NULL, cur;
     xmlDocPtr container;
-    xsltStackElemPtr svar;
-    xmlNodeSetPtr res;
     xmlNodeSetPtr nset = NULL;
     int i;
 
-    if (value == NULL && tree == NULL) /* Must have one or the other */
+    if (value == NULL)
 	return TRUE;
 
-    slaxLog("mvar: append: %s, old %p --> new %p, tree %p",
-	    name, xsltStackElemGetValue(var), value, tree);
+    slaxLog("mvar: append: %s, old %p --> new %p",
+	    name, xsltStackElemGetValue(var), value);
 
     if (slaxValueIsScalar(xsltStackElemGetValue(var))) {
 	if (value && slaxValueIsScalar(value)) {
@@ -661,26 +398,28 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 		memcpy(buf + old_len, new_str, new_len);
 		buf[old_len + new_len] = '\0';
 
-		xmlXPathFreeObject(xsltStackElemGetValue(var));
-		xsltStackElemSetValue(var, xmlXPathWrapString(buf));
+		xsltStackElemReplaceValue(var, xmlXPathWrapString(buf));
 	    }
 
 	    /* Free the values if we allocated them */
 	    xmlFreeAndEasy(old_str);
 	    xmlFreeAndEasy(new_str);
+	    xmlXPathFreeObject(value);
 
 	    return FALSE;
 
 	} else {
 	    /*
-	     * case #2: [ scalar var / non-scalar value ] -> discard var
+	     * case #2: [ scalar var / non-scalar value ] -> discard var;
+	     * @value's own RTF(s) become $var's new value outright, no
+	     * copying needed.
 	     */
-
-	    nset = value ? xmlXPathObjectGetNodesetval(value) : NULL;
+	    xsltStackElemReplaceMvarValue(var, value);
+	    return FALSE;
 	}
 
     } else {
-	if (value && slaxValueIsScalar(value)) {
+	if (slaxValueIsScalar(value)) {
 	    /*
 	     * case #3: [ non-scalar var / scalar value ] -> use
 	     * <text> for value
@@ -691,83 +430,40 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 		newp = xmlNewText(new_str);
 
 	    xmlFreeAndEasy(new_str);
+	    xmlXPathFreeObject(value);
+	    value = NULL;
 
 	} else {
 	    /*
 	     * case #4: [ non-scalar var / non-scalar value ] ->
 	     * append to node set
 	     */
-	    nset = value ? xmlXPathObjectGetNodesetval(value) : NULL;
+	    nset = xmlXPathObjectGetNodesetval(value);
 	}
     }
 
-    int local = FALSE;
-
-    svar = slaxMvarGetSvar(ctxt, svarname, &local);
-    if (svar == NULL) {
-	slaxTransformError2(ctxt,
-			    "found not find shadow variable for %s (%s)",
-			    name, svarname);
-	return TRUE;
-    }
-
-    container = slaxMvarLastContainer(ctxt, svar);
+    container = slaxMvarAppendContainer(ctxt, var);
     if (container == NULL) {
-	slaxTransformError2(ctxt,
-			    "found not find shadow container for %s (%s)",
-			    name, svarname);
+	slaxTransformError2(ctxt, "could not find append container for %s",
+			    name);
+	if (newp)
+	    xmlFreeNode(newp);
+	if (value)
+	    xmlXPathFreeObject(value);
 	return TRUE;
     }
-
-    /* Make a node set */
-    res = xmlXPathNodeSetCreate(NULL);
-    if (res == NULL) {
-	slaxTransformError2(ctxt,
-			    "found not make node set for %s (%s)",
-			    name, svarname);
-	return TRUE;
-    }
-
-    xmlXPathObjectPtr val = xsltStackElemGetValue(var);
-    xmlXPathObjectSetNodesetval(val, res);
-    xmlXPathObjectSetType(val, XPATH_NODESET);
-    xmlXPathObjectSetBoolval(val, FALSE);
-    if (xmlXPathObjectGetStringval(val)) {
-	xmlFree(xmlXPathObjectGetStringval(val));
-	xmlXPathObjectSetStringval(val, NULL);
-    }
-
-    /*
-     * If we are appending to an emtpy set, we need to add the
-     * container to the variable's node set.
-     */
-    if (xmlNodeSetGetNodeNr(res) == 0)
-        xmlXPathNodeSetAdd(res, (xmlNodePtr) container);
 
     if (newp) {
 	cur = xmlNewDocNode(container, NULL, (const xmlChar *) ELT_TEXT, NULL);
 	if (cur) {
 	    xmlAddChild(cur, newp);
-
-	    /* Add one node to the variable */
-	    slaxMvarAdd(container, NULL, cur);
-
-	    /*
-	     * Since slaxMvarAdd has copied cur into the container tree,
-	     * we need to release cur.
-	     */
+	    slaxMvarAddChild(container, cur);
 	    xmlFreeNode(cur);
 	} else
 	    xmlFreeNode(newp); /* Clean up on error */
 
-    } else if (tree) {
-	/* Add all the nodes in a tree to the show variable and the nodeset */
-	for (cur = xmlDocGetChildren(tree); cur; cur = xmlNodeGetNext(cur)) {
-	    slaxMvarAdd(container, NULL, cur);
-	}
-
     } else if (nset) {
-	/* Add everything in the node set to the variable */
+	/* Add everything in the node set to the container */
 	for (i = 0; i < xmlNodeSetGetNodeNr(nset); i++) {
 	    cur = xmlNodeSetGetNodeEntry(nset, i);
 	    if (cur == NULL)
@@ -776,12 +472,14 @@ slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 	    if (xsltIsResultTreeFragment(cur)) {
 		for (cur = xmlNodeGetChildren(cur); cur;
 		     cur = xmlNodeGetNext(cur))
-		    slaxMvarAdd(container, NULL, cur);
+		    slaxMvarAddChild(container, cur);
 
 	    } else {
-		slaxMvarAdd(container, NULL, cur);
+		slaxMvarAddChild(container, cur);
 	    }
 	}
+
+	xmlXPathFreeObject(value);
     }
 
     return FALSE;
@@ -847,27 +545,6 @@ slaxFindVariable (xsltStylesheetPtr style UNUSED, xmlNodePtr inst,
 
     return NULL;
 }
-
-/*
- * Add the "svarname" attribute to a node
- */
-void
-slaxMvarAddSvarName (slax_data_t *sdp UNUSED, xmlNodePtr nodep)
-{
-    char *mvarname = (char *) xmlGetProp(nodep, (const xmlChar *) ATT_NAME);
-
-    if (mvarname) {
-	xmlChar *svarname = slaxMvarSvarName(mvarname ?: "bad-svarname", FALSE);
-	if (svarname) {
-	    xmlSetNsProp(nodep, NULL,
-		 (const xmlChar *) ATT_SVARNAME, (const xmlChar *) svarname);
-	    xmlFree(svarname);
-	}
-
-	xmlFree(mvarname);
-    }
-}
-
 
 /**
  * Set a mutable variable
@@ -955,14 +632,6 @@ slaxMvarCompile (xsltStylesheetPtr style, xmlNodePtr inst,
 	}
 
 	xmlFree(sel);
-    }
-
-    comp->mp_svarname = xmlGetNsProp(inst, (const xmlChar *) ATT_SVARNAME,
-				     NULL);
-    if (comp->mp_svarname == NULL) {
-	xsltTransformError(NULL, style, inst,
-	   "missing 'svarname' attribute for mvar: '%s'.\n", name);
-	xsltStylesheetIncrementErrors(style);
     }
 
     /* Prebuild the namespace list */
@@ -1066,40 +735,51 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 	if (tree == NULL)
 	    return;
 
+	/*
+	 * Wrap the freshly rendered RTF as a value, same as any other
+	 * mvar content -- its lifetime from here on is governed purely
+	 * by mvar refcounting (xsltStackElemReplaceMvarValue() and
+	 * friends), not by any persist-RVT registration, so there's
+	 * nothing further to do with the raw doc pointer itself.
+	 */
+	value = xmlXPathNewValueTree((xmlNodePtr) tree);
+	if (value == NULL) {
+	    xmlFreeDoc(tree);
+	    return;
+	}
+
     } else
 	return;
+
+    /*
+     * mvars must support stepping through their content directly (e.g.
+     * "$book/child::*"), which XPath's CHECK_TYPE0() refuses for
+     * XPATH_XSLT_TREE -- that type is only transparent to node-set
+     * -accepting functions/operators, not to location-step evaluation
+     * (see xmlXPathNodeCollectAndTest()). A value can come out tagged
+     * XPATH_XSLT_TREE either from slaxMvarEvalBlock()'s RTF above, or
+     * from a "select" expression that itself evaluates to one (e.g.
+     * calling a SLAX function that returns a result tree fragment); in
+     * either case, retag it in place as a plain node-set, exactly like
+     * exsl:node-set() does for the same type (see xsltFunctionNodeSet()
+     * in extra.c) -- the two types share the same internal layout.
+     */
+    if (xmlXPathObjectGetType(value) == XPATH_XSLT_TREE)
+	xmlXPathObjectSetType(value, XPATH_NODESET);
 
     var = slaxMvarLookup (ctxt, comp->mp_name, comp->mp_uri, &local);
     if (var == NULL) {
 	xsltGenericError(xsltGenericErrorContext,
 			 "mvar variable not found: %s\n", comp->mp_name);
-	if (value)
-	    xmlXPathFreeObject(value);
+	xmlXPathFreeObject(value);
 	return;
     }
 
-    if (append) {
-	slaxMvarAppend(ctxt, comp->mp_localname, comp->mp_svarname,
-		       comp->mp_uri, var, value, tree);
-
-	if (tree)
-	    xmlFreeDoc(tree);
-	if (value)
-	    xmlXPathFreeObject(value);
-
-    } else {
-	if (tree) {
-	    value = xmlXPathNewValueTree((xmlNodePtr) tree);
-	    if (value == NULL) {
-		xmlFreeDoc(tree);
-		return;
-	    }
-	}
-
-	/* slaxMvarSet() consumes value and/or table, so don't free them */
-	slaxMvarSet(ctxt, comp->mp_localname, comp->mp_svarname,
-		    comp->mp_uri, var, value);
-    }
+    /* slaxMvarSet()/slaxMvarAppend() consume value, so don't free it */
+    if (append)
+	slaxMvarAppend(ctxt, comp->mp_localname, var, value);
+    else
+	slaxMvarSet(comp->mp_localname, var, value);
 }
 
 static xsltElemPreCompPtr
@@ -1132,119 +812,9 @@ slaxMvarAppendElement (xsltTransformContextPtr ctxt,
     slaxMvarElement(ctxt, node, inst, comp, TRUE);
 }
 
-/*
- * Initialize a variable from a shadow variable's contents.  We are
- * passed the name of shadow variable, 
- */
-static void
-slaxMvarInit (xmlXPathParserContextPtr ctxt, int nargs)
-{
-    xsltTransformContextPtr tctxt;
-    xmlChar *svarname = NULL;
-    xmlChar *mvarname = NULL;
-    xsltStackElemPtr svar;
-    xmlXPathObjectPtr ret = NULL;
-    xmlNodePtr nodep;
-    xmlXPathObjectPtr xop = NULL;
-    xmlXPathObjectPtr varg = NULL;
-
-    if (nargs < 3 || nargs > 4) {
-	xmlXPathSetArityError(ctxt);
-	return;
-    }
-
-    /* If we have an initial value, fetch it.  If null, no problemo */
-    if (nargs == 4)
-	xop = valuePop(ctxt);
-
-    /*
-     * vop is a reference to either our empty shadow variable, or to our
-     * "init" variable, which would contain an RTF of data, which we'll
-     * copy into the shadow variable.
-     */
-    varg = valuePop(ctxt);
-    if (varg) {
-	if (xop)
-	    xmlFree(varg);	/* Should not occur; ignore varg */
-	else
-	    xop = varg;
-    }
-
-    /* The first two parameters are the names of our variable and shadow */
-    svarname = xmlXPathPopString(ctxt);
-    mvarname = xmlXPathPopString(ctxt);
-    if (svarname == NULL || mvarname == NULL) {
-	slaxTransformError(ctxt, "slax:mvar-init: variable names are NULL");
-	goto fail;
-    }
-
-    slaxLog("mvar: init: %s/%s (%p)", mvarname, svarname, xop);
-
-    tctxt = xsltXPathGetTransformContext(ctxt);
-    if (tctxt == NULL) {
-	slaxTransformError(ctxt, "slax:mvar-init: tctxt is NULL");
-	goto fail;
-    }
-
-    svar = slaxMvarLookupQname(tctxt, svarname, NULL);
-    if (svar == NULL) {
-	slaxTransformError(ctxt, "slax:mvar-init: svarname not found: %s",
-			   svarname);
-	goto fail;
-    }
-
-    /*
-     * We have to have an initial value, even if the assigned value
-     * is a string or number.  So if the value isn't kocher, force it
-     * into being a real and usable root.  This is required for append
-     * to work, since we have to have the document allocated in the
-     * original context.
-     */
-    if (xop) {
-	ret = slaxMvarRecord(tctxt, mvarname, svarname, xop);
-
-    } else {
-	/*
-	 * If we don't have an initial value, do not give outselves
-	 * an empty RTF.  Use an empty string instead.
-	 */
-	xmlXPathObjectPtr svarValue = xsltStackElemGetValue(svar);
-
-	nodep = NULL;
-	if (svarValue && xmlXPathObjectGetNodesetval(svarValue)
-	    && xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(svarValue), 0))
-	    nodep = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(svarValue), 0);
-
-	if (nodep == NULL || xmlNodeGetChildren(nodep) == NULL) {
-	    xmlFreeAndEasy(mvarname);
-	    xmlFreeAndEasy(svarname);
-	    xmlXPathReturnEmptyString(ctxt);
-	    return;
-	}
-
-	/*
-	 * Now we have the shadow variable and just need to build a nodeset
-	 * containing its nodes.
-	 */
-	ret = xmlXPathNewNodeSet(nodep);
-	if (ret == NULL)
-	    goto fail;
-    }
-
-fail:
-    xmlFreeAndEasy(mvarname);
-    xmlFreeAndEasy(svarname);
-
-    if (ret)
-	valuePush(ctxt, ret);
-    else 
-	valuePush(ctxt, xmlXPathNewNodeSet(NULL));
-}
-
 void
 slaxMvarRegister (void)
 {
-
     xsltRegisterExtModuleElement ((const xmlChar *) ELT_SET_VARIABLE,
 				  (const xmlChar *) SLAX_URI,
 			  (xsltPreComputeFunction) slaxMvarSetCompile,
@@ -1254,8 +824,4 @@ slaxMvarRegister (void)
 				  (const xmlChar *) SLAX_URI,
 			  (xsltPreComputeFunction) slaxMvarAppendCompile,
 			  (xsltTransformFunction) slaxMvarAppendElement);
-
-    xsltRegisterExtModuleFunction((const xmlChar *) FUNC_MVAR_INIT,
-				  (const xmlChar *) SLAX_URI,
-				  slaxMvarInit);
 }

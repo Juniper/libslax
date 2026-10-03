@@ -2440,56 +2440,19 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 {
     char *name;
     char *sel;
-    char *mvarname = slaxGetAttrib(nodep, ATT_MVARNAME);
-    char *svarname;
+    char *mutable = slaxGetAttrib(nodep, ATT_MUTABLE);
     const char *tag = (xmlNodeGetName(nodep)[0] == 'v') ? "var" : "param";
     xmlNodePtr vnode = nodep;
     char *aname;
     const char *operator;
-    int is_mvar = FALSE;
 
-    if (mvarname) {
-	/*
-	 * If this variable has an 'mvarname' attribute, then we are
-	 * looking at the shadow variable of a mutable variable (aka
-	 * "mvar").  Since shadow variables aren't seen in real SLAX
-	 * code, we skip it, knowing that we'll see the real part
-	 * later.
-	 */
-	xmlFree(mvarname);
-	return;
+    if (mutable) {
+	tag = "mvar";
+	xmlFree(mutable);
     }
 
     name = slaxGetAttrib(nodep, ATT_NAME);
     sel = slaxGetAttrib(nodep, ATT_SELECT);
-    svarname = slaxGetAttrib(nodep, ATT_SVARNAME);
-
-    if (svarname) {
-	/*
-	 * If this variable has an 'svarname' attribute, then we are
-	 * looking at the real part of a mutable variable (aka
-	 * "mvar").  We know that if the mvar is initialized with an
-	 * RTF, then the shadow variable has the contents and the real
-	 * variable has a select attribute containing a call to
-	 * "slax:mvar-init()" with the svarname passed as the only
-	 * parameter.  But the select could also have a scalar value.
-	 * If the select refers to the svar, we need to go find it and
-	 * use that value as the initializer for the mvar.
-	 */
-	const char mvar_init[] = SLAX_PREFIX ":" FUNC_MVAR_INIT "(";
-	tag = "mvar";
-
-	is_mvar = TRUE;
-
-	if (sel && strncmp(sel, mvar_init, strlen(mvar_init)) == 0) {
-	    for (vnode = xmlNodeGetPrev(nodep); vnode; vnode = xmlNodeGetPrev(vnode))
-		if (xmlNodeGetType(vnode) == XML_ELEMENT_NODE)
-		    break;
-	    if (vnode == NULL || xmlNodeGetChildren(vnode) == NULL)
-		vnode = nodep;	/* Revert */
-	}
-	xmlFree(svarname);
-    }
 
     if (name && sel && slaxV11(swp)
 	&& strncmp(name, slaxForVariablePrefix + 1,
@@ -2581,36 +2544,6 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
     } else if (sel) {
 	char *selval = sel;
 
-	if (is_mvar) {
-	    /*
-	     * We are looking at an initialization that is a call to
-	     * mvar-init().  We know the real expression is the optional
-	     * fourth argument.  The other args are the mvar name,
-	     * the shadow variable name, and the shadow variable value.
-	     *    $x = slax:mvar-init("x", "slax-x", $slax-x, real/value);
-	     *                           a         b        c
-	     * So we skip over the first three commas and use anything
-	     * else as the initial value.  If there is no fourth
-	     * argument, there's no initial value.
-	     */
-	    do {
-		char *cp = strchr(sel, ','); /* Find 'a' */
-		if (cp == NULL)
-		    break;
-		cp = strchr(cp + 1, ','); /* Find 'b' */
-		if (cp == NULL)
-		    break;
-		cp = strchr(cp + 1, ','); /* Find 'c' */
-		if (cp == NULL)
-		    goto emit_simple;
-
-		selval = cp + 1;
-		cp = selval + strlen(selval) - 1;
-		if (*cp == ')')
-		    *cp = '\0';
-	    } while (0);
-	}
-
 	/*
 	 * The select might be an assignment if this is a function.
 	 */
@@ -2635,8 +2568,6 @@ slaxWriteVariable (slax_writer_t *swp, xmlDocPtr docp, xmlNodePtr nodep)
 	xmlFreeAndEasy(expr);
 
     } else {
-
-    emit_simple:
 	slaxWrite(swp, "%s $%s;", tag, aname);
 	slaxWriteNewline(swp, 0);
     }

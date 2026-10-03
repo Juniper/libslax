@@ -41,7 +41,6 @@
 #define ATT_GROUPING_SIZE "grouping-size"
 #define ATT_HREF	"href"
 #define ATT_INDENT	"indent"
-#define ATT_IVARNAME	"ivarname"
 #define ATT_JSON	"json"
 #define ATT_LANG	"lang"
 #define ATT_MAKE	"make"
@@ -49,7 +48,6 @@
 #define ATT_METHOD	"method"
 #define ATT_MODE	"mode"
 #define ATT_MUTABLE	"mutable"
-#define ATT_MVARNAME	"mvarname"
 #define ATT_NAME	"name"
 #define ATT_NAMESPACE	"namespace"
 #define ATT_NAN		"NaN"	/* Yes, it's mixed case */
@@ -58,7 +56,6 @@
 #define ATT_RESULT_PREFIX "result-prefix"
 #define ATT_SELECT	"select"
 #define ATT_STYLESHEET_PREFIX "stylesheet-prefix"
-#define ATT_SVARNAME	"svarname"
 #define ATT_TERMINATE	"terminate"
 #define ATT_TEST	"test"
 #define ATT_TYPE	"type"
@@ -151,4 +148,3 @@
 /* Names for generated code */
 #define FOR_VARIABLE_PREFIX "$slax-dot-"
 #define FUNC_BUILD_SEQUENCE "build-sequence"
-#define FUNC_MVAR_INIT "mvar-init"

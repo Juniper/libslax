@@ -1435,6 +1435,12 @@ struct _xsltStackElem {
     xsltTransformContextPtr context; /* The transformation context; needed to cache
                                         the variables */
     int flags;
+
+    /* docs (owned by RVTs) referenced by the current value of this
+       mvar; see libslax mvars-redo plan, Section 6 step 1 */
+    int               mvarDocsNr;	/* Nb of docs referenced */
+    int               mvarDocsMax;	/* Size of the docs array */
+    xmlDocPtr        *mvarDocsTab;	/* the referenced docs */
 };
 
 #ifdef XSLT_REFACTORED
@@ -1895,6 +1901,12 @@ XSLTPUBFUN int XSLTCALL
 			xsltIsBlank		(xmlChar *str);
 XSLTPUBFUN void XSLTCALL
 			xsltFreeStackElemList	(xsltStackElemPtr elem);
+XSLTPUBFUN void XSLTCALL
+			xsltStackElemReplaceValue (xsltStackElemPtr elem,
+						 xmlXPathObjectPtr value);
+XSLTPUBFUN void XSLTCALL
+			xsltStackElemReplaceMvarValue (xsltStackElemPtr elem,
+						 xmlXPathObjectPtr value);
 XSLTPUBFUN xsltDecimalFormatPtr XSLTCALL
 			xsltDecimalFormatGetByName(xsltStylesheetPtr style,
 						 xmlChar *name);

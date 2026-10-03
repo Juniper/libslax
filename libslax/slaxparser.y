@@ -822,7 +822,7 @@ var_decl :
 					   ATT_NAME, $2->ss_token + 1);
 
 		    if ($1->ss_ttype == K_MVAR)
-			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+			slaxMvarMarkMutable(slax_data);
 
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
@@ -839,7 +839,7 @@ var_decl :
 		{
 		    ALL_KEYWORDS_ON();
 		    if ($1->ss_ttype == K_MVAR)
-			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+			slaxMvarMarkMutable(slax_data);
 
 		    slaxElementPop(slax_data);
 		    $$ = STACK_CLEAR($1);
@@ -858,7 +858,7 @@ var_decl :
 		    ALL_KEYWORDS_ON();
 
 		    if ($1->ss_ttype == K_MVAR)
-			slaxMvarCreateSvar(slax_data, $2->ss_token + 1);
+			slaxMvarMarkMutable(slax_data);
 		    else
 			slaxAvoidRtf(slax_data);
 
@@ -926,10 +926,8 @@ set_mvar_preface :
 		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementPush(slax_data, ELT_SET_VARIABLE,
 					    ATT_NAME, $2->ss_token + 1);
-		    if (nodep) {
+		    if (nodep)
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
-			slaxMvarAddSvarName(slax_data, nodep);
-		    }
 
 		    $$ = STACK_CLEAR($1);
 		}
@@ -941,10 +939,8 @@ set_mvar_preface :
 		    SLAX_KEYWORDS_OFF();
 		    nodep = slaxElementPush(slax_data, ELT_APPEND_TO_VARIABLE,
 					    ATT_NAME, $2->ss_token + 1);
-		    if (nodep) {
+		    if (nodep)
 			slaxSetSlaxNs(slax_data, nodep, TRUE);
-			slaxMvarAddSvarName(slax_data, nodep);
-		    }
 
 		    $$ = STACK_CLEAR($1);
 		}

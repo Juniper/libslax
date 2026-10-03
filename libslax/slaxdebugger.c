@@ -1307,13 +1307,8 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
 	    type = "local";
 	    name = "unknown";
 
-	    if (curName) {
-		const char mprefix[] = SLAX_MVAR_PREFIX;
-
+	    if (curName)
 		name = (const char *) curName;
-		if (strncmp(name, mprefix, sizeof(mprefix) - 1) == 0)
-		    continue;
-	    }
 
             if (comp == NULL) {
                 type = "invalid";
