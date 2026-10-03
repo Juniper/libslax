@@ -3,17 +3,12 @@
   <xsl:output indent="yes"/>
   <xsl:template match="/">
     <out>
-      <xsl:variable name="slax-a" mvarname="a"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="a" mutable="yes" select="slax:mvar-init(&quot;a&quot;, &quot;slax-a&quot;, $slax-a)" svarname="slax-a"/>
-      <xsl:variable name="slax-b" mvarname="b"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="b" select="slax:mvar-init(&quot;b&quot;, &quot;slax-b&quot;, $slax-b, 42)" mutable="yes" svarname="slax-b"/>
-      <xsl:variable name="slax-c" mvarname="c"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-c" mvarname="c">
+      <xsl:variable name="a" mutable="yes"/>
+      <xsl:variable name="b" select="42" mutable="yes"/>
+      <xsl:variable name="c" mutable="yes">
         <fish>blue</fish>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;c&quot;, &quot;slax-c&quot;, $slax-init-c)" svarname="slax-c" ivarname="slax-init-c"/>
-      <xsl:variable name="slax-d" mvarname="d"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-d" mvarname="d">
+      <xsl:variable name="d" mutable="yes">
         <one>
           <xsl:value-of select="1"/>
         </one>
@@ -24,9 +19,7 @@
           <xsl:value-of select="3"/>
         </three>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="d" mutable="yes" select="slax:mvar-init(&quot;d&quot;, &quot;slax-d&quot;, $slax-init-d)" svarname="slax-d" ivarname="slax-init-d"/>
-      <xsl:variable name="slax-e" mvarname="e"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="e" select="slax:mvar-init(&quot;e&quot;, &quot;slax-e&quot;, $slax-e, $d/two)" mutable="yes" svarname="slax-e"/>
+      <xsl:variable name="e" select="$d/two" mutable="yes"/>
       <xsl:variable name="f" select="$d/two"/>
       <xsl:call-template name="print">
         <xsl:with-param name="name" select="&quot;mvar&quot;"/>
@@ -35,12 +28,12 @@
         <xsl:with-param name="c" select="$c"/>
         <xsl:with-param name="d" select="$d"/>
       </xsl:call-template>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot;happy&quot;"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b" select="99"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="a" select="&quot;happy&quot;"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="b" select="99"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="c">
         <fish>red</fish>
       </slax:set-variable>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="d" svarname="slax-d">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="d">
         <four>
           <xsl:value-of select="4"/>
         </four>
@@ -58,12 +51,12 @@
         <xsl:with-param name="c" select="$c"/>
         <xsl:with-param name="d" select="$d"/>
       </xsl:call-template>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a" select="&quot; camper&quot;"/>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="b" svarname="slax-b" select="&quot; bottles&quot;"/>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" select="&quot; camper&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="b" select="&quot; bottles&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c">
         <fish>old</fish>
       </slax:append-to-variable>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="d" svarname="slax-d">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="d">
         <seven>
           <xsl:value-of select="7"/>
         </seven>
