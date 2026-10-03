@@ -58,6 +58,9 @@ one:
 	-@(test=${TEST_CASE}; data=${TEST_DATA}; ${TEST_ONE} ; true)
 
 accept:
+	-@echo "... (skipping errors) ...";
+
+accept-errors:
 	-@(for test in ${TEST_CASES} ; do \
 	      echo "... $$test ..."; \
 	      base=`${BASENAME} $$test .slax` ; \
