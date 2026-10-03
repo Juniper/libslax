@@ -50,9 +50,6 @@ main <top> {
     <book> {
         copy-of $book;
     }
-    <slax-book> {
-        copy-of $slax-book;
-    }
 }
 
 function app:get () {
