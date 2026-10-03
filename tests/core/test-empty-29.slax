@@ -51,7 +51,6 @@ match / {
 	}
 
 	<book> { copy-of $book; }
-	<slax-book> { copy-of $slax-book; }
     }
 }
 
