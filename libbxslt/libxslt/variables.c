@@ -1173,6 +1173,28 @@ xsltAddStackElemList(xsltTransformContextPtr ctxt, xsltStackElemPtr elems)
  *									*
  ************************************************************************/
 
+/*
+ * SLAX mvars must be steppable ("$d/two"), which XPath refuses for
+ * XPATH_XSLT_TREE; a mutable literal-content value is retagged in place
+ * as a node-set, as slaxMvarElement() does for set/append.
+ */
+static void
+xsltMarkMvarNodeSet(xmlXPathObjectPtr result, xmlNodePtr inst)
+{
+    xmlChar *mutable;
+
+    if (result == NULL || inst == NULL)
+	return;
+
+    mutable = xmlGetNsProp(inst, (const xmlChar *) "mutable", NULL);
+    if (mutable == NULL)
+	return;
+
+    if (xmlStrEqual(mutable, (const xmlChar *) "yes"))
+	xmlXPathObjectSetType(result, XPATH_NODESET);
+    xmlFree(mutable);
+}
+
 /**
  * xsltEvalVariable:
  * @ctxt:  the XSLT transformation context
@@ -1379,6 +1401,7 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
                 ctxt->lasttuse = oldLastTextUse;
 
 		result = xmlXPathNewValueTree((xmlNodePtr) container);
+		xsltMarkMvarNodeSet(result, (comp != NULL) ? comp->inst : NULL);
 	    }
 	    if (result == NULL) {
 		result = xmlXPathNewCString("");
@@ -1624,6 +1647,7 @@ xsltEvalGlobalVariable(xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
 	    ctxt->output = oldOutput;
 
 	    result = xmlXPathNewValueTree((xmlNodePtr) container);
+	    xsltMarkMvarNodeSet(result, (elem->comp != NULL) ? elem->comp->inst : NULL);
 	    if (result == NULL) {
 		result = xmlXPathNewCString("");
 	    } else {
