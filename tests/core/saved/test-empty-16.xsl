@@ -104,8 +104,7 @@ including them in tests is a Bad Idea (tm). -->
         <xsl:variable name="ne2">
           <test/>
         </xsl:variable>
-        <xsl:variable name="slax-ne3" mvarname="ne3"/>
-        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="ne3" mutable="yes" select="slax:mvar-init(&quot;ne3&quot;, &quot;slax-ne3&quot;, $slax-ne3)" svarname="slax-ne3"/>
+        <xsl:variable name="ne3" mutable="yes"/>
         <e1>
           <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:is-empty($e1)"/>
         </e1>
@@ -121,7 +120,7 @@ including them in tests is a Bad Idea (tm). -->
         <ne2>
           <xsl:value-of xmlns:slax="http://xml.libslax.org/slax" select="slax:is-empty($ne2)"/>
         </ne2>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ne3" svarname="slax-ne3">
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="ne3">
           <test/>
         </slax:set-variable>
         <ne3>
