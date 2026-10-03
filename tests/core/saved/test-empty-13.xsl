@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
   <xsl:output indent="yes"/>
-  <xsl:variable name="slax-indent" mvarname="indent"/>
-  <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="slax:mvar-init(&quot;indent&quot;, &quot;slax-indent&quot;, $slax-indent, &quot;aaa&quot;)" mutable="yes" svarname="slax-indent"/>
+  <xsl:variable name="indent" select="&quot;aaa&quot;" mutable="yes"/>
   <xsl:param name="test" select="1"/>
   <xsl:template match="/">
     <top>
@@ -10,11 +9,10 @@
       <xsl:call-template name="non-scalars"/>
       <xsl:call-template name="append-scalars"/>
       <xsl:call-template name="to-scalars"/>
-      <xsl:variable name="slax-set" mvarname="set"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="set" mutable="yes" select="slax:mvar-init(&quot;set&quot;, &quot;slax-set&quot;, $slax-set)" svarname="slax-set"/>
+      <xsl:variable name="set" mutable="yes"/>
       <xsl:for-each select="*/*">
         <xsl:if test="starts-with(name(), &quot;i&quot;)">
-          <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="set" svarname="slax-set" select="."/>
+          <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="set" select="."/>
         </xsl:if>
       </xsl:for-each>
       <set>
@@ -24,23 +22,22 @@
   </xsl:template>
   <xsl:template name="to-scalars">
     <to-scalars>
-      <xsl:variable name="slax-var" mvarname="var"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="slax:mvar-init(&quot;var&quot;, &quot;slax-var&quot;, $slax-var, &quot;one&quot;)" mutable="yes" svarname="slax-var"/>
+      <xsl:variable name="var" select="&quot;one&quot;" mutable="yes"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <two>two</two>
       </slax:append-to-variable>
       <xsl:variable name="save" select="$var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;three&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;three&quot;"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <four>four</four>
       </slax:append-to-variable>
       <var>
@@ -53,24 +50,22 @@
   </xsl:template>
   <xsl:template name="append-scalars">
     <append-scalars>
-      <xsl:variable name="slax-var" mvarname="var"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-var" mvarname="var">
+      <xsl:variable name="var" mutable="yes">
         <one>one</one>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="var" mutable="yes" select="slax:mvar-init(&quot;var&quot;, &quot;slax-var&quot;, $slax-init-var)" svarname="slax-var" ivarname="slax-init-var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;two&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;two&quot;"/>
       <xsl:variable name="save" select="$var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;three&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;three&quot;"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <four>four</four>
       </slax:append-to-variable>
       <var>
@@ -83,28 +78,26 @@
   </xsl:template>
   <xsl:template name="non-scalars">
     <non-scalars>
-      <xsl:variable name="slax-var" mvarname="var"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-var" mvarname="var">
+      <xsl:variable name="var" mutable="yes">
         <one>one</one>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="var" mutable="yes" select="slax:mvar-init(&quot;var&quot;, &quot;slax-var&quot;, $slax-init-var)" svarname="slax-var" ivarname="slax-init-var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <two>two</two>
       </slax:append-to-variable>
       <xsl:variable name="save" select="$var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <three>three</three>
       </slax:append-to-variable>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <four>four</four>
       </slax:append-to-variable>
       <var>
@@ -117,29 +110,28 @@
   </xsl:template>
   <xsl:template name="scalars">
     <scalar>
-      <xsl:variable name="slax-var" mvarname="var"/>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="slax:mvar-init(&quot;var&quot;, &quot;slax-var&quot;, $slax-var, &quot;one&quot;)" mutable="yes" svarname="slax-var"/>
+      <xsl:variable name="var" select="&quot;one&quot;" mutable="yes"/>
       <xsl:variable name="save" select="$var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;-and-two&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;-and-two&quot;"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="111"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="111"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="222"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="222"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="333"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="333"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="444"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="444"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
@@ -150,25 +142,23 @@
   </xsl:template>
   <xsl:template name="basic-four">
     <basic-four>
-      <xsl:variable name="slax-var" mvarname="var"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-var" mvarname="var">
+      <xsl:variable name="var" mutable="yes">
         <test>one</test>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="var" mutable="yes" select="slax:mvar-init(&quot;var&quot;, &quot;slax-var&quot;, $slax-init-var)" svarname="slax-var" ivarname="slax-init-var"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var">
         <test>two</test>
       </slax:set-variable>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;three&quot;"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;three&quot;"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" svarname="slax-var" select="&quot;four&quot;"/>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="var" select="&quot;four&quot;"/>
       <var>
         <xsl:copy-of select="$var"/>
       </var>
@@ -177,24 +167,23 @@
   <xsl:template name="simple">
     <simple>
       <xsl:if test="$test">
-        <xsl:variable name="slax-one" mvarname="one"/>
-        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="slax:mvar-init(&quot;one&quot;, &quot;slax-one&quot;, $slax-one, &quot;111&quot;)" mutable="yes" svarname="slax-one"/>
+        <xsl:variable name="one" select="&quot;111&quot;" mutable="yes"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" svarname="slax-one" select="&quot;222&quot;"/>
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="&quot;222&quot;"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" svarname="slax-one" select="&quot;333&quot;"/>
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="&quot;333&quot;"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" svarname="slax-one" select="&quot;444&quot;"/>
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="&quot;444&quot;"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" svarname="slax-one" select="&quot;555&quot;"/>
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="one" select="&quot;555&quot;"/>
         <one>
           <xsl:value-of select="$one"/>
         </one>
@@ -205,23 +194,19 @@
         <one>
           <xsl:value-of select="concat($one, $one, $one)"/>
         </one>
-        <xsl:variable name="slax-three" mvarname="three"/>
-        <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="three" select="slax:mvar-init(&quot;three&quot;, &quot;slax-three&quot;, $slax-three, &quot;three3&quot;)" mutable="yes" svarname="slax-three"/>
+        <xsl:variable name="three" select="&quot;three3&quot;" mutable="yes"/>
         <xsl:variable name="four" select="$three"/>
-        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="three" svarname="slax-three" select="&quot;Third&quot;"/>
+        <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="three" select="&quot;Third&quot;"/>
         <check three="{$three}" four="{$four}"/>
       </xsl:if>
-      <xsl:variable name="slax-five" mvarname="five"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-five" mvarname="five">
+      <xsl:variable name="five" mutable="yes">
         <a>eh</a>
         <b>bee</b>
         <c>sea</c>
         <d>Dee</d>
         <e>Eh!</e>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="five" mutable="yes" select="slax:mvar-init(&quot;five&quot;, &quot;slax-five&quot;, $slax-init-five)" svarname="slax-five" ivarname="slax-init-five"/>
-      <xsl:variable name="slax-six" mvarname="six"/>
-      <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-six" mvarname="six">
+      <xsl:variable name="six" mutable="yes">
         <stuff>
           <a>eh</a>
           <b>bee</b>
@@ -230,8 +215,7 @@
           <e>Eh!</e>
         </stuff>
       </xsl:variable>
-      <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="six" mutable="yes" select="slax:mvar-init(&quot;six&quot;, &quot;slax-six&quot;, $slax-init-six)" svarname="slax-six" ivarname="slax-init-six"/>
-      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="five" svarname="slax-five">
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="five">
         <five>t5</five>
       </slax:set-variable>
       <!-- * /
@@ -248,29 +232,28 @@
   </xsl:template>
   <xsl:template name="that">
     <xsl:param name="one" select="&quot;five&quot;"/>
-    <xsl:variable name="slax-two" mvarname="two"/>
-    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="two" select="slax:mvar-init(&quot;two&quot;, &quot;slax-two&quot;, $slax-two, &quot;too&quot;)" mutable="yes" svarname="slax-two"/>
+    <xsl:variable name="two" select="&quot;too&quot;" mutable="yes"/>
     <two>
       <xsl:value-of select="$two"/>
     </two>
-    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="two" svarname="slax-two" select="&quot;to&quot;"/>
+    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="two" select="&quot;to&quot;"/>
     <two>
       <xsl:value-of select="$two"/>
     </two>
   </xsl:template>
   <xsl:template name="foo">
     <configuration-text>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="&quot;bbb&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="&quot;bbb&quot;"/>
       <xsl:call-template name="other"/>
-      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="&quot;ccc&quot;"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="&quot;ccc&quot;"/>
     </configuration-text>
   </xsl:template>
   <xsl:template name="other">
     <xsl:param name="depth" select="0"/>
-    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="&quot;ddd&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="&quot;ddd&quot;"/>
     <xsl:variable name="tmp" select="&quot;this&quot; + &quot;that&quot;"/>
     <xsl:variable name="save" select="$indent"/>
-    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="&quot;eee&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="&quot;eee&quot;"/>
     <sample>
       <indent>
         <xsl:copy-of select="$indent"/>
@@ -285,7 +268,7 @@
         <xsl:value-of select="$save"/>
       </save>
     </sample>
-    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="$save"/>
+    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="$save"/>
     <xsl:if test="$depth &lt; 3">
       <xsl:call-template name="other">
         <xsl:with-param name="depth" select="$depth + 1"/>
@@ -297,10 +280,10 @@
     <line length="{string-length($indent)}">
       <xsl:value-of select="concat(name(), &quot; {&quot;)"/>
     </line>
-    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="&quot;ddd&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="&quot;ddd&quot;"/>
     <xsl:apply-templates/>
     <line>}</line>
-    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" svarname="slax-indent" select="$save"/>
+    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="indent" select="$save"/>
   </xsl:template>
   <xsl:template match="text()">
     <!-- nothing -->
