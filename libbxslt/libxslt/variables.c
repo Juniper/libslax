@@ -342,6 +342,49 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, int val) {
 }
 
 /**
+ * xsltMvarUnlinkPersistRVT:
+ * @ctxt: an XSLT transformation context
+ * @doc: an mvar-owned RVT doc whose last reference is about to be
+ *       dropped (refcount reaching zero), tagged XSLT_RVT_GLOBAL
+ *
+ * Removes @doc from ctxt->persistRVT if it is still linked there.
+ * Unlike ctxt->localRVT (which xsltReleaseLocalRVTs() walks, and
+ * detaches any mvar-owned doc from, once per enclosing instruction --
+ * see the mvar-refcount check there and in xsltFreeStackElem()'s
+ * elem->fragment walk), nothing visits ctxt->persistRVT incrementally
+ * during a transform; a doc flagged XSLT_RVT_GLOBAL (xsltFlagRVTs())
+ * that also became mvar-owned would otherwise sit on that list,
+ * untouched, right up until xsltReleaseRVT() below reuses its next
+ * field for ctxt->cache->RVT -- corrupting persistRVT's chain for
+ * xsltFreeRVTs() to later walk into. Called only from
+ * xsltMvarDocsRelease(), synchronously (never from within a list walk
+ * of our own), so @doc's prev/next are guaranteed current here, never
+ * stale. See mvars-redo.md, Section 6 step 4.
+ */
+static void
+xsltMvarUnlinkPersistRVT(xsltTransformContextPtr ctxt, xmlDocPtr doc)
+{
+    xmlDocPtr prev, next;
+
+    if ((ctxt == NULL) || (xmlDocGetCompression(doc) != XSLT_RVT_GLOBAL))
+	return;
+
+    prev = (xmlDocPtr) xmlDocGetPrev(doc);
+    next = (xmlDocPtr) xmlDocGetNext(doc);
+
+    if (prev != NULL)
+	xmlDocSetNext(prev, (xmlNodePtr) next);
+    else if (ctxt->persistRVT == doc)
+	ctxt->persistRVT = next;
+
+    if (next != NULL)
+	xmlDocSetPrev(next, (xmlNodePtr) prev);
+
+    xmlDocSetNext(doc, NULL);
+    xmlDocSetPrev(doc, NULL);
+}
+
+/**
  * xsltMvarDocsRelease:
  * @elem: an XSLT stack element whose mvarDocsTab holds the docs to
  *        release (entries previously recorded via
@@ -367,8 +410,10 @@ xsltMvarDocsRelease(xsltStackElemPtr elem, int nr)
 	int refs = xmlDocGetMvarRefcount(doc) - 1;
 
 	xmlDocSetMvarRefcount(doc, refs);
-	if (refs <= 0)
+	if (refs <= 0) {
+	    xsltMvarUnlinkPersistRVT(elem->context, doc);
 	    xsltReleaseRVT(elem->context, doc);
+	}
     }
 }
 
@@ -523,62 +568,6 @@ xsltStackElemReplaceValue(xsltStackElemPtr elem, xmlXPathObjectPtr value)
 }
 
 /**
- * xsltMvarUnlinkRVT:
- * @ctxt: an XSLT transformation context
- * @doc: an RVT doc that is about to be promoted to mvar-owned
- *
- * Removes @doc from whichever RVT garbage-collector list it currently
- * sits on (ctxt->localRVT for XSLT_RVT_LOCAL/XSLT_RVT_FUNC_RESULT,
- * ctxt->persistRVT for XSLT_RVT_GLOBAL) and clears its compression tag.
- * Those lists and the mvar refcounting system both reuse the same
- * xmlDoc next/prev fields to link docs, so a doc must never be on one
- * of those lists AND be live in an elem->mvarDocsTab at the same time --
- * the next list walk (or xsltReleaseRVT() re-pushing it onto
- * ctxt->cache->RVT when its refcount later hits zero) would corrupt
- * whichever chain still threads through it. Called once, at the moment
- * a doc is first promoted to mvar-owned in xsltStackElemReplaceMvarValue(),
- * so that from then on the mvar refcount is its only owner. See
- * mvars-redo.md, Section 6 step 2.
- */
-static void
-xsltMvarUnlinkRVT(xsltTransformContextPtr ctxt, xmlDocPtr doc)
-{
-    xmlDocPtr prev, next;
-    xmlDocPtr *head;
-
-    if (ctxt == NULL)
-	return;
-
-    prev = (xmlDocPtr) xmlDocGetPrev(doc);
-    next = (xmlDocPtr) xmlDocGetNext(doc);
-
-    switch (xmlDocGetCompression(doc)) {
-    case XSLT_RVT_GLOBAL:
-	head = &ctxt->persistRVT;
-	break;
-    case XSLT_RVT_LOCAL:
-    case XSLT_RVT_FUNC_RESULT:
-	head = &ctxt->localRVT;
-	break;
-    default:
-	/* Not currently linked on any GC list we manage this way. */
-	return;
-    }
-
-    if (prev != NULL)
-	xmlDocSetNext(prev, (xmlNodePtr) next);
-    else if (*head == doc)
-	*head = next;
-
-    if (next != NULL)
-	xmlDocSetPrev(next, (xmlNodePtr) prev);
-
-    xmlDocSetNext(doc, NULL);
-    xmlDocSetPrev(doc, NULL);
-    xmlDocSetCompression(doc, 0);
-}
-
-/**
  * xsltStackElemReplaceMvarValue:
  * @elem: an mvar's own XSLT stack element
  * @value: its new value (may be NULL)
@@ -656,7 +645,6 @@ xsltStackElemReplaceMvarValue(xsltStackElemPtr elem, xmlXPathObjectPtr value)
 		newMax = grownMax;
 	    }
 
-	    xsltMvarUnlinkRVT(elem->context, doc);
 	    xmlDocSetMvarRefcount(doc, 1);
 	    newDocs[newNr++] = doc;
 	}
@@ -935,7 +923,37 @@ xsltFreeStackElem(xsltStackElemPtr elem) {
 	    cur = elem->fragment;
 	    elem->fragment = (xmlDocPtr) xmlDocGetNext(cur);
 
-            if (xmlDocGetCompression(cur) == XSLT_RVT_LOCAL) {
+            if (xmlDocGetMvarRefcount(cur) > 0) {
+                /*
+                 * Some mvar still holds a counted reference to this
+                 * doc (it was promoted to mvar-owned while reachable
+                 * only via this elem's ->fragment, e.g.
+                 * "var $x := <a/>; append $m += $x;"). Leave it
+                 * untouched; xsltMvarDocsRelease() will dispose of it
+                 * via xsltReleaseRVT() when the last mvar reference
+                 * goes away. See mvars-redo.md, Section 6 step 4.
+                 */
+            } else if (xmlDocGetCompression(cur) == 0) {
+                /*
+                 * Refcount 0 *and* flag 0: this doc was promoted to
+                 * mvar-owned via this same uncounted ->fragment pointer
+                 * (e.g. "mvar $y = <a/>;" sets $y's elem->fragment
+                 * directly, uncounted, in xsltEvalVariable()'s
+                 * literal-content branch above; "append $x1 += $y;"
+                 * then promotes that same doc into $x1's mvarDocsTab,
+                 * the only counted reference it ever gets) and has
+                 * since been fully released elsewhere -- $x1's own
+                 * teardown already dropped the refcount to zero and
+                 * called xsltReleaseRVT(), which resets the
+                 * compression flag to 0 as part of caching/freeing it.
+                 * xsltCreateRVT() callers always flag a doc with a
+                 * non-zero XSLT_RVT_* tag before linking it anywhere
+                 * (see above, and xsltFlagRVTs()), so flag 0 here can
+                 * only mean "already disposed of via xsltReleaseRVT()",
+                 * never "not yet tracked". Nothing left to do. See
+                 * mvars-redo.md, Section 6 step 4.
+                 */
+            } else if (xmlDocGetCompression(cur) == XSLT_RVT_LOCAL) {
 		xsltReleaseRVT(elem->context, cur);
             } else if (xmlDocGetCompression(cur) == XSLT_RVT_FUNC_RESULT) {
                 xsltRegisterLocalRVT(elem->context, cur);
@@ -1691,7 +1709,7 @@ xsltEvalGlobalVariables(xsltTransformContextPtr ctxt) {
 		 * elem (from style->variables) is a compile-time copy with
 		 * context == NULL; def is the live, per-transform instance
 		 * that mvar refcounting (xsltMvarDocsRelease(),
-		 * xsltMvarUnlinkRVT()) and fragment cleanup
+		 * xsltMvarUnlinkPersistRVT()) and fragment cleanup
 		 * (xsltFreeStackElem()) act on via elem->context, so it must
 		 * carry the real transform context, not the NULL it was
 		 * copied with. See mvars-redo.md, Section 6 step 2.

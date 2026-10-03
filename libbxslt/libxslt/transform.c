@@ -2282,8 +2282,34 @@ xsltReleaseLocalRVTs(xsltTransformContextPtr ctxt, xmlDocPtr base)
     do {
         tmp = cur;
         cur = (xmlDocPtr) xmlDocGetNext(cur);
-        if (xmlDocGetCompression(tmp) == XSLT_RVT_LOCAL) {
+        if (xmlDocGetMvarRefcount(tmp) > 0) {
+            /*
+             * An mvar's mvarDocsTab still holds a counted reference to
+             * this doc. Leave it alone -- not relinked onto any GC list,
+             * which detaches it from ctxt->localRVT here -- and let
+             * xsltMvarDocsRelease() dispose of it via xsltReleaseRVT()
+             * once the last mvar reference goes away. See
+             * mvars-redo.md, Section 6 step 4.
+             */
+        } else if (xmlDocGetCompression(tmp) == XSLT_RVT_LOCAL) {
             xsltReleaseRVT(ctxt, tmp);
+        } else if (xmlDocGetCompression(tmp) == 0) {
+            /*
+             * Refcount 0 *and* flag 0: this doc was promoted to
+             * mvar-owned while reachable only via ctxt->localRVT (e.g.
+             * "var $x := <a/>; append $m += $x;") and has since been
+             * fully released elsewhere -- the owning mvar's own
+             * teardown already dropped the refcount to zero and called
+             * xsltReleaseRVT(), which resets the compression flag to 0
+             * as part of caching/freeing it. xsltCreateRVT() callers
+             * always flag a doc with a non-zero XSLT_RVT_* tag before
+             * linking it onto this list, so flag 0 here can only mean
+             * "already disposed of via xsltReleaseRVT()", never "not
+             * yet tracked". Nothing left to do -- it's already detached
+             * from ctxt->localRVT as a side effect of this walk not
+             * relinking it. See mvars-redo.md, Section 6 step 4, and
+             * the symmetric case in xsltFreeStackElem() (variables.c).
+             */
         } else if (xmlDocGetCompression(tmp) == XSLT_RVT_GLOBAL) {
             xsltRegisterPersistRVT(ctxt, tmp);
         } else if (xmlDocGetCompression(tmp) == XSLT_RVT_FUNC_RESULT) {
