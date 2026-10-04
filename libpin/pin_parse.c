@@ -125,7 +125,7 @@ pin_body_find_attrib (const char *attribs, const char *name, size_t *lenp)
 /*
  * Parse the raw XML attribute string and feed each name=value pair to
  * the filter via xo_filter_walk_attr.  Called on demand from BIA_IF
- * evaluation — attributes are only parsed when a condition check needs them.
+ * evaluation -- attributes are only parsed when a condition check needs them.
  */
 static void
 pin_body_feed_attribs (xo_filter_t *xfp, const char *attribs)
@@ -346,7 +346,7 @@ pin_insert_node (pin_insert_t *pip, const char *msg,
 		const char *data, size_t len,
 		pin_node_type_t type, pin_name_id_t name_id, pa_atom_t contents)
 {
-    /* Inside a phantom discard frame — don't insert anything */
+    /* Inside a phantom discard frame -- don't insert anything */
     pin_istack_t *cur = &pip->pin_stack[pip->pin_depth];
     if (cur->ps_node == NULL && cur->ps_action == PIA_DISCARD)
 	return pin_node_id_null_atom();
@@ -992,7 +992,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
-    /* Phantom frame pushed for PIA_DISCARD — verify name and pop */
+    /* Phantom frame pushed for PIA_DISCARD -- verify name and pop */
     if (psp->ps_node == NULL) {
 	if (psp->ps_action != PIA_DISCARD) {
 	    pin_source_failure(parsep->pp_srcp, 0,
@@ -1370,13 +1370,13 @@ pin_body_avt_expand (pin_parse_t *parsep, pin_body_frame_t *bfp,
     const char *p = tmpl;
 
     while (*p && pos < sizeof(buf) - 1) {
-	/* Escaped {{ → single '{' */
+	/* Escaped {{ -> single '{' */
 	if (p[0] == '{' && p[1] == '{') {
 	    buf[pos++] = '{';
 	    p += 2;
 	    continue;
 	}
-	/* Escaped }} → single '}' */
+	/* Escaped }} -> single '}' */
 	if (p[0] == '}' && p[1] == '}') {
 	    buf[pos++] = '}';
 	    p += 2;
@@ -1584,7 +1584,7 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 	}
 	case BIA_VALUE_OF: {
 	    if (!pin_name_id_is_null(instr->bi_text)) {
-		/* select="path/or/expr" — evaluate against context node */
+		/* select="path/or/expr" -- evaluate against context node */
 		const char *path = pin_namepool_string(pwp, instr->bi_text);
 		if (path && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
 		    char vbuf[512];
@@ -2229,7 +2229,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 
 /*
  * Return TRUE if rulep's mode (pr_mode) matches the context's current mode.
- * Both NULL/PA_NULL_ATOM → default-mode match.
+ * Both NULL/PA_NULL_ATOM -> default-mode match.
  */
 static int
 pin_parse_mode_matches (pin_parse_t *parsep, pin_rule_t *rulep)
