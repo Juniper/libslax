@@ -44,8 +44,8 @@ int xi_dead_code;
  * Append new_node_atom as the last child of parent_atom.
  *
  * If last_hint is non-null and its xn_next still points to parent_atom
- * (i.e. it is still the last child), use it directly — O(1).  Otherwise
- * scan the sibling chain from xn_contents to find the last child — O(n).
+ * (i.e. it is still the last child), use it directly -- O(1).  Otherwise
+ * scan the sibling chain from xn_contents to find the last child -- O(n).
  *
  * The caller must have already set all fields of the new node except
  * xn_next; this function wires xn_next and updates xn_contents if needed.
@@ -64,7 +64,7 @@ xi_tree_append_child (xi_workspace_t *xwp,
     newp->xn_next = parent_atom;
 
     if (parentp->xn_contents == PA_NULL_ATOM) {
-	/* No children yet — new node is the first and last */
+	/* No children yet -- new node is the first and last */
 	parentp->xn_contents = new_node_atom;
 	return new_node_atom;
     }
@@ -75,7 +75,7 @@ xi_tree_append_child (xi_workspace_t *xwp,
 
     if (last_hint != PA_NULL_ATOM) {
 	xi_node_t *hintp = xi_node_addr(xwp, last_hint);
-	/* A last child's xn_next is the parent atom — O(1) validation */
+	/* A last child's xn_next is the parent atom -- O(1) validation */
 	if (hintp != NULL && hintp->xn_next == parent_atom) {
 	    lastp = hintp;
 	    last_atom = last_hint;
