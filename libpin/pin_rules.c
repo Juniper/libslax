@@ -508,7 +508,7 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
      * We update the existing entry in-place so the list and Patricia tree
      * both automatically reflect the winner without relinking.
      *
-     * Resolution order (XSLT §5.5):
+     * Resolution order (XSLT section 5.5):
      *   1. Higher import_prec wins.
      *   2. Same import_prec: higher priority wins.
      *   3. Tie: emit a warning; treat new entry as winner.
@@ -717,6 +717,12 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_named_count = 0;
 	rules->prb_named_size = 0;
     }
+    if (rules->prb_pending_calls) {
+	free(rules->prb_pending_calls);
+	rules->prb_pending_calls = NULL;
+	rules->prb_pending_call_count = 0;
+	rules->prb_pending_call_size = 0;
+    }
     if (rules->prb_globals) {
 	free(rules->prb_globals);
 	rules->prb_globals = NULL;
@@ -814,6 +820,39 @@ pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id)
 	    return prbp->prb_named[i].pnt_ops;
     }
     return pin_op_id_null_atom();
+}
+
+int
+pin_rulebook_named_exists (pin_rulebook_t *prbp, pin_name_id_t name_id)
+{
+    for (uint32_t i = 0; i < prbp->prb_named_count; i++) {
+	if (pin_name_id_equal(prbp->prb_named[i].pnt_name, name_id))
+	    return 1;
+    }
+    return 0;
+}
+
+int
+pin_rulebook_pending_call_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
+			       pin_name_id_t src_file, uint32_t src_line)
+{
+    if (prbp->prb_pending_call_count >= prbp->prb_pending_call_size) {
+	uint32_t newsize = prbp->prb_pending_call_size
+	    ? prbp->prb_pending_call_size * 2 : 8;
+	pin_pending_call_t *np = realloc(prbp->prb_pending_calls,
+	                                 newsize * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	prbp->prb_pending_calls = np;
+	prbp->prb_pending_call_size = newsize;
+    }
+    pin_pending_call_t *pcp
+	= &prbp->prb_pending_calls[prbp->prb_pending_call_count];
+    pcp->pc_name = name_id;
+    pcp->pc_src_file = src_file;
+    pcp->pc_src_line = src_line;
+    prbp->prb_pending_call_count += 1;
+    return 0;
 }
 
 int
