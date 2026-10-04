@@ -8,7 +8,7 @@
  *
  * Phil Shafer, August 2026
  *
- * pin_stree_t — parrotdb-backed sort/index tree.
+ * pin_stree_t -- parrotdb-backed sort/index tree.
  * See pin_sort.h for design notes.
  */
 
