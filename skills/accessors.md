@@ -3,18 +3,18 @@
 ## Why this exists
 
 `libbxml` (our libxml2 fork) and `libbxslt` (our libxslt fork) define the
-structs that every other library in this tree — `libslax`, `extensions`,
-`slaxproc` — builds on: `xmlNode`, `xmlDoc`, `xmlXPathObject`,
+structs that every other library in this tree -- `libslax`, `extensions`,
+`slaxproc` -- builds on: `xmlNode`, `xmlDoc`, `xmlXPathObject`,
 `xsltStylesheet`, `xsltTransformContext`, and friends. Historically,
 consumer code reached straight into those structs (`node->type`,
 `ctxt->xpathCtxt`, `xop->stringval`). Every one of those touches is a
-hidden dependency on today's field layout — `libbxml`/`libbxslt` can never
+hidden dependency on today's field layout -- `libbxml`/`libbxslt` can never
 change how a struct is stored as long as outside code pokes its fields
 directly.
 
 The fix: every touched field gets a generated `get`/`set` accessor
 function, and consumer code goes through the accessor instead of the raw
-field. `libbxml` and `libbxslt` themselves are exempt — they own the data
+field. `libbxml` and `libbxslt` themselves are exempt -- they own the data
 and *are* the implementation the accessor calls into. If you're writing
 code in `libslax`, `extensions`, `slaxproc`, or anywhere else outside
 `libbxml`/`libbxslt`, this applies to you.
@@ -42,13 +42,13 @@ if (xmlXPathObjectGetType(xop) == XPATH_NUMBER) {
 
 (Real example, `extensions/bit/ext_bit.c`.) Naming convention:
 `xml<Struct>Get<Field>` / `xml<Struct>Set<Field>` for libbxml structs,
-`xslt<Struct>Get<Field>` / `xslt<Struct>Set<Field>` for libbxslt structs —
+`xslt<Struct>Get<Field>` / `xslt<Struct>Set<Field>` for libbxslt structs --
 no `Ptr` in the name (`xmlNsGetPrefix`, not `xmlNsPtrGetPrefix`). Every
 accessor is `static inline` by default, so this costs nothing at the call
-site — it's a 1:1 textual substitution, not a new indirection at runtime.
+site -- it's a 1:1 textual substitution, not a new indirection at runtime.
 
 If a field has no setter, it's read-only everywhere outside
-`libbxml`/`libbxslt` (no consumer ever assigns it) — don't add one
+`libbxml`/`libbxslt` (no consumer ever assigns it) -- don't add one
 speculatively; add it only when a real write site needs it (and update
 the generator table, see "Adding a new accessor" below).
 
@@ -62,17 +62,17 @@ the generator table, see "Adding a new accessor" below).
 | `xmlNs` | `next`, `type`, `href`, `prefix`, `_private` |
 | `xmlAttr` | `type`, `name`, `children`, `last`, `parent`, `next`, `prev`, `doc`, `ns`, `atype`, `psvi` |
 | `xmlDoc` | tree-linkage fields, plus all 12 scalar-metadata fields: `compression`, `standalone`, `intSubset`, `extSubset`, `version`, `encoding`, `ids`, `URL`, `charset`, `dict`, `parseFlags`, `properties` |
-| `xmlDtd` | `type`, `name`, `children`, `last`, `parent`, `next`, `prev`, `doc` (all getter-only — upstream libxml2 already treats `xmlDtd` as opaque) |
-| `xmlNodeSet` | `nodeNr`, `nodeMax` (getter-only), `nodeTab` (via `xmlNodeSetGetNodeEntry`/`SetNodeEntry` — see "Array fields" below) |
+| `xmlDtd` | `type`, `name`, `children`, `last`, `parent`, `next`, `prev`, `doc` (all getter-only -- upstream libxml2 already treats `xmlDtd` as opaque) |
+| `xmlNodeSet` | `nodeNr`, `nodeMax` (getter-only), `nodeTab` (via `xmlNodeSetGetNodeEntry`/`SetNodeEntry` -- see "Array fields" below) |
 | `xmlXPathContext` | `doc`, `node`, `namespaces`, `nsNr`, `contextSize`, `proximityPosition`, `nsHash`, `extra`, `function`, `functionURI`, `dict`, `flags`, `opLimit`, `opCount`, `depth` |
 | `xmlXPathObject` | `type`, `nodesetval`, `boolval`, `stringval`, `user`, `index` (get+set); `floatval`, `user2`, `index2` (getter-only) |
 | `xmlXPathParserContext` | `context`, `value` (getter-only); `error` (get+set) |
-| `xmlParserCtxt` | `node`, `input`, `wellFormed` (getter-only); `userData`, `version`, `myDoc` (get+set) — `dict`/`sax` deliberately excluded, see "Prefer upstream" below |
-| `xmlSAXHandler` | `warning` (get+set) — the only field any consumer outside `libbxml` touches |
+| `xmlParserCtxt` | `node`, `input`, `wellFormed` (getter-only); `userData`, `version`, `myDoc` (get+set) -- `dict`/`sax` deliberately excluded, see "Prefer upstream" below |
+| `xmlSAXHandler` | `warning` (get+set) -- the only field any consumer outside `libbxml` touches |
 
 Only fields with a real call site outside `libbxml` got an accessor
 (the "touched-only" rule) for `xmlNodeSet`/`xmlXPathContext`/
-`xmlXPathParserContext`/`xmlParserCtxt`/`xmlSAXHandler` — these structs
+`xmlXPathParserContext`/`xmlParserCtxt`/`xmlSAXHandler` -- these structs
 have more fields than the table above; untouched ones are deliberately
 deferred and listed in a comment next to the relevant table in
 `bin/gen-xmlaccessors.sh`. `xmlNode`/`xmlNs`/`xmlAttr`/`xmlDoc`/`xmlDtd`
@@ -87,7 +87,7 @@ and `xmlXPathObject`, by contrast, get full coverage.
 | `xsltTemplate` | `name`, `match`, `mode`, `next`, `elem` (all getter-only) |
 | `xsltStackElem` | all 12 fields: `next`, `comp`, `computed`, `name`, `nameURI`, `select`, `level`, `flags`, `context`, `tree`, `value`, `fragment` |
 | `xsltStylePreComp` | `type` only (reached via `xsltStackElem.comp->type`) |
-| `xsltDocument`, `xsltKeyDef`, `xsltKeyTable`, `xsltDecimalFormat` | full get+set coverage on every field — these are libxslt's own documented public-API structs (opaque-handle pattern per its devhelp docs), so they got full coverage even though no in-tree call site touches them today |
+| `xsltDocument`, `xsltKeyDef`, `xsltKeyTable`, `xsltDecimalFormat` | full get+set coverage on every field -- these are libxslt's own documented public-API structs (opaque-handle pattern per its devhelp docs), so they got full coverage even though no in-tree call site touches them today |
 
 ## Patterns you'll actually hit
 
@@ -101,7 +101,7 @@ xmlNsPtr ns = xmlNodeGetNs(node);       /* was: xmlNsPtr ns = node->ns; */
 ### Array fields: no raw-pointer getter, an indexed "Entry" accessor instead
 
 An accessor that just handed back the raw array pointer (`ns->nodeTab`)
-would still leave the caller indexing raw storage — it doesn't remove the
+would still leave the caller indexing raw storage -- it doesn't remove the
 layout dependency, just relocates it one level down. So array fields
 (`xmlNodeSet.nodeTab`, `xsltTransformContext.templTab`/`varsTab`) instead
 get a per-element accessor that takes the index itself:
@@ -114,14 +114,14 @@ node = xmlNodeSetGetNodeEntry(list, i);
 tmpl = xsltTransformContextGetTemplEntry(ctxt, i);
 ```
 
-Getter-only unless a real call site writes through an index — `nodeTab`
+Getter-only unless a real call site writes through an index -- `nodeTab`
 is the one exception (`xsltutils.c`'s sort routines swap entries in
 place), so it also has `xmlNodeSetSetNodeEntry(ns, i, value)`.
 
 ### Increment accessor for counters bumped one at a time
 
 `xsltStylesheet.errors` is never set to an absolute value outside
-`libbxslt` — every call site just does `style->errors += 1;`. Rather than
+`libbxslt` -- every call site just does `style->errors += 1;`. Rather than
 force a get-then-add-then-set round trip through the normal pair, it also
 gets a dedicated increment accessor:
 
@@ -131,7 +131,7 @@ xsltStylesheetIncrementErrors(style);   /* was: style->errors += 1; */
 
 If you find another counter field with the same "always incremented by
 exactly one, never set to a specific value" usage pattern, this is the
-precedent to follow — ask before inventing a different shape.
+precedent to follow -- ask before inventing a different shape.
 
 ### Nested access
 
@@ -141,7 +141,7 @@ xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
 ```
 
 The outer accessor's return value just becomes the argument to the inner
-one — no temporary variable needed, though feel free to use one if it
+one -- no temporary variable needed, though feel free to use one if it
 reads more clearly at a given call site.
 
 ### Self-referential writes
@@ -154,7 +154,7 @@ xmlXPathObjectSetNodesetval(ret,
 ```
 
 The setter wraps the *entire* right-hand-side expression, not just the
-assignment target — don't leave a raw read on the RHS just because it's
+assignment target -- don't leave a raw read on the RHS just because it's
 "only a read."
 
 ### Name collisions: the `Raw` suffix
@@ -163,7 +163,7 @@ A few fields collide with a pre-existing public (or file-static) function
 of the same derived name but different semantics:
 
 - `xmlNodeSetContent`/`xmlNodeSetName` are real public libxml2 API
-  (copy-and-escape / dict-aware rename) — not the same thing as setting
+  (copy-and-escape / dict-aware rename) -- not the same thing as setting
   the raw field.
 - `xmlNodeSetDoc` collides with a `static` helper in `tree.c` that
   recursively updates a subtree's dict.
@@ -176,7 +176,7 @@ char *content = (char *) xmlNodeGetContentRaw(child);   /* not xmlNodeGetContent
 
 (Real example, `libslax/jsonwriter.c`.) **Before adding any new accessor**,
 grep both public headers *and* `.c` files for the candidate name, and
-confirm with a real build — some collisions (file-static helpers) don't
+confirm with a real build -- some collisions (file-static helpers) don't
 show up in a header-only grep.
 
 ### Prefer an existing upstream accessor over a generated duplicate
@@ -184,38 +184,38 @@ show up in a header-only grep.
 For `xmlParserCtxt`, two fields (`dict`, `sax`) were deliberately left out
 of the generated table because libxml2 2.14+ already ships a public
 accessor with *identical* semantics to a raw field read/write
-(`xmlCtxtGetDict()`/`xmlCtxtSetDict()`, `xmlCtxtGetSaxHandler()`) — use
+(`xmlCtxtGetDict()`/`xmlCtxtSetDict()`, `xmlCtxtGetSaxHandler()`) -- use
 those directly instead of a duplicate. Several *other*
 `XML_DEPRECATED_MEMBER`-flagged fields on the same struct look like they
-have an upstream replacement but don't — e.g. `xmlCtxtGetNode()` silently
+have an upstream replacement but don't -- e.g. `xmlCtxtGetNode()` silently
 falls back to returning `myDoc` cast as a node when the real field is
 `NULL`, and `xmlCtxtGetStatus()` returns a combined bitmask, not the raw
-`wellFormed` boolean — so those got a real generated accessor instead.
+`wellFormed` boolean -- so those got a real generated accessor instead.
 **Verify semantics by reading the real implementation before assuming an
 upstream function is a safe substitute**, don't just match by name.
 
 ## What's still raw, and why
 
-- **`libbxml`/`libbxslt` themselves** — out of scope entirely. They're the
+- **`libbxml`/`libbxslt` themselves** -- out of scope entirely. They're the
   data owner; raw field access there *is* the accessor's implementation.
-- **`xsltutils.c`'s `xsltGetPSVIPtr()`** — returns `&node->psvi` (the
+- **`xsltutils.c`'s `xsltGetPSVIPtr()`** -- returns `&node->psvi` (the
   *address* of the field, keyed off a runtime type switch), not its
   value. No get/set pair can express "pointer to storage location," so
   this stays raw.
 - **False-friend struct names**: several unrelated structs reuse common
-  field/variable names — `xsltTransformContextPtr ctxt` has its own
+  field/variable names -- `xsltTransformContextPtr ctxt` has its own
   `dict`/`node`/`version`/`error`, distinct from `xmlParserCtxtPtr ctxt`'s
   fields of the same name; `xsltStylesheetPtr style` has its own `dict`;
   `xmlXPathObjectPtr`'s `type` is unrelated to `xmlNode`'s `type`. Don't
-  assume a field name implies a specific struct — check the declared type
+  assume a field name implies a specific struct -- check the declared type
   of the base expression before converting anything.
 - **`XSLT_IS_RES_TREE_FRAG(n)`** (in `slaxdebugger.c`, `slaxext.c`,
-  `slaxio.c`, `slaxmvar.c`) — a macro libxslt's own header labels
+  `slaxio.c`, `slaxmvar.c`) -- a macro libxslt's own header labels
   "internal," with no public replacement. This is a real upstream gap,
   not an oversight; leave it as-is unless you're specifically asked to
   address it.
 - **Dead code** (`#if 0`, or a disabled `#ifdef` with no live `#else`) is
-  left unconverted on sight — don't "fix" raw access inside code that
+  left unconverted on sight -- don't "fix" raw access inside code that
   doesn't compile today.
 
 ## Build-time inline/non-inline switch
@@ -228,7 +228,7 @@ functions, defined once in the generated `xmlaccessors.c`/
 accessor calls at link time with no measurable cost, which would make it
 safe to change the underlying struct layout without a tree-wide rebuild
 of every call site's assumptions. **You don't need to do anything for
-this to work** — just go through the accessor functions as normal; which
+this to work** -- just go through the accessor functions as normal; which
 flavor gets built is a configure-time choice, invisible at the call site.
 
 ## Adding a new accessor
@@ -250,7 +250,7 @@ field:ctype:getter:setter:param:comment
   fields" above); leave the setter column empty for getter-only, or put
   `auto`/an explicit name to opt in.
 - Add a one-line comment above the row explaining *why* a setter exists
-  or doesn't, matching the style already in both scripts — future readers
+  or doesn't, matching the style already in both scripts -- future readers
   (including future-you) need the "was this checked or just guessed"
   context, not just the mechanical result.
 
@@ -261,30 +261,30 @@ bin/gen-xmlaccessors.sh   # or bin/gen-xsltaccessors.sh
 ```
 
 (Both scripts also run automatically from the relevant `Makefile.am`
-generation rule during a normal build — you don't need to run them by
+generation rule during a normal build -- you don't need to run them by
 hand unless you're iterating on the table itself.) Then rebuild the whole
-tree (`libbxml`, `libbxslt`, `libslax`, `extensions`, `slaxproc`) — not
-just the library you're changing — since call sites elsewhere may already
+tree (`libbxml`, `libbxslt`, `libslax`, `extensions`, `slaxproc`) -- not
+just the library you're changing -- since call sites elsewhere may already
 be using the field.
 
 ## Migration checklist for your own code
 
 1. `grep -n -- '->fieldname\b' yourfile.c` to enumerate candidates.
 2. For each hit, confirm the base expression's *declared* type is one of
-   the covered structs above — don't convert a same-named field on an
+   the covered structs above -- don't convert a same-named field on an
    unrelated struct (see "False-friend struct names").
 3. Check the field is actually in the table for that struct (see
    "Struct coverage" above). If it's not there yet, you likely need to
-   add a row rather than work around it — see "Adding a new accessor."
+   add a row rather than work around it -- see "Adding a new accessor."
 4. Convert: plain field -> `Get`/`Set` call; array index -> `GetEntry`/
    `SetEntry`; counter bumped by exactly one -> `Increment` if one
    exists.
 5. Build (`make yourfile.lo` from the relevant `build/` subdirectory,
    then a full top-level `make`) after each file, not at the end of a
    batch.
-6. One file per commit — keeps review tractable on a large mechanical
+6. One file per commit -- keeps review tractable on a large mechanical
    change. Don't bundle multiple files' conversions into one commit.
-7. Never run `make accept` yourself if your change touches test output —
+7. Never run `make accept` yourself if your change touches test output --
    that's a manual, hand-inspected step reserved for the repo owner.
 
 ## Moving other software onto libbxml/libbxslt
@@ -293,7 +293,7 @@ If you're porting an external tool, or adding a new module to this tree,
 so it uses our captive `libbxml`/`libbxslt` instead of a system-installed
 libxml2/libxslt, the accessor rules above are necessary but not
 sufficient. You also need to get the build wiring right, or you'll either
-fail to link or — worse — silently link against the *system* libxml2/
+fail to link or -- worse -- silently link against the *system* libxml2/
 libxslt and get two incompatible copies of the same structs in one
 process.
 
@@ -327,15 +327,15 @@ LIBS = \
 ```
 
 `LIBXSLT_CFLAGS`/`LIBXSLT_LIBS` already include libbxml's include path and
-`libbxml.la` transitively — listing both is the established convention
+`libbxml.la` transitively -- listing both is the established convention
 here (libtool dedups the shared dependency at link time), not a mistake
 to "clean up."
 
 **Do not** add a `PKG_CHECK_MODULES([LIBXML], [libxml-2.0 ...])`,
 `AC_PATH_PROG(XML2_CONFIG, xml2-config, ...)`, or any other autodetection
 for libxml2/libxslt in a new module's `configure.ac` fragment. There is
-none anywhere in this tree's own top-level `configure.ac` — confirmed by
-grep — and adding one reintroduces exactly the problem the captive fork
+none anywhere in this tree's own top-level `configure.ac` -- confirmed by
+grep -- and adding one reintroduces exactly the problem the captive fork
 exists to prevent: a second, ABI-incompatible copy of `xmlNode`/etc. from
 whatever libxml2 happens to be installed on the build machine, silently
 linked alongside ours. If your new code needs libxml/libxslt at all, it
@@ -343,19 +343,19 @@ needs `${LIBXML_CFLAGS}`/`${LIBXSLT_CFLAGS}` and nothing else.
 
 ### `#include` lines don't change
 
-Source stays exactly as upstream libxml2/libxslt code would write it —
+Source stays exactly as upstream libxml2/libxslt code would write it --
 `#include <libxml/tree.h>`, `#include <libxslt/extensions.h>`,
 `#include <libexslt/exslt.h>` (real examples from `libslax/slaxtree.c`).
 The `-I` flags above make these resolve into `libbxml/include/`/
 `libbxslt/` instead of a system path; nothing about the `#include` syntax
 itself is captive-specific. Don't add a `libxml2/` or `libbxml/`
-directory prefix to the include path yourself — the existing headers
+directory prefix to the include path yourself -- the existing headers
 already expect to be reached as `<libxml/...>`.
 
 ### Build order
 
 `libbxml` must build before `libbxslt`, which must build before any new
-consumer — the top-level `Makefile.am`'s `SUBDIRS` already enforces this
+consumer -- the top-level `Makefile.am`'s `SUBDIRS` already enforces this
 (`libpsu, parrotdb, libbxml, libbxslt, libslax, libxi, extensions,
 slaxproc, ...`). A new module's directory needs:
 
@@ -366,7 +366,7 @@ slaxproc, ...`). A new module's directory needs:
 If you ever build a subdirectory directly (`cd yourdir && make`) instead
 of from the top level, the generated accessor headers
 (`libbxml/include/libxml/gen/xmlaccessors-inline.h`, etc.) and libbxml/
-libbxslt's own generated build files may not exist yet — build from the
+libbxslt's own generated build files may not exist yet -- build from the
 top level at least once first, or `make -C libbxml -C libbxslt` before
 your subdirectory.
 
