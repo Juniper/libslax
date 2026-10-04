@@ -44,8 +44,8 @@ int pin_dead_code;
  * Append new_node_atom as the last child of parent_atom.
  *
  * If last_hint is non-null and its pn_next still points to parent_atom
- * (i.e. it is still the last child), use it directly — O(1).  Otherwise
- * scan the sibling chain from pn_contents to find the last child — O(n).
+ * (i.e. it is still the last child), use it directly -- O(1).  Otherwise
+ * scan the sibling chain from pn_contents to find the last child -- O(n).
  *
  * The caller must have already set all fields of the new node except
  * pn_next; this function wires pn_next and updates pn_contents if needed.
@@ -64,7 +64,7 @@ pin_tree_append_child (pin_workspace_t *pwp,
     newp->pn_next = parent_atom;
 
     if (parentp->pn_contents == PA_NULL_ATOM) {
-	/* No children yet — new node is the first and last */
+	/* No children yet -- new node is the first and last */
 	pin_node_set_child(parentp, new_node_atom);
 	return new_node_atom;
     }
@@ -75,7 +75,7 @@ pin_tree_append_child (pin_workspace_t *pwp,
 
     if (!pin_node_id_is_null(last_hint)) {
 	pin_node_t *hintp = pin_node_addr(pwp, last_hint);
-	/* A last child's pn_next is the parent atom — O(1) validation */
+	/* A last child's pn_next is the parent atom -- O(1) validation */
 	if (hintp != NULL && pin_node_id_equal(hintp->pn_next, parent_atom)) {
 	    lastp = hintp;
 	    last_atom = last_hint;
