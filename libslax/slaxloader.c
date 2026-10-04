@@ -717,6 +717,7 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
 
     strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
     sd.sd_file = file;
+    slaxCheckUtf8(&sd);
 
     sd.sd_ctxt = ctxt;
 
