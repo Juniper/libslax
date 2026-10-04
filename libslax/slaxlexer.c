@@ -675,6 +675,56 @@ slaxGetInput (slax_data_t *sdp, int final)
 }
 
 /*
+ * Scan the whole input file for malformed UTF-8, reporting the first
+ * bad line, then rewind so the lexer can read it from the start.
+ */
+int
+slaxCheckUtf8 (slax_data_t *sdp)
+{
+    int line = 1, ch, need = 0, lo = 0x80, hi = 0xbf, bad = FALSE;
+
+    while (!bad && (ch = getc(sdp->sd_file)) != EOF) {
+	if (need > 0) {
+	    if (ch < lo || ch > hi)
+		bad = TRUE;
+	    else {
+		need -= 1;
+		lo = 0x80;
+		hi = 0xbf;
+	    }
+	} else if (ch == '\n') {
+	    line += 1;
+	} else if (ch < 0x80) {
+	    continue;
+	} else if (ch >= 0xc2 && ch <= 0xdf) {
+	    need = 1;
+	} else if (ch >= 0xe0 && ch <= 0xef) {
+	    need = 2;
+	    lo = (ch == 0xe0) ? 0xa0 : 0x80;
+	    hi = (ch == 0xed) ? 0x9f : 0xbf;
+	} else if (ch >= 0xf0 && ch <= 0xf4) {
+	    need = 3;
+	    lo = (ch == 0xf0) ? 0x90 : 0x80;
+	    hi = (ch == 0xf4) ? 0x8f : 0xbf;
+	} else {
+	    bad = TRUE;
+	}
+    }
+
+    if (need > 0)
+	bad = TRUE;
+
+    if (bad) {
+	slaxError("%s:%d: error : string is not in UTF-8\n",
+		  sdp->sd_filename, line);
+	sdp->sd_errors += 1;
+    }
+
+    rewind(sdp->sd_file);
+    return bad;
+}
+
+/*
  * Move the current point by one character, getting more data if needed.
  */
 static int
@@ -1036,6 +1086,7 @@ slaxLexer (slax_data_t *sdp)
 		&& slaxIsCommentStart(sdp, sdp->sd_buf + sdp->sd_cur)) {
 
 		sdp->sd_start = sdp->sd_cur;
+		sdp->sd_comment_line = sdp->sd_line;
 		if (slaxDrainComment(sdp)) {
 		    sdp->sd_flags |= SDF_OPEN_COMMENT;
 		    return -1;
@@ -1677,6 +1728,8 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
     char buf[BUFSIZ * 4];
     int unterm = (sdp->sd_last == T_UNTERMINATED_STRING);
     int trunc = FALSE;
+    int line = (sdp->sd_flags & SDF_OPEN_COMMENT)
+		? sdp->sd_comment_line : sdp->sd_line;
 
     if (strncmp(str, leader2, sizeof(leader2) - 1) != 0)
 	sdp->sd_errors += 1;
@@ -1740,8 +1793,7 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 				    vstack, vtop);
 
 	if (msg) {
-	    slaxError("%s:%d: %s%s\n", sdp->sd_filename, sdp->sd_line,
-		      msg, buf);
+	    slaxError("%s:%d: %s%s\n", sdp->sd_filename, line, msg, buf);
 	    xmlFree(msg);
 	    return 0;
 	}
@@ -1752,7 +1804,7 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	strlcat(buf, "possibly unterminated string", sizeof(buf));
 
     slaxError("%s:%d: %s%s%s%s%s%s\n",
-	      sdp->sd_filename, sdp->sd_line, str,
+	      sdp->sd_filename, line, str,
 	      token ? " before " : "", token ?: "",
 	      token && trunc ? "... " : "",
 	      token ? ": " : "", buf);
