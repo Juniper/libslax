@@ -254,6 +254,7 @@
  * Use a "%pure-parser" for reentracy
  */
 %define api.pure full
+%define parse.error verbose
 
 /*
  * %expect is a hack, but adding the JSON-like encoding option
