@@ -16,7 +16,7 @@
 
 /*
  *To compile this file using gcc you can type
- *gcc `xml2-config --cflags --libs` -o tree2 tree2.c
+ *gcc `bxml-config --cflags --libs` -o tree2 tree2.c
  */
 
 /* A simple example how to create DOM. Libxml2 automagically 
