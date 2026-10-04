@@ -15,7 +15,7 @@
 
 /*
  *To compile this file using gcc you can type
- *gcc `xml2-config --cflags --libs` -o xmlexample libxml2-example.c
+ *gcc `bxml-config --cflags --libs` -o xmlexample libxml2-example.c
  */
 
 /**
