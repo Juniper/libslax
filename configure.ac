@@ -1629,7 +1629,7 @@ dnl
 #
 
 dnl bxml is always our own captive source tree (bxml/), never an
-dnl installed/external libxml2 — so there's nothing to search for.
+dnl installed/external libxml2 -- so there's nothing to search for.
 dnl Point straight at its build-tree headers and library.
 AC_SUBST(LIBXML_REQUIRED_VERSION)
 LIBXML_CFLAGS='-I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include'
@@ -1861,12 +1861,6 @@ AC_ARG_WITH(share-dir,
         [SLAX_SHAREDIR=$datarootdir/slax]
 )
 
-AC_ARG_WITH(oxtradoc-dir,
-        [  --with-oxtradoc-dir=[DIR]        Specify location of oxtradoc files],
-        [SLAX_OXTRADOCDIR=$withval],
-        [SLAX_OXTRADOCDIR=$datarootdir/oxtradoc]
-)
-
 AC_ARG_WITH(bin-dir,
         [  --with-bin-dir=[DIR]        Specify location of executable files],
         [SLAX_BINDIR=$withval],
@@ -1883,7 +1877,6 @@ AC_SUBST(SLAX_LIBDIR)
 AC_SUBST(SLAX_LIBEXT)
 AC_SUBST(SLAX_EXTDIR)
 AC_SUBST(SLAX_SHAREDIR)
-AC_SUBST(SLAX_OXTRADOCDIR)
 AC_SUBST(SLAX_BINDIR)
 AC_SUBST(SLAX_INCLUDEDIR)
 AC_SUBST(SLAX_CFLAGS)
@@ -1958,7 +1951,6 @@ AC_CONFIG_FILES([
   extensions/xutil/Makefile
   slaxproc/Makefile
   tests/Makefile
-  tests/art/Makefile
   tests/base/Makefile
   tests/bugs/Makefile
   tests/bxml/Makefile
@@ -1969,7 +1961,6 @@ AC_CONFIG_FILES([
   tests/xi/Makefile
   bin/Makefile
   doc/Makefile
-  doc/oxtradoc/oxtradoc
   packaging/libslax.pc
   packaging/rpm/libslax.spec
   packaging/rpm/libslax.space.spec
