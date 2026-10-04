@@ -11,7 +11,7 @@ Strategy:
   1. Touch all .c source files so they appear newer than their .lo outputs.
      This causes 'make -n all' to print every compile command.
   2. Run 'make -n all' from the build directory (single top-level invocation).
-     .la library files must already exist — i.e. run after a successful build.
+     .la library files must already exist -- i.e. run after a successful build.
      The .la files let make traverse all subdirectory dependencies without
      stopping (the problem that 'make -n -B' has at the top level).
   3. Parse the compile commands and write compile_commands.json.
