@@ -14,7 +14,6 @@ SUBDIRS= \
     bxslt \
     reuse \
     errors \
-    art \
     pa \
     xi
 
