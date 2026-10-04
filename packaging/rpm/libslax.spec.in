@@ -47,7 +47,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/*
 %{_includedir}/libslax/*
 %{_libdir}/*
-%{_datadir}/oxtradoc/*
 %{_datadir}/doc/libslax/*
 %docdir %{_datadir}/doc/libslax/*
 %{_mandir}/*/*
