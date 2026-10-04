@@ -29,7 +29,6 @@ Known values for OPTION are:
   --cflags		print pre-processor and compiler flags
   --cflags-internal     print internal pre-processor and compiler flags
   --share		print share directory
-  --oxtradoc		print oxtradoc directory
   --modules		module support enabled
   --help		display this help and exit
   --version		output version information
@@ -99,10 +98,6 @@ while test $# -gt 0; do
 
     --share)
        	echo @SLAX_SHAREDIR@
-       	;;
-
-    --oxtradoc)
-       	echo @SLAX_OXTRADOCDIR@
        	;;
 
     --bindir)
