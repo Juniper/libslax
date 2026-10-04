@@ -280,7 +280,7 @@ case "$op" in
         echo "clone gh-pages into gh-page; 'cd gh-pages && gt rm -fr .' to clean it"
         ;;
 
-    diff|dif|delta)
+    diff|dif|d|delta)
 	## gt diff [<files>]
 	## == Display uncommitted diffs
 	## == To show specific commit: gt diff commit <hex>
@@ -374,7 +374,7 @@ case "$op" in
 	## gt out
 	## == Display outstanding changes (committed but not yet pushed)
         set_branch
-        git diff $origin/$branch $branch
+        git diff $origin/$branch $branch "$@"
 	;;
 
     push|pu|pom|pob)
