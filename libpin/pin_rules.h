@@ -106,6 +106,21 @@ typedef struct pin_named_template_s {
 } pin_named_template_t;
 
 /*
+ * One recorded xsl:call-template site, awaiting validation once the whole
+ * compilation unit (all includes/imports) has finished compiling.  A name
+ * that still doesn't resolve to a registered named template at that point
+ * is a genuine error: a misspelled name, or a target that was rejected for
+ * having an unsupported body.  Deferring the check this way means a call
+ * to a template defined later in the document, or in an included/imported
+ * file, is never mistaken for a missing one.
+ */
+typedef struct pin_pending_call_s {
+    pin_name_id_t pc_name;      /* called template's name atom */
+    pin_name_id_t pc_src_file;  /* source filename atom of the call site */
+    uint32_t      pc_src_line;  /* source line number of the call site */
+} pin_pending_call_t;
+
+/*
  * One global variable or parameter binding.
  * Registered at compile time from top-level xsl:variable / xsl:param.
  * The value is a namepool atom for the string value; null atom = empty string.
@@ -162,7 +177,7 @@ typedef struct pin_apply_entry_s {
     pin_apply_key2_t pae_key2;       /* Patricia tree key: (pae_mode, pae_name) */
     pin_rule_id_t  pae_rule;         /* Rule to dispatch to via apply-templates */
     pin_apply_id_t pae_next;         /* Next entry in all-entries linked list */
-    float          pae_priority;     /* Explicit or default priority (XSLT §5.5) */
+    float          pae_priority;     /* Explicit or default priority (XSLT section 5.5) */
     int16_t        pae_import_prec;  /* 0 = main; -1,-2,... = imported depth */
 } pin_apply_entry_t;
 
@@ -201,7 +216,7 @@ typedef struct pin_mode_entry_s {
     pin_name_id_t  pme_mode;       /* Mode atom (0 = default mode) */
     pin_name_id_t  pme_xpath_id;   /* Namepool atom: xpath match pattern string */
     pin_rule_id_t  pme_rule;       /* Rule to fire when this pattern matches */
-    float          pme_priority;   /* Explicit or default priority (XSLT §5.5) */
+    float          pme_priority;   /* Explicit or default priority (XSLT section 5.5) */
     int16_t        pme_import_prec; /* 0 = main; -1,-2,... = imported depth */
 } pin_mode_entry_t;
 
@@ -249,6 +264,9 @@ typedef struct pin_rulebook_s {
     pin_named_template_t *prb_named;      /* Array of named templates */
     uint32_t              prb_named_count;
     uint32_t              prb_named_size;
+    pin_pending_call_t   *prb_pending_calls; /* call-template sites, pending validation */
+    uint32_t              prb_pending_call_count;
+    uint32_t              prb_pending_call_size;
     pin_global_var_t     *prb_globals;    /* Array of global variables/params */
     uint32_t              prb_global_count;
     uint32_t              prb_global_size;
@@ -287,8 +305,8 @@ pin_rulebook_prep (pin_parse_t *input, const char *name);
 
 /*
  * Create a new rulebook state suitable for a for-each context:
- *   - One rule with 'select_name' in its bitmap → select_action (e.g. SAVE)
- *   - A catch-all default rule → default_action (e.g. DISCARD)
+ *   - One rule with 'select_name' in its bitmap -> select_action (e.g. SAVE)
+ *   - A catch-all default rule -> default_action (e.g. DISCARD)
  * Returns the new state's id, or the null id on failure.
  * Uses the workspace namepool in prbp->prb_workspace for atom lookup.
  */
@@ -418,6 +436,26 @@ pin_op_id_t
 pin_rulebook_named_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
 
 /*
+ * Report whether a named template is registered, regardless of whether its
+ * body compiled to a non-null op sequence.  pin_rulebook_named_find cannot
+ * make this distinction on its own: a template with a legitimately empty
+ * body registers with a null op id, which looks identical to "not found".
+ * Callers that need to tell those two cases apart (e.g. validating
+ * xsl:call-template targets) use this instead.
+ */
+int
+pin_rulebook_named_exists (pin_rulebook_t *prbp, pin_name_id_t name_id);
+
+/*
+ * Record one xsl:call-template site for later validation, once the whole
+ * compilation unit has finished compiling.  See pin_pending_call_t.
+ * Returns 0 on success, -1 on allocation failure.
+ */
+int
+pin_rulebook_pending_call_add (pin_rulebook_t *prbp, pin_name_id_t name_id,
+			       pin_name_id_t src_file, uint32_t src_line);
+
+/*
  * Register a global variable or parameter.
  * value_id is the namepool atom for the string value (null atom = empty).
  * If a binding for name_id already exists it is overwritten.
@@ -442,7 +480,7 @@ pin_rulebook_global_find (pin_rulebook_t *prbp, pin_name_id_t name_id);
  * pgv_expr and evaluated lazily at load time.  Used when the expression
  * cannot be resolved to a static string at compile time (e.g. "$other").
  * If the entry already has an explicit pgv_value (set by pin_rulebook_global_add)
- * the expression is ignored — the explicit value takes priority.
+ * the expression is ignored -- the explicit value takes priority.
  */
 int
 pin_rulebook_global_set_expr (pin_rulebook_t *prbp,
