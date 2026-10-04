@@ -2,10 +2,10 @@
 
 EXTRA_DIST = \
 	Doxyfile \
-	libxml2.css \
+	libbxml.css \
 	mainpage.md \
 	meson.build \
-	xml2-config.1 \
+	bxml-config.1 \
 	xmlcatalog.xml \
 	xmllint.xml
 
@@ -23,7 +23,7 @@ clean-local:
 
 if WITH_DOCS
 
-man_MANS = xml2-config.1 xmllint.1
+man_MANS = bxml-config.1 xmllint.1
 doc_DATA = xmllint.html
 CLEANFILES += xmllint.1 xmllint.html
 
