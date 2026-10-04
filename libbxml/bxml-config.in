@@ -10,7 +10,7 @@ libs=
 usage()
 {
     cat <<EOF
-Usage: xml2-config [OPTION]
+Usage: bxml-config [OPTION]
 
 Known values for OPTION are:
 
