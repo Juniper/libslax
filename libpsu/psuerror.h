@@ -15,7 +15,7 @@
  *
  * This format is recognised by emacs compilation-mode, vi quickfix, and
  * similar tools.  Unlike psu_log(), these functions are NOT gated by the
- * logging enable flag — errors and warnings are always emitted.
+ * logging enable flag -- errors and warnings are always emitted.
  *
  * By default output goes to stderr.  Call psu_error_set_callback() to
  * redirect it; the callback receives the fully-formatted line (without a
@@ -31,10 +31,10 @@
 /*
  * Optional callback for redirecting error/warning output.
  *
- * filename  — source file path (may be NULL or empty for unknown location)
- * line      — source line number (0 if unknown)
- * is_warning — non-zero for warnings, zero for errors
- * msg       — fully-formatted message text (no trailing newline)
+ * filename  -- source file path (may be NULL or empty for unknown location)
+ * line      -- source line number (0 if unknown)
+ * is_warning -- non-zero for warnings, zero for errors
+ * msg       -- fully-formatted message text (no trailing newline)
  */
 typedef void (*psu_error_callback_t)(void *opaque,
                                      const char *filename, int line,
