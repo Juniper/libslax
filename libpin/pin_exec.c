@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
@@ -489,7 +490,7 @@ pin_exec_collect_path (pin_workspace_t *pwp, pin_exec_state_t *esp,
 
     pin_name_id_t step_name = pin_namepool_atom(pwp, stepbuf, FALSE);
     if (pin_name_id_is_null(step_name))
-        return;  /* name not in pool → no such elements exist */
+        return;  /* name not in pool -> no such elements exist */
 
     pin_node_t *node = pin_node_addr(pwp, start);
     if (node == NULL)
@@ -535,7 +536,7 @@ pin_op_push_nodes (PIN_OP_FUNC_ARGS)
 }
 
 /*
- * XPath boolean() of any value type (XPath §4.3).
+ * XPath boolean() of any value type (XPath section 4.3).
  * For strings: "a string is true if and only if its length is non-zero."
  * Requires pwp to resolve the namepool atom for PVT_STRING.
  */
@@ -746,7 +747,7 @@ pin_op_push_avt (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
-/* Forward declaration — defined after the dispatch table */
+/* Forward declaration -- defined after the dispatch table */
 static int pin_exec_seq_grow (pin_exec_state_t *esp);
 
 /*
@@ -855,10 +856,10 @@ pin_eval_arith (pin_workspace_t *pwp, pin_node_id_t cid,
 /*
  * Evaluate a single sort-key expression against child_id, writing the
  * raw value into valbuf[vcap].  Supported forms:
- *   @attr            — attribute value
- *   .                — text content of context node itself
- *   a/b/c/...        — text content of node reached by walking the path steps
- *   path1 OP path2   — arithmetic on text values (OP = + - * /)
+ *   @attr            -- attribute value
+ *   .                -- text content of context node itself
+ *   a/b/c/...        -- text content of node reached by walking the path steps
+ *   path1 OP path2   -- arithmetic on text values (OP = + - * /)
  * Arithmetic results are zero-padded to 6 digits for lexicographic sort.
  * Unknown forms write an empty string.
  */
@@ -1289,6 +1290,87 @@ pin_op_call (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
+/* String value of a PVT_STRING (or PVT_NULL); "" for anything else/missing. */
+static const char *
+pin_exec_cmp_operand_string (pin_workspace_t *pwp, pin_value_t v)
+{
+    if (v.pv_type != PVT_STRING || v.pv_atom == 0)
+        return "";
+    const char *s = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+    return s ? s : "";
+}
+
+/*
+ * Pop rhs, then lhs; compare numerically if both parse fully as numbers,
+ * otherwise lexically; push the PVT_BOOLEAN result of po_count's comparator
+ * (PIN_CMP_*).
+ */
+static pin_value_t
+pin_op_cmp (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_value_t rhs = pin_exec_pop(esp);
+    pin_value_t lhs = pin_exec_pop(esp);
+    const char *ls = pin_exec_cmp_operand_string(pwp, lhs);
+    const char *rs = pin_exec_cmp_operand_string(pwp, rhs);
+
+    char *lend, *rend;
+    double ln = strtod(ls, &lend);
+    double rn = strtod(rs, &rend);
+    int numeric = (lend != ls && *lend == '\0' && rend != rs && *rend == '\0');
+
+    int cmp = numeric ? (ln < rn ? -1 : (ln > rn ? 1 : 0)) : strcmp(ls, rs);
+
+    int truth;
+    switch (opp->po_count) {
+    case PIN_CMP_EQ: truth = (cmp == 0); break;
+    case PIN_CMP_NE: truth = (cmp != 0); break;
+    case PIN_CMP_LT: truth = (cmp < 0);  break;
+    case PIN_CMP_LE: truth = (cmp <= 0); break;
+    case PIN_CMP_GT: truth = (cmp > 0);  break;
+    case PIN_CMP_GE: truth = (cmp >= 0); break;
+    default:         truth = 0;         break;
+    }
+
+    pin_exec_push(esp, pin_value_bool(truth));
+    return pin_value_null();
+}
+
+/*
+ * Pop rhs, then lhs; parse both as numbers (non-numeric -> 0), compute
+ * po_count's arithmetic operator (PIN_ARITH_*), and push the result as a
+ * PVT_STRING, formatted as an integer when the result is integral.
+ */
+static pin_value_t
+pin_op_arith (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_value_t rhs = pin_exec_pop(esp);
+    pin_value_t lhs = pin_exec_pop(esp);
+    double ln = strtod(pin_exec_cmp_operand_string(pwp, lhs), NULL);
+    double rn = strtod(pin_exec_cmp_operand_string(pwp, rhs), NULL);
+
+    double result;
+    switch (opp->po_count) {
+    case PIN_ARITH_ADD: result = ln + rn; break;
+    case PIN_ARITH_SUB: result = ln - rn; break;
+    case PIN_ARITH_MUL: result = ln * rn; break;
+    case PIN_ARITH_DIV: result = rn != 0 ? ln / rn : 0; break;
+    case PIN_ARITH_MOD: result = rn != 0 ? fmod(ln, rn) : 0; break;
+    default:            result = 0; break;
+    }
+
+    char buf[64];
+    if (result == (double) (long) result)
+        snprintf(buf, sizeof(buf), "%ld", (long) result);
+    else
+        snprintf(buf, sizeof(buf), "%g", result);
+
+    pin_name_id_t atom = pin_namepool_atom(pwp, buf, TRUE);
+    pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(atom)));
+    return pin_value_null();
+}
+
 /*
  * Op dispatch table
  */
@@ -1299,7 +1381,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_APPLY]        = { "apply",        pin_op_stub,         0 },
     [PIN_OP_PUSH_NODE]    = { "push-node",    pin_op_push_node,    0 },
     [PIN_OP_COMPLEX_EXPR] = { "complex-expr", pin_op_complex_expr, 0 },
-    /* slots 4-7: reserved for future complex ops (NULL handler → skipped) */
+    /* slots 4-7: reserved for future complex ops (NULL handler -> skipped) */
     /* non-complex ops (types >= PIN_OP_MAX_COMPLEX) */
     [PIN_OP_EMIT_OPEN]    = { "emit-open",    pin_op_emit_open,    0 },
     [PIN_OP_EMIT_CLOSE]   = { "emit-close",   pin_op_emit_close,   0 },
@@ -1334,11 +1416,20 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_PI_CLOSE]      = { "pi-close",      pin_op_pi_close,      0 },
     [PIN_OP_NUMBER]        = { "number",        pin_op_number,        0 },
     [PIN_OP_PUSH_AVT]      = { "push-avt",      pin_op_push_avt,      0 },
+    [PIN_OP_CMP]           = { "cmp",           pin_op_cmp,           0 },
+    [PIN_OP_ARITH]         = { "arith",         pin_op_arith,         0 },
 };
 
 /*
  * Dispatch loop
  */
+
+/*
+ * Bounds call-template recursion depth: without this, a named template
+ * that recurses without a terminating condition grows pes_seq[] by
+ * doubling forever instead of failing with a clear error.
+ */
+#define PIN_EXEC_SEQ_MAX_DEPTH 4096
 
 static int
 pin_exec_seq_grow (pin_exec_state_t *esp)
@@ -1346,7 +1437,15 @@ pin_exec_seq_grow (pin_exec_state_t *esp)
     if (esp->pes_seq_top < esp->pes_seq_size)
         return 0;
 
+    if (esp->pes_seq_size >= PIN_EXEC_SEQ_MAX_DEPTH) {
+        psu_log("pin_exec: call-template recursion exceeded %d frames; "
+                "aborting call", PIN_EXEC_SEQ_MAX_DEPTH);
+        return -1;
+    }
+
     int newsize = esp->pes_seq_size ? esp->pes_seq_size * 2 : 8;
+    if (newsize > PIN_EXEC_SEQ_MAX_DEPTH)
+        newsize = PIN_EXEC_SEQ_MAX_DEPTH;
     pin_exec_seq_frame_t *seq = realloc(esp->pes_seq, newsize * sizeof(*seq));
     if (seq == NULL)
         return -1;
@@ -1408,7 +1507,7 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
         }
 
         /* Advance PC before dispatch; pod_func may override for branches.
-         * Do not hold a pointer into pes_seq across the pod_func call —
+         * Do not hold a pointer into pes_seq across the pod_func call --
          * ops that push new frames (CALL, APPLY) may realloc pes_seq. */
         esp->pes_seq[top].psf_pc = opp->po_next;
 
