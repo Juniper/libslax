@@ -8,7 +8,7 @@
  *
  * Phil Shafer, August 2026
  *
- * pin_stree_t — parrotdb-backed sort/index tree for xsl:for-each, xsl:sort,
+ * pin_stree_t -- parrotdb-backed sort/index tree for xsl:for-each, xsl:sort,
  * and future slax:build-index support.
  *
  * One pin_stree_t holds a patricia tree of elements ordered by their sort keys.
@@ -96,11 +96,11 @@ void pin_stree_free (pin_stree_t *pst);
 int pin_stree_insert (pin_stree_t *pst, const char *key, uint16_t klen,
                       pin_node_id_t node_id);
 
-/* Sorted walk — ascending (smallest key first). */
+/* Sorted walk -- ascending (smallest key first). */
 pin_stree_entry_t *pin_stree_first (pin_stree_t *pst);
 pin_stree_entry_t *pin_stree_next (pin_stree_t *pst, pin_stree_entry_t *e);
 
-/* Sorted walk — descending (largest key first). */
+/* Sorted walk -- descending (largest key first). */
 pin_stree_entry_t *pin_stree_last (pin_stree_t *pst);
 pin_stree_entry_t *pin_stree_prev (pin_stree_t *pst, pin_stree_entry_t *e);
 
