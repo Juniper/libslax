@@ -170,7 +170,7 @@ pin_filter_data_name_intern (xo_filter_data_t *dp,
  *
  * We do a lookup-without-create: if the tag has never been interned,
  * it can't match any compiled pattern step, so we return 0 immediately.
- * If it has been interned, we compare atoms — an integer equality check.
+ * If it has been interned, we compare atoms -- an integer equality check.
  *
  * Assumes tag is NUL-terminated (guaranteed for pin_source element tokens).
  */
