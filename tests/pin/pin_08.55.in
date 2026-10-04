@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.55.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Recursive named template: count down from $n to 1, using a comparison
+    to terminate and arithmetic to step.  Exercises PIN_OP_CMP ($n > 0)
+    and PIN_OP_ARITH ($n - 1).
+  -->
+  <xsl:template name="count-down">
+    <xsl:param name="n" select="0"/>
+    <xsl:if test="$n &gt; 0">
+      <item><xsl:value-of select="$n"/></item>
+      <xsl:call-template name="count-down">
+        <xsl:with-param name="n" select="$n - 1"/>
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="start">
+    <xsl:call-template name="count-down">
+      <xsl:with-param name="n" select="3"/>
+    </xsl:call-template>
+  </xsl:template>
+
+</xsl:stylesheet>
