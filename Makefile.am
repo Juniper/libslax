@@ -24,7 +24,7 @@ SUBDIRS = \
     bin
 
 bin_SCRIPTS=slax-config
-dist_doc_DATA = Copyright doc/slax.txt
+dist_doc_DATA = Copyright
 
 EXTRA_DIST = \
     slax-config.in \
@@ -53,18 +53,6 @@ PACKAGE_FILE = ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.gz
 upload: dist
 	@echo "Remember to run:"
 	@echo "        gt tag ${PACKAGE_VERSION}"
-
-upload-docs: docs
-	@echo "Uploading slax-manual.html ... "
-	@-[ -d ${GH_PAGES_DIR} ] \
-		&& echo "Updating manual on gh-pages ..." \
-		&& cp doc/slax-manual.html ${GH_PAGES_DIR} \
-		&& echo "Uploading slax-quick-reference.pdf ... " \
-		&& cp ${srcdir}/doc/slax-quick-reference.pdf ${GH_PAGES_DIR} \
-		&& (cd ${GH_PAGES_DIR} \
-			&& git commit -m 'new docs' \
-                               slax-manual.html slax-quick-reference.pdf \
-			&& git push origin gh-pages ) ; true
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA = packaging/${PACKAGE_NAME}.pc
