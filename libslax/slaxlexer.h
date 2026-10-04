@@ -38,6 +38,7 @@ struct slax_data_s {
     int sd_ytype;		/* YANG argument type */
     char sd_filename[MAXPATHLEN]; /* Path of current file */
     int sd_line;		/* Line number */
+    int sd_comment_line;	/* Line where the current comment started */
     int sd_col;			/* Column number */
     int sd_start;		/* Next valid byte in sd_buf */
     int sd_cur;			/* Current byte in sd_buf */
@@ -217,6 +218,9 @@ slaxIsVarChar (int ch)
  */
 int
 slaxGetInput (slax_data_t *sdp, int final);
+
+int
+slaxCheckUtf8 (slax_data_t *sdp);
 
 int
 slaxParseIsSlax (slax_data_t *sdp);
