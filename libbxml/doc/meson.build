@@ -10,7 +10,7 @@ doxygen_docs = custom_target(
     'Doxygen documentation',
     input: [
         xml_src_files, libxml_headers,
-        files('libxml2.css', 'mainpage.md'),
+        files('libbxml.css', 'mainpage.md'),
     ],
     output: [ 'html', 'xml' ],
     command: [ doxygen, '-q', files('Doxyfile') ],
@@ -23,9 +23,9 @@ doxygen_docs = custom_target(
 )
 
 if want_docs
-    # xml2-config
+    # bxml-config
 
-    install_man('xml2-config.1')
+    install_man('bxml-config.1')
 
     # Docbook
 
