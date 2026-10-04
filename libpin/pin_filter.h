@@ -35,7 +35,7 @@ typedef struct xo_filter_s xo_filter_t;
  *
  * XPath expressions are added with xo_filter_add_one(); the filter is
  * driven by calling the outer xo_filter_ops_t functions (open_container,
- * close_container, key, get_status, …) exactly as for any other filter.
+ * close_container, key, get_status, etc.) exactly as for any other filter.
  */
 xo_filter_t *
 pin_filter_create (xo_handle_t *xop, pin_workspace_t *pwp);
