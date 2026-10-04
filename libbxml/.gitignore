@@ -37,7 +37,7 @@
 /include/libxml/xmlversion.h
 /libxml-2.0.pc
 /libxml2-config.cmake
-/xml2-config
+/bxml-config
 
 # Autotools
 .deps
