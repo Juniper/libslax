@@ -54,7 +54,7 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_ATTRIB        16  /* xsl:attribute: bi_tag=name, bi_text=value-AVT */
 #define BIA_COPY_OPEN     17  /* xsl:copy: emit open tag of context node */
 #define BIA_MESSAGE_OPEN  18  /* xsl:message: start text capture */
-#define BIA_MESSAGE_CLOSE 19  /* xsl:message: flush capture to stderr; bi_tag != null → terminate */
+#define BIA_MESSAGE_CLOSE 19  /* xsl:message: flush capture to stderr; bi_tag != null -> terminate */
 #define BIA_COMMENT_OPEN  20  /* xsl:comment: start text capture */
 #define BIA_COMMENT_CLOSE 21  /* xsl:comment: flush capture as XML comment */
 #define BIA_PI_OPEN       22  /* xsl:processing-instruction: start capture; bi_tag=target atom */
@@ -73,7 +73,7 @@ typedef uint8_t pin_body_instr_type_t;
  * Retention requirement for the matched element.  Computed at compile time
  * from the body instruction list and stored in pin_rule_t.pr_body_retain.
  *
- * The scope ladder is: NONE → ELEMENT → SIBLINGS → DOCUMENT.
+ * The scope ladder is: NONE -> ELEMENT -> SIBLINGS -> DOCUMENT.
  * DISCARD means the body has no BIA_COPY/BIA_APPLY; the matched element
  * is discarded after the body's EMIT_* instructions run.
  */
