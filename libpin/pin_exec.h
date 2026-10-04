@@ -15,9 +15,9 @@
  * pin_exec_run() executes the op sequence against the retained subtree.
  *
  * The engine maintains three stacks in pin_exec_state_t:
- *   pes_rb[]    — rulebook stack (active rulebook per input depth)
- *   pes_val[]   — value stack (pin_value_t operands)
- *   pes_seq[]   — op-sequence stack (pc + context node per frame)
+ *   pes_rb[]    -- rulebook stack (active rulebook per input depth)
+ *   pes_val[]   -- value stack (pin_value_t operands)
+ *   pes_seq[]   -- op-sequence stack (pc + context node per frame)
  *
  * Temporary nodesets (select results, variable values) live in pes_nodesets[],
  * a heap-allocated growable table indexed by pin_value_t.pv_atom when
@@ -37,7 +37,7 @@
 #include <libpin/pin_value.h>
 #include <libpin/pin_node.h>
 
-/* pin_rstate_id_t — needed for pes_rb[]; does not pull in pin_rules.h */
+/* pin_rstate_id_t -- needed for pes_rb[]; does not pull in pin_rules.h */
 #include "gen/pin_rstate_id_gen.h"
 
 /* Generated typed atom for op ids (wraps pa_fixed_atom_t) */
@@ -64,11 +64,11 @@ typedef struct pin_exec_state_s pin_exec_state_t;
 
 typedef uint16_t pin_op_type_t;
 
-#define PIN_OP_NONE         0   /* Sentinel / null op — never emitted */
+#define PIN_OP_NONE         0   /* Sentinel / null op -- never emitted */
 
 /* --- complex ops: bit (1 << type) set in poc_complexity when present --- */
 #define PIN_OP_APPLY        1   /* Apply-templates to retained children (po_name = mode) */
-#define PIN_OP_PUSH_NODE    2   /* Push context node itself → PVT_NODE */
+#define PIN_OP_PUSH_NODE    2   /* Push context node itself -> PVT_NODE */
 #define PIN_OP_COMPLEX_EXPR 3   /* Stub: unsupported test expression, always false */
 /* 4-7: reserved for future complex ops */
 
@@ -79,15 +79,15 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_EMIT_CLOSE  (PIN_OP_MAX_COMPLEX +  1) /* Emit static close tag to output */
 #define PIN_OP_EMIT_ATTRIB (PIN_OP_MAX_COMPLEX +  2) /* Push name/value pair for next EMIT_OPEN */
 #define PIN_OP_EMIT        (PIN_OP_MAX_COMPLEX +  3) /* Emit (pop + output) top of value stack */
-#define PIN_OP_PUSH_STRING (PIN_OP_MAX_COMPLEX +  4) /* Push literal string atom → PVT_STRING */
-#define PIN_OP_PUSH_ATTR   (PIN_OP_MAX_COMPLEX +  5) /* Push attribute value → PVT_STRING */
-#define PIN_OP_PUSH_TEXT   (PIN_OP_MAX_COMPLEX +  6) /* Push text content → PVT_STRING */
-#define PIN_OP_PUSH_NODES  (PIN_OP_MAX_COMPLEX +  7) /* Push matching children → PVT_NODESET */
+#define PIN_OP_PUSH_STRING (PIN_OP_MAX_COMPLEX +  4) /* Push literal string atom -> PVT_STRING */
+#define PIN_OP_PUSH_ATTR   (PIN_OP_MAX_COMPLEX +  5) /* Push attribute value -> PVT_STRING */
+#define PIN_OP_PUSH_TEXT   (PIN_OP_MAX_COMPLEX +  6) /* Push text content -> PVT_STRING */
+#define PIN_OP_PUSH_NODES  (PIN_OP_MAX_COMPLEX +  7) /* Push matching children -> PVT_NODESET */
 #define PIN_OP_PUSH_BOOL   (PIN_OP_MAX_COMPLEX +  8) /* Convert top of stack to PVT_BOOLEAN */
 #define PIN_OP_CONVERT     (PIN_OP_MAX_COMPLEX +  9) /* Convert top to type in po_name */
 #define PIN_OP_IF          (PIN_OP_MAX_COMPLEX + 10) /* Pop PVT_BOOLEAN; if false jump to po_alt */
 #define PIN_OP_GOTO        (PIN_OP_MAX_COMPLEX + 11) /* Unconditional jump to po_alt */
-#define PIN_OP_JUMP        (PIN_OP_MAX_COMPLEX + 12) /* Join point — falls through po_next */
+#define PIN_OP_JUMP        (PIN_OP_MAX_COMPLEX + 12) /* Join point -- falls through po_next */
 #define PIN_OP_CALL        (PIN_OP_MAX_COMPLEX + 13) /* Invoke named template (future) */
 #define PIN_OP_RETURN      (PIN_OP_MAX_COMPLEX + 14) /* Return from named template (future) */
 #define PIN_OP_DISCARD     (PIN_OP_MAX_COMPLEX + 15) /* Pop and discard top of value stack */
@@ -101,14 +101,35 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_ELEMENT_CLOSE (PIN_OP_MAX_COMPLEX + 23) /* Close last computed-name element */
 #define PIN_OP_COPY_OPEN     (PIN_OP_MAX_COMPLEX + 24) /* xsl:copy: emit open tag of context node */
 #define PIN_OP_MESSAGE_OPEN  (PIN_OP_MAX_COMPLEX + 25) /* xsl:message: start text capture */
-#define PIN_OP_MESSAGE_CLOSE (PIN_OP_MAX_COMPLEX + 26) /* xsl:message: flush to stderr; po_name != null → terminate */
+#define PIN_OP_MESSAGE_CLOSE (PIN_OP_MAX_COMPLEX + 26) /* xsl:message: flush to stderr; po_name != null -> terminate */
 #define PIN_OP_COMMENT_OPEN  (PIN_OP_MAX_COMPLEX + 27) /* xsl:comment: start text capture */
 #define PIN_OP_COMMENT_CLOSE (PIN_OP_MAX_COMPLEX + 28) /* xsl:comment: flush as XML comment */
-#define PIN_OP_PI_OPEN       (PIN_OP_MAX_COMPLEX + 29) /* xsl:processing-instruction: start capture; po_name=target or null→pop */
+#define PIN_OP_PI_OPEN       (PIN_OP_MAX_COMPLEX + 29) /* xsl:processing-instruction: start capture; po_name=target or null->pop */
 #define PIN_OP_PI_CLOSE      (PIN_OP_MAX_COMPLEX + 30) /* xsl:processing-instruction: flush as XML PI */
 #define PIN_OP_NUMBER        (PIN_OP_MAX_COMPLEX + 31) /* xsl:number: po_name=value-expr, po_name2=format */
 #define PIN_OP_PUSH_AVT      (PIN_OP_MAX_COMPLEX + 32) /* Eval AVT in po_name2 against context; push result string */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 33) /* Sentinel: number of defined op codes */
+#define PIN_OP_CMP           (PIN_OP_MAX_COMPLEX + 33) /* Pop rhs, lhs; compare per po_count (PIN_CMP_*); push PVT_BOOLEAN */
+#define PIN_OP_ARITH         (PIN_OP_MAX_COMPLEX + 34) /* Pop rhs, lhs; compute per po_count (PIN_ARITH_*); push PVT_STRING */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 35) /* Sentinel: number of defined op codes */
+
+/*
+ * po_count values for PIN_OP_CMP.
+ */
+#define PIN_CMP_EQ  0
+#define PIN_CMP_NE  1
+#define PIN_CMP_LT  2
+#define PIN_CMP_LE  3
+#define PIN_CMP_GT  4
+#define PIN_CMP_GE  5
+
+/*
+ * po_count values for PIN_OP_ARITH.
+ */
+#define PIN_ARITH_ADD  0
+#define PIN_ARITH_SUB  1
+#define PIN_ARITH_MUL  2
+#define PIN_ARITH_DIV  3
+#define PIN_ARITH_MOD  4
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -117,7 +138,7 @@ typedef uint16_t pin_op_type_t;
 typedef struct pin_op_s {
     pin_op_id_t    po_next;      /* Next op in sequence; null = end of list */
     pin_op_id_t    po_alt;       /* Branch target: IF false / GOTO / join */
-    pin_op_type_t  po_type;      /* Opcode — index into pin_op_table[] */
+    pin_op_type_t  po_type;      /* Opcode -- index into pin_op_table[] */
     uint16_t       po_count;     /* CALL: number of preceding WITH_PARAM ops */
     pin_name_id_t  po_name;      /* Primary operand: tag / attr / string atom */
     pin_name_id_t  po_name2;     /* Secondary operand (e.g. attribute value) */
