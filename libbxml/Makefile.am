@@ -185,7 +185,7 @@ xmllint_LDFLAGS = $(LTO_LDFLAGS) $(LTO_STATIC_LDFLAGS)
 
 dist-hook:
 	(cd $(srcdir) ; \
-	    tar -cf - --exclude .git win32 result) | (cd $(distdir); tar xf -)
+	    tar -cf - --exclude .git win32) | (cd $(distdir); tar xf -)
 
 EXTRA_DIST = \
     Copyright \
