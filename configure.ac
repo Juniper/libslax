@@ -94,6 +94,21 @@ AC_CHECK_DECLS([mmap], [], [], [#include <sys/mman.h>])
 
 AM_CONDITIONAL(WITH_GLOB, test "$ac_cv_have_decl_glob" = "yes")
 
+dnl libFuzzer provides main(), so a link with no main() succeeds only
+dnl when the fuzzer runtime is present
+AC_MSG_CHECKING([whether the compiler supports libFuzzer])
+ac_save_LDFLAGS=$LDFLAGS
+LDFLAGS="$LDFLAGS -fsanitize=fuzzer"
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
+int LLVMFuzzerTestOneInput(const unsigned char *data, unsigned long size)
+{
+    return (data == 0) + (size == 0);
+}
+]])], [have_libfuzzer=yes], [have_libfuzzer=no])
+LDFLAGS=$ac_save_LDFLAGS
+AC_MSG_RESULT([$have_libfuzzer])
+AM_CONDITIONAL([HAVE_LIBFUZZER], [test "$have_libfuzzer" = "yes"])
+
 dnl old checks for libslax (XXX remove)
 dnl AC_CHECK_LIB([bxml], [xmlNewParserCtxt])
 dnl AC_CHECK_LIB([xslt], [xsltInit])
@@ -2023,7 +2038,7 @@ AC_MSG_NOTICE([summary of build options:
   includedir:       ${SLAX_INCLUDEDIR}
   extensions dir:   ${SLAX_EXTDIR}
 
-  compiler:         ${CC} (gcc: ${HAVE_GCC:-no}) (clang: ${HAVE_CLANG:-no})
+  compiler:         ${CC} (gcc: ${HAVE_GCC:-no}) (clang: ${HAVE_CLANG:-no}) (fuzz: ${HAVE_LIBFUZZER:-no})
   compiler flags:   ${CFLAGS}
   library types:    Shared=${enable_shared}, Static=${enable_static}
   libbxml version:   ${LIBXML_VERSION} (captive)
