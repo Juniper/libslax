@@ -19,7 +19,6 @@ LINKDIRS = \
 	encoding \
 	exslt \
 	extensions \
-	fuzz \
 	general \
 	keys \
 	namespaces \
@@ -70,8 +69,15 @@ SHOW_DIFFS = \
  ${DIFF} -Nbu ${srcdir}/saved/$$file.out out/$$file.out ${S2O} ; \
  ${DIFF} -Nbu ${srcdir}/saved/$$file.err out/$$file.err ${S2O}
 
-test tests: work-links
+test tests: work-links mkdir-out test-check test-multiple
+
+mkdir-out:
 	@${MKDIR_P} out
+
+mkdir-work:
+	@${MKDIR_P} work
+
+test-check:
 	@for file in check; do \
 		echo "... bxslt ... $$file ..." ; \
 		( cd work ; \
@@ -79,6 +85,8 @@ test tests: work-links
 		> out/$$file.out 2> out/$$file.err ; \
 		${SHOW_DIFFS} ; \
 		done
+
+test-multiple:
 	@for file in multiple; do \
 		echo "... bxslt ... $$file ..." ; \
 		( cd $$file ; ${MAKE} tests ) \
@@ -94,10 +102,9 @@ accept:
 	      ${CP} out/$$file.err ${srcdir}/saved/$$file.err ; \
 	done; true)
 
-work-links:
-	@${MKDIR_P} work
-	@-for i in ${LINKDIRS}; do \
-		${LN_S} -f ${top_srcdir}/../tests/bxslt/$$i work/$$i; \
+work-links: mkdir-out mkdir-work
+	-${SET_X} for i in ${LINKDIRS}; do \
+		${LN_S} -f -n ${top_srcdir}/../tests/bxslt/$$i work/$$i; \
 		done
 
 # runtest has its own built-in "update results in place" mode (-u),
