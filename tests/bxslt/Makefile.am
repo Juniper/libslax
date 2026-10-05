@@ -22,7 +22,6 @@ LINKDIRS = \
 	fuzz \
 	general \
 	keys \
-	multiple \
 	namespaces \
 	numbers \
 	plugins \
@@ -72,19 +71,24 @@ SHOW_DIFFS = \
  ${DIFF} -Nbu ${srcdir}/saved/$$file.err out/$$file.err ${S2O}
 
 test tests: work-links
-	@(cd multiple ; $(MAKE) tests)
 	@${MKDIR_P} out
 	@for file in check; do \
 		echo "... bxslt ... $$file ..." ; \
 		( cd work ; \
 		LIBXSLT_PLUGINS_PATH=$(plugindir) $(abs_builddir)/runtest ) \
-		> out/check.out 2> out/check.err ; \
+		> out/$$file.out 2> out/$$file.err ; \
+		${SHOW_DIFFS} ; \
+		done
+	@for file in multiple; do \
+		echo "... bxslt ... $$file ..." ; \
+		( cd $$file ; ${MAKE} tests ) \
+		> out/$$file.out 2> out/$$file.err ; \
 		${SHOW_DIFFS} ; \
 		done
 
 accept:
 	@(cd multiple ; $(MAKE) accept)
-	-@(for file in check ; do \
+	-@(for file in check multiple ; do \
 	      echo "... bxslt ... $$file ..."; \
 	      ${CP} out/$$file.out ${srcdir}/saved/$$file.out ; \
 	      ${CP} out/$$file.err ${srcdir}/saved/$$file.err ; \
