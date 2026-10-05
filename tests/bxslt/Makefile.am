@@ -103,7 +103,7 @@ accept:
 	done; true)
 
 work-links: mkdir-out mkdir-work
-	-${SET_X} for i in ${LINKDIRS}; do \
+	-@${SET_X} for i in ${LINKDIRS}; do \
 		${LN_S} -f -n ${top_srcdir}/../tests/bxslt/$$i work/$$i; \
 		done
 
