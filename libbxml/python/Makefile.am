@@ -1,4 +1,4 @@
-# Makefile for libxml2 python library
+# Makefile for libbxml python library
 
 # We use a rule with multiple output files which creates problems with
 # parallel builds.
@@ -8,7 +8,7 @@ SUBDIRS = . tests
 
 EXTRA_DIST = 			\
 	generator.py		\
-	libxml.py		\
+	libbxml.py		\
 	pyproject.toml		\
 	meson.build
 
@@ -18,29 +18,29 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include	\
 	$(PYTHON_CFLAGS)
 
-pyexec_LTLIBRARIES = libxml2mod.la
+pyexec_LTLIBRARIES = libbxmlmod.la
 
-libxml2mod_la_SOURCES = libxml.c libxml_wrap.h types.c
-nodist_libxml2mod_la_SOURCES = libxml2-py.h libxml2-py.c
-libxml2mod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
-libxml2mod_la_LIBADD = $(top_builddir)/libbxml.la $(PYTHON_LIBS)
+libbxmlmod_la_SOURCES = libxml.c libxml_wrap.h types.c
+nodist_libbxmlmod_la_SOURCES = libbxml-py.h libbxml-py.c
+libbxmlmod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
+libbxmlmod_la_LIBADD = $(top_builddir)/libbxml.la $(PYTHON_LIBS)
 
-BUILT_SOURCES = libxml2-export.c libxml2-py.h libxml2-py.c
+BUILT_SOURCES = libbxml-export.c libbxml-py.h libbxml-py.c
 
-python_PYTHON = drv_libxml2.py
-nodist_python_PYTHON = libxml2.py
+python_PYTHON = drv_libbxml.py
+nodist_python_PYTHON = libbxml.py
 
 API_DESC = ../doc/html.stamp
-GENERATED = libxml2.py $(BUILT_SOURCES)
+GENERATED = libbxml.py $(BUILT_SOURCES)
 CLEANFILES = $(GENERATED)
 
-all-local: libxml2.py
+all-local: libbxml.py
 
 $(GENERATED): $(srcdir)/generator.py $(API_DESC)
 	$(PYTHON) $(srcdir)/generator.py $(builddir)
 
-# libxml.c #includes libxml2-export.c
-libxml.$(OBJEXT): libxml2-export.c
+# libxml.c #includes libbxml-export.c
+libxml.$(OBJEXT): libbxml-export.c
 
 clean-local:
 	rm -rf __pycache__ *.pyc
