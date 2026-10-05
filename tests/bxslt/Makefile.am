@@ -72,6 +72,7 @@ SHOW_DIFFS = \
  ${DIFF} -Nbu ${srcdir}/saved/$$file.err out/$$file.err ${S2O}
 
 test tests: work-links
+	@(cd multiple ; $(MAKE) tests)
 	@${MKDIR_P} out
 	@for file in check; do \
 		echo "... bxslt ... $$file ..." ; \
@@ -82,6 +83,7 @@ test tests: work-links
 		done
 
 accept:
+	@(cd multiple ; $(MAKE) accept)
 	-@(for file in check ; do \
 	      echo "... bxslt ... $$file ..."; \
 	      ${CP} out/$$file.out ${srcdir}/saved/$$file.out ; \
