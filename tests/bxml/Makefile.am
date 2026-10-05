@@ -1,5 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS =
+if WITH_GLOB
+SUBDIRS += fuzz
+endif
+DIST_SUBDIRS = fuzz
+
 AM_CPPFLAGS = \
 	-I$(top_builddir) -I$(top_srcdir) \
 	-I$(top_builddir)/libbxml -I$(top_srcdir)/libbxml \
