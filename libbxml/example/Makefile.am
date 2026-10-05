@@ -23,8 +23,8 @@ check_PROGRAMS = \
     xpath1 \
     xpath2
 
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/libbxml.la
+AM_CPPFLAGS = -I$(top_builddir)/libbxml/include -I$(top_srcdir)/libbxml/include
+LDADD = $(top_builddir)/libbxml/libbxml.la
 
 gjobread_SOURCES=gjobread.c
 io1_SOURCES = io1.c
