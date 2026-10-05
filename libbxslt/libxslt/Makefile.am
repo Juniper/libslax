@@ -122,7 +122,7 @@ libbxslt_la_LDFLAGS =					\
 
 man_MANS = libxslt.3
 
-EXTRA_DIST = $(man_MANS) trio.h triodef.h libxslt.syms
+EXTRA_DIST = $(man_MANS) trio.h triodef.h libxslt.syms xsltaccessors-custom.h
 
 xsltproc: all
 	@(cd ../xsltproc ; $(MAKE))
