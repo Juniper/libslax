@@ -56,7 +56,8 @@ EXTRA_DIST = \
     ${TEST_CASES} \
     xi04.01.in \
     xi04.02.in \
-    make-xi04-02.py \
+    xi04.03.in \
+    gen-data-xi04.py \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
