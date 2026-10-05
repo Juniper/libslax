@@ -3,46 +3,40 @@
 $(top_builddir)/libbxslt/xsltproc/xsltproc:
 	@(cd ../../libbxslt/xsltproc ; $(MAKE) xsltproc)
 
-EXTRA_DIST = dict.dtd  dict.xml  dict.xsl result.xml \
-    out/lettera.orig out/letterb.orig \
-    out/letterc.orig out/letterd.orig \
-    out/lettere.orig out/letterf.orig \
-    out/letterg.orig out/letterh.orig \
-    out/letterij.orig out/letterk.orig \
-    out/letterl.orig out/letterm.orig \
-    out/lettern.orig out/lettero.orig \
-    out/letterp.orig out/letterq.orig \
-    out/letterr.orig out/letters.orig \
-    out/lettert.orig out/letteruv.orig \
-    out/letterw.orig out/letterx.orig \
-    out/lettery.orig out/letterz.orig \
-    out/titlepage.orig
-
-
-GENERATED = \
-	out/lettera.html out/letterb.html out/letterc.html out/letterd.html \
-	out/lettere.html out/letterf.html out/letterg.html out/letterh.html \
-	out/letterij.html out/letterk.html out/letterl.html out/letterm.html \
-	out/lettern.html out/lettero.html out/letterp.html out/letterq.html \
-	out/letterr.html out/letters.html out/lettert.html out/letteruv.html \
-	out/letterw.html out/letterx.html out/lettery.html out/letterz.html \
-	out/titlepage.html
+EXTRA_DIST = \
+    dict.dtd \
+    dict.xml \
+    dict.xsl \
+    $(addprefix saved/, $(shell cd ${srcdir} && ls saved 2>/dev/null))
 
 CLEANFILES = .memdump
+CLEANDIRS = out
+
+all:
+
+test tests:
+	@${MAKE} check-local
 
 check-local: $(top_builddir)/libbxslt/xsltproc/xsltproc
 	@echo '## Running multiple tests'
+	@${MKDIR_P} out
 	@(echo > .memdump)
-	@($(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc $(srcdir)/dict.xsl $(srcdir)/dict.xml > dict.res ; \
-	diff $(srcdir)/result.xml dict.res; \
-	for i in out/letter*.html out/titlepage.html ; do \
-	  orig=$(srcdir)/out/`basename $$i .html`.orig ; \
-	  if [ -f $$orig ] ; then \
-	    diff $$orig $$i ; \
-	  else \
-	    echo "new $$orig" ; cp $$i $$orig ; \
-	  fi ; done ; \
-	grep "MORY ALLO" .memdump  | grep -v "MEMORY ALLOCATED : 0" || true;\
-	rm -f dict.res $(GENERATED))
+	@$(CHECKER) $(top_builddir)/libbxslt/xsltproc/xsltproc \
+		$(srcdir)/dict.xsl $(srcdir)/dict.xml \
+		> out/dict.out 2> out/dict.err ; \
+	fail=0 ; \
+	for i in out/dict.out out/dict.err out/letter*.html out/titlepage.html ; do \
+	    base=`${BASENAME} $$i` ; \
+	    if [ ! -f ${srcdir}/saved/$$base ] ; then \
+		echo "missing ${srcdir}/saved/$$base" ; fail=1 ; \
+	    elif ! ${DIFF} -Nbu ${srcdir}/saved/$$base $$i ; then \
+	        fail=1 ; \
+	    fi ; \
+	done ; \
+	grep "MORY ALLO" .memdump | grep -v "MEMORY ALLOCATED : 0" || true ; true
 
-
+accept:
+	@${MKDIR_P} ${srcdir}/saved
+	@for i in out/dict.out out/dict.err out/letter*.html out/titlepage.html ; do \
+	    ${CP} $$i ${srcdir}/saved/`${BASENAME} $$i` ; \
+	done
