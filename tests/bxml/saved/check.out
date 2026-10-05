@@ -1,3 +1,9 @@
+Making check in fuzz
+/Applications/Xcode.app/Contents/Developer/usr/bin/make  testFuzzer
+make[3]: `testFuzzer' is up to date.
+/Applications/Xcode.app/Contents/Developer/usr/bin/make  check-local
+./testFuzzer
+Successfully tested 2123 inputs
 /Applications/Xcode.app/Contents/Developer/usr/bin/make  check-local
 [ -d test   ] || ln -s ../../../tests/bxml/test  test
 [ -d result ] || ln -s ../../../tests/bxml/result result
