@@ -8,7 +8,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = gt setup.sh
+EXTRA_DIST = gt setup.sh gen-code.sh gen-xmlaccessors.sh gen-xsltaccessors.sh
 
 GT_INSTALL_DIR = ${DESTDIR}${prefix}/bin
 GT_INSTALL_FILES = gt
