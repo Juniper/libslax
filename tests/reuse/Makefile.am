@@ -333,7 +333,7 @@ EXTRA_DIST_FILES_BASE = \
     ${TEST_CASES_WITH_INPUT:.xsl=.out} \
     ${TEST_CASES_WITH_INPUT:.xsl=.err} 
 
-EXTRA_DIST_FILES = $(addprefix f, ${EXTRA_DIST_FILES_BASE}, saved/${f})
+EXTRA_DIST_FILES = $(addprefix saved/, ${EXTRA_DIST_FILES_BASE})
 
 EXTRA_DIST = ${EXTRA_DIST_FILES}
 
