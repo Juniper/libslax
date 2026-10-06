@@ -11,11 +11,7 @@ endif
 if WITH_PYTHON
 SUBDIRS += python
 endif
-if WITH_GLOB
-SUBDIRS += fuzz
-endif
-
-DIST_SUBDIRS = include . doc example fuzz python
+DIST_SUBDIRS = include . doc example python
 
 AM_CPPFLAGS = \
     -I$(top_builddir) \
@@ -189,7 +185,6 @@ dist-hook:
 
 EXTRA_DIST = \
     Copyright \
-    autogen.sh \
     libxml.h \
     codegen/charset.inc \
     codegen/escape.inc \
