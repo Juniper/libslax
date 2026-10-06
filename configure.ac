@@ -1991,7 +1991,7 @@ AC_CONFIG_FILES([
     libbxml/include/private/Makefile
     libbxml/doc/Makefile
     libbxml/example/Makefile
-    libbxml/fuzz/Makefile
+    tests/bxml/fuzz/Makefile
     libbxml/python/Makefile
     libbxml/python/tests/Makefile
     libbxml/include/libxml/xmlversion.h
