@@ -1,11 +1,11 @@
 /*
  * libxml.c: this modules implements the main part of the glue of the
- *           libxml2 library and the Python interpreter. It provides the
+ *           libbxml library and the Python interpreter. It provides the
  *           entry points where an automatically generated stub is either
  *           unpractical or would not match cleanly the Python model.
  *
  * If compiled with MERGED_MODULES, the entry point will be used to
- * initialize both the libxml2 and the libxslt wrappers
+ * initialize both the libbxml and the libxslt wrappers
  *
  * See Copyright for the status of this software.
  *
@@ -27,15 +27,15 @@
 #include <libxml/xmlreader.h>
 #include <libxml/xmlsave.h>
 #include "libxml_wrap.h"
-#include "libxml2-py.h"
+#include "libbxml-py.h"
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_libxml2mod(void);
+PyMODINIT_FUNC PyInit_libbxmlmod(void);
 
 #define PY_IMPORT_STRING_SIZE PyUnicode_FromStringAndSize
 #define PY_IMPORT_STRING PyUnicode_FromString
 #else
-void initlibxml2mod(void);
+void initlibbxmlmod(void);
 #define PY_IMPORT_STRING_SIZE PyString_FromStringAndSize
 #define PY_IMPORT_STRING PyString_FromString
 #endif
@@ -3377,7 +3377,7 @@ libxml_C14NDocDumpMemory(UNUSED PyObject * self,
 
     if (result < 0) {
         PyErr_SetString(PyExc_Exception,
-                        "libxml2 xmlC14NDocDumpMemory failure.");
+                        "libbxml xmlC14NDocDumpMemory failure.");
         return NULL;
     }
     else {
@@ -3470,7 +3470,7 @@ libxml_C14NDocSaveTo(UNUSED PyObject * self,
 
     if (result < 0) {
         PyErr_SetString(PyExc_Exception,
-                        "libxml2 xmlC14NDocSaveTo failure.");
+                        "libbxml xmlC14NDocSaveTo failure.");
         return NULL;
     }
     else
@@ -3536,7 +3536,7 @@ int
 libxml_deprecationWarning(const char *func) {
 #if PY_VERSION_HEX >= 0x03020000
     return PyErr_WarnFormat(PyExc_PendingDeprecationWarning, 1,
-            "libxml2mod.%s is deprecated and will be removed "
+            "libbxmlmod.%s is deprecated and will be removed "
             "in future versions", func);
 #else
     return PyErr_WarnEx(PyExc_PendingDeprecationWarning, func, 1);
@@ -3549,7 +3549,7 @@ libxml_deprecationWarning(const char *func) {
  *									*
  ************************************************************************/
 static PyMethodDef libxmlMethods[] = {
-#include "libxml2-export.c"
+#include "libbxml-export.c"
     {"name", libxml_name, METH_VARARGS, NULL},
     {"children", libxml_children, METH_VARARGS, NULL},
     {"properties", libxml_properties, METH_VARARGS, NULL},
@@ -3616,7 +3616,7 @@ static PyMethodDef libxmlMethods[] = {
 
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
-        "libxml2mod",
+        "libbxmlmod",
         NULL,
         -1,
         libxmlMethods,
@@ -3636,9 +3636,9 @@ extern void initlibxsltmod(void);
 #endif
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_libxml2mod(void)
+PyMODINIT_FUNC PyInit_libbxmlmod(void)
 #else
-void initlibxml2mod(void)
+void initlibbxmlmod(void)
 #endif
 {
     PyObject *module;
@@ -3647,12 +3647,12 @@ void initlibxml2mod(void)
     module = PyModule_Create(&moduledef);
 #else
     /* initialize the python extension module */
-    module = Py_InitModule("libxml2mod", libxmlMethods);
+    module = Py_InitModule("libbxmlmod", libxmlMethods);
 #endif
     if (module == NULL)
         INITERROR;
 
-    /* initialize libxml2 */
+    /* initialize libbxml */
     xmlInitParser();
     /* TODO this probably need to be revamped for Python3 */
     libxml_xmlErrorInitialize();
