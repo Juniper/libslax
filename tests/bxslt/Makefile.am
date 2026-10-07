@@ -9,6 +9,9 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/libbxml/include
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
+if WITH_XSLT_PYTHON
+SUBDIRS += python
+endif
 
 LINKDIRS = \
 	REC \
