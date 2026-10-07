@@ -14,8 +14,8 @@ EXTRA_DIST = 			\
 
 if WITH_PYTHON
 AM_CPPFLAGS = \
-	-I$(top_builddir)/include \
-	-I$(top_srcdir)/include	\
+	-I$(top_builddir)/libbxml/include \
+	-I$(top_srcdir)/libbxml/include	\
 	$(PYTHON_CFLAGS)
 
 pyexec_LTLIBRARIES = libbxmlmod.la
@@ -23,7 +23,7 @@ pyexec_LTLIBRARIES = libbxmlmod.la
 libbxmlmod_la_SOURCES = libxml.c libxml_wrap.h types.c
 nodist_libbxmlmod_la_SOURCES = libbxml-py.h libbxml-py.c
 libbxmlmod_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) -module -avoid-version
-libbxmlmod_la_LIBADD = $(top_builddir)/libbxml.la $(PYTHON_LIBS)
+libbxmlmod_la_LIBADD = $(top_builddir)/libbxml/libbxml.la $(PYTHON_LIBS)
 
 BUILT_SOURCES = libbxml-export.c libbxml-py.h libbxml-py.c
 
