@@ -339,26 +339,10 @@ EXTRA_DIST = ${EXTRA_DIST_FILES}
 CLEANDIRS = out
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
-
-WIDTH = 80
-WIDTH_ARG = --width ${WIDTH}
-TEST_VERSION = 1.3
-VERSION_ARG = --write-version ${TEST_VERSION}
-VERSION_ARG12 = --write-version 1.2
-F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
-F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
+RUN_TESTS = sh ${srcdir}/../run-tests.sh -d ${srcdir} -s ${SLAXPROC}
 
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
-S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
-SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
-
-TEST_TWO = \
- ${F13} out/$$dir/$$base.slax out/$$dir/$$base.slax3 ; \
- ${F12} out/$$dir/$$base.slax3 out/$$dir/$$base.slax4 ; \
- ${F13} out/$$dir/$$base.slax4 out/$$dir/$$base.slax5 ; \
- ${DIFF} -Nu out/$$dir/$$base.slax3 out/$$dir/$$base.slax5 ${S2O}
 
 testdir = ${WITH_LIBXSLT_TESTS}
 
@@ -377,64 +361,14 @@ scribble:
 	@echo '## Running the regression tests under MallocPreScribble'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
-SH_OPTS=
-
 if USE_LIBXSLT_TESTS
-test tests:
-	@-${MKDIR} -p out out/documents out/keys out/xinclude out/multiple
-	@-${CP} ${testdir}/documents/fragment2.xml out/documents/fragment2.xml
-	@-${CP} ${testdir}/xinclude/x1.xml out/xinclude/x1.xml
-	@-${CP} ${testdir}/multiple/dict.dtd out/multiple/dict.dtd
-	@-(${SH_OPTS} for test in ${TEST_CASES}; do \
-	  base=`basename $$test .xsl` ; \
-	  dir=`dirname $$test` ; \
-	  echo ... $$test ... ; \
-	  ${MKDIR} -p out/$$dir ; \
-	  ${X2S} ${testdir}/$$test out/$$dir/$$base.slax ; \
-	  ${S2X} out/$$dir/$$base.slax out/$$dir/$$base.xsl2 ; \
-	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.slax \
-			out/$$dir/$$base.slax ${S2O}; \
-	  ${DIFF} -Nu ${srcdir}/$$dir/$$base.xsl2 \
-			out/$$dir/$$base.xsl2 ${S2O}; \
-	  ${TEST_TWO}; \
-	  if [ -f ${srcdir}/$$dir/$$base.xml ]; then \
-	    input=${srcdir}/$$dir/$$base.xml ; \
-          else \
-	    input=${testdir}/$$dir/$$base.xml ; \
-	  fi ; \
-	  if [ -f $$input ]; then \
-	    ${SRUN} out/$$dir/$$base.slax $$input \
-			> out/$$dir/$$base.out 2> out/$$dir/$$base.err ; \
-	    if [ -f ${srcdir}/$$dir/$$base.out ]; then \
-	      ${DIFF} -Nu ${srcdir}/$$dir/$$base.out \
-			out/$$dir/$$base.out ${S2O} ; \
-            else  \
-	      ${DIFF} -Nu ${testdir}/$$dir/$$base.out \
-			out/$$dir/$$base.out ${S2O} ; \
-	    fi ; \
-	    if [ -f ${srcdir}/$$dir/$$base.err ]; then \
-	    ${DIFF} -Nu ${srcdir}/$$dir/$$base.err \
-			out/$$dir/$$base.err ${S2O} ; \
-	    else \
-	      ${DIFF} -Nu ${testdir}/$$dir/$$base.err \
-			out/$$dir/$$base.err ${S2O} ; \
-	    fi ; \
-	  fi ; \
-	done)
+test tests: ${SLAXPROC}
+	@${MKDIR} -p out
+	@TESTDIR=${testdir} ${RUN_TESTS} ${RUN_OPTS} run-libxslt ${TEST_CASES}
 endif
 
 accept:
-	@-(for test in ${TEST_CASES}; do \
-	  base=`basename $$test .xsl` ; \
-	  dir=`dirname $$test` ; \
-	  ${MKDIR} -p ${srcdir}/$$dir ; \
-	  ${CP} out/$$dir/$$base.slax ${srcdir}/$$dir/$$base.slax ; \
-	  ${CP} out/$$dir/$$base.xsl2 ${srcdir}/$$dir/$$base.xsl2 ; \
-	  if [ -f out/$$dir/$$base.out ]; then \
-	    ${CP} out/$$dir/$$base.out ${srcdir}/$$dir/$$base.out ; \
-	    ${CP} out/$$dir/$$base.err ${srcdir}/$$dir/$$base.err ; \
-	  fi ; \
-	done)
+	@TESTDIR=${testdir} ${RUN_TESTS} accept-libxslt ${TEST_CASES}
 
 test-input:
 	@echo TEST_CASES_WITH_INPUT =
