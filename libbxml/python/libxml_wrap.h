@@ -48,7 +48,7 @@
  *
  * Macro used to signal to GCC unused function parameters
  * Repeated here since the definition is not available when
- * compiled outside the libxml2 build tree.
+ * compiled outside the libbxml build tree.
  */
 #if defined(__GNUC__) || defined(__clang__)
 #ifdef UNUSED
