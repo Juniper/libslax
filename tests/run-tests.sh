@@ -287,6 +287,148 @@ do_accept_pin () {
     done
 }
 
+#
+# Compile each TEST_CASES entry from slax to xsl and back to slax,
+# diffing each stage against the saved file sitting next to the
+# source (no saved/ subdirectory, unlike run-core).
+#
+do_run_bugs () {
+    mkdir -p out
+
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        info "... $test ..."
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --slax-to-xslt ${SRCDIR}/$test out/$base.xsl"
+        run "diff -Nbu ${SRCDIR}/$base.xsl out/$base.xsl | ${S2O}"
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --xslt-to-slax --write-version 1.2 out/$base.xsl out/$base.slax2"
+        run "diff -Nbu ${SRCDIR}/$base.slax2 out/$base.slax2 | ${S2O}"
+    done
+}
+
+do_accept_bugs () {
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        accept_file out/$base.xsl ${SRCDIR}/$base.xsl
+        accept_file out/$base.slax2 ${SRCDIR}/$base.slax2
+    done
+}
+
+#
+# Dump the parse tree for each OTHER_TEST_CASES entry, diffing
+# against the saved .out sitting next to the source.
+#
+do_run_bugs_other () {
+    mkdir -p out
+
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        info "... $test (dump) ..."
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --format --dump-tree --write-version 1.2 ${SRCDIR}/$test > out/$base.out 2>&1"
+        run "diff -Nbu ${SRCDIR}/$base.out out/$base.out | ${S2O}"
+    done
+}
+
+do_accept_bugs_other () {
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        accept_file out/$base.out ${SRCDIR}/$base.out
+    done
+}
+
+#
+# Run slaxproc --check over each TEST_CASES entry, diffing its
+# stdout/stderr against saved/.
+#
+do_run_errors () {
+    mkdir -p out
+
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        info "... $test ..."
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --check ${SRCDIR}/$test > out/$base.out 2> out/$base.err"
+        run "diff -Nbu ${SRCDIR}/saved/$base.out out/$base.out | ${S2O}"
+        run "diff -Nbu ${SRCDIR}/saved/$base.err out/$base.err | ${S2O}"
+    done
+}
+
+do_accept_errors () {
+    for test in ${TESTS}; do
+        base=`basename $test .slax`
+        accept_file out/$base.out ${SRCDIR}/saved/$base.out
+        accept_file out/$base.err ${SRCDIR}/saved/$base.err
+    done
+}
+
+#
+# Round-trip each TEST_CASES entry (a path like "documents/foo.xsl",
+# relative to TESTDIR) through xslt-to-slax and back, then through an
+# extra format/write-version cycle to check idempotency, then (if a
+# matching .xml exists) runs it and diffs stdout/stderr.  The saved
+# .slax/.xsl2/.out/.err live next to the source when present, falling
+# back to TESTDIR's own copy otherwise.
+#
+do_run_libxslt () {
+    mkdir -p out out/documents out/keys out/xinclude out/multiple
+    cp "${TESTDIR}/documents/fragment2.xml" out/documents/fragment2.xml 2>/dev/null
+    cp "${TESTDIR}/xinclude/x1.xml" out/xinclude/x1.xml 2>/dev/null
+    cp "${TESTDIR}/multiple/dict.dtd" out/multiple/dict.dtd 2>/dev/null
+
+    for test in ${TESTS}; do
+        base=`basename $test .xsl`
+        dir=`dirname $test`
+        mkdir -p out/$dir
+        info "... $test ..."
+
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --xslt-to-slax --write-version 1.2 ${TESTDIR}/$test out/$dir/$base.slax"
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --slax-to-xslt out/$dir/$base.slax out/$dir/$base.xsl2"
+        run "diff -Nu ${SRCDIR}/$dir/$base.slax out/$dir/$base.slax | ${S2O}"
+        run "diff -Nu ${SRCDIR}/$dir/$base.xsl2 out/$dir/$base.xsl2 | ${S2O}"
+
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --format --write-version 1.3 --width 80 out/$dir/$base.slax out/$dir/$base.slax3"
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --format --write-version 1.2 out/$dir/$base.slax3 out/$dir/$base.slax4"
+        run_binary "${SLAXPROC}" "${SLAXOPTS} --format --write-version 1.3 --width 80 out/$dir/$base.slax4 out/$dir/$base.slax5"
+        run "diff -Nu out/$dir/$base.slax3 out/$dir/$base.slax5 | ${S2O}"
+
+        if [ -f "${SRCDIR}/$dir/$base.xml" ]; then
+            input=${SRCDIR}/$dir/$base.xml
+        else
+            input=${TESTDIR}/$dir/$base.xml
+        fi
+
+        if [ -f "$input" ]; then
+            run_binary "${SLAXPROC}" "${SLAXOPTS} --run out/$dir/$base.slax $input > out/$dir/$base.out 2> out/$dir/$base.err"
+
+            if [ -f "${SRCDIR}/$dir/$base.out" ]; then
+                run "diff -Nu ${SRCDIR}/$dir/$base.out out/$dir/$base.out | ${S2O}"
+            else
+                run "diff -Nu ${TESTDIR}/$dir/$base.out out/$dir/$base.out | ${S2O}"
+            fi
+
+            if [ -f "${SRCDIR}/$dir/$base.err" ]; then
+                run "diff -Nu ${SRCDIR}/$dir/$base.err out/$dir/$base.err | ${S2O}"
+            else
+                run "diff -Nu ${TESTDIR}/$dir/$base.err out/$dir/$base.err | ${S2O}"
+            fi
+        fi
+    done
+}
+
+do_accept_libxslt () {
+    for test in ${TESTS}; do
+        base=`basename $test .xsl`
+        dir=`dirname $test`
+        mkdir -p ${SRCDIR}/$dir
+
+        accept_file out/$dir/$base.slax ${SRCDIR}/$dir/$base.slax
+        accept_file out/$dir/$base.xsl2 ${SRCDIR}/$dir/$base.xsl2
+
+        if [ -f out/$dir/$base.out ]; then
+            accept_file out/$dir/$base.out ${SRCDIR}/$dir/$base.out
+            accept_file out/$dir/$base.err ${SRCDIR}/$dir/$base.err
+        fi
+    done
+}
+
 do_run_one_core () {
     slaxfile=$1
     [ -f "$slaxfile" ] || slaxfile=${SRCDIR}/$1
@@ -402,6 +544,46 @@ case $verb in
 
     run-one-core)
         do_run_one_core "$1"
+    ;;
+
+    run-bugs)
+        TESTS="$@"
+        do_run_bugs
+    ;;
+
+    accept-bugs)
+        TESTS="$@"
+        do_accept_bugs
+    ;;
+
+    run-bugs-other)
+        TESTS="$@"
+        do_run_bugs_other
+    ;;
+
+    accept-bugs-other)
+        TESTS="$@"
+        do_accept_bugs_other
+    ;;
+
+    run-errors)
+        TESTS="$@"
+        do_run_errors
+    ;;
+
+    accept-errors)
+        TESTS="$@"
+        do_accept_errors
+    ;;
+
+    run-libxslt)
+        TESTS="$@"
+        do_run_libxslt
+    ;;
+
+    accept-libxslt)
+        TESTS="$@"
+        do_accept_libxslt
     ;;
 
     run-one-slax)
