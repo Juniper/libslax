@@ -953,7 +953,7 @@ htmlNodeDumpOutputInternal(xmlSaveCtxtPtr ctxt, xmlNodePtr cur) {
 
 /**
  * Recursively drop blank (whitespace-only) text-node children from
- * @node, in place, but only where the whitespace is leftover
+ * `node`, in place, but only where the whitespace is leftover
  * indentation rather than a legitimate element value. A blank text
  * node is dropped when it sits between two open tags, two close
  * tags, or a close tag and an open tag (i.e. it has a preceding
