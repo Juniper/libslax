@@ -1,8 +1,8 @@
-import libxml2mod
+import libbxmlmod
 import types
 import sys
 
-# The root of all libxml2 errors.
+# The root of all libbxml errors.
 class libxmlError(Exception): pass
 
 # Type of the wrapper class for the C objects wrappers
@@ -97,19 +97,19 @@ class ioWrapper:
 class ioReadWrapper(ioWrapper):
     def __init__(self, _obj, enc = ""):
         ioWrapper.__init__(self, _obj)
-        self._o = libxml2mod.xmlCreateInputBuffer(self, enc)
+        self._o = libbxmlmod.xmlCreateInputBuffer(self, enc)
 
     def __del__(self):
         print("__del__")
         self.io_close()
         if self._o != None:
-            libxml2mod.xmlFreeParserInputBuffer(self._o)
+            libbxmlmod.xmlFreeParserInputBuffer(self._o)
         self._o = None
 
     def close(self):
         self.io_close()
         if self._o != None:
-            libxml2mod.xmlFreeParserInputBuffer(self._o)
+            libbxmlmod.xmlFreeParserInputBuffer(self._o)
         self._o = None
 
 class ioWriteWrapper(ioWrapper):
@@ -119,7 +119,7 @@ class ioWriteWrapper(ioWrapper):
             print("write io from a string")
             self.o = None
         elif type(_obj).__name__ == 'PyCapsule':
-            file = libxml2mod.outputBufferGetPythonFile(_obj)
+            file = libbxmlmod.outputBufferGetPythonFile(_obj)
             if file != None:
                 ioWrapper.__init__(self, file)
             else:
@@ -128,9 +128,9 @@ class ioWriteWrapper(ioWrapper):
 #        elif type(_obj) == types.InstanceType:
 #            print(("write io from instance of %s" % (_obj.__class__)))
 #            ioWrapper.__init__(self, _obj)
-#            self._o = libxml2mod.xmlCreateOutputBuffer(self, enc)
+#            self._o = libbxmlmod.xmlCreateOutputBuffer(self, enc)
         else:
-            file = libxml2mod.outputBufferGetPythonFile(_obj)
+            file = libbxmlmod.outputBufferGetPythonFile(_obj)
             if file != None:
                 ioWrapper.__init__(self, file)
             else:
@@ -141,19 +141,19 @@ class ioWriteWrapper(ioWrapper):
 #        print "__del__"
         self.io_close()
         if self._o != None:
-            libxml2mod.xmlOutputBufferClose(self._o)
+            libbxmlmod.xmlOutputBufferClose(self._o)
         self._o = None
 
     def flush(self):
         self.io_flush()
         if self._o != None:
-            libxml2mod.xmlOutputBufferClose(self._o)
+            libbxmlmod.xmlOutputBufferClose(self._o)
         self._o = None
 
     def close(self):
         self.io_flush()
         if self._o != None:
-            libxml2mod.xmlOutputBufferClose(self._o)
+            libbxmlmod.xmlOutputBufferClose(self._o)
         self._o = None
 
 #
@@ -274,60 +274,60 @@ class xmlCore:
     def __eq__(self, other):
         if other == None:
             return False
-        ret = libxml2mod.compareNodesEqual(self._o, other._o)
+        ret = libbxmlmod.compareNodesEqual(self._o, other._o)
         if ret == None:
             return False
         return ret == True
     def __ne__(self, other):
         if other == None:
             return True
-        ret = libxml2mod.compareNodesEqual(self._o, other._o)
+        ret = libbxmlmod.compareNodesEqual(self._o, other._o)
         return not ret
     def __hash__(self):
-        ret = libxml2mod.nodeHash(self._o)
+        ret = libbxmlmod.nodeHash(self._o)
         return ret
 
     def __str__(self):
         return self.serialize()
     def get_parent(self):
-        ret = libxml2mod.parent(self._o)
+        ret = libbxmlmod.parent(self._o)
         if ret == None:
             return None
         return nodeWrap(ret)
     def get_children(self):
-        ret = libxml2mod.children(self._o)
+        ret = libbxmlmod.children(self._o)
         if ret == None:
             return None
         return nodeWrap(ret)
     def get_last(self):
-        ret = libxml2mod.last(self._o)
+        ret = libbxmlmod.last(self._o)
         if ret == None:
             return None
         return nodeWrap(ret)
     def get_next(self):
-        ret = libxml2mod.next(self._o)
+        ret = libbxmlmod.next(self._o)
         if ret == None:
             return None
         return nodeWrap(ret)
     def get_properties(self):
-        ret = libxml2mod.properties(self._o)
+        ret = libbxmlmod.properties(self._o)
         if ret == None:
             return None
         return xmlAttr(_obj=ret)
     def get_prev(self):
-        ret = libxml2mod.prev(self._o)
+        ret = libbxmlmod.prev(self._o)
         if ret == None:
             return None
         return nodeWrap(ret)
     def get_content(self):
-        return libxml2mod.xmlNodeGetContent(self._o)
+        return libbxmlmod.xmlNodeGetContent(self._o)
     getContent = get_content  # why is this duplicate naming needed ?
     def get_name(self):
-        return libxml2mod.name(self._o)
+        return libbxmlmod.name(self._o)
     def get_type(self):
-        return libxml2mod.type(self._o)
+        return libbxmlmod.type(self._o)
     def get_doc(self):
-        ret = libxml2mod.doc(self._o)
+        ret = libbxmlmod.doc(self._o)
         if ret == None:
             if self.type in ["document_xml", "document_html"]:
                 return xmlDoc(_obj=self._o)
@@ -342,43 +342,43 @@ class xmlCore:
     if float(sys.version[0:3]) < 2.2:
         def __getattr__(self, attr):
             if attr == "parent":
-                ret = libxml2mod.parent(self._o)
+                ret = libbxmlmod.parent(self._o)
                 if ret == None:
                     return None
                 return nodeWrap(ret)
             elif attr == "properties":
-                ret = libxml2mod.properties(self._o)
+                ret = libbxmlmod.properties(self._o)
                 if ret == None:
                     return None
                 return xmlAttr(_obj=ret)
             elif attr == "children":
-                ret = libxml2mod.children(self._o)
+                ret = libbxmlmod.children(self._o)
                 if ret == None:
                     return None
                 return nodeWrap(ret)
             elif attr == "last":
-                ret = libxml2mod.last(self._o)
+                ret = libbxmlmod.last(self._o)
                 if ret == None:
                     return None
                 return nodeWrap(ret)
             elif attr == "next":
-                ret = libxml2mod.next(self._o)
+                ret = libbxmlmod.next(self._o)
                 if ret == None:
                     return None
                 return nodeWrap(ret)
             elif attr == "prev":
-                ret = libxml2mod.prev(self._o)
+                ret = libbxmlmod.prev(self._o)
                 if ret == None:
                     return None
                 return nodeWrap(ret)
             elif attr == "content":
-                return libxml2mod.xmlNodeGetContent(self._o)
+                return libbxmlmod.xmlNodeGetContent(self._o)
             elif attr == "name":
-                return libxml2mod.name(self._o)
+                return libbxmlmod.name(self._o)
             elif attr == "type":
-                return libxml2mod.type(self._o)
+                return libbxmlmod.type(self._o)
             elif attr == "doc":
-                ret = libxml2mod.doc(self._o)
+                ret = libbxmlmod.doc(self._o)
                 if ret == None:
                     if self.type == "document_xml" or self.type == "document_html":
                         return xmlDoc(_obj=self._o)
@@ -405,9 +405,9 @@ class xmlCore:
     #     indent: if 1 the serializer is asked to indent the output
     #
     def serialize(self, encoding = None, format = 0):
-        return libxml2mod.serializeNode(self._o, encoding, format)
+        return libbxmlmod.serializeNode(self._o, encoding, format)
     def saveTo(self, file, encoding = None, format = 0):
-        return libxml2mod.saveNodeTo(self._o, file, encoding, format)
+        return libbxmlmod.saveNodeTo(self._o, file, encoding, format)
             
     #
     # Canonicalization routines:
@@ -429,7 +429,7 @@ class xmlCore:
                    with_comments=0):
         if nodes:
             nodes = [n._o for n in nodes]
-        return libxml2mod.xmlC14NDocDumpMemory(
+        return libbxmlmod.xmlC14NDocDumpMemory(
             self.get_doc()._o,
             nodes,
             exclusive != 0,
@@ -443,7 +443,7 @@ class xmlCore:
                    with_comments=0):
         if nodes:
             nodes = [n._o for n in nodes]
-        return libxml2mod.xmlC14NDocSaveTo(
+        return libbxmlmod.xmlC14NDocSaveTo(
             self.get_doc()._o,
             nodes,
             exclusive != 0,
@@ -501,7 +501,7 @@ class xmlCore:
         freeNsList() method on the returns xmlNs object.
         """
 
-        ret = libxml2mod.xmlNodeRemoveNsDef(self._o, href)
+        ret = libbxmlmod.xmlNodeRemoveNsDef(self._o, href)
         if ret is None:return None
         __tmp = xmlNs(_obj=ret)
         return __tmp
@@ -518,11 +518,11 @@ class xmlCore:
             self.doc._ctxt.xpathFreeContext()
         except:
             pass
-        libxml2mod.xmlFreeDoc(self._o)
+        libbxmlmod.xmlFreeDoc(self._o)
 
 
 #
-# implements the depth-first iterator for libxml2 DOM tree
+# implements the depth-first iterator for libbxml DOM tree
 #
 class xmlCoreDepthFirstItertor:
     def __init__(self, node):
@@ -545,7 +545,7 @@ class xmlCoreDepthFirstItertor:
     next = __next__
 
 #
-# implements the breadth-first iterator for libxml2 DOM tree
+# implements the breadth-first iterator for libbxml DOM tree
 #
 class xmlCoreBreadthFirstItertor:
     def __init__(self, node):
@@ -572,7 +572,7 @@ class xmlCoreBreadthFirstItertor:
 #
 def nodeWrap(o):
     # TODO try to cast to the most appropriate node class
-    name = libxml2mod.type(o)
+    name = libbxmlmod.type(o)
     if name == "element" or name == "text":
         return xmlNode(_obj=o)
     if name == "attribute":
@@ -608,7 +608,7 @@ def xpathObjectRet(o):
 # register an XPath function
 #
 def registerXPathFunction(ctxt, name, ns_uri, f):
-    ret = libxml2mod.xmlRegisterXPathFunction(ctxt, name, ns_uri, f)
+    ret = libbxmlmod.xmlRegisterXPathFunction(ctxt, name, ns_uri, f)
 
 #
 # For the xmlTextReader parser configuration
@@ -627,7 +627,7 @@ PARSER_SEVERITY_WARNING=3
 PARSER_SEVERITY_ERROR=4
 
 #
-# register the libxml2 error handler
+# register the libbxml error handler
 #
 def registerErrorHandler(f, ctx):
     """Register a Python written function to for error reporting.
@@ -635,7 +635,7 @@ def registerErrorHandler(f, ctx):
     import sys
     if 'libxslt' not in sys.modules:
         # normal behaviour when libxslt is not imported
-        ret = libxml2mod.xmlRegisterErrorHandler(f,ctx)
+        ret = libbxmlmod.xmlRegisterErrorHandler(f,ctx)
     else:
         # when libxslt is already imported, one must
         # use libxst's error handler instead
@@ -653,7 +653,7 @@ class parserCtxtCore:
 
     def __del__(self):
         if self._o != None:
-            libxml2mod.xmlFreeParserCtxt(self._o)
+            libbxmlmod.xmlFreeParserCtxt(self._o)
         self._o = None
 
     def setErrorHandler(self,f,arg):
@@ -661,16 +661,16 @@ class parserCtxtCore:
            f(arg,msg,severity,reserved).
            
            @reserved is currently always None."""
-        libxml2mod.xmlParserCtxtSetErrorHandler(self._o,f,arg)
+        libbxmlmod.xmlParserCtxtSetErrorHandler(self._o,f,arg)
 
     def getErrorHandler(self):
         """Return (f,arg) as previously registered with setErrorHandler
            or (None,None)."""
-        return libxml2mod.xmlParserCtxtGetErrorHandler(self._o)
+        return libbxmlmod.xmlParserCtxtGetErrorHandler(self._o)
 
     def addLocalCatalog(self, uri):
         """Register a local catalog with the parser"""
-        return libxml2mod.addLocalCatalog(self._o, uri)
+        return libbxmlmod.addLocalCatalog(self._o, uri)
     
 
 class ValidCtxtCore:
@@ -683,7 +683,7 @@ class ValidCtxtCore:
         Register error and warning handlers for DTD validation.
         These will be called back as f(msg,arg)
         """
-        libxml2mod.xmlSetValidErrors(self._o, err_func, warn_func, arg)
+        libbxmlmod.xmlSetValidErrors(self._o, err_func, warn_func, arg)
     
 
 class SchemaValidCtxtCore:
@@ -696,7 +696,7 @@ class SchemaValidCtxtCore:
         Register error and warning handlers for Schema validation.
         These will be called back as f(msg,arg)
         """
-        libxml2mod.xmlSchemaSetValidErrors(self._o, err_func, warn_func, arg)
+        libbxmlmod.xmlSchemaSetValidErrors(self._o, err_func, warn_func, arg)
 
 
 class relaxNgValidCtxtCore:
@@ -709,7 +709,7 @@ class relaxNgValidCtxtCore:
         Register error and warning handlers for RelaxNG validation.
         These will be called back as f(msg,arg)
         """
-        libxml2mod.xmlRelaxNGSetValidErrors(self._o, err_func, warn_func, arg)
+        libbxmlmod.xmlRelaxNGSetValidErrors(self._o, err_func, warn_func, arg)
 
     
 def _xmlTextReaderErrorFunc(xxx_todo_changeme,msg,severity,locator):
@@ -726,23 +726,23 @@ class xmlTextReaderCore:
 
     def __del__(self):
         if self._o != None:
-            libxml2mod.xmlFreeTextReader(self._o)
+            libbxmlmod.xmlFreeTextReader(self._o)
         self._o = None
 
     def SetErrorHandler(self,f,arg):
         """Register an error handler that will be called back as
            f(arg,msg,severity,locator)."""
         if f is None:
-            libxml2mod.xmlTextReaderSetErrorHandler(\
+            libbxmlmod.xmlTextReaderSetErrorHandler(\
                 self._o,None,None)
         else:
-            libxml2mod.xmlTextReaderSetErrorHandler(\
+            libbxmlmod.xmlTextReaderSetErrorHandler(\
                 self._o,_xmlTextReaderErrorFunc,(f,arg))
 
     def GetErrorHandler(self):
         """Return (f,arg) as previously registered with setErrorHandler
            or (None,None)."""
-        f,arg = libxml2mod.xmlTextReaderGetErrorHandler(self._o)
+        f,arg = libbxmlmod.xmlTextReaderGetErrorHandler(self._o)
         if f is None:
             return None,None
         else:
@@ -753,7 +753,7 @@ class xmlTextReaderCore:
 # The cleanup now goes though a wrapper in libxml.c
 #
 def cleanupParser():
-    libxml2mod.xmlPythonCleanupParser()
+    libbxmlmod.xmlPythonCleanupParser()
 
 #
 # The interface to xmlRegisterInputCallbacks.
@@ -768,7 +768,7 @@ def registerInputCallback(func):
             o = cb(URI)
             if o is not None:
                 return o
-    libxml2mod.xmlRegisterInputCallback(findOpenCallback)
+    libbxmlmod.xmlRegisterInputCallback(findOpenCallback)
     __input_callbacks.append(func)
 
 def popInputCallbacks():
@@ -777,7 +777,7 @@ def popInputCallbacks():
     if len(__input_callbacks) > 0:
         __input_callbacks.pop()
     if len(__input_callbacks) == 0:
-        libxml2mod.xmlUnregisterInputCallback()
+        libbxmlmod.xmlUnregisterInputCallback()
 
 #
 # Deprecated
