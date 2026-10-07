@@ -556,8 +556,8 @@ foreign_encoding_args = (
 
 #######################################################################
 #
-#  This part writes the C <-> Python stubs libxml2-py.[ch] and
-#  the table libxml2-export.c to add when registrering the Python module
+#  This part writes the C <-> Python stubs libbxml-py.[ch] and
+#  the table libbxml-export.c to add when registrering the Python module
 #
 #######################################################################
 
@@ -930,10 +930,10 @@ def print_function_wrapper(name, output, export, include):
     if is_deprecated:
         output.write("XML_IGNORE_DEPRECATION_WARNINGS\n")
     output.write("PyObject *\n")
-    output.write("libxml_%s(PyObject *self ATTRIBUTE_UNUSED," % (name))
+    output.write("libxml_%s(PyObject *self UNUSED," % (name))
     output.write(" PyObject *args")
     if format == "":
-        output.write(" ATTRIBUTE_UNUSED")
+        output.write(" UNUSED")
     output.write(") {\n")
     if ret[0] != 'void':
         output.write("    PyObject *py_retval;\n")
@@ -977,11 +977,11 @@ def buildStubs():
     failed = 0
     skipped = 0
 
-    include = open(os.path.join(dstPref, "libxml2-py.h"), "w")
+    include = open(os.path.join(dstPref, "libbxml-py.h"), "w")
     include.write("/* Generated */\n\n")
-    export = open(os.path.join(dstPref, "libxml2-export.c"), "w")
+    export = open(os.path.join(dstPref, "libbxml-export.c"), "w")
     export.write("/* Generated */\n\n")
-    wrapper = open(os.path.join(dstPref, "libxml2-py.c"), "w")
+    wrapper = open(os.path.join(dstPref, "libbxml-py.c"), "w")
     wrapper.write("/* Generated */\n\n")
     wrapper.write("#define PY_SSIZE_T_CLEAN\n")
     wrapper.write("#include <Python.h>\n")
@@ -989,7 +989,7 @@ def buildStubs():
     wrapper.write("#include <libxml/tree.h>\n")
     wrapper.write("#include <libxml/xmlschemastypes.h>\n")
     wrapper.write("#include \"libxml_wrap.h\"\n")
-    wrapper.write("#include \"libxml2-py.h\"\n\n")
+    wrapper.write("#include \"libbxml-py.h\"\n\n")
     for function in sorted(functions.keys()):
         ret = print_function_wrapper(function, wrapper, export, include)
         if ret < 0:
@@ -1354,13 +1354,13 @@ def buildWrappers():
 
     libxml_content = ""
     try:
-        with open(os.path.join(srcPref, "libxml.py"), "r") as libxml_file:
+        with open(os.path.join(srcPref, "libbxml.py"), "r") as libxml_file:
             libxml_content = libxml_file.read()
     except IOError as msg:
         print("Error reading libxml.py:", msg)
         sys.exit(1)
 
-    classes = open(os.path.join(dstPref, "libxml2.py"), "w")
+    classes = open(os.path.join(dstPref, "libbxml.py"), "w")
 
     classes.write(libxml_content)
 
@@ -1399,7 +1399,7 @@ def buildWrappers():
                 classes.write("    ret = ")
             else:
                 classes.write("    ")
-            classes.write("libxml2mod.%s(" % name)
+            classes.write("libbxmlmod.%s(" % name)
             n = 0
             for arg in args:
                 if n != 0:
@@ -1489,7 +1489,7 @@ def buildWrappers():
             if classname in classes_destructors:
                 classes.write("    def __del__(self):\n")
                 classes.write("        if self._o != None:\n")
-                classes.write("            libxml2mod.%s(self._o)\n" %
+                classes.write("            libbxmlmod.%s(self._o)\n" %
                               classes_destructors[classname])
                 classes.write("        self._o = None\n\n")
                 destruct=classes_destructors[classname]
@@ -1534,7 +1534,7 @@ def buildWrappers():
                     classes.write("        ret = ")
                 else:
                     classes.write("        ")
-                classes.write("libxml2mod.%s(" % name)
+                classes.write("libbxmlmod.%s(" % name)
                 n = 0
                 for arg in args:
                     if n != 0:
