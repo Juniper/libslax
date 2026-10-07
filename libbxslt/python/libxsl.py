@@ -1,13 +1,13 @@
 #
-# Both libxml2mod and libxsltmod have a dependency on libxml2.so
+# Both libbxmlmod and libxsltmod have a dependency on libbxml.so
 # and they should share the same module, try to convince the python
 # loader to work in that mode if feasible
 #
 import sys
 if not hasattr(sys,'getdlopenflags'):
-    import libxml2mod
+    import libbxmlmod
     import libxsltmod
-    import libxml2
+    import libbxml
 else:
     try:
         from dl import RTLD_GLOBAL, RTLD_NOW
@@ -42,19 +42,19 @@ else:
             flags = sys.getdlopenflags() 
             sys.setdlopenflags(RTLD_GLOBAL | RTLD_NOW)
             try:
-                import libxml2mod
+                import libbxmlmod
                 import libxsltmod
-                import libxml2
+                import libbxml
             finally:
                 sys.setdlopenflags(flags)
         except:
-            import libxml2mod
+            import libbxmlmod
             import libxsltmod
-            import libxml2
+            import libbxml
     else:
-        import libxml2mod
+        import libbxmlmod
         import libxsltmod
-        import libxml2
+        import libbxml
 
 
 class transformCtxtBase:
@@ -119,9 +119,9 @@ class extensionModule:
         pass
 
 def cleanup():
-    """Cleanup all libxslt and libxml2 memory allocated"""
+    """Cleanup all libxslt and libbxml memory allocated"""
     libxsltmod.xsltPythonCleanup()
-    libxml2.cleanupParser()
+    libbxml.cleanupParser()
 
 #
 # Everything below this point is automatically generated
