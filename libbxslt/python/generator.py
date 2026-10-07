@@ -472,7 +472,7 @@ def buildStubs():
 #
 # The type automatically remapped to generated classes
 #
-libxml2_classes_type = {
+libbxml_classes_type = {
     "xmlNodePtr": ("._o", "xmlNode(_obj=%s)", "xmlNode"),
     "xmlNode *": ("._o", "xmlNode(_obj=%s)", "xmlNode"),
     "xmlDocPtr": ("._o", "xmlDoc(_obj=%s)", "xmlDoc"),
@@ -508,14 +508,14 @@ classes_type = {
 }
 
 converter_type = {
-    "xmlXPathObjectPtr": "libxml2.xpathObjectRet(%s)",
+    "xmlXPathObjectPtr": "libbxml.xpathObjectRet(%s)",
 }
 
 primary_classes = ["xpathParserContext", "xpathContext", "transformCtxt", "stylesheet"]
 
 classes_ancestor = {
-    "xpathContext" : "libxml2.xpathContext",
-    "xpathParserContext" : "libxml2.xpathParserContext",
+    "xpathContext" : "libbxml.xpathContext",
+    "xpathParserContext" : "libbxml.xpathParserContext",
     "transformCtxt": "transformCtxtBase",
     "stylesheet": "stylesheetBase",
 }
@@ -666,7 +666,7 @@ def buildWrappers():
     global unknown_types
     global functions
     global function_classes
-    global libxml2_classes_type
+    global libbxml_classes_type
     global classes_type
     global classes_list
     global converter_type
@@ -772,11 +772,11 @@ def buildWrappers():
                                   (arg[0], arg[0]))
                     classes.write("    else: %s__o = %s%s\n" %
                                   (arg[0], arg[0], classes_type[arg[1]][0]))
-                elif arg[1] in libxml2_classes_type:
+                elif arg[1] in libbxml_classes_type:
                     classes.write("    if %s == None: %s__o = None\n" %
                                   (arg[0], arg[0]))
                     classes.write("    else: %s__o = %s%s\n" %
-                                  (arg[0], arg[0], libxml2_classes_type[arg[1]][0]))
+                                  (arg[0], arg[0], libbxml_classes_type[arg[1]][0]))
             if ret[0] != "void":
                 classes.write("    ret = ")
             else:
@@ -789,7 +789,7 @@ def buildWrappers():
                 classes.write("%s" % arg[0])
                 if arg[1] in classes_type:
                     classes.write("__o")
-                if arg[1] in libxml2_classes_type:
+                if arg[1] in libbxml_classes_type:
                     classes.write("__o")
                 n = n + 1
             classes.write(")\n")
@@ -799,10 +799,10 @@ def buildWrappers():
                     classes.write("    return ")
                     classes.write(classes_type[ret[0]][1] % ("ret"))
                     classes.write("\n")
-                elif ret[0] in libxml2_classes_type:
+                elif ret[0] in libbxml_classes_type:
                     classes.write("    if ret == None: return None\n")
-                    classes.write("    return libxml2.")
-                    classes.write(libxml2_classes_type[ret[0]][1] % ("ret"))
+                    classes.write("    return libbxml.")
+                    classes.write(libbxml_classes_type[ret[0]][1] % ("ret"))
                     classes.write("\n")
                 else:
                     classes.write("    return ret\n")
@@ -876,12 +876,12 @@ def buildWrappers():
                                           (arg[0], arg[0]))
                             classes.write("        else: %s__o = %s%s\n" %
                                           (arg[0], arg[0], classes_type[arg[1]][0]))
-                    elif arg[1] in libxml2_classes_type:
+                    elif arg[1] in libbxml_classes_type:
                         classes.write("        if %s == None: %s__o = None\n" %
                                       (arg[0], arg[0]))
                         classes.write("        else: %s__o = %s%s\n" %
                                       (arg[0], arg[0],
-                                       libxml2_classes_type[arg[1]][0]))
+                                       libbxml_classes_type[arg[1]][0]))
                     n = n + 1
                 if ret[0] != "void":
                     classes.write("        ret = ")
@@ -896,14 +896,14 @@ def buildWrappers():
                         classes.write("%s" % arg[0])
                         if arg[1] in classes_type:
                             classes.write("__o")
-                        elif arg[1] in libxml2_classes_type:
+                        elif arg[1] in libbxml_classes_type:
                             classes.write("__o")
                     else:
                         classes.write("self")
                         if arg[1] in classes_type:
                             classes.write(classes_type[arg[1]][0])
-                        elif arg[1] in libxml2_classes_type:
-                            classes.write(libxml2_classes_type[arg[1]][0])
+                        elif arg[1] in libbxml_classes_type:
+                            classes.write(libbxml_classes_type[arg[1]][0])
                     n = n + 1
                 classes.write(")\n")
                 if ret[0] != "void":
@@ -912,10 +912,10 @@ def buildWrappers():
                         classes.write("        return ")
                         classes.write(classes_type[ret[0]][1] % ("ret"))
                         classes.write("\n")
-                    elif ret[0] in libxml2_classes_type:
+                    elif ret[0] in libbxml_classes_type:
                         classes.write("        if ret == None: return None\n")
-                        classes.write("        return libxml2.")
-                        classes.write(libxml2_classes_type[ret[0]][1] % ("ret"))
+                        classes.write("        return libbxml.")
+                        classes.write(libbxml_classes_type[ret[0]][1] % ("ret"))
                         classes.write("\n")
                     elif ret[0] in converter_type:
                         classes.write("        if ret == None: return None\n")
