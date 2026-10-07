@@ -1043,7 +1043,7 @@ dnl
 dnl Check for Python
 dnl
 
-AS_IF([test "x$with_python" = "xyes"], [
+AS_IF([test "$WITH_PYTHON" = "1"], [
     AM_PATH_PYTHON
     PKG_CHECK_MODULES([PYTHON], [python-${PYTHON_VERSION}])
 ])
@@ -1052,7 +1052,7 @@ dnl
 dnl Check for Doxygen
 dnl
 
-if test "$with_python" = "yes" || test "$with_docs" = "yes"; then
+if test "$WITH_PYTHON" = "1" || test "$WITH_DOCS" = "1"; then
     AC_PATH_PROG(DOXYGEN, doxygen, [no])
     if test "$DOXYGEN" = "no"; then
         AC_MSG_ERROR([cannot find doxygen])
@@ -2010,7 +2010,7 @@ AC_CONFIG_FILES([
     libbxslt/libexslt/exsltconfig.h
     libbxslt/xsltproc/Makefile
     libbxslt/python/Makefile
-    libbxslt/python/tests/Makefile
+    tests/bxslt/python/Makefile
     libbxslt/doc/Makefile
     libbxslt/doc/devhelp/Makefile
     libbxslt/doc/EXSLT/devhelp/Makefile
