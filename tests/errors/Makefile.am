@@ -15,7 +15,6 @@ EXTRA_DIST = \
     $(addprefix saved/, ${TEST_CASES:.slax=.err})
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
-RUN_TESTS = sh ${srcdir}/../run-tests.sh -d ${srcdir} -s ${SLAXPROC}
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2E = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --check
@@ -50,10 +49,18 @@ test tests:
 
 errors: ${SLAXPROC}
 	@${MKDIR} -p out
-	@${RUN_TESTS} ${RUN_OPTS} run-errors ${TEST_CASES}
+	-@(for test in ${TEST_CASES} ; do \
+	      echo "... $$test ..."; \
+	      ${TEST_ONE}; \
+	done; true)
 
 one:
 	-@(test=${TEST_CASE}; data=${TEST_DATA}; ${TEST_ONE} ; true)
 
 accept:
-	@${RUN_TESTS} accept-errors ${TEST_CASES}
+	-@(for test in ${TEST_CASES} ; do \
+	      echo "... $$test ..."; \
+	      base=`${BASENAME} $$test .slax` ; \
+	      ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \
+	      ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \
+	done; true)
