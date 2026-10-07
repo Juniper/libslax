@@ -32,12 +32,9 @@ F13 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG} ${WIDTH_ARG}
 F12 = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format ${VERSION_ARG12}
 
 SLAXPROC=${top_builddir}/slaxproc/slaxproc
+RUN_TESTS = sh ${srcdir}/../run-tests.sh -d ${srcdir} -s ${SLAXPROC}
 S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
-S2X = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --slax-to-xslt
-X2S = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --xslt-to-slax ${VERSION_ARG12}
-SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run
-SDUMP = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --format --dump-tree ${VERSION_ARG12}
 
 all:
 
@@ -54,38 +51,14 @@ scribble:
 	@echo '## Running the regression tests under MallocPreScribble'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
-test tests: ${SLAXPROC} main-tests other-tests
-
-main-tests:
+test tests: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@(for test in ${TEST_CASES} ; do \
-	  echo "... $$test ..."; \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${S2X} ${srcdir}/$$test out/$$name.xsl ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.xsl out/$$name.xsl ${S2O} ; \
-	  ${X2S} out/$$name.xsl out/$$name.slax2 ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.slax2 out/$$name.slax2 ${S2O} ; \
-	done)
-
-other-tests: ${SLAXPROC}
-	@${MKDIR} -p out
-	-@(for test in ${OTHER_TEST_CASES} ; do \
-	  echo "... $$test ..."; \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${SDUMP} ${srcdir}/$$test > out/$$name.out 2>&1 ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.out out/$$name.out ${S2O} ; \
-	done)
+	@${RUN_TESTS} ${RUN_OPTS} run-bugs ${TEST_CASES}
+	@${RUN_TESTS} ${RUN_OPTS} run-bugs-other ${OTHER_TEST_CASES}
 
 accept:
-	-@(for test in ${TEST_CASES} ; do \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${CP} out/$$name.xsl ${srcdir}/$$name.xsl ; \
-	  ${CP} out/$$name.slax2 ${srcdir}/$$name.slax2 ; \
-	done)
-	-@(for test in ${OTHER_TEST_CASES} ; do \
-	  name=`${BASENAME} $$test .slax` ; \
-	  ${CP} out/$$name.out ${srcdir}/$$name.out ; \
-	done)
+	@${RUN_TESTS} accept-bugs ${TEST_CASES}
+	@${RUN_TESTS} accept-bugs-other ${OTHER_TEST_CASES}
 
 clean-local:
 	${RM} -fr out
