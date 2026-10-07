@@ -12,7 +12,8 @@ EXTRA_DIST = \
 all-local: html.stamp
 
 html.stamp: Doxyfile
-	SOURCE_ROOT=$(top_srcdir)/ BUILD_ROOT=$(top_builddir)/ \
+	echo ... doxygen for libbxml ...
+	@SOURCE_ROOT=$(top_srcdir)/libbxml/ BUILD_ROOT=$(top_builddir)/libbxml/ \
 	    $(DOXYGEN) -q $<
 	@touch $@
 
