@@ -4,7 +4,7 @@
 # parallel builds.
 .NOTPARALLEL:
 
-SUBDIRS = . tests
+SUBDIRS = .
 
 EXTRA_DIST = 			\
 	libxslt.c		\
