@@ -45,6 +45,14 @@ errors:
 docs:
 	@(cd doc ; ${MAKE} docs)
 
+if WITH_BEAR
+HW_CPU=`sysctl -n hw.ncpu`
+bear:
+	@${BEAR} -- ${MAKE} -j${HW_CPU} clean all
+else
+bear:
+	@${MAKE} clean all
+endif
 
 DIST_FILES_DIR = ~/Dropbox/dist-files/
 GH_PAGES_DIR = gh-pages/
