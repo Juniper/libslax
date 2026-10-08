@@ -40,6 +40,7 @@ LT_INIT([dlopen shared])
 LT_LIB_M
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
+AC_PATH_PROG(BEAR, bear, [no])
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
 AC_PATH_PROG(CAT, cat, /bin/cat)
 AC_PATH_PROG(CHMOD, chmod, /bin/chmod)
@@ -93,6 +94,7 @@ AC_CHECK_DECLS([glob], [], [], [#include <glob.h>])
 AC_CHECK_DECLS([mmap], [], [], [#include <sys/mman.h>])
 
 AM_CONDITIONAL(WITH_GLOB, test "$ac_cv_have_decl_glob" = "yes")
+AM_CONDITIONAL([WITH_BEAR], test "$BEAR" != "no")
 
 dnl libFuzzer provides main(), so a link with no main() succeeds only
 dnl when the fuzzer runtime is present
