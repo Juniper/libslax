@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#ifndef	XSLT_NEED_TRIO
+#ifndef XSLT_NEED_TRIO
 #include <stdio.h>
 #else
 #include <trio.h>
@@ -39,19 +39,20 @@
 
 #ifdef XSLT_REFACTORED
 static xsltNsAliasPtr
-xsltNewNsAlias(xsltCompilerCtxtPtr cctxt)
+xsltNewNsAlias (xsltCompilerCtxtPtr cctxt)
 {
     xsltNsAliasPtr ret;
 
     if (cctxt == NULL)
-	return(NULL);
+        return NULL;
 
     ret = (xsltNsAliasPtr) xmlMalloc(sizeof(xsltNsAlias));
     if (ret == NULL) {
-	xsltTransformError(NULL, cctxt->style, NULL,
-	    "Internal error in xsltNewNsAlias(): Memory allocation failed.\n");
-	cctxt->style->errors++;
-	return(NULL);
+        xsltTransformError(
+            NULL, cctxt->style, NULL,
+            "Internal error in xsltNewNsAlias(): Memory allocation failed.\n");
+        cctxt->style->errors++;
+        return NULL;
     }
     memset(ret, 0, sizeof(xsltNsAlias));
     /*
@@ -60,7 +61,7 @@ xsltNewNsAlias(xsltCompilerCtxtPtr cctxt)
     ret->next = cctxt->nsAliases;
     cctxt->nsAliases = ret;
 
-    return(ret);
+    return ret;
 }
 #endif /* XSLT_REFACTORED */
 /**
@@ -72,7 +73,7 @@ xsltNewNsAlias(xsltCompilerCtxtPtr cctxt)
  * them as well as the corresponding namespace.
  */
 void
-xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
+xsltNamespaceAlias (xsltStylesheetPtr style, xmlNodePtr node)
 {
     xmlChar *resultPrefix = NULL;
     xmlChar *stylePrefix = NULL;
@@ -83,7 +84,7 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
     xsltNsAliasPtr alias;
 
     if ((style == NULL) || (node == NULL))
-	return;
+        return;
 
     /*
     * SPEC XSLT 1.0:
@@ -107,45 +108,48 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
     /*
     * Attribute "stylesheet-prefix".
     */
-    stylePrefix = xmlGetNsProp(node, (const xmlChar *)"stylesheet-prefix", NULL);
+    stylePrefix
+        = xmlGetNsProp(node, (const xmlChar *) "stylesheet-prefix", NULL);
     if (stylePrefix == NULL) {
-	xsltTransformError(NULL, style, node,
-	    "The attribute 'stylesheet-prefix' is missing.\n");
-	return;
+        xsltTransformError(NULL, style, node,
+                           "The attribute 'stylesheet-prefix' is missing.\n");
+        return;
     }
-    if (xmlStrEqual(stylePrefix, (const xmlChar *)"#default"))
-	literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
+    if (xmlStrEqual(stylePrefix, (const xmlChar *) "#default"))
+        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
     else {
-	literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, stylePrefix);
-	if (literalNs == NULL) {
-	    xsltTransformError(NULL, style, node,
-	        "Attribute 'stylesheet-prefix': There's no namespace "
-		"declaration in scope for the prefix '%s'.\n",
-		    stylePrefix);
-	    goto error;
-	}
+        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, stylePrefix);
+        if (literalNs == NULL) {
+            xsltTransformError(
+                NULL, style, node,
+                "Attribute 'stylesheet-prefix': There's no namespace "
+                "declaration in scope for the prefix '%s'.\n",
+                stylePrefix);
+            goto error;
+        }
     }
     /*
     * Attribute "result-prefix".
     */
-    resultPrefix = xmlGetNsProp(node, (const xmlChar *)"result-prefix", NULL);
+    resultPrefix = xmlGetNsProp(node, (const xmlChar *) "result-prefix", NULL);
     if (resultPrefix == NULL) {
-	xsltTransformError(NULL, style, node,
-	    "The attribute 'result-prefix' is missing.\n");
-	goto error;
+        xsltTransformError(NULL, style, node,
+                           "The attribute 'result-prefix' is missing.\n");
+        goto error;
     }
-    if (xmlStrEqual(resultPrefix, (const xmlChar *)"#default"))
-	targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
+    if (xmlStrEqual(resultPrefix, (const xmlChar *) "#default"))
+        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
     else {
-	targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, resultPrefix);
+        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, resultPrefix);
 
         if (targetNs == NULL) {
-	   xsltTransformError(NULL, style, node,
-	        "Attribute 'result-prefix': There's no namespace "
-		"declaration in scope for the prefix '%s'.\n",
-		    stylePrefix);
-	    goto error;
-	}
+            xsltTransformError(
+                NULL, style, node,
+                "Attribute 'result-prefix': There's no namespace "
+                "declaration in scope for the prefix '%s'.\n",
+                stylePrefix);
+            goto error;
+        }
     }
     /*
      *
@@ -180,55 +184,57 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
      *  From no namespace to namespace.
      */
 
-
-     /*
+    /*
      * Store the ns-node in the alias-object.
     */
     alias = xsltNewNsAlias(XSLT_CCTXT(style));
     if (alias == NULL)
-	return;
+        return;
     alias->literalNs = literalNs;
     alias->targetNs = targetNs;
     XSLT_CCTXT(style)->hasNsAliases = 1;
 
-
-#else /* XSLT_REFACTORED */
+#else  /* XSLT_REFACTORED */
     const xmlChar *literalNsName;
     const xmlChar *targetNsName;
 
-
     if ((style == NULL) || (node == NULL))
-	return;
+        return;
 
-    stylePrefix = xmlGetNsProp(node, (const xmlChar *)"stylesheet-prefix", NULL);
+    stylePrefix
+        = xmlGetNsProp(node, (const xmlChar *) "stylesheet-prefix", NULL);
     if (stylePrefix == NULL) {
-	xsltTransformError(NULL, style, node,
-	    "namespace-alias: stylesheet-prefix attribute missing\n");
-	return;
+        xsltTransformError(
+            NULL, style, node,
+            "namespace-alias: stylesheet-prefix attribute missing\n");
+        return;
     }
-    resultPrefix = xmlGetNsProp(node, (const xmlChar *)"result-prefix", NULL);
+    resultPrefix = xmlGetNsProp(node, (const xmlChar *) "result-prefix", NULL);
     if (resultPrefix == NULL) {
-	xsltTransformError(NULL, style, node,
-	    "namespace-alias: result-prefix attribute missing\n");
-	goto error;
+        xsltTransformError(
+            NULL, style, node,
+            "namespace-alias: result-prefix attribute missing\n");
+        goto error;
     }
 
-    if (xmlStrEqual(stylePrefix, (const xmlChar *)"#default")) {
-	literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
-	if (literalNs == NULL) {
-	    literalNsName = NULL;
-	} else
-	    literalNsName = xmlNsGetHref(literalNs); /* Yes - set for nsAlias table */
+    if (xmlStrEqual(stylePrefix, (const xmlChar *) "#default")) {
+        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
+        if (literalNs == NULL) {
+            literalNsName = NULL;
+        } else
+            literalNsName
+                = xmlNsGetHref(literalNs); /* Yes - set for nsAlias table */
     } else {
-	literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, stylePrefix);
+        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, stylePrefix);
 
-	if ((literalNs == NULL) || (xmlNsGetHref(literalNs) == NULL)) {
-	    xsltTransformError(NULL, style, node,
-	        "namespace-alias: prefix %s not bound to any namespace\n",
-					stylePrefix);
-	    goto error;
-	} else
-	    literalNsName = xmlNsGetHref(literalNs);
+        if ((literalNs == NULL) || (xmlNsGetHref(literalNs) == NULL)) {
+            xsltTransformError(
+                NULL, style, node,
+                "namespace-alias: prefix %s not bound to any namespace\n",
+                stylePrefix);
+            goto error;
+        } else
+            literalNsName = xmlNsGetHref(literalNs);
     }
 
     /*
@@ -236,22 +242,23 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
      * been explicitly declared the special value UNDEFINED_DEFAULT_NS is
      * put into the nsAliases table
      */
-    if (xmlStrEqual(resultPrefix, (const xmlChar *)"#default")) {
-	targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
-	if (targetNs == NULL) {
-	    targetNsName = UNDEFINED_DEFAULT_NS;
-	} else
-	    targetNsName = xmlNsGetHref(targetNs);
+    if (xmlStrEqual(resultPrefix, (const xmlChar *) "#default")) {
+        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
+        if (targetNs == NULL) {
+            targetNsName = UNDEFINED_DEFAULT_NS;
+        } else
+            targetNsName = xmlNsGetHref(targetNs);
     } else {
-	targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, resultPrefix);
+        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, resultPrefix);
 
         if ((targetNs == NULL) || (xmlNsGetHref(targetNs) == NULL)) {
-	    xsltTransformError(NULL, style, node,
-	        "namespace-alias: prefix %s not bound to any namespace\n",
-					resultPrefix);
-	    goto error;
-	} else
-	    targetNsName = xmlNsGetHref(targetNs);
+            xsltTransformError(
+                NULL, style, node,
+                "namespace-alias: prefix %s not bound to any namespace\n",
+                resultPrefix);
+            goto error;
+        } else
+            targetNsName = xmlNsGetHref(targetNs);
     }
     /*
      * Special case: if #default is used for
@@ -260,7 +267,7 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
      */
     if (literalNsName == NULL) {
         if (targetNs != NULL) {
-	    /*
+            /*
 	    * BUG TODO: Is it not sufficient to have only 1 field for
 	    *  this, since subsequently alias declarations will
 	    *  overwrite this.
@@ -272,25 +279,25 @@ xsltNamespaceAlias(xsltStylesheetPtr style, xmlNodePtr node)
 	    *  The mapping for "foo" won't be visible anymore.
 	    */
             style->defaultAlias = xmlNsGetHref(targetNs);
-	}
+        }
     } else {
         if (style->nsAliases == NULL)
-	    style->nsAliases = xmlHashCreate(10);
+            style->nsAliases = xmlHashCreate(10);
         if (style->nsAliases == NULL) {
-	    xsltTransformError(NULL, style, node,
-	        "namespace-alias: cannot create hash table\n");
-	    goto error;
+            xsltTransformError(NULL, style, node,
+                               "namespace-alias: cannot create hash table\n");
+            goto error;
         }
-	xmlHashAddEntry((xmlHashTablePtr) style->nsAliases,
-	    literalNsName, (void *) targetNsName);
+        xmlHashAddEntry((xmlHashTablePtr) style->nsAliases, literalNsName,
+                        (void *) targetNsName);
     }
 #endif /* else of XSLT_REFACTORED */
 
 error:
     if (stylePrefix != NULL)
-	xmlFree(stylePrefix);
+        xmlFree(stylePrefix);
     if (resultPrefix != NULL)
-	xmlFree(resultPrefix);
+        xmlFree(resultPrefix);
 }
 
 /**
@@ -316,16 +323,16 @@ error:
  * Returns a namespace declaration or NULL.
  */
 xmlNsPtr
-xsltGetSpecialNamespace(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
-		const xmlChar *nsName, const xmlChar *nsPrefix,
-		xmlNodePtr target)
+xsltGetSpecialNamespace (xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
+                         const xmlChar *nsName, const xmlChar *nsPrefix,
+                         xmlNodePtr target)
 {
     xmlNsPtr ns;
     int prefixOccupied = 0;
 
-    if ((ctxt == NULL) || (target == NULL) ||
-	(xmlNodeGetType(target) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((ctxt == NULL) || (target == NULL)
+        || (xmlNodeGetType(target) != XML_ELEMENT_NODE))
+        return NULL;
 
     /*
     * NOTE: Namespace exclusion and ns-aliasing is performed at
@@ -342,107 +349,109 @@ xsltGetSpecialNamespace(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
     *  the ns-decls currently in-scope via a specialized context.
     */
     if ((nsPrefix == NULL) && ((nsName == NULL) || (nsName[0] == 0))) {
-	/*
+        /*
 	* NOTE: the "undeclaration" of the default namespace was
 	* part of the logic of the old xsltGetSpecialNamespace() code,
 	* so we'll keep that mechanism.
 	* Related to the old code: bug #302020:
 	*/
-	/*
+        /*
 	* OPTIMIZE TODO: This all could be optimized by keeping track of
 	*  the ns-decls currently in-scope via a specialized context.
 	*/
-	/*
+        /*
 	* Search on the result element itself.
 	*/
-	if (xmlNodeGetNsDef(target) != NULL) {
-	    ns = xmlNodeGetNsDef(target);
-	    do {
-		if (xmlNsGetPrefix(ns) == NULL) {
-		    if ((xmlNsGetHref(ns) != NULL) && (xmlNsGetHref(ns)[0] != 0)) {
-			/*
+        if (xmlNodeGetNsDef(target) != NULL) {
+            ns = xmlNodeGetNsDef(target);
+            do {
+                if (xmlNsGetPrefix(ns) == NULL) {
+                    if ((xmlNsGetHref(ns) != NULL)
+                        && (xmlNsGetHref(ns)[0] != 0)) {
+                        /*
 			* Raise a namespace normalization error.
 			*/
-			xsltTransformError(ctxt, NULL, invocNode,
-			    "Namespace normalization error: Cannot undeclare "
-			    "the default namespace, since the default namespace "
-			    "'%s' is already declared on the result element "
-			    "'%s'.\n", xmlNsGetHref(ns), xmlNodeGetName(target));
-			return(NULL);
-		    } else {
-			/*
+                        xsltTransformError(
+                            ctxt, NULL, invocNode,
+                            "Namespace normalization error: Cannot undeclare "
+                            "the default namespace, since the default "
+                            "namespace "
+                            "'%s' is already declared on the result element "
+                            "'%s'.\n",
+                            xmlNsGetHref(ns), xmlNodeGetName(target));
+                        return NULL;
+                    } else {
+                        /*
 			* The default namespace was undeclared on the
 			* result element.
 			*/
-			return(NULL);
-		    }
-		    break;
-		}
-		ns = xmlNsGetNext(ns);
-	    } while (ns != NULL);
-	}
-	if ((xmlNodeGetParent(target) != NULL) &&
-	    (xmlNodeGetType(xmlNodeGetParent(target)) == XML_ELEMENT_NODE))
-	{
-	    /*
+                        return NULL;
+                    }
+                    break;
+                }
+                ns = xmlNsGetNext(ns);
+            } while (ns != NULL);
+        }
+        if ((xmlNodeGetParent(target) != NULL)
+            && (xmlNodeGetType(xmlNodeGetParent(target)) == XML_ELEMENT_NODE)) {
+            /*
 	    * The parent element is in no namespace, so assume
 	    * that there is no default namespace in scope.
 	    */
-	    if (xmlNodeGetNs(xmlNodeGetParent(target)) == NULL)
-		return(NULL);
+            if (xmlNodeGetNs(xmlNodeGetParent(target)) == NULL)
+                return NULL;
 
-	    ns = xmlSearchNs(xmlNodeGetDoc(target), xmlNodeGetParent(target),
-		NULL);
-	    /*
+            ns = xmlSearchNs(xmlNodeGetDoc(target), xmlNodeGetParent(target),
+                             NULL);
+            /*
 	    * Fine if there's no default ns is scope, or if the
 	    * default ns was undeclared.
 	    */
-	    if ((ns == NULL) || (xmlNsGetHref(ns) == NULL) || (xmlNsGetHref(ns)[0] == 0))
-		return(NULL);
+            if ((ns == NULL) || (xmlNsGetHref(ns) == NULL)
+                || (xmlNsGetHref(ns)[0] == 0))
+                return NULL;
 
-	    /*
+            /*
 	    * Undeclare the default namespace.
 	    */
-	    xmlNewNs(target, BAD_CAST "", NULL);
-	    /* TODO: Check result */
-	    return(NULL);
-	}
-	return(NULL);
+            xmlNewNs(target, BAD_CAST "", NULL);
+            /* TODO: Check result */
+            return NULL;
+        }
+        return NULL;
     }
     /*
     * Handle the XML namespace.
     * QUESTION: Is this faster than using xmlStrEqual() anyway?
     */
-    if ((nsPrefix != NULL) &&
-	(nsPrefix[0] == 'x') && (nsPrefix[1] == 'm') &&
-	(nsPrefix[2] == 'l') && (nsPrefix[3] == 0))
-    {
-	return(xmlSearchNs(xmlNodeGetDoc(target), target, nsPrefix));
+    if ((nsPrefix != NULL) && (nsPrefix[0] == 'x') && (nsPrefix[1] == 'm')
+        && (nsPrefix[2] == 'l') && (nsPrefix[3] == 0)) {
+        return xmlSearchNs(xmlNodeGetDoc(target), target, nsPrefix);
     }
     /*
     * First: search on the result element itself.
     */
     if (xmlNodeGetNsDef(target) != NULL) {
-	ns = xmlNodeGetNsDef(target);
-	do {
-	    if ((xmlNsGetPrefix(ns) == NULL) == (nsPrefix == NULL)) {
-		if (xmlNsGetPrefix(ns) == nsPrefix) {
-		    if (xmlStrEqual(xmlNsGetHref(ns), nsName))
-			return(ns);
-		    prefixOccupied = 1;
-		    break;
-		} else if (xmlStrEqual(xmlNsGetPrefix(ns), nsPrefix)) {
-		    if (xmlStrEqual(xmlNsGetHref(ns), nsName))
-			return(ns);
-		    prefixOccupied = 1;
-		    break;
-		}
-	    }
-	    ns = xmlNsGetNext(ns);
-	} while (ns != NULL);
+        ns = xmlNodeGetNsDef(target);
+        do {
+            if ((xmlNsGetPrefix(ns) == NULL) == (nsPrefix == NULL)) {
+                if (xmlNsGetPrefix(ns) == nsPrefix) {
+                    if (xmlStrEqual(xmlNsGetHref(ns), nsName))
+                        return ns;
+                    prefixOccupied = 1;
+                    break;
+                } else if (xmlStrEqual(xmlNsGetPrefix(ns), nsPrefix)) {
+                    if (xmlStrEqual(xmlNsGetHref(ns), nsName))
+                        return ns;
+                    prefixOccupied = 1;
+                    break;
+                }
+            }
+            ns = xmlNsGetNext(ns);
+        } while (ns != NULL);
     }
     if (prefixOccupied) {
-	/*
+        /*
 	* If the ns-prefix is occupied by an other ns-decl on the
 	* result element, then this means:
 	* 1) The desired prefix is shadowed
@@ -452,44 +461,44 @@ xsltGetSpecialNamespace(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 	* with a matching ns-name before we use the last option,
 	* which is to recreate the ns-decl with a modified prefix.
 	*/
-	ns = xmlSearchNsByHref(xmlNodeGetDoc(target), target, nsName);
-	if (ns != NULL)
-	    return(ns);
+        ns = xmlSearchNsByHref(xmlNodeGetDoc(target), target, nsName);
+        if (ns != NULL)
+            return ns;
 
-	/*
+        /*
 	* Fallback to changing the prefix.
 	*/
-    } else if ((xmlNodeGetParent(target) != NULL) &&
-	(xmlNodeGetType(xmlNodeGetParent(target)) == XML_ELEMENT_NODE))
-    {
-	/*
+    } else if ((xmlNodeGetParent(target) != NULL)
+               && (xmlNodeGetType(xmlNodeGetParent(target))
+                   == XML_ELEMENT_NODE)) {
+        /*
 	* Try to find a matching ns-decl in the ancestor-axis.
 	*
 	* Check the common case: The parent element of the current
 	* result element is in the same namespace (with an equal ns-prefix).
 	*/
-	if ((xmlNodeGetNs(xmlNodeGetParent(target)) != NULL) &&
-	    ((xmlNsGetPrefix(xmlNodeGetNs(xmlNodeGetParent(target))) != NULL) == (nsPrefix != NULL)))
-	{
-	    ns = xmlNodeGetNs(xmlNodeGetParent(target));
+        if ((xmlNodeGetNs(xmlNodeGetParent(target)) != NULL)
+            && ((xmlNsGetPrefix(xmlNodeGetNs(xmlNodeGetParent(target))) != NULL)
+                == (nsPrefix != NULL))) {
+            ns = xmlNodeGetNs(xmlNodeGetParent(target));
 
-	    if (nsPrefix == NULL) {
-		if (xmlStrEqual(xmlNsGetHref(ns), nsName))
-		    return(ns);
-	    } else if (xmlStrEqual(xmlNsGetPrefix(ns), nsPrefix) &&
-		xmlStrEqual(xmlNsGetHref(ns), nsName))
-	    {
-		return(ns);
-	    }
-	}
-	/*
+            if (nsPrefix == NULL) {
+                if (xmlStrEqual(xmlNsGetHref(ns), nsName))
+                    return ns;
+            } else if (xmlStrEqual(xmlNsGetPrefix(ns), nsPrefix)
+                       && xmlStrEqual(xmlNsGetHref(ns), nsName)) {
+                return ns;
+            }
+        }
+        /*
 	* Lookup the remaining in-scope namespaces.
 	*/
-	ns = xmlSearchNs(xmlNodeGetDoc(target), xmlNodeGetParent(target), nsPrefix);
-	if (ns != NULL) {
-	    if (xmlStrEqual(xmlNsGetHref(ns), nsName))
-		return(ns);
-	    /*
+        ns = xmlSearchNs(xmlNodeGetDoc(target), xmlNodeGetParent(target),
+                         nsPrefix);
+        if (ns != NULL) {
+            if (xmlStrEqual(xmlNsGetHref(ns), nsName))
+                return ns;
+            /*
 	    * Now check for a nasty case: We need to ensure that the new
 	    * ns-decl won't shadow a prefix in-use by an existing attribute.
 	    * <foo xmlns:a="urn:test:a">
@@ -499,28 +508,29 @@ xsltGetSpecialNamespace(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 	    *   </bar>
 	    * </foo>
 	    */
-	    if (xmlNodeGetProperties(target)) {
-		xmlAttrPtr attr = xmlNodeGetProperties(target);
-		do {
-		    if ((xmlAttrGetNs(attr)) &&
-			xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(attr)), nsPrefix))
-		    {
-			/*
+            if (xmlNodeGetProperties(target)) {
+                xmlAttrPtr attr = xmlNodeGetProperties(target);
+                do {
+                    if ((xmlAttrGetNs(attr))
+                        && xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(attr)),
+                                       nsPrefix)) {
+                        /*
 			* Bad, this prefix is already in use.
 			* Since we'll change the prefix anyway, try
 			* a search for a matching ns-decl based on the
 			* namespace name.
 			*/
-			ns = xmlSearchNsByHref(xmlNodeGetDoc(target), target, nsName);
-			if (ns != NULL)
-			    return(ns);
-			goto declare_new_prefix;
-		    }
-		    attr = xmlAttrGetNext(attr);
-		} while (attr != NULL);
-	    }
-	} else {
-	    /*
+                        ns = xmlSearchNsByHref(xmlNodeGetDoc(target), target,
+                                               nsName);
+                        if (ns != NULL)
+                            return ns;
+                        goto declare_new_prefix;
+                    }
+                    attr = xmlAttrGetNext(attr);
+                } while (attr != NULL);
+            }
+        } else {
+            /*
 	    * Either no matching ns-prefix was found or the namespace is
 	    * shadowed.
 	    * Create a new ns-decl on the current result element.
@@ -541,20 +551,20 @@ xsltGetSpecialNamespace(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 	    if (ns != NULL)
 		return(ns);
 #endif
-	}
-	/*
+        }
+        /*
 	* Create the ns-decl on the current result element.
 	*/
-	ns = xmlNewNs(target, nsName, nsPrefix);
-	/* TODO: check errors */
-	return(ns);
+        ns = xmlNewNs(target, nsName, nsPrefix);
+        /* TODO: check errors */
+        return ns;
     } else {
-	/*
+        /*
 	* This is either the root of the tree or something weird is going on.
 	*/
-	ns = xmlNewNs(target, nsName, nsPrefix);
-	/* TODO: Check result */
-	return(ns);
+        ns = xmlNewNs(target, nsName, nsPrefix);
+        /* TODO: Check result */
+        return ns;
     }
 
 declare_new_prefix:
@@ -563,29 +573,30 @@ declare_new_prefix:
     * on the result element.
     */
     {
-	xmlChar pref[30];
-	int counter = 1;
+        xmlChar pref[30];
+        int counter = 1;
 
-	if (nsPrefix == NULL) {
-	    nsPrefix = BAD_CAST "ns";
-	}
+        if (nsPrefix == NULL) {
+            nsPrefix = BAD_CAST "ns";
+        }
 
-	do {
-	    snprintf((char *) pref, 30, "%s_%d", nsPrefix, counter++);
-	    ns = xmlSearchNs(xmlNodeGetDoc(target), target, BAD_CAST pref);
-	    if (counter > 1000) {
-		xsltTransformError(ctxt, NULL, invocNode,
-		    "Internal error in xsltAcquireResultInScopeNs(): "
-		    "Failed to compute a unique ns-prefix for the "
-		    "generated element");
-		return(NULL);
-	    }
-	} while (ns != NULL);
-	ns = xmlNewNs(target, nsName, BAD_CAST pref);
-	/* TODO: Check result */
-	return(ns);
+        do {
+            snprintf((char *) pref, 30, "%s_%d", nsPrefix, counter++);
+            ns = xmlSearchNs(xmlNodeGetDoc(target), target, BAD_CAST pref);
+            if (counter > 1000) {
+                xsltTransformError(
+                    ctxt, NULL, invocNode,
+                    "Internal error in xsltAcquireResultInScopeNs(): "
+                    "Failed to compute a unique ns-prefix for the "
+                    "generated element");
+                return NULL;
+            }
+        } while (ns != NULL);
+        ns = xmlNewNs(target, nsName, BAD_CAST pref);
+        /* TODO: Check result */
+        return ns;
     }
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -613,12 +624,11 @@ declare_new_prefix:
  *         namespace fixup failures or API or internal errors.
  */
 xmlNsPtr
-xsltGetNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
-	         xmlNodePtr out)
+xsltGetNamespace (xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
+                  xmlNodePtr out)
 {
-
     if (ns == NULL)
-	return(NULL);
+        return NULL;
 
 #ifdef XSLT_REFACTORED
     /*
@@ -627,29 +637,29 @@ xsltGetNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
     * Additionally, aliasing is not intended for non Literal
     * Result Elements.
     */
-    return(xsltGetSpecialNamespace(ctxt, cur, xmlNsGetHref(ns), xmlNsGetPrefix(ns), out));
+    return xsltGetSpecialNamespace(ctxt, cur, xmlNsGetHref(ns),
+                                   xmlNsGetPrefix(ns), out);
 #else
     {
-	xsltStylesheetPtr style;
-	const xmlChar *URI = NULL; /* the replacement URI */
+        xsltStylesheetPtr style;
+        const xmlChar *URI = NULL; /* the replacement URI */
 
-	if ((ctxt == NULL) || (cur == NULL) || (out == NULL))
-	    return(NULL);
+        if ((ctxt == NULL) || (cur == NULL) || (out == NULL))
+            return NULL;
 
-	style = ctxt->style;
-	while (style != NULL) {
-	    if (style->nsAliases != NULL)
-		URI = (const xmlChar *)
-		xmlHashLookup(style->nsAliases, xmlNsGetHref(ns));
-	    if (URI != NULL)
-		break;
+        style = ctxt->style;
+        while (style != NULL) {
+            if (style->nsAliases != NULL)
+                URI = (const xmlChar *) xmlHashLookup(style->nsAliases,
+                                                      xmlNsGetHref(ns));
+            if (URI != NULL)
+                break;
 
-	    style = xsltNextImport(style);
-	}
+            style = xsltNextImport(style);
+        }
 
-
-	if (URI == UNDEFINED_DEFAULT_NS) {
-	    return(xsltGetSpecialNamespace(ctxt, cur, NULL, NULL, out));
+        if (URI == UNDEFINED_DEFAULT_NS) {
+            return xsltGetSpecialNamespace(ctxt, cur, NULL, NULL, out);
 #if 0
 	    /*
 	    * TODO: Removed, since wrong. If there was no default
@@ -663,10 +673,10 @@ xsltGetNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
 	    else
 		return NULL;
 #endif
-	} else if (URI == NULL)
-	    URI = xmlNsGetHref(ns);
+        } else if (URI == NULL)
+            URI = xmlNsGetHref(ns);
 
-	return(xsltGetSpecialNamespace(ctxt, cur, URI, xmlNsGetPrefix(ns), out));
+        return xsltGetSpecialNamespace(ctxt, cur, URI, xmlNsGetPrefix(ns), out);
     }
 #endif
 }
@@ -686,10 +696,10 @@ xsltGetNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
  *         namespace fixup failures or API or internal errors.
  */
 xmlNsPtr
-xsltGetPlainNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur,
-                      xmlNsPtr ns, xmlNodePtr out)
+xsltGetPlainNamespace (xsltTransformContextPtr ctxt, xmlNodePtr cur,
+                       xmlNsPtr ns, xmlNodePtr out)
 {
-    return(xsltGetNamespace(ctxt, cur, ns, out));
+    return xsltGetNamespace(ctxt, cur, ns, out);
 }
 
 /**
@@ -714,84 +724,88 @@ xsltGetPlainNamespace(xsltTransformContextPtr ctxt, xmlNodePtr cur,
  * Returns: a new xmlNsPtr, or NULL in case of error.
  */
 xmlNsPtr
-xsltCopyNamespaceList(xsltTransformContextPtr ctxt, xmlNodePtr node,
-	              xmlNsPtr cur) {
+xsltCopyNamespaceList (xsltTransformContextPtr ctxt, xmlNodePtr node,
+                       xmlNsPtr cur)
+{
     xmlNsPtr ret = NULL, tmp;
-    xmlNsPtr p = NULL,q;
+    xmlNsPtr p = NULL, q;
 
     if (cur == NULL)
-	return(NULL);
+        return NULL;
     if (xmlNsGetType(cur) != XML_NAMESPACE_DECL)
-	return(NULL);
+        return NULL;
 
     /*
      * One can add namespaces only on element nodes
      */
     if ((node != NULL) && (xmlNodeGetType(node) != XML_ELEMENT_NODE))
-	node = NULL;
+        node = NULL;
 
     while (cur != NULL) {
-	if (xmlNsGetType(cur) != XML_NAMESPACE_DECL)
-	    break;
+        if (xmlNsGetType(cur) != XML_NAMESPACE_DECL)
+            break;
 
-	/*
+        /*
 	 * Avoid duplicating namespace declarations in the tree if
 	 * a matching declaration is in scope.
 	 */
-	if (node != NULL) {
-	    if ((xmlNodeGetNs(node) != NULL) &&
-		(xmlStrEqual(xmlNsGetPrefix(xmlNodeGetNs(node)), xmlNsGetPrefix(cur))) &&
-	(xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)), xmlNsGetHref(cur)))) {
-		cur = xmlNsGetNext(cur);
-		continue;
-	    }
-	    tmp = xmlSearchNs(xmlNodeGetDoc(node), node, xmlNsGetPrefix(cur));
-	    if ((tmp != NULL) && (xmlStrEqual(xmlNsGetHref(tmp), xmlNsGetHref(cur)))) {
-		cur = xmlNsGetNext(cur);
-		continue;
-	    }
-	}
+        if (node != NULL) {
+            if ((xmlNodeGetNs(node) != NULL)
+                && (xmlStrEqual(xmlNsGetPrefix(xmlNodeGetNs(node)),
+                                xmlNsGetPrefix(cur)))
+                && (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)),
+                                xmlNsGetHref(cur)))) {
+                cur = xmlNsGetNext(cur);
+                continue;
+            }
+            tmp = xmlSearchNs(xmlNodeGetDoc(node), node, xmlNsGetPrefix(cur));
+            if ((tmp != NULL)
+                && (xmlStrEqual(xmlNsGetHref(tmp), xmlNsGetHref(cur)))) {
+                cur = xmlNsGetNext(cur);
+                continue;
+            }
+        }
 #ifdef XSLT_REFACTORED
-	/*
+        /*
 	* Namespace exclusion and ns-aliasing is performed at
 	* compilation-time in the refactored code.
 	*/
-	q = xmlNewNs(node, xmlNsGetHref(cur), xmlNsGetPrefix(cur));
-	if (p == NULL) {
-	    ret = p = q;
-	} else {
-	    xmlNsSetNext(p, q);
-	    p = q;
-	}
+        q = xmlNewNs(node, xmlNsGetHref(cur), xmlNsGetPrefix(cur));
+        if (p == NULL) {
+            ret = p = q;
+        } else {
+            xmlNsSetNext(p, q);
+            p = q;
+        }
 #else
-	/*
+        /*
 	* TODO: Remove this if the refactored code gets enabled.
 	*/
-	if (!xmlStrEqual(xmlNsGetHref(cur), XSLT_NAMESPACE)) {
-	    const xmlChar *URI;
-	    /* TODO apply cascading */
-	    URI = (const xmlChar *) xmlHashLookup(ctxt->style->nsAliases,
-		                                  xmlNsGetHref(cur));
-	    if (URI == UNDEFINED_DEFAULT_NS) {
-		cur = xmlNsGetNext(cur);
-	        continue;
-	    }
-	    if (URI != NULL) {
-		q = xmlNewNs(node, URI, xmlNsGetPrefix(cur));
-	    } else {
-		q = xmlNewNs(node, xmlNsGetHref(cur), xmlNsGetPrefix(cur));
-	    }
-	    if (p == NULL) {
-		ret = p = q;
-	    } else {
-		xmlNsSetNext(p, q);
-		p = q;
-	    }
-	}
+        if (!xmlStrEqual(xmlNsGetHref(cur), XSLT_NAMESPACE)) {
+            const xmlChar *URI;
+            /* TODO apply cascading */
+            URI = (const xmlChar *) xmlHashLookup(ctxt->style->nsAliases,
+                                                  xmlNsGetHref(cur));
+            if (URI == UNDEFINED_DEFAULT_NS) {
+                cur = xmlNsGetNext(cur);
+                continue;
+            }
+            if (URI != NULL) {
+                q = xmlNewNs(node, URI, xmlNsGetPrefix(cur));
+            } else {
+                q = xmlNewNs(node, xmlNsGetHref(cur), xmlNsGetPrefix(cur));
+            }
+            if (p == NULL) {
+                ret = p = q;
+            } else {
+                xmlNsSetNext(p, q);
+                p = q;
+            }
+        }
 #endif
-	cur = xmlNsGetNext(cur);
+        cur = xmlNsGetNext(cur);
     }
-    return(ret);
+    return ret;
 }
 
 /**
@@ -806,20 +820,19 @@ xsltCopyNamespaceList(xsltTransformContextPtr ctxt, xmlNodePtr node,
  * Returns: a new xmlNsPtr, or NULL in case of an error.
  */
 xmlNsPtr
-xsltCopyNamespace(xsltTransformContextPtr ctxt UNUSED,
-		  xmlNodePtr elem, xmlNsPtr ns)
+xsltCopyNamespace (xsltTransformContextPtr ctxt UNUSED, xmlNodePtr elem,
+                   xmlNsPtr ns)
 {
     if ((ns == NULL) || (xmlNsGetType(ns) != XML_NAMESPACE_DECL))
-	return(NULL);
+        return NULL;
     /*
      * One can add namespaces only on element nodes
      */
     if ((elem != NULL) && (xmlNodeGetType(elem) != XML_ELEMENT_NODE))
-	return(xmlNewNs(NULL, xmlNsGetHref(ns), xmlNsGetPrefix(ns)));
+        return xmlNewNs(NULL, xmlNsGetHref(ns), xmlNsGetPrefix(ns));
     else
-	return(xmlNewNs(elem, xmlNsGetHref(ns), xmlNsGetPrefix(ns)));
+        return xmlNewNs(elem, xmlNsGetHref(ns), xmlNsGetPrefix(ns));
 }
-
 
 /**
  * xsltFreeNamespaceAliasHashes:
@@ -828,8 +841,9 @@ xsltCopyNamespace(xsltTransformContextPtr ctxt UNUSED,
  * Free up the memory used by namespaces aliases
  */
 void
-xsltFreeNamespaceAliasHashes(xsltStylesheetPtr style) {
+xsltFreeNamespaceAliasHashes (xsltStylesheetPtr style)
+{
     if (style->nsAliases != NULL)
-	xmlHashFree((xmlHashTablePtr) style->nsAliases, NULL);
+        xmlHashFree((xmlHashTablePtr) style->nsAliases, NULL);
     style->nsAliases = NULL;
 }
