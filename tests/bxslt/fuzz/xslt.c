@@ -8,13 +8,15 @@
 #include <libxml/globals.h>
 
 int
-LLVMFuzzerInitialize(int *argc_p ATTRIBUTE_UNUSED,
-                     char ***argv_p ATTRIBUTE_UNUSED) {
+LLVMFuzzerInitialize (int *argc_p ATTRIBUTE_UNUSED,
+                      char ***argv_p ATTRIBUTE_UNUSED)
+{
     return xsltFuzzXsltInit();
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlChar *result = xsltFuzzXslt(data, size);
     xmlFree(result);
 
