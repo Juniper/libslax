@@ -21,13 +21,13 @@
 
 #ifdef LIBXML_SAX1_ENABLED
 static void
-ignoreError(void *ctxt UNUSED,
-            const xmlError *error UNUSED) {
-}
+ignoreError (void *ctxt UNUSED, const xmlError *error UNUSED)
+{}
 #endif
 
 static int
-testNewDocNode(void) {
+testNewDocNode (void)
+{
     xmlNodePtr node;
     int err = 0;
 
@@ -42,11 +42,11 @@ testNewDocNode(void) {
 }
 
 static int
-testStandaloneWithEncoding(void) {
+testStandaloneWithEncoding (void)
+{
     xmlDocPtr doc;
-    const char *str =
-        "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-        "<doc></doc>\n";
+    const char *str = "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+                      "<doc></doc>\n";
     int err = 0;
 
     xmlResetLastError();
@@ -62,7 +62,8 @@ testStandaloneWithEncoding(void) {
 }
 
 static int
-testUnsupportedEncoding(void) {
+testUnsupportedEncoding (void)
+{
     xmlDocPtr doc;
     const xmlError *error;
     int err = 0;
@@ -78,11 +79,10 @@ testUnsupportedEncoding(void) {
     xmlFreeDoc(doc);
 
     error = xmlGetLastError();
-    if (error == NULL ||
-        error->code != XML_ERR_UNSUPPORTED_ENCODING ||
-        error->level != XML_ERR_WARNING ||
-        strcmp(error->message, "Unsupported encoding: #unsupported\n") != 0)
-    {
+    if (error == NULL || error->code != XML_ERR_UNSUPPORTED_ENCODING
+        || error->level != XML_ERR_WARNING
+        || strcmp(error->message, "Unsupported encoding: #unsupported\n")
+            != 0) {
         fprintf(stderr, "xmlReadDoc failed to raise correct error\n");
         err = 1;
     }
@@ -91,7 +91,8 @@ testUnsupportedEncoding(void) {
 }
 
 static int
-testNodeGetContent(void) {
+testNodeGetContent (void)
+{
     xmlDocPtr doc;
     xmlChar *content;
     int err = 0;
@@ -110,7 +111,8 @@ testNodeGetContent(void) {
 }
 
 static int
-testCFileIO(void) {
+testCFileIO (void)
+{
     xmlDocPtr doc;
     int err = 0;
 
@@ -144,7 +146,8 @@ testCFileIO(void) {
  * demonstrates such an asymmetry.
  */
 static int
-testUndeclEntInContent(void) {
+testUndeclEntInContent (void)
+{
     const char xml[] = "<!DOCTYPE doc SYSTEM 'my.dtd'><doc>&undecl;</doc>";
     const char content[] = "<doc>&undecl;</doc>";
     xmlDocPtr doc;
@@ -185,7 +188,8 @@ testUndeclEntInContent(void) {
 }
 
 static int
-testInvalidCharRecovery(void) {
+testInvalidCharRecovery (void)
+{
     const char *xml = "<doc>&#x10;</doc>";
     xmlDoc *doc;
     int err = 0;
@@ -204,7 +208,8 @@ testInvalidCharRecovery(void) {
 }
 
 static void
-testCtxtInputGetterError(void *errCtxt, const xmlError *error) {
+testCtxtInputGetterError (void *errCtxt, const xmlError *error)
+{
     int *err = errCtxt;
     xmlParserCtxt *ctxt = error->ctxt;
     const char *filename;
@@ -215,50 +220,49 @@ testCtxtInputGetterError(void *errCtxt, const xmlError *error) {
 
     xmlCtxtGetInputPosition(ctxt, 0, &filename, &line, &col, &bytePos);
 
-    if (strcmp(filename, "test.xml") != 0 ||
-        line != 4 || col != 11 || bytePos != 62) {
-        fprintf(stderr, "unexpected position: %s %d %d %lu\n",
-                filename, line, col, bytePos);
+    if (strcmp(filename, "test.xml") != 0 || line != 4 || col != 11
+        || bytePos != 62) {
+        fprintf(stderr, "unexpected position: %s %d %d %lu\n", filename, line,
+                col, bytePos);
         *err = 1;
     }
 
     size = 80;
     xmlCtxtGetInputWindow(ctxt, 0, &start, &size, &offset);
 
-    if (strncmp((char *) start, "<doc>&ent;", 10) != 0 ||
-        size != 16 || offset != 10) {
-        fprintf(stderr, "unexpected window: %.10s %d %d\n",
-                start, size, offset);
+    if (strncmp((char *) start, "<doc>&ent;", 10) != 0 || size != 16
+        || offset != 10) {
+        fprintf(stderr, "unexpected window: %.10s %d %d\n", start, size,
+                offset);
         *err = 1;
     }
 
     xmlCtxtGetInputPosition(ctxt, -1, &filename, &line, &col, &bytePos);
 
-    if (filename != NULL ||
-        line != 1 || col != 11 || bytePos != 10) {
-        fprintf(stderr, "unexpected position: %s %d %d %lu\n",
-                filename, line, col, bytePos);
+    if (filename != NULL || line != 1 || col != 11 || bytePos != 10) {
+        fprintf(stderr, "unexpected position: %s %d %d %lu\n", filename, line,
+                col, bytePos);
         *err = 1;
     }
 
     size = 80;
     xmlCtxtGetInputWindow(ctxt, -1, &start, &size, &offset);
 
-    if (strncmp((char *) start, "xxx &fail;", 10) != 0 ||
-        size != 14 || offset != 10) {
-        fprintf(stderr, "unexpected window: %.10s %d %d\n",
-                start, size, offset);
+    if (strncmp((char *) start, "xxx &fail;", 10) != 0 || size != 14
+        || offset != 10) {
+        fprintf(stderr, "unexpected window: %.10s %d %d\n", start, size,
+                offset);
         *err = 1;
     }
 }
 
 static int
-testCtxtInputGetters(void) {
-    const char *xml =
-        "<!DOCTYPE doc [\n"
-        "  <!ENTITY ent 'xxx &fail; xxx'>\n"
-        "]>\n"
-        "<doc>&ent;</doc>\n";
+testCtxtInputGetters (void)
+{
+    const char *xml = "<!DOCTYPE doc [\n"
+                      "  <!ENTITY ent 'xxx &fail; xxx'>\n"
+                      "]>\n"
+                      "<doc>&ent;</doc>\n";
     xmlParserCtxt *ctxt;
     xmlDoc *doc;
     int err = 0;
@@ -274,21 +278,21 @@ testCtxtInputGetters(void) {
 
 #ifdef LIBXML_VALID_ENABLED
 static void
-testSwitchDtdExtSubset(void *vctxt, const xmlChar *name UNUSED,
-                       const xmlChar *externalId UNUSED,
-                       const xmlChar *systemId UNUSED) {
+testSwitchDtdExtSubset (void *vctxt, const xmlChar *name UNUSED,
+                        const xmlChar *externalId UNUSED,
+                        const xmlChar *systemId UNUSED)
+{
     xmlParserCtxtPtr ctxt = vctxt;
 
     ctxt->myDoc->extSubset = ctxt->_private;
 }
 
 static int
-testSwitchDtd(void) {
-    const char dtdContent[] =
-        "<!ENTITY test '<elem1/><elem2/>'>\n";
-    const char docContent[] =
-        "<!DOCTYPE doc SYSTEM 'entities.dtd'>\n"
-        "<doc>&test;</doc>\n";
+testSwitchDtd (void)
+{
+    const char dtdContent[] = "<!ENTITY test '<elem1/><elem2/>'>\n";
+    const char docContent[] = "<!DOCTYPE doc SYSTEM 'entities.dtd'>\n"
+                              "<doc>&test;</doc>\n";
     xmlParserInputBufferPtr input;
     xmlParserCtxtPtr ctxt;
     xmlDtdPtr dtd;
@@ -296,8 +300,7 @@ testSwitchDtd(void) {
     xmlEntityPtr ent;
     int err = 0;
 
-    input = xmlParserInputBufferCreateStatic(dtdContent,
-                                             sizeof(dtdContent) - 1,
+    input = xmlParserInputBufferCreateStatic(dtdContent, sizeof(dtdContent) - 1,
                                              XML_CHAR_ENCODING_NONE);
     dtd = xmlIOParseDTD(NULL, input, XML_CHAR_ENCODING_NONE);
 
@@ -325,7 +328,8 @@ testSwitchDtd(void) {
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static xmlChar *
-dumpNodeList(xmlNodePtr list) {
+dumpNodeList (xmlNodePtr list)
+{
     xmlBufferPtr buffer;
     xmlSaveCtxtPtr save;
     xmlNodePtr cur;
@@ -343,7 +347,8 @@ dumpNodeList(xmlNodePtr list) {
 }
 
 static int
-testCtxtParseContent(void) {
+testCtxtParseContent (void)
+{
     xmlParserCtxtPtr ctxt;
     xmlParserInputPtr input;
     xmlDocPtr doc;
@@ -353,10 +358,9 @@ testCtxtParseContent(void) {
     int i, j;
     int err = 0;
 
-    static const char *const tests[] = {
-        "<!-- c -->\xF0\x9F\x98\x84<a/><b/>end",
-        "text<a:foo><b:foo/></a:foo>text<!-- c -->"
-    };
+    static const char *const tests[]
+        = {"<!-- c -->\xF0\x9F\x98\x84<a/><b/>end",
+           "text<a:foo><b:foo/></a:foo>text<!-- c -->"};
 
     doc = xmlReadDoc(BAD_CAST "<doc xmlns:a='a'><elem xmlns:b='b'/></doc>",
                      NULL, NULL, 0);
@@ -373,18 +377,16 @@ testCtxtParseContent(void) {
                                               XML_INPUT_BUF_STATIC);
                 list = xmlCtxtParseContent(ctxt, input, node, 0);
             } else {
-                xmlParseInNodeContext(node, content, strlen(content), 0,
-                                      &list);
+                xmlParseInNodeContext(node, content, strlen(content), 0, &list);
             }
 
             output = dumpNodeList(list);
 
-            if ((j == 0 && ctxt->nsWellFormed == 0) ||
-                strcmp((char *) output, content) != 0) {
+            if ((j == 0 && ctxt->nsWellFormed == 0)
+                || strcmp((char *) output, content) != 0) {
                 fprintf(stderr, "%s failed test %d, got:\n%s\n",
-                        j == 0 ?
-                            "xmlCtxtParseContent" :
-                            "xmlParseInNodeContext",
+                        j == 0 ? "xmlCtxtParseContent"
+                               : "xmlParseInNodeContext",
                         i, output);
                 err = 1;
             }
@@ -406,7 +408,8 @@ testCtxtParseContent(void) {
  * Regression test for infinite loop bug in xmlCtxtParseContent.
  */
 static int
-testParseInNodeContextEntityParent(void) {
+testParseInNodeContextEntityParent (void)
+{
     xmlDocPtr doc;
     xmlNodePtr root, entRef, textNode, result = NULL;
     int err = 0;
@@ -444,20 +447,21 @@ testParseInNodeContextEntityParent(void) {
 }
 
 static int
-testNoBlanks(void) {
-    const xmlChar xml[] =
-        "<refentry>\n"
-        "  <refsect1>\n"
-        "    <para>\n"
-        "      Run <command>tester --help</command> for more options.\n"
-        "    </para>\n"
-        "  </refsect1>\n"
-        "</refentry>\n";
-    const xmlChar expect[] =
-        "<?xml version=\"1.0\"?>\n"
-        "<refentry><refsect1><para>\n"
-        "      Run <command>tester --help</command> for more options.\n"
-        "    </para></refsect1></refentry>\n";
+testNoBlanks (void)
+{
+    const xmlChar xml[]
+        = "<refentry>\n"
+          "  <refsect1>\n"
+          "    <para>\n"
+          "      Run <command>tester --help</command> for more options.\n"
+          "    </para>\n"
+          "  </refsect1>\n"
+          "</refentry>\n";
+    const xmlChar expect[]
+        = "<?xml version=\"1.0\"?>\n"
+          "<refentry><refsect1><para>\n"
+          "      Run <command>tester --help</command> for more options.\n"
+          "    </para></refsect1></refentry>\n";
     xmlDocPtr doc;
     xmlChar *out;
     int size;
@@ -477,7 +481,8 @@ testNoBlanks(void) {
 }
 
 static int
-testSaveNullEncDoc(const char *xml, const char *expect) {
+testSaveNullEncDoc (const char *xml, const char *expect)
+{
     xmlDocPtr doc;
     xmlBufferPtr buffer;
     xmlSaveCtxtPtr save;
@@ -504,12 +509,12 @@ testSaveNullEncDoc(const char *xml, const char *expect) {
 }
 
 static int
-testSaveNullEnc(void) {
+testSaveNullEnc (void)
+{
     int err = 0;
 
-    err |= testSaveNullEncDoc(
-        "<?xml version=\"1.0\"?><doc>\xC3\x98</doc>",
-        "<?xml version=\"1.0\"?>\n<doc>&#xD8;</doc>\n");
+    err |= testSaveNullEncDoc("<?xml version=\"1.0\"?><doc>\xC3\x98</doc>",
+                              "<?xml version=\"1.0\"?>\n<doc>&#xD8;</doc>\n");
     err |= testSaveNullEncDoc(
         "<?xml version=\"1.0\" encoding=\"utf-8\"?><doc>\xC3\x98</doc>",
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<doc>\xC3\x98</doc>\n");
@@ -521,11 +526,11 @@ testSaveNullEnc(void) {
 }
 
 static int
-testDocDumpFormatMemoryEnc(void) {
+testDocDumpFormatMemoryEnc (void)
+{
     const char *xml = "<doc>\xC3\x98</doc>";
-    const char *expect =
-        "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
-        "<doc>\xD8</doc>\n";
+    const char *expect = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
+                         "<doc>\xD8</doc>\n";
     xmlDocPtr doc;
     xmlChar *text;
     int len;
@@ -547,34 +552,34 @@ testDocDumpFormatMemoryEnc(void) {
 
 #ifdef LIBXML_SAX1_ENABLED
 static int
-testBalancedChunk(void) {
+testBalancedChunk (void)
+{
     xmlNodePtr list;
     xmlNodePtr elem;
     int ret;
     int err = 0;
 
-    ret = xmlParseBalancedChunkMemory(NULL, NULL, NULL, 0,
-            BAD_CAST "start <node xml:lang='en'>abc</node> end", &list);
+    ret = xmlParseBalancedChunkMemory(
+        NULL, NULL, NULL, 0,
+        BAD_CAST "start <node xml:lang='en'>abc</node> end", &list);
 
-    if ((ret != XML_ERR_OK) ||
-        (list == NULL) ||
-        ((elem = list->next) == NULL) ||
-        (elem->type != XML_ELEMENT_NODE) ||
-        (elem->nsDef == NULL) ||
-        (!xmlStrEqual(elem->nsDef->href, XML_XML_NAMESPACE))) {
+    if ((ret != XML_ERR_OK) || (list == NULL) || ((elem = list->next) == NULL)
+        || (elem->type != XML_ELEMENT_NODE) || (elem->nsDef == NULL)
+        || (!xmlStrEqual(elem->nsDef->href, XML_XML_NAMESPACE))) {
         fprintf(stderr, "xmlParseBalancedChunkMemory failed\n");
         err = 1;
     }
 
     xmlFreeNodeList(list);
 
-    return(err);
+    return err;
 }
 #endif
 
 #ifdef LIBXML_PUSH_ENABLED
 static int
-testHugePush(void) {
+testHugePush (void)
+{
     xmlParserCtxtPtr ctxt;
     int err, i;
 
@@ -598,7 +603,8 @@ testHugePush(void) {
 }
 
 static int
-testHugeEncodedChunk(void) {
+testHugeEncodedChunk (void)
+{
     xmlBufferPtr buf;
     xmlChar *chunk;
     xmlParserCtxtPtr ctxt;
@@ -609,8 +615,7 @@ testHugeEncodedChunk(void) {
      * and a chunk larger than the initial decoded buffer (currently 4 KB).
      */
     buf = xmlBufferCreate();
-    xmlBufferCat(buf,
-            BAD_CAST "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+    xmlBufferCat(buf, BAD_CAST "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
     xmlBufferCat(buf, BAD_CAST "<doc><!-- ");
     for (i = 0; i < 2000; i++)
         xmlBufferCat(buf, BAD_CAST "0123456789");
@@ -640,8 +645,7 @@ testHugeEncodedChunk(void) {
      * charset conversion.
      */
     buf = xmlBufferCreate();
-    xmlBufferCat(buf,
-            BAD_CAST "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+    xmlBufferCat(buf, BAD_CAST "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
     xmlBufferCat(buf, BAD_CAST "<doc>");
     /* 20,000 characters */
     for (i = 0; i < 2000; i++)
@@ -664,7 +668,8 @@ testHugeEncodedChunk(void) {
 }
 
 static int
-testPushCDataEnd(void) {
+testPushCDataEnd (void)
+{
     int err = 0;
     int k;
 
@@ -729,9 +734,10 @@ testPushCDataEnd(void) {
 
 #ifdef LIBXML_HTML_ENABLED
 static int
-testHtmlIds(void) {
-    const char *htmlContent =
-        "<html><body><div id='myId'>Hello, World!</div></body></html>";
+testHtmlIds (void)
+{
+    const char *htmlContent
+        = "<html><body><div id='myId'>Hello, World!</div></body></html>";
     htmlDocPtr doc;
     xmlAttrPtr node;
 
@@ -755,24 +761,22 @@ testHtmlIds(void) {
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static int
-testHtmlInsertMetaEncoding(void) {
+testHtmlInsertMetaEncoding (void)
+{
     /* We currently require a head element to be present. */
-    const char *html =
-        "<html>"
-        "<head></head>"
-        "<body>text</body>"
-        "</html>\n";
-    const char *expect =
-        "<html>"
-        "<head><meta charset=\"utf-8\"></head>"
-        "<body>text</body>"
-        "</html>\n";
+    const char *html = "<html>"
+                       "<head></head>"
+                       "<body>text</body>"
+                       "</html>\n";
+    const char *expect = "<html>"
+                         "<head><meta charset=\"utf-8\"></head>"
+                         "<body>text</body>"
+                         "</html>\n";
     htmlDocPtr doc;
     xmlBufferPtr buf;
     xmlSaveCtxtPtr save;
     xmlChar *out;
     int size, err = 0;
-
 
     doc = htmlReadDoc(BAD_CAST html, NULL, NULL, HTML_PARSE_NODEFDTD);
 
@@ -801,46 +805,48 @@ testHtmlInsertMetaEncoding(void) {
 }
 
 static int
-testHtmlUpdateMetaEncoding(void) {
+testHtmlUpdateMetaEncoding (void)
+{
     /* We rely on the implementation adjusting all meta tags */
-    const char *html =
-        "<html>\n"
-        "    <head>\n"
-        "        <meta charset=\"utf-8\">\n"
-        "        <meta charset=\"  foo  \">\n"
-        "        <meta charset=\"\">\n"
-        "        <" MHE " content=\"text/html; ChArSeT=foo\">\n"
-        "        <" MHE " content=\"text/html; charset = \">\n"
-        "        <" MHE " content=\"text/html; charset = '  foo  '\">\n"
-        "        <" MHE " content=\"text/html; charset = '  foo  \">\n"
-        "        <" MHE " content='text/html; charset = \"  foo  \"'>\n"
-        "        <" MHE " content='text/html; charset = \"  foo  '>\n"
-        "        <" MHE " content=\"charset ; charset = bar; baz\">\n"
-        "        <" MHE " content=\"text/html\">\n"
-        "        <" MHE " content=\"\">\n"
-        "        <" MHE ">\n"
-        "    </head>\n"
-        "    <body></body>\n"
-        "</html>\n";
-    const char *expect =
-        "<html>\n"
-        "    <head>\n"
-        "        <meta charset=\"utf-8\">\n"
-        "        <meta charset=\"  utf-8  \">\n"
-        "        <meta charset=\"utf-8\">\n"
-        "        <" MHE " content=\"text/html; ChArSeT=utf-8\">\n"
-        "        <" MHE " content=\"text/html; charset = \">\n"
-        "        <" MHE " content=\"text/html; charset = '  utf-8  '\">\n"
-        "        <" MHE " content=\"text/html; charset = '  foo  \">\n"
-        "        <" MHE " content=\"text/html; charset = &quot;  utf-8  &quot;\">\n"
-        "        <" MHE " content=\"text/html; charset = &quot;  foo  \">\n"
-        "        <" MHE " content=\"charset ; charset = utf-8; baz\">\n"
-        "        <" MHE " content=\"text/html\">\n"
-        "        <" MHE " content=\"\">\n"
-        "        <" MHE ">\n"
-        "    </head>\n"
-        "    <body></body>\n"
-        "</html>\n";
+    const char *html
+        = "<html>\n"
+          "    <head>\n"
+          "        <meta charset=\"utf-8\">\n"
+          "        <meta charset=\"  foo  \">\n"
+          "        <meta charset=\"\">\n"
+          "        <" MHE " content=\"text/html; ChArSeT=foo\">\n"
+          "        <" MHE " content=\"text/html; charset = \">\n"
+          "        <" MHE " content=\"text/html; charset = '  foo  '\">\n"
+          "        <" MHE " content=\"text/html; charset = '  foo  \">\n"
+          "        <" MHE " content='text/html; charset = \"  foo  \"'>\n"
+          "        <" MHE " content='text/html; charset = \"  foo  '>\n"
+          "        <" MHE " content=\"charset ; charset = bar; baz\">\n"
+          "        <" MHE " content=\"text/html\">\n"
+          "        <" MHE " content=\"\">\n"
+          "        <" MHE ">\n"
+          "    </head>\n"
+          "    <body></body>\n"
+          "</html>\n";
+    const char *expect
+        = "<html>\n"
+          "    <head>\n"
+          "        <meta charset=\"utf-8\">\n"
+          "        <meta charset=\"  utf-8  \">\n"
+          "        <meta charset=\"utf-8\">\n"
+          "        <" MHE " content=\"text/html; ChArSeT=utf-8\">\n"
+          "        <" MHE " content=\"text/html; charset = \">\n"
+          "        <" MHE " content=\"text/html; charset = '  utf-8  '\">\n"
+          "        <" MHE " content=\"text/html; charset = '  foo  \">\n"
+          "        <" MHE
+          " content=\"text/html; charset = &quot;  utf-8  &quot;\">\n"
+          "        <" MHE " content=\"text/html; charset = &quot;  foo  \">\n"
+          "        <" MHE " content=\"charset ; charset = utf-8; baz\">\n"
+          "        <" MHE " content=\"text/html\">\n"
+          "        <" MHE " content=\"\">\n"
+          "        <" MHE ">\n"
+          "    </head>\n"
+          "    <body></body>\n"
+          "</html>\n";
     htmlDocPtr doc;
     xmlBufferPtr buf;
     xmlSaveCtxtPtr save;
@@ -878,7 +884,8 @@ testHtmlUpdateMetaEncoding(void) {
 
 #ifdef LIBXML_PUSH_ENABLED
 static int
-testHtmlPushWithEncoding(void) {
+testHtmlPushWithEncoding (void)
+{
     htmlParserCtxtPtr ctxt;
     htmlDocPtr doc;
     htmlNodePtr node;
@@ -909,7 +916,8 @@ testHtmlPushWithEncoding(void) {
 
 #ifdef LIBXML_READER_ENABLED
 static int
-testReaderEncoding(void) {
+testReaderEncoding (void)
+{
     xmlBuffer *buf;
     xmlTextReader *reader;
     xmlChar *xml;
@@ -942,7 +950,8 @@ testReaderEncoding(void) {
 
 #ifdef LIBXML_OUTPUT_ENABLED
 static int
-testReaderContent(void) {
+testReaderContent (void)
+{
     xmlTextReader *reader;
     const xmlChar *xml = BAD_CAST "<d>x<e>y</e><f>z</f></d>";
     xmlChar *string;
@@ -978,7 +987,8 @@ testReaderContent(void) {
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 static int
-testReaderNode(xmlTextReader *reader) {
+testReaderNode (xmlTextReader *reader)
+{
     xmlChar *string;
     int type;
     int err = 0;
@@ -991,10 +1001,9 @@ testReaderNode(xmlTextReader *reader) {
 
         if ((node->children == NULL) != (string == NULL))
             err = 1;
-    } else if (type == XML_READER_TYPE_TEXT ||
-               type == XML_READER_TYPE_CDATA ||
-               type == XML_READER_TYPE_WHITESPACE ||
-               type == XML_READER_TYPE_SIGNIFICANT_WHITESPACE) {
+    } else if (type == XML_READER_TYPE_TEXT || type == XML_READER_TYPE_CDATA
+               || type == XML_READER_TYPE_WHITESPACE
+               || type == XML_READER_TYPE_SIGNIFICANT_WHITESPACE) {
         if (string == NULL)
             err = 1;
     } else {
@@ -1011,16 +1020,16 @@ testReaderNode(xmlTextReader *reader) {
 }
 
 static int
-testReader(void) {
+testReader (void)
+{
     xmlTextReader *reader;
-    const xmlChar *xml = BAD_CAST
-        "<d>\n"
-        "  x<e a='v'>y</e><f>z</f>\n"
-        "  <![CDATA[cdata]]>\n"
-        "  <!-- comment -->\n"
-        "  <?pi content?>\n"
-        "  <empty/>\n"
-        "</d>";
+    const xmlChar *xml = BAD_CAST "<d>\n"
+                                  "  x<e a='v'>y</e><f>z</f>\n"
+                                  "  <![CDATA[cdata]]>\n"
+                                  "  <!-- comment -->\n"
+                                  "  <?pi content?>\n"
+                                  "  <empty/>\n"
+                                  "</d>";
     int err = 0;
 
     reader = xmlReaderForDoc(xml, NULL, NULL, 0);
@@ -1055,25 +1064,25 @@ typedef struct {
 
 #ifdef LIBXML_SCHEMAS_ENABLED
 static xmlParserErrors
-testReaderResourceLoader(void *ctxt, const char *url,
-                         const char *publicId UNUSED,
-                         xmlResourceType type UNUSED,
-                         xmlParserInputFlags flags,
-                         xmlParserInputPtr *out) {
+testReaderResourceLoader (void *ctxt, const char *url,
+                          const char *publicId UNUSED,
+                          xmlResourceType type UNUSED,
+                          xmlParserInputFlags flags, xmlParserInputPtr *out)
+{
     testReaderResourceLoaderCtxt *loaderCtxt = ctxt;
-    static const char importedXsd[] =
-        "<?xml version='1.0'?>\n"
-        "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'\n"
-        "           targetNamespace='urn:remote'\n"
-        "           xmlns='urn:remote'\n"
-        "           elementFormDefault='qualified'>\n"
-        "  <xs:simpleType name='RemoteType'>\n"
-        "    <xs:restriction base='xs:string'/>\n"
-        "  </xs:simpleType>\n"
-        "</xs:schema>\n";
+    static const char importedXsd[]
+        = "<?xml version='1.0'?>\n"
+          "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'\n"
+          "           targetNamespace='urn:remote'\n"
+          "           xmlns='urn:remote'\n"
+          "           elementFormDefault='qualified'>\n"
+          "  <xs:simpleType name='RemoteType'>\n"
+          "    <xs:restriction base='xs:string'/>\n"
+          "  </xs:simpleType>\n"
+          "</xs:schema>\n";
 
-    if ((url == NULL) ||
-        (strcmp(url, "http://example.invalid/imported.xsd") != 0)) {
+    if ((url == NULL)
+        || (strcmp(url, "http://example.invalid/imported.xsd") != 0)) {
         return xmlNewInputFromUrl(url, flags, out);
     }
 
@@ -1086,7 +1095,8 @@ testReaderResourceLoader(void *ctxt, const char *url,
 }
 
 static int
-testReaderSchemaResourceLoader(void) {
+testReaderSchemaResourceLoader (void)
+{
     const char *doc = "<doc>ok</doc>";
     const char *xsd = "test/schemas/v012-reader-schema-main.xsd";
     testReaderResourceLoaderCtxt loaderCtxt;
@@ -1116,8 +1126,9 @@ testReaderSchemaResourceLoader(void) {
                                    &loaderCtxt);
     ret = xmlTextReaderSchemaValidate(reader, xsd);
     if (ret != 0 || loaderCtxt.sawRemote == 0) {
-        fprintf(stderr,
-                "xmlTextReaderSetResourceLoader was not used for schema imports\n");
+        fprintf(
+            stderr,
+            "xmlTextReaderSetResourceLoader was not used for schema imports\n");
         err = 1;
     }
     xmlFreeTextReader(reader);
@@ -1131,15 +1142,15 @@ testReaderSchemaResourceLoader(void) {
  * internal entity.
  */
 static int
-testReaderSchemaEntityExpansion(void) {
-    static const char xsd[] =
-        "<?xml version='1.0'?>\n"
-        "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'>\n"
-        "  <xs:element name='e' type='xs:integer'/>\n"
-        "</xs:schema>\n";
-    static const char xml[] =
-        "<!DOCTYPE e [<!ENTITY n \"not-an-int\">]>\n"
-        "<e>&n;</e>";
+testReaderSchemaEntityExpansion (void)
+{
+    static const char xsd[]
+        = "<?xml version='1.0'?>\n"
+          "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'>\n"
+          "  <xs:element name='e' type='xs:integer'/>\n"
+          "</xs:schema>\n";
+    static const char xml[] = "<!DOCTYPE e [<!ENTITY n \"not-an-int\">]>\n"
+                              "<e>&n;</e>";
     xmlSchemaParserCtxtPtr spc;
     xmlSchemaPtr schema;
     xmlTextReaderPtr reader;
@@ -1177,21 +1188,22 @@ testReaderSchemaEntityExpansion(void) {
 
 #ifdef LIBXML_RELAXNG_ENABLED
 static xmlParserErrors
-testReaderRelaxNGResourceLoader(void *ctxt, const char *url,
-                                const char *publicId UNUSED,
-                                xmlResourceType type UNUSED,
-                                xmlParserInputFlags flags,
-                                xmlParserInputPtr *out) {
+testReaderRelaxNGResourceLoader (void *ctxt, const char *url,
+                                 const char *publicId UNUSED,
+                                 xmlResourceType type UNUSED,
+                                 xmlParserInputFlags flags,
+                                 xmlParserInputPtr *out)
+{
     testReaderResourceLoaderCtxt *loaderCtxt = ctxt;
-    static const char importedRng[] =
-        "<grammar xmlns='http://relaxng.org/ns/structure/1.0'>\n"
-        "  <define name='docdef'>\n"
-        "    <element name='doc'><text/></element>\n"
-        "  </define>\n"
-        "</grammar>\n";
+    static const char importedRng[]
+        = "<grammar xmlns='http://relaxng.org/ns/structure/1.0'>\n"
+          "  <define name='docdef'>\n"
+          "    <element name='doc'><text/></element>\n"
+          "  </define>\n"
+          "</grammar>\n";
 
-    if ((url != NULL) &&
-        (strcmp(url, "http://example.invalid/imported.rng") == 0)) {
+    if ((url != NULL)
+        && (strcmp(url, "http://example.invalid/imported.rng") == 0)) {
         loaderCtxt->sawRemote = 1;
         *out = xmlNewInputFromString(url, importedRng, flags);
         if (*out == NULL)
@@ -1203,7 +1215,8 @@ testReaderRelaxNGResourceLoader(void *ctxt, const char *url,
 }
 
 static int
-testReaderRelaxNGResourceLoaderCtxt(void) {
+testReaderRelaxNGResourceLoaderCtxt (void)
+{
     const char *doc = "<doc>ok</doc>";
     const char *rng = "test/relaxng/v012-reader-main.rng";
     testReaderResourceLoaderCtxt loaderCtxt;
@@ -1218,7 +1231,8 @@ testReaderRelaxNGResourceLoaderCtxt(void) {
     }
     ret = xmlTextReaderRelaxNGValidate(reader, rng);
     if (ret == 0) {
-        fprintf(stderr, "xmlTextReaderRelaxNGValidate unexpectedly succeeded\n");
+        fprintf(stderr,
+                "xmlTextReaderRelaxNGValidate unexpectedly succeeded\n");
         err = 1;
     }
     xmlFreeTextReader(reader);
@@ -1234,7 +1248,8 @@ testReaderRelaxNGResourceLoaderCtxt(void) {
     ret = xmlTextReaderRelaxNGValidate(reader, rng);
     if (ret != 0 || loaderCtxt.sawRemote == 0) {
         fprintf(stderr,
-                "xmlTextReaderSetResourceLoader was not used for Relax NG includes\n");
+                "xmlTextReaderSetResourceLoader was not used for Relax NG "
+                "includes\n");
         err = 1;
     }
     xmlFreeTextReader(reader);
@@ -1250,9 +1265,10 @@ typedef struct {
 } testReaderErrorCtxt;
 
 static void
-testReaderError(void *arg, const char *msg,
-                xmlParserSeverities severity UNUSED,
-                xmlTextReaderLocatorPtr locator UNUSED) {
+testReaderError (void *arg, const char *msg,
+                 xmlParserSeverities severity UNUSED,
+                 xmlTextReaderLocatorPtr locator UNUSED)
+{
     testReaderErrorCtxt *ctxt = arg;
 
     if (ctxt->message != NULL)
@@ -1261,7 +1277,8 @@ testReaderError(void *arg, const char *msg,
 }
 
 static void
-testStructuredReaderError(void *arg, const xmlError *error) {
+testStructuredReaderError (void *arg, const xmlError *error)
+{
     testReaderErrorCtxt *ctxt = arg;
 
     if (ctxt->message != NULL)
@@ -1271,15 +1288,15 @@ testStructuredReaderError(void *arg, const xmlError *error) {
 }
 
 static int
-testReaderXIncludeError(void) {
+testReaderXIncludeError (void)
+{
     /*
      * Test whether XInclude errors are reported to the custom error
      * handler of a reader.
      */
-    const char *doc =
-        "<doc xmlns:xi='http://www.w3.org/2001/XInclude'>\n"
-        "  <xi:include/>\n"
-        "</doc>\n";
+    const char *doc = "<doc xmlns:xi='http://www.w3.org/2001/XInclude'>\n"
+                      "  <xi:include/>\n"
+                      "</doc>\n";
     xmlTextReader *reader;
     testReaderErrorCtxt errorCtxt;
     int err = 0;
@@ -1291,8 +1308,8 @@ testReaderXIncludeError(void) {
     while (xmlTextReaderRead(reader) > 0)
         ;
 
-    if (errorCtxt.message == NULL ||
-        strstr(errorCtxt.message, "href or xpointer") == NULL) {
+    if (errorCtxt.message == NULL
+        || strstr(errorCtxt.message, "href or xpointer") == NULL) {
         fprintf(stderr, "xmlTextReaderSetErrorHandler failed\n");
         err = 1;
     }
@@ -1308,9 +1325,8 @@ testReaderXIncludeError(void) {
     while (xmlTextReaderRead(reader) > 0)
         ;
 
-    if (errorCtxt.code != XML_XINCLUDE_NO_HREF ||
-        errorCtxt.message == NULL ||
-        strstr(errorCtxt.message, "href or xpointer") == NULL) {
+    if (errorCtxt.code != XML_XINCLUDE_NO_HREF || errorCtxt.message == NULL
+        || strstr(errorCtxt.message, "href or xpointer") == NULL) {
         fprintf(stderr, "xmlTextReaderSetStructuredErrorHandler failed\n");
         err = 1;
     }
@@ -1325,7 +1341,8 @@ testReaderXIncludeError(void) {
 
 #ifdef LIBXML_WRITER_ENABLED
 static int
-testWriterIOWrite(void *ctxt, const char *data, int len) {
+testWriterIOWrite (void *ctxt, const char *data, int len)
+{
     (void) ctxt;
     (void) data;
 
@@ -1333,21 +1350,23 @@ testWriterIOWrite(void *ctxt, const char *data, int len) {
 }
 
 static int
-testWriterIOClose(void *ctxt) {
+testWriterIOClose (void *ctxt)
+{
     (void) ctxt;
 
     return XML_IO_ENAMETOOLONG;
 }
 
 static int
-testWriterClose(void){
+testWriterClose (void)
+{
     xmlOutputBufferPtr out;
     xmlTextWriterPtr writer;
     int err = 0;
     int result;
 
-    out = xmlOutputBufferCreateIO(testWriterIOWrite, testWriterIOClose,
-                                  NULL, NULL);
+    out = xmlOutputBufferCreateIO(testWriterIOWrite, testWriterIOClose, NULL,
+                                  NULL);
     writer = xmlNewTextWriter(out);
     xmlTextWriterStartDocument(writer, "1.0", "UTF-8", NULL);
     xmlTextWriterStartElement(writer, BAD_CAST "elem");
@@ -1356,8 +1375,7 @@ testWriterClose(void){
     result = xmlTextWriterClose(writer);
 
     if (result != XML_IO_ENAMETOOLONG) {
-        fprintf(stderr, "xmlTextWriterClose reported wrong error %d\n",
-                result);
+        fprintf(stderr, "xmlTextWriterClose reported wrong error %d\n", result);
         err = 1;
     }
 
@@ -1373,107 +1391,39 @@ typedef struct {
 } xmlRelativeUriTest;
 
 static int
-testBuildRelativeUri(void) {
+testBuildRelativeUri (void)
+{
     xmlChar *res;
     int err = 0;
     int i;
 
     static const xmlRelativeUriTest tests[] = {
-        {
-            "/a/b1/c1",
-            "/a/b2/c2",
-            "../b1/c1"
-        }, {
-            "a/b1/c1",
-            "a/b2/c2",
-            "../b1/c1"
-        }, {
-            "a/././b1/x/y/../z/../.././c1",
-            "./a/./b2/././b2",
-            "../b1/c1"
-        }, {
-            "file:///a/b1/c1",
-            "/a/b2/c2",
-            NULL
-        }, {
-            "/a/b1/c1",
-            "file:///a/b2/c2",
-            NULL
-        }, {
-            "a/b1/c1",
-            "/a/b2/c2",
-            NULL
-        }, {
-            "/a/b1/c1",
-            "a/b2/c2",
-            NULL
-        }, {
-            "http://example.org/a/b1/c1",
-            "http://example.org/a/b2/c2",
-            "../b1/c1"
-        }, {
-            "http://example.org/a/b1/c1",
-            "https://example.org/a/b2/c2",
-            NULL
-        }, {
-            "http://example.org/a/b1/c1",
-            "http://localhost/a/b2/c2",
-            NULL
-        }, {
-            "with space/x x/y y",
-            "with space/b2/c2",
-            "../x%20x/y%20y"
-        }, {
-            "with space/x x/y y",
-            "/b2/c2",
-            "with%20space/x%20x/y%20y"
-        }
+        {"/a/b1/c1",                     "/a/b2/c2",                      "../b1/c1"                },
+        {"a/b1/c1",                      "a/b2/c2",                       "../b1/c1"                },
+        {"a/././b1/x/y/../z/../.././c1", "./a/./b2/././b2",               "../b1/c1"                },
+        {"file:///a/b1/c1",              "/a/b2/c2",                      NULL                      },
+        {"/a/b1/c1",                     "file:///a/b2/c2",               NULL                      },
+        {"a/b1/c1",                      "/a/b2/c2",                      NULL                      },
+        {"/a/b1/c1",                     "a/b2/c2",                       NULL                      },
+        {"http://example.org/a/b1/c1",   "http://example.org/a/b2/c2",
+         "../b1/c1"                                                                                 },
+        {"http://example.org/a/b1/c1",   "https://example.org/a/b2/c2",   NULL                      },
+        {"http://example.org/a/b1/c1",   "http://localhost/a/b2/c2",      NULL                      },
+        {"with space/x x/y y",           "with space/b2/c2",              "../x%20x/y%20y"          },
+        {"with space/x x/y y",           "/b2/c2",                        "with%20space/x%20x/y%20y"}
 #if defined(_WIN32) || defined(__CYGWIN__)
-        , {
-            "\\a\\b1\\c1",
-            "\\a\\b2\\c2",
-            "../b1/c1"
-        }, {
-            "\\a\\b1\\c1",
-            "/a/b2/c2",
-            "../b1/c1"
-        }, {
-            "a\\b1\\c1",
-            "a/b2/c2",
-            "../b1/c1"
-        }, {
-            "file://server/a/b1/c1",
-            "\\\\?\\UNC\\server\\a\\b2\\c2",
-            "../b1/c1"
-        }, {
-            "file://server/a/b1/c1",
-            "\\\\server\\a\\b2\\c2",
-            "../b1/c1"
-        }, {
-            "file:///x:/a/b1/c1",
-            "x:\\a\\b2\\c2",
-            "../b1/c1"
-        }, {
-            "file:///x:/a/b1/c1",
-            "\\\\?\\x:\\a\\b2\\c2",
-            "../b1/c1"
-        }, {
-            "file:///x:/a/b1/c1",
-            "file:///y:/a/b2/c2",
-            NULL
-        }, {
-            "x:/a/b1/c1",
-            "y:/a/b2/c2",
-            "file:///x:/a/b1/c1"
-        }, {
-            "/a/b1/c1",
-            "y:/a/b2/c2",
-            NULL
-        }, {
-            "\\\\server\\a\\b1\\c1",
-            "a/b2/c2",
-            "file://server/a/b1/c1"
-        }
+        ,
+        {"\\a\\b1\\c1",                  "\\a\\b2\\c2",                   "../b1/c1"                },
+        {"\\a\\b1\\c1",                  "/a/b2/c2",                      "../b1/c1"                },
+        {"a\\b1\\c1",                    "a/b2/c2",                       "../b1/c1"                },
+        {"file://server/a/b1/c1",        "\\\\?\\UNC\\server\\a\\b2\\c2", "../b1/c1"                },
+        {"file://server/a/b1/c1",        "\\\\server\\a\\b2\\c2",         "../b1/c1"                },
+        {"file:///x:/a/b1/c1",           "x:\\a\\b2\\c2",                 "../b1/c1"                },
+        {"file:///x:/a/b1/c1",           "\\\\?\\x:\\a\\b2\\c2",          "../b1/c1"                },
+        {"file:///x:/a/b1/c1",           "file:///y:/a/b2/c2",            NULL                      },
+        {"x:/a/b1/c1",                   "y:/a/b2/c2",                    "file:///x:/a/b1/c1"      },
+        {"/a/b1/c1",                     "y:/a/b2/c2",                    NULL                      },
+        {"\\\\server\\a\\b1\\c1",        "a/b2/c2",                       "file://server/a/b1/c1"   }
 #endif
     };
 
@@ -1484,9 +1434,10 @@ testBuildRelativeUri(void) {
         res = xmlBuildRelativeURI(BAD_CAST test->uri, BAD_CAST test->base);
         expect = test->result ? test->result : test->uri;
         if (!xmlStrEqual(res, BAD_CAST expect)) {
-            fprintf(stderr, "xmlBuildRelativeURI failed uri=%s base=%s "
-                    "result=%s expected=%s\n", test->uri, test->base,
-                    res, expect);
+            fprintf(stderr,
+                    "xmlBuildRelativeURI failed uri=%s base=%s "
+                    "result=%s expected=%s\n",
+                    test->uri, test->base, res, expect);
             err = 1;
         }
         xmlFree(res);
@@ -1497,7 +1448,8 @@ testBuildRelativeUri(void) {
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 static int
-testWindowsUri(void) {
+testWindowsUri (void)
+{
     const char *url = "c:/a%20b/file.txt";
     xmlURIPtr uri;
     xmlChar *res;
@@ -1505,35 +1457,13 @@ testWindowsUri(void) {
     int i;
 
     static const xmlRelativeUriTest tests[] = {
-        {
-            "c:/a%20b/file.txt",
-            "base.xml",
-            "c:/a b/file.txt"
-        }, {
-            "file:///c:/a%20b/file.txt",
-            "base.xml",
-            "file:///c:/a%20b/file.txt"
-        }, {
-            "Z:/a%20b/file.txt",
-            "http://example.com/",
-            "Z:/a b/file.txt"
-        }, {
-            "a%20b/b1/c1",
-            "C:/a/b2/c2",
-            "C:/a/b2/a b/b1/c1"
-        }, {
-            "a%20b/b1/c1",
-            "\\a\\b2\\c2",
-            "/a/b2/a b/b1/c1"
-        }, {
-            "a%20b/b1/c1",
-            "\\\\?\\a\\b2\\c2",
-            "//?/a/b2/a b/b1/c1"
-        }, {
-            "a%20b/b1/c1",
-            "\\\\\\\\server\\b2\\c2",
-            "//server/b2/a b/b1/c1"
-        }
+        {"c:/a%20b/file.txt",         "base.xml",               "c:/a b/file.txt"          },
+        {"file:///c:/a%20b/file.txt", "base.xml",               "file:///c:/a%20b/file.txt"},
+        {"Z:/a%20b/file.txt",         "http://example.com/",    "Z:/a b/file.txt"          },
+        {"a%20b/b1/c1",               "C:/a/b2/c2",             "C:/a/b2/a b/b1/c1"        },
+        {"a%20b/b1/c1",               "\\a\\b2\\c2",            "/a/b2/a b/b1/c1"          },
+        {"a%20b/b1/c1",               "\\\\?\\a\\b2\\c2",       "//?/a/b2/a b/b1/c1"       },
+        {"a%20b/b1/c1",               "\\\\\\\\server\\b2\\c2", "//server/b2/a b/b1/c1"    }
     };
 
     uri = xmlParseURI(url);
@@ -1558,9 +1488,10 @@ testWindowsUri(void) {
 
         res = xmlBuildURI(BAD_CAST test->uri, BAD_CAST test->base);
         if (res == NULL || !xmlStrEqual(res, BAD_CAST test->result)) {
-            fprintf(stderr, "xmlBuildURI failed uri=%s base=%s "
-                    "result=%s expected=%s\n", test->uri, test->base,
-                    res, test->result);
+            fprintf(stderr,
+                    "xmlBuildURI failed uri=%s base=%s "
+                    "result=%s expected=%s\n",
+                    test->uri, test->base, res, test->result);
             err = 1;
         }
         xmlFree(res);
@@ -1572,14 +1503,13 @@ testWindowsUri(void) {
 
 #if defined(LIBXML_ICONV_ENABLED) || defined(LIBXML_ICU_ENABLED)
 static int
-testTruncatedMultiByte(void) {
-    const char xml[] =
-        "<?xml version=\"1.0\" encoding=\"EUC-JP\"?>\n"
-        "<doc/>\xC3";
+testTruncatedMultiByte (void)
+{
+    const char xml[] = "<?xml version=\"1.0\" encoding=\"EUC-JP\"?>\n"
+                       "<doc/>\xC3";
 #ifdef LIBXML_HTML_ENABLED
-    const char html[] =
-        "<meta charset=\"EUC-JP\">\n"
-        "<div/>\xC3";
+    const char html[] = "<meta charset=\"EUC-JP\">\n"
+                        "<div/>\xC3";
 #endif
     xmlDocPtr doc;
     const xmlError *error;
@@ -1649,9 +1579,9 @@ testTruncatedMultiByte(void) {
 static int charEncConvImplError;
 
 static xmlCharEncError
-rot13Convert(void *vctxt, unsigned char *out, int *outlen,
-             const unsigned char *in, int *inlen,
-             int flush UNUSED) {
+rot13Convert (void *vctxt, unsigned char *out, int *outlen,
+              const unsigned char *in, int *inlen, int flush UNUSED)
+{
     int *ctxt = vctxt;
     int inSize = *inlen;
     int outSize = *outlen;
@@ -1677,13 +1607,15 @@ rot13Convert(void *vctxt, unsigned char *out, int *outlen,
 }
 
 static void
-rot13ConvCtxtDtor(void *vctxt) {
+rot13ConvCtxtDtor (void *vctxt)
+{
     xmlFree(vctxt);
 }
 
 static xmlParserErrors
-rot13ConvImpl(void *vctxt UNUSED, const char *name,
-              xmlCharEncFlags flags, xmlCharEncodingHandler **out) {
+rot13ConvImpl (void *vctxt UNUSED, const char *name, xmlCharEncFlags flags,
+               xmlCharEncodingHandler **out)
+{
     int *inputCtxt;
 
     if (strcmp(name, "rot13") != 0)
@@ -1696,12 +1628,12 @@ rot13ConvImpl(void *vctxt UNUSED, const char *name,
     *inputCtxt = 13;
 
     return xmlCharEncNewCustomHandler(name, rot13Convert, NULL,
-                                      rot13ConvCtxtDtor, inputCtxt, NULL,
-                                      out);
+                                      rot13ConvCtxtDtor, inputCtxt, NULL, out);
 }
 
 static int
-testCharEncConvImpl(void) {
+testCharEncConvImpl (void)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -1728,7 +1660,8 @@ testCharEncConvImpl(void) {
 }
 
 static int
-testRemoveParamEntityIntSubset(void) {
+testRemoveParamEntityIntSubset (void)
+{
     xmlDocPtr doc;
     xmlEntityPtr ent;
     int err = 0;
@@ -1736,18 +1669,20 @@ testRemoveParamEntityIntSubset(void) {
     doc = xmlNewDoc(BAD_CAST "1.0");
     xmlCreateIntSubset(doc, BAD_CAST "doc", NULL, NULL);
 
-    xmlAddDocEntity(doc, BAD_CAST "param1", XML_INTERNAL_PARAMETER_ENTITY,
-                    NULL, NULL, BAD_CAST "value");
+    xmlAddDocEntity(doc, BAD_CAST "param1", XML_INTERNAL_PARAMETER_ENTITY, NULL,
+                    NULL, BAD_CAST "value");
     ent = xmlGetParameterEntity(doc, BAD_CAST "param1");
     if (ent == NULL) {
-        fprintf(stderr, "testRemoveParamEntityIntSubset: "
+        fprintf(stderr,
+                "testRemoveParamEntityIntSubset: "
                 "entity not found after add\n");
         xmlFreeDoc(doc);
         return 1;
     }
     xmlUnlinkNode((xmlNodePtr) ent);
     if (xmlGetParameterEntity(doc, BAD_CAST "param1") != NULL) {
-        fprintf(stderr, "testRemoveParamEntityIntSubset: "
+        fprintf(stderr,
+                "testRemoveParamEntityIntSubset: "
                 "parameter entity still in pentities after unlink\n");
         err = 1;
     } else {
@@ -1759,7 +1694,8 @@ testRemoveParamEntityIntSubset(void) {
 }
 
 static int
-testRemoveParamEntityExtSubset(void) {
+testRemoveParamEntityExtSubset (void)
+{
     xmlDocPtr doc;
     xmlEntityPtr ent;
     int err = 0;
@@ -1767,18 +1703,20 @@ testRemoveParamEntityExtSubset(void) {
     doc = xmlNewDoc(BAD_CAST "1.0");
     xmlNewDtd(doc, BAD_CAST "doc", NULL, BAD_CAST "doc.dtd");
 
-    xmlAddDtdEntity(doc, BAD_CAST "param2", XML_EXTERNAL_PARAMETER_ENTITY,
-                    NULL, NULL, BAD_CAST "value");
+    xmlAddDtdEntity(doc, BAD_CAST "param2", XML_EXTERNAL_PARAMETER_ENTITY, NULL,
+                    NULL, BAD_CAST "value");
     ent = xmlGetParameterEntity(doc, BAD_CAST "param2");
     if (ent == NULL) {
-        fprintf(stderr, "testRemoveParamEntityExtSubset: "
+        fprintf(stderr,
+                "testRemoveParamEntityExtSubset: "
                 "entity not found after add\n");
         xmlFreeDoc(doc);
         return 1;
     }
     xmlUnlinkNode((xmlNodePtr) ent);
     if (xmlGetParameterEntity(doc, BAD_CAST "param2") != NULL) {
-        fprintf(stderr, "testRemoveParamEntityExtSubset: "
+        fprintf(stderr,
+                "testRemoveParamEntityExtSubset: "
                 "parameter entity still in pentities after unlink\n");
         err = 1;
     } else {
@@ -1790,7 +1728,8 @@ testRemoveParamEntityExtSubset(void) {
 }
 
 int
-main(void) {
+main (void)
+{
     int err = 0;
 
     err |= testNewDocNode();
