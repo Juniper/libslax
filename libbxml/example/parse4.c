@@ -27,11 +27,12 @@ static FILE *desc;
  * Returns the number of bytes read
  */
 static int
-readPacket(char *mem, int size) {
+readPacket (char *mem, int size)
+{
     int res;
 
     res = fread(mem, 1, size, desc);
-    return(res);
+    return res;
 }
 
 /**
@@ -41,7 +42,8 @@ readPacket(char *mem, int size) {
  * Parse the resource and free the resulting tree
  */
 static void
-example4Func(const char *filename) {
+example4Func (const char *filename)
+{
     xmlParserCtxtPtr ctxt;
     char chars[4];
     xmlDocPtr doc; /* the resulting document tree */
@@ -54,7 +56,7 @@ example4Func(const char *filename) {
     res = readPacket(chars, 4);
     if (res <= 0) {
         fprintf(stderr, "Failed to parse %s\n", filename);
-	return;
+        return;
     }
 
     /*
@@ -64,11 +66,10 @@ example4Func(const char *filename) {
      * to allow encoding detection when creating the parser but this
      * is optional.
      */
-    ctxt = xmlCreatePushParserCtxt(NULL, NULL,
-                                   chars, res, filename);
+    ctxt = xmlCreatePushParserCtxt(NULL, NULL, chars, res, filename);
     if (ctxt == NULL) {
         fprintf(stderr, "Failed to create parser context !\n");
-	return;
+        return;
     }
 
     /*
@@ -103,9 +104,11 @@ example4Func(const char *filename) {
     xmlFreeDoc(doc);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     if (argc != 2)
-        return(1);
+        return 1;
 
     /*
      * this initialize the library and check potential ABI mismatches
@@ -119,17 +122,19 @@ int main(int argc, char **argv) {
      */
     desc = fopen(argv[1], "rb");
     if (desc != NULL) {
-	example4Func(argv[1]);
-	fclose(desc);
+        example4Func(argv[1]);
+        fclose(desc);
     } else {
         fprintf(stderr, "Failed to parse %s\n", argv[1]);
     }
 
-    return(0);
+    return 0;
 }
 #else /* ! LIBXML_PUSH_ENABLED */
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "Library not compiled with push parser support\n");
-    return(0);
+    return 0;
 }
 #endif
