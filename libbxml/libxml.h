@@ -14,12 +14,12 @@
  * Do not add any #include directives above this block.
  */
 #ifndef NO_LARGEFILE_SOURCE
-  #ifndef _LARGEFILE_SOURCE
-    #define _LARGEFILE_SOURCE
-  #endif
-  #ifndef _FILE_OFFSET_BITS
-    #define _FILE_OFFSET_BITS 64
-  #endif
+#ifndef _LARGEFILE_SOURCE
+#define _LARGEFILE_SOURCE
+#endif
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
 #endif
 
 /*
@@ -36,72 +36,70 @@
 #endif
 
 #if __STDC_VERSION__ >= 199901L
-  #define XML_INLINE inline
+#define XML_INLINE inline
 #elif defined(_MSC_VER)
-  #if _MSC_VER >= 1900
-    #define XML_INLINE inline
-  #else
-    #define XML_INLINE _inline
-  #endif
+#if _MSC_VER >= 1900
+#define XML_INLINE inline
 #else
-  #define XML_INLINE
+#define XML_INLINE _inline
+#endif
+#else
+#define XML_INLINE
 #endif
 
 #if __STDC_VERSION__ >= 199901L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-  #include <stdint.h>
-  #define XML_INTPTR_T intptr_t
+#include <stdint.h>
+#define XML_INTPTR_T intptr_t
 #else
-  #include <stddef.h>
-  #define XML_INTPTR_T ptrdiff_t
+#include <stddef.h>
+#define XML_INTPTR_T ptrdiff_t
 #endif
 
 #define XML_PTR_TO_INT(p) ((XML_INTPTR_T) (p))
 #define XML_INT_TO_PTR(i) ((void *) (XML_INTPTR_T) (i))
 
-#if !defined(_WIN32) && \
-    !defined(__CYGWIN__) && \
-    (defined(__clang__) || \
-     (defined(__GNUC__) && (__GNUC__ >= 4)))
-  #define XML_HIDDEN __attribute__((visibility("hidden")))
+#if !defined(_WIN32) && !defined(__CYGWIN__) \
+    && (defined(__clang__) || (defined(__GNUC__) && (__GNUC__ >= 4)))
+#define XML_HIDDEN __attribute__((visibility("hidden")))
 #else
-  #define XML_HIDDEN
+#define XML_HIDDEN
 #endif
 
 #if __GNUC__ * 100 + __GNUC_MINOR__ >= 207 || defined(__clang__)
-  #define UNUSED __attribute__((unused))
+#define UNUSED __attribute__((unused))
 #else
-  #define UNUSED
+#define UNUSED
 #endif
 
 #ifdef HAVE_FUNC_ATTRIBUTE_DESTRUCTOR
-  #define ATTRIBUTE_DESTRUCTOR __attribute__((destructor))
+#define ATTRIBUTE_DESTRUCTOR __attribute__((destructor))
 #endif
 
 #if XML_HAS_ATTRIBUTE(__counted_by__)
-  #define ATTRIBUTE_COUNTED_BY(c) __attribute__((__counted_by__(c)))
+#define ATTRIBUTE_COUNTED_BY(c) __attribute__((__counted_by__(c)))
 #else
-  #define ATTRIBUTE_COUNTED_BY(c)
+#define ATTRIBUTE_COUNTED_BY(c)
 #endif
 
-#if defined(__clang__) || \
-    (defined(__GNUC__) && (__GNUC__ >= 8) && !defined(__EDG__))
-  #define ATTRIBUTE_NO_SANITIZE(arg) __attribute__((no_sanitize(arg)))
+#if defined(__clang__) \
+    || (defined(__GNUC__) && (__GNUC__ >= 8) && !defined(__EDG__))
+#define ATTRIBUTE_NO_SANITIZE(arg) __attribute__((no_sanitize(arg)))
 #else
-  #define ATTRIBUTE_NO_SANITIZE(arg)
+#define ATTRIBUTE_NO_SANITIZE(arg)
 #endif
 
 #ifdef __clang__
-  #if (!defined(__apple_build_version__) && __clang_major__ >= 12) || \
-      (defined(__apple_build_version__) && __clang_major__ >= 13)
-    #define ATTRIBUTE_NO_SANITIZE_INTEGER \
-      ATTRIBUTE_NO_SANITIZE("unsigned-integer-overflow") \
-      ATTRIBUTE_NO_SANITIZE("unsigned-shift-base")
-  #else
-    #define ATTRIBUTE_NO_SANITIZE_INTEGER \
-      ATTRIBUTE_NO_SANITIZE("unsigned-integer-overflow")
-  #endif
+#if (!defined(__apple_build_version__) && __clang_major__ >= 12) \
+    || (defined(__apple_build_version__) && __clang_major__ >= 13)
+#define ATTRIBUTE_NO_SANITIZE_INTEGER                  \
+    ATTRIBUTE_NO_SANITIZE("unsigned-integer-overflow") \
+    ATTRIBUTE_NO_SANITIZE("unsigned-shift-base")
 #else
-  #define ATTRIBUTE_NO_SANITIZE_INTEGER
+#define ATTRIBUTE_NO_SANITIZE_INTEGER \
+    ATTRIBUTE_NO_SANITIZE("unsigned-integer-overflow")
+#endif
+#else
+#define ATTRIBUTE_NO_SANITIZE_INTEGER
 #endif
 
 #endif /* ! __XML_LIBXML_H__ */
