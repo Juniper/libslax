@@ -16,14 +16,16 @@
 
 #ifdef LIBXML_READER_ENABLED
 
-static void processDoc(xmlTextReaderPtr readerPtr) {
+static void
+processDoc (xmlTextReaderPtr readerPtr)
+{
     int ret;
     xmlDocPtr docPtr;
     const xmlChar *URL;
 
     ret = xmlTextReaderRead(readerPtr);
     while (ret == 1) {
-      ret = xmlTextReaderRead(readerPtr);
+        ret = xmlTextReaderRead(readerPtr);
     }
 
     /*
@@ -33,30 +35,32 @@ static void processDoc(xmlTextReaderPtr readerPtr) {
      */
     docPtr = xmlTextReaderCurrentDoc(readerPtr);
     if (NULL == docPtr) {
-      fprintf(stderr, "failed to obtain document\n");      
-      return;
+        fprintf(stderr, "failed to obtain document\n");
+        return;
     }
-      
+
     URL = docPtr->URL;
     if (NULL == URL) {
-      fprintf(stderr, "Failed to obtain URL\n");      
+        fprintf(stderr, "Failed to obtain URL\n");
     }
 
     if (ret != 0) {
-      fprintf(stderr, "%s: Failed to parse\n", URL);
-      return;
+        fprintf(stderr, "%s: Failed to parse\n", URL);
+        return;
     }
 
-    printf("%s: Processed ok\n", (const char *)URL);
+    printf("%s: Processed ok\n", (const char *) URL);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     xmlTextReaderPtr readerPtr;
     int i;
     xmlDocPtr docPtr;
 
     if (argc < 2)
-        return(1);
+        return 1;
 
     /*
      * this initialises the library and check potential ABI mismatches
@@ -71,20 +75,20 @@ int main(int argc, char **argv) {
      */
     readerPtr = xmlReaderForFile(argv[1], NULL, 0);
     if (NULL == readerPtr) {
-      fprintf(stderr, "%s: failed to create reader\n", argv[1]);      
-      return(1);
+        fprintf(stderr, "%s: failed to create reader\n", argv[1]);
+        return 1;
     }
     processDoc(readerPtr);
 
     /*
      * The reader can be reused for subsequent files.
      */
-    for (i=2; i < argc; ++i) {
-      	xmlReaderNewFile(readerPtr, argv[i], NULL, 0);
-	if (NULL == readerPtr) {
-	  fprintf(stderr, "%s: failed to create reader\n", argv[i]);      
-	  return(1);
-	}
+    for (i = 2; i < argc; ++i) {
+        xmlReaderNewFile(readerPtr, argv[i], NULL, 0);
+        if (NULL == readerPtr) {
+            fprintf(stderr, "%s: failed to create reader\n", argv[i]);
+            return 1;
+        }
         processDoc(readerPtr);
     }
 
@@ -96,19 +100,21 @@ int main(int argc, char **argv) {
      */
     docPtr = xmlTextReaderCurrentDoc(readerPtr);
     if (docPtr != NULL)
-      xmlFreeDoc(docPtr);
+        xmlFreeDoc(docPtr);
 
     /*
      * Clean up the reader.
      */
     xmlFreeTextReader(readerPtr);
 
-    return(0);
+    return 0;
 }
 
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "xmlReader support not compiled in\n");
-    return(0);
+    return 0;
 }
 #endif
