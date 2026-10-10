@@ -23,7 +23,8 @@ static const char *document = "<doc/>";
  * Parse the in memory document and free the resulting tree
  */
 static void
-example3Func(const char *content, int length) {
+example3Func (const char *content, int length)
+{
     xmlDocPtr doc; /* the resulting document tree */
 
     /*
@@ -33,12 +34,14 @@ example3Func(const char *content, int length) {
     doc = xmlReadMemory(content, length, "noname.xml", NULL, 0);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse document\n");
-	return;
+        return;
     }
     xmlFreeDoc(doc);
 }
 
-int main(void) {
+int
+main (void)
+{
     /*
      * this initialize the library and check potential ABI mismatches
      * between the version it was compiled for and the actual shared
@@ -48,5 +51,5 @@ int main(void) {
 
     example3Func(document, 6);
 
-    return(0);
+    return 0;
 }
