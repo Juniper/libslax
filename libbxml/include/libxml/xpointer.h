@@ -36,13 +36,10 @@ extern "C" {
  * Functions.
  */
 XML_DEPRECATED
-XMLPUBFUN xmlXPathContext *
-		    xmlXPtrNewContext		(xmlDoc *doc,
-						 xmlNode *here,
-						 xmlNode *origin);
-XMLPUBFUN xmlXPathObject *
-		    xmlXPtrEval			(const xmlChar *str,
-						 xmlXPathContext *ctx);
+XMLPUBFUN xmlXPathContext *xmlXPtrNewContext (xmlDoc *doc, xmlNode *here,
+                                              xmlNode *origin);
+XMLPUBFUN xmlXPathObject *xmlXPtrEval (const xmlChar *str,
+                                       xmlXPathContext *ctx);
 
 #ifdef __cplusplus
 }
