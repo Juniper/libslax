@@ -37,9 +37,9 @@ typedef struct _xsltAttrVT xsltAttrVT;
 typedef xsltAttrVT *xsltAttrVTPtr;
 struct _xsltAttrVT {
     struct _xsltAttrVT *next; /* next xsltAttrVT */
-    int nb_seg;		/* Number of segments */
-    int max_seg;	/* max capacity before re-alloc needed */
-    int strstart;	/* is the start a string */
+    int nb_seg;               /* Number of segments */
+    int max_seg;              /* max capacity before re-alloc needed */
+    int strstart;             /* is the start a string */
     /*
      * the namespaces in scope
      */
@@ -65,16 +65,18 @@ struct _xsltAttrVT {
  * Returns the structure or NULL in case of error
  */
 static xsltAttrVTPtr
-xsltNewAttrVT(xsltStylesheetPtr style) {
+xsltNewAttrVT (xsltStylesheetPtr style)
+{
     xsltAttrVTPtr cur;
-    size_t size = sizeof(xsltAttrVT) + MAX_AVT_SEG * sizeof(void*);
+    size_t size = sizeof(xsltAttrVT) + MAX_AVT_SEG * sizeof(void *);
 
     cur = (xsltAttrVTPtr) xmlMalloc(size);
     if (cur == NULL) {
-	xsltTransformError(NULL, style, NULL,
-		"xsltNewAttrVTPtr : malloc failed\n");
-	if (style != NULL) style->errors++;
-	return(NULL);
+        xsltTransformError(NULL, style, NULL,
+                           "xsltNewAttrVTPtr : malloc failed\n");
+        if (style != NULL)
+            style->errors++;
+        return NULL;
     }
     memset(cur, 0, size);
 
@@ -88,7 +90,7 @@ xsltNewAttrVT(xsltStylesheetPtr style) {
      */
     style->attVTs = (xsltAttrVTPtr) cur;
 
-    return(cur);
+    return cur;
 }
 
 /**
@@ -98,23 +100,25 @@ xsltNewAttrVT(xsltStylesheetPtr style) {
  * Free up the memory associated to the attribute value template
  */
 static void
-xsltFreeAttrVT(xsltAttrVTPtr avt) {
+xsltFreeAttrVT (xsltAttrVTPtr avt)
+{
     int i;
 
-    if (avt == NULL) return;
+    if (avt == NULL)
+        return;
 
     if (avt->strstart == 1) {
-	for (i = 0;i < avt->nb_seg; i += 2)
-	    if (avt->segments[i] != NULL)
-		xmlFree((xmlChar *) avt->segments[i]);
-	for (i = 1;i < avt->nb_seg; i += 2)
-	    xmlXPathFreeCompExpr((xmlXPathCompExprPtr) avt->segments[i]);
+        for (i = 0; i < avt->nb_seg; i += 2)
+            if (avt->segments[i] != NULL)
+                xmlFree((xmlChar *) avt->segments[i]);
+        for (i = 1; i < avt->nb_seg; i += 2)
+            xmlXPathFreeCompExpr((xmlXPathCompExprPtr) avt->segments[i]);
     } else {
-	for (i = 0;i < avt->nb_seg; i += 2)
-	    xmlXPathFreeCompExpr((xmlXPathCompExprPtr) avt->segments[i]);
-	for (i = 1;i < avt->nb_seg; i += 2)
-	    if (avt->segments[i] != NULL)
-		xmlFree((xmlChar *) avt->segments[i]);
+        for (i = 0; i < avt->nb_seg; i += 2)
+            xmlXPathFreeCompExpr((xmlXPathCompExprPtr) avt->segments[i]);
+        for (i = 1; i < avt->nb_seg; i += 2)
+            if (avt->segments[i] != NULL)
+                xmlFree((xmlChar *) avt->segments[i]);
     }
     if (avt->nsList != NULL)
         xmlFree(avt->nsList);
@@ -128,13 +132,14 @@ xsltFreeAttrVT(xsltAttrVTPtr avt) {
  * Free up the memory associated to the attribute value templates
  */
 void
-xsltFreeAVTList(void *avt) {
+xsltFreeAVTList (void *avt)
+{
     xsltAttrVTPtr cur = (xsltAttrVTPtr) avt, next;
 
     while (cur != NULL) {
         next = cur->next;
-	xsltFreeAttrVT(cur);
-	cur = next;
+        xsltFreeAttrVT(cur);
+        cur = next;
     }
 }
 /**
@@ -150,15 +155,16 @@ xsltFreeAVTList(void *avt) {
  * Returns the avt pointer, which may have been changed by a re-alloc
  */
 static xsltAttrVTPtr
-xsltSetAttrVTsegment(xsltAttrVTPtr avt, void *val) {
+xsltSetAttrVTsegment (xsltAttrVTPtr avt, void *val)
+{
     if (avt->nb_seg >= avt->max_seg) {
-        size_t size = sizeof(xsltAttrVT) +
-                      (avt->max_seg + MAX_AVT_SEG) * sizeof(void *);
-	avt = (xsltAttrVTPtr) xmlRealloc(avt, size);
-	if (avt == NULL)
-	    return NULL;
-	memset(&avt->segments[avt->nb_seg], 0, MAX_AVT_SEG*sizeof(void *));
-	avt->max_seg += MAX_AVT_SEG;
+        size_t size = sizeof(xsltAttrVT)
+            + (avt->max_seg + MAX_AVT_SEG) * sizeof(void *);
+        avt = (xsltAttrVTPtr) xmlRealloc(avt, size);
+        if (avt == NULL)
+            return NULL;
+        memset(&avt->segments[avt->nb_seg], 0, MAX_AVT_SEG * sizeof(void *));
+        avt->max_seg += MAX_AVT_SEG;
     }
     avt->segments[avt->nb_seg++] = val;
     return avt;
@@ -174,7 +180,8 @@ xsltSetAttrVTsegment(xsltAttrVTPtr avt, void *val) {
  * to process it at transformation time.
  */
 void
-xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
+xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
+{
     const xmlChar *str;
     const xmlChar *cur;
     xmlChar *ret = NULL;
@@ -185,26 +192,28 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
 
     if ((style == NULL) || (attr == NULL) || (xmlAttrGetChildren(attr) == NULL))
         return;
-    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
-        (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
-        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
-	    "Attribute '%s': The content is expected to be a single text "
-	    "node when compiling an AVT.\n", xmlAttrGetName(attr));
-	style->errors++;
-	return;
+    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
+        || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+        xsltTransformError(
+            NULL, style, xmlAttrGetParent(attr),
+            "Attribute '%s': The content is expected to be a single text "
+            "node when compiling an AVT.\n",
+            xmlAttrGetName(attr));
+        style->errors++;
+        return;
     }
     str = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
-    if ((xmlStrchr(str, '{') == NULL) &&
-        (xmlStrchr(str, '}') == NULL)) return;
+    if ((xmlStrchr(str, '{') == NULL) && (xmlStrchr(str, '}') == NULL))
+        return;
 
 #ifdef WITH_XSLT_DEBUG_AVT
-    xsltGenericDebug(xsltGenericDebugContext,
-		    "Found AVT %s: %s\n", xmlAttrGetName(attr), str);
+    xsltGenericDebug(xsltGenericDebugContext, "Found AVT %s: %s\n",
+                     xmlAttrGetName(attr), str);
 #endif
     if (xmlAttrGetPsvi(attr) != NULL) {
 #ifdef WITH_XSLT_DEBUG_AVT
-	xsltGenericDebug(xsltGenericDebugContext,
-			"AVT %s: already compiled\n", xmlAttrGetName(attr));
+        xsltGenericDebug(xsltGenericDebugContext, "AVT %s: already compiled\n",
+                         xmlAttrGetName(attr));
 #endif
         return;
     }
@@ -213,154 +222,157 @@ xsltCompileAttr(xsltStylesheetPtr style, xmlAttrPtr attr) {
     */
     avt = xsltNewAttrVT(style);
     if (avt == NULL)
-	return;
+        return;
     xmlAttrSetPsvi(attr, avt);
 
     avt->nsList = xmlGetNsList(xmlAttrGetDoc(attr), xmlAttrGetParent(attr));
     if (avt->nsList != NULL) {
-	while (avt->nsList[i] != NULL)
-	    i++;
+        while (avt->nsList[i] != NULL)
+            i++;
     }
     avt->nsNr = i;
 
     cur = str;
     while (*cur != 0) {
-	if (*cur == '{') {
-	    if (*(cur+1) == '{') {	/* escaped '{' */
-	        cur++;
-		ret = xmlStrncat(ret, str, cur - str);
-		cur++;
-		str = cur;
-		continue;
-	    }
-	    if (*(cur+1) == '}') {	/* skip empty AVT */
-		ret = xmlStrncat(ret, str, cur - str);
-	        cur += 2;
-		str = cur;
-		continue;
-	    }
-	    if ((ret != NULL) || (cur - str > 0)) {
-		ret = xmlStrncat(ret, str, cur - str);
-		str = cur;
-		if (avt->nb_seg == 0)
-		    avt->strstart = 1;
-		if ((tmp = xsltSetAttrVTsegment(avt, (void *) ret)) == NULL)
-		    goto error;
+        if (*cur == '{') {
+            if (*(cur + 1) == '{') { /* escaped '{' */
+                cur++;
+                ret = xmlStrncat(ret, str, cur - str);
+                cur++;
+                str = cur;
+                continue;
+            }
+            if (*(cur + 1) == '}') { /* skip empty AVT */
+                ret = xmlStrncat(ret, str, cur - str);
+                cur += 2;
+                str = cur;
+                continue;
+            }
+            if ((ret != NULL) || (cur - str > 0)) {
+                ret = xmlStrncat(ret, str, cur - str);
+                str = cur;
+                if (avt->nb_seg == 0)
+                    avt->strstart = 1;
+                if ((tmp = xsltSetAttrVTsegment(avt, (void *) ret)) == NULL)
+                    goto error;
                 avt = tmp;
-		ret = NULL;
-		lastavt = 0;
-	    }
+                ret = NULL;
+                lastavt = 0;
+            }
 
-	    cur++;
-	    while ((*cur != 0) && (*cur != '}')) {
-		/* Need to check for literal (bug539741) */
-		if ((*cur == '\'') || (*cur == '"')) {
-		    char delim = *(cur++);
-		    while ((*cur != 0) && (*cur != delim))
-			cur++;
-		    if (*cur != 0)
-			cur++;	/* skip the ending delimiter */
-		} else
-		    cur++;
-	    }
-	    if (*cur == 0) {
-	        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
-		     "Attribute '%s': The AVT has an unmatched '{'.\n",
-		     xmlAttrGetName(attr));
-		style->errors++;
-		goto error;
-	    }
-	    str++;
-	    expr = xmlStrndup(str, cur - str);
-	    if (expr == NULL) {
-		/*
+            cur++;
+            while ((*cur != 0) && (*cur != '}')) {
+                /* Need to check for literal (bug539741) */
+                if ((*cur == '\'') || (*cur == '"')) {
+                    char delim = *(cur++);
+                    while ((*cur != 0) && (*cur != delim))
+                        cur++;
+                    if (*cur != 0)
+                        cur++; /* skip the ending delimiter */
+                } else
+                    cur++;
+            }
+            if (*cur == 0) {
+                xsltTransformError(
+                    NULL, style, xmlAttrGetParent(attr),
+                    "Attribute '%s': The AVT has an unmatched '{'.\n",
+                    xmlAttrGetName(attr));
+                style->errors++;
+                goto error;
+            }
+            str++;
+            expr = xmlStrndup(str, cur - str);
+            if (expr == NULL) {
+                /*
 		* TODO: What needs to be done here?
 		*/
-	        XSLT_TODO
-		goto error;
-	    } else {
-		comp = xsltXPathCompile(style, expr);
-		if (comp == NULL) {
-		    xsltTransformError(NULL, style, xmlAttrGetParent(attr),
-			 "Attribute '%s': Failed to compile the expression "
-			 "'%s' in the AVT.\n", xmlAttrGetName(attr), expr);
-		    style->errors++;
-		    goto error;
-		}
-		if (avt->nb_seg == 0)
-		    avt->strstart = 0;
-		if (lastavt == 1) {
-		    if ((tmp = xsltSetAttrVTsegment(avt, NULL)) == NULL) {
+                XSLT_TODO
+                goto error;
+            } else {
+                comp = xsltXPathCompile(style, expr);
+                if (comp == NULL) {
+                    xsltTransformError(
+                        NULL, style, xmlAttrGetParent(attr),
+                        "Attribute '%s': Failed to compile the expression "
+                        "'%s' in the AVT.\n",
+                        xmlAttrGetName(attr), expr);
+                    style->errors++;
+                    goto error;
+                }
+                if (avt->nb_seg == 0)
+                    avt->strstart = 0;
+                if (lastavt == 1) {
+                    if ((tmp = xsltSetAttrVTsegment(avt, NULL)) == NULL) {
                         xsltTransformError(NULL, style, xmlAttrGetParent(attr),
                                            "out of memory\n");
-		        goto error;
+                        goto error;
                     }
                     avt = tmp;
-		}
-		if ((tmp = xsltSetAttrVTsegment(avt, (void *) comp)) == NULL) {
+                }
+                if ((tmp = xsltSetAttrVTsegment(avt, (void *) comp)) == NULL) {
                     xsltTransformError(NULL, style, xmlAttrGetParent(attr),
                                        "out of memory\n");
-		    goto error;
+                    goto error;
                 }
                 avt = tmp;
-		lastavt = 1;
-		xmlFree(expr);
-		expr = NULL;
+                lastavt = 1;
+                xmlFree(expr);
+                expr = NULL;
                 comp = NULL;
-	    }
-	    cur++;
-	    str = cur;
-	} else if (*cur == '}') {
-	    cur++;
-	    if (*cur == '}') {	/* escaped '}' */
-		ret = xmlStrncat(ret, str, cur - str);
-		cur++;
-		str = cur;
-		continue;
-	    } else {
-	        xsltTransformError(NULL, style, xmlAttrGetParent(attr),
-		     "Attribute '%s': The AVT has an unmatched '}'.\n",
-		     xmlAttrGetName(attr));
-		goto error;
-	    }
-	} else
-	    cur++;
+            }
+            cur++;
+            str = cur;
+        } else if (*cur == '}') {
+            cur++;
+            if (*cur == '}') { /* escaped '}' */
+                ret = xmlStrncat(ret, str, cur - str);
+                cur++;
+                str = cur;
+                continue;
+            } else {
+                xsltTransformError(
+                    NULL, style, xmlAttrGetParent(attr),
+                    "Attribute '%s': The AVT has an unmatched '}'.\n",
+                    xmlAttrGetName(attr));
+                goto error;
+            }
+        } else
+            cur++;
     }
     if ((ret != NULL) || (cur - str > 0)) {
-	ret = xmlStrncat(ret, str, cur - str);
-	str = cur;
-	if (avt->nb_seg == 0)
-	    avt->strstart = 1;
-	if ((tmp = xsltSetAttrVTsegment(avt, (void *) ret)) == NULL)
-	    goto error;
+        ret = xmlStrncat(ret, str, cur - str);
+        str = cur;
+        if (avt->nb_seg == 0)
+            avt->strstart = 1;
+        if ((tmp = xsltSetAttrVTsegment(avt, (void *) ret)) == NULL)
+            goto error;
         avt = tmp;
-	ret = NULL;
+        ret = NULL;
     }
 
 error:
     if (avt == NULL) {
         xsltTransformError(NULL, style, xmlAttrGetParent(attr),
-		"xsltCompileAttr: malloc problem\n");
+                           "xsltCompileAttr: malloc problem\n");
     } else {
-        if (xmlAttrGetPsvi(attr) != avt) {  /* may have changed from realloc */
+        if (xmlAttrGetPsvi(attr) != avt) { /* may have changed from realloc */
             xmlAttrSetPsvi(attr, avt);
-	    /*
+            /*
 	     * This is a "hack", but I can't see any clean method of
 	     * doing it.  If a re-alloc has taken place, then the pointer
 	     * for this AVT may have changed.  style->attVTs was set by
 	     * xsltNewAttrVT, so it needs to be re-set to the new value!
 	     */
-	    style->attVTs = avt;
-	}
+            style->attVTs = avt;
+        }
     }
     if (ret != NULL)
-	xmlFree(ret);
+        xmlFree(ret);
     if (expr != NULL)
-	xmlFree(expr);
+        xmlFree(expr);
     if (comp != NULL)
         xmlXPathFreeCompExpr(comp);
 }
-
 
 /**
  * xsltEvalAVT:
@@ -374,7 +386,8 @@ error:
  *         caller.
  */
 xmlChar *
-xsltEvalAVT(xsltTransformContextPtr ctxt, void *avt, xmlNodePtr node) {
+xsltEvalAVT (xsltTransformContextPtr ctxt, void *avt, xmlNodePtr node)
+{
     xmlChar *ret = NULL, *tmp;
     xmlXPathCompExprPtr comp;
     xsltAttrVTPtr cur = (xsltAttrVTPtr) avt;
@@ -382,24 +395,24 @@ xsltEvalAVT(xsltTransformContextPtr ctxt, void *avt, xmlNodePtr node) {
     int str;
 
     if ((ctxt == NULL) || (avt == NULL) || (node == NULL))
-        return(NULL);
+        return NULL;
     str = cur->strstart;
-    for (i = 0;i < cur->nb_seg;i++) {
+    for (i = 0; i < cur->nb_seg; i++) {
         if (str) {
-	    ret = xmlStrcat(ret, (const xmlChar *) cur->segments[i]);
-	} else {
-	    comp = (xmlXPathCompExprPtr) cur->segments[i];
-	    tmp = xsltEvalXPathStringNs(ctxt, comp, cur->nsNr, cur->nsList);
-	    if (tmp != NULL) {
-	        if (ret != NULL) {
-		    ret = xmlStrcat(ret, tmp);
-		    xmlFree(tmp);
-		} else {
-		    ret = tmp;
-		}
-	    }
-	}
-	str = !str;
+            ret = xmlStrcat(ret, (const xmlChar *) cur->segments[i]);
+        } else {
+            comp = (xmlXPathCompExprPtr) cur->segments[i];
+            tmp = xsltEvalXPathStringNs(ctxt, comp, cur->nsNr, cur->nsList);
+            if (tmp != NULL) {
+                if (ret != NULL) {
+                    ret = xmlStrcat(ret, tmp);
+                    xmlFree(tmp);
+                } else {
+                    ret = tmp;
+                }
+            }
+        }
+        str = !str;
     }
-    return(ret);
+    return ret;
 }
