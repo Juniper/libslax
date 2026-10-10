@@ -33,41 +33,28 @@ typedef xsltCompMatch *xsltCompMatchPtr;
  */
 
 XSLTPUBFUN xsltCompMatchPtr XSLTCALL
-		xsltCompilePattern	(const xmlChar *pattern,
-					 xmlDocPtr doc,
-					 xmlNodePtr node,
-					 xsltStylesheetPtr style,
-					 xsltTransformContextPtr runtime);
-XSLTPUBFUN void XSLTCALL
-		xsltFreeCompMatchList	(xsltCompMatchPtr comp);
-XSLTPUBFUN int XSLTCALL
-		xsltTestCompMatchList	(xsltTransformContextPtr ctxt,
-					 xmlNodePtr node,
-					 xsltCompMatchPtr comp);
-XSLTPUBFUN void XSLTCALL
-		xsltCompMatchClearCache	(xsltTransformContextPtr ctxt,
-					 xsltCompMatchPtr comp);
-XSLTPUBFUN void XSLTCALL
-		xsltNormalizeCompSteps	(void *payload,
-					 void *data,
-					 const xmlChar *name);
+xsltCompilePattern (const xmlChar *pattern, xmlDocPtr doc, xmlNodePtr node,
+                    xsltStylesheetPtr style, xsltTransformContextPtr runtime);
+XSLTPUBFUN void XSLTCALL xsltFreeCompMatchList (xsltCompMatchPtr comp);
+XSLTPUBFUN int XSLTCALL xsltTestCompMatchList (xsltTransformContextPtr ctxt,
+                                               xmlNodePtr node,
+                                               xsltCompMatchPtr comp);
+XSLTPUBFUN void XSLTCALL xsltCompMatchClearCache (xsltTransformContextPtr ctxt,
+                                                  xsltCompMatchPtr comp);
+XSLTPUBFUN void XSLTCALL xsltNormalizeCompSteps (void *payload, void *data,
+                                                 const xmlChar *name);
 
 /*
  * Template related interfaces.
  */
-XSLTPUBFUN int XSLTCALL
-		xsltAddTemplate		(xsltStylesheetPtr style,
-					 xsltTemplatePtr cur,
-					 const xmlChar *mode,
-					 const xmlChar *modeURI);
-XSLTPUBFUN xsltTemplatePtr XSLTCALL
-		xsltGetTemplate		(xsltTransformContextPtr ctxt,
-					 xmlNodePtr node,
-					 xsltStylesheetPtr style);
-XSLTPUBFUN void XSLTCALL
-		xsltFreeTemplateHashes	(xsltStylesheetPtr style);
-XSLTPUBFUN void XSLTCALL
-		xsltCleanupTemplates	(xsltStylesheetPtr style);
+XSLTPUBFUN int XSLTCALL xsltAddTemplate (xsltStylesheetPtr style,
+                                         xsltTemplatePtr cur,
+                                         const xmlChar *mode,
+                                         const xmlChar *modeURI);
+XSLTPUBFUN xsltTemplatePtr XSLTCALL xsltGetTemplate (
+    xsltTransformContextPtr ctxt, xmlNodePtr node, xsltStylesheetPtr style);
+XSLTPUBFUN void XSLTCALL xsltFreeTemplateHashes (xsltStylesheetPtr style);
+XSLTPUBFUN void XSLTCALL xsltCleanupTemplates (xsltStylesheetPtr style);
 
 #if 0
 int		xsltMatchPattern	(xsltTransformContextPtr ctxt,
@@ -81,4 +68,3 @@ int		xsltMatchPattern	(xsltTransformContextPtr ctxt,
 #endif
 
 #endif /* __XML_XSLT_PATTERN_H__ */
-
