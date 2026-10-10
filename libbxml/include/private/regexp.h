@@ -8,18 +8,16 @@
 /*
  * -2 and -3 are used by xmlValidateElementType for other things.
  */
-#define XML_REGEXP_OK               0
-#define XML_REGEXP_NOT_FOUND        (-1)
-#define XML_REGEXP_INTERNAL_ERROR   (-4)
-#define XML_REGEXP_OUT_OF_MEMORY    (-5)
-#define XML_REGEXP_INTERNAL_LIMIT   (-6)
-#define XML_REGEXP_INVALID_UTF8     (-7)
+#define XML_REGEXP_OK             0
+#define XML_REGEXP_NOT_FOUND      (-1)
+#define XML_REGEXP_INTERNAL_ERROR (-4)
+#define XML_REGEXP_OUT_OF_MEMORY  (-5)
+#define XML_REGEXP_INTERNAL_LIMIT (-6)
+#define XML_REGEXP_INVALID_UTF8   (-7)
 
-XML_HIDDEN void
-xmlAutomataSetFlags(xmlAutomata *am, int flags);
+XML_HIDDEN void xmlAutomataSetFlags (xmlAutomata *am, int flags);
 
-XML_HIDDEN void
-xmlRegExecClearErrors(xmlRegExecCtxt* exec);
+XML_HIDDEN void xmlRegExecClearErrors (xmlRegExecCtxt *exec);
 
 #endif /* LIBXML_REGEXP_ENABLED */
 
