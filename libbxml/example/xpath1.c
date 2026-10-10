@@ -20,29 +20,32 @@
 
 #if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_SAX1_ENABLED)
 
+static void usage (const char *name);
+int execute_xpath_expression (const char *filename, const xmlChar *xpathExpr,
+                              const xmlChar *nsList);
+int register_namespaces (xmlXPathContextPtr xpathCtx, const xmlChar *nsList);
+void print_xpath_nodes (xmlNodeSetPtr nodes, FILE *output);
 
-static void usage(const char *name);
-int  execute_xpath_expression(const char* filename, const xmlChar* xpathExpr, const xmlChar* nsList);
-int  register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList);
-void print_xpath_nodes(xmlNodeSetPtr nodes, FILE* output);
-
-int 
-main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     /* Parse command line and process file */
-    if((argc < 3) || (argc > 4)) {
-	fprintf(stderr, "Error: wrong number of arguments.\n");
-	usage(argv[0]);
-	return(-1);
-    } 
-    
-    /* Init libxml */     
+    if ((argc < 3) || (argc > 4)) {
+        fprintf(stderr, "Error: wrong number of arguments.\n");
+        usage(argv[0]);
+        return -1;
+    }
+
+    /* Init libxml */
     xmlInitParser();
     LIBXML_TEST_VERSION
 
     /* Do the main job */
-    if(execute_xpath_expression(argv[1], BAD_CAST argv[2], (argc > 3) ? BAD_CAST argv[3] : NULL) < 0) {
-	usage(argv[0]);
-	return(-1);
+    if (execute_xpath_expression(argv[1], BAD_CAST argv[2],
+                                 (argc > 3) ? BAD_CAST argv[3] : NULL)
+        < 0) {
+        usage(argv[0]);
+        return -1;
     }
 
     return 0;
@@ -54,11 +57,13 @@ main(int argc, char **argv) {
  *
  * Prints usage information.
  */
-static void 
-usage(const char *name) {
+static void
+usage (const char *name)
+{
     assert(name);
-    
-    fprintf(stderr, "Usage: %s <xml-file> <xpath-expr> [<known-ns-list>]\n", name);
+
+    fprintf(stderr, "Usage: %s <xml-file> <xpath-expr> [<known-ns-list>]\n",
+            name);
     fprintf(stderr, "where <known-ns-list> is a list of known namespaces\n");
     fprintf(stderr, "in \"<prefix1>=<href1> <prefix2>=href2> ...\" format\n");
 }
@@ -74,45 +79,49 @@ usage(const char *name) {
  *
  * Returns 0 on success and a negative value otherwise.
  */
-int 
-execute_xpath_expression(const char* filename, const xmlChar* xpathExpr, const xmlChar* nsList) {
+int
+execute_xpath_expression (const char *filename, const xmlChar *xpathExpr,
+                          const xmlChar *nsList)
+{
     xmlDocPtr doc;
-    xmlXPathContextPtr xpathCtx; 
-    xmlXPathObjectPtr xpathObj; 
-    
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+
     assert(filename);
     assert(xpathExpr);
 
     /* Load XML document */
     doc = xmlParseFile(filename);
     if (doc == NULL) {
-	fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
-	return(-1);
+        fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
+        return -1;
     }
 
     /* Create xpath evaluation context */
     xpathCtx = xmlXPathNewContext(doc);
-    if(xpathCtx == NULL) {
-        fprintf(stderr,"Error: unable to create new XPath context\n");
-        xmlFreeDoc(doc); 
-        return(-1);
+    if (xpathCtx == NULL) {
+        fprintf(stderr, "Error: unable to create new XPath context\n");
+        xmlFreeDoc(doc);
+        return -1;
     }
-    
+
     /* Register namespaces from list (if any) */
-    if((nsList != NULL) && (register_namespaces(xpathCtx, nsList) < 0)) {
-        fprintf(stderr,"Error: failed to register namespaces list \"%s\"\n", nsList);
-        xmlXPathFreeContext(xpathCtx); 
-        xmlFreeDoc(doc); 
-        return(-1);
+    if ((nsList != NULL) && (register_namespaces(xpathCtx, nsList) < 0)) {
+        fprintf(stderr, "Error: failed to register namespaces list \"%s\"\n",
+                nsList);
+        xmlXPathFreeContext(xpathCtx);
+        xmlFreeDoc(doc);
+        return -1;
     }
 
     /* Evaluate xpath expression */
     xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-    if(xpathObj == NULL) {
-        fprintf(stderr,"Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
-        xmlXPathFreeContext(xpathCtx); 
-        xmlFreeDoc(doc); 
-        return(-1);
+    if (xpathObj == NULL) {
+        fprintf(stderr, "Error: unable to evaluate xpath expression \"%s\"\n",
+                xpathExpr);
+        xmlXPathFreeContext(xpathCtx);
+        xmlFreeDoc(doc);
+        return -1;
     }
 
     /* Print results */
@@ -120,10 +129,10 @@ execute_xpath_expression(const char* filename, const xmlChar* xpathExpr, const x
 
     /* Cleanup */
     xmlXPathFreeObject(xpathObj);
-    xmlXPathFreeContext(xpathCtx); 
-    xmlFreeDoc(doc); 
-    
-    return(0);
+    xmlXPathFreeContext(xpathCtx);
+    xmlFreeDoc(doc);
+
+    return 0;
 }
 
 /**
@@ -136,55 +145,61 @@ execute_xpath_expression(const char* filename, const xmlChar* xpathExpr, const x
  *
  * Returns 0 on success and a negative value otherwise.
  */
-int 
-register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
-    xmlChar* nsListDup;
-    xmlChar* prefix;
-    xmlChar* href;
-    xmlChar* next;
-    
+int
+register_namespaces (xmlXPathContextPtr xpathCtx, const xmlChar *nsList)
+{
+    xmlChar *nsListDup;
+    xmlChar *prefix;
+    xmlChar *href;
+    xmlChar *next;
+
     assert(xpathCtx);
     assert(nsList);
 
     nsListDup = xmlStrdup(nsList);
-    if(nsListDup == NULL) {
-	fprintf(stderr, "Error: unable to strdup namespaces list\n");
-	return(-1);	
+    if (nsListDup == NULL) {
+        fprintf(stderr, "Error: unable to strdup namespaces list\n");
+        return -1;
     }
-    
-    next = nsListDup; 
-    while(next != NULL) {
-	/* skip spaces */
-	while((*next) == ' ') next++;
-	if((*next) == '\0') break;
 
-	/* find prefix */
-	prefix = next;
-	next = (xmlChar*)xmlStrchr(next, '=');
-	if(next == NULL) {
-	    fprintf(stderr,"Error: invalid namespaces list format\n");
-	    xmlFree(nsListDup);
-	    return(-1);	
-	}
-	*(next++) = '\0';	
-	
-	/* find href */
-	href = next;
-	next = (xmlChar*)xmlStrchr(next, ' ');
-	if(next != NULL) {
-	    *(next++) = '\0';	
-	}
+    next = nsListDup;
+    while (next != NULL) {
+        /* skip spaces */
+        while ((*next) == ' ')
+            next++;
+        if ((*next) == '\0')
+            break;
 
-	/* do register namespace */
-	if(xmlXPathRegisterNs(xpathCtx, prefix, href) != 0) {
-	    fprintf(stderr,"Error: unable to register NS with prefix=\"%s\" and href=\"%s\"\n", prefix, href);
-	    xmlFree(nsListDup);
-	    return(-1);	
-	}
+        /* find prefix */
+        prefix = next;
+        next = (xmlChar *) xmlStrchr(next, '=');
+        if (next == NULL) {
+            fprintf(stderr, "Error: invalid namespaces list format\n");
+            xmlFree(nsListDup);
+            return -1;
+        }
+        *(next++) = '\0';
+
+        /* find href */
+        href = next;
+        next = (xmlChar *) xmlStrchr(next, ' ');
+        if (next != NULL) {
+            *(next++) = '\0';
+        }
+
+        /* do register namespace */
+        if (xmlXPathRegisterNs(xpathCtx, prefix, href) != 0) {
+            fprintf(stderr,
+                    "Error: unable to register NS with prefix=\"%s\" and "
+                    "href=\"%s\"\n",
+                    prefix, href);
+            xmlFree(nsListDup);
+            return -1;
+        }
     }
-    
+
     xmlFree(nsListDup);
-    return(0);
+    return 0;
 }
 
 /**
@@ -195,48 +210,50 @@ register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
  * Prints the @nodes content to @output.
  */
 void
-print_xpath_nodes(xmlNodeSetPtr nodes, FILE* output) {
+print_xpath_nodes (xmlNodeSetPtr nodes, FILE *output)
+{
     xmlNodePtr cur;
     int size;
     int i;
-    
+
     assert(output);
     size = (nodes) ? nodes->nodeNr : 0;
-    
+
     fprintf(output, "Result (%d nodes):\n", size);
-    for(i = 0; i < size; ++i) {
-	assert(nodes->nodeTab[i]);
-	
-	if(nodes->nodeTab[i]->type == XML_NAMESPACE_DECL) {
-	    xmlNsPtr ns;
-	    
-	    ns = (xmlNsPtr)nodes->nodeTab[i];
-	    cur = (xmlNodePtr)ns->next;
-	    if(cur->ns) { 
-	        fprintf(output, "= namespace \"%s\"=\"%s\" for node %s:%s\n", 
-		    ns->prefix, ns->href, cur->ns->href, cur->name);
-	    } else {
-	        fprintf(output, "= namespace \"%s\"=\"%s\" for node %s\n", 
-		    ns->prefix, ns->href, cur->name);
-	    }
-	} else if(nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
-	    cur = nodes->nodeTab[i];   	    
-	    if(cur->ns) { 
-    	        fprintf(output, "= element node \"%s:%s\"\n", 
-		    cur->ns->href, cur->name);
-	    } else {
-    	        fprintf(output, "= element node \"%s\"\n", 
-		    cur->name);
-	    }
-	} else {
-	    cur = nodes->nodeTab[i];    
-	    fprintf(output, "= node \"%s\": type %d\n", cur->name, cur->type);
-	}
+    for (i = 0; i < size; ++i) {
+        assert(nodes->nodeTab[i]);
+
+        if (nodes->nodeTab[i]->type == XML_NAMESPACE_DECL) {
+            xmlNsPtr ns;
+
+            ns = (xmlNsPtr) nodes->nodeTab[i];
+            cur = (xmlNodePtr) ns->next;
+            if (cur->ns) {
+                fprintf(output, "= namespace \"%s\"=\"%s\" for node %s:%s\n",
+                        ns->prefix, ns->href, cur->ns->href, cur->name);
+            } else {
+                fprintf(output, "= namespace \"%s\"=\"%s\" for node %s\n",
+                        ns->prefix, ns->href, cur->name);
+            }
+        } else if (nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
+            cur = nodes->nodeTab[i];
+            if (cur->ns) {
+                fprintf(output, "= element node \"%s:%s\"\n", cur->ns->href,
+                        cur->name);
+            } else {
+                fprintf(output, "= element node \"%s\"\n", cur->name);
+            }
+        } else {
+            cur = nodes->nodeTab[i];
+            fprintf(output, "= node \"%s\": type %d\n", cur->name, cur->type);
+        }
     }
 }
 
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "XPath support not compiled in\n");
     return 0;
 }
