@@ -50,19 +50,20 @@
 
 static int failures;
 
-#define CHECK(cond, msg) do { \
-    if (cond) { \
-        printf("ok   - %s\n", msg); \
-    } else { \
-        printf("FAIL - %s (%s:%d)\n", msg, __FILE__, __LINE__); \
-        failures++; \
-    } \
-} while (0)
+#define CHECK(cond, msg)                                            \
+    do {                                                            \
+        if (cond) {                                                 \
+            printf("ok   - %s\n", msg);                             \
+        } else {                                                    \
+            printf("FAIL - %s (%s:%d)\n", msg, __FILE__, __LINE__); \
+            failures++;                                             \
+        }                                                           \
+    } while (0)
 
 /* A fresh RVT-like document with one element node, usable as an
    mvar-owned container. */
 static xmlDocPtr
-mkDoc(void)
+mkDoc (void)
 {
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlNodePtr root = xmlNewDocNode(doc, NULL, BAD_CAST "r", NULL);
@@ -72,7 +73,7 @@ mkDoc(void)
 }
 
 static xmlXPathObjectPtr
-mkNodesetVal(xmlNodePtr *nodes, int n)
+mkNodesetVal (xmlNodePtr *nodes, int n)
 {
     xmlNodeSetPtr set = xmlXPathNodeSetCreate(nodes[0]);
     int i;
@@ -84,17 +85,18 @@ mkNodesetVal(xmlNodePtr *nodes, int n)
 }
 
 static xsltStackElemPtr
-newElem(void)
+newElem (void)
 {
     xsltStackElemPtr elem = (xsltStackElemPtr) calloc(1, sizeof(xsltStackElem));
 
     elem->mvarDocsMax = 16;
-    elem->mvarDocsTab = (xmlDocPtr *) calloc(elem->mvarDocsMax, sizeof(xmlDocPtr));
+    elem->mvarDocsTab
+        = (xmlDocPtr *) calloc(elem->mvarDocsMax, sizeof(xmlDocPtr));
     return elem;
 }
 
 static void
-freeElem(xsltStackElemPtr elem)
+freeElem (xsltStackElemPtr elem)
 {
     xsltStackElemReplaceValue(elem, NULL);
     free(elem->mvarDocsTab);
@@ -109,8 +111,8 @@ freeElem(xsltStackElemPtr elem)
  * unseed dance around the call is needed and correct.
  */
 static void
-installNewMvarDocs(xsltStackElemPtr elem, xmlDocPtr *docs, int n,
-	xmlXPathObjectPtr val)
+installNewMvarDocs (xsltStackElemPtr elem, xmlDocPtr *docs, int n,
+                    xmlXPathObjectPtr val)
 {
     int i;
 
@@ -124,7 +126,7 @@ installNewMvarDocs(xsltStackElemPtr elem, xmlDocPtr *docs, int n,
 }
 
 static xmlXPathObjectPtr
-valOf(xmlDocPtr doc)
+valOf (xmlDocPtr doc)
 {
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
@@ -133,7 +135,7 @@ valOf(xmlDocPtr doc)
 
 /* ---- Scenario 1: repeated non-scalar reassignment ---- */
 static void
-test_repeated_reassignment(void)
+test_repeated_reassignment (void)
 {
     xmlDocPtr d1 = mkDoc(), d2 = mkDoc(), d3 = mkDoc();
     xsltStackElemPtr elem = newElem();
@@ -146,12 +148,12 @@ test_repeated_reassignment(void)
     installNewMvarDocs(elem, &d2, 1, valOf(d2));
     CHECK(xmlDocGetMvarRefcount(d2) == 1, "d2 refcount 1 after second set");
     CHECK(elem->mvarDocsNr == 1 && elem->mvarDocsTab[0] == d2,
-	    "elem tracks only d2 after second set");
+          "elem tracks only d2 after second set");
 
     installNewMvarDocs(elem, &d3, 1, valOf(d3));
     CHECK(xmlDocGetMvarRefcount(d3) == 1, "d3 refcount 1 after third set");
     CHECK(elem->mvarDocsNr == 1 && elem->mvarDocsTab[0] == d3,
-	    "elem tracks only d3 after third set");
+          "elem tracks only d3 after third set");
 
     /* d1 and d2 were released (and freed, under ASan/valgrind) as soon
        as each reassignment moved elem's value away from them -- nothing
@@ -163,7 +165,7 @@ test_repeated_reassignment(void)
 
 /* ---- Scenario 2: self-assignment (set $foo = $foo;) ---- */
 static void
-test_self_assignment(void)
+test_self_assignment (void)
 {
     xmlDocPtr d = mkDoc();
     xsltStackElemPtr elem = newElem();
@@ -183,12 +185,12 @@ test_self_assignment(void)
     xsltStackElemReplaceValue(elem, copy);
 
     CHECK(xmlDocGetMvarRefcount(d) == 1,
-	    "d refcount still 1 after self-assignment (no premature free)");
+          "d refcount still 1 after self-assignment (no premature free)");
     CHECK(elem->mvarDocsNr == 1 && elem->mvarDocsTab[0] == d,
-	    "elem still tracks exactly one entry for d");
-    CHECK(xmlDocGetRootElement(d) != NULL &&
-	    xmlStrEqual(xmlDocGetRootElement(d)->name, BAD_CAST "r"),
-	    "d's content still intact after self-assignment");
+          "elem still tracks exactly one entry for d");
+    CHECK(xmlDocGetRootElement(d) != NULL
+              && xmlStrEqual(xmlDocGetRootElement(d)->name, BAD_CAST "r"),
+          "d's content still intact after self-assignment");
 
     freeElem(elem);
 }
@@ -196,7 +198,7 @@ test_self_assignment(void)
 /* ---- Scenario 3: a plain variable's captured reference survives a
    later `set` on the mvar it was drawn from ---- */
 static void
-test_captured_reference_survives(void)
+test_captured_reference_survives (void)
 {
     xmlDocPtr d = mkDoc(), d2 = mkDoc();
     xsltStackElemPtr mvarElem = newElem();
@@ -213,16 +215,17 @@ test_captured_reference_survives(void)
     copy = xmlXPathObjectCopy(mvarElem->value);
     xsltStackElemReplaceValue(plainElem, copy);
     CHECK(xmlDocGetMvarRefcount(d) == 2,
-	    "d refcount 2 once a plain variable captures it too");
+          "d refcount 2 once a plain variable captures it too");
 
     /* set $foo = <d2's content>; */
     installNewMvarDocs(mvarElem, &d2, 1, valOf(d2));
-    CHECK(xmlDocGetMvarRefcount(d) == 1,
-	    "d refcount drops to 1, not 0 -- plainElem's reference keeps it alive");
+    CHECK(
+        xmlDocGetMvarRefcount(d) == 1,
+        "d refcount drops to 1, not 0 -- plainElem's reference keeps it alive");
     CHECK(xmlDocGetMvarRefcount(d2) == 1, "d2 refcount 1 after the set");
-    CHECK(xmlDocGetRootElement(d) != NULL &&
-	    xmlStrEqual(xmlDocGetRootElement(d)->name, BAD_CAST "r"),
-	    "d's content still intact through plainElem (no use-after-free)");
+    CHECK(xmlDocGetRootElement(d) != NULL
+              && xmlStrEqual(xmlDocGetRootElement(d)->name, BAD_CAST "r"),
+          "d's content still intact through plainElem (no use-after-free)");
 
     /* freeElem(plainElem) drops d's last reference and frees it here --
        nothing left to check on d afterward; reading its refcount post-free
@@ -235,7 +238,7 @@ test_captured_reference_survives(void)
 /* ---- Scenario 4: a value spanning multiple mvar-owned docs
    (e.g. a nodeset union) ---- */
 static void
-test_multi_doc_union(void)
+test_multi_doc_union (void)
 {
     xmlDocPtr da = mkDoc(), db = mkDoc(), dc = mkDoc();
     xsltStackElemPtr elem = newElem();
@@ -244,7 +247,8 @@ test_multi_doc_union(void)
 
     printf("-- value spanning multiple mvar-owned docs (union) --\n");
 
-    pair[0] = da; pair[1] = db;
+    pair[0] = da;
+    pair[1] = db;
     nodes[0] = xmlDocGetRootElement(da);
     nodes[1] = xmlDocGetRootElement(db);
     installNewMvarDocs(elem, pair, 2, mkNodesetVal(nodes, 2));
@@ -257,13 +261,13 @@ test_multi_doc_union(void)
     installNewMvarDocs(elem, &dc, 1, valOf(dc));
     CHECK(xmlDocGetMvarRefcount(dc) == 1, "dc refcount 1 after the set");
     CHECK(elem->mvarDocsNr == 1 && elem->mvarDocsTab[0] == dc,
-	    "elem tracks only dc now (da and db released and freed)");
+          "elem tracks only dc now (da and db released and freed)");
 
     freeElem(elem);
 }
 
 int
-main(void)
+main (void)
 {
     xmlInitParser();
 
@@ -275,8 +279,8 @@ main(void)
     xmlCleanupParser();
 
     if (failures == 0) {
-	printf("ALL PASS\n");
-	return 0;
+        printf("ALL PASS\n");
+        return 0;
     }
 
     printf("%d CHECK(S) FAILED\n", failures);
