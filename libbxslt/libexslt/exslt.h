@@ -4,7 +4,6 @@
  * Copy: See Copyright for the status of this software.
  */
 
-
 #ifndef __EXSLT_H__
 #define __EXSLT_H__
 
@@ -51,7 +50,8 @@ EXSLTPUBVAR const int exsltLibxmlVersion;
  *
  * Namespace for EXSLT functions extension functions
  */
-#define EXSLT_FUNCTIONS_NAMESPACE ((const xmlChar *) "http://exslt.org/functions")
+#define EXSLT_FUNCTIONS_NAMESPACE \
+    ((const xmlChar *) "http://exslt.org/functions")
 /**
  * EXSLT_STRINGS_NAMESPACE:
  *
@@ -63,7 +63,8 @@ EXSLTPUBVAR const int exsltLibxmlVersion;
  *
  * Namespace for EXSLT date functions
  */
-#define EXSLT_DATE_NAMESPACE ((const xmlChar *) "http://exslt.org/dates-and-times")
+#define EXSLT_DATE_NAMESPACE \
+    ((const xmlChar *) "http://exslt.org/dates-and-times")
 /**
  * EXSLT_DYNAMIC_NAMESPACE:
  *
@@ -88,7 +89,7 @@ EXSLTPUBFUN void EXSLTCALL exsltFuncRegister (void);
 EXSLTPUBFUN void EXSLTCALL exsltStrRegister (void);
 EXSLTPUBFUN void EXSLTCALL exsltDateRegister (void);
 EXSLTPUBFUN void EXSLTCALL exsltSaxonRegister (void);
-EXSLTPUBFUN void EXSLTCALL exsltDynRegister(void);
+EXSLTPUBFUN void EXSLTCALL exsltDynRegister (void);
 
 EXSLTPUBFUN void EXSLTCALL exsltRegisterAll (void);
 
@@ -105,4 +106,3 @@ EXSLTPUBFUN int EXSLTCALL exsltStrXpathCtxtRegister (xmlXPathContextPtr ctxt,
 }
 #endif
 #endif /* __EXSLT_H__ */
-
