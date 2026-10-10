@@ -22,31 +22,36 @@
 #define HTTP_TEST_PREFIX "http://example.org/"
 
 static int
-httpTestMatch(const char *url) {
+httpTestMatch (const char *url)
+{
     return !strncasecmp(url, HTTP_TEST_PREFIX, strlen(HTTP_TEST_PREFIX));
 }
 
 static void *
-httpTestOpen(const char *url) {
+httpTestOpen (const char *url)
+{
     char path[1024];
 
     snprintf(path, sizeof(path), "test/threads/%s",
-	     url + strlen(HTTP_TEST_PREFIX));
+             url + strlen(HTTP_TEST_PREFIX));
     return fopen(path, "rb");
 }
 
 static int
-httpTestRead(void *context, char *buffer, int len) {
+httpTestRead (void *context, char *buffer, int len)
+{
     return (int) fread(buffer, 1, len, (FILE *) context);
 }
 
 static int
-httpTestClose(void *context) {
+httpTestClose (void *context)
+{
     return fclose((FILE *) context) == 0 ? 0 : -1;
 }
 
 void
-httpTestLoaderInit(void) {
-    xmlRegisterInputCallbacks(httpTestMatch, httpTestOpen,
-			       httpTestRead, httpTestClose);
+httpTestLoaderInit (void)
+{
+    xmlRegisterInputCallbacks(httpTestMatch, httpTestOpen, httpTestRead,
+                              httpTestClose);
 }
