@@ -28,41 +28,16 @@ extern "C" {
 /*
  * The standard Dump routines.
  */
-XMLPUBFUN void
-	xmlDebugDumpString	(FILE *output,
-				 const xmlChar *str);
-XMLPUBFUN void
-	xmlDebugDumpAttr	(FILE *output,
-				 xmlAttr *attr,
-				 int depth);
-XMLPUBFUN void
-	xmlDebugDumpAttrList	(FILE *output,
-				 xmlAttr *attr,
-				 int depth);
-XMLPUBFUN void
-	xmlDebugDumpOneNode	(FILE *output,
-				 xmlNode *node,
-				 int depth);
-XMLPUBFUN void
-	xmlDebugDumpNode	(FILE *output,
-				 xmlNode *node,
-				 int depth);
-XMLPUBFUN void
-	xmlDebugDumpNodeList	(FILE *output,
-				 xmlNode *node,
-				 int depth);
-XMLPUBFUN void
-	xmlDebugDumpDocumentHead(FILE *output,
-				 xmlDoc *doc);
-XMLPUBFUN void
-	xmlDebugDumpDocument	(FILE *output,
-				 xmlDoc *doc);
-XMLPUBFUN void
-	xmlDebugDumpDTD		(FILE *output,
-				 xmlDtd *dtd);
-XMLPUBFUN void
-	xmlDebugDumpEntities	(FILE *output,
-				 xmlDoc *doc);
+XMLPUBFUN void xmlDebugDumpString (FILE *output, const xmlChar *str);
+XMLPUBFUN void xmlDebugDumpAttr (FILE *output, xmlAttr *attr, int depth);
+XMLPUBFUN void xmlDebugDumpAttrList (FILE *output, xmlAttr *attr, int depth);
+XMLPUBFUN void xmlDebugDumpOneNode (FILE *output, xmlNode *node, int depth);
+XMLPUBFUN void xmlDebugDumpNode (FILE *output, xmlNode *node, int depth);
+XMLPUBFUN void xmlDebugDumpNodeList (FILE *output, xmlNode *node, int depth);
+XMLPUBFUN void xmlDebugDumpDocumentHead (FILE *output, xmlDoc *doc);
+XMLPUBFUN void xmlDebugDumpDocument (FILE *output, xmlDoc *doc);
+XMLPUBFUN void xmlDebugDumpDTD (FILE *output, xmlDtd *dtd);
+XMLPUBFUN void xmlDebugDumpEntities (FILE *output, xmlDoc *doc);
 
 /****************************************************************
  *								*
@@ -70,9 +45,7 @@ XMLPUBFUN void
  *								*
  ****************************************************************/
 
-XMLPUBFUN int
-	xmlDebugCheckDocument	(FILE * output,
-				 xmlDoc *doc);
+XMLPUBFUN int xmlDebugCheckDocument (FILE *output, xmlDoc *doc);
 
 #ifdef __cplusplus
 }
