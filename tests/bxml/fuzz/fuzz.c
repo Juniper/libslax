@@ -55,9 +55,8 @@ int fuzzIoFailed;
  * An error function that simply discards all errors.
  */
 void
-xmlFuzzErrorFunc(void *ctx UNUSED, const char *msg UNUSED,
-                 ...) {
-}
+xmlFuzzErrorFunc (void *ctx UNUSED, const char *msg UNUSED, ...)
+{}
 
 /**
  * xmlFuzzSErrorFunc:
@@ -65,9 +64,8 @@ xmlFuzzErrorFunc(void *ctx UNUSED, const char *msg UNUSED,
  * A structured error function that simply discards all errors.
  */
 void
-xmlFuzzSErrorFunc(void *ctx UNUSED,
-                  const xmlError *error UNUSED) {
-}
+xmlFuzzSErrorFunc (void *ctx UNUSED, const xmlError *error UNUSED)
+{}
 
 /*
  * Failure injection.
@@ -77,10 +75,11 @@ xmlFuzzSErrorFunc(void *ctx UNUSED,
  * operation.
  */
 
-#define XML_FUZZ_FAILURE_ABORT   0
+#define XML_FUZZ_FAILURE_ABORT 0
 
 void
-xmlFuzzInjectFailure(size_t failurePos) {
+xmlFuzzInjectFailure (size_t failurePos)
+{
     fuzzNumAttempts = 0;
     fuzzFailurePos = failurePos;
     fuzzAllocFailed = 0;
@@ -88,7 +87,8 @@ xmlFuzzInjectFailure(size_t failurePos) {
 }
 
 static int
-xmlFuzzTryMalloc(void) {
+xmlFuzzTryMalloc (void)
+{
     if (fuzzFailurePos > 0) {
         fuzzNumAttempts += 1;
         if (fuzzNumAttempts == fuzzFailurePos) {
@@ -104,7 +104,8 @@ xmlFuzzTryMalloc(void) {
 }
 
 static int
-xmlFuzzTryIo(void) {
+xmlFuzzTryIo (void)
+{
     if (fuzzFailurePos > 0) {
         fuzzNumAttempts += 1;
         if (fuzzNumAttempts == fuzzFailurePos) {
@@ -120,7 +121,8 @@ xmlFuzzTryIo(void) {
 }
 
 static void *
-xmlFuzzMalloc(size_t size) {
+xmlFuzzMalloc (size_t size)
+{
     void *ret;
 
     if (xmlFuzzTryMalloc() < 0)
@@ -134,7 +136,8 @@ xmlFuzzMalloc(size_t size) {
 }
 
 static void *
-xmlFuzzRealloc(void *ptr, size_t size) {
+xmlFuzzRealloc (void *ptr, size_t size)
+{
     void *ret;
 
     if (xmlFuzzTryMalloc() < 0)
@@ -148,31 +151,35 @@ xmlFuzzRealloc(void *ptr, size_t size) {
 }
 
 void
-xmlFuzzMemSetup(void) {
+xmlFuzzMemSetup (void)
+{
     xmlMemSetup(free, xmlFuzzMalloc, xmlFuzzRealloc, xmlMemStrdup);
 }
 
 int
-xmlFuzzMallocFailed(void) {
+xmlFuzzMallocFailed (void)
+{
     return fuzzAllocFailed;
 }
 
 void
-xmlFuzzResetFailure(void) {
+xmlFuzzResetFailure (void)
+{
     fuzzAllocFailed = 0;
     fuzzIoFailed = 0;
 }
 
 void
-xmlFuzzCheckFailureReport(const char *func, int oomReport, int ioReport) {
+xmlFuzzCheckFailureReport (const char *func, int oomReport, int ioReport)
+{
     if (oomReport >= 0 && fuzzAllocFailed != oomReport) {
-        fprintf(stderr, "%s: malloc failure %s reported\n",
-                func, fuzzAllocFailed ? "not" : "erroneously");
+        fprintf(stderr, "%s: malloc failure %s reported\n", func,
+                fuzzAllocFailed ? "not" : "erroneously");
         abort();
     }
     if (ioReport >= 0 && fuzzIoFailed != ioReport) {
-        fprintf(stderr, "%s: IO failure %s reported\n",
-                func, fuzzIoFailed ? "not" : "erroneously");
+        fprintf(stderr, "%s: IO failure %s reported\n", func,
+                fuzzIoFailed ? "not" : "erroneously");
         abort();
     }
     fuzzAllocFailed = 0;
@@ -185,7 +192,8 @@ xmlFuzzCheckFailureReport(const char *func, int oomReport, int ioReport) {
  * Initialize fuzz data provider.
  */
 void
-xmlFuzzDataInit(const char *data, size_t size) {
+xmlFuzzDataInit (const char *data, size_t size)
+{
     fuzzData.data = data;
     fuzzData.size = size;
     fuzzData.ptr = data;
@@ -207,7 +215,8 @@ xmlFuzzDataInit(const char *data, size_t size) {
  * Cleanup fuzz data provider.
  */
 void
-xmlFuzzDataCleanup(void) {
+xmlFuzzDataCleanup (void)
+{
     xmlFree(fuzzData.outBuf);
     xmlHashFree(fuzzData.entities, xmlHashDefaultDeallocator);
 }
@@ -221,7 +230,8 @@ xmlFuzzDataCleanup(void) {
  * Write an integer to the fuzz data.
  */
 void
-xmlFuzzWriteInt(FILE *out, size_t v, int size) {
+xmlFuzzWriteInt (FILE *out, size_t v, int size)
+{
     int shift;
 
     while (size > (int) sizeof(size_t)) {
@@ -243,7 +253,8 @@ xmlFuzzWriteInt(FILE *out, size_t v, int size) {
  * Read an integer from the fuzz data.
  */
 size_t
-xmlFuzzReadInt(int size) {
+xmlFuzzReadInt (int size)
+{
     size_t ret = 0;
 
     while ((size > 0) && (fuzzData.remaining > 0)) {
@@ -262,8 +273,9 @@ xmlFuzzReadInt(int size) {
  * Return number of remaining bytes in fuzz data.
  */
 size_t
-xmlFuzzBytesRemaining(void) {
-    return(fuzzData.remaining);
+xmlFuzzBytesRemaining (void)
+{
+    return fuzzData.remaining;
 }
 
 /**
@@ -273,14 +285,15 @@ xmlFuzzBytesRemaining(void) {
  * Read remaining bytes from fuzz data.
  */
 const char *
-xmlFuzzReadRemaining(size_t *size) {
+xmlFuzzReadRemaining (size_t *size)
+{
     const char *ret = fuzzData.ptr;
 
     *size = fuzzData.remaining;
     fuzzData.ptr += fuzzData.remaining;
     fuzzData.remaining = 0;
 
-    return(ret);
+    return ret;
 }
 
 /*
@@ -293,7 +306,8 @@ xmlFuzzReadRemaining(size_t *size) {
  * string. Two backslashes are used to escape a backslash.
  */
 void
-xmlFuzzWriteString(FILE *out, const char *str) {
+xmlFuzzWriteString (FILE *out, const char *str)
+{
     for (; *str; str++) {
         int c = (unsigned char) *str;
         putc(c, out);
@@ -317,7 +331,8 @@ xmlFuzzWriteString(FILE *out, const char *str) {
  * Returns a zero-terminated string or NULL if the fuzz data is exhausted.
  */
 const char *
-xmlFuzzReadString(size_t *size) {
+xmlFuzzReadString (size_t *size)
+{
     const char *out = fuzzData.outPtr;
 
     while (fuzzData.remaining > 0) {
@@ -333,7 +348,7 @@ xmlFuzzReadString(size_t *size) {
                 if (size != NULL)
                     *size = fuzzData.outPtr - out;
                 *fuzzData.outPtr++ = '\0';
-                return(out);
+                return out;
             }
             if (c2 == '\\') {
                 fuzzData.ptr++;
@@ -348,12 +363,12 @@ xmlFuzzReadString(size_t *size) {
         if (size != NULL)
             *size = fuzzData.outPtr - out;
         *fuzzData.outPtr++ = '\0';
-        return(out);
+        return out;
     }
 
     if (size != NULL)
         *size = 0;
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -363,7 +378,8 @@ xmlFuzzReadString(size_t *size) {
  * entities from fuzz data.
  */
 void
-xmlFuzzReadEntities(void) {
+xmlFuzzReadEntities (void)
+{
     size_t num = 0;
 
     while (1) {
@@ -372,24 +388,26 @@ xmlFuzzReadEntities(void) {
         xmlFuzzEntityInfo *entityInfo;
 
         url = xmlFuzzReadString(&urlSize);
-        if (url == NULL) break;
+        if (url == NULL)
+            break;
 
         entity = xmlFuzzReadString(&entitySize);
-        if (entity == NULL) break;
+        if (entity == NULL)
+            break;
 
         /*
          * Cap URL size to avoid quadratic behavior when generating
          * error messages or looking up entities.
          */
-        if (urlSize < 50 &&
-            xmlHashLookup(fuzzData.entities, (xmlChar *)url) == NULL) {
+        if (urlSize < 50
+            && xmlHashLookup(fuzzData.entities, (xmlChar *) url) == NULL) {
             entityInfo = xmlMalloc(sizeof(xmlFuzzEntityInfo));
             if (entityInfo == NULL)
                 break;
             entityInfo->data = entity;
             entityInfo->size = entitySize;
 
-            xmlHashAddEntry(fuzzData.entities, (xmlChar *)url, entityInfo);
+            xmlHashAddEntry(fuzzData.entities, (xmlChar *) url, entityInfo);
 
             if (num == 0) {
                 fuzzData.mainUrl = url;
@@ -410,8 +428,9 @@ xmlFuzzReadEntities(void) {
  * Returns the main URL.
  */
 const char *
-xmlFuzzMainUrl(void) {
-    return(fuzzData.mainUrl);
+xmlFuzzMainUrl (void)
+{
+    return fuzzData.mainUrl;
 }
 
 /**
@@ -421,11 +440,12 @@ xmlFuzzMainUrl(void) {
  * Returns the main entity.
  */
 const char *
-xmlFuzzMainEntity(size_t *size) {
+xmlFuzzMainEntity (size_t *size)
+{
     if (fuzzData.mainEntity == NULL)
-        return(NULL);
+        return NULL;
     *size = fuzzData.mainEntity->size;
-    return(fuzzData.mainEntity->data);
+    return fuzzData.mainEntity->data;
 }
 
 /**
@@ -434,8 +454,9 @@ xmlFuzzMainEntity(size_t *size) {
  * Returns the secondary URL.
  */
 const char *
-xmlFuzzSecondaryUrl(void) {
-    return(fuzzData.secondaryUrl);
+xmlFuzzSecondaryUrl (void)
+{
+    return fuzzData.secondaryUrl;
 }
 
 /**
@@ -445,11 +466,12 @@ xmlFuzzSecondaryUrl(void) {
  * Returns the secondary entity.
  */
 const char *
-xmlFuzzSecondaryEntity(size_t *size) {
+xmlFuzzSecondaryEntity (size_t *size)
+{
     if (fuzzData.secondaryEntity == NULL)
-        return(NULL);
+        return NULL;
     *size = fuzzData.secondaryEntity->size;
-    return(fuzzData.secondaryEntity->data);
+    return fuzzData.secondaryEntity->data;
 }
 
 /**
@@ -458,45 +480,45 @@ xmlFuzzSecondaryEntity(size_t *size) {
  * The resource loader for fuzz data.
  */
 xmlParserErrors
-xmlFuzzResourceLoader(void *data UNUSED, const char *URL,
-                      const char *ID UNUSED,
-                      xmlResourceType type UNUSED,
-                      xmlParserInputFlags flags UNUSED,
-                      xmlParserInputPtr *out) {
+xmlFuzzResourceLoader (void *data UNUSED, const char *URL,
+                       const char *ID UNUSED, xmlResourceType type UNUSED,
+                       xmlParserInputFlags flags UNUSED, xmlParserInputPtr *out)
+{
     xmlParserInputPtr input;
     xmlFuzzEntityInfo *entity;
 
     entity = xmlHashLookup(fuzzData.entities, (xmlChar *) URL);
     if (entity == NULL)
-        return(XML_IO_ENOENT);
+        return XML_IO_ENOENT;
 
     /* IO failure injection */
     if (xmlFuzzTryIo() < 0)
-        return(XML_IO_EIO);
+        return XML_IO_EIO;
 
     input = xmlNewInputFromMemory(URL, entity->data, entity->size,
-                                  XML_INPUT_BUF_STATIC |
-                                  XML_INPUT_BUF_ZERO_TERMINATED);
+                                  XML_INPUT_BUF_STATIC
+                                      | XML_INPUT_BUF_ZERO_TERMINATED);
     if (input == NULL)
-        return(XML_ERR_NO_MEMORY);
+        return XML_ERR_NO_MEMORY;
 
     *out = input;
-    return(XML_ERR_OK);
+    return XML_ERR_OK;
 }
 
 char *
-xmlSlurpFile(const char *path, size_t *sizeRet) {
+xmlSlurpFile (const char *path, size_t *sizeRet)
+{
     FILE *file;
     struct stat statbuf;
     char *data;
     size_t size;
 
     if ((stat(path, &statbuf) != 0) || (!S_ISREG(statbuf.st_mode)))
-        return(NULL);
+        return NULL;
     size = statbuf.st_size;
     file = fopen(path, "rb");
     if (file == NULL)
-        return(NULL);
+        return NULL;
     data = xmlMalloc(size + 1);
     if (data != NULL) {
         if (fread(data, 1, size, file) != size) {
@@ -510,12 +532,12 @@ xmlSlurpFile(const char *path, size_t *sizeRet) {
     }
     fclose(file);
 
-    return(data);
+    return data;
 }
 
 int
-xmlFuzzOutputWrite(void *ctxt UNUSED,
-                   const char *buffer UNUSED, int len) {
+xmlFuzzOutputWrite (void *ctxt UNUSED, const char *buffer UNUSED, int len)
+{
     if (xmlFuzzTryIo() < 0)
         return -XML_IO_EIO;
 
@@ -523,7 +545,8 @@ xmlFuzzOutputWrite(void *ctxt UNUSED,
 }
 
 int
-xmlFuzzOutputClose(void *ctxt UNUSED) {
+xmlFuzzOutputClose (void *ctxt UNUSED)
+{
     if (xmlFuzzTryIo() < 0)
         return XML_IO_EIO;
 
@@ -549,9 +572,9 @@ xmlFuzzOutputClose(void *ctxt UNUSED) {
  * Returns the size of the mutated data like LLVMFuzzerCustomMutator.
  */
 size_t
-xmlFuzzMutateChunks(const xmlFuzzChunkDesc *chunks,
-                    char *data, size_t size, size_t maxSize, unsigned seed,
-                    xmlFuzzMutator mutator) {
+xmlFuzzMutateChunks (const xmlFuzzChunkDesc *chunks, char *data, size_t size,
+                     size_t maxSize, unsigned seed, xmlFuzzMutator mutator)
+{
     size_t off = 0;
     size_t ret, chunkSize, maxChunkSize, mutSize;
     unsigned prob = seed % XML_FUZZ_PROB_ONE;
@@ -564,10 +587,8 @@ xmlFuzzMutateChunks(const xmlFuzzChunkDesc *chunks,
         descSize = chunks[i].size;
         descProb = chunks[i].mutateProb;
 
-        if (descSize == 0 ||
-            off + descSize > size ||
-            off + descSize >= maxSize ||
-            prob < descProb)
+        if (descSize == 0 || off + descSize > size || off + descSize >= maxSize
+            || prob < descProb)
             break;
 
         off += descSize;
@@ -600,4 +621,3 @@ xmlFuzzMutateChunks(const xmlFuzzChunkDesc *chunks,
 
     return ret;
 }
-
