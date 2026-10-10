@@ -40,55 +40,53 @@
  *          not worth it.
  */
 
-static const char *const switches[] = {
-    "--auto",
-    "--c14n",
-    "--c14n11",
-    "--compress",
-    "--copy",
-    "--debug",
-    NULL,
-    "--dropdtd",
-    "--dtdattr",
-    "--exc-c14n",
-    "--format",
-    NULL,
-    "--huge",
-    "--insert",
-    "--loaddtd",
-    "--load-trace",
-    NULL,
-    "--noblanks",
-    "--nocdata",
-    "--nocompact",
-    "--nodefdtd",
-    "--nodict",
-    "--noenc",
-    "--noent",
-    "--nofixup-base-uris",
-    "--nonet",
-    "--noout",
-    "--nowarning",
-    NULL,
-    "--noxincludenode",
-    "--nsclean",
-    "--oldxml10",
-    "--pedantic",
-    "--postvalid",
-    "--push",
-    "--pushsmall",
-    "--quiet",
-    "--recover",
-    "--repeat",
-    "--sax1",
-    NULL,
-    "--timing",
-    "--valid",
-    "--version",
-    "--walker",
-    "--xinclude",
-    "--xmlout"
-};
+static const char *const switches[] = {"--auto",
+                                       "--c14n",
+                                       "--c14n11",
+                                       "--compress",
+                                       "--copy",
+                                       "--debug",
+                                       NULL,
+                                       "--dropdtd",
+                                       "--dtdattr",
+                                       "--exc-c14n",
+                                       "--format",
+                                       NULL,
+                                       "--huge",
+                                       "--insert",
+                                       "--loaddtd",
+                                       "--load-trace",
+                                       NULL,
+                                       "--noblanks",
+                                       "--nocdata",
+                                       "--nocompact",
+                                       "--nodefdtd",
+                                       "--nodict",
+                                       "--noenc",
+                                       "--noent",
+                                       "--nofixup-base-uris",
+                                       "--nonet",
+                                       "--noout",
+                                       "--nowarning",
+                                       NULL,
+                                       "--noxincludenode",
+                                       "--nsclean",
+                                       "--oldxml10",
+                                       "--pedantic",
+                                       "--postvalid",
+                                       "--push",
+                                       "--pushsmall",
+                                       "--quiet",
+                                       "--recover",
+                                       "--repeat",
+                                       "--sax1",
+                                       NULL,
+                                       "--timing",
+                                       "--valid",
+                                       "--version",
+                                       "--walker",
+                                       "--xinclude",
+                                       "--xmlout"};
 static const size_t numSwitches = sizeof(switches) / sizeof(switches[0]);
 
 struct {
@@ -97,13 +95,14 @@ struct {
 } vars;
 
 static void
-pushArg(const char *str) {
+pushArg (const char *str)
+{
     vars.argv[vars.argi++] = str;
 }
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     int fd;
 
     /* Redirect stdout to /dev/null */
@@ -122,7 +121,8 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     char maxmemBuf[20];
     char maxAmplBuf[20];
     char prettyBuf[20];
@@ -138,8 +138,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     vars.argv = malloc((numSwitches + 5 + 6 * 2) * sizeof(vars.argv[0]));
     vars.argi = 0;
-    pushArg("xmllint"),
-    pushArg("--nocatalogs");
+    pushArg("xmllint"), pushArg("--nocatalogs");
 
     xmlFuzzDataInit(data, size);
 
@@ -155,21 +154,21 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
      * Use four main parsing modes with equal probability
      */
     switch (uval & 3) {
-        case 0:
-            /* XML parser */
-            break;
-        case 1:
-            /* HTML parser */
-            pushArg("--html");
-            break;
-        case 2:
-            /* XML reader */
-            pushArg("--stream");
-            break;
-        case 3:
-            /* SAX parser */
-            pushArg("--sax");
-            break;
+    case 0:
+        /* XML parser */
+        break;
+    case 1:
+        /* HTML parser */
+        pushArg("--html");
+        break;
+    case 2:
+        /* XML reader */
+        pushArg("--stream");
+        break;
+    case 3:
+        /* SAX parser */
+        pushArg("--sax");
+        break;
     }
 
     uval = xmlFuzzReadInt(4);
@@ -236,21 +235,20 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 exit:
     xmlFuzzDataCleanup();
     free(vars.argv);
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 8, XML_FUZZ_PROB_ONE / 10  }, /* switches */
-        { 4, XML_FUZZ_PROB_ONE / 10  }, /* maxmem */
-        { 1, XML_FUZZ_PROB_ONE / 100 }, /* maxAmpl */
-        { 1, XML_FUZZ_PROB_ONE / 100 }, /* pretty */
-        { 0, 0 }
+        {8, XML_FUZZ_PROB_ONE / 10 }, /* switches */
+        {4, XML_FUZZ_PROB_ONE / 10 }, /* maxmem */
+        {1, XML_FUZZ_PROB_ONE / 100}, /* maxAmpl */
+        {1, XML_FUZZ_PROB_ONE / 100}, /* pretty */
+        {0, 0                      }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
