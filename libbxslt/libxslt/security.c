@@ -21,19 +21,19 @@
 #if defined(_WIN32)
 #include <windows.h>
 #ifndef INVALID_FILE_ATTRIBUTES
-#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
 #endif
 #endif
 
 #ifndef HAVE_STAT
-#  ifdef HAVE__STAT
-     /* MS C library seems to define stat and _stat. The definition
+#ifdef HAVE__STAT
+/* MS C library seems to define stat and _stat. The definition
       *         is identical. Still, mapping them to each other causes a warning. */
-#    ifndef _MSC_VER
-#      define stat(x,y) _stat(x,y)
-#    endif
-#    define HAVE_STAT
-#  endif
+#ifndef _MSC_VER
+#define stat(x, y) _stat(x, y)
+#endif
+#define HAVE_STAT
+#endif
 #endif
 
 #include <libxml/xmlmemory.h>
@@ -44,7 +44,6 @@
 #include "xsltutils.h"
 #include "extensions.h"
 #include "security.h"
-
 
 struct _xsltSecurityPrefs {
     xsltSecurityCheck readFile;
@@ -70,19 +69,20 @@ static xsltSecurityPrefsPtr xsltDefaultSecurityPrefs = NULL;
  * Returns a pointer to the new block or NULL in case of error
  */
 xsltSecurityPrefsPtr
-xsltNewSecurityPrefs(void) {
+xsltNewSecurityPrefs (void)
+{
     xsltSecurityPrefsPtr ret;
 
     xsltInitGlobals();
 
     ret = (xsltSecurityPrefsPtr) xmlMalloc(sizeof(xsltSecurityPrefs));
     if (ret == NULL) {
-	xsltTransformError(NULL, NULL, NULL,
-		"xsltNewSecurityPrefs : malloc failed\n");
-	return(NULL);
+        xsltTransformError(NULL, NULL, NULL,
+                           "xsltNewSecurityPrefs : malloc failed\n");
+        return NULL;
     }
     memset(ret, 0, sizeof(xsltSecurityPrefs));
-    return(ret);
+    return ret;
 }
 
 /**
@@ -92,9 +92,10 @@ xsltNewSecurityPrefs(void) {
  * Free up a security preference block
  */
 void
-xsltFreeSecurityPrefs(xsltSecurityPrefsPtr sec) {
+xsltFreeSecurityPrefs (xsltSecurityPrefsPtr sec)
+{
     if (sec == NULL)
-	return;
+        return;
     xmlFree(sec);
 }
 
@@ -109,24 +110,30 @@ xsltFreeSecurityPrefs(xsltSecurityPrefsPtr sec) {
  * Returns -1 in case of error, 0 otherwise
  */
 int
-xsltSetSecurityPrefs(xsltSecurityPrefsPtr sec, xsltSecurityOption option,
-                     xsltSecurityCheck func) {
+xsltSetSecurityPrefs (xsltSecurityPrefsPtr sec, xsltSecurityOption option,
+                      xsltSecurityCheck func)
+{
     xsltInitGlobals();
     if (sec == NULL)
-	return(-1);
+        return -1;
     switch (option) {
-        case XSLT_SECPREF_READ_FILE:
-            sec->readFile = func; return(0);
-        case XSLT_SECPREF_WRITE_FILE:
-            sec->createFile = func; return(0);
-        case XSLT_SECPREF_CREATE_DIRECTORY:
-            sec->createDir = func; return(0);
-        case XSLT_SECPREF_READ_NETWORK:
-            sec->readNet = func; return(0);
-        case XSLT_SECPREF_WRITE_NETWORK:
-            sec->writeNet = func; return(0);
+    case XSLT_SECPREF_READ_FILE:
+        sec->readFile = func;
+        return 0;
+    case XSLT_SECPREF_WRITE_FILE:
+        sec->createFile = func;
+        return 0;
+    case XSLT_SECPREF_CREATE_DIRECTORY:
+        sec->createDir = func;
+        return 0;
+    case XSLT_SECPREF_READ_NETWORK:
+        sec->readNet = func;
+        return 0;
+    case XSLT_SECPREF_WRITE_NETWORK:
+        sec->writeNet = func;
+        return 0;
     }
-    return(-1);
+    return -1;
 }
 
 /**
@@ -139,22 +146,23 @@ xsltSetSecurityPrefs(xsltSecurityPrefsPtr sec, xsltSecurityOption option,
  * Returns NULL if not found, the function otherwise
  */
 xsltSecurityCheck
-xsltGetSecurityPrefs(xsltSecurityPrefsPtr sec, xsltSecurityOption option) {
+xsltGetSecurityPrefs (xsltSecurityPrefsPtr sec, xsltSecurityOption option)
+{
     if (sec == NULL)
-	return(NULL);
+        return NULL;
     switch (option) {
-        case XSLT_SECPREF_READ_FILE:
-            return(sec->readFile);
-        case XSLT_SECPREF_WRITE_FILE:
-            return(sec->createFile);
-        case XSLT_SECPREF_CREATE_DIRECTORY:
-            return(sec->createDir);
-        case XSLT_SECPREF_READ_NETWORK:
-            return(sec->readNet);
-        case XSLT_SECPREF_WRITE_NETWORK:
-            return(sec->writeNet);
+    case XSLT_SECPREF_READ_FILE:
+        return sec->readFile;
+    case XSLT_SECPREF_WRITE_FILE:
+        return sec->createFile;
+    case XSLT_SECPREF_CREATE_DIRECTORY:
+        return sec->createDir;
+    case XSLT_SECPREF_READ_NETWORK:
+        return sec->readNet;
+    case XSLT_SECPREF_WRITE_NETWORK:
+        return sec->writeNet;
     }
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -164,8 +172,8 @@ xsltGetSecurityPrefs(xsltSecurityPrefsPtr sec, xsltSecurityOption option) {
  * Set the default security preference application-wide
  */
 void
-xsltSetDefaultSecurityPrefs(xsltSecurityPrefsPtr sec) {
-
+xsltSetDefaultSecurityPrefs (xsltSecurityPrefsPtr sec)
+{
     xsltDefaultSecurityPrefs = sec;
 }
 
@@ -177,8 +185,9 @@ xsltSetDefaultSecurityPrefs(xsltSecurityPrefsPtr sec) {
  * Returns the current xsltSecurityPrefsPtr in use or NULL if none
  */
 xsltSecurityPrefsPtr
-xsltGetDefaultSecurityPrefs(void) {
-    return(xsltDefaultSecurityPrefs);
+xsltGetDefaultSecurityPrefs (void)
+{
+    return xsltDefaultSecurityPrefs;
 }
 
 /**
@@ -191,14 +200,14 @@ xsltGetDefaultSecurityPrefs(void) {
  * Returns -1 in case of error, 0 otherwise
  */
 int
-xsltSetCtxtSecurityPrefs(xsltSecurityPrefsPtr sec,
-	                 xsltTransformContextPtr ctxt) {
+xsltSetCtxtSecurityPrefs (xsltSecurityPrefsPtr sec,
+                          xsltTransformContextPtr ctxt)
+{
     if (ctxt == NULL)
-	return(-1);
+        return -1;
     ctxt->sec = (void *) sec;
-    return(0);
+    return 0;
 }
-
 
 /**
  * xsltSecurityAllow:
@@ -211,10 +220,11 @@ xsltSetCtxtSecurityPrefs(xsltSecurityPrefsPtr sec,
  * Returns 1 always
  */
 int
-xsltSecurityAllow(xsltSecurityPrefsPtr sec UNUSED,
-	          xsltTransformContextPtr ctxt UNUSED,
-		  const char *value UNUSED) {
-    return(1);
+xsltSecurityAllow (xsltSecurityPrefsPtr sec UNUSED,
+                   xsltTransformContextPtr ctxt UNUSED,
+                   const char *value UNUSED)
+{
+    return 1;
 }
 
 /**
@@ -228,10 +238,11 @@ xsltSecurityAllow(xsltSecurityPrefsPtr sec UNUSED,
  * Returns 0 always
  */
 int
-xsltSecurityForbid(xsltSecurityPrefsPtr sec UNUSED,
-	          xsltTransformContextPtr ctxt UNUSED,
-		  const char *value UNUSED) {
-    return(0);
+xsltSecurityForbid (xsltSecurityPrefsPtr sec UNUSED,
+                    xsltTransformContextPtr ctxt UNUSED,
+                    const char *value UNUSED)
+{
+    return 0;
 }
 
 /************************************************************************
@@ -270,7 +281,7 @@ xsltCheckFilename (const char *path)
     if (dwAttrs != INVALID_FILE_ATTRIBUTES) {
         if (dwAttrs & FILE_ATTRIBUTE_DIRECTORY) {
             return 2;
-		}
+        }
     }
 #endif
 
@@ -287,9 +298,8 @@ xsltCheckFilename (const char *path)
 }
 
 static int
-xsltCheckWritePath(xsltSecurityPrefsPtr sec,
-		   xsltTransformContextPtr ctxt,
-		   const char *path)
+xsltCheckWritePath (xsltSecurityPrefsPtr sec, xsltTransformContextPtr ctxt,
+                    const char *path)
 {
     int ret;
     xsltSecurityCheck check;
@@ -297,44 +307,43 @@ xsltCheckWritePath(xsltSecurityPrefsPtr sec,
 
     check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE);
     if (check != NULL) {
-	ret = check(sec, ctxt, path);
-	if (ret == 0) {
-	    xsltTransformError(ctxt, NULL, NULL,
-			       "File write for %s refused\n", path);
-	    return(0);
-	}
+        ret = check(sec, ctxt, path);
+        if (ret == 0) {
+            xsltTransformError(ctxt, NULL, NULL, "File write for %s refused\n",
+                               path);
+            return 0;
+        }
     }
 
-    directory = xmlParserGetDirectory (path);
+    directory = xmlParserGetDirectory(path);
 
     if (directory != NULL) {
-	ret = xsltCheckFilename(directory);
-	if (ret == 0) {
-	    /*
+        ret = xsltCheckFilename(directory);
+        if (ret == 0) {
+            /*
 	     * The directory doesn't exist check for creation
 	     */
-	    check = xsltGetSecurityPrefs(sec,
-					 XSLT_SECPREF_CREATE_DIRECTORY);
-	    if (check != NULL) {
-		ret = check(sec, ctxt, directory);
-		if (ret == 0) {
-		    xsltTransformError(ctxt, NULL, NULL,
-				       "Directory creation for %s refused\n",
-				       path);
-		    xmlFree(directory);
-		    return(0);
-		}
-	    }
-	    ret = xsltCheckWritePath(sec, ctxt, directory);
-	    if (ret == 1)
-		ret = mkdir(directory, 0755);
-	}
-	xmlFree(directory);
-	if (ret < 0)
-	    return(ret);
+            check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY);
+            if (check != NULL) {
+                ret = check(sec, ctxt, directory);
+                if (ret == 0) {
+                    xsltTransformError(ctxt, NULL, NULL,
+                                       "Directory creation for %s refused\n",
+                                       path);
+                    xmlFree(directory);
+                    return 0;
+                }
+            }
+            ret = xsltCheckWritePath(sec, ctxt, directory);
+            if (ret == 1)
+                ret = mkdir(directory, 0755);
+        }
+        xmlFree(directory);
+        if (ret < 0)
+            return ret;
     }
 
-    return(1);
+    return 1;
 }
 
 /**
@@ -349,61 +358,60 @@ xsltCheckWritePath(xsltSecurityPrefsPtr sec,
  * Return 1 if write is allowed, 0 if not and -1 in case or error.
  */
 int
-xsltCheckWrite(xsltSecurityPrefsPtr sec,
-	       xsltTransformContextPtr ctxt, const xmlChar *URL) {
+xsltCheckWrite (xsltSecurityPrefsPtr sec, xsltTransformContextPtr ctxt,
+                const xmlChar *URL)
+{
     int ret;
     xmlURIPtr uri;
     xsltSecurityCheck check;
 
-    uri = xmlParseURI((const char *)URL);
+    uri = xmlParseURI((const char *) URL);
     if (uri == NULL) {
         uri = xmlCreateURI();
-	if (uri == NULL) {
-	    xsltTransformError(ctxt, NULL, NULL,
-	     "xsltCheckWrite: out of memory for %s\n", URL);
-	    return(-1);
-	}
-	uri->path = (char *)xmlStrdup(URL);
+        if (uri == NULL) {
+            xsltTransformError(ctxt, NULL, NULL,
+                               "xsltCheckWrite: out of memory for %s\n", URL);
+            return -1;
+        }
+        uri->path = (char *) xmlStrdup(URL);
     }
-    if ((uri->scheme == NULL) ||
-	(xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
-
+    if ((uri->scheme == NULL)
+        || (xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
 #if defined(_WIN32)
-        if ((uri->path)&&(uri->path[0]=='/')&&
-            (uri->path[1]!='\0')&&(uri->path[2]==':'))
-            ret = xsltCheckWritePath(sec, ctxt, uri->path+1);
+        if ((uri->path) && (uri->path[0] == '/') && (uri->path[1] != '\0')
+            && (uri->path[2] == ':'))
+            ret = xsltCheckWritePath(sec, ctxt, uri->path + 1);
         else
 #endif
         {
             /*
              * Check if we are allowed to write this file
              */
-	    ret = xsltCheckWritePath(sec, ctxt, uri->path);
+            ret = xsltCheckWritePath(sec, ctxt, uri->path);
         }
 
-	if (ret <= 0) {
-	    xmlFreeURI(uri);
-	    return(ret);
-	}
+        if (ret <= 0) {
+            xmlFreeURI(uri);
+            return ret;
+        }
     } else {
-	/*
+        /*
 	 * Check if we are allowed to write this network resource
 	 */
-	check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_WRITE_NETWORK);
-	if (check != NULL) {
-	    ret = check(sec, ctxt, (const char *)URL);
-	    if (ret == 0) {
-		xsltTransformError(ctxt, NULL, NULL,
-			     "File write for %s refused\n", URL);
-		xmlFreeURI(uri);
-		return(0);
-	    }
-	}
+        check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_WRITE_NETWORK);
+        if (check != NULL) {
+            ret = check(sec, ctxt, (const char *) URL);
+            if (ret == 0) {
+                xsltTransformError(ctxt, NULL, NULL,
+                                   "File write for %s refused\n", URL);
+                xmlFreeURI(uri);
+                return 0;
+            }
+        }
     }
     xmlFreeURI(uri);
-    return(1);
+    return 1;
 }
-
 
 /**
  * xsltCheckRead:
@@ -416,64 +424,62 @@ xsltCheckWrite(xsltSecurityPrefsPtr sec,
  * Return 1 if read is allowed, 0 if not and -1 in case or error.
  */
 int
-xsltCheckRead(xsltSecurityPrefsPtr sec,
-	      xsltTransformContextPtr ctxt, const xmlChar *URL) {
+xsltCheckRead (xsltSecurityPrefsPtr sec, xsltTransformContextPtr ctxt,
+               const xmlChar *URL)
+{
     int ret;
     xmlURIPtr uri;
     xsltSecurityCheck check;
 
     if (xmlStrstr(URL, BAD_CAST "://") == NULL) {
-	check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_FILE);
-	if (check != NULL) {
+        check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_FILE);
+        if (check != NULL) {
             ret = check(sec, ctxt, (const char *) URL);
             if (ret == 0) {
                 xsltTransformError(ctxt, NULL, NULL,
-                             "Local file read for %s refused\n", URL);
-                return(0);
+                                   "Local file read for %s refused\n", URL);
+                return 0;
             }
         }
-        return(1);
+        return 1;
     }
 
-    uri = xmlParseURI((const char *)URL);
+    uri = xmlParseURI((const char *) URL);
     if (uri == NULL) {
-	xsltTransformError(ctxt, NULL, NULL,
-	 "xsltCheckRead: URL parsing failed for %s\n",
-			 URL);
-	return(-1);
+        xsltTransformError(ctxt, NULL, NULL,
+                           "xsltCheckRead: URL parsing failed for %s\n", URL);
+        return -1;
     }
-    if ((uri->scheme == NULL) ||
-	(xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
-
-	/*
+    if ((uri->scheme == NULL)
+        || (xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
+        /*
 	 * Check if we are allowed to read this file
 	 */
-	check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_FILE);
-	if (check != NULL) {
-	    ret = check(sec, ctxt, uri->path);
-	    if (ret == 0) {
-		xsltTransformError(ctxt, NULL, NULL,
-			     "Local file read for %s refused\n", URL);
-		xmlFreeURI(uri);
-		return(0);
-	    }
-	}
+        check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_FILE);
+        if (check != NULL) {
+            ret = check(sec, ctxt, uri->path);
+            if (ret == 0) {
+                xsltTransformError(ctxt, NULL, NULL,
+                                   "Local file read for %s refused\n", URL);
+                xmlFreeURI(uri);
+                return 0;
+            }
+        }
     } else {
-	/*
+        /*
 	 * Check if we are allowed to write this network resource
 	 */
-	check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_NETWORK);
-	if (check != NULL) {
-	    ret = check(sec, ctxt, (const char *)URL);
-	    if (ret == 0) {
-		xsltTransformError(ctxt, NULL, NULL,
-			     "Network file read for %s refused\n", URL);
-		xmlFreeURI(uri);
-		return(0);
-	    }
-	}
+        check = xsltGetSecurityPrefs(sec, XSLT_SECPREF_READ_NETWORK);
+        if (check != NULL) {
+            ret = check(sec, ctxt, (const char *) URL);
+            if (ret == 0) {
+                xsltTransformError(ctxt, NULL, NULL,
+                                   "Network file read for %s refused\n", URL);
+                xmlFreeURI(uri);
+                return 0;
+            }
+        }
     }
     xmlFreeURI(uri);
-    return(1);
+    return 1;
 }
-
