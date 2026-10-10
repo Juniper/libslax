@@ -12,8 +12,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -26,7 +26,8 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     const char *docBuffer, *docUrl;
@@ -35,8 +36,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     xmlFuzzDataInit(data, size);
     opts = (int) xmlFuzzReadInt(4);
-    opts &= ~XML_PARSE_DTDVALID &
-            ~XML_PARSE_SAX1;
+    opts &= ~XML_PARSE_DTDVALID & ~XML_PARSE_SAX1;
     failurePos = xmlFuzzReadInt(4) % (size + 100);
 
     xmlFuzzReadEntities();
@@ -57,19 +57,20 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
         doc = xmlCtxtReadMemory(ctxt, docBuffer, docSize, docUrl, NULL, opts);
         xmlFuzzCheckFailureReport("xmlCtxtReadMemory",
-                doc == NULL && ctxt->errNo == XML_ERR_NO_MEMORY,
-                doc == NULL && ctxt->errNo == XML_IO_EIO);
+                                  doc == NULL
+                                      && ctxt->errNo == XML_ERR_NO_MEMORY,
+                                  doc == NULL && ctxt->errNo == XML_IO_EIO);
 
         xinc = xmlXIncludeNewContext(doc);
         xmlXIncludeSetResourceLoader(xinc, xmlFuzzResourceLoader, NULL);
         xmlXIncludeSetFlags(xinc, opts);
         xmlXIncludeProcessNode(xinc, (xmlNodePtr) doc);
         if (doc != NULL) {
-            xmlFuzzCheckFailureReport("xmlXIncludeProcessNode",
-                    xinc == NULL ||
-                    xmlXIncludeGetLastError(xinc) == XML_ERR_NO_MEMORY,
-                    xinc != NULL &&
-                    xmlXIncludeGetLastError(xinc) == XML_IO_EIO);
+            xmlFuzzCheckFailureReport(
+                "xmlXIncludeProcessNode",
+                xinc == NULL
+                    || xmlXIncludeGetLastError(xinc) == XML_ERR_NO_MEMORY,
+                xinc != NULL && xmlXIncludeGetLastError(xinc) == XML_IO_EIO);
         }
         xmlXIncludeFreeContext(xinc);
 
@@ -87,19 +88,18 @@ exit:
     xmlFuzzInjectFailure(0);
     xmlFuzzDataCleanup();
     xmlResetLastError();
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* opts */
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* opts */
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
