@@ -6,7 +6,7 @@
  */
 
 #ifndef XML_DEPRECATED
-  #define XML_DEPRECATED
+#define XML_DEPRECATED
 #endif
 
 #include <string.h>
@@ -17,7 +17,8 @@
 #include "fuzz.h"
 
 size_t
-LLVMFuzzerMutate(char *data, size_t size, size_t maxSize) {
+LLVMFuzzerMutate (char *data, size_t size, size_t maxSize)
+{
     (void) data;
     (void) maxSize;
 
@@ -25,12 +26,11 @@ LLVMFuzzerMutate(char *data, size_t size, size_t maxSize) {
 }
 
 #ifdef HAVE_HTML_FUZZER
-int fuzzHtmlInit(int *argc, char ***argv);
-int fuzzHtml(const char *data, size_t size);
-size_t fuzzHtmlMutate(char *data, size_t size, size_t maxSize,
-                      unsigned seed);
-#define LLVMFuzzerInitialize fuzzHtmlInit
-#define LLVMFuzzerTestOneInput fuzzHtml
+int fuzzHtmlInit (int *argc, char ***argv);
+int fuzzHtml (const char *data, size_t size);
+size_t fuzzHtmlMutate (char *data, size_t size, size_t maxSize, unsigned seed);
+#define LLVMFuzzerInitialize    fuzzHtmlInit
+#define LLVMFuzzerTestOneInput  fuzzHtml
 #define LLVMFuzzerCustomMutator fuzzHtmlMutate
 #include "html.c"
 #undef LLVMFuzzerInitialize
@@ -39,12 +39,12 @@ size_t fuzzHtmlMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_READER_FUZZER
-int fuzzReaderInit(int *argc, char ***argv);
-int fuzzReader(const char *data, size_t size);
-size_t fuzzReaderMutate(char *data, size_t size, size_t maxSize,
-                        unsigned seed);
-#define LLVMFuzzerInitialize fuzzReaderInit
-#define LLVMFuzzerTestOneInput fuzzReader
+int fuzzReaderInit (int *argc, char ***argv);
+int fuzzReader (const char *data, size_t size);
+size_t fuzzReaderMutate (char *data, size_t size, size_t maxSize,
+                         unsigned seed);
+#define LLVMFuzzerInitialize    fuzzReaderInit
+#define LLVMFuzzerTestOneInput  fuzzReader
 #define LLVMFuzzerCustomMutator fuzzReaderMutate
 #include "reader.c"
 #undef LLVMFuzzerInitialize
@@ -53,12 +53,12 @@ size_t fuzzReaderMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_REGEXP_FUZZER
-int fuzzRegexpInit(int *argc, char ***argv);
-int fuzzRegexp(const char *data, size_t size);
-size_t fuzzRegexpMutate(char *data, size_t size, size_t maxSize,
-                        unsigned seed);
-#define LLVMFuzzerInitialize fuzzRegexpInit
-#define LLVMFuzzerTestOneInput fuzzRegexp
+int fuzzRegexpInit (int *argc, char ***argv);
+int fuzzRegexp (const char *data, size_t size);
+size_t fuzzRegexpMutate (char *data, size_t size, size_t maxSize,
+                         unsigned seed);
+#define LLVMFuzzerInitialize    fuzzRegexpInit
+#define LLVMFuzzerTestOneInput  fuzzRegexp
 #define LLVMFuzzerCustomMutator fuzzRegexpMutate
 #include "regexp.c"
 #undef LLVMFuzzerInitialize
@@ -67,12 +67,12 @@ size_t fuzzRegexpMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_SCHEMA_FUZZER
-int fuzzSchemaInit(int *argc, char ***argv);
-int fuzzSchema(const char *data, size_t size);
-size_t fuzzSchemaMutate(char *data, size_t size, size_t maxSize,
-                        unsigned seed);
-#define LLVMFuzzerInitialize fuzzSchemaInit
-#define LLVMFuzzerTestOneInput fuzzSchema
+int fuzzSchemaInit (int *argc, char ***argv);
+int fuzzSchema (const char *data, size_t size);
+size_t fuzzSchemaMutate (char *data, size_t size, size_t maxSize,
+                         unsigned seed);
+#define LLVMFuzzerInitialize    fuzzSchemaInit
+#define LLVMFuzzerTestOneInput  fuzzSchema
 #define LLVMFuzzerCustomMutator fuzzSchemaMutate
 #include "schema.c"
 #undef LLVMFuzzerInitialize
@@ -81,12 +81,11 @@ size_t fuzzSchemaMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_URI_FUZZER
-int fuzzUriInit(int *argc, char ***argv);
-int fuzzUri(const char *data, size_t size);
-size_t fuzzUriMutate(char *data, size_t size, size_t maxSize,
-                     unsigned seed);
-#define LLVMFuzzerInitialize fuzzUriInit
-#define LLVMFuzzerTestOneInput fuzzUri
+int fuzzUriInit (int *argc, char ***argv);
+int fuzzUri (const char *data, size_t size);
+size_t fuzzUriMutate (char *data, size_t size, size_t maxSize, unsigned seed);
+#define LLVMFuzzerInitialize    fuzzUriInit
+#define LLVMFuzzerTestOneInput  fuzzUri
 #define LLVMFuzzerCustomMutator fuzzUriMutate
 #include "uri.c"
 #undef LLVMFuzzerInitialize
@@ -95,12 +94,11 @@ size_t fuzzUriMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_VALID_FUZZER
-int fuzzValidInit(int *argc, char ***argv);
-int fuzzValid(const char *data, size_t size);
-size_t fuzzValidMutate(char *data, size_t size, size_t maxSize,
-                       unsigned seed);
-#define LLVMFuzzerInitialize fuzzValidInit
-#define LLVMFuzzerTestOneInput fuzzValid
+int fuzzValidInit (int *argc, char ***argv);
+int fuzzValid (const char *data, size_t size);
+size_t fuzzValidMutate (char *data, size_t size, size_t maxSize, unsigned seed);
+#define LLVMFuzzerInitialize    fuzzValidInit
+#define LLVMFuzzerTestOneInput  fuzzValid
 #define LLVMFuzzerCustomMutator fuzzValidMutate
 #include "valid.c"
 #undef LLVMFuzzerInitialize
@@ -109,12 +107,12 @@ size_t fuzzValidMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_XINCLUDE_FUZZER
-int fuzzXIncludeInit(int *argc, char ***argv);
-int fuzzXInclude(const char *data, size_t size);
-size_t fuzzXIncludeMutate(char *data, size_t size, size_t maxSize,
-                          unsigned seed);
-#define LLVMFuzzerInitialize fuzzXIncludeInit
-#define LLVMFuzzerTestOneInput fuzzXInclude
+int fuzzXIncludeInit (int *argc, char ***argv);
+int fuzzXInclude (const char *data, size_t size);
+size_t fuzzXIncludeMutate (char *data, size_t size, size_t maxSize,
+                           unsigned seed);
+#define LLVMFuzzerInitialize    fuzzXIncludeInit
+#define LLVMFuzzerTestOneInput  fuzzXInclude
 #define LLVMFuzzerCustomMutator fuzzXIncludeMutate
 #include "xinclude.c"
 #undef LLVMFuzzerInitialize
@@ -123,12 +121,11 @@ size_t fuzzXIncludeMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_XML_FUZZER
-int fuzzXmlInit(int *argc, char ***argv);
-int fuzzXml(const char *data, size_t size);
-size_t fuzzXmlMutate(char *data, size_t size, size_t maxSize,
-                     unsigned seed);
-#define LLVMFuzzerInitialize fuzzXmlInit
-#define LLVMFuzzerTestOneInput fuzzXml
+int fuzzXmlInit (int *argc, char ***argv);
+int fuzzXml (const char *data, size_t size);
+size_t fuzzXmlMutate (char *data, size_t size, size_t maxSize, unsigned seed);
+#define LLVMFuzzerInitialize    fuzzXmlInit
+#define LLVMFuzzerTestOneInput  fuzzXml
 #define LLVMFuzzerCustomMutator fuzzXmlMutate
 #include "xml.c"
 #undef LLVMFuzzerInitialize
@@ -137,12 +134,11 @@ size_t fuzzXmlMutate(char *data, size_t size, size_t maxSize,
 #endif
 
 #ifdef HAVE_XPATH_FUZZER
-int fuzzXPathInit(int *argc, char ***argv);
-int fuzzXPath(const char *data, size_t size);
-size_t fuzzXPathMutate(char *data, size_t size, size_t maxSize,
-                       unsigned seed);
-#define LLVMFuzzerInitialize fuzzXPathInit
-#define LLVMFuzzerTestOneInput fuzzXPath
+int fuzzXPathInit (int *argc, char ***argv);
+int fuzzXPath (const char *data, size_t size);
+size_t fuzzXPathMutate (char *data, size_t size, size_t maxSize, unsigned seed);
+#define LLVMFuzzerInitialize    fuzzXPathInit
+#define LLVMFuzzerTestOneInput  fuzzXPath
 #define LLVMFuzzerCustomMutator fuzzXPathMutate
 #include "xpath.c"
 #undef LLVMFuzzerInitialize
@@ -150,18 +146,17 @@ size_t fuzzXPathMutate(char *data, size_t size, size_t maxSize,
 #undef LLVMFuzzerCustomMutator
 #endif
 
-typedef int
-(*initFunc)(int *argc, char ***argv);
-typedef int
-(*fuzzFunc)(const char *data, size_t size);
-typedef size_t
-(*mutateFunc)(char *data, size_t size, size_t maxSize, unsigned seed);
+typedef int (*initFunc)(int *argc, char ***argv);
+typedef int (*fuzzFunc)(const char *data, size_t size);
+typedef size_t (*mutateFunc)(char *data, size_t size, size_t maxSize,
+                             unsigned seed);
 
 int numInputs;
 
 static int
-testFuzzer(initFunc init, fuzzFunc fuzz, mutateFunc mutate,
-           const char *pattern) {
+testFuzzer (initFunc init, fuzzFunc fuzz, mutateFunc mutate,
+            const char *pattern)
+{
     glob_t globbuf;
     int ret = -1;
     size_t i;
@@ -170,7 +165,7 @@ testFuzzer(initFunc init, fuzzFunc fuzz, mutateFunc mutate,
 
     if (glob(pattern, 0, NULL, &globbuf) != 0) {
         fprintf(stderr, "pattern %s matches no files\n", pattern);
-        return(-1);
+        return -1;
     }
 
     if (init != NULL)
@@ -195,22 +190,22 @@ testFuzzer(initFunc init, fuzzFunc fuzz, mutateFunc mutate,
     ret = 0;
 error:
     globfree(&globbuf);
-    return(ret);
+    return ret;
 }
 
 #ifdef HAVE_XML_FUZZER
 static int
-testEntityLoader(void) {
+testEntityLoader (void)
+{
     xmlParserCtxtPtr ctxt;
-    static const char data[] =
-        "doc.xml\\\n"
-        "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
-        "<doc>&ent;</doc>\\\n"
-        "doc.dtd\\\n"
-        "<!ELEMENT doc (#PCDATA)>\n"
-        "<!ENTITY ent SYSTEM \"ent.txt\">\\\n"
-        "ent.txt\\\n"
-        "Hello, world!\\\n";
+    static const char data[] = "doc.xml\\\n"
+                               "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
+                               "<doc>&ent;</doc>\\\n"
+                               "doc.dtd\\\n"
+                               "<!ELEMENT doc (#PCDATA)>\n"
+                               "<!ENTITY ent SYSTEM \"ent.txt\">\\\n"
+                               "ent.txt\\\n"
+                               "Hello, world!\\\n";
     const char *docBuffer, *url;
     size_t docSize;
     xmlDocPtr doc;
@@ -240,10 +235,9 @@ testEntityLoader(void) {
 
 #ifdef LIBXML_OUTPUT_ENABLED
     {
-        static xmlChar expected[] =
-            "<?xml version=\"1.0\"?>\n"
-            "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
-            "<doc>Hello, world!</doc>\n";
+        static xmlChar expected[] = "<?xml version=\"1.0\"?>\n"
+                                    "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
+                                    "<doc>Hello, world!</doc>\n";
         xmlChar *out;
 
         xmlDocDumpMemory(doc, &out, NULL);
@@ -258,12 +252,13 @@ testEntityLoader(void) {
     xmlFreeDoc(doc);
     xmlFuzzDataCleanup();
 
-    return(ret);
+    return ret;
 }
 #endif
 
 int
-main(void) {
+main (void)
+{
     int ret = 0;
 
 #ifdef HAVE_XML_FUZZER
@@ -271,54 +266,54 @@ main(void) {
         ret = 1;
 #endif
 #ifdef HAVE_HTML_FUZZER
-    if (testFuzzer(fuzzHtmlInit, fuzzHtml, fuzzHtmlMutate,
-                   "seed/html/*") != 0)
+    if (testFuzzer(fuzzHtmlInit, fuzzHtml, fuzzHtmlMutate, "seed/html/*") != 0)
         ret = 1;
 #endif
 #ifdef HAVE_READER_FUZZER
     if (testFuzzer(fuzzReaderInit, fuzzReader, fuzzReaderMutate,
-                   "seed/reader/*") != 0)
+                   "seed/reader/*")
+        != 0)
         ret = 1;
 #endif
 #ifdef HAVE_REGEXP_FUZZER
     if (testFuzzer(fuzzRegexpInit, fuzzRegexp, fuzzRegexpMutate,
-                   "seed/regexp/*") != 0)
+                   "seed/regexp/*")
+        != 0)
         ret = 1;
 #endif
 #ifdef HAVE_SCHEMA_FUZZER
     if (testFuzzer(fuzzSchemaInit, fuzzSchema, fuzzSchemaMutate,
-                   "seed/schema/*") != 0)
+                   "seed/schema/*")
+        != 0)
         ret = 1;
 #endif
 #ifdef HAVE_URI_FUZZER
-    if (testFuzzer(fuzzUriInit, fuzzUri, fuzzUriMutate,
-                   "seed/uri/*") != 0)
+    if (testFuzzer(fuzzUriInit, fuzzUri, fuzzUriMutate, "seed/uri/*") != 0)
         ret = 1;
 #endif
 #ifdef HAVE_VALID_FUZZER
-    if (testFuzzer(fuzzValidInit, fuzzValid, fuzzValidMutate,
-                   "seed/valid/*") != 0)
+    if (testFuzzer(fuzzValidInit, fuzzValid, fuzzValidMutate, "seed/valid/*")
+        != 0)
         ret = 1;
 #endif
 #ifdef HAVE_XINCLUDE_FUZZER
     if (testFuzzer(fuzzXIncludeInit, fuzzXInclude, fuzzXIncludeMutate,
-                   "seed/xinclude/*") != 0)
+                   "seed/xinclude/*")
+        != 0)
         ret = 1;
 #endif
 #ifdef HAVE_XML_FUZZER
-    if (testFuzzer(fuzzXmlInit, fuzzXml, fuzzXmlMutate,
-                   "seed/xml/*") != 0)
+    if (testFuzzer(fuzzXmlInit, fuzzXml, fuzzXmlMutate, "seed/xml/*") != 0)
         ret = 1;
 #endif
 #ifdef HAVE_XPATH_FUZZER
-    if (testFuzzer(fuzzXPathInit, fuzzXPath, fuzzXPathMutate,
-                   "seed/xpath/*") != 0)
+    if (testFuzzer(fuzzXPathInit, fuzzXPath, fuzzXPathMutate, "seed/xpath/*")
+        != 0)
         ret = 1;
 #endif
 
     if (ret == 0)
         printf("Successfully tested %d inputs\n", numInputs);
 
-    return(ret);
+    return ret;
 }
-
