@@ -9,7 +9,6 @@
  * Author: Daniel Garcia <dani@danigm.net>
  */
 
-
 #include "libxml.h"
 #include <stdio.h>
 
@@ -18,7 +17,8 @@
 
 /* Test catalog resolve uri with recursive catalog */
 static int
-testRecursiveDelegateUri(void) {
+testRecursiveDelegateUri (void)
+{
     int ret = 0;
     const char *cat = "test/catalogs/catalog-recursive.xml";
     const char *entity = "/foo.ent";
@@ -30,7 +30,9 @@ testRecursiveDelegateUri(void) {
     /* This should trigger recursive error */
     resolved = xmlCatalogResolveURI(BAD_CAST entity);
     if (resolved != NULL) {
-        fprintf(stderr, "CATALOG-FAILURE: Catalog %s entity should fail to resolve\n", entity);
+        fprintf(stderr,
+                "CATALOG-FAILURE: Catalog %s entity should fail to resolve\n",
+                entity);
         ret = 1;
     }
     xmlCatalogCleanup();
@@ -40,7 +42,8 @@ testRecursiveDelegateUri(void) {
 
 /* Test parsing repeated NextCatalog */
 static int
-testRepeatedNextCatalog(void) {
+testRepeatedNextCatalog (void)
+{
     int ret = 0;
     int i = 0;
     const char *cat = "test/catalogs/repeated-next-catalog.xml";
@@ -67,9 +70,13 @@ testRepeatedNextCatalog(void) {
     /* Just the root "catalog" node with a series of nextCatalog */
     node = xmlDocGetRootElement(doc);
     node = node->children;
-    for (i=0; node != NULL; node=node->next, i++) {}
+    for (i = 0; node != NULL; node = node->next, i++) {
+    }
     if (i > 1) {
-        fprintf(stderr, "CATALOG-FAILURE: Found %d nextCatalog entries and should be 1\n", i);
+        fprintf(
+            stderr,
+            "CATALOG-FAILURE: Found %d nextCatalog entries and should be 1\n",
+            i);
         ret = 1;
     }
 
@@ -79,7 +86,8 @@ testRepeatedNextCatalog(void) {
 }
 
 int
-main(void) {
+main (void)
+{
     int err = 0;
 
     err |= testRecursiveDelegateUri();
@@ -90,7 +98,8 @@ main(void) {
 #else
 /* No catalog, so everything okay */
 int
-main(void) {
+main (void)
+{
     return 0;
 }
 #endif
