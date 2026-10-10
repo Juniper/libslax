@@ -58,7 +58,7 @@ xsltTransformContextGetDebugStatus (const xsltTransformContextPtr ctxt UNUSED)
 
 static inline void
 xsltTransformContextSetDebugStatus (xsltTransformContextPtr ctxt UNUSED,
-				     int debugStatus)
+                                    int debugStatus)
 {
     xslDebugStatus = debugStatus;
 }
