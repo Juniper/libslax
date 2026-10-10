@@ -23,14 +23,14 @@
  * Returns the data for this transformation
  */
 static void *
-exsltSaxonInit (xsltTransformContextPtr ctxt UNUSED,
-		const xmlChar *URI UNUSED) {
+exsltSaxonInit (xsltTransformContextPtr ctxt UNUSED, const xmlChar *URI UNUSED)
+{
     return xmlHashCreate(1);
 }
 
 static void
-exsltSaxonFreeCompExprEntry(void *payload,
-                            const xmlChar *name UNUSED) {
+exsltSaxonFreeCompExprEntry (void *payload, const xmlChar *name UNUSED)
+{
     xmlXPathFreeCompExpr((xmlXPathCompExprPtr) payload);
 }
 
@@ -44,12 +44,11 @@ exsltSaxonFreeCompExprEntry(void *payload,
  */
 static void
 exsltSaxonShutdown (xsltTransformContextPtr ctxt UNUSED,
-		    const xmlChar *URI UNUSED,
-		    void *vdata) {
+                    const xmlChar *URI UNUSED, void *vdata)
+{
     xmlHashTablePtr data = (xmlHashTablePtr) vdata;
     xmlHashFree(data, exsltSaxonFreeCompExprEntry);
 }
-
 
 /**
  * exsltSaxonExpressionFunction:
@@ -75,25 +74,27 @@ exsltSaxonShutdown (xsltTransformContextPtr ctxt UNUSED,
  * regarding context and namespaces.
  */
 static void
-exsltSaxonExpressionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
+exsltSaxonExpressionFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
     xmlChar *arg;
     xmlXPathCompExprPtr ret;
     xmlHashTablePtr hash;
     xsltTransformContextPtr tctxt = xsltXPathGetTransformContext(ctxt);
 
     if (nargs != 1) {
-	xmlXPathSetArityError(ctxt);
-	return;
+        xmlXPathSetArityError(ctxt);
+        return;
     }
 
     arg = xmlXPathPopString(ctxt);
     if (xmlXPathCheckError(ctxt) || (arg == NULL)) {
-	xmlXPathSetTypeError(ctxt);
-	return;
+        xmlXPathSetTypeError(ctxt);
+        return;
     }
 
-    hash = (xmlHashTablePtr) xsltGetExtData(tctxt,
-					    xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)));
+    hash = (xmlHashTablePtr) xsltGetExtData(
+        tctxt,
+        xmlXPathContextGetFunctionURI(xmlXPathParserContextGetContext(ctxt)));
 
     ret = xmlHashLookup(hash, arg);
 
@@ -133,29 +134,30 @@ exsltSaxonExpressionFunction (xmlXPathParserContextPtr ctxt, int nargs) {
  * or last() respectively.
  */
 static void
-exsltSaxonEvalFunction (xmlXPathParserContextPtr ctxt, int nargs) {
-     xmlXPathCompExprPtr expr;
-     xmlXPathObjectPtr ret;
+exsltSaxonEvalFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlXPathCompExprPtr expr;
+    xmlXPathObjectPtr ret;
 
-     if (nargs != 1) {
-	  xmlXPathSetArityError(ctxt);
-	  return;
-     }
+    if (nargs != 1) {
+        xmlXPathSetArityError(ctxt);
+        return;
+    }
 
-     if (!xmlXPathStackIsExternal(ctxt)) {
-	  xmlXPathSetTypeError(ctxt);
-	  return;
-     }
+    if (!xmlXPathStackIsExternal(ctxt)) {
+        xmlXPathSetTypeError(ctxt);
+        return;
+    }
 
-     expr = (xmlXPathCompExprPtr) xmlXPathPopExternal(ctxt);
+    expr = (xmlXPathCompExprPtr) xmlXPathPopExternal(ctxt);
 
-     ret = xmlXPathCompiledEval(expr, xmlXPathParserContextGetContext(ctxt));
-     if (ret == NULL) {
-	  xmlXPathSetError(ctxt, XPATH_EXPR_ERROR);
-	  return;
-     }
+    ret = xmlXPathCompiledEval(expr, xmlXPathParserContextGetContext(ctxt));
+    if (ret == NULL) {
+        xmlXPathSetError(ctxt, XPATH_EXPR_ERROR);
+        return;
+    }
 
-     valuePush(ctxt, ret);
+    valuePush(ctxt, ret);
 }
 
 /**
@@ -176,14 +178,15 @@ exsltSaxonEvalFunction (xmlXPathParserContextPtr ctxt, int nargs) {
  * saxon:eval(saxon:expression(string)).
  */
 static void
-exsltSaxonEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs) {
-     if (nargs != 1) {
-	  xmlXPathSetArityError(ctxt);
-	  return;
-     }
+exsltSaxonEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
+    if (nargs != 1) {
+        xmlXPathSetArityError(ctxt);
+        return;
+    }
 
-     exsltSaxonExpressionFunction(ctxt, 1);
-     exsltSaxonEvalFunction(ctxt, 1);
+    exsltSaxonExpressionFunction(ctxt, 1);
+    exsltSaxonEvalFunction(ctxt, 1);
 }
 
 /**
@@ -196,7 +199,7 @@ exsltSaxonEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs) {
  * This function returns the system ID of the document being styled.
  */
 static void
-exsltSaxonSystemIdFunction(xmlXPathParserContextPtr ctxt, int nargs)
+exsltSaxonSystemIdFunction (xmlXPathParserContextPtr ctxt, int nargs)
 {
     if (ctxt == NULL)
         return;
@@ -205,11 +208,15 @@ exsltSaxonSystemIdFunction(xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
 
-    if ((xmlXPathParserContextGetContext(ctxt)) && (xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt))) &&
-        (xmlDocGetURL(xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))))
-	valuePush(ctxt, xmlXPathNewString(xmlDocGetURL(xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))));
+    if ((xmlXPathParserContextGetContext(ctxt))
+        && (xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))
+        && (xmlDocGetURL(
+            xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))))
+        valuePush(ctxt,
+                  xmlXPathNewString(xmlDocGetURL(xmlXPathContextGetDoc(
+                      xmlXPathParserContextGetContext(ctxt)))));
     else
-	valuePush(ctxt, xmlXPathNewString(BAD_CAST ""));
+        valuePush(ctxt, xmlXPathNewString(BAD_CAST ""));
 }
 
 /**
@@ -232,41 +239,45 @@ exsltSaxonSystemIdFunction(xmlXPathParserContextPtr ctxt, int nargs)
  * node in the argument node-set that is first in document order.
  */
 static void
-exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
+exsltSaxonLineNumberFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
     xmlNodePtr cur = NULL;
     xmlXPathObjectPtr obj = NULL;
     long lineNo = -1;
 
     if (nargs == 0) {
-	cur = xmlXPathContextGetNode(xmlXPathParserContextGetContext(ctxt));
+        cur = xmlXPathContextGetNode(xmlXPathParserContextGetContext(ctxt));
     } else if (nargs == 1) {
-	xmlNodeSetPtr nodelist;
-	int i;
+        xmlNodeSetPtr nodelist;
+        int i;
 
-	if ((xmlXPathParserContextGetValue(ctxt) == NULL) ||
-	    (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NODESET)) {
-	    xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"saxon:line-number() : invalid arg expecting a node-set\n");
-	    xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
-	    return;
-	}
+        if ((xmlXPathParserContextGetValue(ctxt) == NULL)
+            || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+                != XPATH_NODESET)) {
+            xsltTransformError(
+                xsltXPathGetTransformContext(ctxt), NULL, NULL,
+                "saxon:line-number() : invalid arg expecting a node-set\n");
+            xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
+            return;
+        }
 
-	obj = valuePop(ctxt);
-	nodelist = xmlXPathObjectGetNodesetval(obj);
-	if ((nodelist != NULL) && (xmlNodeSetGetNodeNr(nodelist) > 0)) {
+        obj = valuePop(ctxt);
+        nodelist = xmlXPathObjectGetNodesetval(obj);
+        if ((nodelist != NULL) && (xmlNodeSetGetNodeNr(nodelist) > 0)) {
             cur = xmlNodeSetGetNodeEntry(nodelist, 0);
-            for (i = 1;i < xmlNodeSetGetNodeNr(nodelist);i++) {
-                int ret = xmlXPathCmpNodes(cur, xmlNodeSetGetNodeEntry(nodelist, i));
+            for (i = 1; i < xmlNodeSetGetNodeNr(nodelist); i++) {
+                int ret = xmlXPathCmpNodes(cur,
+                                           xmlNodeSetGetNodeEntry(nodelist, i));
                 if (ret == -1)
                     cur = xmlNodeSetGetNodeEntry(nodelist, i);
             }
         }
     } else {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"saxon:line-number() : invalid number of args %d\n",
-		nargs);
-	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
-	return;
+        xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+                           "saxon:line-number() : invalid number of args %d\n",
+                           nargs);
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
+        return;
     }
 
     if ((cur != NULL) && (xmlNodeGetType(cur) == XML_NAMESPACE_DECL)) {
@@ -277,8 +288,8 @@ exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
         cur = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur);
         if (cur == NULL || xmlNodeGetType(cur) != XML_ELEMENT_NODE) {
             xsltGenericError(xsltGenericErrorContext,
-                "Internal error in exsltSaxonLineNumberFunction: "
-                "Cannot retrieve the doc of a namespace node.\n");
+                             "Internal error in exsltSaxonLineNumberFunction: "
+                             "Cannot retrieve the doc of a namespace node.\n");
             cur = NULL;
         }
     }
@@ -297,23 +308,19 @@ exsltSaxonLineNumberFunction(xmlXPathParserContextPtr ctxt, int nargs) {
  * Registers the SAXON extension module
  */
 void
-exsltSaxonRegister (void) {
-     xsltRegisterExtModule (SAXON_NAMESPACE,
-			    exsltSaxonInit,
-			    exsltSaxonShutdown);
-     xsltRegisterExtModuleFunction((const xmlChar *) "expression",
-				   SAXON_NAMESPACE,
-				   exsltSaxonExpressionFunction);
-     xsltRegisterExtModuleFunction((const xmlChar *) "eval",
-				   SAXON_NAMESPACE,
-				   exsltSaxonEvalFunction);
-     xsltRegisterExtModuleFunction((const xmlChar *) "evaluate",
-				   SAXON_NAMESPACE,
-				   exsltSaxonEvaluateFunction);
-    xsltRegisterExtModuleFunction ((const xmlChar *) "line-number",
-				   SAXON_NAMESPACE,
-				   exsltSaxonLineNumberFunction);
-    xsltRegisterExtModuleFunction ((const xmlChar *) "systemId",
-				   SAXON_NAMESPACE,
-				   exsltSaxonSystemIdFunction);
+exsltSaxonRegister (void)
+{
+    xsltRegisterExtModule(SAXON_NAMESPACE, exsltSaxonInit, exsltSaxonShutdown);
+    xsltRegisterExtModuleFunction((const xmlChar *) "expression",
+                                  SAXON_NAMESPACE,
+                                  exsltSaxonExpressionFunction);
+    xsltRegisterExtModuleFunction((const xmlChar *) "eval", SAXON_NAMESPACE,
+                                  exsltSaxonEvalFunction);
+    xsltRegisterExtModuleFunction((const xmlChar *) "evaluate", SAXON_NAMESPACE,
+                                  exsltSaxonEvaluateFunction);
+    xsltRegisterExtModuleFunction((const xmlChar *) "line-number",
+                                  SAXON_NAMESPACE,
+                                  exsltSaxonLineNumberFunction);
+    xsltRegisterExtModuleFunction((const xmlChar *) "systemId", SAXON_NAMESPACE,
+                                  exsltSaxonSystemIdFunction);
 }
