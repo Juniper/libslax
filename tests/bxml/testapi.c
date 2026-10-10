@@ -32,12 +32,12 @@
 #include <libxml/xpointer.h>
 
 static void
-ignoreError(void *userData UNUSED,
-            const xmlError *error UNUSED) {
-}
+ignoreError (void *userData UNUSED, const xmlError *error UNUSED)
+{}
 
 int
-main(int argc UNUSED, char **argv UNUSED) {
+main (int argc UNUSED, char **argv UNUSED)
+{
     xmlInitParser();
     xmlSetStructuredErrorFunc(NULL, ignoreError);
 
