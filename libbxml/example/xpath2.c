@@ -18,33 +18,32 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
-#if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_SAX1_ENABLED) && \
-    defined(LIBXML_OUTPUT_ENABLED)
+#if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_SAX1_ENABLED) \
+    && defined(LIBXML_OUTPUT_ENABLED)
 
+static void usage (const char *name);
+static int example4 (const char *filename, const xmlChar *xpathExpr,
+                     const xmlChar *value);
+static void update_xpath_nodes (xmlNodeSetPtr nodes, const xmlChar *value);
 
-static void usage(const char *name);
-static int example4(const char *filename, const xmlChar * xpathExpr,
-                    const xmlChar * value);
-static void update_xpath_nodes(xmlNodeSetPtr nodes, const xmlChar * value);
-
-
-int 
-main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     /* Parse command line and process file */
     if (argc != 4) {
-	fprintf(stderr, "Error: wrong number of arguments.\n");
-	usage(argv[0]);
-	return(-1);
-    } 
-    
-    /* Init libxml */     
+        fprintf(stderr, "Error: wrong number of arguments.\n");
+        usage(argv[0]);
+        return -1;
+    }
+
+    /* Init libxml */
     xmlInitParser();
     LIBXML_TEST_VERSION
 
     /* Do the main job */
     if (example4(argv[1], BAD_CAST argv[2], BAD_CAST argv[3])) {
-	usage(argv[0]);
-	return(-1);
+        usage(argv[0]);
+        return -1;
     }
 
     return 0;
@@ -56,10 +55,11 @@ main(int argc, char **argv) {
  *
  * Prints usage information.
  */
-static void 
-usage(const char *name) {
+static void
+usage (const char *name)
+{
     assert(name);
-    
+
     fprintf(stderr, "Usage: %s <xml-file> <xpath-expr> <value>\n", name);
 }
 
@@ -74,12 +74,13 @@ usage(const char *name) {
  *
  * Returns 0 on success and a negative value otherwise.
  */
-static int 
-example4(const char* filename, const xmlChar* xpathExpr, const xmlChar* value) {
+static int
+example4 (const char *filename, const xmlChar *xpathExpr, const xmlChar *value)
+{
     xmlDocPtr doc;
-    xmlXPathContextPtr xpathCtx; 
-    xmlXPathObjectPtr xpathObj; 
-    
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+
     assert(filename);
     assert(xpathExpr);
     assert(value);
@@ -87,43 +88,42 @@ example4(const char* filename, const xmlChar* xpathExpr, const xmlChar* value) {
     /* Load XML document */
     doc = xmlParseFile(filename);
     if (doc == NULL) {
-	fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
-	return(-1);
+        fprintf(stderr, "Error: unable to parse file \"%s\"\n", filename);
+        return -1;
     }
 
     /* Create xpath evaluation context */
     xpathCtx = xmlXPathNewContext(doc);
-    if(xpathCtx == NULL) {
-        fprintf(stderr,"Error: unable to create new XPath context\n");
-        xmlFreeDoc(doc); 
-        return(-1);
+    if (xpathCtx == NULL) {
+        fprintf(stderr, "Error: unable to create new XPath context\n");
+        xmlFreeDoc(doc);
+        return -1;
     }
-    
+
     /* Evaluate xpath expression */
     xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-    if(xpathObj == NULL) {
-        fprintf(stderr,"Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
-        xmlXPathFreeContext(xpathCtx); 
-        xmlFreeDoc(doc); 
-        return(-1);
+    if (xpathObj == NULL) {
+        fprintf(stderr, "Error: unable to evaluate xpath expression \"%s\"\n",
+                xpathExpr);
+        xmlXPathFreeContext(xpathCtx);
+        xmlFreeDoc(doc);
+        return -1;
     }
 
     /* update selected nodes */
     update_xpath_nodes(xpathObj->nodesetval, value);
 
-    
     /* Cleanup of XPath data */
     xmlXPathFreeObject(xpathObj);
-    xmlXPathFreeContext(xpathCtx); 
+    xmlXPathFreeContext(xpathCtx);
 
     /* dump the resulting document */
     xmlDocDump(stdout, doc);
 
-
     /* free the document */
-    xmlFreeDoc(doc); 
-    
-    return(0);
+    xmlFreeDoc(doc);
+
+    return 0;
 }
 
 /**
@@ -134,13 +134,14 @@ example4(const char* filename, const xmlChar* xpathExpr, const xmlChar* value) {
  * Prints the @nodes content to @output.
  */
 static void
-update_xpath_nodes(xmlNodeSetPtr nodes, const xmlChar* value) {
+update_xpath_nodes (xmlNodeSetPtr nodes, const xmlChar *value)
+{
     int size;
     int i;
-    
+
     assert(value);
     size = (nodes) ? nodes->nodeNr : 0;
-    
+
     /*
      * NOTE: the nodes are processed in reverse order, i.e. reverse document
      *       order because xmlNodeSetContent can actually free up descendant
@@ -149,11 +150,11 @@ update_xpath_nodes(xmlNodeSetPtr nodes, const xmlChar* value) {
      *       they get removed. Mixing XPath and modifications on a tree must be
      *       done carefully !
      */
-    for(i = size - 1; i >= 0; i--) {
-	assert(nodes->nodeTab[i]);
-	
-	xmlNodeSetContent(nodes->nodeTab[i], value);
-	/*
+    for (i = size - 1; i >= 0; i--) {
+        assert(nodes->nodeTab[i]);
+
+        xmlNodeSetContent(nodes->nodeTab[i], value);
+        /*
 	 * All the elements returned by an XPath query are pointers to
 	 * elements from the tree *except* namespace nodes where the XPath
 	 * semantic is different from the implementation in libxml2 tree.
@@ -170,13 +171,15 @@ update_xpath_nodes(xmlNodeSetPtr nodes, const xmlChar* value) {
 	 *   - remove the reference to the modified nodes from the node set
 	 *     as they are processed, if they are not namespace nodes.
 	 */
-	if (nodes->nodeTab[i]->type != XML_NAMESPACE_DECL)
-	    nodes->nodeTab[i] = NULL;
+        if (nodes->nodeTab[i]->type != XML_NAMESPACE_DECL)
+            nodes->nodeTab[i] = NULL;
     }
 }
 
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "XPath support not compiled in\n");
     return 0;
 }
