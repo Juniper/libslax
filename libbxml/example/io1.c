@@ -33,10 +33,11 @@ static int rlen;
  * Returns 1 if yes and 0 if another Input module should be used
  */
 static int
-sqlMatch(const char * URI) {
+sqlMatch (const char *URI)
+{
     if ((URI != NULL) && (!strncmp(URI, "sql:", 4)))
-        return(1);
-    return(0);
+        return 1;
+    return 0;
 }
 
 /**
@@ -49,12 +50,13 @@ sqlMatch(const char * URI) {
  * Returns an Input context or NULL in case or error
  */
 static void *
-sqlOpen(const char * URI) {
+sqlOpen (const char *URI)
+{
     if ((URI == NULL) || (strncmp(URI, "sql:", 4)))
-        return(NULL);
+        return NULL;
     cur = result;
     rlen = strlen(result);
-    return((void *) cur);
+    return (void *) cur;
 }
 
 /**
@@ -66,11 +68,13 @@ sqlOpen(const char * URI) {
  * Returns 0 or -1 in case of error
  */
 static int
-sqlClose(void * context) {
-    if (context == NULL) return(-1);
+sqlClose (void *context)
+{
+    if (context == NULL)
+        return -1;
     cur = NULL;
     rlen = 0;
-    return(0);
+    return 0;
 }
 
 /**
@@ -84,16 +88,18 @@ sqlClose(void * context) {
  * Returns the number of bytes read or -1 in case of error
  */
 static int
-sqlRead(void * context, char * buffer, int len) {
-   const char *ptr = (const char *) context;
+sqlRead (void *context, char *buffer, int len)
+{
+    const char *ptr = (const char *) context;
 
-   if ((context == NULL) || (buffer == NULL) || (len < 0))
-       return(-1);
+    if ((context == NULL) || (buffer == NULL) || (len < 0))
+        return -1;
 
-   if (len > rlen) len = rlen;
-   memcpy(buffer, ptr, len);
-   rlen -= len;
-   return(len);
+    if (len > rlen)
+        len = rlen;
+    memcpy(buffer, ptr, len);
+    rlen -= len;
+    return len;
 }
 
 static const char *const include = "<?xml version='1.0'?>\n\
@@ -102,7 +108,9 @@ static const char *const include = "<?xml version='1.0'?>\n\
   <xi:include href=\"sql:select_name_from_people\"/>\n\
 </document>\n";
 
-int main(void) {
+int
+main (void)
+{
     xmlDocPtr doc;
 
     /*
@@ -117,7 +125,7 @@ int main(void) {
      */
     if (xmlRegisterInputCallbacks(sqlMatch, sqlOpen, sqlRead, sqlClose) < 0) {
         fprintf(stderr, "failed to register SQL handler\n");
-	exit(1);
+        exit(1);
     }
     /*
      * parse include into a document
@@ -125,7 +133,7 @@ int main(void) {
     doc = xmlReadMemory(include, strlen(include), "include.xml", NULL, 0);
     if (doc == NULL) {
         fprintf(stderr, "failed to parse the including file\n");
-	exit(1);
+        exit(1);
     }
 
     /*
@@ -134,7 +142,7 @@ int main(void) {
      */
     if (xmlXIncludeProcess(doc) <= 0) {
         fprintf(stderr, "XInclude processing failed\n");
-	exit(1);
+        exit(1);
     }
 
 #ifdef LIBXML_OUTPUT_ENABLED
@@ -149,11 +157,13 @@ int main(void) {
      */
     xmlFreeDoc(doc);
 
-    return(0);
+    return 0;
 }
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "XInclude support not compiled in\n");
-    return(0);
+    return 0;
 }
 #endif
