@@ -24,9 +24,9 @@
 #include "fuzz.h"
 
 #if defined(_WIN32)
-  #define DIR_SEP '\\'
+#define DIR_SEP '\\'
 #else
-  #define DIR_SEP '/'
+#define DIR_SEP '/'
 #endif
 
 static xsltSecurityPrefsPtr globalSec;
@@ -34,7 +34,8 @@ static xsltStylesheetPtr globalStyle;
 static xsltTransformContextPtr tctxt;
 
 static void
-xsltFuzzXmlErrorFunc(void *vctxt, const char *msg ATTRIBUTE_UNUSED, ...) {
+xsltFuzzXmlErrorFunc (void *vctxt, const char *msg ATTRIBUTE_UNUSED, ...)
+{
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) vctxt;
     /*
      * Stopping the parser should be slightly faster and might catch some
@@ -44,12 +45,13 @@ xsltFuzzXmlErrorFunc(void *vctxt, const char *msg ATTRIBUTE_UNUSED, ...) {
 }
 
 static void
-xsltFuzzXsltErrorFunc(void *vctxt ATTRIBUTE_UNUSED,
-                      const char *msg ATTRIBUTE_UNUSED, ...) {
-}
+xsltFuzzXsltErrorFunc (void *vctxt ATTRIBUTE_UNUSED,
+                       const char *msg ATTRIBUTE_UNUSED, ...)
+{}
 
 static void
-xsltFuzzInit(void) {
+xsltFuzzInit (void)
+{
     xmlFuzzMemSetup();
 
     /* Init libxml2, libxslt and libexslt */
@@ -63,8 +65,7 @@ xsltFuzzInit(void) {
 
     /* Disallow I/O */
     globalSec = xsltNewSecurityPrefs();
-    xsltSetSecurityPrefs(globalSec, XSLT_SECPREF_READ_FILE,
-                         xsltSecurityForbid);
+    xsltSetSecurityPrefs(globalSec, XSLT_SECPREF_READ_FILE, xsltSecurityForbid);
     xsltSetSecurityPrefs(globalSec, XSLT_SECPREF_WRITE_FILE,
                          xsltSecurityForbid);
     xsltSetSecurityPrefs(globalSec, XSLT_SECPREF_CREATE_DIRECTORY,
@@ -111,14 +112,16 @@ xsltFuzzInit(void) {
  */
 
 int
-xsltFuzzXPathInit(void) {
+xsltFuzzXPathInit (void)
+{
     xsltFuzzInit();
     globalStyle = xsltNewStylesheet();
-    return(0);
+    return 0;
 }
 
 xmlXPathObjectPtr
-xsltFuzzXPath(const char *data, size_t size) {
+xsltFuzzXPath (const char *data, size_t size)
+{
     xmlXPathContextPtr xpctxt = NULL;
     xmlXPathObjectPtr xpathObj = NULL;
     xmlDocPtr doc;
@@ -188,12 +191,12 @@ xsltFuzzXPath(const char *data, size_t size) {
     xmlXPathRegisterVariable(xpctxt, BAD_CAST "s",
                              xmlXPathNewString(BAD_CAST "var"));
     xmlXPathRegisterVariable(
-            xpctxt, BAD_CAST "n",
-            xmlXPathEval(BAD_CAST "//node() | /*/*/namespace::*", xpctxt));
+        xpctxt, BAD_CAST "n",
+        xmlXPathEval(BAD_CAST "//node() | /*/*/namespace::*", xpctxt));
 
     /* Compile and return early if the expression is invalid */
-    xmlXPathCompExprPtr compExpr = xmlXPathCtxtCompile(xpctxt,
-            (const xmlChar *) xpathExpr);
+    xmlXPathCompExprPtr compExpr
+        = xmlXPathCtxtCompile(xpctxt, (const xmlChar *) xpathExpr);
     if (compExpr == NULL)
         goto error;
 
@@ -216,7 +219,8 @@ error:
 }
 
 void
-xsltFuzzXPathFreeObject(xmlXPathObjectPtr obj) {
+xsltFuzzXPathFreeObject (xmlXPathObjectPtr obj)
+{
     xmlXPathFreeObject(obj);
 
     if (tctxt != NULL) {
@@ -229,7 +233,8 @@ xsltFuzzXPathFreeObject(xmlXPathObjectPtr obj) {
 }
 
 void
-xsltFuzzXPathCleanup(void) {
+xsltFuzzXPathCleanup (void)
+{
     xsltFreeSecurityPrefs(globalSec);
     globalSec = NULL;
     xsltFreeStylesheet(globalStyle);
@@ -252,14 +257,16 @@ xsltFuzzXPathCleanup(void) {
  */
 
 int
-xsltFuzzXsltInit(void) {
+xsltFuzzXsltInit (void)
+{
     xsltFuzzInit();
     xmlSetExternalEntityLoader(xmlFuzzEntityLoader);
-    return(0);
+    return 0;
 }
 
 xmlChar *
-xsltFuzzXslt(const char *data, size_t size) {
+xsltFuzzXslt (const char *data, size_t size)
+{
     const char *xsltBuffer, *xsltUrl, *docBuffer, *docUrl;
     xmlDocPtr xsltDoc = NULL, doc = NULL;
     xmlDocPtr result = NULL;
@@ -347,7 +354,8 @@ exit:
 }
 
 void
-xsltFuzzXsltCleanup(void) {
+xsltFuzzXsltCleanup (void)
+{
     xsltFreeSecurityPrefs(globalSec);
     globalSec = NULL;
 }
@@ -393,9 +401,9 @@ size_t fuzzMaxAllocs;
  * An error function that simply discards all errors.
  */
 void
-xmlFuzzErrorFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
-                 ...) {
-}
+xmlFuzzErrorFunc (void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
+                  ...)
+{}
 
 /*
  * Malloc failure injection.
@@ -407,17 +415,18 @@ xmlFuzzErrorFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
  * issue.
  */
 
-#define XML_FUZZ_MALLOC_OFFSET  0
-#define XML_FUZZ_MALLOC_ABORT   0
+#define XML_FUZZ_MALLOC_OFFSET 0
+#define XML_FUZZ_MALLOC_ABORT  0
 
 static void *
-xmlFuzzMalloc(size_t size) {
+xmlFuzzMalloc (size_t size)
+{
     if (fuzzMaxAllocs > 0) {
         if (fuzzNumAllocs >= fuzzMaxAllocs - 1)
 #if XML_FUZZ_MALLOC_ABORT
             abort();
 #else
-            return(NULL);
+            return NULL;
 #endif
         fuzzNumAllocs += 1;
     }
@@ -425,13 +434,14 @@ xmlFuzzMalloc(size_t size) {
 }
 
 static void *
-xmlFuzzRealloc(void *ptr, size_t size) {
+xmlFuzzRealloc (void *ptr, size_t size)
+{
     if (fuzzMaxAllocs > 0) {
         if (fuzzNumAllocs >= fuzzMaxAllocs - 1)
 #if XML_FUZZ_MALLOC_ABORT
             abort();
 #else
-            return(NULL);
+            return NULL;
 #endif
         fuzzNumAllocs += 1;
     }
@@ -439,12 +449,14 @@ xmlFuzzRealloc(void *ptr, size_t size) {
 }
 
 void
-xmlFuzzMemSetup(void) {
+xmlFuzzMemSetup (void)
+{
     xmlMemSetup(free, xmlFuzzMalloc, xmlFuzzRealloc, xmlMemStrdup);
 }
 
 void
-xmlFuzzMemSetLimit(size_t limit) {
+xmlFuzzMemSetLimit (size_t limit)
+{
     fuzzNumAllocs = 0;
     fuzzMaxAllocs = limit ? limit + XML_FUZZ_MALLOC_OFFSET : 0;
 }
@@ -455,7 +467,8 @@ xmlFuzzMemSetLimit(size_t limit) {
  * Initialize fuzz data provider.
  */
 void
-xmlFuzzDataInit(const char *data, size_t size) {
+xmlFuzzDataInit (const char *data, size_t size)
+{
     fuzzData.data = data;
     fuzzData.size = size;
     fuzzData.ptr = data;
@@ -477,7 +490,8 @@ xmlFuzzDataInit(const char *data, size_t size) {
  * Cleanup fuzz data provider.
  */
 void
-xmlFuzzDataCleanup(void) {
+xmlFuzzDataCleanup (void)
+{
     xmlFree(fuzzData.outBuf);
     xmlHashFree(fuzzData.entities, xmlHashDefaultDeallocator);
 }
@@ -491,7 +505,8 @@ xmlFuzzDataCleanup(void) {
  * Write an integer to the fuzz data.
  */
 void
-xmlFuzzWriteInt(FILE *out, size_t v, int size) {
+xmlFuzzWriteInt (FILE *out, size_t v, int size)
+{
     int shift;
 
     while (size > (int) sizeof(size_t)) {
@@ -513,7 +528,8 @@ xmlFuzzWriteInt(FILE *out, size_t v, int size) {
  * Read an integer from the fuzz data.
  */
 size_t
-xmlFuzzReadInt(int size) {
+xmlFuzzReadInt (int size)
+{
     size_t ret = 0;
 
     while ((size > 0) && (fuzzData.remaining > 0)) {
@@ -533,14 +549,15 @@ xmlFuzzReadInt(int size) {
  * Read remaining bytes from fuzz data.
  */
 const char *
-xmlFuzzReadRemaining(size_t *size) {
+xmlFuzzReadRemaining (size_t *size)
+{
     const char *ret = fuzzData.ptr;
 
     *size = fuzzData.remaining;
     fuzzData.ptr += fuzzData.remaining;
     fuzzData.remaining = 0;
 
-    return(ret);
+    return ret;
 }
 
 /*
@@ -553,7 +570,8 @@ xmlFuzzReadRemaining(size_t *size) {
  * string. Two backslashes are used to escape a backslash.
  */
 void
-xmlFuzzWriteString(FILE *out, const char *str) {
+xmlFuzzWriteString (FILE *out, const char *str)
+{
     for (; *str; str++) {
         int c = (unsigned char) *str;
         putc(c, out);
@@ -577,7 +595,8 @@ xmlFuzzWriteString(FILE *out, const char *str) {
  * Returns a zero-terminated string or NULL if the fuzz data is exhausted.
  */
 const char *
-xmlFuzzReadString(size_t *size) {
+xmlFuzzReadString (size_t *size)
+{
     const char *out = fuzzData.outPtr;
 
     while (fuzzData.remaining > 0) {
@@ -593,7 +612,7 @@ xmlFuzzReadString(size_t *size) {
                 if (size != NULL)
                     *size = fuzzData.outPtr - out;
                 *fuzzData.outPtr++ = '\0';
-                return(out);
+                return out;
             }
             if (c2 == '\\') {
                 fuzzData.ptr++;
@@ -608,12 +627,12 @@ xmlFuzzReadString(size_t *size) {
         if (size != NULL)
             *size = fuzzData.outPtr - out;
         *fuzzData.outPtr++ = '\0';
-        return(out);
+        return out;
     }
 
     if (size != NULL)
         *size = 0;
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -623,7 +642,8 @@ xmlFuzzReadString(size_t *size) {
  * entities from fuzz data.
  */
 void
-xmlFuzzReadEntities(void) {
+xmlFuzzReadEntities (void)
+{
     size_t num = 0;
 
     while (1) {
@@ -632,19 +652,21 @@ xmlFuzzReadEntities(void) {
         xmlFuzzEntityInfo *entityInfo;
 
         url = xmlFuzzReadString(NULL);
-        if (url == NULL) break;
+        if (url == NULL)
+            break;
 
         entity = xmlFuzzReadString(&entitySize);
-        if (entity == NULL) break;
+        if (entity == NULL)
+            break;
 
-        if (xmlHashLookup(fuzzData.entities, (xmlChar *)url) == NULL) {
+        if (xmlHashLookup(fuzzData.entities, (xmlChar *) url) == NULL) {
             entityInfo = xmlMalloc(sizeof(xmlFuzzEntityInfo));
             if (entityInfo == NULL)
                 break;
             entityInfo->data = entity;
             entityInfo->size = entitySize;
 
-            xmlHashAddEntry(fuzzData.entities, (xmlChar *)url, entityInfo);
+            xmlHashAddEntry(fuzzData.entities, (xmlChar *) url, entityInfo);
 
             if (num == 0) {
                 fuzzData.mainUrl = url;
@@ -665,8 +687,9 @@ xmlFuzzReadEntities(void) {
  * Returns the main URL.
  */
 const char *
-xmlFuzzMainUrl(void) {
-    return(fuzzData.mainUrl);
+xmlFuzzMainUrl (void)
+{
+    return fuzzData.mainUrl;
 }
 
 /**
@@ -676,11 +699,12 @@ xmlFuzzMainUrl(void) {
  * Returns the main entity.
  */
 const char *
-xmlFuzzMainEntity(size_t *size) {
+xmlFuzzMainEntity (size_t *size)
+{
     if (fuzzData.mainEntity == NULL)
-        return(NULL);
+        return NULL;
     *size = fuzzData.mainEntity->size;
-    return(fuzzData.mainEntity->data);
+    return fuzzData.mainEntity->data;
 }
 
 /**
@@ -689,8 +713,9 @@ xmlFuzzMainEntity(size_t *size) {
  * Returns the secondary URL.
  */
 const char *
-xmlFuzzSecondaryUrl(void) {
-    return(fuzzData.secondaryUrl);
+xmlFuzzSecondaryUrl (void)
+{
+    return fuzzData.secondaryUrl;
 }
 
 /**
@@ -700,11 +725,12 @@ xmlFuzzSecondaryUrl(void) {
  * Returns the secondary entity.
  */
 const char *
-xmlFuzzSecondaryEntity(size_t *size) {
+xmlFuzzSecondaryEntity (size_t *size)
+{
     if (fuzzData.secondaryEntity == NULL)
-        return(NULL);
+        return NULL;
     *size = fuzzData.secondaryEntity->size;
-    return(fuzzData.secondaryEntity->data);
+    return fuzzData.secondaryEntity->data;
 }
 
 /**
@@ -713,21 +739,22 @@ xmlFuzzSecondaryEntity(size_t *size) {
  * The entity loader for fuzz data.
  */
 xmlParserInputPtr
-xmlFuzzEntityLoader(const char *URL, const char *ID ATTRIBUTE_UNUSED,
-                    xmlParserCtxtPtr ctxt) {
+xmlFuzzEntityLoader (const char *URL, const char *ID ATTRIBUTE_UNUSED,
+                     xmlParserCtxtPtr ctxt)
+{
     xmlParserInputBufferPtr buf;
     xmlFuzzEntityInfo *entity;
 
     if (URL == NULL)
-        return(NULL);
+        return NULL;
     entity = xmlHashLookup(fuzzData.entities, (xmlChar *) URL);
     if (entity == NULL)
-        return(NULL);
+        return NULL;
 
     buf = xmlParserInputBufferCreateMem(entity->data, entity->size,
                                         XML_CHAR_ENCODING_NONE);
     if (buf == NULL)
-        return(NULL);
+        return NULL;
 
-    return(xmlNewIOInputStream(ctxt, buf, XML_CHAR_ENCODING_NONE));
+    return xmlNewIOInputStream(ctxt, buf, XML_CHAR_ENCODING_NONE);
 }
