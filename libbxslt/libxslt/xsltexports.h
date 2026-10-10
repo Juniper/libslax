@@ -12,11 +12,11 @@
 /** DOC_DISABLE */
 
 #ifdef LIBXSLT_STATIC
-  #define XSLTPUBLIC
+#define XSLTPUBLIC
 #elif defined(IN_LIBXSLT)
-  #define XSLTPUBLIC __declspec(dllexport)
+#define XSLTPUBLIC __declspec(dllexport)
 #else
-  #define XSLTPUBLIC __declspec(dllimport)
+#define XSLTPUBLIC __declspec(dllimport)
 #endif
 
 #define XSLTCALL __cdecl
@@ -60,5 +60,3 @@
 #endif
 
 #endif /* __XSLT_EXPORTS_H__ */
-
-
