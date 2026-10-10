@@ -58,9 +58,8 @@
  * freed by the engine later), or NULL in case of error.
  */
 static xmlDocPtr
-xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
-                         void *ctxt UNUSED,
-			 xsltLoadType type UNUSED)
+xsltDocDefaultLoaderFunc (const xmlChar *URI, xmlDictPtr dict, int options,
+                          void *ctxt UNUSED, xsltLoadType type UNUSED)
 {
     xmlParserCtxtPtr pctxt;
     xmlParserInputPtr inputStream;
@@ -68,19 +67,19 @@ xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
 
     pctxt = xmlNewParserCtxt();
     if (pctxt == NULL)
-        return(NULL);
+        return NULL;
     if (dict != NULL) {
-	xmlCtxtSetDict(pctxt, dict);
+        xmlCtxtSetDict(pctxt, dict);
 #ifdef WITH_XSLT_DEBUG
-	xsltGenericDebug(xsltGenericDebugContext,
-                     "Reusing dictionary for document\n");
+        xsltGenericDebug(xsltGenericDebugContext,
+                         "Reusing dictionary for document\n");
 #endif
     }
     xmlCtxtUseOptions(pctxt, options);
     inputStream = xmlLoadExternalEntity((const char *) URI, NULL, pctxt);
     if (inputStream == NULL) {
         xmlFreeParserCtxt(pctxt);
-	return(NULL);
+        return NULL;
     }
 
 #if LIBXML_VERSION >= 21300
@@ -92,8 +91,7 @@ xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
 
     if (xmlParserCtxtGetWellFormed(pctxt)) {
         doc = xmlParserCtxtGetMyDoc(pctxt);
-    }
-    else {
+    } else {
         doc = NULL;
         xmlFreeDoc(xmlParserCtxtGetMyDoc(pctxt));
         xmlParserCtxtSetMyDoc(pctxt, NULL);
@@ -102,9 +100,8 @@ xsltDocDefaultLoaderFunc(const xmlChar * URI, xmlDictPtr dict, int options,
 
     xmlFreeParserCtxt(pctxt);
 
-    return(doc);
+    return doc;
 }
-
 
 xsltDocLoaderFunc xsltDocDefaultLoader = xsltDocDefaultLoaderFunc;
 
@@ -117,7 +114,8 @@ xsltDocLoaderFunc xsltDocDefaultLoader = xsltDocDefaultLoaderFunc;
  */
 
 void
-xsltSetLoaderFunc(xsltDocLoaderFunc f) {
+xsltSetLoaderFunc (xsltDocLoaderFunc f)
+{
     if (f == NULL)
         xsltDocDefaultLoader = xsltDocDefaultLoaderFunc;
     else
@@ -140,23 +138,24 @@ xsltSetLoaderFunc(xsltDocLoaderFunc f) {
  * Returns a handler to the document
  */
 xsltDocumentPtr
-xsltNewDocument(xsltTransformContextPtr ctxt, xmlDocPtr doc) {
+xsltNewDocument (xsltTransformContextPtr ctxt, xmlDocPtr doc)
+{
     xsltDocumentPtr cur;
 
     cur = (xsltDocumentPtr) xmlMalloc(sizeof(xsltDocument));
     if (cur == NULL) {
-	xsltTransformError(ctxt, NULL, (xmlNodePtr) doc,
-		"xsltNewDocument : malloc failed\n");
-	return(NULL);
+        xsltTransformError(ctxt, NULL, (xmlNodePtr) doc,
+                           "xsltNewDocument : malloc failed\n");
+        return NULL;
     }
     memset(cur, 0, sizeof(xsltDocument));
     cur->doc = doc;
     if (ctxt != NULL) {
-        if (! XSLT_IS_RES_TREE_FRAG(doc)) {
-	    cur->next = ctxt->docList;
-	    ctxt->docList = cur;
-	}
-	/*
+        if (!XSLT_IS_RES_TREE_FRAG(doc)) {
+            cur->next = ctxt->docList;
+            ctxt->docList = cur;
+        }
+        /*
 	* A key with a specific name for a specific document
 	* will only be computed if there's a call to the key()
 	* function using that specific name for that specific
@@ -166,7 +165,7 @@ xsltNewDocument(xsltTransformContextPtr ctxt, xmlDocPtr doc) {
 	* xsltInitCtxtKeys(ctxt, cur); not called here anymore
 	*/
     }
-    return(cur);
+    return cur;
 }
 
 /**
@@ -179,22 +178,23 @@ xsltNewDocument(xsltTransformContextPtr ctxt, xmlDocPtr doc) {
  * Returns a handler to the document
  */
 xsltDocumentPtr
-xsltNewStyleDocument(xsltStylesheetPtr style, xmlDocPtr doc) {
+xsltNewStyleDocument (xsltStylesheetPtr style, xmlDocPtr doc)
+{
     xsltDocumentPtr cur;
 
     cur = (xsltDocumentPtr) xmlMalloc(sizeof(xsltDocument));
     if (cur == NULL) {
-	xsltTransformError(NULL, style, (xmlNodePtr) doc,
-		"xsltNewStyleDocument : malloc failed\n");
-	return(NULL);
+        xsltTransformError(NULL, style, (xmlNodePtr) doc,
+                           "xsltNewStyleDocument : malloc failed\n");
+        return NULL;
     }
     memset(cur, 0, sizeof(xsltDocument));
     cur->doc = doc;
     if (style != NULL) {
-	cur->next = style->docList;
-	style->docList = cur;
+        cur->next = style->docList;
+        style->docList = cur;
     }
-    return(cur);
+    return cur;
 }
 
 /**
@@ -206,36 +206,37 @@ xsltNewStyleDocument(xsltStylesheetPtr style, xmlDocPtr doc) {
  * the given @style.
  */
 void
-xsltFreeStyleDocuments(xsltStylesheetPtr style) {
+xsltFreeStyleDocuments (xsltStylesheetPtr style)
+{
     xsltDocumentPtr doc, cur;
 #ifdef XSLT_REFACTORED_XSLT_NSCOMP
     xsltNsMapPtr nsMap;
 #endif
 
     if (style == NULL)
-	return;
+        return;
 
 #ifdef XSLT_REFACTORED_XSLT_NSCOMP
     if (XSLT_HAS_INTERNAL_NSMAP(style))
-	nsMap = XSLT_GET_INTERNAL_NSMAP(style);
+        nsMap = XSLT_GET_INTERNAL_NSMAP(style);
     else
-	nsMap = NULL;
+        nsMap = NULL;
 #endif
 
     cur = style->docList;
     while (cur != NULL) {
-	doc = cur;
-	cur = cur->next;
+        doc = cur;
+        cur = cur->next;
 #ifdef XSLT_REFACTORED_XSLT_NSCOMP
-	/*
+        /*
 	* Restore all changed namespace URIs of ns-decls.
 	*/
-	if (nsMap)
-	    xsltRestoreDocumentNamespaces(nsMap, doc->doc);
+        if (nsMap)
+            xsltRestoreDocumentNamespaces(nsMap, doc->doc);
 #endif
-	xsltFreeDocumentKeys(doc);
-	if (!doc->main)
-	    xmlFreeDoc(doc->doc);
+        xsltFreeDocumentKeys(doc);
+        if (!doc->main)
+            xmlFreeDoc(doc->doc);
         xmlFree(doc);
     }
 }
@@ -247,25 +248,26 @@ xsltFreeStyleDocuments(xsltStylesheetPtr style) {
  * Free up all the space used by the loaded documents
  */
 void
-xsltFreeDocuments(xsltTransformContextPtr ctxt) {
+xsltFreeDocuments (xsltTransformContextPtr ctxt)
+{
     xsltDocumentPtr doc, cur;
 
     cur = ctxt->docList;
     while (cur != NULL) {
-	doc = cur;
-	cur = cur->next;
-	xsltFreeDocumentKeys(doc);
-	if (!doc->main)
-	    xmlFreeDoc(doc->doc);
+        doc = cur;
+        cur = cur->next;
+        xsltFreeDocumentKeys(doc);
+        if (!doc->main)
+            xmlFreeDoc(doc->doc);
         xmlFree(doc);
     }
     cur = ctxt->styleList;
     while (cur != NULL) {
-	doc = cur;
-	cur = cur->next;
-	xsltFreeDocumentKeys(doc);
-	if (!doc->main)
-	    xmlFreeDoc(doc->doc);
+        doc = cur;
+        cur = cur->next;
+        xsltFreeDocumentKeys(doc);
+        if (!doc->main)
+            xmlFreeDoc(doc->doc);
         xmlFree(doc);
     }
 }
@@ -281,27 +283,28 @@ xsltFreeDocuments(xsltTransformContextPtr ctxt) {
  * Returns the new xsltDocumentPtr or NULL in case of error
  */
 xsltDocumentPtr
-xsltLoadDocument(xsltTransformContextPtr ctxt, const xmlChar *URI) {
+xsltLoadDocument (xsltTransformContextPtr ctxt, const xmlChar *URI)
+{
     xsltDocumentPtr ret;
     xmlDocPtr doc;
 
     if ((ctxt == NULL) || (URI == NULL))
-	return(NULL);
+        return NULL;
 
     /*
      * Security framework check
      */
     if (ctxt->sec != NULL) {
-	int res;
+        int res;
 
-	res = xsltCheckRead(ctxt->sec, ctxt, URI);
-	if (res <= 0) {
+        res = xsltCheckRead(ctxt->sec, ctxt, URI);
+        if (res <= 0) {
             if (res == 0)
-                xsltTransformError(ctxt, NULL, NULL,
-                     "xsltLoadDocument: read rights for %s denied\n",
-                                 URI);
-	    return(NULL);
-	}
+                xsltTransformError(
+                    ctxt, NULL, NULL,
+                    "xsltLoadDocument: read rights for %s denied\n", URI);
+            return NULL;
+        }
     }
 
     /*
@@ -309,41 +312,42 @@ xsltLoadDocument(xsltTransformContextPtr ctxt, const xmlChar *URI) {
      */
     ret = ctxt->docList;
     while (ret != NULL) {
-	if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL) &&
-	    (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
-	    return(ret);
-	ret = ret->next;
+        if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL)
+            && (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
+            return ret;
+        ret = ret->next;
     }
 
     doc = xsltDocDefaultLoader(URI, ctxt->dict, ctxt->parserOptions,
                                (void *) ctxt, XSLT_LOAD_DOCUMENT);
 
     if (doc == NULL)
-	return(NULL);
+        return NULL;
 
     if (ctxt->xinclude != 0) {
 #ifdef LIBXML_XINCLUDE_ENABLED
 #if LIBXML_VERSION >= 20603
-	xmlXIncludeProcessFlags(doc, ctxt->parserOptions);
+        xmlXIncludeProcessFlags(doc, ctxt->parserOptions);
 #else
-	xmlXIncludeProcess(doc);
+        xmlXIncludeProcess(doc);
 #endif
 #else
-	xsltTransformError(ctxt, NULL, NULL,
-	    "xsltLoadDocument(%s) : XInclude processing not compiled in\n",
-	                 URI);
+        xsltTransformError(
+            ctxt, NULL, NULL,
+            "xsltLoadDocument(%s) : XInclude processing not compiled in\n",
+            URI);
 #endif
     }
     /*
      * Apply white-space stripping if asked for
      */
     if (xsltNeedElemSpaceHandling(ctxt))
-	xsltApplyStripSpaces(ctxt, xmlDocGetRootElement(doc));
+        xsltApplyStripSpaces(ctxt, xmlDocGetRootElement(doc));
     if (xslDebugStatus == XSLT_DEBUG_NONE)
-	xmlXPathOrderDocElems(doc);
+        xmlXPathOrderDocElems(doc);
 
     ret = xsltNewDocument(ctxt, doc);
-    return(ret);
+    return ret;
 }
 
 /**
@@ -356,29 +360,30 @@ xsltLoadDocument(xsltTransformContextPtr ctxt, const xmlChar *URI) {
  * Returns the new xsltDocumentPtr or NULL in case of error
  */
 xsltDocumentPtr
-xsltLoadStyleDocument(xsltStylesheetPtr style, const xmlChar *URI) {
+xsltLoadStyleDocument (xsltStylesheetPtr style, const xmlChar *URI)
+{
     xsltDocumentPtr ret;
     xmlDocPtr doc;
     xsltSecurityPrefsPtr sec;
 
     if ((style == NULL) || (URI == NULL))
-	return(NULL);
+        return NULL;
 
     /*
      * Security framework check
      */
     sec = xsltGetDefaultSecurityPrefs();
     if (sec != NULL) {
-	int res;
+        int res;
 
-	res = xsltCheckRead(sec, NULL, URI);
-	if (res <= 0) {
+        res = xsltCheckRead(sec, NULL, URI);
+        if (res <= 0) {
             if (res == 0)
-                xsltTransformError(NULL, NULL, NULL,
-                     "xsltLoadStyleDocument: read rights for %s denied\n",
-                                 URI);
-	    return(NULL);
-	}
+                xsltTransformError(
+                    NULL, NULL, NULL,
+                    "xsltLoadStyleDocument: read rights for %s denied\n", URI);
+            return NULL;
+        }
     }
 
     /*
@@ -386,21 +391,21 @@ xsltLoadStyleDocument(xsltStylesheetPtr style, const xmlChar *URI) {
      */
     ret = style->docList;
     while (ret != NULL) {
-	if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL) &&
-	    (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
-	    return(ret);
-	ret = ret->next;
+        if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL)
+            && (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
+            return ret;
+        ret = ret->next;
     }
 
     doc = xsltDocDefaultLoader(URI, style->dict, XSLT_PARSE_OPTIONS,
                                (void *) style, XSLT_LOAD_STYLESHEET);
     if (doc == NULL)
-	return(NULL);
+        return NULL;
 
     ret = xsltNewStyleDocument(style, doc);
     if (ret == NULL)
         xmlFreeDoc(doc);
-    return(ret);
+    return ret;
 }
 
 /**
@@ -415,23 +420,23 @@ xsltLoadStyleDocument(xsltStylesheetPtr style, const xmlChar *URI) {
  * Returns the desired xsltDocumentPtr or NULL in case of error
  */
 xsltDocumentPtr
-xsltFindDocument (xsltTransformContextPtr ctxt, xmlDocPtr doc) {
+xsltFindDocument (xsltTransformContextPtr ctxt, xmlDocPtr doc)
+{
     xsltDocumentPtr ret;
 
     if ((ctxt == NULL) || (doc == NULL))
-	return(NULL);
+        return NULL;
 
     /*
      * Walk the context list to find the document
      */
     ret = ctxt->docList;
     while (ret != NULL) {
-	if (ret->doc == doc)
-	    return(ret);
-	ret = ret->next;
+        if (ret->doc == doc)
+            return ret;
+        ret = ret->next;
     }
     if (doc == ctxt->style->doc)
-	return(ctxt->document);
-    return(NULL);
+        return ctxt->document;
+    return NULL;
 }
-
