@@ -29,48 +29,47 @@
  * O_BINARY is just for Windows compatibility - if it isn't defined
  * on this system, avoid any compilation error
  */
-#ifdef	O_BINARY
-#define RD_FLAGS	O_RDONLY | O_BINARY
+#ifdef O_BINARY
+#define RD_FLAGS O_RDONLY | O_BINARY
 #else
-#define	RD_FLAGS	O_RDONLY
+#define RD_FLAGS O_RDONLY
 #endif
 
-#define OPT_SAX         (1<<0)
-#define OPT_NO_SUBST    (1<<1)
+#define OPT_SAX      (1 << 0)
+#define OPT_NO_SUBST (1 << 1)
 
-typedef int (*functest) (const char *filename, const char *result,
-                         const char *error, int options);
+typedef int (*functest)(const char *filename, const char *result,
+                        const char *error, int options);
 
 typedef struct testDesc testDesc;
 typedef testDesc *testDescPtr;
 struct testDesc {
-    const char *desc; /* description of the test */
-    functest    func; /* function implementing the test */
-    const char *in;   /* glob to path for input files */
-    const char *out;  /* output directory */
-    const char *suffix;/* suffix for output files */
-    const char *err;  /* suffix for error output files */
-    int     options;  /* parser options for the test */
+    const char *desc;   /* description of the test */
+    functest func;      /* function implementing the test */
+    const char *in;     /* glob to path for input files */
+    const char *out;    /* output directory */
+    const char *suffix; /* suffix for output files */
+    const char *err;    /* suffix for error output files */
+    int options;        /* parser options for the test */
 };
 
-static int checkTestFile(const char *filename);
-
+static int checkTestFile (const char *filename);
 
 #if defined(_WIN32)
 
 #include <windows.h>
 
-typedef struct
-{
-      size_t gl_pathc;    /* Count of paths matched so far  */
-      char **gl_pathv;    /* List of matched pathnames.  */
-      size_t gl_offs;     /* Slots to reserve in 'gl_pathv'.  */
+typedef struct {
+    size_t gl_pathc; /* Count of paths matched so far  */
+    char **gl_pathv; /* List of matched pathnames.  */
+    size_t gl_offs;  /* Slots to reserve in 'gl_pathv'.  */
 } glob_t;
 
 #define GLOB_DOOFFS 0
-static int glob(const char *pattern, UNUSED int flags,
-                UNUSED int errfunc(const char *epath, int eerrno),
-                glob_t *pglob) {
+static int
+glob (const char *pattern, UNUSED int flags,
+      UNUSED int errfunc(const char *epath, int eerrno), glob_t *pglob)
+{
     glob_t *ret;
     WIN32_FIND_DATA FindFileData;
     HANDLE hFind;
@@ -78,49 +77,50 @@ static int glob(const char *pattern, UNUSED int flags,
     char directory[500];
     int len;
 
-    if ((pattern == NULL) || (pglob == NULL)) return(-1);
+    if ((pattern == NULL) || (pglob == NULL))
+        return -1;
 
     strncpy(directory, pattern, 499);
-    for (len = strlen(directory);len >= 0;len--) {
+    for (len = strlen(directory); len >= 0; len--) {
         if (directory[len] == '/') {
-	    len++;
-	    directory[len] = 0;
-	    break;
-	}
+            len++;
+            directory[len] = 0;
+            break;
+        }
     }
     if (len <= 0)
         len = 0;
-
 
     ret = pglob;
     memset(ret, 0, sizeof(glob_t));
 
     hFind = FindFirstFileA(pattern, &FindFileData);
     if (hFind == INVALID_HANDLE_VALUE)
-        return(0);
+        return 0;
     nb_paths = 20;
     ret->gl_pathv = (char **) xmlMalloc(nb_paths * sizeof(char *));
     if (ret->gl_pathv == NULL) {
-	FindClose(hFind);
-        return(-1);
+        FindClose(hFind);
+        return -1;
     }
     strncpy(directory + len, FindFileData.cFileName, 499 - len);
     ret->gl_pathv[ret->gl_pathc] = xmlMemStrdup(directory);
     if (ret->gl_pathv[ret->gl_pathc] == NULL)
         goto done;
     ret->gl_pathc++;
-    while(FindNextFileA(hFind, &FindFileData)) {
+    while (FindNextFileA(hFind, &FindFileData)) {
         if (FindFileData.cFileName[0] == '.')
-	    continue;
+            continue;
         if (ret->gl_pathc + 2 > nb_paths) {
-            char **tmp = xmlRealloc(ret->gl_pathv, nb_paths * 2 * sizeof(char *));
+            char **tmp
+                = xmlRealloc(ret->gl_pathv, nb_paths * 2 * sizeof(char *));
             if (tmp == NULL)
                 break;
             ret->gl_pathv = tmp;
             nb_paths *= 2;
-	}
-	strncpy(directory + len, FindFileData.cFileName, 499 - len);
-	ret->gl_pathv[ret->gl_pathc] = xmlMemStrdup(directory);
+        }
+        strncpy(directory + len, FindFileData.cFileName, 499 - len);
+        ret->gl_pathv[ret->gl_pathc] = xmlMemStrdup(directory);
         if (ret->gl_pathv[ret->gl_pathc] == NULL)
             break;
         ret->gl_pathc++;
@@ -129,19 +129,19 @@ static int glob(const char *pattern, UNUSED int flags,
 
 done:
     FindClose(hFind);
-    return(0);
+    return 0;
 }
 
-
-
-static void globfree(glob_t *pglob) {
+static void
+globfree (glob_t *pglob)
+{
     unsigned int i;
     if (pglob == NULL)
         return;
 
-    for (i = 0;i < pglob->gl_pathc;i++) {
-         if (pglob->gl_pathv[i] != NULL)
-             xmlFree(pglob->gl_pathv[i]);
+    for (i = 0; i < pglob->gl_pathc; i++) {
+        if (pglob->gl_pathv[i] != NULL)
+            xmlFree(pglob->gl_pathv[i]);
     }
 }
 
@@ -154,24 +154,24 @@ static void globfree(glob_t *pglob) {
 #define GLOB_DOOFFS 0
 
 typedef struct {
-      size_t gl_pathc;    /* Count of paths matched so far  */
-      char **gl_pathv;    /* List of matched pathnames.  */
-      size_t gl_offs;     /* Slots to reserve in 'gl_pathv'.  */
+    size_t gl_pathc; /* Count of paths matched so far  */
+    char **gl_pathv; /* List of matched pathnames.  */
+    size_t gl_offs;  /* Slots to reserve in 'gl_pathv'.  */
 } glob_t;
 
 static int
-glob(const char *pattern UNUSED, int flags UNUSED,
-     int errfunc(const char *epath, int eerrno) UNUSED,
-     glob_t *pglob) {
+glob (const char *pattern UNUSED, int flags UNUSED,
+      int errfunc(const char *epath, int eerrno) UNUSED, glob_t *pglob)
+{
     pglob->gl_pathc = 0;
     pglob->gl_pathv = NULL;
 
-    return(0);
+    return 0;
 }
 
 static void
-globfree(glob_t *pglob UNUSED) {
-}
+globfree (glob_t *pglob UNUSED)
+{}
 
 #endif /* _WIN32, HAVE_DECL_GLOB */
 
@@ -191,51 +191,39 @@ typedef struct {
 } xmlHugeDocParts;
 
 static const xmlHugeDocParts hugeDocTable[] = {
-    {
-        "test/recurse/huge.xml",
+    {"test/recurse/huge.xml",
 
-        "<!DOCTYPE foo ["
-        "<!ELEMENT foo (bar*)> "
-        "<!ELEMENT bar (#PCDATA)> "
-        "<!ATTLIST bar attr CDATA #IMPLIED> "
-        "<!ENTITY a SYSTEM 'ga.ent'> "
-        "<!ENTITY b SYSTEM 'gb.ent'> "
-        "<!ENTITY c SYSTEM 'gc.ent'> "
-        "<!ENTITY f 'some internal data'> "
-        "<!ENTITY e '&f;&f;'> "
-        "<!ENTITY d '&e;&e;'> "
-        "]> "
-        "<foo>",
+     "<!DOCTYPE foo ["
+     "<!ELEMENT foo (bar*)> "
+     "<!ELEMENT bar (#PCDATA)> "
+     "<!ATTLIST bar attr CDATA #IMPLIED> "
+     "<!ENTITY a SYSTEM 'ga.ent'> "
+     "<!ENTITY b SYSTEM 'gb.ent'> "
+     "<!ENTITY c SYSTEM 'gc.ent'> "
+     "<!ENTITY f 'some internal data'> "
+     "<!ENTITY e '&f;&f;'> "
+     "<!ENTITY d '&e;&e;'> "
+     "]> "
+     "<foo>",                           "  <bar attr='&e; &f; &d;'>&a; &b; &c; &e; &f; &d;</bar>\n"
+     "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
+     "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
+     "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
+     "  <bar>_123456789_123456789_123456789_123456789</bar>\n",                "</foo>"},
+    {"test/recurse/huge_dtd.dtd",
 
-        "  <bar attr='&e; &f; &d;'>&a; &b; &c; &e; &f; &d;</bar>\n"
-        "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
-        "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
-        "  <bar>_123456789_123456789_123456789_123456789</bar>\n"
-        "  <bar>_123456789_123456789_123456789_123456789</bar>\n",
-
-        "</foo>"
-    },
-    {
-        "test/recurse/huge_dtd.dtd",
-
-        "<!ELEMENT foo (#PCDATA)>\n"
-        "<!ENTITY ent 'success'>\n"
-        "<!ENTITY % a SYSTEM 'pa.ent'>\n"
-        "<!ENTITY % b SYSTEM 'pb.ent'>\n"
-        "<!ENTITY % c SYSTEM 'pc.ent'>\n"
-        "<!ENTITY % d '<!-- comment -->'>\n"
-        "<!ENTITY % e '%d;%d;'>\n"
-        "<!ENTITY % f '%e;%e;'>\n",
-
-        "<!ENTITY ent '%a; %b; %c; %d; %e; %f;'>\n"
-        "%a; %b; %c; %d; %e; %f;\n"
-        "<!-- _123456789_123456789_123456789_123456789 -->\n"
-        "<!-- _123456789_123456789_123456789_123456789 -->\n"
-        "<!-- _123456789_123456789_123456789_123456789 -->\n",
-
-        ""
-    },
-    { NULL, NULL, NULL, NULL }
+     "<!ELEMENT foo (#PCDATA)>\n"
+     "<!ENTITY ent 'success'>\n"
+     "<!ENTITY % a SYSTEM 'pa.ent'>\n"
+     "<!ENTITY % b SYSTEM 'pb.ent'>\n"
+     "<!ENTITY % c SYSTEM 'pc.ent'>\n"
+     "<!ENTITY % d '<!-- comment -->'>\n"
+     "<!ENTITY % e '%d;%d;'>\n"
+     "<!ENTITY % f '%e;%e;'>\n",        "<!ENTITY ent '%a; %b; %c; %d; %e; %f;'>\n"
+     "%a; %b; %c; %d; %e; %f;\n"
+     "<!-- _123456789_123456789_123456789_123456789 -->\n"
+     "<!-- _123456789_123456789_123456789_123456789 -->\n"
+     "<!-- _123456789_123456789_123456789_123456789 -->\n", ""      },
+    {NULL,                        NULL, NULL,                                               NULL    }
 };
 
 static const xmlHugeDocParts *hugeDocParts;
@@ -250,18 +238,19 @@ static int rlen;
  * @returns 1 if yes and 0 if another Input module should be used
  */
 static int
-hugeMatch(const char * URI) {
+hugeMatch (const char *URI)
+{
     int i;
 
     if (URI == NULL)
-        return(0);
+        return 0;
 
     for (i = 0; hugeDocTable[i].URL; i++) {
         if (strcmp(URI, hugeDocTable[i].URL) == 0)
-            return(1);
+            return 1;
     }
 
-    return(0);
+    return 0;
 }
 
 /**
@@ -272,11 +261,12 @@ hugeMatch(const char * URI) {
  * @returns an Input context or NULL in case or error
  */
 static void *
-hugeOpen(const char * URI) {
+hugeOpen (const char *URI)
+{
     int i;
 
     if (URI == NULL)
-        return(NULL);
+        return NULL;
 
     for (i = 0; hugeDocTable[i].URL; i++) {
         if (strcmp(URI, hugeDocTable[i].URL) == 0) {
@@ -284,11 +274,11 @@ hugeOpen(const char * URI) {
             curseg = 0;
             current = hugeDocParts->start;
             rlen = strlen(current);
-            return((void *) current);
+            return (void *) current;
         }
     }
 
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -298,9 +288,11 @@ hugeOpen(const char * URI) {
  * @returns 0 or -1 in case of error
  */
 static int
-hugeClose(void * context) {
-    if (context == NULL) return(-1);
-    return(0);
+hugeClose (void *context)
+{
+    if (context == NULL)
+        return -1;
+    return 0;
 }
 
 #define MAX_NODES 1000
@@ -314,32 +306,32 @@ hugeClose(void * context) {
  * @returns the number of bytes read or -1 in case of error
  */
 static int
-hugeRead(void *context, char *buffer, int len)
+hugeRead (void *context, char *buffer, int len)
 {
     if ((context == NULL) || (buffer == NULL) || (len < 0))
-        return (-1);
+        return -1;
 
     if (len >= rlen) {
         if (curseg >= MAX_NODES + 1) {
             rlen = 0;
-            return(0);
+            return 0;
         }
         len = rlen;
         rlen = 0;
-	memcpy(buffer, current, len);
-        curseg ++;
+        memcpy(buffer, current, len);
+        curseg++;
         if (curseg == MAX_NODES) {
             current = hugeDocParts->finish;
-	} else {
+        } else {
             current = hugeDocParts->segment;
-	}
+        }
         rlen = strlen(current);
     } else {
-	memcpy(buffer, current, len);
-	rlen -= len;
+        memcpy(buffer, current, len);
+        rlen -= len;
         current += len;
     }
-    return (len);
+    return len;
 }
 
 /************************************************************************
@@ -353,13 +345,15 @@ static int nb_errors = 0;
 static int nb_leaks = 0;
 
 static int
-fatalError(void) {
+fatalError (void)
+{
     fprintf(stderr, "Exitting tests on fatal error\n");
     exit(1);
 }
 
 static void
-initializeLibxml2(void) {
+initializeLibxml2 (void)
+{
     xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -369,15 +363,16 @@ initializeLibxml2(void) {
     /*
      * register the new I/O handlers
      */
-    if (xmlRegisterInputCallbacks(hugeMatch, hugeOpen,
-                                  hugeRead, hugeClose) < 0) {
+    if (xmlRegisterInputCallbacks(hugeMatch, hugeOpen, hugeRead, hugeClose)
+        < 0) {
         fprintf(stderr, "failed to register Huge handler\n");
-	exit(1);
+        exit(1);
     }
 }
 
 static void
-initSAX(xmlParserCtxtPtr ctxt) {
+initSAX (xmlParserCtxtPtr ctxt)
+{
     ctxt->sax->startElementNs = NULL;
     ctxt->sax->endElementNs = NULL;
     ctxt->sax->startElement = NULL;
@@ -395,25 +390,28 @@ initSAX(xmlParserCtxtPtr ctxt) {
  *									*
  ************************************************************************/
 
-static const char *baseFilename(const char *filename) {
+static const char *
+baseFilename (const char *filename)
+{
     const char *cur;
     if (filename == NULL)
-        return(NULL);
+        return NULL;
     cur = &filename[strlen(filename)];
     while ((cur > filename) && (*cur != '/'))
         cur--;
     if (*cur == '/')
-        return(cur + 1);
-    return(cur);
+        return cur + 1;
+    return cur;
 }
 
-static char *resultFilename(const char *filename, const char *out,
-                            const char *suffix) {
+static char *
+resultFilename (const char *filename, const char *out, const char *suffix)
+{
     const char *base;
     char res[500];
     char suffixbuff[500];
 
-/*************
+    /*************
     if ((filename[0] == 't') && (filename[1] == 'e') &&
         (filename[2] == 's') && (filename[3] == 't') &&
 	(filename[4] == '/'))
@@ -426,31 +424,31 @@ static char *resultFilename(const char *filename, const char *out,
     if (out == NULL)
         out = "";
 
-    strncpy(suffixbuff,suffix,499);
+    strncpy(suffixbuff, suffix, 499);
 
     if (snprintf(res, 499, "%s%s%s", out, base, suffixbuff) >= 499)
         res[499] = 0;
-    return(xmlMemStrdup(res));
+    return xmlMemStrdup(res);
 }
 
-static int checkTestFile(const char *filename) {
+static int
+checkTestFile (const char *filename)
+{
     struct stat buf;
 
     if (stat(filename, &buf) == -1)
-        return(0);
+        return 0;
 
 #if defined(_WIN32)
     if (!(buf.st_mode & _S_IFREG))
-        return(0);
+        return 0;
 #else
     if (!S_ISREG(buf.st_mode))
-        return(0);
+        return 0;
 #endif
 
-    return(1);
+    return 1;
 }
-
-
 
 /************************************************************************
  *									*
@@ -467,10 +465,9 @@ static int checkTestFile(const char *filename) {
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-recursiveDetectTest(const char *filename,
-             const char *result UNUSED,
-             const char *err UNUSED,
-	     int options) {
+recursiveDetectTest (const char *filename, const char *result UNUSED,
+                     const char *err UNUSED, int options)
+{
     xmlDocPtr doc;
     xmlParserCtxtPtr ctxt;
     int res = 0;
@@ -494,13 +491,13 @@ recursiveDetectTest(const char *filename,
     doc = xmlCtxtReadFile(ctxt, filename, NULL, parserOptions);
     if ((doc != NULL) || (ctxt->lastError.code != XML_ERR_RESOURCE_LIMIT)) {
         fprintf(stderr, "Failed to detect recursion in %s\n", filename);
-	xmlFreeParserCtxt(ctxt);
-	xmlFreeDoc(doc);
-        return(1);
+        xmlFreeParserCtxt(ctxt);
+        xmlFreeDoc(doc);
+        return 1;
     }
     xmlFreeParserCtxt(ctxt);
 
-    return(res);
+    return res;
 }
 
 /**
@@ -513,10 +510,9 @@ recursiveDetectTest(const char *filename,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-notRecursiveDetectTest(const char *filename,
-             const char *result UNUSED,
-             const char *err UNUSED,
-	     int options) {
+notRecursiveDetectTest (const char *filename, const char *result UNUSED,
+                        const char *err UNUSED, int options)
+{
     xmlDocPtr doc;
     xmlParserCtxtPtr ctxt;
     int res = 0;
@@ -535,13 +531,13 @@ notRecursiveDetectTest(const char *filename,
     doc = xmlCtxtReadFile(ctxt, filename, NULL, parserOptions);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse correct file %s\n", filename);
-	xmlFreeParserCtxt(ctxt);
-        return(1);
+        xmlFreeParserCtxt(ctxt);
+        return 1;
     }
     xmlFreeDoc(doc);
     xmlFreeParserCtxt(ctxt);
 
-    return(res);
+    return res;
 }
 
 /**
@@ -554,10 +550,9 @@ notRecursiveDetectTest(const char *filename,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-notRecursiveHugeTest(const char *filename UNUSED,
-             const char *result UNUSED,
-             const char *err UNUSED,
-	     int options) {
+notRecursiveHugeTest (const char *filename UNUSED, const char *result UNUSED,
+                      const char *err UNUSED, int options)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     int res = 0;
@@ -573,7 +568,7 @@ notRecursiveHugeTest(const char *filename UNUSED,
     doc = xmlCtxtReadFile(ctxt, "test/recurse/huge.xml", NULL, parserOptions);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse huge.xml\n");
-	res = 1;
+        res = 1;
     } else {
         xmlEntityPtr ent;
         unsigned long fixed_cost = 20;
@@ -584,9 +579,7 @@ notRecursiveHugeTest(const char *filename UNUSED,
         unsigned long total_size;
 
         ent = xmlGetDocEntity(doc, BAD_CAST "e");
-        e_size = f_size * 2 +
-                 xmlStrlen(BAD_CAST "&f;") * 2 +
-                 fixed_cost * 2;
+        e_size = f_size * 2 + xmlStrlen(BAD_CAST "&f;") * 2 + fixed_cost * 2;
         if (ent->expandedSize != e_size) {
             fprintf(stderr, "Wrong size for entity e: %lu (expected %lu)\n",
                     ent->expandedSize, e_size);
@@ -601,9 +594,7 @@ notRecursiveHugeTest(const char *filename UNUSED,
         }
 
         ent = xmlGetDocEntity(doc, BAD_CAST "d");
-        d_size = e_size * 2 +
-                 xmlStrlen(BAD_CAST "&e;") * 2 +
-                 fixed_cost * 2;
+        d_size = e_size * 2 + xmlStrlen(BAD_CAST "&e;") * 2 + fixed_cost * 2;
         if (ent->expandedSize != d_size) {
             fprintf(stderr, "Wrong size for entity d: %lu (expected %lu)\n",
                     ent->expandedSize, d_size);
@@ -623,8 +614,8 @@ notRecursiveHugeTest(const char *filename UNUSED,
             res = 1;
         }
 
-        total_size = (f_size + e_size + d_size + 3 * fixed_cost) *
-                     (MAX_NODES - 1) * 3;
+        total_size
+            = (f_size + e_size + d_size + 3 * fixed_cost) * (MAX_NODES - 1) * 3;
         if (ctxt->sizeentcopy != total_size) {
             fprintf(stderr, "Wrong total entity size: %lu (expected %lu)\n",
                     ctxt->sizeentcopy, total_size);
@@ -641,7 +632,7 @@ notRecursiveHugeTest(const char *filename UNUSED,
     xmlFreeDoc(doc);
     xmlFreeParserCtxt(ctxt);
 
-    return(res);
+    return res;
 }
 
 /**
@@ -654,10 +645,9 @@ notRecursiveHugeTest(const char *filename UNUSED,
  * @returns 0 in case of success, an error code otherwise
  */
 static int
-hugeDtdTest(const char *filename UNUSED,
-            const char *result UNUSED,
-            const char *err UNUSED,
-            int options) {
+hugeDtdTest (const char *filename UNUSED, const char *result UNUSED,
+             const char *err UNUSED, int options)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     int res = 0;
@@ -674,7 +664,7 @@ hugeDtdTest(const char *filename UNUSED,
                           parserOptions);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse huge_dtd.xml\n");
-	res = 1;
+        res = 1;
     } else {
         unsigned long fixed_cost = 20;
         unsigned long allowed_expansion = 1000000;
@@ -700,29 +690,28 @@ hugeDtdTest(const char *filename UNUSED,
         e_size = a_size * 2;
         f_size = e_size * 2;
         total_size = /* internal */
-                     e_size + f_size + fixed_cost * 4 +
-                     (a_size + e_size + f_size + fixed_cost * 3) *
-                     (MAX_NODES - 1) * 2 +
-                     /* external */
-                     (a_size + b_size + c_size + fixed_cost * 3) *
-                     (MAX_NODES - 1) * 2 +
-                     /* final reference in main doc */
-                     strlen("success") + fixed_cost;
+            e_size + f_size + fixed_cost * 4
+            + (a_size + e_size + f_size + fixed_cost * 3) * (MAX_NODES - 1) * 2
+            +
+            /* external */
+            (a_size + b_size + c_size + fixed_cost * 3) * (MAX_NODES - 1) * 2 +
+            /* final reference in main doc */
+            strlen("success") + fixed_cost;
         if (ctxt->sizeentcopy != total_size) {
             fprintf(stderr, "Wrong total entity size: %lu (expected %lu)\n",
                     ctxt->sizeentcopy, total_size);
             res = 1;
         }
 
-        total_size = strlen(hugeDocParts->start) +
-                     strlen(hugeDocParts->segment) * (MAX_NODES - 1) +
-                     strlen(hugeDocParts->finish) +
-                     /*
+        total_size = strlen(hugeDocParts->start)
+            + strlen(hugeDocParts->segment) * (MAX_NODES - 1)
+            + strlen(hugeDocParts->finish) +
+            /*
                       * Other external entities pa.ent, pb.ent, pc.ent.
                       * These are currently counted twice because they're
                       * used both in DTD and EntityValue.
                       */
-                     (16 + 6 + 6) * 2;
+            (16 + 6 + 6) * 2;
         if (ctxt->sizeentities != total_size) {
             fprintf(stderr, "Wrong parsed entity size: %lu (expected %lu)\n",
                     ctxt->sizeentities, total_size);
@@ -733,7 +722,7 @@ hugeDtdTest(const char *filename UNUSED,
     xmlFreeDoc(doc);
     xmlFreeParserCtxt(ctxt);
 
-    return(res);
+    return res;
 }
 
 /************************************************************************
@@ -742,42 +731,30 @@ hugeDtdTest(const char *filename UNUSED,
  *									*
  ************************************************************************/
 
-static
-testDesc testDescriptions[] = {
-    { "Parsing recursive test cases" ,
-      recursiveDetectTest, "./test/recurse/lol*.xml", NULL, NULL, NULL,
-      0 },
-    { "Parsing recursive test cases (no substitution)" ,
-      recursiveDetectTest, "./test/recurse/lol*.xml", NULL, NULL, NULL,
-      OPT_NO_SUBST },
-    { "Parsing recursive test cases (SAX)" ,
-      recursiveDetectTest, "./test/recurse/lol*.xml", NULL, NULL, NULL,
-      OPT_SAX },
-    { "Parsing recursive test cases (SAX, no substitution)" ,
-      recursiveDetectTest, "./test/recurse/lol*.xml", NULL, NULL, NULL,
-      OPT_SAX | OPT_NO_SUBST },
-    { "Parsing non-recursive test cases" ,
-      notRecursiveDetectTest, "./test/recurse/good*.xml", NULL, NULL, NULL,
-      0 },
-    { "Parsing non-recursive test cases (SAX)" ,
-      notRecursiveDetectTest, "./test/recurse/good*.xml", NULL, NULL, NULL,
-      OPT_SAX },
-    { "Parsing non-recursive huge case" ,
-      notRecursiveHugeTest, NULL, NULL, NULL, NULL,
-      0 },
-    { "Parsing non-recursive huge case (no substitution)" ,
-      notRecursiveHugeTest, NULL, NULL, NULL, NULL,
-      OPT_NO_SUBST },
-    { "Parsing non-recursive huge case (SAX)" ,
-      notRecursiveHugeTest, NULL, NULL, NULL, NULL,
-      OPT_SAX },
-    { "Parsing non-recursive huge case (SAX, no substitution)" ,
-      notRecursiveHugeTest, NULL, NULL, NULL, NULL,
-      OPT_SAX | OPT_NO_SUBST },
-    { "Parsing non-recursive huge DTD case" ,
-      hugeDtdTest, NULL, NULL, NULL, NULL,
-      0 },
-    {NULL, NULL, NULL, NULL, NULL, NULL, 0}
+static testDesc testDescriptions[] = {
+    {"Parsing recursive test cases",                           recursiveDetectTest,
+     "./test/recurse/lol*.xml",                                                              NULL, NULL, NULL, 0                     },
+    {"Parsing recursive test cases (no substitution)",         recursiveDetectTest,
+     "./test/recurse/lol*.xml",                                                              NULL, NULL, NULL, OPT_NO_SUBST          },
+    {"Parsing recursive test cases (SAX)",                     recursiveDetectTest,
+     "./test/recurse/lol*.xml",                                                              NULL, NULL, NULL, OPT_SAX               },
+    {"Parsing recursive test cases (SAX, no substitution)",    recursiveDetectTest,
+     "./test/recurse/lol*.xml",                                                              NULL, NULL, NULL, OPT_SAX | OPT_NO_SUBST},
+    {"Parsing non-recursive test cases",                       notRecursiveDetectTest,
+     "./test/recurse/good*.xml",                                                             NULL, NULL, NULL, 0                     },
+    {"Parsing non-recursive test cases (SAX)",                 notRecursiveDetectTest,
+     "./test/recurse/good*.xml",                                                             NULL, NULL, NULL, OPT_SAX               },
+    {"Parsing non-recursive huge case",                        notRecursiveHugeTest,   NULL, NULL, NULL,
+     NULL,                                                                                                     0                     },
+    {"Parsing non-recursive huge case (no substitution)",      notRecursiveHugeTest,
+     NULL,                                                                                   NULL, NULL, NULL, OPT_NO_SUBST          },
+    {"Parsing non-recursive huge case (SAX)",                  notRecursiveHugeTest,   NULL, NULL,
+     NULL,                                                                                               NULL, OPT_SAX               },
+    {"Parsing non-recursive huge case (SAX, no substitution)",
+     notRecursiveHugeTest,                                                             NULL, NULL, NULL, NULL, OPT_SAX | OPT_NO_SUBST},
+    {"Parsing non-recursive huge DTD case",                    hugeDtdTest,            NULL, NULL, NULL, NULL,
+     0                                                                                                                               },
+    {NULL,                                                     NULL,                   NULL, NULL, NULL, NULL, 0                     }
 };
 
 /************************************************************************
@@ -787,85 +764,86 @@ testDesc testDescriptions[] = {
  ************************************************************************/
 
 static int
-launchTests(testDescPtr tst) {
+launchTests (testDescPtr tst)
+{
     int res = 0, err = 0;
     size_t i;
     char *result;
     char *error;
     int mem;
 
-    if (tst == NULL) return(-1);
+    if (tst == NULL)
+        return -1;
     if (tst->in != NULL) {
-	glob_t globbuf;
+        glob_t globbuf;
 
-	globbuf.gl_offs = 0;
-	glob(tst->in, GLOB_DOOFFS, NULL, &globbuf);
-	for (i = 0;i < globbuf.gl_pathc;i++) {
-	    if (!checkTestFile(globbuf.gl_pathv[i]))
-	        continue;
-	    if (tst->suffix != NULL) {
-		result = resultFilename(globbuf.gl_pathv[i], tst->out,
-					tst->suffix);
-		if (result == NULL) {
-		    fprintf(stderr, "Out of memory !\n");
-		    fatalError();
-		}
-	    } else {
-	        result = NULL;
-	    }
-	    if (tst->err != NULL) {
-		error = resultFilename(globbuf.gl_pathv[i], tst->out,
-		                        tst->err);
-		if (error == NULL) {
-		    fprintf(stderr, "Out of memory !\n");
-		    fatalError();
-		}
-	    } else {
-	        error = NULL;
-	    }
-	    if ((result) &&(!checkTestFile(result))) {
-	        fprintf(stderr, "Missing result file %s\n", result);
-	    } else if ((error) &&(!checkTestFile(error))) {
-	        fprintf(stderr, "Missing error file %s\n", error);
-	    } else {
-		mem = xmlMemUsed();
-		res = tst->func(globbuf.gl_pathv[i], result, error,
-		                tst->options | XML_PARSE_COMPACT);
-		xmlResetLastError();
-		if (res != 0) {
-		    fprintf(stderr, "File %s generated an error\n",
-		            globbuf.gl_pathv[i]);
-		    nb_errors++;
-		    err++;
-		}
-		else if (xmlMemUsed() != mem) {
+        globbuf.gl_offs = 0;
+        glob(tst->in, GLOB_DOOFFS, NULL, &globbuf);
+        for (i = 0; i < globbuf.gl_pathc; i++) {
+            if (!checkTestFile(globbuf.gl_pathv[i]))
+                continue;
+            if (tst->suffix != NULL) {
+                result = resultFilename(globbuf.gl_pathv[i], tst->out,
+                                        tst->suffix);
+                if (result == NULL) {
+                    fprintf(stderr, "Out of memory !\n");
+                    fatalError();
+                }
+            } else {
+                result = NULL;
+            }
+            if (tst->err != NULL) {
+                error = resultFilename(globbuf.gl_pathv[i], tst->out, tst->err);
+                if (error == NULL) {
+                    fprintf(stderr, "Out of memory !\n");
+                    fatalError();
+                }
+            } else {
+                error = NULL;
+            }
+            if ((result) && (!checkTestFile(result))) {
+                fprintf(stderr, "Missing result file %s\n", result);
+            } else if ((error) && (!checkTestFile(error))) {
+                fprintf(stderr, "Missing error file %s\n", error);
+            } else {
+                mem = xmlMemUsed();
+                res = tst->func(globbuf.gl_pathv[i], result, error,
+                                tst->options | XML_PARSE_COMPACT);
+                xmlResetLastError();
+                if (res != 0) {
+                    fprintf(stderr, "File %s generated an error\n",
+                            globbuf.gl_pathv[i]);
+                    nb_errors++;
+                    err++;
+                } else if (xmlMemUsed() != mem) {
                     fprintf(stderr, "File %s leaked %d bytes\n",
                             globbuf.gl_pathv[i], xmlMemUsed() - mem);
                     nb_leaks++;
                     err++;
-		}
-	    }
-	    if (result)
-		xmlFree(result);
-	    if (error)
-		xmlFree(error);
-	}
-	globfree(&globbuf);
+                }
+            }
+            if (result)
+                xmlFree(result);
+            if (error)
+                xmlFree(error);
+        }
+        globfree(&globbuf);
     } else {
         res = tst->func(NULL, NULL, NULL, tst->options);
-	if (res != 0) {
-	    nb_errors++;
-	    err++;
-	}
+        if (res != 0) {
+            nb_errors++;
+            err++;
+        }
     }
-    return(err);
+    return err;
 }
 
 static int verbose = 0;
 static int tests_quiet = 0;
 
 static int
-runtest(int i) {
+runtest (int i)
+{
     int ret = 0, res;
     int old_errors, old_tests, old_leaks;
 
@@ -873,58 +851,56 @@ runtest(int i) {
     old_tests = nb_tests;
     old_leaks = nb_leaks;
     if ((tests_quiet == 0) && (testDescriptions[i].desc != NULL))
-	printf("## %s\n", testDescriptions[i].desc);
+        printf("## %s\n", testDescriptions[i].desc);
     res = launchTests(&testDescriptions[i]);
     if (res != 0)
-	ret++;
+        ret++;
     if (verbose) {
-	if ((nb_errors == old_errors) && (nb_leaks == old_leaks))
-	    printf("Ran %d tests, no errors\n", nb_tests - old_tests);
-	else
-	    printf("Ran %d tests, %d errors, %d leaks\n",
-		   nb_tests - old_tests,
-		   nb_errors - old_errors,
-		   nb_leaks - old_leaks);
+        if ((nb_errors == old_errors) && (nb_leaks == old_leaks))
+            printf("Ran %d tests, no errors\n", nb_tests - old_tests);
+        else
+            printf("Ran %d tests, %d errors, %d leaks\n", nb_tests - old_tests,
+                   nb_errors - old_errors, nb_leaks - old_leaks);
     }
-    return(ret);
+    return ret;
 }
 
 int
-main(int argc UNUSED, char **argv UNUSED) {
+main (int argc UNUSED, char **argv UNUSED)
+{
     int i, a, ret = 0;
     int subset = 0;
 
     initializeLibxml2();
 
-    for (a = 1; a < argc;a++) {
+    for (a = 1; a < argc; a++) {
         if (!strcmp(argv[a], "-v"))
-	    verbose = 1;
+            verbose = 1;
         else if (!strcmp(argv[a], "-quiet"))
-	    tests_quiet = 1;
-	else {
-	    for (i = 0; testDescriptions[i].func != NULL; i++) {
-	        if (strstr(testDescriptions[i].desc, argv[a])) {
-		    ret += runtest(i);
-		    subset++;
-		}
-	    }
-	}
+            tests_quiet = 1;
+        else {
+            for (i = 0; testDescriptions[i].func != NULL; i++) {
+                if (strstr(testDescriptions[i].desc, argv[a])) {
+                    ret += runtest(i);
+                    subset++;
+                }
+            }
+        }
     }
     if (subset == 0) {
-	for (i = 0; testDescriptions[i].func != NULL; i++) {
-	    ret += runtest(i);
-	}
+        for (i = 0; testDescriptions[i].func != NULL; i++) {
+            ret += runtest(i);
+        }
     }
     if ((nb_errors == 0) && (nb_leaks == 0)) {
         ret = 0;
-	printf("Total %d tests, no errors\n",
-	       nb_tests);
+        printf("Total %d tests, no errors\n", nb_tests);
     } else {
         ret = 1;
-	printf("Total %d tests, %d errors, %d leaks\n",
-	       nb_tests, nb_errors, nb_leaks);
+        printf("Total %d tests, %d errors, %d leaks\n", nb_tests, nb_errors,
+               nb_leaks);
     }
     xmlCleanupParser();
 
-    return(ret);
+    return ret;
 }
