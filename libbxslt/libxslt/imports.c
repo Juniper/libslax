@@ -28,7 +28,6 @@
 #include "security.h"
 #include "pattern.h"
 
-
 /************************************************************************
  *									*
  *			Module interfaces				*
@@ -43,8 +42,9 @@
  * by the master, together with any imports within that.
  *
  */
-static void xsltFixImportedCompSteps(xsltStylesheetPtr master,
-			xsltStylesheetPtr style) {
+static void
+xsltFixImportedCompSteps (xsltStylesheetPtr master, xsltStylesheetPtr style)
+{
     xsltStylesheetPtr res;
     xmlHashScan(style->templatesHash, xsltNormalizeCompSteps, master);
     master->extrasNr += style->extrasNr;
@@ -56,7 +56,8 @@ static void xsltFixImportedCompSteps(xsltStylesheetPtr master,
 #define XSLT_MAX_NESTING 40
 
 static int
-xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
+xsltCheckCycle (xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI)
+{
     xsltStylesheetPtr ancestor;
     xsltDocumentPtr docptr;
     int depth;
@@ -69,13 +70,13 @@ xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
     while (ancestor != NULL) {
         if (++depth >= XSLT_MAX_NESTING) {
             xsltTransformError(NULL, style, cur,
-               "maximum nesting depth exceeded: %s\n", URI);
-            return(-1);
+                               "maximum nesting depth exceeded: %s\n", URI);
+            return -1;
         }
-	if (xmlStrEqual(xmlDocGetURL(ancestor->doc), URI)) {
+        if (xmlStrEqual(xmlDocGetURL(ancestor->doc), URI)) {
             xsltTransformError(NULL, style, cur,
-               "recursion detected on imported URL %s\n", URI);
-	    return(-1);
+                               "recursion detected on imported URL %s\n", URI);
+            return -1;
         }
 
         /*
@@ -85,21 +86,22 @@ xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
         while (docptr != NULL) {
             if (++depth >= XSLT_MAX_NESTING) {
                 xsltTransformError(NULL, style, cur,
-                   "maximum nesting depth exceeded: %s\n", URI);
-                return(-1);
+                                   "maximum nesting depth exceeded: %s\n", URI);
+                return -1;
             }
             if (xmlStrEqual(xmlDocGetURL(docptr->doc), URI)) {
                 xsltTransformError(NULL, style, cur,
-                   "recursion detected on included URL %s\n", URI);
-                return(-1);
+                                   "recursion detected on included URL %s\n",
+                                   URI);
+                return -1;
             }
             docptr = docptr->includes;
         }
 
-	ancestor = ancestor->parent;
+        ancestor = ancestor->parent;
     }
 
-    return(0);
+    return 0;
 }
 
 /**
@@ -113,7 +115,8 @@ xsltCheckCycle(xsltStylesheetPtr style, xmlNodePtr cur, const xmlChar *URI) {
  */
 
 int
-xsltParseStylesheetImport(xsltStylesheetPtr style, xmlNodePtr cur) {
+xsltParseStylesheetImport (xsltStylesheetPtr style, xmlNodePtr cur)
+{
     int ret = -1;
     xmlDocPtr import = NULL;
     xmlChar *base = NULL;
@@ -123,21 +126,21 @@ xsltParseStylesheetImport(xsltStylesheetPtr style, xmlNodePtr cur) {
     xsltSecurityPrefsPtr sec;
 
     if ((cur == NULL) || (style == NULL))
-	return (ret);
+        return ret;
 
-    uriRef = xmlGetNsProp(cur, (const xmlChar *)"href", NULL);
+    uriRef = xmlGetNsProp(cur, (const xmlChar *) "href", NULL);
     if (uriRef == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:import : missing href attribute\n");
-	goto error;
+        xsltTransformError(NULL, style, cur,
+                           "xsl:import : missing href attribute\n");
+        goto error;
     }
 
     base = xmlNodeGetBase(style->doc, cur);
     URI = xmlBuildURI(uriRef, base);
     if (URI == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:import : invalid URI reference %s\n", uriRef);
-	goto error;
+        xsltTransformError(NULL, style, cur,
+                           "xsl:import : invalid URI reference %s\n", uriRef);
+        goto error;
     }
 
     if (xsltCheckCycle(style, cur, URI) < 0)
@@ -148,47 +151,47 @@ xsltParseStylesheetImport(xsltStylesheetPtr style, xmlNodePtr cur) {
      */
     sec = xsltGetDefaultSecurityPrefs();
     if (sec != NULL) {
-	int secres;
+        int secres;
 
-	secres = xsltCheckRead(sec, NULL, URI);
-	if (secres <= 0) {
+        secres = xsltCheckRead(sec, NULL, URI);
+        if (secres <= 0) {
             if (secres == 0)
                 xsltTransformError(NULL, NULL, NULL,
-                     "xsl:import: read rights for %s denied\n",
-                                 URI);
-	    goto error;
-	}
+                                   "xsl:import: read rights for %s denied\n",
+                                   URI);
+            goto error;
+        }
     }
 
     import = xsltDocDefaultLoader(URI, style->dict, XSLT_PARSE_OPTIONS,
                                   (void *) style, XSLT_LOAD_STYLESHEET);
     if (import == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:import : unable to load %s\n", URI);
-	goto error;
+        xsltTransformError(NULL, style, cur, "xsl:import : unable to load %s\n",
+                           URI);
+        goto error;
     }
 
     res = xsltParseStylesheetImportedDoc(import, style);
     if (res != NULL) {
-	res->next = style->imports;
-	style->imports = res;
-	if (style->parent == NULL) {
-	    xsltFixImportedCompSteps(style, res);
-	}
-	ret = 0;
+        res->next = style->imports;
+        style->imports = res;
+        if (style->parent == NULL) {
+            xsltFixImportedCompSteps(style, res);
+        }
+        ret = 0;
     } else {
-	xmlFreeDoc(import);
-	}
+        xmlFreeDoc(import);
+    }
 
 error:
     if (uriRef != NULL)
-	xmlFree(uriRef);
+        xmlFree(uriRef);
     if (base != NULL)
-	xmlFree(base);
+        xmlFree(base);
     if (URI != NULL)
-	xmlFree(URI);
+        xmlFree(URI);
 
-    return (ret);
+    return ret;
 }
 
 /**
@@ -202,7 +205,8 @@ error:
  */
 
 int
-xsltParseStylesheetInclude(xsltStylesheetPtr style, xmlNodePtr cur) {
+xsltParseStylesheetInclude (xsltStylesheetPtr style, xmlNodePtr cur)
+{
     int ret = -1;
     xmlDocPtr oldDoc;
     xmlChar *base = NULL;
@@ -213,21 +217,21 @@ xsltParseStylesheetInclude(xsltStylesheetPtr style, xmlNodePtr cur) {
     int oldNopreproc;
 
     if ((cur == NULL) || (style == NULL))
-	return (ret);
+        return ret;
 
-    uriRef = xmlGetNsProp(cur, (const xmlChar *)"href", NULL);
+    uriRef = xmlGetNsProp(cur, (const xmlChar *) "href", NULL);
     if (uriRef == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:include : missing href attribute\n");
-	goto error;
+        xsltTransformError(NULL, style, cur,
+                           "xsl:include : missing href attribute\n");
+        goto error;
     }
 
     base = xmlNodeGetBase(style->doc, cur);
     URI = xmlBuildURI(uriRef, base);
     if (URI == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:include : invalid URI reference %s\n", uriRef);
-	goto error;
+        xsltTransformError(NULL, style, cur,
+                           "xsl:include : invalid URI reference %s\n", uriRef);
+        goto error;
     }
 
     if (xsltCheckCycle(style, cur, URI) < 0)
@@ -235,18 +239,19 @@ xsltParseStylesheetInclude(xsltStylesheetPtr style, xmlNodePtr cur) {
 
     include = xsltLoadStyleDocument(style, URI);
     if (include == NULL) {
-	xsltTransformError(NULL, style, cur,
-	    "xsl:include : unable to load %s\n", URI);
-	goto error;
+        xsltTransformError(NULL, style, cur,
+                           "xsl:include : unable to load %s\n", URI);
+        goto error;
     }
 #ifdef XSLT_REFACTORED
     if (IS_XSLT_ELEM_FAST(cur) && (xmlNodeGetPsvi(cur) != NULL)) {
-	((xsltStyleItemIncludePtr) xmlNodeGetPsvi(cur))->include = include;
+        ((xsltStyleItemIncludePtr) xmlNodeGetPsvi(cur))->include = include;
     } else {
-	xsltTransformError(NULL, style, cur,
-	    "Internal error: (xsltParseStylesheetInclude) "
-	    "The xsl:include element was not compiled.\n", URI);
-	style->errors++;
+        xsltTransformError(NULL, style, cur,
+                           "Internal error: (xsltParseStylesheetInclude) "
+                           "The xsl:include element was not compiled.\n",
+                           URI);
+        style->errors++;
     }
 #endif
     oldDoc = style->doc;
@@ -268,20 +273,20 @@ xsltParseStylesheetInclude(xsltStylesheetPtr style, xmlNodePtr cur) {
     style->includes = include->includes;
     style->doc = oldDoc;
     if (result == NULL) {
-	ret = -1;
-	goto error;
+        ret = -1;
+        goto error;
     }
     ret = 0;
 
 error:
     if (uriRef != NULL)
-	xmlFree(uriRef);
+        xmlFree(uriRef);
     if (base != NULL)
-	xmlFree(base);
+        xmlFree(base);
     if (URI != NULL)
-	xmlFree(URI);
+        xmlFree(URI);
 
-    return (ret);
+    return ret;
 }
 
 /**
@@ -294,19 +299,22 @@ error:
  */
 
 xsltStylesheetPtr
-xsltNextImport(xsltStylesheetPtr cur) {
+xsltNextImport (xsltStylesheetPtr cur)
+{
     if (cur == NULL)
-	return(NULL);
+        return NULL;
     if (cur->imports != NULL)
-	return(cur->imports);
+        return cur->imports;
     if (cur->next != NULL)
-	return(cur->next) ;
+        return cur->next;
     do {
-	cur = cur->parent;
-	if (cur == NULL) break;
-	if (cur->next != NULL) return(cur->next);
+        cur = cur->parent;
+        if (cur == NULL)
+            break;
+        if (cur->next != NULL)
+            return cur->next;
     } while (cur != NULL);
-    return(cur);
+    return cur;
 }
 
 /**
@@ -319,18 +327,19 @@ xsltNextImport(xsltStylesheetPtr cur) {
  */
 
 int
-xsltNeedElemSpaceHandling(xsltTransformContextPtr ctxt) {
+xsltNeedElemSpaceHandling (xsltTransformContextPtr ctxt)
+{
     xsltStylesheetPtr style;
 
     if (ctxt == NULL)
-	return(0);
+        return 0;
     style = ctxt->style;
     while (style != NULL) {
-	if (style->stripSpaces != NULL)
-	    return(1);
-	style = xsltNextImport(style);
+        if (style->stripSpaces != NULL)
+            return 1;
+        style = xsltNextImport(style);
     }
-    return(0);
+    return 0;
 }
 
 /**
@@ -346,41 +355,42 @@ xsltNeedElemSpaceHandling(xsltTransformContextPtr ctxt) {
  */
 
 int
-xsltFindElemSpaceHandling(xsltTransformContextPtr ctxt, xmlNodePtr node) {
+xsltFindElemSpaceHandling (xsltTransformContextPtr ctxt, xmlNodePtr node)
+{
     xsltStylesheetPtr style;
     const xmlChar *val;
 
     if ((ctxt == NULL) || (node == NULL))
-	return(0);
+        return 0;
     style = ctxt->style;
     while (style != NULL) {
-	if (xmlNodeGetNs(node) != NULL) {
-	    val = (const xmlChar *)
-	      xmlHashLookup2(style->stripSpaces, xmlNodeGetName(node),
-			      xmlNsGetHref(xmlNodeGetNs(node)));
+        if (xmlNodeGetNs(node) != NULL) {
+            val = (const xmlChar *) xmlHashLookup2(
+                style->stripSpaces, xmlNodeGetName(node),
+                xmlNsGetHref(xmlNodeGetNs(node)));
             if (val == NULL) {
-                val = (const xmlChar *)
-                    xmlHashLookup2(style->stripSpaces, BAD_CAST "*",
-                                   xmlNsGetHref(xmlNodeGetNs(node)));
+                val = (const xmlChar *) xmlHashLookup2(
+                    style->stripSpaces, BAD_CAST "*",
+                    xmlNsGetHref(xmlNodeGetNs(node)));
             }
-	} else {
-	    val = (const xmlChar *)
-		  xmlHashLookup2(style->stripSpaces, xmlNodeGetName(node), NULL);
-	}
-	if (val != NULL) {
-	    if (xmlStrEqual(val, (xmlChar *) "strip"))
-		return(1);
-	    if (xmlStrEqual(val, (xmlChar *) "preserve"))
-		return(0);
-	}
-	if (style->stripAll == 1)
-	    return(1);
-	if (style->stripAll == -1)
-	    return(0);
+        } else {
+            val = (const xmlChar *) xmlHashLookup2(style->stripSpaces,
+                                                   xmlNodeGetName(node), NULL);
+        }
+        if (val != NULL) {
+            if (xmlStrEqual(val, (xmlChar *) "strip"))
+                return 1;
+            if (xmlStrEqual(val, (xmlChar *) "preserve"))
+                return 0;
+        }
+        if (style->stripAll == 1)
+            return 1;
+        if (style->stripAll == -1)
+            return 0;
 
-	style = xsltNextImport(style);
+        style = xsltNextImport(style);
     }
-    return(0);
+    return 0;
 }
 
 /**
@@ -401,24 +411,24 @@ xsltFindElemSpaceHandling(xsltTransformContextPtr ctxt, xmlNodePtr node) {
  * Returns the xsltTemplatePtr or NULL if not found
  */
 xsltTemplatePtr
-xsltFindTemplate(xsltTransformContextPtr ctxt, const xmlChar *name,
-	         const xmlChar *nameURI) {
+xsltFindTemplate (xsltTransformContextPtr ctxt, const xmlChar *name,
+                  const xmlChar *nameURI)
+{
     xsltTemplatePtr cur;
     xsltStylesheetPtr style;
 
     if ((ctxt == NULL) || (name == NULL))
-	return(NULL);
+        return NULL;
     style = ctxt->style;
     while (style != NULL) {
         if (style->namedTemplates != NULL) {
-            cur = (xsltTemplatePtr)
-                xmlHashLookup2(style->namedTemplates, name, nameURI);
+            cur = (xsltTemplatePtr) xmlHashLookup2(style->namedTemplates, name,
+                                                   nameURI);
             if (cur != NULL)
-                return(cur);
+                return cur;
         }
 
-	style = xsltNextImport(style);
+        style = xsltNextImport(style);
     }
-    return(NULL);
+    return NULL;
 }
-
