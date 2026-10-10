@@ -26,7 +26,7 @@
  * that are siblings or children of a given xml node.
  */
 static void
-print_element_names(xmlNode * a_node)
+print_element_names (xmlNode *a_node)
 {
     xmlNode *cur_node = NULL;
 
@@ -39,20 +39,19 @@ print_element_names(xmlNode * a_node)
     }
 }
 
-
 /**
  * Simple example to parse a file called "file.xml", 
  * walk down the DOM, and print the name of the 
  * xml elements nodes.
  */
 int
-main(int argc, char **argv)
+main (int argc, char **argv)
 {
     xmlDoc *doc = NULL;
     xmlNode *root_element = NULL;
 
     if (argc != 2)
-        return(1);
+        return 1;
 
     /*
      * this initialize the library and check potential ABI mismatches
