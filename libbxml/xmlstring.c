@@ -26,11 +26,11 @@
 #include "private/string.h"
 
 #ifndef va_copy
-  #ifdef __va_copy
-    #define va_copy(dest, src) __va_copy(dest, src)
-  #else
-    #define va_copy(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
-  #endif
+#ifdef __va_copy
+#define va_copy(dest, src) __va_copy(dest, src)
+#else
+#define va_copy(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
+#endif
 #endif
 
 /************************************************************************
@@ -47,17 +47,19 @@
  * @returns a new xmlChar * or NULL
  */
 xmlChar *
-xmlStrndup(const xmlChar *cur, int len) {
+xmlStrndup (const xmlChar *cur, int len)
+{
     xmlChar *ret;
 
-    if ((cur == NULL) || (len < 0)) return(NULL);
+    if ((cur == NULL) || (len < 0))
+        return NULL;
     ret = xmlMalloc((size_t) len + 1);
     if (ret == NULL) {
-        return(NULL);
+        return NULL;
     }
     memcpy(ret, cur, len);
     ret[len] = 0;
-    return(ret);
+    return ret;
 }
 
 /**
@@ -69,12 +71,15 @@ xmlStrndup(const xmlChar *cur, int len) {
  * @returns a new xmlChar * or NULL
  */
 xmlChar *
-xmlStrdup(const xmlChar *cur) {
+xmlStrdup (const xmlChar *cur)
+{
     const xmlChar *p = cur;
 
-    if (cur == NULL) return(NULL);
-    while (*p != 0) p++; /* non input consuming */
-    return(xmlStrndup(cur, p - cur));
+    if (cur == NULL)
+        return NULL;
+    while (*p != 0)
+        p++; /* non input consuming */
+    return xmlStrndup(cur, p - cur);
 }
 
 /**
@@ -86,22 +91,25 @@ xmlStrdup(const xmlChar *cur) {
  */
 
 xmlChar *
-xmlCharStrndup(const char *cur, int len) {
+xmlCharStrndup (const char *cur, int len)
+{
     int i;
     xmlChar *ret;
 
-    if ((cur == NULL) || (len < 0)) return(NULL);
+    if ((cur == NULL) || (len < 0))
+        return NULL;
     ret = xmlMalloc((size_t) len + 1);
     if (ret == NULL) {
-        return(NULL);
+        return NULL;
     }
-    for (i = 0;i < len;i++) {
+    for (i = 0; i < len; i++) {
         /* Explicit sign change */
         ret[i] = (xmlChar) cur[i];
-        if (ret[i] == 0) return(ret);
+        if (ret[i] == 0)
+            return ret;
     }
     ret[len] = 0;
-    return(ret);
+    return ret;
 }
 
 /**
@@ -112,12 +120,15 @@ xmlCharStrndup(const char *cur, int len) {
  */
 
 xmlChar *
-xmlCharStrdup(const char *cur) {
+xmlCharStrdup (const char *cur)
+{
     const char *p = cur;
 
-    if (cur == NULL) return(NULL);
-    while (*p != '\0') p++; /* non input consuming */
-    return(xmlCharStrndup(cur, p - cur));
+    if (cur == NULL)
+        return NULL;
+    while (*p != '\0')
+        p++; /* non input consuming */
+    return xmlCharStrndup(cur, p - cur);
 }
 
 /**
@@ -129,16 +140,21 @@ xmlCharStrdup(const char *cur) {
  */
 
 int
-xmlStrcmp(const xmlChar *str1, const xmlChar *str2) {
-    if (str1 == str2) return(0);
-    if (str1 == NULL) return(-1);
-    if (str2 == NULL) return(1);
+xmlStrcmp (const xmlChar *str1, const xmlChar *str2)
+{
+    if (str1 == str2)
+        return 0;
+    if (str1 == NULL)
+        return -1;
+    if (str2 == NULL)
+        return 1;
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-    return(strcmp((const char *)str1, (const char *)str2));
+    return strcmp((const char *) str1, (const char *) str2);
 #else
     do {
         int tmp = *str1++ - *str2;
-        if (tmp != 0) return(tmp);
+        if (tmp != 0)
+            return tmp;
     } while (*str2++ != 0);
     return 0;
 #endif
@@ -154,17 +170,22 @@ xmlStrcmp(const xmlChar *str1, const xmlChar *str2) {
  */
 
 int
-xmlStrEqual(const xmlChar *str1, const xmlChar *str2) {
-    if (str1 == str2) return(1);
-    if (str1 == NULL) return(0);
-    if (str2 == NULL) return(0);
+xmlStrEqual (const xmlChar *str1, const xmlChar *str2)
+{
+    if (str1 == str2)
+        return 1;
+    if (str1 == NULL)
+        return 0;
+    if (str2 == NULL)
+        return 0;
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-    return(strcmp((const char *)str1, (const char *)str2) == 0);
+    return strcmp((const char *) str1, (const char *) str2) == 0;
 #else
     do {
-        if (*str1++ != *str2) return(0);
+        if (*str1++ != *str2)
+            return 0;
     } while (*str2++);
-    return(1);
+    return 1;
 #endif
 }
 
@@ -178,19 +199,26 @@ xmlStrEqual(const xmlChar *str1, const xmlChar *str2) {
  */
 
 int
-xmlStrQEqual(const xmlChar *pref, const xmlChar *name, const xmlChar *str) {
-    if (pref == NULL) return(xmlStrEqual(name, str));
-    if (name == NULL) return(0);
-    if (str == NULL) return(0);
+xmlStrQEqual (const xmlChar *pref, const xmlChar *name, const xmlChar *str)
+{
+    if (pref == NULL)
+        return xmlStrEqual(name, str);
+    if (name == NULL)
+        return 0;
+    if (str == NULL)
+        return 0;
 
     do {
-        if (*pref++ != *str) return(0);
+        if (*pref++ != *str)
+            return 0;
     } while ((*str++) && (*pref));
-    if (*str++ != ':') return(0);
+    if (*str++ != ':')
+        return 0;
     do {
-        if (*name++ != *str) return(0);
+        if (*name++ != *str)
+            return 0;
     } while (*str++);
-    return(1);
+    return 1;
 }
 
 /**
@@ -203,56 +231,51 @@ xmlStrQEqual(const xmlChar *pref, const xmlChar *name, const xmlChar *str) {
  */
 
 int
-xmlStrncmp(const xmlChar *str1, const xmlChar *str2, int len) {
-    if (len <= 0) return(0);
-    if (str1 == str2) return(0);
-    if (str1 == NULL) return(-1);
-    if (str2 == NULL) return(1);
+xmlStrncmp (const xmlChar *str1, const xmlChar *str2, int len)
+{
+    if (len <= 0)
+        return 0;
+    if (str1 == str2)
+        return 0;
+    if (str1 == NULL)
+        return -1;
+    if (str2 == NULL)
+        return 1;
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-    return(strncmp((const char *)str1, (const char *)str2, len));
+    return strncmp((const char *) str1, (const char *) str2, len);
 #else
     do {
         int tmp = *str1++ - *str2;
-        if (tmp != 0 || --len == 0) return(tmp);
+        if (tmp != 0 || --len == 0)
+            return tmp;
     } while (*str2++ != 0);
     return 0;
 #endif
 }
 
-static const xmlChar casemap[256] = {
-    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-    0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
-    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-    0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,
-    0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
-    0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,
-    0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
-    0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F,
-    0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
-    0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,
-    0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-    0x78,0x79,0x7A,0x7B,0x5C,0x5D,0x5E,0x5F,
-    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
-    0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,
-    0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-    0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F,
-    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
-    0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
-    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
-    0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F,
-    0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,
-    0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF,
-    0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,
-    0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF,
-    0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,
-    0xC8,0xC9,0xCA,0xCB,0xCC,0xCD,0xCE,0xCF,
-    0xD0,0xD1,0xD2,0xD3,0xD4,0xD5,0xD6,0xD7,
-    0xD8,0xD9,0xDA,0xDB,0xDC,0xDD,0xDE,0xDF,
-    0xE0,0xE1,0xE2,0xE3,0xE4,0xE5,0xE6,0xE7,
-    0xE8,0xE9,0xEA,0xEB,0xEC,0xED,0xEE,0xEF,
-    0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,
-    0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
-};
+static const xmlChar casemap[256]
+    = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
+       0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+       0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23,
+       0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
+       0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B,
+       0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+       0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73,
+       0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x5C, 0x5D, 0x5E, 0x5F,
+       0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B,
+       0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+       0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83,
+       0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
+       0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B,
+       0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
+       0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3,
+       0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
+       0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB,
+       0xCC, 0xCD, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
+       0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, 0xE0, 0xE1, 0xE2, 0xE3,
+       0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF,
+       0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB,
+       0xFC, 0xFD, 0xFE, 0xFF};
 
 /**
  * a strcasecmp for xmlChar's
@@ -263,15 +286,20 @@ static const xmlChar casemap[256] = {
  */
 
 int
-xmlStrcasecmp(const xmlChar *str1, const xmlChar *str2) {
+xmlStrcasecmp (const xmlChar *str1, const xmlChar *str2)
+{
     register int tmp;
 
-    if (str1 == str2) return(0);
-    if (str1 == NULL) return(-1);
-    if (str2 == NULL) return(1);
+    if (str1 == str2)
+        return 0;
+    if (str1 == NULL)
+        return -1;
+    if (str2 == NULL)
+        return 1;
     do {
         tmp = casemap[*str1++] - casemap[*str2];
-        if (tmp != 0) return(tmp);
+        if (tmp != 0)
+            return tmp;
     } while (*str2++ != 0);
     return 0;
 }
@@ -286,16 +314,22 @@ xmlStrcasecmp(const xmlChar *str1, const xmlChar *str2) {
  */
 
 int
-xmlStrncasecmp(const xmlChar *str1, const xmlChar *str2, int len) {
+xmlStrncasecmp (const xmlChar *str1, const xmlChar *str2, int len)
+{
     register int tmp;
 
-    if (len <= 0) return(0);
-    if (str1 == str2) return(0);
-    if (str1 == NULL) return(-1);
-    if (str2 == NULL) return(1);
+    if (len <= 0)
+        return 0;
+    if (str1 == str2)
+        return 0;
+    if (str1 == NULL)
+        return -1;
+    if (str2 == NULL)
+        return 1;
     do {
         tmp = casemap[*str1++] - casemap[*str2];
-        if (tmp != 0 || --len == 0) return(tmp);
+        if (tmp != 0 || --len == 0)
+            return tmp;
     } while (*str2++ != 0);
     return 0;
 }
@@ -309,13 +343,16 @@ xmlStrncasecmp(const xmlChar *str1, const xmlChar *str2, int len) {
  */
 
 const xmlChar *
-xmlStrchr(const xmlChar *str, xmlChar val) {
-    if (str == NULL) return(NULL);
+xmlStrchr (const xmlChar *str, xmlChar val)
+{
+    if (str == NULL)
+        return NULL;
     while (*str != 0) { /* non input consuming */
-        if (*str == val) return((xmlChar *) str);
+        if (*str == val)
+            return (xmlChar *) str;
         str++;
     }
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -327,21 +364,26 @@ xmlStrchr(const xmlChar *str, xmlChar val) {
  */
 
 const xmlChar *
-xmlStrstr(const xmlChar *str, const xmlChar *val) {
+xmlStrstr (const xmlChar *str, const xmlChar *val)
+{
     int n;
 
-    if (str == NULL) return(NULL);
-    if (val == NULL) return(NULL);
+    if (str == NULL)
+        return NULL;
+    if (val == NULL)
+        return NULL;
     n = xmlStrlen(val);
 
-    if (n == 0) return(str);
+    if (n == 0)
+        return str;
     while (*str != 0) { /* non input consuming */
         if (*str == *val) {
-            if (!xmlStrncmp(str, val, n)) return((const xmlChar *) str);
+            if (!xmlStrncmp(str, val, n))
+                return (const xmlChar *) str;
         }
         str++;
     }
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -353,20 +395,25 @@ xmlStrstr(const xmlChar *str, const xmlChar *val) {
  */
 
 const xmlChar *
-xmlStrcasestr(const xmlChar *str, const xmlChar *val) {
+xmlStrcasestr (const xmlChar *str, const xmlChar *val)
+{
     int n;
 
-    if (str == NULL) return(NULL);
-    if (val == NULL) return(NULL);
+    if (str == NULL)
+        return NULL;
+    if (val == NULL)
+        return NULL;
     n = xmlStrlen(val);
 
-    if (n == 0) return(str);
+    if (n == 0)
+        return str;
     while (*str != 0) { /* non input consuming */
         if (casemap[*str] == casemap[*val])
-            if (!xmlStrncasecmp(str, val, n)) return(str);
+            if (!xmlStrncasecmp(str, val, n))
+                return str;
         str++;
     }
-    return(NULL);
+    return NULL;
 }
 
 /**
@@ -379,19 +426,25 @@ xmlStrcasestr(const xmlChar *str, const xmlChar *val) {
  */
 
 xmlChar *
-xmlStrsub(const xmlChar *str, int start, int len) {
+xmlStrsub (const xmlChar *str, int start, int len)
+{
     int i;
 
-    if (str == NULL) return(NULL);
-    if (start < 0) return(NULL);
-    if (len < 0) return(NULL);
+    if (str == NULL)
+        return NULL;
+    if (start < 0)
+        return NULL;
+    if (len < 0)
+        return NULL;
 
-    for (i = 0;i < start;i++) {
-        if (*str == 0) return(NULL);
+    for (i = 0; i < start; i++) {
+        if (*str == 0)
+            return NULL;
         str++;
     }
-    if (*str == 0) return(NULL);
-    return(xmlStrndup(str, len));
+    if (*str == 0)
+        return NULL;
+    return xmlStrndup(str, len);
 }
 
 /**
@@ -402,9 +455,10 @@ xmlStrsub(const xmlChar *str, int start, int len) {
  */
 
 int
-xmlStrlen(const xmlChar *str) {
-    size_t len = str ? strlen((const char *)str) : 0;
-    return(len > INT_MAX ? 0 : len);
+xmlStrlen (const xmlChar *str)
+{
+    size_t len = str ? strlen((const char *) str) : 0;
+    return len > INT_MAX ? 0 : len;
 }
 
 /**
@@ -420,35 +474,36 @@ xmlStrlen(const xmlChar *str) {
  */
 
 xmlChar *
-xmlStrncat(xmlChar *cur, const xmlChar *add, int len) {
+xmlStrncat (xmlChar *cur, const xmlChar *add, int len)
+{
     int size;
     xmlChar *ret;
 
     if ((add == NULL) || (len == 0))
-        return(cur);
+        return cur;
 
     if (len < 0) {
         if (cur != NULL)
             xmlFree(cur);
-        return(NULL);
+        return NULL;
     }
 
     if (cur == NULL)
-        return(xmlStrndup(add, len));
+        return xmlStrndup(add, len);
 
     size = xmlStrlen(cur);
     if ((size < 0) || (size > INT_MAX - len)) {
         xmlFree(cur);
-        return(NULL);
+        return NULL;
     }
     ret = (xmlChar *) xmlRealloc(cur, (size_t) size + len + 1);
     if (ret == NULL) {
         xmlFree(cur);
-        return(NULL);
+        return NULL;
     }
     memcpy(&ret[size], add, len);
     ret[size + len] = 0;
-    return(ret);
+    return ret;
 }
 
 /**
@@ -462,30 +517,31 @@ xmlStrncat(xmlChar *cur, const xmlChar *add, int len) {
  * @returns a new xmlChar * or NULL
  */
 xmlChar *
-xmlStrncatNew(const xmlChar *str1, const xmlChar *str2, int len) {
+xmlStrncatNew (const xmlChar *str1, const xmlChar *str2, int len)
+{
     int size;
     xmlChar *ret;
 
     if (len < 0) {
         len = xmlStrlen(str2);
         if (len < 0)
-            return(NULL);
+            return NULL;
     }
     if (str1 == NULL)
-        return(xmlStrndup(str2, len));
+        return xmlStrndup(str2, len);
     if ((str2 == NULL) || (len == 0))
-        return(xmlStrdup(str1));
+        return xmlStrdup(str1);
 
     size = xmlStrlen(str1);
     if ((size < 0) || (size > INT_MAX - len))
-        return(NULL);
+        return NULL;
     ret = (xmlChar *) xmlMalloc((size_t) size + len + 1);
     if (ret == NULL)
-        return(NULL);
+        return NULL;
     memcpy(ret, str1, size);
     memcpy(&ret[size], str2, len);
     ret[size + len] = 0;
-    return(ret);
+    return ret;
 }
 
 /**
@@ -499,15 +555,18 @@ xmlStrncatNew(const xmlChar *str1, const xmlChar *str2, int len) {
  * `cur` is reallocated and should not be freed.
  */
 xmlChar *
-xmlStrcat(xmlChar *cur, const xmlChar *add) {
+xmlStrcat (xmlChar *cur, const xmlChar *add)
+{
     const xmlChar *p = add;
 
-    if (add == NULL) return(cur);
+    if (add == NULL)
+        return cur;
     if (cur == NULL)
-        return(xmlStrdup(add));
+        return xmlStrdup(add);
 
-    while (*p != 0) p++; /* non input consuming */
-    return(xmlStrncat(cur, add, p - add));
+    while (*p != 0)
+        p++; /* non input consuming */
+    return xmlStrncat(cur, add, p - add);
 }
 
 /**
@@ -520,12 +579,13 @@ xmlStrcat(xmlChar *cur, const xmlChar *add) {
  * @returns the number of characters written to `buf` or -1 if an error occurs.
  */
 int
-xmlStrPrintf(xmlChar *buf, int len, const char *msg, ...) {
+xmlStrPrintf (xmlChar *buf, int len, const char *msg, ...)
+{
     va_list args;
     int ret;
 
-    if((buf == NULL) || (msg == NULL) || (len <= 0)) {
-        return(-1);
+    if ((buf == NULL) || (msg == NULL) || (len <= 0)) {
+        return -1;
     }
 
     va_start(args, msg);
@@ -533,7 +593,7 @@ xmlStrPrintf(xmlChar *buf, int len, const char *msg, ...) {
     va_end(args);
     buf[len - 1] = 0; /* be safe ! */
 
-    return(ret);
+    return ret;
 }
 
 /**
@@ -546,17 +606,18 @@ xmlStrPrintf(xmlChar *buf, int len, const char *msg, ...) {
  * @returns the number of characters written to `buf` or -1 if an error occurs.
  */
 int
-xmlStrVPrintf(xmlChar *buf, int len, const char *msg, va_list ap) {
+xmlStrVPrintf (xmlChar *buf, int len, const char *msg, va_list ap)
+{
     int ret;
 
-    if((buf == NULL) || (msg == NULL) || (len <= 0)) {
-        return(-1);
+    if ((buf == NULL) || (msg == NULL) || (len <= 0)) {
+        return -1;
     }
 
     ret = vsnprintf((char *) buf, len, (const char *) msg, ap);
     buf[len - 1] = 0; /* be safe ! */
 
-    return(ret);
+    return ret;
 }
 
 /**
@@ -570,7 +631,8 @@ xmlStrVPrintf(xmlChar *buf, int len, const char *msg, va_list ap) {
  * errors, -1 if a memory allocation failed.
  */
 int
-xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
+xmlStrVASPrintf (xmlChar **out, int maxSize, const char *msg, va_list ap)
+{
     char empty[1];
     va_list copy;
     xmlChar *buf;
@@ -578,10 +640,10 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
     int truncated = 0;
 
     if (out == NULL)
-        return(1);
+        return 1;
     *out = NULL;
     if (msg == NULL)
-        return(1);
+        return 1;
     if (maxSize < 32)
         maxSize = 32;
 
@@ -600,10 +662,10 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
         }
         buf = xmlMalloc(size);
         if (buf == NULL)
-            return(-1);
+            return -1;
         if (vsnprintf((char *) buf, size, msg, ap) < 0) {
             xmlFree(buf);
-            return(1);
+            return 1;
         }
     } else {
         /*
@@ -629,7 +691,7 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
         while (1) {
             buf = xmlMalloc(size);
             if (buf == NULL)
-                return(-1);
+                return -1;
 
             va_copy(copy, ap);
             res = vsnprintf((char *) buf, size, msg, copy);
@@ -660,7 +722,7 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
 
         while (i > 0) {
             /* Break after ASCII */
-            if (buf[i-1] < 0x80)
+            if (buf[i - 1] < 0x80)
                 break;
             i -= 1;
             /* Break before non-ASCII */
@@ -672,7 +734,7 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
     }
 
     *out = (xmlChar *) buf;
-    return(truncated);
+    return truncated;
 }
 
 /**
@@ -686,7 +748,8 @@ xmlStrVASPrintf(xmlChar **out, int maxSize, const char *msg, va_list ap) {
  * errors, -1 if a memory allocation failed.
  */
 int
-xmlStrASPrintf(xmlChar **out, int maxSize, const char *msg, ...) {
+xmlStrASPrintf (xmlChar **out, int maxSize, const char *msg, ...)
+{
     va_list ap;
     int ret;
 
@@ -694,7 +757,7 @@ xmlStrASPrintf(xmlChar **out, int maxSize, const char *msg, ...) {
     ret = xmlStrVASPrintf(out, maxSize, msg, ap);
     va_end(ap);
 
-    return(ret);
+    return ret;
 }
 
 /************************************************************************
@@ -712,7 +775,6 @@ xmlStrASPrintf(xmlChar **out, int maxSize, const char *msg, ...) {
  *                                                                      *
  ************************************************************************/
 
-
 /**
  * calculates the internal size of a UTF8 character
  *
@@ -720,7 +782,8 @@ xmlStrASPrintf(xmlChar **out, int maxSize, const char *msg, ...) {
  * @returns the numbers of bytes in the character, -1 on format error
  */
 int
-xmlUTF8Size(const xmlChar *utf) {
+xmlUTF8Size (const xmlChar *utf)
+{
     xmlChar mask;
     int len;
 
@@ -733,7 +796,7 @@ xmlUTF8Size(const xmlChar *utf) {
         return -1;
     /* determine number of bytes in char */
     len = 2;
-    for (mask=0x20; mask != 0; mask>>=1) {
+    for (mask = 0x20; mask != 0; mask >>= 1) {
         if (!(*utf & mask))
             return len;
         len++;
@@ -749,9 +812,9 @@ xmlUTF8Size(const xmlChar *utf) {
  * @returns result of the compare as with #xmlStrncmp
  */
 int
-xmlUTF8Charcmp(const xmlChar *utf1, const xmlChar *utf2) {
-
-    if (utf1 == NULL ) {
+xmlUTF8Charcmp (const xmlChar *utf1, const xmlChar *utf2)
+{
+    if (utf1 == NULL) {
         if (utf2 == NULL)
             return 0;
         return -1;
@@ -767,22 +830,23 @@ xmlUTF8Charcmp(const xmlChar *utf1, const xmlChar *utf2) {
  * @returns the number of characters in the string or -1 in case of error
  */
 int
-xmlUTF8Strlen(const xmlChar *utf) {
+xmlUTF8Strlen (const xmlChar *utf)
+{
     size_t ret = 0;
 
     if (utf == NULL)
-        return(-1);
+        return -1;
 
     while (*utf != 0) {
         if (utf[0] & 0x80) {
             if ((utf[1] & 0xc0) != 0x80)
-                return(-1);
+                return -1;
             if ((utf[0] & 0xe0) == 0xe0) {
                 if ((utf[2] & 0xc0) != 0x80)
-                    return(-1);
+                    return -1;
                 if ((utf[0] & 0xf0) == 0xf0) {
                     if ((utf[0] & 0xf8) != 0xf0 || (utf[3] & 0xc0) != 0x80)
-                        return(-1);
+                        return -1;
                     utf += 4;
                 } else {
                     utf += 3;
@@ -795,7 +859,7 @@ xmlUTF8Strlen(const xmlChar *utf) {
         }
         ret++;
     }
-    return(ret > INT_MAX ? 0 : ret);
+    return ret > INT_MAX ? 0 : ret;
 }
 
 /**
@@ -809,7 +873,8 @@ xmlUTF8Strlen(const xmlChar *utf) {
  *        the actual number of bytes consumed (0 in case of error)
  */
 int
-xmlGetUTF8Char(const unsigned char *utf, int *len) {
+xmlGetUTF8Char (const unsigned char *utf, int *len)
+{
     unsigned int c;
 
     if (utf == NULL)
@@ -858,12 +923,12 @@ xmlGetUTF8Char(const unsigned char *utf, int *len) {
             }
         }
     }
-    return(c);
+    return c;
 
 error:
     if (len != NULL)
-	*len = 0;
-    return(-1);
+        *len = 0;
+    return -1;
 }
 
 /**
@@ -878,13 +943,13 @@ error:
  * @returns value: true if `utf` is valid.
  **/
 int
-xmlCheckUTF8(const unsigned char *utf)
+xmlCheckUTF8 (const unsigned char *utf)
 {
     int ix;
     unsigned char c;
 
     if (utf == NULL)
-        return(0);
+        return 0;
     /*
      * utf is a string of 1, 2, 3 or 4 bytes.  The valid strings
      * are as follows (in "bit format"):
@@ -893,30 +958,28 @@ xmlCheckUTF8(const unsigned char *utf)
      *    1110xxxx 10xxxxxx 10xxxxxx                    valid 3-byte
      *    11110xxx 10xxxxxx 10xxxxxx 10xxxxxx           valid 4-byte
      */
-    while ((c = utf[0])) {      /* string is 0-terminated */
+    while ((c = utf[0])) { /* string is 0-terminated */
         ix = 0;
-        if ((c & 0x80) == 0x00) {	/* 1-byte code, starts with 10 */
+        if ((c & 0x80) == 0x00) { /* 1-byte code, starts with 10 */
             ix = 1;
-	} else if ((c & 0xe0) == 0xc0) {/* 2-byte code, starts with 110 */
-	    if ((utf[1] & 0xc0 ) != 0x80)
-	        return 0;
-	    ix = 2;
-	} else if ((c & 0xf0) == 0xe0) {/* 3-byte code, starts with 1110 */
-	    if (((utf[1] & 0xc0) != 0x80) ||
-	        ((utf[2] & 0xc0) != 0x80))
-		    return 0;
-	    ix = 3;
-	} else if ((c & 0xf8) == 0xf0) {/* 4-byte code, starts with 11110 */
-	    if (((utf[1] & 0xc0) != 0x80) ||
-	        ((utf[2] & 0xc0) != 0x80) ||
-		((utf[3] & 0xc0) != 0x80))
-		    return 0;
-	    ix = 4;
-	} else				/* unknown encoding */
-	    return 0;
+        } else if ((c & 0xe0) == 0xc0) { /* 2-byte code, starts with 110 */
+            if ((utf[1] & 0xc0) != 0x80)
+                return 0;
+            ix = 2;
+        } else if ((c & 0xf0) == 0xe0) { /* 3-byte code, starts with 1110 */
+            if (((utf[1] & 0xc0) != 0x80) || ((utf[2] & 0xc0) != 0x80))
+                return 0;
+            ix = 3;
+        } else if ((c & 0xf8) == 0xf0) { /* 4-byte code, starts with 11110 */
+            if (((utf[1] & 0xc0) != 0x80) || ((utf[2] & 0xc0) != 0x80)
+                || ((utf[3] & 0xc0) != 0x80))
+                return 0;
+            ix = 4;
+        } else /* unknown encoding */
+            return 0;
         utf += ix;
-      }
-      return(1);
+    }
+    return 1;
 }
 
 /**
@@ -930,31 +993,32 @@ xmlCheckUTF8(const unsigned char *utf)
  */
 
 int
-xmlUTF8Strsize(const xmlChar *utf, int len) {
-    const xmlChar *ptr=utf;
+xmlUTF8Strsize (const xmlChar *utf, int len)
+{
+    const xmlChar *ptr = utf;
     int ch;
     size_t ret;
 
     if (utf == NULL)
-        return(0);
+        return 0;
 
     if (len <= 0)
-        return(0);
+        return 0;
 
-    while ( len-- > 0) {
-        if ( !*ptr )
+    while (len-- > 0) {
+        if (!*ptr)
             break;
         ch = *ptr++;
-        if ((ch & 0x80))
-            while ((ch<<=1) & 0x80 ) {
-		if (*ptr == 0) break;
+        if (ch & 0x80)
+            while ((ch <<= 1) & 0x80) {
+                if (*ptr == 0)
+                    break;
                 ptr++;
-	    }
+            }
     }
     ret = ptr - utf;
-    return (ret > INT_MAX ? 0 : ret);
+    return ret > INT_MAX ? 0 : ret;
 }
-
 
 /**
  * a strndup for array of UTF8's
@@ -964,19 +1028,21 @@ xmlUTF8Strsize(const xmlChar *utf, int len) {
  * @returns a new UTF8 * or NULL
  */
 xmlChar *
-xmlUTF8Strndup(const xmlChar *utf, int len) {
+xmlUTF8Strndup (const xmlChar *utf, int len)
+{
     xmlChar *ret;
     int i;
 
-    if ((utf == NULL) || (len < 0)) return(NULL);
+    if ((utf == NULL) || (len < 0))
+        return NULL;
     i = xmlUTF8Strsize(utf, len);
     ret = xmlMalloc((size_t) i + 1);
     if (ret == NULL) {
-        return(NULL);
+        return NULL;
     }
     memcpy(ret, utf, i);
     ret[i] = 0;
-    return(ret);
+    return ret;
 }
 
 /**
@@ -988,27 +1054,29 @@ xmlUTF8Strndup(const xmlChar *utf, int len) {
  * @returns a pointer to the UTF8 character or NULL
  */
 const xmlChar *
-xmlUTF8Strpos(const xmlChar *utf, int pos) {
+xmlUTF8Strpos (const xmlChar *utf, int pos)
+{
     int ch;
 
-    if (utf == NULL) return(NULL);
+    if (utf == NULL)
+        return NULL;
     if (pos < 0)
-        return(NULL);
+        return NULL;
     while (pos--) {
         ch = *utf++;
         if (ch == 0)
-            return(NULL);
-        if ( ch & 0x80 ) {
+            return NULL;
+        if (ch & 0x80) {
             /* if not simple ascii, verify proper format */
-            if ( (ch & 0xc0) != 0xc0 )
-                return(NULL);
+            if ((ch & 0xc0) != 0xc0)
+                return NULL;
             /* then skip over remaining bytes for this char */
-            while ( (ch <<= 1) & 0x80 )
-                if ( (*utf++ & 0xc0) != 0x80 )
-                    return(NULL);
+            while ((ch <<= 1) & 0x80)
+                if ((*utf++ & 0xc0) != 0x80)
+                    return NULL;
         }
     }
-    return((xmlChar *)utf);
+    return (xmlChar *) utf;
 }
 
 /**
@@ -1020,29 +1088,31 @@ xmlUTF8Strpos(const xmlChar *utf, int pos) {
  * or -1 if not found
  */
 int
-xmlUTF8Strloc(const xmlChar *utf, const xmlChar *utfchar) {
+xmlUTF8Strloc (const xmlChar *utf, const xmlChar *utfchar)
+{
     size_t i;
     int size;
     int ch;
 
-    if (utf==NULL || utfchar==NULL) return -1;
+    if (utf == NULL || utfchar == NULL)
+        return -1;
     size = xmlUTF8Strsize(utfchar, 1);
-        for(i=0; (ch=*utf) != 0; i++) {
-            if (xmlStrncmp(utf, utfchar, size)==0)
-                return(i > INT_MAX ? 0 : i);
-            utf++;
-            if ( ch & 0x80 ) {
-                /* if not simple ascii, verify proper format */
-                if ( (ch & 0xc0) != 0xc0 )
-                    return(-1);
-                /* then skip over remaining bytes for this char */
-                while ( (ch <<= 1) & 0x80 )
-                    if ( (*utf++ & 0xc0) != 0x80 )
-                        return(-1);
-            }
+    for (i = 0; (ch = *utf) != 0; i++) {
+        if (xmlStrncmp(utf, utfchar, size) == 0)
+            return i > INT_MAX ? 0 : i;
+        utf++;
+        if (ch & 0x80) {
+            /* if not simple ascii, verify proper format */
+            if ((ch & 0xc0) != 0xc0)
+                return -1;
+            /* then skip over remaining bytes for this char */
+            while ((ch <<= 1) & 0x80)
+                if ((*utf++ & 0xc0) != 0x80)
+                    return -1;
         }
+    }
 
-    return(-1);
+    return -1;
 }
 /**
  * Create a substring from a given UTF-8 string
@@ -1057,13 +1127,17 @@ xmlUTF8Strloc(const xmlChar *utf, const xmlChar *utfchar) {
  */
 
 xmlChar *
-xmlUTF8Strsub(const xmlChar *utf, int start, int len) {
+xmlUTF8Strsub (const xmlChar *utf, int start, int len)
+{
     int i;
     int ch;
 
-    if (utf == NULL) return(NULL);
-    if (start < 0) return(NULL);
-    if (len < 0) return(NULL);
+    if (utf == NULL)
+        return NULL;
+    if (start < 0)
+        return NULL;
+    if (len < 0)
+        return NULL;
 
     /*
      * Skip over any leading chars
@@ -1071,19 +1145,19 @@ xmlUTF8Strsub(const xmlChar *utf, int start, int len) {
     for (i = 0; i < start; i++) {
         ch = *utf++;
         if (ch == 0)
-            return(NULL);
+            return NULL;
         /* skip over remaining bytes for this char */
         if (ch & 0x80) {
             ch <<= 1;
             while (ch & 0x80) {
                 if (*utf++ == 0)
-                    return(NULL);
+                    return NULL;
                 ch <<= 1;
             }
         }
     }
 
-    return(xmlUTF8Strndup(utf, len));
+    return xmlUTF8Strndup(utf, len);
 }
 
 /**
@@ -1096,7 +1170,7 @@ xmlUTF8Strsub(const xmlChar *utf, int start, int len) {
  * @returns the same string with all '%' characters escaped.
  */
 xmlChar *
-xmlEscapeFormatString(xmlChar **msg)
+xmlEscapeFormatString (xmlChar **msg)
 {
     xmlChar *msgPtr = NULL;
     xmlChar *result = NULL;
@@ -1106,7 +1180,7 @@ xmlEscapeFormatString(xmlChar **msg)
     size_t resultLen = 0;
 
     if (!msg || !*msg)
-        return(NULL);
+        return NULL;
 
     for (msgPtr = *msg; *msgPtr != '\0'; ++msgPtr) {
         ++msgLen;
@@ -1115,10 +1189,10 @@ xmlEscapeFormatString(xmlChar **msg)
     }
 
     if (count == 0)
-        return(*msg);
+        return *msg;
 
     if ((count > INT_MAX) || (msgLen > INT_MAX - count))
-        return(NULL);
+        return NULL;
     resultLen = msgLen + count + 1;
     result = xmlMalloc(resultLen);
     if (result == NULL) {
@@ -1126,10 +1200,11 @@ xmlEscapeFormatString(xmlChar **msg)
            out-of-memory situations. */
         xmlFree(*msg);
         *msg = NULL;
-        return(NULL);
+        return NULL;
     }
 
-    for (msgPtr = *msg, resultPtr = result; *msgPtr != '\0'; ++msgPtr, ++resultPtr) {
+    for (msgPtr = *msg, resultPtr = result; *msgPtr != '\0';
+         ++msgPtr, ++resultPtr) {
         *resultPtr = *msgPtr;
         if (*msgPtr == '%')
             *(++resultPtr) = '%';
@@ -1141,4 +1216,3 @@ xmlEscapeFormatString(xmlChar **msg)
 
     return *msg;
 }
-
