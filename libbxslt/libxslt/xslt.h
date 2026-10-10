@@ -22,28 +22,29 @@ extern "C" {
  *
  * The default version of XSLT supported.
  */
-#define XSLT_DEFAULT_VERSION     "1.0"
+#define XSLT_DEFAULT_VERSION "1.0"
 
 /**
  * XSLT_DEFAULT_VENDOR:
  *
  * The XSLT "vendor" string for this processor.
  */
-#define XSLT_DEFAULT_VENDOR      "libxslt"
+#define XSLT_DEFAULT_VENDOR "libxslt"
 
 /**
  * XSLT_DEFAULT_URL:
  *
  * The XSLT "vendor" URL for this processor.
  */
-#define XSLT_DEFAULT_URL         "http://xmlsoft.org/XSLT/"
+#define XSLT_DEFAULT_URL "http://xmlsoft.org/XSLT/"
 
 /**
  * XSLT_NAMESPACE:
  *
  * The XSLT specification namespace.
  */
-#define XSLT_NAMESPACE ((const xmlChar *)"http://www.w3.org/1999/XSL/Transform")
+#define XSLT_NAMESPACE \
+    ((const xmlChar *) "http://www.w3.org/1999/XSL/Transform")
 
 /**
  * XSLT_PARSE_OPTIONS:
@@ -52,7 +53,7 @@ extern "C" {
  * XSLT consumption.
  */
 #define XSLT_PARSE_OPTIONS \
- XML_PARSE_NOENT | XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR | XML_PARSE_NOCDATA
+    XML_PARSE_NOENT | XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR | XML_PARSE_NOCDATA
 
 /**
  * xsltMaxDepth:
@@ -93,18 +94,15 @@ XSLTPUBVAR const int xsltLibxmlVersion;
  * Global initialization function.
  */
 
-XSLTPUBFUN void XSLTCALL
-		xsltInit		(void);
+XSLTPUBFUN void XSLTCALL xsltInit (void);
 
 /*
  * Global cleanup function.
  */
-XSLTPUBFUN void XSLTCALL
-		xsltCleanupGlobals	(void);
+XSLTPUBFUN void XSLTCALL xsltCleanupGlobals (void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __XML_XSLT_H__ */
-
