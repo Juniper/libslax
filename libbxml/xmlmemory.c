@@ -21,8 +21,8 @@
 #include "private/memory.h"
 #include "private/threads.h"
 
-static unsigned long  debugMemSize = 0;
-static unsigned long  debugMemBlocks = 0;
+static unsigned long debugMemSize = 0;
+static unsigned long debugMemBlocks = 0;
 static xmlMutex xmlMemMutex;
 
 /************************************************************************
@@ -38,22 +38,22 @@ static xmlMutex xmlMemMutex;
 #define MEMTAG 0x5aa5U
 
 typedef struct memnod {
-    unsigned int   mh_tag;
-    size_t         mh_size;
+    unsigned int mh_tag;
+    size_t mh_size;
 } MEMHDR;
 
 #ifdef SUN4
-#define ALIGN_SIZE  16
+#define ALIGN_SIZE 16
 #else
-#define ALIGN_SIZE  sizeof(double)
+#define ALIGN_SIZE sizeof(double)
 #endif
-#define RESERVE_SIZE (((sizeof(MEMHDR) + ALIGN_SIZE - 1) \
-		      / ALIGN_SIZE ) * ALIGN_SIZE)
+#define RESERVE_SIZE \
+    (((sizeof(MEMHDR) + ALIGN_SIZE - 1) / ALIGN_SIZE) * ALIGN_SIZE)
 
-#define MAX_SIZE_T ((size_t)-1)
+#define MAX_SIZE_T ((size_t) -1)
 
 #define CLIENT_2_HDR(a) ((void *) (((char *) (a)) - RESERVE_SIZE))
-#define HDR_2_CLIENT(a)    ((void *) (((char *) (a)) + RESERVE_SIZE))
+#define HDR_2_CLIENT(a) ((void *) (((char *) (a)) + RESERVE_SIZE))
 
 /**
  * @deprecated don't use
@@ -64,10 +64,9 @@ typedef struct memnod {
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMallocLoc(size_t size, const char *file UNUSED,
-             int line UNUSED)
+xmlMallocLoc (size_t size, const char *file UNUSED, int line UNUSED)
 {
-    return(xmlMemMalloc(size));
+    return xmlMemMalloc(size);
 }
 
 /**
@@ -79,10 +78,9 @@ xmlMallocLoc(size_t size, const char *file UNUSED,
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMallocAtomicLoc(size_t size, const char *file UNUSED,
-                   int line UNUSED)
+xmlMallocAtomicLoc (size_t size, const char *file UNUSED, int line UNUSED)
 {
-    return(xmlMemMalloc(size));
+    return xmlMemMalloc(size);
 }
 
 /**
@@ -92,18 +90,18 @@ xmlMallocAtomicLoc(size_t size, const char *file UNUSED,
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMemMalloc(size_t size)
+xmlMemMalloc (size_t size)
 {
     MEMHDR *p;
 
     xmlInitParser();
 
     if (size > (MAX_SIZE_T - RESERVE_SIZE))
-        return(NULL);
+        return NULL;
 
     p = (MEMHDR *) malloc(RESERVE_SIZE + size);
     if (!p)
-        return(NULL);
+        return NULL;
     p->mh_tag = MEMTAG;
     p->mh_size = size;
 
@@ -112,7 +110,7 @@ xmlMemMalloc(size_t size)
     debugMemBlocks++;
     xmlMutexUnlock(&xmlMemMutex);
 
-    return(HDR_2_CLIENT(p));
+    return HDR_2_CLIENT(p);
 }
 
 /**
@@ -125,10 +123,9 @@ xmlMemMalloc(size_t size)
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlReallocLoc(void *ptr, size_t size, const char *file UNUSED,
-              int line UNUSED)
+xmlReallocLoc (void *ptr, size_t size, const char *file UNUSED, int line UNUSED)
 {
-    return(xmlMemRealloc(ptr, size));
+    return xmlMemRealloc(ptr, size);
 }
 
 /**
@@ -139,22 +136,23 @@ xmlReallocLoc(void *ptr, size_t size, const char *file UNUSED,
  * @returns a pointer to the allocated area or NULL in case of lack of memory.
  */
 void *
-xmlMemRealloc(void *ptr, size_t size) {
+xmlMemRealloc (void *ptr, size_t size)
+{
     MEMHDR *p, *tmp;
     size_t oldSize;
 
     if (ptr == NULL)
-        return(xmlMemMalloc(size));
+        return xmlMemMalloc(size);
 
     xmlInitParser();
 
     if (size > (MAX_SIZE_T - RESERVE_SIZE))
-        return(NULL);
+        return NULL;
 
     p = CLIENT_2_HDR(ptr);
     if (p->mh_tag != MEMTAG) {
         xmlPrintErrorMessage("xmlMemRealloc: Tag error\n");
-        return(NULL);
+        return NULL;
     }
     oldSize = p->mh_size;
     p->mh_tag = ~MEMTAG;
@@ -162,7 +160,7 @@ xmlMemRealloc(void *ptr, size_t size) {
     tmp = (MEMHDR *) realloc(p, RESERVE_SIZE + size);
     if (!tmp) {
         p->mh_tag = MEMTAG;
-        return(NULL);
+        return NULL;
     }
     p = tmp;
     p->mh_tag = MEMTAG;
@@ -173,7 +171,7 @@ xmlMemRealloc(void *ptr, size_t size) {
     debugMemSize += size;
     xmlMutexUnlock(&xmlMemMutex);
 
-    return(HDR_2_CLIENT(p));
+    return HDR_2_CLIENT(p);
 }
 
 /**
@@ -182,7 +180,7 @@ xmlMemRealloc(void *ptr, size_t size) {
  * @param ptr  the memory block pointer
  */
 void
-xmlMemFree(void *ptr)
+xmlMemFree (void *ptr)
 {
     MEMHDR *p;
 
@@ -219,10 +217,9 @@ xmlMemFree(void *ptr)
  * @returns a pointer to the new string or NULL if allocation error occurred.
  */
 char *
-xmlMemStrdupLoc(const char *str, const char *file UNUSED,
-                int line UNUSED)
+xmlMemStrdupLoc (const char *str, const char *file UNUSED, int line UNUSED)
 {
-    return(xmlMemoryStrdup(str));
+    return xmlMemoryStrdup(str);
 }
 
 /**
@@ -232,7 +229,8 @@ xmlMemStrdupLoc(const char *str, const char *file UNUSED,
  * @returns a pointer to the new string or NULL if allocation error occurred.
  */
 char *
-xmlMemoryStrdup(const char *str) {
+xmlMemoryStrdup (const char *str)
+{
     char *s;
     size_t size = strlen(str) + 1;
     MEMHDR *p;
@@ -240,11 +238,11 @@ xmlMemoryStrdup(const char *str) {
     xmlInitParser();
 
     if (size > (MAX_SIZE_T - RESERVE_SIZE))
-        return(NULL);
+        return NULL;
 
     p = (MEMHDR *) malloc(RESERVE_SIZE + size);
     if (!p)
-        return(NULL);
+        return NULL;
     p->mh_tag = MEMTAG;
     p->mh_size = size;
 
@@ -257,7 +255,7 @@ xmlMemoryStrdup(const char *str) {
 
     memcpy(s, str, size);
 
-    return(s);
+    return s;
 }
 
 /**
@@ -266,17 +264,18 @@ xmlMemoryStrdup(const char *str) {
  */
 
 size_t
-xmlMemSize(void *ptr) {
+xmlMemSize (void *ptr)
+{
     MEMHDR *p;
 
     if (ptr == NULL)
-	return(0);
+        return 0;
 
     p = CLIENT_2_HDR(ptr);
     if (p->mh_tag != MEMTAG)
-        return(0);
+        return 0;
 
-    return(p->mh_size);
+    return p->mh_size;
 }
 
 /**
@@ -286,8 +285,9 @@ xmlMemSize(void *ptr) {
  */
 
 int
-xmlMemUsed(void) {
-    return(debugMemSize);
+xmlMemUsed (void)
+{
+    return debugMemSize;
 }
 
 /**
@@ -297,13 +297,14 @@ xmlMemUsed(void) {
  */
 
 int
-xmlMemBlocks(void) {
+xmlMemBlocks (void)
+{
     int res;
 
     xmlMutexLock(&xmlMemMutex);
     res = debugMemBlocks;
     xmlMutexUnlock(&xmlMemMutex);
-    return(res);
+    return res;
 }
 
 /**
@@ -312,18 +313,16 @@ xmlMemBlocks(void) {
  * @param nbBytes  the amount of memory to dump
  */
 void
-xmlMemDisplayLast(FILE *fp UNUSED, long nbBytes UNUSED)
-{
-}
+xmlMemDisplayLast (FILE *fp UNUSED, long nbBytes UNUSED)
+{}
 
 /**
  * @deprecated This feature was removed.
  * @param fp  a FILE descriptor
  */
 void
-xmlMemDisplay(FILE *fp UNUSED)
-{
-}
+xmlMemDisplay (FILE *fp UNUSED)
+{}
 
 /**
  * @deprecated This feature was removed.
@@ -331,18 +330,15 @@ xmlMemDisplay(FILE *fp UNUSED)
  * @param nr  number of entries to dump
  */
 void
-xmlMemShow(FILE *fp UNUSED, int nr UNUSED)
-{
-}
+xmlMemShow (FILE *fp UNUSED, int nr UNUSED)
+{}
 
 /**
  * @deprecated This feature was removed.
  */
 void
-xmlMemoryDump(void)
-{
-}
-
+xmlMemoryDump (void)
+{}
 
 /****************************************************************
  *								*
@@ -356,16 +352,18 @@ xmlMemoryDump(void)
  * @returns 0.
  */
 int
-xmlInitMemory(void) {
+xmlInitMemory (void)
+{
     xmlInitParser();
-    return(0);
+    return 0;
 }
 
 /**
  * Initialize the memory layer.
  */
 void
-xmlInitMemoryInternal(void) {
+xmlInitMemoryInternal (void)
+{
     xmlInitMutex(&xmlMemMutex);
 }
 
@@ -376,15 +374,16 @@ xmlInitMemoryInternal(void) {
  * have call cleanup functions at all.
  */
 void
-xmlCleanupMemory(void) {
-}
+xmlCleanupMemory (void)
+{}
 
 /**
  * Free up all the memory allocated by the library for its own
  * use. This should not be called by user level code.
  */
 void
-xmlCleanupMemoryInternal(void) {
+xmlCleanupMemoryInternal (void)
+{
     /*
      * Don't clean up mutex on Windows. Global state destructors can call
      * malloc functions after xmlCleanupParser was called. If memory
@@ -411,22 +410,23 @@ xmlCleanupMemoryInternal(void) {
  * @returns 0 on success
  */
 int
-xmlMemSetup(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
-            xmlReallocFunc reallocFunc, xmlStrdupFunc strdupFunc) {
+xmlMemSetup (xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
+             xmlReallocFunc reallocFunc, xmlStrdupFunc strdupFunc)
+{
     if (freeFunc == NULL)
-	return(-1);
+        return -1;
     if (mallocFunc == NULL)
-	return(-1);
+        return -1;
     if (reallocFunc == NULL)
-	return(-1);
+        return -1;
     if (strdupFunc == NULL)
-	return(-1);
+        return -1;
     xmlFree = freeFunc;
     xmlMalloc = mallocFunc;
     xmlMallocAtomic = mallocFunc;
     xmlRealloc = reallocFunc;
     xmlMemStrdup = strdupFunc;
-    return(0);
+    return 0;
 }
 
 /**
@@ -439,13 +439,18 @@ xmlMemSetup(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
  * @returns 0 on success
  */
 int
-xmlMemGet(xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
-	  xmlReallocFunc *reallocFunc, xmlStrdupFunc *strdupFunc) {
-    if (freeFunc != NULL) *freeFunc = xmlFree;
-    if (mallocFunc != NULL) *mallocFunc = xmlMalloc;
-    if (reallocFunc != NULL) *reallocFunc = xmlRealloc;
-    if (strdupFunc != NULL) *strdupFunc = xmlMemStrdup;
-    return(0);
+xmlMemGet (xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
+           xmlReallocFunc *reallocFunc, xmlStrdupFunc *strdupFunc)
+{
+    if (freeFunc != NULL)
+        *freeFunc = xmlFree;
+    if (mallocFunc != NULL)
+        *mallocFunc = xmlMalloc;
+    if (reallocFunc != NULL)
+        *reallocFunc = xmlRealloc;
+    if (strdupFunc != NULL)
+        *strdupFunc = xmlMemStrdup;
+    return 0;
 }
 
 /**
@@ -467,25 +472,26 @@ xmlMemGet(xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
  * @returns 0 on success
  */
 int
-xmlGcMemSetup(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
-              xmlMallocFunc mallocAtomicFunc, xmlReallocFunc reallocFunc,
-	      xmlStrdupFunc strdupFunc) {
+xmlGcMemSetup (xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
+               xmlMallocFunc mallocAtomicFunc, xmlReallocFunc reallocFunc,
+               xmlStrdupFunc strdupFunc)
+{
     if (freeFunc == NULL)
-	return(-1);
+        return -1;
     if (mallocFunc == NULL)
-	return(-1);
+        return -1;
     if (mallocAtomicFunc == NULL)
-	return(-1);
+        return -1;
     if (reallocFunc == NULL)
-	return(-1);
+        return -1;
     if (strdupFunc == NULL)
-	return(-1);
+        return -1;
     xmlFree = freeFunc;
     xmlMalloc = mallocFunc;
     xmlMallocAtomic = mallocAtomicFunc;
     xmlRealloc = reallocFunc;
     xmlMemStrdup = strdupFunc;
-    return(0);
+    return 0;
 }
 
 /**
@@ -503,14 +509,19 @@ xmlGcMemSetup(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
  * @returns 0 on success
  */
 int
-xmlGcMemGet(xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
-            xmlMallocFunc *mallocAtomicFunc, xmlReallocFunc *reallocFunc,
-	    xmlStrdupFunc *strdupFunc) {
-    if (freeFunc != NULL) *freeFunc = xmlFree;
-    if (mallocFunc != NULL) *mallocFunc = xmlMalloc;
-    if (mallocAtomicFunc != NULL) *mallocAtomicFunc = xmlMallocAtomic;
-    if (reallocFunc != NULL) *reallocFunc = xmlRealloc;
-    if (strdupFunc != NULL) *strdupFunc = xmlMemStrdup;
-    return(0);
+xmlGcMemGet (xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
+             xmlMallocFunc *mallocAtomicFunc, xmlReallocFunc *reallocFunc,
+             xmlStrdupFunc *strdupFunc)
+{
+    if (freeFunc != NULL)
+        *freeFunc = xmlFree;
+    if (mallocFunc != NULL)
+        *mallocFunc = xmlMalloc;
+    if (mallocAtomicFunc != NULL)
+        *mallocAtomicFunc = xmlMallocAtomic;
+    if (reallocFunc != NULL)
+        *reallocFunc = xmlRealloc;
+    if (strdupFunc != NULL)
+        *strdupFunc = xmlMemStrdup;
+    return 0;
 }
-
