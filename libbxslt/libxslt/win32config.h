@@ -17,10 +17,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#define snprintf c99_snprintf
+#define snprintf  c99_snprintf
 #define vsnprintf c99_vsnprintf
 
-__inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
+__inline int
+c99_vsnprintf (char *outBuf, size_t size, const char *format, va_list ap)
 {
     int count = -1;
 
@@ -32,7 +33,8 @@ __inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_lis
     return count;
 }
 
-__inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
+__inline int
+c99_snprintf (char *outBuf, size_t size, const char *format, ...)
 {
     int count;
     va_list ap;
@@ -50,4 +52,3 @@ __inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #define HAVE__STAT
 
 #endif /* __LIBXSLT_WIN32_CONFIG__ */
-
