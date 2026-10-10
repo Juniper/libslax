@@ -21,15 +21,16 @@
  * Parse and validate the resource and free the resulting tree
  */
 static void
-exampleFunc(const char *filename) {
+exampleFunc (const char *filename)
+{
     xmlParserCtxtPtr ctxt; /* the parser context */
-    xmlDocPtr doc; /* the resulting document tree */
+    xmlDocPtr doc;         /* the resulting document tree */
 
     /* create a parser context */
     ctxt = xmlNewParserCtxt();
     if (ctxt == NULL) {
         fprintf(stderr, "Failed to allocate parser context\n");
-	return;
+        return;
     }
     /* parse the file, activating the DTD validation option */
     doc = xmlCtxtReadFile(ctxt, filename, NULL, XML_PARSE_DTDVALID);
@@ -37,19 +38,21 @@ exampleFunc(const char *filename) {
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", filename);
     } else {
-	/* check if validation succeeded */
+        /* check if validation succeeded */
         if (ctxt->valid == 0)
-	    fprintf(stderr, "Failed to validate %s\n", filename);
-	/* free up the resulting document */
-	xmlFreeDoc(doc);
+            fprintf(stderr, "Failed to validate %s\n", filename);
+        /* free up the resulting document */
+        xmlFreeDoc(doc);
     }
     /* free up the parser context */
     xmlFreeParserCtxt(ctxt);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     if (argc != 2)
-        return(1);
+        return 1;
 
     /*
      * this initialize the library and check potential ABI mismatches
@@ -60,5 +63,5 @@ int main(int argc, char **argv) {
 
     exampleFunc(argv[1]);
 
-    return(0);
+    return 0;
 }
