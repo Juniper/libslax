@@ -29,53 +29,54 @@
  * @returns true if character valid, false otherwise
  */
 int
-xmlCharInRange (unsigned int val, const xmlChRangeGroup *rptr) {
+xmlCharInRange (unsigned int val, const xmlChRangeGroup *rptr)
+{
     int low, high, mid;
     const xmlChSRange *sptr;
     const xmlChLRange *lptr;
 
-    if (rptr == NULL) return(0);
-    if (val < 0x10000) {	/* is val in 'short' or 'long'  array? */
-	if (rptr->nbShortRange == 0)
-	    return 0;
-	low = 0;
-	high = rptr->nbShortRange - 1;
-	sptr = rptr->shortRange;
-	while (low <= high) {
-	    mid = (low + high) / 2;
-	    if ((unsigned short) val < sptr[mid].low) {
-		high = mid - 1;
-	    } else {
-		if ((unsigned short) val > sptr[mid].high) {
-		    low = mid + 1;
-		} else {
-		    return 1;
-		}
-	    }
-	}
+    if (rptr == NULL)
+        return 0;
+    if (val < 0x10000) { /* is val in 'short' or 'long'  array? */
+        if (rptr->nbShortRange == 0)
+            return 0;
+        low = 0;
+        high = rptr->nbShortRange - 1;
+        sptr = rptr->shortRange;
+        while (low <= high) {
+            mid = (low + high) / 2;
+            if ((unsigned short) val < sptr[mid].low) {
+                high = mid - 1;
+            } else {
+                if ((unsigned short) val > sptr[mid].high) {
+                    low = mid + 1;
+                } else {
+                    return 1;
+                }
+            }
+        }
     } else {
-	if (rptr->nbLongRange == 0) {
-	    return 0;
-	}
-	low = 0;
-	high = rptr->nbLongRange - 1;
-	lptr = rptr->longRange;
-	while (low <= high) {
-	    mid = (low + high) / 2;
-	    if (val < lptr[mid].low) {
-		high = mid - 1;
-	    } else {
-		if (val > lptr[mid].high) {
-		    low = mid + 1;
-		} else {
-		    return 1;
-		}
-	    }
-	}
+        if (rptr->nbLongRange == 0) {
+            return 0;
+        }
+        low = 0;
+        high = rptr->nbLongRange - 1;
+        lptr = rptr->longRange;
+        while (low <= high) {
+            mid = (low + high) / 2;
+            if (val < lptr[mid].low) {
+                high = mid - 1;
+            } else {
+                if (val > lptr[mid].high) {
+                    low = mid + 1;
+                } else {
+                    return 1;
+                }
+            }
+        }
     }
     return 0;
 }
-
 
 /**
  * @deprecated Use #xmlIsBaseChar_ch or #xmlIsBaseCharQ.
@@ -84,10 +85,10 @@ xmlCharInRange (unsigned int val, const xmlChRangeGroup *rptr) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsBaseChar(unsigned int ch) {
-    return(xmlIsBaseCharQ(ch));
+xmlIsBaseChar (unsigned int ch)
+{
+    return xmlIsBaseCharQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsBlank_ch or #xmlIsBlankQ.
@@ -96,10 +97,10 @@ xmlIsBaseChar(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsBlank(unsigned int ch) {
-    return(xmlIsBlankQ(ch));
+xmlIsBlank (unsigned int ch)
+{
+    return xmlIsBlankQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsChar_ch or #xmlIsCharQ.
@@ -108,10 +109,10 @@ xmlIsBlank(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsChar(unsigned int ch) {
-    return(xmlIsCharQ(ch));
+xmlIsChar (unsigned int ch)
+{
+    return xmlIsCharQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsCombiningQ.
@@ -120,10 +121,10 @@ xmlIsChar(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsCombining(unsigned int ch) {
-    return(xmlIsCombiningQ(ch));
+xmlIsCombining (unsigned int ch)
+{
+    return xmlIsCombiningQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsDigit_ch or #xmlIsDigitQ.
@@ -132,10 +133,10 @@ xmlIsCombining(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsDigit(unsigned int ch) {
-    return(xmlIsDigitQ(ch));
+xmlIsDigit (unsigned int ch)
+{
+    return xmlIsDigitQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsExtender_ch or #xmlIsExtenderQ.
@@ -144,10 +145,10 @@ xmlIsDigit(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsExtender(unsigned int ch) {
-    return(xmlIsExtenderQ(ch));
+xmlIsExtender (unsigned int ch)
+{
+    return xmlIsExtenderQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsIdeographicQ.
@@ -156,10 +157,10 @@ xmlIsExtender(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsIdeographic(unsigned int ch) {
-    return(xmlIsIdeographicQ(ch));
+xmlIsIdeographic (unsigned int ch)
+{
+    return xmlIsIdeographicQ(ch);
 }
-
 
 /**
  * @deprecated Use #xmlIsPubidChar_ch or #xmlIsPubidCharQ.
@@ -168,7 +169,7 @@ xmlIsIdeographic(unsigned int ch) {
  * @returns true if argument valid, false otherwise
  */
 int
-xmlIsPubidChar(unsigned int ch) {
-    return(xmlIsPubidCharQ(ch));
+xmlIsPubidChar (unsigned int ch)
+{
+    return xmlIsPubidCharQ(ch);
 }
-
