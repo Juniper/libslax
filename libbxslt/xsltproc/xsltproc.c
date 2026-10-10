@@ -49,7 +49,7 @@
 #include <libexslt/exsltconfig.h>
 
 #ifndef STDIN_FILENO
-  #define STDIN_FILENO 0
+#define STDIN_FILENO 0
 #endif
 
 #ifdef LIBXML_DEBUG_ENABLED
@@ -74,11 +74,11 @@ static int xincludestyle = 0;
 static int profile = 0;
 
 #define MAX_PARAMETERS 64
-#define MAX_PATHS 64
+#define MAX_PATHS      64
 #ifdef _WIN32
-# define PATH_SEPARATOR ';'
+#define PATH_SEPARATOR ';'
 #else
-# define PATH_SEPARATOR ':'
+#define PATH_SEPARATOR ':'
 #endif
 
 static int options = XSLT_PARSE_OPTIONS;
@@ -96,37 +96,39 @@ static const char *writesubtree = NULL;
  * Entity loading control and customization.
  */
 
-static
-void parsePath(const xmlChar *path) {
+static void
+parsePath (const xmlChar *path)
+{
     const xmlChar *cur;
 
     if (path == NULL)
-	return;
+        return;
     while (*path != 0) {
-	if (nbpaths >= MAX_PATHS) {
-	    fprintf(stderr, "MAX_PATHS reached: too many paths\n");
-	    return;
-	}
-	cur = path;
-	while ((*cur == ' ') || (*cur == PATH_SEPARATOR))
-	    cur++;
-	path = cur;
-	while ((*cur != 0) && (*cur != ' ') && (*cur != PATH_SEPARATOR))
-	    cur++;
-	if (cur != path) {
-	    paths[nbpaths] = xmlStrndup(path, cur - path);
-	    if (paths[nbpaths] != NULL)
-		nbpaths++;
-	    path = cur;
-	}
+        if (nbpaths >= MAX_PATHS) {
+            fprintf(stderr, "MAX_PATHS reached: too many paths\n");
+            return;
+        }
+        cur = path;
+        while ((*cur == ' ') || (*cur == PATH_SEPARATOR))
+            cur++;
+        path = cur;
+        while ((*cur != 0) && (*cur != ' ') && (*cur != PATH_SEPARATOR))
+            cur++;
+        if (cur != path) {
+            paths[nbpaths] = xmlStrndup(path, cur - path);
+            if (paths[nbpaths] != NULL)
+                nbpaths++;
+            path = cur;
+        }
     }
 }
 
 xmlExternalEntityLoader defaultEntityLoader = NULL;
 
 static xmlParserInputPtr
-xsltprocExternalEntityLoader(const char *URL, const char *ID,
-			     xmlParserCtxtPtr ctxt) {
+xsltprocExternalEntityLoader (const char *URL, const char *ID,
+                              xmlParserCtxtPtr ctxt)
+{
     xmlParserInputPtr ret = NULL;
     warningSAXFunc warning = NULL;
     xmlSAXHandlerPtr sax = ctxt != NULL ? xmlCtxtGetSaxHandler(ctxt) : NULL;
@@ -136,66 +138,60 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
     const char *iter = URL;
 
     if (nbpaths > 0) {
-	while (*iter != 0) {
-	    if (*iter == '/')
-		lastsegment = iter + 1;
-	    iter++;
-	}
+        while (*iter != 0) {
+            if (*iter == '/')
+                lastsegment = iter + 1;
+            iter++;
+        }
     }
 
     if (sax != NULL) {
-	warning = xmlSAXHandlerGetWarning(sax);
-	xmlSAXHandlerSetWarning(sax, NULL);
+        warning = xmlSAXHandlerGetWarning(sax);
+        xmlSAXHandlerSetWarning(sax, NULL);
     }
 
     if (defaultEntityLoader != NULL) {
-	ret = defaultEntityLoader(URL, ID, ctxt);
-	if (ret != NULL) {
-	    if (warning != NULL)
-		xmlSAXHandlerSetWarning(sax, warning);
-	    if (load_trace) {
-		fprintf \
-			(stderr,
-			 "Loaded URL=\"%s\" ID=\"%s\"\n",
-			 URL ? URL : "(null)",
-			 ID ? ID : "(null)");
-	    }
-	    return(ret);
-	}
+        ret = defaultEntityLoader(URL, ID, ctxt);
+        if (ret != NULL) {
+            if (warning != NULL)
+                xmlSAXHandlerSetWarning(sax, warning);
+            if (load_trace) {
+                fprintf(stderr, "Loaded URL=\"%s\" ID=\"%s\"\n",
+                        URL ? URL : "(null)", ID ? ID : "(null)");
+            }
+            return ret;
+        }
     }
-    for (i = 0;i < nbpaths;i++) {
-	xmlChar *newURL;
+    for (i = 0; i < nbpaths; i++) {
+        xmlChar *newURL;
 
-	newURL = xmlStrdup((const xmlChar *) paths[i]);
-	newURL = xmlStrcat(newURL, (const xmlChar *) "/");
-	newURL = xmlStrcat(newURL, (const xmlChar *) lastsegment);
-	if (newURL != NULL) {
-	    if (defaultEntityLoader != NULL)
-		ret = defaultEntityLoader((const char *)newURL, ID, ctxt);
-	    if (ret != NULL) {
-		if (warning != NULL)
-		    xmlSAXHandlerSetWarning(sax, warning);
-		if (load_trace) {
-		    fprintf \
-			(stderr,
-			 "Loaded URL=\"%s\" ID=\"%s\"\n",
-			 newURL,
-			 ID ? ID : "(null)");
-		}
-		xmlFree(newURL);
-		return(ret);
-	    }
-	    xmlFree(newURL);
-	}
+        newURL = xmlStrdup((const xmlChar *) paths[i]);
+        newURL = xmlStrcat(newURL, (const xmlChar *) "/");
+        newURL = xmlStrcat(newURL, (const xmlChar *) lastsegment);
+        if (newURL != NULL) {
+            if (defaultEntityLoader != NULL)
+                ret = defaultEntityLoader((const char *) newURL, ID, ctxt);
+            if (ret != NULL) {
+                if (warning != NULL)
+                    xmlSAXHandlerSetWarning(sax, warning);
+                if (load_trace) {
+                    fprintf(stderr, "Loaded URL=\"%s\" ID=\"%s\"\n", newURL,
+                            ID ? ID : "(null)");
+                }
+                xmlFree(newURL);
+                return ret;
+            }
+            xmlFree(newURL);
+        }
     }
     if (warning != NULL) {
-	xmlSAXHandlerSetWarning(sax, warning);
-	if (URL != NULL)
-	    warning(ctxt, "failed to load external entity \"%s\"\n", URL);
-	else if (ID != NULL)
-	    warning(ctxt, "failed to load external entity \"%s\"\n", ID);
+        xmlSAXHandlerSetWarning(sax, warning);
+        if (URL != NULL)
+            warning(ctxt, "failed to load external entity \"%s\"\n", URL);
+        else if (ID != NULL)
+            warning(ctxt, "failed to load external entity \"%s\"\n", ID);
     }
-    return(NULL);
+    return NULL;
 }
 
 /*
@@ -208,42 +204,44 @@ xsltprocExternalEntityLoader(const char *URL, const char *ID,
 #ifdef HAVE_FTIME
 
 int
-my_gettimeofday(struct timeval *tvp, void *tzp)
+my_gettimeofday (struct timeval *tvp, void *tzp)
 {
-	struct timeb timebuffer;
+    struct timeb timebuffer;
 
-	ftime(&timebuffer);
-	if (tvp) {
-		tvp->tv_sec = timebuffer.time;
-		tvp->tv_usec = timebuffer.millitm * 1000L;
-	}
-	return (0);
+    ftime(&timebuffer);
+    if (tvp) {
+        tvp->tv_sec = timebuffer.time;
+        tvp->tv_usec = timebuffer.millitm * 1000L;
+    }
+    return 0;
 }
 #define HAVE_GETTIMEOFDAY 1
-#define gettimeofday my_gettimeofday
+#define gettimeofday      my_gettimeofday
 
 #endif /* HAVE_FTIME */
 #endif /* HAVE_SYS_TIME_H */
 #endif /* HAVE_SYS_TIMEB_H */
 #endif /* !HAVE_GETTIMEOFDAY */
 
-static void endTimer(const char *format, ...) PSU_PRINTFLIKE(1,2);
+static void endTimer (const char *format, ...) PSU_PRINTFLIKE(1, 2);
 
 #if defined(HAVE_GETTIMEOFDAY)
 static struct timeval begin, endtime;
 /*
  * startTimer: call where you want to start timing
  */
-static void startTimer(void)
+static void
+startTimer (void)
 {
-    gettimeofday(&begin,NULL);
+    gettimeofday(&begin, NULL);
 }
 /*
  * endTimer: call where you want to stop timing and to print out a
  *           message about the timing performed; format is a printf
  *           type argument
  */
-static void endTimer(const char *format, ...)
+static void
+endTimer (const char *format, ...)
 {
     long msec;
     va_list ap;
@@ -254,7 +252,7 @@ static void endTimer(const char *format, ...)
     msec += (endtime.tv_usec - begin.tv_usec) / 1000;
 
     va_start(ap, format);
-    vfprintf(stderr,format,ap);
+    vfprintf(stderr, format, ap);
     va_end(ap);
 
     fprintf(stderr, " took %ld ms\n", msec);
@@ -270,20 +268,22 @@ static void endTimer(const char *format, ...)
 #endif
 
 clock_t begin, endtime;
-static void startTimer(void)
+static void
+startTimer (void)
 {
-    begin=clock();
+    begin = clock();
 }
-static void endTimer(const char *format, ...)
+static void
+endTimer (const char *format, ...)
 {
     long msec;
     va_list ap;
 
-    endtime=clock();
-    msec = ((endtime-begin) * 1000) / CLOCKS_PER_SEC;
+    endtime = clock();
+    msec = ((endtime - begin) * 1000) / CLOCKS_PER_SEC;
 
     va_start(ap, format);
-    vfprintf(stderr,format,ap);
+    vfprintf(stderr, format, ap);
     va_end(ap);
     fprintf(stderr, " took %ld ms\n", msec);
 }
@@ -295,25 +295,26 @@ static void endTimer(const char *format, ...)
  * allow writes only on a subtree specified on the command line
  */
 static int
-xsltSubtreeCheck(xsltSecurityPrefsPtr sec UNUSED,
-	          xsltTransformContextPtr ctxt UNUSED,
-		  const char *value UNUSED) {
+xsltSubtreeCheck (xsltSecurityPrefsPtr sec UNUSED,
+                  xsltTransformContextPtr ctxt UNUSED, const char *value UNUSED)
+{
     int len, ret;
 
     if (writesubtree == NULL)
-	return(0);
+        return 0;
     if (value == NULL)
-	return(-1);
+        return -1;
 
     len = xmlStrlen(BAD_CAST writesubtree);
     ret = xmlStrncmp(BAD_CAST writesubtree, BAD_CAST value, len);
     if (ret == 0)
-	return(1);
-    return(0);
+        return 1;
+    return 0;
 }
 
 static xmlDocPtr
-xsltReadFile(const char *filename) {
+xsltReadFile (const char *filename)
+{
     xmlDocPtr doc;
 
 #ifdef LIBXML_HTML_ENABLED
@@ -331,32 +332,32 @@ xsltReadFile(const char *filename) {
             doc = xmlReadFile(filename, encoding, options);
     }
 
-    return(doc);
+    return doc;
 }
 
 static void
-xsltProcess(xmlDocPtr doc, xsltStylesheetPtr cur, const char *filename) {
+xsltProcess (xmlDocPtr doc, xsltStylesheetPtr cur, const char *filename)
+{
     xmlDocPtr res;
     xsltTransformContextPtr ctxt;
-
 
 #ifdef LIBXML_XINCLUDE_ENABLED
     if (xinclude) {
         int ret;
 
-	if (timing)
-	    startTimer();
+        if (timing)
+            startTimer();
 #if LIBXML_VERSION >= 20603
-	ret = xmlXIncludeProcessFlags(doc, XSLT_PARSE_OPTIONS);
+        ret = xmlXIncludeProcessFlags(doc, XSLT_PARSE_OPTIONS);
 #else
-	ret = xmlXIncludeProcess(doc);
+        ret = xmlXIncludeProcess(doc);
 #endif
-	if (timing) {
-	    endTimer("XInclude processing %s", filename);
-	}
+        if (timing) {
+            endTimer("XInclude processing %s", filename);
+        }
 
         if (ret < 0) {
-	    errorno = 6;
+            errorno = 6;
             return;
         }
     }
@@ -364,117 +365,115 @@ xsltProcess(xmlDocPtr doc, xsltStylesheetPtr cur, const char *filename) {
     if (timing)
         startTimer();
     if (output == NULL) {
-	if (repeat) {
-	    int j;
+        if (repeat) {
+            int j;
 
-	    for (j = 1; j < repeat; j++) {
-		res = xsltApplyStylesheet(cur, doc, params);
-		xmlFreeDoc(res);
-		xmlFreeDoc(doc);
+            for (j = 1; j < repeat; j++) {
+                res = xsltApplyStylesheet(cur, doc, params);
+                xmlFreeDoc(res);
+                xmlFreeDoc(doc);
                 doc = xsltReadFile(filename);
-	    }
-	}
-	ctxt = xsltNewTransformContext(cur, doc);
-	if (ctxt == NULL)
-	    return;
-	xsltSetCtxtParseOptions(ctxt, options);
+            }
+        }
+        ctxt = xsltNewTransformContext(cur, doc);
+        if (ctxt == NULL)
+            return;
+        xsltSetCtxtParseOptions(ctxt, options);
 #ifdef LIBXML_XINCLUDE_ENABLED
-	if (xinclude)
-	    ctxt->xinclude = 1;
+        if (xinclude)
+            ctxt->xinclude = 1;
 #endif
-	if (profile) {
-	    res = xsltApplyStylesheetUser(cur, doc, params, NULL,
-		                          stderr, ctxt);
-	} else {
-	    res = xsltApplyStylesheetUser(cur, doc, params, NULL,
-		                          NULL, ctxt);
-	}
-	if (ctxt->state == XSLT_STATE_ERROR)
-	    errorno = 9;
-	else if (ctxt->state == XSLT_STATE_STOPPED)
-	    errorno = 10;
-	xsltFreeTransformContext(ctxt);
-	if (timing) {
-	    if (repeat)
-		endTimer("Applying stylesheet %d times", repeat);
-	    else
-		endTimer("Applying stylesheet");
-	}
-	xmlFreeDoc(doc);
-	if (res == NULL) {
-	    fprintf(stderr, "no result for %s\n", filename);
-	    return;
-	}
-	if (noout) {
-	    xmlFreeDoc(res);
-	    return;
-	}
+        if (profile) {
+            res = xsltApplyStylesheetUser(cur, doc, params, NULL, stderr, ctxt);
+        } else {
+            res = xsltApplyStylesheetUser(cur, doc, params, NULL, NULL, ctxt);
+        }
+        if (ctxt->state == XSLT_STATE_ERROR)
+            errorno = 9;
+        else if (ctxt->state == XSLT_STATE_STOPPED)
+            errorno = 10;
+        xsltFreeTransformContext(ctxt);
+        if (timing) {
+            if (repeat)
+                endTimer("Applying stylesheet %d times", repeat);
+            else
+                endTimer("Applying stylesheet");
+        }
+        xmlFreeDoc(doc);
+        if (res == NULL) {
+            fprintf(stderr, "no result for %s\n", filename);
+            return;
+        }
+        if (noout) {
+            xmlFreeDoc(res);
+            return;
+        }
 #ifdef LIBXML_DEBUG_ENABLED
-	if (debug)
-	    xmlDebugDumpDocument(stdout, res);
-	else {
+        if (debug)
+            xmlDebugDumpDocument(stdout, res);
+        else {
 #endif
-	    if (cur->methodURI == NULL) {
-		if (timing)
-		    startTimer();
-		xsltSaveResultToFile(stdout, res, cur);
-		if (timing)
-		    endTimer("Saving result");
-	    } else {
-		if (xmlStrEqual
-		    (cur->method, (const xmlChar *) "xhtml")) {
-		    fprintf(stderr, "non standard output xhtml\n");
-		    if (timing)
-			startTimer();
-		    xsltSaveResultToFile(stdout, res, cur);
-		    if (timing)
-			endTimer("Saving result");
-		} else {
-		    fprintf(stderr,
-			    "Unsupported non standard output %s\n",
-			    cur->method);
-		    errorno = 7;
-		}
-	    }
+            if (cur->methodURI == NULL) {
+                if (timing)
+                    startTimer();
+                xsltSaveResultToFile(stdout, res, cur);
+                if (timing)
+                    endTimer("Saving result");
+            } else {
+                if (xmlStrEqual(cur->method, (const xmlChar *) "xhtml")) {
+                    fprintf(stderr, "non standard output xhtml\n");
+                    if (timing)
+                        startTimer();
+                    xsltSaveResultToFile(stdout, res, cur);
+                    if (timing)
+                        endTimer("Saving result");
+                } else {
+                    fprintf(stderr, "Unsupported non standard output %s\n",
+                            cur->method);
+                    errorno = 7;
+                }
+            }
 #ifdef LIBXML_DEBUG_ENABLED
-	}
+        }
 #endif
 
-	xmlFreeDoc(res);
+        xmlFreeDoc(res);
     } else {
         int ret;
-	ctxt = xsltNewTransformContext(cur, doc);
-	if (ctxt == NULL)
-	    return;
-	xsltSetCtxtParseOptions(ctxt, options);
+        ctxt = xsltNewTransformContext(cur, doc);
+        if (ctxt == NULL)
+            return;
+        xsltSetCtxtParseOptions(ctxt, options);
 #ifdef LIBXML_XINCLUDE_ENABLED
-	if (xinclude)
-	    ctxt->xinclude = 1;
+        if (xinclude)
+            ctxt->xinclude = 1;
 #endif
-	ctxt->maxTemplateDepth = xsltMaxDepth;
-	ctxt->maxTemplateVars = xsltMaxVars;
+        ctxt->maxTemplateDepth = xsltMaxDepth;
+        ctxt->maxTemplateVars = xsltMaxVars;
 
-	if (profile) {
-	    ret = xsltRunStylesheetUser(cur, doc, params, output,
-		                        NULL, NULL, stderr, ctxt);
-	} else {
-	    ret = xsltRunStylesheetUser(cur, doc, params, output,
-		                        NULL, NULL, NULL, ctxt);
-	}
-	if (ret == -1)
-	    errorno = 11;
-	else if (ctxt->state == XSLT_STATE_ERROR)
-	    errorno = 9;
-	else if (ctxt->state == XSLT_STATE_STOPPED)
-	    errorno = 10;
-	xsltFreeTransformContext(ctxt);
-	if (timing)
-	    endTimer("Running stylesheet and saving result");
-	xmlFreeDoc(doc);
+        if (profile) {
+            ret = xsltRunStylesheetUser(cur, doc, params, output, NULL, NULL,
+                                        stderr, ctxt);
+        } else {
+            ret = xsltRunStylesheetUser(cur, doc, params, output, NULL, NULL,
+                                        NULL, ctxt);
+        }
+        if (ret == -1)
+            errorno = 11;
+        else if (ctxt->state == XSLT_STATE_ERROR)
+            errorno = 9;
+        else if (ctxt->state == XSLT_STATE_STOPPED)
+            errorno = 10;
+        xsltFreeTransformContext(ctxt);
+        if (timing)
+            endTimer("Running stylesheet and saving result");
+        xmlFreeDoc(doc);
     }
 }
 
-static void usage(const char *name) {
+static void
+usage (const char *name)
+{
     printf("Usage: %s [options] stylesheet file [file ...]\n", name);
     printf("   Options:\n");
     printf("\t--version or -V: show the version of libxml and libxslt used\n");
@@ -485,15 +484,20 @@ static void usage(const char *name) {
 #ifdef LIBXML_DEBUG_ENABLED
     printf("\t--debug: dump the tree of the result instead\n");
 #endif
-    printf("\t--dumpextensions: dump the registered extension elements and functions to stdout\n");
+    printf("\t--dumpextensions: dump the registered extension elements and "
+           "functions to stdout\n");
     printf("\t--novalid skip the DTD loading phase\n");
     printf("\t--nodtdattr do not default attributes from the DTD\n");
     printf("\t--noout: do not dump the result\n");
-    printf("\t--maxdepth val : increase the maximum depth (default %d)\n", xsltMaxDepth);
-    printf("\t--maxvars val : increase the maximum variables (default %d)\n", xsltMaxVars);
+    printf("\t--maxdepth val : increase the maximum depth (default %d)\n",
+           xsltMaxDepth);
+    printf("\t--maxvars val : increase the maximum variables (default %d)\n",
+           xsltMaxVars);
     printf("\t--huge: relax any hardcoded limit from the parser\n");
-    printf("\t             fixes \"parser error : internal error: Huge input lookup\"\n");
-    printf("\t--seed-rand val : initialize pseudo random number generator with specific seed\n");
+    printf("\t             fixes \"parser error : internal error: Huge input "
+           "lookup\"\n");
+    printf("\t--seed-rand val : initialize pseudo random number generator with "
+           "specific seed\n");
 #ifdef LIBXML_HTML_ENABLED
     printf("\t--html: the input document is(are) an HTML file(s)\n");
 #endif
@@ -503,12 +507,14 @@ static void usage(const char *name) {
     printf("\t       value is an UTF8 XPath expression.\n");
     printf("\t       string values must be quoted like \"'string'\"\n or");
     printf("\t       use stringparam to avoid it\n");
-    printf("\t--stringparam name value : pass a (parameter, UTF8 string value) pair\n");
+    printf("\t--stringparam name value : pass a (parameter, UTF8 string value) "
+           "pair\n");
     printf("\t--path 'paths': provide a set of paths for resources\n");
     printf("\t--nonet : refuse to fetch DTDs or entities over network\n");
     printf("\t--nowrite : refuse to write to any file or resource\n");
     printf("\t--nomkdir : refuse to create directories\n");
-    printf("\t--writesubtree path : allow file write only with the path subtree\n");
+    printf("\t--writesubtree path : allow file write only with the path "
+           "subtree\n");
 #ifdef LIBXML_CATALOG_ENABLED
     printf("\t--catalogs : use SGML catalogs from $SGML_CATALOG_FILES\n");
     printf("\t             otherwise XML Catalogs starting from \n");
@@ -520,11 +526,12 @@ static void usage(const char *name) {
 #endif
     printf("\t--load-trace : print trace of all external entites loaded\n");
     printf("\t--profile or --norman : dump profiling information \n");
-    printf("\nProject libxslt home page: https://gitlab.gnome.org/GNOME/libxslt\n");
+    printf("\nProject libxslt home page: "
+           "https://gitlab.gnome.org/GNOME/libxslt\n");
 }
 
 int
-main(int argc, char **argv)
+main (int argc, char **argv)
 {
     int i;
     xsltStylesheetPtr cur = NULL;
@@ -533,7 +540,7 @@ main(int argc, char **argv)
 
     if (argc <= 1) {
         usage(argv[0]);
-        return (1);
+        return 1;
     }
 
     srand(time(NULL));
@@ -564,27 +571,24 @@ main(int argc, char **argv)
             debug++;
         } else
 #endif
-        if ((!strcmp(argv[i], "-v")) ||
-                (!strcmp(argv[i], "-verbose")) ||
-                (!strcmp(argv[i], "--verbose"))) {
+            if ((!strcmp(argv[i], "-v")) || (!strcmp(argv[i], "-verbose"))
+                || (!strcmp(argv[i], "--verbose"))) {
             xsltSetGenericDebugFunc(stderr, NULL);
-        } else if ((!strcmp(argv[i], "-o")) ||
-                   (!strcmp(argv[i], "-output")) ||
-                   (!strcmp(argv[i], "--output"))) {
+        } else if ((!strcmp(argv[i], "-o")) || (!strcmp(argv[i], "-output"))
+                   || (!strcmp(argv[i], "--output"))) {
             i++;
-#if defined(_WIN32) || defined (__CYGWIN__)
-	    output = (char *) xmlCanonicPath((xmlChar *) argv[i]);
+#if defined(_WIN32) || defined(__CYGWIN__)
+            output = (char *) xmlCanonicPath((xmlChar *) argv[i]);
             if (output == NULL)
 #endif
-		output = (char *) xmlStrdup((xmlChar *) argv[i]);
-        } else if ((!strcmp(argv[i], "-V")) ||
-                   (!strcmp(argv[i], "-version")) ||
-                   (!strcmp(argv[i], "--version"))) {
+                output = (char *) xmlStrdup((xmlChar *) argv[i]);
+        } else if ((!strcmp(argv[i], "-V")) || (!strcmp(argv[i], "-version"))
+                   || (!strcmp(argv[i], "--version"))) {
             printf("Using libxml %s, libxslt %s and libexslt %s\n",
                    xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
-            printf
-    ("xsltproc was compiled against libxml %d, libxslt %d and libexslt %d\n",
-                 LIBXML_VERSION, LIBXSLT_VERSION, LIBEXSLT_VERSION);
+            printf("xsltproc was compiled against libxml %d, libxslt %d and "
+                   "libexslt %d\n",
+                   LIBXML_VERSION, LIBXSLT_VERSION, LIBEXSLT_VERSION);
             printf("libxslt %d was compiled against libxml %d\n",
                    xsltLibxsltVersion, xsltLibxmlVersion);
             printf("libexslt %d was compiled against libxml %d\n",
@@ -595,63 +599,63 @@ main(int argc, char **argv)
                 repeat = 20;
             else
                 repeat = 100;
-        } else if ((!strcmp(argv[i], "-novalid")) ||
-                   (!strcmp(argv[i], "--novalid"))) {
+        } else if ((!strcmp(argv[i], "-novalid"))
+                   || (!strcmp(argv[i], "--novalid"))) {
             novalid++;
-        } else if ((!strcmp(argv[i], "-nodtdattr")) ||
-                   (!strcmp(argv[i], "--nodtdattr"))) {
+        } else if ((!strcmp(argv[i], "-nodtdattr"))
+                   || (!strcmp(argv[i], "--nodtdattr"))) {
             nodtdattr++;
-        } else if ((!strcmp(argv[i], "-noout")) ||
-                   (!strcmp(argv[i], "--noout"))) {
+        } else if ((!strcmp(argv[i], "-noout"))
+                   || (!strcmp(argv[i], "--noout"))) {
             noout++;
 #ifdef LIBXML_HTML_ENABLED
-        } else if ((!strcmp(argv[i], "-html")) ||
-                   (!strcmp(argv[i], "--html"))) {
+        } else if ((!strcmp(argv[i], "-html"))
+                   || (!strcmp(argv[i], "--html"))) {
             html++;
 #endif
-	} else if ((!strcmp(argv[i], "-encoding")) ||
-		   (!strcmp(argv[i], "--encoding"))) {
-	    encoding = argv[++i];
-        } else if ((!strcmp(argv[i], "-timing")) ||
-                   (!strcmp(argv[i], "--timing"))) {
+        } else if ((!strcmp(argv[i], "-encoding"))
+                   || (!strcmp(argv[i], "--encoding"))) {
+            encoding = argv[++i];
+        } else if ((!strcmp(argv[i], "-timing"))
+                   || (!strcmp(argv[i], "--timing"))) {
             timing++;
-        } else if ((!strcmp(argv[i], "-profile")) ||
-                   (!strcmp(argv[i], "--profile"))) {
+        } else if ((!strcmp(argv[i], "-profile"))
+                   || (!strcmp(argv[i], "--profile"))) {
             profile++;
-        } else if ((!strcmp(argv[i], "-nodict")) ||
-                   (!strcmp(argv[i], "--nodict"))) {
+        } else if ((!strcmp(argv[i], "-nodict"))
+                   || (!strcmp(argv[i], "--nodict"))) {
             nodict++;
-        } else if ((!strcmp(argv[i], "-norman")) ||
-                   (!strcmp(argv[i], "--norman"))) {
+        } else if ((!strcmp(argv[i], "-norman"))
+                   || (!strcmp(argv[i], "--norman"))) {
             profile++;
-        } else if ((!strcmp(argv[i], "-nonet")) ||
-                   (!strcmp(argv[i], "--nonet"))) {
+        } else if ((!strcmp(argv[i], "-nonet"))
+                   || (!strcmp(argv[i], "--nonet"))) {
             options |= XML_PARSE_NONET;
-        } else if ((!strcmp(argv[i], "-nowrite")) ||
-                   (!strcmp(argv[i], "--nowrite"))) {
-	    xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
-		                 xsltSecurityForbid);
-	    xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
-		                 xsltSecurityForbid);
-	    xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_NETWORK,
-		                 xsltSecurityForbid);
-        } else if ((!strcmp(argv[i], "-nomkdir")) ||
-                   (!strcmp(argv[i], "--nomkdir"))) {
-	    xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
-		                 xsltSecurityForbid);
-        } else if ((!strcmp(argv[i], "-writesubtree")) ||
-                   (!strcmp(argv[i], "--writesubtree"))) {
-	    i++;
-	    writesubtree = argv[i];
-	    xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
-		                 xsltSubtreeCheck);
-        } else if ((!strcmp(argv[i], "-path")) ||
-                   (!strcmp(argv[i], "--path"))) {
-	    i++;
-	    parsePath(BAD_CAST argv[i]);
+        } else if ((!strcmp(argv[i], "-nowrite"))
+                   || (!strcmp(argv[i], "--nowrite"))) {
+            xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
+                                 xsltSecurityForbid);
+            xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
+                                 xsltSecurityForbid);
+            xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_NETWORK,
+                                 xsltSecurityForbid);
+        } else if ((!strcmp(argv[i], "-nomkdir"))
+                   || (!strcmp(argv[i], "--nomkdir"))) {
+            xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
+                                 xsltSecurityForbid);
+        } else if ((!strcmp(argv[i], "-writesubtree"))
+                   || (!strcmp(argv[i], "--writesubtree"))) {
+            i++;
+            writesubtree = argv[i];
+            xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
+                                 xsltSubtreeCheck);
+        } else if ((!strcmp(argv[i], "-path"))
+                   || (!strcmp(argv[i], "--path"))) {
+            i++;
+            parsePath(BAD_CAST argv[i]);
 #ifdef LIBXML_CATALOG_ENABLED
-        } else if ((!strcmp(argv[i], "-catalogs")) ||
-                   (!strcmp(argv[i], "--catalogs"))) {
+        } else if ((!strcmp(argv[i], "-catalogs"))
+                   || (!strcmp(argv[i], "--catalogs"))) {
             const char *catalogs;
 
             catalogs = getenv("SGML_CATALOG_FILES");
@@ -662,71 +666,72 @@ main(int argc, char **argv)
             }
 #endif
 #ifdef LIBXML_XINCLUDE_ENABLED
-        } else if ((!strcmp(argv[i], "-xinclude")) ||
-                   (!strcmp(argv[i], "--xinclude"))) {
+        } else if ((!strcmp(argv[i], "-xinclude"))
+                   || (!strcmp(argv[i], "--xinclude"))) {
             xinclude++;
-        } else if ((!strcmp(argv[i], "-xincludestyle")) ||
-                   (!strcmp(argv[i], "--xincludestyle"))) {
+        } else if ((!strcmp(argv[i], "-xincludestyle"))
+                   || (!strcmp(argv[i], "--xincludestyle"))) {
             xincludestyle++;
             xsltSetXIncludeDefault(1);
 #endif
-        } else if ((!strcmp(argv[i], "-load-trace")) ||
-                   (!strcmp(argv[i], "--load-trace"))) {
+        } else if ((!strcmp(argv[i], "-load-trace"))
+                   || (!strcmp(argv[i], "--load-trace"))) {
             load_trace++;
-        } else if ((!strcmp(argv[i], "-param")) ||
-                   (!strcmp(argv[i], "--param"))) {
+        } else if ((!strcmp(argv[i], "-param"))
+                   || (!strcmp(argv[i], "--param"))) {
             i++;
             params[nbparams++] = argv[i++];
             params[nbparams++] = argv[i];
             if (nbparams >= MAX_PARAMETERS) {
                 fprintf(stderr, "too many params increase MAX_PARAMETERS \n");
-                return (2);
+                return 2;
             }
-        } else if ((!strcmp(argv[i], "-stringparam")) ||
-                   (!strcmp(argv[i], "--stringparam"))) {
-	    const xmlChar *string;
-	    xmlChar *value;
+        } else if ((!strcmp(argv[i], "-stringparam"))
+                   || (!strcmp(argv[i], "--stringparam"))) {
+            const xmlChar *string;
+            xmlChar *value;
 
             i++;
             params[nbparams++] = argv[i++];
-	    string = (const xmlChar *) argv[i];
-	    if (xmlStrchr(string, '"')) {
-		if (xmlStrchr(string, '\'')) {
-		    fprintf(stderr,
-		    "stringparam contains both quote and double-quotes !\n");
-		    return(8);
-		}
-		value = xmlStrdup((const xmlChar *)"'");
-		value = xmlStrcat(value, string);
-		value = xmlStrcat(value, (const xmlChar *)"'");
-	    } else {
-		value = xmlStrdup((const xmlChar *)"\"");
-		value = xmlStrcat(value, string);
-		value = xmlStrcat(value, (const xmlChar *)"\"");
-	    }
+            string = (const xmlChar *) argv[i];
+            if (xmlStrchr(string, '"')) {
+                if (xmlStrchr(string, '\'')) {
+                    fprintf(stderr,
+                            "stringparam contains both quote and double-quotes "
+                            "!\n");
+                    return 8;
+                }
+                value = xmlStrdup((const xmlChar *) "'");
+                value = xmlStrcat(value, string);
+                value = xmlStrcat(value, (const xmlChar *) "'");
+            } else {
+                value = xmlStrdup((const xmlChar *) "\"");
+                value = xmlStrcat(value, string);
+                value = xmlStrcat(value, (const xmlChar *) "\"");
+            }
 
             params[nbparams++] = (const char *) value;
-	    strparams[nbstrparams++] = value;
+            strparams[nbstrparams++] = value;
             if (nbparams >= MAX_PARAMETERS) {
                 fprintf(stderr, "too many params increase MAX_PARAMETERS \n");
-                return (2);
+                return 2;
             }
-        } else if ((!strcmp(argv[i], "-maxdepth")) ||
-                   (!strcmp(argv[i], "--maxdepth"))) {
+        } else if ((!strcmp(argv[i], "-maxdepth"))
+                   || (!strcmp(argv[i], "--maxdepth"))) {
             int value;
 
             i++;
             if (i == argc) {
                 fprintf(stderr, "XSLT maxdepth value not specified!\n");
-                return (2);
+                return 2;
             }
 
             if (sscanf(argv[i], "%d", &value) == 1) {
                 if (value > 0)
                     xsltMaxDepth = value;
             }
-        } else if ((!strcmp(argv[i], "-maxvars")) ||
-                   (!strcmp(argv[i], "--maxvars"))) {
+        } else if ((!strcmp(argv[i], "-maxvars"))
+                   || (!strcmp(argv[i], "--maxvars"))) {
             int value;
 
             i++;
@@ -734,11 +739,11 @@ main(int argc, char **argv)
                 if (value > 0)
                     xsltMaxVars = value;
             }
-        } else if ((!strcmp(argv[i], "-huge")) ||
-                   (!strcmp(argv[i], "--huge"))) {
+        } else if ((!strcmp(argv[i], "-huge"))
+                   || (!strcmp(argv[i], "--huge"))) {
             options |= XML_PARSE_HUGE;
-        } else if ((!strcmp(argv[i], "-seed-rand")) ||
-                   (!strcmp(argv[i], "--seed-rand"))) {
+        } else if ((!strcmp(argv[i], "-seed-rand"))
+                   || (!strcmp(argv[i], "--seed-rand"))) {
             int value;
 
             i++;
@@ -746,19 +751,19 @@ main(int argc, char **argv)
                 if (value > 0)
                     srand(value);
             }
-        } else if ((!strcmp(argv[i],"-dumpextensions"))||
-			(!strcmp(argv[i],"--dumpextensions"))) {
-		dumpextensions++;
-	} else {
+        } else if ((!strcmp(argv[i], "-dumpextensions"))
+                   || (!strcmp(argv[i], "--dumpextensions"))) {
+            dumpextensions++;
+        } else {
             fprintf(stderr, "Unknown option %s\n", argv[i]);
             usage(argv[0]);
-            return (3);
+            return 3;
         }
     }
     params[nbparams] = NULL;
 
     if (novalid != 0)
-	options = XML_PARSE_NOENT | XML_PARSE_NOCDATA;
+        options = XML_PARSE_NOENT | XML_PARSE_NOCDATA;
     else if (nodtdattr)
         options = XML_PARSE_NOENT | XML_PARSE_DTDLOAD | XML_PARSE_NOCDATA;
     if (nodict != 0)
@@ -771,128 +776,124 @@ main(int argc, char **argv)
     xsltRegisterTestModule();
 
     if (dumpextensions)
-	xsltDebugDumpExtensions(NULL);
+        xsltDebugDumpExtensions(NULL);
 
     for (i = 1; i < argc; i++) {
-        if ((!strcmp(argv[i], "-maxdepth")) ||
-            (!strcmp(argv[i], "--maxdepth"))) {
+        if ((!strcmp(argv[i], "-maxdepth"))
+            || (!strcmp(argv[i], "--maxdepth"))) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-maxvars")) ||
-            (!strcmp(argv[i], "--maxvars"))) {
+        } else if ((!strcmp(argv[i], "-maxvars"))
+                   || (!strcmp(argv[i], "--maxvars"))) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-seed-rand")) ||
-            (!strcmp(argv[i], "--seed-rand"))) {
+        } else if ((!strcmp(argv[i], "-seed-rand"))
+                   || (!strcmp(argv[i], "--seed-rand"))) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-o")) ||
-                   (!strcmp(argv[i], "-output")) ||
-                   (!strcmp(argv[i], "--output"))) {
+        } else if ((!strcmp(argv[i], "-o")) || (!strcmp(argv[i], "-output"))
+                   || (!strcmp(argv[i], "--output"))) {
             i++;
-	    continue;
-	} else if ((!strcmp(argv[i], "-encoding")) ||
-		   (!strcmp(argv[i], "--encoding"))) {
-	    i++;
-	    continue;
-        } else if ((!strcmp(argv[i], "-writesubtree")) ||
-                   (!strcmp(argv[i], "--writesubtree"))) {
+            continue;
+        } else if ((!strcmp(argv[i], "-encoding"))
+                   || (!strcmp(argv[i], "--encoding"))) {
             i++;
-	    continue;
-        } else if ((!strcmp(argv[i], "-path")) ||
-                   (!strcmp(argv[i], "--path"))) {
+            continue;
+        } else if ((!strcmp(argv[i], "-writesubtree"))
+                   || (!strcmp(argv[i], "--writesubtree"))) {
             i++;
-	    continue;
-	}
+            continue;
+        } else if ((!strcmp(argv[i], "-path"))
+                   || (!strcmp(argv[i], "--path"))) {
+            i++;
+            continue;
+        }
         if ((!strcmp(argv[i], "-param")) || (!strcmp(argv[i], "--param"))) {
             i += 2;
             continue;
         }
-        if ((!strcmp(argv[i], "-stringparam")) ||
-            (!strcmp(argv[i], "--stringparam"))) {
+        if ((!strcmp(argv[i], "-stringparam"))
+            || (!strcmp(argv[i], "--stringparam"))) {
             i += 2;
             continue;
         }
         if ((argv[i][0] != '-') || (strcmp(argv[i], "-") == 0)) {
             if (timing)
                 startTimer();
-	    style = xmlReadFile((const char *) argv[i], NULL, options);
+            style = xmlReadFile((const char *) argv[i], NULL, options);
             if (timing)
-		endTimer("Parsing stylesheet %s", argv[i]);
+                endTimer("Parsing stylesheet %s", argv[i]);
 #ifdef LIBXML_XINCLUDE_ENABLED
-	    if (xincludestyle) {
-		if (style != NULL) {
-		    if (timing)
-			startTimer();
+            if (xincludestyle) {
+                if (style != NULL) {
+                    if (timing)
+                        startTimer();
 #if LIBXML_VERSION >= 20603
-		    xmlXIncludeProcessFlags(style, XSLT_PARSE_OPTIONS);
+                    xmlXIncludeProcessFlags(style, XSLT_PARSE_OPTIONS);
 #else
-		    xmlXIncludeProcess(style);
+                    xmlXIncludeProcess(style);
 #endif
-		    if (timing) {
-			endTimer("XInclude processing %s", argv[i]);
-		    }
-		}
-	    }
+                    if (timing) {
+                        endTimer("XInclude processing %s", argv[i]);
+                    }
+                }
+            }
 #endif
-	    if (style == NULL) {
-		fprintf(stderr,  "cannot parse %s\n", argv[i]);
-		cur = NULL;
-		errorno = 4;
-	    } else {
-		cur = xsltLoadStylesheetPI(style);
-		if (cur != NULL) {
-		    /* it is an embedded stylesheet */
-		    xsltProcess(style, cur, argv[i]);
-		    xsltFreeStylesheet(cur);
-		    cur = NULL;
-		    goto done;
-		}
-		cur = xsltParseStylesheetDoc(style);
-		if (cur != NULL) {
-		    if (cur->errors != 0) {
-			errorno = 5;
-			goto done;
-		    }
-		    i++;
-		} else {
-		    xmlFreeDoc(style);
-		    errorno = 5;
-		    goto done;
-		}
-	    }
+            if (style == NULL) {
+                fprintf(stderr, "cannot parse %s\n", argv[i]);
+                cur = NULL;
+                errorno = 4;
+            } else {
+                cur = xsltLoadStylesheetPI(style);
+                if (cur != NULL) {
+                    /* it is an embedded stylesheet */
+                    xsltProcess(style, cur, argv[i]);
+                    xsltFreeStylesheet(cur);
+                    cur = NULL;
+                    goto done;
+                }
+                cur = xsltParseStylesheetDoc(style);
+                if (cur != NULL) {
+                    if (cur->errors != 0) {
+                        errorno = 5;
+                        goto done;
+                    }
+                    i++;
+                } else {
+                    xmlFreeDoc(style);
+                    errorno = 5;
+                    goto done;
+                }
+            }
             break;
-
         }
     }
 
-
     if ((cur != NULL) && (cur->errors == 0)) {
         for (; i < argc; i++) {
-	    doc = NULL;
+            doc = NULL;
             if (timing)
                 startTimer();
             doc = xsltReadFile(argv[i]);
             if (doc == NULL) {
                 fprintf(stderr, "unable to parse %s\n", argv[i]);
-		errorno = 6;
+                errorno = 6;
                 continue;
             }
             if (timing)
-		endTimer("Parsing document %s", argv[i]);
-	    xsltProcess(doc, cur, argv[i]);
+                endTimer("Parsing document %s", argv[i]);
+            xsltProcess(doc, cur, argv[i]);
         }
     }
 done:
     if (cur != NULL)
         xsltFreeStylesheet(cur);
-    for (i = 0;i < nbstrparams;i++)
-	xmlFree(strparams[i]);
+    for (i = 0; i < nbstrparams; i++)
+        xmlFree(strparams[i]);
     if (output != NULL)
-	xmlFree(output);
+        xmlFree(output);
     xsltFreeSecurityPrefs(sec);
     xsltCleanupGlobals();
     xmlCleanupParser();
-    return(errorno);
+    return errorno;
 }
-
