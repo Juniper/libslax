@@ -5,33 +5,24 @@
 #include <libxml/parser.h>
 #include <libxml/dict.h>
 
-
 /**** dictionary tests ****/
 
 /* #define WITH_PRINT */
 
-static const char *seeds1[] = {
-   "a", "b", "c",
-   "d", "e", "f",
-   "g", "h", "i",
-   "j", "k", "l",
+static const char *seeds1[]
+    = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
 
-   NULL
-};
+       NULL};
 
-static const char *seeds2[] = {
-   "m", "n", "o",
-   "p", "q", "r",
-   "s", "t", "u",
-   "v", "w", "x",
+static const char *seeds2[]
+    = {"m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
 
-   NULL
-};
+       NULL};
 
-#define NB_STRINGS_MAX 100000
-#define NB_STRINGS_NS  10000
+#define NB_STRINGS_MAX    100000
+#define NB_STRINGS_NS     10000
 #define NB_STRINGS_PREFIX (NB_STRINGS_NS / 20)
-#define NB_STRINGS_MIN 10
+#define NB_STRINGS_MIN    10
 
 static xmlChar **strings1;
 static xmlChar **strings2;
@@ -40,7 +31,8 @@ static const xmlChar **test2;
 static int nbErrors = 0;
 
 static void
-fill_string_pool(xmlChar **strings, const char **seeds) {
+fill_string_pool (xmlChar **strings, const char **seeds)
+{
     int i, j, k;
     int start_ns = NB_STRINGS_MAX - NB_STRINGS_NS;
 
@@ -51,73 +43,80 @@ fill_string_pool(xmlChar **strings, const char **seeds) {
      */
     for (i = 0; seeds[i] != NULL; i++) {
         strings[i] = xmlStrdup((const xmlChar *) seeds[i]);
-	if (strings[i] == NULL) {
-	    fprintf(stderr, "Out of memory while generating strings\n");
-	    exit(1);
-	}
+        if (strings[i] == NULL) {
+            fprintf(stderr, "Out of memory while generating strings\n");
+            exit(1);
+        }
     }
     for (j = 0, k = 0; i < start_ns; i++) {
         strings[i] = xmlStrncatNew(strings[j], strings[k], -1);
-	if (strings[i] == NULL) {
-	    fprintf(stderr, "Out of memory while generating strings\n");
-	    exit(1);
-	}
+        if (strings[i] == NULL) {
+            fprintf(stderr, "Out of memory while generating strings\n");
+            exit(1);
+        }
         if (xmlStrlen(strings[i]) > 30) {
-            fprintf(stderr, "### %s %s\n", strings[start_ns+j], strings[k]);
+            fprintf(stderr, "### %s %s\n", strings[start_ns + j], strings[k]);
             abort();
         }
         j++;
-	if (j >= 50) {
-	    j = 0;
-	    k++;
-	}
+        if (j >= 50) {
+            j = 0;
+            k++;
+        }
     }
     for (j = 0, k = 0; (j < NB_STRINGS_PREFIX) && (i < NB_STRINGS_MAX);
          i++, j++) {
         strings[i] = xmlStrncatNew(strings[k], (const xmlChar *) ":", -1);
-	if (strings[i] == NULL) {
-	    fprintf(stderr, "Out of memory while generating strings\n");
-	    exit(1);
-	}
+        if (strings[i] == NULL) {
+            fprintf(stderr, "Out of memory while generating strings\n");
+            exit(1);
+        }
         k += 1;
-        if (k >= start_ns) k = 0;
+        if (k >= start_ns)
+            k = 0;
     }
     for (j = 0, k = 0; i < NB_STRINGS_MAX; i++) {
-        strings[i] = xmlStrncatNew(strings[start_ns+j], strings[k], -1);
-	if (strings[i] == NULL) {
-	    fprintf(stderr, "Out of memory while generating strings\n");
-	    exit(1);
-	}
+        strings[i] = xmlStrncatNew(strings[start_ns + j], strings[k], -1);
+        if (strings[i] == NULL) {
+            fprintf(stderr, "Out of memory while generating strings\n");
+            exit(1);
+        }
         j++;
-        if (j >= NB_STRINGS_PREFIX) j = 0;
-	k += 5;
-        if (k >= start_ns) k = 0;
+        if (j >= NB_STRINGS_PREFIX)
+            j = 0;
+        k += 5;
+        if (k >= start_ns)
+            k = 0;
     }
 }
 
 #ifdef WITH_PRINT
-static void print_strings(void) {
+static void
+print_strings (void)
+{
     int i;
 
-    for (i = 0; i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         printf("%s\n", strings1[i]);
     }
-    for (i = 0; i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         printf("%s\n", strings2[i]);
     }
 }
 #endif
 
-static void clean_strings(void) {
+static void
+clean_strings (void)
+{
     int i;
 
     for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (strings1[i] != NULL) /* really should not happen */
-	    xmlFree(strings1[i]);
+            xmlFree(strings1[i]);
     }
     for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (strings2[i] != NULL) /* really should not happen */
-	    xmlFree(strings2[i]);
+            xmlFree(strings2[i]);
     }
 }
 
@@ -125,7 +124,8 @@ static void clean_strings(void) {
  * This tests the sub-dictionary support
  */
 static int
-test_subdict(xmlDictPtr parent) {
+test_subdict (xmlDictPtr parent)
+{
     int i, j;
     xmlDictPtr dict;
     int ret = 0;
@@ -135,8 +135,8 @@ test_subdict(xmlDictPtr parent) {
 
     dict = xmlDictCreateSub(parent);
     if (dict == NULL) {
-	fprintf(stderr, "Out of memory while creating sub-dictionary\n");
-	exit(1);
+        fprintf(stderr, "Out of memory while creating sub-dictionary\n");
+        exit(1);
     }
     /* Cast to avoid buggy warning on MSVC. */
     memset((void *) test2, 0, sizeof(test2));
@@ -147,33 +147,33 @@ test_subdict(xmlDictPtr parent) {
      * All the strings are based on a different seeds subset so we know
      * they are allocated in the main dictionary, not coming from the parent
      */
-    for (i = 0;i < NB_STRINGS_MIN;i++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++) {
         test2[i] = xmlDictLookup(dict, strings2[i], -1);
-	if (test2[i] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings2[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test2[i] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings2[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
     j = NB_STRINGS_MAX - NB_STRINGS_NS;
     /* ":foo" like strings2 */
-    for (i = 0;i < NB_STRINGS_MIN;i++, j++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++, j++) {
         test2[j] = xmlDictLookup(dict, strings2[j], xmlStrlen(strings2[j]));
-	if (test2[j] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings2[j]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test2[j] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings2[j]);
+            ret = 1;
+            nbErrors++;
+        }
     }
     /* "a:foo" like strings2 */
     j = NB_STRINGS_MAX - NB_STRINGS_MIN;
-    for (i = 0;i < NB_STRINGS_MIN;i++, j++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++, j++) {
         test2[j] = xmlDictLookup(dict, strings2[j], xmlStrlen(strings2[j]));
-	if (test2[j] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings2[j]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test2[j] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings2[j]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
@@ -181,116 +181,118 @@ test_subdict(xmlDictPtr parent) {
      * the dictionary will grow in the process, reallocate more string tables
      * and switch to the better key generator
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (test2[i] != NULL)
-	    continue;
-	test2[i] = xmlDictLookup(dict, strings2[i], -1);
-	if (test2[i] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings2[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            continue;
+        test2[i] = xmlDictLookup(dict, strings2[i], -1);
+        if (test2[i] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings2[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * Now we can start to test things, first that all strings2 belongs to
      * the dict, and that none of them was actually allocated in the parent
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (!xmlDictOwns(dict, test2[i])) {
-	    fprintf(stderr, "Failed ownership failure for '%s'\n",
-	            strings2[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed ownership failure for '%s'\n", strings2[i]);
+            ret = 1;
+            nbErrors++;
+        }
         if (xmlDictOwns(parent, test2[i])) {
-	    fprintf(stderr, "Failed parent ownership failure for '%s'\n",
-	            strings2[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed parent ownership failure for '%s'\n",
+                    strings2[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * Also verify that all strings from the parent are seen from the subdict
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (!xmlDictOwns(dict, test1[i])) {
-	    fprintf(stderr, "Failed sub-ownership failure for '%s'\n",
-	            strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed sub-ownership failure for '%s'\n",
+                    strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * Then that another lookup to the string in sub will return the same
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (xmlDictLookup(dict, strings2[i], -1) != test2[i]) {
-	    fprintf(stderr, "Failed re-lookup check for %d, '%s'\n",
-	            i, strings2[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed re-lookup check for %d, '%s'\n", i,
+                    strings2[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
     /*
      * But also that any lookup for a string in the parent will be provided
      * as in the parent
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (xmlDictLookup(dict, strings1[i], -1) != test1[i]) {
-	    fprintf(stderr, "Failed parent string lookup check for %d, '%s'\n",
-	            i, strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed parent string lookup check for %d, '%s'\n",
+                    i, strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * check the QName lookups
      */
-    for (i = NB_STRINGS_MAX - NB_STRINGS_NS;i < NB_STRINGS_MAX;i++) {
+    for (i = NB_STRINGS_MAX - NB_STRINGS_NS; i < NB_STRINGS_MAX; i++) {
         cur = strings2[i];
-	pref = &prefix[0];
-	while (*cur != ':') *pref++ = *cur++;
-	cur++;
-	*pref = 0;
-	tmp = xmlDictQLookup(dict, &prefix[0], cur);
-	if (tmp != test2[i]) {
-	    fprintf(stderr, "Failed lookup check for '%s':'%s'\n",
-	            &prefix[0], cur);
+        pref = &prefix[0];
+        while (*cur != ':')
+            *pref++ = *cur++;
+        cur++;
+        *pref = 0;
+        tmp = xmlDictQLookup(dict, &prefix[0], cur);
+        if (tmp != test2[i]) {
+            fprintf(stderr, "Failed lookup check for '%s':'%s'\n", &prefix[0],
+                    cur);
             ret = 1;
-	    nbErrors++;
-	}
+            nbErrors++;
+        }
     }
     /*
      * check the QName lookups for strings from the parent
      */
-    for (i = NB_STRINGS_MAX - NB_STRINGS_NS;i < NB_STRINGS_MAX;i++) {
+    for (i = NB_STRINGS_MAX - NB_STRINGS_NS; i < NB_STRINGS_MAX; i++) {
         cur = strings1[i];
-	pref = &prefix[0];
-	while (*cur != ':') *pref++ = *cur++;
-	cur++;
-	*pref = 0;
-	tmp = xmlDictQLookup(dict, &prefix[0], cur);
-	if (xmlDictQLookup(dict, &prefix[0], cur) != test1[i]) {
-	    fprintf(stderr, "Failed parent lookup check for '%s':'%s'\n",
-	            &prefix[0], cur);
+        pref = &prefix[0];
+        while (*cur != ':')
+            *pref++ = *cur++;
+        cur++;
+        *pref = 0;
+        tmp = xmlDictQLookup(dict, &prefix[0], cur);
+        if (xmlDictQLookup(dict, &prefix[0], cur) != test1[i]) {
+            fprintf(stderr, "Failed parent lookup check for '%s':'%s'\n",
+                    &prefix[0], cur);
             ret = 1;
-	    nbErrors++;
-	}
+            nbErrors++;
+        }
     }
 
     xmlDictFree(dict);
-    return(ret);
+    return ret;
 }
 
 /*
  * Test a single dictionary
  */
 static int
-test_dict(xmlDict *dict) {
+test_dict (xmlDict *dict)
+{
     int i, j;
     int ret = 0;
     xmlChar prefix[40];
@@ -304,33 +306,33 @@ test_dict(xmlDict *dict) {
      * Fill in NB_STRINGS_MIN, at this point the dictionary should not grow
      * and we allocate all those doing the fast key computations
      */
-    for (i = 0;i < NB_STRINGS_MIN;i++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++) {
         test1[i] = xmlDictLookup(dict, strings1[i], -1);
-	if (test1[i] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test1[i] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
     j = NB_STRINGS_MAX - NB_STRINGS_NS;
     /* ":foo" like strings1 */
-    for (i = 0;i < NB_STRINGS_MIN;i++, j++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++, j++) {
         test1[j] = xmlDictLookup(dict, strings1[j], xmlStrlen(strings1[j]));
-	if (test1[j] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings1[j]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test1[j] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings1[j]);
+            ret = 1;
+            nbErrors++;
+        }
     }
     /* "a:foo" like strings1 */
     j = NB_STRINGS_MAX - NB_STRINGS_MIN;
-    for (i = 0;i < NB_STRINGS_MIN;i++, j++) {
+    for (i = 0; i < NB_STRINGS_MIN; i++, j++) {
         test1[j] = xmlDictLookup(dict, strings1[j], xmlStrlen(strings1[j]));
-	if (test1[j] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings1[j]);
-	    ret = 1;
-	    nbErrors++;
-	}
+        if (test1[j] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings1[j]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
@@ -338,65 +340,66 @@ test_dict(xmlDict *dict) {
      * the dictionary will grow in the process, reallocate more string tables
      * and switch to the better key generator
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (test1[i] != NULL)
-	    continue;
-	test1[i] = xmlDictLookup(dict, strings1[i], -1);
-	if (test1[i] == NULL) {
-	    fprintf(stderr, "Failed lookup for '%s'\n", strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            continue;
+        test1[i] = xmlDictLookup(dict, strings1[i], -1);
+        if (test1[i] == NULL) {
+            fprintf(stderr, "Failed lookup for '%s'\n", strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * Now we can start to test things, first that all strings1 belongs to
      * the dict
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (!xmlDictOwns(dict, test1[i])) {
-	    fprintf(stderr, "Failed ownership failure for '%s'\n",
-	            strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed ownership failure for '%s'\n", strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * Then that another lookup to the string will return the same
      */
-    for (i = 0;i < NB_STRINGS_MAX;i++) {
+    for (i = 0; i < NB_STRINGS_MAX; i++) {
         if (xmlDictLookup(dict, strings1[i], -1) != test1[i]) {
-	    fprintf(stderr, "Failed re-lookup check for %d, '%s'\n",
-	            i, strings1[i]);
-	    ret = 1;
-	    nbErrors++;
-	}
+            fprintf(stderr, "Failed re-lookup check for %d, '%s'\n", i,
+                    strings1[i]);
+            ret = 1;
+            nbErrors++;
+        }
     }
 
     /*
      * More complex, check the QName lookups
      */
-    for (i = NB_STRINGS_MAX - NB_STRINGS_NS;i < NB_STRINGS_MAX;i++) {
+    for (i = NB_STRINGS_MAX - NB_STRINGS_NS; i < NB_STRINGS_MAX; i++) {
         cur = strings1[i];
-	pref = &prefix[0];
-	while (*cur != ':') *pref++ = *cur++;
-	cur++;
-	*pref = 0;
-	tmp = xmlDictQLookup(dict, &prefix[0], cur);
-	if (tmp != test1[i]) {
-	    fprintf(stderr, "Failed lookup check for '%s':'%s'\n",
-	            &prefix[0], cur);
+        pref = &prefix[0];
+        while (*cur != ':')
+            *pref++ = *cur++;
+        cur++;
+        *pref = 0;
+        tmp = xmlDictQLookup(dict, &prefix[0], cur);
+        if (tmp != test1[i]) {
+            fprintf(stderr, "Failed lookup check for '%s':'%s'\n", &prefix[0],
+                    cur);
             ret = 1;
-	    nbErrors++;
-	}
+            nbErrors++;
+        }
     }
 
-    return(ret);
+    return ret;
 }
 
 static int
-testall_dict(void) {
+testall_dict (void)
+{
     xmlDictPtr dict;
     int ret = 0;
 
@@ -417,8 +420,8 @@ testall_dict(void) {
 
     dict = xmlDictCreate();
     if (dict == NULL) {
-	fprintf(stderr, "Out of memory while creating dictionary\n");
-	exit(1);
+        fprintf(stderr, "Out of memory while creating dictionary\n");
+        exit(1);
     }
     if (test_dict(dict) != 0) {
         ret = 1;
@@ -437,17 +440,16 @@ testall_dict(void) {
     return ret;
 }
 
-
 /**** Hash table tests ****/
 
-static unsigned
-rng_state[2] = { 123, 456 };
+static unsigned rng_state[2] = {123, 456};
 
-#define HASH_ROL(x,n) ((x) << (n) | ((x) & 0xFFFFFFFF) >> (32 - (n)))
+#define HASH_ROL(x, n) ((x) << (n) | ((x) & 0xFFFFFFFF) >> (32 - (n)))
 
 ATTRIBUTE_NO_SANITIZE_INTEGER
 static unsigned
-my_rand(unsigned max) {
+my_rand (unsigned max)
+{
     unsigned s0 = rng_state[0];
     unsigned s1 = rng_state[1];
     unsigned result = HASH_ROL(s0 * 0x9E3779BB, 5) * 5;
@@ -456,11 +458,12 @@ my_rand(unsigned max) {
     rng_state[0] = HASH_ROL(s0, 26) ^ s1 ^ (s1 << 9);
     rng_state[1] = HASH_ROL(s1, 13);
 
-    return((result & 0xFFFFFFFF) % max);
+    return (result & 0xFFFFFFFF) % max;
 }
 
 static xmlChar *
-gen_random_string(xmlChar id) {
+gen_random_string (xmlChar id)
+{
     unsigned size = my_rand(64) + 1;
     unsigned id_pos = my_rand(size);
     size_t j;
@@ -494,7 +497,8 @@ typedef struct {
 } StringPool;
 
 static StringPool *
-pool_new(size_t num_entries, size_t num_keys, xmlChar id) {
+pool_new (size_t num_entries, size_t num_keys, xmlChar id)
+{
     StringPool *ret;
     size_t num_strings;
 
@@ -512,7 +516,8 @@ pool_new(size_t num_entries, size_t num_keys, xmlChar id) {
 }
 
 static void
-pool_free(StringPool *pool) {
+pool_free (StringPool *pool)
+{
     size_t i;
 
     for (i = 0; i < pool->num_strings; i++) {
@@ -523,17 +528,20 @@ pool_free(StringPool *pool) {
 }
 
 static int
-pool_done(StringPool *pool) {
+pool_done (StringPool *pool)
+{
     return pool->index >= pool->num_strings;
 }
 
 static void
-pool_reset(StringPool *pool) {
+pool_reset (StringPool *pool)
+{
     pool->index = 0;
 }
 
 static int
-pool_bulk_insert(StringPool *pool, xmlHashTablePtr hash, size_t num) {
+pool_bulk_insert (StringPool *pool, xmlHashTablePtr hash, size_t num)
+{
     size_t i, j;
     int ret = 0;
 
@@ -549,27 +557,27 @@ pool_bulk_insert(StringPool *pool, xmlHashTablePtr hash, size_t num) {
                 str[k] = gen_random_string(pool->id);
 
             switch (pool->num_keys) {
-                case 1:
-                    res = xmlHashAddEntry(hash, str[0], tmp_key);
-                    if (res == 0 &&
-                        xmlHashUpdateEntry(hash, str[0], str[0], NULL) != 0)
-                        ret = -1;
-                    break;
-                case 2:
-                    res = xmlHashAddEntry2(hash, str[0], str[1], tmp_key);
-                    if (res == 0 &&
-                        xmlHashUpdateEntry2(hash, str[0], str[1], str[0],
-                                            NULL) != 0)
-                        ret = -1;
-                    break;
-                case 3:
-                    res = xmlHashAddEntry3(hash, str[0], str[1], str[2],
-                                           tmp_key);
-                    if (res == 0 &&
-                        xmlHashUpdateEntry3(hash, str[0], str[1], str[2],
-                                            str[0], NULL) != 0)
-                        ret = -1;
-                    break;
+            case 1:
+                res = xmlHashAddEntry(hash, str[0], tmp_key);
+                if (res == 0
+                    && xmlHashUpdateEntry(hash, str[0], str[0], NULL) != 0)
+                    ret = -1;
+                break;
+            case 2:
+                res = xmlHashAddEntry2(hash, str[0], str[1], tmp_key);
+                if (res == 0
+                    && xmlHashUpdateEntry2(hash, str[0], str[1], str[0], NULL)
+                        != 0)
+                    ret = -1;
+                break;
+            case 3:
+                res = xmlHashAddEntry3(hash, str[0], str[1], str[2], tmp_key);
+                if (res == 0
+                    && xmlHashUpdateEntry3(hash, str[0], str[1], str[2], str[0],
+                                           NULL)
+                        != 0)
+                    ret = -1;
+                break;
             }
 
             if (res == 0)
@@ -587,7 +595,8 @@ pool_bulk_insert(StringPool *pool, xmlHashTablePtr hash, size_t num) {
 }
 
 static xmlChar *
-hash_qlookup(xmlHashTable *hash, xmlChar **names, size_t num_keys) {
+hash_qlookup (xmlHashTable *hash, xmlChar **names, size_t num_keys)
+{
     xmlChar *prefix[3];
     const xmlChar *local[3];
     xmlChar *res;
@@ -621,8 +630,9 @@ hash_qlookup(xmlHashTable *hash, xmlChar **names, size_t num_keys) {
 }
 
 static int
-pool_bulk_lookup(StringPool *pool, xmlHashTablePtr hash, size_t num,
-                 int existing) {
+pool_bulk_lookup (StringPool *pool, xmlHashTablePtr hash, size_t num,
+                  int existing)
+{
     size_t i, j;
     int ret = 0;
 
@@ -637,15 +647,15 @@ pool_bulk_lookup(StringPool *pool, xmlHashTablePtr hash, size_t num,
                 res = hash_qlookup(hash, str, pool->num_keys);
             } else {
                 switch (pool->num_keys) {
-                    case 1:
-                        res = xmlHashLookup(hash, str[0]);
-                        break;
-                    case 2:
-                        res = xmlHashLookup2(hash, str[0], str[1]);
-                        break;
-                    case 3:
-                        res = xmlHashLookup3(hash, str[0], str[1], str[2]);
-                        break;
+                case 1:
+                    res = xmlHashLookup(hash, str[0]);
+                    break;
+                case 2:
+                    res = xmlHashLookup2(hash, str[0], str[1]);
+                    break;
+                case 3:
+                    res = xmlHashLookup3(hash, str[0], str[1], str[2]);
+                    break;
                 }
             }
 
@@ -666,7 +676,8 @@ pool_bulk_lookup(StringPool *pool, xmlHashTablePtr hash, size_t num,
 }
 
 static int
-pool_bulk_remove(StringPool *pool, xmlHashTablePtr hash, size_t num) {
+pool_bulk_remove (StringPool *pool, xmlHashTablePtr hash, size_t num)
+{
     size_t i, j;
     int ret = 0;
 
@@ -675,15 +686,15 @@ pool_bulk_remove(StringPool *pool, xmlHashTablePtr hash, size_t num) {
         int res = -1;
 
         switch (pool->num_keys) {
-            case 1:
-                res = xmlHashRemoveEntry(hash, str[0], NULL);
-                break;
-            case 2:
-                res = xmlHashRemoveEntry2(hash, str[0], str[1], NULL);
-                break;
-            case 3:
-                res = xmlHashRemoveEntry3(hash, str[0], str[1], str[2], NULL);
-                break;
+        case 1:
+            res = xmlHashRemoveEntry(hash, str[0], NULL);
+            break;
+        case 2:
+            res = xmlHashRemoveEntry2(hash, str[0], str[1], NULL);
+            break;
+        case 3:
+            res = xmlHashRemoveEntry3(hash, str[0], str[1], str[2], NULL);
+            break;
         }
 
         if (res != 0)
@@ -697,7 +708,8 @@ pool_bulk_remove(StringPool *pool, xmlHashTablePtr hash, size_t num) {
 }
 
 static int
-test_hash(size_t num_entries, size_t num_keys, int use_dict) {
+test_hash (size_t num_entries, size_t num_keys, int use_dict)
+{
     xmlDict *dict = NULL;
     xmlHashTable *hash;
     StringPool *pool1, *pool2;
@@ -767,7 +779,8 @@ test_hash(size_t num_entries, size_t num_keys, int use_dict) {
 }
 
 static int
-testall_hash(void) {
+testall_hash (void)
+{
     size_t num_keys;
 
     for (num_keys = 1; num_keys <= 3; num_keys++) {
@@ -783,22 +796,22 @@ testall_hash(void) {
 
             for (i = 0; i < reps; i++) {
                 if (test_hash(num_strings, num_keys, /* use_dict */ 0) != 0)
-                    return(1);
+                    return 1;
             }
 
             if (test_hash(num_strings, num_keys, /* use_dict */ 1) != 0)
-                return(1);
+                return 1;
         }
     }
 
-    return(0);
+    return 0;
 }
-
 
 /**** main ****/
 
 int
-main(void) {
+main (void)
+{
     int ret = 0;
 
     LIBXML_TEST_VERSION
@@ -813,5 +826,5 @@ main(void) {
     }
 
     xmlCleanupParser();
-    return(ret);
+    return ret;
 }
