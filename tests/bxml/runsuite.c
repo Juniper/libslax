@@ -18,8 +18,8 @@
 #include <libxml/tree.h>
 #include <libxml/uri.h>
 
-#if (defined(LIBXML_RELAXNG_ENABLED) || defined(LIBXML_SCHEMAS_ENABLED)) && \
-    defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
+#if (defined(LIBXML_RELAXNG_ENABLED) || defined(LIBXML_SCHEMAS_ENABLED)) \
+    && defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
 #include <libxml/xmlreader.h>
 
 #include <libxml/xpath.h>
@@ -29,7 +29,7 @@
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlschemastypes.h>
 
-#define LOGFILE "runsuite.log"
+#define LOGFILE                  "runsuite.log"
 #define EXPECTED_XMP_ERROR_COUNT 3
 
 static FILE *logfile = NULL;
@@ -41,21 +41,23 @@ static int verbose = 0;
  *									*
  ************************************************************************/
 
-static int checkTestFile(const char *filename) {
+static int
+checkTestFile (const char *filename)
+{
     struct stat buf;
 
     if (stat(filename, &buf) == -1)
-        return(0);
+        return 0;
 
 #if defined(_WIN32)
     if (!(buf.st_mode & _S_IFREG))
-        return(0);
+        return 0;
 #else
     if (!S_ISREG(buf.st_mode))
-        return(0);
+        return 0;
 #endif
 
-    return(1);
+    return 1;
 }
 
 /************************************************************************
@@ -78,39 +80,42 @@ static int nb_leaks = 0;
 static char testErrors[32769];
 static int testErrorsSize = 0;
 
-static void test_log(const char *msg, ...) {
+static void
+test_log (const char *msg, ...)
+{
     va_list args;
     if (logfile != NULL) {
         fprintf(logfile, "\n------------\n");
-	va_start(args, msg);
-	vfprintf(logfile, msg, args);
-	va_end(args);
-	fprintf(logfile, "%s", testErrors);
-	testErrorsSize = 0; testErrors[0] = 0;
+        va_start(args, msg);
+        vfprintf(logfile, msg, args);
+        va_end(args);
+        fprintf(logfile, "%s", testErrors);
+        testErrorsSize = 0;
+        testErrors[0] = 0;
     }
     if (verbose) {
-	va_start(args, msg);
-	vfprintf(stderr, msg, args);
-	va_end(args);
+        va_start(args, msg);
+        vfprintf(stderr, msg, args);
+        va_end(args);
     }
 }
 
 static void
-testErrorHandler(void *ctx  UNUSED, const char *msg, ...) {
+testErrorHandler (void *ctx UNUSED, const char *msg, ...)
+{
     va_list args;
     int res;
 
     if (testErrorsSize >= 32768)
         return;
     va_start(args, msg);
-    res = vsnprintf(&testErrors[testErrorsSize],
-                    32768 - testErrorsSize,
-		    msg, args);
+    res = vsnprintf(&testErrors[testErrorsSize], 32768 - testErrorsSize, msg,
+                    args);
     va_end(args);
     if (testErrorsSize + res >= 32768) {
         /* buffer is full */
-	testErrorsSize = 32768;
-	testErrors[testErrorsSize] = 0;
+        testErrorsSize = 32768;
+        testErrors[testErrorsSize] = 0;
     } else {
         testErrorsSize += res;
     }
@@ -120,7 +125,8 @@ testErrorHandler(void *ctx  UNUSED, const char *msg, ...) {
 static xmlXPathContextPtr ctxtXPath;
 
 static void
-initializeLibxml2(void) {
+initializeLibxml2 (void)
+{
     xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
     xmlInitParser();
     ctxtXPath = xmlXPathNewContext(NULL);
@@ -133,7 +139,7 @@ initializeLibxml2(void) {
     * cache by default for the whole library.
     */
     if (ctxtXPath->cache != NULL)
-	xmlXPathContextSetCache(ctxtXPath, 0, -1, 0);
+        xmlXPathContextSetCache(ctxtXPath, 0, -1, 0);
     /* used as default namespace in xstc tests */
     xmlXPathRegisterNs(ctxtXPath, BAD_CAST "ts", BAD_CAST "TestSuite");
     xmlXPathRegisterNs(ctxtXPath, BAD_CAST "xlink",
@@ -152,58 +158,58 @@ initializeLibxml2(void) {
 }
 
 static xmlNodePtr
-getNext(xmlNodePtr cur, const char *xpath) {
+getNext (xmlNodePtr cur, const char *xpath)
+{
     xmlNodePtr ret = NULL;
     xmlXPathObjectPtr res;
     xmlXPathCompExprPtr comp;
 
-    if ((cur == NULL)  || (cur->doc == NULL) || (xpath == NULL))
-        return(NULL);
+    if ((cur == NULL) || (cur->doc == NULL) || (xpath == NULL))
+        return NULL;
     ctxtXPath->doc = cur->doc;
     ctxtXPath->node = cur;
     comp = xmlXPathCompile(BAD_CAST xpath);
     if (comp == NULL) {
         fprintf(stderr, "Failed to compile %s\n", xpath);
-	return(NULL);
+        return NULL;
     }
     res = xmlXPathCompiledEval(comp, ctxtXPath);
     xmlXPathFreeCompExpr(comp);
     if (res == NULL)
-        return(NULL);
-    if ((res->type == XPATH_NODESET) &&
-        (res->nodesetval != NULL) &&
-	(res->nodesetval->nodeNr > 0) &&
-	(res->nodesetval->nodeTab != NULL))
-	ret = res->nodesetval->nodeTab[0];
+        return NULL;
+    if ((res->type == XPATH_NODESET) && (res->nodesetval != NULL)
+        && (res->nodesetval->nodeNr > 0) && (res->nodesetval->nodeTab != NULL))
+        ret = res->nodesetval->nodeTab[0];
     xmlXPathFreeObject(res);
-    return(ret);
+    return ret;
 }
 
 static xmlChar *
-getString(xmlNodePtr cur, const char *xpath) {
+getString (xmlNodePtr cur, const char *xpath)
+{
     xmlChar *ret = NULL;
     xmlXPathObjectPtr res;
     xmlXPathCompExprPtr comp;
 
-    if ((cur == NULL)  || (cur->doc == NULL) || (xpath == NULL))
-        return(NULL);
+    if ((cur == NULL) || (cur->doc == NULL) || (xpath == NULL))
+        return NULL;
     ctxtXPath->doc = cur->doc;
     ctxtXPath->node = cur;
     comp = xmlXPathCompile(BAD_CAST xpath);
     if (comp == NULL) {
         fprintf(stderr, "Failed to compile %s\n", xpath);
-	return(NULL);
+        return NULL;
     }
     res = xmlXPathCompiledEval(comp, ctxtXPath);
     xmlXPathFreeCompExpr(comp);
     if (res == NULL)
-        return(NULL);
+        return NULL;
     if (res->type == XPATH_STRING) {
         ret = res->stringval;
-	res->stringval = NULL;
+        res->stringval = NULL;
     }
     xmlXPathFreeObject(res);
-    return(ret);
+    return ret;
 }
 
 /************************************************************************
@@ -221,56 +227,61 @@ getString(xmlNodePtr cur, const char *xpath) {
 static char *testEntitiesName[MAX_ENTITIES];
 static char *testEntitiesValue[MAX_ENTITIES];
 static int nb_entities = 0;
-static void resetEntities(void) {
+static void
+resetEntities (void)
+{
     int i;
 
-    for (i = 0;i < nb_entities;i++) {
+    for (i = 0; i < nb_entities; i++) {
         if (testEntitiesName[i] != NULL)
-	    xmlFree(testEntitiesName[i]);
+            xmlFree(testEntitiesName[i]);
         if (testEntitiesValue[i] != NULL)
-	    xmlFree(testEntitiesValue[i]);
+            xmlFree(testEntitiesValue[i]);
     }
     nb_entities = 0;
 }
-static int addEntity(char *name, char *content) {
+static int
+addEntity (char *name, char *content)
+{
     if (nb_entities >= MAX_ENTITIES) {
-	fprintf(stderr, "Too many entities defined\n");
-	return(-1);
+        fprintf(stderr, "Too many entities defined\n");
+        return -1;
     }
     testEntitiesName[nb_entities] = name;
     testEntitiesValue[nb_entities] = content;
     nb_entities++;
-    return(0);
+    return 0;
 }
 
 static xmlParserErrors
-testResourceLoader(void *vctxt UNUSED, const char *URL,
-                   const char *ID UNUSED,
-                   xmlResourceType type UNUSED,
-                   xmlParserInputFlags flags UNUSED,
-                   xmlParserInputPtr *out) {
+testResourceLoader (void *vctxt UNUSED, const char *URL, const char *ID UNUSED,
+                    xmlResourceType type UNUSED,
+                    xmlParserInputFlags flags UNUSED, xmlParserInputPtr *out)
+{
     int i;
 
     for (i = 0; i < nb_entities; i++) {
         if (!strcmp(testEntitiesName[i], URL)) {
-	    *out = xmlNewInputFromString(testEntitiesName[i],
-                                        testEntitiesValue[i],
-                                        XML_INPUT_BUF_STATIC);
-	    return(XML_ERR_OK);
-	}
+            *out = xmlNewInputFromString(testEntitiesName[i],
+                                         testEntitiesValue[i],
+                                         XML_INPUT_BUF_STATIC);
+            return XML_ERR_OK;
+        }
     }
 
-    return(xmlNewInputFromUrl(URL, 0, out));
+    return xmlNewInputFromUrl(URL, 0, out);
 }
 
 static int
-fatalError(void) {
+fatalError (void)
+{
     fprintf(stderr, "Exitting tests on fatal error\n");
     exit(1);
 }
 
 static int
-xsdIncorrectTestCase(xmlNodePtr cur) {
+xsdIncorrectTestCase (xmlNodePtr cur)
+{
     xmlNodePtr test;
     xmlBufferPtr buf;
     xmlRelaxNGParserCtxtPtr pctxt;
@@ -279,14 +290,14 @@ xsdIncorrectTestCase(xmlNodePtr cur) {
 
     cur = getNext(cur, "./incorrect[1]");
     if (cur == NULL) {
-        return(0);
+        return 0;
     }
 
     test = getNext(cur, "./*");
     if (test == NULL) {
         test_log("Failed to find test in correct line %ld\n",
-	        xmlGetLineNo(cur));
-        return(1);
+                 xmlGetLineNo(cur));
+        return 1;
     }
 
     memt = xmlMemUsed();
@@ -296,50 +307,54 @@ xsdIncorrectTestCase(xmlNodePtr cur) {
     buf = xmlBufferCreate();
     if (buf == NULL) {
         fprintf(stderr, "out of memory !\n");
-	fatalError();
+        fatalError();
     }
     xmlBufferSetAllocationScheme(buf, XML_BUFFER_ALLOC_DOUBLEIT);
     xmlNodeDump(buf, test->doc, test, 0, 0);
-    pctxt = xmlRelaxNGNewMemParserCtxt(
-            (const char *) xmlBufferContent(buf), xmlBufferLength(buf));
-    xmlRelaxNGSetParserErrors(pctxt, testErrorHandler, testErrorHandler,
-            pctxt);
+    pctxt = xmlRelaxNGNewMemParserCtxt((const char *) xmlBufferContent(buf),
+                                       xmlBufferLength(buf));
+    xmlRelaxNGSetParserErrors(pctxt, testErrorHandler, testErrorHandler, pctxt);
     xmlRelaxNGSetResourceLoader(pctxt, testResourceLoader, NULL);
     rng = xmlRelaxNGParse(pctxt);
     xmlRelaxNGFreeParserCtxt(pctxt);
     if (rng != NULL) {
-	test_log("Failed to detect incorrect RNG line %ld\n",
-		    xmlGetLineNo(test));
+        test_log("Failed to detect incorrect RNG line %ld\n",
+                 xmlGetLineNo(test));
         ret = 1;
-	goto done;
+        goto done;
     }
 
 done:
     if (buf != NULL)
-	xmlBufferFree(buf);
+        xmlBufferFree(buf);
     if (rng != NULL)
         xmlRelaxNGFree(rng);
     xmlResetLastError();
     if (memt != xmlMemUsed()) {
-	test_log("Validation of tests starting line %ld leaked %d\n",
-		xmlGetLineNo(cur), xmlMemUsed() - memt);
-	nb_leaks++;
+        test_log("Validation of tests starting line %ld leaked %d\n",
+                 xmlGetLineNo(cur), xmlMemUsed() - memt);
+        nb_leaks++;
     }
-    return(ret);
+    return ret;
 }
 
-static xmlChar *composeDir(const xmlChar *dir, const xmlChar *path) {
+static xmlChar *
+composeDir (const xmlChar *dir, const xmlChar *path)
+{
     char buf[500];
 
-    if (dir == NULL) return(xmlStrdup(path));
-    if (path == NULL) return(NULL);
+    if (dir == NULL)
+        return xmlStrdup(path);
+    if (path == NULL)
+        return NULL;
 
     snprintf(buf, 500, "%s/%s", (const char *) dir, (const char *) path);
-    return(xmlStrdup((const xmlChar *) buf));
+    return xmlStrdup((const xmlChar *) buf);
 }
 
 static void
-installResources(xmlNodePtr tst, const xmlChar *base) {
+installResources (xmlNodePtr tst, const xmlChar *base)
+{
     xmlNodePtr test;
     xmlBufferPtr buf;
     xmlChar *name, *content, *res;
@@ -347,35 +362,38 @@ installResources(xmlNodePtr tst, const xmlChar *base) {
     buf = xmlBufferCreate();
     if (buf == NULL) {
         fprintf(stderr, "out of memory !\n");
-	fatalError();
+        fatalError();
     }
     xmlBufferSetAllocationScheme(buf, XML_BUFFER_ALLOC_DOUBLEIT);
     xmlNodeDump(buf, tst->doc, tst, 0, 0);
 
     while (tst != NULL) {
-	test = getNext(tst, "./*");
-	if (test != NULL) {
-	    xmlBufferEmpty(buf);
-	    xmlNodeDump(buf, test->doc, test, 0, 0);
-	    name = getString(tst, "string(@name)");
-	    content = xmlStrdup(xmlBufferContent(buf));
-	    if ((name != NULL) && (content != NULL)) {
-	        res = composeDir(base, name);
-		xmlFree(name);
-	        addEntity((char *) res, (char *) content);
-	    } else {
-	        if (name != NULL) xmlFree(name);
-	        if (content != NULL) xmlFree(content);
-	    }
-	}
-	tst = getNext(tst, "following-sibling::resource[1]");
+        test = getNext(tst, "./*");
+        if (test != NULL) {
+            xmlBufferEmpty(buf);
+            xmlNodeDump(buf, test->doc, test, 0, 0);
+            name = getString(tst, "string(@name)");
+            content = xmlStrdup(xmlBufferContent(buf));
+            if ((name != NULL) && (content != NULL)) {
+                res = composeDir(base, name);
+                xmlFree(name);
+                addEntity((char *) res, (char *) content);
+            } else {
+                if (name != NULL)
+                    xmlFree(name);
+                if (content != NULL)
+                    xmlFree(content);
+            }
+        }
+        tst = getNext(tst, "following-sibling::resource[1]");
     }
     if (buf != NULL)
-	xmlBufferFree(buf);
+        xmlBufferFree(buf);
 }
 
 static void
-installDirs(xmlNodePtr tst, const xmlChar *base) {
+installDirs (xmlNodePtr tst, const xmlChar *base)
+{
     xmlNodePtr test;
     xmlChar *name, *res;
 
@@ -385,7 +403,7 @@ installDirs(xmlNodePtr tst, const xmlChar *base) {
     res = composeDir(base, name);
     xmlFree(name);
     if (res == NULL) {
-	return;
+        return;
     }
     /* Now process resources and subdir recursively */
     test = getNext(tst, "./resource[1]");
@@ -395,13 +413,14 @@ installDirs(xmlNodePtr tst, const xmlChar *base) {
     test = getNext(tst, "./dir[1]");
     while (test != NULL) {
         installDirs(test, res);
-	test = getNext(test, "following-sibling::dir[1]");
+        test = getNext(test, "following-sibling::dir[1]");
     }
     xmlFree(res);
 }
 
 static int
-xsdTestCase(xmlNodePtr tst) {
+xsdTestCase (xmlNodePtr tst)
+{
     xmlNodePtr test, tmp, cur;
     xmlBufferPtr buf;
     xmlDocPtr doc = NULL;
@@ -412,7 +431,8 @@ xsdTestCase(xmlNodePtr tst) {
     xmlChar *dtd;
 
     resetEntities();
-    testErrorsSize = 0; testErrors[0] = 0;
+    testErrorsSize = 0;
+    testErrors[0] = 0;
 
     tmp = getNext(tst, "./dir[1]");
     if (tmp != NULL) {
@@ -425,14 +445,14 @@ xsdTestCase(xmlNodePtr tst) {
 
     cur = getNext(tst, "./correct[1]");
     if (cur == NULL) {
-        return(xsdIncorrectTestCase(tst));
+        return xsdIncorrectTestCase(tst);
     }
 
     test = getNext(cur, "./*");
     if (test == NULL) {
         fprintf(stderr, "Failed to find test in correct line %ld\n",
-	        xmlGetLineNo(cur));
-        return(1);
+                xmlGetLineNo(cur));
+        return 1;
     }
 
     memt = xmlMemUsed();
@@ -442,168 +462,168 @@ xsdTestCase(xmlNodePtr tst) {
     buf = xmlBufferCreate();
     if (buf == NULL) {
         fprintf(stderr, "out of memory !\n");
-	fatalError();
+        fatalError();
     }
     xmlBufferSetAllocationScheme(buf, XML_BUFFER_ALLOC_DOUBLEIT);
     xmlNodeDump(buf, test->doc, test, 0, 0);
-    pctxt = xmlRelaxNGNewMemParserCtxt(
-            (const char *) xmlBufferContent(buf), xmlBufferLength(buf));
-    xmlRelaxNGSetParserErrors(pctxt, testErrorHandler, testErrorHandler,
-            pctxt);
+    pctxt = xmlRelaxNGNewMemParserCtxt((const char *) xmlBufferContent(buf),
+                                       xmlBufferLength(buf));
+    xmlRelaxNGSetParserErrors(pctxt, testErrorHandler, testErrorHandler, pctxt);
     xmlRelaxNGSetResourceLoader(pctxt, testResourceLoader, NULL);
     rng = xmlRelaxNGParse(pctxt);
     xmlRelaxNGFreeParserCtxt(pctxt);
 
     if (rng == NULL) {
-        test_log("Failed to parse RNGtest line %ld\n",
-	        xmlGetLineNo(test));
-	nb_errors++;
+        test_log("Failed to parse RNGtest line %ld\n", xmlGetLineNo(test));
+        nb_errors++;
         ret = 1;
-	goto done;
+        goto done;
     }
     /*
      * now scan all the siblings of correct to process the <valid> tests
      */
     tmp = getNext(cur, "following-sibling::valid[1]");
     while (tmp != NULL) {
-	dtd = xmlGetProp(tmp, BAD_CAST "dtd");
-	test = getNext(tmp, "./*");
-	if (test == NULL) {
-	    fprintf(stderr, "Failed to find test in <valid> line %ld\n",
-		    xmlGetLineNo(tmp));
+        dtd = xmlGetProp(tmp, BAD_CAST "dtd");
+        test = getNext(tmp, "./*");
+        if (test == NULL) {
+            fprintf(stderr, "Failed to find test in <valid> line %ld\n",
+                    xmlGetLineNo(tmp));
 
-	} else {
-	    xmlBufferEmpty(buf);
-	    if (dtd != NULL)
-		xmlBufferAdd(buf, dtd, -1);
-	    xmlNodeDump(buf, test->doc, test, 0, 0);
+        } else {
+            xmlBufferEmpty(buf);
+            if (dtd != NULL)
+                xmlBufferAdd(buf, dtd, -1);
+            xmlNodeDump(buf, test->doc, test, 0, 0);
 
-	    /*
+            /*
 	     * We are ready to run the test
 	     */
-	    mem = xmlMemUsed();
+            mem = xmlMemUsed();
             doc = xmlReadMemory((const char *) xmlBufferContent(buf),
                                 xmlBufferLength(buf), "test", NULL, 0);
-	    if (doc == NULL) {
-		test_log("Failed to parse valid instance line %ld\n",
-			xmlGetLineNo(tmp));
-		nb_errors++;
-	    } else {
-		nb_tests++;
-	        ctxt = xmlRelaxNGNewValidCtxt(rng);
-		xmlRelaxNGSetValidErrors(ctxt,
-                        testErrorHandler, testErrorHandler, ctxt);
-		ret = xmlRelaxNGValidateDoc(ctxt, doc);
-		xmlRelaxNGFreeValidCtxt(ctxt);
-		if (ret > 0) {
-		    test_log("Failed to validate valid instance line %ld\n",
-				xmlGetLineNo(tmp));
-		    nb_errors++;
-		} else if (ret < 0) {
-		    test_log("Internal error validating instance line %ld\n",
-			    xmlGetLineNo(tmp));
-		    nb_errors++;
-		}
-		xmlFreeDoc(doc);
-	    }
-	    xmlResetLastError();
-	    if (mem != xmlMemUsed()) {
-	        test_log("Validation of instance line %ld leaked %d\n",
-		        xmlGetLineNo(tmp), xmlMemUsed() - mem);
-	        nb_leaks++;
-	    }
-	}
-	if (dtd != NULL)
-	    xmlFree(dtd);
-	tmp = getNext(tmp, "following-sibling::valid[1]");
+            if (doc == NULL) {
+                test_log("Failed to parse valid instance line %ld\n",
+                         xmlGetLineNo(tmp));
+                nb_errors++;
+            } else {
+                nb_tests++;
+                ctxt = xmlRelaxNGNewValidCtxt(rng);
+                xmlRelaxNGSetValidErrors(ctxt, testErrorHandler,
+                                         testErrorHandler, ctxt);
+                ret = xmlRelaxNGValidateDoc(ctxt, doc);
+                xmlRelaxNGFreeValidCtxt(ctxt);
+                if (ret > 0) {
+                    test_log("Failed to validate valid instance line %ld\n",
+                             xmlGetLineNo(tmp));
+                    nb_errors++;
+                } else if (ret < 0) {
+                    test_log("Internal error validating instance line %ld\n",
+                             xmlGetLineNo(tmp));
+                    nb_errors++;
+                }
+                xmlFreeDoc(doc);
+            }
+            xmlResetLastError();
+            if (mem != xmlMemUsed()) {
+                test_log("Validation of instance line %ld leaked %d\n",
+                         xmlGetLineNo(tmp), xmlMemUsed() - mem);
+                nb_leaks++;
+            }
+        }
+        if (dtd != NULL)
+            xmlFree(dtd);
+        tmp = getNext(tmp, "following-sibling::valid[1]");
     }
     /*
      * now scan all the siblings of correct to process the <invalid> tests
      */
     tmp = getNext(cur, "following-sibling::invalid[1]");
     while (tmp != NULL) {
-	test = getNext(tmp, "./*");
-	if (test == NULL) {
-	    fprintf(stderr, "Failed to find test in <invalid> line %ld\n",
-		    xmlGetLineNo(tmp));
+        test = getNext(tmp, "./*");
+        if (test == NULL) {
+            fprintf(stderr, "Failed to find test in <invalid> line %ld\n",
+                    xmlGetLineNo(tmp));
 
-	} else {
-	    xmlBufferEmpty(buf);
-	    xmlNodeDump(buf, test->doc, test, 0, 0);
+        } else {
+            xmlBufferEmpty(buf);
+            xmlNodeDump(buf, test->doc, test, 0, 0);
 
-	    /*
+            /*
 	     * We are ready to run the test
 	     */
-	    mem = xmlMemUsed();
+            mem = xmlMemUsed();
             doc = xmlReadMemory((const char *) xmlBufferContent(buf),
                                 xmlBufferLength(buf), "test", NULL, 0);
-	    if (doc == NULL) {
-		test_log("Failed to parse valid instance line %ld\n",
-			xmlGetLineNo(tmp));
-		nb_errors++;
-	    } else {
-		nb_tests++;
-	        ctxt = xmlRelaxNGNewValidCtxt(rng);
-		xmlRelaxNGSetValidErrors(ctxt,
-                        testErrorHandler, testErrorHandler, ctxt);
-		ret = xmlRelaxNGValidateDoc(ctxt, doc);
-		xmlRelaxNGFreeValidCtxt(ctxt);
-		if (ret == 0) {
-		    test_log("Failed to detect invalid instance line %ld\n",
-				xmlGetLineNo(tmp));
-		    nb_errors++;
-		} else if (ret < 0) {
-		    test_log("Internal error validating instance line %ld\n",
-			    xmlGetLineNo(tmp));
-		    nb_errors++;
-		}
-		xmlFreeDoc(doc);
-	    }
-	    xmlResetLastError();
-	    if (mem != xmlMemUsed()) {
-	        test_log("Validation of instance line %ld leaked %d\n",
-		        xmlGetLineNo(tmp), xmlMemUsed() - mem);
-	        nb_leaks++;
-	    }
-	}
-	tmp = getNext(tmp, "following-sibling::invalid[1]");
+            if (doc == NULL) {
+                test_log("Failed to parse valid instance line %ld\n",
+                         xmlGetLineNo(tmp));
+                nb_errors++;
+            } else {
+                nb_tests++;
+                ctxt = xmlRelaxNGNewValidCtxt(rng);
+                xmlRelaxNGSetValidErrors(ctxt, testErrorHandler,
+                                         testErrorHandler, ctxt);
+                ret = xmlRelaxNGValidateDoc(ctxt, doc);
+                xmlRelaxNGFreeValidCtxt(ctxt);
+                if (ret == 0) {
+                    test_log("Failed to detect invalid instance line %ld\n",
+                             xmlGetLineNo(tmp));
+                    nb_errors++;
+                } else if (ret < 0) {
+                    test_log("Internal error validating instance line %ld\n",
+                             xmlGetLineNo(tmp));
+                    nb_errors++;
+                }
+                xmlFreeDoc(doc);
+            }
+            xmlResetLastError();
+            if (mem != xmlMemUsed()) {
+                test_log("Validation of instance line %ld leaked %d\n",
+                         xmlGetLineNo(tmp), xmlMemUsed() - mem);
+                nb_leaks++;
+            }
+        }
+        tmp = getNext(tmp, "following-sibling::invalid[1]");
     }
 
 done:
     if (buf != NULL)
-	xmlBufferFree(buf);
+        xmlBufferFree(buf);
     if (rng != NULL)
         xmlRelaxNGFree(rng);
     xmlResetLastError();
     if ((memt != xmlMemUsed()) && (memt != 0)) {
-	test_log("Validation of tests starting line %ld leaked %d\n",
-		xmlGetLineNo(cur), xmlMemUsed() - memt);
-	nb_leaks++;
+        test_log("Validation of tests starting line %ld leaked %d\n",
+                 xmlGetLineNo(cur), xmlMemUsed() - memt);
+        nb_leaks++;
     }
-    return(ret);
+    return ret;
 }
 
 static int
-xsdTestSuite(xmlNodePtr cur) {
+xsdTestSuite (xmlNodePtr cur)
+{
     if (verbose) {
-	xmlChar *doc = getString(cur, "string(documentation)");
+        xmlChar *doc = getString(cur, "string(documentation)");
 
-	if (doc != NULL) {
-	    printf("Suite %s\n", doc);
-	    xmlFree(doc);
-	}
+        if (doc != NULL) {
+            printf("Suite %s\n", doc);
+            xmlFree(doc);
+        }
     }
     cur = getNext(cur, "./testCase[1]");
     while (cur != NULL) {
         xsdTestCase(cur);
-	cur = getNext(cur, "following-sibling::testCase[1]");
+        cur = getNext(cur, "following-sibling::testCase[1]");
     }
 
-    return(0);
+    return 0;
 }
 
 static int
-xsdTest(void) {
+xsdTest (void)
+{
     xmlDocPtr doc;
     xmlNodePtr cur;
     const char *filename = "test/xsdtest/xsdtestsuite.xml";
@@ -612,61 +632,63 @@ xsdTest(void) {
     doc = xmlReadFile(filename, NULL, XML_PARSE_NOENT);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", filename);
-	return(-1);
+        return -1;
     }
     printf("## XML Schemas datatypes test suite from James Clark\n");
 
     cur = xmlDocGetRootElement(doc);
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
 
     cur = getNext(cur, "./testSuite[1]");
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
     while (cur != NULL) {
         xsdTestSuite(cur);
-	cur = getNext(cur, "following-sibling::testSuite[1]");
+        cur = getNext(cur, "following-sibling::testSuite[1]");
     }
 
 done:
     if (doc != NULL)
-	xmlFreeDoc(doc);
-    return(ret);
+        xmlFreeDoc(doc);
+    return ret;
 }
 
 static int
-rngTestSuite(xmlNodePtr cur) {
+rngTestSuite (xmlNodePtr cur)
+{
     if (verbose) {
-	xmlChar *doc = getString(cur, "string(documentation)");
+        xmlChar *doc = getString(cur, "string(documentation)");
 
-	if (doc != NULL) {
-	    printf("Suite %s\n", doc);
-	    xmlFree(doc);
-	} else {
-	    doc = getString(cur, "string(section)");
-	    if (doc != NULL) {
-		printf("Section %s\n", doc);
-		xmlFree(doc);
-	    }
-	}
+        if (doc != NULL) {
+            printf("Suite %s\n", doc);
+            xmlFree(doc);
+        } else {
+            doc = getString(cur, "string(section)");
+            if (doc != NULL) {
+                printf("Section %s\n", doc);
+                xmlFree(doc);
+            }
+        }
     }
     cur = getNext(cur, "./testSuite[1]");
     while (cur != NULL) {
         xsdTestSuite(cur);
-	cur = getNext(cur, "following-sibling::testSuite[1]");
+        cur = getNext(cur, "following-sibling::testSuite[1]");
     }
 
-    return(0);
+    return 0;
 }
 
 static int
-rngTest1(void) {
+rngTest1 (void)
+{
     xmlDocPtr doc;
     xmlNodePtr cur;
     const char *filename = "test/relaxng/OASIS/spectest.xml";
@@ -675,36 +697,37 @@ rngTest1(void) {
     doc = xmlReadFile(filename, NULL, XML_PARSE_NOENT);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", filename);
-	return(-1);
+        return -1;
     }
     printf("## Relax NG test suite from James Clark\n");
 
     cur = xmlDocGetRootElement(doc);
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
 
     cur = getNext(cur, "./testSuite[1]");
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
     while (cur != NULL) {
         rngTestSuite(cur);
-	cur = getNext(cur, "following-sibling::testSuite[1]");
+        cur = getNext(cur, "following-sibling::testSuite[1]");
     }
 
 done:
     if (doc != NULL)
-	xmlFreeDoc(doc);
-    return(ret);
+        xmlFreeDoc(doc);
+    return ret;
 }
 
 static int
-rngTest2(void) {
+rngTest2 (void)
+{
     xmlDocPtr doc;
     xmlNodePtr cur;
     const char *filename = "test/relaxng/testsuite.xml";
@@ -713,40 +736,40 @@ rngTest2(void) {
     doc = xmlReadFile(filename, NULL, XML_PARSE_NOENT);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", filename);
-	return(-1);
+        return -1;
     }
     printf("## Relax NG test suite for libxml2\n");
 
     cur = xmlDocGetRootElement(doc);
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
 
     cur = getNext(cur, "./testSuite[1]");
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSuite"))) {
         fprintf(stderr, "Unexpected format %s\n", filename);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
     while (cur != NULL) {
         xsdTestSuite(cur);
-	cur = getNext(cur, "following-sibling::testSuite[1]");
+        cur = getNext(cur, "following-sibling::testSuite[1]");
     }
 
 done:
     if (doc != NULL)
-	xmlFreeDoc(doc);
-    return(ret);
+        xmlFreeDoc(doc);
+    return ret;
 }
 
 /* Returns 1 for success */
-static int tryValidateElement(xmlRelaxNGValidCtxtPtr ctx, xmlDocPtr doc, xmlNodePtr elem)
+static int
+tryValidateElement (xmlRelaxNGValidCtxtPtr ctx, xmlDocPtr doc, xmlNodePtr elem)
 {
     int rc = xmlRelaxNGValidatePushElement(ctx, doc, elem);
-    if (rc == 0)
-    {
+    if (rc == 0) {
         /* Streaming is not possible, validate full element instead */
         rc = xmlRelaxNGValidateFullElement(ctx, doc, elem);
         if (rc == 1)
@@ -756,13 +779,11 @@ static int tryValidateElement(xmlRelaxNGValidCtxtPtr ctx, xmlDocPtr doc, xmlNode
         xmlRelaxNGValidCtxtClearErrors(ctx);
         xmlResetLastError();
         return 0;
-    }
-    else if (rc == 1)
-    {
+    } else if (rc == 1) {
         xmlNodePtr child;
         int success = 1;
-        for (child = xmlFirstElementChild(elem); child != NULL; child = xmlNextElementSibling(child))
-        {
+        for (child = xmlFirstElementChild(elem); child != NULL;
+             child = xmlNextElementSibling(child)) {
             /* Validate children elements recursively.
              * NOTE: There may be no children to validate,
              * as for example for <rng:text/> defines */
@@ -775,15 +796,14 @@ static int tryValidateElement(xmlRelaxNGValidCtxtPtr ctx, xmlDocPtr doc, xmlNode
             goto Fail;
 
         return success;
-    }
-    else
-    {
+    } else {
         goto Fail;
     }
 }
 
 static int
-rngTestStreaming(void) {
+rngTestStreaming (void)
+{
     int mem;
     int rc;
     int error_count = 0;
@@ -796,23 +816,24 @@ rngTestStreaming(void) {
     xmlNodePtr rdf;
     xmlNodePtr description;
     xmlNodePtr child;
-    const xmlChar* error_arr[EXPECTED_XMP_ERROR_COUNT] = { NULL };
-    const char* schema_filepath = "test/relaxng/ISO19005-1-XMP_Packet.rng";
-    const char* xmp_packet_filepath = "test/relaxng/TestXMPInvalid1.xmp";
+    const xmlChar *error_arr[EXPECTED_XMP_ERROR_COUNT] = {NULL};
+    const char *schema_filepath = "test/relaxng/ISO19005-1-XMP_Packet.rng";
+    const char *xmp_packet_filepath = "test/relaxng/TestXMPInvalid1.xmp";
 
     mem = xmlMemUsed();
 
     schema_doc = xmlReadFile(schema_filepath, NULL, 0);
     if (schema_doc == NULL) {
         fprintf(stderr, "RNG Streaming: Failed to parse %s\n", schema_filepath);
-        return(-1);
+        return -1;
     }
 
     rng_parser_ctx = xmlRelaxNGNewDocParserCtxt(schema_doc);
     if (rng_parser_ctx == NULL) {
         xmlFreeDoc(schema_doc);
-        fprintf(stderr, "RNG Streaming: Failed to create Relax NG parser context\n");
-        return(-1);
+        fprintf(stderr,
+                "RNG Streaming: Failed to create Relax NG parser context\n");
+        return -1;
     }
 
     xmlFreeDoc(schema_doc);
@@ -820,23 +841,26 @@ rngTestStreaming(void) {
     if (rng_parser_ctx == NULL) {
         xmlRelaxNGFreeParserCtxt(rng_parser_ctx);
         fprintf(stderr, "RNG Streaming: Failed to parse Relax NG schema\n");
-        return(-1);
+        return -1;
     }
 
     xmlRelaxNGFreeParserCtxt(rng_parser_ctx);
     validation_ctx = xmlRelaxNGNewValidCtxt(schema);
     if (rng_parser_ctx == NULL) {
         xmlRelaxNGFree(schema);
-        fprintf(stderr, "RNG Streaming: Failed to create Relax NG validation context\n");
-        return(-1);
+        fprintf(
+            stderr,
+            "RNG Streaming: Failed to create Relax NG validation context\n");
+        return -1;
     }
 
     xmp_packet_doc = xmlReadFile(xmp_packet_filepath, NULL, 0);
     if (xmp_packet_doc == NULL) {
         xmlRelaxNGFreeValidCtxt(validation_ctx);
         xmlRelaxNGFree(schema);
-        fprintf(stderr, "RNG Streaming: Failed to parse %s\n", xmp_packet_filepath);
-        return(-1);
+        fprintf(stderr, "RNG Streaming: Failed to parse %s\n",
+                xmp_packet_filepath);
+        return -1;
     }
 
     xmpmeta = xmlDocGetRootElement(xmp_packet_doc);
@@ -854,27 +878,31 @@ rngTestStreaming(void) {
     }
 
     description = xmlFirstElementChild(rdf);
-    if (description == NULL || xmlStrcmp(BAD_CAST "Description", description->name) != 0) {
-        fprintf(stderr, "RNG Streaming: Unable to find <rdf:Description> element\n");
+    if (description == NULL
+        || xmlStrcmp(BAD_CAST "Description", description->name) != 0) {
+        fprintf(stderr,
+                "RNG Streaming: Unable to find <rdf:Description> element\n");
         rc = -1;
         goto Exit;
     }
 
     /* Push enclosing/preamble elements */
-    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc, xmpmeta);        /* <x:xmpmeta> */
+    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc,
+                                       xmpmeta); /* <x:xmpmeta> */
     if (rc != 1)
         goto FailPushPopEnclosing;
-    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc, rdf);            /* <rdf:RDF> */
+    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc,
+                                       rdf); /* <rdf:RDF> */
     if (rc != 1)
         goto FailPushPopEnclosing;
-    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc, description);    /* <rdf:Description> */
+    rc = xmlRelaxNGValidatePushElement(validation_ctx, xmp_packet_doc,
+                                       description); /* <rdf:Description> */
     if (rc != 1)
         goto FailPushPopEnclosing;
 
-    for (child = xmlFirstElementChild(description); child != NULL; child = xmlNextElementSibling(child))
-    {
-        if (!tryValidateElement(validation_ctx, xmp_packet_doc, child))
-        {
+    for (child = xmlFirstElementChild(description); child != NULL;
+         child = xmlNextElementSibling(child)) {
+        if (!tryValidateElement(validation_ctx, xmp_packet_doc, child)) {
             error_count++;
             if (error_count > EXPECTED_XMP_ERROR_COUNT) {
                 fprintf(stderr, "RNG Streaming: Unexpected error count\n");
@@ -886,20 +914,23 @@ rngTestStreaming(void) {
         }
     }
 
-    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc, description);     /* </rdf:Description> */
+    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc,
+                                      description); /* </rdf:Description> */
     if (rc != 1)
         goto FailPushPopEnclosing;
-    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc, rdf);             /* </rdf:RDF> */
+    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc,
+                                      rdf); /* </rdf:RDF> */
     if (rc != 1)
         goto FailPushPopEnclosing;
-    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc, xmpmeta);         /* </x:xmpmeta> */
+    rc = xmlRelaxNGValidatePopElement(validation_ctx, xmp_packet_doc,
+                                      xmpmeta); /* </x:xmpmeta> */
     if (rc != 1)
         goto FailPushPopEnclosing;
 
     if (error_count < EXPECTED_XMP_ERROR_COUNT
-            || xmlStrcmp(error_arr[0], BAD_CAST "MetadataDate") != 0
-            || xmlStrcmp(error_arr[1], BAD_CAST "Trapped") != 0
-            || xmlStrcmp(error_arr[2], BAD_CAST "Ignore") != 0) {
+        || xmlStrcmp(error_arr[0], BAD_CAST "MetadataDate") != 0
+        || xmlStrcmp(error_arr[1], BAD_CAST "Trapped") != 0
+        || xmlStrcmp(error_arr[2], BAD_CAST "Ignore") != 0) {
         fprintf(stderr, "RNG Streaming: Invalid known errors\n");
         rc = -1;
         goto Exit;
@@ -909,7 +940,8 @@ rngTestStreaming(void) {
     goto Exit;
 
 FailPushPopEnclosing:
-    fprintf(stderr, "RNG Streaming: Unable to push/pop packet enclosing elements\n");
+    fprintf(stderr,
+            "RNG Streaming: Unable to push/pop packet enclosing elements\n");
     rc = -1;
 
 Exit:
@@ -935,8 +967,9 @@ Exit:
 
 #ifdef LIBXML_SCHEMAS_ENABLED
 static int
-xstcTestInstance(xmlNodePtr cur, xmlSchemaPtr schemas,
-                 const xmlChar *spath, const char *base) {
+xstcTestInstance (xmlNodePtr cur, xmlSchemaPtr schemas, const xmlChar *spath,
+                  const char *base)
+{
     xmlChar *href = NULL;
     xmlChar *path = NULL;
     xmlChar *validity = NULL;
@@ -945,45 +978,44 @@ xstcTestInstance(xmlNodePtr cur, xmlSchemaPtr schemas,
     int ret = 0, mem;
 
     xmlResetLastError();
-    testErrorsSize = 0; testErrors[0] = 0;
+    testErrorsSize = 0;
+    testErrors[0] = 0;
     mem = xmlMemUsed();
-    href = getString(cur,
-                     "string(ts:instanceDocument/@xlink:href)");
+    href = getString(cur, "string(ts:instanceDocument/@xlink:href)");
     if ((href == NULL) || (href[0] == 0)) {
-	test_log("testGroup line %ld misses href for schemaDocument\n",
-		    xmlGetLineNo(cur));
-	ret = -1;
-	goto done;
+        test_log("testGroup line %ld misses href for schemaDocument\n",
+                 xmlGetLineNo(cur));
+        ret = -1;
+        goto done;
     }
     path = xmlBuildURI(href, BAD_CAST base);
     if (path == NULL) {
-	fprintf(stderr,
-	        "Failed to build path to schemas testGroup line %ld : %s\n",
-		xmlGetLineNo(cur), href);
-	ret = -1;
-	goto done;
+        fprintf(stderr,
+                "Failed to build path to schemas testGroup line %ld : %s\n",
+                xmlGetLineNo(cur), href);
+        ret = -1;
+        goto done;
     }
     if (checkTestFile((const char *) path) <= 0) {
-	test_log("schemas for testGroup line %ld is missing: %s\n",
-		xmlGetLineNo(cur), path);
-	ret = -1;
-	goto done;
+        test_log("schemas for testGroup line %ld is missing: %s\n",
+                 xmlGetLineNo(cur), path);
+        ret = -1;
+        goto done;
     }
-    validity = getString(cur,
-                         "string(ts:expected/@validity)");
+    validity = getString(cur, "string(ts:expected/@validity)");
     if (validity == NULL) {
         fprintf(stderr, "instanceDocument line %ld misses expected validity\n",
-	        xmlGetLineNo(cur));
-	ret = -1;
-	goto done;
+                xmlGetLineNo(cur));
+        ret = -1;
+        goto done;
     }
     nb_tests++;
     doc = xmlReadFile((const char *) path, NULL, XML_PARSE_NOENT);
     if (doc == NULL) {
         fprintf(stderr, "instance %s fails to parse\n", path);
-	ret = -1;
-	nb_errors++;
-	goto done;
+        ret = -1;
+        nb_errors++;
+        goto done;
     }
 
     ctxt = xmlSchemaNewValidCtxt(schemas);
@@ -991,46 +1023,52 @@ xstcTestInstance(xmlNodePtr cur, xmlSchemaPtr schemas,
     ret = xmlSchemaValidateDoc(ctxt, doc);
 
     if (xmlStrEqual(validity, BAD_CAST "valid")) {
-	if (ret > 0) {
-	    test_log("valid instance %s failed to validate against %s\n",
-			path, spath);
-	    nb_errors++;
-	} else if (ret < 0) {
-	    test_log("valid instance %s got internal error validating %s\n",
-			path, spath);
-	    nb_internals++;
-	    nb_errors++;
-	}
+        if (ret > 0) {
+            test_log("valid instance %s failed to validate against %s\n", path,
+                     spath);
+            nb_errors++;
+        } else if (ret < 0) {
+            test_log("valid instance %s got internal error validating %s\n",
+                     path, spath);
+            nb_internals++;
+            nb_errors++;
+        }
     } else if (xmlStrEqual(validity, BAD_CAST "invalid")) {
-	if (ret == 0) {
-	    test_log("Failed to detect invalid instance %s against %s\n",
-			path, spath);
-	    nb_errors++;
-	}
+        if (ret == 0) {
+            test_log("Failed to detect invalid instance %s against %s\n", path,
+                     spath);
+            nb_errors++;
+        }
     } else {
         test_log("instanceDocument line %ld has unexpected validity value%s\n",
-	        xmlGetLineNo(cur), validity);
-	ret = -1;
-	goto done;
+                 xmlGetLineNo(cur), validity);
+        ret = -1;
+        goto done;
     }
 
 done:
-    if (href != NULL) xmlFree(href);
-    if (path != NULL) xmlFree(path);
-    if (validity != NULL) xmlFree(validity);
-    if (ctxt != NULL) xmlSchemaFreeValidCtxt(ctxt);
-    if (doc != NULL) xmlFreeDoc(doc);
+    if (href != NULL)
+        xmlFree(href);
+    if (path != NULL)
+        xmlFree(path);
+    if (validity != NULL)
+        xmlFree(validity);
+    if (ctxt != NULL)
+        xmlSchemaFreeValidCtxt(ctxt);
+    if (doc != NULL)
+        xmlFreeDoc(doc);
     xmlResetLastError();
     if (mem != xmlMemUsed()) {
-	test_log("Validation of tests starting line %ld leaked %d\n",
-		xmlGetLineNo(cur), xmlMemUsed() - mem);
-	nb_leaks++;
+        test_log("Validation of tests starting line %ld leaked %d\n",
+                 xmlGetLineNo(cur), xmlMemUsed() - mem);
+        nb_leaks++;
     }
-    return(ret);
+    return ret;
 }
 
 static int
-xstcTestGroup(xmlNodePtr cur, const char *base) {
+xstcTestGroup (xmlNodePtr cur, const char *base)
+{
     xmlChar *href = NULL;
     xmlChar *path = NULL;
     xmlChar *validity = NULL;
@@ -1040,115 +1078,116 @@ xstcTestGroup(xmlNodePtr cur, const char *base) {
     int ret = 0, mem;
 
     xmlResetLastError();
-    testErrorsSize = 0; testErrors[0] = 0;
+    testErrorsSize = 0;
+    testErrors[0] = 0;
     mem = xmlMemUsed();
-    href = getString(cur,
-                     "string(ts:schemaTest/ts:schemaDocument/@xlink:href)");
+    href
+        = getString(cur, "string(ts:schemaTest/ts:schemaDocument/@xlink:href)");
     if ((href == NULL) || (href[0] == 0)) {
         test_log("testGroup line %ld misses href for schemaDocument\n",
-		    xmlGetLineNo(cur));
-	ret = -1;
-	goto done;
+                 xmlGetLineNo(cur));
+        ret = -1;
+        goto done;
     }
     path = xmlBuildURI(href, BAD_CAST base);
     if (path == NULL) {
-	test_log("Failed to build path to schemas testGroup line %ld : %s\n",
-		xmlGetLineNo(cur), href);
-	ret = -1;
-	goto done;
+        test_log("Failed to build path to schemas testGroup line %ld : %s\n",
+                 xmlGetLineNo(cur), href);
+        ret = -1;
+        goto done;
     }
     if (checkTestFile((const char *) path) <= 0) {
-	test_log("schemas for testGroup line %ld is missing: %s\n",
-		xmlGetLineNo(cur), path);
-	ret = -1;
-	goto done;
+        test_log("schemas for testGroup line %ld is missing: %s\n",
+                 xmlGetLineNo(cur), path);
+        ret = -1;
+        goto done;
     }
-    validity = getString(cur,
-                         "string(ts:schemaTest/ts:expected/@validity)");
+    validity = getString(cur, "string(ts:schemaTest/ts:expected/@validity)");
     if (validity == NULL) {
         test_log("testGroup line %ld misses expected validity\n",
-	        xmlGetLineNo(cur));
-	ret = -1;
-	goto done;
+                 xmlGetLineNo(cur));
+        ret = -1;
+        goto done;
     }
     nb_tests++;
     if (xmlStrEqual(validity, BAD_CAST "valid")) {
         nb_schematas++;
-	ctxt = xmlSchemaNewParserCtxt((const char *) path);
-	xmlSchemaSetParserErrors(ctxt, testErrorHandler, testErrorHandler,
-                ctxt);
-	schemas = xmlSchemaParse(ctxt);
-	xmlSchemaFreeParserCtxt(ctxt);
-	if (schemas == NULL) {
-	    test_log("valid schemas %s failed to parse\n",
-			path);
-	    ret = 1;
-	    nb_errors++;
-	}
-	if ((ret == 0) && (strstr(testErrors, "nimplemented") != NULL)) {
-	    test_log("valid schemas %s hit an unimplemented block\n",
-			path);
-	    ret = 1;
-	    nb_unimplemented++;
-	    nb_errors++;
-	}
-	instance = getNext(cur, "./ts:instanceTest[1]");
-	while (instance != NULL) {
-	    if (schemas != NULL) {
-		xstcTestInstance(instance, schemas, path, base);
-	    } else {
-		/*
+        ctxt = xmlSchemaNewParserCtxt((const char *) path);
+        xmlSchemaSetParserErrors(ctxt, testErrorHandler, testErrorHandler,
+                                 ctxt);
+        schemas = xmlSchemaParse(ctxt);
+        xmlSchemaFreeParserCtxt(ctxt);
+        if (schemas == NULL) {
+            test_log("valid schemas %s failed to parse\n", path);
+            ret = 1;
+            nb_errors++;
+        }
+        if ((ret == 0) && (strstr(testErrors, "nimplemented") != NULL)) {
+            test_log("valid schemas %s hit an unimplemented block\n", path);
+            ret = 1;
+            nb_unimplemented++;
+            nb_errors++;
+        }
+        instance = getNext(cur, "./ts:instanceTest[1]");
+        while (instance != NULL) {
+            if (schemas != NULL) {
+                xstcTestInstance(instance, schemas, path, base);
+            } else {
+                /*
 		* We'll automatically mark the instances as failed
 		* if the schema was broken.
 		*/
-		nb_errors++;
-	    }
-	    instance = getNext(instance,
-		"following-sibling::ts:instanceTest[1]");
-	}
+                nb_errors++;
+            }
+            instance
+                = getNext(instance, "following-sibling::ts:instanceTest[1]");
+        }
     } else if (xmlStrEqual(validity, BAD_CAST "invalid")) {
         nb_schematas++;
-	ctxt = xmlSchemaNewParserCtxt((const char *) path);
-	xmlSchemaSetParserErrors(ctxt, testErrorHandler, testErrorHandler,
-                ctxt);
-	schemas = xmlSchemaParse(ctxt);
-	xmlSchemaFreeParserCtxt(ctxt);
-	if (schemas != NULL) {
-	    test_log("Failed to detect error in schemas %s\n",
-			path);
-	    nb_errors++;
-	    ret = 1;
-	}
-	if ((ret == 0) && (strstr(testErrors, "nimplemented") != NULL)) {
-	    nb_unimplemented++;
-	    test_log("invalid schemas %s hit an unimplemented block\n",
-			path);
-	    ret = 1;
-	    nb_errors++;
-	}
+        ctxt = xmlSchemaNewParserCtxt((const char *) path);
+        xmlSchemaSetParserErrors(ctxt, testErrorHandler, testErrorHandler,
+                                 ctxt);
+        schemas = xmlSchemaParse(ctxt);
+        xmlSchemaFreeParserCtxt(ctxt);
+        if (schemas != NULL) {
+            test_log("Failed to detect error in schemas %s\n", path);
+            nb_errors++;
+            ret = 1;
+        }
+        if ((ret == 0) && (strstr(testErrors, "nimplemented") != NULL)) {
+            nb_unimplemented++;
+            test_log("invalid schemas %s hit an unimplemented block\n", path);
+            ret = 1;
+            nb_errors++;
+        }
     } else {
         test_log("testGroup line %ld misses unexpected validity value%s\n",
-	        xmlGetLineNo(cur), validity);
-	ret = -1;
-	goto done;
+                 xmlGetLineNo(cur), validity);
+        ret = -1;
+        goto done;
     }
 
 done:
-    if (href != NULL) xmlFree(href);
-    if (path != NULL) xmlFree(path);
-    if (validity != NULL) xmlFree(validity);
-    if (schemas != NULL) xmlSchemaFree(schemas);
+    if (href != NULL)
+        xmlFree(href);
+    if (path != NULL)
+        xmlFree(path);
+    if (validity != NULL)
+        xmlFree(validity);
+    if (schemas != NULL)
+        xmlSchemaFree(schemas);
     xmlResetLastError();
     if (mem != xmlMemUsed()) {
-	test_log("Processing test line %ld %s leaked %d\n",
-		xmlGetLineNo(cur), path, xmlMemUsed() - mem);
-	nb_leaks++;
+        test_log("Processing test line %ld %s leaked %d\n", xmlGetLineNo(cur),
+                 path, xmlMemUsed() - mem);
+        nb_leaks++;
     }
-    return(ret);
+    return ret;
 }
 
 static int
-xstcMetadata(const char *metadata, const char *base) {
+xstcMetadata (const char *metadata, const char *base)
+{
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlChar *contributor;
@@ -1158,13 +1197,13 @@ xstcMetadata(const char *metadata, const char *base) {
     doc = xmlReadFile(metadata, NULL, XML_PARSE_NOENT);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", metadata);
-	return(-1);
+        return -1;
     }
 
     cur = xmlDocGetRootElement(doc);
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testSet"))) {
         fprintf(stderr, "Unexpected format %s\n", metadata);
-	return(-1);
+        return -1;
     }
     contributor = xmlGetProp(cur, BAD_CAST "contributor");
     if (contributor == NULL) {
@@ -1181,17 +1220,17 @@ xstcMetadata(const char *metadata, const char *base) {
     cur = getNext(cur, "./ts:testGroup[1]");
     if ((cur == NULL) || (!xmlStrEqual(cur->name, BAD_CAST "testGroup"))) {
         fprintf(stderr, "Unexpected format %s\n", metadata);
-	ret = -1;
-	goto done;
+        ret = -1;
+        goto done;
     }
     while (cur != NULL) {
         xstcTestGroup(cur, base);
-	cur = getNext(cur, "following-sibling::ts:testGroup[1]");
+        cur = getNext(cur, "following-sibling::ts:testGroup[1]");
     }
 
 done:
     xmlFreeDoc(doc);
-    return(ret);
+    return ret;
 }
 #endif /* LIBXML_SCHEMAS_ENABLED */
 
@@ -1202,7 +1241,8 @@ done:
  ************************************************************************/
 
 int
-main(int argc UNUSED, char **argv UNUSED) {
+main (int argc UNUSED, char **argv UNUSED)
+{
     int ret = 0;
     int old_errors, old_tests, old_leaks;
 #ifdef LIBXML_RELAXNG_ENABLED
@@ -1212,8 +1252,8 @@ main(int argc UNUSED, char **argv UNUSED) {
     logfile = fopen(LOGFILE, "wb");
     if (logfile == NULL) {
         fprintf(stderr,
-	        "Could not open the log file, running in verbose mode\n");
-	verbose = 1;
+                "Could not open the log file, running in verbose mode\n");
+        verbose = 1;
     }
     initializeLibxml2();
 
@@ -1229,16 +1269,14 @@ main(int argc UNUSED, char **argv UNUSED) {
     old_leaks = nb_leaks;
     xsdTest();
     expected_errors = 3;
-    printf("Ran %d tests, %d errors, %d leaks\n",
-           nb_tests - old_tests,
-           nb_errors - old_errors,
-           nb_leaks - old_leaks);
+    printf("Ran %d tests, %d errors, %d leaks\n", nb_tests - old_tests,
+           nb_errors - old_errors, nb_leaks - old_leaks);
     if (nb_errors - old_errors == expected_errors) {
         printf("%d errors were expected\n", expected_errors);
         nb_errors = old_errors;
     } else {
-        printf("%d errors were expected, got %d errors\n",
-               expected_errors, nb_errors - old_errors);
+        printf("%d errors were expected, got %d errors\n", expected_errors,
+               nb_errors - old_errors);
         nb_errors = old_errors + 1;
     }
 
@@ -1247,24 +1285,20 @@ main(int argc UNUSED, char **argv UNUSED) {
     old_leaks = nb_leaks;
     rngTest1();
     if ((nb_errors == old_errors) && (nb_leaks == old_leaks))
-	printf("Ran %d tests, no errors\n", nb_tests - old_tests);
+        printf("Ran %d tests, no errors\n", nb_tests - old_tests);
     else
-	printf("Ran %d tests, %d errors, %d leaks\n",
-	       nb_tests - old_tests,
-	       nb_errors - old_errors,
-	       nb_leaks - old_leaks);
+        printf("Ran %d tests, %d errors, %d leaks\n", nb_tests - old_tests,
+               nb_errors - old_errors, nb_leaks - old_leaks);
 
     old_errors = nb_errors;
     old_tests = nb_tests;
     old_leaks = nb_leaks;
     rngTest2();
     if ((nb_errors == old_errors) && (nb_leaks == old_leaks))
-	printf("Ran %d tests, no errors\n", nb_tests - old_tests);
+        printf("Ran %d tests, no errors\n", nb_tests - old_tests);
     else
-	printf("Ran %d tests, %d errors, %d leaks\n",
-	       nb_tests - old_tests,
-	       nb_errors - old_errors,
-	       nb_leaks - old_leaks);
+        printf("Ran %d tests, %d errors, %d leaks\n", nb_tests - old_tests,
+               nb_errors - old_errors, nb_leaks - old_leaks);
 #endif /* LIBXML_RELAXNG_ENABLED */
 
 #ifdef LIBXML_SCHEMAS_ENABLED
@@ -1274,17 +1308,15 @@ main(int argc UNUSED, char **argv UNUSED) {
     nb_internals = 0;
     nb_schematas = 0;
     xstcMetadata("xstc/Tests/Metadata/NISTXMLSchemaDatatypes.testSet",
-		 "xstc/Tests/Metadata/");
+                 "xstc/Tests/Metadata/");
     if ((nb_errors == old_errors) && (nb_leaks == old_leaks))
-	printf("Ran %d tests (%d schemata), no errors\n",
-	       nb_tests - old_tests, nb_schematas);
+        printf("Ran %d tests (%d schemata), no errors\n", nb_tests - old_tests,
+               nb_schematas);
     else
-	printf("Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
-	       nb_tests - old_tests,
-	       nb_schematas,
-	       nb_errors - old_errors,
-	       nb_internals,
-	       nb_leaks - old_leaks);
+        printf(
+            "Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
+            nb_tests - old_tests, nb_schematas, nb_errors - old_errors,
+            nb_internals, nb_leaks - old_leaks);
 
     old_errors = nb_errors;
     old_tests = nb_tests;
@@ -1292,17 +1324,15 @@ main(int argc UNUSED, char **argv UNUSED) {
     nb_internals = 0;
     nb_schematas = 0;
     xstcMetadata("xstc/Tests/Metadata/SunXMLSchema1-0-20020116.testSet",
-		 "xstc/Tests/");
+                 "xstc/Tests/");
     if ((nb_errors == old_errors) && (nb_leaks == old_leaks)) {
-	printf("Ran %d tests (%d schemata), no errors\n",
-	       nb_tests - old_tests, nb_schematas);
+        printf("Ran %d tests (%d schemata), no errors\n", nb_tests - old_tests,
+               nb_schematas);
     } else {
-	printf("Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
-	       nb_tests - old_tests,
-	       nb_schematas,
-	       nb_errors - old_errors,
-	       nb_internals,
-	       nb_leaks - old_leaks);
+        printf(
+            "Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
+            nb_tests - old_tests, nb_schematas, nb_errors - old_errors,
+            nb_internals, nb_leaks - old_leaks);
         printf("Some errors were expected.\n");
         nb_errors = old_errors;
     }
@@ -1313,17 +1343,15 @@ main(int argc UNUSED, char **argv UNUSED) {
     nb_internals = 0;
     nb_schematas = 0;
     xstcMetadata("xstc/Tests/Metadata/MSXMLSchema1-0-20020116.testSet",
-		 "xstc/Tests/");
+                 "xstc/Tests/");
     if ((nb_errors == old_errors) && (nb_leaks == old_leaks)) {
-	printf("Ran %d tests (%d schemata), no errors\n",
-	       nb_tests - old_tests, nb_schematas);
+        printf("Ran %d tests (%d schemata), no errors\n", nb_tests - old_tests,
+               nb_schematas);
     } else {
-	printf("Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
-	       nb_tests - old_tests,
-	       nb_schematas,
-	       nb_errors - old_errors,
-	       nb_internals,
-	       nb_leaks - old_leaks);
+        printf(
+            "Ran %d tests (%d schemata), %d errors (%d internals), %d leaks\n",
+            nb_tests - old_tests, nb_schematas, nb_errors - old_errors,
+            nb_internals, nb_leaks - old_leaks);
         printf("Some errors were expected.\n");
         nb_errors = old_errors;
     }
@@ -1331,23 +1359,24 @@ main(int argc UNUSED, char **argv UNUSED) {
 
     if ((nb_errors == 0) && (nb_leaks == 0)) {
         ret = 0;
-	printf("Total %d tests, no errors\n",
-	       nb_tests);
+        printf("Total %d tests, no errors\n", nb_tests);
     } else {
         ret = 1;
-	printf("Total %d tests, %d errors, %d leaks\n",
-	       nb_tests, nb_errors, nb_leaks);
+        printf("Total %d tests, %d errors, %d leaks\n", nb_tests, nb_errors,
+               nb_leaks);
     }
     xmlXPathFreeContext(ctxtXPath);
     xmlCleanupParser();
 
     if (logfile != NULL)
         fclose(logfile);
-    return(ret);
+    return ret;
 }
 #else /* !RELAXNG && !SCHEMAS */
 int
-main(int argc UNUSED, char **argv UNUSED) {
-    fprintf(stderr, "runsuite requires support for schemas and xpath in libxml2\n");
+main (int argc UNUSED, char **argv UNUSED)
+{
+    fprintf(stderr,
+            "runsuite requires support for schemas and xpath in libxml2\n");
 }
 #endif
