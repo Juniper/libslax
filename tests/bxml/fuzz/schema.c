@@ -5,7 +5,7 @@
  */
 
 #ifndef XML_DEPRECATED
-  #define XML_DEPRECATED
+#define XML_DEPRECATED
 #endif
 
 #include <libxml/catalog.h>
@@ -14,8 +14,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -27,13 +27,14 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlSchemaParserCtxtPtr pctxt;
     xmlSchemaPtr schema;
     size_t failurePos;
 
     if (size > 200000)
-        return(0);
+        return 0;
 
     xmlFuzzDataInit(data, size);
 
@@ -74,18 +75,17 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     xmlResetLastError();
     xmlSchemaCleanupTypes();
 
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
