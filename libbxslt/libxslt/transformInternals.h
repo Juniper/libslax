@@ -6,4 +6,4 @@
  * Author: David Kilzer <ddkilzer@apple.com>
  */
 
-void xsltCleanupSourceDoc(xmlDocPtr doc);
+void xsltCleanupSourceDoc (xmlDocPtr doc);
