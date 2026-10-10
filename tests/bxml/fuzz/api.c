@@ -36,10 +36,10 @@
 #include <string.h>
 
 #ifndef XML_DEPRECATED
-  #define XML_DEPRECATED
+#define XML_DEPRECATED
 #endif
 #ifndef XML_DEPRECATED_MEMBER
-  #define XML_DEPRECATED_MEMBER
+#define XML_DEPRECATED_MEMBER
 #endif
 
 #include <libxml/catalog.h>
@@ -50,14 +50,14 @@
 #include "fuzz.h"
 
 #if 0
-  #define DEBUG printf
+#define DEBUG printf
 #else
-  #define DEBUG(...)
+#define DEBUG(...)
 #endif
 
-#define MAX_CONTENT     100
-#define MAX_COPY_NODES   50
-#define MAX_COPY_OPS     20
+#define MAX_CONTENT    100
+#define MAX_COPY_NODES 50
+#define MAX_COPY_OPS   20
 
 typedef enum {
     /* Basic operations */
@@ -301,64 +301,52 @@ typedef enum {
     OP_MAX
 } opType;
 
-#define NODE_MASK_TEXT_CONTENT ( \
-    (1 << XML_TEXT_NODE) | \
-    (1 << XML_CDATA_SECTION_NODE) | \
-    (1 << XML_COMMENT_NODE) | \
-    (1 << XML_PI_NODE))
+#define NODE_MASK_TEXT_CONTENT                            \
+    ((1 << XML_TEXT_NODE) | (1 << XML_CDATA_SECTION_NODE) \
+     | (1 << XML_COMMENT_NODE) | (1 << XML_PI_NODE))
 
-#define CHILD_MASK_DOCUMENT ( \
-    (1 << XML_ELEMENT_NODE) | \
-    (1 << XML_PI_NODE) | \
-    (1 << XML_COMMENT_NODE))
+#define CHILD_MASK_DOCUMENT \
+    ((1 << XML_ELEMENT_NODE) | (1 << XML_PI_NODE) | (1 << XML_COMMENT_NODE))
 
-#define CHILD_MASK_CONTENT ( \
-    (1 << XML_ELEMENT_NODE) | \
-    (1 << XML_TEXT_NODE) | \
-    (1 << XML_CDATA_SECTION_NODE) | \
-    (1 << XML_ENTITY_REF_NODE) | \
-    (1 << XML_PI_NODE) | \
-    (1 << XML_COMMENT_NODE))
+#define CHILD_MASK_CONTENT                                        \
+    ((1 << XML_ELEMENT_NODE) | (1 << XML_TEXT_NODE)               \
+     | (1 << XML_CDATA_SECTION_NODE) | (1 << XML_ENTITY_REF_NODE) \
+     | (1 << XML_PI_NODE) | (1 << XML_COMMENT_NODE))
 
-#define CHILD_MASK_ELEMENT ( \
-    CHILD_MASK_CONTENT | \
-    (1 << XML_ATTRIBUTE_NODE))
+#define CHILD_MASK_ELEMENT (CHILD_MASK_CONTENT | (1 << XML_ATTRIBUTE_NODE))
 
-#define CHILD_MASK_ATTRIBUTE ( \
-    (1 << XML_TEXT_NODE) | \
-    (1 << XML_ENTITY_REF_NODE))
+#define CHILD_MASK_ATTRIBUTE ((1 << XML_TEXT_NODE) | (1 << XML_ENTITY_REF_NODE))
 
-#define CHILD_MASK_DTD ( \
-    (1 << XML_ELEMENT_DECL) | \
-    (1 << XML_ATTRIBUTE_DECL) | \
-    (1 << XML_ENTITY_DECL))
+#define CHILD_MASK_DTD                                   \
+    ((1 << XML_ELEMENT_DECL) | (1 << XML_ATTRIBUTE_DECL) \
+     | (1 << XML_ENTITY_DECL))
 
 static const int childMasks[] = {
     0,
-    CHILD_MASK_ELEMENT, /* XML_ELEMENT_NODE */
+    CHILD_MASK_ELEMENT,   /* XML_ELEMENT_NODE */
     CHILD_MASK_ATTRIBUTE, /* XML_ATTRIBUTE_NODE */
-    0, /* XML_TEXT_NODE */
-    0, /* XML_CDATA_SECTION_NODE */
-    0, /* XML_ENTITY_REF_NODE */
-    0, /* XML_ENTITY_NODE */
-    0, /* XML_PI_NODE */
-    0, /* XML_COMMENT_NODE */
-    CHILD_MASK_DOCUMENT, /* XML_DOCUMENT_NODE */
-    0, /* XML_DOCUMENT_TYPE_NODE */
-    CHILD_MASK_CONTENT, /* XML_DOCUMENT_FRAG_NODE */
-    0, /* XML_NOTATION_NODE */
-    CHILD_MASK_DOCUMENT, /* XML_HTML_DOCUMENT_NODE */
-    0, /* XML_DTD_NODE */
-    0, /* XML_ELEMENT_DECL */
-    0, /* XML_ATTRIBUTE_DECL */
-    0, /* XML_ENTITY_DECL */
-    0, /* XML_NAMESPACE_DECL */
-    0, /* XML_XINCLUDE_START */
-    0, /* XML_XINCLUDE_END */
-    CHILD_MASK_DOCUMENT /* XML_DOCB_DOCUMENT_NODE */
+    0,                    /* XML_TEXT_NODE */
+    0,                    /* XML_CDATA_SECTION_NODE */
+    0,                    /* XML_ENTITY_REF_NODE */
+    0,                    /* XML_ENTITY_NODE */
+    0,                    /* XML_PI_NODE */
+    0,                    /* XML_COMMENT_NODE */
+    CHILD_MASK_DOCUMENT,  /* XML_DOCUMENT_NODE */
+    0,                    /* XML_DOCUMENT_TYPE_NODE */
+    CHILD_MASK_CONTENT,   /* XML_DOCUMENT_FRAG_NODE */
+    0,                    /* XML_NOTATION_NODE */
+    CHILD_MASK_DOCUMENT,  /* XML_HTML_DOCUMENT_NODE */
+    0,                    /* XML_DTD_NODE */
+    0,                    /* XML_ELEMENT_DECL */
+    0,                    /* XML_ATTRIBUTE_DECL */
+    0,                    /* XML_ENTITY_DECL */
+    0,                    /* XML_NAMESPACE_DECL */
+    0,                    /* XML_XINCLUDE_START */
+    0,                    /* XML_XINCLUDE_END */
+    CHILD_MASK_DOCUMENT   /* XML_DOCB_DOCUMENT_NODE */
 };
 
-#define REG_MAX 8
+#define REG_MAX  8
 #define REG_MASK (REG_MAX - 1)
 
 typedef struct {
@@ -383,40 +371,46 @@ static xmlFuzzApiVars *const vars = &varsStruct;
 /* Debug output */
 
 static void
-startOp(const char *name) {
+startOp (const char *name)
+{
     vars->opName = name;
     DEBUG("%s(", name);
 }
 
 static void
-endOp(void) {
+endOp (void)
+{
     DEBUG(" )\n");
 }
 
 /* Integers */
 
 static int
-getInt(int offset) {
+getInt (int offset)
+{
     int idx = (vars->intIdx - offset - 1) & REG_MASK;
     DEBUG(" %d", vars->integers[idx]);
     return vars->integers[idx];
 }
 
 static void
-setInt(int offset, int n) {
+setInt (int offset, int n)
+{
     int idx = (vars->intIdx - offset - 1) & REG_MASK;
     vars->integers[idx] = n;
 }
 
 static void
-incIntIdx(void) {
+incIntIdx (void)
+{
     vars->intIdx = (vars->intIdx + 1) & REG_MASK;
 }
 
 /* Strings */
 
 static const xmlChar *
-getStr(int offset) {
+getStr (int offset)
+{
     int idx = (vars->stringIdx - offset - 1) & REG_MASK;
     const xmlChar *str = vars->strings[idx];
 
@@ -429,12 +423,14 @@ getStr(int offset) {
 }
 
 static const char *
-getCStr(int offset) {
+getCStr (int offset)
+{
     return (const char *) getStr(offset);
 }
 
 static void
-setStr(int offset, xmlChar *str) {
+setStr (int offset, xmlChar *str)
+{
     xmlChar **strings = vars->strings;
     int idx = (vars->stringIdx - offset - 1) & REG_MASK;
     xmlChar *oldString = strings[idx];
@@ -445,7 +441,8 @@ setStr(int offset, xmlChar *str) {
 }
 
 static void
-moveStr(int offset, xmlChar *str) {
+moveStr (int offset, xmlChar *str)
+{
     if (xmlStrlen(str) > 1000) {
         setStr(offset, NULL);
         xmlFree(str);
@@ -459,7 +456,8 @@ moveStr(int offset, xmlChar *str) {
  * injection.
  */
 static xmlChar *
-uncheckedStrndup(const xmlChar *str, int size) {
+uncheckedStrndup (const xmlChar *str, int size)
+{
     xmlChar *copy;
 
     if (str == NULL)
@@ -475,27 +473,30 @@ uncheckedStrndup(const xmlChar *str, int size) {
 }
 
 static xmlChar *
-uncheckedStrdup(const xmlChar *str) {
+uncheckedStrdup (const xmlChar *str)
+{
     return uncheckedStrndup(str, MAX_CONTENT);
 }
 
 static void
-copyStr(int offset, const xmlChar *str) {
+copyStr (int offset, const xmlChar *str)
+{
     setStr(offset, uncheckedStrdup(str));
 }
 
 static void
-incStrIdx(void) {
+incStrIdx (void)
+{
     vars->stringIdx = (vars->stringIdx + 1) & REG_MASK;
 }
 
 /* Nodes */
 
-static void
-dropNode(xmlNodePtr node);
+static void dropNode (xmlNodePtr node);
 
 static xmlNodePtr
-getNode(int offset) {
+getNode (int offset)
+{
     int idx = (vars->nodeIdx - offset - 1) & REG_MASK;
     if (vars->nodes[idx])
         DEBUG(" n%d", idx);
@@ -506,7 +507,8 @@ getNode(int offset) {
 }
 
 static xmlDocPtr
-getDoc(int offset) {
+getDoc (int offset)
+{
     xmlNodePtr node = getNode(offset);
 
     if (node == NULL)
@@ -515,7 +517,8 @@ getDoc(int offset) {
 }
 
 static xmlAttrPtr
-getAttr(int offset) {
+getAttr (int offset)
+{
     xmlNodePtr node = getNode(offset);
 
     if (node == NULL)
@@ -529,7 +532,8 @@ getAttr(int offset) {
 }
 
 static xmlDtdPtr
-getDtd(int offset) {
+getDtd (int offset)
+{
     xmlNodePtr node = getNode(offset);
     xmlDocPtr doc;
 
@@ -548,7 +552,8 @@ getDtd(int offset) {
 }
 
 static void
-setNode(int offset, xmlNodePtr node) {
+setNode (int offset, xmlNodePtr node)
+{
     int idx = (vars->nodeIdx - offset - 1) & REG_MASK;
     xmlNodePtr oldNode = vars->nodes[idx];
 
@@ -564,7 +569,8 @@ setNode(int offset, xmlNodePtr node) {
 }
 
 static void
-incNodeIdx(void) {
+incNodeIdx (void)
+{
     xmlNodePtr oldNode;
     int idx;
 
@@ -579,12 +585,14 @@ incNodeIdx(void) {
 }
 
 static int
-isValidChildType(xmlNodePtr parent, int childType) {
+isValidChildType (xmlNodePtr parent, int childType)
+{
     return ((1 << childType) & childMasks[parent->type]) != 0;
 }
 
 static int
-isValidChild(xmlNodePtr parent, xmlNodePtr child) {
+isValidChild (xmlNodePtr parent, xmlNodePtr child)
+{
     xmlNodePtr cur;
 
     if (child == NULL || parent == NULL)
@@ -607,7 +615,8 @@ isValidChild(xmlNodePtr parent, xmlNodePtr child) {
 }
 
 static int
-isTextContentNode(xmlNodePtr child) {
+isTextContentNode (xmlNodePtr child)
+{
     if (child == NULL)
         return 0;
 
@@ -615,7 +624,8 @@ isTextContentNode(xmlNodePtr child) {
 }
 
 static int
-isDtdChild(xmlNodePtr child) {
+isDtdChild (xmlNodePtr child)
+{
     if (child == NULL)
         return 0;
 
@@ -623,7 +633,8 @@ isDtdChild(xmlNodePtr child) {
 }
 
 static xmlNodePtr
-nodeGetTree(xmlNodePtr node) {
+nodeGetTree (xmlNodePtr node)
+{
     xmlNodePtr cur = node;
 
     while (cur->parent)
@@ -644,7 +655,8 @@ nodeGetTree(xmlNodePtr node) {
  * can only be freed if no other trees reference the document.
  */
 static void
-dropNode(xmlNodePtr node) {
+dropNode (xmlNodePtr node)
+{
     xmlNodePtr *nodes = vars->nodes;
     xmlNodePtr tree;
     xmlDocPtr doc;
@@ -674,9 +686,9 @@ dropNode(xmlNodePtr node) {
     }
 
     if (tree != (xmlNodePtr) doc && !isDtdChild(tree)) {
-        if (doc == NULL || tree->type != XML_DTD_NODE ||
-            ((xmlDtdPtr) tree != doc->intSubset &&
-             (xmlDtdPtr) tree != doc->extSubset))
+        if (doc == NULL || tree->type != XML_DTD_NODE
+            || ((xmlDtdPtr) tree != doc->intSubset
+                && (xmlDtdPtr) tree != doc->extSubset))
             xmlFreeNode(tree);
     }
 
@@ -695,7 +707,8 @@ dropNode(xmlNodePtr node) {
  */
 
 static void
-removeNode(xmlNodePtr node) {
+removeNode (xmlNodePtr node)
+{
     int i;
 
     for (i = 0; i < REG_MAX; i++)
@@ -704,7 +717,8 @@ removeNode(xmlNodePtr node) {
 }
 
 static void
-removeChildren(xmlNodePtr parent, int self) {
+removeChildren (xmlNodePtr parent, int self)
+{
     int i;
 
     if (parent == NULL || (!self && parent->children == NULL))
@@ -730,7 +744,8 @@ removeChildren(xmlNodePtr parent, int self) {
 }
 
 static xmlNsPtr
-nodeGetNs(xmlNodePtr node, int k) {
+nodeGetNs (xmlNodePtr node, int k)
+{
     int i = 0;
     xmlNsPtr ns, next;
 
@@ -773,22 +788,22 @@ nodeGetNs(xmlNodePtr node, int k) {
  */
 
 static void
-checkContent(xmlNodePtr node) {
-    if (node != NULL &&
-        (node->type == XML_TEXT_NODE ||
-         node->type == XML_CDATA_SECTION_NODE ||
-         node->type == XML_ENTITY_NODE ||
-         node->type == XML_PI_NODE ||
-         node->type == XML_COMMENT_NODE ||
-         node->type == XML_NOTATION_NODE) &&
-        xmlStrlen(node->content) > MAX_CONTENT) {
+checkContent (xmlNodePtr node)
+{
+    if (node != NULL
+        && (node->type == XML_TEXT_NODE || node->type == XML_CDATA_SECTION_NODE
+            || node->type == XML_ENTITY_NODE || node->type == XML_PI_NODE
+            || node->type == XML_COMMENT_NODE
+            || node->type == XML_NOTATION_NODE)
+        && xmlStrlen(node->content) > MAX_CONTENT) {
         xmlNodeSetContent(node, NULL);
         node->content = uncheckedStrdup(BAD_CAST "");
     }
 }
 
 static int
-countNodes(xmlNodePtr node) {
+countNodes (xmlNodePtr node)
+{
     xmlNodePtr cur;
     int numNodes;
 
@@ -801,8 +816,7 @@ countNodes(xmlNodePtr node) {
     while (1) {
         numNodes += 1;
 
-        if (cur->children != NULL &&
-            cur->type != XML_ENTITY_REF_NODE) {
+        if (cur->children != NULL && cur->type != XML_ENTITY_REF_NODE) {
             cur = cur->children;
         } else {
             while (cur->next == NULL) {
@@ -819,14 +833,15 @@ done:
 }
 
 static xmlNodePtr
-checkCopy(xmlNodePtr copy) {
+checkCopy (xmlNodePtr copy)
+{
     vars->numCopyOps += 1;
 
-    if (copy != NULL &&
-        (vars->numCopyOps > MAX_COPY_OPS ||
-         countNodes(copy) > MAX_COPY_NODES)) {
-        if (copy->type == XML_DOCUMENT_NODE ||
-            copy->type == XML_HTML_DOCUMENT_NODE)
+    if (copy != NULL
+        && (vars->numCopyOps > MAX_COPY_OPS
+            || countNodes(copy) > MAX_COPY_NODES)) {
+        if (copy->type == XML_DOCUMENT_NODE
+            || copy->type == XML_HTML_DOCUMENT_NODE)
             xmlFreeDoc((xmlDocPtr) copy);
         else
             xmlFreeNode(copy);
@@ -842,7 +857,8 @@ checkCopy(xmlNodePtr copy) {
  * nodes.
  */
 static int
-fixNs(xmlNodePtr node) {
+fixNs (xmlNodePtr node)
+{
     if (node == NULL)
         return 0;
 
@@ -863,26 +879,34 @@ fixNs(xmlNodePtr node) {
 /* Node operations */
 
 static void
-opNodeAccessor(int op) {
+opNodeAccessor (int op)
+{
     xmlNodePtr node;
 
     switch (op) {
-        case OP_NODE_PARENT:
-            startOp("parent"); break;
-        case OP_NODE_NEXT_SIBLING:
-            startOp("next"); break;
-        case OP_NODE_PREV_SIBLING:
-            startOp("prev"); break;
-        case OP_NODE_FIRST_CHILD:
-            startOp("children"); break;
-        case OP_XML_GET_LAST_CHILD:
-            startOp("xmlGetLastChild"); break;
-        case OP_XML_GET_INT_SUBSET:
-            startOp("xmlGetIntSubset"); break;
-        case OP_XML_DOC_GET_ROOT_ELEMENT:
-            startOp("xmlDocGetRootElement"); break;
-        default:
-            break;
+    case OP_NODE_PARENT:
+        startOp("parent");
+        break;
+    case OP_NODE_NEXT_SIBLING:
+        startOp("next");
+        break;
+    case OP_NODE_PREV_SIBLING:
+        startOp("prev");
+        break;
+    case OP_NODE_FIRST_CHILD:
+        startOp("children");
+        break;
+    case OP_XML_GET_LAST_CHILD:
+        startOp("xmlGetLastChild");
+        break;
+    case OP_XML_GET_INT_SUBSET:
+        startOp("xmlGetIntSubset");
+        break;
+    case OP_XML_DOC_GET_ROOT_ELEMENT:
+        startOp("xmlDocGetRootElement");
+        break;
+    default:
+        break;
     }
 
     incNodeIdx();
@@ -890,22 +914,29 @@ opNodeAccessor(int op) {
 
     if (node != NULL) {
         switch (op) {
-            case OP_NODE_PARENT:
-                node = node->parent; break;
-            case OP_NODE_NEXT_SIBLING:
-                node = node->next; break;
-            case OP_NODE_PREV_SIBLING:
-                node = node->prev; break;
-            case OP_NODE_FIRST_CHILD:
-                node = node->children; break;
-            case OP_XML_GET_LAST_CHILD:
-                node = xmlGetLastChild(node); break;
-            case OP_XML_GET_INT_SUBSET:
-                node = (xmlNodePtr) xmlGetIntSubset(node->doc); break;
-            case OP_XML_DOC_GET_ROOT_ELEMENT:
-                node = xmlDocGetRootElement(node->doc); break;
-            default:
-                break;
+        case OP_NODE_PARENT:
+            node = node->parent;
+            break;
+        case OP_NODE_NEXT_SIBLING:
+            node = node->next;
+            break;
+        case OP_NODE_PREV_SIBLING:
+            node = node->prev;
+            break;
+        case OP_NODE_FIRST_CHILD:
+            node = node->children;
+            break;
+        case OP_XML_GET_LAST_CHILD:
+            node = xmlGetLastChild(node);
+            break;
+        case OP_XML_GET_INT_SUBSET:
+            node = (xmlNodePtr) xmlGetIntSubset(node->doc);
+            break;
+        case OP_XML_DOC_GET_ROOT_ELEMENT:
+            node = xmlDocGetRootElement(node->doc);
+            break;
+        default:
+            break;
         }
 
         /*
@@ -923,18 +954,22 @@ opNodeAccessor(int op) {
 }
 
 static void
-opDup(int op) {
+opDup (int op)
+{
     int offset;
 
     switch (op) {
-        case OP_DUP_INTEGER:
-            incIntIdx(); break;
-        case OP_DUP_STRING:
-            incStrIdx(); break;
-        case OP_DUP_NODE:
-            incNodeIdx(); break;
-        default:
-            break;
+    case OP_DUP_INTEGER:
+        incIntIdx();
+        break;
+    case OP_DUP_STRING:
+        incStrIdx();
+        break;
+    case OP_DUP_NODE:
+        incNodeIdx();
+        break;
+    default:
+        break;
     }
 
     offset = (xmlFuzzReadInt(1) + 1) & REG_MASK;
@@ -942,26 +977,26 @@ opDup(int op) {
     if (offset != 0) {
         startOp("dup");
         switch (op) {
-            case OP_DUP_INTEGER:
-                setInt(0, getInt(offset));
-                endOp();
-                break;
-            case OP_DUP_STRING:
-                copyStr(0, getStr(offset));
-                endOp();
-                break;
-            case OP_DUP_NODE:
-                setNode(0, getNode(offset));
-                break;
-            default:
-                break;
+        case OP_DUP_INTEGER:
+            setInt(0, getInt(offset));
+            endOp();
+            break;
+        case OP_DUP_STRING:
+            copyStr(0, getStr(offset));
+            endOp();
+            break;
+        case OP_DUP_NODE:
+            setNode(0, getNode(offset));
+            break;
+        default:
+            break;
         }
     }
 }
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -974,7 +1009,8 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     size_t failurePos;
     int i;
 
@@ -1012,24 +1048,24 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
         vars->opName = "[unset]";
 
         switch (op) {
-            case OP_CREATE_INTEGER:
-                incIntIdx();
-                setInt(0, (int) xmlFuzzReadInt(4));
-                break;
+        case OP_CREATE_INTEGER:
+            incIntIdx();
+            setInt(0, (int) xmlFuzzReadInt(4));
+            break;
 
-            case OP_CREATE_STRING:
-                incStrIdx();
-                copyStr(0, BAD_CAST xmlFuzzReadString(&readSize));
-                break;
+        case OP_CREATE_STRING:
+            incStrIdx();
+            copyStr(0, BAD_CAST xmlFuzzReadString(&readSize));
+            break;
 
-            case OP_DUP_INTEGER:
-            case OP_DUP_STRING:
-            case OP_DUP_NODE:
-                opDup(op);
-                break;
+        case OP_DUP_INTEGER:
+        case OP_DUP_STRING:
+        case OP_DUP_NODE:
+            opDup(op);
+            break;
 
-            case OP_PARSE_DOCUMENT:
-                /*
+        case OP_PARSE_DOCUMENT:
+            /*
                  * We don't really want to test the parser but exposing
                  * xmlReadDoc seems like a useful way generate or
                  * round-trip documents.
@@ -1037,2548 +1073,2282 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                  * This also creates documents with a dictionary which
                  * is crucial to hit some code paths.
                  */
-                startOp("xmlReadDoc");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlReadDoc(
-                    getStr(0),
-                    getCStr(1),
-                    getCStr(2),
-                    getInt(0)));
-                break;
+            startOp("xmlReadDoc");
+            incNodeIdx();
+            setNode(0,
+                    (xmlNodePtr) xmlReadDoc(getStr(0), getCStr(1), getCStr(2),
+                                            getInt(0)));
+            break;
 
-            case OP_XML_NEW_DOC: {
-                xmlDocPtr doc;
+        case OP_XML_NEW_DOC: {
+            xmlDocPtr doc;
 
-                /*
+            /*
                  * TODO: There's no public API function to generate a
                  * document with a dictionary. We should add an extra
                  * opcode that sets doc->dict.
                  */
-                startOp("xmlNewDoc");
-                incNodeIdx();
-                doc = xmlNewDoc(getStr(0));
-                oomReport = (doc == NULL);
-                setNode(0, (xmlNodePtr) doc);
-                break;
+            startOp("xmlNewDoc");
+            incNodeIdx();
+            doc = xmlNewDoc(getStr(0));
+            oomReport = (doc == NULL);
+            setNode(0, (xmlNodePtr) doc);
+            break;
+        }
+
+        case OP_XML_NEW_NODE: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewNode");
+            incNodeIdx();
+            node = xmlNewNode(nodeGetNs(getNode(1), getInt(0)),
+                              name = getStr(0));
+            oomReport = (name != NULL && node == NULL);
+            if (fixNs(node) < 0)
+                oomReport = 1;
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_NODE_EAT_NAME: {
+            xmlNodePtr node;
+            xmlChar *name;
+
+            startOp("xmlNewNodeEatName");
+            incNodeIdx();
+            node = xmlNewNodeEatName(nodeGetNs(getNode(1), getInt(0)),
+                                     name = uncheckedStrdup(getStr(0)));
+            oomReport = (name != NULL && node == NULL);
+            if (fixNs(node) < 0)
+                oomReport = 1;
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_NODE: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewDocNode");
+            incNodeIdx();
+            node = xmlNewDocNode(getDoc(1), nodeGetNs(getNode(2), getInt(0)),
+                                 name = getStr(0), getStr(1));
+            oomReport = (name != NULL && node == NULL);
+            if (fixNs(node) < 0)
+                oomReport = 1;
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_NODE_EAT_NAME: {
+            xmlNodePtr node;
+            xmlChar *name;
+
+            startOp("xmlNewDocNodeEatName");
+            incNodeIdx();
+            node = xmlNewDocNodeEatName(
+                getDoc(1), nodeGetNs(getNode(2), getInt(0)),
+                name = uncheckedStrdup(getStr(0)), getStr(1));
+            oomReport = (name != NULL && node == NULL);
+            if (fixNs(node) < 0)
+                oomReport = 1;
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_RAW_NODE: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewDocRawNode");
+            incNodeIdx();
+            node = xmlNewDocRawNode(getDoc(1), nodeGetNs(getNode(2), getInt(0)),
+                                    name = getStr(0), getStr(1));
+            oomReport = (name != NULL && node == NULL);
+            if (fixNs(node) < 0)
+                oomReport = 1;
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_CHILD: {
+            xmlNodePtr parent, node;
+            const xmlChar *name;
+
+            startOp("xmlNewChild");
+            incNodeIdx();
+            /* Use parent namespace without fixup */
+            node = xmlNewChild(parent = getNode(1),
+                               nodeGetNs(getNode(1), getInt(0)),
+                               name = getStr(0), getStr(1));
+            oomReport
+                = (parent != NULL && isValidChildType(parent, XML_ELEMENT_NODE)
+                   && name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_TEXT_CHILD: {
+            xmlNodePtr parent, node;
+            const xmlChar *name;
+
+            startOp("xmlNewTextChild");
+            incNodeIdx();
+            /* Use parent namespace without fixup */
+            node = xmlNewTextChild(parent = getNode(1),
+                                   nodeGetNs(getNode(1), getInt(0)),
+                                   name = getStr(0), getStr(1));
+            oomReport
+                = (parent != NULL && isValidChildType(parent, XML_ELEMENT_NODE)
+                   && name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_PROP: {
+            xmlNodePtr parent;
+            xmlAttrPtr attr;
+            const xmlChar *name;
+
+            startOp("xmlNewProp");
+            incNodeIdx();
+            attr = xmlNewProp(parent = getNode(1), name = getStr(0), getStr(1));
+            oomReport = ((parent == NULL || parent->type == XML_ELEMENT_NODE)
+                         && name != NULL && attr == NULL);
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_PROP: {
+            xmlAttrPtr attr;
+            const xmlChar *name;
+
+            startOp("xmlNewDocProp");
+            incNodeIdx();
+            attr = xmlNewDocProp(getDoc(1), name = getStr(0), getStr(1));
+            oomReport = (name != NULL && attr == NULL);
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
+
+        case OP_XML_NEW_NS_PROP: {
+            xmlAttrPtr attr;
+
+            startOp("xmlNewNsProp");
+            incNodeIdx();
+            attr = xmlNewNsProp(getNode(1), nodeGetNs(getNode(1), getInt(0)),
+                                getStr(0), getStr(1));
+            /* xmlNewNsProp returns NULL on duplicate prefixes. */
+            if (attr != NULL)
+                oomReport = 0;
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
+
+        case OP_XML_NEW_NS_PROP_EAT_NAME: {
+            xmlAttrPtr attr;
+
+            startOp("xmlNewNsPropEatName");
+            incNodeIdx();
+            attr = xmlNewNsPropEatName(getNode(1),
+                                       nodeGetNs(getNode(1), getInt(0)),
+                                       uncheckedStrdup(getStr(0)), getStr(1));
+            if (attr != NULL)
+                oomReport = 0;
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
+
+        case OP_XML_NEW_TEXT: {
+            xmlNodePtr node;
+
+            startOp("xmlNewText");
+            incNodeIdx();
+            node = xmlNewText(getStr(0));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_TEXT_LEN: {
+            xmlNodePtr node;
+            const xmlChar *text;
+
+            startOp("xmlNewTextLen");
+            incNodeIdx();
+            text = getStr(0);
+            node = xmlNewTextLen(text, xmlStrlen(text));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_TEXT: {
+            xmlNodePtr node;
+
+            startOp("xmlNewDocText");
+            incNodeIdx();
+            node = xmlNewDocText(getDoc(1), getStr(0));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_TEXT_LEN: {
+            xmlDocPtr doc;
+            xmlNodePtr node;
+            const xmlChar *text;
+
+            startOp("xmlNewDocTextLen");
+            incNodeIdx();
+            doc = getDoc(1);
+            text = getStr(0);
+            node = xmlNewDocTextLen(doc, text, xmlStrlen(text));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_PI: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewPI");
+            incNodeIdx();
+            node = xmlNewPI(name = getStr(0), getStr(1));
+            oomReport = (name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_PI: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewDocPI");
+            incNodeIdx();
+            node = xmlNewDocPI(getDoc(1), name = getStr(0), getStr(1));
+            oomReport = (name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_COMMENT: {
+            xmlNodePtr node;
+
+            startOp("xmlNewComment");
+            incNodeIdx();
+            node = xmlNewComment(getStr(0));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_COMMENT: {
+            xmlNodePtr node;
+
+            startOp("xmlNewDocComment");
+            incNodeIdx();
+            node = xmlNewDocComment(getDoc(1), getStr(0));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_CDATA_BLOCK: {
+            xmlDocPtr doc;
+            xmlNodePtr node;
+            const xmlChar *text;
+
+            startOp("xmlNewCDataBlock");
+            incNodeIdx();
+            doc = getDoc(1);
+            text = getStr(0);
+            node = xmlNewDocTextLen(doc, text, xmlStrlen(text));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_CHAR_REF: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewCharRef");
+            incNodeIdx();
+            node = xmlNewCharRef(getDoc(1), name = getStr(0));
+            oomReport = (name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_REFERENCE: {
+            xmlNodePtr node;
+            const xmlChar *name;
+
+            startOp("xmlNewReference");
+            incNodeIdx();
+            node = xmlNewReference(getDoc(1), name = getStr(0));
+            oomReport = (name != NULL && node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_NEW_DOC_FRAGMENT: {
+            xmlNodePtr node;
+
+            startOp("xmlNewDocFragment");
+            incNodeIdx();
+            node = xmlNewDocFragment(getDoc(1));
+            oomReport = (node == NULL);
+            setNode(0, node);
+            break;
+        }
+
+        case OP_XML_CREATE_INT_SUBSET: {
+            xmlDocPtr doc;
+            xmlDtdPtr dtd = NULL;
+
+            startOp("xmlCreateIntSubset");
+            incNodeIdx();
+            doc = getDoc(1);
+            if (doc == NULL || doc->intSubset == NULL) {
+                dtd = xmlCreateIntSubset(doc, getStr(0), getStr(1), getStr(2));
+                oomReport = (dtd == NULL);
             }
+            setNode(0, (xmlNodePtr) dtd);
+            break;
+        }
 
-            case OP_XML_NEW_NODE: {
-                xmlNodePtr node;
-                const xmlChar *name;
+        case OP_XML_NEW_DTD: {
+            xmlDocPtr doc;
+            xmlDtdPtr dtd = NULL;
 
-                startOp("xmlNewNode");
-                incNodeIdx();
-                node = xmlNewNode(
-                    nodeGetNs(getNode(1), getInt(0)),
-                    name = getStr(0));
-                oomReport = (name != NULL && node == NULL);
-                if (fixNs(node) < 0)
-                    oomReport = 1;
-                setNode(0, node);
-                break;
+            startOp("xmlNewDtd");
+            incNodeIdx();
+            doc = getDoc(1);
+            if (doc == NULL || doc->extSubset == NULL) {
+                dtd = xmlNewDtd(doc, getStr(0), getStr(1), getStr(2));
+                oomReport = (dtd == NULL);
             }
+            setNode(0, (xmlNodePtr) dtd);
+            break;
+        }
 
-            case OP_XML_NEW_NODE_EAT_NAME: {
-                xmlNodePtr node;
-                xmlChar *name;
+        case OP_XML_COPY_DOC: {
+            xmlDocPtr copy;
 
-                startOp("xmlNewNodeEatName");
-                incNodeIdx();
-                node = xmlNewNodeEatName(
-                    nodeGetNs(getNode(1), getInt(0)),
-                    name = uncheckedStrdup(getStr(0)));
-                oomReport = (name != NULL && node == NULL);
-                if (fixNs(node) < 0)
-                    oomReport = 1;
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_NODE: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewDocNode");
-                incNodeIdx();
-                node = xmlNewDocNode(
-                    getDoc(1),
-                    nodeGetNs(getNode(2), getInt(0)),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport = (name != NULL && node == NULL);
-                if (fixNs(node) < 0)
-                    oomReport = 1;
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_NODE_EAT_NAME: {
-                xmlNodePtr node;
-                xmlChar *name;
-
-                startOp("xmlNewDocNodeEatName");
-                incNodeIdx();
-                node = xmlNewDocNodeEatName(
-                    getDoc(1),
-                    nodeGetNs(getNode(2), getInt(0)),
-                    name = uncheckedStrdup(getStr(0)),
-                    getStr(1));
-                oomReport = (name != NULL && node == NULL);
-                if (fixNs(node) < 0)
-                    oomReport = 1;
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_RAW_NODE: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewDocRawNode");
-                incNodeIdx();
-                node = xmlNewDocRawNode(
-                    getDoc(1),
-                    nodeGetNs(getNode(2), getInt(0)),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport = (name != NULL && node == NULL);
-                if (fixNs(node) < 0)
-                    oomReport = 1;
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_CHILD: {
-                xmlNodePtr parent, node;
-                const xmlChar *name;
-
-                startOp("xmlNewChild");
-                incNodeIdx();
-                /* Use parent namespace without fixup */
-                node = xmlNewChild(
-                    parent = getNode(1),
-                    nodeGetNs(getNode(1), getInt(0)),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport =
-                    (parent != NULL &&
-                     isValidChildType(parent, XML_ELEMENT_NODE) &&
-                     name != NULL &&
-                     node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_TEXT_CHILD: {
-                xmlNodePtr parent, node;
-                const xmlChar *name;
-
-                startOp("xmlNewTextChild");
-                incNodeIdx();
-                /* Use parent namespace without fixup */
-                node = xmlNewTextChild(
-                    parent = getNode(1),
-                    nodeGetNs(getNode(1), getInt(0)),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport =
-                    (parent != NULL &&
-                     isValidChildType(parent, XML_ELEMENT_NODE) &&
-                     name != NULL &&
-                     node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_PROP: {
-                xmlNodePtr parent;
-                xmlAttrPtr attr;
-                const xmlChar *name;
-
-                startOp("xmlNewProp");
-                incNodeIdx();
-                attr = xmlNewProp(
-                    parent = getNode(1),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport =
-                    ((parent == NULL || parent->type == XML_ELEMENT_NODE) &&
-                     name != NULL &&
-                     attr == NULL);
-                setNode(0, (xmlNodePtr) attr);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_PROP: {
-                xmlAttrPtr attr;
-                const xmlChar *name;
-
-                startOp("xmlNewDocProp");
-                incNodeIdx();
-                attr = xmlNewDocProp(
-                    getDoc(1),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport = (name != NULL && attr == NULL);
-                setNode(0, (xmlNodePtr) attr);
-                break;
-            }
-
-            case OP_XML_NEW_NS_PROP: {
-                xmlAttrPtr attr;
-
-                startOp("xmlNewNsProp");
-                incNodeIdx();
-                attr = xmlNewNsProp(
-                    getNode(1),
-                    nodeGetNs(getNode(1), getInt(0)),
-                    getStr(0),
-                    getStr(1));
-                /* xmlNewNsProp returns NULL on duplicate prefixes. */
-                if (attr != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) attr);
-                break;
-            }
-
-            case OP_XML_NEW_NS_PROP_EAT_NAME: {
-                xmlAttrPtr attr;
-
-                startOp("xmlNewNsPropEatName");
-                incNodeIdx();
-                attr = xmlNewNsPropEatName(
-                    getNode(1),
-                    nodeGetNs(getNode(1), getInt(0)),
-                    uncheckedStrdup(getStr(0)),
-                    getStr(1));
-                if (attr != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) attr);
-                break;
-            }
-
-            case OP_XML_NEW_TEXT: {
-                xmlNodePtr node;
-
-                startOp("xmlNewText");
-                incNodeIdx();
-                node = xmlNewText(getStr(0));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_TEXT_LEN: {
-                xmlNodePtr node;
-                const xmlChar *text;
-
-                startOp("xmlNewTextLen");
-                incNodeIdx();
-                text = getStr(0);
-                node = xmlNewTextLen(text, xmlStrlen(text));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_TEXT: {
-                xmlNodePtr node;
-
-                startOp("xmlNewDocText");
-                incNodeIdx();
-                node = xmlNewDocText(getDoc(1), getStr(0));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_TEXT_LEN: {
-                xmlDocPtr doc;
-                xmlNodePtr node;
-                const xmlChar *text;
-
-                startOp("xmlNewDocTextLen");
-                incNodeIdx();
-                doc = getDoc(1);
-                text = getStr(0);
-                node = xmlNewDocTextLen(doc, text, xmlStrlen(text));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_PI: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewPI");
-                incNodeIdx();
-                node = xmlNewPI(
-                    name = getStr(0),
-                    getStr(1));
-                oomReport = (name != NULL && node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_PI: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewDocPI");
-                incNodeIdx();
-                node = xmlNewDocPI(
-                    getDoc(1),
-                    name = getStr(0),
-                    getStr(1));
-                oomReport = (name != NULL && node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_COMMENT: {
-                xmlNodePtr node;
-
-                startOp("xmlNewComment");
-                incNodeIdx();
-                node = xmlNewComment(getStr(0));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_COMMENT: {
-                xmlNodePtr node;
-
-                startOp("xmlNewDocComment");
-                incNodeIdx();
-                node = xmlNewDocComment(
-                    getDoc(1),
-                    getStr(0));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_CDATA_BLOCK: {
-                xmlDocPtr doc;
-                xmlNodePtr node;
-                const xmlChar *text;
-
-                startOp("xmlNewCDataBlock");
-                incNodeIdx();
-                doc = getDoc(1);
-                text = getStr(0);
-                node = xmlNewDocTextLen(
-                    doc,
-                    text,
-                    xmlStrlen(text));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_CHAR_REF: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewCharRef");
-                incNodeIdx();
-                node = xmlNewCharRef(
-                    getDoc(1),
-                    name = getStr(0));
-                oomReport = (name != NULL && node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_REFERENCE: {
-                xmlNodePtr node;
-                const xmlChar *name;
-
-                startOp("xmlNewReference");
-                incNodeIdx();
-                node = xmlNewReference(
-                    getDoc(1),
-                    name = getStr(0));
-                oomReport = (name != NULL && node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_NEW_DOC_FRAGMENT: {
-                xmlNodePtr node;
-
-                startOp("xmlNewDocFragment");
-                incNodeIdx();
-                node = xmlNewDocFragment(getDoc(1));
-                oomReport = (node == NULL);
-                setNode(0, node);
-                break;
-            }
-
-            case OP_XML_CREATE_INT_SUBSET: {
-                xmlDocPtr doc;
-                xmlDtdPtr dtd = NULL;
-
-                startOp("xmlCreateIntSubset");
-                incNodeIdx();
-                doc = getDoc(1);
-                if (doc == NULL || doc->intSubset == NULL) {
-                    dtd = xmlCreateIntSubset(
-                        doc,
-                        getStr(0),
-                        getStr(1),
-                        getStr(2));
-                    oomReport = (dtd == NULL);
-                }
-                setNode(0, (xmlNodePtr) dtd);
-                break;
-            }
-
-            case OP_XML_NEW_DTD: {
-                xmlDocPtr doc;
-                xmlDtdPtr dtd = NULL;
-
-                startOp("xmlNewDtd");
-                incNodeIdx();
-                doc = getDoc(1);
-                if (doc == NULL || doc->extSubset == NULL) {
-                    dtd = xmlNewDtd(
-                        doc,
-                        getStr(0),
-                        getStr(1),
-                        getStr(2));
-                    oomReport = (dtd == NULL);
-                }
-                setNode(0, (xmlNodePtr) dtd);
-                break;
-            }
-
-            case OP_XML_COPY_DOC: {
-                xmlDocPtr copy;
-
-                startOp("xmlCopyDoc");
-                incNodeIdx();
-                copy = xmlCopyDoc(
-                    getDoc(1),
-                    getInt(0));
-                /*
+            startOp("xmlCopyDoc");
+            incNodeIdx();
+            copy = xmlCopyDoc(getDoc(1), getInt(0));
+            /*
                  * TODO: Copying DTD nodes without a document can
                  * result in an empty list.
                  */
-                if (copy != NULL)
-                    oomReport = 0;
-                setNode(0, checkCopy((xmlNodePtr) copy));
-                break;
-            }
+            if (copy != NULL)
+                oomReport = 0;
+            setNode(0, checkCopy((xmlNodePtr) copy));
+            break;
+        }
 
-            case OP_XML_COPY_NODE: {
-                xmlNodePtr copy;
+        case OP_XML_COPY_NODE: {
+            xmlNodePtr copy;
 
-                startOp("xmlCopyNode");
-                incNodeIdx();
-                copy = xmlCopyNode(
-                    getNode(1),
-                    getInt(0));
-                if (copy != NULL)
-                    oomReport = 0;
-                setNode(0, checkCopy((xmlNodePtr) copy));
-                break;
-            }
+            startOp("xmlCopyNode");
+            incNodeIdx();
+            copy = xmlCopyNode(getNode(1), getInt(0));
+            if (copy != NULL)
+                oomReport = 0;
+            setNode(0, checkCopy((xmlNodePtr) copy));
+            break;
+        }
 
-            case OP_XML_COPY_NODE_LIST: {
-                xmlNodePtr copy;
+        case OP_XML_COPY_NODE_LIST: {
+            xmlNodePtr copy;
 
-                startOp("xmlCopyNodeList");
-                copy = xmlCopyNodeList(getNode(0));
-                if (copy != NULL)
-                    oomReport = 0;
-                xmlFreeNodeList(copy);
-                endOp();
-                break;
-            }
+            startOp("xmlCopyNodeList");
+            copy = xmlCopyNodeList(getNode(0));
+            if (copy != NULL)
+                oomReport = 0;
+            xmlFreeNodeList(copy);
+            endOp();
+            break;
+        }
 
-            case OP_XML_DOC_COPY_NODE: {
-                xmlNodePtr node, copy;
-                xmlDocPtr doc;
+        case OP_XML_DOC_COPY_NODE: {
+            xmlNodePtr node, copy;
+            xmlDocPtr doc;
 
-                startOp("xmlDocCopyNode");
-                incNodeIdx();
-                copy = xmlDocCopyNode(
-                    node = getNode(1),
-                    doc = getDoc(2),
-                    getInt(0));
-                if (copy != NULL)
-                    oomReport = 0;
-                setNode(0, checkCopy((xmlNodePtr) copy));
-                break;
-            }
+            startOp("xmlDocCopyNode");
+            incNodeIdx();
+            copy
+                = xmlDocCopyNode(node = getNode(1), doc = getDoc(2), getInt(0));
+            if (copy != NULL)
+                oomReport = 0;
+            setNode(0, checkCopy((xmlNodePtr) copy));
+            break;
+        }
 
-            case OP_XML_DOC_COPY_NODE_LIST: {
-                xmlNodePtr copy;
+        case OP_XML_DOC_COPY_NODE_LIST: {
+            xmlNodePtr copy;
 
-                startOp("xmlDocCopyNodeList");
-                copy = xmlDocCopyNodeList(
-                    getDoc(0),
-                    getNode(1));
-                if (copy != NULL)
-                    oomReport = 0;
-                xmlFreeNodeList(copy);
-                endOp();
-                break;
-            }
+            startOp("xmlDocCopyNodeList");
+            copy = xmlDocCopyNodeList(getDoc(0), getNode(1));
+            if (copy != NULL)
+                oomReport = 0;
+            xmlFreeNodeList(copy);
+            endOp();
+            break;
+        }
 
-            case OP_XML_COPY_PROP: {
-                xmlAttrPtr copy;
+        case OP_XML_COPY_PROP: {
+            xmlAttrPtr copy;
 
-                startOp("xmlCopyProp");
-                incNodeIdx();
-                copy = xmlCopyProp(
-                    getNode(1),
-                    getAttr(2));
-                /*
+            startOp("xmlCopyProp");
+            incNodeIdx();
+            copy = xmlCopyProp(getNode(1), getAttr(2));
+            /*
                  * TODO: Copying attributes can result in an empty list
                  * if there's a duplicate namespace prefix.
                  */
-                if (copy != NULL)
-                    oomReport = 0;
-                if (copy != NULL) {
-                    /* Quirk */
-                    copy->parent = NULL;
-                    /* Fix namespace */
-                    copy->ns = NULL;
-                }
-                setNode(0, checkCopy((xmlNodePtr) copy));
-                break;
-            }
-
-            case OP_XML_COPY_PROP_LIST: {
-                xmlAttrPtr copy;
-
-                startOp("xmlCopyPropList");
-                copy = xmlCopyPropList(
-                    getNode(0),
-                    getAttr(1));
-                if (copy != NULL)
-                    oomReport = 0;
-                xmlFreePropList(copy);
-                endOp();
-                break;
-            }
-
-            case OP_XML_COPY_DTD: {
-                xmlDtdPtr dtd, copy;
-
-                startOp("xmlCopyDtd");
-                incNodeIdx();
-                copy = xmlCopyDtd(
-                    dtd = getDtd(1));
-                oomReport = (dtd != NULL && copy == NULL);
-                setNode(0, checkCopy((xmlNodePtr) copy));
-                break;
-            }
-
-            case OP_NODE_PARENT:
-            case OP_NODE_NEXT_SIBLING:
-            case OP_NODE_PREV_SIBLING:
-            case OP_NODE_FIRST_CHILD:
-            case OP_XML_GET_LAST_CHILD:
-            case OP_XML_GET_INT_SUBSET:
-            case OP_XML_DOC_GET_ROOT_ELEMENT:
-                opNodeAccessor(op);
+            if (copy != NULL)
                 oomReport = 0;
-                break;
+            if (copy != NULL) {
+                /* Quirk */
+                copy->parent = NULL;
+                /* Fix namespace */
+                copy->ns = NULL;
+            }
+            setNode(0, checkCopy((xmlNodePtr) copy));
+            break;
+        }
 
-            case OP_NODE_NAME: {
-                xmlNodePtr node;
+        case OP_XML_COPY_PROP_LIST: {
+            xmlAttrPtr copy;
 
-                startOp("name");
-                incStrIdx();
-                node = getNode(0);
-                copyStr(0, node ? node->name : NULL);
+            startOp("xmlCopyPropList");
+            copy = xmlCopyPropList(getNode(0), getAttr(1));
+            if (copy != NULL)
                 oomReport = 0;
-                endOp();
-                break;
-            }
+            xmlFreePropList(copy);
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_SET_NAME:
-                startOp("xmlNodeSetName");
-                xmlNodeSetName(
-                    getNode(0),
-                    getStr(0));
-                endOp();
-                break;
+        case OP_XML_COPY_DTD: {
+            xmlDtdPtr dtd, copy;
 
-            case OP_XML_NODE_GET_CONTENT: {
-                xmlChar *content;
+            startOp("xmlCopyDtd");
+            incNodeIdx();
+            copy = xmlCopyDtd(dtd = getDtd(1));
+            oomReport = (dtd != NULL && copy == NULL);
+            setNode(0, checkCopy((xmlNodePtr) copy));
+            break;
+        }
 
-                incStrIdx();
-                startOp("xmlNodeGetContent");
-                content = xmlNodeGetContent(getNode(0));
-                if (content != NULL)
-                    oomReport = 0;
-                moveStr(0, content);
-                endOp();
-                break;
-            }
+        case OP_NODE_PARENT:
+        case OP_NODE_NEXT_SIBLING:
+        case OP_NODE_PREV_SIBLING:
+        case OP_NODE_FIRST_CHILD:
+        case OP_XML_GET_LAST_CHILD:
+        case OP_XML_GET_INT_SUBSET:
+        case OP_XML_DOC_GET_ROOT_ELEMENT:
+            opNodeAccessor(op);
+            oomReport = 0;
+            break;
 
-            case OP_XML_NODE_SET_CONTENT: {
-                xmlNodePtr node;
-                int res;
+        case OP_NODE_NAME: {
+            xmlNodePtr node;
 
-                startOp("xmlNodeSetContent");
-                node = getNode(0);
-                removeChildren(node, 0);
-                res = xmlNodeSetContent(
-                    node,
-                    getStr(0));
-                oomReport = (res < 0);
-                endOp();
-                break;
-            }
+            startOp("name");
+            incStrIdx();
+            node = getNode(0);
+            copyStr(0, node ? node->name : NULL);
+            oomReport = 0;
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_SET_CONTENT_LEN: {
-                xmlNodePtr node;
-                const xmlChar *content;
-                int res;
+        case OP_XML_NODE_SET_NAME:
+            startOp("xmlNodeSetName");
+            xmlNodeSetName(getNode(0), getStr(0));
+            endOp();
+            break;
 
-                startOp("xmlNodeSetContentLen");
-                node = getNode(0);
-                content = getStr(0);
-                removeChildren(node, 0);
-                res = xmlNodeSetContentLen(
-                    node,
-                    content,
-                    xmlStrlen(content));
-                oomReport = (res < 0);
-                endOp();
-                break;
-            }
+        case OP_XML_NODE_GET_CONTENT: {
+            xmlChar *content;
 
-            case OP_XML_NODE_ADD_CONTENT: {
-                xmlNodePtr node, text;
-                int res;
-
-                startOp("xmlNodeAddContent");
-                node = getNode(0);
-                res = xmlNodeAddContent(
-                    node,
-                    getStr(0));
-                oomReport = (res < 0);
-                if (node != NULL) {
-                    if (node->type == XML_ELEMENT_NODE ||
-                        node->type == XML_DOCUMENT_FRAG_NODE)
-                        text = node->last;
-                    else
-                        text = node;
-                    checkContent(text);
-                }
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_ADD_CONTENT_LEN: {
-                xmlNodePtr node, text;
-                const xmlChar *content;
-                int res;
-
-                startOp("xmlNodeAddContentLen");
-                node = getNode(0);
-                content = getStr(0);
-                res = xmlNodeAddContentLen(
-                    node,
-                    content,
-                    xmlStrlen(content));
-                oomReport = res < 0;
-                if (node != NULL) {
-                    if (node->type == XML_ELEMENT_NODE ||
-                        node->type == XML_DOCUMENT_FRAG_NODE)
-                        text = node->last;
-                    else
-                        text = node;
-                    checkContent(text);
-                }
-                endOp();
-                break;
-            }
-
-            case OP_XML_GET_LINE_NO:
-                incIntIdx();
-                startOp("xmlGetLineNo");
-                setInt(0, xmlGetLineNo(getNode(0)));
+            incStrIdx();
+            startOp("xmlNodeGetContent");
+            content = xmlNodeGetContent(getNode(0));
+            if (content != NULL)
                 oomReport = 0;
-                endOp();
-                break;
+            moveStr(0, content);
+            endOp();
+            break;
+        }
 
-            case OP_XML_GET_NODE_PATH: {
-                xmlChar *path;
+        case OP_XML_NODE_SET_CONTENT: {
+            xmlNodePtr node;
+            int res;
 
-                incStrIdx();
-                startOp("xmlGetNodePath");
-                path = xmlGetNodePath(getNode(0));
-                if (path != NULL)
-                    oomReport = 0;
-                moveStr(0, path);
-                endOp();
-                break;
+            startOp("xmlNodeSetContent");
+            node = getNode(0);
+            removeChildren(node, 0);
+            res = xmlNodeSetContent(node, getStr(0));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_SET_CONTENT_LEN: {
+            xmlNodePtr node;
+            const xmlChar *content;
+            int res;
+
+            startOp("xmlNodeSetContentLen");
+            node = getNode(0);
+            content = getStr(0);
+            removeChildren(node, 0);
+            res = xmlNodeSetContentLen(node, content, xmlStrlen(content));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_ADD_CONTENT: {
+            xmlNodePtr node, text;
+            int res;
+
+            startOp("xmlNodeAddContent");
+            node = getNode(0);
+            res = xmlNodeAddContent(node, getStr(0));
+            oomReport = (res < 0);
+            if (node != NULL) {
+                if (node->type == XML_ELEMENT_NODE
+                    || node->type == XML_DOCUMENT_FRAG_NODE)
+                    text = node->last;
+                else
+                    text = node;
+                checkContent(text);
             }
+            endOp();
+            break;
+        }
 
-            case OP_XML_DOC_SET_ROOT_ELEMENT: {
-                xmlDocPtr oldDoc, doc;
-                xmlNodePtr oldRoot, oldParent, root;
+        case OP_XML_NODE_ADD_CONTENT_LEN: {
+            xmlNodePtr node, text;
+            const xmlChar *content;
+            int res;
 
-                startOp("xmlDocSetRootElement");
-                incNodeIdx();
-                doc = getDoc(1);
-                root = getNode(2);
-                if (doc != NULL && doc->parent != NULL)
-                    doc = NULL;
-                if (!isValidChild((xmlNodePtr) doc, root))
-                    root = NULL;
-                oldDoc = root ? root->doc : NULL;
-                oldParent = root ? root->parent : NULL;
-
-                oldRoot = xmlDocSetRootElement(doc, root);
-                /* We can't really know whether xmlSetTreeDoc failed */
-                if (oldRoot != NULL ||
-                    root == NULL ||
-                    root->doc == oldDoc)
-                    oomReport = 0;
-                setNode(0, oldRoot);
-
-                if (root &&
-                    (root->parent != oldParent ||
-                     root->doc != oldDoc)) {
-                    if (fixNs(root) < 0)
-                        oomReport = 1;
-                    if (oldParent != NULL)
-                        dropNode(oldParent);
-                    else
-                        dropNode((xmlNodePtr) oldDoc);
-                }
-                endOp();
-                break;
+            startOp("xmlNodeAddContentLen");
+            node = getNode(0);
+            content = getStr(0);
+            res = xmlNodeAddContentLen(node, content, xmlStrlen(content));
+            oomReport = res < 0;
+            if (node != NULL) {
+                if (node->type == XML_ELEMENT_NODE
+                    || node->type == XML_DOCUMENT_FRAG_NODE)
+                    text = node->last;
+                else
+                    text = node;
+                checkContent(text);
             }
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_IS_TEXT:
-                incIntIdx();
-                startOp("xmlNodeIsText");
-                setInt(0, xmlNodeIsText(getNode(0)));
+        case OP_XML_GET_LINE_NO:
+            incIntIdx();
+            startOp("xmlGetLineNo");
+            setInt(0, xmlGetLineNo(getNode(0)));
+            oomReport = 0;
+            endOp();
+            break;
+
+        case OP_XML_GET_NODE_PATH: {
+            xmlChar *path;
+
+            incStrIdx();
+            startOp("xmlGetNodePath");
+            path = xmlGetNodePath(getNode(0));
+            if (path != NULL)
                 oomReport = 0;
-                endOp();
-                break;
+            moveStr(0, path);
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_GET_ATTR_VALUE: {
-                xmlChar *value = NULL;
-                int res;
+        case OP_XML_DOC_SET_ROOT_ELEMENT: {
+            xmlDocPtr oldDoc, doc;
+            xmlNodePtr oldRoot, oldParent, root;
 
-                incStrIdx();
-                startOp("xmlNodeGetAttrValue");
-                res = xmlNodeGetAttrValue(
-                    getNode(0),
-                    getStr(1),
-                    getStr(2),
-                    &value);
-                oomReport = (res < 0);
-                moveStr(0, value);
-                endOp();
-                break;
-            }
+            startOp("xmlDocSetRootElement");
+            incNodeIdx();
+            doc = getDoc(1);
+            root = getNode(2);
+            if (doc != NULL && doc->parent != NULL)
+                doc = NULL;
+            if (!isValidChild((xmlNodePtr) doc, root))
+                root = NULL;
+            oldDoc = root ? root->doc : NULL;
+            oldParent = root ? root->parent : NULL;
 
-            case OP_XML_NODE_GET_LANG: {
-                xmlChar *lang;
-
-                incStrIdx();
-                startOp("xmlNodeGetLang");
-                lang = xmlNodeGetLang(getNode(0));
-                if (lang != NULL)
-                    oomReport = 0;
-                moveStr(0, lang);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_SET_LANG: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
-                int res;
-
-                startOp("xmlNodeSetLang");
-                node = getNode(0);
-                attr = xmlHasNsProp(
-                    node,
-                    BAD_CAST "lang",
-                    XML_XML_NAMESPACE);
-                xmlFuzzResetFailure();
-                removeChildren((xmlNodePtr) attr, 0);
-                res = xmlNodeSetLang(
-                    node,
-                    getStr(0));
-                oomReport = (res < 0);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_GET_SPACE_PRESERVE: {
-                int res;
-
-                incIntIdx();
-                startOp("xmlNodeGetSpacePreserve");
-                res = xmlNodeGetSpacePreserve(getNode(0));
-                if (res >= 0)
-                    oomReport = 0;
-                setInt(0, res);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_SET_SPACE_PRESERVE: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
-                int res;
-
-                startOp("xmlNodeSetSpacePreserve");
-                node = getNode(0);
-                attr = xmlHasNsProp(
-                    node,
-                    BAD_CAST "space",
-                    XML_XML_NAMESPACE);
-                xmlFuzzResetFailure();
-                removeChildren((xmlNodePtr) attr, 0);
-                res = xmlNodeSetSpacePreserve(
-                    node,
-                    getInt(0));
-                oomReport = (res < 0);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_GET_BASE: {
-                xmlChar *base;
-
-                incStrIdx();
-                startOp("xmlNodeGetBase");
-                base = xmlNodeGetBase(
-                    getDoc(0),
-                    getNode(1));
-                if (base != NULL)
-                    oomReport = 0;
-                moveStr(0, base);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_GET_BASE_SAFE: {
-                xmlChar *base;
-                int res;
-
-                startOp("xmlNodeGetBaseSafe");
-                incStrIdx();
-                res = xmlNodeGetBaseSafe(
-                    getDoc(0),
-                    getNode(1),
-                    &base);
-                oomReport = (res < 0);
-                moveStr(0, base);
-                endOp();
-                break;
-            }
-
-            case OP_XML_NODE_SET_BASE: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
-                int res;
-
-                startOp("xmlNodeSetBase");
-                node = getNode(0);
-                attr = xmlHasNsProp(
-                    node,
-                    BAD_CAST "base",
-                    XML_XML_NAMESPACE);
-                xmlFuzzResetFailure();
-                removeChildren((xmlNodePtr) attr, 0);
-                res = xmlNodeSetBase(
-                    node,
-                    getStr(0));
-                if (res == 0)
-                    oomReport = 0;
-                endOp();
-                break;
-            }
-
-            case OP_XML_IS_BLANK_NODE:
-                startOp("xmlIsBlankNode");
-                incNodeIdx();
-                setInt(0, xmlIsBlankNode(getNode(0)));
+            oldRoot = xmlDocSetRootElement(doc, root);
+            /* We can't really know whether xmlSetTreeDoc failed */
+            if (oldRoot != NULL || root == NULL || root->doc == oldDoc)
                 oomReport = 0;
-                break;
+            setNode(0, oldRoot);
 
-            case OP_XML_HAS_PROP: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
+            if (root && (root->parent != oldParent || root->doc != oldDoc)) {
+                if (fixNs(root) < 0)
+                    oomReport = 1;
+                if (oldParent != NULL)
+                    dropNode(oldParent);
+                else
+                    dropNode((xmlNodePtr) oldDoc);
+            }
+            endOp();
+            break;
+        }
 
-                startOp("xmlHasProp");
-                incNodeIdx();
-                attr = xmlHasProp(
-                    node = getNode(1),
-                    getStr(0));
-                if (node != NULL &&
-                    node->doc != NULL &&
-                    node->doc->intSubset != NULL) {
-                    /*
+        case OP_XML_NODE_IS_TEXT:
+            incIntIdx();
+            startOp("xmlNodeIsText");
+            setInt(0, xmlNodeIsText(getNode(0)));
+            oomReport = 0;
+            endOp();
+            break;
+
+        case OP_XML_NODE_GET_ATTR_VALUE: {
+            xmlChar *value = NULL;
+            int res;
+
+            incStrIdx();
+            startOp("xmlNodeGetAttrValue");
+            res = xmlNodeGetAttrValue(getNode(0), getStr(1), getStr(2), &value);
+            oomReport = (res < 0);
+            moveStr(0, value);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_GET_LANG: {
+            xmlChar *lang;
+
+            incStrIdx();
+            startOp("xmlNodeGetLang");
+            lang = xmlNodeGetLang(getNode(0));
+            if (lang != NULL)
+                oomReport = 0;
+            moveStr(0, lang);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_SET_LANG: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
+            int res;
+
+            startOp("xmlNodeSetLang");
+            node = getNode(0);
+            attr = xmlHasNsProp(node, BAD_CAST "lang", XML_XML_NAMESPACE);
+            xmlFuzzResetFailure();
+            removeChildren((xmlNodePtr) attr, 0);
+            res = xmlNodeSetLang(node, getStr(0));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_GET_SPACE_PRESERVE: {
+            int res;
+
+            incIntIdx();
+            startOp("xmlNodeGetSpacePreserve");
+            res = xmlNodeGetSpacePreserve(getNode(0));
+            if (res >= 0)
+                oomReport = 0;
+            setInt(0, res);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_SET_SPACE_PRESERVE: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
+            int res;
+
+            startOp("xmlNodeSetSpacePreserve");
+            node = getNode(0);
+            attr = xmlHasNsProp(node, BAD_CAST "space", XML_XML_NAMESPACE);
+            xmlFuzzResetFailure();
+            removeChildren((xmlNodePtr) attr, 0);
+            res = xmlNodeSetSpacePreserve(node, getInt(0));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_GET_BASE: {
+            xmlChar *base;
+
+            incStrIdx();
+            startOp("xmlNodeGetBase");
+            base = xmlNodeGetBase(getDoc(0), getNode(1));
+            if (base != NULL)
+                oomReport = 0;
+            moveStr(0, base);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_GET_BASE_SAFE: {
+            xmlChar *base;
+            int res;
+
+            startOp("xmlNodeGetBaseSafe");
+            incStrIdx();
+            res = xmlNodeGetBaseSafe(getDoc(0), getNode(1), &base);
+            oomReport = (res < 0);
+            moveStr(0, base);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_SET_BASE: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
+            int res;
+
+            startOp("xmlNodeSetBase");
+            node = getNode(0);
+            attr = xmlHasNsProp(node, BAD_CAST "base", XML_XML_NAMESPACE);
+            xmlFuzzResetFailure();
+            removeChildren((xmlNodePtr) attr, 0);
+            res = xmlNodeSetBase(node, getStr(0));
+            if (res == 0)
+                oomReport = 0;
+            endOp();
+            break;
+        }
+
+        case OP_XML_IS_BLANK_NODE:
+            startOp("xmlIsBlankNode");
+            incNodeIdx();
+            setInt(0, xmlIsBlankNode(getNode(0)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_HAS_PROP: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
+
+            startOp("xmlHasProp");
+            incNodeIdx();
+            attr = xmlHasProp(node = getNode(1), getStr(0));
+            if (node != NULL && node->doc != NULL
+                && node->doc->intSubset != NULL) {
+                /*
                      * xmlHasProp tries to look up default attributes,
                      * requiring a memory allocation which isn't
                      * checked.
                      */
-                    if (attr != NULL)
-                        oomReport = 0;
-                } else {
+                if (attr != NULL)
                     oomReport = 0;
-                }
-                setNode(0, (xmlNodePtr) attr);
-                break;
+            } else {
+                oomReport = 0;
             }
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
 
-            case OP_XML_HAS_NS_PROP: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
+        case OP_XML_HAS_NS_PROP: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
 
-                startOp("xmlHasNsProp");
-                incNodeIdx();
-                attr = xmlHasNsProp(
-                    node = getNode(1),
-                    getStr(0),
-                    getStr(1));
-                if (node != NULL &&
-                    node->doc != NULL &&
-                    node->doc->intSubset != NULL) {
-                    if (attr != NULL)
-                        oomReport = 0;
-                } else {
+            startOp("xmlHasNsProp");
+            incNodeIdx();
+            attr = xmlHasNsProp(node = getNode(1), getStr(0), getStr(1));
+            if (node != NULL && node->doc != NULL
+                && node->doc->intSubset != NULL) {
+                if (attr != NULL)
                     oomReport = 0;
-                }
-                setNode(0, (xmlNodePtr) attr);
-                break;
+            } else {
+                oomReport = 0;
             }
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
 
-            case OP_XML_GET_PROP: {
-                xmlChar *content;
+        case OP_XML_GET_PROP: {
+            xmlChar *content;
 
-                startOp("xmlGetProp");
-                incStrIdx();
-                content = xmlGetProp(
-                    getNode(0),
-                    getStr(1));
-                if (content != NULL)
-                    oomReport = 0;
-                moveStr(0, content);
-                endOp();
-                break;
-            }
+            startOp("xmlGetProp");
+            incStrIdx();
+            content = xmlGetProp(getNode(0), getStr(1));
+            if (content != NULL)
+                oomReport = 0;
+            moveStr(0, content);
+            endOp();
+            break;
+        }
 
-            case OP_XML_GET_NS_PROP: {
-                xmlChar *content;
+        case OP_XML_GET_NS_PROP: {
+            xmlChar *content;
 
-                startOp("xmlGetNsProp");
-                incStrIdx();
-                content = xmlGetNsProp(
-                    getNode(0),
-                    getStr(1),
-                    getStr(2));
-                if (content != NULL)
-                    oomReport = 0;
-                moveStr(0, content);
-                endOp();
-                break;
-            }
+            startOp("xmlGetNsProp");
+            incStrIdx();
+            content = xmlGetNsProp(getNode(0), getStr(1), getStr(2));
+            if (content != NULL)
+                oomReport = 0;
+            moveStr(0, content);
+            endOp();
+            break;
+        }
 
-            case OP_XML_GET_NO_NS_PROP: {
-                xmlChar *content;
+        case OP_XML_GET_NO_NS_PROP: {
+            xmlChar *content;
 
-                startOp("xmlGetNoNsProp");
-                incStrIdx();
-                content = xmlGetNoNsProp(
-                    getNode(0),
-                    getStr(1));
-                if (content != NULL)
-                    oomReport = 0;
-                moveStr(0, content);
-                endOp();
-                break;
-            }
+            startOp("xmlGetNoNsProp");
+            incStrIdx();
+            content = xmlGetNoNsProp(getNode(0), getStr(1));
+            if (content != NULL)
+                oomReport = 0;
+            moveStr(0, content);
+            endOp();
+            break;
+        }
 
-            case OP_XML_SET_PROP: {
-                xmlNodePtr node;
-                xmlAttrPtr oldAttr, attr;
-                xmlNsPtr ns = NULL;
-                const xmlChar *name, *value, *localName;
-                xmlChar *prefix;
-                int prefixLen;
+        case OP_XML_SET_PROP: {
+            xmlNodePtr node;
+            xmlAttrPtr oldAttr, attr;
+            xmlNsPtr ns = NULL;
+            const xmlChar *name, *value, *localName;
+            xmlChar *prefix;
+            int prefixLen;
 
-                startOp("xmlSetProp");
-                incNodeIdx();
-                node = getNode(1);
-                name = getStr(0);
-                value = getStr(1);
+            startOp("xmlSetProp");
+            incNodeIdx();
+            node = getNode(1);
+            name = getStr(0);
+            value = getStr(1);
 
-                /*
+            /*
                  * Find the old attribute node which will be deleted.
                  */
-                localName = xmlSplitQName3(name, &prefixLen);
-                if (localName != NULL) {
-                    prefix = uncheckedStrndup(name, prefixLen);
-                    ns = xmlSearchNs(NULL, node, prefix);
-                    xmlFree(prefix);
-                }
-                if (ns == NULL)
-                    oldAttr = xmlHasNsProp(node, name, NULL);
+            localName = xmlSplitQName3(name, &prefixLen);
+            if (localName != NULL) {
+                prefix = uncheckedStrndup(name, prefixLen);
+                ns = xmlSearchNs(NULL, node, prefix);
+                xmlFree(prefix);
+            }
+            if (ns == NULL)
+                oldAttr = xmlHasNsProp(node, name, NULL);
+            else
+                oldAttr = xmlHasNsProp(node, localName, ns->href);
+            xmlFuzzResetFailure();
+            if (oldAttr != NULL)
+                removeChildren((xmlNodePtr) oldAttr, 0);
+
+            attr = xmlSetProp(node, name, value);
+
+            oomReport = (node != NULL && node->type == XML_ELEMENT_NODE
+                         && name != NULL && attr == NULL);
+            setNode(0, (xmlNodePtr) attr);
+            break;
+        }
+
+        case OP_XML_SET_NS_PROP: {
+            xmlNodePtr node;
+            xmlNsPtr ns;
+            xmlAttrPtr oldAttr, attr;
+            const xmlChar *name, *value;
+
+            startOp("xmlSetNsProp");
+            incNodeIdx();
+            node = getNode(1);
+            ns = nodeGetNs(getNode(2), getInt(0));
+            name = getStr(0);
+            value = getStr(1);
+            oldAttr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
+            xmlFuzzResetFailure();
+            if (oldAttr != NULL)
+                removeChildren((xmlNodePtr) oldAttr, 0);
+            attr = xmlSetNsProp(node, ns, name, value);
+            oomReport = ((node == NULL || node->type == XML_ELEMENT_NODE)
+                         && (ns == NULL || ns->href != NULL) && name != NULL
+                         && attr == NULL);
+            setNode(0, (xmlNodePtr) attr);
+            if (ns != NULL) {
+                if (fixNs((xmlNodePtr) attr) < 0)
+                    oomReport = 1;
+            }
+            break;
+        }
+
+        case OP_XML_REMOVE_PROP: {
+            xmlNodePtr attr, parent = NULL;
+
+            startOp("xmlRemoveProp");
+            incIntIdx();
+            attr = getNode(0);
+            if (attr != NULL) {
+                if (attr->parent != NULL && attr->type == XML_ATTRIBUTE_NODE)
+                    removeChildren(attr, 1);
                 else
-                    oldAttr = xmlHasNsProp(node, localName, ns->href);
-                xmlFuzzResetFailure();
-                if (oldAttr != NULL)
-                    removeChildren((xmlNodePtr) oldAttr, 0);
-
-                attr = xmlSetProp(node, name, value);
-
-                oomReport =
-                    (node != NULL && node->type == XML_ELEMENT_NODE &&
-                     name != NULL &&
-                     attr == NULL);
-                setNode(0, (xmlNodePtr) attr);
-                break;
+                    attr = NULL;
             }
+            if (attr != NULL)
+                parent = attr->parent;
+            setInt(0, xmlRemoveProp((xmlAttrPtr) attr));
+            oomReport = 0;
+            dropNode(parent);
+            endOp();
+            break;
+        }
 
-            case OP_XML_SET_NS_PROP: {
-                xmlNodePtr node;
-                xmlNsPtr ns;
-                xmlAttrPtr oldAttr, attr;
-                const xmlChar *name, *value;
+        case OP_XML_UNSET_PROP: {
+            xmlNodePtr node;
+            xmlAttrPtr attr;
+            const xmlChar *name;
 
-                startOp("xmlSetNsProp");
-                incNodeIdx();
-                node = getNode(1);
-                ns = nodeGetNs(getNode(2), getInt(0));
-                name = getStr(0);
-                value = getStr(1);
-                oldAttr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
-                xmlFuzzResetFailure();
-                if (oldAttr != NULL)
-                    removeChildren((xmlNodePtr) oldAttr, 0);
-                attr = xmlSetNsProp(node, ns, name, value);
-                oomReport =
-                    ((node == NULL || node->type == XML_ELEMENT_NODE) &&
-                     (ns == NULL || ns->href != NULL) &&
-                     name != NULL &&
-                     attr == NULL);
-                setNode(0, (xmlNodePtr) attr);
-                if (ns != NULL) {
-                    if (fixNs((xmlNodePtr) attr) < 0)
-                        oomReport = 1;
-                }
-                break;
-            }
+            startOp("xmlUnsetProp");
+            incIntIdx();
+            node = getNode(0);
+            name = getStr(0);
+            attr = xmlHasNsProp(node, name, NULL);
+            xmlFuzzResetFailure();
+            if (attr != NULL)
+                removeChildren((xmlNodePtr) attr, 1);
+            setInt(0, xmlUnsetProp(node, name));
+            oomReport = 0;
+            dropNode(node);
+            endOp();
+            break;
+        }
 
-            case OP_XML_REMOVE_PROP: {
-                xmlNodePtr attr, parent = NULL;
+        case OP_XML_UNSET_NS_PROP: {
+            xmlNodePtr node;
+            xmlNsPtr ns;
+            xmlAttrPtr attr;
+            const xmlChar *name;
 
-                startOp("xmlRemoveProp");
-                incIntIdx();
-                attr = getNode(0);
-                if (attr != NULL) {
-                    if (attr->parent != NULL &&
-                        attr->type == XML_ATTRIBUTE_NODE)
-                        removeChildren(attr, 1);
-                    else
-                        attr = NULL;
-                }
-                if (attr != NULL)
-                    parent = attr->parent;
-                setInt(0, xmlRemoveProp((xmlAttrPtr) attr));
+            startOp("xmlUnsetNsProp");
+            incIntIdx();
+            node = getNode(0);
+            ns = nodeGetNs(getNode(1), getInt(1));
+            name = getStr(0);
+            attr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
+            xmlFuzzResetFailure();
+            if (attr != NULL)
+                removeChildren((xmlNodePtr) attr, 1);
+            setInt(0, xmlUnsetNsProp(node, ns, name));
+            oomReport = 0;
+            dropNode(node);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NEW_NS: {
+            xmlNodePtr node;
+            xmlNsPtr ns;
+
+            startOp("xmlNewNs");
+            ns = xmlNewNs(node = getNode(0), getStr(0), getStr(1));
+            if (ns != NULL)
                 oomReport = 0;
-                dropNode(parent);
-                endOp();
-                break;
-            }
+            if (node == NULL)
+                xmlFreeNs(ns);
+            endOp();
+            break;
+        }
 
-            case OP_XML_UNSET_PROP: {
-                xmlNodePtr node;
-                xmlAttrPtr attr;
-                const xmlChar *name;
+        case OP_XML_SEARCH_NS: {
+            xmlNsPtr ns;
 
-                startOp("xmlUnsetProp");
-                incIntIdx();
-                node = getNode(0);
-                name = getStr(0);
-                attr = xmlHasNsProp(node, name, NULL);
-                xmlFuzzResetFailure();
-                if (attr != NULL)
-                    removeChildren((xmlNodePtr) attr, 1);
-                setInt(0, xmlUnsetProp(node, name));
+            startOp("xmlSearchNs");
+            ns = xmlSearchNs(getDoc(0), getNode(1), getStr(0));
+            if (ns != NULL)
                 oomReport = 0;
-                dropNode(node);
-                endOp();
-                break;
-            }
+            endOp();
+            break;
+        }
 
-            case OP_XML_UNSET_NS_PROP: {
-                xmlNodePtr node;
-                xmlNsPtr ns;
-                xmlAttrPtr attr;
-                const xmlChar *name;
+        case OP_XML_SEARCH_NS_BY_HREF: {
+            xmlNsPtr ns;
 
-                startOp("xmlUnsetNsProp");
-                incIntIdx();
-                node = getNode(0);
-                ns = nodeGetNs(getNode(1), getInt(1));
-                name = getStr(0);
-                attr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
-                xmlFuzzResetFailure();
-                if (attr != NULL)
-                    removeChildren((xmlNodePtr) attr, 1);
-                setInt(0, xmlUnsetNsProp(node, ns, name));
+            startOp("xmlSearchNsByHref");
+            ns = xmlSearchNsByHref(getDoc(0), getNode(1), getStr(0));
+            if (ns != NULL)
                 oomReport = 0;
-                dropNode(node);
-                endOp();
-                break;
-            }
+            endOp();
+            break;
+        }
 
-            case OP_XML_NEW_NS: {
-                xmlNodePtr node;
-                xmlNsPtr ns;
+        case OP_XML_GET_NS_LIST: {
+            xmlNsPtr *list;
 
-                startOp("xmlNewNs");
-                ns = xmlNewNs(
-                    node = getNode(0),
-                    getStr(0),
-                    getStr(1));
-                if (ns != NULL)
-                    oomReport = 0;
-                if (node == NULL)
-                    xmlFreeNs(ns);
-                endOp();
-                break;
-            }
-
-            case OP_XML_SEARCH_NS: {
-                xmlNsPtr ns;
-
-                startOp("xmlSearchNs");
-                ns = xmlSearchNs(
-                    getDoc(0),
-                    getNode(1),
-                    getStr(0));
-                if (ns != NULL)
-                    oomReport = 0;
-                endOp();
-                break;
-            }
-
-            case OP_XML_SEARCH_NS_BY_HREF: {
-                xmlNsPtr ns;
-
-                startOp("xmlSearchNsByHref");
-                ns = xmlSearchNsByHref(
-                    getDoc(0),
-                    getNode(1),
-                    getStr(0));
-                if (ns != NULL)
-                    oomReport = 0;
-                endOp();
-                break;
-            }
-
-            case OP_XML_GET_NS_LIST: {
-                xmlNsPtr *list;
-
-                startOp("xmlGetNsList");
-                list = xmlGetNsList(
-                    getDoc(0),
-                    getNode(1));
-                if (list != NULL)
-                    oomReport = 0;
-                xmlFree(list);
-                endOp();
-                break;
-            }
-
-            case OP_XML_GET_NS_LIST_SAFE: {
-                xmlNsPtr *list;
-                int res;
-
-                startOp("xmlGetNsList");
-                res = xmlGetNsListSafe(
-                    getDoc(0),
-                    getNode(1),
-                    &list);
-                oomReport = (res < 0);
-                xmlFree(list);
-                endOp();
-                break;
-            }
-
-            case OP_XML_SET_NS: {
-                xmlNodePtr node;
-                xmlNsPtr ns;
-
-                startOp("xmlSetNs");
-                node = getNode(0),
-                ns = nodeGetNs(getNode(1), getInt(0));
-                xmlSetNs(node, ns);
+            startOp("xmlGetNsList");
+            list = xmlGetNsList(getDoc(0), getNode(1));
+            if (list != NULL)
                 oomReport = 0;
-                if (ns != NULL) {
-                    if (fixNs(node) < 0)
-                        oomReport = 1;
-                }
-                endOp();
-                break;
+            xmlFree(list);
+            endOp();
+            break;
+        }
+
+        case OP_XML_GET_NS_LIST_SAFE: {
+            xmlNsPtr *list;
+            int res;
+
+            startOp("xmlGetNsList");
+            res = xmlGetNsListSafe(getDoc(0), getNode(1), &list);
+            oomReport = (res < 0);
+            xmlFree(list);
+            endOp();
+            break;
+        }
+
+        case OP_XML_SET_NS: {
+            xmlNodePtr node;
+            xmlNsPtr ns;
+
+            startOp("xmlSetNs");
+            node = getNode(0), ns = nodeGetNs(getNode(1), getInt(0));
+            xmlSetNs(node, ns);
+            oomReport = 0;
+            if (ns != NULL) {
+                if (fixNs(node) < 0)
+                    oomReport = 1;
             }
+            endOp();
+            break;
+        }
 
-            case OP_XML_COPY_NAMESPACE: {
-                xmlNsPtr ns, copy;
+        case OP_XML_COPY_NAMESPACE: {
+            xmlNsPtr ns, copy;
 
-                startOp("xmlCopyNamespace");
-                copy = xmlCopyNamespace(
-                    ns = nodeGetNs(getNode(0), getInt(0)));
-                oomReport = (ns != NULL && copy == NULL);
-                xmlFreeNs(copy);
-                endOp();
-                break;
-            }
+            startOp("xmlCopyNamespace");
+            copy = xmlCopyNamespace(ns = nodeGetNs(getNode(0), getInt(0)));
+            oomReport = (ns != NULL && copy == NULL);
+            xmlFreeNs(copy);
+            endOp();
+            break;
+        }
 
-            case OP_XML_COPY_NAMESPACE_LIST: {
-                xmlNsPtr list, copy;
+        case OP_XML_COPY_NAMESPACE_LIST: {
+            xmlNsPtr list, copy;
 
-                startOp("xmlCopyNamespaceList");
-                copy = xmlCopyNamespaceList(
-                    list = nodeGetNs(getNode(0), getInt(0)));
-                oomReport = (list != NULL && copy == NULL);
-                xmlFreeNsList(copy);
-                endOp();
-                break;
-            }
+            startOp("xmlCopyNamespaceList");
+            copy
+                = xmlCopyNamespaceList(list = nodeGetNs(getNode(0), getInt(0)));
+            oomReport = (list != NULL && copy == NULL);
+            xmlFreeNsList(copy);
+            endOp();
+            break;
+        }
 
-            case OP_XML_UNLINK_NODE: {
-                xmlNodePtr node, oldParent;
-                xmlDocPtr doc;
+        case OP_XML_UNLINK_NODE: {
+            xmlNodePtr node, oldParent;
+            xmlDocPtr doc;
 
-                startOp("xmlUnlinkNode");
-                node = getNode(0);
-                doc = node ? node->doc : NULL;
-                /*
+            startOp("xmlUnlinkNode");
+            node = getNode(0);
+            doc = node ? node->doc : NULL;
+            /*
                  * Unlinking DTD children can cause invalid references
                  * which would be expensive to fix.
                  *
                  * Don't unlink DTD if it is the internal or external
                  * subset of the document.
                  */
-                if (node != NULL &&
-                    (isDtdChild(node) ||
-                     (node->type == XML_DTD_NODE &&
-                      doc != NULL &&
-                      ((xmlDtdPtr) node == doc->intSubset ||
-                       (xmlDtdPtr) node == doc->extSubset))))
-                    node = NULL;
-                oldParent = node ? node->parent : NULL;
-                xmlUnlinkNode(node);
-                oomReport = 0;
-                if (node != NULL && node->parent != oldParent) {
-                    if (fixNs(node) < 0)
-                        oomReport = 1;
-                    dropNode(oldParent);
-                }
-                endOp();
-                break;
+            if (node != NULL
+                && (isDtdChild(node)
+                    || (node->type == XML_DTD_NODE && doc != NULL
+                        && ((xmlDtdPtr) node == doc->intSubset
+                            || (xmlDtdPtr) node == doc->extSubset))))
+                node = NULL;
+            oldParent = node ? node->parent : NULL;
+            xmlUnlinkNode(node);
+            oomReport = 0;
+            if (node != NULL && node->parent != oldParent) {
+                if (fixNs(node) < 0)
+                    oomReport = 1;
+                dropNode(oldParent);
             }
+            endOp();
+            break;
+        }
 
-            case OP_XML_REPLACE_NODE: {
-                xmlNodePtr old, oldParent, node, oldNodeParent, result;
-                xmlDocPtr oldDoc, oldNodeDoc;
+        case OP_XML_REPLACE_NODE: {
+            xmlNodePtr old, oldParent, node, oldNodeParent, result;
+            xmlDocPtr oldDoc, oldNodeDoc;
 
-                startOp("xmlReplaceNode");
-                old = getNode(0);
-                node = getNode(1);
+            startOp("xmlReplaceNode");
+            old = getNode(0);
+            node = getNode(1);
 
-                /*
+            /*
                  * Unlinking DTD children can cause invalid references
                  * which would be expensive to fix.
                  *
                  * Don't unlink DTD if it is the internal or external
                  * subset of the document.
                  */
-                old = old ? old->parent : NULL;
-                oldDoc = old ? old->doc : NULL;
-                if (old != NULL &&
-                    (isDtdChild(old) ||
-                     (old->type == XML_DTD_NODE &&
-                      oldDoc != NULL &&
-                      ((xmlDtdPtr) old == oldDoc->intSubset ||
-                       (xmlDtdPtr) old == oldDoc->extSubset))))
-                    old = NULL;
-                if (old != NULL && !isValidChild(old->parent, node))
-                    node = NULL;
+            old = old ? old->parent : NULL;
+            oldDoc = old ? old->doc : NULL;
+            if (old != NULL
+                && (isDtdChild(old)
+                    || (old->type == XML_DTD_NODE && oldDoc != NULL
+                        && ((xmlDtdPtr) old == oldDoc->intSubset
+                            || (xmlDtdPtr) old == oldDoc->extSubset))))
+                old = NULL;
+            if (old != NULL && !isValidChild(old->parent, node))
+                node = NULL;
 
-                oldParent = old ? old->parent : NULL;
-                oldNodeParent = node ? node->parent : NULL;
-                oldNodeDoc = node ? node->doc : NULL;
+            oldParent = old ? old->parent : NULL;
+            oldNodeParent = node ? node->parent : NULL;
+            oldNodeDoc = node ? node->doc : NULL;
 
-                result = xmlReplaceNode(old, node);
-                oomReport =
-                    (old != NULL && old->parent != NULL &&
-                     node != NULL &&
-                     old != node &&
-                     result == NULL);
+            result = xmlReplaceNode(old, node);
+            oomReport = (old != NULL && old->parent != NULL && node != NULL
+                         && old != node && result == NULL);
 
-                if (old != NULL && old->parent != oldParent) {
-                    if (fixNs(old) < 0)
-                        oomReport = 1;
-                }
-                if (node == NULL) {
-                    /* Old node was unlinked */
-                    dropNode(oldParent);
-                } else if (node->parent != oldNodeParent ||
-                           node->doc != oldNodeDoc) {
-                    if (fixNs(node) < 0)
-                        oomReport = 1;
-                    /* Drop old parent of new node */
-                    if (oldNodeParent != NULL)
-                        dropNode(oldNodeParent);
-                    else
-                        dropNode((xmlNodePtr) oldNodeDoc);
-                }
-                endOp();
-                break;
+            if (old != NULL && old->parent != oldParent) {
+                if (fixNs(old) < 0)
+                    oomReport = 1;
             }
+            if (node == NULL) {
+                /* Old node was unlinked */
+                dropNode(oldParent);
+            } else if (node->parent != oldNodeParent
+                       || node->doc != oldNodeDoc) {
+                if (fixNs(node) < 0)
+                    oomReport = 1;
+                /* Drop old parent of new node */
+                if (oldNodeParent != NULL)
+                    dropNode(oldNodeParent);
+                else
+                    dropNode((xmlNodePtr) oldNodeDoc);
+            }
+            endOp();
+            break;
+        }
 
+        case OP_XML_ADD_CHILD:
+        case OP_XML_ADD_SIBLING:
+        case OP_XML_ADD_PREV_SIBLING:
+        case OP_XML_ADD_NEXT_SIBLING: {
+            xmlNodePtr target, parent, node, oldNodeParent, result;
+            xmlDocPtr oldNodeDoc;
+            int argsOk;
+
+            switch (op) {
             case OP_XML_ADD_CHILD:
+                startOp("xmlAddChild");
+                break;
             case OP_XML_ADD_SIBLING:
+                startOp("xmlAddSibling");
+                break;
             case OP_XML_ADD_PREV_SIBLING:
-            case OP_XML_ADD_NEXT_SIBLING: {
-                xmlNodePtr target, parent, node, oldNodeParent, result;
-                xmlDocPtr oldNodeDoc;
-                int argsOk;
+                startOp("xmlAddPrevSibling");
+                break;
+            case OP_XML_ADD_NEXT_SIBLING:
+                startOp("xmlAddNextSibling");
+                break;
+            }
 
-                switch (op) {
-                    case OP_XML_ADD_CHILD:
-                        startOp("xmlAddChild"); break;
-                    case OP_XML_ADD_SIBLING:
-                        startOp("xmlAddSibling"); break;
-                    case OP_XML_ADD_PREV_SIBLING:
-                        startOp("xmlAddPrevSibling"); break;
-                    case OP_XML_ADD_NEXT_SIBLING:
-                        startOp("xmlAddNextSibling"); break;
-                }
+            if (op == OP_XML_ADD_CHILD) {
+                target = NULL;
+                parent = getNode(0);
+            } else {
+                target = getNode(0);
+                parent = target ? target->parent : NULL;
+            }
+            node = getNode(1);
 
-                if (op == OP_XML_ADD_CHILD) {
-                    target = NULL;
-                    parent = getNode(0);
+            /* Don't append to root node */
+            if (target != NULL && parent == NULL)
+                node = NULL;
+
+            /* Check tree structure */
+            if (isDtdChild(node) || !isValidChild(parent, node))
+                node = NULL;
+
+            /* Attributes */
+            if (node != NULL && node->type == XML_ATTRIBUTE_NODE) {
+                if ((op == OP_XML_ADD_CHILD)
+                    || (target != NULL
+                        && (target->type == XML_ATTRIBUTE_NODE))) {
+                    xmlAttrPtr attr = xmlHasNsProp(
+                        parent, node->name, node->ns ? node->ns->href : NULL);
+
+                    xmlFuzzResetFailure();
+                    /* Attribute might be replaced */
+                    if (attr != NULL && attr != (xmlAttrPtr) node)
+                        removeChildren((xmlNodePtr) attr, 1);
                 } else {
-                    target = getNode(0);
-                    parent = target ? target->parent : NULL;
+                    target = NULL;
                 }
-                node = getNode(1);
-
-                /* Don't append to root node */
-                if (target != NULL && parent == NULL)
-                    node = NULL;
-
-                /* Check tree structure */
-                if (isDtdChild(node) ||
-                    !isValidChild(parent, node))
-                    node = NULL;
-
-                /* Attributes */
-                if (node != NULL && node->type == XML_ATTRIBUTE_NODE) {
-                    if ((op == OP_XML_ADD_CHILD) ||
-                        ((target != NULL &&
-                         (target->type == XML_ATTRIBUTE_NODE)))) {
-                        xmlAttrPtr attr = xmlHasNsProp(parent, node->name,
-                            node->ns ? node->ns->href : NULL);
-
-                        xmlFuzzResetFailure();
-                        /* Attribute might be replaced */
-                        if (attr != NULL && attr != (xmlAttrPtr) node)
-                            removeChildren((xmlNodePtr) attr, 1);
-                    } else {
-                        target = NULL;
-                    }
-                } else if (target != NULL &&
-                           target->type == XML_ATTRIBUTE_NODE) {
-                    node = NULL;
-                }
-
-                oldNodeParent = node ? node->parent : NULL;
-                oldNodeDoc = node ? node->doc : NULL;
-                argsOk =
-                    (target != NULL &&
-                     node != NULL &&
-                     target != node);
-
-                switch (op) {
-                    case OP_XML_ADD_CHILD:
-                        argsOk = (parent != NULL && node != NULL);
-                        result = xmlAddChild(parent, node);
-                        break;
-                    case OP_XML_ADD_SIBLING:
-                        result = xmlAddSibling(target, node);
-                        break;
-                    case OP_XML_ADD_PREV_SIBLING:
-                        result = xmlAddPrevSibling(target, node);
-                        break;
-                    case OP_XML_ADD_NEXT_SIBLING:
-                        result = xmlAddNextSibling(target, node);
-                        break;
-                }
-                oomReport = (argsOk && result == NULL);
-
-                if (result != NULL && result != node) {
-                    /* Text node was merged */
-                    removeNode(node);
-                    checkContent(result);
-                    /* Drop old parent of node */
-                    if (oldNodeParent != NULL)
-                        dropNode(oldNodeParent);
-                    else
-                        dropNode((xmlNodePtr) oldNodeDoc);
-                } else if (node != NULL &&
-                           (node->parent != oldNodeParent ||
-                            node->doc != oldNodeDoc)) {
-                    if (fixNs(node) < 0)
-                        oomReport = 1;
-                    /* Drop old parent of node */
-                    if (oldNodeParent != NULL)
-                        dropNode(oldNodeParent);
-                    else
-                        dropNode((xmlNodePtr) oldNodeDoc);
-                }
-
-                endOp();
-                break;
+            } else if (target != NULL && target->type == XML_ATTRIBUTE_NODE) {
+                node = NULL;
             }
 
-            case OP_XML_TEXT_MERGE: {
-                xmlNodePtr first, second, parent = NULL, res;
-                int argsOk;
+            oldNodeParent = node ? node->parent : NULL;
+            oldNodeDoc = node ? node->doc : NULL;
+            argsOk = (target != NULL && node != NULL && target != node);
 
-                startOp("xmlTextMerge");
-                first = getNode(0);
-                second = getNode(1);
-                argsOk =
-                    first == NULL ?
-                        second != NULL :
-                        second == NULL ||
-                        (first->type == XML_TEXT_NODE &&
-                         second->type == XML_TEXT_NODE &&
-                         first != second &&
-                         first->name == second->name);
-                if (argsOk && second != NULL) {
-                    if (second->parent != NULL)
-                        parent = second->parent;
-                    else
-                        parent = (xmlNodePtr) second->doc;
-
-                }
-                res = xmlTextMerge(first, second);
-                oomReport = (argsOk && res == NULL);
-                if (res != NULL && first != NULL) {
-                    removeNode(second);
-                    dropNode(parent);
-                    checkContent(first);
-                }
-                endOp();
+            switch (op) {
+            case OP_XML_ADD_CHILD:
+                argsOk = (parent != NULL && node != NULL);
+                result = xmlAddChild(parent, node);
+                break;
+            case OP_XML_ADD_SIBLING:
+                result = xmlAddSibling(target, node);
+                break;
+            case OP_XML_ADD_PREV_SIBLING:
+                result = xmlAddPrevSibling(target, node);
+                break;
+            case OP_XML_ADD_NEXT_SIBLING:
+                result = xmlAddNextSibling(target, node);
                 break;
             }
+            oomReport = (argsOk && result == NULL);
 
-            case OP_XML_TEXT_CONCAT: {
-                xmlNodePtr node;
-                const xmlChar *text;
-                int res;
-
-                startOp("xmlTextConcat");
-                node = getNode(0);
-                text = getStr(0);
-                res = xmlTextConcat(
-                    node,
-                    text,
-                    xmlStrlen(text));
-                oomReport = (isTextContentNode(node) && res < 0);
-                checkContent(node);
-                endOp();
-                break;
+            if (result != NULL && result != node) {
+                /* Text node was merged */
+                removeNode(node);
+                checkContent(result);
+                /* Drop old parent of node */
+                if (oldNodeParent != NULL)
+                    dropNode(oldNodeParent);
+                else
+                    dropNode((xmlNodePtr) oldNodeDoc);
+            } else if (node != NULL
+                       && (node->parent != oldNodeParent
+                           || node->doc != oldNodeDoc)) {
+                if (fixNs(node) < 0)
+                    oomReport = 1;
+                /* Drop old parent of node */
+                if (oldNodeParent != NULL)
+                    dropNode(oldNodeParent);
+                else
+                    dropNode((xmlNodePtr) oldNodeDoc);
             }
 
-            case OP_XML_STRING_GET_NODE_LIST: {
-                xmlNodePtr list;
-                const xmlChar *value;
+            endOp();
+            break;
+        }
 
-                startOp("xmlStringGetNodeList");
-                list = xmlStringGetNodeList(
-                    getDoc(0),
-                    value = getStr(0));
-                oomReport = (value != NULL && value[0] != 0 && list == NULL);
-                xmlFreeNodeList(list);
-                endOp();
-                break;
+        case OP_XML_TEXT_MERGE: {
+            xmlNodePtr first, second, parent = NULL, res;
+            int argsOk;
+
+            startOp("xmlTextMerge");
+            first = getNode(0);
+            second = getNode(1);
+            argsOk = first == NULL ? second != NULL
+                                   : second == NULL
+                    || (first->type == XML_TEXT_NODE
+                        && second->type == XML_TEXT_NODE && first != second
+                        && first->name == second->name);
+            if (argsOk && second != NULL) {
+                if (second->parent != NULL)
+                    parent = second->parent;
+                else
+                    parent = (xmlNodePtr) second->doc;
             }
-
-            case OP_XML_STRING_LEN_GET_NODE_LIST: {
-                xmlDocPtr doc;
-                xmlNodePtr list;
-                const xmlChar *value;
-
-                startOp("xmlStringLenGetNodeList");
-                doc = getDoc(0);
-                value = getStr(0);
-                list = xmlStringLenGetNodeList(
-                    doc,
-                    value,
-                    xmlStrlen(value));
-                oomReport = (value != NULL && value[0] != 0 && list == NULL);
-                xmlFreeNodeList(list);
-                endOp();
-                break;
+            res = xmlTextMerge(first, second);
+            oomReport = (argsOk && res == NULL);
+            if (res != NULL && first != NULL) {
+                removeNode(second);
+                dropNode(parent);
+                checkContent(first);
             }
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_LIST_GET_STRING: {
-                xmlDocPtr doc;
-                xmlNodePtr list;
-                xmlChar *string;
+        case OP_XML_TEXT_CONCAT: {
+            xmlNodePtr node;
+            const xmlChar *text;
+            int res;
 
-                startOp("xmlNodeListGetString");
-                incStrIdx();
-                doc = getDoc(0);
-                list = getNode(1);
-                string = xmlNodeListGetString(
-                    doc,
-                    list,
-                    getInt(0));
-                oomReport = (list != NULL && string == NULL);
-                moveStr(0, string);
-                endOp();
-                break;
-            }
+            startOp("xmlTextConcat");
+            node = getNode(0);
+            text = getStr(0);
+            res = xmlTextConcat(node, text, xmlStrlen(text));
+            oomReport = (isTextContentNode(node) && res < 0);
+            checkContent(node);
+            endOp();
+            break;
+        }
 
-            case OP_XML_NODE_LIST_GET_RAW_STRING: {
-                xmlDocPtr doc;
-                xmlNodePtr list;
-                xmlChar *string;
+        case OP_XML_STRING_GET_NODE_LIST: {
+            xmlNodePtr list;
+            const xmlChar *value;
 
-                startOp("xmlNodeListGetRawString");
-                incStrIdx();
-                doc = getDoc(0);
-                list = getNode(1);
-                string = xmlNodeListGetRawString(
-                    doc,
-                    list,
-                    getInt(0));
-                oomReport = (list != NULL && string == NULL);
-                moveStr(0, string);
-                endOp();
-                break;
-            }
+            startOp("xmlStringGetNodeList");
+            list = xmlStringGetNodeList(getDoc(0), value = getStr(0));
+            oomReport = (value != NULL && value[0] != 0 && list == NULL);
+            xmlFreeNodeList(list);
+            endOp();
+            break;
+        }
 
-            case OP_XML_IS_XHTML:
-                startOp("xmlIsXHTML");
-                incIntIdx();
-                setInt(0, xmlIsXHTML(
-                    getStr(0),
-                    getStr(1)));
+        case OP_XML_STRING_LEN_GET_NODE_LIST: {
+            xmlDocPtr doc;
+            xmlNodePtr list;
+            const xmlChar *value;
+
+            startOp("xmlStringLenGetNodeList");
+            doc = getDoc(0);
+            value = getStr(0);
+            list = xmlStringLenGetNodeList(doc, value, xmlStrlen(value));
+            oomReport = (value != NULL && value[0] != 0 && list == NULL);
+            xmlFreeNodeList(list);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_LIST_GET_STRING: {
+            xmlDocPtr doc;
+            xmlNodePtr list;
+            xmlChar *string;
+
+            startOp("xmlNodeListGetString");
+            incStrIdx();
+            doc = getDoc(0);
+            list = getNode(1);
+            string = xmlNodeListGetString(doc, list, getInt(0));
+            oomReport = (list != NULL && string == NULL);
+            moveStr(0, string);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_LIST_GET_RAW_STRING: {
+            xmlDocPtr doc;
+            xmlNodePtr list;
+            xmlChar *string;
+
+            startOp("xmlNodeListGetRawString");
+            incStrIdx();
+            doc = getDoc(0);
+            list = getNode(1);
+            string = xmlNodeListGetRawString(doc, list, getInt(0));
+            oomReport = (list != NULL && string == NULL);
+            moveStr(0, string);
+            endOp();
+            break;
+        }
+
+        case OP_XML_IS_XHTML:
+            startOp("xmlIsXHTML");
+            incIntIdx();
+            setInt(0, xmlIsXHTML(getStr(0), getStr(1)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_ADD_ELEMENT_DECL: {
+            xmlElementPtr decl;
+
+            startOp("xmlAddElementDecl");
+            incNodeIdx();
+            decl = xmlAddElementDecl(NULL, getDtd(1), getStr(0),
+                                     (xmlElementTypeVal) getInt(0), NULL);
+            if (decl != NULL)
                 oomReport = 0;
-                break;
+            setNode(0, (xmlNodePtr) decl);
+            break;
+        }
 
-            case OP_XML_ADD_ELEMENT_DECL: {
-                xmlElementPtr decl;
+        case OP_XML_ADD_ATTRIBUTE_DECL: {
+            xmlAttributePtr decl;
 
-                startOp("xmlAddElementDecl");
-                incNodeIdx();
-                decl = xmlAddElementDecl(
-                    NULL,
-                    getDtd(1),
-                    getStr(0),
-                    (xmlElementTypeVal) getInt(0),
-                    NULL);
-                if (decl != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) decl);
-                break;
-            }
+            startOp("xmlAddAttributeDecl");
+            incNodeIdx();
+            decl = xmlAddAttributeDecl(NULL, getDtd(1), getStr(0), getStr(1),
+                                       getStr(2), (xmlAttributeType) getInt(0),
+                                       (xmlAttributeDefault) getInt(1),
+                                       getStr(3), NULL);
+            if (decl != NULL)
+                oomReport = 0;
+            setNode(0, (xmlNodePtr) decl);
+            break;
+        }
 
-            case OP_XML_ADD_ATTRIBUTE_DECL: {
-                xmlAttributePtr decl;
+        case OP_XML_ADD_NOTATION_DECL: {
+            xmlNotationPtr decl;
 
-                startOp("xmlAddAttributeDecl");
-                incNodeIdx();
-                decl = xmlAddAttributeDecl(
-                    NULL,
-                    getDtd(1),
-                    getStr(0),
-                    getStr(1),
-                    getStr(2),
-                    (xmlAttributeType) getInt(0),
-                    (xmlAttributeDefault) getInt(1),
-                    getStr(3),
-                    NULL);
-                if (decl != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) decl);
-                break;
-            }
+            startOp("xmlAddNotationDecl");
+            decl = xmlAddNotationDecl(NULL, getDtd(1), getStr(0), getStr(1),
+                                      getStr(2));
+            if (decl != NULL)
+                oomReport = 0;
+            endOp();
+            break;
+        }
 
-            case OP_XML_ADD_NOTATION_DECL: {
-                xmlNotationPtr decl;
+        case OP_XML_GET_DTD_ELEMENT_DESC: {
+            xmlElementPtr elem;
 
-                startOp("xmlAddNotationDecl");
-                decl = xmlAddNotationDecl(
-                    NULL,
-                    getDtd(1),
-                    getStr(0),
-                    getStr(1),
-                    getStr(2));
-                if (decl != NULL)
-                    oomReport = 0;
-                endOp();
-                break;
-            }
-
-            case OP_XML_GET_DTD_ELEMENT_DESC: {
-                xmlElementPtr elem;
-
-                startOp("xmlGetDtdElementDesc");
-                incNodeIdx();
-                elem = xmlGetDtdElementDesc(
-                    getDtd(1),
-                    getStr(0));
-                if (elem != NULL)
-                    oomReport = 0;
-                /*
+            startOp("xmlGetDtdElementDesc");
+            incNodeIdx();
+            elem = xmlGetDtdElementDesc(getDtd(1), getStr(0));
+            if (elem != NULL)
+                oomReport = 0;
+            /*
                  * Don't reference XML_ELEMENT_TYPE_UNDEFINED dummy
                  * declarations which can be freed by xmlAddElementDecl.
                  */
-                if (elem != NULL && elem->parent == NULL)
-                    elem = NULL;
-                setNode(0, (xmlNodePtr) elem);
-                break;
-            }
+            if (elem != NULL && elem->parent == NULL)
+                elem = NULL;
+            setNode(0, (xmlNodePtr) elem);
+            break;
+        }
 
-            case OP_XML_GET_DTD_QELEMENT_DESC: {
-                xmlElementPtr elem;
+        case OP_XML_GET_DTD_QELEMENT_DESC: {
+            xmlElementPtr elem;
 
-                startOp("xmlGetDtdQElementDesc");
-                incNodeIdx();
-                elem = xmlGetDtdQElementDesc(
-                    getDtd(1),
-                    getStr(0),
-                    getStr(1));
+            startOp("xmlGetDtdQElementDesc");
+            incNodeIdx();
+            elem = xmlGetDtdQElementDesc(getDtd(1), getStr(0), getStr(1));
+            oomReport = 0;
+            if (elem != NULL && elem->parent == NULL)
+                elem = NULL;
+            setNode(0, (xmlNodePtr) elem);
+            break;
+        }
+
+        case OP_XML_GET_DTD_ATTR_DESC: {
+            xmlAttributePtr decl;
+
+            startOp("xmlGetDtdAttrDesc");
+            incNodeIdx();
+            decl = xmlGetDtdAttrDesc(getDtd(1), getStr(0), getStr(1));
+            if (decl != NULL)
                 oomReport = 0;
-                if (elem != NULL && elem->parent == NULL)
-                    elem = NULL;
-                setNode(0, (xmlNodePtr) elem);
-                break;
-            }
+            setNode(0, (xmlNodePtr) decl);
+            break;
+        }
 
-            case OP_XML_GET_DTD_ATTR_DESC: {
-                xmlAttributePtr decl;
+        case OP_XML_GET_DTD_QATTR_DESC: {
+            xmlAttributePtr decl;
 
-                startOp("xmlGetDtdAttrDesc");
-                incNodeIdx();
-                decl = xmlGetDtdAttrDesc(
-                    getDtd(1),
-                    getStr(0),
-                    getStr(1));
-                if (decl != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) decl);
-                break;
-            }
+            startOp("xmlGetDtdQAttrDesc");
+            incNodeIdx();
+            decl = xmlGetDtdQAttrDesc(getDtd(1), getStr(0), getStr(1),
+                                      getStr(2));
+            oomReport = 0;
+            setNode(0, (xmlNodePtr) decl);
+            break;
+        }
 
-            case OP_XML_GET_DTD_QATTR_DESC: {
-                xmlAttributePtr decl;
+        case OP_XML_GET_DTD_NOTATION_DESC:
+            startOp("xmlGetDtdNotationDesc");
+            xmlGetDtdNotationDesc(getDtd(1), getStr(0));
+            oomReport = 0;
+            endOp();
+            break;
 
-                startOp("xmlGetDtdQAttrDesc");
-                incNodeIdx();
-                decl = xmlGetDtdQAttrDesc(
-                    getDtd(1),
-                    getStr(0),
-                    getStr(1),
-                    getStr(2));
+        case OP_XML_ADD_ID:
+            startOp("xmlAddID");
+            xmlAddID(NULL, getDoc(0), getStr(0), getAttr(1));
+            endOp();
+            break;
+
+        case OP_XML_ADD_ID_SAFE: {
+            int res;
+
+            startOp("xmlAddIDSafe");
+            res = xmlAddIDSafe(getAttr(0), getStr(0));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_GET_ID:
+            startOp("xmlGetID");
+            incNodeIdx();
+            setNode(0, (xmlNodePtr) xmlGetID(getDoc(1), getStr(0)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_IS_ID: {
+            int res;
+
+            startOp("xmlIsID");
+            res = xmlIsID(getDoc(2), getNode(1), getAttr(0));
+            oomReport = (res < 0);
+            endOp();
+            break;
+        }
+
+        case OP_XML_REMOVE_ID:
+            startOp("xmlRemoveID");
+            xmlRemoveID(getDoc(1), getAttr(0));
+            oomReport = 0;
+            endOp();
+            break;
+
+        case OP_XML_ADD_REF: {
+            xmlDocPtr doc;
+            xmlAttrPtr attr;
+            xmlRefPtr ref;
+            const xmlChar *value;
+
+            startOp("xmlAddRef");
+            ref = xmlAddRef(NULL, doc = getDoc(0), value = getStr(0),
+                            attr = getAttr(1));
+            oomReport
+                = (doc != NULL && value != NULL && attr != NULL && ref == NULL);
+            endOp();
+            break;
+        }
+
+        case OP_XML_GET_REFS:
+            startOp("xmlGetRefs");
+            xmlGetRefs(getDoc(1), getStr(0));
+            oomReport = 0;
+            endOp();
+            break;
+
+        case OP_XML_IS_REF:
+            startOp("xmlIsRef");
+            xmlIsRef(getDoc(2), getNode(1), getAttr(0));
+            oomReport = 0;
+            endOp();
+            break;
+
+        case OP_XML_REMOVE_REF: {
+            int res;
+
+            startOp("xmlRemoveRef");
+            res = xmlRemoveRef(getDoc(1), getAttr(0));
+            if (res == 0)
                 oomReport = 0;
-                setNode(0, (xmlNodePtr) decl);
-                break;
-            }
+            endOp();
+            break;
+        }
 
-            case OP_XML_GET_DTD_NOTATION_DESC:
-                startOp("xmlGetDtdNotationDesc");
-                xmlGetDtdNotationDesc(
-                    getDtd(1),
-                    getStr(0));
+        case OP_XML_NEW_ENTITY: {
+            xmlDocPtr doc;
+            xmlEntityPtr ent;
+
+            startOp("xmlNewEntity");
+            incNodeIdx();
+            ent = xmlNewEntity(doc = getDoc(1), getStr(0), getInt(0), getStr(1),
+                               getStr(2), getStr(3));
+            if (ent != NULL)
                 oomReport = 0;
-                endOp();
-                break;
-
-            case OP_XML_ADD_ID:
-                startOp("xmlAddID");
-                xmlAddID(
-                    NULL,
-                    getDoc(0),
-                    getStr(0),
-                    getAttr(1));
-                endOp();
-                break;
-
-            case OP_XML_ADD_ID_SAFE: {
-                int res;
-
-                startOp("xmlAddIDSafe");
-                res = xmlAddIDSafe(
-                    getAttr(0),
-                    getStr(0));
-                oomReport = (res < 0);
-                endOp();
-                break;
+            if (doc == NULL || doc->intSubset == NULL) {
+                xmlFreeEntity(ent);
+                ent = NULL;
             }
+            setNode(0, (xmlNodePtr) ent);
+            break;
+        }
 
-            case OP_XML_GET_ID:
-                startOp("xmlGetID");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlGetID(
-                    getDoc(1),
-                    getStr(0)));
+        case OP_XML_ADD_ENTITY: {
+            xmlEntityPtr ent;
+            int res;
+
+            startOp("xmlAddEntity");
+            incNodeIdx();
+            res = xmlAddEntity(getDoc(1), getInt(0), getStr(0), getInt(1),
+                               getStr(1), getStr(2), getStr(3), &ent);
+            oomReport = (res == XML_ERR_NO_MEMORY);
+            setNode(0, (xmlNodePtr) ent);
+            break;
+        }
+
+        case OP_XML_ADD_DOC_ENTITY: {
+            xmlEntityPtr ent;
+
+            startOp("xmlAddDocEntity");
+            incNodeIdx();
+            ent = xmlAddDocEntity(getDoc(1), getStr(0), getInt(1), getStr(1),
+                                  getStr(2), getStr(3));
+            if (ent != NULL)
                 oomReport = 0;
-                break;
+            setNode(0, (xmlNodePtr) ent);
+            break;
+        }
 
-            case OP_XML_IS_ID: {
-                int res;
+        case OP_XML_ADD_DTD_ENTITY: {
+            xmlEntityPtr ent;
 
-                startOp("xmlIsID");
-                res = xmlIsID(
-                    getDoc(2),
-                    getNode(1),
-                    getAttr(0));
-                oomReport = (res < 0);
-                endOp();
-                break;
-            }
+            startOp("xmlAddDtdEntity");
+            incNodeIdx();
+            ent = xmlAddDtdEntity(getDoc(1), getStr(0), getInt(1), getStr(1),
+                                  getStr(2), getStr(3));
+            setNode(0, (xmlNodePtr) ent);
+            break;
+        }
 
-            case OP_XML_REMOVE_ID:
-                startOp("xmlRemoveID");
-                xmlRemoveID(
-                    getDoc(1),
-                    getAttr(0));
-                oomReport = 0;
-                endOp();
-                break;
+        case OP_XML_GET_PREDEFINED_ENTITY:
+            startOp("xmlGetPredefinedEntity");
+            incNodeIdx();
+            setNode(0, (xmlNodePtr) xmlGetPredefinedEntity(getStr(0)));
+            oomReport = 0;
+            break;
 
-            case OP_XML_ADD_REF: {
-                xmlDocPtr doc;
-                xmlAttrPtr attr;
-                xmlRefPtr ref;
-                const xmlChar *value;
+        case OP_XML_GET_DOC_ENTITY:
+            startOp("xmlGetDocEntity");
+            incNodeIdx();
+            setNode(0, (xmlNodePtr) xmlGetDocEntity(getDoc(1), getStr(0)));
+            oomReport = 0;
+            break;
 
-                startOp("xmlAddRef");
-                ref = xmlAddRef(
-                    NULL,
-                    doc = getDoc(0),
-                    value = getStr(0),
-                    attr = getAttr(1));
-                oomReport =
-                    (doc != NULL &&
-                     value != NULL &&
-                     attr != NULL &&
-                     ref == NULL);
-                endOp();
-                break;
-            }
+        case OP_XML_GET_DTD_ENTITY:
+            startOp("xmlGetDtdEntity");
+            incNodeIdx();
+            setNode(0, (xmlNodePtr) xmlGetDtdEntity(getDoc(1), getStr(0)));
+            oomReport = 0;
+            break;
 
-            case OP_XML_GET_REFS:
-                startOp("xmlGetRefs");
-                xmlGetRefs(
-                    getDoc(1),
-                    getStr(0));
-                oomReport = 0;
-                endOp();
-                break;
+        case OP_XML_GET_PARAMETER_ENTITY:
+            startOp("xmlGetParameterEntity");
+            incNodeIdx();
+            setNode(0,
+                    (xmlNodePtr) xmlGetParameterEntity(getDoc(1), getStr(0)));
+            oomReport = 0;
+            break;
 
-            case OP_XML_IS_REF:
-                startOp("xmlIsRef");
-                xmlIsRef(
-                    getDoc(2),
-                    getNode(1),
-                    getAttr(0));
-                oomReport = 0;
-                endOp();
-                break;
+        case OP_XML_ENCODE_ENTITIES_REENTRANT: {
+            const xmlChar *string;
+            xmlChar *encoded;
 
-            case OP_XML_REMOVE_REF: {
-                int res;
+            startOp("xmlEncodeEntitiesReentrant");
+            incStrIdx();
+            encoded = xmlEncodeEntitiesReentrant(getDoc(0), string = getStr(1));
+            oomReport = (string != NULL && encoded == NULL);
+            moveStr(0, encoded);
+            endOp();
+            break;
+        }
 
-                startOp("xmlRemoveRef");
-                res = xmlRemoveRef(
-                    getDoc(1),
-                    getAttr(0));
-                if (res == 0)
-                    oomReport = 0;
-                endOp();
-                break;
-            }
+        case OP_XML_ENCODE_SPECIAL_CHARS: {
+            const xmlChar *string;
+            xmlChar *encoded;
 
-            case OP_XML_NEW_ENTITY: {
-                xmlDocPtr doc;
-                xmlEntityPtr ent;
-
-                startOp("xmlNewEntity");
-                incNodeIdx();
-                ent = xmlNewEntity(
-                    doc = getDoc(1),
-                    getStr(0),
-                    getInt(0),
-                    getStr(1),
-                    getStr(2),
-                    getStr(3));
-                if (ent != NULL)
-                    oomReport = 0;
-                if (doc == NULL || doc->intSubset == NULL) {
-                    xmlFreeEntity(ent);
-                    ent = NULL;
-                }
-                setNode(0, (xmlNodePtr) ent);
-                break;
-            }
-
-            case OP_XML_ADD_ENTITY: {
-                xmlEntityPtr ent;
-                int res;
-
-                startOp("xmlAddEntity");
-                incNodeIdx();
-                res = xmlAddEntity(
-                    getDoc(1),
-                    getInt(0),
-                    getStr(0),
-                    getInt(1),
-                    getStr(1),
-                    getStr(2),
-                    getStr(3),
-                    &ent);
-                oomReport = (res == XML_ERR_NO_MEMORY);
-                setNode(0, (xmlNodePtr) ent);
-                break;
-            }
-
-            case OP_XML_ADD_DOC_ENTITY: {
-                xmlEntityPtr ent;
-
-                startOp("xmlAddDocEntity");
-                incNodeIdx();
-                ent = xmlAddDocEntity(
-                    getDoc(1),
-                    getStr(0),
-                    getInt(1),
-                    getStr(1),
-                    getStr(2),
-                    getStr(3));
-                if (ent != NULL)
-                    oomReport = 0;
-                setNode(0, (xmlNodePtr) ent);
-                break;
-            }
-
-            case OP_XML_ADD_DTD_ENTITY: {
-                xmlEntityPtr ent;
-
-                startOp("xmlAddDtdEntity");
-                incNodeIdx();
-                ent = xmlAddDtdEntity(
-                    getDoc(1),
-                    getStr(0),
-                    getInt(1),
-                    getStr(1),
-                    getStr(2),
-                    getStr(3));
-                setNode(0, (xmlNodePtr) ent);
-                break;
-            }
-
-            case OP_XML_GET_PREDEFINED_ENTITY:
-                startOp("xmlGetPredefinedEntity");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlGetPredefinedEntity(
-                    getStr(0)));
-                oomReport = 0;
-                break;
-
-            case OP_XML_GET_DOC_ENTITY:
-                startOp("xmlGetDocEntity");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlGetDocEntity(
-                    getDoc(1),
-                    getStr(0)));
-                oomReport = 0;
-                break;
-
-            case OP_XML_GET_DTD_ENTITY:
-                startOp("xmlGetDtdEntity");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlGetDtdEntity(
-                    getDoc(1),
-                    getStr(0)));
-                oomReport = 0;
-                break;
-
-            case OP_XML_GET_PARAMETER_ENTITY:
-                startOp("xmlGetParameterEntity");
-                incNodeIdx();
-                setNode(0, (xmlNodePtr) xmlGetParameterEntity(
-                    getDoc(1),
-                    getStr(0)));
-                oomReport = 0;
-                break;
-
-            case OP_XML_ENCODE_ENTITIES_REENTRANT: {
-                const xmlChar *string;
-                xmlChar *encoded;
-
-                startOp("xmlEncodeEntitiesReentrant");
-                incStrIdx();
-                encoded = xmlEncodeEntitiesReentrant(
-                    getDoc(0),
-                    string = getStr(1));
-                oomReport = (string != NULL && encoded == NULL);
-                moveStr(0, encoded);
-                endOp();
-                break;
-            }
-
-            case OP_XML_ENCODE_SPECIAL_CHARS: {
-                const xmlChar *string;
-                xmlChar *encoded;
-
-                startOp("xmlEncodespecialChars");
-                incStrIdx();
-                encoded = xmlEncodeSpecialChars(
-                    getDoc(0),
-                    string = getStr(1));
-                oomReport = (string != NULL && encoded == NULL);
-                moveStr(0, encoded);
-                endOp();
-                break;
-            }
+            startOp("xmlEncodespecialChars");
+            incStrIdx();
+            encoded = xmlEncodeSpecialChars(getDoc(0), string = getStr(1));
+            oomReport = (string != NULL && encoded == NULL);
+            moveStr(0, encoded);
+            endOp();
+            break;
+        }
 
 #ifdef LIBXML_HTML_ENABLED
-            case OP_HTML_NEW_DOC: {
-                htmlDocPtr doc;
+        case OP_HTML_NEW_DOC: {
+            htmlDocPtr doc;
 
-                startOp("htmlNewDoc");
-                incNodeIdx();
-                doc = htmlNewDoc(
-                    getStr(0),
-                    getStr(1));
-                oomReport = (doc == NULL);
-                setNode(0, (xmlNodePtr) doc);
-                break;
-            }
+            startOp("htmlNewDoc");
+            incNodeIdx();
+            doc = htmlNewDoc(getStr(0), getStr(1));
+            oomReport = (doc == NULL);
+            setNode(0, (xmlNodePtr) doc);
+            break;
+        }
 
-            case OP_HTML_NEW_DOC_NO_DTD: {
-                htmlDocPtr doc;
+        case OP_HTML_NEW_DOC_NO_DTD: {
+            htmlDocPtr doc;
 
-                startOp("htmlNewDocNoDtD");
-                incNodeIdx();
-                doc = htmlNewDocNoDtD(
-                    getStr(0),
-                    getStr(1));
-                oomReport = (doc == NULL);
-                setNode(0, (xmlNodePtr) doc);
-                break;
-            }
+            startOp("htmlNewDocNoDtD");
+            incNodeIdx();
+            doc = htmlNewDocNoDtD(getStr(0), getStr(1));
+            oomReport = (doc == NULL);
+            setNode(0, (xmlNodePtr) doc);
+            break;
+        }
 
-            case OP_HTML_GET_META_ENCODING: {
-                const xmlChar *encoding;
+        case OP_HTML_GET_META_ENCODING: {
+            const xmlChar *encoding;
 
-                startOp("htmlGetMetaEncoding");
-                incStrIdx();
-                encoding = htmlGetMetaEncoding(getDoc(0));
-                if (encoding != NULL)
-                    oomReport = 0;
-                copyStr(0, encoding);
-                break;
-            }
-
-            case OP_HTML_SET_META_ENCODING:
-                /* TODO (can destroy inner text) */
-                break;
-
-            case OP_HTML_IS_BOOLEAN_ATTR:
-                startOp("htmlIsBooleanAttr");
-                htmlIsBooleanAttr(getStr(0));
+            startOp("htmlGetMetaEncoding");
+            incStrIdx();
+            encoding = htmlGetMetaEncoding(getDoc(0));
+            if (encoding != NULL)
                 oomReport = 0;
-                endOp();
-                break;
+            copyStr(0, encoding);
+            break;
+        }
+
+        case OP_HTML_SET_META_ENCODING:
+            /* TODO (can destroy inner text) */
+            break;
+
+        case OP_HTML_IS_BOOLEAN_ATTR:
+            startOp("htmlIsBooleanAttr");
+            htmlIsBooleanAttr(getStr(0));
+            oomReport = 0;
+            endOp();
+            break;
 #endif
 
 #ifdef LIBXML_VALID_ENABLED
-            case OP_VALIDATE: {
-                xmlNodePtr node;
-                int type;
-                int res = 1;
+        case OP_VALIDATE: {
+            xmlNodePtr node;
+            int type;
+            int res = 1;
 
-                startOp("validate");
-                incIntIdx();
-                node = getNode(0);
-                type = node ? node->type : 0;
-                xmlValidCtxtPtr vctxt = xmlNewValidCtxt();
-                xmlFuzzResetFailure();
+            startOp("validate");
+            incIntIdx();
+            node = getNode(0);
+            type = node ? node->type : 0;
+            xmlValidCtxtPtr vctxt = xmlNewValidCtxt();
+            xmlFuzzResetFailure();
 
-                switch (type) {
-                    case XML_DOCUMENT_NODE:
-                    case XML_HTML_DOCUMENT_NODE:
-                        res = xmlValidateDocument(vctxt, (xmlDocPtr) node);
-                        break;
-                    case XML_ELEMENT_DECL:
-                        res = xmlValidateElementDecl(vctxt, node->doc,
-                            (xmlElementPtr) node);
-                        break;
-                    case XML_ATTRIBUTE_DECL:
-                        res = xmlValidateAttributeDecl(vctxt, node->doc,
-                            (xmlAttributePtr) node);
-                        break;
-                    case XML_ELEMENT_NODE:
-                        res = xmlValidateElement(vctxt, node->doc, node);
-                        break;
-                    default:
-                        break;
-                }
-
-                if (res != 0)
-                    oomReport = 0;
-                xmlFreeValidCtxt(vctxt);
-                setInt(0, res);
-                endOp();
+            switch (type) {
+            case XML_DOCUMENT_NODE:
+            case XML_HTML_DOCUMENT_NODE:
+                res = xmlValidateDocument(vctxt, (xmlDocPtr) node);
+                break;
+            case XML_ELEMENT_DECL:
+                res = xmlValidateElementDecl(vctxt, node->doc,
+                                             (xmlElementPtr) node);
+                break;
+            case XML_ATTRIBUTE_DECL:
+                res = xmlValidateAttributeDecl(vctxt, node->doc,
+                                               (xmlAttributePtr) node);
+                break;
+            case XML_ELEMENT_NODE:
+                res = xmlValidateElement(vctxt, node->doc, node);
+                break;
+            default:
                 break;
             }
 
-            case OP_XML_VALIDATE_DTD: {
-                xmlValidCtxtPtr vctxt;
-                int res;
+            if (res != 0)
+                oomReport = 0;
+            xmlFreeValidCtxt(vctxt);
+            setInt(0, res);
+            endOp();
+            break;
+        }
 
-                startOp("xmlValidateDtd");
-                incIntIdx();
-                vctxt = xmlNewValidCtxt();
-                res = xmlValidateDtd(
-                    vctxt,
-                    getDoc(0),
-                    getDtd(1));
-                if (res != 0)
-                    oomReport = 0;
-                xmlFreeValidCtxt(vctxt);
-                setInt(0, res);
-                endOp();
-                break;
-            }
+        case OP_XML_VALIDATE_DTD: {
+            xmlValidCtxtPtr vctxt;
+            int res;
+
+            startOp("xmlValidateDtd");
+            incIntIdx();
+            vctxt = xmlNewValidCtxt();
+            res = xmlValidateDtd(vctxt, getDoc(0), getDtd(1));
+            if (res != 0)
+                oomReport = 0;
+            xmlFreeValidCtxt(vctxt);
+            setInt(0, res);
+            endOp();
+            break;
+        }
 #endif /* LIBXML_VALID_ENABLED */
 
 #ifdef LIBXML_OUTPUT_ENABLED
+        case OP_XML_DOC_DUMP_MEMORY:
+        case OP_XML_DOC_DUMP_MEMORY_ENC:
+        case OP_XML_DOC_DUMP_FORMAT_MEMORY:
+        case OP_XML_DOC_DUMP_FORMAT_MEMORY_ENC:
+        case OP_HTML_DOC_DUMP_MEMORY:
+        case OP_HTML_DOC_DUMP_MEMORY_FORMAT: {
+            xmlDocPtr doc;
+            xmlChar *out = NULL;
+            int outSize = 0;
+
+            switch (op) {
             case OP_XML_DOC_DUMP_MEMORY:
+                startOp("xmlDocDumpMemory");
+                break;
             case OP_XML_DOC_DUMP_MEMORY_ENC:
+                startOp("xmlDocDumpMemoryEnc");
+                break;
             case OP_XML_DOC_DUMP_FORMAT_MEMORY:
+                startOp("xmlDocDumpFormatMemory");
+                break;
             case OP_XML_DOC_DUMP_FORMAT_MEMORY_ENC:
+                startOp("xmlDocDumpFormatMemoryEnc");
+                break;
             case OP_HTML_DOC_DUMP_MEMORY:
-            case OP_HTML_DOC_DUMP_MEMORY_FORMAT: {
-                xmlDocPtr doc;
-                xmlChar *out = NULL;
-                int outSize = 0;
-
-                switch (op) {
-                    case OP_XML_DOC_DUMP_MEMORY:
-                        startOp("xmlDocDumpMemory"); break;
-                    case OP_XML_DOC_DUMP_MEMORY_ENC:
-                        startOp("xmlDocDumpMemoryEnc"); break;
-                    case OP_XML_DOC_DUMP_FORMAT_MEMORY:
-                        startOp("xmlDocDumpFormatMemory"); break;
-                    case OP_XML_DOC_DUMP_FORMAT_MEMORY_ENC:
-                        startOp("xmlDocDumpFormatMemoryEnc"); break;
-                    case OP_HTML_DOC_DUMP_MEMORY:
-                        startOp("htmlDocDumpMemory"); break;
-                    case OP_HTML_DOC_DUMP_MEMORY_FORMAT:
-                        startOp("htmlDocDumpMemoryFormat"); break;
-                }
-
-                incStrIdx();
-                doc = getDoc(0);
-
-                switch (op) {
-                    case OP_XML_DOC_DUMP_MEMORY:
-                        xmlDocDumpMemory(doc, &out, &outSize);
-                        break;
-                    case OP_XML_DOC_DUMP_MEMORY_ENC:
-                        xmlDocDumpMemoryEnc(doc, &out, &outSize,
-                            (const char *) getStr(1));
-                        break;
-                    case OP_XML_DOC_DUMP_FORMAT_MEMORY:
-                        xmlDocDumpFormatMemory(doc, &out, &outSize,
-                            getInt(0));
-                        break;
-                    case OP_XML_DOC_DUMP_FORMAT_MEMORY_ENC:
-                        xmlDocDumpFormatMemoryEnc(doc, &out, &outSize,
-                            (const char *) getStr(1),
-                            getInt(0));
-                        break;
-#ifdef LIBXML_HTML_ENABLED
-                    case OP_HTML_DOC_DUMP_MEMORY:
-                        htmlDocDumpMemory(doc, &out, &outSize);
-                        break;
-                    case OP_HTML_DOC_DUMP_MEMORY_FORMAT:
-                        htmlDocDumpMemoryFormat(doc, &out, &outSize,
-                            getInt(0));
-                        break;
-#endif /* LIBXML_HTML_ENABLED */
-                }
-
-                /* Could be an unknown encoding */
-                if (out != NULL)
-                    oomReport = 0;
-                moveStr(0, out);
-                endOp();
+                startOp("htmlDocDumpMemory");
+                break;
+            case OP_HTML_DOC_DUMP_MEMORY_FORMAT:
+                startOp("htmlDocDumpMemoryFormat");
                 break;
             }
 
+            incStrIdx();
+            doc = getDoc(0);
+
+            switch (op) {
+            case OP_XML_DOC_DUMP_MEMORY:
+                xmlDocDumpMemory(doc, &out, &outSize);
+                break;
+            case OP_XML_DOC_DUMP_MEMORY_ENC:
+                xmlDocDumpMemoryEnc(doc, &out, &outSize,
+                                    (const char *) getStr(1));
+                break;
+            case OP_XML_DOC_DUMP_FORMAT_MEMORY:
+                xmlDocDumpFormatMemory(doc, &out, &outSize, getInt(0));
+                break;
+            case OP_XML_DOC_DUMP_FORMAT_MEMORY_ENC:
+                xmlDocDumpFormatMemoryEnc(doc, &out, &outSize,
+                                          (const char *) getStr(1), getInt(0));
+                break;
+#ifdef LIBXML_HTML_ENABLED
+            case OP_HTML_DOC_DUMP_MEMORY:
+                htmlDocDumpMemory(doc, &out, &outSize);
+                break;
+            case OP_HTML_DOC_DUMP_MEMORY_FORMAT:
+                htmlDocDumpMemoryFormat(doc, &out, &outSize, getInt(0));
+                break;
+#endif /* LIBXML_HTML_ENABLED */
+            }
+
+            /* Could be an unknown encoding */
+            if (out != NULL)
+                oomReport = 0;
+            moveStr(0, out);
+            endOp();
+            break;
+        }
+
+        case OP_XML_NODE_DUMP:
+        case OP_XML_NODE_BUF_GET_CONTENT:
+        case OP_XML_ATTR_SERIALIZE_TXT_CONTENT:
+        case OP_XML_DUMP_ELEMENT_DECL:
+        case OP_XML_DUMP_ELEMENT_TABLE:
+        case OP_XML_DUMP_ATTRIBUTE_DECL:
+        case OP_XML_DUMP_ATTRIBUTE_TABLE:
+        case OP_XML_DUMP_ENTITY_DECL:
+        case OP_XML_DUMP_ENTITIES_TABLE:
+        case OP_XML_DUMP_NOTATION_DECL:
+        case OP_XML_DUMP_NOTATION_TABLE:
+        case OP_HTML_NODE_DUMP: {
+            xmlNodePtr node;
+            xmlDocPtr doc;
+            xmlBufferPtr buffer;
+            xmlChar *dump;
+            int level, format, res;
+
+            switch (op) {
             case OP_XML_NODE_DUMP:
+                startOp("xmlNodeDump");
+                break;
             case OP_XML_NODE_BUF_GET_CONTENT:
+                startOp("xmlNodeBufGetContent");
+                break;
             case OP_XML_ATTR_SERIALIZE_TXT_CONTENT:
+                startOp("xmlAttrSerializeTxtContent");
+                break;
             case OP_XML_DUMP_ELEMENT_DECL:
+                startOp("xmlDumpElementDecl");
+                break;
             case OP_XML_DUMP_ELEMENT_TABLE:
+                startOp("xmlDumpElementTable");
+                break;
             case OP_XML_DUMP_ATTRIBUTE_DECL:
+                startOp("xmlDumpAttributeDecl");
+                break;
             case OP_XML_DUMP_ATTRIBUTE_TABLE:
+                startOp("xmlDumpAttributeTable");
+                break;
             case OP_XML_DUMP_ENTITY_DECL:
+                startOp("xmlDumpEntityDecl");
+                break;
             case OP_XML_DUMP_ENTITIES_TABLE:
+                startOp("xmlDumpEntitiesTable");
+                break;
             case OP_XML_DUMP_NOTATION_DECL:
+                startOp("xmlDumpNotationDecl");
+                break;
             case OP_XML_DUMP_NOTATION_TABLE:
-            case OP_HTML_NODE_DUMP: {
-                xmlNodePtr node;
-                xmlDocPtr doc;
-                xmlBufferPtr buffer;
-                xmlChar *dump;
-                int level, format, res;
-
-                switch (op) {
-                    case OP_XML_NODE_DUMP:
-                        startOp("xmlNodeDump"); break;
-                    case OP_XML_NODE_BUF_GET_CONTENT:
-                        startOp("xmlNodeBufGetContent"); break;
-                    case OP_XML_ATTR_SERIALIZE_TXT_CONTENT:
-                        startOp("xmlAttrSerializeTxtContent"); break;
-                    case OP_XML_DUMP_ELEMENT_DECL:
-                        startOp("xmlDumpElementDecl"); break;
-                    case OP_XML_DUMP_ELEMENT_TABLE:
-                        startOp("xmlDumpElementTable"); break;
-                    case OP_XML_DUMP_ATTRIBUTE_DECL:
-                        startOp("xmlDumpAttributeDecl"); break;
-                    case OP_XML_DUMP_ATTRIBUTE_TABLE:
-                        startOp("xmlDumpAttributeTable"); break;
-                    case OP_XML_DUMP_ENTITY_DECL:
-                        startOp("xmlDumpEntityDecl"); break;
-                    case OP_XML_DUMP_ENTITIES_TABLE:
-                        startOp("xmlDumpEntitiesTable"); break;
-                    case OP_XML_DUMP_NOTATION_DECL:
-                        startOp("xmlDumpNotationDecl"); break;
-                    case OP_XML_DUMP_NOTATION_TABLE:
-                        startOp("xmlDumpNotationTable"); break;
-                    case OP_HTML_NODE_DUMP:
-                        startOp("htmlNodeDump"); break;
-                }
-
-                incStrIdx();
-                buffer = xmlBufferCreate();
-                xmlFuzzResetFailure();
-                node = getNode(0);
-                doc = node ? node->doc : NULL;
-                level = getInt(0);
-                format = getInt(0);
-                res = 0;
-
-                switch (op) {
-                    case OP_XML_NODE_DUMP:
-                        res = xmlNodeDump(buffer, doc, node, level, format);
-                        break;
-                    case OP_XML_NODE_BUF_GET_CONTENT:
-                        res = xmlNodeBufGetContent(buffer, node);
-                        break;
-                    case OP_XML_ATTR_SERIALIZE_TXT_CONTENT:
-                        if (node != NULL && node->type != XML_ATTRIBUTE_NODE)
-                            node = NULL;
-                        xmlAttrSerializeTxtContent(
-                            buffer, doc,
-                            (xmlAttrPtr) node,
-                            getStr(1));
-                        break;
-                    case OP_XML_DUMP_ELEMENT_DECL:
-                        if (node != NULL && node->type != XML_ELEMENT_DECL)
-                            node = NULL;
-                        xmlDumpElementDecl(buffer, (xmlElementPtr) node);
-                        break;
-                    case OP_XML_DUMP_ATTRIBUTE_DECL:
-                        if (node != NULL && node->type != XML_ATTRIBUTE_DECL)
-                            node = NULL;
-                        xmlDumpAttributeDecl(buffer, (xmlAttributePtr) node);
-                        break;
-                    case OP_XML_DUMP_NOTATION_DECL:
-                        /* TODO */
-                        break;
-                    case OP_XML_DUMP_ENTITY_DECL:
-                        if (node != NULL && node->type != XML_ENTITY_DECL)
-                            node = NULL;
-                        xmlDumpEntityDecl(buffer, (xmlEntityPtr) node);
-                        break;
-                    case OP_XML_DUMP_ELEMENT_TABLE: {
-                        xmlElementTablePtr table;
-
-                        table = node != NULL && node->type == XML_DTD_NODE ?
-                                ((xmlDtdPtr) node)->elements :
-                                NULL;
-                        xmlDumpElementTable(buffer, table);
-                        break;
-                    }
-                    case OP_XML_DUMP_ATTRIBUTE_TABLE: {
-                        xmlAttributeTablePtr table;
-
-                        table = node != NULL && node->type == XML_DTD_NODE ?
-                                ((xmlDtdPtr) node)->attributes :
-                                NULL;
-                        xmlDumpAttributeTable(buffer, table);
-                        break;
-                    }
-                    case OP_XML_DUMP_NOTATION_TABLE: {
-                        xmlNotationTablePtr table;
-
-                        table = node != NULL && node->type == XML_DTD_NODE ?
-                                ((xmlDtdPtr) node)->notations :
-                                NULL;
-                        xmlDumpNotationTable(buffer, table);
-                        break;
-                    }
-                    case OP_XML_DUMP_ENTITIES_TABLE: {
-                        xmlEntitiesTablePtr table;
-
-                        table = node != NULL && node->type == XML_DTD_NODE ?
-                                ((xmlDtdPtr) node)->entities :
-                                NULL;
-                        xmlDumpEntitiesTable(buffer, table);
-                        break;
-                    }
-#ifdef LIBXML_HTML_ENABLED
-                    case OP_HTML_NODE_DUMP:
-                        res = htmlNodeDump(buffer, doc, node);
-                        break;
-#endif /* LIBXML_HTML_ENABLED */
-                }
-
-                dump = xmlBufferDetach(buffer);
-                if (res == 0 && dump != NULL)
-                    oomReport = 0;
-                moveStr(0, dump);
-                xmlBufferFree(buffer);
-                endOp();
+                startOp("xmlDumpNotationTable");
+                break;
+            case OP_HTML_NODE_DUMP:
+                startOp("htmlNodeDump");
                 break;
             }
 
+            incStrIdx();
+            buffer = xmlBufferCreate();
+            xmlFuzzResetFailure();
+            node = getNode(0);
+            doc = node ? node->doc : NULL;
+            level = getInt(0);
+            format = getInt(0);
+            res = 0;
+
+            switch (op) {
+            case OP_XML_NODE_DUMP:
+                res = xmlNodeDump(buffer, doc, node, level, format);
+                break;
+            case OP_XML_NODE_BUF_GET_CONTENT:
+                res = xmlNodeBufGetContent(buffer, node);
+                break;
+            case OP_XML_ATTR_SERIALIZE_TXT_CONTENT:
+                if (node != NULL && node->type != XML_ATTRIBUTE_NODE)
+                    node = NULL;
+                xmlAttrSerializeTxtContent(buffer, doc, (xmlAttrPtr) node,
+                                           getStr(1));
+                break;
+            case OP_XML_DUMP_ELEMENT_DECL:
+                if (node != NULL && node->type != XML_ELEMENT_DECL)
+                    node = NULL;
+                xmlDumpElementDecl(buffer, (xmlElementPtr) node);
+                break;
+            case OP_XML_DUMP_ATTRIBUTE_DECL:
+                if (node != NULL && node->type != XML_ATTRIBUTE_DECL)
+                    node = NULL;
+                xmlDumpAttributeDecl(buffer, (xmlAttributePtr) node);
+                break;
+            case OP_XML_DUMP_NOTATION_DECL:
+                /* TODO */
+                break;
+            case OP_XML_DUMP_ENTITY_DECL:
+                if (node != NULL && node->type != XML_ENTITY_DECL)
+                    node = NULL;
+                xmlDumpEntityDecl(buffer, (xmlEntityPtr) node);
+                break;
+            case OP_XML_DUMP_ELEMENT_TABLE: {
+                xmlElementTablePtr table;
+
+                table = node != NULL && node->type == XML_DTD_NODE
+                    ? ((xmlDtdPtr) node)->elements
+                    : NULL;
+                xmlDumpElementTable(buffer, table);
+                break;
+            }
+            case OP_XML_DUMP_ATTRIBUTE_TABLE: {
+                xmlAttributeTablePtr table;
+
+                table = node != NULL && node->type == XML_DTD_NODE
+                    ? ((xmlDtdPtr) node)->attributes
+                    : NULL;
+                xmlDumpAttributeTable(buffer, table);
+                break;
+            }
+            case OP_XML_DUMP_NOTATION_TABLE: {
+                xmlNotationTablePtr table;
+
+                table = node != NULL && node->type == XML_DTD_NODE
+                    ? ((xmlDtdPtr) node)->notations
+                    : NULL;
+                xmlDumpNotationTable(buffer, table);
+                break;
+            }
+            case OP_XML_DUMP_ENTITIES_TABLE: {
+                xmlEntitiesTablePtr table;
+
+                table = node != NULL && node->type == XML_DTD_NODE
+                    ? ((xmlDtdPtr) node)->entities
+                    : NULL;
+                xmlDumpEntitiesTable(buffer, table);
+                break;
+            }
+#ifdef LIBXML_HTML_ENABLED
+            case OP_HTML_NODE_DUMP:
+                res = htmlNodeDump(buffer, doc, node);
+                break;
+#endif /* LIBXML_HTML_ENABLED */
+            }
+
+            dump = xmlBufferDetach(buffer);
+            if (res == 0 && dump != NULL)
+                oomReport = 0;
+            moveStr(0, dump);
+            xmlBufferFree(buffer);
+            endOp();
+            break;
+        }
+
+        case OP_XML_SAVE_FILE_TO:
+        case OP_XML_SAVE_FORMAT_FILE_TO:
+        case OP_XML_NODE_DUMP_OUTPUT:
+        case OP_HTML_DOC_CONTENT_DUMP_OUTPUT:
+        case OP_HTML_DOC_CONTENT_DUMP_FORMAT_OUTPUT:
+        case OP_HTML_NODE_DUMP_OUTPUT:
+        case OP_HTML_NODE_DUMP_FORMAT_OUTPUT: {
+            xmlNodePtr node;
+            xmlDocPtr doc;
+            xmlOutputBufferPtr output;
+            const char *encoding;
+            int level, format, argsOk, res, closed;
+
+            switch (op) {
             case OP_XML_SAVE_FILE_TO:
+                startOp("xmlSaveFileTo");
+                break;
             case OP_XML_SAVE_FORMAT_FILE_TO:
+                startOp("xmlSaveFormatFileTo");
+                break;
             case OP_XML_NODE_DUMP_OUTPUT:
+                startOp("xmlNodeDumpOutput");
+                break;
             case OP_HTML_DOC_CONTENT_DUMP_OUTPUT:
+                startOp("htmlDocContentDumpOutput");
+                break;
             case OP_HTML_DOC_CONTENT_DUMP_FORMAT_OUTPUT:
+                startOp("htmlDocContentDumpFormatOutput");
+                break;
             case OP_HTML_NODE_DUMP_OUTPUT:
-            case OP_HTML_NODE_DUMP_FORMAT_OUTPUT: {
-                xmlNodePtr node;
-                xmlDocPtr doc;
-                xmlOutputBufferPtr output;
-                const char *encoding;
-                int level, format, argsOk, res, closed;
-
-                switch (op) {
-                    case OP_XML_SAVE_FILE_TO:
-                        startOp("xmlSaveFileTo"); break;
-                    case OP_XML_SAVE_FORMAT_FILE_TO:
-                        startOp("xmlSaveFormatFileTo"); break;
-                    case OP_XML_NODE_DUMP_OUTPUT:
-                        startOp("xmlNodeDumpOutput"); break;
-                    case OP_HTML_DOC_CONTENT_DUMP_OUTPUT:
-                        startOp("htmlDocContentDumpOutput"); break;
-                    case OP_HTML_DOC_CONTENT_DUMP_FORMAT_OUTPUT:
-                        startOp("htmlDocContentDumpFormatOutput"); break;
-                    case OP_HTML_NODE_DUMP_OUTPUT:
-                        startOp("htmlNodeDumpOutput"); break;
-                    case OP_HTML_NODE_DUMP_FORMAT_OUTPUT:
-                        startOp("htmlNodeDumpFormatOutput"); break;
-                }
-
-                incStrIdx();
-                output = xmlOutputBufferCreateIO(xmlFuzzOutputWrite,
-                                                 xmlFuzzOutputClose, NULL, NULL);
-                xmlFuzzResetFailure();
-                node = getNode(0);
-                doc = node ? node->doc : NULL;
-                encoding = (const char *) getStr(1);
-                level = getInt(0);
-                format = getInt(0);
-                argsOk = (output != NULL);
-                res = 0;
-                closed = 0;
-
-                switch (op) {
-                    case OP_XML_SAVE_FILE_TO:
-                        argsOk &= (doc != NULL);
-                        res = xmlSaveFileTo(output, doc, encoding);
-                        closed = 1;
-                        break;
-                    case OP_XML_SAVE_FORMAT_FILE_TO:
-                        argsOk &= (doc != NULL);
-                        res = xmlSaveFormatFileTo(output, doc, encoding, format);
-                        closed = 1;
-                        break;
-                    case OP_XML_NODE_DUMP_OUTPUT:
-                        argsOk &= (node != NULL);
-                        xmlNodeDumpOutput(output, doc, node, level, format,
-                                          encoding);
-                        break;
-#ifdef LIBXML_HTML_ENABLED
-                    case OP_HTML_DOC_CONTENT_DUMP_OUTPUT:
-                        argsOk &= (doc != NULL);
-                        htmlDocContentDumpOutput(output, doc, encoding);
-                        break;
-                    case OP_HTML_DOC_CONTENT_DUMP_FORMAT_OUTPUT:
-                        argsOk &= (doc != NULL);
-                        htmlDocContentDumpFormatOutput(output, doc, encoding,
-                                                       format);
-                        break;
-                    case OP_HTML_NODE_DUMP_OUTPUT:
-                        argsOk &= (node != NULL);
-                        htmlNodeDumpOutput(output, doc, node, encoding);
-                        break;
-                    case OP_HTML_NODE_DUMP_FORMAT_OUTPUT:
-                        argsOk &= (node != NULL);
-                        htmlNodeDumpFormatOutput(output, doc, node, encoding,
-                                                 format);
-                        break;
-#endif /* LIBXML_HTML_ENABLED */
-                }
-
-                if (closed) {
-                    if (res >= 0)
-                        oomReport = 0;
-                    else
-                        ioReport = -1;
-                    moveStr(0, NULL);
-                } else {
-                    if (argsOk && !output->error)
-                        copyStr(0, xmlBufContent(output->buffer));
-                    else
-                        moveStr(0, NULL);
-                    res = xmlOutputBufferClose(output);
-                    oomReport = (res == -XML_ERR_NO_MEMORY);
-                    ioReport  = (res == -XML_IO_EIO);
-                }
-                endOp();
+                startOp("htmlNodeDumpOutput");
+                break;
+            case OP_HTML_NODE_DUMP_FORMAT_OUTPUT:
+                startOp("htmlNodeDumpFormatOutput");
                 break;
             }
+
+            incStrIdx();
+            output = xmlOutputBufferCreateIO(xmlFuzzOutputWrite,
+                                             xmlFuzzOutputClose, NULL, NULL);
+            xmlFuzzResetFailure();
+            node = getNode(0);
+            doc = node ? node->doc : NULL;
+            encoding = (const char *) getStr(1);
+            level = getInt(0);
+            format = getInt(0);
+            argsOk = (output != NULL);
+            res = 0;
+            closed = 0;
+
+            switch (op) {
+            case OP_XML_SAVE_FILE_TO:
+                argsOk &= (doc != NULL);
+                res = xmlSaveFileTo(output, doc, encoding);
+                closed = 1;
+                break;
+            case OP_XML_SAVE_FORMAT_FILE_TO:
+                argsOk &= (doc != NULL);
+                res = xmlSaveFormatFileTo(output, doc, encoding, format);
+                closed = 1;
+                break;
+            case OP_XML_NODE_DUMP_OUTPUT:
+                argsOk &= (node != NULL);
+                xmlNodeDumpOutput(output, doc, node, level, format, encoding);
+                break;
+#ifdef LIBXML_HTML_ENABLED
+            case OP_HTML_DOC_CONTENT_DUMP_OUTPUT:
+                argsOk &= (doc != NULL);
+                htmlDocContentDumpOutput(output, doc, encoding);
+                break;
+            case OP_HTML_DOC_CONTENT_DUMP_FORMAT_OUTPUT:
+                argsOk &= (doc != NULL);
+                htmlDocContentDumpFormatOutput(output, doc, encoding, format);
+                break;
+            case OP_HTML_NODE_DUMP_OUTPUT:
+                argsOk &= (node != NULL);
+                htmlNodeDumpOutput(output, doc, node, encoding);
+                break;
+            case OP_HTML_NODE_DUMP_FORMAT_OUTPUT:
+                argsOk &= (node != NULL);
+                htmlNodeDumpFormatOutput(output, doc, node, encoding, format);
+                break;
+#endif /* LIBXML_HTML_ENABLED */
+            }
+
+            if (closed) {
+                if (res >= 0)
+                    oomReport = 0;
+                else
+                    ioReport = -1;
+                moveStr(0, NULL);
+            } else {
+                if (argsOk && !output->error)
+                    copyStr(0, xmlBufContent(output->buffer));
+                else
+                    moveStr(0, NULL);
+                res = xmlOutputBufferClose(output);
+                oomReport = (res == -XML_ERR_NO_MEMORY);
+                ioReport = (res == -XML_IO_EIO);
+            }
+            endOp();
+            break;
+        }
 #endif /* LIBXML_OUTPUT_ENABLED */
 
-            case OP_XML_DOM_WRAP_RECONCILE_NAMESPACES: {
-                xmlNodePtr node;
-                int res;
+        case OP_XML_DOM_WRAP_RECONCILE_NAMESPACES: {
+            xmlNodePtr node;
+            int res;
 
-                startOp("xmlDOMWrapReconcileNamespaces");
-                res = xmlDOMWrapReconcileNamespaces(
-                    NULL,
-                    node = getNode(0),
-                    getInt(0));
-                oomReport =
-                    (node != NULL &&
-                     node->doc != NULL &&
-                     node->type == XML_ELEMENT_NODE &&
-                     res < 0);
-                endOp();
-                break;
-            }
+            startOp("xmlDOMWrapReconcileNamespaces");
+            res = xmlDOMWrapReconcileNamespaces(NULL, node = getNode(0),
+                                                getInt(0));
+            oomReport = (node != NULL && node->doc != NULL
+                         && node->type == XML_ELEMENT_NODE && res < 0);
+            endOp();
+            break;
+        }
 
-            case OP_XML_DOM_WRAP_ADOPT_NODE: {
-                xmlDOMWrapCtxtPtr ctxt;
-                xmlDocPtr doc, destDoc, oldDoc;
-                xmlNodePtr node, destParent, oldParent;
-                int res;
+        case OP_XML_DOM_WRAP_ADOPT_NODE: {
+            xmlDOMWrapCtxtPtr ctxt;
+            xmlDocPtr doc, destDoc, oldDoc;
+            xmlNodePtr node, destParent, oldParent;
+            int res;
 
-                startOp("xmlDOMWrapAdoptNode");
-                ctxt = xmlDOMWrapNewCtxt();
-                doc = getDoc(0);
-                node = getNode(1);
-                destDoc = getDoc(2);
-                destParent = getNode(3);
+            startOp("xmlDOMWrapAdoptNode");
+            ctxt = xmlDOMWrapNewCtxt();
+            doc = getDoc(0);
+            node = getNode(1);
+            destDoc = getDoc(2);
+            destParent = getNode(3);
 
-                if (!isValidChild(destParent, node))
-                    destParent = NULL;
+            if (!isValidChild(destParent, node))
+                destParent = NULL;
 
-                oldParent = node ? node->parent : NULL;
-                oldDoc = node ? node->doc : NULL;
+            oldParent = node ? node->parent : NULL;
+            oldDoc = node ? node->doc : NULL;
 
-                res = xmlDOMWrapAdoptNode(
-                    ctxt,
-                    doc,
-                    node,
-                    destDoc,
-                    destParent,
-                    getInt(0));
-                if (ctxt == NULL)
-                    oomReport = 1;
-                else if (res == 0)
-                    oomReport = 0;
+            res = xmlDOMWrapAdoptNode(ctxt, doc, node, destDoc, destParent,
+                                      getInt(0));
+            if (ctxt == NULL)
+                oomReport = 1;
+            else if (res == 0)
+                oomReport = 0;
 
-                if (node != NULL) {
-                    /* Node can reference destParent's namespaces */
-                    if (destParent != NULL &&
-                        node->parent == NULL &&
-                        node->doc == destParent->doc) {
-                        if (node->type == XML_ATTRIBUTE_NODE) {
-                            xmlNodePtr prop;
-
-                            /* Insert without removing duplicates */
-                            node->parent = destParent;
-                            prop = (xmlNodePtr) destParent->properties;
-                            node->next = prop;
-                            if (prop != NULL)
-                                prop->prev = node;
-                            destParent->properties = (xmlAttrPtr) node;
-                        } else if (node->type != XML_TEXT_NODE) {
-                            xmlAddChild(destParent, node);
-                        }
-                    }
-
-                    /* Node can be unlinked and moved to a new document. */
-                    if (oldParent != NULL && node->parent != oldParent)
-                        dropNode(oldParent);
-                    else if (node->doc != oldDoc)
-                        dropNode((xmlNodePtr) oldDoc);
-                }
-
-                xmlDOMWrapFreeCtxt(ctxt);
-                endOp();
-                break;
-            }
-
-            case OP_XML_DOM_WRAP_REMOVE_NODE: {
-                xmlDocPtr doc;
-                xmlNodePtr node, oldParent;
-                int res;
-
-                startOp("xmlDOMWrapRemoveNode");
-                doc = getDoc(0);
-                node = getNode(1);
-                oldParent = node ? node->parent : NULL;
-                res = xmlDOMWrapRemoveNode(NULL, doc, node, 0);
-                oomReport =
-                    (node != NULL &&
-                     doc != NULL &&
-                     node->doc == doc &&
-                     res < 0);
-                if (node != NULL && node->parent != oldParent) {
-                    if (fixNs(node) < 0)
-                        oomReport = 1;
-                    dropNode(oldParent);
-                }
-                endOp();
-                break;
-            }
-
-            case OP_XML_DOM_WRAP_CLONE_NODE: {
-                xmlDOMWrapCtxtPtr ctxt;
-                xmlDocPtr doc, destDoc;
-                xmlNodePtr node, destParent, copy = NULL;
-                int res;
-
-                startOp("xmlDOMWrapCloneNode");
-                incNodeIdx();
-                ctxt = xmlDOMWrapNewCtxt();
-                doc = getDoc(1);
-                node = getNode(2);
-                destDoc = getDoc(3);
-                destParent = getNode(4);
-
-                if (destParent != NULL &&
-                    node != NULL &&
-                    !isValidChildType(destParent, node->type))
-                    destParent = NULL;
-
-                /* xmlDOMWrapCloneNode returns a garbage node on error. */
-                res = xmlDOMWrapCloneNode(
-                    ctxt,
-                    doc,
-                    node,
-                    &copy,
-                    destDoc,
-                    destParent,
-                    getInt(0),
-                    0);
-                if (ctxt == NULL)
-                    oomReport = 1;
-                else if (res == 0)
-                    oomReport = 0;
-                copy = checkCopy(copy);
-
-                /* Copy can reference destParent's namespaces */
-                if (destParent != NULL && copy != NULL) {
-                    if (copy->type == XML_ATTRIBUTE_NODE) {
+            if (node != NULL) {
+                /* Node can reference destParent's namespaces */
+                if (destParent != NULL && node->parent == NULL
+                    && node->doc == destParent->doc) {
+                    if (node->type == XML_ATTRIBUTE_NODE) {
                         xmlNodePtr prop;
 
                         /* Insert without removing duplicates */
-                        copy->parent = destParent;
+                        node->parent = destParent;
                         prop = (xmlNodePtr) destParent->properties;
-                        copy->next = prop;
+                        node->next = prop;
                         if (prop != NULL)
-                            prop->prev = copy;
-                        destParent->properties = (xmlAttrPtr) copy;
-                    } else if (copy->type != XML_TEXT_NODE) {
-                        xmlAddChild(destParent, copy);
+                            prop->prev = node;
+                        destParent->properties = (xmlAttrPtr) node;
+                    } else if (node->type != XML_TEXT_NODE) {
+                        xmlAddChild(destParent, node);
                     }
                 }
 
-                xmlDOMWrapFreeCtxt(ctxt);
-                setNode(0, copy);
-                break;
+                /* Node can be unlinked and moved to a new document. */
+                if (oldParent != NULL && node->parent != oldParent)
+                    dropNode(oldParent);
+                else if (node->doc != oldDoc)
+                    dropNode((xmlNodePtr) oldDoc);
             }
 
-            case OP_XML_CHILD_ELEMENT_COUNT:
-                startOp("xmlChildElementCount");
-                incIntIdx();
-                setInt(0, xmlChildElementCount(getNode(0)));
-                oomReport = 0;
-                break;
+            xmlDOMWrapFreeCtxt(ctxt);
+            endOp();
+            break;
+        }
 
-            case OP_XML_FIRST_ELEMENT_CHILD:
-                startOp("xmlFirstElementChild");
-                incNodeIdx();
-                setNode(0, xmlFirstElementChild(getNode(1)));
-                oomReport = 0;
-                break;
+        case OP_XML_DOM_WRAP_REMOVE_NODE: {
+            xmlDocPtr doc;
+            xmlNodePtr node, oldParent;
+            int res;
 
-            case OP_XML_LAST_ELEMENT_CHILD:
-                startOp("xmlLastElementChild");
-                incNodeIdx();
-                setNode(0, xmlLastElementChild(getNode(1)));
-                oomReport = 0;
-                break;
+            startOp("xmlDOMWrapRemoveNode");
+            doc = getDoc(0);
+            node = getNode(1);
+            oldParent = node ? node->parent : NULL;
+            res = xmlDOMWrapRemoveNode(NULL, doc, node, 0);
+            oomReport
+                = (node != NULL && doc != NULL && node->doc == doc && res < 0);
+            if (node != NULL && node->parent != oldParent) {
+                if (fixNs(node) < 0)
+                    oomReport = 1;
+                dropNode(oldParent);
+            }
+            endOp();
+            break;
+        }
 
-            case OP_XML_NEXT_ELEMENT_SIBLING:
-                startOp("xmlNextElementSibling");
-                incNodeIdx();
-                setNode(0, xmlNextElementSibling(getNode(1)));
-                oomReport = 0;
-                break;
+        case OP_XML_DOM_WRAP_CLONE_NODE: {
+            xmlDOMWrapCtxtPtr ctxt;
+            xmlDocPtr doc, destDoc;
+            xmlNodePtr node, destParent, copy = NULL;
+            int res;
 
-            case OP_XML_PREVIOUS_ELEMENT_SIBLING:
-                startOp("xmlPreviousElementSibling");
-                incNodeIdx();
-                setNode(0, xmlPreviousElementSibling(getNode(1)));
-                oomReport = 0;
-                break;
+            startOp("xmlDOMWrapCloneNode");
+            incNodeIdx();
+            ctxt = xmlDOMWrapNewCtxt();
+            doc = getDoc(1);
+            node = getNode(2);
+            destDoc = getDoc(3);
+            destParent = getNode(4);
 
-            default:
-                break;
+            if (destParent != NULL && node != NULL
+                && !isValidChildType(destParent, node->type))
+                destParent = NULL;
+
+            /* xmlDOMWrapCloneNode returns a garbage node on error. */
+            res = xmlDOMWrapCloneNode(ctxt, doc, node, &copy, destDoc,
+                                      destParent, getInt(0), 0);
+            if (ctxt == NULL)
+                oomReport = 1;
+            else if (res == 0)
+                oomReport = 0;
+            copy = checkCopy(copy);
+
+            /* Copy can reference destParent's namespaces */
+            if (destParent != NULL && copy != NULL) {
+                if (copy->type == XML_ATTRIBUTE_NODE) {
+                    xmlNodePtr prop;
+
+                    /* Insert without removing duplicates */
+                    copy->parent = destParent;
+                    prop = (xmlNodePtr) destParent->properties;
+                    copy->next = prop;
+                    if (prop != NULL)
+                        prop->prev = copy;
+                    destParent->properties = (xmlAttrPtr) copy;
+                } else if (copy->type != XML_TEXT_NODE) {
+                    xmlAddChild(destParent, copy);
+                }
+            }
+
+            xmlDOMWrapFreeCtxt(ctxt);
+            setNode(0, copy);
+            break;
+        }
+
+        case OP_XML_CHILD_ELEMENT_COUNT:
+            startOp("xmlChildElementCount");
+            incIntIdx();
+            setInt(0, xmlChildElementCount(getNode(0)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_FIRST_ELEMENT_CHILD:
+            startOp("xmlFirstElementChild");
+            incNodeIdx();
+            setNode(0, xmlFirstElementChild(getNode(1)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_LAST_ELEMENT_CHILD:
+            startOp("xmlLastElementChild");
+            incNodeIdx();
+            setNode(0, xmlLastElementChild(getNode(1)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_NEXT_ELEMENT_SIBLING:
+            startOp("xmlNextElementSibling");
+            incNodeIdx();
+            setNode(0, xmlNextElementSibling(getNode(1)));
+            oomReport = 0;
+            break;
+
+        case OP_XML_PREVIOUS_ELEMENT_SIBLING:
+            startOp("xmlPreviousElementSibling");
+            incNodeIdx();
+            setNode(0, xmlPreviousElementSibling(getNode(1)));
+            oomReport = 0;
+            break;
+
+        default:
+            break;
         }
 
         xmlFuzzCheckFailureReport(vars->opName, oomReport, ioReport);
@@ -3597,18 +3367,17 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     xmlFuzzInjectFailure(0);
     xmlFuzzDataCleanup();
     xmlResetLastError();
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
