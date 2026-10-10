@@ -34,14 +34,13 @@
 
 /* make sure init function is exported on win32 */
 #if defined(_WIN32)
-  #define PLUGINPUBFUN __declspec(dllexport)
+#define PLUGINPUBFUN __declspec(dllexport)
 #else
-  #define PLUGINPUBFUN
+#define PLUGINPUBFUN
 #endif
 
 /* include a prototype to make gcc happy */
-void
-PLUGINPUBFUN xmlsoft_org_xslt_testplugin_init(void);
+void PLUGINPUBFUN xmlsoft_org_xslt_testplugin_init (void);
 
 /************************************************************************
  * 									*
@@ -66,8 +65,7 @@ static xmlChar *testStyleData = NULL;
  * function libxslt:test() for testing the extensions support.
  */
 static void
-xsltExtFunctionTest(xmlXPathParserContextPtr ctxt,
-                    int nargs UNUSED)
+xsltExtFunctionTest (xmlXPathParserContextPtr ctxt, int nargs UNUSED)
 {
     xsltTransformContextPtr tctxt;
     void *data = NULL;
@@ -86,8 +84,9 @@ xsltExtFunctionTest(xmlXPathParserContextPtr ctxt,
         }
     }
     if (tctxt == NULL) {
-        xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-                           "xsltExtFunctionTest: failed to get the transformation context\n");
+        xsltTransformError(
+            xsltXPathGetTransformContext(ctxt), NULL, NULL,
+            "xsltExtFunctionTest: failed to get the transformation context\n");
         return;
     }
     if (data == NULL)
@@ -116,15 +115,15 @@ xsltExtFunctionTest(xmlXPathParserContextPtr ctxt,
  * Process a libxslt:test node
  */
 static xsltElemPreCompPtr
-xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
-                          xsltTransformFunction function)
+xsltExtElementPreCompTest (xsltStylesheetPtr style, xmlNodePtr inst,
+                           xsltTransformFunction function)
 {
     xsltElemPreCompPtr ret;
 
     if (style == NULL) {
         xsltTransformError(NULL, NULL, inst,
                            "xsltExtElementTest: no transformation context\n");
-        return (NULL);
+        return NULL;
     }
     if (testStyleData == NULL) {
         xsltGenericDebug(xsltGenericDebugContext,
@@ -136,7 +135,7 @@ xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
                                "xsltExtElementPreCompTest: not initialized\n");
             if (style != NULL)
                 style->errors++;
-            return (NULL);
+            return NULL;
         }
     }
     if (inst == NULL) {
@@ -144,10 +143,10 @@ xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
                            "xsltExtElementPreCompTest: no instruction\n");
         if (style != NULL)
             style->errors++;
-        return (NULL);
+        return NULL;
     }
     ret = xsltNewElemPreComp(style, inst, function);
-    return (ret);
+    return ret;
 }
 
 /**
@@ -160,9 +159,8 @@ xsltExtElementPreCompTest(xsltStylesheetPtr style, xmlNodePtr inst,
  * Process a libxslt:test node
  */
 static void
-xsltExtElementTest(xsltTransformContextPtr ctxt, xmlNodePtr node,
-                   xmlNodePtr inst,
-                   xsltElemPreCompPtr comp UNUSED)
+xsltExtElementTest (xsltTransformContextPtr ctxt, xmlNodePtr node,
+                    xmlNodePtr inst, xsltElemPreCompPtr comp UNUSED)
 {
     xmlNodePtr commentNode;
 
@@ -197,8 +195,8 @@ xsltExtElementTest(xsltTransformContextPtr ctxt, xmlNodePtr node,
                            "xsltExtElementTest: no insertion point\n");
         return;
     }
-    commentNode = xmlNewComment((const xmlChar *)
-                                "libxslt:testplugin element test worked");
+    commentNode = xmlNewComment(
+        (const xmlChar *) "libxslt:testplugin element test worked");
     xmlAddChild(ctxt->insert, commentNode);
 }
 
@@ -212,7 +210,7 @@ xsltExtElementTest(xsltTransformContextPtr ctxt, xmlNodePtr node,
  * Returns a pointer to the module specific data for this transformation
  */
 static void *
-xsltExtInitTest(xsltTransformContextPtr ctxt, const xmlChar * URI)
+xsltExtInitTest (xsltTransformContextPtr ctxt, const xmlChar *URI)
 {
     if (testStyleData == NULL) {
         xsltGenericDebug(xsltGenericErrorContext,
@@ -222,20 +220,19 @@ xsltExtInitTest(xsltTransformContextPtr ctxt, const xmlChar * URI)
         if (testStyleData == NULL) {
             xsltTransformError(ctxt, NULL, NULL,
                                "xsltExtInitTest: not initialized\n");
-            return (NULL);
+            return NULL;
         }
     }
     if (testData != NULL) {
         xsltTransformError(ctxt, NULL, NULL,
                            "xsltExtInitTest: already initialized\n");
-        return (NULL);
+        return NULL;
     }
     testData = (void *) "test data";
     xsltGenericDebug(xsltGenericDebugContext,
                      "Registered test plugin module : %s\n", URI);
-    return (testData);
+    return testData;
 }
-
 
 /**
  * xsltExtShutdownTest:
@@ -246,8 +243,8 @@ xsltExtInitTest(xsltTransformContextPtr ctxt, const xmlChar * URI)
  * A function called at shutdown time of an XSLT extension module
  */
 static void
-xsltExtShutdownTest(xsltTransformContextPtr ctxt,
-                    const xmlChar * URI, void *data)
+xsltExtShutdownTest (xsltTransformContextPtr ctxt, const xmlChar *URI,
+                     void *data)
 {
     if (testData == NULL) {
         xsltTransformError(ctxt, NULL, NULL,
@@ -273,20 +270,18 @@ xsltExtShutdownTest(xsltTransformContextPtr ctxt,
  * Returns a pointer to the module specific data for this transformation
  */
 static void *
-xsltExtStyleInitTest(xsltStylesheetPtr style UNUSED,
-                     const xmlChar * URI)
+xsltExtStyleInitTest (xsltStylesheetPtr style UNUSED, const xmlChar *URI)
 {
     if (testStyleData != NULL) {
         xsltTransformError(NULL, NULL, NULL,
                            "xsltExtInitTest: already initialized\n");
-        return (NULL);
+        return NULL;
     }
     testStyleData = (void *) "test data";
     xsltGenericDebug(xsltGenericDebugContext,
                      "Registered test plugin module : %s\n", URI);
-    return (testStyleData);
+    return testStyleData;
 }
-
 
 /**
  * xsltExtStyleShutdownTest:
@@ -297,8 +292,8 @@ xsltExtStyleInitTest(xsltStylesheetPtr style UNUSED,
  * A function called at shutdown time of an XSLT extension module
  */
 static void
-xsltExtStyleShutdownTest(xsltStylesheetPtr style UNUSED,
-                         const xmlChar * URI, void *data)
+xsltExtStyleShutdownTest (xsltStylesheetPtr style UNUSED, const xmlChar *URI,
+                          void *data)
 {
     if (testStyleData == NULL) {
         xsltGenericError(xsltGenericErrorContext,
@@ -320,20 +315,18 @@ xsltExtStyleShutdownTest(xsltStylesheetPtr style UNUSED,
  * Registers the test plugin module
  */
 
-void
-PLUGINPUBFUN xmlsoft_org_xslt_testplugin_init(void)
+void PLUGINPUBFUN
+xmlsoft_org_xslt_testplugin_init (void)
 {
     xsltRegisterExtModuleFull((const xmlChar *) XSLT_TESTPLUGIN_URL,
                               xsltExtInitTest, xsltExtShutdownTest,
-                              xsltExtStyleInitTest,
-                              xsltExtStyleShutdownTest);
+                              xsltExtStyleInitTest, xsltExtStyleShutdownTest);
     xsltRegisterExtModuleFunction((const xmlChar *) "testplugin",
                                   (const xmlChar *) XSLT_TESTPLUGIN_URL,
                                   xsltExtFunctionTest);
     xsltRegisterExtModuleElement((const xmlChar *) "testplugin",
                                  (const xmlChar *) XSLT_TESTPLUGIN_URL,
-                                 xsltExtElementPreCompTest,
-                                 xsltExtElementTest);
+                                 xsltExtElementPreCompTest, xsltExtElementTest);
 }
 
 #endif /*WITH_MODULES*/
