@@ -18,23 +18,24 @@
  * Create a new ICU collator.
  */
 void *
-xsltICUNewLocale(const xmlChar *lang, int lowerFirst) {
+xsltICUNewLocale (const xmlChar *lang, int lowerFirst)
+{
     UCollator *coll;
     UErrorCode status = U_ZERO_ERROR;
 
     coll = ucol_open((const char *) lang, &status);
     if (U_FAILURE(status)) {
-	status = U_ZERO_ERROR;
-	coll = ucol_open("en", &status);
+        status = U_ZERO_ERROR;
+        coll = ucol_open("en", &status);
         if (U_FAILURE(status)) {
             return NULL;
         }
     }
 
     if (lowerFirst)
-	ucol_setAttribute(coll, UCOL_CASE_FIRST, UCOL_LOWER_FIRST, &status);
+        ucol_setAttribute(coll, UCOL_CASE_FIRST, UCOL_LOWER_FIRST, &status);
     else
-	ucol_setAttribute(coll, UCOL_CASE_FIRST, UCOL_UPPER_FIRST, &status);
+        ucol_setAttribute(coll, UCOL_CASE_FIRST, UCOL_UPPER_FIRST, &status);
 
     return (void *) coll;
 }
@@ -46,7 +47,8 @@ xsltICUNewLocale(const xmlChar *lang, int lowerFirst) {
  * Free the ICU collator.
  */
 void
-xsltICUFreeLocale(void *coll) {
+xsltICUFreeLocale (void *coll)
+{
     ucol_close((UCollator *) coll);
 }
 
@@ -58,7 +60,8 @@ xsltICUFreeLocale(void *coll) {
  * Generate a localized sort key.
  */
 xmlChar *
-xsltICUGenSortKey(void *coll, const xmlChar *str) {
+xsltICUGenSortKey (void *coll, const xmlChar *str)
+{
     UConverter *conv;
     UChar *ustr = NULL;
     xmlChar *result = NULL;
@@ -76,8 +79,8 @@ xsltICUGenSortKey(void *coll, const xmlChar *str) {
     ustr = (UChar *) xmlMalloc((ustrLen + 1) * sizeof(UChar));
     if (ustr == NULL)
         goto error;
-    ustrLen = ucnv_toUChars(conv, ustr, ustrLen, (const char *) str, -1,
-                            &status);
+    ustrLen
+        = ucnv_toUChars(conv, ustr, ustrLen, (const char *) str, -1, &status);
     if (U_FAILURE(status))
         goto error;
 
@@ -87,8 +90,8 @@ xsltICUGenSortKey(void *coll, const xmlChar *str) {
     result = (xmlChar *) xmlMalloc(resultLen);
     if (result == NULL)
         goto error;
-    resultLen = ucol_getSortKey((UCollator *) coll, ustr, ustrLen, result,
-                                resultLen);
+    resultLen
+        = ucol_getSortKey((UCollator *) coll, ustr, ustrLen, result, resultLen);
     if (resultLen == 0) {
         xmlFree(result);
         result = NULL;
@@ -100,29 +103,26 @@ error:
     return result;
 }
 
-int main(void) {
-    xmlDocPtr sourceDoc = xmlReadDoc(
-        BAD_CAST
-        "<d>\n"
-        "  <e>Berta</e>\n"
-        "  <e>Ärger</e>\n"
-        "</d>\n",
-        NULL, NULL, 0
-    );
+int
+main (void)
+{
+    xmlDocPtr sourceDoc = xmlReadDoc(BAD_CAST "<d>\n"
+                                              "  <e>Berta</e>\n"
+                                              "  <e>Ärger</e>\n"
+                                              "</d>\n",
+                                     NULL, NULL, 0);
     xmlDocPtr styleDoc = xmlReadDoc(
-        BAD_CAST
-        "<xsl:stylesheet"
-        " version='1.0'"
-        " xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n"
-        "  <xsl:template match='d'>\n"
-        "    <xsl:for-each select='*'>\n"
-        "      <xsl:sort lang='de'/>\n"
-        "      <xsl:copy-of select='.'/>\n"
-        "    </xsl:for-each>\n"
-        "  </xsl:template>\n"
-        "</xsl:stylesheet>\n",
-        NULL, NULL, 0
-    );
+        BAD_CAST "<xsl:stylesheet"
+                 " version='1.0'"
+                 " xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n"
+                 "  <xsl:template match='d'>\n"
+                 "    <xsl:for-each select='*'>\n"
+                 "      <xsl:sort lang='de'/>\n"
+                 "      <xsl:copy-of select='.'/>\n"
+                 "    </xsl:for-each>\n"
+                 "  </xsl:template>\n"
+                 "</xsl:stylesheet>\n",
+        NULL, NULL, 0);
     xsltStylesheetPtr style = xsltParseStylesheetDoc(styleDoc);
     if (style == NULL)
         xmlFreeDoc(styleDoc);
@@ -131,8 +131,8 @@ int main(void) {
     xsltSetCtxtLocaleHandlers(tctxt, xsltICUNewLocale, xsltICUFreeLocale,
                               xsltICUGenSortKey);
 
-    xmlDocPtr resultDoc = xsltApplyStylesheetUser(style, sourceDoc, NULL, NULL,
-                                                  NULL, tctxt);
+    xmlDocPtr resultDoc
+        = xsltApplyStylesheetUser(style, sourceDoc, NULL, NULL, NULL, tctxt);
 
     xsltFreeTransformContext(tctxt);
 
