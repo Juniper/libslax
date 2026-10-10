@@ -15,93 +15,96 @@
 #include "exslt.h"
 
 static void
-exsltNodeSetFunction (xmlXPathParserContextPtr ctxt, int nargs) {
+exsltNodeSetFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
     if (nargs != 1) {
-	xmlXPathSetArityError(ctxt);
-	return;
+        xmlXPathSetArityError(ctxt);
+        return;
     }
-    if (xmlXPathStackIsNodeSet (ctxt)) {
-	xsltFunctionNodeSet (ctxt, nargs);
-	return;
+    if (xmlXPathStackIsNodeSet(ctxt)) {
+        xsltFunctionNodeSet(ctxt, nargs);
+        return;
     } else {
-	xmlDocPtr fragment;
-	xsltTransformContextPtr tctxt = xsltXPathGetTransformContext(ctxt);
-	xmlNodePtr txt;
-	xmlChar *strval;
-	xmlXPathObjectPtr obj;
-	/*
+        xmlDocPtr fragment;
+        xsltTransformContextPtr tctxt = xsltXPathGetTransformContext(ctxt);
+        xmlNodePtr txt;
+        xmlChar *strval;
+        xmlXPathObjectPtr obj;
+        /*
 	* SPEC EXSLT:
 	* "You can also use this function to turn a string into a text
 	* node, which is helpful if you want to pass a string to a
 	* function that only accepts a node-set."
 	*/
-	fragment = xsltCreateRVT(tctxt);
-	if (fragment == NULL) {
-	    xsltTransformError(tctxt, NULL, tctxt->inst,
-		"exsltNodeSetFunction: Failed to create a tree fragment.\n");
-	    tctxt->state = XSLT_STATE_STOPPED;
-	    return;
-	}
-	xsltRegisterLocalRVT(tctxt, fragment);
+        fragment = xsltCreateRVT(tctxt);
+        if (fragment == NULL) {
+            xsltTransformError(
+                tctxt, NULL, tctxt->inst,
+                "exsltNodeSetFunction: Failed to create a tree fragment.\n");
+            tctxt->state = XSLT_STATE_STOPPED;
+            return;
+        }
+        xsltRegisterLocalRVT(tctxt, fragment);
 
-	strval = xmlXPathPopString (ctxt);
+        strval = xmlXPathPopString(ctxt);
 
-	txt = xmlNewDocText (fragment, strval);
-	xmlAddChild((xmlNodePtr) fragment, txt);
-	obj = xmlXPathNewNodeSet(txt);
-	if (obj == NULL) {
-	    xsltTransformError(tctxt, NULL, tctxt->inst,
-		"exsltNodeSetFunction: Failed to create a node set object.\n");
-	    tctxt->state = XSLT_STATE_STOPPED;
-	}
-	if (strval != NULL)
-	    xmlFree (strval);
+        txt = xmlNewDocText(fragment, strval);
+        xmlAddChild((xmlNodePtr) fragment, txt);
+        obj = xmlXPathNewNodeSet(txt);
+        if (obj == NULL) {
+            xsltTransformError(
+                tctxt, NULL, tctxt->inst,
+                "exsltNodeSetFunction: Failed to create a node set object.\n");
+            tctxt->state = XSLT_STATE_STOPPED;
+        }
+        if (strval != NULL)
+            xmlFree(strval);
 
-	valuePush (ctxt, obj);
+        valuePush(ctxt, obj);
     }
 }
 
 static void
-exsltObjectTypeFunction (xmlXPathParserContextPtr ctxt, int nargs) {
+exsltObjectTypeFunction (xmlXPathParserContextPtr ctxt, int nargs)
+{
     xmlXPathObjectPtr obj, ret;
 
     if (nargs != 1) {
-	xmlXPathSetArityError(ctxt);
-	return;
+        xmlXPathSetArityError(ctxt);
+        return;
     }
 
     obj = valuePop(ctxt);
 
     switch (xmlXPathObjectGetType(obj)) {
     case XPATH_STRING:
-	ret = xmlXPathNewCString("string");
-	break;
+        ret = xmlXPathNewCString("string");
+        break;
     case XPATH_NUMBER:
-	ret = xmlXPathNewCString("number");
-	break;
+        ret = xmlXPathNewCString("number");
+        break;
     case XPATH_BOOLEAN:
-	ret = xmlXPathNewCString("boolean");
-	break;
+        ret = xmlXPathNewCString("boolean");
+        break;
     case XPATH_NODESET:
-	ret = xmlXPathNewCString("node-set");
-	break;
+        ret = xmlXPathNewCString("node-set");
+        break;
     case XPATH_XSLT_TREE:
-	ret = xmlXPathNewCString("RTF");
-	break;
+        ret = xmlXPathNewCString("RTF");
+        break;
     case XPATH_USERS:
-	ret = xmlXPathNewCString("external");
-	break;
+        ret = xmlXPathNewCString("external");
+        break;
     default:
-	xsltGenericError(xsltGenericErrorContext,
-		"object-type() invalid arg\n");
-	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
-	xmlXPathFreeObject(obj);
-	return;
+        xsltGenericError(xsltGenericErrorContext,
+                         "object-type() invalid arg\n");
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
+        xmlXPathFreeObject(obj);
+        return;
     }
     xmlXPathFreeObject(obj);
     valuePush(ctxt, ret);
 }
-
 
 /**
  * exsltCommonRegister:
@@ -110,15 +113,14 @@ exsltObjectTypeFunction (xmlXPathParserContextPtr ctxt, int nargs) {
  */
 
 void
-exsltCommonRegister (void) {
+exsltCommonRegister (void)
+{
     xsltRegisterExtModuleFunction((const xmlChar *) "node-set",
-				  EXSLT_COMMON_NAMESPACE,
-				  exsltNodeSetFunction);
+                                  EXSLT_COMMON_NAMESPACE, exsltNodeSetFunction);
     xsltRegisterExtModuleFunction((const xmlChar *) "object-type",
-				  EXSLT_COMMON_NAMESPACE,
-				  exsltObjectTypeFunction);
+                                  EXSLT_COMMON_NAMESPACE,
+                                  exsltObjectTypeFunction);
     xsltRegisterExtModuleElement((const xmlChar *) "document",
-				 EXSLT_COMMON_NAMESPACE,
-				 xsltDocumentComp,
-				 xsltDocumentElem);
+                                 EXSLT_COMMON_NAMESPACE, xsltDocumentComp,
+                                 xsltDocumentElem);
 }
