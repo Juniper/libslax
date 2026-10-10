@@ -22,14 +22,12 @@
 #include <libxslt/xsltutils.h>
 #include "fuzz.h"
 
-#define PATH_SIZE 500
+#define PATH_SIZE     500
 #define SEED_BUF_SIZE 16384
 
-typedef int
-(*fileFunc)(const char *base, FILE *out);
+typedef int (*fileFunc)(const char *base, FILE *out);
 
-typedef int
-(*mainFunc)(const char *testsDir);
+typedef int (*mainFunc)(const char *testsDir);
 
 static struct {
     FILE *out;
@@ -46,7 +44,8 @@ static struct {
  * single file in the format expected by xmlFuzzEntityLoader.
  */
 static xmlParserInputPtr
-fuzzEntityRecorder(const char *URL, const char *ID, xmlParserCtxtPtr ctxt) {
+fuzzEntityRecorder (const char *URL, const char *ID, xmlParserCtxtPtr ctxt)
+{
     xmlParserInputPtr in;
     xmlChar *data;
     static const int chunkSize = 16384;
@@ -54,13 +53,13 @@ fuzzEntityRecorder(const char *URL, const char *ID, xmlParserCtxtPtr ctxt) {
 
     in = xmlNoNetExternalEntityLoader(URL, ID, ctxt);
     if (in == NULL)
-        return(NULL);
+        return NULL;
 
     if (globalData.entities == NULL) {
         globalData.entities = xmlHashCreate(4);
-    } else if (xmlHashLookup(globalData.entities,
-                             (const xmlChar *) URL) != NULL) {
-        return(in);
+    } else if (xmlHashLookup(globalData.entities, (const xmlChar *) URL)
+               != NULL) {
+        return in;
     }
 
     do {
@@ -68,7 +67,7 @@ fuzzEntityRecorder(const char *URL, const char *ID, xmlParserCtxtPtr ctxt) {
         if (len < 0) {
             fprintf(stderr, "Error reading %s\n", URL);
             xmlFreeInputStream(in);
-            return(NULL);
+            return NULL;
         }
     } while (len > 0);
 
@@ -76,18 +75,19 @@ fuzzEntityRecorder(const char *URL, const char *ID, xmlParserCtxtPtr ctxt) {
     if (data == NULL) {
         fprintf(stderr, "Error allocating entity data\n");
         xmlFreeInputStream(in);
-        return(NULL);
+        return NULL;
     }
 
     xmlFreeInputStream(in);
 
     xmlHashAddEntry(globalData.entities, (const xmlChar *) URL, data);
 
-    return(xmlNoNetExternalEntityLoader(URL, ID, ctxt));
+    return xmlNoNetExternalEntityLoader(URL, ID, ctxt);
 }
 
 static void
-fuzzRecorderInit(FILE *out) {
+fuzzRecorderInit (FILE *out)
+{
     globalData.out = out;
     globalData.entities = xmlHashCreate(8);
     globalData.oldLoader = xmlGetExternalEntityLoader();
@@ -95,7 +95,8 @@ fuzzRecorderInit(FILE *out) {
 }
 
 static void
-fuzzRecorderWriteAndFree(void *entry, const xmlChar *file) {
+fuzzRecorderWriteAndFree (void *entry, const xmlChar *file)
+{
     char *data = entry;
     xmlFuzzWriteString(globalData.out, (const char *) file);
     xmlFuzzWriteString(globalData.out, data);
@@ -103,13 +104,15 @@ fuzzRecorderWriteAndFree(void *entry, const xmlChar *file) {
 }
 
 static void
-fuzzRecorderWrite(const char *file) {
+fuzzRecorderWrite (const char *file)
+{
     xmlHashRemoveEntry(globalData.entities, (const xmlChar *) file,
                        fuzzRecorderWriteAndFree);
 }
 
 static void
-fuzzRecorderCleanup() {
+fuzzRecorderCleanup ()
+{
     xmlSetExternalEntityLoader(globalData.oldLoader);
     /* Write remaining entities (in random order). */
     xmlHashFree(globalData.entities, fuzzRecorderWriteAndFree);
@@ -119,7 +122,8 @@ fuzzRecorderCleanup() {
 }
 
 static int
-processXslt(const char *sheetFile, FILE *out) {
+processXslt (const char *sheetFile, FILE *out)
+{
     struct stat statbuf;
     xsltStylesheetPtr sheet;
     xmlDocPtr doc;
@@ -128,10 +132,10 @@ processXslt(const char *sheetFile, FILE *out) {
     size_t len, size;
 
     len = strlen(sheetFile);
-    if ((len < 5) || (len >= PATH_SIZE) ||
-        (strcmp(sheetFile + len - 4, ".xsl") != 0)) {
+    if ((len < 5) || (len >= PATH_SIZE)
+        || (strcmp(sheetFile + len - 4, ".xsl") != 0)) {
         fprintf(stderr, "invalid stylesheet file: %s\n", sheetFile);
-        return(-1);
+        return -1;
     }
     strncat(base, sheetFile, len - 4);
 
@@ -143,12 +147,12 @@ processXslt(const char *sheetFile, FILE *out) {
     }
     if (size >= sizeof(docFile)) {
         fprintf(stderr, "creating pattern failed\n");
-        return(-1);
+        return -1;
     }
 
     /* Document might not exist, for example with imported stylesheets. */
     if (stat(docFile, &statbuf) != 0)
-        return(-1);
+        return -1;
 
     /* Malloc limit. */
     xmlFuzzWriteInt(out, 0, 4);
@@ -165,11 +169,12 @@ processXslt(const char *sheetFile, FILE *out) {
     fuzzRecorderWrite(docFile);
     fuzzRecorderCleanup();
 
-    return(0);
+    return 0;
 }
 
 static int
-processPattern(const char *pattern) {
+processPattern (const char *pattern)
+{
     glob_t globbuf;
     int ret = 0;
     int res;
@@ -177,10 +182,10 @@ processPattern(const char *pattern) {
 
     res = glob(pattern, 0, NULL, &globbuf);
     if (res == GLOB_NOMATCH)
-        return(0);
+        return 0;
     if (res != 0) {
         fprintf(stderr, "couldn't match pattern %s\n", pattern);
-        return(-1);
+        return -1;
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
@@ -230,7 +235,7 @@ processPattern(const char *pattern) {
         dirChanged = 1;
         res = globalData.processFile(base, out);
 
-error:
+    error:
         if ((dirChanged) && (chdir(globalData.cwd) != 0)) {
             fprintf(stderr, "couldn't chdir to %s\n", globalData.cwd);
             ret = -1;
@@ -248,16 +253,16 @@ error:
     }
 
     globfree(&globbuf);
-    return(ret);
+    return ret;
 }
 
 static int
-processTestDir(const char *testsDir, const char *subDir, const char *docDir) {
+processTestDir (const char *testsDir, const char *subDir, const char *docDir)
+{
     char pattern[PATH_SIZE];
     size_t size;
 
-    size = snprintf(pattern, sizeof(pattern), "%s/%s/*.xsl",
-                    testsDir, subDir);
+    size = snprintf(pattern, sizeof(pattern), "%s/%s/*.xsl", testsDir, subDir);
     if (size >= sizeof(pattern)) {
         fprintf(stderr, "creating pattern failed\n");
         return -1;
@@ -268,7 +273,8 @@ processTestDir(const char *testsDir, const char *subDir, const char *docDir) {
 }
 
 static int
-processTests(const char *testsDir) {
+processTests (const char *testsDir)
+{
     processTestDir(testsDir, "REC", NULL);
     processTestDir(testsDir, "general", "../docs");
     processTestDir(testsDir, "exslt/*", NULL);
@@ -277,150 +283,153 @@ processTests(const char *testsDir) {
 }
 
 static int
-processXPath(const char *testsDir ATTRIBUTE_UNUSED) {
-#define UTF8_Auml   "\xC3\x84"
-#define UTF8_szlig  "\xC3\x9F"
-#define UTF8_ALPHA  "\xCE\xB1"
-#define UTF8_DEJA   "d\xC3\xA9j\xC3\xA0"
-    static const char *xml =
-        "<?pi content?>\n"
-        "<a xmlns:a=\"a\">\n"
-        "    <b xmlns:b=\"b\" a=\"1\" id=\"b\">\n"
-        "        <c b=\"2\">" UTF8_Auml "rger</c>\n"
-        "        <b:d b=\"3\">text</b:d>\n"
-        "        <!-- comment -->\n"
-        "        <a:b b=\"4\">" UTF8_szlig "&#x1f600;</a:b>\n"
-        "        <b:c a=\"4\"><![CDATA[text]]></b:c>\n"
-        "    </b>\n"
-        "    <?pi content?>\n"
-        "    <a:e xmlns:c=\"c\" a=\"" UTF8_ALPHA "\">\n"
-        "        <c:d b=\"2\"/>\n"
-        "        <a:c>99</a:c>\n"
-        "        <e a=\"2\">content</e>\n"
-        "    </a:e>\n"
-        "    <b/>\n"
-        "    <a:a/>\n"
-        "    <!-- comment -->\n"
-        "</a>\n";
-    static const char *exprs[] = {
-        "crypto:md4('a')",
-        "crypto:md5('a')",
-        "crypto:rc4_decrypt(crypto:rc4_encrypt('key','msg'))",
-        "crypto:sha1('a')",
-        "date:add('2016-01-01T12:00:00','-P1Y2M3DT10H30M45S')",
-        "date:add-duration('-P1Y2M3DT10H30M45S','-P1Y2M3DT10H30M45S')",
-        "date:date('2016-01-01T12:00:00')",
-        "date:date-time()",
-        "date:day-abbreviation('2016-01-01T12:00:00')",
-        "date:day-in-month('2016-01-01T12:00:00')",
-        "date:day-in-week('2016-01-01T12:00:00')",
-        "date:day-in-year('2016-01-01T12:00:00')",
-        "date:day-name('2016-01-01T12:00:00')",
-        "date:day-of-week-in-month('2016-01-01T12:00:00')",
-        "date:difference('1999-06-10T20:03:48','2016-01-01T12:00:00')",
-        "date:duration('1234567890')",
-        "date:format-date('2016-01-01T12:00:00','GyyyyMMwwWWDDddFFEaHHkkKKhhMMssSSSzZ')",
-        "date:hour-in-day('2016-01-01T12:00:00')",
-        "date:leap-year('2016-01-01T12:00:00')",
-        "date:minute-in-hour('2016-01-01T12:00:00')",
-        "date:month-abbreviation('2016-01-01T12:00:00')",
-        "date:month-in-year('2016-01-01T12:00:00')",
-        "date:month-name('2016-01-01T12:00:00')",
-        "date:parse-date('20160101120000','yyyyMMddkkmmss')",
-        "date:second-in-minute('2016-01-01T12:00:00')",
-        "date:seconds('2016-01-01T12:00:00')",
-        "date:sum(str:split('-P1Y2M3DT10H30M45S,-P1Y2M3DT10H30M45S,P999999999S',','))",
-        "date:time('2016-01-01T12:00:00')",
-        "date:week-in-month('2016-01-01T12:00:00')",
-        "date:week-in-year('2016-01-01T12:00:00')",
-        "date:year('2016-01-01T12:00:00')",
-        "dyn:evaluate('1+1')",
-        "dyn:map(//*,'.')",
-        "(1.1+-24.5)*0.8-(25div3.5)mod0.2",
-        "/a/b/c/text()|//e/c:d/@b",
-        "(//*[@*][1])[1]",
-        "exsl:node-set($n)",
-        "exsl:node-set('s')",
-        "exsl:object-type(1)",
-        "boolean(.)",
-        "ceiling(.)",
-        "concat(.,'a')",
-        "contains(.,'e')",
-        "count(.)",
-        "false()",
-        "floor(.)",
-        "id(.)",
-        "lang(.)",
-        "last()",
-        "local-name(.)",
-        "name(.)",
-        "namespace-uri(.)",
-        "normalize-space(.)",
-        "not(.)",
-        "number(.)",
-        "number('1.0')",
-        "position()",
-        "round(.)",
-        "starts-with(.,'t')",
-        "string-length(.)",
-        "string(.)",
-        "string(1.0)",
-        "substring(.,2,3)",
-        "substring-after(.,'e')",
-        "substring-before(.,'e')",
-        "sum(*)",
-        "translate(.,'e','a')",
-        "true()",
-        "math:abs(-1.5)",
-        "math:acos(-0.5)",
-        "math:asin(-0.5)",
-        "math:atan(-0.5)",
-        "math:atan2(-1.5,-1.5)",
-        "math:constant('E',20)",
-        "math:cos(-1.5)",
-        "math:exp(-1.5)",
-        "math:highest(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
-        "math:log(2.0)",
-        "math:lowest(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
-        "math:max(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
-        "math:min(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
-        "math:power(2.0,0.5)",
-        "math:random()",
-        "math:sin(-1.5)",
-        "math:sqrt(2.0)",
-        "math:tan(-1.5)",
-        "saxon:eval(saxon:expression('1+1'))",
-        "saxon:evaluate('1+1')",
-        "saxon:line-number()",
-        "saxon:line-number(*)",
-        "saxon:systemId()",
-        "set:difference(//*,//a:*)",
-        "set:distinct(//*)",
-        "set:has-same-node(//*,//a:*)",
-        "set:intersection(//*,//a:*)",
-        "set:leading(//*,/*/*[3])",
-        "set:trailing(//*,/*/*[2])",
-        "str:align('" UTF8_DEJA "','--------','center')",
-        "str:align('" UTF8_DEJA "','--------','left')",
-        "str:align('" UTF8_DEJA "','--------','right')",
-        "str:concat(str:split('ab,cd,ef',','))",
-        "str:decode-uri('%41%00%2d')",
-        "str:encode-uri(';/?:@&=+$,[]',true())",
-        "str:encode-uri('|<>',false())",
-        "str:padding(81,' ')",
-        "str:replace('abcdefgh',str:split('a,c,e,g',','),str:split('w,x,y,z',','))",
-        "str:split('a, sim, lis',', ')",
-        "str:tokenize('2016-01-01T12:00:00','-T:')",
-        "current()",
-        "document('')",
-        "element-available('exsl:document')",
-        "format-number(1.0,'##,##,00.00##')",
-        "format-number(1.0,'#.#;-0.0%')",
-        "function-available('exsl:node-set')",
-        "generate-id(.)",
-        "system-property('xsl:version')",
-        "unparsed-entity-uri('a')"
-    };
+processXPath (const char *testsDir ATTRIBUTE_UNUSED)
+{
+#define UTF8_Auml  "\xC3\x84"
+#define UTF8_szlig "\xC3\x9F"
+#define UTF8_ALPHA "\xCE\xB1"
+#define UTF8_DEJA  "d\xC3\xA9j\xC3\xA0"
+    static const char *xml
+        = "<?pi content?>\n"
+          "<a xmlns:a=\"a\">\n"
+          "    <b xmlns:b=\"b\" a=\"1\" id=\"b\">\n"
+          "        <c b=\"2\">" UTF8_Auml "rger</c>\n"
+          "        <b:d b=\"3\">text</b:d>\n"
+          "        <!-- comment -->\n"
+          "        <a:b b=\"4\">" UTF8_szlig "&#x1f600;</a:b>\n"
+          "        <b:c a=\"4\"><![CDATA[text]]></b:c>\n"
+          "    </b>\n"
+          "    <?pi content?>\n"
+          "    <a:e xmlns:c=\"c\" a=\"" UTF8_ALPHA "\">\n"
+          "        <c:d b=\"2\"/>\n"
+          "        <a:c>99</a:c>\n"
+          "        <e a=\"2\">content</e>\n"
+          "    </a:e>\n"
+          "    <b/>\n"
+          "    <a:a/>\n"
+          "    <!-- comment -->\n"
+          "</a>\n";
+    static const char *exprs[]
+        = {"crypto:md4('a')",
+           "crypto:md5('a')",
+           "crypto:rc4_decrypt(crypto:rc4_encrypt('key','msg'))",
+           "crypto:sha1('a')",
+           "date:add('2016-01-01T12:00:00','-P1Y2M3DT10H30M45S')",
+           "date:add-duration('-P1Y2M3DT10H30M45S','-P1Y2M3DT10H30M45S')",
+           "date:date('2016-01-01T12:00:00')",
+           "date:date-time()",
+           "date:day-abbreviation('2016-01-01T12:00:00')",
+           "date:day-in-month('2016-01-01T12:00:00')",
+           "date:day-in-week('2016-01-01T12:00:00')",
+           "date:day-in-year('2016-01-01T12:00:00')",
+           "date:day-name('2016-01-01T12:00:00')",
+           "date:day-of-week-in-month('2016-01-01T12:00:00')",
+           "date:difference('1999-06-10T20:03:48','2016-01-01T12:00:00')",
+           "date:duration('1234567890')",
+           "date:format-date('2016-01-01T12:00:00','"
+           "GyyyyMMwwWWDDddFFEaHHkkKKhhMMssSSSzZ')",
+           "date:hour-in-day('2016-01-01T12:00:00')",
+           "date:leap-year('2016-01-01T12:00:00')",
+           "date:minute-in-hour('2016-01-01T12:00:00')",
+           "date:month-abbreviation('2016-01-01T12:00:00')",
+           "date:month-in-year('2016-01-01T12:00:00')",
+           "date:month-name('2016-01-01T12:00:00')",
+           "date:parse-date('20160101120000','yyyyMMddkkmmss')",
+           "date:second-in-minute('2016-01-01T12:00:00')",
+           "date:seconds('2016-01-01T12:00:00')",
+           "date:sum(str:split('-P1Y2M3DT10H30M45S,-P1Y2M3DT10H30M45S,"
+           "P999999999S',','))",
+           "date:time('2016-01-01T12:00:00')",
+           "date:week-in-month('2016-01-01T12:00:00')",
+           "date:week-in-year('2016-01-01T12:00:00')",
+           "date:year('2016-01-01T12:00:00')",
+           "dyn:evaluate('1+1')",
+           "dyn:map(//*,'.')",
+           "(1.1+-24.5)*0.8-(25div3.5)mod0.2",
+           "/a/b/c/text()|//e/c:d/@b",
+           "(//*[@*][1])[1]",
+           "exsl:node-set($n)",
+           "exsl:node-set('s')",
+           "exsl:object-type(1)",
+           "boolean(.)",
+           "ceiling(.)",
+           "concat(.,'a')",
+           "contains(.,'e')",
+           "count(.)",
+           "false()",
+           "floor(.)",
+           "id(.)",
+           "lang(.)",
+           "last()",
+           "local-name(.)",
+           "name(.)",
+           "namespace-uri(.)",
+           "normalize-space(.)",
+           "not(.)",
+           "number(.)",
+           "number('1.0')",
+           "position()",
+           "round(.)",
+           "starts-with(.,'t')",
+           "string-length(.)",
+           "string(.)",
+           "string(1.0)",
+           "substring(.,2,3)",
+           "substring-after(.,'e')",
+           "substring-before(.,'e')",
+           "sum(*)",
+           "translate(.,'e','a')",
+           "true()",
+           "math:abs(-1.5)",
+           "math:acos(-0.5)",
+           "math:asin(-0.5)",
+           "math:atan(-0.5)",
+           "math:atan2(-1.5,-1.5)",
+           "math:constant('E',20)",
+           "math:cos(-1.5)",
+           "math:exp(-1.5)",
+           "math:highest(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
+           "math:log(2.0)",
+           "math:lowest(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
+           "math:max(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
+           "math:min(str:split('1.2,-0.5,-2.2e8,-0.1e-5',','))",
+           "math:power(2.0,0.5)",
+           "math:random()",
+           "math:sin(-1.5)",
+           "math:sqrt(2.0)",
+           "math:tan(-1.5)",
+           "saxon:eval(saxon:expression('1+1'))",
+           "saxon:evaluate('1+1')",
+           "saxon:line-number()",
+           "saxon:line-number(*)",
+           "saxon:systemId()",
+           "set:difference(//*,//a:*)",
+           "set:distinct(//*)",
+           "set:has-same-node(//*,//a:*)",
+           "set:intersection(//*,//a:*)",
+           "set:leading(//*,/*/*[3])",
+           "set:trailing(//*,/*/*[2])",
+           "str:align('" UTF8_DEJA "','--------','center')",
+           "str:align('" UTF8_DEJA "','--------','left')",
+           "str:align('" UTF8_DEJA "','--------','right')",
+           "str:concat(str:split('ab,cd,ef',','))",
+           "str:decode-uri('%41%00%2d')",
+           "str:encode-uri(';/?:@&=+$,[]',true())",
+           "str:encode-uri('|<>',false())",
+           "str:padding(81,' ')",
+           "str:replace('abcdefgh',str:split('a,c,e,g',','),str:split('w,x,y,z'"
+           ",','))",
+           "str:split('a, sim, lis',', ')",
+           "str:tokenize('2016-01-01T12:00:00','-T:')",
+           "current()",
+           "document('')",
+           "element-available('exsl:document')",
+           "format-number(1.0,'##,##,00.00##')",
+           "format-number(1.0,'#.#;-0.0%')",
+           "function-available('exsl:node-set')",
+           "generate-id(.)",
+           "system-property('xsl:version')",
+           "unparsed-entity-uri('a')"};
     size_t numExprs = sizeof(exprs) / sizeof(*exprs);
     size_t i, size;
     int ret = 0;
@@ -447,18 +456,19 @@ processXPath(const char *testsDir ATTRIBUTE_UNUSED) {
         fclose(out);
     }
 
-    return(ret);
+    return ret;
 }
 
 int
-main(int argc, const char **argv) {
+main (int argc, const char **argv)
+{
     mainFunc process = processTests;
     const char *fuzzer;
     int ret = 0;
 
     if (argc < 3) {
         fprintf(stderr, "usage: genSeed [FUZZER] [PATTERN...]\n");
-        return(1);
+        return 1;
     }
 
     xmlSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
@@ -471,17 +481,16 @@ main(int argc, const char **argv) {
         process = processXPath;
     } else {
         fprintf(stderr, "unknown fuzzer %s\n", fuzzer);
-        return(1);
+        return 1;
     }
     globalData.fuzzer = fuzzer;
 
     if (getcwd(globalData.cwd, PATH_SIZE) == NULL) {
         fprintf(stderr, "couldn't get current directory\n");
-        return(1);
+        return 1;
     }
 
     process(argv[2]);
 
-    return(ret);
+    return ret;
 }
-
