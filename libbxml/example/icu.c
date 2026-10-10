@@ -23,16 +23,17 @@
 
 typedef struct {
     UConverter *uconv; /* for conversion between an encoding and UTF-16 */
-    UConverter *utf8; /* for conversion between UTF-8 and UTF-16 */
-    UChar      *pivot_source;
-    UChar      *pivot_target;
-    int        isInput;
-    UChar      pivot_buf[ICU_PIVOT_BUF_SIZE];
+    UConverter *utf8;  /* for conversion between UTF-8 and UTF-16 */
+    UChar *pivot_source;
+    UChar *pivot_target;
+    int isInput;
+    UChar pivot_buf[ICU_PIVOT_BUF_SIZE];
 } myConvCtxt;
 
 static xmlCharEncError
-icuConvert(void *vctxt, unsigned char *out, int *outlen,
-           const unsigned char *in, int *inlen, int flush) {
+icuConvert (void *vctxt, unsigned char *out, int *outlen,
+            const unsigned char *in, int *inlen, int flush)
+{
     myConvCtxt *cd = vctxt;
     const char *ucv_in = (const char *) in;
     char *ucv_out = (char *) out;
@@ -60,42 +61,41 @@ icuConvert(void *vctxt, unsigned char *out, int *outlen,
         target = cd->uconv;
     }
 
-    ucnv_convertEx(target, source, &ucv_out, ucv_out + *outlen,
-                   &ucv_in, ucv_in + *inlen, cd->pivot_buf,
-                   &cd->pivot_source, &cd->pivot_target,
-                   cd->pivot_buf + ICU_PIVOT_BUF_SIZE,
+    ucnv_convertEx(target, source, &ucv_out, ucv_out + *outlen, &ucv_in,
+                   ucv_in + *inlen, cd->pivot_buf, &cd->pivot_source,
+                   &cd->pivot_target, cd->pivot_buf + ICU_PIVOT_BUF_SIZE,
                    /* reset */ 0, flush, &err);
 
-    *inlen = ucv_in - (const char*) in;
+    *inlen = ucv_in - (const char *) in;
     *outlen = ucv_out - (char *) out;
 
     if (U_SUCCESS(err)) {
         ret = XML_ENC_ERR_SUCCESS;
     } else {
         switch (err) {
-            case U_TRUNCATED_CHAR_FOUND:
-                /* Should only happen with flush */
-                ret = XML_ENC_ERR_INPUT;
-                break;
+        case U_TRUNCATED_CHAR_FOUND:
+            /* Should only happen with flush */
+            ret = XML_ENC_ERR_INPUT;
+            break;
 
-            case U_BUFFER_OVERFLOW_ERROR:
-                ret = XML_ENC_ERR_SPACE;
-                break;
+        case U_BUFFER_OVERFLOW_ERROR:
+            ret = XML_ENC_ERR_SPACE;
+            break;
 
-            case U_INVALID_CHAR_FOUND:
-            case U_ILLEGAL_CHAR_FOUND:
-            case U_ILLEGAL_ESCAPE_SEQUENCE:
-            case U_UNSUPPORTED_ESCAPE_SEQUENCE:
-                ret = XML_ENC_ERR_INPUT;
-                break;
+        case U_INVALID_CHAR_FOUND:
+        case U_ILLEGAL_CHAR_FOUND:
+        case U_ILLEGAL_ESCAPE_SEQUENCE:
+        case U_UNSUPPORTED_ESCAPE_SEQUENCE:
+            ret = XML_ENC_ERR_INPUT;
+            break;
 
-            case U_MEMORY_ALLOCATION_ERROR:
-                ret = XML_ENC_ERR_MEMORY;
-                break;
+        case U_MEMORY_ALLOCATION_ERROR:
+            ret = XML_ENC_ERR_MEMORY;
+            break;
 
-            default:
-                ret = XML_ENC_ERR_INTERNAL;
-                break;
+        default:
+            ret = XML_ENC_ERR_INTERNAL;
+            break;
         }
     }
 
@@ -103,7 +103,7 @@ icuConvert(void *vctxt, unsigned char *out, int *outlen,
 }
 
 static xmlParserErrors
-icuOpen(const char* name, int isInput, myConvCtxt **out)
+icuOpen (const char *name, int isInput, myConvCtxt **out)
 {
     UErrorCode status;
     myConvCtxt *cd;
@@ -125,12 +125,11 @@ icuOpen(const char* name, int isInput, myConvCtxt **out)
 
     status = U_ZERO_ERROR;
     if (isInput) {
-        ucnv_setToUCallBack(cd->uconv, UCNV_TO_U_CALLBACK_STOP,
-                            NULL, NULL, NULL, &status);
-    }
-    else {
-        ucnv_setFromUCallBack(cd->uconv, UCNV_FROM_U_CALLBACK_STOP,
-                              NULL, NULL, NULL, &status);
+        ucnv_setToUCallBack(cd->uconv, UCNV_TO_U_CALLBACK_STOP, NULL, NULL,
+                            NULL, &status);
+    } else {
+        ucnv_setFromUCallBack(cd->uconv, UCNV_FROM_U_CALLBACK_STOP, NULL, NULL,
+                              NULL, &status);
     }
     if (U_FAILURE(status))
         goto error;
@@ -156,7 +155,7 @@ error:
 }
 
 static void
-icuClose(myConvCtxt *cd)
+icuClose (myConvCtxt *cd)
 {
     if (cd == NULL)
         return;
@@ -166,13 +165,15 @@ icuClose(myConvCtxt *cd)
 }
 
 static void
-icuConvCtxtDtor(void *vctxt) {
+icuConvCtxtDtor (void *vctxt)
+{
     icuClose(vctxt);
 }
 
 static xmlParserErrors
-icuConvImpl(void *vctxt, const char *name, xmlCharEncFlags flags,
-            xmlCharEncodingHandler **result) {
+icuConvImpl (void *vctxt, const char *name, xmlCharEncFlags flags,
+             xmlCharEncodingHandler **result)
+{
     xmlCharEncConvFunc inFunc = NULL, outFunc = NULL;
     myConvCtxt *inputCtxt = NULL;
     myConvCtxt *outputCtxt = NULL;
@@ -204,7 +205,8 @@ error:
 }
 
 int
-main(void) {
+main (void)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     const char *xml;
@@ -238,4 +240,3 @@ main(void) {
 
     return ret;
 }
-
