@@ -43,42 +43,45 @@
 
 typedef int (*hello_world_t)(void);
 
-int main(int argc UNUSED, char **argv UNUSED) {
+int
+main (int argc UNUSED, char **argv UNUSED)
+{
     xmlChar filename[PATH_MAX];
     xmlModulePtr module = NULL;
     hello_world_t hello_world = NULL;
 
     /* build the module filename, and confirm the module exists */
-    xmlStrPrintf(filename, sizeof(filename),
-                 "%s/testdso%s",
-                 (const xmlChar*)MODULE_PATH,
-                 (const xmlChar*)LIBXML_MODULE_EXTENSION);
+    xmlStrPrintf(filename, sizeof(filename), "%s/testdso%s",
+                 (const xmlChar *) MODULE_PATH,
+                 (const xmlChar *) LIBXML_MODULE_EXTENSION);
 
-    module = xmlModuleOpen((const char*)filename, 0);
+    module = xmlModuleOpen((const char *) filename, 0);
     if (module == NULL) {
-      fprintf(stderr, "Failed to open module\n");
-      return(1);
+        fprintf(stderr, "Failed to open module\n");
+        return 1;
     }
 
     if (xmlModuleSymbol(module, "hello_world", (void **) &hello_world)) {
-      fprintf(stderr, "Failure to lookup\n");
-      return(1);
+        fprintf(stderr, "Failure to lookup\n");
+        return 1;
     }
     if (hello_world == NULL) {
-      fprintf(stderr, "Lookup returned NULL\n");
-      return(1);
+        fprintf(stderr, "Lookup returned NULL\n");
+        return 1;
     }
 
     (*hello_world)();
 
     xmlModuleClose(module);
 
-    return(0);
+    return 0;
 }
 
 #else
-int main(int argc UNUSED, char **argv UNUSED) {
+int
+main (int argc UNUSED, char **argv UNUSED)
+{
     printf("%s : Module support not compiled in\n", argv[0]);
-    return(0);
+    return 0;
 }
 #endif /* LIBXML_MODULES_ENABLED */
