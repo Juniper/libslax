@@ -23,28 +23,26 @@
  * Dump information about the current node
  */
 static void
-processNode(xmlTextReaderPtr reader) {
+processNode (xmlTextReaderPtr reader)
+{
     const xmlChar *name, *value;
 
     name = xmlTextReaderConstName(reader);
     if (name == NULL)
-	name = BAD_CAST "--";
+        name = BAD_CAST "--";
 
     value = xmlTextReaderConstValue(reader);
 
-    printf("%d %d %s %d %d", 
-	    xmlTextReaderDepth(reader),
-	    xmlTextReaderNodeType(reader),
-	    name,
-	    xmlTextReaderIsEmptyElement(reader),
-	    xmlTextReaderHasValue(reader));
+    printf("%d %d %s %d %d", xmlTextReaderDepth(reader),
+           xmlTextReaderNodeType(reader), name,
+           xmlTextReaderIsEmptyElement(reader), xmlTextReaderHasValue(reader));
     if (value == NULL)
-	printf("\n");
+        printf("\n");
     else {
         if (xmlStrlen(value) > 40)
             printf(" %.40s...\n", value);
         else
-	    printf(" %s\n", value);
+            printf(" %s\n", value);
     }
 }
 
@@ -55,7 +53,8 @@ processNode(xmlTextReaderPtr reader) {
  * Parse and print information about an XML file.
  */
 static void
-streamFile(const char *filename) {
+streamFile (const char *filename)
+{
     xmlTextReaderPtr reader;
     int ret;
 
@@ -75,9 +74,11 @@ streamFile(const char *filename) {
     }
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     if (argc != 2)
-        return(1);
+        return 1;
 
     /*
      * this initialize the library and check potential ABI mismatches
@@ -88,12 +89,14 @@ int main(int argc, char **argv) {
 
     streamFile(argv[1]);
 
-    return(0);
+    return 0;
 }
 
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "XInclude support not compiled in\n");
-    return(0);
+    return 0;
 }
 #endif
