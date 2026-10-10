@@ -7,13 +7,15 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc_p ATTRIBUTE_UNUSED,
-                     char ***argv_p ATTRIBUTE_UNUSED) {
+LLVMFuzzerInitialize (int *argc_p ATTRIBUTE_UNUSED,
+                      char ***argv_p ATTRIBUTE_UNUSED)
+{
     return xsltFuzzXPathInit();
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlXPathObjectPtr xpathObj = xsltFuzzXPath(data, size);
     xsltFuzzXPathFreeObject(xpathObj);
 
