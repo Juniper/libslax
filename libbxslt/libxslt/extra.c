@@ -50,9 +50,8 @@
  * Process an debug node
  */
 void
-xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
-          xmlNodePtr inst UNUSED,
-          xsltElemPreCompPtr comp UNUSED)
+xsltDebug (xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
+           xmlNodePtr inst UNUSED, xsltElemPreCompPtr comp UNUSED)
 {
     int i, j;
 
@@ -80,23 +79,21 @@ xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
         cur = ctxt->varsTab[j];
         while (cur != NULL) {
             if (cur->comp == NULL) {
-                xsltGenericError(xsltGenericErrorContext,
-                                 "corrupted !!!\n");
+                xsltGenericError(xsltGenericErrorContext, "corrupted !!!\n");
             } else if (cur->comp->type == XSLT_FUNC_PARAM) {
                 xsltGenericError(xsltGenericErrorContext, "param ");
             } else if (cur->comp->type == XSLT_FUNC_VARIABLE) {
                 xsltGenericError(xsltGenericErrorContext, "var ");
             }
             if (cur->name != NULL)
-                xsltGenericError(xsltGenericErrorContext, "%s ",
-                                 cur->name);
+                xsltGenericError(xsltGenericErrorContext, "%s ", cur->name);
             else
                 xsltGenericError(xsltGenericErrorContext, "noname !!!!");
 #ifdef LIBXML_DEBUG_ENABLED
             if (cur->value != NULL) {
-                if ((xsltGenericDebugContext == stdout) ||
-                    (xsltGenericDebugContext == stderr))
-                    xmlXPathDebugDumpObject((FILE*)xsltGenericDebugContext,
+                if ((xsltGenericDebugContext == stdout)
+                    || (xsltGenericDebugContext == stderr))
+                    xmlXPathDebugDumpObject((FILE *) xsltGenericDebugContext,
                                             cur->value, 1);
             } else {
                 xsltGenericError(xsltGenericErrorContext, "NULL !!!!");
@@ -105,7 +102,6 @@ xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
             xsltGenericError(xsltGenericErrorContext, "\n");
             cur = cur->next;
         }
-
     }
 }
 
@@ -126,23 +122,28 @@ xsltDebug(xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
  * This function is available in libxslt, saxon or xt namespace.
  */
 void
-xsltFunctionNodeSet(xmlXPathParserContextPtr ctxt, int nargs){
+xsltFunctionNodeSet (xmlXPathParserContextPtr ctxt, int nargs)
+{
     if (nargs != 1) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"node-set() : expects one result-tree arg\n");
-	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
-	return;
+        xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+                           "node-set() : expects one result-tree arg\n");
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
+        return;
     }
-    if ((xmlXPathParserContextGetValue(ctxt) == NULL) ||
-	((xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_XSLT_TREE) &&
-	 (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) != XPATH_NODESET))) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-	    "node-set() invalid arg expecting a result tree\n");
-	xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
-	return;
+    if ((xmlXPathParserContextGetValue(ctxt) == NULL)
+        || ((xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+             != XPATH_XSLT_TREE)
+            && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+                != XPATH_NODESET))) {
+        xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+                           "node-set() invalid arg expecting a result tree\n");
+        xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
+        return;
     }
-    if (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt)) == XPATH_XSLT_TREE) {
-	xmlXPathObjectSetType(xmlXPathParserContextGetValue(ctxt), XPATH_NODESET);
+    if (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+        == XPATH_XSLT_TREE) {
+        xmlXPathObjectSetType(xmlXPathParserContextGetValue(ctxt),
+                              XPATH_NODESET);
     }
 }
 
@@ -154,7 +155,8 @@ xsltFunctionNodeSet(xmlXPathParserContextPtr ctxt, int nargs){
  * xsltRegisterAllExtras instead.
  */
 void
-xsltRegisterExtras(xsltTransformContextPtr ctxt UNUSED) {
+xsltRegisterExtras (xsltTransformContextPtr ctxt UNUSED)
+{
     xsltRegisterAllExtras();
 }
 
@@ -164,34 +166,25 @@ xsltRegisterExtras(xsltTransformContextPtr ctxt UNUSED) {
  * Registers the built-in extensions
  */
 void
-xsltRegisterAllExtras (void) {
+xsltRegisterAllExtras (void)
+{
     xsltRegisterExtModuleFunction((const xmlChar *) "node-set",
-				  XSLT_LIBXSLT_NAMESPACE,
-				  xsltFunctionNodeSet);
+                                  XSLT_LIBXSLT_NAMESPACE, xsltFunctionNodeSet);
     xsltRegisterExtModuleFunction((const xmlChar *) "node-set",
-				  XSLT_SAXON_NAMESPACE,
-				  xsltFunctionNodeSet);
+                                  XSLT_SAXON_NAMESPACE, xsltFunctionNodeSet);
     xsltRegisterExtModuleFunction((const xmlChar *) "node-set",
-				  XSLT_XT_NAMESPACE,
-				  xsltFunctionNodeSet);
+                                  XSLT_XT_NAMESPACE, xsltFunctionNodeSet);
     xsltRegisterExtModuleElement((const xmlChar *) "debug",
-				 XSLT_LIBXSLT_NAMESPACE,
-				 NULL,
-				 xsltDebug);
+                                 XSLT_LIBXSLT_NAMESPACE, NULL, xsltDebug);
     xsltRegisterExtModuleElement((const xmlChar *) "output",
-				 XSLT_SAXON_NAMESPACE,
-				 xsltDocumentComp,
-				 xsltDocumentElem);
+                                 XSLT_SAXON_NAMESPACE, xsltDocumentComp,
+                                 xsltDocumentElem);
     xsltRegisterExtModuleElement((const xmlChar *) "write",
-				 XSLT_XALAN_NAMESPACE,
-				 xsltDocumentComp,
-				 xsltDocumentElem);
+                                 XSLT_XALAN_NAMESPACE, xsltDocumentComp,
+                                 xsltDocumentElem);
     xsltRegisterExtModuleElement((const xmlChar *) "document",
-				 XSLT_XT_NAMESPACE,
-				 xsltDocumentComp,
-				 xsltDocumentElem);
-    xsltRegisterExtModuleElement((const xmlChar *) "document",
-				 XSLT_NAMESPACE,
-				 xsltDocumentComp,
-				 xsltDocumentElem);
+                                 XSLT_XT_NAMESPACE, xsltDocumentComp,
+                                 xsltDocumentElem);
+    xsltRegisterExtModuleElement((const xmlChar *) "document", XSLT_NAMESPACE,
+                                 xsltDocumentComp, xsltDocumentElem);
 }
