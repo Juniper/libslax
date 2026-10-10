@@ -5,11 +5,9 @@
 
 #include <libxml/parser.h>
 
-int
-xmllintMain(int argc, const char **argv, FILE *errStream,
-            xmlResourceLoader loader);
+int xmllintMain (int argc, const char **argv, FILE *errStream,
+                 xmlResourceLoader loader);
 
-void
-xmllintShell(xmlDoc *doc, const char *filename, FILE *output);
+void xmllintShell (xmlDoc *doc, const char *filename, FILE *output);
 
 #endif /* XML_LINT_H_PRIVATE__ */
