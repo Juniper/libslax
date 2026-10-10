@@ -23,19 +23,17 @@
 #include <libxml/xmlschemas.h>
 #include "fuzz.h"
 
-#define PATH_SIZE 500
+#define PATH_SIZE     500
 #define SEED_BUF_SIZE 16384
-#define EXPR_SIZE 4500
+#define EXPR_SIZE     4500
 
-#define FLAG_READER             (1 << 0)
-#define FLAG_LINT               (1 << 1)
-#define FLAG_PUSH_CHUNK_SIZE    (1 << 2)
+#define FLAG_READER          (1 << 0)
+#define FLAG_LINT            (1 << 1)
+#define FLAG_PUSH_CHUNK_SIZE (1 << 2)
 
-typedef int
-(*fileFunc)(const char *base, FILE *out);
+typedef int (*fileFunc)(const char *base, FILE *out);
 
-typedef int
-(*mainFunc)(const char *arg);
+typedef int (*mainFunc)(const char *arg);
 
 static struct {
     FILE *out;
@@ -48,22 +46,20 @@ static struct {
     int flags;
 } globalData;
 
-#if defined(HAVE_SCHEMA_FUZZER) || \
-    defined(HAVE_XML_FUZZER)
+#if defined(HAVE_SCHEMA_FUZZER) || defined(HAVE_XML_FUZZER)
 /*
  * A custom resource loader that writes all external DTDs or entities to a
  * single file in the format expected by xmlFuzzResourceLoader.
  */
 static xmlParserErrors
-fuzzResourceRecorder(void *data UNUSED, const char *URL,
-                     const char *ID UNUSED,
-                     xmlResourceType type UNUSED,
-                     xmlParserInputFlags flags,
-                     xmlParserInputPtr *out) {
+fuzzResourceRecorder (void *data UNUSED, const char *URL, const char *ID UNUSED,
+                      xmlResourceType type UNUSED, xmlParserInputFlags flags,
+                      xmlParserInputPtr *out)
+{
     *out = NULL;
 
-    if (globalData.entities == NULL ||
-        xmlHashLookup(globalData.entities, BAD_CAST URL) == NULL) {
+    if (globalData.entities == NULL
+        || xmlHashLookup(globalData.entities, BAD_CAST URL) == NULL) {
         data = xmlSlurpFile(URL, NULL);
 
         if (globalData.entities == NULL)
@@ -72,18 +68,20 @@ fuzzResourceRecorder(void *data UNUSED, const char *URL,
         xmlHashAddEntry(globalData.entities, (const xmlChar *) URL, data);
     }
 
-    return(xmlNewInputFromUrl(URL, flags, out));
+    return xmlNewInputFromUrl(URL, flags, out);
 }
 
 static void
-fuzzRecorderInit(FILE *out) {
+fuzzRecorderInit (FILE *out)
+{
     globalData.out = out;
     globalData.entities = xmlHashCreate(8);
     globalData.oldLoader = xmlGetExternalEntityLoader();
 }
 
 static void
-fuzzRecorderWriteAndFree(void *entry, const xmlChar *file) {
+fuzzRecorderWriteAndFree (void *entry, const xmlChar *file)
+{
     char *data = entry;
     xmlFuzzWriteString(globalData.out, (const char *) file);
     xmlFuzzWriteString(globalData.out, data);
@@ -91,13 +89,15 @@ fuzzRecorderWriteAndFree(void *entry, const xmlChar *file) {
 }
 
 static void
-fuzzRecorderWrite(const char *file) {
+fuzzRecorderWrite (const char *file)
+{
     xmlHashRemoveEntry(globalData.entities, (const xmlChar *) file,
                        fuzzRecorderWriteAndFree);
 }
 
 static void
-fuzzRecorderCleanup(void) {
+fuzzRecorderCleanup (void)
+{
     /* Write remaining entities (in random order). */
     xmlHashFree(globalData.entities, fuzzRecorderWriteAndFree);
     globalData.out = NULL;
@@ -108,7 +108,8 @@ fuzzRecorderCleanup(void) {
 
 #ifdef HAVE_XML_FUZZER
 static int
-processXml(const char *docFile, FILE *out) {
+processXml (const char *docFile, FILE *out)
+{
     int opts = XML_PARSE_NOENT | XML_PARSE_DTDLOAD;
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -169,13 +170,14 @@ processXml(const char *docFile, FILE *out) {
     fuzzRecorderWrite(docFile);
     fuzzRecorderCleanup();
 
-    return(0);
+    return 0;
 }
 #endif
 
 #ifdef HAVE_HTML_FUZZER
 static int
-processHtml(const char *docFile, FILE *out) {
+processHtml (const char *docFile, FILE *out)
+{
     char buf[SEED_BUF_SIZE];
     FILE *file;
     size_t size;
@@ -189,7 +191,7 @@ processHtml(const char *docFile, FILE *out) {
     file = fopen(docFile, "rb");
     if (file == NULL) {
         fprintf(stderr, "couldn't open %s\n", docFile);
-        return(0);
+        return 0;
     }
     do {
         size = fread(buf, 1, SEED_BUF_SIZE, file);
@@ -198,14 +200,14 @@ processHtml(const char *docFile, FILE *out) {
     } while (size == SEED_BUF_SIZE);
     fclose(file);
 
-    return(0);
+    return 0;
 }
 #endif
 
-#if defined(HAVE_HTML_FUZZER) || \
-    defined(HAVE_XML_FUZZER)
+#if defined(HAVE_HTML_FUZZER) || defined(HAVE_XML_FUZZER)
 static int
-processPattern(const char *pattern) {
+processPattern (const char *pattern)
+{
     glob_t globbuf;
     int ret = 0;
     int res;
@@ -213,10 +215,10 @@ processPattern(const char *pattern) {
 
     res = glob(pattern, 0, NULL, &globbuf);
     if (res == GLOB_NOMATCH)
-        return(0);
+        return 0;
     if (res != 0) {
         fprintf(stderr, "couldn't match pattern %s\n", pattern);
-        return(-1);
+        return -1;
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
@@ -266,7 +268,7 @@ processPattern(const char *pattern) {
         if (globalData.processFile(base, out) != 0)
             ret = -1;
 
-error:
+    error:
         if (out != NULL)
             fclose(out);
         xmlFree(dirBuf);
@@ -279,13 +281,14 @@ error:
     }
 
     globfree(&globbuf);
-    return(ret);
+    return ret;
 }
 #endif
 
 #if defined(HAVE_SCHEMA_FUZZER)
 static int
-processSchema(const char *xsdFile, const char *xmlFile, FILE *out) {
+processSchema (const char *xsdFile, const char *xmlFile, FILE *out)
+{
     xmlSchemaPtr schema;
     xmlSchemaParserCtxtPtr pctxt;
 
@@ -324,11 +327,12 @@ processSchema(const char *xsdFile, const char *xmlFile, FILE *out) {
     fuzzRecorderWrite(xmlFile);
     fuzzRecorderCleanup();
 
-    return(0);
+    return 0;
 }
 
 static int
-processSchemaPattern(const char *pattern) {
+processSchemaPattern (const char *pattern)
+{
     glob_t globbuf;
     int ret = 0;
     int res;
@@ -336,10 +340,10 @@ processSchemaPattern(const char *pattern) {
 
     res = glob(pattern, 0, NULL, &globbuf);
     if (res == GLOB_NOMATCH)
-        return(0);
+        return 0;
     if (res != 0) {
         fprintf(stderr, "couldn't match pattern %s\n", pattern);
-        return(-1);
+        return -1;
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
@@ -376,8 +380,8 @@ processSchemaPattern(const char *pattern) {
             len -= 6;
         else
             len -= 4;
-        size = snprintf(xmlPattern, sizeof(xmlPattern), "%.*s_*.xml",
-                        (int) len, path);
+        size = snprintf(xmlPattern, sizeof(xmlPattern), "%.*s_*.xml", (int) len,
+                        path);
         if (size >= PATH_SIZE) {
             fprintf(stderr, "creating path failed\n");
             ret = -1;
@@ -442,35 +446,36 @@ processSchemaPattern(const char *pattern) {
 
         globfree(&globbuf2);
 
-error:
+    error:
         xmlFree(dirBuf);
         xmlFree(baseBuf);
     }
 
     globfree(&globbuf);
-    return(ret);
+    return ret;
 }
 #endif
 
 #ifdef HAVE_XPATH_FUZZER
 static int
-processXPath(const char *testDir, const char *prefix, const char *name,
-             const char *data, const char *subdir, int xptr) {
+processXPath (const char *testDir, const char *prefix, const char *name,
+              const char *data, const char *subdir, int xptr)
+{
     char pattern[PATH_SIZE];
     glob_t globbuf;
     size_t i, size;
     int ret = 0, res;
 
-    size = snprintf(pattern, sizeof(pattern), "%s/%s/%s*",
-                    testDir, subdir, prefix);
+    size = snprintf(pattern, sizeof(pattern), "%s/%s/%s*", testDir, subdir,
+                    prefix);
     if (size >= PATH_SIZE)
-        return(-1);
+        return -1;
     res = glob(pattern, 0, NULL, &globbuf);
     if (res == GLOB_NOMATCH)
-        return(0);
+        return 0;
     if (res != 0) {
         fprintf(stderr, "couldn't match pattern %s\n", pattern);
-        return(-1);
+        return -1;
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
@@ -498,8 +503,8 @@ processXPath(const char *testDir, const char *prefix, const char *name,
                     break;
             expr[j] = 0;
 
-            size = snprintf(outPath, sizeof(outPath), "seed/xpath/%s-%d",
-                            name, globalData.counter);
+            size = snprintf(outPath, sizeof(outPath), "seed/xpath/%s-%d", name,
+                            globalData.counter);
             if (size >= PATH_SIZE) {
                 ret = -1;
                 continue;
@@ -516,7 +521,7 @@ processXPath(const char *testDir, const char *prefix, const char *name,
             if (xptr) {
                 xmlFuzzWriteString(out, expr);
             } else {
-                char xptrExpr[EXPR_SIZE+100];
+                char xptrExpr[EXPR_SIZE + 100];
 
                 /* Wrap XPath expressions as XPointer */
                 snprintf(xptrExpr, sizeof(xptrExpr), "xpointer(%s)", expr);
@@ -534,11 +539,12 @@ processXPath(const char *testDir, const char *prefix, const char *name,
 
     globfree(&globbuf);
 
-    return(ret);
+    return ret;
 }
 
 static int
-processXPathDir(const char *testDir) {
+processXPathDir (const char *testDir)
+{
     char pattern[PATH_SIZE];
     glob_t globbuf;
     size_t i, size;
@@ -550,9 +556,9 @@ processXPathDir(const char *testDir) {
 
     size = snprintf(pattern, sizeof(pattern), "%s/docs/*", testDir);
     if (size >= PATH_SIZE)
-        return(1);
+        return 1;
     if (glob(pattern, 0, NULL, &globbuf) != 0)
-        return(1);
+        return 1;
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
         char *path = globbuf.gl_pathv[i];
@@ -579,12 +585,13 @@ processXPathDir(const char *testDir) {
 
     globfree(&globbuf);
 
-    return(ret);
+    return ret;
 }
 #endif
 
 int
-main(int argc, const char **argv) {
+main (int argc, const char **argv)
+{
     mainFunc processArg = NULL;
     const char *fuzzer;
     int ret = 0;
@@ -592,7 +599,7 @@ main(int argc, const char **argv) {
 
     if (argc < 3) {
         fprintf(stderr, "usage: seed [FUZZER] [PATTERN...]\n");
-        return(1);
+        return 1;
     }
 
     fuzzer = argv[1];
@@ -640,19 +647,18 @@ main(int argc, const char **argv) {
 #endif
     } else {
         fprintf(stderr, "unknown fuzzer %s\n", fuzzer);
-        return(1);
+        return 1;
     }
     globalData.fuzzer = fuzzer;
 
     if (getcwd(globalData.cwd, PATH_SIZE) == NULL) {
         fprintf(stderr, "couldn't get current directory\n");
-        return(1);
+        return 1;
     }
 
     if (processArg != NULL)
         for (i = 2; i < argc; i++)
             processArg(argv[i]);
 
-    return(ret);
+    return ret;
 }
-
