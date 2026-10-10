@@ -16,8 +16,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -29,7 +29,8 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     const char *docBuffer, *docUrl;
@@ -47,8 +48,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     /*
      * Disable options that are known to cause timeouts
      */
-    opts &= ~XML_PARSE_DTDVALID &
-            ~XML_PARSE_SAX1;
+    opts &= ~XML_PARSE_DTDVALID & ~XML_PARSE_SAX1;
     failurePos = xmlFuzzReadInt(4) % (size + 100);
 
     maxChunkSize = xmlFuzzReadInt(4) % (size + size / 8 + 1);
@@ -79,8 +79,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
         doc = xmlCtxtReadMemory(ctxt, docBuffer, docSize, docUrl, NULL, opts);
         errorCode = ctxt->errNo;
         xmlFuzzCheckFailureReport("xmlCtxtReadMemory",
-                doc == NULL && errorCode == XML_ERR_NO_MEMORY,
-                doc == NULL && errorCode == XML_IO_EIO);
+                                  doc == NULL && errorCode == XML_ERR_NO_MEMORY,
+                                  doc == NULL && errorCode == XML_IO_EIO);
 
         if (doc != NULL) {
 #ifdef LIBXML_OUTPUT_ENABLED
@@ -137,8 +137,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
         consumed = 0;
         numChunks = 0;
         maxChunks = 50 + docSize / 100;
-        while (numChunks == 0 ||
-               (consumed < docSize && numChunks < maxChunks)) {
+        while (numChunks == 0
+               || (consumed < docSize && numChunks < maxChunks)) {
             size_t chunkSize;
             int terminate;
 
@@ -167,11 +167,9 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
          * stop parsing, and the error code is the *last* error
          * reported, so we can't check whether the codes match.
          */
-        if (errorCode != XML_ERR_NO_MEMORY &&
-            errorCode != XML_IO_EIO &&
-            errorCodePush != XML_ERR_NO_MEMORY &&
-            errorCodePush != XML_IO_EIO &&
-            (errorCode == XML_ERR_OK) != (errorCodePush == XML_ERR_OK)) {
+        if (errorCode != XML_ERR_NO_MEMORY && errorCode != XML_IO_EIO
+            && errorCodePush != XML_ERR_NO_MEMORY && errorCodePush != XML_IO_EIO
+            && (errorCode == XML_ERR_OK) != (errorCodePush == XML_ERR_OK)) {
             fprintf(stderr, "pull/push parser error mismatch: %d != %d\n",
                     errorCode, errorCodePush);
 #if 0
@@ -188,10 +186,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
          *
          * The NOBLANKS option doesn't work reliably in push mode.
          */
-        if ((opts & XML_PARSE_NOBLANKS) == 0 &&
-            errorCode == XML_ERR_OK &&
-            errorCodePush == XML_ERR_OK &&
-            outbuf != NULL) {
+        if ((opts & XML_PARSE_NOBLANKS) == 0 && errorCode == XML_ERR_OK
+            && errorCodePush == XML_ERR_OK && outbuf != NULL) {
             xmlBufferPtr outbufPush;
             xmlSaveCtxtPtr save;
 
@@ -208,11 +204,12 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 if (saveErr == XML_ERR_OK) {
                     int outbufSize = xmlBufferLength(outbuf);
 
-                    if (outbufSize != xmlBufferLength(outbufPush) ||
-                        memcmp(xmlBufferContent(outbuf),
-                               xmlBufferContent(outbufPush),
-                               outbufSize) != 0) {
-                        fprintf(stderr, "pull/push parser roundtrip "
+                    if (outbufSize != xmlBufferLength(outbufPush)
+                        || memcmp(xmlBufferContent(outbuf),
+                                  xmlBufferContent(outbufPush), outbufSize)
+                            != 0) {
+                        fprintf(stderr,
+                                "pull/push parser roundtrip "
                                 "mismatch\n");
 #if 0
                         FILE *f = fopen("c.xml", "wb");
@@ -244,20 +241,19 @@ exit:
     xmlFuzzInjectFailure(0);
     xmlFuzzDataCleanup();
     xmlResetLastError();
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* opts */
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* maxChunkSize */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* opts */
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {4, XML_FUZZ_PROB_ONE / 10}, /* maxChunkSize */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
