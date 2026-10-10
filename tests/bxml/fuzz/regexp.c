@@ -10,21 +10,22 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
 
     return 0;
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlRegexpPtr regexp;
     size_t failurePos;
     const char *str1;
 
     if (size > 200)
-        return(0);
+        return 0;
 
     xmlFuzzDataInit(data, size);
     failurePos = xmlFuzzReadInt(4) % (size * 8 + 100);
@@ -50,14 +51,13 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
