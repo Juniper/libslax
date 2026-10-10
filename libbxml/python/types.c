@@ -12,12 +12,12 @@
 
 #if PY_MAJOR_VERSION >= 3
 #define PY_IMPORT_STRING_SIZE PyUnicode_FromStringAndSize
-#define PY_IMPORT_STRING PyUnicode_FromString
-#define PY_IMPORT_INT PyLong_FromLong
+#define PY_IMPORT_STRING      PyUnicode_FromString
+#define PY_IMPORT_INT         PyLong_FromLong
 #else
 #define PY_IMPORT_STRING_SIZE PyString_FromStringAndSize
-#define PY_IMPORT_STRING PyString_FromString
-#define PY_IMPORT_INT PyInt_FromLong
+#define PY_IMPORT_STRING      PyString_FromString
+#define PY_IMPORT_INT         PyInt_FromLong
 #endif
 
 #if PY_MAJOR_VERSION >= 3
@@ -31,24 +31,22 @@
 
 /* Taken from info on MSDN site, as we may not have the Windows WDK/DDK headers */
 typedef struct _IO_STATUS_BLOCK {
-  union {
-    NTSTATUS Status;
-    PVOID    Pointer;
-  } DUMMYUNIONNAME;
-  ULONG_PTR Information;
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    } DUMMYUNIONNAME;
+    ULONG_PTR Information;
 } IO_STATUS_BLOCK;
 
 typedef struct _FILE_ACCESS_INFORMATION {
-  ACCESS_MASK AccessFlags;
+    ACCESS_MASK AccessFlags;
 } FILE_ACCESS_INFORMATION;
 
-typedef NTSTATUS (*t_NtQueryInformationFile) (HANDLE           FileHandle,
-                                              IO_STATUS_BLOCK *IoStatusBlock,
-                                              PVOID            FileInformation,
-                                              ULONG            Length,
-                                              int              FileInformationClass); /* this is an Enum */
+typedef NTSTATUS (*t_NtQueryInformationFile)(
+    HANDLE FileHandle, IO_STATUS_BLOCK *IoStatusBlock, PVOID FileInformation,
+    ULONG Length, int FileInformationClass); /* this is an Enum */
 
-#if (defined (_MSC_VER) && _MSC_VER >= 1400)
+#if (defined(_MSC_VER) && _MSC_VER >= 1400)
 /*
  * This is the (empty) invalid parameter handler
  * that is used for Visual C++ 2005 (and later) builds
@@ -64,13 +62,10 @@ typedef NTSTATUS (*t_NtQueryInformationFile) (HANDLE           FileHandle,
  * for an explanation on this.
  */
 void
-myInvalidParameterHandler(const wchar_t *expression,
-                          const wchar_t *function,
-                          const wchar_t *file,
-                          unsigned int   line,
-                          uintptr_t      pReserved)
-{
-}
+myInvalidParameterHandler (const wchar_t *expression, const wchar_t *function,
+                           const wchar_t *file, unsigned int line,
+                           uintptr_t pReserved)
+{}
 #endif
 #else
 #include <unistd.h>
@@ -78,7 +73,8 @@ myInvalidParameterHandler(const wchar_t *expression,
 #endif
 
 FILE *
-libxml_PyFileGet(PyObject *f) {
+libxml_PyFileGet (PyObject *f)
+{
     FILE *res;
     const char *mode;
     int fd = PyObject_AsFileDescriptor(f);
@@ -93,7 +89,7 @@ libxml_PyFileGet(PyObject *f) {
     BOOL is_write = FALSE;
     BOOL is_append = FALSE;
 
-#if (defined (_MSC_VER) && _MSC_VER >= 1400)
+#if (defined(_MSC_VER) && _MSC_VER >= 1400)
     /* set up our empty invalid parameter handler */
     _invalid_parameter_handler oldHandler, newHandler;
     newHandler = myInvalidParameterHandler;
@@ -106,53 +102,52 @@ libxml_PyFileGet(PyObject *f) {
     w_fh = _get_osfhandle(fd);
 
     if (w_fh == -1)
-        return(NULL);
+        return NULL;
 
     hntdll = GetModuleHandleW(L"ntdll.dll");
 
     if (hntdll == NULL)
-        return(NULL);
-    NtQueryInformationFile = (t_NtQueryInformationFile) (void (*)(void))
-        GetProcAddress(hntdll, "NtQueryInformationFile");
+        return NULL;
+    NtQueryInformationFile = (t_NtQueryInformationFile) (void (*)(
+        void)) GetProcAddress(hntdll, "NtQueryInformationFile");
 
-    if (NtQueryInformationFile != NULL &&
-        (NtQueryInformationFile((HANDLE)w_fh,
-                               &status_block,
-                               &ai,
-                                sizeof(FILE_ACCESS_INFORMATION),
-                                8) == 0)) /* 8 means "FileAccessInformation" */
-        {
-            if (ai.AccessFlags & FILE_READ_DATA)
-                is_read = TRUE;
-            if (ai.AccessFlags & FILE_WRITE_DATA)
-                is_write = TRUE;
-            if (ai.AccessFlags & FILE_APPEND_DATA)
-                is_append = TRUE;
+    if (NtQueryInformationFile != NULL
+        && (NtQueryInformationFile((HANDLE) w_fh, &status_block, &ai,
+                                   sizeof(FILE_ACCESS_INFORMATION), 8)
+            == 0)) /* 8 means "FileAccessInformation" */
+    {
+        if (ai.AccessFlags & FILE_READ_DATA)
+            is_read = TRUE;
+        if (ai.AccessFlags & FILE_WRITE_DATA)
+            is_write = TRUE;
+        if (ai.AccessFlags & FILE_APPEND_DATA)
+            is_append = TRUE;
 
-            if (is_write) {
-                if (is_read) {
-                    if (is_append)
-                        mode = "a+";
-                    else
-                        mode = "rw";
-                } else {
-                    if (is_append)
-                        mode = "a";
-                    else
-                        mode = "w";
-                }
+        if (is_write) {
+            if (is_read) {
+                if (is_append)
+                    mode = "a+";
+                else
+                    mode = "rw";
             } else {
                 if (is_append)
-                    mode = "r+";
+                    mode = "a";
                 else
-                    mode = "r";
+                    mode = "w";
             }
+        } else {
+            if (is_append)
+                mode = "r+";
+            else
+                mode = "r";
         }
+    }
 
     FreeLibrary(hntdll);
 
-    if (!is_write && !is_read) /* also happens if we did not load or run NtQueryInformationFile() successfully */
-        return(NULL);
+    if (!is_write
+        && !is_read) /* also happens if we did not load or run NtQueryInformationFile() successfully */
+        return NULL;
 #else
     int flags;
 
@@ -161,40 +156,40 @@ libxml_PyFileGet(PyObject *f) {
      * stdout or stderr when opened with fdopen(dup_fd, "rw").
      */
     switch (fd) {
-        case STDIN_FILENO:
-            mode = "r";
-            break;
-        case STDOUT_FILENO:
-        case STDERR_FILENO:
-            mode = "w";
-            break;
-        default:
-            /*
+    case STDIN_FILENO:
+        mode = "r";
+        break;
+    case STDOUT_FILENO:
+    case STDERR_FILENO:
+        mode = "w";
+        break;
+    default:
+        /*
              * Get the flags on the fd to understand how it was opened
              */
-            flags = fcntl(fd, F_GETFL, 0);
-            switch (flags & O_ACCMODE) {
-                case O_RDWR:
-                    if (flags & O_APPEND)
-                        mode = "a+";
-                    else
-                        mode = "rw";
-                    break;
-                case O_RDONLY:
-                    if (flags & O_APPEND)
-                        mode = "r+";
-                    else
-                        mode = "r";
-                    break;
-                case O_WRONLY:
-                    if (flags & O_APPEND)
-                        mode = "a";
-                    else
-                        mode = "w";
-                    break;
-                default:
-                    return(NULL);
-            }
+        flags = fcntl(fd, F_GETFL, 0);
+        switch (flags & O_ACCMODE) {
+        case O_RDWR:
+            if (flags & O_APPEND)
+                mode = "a+";
+            else
+                mode = "rw";
+            break;
+        case O_RDONLY:
+            if (flags & O_APPEND)
+                mode = "r+";
+            else
+                mode = "r";
+            break;
+        case O_WRONLY:
+            if (flags & O_APPEND)
+                mode = "a";
+            else
+                mode = "w";
+            break;
+        default:
+            return NULL;
+        }
     }
 #endif
 
@@ -209,259 +204,262 @@ libxml_PyFileGet(PyObject *f) {
      */
     fd = dup(fd);
     if (fd == -1)
-        return(NULL);
+        return NULL;
     res = fdopen(fd, mode);
     if (res == NULL) {
         close(fd);
-	return(NULL);
+        return NULL;
     }
-    return(res);
+    return res;
 }
 
-void libxml_PyFileRelease(FILE *f) {
+void
+libxml_PyFileRelease (FILE *f)
+{
     if (f != NULL)
         fclose(f);
 }
 #endif
 
 PyObject *
-libxml_intWrap(int val)
+libxml_intWrap (int val)
 {
     PyObject *ret;
 
     ret = PY_IMPORT_INT((long) val);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_longWrap(long val)
+libxml_longWrap (long val)
 {
     PyObject *ret;
 
     ret = PyLong_FromLong(val);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_doubleWrap(double val)
+libxml_doubleWrap (double val)
 {
     PyObject *ret;
 
     ret = PyFloat_FromDouble((double) val);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_charPtrWrap(char *str)
+libxml_charPtrWrap (char *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING(str);
     xmlFree(str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_charPtrConstWrap(const char *str)
+libxml_charPtrConstWrap (const char *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING(str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlCharPtrWrap(xmlChar * str)
+libxml_xmlCharPtrWrap (xmlChar *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING((char *) str);
     xmlFree(str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlCharPtrConstWrap(const xmlChar * str)
+libxml_xmlCharPtrConstWrap (const xmlChar *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING((char *) str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_constcharPtrWrap(const char *str)
+libxml_constcharPtrWrap (const char *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING(str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_constxmlCharPtrWrap(const xmlChar * str)
+libxml_constxmlCharPtrWrap (const xmlChar *str)
 {
     PyObject *ret;
 
     if (str == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PY_IMPORT_STRING((char *) str);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlDocPtrWrap(xmlDocPtr doc)
+libxml_xmlDocPtrWrap (xmlDocPtr doc)
 {
     PyObject *ret;
 
     if (doc == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     /* TODO: look at deallocation */
     ret = PyCapsule_New((void *) doc, (char *) "xmlDocPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlNodePtrWrap(xmlNodePtr node)
+libxml_xmlNodePtrWrap (xmlNodePtr node)
 {
     PyObject *ret;
 
     if (node == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) node, (char *) "xmlNodePtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlURIPtrWrap(xmlURIPtr uri)
+libxml_xmlURIPtrWrap (xmlURIPtr uri)
 {
     PyObject *ret;
 
     if (uri == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) uri, (char *) "xmlURIPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlNsPtrWrap(xmlNsPtr ns)
+libxml_xmlNsPtrWrap (xmlNsPtr ns)
 {
     PyObject *ret;
 
     if (ns == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) ns, (char *) "xmlNsPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlAttrPtrWrap(xmlAttrPtr attr)
+libxml_xmlAttrPtrWrap (xmlAttrPtr attr)
 {
     PyObject *ret;
 
     if (attr == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) attr, (char *) "xmlAttrPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlAttributePtrWrap(xmlAttributePtr attr)
+libxml_xmlAttributePtrWrap (xmlAttributePtr attr)
 {
     PyObject *ret;
 
     if (attr == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) attr, (char *) "xmlAttributePtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlElementPtrWrap(xmlElementPtr elem)
+libxml_xmlElementPtrWrap (xmlElementPtr elem)
 {
     PyObject *ret;
 
     if (elem == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) elem, (char *) "xmlElementPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlParserCtxtPtrWrap(xmlParserCtxtPtr ctxt)
+libxml_xmlParserCtxtPtrWrap (xmlParserCtxtPtr ctxt)
 {
     PyObject *ret;
 
     if (ctxt == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
 
     ret = PyCapsule_New((void *) ctxt, (char *) "xmlParserCtxtPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 #ifdef LIBXML_XPATH_ENABLED
 PyObject *
-libxml_xmlXPathContextPtrWrap(xmlXPathContextPtr ctxt)
+libxml_xmlXPathContextPtrWrap (xmlXPathContextPtr ctxt)
 {
     PyObject *ret;
 
     if (ctxt == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     ret = PyCapsule_New((void *) ctxt, (char *) "xmlXPathContextPtr", NULL);
-    return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlXPathParserContextPtrWrap(xmlXPathParserContextPtr ctxt)
+libxml_xmlXPathParserContextPtrWrap (xmlXPathParserContextPtr ctxt)
 {
     PyObject *ret;
 
     if (ctxt == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
-    ret = PyCapsule_New((void *)ctxt, (char *)"xmlXPathParserContextPtr", NULL);
-    return (ret);
+    ret = PyCapsule_New((void *) ctxt, (char *) "xmlXPathParserContextPtr",
+                        NULL);
+    return ret;
 }
 
 /**
@@ -475,10 +473,10 @@ libxml_xmlXPathParserContextPtrWrap(xmlXPathParserContextPtr ctxt)
  */
 #if PY_VERSION_HEX < 0x02070000
 static void
-libxml_xmlXPathDestructNsNode(void *cap, void *desc UNUSED)
+libxml_xmlXPathDestructNsNode (void *cap, void *desc UNUSED)
 #else
 static void
-libxml_xmlXPathDestructNsNode(PyObject *cap)
+libxml_xmlXPathDestructNsNode (PyObject *cap)
 #endif
 {
 #if PY_VERSION_HEX < 0x02070000
@@ -489,91 +487,89 @@ libxml_xmlXPathDestructNsNode(PyObject *cap)
 }
 
 PyObject *
-libxml_xmlXPathObjectPtrWrap(xmlXPathObjectPtr obj)
+libxml_xmlXPathObjectPtrWrap (xmlXPathObjectPtr obj)
 {
     PyObject *ret;
 
     if (obj == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     switch (obj->type) {
-        case XPATH_XSLT_TREE: {
-            if ((obj->nodesetval == NULL) ||
-		(obj->nodesetval->nodeNr == 0) ||
-		(obj->nodesetval->nodeTab == NULL)) {
-                ret = PyList_New(0);
-	    } else {
-		int i, len = 0;
-		xmlNodePtr node;
+    case XPATH_XSLT_TREE: {
+        if ((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr == 0)
+            || (obj->nodesetval->nodeTab == NULL)) {
+            ret = PyList_New(0);
+        } else {
+            int i, len = 0;
+            xmlNodePtr node;
 
-		node = obj->nodesetval->nodeTab[0]->children;
-		while (node != NULL) {
-		    len++;
-		    node = node->next;
-		}
-		ret = PyList_New(len);
-		node = obj->nodesetval->nodeTab[0]->children;
-		for (i = 0;i < len;i++) {
-                    PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
-		    node = node->next;
-		}
-	    }
-	    /*
+            node = obj->nodesetval->nodeTab[0]->children;
+            while (node != NULL) {
+                len++;
+                node = node->next;
+            }
+            ret = PyList_New(len);
+            node = obj->nodesetval->nodeTab[0]->children;
+            for (i = 0; i < len; i++) {
+                PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
+                node = node->next;
+            }
+        }
+        /*
 	     * Return now, do not free the object passed down
 	     */
-	    return (ret);
-	}
-        case XPATH_NODESET:
-            if ((obj->nodesetval == NULL)
-                || (obj->nodesetval->nodeNr == 0)) {
-                ret = PyList_New(0);
-	    } else {
-                int i;
-                xmlNodePtr node;
+        return ret;
+    }
+    case XPATH_NODESET:
+        if ((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr == 0)) {
+            ret = PyList_New(0);
+        } else {
+            int i;
+            xmlNodePtr node;
 
-                ret = PyList_New(obj->nodesetval->nodeNr);
-                for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-                    node = obj->nodesetval->nodeTab[i];
-                    if (node->type == XML_NAMESPACE_DECL) {
-		        PyObject *ns = PyCapsule_New((void *) node,
-                                     (char *) "xmlNsPtr",
-				     libxml_xmlXPathDestructNsNode);
-			PyList_SetItem(ret, i, ns);
-			/* make sure the xmlNsPtr is not destroyed now */
-			obj->nodesetval->nodeTab[i] = NULL;
-		    } else {
-			PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
-		    }
+            ret = PyList_New(obj->nodesetval->nodeNr);
+            for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+                node = obj->nodesetval->nodeTab[i];
+                if (node->type == XML_NAMESPACE_DECL) {
+                    PyObject *ns
+                        = PyCapsule_New((void *) node, (char *) "xmlNsPtr",
+                                        libxml_xmlXPathDestructNsNode);
+                    PyList_SetItem(ret, i, ns);
+                    /* make sure the xmlNsPtr is not destroyed now */
+                    obj->nodesetval->nodeTab[i] = NULL;
+                } else {
+                    PyList_SetItem(ret, i, libxml_xmlNodePtrWrap(node));
                 }
             }
-            break;
-        case XPATH_BOOLEAN:
-            ret = PY_IMPORT_INT((long) obj->boolval);
-            break;
-        case XPATH_NUMBER:
-            ret = PyFloat_FromDouble(obj->floatval);
-            break;
-        case XPATH_STRING:
-	    ret = PY_IMPORT_STRING((char *) obj->stringval);
-            break;
-        default:
-            Py_INCREF(Py_None);
-            ret = Py_None;
+        }
+        break;
+    case XPATH_BOOLEAN:
+        ret = PY_IMPORT_INT((long) obj->boolval);
+        break;
+    case XPATH_NUMBER:
+        ret = PyFloat_FromDouble(obj->floatval);
+        break;
+    case XPATH_STRING:
+        ret = PY_IMPORT_STRING((char *) obj->stringval);
+        break;
+    default:
+        Py_INCREF(Py_None);
+        ret = Py_None;
     }
     xmlXPathFreeObject(obj);
-    return (ret);
+    return ret;
 }
 
 xmlXPathObjectPtr
-libxml_xmlXPathObjectPtrConvert(PyObject *obj)
+libxml_xmlXPathObjectPtrConvert (PyObject *obj)
 {
     xmlXPathObjectPtr ret = NULL;
 
     if (obj == NULL) {
-        return (NULL);
+        return NULL;
     }
-    if (PyFloat_Check (obj)) {
+    if (PyFloat_Check(obj)) {
         ret = xmlXPathNewFloat((double) PyFloat_AS_DOUBLE(obj));
     } else if (PyLong_Check(obj)) {
 #ifdef PyLong_AS_LONG
@@ -582,29 +578,27 @@ libxml_xmlXPathObjectPtrConvert(PyObject *obj)
         ret = xmlXPathNewFloat((double) PyInt_AS_LONG(obj));
 #endif
 #ifdef PyBool_Check
-    } else if (PyBool_Check (obj)) {
-
+    } else if (PyBool_Check(obj)) {
         if (obj == Py_True) {
-          ret = xmlXPathNewBoolean(1);
-        }
-        else {
-          ret = xmlXPathNewBoolean(0);
+            ret = xmlXPathNewBoolean(1);
+        } else {
+            ret = xmlXPathNewBoolean(0);
         }
 #endif
-    } else if (PyBytes_Check (obj)) {
+    } else if (PyBytes_Check(obj)) {
         xmlChar *str;
 
         str = xmlStrndup((const xmlChar *) PyBytes_AS_STRING(obj),
                          PyBytes_GET_SIZE(obj));
         ret = xmlXPathWrapString(str);
 #ifdef PyUnicode_Check
-    } else if (PyUnicode_Check (obj)) {
+    } else if (PyUnicode_Check(obj)) {
 #if PY_VERSION_HEX >= 0x03030000
         xmlChar *str;
-	const char *tmp;
-	Py_ssize_t size;
+        const char *tmp;
+        Py_ssize_t size;
 
-	/* tmp doesn't need to be deallocated */
+        /* tmp doesn't need to be deallocated */
         tmp = PyUnicode_AsUTF8AndSize(obj, &size);
         str = xmlStrndup((const xmlChar *) tmp, (int) size);
         ret = xmlXPathWrapString(str);
@@ -612,16 +606,16 @@ libxml_xmlXPathObjectPtrConvert(PyObject *obj)
         xmlChar *str = NULL;
         PyObject *b;
 
-	b = PyUnicode_AsUTF8String(obj);
-	if (b != NULL) {
-	    str = xmlStrndup((const xmlChar *) PyBytes_AS_STRING(b),
-			     PyBytes_GET_SIZE(b));
-	    Py_DECREF(b);
-	}
-	ret = xmlXPathWrapString(str);
+        b = PyUnicode_AsUTF8String(obj);
+        if (b != NULL) {
+            str = xmlStrndup((const xmlChar *) PyBytes_AS_STRING(b),
+                             PyBytes_GET_SIZE(b));
+            Py_DECREF(b);
+        }
+        ret = xmlXPathWrapString(str);
 #endif
 #endif
-    } else if (PyList_Check (obj)) {
+    } else if (PyList_Check(obj)) {
         int i;
         PyObject *node;
         xmlNodePtr cur;
@@ -637,13 +631,13 @@ libxml_xmlXPathObjectPtrConvert(PyObject *obj)
             cur = NULL;
             if (PyCapsule_CheckExact(node)) {
                 cur = PyxmlNode_Get(node);
-            } else if ((PyObject_HasAttrString(node, (char *) "_o")) &&
-	               (PyObject_HasAttrString(node, (char *) "get_doc"))) {
-		PyObject *wrapper;
+            } else if ((PyObject_HasAttrString(node, (char *) "_o"))
+                       && (PyObject_HasAttrString(node, (char *) "get_doc"))) {
+                PyObject *wrapper;
 
-		wrapper = PyObject_GetAttrString(node, (char *) "_o");
-		if (wrapper != NULL)
-		    cur = PyxmlNode_Get(wrapper);
+                wrapper = PyObject_GetAttrString(node, (char *) "_o");
+                if (wrapper != NULL)
+                    cur = PyxmlNode_Get(wrapper);
             } else {
             }
             if (cur != NULL) {
@@ -653,243 +647,222 @@ libxml_xmlXPathObjectPtrConvert(PyObject *obj)
         ret = xmlXPathWrapNodeSet(set);
     } else {
     }
-    return (ret);
+    return ret;
 }
 #endif /* LIBXML_XPATH_ENABLED */
 
 PyObject *
-libxml_xmlValidCtxtPtrWrap(xmlValidCtxtPtr valid)
-{
-	PyObject *ret;
-
-	if (valid == NULL) {
-		Py_INCREF(Py_None);
-		return (Py_None);
-	}
-
-	ret = 
-		PyCapsule_New((void *) valid,
-									 (char *) "xmlValidCtxtPtr", NULL);
-
-	return (ret);
-}
-
-#ifdef LIBXML_CATALOG_ENABLED
-PyObject *
-libxml_xmlCatalogPtrWrap(xmlCatalogPtr catal)
-{
-    PyObject *ret;
-
-    if (catal == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) catal,
-                                     (char *) "xmlCatalogPtr", NULL);
-    return (ret);
-}
-#endif /* LIBXML_CATALOG_ENABLED */
-
-PyObject *
-libxml_xmlOutputBufferPtrWrap(xmlOutputBufferPtr buffer)
-{
-    PyObject *ret;
-
-    if (buffer == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) buffer,
-                                     (char *) "xmlOutputBufferPtr", NULL);
-    return (ret);
-}
-
-PyObject *
-libxml_xmlParserInputBufferPtrWrap(xmlParserInputBufferPtr buffer)
-{
-    PyObject *ret;
-
-    if (buffer == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) buffer,
-                                     (char *) "xmlParserInputBufferPtr", NULL);
-    return (ret);
-}
-
-#ifdef LIBXML_REGEXP_ENABLED
-PyObject *
-libxml_xmlRegexpPtrWrap(xmlRegexpPtr regexp)
-{
-    PyObject *ret;
-
-    if (regexp == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) regexp,
-                                     (char *) "xmlRegexpPtr", NULL);
-    return (ret);
-}
-#endif /* LIBXML_REGEXP_ENABLED */
-
-#ifdef LIBXML_READER_ENABLED
-PyObject *
-libxml_xmlTextReaderPtrWrap(xmlTextReaderPtr reader)
-{
-    PyObject *ret;
-
-    if (reader == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) reader,
-                                     (char *) "xmlTextReaderPtr", NULL);
-    return (ret);
-}
-
-PyObject *
-libxml_xmlTextReaderLocatorPtrWrap(xmlTextReaderLocatorPtr locator)
-{
-    PyObject *ret;
-
-    if (locator == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) locator,
-                                     (char *) "xmlTextReaderLocatorPtr", NULL);
-    return (ret);
-}
-#endif /* LIBXML_READER_ENABLED */
-
-#ifdef LIBXML_RELAXNG_ENABLED
-PyObject *
-libxml_xmlRelaxNGPtrWrap(xmlRelaxNGPtr ctxt)
-{
-    PyObject *ret;
-
-    if (ctxt == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) ctxt,
-                                     (char *) "xmlRelaxNGPtr", NULL);
-    return (ret);
-}
-
-PyObject *
-libxml_xmlRelaxNGParserCtxtPtrWrap(xmlRelaxNGParserCtxtPtr ctxt)
-{
-    PyObject *ret;
-
-    if (ctxt == NULL) {
-        Py_INCREF(Py_None);
-        return (Py_None);
-    }
-    ret =
-        PyCapsule_New((void *) ctxt,
-                                     (char *) "xmlRelaxNGParserCtxtPtr", NULL);
-    return (ret);
-}
-PyObject *
-libxml_xmlRelaxNGValidCtxtPtrWrap(xmlRelaxNGValidCtxtPtr valid)
+libxml_xmlValidCtxtPtrWrap (xmlValidCtxtPtr valid)
 {
     PyObject *ret;
 
     if (valid == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
-    ret =
-        PyCapsule_New((void *) valid,
-                                     (char *) "xmlRelaxNGValidCtxtPtr", NULL);
-    return (ret);
+
+    ret = PyCapsule_New((void *) valid, (char *) "xmlValidCtxtPtr", NULL);
+
+    return ret;
+}
+
+#ifdef LIBXML_CATALOG_ENABLED
+PyObject *
+libxml_xmlCatalogPtrWrap (xmlCatalogPtr catal)
+{
+    PyObject *ret;
+
+    if (catal == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) catal, (char *) "xmlCatalogPtr", NULL);
+    return ret;
+}
+#endif /* LIBXML_CATALOG_ENABLED */
+
+PyObject *
+libxml_xmlOutputBufferPtrWrap (xmlOutputBufferPtr buffer)
+{
+    PyObject *ret;
+
+    if (buffer == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) buffer, (char *) "xmlOutputBufferPtr", NULL);
+    return ret;
+}
+
+PyObject *
+libxml_xmlParserInputBufferPtrWrap (xmlParserInputBufferPtr buffer)
+{
+    PyObject *ret;
+
+    if (buffer == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) buffer, (char *) "xmlParserInputBufferPtr",
+                        NULL);
+    return ret;
+}
+
+#ifdef LIBXML_REGEXP_ENABLED
+PyObject *
+libxml_xmlRegexpPtrWrap (xmlRegexpPtr regexp)
+{
+    PyObject *ret;
+
+    if (regexp == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) regexp, (char *) "xmlRegexpPtr", NULL);
+    return ret;
+}
+#endif /* LIBXML_REGEXP_ENABLED */
+
+#ifdef LIBXML_READER_ENABLED
+PyObject *
+libxml_xmlTextReaderPtrWrap (xmlTextReaderPtr reader)
+{
+    PyObject *ret;
+
+    if (reader == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) reader, (char *) "xmlTextReaderPtr", NULL);
+    return ret;
+}
+
+PyObject *
+libxml_xmlTextReaderLocatorPtrWrap (xmlTextReaderLocatorPtr locator)
+{
+    PyObject *ret;
+
+    if (locator == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) locator, (char *) "xmlTextReaderLocatorPtr",
+                        NULL);
+    return ret;
+}
+#endif /* LIBXML_READER_ENABLED */
+
+#ifdef LIBXML_RELAXNG_ENABLED
+PyObject *
+libxml_xmlRelaxNGPtrWrap (xmlRelaxNGPtr ctxt)
+{
+    PyObject *ret;
+
+    if (ctxt == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) ctxt, (char *) "xmlRelaxNGPtr", NULL);
+    return ret;
+}
+
+PyObject *
+libxml_xmlRelaxNGParserCtxtPtrWrap (xmlRelaxNGParserCtxtPtr ctxt)
+{
+    PyObject *ret;
+
+    if (ctxt == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) ctxt, (char *) "xmlRelaxNGParserCtxtPtr",
+                        NULL);
+    return ret;
+}
+PyObject *
+libxml_xmlRelaxNGValidCtxtPtrWrap (xmlRelaxNGValidCtxtPtr valid)
+{
+    PyObject *ret;
+
+    if (valid == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) valid, (char *) "xmlRelaxNGValidCtxtPtr",
+                        NULL);
+    return ret;
 }
 #endif /* LIBXML_RELAXNG_ENABLED */
 
 #ifdef LIBXML_SCHEMAS_ENABLED
 PyObject *
-libxml_xmlSchemaPtrWrap(xmlSchemaPtr ctxt)
+libxml_xmlSchemaPtrWrap (xmlSchemaPtr ctxt)
 {
-	PyObject *ret;
+    PyObject *ret;
 
-	if (ctxt == NULL) {
-		Py_INCREF(Py_None);
-		return (Py_None);
-	}
-	ret =
-		PyCapsule_New((void *) ctxt,
-									 (char *) "xmlSchemaPtr", NULL);
-	return (ret);
+    if (ctxt == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) ctxt, (char *) "xmlSchemaPtr", NULL);
+    return ret;
 }
 
 PyObject *
-libxml_xmlSchemaParserCtxtPtrWrap(xmlSchemaParserCtxtPtr ctxt)
+libxml_xmlSchemaParserCtxtPtrWrap (xmlSchemaParserCtxtPtr ctxt)
 {
-	PyObject *ret;
+    PyObject *ret;
 
-	if (ctxt == NULL) {
-		Py_INCREF(Py_None);
-		return (Py_None);
-	}
-	ret = 
-		PyCapsule_New((void *) ctxt,
-									 (char *) "xmlSchemaParserCtxtPtr", NULL);
+    if (ctxt == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    ret = PyCapsule_New((void *) ctxt, (char *) "xmlSchemaParserCtxtPtr", NULL);
 
-	return (ret);
+    return ret;
 }
 
 PyObject *
-libxml_xmlSchemaValidCtxtPtrWrap(xmlSchemaValidCtxtPtr valid)
+libxml_xmlSchemaValidCtxtPtrWrap (xmlSchemaValidCtxtPtr valid)
 {
-	PyObject *ret;
-	
-	if (valid == NULL) {
-		Py_INCREF(Py_None);
-		return (Py_None);
-	}
+    PyObject *ret;
 
-	ret = 
-		PyCapsule_New((void *) valid,
-									 (char *) "xmlSchemaValidCtxtPtr", NULL);
+    if (valid == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
 
-	return (ret);
+    ret = PyCapsule_New((void *) valid, (char *) "xmlSchemaValidCtxtPtr", NULL);
+
+    return ret;
 }
 #endif /* LIBXML_SCHEMAS_ENABLED */
 
 static void
-libxml_xmlDestructError(PyObject *cap) {
+libxml_xmlDestructError (PyObject *cap)
+{
     xmlErrorPtr err = (xmlErrorPtr) PyCapsule_GetPointer(cap, "xmlErrorPtr");
     xmlResetError(err);
     xmlFree(err);
 }
 
 PyObject *
-libxml_xmlErrorPtrWrap(const xmlError *error)
+libxml_xmlErrorPtrWrap (const xmlError *error)
 {
     PyObject *ret;
     xmlErrorPtr copy;
 
     if (error == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     copy = xmlMalloc(sizeof(*copy));
     if (copy == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
     memset(copy, 0, sizeof(*copy));
     xmlCopyError(error, copy);
     ret = PyCapsule_New(copy, "xmlErrorPtr", libxml_xmlDestructError);
-    return (ret);
+    return ret;
 }
