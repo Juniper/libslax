@@ -17,14 +17,18 @@
 
 extern int xmlLoadExtDtdDefaultValue;
 
-static void usage(const char *name) {
+static void
+usage (const char *name)
+{
     printf("Usage: %s [options] stylesheet [stylesheet ...] file [file ...]\n",
-            name);
+           name);
     printf("      --out file: send output to file\n");
     printf("      --param name value: pass a (parameter,value) pair\n");
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     int arg_indx;
     const char *params[16 + 1];
     int params_indx = 0;
@@ -32,24 +36,24 @@ int main(int argc, char **argv) {
     int file_indx = 0;
     int i, j, k;
     FILE *output_file = stdout;
-    xsltStylesheetPtr *stylesheets = 
-        (xsltStylesheetPtr *) calloc(argc, sizeof(xsltStylesheetPtr));
+    xsltStylesheetPtr *stylesheets
+        = (xsltStylesheetPtr *) calloc(argc, sizeof(xsltStylesheetPtr));
     xmlDocPtr *files = (xmlDocPtr *) calloc(argc, sizeof(xmlDocPtr));
     xmlDocPtr doc, res;
     int return_value = 0;
-        
+
     if (argc <= 1) {
         usage(argv[0]);
         return_value = 1;
         goto finish;
     }
-        
+
     /* Collect arguments */
     for (arg_indx = 1; arg_indx < argc; arg_indx++) {
         if (argv[arg_indx][0] != '-')
             break;
         if ((!strcmp(argv[arg_indx], "-param"))
-                || (!strcmp(argv[arg_indx], "--param"))) {
+            || (!strcmp(argv[arg_indx], "--param"))) {
             arg_indx++;
             params[params_indx++] = argv[arg_indx++];
             params[params_indx++] = argv[arg_indx];
@@ -58,8 +62,8 @@ int main(int argc, char **argv) {
                 return_value = 1;
                 goto finish;
             }
-        }  else if ((!strcmp(argv[arg_indx], "-o"))
-                || (!strcmp(argv[arg_indx], "--out"))) {
+        } else if ((!strcmp(argv[arg_indx], "-o"))
+                   || (!strcmp(argv[arg_indx], "--out"))) {
             arg_indx++;
             output_file = fopen(argv[arg_indx], "w");
         } else {
@@ -73,14 +77,15 @@ int main(int argc, char **argv) {
 
     /* Collect and parse stylesheets and files to be transformed */
     for (; arg_indx < argc; arg_indx++) {
-        char *argument =
-            (char *) malloc(sizeof(char) * (strlen(argv[arg_indx]) + 1));
+        char *argument
+            = (char *) malloc(sizeof(char) * (strlen(argv[arg_indx]) + 1));
         strcpy(argument, argv[arg_indx]);
         if (strtok(argument, ".")) {
             char *suffix = strtok(0, ".");
             if (suffix && !strcmp(suffix, "xsl")) {
-                stylesheets[stylesheet_indx++] =
-                    xsltParseStylesheetFile((const xmlChar *)argv[arg_indx]);;
+                stylesheets[stylesheet_indx++]
+                    = xsltParseStylesheetFile((const xmlChar *) argv[arg_indx]);
+                ;
             } else {
                 files[file_indx++] = xmlParseFile(argv[arg_indx]);
             }
@@ -104,7 +109,7 @@ int main(int argc, char **argv) {
         }
 
         if (stylesheets[0]) {
-            xsltSaveResultToFile(output_file, res, stylesheets[j-1]);
+            xsltSaveResultToFile(output_file, res, stylesheets[j - 1]);
         } else {
             xmlDocDump(output_file, res);
         }
@@ -120,8 +125,8 @@ int main(int argc, char **argv) {
     xsltCleanupGlobals();
     xmlCleanupParser();
 
- finish:
+finish:
     free(stylesheets);
     free(files);
-    return(return_value);
+    return return_value;
 }
