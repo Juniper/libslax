@@ -20,20 +20,23 @@
  * Parse the resource and free the resulting tree
  */
 static void
-example1Func(const char *filename) {
+example1Func (const char *filename)
+{
     xmlDocPtr doc; /* the resulting document tree */
 
     doc = xmlReadFile(filename, NULL, 0);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse %s\n", filename);
-	return;
+        return;
     }
     xmlFreeDoc(doc);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
     if (argc != 2)
-        return(1);
+        return 1;
 
     /*
      * this initialize the library and check potential ABI mismatches
@@ -44,5 +47,5 @@ int main(int argc, char **argv) {
 
     example1Func(argv[1]);
 
-    return(0);
+    return 0;
 }
