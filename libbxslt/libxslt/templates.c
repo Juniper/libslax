@@ -54,8 +54,9 @@
  * Returns 1 is the predicate was true, 0 otherwise
  */
 int
-xsltEvalXPathPredicate(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
-		       xmlNsPtr *nsList, int nsNr) {
+xsltEvalXPathPredicate (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
+                        xmlNsPtr *nsList, int nsNr)
+{
     int ret;
     xmlXPathObjectPtr res;
     int oldNsNr;
@@ -65,9 +66,10 @@ xsltEvalXPathPredicate(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     int oldProximityPosition, oldContextSize;
 
     if ((ctxt == NULL) || (ctxt->inst == NULL)) {
-        xsltTransformError(ctxt, NULL, NULL,
+        xsltTransformError(
+            ctxt, NULL, NULL,
             "xsltEvalXPathPredicate: No context or instruction\n");
-        return(0);
+        return 0;
     }
 
     oldNode = xmlXPathContextGetNode(ctxt->xpathCtxt);
@@ -84,19 +86,22 @@ xsltEvalXPathPredicate(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     res = xmlXPathCompiledEval(comp, ctxt->xpathCtxt);
 
     if (res != NULL) {
-	ret = xmlXPathEvalPredicate(ctxt->xpathCtxt, res);
-	xmlXPathFreeObject(res);
+        ret = xmlXPathEvalPredicate(ctxt->xpathCtxt, res);
+        xmlXPathFreeObject(res);
 #ifdef WITH_XSLT_DEBUG_TEMPLATES
-	XSLT_TRACE(ctxt,XSLT_TRACE_TEMPLATES,xsltGenericDebug(xsltGenericDebugContext,
-	     "xsltEvalXPathPredicate: returns %d\n", ret));
+        XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
+                   xsltGenericDebug(xsltGenericDebugContext,
+                                    "xsltEvalXPathPredicate: returns %d\n",
+                                    ret));
 #endif
     } else {
 #ifdef WITH_XSLT_DEBUG_TEMPLATES
-	XSLT_TRACE(ctxt,XSLT_TRACE_TEMPLATES,xsltGenericDebug(xsltGenericDebugContext,
-	     "xsltEvalXPathPredicate: failed\n"));
+        XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
+                   xsltGenericDebug(xsltGenericDebugContext,
+                                    "xsltEvalXPathPredicate: failed\n"));
 #endif
-	ctxt->state = XSLT_STATE_STOPPED;
-	ret = 0;
+        ctxt->state = XSLT_STATE_STOPPED;
+        ret = 0;
     }
 
     xmlXPathContextSetNode(ctxt->xpathCtxt, oldNode);
@@ -106,7 +111,7 @@ xsltEvalXPathPredicate(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldContextSize);
     xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldProximityPosition);
 
-    return(ret);
+    return ret;
 }
 
 /**
@@ -123,20 +128,22 @@ xsltEvalXPathPredicate(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
  *    caller.
  */
 xmlChar *
-xsltEvalXPathStringNs(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
-	              int nsNr, xmlNsPtr *nsList) {
+xsltEvalXPathStringNs (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
+                       int nsNr, xmlNsPtr *nsList)
+{
     xmlChar *ret = NULL;
     xmlXPathObjectPtr res;
     xmlNodePtr oldInst;
     xmlNodePtr oldNode;
-    int	oldPos, oldSize;
+    int oldPos, oldSize;
     int oldNsNr;
     xmlNsPtr *oldNamespaces;
 
     if ((ctxt == NULL) || (ctxt->inst == NULL)) {
-        xsltTransformError(ctxt, NULL, NULL,
+        xsltTransformError(
+            ctxt, NULL, NULL,
             "xsltEvalXPathStringNs: No context or instruction\n");
-        return(0);
+        return 0;
     }
 
     oldInst = ctxt->inst;
@@ -152,22 +159,24 @@ xsltEvalXPathStringNs(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     xmlXPathContextSetNsNr(ctxt->xpathCtxt, nsNr);
     res = xmlXPathCompiledEval(comp, ctxt->xpathCtxt);
     if (res != NULL) {
-	if (xmlXPathObjectGetType(res) != XPATH_STRING)
-	    res = xmlXPathConvertString(res);
-	if ((res != NULL) && (xmlXPathObjectGetType(res) == XPATH_STRING)) {
+        if (xmlXPathObjectGetType(res) != XPATH_STRING)
+            res = xmlXPathConvertString(res);
+        if ((res != NULL) && (xmlXPathObjectGetType(res) == XPATH_STRING)) {
             ret = xmlXPathObjectGetStringval(res);
-	    xmlXPathObjectSetStringval(res, NULL);
-	} else {
-	    xsltTransformError(ctxt, NULL, NULL,
-		 "xpath : string() function didn't return a String\n");
-	}
-	xmlXPathFreeObject(res);
+            xmlXPathObjectSetStringval(res, NULL);
+        } else {
+            xsltTransformError(
+                ctxt, NULL, NULL,
+                "xpath : string() function didn't return a String\n");
+        }
+        xmlXPathFreeObject(res);
     } else {
-	ctxt->state = XSLT_STATE_STOPPED;
+        ctxt->state = XSLT_STATE_STOPPED;
     }
 #ifdef WITH_XSLT_DEBUG_TEMPLATES
-    XSLT_TRACE(ctxt,XSLT_TRACE_TEMPLATES,xsltGenericDebug(xsltGenericDebugContext,
-	 "xsltEvalXPathString: returns %s\n", ret));
+    XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
+               xsltGenericDebug(xsltGenericDebugContext,
+                                "xsltEvalXPathString: returns %s\n", ret));
 #endif
     ctxt->inst = oldInst;
     xmlXPathContextSetNode(ctxt->xpathCtxt, oldNode);
@@ -175,7 +184,7 @@ xsltEvalXPathStringNs(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, oldPos);
     xmlXPathContextSetNsNr(ctxt->xpathCtxt, oldNsNr);
     xmlXPathContextSetNamespaces(ctxt->xpathCtxt, oldNamespaces);
-    return(ret);
+    return ret;
 }
 
 /**
@@ -189,8 +198,9 @@ xsltEvalXPathStringNs(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
  *    caller.
  */
 xmlChar *
-xsltEvalXPathString(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp) {
-    return(xsltEvalXPathStringNs(ctxt, comp, 0, NULL));
+xsltEvalXPathString (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp)
+{
+    return xsltEvalXPathStringNs(ctxt, comp, 0, NULL);
 }
 
 /**
@@ -207,21 +217,20 @@ xsltEvalXPathString(xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp) {
  *         free the result.
  */
 xmlChar *
-xsltEvalTemplateString(xsltTransformContextPtr ctxt,
-		       xmlNodePtr contextNode,
-	               xmlNodePtr inst)
+xsltEvalTemplateString (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
+                        xmlNodePtr inst)
 {
     xmlNodePtr oldInsert, insert = NULL;
     xmlChar *ret;
     const xmlChar *oldLastText;
     int oldLastTextSize, oldLastTextUse;
 
-    if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL) ||
-        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL)
+        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+        return NULL;
 
     if (xmlNodeGetChildren(inst) == NULL)
-	return(NULL);
+        return NULL;
 
     /*
     * This creates a temporary element-node to add the resulting
@@ -229,12 +238,11 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     * OPTIMIZE TODO: Keep such an element-node in the transformation
     *  context to avoid creating it every time.
     */
-    insert = xmlNewDocNode(ctxt->output, NULL,
-	                   (const xmlChar *)"fake", NULL);
+    insert = xmlNewDocNode(ctxt->output, NULL, (const xmlChar *) "fake", NULL);
     if (insert == NULL) {
-	xsltTransformError(ctxt, NULL, inst,
-		"Failed to create temporary node\n");
-	return(NULL);
+        xsltTransformError(ctxt, NULL, inst,
+                           "Failed to create temporary node\n");
+        return NULL;
     }
     oldInsert = ctxt->insert;
     ctxt->insert = insert;
@@ -244,7 +252,8 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     /*
     * OPTIMIZE TODO: if inst->children consists only of text-nodes.
     */
-    xsltApplyOneTemplate(ctxt, contextNode, xmlNodeGetChildren(inst), NULL, NULL);
+    xsltApplyOneTemplate(ctxt, contextNode, xmlNodeGetChildren(inst), NULL,
+                         NULL);
 
     ctxt->insert = oldInsert;
     ctxt->lasttext = oldLastText;
@@ -253,8 +262,8 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
 
     ret = xmlNodeGetContent(insert);
     if (insert != NULL)
-	xmlFreeNode(insert);
-    return(ret);
+        xmlFreeNode(insert);
+    return ret;
 }
 
 /**
@@ -278,8 +287,8 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
  *    caller.
  */
 xmlChar *
-xsltAttrTemplateValueProcessNode(xsltTransformContextPtr ctxt,
-	  const xmlChar *str, xmlNodePtr inst)
+xsltAttrTemplateValueProcessNode (xsltTransformContextPtr ctxt,
+                                  const xmlChar *str, xmlNodePtr inst)
 {
     xmlChar *ret = NULL;
     const xmlChar *cur;
@@ -287,96 +296,99 @@ xsltAttrTemplateValueProcessNode(xsltTransformContextPtr ctxt,
     xmlNsPtr *nsList = NULL;
     int nsNr = 0;
 
-    if (str == NULL) return(NULL);
+    if (str == NULL)
+        return NULL;
     if (*str == 0)
-	return(xmlStrndup((xmlChar *)"", 0));
+        return xmlStrndup((xmlChar *) "", 0);
 
     cur = str;
     while (*cur != 0) {
-	if (*cur == '{') {
-	    if (*(cur+1) == '{') {	/* escaped '{' */
-	        cur++;
-		ret = xmlStrncat(ret, str, cur - str);
-		cur++;
-		str = cur;
-		continue;
-	    }
-	    ret = xmlStrncat(ret, str, cur - str);
-	    str = cur;
-	    cur++;
-	    while ((*cur != 0) && (*cur != '}')) {
-		/* Need to check for literal (bug539741) */
-		if ((*cur == '\'') || (*cur == '"')) {
-		    char delim = *(cur++);
-		    while ((*cur != 0) && (*cur != delim))
-			cur++;
-		    if (*cur != 0)
-			cur++;	/* skip the ending delimiter */
-		} else
-		    cur++;
+        if (*cur == '{') {
+            if (*(cur + 1) == '{') { /* escaped '{' */
+                cur++;
+                ret = xmlStrncat(ret, str, cur - str);
+                cur++;
+                str = cur;
+                continue;
             }
-	    if (*cur == 0) {
-	        xsltTransformError(ctxt, NULL, inst,
-			"xsltAttrTemplateValueProcessNode: unmatched '{'\n");
-		ret = xmlStrncat(ret, str, cur - str);
-		goto exit;
-	    }
-	    str++;
-	    expr = xmlStrndup(str, cur - str);
-	    if (expr == NULL)
-		goto exit;
-	    else if (*expr == '{') {
-		ret = xmlStrcat(ret, expr);
-		xmlFree(expr);
-	    } else {
-		xmlXPathCompExprPtr comp;
-		/*
+            ret = xmlStrncat(ret, str, cur - str);
+            str = cur;
+            cur++;
+            while ((*cur != 0) && (*cur != '}')) {
+                /* Need to check for literal (bug539741) */
+                if ((*cur == '\'') || (*cur == '"')) {
+                    char delim = *(cur++);
+                    while ((*cur != 0) && (*cur != delim))
+                        cur++;
+                    if (*cur != 0)
+                        cur++; /* skip the ending delimiter */
+                } else
+                    cur++;
+            }
+            if (*cur == 0) {
+                xsltTransformError(
+                    ctxt, NULL, inst,
+                    "xsltAttrTemplateValueProcessNode: unmatched '{'\n");
+                ret = xmlStrncat(ret, str, cur - str);
+                goto exit;
+            }
+            str++;
+            expr = xmlStrndup(str, cur - str);
+            if (expr == NULL)
+                goto exit;
+            else if (*expr == '{') {
+                ret = xmlStrcat(ret, expr);
+                xmlFree(expr);
+            } else {
+                xmlXPathCompExprPtr comp;
+                /*
 		 * TODO: keep precompiled form around
 		 */
-		if ((nsList == NULL) && (inst != NULL)) {
-		    int i = 0;
+                if ((nsList == NULL) && (inst != NULL)) {
+                    int i = 0;
 
-		    nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
-		    if (nsList != NULL) {
-			while (nsList[i] != NULL)
-			    i++;
-			nsNr = i;
-		    }
-		}
-		comp = xmlXPathCtxtCompile(ctxt->xpathCtxt, expr);
+                    nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
+                    if (nsList != NULL) {
+                        while (nsList[i] != NULL)
+                            i++;
+                        nsNr = i;
+                    }
+                }
+                comp = xmlXPathCtxtCompile(ctxt->xpathCtxt, expr);
                 val = xsltEvalXPathStringNs(ctxt, comp, nsNr, nsList);
-		xmlXPathFreeCompExpr(comp);
-		xmlFree(expr);
-		if (val != NULL) {
-		    ret = xmlStrcat(ret, val);
-		    xmlFree(val);
-		}
-	    }
-	    cur++;
-	    str = cur;
-	} else if (*cur == '}') {
-	    cur++;
-	    if (*cur == '}') {	/* escaped '}' */
-		ret = xmlStrncat(ret, str, cur - str);
-		cur++;
-		str = cur;
-		continue;
-	    } else {
-	        xsltTransformError(ctxt, NULL, inst,
-		     "xsltAttrTemplateValueProcessNode: unmatched '}'\n");
-	    }
-	} else
-	    cur++;
+                xmlXPathFreeCompExpr(comp);
+                xmlFree(expr);
+                if (val != NULL) {
+                    ret = xmlStrcat(ret, val);
+                    xmlFree(val);
+                }
+            }
+            cur++;
+            str = cur;
+        } else if (*cur == '}') {
+            cur++;
+            if (*cur == '}') { /* escaped '}' */
+                ret = xmlStrncat(ret, str, cur - str);
+                cur++;
+                str = cur;
+                continue;
+            } else {
+                xsltTransformError(
+                    ctxt, NULL, inst,
+                    "xsltAttrTemplateValueProcessNode: unmatched '}'\n");
+            }
+        } else
+            cur++;
     }
     if (cur != str) {
-	ret = xmlStrncat(ret, str, cur - str);
+        ret = xmlStrncat(ret, str, cur - str);
     }
 
 exit:
     if (nsList != NULL)
-	xmlFree(nsList);
+        xmlFree(nsList);
 
-    return(ret);
+    return ret;
 }
 
 /**
@@ -390,8 +402,9 @@ exit:
  *    caller.
  */
 xmlChar *
-xsltAttrTemplateValueProcess(xsltTransformContextPtr ctxt, const xmlChar *str) {
-    return(xsltAttrTemplateValueProcessNode(ctxt, str, NULL));
+xsltAttrTemplateValueProcess (xsltTransformContextPtr ctxt, const xmlChar *str)
+{
+    return xsltAttrTemplateValueProcessNode(ctxt, str, NULL);
 }
 
 /**
@@ -410,19 +423,19 @@ xsltAttrTemplateValueProcess(xsltTransformContextPtr ctxt, const xmlChar *str) {
  *    caller.
  */
 xmlChar *
-xsltEvalAttrValueTemplate(xsltTransformContextPtr ctxt, xmlNodePtr inst,
-	                  const xmlChar *name, const xmlChar *ns)
+xsltEvalAttrValueTemplate (xsltTransformContextPtr ctxt, xmlNodePtr inst,
+                           const xmlChar *name, const xmlChar *ns)
 {
     xmlChar *ret;
     xmlChar *expr;
 
-    if ((ctxt == NULL) || (inst == NULL) || (name == NULL) ||
-        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((ctxt == NULL) || (inst == NULL) || (name == NULL)
+        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+        return NULL;
 
     expr = xsltGetNsProp(inst, name, ns);
     if (expr == NULL)
-	return(NULL);
+        return NULL;
 
     /*
      * TODO: though now {} is detected ahead, it would still be good to
@@ -432,12 +445,14 @@ xsltEvalAttrValueTemplate(xsltTransformContextPtr ctxt, xmlNodePtr inst,
 
     ret = xsltAttrTemplateValueProcessNode(ctxt, expr, inst);
 #ifdef WITH_XSLT_DEBUG_TEMPLATES
-    XSLT_TRACE(ctxt,XSLT_TRACE_TEMPLATES,xsltGenericDebug(xsltGenericDebugContext,
-	 "xsltEvalAttrValueTemplate: %s returns %s\n", expr, ret));
+    XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
+               xsltGenericDebug(xsltGenericDebugContext,
+                                "xsltEvalAttrValueTemplate: %s returns %s\n",
+                                expr, ret));
 #endif
     if (expr != NULL)
-	xmlFree(expr);
-    return(ret);
+        xmlFree(expr);
+    return ret;
 }
 
 /**
@@ -456,30 +471,32 @@ xsltEvalAttrValueTemplate(xsltTransformContextPtr ctxt, xmlNodePtr inst,
  *    caller.
  */
 const xmlChar *
-xsltEvalStaticAttrValueTemplate(xsltStylesheetPtr style, xmlNodePtr inst,
-			const xmlChar *name, const xmlChar *ns, int *found) {
+xsltEvalStaticAttrValueTemplate (xsltStylesheetPtr style, xmlNodePtr inst,
+                                 const xmlChar *name, const xmlChar *ns,
+                                 int *found)
+{
     const xmlChar *ret;
     xmlChar *expr;
 
-    if ((style == NULL) || (inst == NULL) || (name == NULL) ||
-        (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((style == NULL) || (inst == NULL) || (name == NULL)
+        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+        return NULL;
 
     expr = xsltGetNsProp(inst, name, ns);
     if (expr == NULL) {
-	*found = 0;
-	return(NULL);
+        *found = 0;
+        return NULL;
     }
     *found = 1;
 
     ret = xmlStrchr(expr, '{');
     if (ret != NULL) {
-	xmlFree(expr);
-	return(NULL);
+        xmlFree(expr);
+        return NULL;
     }
     ret = xmlDictLookup(style->dict, expr, -1);
     xmlFree(expr);
-    return(ret);
+    return ret;
 }
 
 /**
@@ -497,86 +514,85 @@ xsltEvalStaticAttrValueTemplate(xsltStylesheetPtr style, xmlNodePtr inst,
  * Returns the generated attribute node.
  */
 xmlAttrPtr
-xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
-	                xmlAttrPtr attr)
+xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
+                         xmlAttrPtr attr)
 {
     const xmlChar *value;
     xmlAttrPtr ret;
 
-    if ((ctxt == NULL) || (attr == NULL) || (target == NULL) ||
-        (xmlNodeGetType(target) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((ctxt == NULL) || (attr == NULL) || (target == NULL)
+        || (xmlNodeGetType(target) != XML_ELEMENT_NODE))
+        return NULL;
 
     if (xmlAttrGetType(attr) != XML_ATTRIBUTE_NODE)
-	return(NULL);
+        return NULL;
 
     /*
     * Skip all XSLT attributes.
     */
 #ifdef XSLT_REFACTORED
     if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
-	return(NULL);
+        return NULL;
 #else
-    if ((xmlAttrGetNs(attr) != NULL) &&
-        xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
-	return(NULL);
+    if ((xmlAttrGetNs(attr) != NULL)
+        && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
+        return NULL;
 #endif
     /*
     * Get the value.
     */
     if (xmlAttrGetChildren(attr) != NULL) {
-	if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
-	    (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL))
-	{
-	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		"Internal error: The children of an attribute node of a "
-		"literal result element are not in the expected form.\n");
-	    return(NULL);
-	}
-	value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
-	if (value == NULL)
-	    value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
+        if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
+            || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+            xsltTransformError(
+                ctxt, NULL, xmlAttrGetParent(attr),
+                "Internal error: The children of an attribute node of a "
+                "literal result element are not in the expected form.\n");
+            return NULL;
+        }
+        value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
+        if (value == NULL)
+            value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
     } else
-	value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
+        value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
     /*
     * Overwrite duplicates.
     */
     ret = xmlNodeGetProperties(target);
     while (ret != NULL) {
-        if (((xmlAttrGetNs(attr) != NULL) == (xmlAttrGetNs(ret) != NULL)) &&
-	    xmlStrEqual(xmlAttrGetName(ret), xmlAttrGetName(attr)) &&
-	    ((xmlAttrGetNs(attr) == NULL) ||
-	     xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(ret)),
-	                 xmlNsGetHref(xmlAttrGetNs(attr)))))
-	{
-	    break;
-	}
+        if (((xmlAttrGetNs(attr) != NULL) == (xmlAttrGetNs(ret) != NULL))
+            && xmlStrEqual(xmlAttrGetName(ret), xmlAttrGetName(attr))
+            && ((xmlAttrGetNs(attr) == NULL)
+                || xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(ret)),
+                               xmlNsGetHref(xmlAttrGetNs(attr))))) {
+            break;
+        }
         ret = xmlAttrGetNext(ret);
     }
     if (ret != NULL) {
         /* free the existing value */
-	xmlFreeNodeList(xmlAttrGetChildren(ret));
-	xmlAttrSetChildren(ret, NULL);
-	xmlAttrSetLast(ret, NULL);
-	/*
+        xmlFreeNodeList(xmlAttrGetChildren(ret));
+        xmlAttrSetChildren(ret, NULL);
+        xmlAttrSetLast(ret, NULL);
+        /*
 	* Adjust ns-prefix if needed.
 	*/
-	if ((xmlAttrGetNs(ret) != NULL) &&
-	    (! xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(ret)),
-	                   xmlNsGetPrefix(xmlAttrGetNs(attr)))))
-	{
-	    xmlAttrSetNs(ret, xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
-	        xmlAttrGetNs(attr), target));
-	}
+        if ((xmlAttrGetNs(ret) != NULL)
+            && (!xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(ret)),
+                             xmlNsGetPrefix(xmlAttrGetNs(attr))))) {
+            xmlAttrSetNs(ret,
+                         xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+                                          xmlAttrGetNs(attr), target));
+        }
     } else {
         /* create a new attribute */
-	if (xmlAttrGetNs(attr) != NULL)
-	    ret = xmlNewNsProp(target,
-		xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
-		    xmlAttrGetNs(attr), target),
-		    xmlAttrGetName(attr), NULL);
-	else
-	    ret = xmlNewNsProp(target, NULL, xmlAttrGetName(attr), NULL);
+        if (xmlAttrGetNs(attr) != NULL)
+            ret = xmlNewNsProp(target,
+                               xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+                                                xmlAttrGetNs(attr), target),
+                               xmlAttrGetName(attr), NULL);
+        else
+            ret = xmlNewNsProp(target, NULL, xmlAttrGetName(attr), NULL);
     }
     /*
     * Set the value.
@@ -585,63 +601,66 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
         xmlNodePtr text;
 
         text = xmlNewText(NULL);
-	if (text != NULL) {
-	    xmlAttrSetLast(ret, text);
-	    xmlAttrSetChildren(ret, text);
-	    xmlNodeSetParent(text, (xmlNodePtr) ret);
-	    xmlNodeSetDocRaw(text, xmlAttrGetDoc(ret));
+        if (text != NULL) {
+            xmlAttrSetLast(ret, text);
+            xmlAttrSetChildren(ret, text);
+            xmlNodeSetParent(text, (xmlNodePtr) ret);
+            xmlNodeSetDocRaw(text, xmlAttrGetDoc(ret));
 
-	    if (xmlAttrGetPsvi(attr) != NULL) {
-		/*
+            if (xmlAttrGetPsvi(attr) != NULL) {
+                /*
 		* Evaluate the Attribute Value Template.
 		*/
-		xmlChar *val;
-		val = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
-		    xmlAttrGetParent(attr));
-		if (val == NULL) {
-		    /*
+                xmlChar *val;
+                val = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
+                                  xmlAttrGetParent(attr));
+                if (val == NULL) {
+                    /*
 		    * TODO: Damn, we need an easy mechanism to report
 		    * qualified names!
 		    */
-		    if (xmlAttrGetNs(attr)) {
-			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-			    "Internal error: Failed to evaluate the AVT "
-			    "of attribute '{%s}%s'.\n",
-			    xmlNsGetHref(xmlAttrGetNs(attr)),
-			    xmlAttrGetName(attr));
-		    } else {
-			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-			    "Internal error: Failed to evaluate the AVT "
-			    "of attribute '%s'.\n",
-			    xmlAttrGetName(attr));
-		    }
-		    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
-		} else {
-		    xmlNodeSetContentRaw(text, val);
-		}
-	    } else if ((ctxt->internalized) && (target != NULL) &&
-	               (xmlNodeGetDoc(target) != NULL) &&
-		       (xmlNodeGetDoc(target)->dict == ctxt->dict) &&
-		       xmlDictOwns(ctxt->dict, value)) {
-		xmlNodeSetContentRaw(text, (xmlChar *) value);
-	    } else {
-		xmlNodeSetContentRaw(text, xmlStrdup(value));
-	    }
-	}
+                    if (xmlAttrGetNs(attr)) {
+                        xsltTransformError(
+                            ctxt, NULL, xmlAttrGetParent(attr),
+                            "Internal error: Failed to evaluate the AVT "
+                            "of attribute '{%s}%s'.\n",
+                            xmlNsGetHref(xmlAttrGetNs(attr)),
+                            xmlAttrGetName(attr));
+                    } else {
+                        xsltTransformError(
+                            ctxt, NULL, xmlAttrGetParent(attr),
+                            "Internal error: Failed to evaluate the AVT "
+                            "of attribute '%s'.\n",
+                            xmlAttrGetName(attr));
+                    }
+                    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
+                } else {
+                    xmlNodeSetContentRaw(text, val);
+                }
+            } else if ((ctxt->internalized) && (target != NULL)
+                       && (xmlNodeGetDoc(target) != NULL)
+                       && (xmlNodeGetDoc(target)->dict == ctxt->dict)
+                       && xmlDictOwns(ctxt->dict, value)) {
+                xmlNodeSetContentRaw(text, (xmlChar *) value);
+            } else {
+                xmlNodeSetContentRaw(text, xmlStrdup(value));
+            }
+        }
     } else {
-	if (xmlAttrGetNs(attr)) {
-	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		"Internal error: Failed to create attribute '{%s}%s'.\n",
-		xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
-	} else {
-	    xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		"Internal error: Failed to create attribute '%s'.\n",
-		xmlAttrGetName(attr));
-	}
+        if (xmlAttrGetNs(attr)) {
+            xsltTransformError(
+                ctxt, NULL, xmlAttrGetParent(attr),
+                "Internal error: Failed to create attribute '{%s}%s'.\n",
+                xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
+        } else {
+            xsltTransformError(
+                ctxt, NULL, xmlAttrGetParent(attr),
+                "Internal error: Failed to create attribute '%s'.\n",
+                xmlAttrGetName(attr));
+        }
     }
-    return(ret);
+    return ret;
 }
-
 
 /**
  * xsltAttrListTemplateProcess:
@@ -663,8 +682,8 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
  *         attributes will be disattached.)
  */
 xmlAttrPtr
-xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
-	                    xmlNodePtr target, xmlAttrPtr attrs)
+xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
+                             xmlAttrPtr attrs)
 {
     xmlAttrPtr attr, copy, last = NULL;
     xmlNodePtr oldInsert, text;
@@ -673,9 +692,9 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
     xmlChar *valueAVT;
     int hasAttr = 0;
 
-    if ((ctxt == NULL) || (target == NULL) || (attrs == NULL) ||
-        (xmlNodeGetType(target) != XML_ELEMENT_NODE))
-	return(NULL);
+    if ((ctxt == NULL) || (target == NULL) || (attrs == NULL)
+        || (xmlNodeGetType(target) != XML_ELEMENT_NODE))
+        return NULL;
 
     oldInsert = ctxt->insert;
     ctxt->insert = target;
@@ -686,20 +705,20 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
     attr = attrs;
     do {
 #ifdef XSLT_REFACTORED
-	if ((xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) &&
-	    xmlStrEqual(xmlAttrGetName(attr), (const xmlChar *)"use-attribute-sets"))
-	{
-	    xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
-	}
+        if ((xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
+            && xmlStrEqual(xmlAttrGetName(attr),
+                           (const xmlChar *) "use-attribute-sets")) {
+            xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
+        }
 #else
-	if ((xmlAttrGetNs(attr) != NULL) &&
-	    xmlStrEqual(xmlAttrGetName(attr), (const xmlChar *)"use-attribute-sets") &&
-	    xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
-	{
-	    xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
-	}
+        if ((xmlAttrGetNs(attr) != NULL)
+            && xmlStrEqual(xmlAttrGetName(attr),
+                           (const xmlChar *) "use-attribute-sets")
+            && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
+            xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
+        }
 #endif
-	attr = xmlAttrGetNext(attr);
+        attr = xmlAttrGetNext(attr);
     } while (attr != NULL);
 
     if (xmlNodeGetProperties(target) != NULL) {
@@ -711,70 +730,71 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
     */
     attr = attrs;
     do {
-	/*
+        /*
 	* Skip XSLT attributes.
 	*/
 #ifdef XSLT_REFACTORED
-	if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) {
-	    goto next_attribute;
-	}
+        if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) {
+            goto next_attribute;
+        }
 #else
-	if ((xmlAttrGetNs(attr) != NULL) &&
-	    xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
-	{
-	    goto next_attribute;
-	}
+        if ((xmlAttrGetNs(attr) != NULL)
+            && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
+            goto next_attribute;
+        }
 #endif
-	/*
+        /*
 	* Get the value.
 	*/
-	if (xmlAttrGetChildren(attr) != NULL) {
-	    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE) ||
-		(xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL))
-	    {
-		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		    "Internal error: The children of an attribute node of a "
-		    "literal result element are not in the expected form.\n");
-		goto error;
-	    }
-	    value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
-	    if (value == NULL)
-		value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
-	} else
-	    value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
+        if (xmlAttrGetChildren(attr) != NULL) {
+            if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
+                || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+                xsltTransformError(
+                    ctxt, NULL, xmlAttrGetParent(attr),
+                    "Internal error: The children of an attribute node of a "
+                    "literal result element are not in the expected form.\n");
+                goto error;
+            }
+            value = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
+            if (value == NULL)
+                value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
+        } else
+            value = xmlDictLookup(ctxt->dict, BAD_CAST "", 0);
 
-	/*
+        /*
 	* Get the namespace. Avoid lookups of same namespaces.
 	*/
-	if (xmlAttrGetNs(attr) != origNs) {
-	    origNs = xmlAttrGetNs(attr);
-	    if (xmlAttrGetNs(attr) != NULL) {
+        if (xmlAttrGetNs(attr) != origNs) {
+            origNs = xmlAttrGetNs(attr);
+            if (xmlAttrGetNs(attr) != NULL) {
 #ifdef XSLT_REFACTORED
-		copyNs = xsltGetSpecialNamespace(ctxt, xmlAttrGetParent(attr),
-		    xmlNsGetHref(xmlAttrGetNs(attr)),
-		    xmlNsGetPrefix(xmlAttrGetNs(attr)), target);
+                copyNs = xsltGetSpecialNamespace(
+                    ctxt, xmlAttrGetParent(attr),
+                    xmlNsGetHref(xmlAttrGetNs(attr)),
+                    xmlNsGetPrefix(xmlAttrGetNs(attr)), target);
 #else
-		copyNs = xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
-		    xmlAttrGetNs(attr), target);
+                copyNs = xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
+                                          xmlAttrGetNs(attr), target);
 #endif
-		if (copyNs == NULL)
-		    goto error;
-	    } else
-		copyNs = NULL;
-	}
-	/*
+                if (copyNs == NULL)
+                    goto error;
+            } else
+                copyNs = NULL;
+        }
+        /*
 	* Create a new attribute.
 	*/
         if (hasAttr) {
-	    copy = xmlSetNsProp(target, copyNs, xmlAttrGetName(attr), NULL);
+            copy = xmlSetNsProp(target, copyNs, xmlAttrGetName(attr), NULL);
         } else {
             /*
             * Avoid checking for duplicate attributes if there aren't
             * any attribute sets.
             */
-	    copy = xmlNewDocProp(xmlNodeGetDoc(target), xmlAttrGetName(attr), NULL);
+            copy = xmlNewDocProp(xmlNodeGetDoc(target), xmlAttrGetName(attr),
+                                 NULL);
 
-	    if (copy != NULL) {
+            if (copy != NULL) {
                 xmlAttrSetNs(copy, copyNs);
 
                 /*
@@ -791,84 +811,85 @@ xsltAttrListTemplateProcess(xsltTransformContextPtr ctxt,
                 }
             }
         }
-	if (copy == NULL) {
-	    if (xmlAttrGetNs(attr)) {
-		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		    "Internal error: Failed to create attribute '{%s}%s'.\n",
-		    xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
-	    } else {
-		xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-		    "Internal error: Failed to create attribute '%s'.\n",
-		    xmlAttrGetName(attr));
-	    }
-	    goto error;
-	}
+        if (copy == NULL) {
+            if (xmlAttrGetNs(attr)) {
+                xsltTransformError(
+                    ctxt, NULL, xmlAttrGetParent(attr),
+                    "Internal error: Failed to create attribute '{%s}%s'.\n",
+                    xmlNsGetHref(xmlAttrGetNs(attr)), xmlAttrGetName(attr));
+            } else {
+                xsltTransformError(
+                    ctxt, NULL, xmlAttrGetParent(attr),
+                    "Internal error: Failed to create attribute '%s'.\n",
+                    xmlAttrGetName(attr));
+            }
+            goto error;
+        }
 
-	/*
+        /*
 	* Set the value.
 	*/
-	text = xmlNewText(NULL);
-	if (text != NULL) {
-	    xmlAttrSetLast(copy, text);
-	    xmlAttrSetChildren(copy, text);
-	    xmlNodeSetParent(text, (xmlNodePtr) copy);
-	    xmlNodeSetDocRaw(text, xmlAttrGetDoc(copy));
+        text = xmlNewText(NULL);
+        if (text != NULL) {
+            xmlAttrSetLast(copy, text);
+            xmlAttrSetChildren(copy, text);
+            xmlNodeSetParent(text, (xmlNodePtr) copy);
+            xmlNodeSetDocRaw(text, xmlAttrGetDoc(copy));
 
-	    if (xmlAttrGetPsvi(attr) != NULL) {
-		/*
+            if (xmlAttrGetPsvi(attr) != NULL) {
+                /*
 		* Evaluate the Attribute Value Template.
 		*/
-		valueAVT = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
-		    xmlAttrGetParent(attr));
-		if (valueAVT == NULL) {
-		    /*
+                valueAVT = xsltEvalAVT(ctxt, xmlAttrGetPsvi(attr),
+                                       xmlAttrGetParent(attr));
+                if (valueAVT == NULL) {
+                    /*
 		    * TODO: Damn, we need an easy mechanism to report
 		    * qualified names!
 		    */
-		    if (xmlAttrGetNs(attr)) {
-			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-			    "Internal error: Failed to evaluate the AVT "
-			    "of attribute '{%s}%s'.\n",
-			    xmlNsGetHref(xmlAttrGetNs(attr)),
-			    xmlAttrGetName(attr));
-		    } else {
-			xsltTransformError(ctxt, NULL, xmlAttrGetParent(attr),
-			    "Internal error: Failed to evaluate the AVT "
-			    "of attribute '%s'.\n",
-			    xmlAttrGetName(attr));
-		    }
-		    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
-		    goto error;
-		} else {
-		    xmlNodeSetContentRaw(text, valueAVT);
-		}
-	    } else if ((ctxt->internalized) &&
-		(xmlNodeGetDoc(target) != NULL) &&
-		(xmlNodeGetDoc(target)->dict == ctxt->dict) &&
-		xmlDictOwns(ctxt->dict, value))
-	    {
-		xmlNodeSetContentRaw(text, (xmlChar *) value);
-	    } else {
-		xmlNodeSetContentRaw(text, xmlStrdup(value));
-	    }
-            if ((copy != NULL) && (text != NULL) &&
-                (xmlIsID(xmlAttrGetDoc(copy), xmlAttrGetParent(copy), copy)))
-                xmlAddID(NULL, xmlAttrGetDoc(copy),
-                    xmlNodeGetContentRaw(text), copy);
-	}
+                    if (xmlAttrGetNs(attr)) {
+                        xsltTransformError(
+                            ctxt, NULL, xmlAttrGetParent(attr),
+                            "Internal error: Failed to evaluate the AVT "
+                            "of attribute '{%s}%s'.\n",
+                            xmlNsGetHref(xmlAttrGetNs(attr)),
+                            xmlAttrGetName(attr));
+                    } else {
+                        xsltTransformError(
+                            ctxt, NULL, xmlAttrGetParent(attr),
+                            "Internal error: Failed to evaluate the AVT "
+                            "of attribute '%s'.\n",
+                            xmlAttrGetName(attr));
+                    }
+                    xmlNodeSetContentRaw(text, xmlStrdup(BAD_CAST ""));
+                    goto error;
+                } else {
+                    xmlNodeSetContentRaw(text, valueAVT);
+                }
+            } else if ((ctxt->internalized) && (xmlNodeGetDoc(target) != NULL)
+                       && (xmlNodeGetDoc(target)->dict == ctxt->dict)
+                       && xmlDictOwns(ctxt->dict, value)) {
+                xmlNodeSetContentRaw(text, (xmlChar *) value);
+            } else {
+                xmlNodeSetContentRaw(text, xmlStrdup(value));
+            }
+            if ((copy != NULL) && (text != NULL)
+                && (xmlIsID(xmlAttrGetDoc(copy), xmlAttrGetParent(copy), copy)))
+                xmlAddID(NULL, xmlAttrGetDoc(copy), xmlNodeGetContentRaw(text),
+                         copy);
+        }
 
-next_attribute:
-	attr = xmlAttrGetNext(attr);
+    next_attribute:
+        attr = xmlAttrGetNext(attr);
     } while (attr != NULL);
 
     ctxt->insert = oldInsert;
-    return(xmlNodeGetProperties(target));
+    return xmlNodeGetProperties(target);
 
 error:
     ctxt->insert = oldInsert;
-    return(NULL);
+    return NULL;
 }
-
 
 /**
  * xsltTemplateProcess:
@@ -880,11 +901,10 @@ error:
  * Returns NULL.
  */
 xmlNodePtr *
-xsltTemplateProcess(xsltTransformContextPtr ctxt UNUSED, xmlNodePtr node) {
+xsltTemplateProcess (xsltTransformContextPtr ctxt UNUSED, xmlNodePtr node)
+{
     if (node == NULL)
-	return(NULL);
+        return NULL;
 
-    return(0);
+    return 0;
 }
-
-
