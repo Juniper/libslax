@@ -13,9 +13,8 @@
 
 #if defined(LIBXML_OUTPUT_ENABLED)
 int
-main(void)
+main (void)
 {
-
     xmlNodePtr n;
     xmlDocPtr doc;
     xmlChar *xmlbuff;
@@ -42,17 +41,15 @@ main(void)
     xmlFree(xmlbuff);
     xmlFreeDoc(doc);
 
-    return (0);
-
+    return 0;
 }
 #else
 #include <stdio.h>
 
 int
-main(void)
+main (void)
 {
-    fprintf(stderr,
-            "library not configured with output support\n");
-    return (0);
+    fprintf(stderr, "library not configured with output support\n");
+    return 0;
 }
 #endif
