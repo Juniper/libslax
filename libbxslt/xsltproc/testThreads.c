@@ -41,11 +41,11 @@
 #endif
 #include <assert.h>
 
-#define	MAX_ARGC	20
+#define MAX_ARGC 20
 
 static pthread_t tid[MAX_ARGC];
 
-#define EXT_NS BAD_CAST "http://foo.org"
+#define EXT_NS   BAD_CAST "http://foo.org"
 #define EXT_DATA "bar"
 
 const char *stylesheet = "<xsl:stylesheet version='1.0' \
@@ -63,21 +63,24 @@ int init = 0;
 const char *doc = "<doc>Failed</doc>";
 const char *expect = "<?xml version=\"1.0\"?>\nSuccess foo\n";
 
-static void fooFunction(xmlXPathParserContextPtr ctxt,
-                        int nargs UNUSED) {
+static void
+fooFunction (xmlXPathParserContextPtr ctxt, int nargs UNUSED)
+{
     xmlXPathReturnString(ctxt, xmlStrdup(BAD_CAST "foo"));
 }
 
-static
-void * registerFooExtensions(UNUSED xsltTransformContextPtr ctxt,
-                             UNUSED const xmlChar *URI) {
+static void *
+registerFooExtensions (UNUSED xsltTransformContextPtr ctxt,
+                       UNUSED const xmlChar *URI)
+{
     xsltRegisterExtModuleFunction(BAD_CAST "foo", EXT_NS, fooFunction);
-    return((void *)EXT_DATA);
+    return (void *) EXT_DATA;
 }
 
-static
-void shutdownFooExtensions(xsltTransformContextPtr ctxt UNUSED,
-                           const xmlChar *URI, void *data) {
+static void
+shutdownFooExtensions (xsltTransformContextPtr ctxt UNUSED, const xmlChar *URI,
+                       void *data)
+{
     const char *str = (const char *) data;
     if (!xmlStrEqual(URI, EXT_NS)) {
         fprintf(stderr, "Mismatch in extensions shutdown URI");
@@ -87,12 +90,14 @@ void shutdownFooExtensions(xsltTransformContextPtr ctxt UNUSED,
     }
 }
 
-static void registerFooModule(void) {
+static void
+registerFooModule (void)
+{
     xsltRegisterExtModule(EXT_NS, registerFooExtensions, shutdownFooExtensions);
 }
 
 static void *
-threadRoutine1(void *data)
+threadRoutine1 (void *data)
 {
     xmlDocPtr input;
     xmlDocPtr style;
@@ -134,11 +139,11 @@ threadRoutine1(void *data)
     xmlFreeDoc(input);
     xmlFreeDoc(res);
     xmlFree(result);
-    return(0);
+    return 0;
 }
 
 static void *
-threadRoutine2(void *data)
+threadRoutine2 (void *data)
 {
     xmlDocPtr input;
     xmlDocPtr res;
@@ -171,10 +176,10 @@ threadRoutine2(void *data)
     xmlFreeDoc(input);
     xmlFreeDoc(res);
     xmlFree(result);
-    return(0);
+    return 0;
 }
 int
-main(void)
+main (void)
 {
     unsigned int i, repeat;
     unsigned int num_threads = 8;
@@ -199,25 +204,25 @@ main(void)
      * each of them will initialize and shutdown the extension
      */
     printf("Pass 1\n");
-    for (repeat = 0;repeat < 500;repeat++) {
-        memset(results, 0, sizeof(*results)*num_threads);
-        memset(tid, 0xff, sizeof(*tid)*num_threads);
+    for (repeat = 0; repeat < 500; repeat++) {
+        memset(results, 0, sizeof(*results) * num_threads);
+        memset(tid, 0xff, sizeof(*tid) * num_threads);
 
-	for (i = 0; i < num_threads; i++) {
-	    ret = pthread_create(&tid[i], NULL, threadRoutine1,
+        for (i = 0; i < num_threads; i++) {
+            ret = pthread_create(&tid[i], NULL, threadRoutine1,
                                  (void *) (size_t) i);
-	    if (ret != 0) {
-		perror("pthread_create");
-		exit(1);
-	    }
-	}
-	for (i = 0; i < num_threads; i++) {
-	    ret = pthread_join(tid[i], &results[i]);
-	    if (ret != 0) {
-		perror("pthread_join");
-		exit(1);
-	    }
-	}
+            if (ret != 0) {
+                perror("pthread_create");
+                exit(1);
+            }
+        }
+        for (i = 0; i < num_threads; i++) {
+            ret = pthread_join(tid[i], &results[i]);
+            if (ret != 0) {
+                perror("pthread_join");
+                exit(1);
+            }
+        }
     }
 
     /*
@@ -225,12 +230,12 @@ main(void)
      * look for transformation clashes
      */
     printf("Pass 2\n");
-    for (repeat = 0;repeat < 500;repeat++) {
+    for (repeat = 0; repeat < 500; repeat++) {
         xmlDocPtr style;
         xsltStylesheetPtr cur;
 
-        style = xmlReadMemory(stylesheet, strlen(stylesheet), "doc.xsl",
-                               NULL, 0);
+        style
+            = xmlReadMemory(stylesheet, strlen(stylesheet), "doc.xsl", NULL, 0);
         if (style == NULL) {
             fprintf(stderr, "Main failed to parse stylesheet\n");
             exit(1);
@@ -240,35 +245,35 @@ main(void)
             fprintf(stderr, "Main failed to compile stylesheet\n");
             exit(1);
         }
-        memset(results, 0, sizeof(*results)*num_threads);
-        memset(tid, 0xff, sizeof(*tid)*num_threads);
+        memset(results, 0, sizeof(*results) * num_threads);
+        memset(tid, 0xff, sizeof(*tid) * num_threads);
 
-	for (i = 0; i < num_threads; i++) {
-	    ret = pthread_create(&tid[i], NULL, threadRoutine2, (void *) cur);
-	    if (ret != 0) {
-		perror("pthread_create");
-		exit(1);
-	    }
-	}
-	for (i = 0; i < num_threads; i++) {
-	    ret = pthread_join(tid[i], &results[i]);
-	    if (ret != 0) {
-		perror("pthread_join");
-		exit(1);
-	    }
-	}
+        for (i = 0; i < num_threads; i++) {
+            ret = pthread_create(&tid[i], NULL, threadRoutine2, (void *) cur);
+            if (ret != 0) {
+                perror("pthread_create");
+                exit(1);
+            }
+        }
+        for (i = 0; i < num_threads; i++) {
+            ret = pthread_join(tid[i], &results[i]);
+            if (ret != 0) {
+                perror("pthread_join");
+                exit(1);
+            }
+        }
         xsltFreeStylesheet(cur);
     }
     xsltCleanupGlobals();
     xmlCleanupParser();
     printf("Ok\n");
-    return (0);
+    return 0;
 }
 #else /* !LIBXML_THREADS_ENABLED | !HAVE_PTHREAD_H */
 int
-main(void)
+main (void)
 {
     fprintf(stderr, "libxml was not compiled with thread\n");
-    return (0);
+    return 0;
 }
 #endif
