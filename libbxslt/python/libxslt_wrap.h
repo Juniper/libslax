@@ -20,32 +20,28 @@
 #include <libxslt/transform.h>
 #include <libxslt/variables.h>
 
-#define Pystylesheet_Get(v) (((v) == Py_None) ? NULL : \
-        (((Pystylesheet_Object *)(v))->obj))
+#define Pystylesheet_Get(v) \
+    (((v) == Py_None) ? NULL : (((Pystylesheet_Object *) (v))->obj))
 
 typedef struct {
-    PyObject_HEAD
-    xsltStylesheetPtr obj;
+    PyObject_HEAD xsltStylesheetPtr obj;
 } Pystylesheet_Object;
 
-#define PytransformCtxt_Get(v) (((v) == Py_None) ? NULL : \
-        (((PytransformCtxt_Object *)(v))->obj))
+#define PytransformCtxt_Get(v) \
+    (((v) == Py_None) ? NULL : (((PytransformCtxt_Object *) (v))->obj))
 
 typedef struct {
-    PyObject_HEAD
-    xsltTransformContextPtr obj;
+    PyObject_HEAD xsltTransformContextPtr obj;
 } PytransformCtxt_Object;
 
-#define PycompiledStyle_Get(v) (((v) == Py_None) ? NULL : \
-        (((PycompiledStyle_Object *)(v))->obj))
+#define PycompiledStyle_Get(v) \
+    (((v) == Py_None) ? NULL : (((PycompiledStyle_Object *) (v))->obj))
 
 typedef struct {
-    PyObject_HEAD
-    xsltTransformContextPtr obj;
+    PyObject_HEAD xsltTransformContextPtr obj;
 } PycompiledStyle_Object;
 
-
-PyObject * libxslt_xsltStylesheetPtrWrap(xsltStylesheetPtr ctxt);
-PyObject * libxslt_xsltTransformContextPtrWrap(xsltTransformContextPtr ctxt);
-PyObject * libxslt_xsltStylePreCompPtrWrap(xsltStylePreCompPtr comp);
-PyObject * libxslt_xsltElemPreCompPtrWrap(xsltElemPreCompPtr comp);
+PyObject *libxslt_xsltStylesheetPtrWrap (xsltStylesheetPtr ctxt);
+PyObject *libxslt_xsltTransformContextPtrWrap (xsltTransformContextPtr ctxt);
+PyObject *libxslt_xsltStylePreCompPtrWrap (xsltStylePreCompPtr comp);
+PyObject *libxslt_xsltElemPreCompPtrWrap (xsltElemPreCompPtr comp);
