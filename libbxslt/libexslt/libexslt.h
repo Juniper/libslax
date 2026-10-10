@@ -9,7 +9,7 @@
 #ifndef __XSLT_LIBEXSLT_H__
 #define __XSLT_LIBEXSLT_H__
 
-#if defined(_WIN32) && !defined (__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 #include <win32config.h>
 #else
 #include "libbxslt/libbxsltconfig.h"
@@ -19,7 +19,8 @@
 #include <libxml/xmlversion.h>
 
 #if !defined LIBEXSLT_PUBLIC
-#if (defined (__CYGWIN__) || defined _MSC_VER) && !defined IN_LIBEXSLT && !defined LIBEXSLT_STATIC
+#if (defined(__CYGWIN__) || defined _MSC_VER) && !defined IN_LIBEXSLT \
+    && !defined LIBEXSLT_STATIC
 #define LIBEXSLT_PUBLIC __declspec(dllimport)
 #else
 #define LIBEXSLT_PUBLIC
