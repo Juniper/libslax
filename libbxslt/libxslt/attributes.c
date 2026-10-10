@@ -42,28 +42,27 @@
 #undef IS_BLANK
 #endif
 
-#define IS_BLANK(c) (((c) == 0x20) || ((c) == 0x09) || ((c) == 0xA) ||	\
-                     ((c) == 0x0D))
+#define IS_BLANK(c) \
+    (((c) == 0x20) || ((c) == 0x09) || ((c) == 0xA) || ((c) == 0x0D))
 
-#define IS_BLANK_NODE(n)						\
-    ((xmlNodeGetType(n) == XML_TEXT_NODE) && (xsltIsBlank(xmlNodeGetContentRaw(n))))
+#define IS_BLANK_NODE(n)                  \
+    ((xmlNodeGetType(n) == XML_TEXT_NODE) \
+     && (xsltIsBlank(xmlNodeGetContentRaw(n))))
 
 #define ATTRSET_UNRESOLVED 0
 #define ATTRSET_RESOLVING  1
 #define ATTRSET_RESOLVED   2
-
 
 /*
  * The in-memory structure corresponding to an XSLT Attribute in
  * an attribute set
  */
 
-
 typedef struct _xsltAttrElem xsltAttrElem;
 typedef xsltAttrElem *xsltAttrElemPtr;
 struct _xsltAttrElem {
-    struct _xsltAttrElem *next;/* chained list */
-    xmlNodePtr attr;	/* the xsl:attribute definition */
+    struct _xsltAttrElem *next; /* chained list */
+    xmlNodePtr attr;            /* the xsl:attribute definition */
 };
 
 typedef struct _xsltUseAttrSet xsltUseAttrSet;
@@ -78,7 +77,7 @@ typedef struct _xsltAttrSet xsltAttrSet;
 typedef xsltAttrSet *xsltAttrSetPtr;
 struct _xsltAttrSet {
     int state;
-    xsltAttrElemPtr attrs; /* list head */
+    xsltAttrElemPtr attrs;         /* list head */
     xsltUseAttrSetPtr useAttrSets; /* list head */
 };
 
@@ -90,10 +89,9 @@ struct _xsltAttrSetContext {
     int error;
 };
 
-static void
-xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
-                   xsltStylesheetPtr style, const xmlChar *name,
-                   const xmlChar *ns, int depth);
+static void xsltResolveAttrSet (xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
+                                xsltStylesheetPtr style, const xmlChar *name,
+                                const xmlChar *ns, int depth);
 
 /************************************************************************
  *									*
@@ -110,18 +108,19 @@ xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
  * Returns the newly allocated xsltAttrElemPtr or NULL in case of error
  */
 static xsltAttrElemPtr
-xsltNewAttrElem(xmlNodePtr attr) {
+xsltNewAttrElem (xmlNodePtr attr)
+{
     xsltAttrElemPtr cur;
 
     cur = (xsltAttrElemPtr) xmlMalloc(sizeof(xsltAttrElem));
     if (cur == NULL) {
         xsltGenericError(xsltGenericErrorContext,
-		"xsltNewAttrElem : malloc failed\n");
-	return(NULL);
+                         "xsltNewAttrElem : malloc failed\n");
+        return NULL;
     }
     memset(cur, 0, sizeof(xsltAttrElem));
     cur->attr = attr;
-    return(cur);
+    return cur;
 }
 
 /**
@@ -131,7 +130,8 @@ xsltNewAttrElem(xmlNodePtr attr) {
  * Free up the memory allocated by @attr
  */
 static void
-xsltFreeAttrElem(xsltAttrElemPtr attr) {
+xsltFreeAttrElem (xsltAttrElemPtr attr)
+{
     xmlFree(attr);
 }
 
@@ -142,13 +142,14 @@ xsltFreeAttrElem(xsltAttrElemPtr attr) {
  * Free up the memory allocated by @list
  */
 static void
-xsltFreeAttrElemList(xsltAttrElemPtr list) {
+xsltFreeAttrElemList (xsltAttrElemPtr list)
+{
     xsltAttrElemPtr next;
 
     while (list != NULL) {
-	next = list->next;
-	xsltFreeAttrElem(list);
-	list = next;
+        next = list->next;
+        xsltFreeAttrElem(list);
+        list = next;
     }
 }
 
@@ -162,23 +163,24 @@ xsltFreeAttrElemList(xsltAttrElemPtr list) {
  * Returns the new list pointer
  */
 static xsltAttrElemPtr
-xsltAddAttrElemList(xsltAttrElemPtr list, xmlNodePtr attr) {
+xsltAddAttrElemList (xsltAttrElemPtr list, xmlNodePtr attr)
+{
     xsltAttrElemPtr next, cur;
 
     if (attr == NULL)
-	return(list);
+        return list;
     if (list == NULL)
-	return(xsltNewAttrElem(attr));
+        return xsltNewAttrElem(attr);
     cur = list;
     while (cur != NULL) {
-	next = cur->next;
-	if (next == NULL) {
-	    cur->next = xsltNewAttrElem(attr);
-	    return(list);
-	}
-	cur = next;
+        next = cur->next;
+        if (next == NULL) {
+            cur->next = xsltNewAttrElem(attr);
+            return list;
+        }
+        cur = next;
     }
-    return(list);
+    return list;
 }
 
 /**
@@ -191,19 +193,20 @@ xsltAddAttrElemList(xsltAttrElemPtr list, xmlNodePtr attr) {
  * Returns the newly allocated xsltUseAttrSetPtr or NULL in case of error.
  */
 static xsltUseAttrSetPtr
-xsltNewUseAttrSet(const xmlChar *ncname, const xmlChar *ns) {
+xsltNewUseAttrSet (const xmlChar *ncname, const xmlChar *ns)
+{
     xsltUseAttrSetPtr cur;
 
     cur = (xsltUseAttrSetPtr) xmlMalloc(sizeof(xsltUseAttrSet));
     if (cur == NULL) {
         xsltGenericError(xsltGenericErrorContext,
-		"xsltNewUseAttrSet : malloc failed\n");
-	return(NULL);
+                         "xsltNewUseAttrSet : malloc failed\n");
+        return NULL;
     }
     memset(cur, 0, sizeof(xsltUseAttrSet));
     cur->ncname = ncname;
     cur->ns = ns;
-    return(cur);
+    return cur;
 }
 
 /**
@@ -213,7 +216,8 @@ xsltNewUseAttrSet(const xmlChar *ncname, const xmlChar *ns) {
  * Free up the memory allocated by @use
  */
 static void
-xsltFreeUseAttrSet(xsltUseAttrSetPtr use) {
+xsltFreeUseAttrSet (xsltUseAttrSetPtr use)
+{
     xmlFree(use);
 }
 
@@ -224,13 +228,14 @@ xsltFreeUseAttrSet(xsltUseAttrSetPtr use) {
  * Free up the memory allocated by @list
  */
 static void
-xsltFreeUseAttrSetList(xsltUseAttrSetPtr list) {
+xsltFreeUseAttrSetList (xsltUseAttrSetPtr list)
+{
     xsltUseAttrSetPtr next;
 
     while (list != NULL) {
-	next = list->next;
-	xsltFreeUseAttrSet(list);
-	list = next;
+        next = list->next;
+        xsltFreeUseAttrSet(list);
+        list = next;
     }
 }
 
@@ -245,26 +250,27 @@ xsltFreeUseAttrSetList(xsltUseAttrSetPtr list) {
  * Returns the new list pointer.
  */
 static xsltUseAttrSetPtr
-xsltAddUseAttrSetList(xsltUseAttrSetPtr list, const xmlChar *ncname,
-                      const xmlChar *ns) {
+xsltAddUseAttrSetList (xsltUseAttrSetPtr list, const xmlChar *ncname,
+                       const xmlChar *ns)
+{
     xsltUseAttrSetPtr next, cur;
 
     if (ncname == NULL)
-        return(list);
+        return list;
     if (list == NULL)
-	return(xsltNewUseAttrSet(ncname, ns));
+        return xsltNewUseAttrSet(ncname, ns);
     cur = list;
     while (cur != NULL) {
         if ((cur->ncname == ncname) && (cur->ns == ns))
-            return(list);
-	next = cur->next;
-	if (next == NULL) {
-	    cur->next = xsltNewUseAttrSet(ncname, ns);
-	    return(list);
-	}
-	cur = next;
+            return list;
+        next = cur->next;
+        if (next == NULL) {
+            cur->next = xsltNewUseAttrSet(ncname, ns);
+            return list;
+        }
+        cur = next;
     }
-    return(list);
+    return list;
 }
 
 /**
@@ -275,17 +281,18 @@ xsltAddUseAttrSetList(xsltUseAttrSetPtr list, const xmlChar *ncname,
  * Returns the newly allocated xsltAttrSetPtr or NULL in case of error.
  */
 static xsltAttrSetPtr
-xsltNewAttrSet(void) {
+xsltNewAttrSet (void)
+{
     xsltAttrSetPtr cur;
 
     cur = (xsltAttrSetPtr) xmlMalloc(sizeof(xsltAttrSet));
     if (cur == NULL) {
         xsltGenericError(xsltGenericErrorContext,
-		"xsltNewAttrSet : malloc failed\n");
-	return(NULL);
+                         "xsltNewAttrSet : malloc failed\n");
+        return NULL;
     }
     memset(cur, 0, sizeof(xsltAttrSet));
-    return(cur);
+    return cur;
 }
 
 /**
@@ -295,7 +302,8 @@ xsltNewAttrSet(void) {
  * Free memory allocated by @set
  */
 static void
-xsltFreeAttrSet(xsltAttrSetPtr set) {
+xsltFreeAttrSet (xsltAttrSetPtr set)
+{
     if (set == NULL)
         return;
 
@@ -313,40 +321,41 @@ xsltFreeAttrSet(xsltAttrSetPtr set) {
  * but drop redefinition of existing values.
  */
 static void
-xsltMergeAttrSets(xsltAttrSetPtr set, xsltAttrSetPtr other) {
+xsltMergeAttrSets (xsltAttrSetPtr set, xsltAttrSetPtr other)
+{
     xsltAttrElemPtr cur;
     xsltAttrElemPtr old = other->attrs;
     int add;
 
     while (old != NULL) {
-	/*
+        /*
 	 * Check that the attribute is not yet in the list
 	 */
-	cur = set->attrs;
-	add = 1;
-	while (cur != NULL) {
+        cur = set->attrs;
+        add = 1;
+        while (cur != NULL) {
             xsltStylePreCompPtr curComp = xmlNodeGetPsvi(cur->attr);
             xsltStylePreCompPtr oldComp = xmlNodeGetPsvi(old->attr);
 
-            if ((curComp->name == oldComp->name) &&
-                (curComp->ns == oldComp->ns)) {
+            if ((curComp->name == oldComp->name)
+                && (curComp->ns == oldComp->ns)) {
                 add = 0;
                 break;
             }
-	    if (cur->next == NULL)
-		break;
+            if (cur->next == NULL)
+                break;
             cur = cur->next;
-	}
+        }
 
-	if (add == 1) {
-	    if (cur == NULL) {
-		set->attrs = xsltNewAttrElem(old->attr);
-	    } else if (add) {
-		cur->next = xsltNewAttrElem(old->attr);
-	    }
-	}
+        if (add == 1) {
+            if (cur == NULL) {
+                set->attrs = xsltNewAttrElem(old->attr);
+            } else if (add) {
+                cur->next = xsltNewAttrElem(old->attr);
+            }
+        }
 
-	old = old->next;
+        old = old->next;
     }
 }
 
@@ -365,7 +374,8 @@ xsltMergeAttrSets(xsltAttrSetPtr set, xsltAttrSetPtr other) {
  */
 
 void
-xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
+xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
+{
     const xmlChar *ncname;
     const xmlChar *prefix;
     const xmlChar *nsUri = NULL;
@@ -373,22 +383,23 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     xmlNodePtr child;
     xsltAttrSetPtr set;
 
-    if ((cur == NULL) || (style == NULL) || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
-	return;
+    if ((cur == NULL) || (style == NULL)
+        || (xmlNodeGetType(cur) != XML_ELEMENT_NODE))
+        return;
 
-    value = xmlGetNsProp(cur, (const xmlChar *)"name", NULL);
+    value = xmlGetNsProp(cur, (const xmlChar *) "name", NULL);
     if ((value == NULL) || (*value == 0)) {
-	xsltGenericError(xsltGenericErrorContext,
-	     "xsl:attribute-set : name is missing\n");
+        xsltGenericError(xsltGenericErrorContext,
+                         "xsl:attribute-set : name is missing\n");
         if (value)
-	    xmlFree(value);
-	return;
+            xmlFree(value);
+        return;
     }
 
     if (xmlValidateQName(value, 0)) {
-        xsltTransformError(NULL, style, cur,
-            "xsl:attribute-set : The name '%s' is not a valid QName.\n",
-            value);
+        xsltTransformError(
+            NULL, style, cur,
+            "xsl:attribute-set : The name '%s' is not a valid QName.\n", value);
         style->errors++;
         xmlFree(value);
         return;
@@ -400,7 +411,8 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     if (prefix != NULL) {
         xmlNsPtr ns = xmlSearchNs(style->doc, cur, prefix);
         if (ns == NULL) {
-            xsltTransformError(NULL, style, cur,
+            xsltTransformError(
+                NULL, style, cur,
                 "xsl:attribute-set : No namespace found for QName '%s:%s'\n",
                 prefix, ncname);
             style->errors++;
@@ -411,20 +423,21 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
 
     if (style->attributeSets == NULL) {
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-	xsltGenericDebug(xsltGenericDebugContext,
-	    "creating attribute set table\n");
+        xsltGenericDebug(xsltGenericDebugContext,
+                         "creating attribute set table\n");
 #endif
-	style->attributeSets = xmlHashCreate(10);
+        style->attributeSets = xmlHashCreate(10);
     }
     if (style->attributeSets == NULL)
-	return;
+        return;
 
     set = xmlHashLookup2(style->attributeSets, ncname, nsUri);
     if (set == NULL) {
         set = xsltNewAttrSet();
-        if ((set == NULL) ||
-            (xmlHashAddEntry2(style->attributeSets, ncname, nsUri, set) < 0)) {
-	    xsltGenericError(xsltGenericErrorContext, "memory error\n");
+        if ((set == NULL)
+            || (xmlHashAddEntry2(style->attributeSets, ncname, nsUri, set)
+                < 0)) {
+            xsltGenericError(xsltGenericErrorContext, "memory error\n");
             xsltFreeAttrSet(set);
             return;
         }
@@ -435,28 +448,27 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     */
     child = xmlNodeGetChildren(cur);
     while (child != NULL) {
-	/*
+        /*
 	* Report invalid nodes.
 	*/
-	if ((xmlNodeGetType(child) != XML_ELEMENT_NODE) ||
-	    (xmlNodeGetNs(child) == NULL) ||
-	    (! IS_XSLT_ELEM(child)))
-	{
-	    if (xmlNodeGetType(child) == XML_ELEMENT_NODE)
-		xsltTransformError(NULL, style, child,
-			"xsl:attribute-set : unexpected child %s\n",
-		                 xmlNodeGetName(child));
-	    else
-		xsltTransformError(NULL, style, child,
-			"xsl:attribute-set : child of unexpected type\n");
-	} else if (!IS_XSLT_NAME(child, "attribute")) {
-	    xsltTransformError(NULL, style, child,
-		"xsl:attribute-set : unexpected child xsl:%s\n",
-		xmlNodeGetName(child));
-	} else {
+        if ((xmlNodeGetType(child) != XML_ELEMENT_NODE)
+            || (xmlNodeGetNs(child) == NULL) || (!IS_XSLT_ELEM(child))) {
+            if (xmlNodeGetType(child) == XML_ELEMENT_NODE)
+                xsltTransformError(NULL, style, child,
+                                   "xsl:attribute-set : unexpected child %s\n",
+                                   xmlNodeGetName(child));
+            else
+                xsltTransformError(
+                    NULL, style, child,
+                    "xsl:attribute-set : child of unexpected type\n");
+        } else if (!IS_XSLT_NAME(child, "attribute")) {
+            xsltTransformError(NULL, style, child,
+                               "xsl:attribute-set : unexpected child xsl:%s\n",
+                               xmlNodeGetName(child));
+        } else {
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-	    xsltGenericDebug(xsltGenericDebugContext,
-		"add attribute to list %s\n", ncname);
+            xsltGenericDebug(xsltGenericDebugContext,
+                             "add attribute to list %s\n", ncname);
 #endif
             xsltStylePreCompute(style, child);
             if (xmlNodeGetChildren(child) != NULL) {
@@ -468,16 +480,17 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
 #endif
             }
             if (xmlNodeGetPsvi(child) == NULL) {
-                xsltTransformError(NULL, style, child,
+                xsltTransformError(
+                    NULL, style, child,
                     "xsl:attribute-set : internal error, attribute %s not "
-                    "compiled\n", xmlNodeGetName(child));
+                    "compiled\n",
+                    xmlNodeGetName(child));
+            } else {
+                set->attrs = xsltAddAttrElemList(set->attrs, child);
             }
-            else {
-	        set->attrs = xsltAddAttrElemList(set->attrs, child);
-            }
-	}
+        }
 
-	child = xmlNodeGetNext(child);
+        child = xmlNodeGetNext(child);
     }
 
     /*
@@ -485,39 +498,45 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
     */
     value = xmlGetNsProp(cur, BAD_CAST "use-attribute-sets", NULL);
     if (value != NULL) {
-	const xmlChar *curval, *endval;
-	curval = value;
-	while (*curval != 0) {
-	    while (IS_BLANK(*curval)) curval++;
-	    if (*curval == 0)
-		break;
-	    endval = curval;
-	    while ((*endval != 0) && (!IS_BLANK(*endval))) endval++;
-	    curval = xmlDictLookup(style->dict, curval, endval - curval);
-	    if (curval) {
-		const xmlChar *ncname2 = NULL;
-		const xmlChar *prefix2 = NULL;
+        const xmlChar *curval, *endval;
+        curval = value;
+        while (*curval != 0) {
+            while (IS_BLANK(*curval))
+                curval++;
+            if (*curval == 0)
+                break;
+            endval = curval;
+            while ((*endval != 0) && (!IS_BLANK(*endval)))
+                endval++;
+            curval = xmlDictLookup(style->dict, curval, endval - curval);
+            if (curval) {
+                const xmlChar *ncname2 = NULL;
+                const xmlChar *prefix2 = NULL;
                 const xmlChar *nsUri2 = NULL;
 
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-		xsltGenericDebug(xsltGenericDebugContext,
-		    "xsl:attribute-set : %s adds use %s\n", ncname, curval);
+                xsltGenericDebug(xsltGenericDebugContext,
+                                 "xsl:attribute-set : %s adds use %s\n", ncname,
+                                 curval);
 #endif
 
                 if (xmlValidateQName(curval, 0)) {
-                    xsltTransformError(NULL, style, cur,
+                    xsltTransformError(
+                        NULL, style, cur,
                         "xsl:attribute-set : The name '%s' in "
-                        "use-attribute-sets is not a valid QName.\n", curval);
+                        "use-attribute-sets is not a valid QName.\n",
+                        curval);
                     style->errors++;
                     xmlFree(value);
                     return;
                 }
 
-		ncname2 = xsltSplitQName(style->dict, curval, &prefix2);
+                ncname2 = xsltSplitQName(style->dict, curval, &prefix2);
                 if (prefix2 != NULL) {
                     xmlNsPtr ns2 = xmlSearchNs(style->doc, cur, prefix2);
                     if (ns2 == NULL) {
-                        xsltTransformError(NULL, style, cur,
+                        xsltTransformError(
+                            NULL, style, cur,
                             "xsl:attribute-set : No namespace found for QName "
                             "'%s:%s' in use-attribute-sets\n",
                             prefix2, ncname2);
@@ -527,18 +546,18 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
                     }
                     nsUri2 = xmlNsGetHref(ns2);
                 }
-                set->useAttrSets = xsltAddUseAttrSetList(set->useAttrSets,
-                                                         ncname2, nsUri2);
-	    }
-	    curval = endval;
-	}
-	xmlFree(value);
-	value = NULL;
+                set->useAttrSets
+                    = xsltAddUseAttrSetList(set->useAttrSets, ncname2, nsUri2);
+            }
+            curval = endval;
+        }
+        xmlFree(value);
+        value = NULL;
     }
 
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-    xsltGenericDebug(xsltGenericDebugContext,
-	"updated attribute list %s\n", ncname);
+    xsltGenericDebug(xsltGenericDebugContext, "updated attribute list %s\n",
+                     ncname);
 #endif
 }
 
@@ -551,8 +570,9 @@ xsltParseStylesheetAttributeSet(xsltStylesheetPtr style, xmlNodePtr cur) {
  * Process "use-attribute-sets".
  */
 static void
-xsltResolveUseAttrSets(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
-		       int depth) {
+xsltResolveUseAttrSets (xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
+                        int depth)
+{
     xsltStylesheetPtr cur;
     xsltAttrSetPtr other;
     xsltUseAttrSetPtr use = set->useAttrSets;
@@ -565,8 +585,8 @@ xsltResolveUseAttrSets(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
         cur = topStyle;
         while (cur != NULL) {
             if (cur->attributeSets) {
-                other = xmlHashLookup2(cur->attributeSets, use->ncname,
-                                       use->ns);
+                other
+                    = xmlHashLookup2(cur->attributeSets, use->ncname, use->ns);
                 if (other != NULL) {
                     xsltResolveAttrSet(other, topStyle, cur, use->ncname,
                                        use->ns, depth + 1);
@@ -597,28 +617,33 @@ xsltResolveUseAttrSets(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
  * resolve the references in an attribute set.
  */
 static void
-xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
-                   xsltStylesheetPtr style, const xmlChar *name,
-                   const xmlChar *ns, int depth) {
+xsltResolveAttrSet (xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
+                    xsltStylesheetPtr style, const xmlChar *name,
+                    const xmlChar *ns, int depth)
+{
     xsltStylesheetPtr cur;
     xsltAttrSetPtr other;
 
     if (set->state == ATTRSET_RESOLVED)
         return;
     if (set->state == ATTRSET_RESOLVING) {
-	xsltTransformError(NULL, topStyle, NULL,
+        xsltTransformError(
+            NULL, topStyle, NULL,
             "xsl:attribute-set : use-attribute-sets recursion detected"
-            " on %s\n", name);
+            " on %s\n",
+            name);
         topStyle->errors++;
         set->state = ATTRSET_RESOLVED;
         return;
     }
     if (depth > 100) {
-	xsltTransformError(NULL, topStyle, NULL,
-		"xsl:attribute-set : use-attribute-sets maximum recursion "
-		"depth exceeded on %s\n", name);
+        xsltTransformError(
+            NULL, topStyle, NULL,
+            "xsl:attribute-set : use-attribute-sets maximum recursion "
+            "depth exceeded on %s\n",
+            name);
         topStyle->errors++;
-	return;
+        return;
     }
 
     set->state = ATTRSET_RESOLVING;
@@ -634,7 +659,8 @@ xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
             if (other != NULL) {
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
                 xsltGenericDebug(xsltGenericDebugContext,
-                    "xsl:attribute-set : merging import for %s\n", name);
+                                 "xsl:attribute-set : merging import for %s\n",
+                                 name);
 #endif
                 xsltResolveUseAttrSets(other, topStyle, depth);
                 xsltMergeAttrSets(set, other);
@@ -659,9 +685,9 @@ xsltResolveAttrSet(xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
  * resolve the references in an attribute set.
  */
 static void
-xsltResolveSASCallback(void *payload, void *data,
-	               const xmlChar *name, const xmlChar *ns,
-		       UNUSED const xmlChar *ignored) {
+xsltResolveSASCallback (void *payload, void *data, const xmlChar *name,
+                        const xmlChar *ns, UNUSED const xmlChar *ignored)
+{
     xsltAttrSetPtr set = (xsltAttrSetPtr) payload;
     xsltAttrSetContextPtr asctx = (xsltAttrSetContextPtr) data;
     xsltStylesheetPtr topStyle = asctx->topStyle;
@@ -682,9 +708,11 @@ xsltResolveSASCallback(void *payload, void *data,
          * removing the hash entry.
          */
         if (xmlHashAddEntry2(topStyle->attributeSets, name, ns, set) < 0) {
-	    xsltGenericError(xsltGenericErrorContext,
+            xsltGenericError(
+                xsltGenericErrorContext,
                 "xsl:attribute-set : internal error, can't move imported "
-                " attribute set %s\n", name);
+                " attribute set %s\n",
+                name);
             asctx->error = 1;
             xsltFreeAttrSet(set);
         }
@@ -698,29 +726,29 @@ xsltResolveSASCallback(void *payload, void *data,
  * resolve the references between attribute sets.
  */
 void
-xsltResolveStylesheetAttributeSet(xsltStylesheetPtr style) {
+xsltResolveStylesheetAttributeSet (xsltStylesheetPtr style)
+{
     xsltStylesheetPtr cur;
     xsltAttrSetContext asctx;
 
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
     xsltGenericDebug(xsltGenericDebugContext,
-	    "Resolving attribute sets references\n");
+                     "Resolving attribute sets references\n");
 #endif
     asctx.topStyle = style;
     asctx.error = 0;
     cur = style;
     while (cur != NULL) {
-	if (cur->attributeSets != NULL) {
-	    if (style->attributeSets == NULL) {
+        if (cur->attributeSets != NULL) {
+            if (style->attributeSets == NULL) {
 #ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-		xsltGenericDebug(xsltGenericDebugContext,
-		    "creating attribute set table\n");
+                xsltGenericDebug(xsltGenericDebugContext,
+                                 "creating attribute set table\n");
 #endif
-		style->attributeSets = xmlHashCreate(10);
-	    }
+                style->attributeSets = xmlHashCreate(10);
+            }
             asctx.style = cur;
-	    xmlHashScanFull(cur->attributeSets, xsltResolveSASCallback,
-                            &asctx);
+            xmlHashScanFull(cur->attributeSets, xsltResolveSASCallback, &asctx);
 
             if (cur != style) {
                 /*
@@ -730,8 +758,8 @@ xsltResolveStylesheetAttributeSet(xsltStylesheetPtr style) {
                 xmlHashFree(cur->attributeSets, NULL);
                 cur->attributeSets = NULL;
             }
-	}
-	cur = xsltNextImport(cur);
+        }
+        cur = xsltNextImport(cur);
     }
 }
 
@@ -745,14 +773,11 @@ xsltResolveStylesheetAttributeSet(xsltStylesheetPtr style) {
  * Process the xslt attribute node on the source node
  */
 void
-xsltAttribute(xsltTransformContextPtr ctxt,
-	      xmlNodePtr contextNode,
-              xmlNodePtr inst,
-	      xsltElemPreCompPtr castedComp)
+xsltAttribute (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
+               xmlNodePtr inst, xsltElemPreCompPtr castedComp)
 {
 #ifdef XSLT_REFACTORED
-    xsltStyleItemAttributePtr comp =
-	(xsltStyleItemAttributePtr) castedComp;
+    xsltStyleItemAttributePtr comp = (xsltStyleItemAttributePtr) castedComp;
 #else
     xsltStylePreCompPtr comp = (xsltStylePreCompPtr) castedComp;
 #endif
@@ -763,8 +788,8 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     xmlNsPtr ns = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL) ||
-        (xmlNodeGetType(inst) != XML_ELEMENT_NODE) )
+    if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL)
+        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
         return;
 
     /*
@@ -787,9 +812,10 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     */
 
     if (comp == NULL) {
-        xsltTransformError(ctxt, NULL, inst,
-	    "Internal error in xsltAttribute(): "
-	    "The XSLT 'attribute' instruction was not compiled.\n");
+        xsltTransformError(
+            ctxt, NULL, inst,
+            "Internal error in xsltAttribute(): "
+            "The XSLT 'attribute' instruction was not compiled.\n");
         return;
     }
     /*
@@ -808,7 +834,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     */
     targetElem = ctxt->insert;
     if (xmlNodeGetType(targetElem) != XML_ELEMENT_NODE)
-	return;
+        return;
 
     /*
     * SPEC XSLT 1.0:
@@ -821,14 +847,14 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     *  element, but here we report an error.
     */
     if (xmlNodeGetChildren(targetElem) != NULL) {
-	/*
+        /*
 	* NOTE: Ah! This seems to be intended to support streamed
 	*  result generation!.
 	*/
         xsltTransformError(ctxt, NULL, inst,
-	    "xsl:attribute: Cannot add attributes to an "
-	    "element if children have been already added "
-	    "to the element.\n");
+                           "xsl:attribute: Cannot add attributes to an "
+                           "element if children have been already added "
+                           "to the element.\n");
         return;
     }
 
@@ -843,42 +869,46 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 #endif
 
     if (comp->name == NULL) {
-	/* TODO: fix attr acquisition wrt to the XSLT namespace */
-        prop = xsltEvalAttrValueTemplate(ctxt, inst,
-	    (const xmlChar *) "name", XSLT_NAMESPACE);
+        /* TODO: fix attr acquisition wrt to the XSLT namespace */
+        prop = xsltEvalAttrValueTemplate(ctxt, inst, (const xmlChar *) "name",
+                                         XSLT_NAMESPACE);
         if (prop == NULL) {
-            xsltTransformError(ctxt, NULL, inst,
-		"xsl:attribute: The attribute 'name' is missing.\n");
+            xsltTransformError(
+                ctxt, NULL, inst,
+                "xsl:attribute: The attribute 'name' is missing.\n");
             goto error;
         }
-	if (xmlValidateQName(prop, 0)) {
-	    xsltTransformError(ctxt, NULL, inst,
-		"xsl:attribute: The effective name '%s' is not a "
-		"valid QName.\n", prop);
-	    /* we fall through to catch any further errors, if possible */
-	}
+        if (xmlValidateQName(prop, 0)) {
+            xsltTransformError(
+                ctxt, NULL, inst,
+                "xsl:attribute: The effective name '%s' is not a "
+                "valid QName.\n",
+                prop);
+            /* we fall through to catch any further errors, if possible */
+        }
 
-	/*
+        /*
 	* Reject a name of "xmlns".
 	*/
-	if (xmlStrEqual(prop, BAD_CAST "xmlns")) {
-            xsltTransformError(ctxt, NULL, inst,
+        if (xmlStrEqual(prop, BAD_CAST "xmlns")) {
+            xsltTransformError(
+                ctxt, NULL, inst,
                 "xsl:attribute: The effective name 'xmlns' is not allowed.\n");
-	    xmlFree(prop);
-	    goto error;
-	}
+            xmlFree(prop);
+            goto error;
+        }
 
-	name = xsltSplitQName(ctxt->dict, prop, &prefix);
-	xmlFree(prop);
+        name = xsltSplitQName(ctxt->dict, prop, &prefix);
+        xmlFree(prop);
     } else {
-	/*
+        /*
 	* The "name" value was static.
 	*/
 #ifdef XSLT_REFACTORED
-	prefix = comp->nsPrefix;
-	name = comp->name;
+        prefix = comp->nsPrefix;
+        name = comp->name;
 #else
-	name = xsltSplitQName(ctxt->dict, comp->name, &prefix);
+        name = xsltSplitQName(ctxt->dict, comp->name, &prefix);
 #endif
     }
 
@@ -889,24 +919,24 @@ xsltAttribute(xsltTransformContextPtr ctxt,
     * Evaluate the namespace name.
     */
     if (comp->has_ns) {
-	/*
+        /*
 	* The "namespace" attribute was existent.
 	*/
-	if (comp->ns != NULL) {
-	    /*
+        if (comp->ns != NULL) {
+            /*
 	    * No AVT; just plain text for the namespace name.
 	    */
-	    if (comp->ns[0] != 0)
-		nsName = comp->ns;
-	} else {
-	    xmlChar *tmpNsName;
-	    /*
+            if (comp->ns[0] != 0)
+                nsName = comp->ns;
+        } else {
+            xmlChar *tmpNsName;
+            /*
 	    * Eval the AVT.
 	    */
-	    /* TODO: check attr acquisition wrt to the XSLT namespace */
-	    tmpNsName = xsltEvalAttrValueTemplate(ctxt, inst,
-		(const xmlChar *) "namespace", XSLT_NAMESPACE);
-	    /*
+            /* TODO: check attr acquisition wrt to the XSLT namespace */
+            tmpNsName = xsltEvalAttrValueTemplate(
+                ctxt, inst, (const xmlChar *) "namespace", XSLT_NAMESPACE);
+            /*
 	    * This fixes bug #302020: The AVT might also evaluate to the
 	    * empty string; this means that the empty string also indicates
 	    * "no namespace".
@@ -914,13 +944,14 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	    *  "If the string is empty, then the expanded-name of the
 	    *  attribute has a null namespace URI."
 	    */
-	    if ((tmpNsName != NULL) && (tmpNsName[0] != 0))
-		nsName = xmlDictLookup(ctxt->dict, BAD_CAST tmpNsName, -1);
-	    xmlFree(tmpNsName);
-	}
+            if ((tmpNsName != NULL) && (tmpNsName[0] != 0))
+                nsName = xmlDictLookup(ctxt->dict, BAD_CAST tmpNsName, -1);
+            xmlFree(tmpNsName);
+        }
 
         if (xmlStrEqual(nsName, BAD_CAST "http://www.w3.org/2000/xmlns/")) {
-            xsltTransformError(ctxt, NULL, inst,
+            xsltTransformError(
+                ctxt, NULL, inst,
                 "xsl:attribute: Namespace http://www.w3.org/2000/xmlns/ "
                 "forbidden.\n");
             goto error;
@@ -931,26 +962,27 @@ xsltAttribute(xsltTransformContextPtr ctxt,
             prefix = NULL;
         }
     } else if (prefix != NULL) {
-	/*
+        /*
 	* SPEC XSLT 1.0:
 	*  "If the namespace attribute is not present, then the QName is
 	*  expanded into an expanded-name using the namespace declarations
 	*  in effect for the xsl:attribute element, *not* including any
 	*  default namespace declaration."
 	*/
-	ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
-	if (ns == NULL) {
-	    /*
+        ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
+        if (ns == NULL) {
+            /*
 	    * Note that this is treated as an error now (checked with
 	    *  Saxon, Xalan-J and MSXML).
 	    */
-	    xsltTransformError(ctxt, NULL, inst,
-		"xsl:attribute: The QName '%s:%s' has no "
-		"namespace binding in scope in the stylesheet; "
-		"this is an error, since the namespace was not "
-		"specified by the instruction itself.\n", prefix, name);
-	} else
-	    nsName = xmlNsGetHref(ns);
+            xsltTransformError(ctxt, NULL, inst,
+                               "xsl:attribute: The QName '%s:%s' has no "
+                               "namespace binding in scope in the stylesheet; "
+                               "this is an error, since the namespace was not "
+                               "specified by the instruction itself.\n",
+                               prefix, name);
+        } else
+            nsName = xmlNsGetHref(ns);
     }
 
     /*
@@ -979,7 +1011,7 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 #endif
 
     if (nsName != NULL) {
-	/*
+        /*
 	* Something about ns-prefixes:
 	* SPEC XSLT 1.0:
 	*  "XSLT processors may make use of the prefix of the QName specified
@@ -987,116 +1019,117 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	*  the created attribute as XML; however, they are not required to do
 	*  so and, if the prefix is xmlns, they must not do so"
 	*/
-	/*
+        /*
 	* xsl:attribute can produce a scenario where the prefix is NULL,
 	* so generate a prefix.
 	*/
-	if ((prefix == NULL) || xmlStrEqual(prefix, BAD_CAST "xmlns")) {
-	    xmlChar *pref = xmlStrdup(BAD_CAST "ns_1");
+        if ((prefix == NULL) || xmlStrEqual(prefix, BAD_CAST "xmlns")) {
+            xmlChar *pref = xmlStrdup(BAD_CAST "ns_1");
 
-	    ns = xsltGetSpecialNamespace(ctxt, inst, nsName, pref, targetElem);
+            ns = xsltGetSpecialNamespace(ctxt, inst, nsName, pref, targetElem);
 
-	    xmlFree(pref);
-	} else {
-	    ns = xsltGetSpecialNamespace(ctxt, inst, nsName, prefix,
-		targetElem);
-	}
-	if (ns == NULL) {
-	    xsltTransformError(ctxt, NULL, inst,
-		"Namespace fixup error: Failed to acquire an in-scope "
-		"namespace binding for the generated attribute '{%s}%s'.\n",
-		nsName, name);
-	    goto error;
-	}
+            xmlFree(pref);
+        } else {
+            ns = xsltGetSpecialNamespace(ctxt, inst, nsName, prefix,
+                                         targetElem);
+        }
+        if (ns == NULL) {
+            xsltTransformError(
+                ctxt, NULL, inst,
+                "Namespace fixup error: Failed to acquire an in-scope "
+                "namespace binding for the generated attribute '{%s}%s'.\n",
+                nsName, name);
+            goto error;
+        }
     }
     /*
     * Construction of the value
     * -------------------------
     */
     if (xmlNodeGetChildren(inst) == NULL) {
-	/*
+        /*
 	* No content.
 	* TODO: Do we need to put the empty string in ?
 	*/
-	attr = xmlSetNsProp(ctxt->insert, ns, name, (const xmlChar *) "");
-    } else if ((xmlNodeGetNext(xmlNodeGetChildren(inst)) == NULL) &&
-	    ((xmlNodeGetType(xmlNodeGetChildren(inst)) == XML_TEXT_NODE) ||
-	     (xmlNodeGetType(xmlNodeGetChildren(inst)) == XML_CDATA_SECTION_NODE)))
-    {
-	xmlNodePtr copyTxt;
+        attr = xmlSetNsProp(ctxt->insert, ns, name, (const xmlChar *) "");
+    } else if ((xmlNodeGetNext(xmlNodeGetChildren(inst)) == NULL)
+               && ((xmlNodeGetType(xmlNodeGetChildren(inst)) == XML_TEXT_NODE)
+                   || (xmlNodeGetType(xmlNodeGetChildren(inst))
+                       == XML_CDATA_SECTION_NODE))) {
+        xmlNodePtr copyTxt;
 
-	/*
+        /*
 	* xmlSetNsProp() will take care of duplicates.
 	*/
-	attr = xmlSetNsProp(ctxt->insert, ns, name, NULL);
-	if (attr == NULL) /* TODO: report error ? */
-	    goto error;
-	/*
+        attr = xmlSetNsProp(ctxt->insert, ns, name, NULL);
+        if (attr == NULL) /* TODO: report error ? */
+            goto error;
+        /*
 	* This was taken over from xsltCopyText() (transform.c).
 	*/
-	if (ctxt->internalized &&
-	    (xmlNodeGetDoc(ctxt->insert) != NULL) &&
-	    (xmlNodeGetDoc(ctxt->insert)->dict == ctxt->dict))
-	{
-	    copyTxt = xmlNewText(NULL);
-	    if (copyTxt == NULL) /* TODO: report error */
-		goto error;
-	    /*
+        if (ctxt->internalized && (xmlNodeGetDoc(ctxt->insert) != NULL)
+            && (xmlNodeGetDoc(ctxt->insert)->dict == ctxt->dict)) {
+            copyTxt = xmlNewText(NULL);
+            if (copyTxt == NULL) /* TODO: report error */
+                goto error;
+            /*
 	    * This is a safe scenario where we don't need to lookup
 	    * the dict.
 	    */
-	    xmlNodeSetContentRaw(copyTxt, xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
-	    /*
+            xmlNodeSetContentRaw(
+                copyTxt, xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
+            /*
 	    * Copy "disable-output-escaping" information.
 	    * TODO: Does this have any effect for attribute values
 	    *  anyway?
 	    */
-	    if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
-		xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
-	} else {
-	    /*
+            if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
+                xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
+        } else {
+            /*
 	    * Copy the value.
 	    */
-	    copyTxt = xmlNewText(xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
-	    if (copyTxt == NULL) /* TODO: report error */
-		goto error;
-	}
-	xmlAttrSetChildren(attr, copyTxt);
-	xmlAttrSetLast(attr, copyTxt);
-	xmlNodeSetParent(copyTxt, (xmlNodePtr) attr);
-	xmlNodeSetDocRaw(copyTxt, xmlAttrGetDoc(attr));
-	/*
+            copyTxt
+                = xmlNewText(xmlNodeGetContentRaw(xmlNodeGetChildren(inst)));
+            if (copyTxt == NULL) /* TODO: report error */
+                goto error;
+        }
+        xmlAttrSetChildren(attr, copyTxt);
+        xmlAttrSetLast(attr, copyTxt);
+        xmlNodeSetParent(copyTxt, (xmlNodePtr) attr);
+        xmlNodeSetDocRaw(copyTxt, xmlAttrGetDoc(attr));
+        /*
 	* Copy "disable-output-escaping" information.
 	* TODO: Does this have any effect for attribute values
 	*  anyway?
 	*/
-	if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
-	    xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
+        if (xmlNodeGetName(xmlNodeGetChildren(inst)) == xmlStringTextNoenc)
+            xmlNodeSetNameRaw(copyTxt, xmlStringTextNoenc);
 
         /*
          * since we create the attribute without content IDness must be
          * asserted as a second step
          */
-        if ((xmlNodeGetContentRaw(copyTxt) != NULL) &&
-            (xmlIsID(xmlAttrGetDoc(attr), xmlAttrGetParent(attr), attr)))
-            xmlAddID(NULL, xmlAttrGetDoc(attr), xmlNodeGetContentRaw(copyTxt), attr);
+        if ((xmlNodeGetContentRaw(copyTxt) != NULL)
+            && (xmlIsID(xmlAttrGetDoc(attr), xmlAttrGetParent(attr), attr)))
+            xmlAddID(NULL, xmlAttrGetDoc(attr), xmlNodeGetContentRaw(copyTxt),
+                     attr);
     } else {
-	/*
+        /*
 	* The sequence constructor might be complex, so instantiate it.
 	*/
-	value = xsltEvalTemplateString(ctxt, contextNode, inst);
-	if (value != NULL) {
-	    attr = xmlSetNsProp(ctxt->insert, ns, name, value);
-	    xmlFree(value);
-	} else {
-	    /*
+        value = xsltEvalTemplateString(ctxt, contextNode, inst);
+        if (value != NULL) {
+            attr = xmlSetNsProp(ctxt->insert, ns, name, value);
+            xmlFree(value);
+        } else {
+            /*
 	    * TODO: Do we have to add the empty string to the attr?
 	    * TODO: Does a  value of NULL indicate an
 	    *  error in xsltEvalTemplateString() ?
 	    */
-	    attr = xmlSetNsProp(ctxt->insert, ns, name,
-		(const xmlChar *) "");
-	}
+            attr = xmlSetNsProp(ctxt->insert, ns, name, (const xmlChar *) "");
+        }
     }
 
 error:
@@ -1116,9 +1149,8 @@ error:
  * If both, @attrSets and @inst, are NULL, then this will do nothing.
  */
 void
-xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
-                      xmlNodePtr inst,
-                      const xmlChar *attrSets)
+xsltApplyAttributeSet (xsltTransformContextPtr ctxt, xmlNodePtr node,
+                       xmlNodePtr inst, const xmlChar *attrSets)
 {
     const xmlChar *ncname = NULL;
     const xmlChar *prefix = NULL;
@@ -1127,25 +1159,24 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
     xsltStylesheetPtr style;
 
     if (attrSets == NULL) {
-	if (inst == NULL)
-	    return;
-	else {
-	    /*
+        if (inst == NULL)
+            return;
+        else {
+            /*
 	    * Extract the value from @inst.
 	    */
-	    if (xmlNodeGetType(inst) == XML_ATTRIBUTE_NODE) {
-		if (xmlAttrGetChildren((xmlAttrPtr) inst) != NULL)
-		    attrSets = xmlNodeGetContentRaw(
-			xmlAttrGetChildren((xmlAttrPtr) inst));
-
-	    }
-	    if (attrSets == NULL) {
-		/*
+            if (xmlNodeGetType(inst) == XML_ATTRIBUTE_NODE) {
+                if (xmlAttrGetChildren((xmlAttrPtr) inst) != NULL)
+                    attrSets = xmlNodeGetContentRaw(
+                        xmlAttrGetChildren((xmlAttrPtr) inst));
+            }
+            if (attrSets == NULL) {
+                /*
 		* TODO: Return an error?
 		*/
-		return;
-	    }
-	}
+                return;
+            }
+        }
     }
     /*
     * Parse/apply the list of QNames.
@@ -1170,19 +1201,23 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 #endif
 
             if (xmlValidateQName(curstr, 0)) {
-                xsltTransformError(ctxt, NULL, inst,
+                xsltTransformError(
+                    ctxt, NULL, inst,
                     "The name '%s' in use-attribute-sets is not a valid "
-                    "QName.\n", curstr);
+                    "QName.\n",
+                    curstr);
                 return;
             }
 
             ncname = xsltSplitQName(ctxt->dict, curstr, &prefix);
             if (prefix != NULL) {
-	        ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
+                ns = xmlSearchNs(xmlNodeGetDoc(inst), inst, prefix);
                 if (ns == NULL) {
-                    xsltTransformError(ctxt, NULL, inst,
+                    xsltTransformError(
+                        ctxt, NULL, inst,
                         "use-attribute-set : No namespace found for QName "
-                        "'%s:%s'\n", prefix, ncname);
+                        "'%s:%s'\n",
+                        prefix, ncname);
                     return;
                 }
                 nsUri = xmlNsGetHref(ns);
@@ -1191,18 +1226,16 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
             style = ctxt->style;
 
 #ifdef WITH_DEBUGGER
-            if ((style != NULL) &&
-		(style->attributeSets != NULL) &&
-		(xslDebugStatus != XSLT_DEBUG_NONE))
-	    {
+            if ((style != NULL) && (style->attributeSets != NULL)
+                && (xslDebugStatus != XSLT_DEBUG_NONE)) {
                 set = xmlHashLookup2(style->attributeSets, ncname, nsUri);
-                if ((set != NULL) && (set->attrs != NULL) &&
-                    (set->attrs->attr != NULL))
-                    xslHandleDebugger(xmlNodeGetParent(set->attrs->attr),
-			node, NULL, ctxt);
+                if ((set != NULL) && (set->attrs != NULL)
+                    && (set->attrs->attr != NULL))
+                    xslHandleDebugger(xmlNodeGetParent(set->attrs->attr), node,
+                                      NULL, ctxt);
             }
 #endif
-	    /*
+            /*
 	    * Lookup the referenced attribute-set. All attribute sets were
             * moved to the top stylesheet so there's no need to iterate
             * imported stylesheets
@@ -1213,7 +1246,7 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
                 while (cur != NULL) {
                     if (cur->attr != NULL) {
                         xsltAttribute(ctxt, node, cur->attr,
-                            xmlNodeGetPsvi(cur->attr));
+                                      xmlNodeGetPsvi(cur->attr));
                     }
                     cur = cur->next;
                 }
@@ -1224,8 +1257,8 @@ xsltApplyAttributeSet(xsltTransformContextPtr ctxt, xmlNodePtr node,
 }
 
 static void
-xsltFreeAttributeSetsEntry(void *payload,
-                           const xmlChar *name UNUSED) {
+xsltFreeAttributeSetsEntry (void *payload, const xmlChar *name UNUSED)
+{
     xsltFreeAttrSet((xsltAttrSetPtr) payload);
 }
 
@@ -1236,9 +1269,10 @@ xsltFreeAttributeSetsEntry(void *payload,
  * Free up the memory used by attribute sets
  */
 void
-xsltFreeAttributeSetsHashes(xsltStylesheetPtr style) {
+xsltFreeAttributeSetsHashes (xsltStylesheetPtr style)
+{
     if (style->attributeSets != NULL)
-	xmlHashFree((xmlHashTablePtr) style->attributeSets,
-		    xsltFreeAttributeSetsEntry);
+        xmlHashFree((xmlHashTablePtr) style->attributeSets,
+                    xsltFreeAttributeSetsEntry);
     style->attributeSets = NULL;
 }
