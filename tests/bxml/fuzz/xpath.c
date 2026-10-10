@@ -10,8 +10,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
@@ -24,13 +24,14 @@ LLVMFuzzerInitialize(int *argc UNUSED,
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlDocPtr doc;
     const char *expr, *xml;
     size_t failurePos, exprSize, xmlSize;
 
     if (size > 10000)
-        return(0);
+        return 0;
 
     xmlFuzzDataInit(data, size);
 
@@ -57,8 +58,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
             xmlFuzzResetFailure();
             xmlXPathFreeObject(xmlXPtrEval(BAD_CAST expr, xpctxt));
-            xmlFuzzCheckFailureReport("xmlXPtrEval",
-                    xpctxt->lastError.code == XML_ERR_NO_MEMORY, 0);
+            xmlFuzzCheckFailureReport(
+                "xmlXPtrEval", xpctxt->lastError.code == XML_ERR_NO_MEMORY, 0);
             xmlXPathFreeContext(xpctxt);
         }
 
@@ -69,18 +70,17 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     xmlFuzzDataCleanup();
     xmlResetLastError();
 
-    return(0);
+    return 0;
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
