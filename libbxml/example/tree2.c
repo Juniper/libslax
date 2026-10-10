@@ -23,10 +23,10 @@
  * allocates the necessary amount of memory to it.
 */
 int
-main(int argc, char **argv)
+main (int argc, char **argv)
 {
-    xmlDocPtr doc = NULL;       /* document pointer */
-    xmlNodePtr root_node = NULL, node = NULL, node1 = NULL;/* node pointers */
+    xmlDocPtr doc = NULL; /* document pointer */
+    xmlNodePtr root_node = NULL, node = NULL, node1 = NULL; /* node pointers */
     char buff[256];
     int i, j;
 
@@ -59,9 +59,8 @@ main(int argc, char **argv)
      * xmlNewProp() creates attributes, which is "attached" to an node.
      * It returns xmlAttrPtr, which isn't used here.
      */
-    node =
-        xmlNewChild(root_node, NULL, BAD_CAST "node3",
-                    BAD_CAST "this node has attributes");
+    node = xmlNewChild(root_node, NULL, BAD_CAST "node3",
+                       BAD_CAST "this node has attributes");
     xmlNewProp(node, BAD_CAST "attribute", BAD_CAST "yes");
     xmlNewProp(node, BAD_CAST "foo", BAD_CAST "bar");
 
@@ -71,8 +70,8 @@ main(int argc, char **argv)
      * by xmlAddChild() 
      */
     node = xmlNewDocNode(doc, NULL, BAD_CAST "node4", NULL);
-    node1 = xmlNewDocText(doc, BAD_CAST
-                   "other way to create content (which is also a node)");
+    node1 = xmlNewDocText(
+        doc, BAD_CAST "other way to create content (which is also a node)");
     xmlAddChild(node, node1);
     xmlAddChild(root_node, node);
 
@@ -97,11 +96,13 @@ main(int argc, char **argv)
     /*free the document */
     xmlFreeDoc(doc);
 
-    return(0);
+    return 0;
 }
 #else
-int main(void) {
+int
+main (void)
+{
     fprintf(stderr, "output support not compiled in\n");
-    return(0);
+    return 0;
 }
 #endif
