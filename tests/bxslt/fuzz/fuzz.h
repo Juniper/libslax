@@ -17,82 +17,58 @@
 #define ATTRIBUTE_UNUSED
 #endif
 
-int
-LLVMFuzzerInitialize(int *argc, char ***argv);
+int LLVMFuzzerInitialize (int *argc, char ***argv);
 
-int
-LLVMFuzzerTestOneInput(const char *data, size_t size);
+int LLVMFuzzerTestOneInput (const char *data, size_t size);
 
-int
-xsltFuzzXPathInit(void);
+int xsltFuzzXPathInit (void);
 
-xmlXPathObjectPtr
-xsltFuzzXPath(const char *data, size_t size);
+xmlXPathObjectPtr xsltFuzzXPath (const char *data, size_t size);
 
-void
-xsltFuzzXPathFreeObject(xmlXPathObjectPtr obj);
+void xsltFuzzXPathFreeObject (xmlXPathObjectPtr obj);
 
-void
-xsltFuzzXPathCleanup(void);
+void xsltFuzzXPathCleanup (void);
 
-int
-xsltFuzzXsltInit(void);
+int xsltFuzzXsltInit (void);
 
-xmlChar *
-xsltFuzzXslt(const char *data, size_t size);
+xmlChar *xsltFuzzXslt (const char *data, size_t size);
 
-void
-xsltFuzzXsltCleanup(void);
+void xsltFuzzXsltCleanup (void);
 
 /* Utility functions */
 
-void
-xmlFuzzErrorFunc(void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
-                 ...);
+void xmlFuzzErrorFunc (void *ctx ATTRIBUTE_UNUSED,
+                       const char *msg ATTRIBUTE_UNUSED, ...);
 
-void
-xmlFuzzMemSetup(void);
+void xmlFuzzMemSetup (void);
 
-void
-xmlFuzzMemSetLimit(size_t limit);
+void xmlFuzzMemSetLimit (size_t limit);
 
-void
-xmlFuzzDataInit(const char *data, size_t size);
+void xmlFuzzDataInit (const char *data, size_t size);
 
-void
-xmlFuzzDataCleanup(void);
+void xmlFuzzDataCleanup (void);
 
-void
-xmlFuzzWriteInt(FILE *out, size_t v, int size);
+void xmlFuzzWriteInt (FILE *out, size_t v, int size);
 
-size_t
-xmlFuzzReadInt(int size);
+size_t xmlFuzzReadInt (int size);
 
-const char *
-xmlFuzzReadRemaining(size_t *size);
+const char *xmlFuzzReadRemaining (size_t *size);
 
-void
-xmlFuzzWriteString(FILE *out, const char *str);
+void xmlFuzzWriteString (FILE *out, const char *str);
 
-const char *
-xmlFuzzReadString(size_t *size);
+const char *xmlFuzzReadString (size_t *size);
 
-void
-xmlFuzzReadEntities(void);
+void xmlFuzzReadEntities (void);
 
-const char *
-xmlFuzzMainUrl(void);
+const char *xmlFuzzMainUrl (void);
 
-const char *
-xmlFuzzMainEntity(size_t *size);
+const char *xmlFuzzMainEntity (size_t *size);
 
-const char *
-xmlFuzzSecondaryUrl(void);
+const char *xmlFuzzSecondaryUrl (void);
 
-const char *
-xmlFuzzSecondaryEntity(size_t *size);
+const char *xmlFuzzSecondaryEntity (size_t *size);
 
-xmlParserInputPtr
-xmlFuzzEntityLoader(const char *URL, const char *ID, xmlParserCtxtPtr ctxt);
+xmlParserInputPtr xmlFuzzEntityLoader (const char *URL, const char *ID,
+                                       xmlParserCtxtPtr ctxt);
 
 #endif
