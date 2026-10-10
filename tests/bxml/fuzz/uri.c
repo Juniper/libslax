@@ -8,15 +8,16 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc UNUSED,
-                     char ***argv UNUSED) {
+LLVMFuzzerInitialize (int *argc UNUSED, char ***argv UNUSED)
+{
     xmlFuzzMemSetup();
 
     return 0;
 }
 
 int
-LLVMFuzzerTestOneInput(const char *data, size_t size) {
+LLVMFuzzerTestOneInput (const char *data, size_t size)
+{
     xmlURIPtr uri;
     size_t failurePos;
     const char *str1, *str2;
@@ -25,7 +26,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     int intRes;
 
     if (size > 10000)
-        return(0);
+        return 0;
 
     xmlFuzzDataInit(data, size);
     failurePos = xmlFuzzReadInt(4) % (size * 8 + 100);
@@ -62,14 +63,14 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     xmlFuzzResetFailure();
     strRes = xmlCanonicPath(BAD_CAST str1);
-    xmlFuzzCheckFailureReport("xmlCanonicPath",
-                              str1 != NULL && strRes == NULL, 0);
+    xmlFuzzCheckFailureReport("xmlCanonicPath", str1 != NULL && strRes == NULL,
+                              0);
     xmlFree(strRes);
 
     xmlFuzzResetFailure();
     strRes = xmlPathToURI(BAD_CAST str1);
-    xmlFuzzCheckFailureReport("xmlPathToURI",
-                              str1 != NULL && strRes == NULL, 0);
+    xmlFuzzCheckFailureReport("xmlPathToURI", str1 != NULL && strRes == NULL,
+                              0);
     xmlFree(strRes);
 
     xmlFuzzResetFailure();
@@ -88,8 +89,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     xmlFuzzResetFailure();
     strRes = xmlURIEscapeStr(BAD_CAST str1, BAD_CAST str2);
-    xmlFuzzCheckFailureReport("xmlURIEscapeStr",
-                              str1 != NULL && strRes == NULL, 0);
+    xmlFuzzCheckFailureReport("xmlURIEscapeStr", str1 != NULL && strRes == NULL,
+                              0);
     xmlFree(strRes);
 
     copy = (char *) xmlCharStrdup(str1);
@@ -103,14 +104,13 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 }
 
 size_t
-LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
-                        unsigned seed) {
+LLVMFuzzerCustomMutator (char *data, size_t size, size_t maxSize, unsigned seed)
+{
     static const xmlFuzzChunkDesc chunks[] = {
-        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
-        { 0, 0 }
+        {4, XML_FUZZ_PROB_ONE / 10}, /* failurePos */
+        {0, 0                     }
     };
 
     return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
                                LLVMFuzzerMutate);
 }
-
