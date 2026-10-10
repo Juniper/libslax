@@ -9,6 +9,7 @@
 #include "private/lint.h"
 
 int
-main(int argc, char **argv) {
-    return(xmllintMain(argc, (const char **) argv, stderr, NULL));
+main (int argc, char **argv)
+{
+    return xmllintMain(argc, (const char **) argv, stderr, NULL);
 }
