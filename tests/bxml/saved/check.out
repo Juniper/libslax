@@ -1,6 +1,4 @@
 Making check in fuzz
-/Applications/Xcode.app/Contents/Developer/usr/bin/make  testFuzzer
-make[3]: `testFuzzer' is up to date.
 /Applications/Xcode.app/Contents/Developer/usr/bin/make  check-local
 ./testFuzzer
 Successfully tested 2123 inputs
