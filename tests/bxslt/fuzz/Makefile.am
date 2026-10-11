@@ -7,7 +7,7 @@ if HAVE_LIBFUZZER
 noinst_PROGRAMS += xpath xslt
 endif
 
-noinst_PROGRAMS = testTargets
+noinst_PROGRAMS += testTargets
 
 EXTRA_DIST = xpath.dict xslt.dict
 CLEANFILES = $(noinst_PROGRAMS)
