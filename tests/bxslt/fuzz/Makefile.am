@@ -1,13 +1,16 @@
 LIBXSLT_LIBS = $(top_builddir)/libbxslt/libxslt/libbxslt.la \
                $(top_builddir)/libbxslt/libexslt/libexslt.la
 
-EXTRA_PROGRAMS = genSeed
+noinst_PROGRAMS = genSeed
+
 if HAVE_LIBFUZZER
-EXTRA_PROGRAMS += xpath xslt
+noinst_PROGRAMS += xpath xslt
 endif
+
 noinst_PROGRAMS = testTargets
+
 EXTRA_DIST = xpath.dict xslt.dict
-CLEANFILES = $(EXTRA_PROGRAMS)
+CLEANFILES = $(noinst_PROGRAMS)
 
 AM_CPPFLAGS = \
 -I$(top_builddir) \
