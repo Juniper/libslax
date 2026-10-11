@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/libbxml/include
 
 SUBDIRS = xmlspec multiple xinclude XSLTMark docbook fuzz
+
 if WITH_XSLT_PYTHON
 SUBDIRS += python
 endif
@@ -92,7 +93,7 @@ test-check:
 test-multiple:
 	@for file in multiple; do \
 		echo "... bxslt ... $$file ..." ; \
-		( cd $$file ; ${MAKE} tests ) \
+		( cd $$file ; ${MAKE} ${AM_MAKEFLAGS} tests ) \
 		> out/$$file.out 2> out/$$file.err ; \
 		${SHOW_DIFFS} ; \
 		done
