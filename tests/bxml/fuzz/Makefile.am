@@ -1,13 +1,17 @@
 AUTOMAKE_OPTIONS = -Wno-syntax
-EXTRA_PROGRAMS = genSeed
+
+noinst_PROGRAMS = genSeed
+
 if HAVE_LIBFUZZER
-EXTRA_PROGRAMS += api html lint reader regexp schema uri valid xinclude \
+noinst_PROGRAMS += api html lint reader regexp schema uri valid xinclude \
 		 xml xpath
 endif
-check_PROGRAMS = testFuzzer
+
+noinst_PROGRAMS += testFuzzer
 EXTRA_DIST = html.dict regexp.dict schema.dict xml.dict xpath.dict \
 	     fuzz.h
-CLEANFILES = $(EXTRA_PROGRAMS)
+CLEANFILES = $(noinst_PROGRAMS)
+
 AM_CPPFLAGS = -I$(top_srcdir)/libbxml/include -I$(top_builddir)/libbxml/include
 DEPENDENCIES = $(top_builddir)/libbxml/libbxml.la
 LDADD = $(top_builddir)/libbxml/libbxml.la
@@ -39,6 +43,8 @@ corpus: seed/html.stamp seed/lint.stamp seed/reader.stamp \
 check-local: corpus
 	./testFuzzer$(EXEEXT)
 
+all: corpus
+
 clean-corpus:
 	rm -rf seed
 
@@ -50,52 +56,62 @@ genSeed_SOURCES = genSeed.c fuzz.c
 
 seed/xml.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xml
-	./genSeed$(EXEEXT) xml $(XML_SEED_CORPUS_SRC)
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) xml $(XML_SEED_CORPUS_SRC)
 	@touch seed/xml.stamp
 
 seed/valid.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/valid
-	./genSeed$(EXEEXT) valid $(XML_SEED_CORPUS_SRC)
-	@touch seed/valid.stamp
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) valid $(XML_SEED_CORPUS_SRC)
+	@touch seed/valid.stamp 
 
 seed/xinclude.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xinclude
-	./genSeed$(EXEEXT) xinclude $(XML_SEED_CORPUS_SRC)
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) xinclude $(XML_SEED_CORPUS_SRC)
 	@touch seed/xinclude.stamp
 
 seed/html.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/html
-	./genSeed$(EXEEXT) html '$(top_srcdir)/tests/bxml/test/HTML/*'
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) html '$(top_srcdir)/tests/bxml/test/HTML/*'
 	@touch seed/html.stamp
 
 seed/reader.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/reader
-	./genSeed$(EXEEXT) reader $(XML_SEED_CORPUS_SRC)
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) reader $(XML_SEED_CORPUS_SRC)
 	@touch seed/reader.stamp
 
 seed/lint.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/lint
-	./genSeed$(EXEEXT) lint $(XML_SEED_CORPUS_SRC)
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) lint $(XML_SEED_CORPUS_SRC)
 	@touch seed/lint.stamp
 
 seed/schema.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/schema
-	./genSeed$(EXEEXT) schema '$(top_srcdir)/tests/bxml/test/schemas/*.xsd'
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) schema '$(top_srcdir)/tests/bxml/test/schemas/*.xsd'
 	@touch seed/schema.stamp
 
 seed/xpath.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xpath
-	./genSeed$(EXEEXT) xpath '$(top_srcdir)/tests/bxml/test/XPath'
+	@echo "  GEN      $@"
+	@./genSeed$(EXEEXT) xpath '$(top_srcdir)/tests/bxml/test/XPath'
 	@touch seed/xpath.stamp
 
 seed/regexp.stamp:
 	@mkdir -p seed/regexp
-	cp -R $(top_srcdir)/tests/bxml/test/regexp/. seed/regexp
+	@echo "  GEN      $@"
+	@cp -R $(top_srcdir)/tests/bxml/test/regexp/. seed/regexp
 	@touch seed/regexp.stamp
 
 seed/uri.stamp:
 	@mkdir -p seed/uri
-	cp -R $(top_srcdir)/tests/bxml/test/URI/. seed/uri
+	@echo "  GEN      $@"
+	@cp -R $(top_srcdir)/tests/bxml/test/URI/. seed/uri
 	@touch seed/uri.stamp
 
 # libFuzzer targets, built only when the compiler supports -fsanitize=fuzzer
