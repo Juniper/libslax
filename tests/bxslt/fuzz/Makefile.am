@@ -44,13 +44,19 @@ genSeed_SOURCES = genSeed.c fuzz.c
 
 # XPath fuzzer
 
+corpus: seed/xpath.stamp seed/xslt.stamp
+
+all: corpus
+
 seed/xpath.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xpath
+	@echo "  GEN      $@"
 	@./genSeed$(EXEEXT) xpath "$(top_srcdir)/tests/bxslt"
 	@touch seed/xpath.stamp
 
 seed/xslt.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xslt
+	@echo "  GEN      $@"
 	@./genSeed$(EXEEXT) xslt "$(top_srcdir)/tests/bxslt"
 	@touch seed/xslt.stamp
 
