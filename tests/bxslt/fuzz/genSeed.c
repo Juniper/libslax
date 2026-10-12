@@ -17,6 +17,7 @@
 #endif
 
 #include <libxml/parserInternals.h>
+#include <libxslt/documents.h>
 #include <libxslt/transform.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/xsltutils.h>
@@ -32,7 +33,7 @@ typedef int (*mainFunc)(const char *testsDir);
 static struct {
     FILE *out;
     xmlHashTablePtr entities; /* Maps URLs to xmlFuzzEntityInfos */
-    xmlExternalEntityLoader oldLoader;
+    xsltDocLoaderFunc oldLoader;
     fileFunc processFile;
     const char *fuzzer;
     const char *docDir;
@@ -40,49 +41,56 @@ static struct {
 } globalData;
 
 /*
- * A custom entity loader that writes all external DTDs or entities to a
+ * A custom resource loader that writes all external DTDs or entities to a
  * single file in the format expected by xmlFuzzEntityLoader.
  */
-static xmlParserInputPtr
-fuzzEntityRecorder (const char *URL, const char *ID, xmlParserCtxtPtr ctxt)
+static xmlParserErrors
+fuzzResourceRecorder (void *data ATTRIBUTE_UNUSED, const char *URL,
+                      const char *ID ATTRIBUTE_UNUSED,
+                      xmlResourceType type ATTRIBUTE_UNUSED,
+                      xmlParserInputFlags flags, xmlParserInputPtr *out)
 {
-    xmlParserInputPtr in;
-    xmlChar *data;
-    static const int chunkSize = 16384;
-    int len;
+    *out = NULL;
 
-    in = xmlNoNetExternalEntityLoader(URL, ID, ctxt);
-    if (in == NULL)
-        return NULL;
+    if (globalData.entities == NULL
+        || xmlHashLookup(globalData.entities, BAD_CAST URL) == NULL) {
+        data = xmlSlurpFile(URL, NULL);
 
-    if (globalData.entities == NULL) {
-        globalData.entities = xmlHashCreate(4);
-    } else if (xmlHashLookup(globalData.entities, (const xmlChar *) URL)
-               != NULL) {
-        return in;
+        if (globalData.entities == NULL)
+            globalData.entities = xmlHashCreate(4);
+
+        xmlHashAddEntry(globalData.entities, (const xmlChar *) URL, data);
     }
 
-    do {
-        len = xmlParserInputBufferGrow(in->buf, chunkSize);
-        if (len < 0) {
-            fprintf(stderr, "Error reading %s\n", URL);
-            xmlFreeInputStream(in);
-            return NULL;
-        }
-    } while (len > 0);
+    return xmlNewInputFromUrl(URL, flags, out);
+}
 
-    data = xmlStrdup(xmlBufContent(in->buf->buffer));
-    if (data == NULL) {
-        fprintf(stderr, "Error allocating entity data\n");
-        xmlFreeInputStream(in);
+/*
+ * A custom document loader for libxslt (used for the top-level stylesheet,
+ * xsl:include/xsl:import, and document()) that parses through the modern
+ * per-context resource loader, so every resource it touches is captured by
+ * fuzzResourceRecorder the same way as a plain XML parse.
+ */
+static xmlDocPtr
+fuzzDocLoader (const xmlChar *URI, xmlDictPtr dict, int options,
+              void *ctxt ATTRIBUTE_UNUSED, xsltLoadType type ATTRIBUTE_UNUSED)
+{
+    xmlParserCtxtPtr pctxt;
+    xmlDocPtr doc;
+
+    pctxt = xmlNewParserCtxt();
+    if (pctxt == NULL)
         return NULL;
-    }
+    if (dict != NULL)
+        xmlCtxtSetDict(pctxt, dict);
+    xmlCtxtSetErrorHandler(pctxt, xmlFuzzSErrorFunc, NULL);
+    xmlCtxtSetResourceLoader(pctxt, fuzzResourceRecorder, NULL);
 
-    xmlFreeInputStream(in);
+    doc = xmlCtxtReadFile(pctxt, (const char *) URI, NULL, options);
 
-    xmlHashAddEntry(globalData.entities, (const xmlChar *) URL, data);
+    xmlFreeParserCtxt(pctxt);
 
-    return xmlNoNetExternalEntityLoader(URL, ID, ctxt);
+    return doc;
 }
 
 static void
@@ -90,8 +98,8 @@ fuzzRecorderInit (FILE *out)
 {
     globalData.out = out;
     globalData.entities = xmlHashCreate(8);
-    globalData.oldLoader = xmlGetExternalEntityLoader();
-    xmlSetExternalEntityLoader(fuzzEntityRecorder);
+    globalData.oldLoader = xsltDocDefaultLoader;
+    xsltSetLoaderFunc(fuzzDocLoader);
 }
 
 static void
@@ -113,7 +121,7 @@ fuzzRecorderWrite (const char *file)
 static void
 fuzzRecorderCleanup ()
 {
-    xmlSetExternalEntityLoader(globalData.oldLoader);
+    xsltSetLoaderFunc(globalData.oldLoader);
     /* Write remaining entities (in random order). */
     xmlHashFree(globalData.entities, fuzzRecorderWriteAndFree);
     globalData.out = NULL;
@@ -126,6 +134,7 @@ processXslt (const char *sheetFile, FILE *out)
 {
     struct stat statbuf;
     xsltStylesheetPtr sheet;
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     char docFile[PATH_SIZE];
     char base[PATH_SIZE] = "";
@@ -160,7 +169,13 @@ processXslt (const char *sheetFile, FILE *out)
     fuzzRecorderInit(out);
 
     sheet = xsltParseStylesheetFile(BAD_CAST sheetFile);
-    doc = xmlReadFile(docFile, NULL, XSLT_PARSE_OPTIONS);
+
+    ctxt = xmlNewParserCtxt();
+    xmlCtxtSetErrorHandler(ctxt, xmlFuzzSErrorFunc, NULL);
+    xmlCtxtSetResourceLoader(ctxt, fuzzResourceRecorder, NULL);
+    doc = xmlCtxtReadFile(ctxt, docFile, NULL, XSLT_PARSE_OPTIONS);
+    xmlFreeParserCtxt(ctxt);
+
     xmlFreeDoc(xsltApplyStylesheet(sheet, doc, NULL));
     xmlFreeDoc(doc);
     xsltFreeStylesheet(sheet);
