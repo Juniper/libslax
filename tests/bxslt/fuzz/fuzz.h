@@ -40,6 +40,9 @@ void xsltFuzzXsltCleanup (void);
 void xmlFuzzErrorFunc (void *ctx ATTRIBUTE_UNUSED,
                        const char *msg ATTRIBUTE_UNUSED, ...);
 
+void xmlFuzzSErrorFunc (void *ctx ATTRIBUTE_UNUSED,
+                        const xmlError *error ATTRIBUTE_UNUSED);
+
 void xmlFuzzMemSetup (void);
 
 void xmlFuzzMemSetLimit (size_t limit);
@@ -70,5 +73,7 @@ const char *xmlFuzzSecondaryEntity (size_t *size);
 
 xmlParserInputPtr xmlFuzzEntityLoader (const char *URL, const char *ID,
                                        xmlParserCtxtPtr ctxt);
+
+char *xmlSlurpFile (const char *path, size_t *size);
 
 #endif
