@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>
@@ -405,6 +406,16 @@ xmlFuzzErrorFunc (void *ctx ATTRIBUTE_UNUSED, const char *msg ATTRIBUTE_UNUSED,
                   ...)
 {}
 
+/**
+ * xmlFuzzSErrorFunc:
+ *
+ * A structured error function that simply discards all errors.
+ */
+void
+xmlFuzzSErrorFunc (void *ctx ATTRIBUTE_UNUSED,
+                   const xmlError *error ATTRIBUTE_UNUSED)
+{}
+
 /*
  * Malloc failure injection.
  *
@@ -757,4 +768,41 @@ xmlFuzzEntityLoader (const char *URL, const char *ID ATTRIBUTE_UNUSED,
         return NULL;
 
     return xmlNewIOInputStream(ctxt, buf, XML_CHAR_ENCODING_NONE);
+}
+
+/**
+ * xmlSlurpFile:
+ * @path:  path to file
+ * @sizeRet:  size of file in bytes
+ *
+ * Read a file into a zero-terminated buffer.
+ */
+char *
+xmlSlurpFile (const char *path, size_t *sizeRet)
+{
+    FILE *file;
+    struct stat statbuf;
+    char *data;
+    size_t size;
+
+    if ((stat(path, &statbuf) != 0) || (!S_ISREG(statbuf.st_mode)))
+        return NULL;
+    size = statbuf.st_size;
+    file = fopen(path, "rb");
+    if (file == NULL)
+        return NULL;
+    data = xmlMalloc(size + 1);
+    if (data != NULL) {
+        if (fread(data, 1, size, file) != size) {
+            xmlFree(data);
+            data = NULL;
+        } else {
+            data[size] = 0;
+            if (sizeRet != NULL)
+                *sizeRet = size;
+        }
+    }
+    fclose(file);
+
+    return data;
 }
