@@ -124,8 +124,10 @@ typedef enum {
  * Control the type of xsl debugtrace messages emitted.
  */
 #define XSLT_TRACE(ctxt, code, call)                    \
-    if (ctxt->traceCode && (*(ctxt->traceCode) & code)) \
-    call
+    do { \
+        if ((ctxt)->traceCode && (*((ctxt)->traceCode) & (code)))	\
+	    call ; \
+    } while (0)
 
 XSLTPUBFUN void XSLTCALL xsltDebugSetDefaultTrace (xsltDebugTraceCodes val);
 XSLTPUBFUN xsltDebugTraceCodes XSLTCALL xsltDebugGetDefaultTrace (void);
