@@ -129,19 +129,19 @@ static const long daysInMonthLeap[12]
 #define MAX_DAYINMONTH(yr, mon) \
     (IS_LEAP(yr) ? daysInMonthLeap[mon - 1] : daysInMonth[mon - 1])
 
-#define VALID_MDAY(dt)                                             \
-    (IS_LEAP(dt->year) ? (dt->day <= daysInMonthLeap[dt->mon - 1]) \
-                       : (dt->day <= daysInMonth[dt->mon - 1]))
+#define VALID_MDAY(dt)                                                   \
+    (IS_LEAP((dt)->year) ? ((dt)->day <= daysInMonthLeap[(dt)->mon - 1]) \
+                         : ((dt)->day <= daysInMonth[(dt)->mon - 1]))
 
-#define VALID_DATE(dt) (VALID_MONTH(dt->mon) && VALID_MDAY(dt))
+#define VALID_DATE(dt) (VALID_MONTH((dt)->mon) && VALID_MDAY(dt))
 
 /*
     hour and min structure vals are unsigned, so normal macros give
     warnings on some compilers.
 */
-#define VALID_TIME(dt)                                         \
-    ((dt->hour <= 23) && (dt->min <= 59) && VALID_SEC(dt->sec) \
-     && VALID_TZO(dt->tzo))
+#define VALID_TIME(dt)                                              \
+    (((dt)->hour <= 23) && ((dt)->min <= 59) && VALID_SEC((dt)->sec) \
+     && VALID_TZO((dt)->tzo))
 
 #define VALID_DATETIME(dt) (VALID_DATE(dt) && VALID_TIME(dt))
 
@@ -1442,8 +1442,9 @@ _exsltDateCastYMToDays (const exsltDateValPtr dt)
  *
  * Returns seconds.
  */
-#define TIME_TO_NUMBER(dt) \
-    ((double) ((dt->hour * SECS_PER_HOUR) + (dt->min * SECS_PER_MIN)) + dt->sec)
+#define TIME_TO_NUMBER(dt)                                                       \
+    ((double) (((dt)->hour * SECS_PER_HOUR) + ((dt)->min * SECS_PER_MIN)) + \
+     (dt)->sec)
 
 /**
  * _exsltDateTruncateDate:
