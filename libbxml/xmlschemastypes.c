@@ -3741,10 +3741,11 @@ xmlSchemaCompareDurations (xmlSchemaValPtr x, xmlSchemaValPtr y)
 /*
  * macros for adding date/times and durations
  */
-#define FQUOTIENT(a, b)               (floor(((double) a / (double) b)))
-#define MODULO(a, b)                  (a - FQUOTIENT(a, b) * b)
-#define FQUOTIENT_RANGE(a, low, high) (FQUOTIENT((a - low), (high - low)))
-#define MODULO_RANGE(a, low, high)    ((MODULO((a - low), (high - low))) + low)
+#define FQUOTIENT(a, b)               (floor(((double) (a) / (double) (b))))
+#define MODULO(a, b)                  ((a) - FQUOTIENT(a, b) * (b))
+#define FQUOTIENT_RANGE(a, low, high) (FQUOTIENT(((a) - (low)), ((high) - (low))))
+#define MODULO_RANGE(a, low, high) \
+    ((MODULO(((a) - (low)), ((high) - (low)))) + (low))
 
 /**
  * Makes a copy of `v`. The calling program is responsible for freeing
@@ -4104,11 +4105,11 @@ _xmlSchemaDateCastYMToDays (const xmlSchemaValPtr dt)
  * @param dt  an xmlSchemaVal
  * @returns seconds.
  */
-#define TIME_TO_NUMBER(dt)                            \
-    ((double) ((dt->value.date.hour * SECS_PER_HOUR)  \
-               + (dt->value.date.min * SECS_PER_MIN)  \
-               + (dt->value.date.tzo * SECS_PER_MIN)) \
-     + dt->value.date.sec)
+#define TIME_TO_NUMBER(dt)                                   \
+    ((double) (((dt)->value.date.hour * SECS_PER_HOUR)       \
+               + ((dt)->value.date.min * SECS_PER_MIN)       \
+               + ((dt)->value.date.tzo * SECS_PER_MIN))      \
+     + (dt)->value.date.sec)
 
 /**
  * Compare 2 date/times
