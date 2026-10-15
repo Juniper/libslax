@@ -275,6 +275,9 @@ typedef void (*xsltHandleDebuggerCallback)(xmlNodePtr cur, xmlNodePtr node,
                                            xsltTransformContextPtr ctxt);
 typedef int (*xsltAddCallCallback)(xsltTemplatePtr templ, xmlNodePtr source);
 typedef void (*xsltDropCallCallback)(void);
+typedef void (*xsltHandleDebuggerErrorCallback)(xmlNodePtr cur,
+                                           xsltTransformContextPtr ctxt,
+                                           const char *message);
 
 XSLTPUBFUN int XSLTCALL xsltGetDebuggerStatus (void);
 #ifdef WITH_DEBUGGER
