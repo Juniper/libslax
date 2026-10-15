@@ -1,0 +1,12 @@
+version 1.0;
+
+main <top> {
+    var $a = {
+        <item> 1;
+        <item> 2;
+        <item> 3;
+        <item> 4;
+    }
+
+    var $b = $a/item[. == 2];
+}
