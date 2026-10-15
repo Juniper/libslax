@@ -620,7 +620,7 @@ xmlListWalk (xmlList *l, xmlListWalker walker, void *user)
 {
     xmlLinkPtr lk;
 
-    if ((l == NULL) || (walker == NULL))
+    if (l == NULL || walker == NULL)
         return;
     for (lk = l->sentinel->next; lk != l->sentinel; lk = lk->next) {
         if ((walker(lk->data, user)) == 0)
@@ -641,7 +641,7 @@ xmlListReverseWalk (xmlList *l, xmlListWalker walker, void *user)
 {
     xmlLinkPtr lk;
 
-    if ((l == NULL) || (walker == NULL))
+    if (l == NULL || walker == NULL)
         return;
     for (lk = l->sentinel->prev; lk != l->sentinel; lk = lk->prev) {
         if ((walker(lk->data, user)) == 0)
@@ -703,7 +703,7 @@ xmlListCopy (xmlList *cur, xmlList *old)
     /* Walk the old tree and insert the data into the new one */
     xmlLinkPtr lk;
 
-    if ((old == NULL) || (cur == NULL))
+    if (old == NULL || cur == NULL)
         return 1;
     for (lk = old->sentinel->next; lk != old->sentinel; lk = lk->next) {
         if (0 != xmlListInsert(cur, lk->data)) {
