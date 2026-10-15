@@ -150,7 +150,7 @@ xmlDictAddString (xmlDictPtr dict, const xmlChar *name, unsigned int namelen)
      * Not found, need to allocate
      */
     if (pool == NULL) {
-        if ((dict->limit > 0) && (limit > dict->limit)) {
+        if (dict->limit > 0 && limit > dict->limit) {
             return NULL;
         }
 
@@ -220,7 +220,7 @@ xmlDictAddQString (xmlDictPtr dict, const xmlChar *prefix, unsigned int plen,
      * Not found, need to allocate
      */
     if (pool == NULL) {
-        if ((dict->limit > 0) && (limit > dict->limit)) {
+        if (dict->limit > 0 && limit > dict->limit) {
             return NULL;
         }
 
@@ -296,7 +296,7 @@ xmlDictCreateSub (xmlDict *sub)
 {
     xmlDictPtr dict = xmlDictCreate();
 
-    if ((dict != NULL) && (sub != NULL)) {
+    if (dict != NULL && sub != NULL) {
         dict->seed = sub->seed;
         dict->subdict = sub;
         xmlDictReference(dict->subdict);
@@ -374,11 +374,11 @@ xmlDictOwns (xmlDict *dict, const xmlChar *str)
 {
     xmlDictStringsPtr pool;
 
-    if ((dict == NULL) || (str == NULL))
+    if (dict == NULL || str == NULL)
         return -1;
     pool = dict->strings;
     while (pool != NULL) {
-        if ((str >= &pool->array[0]) && (str <= pool->free))
+        if (str >= &pool->array[0] && str <= pool->free)
             return 1;
         pool = pool->next;
     }
@@ -581,10 +581,10 @@ xmlDictFindEntry (const xmlDict *dict, const xmlChar *prefix,
                     /*
                      * name is not necessarily null-terminated.
                      */
-                    if ((strncmp((const char *) entry->name,
+                    if (strncmp((const char *) entry->name,
                                  (const char *) name, len)
-                         == 0)
-                        && (entry->name[len] == 0)) {
+                         == 0
+                        && entry->name[len] == 0) {
                         found = 1;
                         break;
                     }
@@ -601,8 +601,8 @@ xmlDictFindEntry (const xmlDict *dict, const xmlChar *prefix,
             entry++;
             if ((pos & mask) == 0)
                 entry = dict->table;
-        } while ((entry->hashValue != 0)
-                 && (((pos - entry->hashValue) & mask) >= displ));
+        } while (entry->hashValue != 0
+                 && ((pos - entry->hashValue) & mask) >= displ);
     }
 
     *pfound = found;
@@ -695,7 +695,7 @@ xmlDictLookupInternal (xmlDict *dict, const xmlChar *prefix,
     size_t maxLen, len, plen, klen;
     int found = 0;
 
-    if ((dict == NULL) || (name == NULL))
+    if (dict == NULL || name == NULL)
         return NULL;
 
     maxLen = (maybeLen < 0) ? SIZE_MAX : (size_t) maybeLen;
@@ -707,12 +707,12 @@ xmlDictLookupInternal (xmlDict *dict, const xmlChar *prefix,
         klen = len;
     } else {
         hashValue = xmlDictHashQName(dict->seed, prefix, name, &plen, &len);
-        if ((len > INT_MAX / 2) || (plen >= INT_MAX / 2 - len))
+        if (len > INT_MAX / 2 || plen >= INT_MAX / 2 - len)
             return NULL;
         klen = plen + 1 + len;
     }
 
-    if ((dict->limit > 0) && (klen >= dict->limit))
+    if (dict->limit > 0 && klen >= dict->limit)
         return NULL;
 
     /*
@@ -734,7 +734,7 @@ xmlDictLookupInternal (xmlDict *dict, const xmlChar *prefix,
         }
     }
 
-    if ((dict->subdict != NULL) && (dict->subdict->size > 0)) {
+    if (dict->subdict != NULL && dict->subdict->size > 0) {
         xmlDictEntry *subEntry;
         unsigned subHashValue;
 
@@ -770,7 +770,7 @@ xmlDictLookupInternal (xmlDict *dict, const xmlChar *prefix,
         pos = hashValue & mask;
         entry = &dict->table[pos];
 
-        while ((entry->hashValue != 0)
+        while (entry->hashValue != 0
                && ((pos - entry->hashValue) & mask) >= displ) {
             displ++;
             pos++;
