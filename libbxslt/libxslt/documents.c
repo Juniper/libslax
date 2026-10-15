@@ -288,7 +288,7 @@ xsltLoadDocument (xsltTransformContextPtr ctxt, const xmlChar *URI)
     xsltDocumentPtr ret;
     xmlDocPtr doc;
 
-    if ((ctxt == NULL) || (URI == NULL))
+    if (ctxt == NULL || URI == NULL)
         return NULL;
 
     /*
@@ -312,8 +312,8 @@ xsltLoadDocument (xsltTransformContextPtr ctxt, const xmlChar *URI)
      */
     ret = ctxt->docList;
     while (ret != NULL) {
-        if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL)
-            && (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
+        if (ret->doc != NULL && xmlDocGetURL(ret->doc) != NULL
+            && xmlStrEqual(xmlDocGetURL(ret->doc), URI))
             return ret;
         ret = ret->next;
     }
@@ -366,7 +366,7 @@ xsltLoadStyleDocument (xsltStylesheetPtr style, const xmlChar *URI)
     xmlDocPtr doc;
     xsltSecurityPrefsPtr sec;
 
-    if ((style == NULL) || (URI == NULL))
+    if (style == NULL || URI == NULL)
         return NULL;
 
     /*
@@ -391,8 +391,8 @@ xsltLoadStyleDocument (xsltStylesheetPtr style, const xmlChar *URI)
      */
     ret = style->docList;
     while (ret != NULL) {
-        if ((ret->doc != NULL) && (xmlDocGetURL(ret->doc) != NULL)
-            && (xmlStrEqual(xmlDocGetURL(ret->doc), URI)))
+        if (ret->doc != NULL && xmlDocGetURL(ret->doc) != NULL
+            && xmlStrEqual(xmlDocGetURL(ret->doc), URI))
             return ret;
         ret = ret->next;
     }
@@ -424,7 +424,7 @@ xsltFindDocument (xsltTransformContextPtr ctxt, xmlDocPtr doc)
 {
     xsltDocumentPtr ret;
 
-    if ((ctxt == NULL) || (doc == NULL))
+    if (ctxt == NULL || doc == NULL)
         return NULL;
 
     /*
