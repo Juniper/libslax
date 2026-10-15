@@ -40,7 +40,7 @@ xmlGrowCapacity (int capacity, size_t elemSize, int min, int max)
 #endif
     }
 
-    if ((capacity >= max) || ((size_t) capacity > SIZE_MAX / 2 / elemSize))
+    if (capacity >= max || (size_t) capacity > SIZE_MAX / 2 / elemSize)
         return -1;
 
     /* Grow by 50% */
