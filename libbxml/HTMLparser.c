@@ -148,9 +148,9 @@ static void LIBXML_ATTR_FORMAT(3, 0)
 static int
 htmlnamePush (htmlParserCtxtPtr ctxt, const xmlChar *value)
 {
-    if ((ctxt->html < INSERT_IN_HEAD) && (xmlStrEqual(value, BAD_CAST "head")))
+    if (ctxt->html < INSERT_IN_HEAD && xmlStrEqual(value, BAD_CAST "head"))
         ctxt->html = INSERT_IN_HEAD;
-    if ((ctxt->html < INSERT_IN_BODY) && (xmlStrEqual(value, BAD_CAST "body")))
+    if (ctxt->html < INSERT_IN_BODY && xmlStrEqual(value, BAD_CAST "body"))
         ctxt->html = INSERT_IN_BODY;
     if (ctxt->nameNr >= ctxt->nameMax) {
         const xmlChar **tmp;
@@ -322,10 +322,10 @@ htmlFindEncoding (xmlParserCtxtPtr ctxt)
     const xmlChar *start, *cur, *end;
     xmlChar *ret;
 
-    if ((ctxt == NULL) || (ctxt->input == NULL)
+    if (ctxt == NULL || ctxt->input == NULL
         || (ctxt->input->flags & XML_INPUT_HAS_ENCODING))
         return NULL;
-    if ((ctxt->input->cur == NULL) || (ctxt->input->end == NULL))
+    if (ctxt->input->cur == NULL || ctxt->input->end == NULL)
         return NULL;
 
     start = ctxt->input->cur;
@@ -345,8 +345,8 @@ htmlFindEncoding (xmlParserCtxtPtr ctxt)
         return NULL;
     cur += 8;
     start = cur;
-    while ((IS_ALNUM(*cur)) || (*cur == '-') || (*cur == '_') || (*cur == ':')
-           || (*cur == '/'))
+    while (IS_ALNUM(*cur) || *cur == '-' || *cur == '_' || *cur == ':'
+           || *cur == '/')
         cur++;
     if (cur == start)
         return NULL;
@@ -388,8 +388,8 @@ htmlValidateUtf8 (xmlParserCtxtPtr ctxt, const xmlChar *str, size_t len,
         v = str[1] << 8 | str[2]; /* hint to generate 16-bit load */
         v |= c << 16;
 
-        if (((v & 0x00C0C0) != 0x008080) || ((v & 0x0F2000) == 0x000000)
-            || ((v & 0x0F2000) == 0x0D2000))
+        if ((v & 0x00C0C0) != 0x008080 || (v & 0x0F2000) == 0x000000
+            || (v & 0x0F2000) == 0x0D2000)
             goto invalid;
 
         size = 3;
@@ -401,8 +401,8 @@ htmlValidateUtf8 (xmlParserCtxtPtr ctxt, const xmlChar *str, size_t len,
 
         v = c << 24 | str[1] << 16 | str[2] << 8 | str[3];
 
-        if (((v & 0x00C0C0C0) != 0x00808080) || (v < 0xF0900000)
-            || (v >= 0xF4900000))
+        if ((v & 0x00C0C0C0) != 0x00808080 || v < 0xF0900000
+            || v >= 0xF4900000)
             goto invalid;
 
         size = 4;
@@ -1047,8 +1047,8 @@ htmlGetEndPriority (const xmlChar *name)
 {
     int i = 0;
 
-    while ((htmlEndPriority[i].name != NULL)
-           && (!xmlStrEqual((const xmlChar *) htmlEndPriority[i].name, name)))
+    while (htmlEndPriority[i].name != NULL
+           && !xmlStrEqual((const xmlChar *) htmlEndPriority[i].name, name))
         i++;
 
     return htmlEndPriority[i].priority;
@@ -1124,13 +1124,13 @@ htmlAutoCloseOnClose (htmlParserCtxtPtr ctxt, const xmlChar *newtag)
 
     while (!xmlStrEqual(newtag, ctxt->name)) {
         info = htmlTagLookup(ctxt->name);
-        if ((info != NULL) && (info->endTag == 3)) {
+        if (info != NULL && info->endTag == 3) {
             htmlParseErr(ctxt, XML_ERR_TAG_NAME_MISMATCH,
                          "Opening and ending tag mismatch: %s and %s\n", newtag,
                          ctxt->name);
         }
         htmlParserFinishElementParsing(ctxt);
-        if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
             ctxt->sax->endElement(ctxt->userData, ctxt->name);
         htmlnamePop(ctxt);
     }
@@ -1153,7 +1153,7 @@ htmlAutoCloseOnEnd (htmlParserCtxtPtr ctxt)
         return;
     for (i = (ctxt->nameNr - 1); i >= 0; i--) {
         htmlParserFinishElementParsing(ctxt);
-        if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
             ctxt->sax->endElement(ctxt->userData, ctxt->name);
         htmlnamePop(ctxt);
     }
@@ -1179,9 +1179,9 @@ htmlAutoClose (htmlParserCtxtPtr ctxt, const xmlChar *newtag)
     if (newtag == NULL)
         return;
 
-    while ((ctxt->name != NULL) && (htmlCheckAutoClose(newtag, ctxt->name))) {
+    while (ctxt->name != NULL && htmlCheckAutoClose(newtag, ctxt->name)) {
         htmlParserFinishElementParsing(ctxt);
-        if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
             ctxt->sax->endElement(ctxt->userData, ctxt->name);
         htmlnamePop(ctxt);
     }
@@ -1268,13 +1268,13 @@ htmlCheckImplied (htmlParserCtxtPtr ctxt, const xmlChar *newtag)
         return;
     if (ctxt->nameNr <= 0) {
         htmlnamePush(ctxt, BAD_CAST "html");
-        if ((ctxt->sax != NULL) && (ctxt->sax->startElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->startElement != NULL)
             ctxt->sax->startElement(ctxt->userData, BAD_CAST "html", NULL);
     }
-    if ((xmlStrEqual(newtag, BAD_CAST "body"))
-        || (xmlStrEqual(newtag, BAD_CAST "head")))
+    if (xmlStrEqual(newtag, BAD_CAST "body")
+        || xmlStrEqual(newtag, BAD_CAST "head"))
         return;
-    if ((ctxt->nameNr <= 1)
+    if (ctxt->nameNr <= 1
         && ((xmlStrEqual(newtag, BAD_CAST "script"))
             || (xmlStrEqual(newtag, BAD_CAST "style"))
             || (xmlStrEqual(newtag, BAD_CAST "meta"))
@@ -1290,11 +1290,11 @@ htmlCheckImplied (htmlParserCtxtPtr ctxt, const xmlChar *newtag)
          * assumed !
          */
         htmlnamePush(ctxt, BAD_CAST "head");
-        if ((ctxt->sax != NULL) && (ctxt->sax->startElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->startElement != NULL)
             ctxt->sax->startElement(ctxt->userData, BAD_CAST "head", NULL);
-    } else if ((!xmlStrEqual(newtag, BAD_CAST "noframes"))
-               && (!xmlStrEqual(newtag, BAD_CAST "frame"))
-               && (!xmlStrEqual(newtag, BAD_CAST "frameset"))) {
+    } else if (!xmlStrEqual(newtag, BAD_CAST "noframes")
+               && !xmlStrEqual(newtag, BAD_CAST "frame")
+               && !xmlStrEqual(newtag, BAD_CAST "frameset")) {
         if (ctxt->html >= INSERT_IN_BODY) {
             /* we already saw or generated a <body> before */
             return;
@@ -1309,7 +1309,7 @@ htmlCheckImplied (htmlParserCtxtPtr ctxt, const xmlChar *newtag)
         }
 
         htmlnamePush(ctxt, BAD_CAST "body");
-        if ((ctxt->sax != NULL) && (ctxt->sax->startElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->startElement != NULL)
             ctxt->sax->startElement(ctxt->userData, BAD_CAST "body", NULL);
     }
 }
@@ -1351,7 +1351,7 @@ htmlIsScriptAttribute (const xmlChar *name)
     /*
      * all script attributes start with 'on'
      */
-    if ((name[0] != 'o') || (name[1] != 'n'))
+    if (name[0] != 'o' || name[1] != 'n')
         return 0;
     for (i = 0;
          i < sizeof(htmlScriptAttributes) / sizeof(htmlScriptAttributes[0]);
@@ -1769,7 +1769,7 @@ htmlUTF8ToHtml (unsigned char *out, int *outlen, const unsigned char *in,
     unsigned char *outend;
     int ret = XML_ENC_ERR_SPACE;
 
-    if ((out == NULL) || (outlen == NULL) || (inlen == NULL))
+    if (out == NULL || outlen == NULL || inlen == NULL)
         return XML_ENC_ERR_INTERNAL;
 
     if (in == NULL) {
@@ -1880,7 +1880,7 @@ htmlEncodeEntities (unsigned char *out, int *outlen, const unsigned char *in,
     unsigned int c, d;
     int trailing;
 
-    if ((out == NULL) || (outlen == NULL) || (inlen == NULL) || (in == NULL))
+    if (out == NULL || outlen == NULL || inlen == NULL || in == NULL)
         return -1;
     outend = out + (*outlen);
     inend = in + (*inlen);
@@ -1924,8 +1924,8 @@ htmlEncodeEntities (unsigned char *out, int *outlen, const unsigned char *in,
         }
 
         /* assertion: c is a single UTF-4 value */
-        if ((c < 0x80) && (c != (unsigned int) quoteChar) && (c != '&')
-            && (c != '<') && (c != '>')) {
+        if (c < 0x80 && c != (unsigned int) quoteChar && c != '&'
+            && c != '<' && c != '>') {
             if (out >= outend)
                 break;
             *out++ = c;
@@ -2027,11 +2027,11 @@ areBlanks (htmlParserCtxtPtr ctxt, const xmlChar *str, int len)
     if (ctxt->node == NULL)
         return 0;
     lastChild = xmlGetLastChild(ctxt->node);
-    while ((lastChild) && (lastChild->type == XML_COMMENT_NODE))
+    while (lastChild && lastChild->type == XML_COMMENT_NODE)
         lastChild = lastChild->prev;
     if (lastChild == NULL) {
-        if ((ctxt->node->type != XML_ELEMENT_NODE)
-            && (ctxt->node->content != NULL))
+        if (ctxt->node->type != XML_ELEMENT_NODE
+            && ctxt->node->content != NULL)
             return 0;
         /* keep ws in constructs like ...<b> </b>...
 	   for all tags "b" allowing PCDATA */
@@ -2091,7 +2091,7 @@ htmlNewDocNoDtD (const xmlChar *URI, const xmlChar *publicId)
     cur->_private = NULL;
     cur->charset = XML_CHAR_ENCODING_UTF8;
     cur->properties = XML_DOC_HTML | XML_DOC_USERBUILT;
-    if ((publicId != NULL) || (URI != NULL)) {
+    if (publicId != NULL || URI != NULL) {
         xmlDtdPtr intSubset;
 
         intSubset = xmlCreateIntSubset(cur, BAD_CAST "html", publicId, URI);
@@ -2100,7 +2100,7 @@ htmlNewDocNoDtD (const xmlChar *URI, const xmlChar *publicId)
             return NULL;
         }
     }
-    if ((xmlRegisterCallbacks) && (xmlRegisterNodeDefaultValue))
+    if (xmlRegisterCallbacks && (xmlRegisterNodeDefaultValue))
         xmlRegisterNodeDefaultValue((xmlNodePtr) cur);
     return cur;
 }
@@ -2115,7 +2115,7 @@ htmlNewDocNoDtD (const xmlChar *URI, const xmlChar *publicId)
 xmlDoc *
 htmlNewDoc (const xmlChar *URI, const xmlChar *publicId)
 {
-    if ((URI == NULL) && (publicId == NULL))
+    if (URI == NULL && publicId == NULL)
         return htmlNewDocNoDtD(
             BAD_CAST "http://www.w3.org/TR/REC-html40/loose.dtd",
             BAD_CAST "-//W3C//DTD HTML 4.0 Transitional//EN");
@@ -2162,7 +2162,7 @@ htmlParseHTMLName (htmlParserCtxtPtr ctxt, int attr)
     while (1) {
         int c, size;
 
-        if ((!eof) && (avail < 32)) {
+        if (!eof && avail < 32) {
             size_t oldAvail = avail;
 
             ctxt->input->cur = in;
@@ -2183,7 +2183,7 @@ htmlParseHTMLName (htmlParserCtxtPtr ctxt, int attr)
         c = *in;
         size = 1;
 
-        if ((nbchar != 0)
+        if (nbchar != 0
             && ((c == '/') || (c == '>') || (c == stop) || (IS_WS_HTML(c))))
             break;
 
@@ -2245,9 +2245,9 @@ htmlCodePointToUtf8 (int c, xmlChar *out, int *osize)
     int i = 0;
     int bits, hi;
 
-    if ((c >= 0x80) && (c < 0xA0)) {
+    if (c >= 0x80 && c < 0xA0) {
         c = htmlC1Remap[c - 0x80];
-    } else if ((c <= 0) || ((c >= 0xD800) && (c < 0xE000)) || (c > 0x10FFFF)) {
+    } else if (c <= 0 || c >= 0xD800 && c < 0xE000 || c > 0x10FFFF) {
         c = 0xFFFD;
     }
 
@@ -2356,7 +2356,7 @@ htmlFindEntityPrefix (const xmlChar *string, size_t slen, int isAttr, int *nlen,
                 if (isTerm)
                     match += 2;
 
-                if ((isAlnum) && (soff + len < slen)) {
+                if (isAlnum && soff + len < slen) {
                     left = mid + bytes[len + 1];
                     right = left + bytes[len + 2];
                     soff += len;
@@ -2436,7 +2436,7 @@ htmlParseData (htmlParserCtxtPtr ctxt, htmlAsciiMask mask, int comment,
             size_t j;
             int cur, size;
 
-            if ((!eof) && (avail <= 64)) {
+            if (!eof && avail <= 64) {
                 size_t oldAvail = avail;
                 size_t off = in - chunk;
 
@@ -2491,9 +2491,9 @@ htmlParseData (htmlParserCtxtPtr ctxt, htmlAsciiMask mask, int comment,
                 int lc = cur | 0x20;
                 int digit;
 
-                if ((cur >= '0') && (cur <= '9')) {
+                if (cur >= '0' && cur <= '9') {
                     digit = cur - '0';
-                } else if ((ncr == 16) && (lc >= 'a') && (lc <= 'f')) {
+                } else if (ncr == 16 && lc >= 'a' && lc <= 'f') {
                     digit = (lc - 'a') + 10;
                 } else {
                     if (cur == ';') {
@@ -2520,12 +2520,12 @@ htmlParseData (htmlParserCtxtPtr ctxt, htmlAsciiMask mask, int comment,
 
                 j = 1;
 
-                if ((j < avail) && (in[j] == '#')) {
+                if (j < avail && in[j] == '#') {
                     j += 1;
                     if (j < avail) {
                         if ((in[j] | 0x20) == 'x') {
                             j += 1;
-                            if ((j < avail) && (IS_HEX_DIGIT(in[j]))) {
+                            if (j < avail && (IS_HEX_DIGIT(in[j]))) {
                                 ncr = 16;
                                 size = 3;
                                 ncrSize = 3;
@@ -2737,13 +2737,13 @@ static void
 htmlCharDataSAXCallback (htmlParserCtxtPtr ctxt, const xmlChar *buf, int size,
                          int mode)
 {
-    if ((ctxt->sax == NULL) || (ctxt->disableSAX))
+    if (ctxt->sax == NULL || ctxt->disableSAX)
         return;
 
-    if ((mode == 0) || (mode == DATA_RCDATA)
-        || (ctxt->sax->cdataBlock == NULL)) {
-        if ((ctxt->name == NULL) || (xmlStrEqual(ctxt->name, BAD_CAST "html"))
-            || (xmlStrEqual(ctxt->name, BAD_CAST "head"))) {
+    if (mode == 0 || mode == DATA_RCDATA
+        || ctxt->sax->cdataBlock == NULL) {
+        if (ctxt->name == NULL || xmlStrEqual(ctxt->name, BAD_CAST "html")
+            || xmlStrEqual(ctxt->name, BAD_CAST "head")) {
             int i;
 
             /*
@@ -2776,8 +2776,8 @@ htmlCharDataSAXCallback (htmlParserCtxtPtr ctxt, const xmlChar *buf, int size,
                 return;
         }
 
-        if ((mode == 0) && (!ctxt->keepBlanks)
-            && (areBlanks(ctxt, buf, size) > 0)) {
+        if (mode == 0 && !ctxt->keepBlanks
+            && areBlanks(ctxt, buf, size) > 0) {
             if (ctxt->sax->ignorableWhitespace != NULL)
                 ctxt->sax->ignorableWhitespace(ctxt->userData, buf, size);
         } else {
@@ -2855,7 +2855,7 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                 }
 
                 if (avail == 0) {
-                    if ((partial) && (ncr)) {
+                    if (partial && ncr) {
                         in -= ncrSize;
                         ncrSize = 0;
                     }
@@ -2879,7 +2879,7 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                     avail -= 1;
                 }
 
-                if ((!eof) && (avail <= 64))
+                if (!eof && avail <= 64)
                     continue;
                 if (avail == 0)
                     continue;
@@ -2893,9 +2893,9 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                 int lc = cur | 0x20;
                 int digit;
 
-                if ((cur >= '0') && (cur <= '9')) {
+                if (cur >= '0' && cur <= '9') {
                     digit = cur - '0';
-                } else if ((ncr == 16) && (lc >= 'a') && (lc <= 'f')) {
+                } else if (ncr == 16 && lc >= 'a' && lc <= 'f') {
                     digit = (lc - 'a') + 10;
                 } else {
                     if (cur == ';') {
@@ -2927,13 +2927,13 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
 
                 j = 1;
                 if (j < avail) {
-                    if ((mode == DATA_SCRIPT) && (in[j] == '!')) {
+                    if (mode == DATA_SCRIPT && in[j] == '!') {
                         /* Check for comment start */
 
                         j += 1;
-                        if ((j < avail) && (in[j] == '-')) {
+                        if (j < avail && in[j] == '-') {
                             j += 1;
-                            if ((j < avail) && (in[j] == '-'))
+                            if (j < avail && in[j] == '-')
                                 mode = DATA_SCRIPT_ESC1;
                         }
                     } else {
@@ -2947,20 +2947,20 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                             solidus = 1;
                         }
 
-                        if ((solidus) || (mode == DATA_SCRIPT_ESC1)) {
-                            while ((j < avail) && (ctxt->name[i] != 0)
-                                   && (ctxt->name[i] == (in[j] | 0x20))) {
+                        if (solidus || mode == DATA_SCRIPT_ESC1) {
+                            while (j < avail && ctxt->name[i] != 0
+                                   && ctxt->name[i] == (in[j] | 0x20)) {
                                 i += 1;
                                 j += 1;
                             }
 
-                            if ((ctxt->name[i] == 0) && (j < avail)) {
+                            if (ctxt->name[i] == 0 && j < avail) {
                                 int c = in[j];
 
-                                if ((c == '>') || (c == '/')
-                                    || (IS_WS_HTML(c))) {
-                                    if ((mode == DATA_SCRIPT_ESC1)
-                                        && (!solidus)) {
+                                if (c == '>' || c == '/'
+                                    || IS_WS_HTML(c)) {
+                                    if (mode == DATA_SCRIPT_ESC1
+                                        && !solidus) {
                                         mode = DATA_SCRIPT_ESC2;
                                     } else if (mode == DATA_SCRIPT_ESC2) {
                                         mode = DATA_SCRIPT_ESC1;
@@ -2975,7 +2975,7 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                     }
                 }
 
-                if ((partial) && (j >= avail)) {
+                if (partial && j >= avail) {
                     done = 1;
                     goto next_chunk;
                 }
@@ -2983,19 +2983,19 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                 break;
 
             case '-':
-                if ((mode != DATA_SCRIPT_ESC1) && (mode != DATA_SCRIPT_ESC2))
+                if (mode != DATA_SCRIPT_ESC1 && mode != DATA_SCRIPT_ESC2)
                     break;
 
                 /* Check for comment end */
 
                 j = 1;
-                if ((j < avail) && (in[j] == '-')) {
+                if (j < avail && in[j] == '-') {
                     j += 1;
-                    if ((j < avail) && (in[j] == '>'))
+                    if (j < avail && in[j] == '>')
                         mode = DATA_SCRIPT;
                 }
 
-                if ((partial) && (j >= avail)) {
+                if (partial && j >= avail) {
                     done = 1;
                     goto next_chunk;
                 }
@@ -3003,17 +3003,17 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                 break;
 
             case '&':
-                if ((mode != 0) && (mode != DATA_RCDATA))
+                if (mode != 0 && mode != DATA_RCDATA)
                     break;
 
                 j = 1;
 
-                if ((j < avail) && (in[j] == '#')) {
+                if (j < avail && in[j] == '#') {
                     j += 1;
                     if (j < avail) {
                         if ((in[j] | 0x20) == 'x') {
                             j += 1;
-                            if ((j < avail) && (IS_HEX_DIGIT(in[j]))) {
+                            if (j < avail && (IS_HEX_DIGIT(in[j]))) {
                                 ncr = 16;
                                 size = 3;
                                 ncrSize = 3;
@@ -3035,9 +3035,9 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                          * &CounterClockwiseContourIntegral; has 33 bytes.
                          */
                         for (i = 1; i < avail; i++) {
-                            if ((i >= 32)
-                                || (!IS_ASCII_LETTER(in[i])
-                                    && ((i < 2) || !IS_ASCII_DIGIT(in[i])))) {
+                            if (i >= 32
+                                || !IS_ASCII_LETTER(in[i])
+                                    && ((i < 2) || !IS_ASCII_DIGIT(in[i]))) {
                                 terminated = 1;
                                 break;
                             }
@@ -3060,7 +3060,7 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
                     skip = 0;
                 }
 
-                if ((partial) && (j >= avail)) {
+                if (partial && j >= avail) {
                     done = 1;
                     goto next_chunk;
                 }
@@ -3137,7 +3137,7 @@ htmlParseCharData (htmlParserCtxtPtr ctxt, int partial)
 
                 size = htmlValidateUtf8(ctxt, in, avail, partial);
 
-                if ((partial) && (size == 0)) {
+                if (partial && size == 0) {
                     done = 1;
                     goto next_chunk;
                 }
@@ -3213,13 +3213,13 @@ htmlParseComment (htmlParserCtxtPtr ctxt, int bogus)
             SKIP(1);
         comment = buf;
     } else {
-        if ((!PARSER_PROGRESSIVE(ctxt))
-            && (ctxt->input->end - ctxt->input->cur < 2))
+        if (!PARSER_PROGRESSIVE(ctxt)
+            && ctxt->input->end - ctxt->input->cur < 2)
             xmlParserGrow(ctxt);
 
         if (CUR == '>') {
             SKIP(1);
-        } else if ((CUR == '-') && (NXT(1) == '>')) {
+        } else if (CUR == '-' && NXT(1) == '>') {
             SKIP(2);
         } else {
             buf = htmlParseData(ctxt, MASK_DASH, 1, 0, maxLength);
@@ -3230,8 +3230,8 @@ htmlParseComment (htmlParserCtxtPtr ctxt, int bogus)
     if (comment == NULL)
         return;
 
-    if ((ctxt->sax != NULL) && (ctxt->sax->comment != NULL)
-        && (!ctxt->disableSAX))
+    if (ctxt->sax != NULL && ctxt->sax->comment != NULL
+        && !ctxt->disableSAX)
         ctxt->sax->comment(ctxt->userData, comment);
 
     xmlFree(buf);
@@ -3297,7 +3297,7 @@ htmlSkipBogusDoctype (htmlParserCtxtPtr ctxt)
     while (!PARSER_STOPPED(ctxt)) {
         int cur;
 
-        if ((!eof) && (avail <= 64)) {
+        if (!eof && avail <= 64) {
             size_t oldAvail = avail;
 
             ctxt->input->cur = in;
@@ -3358,10 +3358,10 @@ htmlParseDocTypeDecl (htmlParserCtxtPtr ctxt)
 
     SKIP_BLANKS;
 
-    if ((ctxt->input->cur < ctxt->input->end) && (CUR != '>')) {
+    if (ctxt->input->cur < ctxt->input->end && CUR != '>') {
         name = htmlParseData(ctxt, MASK_WS_GT, 0, 0, maxLength);
 
-        if ((ctxt->options & HTML_PARSE_HTML5) && (name != NULL)) {
+        if ((ctxt->options & HTML_PARSE_HTML5) && name != NULL) {
             xmlChar *cur;
 
             for (cur = name; *cur; cur++) {
@@ -3376,8 +3376,8 @@ htmlParseDocTypeDecl (htmlParserCtxtPtr ctxt)
     /*
      * Check for SystemID and publicId
      */
-    if ((UPPER == 'P') && (UPP(1) == 'U') && (UPP(2) == 'B') && (UPP(3) == 'L')
-        && (UPP(4) == 'I') && (UPP(5) == 'C')) {
+    if (UPPER == 'P' && UPP(1) == 'U' && UPP(2) == 'B' && UPP(3) == 'L'
+        && UPP(4) == 'I' && UPP(5) == 'C') {
         SKIP(6);
         SKIP_BLANKS;
         publicId = htmlParseDoctypeLiteral(ctxt);
@@ -3385,8 +3385,8 @@ htmlParseDocTypeDecl (htmlParserCtxtPtr ctxt)
             goto bogus;
         SKIP_BLANKS;
         URI = htmlParseDoctypeLiteral(ctxt);
-    } else if ((UPPER == 'S') && (UPP(1) == 'Y') && (UPP(2) == 'S')
-               && (UPP(3) == 'T') && (UPP(4) == 'E') && (UPP(5) == 'M')) {
+    } else if (UPPER == 'S' && UPP(1) == 'Y' && UPP(2) == 'S'
+               && UPP(3) == 'T' && UPP(4) == 'E' && UPP(5) == 'M') {
         SKIP(6);
         SKIP_BLANKS;
         URI = htmlParseDoctypeLiteral(ctxt);
@@ -3398,8 +3398,8 @@ bogus:
     /*
      * Create or update the document accordingly to the DOCTYPE
      */
-    if ((ctxt->sax != NULL) && (ctxt->sax->internalSubset != NULL)
-        && (!ctxt->disableSAX))
+    if (ctxt->sax != NULL && ctxt->sax->internalSubset != NULL
+        && !ctxt->disableSAX)
         ctxt->sax->internalSubset(ctxt->userData, name, publicId, URI);
 
     xmlFree(name);
@@ -3478,8 +3478,8 @@ htmlCharEncCheckAsciiCompatible (htmlParserCtxt *ctxt, const xmlChar *encoding)
 
     xmlCharEncCloseFunc(handler);
 
-    if ((res != XML_ENC_ERR_SUCCESS) || (inlen != 8) || (outlen != 8)
-        || (memcmp(in, out, 8) != 0)) {
+    if (res != XML_ENC_ERR_SUCCESS || inlen != 8 || outlen != 8
+        || memcmp(in, out, 8) != 0) {
         htmlParseErr(ctxt, XML_ERR_UNSUPPORTED_ENCODING,
                      "Encoding %s isn't ASCII-compatible", encoding, NULL);
         return -1;
@@ -3503,7 +3503,7 @@ htmlCheckMeta (htmlParserCtxtPtr ctxt, const xmlChar **atts)
     const xmlChar *content = NULL;
     xmlChar *encoding = NULL;
 
-    if ((ctxt == NULL) || (atts == NULL))
+    if (ctxt == NULL || atts == NULL)
         return;
 
     i = 0;
@@ -3511,8 +3511,8 @@ htmlCheckMeta (htmlParserCtxtPtr ctxt, const xmlChar **atts)
     while (att != NULL) {
         value = atts[i++];
         if (value != NULL) {
-            if ((!xmlStrcasecmp(att, BAD_CAST "http-equiv"))
-                && (!xmlStrcasecmp(value, BAD_CAST "Content-Type"))) {
+            if (!xmlStrcasecmp(att, BAD_CAST "http-equiv")
+                && !xmlStrcasecmp(value, BAD_CAST "Content-Type")) {
                 isContentType = 1;
             } else if (!xmlStrcasecmp(att, BAD_CAST "charset")) {
                 encoding = xmlStrdup(value);
@@ -3526,7 +3526,7 @@ htmlCheckMeta (htmlParserCtxtPtr ctxt, const xmlChar **atts)
         att = atts[i++];
     }
 
-    if ((encoding == NULL) && (isContentType) && (content != NULL)) {
+    if (encoding == NULL && isContentType && content != NULL) {
         htmlMetaEncodingOffsets off;
 
         if (htmlParseContentType(content, &off)) {
@@ -3644,14 +3644,14 @@ htmlParseStartTag (htmlParserCtxtPtr ctxt)
          * Avoid html at any level > 0, head at any level != 1
          * or any attempt to recurse body
          */
-        if ((ctxt->nameNr > 0) && (xmlStrEqual(name, BAD_CAST "html"))) {
+        if (ctxt->nameNr > 0 && xmlStrEqual(name, BAD_CAST "html")) {
             htmlParseErr(ctxt, XML_HTML_STRUCURE_ERROR,
                          "htmlParseStartTag: misplaced <html> tag\n", name,
                          NULL);
             discardtag = 1;
             ctxt->depth++;
         }
-        if ((ctxt->nameNr != 1) && (xmlStrEqual(name, BAD_CAST "head"))) {
+        if (ctxt->nameNr != 1 && xmlStrEqual(name, BAD_CAST "head")) {
             htmlParseErr(ctxt, XML_HTML_STRUCURE_ERROR,
                          "htmlParseStartTag: misplaced <head> tag\n", name,
                          NULL);
@@ -3678,9 +3678,9 @@ htmlParseStartTag (htmlParserCtxtPtr ctxt)
      * (S Attribute)* S?
      */
     SKIP_BLANKS;
-    while ((ctxt->input->cur < ctxt->input->end) && (CUR != '>')
+    while (ctxt->input->cur < ctxt->input->end && CUR != '>'
            && ((CUR != '/') || (NXT(1) != '>'))
-           && (PARSER_STOPPED(ctxt) == 0)) {
+           && PARSER_STOPPED(ctxt) == 0) {
         xmlHashedString hattname;
 
         /*  unexpected-solidus-in-tag */
@@ -3819,8 +3819,8 @@ htmlParseStartTag (htmlParserCtxtPtr ctxt)
         /*
          * Handle specific association to the META tag
          */
-        if (((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0)
-            && (strcmp((char *) name, "meta") == 0)) {
+        if ((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0
+            && strcmp((char *) name, "meta") == 0) {
             htmlCheckMeta(ctxt, atts);
         }
 #endif
@@ -3836,7 +3836,7 @@ htmlParseStartTag (htmlParserCtxtPtr ctxt)
         }
 
         htmlnamePush(ctxt, name);
-        if ((ctxt->sax != NULL) && (ctxt->sax->startElement != NULL)) {
+        if (ctxt->sax != NULL && ctxt->sax->startElement != NULL) {
             if (nbatts != 0)
                 ctxt->sax->startElement(ctxt->userData, name, atts);
             else
@@ -3879,8 +3879,8 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
 
     if (ctxt->input->cur >= ctxt->input->end) {
         htmlStartCharData(ctxt);
-        if ((ctxt->sax != NULL) && (!ctxt->disableSAX)
-            && (ctxt->sax->characters != NULL))
+        if (ctxt->sax != NULL && !ctxt->disableSAX
+            && ctxt->sax->characters != NULL)
             ctxt->sax->characters(ctxt->userData, BAD_CAST "</", 2);
         return;
     }
@@ -3903,9 +3903,9 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
      * Parse and ignore attributes.
      */
     SKIP_BLANKS;
-    while ((ctxt->input->cur < ctxt->input->end) && (CUR != '>')
+    while (ctxt->input->cur < ctxt->input->end && CUR != '>'
            && ((CUR != '/') || (NXT(1) != '>'))
-           && (ctxt->instate != XML_PARSER_EOF)) {
+           && ctxt->instate != XML_PARSER_EOF) {
         xmlChar *attvalue = NULL;
 
         /*  unexpected-solidus-in-tag */
@@ -3924,14 +3924,14 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
 
     if (CUR == '>') {
         SKIP(1);
-    } else if ((CUR == '/') && (NXT(1) == '>')) {
+    } else if (CUR == '/' && NXT(1) == '>') {
         SKIP(2);
     } else {
         return;
     }
 
     if (ctxt->options & HTML_PARSE_HTML5) {
-        if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
             ctxt->sax->endElement(ctxt->userData, name);
         return;
     }
@@ -3940,7 +3940,7 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
      * if we ignored misplaced tags in htmlParseStartTag don't pop them
      * out now.
      */
-    if ((ctxt->depth > 0)
+    if (ctxt->depth > 0
         && (xmlStrEqual(name, BAD_CAST "html")
             || xmlStrEqual(name, BAD_CAST "body")
             || xmlStrEqual(name, BAD_CAST "head"))) {
@@ -3973,7 +3973,7 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
      * With the exception that the autoclose may have popped stuff out
      * of the stack.
      */
-    if ((ctxt->name != NULL) && (!xmlStrEqual(ctxt->name, name))) {
+    if (ctxt->name != NULL && !xmlStrEqual(ctxt->name, name)) {
         htmlParseErr(ctxt, XML_ERR_TAG_NAME_MISMATCH,
                      "Opening and ending tag mismatch: %s and %s\n", name,
                      ctxt->name);
@@ -3983,9 +3983,9 @@ htmlParseEndTag (htmlParserCtxtPtr ctxt)
      * SAX: End of Tag
      */
     oldname = ctxt->name;
-    if ((oldname != NULL) && (xmlStrEqual(oldname, name))) {
+    if (oldname != NULL && xmlStrEqual(oldname, name)) {
         htmlParserFinishElementParsing(ctxt);
-        if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+        if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
             ctxt->sax->endElement(ctxt->userData, name);
         htmlnamePop(ctxt);
     }
@@ -4003,24 +4003,24 @@ htmlParseContent (htmlParserCtxtPtr ctxt)
 {
     GROW;
 
-    while ((PARSER_STOPPED(ctxt) == 0)
-           && (ctxt->input->cur < ctxt->input->end)) {
+    while (PARSER_STOPPED(ctxt) == 0
+           && ctxt->input->cur < ctxt->input->end) {
         int mode;
 
         mode = ctxt->endCheckState;
 
-        if ((mode == 0) && (CUR == '<')) {
+        if (mode == 0 && CUR == '<') {
             if (NXT(1) == '/') {
                 htmlParseEndTag(ctxt);
             } else if (NXT(1) == '!') {
                 /*
                  * Sometimes DOCTYPE arrives in the middle of the document
                  */
-                if ((UPP(2) == 'D') && (UPP(3) == 'O') && (UPP(4) == 'C')
-                    && (UPP(5) == 'T') && (UPP(6) == 'Y') && (UPP(7) == 'P')
-                    && (UPP(8) == 'E')) {
+                if (UPP(2) == 'D' && UPP(3) == 'O' && UPP(4) == 'C'
+                    && UPP(5) == 'T' && UPP(6) == 'Y' && UPP(7) == 'P'
+                    && UPP(8) == 'E') {
                     htmlParseDocTypeDecl(ctxt);
-                } else if ((NXT(2) == '-') && (NXT(3) == '-')) {
+                } else if (NXT(2) == '-' && NXT(3) == '-') {
                     SKIP(4);
                     htmlParseComment(ctxt, /* bogus */ 0);
                 } else {
@@ -4034,8 +4034,8 @@ htmlParseContent (htmlParserCtxtPtr ctxt)
                 htmlParseElementInternal(ctxt);
             } else {
                 htmlStartCharData(ctxt);
-                if ((ctxt->sax != NULL) && (!ctxt->disableSAX)
-                    && (ctxt->sax->characters != NULL))
+                if (ctxt->sax != NULL && !ctxt->disableSAX
+                    && ctxt->sax->characters != NULL)
                     ctxt->sax->characters(ctxt->userData, BAD_CAST "<", 1);
                 SKIP(1);
             }
@@ -4063,7 +4063,7 @@ htmlParseElementInternal (htmlParserCtxtPtr ctxt)
     const htmlElemDesc *info;
     htmlParserNodeInfo node_info = {NULL, 0, 0, 0, 0};
 
-    if ((ctxt == NULL) || (ctxt->input == NULL))
+    if (ctxt == NULL || ctxt->input == NULL)
         return 0;
 
     /* Capture start position */
@@ -4084,11 +4084,11 @@ htmlParseElementInternal (htmlParserCtxtPtr ctxt)
     /*
      * Check for an Empty Element labeled the XML/SGML way
      */
-    if ((CUR == '/') && (NXT(1) == '>')) {
+    if (CUR == '/' && NXT(1) == '>') {
         SKIP(2);
         htmlParserFinishElementParsing(ctxt);
         if ((ctxt->options & HTML_PARSE_HTML5) == 0) {
-            if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+            if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
                 ctxt->sax->endElement(ctxt->userData, name);
         }
         htmlnamePop(ctxt);
@@ -4107,10 +4107,10 @@ htmlParseElementInternal (htmlParserCtxtPtr ctxt)
     /*
      * Check for an Empty Element from DTD definition
      */
-    if ((info != NULL) && (info->empty)) {
+    if (info != NULL && info->empty) {
         htmlParserFinishElementParsing(ctxt);
         if ((ctxt->options & HTML_PARSE_HTML5) == 0) {
-            if ((ctxt->sax != NULL) && (ctxt->sax->endElement != NULL))
+            if (ctxt->sax != NULL && ctxt->sax->endElement != NULL)
                 ctxt->sax->endElement(ctxt->userData, name);
         }
         htmlnamePop(ctxt);
@@ -4136,7 +4136,7 @@ htmlParseElement (htmlParserCtxt *ctxt)
     const xmlChar *oldptr;
     int depth;
 
-    if ((ctxt == NULL) || (ctxt->input == NULL))
+    if (ctxt == NULL || ctxt->input == NULL)
         return;
 
     if (htmlParseElementInternal(ctxt) == 0)
@@ -4227,10 +4227,10 @@ htmlCtxtParseContentInternal (htmlParserCtxt *ctxt, xmlParserInput *input)
 int
 htmlParseDocument (htmlParserCtxt *ctxt)
 {
-    if ((ctxt == NULL) || (ctxt->input == NULL))
+    if (ctxt == NULL || ctxt->input == NULL)
         return -1;
 
-    if ((ctxt->sax) && (ctxt->sax->setDocumentLocator)) {
+    if (ctxt->sax && ctxt->sax->setDocumentLocator) {
         ctxt->sax->setDocumentLocator(ctxt->userData,
                                       (xmlSAXLocator *) &xmlDefaultSAXLocator);
     }
@@ -4247,8 +4247,8 @@ htmlParseDocument (htmlParserCtxt *ctxt)
      * specify UTF-8. The HTML5 prescan algorithm handles
      * XML declarations in a better way.
      */
-    if (((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0)
-        && (xmlStrncmp(ctxt->input->cur, BAD_CAST "<?xm", 4) == 0))
+    if ((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0
+        && xmlStrncmp(ctxt->input->cur, BAD_CAST "<?xm", 4) == 0)
         xmlSwitchEncoding(ctxt, XML_CHAR_ENCODING_UTF8);
 
     /*
@@ -4256,7 +4256,7 @@ htmlParseDocument (htmlParserCtxt *ctxt)
      */
     SKIP_BLANKS;
 
-    if ((ctxt->sax) && (ctxt->sax->startDocument) && (!ctxt->disableSAX))
+    if (ctxt->sax && ctxt->sax->startDocument && !ctxt->disableSAX)
         ctxt->sax->startDocument(ctxt->userData);
 
     /*
@@ -4266,12 +4266,12 @@ htmlParseDocument (htmlParserCtxt *ctxt)
     ctxt->instate = XML_PARSER_MISC;
     while (CUR == '<') {
         if (NXT(1) == '!') {
-            if ((NXT(2) == '-') && (NXT(3) == '-')) {
+            if (NXT(2) == '-' && NXT(3) == '-') {
                 SKIP(4);
                 htmlParseComment(ctxt, /* bogus */ 0);
-            } else if ((UPP(2) == 'D') && (UPP(3) == 'O') && (UPP(4) == 'C')
-                       && (UPP(5) == 'T') && (UPP(6) == 'Y') && (UPP(7) == 'P')
-                       && (UPP(8) == 'E')) {
+            } else if (UPP(2) == 'D' && UPP(3) == 'O' && UPP(4) == 'C'
+                       && UPP(5) == 'T' && UPP(6) == 'Y' && UPP(7) == 'P'
+                       && UPP(8) == 'E') {
                 htmlParseDocTypeDecl(ctxt);
                 ctxt->instate = XML_PARSER_PROLOG;
             } else {
@@ -4302,7 +4302,7 @@ htmlParseDocument (htmlParserCtxt *ctxt)
     /*
      * SAX: end of the document processing.
      */
-    if ((ctxt->sax) && (ctxt->sax->endDocument != NULL))
+    if (ctxt->sax && ctxt->sax->endDocument != NULL)
         ctxt->sax->endDocument(ctxt->userData);
 
     if (!ctxt->wellFormed)
@@ -4696,8 +4696,8 @@ htmlParseLookupString (xmlParserCtxtPtr ctxt, size_t startDelta,
     }
 
     term = BAD_CAST strstr((const char *) cur, str);
-    if ((term != NULL)
-        && ((size_t) (ctxt->input->end - term) >= extraLen + 1)) {
+    if (term != NULL
+        && (size_t) (ctxt->input->end - term) >= extraLen + 1) {
         ctxt->checkIndex = 0;
 
         if (term - ctxt->input->cur > INT_MAX / 2)
@@ -4751,9 +4751,9 @@ htmlParseLookupCommentEnd (htmlParserCtxtPtr ctxt)
          * <!---!>  is not
          * <!----!> is
          */
-        if ((NXT(mark + 2) == '>')
-            || ((mark >= 4) && (NXT(mark + 2) == '!')
-                && (NXT(mark + 3) == '>'))) {
+        if (NXT(mark + 2) == '>'
+            || mark >= 4 && NXT(mark + 2) == '!'
+                && NXT(mark + 3) == '>') {
             ctxt->checkIndex = 0;
             break;
         }
@@ -4797,7 +4797,7 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
             /*
                  * Very first chars read from the document flow.
                  */
-            if ((!terminate) && (avail < 4))
+            if (!terminate && avail < 4)
                 return;
 
             xmlDetectEncoding(ctxt);
@@ -4812,30 +4812,30 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
                  * specify UTF-8. The HTML5 prescan algorithm handles
                  * XML declarations in a better way.
                  */
-            if (((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0)
-                && (xmlStrncmp(ctxt->input->cur, BAD_CAST "<?xm", 4) == 0)) {
+            if ((ctxt->input->flags & XML_INPUT_HAS_ENCODING) == 0
+                && xmlStrncmp(ctxt->input->cur, BAD_CAST "<?xm", 4) == 0) {
                 xmlSwitchEncoding(ctxt, XML_CHAR_ENCODING_UTF8);
             }
 
             /* fall through */
 
         case XML_PARSER_XML_DECL:
-            if ((ctxt->sax) && (ctxt->sax->setDocumentLocator)) {
+            if (ctxt->sax && ctxt->sax->setDocumentLocator) {
                 ctxt->sax->setDocumentLocator(
                     ctxt->userData, (xmlSAXLocator *) &xmlDefaultSAXLocator);
             }
-            if ((ctxt->sax) && (ctxt->sax->startDocument)
-                && (!ctxt->disableSAX))
+            if (ctxt->sax && ctxt->sax->startDocument
+                && !ctxt->disableSAX)
                 ctxt->sax->startDocument(ctxt->userData);
 
             /* Allow callback to modify state for tests */
-            if ((ctxt->instate == XML_PARSER_START)
-                || (ctxt->instate == XML_PARSER_XML_DECL))
+            if (ctxt->instate == XML_PARSER_START
+                || ctxt->instate == XML_PARSER_XML_DECL)
                 ctxt->instate = XML_PARSER_MISC;
             break;
 
         case XML_PARSER_START_TAG:
-            if ((!terminate) && (htmlParseLookupGt(ctxt) < 0))
+            if (!terminate && htmlParseLookupGt(ctxt) < 0)
                 return;
 
             htmlParseElementInternal(ctxt);
@@ -4848,8 +4848,8 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
         case XML_PARSER_CONTENT: {
             int mode;
 
-            if ((ctxt->instate == XML_PARSER_MISC)
-                || (ctxt->instate == XML_PARSER_PROLOG)) {
+            if (ctxt->instate == XML_PARSER_MISC
+                || ctxt->instate == XML_PARSER_PROLOG) {
                 SKIP_BLANKS;
                 avail = in->end - in->cur;
             }
@@ -4877,11 +4877,11 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
                 }
 
                 if (next == '!') {
-                    if ((!terminate) && (avail < 4))
+                    if (!terminate && avail < 4)
                         return;
-                    if ((in->cur[2] == '-') && (in->cur[3] == '-')) {
-                        if ((!terminate)
-                            && (htmlParseLookupCommentEnd(ctxt) < 0))
+                    if (in->cur[2] == '-' && in->cur[3] == '-') {
+                        if (!terminate
+                            && htmlParseLookupCommentEnd(ctxt) < 0)
                             return;
                         SKIP(4);
                         htmlParseComment(ctxt, /* bogus */ 0);
@@ -4889,27 +4889,27 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
                         break;
                     }
 
-                    if ((!terminate) && (avail < 9))
+                    if (!terminate && avail < 9)
                         return;
-                    if ((UPP(2) == 'D') && (UPP(3) == 'O') && (UPP(4) == 'C')
-                        && (UPP(5) == 'T') && (UPP(6) == 'Y') && (UPP(7) == 'P')
-                        && (UPP(8) == 'E')) {
-                        if ((!terminate)
-                            && (htmlParseLookupString(ctxt, 9, ">", 1, 0) < 0))
+                    if (UPP(2) == 'D' && UPP(3) == 'O' && UPP(4) == 'C'
+                        && UPP(5) == 'T' && UPP(6) == 'Y' && UPP(7) == 'P'
+                        && UPP(8) == 'E') {
+                        if (!terminate
+                            && htmlParseLookupString(ctxt, 9, ">", 1, 0) < 0)
                             return;
                         htmlParseDocTypeDecl(ctxt);
                         if (ctxt->instate == XML_PARSER_MISC)
                             ctxt->instate = XML_PARSER_PROLOG;
                     } else {
-                        if ((!terminate)
-                            && (htmlParseLookupString(ctxt, 2, ">", 1, 0) < 0))
+                        if (!terminate
+                            && htmlParseLookupString(ctxt, 2, ">", 1, 0) < 0)
                             return;
                         SKIP(2);
                         htmlParseComment(ctxt, /* bogus */ 1);
                     }
                 } else if (next == '?') {
-                    if ((!terminate)
-                        && (htmlParseLookupString(ctxt, 2, ">", 1, 0) < 0))
+                    if (!terminate
+                        && htmlParseLookupString(ctxt, 2, ">", 1, 0) < 0)
                         return;
                     SKIP(1);
                     htmlParseComment(ctxt, /* bogus */ 1);
@@ -4923,8 +4923,8 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
                 } else {
                     ctxt->instate = XML_PARSER_CONTENT;
                     htmlStartCharData(ctxt);
-                    if ((ctxt->sax != NULL) && (!ctxt->disableSAX)
-                        && (ctxt->sax->characters != NULL))
+                    if (ctxt->sax != NULL && !ctxt->disableSAX
+                        && ctxt->sax->characters != NULL)
                         ctxt->sax->characters(ctxt->userData, BAD_CAST "<", 1);
                     SKIP(1);
                 }
@@ -4934,8 +4934,8 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
                      * We follow the logic of the XML push parser
                      */
                 if (avail < HTML_PARSER_BIG_BUFFER_SIZE) {
-                    if ((!terminate)
-                        && (htmlParseLookupString(ctxt, 0, "<", 1, 0) < 0))
+                    if (!terminate
+                        && htmlParseLookupString(ctxt, 0, "<", 1, 0) < 0)
                         return;
                 }
                 ctxt->checkIndex = 0;
@@ -4947,7 +4947,7 @@ htmlParseTryOrFinish (htmlParserCtxtPtr ctxt, int terminate)
         }
 
         case XML_PARSER_END_TAG:
-            if ((!terminate) && (htmlParseLookupGt(ctxt) < 0))
+            if (!terminate && htmlParseLookupGt(ctxt) < 0)
                 return;
             htmlParseEndTag(ctxt);
             ctxt->instate = XML_PARSER_CONTENT;
@@ -4989,8 +4989,8 @@ int
 htmlParseChunk (htmlParserCtxt *ctxt, const char *chunk, int size,
                 int terminate)
 {
-    if ((ctxt == NULL) || (ctxt->input == NULL) || (ctxt->input->buf == NULL)
-        || (size < 0) || ((size > 0) && (chunk == NULL)))
+    if (ctxt == NULL || ctxt->input == NULL || ctxt->input->buf == NULL
+        || size < 0 || size > 0 && chunk == NULL)
         return XML_ERR_ARGUMENT;
     if (PARSER_STOPPED(ctxt) != 0)
         return ctxt->errNo;
@@ -5010,7 +5010,7 @@ htmlParseChunk (htmlParserCtxt *ctxt, const char *chunk, int size,
 
     htmlParseTryOrFinish(ctxt, terminate);
 
-    if ((terminate) && (ctxt->instate != XML_PARSER_EOF)) {
+    if (terminate && ctxt->instate != XML_PARSER_EOF) {
         htmlAutoCloseOnEnd(ctxt);
 
         /*
@@ -5018,7 +5018,7 @@ htmlParseChunk (htmlParserCtxt *ctxt, const char *chunk, int size,
          */
         xmlParserCheckEOF(ctxt, XML_ERR_INTERNAL_ERROR);
 
-        if ((ctxt->sax) && (ctxt->sax->endDocument != NULL))
+        if (ctxt->sax && ctxt->sax->endDocument != NULL)
             ctxt->sax->endDocument(ctxt->userData);
 
         ctxt->instate = XML_PARSER_EOF;
@@ -5449,7 +5449,7 @@ htmlCtxtParseDocument (htmlParserCtxt *ctxt, xmlParserInput *input)
 {
     htmlDocPtr ret;
 
-    if ((ctxt == NULL) || (input == NULL)) {
+    if (ctxt == NULL || input == NULL) {
         xmlFatalErr(ctxt, XML_ERR_ARGUMENT, NULL);
         xmlFreeInputStream(input);
         return NULL;
@@ -5743,7 +5743,7 @@ htmlCtxtReadMemory (xmlParserCtxt *ctxt, const char *buffer, int size,
 {
     xmlParserInputPtr input;
 
-    if ((ctxt == NULL) || (size < 0))
+    if (ctxt == NULL || size < 0)
         return NULL;
 
     htmlCtxtReset(ctxt);
