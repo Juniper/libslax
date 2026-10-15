@@ -190,10 +190,10 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
     xsltAttrVTPtr avt, tmp;
     int i = 0, lastavt = 0;
 
-    if ((style == NULL) || (attr == NULL) || (xmlAttrGetChildren(attr) == NULL))
+    if (style == NULL || attr == NULL || xmlAttrGetChildren(attr) == NULL)
         return;
-    if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
-        || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+    if (xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE
+        || xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL) {
         xsltTransformError(
             NULL, style, xmlAttrGetParent(attr),
             "Attribute '%s': The content is expected to be a single text "
@@ -203,7 +203,7 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
         return;
     }
     str = xmlNodeGetContentRaw(xmlAttrGetChildren(attr));
-    if ((xmlStrchr(str, '{') == NULL) && (xmlStrchr(str, '}') == NULL))
+    if (xmlStrchr(str, '{') == NULL && xmlStrchr(str, '}') == NULL)
         return;
 
 #ifdef WITH_XSLT_DEBUG_AVT
@@ -248,7 +248,7 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
                 str = cur;
                 continue;
             }
-            if ((ret != NULL) || (cur - str > 0)) {
+            if (ret != NULL || cur - str > 0) {
                 ret = xmlStrncat(ret, str, cur - str);
                 str = cur;
                 if (avt->nb_seg == 0)
@@ -261,11 +261,11 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
             }
 
             cur++;
-            while ((*cur != 0) && (*cur != '}')) {
+            while (*cur != 0 && *cur != '}') {
                 /* Need to check for literal (bug539741) */
-                if ((*cur == '\'') || (*cur == '"')) {
+                if (*cur == '\'' || *cur == '"') {
                     char delim = *(cur++);
-                    while ((*cur != 0) && (*cur != delim))
+                    while (*cur != 0 && *cur != delim)
                         cur++;
                     if (*cur != 0)
                         cur++; /* skip the ending delimiter */
@@ -339,7 +339,7 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
         } else
             cur++;
     }
-    if ((ret != NULL) || (cur - str > 0)) {
+    if (ret != NULL || cur - str > 0) {
         ret = xmlStrncat(ret, str, cur - str);
         str = cur;
         if (avt->nb_seg == 0)
@@ -394,7 +394,7 @@ xsltEvalAVT (xsltTransformContextPtr ctxt, void *avt, xmlNodePtr node)
     int i;
     int str;
 
-    if ((ctxt == NULL) || (avt == NULL) || (node == NULL))
+    if (ctxt == NULL || avt == NULL || node == NULL)
         return NULL;
     str = cur->strstart;
     for (i = 0; i < cur->nb_seg; i++) {
