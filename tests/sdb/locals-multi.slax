@@ -1,0 +1,10 @@
+version 1.0;
+
+match / {
+    call show($a = "alpha", $b = "bravo", $c = "charlie", $d = "delta");
+}
+
+template show ($a, $b, $c, $d) {
+    var $label = "show";
+    <result> $a;
+}
