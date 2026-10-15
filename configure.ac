@@ -1976,6 +1976,7 @@ AC_CONFIG_FILES([
   tests/pa/Makefile
   tests/reuse/Makefile
   tests/xi/Makefile
+  tests/sdb/Makefile
   bin/Makefile
   doc/Makefile
   packaging/libslax.pc
