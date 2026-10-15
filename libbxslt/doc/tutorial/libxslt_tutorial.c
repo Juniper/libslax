@@ -47,7 +47,7 @@ main (int argc, char **argv)
     for (i = 1; i < argc; i++) {
         if (argv[i][0] != '-')
             break;
-        if ((!strcmp(argv[i], "-param")) || (!strcmp(argv[i], "--param"))) {
+        if (!strcmp(argv[i], "-param") || !strcmp(argv[i], "--param")) {
             i++;
             params[nbparams++] = argv[i++];
             params[nbparams++] = argv[i];
