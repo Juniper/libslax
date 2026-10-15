@@ -62,11 +62,11 @@ parsePerson (xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
     /* COMPAT xmlChildrenNode is a macro unifying libxml1 and libxml2 names */
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Person"))
-            && (cur->ns == ns))
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Person")
+            && cur->ns == ns)
             ret->name = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Email"))
-            && (cur->ns == ns))
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Email")
+            && cur->ns == ns)
             ret->email = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
         cur = cur->next;
     }
@@ -134,22 +134,22 @@ parseJob (xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
     /* We don't care what the top level element name is */
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Project"))
-            && (cur->ns == ns)) {
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Project")
+            && cur->ns == ns) {
             ret->projectID = xmlGetProp(cur, (const xmlChar *) "ID");
             if (ret->projectID == NULL) {
                 fprintf(stderr, "Project has no ID\n");
             }
         }
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Application"))
-            && (cur->ns == ns))
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Application")
+            && cur->ns == ns)
             ret->application
                 = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Category"))
-            && (cur->ns == ns))
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Category")
+            && cur->ns == ns)
             ret->category = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Contact"))
-            && (cur->ns == ns))
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Contact")
+            && cur->ns == ns)
             ret->contact = parsePerson(doc, ns, cur);
         cur = cur->next;
     }
@@ -255,7 +255,7 @@ parseGjobFile (char *filename)
         free(ret);
         return NULL;
     }
-    if ((xmlStrcmp(cur->name, (const xmlChar *) "Jobs")) || (cur->ns != ns)) {
+    if (xmlStrcmp(cur->name, (const xmlChar *) "Jobs") || cur->ns != ns) {
         fprintf(stderr, "document of the wrong type, was '%s', Jobs expected",
                 cur->name);
         fprintf(stderr, "xmlDocDump follows\n");
@@ -271,8 +271,8 @@ parseGjobFile (char *filename)
     /* Second level is a list of Job, but be laxist */
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
-        if ((!xmlStrcmp(cur->name, (const xmlChar *) "Job"))
-            && (cur->ns == ns)) {
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "Job")
+            && cur->ns == ns) {
             curjob = parseJob(doc, ns, cur);
             if (curjob != NULL)
                 ret->jobs[ret->nbJobs++] = curjob;
