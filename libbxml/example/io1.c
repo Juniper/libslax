@@ -35,7 +35,7 @@ static int rlen;
 static int
 sqlMatch (const char *URI)
 {
-    if ((URI != NULL) && (!strncmp(URI, "sql:", 4)))
+    if (URI != NULL && !strncmp(URI, "sql:", 4))
         return 1;
     return 0;
 }
@@ -52,7 +52,7 @@ sqlMatch (const char *URI)
 static void *
 sqlOpen (const char *URI)
 {
-    if ((URI == NULL) || (strncmp(URI, "sql:", 4)))
+    if (URI == NULL || strncmp(URI, "sql:", 4))
         return NULL;
     cur = result;
     rlen = strlen(result);
@@ -92,7 +92,7 @@ sqlRead (void *context, char *buffer, int len)
 {
     const char *ptr = (const char *) context;
 
-    if ((context == NULL) || (buffer == NULL) || (len < 0))
+    if (context == NULL || buffer == NULL || len < 0)
         return -1;
 
     if (len > rlen)
