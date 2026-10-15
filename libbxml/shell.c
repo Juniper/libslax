@@ -192,7 +192,7 @@ xmllintLsOneNode (FILE *output, xmlNodePtr node)
     switch (node->type) {
     case XML_ELEMENT_NODE:
         if (node->name != NULL) {
-            if ((node->ns != NULL) && (node->ns->prefix != NULL))
+            if (node->ns != NULL && node->ns->prefix != NULL)
                 fprintf(output, "%s:", node->ns->prefix);
             fprintf(output, "%s", (const char *) node->name);
         }
@@ -271,8 +271,8 @@ xmllintShellList (xmllintShellCtxtPtr ctxt, char *arg UNUSED, xmlNodePtr node,
         fprintf(ctxt->output, "NULL\n");
         return 0;
     }
-    if ((node->type == XML_DOCUMENT_NODE)
-        || (node->type == XML_HTML_DOCUMENT_NODE)) {
+    if (node->type == XML_DOCUMENT_NODE
+        || node->type == XML_HTML_DOCUMENT_NODE) {
         cur = ((xmlDocPtr) node)->children;
     } else if (node->type == XML_NAMESPACE_DECL) {
         xmllintLsOneNode(ctxt->output, node);
@@ -417,8 +417,8 @@ xmllintShellRegisterRootNamespaces (xmllintShellCtxtPtr ctxt, char *arg UNUSED,
 {
     xmlNsPtr ns;
 
-    if ((root == NULL) || (root->type != XML_ELEMENT_NODE)
-        || (root->nsDef == NULL) || (ctxt == NULL) || (ctxt->pctxt == NULL))
+    if (root == NULL || root->type != XML_ELEMENT_NODE
+        || root->nsDef == NULL || ctxt == NULL || ctxt->pctxt == NULL)
         return -1;
     ns = root->nsDef;
     while (ns != NULL) {
@@ -453,9 +453,9 @@ xmllintShellGrep (xmllintShellCtxtPtr ctxt UNUSED, char *arg, xmlNodePtr node,
     if (arg == NULL)
         return 0;
 #ifdef LIBXML_REGEXP_ENABLED
-    if ((xmlStrchr((xmlChar *) arg, '?')) || (xmlStrchr((xmlChar *) arg, '*'))
-        || (xmlStrchr((xmlChar *) arg, '.'))
-        || (xmlStrchr((xmlChar *) arg, '['))) {
+    if (xmlStrchr((xmlChar *) arg, '?') || xmlStrchr((xmlChar *) arg, '*')
+        || xmlStrchr((xmlChar *) arg, '.')
+        || xmlStrchr((xmlChar *) arg, '[')) {
     }
 #endif
     while (node != NULL) {
@@ -475,11 +475,11 @@ xmllintShellGrep (xmllintShellCtxtPtr ctxt UNUSED, char *arg, xmlNodePtr node,
          * Browse the full subtree, deep first
          */
 
-        if ((node->type == XML_DOCUMENT_NODE)
-            || (node->type == XML_HTML_DOCUMENT_NODE)) {
+        if (node->type == XML_DOCUMENT_NODE
+            || node->type == XML_HTML_DOCUMENT_NODE) {
             node = ((xmlDocPtr) node)->children;
-        } else if ((node->children != NULL)
-                   && (node->type != XML_ENTITY_REF_NODE)) {
+        } else if (node->children != NULL
+                   && node->type != XML_ENTITY_REF_NODE) {
             /* deep first */
             node = node->children;
         } else if (node->next != NULL) {
@@ -526,8 +526,8 @@ xmllintShellDir (xmllintShellCtxtPtr ctxt UNUSED, char *arg UNUSED,
         return 0;
     }
 #ifdef LIBXML_DEBUG_ENABLED
-    if ((node->type == XML_DOCUMENT_NODE)
-        || (node->type == XML_HTML_DOCUMENT_NODE)) {
+    if (node->type == XML_DOCUMENT_NODE
+        || node->type == XML_HTML_DOCUMENT_NODE) {
         xmlDebugDumpDocumentHead(ctxt->output, (xmlDocPtr) node);
     } else if (node->type == XML_ATTRIBUTE_NODE) {
         xmlDebugDumpAttr(ctxt->output, (xmlAttrPtr) node, 0);
@@ -703,7 +703,7 @@ xmllintShellLoad (xmllintShellCtxtPtr ctxt, char *filename,
     xmlDocPtr doc;
     int html = 0;
 
-    if ((ctxt == NULL) || (filename == NULL))
+    if (ctxt == NULL || filename == NULL)
         return -1;
     if (ctxt->doc != NULL)
         html = (ctxt->doc->type == XML_HTML_DOCUMENT_NODE);
@@ -756,7 +756,7 @@ xmllintShellWrite (xmllintShellCtxtPtr ctxt, char *filename, xmlNodePtr node,
 {
     if (node == NULL)
         return -1;
-    if ((filename == NULL) || (filename[0] == 0)) {
+    if (filename == NULL || filename[0] == 0) {
         return -1;
     }
     switch (node->type) {
@@ -808,9 +808,9 @@ static int
 xmllintShellSave (xmllintShellCtxtPtr ctxt, char *filename,
                   xmlNodePtr node UNUSED, xmlNodePtr node2 UNUSED)
 {
-    if ((ctxt == NULL) || (ctxt->doc == NULL))
+    if (ctxt == NULL || ctxt->doc == NULL)
         return -1;
-    if ((filename == NULL) || (filename[0] == 0))
+    if (filename == NULL || filename[0] == 0)
         filename = ctxt->filename;
     if (filename == NULL)
         return -1;
@@ -859,14 +859,14 @@ xmllintShellValidate (xmllintShellCtxtPtr ctxt, char *dtd,
     xmlValidCtxt vctxt;
     int res = -1;
 
-    if ((ctxt == NULL) || (ctxt->doc == NULL))
+    if (ctxt == NULL || ctxt->doc == NULL)
         return -1;
     memset(&vctxt, 0, sizeof(vctxt));
     vctxt.error = xmllintShellPrintf;
     vctxt.warning = xmllintShellPrintf;
     vctxt.userData = ctxt;
 
-    if ((dtd == NULL) || (dtd[0] == 0)) {
+    if (dtd == NULL || dtd[0] == 0) {
         res = xmlValidateDocument(&vctxt, ctxt->doc);
     } else {
         xmlDtdPtr subset;
@@ -907,13 +907,13 @@ xmllintShellDu (xmllintShellCtxtPtr ctxt, char *arg UNUSED, xmlNodePtr tree,
         return -1;
     node = tree;
     while (node != NULL) {
-        if ((node->type == XML_DOCUMENT_NODE)
-            || (node->type == XML_HTML_DOCUMENT_NODE)) {
+        if (node->type == XML_DOCUMENT_NODE
+            || node->type == XML_HTML_DOCUMENT_NODE) {
             fprintf(ctxt->output, "/\n");
         } else if (node->type == XML_ELEMENT_NODE) {
             for (i = 0; i < indent; i++)
                 fprintf(ctxt->output, "  ");
-            if ((node->ns) && (node->ns->prefix))
+            if (node->ns && node->ns->prefix)
                 fprintf(ctxt->output, "%s:", node->ns->prefix);
             fprintf(ctxt->output, "%s\n", node->name);
         } else {
@@ -923,15 +923,15 @@ xmllintShellDu (xmllintShellCtxtPtr ctxt, char *arg UNUSED, xmlNodePtr tree,
          * Browse the full subtree, deep first
          */
 
-        if ((node->type == XML_DOCUMENT_NODE)
-            || (node->type == XML_HTML_DOCUMENT_NODE)) {
+        if (node->type == XML_DOCUMENT_NODE
+            || node->type == XML_HTML_DOCUMENT_NODE) {
             node = ((xmlDocPtr) node)->children;
-        } else if ((node->children != NULL)
-                   && (node->type != XML_ENTITY_REF_NODE)) {
+        } else if (node->children != NULL
+                   && node->type != XML_ENTITY_REF_NODE) {
             /* deep first */
             node = node->children;
             indent++;
-        } else if ((node != tree) && (node->next != NULL)) {
+        } else if (node != tree && node->next != NULL) {
             /* then siblings */
             node = node->next;
         } else if (node != tree) {
@@ -941,7 +941,7 @@ xmllintShellDu (xmllintShellCtxtPtr ctxt, char *arg UNUSED, xmlNodePtr tree,
                     node = node->parent;
                     indent--;
                 }
-                if ((node != tree) && (node->next != NULL)) {
+                if (node != tree && node->next != NULL) {
                     node = node->next;
                     break;
                 }
@@ -981,7 +981,7 @@ xmllintShellPwd (xmllintShellCtxtPtr ctxt UNUSED, char *buffer, xmlNodePtr node,
 {
     xmlChar *path;
 
-    if ((node == NULL) || (buffer == NULL))
+    if (node == NULL || buffer == NULL)
         return -1;
 
     path = xmlGetNodePath(node);
@@ -1099,11 +1099,11 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
     while (1) {
         if (ctxt->node == (xmlNodePtr) ctxt->doc)
             snprintf(prompt, sizeof(prompt), "%s > ", "/");
-        else if ((ctxt->node != NULL) && (ctxt->node->name) && (ctxt->node->ns)
-                 && (ctxt->node->ns->prefix))
+        else if (ctxt->node != NULL && ctxt->node->name && ctxt->node->ns
+                 && ctxt->node->ns->prefix)
             snprintf(prompt, sizeof(prompt), "%s:%s > ", ctxt->node->ns->prefix,
                      ctxt->node->name);
-        else if ((ctxt->node != NULL) && (ctxt->node->name))
+        else if (ctxt->node != NULL && ctxt->node->name)
             snprintf(prompt, sizeof(prompt), "%s > ", ctxt->node->name);
         else
             snprintf(prompt, sizeof(prompt), "? > ");
@@ -1120,11 +1120,11 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
          * Parse the command itself
          */
         cur = cmdline;
-        while ((*cur == ' ') || (*cur == '\t'))
+        while (*cur == ' ' || *cur == '\t')
             cur++;
         i = 0;
-        while ((*cur != ' ') && (*cur != '\t') && (*cur != '\n')
-               && (*cur != '\r') && (i < (MAX_COMMAND_SIZE - 1))) {
+        while (*cur != ' ' && *cur != '\t' && *cur != '\n'
+               && *cur != '\r' && i < (MAX_COMMAND_SIZE - 1)) {
             if (*cur == 0)
                 break;
             command[i++] = *cur++;
@@ -1139,11 +1139,11 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
         /*
          * Parse the argument
          */
-        while ((*cur == ' ') || (*cur == '\t'))
+        while (*cur == ' ' || *cur == '\t')
             cur++;
         i = 0;
-        while ((*cur != '\n') && (*cur != '\r') && (*cur != 0)
-               && (i < (MAX_ARG_SIZE - 1))) {
+        while (*cur != '\n' && *cur != '\r' && *cur != 0
+               && i < (MAX_ARG_SIZE - 1)) {
             if (*cur == 0)
                 break;
             arg[i++] = *cur++;
@@ -1332,7 +1332,7 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
 #endif /* LIBXML_XPATH_ENABLED */
         } else if (!strcmp(command, "setbase")) {
             xmllintShellSetBase(ctxt, arg, ctxt->node, NULL);
-        } else if ((!strcmp(command, "ls")) || (!strcmp(command, "dir"))) {
+        } else if (!strcmp(command, "ls") || !strcmp(command, "dir")) {
             int dir = (!strcmp(command, "dir"));
 
             if (arg[0] == 0) {
@@ -1455,7 +1455,7 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
 
                 ctxt->pctxt->node = ctxt->node;
                 l = strlen(arg);
-                if ((l >= 2) && (arg[l - 1] == '/'))
+                if (l >= 2 && arg[l - 1] == '/')
                     arg[l - 1] = 0;
                 list = xmlXPathEval((xmlChar *) arg, ctxt->pctxt);
                 if (list != NULL) {
@@ -1467,9 +1467,9 @@ xmllintShell (xmlDoc *doc, const char *filename, FILE *output)
                         if (list->nodesetval != NULL) {
                             if (list->nodesetval->nodeNr == 1) {
                                 ctxt->node = list->nodesetval->nodeTab[0];
-                                if ((ctxt->node != NULL)
-                                    && (ctxt->node->type
-                                        == XML_NAMESPACE_DECL)) {
+                                if (ctxt->node != NULL
+                                    && ctxt->node->type
+                                        == XML_NAMESPACE_DECL) {
                                     fprintf(ctxt->output,
                                             "cannot cd to namespace\n");
                                     ctxt->node = NULL;
