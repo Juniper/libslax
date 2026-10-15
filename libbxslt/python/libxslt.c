@@ -398,8 +398,8 @@ libxslt_xsltRegisterExtModuleElement (PyObject *self UNUSED, PyObject *args)
            ns_uri);
 #endif
 
-    if ((name == NULL) || (pyobj_element_f == NULL)
-        || (pyobj_precomp_f == NULL)) {
+    if (name == NULL || pyobj_element_f == NULL
+        || pyobj_precomp_f == NULL) {
         py_retval = libxml_intWrap(-1);
         return py_retval;
     }
@@ -511,7 +511,7 @@ libxslt_xsltRegisterExtModuleFunction (PyObject *self UNUSED, PyObject *args)
                           &ns_uri, &pyobj_f))
         return NULL;
 
-    if ((name == NULL) || (pyobj_f == NULL)) {
+    if (name == NULL || pyobj_f == NULL) {
         py_retval = libxml_intWrap(-1);
         return py_retval;
     }
@@ -961,7 +961,7 @@ static void PSU_PRINTFLIKE(2, 3)
             va_start(ap, msg);
             chars = vsnprintf(str, size, msg, ap);
             va_end(ap);
-            if ((chars > -1) && (chars < size))
+            if (chars > -1 && chars < size)
                 break;
             if (chars > -1)
                 size += chars + 1;
@@ -1047,7 +1047,7 @@ libxslt_xsltPythonExtModuleStyleInit (xsltStylesheetPtr style,
     printf("libxslt_xsltPythonExtModuleStyleInit(%p, %s) called\n", style, URI);
 #endif
 
-    if ((style == NULL) || (URI == NULL))
+    if (style == NULL || URI == NULL)
         return NULL;
 
     /*
@@ -1081,7 +1081,7 @@ libxslt_xsltPythonExtModuleStyleShutdown (xsltStylesheetPtr style,
            style, URI, data);
 #endif
 
-    if ((style == NULL) || (URI == NULL))
+    if (style == NULL || URI == NULL)
         return;
 
     /*
@@ -1116,7 +1116,7 @@ libxslt_xsltPythonExtModuleCtxtInit (xsltTransformContextPtr ctxt,
     printf("libxslt_xsltPythonExtModuleCtxtInit(%p, %s) called\n", ctxt, URI);
 #endif
 
-    if ((ctxt == NULL) || (URI == NULL))
+    if (ctxt == NULL || URI == NULL)
         return NULL;
 
     /*
@@ -1150,7 +1150,7 @@ libxslt_xsltPythonExtModuleCtxtShutdown (xsltTransformContextPtr ctxt,
            URI, data);
 #endif
 
-    if ((ctxt == NULL) || (URI == NULL))
+    if (ctxt == NULL || URI == NULL)
         return;
 
     /*
@@ -1186,7 +1186,7 @@ libxslt_xsltRegisterExtensionClass (PyObject *self UNUSED, PyObject *args)
                           &pyobj_c))
         return NULL;
 
-    if ((ns_uri == NULL) || (pyobj_c == NULL)) {
+    if (ns_uri == NULL || pyobj_c == NULL) {
         py_retval = libxml_intWrap(-1);
         return py_retval;
     }
