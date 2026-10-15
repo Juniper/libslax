@@ -33,7 +33,7 @@ exsltStrTokenizeFunction (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathObjectPtr ret = NULL;
     int clen;
 
-    if ((nargs < 1) || (nargs > 2)) {
+    if (nargs < 1 || nargs > 2) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -49,7 +49,7 @@ exsltStrTokenizeFunction (xmlXPathParserContextPtr ctxt, int nargs)
         return;
 
     str = xmlXPathPopString(ctxt);
-    if (xmlXPathCheckError(ctxt) || (str == NULL)) {
+    if (xmlXPathCheckError(ctxt) || str == NULL) {
         xmlFree(delimiters);
         return;
     }
@@ -142,7 +142,7 @@ exsltStrSplitFunction (xmlXPathParserContextPtr ctxt, int nargs)
     xmlXPathObjectPtr ret = NULL;
     int delimiterLength;
 
-    if ((nargs < 1) || (nargs > 2)) {
+    if (nargs < 1 || nargs > 2) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -159,7 +159,7 @@ exsltStrSplitFunction (xmlXPathParserContextPtr ctxt, int nargs)
     delimiterLength = xmlStrlen(delimiter);
 
     str = xmlXPathPopString(ctxt);
-    if (xmlXPathCheckError(ctxt) || (str == NULL)) {
+    if (xmlXPathCheckError(ctxt) || str == NULL) {
         xmlFree(delimiter);
         return;
     }
@@ -245,7 +245,7 @@ exsltStrEncodeUriFunction (xmlXPathParserContextPtr ctxt, int nargs)
     int escape_all = 1, str_len = 0;
     xmlChar *str = NULL, *ret = NULL, *tmp;
 
-    if ((nargs < 2) || (nargs > 3)) {
+    if (nargs < 2 || nargs > 3) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -299,7 +299,7 @@ exsltStrDecodeUriFunction (xmlXPathParserContextPtr ctxt, int nargs)
     int str_len = 0;
     xmlChar *str = NULL, *ret = NULL, *tmp;
 
-    if ((nargs < 1) || (nargs > 2)) {
+    if (nargs < 1 || nargs > 2) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -360,7 +360,7 @@ exsltStrPaddingFunction (xmlXPathParserContextPtr ctxt, int nargs)
     xmlChar *str = NULL;
     xmlBufferPtr buf;
 
-    if ((nargs < 1) || (nargs > 2)) {
+    if (nargs < 1 || nargs > 2) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -439,7 +439,7 @@ exsltStrAlignFunction (xmlXPathParserContextPtr ctxt, int nargs)
     xmlChar *str, *padding, *alignment, *ret;
     int str_l, padding_l;
 
-    if ((nargs < 2) || (nargs > 3)) {
+    if (nargs < 2 || nargs > 3) {
         xmlXPathSetArityError(ctxt);
         return;
     }
@@ -761,9 +761,9 @@ exsltStrReplaceFunction (xmlXPathParserContextPtr ctxt, int nargs)
 
             src += xmlUTF8Strsize(src, 1);
         } else {
-            if ((start < src && xmlBufferAdd(buf, start, src - start))
-                || (rlen[i_match]
-                    && xmlBufferAdd(buf, replace[i_match], rlen[i_match]))) {
+            if (start < src && xmlBufferAdd(buf, start, src - start)
+                || rlen[i_match]
+                    && xmlBufferAdd(buf, replace[i_match], rlen[i_match])) {
                 xmlXPathSetError(ctxt, XPATH_MEMORY_ERROR);
                 goto fail_buffer_add;
             }
