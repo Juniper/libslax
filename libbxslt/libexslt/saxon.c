@@ -87,7 +87,7 @@ exsltSaxonExpressionFunction (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     arg = xmlXPathPopString(ctxt);
-    if (xmlXPathCheckError(ctxt) || (arg == NULL)) {
+    if (xmlXPathCheckError(ctxt) || arg == NULL) {
         xmlXPathSetTypeError(ctxt);
         return;
     }
@@ -208,10 +208,10 @@ exsltSaxonSystemIdFunction (xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
 
-    if ((xmlXPathParserContextGetContext(ctxt))
-        && (xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))
-        && (xmlDocGetURL(
-            xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt)))))
+    if (xmlXPathParserContextGetContext(ctxt)
+        && xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt))
+        && xmlDocGetURL(
+            xmlXPathContextGetDoc(xmlXPathParserContextGetContext(ctxt))))
         valuePush(ctxt,
                   xmlXPathNewString(xmlDocGetURL(xmlXPathContextGetDoc(
                       xmlXPathParserContextGetContext(ctxt)))));
@@ -251,9 +251,9 @@ exsltSaxonLineNumberFunction (xmlXPathParserContextPtr ctxt, int nargs)
         xmlNodeSetPtr nodelist;
         int i;
 
-        if ((xmlXPathParserContextGetValue(ctxt) == NULL)
-            || (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
-                != XPATH_NODESET)) {
+        if (xmlXPathParserContextGetValue(ctxt) == NULL
+            || xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+                != XPATH_NODESET) {
             xsltTransformError(
                 xsltXPathGetTransformContext(ctxt), NULL, NULL,
                 "saxon:line-number() : invalid arg expecting a node-set\n");
@@ -263,7 +263,7 @@ exsltSaxonLineNumberFunction (xmlXPathParserContextPtr ctxt, int nargs)
 
         obj = valuePop(ctxt);
         nodelist = xmlXPathObjectGetNodesetval(obj);
-        if ((nodelist != NULL) && (xmlNodeSetGetNodeNr(nodelist) > 0)) {
+        if (nodelist != NULL && xmlNodeSetGetNodeNr(nodelist) > 0) {
             cur = xmlNodeSetGetNodeEntry(nodelist, 0);
             for (i = 1; i < xmlNodeSetGetNodeNr(nodelist); i++) {
                 int ret = xmlXPathCmpNodes(cur,
@@ -280,7 +280,7 @@ exsltSaxonLineNumberFunction (xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
 
-    if ((cur != NULL) && (xmlNodeGetType(cur) == XML_NAMESPACE_DECL)) {
+    if (cur != NULL && xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
         /*
         * The XPath module sets the owner element of a ns-node on
         * the ns->next field.
