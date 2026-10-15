@@ -234,7 +234,7 @@ static int
 xmlC14NIsNodeInNodeset (void *user_data, xmlNodePtr node, xmlNodePtr parent)
 {
     xmlNodeSetPtr nodes = (xmlNodeSetPtr) user_data;
-    if ((nodes != NULL) && (node != NULL)) {
+    if (nodes != NULL && node != NULL) {
         if (node->type != XML_NAMESPACE_DECL) {
             return xmlXPathNodeSetContains(nodes, node);
         } else {
@@ -243,7 +243,7 @@ xmlC14NIsNodeInNodeset (void *user_data, xmlNodePtr node, xmlNodePtr parent)
             memcpy(&ns, node, sizeof(ns));
 
             /* this is a libxml hack! check xpath.c for details */
-            if ((parent != NULL) && (parent->type == XML_ATTRIBUTE_NODE)) {
+            if (parent != NULL && parent->type == XML_ATTRIBUTE_NODE) {
                 ns.next = (xmlNsPtr) parent->parent;
             } else {
                 ns.next = (xmlNsPtr) parent;
@@ -294,8 +294,8 @@ static int
 xmlC14NVisibleNsStackAdd (xmlC14NVisibleNsStackPtr cur, xmlNsPtr ns,
                           xmlNodePtr node)
 {
-    if ((cur == NULL) || ((cur->nsTab == NULL) && (cur->nodeTab != NULL))
-        || ((cur->nsTab != NULL) && (cur->nodeTab == NULL)))
+    if (cur == NULL || cur->nsTab == NULL && cur->nodeTab != NULL
+        || cur->nsTab != NULL && cur->nodeTab == NULL)
         return 1;
 
     if (cur->nsMax <= cur->nsCurEnd) {
@@ -330,7 +330,7 @@ static void
 xmlC14NVisibleNsStackSave (xmlC14NVisibleNsStackPtr cur,
                            xmlC14NVisibleNsStackPtr state)
 {
-    if ((cur == NULL) || (state == NULL)) {
+    if (cur == NULL || state == NULL) {
         xmlC14NErrParam(NULL);
         return;
     }
@@ -344,7 +344,7 @@ static void
 xmlC14NVisibleNsStackRestore (xmlC14NVisibleNsStackPtr cur,
                               xmlC14NVisibleNsStackPtr state)
 {
-    if ((cur == NULL) || (state == NULL)) {
+    if (cur == NULL || state == NULL) {
         xmlC14NErrParam(NULL);
         return;
     }
@@ -510,7 +510,7 @@ xmlC14NNsCompare (const void *data1, const void *data2)
 static int
 xmlC14NPrintNamespaces (const xmlNs *ns, xmlC14NCtxPtr ctx)
 {
-    if ((ns == NULL) || (ctx == NULL)) {
+    if (ns == NULL || ctx == NULL) {
         xmlC14NErrParam(ctx);
         return 0;
     }
@@ -583,7 +583,7 @@ xmlC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     int already_rendered;
     int has_empty_ns = 0;
 
-    if ((ctx == NULL) || (cur == NULL) || (cur->type != XML_ELEMENT_NODE)) {
+    if (ctx == NULL || cur == NULL || cur->type != XML_ELEMENT_NODE) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -602,7 +602,7 @@ xmlC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
         for (ns = n->nsDef; ns != NULL; ns = ns->next) {
             tmp = xmlSearchNs(cur->doc, cur, ns->prefix);
 
-            if ((tmp == ns) && !xmlC14NIsXmlNs(ns)
+            if (tmp == ns && !xmlC14NIsXmlNs(ns)
                 && xmlC14NIsVisible(ctx, ns, cur)) {
                 already_rendered
                     = xmlC14NVisibleNsStackFind(ctx->ns_rendered, ns);
@@ -694,7 +694,7 @@ xmlExcC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     int has_visibly_utilized_empty_ns = 0;
     int has_empty_ns_in_inclusive_list = 0;
 
-    if ((ctx == NULL) || (cur == NULL) || (cur->type != XML_ELEMENT_NODE)) {
+    if (ctx == NULL || cur == NULL || cur->type != XML_ELEMENT_NODE) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -734,7 +734,7 @@ xmlExcC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
             }
 
             ns = xmlSearchNs(cur->doc, cur, prefix);
-            if ((ns != NULL) && !xmlC14NIsXmlNs(ns)
+            if (ns != NULL && !xmlC14NIsXmlNs(ns)
                 && xmlC14NIsVisible(ctx, ns, cur)) {
                 already_rendered
                     = xmlC14NVisibleNsStackFind(ctx->ns_rendered, ns);
@@ -762,7 +762,7 @@ xmlExcC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
         ns = xmlSearchNs(cur->doc, cur, NULL);
         has_visibly_utilized_empty_ns = 1;
     }
-    if ((ns != NULL) && !xmlC14NIsXmlNs(ns)) {
+    if (ns != NULL && !xmlC14NIsXmlNs(ns)) {
         if (visible && xmlC14NIsVisible(ctx, ns, cur)) {
             if (!xmlExcC14NVisibleNsStackFind(ctx->ns_rendered, ns, ctx)) {
                 xmlListInsert(list, ns);
@@ -786,7 +786,7 @@ xmlExcC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
          * default namespace (XML Namespaces: "default namespaces
 	 * do not apply directly to attributes")
          */
-        if ((attr->ns != NULL) && !xmlC14NIsXmlNs(attr->ns)
+        if (attr->ns != NULL && !xmlC14NIsXmlNs(attr->ns)
             && xmlC14NIsVisible(ctx, attr, cur)) {
             already_rendered
                 = xmlExcC14NVisibleNsStackFind(ctx->ns_rendered, attr->ns, ctx);
@@ -800,8 +800,8 @@ xmlExcC14NProcessNamespacesAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
             if (xmlStrlen(attr->ns->prefix) == 0) {
                 has_empty_ns = 1;
             }
-        } else if ((attr->ns != NULL) && (xmlStrlen(attr->ns->prefix) == 0)
-                   && (xmlStrlen(attr->ns->href) == 0)) {
+        } else if (attr->ns != NULL && xmlStrlen(attr->ns->prefix) == 0
+                   && xmlStrlen(attr->ns->href) == 0) {
             has_visibly_utilized_empty_ns = 1;
         }
     }
@@ -923,7 +923,7 @@ xmlC14NPrintAttrs (const void *data, void *user)
     xmlChar *value;
     xmlChar *buffer;
 
-    if ((attr == NULL) || (ctx == NULL)) {
+    if (attr == NULL || ctx == NULL) {
         xmlC14NErrParam(ctx);
         return 0;
     }
@@ -963,7 +963,7 @@ xmlC14NFindHiddenParentAttr (xmlC14NCtxPtr ctx, xmlNodePtr cur,
                              const xmlChar *name, const xmlChar *ns)
 {
     xmlAttrPtr res;
-    while ((cur != NULL) && (!xmlC14NIsVisible(ctx, cur, cur->parent))) {
+    while (cur != NULL && !xmlC14NIsVisible(ctx, cur, cur->parent)) {
         res = xmlHasNsProp(cur, name, ns);
         if (res != NULL) {
             return res;
@@ -990,8 +990,8 @@ xmlC14NFixupBaseAttr (xmlC14NCtxPtr ctx, xmlAttrPtr xml_base_attr)
     xmlChar *tmp_str2;
     int tmp_str_len;
 
-    if ((ctx == NULL) || (xml_base_attr == NULL)
-        || (xml_base_attr->parent == NULL)) {
+    if (ctx == NULL || xml_base_attr == NULL
+        || xml_base_attr->parent == NULL) {
         xmlC14NErrParam(ctx);
         return NULL;
     }
@@ -1005,7 +1005,7 @@ xmlC14NFixupBaseAttr (xmlC14NCtxPtr ctx, xmlAttrPtr xml_base_attr)
 
     /* go up the stack until we find a node that we rendered already */
     cur = xml_base_attr->parent->parent;
-    while ((cur != NULL) && (!xmlC14NIsVisible(ctx, cur, cur->parent))) {
+    while (cur != NULL && !xmlC14NIsVisible(ctx, cur, cur->parent)) {
         int code;
 
         attr = xmlHasNsProp(cur, BAD_CAST "base", XML_XML_NAMESPACE);
@@ -1058,7 +1058,7 @@ xmlC14NFixupBaseAttr (xmlC14NCtxPtr ctx, xmlAttrPtr xml_base_attr)
     }
 
     /* check if result uri is empty or not */
-    if ((res == NULL) || xmlStrEqual(res, BAD_CAST "")) {
+    if (res == NULL || xmlStrEqual(res, BAD_CAST "")) {
         xmlFree(res);
         return NULL;
     }
@@ -1119,7 +1119,7 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
     xmlAttrPtr xml_lang_attr = NULL;
     xmlAttrPtr xml_space_attr = NULL;
 
-    if ((ctx == NULL) || (cur == NULL) || (cur->type != XML_ELEMENT_NODE)) {
+    if (ctx == NULL || cur == NULL || cur->type != XML_ELEMENT_NODE) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -1161,8 +1161,8 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
         /*
          * Handle xml attributes
          */
-        if (parent_visible && (cur->parent != NULL)
-            && (!xmlC14NIsVisible(ctx, cur->parent, cur->parent->parent))) {
+        if (parent_visible && cur->parent != NULL
+            && !xmlC14NIsVisible(ctx, cur->parent, cur->parent->parent)) {
             xmlNodePtr tmp;
 
             /*
@@ -1240,7 +1240,7 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
         attr = cur->properties;
         while (attr != NULL) {
             /* special processing for XML attribute kiks in only when we have invisible parents */
-            if ((!parent_visible) || (xmlC14NIsXmlAttr(attr) == 0)) {
+            if (!parent_visible || xmlC14NIsXmlAttr(attr) == 0) {
                 /* check that attribute is visible */
                 if (xmlC14NIsVisible(ctx, attr, cur)) {
                     xmlListInsert(list, attr);
@@ -1249,26 +1249,26 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
                 int matched = 0;
 
                 /* check for simple inheritance attributes */
-                if ((!matched) && (xml_lang_attr == NULL)
+                if (!matched && xml_lang_attr == NULL
                     && xmlStrEqual(attr->name, BAD_CAST "lang")) {
                     xml_lang_attr = attr;
                     matched = 1;
                 }
-                if ((!matched) && (xml_space_attr == NULL)
+                if (!matched && xml_space_attr == NULL
                     && xmlStrEqual(attr->name, BAD_CAST "space")) {
                     xml_space_attr = attr;
                     matched = 1;
                 }
 
                 /* check for base attr */
-                if ((!matched) && (xml_base_attr == NULL)
+                if (!matched && xml_base_attr == NULL
                     && xmlStrEqual(attr->name, BAD_CAST "base")) {
                     xml_base_attr = attr;
                     matched = 1;
                 }
 
                 /* otherwise, it is a normal attribute, so just check if it is visible */
-                if ((!matched) && xmlC14NIsVisible(ctx, attr, cur)) {
+                if (!matched && xmlC14NIsVisible(ctx, attr, cur)) {
                     xmlListInsert(list, attr);
                 }
             }
@@ -1342,7 +1342,7 @@ xmlC14NCheckForRelativeNamespaces (xmlC14NCtxPtr ctx, xmlNodePtr cur)
 {
     xmlNsPtr ns;
 
-    if ((ctx == NULL) || (cur == NULL) || (cur->type != XML_ELEMENT_NODE)) {
+    if (ctx == NULL || cur == NULL || cur->type != XML_ELEMENT_NODE) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -1401,7 +1401,7 @@ xmlC14NProcessElementNode (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     xmlC14NVisibleNsStack state;
     int parent_is_doc = 0;
 
-    if ((ctx == NULL) || (cur == NULL) || (cur->type != XML_ELEMENT_NODE)) {
+    if (ctx == NULL || cur == NULL || cur->type != XML_ELEMENT_NODE) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -1429,7 +1429,7 @@ xmlC14NProcessElementNode (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
         }
         xmlOutputBufferWriteString(ctx->buf, "<");
 
-        if ((cur->ns != NULL) && (xmlStrlen(cur->ns->prefix) > 0)) {
+        if (cur->ns != NULL && xmlStrlen(cur->ns->prefix) > 0) {
             xmlOutputBufferWriteString(ctx->buf,
                                        (const char *) cur->ns->prefix);
             xmlOutputBufferWriteString(ctx->buf, ":");
@@ -1463,7 +1463,7 @@ xmlC14NProcessElementNode (xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     }
     if (visible) {
         xmlOutputBufferWriteString(ctx->buf, "</");
-        if ((cur->ns != NULL) && (xmlStrlen(cur->ns->prefix) > 0)) {
+        if (cur->ns != NULL && xmlStrlen(cur->ns->prefix) > 0) {
             xmlOutputBufferWriteString(ctx->buf,
                                        (const char *) cur->ns->prefix);
             xmlOutputBufferWriteString(ctx->buf, ":");
@@ -1497,7 +1497,7 @@ xmlC14NProcessNode (xmlC14NCtxPtr ctx, xmlNodePtr cur)
     int ret = 0;
     int visible;
 
-    if ((ctx == NULL) || (cur == NULL)) {
+    if (ctx == NULL || cur == NULL) {
         xmlC14NErrParam(ctx);
         return -1;
     }
@@ -1518,7 +1518,7 @@ xmlC14NProcessNode (xmlC14NCtxPtr ctx, xmlNodePtr cur)
              */
         /* cdata sections are processed as text nodes */
         /* todo: verify that cdata sections are included in XPath nodes set */
-        if ((visible) && (cur->content != NULL)) {
+        if (visible && cur->content != NULL) {
             xmlChar *buffer;
 
             buffer = xmlC11NNormalizeText(cur->content);
@@ -1552,7 +1552,7 @@ xmlC14NProcessNode (xmlC14NCtxPtr ctx, xmlNodePtr cur)
             }
 
             xmlOutputBufferWriteString(ctx->buf, (const char *) cur->name);
-            if ((cur->content != NULL) && (*(cur->content) != '\0')) {
+            if (cur->content != NULL && *(cur->content) != '\0') {
                 xmlChar *buffer;
 
                 xmlOutputBufferWriteString(ctx->buf, " ");
@@ -1736,7 +1736,7 @@ xmlC14NNewCtx (xmlDocPtr doc, xmlC14NIsVisibleCallback is_visible_callback,
 {
     xmlC14NCtxPtr ctx = NULL;
 
-    if ((doc == NULL) || (buf == NULL)) {
+    if (doc == NULL || buf == NULL) {
         xmlC14NErrParam(ctx);
         return NULL;
     }
@@ -1821,7 +1821,7 @@ xmlC14NExecute (xmlDoc *doc, xmlC14NIsVisibleCallback is_visible_callback,
     xmlC14NMode c14n_mode = XML_C14N_1_0;
     int ret;
 
-    if ((buf == NULL) || (doc == NULL)) {
+    if (buf == NULL || doc == NULL) {
         xmlC14NErrParam(NULL);
         return -1;
     }
@@ -1977,7 +1977,7 @@ xmlC14NDocDumpMemory (xmlDoc *doc, xmlNodeSet *nodes, int mode,
     }
     (void) xmlOutputBufferClose(buf);
 
-    if ((*doc_txt_ptr == NULL) && (ret >= 0)) {
+    if (*doc_txt_ptr == NULL && ret >= 0) {
         xmlC14NErrMemory(NULL);
         return -1;
     }
@@ -2099,19 +2099,19 @@ xmlC11NNormalizeString (const xmlChar *input, xmlC14NNormalizationMode mode)
             out = &buffer[indx];
         }
 
-        if ((*cur == '<')
+        if (*cur == '<'
             && ((mode == XMLC14N_NORMALIZE_ATTR)
                 || (mode == XMLC14N_NORMALIZE_TEXT))) {
             *out++ = '&';
             *out++ = 'l';
             *out++ = 't';
             *out++ = ';';
-        } else if ((*cur == '>') && (mode == XMLC14N_NORMALIZE_TEXT)) {
+        } else if (*cur == '>' && mode == XMLC14N_NORMALIZE_TEXT) {
             *out++ = '&';
             *out++ = 'g';
             *out++ = 't';
             *out++ = ';';
-        } else if ((*cur == '&')
+        } else if (*cur == '&'
                    && ((mode == XMLC14N_NORMALIZE_ATTR)
                        || (mode == XMLC14N_NORMALIZE_TEXT))) {
             *out++ = '&';
@@ -2119,26 +2119,26 @@ xmlC11NNormalizeString (const xmlChar *input, xmlC14NNormalizationMode mode)
             *out++ = 'm';
             *out++ = 'p';
             *out++ = ';';
-        } else if ((*cur == '"') && (mode == XMLC14N_NORMALIZE_ATTR)) {
+        } else if (*cur == '"' && mode == XMLC14N_NORMALIZE_ATTR) {
             *out++ = '&';
             *out++ = 'q';
             *out++ = 'u';
             *out++ = 'o';
             *out++ = 't';
             *out++ = ';';
-        } else if ((*cur == '\x09') && (mode == XMLC14N_NORMALIZE_ATTR)) {
+        } else if (*cur == '\x09' && mode == XMLC14N_NORMALIZE_ATTR) {
             *out++ = '&';
             *out++ = '#';
             *out++ = 'x';
             *out++ = '9';
             *out++ = ';';
-        } else if ((*cur == '\x0A') && (mode == XMLC14N_NORMALIZE_ATTR)) {
+        } else if (*cur == '\x0A' && mode == XMLC14N_NORMALIZE_ATTR) {
             *out++ = '&';
             *out++ = '#';
             *out++ = 'x';
             *out++ = 'A';
             *out++ = ';';
-        } else if ((*cur == '\x0D')
+        } else if (*cur == '\x0D'
                    && ((mode == XMLC14N_NORMALIZE_ATTR)
                        || (mode == XMLC14N_NORMALIZE_TEXT)
                        || (mode == XMLC14N_NORMALIZE_COMMENT)
