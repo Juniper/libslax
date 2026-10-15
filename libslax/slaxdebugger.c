@@ -123,6 +123,20 @@ const char **slaxDebugIncludes;
 /* Flags from slaxDebugInitFlags() */
 slaxDebugFlags_t slaxDebugFlags;
 
+/*
+ * Echo a line of input just read via slaxInput(), if SDBF_ECHO_INPUT
+ * is set.  slaxInput() already writes the prompt (sans newline), so
+ * we only need to echo the input text to complete that line, making
+ * piped/non-tty transcripts (e.g. test output) show both halves of
+ * the exchange.
+ */
+static void
+slaxDebugEchoInput (const char *input)
+{
+    if ((slaxDebugFlags & SDBF_ECHO_INPUT) && input != NULL)
+	slaxOutput("%s", input);
+}
+
 /* Arguments to our command functions */
 #define DC_ARGS \
         slaxDebugState_t *statep UNUSED, \
@@ -1093,6 +1107,7 @@ slaxDebugCmdDelete (DC_ARGS)
      */
     if (argv[1] == NULL) {
 	cp = slaxInput(prompt, 0);
+	slaxDebugEchoInput(cp);
 
 	if (!streq(cp, "y") && !streq(cp, "yes"))
 	    return;
@@ -1945,6 +1960,7 @@ slaxDebugCmdReload (DC_ARGS)
 
 	slaxOutput(warning);
 	input = slaxInput(prompt, 0);
+	slaxDebugEchoInput(input);
 	if (input == NULL)
 	    return;
 
@@ -1982,6 +1998,7 @@ slaxDebugCmdRun (DC_ARGS)
 
 	slaxOutput(warning);
 	input = slaxInput(prompt, 0);
+	slaxDebugEchoInput(input);
 	if (input == NULL)
 	    return;
 
@@ -2053,6 +2070,7 @@ slaxDebugCmdQuit (DC_ARGS)
 
     if (status != 0 && status != XSLT_DEBUG_DONE) {
 	char *input = slaxInput(prompt, 0);
+	slaxDebugEchoInput(input);
 
 	if (input == NULL
 	    	|| !slaxDebugCheckAbbrev("yes", 1, input, strlen(input)))
@@ -2278,6 +2296,8 @@ slaxDebugShell (slaxDebugState_t *statep)
     } else {
 	strlcpy(prev_input, cp, sizeof(prev_input));
     }
+
+    slaxDebugEchoInput(cp);
 
     statep->ds_flags |= DSF_INSHELL;
     slaxDebugRunCommand(statep, cp);
