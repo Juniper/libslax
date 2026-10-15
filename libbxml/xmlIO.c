@@ -251,7 +251,7 @@ xmlEscapeText (const xmlChar *string, int flags)
                 val = 0xFFFD;
                 cur += 1;
             } else {
-                if ((val == 0xFFFE) || (val == 0xFFFF))
+                if (val == 0xFFFE || val == 0xFFFF)
                     val = 0xFFFD;
                 cur += len;
             }
@@ -267,8 +267,8 @@ xmlEscapeText (const xmlChar *string, int flags)
             xmlChar *tmp;
             size_t newSize;
 
-            if ((size > (SIZE_MAX - 1) / 2)
-                || (totalSize > (SIZE_MAX - 1) / 2 - size)) {
+            if (size > (SIZE_MAX - 1) / 2
+                || totalSize > (SIZE_MAX - 1) / 2 - size) {
                 xmlFree(buffer);
                 return NULL;
             }
@@ -378,7 +378,7 @@ xmlSerializeText (xmlOutputBuffer *buf, const xmlChar *string, size_t maxSize,
                 val = 0xFFFD;
                 cur += 1;
             } else {
-                if ((val == 0xFFFE) || (val == 0xFFFF))
+                if (val == 0xFFFE || val == 0xFFFF)
                     val = 0xFFFD;
                 cur += len;
             }
@@ -865,7 +865,7 @@ xmlFdOpen (const char *filename, int write, int *out)
          * Windows and possibly other platforms return EINVAL
          * for invalid filenames.
          */
-        if ((errno == ENOENT) || (errno == EINVAL)) {
+        if (errno == ENOENT || errno == EINVAL) {
             ret = XML_IO_ENOENT;
         } else {
             ret = xmlIOErr(errno);
@@ -1034,7 +1034,7 @@ xmlFileOpenSafe (const char *filename, int write, void **out)
          * Windows and possibly other platforms return EINVAL
          * for invalid filenames.
          */
-        if ((errno == ENOENT) || (errno == EINVAL)) {
+        if (errno == ENOENT || errno == EINVAL) {
             ret = XML_IO_ENOENT;
         } else {
             /*
@@ -1079,7 +1079,7 @@ xmlFileRead (void *context, char *buffer, int len)
     FILE *file = context;
     size_t bytes;
 
-    if ((context == NULL) || (buffer == NULL))
+    if (context == NULL || buffer == NULL)
         return -1;
 
     /*
@@ -1090,7 +1090,7 @@ xmlFileRead (void *context, char *buffer, int len)
      */
     errno = 0;
     bytes = fread(buffer, 1, len, file);
-    if ((bytes < (size_t) len) && (ferror(file)))
+    if (bytes < (size_t) len && ferror(file))
         return -xmlIOErr(errno);
 
     return bytes;
@@ -1111,7 +1111,7 @@ xmlFileWrite (void *context, const char *buffer, int len)
     FILE *file = context;
     size_t bytes;
 
-    if ((context == NULL) || (buffer == NULL))
+    if (context == NULL || buffer == NULL)
         return -1;
 
     errno = 0;
@@ -1158,7 +1158,7 @@ xmlFileClose (void *context)
 
     if (file == stdin)
         return 0;
-    if ((file == stdout) || (file == stderr))
+    if (file == stdout || file == stderr)
         return xmlFileFlush(file);
 
     if (fclose(file) != 0)
@@ -1574,8 +1574,8 @@ xmlOutputBufferClose (xmlOutputBuffer *out)
     if (out->closecallback != NULL) {
         int code = out->closecallback(out->context);
 
-        if ((code != XML_ERR_OK)
-            && (!xmlIsCatastrophicError(XML_ERR_FATAL, out->error))) {
+        if (code != XML_ERR_OK
+            && !xmlIsCatastrophicError(XML_ERR_FATAL, out->error)) {
             if (code < 0)
                 out->error = XML_IO_UNKNOWN;
             else
@@ -1655,8 +1655,8 @@ xmlParserInputBufferCreateUrl (const char *URI, xmlCharEncoding enc,
             } else if (ret != XML_IO_ENOENT) {
                 break;
             }
-        } else if ((cb->matchcallback != NULL)
-                   && (cb->matchcallback(URI) != 0)) {
+        } else if (cb->matchcallback != NULL
+                   && cb->matchcallback(URI) != 0) {
             buf->context = cb->opencallback(URI);
             if (buf->context != NULL) {
                 buf->readcallback = cb->readcallback;
@@ -1731,7 +1731,7 @@ xmlParserInputBufferCreateFilename (const char *URI, xmlCharEncoding enc)
      * the kind of error although it really is crucial.
      * All we can do is to set the global error.
      */
-    if ((code != XML_ERR_OK) && (code != XML_IO_ENOENT)) {
+    if (code != XML_ERR_OK && code != XML_IO_ENOENT) {
         if (xmlRaiseError(NULL, NULL, NULL, NULL, NULL, XML_FROM_IO, code,
                           XML_ERR_ERROR, URI, 0, NULL, NULL, NULL, 0, 0,
                           "Failed to open file\n")
@@ -1810,8 +1810,8 @@ __xmlOutputBufferCreateFilename (const char *URI,
             /* TODO: Handle other errors */
             if (code == XML_ERR_OK)
                 break;
-        } else if ((cb->matchcallback != NULL)
-                   && (cb->matchcallback(URI) != 0)) {
+        } else if (cb->matchcallback != NULL
+                   && cb->matchcallback(URI) != 0) {
             ret->context = cb->opencallback(URI);
             if (ret->context != NULL) {
                 ret->writecallback = cb->writecallback;
@@ -1955,8 +1955,8 @@ xmlOutputBufferCreateBuffer (xmlBuffer *buffer, xmlCharEncodingHandler *encoder)
 const xmlChar *
 xmlOutputBufferGetContent (xmlOutputBuffer *out)
 {
-    if ((out == NULL) || (out->buffer == NULL)
-        || ((out->encoder != NULL) && (out->conv == NULL)) || (out->error != 0))
+    if (out == NULL || out->buffer == NULL
+        || out->encoder != NULL && out->conv == NULL || out->error != 0)
         return NULL;
 
     if (out->encoder != NULL)
@@ -1974,8 +1974,8 @@ xmlOutputBufferGetContent (xmlOutputBuffer *out)
 size_t
 xmlOutputBufferGetSize (xmlOutputBuffer *out)
 {
-    if ((out == NULL) || (out->buffer == NULL)
-        || ((out->encoder != NULL) && (out->conv == NULL)) || (out->error != 0))
+    if (out == NULL || out->buffer == NULL
+        || out->encoder != NULL && out->conv == NULL || out->error != 0)
         return 0;
 
     if (out->encoder != NULL)
@@ -2071,7 +2071,7 @@ xmlNewInputBufferMemory (const void *mem, size_t size,
     xmlParserInputBufferPtr ret;
 
     if ((flags & XML_INPUT_BUF_STATIC)
-        && ((flags & XML_INPUT_BUF_ZERO_TERMINATED) == 0)) {
+        && (flags & XML_INPUT_BUF_ZERO_TERMINATED) == 0) {
         xmlMemIOCtxt *ctxt;
 
         /*
@@ -2134,7 +2134,7 @@ xmlNewInputBufferMemory (const void *mem, size_t size,
 xmlParserInputBuffer *
 xmlParserInputBufferCreateMem (const char *mem, int size, xmlCharEncoding enc)
 {
-    if ((mem == NULL) || (size < 0))
+    if (mem == NULL || size < 0)
         return NULL;
 
     return xmlNewInputBufferMemory(mem, size, 0, enc);
@@ -2162,7 +2162,7 @@ xmlParserInputBuffer *
 xmlParserInputBufferCreateStatic (const char *mem, int size,
                                   xmlCharEncoding enc)
 {
-    if ((mem == NULL) || (size < 0))
+    if (mem == NULL || size < 0)
         return NULL;
 
     return xmlNewInputBufferMemory(mem, size, XML_INPUT_BUF_STATIC, enc);
@@ -2372,7 +2372,7 @@ xmlParserInputBufferPush (xmlParserInputBuffer *in, int len, const char *buf)
 
     if (len < 0)
         return 0;
-    if ((in == NULL) || (in->error))
+    if (in == NULL || in->error)
         return -1;
     if (in->encoder != NULL) {
         /*
@@ -2437,7 +2437,7 @@ xmlParserInputBufferGrow (xmlParserInputBuffer *in, int len)
 {
     int res = 0;
 
-    if ((in == NULL) || (in->error))
+    if (in == NULL || in->error)
         return -1;
 
     if (len < MINLEN)
@@ -2545,7 +2545,7 @@ xmlOutputBufferWrite (xmlOutputBuffer *out, int len, const char *data)
     size_t written = 0;
     int ret;
 
-    if ((out == NULL) || (out->error))
+    if (out == NULL || out->error)
         return -1;
     if (len < 0)
         return 0;
@@ -2593,7 +2593,7 @@ xmlOutputBufferWrite (xmlOutputBuffer *out, int len, const char *data)
             written = len;
     }
 
-    if ((buf != NULL) && (out->writecallback)) {
+    if (buf != NULL && out->writecallback) {
         /*
          * second write the stuff to the I/O channel
          */
@@ -2609,7 +2609,7 @@ xmlOutputBufferWrite (xmlOutputBuffer *out, int len, const char *data)
                 out->error = (ret == -1) ? XML_IO_WRITE : -ret;
                 return -1;
             }
-            if ((ret == 0) || ((size_t) ret > nbchars)) {
+            if (ret == 0 || (size_t) ret > nbchars) {
                 out->error = XML_ERR_INTERNAL_ERROR;
                 return -1;
             }
@@ -2647,7 +2647,7 @@ xmlOutputBufferWriteEscape (xmlOutputBuffer *out, const xmlChar *str,
     int written = 0;
     size_t len;
 
-    if ((out == NULL) || (out->error) || (str == NULL))
+    if (out == NULL || out->error || str == NULL)
         return -1;
 
     len = strlen((const char *) str);
@@ -2717,7 +2717,7 @@ xmlOutputBufferWriteString (xmlOutputBuffer *out, const char *str)
 {
     int len;
 
-    if ((out == NULL) || (out->error))
+    if (out == NULL || out->error)
         return -1;
     if (str == NULL)
         return -1;
@@ -2747,7 +2747,7 @@ xmlOutputBufferWriteQuotedString (xmlOutputBuffer *buf, const xmlChar *string)
 {
     const xmlChar *cur, *base;
 
-    if ((buf == NULL) || (buf->error))
+    if (buf == NULL || buf->error)
         return;
 
     if (xmlStrchr(string, '\"')) {
@@ -2792,12 +2792,12 @@ xmlOutputBufferFlush (xmlOutputBuffer *out)
 {
     int nbchars = 0, ret = 0;
 
-    if ((out == NULL) || (out->error))
+    if (out == NULL || out->error)
         return -1;
     /*
      * first handle encoding stuff.
      */
-    if ((out->conv != NULL) && (out->encoder != NULL)) {
+    if (out->conv != NULL && out->encoder != NULL) {
         /*
 	 * convert as much as possible to the parser output buffer.
 	 */
@@ -2811,8 +2811,8 @@ xmlOutputBufferFlush (xmlOutputBuffer *out)
     /*
      * second flush the stuff to the I/O channel
      */
-    if ((out->conv != NULL) && (out->encoder != NULL)
-        && (out->writecallback != NULL)) {
+    if (out->conv != NULL && out->encoder != NULL
+        && out->writecallback != NULL) {
         ret = out->writecallback(out->context,
                                  (const char *) xmlBufContent(out->conv),
                                  xmlBufUse(out->conv));
