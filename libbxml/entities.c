@@ -156,10 +156,10 @@ xmlFreeEntity (xmlEntity *entity)
     if (entity->doc != NULL)
         dict = entity->doc->dict;
 
-    if ((entity->children)
-        && (entity == (xmlEntityPtr) entity->children->parent))
+    if (entity->children
+        && entity == (xmlEntityPtr) entity->children->parent)
         xmlFreeNodeList(entity->children);
-    if ((entity->name != NULL)
+    if (entity->name != NULL
         && ((dict == NULL) || (!xmlDictOwns(dict, entity->name))))
         xmlFree((char *) entity->name);
     if (entity->ExternalID != NULL)
@@ -196,7 +196,7 @@ xmlCreateEntity (xmlDocPtr doc, const xmlChar *name, int type,
      * fill the structure.
      */
     ret->etype = (xmlEntityType) type;
-    if ((doc == NULL) || (doc->dict == NULL))
+    if (doc == NULL || doc->dict == NULL)
         ret->name = xmlStrdup(name);
     else
         ret->name = xmlDictLookup(doc->dict, name, -1);
@@ -260,7 +260,7 @@ xmlAddEntity (xmlDoc *doc, int extSubset, const xmlChar *name, int type,
 
     if (out != NULL)
         *out = NULL;
-    if ((doc == NULL) || (name == NULL))
+    if (doc == NULL || name == NULL)
         return XML_ERR_ARGUMENT;
     dict = doc->dict;
 
@@ -280,13 +280,13 @@ xmlAddEntity (xmlDoc *doc, int extSubset, const xmlChar *name, int type,
             int valid = 0;
 
             /* 4.6 Predefined Entities */
-            if ((type == XML_INTERNAL_GENERAL_ENTITY) && (content != NULL)) {
+            if (type == XML_INTERNAL_GENERAL_ENTITY && content != NULL) {
                 int c = predef->content[0];
 
-                if (((content[0] == c) && (content[1] == 0))
+                if (content[0] == c && content[1] == 0
                     && ((c == '>') || (c == '\'') || (c == '"'))) {
                     valid = 1;
-                } else if ((content[0] == '&') && (content[1] == '#')) {
+                } else if (content[0] == '&' && content[1] == '#') {
                     if (content[2] == 'x') {
                         xmlChar *hex = BAD_CAST "0123456789ABCDEF";
                         xmlChar ref[] = "00;";
@@ -466,7 +466,7 @@ xmlNewEntity (xmlDoc *doc, const xmlChar *name, int type,
               const xmlChar *publicId, const xmlChar *systemId,
               const xmlChar *content)
 {
-    if ((doc != NULL) && (doc->intSubset != NULL)) {
+    if (doc != NULL && doc->intSubset != NULL) {
         return xmlAddDocEntity(doc, name, type, publicId, systemId, content);
     }
     if (name == NULL)
@@ -503,13 +503,13 @@ xmlGetParameterEntity (xmlDoc *doc, const xmlChar *name)
 
     if (doc == NULL)
         return NULL;
-    if ((doc->intSubset != NULL) && (doc->intSubset->pentities != NULL)) {
+    if (doc->intSubset != NULL && doc->intSubset->pentities != NULL) {
         table = (xmlEntitiesTablePtr) doc->intSubset->pentities;
         ret = xmlGetEntityFromTable(table, name);
         if (ret != NULL)
             return ret;
     }
-    if ((doc->extSubset != NULL) && (doc->extSubset->pentities != NULL)) {
+    if (doc->extSubset != NULL && doc->extSubset->pentities != NULL) {
         table = (xmlEntitiesTablePtr) doc->extSubset->pentities;
         return xmlGetEntityFromTable(table, name);
     }
@@ -530,7 +530,7 @@ xmlGetDtdEntity (xmlDoc *doc, const xmlChar *name)
 
     if (doc == NULL)
         return NULL;
-    if ((doc->extSubset != NULL) && (doc->extSubset->entities != NULL)) {
+    if (doc->extSubset != NULL && doc->extSubset->entities != NULL) {
         table = (xmlEntitiesTablePtr) doc->extSubset->entities;
         return xmlGetEntityFromTable(table, name);
     }
@@ -552,15 +552,15 @@ xmlGetDocEntity (const xmlDoc *doc, const xmlChar *name)
     xmlEntitiesTablePtr table;
 
     if (doc != NULL) {
-        if ((doc->intSubset != NULL) && (doc->intSubset->entities != NULL)) {
+        if (doc->intSubset != NULL && doc->intSubset->entities != NULL) {
             table = (xmlEntitiesTablePtr) doc->intSubset->entities;
             cur = xmlGetEntityFromTable(table, name);
             if (cur != NULL)
                 return cur;
         }
         if (doc->standalone != 1) {
-            if ((doc->extSubset != NULL)
-                && (doc->extSubset->entities != NULL)) {
+            if (doc->extSubset != NULL
+                && doc->extSubset->entities != NULL) {
                 table = (xmlEntitiesTablePtr) doc->extSubset->entities;
                 cur = xmlGetEntityFromTable(table, name);
                 if (cur != NULL)
@@ -600,9 +600,9 @@ xmlEncodeEntitiesReentrant (xmlDoc *doc, const xmlChar *input)
     if (input == NULL)
         return NULL;
 
-    if ((doc != NULL) && (doc->type == XML_HTML_DOCUMENT_NODE))
+    if (doc != NULL && doc->type == XML_HTML_DOCUMENT_NODE)
         flags |= XML_ESCAPE_HTML;
-    else if ((doc == NULL) || (doc->encoding == NULL))
+    else if (doc == NULL || doc->encoding == NULL)
         flags |= XML_ESCAPE_NON_ASCII;
 
     return xmlEscapeText(input, flags);
@@ -764,7 +764,7 @@ xmlDumpEntityDecl (xmlBuffer *buf, xmlEntity *ent)
 {
     xmlSaveCtxtPtr save;
 
-    if ((buf == NULL) || (ent == NULL))
+    if (buf == NULL || ent == NULL)
         return;
 
     save = xmlSaveToBuffer(buf, NULL, 0);
@@ -801,7 +801,7 @@ xmlDumpEntitiesTable (xmlBuffer *buf, xmlEntitiesTable *table)
 {
     xmlSaveCtxtPtr save;
 
-    if ((buf == NULL) || (table == NULL))
+    if (buf == NULL || table == NULL)
         return;
 
     save = xmlSaveToBuffer(buf, NULL, 0);
