@@ -125,7 +125,7 @@ xsltParseStylesheetImport (xsltStylesheetPtr style, xmlNodePtr cur)
     xsltStylesheetPtr res;
     xsltSecurityPrefsPtr sec;
 
-    if ((cur == NULL) || (style == NULL))
+    if (cur == NULL || style == NULL)
         return ret;
 
     uriRef = xmlGetNsProp(cur, (const xmlChar *) "href", NULL);
@@ -216,7 +216,7 @@ xsltParseStylesheetInclude (xsltStylesheetPtr style, xmlNodePtr cur)
     xsltDocumentPtr include;
     int oldNopreproc;
 
-    if ((cur == NULL) || (style == NULL))
+    if (cur == NULL || style == NULL)
         return ret;
 
     uriRef = xmlGetNsProp(cur, (const xmlChar *) "href", NULL);
@@ -360,7 +360,7 @@ xsltFindElemSpaceHandling (xsltTransformContextPtr ctxt, xmlNodePtr node)
     xsltStylesheetPtr style;
     const xmlChar *val;
 
-    if ((ctxt == NULL) || (node == NULL))
+    if (ctxt == NULL || node == NULL)
         return 0;
     style = ctxt->style;
     while (style != NULL) {
@@ -417,7 +417,7 @@ xsltFindTemplate (xsltTransformContextPtr ctxt, const xmlChar *name,
     xsltTemplatePtr cur;
     xsltStylesheetPtr style;
 
-    if ((ctxt == NULL) || (name == NULL))
+    if (ctxt == NULL || name == NULL)
         return NULL;
     style = ctxt->style;
     while (style != NULL) {
