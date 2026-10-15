@@ -1311,37 +1311,51 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
 
     slaxOutput("Local variables:");
     for (i = varsNr; i > varsBase; i--) {
-        xsltStackElemPtr cur;
+        xsltStackElemPtr cur = xsltTransformContextGetVarsEntry(ctxt, i - 1);
+	xmlXPathObjectPtr value;
+	xsltStylePreCompPtr comp;
+	const xmlChar *curName;
 
-        for (cur = xsltTransformContextGetVarsEntry(ctxt, i - 1); cur != NULL;
-	     cur = xsltStackElemGetNext(cur)) {
-	    xmlXPathObjectPtr value = xsltStackElemGetValue(cur);
-	    xsltStylePreCompPtr comp = xsltStackElemGetComp(cur);
-	    const xmlChar *curName = xsltStackElemGetName(cur);
+	if (cur == NULL)
+	    continue;
 
-	    type = "local";
-	    name = "unknown";
+	/*
+	 * Each slot in the vars stack already holds exactly one
+	 * variable (xsltAddStackElem() pushes a chain by storing
+	 * each member in its own slot), but that member's own
+	 * "next" pointer still dangles into the slots that follow
+	 * it (the rest of the chain it was pushed with).  Those
+	 * slots are visited separately by this same loop, so we
+	 * must not follow "next" here -- doing so re-walks and
+	 * re-prints variables that belong to later (lower i) slots,
+	 * once for every slot that precedes them in the chain.
+	 */
+	value = xsltStackElemGetValue(cur);
+	comp = xsltStackElemGetComp(cur);
+	curName = xsltStackElemGetName(cur);
 
-	    if (curName)
-		name = (const char *) curName;
+	type = "local";
+	name = "unknown";
 
-            if (comp == NULL) {
-                type = "invalid";
+	if (curName)
+	    name = (const char *) curName;
 
-            } else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM) {
-                type = "param";
+	if (comp == NULL) {
+	    type = "invalid";
 
-            } else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_VARIABLE) {
-                type = "var";
-            }
+	} else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM) {
+	    type = "param";
 
-	    snprintf(buf, sizeof(buf), "%s $%s%s", type, name,
-		       value ? " = " : " -- null value");
-            if (value)
-                slaxDebugOutputXpath(value, buf, TRUE);
-	    else
-		slaxOutput("%s", buf);
-        }
+	} else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_VARIABLE) {
+	    type = "var";
+	}
+
+	snprintf(buf, sizeof(buf), "%s $%s%s", type, name,
+		   value ? " = " : " -- null value");
+	if (value)
+	    slaxDebugOutputXpath(value, buf, TRUE);
+	else
+	    slaxOutput("%s", buf);
     }
 }
 
@@ -2712,7 +2726,8 @@ slaxDebugInitFlags (slaxDebugFlags_t flags)
 
     } else {
 	slaxDebugDisplayMode = DEBUG_MODE_CLI;
-	slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
+	if (!(slaxDebugFlags & SDBF_ECHO_INPUT))
+	    slaxOutput("sdb: The SLAX Debugger (version %s)", LIBSLAX_VERSION);
 	slaxOutput("Type 'help' for help");
     }
 
