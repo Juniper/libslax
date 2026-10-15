@@ -1,0 +1,20 @@
+version 1.0;
+
+match / {
+    var $start = 1;
+    call first($n = $start);
+}
+
+template first ($n) {
+    var $label = "first";
+    <level> $n;
+    call second($n = $n + 1);
+}
+
+template second ($n) {
+    var $label = "second";
+    <level> $n;
+    if ($n < 4) {
+        call first($n);
+    }
+}
