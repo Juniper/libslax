@@ -30,7 +30,7 @@ int
 main (int argc, char **argv)
 {
     /* Parse command line and process file */
-    if ((argc < 3) || (argc > 4)) {
+    if (argc < 3 || argc > 4) {
         fprintf(stderr, "Error: wrong number of arguments.\n");
         usage(argv[0]);
         return -1;
@@ -106,7 +106,7 @@ execute_xpath_expression (const char *filename, const xmlChar *xpathExpr,
     }
 
     /* Register namespaces from list (if any) */
-    if ((nsList != NULL) && (register_namespaces(xpathCtx, nsList) < 0)) {
+    if (nsList != NULL && register_namespaces(xpathCtx, nsList) < 0) {
         fprintf(stderr, "Error: failed to register namespaces list \"%s\"\n",
                 nsList);
         xmlXPathFreeContext(xpathCtx);
