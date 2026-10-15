@@ -181,7 +181,7 @@ xmlHashCreate (int size)
     if (size > MIN_HASH_SIZE) {
         unsigned newSize = MIN_HASH_SIZE * 2;
 
-        while ((newSize < (unsigned) size) && (newSize < MAX_HASH_SIZE))
+        while (newSize < (unsigned) size && newSize < MAX_HASH_SIZE)
             newSize *= 2;
 
         if (xmlHashGrow(hash, newSize) != 0) {
@@ -235,7 +235,7 @@ xmlHashFree (xmlHashTable *hash, xmlHashDeallocator dealloc)
         for (entry = hash->table; entry < end; entry++) {
             if (entry->hashValue == 0)
                 continue;
-            if ((dealloc != NULL) && (entry->payload != NULL))
+            if (dealloc != NULL && entry->payload != NULL)
                 dealloc(entry->payload, entry->key);
             if (hash->dict == NULL) {
                 if (entry->key)
@@ -310,15 +310,15 @@ xmlHashFindEntry (const xmlHashTable *hash, const xmlChar *key,
         do {
             if (entry->hashValue == hashValue) {
                 if (hash->dict) {
-                    if ((entry->key == key) && (entry->key2 == key2)
-                        && (entry->key3 == key3)) {
+                    if (entry->key == key && entry->key2 == key2
+                        && entry->key3 == key3) {
                         found = 1;
                         break;
                     }
                 }
-                if ((strcmp((const char *) entry->key, (const char *) key) == 0)
-                    && (xmlFastStrEqual(entry->key2, key2))
-                    && (xmlFastStrEqual(entry->key3, key3))) {
+                if (strcmp((const char *) entry->key, (const char *) key) == 0
+                    && xmlFastStrEqual(entry->key2, key2)
+                    && xmlFastStrEqual(entry->key3, key3)) {
                     found = 1;
                     break;
                 }
@@ -329,8 +329,8 @@ xmlHashFindEntry (const xmlHashTable *hash, const xmlChar *key,
             entry++;
             if ((pos & mask) == 0)
                 entry = hash->table;
-        } while ((entry->hashValue != 0)
-                 && (((pos - entry->hashValue) & mask) >= displ));
+        } while (entry->hashValue != 0
+                 && ((pos - entry->hashValue) & mask) >= displ);
     }
 
     *pfound = found;
@@ -425,7 +425,7 @@ xmlHashUpdateInternal (xmlHashTable *hash, const xmlChar *key,
     size_t lengths[3] = {0, 0, 0};
     unsigned hashValue, newSize;
 
-    if ((hash == NULL) || (key == NULL))
+    if (hash == NULL || key == NULL)
         return -1;
 
     hashValue = xmlHashValue(hash->randomSeed, key, key2, key3, lengths);
@@ -484,7 +484,7 @@ xmlHashUpdateInternal (xmlHashTable *hash, const xmlChar *key,
                 entry++;
                 if ((pos & mask) == 0)
                     entry = hash->table;
-            } while ((entry->hashValue != 0)
+            } while (entry->hashValue != 0
                      && ((pos - entry->hashValue) & mask) >= displ);
         }
     }
@@ -501,14 +501,14 @@ xmlHashUpdateInternal (xmlHashTable *hash, const xmlChar *key,
                 return -1;
         }
 
-        if ((key2 == NULL) || (xmlDictOwns(hash->dict, key2))) {
+        if (key2 == NULL || xmlDictOwns(hash->dict, key2)) {
             copy2 = (xmlChar *) key2;
         } else {
             copy2 = (xmlChar *) xmlDictLookup(hash->dict, key2, -1);
             if (copy2 == NULL)
                 return -1;
         }
-        if ((key3 == NULL) || (xmlDictOwns(hash->dict, key3))) {
+        if (key3 == NULL || xmlDictOwns(hash->dict, key3)) {
             copy3 = (xmlChar *) key3;
         } else {
             copy3 = (xmlChar *) xmlDictLookup(hash->dict, key3, -1);
@@ -885,7 +885,7 @@ xmlHashLookup3 (xmlHashTable *hash, const xmlChar *key, const xmlChar *key2,
     unsigned hashValue;
     int found;
 
-    if ((hash == NULL) || (hash->size == 0) || (key == NULL))
+    if (hash == NULL || hash->size == 0 || key == NULL)
         return NULL;
     hashValue = xmlHashValue(hash->randomSeed, key, key2, key3, NULL);
     entry = xmlHashFindEntry(hash, key, key2, key3, hashValue, &found);
@@ -915,7 +915,7 @@ xmlHashQLookup3 (xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name,
     const xmlHashEntry *entry;
     unsigned hashValue, mask, pos, displ;
 
-    if ((hash == NULL) || (hash->size == 0) || (name == NULL))
+    if (hash == NULL || hash->size == 0 || name == NULL)
         return NULL;
 
     hashValue = xmlHashQNameValue(hash->randomSeed, prefix, name, prefix2,
@@ -929,10 +929,10 @@ xmlHashQLookup3 (xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name,
         hashValue |= MAX_HASH_SIZE;
 
         do {
-            if ((hashValue == entry->hashValue)
-                && (xmlStrQEqual(prefix, name, entry->key))
-                && (xmlStrQEqual(prefix2, name2, entry->key2))
-                && (xmlStrQEqual(prefix3, name3, entry->key3)))
+            if (hashValue == entry->hashValue
+                && xmlStrQEqual(prefix, name, entry->key)
+                && xmlStrQEqual(prefix2, name2, entry->key2)
+                && xmlStrQEqual(prefix3, name3, entry->key3))
                 return entry->payload;
 
             displ++;
@@ -940,8 +940,8 @@ xmlHashQLookup3 (xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name,
             entry++;
             if ((pos & mask) == 0)
                 entry = hash->table;
-        } while ((entry->hashValue != 0)
-                 && (((pos - entry->hashValue) & mask) >= displ));
+        } while (entry->hashValue != 0
+                 && ((pos - entry->hashValue) & mask) >= displ);
     }
 
     return NULL;
@@ -990,7 +990,7 @@ xmlHashScanFull (xmlHashTable *hash, xmlHashScannerFull scan, void *data)
     xmlHashEntry old;
     unsigned i;
 
-    if ((hash == NULL) || (hash->size == 0) || (scan == NULL))
+    if (hash == NULL || hash->size == 0 || scan == NULL)
         return;
 
     /*
@@ -1008,7 +1008,7 @@ xmlHashScanFull (xmlHashTable *hash, xmlHashScannerFull scan, void *data)
     }
 
     for (i = 0; i < hash->size; i++) {
-        if ((entry->hashValue != 0) && (entry->payload != NULL)) {
+        if (entry->hashValue != 0 && entry->payload != NULL) {
             /*
              * Make sure to rescan after a possible deletion.
              */
@@ -1016,7 +1016,7 @@ xmlHashScanFull (xmlHashTable *hash, xmlHashScannerFull scan, void *data)
                 old = *entry;
                 scan(entry->payload, data, entry->key, entry->key2,
                      entry->key3);
-            } while ((entry->hashValue != 0) && (entry->payload != NULL)
+            } while (entry->hashValue != 0 && entry->payload != NULL
                      && ((entry->key != old.key) || (entry->key2 != old.key2)
                          || (entry->key3 != old.key3)));
         }
@@ -1067,7 +1067,7 @@ xmlHashScanFull3 (xmlHashTable *hash, const xmlChar *key, const xmlChar *key2,
     xmlHashEntry old;
     unsigned i;
 
-    if ((hash == NULL) || (hash->size == 0) || (scan == NULL))
+    if (hash == NULL || hash->size == 0 || scan == NULL)
         return;
 
     /*
@@ -1085,22 +1085,22 @@ xmlHashScanFull3 (xmlHashTable *hash, const xmlChar *key, const xmlChar *key2,
     }
 
     for (i = 0; i < hash->size; i++) {
-        if ((entry->hashValue != 0) && (entry->payload != NULL)) {
+        if (entry->hashValue != 0 && entry->payload != NULL) {
             /*
              * Make sure to rescan after a possible deletion.
              */
             do {
-                if (((key != NULL)
-                     && (strcmp((const char *) key, (const char *) entry->key)
-                         != 0))
-                    || ((key2 != NULL) && (!xmlFastStrEqual(key2, entry->key2)))
-                    || ((key3 != NULL)
-                        && (!xmlFastStrEqual(key3, entry->key3))))
+                if (key != NULL
+                     && strcmp((const char *) key, (const char *) entry->key)
+                         != 0
+                    || key2 != NULL && !xmlFastStrEqual(key2, entry->key2)
+                    || key3 != NULL
+                        && !xmlFastStrEqual(key3, entry->key3))
                     break;
                 old = *entry;
                 scan(entry->payload, data, entry->key, entry->key2,
                      entry->key3);
-            } while ((entry->hashValue != 0) && (entry->payload != NULL)
+            } while (entry->hashValue != 0 && entry->payload != NULL
                      && ((entry->key != old.key) || (entry->key2 != old.key2)
                          || (entry->key3 != old.key3)));
         }
@@ -1127,7 +1127,7 @@ xmlHashCopySafe (xmlHashTable *hash, xmlHashCopier copyFunc,
     const xmlHashEntry *entry, *end;
     xmlHashTablePtr ret;
 
-    if ((hash == NULL) || (copyFunc == NULL))
+    if (hash == NULL || copyFunc == NULL)
         return NULL;
 
     ret = xmlHashCreate(hash->size);
@@ -1249,7 +1249,7 @@ xmlHashRemoveEntry3 (xmlHashTable *hash, const xmlChar *key,
     unsigned hashValue, mask, pos, nextpos;
     int found;
 
-    if ((hash == NULL) || (hash->size == 0) || (key == NULL))
+    if (hash == NULL || hash->size == 0 || key == NULL)
         return -1;
 
     hashValue = xmlHashValue(hash->randomSeed, key, key2, key3, NULL);
@@ -1257,7 +1257,7 @@ xmlHashRemoveEntry3 (xmlHashTable *hash, const xmlChar *key,
     if (!found)
         return -1;
 
-    if ((dealloc != NULL) && (entry->payload != NULL))
+    if (dealloc != NULL && entry->payload != NULL)
         dealloc(entry->payload, entry->key);
     if (hash->dict == NULL) {
         if (entry->key)
@@ -1282,8 +1282,8 @@ xmlHashRemoveEntry3 (xmlHashTable *hash, const xmlChar *key,
         if ((nextpos & mask) == 0)
             next = hash->table;
 
-        if ((next->hashValue == 0)
-            || (((next->hashValue - nextpos) & mask) == 0))
+        if (next->hashValue == 0
+            || ((next->hashValue - nextpos) & mask) == 0)
             break;
 
         cur = next;
