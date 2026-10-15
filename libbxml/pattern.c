@@ -387,7 +387,7 @@ xmlReversePattern (xmlPatternPtr comp)
     /*
      * remove the leading // for //a or .//a
      */
-    if ((comp->nbStep > 0) && (comp->steps[0].op == XML_OP_ANCESTOR)) {
+    if (comp->nbStep > 0 && comp->steps[0].op == XML_OP_ANCESTOR) {
         for (i = 0, j = 1; j < comp->nbStep; i++, j++) {
             comp->steps[i].value = comp->steps[j].value;
             comp->steps[i].value2 = comp->steps[j].value2;
@@ -470,7 +470,7 @@ xmlPatMatch (xmlPatternPtr comp, xmlNodePtr node)
     xmlStepOpPtr step;
     xmlStepStates states = {0, 0, NULL}; /* // may require backtrack */
 
-    if ((comp == NULL) || (node == NULL))
+    if (comp == NULL || node == NULL)
         return -1;
     i = 0;
 restart:
@@ -483,8 +483,8 @@ restart:
             if (node->type == XML_NAMESPACE_DECL)
                 goto rollback;
             node = node->parent;
-            if ((node->type == XML_DOCUMENT_NODE)
-                || (node->type == XML_HTML_DOCUMENT_NODE))
+            if (node->type == XML_DOCUMENT_NODE
+                || node->type == XML_HTML_DOCUMENT_NODE)
                 continue;
             goto rollback;
         case XML_OP_ELEM:
@@ -511,18 +511,18 @@ restart:
         case XML_OP_CHILD: {
             xmlNodePtr lst;
 
-            if ((node->type != XML_ELEMENT_NODE)
-                && (node->type != XML_DOCUMENT_NODE)
-                && (node->type != XML_HTML_DOCUMENT_NODE))
+            if (node->type != XML_ELEMENT_NODE
+                && node->type != XML_DOCUMENT_NODE
+                && node->type != XML_HTML_DOCUMENT_NODE)
                 goto rollback;
 
             lst = node->children;
 
             if (step->value != NULL) {
                 while (lst != NULL) {
-                    if ((lst->type == XML_ELEMENT_NODE)
-                        && (step->value[0] == lst->name[0])
-                        && (xmlStrEqual(step->value, lst->name)))
+                    if (lst->type == XML_ELEMENT_NODE
+                        && step->value[0] == lst->name[0]
+                        && xmlStrEqual(step->value, lst->name))
                         break;
                     lst = lst->next;
                 }
@@ -550,9 +550,9 @@ restart:
             }
             continue;
         case XML_OP_PARENT:
-            if ((node->type == XML_DOCUMENT_NODE)
-                || (node->type == XML_HTML_DOCUMENT_NODE)
-                || (node->type == XML_NAMESPACE_DECL))
+            if (node->type == XML_DOCUMENT_NODE
+                || node->type == XML_HTML_DOCUMENT_NODE
+                || node->type == XML_NAMESPACE_DECL)
                 goto rollback;
             node = node->parent;
             if (node == NULL)
@@ -588,22 +588,22 @@ restart:
             }
             if (node == NULL)
                 goto rollback;
-            if ((node->type == XML_DOCUMENT_NODE)
-                || (node->type == XML_HTML_DOCUMENT_NODE)
-                || (node->type == XML_NAMESPACE_DECL))
+            if (node->type == XML_DOCUMENT_NODE
+                || node->type == XML_HTML_DOCUMENT_NODE
+                || node->type == XML_NAMESPACE_DECL)
                 goto rollback;
             node = node->parent;
             while (node != NULL) {
-                if ((node->type == XML_ELEMENT_NODE)
-                    && (step->value[0] == node->name[0])
-                    && (xmlStrEqual(step->value, node->name))) {
+                if (node->type == XML_ELEMENT_NODE
+                    && step->value[0] == node->name[0]
+                    && xmlStrEqual(step->value, node->name)) {
                     /* Namespace test */
                     if (node->ns == NULL) {
                         if (step->value2 == NULL)
                             break;
                     } else if (node->ns->href != NULL) {
-                        if ((step->value2 != NULL)
-                            && (xmlStrEqual(step->value2, node->ns->href)))
+                        if (step->value2 != NULL
+                            && xmlStrEqual(step->value2, node->ns->href))
                             break;
                     }
                 }
@@ -704,7 +704,7 @@ xmlPatScanName (xmlPatParserContextPtr ctxt)
 
     q = CUR_PTR;
     cur = xmlScanName(q, XML_MAX_NAME_LENGTH, 0);
-    if ((cur == NULL) || (cur == q))
+    if (cur == NULL || cur == q)
         return NULL;
     if (ctxt->dict)
         ret = (xmlChar *) xmlDictLookup(ctxt->dict, q, cur - q);
@@ -731,7 +731,7 @@ xmlPatScanNCName (xmlPatParserContextPtr ctxt)
 
     q = CUR_PTR;
     cur = xmlScanName(q, XML_MAX_NAME_LENGTH, XML_SCAN_NC);
-    if ((cur == NULL) || (cur == q))
+    if (cur == NULL || cur == q)
         return NULL;
     if (ctxt->dict)
         ret = (xmlChar *) xmlDictLookup(ctxt->dict, q, cur - q);
@@ -785,8 +785,8 @@ xmlCompileAttributeTest (xmlPatParserContextPtr ctxt)
 	* This is a namespace match
 	*/
         token = xmlPatScanName(ctxt);
-        if ((prefix[0] == 'x') && (prefix[1] == 'm') && (prefix[2] == 'l')
-            && (prefix[3] == 0)) {
+        if (prefix[0] == 'x' && prefix[1] == 'm' && prefix[2] == 'l'
+            && prefix[3] == 0) {
             XML_PAT_COPY_NSNAME(ctxt, URL, XML_XML_NAMESPACE);
         } else {
             for (i = 0; i < ctxt->nb_namespaces; i++) {
@@ -908,8 +908,8 @@ xmlCompileStepPattern (xmlPatParserContextPtr ctxt)
 	     * This is a namespace match
 	     */
             token = xmlPatScanName(ctxt);
-            if ((prefix[0] == 'x') && (prefix[1] == 'm') && (prefix[2] == 'l')
-                && (prefix[3] == 0)) {
+            if (prefix[0] == 'x' && prefix[1] == 'm' && prefix[2] == 'l'
+                && prefix[3] == 0) {
                 XML_PAT_COPY_NSNAME(ctxt, URL, XML_XML_NAMESPACE)
             } else {
                 for (i = 0; i < ctxt->nb_namespaces; i++) {
@@ -973,8 +973,8 @@ xmlCompileStepPattern (xmlPatParserContextPtr ctxt)
 		    * This is a namespace match
 		    */
                     token = xmlPatScanName(ctxt);
-                    if ((prefix[0] == 'x') && (prefix[1] == 'm')
-                        && (prefix[2] == 'l') && (prefix[3] == 0)) {
+                    if (prefix[0] == 'x' && prefix[1] == 'm'
+                        && prefix[2] == 'l' && prefix[3] == 0) {
                         XML_PAT_COPY_NSNAME(ctxt, URL, XML_XML_NAMESPACE)
                     } else {
                         for (i = 0; i < ctxt->nb_namespaces; i++) {
@@ -1067,15 +1067,15 @@ xmlCompilePathPattern (xmlPatParserContextPtr ctxt)
     SKIP_BLANKS;
     if (CUR == '/') {
         ctxt->comp->flags |= PAT_FROM_ROOT;
-    } else if ((CUR == '.') || (ctxt->comp->flags & XML_PATTERN_NOTPATTERN)) {
+    } else if (CUR == '.' || (ctxt->comp->flags & XML_PATTERN_NOTPATTERN)) {
         ctxt->comp->flags |= PAT_FROM_CUR;
     }
 
-    if ((CUR == '/') && (NXT(1) == '/')) {
+    if (CUR == '/' && NXT(1) == '/') {
         PUSH(XML_OP_ANCESTOR, NULL, NULL);
         NEXT;
         NEXT;
-    } else if ((CUR == '.') && (NXT(1) == '/') && (NXT(2) == '/')) {
+    } else if (CUR == '.' && NXT(1) == '/' && NXT(2) == '/') {
         PUSH(XML_OP_ANCESTOR, NULL, NULL);
         NEXT;
         NEXT;
@@ -1358,13 +1358,13 @@ xmlStreamCompile (xmlPatternPtr comp)
     int i, s = 0, root = 0, flags = 0, prevs = -1;
     xmlStepOp step;
 
-    if ((comp == NULL) || (comp->steps == NULL))
+    if (comp == NULL || comp->steps == NULL)
         return -1;
     /*
      * special case for .
      */
-    if ((comp->nbStep == 1) && (comp->steps[0].op == XML_OP_ELEM)
-        && (comp->steps[0].value == NULL) && (comp->steps[0].value2 == NULL)) {
+    if (comp->nbStep == 1 && comp->steps[0].op == XML_OP_ELEM
+        && comp->steps[0].value == NULL && comp->steps[0].value2 == NULL) {
         stream = xmlNewStreamComp(0);
         if (stream == NULL)
             return -1;
@@ -1414,7 +1414,7 @@ xmlStreamCompile (xmlPatternPtr comp)
                 goto error;
             break;
         case XML_OP_ELEM:
-            if ((step.value == NULL) && (step.value2 == NULL)) {
+            if (step.value == NULL && step.value2 == NULL) {
                 /*
 		    * We have a "." or "self::node()" here.
 		    * Eliminate redundant self::node() tests like in "/./."
@@ -1423,7 +1423,7 @@ xmlStreamCompile (xmlPatternPtr comp)
 		    * self::node() is the last node test and we had
 		    * continuation somewhere beforehand.
 		    */
-                if ((comp->nbStep == i + 1) && (flags & XML_STREAM_STEP_DESC)) {
+                if (comp->nbStep == i + 1 && (flags & XML_STREAM_STEP_DESC)) {
                     /*
 			* Mark the special case where the expression resolves
 			* to any type of node.
@@ -1494,7 +1494,7 @@ xmlStreamCompile (xmlPatternPtr comp)
             break;
         }
     }
-    if ((!root) && (comp->flags & XML_PATTERN_NOTPATTERN) == 0) {
+    if (!root && (comp->flags & XML_PATTERN_NOTPATTERN) == 0) {
         /*
 	* If this should behave like a real pattern, we will mark
 	* the first step as having "//", to be reentrant on every
@@ -1629,13 +1629,13 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
     xmlStreamCompPtr comp;
     xmlStreamStep step;
 
-    if ((stream == NULL) || (stream->nbState < 0))
+    if (stream == NULL || stream->nbState < 0)
         return -1;
 
     while (stream != NULL) {
         comp = stream->comp;
 
-        if ((nodeType == XML_ELEMENT_NODE) && (name == NULL) && (ns == NULL)) {
+        if (nodeType == XML_ELEMENT_NODE && name == NULL && ns == NULL) {
             /* We have a document node here (or a reset). */
             stream->nbState = 0;
             stream->level = 0;
@@ -1645,8 +1645,8 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                     /* TODO: We have a "/." here? */
                     ret = 1;
                 } else {
-                    if ((comp->nbStep == 1)
-                        && (comp->steps[0].nodeType == XML_STREAM_ANY_NODE)
+                    if (comp->nbStep == 1
+                        && comp->steps[0].nodeType == XML_STREAM_ANY_NODE
                         && (comp->steps[0].flags & XML_STREAM_STEP_DESC)) {
                         /*
 			* In the case of "//." the document node will match
@@ -1680,7 +1680,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
 	    * or traditional XPath expressions, this will match if
 	    * we are at the first level only, otherwise on every level.
 	    */
-            if ((nodeType != XML_ATTRIBUTE_NODE)
+            if (nodeType != XML_ATTRIBUTE_NODE
                 && (((stream->flags & XML_PATTERN_NOTPATTERN) == 0)
                     || (stream->level == 0))) {
                 ret = 1;
@@ -1696,8 +1696,8 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
             goto stream_next;
         }
 
-        if ((nodeType != XML_ELEMENT_NODE) && (nodeType != XML_ATTRIBUTE_NODE)
-            && ((comp->flags & XML_STREAM_FINAL_IS_ANY_NODE) == 0)) {
+        if (nodeType != XML_ELEMENT_NODE && nodeType != XML_ATTRIBUTE_NODE
+            && (comp->flags & XML_STREAM_FINAL_IS_ANY_NODE) == 0) {
             /*
 	    * No need to process nodes of other types if we don't
 	    * resolve to those types.
@@ -1749,7 +1749,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
 
                 /* skip states at ancestor levels, except if "//" */
                 desc = comp->steps[stepNr].flags & XML_STREAM_STEP_DESC;
-                if ((tmp < stream->level) && (!desc))
+                if (tmp < stream->level && !desc)
                     goto next_state;
             }
             /*
@@ -1781,8 +1781,8 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                     match = 1;
                 } else if (ns != NULL)
                     match = xmlStrEqual(step.ns, ns);
-            } else if (((step.ns != NULL) == (ns != NULL)) && (name != NULL)
-                       && (step.name[0] == name[0])
+            } else if ((step.ns != NULL) == (ns != NULL) && name != NULL
+                       && step.name[0] == name[0]
                        && xmlStrEqual(step.name, name)
                        && ((step.ns == ns) || xmlStrEqual(step.ns, ns))) {
                 match = 1;
@@ -1796,7 +1796,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                            < 0) {
                     return -1;
                 }
-                if ((ret != 1) && (step.flags & XML_STREAM_STEP_IN_SET)) {
+                if (ret != 1 && (step.flags & XML_STREAM_STEP_IN_SET)) {
                     /*
 		    * Check if we have a special case like "foo/bar//.", where
 		    * "foo" is selected as well.
@@ -1804,7 +1804,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                     ret = 1;
                 }
             }
-            if (((comp->flags & XML_STREAM_DESC) == 0) && ((!match) || final)) {
+            if ((comp->flags & XML_STREAM_DESC) == 0 && ((!match) || final)) {
                 /*
 		* Mark this expression as blocked for any evaluation at
 		* deeper levels. Note that this includes "/foo"
@@ -1855,7 +1855,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
 	    * "self::node()" is responsible for the 2nd level being
 	    * the real start level.
 	    */
-            if ((stream->level == 2) && XML_STREAM_XS_IDC(stream))
+            if (stream->level == 2 && XML_STREAM_XS_IDC(stream))
                 goto compare;
 
             goto stream_next;
@@ -1885,8 +1885,8 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                 match = 1;
             } else if (ns != NULL)
                 match = xmlStrEqual(step.ns, ns);
-        } else if (((step.ns != NULL) == (ns != NULL)) && (name != NULL)
-                   && (step.name[0] == name[0]) && xmlStrEqual(step.name, name)
+        } else if ((step.ns != NULL) == (ns != NULL) && name != NULL
+                   && step.name[0] == name[0] && xmlStrEqual(step.name, name)
                    && ((step.ns == ns) || xmlStrEqual(step.ns, ns))) {
             match = 1;
         }
@@ -1897,7 +1897,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
             } else if (xmlStreamCtxtAddState(stream, 1, stream->level) < 0) {
                 return -1;
             }
-            if ((ret != 1) && (step.flags & XML_STREAM_STEP_IN_SET)) {
+            if (ret != 1 && (step.flags & XML_STREAM_STEP_IN_SET)) {
                 /*
 		* Check if we have a special case like "foo//.", where
 		* "foo" is selected as well.
@@ -1905,7 +1905,7 @@ xmlStreamPushInternal (xmlStreamCtxtPtr stream, const xmlChar *name,
                 ret = 1;
             }
         }
-        if (((comp->flags & XML_STREAM_DESC) == 0) && ((!match) || final)) {
+        if ((comp->flags & XML_STREAM_DESC) == 0 && ((!match) || final)) {
             /*
 	    * Mark this expression as blocked for any evaluation at
 	    * deeper levels.
@@ -2096,7 +2096,7 @@ xmlPatternCompileSafe (const xmlChar *pattern, xmlDict *dict, int flags,
     or = start;
     while (*or != 0) {
         tmp = NULL;
-        while ((*or != 0) && (*or != '|'))
+        while (*or != 0 && *or != '|')
             or++;
         if (*or == 0)
             ctxt = xmlNewPatParserContext(start, dict, namespaces);
@@ -2222,7 +2222,7 @@ xmlPatternMatch (xmlPattern *comp, xmlNode *node)
 {
     int ret = 0;
 
-    if ((comp == NULL) || (node == NULL))
+    if (comp == NULL || node == NULL)
         return -1;
 
     while (comp != NULL) {
@@ -2246,7 +2246,7 @@ xmlPatternGetStreamCtxt (xmlPattern *comp)
 {
     xmlStreamCtxtPtr ret = NULL, cur;
 
-    if ((comp == NULL) || (comp->stream == NULL))
+    if (comp == NULL || comp->stream == NULL)
         return NULL;
 
     while (comp != NULL) {
