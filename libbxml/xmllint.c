@@ -257,10 +257,10 @@ parsePath (xmllintState *lint, const xmlChar *path)
             return;
         }
         cur = path;
-        while ((*cur == ' ') || (*cur == PATH_SEPARATOR))
+        while (*cur == ' ' || *cur == PATH_SEPARATOR)
             cur++;
         path = cur;
-        while ((*cur != 0) && (*cur != ' ') && (*cur != PATH_SEPARATOR))
+        while (*cur != 0 && *cur != ' ' && *cur != PATH_SEPARATOR)
             cur++;
         if (cur != path) {
             lint->paths[lint->nbpaths] = xmlStrndup(path, cur - path);
@@ -282,7 +282,7 @@ xmllintResourceLoader (void *ctxt, const char *URL, const char *ID,
     const char *lastsegment = URL;
     const char *iter = URL;
 
-    if ((lint->nbpaths > 0) && (iter != NULL)) {
+    if (lint->nbpaths > 0 && iter != NULL) {
         while (*iter != 0) {
             if (*iter == '/')
                 lastsegment = iter + 1;
@@ -296,7 +296,7 @@ xmllintResourceLoader (void *ctxt, const char *URL, const char *ID,
         code = xmlNewInputFromUrl(URL, flags, out);
     if (code != XML_IO_ENOENT) {
         if ((lint->appOptions & XML_LINT_USE_LOAD_TRACE)
-            && (code == XML_ERR_OK)) {
+            && code == XML_ERR_OK) {
             fprintf(lint->errStream, "Loaded URL=\"%s\" ID=\"%s\"\n", URL,
                     ID ? ID : "(null)");
         }
@@ -317,7 +317,7 @@ xmllintResourceLoader (void *ctxt, const char *URL, const char *ID,
                 code = xmlNewInputFromUrl((const char *) newURL, flags, out);
             if (code != XML_IO_ENOENT) {
                 if ((lint->appOptions & XML_LINT_USE_LOAD_TRACE)
-                    && (code == XML_ERR_OK)) {
+                    && code == XML_ERR_OK) {
                     fprintf(lint->errStream, "Loaded URL=\"%s\" ID=\"%s\"\n",
                             newURL, ID ? ID : "(null)");
                 }
@@ -377,7 +377,7 @@ parseXml (xmllintState *lint, const char *filename)
         int res;
         char chars[4096];
 
-        if ((filename[0] == '-') && (filename[1] == 0)) {
+        if (filename[0] == '-' && filename[1] == 0) {
             f = stdin;
         } else {
             f = fopen(filename, "rb");
@@ -453,7 +453,7 @@ parseHtml (xmllintState *lint, const char *filename)
         int res;
         char chars[4096];
 
-        if ((filename[0] == '-') && (filename[1] == 0)) {
+        if (filename[0] == '-' && filename[1] == 0) {
             f = stdin;
         } else {
             f = fopen(filename, "rb");
@@ -1354,8 +1354,8 @@ processNode (xmllintState *lint, xmlTextReaderPtr reader)
                                 lint->pattern, xmlTextReaderConstName(reader));
                 }
             }
-            if ((type == XML_READER_TYPE_END_ELEMENT)
-                || ((type == XML_READER_TYPE_ELEMENT) && (empty))) {
+            if (type == XML_READER_TYPE_END_ELEMENT
+                || type == XML_READER_TYPE_ELEMENT && empty) {
                 ret = xmlStreamPop(lint->patstream);
                 if (ret < 0) {
                     fprintf(lint->errStream, "xmlStreamPop() failure\n");
@@ -1420,7 +1420,7 @@ streamFile (xmllintState *lint, const char *filename)
         if (reader == NULL) {
             const xmlError *error = xmlGetLastError();
 
-            if ((error != NULL) && (error->code == XML_ERR_NO_MEMORY)) {
+            if (error != NULL && error->code == XML_ERR_NO_MEMORY) {
                 lint->progresult = XMLLINT_ERR_MEM;
             } else {
                 fprintf(errStream, "Unable to open %s\n", filename);
@@ -1450,7 +1450,7 @@ streamFile (xmllintState *lint, const char *filename)
 
 #ifdef LIBXML_RELAXNG_ENABLED
     if (lint->relaxng != NULL) {
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
         ret = xmlTextReaderRelaxNGValidate(reader, lint->relaxng);
@@ -1460,14 +1460,14 @@ streamFile (xmllintState *lint, const char *filename)
             lint->progresult = XMLLINT_ERR_SCHEMACOMP;
             lint->relaxng = NULL;
         }
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Compiling the schemas");
         }
     }
 #endif
 #ifdef LIBXML_SCHEMAS_ENABLED
     if (lint->schema != NULL) {
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
         ret = xmlTextReaderSchemaValidate(reader, lint->schema);
@@ -1477,7 +1477,7 @@ streamFile (xmllintState *lint, const char *filename)
             lint->progresult = XMLLINT_ERR_SCHEMACOMP;
             lint->schema = NULL;
         }
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Compiling the schemas");
         }
     }
@@ -1486,20 +1486,20 @@ streamFile (xmllintState *lint, const char *filename)
     /*
      * Process all nodes in sequence
      */
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
         startTimer(lint);
     }
     ret = xmlTextReaderRead(reader);
     while (ret == 1) {
         if (lint->appOptions & XML_LINT_DEBUG_ENABLED
 #ifdef LIBXML_PATTERN_ENABLED
-            || (lint->patternc)
+            || lint->patternc
 #endif
         )
             processNode(lint, reader);
         ret = xmlTextReaderRead(reader);
     }
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
 #ifdef LIBXML_RELAXNG_ENABLED
         if (lint->relaxng != NULL)
             endTimer(lint, "Parsing and validating");
@@ -1618,20 +1618,20 @@ walkDoc (xmllintState *lint, xmlDocPtr doc)
 #endif /* LIBXML_PATTERN_ENABLED */
     reader = xmlReaderWalker(doc);
     if (reader != NULL) {
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
         ret = xmlTextReaderRead(reader);
         while (ret == 1) {
             if (lint->appOptions & XML_LINT_DEBUG_ENABLED
 #ifdef LIBXML_PATTERN_ENABLED
-                || (lint->patternc)
+                || lint->patternc
 #endif
             )
                 processNode(lint, reader);
             ret = xmlTextReaderRead(reader);
         }
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "walking through the doc");
         }
         xmlFreeTextReader(reader);
@@ -1675,7 +1675,7 @@ doXPathDump (xmllintState *lint, xmlXPathObjectPtr cur)
         xmlNodePtr node;
         int i;
 
-        if ((cur->nodesetval == NULL) || (cur->nodesetval->nodeNr <= 0)) {
+        if (cur->nodesetval == NULL || cur->nodesetval->nodeNr <= 0) {
             lint->progresult = XMLLINT_ERR_XPATH_EMPTY;
             if ((lint->appOptions & XML_LINT_QUIET) != XML_LINT_QUIET) {
                 fprintf(lint->errStream, "XPath set is empty\n");
@@ -1789,7 +1789,7 @@ parseFile (xmllintState *lint, const char *filename)
 {
     xmlDocPtr doc = NULL;
 
-    if ((lint->appOptions & XML_LINT_GENERATE) && (filename == NULL)) {
+    if ((lint->appOptions & XML_LINT_GENERATE) && filename == NULL) {
         xmlNodePtr n;
 
         doc = xmlNewDoc(BAD_CAST "1.0");
@@ -1853,7 +1853,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
     /* Avoid unused variable warning */
     (void) errStream;
 
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1))
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1)
         startTimer(lint);
 
     doc = parseFile(lint, filename);
@@ -1863,7 +1863,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         return;
     }
 
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
         endTimer(lint, "Parsing");
     }
 
@@ -1882,7 +1882,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         xmlXIncludeCtxt *xinc;
         int res;
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
 
@@ -1903,7 +1903,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
             lint->progresult = XMLLINT_ERR_UNCLASS;
         }
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Xinclude processing");
         }
     }
@@ -1958,7 +1958,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
 #ifdef LIBXML_VALID_ENABLED
     if (lint->appOptions & XML_LINT_VALID_INSERTIONS
 #ifdef LIBXML_HTML_ENABLED
-        && ((lint->appOptions & XML_LINT_HTML_ENABLED) != XML_LINT_HTML_ENABLED)
+        && (lint->appOptions & XML_LINT_HTML_ENABLED) != XML_LINT_HTML_ENABLED
 #endif
     ) {
         const xmlChar *list[256];
@@ -1968,7 +1968,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         if (doc->children != NULL) {
             node = doc->children;
             while (
-                (node != NULL)
+                node != NULL
                 && ((node->type != XML_ELEMENT_NODE) || (node->last == NULL)))
                 node = node->next;
             if (node != NULL) {
@@ -2005,7 +2005,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         if ((lint->appOptions & XML_LINT_DEBUG_ENABLED)
             != XML_LINT_DEBUG_ENABLED) {
 #endif
-            if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+            if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
                 startTimer(lint);
             }
 #ifdef LIBXML_C14N_ENABLED
@@ -2109,7 +2109,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
                     lint->progresult = XMLLINT_ERR_OUT;
                 }
             }
-            if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+            if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
                 endTimer(lint, "Saving");
             }
 #ifdef LIBXML_DEBUG_ENABLED
@@ -2138,17 +2138,17 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
     /*
      * A posteriori validation test
      */
-    if ((lint->dtdvalid != NULL) || (lint->dtdvalidfpi != NULL)) {
+    if (lint->dtdvalid != NULL || lint->dtdvalidfpi != NULL) {
         xmlDtdPtr dtd;
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
         if (lint->dtdvalid != NULL)
             dtd = xmlParseDTD(NULL, BAD_CAST lint->dtdvalid);
         else
             dtd = xmlParseDTD(BAD_CAST lint->dtdvalidfpi, NULL);
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Parsing DTD");
         }
         if (dtd == NULL) {
@@ -2168,7 +2168,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
                 return;
             }
 
-            if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+            if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
                 startTimer(lint);
             }
             if (!xmlValidateDtd(cvp, doc, dtd)) {
@@ -2182,7 +2182,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
                             filename, lint->dtdvalidfpi);
                 lint->progresult = XMLLINT_ERR_VALID;
             }
-            if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+            if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
                 endTimer(lint, "Validating against DTD");
             }
             xmlFreeValidCtxt(cvp);
@@ -2198,14 +2198,14 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
             return;
         }
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
         if (!xmlValidateDocument(cvp, doc)) {
             fprintf(errStream, "Document %s does not validate\n", filename);
             lint->progresult = XMLLINT_ERR_VALID;
         }
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Validating");
         }
         xmlFreeValidCtxt(cvp);
@@ -2258,7 +2258,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         xmlRelaxNGValidCtxtPtr ctxt;
         int ret;
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
 
@@ -2282,7 +2282,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
             lint->progresult = XMLLINT_ERR_VALID;
         }
         xmlRelaxNGFreeValidCtxt(ctxt);
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Validating");
         }
     }
@@ -2293,7 +2293,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
         xmlSchemaValidCtxtPtr ctxt;
         int ret;
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             startTimer(lint);
         }
 
@@ -2317,7 +2317,7 @@ parseAndPrintFile (xmllintState *lint, const char *filename)
             lint->progresult = XMLLINT_ERR_VALID;
         }
         xmlSchemaFreeValidCtxt(ctxt);
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
             endTimer(lint, "Validating");
         }
     }
@@ -2330,11 +2330,11 @@ done:
     /*
      * free it.
      */
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
         startTimer(lint);
     }
     xmlFreeDoc(doc);
-    if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat == 1)) {
+    if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat == 1) {
         endTimer(lint, "Freeing");
     }
 }
@@ -2578,35 +2578,35 @@ parseInteger (unsigned long *result, FILE *errStream, const char *ctxt,
 static int
 skipArgs (const char *arg)
 {
-    if ((!strcmp(arg, "-path")) || (!strcmp(arg, "--path"))
-        || (!strcmp(arg, "-maxmem")) || (!strcmp(arg, "--maxmem")) ||
+    if (!strcmp(arg, "-path") || !strcmp(arg, "--path")
+        || !strcmp(arg, "-maxmem") || !strcmp(arg, "--maxmem") ||
 #ifdef LIBXML_OUTPUT_ENABLED
-        (!strcmp(arg, "-o")) || (!strcmp(arg, "-output"))
-        || (!strcmp(arg, "--output")) || (!strcmp(arg, "-encode"))
-        || (!strcmp(arg, "--encode")) || (!strcmp(arg, "-pretty"))
-        || (!strcmp(arg, "--pretty")) ||
+        !strcmp(arg, "-o") || !strcmp(arg, "-output")
+        || !strcmp(arg, "--output") || !strcmp(arg, "-encode")
+        || !strcmp(arg, "--encode") || !strcmp(arg, "-pretty")
+        || !strcmp(arg, "--pretty") ||
 #endif
 #ifdef LIBXML_VALID_ENABLED
-        (!strcmp(arg, "-dtdvalid")) || (!strcmp(arg, "--dtdvalid"))
-        || (!strcmp(arg, "-dtdvalidfpi")) || (!strcmp(arg, "--dtdvalidfpi")) ||
+        !strcmp(arg, "-dtdvalid") || !strcmp(arg, "--dtdvalid")
+        || !strcmp(arg, "-dtdvalidfpi") || !strcmp(arg, "--dtdvalidfpi") ||
 #endif
 #ifdef LIBXML_RELAXNG_ENABLED
-        (!strcmp(arg, "-relaxng")) || (!strcmp(arg, "--relaxng")) ||
+        !strcmp(arg, "-relaxng") || !strcmp(arg, "--relaxng") ||
 #endif
 #ifdef LIBXML_SCHEMAS_ENABLED
-        (!strcmp(arg, "-schema")) || (!strcmp(arg, "--schema")) ||
+        !strcmp(arg, "-schema") || !strcmp(arg, "--schema") ||
 #endif
 #ifdef LIBXML_SCHEMATRON_ENABLED
         (!strcmp(arg, "-schematron")) || (!strcmp(arg, "--schematron")) ||
 #endif
 #if defined(LIBXML_READER_ENABLED) && defined(LIBXML_PATTERN_ENABLED)
-        (!strcmp(arg, "-pattern")) || (!strcmp(arg, "--pattern")) ||
+        !strcmp(arg, "-pattern") || !strcmp(arg, "--pattern") ||
 #endif
 #ifdef LIBXML_XPATH_ENABLED
-        (!strcmp(arg, "-xpath")) || (!strcmp(arg, "--xpath"))
-        || (!strcmp(arg, "-xpath0")) || (!strcmp(arg, "--xpath0")) ||
+        !strcmp(arg, "-xpath") || !strcmp(arg, "--xpath")
+        || !strcmp(arg, "-xpath0") || !strcmp(arg, "--xpath0") ||
 #endif
-        (!strcmp(arg, "-max-ampl")) || (!strcmp(arg, "--max-ampl"))) {
+        !strcmp(arg, "-max-ampl") || !strcmp(arg, "--max-ampl")) {
         return 1;
     }
 
@@ -2650,7 +2650,7 @@ xmllintParseOptions (xmllintState *lint, int argc, const char **argv)
         if (argv[i][0] != '-' || argv[i][1] == 0)
             continue;
 
-        if ((!strcmp(argv[i], "-maxmem")) || (!strcmp(argv[i], "--maxmem"))) {
+        if (!strcmp(argv[i], "-maxmem") || !strcmp(argv[i], "--maxmem")) {
             i++;
             if (i >= argc) {
                 fprintf(errStream, "maxmem: missing integer value\n");
@@ -2660,107 +2660,107 @@ xmllintParseOptions (xmllintState *lint, int argc, const char **argv)
                 < 0)
                 return XMLLINT_ERR_UNCLASS;
             lint->maxmem = val;
-        } else if ((!strcmp(argv[i], "-debug"))
-                   || (!strcmp(argv[i], "--debug"))) {
+        } else if (!strcmp(argv[i], "-debug")
+                   || !strcmp(argv[i], "--debug")) {
             lint->appOptions |= XML_LINT_DEBUG_ENABLED;
-        } else if ((!strcmp(argv[i], "-shell"))
-                   || (!strcmp(argv[i], "--shell"))) {
+        } else if (!strcmp(argv[i], "-shell")
+                   || !strcmp(argv[i], "--shell")) {
             lint->appOptions |= XML_LINT_NAVIGATING_SHELL;
-        } else if ((!strcmp(argv[i], "-copy"))
-                   || (!strcmp(argv[i], "--copy"))) {
+        } else if (!strcmp(argv[i], "-copy")
+                   || !strcmp(argv[i], "--copy")) {
             lint->appOptions |= XML_LINT_COPY_ENABLED;
-        } else if ((!strcmp(argv[i], "-recover"))
-                   || (!strcmp(argv[i], "--recover"))) {
+        } else if (!strcmp(argv[i], "-recover")
+                   || !strcmp(argv[i], "--recover")) {
             lint->parseOptions |= XML_PARSE_RECOVER;
-        } else if ((!strcmp(argv[i], "-huge"))
-                   || (!strcmp(argv[i], "--huge"))) {
+        } else if (!strcmp(argv[i], "-huge")
+                   || !strcmp(argv[i], "--huge")) {
             lint->parseOptions |= XML_PARSE_HUGE;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions |= HTML_PARSE_HUGE;
 #endif
-        } else if ((!strcmp(argv[i], "-noent"))
-                   || (!strcmp(argv[i], "--noent"))) {
+        } else if (!strcmp(argv[i], "-noent")
+                   || !strcmp(argv[i], "--noent")) {
             lint->parseOptions |= XML_PARSE_NOENT;
-        } else if ((!strcmp(argv[i], "-noenc"))
-                   || (!strcmp(argv[i], "--noenc"))) {
+        } else if (!strcmp(argv[i], "-noenc")
+                   || !strcmp(argv[i], "--noenc")) {
             lint->parseOptions |= XML_PARSE_IGNORE_ENC;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions |= HTML_PARSE_IGNORE_ENC;
 #endif
-        } else if ((!strcmp(argv[i], "-nsclean"))
-                   || (!strcmp(argv[i], "--nsclean"))) {
+        } else if (!strcmp(argv[i], "-nsclean")
+                   || !strcmp(argv[i], "--nsclean")) {
             lint->parseOptions |= XML_PARSE_NSCLEAN;
-        } else if ((!strcmp(argv[i], "-nocdata"))
-                   || (!strcmp(argv[i], "--nocdata"))) {
+        } else if (!strcmp(argv[i], "-nocdata")
+                   || !strcmp(argv[i], "--nocdata")) {
             lint->parseOptions |= XML_PARSE_NOCDATA;
-        } else if ((!strcmp(argv[i], "-nodict"))
-                   || (!strcmp(argv[i], "--nodict"))) {
+        } else if (!strcmp(argv[i], "-nodict")
+                   || !strcmp(argv[i], "--nodict")) {
             lint->parseOptions |= XML_PARSE_NODICT;
-        } else if ((!strcmp(argv[i], "-version"))
-                   || (!strcmp(argv[i], "--version"))) {
+        } else if (!strcmp(argv[i], "-version")
+                   || !strcmp(argv[i], "--version")) {
             showVersion(errStream, argv[0]);
             lint->version = 1;
-        } else if ((!strcmp(argv[i], "-noout"))
-                   || (!strcmp(argv[i], "--noout"))) {
+        } else if (!strcmp(argv[i], "-noout")
+                   || !strcmp(argv[i], "--noout")) {
             lint->noout = 1;
 #ifdef LIBXML_HTML_ENABLED
-        } else if ((!strcmp(argv[i], "-html"))
-                   || (!strcmp(argv[i], "--html"))) {
+        } else if (!strcmp(argv[i], "-html")
+                   || !strcmp(argv[i], "--html")) {
             lint->appOptions |= XML_LINT_HTML_ENABLED;
-        } else if ((!strcmp(argv[i], "-nodefdtd"))
-                   || (!strcmp(argv[i], "--nodefdtd"))) {
+        } else if (!strcmp(argv[i], "-nodefdtd")
+                   || !strcmp(argv[i], "--nodefdtd")) {
             lint->htmlOptions |= HTML_PARSE_NODEFDTD;
 #ifdef LIBXML_OUTPUT_ENABLED
-        } else if ((!strcmp(argv[i], "-xmlout"))
-                   || (!strcmp(argv[i], "--xmlout"))) {
+        } else if (!strcmp(argv[i], "-xmlout")
+                   || !strcmp(argv[i], "--xmlout")) {
             lint->appOptions |= XML_LINT_XML_OUT;
 #endif
 #endif /* LIBXML_HTML_ENABLED */
-        } else if ((!strcmp(argv[i], "-loaddtd"))
-                   || (!strcmp(argv[i], "--loaddtd"))) {
+        } else if (!strcmp(argv[i], "-loaddtd")
+                   || !strcmp(argv[i], "--loaddtd")) {
             lint->parseOptions |= XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-dtdattr"))
-                   || (!strcmp(argv[i], "--dtdattr"))) {
+        } else if (!strcmp(argv[i], "-dtdattr")
+                   || !strcmp(argv[i], "--dtdattr")) {
             lint->parseOptions |= XML_PARSE_DTDATTR;
 #ifdef LIBXML_VALID_ENABLED
-        } else if ((!strcmp(argv[i], "-valid"))
-                   || (!strcmp(argv[i], "--valid"))) {
+        } else if (!strcmp(argv[i], "-valid")
+                   || !strcmp(argv[i], "--valid")) {
             lint->parseOptions |= XML_PARSE_DTDVALID;
-        } else if ((!strcmp(argv[i], "-postvalid"))
-                   || (!strcmp(argv[i], "--postvalid"))) {
+        } else if (!strcmp(argv[i], "-postvalid")
+                   || !strcmp(argv[i], "--postvalid")) {
             lint->appOptions |= XML_LINT_POST_VALIDATION;
             lint->parseOptions |= XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-dtdvalid"))
-                   || (!strcmp(argv[i], "--dtdvalid"))) {
+        } else if (!strcmp(argv[i], "-dtdvalid")
+                   || !strcmp(argv[i], "--dtdvalid")) {
             i++;
             lint->dtdvalid = argv[i];
             lint->parseOptions |= XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-dtdvalidfpi"))
-                   || (!strcmp(argv[i], "--dtdvalidfpi"))) {
+        } else if (!strcmp(argv[i], "-dtdvalidfpi")
+                   || !strcmp(argv[i], "--dtdvalidfpi")) {
             i++;
             lint->dtdvalidfpi = argv[i];
             lint->parseOptions |= XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-insert"))
-                   || (!strcmp(argv[i], "--insert"))) {
+        } else if (!strcmp(argv[i], "-insert")
+                   || !strcmp(argv[i], "--insert")) {
             lint->appOptions |= XML_LINT_VALID_INSERTIONS;
 #endif /* LIBXML_VALID_ENABLED */
-        } else if ((!strcmp(argv[i], "-strict-namespace"))
-                   || (!strcmp(argv[i], "--strict-namespace"))) {
+        } else if (!strcmp(argv[i], "-strict-namespace")
+                   || !strcmp(argv[i], "--strict-namespace")) {
             lint->appOptions |= XML_LINT_STRICT_NAMESPACE;
-        } else if ((!strcmp(argv[i], "-dropdtd"))
-                   || (!strcmp(argv[i], "--dropdtd"))) {
+        } else if (!strcmp(argv[i], "-dropdtd")
+                   || !strcmp(argv[i], "--dropdtd")) {
             lint->appOptions |= XML_LINT_DROP_DTD;
-        } else if ((!strcmp(argv[i], "-quiet"))
-                   || (!strcmp(argv[i], "--quiet"))) {
+        } else if (!strcmp(argv[i], "-quiet")
+                   || !strcmp(argv[i], "--quiet")) {
             lint->appOptions |= XML_LINT_QUIET;
-        } else if ((!strcmp(argv[i], "-timing"))
-                   || (!strcmp(argv[i], "--timing"))) {
+        } else if (!strcmp(argv[i], "-timing")
+                   || !strcmp(argv[i], "--timing")) {
             lint->appOptions |= XML_LINT_TIMINGS;
-        } else if ((!strcmp(argv[i], "-auto"))
-                   || (!strcmp(argv[i], "--auto"))) {
+        } else if (!strcmp(argv[i], "-auto")
+                   || !strcmp(argv[i], "--auto")) {
             lint->appOptions |= XML_LINT_GENERATE;
-        } else if ((!strcmp(argv[i], "-repeat"))
-                   || (!strcmp(argv[i], "--repeat"))) {
+        } else if (!strcmp(argv[i], "-repeat")
+                   || !strcmp(argv[i], "--repeat")) {
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
             lint->repeat = 2;
 #else
@@ -2770,75 +2770,75 @@ xmllintParseOptions (xmllintState *lint, int argc, const char **argv)
                 lint->repeat = 100;
 #endif
 #ifdef LIBXML_PUSH_ENABLED
-        } else if ((!strcmp(argv[i], "-push"))
-                   || (!strcmp(argv[i], "--push"))) {
+        } else if (!strcmp(argv[i], "-push")
+                   || !strcmp(argv[i], "--push")) {
             lint->appOptions |= XML_LINT_PUSH_ENABLED;
 #endif /* LIBXML_PUSH_ENABLED */
 #if HAVE_DECL_MMAP
-        } else if ((!strcmp(argv[i], "-memory"))
-                   || (!strcmp(argv[i], "--memory"))) {
+        } else if (!strcmp(argv[i], "-memory")
+                   || !strcmp(argv[i], "--memory")) {
             lint->appOptions |= XML_LINT_MEMORY;
 #endif
 #ifdef LIBXML_XINCLUDE_ENABLED
-        } else if ((!strcmp(argv[i], "-xinclude"))
-                   || (!strcmp(argv[i], "--xinclude"))) {
+        } else if (!strcmp(argv[i], "-xinclude")
+                   || !strcmp(argv[i], "--xinclude")) {
             lint->appOptions |= XML_LINT_XINCLUDE;
             lint->parseOptions |= XML_PARSE_XINCLUDE;
-        } else if ((!strcmp(argv[i], "-noxincludenode"))
-                   || (!strcmp(argv[i], "--noxincludenode"))) {
+        } else if (!strcmp(argv[i], "-noxincludenode")
+                   || !strcmp(argv[i], "--noxincludenode")) {
             lint->appOptions |= XML_LINT_XINCLUDE;
             lint->parseOptions |= XML_PARSE_XINCLUDE;
             lint->parseOptions |= XML_PARSE_NOXINCNODE;
-        } else if ((!strcmp(argv[i], "-nofixup-base-uris"))
-                   || (!strcmp(argv[i], "--nofixup-base-uris"))) {
+        } else if (!strcmp(argv[i], "-nofixup-base-uris")
+                   || !strcmp(argv[i], "--nofixup-base-uris")) {
             lint->appOptions |= XML_LINT_XINCLUDE;
             lint->parseOptions |= XML_PARSE_XINCLUDE;
             lint->parseOptions |= XML_PARSE_NOBASEFIX;
 #endif
-        } else if ((!strcmp(argv[i], "-nowarning"))
-                   || (!strcmp(argv[i], "--nowarning"))) {
+        } else if (!strcmp(argv[i], "-nowarning")
+                   || !strcmp(argv[i], "--nowarning")) {
             lint->parseOptions |= XML_PARSE_NOWARNING;
             lint->parseOptions &= ~XML_PARSE_PEDANTIC;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions |= HTML_PARSE_NOWARNING;
 #endif
-        } else if ((!strcmp(argv[i], "-pedantic"))
-                   || (!strcmp(argv[i], "--pedantic"))) {
+        } else if (!strcmp(argv[i], "-pedantic")
+                   || !strcmp(argv[i], "--pedantic")) {
             lint->parseOptions |= XML_PARSE_PEDANTIC;
             lint->parseOptions &= ~XML_PARSE_NOWARNING;
 #ifdef LIBXML_CATALOG_ENABLED
-        } else if ((!strcmp(argv[i], "-catalogs"))
-                   || (!strcmp(argv[i], "--catalogs"))) {
+        } else if (!strcmp(argv[i], "-catalogs")
+                   || !strcmp(argv[i], "--catalogs")) {
             lint->appOptions |= XML_LINT_USE_CATALOGS;
-        } else if ((!strcmp(argv[i], "-nocatalogs"))
-                   || (!strcmp(argv[i], "--nocatalogs"))) {
+        } else if (!strcmp(argv[i], "-nocatalogs")
+                   || !strcmp(argv[i], "--nocatalogs")) {
             lint->appOptions |= XML_LINT_USE_NO_CATALOGS;
             lint->parseOptions |= XML_PARSE_NO_SYS_CATALOG;
 #endif
-        } else if ((!strcmp(argv[i], "-noblanks"))
-                   || (!strcmp(argv[i], "--noblanks"))) {
+        } else if (!strcmp(argv[i], "-noblanks")
+                   || !strcmp(argv[i], "--noblanks")) {
             lint->parseOptions |= XML_PARSE_NOBLANKS;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions |= HTML_PARSE_NOBLANKS;
 #endif
 #ifdef LIBXML_OUTPUT_ENABLED
-        } else if ((!strcmp(argv[i], "-o")) || (!strcmp(argv[i], "-output"))
-                   || (!strcmp(argv[i], "--output"))) {
+        } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "-output")
+                   || !strcmp(argv[i], "--output")) {
             i++;
             lint->output = argv[i];
-        } else if ((!strcmp(argv[i], "-format"))
-                   || (!strcmp(argv[i], "--format"))) {
+        } else if (!strcmp(argv[i], "-format")
+                   || !strcmp(argv[i], "--format")) {
             lint->format = 1;
             lint->parseOptions |= XML_PARSE_NOBLANKS;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions |= HTML_PARSE_NOBLANKS;
 #endif
-        } else if ((!strcmp(argv[i], "-encode"))
-                   || (!strcmp(argv[i], "--encode"))) {
+        } else if (!strcmp(argv[i], "-encode")
+                   || !strcmp(argv[i], "--encode")) {
             i++;
             lint->encoding = argv[i];
-        } else if ((!strcmp(argv[i], "-pretty"))
-                   || (!strcmp(argv[i], "--pretty"))) {
+        } else if (!strcmp(argv[i], "-pretty")
+                   || !strcmp(argv[i], "--pretty")) {
             i++;
             if (i >= argc) {
                 fprintf(errStream, "pretty: missing integer value\n");
@@ -2853,55 +2853,55 @@ xmllintParseOptions (xmllintState *lint, int argc, const char **argv)
             lint->appOptions |= XML_LINT_ZLIB_COMPRESSION;
 #endif
 #ifdef LIBXML_C14N_ENABLED
-        } else if ((!strcmp(argv[i], "-c14n"))
-                   || (!strcmp(argv[i], "--c14n"))) {
+        } else if (!strcmp(argv[i], "-c14n")
+                   || !strcmp(argv[i], "--c14n")) {
             lint->appOptions |= XML_LINT_CANONICAL_V1_0;
             lint->parseOptions
                 |= XML_PARSE_NOENT | XML_PARSE_DTDATTR | XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-c14n11"))
-                   || (!strcmp(argv[i], "--c14n11"))) {
+        } else if (!strcmp(argv[i], "-c14n11")
+                   || !strcmp(argv[i], "--c14n11")) {
             lint->appOptions |= XML_LINT_CANONICAL_V1_1;
             lint->parseOptions
                 |= XML_PARSE_NOENT | XML_PARSE_DTDATTR | XML_PARSE_DTDLOAD;
-        } else if ((!strcmp(argv[i], "-exc-c14n"))
-                   || (!strcmp(argv[i], "--exc-c14n"))) {
+        } else if (!strcmp(argv[i], "-exc-c14n")
+                   || !strcmp(argv[i], "--exc-c14n")) {
             lint->appOptions |= XML_LINT_CANONICAL_EXE;
             lint->parseOptions
                 |= XML_PARSE_NOENT | XML_PARSE_DTDATTR | XML_PARSE_DTDLOAD;
 #endif /* LIBXML_C14N_ENABLED */
 #endif /* LIBXML_OUTPUT_ENABLED */
 #ifdef LIBXML_READER_ENABLED
-        } else if ((!strcmp(argv[i], "-stream"))
-                   || (!strcmp(argv[i], "--stream"))) {
+        } else if (!strcmp(argv[i], "-stream")
+                   || !strcmp(argv[i], "--stream")) {
             lint->appOptions |= XML_LINT_USE_STREAMING;
-        } else if ((!strcmp(argv[i], "-walker"))
-                   || (!strcmp(argv[i], "--walker"))) {
+        } else if (!strcmp(argv[i], "-walker")
+                   || !strcmp(argv[i], "--walker")) {
             lint->appOptions |= XML_LINT_USE_WALKER;
             lint->noout = 1;
 #ifdef LIBXML_PATTERN_ENABLED
-        } else if ((!strcmp(argv[i], "-pattern"))
-                   || (!strcmp(argv[i], "--pattern"))) {
+        } else if (!strcmp(argv[i], "-pattern")
+                   || !strcmp(argv[i], "--pattern")) {
             i++;
             lint->pattern = argv[i];
 #endif
 #endif /* LIBXML_READER_ENABLED */
 #ifdef LIBXML_SAX1_ENABLED
-        } else if ((!strcmp(argv[i], "-sax1"))
-                   || (!strcmp(argv[i], "--sax1"))) {
+        } else if (!strcmp(argv[i], "-sax1")
+                   || !strcmp(argv[i], "--sax1")) {
             lint->parseOptions |= XML_PARSE_SAX1;
 #endif /* LIBXML_SAX1_ENABLED */
-        } else if ((!strcmp(argv[i], "-sax")) || (!strcmp(argv[i], "--sax"))) {
+        } else if (!strcmp(argv[i], "-sax") || !strcmp(argv[i], "--sax")) {
             lint->appOptions |= XML_LINT_SAX_ENABLED;
 #ifdef LIBXML_RELAXNG_ENABLED
-        } else if ((!strcmp(argv[i], "-relaxng"))
-                   || (!strcmp(argv[i], "--relaxng"))) {
+        } else if (!strcmp(argv[i], "-relaxng")
+                   || !strcmp(argv[i], "--relaxng")) {
             i++;
             lint->relaxng = argv[i];
             lint->parseOptions |= XML_PARSE_NOENT;
 #endif
 #ifdef LIBXML_SCHEMAS_ENABLED
-        } else if ((!strcmp(argv[i], "-schema"))
-                   || (!strcmp(argv[i], "--schema"))) {
+        } else if (!strcmp(argv[i], "-schema")
+                   || !strcmp(argv[i], "--schema")) {
             i++;
             lint->schema = argv[i];
             lint->parseOptions |= XML_PARSE_NOENT;
@@ -2913,41 +2913,41 @@ xmllintParseOptions (xmllintState *lint, int argc, const char **argv)
             lint->schematron = argv[i];
             lint->parseOptions |= XML_PARSE_NOENT;
 #endif
-        } else if ((!strcmp(argv[i], "-nonet"))
-                   || (!strcmp(argv[i], "--nonet"))) {
+        } else if (!strcmp(argv[i], "-nonet")
+                   || !strcmp(argv[i], "--nonet")) {
             lint->parseOptions |= XML_PARSE_NONET;
-        } else if ((!strcmp(argv[i], "-nocompact"))
-                   || (!strcmp(argv[i], "--nocompact"))) {
+        } else if (!strcmp(argv[i], "-nocompact")
+                   || !strcmp(argv[i], "--nocompact")) {
             lint->parseOptions &= ~XML_PARSE_COMPACT;
 #ifdef LIBXML_HTML_ENABLED
             lint->htmlOptions &= ~HTML_PARSE_COMPACT;
 #endif
-        } else if ((!strcmp(argv[i], "-load-trace"))
-                   || (!strcmp(argv[i], "--load-trace"))) {
+        } else if (!strcmp(argv[i], "-load-trace")
+                   || !strcmp(argv[i], "--load-trace")) {
             lint->appOptions |= XML_LINT_USE_LOAD_TRACE;
-        } else if ((!strcmp(argv[i], "-path"))
-                   || (!strcmp(argv[i], "--path"))) {
+        } else if (!strcmp(argv[i], "-path")
+                   || !strcmp(argv[i], "--path")) {
             i++;
             parsePath(lint, BAD_CAST argv[i]);
 #ifdef LIBXML_XPATH_ENABLED
-        } else if ((!strcmp(argv[i], "-xpath"))
-                   || (!strcmp(argv[i], "--xpath"))) {
+        } else if (!strcmp(argv[i], "-xpath")
+                   || !strcmp(argv[i], "--xpath")) {
             i++;
             lint->noout++;
             lint->xpathquery = argv[i];
             lint->xpathsep = "\n";
-        } else if ((!strcmp(argv[i], "-xpath0"))
-                   || (!strcmp(argv[i], "--xpath0"))) {
+        } else if (!strcmp(argv[i], "-xpath0")
+                   || !strcmp(argv[i], "--xpath0")) {
             i++;
             lint->noout++;
             lint->xpathquery = argv[i];
             lint->xpathsep = "\0";
 #endif
-        } else if ((!strcmp(argv[i], "-oldxml10"))
-                   || (!strcmp(argv[i], "--oldxml10"))) {
+        } else if (!strcmp(argv[i], "-oldxml10")
+                   || !strcmp(argv[i], "--oldxml10")) {
             lint->parseOptions |= XML_PARSE_OLD10;
-        } else if ((!strcmp(argv[i], "-max-ampl"))
-                   || (!strcmp(argv[i], "--max-ampl"))) {
+        } else if (!strcmp(argv[i], "-max-ampl")
+                   || !strcmp(argv[i], "--max-ampl")) {
             i++;
             if (i >= argc) {
                 fprintf(errStream, "max-ampl: missing integer value\n");
@@ -3201,11 +3201,11 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
 #endif
 
 #ifdef LIBXML_RELAXNG_ENABLED
-    if ((lint->relaxng != NULL)
-        && ((lint->appOptions & XML_LINT_SAX_ENABLED) != XML_LINT_SAX_ENABLED)
+    if (lint->relaxng != NULL
+        && (lint->appOptions & XML_LINT_SAX_ENABLED) != XML_LINT_SAX_ENABLED
 #ifdef LIBXML_READER_ENABLED
-        && ((lint->appOptions & XML_LINT_USE_STREAMING)
-            != XML_LINT_USE_STREAMING)
+        && (lint->appOptions & XML_LINT_USE_STREAMING)
+            != XML_LINT_USE_STREAMING
 #endif /* LIBXML_READER_ENABLED */
     ) {
         xmlRelaxNGParserCtxtPtr ctxt;
@@ -3238,8 +3238,8 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
 #ifdef LIBXML_SCHEMAS_ENABLED
     if (lint->schema != NULL
 #ifdef LIBXML_READER_ENABLED
-        && ((lint->appOptions & XML_LINT_USE_STREAMING)
-            != XML_LINT_USE_STREAMING)
+        && (lint->appOptions & XML_LINT_USE_STREAMING)
+            != XML_LINT_USE_STREAMING
 #endif
     ) {
         xmlSchemaParserCtxtPtr ctxt;
@@ -3268,8 +3268,8 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
 #endif /* LIBXML_SCHEMAS_ENABLED */
 
 #if defined(LIBXML_READER_ENABLED) && defined(LIBXML_PATTERN_ENABLED)
-    if ((lint->pattern != NULL)
-        && ((lint->appOptions & XML_LINT_USE_WALKER) != XML_LINT_USE_WALKER)) {
+    if (lint->pattern != NULL
+        && (lint->appOptions & XML_LINT_USE_WALKER) != XML_LINT_USE_WALKER) {
         res = xmlPatternCompileSafe(BAD_CAST lint->pattern, NULL, 0, NULL,
                                     &lint->patternc);
         if (lint->patternc == NULL) {
@@ -3294,7 +3294,7 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
         int memoryFd = -1;
 #endif
 
-        if ((filename[0] == '-') && (strcmp(filename, "-") != 0)) {
+        if (filename[0] == '-' && strcmp(filename, "-") != 0) {
             i += skipArgs(filename);
             continue;
         }
@@ -3323,7 +3323,7 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
         }
 #endif /* HAVE_DECL_MMAP */
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat > 1))
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat > 1)
             startTimer(lint);
 
 #ifdef LIBXML_READER_ENABLED
@@ -3411,7 +3411,7 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
             xmlFreeParserCtxt(ctxt);
         }
 
-        if ((lint->appOptions & XML_LINT_TIMINGS) && (lint->repeat > 1)) {
+        if ((lint->appOptions & XML_LINT_TIMINGS) && lint->repeat > 1) {
             endTimer(lint, "%d iterations", lint->repeat);
         }
 
@@ -3428,9 +3428,9 @@ xmllintMain (int argc, const char **argv, FILE *errStream,
     if (lint->appOptions & XML_LINT_GENERATE)
         parseAndPrintFile(lint, NULL);
 
-    if ((files == 0)
-        && ((lint->appOptions & XML_LINT_GENERATE) != XML_LINT_GENERATE)
-        && (lint->version == 0)) {
+    if (files == 0
+        && (lint->appOptions & XML_LINT_GENERATE) != XML_LINT_GENERATE
+        && lint->version == 0) {
         usage(errStream, argv[0]);
         lint->progresult = XMLLINT_ERR_UNCLASS;
     }
@@ -3456,7 +3456,7 @@ error:
 
     xmlCleanupParser();
 
-    if ((lint->maxmem) && (xmllintMaxmemReached)) {
+    if (lint->maxmem && xmllintMaxmemReached) {
         fprintf(errStream, "Maximum memory exceeded (%d bytes)\n",
                 xmllintMaxmem);
     } else if (lint->progresult == XMLLINT_ERR_MEM) {
