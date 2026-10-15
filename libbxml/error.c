@@ -51,7 +51,7 @@ xmlIsCatastrophicError (int level, int code)
         fatal = 1;
         break;
     default:
-        if ((code >= 1500) && (code <= 1599))
+        if (code >= 1500 && code <= 1599)
             fatal = 1;
         break;
     }
@@ -179,7 +179,7 @@ xmlVUpdateError (xmlError *err, void *ctxt, xmlNodePtr node, int domain,
         int i;
 
         for (i = 0; i < 10; i++) {
-            if ((node->type == XML_ELEMENT_NODE) || (node->parent == NULL))
+            if (node->type == XML_ELEMENT_NODE || node->parent == NULL)
                 break;
             node = node->parent;
         }
@@ -189,13 +189,13 @@ xmlVUpdateError (xmlError *err, void *ctxt, xmlNodePtr node, int domain,
      * Get file and line from node.
      */
     if (node != NULL) {
-        if ((file == NULL) && (node->doc != NULL))
+        if (file == NULL && node->doc != NULL)
             file = (const char *) node->doc->URL;
 
         if (line == 0) {
             if (node->type == XML_ELEMENT_NODE)
                 line = node->line;
-            if ((line == 0) || (line == 65535))
+            if (line == 0 || line == 65535)
                 line = xmlGetLineNo(node);
         }
     }
@@ -359,7 +359,7 @@ xmlParserPrintFileContextInternal (xmlParserInputPtr input,
     int n, col;
     xmlChar content[81]; /* space for 80 chars + line terminator */
 
-    if ((input == NULL) || (input->cur == NULL))
+    if (input == NULL || input->cur == NULL)
         return;
 
     n = sizeof(content) - 1;
@@ -420,7 +420,7 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
     xmlParserInputPtr input = NULL;
     xmlParserInputPtr cur = NULL;
 
-    if ((err == NULL) || (channel == NULL))
+    if (err == NULL || channel == NULL)
         return;
 
     message = err->message;
@@ -434,33 +434,33 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
     if (code == XML_ERR_OK)
         return;
 
-    if ((domain == XML_FROM_PARSER) || (domain == XML_FROM_HTML)
-        || (domain == XML_FROM_DTD) || (domain == XML_FROM_NAMESPACE)
-        || (domain == XML_FROM_IO) || (domain == XML_FROM_VALID)) {
+    if (domain == XML_FROM_PARSER || domain == XML_FROM_HTML
+        || domain == XML_FROM_DTD || domain == XML_FROM_NAMESPACE
+        || domain == XML_FROM_IO || domain == XML_FROM_VALID) {
         ctxt = err->ctxt;
     }
 
-    if ((node != NULL) && (node->type == XML_ELEMENT_NODE)
-        && (domain != XML_FROM_SCHEMASV))
+    if (node != NULL && node->type == XML_ELEMENT_NODE
+        && domain != XML_FROM_SCHEMASV)
         name = node->name;
 
     /*
      * Maintain the compatibility with the legacy error handling
      */
-    if ((ctxt != NULL) && (ctxt->input != NULL)) {
+    if (ctxt != NULL && ctxt->input != NULL) {
         input = ctxt->input;
-        if ((input->filename == NULL) && (ctxt->inputNr > 1)) {
+        if (input->filename == NULL && ctxt->inputNr > 1) {
             cur = input;
             input = ctxt->inputTab[ctxt->inputNr - 2];
         }
         if (input->filename)
             channel(data, "%s:%d: ", input->filename, input->line);
-        else if ((line != 0) && (domain == XML_FROM_PARSER))
+        else if (line != 0 && domain == XML_FROM_PARSER)
             channel(data, "Entity: line %d: ", input->line);
     } else {
         if (file != NULL)
             channel(data, "%s:%d: ", file, line);
-        else if ((line != 0)
+        else if (line != 0
                  && ((domain == XML_FROM_PARSER)
                      || (domain == XML_FROM_SCHEMASV)
                      || (domain == XML_FROM_SCHEMASP)
@@ -563,7 +563,7 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
     if (message != NULL) {
         int len;
         len = xmlStrlen((const xmlChar *) message);
-        if ((len > 0) && (message[len - 1] != '\n'))
+        if (len > 0 && message[len - 1] != '\n')
             channel(data, "%s\n", message);
         else
             channel(data, "%s", message);
@@ -572,10 +572,10 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
     }
 
     if (ctxt != NULL) {
-        if ((input != NULL)
+        if (input != NULL
             && ((input->buf == NULL) || (input->buf->encoder == NULL))
-            && (code == XML_ERR_INVALID_ENCODING)
-            && (input->cur < input->end)) {
+            && code == XML_ERR_INVALID_ENCODING
+            && input->cur < input->end) {
             int i;
 
             channel(data, "Bytes:");
@@ -592,7 +592,7 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
         if (cur != NULL) {
             if (cur->filename)
                 channel(data, "%s:%d: \n", cur->filename, cur->line);
-            else if ((line != 0)
+            else if (line != 0
                      && ((domain == XML_FROM_PARSER)
                          || (domain == XML_FROM_SCHEMASV)
                          || (domain == XML_FROM_SCHEMASP)
@@ -603,8 +603,8 @@ xmlFormatError (const xmlError *err, xmlGenericErrorFunc channel, void *data)
             xmlParserPrintFileContextInternal(cur, channel, data);
         }
     }
-    if ((domain == XML_FROM_XPATH) && (err->str1 != NULL) && (err->int1 < 100)
-        && (err->int1 < xmlStrlen((const xmlChar *) err->str1))) {
+    if (domain == XML_FROM_XPATH && err->str1 != NULL && err->int1 < 100
+        && err->int1 < xmlStrlen((const xmlChar *) err->str1)) {
         xmlChar buf[150];
         int i;
 
@@ -700,12 +700,12 @@ xmlVRaiseError (xmlStructuredErrorFunc schannel, xmlGenericErrorFunc channel,
     if (code == XML_ERR_INTERNAL_ERROR)
         xmlAbort("Unexpected internal error: %s\n", msg);
 #endif
-    if ((xmlGetWarningsDefaultValue == 0) && (level == XML_ERR_WARNING))
+    if (xmlGetWarningsDefaultValue == 0 && level == XML_ERR_WARNING)
         return 0;
 
-    if ((domain == XML_FROM_PARSER) || (domain == XML_FROM_HTML)
-        || (domain == XML_FROM_DTD) || (domain == XML_FROM_NAMESPACE)
-        || (domain == XML_FROM_IO) || (domain == XML_FROM_VALID)) {
+    if (domain == XML_FROM_PARSER || domain == XML_FROM_HTML
+        || domain == XML_FROM_DTD || domain == XML_FROM_NAMESPACE
+        || domain == XML_FROM_IO || domain == XML_FROM_VALID) {
         ctxt = (xmlParserCtxtPtr) ctx;
 
         if (ctxt != NULL)
@@ -727,10 +727,10 @@ xmlVRaiseError (xmlStructuredErrorFunc schannel, xmlGenericErrorFunc channel,
         xmlStructuredError(xmlStructuredErrorContext, to);
     } else if (channel != NULL) {
         /* Don't invoke legacy error handlers */
-        if ((channel == xmlGenericErrorDefaultFunc)
-            || (channel == xmlParserError) || (channel == xmlParserWarning)
-            || (channel == xmlParserValidityError)
-            || (channel == xmlParserValidityWarning))
+        if (channel == xmlGenericErrorDefaultFunc
+            || channel == xmlParserError || channel == xmlParserWarning
+            || channel == xmlParserValidityError
+            || channel == xmlParserValidityWarning)
             xmlFormatError(to, xmlGenericError, xmlGenericErrorContext);
         else
             channel(data, "%s", to->message);
@@ -793,8 +793,8 @@ xmlVFormatLegacyError (void *ctx, const char *level, const char *fmt,
 
     if (ctxt != NULL) {
         input = ctxt->input;
-        if ((input != NULL) && (input->filename == NULL)
-            && (ctxt->inputNr > 1)) {
+        if (input != NULL && input->filename == NULL
+            && ctxt->inputNr > 1) {
             cur = input;
             input = ctxt->inputTab[ctxt->inputNr - 2];
         }
@@ -986,7 +986,7 @@ xmlCopyError (const xmlError *from, xmlError *to)
 {
     const char *fmt = NULL;
 
-    if ((from == NULL) || (to == NULL))
+    if (from == NULL || to == NULL)
         return -1;
 
     if (from->message != NULL)
