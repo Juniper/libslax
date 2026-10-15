@@ -538,7 +538,7 @@ xsltRegisterExtPrefix (xsltStylesheetPtr style, const xmlChar *prefix,
 {
     xsltExtDefPtr def, ret;
 
-    if ((style == NULL) || (URI == NULL))
+    if (style == NULL || URI == NULL)
         return -1;
 
 #ifdef WITH_XSLT_DEBUG_EXTENSIONS
@@ -622,7 +622,7 @@ xsltRegisterExtFunction (xsltTransformContextPtr ctxt, const xmlChar *name,
 {
     int ret;
 
-    if ((ctxt == NULL) || (name == NULL) || (URI == NULL) || (function == NULL))
+    if (ctxt == NULL || name == NULL || URI == NULL || function == NULL)
         return -1;
     if (ctxt->xpathCtxt != NULL) {
         xmlXPathRegisterFuncNS(ctxt->xpathCtxt, name, URI, function);
@@ -653,7 +653,7 @@ int
 xsltRegisterExtElement (xsltTransformContextPtr ctxt, const xmlChar *name,
                         const xmlChar *URI, xsltTransformFunction function)
 {
-    if ((ctxt == NULL) || (name == NULL) || (URI == NULL) || (function == NULL))
+    if (ctxt == NULL || name == NULL || URI == NULL || function == NULL)
         return -1;
     if (ctxt->extElements == NULL)
         ctxt->extElements = xmlHashCreate(10);
@@ -698,7 +698,7 @@ xsltStyleInitializeStylesheetModule (xsltStylesheetPtr style,
     void *userData = NULL;
     xsltExtModulePtr module;
 
-    if ((style == NULL) || (URI == NULL))
+    if (style == NULL || URI == NULL)
         return NULL;
 
     if (xsltExtensionsHash == NULL) {
@@ -790,7 +790,7 @@ xsltStyleGetExtData (xsltStylesheetPtr style, const xmlChar *URI)
     xsltExtDataPtr dataContainer = NULL;
     xsltStylesheetPtr tmpStyle;
 
-    if ((style == NULL) || (URI == NULL) || (xsltExtensionsHash == NULL))
+    if (style == NULL || URI == NULL || xsltExtensionsHash == NULL)
         return NULL;
 
 #ifdef XSLT_REFACTORED
@@ -883,7 +883,7 @@ xsltGetExtData (xsltTransformContextPtr ctxt, const xmlChar *URI)
 {
     xsltExtDataPtr data;
 
-    if ((ctxt == NULL) || (URI == NULL))
+    if (ctxt == NULL || URI == NULL)
         return NULL;
     if (ctxt->extInfos == NULL) {
         ctxt->extInfos = xmlHashCreate(10);
@@ -923,8 +923,8 @@ xsltGetExtData (xsltTransformContextPtr ctxt, const xmlChar *URI)
                 return NULL;
 
             data = xsltNewExtData(module, extData);
-            if ((data == NULL)
-                || (xmlHashAddEntry(ctxt->extInfos, URI, (void *) data) < 0)) {
+            if (data == NULL
+                || xmlHashAddEntry(ctxt->extInfos, URI, (void *) data) < 0) {
                 xsltTransformError(ctxt, NULL, NULL,
                                    "Failed to register module data: %s\n", URI);
                 if (module->shutdownFunc)
@@ -960,8 +960,8 @@ xsltInitCtxtExt (void *payload, void *data, const xmlChar *URI)
     xsltExtDataPtr ctxtData;
     void *extData;
 
-    if ((styleData == NULL) || (ctxt == NULL) || (URI == NULL)
-        || (ctxt->ret == -1)) {
+    if (styleData == NULL || ctxt == NULL || URI == NULL
+        || ctxt->ret == -1) {
 #ifdef WITH_XSLT_DEBUG_EXTENSIONS
         xsltGenericDebug(xsltGenericDebugContext,
                          "xsltInitCtxtExt: NULL param or error\n");
@@ -969,7 +969,7 @@ xsltInitCtxtExt (void *payload, void *data, const xmlChar *URI)
         return;
     }
     module = styleData->extModule;
-    if ((module == NULL) || (module->initFunc == NULL)) {
+    if (module == NULL || module->initFunc == NULL) {
 #ifdef WITH_XSLT_DEBUG_EXTENSIONS
         xsltGenericDebug(xsltGenericDebugContext,
                          "xsltInitCtxtExt: no module or no initFunc\n");
@@ -1080,10 +1080,10 @@ xsltShutdownCtxtExt (void *payload, void *vctxt, const xmlChar *URI)
     xsltTransformContextPtr ctxt = (xsltTransformContextPtr) vctxt;
     xsltExtModulePtr module;
 
-    if ((data == NULL) || (ctxt == NULL) || (URI == NULL))
+    if (data == NULL || ctxt == NULL || URI == NULL)
         return;
     module = data->extModule;
-    if ((module == NULL) || (module->shutdownFunc == NULL))
+    if (module == NULL || module->shutdownFunc == NULL)
         return;
 
 #ifdef WITH_XSLT_DEBUG_EXTENSIONS
@@ -1126,10 +1126,10 @@ xsltShutdownExt (void *payload, void *vctxt, const xmlChar *URI)
     xsltStylesheetPtr style = (xsltStylesheetPtr) vctxt;
     xsltExtModulePtr module;
 
-    if ((data == NULL) || (style == NULL) || (URI == NULL))
+    if (data == NULL || style == NULL || URI == NULL)
         return;
     module = data->extModule;
-    if ((module == NULL) || (module->styleShutdownFunc == NULL))
+    if (module == NULL || module->styleShutdownFunc == NULL)
         return;
 
 #ifdef WITH_XSLT_DEBUG_EXTENSIONS
@@ -1201,7 +1201,7 @@ xsltCheckExtPrefix (xsltStylesheetPtr style, const xmlChar *URI)
 #else
     xsltExtDefPtr cur;
 
-    if ((style == NULL) || (style->nsDefs == NULL))
+    if (style == NULL || style->nsDefs == NULL)
         return 0;
     if (URI == NULL)
         URI = BAD_CAST "#default";
@@ -1239,7 +1239,7 @@ xsltCheckExtURI (xsltStylesheetPtr style, const xmlChar *URI)
 {
     xsltExtDefPtr cur;
 
-    if ((style == NULL) || (style->nsDefs == NULL))
+    if (style == NULL || style->nsDefs == NULL)
         return 0;
     if (URI == NULL)
         return 0;
@@ -1273,7 +1273,7 @@ xsltRegisterExtModuleFull (const xmlChar *URI, xsltExtInitFunction initFunc,
     int ret;
     xsltExtModulePtr module;
 
-    if ((URI == NULL) || (initFunc == NULL))
+    if (URI == NULL || initFunc == NULL)
         return -1;
     if (xsltExtensionsHash == NULL)
         xsltExtensionsHash = xmlHashCreate(10);
@@ -1285,8 +1285,8 @@ xsltRegisterExtModuleFull (const xmlChar *URI, xsltExtInitFunction initFunc,
 
     module = xmlHashLookup(xsltExtensionsHash, URI);
     if (module != NULL) {
-        if ((module->initFunc == initFunc)
-            && (module->shutdownFunc == shutdownFunc))
+        if (module->initFunc == initFunc
+            && module->shutdownFunc == shutdownFunc)
             ret = 0;
         else
             ret = -1;
@@ -1383,7 +1383,7 @@ xsltUnregisterAllExtModules (void)
 xsltTransformContextPtr
 xsltXPathGetTransformContext (xmlXPathParserContextPtr ctxt)
 {
-    if ((ctxt == NULL) || (xmlXPathParserContextGetContext(ctxt) == NULL))
+    if (ctxt == NULL || xmlXPathParserContextGetContext(ctxt) == NULL)
         return NULL;
     return xmlXPathContextGetExtra(xmlXPathParserContextGetContext(ctxt));
 }
@@ -1402,7 +1402,7 @@ int
 xsltRegisterExtModuleFunction (const xmlChar *name, const xmlChar *URI,
                                xmlXPathFunction function)
 {
-    if ((name == NULL) || (URI == NULL) || (function == NULL))
+    if (name == NULL || URI == NULL || function == NULL)
         return -1;
 
     if (xsltFunctionsHash == NULL)
@@ -1434,7 +1434,7 @@ xsltExtModuleFunctionLookup (const xmlChar *name, const xmlChar *URI)
 {
     xmlXPathFunction ret;
 
-    if ((xsltFunctionsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltFunctionsHash == NULL || name == NULL || URI == NULL)
         return NULL;
 
     xmlMutexLock(xsltExtMutex);
@@ -1471,7 +1471,7 @@ xsltUnregisterExtModuleFunction (const xmlChar *name, const xmlChar *URI)
 {
     int ret;
 
-    if ((xsltFunctionsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltFunctionsHash == NULL || name == NULL || URI == NULL)
         return -1;
 
     xmlMutexLock(xsltExtMutex);
@@ -1576,9 +1576,9 @@ xsltPreComputeExtModuleElement (xsltStylesheetPtr style, xmlNodePtr inst)
     xsltExtElementPtr ext;
     xsltElemPreCompPtr comp = NULL;
 
-    if ((style == NULL) || (inst == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE)
-        || (xmlNodeGetNs(inst) == NULL))
+    if (style == NULL || inst == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE
+        || xmlNodeGetNs(inst) == NULL)
         return NULL;
 
     xmlMutexLock(xsltExtMutex);
@@ -1646,7 +1646,7 @@ xsltRegisterExtModuleElement (const xmlChar *name, const xmlChar *URI,
 
     xsltExtElementPtr ext;
 
-    if ((name == NULL) || (URI == NULL) || (transform == NULL))
+    if (name == NULL || URI == NULL || transform == NULL)
         return -1;
 
     if (xsltElementsHash == NULL)
@@ -1688,10 +1688,10 @@ xsltExtElementLookup (xsltTransformContextPtr ctxt, const xmlChar *name,
 {
     xsltTransformFunction ret;
 
-    if ((name == NULL) || (URI == NULL))
+    if (name == NULL || URI == NULL)
         return NULL;
 
-    if ((ctxt != NULL) && (ctxt->extElements != NULL)) {
+    if (ctxt != NULL && ctxt->extElements != NULL) {
         XML_CAST_FPTR(ret) = xmlHashLookup2(ctxt->extElements, name, URI);
         if (ret != NULL) {
             return ret;
@@ -1717,7 +1717,7 @@ xsltExtModuleElementLookup (const xmlChar *name, const xmlChar *URI)
 {
     xsltExtElementPtr ext;
 
-    if ((xsltElementsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltElementsHash == NULL || name == NULL || URI == NULL)
         return NULL;
 
     xmlMutexLock(xsltExtMutex);
@@ -1760,7 +1760,7 @@ xsltExtModuleElementPreComputeLookup (const xmlChar *name, const xmlChar *URI)
 {
     xsltExtElementPtr ext;
 
-    if ((xsltElementsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltElementsHash == NULL || name == NULL || URI == NULL)
         return NULL;
 
     xmlMutexLock(xsltExtMutex);
@@ -1799,7 +1799,7 @@ xsltUnregisterExtModuleElement (const xmlChar *name, const xmlChar *URI)
 {
     int ret;
 
-    if ((xsltElementsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltElementsHash == NULL || name == NULL || URI == NULL)
         return -1;
 
     xmlMutexLock(xsltExtMutex);
@@ -1842,7 +1842,7 @@ int
 xsltRegisterExtModuleTopLevel (const xmlChar *name, const xmlChar *URI,
                                xsltTopLevelFunction function)
 {
-    if ((name == NULL) || (URI == NULL) || (function == NULL))
+    if (name == NULL || URI == NULL || function == NULL)
         return -1;
 
     if (xsltTopLevelsHash == NULL)
@@ -1874,7 +1874,7 @@ xsltExtModuleTopLevelLookup (const xmlChar *name, const xmlChar *URI)
 {
     xsltTopLevelFunction ret;
 
-    if ((xsltTopLevelsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltTopLevelsHash == NULL || name == NULL || URI == NULL)
         return NULL;
 
     xmlMutexLock(xsltExtMutex);
@@ -1911,7 +1911,7 @@ xsltUnregisterExtModuleTopLevel (const xmlChar *name, const xmlChar *URI)
 {
     int ret;
 
-    if ((xsltTopLevelsHash == NULL) || (name == NULL) || (URI == NULL))
+    if (xsltTopLevelsHash == NULL || name == NULL || URI == NULL)
         return -1;
 
     xmlMutexLock(xsltExtMutex);
