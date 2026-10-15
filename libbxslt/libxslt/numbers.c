@@ -79,7 +79,7 @@ static const xsltFormatToken default_token
 static int
 xsltCopyCharMultiByte (xmlChar *out, int val)
 {
-    if ((out == NULL) || (val < 0))
+    if (out == NULL || val < 0)
         return 0;
     if (val >= 0x80) {
         xmlChar *savedout = out;
@@ -204,10 +204,10 @@ xsltNumberFormatDecimal (xmlBufferPtr buffer, double number, int digit_zero,
     *pointer = 0;
     i = 0;
     while (pointer > temp_string) {
-        if ((i >= width) && (fabs(number) < 1.0))
+        if (i >= width && fabs(number) < 1.0)
             break; /* for */
-        if ((i > 0) && (groupingCharacter != 0) && (digitsPerGroup > 0)
-            && ((i % digitsPerGroup) == 0)) {
+        if (i > 0 && groupingCharacter != 0 && digitsPerGroup > 0
+            && (i % digitsPerGroup) == 0) {
             if (pointer - groupingCharacterLen < temp_string) {
                 i = -1; /* flag error */
                 break;
@@ -417,8 +417,8 @@ xsltNumberFormatTokenize (const xmlChar *format, xsltFormatPtr tokens)
                 tokens->tokens[tokens->nTokens].token = '0';
                 tokens->tokens[tokens->nTokens].width = 1;
             }
-        } else if ((val == 'A') || (val == 'a') || (val == 'I')
-                   || (val == 'i')) {
+        } else if (val == 'A' || val == 'a' || val == 'I'
+                   || val == 'i') {
             tokens->tokens[tokens->nTokens].token = val;
             ix += len;
             val = xsltGetUTF8CharZ(format + ix, &len);
@@ -597,7 +597,7 @@ xsltTestCompMatchCount (xsltTransformContextPtr context, xmlNodePtr node,
             return 0;
         if (xmlNodeGetNs(node) == xmlNodeGetNs(cur))
             return 1;
-        if ((xmlNodeGetNs(node) == NULL) || (xmlNodeGetNs(cur) == NULL))
+        if (xmlNodeGetNs(node) == NULL || xmlNodeGetNs(cur) == NULL)
             return 0;
         return xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(node)),
                            xmlNsGetHref(xmlNodeGetNs(cur)));
@@ -617,16 +617,16 @@ xsltNumberFormatGetAnyLevel (xsltTransformContextPtr context, xmlNodePtr node,
         /* process current node */
         if (xsltTestCompMatchCount(context, cur, countPat, node))
             cnt++;
-        if ((fromPat != NULL) && xsltTestCompMatchList(context, cur, fromPat)) {
+        if (fromPat != NULL && xsltTestCompMatchList(context, cur, fromPat)) {
             break; /* while */
         }
 
         /* Skip to next preceding or ancestor */
-        if ((xmlNodeGetType(cur) == XML_DOCUMENT_NODE) ||
+        if (xmlNodeGetType(cur) == XML_DOCUMENT_NODE ||
 #ifdef LIBXML_DOCB_ENABLED
             (xmlNodeGetType(cur) == XML_DOCB_DOCUMENT_NODE) ||
 #endif
-            (xmlNodeGetType(cur) == XML_HTML_DOCUMENT_NODE))
+            xmlNodeGetType(cur) == XML_HTML_DOCUMENT_NODE)
             break; /* while */
 
         if (xmlNodeGetType(cur) == XML_NAMESPACE_DECL) {
@@ -638,7 +638,7 @@ xsltNumberFormatGetAnyLevel (xsltTransformContextPtr context, xmlNodePtr node,
         } else if (xmlNodeGetType(cur) == XML_ATTRIBUTE_NODE) {
             cur = xmlNodeGetParent(cur);
         } else {
-            while ((xmlNodeGetPrev(cur) != NULL)
+            while (xmlNodeGetPrev(cur) != NULL
                    && ((xmlNodeGetType(xmlNodeGetPrev(cur)) == XML_DTD_NODE)
                        || (xmlNodeGetType(xmlNodeGetPrev(cur))
                            == XML_XINCLUDE_START)
@@ -674,9 +674,9 @@ xsltNumberFormatGetMultipleLevel (xsltTransformContextPtr context,
     /* ancestor-or-self::*[count] */
     ancestor = node;
 
-    while ((ancestor != NULL)
-           && (xmlNodeGetType(ancestor) != XML_DOCUMENT_NODE)) {
-        if ((fromPat != NULL)
+    while (ancestor != NULL
+           && xmlNodeGetType(ancestor) != XML_DOCUMENT_NODE) {
+        if (fromPat != NULL
             && xsltTestCompMatchList(context, ancestor, fromPat))
             break;
 
@@ -697,12 +697,12 @@ xsltNumberFormatGetMultipleLevel (xsltTransformContextPtr context,
                 break;
         }
 
-        if ((ancestor != NULL)
-            && (xmlNodeGetType(ancestor) == XML_NAMESPACE_DECL)) {
+        if (ancestor != NULL
+            && xmlNodeGetType(ancestor) == XML_NAMESPACE_DECL) {
             xmlNsPtr ns = (xmlNsPtr) ancestor;
 
-            if ((xmlNsGetNext(ns) != NULL)
-                && (xmlNsGetType(xmlNsGetNext(ns)) != XML_NAMESPACE_DECL))
+            if (xmlNsGetNext(ns) != NULL
+                && xmlNsGetType(xmlNsGetNext(ns)) != XML_NAMESPACE_DECL)
                 ancestor = (xmlNodePtr) xmlNsGetNext(ns);
             else
                 ancestor = NULL;
@@ -966,7 +966,7 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
     }
     *result = NULL;
     if (xmlXPathIsNaN(number)) {
-        if ((self == NULL) || (self->noNumber == NULL))
+        if (self == NULL || self->noNumber == NULL)
             *result = xmlStrdup(BAD_CAST "NaN");
         else
             *result = xmlStrdup(self->noNumber);
@@ -1004,9 +1004,9 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
      * is used to handle it
      */
     self_grouping_len = xmlStrlen(self->grouping);
-    while ((*the_format != 0)
-           && (xsltUTF8Charcmp(the_format, self->decimalPoint) != 0)
-           && (xsltUTF8Charcmp(the_format, self->patternSeparator) != 0)) {
+    while (*the_format != 0
+           && xsltUTF8Charcmp(the_format, self->decimalPoint) != 0
+           && xsltUTF8Charcmp(the_format, self->patternSeparator) != 0) {
         if (delayed_multiplier != 0) {
             format_info.multiplier = delayed_multiplier;
             format_info.is_multiplier_set = TRUE;
@@ -1024,9 +1024,9 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
             format_info.integer_digits++;
             if (format_info.group >= 0)
                 format_info.group++;
-        } else if ((self_grouping_len > 0)
-                   && (!xmlStrncmp(the_format, self->grouping,
-                                   self_grouping_len))) {
+        } else if (self_grouping_len > 0
+                   && !xmlStrncmp(the_format, self->grouping,
+                                   self_grouping_len)) {
             /* Reset group count */
             format_info.group = 0;
             the_format += self_grouping_len;
@@ -1054,8 +1054,8 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
     }
 
     /* We have finished the integer part, now work on fraction */
-    if ((*the_format != 0)
-        && (xsltUTF8Charcmp(the_format, self->decimalPoint) == 0)) {
+    if (*the_format != 0
+        && xsltUTF8Charcmp(the_format, self->decimalPoint) == 0) {
         format_info.add_decimal = TRUE;
         if ((len = xmlUTF8Strsize(the_format, 1)) < 1) {
             found_error = 1;
@@ -1123,9 +1123,9 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
 
     suffix = the_format;
     suffix_length = xsltFormatNumberPreSuffix(self, &the_format, &format_info);
-    if ((suffix_length < 0)
-        || ((*the_format != 0)
-            && (xsltUTF8Charcmp(the_format, self->patternSeparator) != 0))) {
+    if (suffix_length < 0
+        || *the_format != 0
+            && xsltUTF8Charcmp(the_format, self->patternSeparator) != 0) {
         found_error = 1;
         goto OUTPUT_NUMBER;
     }
@@ -1163,8 +1163,8 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
             }
 
             while (*the_format != 0) {
-                if ((xsltUTF8Charcmp(the_format, (self)->percent) == 0)
-                    || (xsltUTF8Charcmp(the_format, (self)->permille) == 0)) {
+                if (xsltUTF8Charcmp(the_format, (self)->percent) == 0
+                    || xsltUTF8Charcmp(the_format, (self)->permille) == 0) {
                     if (format_info.is_multiplier_set) {
                         found_error = 1;
                         goto OUTPUT_NUMBER;
@@ -1205,12 +1205,12 @@ xsltFormatNumberConversion (xsltDecimalFormatPtr self, xmlChar *format,
 	     * Here's another Java peculiarity:
 	     * if -ve prefix/suffix == +ve ones, discard & use default
 	     */
-            if ((nprefix_length != prefix_length)
-                || (nsuffix_length != suffix_length)
-                || ((nprefix_length > 0)
-                    && (xmlStrncmp(nprefix, prefix, prefix_length) != 0))
-                || ((nsuffix_length > 0)
-                    && (xmlStrncmp(nsuffix, suffix, suffix_length) != 0))) {
+            if (nprefix_length != prefix_length
+                || nsuffix_length != suffix_length
+                || nprefix_length > 0
+                    && xmlStrncmp(nprefix, prefix, prefix_length) != 0
+                || nsuffix_length > 0
+                    && xmlStrncmp(nsuffix, suffix, suffix_length) != 0) {
                 prefix = nprefix;
                 prefix_length = nprefix_length;
                 suffix = nsuffix;
@@ -1249,7 +1249,7 @@ OUTPUT_NUMBER:
             *result = xmlStrdup(self->minusSign);
         /* Intentional fall-through */
     case 1:
-        if ((self == NULL) || (self->infinity == NULL))
+        if (self == NULL || self->infinity == NULL)
             *result = xmlStrcat(*result, BAD_CAST "Infinity");
         else
             *result = xmlStrcat(*result, self->infinity);
@@ -1296,7 +1296,7 @@ OUTPUT_NUMBER:
     number -= fmod(number, 1 / scale);
 
     /* Next do the integer part of the number */
-    if ((self->grouping != NULL) && (self->grouping[0] != 0)) {
+    if (self->grouping != NULL && self->grouping[0] != 0) {
         int gchar;
 
         len = xmlStrlen(self->grouping);
@@ -1310,17 +1310,17 @@ OUTPUT_NUMBER:
                                 ',', 1);
 
     /* Special case: java treats '.#' like '.0', '.##' like '.0#', etc. */
-    if ((format_info.integer_digits + format_info.integer_hash
+    if (format_info.integer_digits + format_info.integer_hash
              + format_info.frac_digits
-         == 0)
-        && (format_info.frac_hash > 0)) {
+         == 0
+        && format_info.frac_hash > 0) {
         ++format_info.frac_digits;
         --format_info.frac_hash;
     }
 
     /* Add leading zero, if required */
-    if ((floor(number) == 0)
-        && (format_info.integer_digits + format_info.frac_digits == 0)) {
+    if (floor(number) == 0
+        && format_info.integer_digits + format_info.frac_digits == 0) {
         xmlBufferAdd(buffer, self->zeroDigit,
                      xmlUTF8Strsize(self->zeroDigit, 1));
     }
@@ -1332,7 +1332,7 @@ OUTPUT_NUMBER:
                          xmlUTF8Strsize(self->decimalPoint, 1));
     } else {
         number -= floor(number);
-        if ((number != 0) || (format_info.frac_digits != 0)) {
+        if (number != 0 || format_info.frac_digits != 0) {
             xmlBufferAdd(buffer, self->decimalPoint,
                          xmlUTF8Strsize(self->decimalPoint, 1));
             number = floor(scale * number + 0.5);
