@@ -375,8 +375,8 @@ xsltCheckWrite (xsltSecurityPrefsPtr sec, xsltTransformContextPtr ctxt,
         }
         uri->path = (char *) xmlStrdup(URL);
     }
-    if ((uri->scheme == NULL)
-        || (xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
+    if (uri->scheme == NULL
+        || xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file")) {
 #if defined(_WIN32)
         if ((uri->path) && (uri->path[0] == '/') && (uri->path[1] != '\0')
             && (uri->path[2] == ':'))
@@ -450,8 +450,8 @@ xsltCheckRead (xsltSecurityPrefsPtr sec, xsltTransformContextPtr ctxt,
                            "xsltCheckRead: URL parsing failed for %s\n", URL);
         return -1;
     }
-    if ((uri->scheme == NULL)
-        || (xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file"))) {
+    if (uri->scheme == NULL
+        || xmlStrEqual(BAD_CAST uri->scheme, BAD_CAST "file")) {
         /*
 	 * Check if we are allowed to read this file
 	 */
