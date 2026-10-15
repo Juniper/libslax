@@ -31,7 +31,7 @@ exsltMathMin (xmlNodeSetPtr ns)
     double ret, cur;
     int i;
 
-    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
+    if (ns == NULL || xmlNodeSetGetNodeNr(ns) == 0)
         return NAN;
     ret = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(ret))
@@ -67,9 +67,9 @@ exsltMathMinFunction (xmlXPathParserContextPtr ctxt, int nargs)
         return;
     }
     /* We need to delay the freeing of value->user */
-    if ((xmlXPathParserContextGetValue(ctxt) != NULL)
-        && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
-            != 0)) {
+    if (xmlXPathParserContextGetValue(ctxt) != NULL
+        && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
+            != 0) {
         user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
         xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
         xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
@@ -104,7 +104,7 @@ exsltMathMax (xmlNodeSetPtr ns)
     double ret, cur;
     int i;
 
-    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
+    if (ns == NULL || xmlNodeSetGetNodeNr(ns) == 0)
         return NAN;
     ret = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
     if (xmlXPathIsNaN(ret))
@@ -139,9 +139,9 @@ exsltMathMaxFunction (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     /* We need to delay the freeing of value->user */
-    if ((xmlXPathParserContextGetValue(ctxt) != NULL)
-        && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
-            != 0)) {
+    if (xmlXPathParserContextGetValue(ctxt) != NULL
+        && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
+            != 0) {
         user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
         xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
         xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), 0);
@@ -176,7 +176,7 @@ exsltMathHighest (xmlNodeSetPtr ns)
     double max, cur;
     int i;
 
-    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
+    if (ns == NULL || xmlNodeSetGetNodeNr(ns) == 0)
         return ret;
 
     max = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
@@ -223,7 +223,7 @@ exsltMathHighestFunction (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     /* We need to delay the freeing of value->user */
-    if ((xmlXPathParserContextGetValue(ctxt) != NULL)
+    if (xmlXPathParserContextGetValue(ctxt) != NULL
         && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt)) != 0) {
         user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
         xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
@@ -259,7 +259,7 @@ exsltMathLowest (xmlNodeSetPtr ns)
     double min, cur;
     int i;
 
-    if ((ns == NULL) || (xmlNodeSetGetNodeNr(ns) == 0))
+    if (ns == NULL || xmlNodeSetGetNodeNr(ns) == 0)
         return ret;
 
     min = xmlXPathCastNodeToNumber(xmlNodeSetGetNodeEntry(ns, 0));
@@ -306,9 +306,9 @@ exsltMathLowestFunction (xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     /* We need to delay the freeing of value->user */
-    if ((xmlXPathParserContextGetValue(ctxt) != NULL)
-        && (xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
-            != 0)) {
+    if (xmlXPathParserContextGetValue(ctxt) != NULL
+        && xmlXPathObjectGetBoolval(xmlXPathParserContextGetValue(ctxt))
+            != 0) {
         user = xmlXPathObjectGetUser(xmlXPathParserContextGetValue(ctxt));
         xmlXPathObjectSetBoolval(xmlXPathParserContextGetValue(ctxt), 0);
         xmlXPathObjectSetUser(xmlXPathParserContextGetValue(ctxt), NULL);
@@ -359,7 +359,7 @@ exsltMathConstant (xmlChar *name, double precision)
     xmlChar *str;
     double ret;
 
-    if ((name == NULL) || (xmlXPathIsNaN(precision)) || (precision < 1.0)) {
+    if (name == NULL || xmlXPathIsNaN(precision) || precision < 1.0) {
         return NAN;
     }
 
