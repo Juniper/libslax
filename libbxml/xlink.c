@@ -114,12 +114,12 @@ xlinkIsLink (xmlDoc *doc, xmlNode *node)
         return XLINK_TYPE_NONE;
     if (doc == NULL)
         doc = node->doc;
-    if ((doc != NULL) && (doc->type == XML_HTML_DOCUMENT_NODE)) {
+    if (doc != NULL && doc->type == XML_HTML_DOCUMENT_NODE) {
         /*
 	 * This is an HTML document.
 	 */
-    } else if ((node->ns != NULL)
-               && (xmlStrEqual(node->ns->href, XHTML_NAMESPACE))) {
+    } else if (node->ns != NULL
+               && xmlStrEqual(node->ns->href, XHTML_NAMESPACE)) {
         /*
 	 * !!!! We really need an IS_XHTML_ELEMENT function from HTMLtree.h @@@
 	 */
