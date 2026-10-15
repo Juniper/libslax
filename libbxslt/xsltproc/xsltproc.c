@@ -109,10 +109,10 @@ parsePath (const xmlChar *path)
             return;
         }
         cur = path;
-        while ((*cur == ' ') || (*cur == PATH_SEPARATOR))
+        while (*cur == ' ' || *cur == PATH_SEPARATOR)
             cur++;
         path = cur;
-        while ((*cur != 0) && (*cur != ' ') && (*cur != PATH_SEPARATOR))
+        while (*cur != 0 && *cur != ' ' && *cur != PATH_SEPARATOR)
             cur++;
         if (cur != path) {
             paths[nbpaths] = xmlStrndup(path, cur - path);
@@ -567,23 +567,23 @@ main (int argc, char **argv)
         if (argv[i][0] != '-')
             continue;
 #ifdef LIBXML_DEBUG_ENABLED
-        if ((!strcmp(argv[i], "-debug")) || (!strcmp(argv[i], "--debug"))) {
+        if (!strcmp(argv[i], "-debug") || !strcmp(argv[i], "--debug")) {
             debug++;
         } else
 #endif
-            if ((!strcmp(argv[i], "-v")) || (!strcmp(argv[i], "-verbose"))
-                || (!strcmp(argv[i], "--verbose"))) {
+            if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "-verbose")
+                || !strcmp(argv[i], "--verbose")) {
             xsltSetGenericDebugFunc(stderr, NULL);
-        } else if ((!strcmp(argv[i], "-o")) || (!strcmp(argv[i], "-output"))
-                   || (!strcmp(argv[i], "--output"))) {
+        } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "-output")
+                   || !strcmp(argv[i], "--output")) {
             i++;
 #if defined(_WIN32) || defined(__CYGWIN__)
             output = (char *) xmlCanonicPath((xmlChar *) argv[i]);
             if (output == NULL)
 #endif
                 output = (char *) xmlStrdup((xmlChar *) argv[i]);
-        } else if ((!strcmp(argv[i], "-V")) || (!strcmp(argv[i], "-version"))
-                   || (!strcmp(argv[i], "--version"))) {
+        } else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "-version")
+                   || !strcmp(argv[i], "--version")) {
             printf("Using libxml %s, libxslt %s and libexslt %s\n",
                    xmlParserVersion, xsltEngineVersion, exsltLibraryVersion);
             printf("xsltproc was compiled against libxml %d, libxslt %d and "
@@ -593,69 +593,69 @@ main (int argc, char **argv)
                    xsltLibxsltVersion, xsltLibxmlVersion);
             printf("libexslt %d was compiled against libxml %d\n",
                    exsltLibexsltVersion, exsltLibxmlVersion);
-        } else if ((!strcmp(argv[i], "-repeat"))
-                   || (!strcmp(argv[i], "--repeat"))) {
+        } else if (!strcmp(argv[i], "-repeat")
+                   || !strcmp(argv[i], "--repeat")) {
             if (repeat == 0)
                 repeat = 20;
             else
                 repeat = 100;
-        } else if ((!strcmp(argv[i], "-novalid"))
-                   || (!strcmp(argv[i], "--novalid"))) {
+        } else if (!strcmp(argv[i], "-novalid")
+                   || !strcmp(argv[i], "--novalid")) {
             novalid++;
-        } else if ((!strcmp(argv[i], "-nodtdattr"))
-                   || (!strcmp(argv[i], "--nodtdattr"))) {
+        } else if (!strcmp(argv[i], "-nodtdattr")
+                   || !strcmp(argv[i], "--nodtdattr")) {
             nodtdattr++;
-        } else if ((!strcmp(argv[i], "-noout"))
-                   || (!strcmp(argv[i], "--noout"))) {
+        } else if (!strcmp(argv[i], "-noout")
+                   || !strcmp(argv[i], "--noout")) {
             noout++;
 #ifdef LIBXML_HTML_ENABLED
-        } else if ((!strcmp(argv[i], "-html"))
-                   || (!strcmp(argv[i], "--html"))) {
+        } else if (!strcmp(argv[i], "-html")
+                   || !strcmp(argv[i], "--html")) {
             html++;
 #endif
-        } else if ((!strcmp(argv[i], "-encoding"))
-                   || (!strcmp(argv[i], "--encoding"))) {
+        } else if (!strcmp(argv[i], "-encoding")
+                   || !strcmp(argv[i], "--encoding")) {
             encoding = argv[++i];
-        } else if ((!strcmp(argv[i], "-timing"))
-                   || (!strcmp(argv[i], "--timing"))) {
+        } else if (!strcmp(argv[i], "-timing")
+                   || !strcmp(argv[i], "--timing")) {
             timing++;
-        } else if ((!strcmp(argv[i], "-profile"))
-                   || (!strcmp(argv[i], "--profile"))) {
+        } else if (!strcmp(argv[i], "-profile")
+                   || !strcmp(argv[i], "--profile")) {
             profile++;
-        } else if ((!strcmp(argv[i], "-nodict"))
-                   || (!strcmp(argv[i], "--nodict"))) {
+        } else if (!strcmp(argv[i], "-nodict")
+                   || !strcmp(argv[i], "--nodict")) {
             nodict++;
-        } else if ((!strcmp(argv[i], "-norman"))
-                   || (!strcmp(argv[i], "--norman"))) {
+        } else if (!strcmp(argv[i], "-norman")
+                   || !strcmp(argv[i], "--norman")) {
             profile++;
-        } else if ((!strcmp(argv[i], "-nonet"))
-                   || (!strcmp(argv[i], "--nonet"))) {
+        } else if (!strcmp(argv[i], "-nonet")
+                   || !strcmp(argv[i], "--nonet")) {
             options |= XML_PARSE_NONET;
-        } else if ((!strcmp(argv[i], "-nowrite"))
-                   || (!strcmp(argv[i], "--nowrite"))) {
+        } else if (!strcmp(argv[i], "-nowrite")
+                   || !strcmp(argv[i], "--nowrite")) {
             xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
                                  xsltSecurityForbid);
             xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
                                  xsltSecurityForbid);
             xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_NETWORK,
                                  xsltSecurityForbid);
-        } else if ((!strcmp(argv[i], "-nomkdir"))
-                   || (!strcmp(argv[i], "--nomkdir"))) {
+        } else if (!strcmp(argv[i], "-nomkdir")
+                   || !strcmp(argv[i], "--nomkdir")) {
             xsltSetSecurityPrefs(sec, XSLT_SECPREF_CREATE_DIRECTORY,
                                  xsltSecurityForbid);
-        } else if ((!strcmp(argv[i], "-writesubtree"))
-                   || (!strcmp(argv[i], "--writesubtree"))) {
+        } else if (!strcmp(argv[i], "-writesubtree")
+                   || !strcmp(argv[i], "--writesubtree")) {
             i++;
             writesubtree = argv[i];
             xsltSetSecurityPrefs(sec, XSLT_SECPREF_WRITE_FILE,
                                  xsltSubtreeCheck);
-        } else if ((!strcmp(argv[i], "-path"))
-                   || (!strcmp(argv[i], "--path"))) {
+        } else if (!strcmp(argv[i], "-path")
+                   || !strcmp(argv[i], "--path")) {
             i++;
             parsePath(BAD_CAST argv[i]);
 #ifdef LIBXML_CATALOG_ENABLED
-        } else if ((!strcmp(argv[i], "-catalogs"))
-                   || (!strcmp(argv[i], "--catalogs"))) {
+        } else if (!strcmp(argv[i], "-catalogs")
+                   || !strcmp(argv[i], "--catalogs")) {
             const char *catalogs;
 
             catalogs = getenv("SGML_CATALOG_FILES");
@@ -666,19 +666,19 @@ main (int argc, char **argv)
             }
 #endif
 #ifdef LIBXML_XINCLUDE_ENABLED
-        } else if ((!strcmp(argv[i], "-xinclude"))
-                   || (!strcmp(argv[i], "--xinclude"))) {
+        } else if (!strcmp(argv[i], "-xinclude")
+                   || !strcmp(argv[i], "--xinclude")) {
             xinclude++;
-        } else if ((!strcmp(argv[i], "-xincludestyle"))
-                   || (!strcmp(argv[i], "--xincludestyle"))) {
+        } else if (!strcmp(argv[i], "-xincludestyle")
+                   || !strcmp(argv[i], "--xincludestyle")) {
             xincludestyle++;
             xsltSetXIncludeDefault(1);
 #endif
-        } else if ((!strcmp(argv[i], "-load-trace"))
-                   || (!strcmp(argv[i], "--load-trace"))) {
+        } else if (!strcmp(argv[i], "-load-trace")
+                   || !strcmp(argv[i], "--load-trace")) {
             load_trace++;
-        } else if ((!strcmp(argv[i], "-param"))
-                   || (!strcmp(argv[i], "--param"))) {
+        } else if (!strcmp(argv[i], "-param")
+                   || !strcmp(argv[i], "--param")) {
             i++;
             params[nbparams++] = argv[i++];
             params[nbparams++] = argv[i];
@@ -686,8 +686,8 @@ main (int argc, char **argv)
                 fprintf(stderr, "too many params increase MAX_PARAMETERS \n");
                 return 2;
             }
-        } else if ((!strcmp(argv[i], "-stringparam"))
-                   || (!strcmp(argv[i], "--stringparam"))) {
+        } else if (!strcmp(argv[i], "-stringparam")
+                   || !strcmp(argv[i], "--stringparam")) {
             const xmlChar *string;
             xmlChar *value;
 
@@ -716,8 +716,8 @@ main (int argc, char **argv)
                 fprintf(stderr, "too many params increase MAX_PARAMETERS \n");
                 return 2;
             }
-        } else if ((!strcmp(argv[i], "-maxdepth"))
-                   || (!strcmp(argv[i], "--maxdepth"))) {
+        } else if (!strcmp(argv[i], "-maxdepth")
+                   || !strcmp(argv[i], "--maxdepth")) {
             int value;
 
             i++;
@@ -730,8 +730,8 @@ main (int argc, char **argv)
                 if (value > 0)
                     xsltMaxDepth = value;
             }
-        } else if ((!strcmp(argv[i], "-maxvars"))
-                   || (!strcmp(argv[i], "--maxvars"))) {
+        } else if (!strcmp(argv[i], "-maxvars")
+                   || !strcmp(argv[i], "--maxvars")) {
             int value;
 
             i++;
@@ -739,11 +739,11 @@ main (int argc, char **argv)
                 if (value > 0)
                     xsltMaxVars = value;
             }
-        } else if ((!strcmp(argv[i], "-huge"))
-                   || (!strcmp(argv[i], "--huge"))) {
+        } else if (!strcmp(argv[i], "-huge")
+                   || !strcmp(argv[i], "--huge")) {
             options |= XML_PARSE_HUGE;
-        } else if ((!strcmp(argv[i], "-seed-rand"))
-                   || (!strcmp(argv[i], "--seed-rand"))) {
+        } else if (!strcmp(argv[i], "-seed-rand")
+                   || !strcmp(argv[i], "--seed-rand")) {
             int value;
 
             i++;
@@ -751,8 +751,8 @@ main (int argc, char **argv)
                 if (value > 0)
                     srand(value);
             }
-        } else if ((!strcmp(argv[i], "-dumpextensions"))
-                   || (!strcmp(argv[i], "--dumpextensions"))) {
+        } else if (!strcmp(argv[i], "-dumpextensions")
+                   || !strcmp(argv[i], "--dumpextensions")) {
             dumpextensions++;
         } else {
             fprintf(stderr, "Unknown option %s\n", argv[i]);
@@ -779,45 +779,45 @@ main (int argc, char **argv)
         xsltDebugDumpExtensions(NULL);
 
     for (i = 1; i < argc; i++) {
-        if ((!strcmp(argv[i], "-maxdepth"))
-            || (!strcmp(argv[i], "--maxdepth"))) {
+        if (!strcmp(argv[i], "-maxdepth")
+            || !strcmp(argv[i], "--maxdepth")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-maxvars"))
-                   || (!strcmp(argv[i], "--maxvars"))) {
+        } else if (!strcmp(argv[i], "-maxvars")
+                   || !strcmp(argv[i], "--maxvars")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-seed-rand"))
-                   || (!strcmp(argv[i], "--seed-rand"))) {
+        } else if (!strcmp(argv[i], "-seed-rand")
+                   || !strcmp(argv[i], "--seed-rand")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-o")) || (!strcmp(argv[i], "-output"))
-                   || (!strcmp(argv[i], "--output"))) {
+        } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "-output")
+                   || !strcmp(argv[i], "--output")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-encoding"))
-                   || (!strcmp(argv[i], "--encoding"))) {
+        } else if (!strcmp(argv[i], "-encoding")
+                   || !strcmp(argv[i], "--encoding")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-writesubtree"))
-                   || (!strcmp(argv[i], "--writesubtree"))) {
+        } else if (!strcmp(argv[i], "-writesubtree")
+                   || !strcmp(argv[i], "--writesubtree")) {
             i++;
             continue;
-        } else if ((!strcmp(argv[i], "-path"))
-                   || (!strcmp(argv[i], "--path"))) {
+        } else if (!strcmp(argv[i], "-path")
+                   || !strcmp(argv[i], "--path")) {
             i++;
             continue;
         }
-        if ((!strcmp(argv[i], "-param")) || (!strcmp(argv[i], "--param"))) {
+        if (!strcmp(argv[i], "-param") || !strcmp(argv[i], "--param")) {
             i += 2;
             continue;
         }
-        if ((!strcmp(argv[i], "-stringparam"))
-            || (!strcmp(argv[i], "--stringparam"))) {
+        if (!strcmp(argv[i], "-stringparam")
+            || !strcmp(argv[i], "--stringparam")) {
             i += 2;
             continue;
         }
-        if ((argv[i][0] != '-') || (strcmp(argv[i], "-") == 0)) {
+        if (argv[i][0] != '-' || strcmp(argv[i], "-") == 0) {
             if (timing)
                 startTimer();
             style = xmlReadFile((const char *) argv[i], NULL, options);
@@ -869,7 +869,7 @@ main (int argc, char **argv)
         }
     }
 
-    if ((cur != NULL) && (cur->errors == 0)) {
+    if (cur != NULL && cur->errors == 0) {
         for (; i < argc; i++) {
             doc = NULL;
             if (timing)
