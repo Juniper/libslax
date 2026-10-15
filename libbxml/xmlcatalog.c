@@ -131,11 +131,11 @@ usershell (void)
 	 */
         cur = cmdline;
         nbargs = 0;
-        while ((*cur == ' ') || (*cur == '\t'))
+        while (*cur == ' ' || *cur == '\t')
             cur++;
         i = 0;
-        while ((*cur != ' ') && (*cur != '\t') && (*cur != '\n')
-               && (*cur != '\r')) {
+        while (*cur != ' ' && *cur != '\t' && *cur != '\n'
+               && *cur != '\r') {
             if (*cur == 0)
                 break;
             command[i++] = *cur++;
@@ -150,10 +150,10 @@ usershell (void)
 	 * Parse the argument string
 	 */
         memset(arg, 0, sizeof(arg));
-        while ((*cur == ' ') || (*cur == '\t'))
+        while (*cur == ' ' || *cur == '\t')
             cur++;
         i = 0;
-        while ((*cur != '\n') && (*cur != '\r') && (*cur != 0)) {
+        while (*cur != '\n' && *cur != '\r' && *cur != 0) {
             if (*cur == 0)
                 break;
             arg[i++] = *cur++;
@@ -168,12 +168,12 @@ usershell (void)
         cur = arg;
         memset(argv, 0, sizeof(argv));
         while (*cur != 0) {
-            while ((*cur == ' ') || (*cur == '\t'))
+            while (*cur == ' ' || *cur == '\t')
                 cur++;
             if (*cur == '\'') {
                 cur++;
                 argv[i] = cur;
-                while ((*cur != 0) && (*cur != '\''))
+                while (*cur != 0 && *cur != '\'')
                     cur++;
                 if (*cur == '\'') {
                     *cur = 0;
@@ -184,7 +184,7 @@ usershell (void)
             } else if (*cur == '"') {
                 cur++;
                 argv[i] = cur;
-                while ((*cur != 0) && (*cur != '"'))
+                while (*cur != 0 && *cur != '"')
                     cur++;
                 if (*cur == '"') {
                     *cur = 0;
@@ -194,7 +194,7 @@ usershell (void)
                 }
             } else {
                 argv[i] = cur;
-                while ((*cur != 0) && (*cur != ' ') && (*cur != '\t'))
+                while (*cur != 0 && *cur != ' ' && *cur != '\t')
                     cur++;
                 *cur = 0;
                 nbargs++;
@@ -237,7 +237,7 @@ usershell (void)
                 }
             }
         } else if (!strcmp(command, "add")) {
-            if ((nbargs != 3) && (nbargs != 2)) {
+            if (nbargs != 3 && nbargs != 2) {
                 printf("add requires 2 or 3 arguments\n");
             } else {
                 if (argv[2] == NULL)
@@ -365,34 +365,34 @@ main (int argc, char **argv)
 
         if (argv[i][0] != '-')
             break;
-        if ((!strcmp(argv[i], "-verbose")) || (!strcmp(argv[i], "-v"))
-            || (!strcmp(argv[i], "--verbose"))) {
+        if (!strcmp(argv[i], "-verbose") || !strcmp(argv[i], "-v")
+            || !strcmp(argv[i], "--verbose")) {
             verbose++;
             xmlCatalogSetDebug(verbose);
-        } else if ((!strcmp(argv[i], "-noout"))
-                   || (!strcmp(argv[i], "--noout"))) {
+        } else if (!strcmp(argv[i], "-noout")
+                   || !strcmp(argv[i], "--noout")) {
             noout = 1;
-        } else if ((!strcmp(argv[i], "-shell"))
-                   || (!strcmp(argv[i], "--shell"))) {
+        } else if (!strcmp(argv[i], "-shell")
+                   || !strcmp(argv[i], "--shell")) {
             shell++;
             noout = 1;
 #ifdef LIBXML_SGML_CATALOG_ENABLED
-        } else if ((!strcmp(argv[i], "-sgml"))
-                   || (!strcmp(argv[i], "--sgml"))) {
+        } else if (!strcmp(argv[i], "-sgml")
+                   || !strcmp(argv[i], "--sgml")) {
             sgml++;
 #endif
-        } else if ((!strcmp(argv[i], "-create"))
-                   || (!strcmp(argv[i], "--create"))) {
+        } else if (!strcmp(argv[i], "-create")
+                   || !strcmp(argv[i], "--create")) {
             create++;
 #ifdef LIBXML_SGML_CATALOG_ENABLED
-        } else if ((!strcmp(argv[i], "-convert"))
-                   || (!strcmp(argv[i], "--convert"))) {
+        } else if (!strcmp(argv[i], "-convert")
+                   || !strcmp(argv[i], "--convert")) {
             convert++;
-        } else if ((!strcmp(argv[i], "-no-super-update"))
-                   || (!strcmp(argv[i], "--no-super-update"))) {
+        } else if (!strcmp(argv[i], "-no-super-update")
+                   || !strcmp(argv[i], "--no-super-update")) {
             no_super_update++;
 #endif
-        } else if ((!strcmp(argv[i], "-add")) || (!strcmp(argv[i], "--add"))) {
+        } else if (!strcmp(argv[i], "-add") || !strcmp(argv[i], "--add")) {
 #ifdef LIBXML_SGML_CATALOG_ENABLED
             if (sgml)
                 i += 2;
@@ -400,7 +400,7 @@ main (int argc, char **argv)
 #endif
                 i += 3;
             add++;
-        } else if ((!strcmp(argv[i], "-del")) || (!strcmp(argv[i], "--del"))) {
+        } else if (!strcmp(argv[i], "-del") || !strcmp(argv[i], "--del")) {
             i += 1;
             del++;
         } else {
@@ -411,7 +411,7 @@ main (int argc, char **argv)
     }
 
     for (i = 1; i < argc; i++) {
-        if ((!strcmp(argv[i], "-add")) || (!strcmp(argv[i], "--add"))) {
+        if (!strcmp(argv[i], "-add") || !strcmp(argv[i], "--add")) {
 #ifdef LIBXML_SGML_CATALOG_ENABLED
             if (sgml)
                 i += 2;
@@ -419,13 +419,13 @@ main (int argc, char **argv)
 #endif
                 i += 3;
             continue;
-        } else if ((!strcmp(argv[i], "-del")) || (!strcmp(argv[i], "--del"))) {
+        } else if (!strcmp(argv[i], "-del") || !strcmp(argv[i], "--del")) {
             i += 1;
 
             /* No catalog entry specified */
             if (i == argc
 #ifdef LIBXML_SGML_CATALOG_ENABLED
-                || (sgml && i + 1 == argc)
+                || sgml && i + 1 == argc
 #endif
             ) {
                 fprintf(stderr, "No catalog entry specified to remove from\n");
@@ -444,7 +444,7 @@ main (int argc, char **argv)
         } else {
             filename = argv[i];
             ret = xmlLoadCatalog(argv[i]);
-            if ((ret < 0) && (create)) {
+            if (ret < 0 && create) {
                 xmlCatalogAdd(BAD_CAST "catalog", BAD_CAST argv[i], NULL);
             }
 
@@ -463,7 +463,7 @@ main (int argc, char **argv)
         ret = xmlCatalogConvert();
 #endif
 
-    if ((add) || (del)) {
+    if (add || del) {
         for (i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "-"))
                 break;
@@ -484,7 +484,7 @@ main (int argc, char **argv)
 
                 catal = xmlLoadSGMLSuperCatalog(argv[i + 1]);
 
-                if ((!strcmp(argv[i], "-add")) || (!strcmp(argv[i], "--add"))) {
+                if (!strcmp(argv[i], "-add") || !strcmp(argv[i], "--add")) {
                     if (catal == NULL)
                         catal = xmlNewCatalog(1);
                     xmlACatalogAdd(catal, BAD_CAST "CATALOG",
@@ -509,8 +509,8 @@ main (int argc, char **argv)
                                 argv[i + 1]);
                         exit_value = 1;
                     }
-                    if ((!no_super_update) && (noout) && (catal != NULL)
-                        && (xmlCatalogIsEmpty(catal))) {
+                    if (!no_super_update && noout && catal != NULL
+                        && xmlCatalogIsEmpty(catal)) {
                         super
                             = xmlLoadSGMLSuperCatalog(XML_SGML_DEFAULT_CATALOG);
                         if (super != NULL) {
@@ -569,8 +569,8 @@ main (int argc, char **argv)
             } else
 #endif /* LIBXML_SGML_CATALOG_ENABLED */
             {
-                if ((!strcmp(argv[i], "-add")) || (!strcmp(argv[i], "--add"))) {
-                    if ((argv[i + 3] == NULL) || (argv[i + 3][0] == 0))
+                if (!strcmp(argv[i], "-add") || !strcmp(argv[i], "--add")) {
+                    if (argv[i + 3] == NULL || argv[i + 3][0] == 0)
                         ret = xmlCatalogAdd(BAD_CAST argv[i + 1], NULL,
                                             BAD_CAST argv[i + 2]);
                     else
@@ -582,8 +582,8 @@ main (int argc, char **argv)
                         exit_value = 3;
                     }
                     i += 3;
-                } else if ((!strcmp(argv[i], "-del"))
-                           || (!strcmp(argv[i], "--del"))) {
+                } else if (!strcmp(argv[i], "-del")
+                           || !strcmp(argv[i], "--del")) {
                     ret = xmlCatalogRemove(BAD_CAST argv[i + 1]);
                     if (ret < 0) {
                         fprintf(stderr, "Failed to remove entry %s\n",
@@ -634,7 +634,7 @@ main (int argc, char **argv)
     }
     if (
 #ifdef LIBXML_SGML_CATALOG_ENABLED
-        (!sgml) &&
+        !sgml &&
 #endif
         ((add) || (del) || (create)
 #ifdef LIBXML_SGML_CATALOG_ENABLED
