@@ -83,6 +83,7 @@ static struct opts {
 
     int o_check_namespaces;
     int o_dump_tree;
+    int o_echo_input;
     int o_encoding;
     int o_expression;
     int o_ignore_arguments;
@@ -119,6 +120,7 @@ static const char slaxproc_help[] =
 "\n"
 "    Options:\n"
 "\t--debug OR -d: enable the SLAX/XSLT debugger\n"
+"\t--echo-input: echo each debugger command before running it\n"
 "\t--empty OR -E: give an empty document for input\n"
 "\t--encoding <name>: specifies the input document encoding\n"
 "\t--exslt OR -e: enable the EXSLT library\n"
@@ -173,6 +175,7 @@ static struct option long_opts[] = {
     { "check-namespaces", no_argument, &opts.o_check_namespaces, 1 },
     { "debug", no_argument, NULL, 'd' },
     { "dump-tree", no_argument, &opts.o_dump_tree, 1 },
+    { "echo-input", no_argument, &opts.o_echo_input, 1 },
     { "empty", no_argument, NULL, 'E' },
     { "encoding", required_argument, &opts.o_encoding, 1 },
     { "exslt", no_argument, NULL, 'e' },
@@ -1131,7 +1134,7 @@ main (int argc UNUSED, char **argv)
 /* Non-mode flags start here */
 
 	case 'd':
-	    opt_debugger = SDBF_ENABLE;
+	    opt_debugger |= SDBF_ENABLE;
 	    break;
 
 	case 'E':
@@ -1282,6 +1285,9 @@ main (int argc UNUSED, char **argv)
 
 	    } else if (opts.o_dump_tree) {
 		opt_dump_tree = TRUE;
+
+	    } else if (opts.o_echo_input) {
+		opt_debugger |= SDBF_ECHO_INPUT;
 
 	    } else if (opts.o_encoding) {
 		opt_encoding = check_arg("text encoding");
