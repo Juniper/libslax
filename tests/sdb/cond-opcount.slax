@@ -1,0 +1,13 @@
+version 1.0;
+
+match / {
+    call sum($n = 5000);
+}
+
+template sum ($n) {
+    mvar $total = 0;
+    for $i (1 ... $n) {
+        set $total = $total + $i;
+    }
+    <total> $total;
+}
