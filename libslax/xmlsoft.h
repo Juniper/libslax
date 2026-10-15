@@ -51,9 +51,10 @@ XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
 static inline void
 xsltSetDebuggerCallbacksHelper (xsltHandleDebuggerCallback handler,
 				xsltAddCallCallback add_frame,
-				xsltDropCallCallback drop_frame)
+				xsltDropCallCallback drop_frame,
+				xsltHandleDebuggerErrorCallback error_handler)
 {
-    void *cb[] = { handler, add_frame, drop_frame };
+    void *cb[] = { handler, add_frame, drop_frame, error_handler };
 
     xsltSetDebuggerCallbacks(NUM_ARRAY(cb), &cb);
 }
