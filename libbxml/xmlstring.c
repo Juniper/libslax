@@ -51,7 +51,7 @@ xmlStrndup (const xmlChar *cur, int len)
 {
     xmlChar *ret;
 
-    if ((cur == NULL) || (len < 0))
+    if (cur == NULL || len < 0)
         return NULL;
     ret = xmlMalloc((size_t) len + 1);
     if (ret == NULL) {
@@ -96,7 +96,7 @@ xmlCharStrndup (const char *cur, int len)
     int i;
     xmlChar *ret;
 
-    if ((cur == NULL) || (len < 0))
+    if (cur == NULL || len < 0)
         return NULL;
     ret = xmlMalloc((size_t) len + 1);
     if (ret == NULL) {
@@ -479,7 +479,7 @@ xmlStrncat (xmlChar *cur, const xmlChar *add, int len)
     int size;
     xmlChar *ret;
 
-    if ((add == NULL) || (len == 0))
+    if (add == NULL || len == 0)
         return cur;
 
     if (len < 0) {
@@ -492,7 +492,7 @@ xmlStrncat (xmlChar *cur, const xmlChar *add, int len)
         return xmlStrndup(add, len);
 
     size = xmlStrlen(cur);
-    if ((size < 0) || (size > INT_MAX - len)) {
+    if (size < 0 || size > INT_MAX - len) {
         xmlFree(cur);
         return NULL;
     }
@@ -529,11 +529,11 @@ xmlStrncatNew (const xmlChar *str1, const xmlChar *str2, int len)
     }
     if (str1 == NULL)
         return xmlStrndup(str2, len);
-    if ((str2 == NULL) || (len == 0))
+    if (str2 == NULL || len == 0)
         return xmlStrdup(str1);
 
     size = xmlStrlen(str1);
-    if ((size < 0) || (size > INT_MAX - len))
+    if (size < 0 || size > INT_MAX - len)
         return NULL;
     ret = (xmlChar *) xmlMalloc((size_t) size + len + 1);
     if (ret == NULL)
@@ -584,7 +584,7 @@ xmlStrPrintf (xmlChar *buf, int len, const char *msg, ...)
     va_list args;
     int ret;
 
-    if ((buf == NULL) || (msg == NULL) || (len <= 0)) {
+    if (buf == NULL || msg == NULL || len <= 0) {
         return -1;
     }
 
@@ -610,7 +610,7 @@ xmlStrVPrintf (xmlChar *buf, int len, const char *msg, va_list ap)
 {
     int ret;
 
-    if ((buf == NULL) || (msg == NULL) || (len <= 0)) {
+    if (buf == NULL || msg == NULL || len <= 0) {
         return -1;
     }
 
@@ -696,7 +696,7 @@ xmlStrVASPrintf (xmlChar **out, int maxSize, const char *msg, va_list ap)
             va_copy(copy, ap);
             res = vsnprintf((char *) buf, size, msg, copy);
             va_end(copy);
-            if ((res >= 0) && (res < size - 1))
+            if (res >= 0 && res < size - 1)
                 break;
 
             if (size >= maxSize) {
@@ -889,7 +889,7 @@ xmlGetUTF8Char (const unsigned char *utf, int *len)
         /* 1-byte code */
         *len = 1;
     } else {
-        if ((*len < 2) || ((utf[1] & 0xc0) != 0x80))
+        if (*len < 2 || (utf[1] & 0xc0) != 0x80)
             goto error;
         if (c < 0xe0) {
             if (c < 0xc2)
@@ -899,7 +899,7 @@ xmlGetUTF8Char (const unsigned char *utf, int *len)
             c = (c & 0x1f) << 6;
             c |= utf[1] & 0x3f;
         } else {
-            if ((*len < 3) || ((utf[2] & 0xc0) != 0x80))
+            if (*len < 3 || (utf[2] & 0xc0) != 0x80)
                 goto error;
             if (c < 0xf0) {
                 /* 3-byte code */
@@ -907,10 +907,10 @@ xmlGetUTF8Char (const unsigned char *utf, int *len)
                 c = (c & 0xf) << 12;
                 c |= (utf[1] & 0x3f) << 6;
                 c |= utf[2] & 0x3f;
-                if ((c < 0x800) || ((c >= 0xd800) && (c < 0xe000)))
+                if (c < 0x800 || c >= 0xd800 && c < 0xe000)
                     goto error;
             } else {
-                if ((*len < 4) || ((utf[3] & 0xc0) != 0x80))
+                if (*len < 4 || (utf[3] & 0xc0) != 0x80)
                     goto error;
                 *len = 4;
                 /* 4-byte code */
@@ -918,7 +918,7 @@ xmlGetUTF8Char (const unsigned char *utf, int *len)
                 c |= (utf[1] & 0x3f) << 12;
                 c |= (utf[2] & 0x3f) << 6;
                 c |= utf[3] & 0x3f;
-                if ((c < 0x10000) || (c >= 0x110000))
+                if (c < 0x10000 || c >= 0x110000)
                     goto error;
             }
         }
@@ -967,12 +967,12 @@ xmlCheckUTF8 (const unsigned char *utf)
                 return 0;
             ix = 2;
         } else if ((c & 0xf0) == 0xe0) { /* 3-byte code, starts with 1110 */
-            if (((utf[1] & 0xc0) != 0x80) || ((utf[2] & 0xc0) != 0x80))
+            if ((utf[1] & 0xc0) != 0x80 || (utf[2] & 0xc0) != 0x80)
                 return 0;
             ix = 3;
         } else if ((c & 0xf8) == 0xf0) { /* 4-byte code, starts with 11110 */
-            if (((utf[1] & 0xc0) != 0x80) || ((utf[2] & 0xc0) != 0x80)
-                || ((utf[3] & 0xc0) != 0x80))
+            if ((utf[1] & 0xc0) != 0x80 || (utf[2] & 0xc0) != 0x80
+                || (utf[3] & 0xc0) != 0x80)
                 return 0;
             ix = 4;
         } else /* unknown encoding */
@@ -1033,7 +1033,7 @@ xmlUTF8Strndup (const xmlChar *utf, int len)
     xmlChar *ret;
     int i;
 
-    if ((utf == NULL) || (len < 0))
+    if (utf == NULL || len < 0)
         return NULL;
     i = xmlUTF8Strsize(utf, len);
     ret = xmlMalloc((size_t) i + 1);
@@ -1191,7 +1191,7 @@ xmlEscapeFormatString (xmlChar **msg)
     if (count == 0)
         return *msg;
 
-    if ((count > INT_MAX) || (msgLen > INT_MAX - count))
+    if (count > INT_MAX || msgLen > INT_MAX - count)
         return NULL;
     resultLen = msgLen + count + 1;
     result = xmlMalloc(resultLen);
