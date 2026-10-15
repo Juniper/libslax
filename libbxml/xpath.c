@@ -311,7 +311,7 @@ xmlXPathCmpNodesExt (xmlNodePtr node1, xmlNodePtr node2)
     xmlNodePtr cur, root;
     XML_INTPTR_T l1, l2;
 
-    if ((node1 == NULL) || (node2 == NULL))
+    if (node1 == NULL || node2 == NULL)
         return -2;
 
     if (node1 == node2)
@@ -371,8 +371,8 @@ xmlXPathCmpNodesExt (xmlNodePtr node1, xmlNodePtr node2)
             precedence1 = 2; /* element is parent */
             node1 = node1->parent;
         }
-        if ((node1 == NULL) || (node1->type != XML_ELEMENT_NODE)
-            || (0 <= XML_NODE_SORT_VALUE(node1))) {
+        if (node1 == NULL || node1->type != XML_ELEMENT_NODE
+            || 0 <= XML_NODE_SORT_VALUE(node1)) {
             /*
 		* Fallback for whatever case.
 		*/
@@ -420,8 +420,8 @@ xmlXPathCmpNodesExt (xmlNodePtr node1, xmlNodePtr node2)
             precedence2 = 2; /* element is parent */
             node2 = node2->parent;
         }
-        if ((node2 == NULL) || (node2->type != XML_ELEMENT_NODE)
-            || (0 <= XML_NODE_SORT_VALUE(node2))) {
+        if (node2 == NULL || node2->type != XML_ELEMENT_NODE
+            || 0 <= XML_NODE_SORT_VALUE(node2)) {
             node2 = miscNode2;
             precedence2 = 0;
         } else
@@ -10084,8 +10084,36 @@ xmlXPathNodeCollectAndTest (xmlXPathParserContextPtr ctxt, xmlXPathStepOpPtr op,
     xmlNodePtr oldContextNode;
     xmlXPathContextPtr xpctxt = ctxt->context;
 
-    CHECK_TYPE0(XPATH_NODESET);
+    if (ctxt->value == NULL || ctxt->value->type != XPATH_NODESET) {
+        if (ctxt->value != NULL && ctxt->value->type == XPATH_XSLT_TREE) {
+            /*
+             * The operand is a result tree fragment (e.g. a variable
+             * holding a literal result element tree), which XPath 1.0
+             * forbids navigating into with a location step. Report
+             * this specific, common mistake together with the
+             * offending expression, instead of the generic and
+             * uninformative "Invalid type". File/line/element context
+             * is added automatically (see xmlVUpdateError) from
+             * ctxt->context->debugNode, when the caller -- e.g.
+             * xsltEvalVariable() -- has set it to the instruction
+             * being evaluated.
+             */
+            xmlXPathErrFmt(
+                ctxt, XPATH_INVALID_TYPE,
+                "Cannot apply an XPath expression to a result tree"
+                " fragment; convert it with the exslt:node-set()"
+                " function first: %s\n",
+                ((ctxt->comp != NULL) && (ctxt->comp->expr != NULL))
+                    ? ctxt->comp->expr
+                    : (const xmlChar *) "(unknown expression)");
+        } else {
+            xmlXPathErr(ctxt, XPATH_INVALID_TYPE);
+        }
+        return (0);
+    }
+
     obj = xmlXPathValuePop(ctxt);
+
     /*
     * Setup namespaces.
     */
