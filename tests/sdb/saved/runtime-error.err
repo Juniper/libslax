@@ -1,0 +1,30 @@
+Type 'help' for help
+(sdb) break 11
+Breakpoint 1 at file ../../../tests/sdb/runtime-error.slax, line 11
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/runtime-error.slax:11
+runtime-error.slax: 11:     var $b = $a/item[. == 2];
+(sdb) next
+../../../tests/sdb/runtime-error.slax:11: element variable: XPath error : Cannot apply an XPath expression to a result tree fragment; convert it with the exslt:node-set() function first: $a/item[. = 2]
+runtime error: file ../../../tests/sdb/runtime-error.slax line 11 element variable
+Failed to evaluate the expression of variable 'b'.
+Entering the debugger; the script will exit once you continue, since it cannot recover from this error.
+runtime-error.slax: 11:     var $b = $a/item[. == 2];
+(sdb) p $a
+[rtf] (1)
+<item>1</item>
+<item>2</item>
+<item>3</item>
+<item>4</item>
+
+
+(sdb) info locals
+Local variables:
+var $a = [rtf] (1)
+<item>1</item>
+<item>2</item>
+<item>3</item>
+<item>4</item>
+
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y
