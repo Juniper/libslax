@@ -52,8 +52,8 @@ main (int argc, char **argv)
     for (arg_indx = 1; arg_indx < argc; arg_indx++) {
         if (argv[arg_indx][0] != '-')
             break;
-        if ((!strcmp(argv[arg_indx], "-param"))
-            || (!strcmp(argv[arg_indx], "--param"))) {
+        if (!strcmp(argv[arg_indx], "-param")
+            || !strcmp(argv[arg_indx], "--param")) {
             arg_indx++;
             params[params_indx++] = argv[arg_indx++];
             params[params_indx++] = argv[arg_indx];
@@ -62,8 +62,8 @@ main (int argc, char **argv)
                 return_value = 1;
                 goto finish;
             }
-        } else if ((!strcmp(argv[arg_indx], "-o"))
-                   || (!strcmp(argv[arg_indx], "--out"))) {
+        } else if (!strcmp(argv[arg_indx], "-o")
+                   || !strcmp(argv[arg_indx], "--out")) {
             arg_indx++;
             output_file = fopen(argv[arg_indx], "w");
         } else {
