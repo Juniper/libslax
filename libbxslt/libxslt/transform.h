@@ -137,6 +137,16 @@ XSLTPUBFUN void XSLTCALL xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node,
                                             xsltTemplatePtr templ,
                                             xsltTransformContextPtr ctxt);
 
+/*
+ * Hook for the debugger to stop (unconditionally, regardless of any
+ * breakpoint or step/continue state) at the point where a runtime
+ * error aborted the transform, so the current frame can still be
+ * inspected before the transform unwinds.
+ */
+XSLTPUBFUN void XSLTCALL xslHandleDebuggerError (xmlNodePtr cur,
+                                            xsltTransformContextPtr ctxt,
+                                            const char *message);
+
 #ifdef __cplusplus
 }
 #endif
