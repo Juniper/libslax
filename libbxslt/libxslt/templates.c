@@ -65,7 +65,7 @@ xsltEvalXPathPredicate (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     xmlNodePtr oldNode;
     int oldProximityPosition, oldContextSize;
 
-    if ((ctxt == NULL) || (ctxt->inst == NULL)) {
+    if (ctxt == NULL || ctxt->inst == NULL) {
         xsltTransformError(
             ctxt, NULL, NULL,
             "xsltEvalXPathPredicate: No context or instruction\n");
@@ -139,7 +139,7 @@ xsltEvalXPathStringNs (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     int oldNsNr;
     xmlNsPtr *oldNamespaces;
 
-    if ((ctxt == NULL) || (ctxt->inst == NULL)) {
+    if (ctxt == NULL || ctxt->inst == NULL) {
         xsltTransformError(
             ctxt, NULL, NULL,
             "xsltEvalXPathStringNs: No context or instruction\n");
@@ -161,7 +161,7 @@ xsltEvalXPathStringNs (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     if (res != NULL) {
         if (xmlXPathObjectGetType(res) != XPATH_STRING)
             res = xmlXPathConvertString(res);
-        if ((res != NULL) && (xmlXPathObjectGetType(res) == XPATH_STRING)) {
+        if (res != NULL && xmlXPathObjectGetType(res) == XPATH_STRING) {
             ret = xmlXPathObjectGetStringval(res);
             xmlXPathObjectSetStringval(res, NULL);
         } else {
@@ -225,8 +225,8 @@ xsltEvalTemplateString (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     const xmlChar *oldLastText;
     int oldLastTextSize, oldLastTextUse;
 
-    if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+    if (ctxt == NULL || contextNode == NULL || inst == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return NULL;
 
     if (xmlNodeGetChildren(inst) == NULL)
@@ -314,11 +314,11 @@ xsltAttrTemplateValueProcessNode (xsltTransformContextPtr ctxt,
             ret = xmlStrncat(ret, str, cur - str);
             str = cur;
             cur++;
-            while ((*cur != 0) && (*cur != '}')) {
+            while (*cur != 0 && *cur != '}') {
                 /* Need to check for literal (bug539741) */
-                if ((*cur == '\'') || (*cur == '"')) {
+                if (*cur == '\'' || *cur == '"') {
                     char delim = *(cur++);
-                    while ((*cur != 0) && (*cur != delim))
+                    while (*cur != 0 && *cur != delim)
                         cur++;
                     if (*cur != 0)
                         cur++; /* skip the ending delimiter */
@@ -344,7 +344,7 @@ xsltAttrTemplateValueProcessNode (xsltTransformContextPtr ctxt,
                 /*
 		 * TODO: keep precompiled form around
 		 */
-                if ((nsList == NULL) && (inst != NULL)) {
+                if (nsList == NULL && inst != NULL) {
                     int i = 0;
 
                     nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
@@ -429,8 +429,8 @@ xsltEvalAttrValueTemplate (xsltTransformContextPtr ctxt, xmlNodePtr inst,
     xmlChar *ret;
     xmlChar *expr;
 
-    if ((ctxt == NULL) || (inst == NULL) || (name == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+    if (ctxt == NULL || inst == NULL || name == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return NULL;
 
     expr = xsltGetNsProp(inst, name, ns);
@@ -478,8 +478,8 @@ xsltEvalStaticAttrValueTemplate (xsltStylesheetPtr style, xmlNodePtr inst,
     const xmlChar *ret;
     xmlChar *expr;
 
-    if ((style == NULL) || (inst == NULL) || (name == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+    if (style == NULL || inst == NULL || name == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return NULL;
 
     expr = xsltGetNsProp(inst, name, ns);
@@ -520,8 +520,8 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     const xmlChar *value;
     xmlAttrPtr ret;
 
-    if ((ctxt == NULL) || (attr == NULL) || (target == NULL)
-        || (xmlNodeGetType(target) != XML_ELEMENT_NODE))
+    if (ctxt == NULL || attr == NULL || target == NULL
+        || xmlNodeGetType(target) != XML_ELEMENT_NODE)
         return NULL;
 
     if (xmlAttrGetType(attr) != XML_ATTRIBUTE_NODE)
@@ -534,7 +534,7 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
         return NULL;
 #else
-    if ((xmlAttrGetNs(attr) != NULL)
+    if (xmlAttrGetNs(attr) != NULL
         && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
         return NULL;
 #endif
@@ -542,8 +542,8 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     * Get the value.
     */
     if (xmlAttrGetChildren(attr) != NULL) {
-        if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
-            || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+        if (xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE
+            || xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL) {
             xsltTransformError(
                 ctxt, NULL, xmlAttrGetParent(attr),
                 "Internal error: The children of an attribute node of a "
@@ -560,7 +560,7 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     */
     ret = xmlNodeGetProperties(target);
     while (ret != NULL) {
-        if (((xmlAttrGetNs(attr) != NULL) == (xmlAttrGetNs(ret) != NULL))
+        if ((xmlAttrGetNs(attr) != NULL) == (xmlAttrGetNs(ret) != NULL)
             && xmlStrEqual(xmlAttrGetName(ret), xmlAttrGetName(attr))
             && ((xmlAttrGetNs(attr) == NULL)
                 || xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(ret)),
@@ -577,9 +577,9 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
         /*
 	* Adjust ns-prefix if needed.
 	*/
-        if ((xmlAttrGetNs(ret) != NULL)
-            && (!xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(ret)),
-                             xmlNsGetPrefix(xmlAttrGetNs(attr))))) {
+        if (xmlAttrGetNs(ret) != NULL
+            && !xmlStrEqual(xmlNsGetPrefix(xmlAttrGetNs(ret)),
+                             xmlNsGetPrefix(xmlAttrGetNs(attr)))) {
             xmlAttrSetNs(ret,
                          xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
                                           xmlAttrGetNs(attr), target));
@@ -637,9 +637,9 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
                 } else {
                     xmlNodeSetContentRaw(text, val);
                 }
-            } else if ((ctxt->internalized) && (target != NULL)
-                       && (xmlNodeGetDoc(target) != NULL)
-                       && (xmlNodeGetDoc(target)->dict == ctxt->dict)
+            } else if (ctxt->internalized && target != NULL
+                       && xmlNodeGetDoc(target) != NULL
+                       && xmlNodeGetDoc(target)->dict == ctxt->dict
                        && xmlDictOwns(ctxt->dict, value)) {
                 xmlNodeSetContentRaw(text, (xmlChar *) value);
             } else {
@@ -692,8 +692,8 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     xmlChar *valueAVT;
     int hasAttr = 0;
 
-    if ((ctxt == NULL) || (target == NULL) || (attrs == NULL)
-        || (xmlNodeGetType(target) != XML_ELEMENT_NODE))
+    if (ctxt == NULL || target == NULL || attrs == NULL
+        || xmlNodeGetType(target) != XML_ELEMENT_NODE)
         return NULL;
 
     oldInsert = ctxt->insert;
@@ -711,7 +711,7 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
             xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
         }
 #else
-        if ((xmlAttrGetNs(attr) != NULL)
+        if (xmlAttrGetNs(attr) != NULL
             && xmlStrEqual(xmlAttrGetName(attr),
                            (const xmlChar *) "use-attribute-sets")
             && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
@@ -738,7 +738,7 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
             goto next_attribute;
         }
 #else
-        if ((xmlAttrGetNs(attr) != NULL)
+        if (xmlAttrGetNs(attr) != NULL
             && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
             goto next_attribute;
         }
@@ -747,8 +747,8 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
 	* Get the value.
 	*/
         if (xmlAttrGetChildren(attr) != NULL) {
-            if ((xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE)
-                || (xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL)) {
+            if (xmlNodeGetType(xmlAttrGetChildren(attr)) != XML_TEXT_NODE
+                || xmlNodeGetNext(xmlAttrGetChildren(attr)) != NULL) {
                 xsltTransformError(
                     ctxt, NULL, xmlAttrGetParent(attr),
                     "Internal error: The children of an attribute node of a "
@@ -866,15 +866,15 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
                 } else {
                     xmlNodeSetContentRaw(text, valueAVT);
                 }
-            } else if ((ctxt->internalized) && (xmlNodeGetDoc(target) != NULL)
-                       && (xmlNodeGetDoc(target)->dict == ctxt->dict)
+            } else if (ctxt->internalized && xmlNodeGetDoc(target) != NULL
+                       && xmlNodeGetDoc(target)->dict == ctxt->dict
                        && xmlDictOwns(ctxt->dict, value)) {
                 xmlNodeSetContentRaw(text, (xmlChar *) value);
             } else {
                 xmlNodeSetContentRaw(text, xmlStrdup(value));
             }
-            if ((copy != NULL) && (text != NULL)
-                && (xmlIsID(xmlAttrGetDoc(copy), xmlAttrGetParent(copy), copy)))
+            if (copy != NULL && text != NULL
+                && xmlIsID(xmlAttrGetDoc(copy), xmlAttrGetParent(copy), copy))
                 xmlAddID(NULL, xmlAttrGetDoc(copy), xmlNodeGetContentRaw(text),
                          copy);
         }
