@@ -1,0 +1,15 @@
+Type 'help' for help
+(sdb) break 9
+Breakpoint 1 at file ../../../tests/sdb/locals-multi.slax, line 9
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/locals-multi.slax:9
+locals-multi.slax: 9:     <result> $a;
+(sdb) info locals
+Local variables:
+var $label = [string] "show"
+local $d = [string] "delta"
+local $c = [string] "charlie"
+local $b = [string] "bravo"
+local $a = [string] "alpha"
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y
