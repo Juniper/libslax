@@ -224,9 +224,9 @@ skipString (const xmlChar *cur, int end)
 {
     xmlChar limit;
 
-    if ((cur == NULL) || (end < 0))
+    if (cur == NULL || end < 0)
         return -1;
-    if ((cur[end] == '\'') || (cur[end] == '"'))
+    if (cur[end] == '\'' || cur[end] == '"')
         limit = cur[end];
     else
         return end;
@@ -253,13 +253,13 @@ skipPredicate (const xmlChar *cur, int end)
 {
     int level = 0;
 
-    if ((cur == NULL) || (end < 0))
+    if (cur == NULL || end < 0)
         return -1;
     if (cur[end] != '[')
         return end;
     end++;
     while (cur[end] != 0) {
-        if ((cur[end] == '\'') || (cur[end] == '"')) {
+        if (cur[end] == '\'' || cur[end] == '"') {
             end = skipString(cur, end);
             if (end <= 0)
                 return -1;
@@ -298,7 +298,7 @@ xsltAddKey (xsltStylesheetPtr style, const xmlChar *name,
     xmlChar *pattern = NULL;
     int current, end, start, i = 0;
 
-    if ((style == NULL) || (name == NULL) || (match == NULL) || (use == NULL))
+    if (style == NULL || name == NULL || match == NULL || use == NULL)
         return -1;
 
 #ifdef WITH_XSLT_DEBUG_KEYS
@@ -328,7 +328,7 @@ xsltAddKey (xsltStylesheetPtr style, const xmlChar *name,
         while (xmlIsBlank_ch(match[current]))
             current++;
         end = current;
-        while ((match[end] != 0) && (match[end] != '|')) {
+        while (match[end] != 0 && match[end] != '|') {
             if (match[end] == '[') {
                 end = skipPredicate(match, end);
                 if (end <= 0) {
@@ -462,8 +462,8 @@ xsltGetKey (xsltTransformContextPtr ctxt, const xmlChar *name,
     xsltKeyTablePtr table;
     int init_table = 0;
 
-    if ((ctxt == NULL) || (name == NULL) || (value == NULL)
-        || (ctxt->document == NULL))
+    if (ctxt == NULL || name == NULL || value == NULL
+        || ctxt->document == NULL)
         return NULL;
 
 #ifdef WITH_XSLT_DEBUG_KEYS
@@ -474,8 +474,8 @@ xsltGetKey (xsltTransformContextPtr ctxt, const xmlChar *name,
     /*
      * keys are computed only on-demand on first key access for a document
      */
-    if ((ctxt->document->nbKeysComputed < ctxt->nbKeys)
-        && (ctxt->keyInitLevel == 0)) {
+    if (ctxt->document->nbKeysComputed < ctxt->nbKeys
+        && ctxt->keyInitLevel == 0) {
         /*
 	 * If non-recursive behaviour, just try to initialize all keys
 	 */
@@ -486,7 +486,7 @@ xsltGetKey (xsltTransformContextPtr ctxt, const xmlChar *name,
 retry:
     table = (xsltKeyTablePtr) ctxt->document->keys;
     while (table != NULL) {
-        if (((nameURI != NULL) == (table->nameURI != NULL))
+        if ((nameURI != NULL) == (table->nameURI != NULL)
             && xmlStrEqual(table->name, name)
             && xmlStrEqual(table->nameURI, nameURI)) {
             ret = (xmlNodeSetPtr) xmlHashLookup(table->keys, value);
@@ -495,7 +495,7 @@ retry:
         table = table->next;
     }
 
-    if ((ctxt->keyInitLevel != 0) && (init_table == 0)) {
+    if (ctxt->keyInitLevel != 0 && init_table == 0) {
         /*
 	 * Apparently one key is recursive and this one is needed,
 	 * initialize just it, that time and retry
@@ -531,7 +531,7 @@ xsltInitDocKeyTable (xsltTransformContextPtr ctxt, const xmlChar *name,
     while (style != NULL) {
         keyd = (xsltKeyDefPtr) style->keys;
         while (keyd != NULL) {
-            if (((keyd->nameURI != NULL) == (nameURI != NULL))
+            if ((keyd->nameURI != NULL) == (nameURI != NULL)
                 && xmlStrEqual(keyd->name, name)
                 && xmlStrEqual(keyd->nameURI, nameURI)) {
                 xsltInitCtxtKey(ctxt, ctxt->document, keyd);
@@ -605,7 +605,7 @@ xsltInitAllDocKeys (xsltTransformContextPtr ctxt)
 	    */
             table = (xsltKeyTablePtr) ctxt->document->keys;
             while (table) {
-                if (((keyd->nameURI != NULL) == (table->nameURI != NULL))
+                if ((keyd->nameURI != NULL) == (table->nameURI != NULL)
                     && xmlStrEqual(keyd->name, table->name)
                     && xmlStrEqual(keyd->nameURI, table->nameURI)) {
                     break;
@@ -662,7 +662,7 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
             ctxt->keyInitLevel);
 #endif
 
-    if ((keyDef->comp == NULL) || (keyDef->usecomp == NULL))
+    if (keyDef->comp == NULL || keyDef->usecomp == NULL)
         return -1;
 
     /*
@@ -759,7 +759,7 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
             goto error;
         }
     }
-    if ((matchList == NULL) || (xmlNodeSetGetNodeNr(matchList) <= 0))
+    if (matchList == NULL || xmlNodeSetGetNodeNr(matchList) <= 0)
         goto exit;
 
     /**
@@ -819,9 +819,9 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
             break;
         }
         if (xmlXPathObjectGetType(useRes) == XPATH_NODESET) {
-            if ((xmlXPathObjectGetNodesetval(useRes) != NULL)
-                && (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(useRes))
-                    != 0)) {
+            if (xmlXPathObjectGetNodesetval(useRes) != NULL
+                && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(useRes))
+                    != 0) {
                 len = xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(useRes));
                 str = xmlXPathCastNodeToString(xmlNodeSetGetNodeEntry(
                     xmlXPathObjectGetNodesetval(useRes), 0));
@@ -925,7 +925,7 @@ xsltInitCtxtKeys (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc)
     xsltStylesheetPtr style;
     xsltKeyDefPtr keyDef;
 
-    if ((ctxt == NULL) || (idoc == NULL))
+    if (ctxt == NULL || idoc == NULL)
         return;
 
 #ifdef KEY_INIT_DEBUG
@@ -933,7 +933,7 @@ xsltInitCtxtKeys (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc)
 #endif
 
 #ifdef WITH_XSLT_DEBUG_KEYS
-    if ((idoc->doc != NULL) && (xmlDocGetURL(idoc->doc) != NULL))
+    if (idoc->doc != NULL && xmlDocGetURL(idoc->doc) != NULL)
         XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
                    xsltGenericDebug(xsltGenericDebugContext,
                                     "Initializing keys on %s\n",
