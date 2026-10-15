@@ -123,14 +123,14 @@ static xmlNodePtr
 xmlXPtrGetNthChild (xmlNodePtr cur, int no)
 {
     int i;
-    if ((cur == NULL) || (cur->type == XML_NAMESPACE_DECL))
+    if (cur == NULL || cur->type == XML_NAMESPACE_DECL)
         return cur;
     cur = cur->children;
     for (i = 0; i <= no; cur = cur->next) {
         if (cur == NULL)
             return cur;
-        if ((cur->type == XML_ELEMENT_NODE) || (cur->type == XML_DOCUMENT_NODE)
-            || (cur->type == XML_HTML_DOCUMENT_NODE)) {
+        if (cur->type == XML_ELEMENT_NODE || cur->type == XML_DOCUMENT_NODE
+            || cur->type == XML_HTML_DOCUMENT_NODE) {
             i++;
             if (i == no)
                 break;
@@ -197,7 +197,7 @@ xmlXPtrGetChildNo (xmlXPathParserContextPtr ctxt, int indx)
     CHECK_TYPE(XPATH_NODESET);
     obj = xmlXPathValuePop(ctxt);
     oldset = obj->nodesetval;
-    if ((indx <= 0) || (oldset == NULL) || (oldset->nodeNr != 1)) {
+    if (indx <= 0 || oldset == NULL || oldset->nodeNr != 1) {
         xmlXPathFreeObject(obj);
         xmlXPathValuePush(ctxt, xmlXPathNewNodeSet(NULL));
         return;
@@ -284,7 +284,7 @@ xmlXPtrEvalXPtrPart (xmlXPathParserContextPtr ctxt, xmlChar *name)
         } else if (CUR == '(') {
             level++;
         } else if (CUR == '^') {
-            if ((NXT(1) == ')') || (NXT(1) == '(') || (NXT(1) == '^')) {
+            if (NXT(1) == ')' || NXT(1) == '(' || NXT(1) == '^') {
                 NEXT;
             }
         }
@@ -293,7 +293,7 @@ xmlXPtrEvalXPtrPart (xmlXPathParserContextPtr ctxt, xmlChar *name)
     }
     *cur = 0;
 
-    if ((level != 0) && (CUR == 0)) {
+    if (level != 0 && CUR == 0) {
         xmlFree(name);
         xmlFree(buffer);
         XP_ERROR(XPTR_SYNTAX_ERROR);
@@ -418,8 +418,8 @@ xmlXPtrEvalFullXPtr (xmlXPathParserContextPtr ctxt, xmlChar *name)
         xmlXPtrEvalXPtrPart(ctxt, name);
 
         /* in case of syntax error, break here */
-        if ((ctxt->error != XPATH_EXPRESSION_OK)
-            && (ctxt->error != XML_XPTR_UNKNOWN_SCHEME))
+        if (ctxt->error != XPATH_EXPRESSION_OK
+            && ctxt->error != XML_XPTR_UNKNOWN_SCHEME)
             return;
 
         /*
@@ -432,7 +432,7 @@ xmlXPtrEvalFullXPtr (xmlXPathParserContextPtr ctxt, xmlChar *name)
             switch (obj->type) {
             case XPATH_NODESET: {
                 xmlNodeSetPtr loc = ctxt->value->nodesetval;
-                if ((loc != NULL) && (loc->nodeNr > 0))
+                if (loc != NULL && loc->nodeNr > 0)
                     return;
                 break;
             }
@@ -477,7 +477,7 @@ xmlXPtrEvalChildSeq (xmlXPathParserContextPtr ctxt, xmlChar *name)
      * XPointer don't allow by syntax to address in multirooted trees
      * this might prove useful in some cases, warn about it.
      */
-    if ((name == NULL) && (CUR == '/') && (NXT(1) != '1')) {
+    if (name == NULL && CUR == '/' && NXT(1) != '1') {
         xmlXPtrErr(ctxt, XML_XPTR_CHILDSEQ_START,
                    "warning: ChildSeq not starting by /1\n", NULL);
     }
@@ -493,7 +493,7 @@ xmlXPtrEvalChildSeq (xmlXPathParserContextPtr ctxt, xmlChar *name)
         int child = 0, overflow = 0;
         NEXT;
 
-        while ((CUR >= '0') && (CUR <= '9')) {
+        while (CUR >= '0' && CUR <= '9') {
             int d = CUR - '0';
             if (child > INT_MAX / 10)
                 overflow = 1;
@@ -610,7 +610,7 @@ xmlXPtrEval (const xmlChar *str, xmlXPathContext *ctx)
 
     xmlInitParser();
 
-    if ((ctx == NULL) || (str == NULL))
+    if (ctx == NULL || str == NULL)
         return NULL;
 
     xmlResetError(&ctx->lastError);
@@ -624,7 +624,7 @@ xmlXPtrEval (const xmlChar *str, xmlXPathContext *ctx)
     if (ctx->lastError.code != XML_ERR_OK)
         goto error;
 
-    if ((ctxt->value != NULL) && (ctxt->value->type != XPATH_NODESET)) {
+    if (ctxt->value != NULL && ctxt->value->type != XPATH_NODESET) {
         xmlXPtrErr(ctxt, XML_XPTR_EVAL_FAILED,
                    "xmlXPtrEval: evaluation failed to return a node set\n",
                    NULL);
@@ -642,8 +642,8 @@ xmlXPtrEval (const xmlChar *str, xmlXPathContext *ctx)
 		     */
                     xmlNodeSetPtr set;
                     set = tmp->nodesetval;
-                    if ((set == NULL) || (set->nodeNr != 1)
-                        || (set->nodeTab[0] != (xmlNodePtr) ctx->doc))
+                    if (set == NULL || set->nodeNr != 1
+                        || set->nodeTab[0] != (xmlNodePtr) ctx->doc)
                         stack++;
                 } else
                     stack++;
