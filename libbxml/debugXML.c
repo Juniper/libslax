@@ -83,22 +83,22 @@ xmlNsCheckScope (xmlNodePtr node, xmlNsPtr ns)
 {
     xmlNsPtr cur;
 
-    if ((node == NULL) || (ns == NULL))
+    if (node == NULL || ns == NULL)
         return -1;
 
-    if ((node->type != XML_ELEMENT_NODE) && (node->type != XML_ATTRIBUTE_NODE)
-        && (node->type != XML_DOCUMENT_NODE) && (node->type != XML_TEXT_NODE)
-        && (node->type != XML_HTML_DOCUMENT_NODE)
-        && (node->type != XML_XINCLUDE_START))
+    if (node->type != XML_ELEMENT_NODE && node->type != XML_ATTRIBUTE_NODE
+        && node->type != XML_DOCUMENT_NODE && node->type != XML_TEXT_NODE
+        && node->type != XML_HTML_DOCUMENT_NODE
+        && node->type != XML_XINCLUDE_START)
         return -2;
 
-    while ((node != NULL)
+    while (node != NULL
            && ((node->type == XML_ELEMENT_NODE)
                || (node->type == XML_ATTRIBUTE_NODE)
                || (node->type == XML_TEXT_NODE)
                || (node->type == XML_XINCLUDE_START))) {
-        if ((node->type == XML_ELEMENT_NODE)
-            || (node->type == XML_XINCLUDE_START)) {
+        if (node->type == XML_ELEMENT_NODE
+            || node->type == XML_XINCLUDE_START) {
             cur = node->nsDef;
             while (cur != NULL) {
                 if (cur == ns)
@@ -111,7 +111,7 @@ xmlNsCheckScope (xmlNodePtr node, xmlNsPtr ns)
         node = node->parent;
     }
     /* the xml namespace may be declared on the document node */
-    if ((node != NULL)
+    if (node != NULL
         && ((node->type == XML_DOCUMENT_NODE)
             || (node->type == XML_HTML_DOCUMENT_NODE))) {
         xmlNsPtr oldNs = ((xmlDocPtr) node)->oldNs;
@@ -126,7 +126,7 @@ xmlCtxtDumpSpaces (xmlDebugCtxtPtr ctxt)
 {
     if (ctxt->check)
         return;
-    if ((ctxt->output != NULL) && (ctxt->depth > 0)) {
+    if (ctxt->output != NULL && ctxt->depth > 0) {
         if (ctxt->depth < 50)
             fprintf(ctxt->output, "%s", &ctxt->shift[100 - 2 * ctxt->depth]);
         else
@@ -234,7 +234,7 @@ xmlCtxtCheckName (xmlDebugCtxtPtr ctxt, const xmlChar *name)
             xmlDebugErr3(ctxt, XML_CHECK_NOT_NCNAME,
                          "Name is not an NCName '%s'", (const char *) name);
         }
-        if ((ctxt->dict != NULL) && (!xmlDictOwns(ctxt->dict, name))
+        if (ctxt->dict != NULL && !xmlDictOwns(ctxt->dict, name)
             && ((ctxt->doc == NULL)
                 || ((ctxt->doc->parseFlags
                      & (XML_PARSE_SAX1 | XML_PARSE_NODICT))
@@ -261,7 +261,7 @@ xmlCtxtGenericNodeCheck (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
         dict = NULL;
     } else {
         dict = doc->dict;
-        if ((dict == NULL) && (ctxt->nodict == 0)) {
+        if (dict == NULL && ctxt->nodict == 0) {
             ctxt->nodict = 1;
         }
         if (ctxt->doc == NULL)
@@ -271,18 +271,18 @@ xmlCtxtGenericNodeCheck (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
             ctxt->dict = dict;
         }
     }
-    if ((node->parent != NULL) && (node->doc != node->parent->doc)
-        && (!xmlStrEqual(node->name, BAD_CAST "pseudoroot")))
+    if (node->parent != NULL && node->doc != node->parent->doc
+        && !xmlStrEqual(node->name, BAD_CAST "pseudoroot"))
         xmlDebugErr(ctxt, XML_CHECK_WRONG_DOC,
                     "Node doc differs from parent's one\n");
     if (node->prev == NULL) {
         if (node->type == XML_ATTRIBUTE_NODE) {
-            if ((node->parent != NULL)
-                && (node != (xmlNodePtr) node->parent->properties))
+            if (node->parent != NULL
+                && node != (xmlNodePtr) node->parent->properties)
                 xmlDebugErr(ctxt, XML_CHECK_NO_PREV,
                             "Attr has no prev and not first of attr list\n");
 
-        } else if ((node->parent != NULL) && (node->parent->children != node))
+        } else if (node->parent != NULL && node->parent->children != node)
             xmlDebugErr(ctxt, XML_CHECK_NO_PREV,
                         "Node has no prev and not first of parent list\n");
     } else {
@@ -291,9 +291,9 @@ xmlCtxtGenericNodeCheck (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
                         "Node prev->next : back link wrong\n");
     }
     if (node->next == NULL) {
-        if ((node->parent != NULL) && (node->type != XML_ATTRIBUTE_NODE)
-            && (node->parent->last != node)
-            && (node->parent->type == XML_ELEMENT_NODE))
+        if (node->parent != NULL && node->type != XML_ATTRIBUTE_NODE
+            && node->parent->last != node
+            && node->parent->type == XML_ELEMENT_NODE)
             xmlDebugErr(ctxt, XML_CHECK_NO_NEXT,
                         "Node has no next and not last of parent list\n");
     } else {
@@ -319,11 +319,11 @@ xmlCtxtGenericNodeCheck (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
             xmlCtxtNsCheckScope(ctxt, node, node->ns);
     }
 
-    if ((node->type != XML_ELEMENT_NODE) && (node->type != XML_ATTRIBUTE_NODE)
-        && (node->type != XML_ELEMENT_DECL)
-        && (node->type != XML_ATTRIBUTE_DECL) && (node->type != XML_DTD_NODE)
-        && (node->type != XML_HTML_DOCUMENT_NODE)
-        && (node->type != XML_DOCUMENT_NODE)) {
+    if (node->type != XML_ELEMENT_NODE && node->type != XML_ATTRIBUTE_NODE
+        && node->type != XML_ELEMENT_DECL
+        && node->type != XML_ATTRIBUTE_DECL && node->type != XML_DTD_NODE
+        && node->type != XML_HTML_DOCUMENT_NODE
+        && node->type != XML_DOCUMENT_NODE) {
         if (node->content != NULL)
             xmlCtxtCheckString(ctxt, (const xmlChar *) node->content);
     }
@@ -333,7 +333,7 @@ xmlCtxtGenericNodeCheck (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
         xmlCtxtCheckName(ctxt, node->name);
         break;
     case XML_TEXT_NODE:
-        if ((node->name == xmlStringText) || (node->name == xmlStringTextNoenc))
+        if (node->name == xmlStringText || node->name == xmlStringTextNoenc)
             break;
         xmlDebugErr3(ctxt, XML_CHECK_WRONG_NAME,
                      "Text node has wrong name '%s'",
@@ -577,7 +577,7 @@ xmlCtxtDumpElemDecl (xmlDebugCtxtPtr ctxt, xmlElementPtr elem)
             fprintf(ctxt->output, ", MIXED ");
             break;
         }
-        if ((elem->type != XML_ELEMENT_NODE) && (elem->content != NULL)) {
+        if (elem->type != XML_ELEMENT_NODE && elem->content != NULL) {
             char buf[5001];
 
             buf[0] = 0;
@@ -835,7 +835,7 @@ xmlCtxtDumpOneNode (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
         if (!ctxt->check) {
             xmlCtxtDumpSpaces(ctxt);
             fprintf(ctxt->output, "ELEMENT ");
-            if ((node->ns != NULL) && (node->ns->prefix != NULL)) {
+            if (node->ns != NULL && node->ns->prefix != NULL) {
                 xmlCtxtDumpString(ctxt, node->ns->prefix);
                 fprintf(ctxt->output, ":");
             }
@@ -964,12 +964,12 @@ xmlCtxtDumpOneNode (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
         fprintf(ctxt->output, "PBM: doc == NULL !!!\n");
     }
     ctxt->depth++;
-    if ((node->type == XML_ELEMENT_NODE) && (node->nsDef != NULL))
+    if (node->type == XML_ELEMENT_NODE && node->nsDef != NULL)
         xmlCtxtDumpNamespaceList(ctxt, node->nsDef);
-    if ((node->type == XML_ELEMENT_NODE) && (node->properties != NULL))
+    if (node->type == XML_ELEMENT_NODE && node->properties != NULL)
         xmlCtxtDumpAttrList(ctxt, node->properties);
     if (node->type != XML_ENTITY_REF_NODE) {
-        if ((node->type != XML_ELEMENT_NODE) && (node->content != NULL)) {
+        if (node->type != XML_ELEMENT_NODE && node->content != NULL) {
             if (!ctxt->check) {
                 xmlCtxtDumpSpaces(ctxt);
                 fprintf(ctxt->output, "content=");
@@ -1009,8 +1009,8 @@ xmlCtxtDumpNode (xmlDebugCtxtPtr ctxt, xmlNodePtr node)
         return;
     }
     xmlCtxtDumpOneNode(ctxt, node);
-    if ((node->type != XML_NAMESPACE_DECL) && (node->children != NULL)
-        && (node->type != XML_ENTITY_REF_NODE)) {
+    if (node->type != XML_NAMESPACE_DECL && node->children != NULL
+        && node->type != XML_ENTITY_REF_NODE) {
         ctxt->depth++;
         xmlCtxtDumpNodeList(ctxt, node->children);
         ctxt->depth--;
@@ -1151,7 +1151,7 @@ xmlCtxtDumpDocument (xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
     xmlCtxtDumpDocumentHead(ctxt, doc);
     if (((doc->type == XML_DOCUMENT_NODE)
          || (doc->type == XML_HTML_DOCUMENT_NODE))
-        && (doc->children != NULL)) {
+        && doc->children != NULL) {
         ctxt->depth++;
         xmlCtxtDumpNodeList(ctxt, doc->children);
         ctxt->depth--;
@@ -1197,7 +1197,7 @@ xmlCtxtDumpEntityCallback (void *payload, void *data,
             fprintf(ctxt->output, "SYSTEM \"%s\"", (char *) cur->SystemID);
         if (cur->orig != NULL)
             fprintf(ctxt->output, "\n orig \"%s\"", (char *) cur->orig);
-        if ((cur->type != XML_ELEMENT_NODE) && (cur->content != NULL))
+        if (cur->type != XML_ELEMENT_NODE && cur->content != NULL)
             fprintf(ctxt->output, "\n content \"%s\"", (char *) cur->content);
         fprintf(ctxt->output, "\n");
     }
@@ -1215,7 +1215,7 @@ xmlCtxtDumpEntities (xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
     if (doc == NULL)
         return;
     xmlCtxtDumpDocHead(ctxt, doc);
-    if ((doc->intSubset != NULL) && (doc->intSubset->entities != NULL)) {
+    if (doc->intSubset != NULL && doc->intSubset->entities != NULL) {
         xmlEntitiesTablePtr table
             = (xmlEntitiesTablePtr) doc->intSubset->entities;
 
@@ -1224,7 +1224,7 @@ xmlCtxtDumpEntities (xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
         xmlHashScan(table, xmlCtxtDumpEntityCallback, ctxt);
     } else
         fprintf(ctxt->output, "No entities in internal subset\n");
-    if ((doc->extSubset != NULL) && (doc->extSubset->entities != NULL)) {
+    if (doc->extSubset != NULL && doc->extSubset->entities != NULL) {
         xmlEntitiesTablePtr table
             = (xmlEntitiesTablePtr) doc->extSubset->entities;
 
