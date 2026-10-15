@@ -497,8 +497,8 @@ libxml_xmlXPathObjectPtrWrap (xmlXPathObjectPtr obj)
     }
     switch (obj->type) {
     case XPATH_XSLT_TREE: {
-        if ((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr == 0)
-            || (obj->nodesetval->nodeTab == NULL)) {
+        if (obj->nodesetval == NULL || obj->nodesetval->nodeNr == 0
+            || obj->nodesetval->nodeTab == NULL) {
             ret = PyList_New(0);
         } else {
             int i, len = 0;
@@ -522,7 +522,7 @@ libxml_xmlXPathObjectPtrWrap (xmlXPathObjectPtr obj)
         return ret;
     }
     case XPATH_NODESET:
-        if ((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr == 0)) {
+        if (obj->nodesetval == NULL || obj->nodesetval->nodeNr == 0) {
             ret = PyList_New(0);
         } else {
             int i;
@@ -625,14 +625,14 @@ libxml_xmlXPathObjectPtrConvert (PyObject *obj)
 
         for (i = 0; i < PyList_Size(obj); i++) {
             node = PyList_GetItem(obj, i);
-            if ((node == NULL) || (node->ob_type == NULL))
+            if (node == NULL || node->ob_type == NULL)
                 continue;
 
             cur = NULL;
             if (PyCapsule_CheckExact(node)) {
                 cur = PyxmlNode_Get(node);
-            } else if ((PyObject_HasAttrString(node, (char *) "_o"))
-                       && (PyObject_HasAttrString(node, (char *) "get_doc"))) {
+            } else if (PyObject_HasAttrString(node, (char *) "_o")
+                       && PyObject_HasAttrString(node, (char *) "get_doc")) {
                 PyObject *wrapper;
 
                 wrapper = PyObject_GetAttrString(node, (char *) "_o");
