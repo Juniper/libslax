@@ -1451,7 +1451,7 @@ xmlSchemaGetCanonValueWhtspExt_1 (xmlSchemaValPtr val,
     xmlSchemaValType valType;
     const xmlChar *value, *value2 = NULL;
 
-    if ((retValue == NULL) || (val == NULL))
+    if (retValue == NULL || val == NULL)
         return -1;
     list = xmlSchemaValueGetNext(val) ? 1 : 0;
     *retValue = NULL;
@@ -1723,7 +1723,7 @@ xmlSchemaFormatItemForReport (xmlChar **buf, const xmlChar *itemDes,
     } else
         named = 0;
 
-    if ((named == 0) && (itemNode != NULL)) {
+    if (named == 0 && itemNode != NULL) {
         xmlNodePtr elem;
 
         if (itemNode->type == XML_ATTRIBUTE_NODE)
@@ -1739,7 +1739,7 @@ xmlSchemaFormatItemForReport (xmlChar **buf, const xmlChar *itemDes,
             *buf = xmlStrcat(*buf, elem->name);
         *buf = xmlStrcat(*buf, BAD_CAST "'");
     }
-    if ((itemNode != NULL) && (itemNode->type == XML_ATTRIBUTE_NODE)) {
+    if (itemNode != NULL && itemNode->type == XML_ATTRIBUTE_NODE) {
         *buf = xmlStrcat(*buf, BAD_CAST ", attribute '");
         if (itemNode->ns != NULL) {
             *buf = xmlStrcat(
@@ -1815,7 +1815,7 @@ xmlSchemaFormatFacetEnumSet (xmlSchemaAbstractCtxtPtr actxt, xmlChar **buf,
         if (found)
             break;
         type = type->baseType;
-    } while ((type != NULL) && (type->type != XML_SCHEMA_TYPE_BASIC));
+    } while (type != NULL && type->type != XML_SCHEMA_TYPE_BASIC);
 
     return (const xmlChar *) *buf;
 }
@@ -1877,7 +1877,7 @@ static void LIBXML_ATTR_FORMAT(11, 12)
         schannel = ctxt->serror;
     }
 
-    if ((channel == NULL) && (schannel == NULL)) {
+    if (channel == NULL && schannel == NULL) {
         channel = xmlGenericError;
         data = xmlGenericErrorContext;
     }
@@ -2018,7 +2018,7 @@ static void LIBXML_ATTR_FORMAT(11, 12)
         schannel = ctxt->serror;
     }
 
-    if ((channel == NULL) && (schannel == NULL)) {
+    if (channel == NULL && schannel == NULL) {
         channel = xmlGenericError;
         data = xmlGenericErrorContext;
     }
@@ -2067,15 +2067,15 @@ static void LIBXML_ATTR_FORMAT(6, 0)
 	    * do not channel any node to the error function.
 	    */
             if (line == 0) {
-                if ((node == NULL) && (vctxt->depth >= 0)
-                    && (vctxt->inode != NULL)) {
+                if (node == NULL && vctxt->depth >= 0
+                    && vctxt->inode != NULL) {
                     node = vctxt->inode->node;
                 }
                 /*
 		* Get filename and line if no node-tree.
 		*/
-                if ((node == NULL) && (vctxt->parserCtxt != NULL)
-                    && (vctxt->parserCtxt->input != NULL)) {
+                if (node == NULL && vctxt->parserCtxt != NULL
+                    && vctxt->parserCtxt->input != NULL) {
                     file = vctxt->parserCtxt->input->filename;
                     if (vctxt->inode != NULL) {
                         line = vctxt->inode->nodeLine;
@@ -2097,12 +2097,12 @@ static void LIBXML_ATTR_FORMAT(6, 0)
 		*/
                 if (vctxt->doc != NULL)
                     file = (const char *) vctxt->doc->URL;
-                else if ((vctxt->parserCtxt != NULL)
-                         && (vctxt->parserCtxt->input != NULL))
+                else if (vctxt->parserCtxt != NULL
+                         && vctxt->parserCtxt->input != NULL)
                     file = vctxt->parserCtxt->input->filename;
             }
             if (vctxt->locFunc != NULL) {
-                if ((file == NULL) || (line == 0)) {
+                if (file == NULL || line == 0) {
                     unsigned long l;
                     const char *f;
                     vctxt->locFunc(vctxt->locCtxt, &f, &l);
@@ -2112,7 +2112,7 @@ static void LIBXML_ATTR_FORMAT(6, 0)
                         line = (int) l;
                 }
             }
-            if ((file == NULL) && (vctxt->filename != NULL))
+            if (file == NULL && vctxt->filename != NULL)
                 file = vctxt->filename;
 
             xmlSchemaVErrFull(vctxt, node, code, errorLevel, file, line, str1,
@@ -2169,8 +2169,8 @@ xmlSchemaFormatNodeForError (xmlChar **msg, xmlSchemaAbstractCtxtPtr actxt,
     xmlChar *str = NULL;
 
     *msg = NULL;
-    if ((node != NULL) && (node->type != XML_ELEMENT_NODE)
-        && (node->type != XML_ATTRIBUTE_NODE)) {
+    if (node != NULL && node->type != XML_ELEMENT_NODE
+        && node->type != XML_ATTRIBUTE_NODE) {
         /*
 	* Don't try to format other nodes than element and
 	* attribute nodes.
@@ -2316,8 +2316,8 @@ static void LIBXML_ATTR_FORMAT(5, 0)
 {
     xmlChar *msg = NULL;
 
-    if ((node == NULL) && (item != NULL)
-        && (actxt->type == XML_SCHEMA_CTXT_PARSER)) {
+    if (node == NULL && item != NULL
+        && actxt->type == XML_SCHEMA_CTXT_PARSER) {
         node = WXS_ITEM_NODE(item);
         xmlSchemaFormatItemForReport(&msg, NULL, item, NULL);
         msg = xmlStrcat(msg, BAD_CAST ": ");
@@ -2387,8 +2387,8 @@ xmlSchemaEvalErrorNodeType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node)
 {
     if (node != NULL)
         return node->type;
-    if ((actxt->type == XML_SCHEMA_CTXT_VALIDATOR)
-        && (((xmlSchemaValidCtxtPtr) actxt)->inode != NULL))
+    if (actxt->type == XML_SCHEMA_CTXT_VALIDATOR
+        && ((xmlSchemaValidCtxtPtr) actxt)->inode != NULL)
         return ((xmlSchemaValidCtxtPtr) actxt)->inode->nodeType;
     return -1;
 }
@@ -2429,7 +2429,7 @@ xmlSchemaSimpleTypeErr (xmlSchemaAbstractCtxtPtr actxt, xmlParserErrors error,
     xmlSchemaFormatNodeForError(&msg, actxt, node);
 
     if (displayValue
-        || (xmlSchemaEvalErrorNodeType(actxt, node) == XML_ATTRIBUTE_NODE))
+        || xmlSchemaEvalErrorNodeType(actxt, node) == XML_ATTRIBUTE_NODE)
         msg = xmlStrcat(msg, BAD_CAST "'%s' is not a valid value of ");
     else
         msg = xmlStrcat(msg,
@@ -2466,7 +2466,7 @@ xmlSchemaSimpleTypeErr (xmlSchemaAbstractCtxtPtr actxt, xmlParserErrors error,
     }
     msg = xmlStrcat(msg, BAD_CAST ".\n");
     if (displayValue
-        || (xmlSchemaEvalErrorNodeType(actxt, node) == XML_ATTRIBUTE_NODE))
+        || xmlSchemaEvalErrorNodeType(actxt, node) == XML_ATTRIBUTE_NODE)
         xmlSchemaErr(actxt, error, node, (const char *) msg, value, NULL);
     else
         xmlSchemaErr(actxt, error, node, (const char *) msg, NULL, NULL);
@@ -2533,8 +2533,8 @@ static void LIBXML_ATTR_FORMAT(5, 0)
             cur = values[i];
             if (cur == NULL)
                 continue;
-            if ((cur[0] == 'n') && (cur[1] == 'o') && (cur[2] == 't')
-                && (cur[3] == ' ')) {
+            if (cur[0] == 'n' && cur[1] == 'o' && cur[2] == 't'
+                && cur[3] == ' ') {
                 cur += 4;
                 str = xmlStrcat(str, BAD_CAST "##other");
             }
@@ -2548,7 +2548,7 @@ static void LIBXML_ATTR_FORMAT(5, 0)
                 localName = xmlStrdup(BAD_CAST "*");
                 end++;
             } else {
-                while ((*end != 0) && (*end != '|'))
+                while (*end != 0 && *end != '|')
                     end++;
                 localName = xmlStrncat(localName, BAD_CAST cur, end - cur);
             }
@@ -2558,7 +2558,7 @@ static void LIBXML_ATTR_FORMAT(5, 0)
 		* Skip "*|*" if they come with negated expressions, since
 		* they represent the same negated wildcard.
 		*/
-                if ((nbneg == 0) || (*end != '*') || (*localName != '*')) {
+                if (nbneg == 0 || *end != '*' || *localName != '*') {
                     /*
 		    * Get the namespace name.
 		    */
@@ -2627,9 +2627,9 @@ static void LIBXML_ATTR_FORMAT(8, 0)
         /*
 	* Use a default message.
 	*/
-        if ((facetType == XML_SCHEMA_FACET_LENGTH)
-            || (facetType == XML_SCHEMA_FACET_MINLENGTH)
-            || (facetType == XML_SCHEMA_FACET_MAXLENGTH)) {
+        if (facetType == XML_SCHEMA_FACET_LENGTH
+            || facetType == XML_SCHEMA_FACET_MINLENGTH
+            || facetType == XML_SCHEMA_FACET_MAXLENGTH) {
             char len[25], actLen[25];
 
             /* FIXME, TODO: What is the max expected string length of the
@@ -2894,7 +2894,7 @@ static void LIBXML_ATTR_FORMAT(5, 0)
     msg = xmlStrdup(BAD_CAST "%s: ");
     msg = xmlStrcat(msg, (const xmlChar *) message);
     msg = xmlStrcat(msg, BAD_CAST ".\n");
-    if ((itemElem == NULL) && (item != NULL))
+    if (itemElem == NULL && item != NULL)
         itemElem = WXS_ITEM_NODE(item);
     xmlSchemaPErrExt(ctxt, itemElem, error, NULL, NULL, NULL,
                      (const char *) msg, BAD_CAST des, str1, str2, str3, NULL);
@@ -3348,7 +3348,7 @@ static int
 xmlSchemaItemListRemove (xmlSchemaItemListPtr list, int idx)
 {
     int i;
-    if ((list->items == NULL) || (idx >= list->nbItems))
+    if (list->items == NULL || idx >= list->nbItems)
         return -1;
 
     if (list->nbItems == 1) {
@@ -3403,7 +3403,7 @@ xmlSchemaBucketFree (xmlSchemaBucketPtr bucket)
             xmlFree(prev);
         } while (cur != NULL);
     }
-    if ((!bucket->preserveDoc) && (bucket->doc != NULL)) {
+    if (!bucket->preserveDoc && bucket->doc != NULL) {
         xmlFreeDoc(bucket->doc);
     }
     if (bucket->type == XML_SCHEMA_SCHEMA_IMPORT) {
@@ -3889,7 +3889,7 @@ xmlSchemaFreeModelGroup (xmlSchemaModelGroupPtr item)
 static void
 xmlSchemaComponentListFree (xmlSchemaItemListPtr list)
 {
-    if ((list == NULL) || (list->nbItems == 0))
+    if (list == NULL || list->nbItems == 0)
         return;
     {
         xmlSchemaTreeItemPtr item;
@@ -4192,7 +4192,7 @@ xmlSchemaContentModelDump (xmlSchemaParticlePtr particle, FILE *output,
         && ((term->type == XML_SCHEMA_TYPE_SEQUENCE)
             || (term->type == XML_SCHEMA_TYPE_CHOICE)
             || (term->type == XML_SCHEMA_TYPE_ALL))
-        && (term->children != NULL)) {
+        && term->children != NULL) {
         xmlSchemaContentModelDump((xmlSchemaParticlePtr) term->children, output,
                                   depth + 1);
     }
@@ -4217,7 +4217,7 @@ xmlSchemaAttrUsesDump (xmlSchemaItemListPtr uses, FILE *output)
     xmlChar *str = NULL;
     int i;
 
-    if ((uses == NULL) || (uses->nbItems == 0))
+    if (uses == NULL || uses->nbItems == 0)
         return;
 
     fprintf(output, "  attributes:\n");
@@ -4336,7 +4336,7 @@ xmlSchemaTypeDump (xmlSchemaTypePtr type, FILE *output)
     if (type->annot != NULL)
         xmlSchemaAnnotDump(output, type->annot);
 #ifdef DUMP_CONTENT_MODEL
-    if ((type->type == XML_SCHEMA_TYPE_COMPLEX) && (type->subtypes != NULL)) {
+    if (type->type == XML_SCHEMA_TYPE_COMPLEX && type->subtypes != NULL) {
         xmlSchemaContentModelDump((xmlSchemaParticlePtr) type->subtypes, output,
                                   1);
     }
@@ -4401,11 +4401,11 @@ xmlSchemaGetPropNode (xmlNodePtr node, const char *name)
 {
     xmlAttrPtr prop;
 
-    if ((node == NULL) || (name == NULL))
+    if (node == NULL || name == NULL)
         return NULL;
     prop = node->properties;
     while (prop != NULL) {
-        if ((prop->ns == NULL) && xmlStrEqual(prop->name, BAD_CAST name))
+        if (prop->ns == NULL && xmlStrEqual(prop->name, BAD_CAST name))
             return prop;
         prop = prop->next;
     }
@@ -4426,11 +4426,11 @@ xmlSchemaGetPropNodeNs (xmlNodePtr node, const char *uri, const char *name)
 {
     xmlAttrPtr prop;
 
-    if ((node == NULL) || (name == NULL))
+    if (node == NULL || name == NULL)
         return NULL;
     prop = node->properties;
     while (prop != NULL) {
-        if ((prop->ns != NULL) && xmlStrEqual(prop->name, BAD_CAST name)
+        if (prop->ns != NULL && xmlStrEqual(prop->name, BAD_CAST name)
             && xmlStrEqual(prop->ns->href, BAD_CAST uri))
             return prop;
         prop = prop->next;
@@ -4521,7 +4521,7 @@ xmlSchemaGetElem (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaElementPtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(elemDecl)
@@ -4547,7 +4547,7 @@ xmlSchemaGetType (xmlSchemaPtr schema, const xmlChar *name,
     if (name == NULL)
         return NULL;
     /* First try the built-in types. */
-    if ((nsName != NULL) && xmlStrEqual(nsName, xmlSchemaNs)) {
+    if (nsName != NULL && xmlStrEqual(nsName, xmlSchemaNs)) {
         ret = xmlSchemaGetPredefinedType(name, nsName);
         if (ret != NULL)
             goto exit;
@@ -4580,7 +4580,7 @@ xmlSchemaGetAttributeDecl (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaAttributePtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(attrDecl)
@@ -4603,7 +4603,7 @@ xmlSchemaGetAttributeGroup (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaAttributeGroupPtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(attrgrpDecl)
@@ -4632,7 +4632,7 @@ xmlSchemaGetGroup (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaModelGroupDefPtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(groupDecl)
@@ -4648,7 +4648,7 @@ xmlSchemaGetNotation (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaNotationPtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(notaDecl)
@@ -4663,7 +4663,7 @@ xmlSchemaGetIDC (xmlSchemaPtr schema, const xmlChar *name,
 {
     xmlSchemaIDCPtr ret = NULL;
 
-    if ((name == NULL) || (schema == NULL))
+    if (name == NULL || schema == NULL)
         return NULL;
     if (schema != NULL) {
         WXS_FIND_GLOBAL_ITEM(idcDef)
@@ -4725,7 +4725,7 @@ xmlSchemaIsBlank (xmlChar *str, int len)
             str++;
         }
     } else
-        while ((*str != 0) && (len != 0)) {
+        while (*str != 0 && len != 0) {
             if (!(IS_BLANK_CH(*str)))
                 return 0;
             str++;
@@ -4749,9 +4749,9 @@ xmlSchemaFindRedefCompInGraph (xmlSchemaBucketPtr bucket,
     xmlSchemaBasicItemPtr ret;
     int i;
 
-    if ((bucket == NULL) || (name == NULL))
+    if (bucket == NULL || name == NULL)
         return NULL;
-    if ((bucket->globals == NULL) || (bucket->globals->nbItems == 0))
+    if (bucket->globals == NULL || bucket->globals->nbItems == 0)
         goto subschemas;
     /*
     * Search in global components.
@@ -4762,22 +4762,22 @@ xmlSchemaFindRedefCompInGraph (xmlSchemaBucketPtr bucket,
             switch (type) {
             case XML_SCHEMA_TYPE_COMPLEX:
             case XML_SCHEMA_TYPE_SIMPLE:
-                if ((WXS_COMP_NAME(ret, xmlSchemaTypePtr) == name)
-                    && (WXS_COMP_TNS(ret, xmlSchemaTypePtr) == nsName)) {
+                if (WXS_COMP_NAME(ret, xmlSchemaTypePtr) == name
+                    && WXS_COMP_TNS(ret, xmlSchemaTypePtr) == nsName) {
                     return ret;
                 }
                 break;
             case XML_SCHEMA_TYPE_GROUP:
-                if ((WXS_COMP_NAME(ret, xmlSchemaModelGroupDefPtr) == name)
-                    && (WXS_COMP_TNS(ret, xmlSchemaModelGroupDefPtr)
-                        == nsName)) {
+                if (WXS_COMP_NAME(ret, xmlSchemaModelGroupDefPtr) == name
+                    && WXS_COMP_TNS(ret, xmlSchemaModelGroupDefPtr)
+                        == nsName) {
                     return ret;
                 }
                 break;
             case XML_SCHEMA_TYPE_ATTRIBUTEGROUP:
-                if ((WXS_COMP_NAME(ret, xmlSchemaAttributeGroupPtr) == name)
-                    && (WXS_COMP_TNS(ret, xmlSchemaAttributeGroupPtr)
-                        == nsName)) {
+                if (WXS_COMP_NAME(ret, xmlSchemaAttributeGroupPtr) == name
+                    && WXS_COMP_TNS(ret, xmlSchemaAttributeGroupPtr)
+                        == nsName) {
                     return ret;
                 }
                 break;
@@ -4800,8 +4800,8 @@ subschemas:
 	*/
         bucket->flags |= XML_SCHEMA_BUCKET_MARKED;
         do {
-            if ((rel->bucket != NULL)
-                && ((rel->bucket->flags & XML_SCHEMA_BUCKET_MARKED) == 0)) {
+            if (rel->bucket != NULL
+                && (rel->bucket->flags & XML_SCHEMA_BUCKET_MARKED) == 0) {
                 ret = xmlSchemaFindRedefCompInGraph(rel->bucket, type, name,
                                                     nsName);
                 if (ret != NULL)
@@ -4832,7 +4832,7 @@ xmlSchemaAddNotation (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaNotationPtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (name == NULL))
+    if (ctxt == NULL || schema == NULL || name == NULL)
         return NULL;
 
     ret = (xmlSchemaNotationPtr) xmlMalloc(sizeof(xmlSchemaNotation));
@@ -4869,7 +4869,7 @@ xmlSchemaAddAttribute (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaAttributePtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL))
+    if (ctxt == NULL || schema == NULL)
         return NULL;
 
     ret = (xmlSchemaAttributePtr) xmlMalloc(sizeof(xmlSchemaAttribute));
@@ -4970,7 +4970,7 @@ xmlSchemaAddAttributeGroupDefinition (xmlSchemaParserCtxtPtr pctxt,
 {
     xmlSchemaAttributeGroupPtr ret = NULL;
 
-    if ((pctxt == NULL) || (name == NULL))
+    if (pctxt == NULL || name == NULL)
         return NULL;
 
     ret = (xmlSchemaAttributeGroupPtr) xmlMalloc(
@@ -5018,7 +5018,7 @@ xmlSchemaAddElement (xmlSchemaParserCtxtPtr ctxt, const xmlChar *name,
 {
     xmlSchemaElementPtr ret = NULL;
 
-    if ((ctxt == NULL) || (name == NULL))
+    if (ctxt == NULL || name == NULL)
         return NULL;
 
     ret = (xmlSchemaElementPtr) xmlMalloc(sizeof(xmlSchemaElement));
@@ -5060,7 +5060,7 @@ xmlSchemaAddType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaTypePtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL))
+    if (ctxt == NULL || schema == NULL)
         return NULL;
 
     ret = (xmlSchemaTypePtr) xmlMalloc(sizeof(xmlSchemaType));
@@ -5147,7 +5147,7 @@ xmlSchemaAddModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaModelGroupPtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL))
+    if (ctxt == NULL || schema == NULL)
         return NULL;
 
     ret = (xmlSchemaModelGroupPtr) xmlMalloc(sizeof(xmlSchemaModelGroup));
@@ -5159,7 +5159,7 @@ xmlSchemaAddModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     ret->type = type;
     ret->node = node;
     WXS_ADD_LOCAL(ctxt, ret);
-    if ((type == XML_SCHEMA_TYPE_SEQUENCE) || (type == XML_SCHEMA_TYPE_CHOICE))
+    if (type == XML_SCHEMA_TYPE_SEQUENCE || type == XML_SCHEMA_TYPE_CHOICE)
         WXS_ADD_PENDING(ctxt, ret);
     return ret;
 }
@@ -5222,7 +5222,7 @@ xmlSchemaAddModelGroupDefinition (xmlSchemaParserCtxtPtr ctxt,
 {
     xmlSchemaModelGroupDefPtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (name == NULL))
+    if (ctxt == NULL || schema == NULL || name == NULL)
         return NULL;
 
     ret = (xmlSchemaModelGroupDefPtr) xmlMalloc(sizeof(xmlSchemaModelGroupDef));
@@ -5278,7 +5278,7 @@ xmlSchemaAddIDC (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaIDCPtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (name == NULL))
+    if (ctxt == NULL || schema == NULL || name == NULL)
         return NULL;
 
     ret = (xmlSchemaIDCPtr) xmlMalloc(sizeof(xmlSchemaIDC));
@@ -5318,7 +5318,7 @@ xmlSchemaAddWildcard (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     xmlSchemaWildcardPtr ret = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL))
+    if (ctxt == NULL || schema == NULL)
         return NULL;
 
     ret = (xmlSchemaWildcardPtr) xmlMalloc(sizeof(xmlSchemaWildcard));
@@ -5410,7 +5410,7 @@ xmlSchemaAddElementSubstitutionMember (xmlSchemaParserCtxtPtr pctxt,
 {
     xmlSchemaSubstGroupPtr substGroup = NULL;
 
-    if ((pctxt == NULL) || (head == NULL) || (member == NULL))
+    if (pctxt == NULL || head == NULL || member == NULL)
         return -1;
 
     substGroup = xmlSchemaSubstGroupGet(pctxt, head);
@@ -5686,7 +5686,7 @@ xmlGetMaxOccurs (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node, int min, int max,
                                 NULL, NULL, NULL);
         return def;
     }
-    while ((*cur >= '0') && (*cur <= '9')) {
+    while (*cur >= '0' && *cur <= '9') {
         if (ret > INT_MAX / 10) {
             ret = INT_MAX;
         } else {
@@ -5704,7 +5704,7 @@ xmlGetMaxOccurs (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node, int min, int max,
     /*
     * TODO: Restrict the maximal value to Integer.
     */
-    if ((*cur != 0) || (ret < min) || ((max != -1) && (ret > max))) {
+    if (*cur != 0 || ret < min || max != -1 && ret > max) {
         xmlSchemaPSimpleTypeErr(ctxt, XML_SCHEMAP_S4S_ATTR_INVALID_VALUE,
                                 /* XML_SCHEMAP_INVALID_MINOCCURS, */
                                 NULL, (xmlNodePtr) attr, NULL, expected, val,
@@ -5749,7 +5749,7 @@ xmlGetMinOccurs (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node, int min, int max,
                                 NULL, NULL, NULL);
         return def;
     }
-    while ((*cur >= '0') && (*cur <= '9')) {
+    while (*cur >= '0' && *cur <= '9') {
         if (ret > INT_MAX / 10) {
             ret = INT_MAX;
         } else {
@@ -5767,7 +5767,7 @@ xmlGetMinOccurs (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node, int min, int max,
     /*
     * TODO: Restrict the maximal value to Integer.
     */
-    if ((*cur != 0) || (ret < min) || ((max != -1) && (ret > max))) {
+    if (*cur != 0 || ret < min || max != -1 && ret > max) {
         xmlSchemaPSimpleTypeErr(ctxt, XML_SCHEMAP_S4S_ATTR_INVALID_VALUE,
                                 /* XML_SCHEMAP_INVALID_MINOCCURS, */
                                 NULL, (xmlNodePtr) attr, NULL, expected, val,
@@ -5909,7 +5909,7 @@ xmlSchemaPValAttrNodeValue (xmlSchemaParserCtxtPtr pctxt,
     * NOTE: Should we move this to xmlschematypes.c? Hmm, but this
     * one is really meant to be used internally, so better not.
     */
-    if ((pctxt == NULL) || (type == NULL) || (attr == NULL))
+    if (pctxt == NULL || type == NULL || attr == NULL)
         return -1;
     if (type->type != XML_SCHEMA_TYPE_BASIC) {
         PERROR_INT("xmlSchemaPValAttrNodeValue",
@@ -5969,7 +5969,7 @@ xmlSchemaPValAttrNode (xmlSchemaParserCtxtPtr ctxt,
 {
     const xmlChar *val;
 
-    if ((ctxt == NULL) || (type == NULL) || (attr == NULL))
+    if (ctxt == NULL || type == NULL || attr == NULL)
         return -1;
 
     val = xmlSchemaGetNodeContent(ctxt, (xmlNodePtr) attr);
@@ -6000,7 +6000,7 @@ xmlSchemaPValAttr (xmlSchemaParserCtxtPtr ctxt, xmlSchemaBasicItemPtr ownerItem,
 {
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (type == NULL)) {
+    if (ctxt == NULL || type == NULL) {
         if (value != NULL)
             *value = NULL;
         return -1;
@@ -6089,14 +6089,14 @@ xmlSchemaParseLocalAttributes (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 {
     void *item;
 
-    while ((IS_SCHEMA(*child, "attribute"))
-           || (IS_SCHEMA(*child, "attributeGroup"))) {
+    while (IS_SCHEMA(*child, "attribute")
+           || IS_SCHEMA(*child, "attributeGroup")) {
         if (IS_SCHEMA(*child, "attribute")) {
             item = xmlSchemaParseLocalAttribute(ctxt, schema, *child, *list,
                                                 parentType);
         } else {
             item = xmlSchemaParseAttributeGroupRef(ctxt, schema, *child);
-            if ((item != NULL) && (hasRefs != NULL))
+            if (item != NULL && hasRefs != NULL)
                 *hasRefs = 1;
         }
         if (item != NULL) {
@@ -6141,7 +6141,7 @@ xmlSchemaParseAnnotation (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node,
     * {any attributes with non-schema namespace . . .}>
     * Content: (appinfo | documentation)*
     */
-    if ((ctxt == NULL) || (node == NULL))
+    if (ctxt == NULL || node == NULL)
         return NULL;
     if (needed)
         ret = xmlSchemaNewAnnot(ctxt, node);
@@ -6149,9 +6149,9 @@ xmlSchemaParseAnnotation (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node,
         ret = NULL;
     attr = node->properties;
     while (attr != NULL) {
-        if (((attr->ns == NULL) && (!xmlStrEqual(attr->name, BAD_CAST "id")))
-            || ((attr->ns != NULL)
-                && xmlStrEqual(attr->ns->href, xmlSchemaNs))) {
+        if (attr->ns == NULL && !xmlStrEqual(attr->name, BAD_CAST "id")
+            || attr->ns != NULL
+                && xmlStrEqual(attr->ns->href, xmlSchemaNs)) {
             xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                      NULL, attr);
         }
@@ -6172,10 +6172,10 @@ xmlSchemaParseAnnotation (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node,
 	    */
             attr = child->properties;
             while (attr != NULL) {
-                if (((attr->ns == NULL)
-                     && (!xmlStrEqual(attr->name, BAD_CAST "source")))
-                    || ((attr->ns != NULL)
-                        && xmlStrEqual(attr->ns->href, xmlSchemaNs))) {
+                if (attr->ns == NULL
+                     && !xmlStrEqual(attr->name, BAD_CAST "source")
+                    || attr->ns != NULL
+                        && xmlStrEqual(attr->ns->href, xmlSchemaNs)) {
                     xmlSchemaPIllegalAttrErr(
                         ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                 }
@@ -6201,9 +6201,9 @@ xmlSchemaParseAnnotation (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr node,
                     }
                 } else {
                     if (xmlStrEqual(attr->ns->href, xmlSchemaNs)
-                        || (xmlStrEqual(attr->name, BAD_CAST "lang")
-                            && (!xmlStrEqual(attr->ns->href,
-                                             XML_XML_NAMESPACE)))) {
+                        || xmlStrEqual(attr->name, BAD_CAST "lang")
+                            && !xmlStrEqual(attr->ns->href,
+                                             XML_XML_NAMESPACE)) {
                         xmlSchemaPIllegalAttrErr(
                             ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                     }
@@ -6250,7 +6250,7 @@ xmlSchemaParseFacet (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     const xmlChar *value;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     facet = xmlSchemaNewFacet();
@@ -6298,8 +6298,8 @@ xmlSchemaParseFacet (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     }
     xmlSchemaPValAttrID(ctxt, node, BAD_CAST "id");
     facet->value = value;
-    if ((facet->type != XML_SCHEMA_FACET_PATTERN)
-        && (facet->type != XML_SCHEMA_FACET_ENUMERATION)) {
+    if (facet->type != XML_SCHEMA_FACET_PATTERN
+        && facet->type != XML_SCHEMA_FACET_ENUMERATION) {
         const xmlChar *fixed;
 
         fixed = xmlSchemaGetProp(ctxt, node, "fixed");
@@ -6346,7 +6346,7 @@ xmlSchemaParseWildcardNs (xmlSchemaParserCtxtPtr ctxt,
     xmlAttrPtr attr;
 
     pc = xmlSchemaGetProp(ctxt, node, "processContents");
-    if ((pc == NULL) || (xmlStrEqual(pc, (const xmlChar *) "strict"))) {
+    if (pc == NULL || xmlStrEqual(pc, (const xmlChar *) "strict")) {
         wildc->processContents = XML_SCHEMAS_ANY_STRICT;
     } else if (xmlStrEqual(pc, (const xmlChar *) "skip")) {
         wildc->processContents = XML_SCHEMAS_ANY_SKIP;
@@ -6366,7 +6366,7 @@ xmlSchemaParseWildcardNs (xmlSchemaParserCtxtPtr ctxt,
     ns = xmlSchemaGetNodeContent(ctxt, (xmlNodePtr) attr);
     if (ns == NULL)
         return -1;
-    if ((attr == NULL) || (xmlStrEqual(ns, BAD_CAST "##any")))
+    if (attr == NULL || xmlStrEqual(ns, BAD_CAST "##any"))
         wildc->any = 1;
     else if (xmlStrEqual(ns, BAD_CAST "##other")) {
         wildc->negNsSet = xmlSchemaNewWildcardNsConstraint(ctxt);
@@ -6382,13 +6382,13 @@ xmlSchemaParseWildcardNs (xmlSchemaParserCtxtPtr ctxt,
             while (IS_BLANK_CH(*cur))
                 cur++;
             end = cur;
-            while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+            while (*end != 0 && !(IS_BLANK_CH(*end)))
                 end++;
             if (end == cur)
                 break;
             nsItem = xmlStrndup(cur, end - cur);
-            if ((xmlStrEqual(nsItem, BAD_CAST "##other"))
-                || (xmlStrEqual(nsItem, BAD_CAST "##any"))) {
+            if (xmlStrEqual(nsItem, BAD_CAST "##other")
+                || xmlStrEqual(nsItem, BAD_CAST "##any")) {
                 xmlSchemaPSimpleTypeErr(
                     ctxt, XML_SCHEMAP_WILDCARD_INVALID_NS_MEMBER, NULL,
                     (xmlNodePtr) attr, NULL,
@@ -6446,7 +6446,7 @@ xmlSchemaPCheckParticleCorrect_2 (xmlSchemaParserCtxtPtr ctxt,
                                   xmlSchemaParticlePtr item UNUSED,
                                   xmlNodePtr node, int minOccurs, int maxOccurs)
 {
-    if ((maxOccurs == 0) && (minOccurs == 0))
+    if (maxOccurs == 0 && minOccurs == 0)
         return 0;
     if (maxOccurs != UNBOUNDED) {
         /*
@@ -6503,7 +6503,7 @@ xmlSchemaParseAny (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlAttrPtr attr;
     xmlSchemaAnnotPtr annot = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /*
     * Check for illegal attributes.
@@ -6511,11 +6511,11 @@ xmlSchemaParseAny (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "minOccurs"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "maxOccurs"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "namespace"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "processContents"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "minOccurs")
+                && !xmlStrEqual(attr->name, BAD_CAST "maxOccurs")
+                && !xmlStrEqual(attr->name, BAD_CAST "namespace")
+                && !xmlStrEqual(attr->name, BAD_CAST "processContents")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -6555,7 +6555,7 @@ xmlSchemaParseAny (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     /*
     * No component if minOccurs==maxOccurs==0.
     */
-    if ((min == 0) && (max == 0)) {
+    if (min == 0 && max == 0) {
         /* Don't free the wildcard, since it's already on the list. */
         return NULL;
     }
@@ -6587,7 +6587,7 @@ xmlSchemaParseNotation (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlSchemaNotationPtr ret;
     xmlNodePtr child = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     name = xmlSchemaGetProp(ctxt, node, "name");
     if (name == NULL) {
@@ -6630,7 +6630,7 @@ xmlSchemaParseAnyAttribute (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     ret = xmlSchemaAddWildcard(ctxt, schema, XML_SCHEMA_TYPE_ANY_ATTRIBUTE,
@@ -6644,9 +6644,9 @@ xmlSchemaParseAnyAttribute (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "namespace"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "processContents"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "namespace")
+                && !xmlStrEqual(attr->name, BAD_CAST "processContents")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -6709,7 +6709,7 @@ xmlSchemaParseLocalAttribute (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
      * 3.2.3 Constraints on XML Representations of Attribute Declarations
      */
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     attr = xmlSchemaGetPropNode(node, "ref");
     if (attr != NULL) {
@@ -6828,8 +6828,8 @@ xmlSchemaParseLocalAttribute (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
     * If default and use are both present, use must have
     * the actual value optional.
     */
-    if ((defValueType == WXS_ATTR_DEF_VAL_DEFAULT)
-        && (occurs != XML_SCHEMAS_ATTR_USE_OPTIONAL)) {
+    if (defValueType == WXS_ATTR_DEF_VAL_DEFAULT
+        && occurs != XML_SCHEMAS_ATTR_USE_OPTIONAL) {
         xmlSchemaPSimpleTypeErr(
             pctxt, XML_SCHEMAP_SRC_ATTRIBUTE_2, NULL, node, NULL,
             "(optional | prohibited | required)", NULL,
@@ -6846,7 +6846,7 @@ xmlSchemaParseLocalAttribute (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
         xmlSchemaAttributePtr attrDecl;
 
         /* TODO: move XML_SCHEMAS_QUALIF_ATTR to the parser. */
-        if ((!hasForm) && (schema->flags & XML_SCHEMAS_QUALIF_ATTR))
+        if (!hasForm && (schema->flags & XML_SCHEMAS_QUALIF_ATTR))
             ns = pctxt->targetNamespace;
         /*
 	* 3.2.6 Schema Component Constraint: xsi: Not Allowed
@@ -6992,9 +6992,9 @@ check_children:
 
             for (i = 0; i < uses->nbItems; i++) {
                 use = uses->items[i];
-                if ((use->type == XML_SCHEMA_EXTRA_ATTR_USE_PROHIB)
-                    && (tmpName == (WXS_ATTR_PROHIB_CAST use)->name)
-                    && (tmpNs == (WXS_ATTR_PROHIB_CAST use)->targetNamespace)) {
+                if (use->type == XML_SCHEMA_EXTRA_ATTR_USE_PROHIB
+                    && tmpName == (WXS_ATTR_PROHIB_CAST use)->name
+                    && tmpNs == (WXS_ATTR_PROHIB_CAST use)->targetNamespace) {
                     xmlChar *str = NULL;
 
                     xmlSchemaCustomWarning(
@@ -7088,7 +7088,7 @@ xmlSchemaParseGlobalAttribute (xmlSchemaParserCtxtPtr pctxt,
      *
      * 3.2.3 Constraints on XML Representations of Attribute Declarations
      */
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /*
     * 3.2.3 : 3.1
@@ -7141,11 +7141,11 @@ xmlSchemaParseGlobalAttribute (xmlSchemaParserCtxtPtr pctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "default"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "fixed"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "name"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "type"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "default")
+                && !xmlStrEqual(attr->name, BAD_CAST "fixed")
+                && !xmlStrEqual(attr->name, BAD_CAST "name")
+                && !xmlStrEqual(attr->name, BAD_CAST "type")) {
                 xmlSchemaPIllegalAttrErr(
                     pctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
             }
@@ -7231,7 +7231,7 @@ xmlSchemaParseAttributeGroupRef (xmlSchemaParserCtxtPtr pctxt,
     xmlAttrPtr attr;
     const xmlChar *refNs = NULL, *ref = NULL;
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     attr = xmlSchemaGetPropNode(node, "ref");
@@ -7250,8 +7250,8 @@ xmlSchemaParseAttributeGroupRef (xmlSchemaParserCtxtPtr pctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "ref"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "id"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "ref")
+                && !xmlStrEqual(attr->name, BAD_CAST "id")) {
                 xmlSchemaPIllegalAttrErr(
                     pctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
             }
@@ -7284,9 +7284,9 @@ xmlSchemaParseAttributeGroupRef (xmlSchemaParserCtxtPtr pctxt,
     * Handle attribute group redefinitions.
     */
     if (pctxt->isRedefine && pctxt->redef
-        && (pctxt->redef->item->type == XML_SCHEMA_TYPE_ATTRIBUTEGROUP)
-        && (ref == pctxt->redef->refName)
-        && (refNs == pctxt->redef->refTargetNs)) {
+        && pctxt->redef->item->type == XML_SCHEMA_TYPE_ATTRIBUTEGROUP
+        && ref == pctxt->redef->refName
+        && refNs == pctxt->redef->refTargetNs) {
         /*
 	* SPEC src-redefine:
 	* (7.1) "If it has an <attributeGroup> among its contents
@@ -7354,7 +7354,7 @@ xmlSchemaParseAttributeGroupDefinition (xmlSchemaParserCtxtPtr pctxt,
     int hasRefs = 0;
     int res;
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     attr = xmlSchemaGetPropNode(node, "name");
@@ -7382,8 +7382,8 @@ xmlSchemaParseAttributeGroupDefinition (xmlSchemaParserCtxtPtr pctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "name"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "id"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "name")
+                && !xmlStrEqual(attr->name, BAD_CAST "id")) {
                 xmlSchemaPIllegalAttrErr(
                     pctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
             }
@@ -7473,7 +7473,7 @@ xmlSchemaPValAttrBlockFinal (const xmlChar *value, int *flags, int flagAll,
     /*
     * TODO: This does not check for duplicate entries.
     */
-    if ((flags == NULL) || (value == NULL))
+    if (flags == NULL || value == NULL)
         return -1;
     if (value[0] == 0)
         return 0;
@@ -7500,7 +7500,7 @@ xmlSchemaPValAttrBlockFinal (const xmlChar *value, int *flags, int flagAll,
             while (IS_BLANK_CH(*cur))
                 cur++;
             end = cur;
-            while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+            while (*end != 0 && !(IS_BLANK_CH(*end)))
                 end++;
             if (end == cur)
                 break;
@@ -7540,7 +7540,7 @@ xmlSchemaPValAttrBlockFinal (const xmlChar *value, int *flags, int flagAll,
             if (item != NULL)
                 xmlFree(item);
             cur = end;
-        } while ((ret == 0) && (*cur != 0));
+        } while (ret == 0 && *cur != 0);
     }
 
     return ret;
@@ -7663,7 +7663,7 @@ xmlSchemaCheckCSelectorXPath (xmlSchemaParserCtxtPtr ctxt, xmlSchemaIDCPtr idc,
 static xmlSchemaAnnotPtr
 xmlSchemaAddAnnotation (xmlSchemaAnnotItemPtr annItem, xmlSchemaAnnotPtr annot)
 {
-    if ((annItem == NULL) || (annot == NULL))
+    if (annItem == NULL || annot == NULL)
         return NULL;
     switch (annItem->type) {
     case XML_SCHEMA_TYPE_ELEMENT: {
@@ -7759,8 +7759,8 @@ xmlSchemaParseIDCSelectorAndField (xmlSchemaParserCtxtPtr ctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "xpath"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "xpath")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -7849,8 +7849,8 @@ xmlSchemaParseIDC (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "name"))
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "name")
                 && ((idcCategory != XML_SCHEMA_TYPE_IDC_KEYREF)
                     || (!xmlStrEqual(attr->name, BAD_CAST "refer")))) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
@@ -7984,7 +7984,7 @@ xmlSchemaParseElement (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     /* 3.3.3 Constraints on XML Representations of Element Declarations */
     /* TODO: Complete implementation of 3.3.6 */
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     if (isElemRef != NULL)
@@ -7996,7 +7996,7 @@ xmlSchemaParseElement (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     */
     nameAttr = xmlSchemaGetPropNode(node, "name");
     attr = xmlSchemaGetPropNode(node, "ref");
-    if ((topLevel) || (attr == NULL)) {
+    if (topLevel || attr == NULL) {
         if (nameAttr == NULL) {
             xmlSchemaPMissingAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_MISSING, NULL,
                                      node, "name", NULL);
@@ -8081,7 +8081,7 @@ xmlSchemaParseElement (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
             xmlSchemaPContentErr(ctxt, XML_SCHEMAP_S4S_ELEM_NOT_ALLOWED, NULL,
                                  node, child, NULL, "(annotation?)");
         }
-        if ((min == 0) && (max == 0))
+        if (min == 0 && max == 0)
             goto return_null;
         /*
 	* Create the reference item and attach it to the particle.
@@ -8140,24 +8140,24 @@ declaration_part: {
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "name"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "type"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "default"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "fixed"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "block"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "nillable"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "name")
+                && !xmlStrEqual(attr->name, BAD_CAST "type")
+                && !xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "default")
+                && !xmlStrEqual(attr->name, BAD_CAST "fixed")
+                && !xmlStrEqual(attr->name, BAD_CAST "block")
+                && !xmlStrEqual(attr->name, BAD_CAST "nillable")) {
                 if (topLevel == 0) {
-                    if ((!xmlStrEqual(attr->name, BAD_CAST "maxOccurs"))
-                        && (!xmlStrEqual(attr->name, BAD_CAST "minOccurs"))
-                        && (!xmlStrEqual(attr->name, BAD_CAST "form"))) {
+                    if (!xmlStrEqual(attr->name, BAD_CAST "maxOccurs")
+                        && !xmlStrEqual(attr->name, BAD_CAST "minOccurs")
+                        && !xmlStrEqual(attr->name, BAD_CAST "form")) {
                         xmlSchemaPIllegalAttrErr(
                             ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                     }
-                } else if ((!xmlStrEqual(attr->name, BAD_CAST "final"))
-                           && (!xmlStrEqual(attr->name, BAD_CAST "abstract"))
-                           && (!xmlStrEqual(attr->name,
-                                            BAD_CAST "substitutionGroup"))) {
+                } else if (!xmlStrEqual(attr->name, BAD_CAST "final")
+                           && !xmlStrEqual(attr->name, BAD_CAST "abstract")
+                           && !xmlStrEqual(attr->name,
+                                            BAD_CAST "substitutionGroup")) {
                     xmlSchemaPIllegalAttrErr(
                         ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                 }
@@ -8294,8 +8294,8 @@ declaration_part: {
                 = xmlSchemaParseSimpleType(ctxt, schema, child, 0);
         child = child->next;
     }
-    while ((IS_SCHEMA(child, "unique")) || (IS_SCHEMA(child, "key"))
-           || (IS_SCHEMA(child, "keyref"))) {
+    while (IS_SCHEMA(child, "unique") || IS_SCHEMA(child, "key")
+           || IS_SCHEMA(child, "keyref")) {
         if (IS_SCHEMA(child, "unique")) {
             curIDC = xmlSchemaParseIDC(ctxt, schema, child,
                                        XML_SCHEMA_TYPE_IDC_UNIQUE,
@@ -8367,7 +8367,7 @@ xmlSchemaParseUnion (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlAttrPtr attr;
     const xmlChar *cur = NULL;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return -1;
     /* Not a component, don't create it. */
     type = ctxt->ctxtType;
@@ -8386,8 +8386,8 @@ xmlSchemaParseUnion (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "memberTypes"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "memberTypes")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -8418,7 +8418,7 @@ xmlSchemaParseUnion (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
             while (IS_BLANK_CH(*cur))
                 cur++;
             end = cur;
-            while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+            while (*end != 0 && !(IS_BLANK_CH(*end)))
                 end++;
             if (end == cur)
                 break;
@@ -8508,7 +8508,7 @@ xmlSchemaParseUnion (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         xmlSchemaPContentErr(ctxt, XML_SCHEMAP_S4S_ELEM_NOT_ALLOWED, NULL, node,
                              child, NULL, "(annotation?, simpleType*)");
     }
-    if ((attr == NULL) && (type->subtypes == NULL)) {
+    if (attr == NULL && type->subtypes == NULL) {
         /*
 	* src-union-memberTypes-or-simpleTypes
 	* Either the memberTypes [attribute] of the <union> element must
@@ -8541,7 +8541,7 @@ xmlSchemaParseList (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /* Not a component, don't create it. */
     type = ctxt->ctxtType;
@@ -8560,8 +8560,8 @@ xmlSchemaParseList (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "itemType"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "itemType")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -8619,8 +8619,8 @@ xmlSchemaParseList (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         xmlSchemaPContentErr(ctxt, XML_SCHEMAP_S4S_ELEM_NOT_ALLOWED, NULL, node,
                              child, NULL, "(annotation?, simpleType?)");
     }
-    if ((type->base == NULL) && (type->subtypes == NULL)
-        && (xmlSchemaGetPropNode(node, "itemType") == NULL)) {
+    if (type->base == NULL && type->subtypes == NULL
+        && xmlSchemaGetPropNode(node, "itemType") == NULL) {
         xmlSchemaPCustomErr(
             ctxt, XML_SCHEMAP_SRC_SIMPLE_TYPE_1, NULL, node,
             "Either the attribute 'itemType' or the <simpleType> child "
@@ -8651,7 +8651,7 @@ xmlSchemaParseSimpleType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlAttrPtr attr;
     int hasRestriction = 0;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     if (topLevel) {
@@ -8753,9 +8753,9 @@ xmlSchemaParseSimpleType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         attr = node->properties;
         while (attr != NULL) {
             if (attr->ns == NULL) {
-                if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                    && (!xmlStrEqual(attr->name, BAD_CAST "name"))
-                    && (!xmlStrEqual(attr->name, BAD_CAST "final"))) {
+                if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                    && !xmlStrEqual(attr->name, BAD_CAST "name")
+                    && !xmlStrEqual(attr->name, BAD_CAST "final")) {
                     xmlSchemaPIllegalAttrErr(
                         ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                 }
@@ -8832,7 +8832,7 @@ xmlSchemaParseSimpleType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     * base [attribute] must be the same as the `actual value` of its own
     * name attribute plus target namespace;"
     */
-    if (topLevel && ctxt->isRedefine && (!hasRestriction)) {
+    if (topLevel && ctxt->isRedefine && !hasRestriction) {
         xmlSchemaPCustomErr(ctxt, XML_SCHEMAP_SRC_REDEFINE, NULL, node,
                             "This is a redefinition, thus the "
                             "<simpleType> must have a <restriction> child",
@@ -8863,7 +8863,7 @@ xmlSchemaParseModelGroupDefRef (xmlSchemaParserCtxtPtr ctxt,
     const xmlChar *ref = NULL, *refNs = NULL;
     int min, max;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     attr = xmlSchemaGetPropNode(node, "ref");
@@ -8886,10 +8886,10 @@ xmlSchemaParseModelGroupDefRef (xmlSchemaParserCtxtPtr ctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "ref"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "minOccurs"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "maxOccurs"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "ref")
+                && !xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "minOccurs")
+                && !xmlStrEqual(attr->name, BAD_CAST "maxOccurs")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -8929,7 +8929,7 @@ xmlSchemaParseModelGroupDefRef (xmlSchemaParserCtxtPtr ctxt,
     /*
     * Corresponds to no component at all if minOccurs==maxOccurs==0.
     */
-    if ((min == 0) && (max == 0))
+    if (min == 0 && max == 0)
         return NULL;
 
     return (xmlSchemaTreeItemPtr) item;
@@ -8959,7 +8959,7 @@ xmlSchemaParseModelGroupDefinition (xmlSchemaParserCtxtPtr ctxt,
     xmlAttrPtr attr;
     const xmlChar *name;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     attr = xmlSchemaGetPropNode(node, "name");
@@ -8983,8 +8983,8 @@ xmlSchemaParseModelGroupDefinition (xmlSchemaParserCtxtPtr ctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "name"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "id"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "name")
+                && !xmlStrEqual(attr->name, BAD_CAST "id")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -9036,7 +9036,7 @@ xmlSchemaCleanupDoc (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr root)
 {
     xmlNodePtr delete, cur;
 
-    if ((ctxt == NULL) || (root == NULL))
+    if (ctxt == NULL || root == NULL)
         return;
 
     /*
@@ -9056,8 +9056,8 @@ xmlSchemaCleanupDoc (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr root)
                     delete = cur;
                 }
             }
-        } else if ((cur->type != XML_ELEMENT_NODE)
-                   && (cur->type != XML_CDATA_SECTION_NODE)) {
+        } else if (cur->type != XML_ELEMENT_NODE
+                   && cur->type != XML_CDATA_SECTION_NODE) {
             delete = cur;
             goto skip_children;
         }
@@ -9066,9 +9066,9 @@ xmlSchemaCleanupDoc (xmlSchemaParserCtxtPtr ctxt, xmlNodePtr root)
          * Skip to next node
          */
         if (cur->children != NULL) {
-            if ((cur->children->type != XML_ENTITY_DECL)
-                && (cur->children->type != XML_ENTITY_REF_NODE)
-                && (cur->children->type != XML_ENTITY_NODE)) {
+            if (cur->children->type != XML_ENTITY_DECL
+                && cur->children->type != XML_ENTITY_REF_NODE
+                && cur->children->type != XML_ENTITY_NODE) {
                 cur = cur->children;
                 continue;
             }
@@ -9247,14 +9247,14 @@ xmlSchemaParseSchemaTopLevel (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlSchemaAnnotPtr annot;
     int res = 0, oldErrs, tmpOldErrs;
 
-    if ((ctxt == NULL) || (schema == NULL) || (nodes == NULL))
+    if (ctxt == NULL || schema == NULL || nodes == NULL)
         return -1;
 
     oldErrs = ctxt->nberrors;
     child = nodes;
-    while ((IS_SCHEMA(child, "include")) || (IS_SCHEMA(child, "import"))
-           || (IS_SCHEMA(child, "redefine"))
-           || (IS_SCHEMA(child, "annotation"))) {
+    while (IS_SCHEMA(child, "include") || IS_SCHEMA(child, "import")
+           || IS_SCHEMA(child, "redefine")
+           || IS_SCHEMA(child, "annotation")) {
         if (IS_SCHEMA(child, "annotation")) {
             annot = xmlSchemaParseAnnotation(ctxt, child, 1);
             if (schema->annot == NULL)
@@ -9538,9 +9538,9 @@ xmlSchemaGetChameleonSchemaBucket (xmlSchemaParserCtxtPtr pctxt,
         for (i = 0; i < list->nbItems; i++) {
             cur = (xmlSchemaBucketPtr) list->items[i];
             /* Pointer comparison! */
-            if ((cur->origTargetNamespace == NULL)
-                && (cur->schemaLocation == schemaLocation)
-                && (cur->targetNamespace == targetNamespace))
+            if (cur->origTargetNamespace == NULL
+                && cur->schemaLocation == schemaLocation
+                && cur->targetNamespace == targetNamespace)
                 return cur;
         }
     }
@@ -9564,8 +9564,8 @@ xmlSchemaGetSchemaBucketByTNS (xmlSchemaParserCtxtPtr pctxt,
         int i;
         for (i = 0; i < list->nbItems; i++) {
             cur = (xmlSchemaBucketPtr) list->items[i];
-            if ((!IS_BAD_SCHEMA_DOC(cur))
-                && (cur->origTargetNamespace == targetNamespace)
+            if (!IS_BAD_SCHEMA_DOC(cur)
+                && cur->origTargetNamespace == targetNamespace
                 && ((imported && cur->imported)
                     || ((!imported) && (!cur->imported))))
                 return cur;
@@ -9603,7 +9603,7 @@ xmlSchemaParseNewDocWithContext (xmlSchemaParserCtxtPtr pctxt,
     pctxt->targetNamespace = bucket->targetNamespace;
     WXS_CONSTRUCTOR(pctxt)->bucket = bucket;
 
-    if ((bucket->targetNamespace != NULL)
+    if (bucket->targetNamespace != NULL
         && xmlStrEqual(bucket->targetNamespace, xmlSchemaNs)) {
         /*
 	* We are parsing the schema for schemas!
@@ -9629,7 +9629,7 @@ xmlSchemaParseNewDocWithContext (xmlSchemaParserCtxtPtr pctxt,
     * as a result of the above functions; so better rely on pctxt->err
     * as well.
     */
-    if ((ret == 0) && (oldErrs != pctxt->nberrors)) {
+    if (ret == 0 && oldErrs != pctxt->nberrors) {
         ret = pctxt->err;
         goto exit;
     }
@@ -9796,13 +9796,13 @@ xmlSchemaAddSchemaDoc (xmlSchemaParserCtxtPtr pctxt, int type,
     * skip the location and relation logic and just parse the doc.
     * We need just a bucket to be returned in this case.
     */
-    if ((type == XML_SCHEMA_SCHEMA_MAIN) || (!WXS_HAS_BUCKETS(pctxt)))
+    if (type == XML_SCHEMA_SCHEMA_MAIN || !WXS_HAS_BUCKETS(pctxt))
         goto doc_load;
 
     /* Note that we expect the location to be an absolute URI. */
     if (schemaLocation != NULL) {
         bkt = xmlSchemaGetSchemaBucket(pctxt, schemaLocation);
-        if ((bkt != NULL) && (pctxt->constructor->bucket == bkt)) {
+        if (bkt != NULL && pctxt->constructor->bucket == bkt) {
             /* Report self-imports/inclusions/redefinitions. */
 
             xmlSchemaCustomErr(
@@ -9839,7 +9839,7 @@ xmlSchemaAddSchemaDoc (xmlSchemaParserCtxtPtr pctxt, int type,
 
     /* Did we already fetch the doc? */
     if (bkt != NULL) {
-        if ((WXS_IS_BUCKET_IMPMAIN(type)) && (!bkt->imported)) {
+        if ((WXS_IS_BUCKET_IMPMAIN(type)) && !bkt->imported) {
             /*
 	    * We included/redefined and then try to import a schema,
 	    * but the new location provided for import was different.
@@ -9854,7 +9854,7 @@ xmlSchemaAddSchemaDoc (xmlSchemaParserCtxtPtr pctxt, int type,
                     schemaLocation, NULL);
                 goto exit;
             }
-        } else if ((!WXS_IS_BUCKET_IMPMAIN(type)) && (bkt->imported)) {
+        } else if (!WXS_IS_BUCKET_IMPMAIN(type) && bkt->imported) {
             /*
 	    * We imported and then try to include/redefine a schema,
 	    * but the new location provided for the include/redefine
@@ -9933,8 +9933,8 @@ xmlSchemaAddSchemaDoc (xmlSchemaParserCtxtPtr pctxt, int type,
     } else {
         /* <include> and <redefine> */
         if (bkt != NULL) {
-            if ((bkt->origTargetNamespace == NULL)
-                && (bkt->targetNamespace != sourceTargetNamespace)) {
+            if (bkt->origTargetNamespace == NULL
+                && bkt->targetNamespace != sourceTargetNamespace) {
                 xmlSchemaBucketPtr chamel;
 
                 /*
@@ -9975,7 +9975,7 @@ xmlSchemaAddSchemaDoc (xmlSchemaParserCtxtPtr pctxt, int type,
             }
         }
     }
-    if ((bkt != NULL) && (bkt->doc != NULL)) {
+    if (bkt != NULL && bkt->doc != NULL) {
         PERROR_INT("xmlSchemaAddSchemaDoc",
                    "trying to load a schema doc, but a doc is already "
                    "assigned to the schema bucket");
@@ -9995,7 +9995,7 @@ doc_load:
             schemaLocation = xmlDictLookup(pctxt->dict, schemaDoc->URL, -1);
         else
             schemaLocation = BAD_CAST "in_memory_buffer";
-    } else if ((schemaLocation != NULL) || (schemaBuffer != NULL)) {
+    } else if (schemaLocation != NULL || schemaBuffer != NULL) {
         xmlParserCtxtPtr parserCtxt;
 
         parserCtxt = xmlNewParserCtxt();
@@ -10010,7 +10010,7 @@ doc_load:
             xmlCtxtSetResourceLoader(parserCtxt, pctxt->resourceLoader,
                                      pctxt->resourceCtxt);
 
-        if ((pctxt->dict != NULL) && (parserCtxt->dict != NULL)) {
+        if (pctxt->dict != NULL && parserCtxt->dict != NULL) {
             /*
 	    * TODO: Do we have to burden the schema parser dict with all
 	    * the content of the schema doc?
@@ -10053,7 +10053,7 @@ doc_load:
 	    * TODO: Try to find specific error codes to react only on
 	    * localisation failures.
 	    */
-            if ((lerr == NULL) || (lerr->domain != XML_FROM_IO)) {
+            if (lerr == NULL || lerr->domain != XML_FROM_IO) {
                 /*
 		* We assume a parser error here.
 		*/
@@ -10066,7 +10066,7 @@ doc_load:
             }
         }
         xmlFreeParserCtxt(parserCtxt);
-        if ((doc == NULL) && located)
+        if (doc == NULL && located)
             goto exit_error;
     } else {
         xmlSchemaPErr(pctxt, NULL, XML_SCHEMAP_NOTHING_TO_PARSE,
@@ -10112,7 +10112,7 @@ doc_load:
     }
 
     /* after_doc_loading: */
-    if ((bkt == NULL) && located) {
+    if (bkt == NULL && located) {
         /* Only create a bucket if the schema was located. */
         bkt = xmlSchemaBucketCreate(pctxt, type, targetNamespace);
         if (bkt == NULL)
@@ -10147,7 +10147,7 @@ exit:
     return 0;
 
 exit_error:
-    if ((doc != NULL) && (!preserveDoc)) {
+    if (doc != NULL && !preserveDoc) {
         xmlFreeDoc(doc);
         if (bkt != NULL)
             bkt->doc = NULL;
@@ -10155,7 +10155,7 @@ exit_error:
     return pctxt->err;
 
 exit_failure:
-    if ((doc != NULL) && (!preserveDoc)) {
+    if (doc != NULL && !preserveDoc) {
         xmlFreeDoc(doc);
         if (bkt != NULL)
             bkt->doc = NULL;
@@ -10184,7 +10184,7 @@ xmlSchemaParseImport (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
     int ret = 0;
     xmlSchemaBucketPtr bucket = NULL;
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return -1;
 
     /*
@@ -10193,9 +10193,9 @@ xmlSchemaParseImport (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "namespace"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "schemaLocation"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "namespace")
+                && !xmlStrEqual(attr->name, BAD_CAST "schemaLocation")) {
                 xmlSchemaPIllegalAttrErr(
                     pctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
             }
@@ -10300,7 +10300,7 @@ xmlSchemaParseImport (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
     * Note that we will get no bucket if the schema could not be
     * located or if there was no schemaLocation.
     */
-    if ((bucket == NULL) && (schemaLocation != NULL)) {
+    if (bucket == NULL && schemaLocation != NULL) {
         xmlSchemaCustomWarning(ACTXT_CAST pctxt,
                                XML_SCHEMAP_WARN_UNLOCATED_SCHEMA, node, NULL,
                                "Failed to locate a schema at location '%s'. "
@@ -10308,7 +10308,7 @@ xmlSchemaParseImport (xmlSchemaParserCtxtPtr pctxt, xmlSchemaPtr schema,
                                schemaLocation, NULL, NULL);
     }
 
-    if ((bucket != NULL) && CAN_PARSE_SCHEMA(bucket)) {
+    if (bucket != NULL && CAN_PARSE_SCHEMA(bucket)) {
         ret = xmlSchemaParseNewDoc(pctxt, schema, bucket);
     }
 
@@ -10322,8 +10322,8 @@ xmlSchemaParseIncludeOrRedefineAttrs (xmlSchemaParserCtxtPtr pctxt,
 {
     xmlAttrPtr attr;
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL)
-        || (schemaLocation == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL
+        || schemaLocation == NULL)
         return -1;
 
     *schemaLocation = NULL;
@@ -10334,8 +10334,8 @@ xmlSchemaParseIncludeOrRedefineAttrs (xmlSchemaParserCtxtPtr pctxt,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "schemaLocation"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "schemaLocation")) {
                 xmlSchemaPIllegalAttrErr(
                     pctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
             }
@@ -10417,7 +10417,7 @@ xmlSchemaParseIncludeOrRedefine (xmlSchemaParserCtxtPtr pctxt,
     int isChameleon = 0, wasChameleon = 0;
     xmlSchemaBucketPtr bucket = NULL;
 
-    if ((pctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (pctxt == NULL || schema == NULL || node == NULL)
         return -1;
 
     /*
@@ -10440,7 +10440,7 @@ xmlSchemaParseIncludeOrRedefine (xmlSchemaParserCtxtPtr pctxt,
     * document could not be located or was broken XML or was not
     * a schema document.
     */
-    if ((bucket == NULL) || (bucket->doc == NULL)) {
+    if (bucket == NULL || bucket->doc == NULL) {
         if (type == XML_SCHEMA_SCHEMA_INCLUDE) {
             /*
 	    * WARNING for <include>:
@@ -10520,7 +10520,7 @@ xmlSchemaParseIncludeOrRedefine (xmlSchemaParserCtxtPtr pctxt,
     /*
     * Parse the schema.
     */
-    if (bucket && (!bucket->parsed) && (bucket->doc != NULL)) {
+    if (bucket && !bucket->parsed && bucket->doc != NULL) {
         if (isChameleon) {
             /* TODO: Get rid of this flag on the schema itself. */
             if ((schema->flags & XML_SCHEMAS_INCLUDING_CONVERT_NS) == 0) {
@@ -10530,7 +10530,7 @@ xmlSchemaParseIncludeOrRedefine (xmlSchemaParserCtxtPtr pctxt,
         }
         xmlSchemaParseNewDoc(pctxt, schema, bucket);
         /* Restore chameleon flag. */
-        if (isChameleon && (!wasChameleon))
+        if (isChameleon && !wasChameleon)
             schema->flags ^= XML_SCHEMAS_INCLUDING_CONVERT_NS;
     }
     /*
@@ -10656,7 +10656,7 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlAttrPtr attr;
     int min = 1, max = 1, isElemRef, hasRefs = 0;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /*
     * Create a model group with the given compositor.
@@ -10690,9 +10690,9 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         attr = node->properties;
         while (attr != NULL) {
             if (attr->ns == NULL) {
-                if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                    && (!xmlStrEqual(attr->name, BAD_CAST "maxOccurs"))
-                    && (!xmlStrEqual(attr->name, BAD_CAST "minOccurs"))) {
+                if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                    && !xmlStrEqual(attr->name, BAD_CAST "maxOccurs")
+                    && !xmlStrEqual(attr->name, BAD_CAST "minOccurs")) {
                     xmlSchemaPIllegalAttrErr(
                         ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED, NULL, attr);
                 }
@@ -10778,9 +10778,9 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         /* choice + sequence */
         xmlSchemaTreeItemPtr part = NULL, last = NULL;
 
-        while ((IS_SCHEMA(child, "element")) || (IS_SCHEMA(child, "group"))
-               || (IS_SCHEMA(child, "any")) || (IS_SCHEMA(child, "choice"))
-               || (IS_SCHEMA(child, "sequence"))) {
+        while (IS_SCHEMA(child, "element") || IS_SCHEMA(child, "group")
+               || IS_SCHEMA(child, "any") || IS_SCHEMA(child, "choice")
+               || IS_SCHEMA(child, "sequence")) {
             if (IS_SCHEMA(child, "element")) {
                 part = (xmlSchemaTreeItemPtr) xmlSchemaParseElement(
                     ctxt, schema, child, &isElemRef, 0);
@@ -10794,12 +10794,12 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 		* Handle redefinitions.
 		*/
                 if (ctxt->isRedefine && ctxt->redef
-                    && (ctxt->redef->item->type == XML_SCHEMA_TYPE_GROUP)
+                    && ctxt->redef->item->type == XML_SCHEMA_TYPE_GROUP
                     && part && part->children) {
-                    if ((xmlSchemaGetQNameRefName(part->children)
-                         == ctxt->redef->refName)
-                        && (xmlSchemaGetQNameRefTargetNs(part->children)
-                            == ctxt->redef->refTargetNs)) {
+                    if (xmlSchemaGetQNameRefName(part->children)
+                         == ctxt->redef->refName
+                        && xmlSchemaGetQNameRefTargetNs(part->children)
+                            == ctxt->redef->refTargetNs) {
                         /*
 			* SPEC src-redefine:
 			* (6.1) "If it has a <group> among its contents at
@@ -10824,8 +10824,8 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
                                 NULL);
                             FREE_AND_NULL(str)
                             part = NULL;
-                        } else if (((WXS_PARTICLE(part))->minOccurs != 1)
-                                   || ((WXS_PARTICLE(part))->maxOccurs != 1)) {
+                        } else if ((WXS_PARTICLE(part))->minOccurs != 1
+                                   || (WXS_PARTICLE(part))->maxOccurs != 1) {
                             xmlChar *str = NULL;
                             /*
 			    * SPEC src-redefine:
@@ -10876,7 +10876,7 @@ xmlSchemaParseModelGroup (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
                 "(annotation?, (element | group | choice | sequence | any)*)");
         }
     }
-    if ((max == 0) && (min == 0))
+    if (max == 0 && min == 0)
         return NULL;
     if (hasRefs) {
         /*
@@ -10908,7 +10908,7 @@ xmlSchemaParseRestriction (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /* Not a component, don't create it. */
     type = ctxt->ctxtType;
@@ -10920,8 +10920,8 @@ xmlSchemaParseRestriction (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "base"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "base")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -10950,16 +10950,16 @@ xmlSchemaParseRestriction (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     if (xmlSchemaPValAttrQName(ctxt, schema, NULL, node, "base",
                                &(type->baseNs), &(type->base))
         == 0) {
-        if ((type->base == NULL) && (type->type == XML_SCHEMA_TYPE_COMPLEX)) {
+        if (type->base == NULL && type->type == XML_SCHEMA_TYPE_COMPLEX) {
             xmlSchemaPMissingAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_MISSING, NULL,
                                      node, "base", NULL);
-        } else if ((ctxt->isRedefine)
+        } else if (ctxt->isRedefine
                    && (type->flags & XML_SCHEMAS_TYPE_GLOBAL)) {
             if (type->base == NULL) {
                 xmlSchemaPMissingAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_MISSING,
                                          NULL, node, "base", NULL);
-            } else if ((!xmlStrEqual(type->base, type->name))
-                       || (!xmlStrEqual(type->baseNs, type->targetNamespace))) {
+            } else if (!xmlStrEqual(type->base, type->name)
+                       || !xmlStrEqual(type->baseNs, type->targetNamespace)) {
                 xmlChar *str1 = NULL, *str2 = NULL;
                 /*
 		* REDEFINE: SPEC src-redefine (5)
@@ -11078,8 +11078,8 @@ xmlSchemaParseRestriction (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
         }
     }
 
-    if ((parentType == XML_SCHEMA_TYPE_SIMPLE)
-        || (parentType == XML_SCHEMA_TYPE_SIMPLE_CONTENT)) {
+    if (parentType == XML_SCHEMA_TYPE_SIMPLE
+        || parentType == XML_SCHEMA_TYPE_SIMPLE_CONTENT) {
         xmlSchemaFacetPtr facet, lastfacet = NULL;
         /*
 	* Corresponds to <complexType><simpleContent><restriction>...
@@ -11094,18 +11094,18 @@ xmlSchemaParseRestriction (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 	* Simple Type Definition Schema Representation Constraint:
 	* *Single Facet Value*
 	*/
-        while ((IS_SCHEMA(child, "minInclusive"))
-               || (IS_SCHEMA(child, "minExclusive"))
-               || (IS_SCHEMA(child, "maxInclusive"))
-               || (IS_SCHEMA(child, "maxExclusive"))
-               || (IS_SCHEMA(child, "totalDigits"))
-               || (IS_SCHEMA(child, "fractionDigits"))
-               || (IS_SCHEMA(child, "pattern"))
-               || (IS_SCHEMA(child, "enumeration"))
-               || (IS_SCHEMA(child, "whiteSpace"))
-               || (IS_SCHEMA(child, "length"))
-               || (IS_SCHEMA(child, "maxLength"))
-               || (IS_SCHEMA(child, "minLength"))) {
+        while (IS_SCHEMA(child, "minInclusive")
+               || IS_SCHEMA(child, "minExclusive")
+               || IS_SCHEMA(child, "maxInclusive")
+               || IS_SCHEMA(child, "maxExclusive")
+               || IS_SCHEMA(child, "totalDigits")
+               || IS_SCHEMA(child, "fractionDigits")
+               || IS_SCHEMA(child, "pattern")
+               || IS_SCHEMA(child, "enumeration")
+               || IS_SCHEMA(child, "whiteSpace")
+               || IS_SCHEMA(child, "length")
+               || IS_SCHEMA(child, "maxLength")
+               || IS_SCHEMA(child, "minLength")) {
             facet = xmlSchemaParseFacet(ctxt, schema, child);
             if (facet != NULL) {
                 if (lastfacet == NULL)
@@ -11207,7 +11207,7 @@ xmlSchemaParseExtension (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
     /* Not a component, don't create it. */
     type = ctxt->ctxtType;
@@ -11219,8 +11219,8 @@ xmlSchemaParseExtension (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "base"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "base")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -11236,10 +11236,10 @@ xmlSchemaParseExtension (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     /*
     * Attribute "base" - mandatory.
     */
-    if ((xmlSchemaPValAttrQName(ctxt, schema, NULL, node, "base",
+    if (xmlSchemaPValAttrQName(ctxt, schema, NULL, node, "base",
                                 &(type->baseNs), &(type->base))
-         == 0)
-        && (type->base == NULL)) {
+         == 0
+        && type->base == NULL) {
         xmlSchemaPMissingAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_MISSING, NULL, node,
                                  "base", NULL);
     }
@@ -11338,8 +11338,8 @@ xmlSchemaParseSimpleContent (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL)
-        || (hasRestrictionOrExtension == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL
+        || hasRestrictionOrExtension == NULL)
         return -1;
     *hasRestrictionOrExtension = 0;
     /* Not a component, don't create it. */
@@ -11423,8 +11423,8 @@ xmlSchemaParseComplexContent (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     xmlNodePtr child = NULL;
     xmlAttrPtr attr;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL)
-        || (hasRestrictionOrExtension == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL
+        || hasRestrictionOrExtension == NULL)
         return -1;
     *hasRestrictionOrExtension = 0;
     /* Not a component, don't create it. */
@@ -11435,8 +11435,8 @@ xmlSchemaParseComplexContent (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     attr = node->properties;
     while (attr != NULL) {
         if (attr->ns == NULL) {
-            if ((!xmlStrEqual(attr->name, BAD_CAST "id"))
-                && (!xmlStrEqual(attr->name, BAD_CAST "mixed"))) {
+            if (!xmlStrEqual(attr->name, BAD_CAST "id")
+                && !xmlStrEqual(attr->name, BAD_CAST "mixed")) {
                 xmlSchemaPIllegalAttrErr(ctxt, XML_SCHEMAP_S4S_ATTR_NOT_ALLOWED,
                                          NULL, attr);
             }
@@ -11518,7 +11518,7 @@ xmlSchemaParseComplexType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
 #endif
     int final = 0, block = 0, hasRestrictionOrExtension = 0;
 
-    if ((ctxt == NULL) || (schema == NULL) || (node == NULL))
+    if (ctxt == NULL || schema == NULL || node == NULL)
         return NULL;
 
     ctxtType = ctxt->ctxtType;
@@ -11763,7 +11763,7 @@ xmlSchemaParseComplexType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
     /*
     * REDEFINE: SPEC src-redefine (5)
     */
-    if (topLevel && ctxt->isRedefine && (!hasRestrictionOrExtension)) {
+    if (topLevel && ctxt->isRedefine && !hasRestrictionOrExtension) {
         xmlSchemaPCustomErr(
             ctxt, XML_SCHEMAP_SRC_REDEFINE, NULL, node,
             "This is a redefinition, thus the "
@@ -11869,7 +11869,7 @@ xmlSchemaNewMemParserCtxt (const char *buffer, int size)
 {
     xmlSchemaParserCtxtPtr ret;
 
-    if ((buffer == NULL) || (size <= 0))
+    if (buffer == NULL || size <= 0)
         return NULL;
     ret = xmlSchemaParserCtxtCreate();
     if (ret == NULL)
@@ -11920,7 +11920,7 @@ xmlSchemaFreeParserCtxt (xmlSchemaParserCtxt *ctxt)
     if (ctxt->vctxt != NULL) {
         xmlSchemaFreeValidCtxt(ctxt->vctxt);
     }
-    if (ctxt->ownsConstructor && (ctxt->constructor != NULL)) {
+    if (ctxt->ownsConstructor && ctxt->constructor != NULL) {
         xmlSchemaConstructionCtxtFree(ctxt->constructor);
         ctxt->constructor = NULL;
         ctxt->ownsConstructor = 0;
@@ -12083,8 +12083,8 @@ xmlSchemaBuildContentModelForElement (xmlSchemaParserCtxtPtr ctxt,
             ctxt->state = xmlAutomataNewTransition2(
                 ctxt->am, start, NULL, elemDecl->name,
                 elemDecl->targetNamespace, elemDecl);
-        } else if ((particle->maxOccurs >= UNBOUNDED)
-                   && (particle->minOccurs < 2)) {
+        } else if (particle->maxOccurs >= UNBOUNDED
+                   && particle->minOccurs < 2) {
             /* Special case. */
             start = ctxt->state;
             ctxt->state = xmlAutomataNewTransition2(
@@ -12240,7 +12240,7 @@ xmlSchemaBuildAContentModel (xmlSchemaParserCtxtPtr pctxt,
              * If max and min occurrences are default (1) then
              * simply iterate over the particles of the <sequence>.
              */
-        if ((particle->minOccurs == 1) && (particle->maxOccurs == 1)) {
+        if (particle->minOccurs == 1 && particle->maxOccurs == 1) {
             sub = particle->children->children;
 
             while (sub != NULL) {
@@ -12309,7 +12309,7 @@ xmlSchemaBuildAContentModel (xmlSchemaParserCtxtPtr pctxt,
                         ret = 1;
                     }
                 }
-            } else if ((particle->maxOccurs > 1) || (particle->minOccurs > 1)) {
+            } else if (particle->maxOccurs > 1 || particle->minOccurs > 1) {
                 xmlAutomataStatePtr tmp;
                 int counter;
 
@@ -12332,7 +12332,7 @@ xmlSchemaBuildAContentModel (xmlSchemaParserCtxtPtr pctxt,
                 xmlAutomataNewCountedTrans(pctxt->am, tmp, oldstate, counter);
                 pctxt->state
                     = xmlAutomataNewCounterTrans(pctxt->am, tmp, NULL, counter);
-                if ((particle->minOccurs == 0) || (ret == 1)) {
+                if (particle->minOccurs == 0 || ret == 1) {
                     xmlAutomataNewEpsilon(pctxt->am, oldstate, pctxt->state);
                     ret = 1;
                 }
@@ -12470,11 +12470,11 @@ xmlSchemaBuildAContentModel (xmlSchemaParserCtxtPtr pctxt,
                 xmlSchemaBuildContentModelForSubstGroup(pctxt, sub, counter,
                                                         pctxt->state);
             } else {
-                if ((sub->minOccurs == 1) && (sub->maxOccurs == 1)) {
+                if (sub->minOccurs == 1 && sub->maxOccurs == 1) {
                     xmlAutomataNewOnceTrans2(
                         pctxt->am, pctxt->state, pctxt->state, elemDecl->name,
                         elemDecl->targetNamespace, 1, 1, elemDecl);
-                } else if ((sub->minOccurs == 0) && (sub->maxOccurs == 1)) {
+                } else if (sub->minOccurs == 0 && sub->maxOccurs == 1) {
                     xmlAutomataNewCountTrans2(
                         pctxt->am, pctxt->state, pctxt->state, elemDecl->name,
                         elemDecl->targetNamespace, 0, 1, elemDecl);
@@ -12518,9 +12518,9 @@ xmlSchemaBuildAContentModel (xmlSchemaParserCtxtPtr pctxt,
 static void
 xmlSchemaBuildContentModel (xmlSchemaTypePtr type, xmlSchemaParserCtxtPtr ctxt)
 {
-    if ((type->type != XML_SCHEMA_TYPE_COMPLEX) || (type->contModel != NULL)
-        || ((type->contentType != XML_SCHEMA_CONTENT_ELEMENTS)
-            && (type->contentType != XML_SCHEMA_CONTENT_MIXED)))
+    if (type->type != XML_SCHEMA_TYPE_COMPLEX || type->contModel != NULL
+        || type->contentType != XML_SCHEMA_CONTENT_ELEMENTS
+            && type->contentType != XML_SCHEMA_CONTENT_MIXED)
         return;
 
     ctxt->am = NULL;
@@ -12564,13 +12564,13 @@ static void
 xmlSchemaResolveElementReferences (xmlSchemaElementPtr elemDecl,
                                    xmlSchemaParserCtxtPtr ctxt)
 {
-    if ((ctxt == NULL) || (elemDecl == NULL)
-        || ((elemDecl != NULL)
-            && (elemDecl->flags & XML_SCHEMAS_ELEM_INTERNAL_RESOLVED)))
+    if (ctxt == NULL || elemDecl == NULL
+        || elemDecl != NULL
+            && (elemDecl->flags & XML_SCHEMAS_ELEM_INTERNAL_RESOLVED))
         return;
     elemDecl->flags |= XML_SCHEMAS_ELEM_INTERNAL_RESOLVED;
 
-    if ((elemDecl->subtypes == NULL) && (elemDecl->namedType != NULL)) {
+    if (elemDecl->subtypes == NULL && elemDecl->namedType != NULL) {
         xmlSchemaTypePtr type;
 
         /* (type definition) ... otherwise the type definition `resolved`
@@ -12633,8 +12633,8 @@ xmlSchemaResolveElementReferences (xmlSchemaElementPtr elemDecl,
     * SPEC "The definition of anyType serves as the default type definition
     * for element declarations whose XML representation does not specify one."
     */
-    if ((elemDecl->subtypes == NULL) && (elemDecl->namedType == NULL)
-        && (elemDecl->substGroup == NULL))
+    if (elemDecl->subtypes == NULL && elemDecl->namedType == NULL
+        && elemDecl->substGroup == NULL)
         elemDecl->subtypes = xmlSchemaGetBuiltInType(XML_SCHEMAS_ANYTYPE);
 }
 
@@ -12673,7 +12673,7 @@ xmlSchemaResolveUnionMemberTypes (xmlSchemaParserCtxtPtr ctxt,
         nsName = ((xmlSchemaQNameRefPtr) link->type)->targetNamespace;
 
         memberType = xmlSchemaGetType(ctxt->schema, name, nsName);
-        if ((memberType == NULL) || (!WXS_IS_SIMPLE(memberType))) {
+        if (memberType == NULL || !WXS_IS_SIMPLE(memberType)) {
             xmlSchemaPResCompAttrErr(
                 ctxt, XML_SCHEMAP_SRC_RESOLVE, WXS_BASIC_CAST type, type->node,
                 "memberTypes", name, nsName, XML_SCHEMA_TYPE_SIMPLE, NULL);
@@ -12732,8 +12732,8 @@ xmlSchemaIsDerivedFromBuiltInType (xmlSchemaTypePtr type, int valType)
     if (type->type == XML_SCHEMA_TYPE_BASIC) {
         if (type->builtInType == valType)
             return 1;
-        if ((type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE)
-            || (type->builtInType == XML_SCHEMAS_ANYTYPE))
+        if (type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE
+            || type->builtInType == XML_SCHEMAS_ANYTYPE)
             return 0;
         return xmlSchemaIsDerivedFromBuiltInType(type->subtypes, valType);
     }
@@ -12792,7 +12792,7 @@ xmlSchemaGetPrimitiveType (xmlSchemaTypePtr type)
 	* Note that anySimpleType is actually not a primitive type
 	* but we need that here.
 	*/
-        if ((type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE)
+        if (type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE
             || (type->flags & XML_SCHEMAS_TYPE_BUILTIN_PRIMITIVE))
             return type;
         type = type->baseType;
@@ -12838,7 +12838,7 @@ xmlSchemaCloneWildcardNsConstraints (xmlSchemaParserCtxtPtr ctxt,
 {
     xmlSchemaWildcardNsPtr cur, tmp, last;
 
-    if ((source == NULL) || (dest == NULL))
+    if (source == NULL || dest == NULL)
         return -1;
     dest->any = source->any;
     cur = source->nsSet;
@@ -12888,11 +12888,11 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
     * 1 If O1 and O2 are the same value, then that value must be the
     * value.
     */
-    if ((completeWild->any == curWild->any)
-        && ((completeWild->nsSet == NULL) == (curWild->nsSet == NULL))
-        && ((completeWild->negNsSet == NULL) == (curWild->negNsSet == NULL))) {
-        if ((completeWild->negNsSet == NULL)
-            || (completeWild->negNsSet->value == curWild->negNsSet->value)) {
+    if (completeWild->any == curWild->any
+        && (completeWild->nsSet == NULL) == (curWild->nsSet == NULL)
+        && (completeWild->negNsSet == NULL) == (curWild->negNsSet == NULL)) {
+        if (completeWild->negNsSet == NULL
+            || completeWild->negNsSet->value == curWild->negNsSet->value) {
             if (completeWild->nsSet != NULL) {
                 int found = 0;
 
@@ -12941,7 +12941,7 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
     * 3 If both O1 and O2 are sets of (namespace names or `absent`),
     * then the union of those sets must be the value.
     */
-    if ((completeWild->nsSet != NULL) && (curWild->nsSet != NULL)) {
+    if (completeWild->nsSet != NULL && curWild->nsSet != NULL) {
         int found;
         xmlSchemaWildcardNsPtr start;
 
@@ -12974,8 +12974,8 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
     * 4 If the two are negations of different values (namespace names
     * or `absent`), then a pair of not and `absent` must be the value.
     */
-    if ((completeWild->negNsSet != NULL) && (curWild->negNsSet != NULL)
-        && (completeWild->negNsSet->value != curWild->negNsSet->value)) {
+    if (completeWild->negNsSet != NULL && curWild->negNsSet != NULL
+        && completeWild->negNsSet->value != curWild->negNsSet->value) {
         completeWild->negNsSet->value = NULL;
 
         return 0;
@@ -12983,10 +12983,10 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
     /*
      * 5.
      */
-    if (((completeWild->negNsSet != NULL)
-         && (completeWild->negNsSet->value != NULL) && (curWild->nsSet != NULL))
-        || ((curWild->negNsSet != NULL) && (curWild->negNsSet->value != NULL)
-            && (completeWild->nsSet != NULL))) {
+    if (completeWild->negNsSet != NULL
+         && completeWild->negNsSet->value != NULL && curWild->nsSet != NULL
+        || curWild->negNsSet != NULL && curWild->negNsSet->value != NULL
+            && completeWild->nsSet != NULL) {
         int nsFound, absentFound = 0;
 
         if (completeWild->nsSet != NULL) {
@@ -13021,7 +13021,7 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
                 xmlFree(completeWild->negNsSet);
                 completeWild->negNsSet = NULL;
             }
-        } else if (nsFound && (!absentFound)) {
+        } else if (nsFound && !absentFound) {
             /*
 	    * 5.2 If the set S includes the negated namespace name
 	    * but not `absent`, then a pair of not and `absent` must
@@ -13037,7 +13037,7 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
                     return -1;
             }
             completeWild->negNsSet->value = NULL;
-        } else if ((!nsFound) && absentFound) {
+        } else if (!nsFound && absentFound) {
             /*
 	    * 5.3 If the set S includes `absent` but not the negated
 	    * namespace name, then the union is not expressible.
@@ -13046,7 +13046,7 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
                 ctxt, completeWild->node, XML_SCHEMAP_UNION_NOT_EXPRESSIBLE,
                 "The union of the wildcard is not expressible.\n", NULL, NULL);
             return XML_SCHEMAP_UNION_NOT_EXPRESSIBLE;
-        } else if ((!nsFound) && (!absentFound)) {
+        } else if (!nsFound && !absentFound) {
             /*
 	    * 5.4 If the set S does not include either the negated namespace
 	    * name or `absent`, then whichever of O1 or O2 is a pair of not
@@ -13068,10 +13068,10 @@ xmlSchemaUnionWildcards (xmlSchemaParserCtxtPtr ctxt,
     /*
      * 6.
      */
-    if (((completeWild->negNsSet != NULL)
-         && (completeWild->negNsSet->value == NULL) && (curWild->nsSet != NULL))
-        || ((curWild->negNsSet != NULL) && (curWild->negNsSet->value == NULL)
-            && (completeWild->nsSet != NULL))) {
+    if (completeWild->negNsSet != NULL
+         && completeWild->negNsSet->value == NULL && curWild->nsSet != NULL
+        || curWild->negNsSet != NULL && curWild->negNsSet->value == NULL
+            && completeWild->nsSet != NULL) {
         if (completeWild->nsSet != NULL) {
             cur = completeWild->nsSet;
         } else {
@@ -13136,11 +13136,11 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     * 1 If O1 and O2 are the same value, then that value must be the
     * value.
     */
-    if ((completeWild->any == curWild->any)
-        && ((completeWild->nsSet == NULL) == (curWild->nsSet == NULL))
-        && ((completeWild->negNsSet == NULL) == (curWild->negNsSet == NULL))) {
-        if ((completeWild->negNsSet == NULL)
-            || (completeWild->negNsSet->value == curWild->negNsSet->value)) {
+    if (completeWild->any == curWild->any
+        && (completeWild->nsSet == NULL) == (curWild->nsSet == NULL)
+        && (completeWild->negNsSet == NULL) == (curWild->negNsSet == NULL)) {
+        if (completeWild->negNsSet == NULL
+            || completeWild->negNsSet->value == curWild->negNsSet->value) {
             if (completeWild->nsSet != NULL) {
                 int found = 0;
 
@@ -13171,7 +13171,7 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     /*
     * 2 If either O1 or O2 is any, then the other must be the value.
     */
-    if ((completeWild->any != curWild->any) && (completeWild->any)) {
+    if (completeWild->any != curWild->any && completeWild->any) {
         if (xmlSchemaCloneWildcardNsConstraints(ctxt, completeWild, curWild)
             == -1)
             return -1;
@@ -13183,8 +13183,8 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     * `absent`), then that set, minus the negated value if it was in
     * the set, minus `absent` if it was in the set, must be the value.
     */
-    if (((completeWild->negNsSet != NULL) && (curWild->nsSet != NULL))
-        || ((curWild->negNsSet != NULL) && (completeWild->nsSet != NULL))) {
+    if (completeWild->negNsSet != NULL && curWild->nsSet != NULL
+        || curWild->negNsSet != NULL && completeWild->nsSet != NULL) {
         const xmlChar *neg;
 
         if (completeWild->nsSet == NULL) {
@@ -13234,7 +13234,7 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     * 4 If both O1 and O2 are sets of (namespace names or `absent`),
     * then the intersection of those sets must be the value.
     */
-    if ((completeWild->nsSet != NULL) && (curWild->nsSet != NULL)) {
+    if (completeWild->nsSet != NULL && curWild->nsSet != NULL) {
         int found;
 
         cur = completeWild->nsSet;
@@ -13268,10 +13268,10 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     /* 5 If the two are negations of different namespace names,
     * then the intersection is not expressible
     */
-    if ((completeWild->negNsSet != NULL) && (curWild->negNsSet != NULL)
-        && (completeWild->negNsSet->value != curWild->negNsSet->value)
-        && (completeWild->negNsSet->value != NULL)
-        && (curWild->negNsSet->value != NULL)) {
+    if (completeWild->negNsSet != NULL && curWild->negNsSet != NULL
+        && completeWild->negNsSet->value != curWild->negNsSet->value
+        && completeWild->negNsSet->value != NULL
+        && curWild->negNsSet->value != NULL) {
         xmlSchemaPErr(ctxt, completeWild->node,
                       XML_SCHEMAP_INTERSECTION_NOT_EXPRESSIBLE,
                       "The intersection of the wildcard is not expressible.\n",
@@ -13283,9 +13283,9 @@ xmlSchemaIntersectWildcards (xmlSchemaParserCtxtPtr ctxt,
     * is a negation of `absent`, then the one which is the negation
     * of a namespace name must be the value.
     */
-    if ((completeWild->negNsSet != NULL) && (curWild->negNsSet != NULL)
-        && (completeWild->negNsSet->value != curWild->negNsSet->value)
-        && (completeWild->negNsSet->value == NULL)) {
+    if (completeWild->negNsSet != NULL && curWild->negNsSet != NULL
+        && completeWild->negNsSet->value != curWild->negNsSet->value
+        && completeWild->negNsSet->value == NULL) {
         completeWild->negNsSet->value = curWild->negNsSet->value;
     }
     return 0;
@@ -13311,8 +13311,8 @@ xmlSchemaCheckCOSNSSubset (xmlSchemaWildcardPtr sub, xmlSchemaWildcardPtr super)
     * 2.1 sub must be a pair of not and a namespace name or `absent`.
     * 2.2 super must be a pair of not and the same value.
     */
-    if ((sub->negNsSet != NULL) && (super->negNsSet != NULL)
-        && (sub->negNsSet->value == super->negNsSet->value))
+    if (sub->negNsSet != NULL && super->negNsSet != NULL
+        && sub->negNsSet->value == super->negNsSet->value)
         return 0;
     /*
     * 3.1 sub must be a set whose members are either namespace names or `absent`.
@@ -13377,8 +13377,8 @@ xmlSchemaGetEffectiveValueConstraint (xmlSchemaAttributeUsePtr attruse,
         if (attruse->flags & XML_SCHEMA_ATTR_USE_FIXED)
             *fixed = 1;
         return 1;
-    } else if ((attruse->attrDecl != NULL)
-               && (attruse->attrDecl->defValue != NULL)) {
+    } else if (attruse->attrDecl != NULL
+               && attruse->attrDecl->defValue != NULL) {
         *value = attruse->attrDecl->defValue;
         if (val != NULL)
             *val = attruse->attrDecl->defVal;
@@ -13415,8 +13415,8 @@ xmlSchemaCheckCVCWildcardNamespace (xmlSchemaWildcardPtr wild,
                 return 0;
             cur = cur->next;
         }
-    } else if ((wild->negNsSet != NULL) && (ns != NULL)
-               && (!xmlStrEqual(wild->negNsSet->value, ns)))
+    } else if (wild->negNsSet != NULL && ns != NULL
+               && !xmlStrEqual(wild->negNsSet->value, ns))
         return 0;
 
     return 1;
@@ -13460,9 +13460,9 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
                 goto not_found;
             for (j = 0; j < baseUses->nbItems; j++) {
                 bcur = baseUses->items[j];
-                if ((WXS_ATTRUSE_DECL_NAME(cur) == WXS_ATTRUSE_DECL_NAME(bcur))
-                    && (WXS_ATTRUSE_DECL_TNS(cur)
-                        == WXS_ATTRUSE_DECL_TNS(bcur))) {
+                if (WXS_ATTRUSE_DECL_NAME(cur) == WXS_ATTRUSE_DECL_NAME(bcur)
+                    && WXS_ATTRUSE_DECL_TNS(cur)
+                        == WXS_ATTRUSE_DECL_TNS(bcur)) {
                     /*
 		    * (2.1) "If there is an attribute use in the {attribute
 		    * uses} of the {base type definition} (call this B) whose
@@ -13471,8 +13471,8 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
 		    */
                     found = 1;
 
-                    if ((cur->occurs == XML_SCHEMAS_ATTR_USE_OPTIONAL)
-                        && (bcur->occurs == XML_SCHEMAS_ATTR_USE_REQUIRED)) {
+                    if (cur->occurs == XML_SCHEMAS_ATTR_USE_OPTIONAL
+                        && bcur->occurs == XML_SCHEMAS_ATTR_USE_REQUIRED) {
                         xmlChar *str = NULL;
                         /*
 			* (2.1.1) "one of the following must be true:"
@@ -13536,7 +13536,7 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
 			* 2.1.3.1 B's `effective value constraint` is
 			* `absent` or default.
 			*/
-                        if ((bEffValue != NULL) && (effFixed == 1)) {
+                        if (bEffValue != NULL && effFixed == 1) {
                             const xmlChar *rEffValue = NULL;
 
                             xmlSchemaGetEffectiveValueConstraint(
@@ -13548,9 +13548,9 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
 			    *       Hmm, it says "same string" so
 			    *       string-equality might really be sufficient.
 			    */
-                            if ((effFixed == 0)
-                                || (!WXS_ARE_DEFAULT_STR_EQUAL(rEffValue,
-                                                               bEffValue))) {
+                            if (effFixed == 0
+                                || !WXS_ARE_DEFAULT_STR_EQUAL(rEffValue,
+                                                               bEffValue)) {
                                 xmlChar *str = NULL;
 
                                 xmlSchemaPAttrUseErr4(
@@ -13581,10 +13581,10 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
 		* to that wildcard, as defined in Wildcard allows Namespace
 		* Name ($3.10.4)."
 		*/
-                if ((baseWild == NULL)
-                    || (xmlSchemaCheckCVCWildcardNamespace(
+                if (baseWild == NULL
+                    || xmlSchemaCheckCVCWildcardNamespace(
                             baseWild, (WXS_ATTRUSE_DECL(cur))->targetNamespace)
-                        != 0)) {
+                        != 0) {
                     xmlChar *str = NULL;
 
                     xmlSchemaPAttrUseErr4(
@@ -13618,10 +13618,10 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
             if (uses != NULL) {
                 for (i = 0; i < uses->nbItems; i++) {
                     cur = uses->items[i];
-                    if ((WXS_ATTRUSE_DECL_NAME(cur)
-                         == WXS_ATTRUSE_DECL_NAME(bcur))
-                        && (WXS_ATTRUSE_DECL_TNS(cur)
-                            == WXS_ATTRUSE_DECL_TNS(bcur))) {
+                    if (WXS_ATTRUSE_DECL_NAME(cur)
+                         == WXS_ATTRUSE_DECL_NAME(bcur)
+                        && WXS_ATTRUSE_DECL_TNS(cur)
+                            == WXS_ATTRUSE_DECL_TNS(bcur)) {
                         found = 1;
                         break;
                     }
@@ -13667,7 +13667,7 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
                 xmlSchemaGetComponentQName(&str, baseItem));
             FREE_AND_NULL(str);
             return pctxt->err;
-        } else if ((baseWild->any == 0)
+        } else if (baseWild->any == 0
                    && xmlSchemaCheckCOSNSSubset(wild, baseWild)) {
             xmlChar *str = NULL;
             /*
@@ -13693,8 +13693,8 @@ xmlSchemaCheckDerivationOKRestriction2to4 (
 	* wildcard}'s {process contents}, where strict is stronger
 	* than lax is stronger than skip.
 	*/
-        if ((!WXS_IS_ANYTYPE(baseItem))
-            && (wild->processContents < baseWild->processContents)) {
+        if (!WXS_IS_ANYTYPE(baseItem)
+            && wild->processContents < baseWild->processContents) {
             xmlChar *str = NULL;
             xmlSchemaCustomErr4(
                 ACTXT_CAST pctxt, XML_SCHEMAP_DERIVATION_OK_RESTRICTION_4_3,
@@ -13803,9 +13803,9 @@ xmlSchemaFixupTypeAttributeUses (xmlSchemaParserCtxtPtr pctxt,
 		    */
                     for (j = 0; j < prohibs->nbItems; j++) {
                         pro = prohibs->items[j];
-                        if ((WXS_ATTRUSE_DECL_NAME(use) == pro->name)
-                            && (WXS_ATTRUSE_DECL_TNS(use)
-                                == pro->targetNamespace)) {
+                        if (WXS_ATTRUSE_DECL_NAME(use) == pro->name
+                            && WXS_ATTRUSE_DECL_TNS(use)
+                                == pro->targetNamespace) {
                             goto inherit_next;
                         }
                     }
@@ -13816,10 +13816,10 @@ xmlSchemaFixupTypeAttributeUses (xmlSchemaParserCtxtPtr pctxt,
 		    */
                     for (j = 0; j < usesCount; j++) {
                         tmp = uses->items[j];
-                        if ((WXS_ATTRUSE_DECL_NAME(use)
-                             == WXS_ATTRUSE_DECL_NAME(tmp))
-                            && (WXS_ATTRUSE_DECL_TNS(use)
-                                == WXS_ATTRUSE_DECL_TNS(tmp))) {
+                        if (WXS_ATTRUSE_DECL_NAME(use)
+                             == WXS_ATTRUSE_DECL_NAME(tmp)
+                            && WXS_ATTRUSE_DECL_TNS(use)
+                                == WXS_ATTRUSE_DECL_TNS(tmp)) {
                             goto inherit_next;
                         }
                     }
@@ -13941,7 +13941,7 @@ xmlSchemaTypeFinalContains (xmlSchemaTypePtr type, int final)
 static xmlSchemaTypeLinkPtr
 xmlSchemaGetUnionSimpleTypeMemberTypes (xmlSchemaTypePtr type)
 {
-    while ((type != NULL) && (type->type == XML_SCHEMA_TYPE_SIMPLE)) {
+    while (type != NULL && type->type == XML_SCHEMA_TYPE_SIMPLE) {
         if (type->memberTypes != NULL)
             return type->memberTypes;
         else
@@ -14073,7 +14073,7 @@ xmlSchemaGetParticleEmptiable (xmlSchemaParticlePtr particle)
     xmlSchemaParticlePtr part;
     int emptiable;
 
-    if ((particle->children == NULL) || (particle->minOccurs == 0))
+    if (particle->children == NULL || particle->minOccurs == 0)
         return 1;
 
     part = (xmlSchemaParticlePtr) particle->children->children;
@@ -14081,8 +14081,8 @@ xmlSchemaGetParticleEmptiable (xmlSchemaParticlePtr particle)
         return 1;
 
     while (part != NULL) {
-        if ((part->children->type == XML_SCHEMA_TYPE_ELEMENT)
-            || (part->children->type == XML_SCHEMA_TYPE_ANY))
+        if (part->children->type == XML_SCHEMA_TYPE_ELEMENT
+            || part->children->type == XML_SCHEMA_TYPE_ANY)
             emptiable = (part->minOccurs == 0);
         else
             emptiable = xmlSchemaGetParticleEmptiable(part);
@@ -14116,8 +14116,8 @@ xmlSchemaIsParticleEmptiable (xmlSchemaParticlePtr particle)
     /*
     * SPEC (1) "Its {min occurs} is 0."
     */
-    if ((particle == NULL) || (particle->minOccurs == 0)
-        || (particle->children == NULL))
+    if (particle == NULL || particle->minOccurs == 0
+        || particle->children == NULL)
         return 1;
     /*
     * SPEC (2) "Its {term} is a group and the minimum part of the
@@ -14168,8 +14168,8 @@ xmlSchemaCheckCOSSTDerivedOK (xmlSchemaAbstractCtxtPtr actxt,
         if (xmlSchemaTypeFixup(baseType, actxt) == -1)
             return -1;
     if ((subset & SUBSET_RESTRICTION)
-        || (xmlSchemaTypeFinalContains(type->baseType,
-                                       XML_SCHEMAS_TYPE_FINAL_RESTRICTION))) {
+        || xmlSchemaTypeFinalContains(type->baseType,
+                                       XML_SCHEMAS_TYPE_FINAL_RESTRICTION)) {
         return XML_SCHEMAP_COS_ST_DERIVED_OK_2_1;
     }
     /* 2.2 */
@@ -14184,10 +14184,10 @@ xmlSchemaCheckCOSSTDerivedOK (xmlSchemaAbstractCtxtPtr actxt,
     * and is validly derived from B given the subset, as defined by this
     * constraint.
     */
-    if ((!WXS_IS_ANYTYPE(type->baseType))
-        && (xmlSchemaCheckCOSSTDerivedOK(actxt, type->baseType, baseType,
+    if (!WXS_IS_ANYTYPE(type->baseType)
+        && xmlSchemaCheckCOSSTDerivedOK(actxt, type->baseType, baseType,
                                          subset)
-            == 0)) {
+            == 0) {
         return 0;
     }
     /*
@@ -14245,7 +14245,7 @@ xmlSchemaCheckTypeDefCircularInternal (xmlSchemaParserCtxtPtr pctxt,
 {
     int ret;
 
-    if ((ancestor == NULL) || (ancestor->type == XML_SCHEMA_TYPE_BASIC))
+    if (ancestor == NULL || ancestor->type == XML_SCHEMA_TYPE_BASIC)
         return 0;
 
     if (ctxtType == ancestor) {
@@ -14277,8 +14277,8 @@ static void
 xmlSchemaCheckTypeDefCircular (xmlSchemaTypePtr item,
                                xmlSchemaParserCtxtPtr ctxt)
 {
-    if ((item == NULL) || (item->type == XML_SCHEMA_TYPE_BASIC)
-        || (item->baseType == NULL))
+    if (item == NULL || item->type == XML_SCHEMA_TYPE_BASIC
+        || item->baseType == NULL)
         return;
     xmlSchemaCheckTypeDefCircularInternal(ctxt, item, item->baseType);
 }
@@ -14307,8 +14307,8 @@ xmlSchemaCheckUnionTypeDefCircularRecur (xmlSchemaParserCtxtPtr pctxt,
     member = members;
     while (member != NULL) {
         memberType = member->type;
-        while ((memberType != NULL)
-               && (memberType->type != XML_SCHEMA_TYPE_BASIC)) {
+        while (memberType != NULL
+               && memberType->type != XML_SCHEMA_TYPE_BASIC) {
             if (memberType == ctxType) {
                 xmlSchemaPCustomErr(pctxt, XML_SCHEMAP_SRC_SIMPLE_TYPE_4,
                                     WXS_BASIC_CAST ctxType, NULL,
@@ -14317,7 +14317,7 @@ xmlSchemaCheckUnionTypeDefCircularRecur (xmlSchemaParserCtxtPtr pctxt,
                 return XML_SCHEMAP_SRC_SIMPLE_TYPE_4;
             }
             if ((WXS_IS_UNION(memberType))
-                && ((memberType->flags & XML_SCHEMAS_TYPE_MARKED) == 0)) {
+                && (memberType->flags & XML_SCHEMAS_TYPE_MARKED) == 0) {
                 int res;
                 memberType->flags |= XML_SCHEMAS_TYPE_MARKED;
                 res = xmlSchemaCheckUnionTypeDefCircularRecur(
@@ -14382,12 +14382,12 @@ xmlSchemaResolveTypeReferences (xmlSchemaTypePtr typeDef,
             /*
 	    * Resolve the itemType.
 	    */
-            if ((typeDef->subtypes == NULL) && (typeDef->base != NULL)) {
+            if (typeDef->subtypes == NULL && typeDef->base != NULL) {
                 typeDef->subtypes = xmlSchemaGetType(
                     ctxt->schema, typeDef->base, typeDef->baseNs);
 
-                if ((typeDef->subtypes == NULL)
-                    || (!WXS_IS_SIMPLE(typeDef->subtypes))) {
+                if (typeDef->subtypes == NULL
+                    || !WXS_IS_SIMPLE(typeDef->subtypes)) {
                     typeDef->subtypes = NULL;
                     xmlSchemaPResCompAttrErr(
                         ctxt, XML_SCHEMAP_SRC_RESOLVE, WXS_BASIC_CAST typeDef,
@@ -14403,12 +14403,12 @@ xmlSchemaResolveTypeReferences (xmlSchemaTypePtr typeDef,
     * which has a QName-helper component as its {term}, we want
     * to resolve it...
     */
-    else if ((WXS_TYPE_CONTENTTYPE(typeDef) != NULL)
-             && ((WXS_TYPE_CONTENTTYPE(typeDef))->type
-                 == XML_SCHEMA_TYPE_PARTICLE)
-             && (WXS_TYPE_PARTICLE_TERM(typeDef) != NULL)
-             && ((WXS_TYPE_PARTICLE_TERM(typeDef))->type
-                 == XML_SCHEMA_EXTRA_QNAMEREF)) {
+    else if (WXS_TYPE_CONTENTTYPE(typeDef) != NULL
+             && (WXS_TYPE_CONTENTTYPE(typeDef))->type
+                 == XML_SCHEMA_TYPE_PARTICLE
+             && WXS_TYPE_PARTICLE_TERM(typeDef) != NULL
+             && (WXS_TYPE_PARTICLE_TERM(typeDef))->type
+                 == XML_SCHEMA_EXTRA_QNAMEREF) {
         xmlSchemaQNameRefPtr ref
             = WXS_QNAME_CAST WXS_TYPE_PARTICLE_TERM(typeDef);
         xmlSchemaModelGroupDefPtr groupDef;
@@ -14508,9 +14508,9 @@ xmlSchemaCheckSTPropsCorrect (xmlSchemaParserCtxtPtr ctxt,
         return XML_SCHEMAP_ST_PROPS_CORRECT_1;
     }
     if ((WXS_IS_LIST(type) || WXS_IS_UNION(type))
-        && (WXS_IS_RESTRICTION(type) == 0)
-        && ((!WXS_IS_ANY_SIMPLE_TYPE(baseType))
-            && (baseType->type != XML_SCHEMA_TYPE_SIMPLE))) {
+        && WXS_IS_RESTRICTION(type) == 0
+        && !WXS_IS_ANY_SIMPLE_TYPE(baseType)
+            && baseType->type != XML_SCHEMA_TYPE_SIMPLE) {
         xmlSchemaPCustomErr(
             ctxt, XML_SCHEMAP_ST_PROPS_CORRECT_1, WXS_BASIC_CAST type, NULL,
             "A type, derived by list or union, must have "
@@ -14522,8 +14522,8 @@ xmlSchemaCheckSTPropsCorrect (xmlSchemaParserCtxtPtr ctxt,
     /*
     * Variety: One of {atomic, list, union}.
     */
-    if ((!WXS_IS_ATOMIC(type)) && (!WXS_IS_UNION(type))
-        && (!WXS_IS_LIST(type))) {
+    if (!WXS_IS_ATOMIC(type) && !WXS_IS_UNION(type)
+        && !WXS_IS_LIST(type)) {
         xmlSchemaPCustomErr(ctxt, XML_SCHEMAP_ST_PROPS_CORRECT_1,
                             WXS_BASIC_CAST type, NULL, "The variety is absent",
                             NULL);
@@ -14651,7 +14651,7 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
         xmlSchemaTypePtr itemType = NULL;
 
         itemType = type->subtypes;
-        if ((itemType == NULL) || (!WXS_IS_SIMPLE(itemType))) {
+        if (itemType == NULL || !WXS_IS_SIMPLE(itemType)) {
             PERROR_INT("xmlSchemaCheckCOSSTRestricts",
                        "failed to evaluate the item type");
             return -1;
@@ -14663,7 +14663,7 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
 	* union (in which case all the {member type definitions}
 	* must be atomic).
 	*/
-        if ((!WXS_IS_ATOMIC(itemType)) && (!WXS_IS_UNION(itemType))) {
+        if (!WXS_IS_ATOMIC(itemType) && !WXS_IS_UNION(itemType)) {
             xmlSchemaPCustomErr(
                 pctxt, XML_SCHEMAP_COS_ST_RESTRICTS_2_1, WXS_BASIC_CAST type,
                 NULL,
@@ -14777,15 +14777,15 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
                 xmlSchemaTypePtr baseItemType;
 
                 baseItemType = type->baseType->subtypes;
-                if ((baseItemType == NULL) || (!WXS_IS_SIMPLE(baseItemType))) {
+                if (baseItemType == NULL || !WXS_IS_SIMPLE(baseItemType)) {
                     PERROR_INT("xmlSchemaCheckCOSSTRestricts",
                                "failed to eval the item type of a base type");
                     return -1;
                 }
-                if ((itemType != baseItemType)
-                    && (xmlSchemaCheckCOSSTDerivedOK(ACTXT_CAST pctxt, itemType,
+                if (itemType != baseItemType
+                    && xmlSchemaCheckCOSSTDerivedOK(ACTXT_CAST pctxt, itemType,
                                                      baseItemType, 0)
-                        != 0)) {
+                        != 0) {
                     xmlChar *strBIT = NULL, *strBT = NULL;
                     xmlSchemaPCustomErrExt(
                         pctxt, XML_SCHEMAP_COS_ST_RESTRICTS_2_3_2_3,
@@ -14859,8 +14859,8 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
             if (WXS_IS_TYPE_NOT_FIXED(member->type))
                 xmlSchemaTypeFixup(member->type, ACTXT_CAST pctxt);
 
-            if ((!WXS_IS_ATOMIC(member->type))
-                && (!WXS_IS_LIST(member->type))) {
+            if (!WXS_IS_ATOMIC(member->type)
+                && !WXS_IS_LIST(member->type)) {
                 xmlSchemaPCustomErr(
                     pctxt, XML_SCHEMAP_COS_ST_RESTRICTS_3_1,
                     WXS_BASIC_CAST type, NULL,
@@ -14957,7 +14957,7 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
                     member = type->memberTypes;
                     baseMember = xmlSchemaGetUnionSimpleTypeMemberTypes(
                         type->baseType);
-                    if ((member == NULL) && (baseMember != NULL)) {
+                    if (member == NULL && baseMember != NULL) {
                         PERROR_INT("xmlSchemaCheckCOSSTRestricts",
                                    "different number of member types in base");
                     }
@@ -14966,11 +14966,11 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
                             PERROR_INT(
                                 "xmlSchemaCheckCOSSTRestricts",
                                 "different number of member types in base");
-                        } else if ((member->type != baseMember->type)
-                                   && (xmlSchemaCheckCOSSTDerivedOK(
+                        } else if (member->type != baseMember->type
+                                   && xmlSchemaCheckCOSSTDerivedOK(
                                            ACTXT_CAST pctxt, member->type,
                                            baseMember->type, 0)
-                                       != 0)) {
+                                       != 0) {
                             xmlChar *strBMT = NULL, *strBT = NULL;
 
                             xmlSchemaPCustomErrExt(
@@ -15005,8 +15005,8 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
 
                 facet = type->facets;
                 do {
-                    if ((facet->type != XML_SCHEMA_FACET_PATTERN)
-                        && (facet->type != XML_SCHEMA_FACET_ENUMERATION)) {
+                    if (facet->type != XML_SCHEMA_FACET_PATTERN
+                        && facet->type != XML_SCHEMA_FACET_ENUMERATION) {
                         xmlSchemaPIllegalFacetListUnionErr(
                             pctxt, XML_SCHEMAP_COS_ST_RESTRICTS_3_3_2_4, type,
                             facet);
@@ -15140,7 +15140,7 @@ xmlSchemaParseCheckCOSValidDefault (xmlSchemaParserCtxtPtr pctxt,
 	* type}'s particle must be `emptiable` as defined by
 	* Particle Emptiable ($3.9.6)."
 	*/
-        if ((!WXS_HAS_SIMPLE_CONTENT(type))
+        if (!WXS_HAS_SIMPLE_CONTENT(type)
             && ((!WXS_HAS_MIXED_CONTENT(type)) || (!WXS_EMPTIABLE(type)))) {
             /* NOTE that this covers (2.2.2) as well. */
             xmlSchemaPCustomErr(
@@ -15204,8 +15204,8 @@ xmlSchemaCheckCTPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
     * Schema Component ($3.4.1), modulo the impact of Missing
     * Sub-components ($5.3)."
     */
-    if ((type->baseType != NULL) && (WXS_IS_SIMPLE(type->baseType))
-        && (WXS_IS_EXTENSION(type) == 0)) {
+    if (type->baseType != NULL && (WXS_IS_SIMPLE(type->baseType))
+        && WXS_IS_EXTENSION(type) == 0) {
         /*
 	* SPEC (2) "If the {base type definition} is a simple type definition,
 	* the {derivation method} must be extension."
@@ -15231,7 +15231,7 @@ xmlSchemaCheckCTPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
     *   - simple types need to be typefixed already
     */
     if (type->attrUses
-        && (((xmlSchemaItemListPtr) type->attrUses)->nbItems > 1)) {
+        && ((xmlSchemaItemListPtr) type->attrUses)->nbItems > 1) {
         xmlSchemaItemListPtr uses = (xmlSchemaItemListPtr) type->attrUses;
         xmlSchemaAttributeUsePtr use, tmp;
         int i, j, hasId = 0;
@@ -15248,10 +15248,10 @@ xmlSchemaCheckCTPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
             if (i > 0) {
                 for (j = i - 1; j >= 0; j--) {
                     tmp = uses->items[j];
-                    if ((WXS_ATTRUSE_DECL_NAME(use)
-                         == WXS_ATTRUSE_DECL_NAME(tmp))
-                        && (WXS_ATTRUSE_DECL_TNS(use)
-                            == WXS_ATTRUSE_DECL_TNS(tmp))) {
+                    if (WXS_ATTRUSE_DECL_NAME(use)
+                         == WXS_ATTRUSE_DECL_NAME(tmp)
+                        && WXS_ATTRUSE_DECL_TNS(use)
+                            == WXS_ATTRUSE_DECL_TNS(tmp)) {
                         xmlChar *str = NULL;
 
                         xmlSchemaCustomErr(
@@ -15311,7 +15311,7 @@ xmlSchemaAreEqualTypes (xmlSchemaTypePtr typeA, xmlSchemaTypePtr typeB)
     * TODO: This should implement component-identity
     * in the future.
     */
-    if ((typeA == NULL) || (typeB == NULL))
+    if (typeA == NULL || typeB == NULL)
         return 0;
     return typeA == typeB;
 }
@@ -15347,8 +15347,8 @@ xmlSchemaCheckCOSCTDerivedOK (xmlSchemaAbstractCtxtPtr actxt,
 	* SPEC (1) "If B and D are not the same type definition, then the
 	* {derivation method} of D must not be in the subset."
 	*/
-        if (((set & SUBSET_EXTENSION) && (WXS_IS_EXTENSION(type)))
-            || ((set & SUBSET_RESTRICTION) && (WXS_IS_RESTRICTION(type))))
+        if ((set & SUBSET_EXTENSION) && (WXS_IS_EXTENSION(type))
+            || (set & SUBSET_RESTRICTION) && (WXS_IS_RESTRICTION(type)))
             return 1;
     } else {
         /*
@@ -15553,16 +15553,16 @@ xmlSchemaCheckCOSCTExtends (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
         /*
 	* SPEC (1.4) "One of the following must be true:"
 	*/
-        if ((type->contentTypeDef != NULL)
-            && (type->contentTypeDef == base->contentTypeDef)) {
+        if (type->contentTypeDef != NULL
+            && type->contentTypeDef == base->contentTypeDef) {
             /*
 	    * SPEC (1.4.1) "The {content type} of the {base type definition}
 	    * and the {content type} of the complex type definition itself
 	    * must be the same simple type definition"
 	    * PASS
 	    */
-        } else if ((type->contentType == XML_SCHEMA_CONTENT_EMPTY)
-                   && (base->contentType == XML_SCHEMA_CONTENT_EMPTY)) {
+        } else if (type->contentType == XML_SCHEMA_CONTENT_EMPTY
+                   && base->contentType == XML_SCHEMA_CONTENT_EMPTY) {
             /*
 	    * SPEC (1.4.2) "The {content type} of both the {base type
 	    * definition} and the complex type definition itself must
@@ -15596,10 +15596,10 @@ xmlSchemaCheckCOSCTExtends (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
                 /*
 		* SPEC (1.4.3.2.2) "All of the following must be true:"
 		*/
-                if ((type->contentType != base->contentType)
-                    || ((type->contentType != XML_SCHEMA_CONTENT_MIXED)
-                        && (type->contentType
-                            != XML_SCHEMA_CONTENT_ELEMENTS))) {
+                if (type->contentType != base->contentType
+                    || type->contentType != XML_SCHEMA_CONTENT_MIXED
+                        && type->contentType
+                            != XML_SCHEMA_CONTENT_ELEMENTS) {
                     /*
 		    * SPEC (1.4.3.2.2.1) "Both {content type}s must be mixed
 		    * or both must be element-only."
@@ -15732,16 +15732,16 @@ xmlSchemaCheckDerivationOKRestriction (xmlSchemaParserCtxtPtr ctxt,
 	* `ur-type definition`."
 	* PASS
 	*/
-    } else if ((type->contentType == XML_SCHEMA_CONTENT_SIMPLE)
-               || (type->contentType == XML_SCHEMA_CONTENT_BASIC)) {
+    } else if (type->contentType == XML_SCHEMA_CONTENT_SIMPLE
+               || type->contentType == XML_SCHEMA_CONTENT_BASIC) {
         /*
 	* SPEC (5.2.1) "The {content type} of the complex type definition
 	* must be a simple type definition"
 	*
 	* SPEC (5.2.2) "One of the following must be true:"
 	*/
-        if ((base->contentType == XML_SCHEMA_CONTENT_SIMPLE)
-            || (base->contentType == XML_SCHEMA_CONTENT_BASIC)) {
+        if (base->contentType == XML_SCHEMA_CONTENT_SIMPLE
+            || base->contentType == XML_SCHEMA_CONTENT_BASIC) {
             int err;
             /*
 	    * SPEC (5.2.2.1) "The {content type} of the {base type
@@ -15773,9 +15773,9 @@ xmlSchemaCheckDerivationOKRestriction (xmlSchemaParserCtxtPtr ctxt,
                 FREE_AND_NULL(strB);
                 return ctxt->err;
             }
-        } else if ((base->contentType == XML_SCHEMA_CONTENT_MIXED)
-                   && (xmlSchemaIsParticleEmptiable(
-                       (xmlSchemaParticlePtr) base->subtypes))) {
+        } else if (base->contentType == XML_SCHEMA_CONTENT_MIXED
+                   && xmlSchemaIsParticleEmptiable(
+                       (xmlSchemaParticlePtr) base->subtypes)) {
             /*
 	    * SPEC (5.2.2.2) "The {base type definition} must be mixed
 	    * and have a particle which is `emptiable` as defined in
@@ -15822,13 +15822,13 @@ xmlSchemaCheckDerivationOKRestriction (xmlSchemaParserCtxtPtr ctxt,
                 NULL);
             return ctxt->err;
         }
-    } else if ((type->contentType == XML_SCHEMA_CONTENT_ELEMENTS)
+    } else if (type->contentType == XML_SCHEMA_CONTENT_ELEMENTS
                || WXS_HAS_MIXED_CONTENT(type)) {
         /*
 	* SPEC (5.4.1.1) "The {content type} of the complex type definition
 	* itself must be element-only"
 	*/
-        if (WXS_HAS_MIXED_CONTENT(type) && (!WXS_HAS_MIXED_CONTENT(base))) {
+        if (WXS_HAS_MIXED_CONTENT(type) && !WXS_HAS_MIXED_CONTENT(base)) {
             /*
 	    * SPEC (5.4.1.2) "The {content type} of the complex type
 	    * definition itself and of the {base type definition} must be
@@ -15949,8 +15949,8 @@ xmlSchemaCheckSRCCT (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
             }
         } else {
             /* Base type is a complex type. */
-            if ((base->contentType == XML_SCHEMA_CONTENT_SIMPLE)
-                || (base->contentType == XML_SCHEMA_CONTENT_BASIC)) {
+            if (base->contentType == XML_SCHEMA_CONTENT_SIMPLE
+                || base->contentType == XML_SCHEMA_CONTENT_BASIC) {
                 /*
 		* 2.1.1 a complex type definition whose {content type} is a
 		* simple type definition;
@@ -15964,7 +15964,7 @@ xmlSchemaCheckSRCCT (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
                                         type->name);
                     return -1;
                 }
-            } else if ((base->contentType == XML_SCHEMA_CONTENT_MIXED)
+            } else if (base->contentType == XML_SCHEMA_CONTENT_MIXED
                        && (WXS_IS_RESTRICTION(type))) {
                 /*
 		* 2.1.2 only if the <restriction> alternative is also
@@ -16512,7 +16512,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
     * are allowed."
     */
 
-    if ((type->facetSet == NULL) && (base->facetSet == NULL))
+    if (type->facetSet == NULL && base->facetSet == NULL)
         return 0;
 
     last = type->facetSet;
@@ -16601,13 +16601,13 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
     /*
     * Mutual exclusions in the same derivation step.
     */
-    if ((fmaxinc) && (fmaxexc)) {
+    if (fmaxinc && fmaxexc) {
         /*
 	* SCC "maxInclusive and maxExclusive"
 	*/
         FACET_RESTR_MUTUAL_ERR(fmaxinc, fmaxexc)
     }
-    if ((fmininc) && (fminexc)) {
+    if (fmininc && fminexc) {
         /*
 	* SCC "minInclusive and minExclusive"
 	*/
@@ -16624,7 +16624,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             goto internal_error;
         if (res != 0)
             xmlSchemaDeriveFacetErr(pctxt, flength, bflength, 0, 0, 1);
-        if ((res != 0) && (bflength->fixed)) {
+        if (res != 0 && bflength->fixed) {
             FACET_RESTR_FIXED_ERR(flength)
         }
     }
@@ -16638,7 +16638,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             goto internal_error;
         if (res == -1)
             xmlSchemaDeriveFacetErr(pctxt, fminlen, bfminlen, 1, 1, 1);
-        if ((res != 0) && (bfminlen->fixed)) {
+        if (res != 0 && bfminlen->fixed) {
             FACET_RESTR_FIXED_ERR(fminlen)
         }
     }
@@ -16652,7 +16652,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             goto internal_error;
         if (res == 1)
             xmlSchemaDeriveFacetErr(pctxt, fmaxlen, bfmaxlen, -1, 1, 1);
-        if ((res != 0) && (bfmaxlen->fixed)) {
+        if (res != 0 && bfmaxlen->fixed) {
             FACET_RESTR_FIXED_ERR(fmaxlen)
         }
     }
@@ -16706,7 +16706,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
                 goto internal_error;
             if (res == 1)
                 xmlSchemaDeriveFacetErr(pctxt, fmaxinc, bfmaxinc, -1, 1, 1);
-            if ((res != 0) && (bfmaxinc->fixed)) {
+            if (res != 0 && bfmaxinc->fixed) {
                 FACET_RESTR_FIXED_ERR(fmaxinc)
             }
         }
@@ -16761,7 +16761,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             if (res == 1) {
                 xmlSchemaDeriveFacetErr(pctxt, fmaxexc, bfmaxexc, -1, 1, 1);
             }
-            if ((res != 0) && (bfmaxexc->fixed)) {
+            if (res != 0 && bfmaxexc->fixed) {
                 FACET_RESTR_FIXED_ERR(fmaxexc)
             }
         }
@@ -16816,7 +16816,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             if (res == -1) {
                 xmlSchemaDeriveFacetErr(pctxt, fminexc, bfminexc, 1, 1, 1);
             }
-            if ((res != 0) && (bfminexc->fixed)) {
+            if (res != 0 && bfminexc->fixed) {
                 FACET_RESTR_FIXED_ERR(fminexc)
             }
         }
@@ -16871,7 +16871,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             if (res == -1) {
                 xmlSchemaDeriveFacetErr(pctxt, fmininc, bfmininc, 1, 1, 1);
             }
-            if ((res != 0) && (bfmininc->fixed)) {
+            if (res != 0 && bfmininc->fixed) {
                 FACET_RESTR_FIXED_ERR(fmininc)
             }
         }
@@ -16911,7 +16911,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             goto internal_error;
         if (res == 1)
             xmlSchemaDeriveFacetErr(pctxt, ftotdig, bftotdig, -1, 1, 1);
-        if ((res != 0) && (bftotdig->fixed)) {
+        if (res != 0 && bftotdig->fixed) {
             FACET_RESTR_FIXED_ERR(ftotdig)
         }
     }
@@ -16925,7 +16925,7 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
             goto internal_error;
         if (res == 1)
             xmlSchemaDeriveFacetErr(pctxt, ffracdig, bffracdig, -1, 1, 1);
-        if ((res != 0) && (bffracdig->fixed)) {
+        if (res != 0 && bffracdig->fixed) {
             FACET_RESTR_FIXED_ERR(ffracdig)
         }
     }
@@ -16960,8 +16960,8 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
 	* Special handling of enumerations and patterns.
 	* TODO: hmm, they should not appear in the set, so remove this.
 	*/
-        if ((bfacet->type == XML_SCHEMA_FACET_PATTERN)
-            || (bfacet->type == XML_SCHEMA_FACET_ENUMERATION))
+        if (bfacet->type == XML_SCHEMA_FACET_PATTERN
+            || bfacet->type == XML_SCHEMA_FACET_ENUMERATION)
             continue;
         /*
 	* Search for a duplicate facet in the current type.
@@ -16984,8 +16984,8 @@ xmlSchemaDeriveAndValidateFacets (xmlSchemaParserCtxtPtr pctxt,
                             "or stronger than the 'whitespace' value of "
                             "the base type")
                     }
-                    if ((bfacet->fixed)
-                        && (facet->whitespace != bfacet->whitespace)) {
+                    if (bfacet->fixed
+                        && facet->whitespace != bfacet->whitespace) {
                         FACET_RESTR_FIXED_ERR(facet)
                     }
                     break;
@@ -17116,13 +17116,13 @@ xmlSchemaTypeFixupOptimFacets (xmlSchemaTypePtr type)
     if (has)
         type->flags |= XML_SCHEMAS_TYPE_HAS_FACETS;
 
-    if (has && (!needVal) && WXS_IS_ATOMIC(type)) {
+    if (has && !needVal && WXS_IS_ATOMIC(type)) {
         xmlSchemaTypePtr prim = xmlSchemaGetPrimitiveType(type);
         /*
 	* OPTIMIZE VAL TODO: Some facets need a computed value.
 	*/
-        if ((prim->builtInType != XML_SCHEMAS_ANYSIMPLETYPE)
-            && (prim->builtInType != XML_SCHEMAS_STRING)) {
+        if (prim->builtInType != XML_SCHEMAS_ANYSIMPLETYPE
+            && prim->builtInType != XML_SCHEMAS_STRING) {
             type->flags |= XML_SCHEMAS_TYPE_FACETSNEEDVALUE;
         }
     }
@@ -17177,8 +17177,8 @@ xmlSchemaTypeFixupWhitespace (xmlSchemaTypePtr type)
                 if (anc->builtInType == XML_SCHEMAS_NORMSTRING) {
                     type->flags |= XML_SCHEMAS_TYPE_WHITESPACE_REPLACE;
 
-                } else if ((anc->builtInType == XML_SCHEMAS_STRING)
-                           || (anc->builtInType == XML_SCHEMAS_ANYSIMPLETYPE)) {
+                } else if (anc->builtInType == XML_SCHEMAS_STRING
+                           || anc->builtInType == XML_SCHEMAS_ANYSIMPLETYPE) {
                     type->flags |= XML_SCHEMAS_TYPE_WHITESPACE_PRESERVE;
 
                 } else
@@ -17291,8 +17291,8 @@ xmlSchemaFixupSimpleTypeStageTwo (xmlSchemaParserCtxtPtr pctxt,
     * NOTE that this might change in WXS 1.1; i.e. we will keep the union
     * types in WXS 1.1.
     */
-    if ((type->memberTypes != NULL)
-        && (xmlSchemaFinishMemberTypeDefinitionsProperty(pctxt, type) == -1))
+    if (type->memberTypes != NULL
+        && xmlSchemaFinishMemberTypeDefinitionsProperty(pctxt, type) == -1)
         return -1;
     /*
     * SPEC src-simple-type 1
@@ -17328,8 +17328,8 @@ xmlSchemaFixupSimpleTypeStageTwo (xmlSchemaParserCtxtPtr pctxt,
     * (st-restrict-facets)
     */
         res = xmlSchemaCheckFacetValues(type, pctxt);
-    HFAILURE HERROR if ((type->facetSet != NULL)
-                        || (type->baseType->facetSet != NULL))
+    HFAILURE HERROR if (type->facetSet != NULL
+                        || type->baseType->facetSet != NULL)
     {
         res = xmlSchemaDeriveAndValidateFacets(pctxt, type);
         HFAILURE HERROR
@@ -17387,7 +17387,7 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
         /*
 	* Corresponds to <complexType><simpleContent>...
 	*/
-        if ((WXS_IS_COMPLEX(baseType)) && (baseType->contentTypeDef != NULL)
+        if ((WXS_IS_COMPLEX(baseType)) && baseType->contentTypeDef != NULL
             && (WXS_IS_RESTRICTION(type))) {
             xmlSchemaTypePtr contentBase, content;
 #ifdef ENABLE_NAMED_LOCALS
@@ -17466,15 +17466,15 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
             HFAILURE HERROR
 
         } else if ((WXS_IS_COMPLEX(baseType))
-                   && (baseType->contentType == XML_SCHEMA_CONTENT_MIXED)
+                   && baseType->contentType == XML_SCHEMA_CONTENT_MIXED
                    && (WXS_IS_RESTRICTION(type))) {
             /*
 	    * SPEC (2) If <restriction> + base is a mixed <complexType> with
 	    * an emptiable particle, then a simple type definition which
 	    * restricts the <restriction>'s <simpleType> child.
 	    */
-            if ((type->contentTypeDef == NULL)
-                || (type->contentTypeDef->baseType == NULL)) {
+            if (type->contentTypeDef == NULL
+                || type->contentTypeDef->baseType == NULL) {
                 /*
 		* TODO: Check if this ever happens.
 		*/
@@ -17540,14 +17540,14 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
 	* Compute the "effective content":
 	* (2.1.1) + (2.1.2) + (2.1.3)
 	*/
-        if ((particle == NULL)
-            || ((particle->type == XML_SCHEMA_TYPE_PARTICLE)
+        if (particle == NULL
+            || particle->type == XML_SCHEMA_TYPE_PARTICLE
                 && ((particle->children->type == XML_SCHEMA_TYPE_ALL)
                     || (particle->children->type == XML_SCHEMA_TYPE_SEQUENCE)
                     || ((particle->children->type == XML_SCHEMA_TYPE_CHOICE)
                         && (particle->minOccurs == 0)))
-                && (((xmlSchemaTreeItemPtr) particle->children)->children
-                    == NULL))) {
+                && ((xmlSchemaTreeItemPtr) particle->children)->children
+                    == NULL) {
             if (type->flags & XML_SCHEMAS_TYPE_MIXED) {
                 /*
 		* SPEC (2.1.4) "If the `effective mixed` is true, then
@@ -17558,8 +17558,8 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
 		* NOTE that we sill assign it the <complexType> node to
 		* somehow anchor it in the doc.
 		*/
-                if ((particle == NULL)
-                    || (particle->children->type != XML_SCHEMA_TYPE_SEQUENCE)) {
+                if (particle == NULL
+                    || particle->children->type != XML_SCHEMA_TYPE_SEQUENCE) {
                     /*
 		    * Create the particle.
 		    */
@@ -17642,10 +17642,10 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
 		    * "A model group whose {compositor} is sequence and whose
 		    * {particles} are..."
 		    */
-                if ((WXS_TYPE_PARTICLE(type) != NULL)
-                    && (WXS_TYPE_PARTICLE_TERM(type) != NULL)
-                    && ((WXS_TYPE_PARTICLE_TERM(type))->type
-                        == XML_SCHEMA_TYPE_ALL)) {
+                if (WXS_TYPE_PARTICLE(type) != NULL
+                    && WXS_TYPE_PARTICLE_TERM(type) != NULL
+                    && (WXS_TYPE_PARTICLE_TERM(type))->type
+                        == XML_SCHEMA_TYPE_ALL) {
                     /*
 		    * SPEC cos-all-limited (1)
 		    */
@@ -17661,10 +17661,10 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
                         "allowed to appear inside other model groups",
                         NULL, NULL);
 
-                } else if ((WXS_TYPE_PARTICLE(baseType) != NULL)
-                           && (WXS_TYPE_PARTICLE_TERM(baseType) != NULL)
-                           && ((WXS_TYPE_PARTICLE_TERM(baseType))->type
-                               == XML_SCHEMA_TYPE_ALL)) {
+                } else if (WXS_TYPE_PARTICLE(baseType) != NULL
+                           && WXS_TYPE_PARTICLE_TERM(baseType) != NULL
+                           && (WXS_TYPE_PARTICLE_TERM(baseType))->type
+                               == XML_SCHEMA_TYPE_ALL) {
                     /*
 		    * SPEC cos-all-limited (1)
 		    */
@@ -17680,7 +17680,7 @@ xmlSchemaFixupComplexType (xmlSchemaParserCtxtPtr pctxt, xmlSchemaTypePtr type)
                         "allowed to appear inside other model groups",
                         NULL, NULL);
 
-                } else if ((!dummySequence) && (baseType->subtypes != NULL)) {
+                } else if (!dummySequence && baseType->subtypes != NULL) {
                     xmlSchemaTreeItemPtr effectiveContent
                         = (xmlSchemaTreeItemPtr) type->subtypes;
                     /*
@@ -17820,7 +17820,7 @@ xmlSchemaCheckFacet (xmlSchemaFacet *facet, xmlSchemaType *typeDecl,
 {
     int ret = 0, ctxtGiven;
 
-    if ((facet == NULL) || (typeDecl == NULL))
+    if (facet == NULL || typeDecl == NULL)
         return -1;
     /*
     * TODO: will the parser context be given if used from
@@ -18003,11 +18003,11 @@ xmlSchemaCheckFacet (xmlSchemaFacet *facet, xmlSchemaType *typeDecl,
         break;
     }
 exit:
-    if ((!ctxtGiven) && (pctxt != NULL))
+    if (!ctxtGiven && pctxt != NULL)
         xmlSchemaFreeParserCtxt(pctxt);
     return ret;
 internal_error:
-    if ((!ctxtGiven) && (pctxt != NULL))
+    if (!ctxtGiven && pctxt != NULL)
         xmlSchemaFreeParserCtxt(pctxt);
     return -1;
 }
@@ -18125,8 +18125,8 @@ xmlSchemaCheckGroupDefCircular (xmlSchemaModelGroupDefPtr item,
     * of a group there must not be at any depth a particle whose {term}
     * is the group itself.
     */
-    if ((item == NULL) || (item->type != XML_SCHEMA_TYPE_GROUP)
-        || (item->children == NULL))
+    if (item == NULL || item->type != XML_SCHEMA_TYPE_GROUP
+        || item->children == NULL)
         return;
     {
         xmlSchemaTreeItemPtr circ;
@@ -18175,8 +18175,8 @@ xmlSchemaModelGroupToModelGroupDefFixup (xmlSchemaParserCtxtPtr ctxt UNUSED,
     xmlSchemaParticlePtr particle = WXS_MODELGROUP_PARTICLE(mg);
 
     while (particle != NULL) {
-        if ((WXS_PARTICLE_TERM(particle) == NULL)
-            || ((WXS_PARTICLE_TERM(particle))->type != XML_SCHEMA_TYPE_GROUP)) {
+        if (WXS_PARTICLE_TERM(particle) == NULL
+            || (WXS_PARTICLE_TERM(particle))->type != XML_SCHEMA_TYPE_GROUP) {
             particle = WXS_PTC_CAST particle->next;
             continue;
         }
@@ -18219,9 +18219,9 @@ xmlSchemaCheckAttrGroupCircularRecur (xmlSchemaAttributeGroupPtr ctxtGr,
     */
     for (i = 0; i < list->nbItems; i++) {
         ref = list->items[i];
-        if ((ref->type == XML_SCHEMA_EXTRA_QNAMEREF)
-            && (ref->itemType == XML_SCHEMA_TYPE_ATTRIBUTEGROUP)
-            && (ref->item != NULL)) {
+        if (ref->type == XML_SCHEMA_EXTRA_QNAMEREF
+            && ref->itemType == XML_SCHEMA_TYPE_ATTRIBUTEGROUP
+            && ref->item != NULL) {
             gr = WXS_ATTR_GROUP_CAST ref->item;
             if (gr == ctxtGr)
                 return ref;
@@ -18231,7 +18231,7 @@ xmlSchemaCheckAttrGroupCircularRecur (xmlSchemaAttributeGroupPtr ctxtGr,
 	    * Mark as visited to avoid infinite recursion on
 	    * circular references not yet examined.
 	    */
-            if ((gr->attrUses)
+            if (gr->attrUses
                 && (gr->flags & XML_SCHEMAS_ATTRGROUP_HAS_REFS)) {
                 gr->flags |= XML_SCHEMAS_ATTRGROUP_MARKED;
                 circ = xmlSchemaCheckAttrGroupCircularRecur(
@@ -18361,9 +18361,9 @@ xmlSchemaExpandAttributeGroupRefs (xmlSchemaParserCtxtPtr pctxt,
             xmlSchemaItemListAddSize(prohibs, 2, use);
             continue;
         }
-        if ((use->type == XML_SCHEMA_EXTRA_QNAMEREF)
-            && ((WXS_QNAME_CAST use)->itemType
-                == XML_SCHEMA_TYPE_ATTRIBUTEGROUP)) {
+        if (use->type == XML_SCHEMA_EXTRA_QNAMEREF
+            && (WXS_QNAME_CAST use)->itemType
+                == XML_SCHEMA_TYPE_ATTRIBUTEGROUP) {
             if ((WXS_QNAME_CAST use)->item == NULL)
                 return -1;
             gr = WXS_ATTR_GROUP_CAST(WXS_QNAME_CAST use)->item;
@@ -18421,7 +18421,7 @@ xmlSchemaExpandAttributeGroupRefs (xmlSchemaParserCtxtPtr pctxt,
 	    * contain any attribute uses.
 	    */
             sublist = ((xmlSchemaItemListPtr) gr->attrUses);
-            if ((sublist == NULL) || sublist->nbItems == 0) {
+            if (sublist == NULL || sublist->nbItems == 0) {
                 if (xmlSchemaItemListRemove(list, i) == -1)
                     return -1;
                 i--;
@@ -18444,7 +18444,7 @@ xmlSchemaExpandAttributeGroupRefs (xmlSchemaParserCtxtPtr pctxt,
     /*
     * Handle pointless prohibitions of declared attributes.
     */
-    if (prohibs && (prohibs->nbItems != 0) && (list->nbItems != 0)) {
+    if (prohibs && prohibs->nbItems != 0 && list->nbItems != 0) {
         xmlSchemaAttributeUseProhibPtr prohib;
 
         for (i = prohibs->nbItems - 1; i >= 0; i--) {
@@ -18452,8 +18452,8 @@ xmlSchemaExpandAttributeGroupRefs (xmlSchemaParserCtxtPtr pctxt,
             for (j = 0; j < list->nbItems; j++) {
                 use = list->items[j];
 
-                if ((prohib->name == WXS_ATTRUSE_DECL_NAME(use))
-                    && (prohib->targetNamespace == WXS_ATTRUSE_DECL_TNS(use))) {
+                if (prohib->name == WXS_ATTRUSE_DECL_NAME(use)
+                    && prohib->targetNamespace == WXS_ATTRUSE_DECL_TNS(use)) {
                     xmlChar *str = NULL;
 
                     xmlSchemaCustomWarning(
@@ -18494,7 +18494,7 @@ static int
 xmlSchemaAttributeGroupExpandRefs (xmlSchemaParserCtxtPtr pctxt,
                                    xmlSchemaAttributeGroupPtr attrGr)
 {
-    if ((attrGr->attrUses == NULL)
+    if (attrGr->attrUses == NULL
         || (attrGr->flags & XML_SCHEMAS_ATTRGROUP_WILDCARD_BUILDED))
         return 0;
 
@@ -18528,7 +18528,7 @@ xmlSchemaCheckAGPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
     * Missing Sub-components ($5.3);"
     */
 
-    if ((attrGr->attrUses != NULL)
+    if (attrGr->attrUses != NULL
         && (WXS_LIST_CAST attrGr->attrUses)->nbItems > 1) {
         xmlSchemaItemListPtr uses = WXS_LIST_CAST attrGr->attrUses;
         xmlSchemaAttributeUsePtr use, tmp;
@@ -18545,10 +18545,10 @@ xmlSchemaCheckAGPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
             if (i > 0) {
                 for (j = i - 1; j >= 0; j--) {
                     tmp = uses->items[j];
-                    if ((WXS_ATTRUSE_DECL_NAME(use)
-                         == WXS_ATTRUSE_DECL_NAME(tmp))
-                        && (WXS_ATTRUSE_DECL_TNS(use)
-                            == WXS_ATTRUSE_DECL_TNS(tmp))) {
+                    if (WXS_ATTRUSE_DECL_NAME(use)
+                         == WXS_ATTRUSE_DECL_NAME(tmp)
+                        && WXS_ATTRUSE_DECL_TNS(use)
+                            == WXS_ATTRUSE_DECL_TNS(tmp)) {
                         xmlChar *str = NULL;
 
                         xmlSchemaCustomErr(
@@ -18830,7 +18830,7 @@ xmlSchemaCheckElemPropsCorrect (xmlSchemaParserCtxtPtr pctxt,
     * Note: The use of ID as a type definition for elements goes beyond
     * XML 1.0, and should be avoided if backwards compatibility is desired"
     */
-    if ((elemDecl->value != NULL)
+    if (elemDecl->value != NULL
         && ((WXS_IS_SIMPLE(typeDef)
              && xmlSchemaIsDerivedFromBuiltInType(typeDef, XML_SCHEMAS_ID))
             || (WXS_IS_COMPLEX(typeDef) && WXS_HAS_SIMPLE_CONTENT(typeDef)
@@ -18905,7 +18905,7 @@ static void
 xmlSchemaCheckElemSubstGroup (xmlSchemaParserCtxtPtr ctxt,
                               xmlSchemaElementPtr elemDecl)
 {
-    if ((WXS_SUBST_HEAD(elemDecl) == NULL) ||
+    if (WXS_SUBST_HEAD(elemDecl) == NULL ||
         /* SPEC (1) "Its {abstract} is false." */
         (elemDecl->flags & XML_SCHEMAS_ELEM_ABSTRACT))
         return;
@@ -18953,14 +18953,14 @@ xmlSchemaCheckElemSubstGroup (xmlSchemaParserCtxtPtr ctxt,
             /*
 	    * The set of all {derivation method}s involved in the derivation
 	    */
-            while ((type != NULL) && (type != headType)
-                   && (type != type->baseType)) {
+            while (type != NULL && type != headType
+                   && type != type->baseType) {
                 if ((WXS_IS_EXTENSION(type))
-                    && ((methSet & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0))
+                    && (methSet & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0)
                     methSet |= XML_SCHEMAS_TYPE_BLOCK_EXTENSION;
 
                 if (WXS_IS_RESTRICTION(type)
-                    && ((methSet & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0))
+                    && (methSet & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0)
                     methSet |= XML_SCHEMAS_TYPE_BLOCK_RESTRICTION;
 
                 type = type->baseType;
@@ -18973,10 +18973,10 @@ xmlSchemaCheckElemSubstGroup (xmlSchemaParserCtxtPtr ctxt,
             while (type != NULL) {
                 if (WXS_IS_COMPLEX(type)) {
                     if ((type->flags & XML_SCHEMAS_TYPE_BLOCK_EXTENSION)
-                        && ((set & XML_SCHEMAS_TYPE_BLOCK_EXTENSION) == 0))
+                        && (set & XML_SCHEMAS_TYPE_BLOCK_EXTENSION) == 0)
                         set |= XML_SCHEMAS_TYPE_BLOCK_EXTENSION;
                     if ((type->flags & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION)
-                        && ((set & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0))
+                        && (set & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION) == 0)
                         set |= XML_SCHEMAS_TYPE_BLOCK_RESTRICTION;
                 } else
                     break;
@@ -18984,7 +18984,7 @@ xmlSchemaCheckElemSubstGroup (xmlSchemaParserCtxtPtr ctxt,
                     break;
                 type = type->baseType;
             }
-            if ((set != 0)
+            if (set != 0
                 && (((set & XML_SCHEMAS_TYPE_BLOCK_EXTENSION)
                      && (methSet & XML_SCHEMAS_TYPE_BLOCK_EXTENSION))
                     || ((set & XML_SCHEMAS_TYPE_BLOCK_RESTRICTION)
@@ -19165,9 +19165,9 @@ xmlSchemaResolveModelGroupParticleReferences (xmlSchemaParserCtxtPtr ctxt,
     * URGENT TODO: Test this.
     */
     while (particle != NULL) {
-        if ((WXS_PARTICLE_TERM(particle) == NULL)
-            || ((WXS_PARTICLE_TERM(particle))->type
-                != XML_SCHEMA_EXTRA_QNAMEREF)) {
+        if (WXS_PARTICLE_TERM(particle) == NULL
+            || (WXS_PARTICLE_TERM(particle))->type
+                != XML_SCHEMA_EXTRA_QNAMEREF) {
             goto next_particle;
         }
         ref = WXS_QNAME_CAST WXS_PARTICLE_TERM(particle);
@@ -19260,7 +19260,7 @@ xmlSchemaAreValuesEqual (xmlSchemaValPtr x, xmlSchemaValPtr y)
 	* We assume computed values to be normalized, so do a fast
 	* string comparison for string based types.
 	*/
-        if ((ptx->builtInType == XML_SCHEMAS_STRING)
+        if (ptx->builtInType == XML_SCHEMAS_STRING
             || WXS_IS_ANY_SIMPLE_TYPE(ptx)) {
             if (!xmlStrEqual(xmlSchemaValueGetAsString(x),
                              xmlSchemaValueGetAsString(y)))
@@ -19300,10 +19300,10 @@ static int
 xmlSchemaResolveAttrUseReferences (xmlSchemaAttributeUsePtr ause,
                                    xmlSchemaParserCtxtPtr ctxt)
 {
-    if ((ctxt == NULL) || (ause == NULL))
+    if (ctxt == NULL || ause == NULL)
         return -1;
-    if ((ause->attrDecl == NULL)
-        || (ause->attrDecl->type != XML_SCHEMA_EXTRA_QNAMEREF))
+    if (ause->attrDecl == NULL
+        || ause->attrDecl->type != XML_SCHEMA_EXTRA_QNAMEREF)
         return 0;
 
     {
@@ -19338,10 +19338,10 @@ static int
 xmlSchemaCheckAttrUsePropsCorrect (xmlSchemaParserCtxtPtr ctxt,
                                    xmlSchemaAttributeUsePtr use)
 {
-    if ((ctxt == NULL) || (use == NULL))
+    if (ctxt == NULL || use == NULL)
         return -1;
-    if ((use->defValue == NULL) || (WXS_ATTRUSE_DECL(use) == NULL)
-        || ((WXS_ATTRUSE_DECL(use))->type != XML_SCHEMA_TYPE_ATTRIBUTE))
+    if (use->defValue == NULL || WXS_ATTRUSE_DECL(use) == NULL
+        || (WXS_ATTRUSE_DECL(use))->type != XML_SCHEMA_TYPE_ATTRIBUTE)
         return 0;
 
     /*
@@ -19352,9 +19352,9 @@ xmlSchemaCheckAttrUsePropsCorrect (xmlSchemaParserCtxtPtr ctxt,
     * Sub-components ($5.3)."
     */
 
-    if (((WXS_ATTRUSE_DECL(use))->defValue != NULL)
+    if ((WXS_ATTRUSE_DECL(use))->defValue != NULL
         && ((WXS_ATTRUSE_DECL(use))->flags & XML_SCHEMAS_ATTR_FIXED)
-        && ((use->flags & XML_SCHEMA_ATTR_USE_FIXED) == 0)) {
+        && (use->flags & XML_SCHEMA_ATTR_USE_FIXED) == 0) {
         xmlSchemaPCustomErr(
             ctxt, XML_SCHEMAP_AU_PROPS_CORRECT_2, WXS_BASIC_CAST use, NULL,
             "The attribute declaration has a 'fixed' value constraint "
@@ -19366,7 +19366,7 @@ xmlSchemaCheckAttrUsePropsCorrect (xmlSchemaParserCtxtPtr ctxt,
     /*
     * Compute and check the value constraint's value.
     */
-    if ((use->defVal != NULL) && (WXS_ATTRUSE_TYPEDEF(use) != NULL)) {
+    if (use->defVal != NULL && WXS_ATTRUSE_TYPEDEF(use) != NULL) {
         int ret;
         /*
 	* TODO: The spec seems to be missing a check of the
@@ -19409,9 +19409,9 @@ xmlSchemaCheckAttrUsePropsCorrect (xmlSchemaParserCtxtPtr ctxt,
     * {value constraint}, it must also be fixed and its value must match
     * that of the {attribute declaration}'s {value constraint}."
     */
-    if (((WXS_ATTRUSE_DECL(use))->defVal != NULL)
-        && (((WXS_ATTRUSE_DECL(use))->flags & XML_SCHEMA_ATTR_USE_FIXED)
-            == 0)) {
+    if ((WXS_ATTRUSE_DECL(use))->defVal != NULL
+        && ((WXS_ATTRUSE_DECL(use))->flags & XML_SCHEMA_ATTR_USE_FIXED)
+            == 0) {
         if (!xmlSchemaAreValuesEqual(use->defVal,
                                      (WXS_ATTRUSE_DECL(use))->defVal)) {
             xmlSchemaPCustomErr(
@@ -19451,7 +19451,7 @@ xmlSchemaResolveAttrTypeReferences (xmlSchemaAttributePtr item,
         xmlSchemaTypePtr type;
 
         type = xmlSchemaGetType(ctxt->schema, item->typeName, item->typeNs);
-        if ((type == NULL) || (!WXS_IS_SIMPLE(type))) {
+        if (type == NULL || !WXS_IS_SIMPLE(type)) {
             xmlSchemaPResCompAttrErr(ctxt, XML_SCHEMAP_SRC_RESOLVE,
                                      WXS_BASIC_CAST item, item->node, "type",
                                      item->typeName, item->typeNs,
@@ -19909,9 +19909,9 @@ xmlSchemaAddComponents (xmlSchemaParserCtxtPtr pctxt, xmlSchemaBucketPtr bucket)
     if (bucket->relations != NULL) {
         xmlSchemaSchemaRelationPtr rel = bucket->relations;
         do {
-            if ((rel->bucket != NULL)
-                && ((rel->bucket->flags & XML_SCHEMA_BUCKET_COMPS_ADDED)
-                    == 0)) {
+            if (rel->bucket != NULL
+                && (rel->bucket->flags & XML_SCHEMA_BUCKET_COMPS_ADDED)
+                    == 0) {
                 if (xmlSchemaAddComponents(pctxt, rel->bucket) == -1)
                     return -1;
             }
@@ -19935,7 +19935,7 @@ xmlSchemaFixupComponents (xmlSchemaParserCtxtPtr pctxt,
     if (pctxt->err == XML_SCHEMAP_INTERNAL) \
         goto exit_failure;
 
-    if ((con->pending == NULL) || (con->pending->nbItems == 0))
+    if (con->pending == NULL || con->pending->nbItems == 0)
         return 0;
 
     /*
@@ -20124,7 +20124,7 @@ xmlSchemaFixupComponents (xmlSchemaParserCtxtPtr pctxt,
         item = items[i];
         switch (item->type) {
         case XML_SCHEMA_TYPE_ATTRIBUTEGROUP:
-            if ((!WXS_ATTR_GROUP_EXPANDED(item))
+            if (!WXS_ATTR_GROUP_EXPANDED(item)
                 && WXS_ATTR_GROUP_HAS_REFS(item)) {
                 xmlSchemaAttributeGroupExpandRefs(pctxt,
                                                   WXS_ATTR_GROUP_CAST item);
@@ -20243,9 +20243,9 @@ xmlSchemaFixupComponents (xmlSchemaParserCtxtPtr pctxt,
         item = items[i];
         switch (item->type) {
         case XML_SCHEMA_TYPE_ATTRIBUTEGROUP:
-            if (((WXS_ATTR_GROUP_CAST item)->attrUses != NULL)
-                && ((WXS_LIST_CAST(WXS_ATTR_GROUP_CAST item)->attrUses)->nbItems
-                    > 1)) {
+            if ((WXS_ATTR_GROUP_CAST item)->attrUses != NULL
+                && (WXS_LIST_CAST(WXS_ATTR_GROUP_CAST item)->attrUses)->nbItems
+                    > 1) {
                 xmlSchemaCheckAGPropsCorrect(pctxt, WXS_ATTR_GROUP_CAST item);
                 FIXHFAILURE;
             }
@@ -20636,8 +20636,8 @@ xmlSchemaGetWhiteSpaceFacetValue (xmlSchemaTypePtr type)
         /*
 	* Note that we assume a whitespace of preserve for anySimpleType.
 	*/
-        if ((type->builtInType == XML_SCHEMAS_STRING)
-            || (type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE))
+        if (type->builtInType == XML_SCHEMAS_STRING
+            || type->builtInType == XML_SCHEMAS_ANYSIMPLETYPE)
             return XML_SCHEMA_WHITESPACE_PRESERVE;
         else if (type->builtInType == XML_SCHEMAS_NORMSTRING)
             return XML_SCHEMA_WHITESPACE_REPLACE;
@@ -20701,7 +20701,7 @@ xmlSchemaAssembleByLocation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
     xmlSchemaBucketPtr bucket = NULL;
     const xmlChar *baseURI = NULL;
 
-    if ((vctxt == NULL) || (schema == NULL))
+    if (vctxt == NULL || schema == NULL)
         return -1;
 
     if (vctxt->pctxt == NULL) {
@@ -20719,8 +20719,8 @@ xmlSchemaAssembleByLocation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
     * In streaming mode, node is NULL, so pass the input document's
     * filename as the base URI for resolving relative locations.
     */
-    if ((node == NULL) && (vctxt->parserCtxt != NULL)
-        && (vctxt->parserCtxt->input != NULL))
+    if (node == NULL && vctxt->parserCtxt != NULL
+        && vctxt->parserCtxt->input != NULL)
         baseURI = BAD_CAST vctxt->parserCtxt->input->filename;
     location = xmlSchemaBuildAbsoluteURI(pctxt->dict, location, node, baseURI);
     /*
@@ -20746,13 +20746,13 @@ xmlSchemaAssembleByLocation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
     * The first located schema will be handled as if all other
     * schemas imported by XSI were imported by this first schema.
     */
-    if ((bucket != NULL) && (WXS_CONSTRUCTOR(pctxt)->bucket == NULL))
+    if (bucket != NULL && WXS_CONSTRUCTOR(pctxt)->bucket == NULL)
         WXS_CONSTRUCTOR(pctxt)->bucket = bucket;
     /*
     * TODO: Is this handled like an import? I.e. is it not an error
     * if the schema cannot be located?
     */
-    if ((bucket == NULL) || (!CAN_PARSE_SCHEMA(bucket)))
+    if (bucket == NULL || !CAN_PARSE_SCHEMA(bucket))
         return 0;
     /*
     * We will reuse the parser context for every schema imported
@@ -20768,7 +20768,7 @@ xmlSchemaAssembleByLocation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
         goto exit_failure;
     }
     /* Paranoid error channelling. */
-    if ((ret == 0) && (pctxt->nberrors != 0))
+    if (ret == 0 && pctxt->nberrors != 0)
         ret = pctxt->err;
     if (pctxt->nberrors == 0) {
         /*
@@ -20783,7 +20783,7 @@ xmlSchemaAssembleByLocation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
 	* Not nice, but we need somehow to channel the schema parser
 	* error to the validation context.
 	*/
-        if ((ret != 0) && (vctxt->err == 0))
+        if (ret != 0 && vctxt->err == 0)
             vctxt->err = ret;
         vctxt->nberrors += pctxt->nberrors;
     } else {
@@ -20860,7 +20860,7 @@ xmlSchemaAssembleByXSI (xmlSchemaValidCtxtPtr vctxt)
             while (IS_BLANK_CH(*cur))
                 cur++;
             end = cur;
-            while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+            while (*end != 0 && !(IS_BLANK_CH(*end)))
                 end++;
             if (end == cur)
                 break;
@@ -20874,7 +20874,7 @@ xmlSchemaAssembleByXSI (xmlSchemaValidCtxtPtr vctxt)
         while (IS_BLANK_CH(*cur))
             cur++;
         end = cur;
-        while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+        while (*end != 0 && !(IS_BLANK_CH(*end)))
             end++;
         if (end == cur) {
             if (iattr->metaType == XML_SCHEMA_ATTR_INFO_META_XSI_SCHEMA_LOC) {
@@ -20914,9 +20914,9 @@ xmlSchemaLookupNamespace (xmlSchemaValidCtxtPtr vctxt, const xmlChar *prefix)
             if (vctxt->elemInfos[i]->nbNsBindings != 0) {
                 inode = vctxt->elemInfos[i];
                 for (j = 0; j < inode->nbNsBindings * 2; j += 2) {
-                    if (((prefix == NULL) && (inode->nsBindings[j] == NULL))
-                        || ((prefix != NULL)
-                            && xmlStrEqual(prefix, inode->nsBindings[j]))) {
+                    if (prefix == NULL && inode->nsBindings[j] == NULL
+                        || prefix != NULL
+                            && xmlStrEqual(prefix, inode->nsBindings[j])) {
                         /*
 			* Note that the namespace bindings are already
 			* in a string dict.
@@ -20944,7 +20944,7 @@ xmlSchemaLookupNamespace (xmlSchemaValidCtxtPtr vctxt, const xmlChar *prefix)
     } else {
         xmlNsPtr ns;
 
-        if ((vctxt->inode->node == NULL) || (vctxt->inode->node->doc == NULL)) {
+        if (vctxt->inode->node == NULL || vctxt->inode->node->doc == NULL) {
             VERROR_INT("xmlSchemaLookupNamespace",
                        "no node or node's doc available");
             return NULL;
@@ -20966,7 +20966,7 @@ xmlSchemaValidateNotation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
 {
     int ret;
 
-    if (vctxt && (vctxt->schema == NULL)) {
+    if (vctxt && vctxt->schema == NULL) {
         VERROR_INT("xmlSchemaValidateNotation",
                    "a schema is needed on the validation context");
         return -1;
@@ -20999,7 +20999,7 @@ xmlSchemaValidateNotation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
                 return 1;
             }
             if (xmlSchemaGetNotation(schema, localName, nsName) != NULL) {
-                if ((valNeeded) && (val != NULL)) {
+                if (valNeeded && val != NULL) {
                     (*val) = xmlSchemaNewNOTATIONValue(xmlStrdup(localName),
                                                        xmlStrdup(nsName));
                     if (*val == NULL)
@@ -21011,7 +21011,7 @@ xmlSchemaValidateNotation (xmlSchemaValidCtxtPtr vctxt, xmlSchemaPtr schema,
             xmlFree(localName);
         } else {
             if (xmlSchemaGetNotation(schema, value, NULL) != NULL) {
-                if (valNeeded && (val != NULL)) {
+                if (valNeeded && val != NULL) {
                     (*val) = xmlSchemaNewNOTATIONValue(
                         BAD_CAST xmlStrdup(value), NULL);
                     if (*val == NULL)
@@ -21039,8 +21039,8 @@ xmlSchemaVAddNodeQName (xmlSchemaValidCtxtPtr vctxt, const xmlChar *lname,
             return -1;
     }
     for (i = 0; i < vctxt->nodeQNames->nbItems; i += 2) {
-        if ((vctxt->nodeQNames->items[i] == lname)
-            && (vctxt->nodeQNames->items[i + 1] == nsname))
+        if (vctxt->nodeQNames->items[i] == lname
+            && vctxt->nodeQNames->items[i + 1] == nsname)
             /* Already there */
             return i;
     }
@@ -21096,8 +21096,8 @@ xmlSchemaAugmentIDC (void *payload, void *data, const xmlChar *name UNUSED)
     /*
     * Save if we have keyrefs at all.
     */
-    if ((vctxt->hasKeyrefs == 0)
-        && (idcDef->type == XML_SCHEMA_TYPE_IDC_KEYREF))
+    if (vctxt->hasKeyrefs == 0
+        && idcDef->type == XML_SCHEMA_TYPE_IDC_KEYREF)
         vctxt->hasKeyrefs = 1;
 }
 
@@ -21803,7 +21803,7 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
                 goto deregister_check;
             }
 
-            if ((key == NULL) && (vctxt->inode->val == NULL)) {
+            if (key == NULL && vctxt->inode->val == NULL) {
                 /*
 		* Failed to provide the normalized value; maybe
 		* the value was invalid.
@@ -21974,7 +21974,7 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
 	    * Check if the matcher has any key-sequences at all, plus
 	    * if it has a key-sequence for the current target node.
 	    */
-            if ((matcher->keySeqs == NULL) || (matcher->sizeKeySeqs <= pos)) {
+            if (matcher->keySeqs == NULL || matcher->sizeKeySeqs <= pos) {
                 if (idc->type == XML_SCHEMA_TYPE_IDC_KEY)
                     goto selector_key_error;
                 else
@@ -22023,8 +22023,8 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
             if (targets == NULL)
                 return -1;
 
-            if ((idc->type != XML_SCHEMA_TYPE_IDC_KEYREF)
-                && (targets->nbItems != 0)) {
+            if (idc->type != XML_SCHEMA_TYPE_IDC_KEYREF
+                && targets->nbItems != 0) {
                 xmlSchemaPSVIIDCKeyPtr ckey, bkey, *bkeySeq;
                 xmlIDCHashEntryPtr e;
 
@@ -22189,7 +22189,7 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
             /*
 	    * Free the key-sequence if not added to the IDC table.
 	    */
-            if ((keySeq != NULL) && (*keySeq != NULL)) {
+            if (keySeq != NULL && *keySeq != NULL) {
                 xmlFree(*keySeq);
                 *keySeq = NULL;
             }
@@ -22201,7 +22201,7 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
         /*
 	* Deregister state objects if they reach the depth of creation.
 	*/
-        if ((sto->nbHistory == 0) && (sto->depth == depth)) {
+        if (sto->nbHistory == 0 && sto->depth == depth) {
             if (vctxt->xpathStates != sto) {
                 VERROR_INT("xmlSchemaXPathProcessHistory",
                            "The state object to be removed is not the first "
@@ -22280,8 +22280,8 @@ xmlSchemaIDCRegisterMatchers (xmlSchemaValidCtxtPtr vctxt,
                         "definition");
                     return -1;
                 }
-                if ((aidc->keyrefDepth == -1)
-                    || (vctxt->depth < aidc->keyrefDepth))
+                if (aidc->keyrefDepth == -1
+                    || vctxt->depth < aidc->keyrefDepth)
                     aidc->keyrefDepth = vctxt->depth;
             }
         }
@@ -22357,7 +22357,7 @@ xmlSchemaIDCFillNodeTables (xmlSchemaValidCtxtPtr vctxt,
         /*
 	* Skip keyref IDCs and empty IDC target-lists.
 	*/
-        if ((matcher->aidc->def->type == XML_SCHEMA_TYPE_IDC_KEYREF)
+        if (matcher->aidc->def->type == XML_SCHEMA_TYPE_IDC_KEYREF
             || WXS_ILIST_IS_EMPTY(matcher->targets)) {
             matcher = matcher->next;
             continue;
@@ -22366,7 +22366,7 @@ xmlSchemaIDCFillNodeTables (xmlSchemaValidCtxtPtr vctxt,
 	* If we _want_ the IDC node-table to be created in any case
 	* then do so. Otherwise create them only if keyrefs need them.
 	*/
-        if ((!vctxt->createIDCNodeTables)
+        if (!vctxt->createIDCNodeTables
             && ((matcher->aidc->keyrefDepth == -1)
                 || (matcher->aidc->keyrefDepth > vctxt->depth))) {
             matcher = matcher->next;
@@ -22392,7 +22392,7 @@ xmlSchemaIDCFillNodeTables (xmlSchemaValidCtxtPtr vctxt,
             nbNodeTable = 0;
         }
 
-        if ((nbNodeTable == 0) && (nbDupls == 0)) {
+        if (nbNodeTable == 0 && nbDupls == 0) {
             /*
 	    * Transfer all IDC target-nodes to the IDC node-table.
 	    */
@@ -22568,7 +22568,7 @@ xmlSchemaBubbleIDCNodeTables (xmlSchemaValidCtxtPtr vctxt)
     * Remove duplicate key-sequences.
     */
     while (bind != NULL) {
-        if ((bind->nbNodes == 0) && WXS_ILIST_IS_EMPTY(bind->dupls))
+        if (bind->nbNodes == 0 && WXS_ILIST_IS_EMPTY(bind->dupls))
             goto next_binding;
         /*
 	* Check if the key/unique IDC table needs to be bubbled.
@@ -22577,8 +22577,8 @@ xmlSchemaBubbleIDCNodeTables (xmlSchemaValidCtxtPtr vctxt)
             aidc = vctxt->aidcs;
             do {
                 if (aidc->def == bind->definition) {
-                    if ((aidc->keyrefDepth == -1)
-                        || (aidc->keyrefDepth >= vctxt->depth)) {
+                    if (aidc->keyrefDepth == -1
+                        || aidc->keyrefDepth >= vctxt->depth) {
                         goto next_binding;
                     }
                     break;
@@ -22843,7 +22843,7 @@ xmlSchemaCheckCVCIDCKeyRef (xmlSchemaValidCtxtPtr vctxt)
     * Find a keyref.
     */
     while (matcher != NULL) {
-        if ((matcher->idcType == XML_SCHEMA_TYPE_IDC_KEYREF) && matcher->targets
+        if (matcher->idcType == XML_SCHEMA_TYPE_IDC_KEYREF && matcher->targets
             && matcher->targets->nbItems) {
             int i, j, k, res, nbFields, hasDupls;
             xmlSchemaPSVIIDCKeyPtr *refKeys, *keys;
@@ -22923,7 +22923,7 @@ xmlSchemaCheckCVCIDCKeyRef (xmlSchemaValidCtxtPtr vctxt)
                             break;
                         }
                     }
-                    if ((res == 0) && hasDupls) {
+                    if (res == 0 && hasDupls) {
                         /*
 			* Search in duplicates
 			*/
@@ -23271,7 +23271,7 @@ xmlSchemaValidateFacets (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
     * types.
     */
     tmpType = xmlSchemaGetPrimitiveType(type);
-    if ((tmpType->builtInType == XML_SCHEMAS_STRING)
+    if (tmpType->builtInType == XML_SCHEMAS_STRING
         || WXS_IS_ANY_SIMPLE_TYPE(tmpType)) {
         ws = xmlSchemaGetWhiteSpaceFacetValue(type);
     } else
@@ -23395,8 +23395,8 @@ pattern_and_enum:
         if (found)
             break;
         tmpType = tmpType->baseType;
-    } while ((tmpType != NULL) && (tmpType->type != XML_SCHEMA_TYPE_BASIC));
-    if (found && (ret == 0)) {
+    } while (tmpType != NULL && tmpType->type != XML_SCHEMA_TYPE_BASIC);
+    if (found && ret == 0) {
         ret = XML_SCHEMAV_CVC_ENUMERATION_VALID;
         if (fireErrors) {
             xmlSchemaFacetErr(actxt, ret, node, value, 0, type, NULL, NULL,
@@ -23438,7 +23438,7 @@ pattern_and_enum:
                 facet = facetLink->facet;
             }
         }
-        if (found && (ret != 1)) {
+        if (found && ret != 1) {
             ret = XML_SCHEMAV_CVC_PATTERN_VALID;
             if (fireErrors) {
                 xmlSchemaFacetErr(actxt, ret, node, value, 0, type, facet, NULL,
@@ -23450,7 +23450,7 @@ pattern_and_enum:
             break;
         }
         tmpType = tmpType->baseType;
-    } while ((tmpType != NULL) && (tmpType->type != XML_SCHEMA_TYPE_BASIC));
+    } while (tmpType != NULL && tmpType->type != XML_SCHEMA_TYPE_BASIC);
 
     return error;
 }
@@ -23556,7 +23556,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
         isNormalized = 1;                                                     \
     }
 
-    if ((retVal != NULL) && (*retVal != NULL)) {
+    if (retVal != NULL && *retVal != NULL) {
         xmlSchemaFreeValue(*retVal);
         *retVal = NULL;
     }
@@ -23582,7 +23582,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
     /*
     * 2.3 otherwise no further condition applies.
     */
-    if ((!valNeeded) && (type->flags & XML_SCHEMAS_TYPE_FACETSNEEDVALUE))
+    if (!valNeeded && (type->flags & XML_SCHEMAS_TYPE_FACETSNEEDVALUE))
         valNeeded = 1;
     if (value == NULL)
         value = BAD_CAST "";
@@ -23601,7 +23601,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
 	    * Get the built-in type.
 	    */
             biType = type->baseType;
-            while ((biType != NULL) && (biType->type != XML_SCHEMA_TYPE_BASIC))
+            while (biType != NULL && biType->type != XML_SCHEMA_TYPE_BASIC)
                 biType = biType->baseType;
 
             if (biType == NULL) {
@@ -23671,7 +23671,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
             else
                 ret = XML_SCHEMAV_CVC_DATATYPE_VALID_1_2_1;
         }
-        if ((ret == 0) && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
+        if (ret == 0 && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
             /*
 	    * Check facets.
 	    */
@@ -23689,7 +23689,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
                 else
                     ret = XML_SCHEMAV_CVC_DATATYPE_VALID_1_2_1;
             }
-        } else if (fireErrors && (ret > 0))
+        } else if (fireErrors && ret > 0)
             xmlSchemaSimpleTypeErr(actxt, ret, node, value, type, 1);
     } else if (WXS_IS_LIST(type)) {
         xmlSchemaTypePtr itemType;
@@ -23716,7 +23716,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
             while (IS_BLANK_CH(*cur))
                 cur++;
             end = cur;
-            while ((*end != 0) && (!(IS_BLANK_CH(*end))))
+            while (*end != 0 && !(IS_BLANK_CH(*end)))
                 end++;
             if (end == cur)
                 break;
@@ -23753,7 +23753,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
             cur = end;
         } while (*cur != 0);
         FREE_AND_NULL(tmpValue);
-        if ((ret == 0) && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
+        if (ret == 0 && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
             /*
 	    * Apply facets (pattern, enumeration).
 	    */
@@ -23769,7 +23769,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
                 ret = XML_SCHEMAV_CVC_DATATYPE_VALID_1_2_2;
             }
         }
-        if (fireErrors && (ret > 0)) {
+        if (fireErrors && ret > 0) {
             /*
 	    * Report the normalized value.
 	    */
@@ -23829,7 +23829,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
         /*
 	* Apply facets (pattern, enumeration).
 	*/
-        if ((ret == 0) && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
+        if (ret == 0 && (type->flags & XML_SCHEMAS_TYPE_HAS_FACETS)) {
             /*
 	    * The normalization behavior of `union` types is controlled by
 	    * the value of whiteSpace on that one of the `memberTypes`
@@ -23848,7 +23848,7 @@ xmlSchemaVCheckCVCSimpleType (xmlSchemaAbstractCtxtPtr actxt, xmlNodePtr node,
                 ret = XML_SCHEMAV_CVC_DATATYPE_VALID_1_2_3;
             }
         }
-        if (fireErrors && (ret > 0))
+        if (fireErrors && ret > 0)
             xmlSchemaSimpleTypeErr(actxt, ret, node, value, type, 1);
     }
 
@@ -23876,7 +23876,7 @@ xmlSchemaVExpandQName (xmlSchemaValidCtxtPtr vctxt, const xmlChar *value,
 {
     int ret = 0;
 
-    if ((nsName == NULL) || (localName == NULL))
+    if (nsName == NULL || localName == NULL)
         return -1;
     *nsName = NULL;
     *localName = NULL;
@@ -24123,7 +24123,7 @@ xmlSchemaValidateElemDecl (xmlSchemaValidCtxtPtr vctxt)
 			* cvc-elt (3.3.4) : 3.2.2
 			*/
                         if ((elemDecl->flags & XML_SCHEMAS_ELEM_FIXED)
-                            && (elemDecl->value != NULL)) {
+                            && elemDecl->value != NULL) {
                             VERROR(XML_SCHEMAV_CVC_ELT_3_2_2, NULL,
                                    "The element cannot be 'nilled' because "
                                    "there is a fixed value constraint defined "
@@ -24163,8 +24163,8 @@ xmlSchemaValidateElemDecl (xmlSchemaValidCtxtPtr vctxt)
     /*
     * IDC: Register identity-constraint XPath matchers.
     */
-    if ((elemDecl->idcs != NULL)
-        && (xmlSchemaIDCRegisterMatchers(vctxt, elemDecl) == -1))
+    if (elemDecl->idcs != NULL
+        && xmlSchemaIDCRegisterMatchers(vctxt, elemDecl) == -1)
         return -1;
     /*
     * No actual type definition.
@@ -24358,7 +24358,7 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
             tmpiattr->state = XML_SCHEMAS_ATTR_ERR_MISSING;
             tmpiattr->use = attrUse;
             tmpiattr->decl = attrDecl;
-        } else if ((attrUse->occurs == XML_SCHEMAS_ATTR_USE_OPTIONAL)
+        } else if (attrUse->occurs == XML_SCHEMAS_ATTR_USE_OPTIONAL
                    && ((attrUse->defValue != NULL)
                        || (attrDecl->defValue != NULL))) {
             /*
@@ -24523,8 +24523,8 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
 	* "lax" and "skip" validated attributes. Check what to
 	* do in this case.
 	*/
-        if ((iattr->state != XML_SCHEMAS_ATTR_ASSESSED)
-            && (iattr->state != XML_SCHEMAS_ATTR_DEFAULT))
+        if (iattr->state != XML_SCHEMAS_ATTR_ASSESSED
+            && iattr->state != XML_SCHEMAS_ATTR_DEFAULT)
             continue;
         /*
 	* VAL TODO: What to do if the type definition is missing?
@@ -24556,7 +24556,7 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
 	    * We need the value only if we need to resolve IDCs or
 	    * will create default attributes.
 	    */
-            if ((xpathRes) || (defAttrOwnerElem)) {
+            if (xpathRes || defAttrOwnerElem) {
                 if (iattr->use->defValue != NULL) {
                     iattr->value = (xmlChar *) iattr->use->defValue;
                     iattr->val = iattr->use->defVal;
@@ -24670,8 +24670,8 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
 	* the attribute was a wild attribute.
 	*/
         if ((iattr->decl->flags & XML_SCHEMAS_ATTR_FIXED)
-            || ((iattr->use != NULL)
-                && (iattr->use->flags & XML_SCHEMAS_ATTR_FIXED)))
+            || iattr->use != NULL
+                && (iattr->use->flags & XML_SCHEMAS_ATTR_FIXED))
             fixed = 1;
         else
             fixed = 0;
@@ -24733,7 +24733,7 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
                 /* VAL TODO: A value was not precomputed. */
                 goto eval_idcs;
             }
-            if ((iattr->use != NULL) && (iattr->use->defValue != NULL)) {
+            if (iattr->use != NULL && iattr->use->defValue != NULL) {
                 if (iattr->use->defVal == NULL) {
                     /* VAL TODO: A default value was not precomputed. */
                     goto eval_idcs;
@@ -24785,10 +24785,10 @@ xmlSchemaVAttributesComplex (xmlSchemaValidCtxtPtr vctxt)
     */
     for (i = 0; i < vctxt->nbAttrInfos; i++) {
         iattr = vctxt->attrInfos[i];
-        if ((iattr->state == XML_SCHEMAS_ATTR_META)
-            || (iattr->state == XML_SCHEMAS_ATTR_ASSESSED)
-            || (iattr->state == XML_SCHEMAS_ATTR_WILD_SKIP)
-            || (iattr->state == XML_SCHEMAS_ATTR_WILD_LAX_NO_DECL))
+        if (iattr->state == XML_SCHEMAS_ATTR_META
+            || iattr->state == XML_SCHEMAS_ATTR_ASSESSED
+            || iattr->state == XML_SCHEMAS_ATTR_WILD_SKIP
+            || iattr->state == XML_SCHEMAS_ATTR_WILD_LAX_NO_DECL)
             continue;
         ACTIVATE_ATTRIBUTE(iattr);
         switch (iattr->state) {
@@ -24856,8 +24856,8 @@ xmlSchemaValidateElemWildcard (xmlSchemaValidCtxtPtr vctxt, int *skip)
     * The namespace of the element was already identified to be
     * matching the wildcard.
     */
-    if ((skip == NULL) || (wild == NULL)
-        || (wild->type != XML_SCHEMA_TYPE_ANY)) {
+    if (skip == NULL || wild == NULL
+        || wild->type != XML_SCHEMA_TYPE_ANY) {
         VERROR_INT("xmlSchemaValidateElemWildcard", "bad arguments");
         return -1;
     }
@@ -24951,7 +24951,7 @@ xmlSchemaCheckCOSValidDefault (xmlSchemaValidCtxtPtr vctxt,
 	* type}'s particle must be `emptiable` as defined by
 	* Particle Emptiable ($3.9.6)."
 	*/
-        if ((!WXS_HAS_SIMPLE_CONTENT(inode->typeDef))
+        if (!WXS_HAS_SIMPLE_CONTENT(inode->typeDef)
             && ((!WXS_HAS_MIXED_CONTENT(inode->typeDef))
                 || (!WXS_EMPTIABLE(inode->typeDef)))) {
             ret = XML_SCHEMAP_COS_VALID_DEFAULT_2_1;
@@ -25047,7 +25047,7 @@ xmlSchemaValidatorPopElem (xmlSchemaValidCtxtPtr vctxt)
         vctxt->skipDepth = vctxt->depth - 1;
         goto end_elem;
     }
-    if ((inode->typeDef == NULL)
+    if (inode->typeDef == NULL
         || (inode->flags & XML_SCHEMA_NODE_INFO_ERR_BAD_TYPE)) {
         /*
 	* 1. the type definition might be missing if the element was
@@ -25059,8 +25059,8 @@ xmlSchemaValidatorPopElem (xmlSchemaValidCtxtPtr vctxt)
     /*
     * Check the content model.
     */
-    if ((inode->typeDef->contentType == XML_SCHEMA_CONTENT_MIXED)
-        || (inode->typeDef->contentType == XML_SCHEMA_CONTENT_ELEMENTS)) {
+    if (inode->typeDef->contentType == XML_SCHEMA_CONTENT_MIXED
+        || inode->typeDef->contentType == XML_SCHEMA_CONTENT_ELEMENTS) {
         /*
 	* Workaround for "anyType".
 	*/
@@ -25100,7 +25100,7 @@ xmlSchemaValidatorPopElem (xmlSchemaValidCtxtPtr vctxt)
             xmlRegExecNextValues(inode->regexCtxt, &nbval, &nbneg, &values[0],
                                  &terminal);
             ret = xmlRegExecPushString(inode->regexCtxt, NULL, NULL);
-            if ((ret < 0) || ((ret == 0) && (!INODE_NILLED(inode)))) {
+            if (ret < 0 || ret == 0 && !INODE_NILLED(inode)) {
                 /*
 		* Still missing something.
 		*/
@@ -25160,9 +25160,9 @@ character_content:
     * the item has neither element nor character [children] and
     * clause 3.2 has not applied, then all of the following must be true:
     */
-    if ((inode->decl->value != NULL)
+    if (inode->decl->value != NULL
         && (inode->flags & XML_SCHEMA_ELEM_INFO_EMPTY)
-        && (!INODE_NILLED(inode))) {
+        && !INODE_NILLED(inode)) {
         /*
 	* cvc-elt (3.3.4) : 5.1.1
 	* If the `actual type definition` is a `local type definition`
@@ -25223,7 +25223,7 @@ character_content:
 	* PSVI: Create a text node on the instance element.
 	*/
         if ((vctxt->options & XML_SCHEMA_VAL_VC_I_CREATE)
-            && (inode->node != NULL)) {
+            && inode->node != NULL) {
             xmlNodePtr textChild;
             xmlChar *normValue;
             /*
@@ -25289,7 +25289,7 @@ character_content:
 	* 5.2.2 If there is a fixed {value constraint} and clause 3.2 has
 	* not applied, all of the following must be true:
 	*/
-        if ((inode->decl->value != NULL)
+        if (inode->decl->value != NULL
             && (inode->decl->flags & XML_SCHEMAS_ELEM_FIXED)) {
             /*
 	    * TODO: We will need a computed value, when comparison is
@@ -25373,7 +25373,7 @@ end_elem:
     * Evaluate the history of XPath state objects.
     */
     if (inode->appliedXPath
-        && (xmlSchemaXPathProcessHistory(vctxt, vctxt->depth) == -1))
+        && xmlSchemaXPathProcessHistory(vctxt, vctxt->depth) == -1)
         goto internal_error;
     /*
     * MAYBE TODO:
@@ -25391,7 +25391,7 @@ end_elem:
     /*
     * Add the current IDC target-nodes to the IDC node-tables.
     */
-    if ((inode->idcMatchers != NULL)
+    if (inode->idcMatchers != NULL
         && (vctxt->hasKeyrefs || vctxt->createIDCNodeTables)) {
         if (xmlSchemaIDCFillNodeTables(vctxt, inode) == -1)
             goto internal_error;
@@ -25406,7 +25406,7 @@ end_elem:
     * Merge/free the IDC table.
     */
     if (inode->idcTable != NULL) {
-        if ((vctxt->depth > 0)
+        if (vctxt->depth > 0
             && (vctxt->hasKeyrefs || vctxt->createIDCNodeTables)) {
             /*
 	    * Merge the IDC node table with the table of the parent node.
@@ -25710,8 +25710,8 @@ xmlSchemaVPushText (xmlSchemaValidCtxtPtr vctxt, int nodeType,
     }
 
     if (vctxt->inode->typeDef->contentType == XML_SCHEMA_CONTENT_ELEMENTS) {
-        if ((nodeType != XML_TEXT_NODE)
-            || (!xmlSchemaIsBlank((xmlChar *) value, len))) {
+        if (nodeType != XML_TEXT_NODE
+            || !xmlSchemaIsBlank((xmlChar *) value, len)) {
             /*
 	    * SPEC cvc-complex-type (2.3)
 	    * "If the {content type} is element-only, then the
@@ -25728,14 +25728,14 @@ xmlSchemaVPushText (xmlSchemaValidCtxtPtr vctxt, int nodeType,
         return 0;
     }
 
-    if ((value == NULL) || (value[0] == 0))
+    if (value == NULL || value[0] == 0)
         return 0;
     /*
     * Save the value.
     * NOTE that even if the content type is *mixed*, we need the
     * *initial value* for default/fixed value constraints.
     */
-    if ((vctxt->inode->typeDef->contentType == XML_SCHEMA_CONTENT_MIXED)
+    if (vctxt->inode->typeDef->contentType == XML_SCHEMA_CONTENT_MIXED
         && ((vctxt->inode->decl == NULL)
             || (vctxt->inode->decl->value == NULL)))
         return 0;
@@ -25800,7 +25800,7 @@ xmlSchemaValidateElem (xmlSchemaValidCtxtPtr vctxt)
 {
     int ret = 0;
 
-    if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth)) {
+    if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth) {
         VERROR_INT("xmlSchemaValidateElem", "in skip-state");
         goto internal_error;
     }
@@ -25845,7 +25845,7 @@ xmlSchemaValidateElem (xmlSchemaValidCtxtPtr vctxt)
         }
         if (vctxt->depth == vctxt->skipDepth)
             goto exit;
-        if ((vctxt->inode->decl == NULL) && (vctxt->inode->typeDef == NULL)) {
+        if (vctxt->inode->decl == NULL && vctxt->inode->typeDef == NULL) {
             VERROR_INT("xmlSchemaValidateElem",
                        "the child element was valid but neither the "
                        "declaration nor the type was set");
@@ -25946,8 +25946,8 @@ type_validation:
     * Validate attributes.
     */
     if (WXS_IS_COMPLEX(vctxt->inode->typeDef)) {
-        if ((vctxt->nbAttrInfos != 0)
-            || (vctxt->inode->typeDef->attrUses != NULL)) {
+        if (vctxt->nbAttrInfos != 0
+            || vctxt->inode->typeDef->attrUses != NULL) {
             ret = xmlSchemaVAttributesComplex(vctxt);
         }
     } else if (vctxt->nbAttrInfos != 0) {
@@ -26185,7 +26185,7 @@ xmlSchemaSAXHandleText (void *ctx, const xmlChar *ch, int len)
 
     if (vctxt->depth < 0)
         return;
-    if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+    if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
         return;
     if (vctxt->inode->flags & XML_SCHEMA_ELEM_INFO_EMPTY)
         vctxt->inode->flags ^= XML_SCHEMA_ELEM_INFO_EMPTY;
@@ -26209,7 +26209,7 @@ xmlSchemaSAXHandleCDataSection (void *ctx, const xmlChar *ch, int len)
 
     if (vctxt->depth < 0)
         return;
-    if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+    if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
         return;
     if (vctxt->inode->flags & XML_SCHEMA_ELEM_INFO_EMPTY)
         vctxt->inode->flags ^= XML_SCHEMA_ELEM_INFO_EMPTY;
@@ -26230,7 +26230,7 @@ xmlSchemaSAXHandleReference (void *ctx UNUSED, const xmlChar *name UNUSED)
 
     if (vctxt->depth < 0)
         return;
-    if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+    if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
         return;
     /* SAX VAL TODO: What to do here? */
 }
@@ -26255,7 +26255,7 @@ xmlSchemaSAXHandleStartElementNs (void *ctx, const xmlChar *localname,
     * Skip elements if inside a "skip" wildcard or invalid.
     */
     vctxt->depth++;
-    if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+    if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
         return;
     /*
     * Push the element.
@@ -26410,8 +26410,8 @@ xmlSchemaSAXHandleEndElementNs (void *ctx, const xmlChar *localname UNUSED,
     /*
     * SAX VAL TODO: Just a temporary check.
     */
-    if ((!xmlStrEqual(vctxt->inode->localName, localname))
-        || (!xmlStrEqual(vctxt->inode->nsName, URI))) {
+    if (!xmlStrEqual(vctxt->inode->localName, localname)
+        || !xmlStrEqual(vctxt->inode->nsName, URI)) {
         VERROR_INT("xmlSchemaSAXHandleEndElementNs", "elem pop mismatch");
     }
     res = xmlSchemaValidatorPopElem(vctxt);
@@ -26853,7 +26853,7 @@ xmlSchemaVDocWalk (xmlSchemaValidCtxtPtr vctxt)
     vctxt->validationRoot = valRoot;
     node = valRoot;
     while (node != NULL) {
-        if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+        if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
             goto next_sibling;
         if (node->type == XML_ELEMENT_NODE) {
             /*
@@ -26918,14 +26918,14 @@ xmlSchemaVDocWalk (xmlSchemaValidCtxtPtr vctxt)
 		*/
                 goto leave_node;
             }
-            if ((vctxt->skipDepth != -1) && (vctxt->depth >= vctxt->skipDepth))
+            if (vctxt->skipDepth != -1 && vctxt->depth >= vctxt->skipDepth)
                 goto leave_node;
-        } else if ((node->type == XML_TEXT_NODE)
-                   || (node->type == XML_CDATA_SECTION_NODE)) {
+        } else if (node->type == XML_TEXT_NODE
+                   || node->type == XML_CDATA_SECTION_NODE) {
             /*
 	    * Process character content.
 	    */
-            if ((ielem != NULL) && (ielem->flags & XML_SCHEMA_ELEM_INFO_EMPTY))
+            if (ielem != NULL && (ielem->flags & XML_SCHEMA_ELEM_INFO_EMPTY))
                 ielem->flags ^= XML_SCHEMA_ELEM_INFO_EMPTY;
             ret = xmlSchemaVPushText(vctxt, node->type, node->content, -1,
                                      XML_SCHEMA_PUSH_TEXT_PERSIST, NULL);
@@ -26937,8 +26937,8 @@ xmlSchemaVDocWalk (xmlSchemaValidCtxtPtr vctxt)
 	    * DOC VAL TODO: Should we skip further validation of the
 	    * element content here?
 	    */
-        } else if ((node->type == XML_ENTITY_NODE)
-                   || (node->type == XML_ENTITY_REF_NODE)) {
+        } else if (node->type == XML_ENTITY_NODE
+                   || node->type == XML_ENTITY_REF_NODE) {
             /*
 	    * DOC VAL TODO: What to do with entities?
 	    */
@@ -27026,8 +27026,8 @@ xmlSchemaPreRun (xmlSchemaValidCtxtPtr vctxt)
 	*
 	* Create the schema parser context.
 	*/
-        if ((vctxt->pctxt == NULL)
-            && (xmlSchemaCreatePCtxtOnVCtxt(vctxt) == -1))
+        if (vctxt->pctxt == NULL
+            && xmlSchemaCreatePCtxtOnVCtxt(vctxt) == -1)
             return -1;
         pctxt = vctxt->pctxt;
         pctxt->xsiAssemble = 1;
@@ -27093,7 +27093,7 @@ xmlSchemaVStart (xmlSchemaValidCtxtPtr vctxt)
         ret = xmlSchemaVReaderWalk(vctxt);
 #endif
 #endif
-    } else if ((vctxt->sax != NULL) && (vctxt->parserCtxt != NULL)) {
+    } else if (vctxt->sax != NULL && vctxt->parserCtxt != NULL) {
         /*
 	 * SAX validation.
 	 */
@@ -27120,7 +27120,7 @@ xmlSchemaVStart (xmlSchemaValidCtxtPtr vctxt)
 int
 xmlSchemaValidateOneElement (xmlSchemaValidCtxt *ctxt, xmlNode *elem)
 {
-    if ((ctxt == NULL) || (elem == NULL) || (elem->type != XML_ELEMENT_NODE))
+    if (ctxt == NULL || elem == NULL || elem->type != XML_ELEMENT_NODE)
         return -1;
 
     if (ctxt->schema == NULL)
@@ -27143,7 +27143,7 @@ xmlSchemaValidateOneElement (xmlSchemaValidCtxt *ctxt, xmlNode *elem)
 int
 xmlSchemaValidateDoc (xmlSchemaValidCtxt *ctxt, xmlDoc *doc)
 {
-    if ((ctxt == NULL) || (doc == NULL))
+    if (ctxt == NULL || doc == NULL)
         return -1;
 
     ctxt->doc = doc;
@@ -27196,8 +27196,8 @@ internalSubsetSplit (void *ctx, const xmlChar *name, const xmlChar *ExternalID,
                      const xmlChar *SystemID)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->internalSubset != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->internalSubset != NULL)
         ctxt->user_sax->internalSubset(ctxt->user_data, name, ExternalID,
                                        SystemID);
 }
@@ -27206,8 +27206,8 @@ static int
 isStandaloneSplit (void *ctx)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->isStandalone != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->isStandalone != NULL)
         return ctxt->user_sax->isStandalone(ctxt->user_data);
     return 0;
 }
@@ -27216,8 +27216,8 @@ static int
 hasInternalSubsetSplit (void *ctx)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->hasInternalSubset != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->hasInternalSubset != NULL)
         return ctxt->user_sax->hasInternalSubset(ctxt->user_data);
     return 0;
 }
@@ -27226,8 +27226,8 @@ static int
 hasExternalSubsetSplit (void *ctx)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->hasExternalSubset != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->hasExternalSubset != NULL)
         return ctxt->user_sax->hasExternalSubset(ctxt->user_data);
     return 0;
 }
@@ -27237,8 +27237,8 @@ externalSubsetSplit (void *ctx, const xmlChar *name, const xmlChar *ExternalID,
                      const xmlChar *SystemID)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->externalSubset != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->externalSubset != NULL)
         ctxt->user_sax->externalSubset(ctxt->user_data, name, ExternalID,
                                        SystemID);
 }
@@ -27247,8 +27247,8 @@ static xmlParserInputPtr
 resolveEntitySplit (void *ctx, const xmlChar *publicId, const xmlChar *systemId)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->resolveEntity != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->resolveEntity != NULL)
         return ctxt->user_sax->resolveEntity(ctxt->user_data, publicId,
                                              systemId);
     return NULL;
@@ -27258,8 +27258,8 @@ static xmlEntityPtr
 getEntitySplit (void *ctx, const xmlChar *name)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->getEntity != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->getEntity != NULL)
         return ctxt->user_sax->getEntity(ctxt->user_data, name);
     return NULL;
 }
@@ -27268,8 +27268,8 @@ static xmlEntityPtr
 getParameterEntitySplit (void *ctx, const xmlChar *name)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->getParameterEntity != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->getParameterEntity != NULL)
         return ctxt->user_sax->getParameterEntity(ctxt->user_data, name);
     return NULL;
 }
@@ -27280,8 +27280,8 @@ entityDeclSplit (void *ctx, const xmlChar *name, int type,
                  xmlChar *content)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->entityDecl != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->entityDecl != NULL)
         ctxt->user_sax->entityDecl(ctxt->user_data, name, type, publicId,
                                    systemId, content);
 }
@@ -27292,8 +27292,8 @@ attributeDeclSplit (void *ctx, const xmlChar *elem, const xmlChar *name,
                     xmlEnumerationPtr tree)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->attributeDecl != NULL)) {
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->attributeDecl != NULL) {
         ctxt->user_sax->attributeDecl(ctxt->user_data, elem, name, type, def,
                                       defaultValue, tree);
     } else {
@@ -27306,8 +27306,8 @@ elementDeclSplit (void *ctx, const xmlChar *name, int type,
                   xmlElementContentPtr content)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->elementDecl != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->elementDecl != NULL)
         ctxt->user_sax->elementDecl(ctxt->user_data, name, type, content);
 }
 
@@ -27316,8 +27316,8 @@ notationDeclSplit (void *ctx, const xmlChar *name, const xmlChar *publicId,
                    const xmlChar *systemId)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->notationDecl != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->notationDecl != NULL)
         ctxt->user_sax->notationDecl(ctxt->user_data, name, publicId, systemId);
 }
 
@@ -27327,8 +27327,8 @@ unparsedEntityDeclSplit (void *ctx, const xmlChar *name,
                          const xmlChar *notationName)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->unparsedEntityDecl != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->unparsedEntityDecl != NULL)
         ctxt->user_sax->unparsedEntityDecl(ctxt->user_data, name, publicId,
                                            systemId, notationName);
 }
@@ -27337,8 +27337,8 @@ static void
 setDocumentLocatorSplit (void *ctx, xmlSAXLocatorPtr loc)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->setDocumentLocator != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->setDocumentLocator != NULL)
         ctxt->user_sax->setDocumentLocator(ctxt->user_data, loc);
 }
 
@@ -27346,8 +27346,8 @@ static void
 startDocumentSplit (void *ctx)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->startDocument != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->startDocument != NULL)
         ctxt->user_sax->startDocument(ctxt->user_data);
 }
 
@@ -27355,8 +27355,8 @@ static void
 endDocumentSplit (void *ctx)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->endDocument != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->endDocument != NULL)
         ctxt->user_sax->endDocument(ctxt->user_data);
 }
 
@@ -27365,8 +27365,8 @@ processingInstructionSplit (void *ctx, const xmlChar *target,
                             const xmlChar *data)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->processingInstruction != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->processingInstruction != NULL)
         ctxt->user_sax->processingInstruction(ctxt->user_data, target, data);
 }
 
@@ -27374,8 +27374,8 @@ static void
 commentSplit (void *ctx, const xmlChar *value)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->comment != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->comment != NULL)
         ctxt->user_sax->comment(ctxt->user_data, value);
 }
 
@@ -27387,8 +27387,8 @@ static void
 warningSplit (void *ctx, const char *msg UNUSED, ...)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->warning != NULL)) {
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->warning != NULL) {
         /* TODO */
     }
 }
@@ -27396,8 +27396,8 @@ static void
 errorSplit (void *ctx, const char *msg UNUSED, ...)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->error != NULL)) {
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->error != NULL) {
         /* TODO */
     }
 }
@@ -27405,8 +27405,8 @@ static void
 fatalErrorSplit (void *ctx, const char *msg UNUSED, ...)
 {
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->fatalError != NULL)) {
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->fatalError != NULL) {
         /* TODO */
     }
 }
@@ -27421,7 +27421,7 @@ charactersSplit (void *ctx, const xmlChar *ch, int len)
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt->user_sax != NULL) && (ctxt->user_sax->characters != NULL))
+    if (ctxt->user_sax != NULL && ctxt->user_sax->characters != NULL)
         ctxt->user_sax->characters(ctxt->user_data, ch, len);
     if (ctxt->ctxt != NULL)
         xmlSchemaSAXHandleText(ctxt->ctxt, ch, len);
@@ -27433,8 +27433,8 @@ ignorableWhitespaceSplit (void *ctx, const xmlChar *ch, int len)
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt->user_sax != NULL)
-        && (ctxt->user_sax->ignorableWhitespace != NULL))
+    if (ctxt->user_sax != NULL
+        && ctxt->user_sax->ignorableWhitespace != NULL)
         ctxt->user_sax->ignorableWhitespace(ctxt->user_data, ch, len);
     if (ctxt->ctxt != NULL)
         xmlSchemaSAXHandleText(ctxt->ctxt, ch, len);
@@ -27446,7 +27446,7 @@ cdataBlockSplit (void *ctx, const xmlChar *value, int len)
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt->user_sax != NULL) && (ctxt->user_sax->cdataBlock != NULL))
+    if (ctxt->user_sax != NULL && ctxt->user_sax->cdataBlock != NULL)
         ctxt->user_sax->cdataBlock(ctxt->user_data, value, len);
     if (ctxt->ctxt != NULL)
         xmlSchemaSAXHandleCDataSection(ctxt->ctxt, value, len);
@@ -27458,8 +27458,8 @@ referenceSplit (void *ctx, const xmlChar *name)
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt != NULL) && (ctxt->user_sax != NULL)
-        && (ctxt->user_sax->reference != NULL))
+    if (ctxt != NULL && ctxt->user_sax != NULL
+        && ctxt->user_sax->reference != NULL)
         ctxt->user_sax->reference(ctxt->user_data, name);
     if (ctxt->ctxt != NULL)
         xmlSchemaSAXHandleReference(ctxt->user_data, name);
@@ -27474,7 +27474,7 @@ startElementNsSplit (void *ctx, const xmlChar *localname, const xmlChar *prefix,
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt->user_sax != NULL) && (ctxt->user_sax->startElementNs != NULL))
+    if (ctxt->user_sax != NULL && ctxt->user_sax->startElementNs != NULL)
         ctxt->user_sax->startElementNs(ctxt->user_data, localname, prefix, URI,
                                        nb_namespaces, namespaces, nb_attributes,
                                        nb_defaulted, attributes);
@@ -27491,7 +27491,7 @@ endElementNsSplit (void *ctx, const xmlChar *localname, const xmlChar *prefix,
     xmlSchemaSAXPlugPtr ctxt = (xmlSchemaSAXPlugPtr) ctx;
     if (ctxt == NULL)
         return;
-    if ((ctxt->user_sax != NULL) && (ctxt->user_sax->endElementNs != NULL))
+    if (ctxt->user_sax != NULL && ctxt->user_sax->endElementNs != NULL)
         ctxt->user_sax->endElementNs(ctxt->user_data, localname, prefix, URI);
     if (ctxt->ctxt != NULL)
         xmlSchemaSAXHandleEndElementNs(ctxt->ctxt, localname, prefix, URI);
@@ -27515,17 +27515,17 @@ xmlSchemaSAXPlug (xmlSchemaValidCtxt *ctxt, xmlSAXHandler **sax,
     xmlSchemaSAXPlugPtr ret;
     xmlSAXHandlerPtr old_sax;
 
-    if ((ctxt == NULL) || (sax == NULL) || (user_data == NULL))
+    if (ctxt == NULL || sax == NULL || user_data == NULL)
         return NULL;
 
     /*
      * We only allow to plug into SAX2 event streams
      */
     old_sax = *sax;
-    if ((old_sax != NULL) && (old_sax->initialized != XML_SAX2_MAGIC))
+    if (old_sax != NULL && old_sax->initialized != XML_SAX2_MAGIC)
         return NULL;
-    if ((old_sax != NULL) && (old_sax->startElementNs == NULL)
-        && (old_sax->endElementNs == NULL)
+    if (old_sax != NULL && old_sax->startElementNs == NULL
+        && old_sax->endElementNs == NULL
         && ((old_sax->startElement != NULL) || (old_sax->endElement != NULL)))
         return NULL;
 
@@ -27616,8 +27616,8 @@ xmlSchemaSAXPlug (xmlSchemaValidCtxt *ctxt, xmlSAXHandler **sax,
 	 * whitespace.
 	 */
         ret->schemas_sax.characters = charactersSplit;
-        if ((old_sax->ignorableWhitespace != NULL)
-            && (old_sax->ignorableWhitespace != old_sax->characters))
+        if (old_sax->ignorableWhitespace != NULL
+            && old_sax->ignorableWhitespace != old_sax->characters)
             ret->schemas_sax.ignorableWhitespace = ignorableWhitespaceSplit;
         else
             ret->schemas_sax.ignorableWhitespace = charactersSplit;
@@ -27654,7 +27654,7 @@ xmlSchemaSAXUnplug (xmlSchemaSAXPlugStruct *plug)
     xmlSAXHandlerPtr *sax;
     void **user_data;
 
-    if ((plug == NULL) || (plug->magic != XML_SAX_PLUG_MAGIC))
+    if (plug == NULL || plug->magic != XML_SAX_PLUG_MAGIC)
         return -1;
     plug->magic = 0;
 
@@ -27708,7 +27708,7 @@ xmlSchemaValidateStreamLocator (void *ctx, const char **file,
 {
     xmlParserCtxtPtr ctxt;
 
-    if ((ctx == NULL) || ((file == NULL) && (line == NULL)))
+    if (ctx == NULL || file == NULL && line == NULL)
         return -1;
 
     if (file != NULL)
@@ -27758,7 +27758,7 @@ xmlSchemaValidateStreamInternal (xmlSchemaValidCtxtPtr ctxt,
     ctxt->flags |= XML_SCHEMA_VALID_CTXT_FLAG_STREAM;
     ret = xmlSchemaVStart(ctxt);
 
-    if ((ret == 0) && (!ctxt->parserCtxt->wellFormed)) {
+    if (ret == 0 && !ctxt->parserCtxt->wellFormed) {
         ret = ctxt->parserCtxt->errNo;
         if (ret == 0)
             ret = 1;
@@ -27796,7 +27796,7 @@ xmlSchemaValidateStream (xmlSchemaValidCtxt *ctxt, xmlParserInputBuffer *input,
     xmlParserInputPtr inputStream = NULL;
     int ret;
 
-    if ((ctxt == NULL) || (input == NULL))
+    if (ctxt == NULL || input == NULL)
         return -1;
 
     /*
@@ -27860,7 +27860,7 @@ xmlSchemaValidateFile (xmlSchemaValidCtxt *ctxt, const char *filename,
     int ret;
     xmlParserCtxtPtr pctxt = NULL;
 
-    if ((ctxt == NULL) || (filename == NULL))
+    if (ctxt == NULL || filename == NULL)
         return -1;
 
     pctxt = xmlCreateURLParserCtxt(filename, 0);
