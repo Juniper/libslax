@@ -12,6 +12,7 @@
 #define IN_LIBXSLT
 #include "libxslt.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <libxml/xmlmemory.h>
@@ -1251,6 +1252,7 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
         xmlNodePtr oldXPContextNode;
         int oldXPProximityPosition, oldXPContextSize, oldXPNsNr;
         xmlNsPtr *oldXPNamespaces;
+        xmlNodePtr oldXPDebugNode;
         xmlXPathContextPtr xpctxt = ctxt->xpathCtxt;
         xsltStackElemPtr oldVar = ctxt->contextVariable;
 
@@ -1270,8 +1272,15 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
         oldXPContextSize = xpctxt->contextSize;
         oldXPNamespaces = xpctxt->namespaces;
         oldXPNsNr = xpctxt->nsNr;
+        oldXPDebugNode = xpctxt->debugNode;
 
         xpctxt->node = ctxt->node;
+        /*
+	* Record the instruction node so a fatal error raised deep inside
+	* XPath evaluation (e.g. applying a location step to a result
+	* tree fragment) can report the stylesheet source location.
+	*/
+        xpctxt->debugNode = (comp != NULL) ? comp->inst : NULL;
         /*
 	* OPTIMIZE TODO: Lame try to set the context doc.
 	*   Get rid of this somehow in xpath.c.
@@ -1335,6 +1344,7 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
         xpctxt->contextSize = oldXPContextSize;
         xpctxt->proximityPosition = oldXPProximityPosition;
         xpctxt->namespaces = oldXPNamespaces;
+        xpctxt->debugNode = oldXPDebugNode;
         xpctxt->nsNr = oldXPNsNr;
 
         if ((comp == NULL) || (comp->comp == NULL))
@@ -1344,6 +1354,25 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
                 ctxt, NULL, (comp != NULL) ? comp->inst : NULL,
                 "Failed to evaluate the expression of variable '%s'.\n",
                 variable->name);
+
+#ifdef WITH_DEBUGGER
+            /*
+             * Give the debugger (if attached) a chance to stop here,
+             * unconditionally, so the user can still inspect the
+             * current frame before the transform unwinds due to
+             * this fatal error.
+             */
+            if (xslDebugStatus != XSLT_DEBUG_NONE) {
+                char errbuf[256];
+
+                snprintf(errbuf, sizeof(errbuf),
+                    "Failed to evaluate the expression of variable '%s'.",
+                    variable->name);
+                xslHandleDebuggerError(
+                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf);
+            }
+#endif /* WITH_DEBUGGER */
+
             ctxt->state = XSLT_STATE_STOPPED;
 
 #ifdef WITH_XSLT_DEBUG_VARIABLE
@@ -1522,6 +1551,7 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
         xmlNodePtr oldXPContextNode;
         int oldXPProximityPosition, oldXPContextSize, oldXPNsNr;
         xmlNsPtr *oldXPNamespaces;
+        xmlNodePtr oldXPDebugNode;
         xmlXPathContextPtr xpctxt = ctxt->xpathCtxt;
 
         if ((comp != NULL) && (comp->comp != NULL)) {
@@ -1554,11 +1584,18 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
         oldXPContextSize = xpctxt->contextSize;
         oldXPNamespaces = xpctxt->namespaces;
         oldXPNsNr = xpctxt->nsNr;
+        oldXPDebugNode = xpctxt->debugNode;
 
         xpctxt->node = ctxt->initialContextNode;
         xpctxt->doc = ctxt->initialContextDoc;
         xpctxt->contextSize = 1;
         xpctxt->proximityPosition = 1;
+        /*
+	* Record the instruction node so a fatal error raised deep inside
+	* XPath evaluation (e.g. applying a location step to a result
+	* tree fragment) can report the stylesheet source location.
+	*/
+        xpctxt->debugNode = (comp != NULL) ? comp->inst : NULL;
 
         if (comp != NULL) {
 #ifdef XSLT_REFACTORED
@@ -1588,6 +1625,7 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
         xpctxt->contextSize = oldXPContextSize;
         xpctxt->proximityPosition = oldXPProximityPosition;
         xpctxt->namespaces = oldXPNamespaces;
+        xpctxt->debugNode = oldXPDebugNode;
         xpctxt->nsNr = oldXPNsNr;
 
         if ((comp == NULL) || (comp->comp == NULL))
@@ -1601,6 +1639,24 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
                 xsltTransformError(ctxt, NULL, comp->inst,
                                    "Evaluating global variable %s failed\n",
                                    elem->name);
+
+#ifdef WITH_DEBUGGER
+            /*
+             * Give the debugger (if attached) a chance to stop here,
+             * unconditionally, so the user can still inspect the
+             * current frame before the transform unwinds due to
+             * this fatal error.
+             */
+            if (xslDebugStatus != XSLT_DEBUG_NONE) {
+                char errbuf[256];
+
+                snprintf(errbuf, sizeof(errbuf),
+                    "Evaluating global variable %s failed.", elem->name);
+                xslHandleDebuggerError(
+                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf);
+            }
+#endif /* WITH_DEBUGGER */
+
             ctxt->state = XSLT_STATE_STOPPED;
             goto error;
         }
