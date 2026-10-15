@@ -457,8 +457,8 @@ xsltReverseCompMatch (xsltParserContextPtr ctxt, xsltCompMatchPtr comp)
      * should be done.
      */
     for (i = 0; i < comp->nbStep - 1; i++) {
-        if ((comp->steps[i].op == XSLT_OP_PREDICATE)
-            && (comp->steps[i + 1].op == XSLT_OP_PREDICATE)) {
+        if (comp->steps[i].op == XSLT_OP_PREDICATE
+            && comp->steps[i + 1].op == XSLT_OP_PREDICATE) {
             comp->direct = 1;
             if (comp->pattern[0] != '/') {
                 xmlChar *query;
@@ -550,7 +550,7 @@ xsltTestCompMatchDirect (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
     ix = XSLT_RUNTIME_EXTRA(ctxt, sel->indexExtra, ival);
     list = (xmlXPathObjectPtr) XSLT_RUNTIME_EXTRA_LST(ctxt, sel->lenExtra);
 
-    if ((list == NULL) || (prevdoc != doc)) {
+    if (list == NULL || prevdoc != doc) {
         xmlXPathObjectPtr newlist;
         xmlNodePtr parent = xmlNodeGetParent(node);
         xmlDocPtr olddoc;
@@ -585,7 +585,7 @@ xsltTestCompMatchDirect (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
         }
         ix = 0;
 
-        if ((parent == NULL) || (xmlNodeGetDoc(node) == NULL) || isRVT)
+        if (parent == NULL || xmlNodeGetDoc(node) == NULL || isRVT)
             nocache = 1;
 
         if (nocache == 0) {
@@ -601,8 +601,8 @@ xsltTestCompMatchDirect (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
         } else
             list = newlist;
     }
-    if ((xmlXPathObjectGetNodesetval(list) == NULL)
-        || (xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(list)) <= 0)) {
+    if (xmlXPathObjectGetNodesetval(list) == NULL
+        || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(list)) <= 0) {
         if (nocache == 1)
             xmlXPathFreeObject(list);
         return 0;
@@ -641,14 +641,14 @@ xsltTestStepMatch (xsltTransformContextPtr ctxt, xmlNodePtr node,
 {
     switch (step->op) {
     case XSLT_OP_ROOT:
-        if ((xmlNodeGetType(node) == XML_DOCUMENT_NODE) ||
+        if (xmlNodeGetType(node) == XML_DOCUMENT_NODE ||
 #ifdef LIBXML_DOCB_ENABLED
             (xmlNodeGetType(node) == XML_DOCB_DOCUMENT_NODE) ||
 #endif
-            (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE))
+            xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE)
             return 1;
-        if ((xmlNodeGetType(node) == XML_ELEMENT_NODE)
-            && (xmlNodeGetName(node)[0] == ' '))
+        if (xmlNodeGetType(node) == XML_ELEMENT_NODE
+            && xmlNodeGetName(node)[0] == ' ')
             return 1;
         return 0;
     case XSLT_OP_ELEM:
@@ -698,7 +698,7 @@ xsltTestStepMatch (xsltTransformContextPtr ctxt, xmlNodePtr node,
             return 0;
 
         id = xmlGetID(xmlNodeGetDoc(node), step->value);
-        if ((id == NULL) || (xmlAttrGetParent(id) != node))
+        if (id == NULL || xmlAttrGetParent(id) != node)
             return 0;
         break;
     }
@@ -746,8 +746,8 @@ xsltTestStepMatch (xsltTransformContextPtr ctxt, xmlNodePtr node,
             return 0;
         break;
     case XSLT_OP_TEXT:
-        if ((xmlNodeGetType(node) != XML_TEXT_NODE)
-            && (xmlNodeGetType(node) != XML_CDATA_SECTION_NODE))
+        if (xmlNodeGetType(node) != XML_TEXT_NODE
+            && xmlNodeGetType(node) != XML_CDATA_SECTION_NODE)
             return 0;
         break;
     case XSLT_OP_NODE:
@@ -826,8 +826,8 @@ xsltTestPredicateMatch (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
 
         previous
             = (xmlNodePtr) XSLT_RUNTIME_EXTRA(ctxt, sel->previousExtra, ptr);
-        if ((previous != NULL)
-            && (xmlNodeGetParent(previous) == xmlNodeGetParent(node))) {
+        if (previous != NULL
+            && xmlNodeGetParent(previous) == xmlNodeGetParent(node)) {
             /*
              * just walk back to adjust the index
              */
@@ -889,14 +889,14 @@ xsltTestPredicateMatch (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
                 }
                 siblings = xmlNodeGetNext(siblings);
             }
-            if ((parent == NULL) || (xmlNodeGetDoc(node) == NULL))
+            if (parent == NULL || xmlNodeGetDoc(node) == NULL)
                 nocache = 1;
             else {
                 while (xmlNodeGetParent(parent) != NULL)
                     parent = xmlNodeGetParent(parent);
-                if (((xmlNodeGetType(parent) != XML_DOCUMENT_NODE)
-                     && (xmlNodeGetType(parent) != XML_HTML_DOCUMENT_NODE))
-                    || (parent != (xmlNodePtr) xmlNodeGetDoc(node)))
+                if (xmlNodeGetType(parent) != XML_DOCUMENT_NODE
+                     && xmlNodeGetType(parent) != XML_HTML_DOCUMENT_NODE
+                    || parent != (xmlNodePtr) xmlNodeGetDoc(node))
                     nocache = 1;
             }
         }
@@ -907,7 +907,7 @@ xsltTestPredicateMatch (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
              * If the node is in a Value Tree we cannot
              * cache it !
              */
-            if ((!isRVT) && (xmlNodeGetDoc(node) != NULL) && (nocache == 0)) {
+            if (!isRVT && xmlNodeGetDoc(node) != NULL && nocache == 0) {
                 XSLT_RUNTIME_EXTRA(ctxt, sel->previousExtra, ptr) = node;
                 XSLT_RUNTIME_EXTRA(ctxt, sel->indexExtra, ival) = pos;
                 XSLT_RUNTIME_EXTRA(ctxt, sel->lenExtra, ival) = len;
@@ -953,7 +953,7 @@ xsltTestCompMatch (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp,
     xsltStepOpPtr step, sel = NULL;
     xsltStepStates states = {0, 0, NULL}; /* // may require backtrack */
 
-    if ((comp == NULL) || (node == NULL) || (ctxt == NULL)) {
+    if (comp == NULL || node == NULL || ctxt == NULL) {
         xsltTransformError(ctxt, NULL, node, "xsltTestCompMatch: null arg\n");
         return -1;
     }
@@ -996,12 +996,12 @@ restart:
         case XSLT_OP_END:
             goto found;
         case XSLT_OP_PARENT:
-            if ((xmlNodeGetType(node) == XML_DOCUMENT_NODE)
-                || (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE) ||
+            if (xmlNodeGetType(node) == XML_DOCUMENT_NODE
+                || xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE ||
 #ifdef LIBXML_DOCB_ENABLED
                 (xmlNodeGetType(node) == XML_DOCB_DOCUMENT_NODE) ||
 #endif
-                (xmlNodeGetType(node) == XML_NAMESPACE_DECL))
+                xmlNodeGetType(node) == XML_NAMESPACE_DECL)
                 goto rollback;
             node = xmlNodeGetParent(node);
             if (node == NULL)
@@ -1031,22 +1031,22 @@ restart:
                 if (step->op == XSLT_OP_ROOT)
                     goto found;
                 /* added NS, ID and KEY as a result of bug 168208 */
-                if ((step->op != XSLT_OP_ELEM) && (step->op != XSLT_OP_ALL)
-                    && (step->op != XSLT_OP_NS) && (step->op != XSLT_OP_ID)
-                    && (step->op != XSLT_OP_KEY))
+                if (step->op != XSLT_OP_ELEM && step->op != XSLT_OP_ALL
+                    && step->op != XSLT_OP_NS && step->op != XSLT_OP_ID
+                    && step->op != XSLT_OP_KEY)
                     goto rollback;
             }
             if (node == NULL)
                 goto rollback;
-            if ((xmlNodeGetType(node) == XML_DOCUMENT_NODE)
-                || (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE) ||
+            if (xmlNodeGetType(node) == XML_DOCUMENT_NODE
+                || xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE ||
 #ifdef LIBXML_DOCB_ENABLED
                 (xmlNodeGetType(node) == XML_DOCB_DOCUMENT_NODE) ||
 #endif
-                (xmlNodeGetType(node) == XML_NAMESPACE_DECL))
+                xmlNodeGetType(node) == XML_NAMESPACE_DECL)
                 goto rollback;
             node = xmlNodeGetParent(node);
-            if ((step->op != XSLT_OP_ELEM) && step->op != XSLT_OP_ALL) {
+            if (step->op != XSLT_OP_ELEM && step->op != XSLT_OP_ALL) {
                 xsltPatPushState(ctxt, &states, i, node);
                 continue;
             }
@@ -1057,17 +1057,17 @@ restart:
                 continue;
             }
             while (node != NULL) {
-                if ((xmlNodeGetType(node) == XML_ELEMENT_NODE)
-                    && (step->value[0] == xmlNodeGetName(node)[0])
-                    && (xmlStrEqual(step->value, xmlNodeGetName(node)))) {
+                if (xmlNodeGetType(node) == XML_ELEMENT_NODE
+                    && step->value[0] == xmlNodeGetName(node)[0]
+                    && xmlStrEqual(step->value, xmlNodeGetName(node))) {
                     /* Namespace test */
                     if (xmlNodeGetNs(node) == NULL) {
                         if (step->value2 == NULL)
                             break;
                     } else if (xmlNsGetHref(xmlNodeGetNs(node)) != NULL) {
-                        if ((step->value2 != NULL)
-                            && (xmlStrEqual(step->value2,
-                                            xmlNsGetHref(xmlNodeGetNs(node)))))
+                        if (step->value2 != NULL
+                            && xmlStrEqual(step->value2,
+                                            xmlNsGetHref(xmlNodeGetNs(node))))
                             break;
                     }
                 }
@@ -1142,7 +1142,7 @@ xsltTestCompMatchList (xsltTransformContextPtr ctxt, xmlNodePtr node,
 {
     int ret;
 
-    if ((ctxt == NULL) || (node == NULL))
+    if (ctxt == NULL || node == NULL)
         return -1;
     while (comp != NULL) {
         ret = xsltTestCompMatch(ctxt, comp, node, NULL, NULL);
@@ -1166,7 +1166,7 @@ xsltCompMatchClearCache (xsltTransformContextPtr ctxt, xsltCompMatchPtr comp)
     xsltStepOpPtr sel;
     xmlXPathObjectPtr list;
 
-    if ((ctxt == NULL) || (comp == NULL))
+    if (ctxt == NULL || comp == NULL)
         return;
 
     sel = &comp->steps[0];
@@ -1244,7 +1244,7 @@ xsltScanLiteral (xsltParserContextPtr ctxt)
         NEXT;
         cur = q = CUR_PTR;
         val = xsltGetUTF8CharZ(cur, &len);
-        while ((xmlIsCharQ(val)) && (val != '"')) {
+        while ((xmlIsCharQ(val)) && val != '"') {
             cur += len;
             val = xsltGetUTF8CharZ(cur, &len);
         }
@@ -1260,7 +1260,7 @@ xsltScanLiteral (xsltParserContextPtr ctxt)
         NEXT;
         cur = q = CUR_PTR;
         val = xsltGetUTF8CharZ(cur, &len);
-        while ((xmlIsCharQ(val)) && (val != '\'')) {
+        while ((xmlIsCharQ(val)) && val != '\'') {
             cur += len;
             val = xsltGetUTF8CharZ(cur, &len);
         }
@@ -1299,11 +1299,11 @@ xsltScanNCName (xsltParserContextPtr ctxt)
 
     cur = q = CUR_PTR;
     val = xsltGetUTF8CharZ(cur, &len);
-    if (!xmlIsBaseCharQ(val) && !xmlIsIdeographicQ(val) && (val != '_'))
+    if (!xmlIsBaseCharQ(val) && !xmlIsIdeographicQ(val) && val != '_')
         return NULL;
 
     while (xmlIsBaseCharQ(val) || xmlIsIdeographicQ(val) || xmlIsDigitQ(val)
-           || (val == '.') || (val == '-') || (val == '_')
+           || val == '.' || val == '-' || val == '_'
            || xmlIsCombiningQ(val) || xmlIsExtenderQ(val)) {
         cur += len;
         val = xsltGetUTF8CharZ(cur, &len);
@@ -1343,7 +1343,7 @@ xsltCompileIdKeyPattern (xsltParserContextPtr ctxt, xmlChar *name, int aid,
         ctxt->error = 1;
         return;
     }
-    if ((aid) && (xmlStrEqual(name, (const xmlChar *) "id"))) {
+    if (aid && xmlStrEqual(name, (const xmlChar *) "id")) {
         if (axis != 0) {
             xsltTransformError(NULL, NULL, NULL,
                                "xsltCompileIdKeyPattern : NodeTest expected\n");
@@ -1370,7 +1370,7 @@ xsltCompileIdKeyPattern (xsltParserContextPtr ctxt, xmlChar *name, int aid,
         NEXT;
         PUSH(XSLT_OP_ID, lit, NULL, novar);
         lit = NULL;
-    } else if ((aid) && (xmlStrEqual(name, (const xmlChar *) "key"))) {
+    } else if (aid && xmlStrEqual(name, (const xmlChar *) "key")) {
         if (axis != 0) {
             xsltTransformError(NULL, NULL, NULL,
                                "xsltCompileIdKeyPattern : NodeTest expected\n");
@@ -1527,7 +1527,7 @@ xsltCompileStepPattern (xsltParserContextPtr ctxt, xmlChar *token, int novar)
     xsltAxis axis = 0;
 
     SKIP_BLANKS;
-    if ((token == NULL) && (CUR == '@')) {
+    if (token == NULL && CUR == '@') {
         NEXT;
         axis = AXIS_ATTRIBUTE;
     }
@@ -1674,11 +1674,11 @@ parse_predicate:
                     break;
             } else if (CUR == '"') {
                 NEXT;
-                while ((CUR != 0) && (CUR != '"'))
+                while (CUR != 0 && CUR != '"')
                     NEXT;
             } else if (CUR == '\'') {
                 NEXT;
-                while ((CUR != 0) && (CUR != '\''))
+                while (CUR != 0 && CUR != '\'')
                     NEXT;
             }
             NEXT;
@@ -1730,8 +1730,8 @@ xsltCompileRelativePathPattern (xsltParserContextPtr ctxt, xmlChar *token,
     if (ctxt->error)
         goto error;
     SKIP_BLANKS;
-    while ((CUR != 0) && (CUR != '|')) {
-        if ((CUR == '/') && (NXT(1) == '/')) {
+    while (CUR != 0 && CUR != '|') {
+        if (CUR == '/' && NXT(1) == '/') {
             PUSH(XSLT_OP_ANCESTOR, NULL, NULL, novar);
             NEXT;
             NEXT;
@@ -1769,7 +1769,7 @@ static void
 xsltCompileLocationPathPattern (xsltParserContextPtr ctxt, int novar)
 {
     SKIP_BLANKS;
-    if ((CUR == '/') && (NXT(1) == '/')) {
+    if (CUR == '/' && NXT(1) == '/') {
         /*
 	 * since we reverse the query
 	 * a leading // can be safely ignored
@@ -1785,7 +1785,7 @@ xsltCompileLocationPathPattern (xsltParserContextPtr ctxt, int novar)
         NEXT;
         SKIP_BLANKS;
         PUSH(XSLT_OP_ROOT, NULL, NULL, novar);
-        if ((CUR != 0) && (CUR != '|')) {
+        if (CUR != 0 && CUR != '|') {
             PUSH(XSLT_OP_PARENT, NULL, NULL, novar);
             xsltCompileRelativePathPattern(ctxt, NULL, novar);
         }
@@ -1804,13 +1804,13 @@ xsltCompileLocationPathPattern (xsltParserContextPtr ctxt, int novar)
             return;
         }
         SKIP_BLANKS;
-        if ((CUR == '(') && !xmlXPathIsNodeType(name)) {
+        if (CUR == '(' && !xmlXPathIsNodeType(name)) {
             xsltCompileIdKeyPattern(ctxt, name, 1, novar, 0);
             xmlFree(name);
             name = NULL;
             if (ctxt->error)
                 return;
-            if ((CUR == '/') && (NXT(1) == '/')) {
+            if (CUR == '/' && NXT(1) == '/') {
                 PUSH(XSLT_OP_ANCESTOR, NULL, NULL, novar);
                 NEXT;
                 NEXT;
@@ -1874,18 +1874,18 @@ xsltCompilePatternInternal (const xmlChar *pattern, xmlDocPtr doc,
             current++;
         end = current;
         level = 0;
-        while ((pattern[end] != 0) && ((pattern[end] != '|') || (level != 0))) {
+        while (pattern[end] != 0 && ((pattern[end] != '|') || (level != 0))) {
             if (pattern[end] == '[')
                 level++;
             else if (pattern[end] == ']')
                 level--;
             else if (pattern[end] == '\'') {
                 end++;
-                while ((pattern[end] != 0) && (pattern[end] != '\''))
+                while (pattern[end] != 0 && pattern[end] != '\'')
                     end++;
             } else if (pattern[end] == '"') {
                 end++;
-                while ((pattern[end] != 0) && (pattern[end] != '"'))
+                while (pattern[end] != 0 && pattern[end] != '"')
                     end++;
             }
             if (pattern[end] == 0)
@@ -1954,28 +1954,28 @@ xsltCompilePatternInternal (const xmlChar *pattern, xmlDocPtr doc,
             if (((element->steps[0].op == XSLT_OP_ELEM)
                  || (element->steps[0].op == XSLT_OP_ATTR)
                  || (element->steps[0].op == XSLT_OP_PI))
-                && (element->steps[0].value != NULL)
-                && (element->steps[1].op == XSLT_OP_END)) {
+                && element->steps[0].value != NULL
+                && element->steps[1].op == XSLT_OP_END) {
                 ; /* previously preset */
-            } else if ((element->steps[0].op == XSLT_OP_ATTR)
-                       && (element->steps[0].value2 != NULL)
-                       && (element->steps[1].op == XSLT_OP_END)) {
+            } else if (element->steps[0].op == XSLT_OP_ATTR
+                       && element->steps[0].value2 != NULL
+                       && element->steps[1].op == XSLT_OP_END) {
                 element->priority = -0.25;
-            } else if ((element->steps[0].op == XSLT_OP_NS)
-                       && (element->steps[0].value != NULL)
-                       && (element->steps[1].op == XSLT_OP_END)) {
+            } else if (element->steps[0].op == XSLT_OP_NS
+                       && element->steps[0].value != NULL
+                       && element->steps[1].op == XSLT_OP_END) {
                 element->priority = -0.25;
-            } else if ((element->steps[0].op == XSLT_OP_ATTR)
-                       && (element->steps[0].value == NULL)
-                       && (element->steps[0].value2 == NULL)
-                       && (element->steps[1].op == XSLT_OP_END)) {
+            } else if (element->steps[0].op == XSLT_OP_ATTR
+                       && element->steps[0].value == NULL
+                       && element->steps[0].value2 == NULL
+                       && element->steps[1].op == XSLT_OP_END) {
                 element->priority = -0.5;
             } else if (((element->steps[0].op == XSLT_OP_PI)
                         || (element->steps[0].op == XSLT_OP_TEXT)
                         || (element->steps[0].op == XSLT_OP_ALL)
                         || (element->steps[0].op == XSLT_OP_NODE)
                         || (element->steps[0].op == XSLT_OP_COMMENT))
-                       && (element->steps[1].op == XSLT_OP_END)) {
+                       && element->steps[1].op == XSLT_OP_END) {
                 element->priority = -0.5;
             } else {
                 element->priority = 0.5;
@@ -2063,7 +2063,7 @@ xsltAddTemplate (xsltStylesheetPtr style, xsltTemplatePtr cur,
     const xmlChar *name = NULL;
     float priority; /* the priority */
 
-    if ((style == NULL) || (cur == NULL))
+    if (style == NULL || cur == NULL)
         return -1;
 
     if (cur->next != NULL)
@@ -2258,7 +2258,7 @@ xsltAddTemplate (xsltStylesheetPtr style, xsltTemplatePtr cur,
 static int
 xsltComputeAllKeys (xsltTransformContextPtr ctxt, xmlNodePtr contextNode)
 {
-    if ((ctxt == NULL) || (contextNode == NULL)) {
+    if (ctxt == NULL || contextNode == NULL) {
         xsltTransformError(ctxt, NULL, ctxt->inst,
                            "Internal error in xsltComputeAllKeys(): "
                            "Bad arguments.\n");
@@ -2310,7 +2310,7 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
     xsltCompMatchPtr list = NULL;
     float priority;
 
-    if ((ctxt == NULL) || (node == NULL))
+    if (ctxt == NULL || node == NULL)
         return NULL;
 
     if (style == NULL) {
@@ -2319,7 +2319,7 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
         curstyle = xsltNextImport(style);
     }
 
-    while ((curstyle != NULL) && (curstyle != style)) {
+    while (curstyle != NULL && curstyle != style) {
         priority = XSLT_PAT_NO_PRIORITY;
         /* TODO : handle IDs/keys here ! */
         if (curstyle->templatesHash != NULL) {
@@ -2421,7 +2421,7 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
         default:
             break;
         }
-        while ((list != NULL)
+        while (list != NULL
                && ((ret == NULL) || (list->priority > priority)
                    || ((list->priority == priority)
                        && (list->template->position > ret->position)))) {
@@ -2436,11 +2436,11 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
         /*
 	 * Some of the tests for elements can also apply to documents
 	 */
-        if ((xmlNodeGetType(node) == XML_DOCUMENT_NODE)
-            || (xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE)
-            || (xmlNodeGetType(node) == XML_TEXT_NODE)) {
+        if (xmlNodeGetType(node) == XML_DOCUMENT_NODE
+            || xmlNodeGetType(node) == XML_HTML_DOCUMENT_NODE
+            || xmlNodeGetType(node) == XML_TEXT_NODE) {
             list = curstyle->elemMatch;
-            while ((list != NULL)
+            while (list != NULL
                    && ((ret == NULL) || (list->priority > priority)
                        || ((list->priority == priority)
                            && (list->template->position > ret->position)))) {
@@ -2453,10 +2453,10 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
                 }
                 list = list->next;
             }
-        } else if ((xmlNodeGetType(node) == XML_PI_NODE)
-                   || (xmlNodeGetType(node) == XML_COMMENT_NODE)) {
+        } else if (xmlNodeGetType(node) == XML_PI_NODE
+                   || xmlNodeGetType(node) == XML_COMMENT_NODE) {
             list = curstyle->elemMatch;
-            while ((list != NULL)
+            while (list != NULL
                    && ((ret == NULL) || (list->priority > priority)
                        || ((list->priority == priority)
                            && (list->template->position > ret->position)))) {
@@ -2474,7 +2474,7 @@ xsltGetTemplate (xsltTransformContextPtr ctxt, xmlNodePtr node,
     keyed_match:
         if (xsltGetSourceNodeFlags(node) & XSLT_SOURCE_NODE_HAS_KEY) {
             list = curstyle->keyMatch;
-            while ((list != NULL)
+            while (list != NULL
                    && ((ret == NULL) || (list->priority > priority)
                        || ((list->priority == priority)
                            && (list->template->position > ret->position)))) {
