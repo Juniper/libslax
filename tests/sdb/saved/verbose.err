@@ -1,0 +1,42 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10
+Breakpoint 1 at file ../../../tests/sdb/verbose.slax, line 10
+(sdb) verbose on
+Enabling verbose logging
+(sdb) run
+addFrame: template 0xADDR/[match /], inst 0xADDR/template/3 (inst 0xADDR/)
+handleFrame: template 0xADDR/[match /], node 0xADDR//9, inst 0xADDR/template/3 ctxt 0xADDR
+profile:enter for template
+addFrame: template 0xADDR/[match /], inst 0xADDR/template/3 (inst 0xADDR/template)
+handleFrame: template 0xADDR/[match /], node 0xADDR//9, inst 0xADDR/template/3 ctxt 0xADDR
+profile:enter for template
+handleFrame: template 0xADDR/[match /], node 0xADDR//9, inst 0xADDR/variable/4 ctxt 0xADDR
+profile:enter for variable
+handleFrame: template 0xADDR/[match /], node 0xADDR//9, inst 0xADDR/call-template/5 ctxt 0xADDR
+profile:enter for call-template
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/with-param/5 ctxt 0xADDR
+profile:enter for with-param
+addFrame: template 0xADDR/[template first], inst 0xADDR/template/8 (inst 0xADDR/with-param)
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/template/8 ctxt 0xADDR
+profile:enter for template
+addFrame: template 0xADDR/[template first], inst 0xADDR/template/8 (inst 0xADDR/template)
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/template/8 ctxt 0xADDR
+profile:enter for template
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/variable/9 ctxt 0xADDR
+profile:enter for variable
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/level/10 ctxt 0xADDR
+Reached breakpoint 1, at ../../../tests/sdb/verbose.slax:10
+verbose.slax: 10:     <level> $n;
+(sdb) step
+profile:enter for level
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/value-of/10 ctxt 0xADDR
+handleFrame: template 0xADDR/[template first], node 0xADDR//9, inst 0xADDR/call-template/11 ctxt 0xADDR
+verbose.slax: 11:     call second($n = $n + 1);
+(sdb) verbose off
+Disabling verbose logging
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/verbose.slax:10
+verbose.slax: 10:     <level> $n;
+(sdb) quit
+The script is running.  Exit anyway? (y or n) (sdb) 

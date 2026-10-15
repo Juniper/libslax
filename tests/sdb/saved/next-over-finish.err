@@ -1,0 +1,16 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10
+Breakpoint 1 at file ../../../tests/sdb/next-over-finish.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/next-over-finish.slax:10
+next-over-finish.slax: 10:     <level> $n;
+(sdb) next
+next-over-finish.slax: 11:     call second($n = $n + 1);
+(sdb) delete 1
+Deleted breakpoint '1'
+(sdb) over
+Script exited normally.
+(sdb) finish
+The script is not being run.
+(sdb) quit

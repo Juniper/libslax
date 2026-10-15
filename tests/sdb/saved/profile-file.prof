@@ -1,0 +1,15 @@
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.0;
+    2        -            -            -        -        - 
+    3        2 (1) TIME TIME TIME TIME match / {
+    4        1 (0) TIME TIME TIME TIME     <out> {
+    5        1 (0) TIME TIME TIME TIME         apply-templates root/item;
+    6        -            -            -        -        -     }
+    7        -            -            -        -        - }
+    8        -            -            -        -        - 
+    9       40(38) TIME TIME TIME TIME match item {
+   10       20(19) TIME TIME TIME TIME     var $v = .;
+   11       40(38) TIME TIME TIME TIME     <seen> $v;
+   12        -            -            -        -        - }
+Total      104 TIME TIME  Total
+Script exited normally.

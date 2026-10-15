@@ -1,0 +1,15 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 16
+Breakpoint 1 at file ../../../tests/sdb/info-output.slax, line 16
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/info-output.slax:16
+info-output.slax: 16:     <level> $n;
+(sdb) info output
+[context output document]
+(sdb) info insert
+[context insertion point]
+<level>1</level>
+
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y

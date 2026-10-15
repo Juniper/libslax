@@ -1,0 +1,33 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10
+Breakpoint 1 at file ../../../tests/sdb/run-reload.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) continue
+Script exited normally.
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) reload
+The script being debugged has been started already.
+Reload and restart it from the beginning? (y or n) y
+Script exited normally.
+(sdb) continue
+The script is not being run.
+Reloading complete.
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/run-reload.slax:10
+run-reload.slax: 10:     <level> $n;
+(sdb) quit
+The script is running.  Exit anyway? (y or n) (sdb) 

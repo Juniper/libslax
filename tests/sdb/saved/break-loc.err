@@ -1,0 +1,30 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 16
+Breakpoint 1 at file ../../../tests/sdb/break-loc.slax, line 16
+(sdb) break second
+Breakpoint 2 at file ../../../tests/sdb/break-loc.slax, line 14
+(sdb) break 10 if $n > 2
+Breakpoint 3 at file ../../../tests/sdb/break-loc.slax, line 10
+(sdb) break 11 when $n == 2
+Breakpoint 4 at file ../../../tests/sdb/break-loc.slax, line 11
+(sdb) info breakpoints
+List of breakpoints:
+     #1 template second at ../../../tests/sdb/break-loc.slax:16
+     #2 template second at ../../../tests/sdb/break-loc.slax:14
+     #3 template first at ../../../tests/sdb/break-loc.slax:10 condition: '$n > 2'
+     #4 template first at ../../../tests/sdb/break-loc.slax:11 condition: '$n = 2'
+(sdb) list 8
+break-loc.slax: 8: template first ($n) {
+break-loc.slax: 9:     var $label = "first";
+break-loc.slax: 10:     <level> $n;
+break-loc.slax: 11:     call second($n = $n + 1);
+break-loc.slax: 12: }
+break-loc.slax: 13: 
+break-loc.slax: 14: template second ($n) {
+break-loc.slax: 15:     var $label = "second";
+break-loc.slax: 16:     <level> $n;
+break-loc.slax: 17:     if ($n < 4) {
+break-loc.slax: 18:         call first($n);
+break-loc.slax: 19:     }
+(sdb) quit

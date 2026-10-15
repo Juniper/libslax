@@ -1,0 +1,23 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 16
+Breakpoint 1 at file ../../../tests/sdb/condition.slax, line 16
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/condition.slax:16
+condition.slax: 16:     <level> $n;
+(sdb) condition 1 $n > 2
+Breakpoint 1 now conditional on '$n > 2'
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/condition.slax:16
+  Condition: '$n > 2'
+condition.slax: 16:     <level> $n;
+(sdb) print $n
+[number] 3.000000
+
+(sdb) condition 1
+Breakpoint 1 is now unconditional
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/condition.slax:16
+condition.slax: 16:     <level> $n;
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y

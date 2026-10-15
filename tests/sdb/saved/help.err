@@ -1,0 +1,55 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) help
+List of commands:
+  backtrace [full] Show the backtrace of template calls (alias: bt)
+  break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
+  callflow [val]  Enable call flow tracing
+  condition <num> [expr]  Set, change, or clear a breakpoint's condition
+  continue [loc]  Continue running the script
+  delete [num]    Delete all (or one) breakpoints
+  dump            Dump internal information about libxml2 objects
+  finish          Finish the current template
+  help            Show this help message
+  info            Showing info about the script being debugged
+  list [loc]      List contents of the current script
+  locals          List contents of local variables
+  next            Execute the over instruction, stepping over calls
+  over            Execute the current instruction hierarchy
+  print <xpath>   Print the value of an XPath expression
+  profile [val]   Turn profiler on or off
+  reload          Reload the script contents
+  run             Restart the script
+  step            Execute the next instruction, stepping into calls
+  verbose         Turn on verbose (-v) output logging
+  where           Show the backtrace of template calls (alias: bt)
+  quit            Quit debugger
+
+Command name abbreviations are allowed
+(sdb) ?
+List of commands:
+  backtrace [full] Show the backtrace of template calls (alias: bt)
+  break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
+  callflow [val]  Enable call flow tracing
+  condition <num> [expr]  Set, change, or clear a breakpoint's condition
+  continue [loc]  Continue running the script
+  delete [num]    Delete all (or one) breakpoints
+  dump            Dump internal information about libxml2 objects
+  finish          Finish the current template
+  help            Show this help message
+  info            Showing info about the script being debugged
+  list [loc]      List contents of the current script
+  locals          List contents of local variables
+  next            Execute the over instruction, stepping over calls
+  over            Execute the current instruction hierarchy
+  print <xpath>   Print the value of an XPath expression
+  profile [val]   Turn profiler on or off
+  reload          Reload the script contents
+  run             Restart the script
+  step            Execute the next instruction, stepping into calls
+  verbose         Turn on verbose (-v) output logging
+  where           Show the backtrace of template calls (alias: bt)
+  quit            Quit debugger
+
+Command name abbreviations are allowed
+(sdb) quit

@@ -1,0 +1,35 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) profile on
+Enabling profiler
+(sdb) run
+Script exited normally.
+(sdb) profile report
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.0;
+    2        -            -            -        -        - 
+    3        2 (1) TIME TIME TIME TIME match / {
+    4        1 (0) TIME TIME TIME TIME     <out> {
+    5        1 (0) TIME TIME TIME TIME         apply-templates root/item;
+    6        -            -            -        -        -     }
+    7        -            -            -        -        - }
+    8        -            -            -        -        - 
+    9       40(38) TIME TIME TIME TIME match item {
+   10       20(19) TIME TIME TIME TIME     var $v = .;
+   11       40(38) TIME TIME TIME TIME     <seen> $v;
+   12        -            -            -        -        - }
+Total      104 TIME TIME  Total
+(sdb) profile report brief
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    3        2 (1) TIME TIME TIME TIME match / {
+    4        1 (0) TIME TIME TIME TIME     <out> {
+    5        1 (0) TIME TIME TIME TIME         apply-templates root/item;
+    9       40(38) TIME TIME TIME TIME match item {
+   10       20(19) TIME TIME TIME TIME     var $v = .;
+   11       40(38) TIME TIME TIME TIME     <seen> $v;
+Total      104 TIME TIME  Total
+(sdb) profile clear
+Clearing profile information
+(sdb) profile off
+Disabling profiler
+(sdb) quit

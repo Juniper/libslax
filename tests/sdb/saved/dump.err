@@ -1,0 +1,18 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10
+Breakpoint 1 at file ../../../tests/sdb/dump.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/dump.slax:10
+dump.slax: 10:     <level> $n;
+(sdb) dump var $label
+variable: $label/0xADDR
+    var 0xADDR: comp 0xADDR, computed 1, name 'label', uri ''
+      select '"first"', level 0, flags 0000, context 0xADDR
+      value: 0xADDR
+        object 0xADDR: type XPATH_STRING/4, value 'first' (user 0xADDR/0xADDR, index 0/0)
+(sdb) dump expr $n + 1
+[number] 2.000000
+    object 0xADDR: type XPATH_NUMBER/3, value 2.000000 (user 0xADDR/0xADDR, index 0/0)
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y

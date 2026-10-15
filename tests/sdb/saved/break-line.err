@@ -1,0 +1,18 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10
+Breakpoint 1 at file ../../../tests/sdb/break-line.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/break-line.slax:10
+break-line.slax: 10:     <level> $n;
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/break-line.slax:10
+break-line.slax: 10:     <level> $n;
+(sdb) info breakpoints
+List of breakpoints:
+     #1 template first at ../../../tests/sdb/break-line.slax:10
+(sdb) delete 1
+Deleted breakpoint '1'
+(sdb) continue
+Script exited normally.
+(sdb) quit

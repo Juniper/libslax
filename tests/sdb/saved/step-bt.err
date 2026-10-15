@@ -1,0 +1,31 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 5
+Breakpoint 1 at file ../../../tests/sdb/step-bt.slax, line 5
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/step-bt.slax:5
+step-bt.slax: 5:     call first($n = $start);
+(sdb) step
+step-bt.slax: 8: template first ($n) {
+(sdb) step
+step-bt.slax: 9:     var $label = "first";
+(sdb) bt
+#0 match / at step-bt.slax:3
+#1 template first() at step-bt.slax:5
+    $n = [number] 1.000000
+(sdb) where
+#0 match / at step-bt.slax:3
+#1 template first() at step-bt.slax:5
+    $n = [number] 1.000000
+(sdb) backtrace
+#0 match / at step-bt.slax:3
+#1 template first() at step-bt.slax:5
+    $n = [number] 1.000000
+(sdb) locals
+Local variables:
+local $n = [number] 1.000000
+(sdb) info locals
+Local variables:
+local $n = [number] 1.000000
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y

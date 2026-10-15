@@ -1,0 +1,16 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) break 10 if $nonexistent_var > 1
+Breakpoint 1 at file ../../../tests/sdb/condition-fail.slax, line 10
+(sdb) run
+runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
+Variable 'nonexistent_var' has not been declared.
+XPath error : Undefined variable: nonexistent_var
+runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
+Variable 'nonexistent_var' has not been declared.
+XPath error : Undefined variable: nonexistent_var
+runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
+Variable 'nonexistent_var' has not been declared.
+XPath error : Undefined variable: nonexistent_var
+Script exited normally.
+(sdb) quit

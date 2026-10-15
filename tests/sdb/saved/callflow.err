@@ -1,0 +1,25 @@
+sdb: The SLAX Debugger (version 3.1.6)
+Type 'help' for help
+(sdb) callflow on
+Enabling callflow
+(sdb) run
+callflow: 0: enter <xsl:template> in match / at ../../../tests/sdb/callflow.slax:3
+callflow: 1: enter <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 2: enter <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 3: enter <xsl:call-template> at ../../../tests/sdb/callflow.slax:18
+callflow: 4: enter <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 5: enter <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 6: enter <xsl:call-template> at ../../../tests/sdb/callflow.slax:18
+callflow: 7: enter <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 8: enter <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 8: exit <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 7: exit <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 6: exit <xsl:call-template> at ../../../tests/sdb/callflow.slax:18
+callflow: 5: exit <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 4: exit <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 3: exit <xsl:call-template> at ../../../tests/sdb/callflow.slax:18
+callflow: 2: exit <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
+callflow: 1: exit <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
+callflow: 0: exit <xsl:template> in match / at ../../../tests/sdb/callflow.slax:3
+Script exited normally.
+(sdb) quit
