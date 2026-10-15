@@ -40,6 +40,14 @@
  * context node will be NULL.  The instruction and context will never be
  * NULL.
  *
+ * There is a fourth callback (errorHandler), added for SLAX, which is
+ * called when a fatal runtime error (e.g. a variable whose expression
+ * fails to evaluate) is about to abort the transform.  Unlike Handler,
+ * it is called unconditionally, regardless of the current debugger
+ * status or any breakpoint, so the user gets a chance to inspect the
+ * still-live context (e.g. "print" or "info locals") before the
+ * transform unwinds and that context is torn down.
+ *
  * So this simple API puts all the work on our side of the fence,
  * which is fine.  Missing features include a real prototype for
  * xsltSetDebuggerCallbacks() and a means of passing opaque data
@@ -1990,7 +1998,18 @@ slaxDebugCmdReload (DC_ARGS)
     /* Tell the xslt engine to stop */
     xsltStopEngine(statep->ds_ctxt);
 
-    xsltSetDebuggerStatus(XSLT_DEBUG_CONT);
+    /*
+     * Use XSLT_DEBUG_QUIT, not XSLT_DEBUG_CONT, so that the main
+     * loop's "status == XSLT_DEBUG_QUIT" check (right after the
+     * in-progress xsltApplyStylesheet() call returns) sees this as
+     * a stop needing attention and acts on DSF_RELOAD immediately --
+     * matching how 'run' (see slaxDebugCmdRun(), just below) uses
+     * XSLT_DEBUG_QUIT with DSF_RESTART.  With XSLT_DEBUG_CONT, that
+     * check never matches, so DSF_RELOAD then sits unconsumed until
+     * some later unrelated command's loop iteration happens to find
+     * it still set.
+     */
+    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
     statep->ds_flags |= DSF_RELOAD;
 }
     
@@ -2541,6 +2560,69 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
 }
 
 /**
+ * Called as callback function from libxslt when a fatal runtime error
+ * is about to abort the transform (e.g. a variable's expression fails
+ * to evaluate).  Unlike slaxDebugHandler(), this is called
+ * unconditionally -- regardless of the current debugger status or any
+ * breakpoint -- so we always stop here and let the user inspect the
+ * still-live frame (e.g. "print" or "info locals") before the
+ * transform unwinds and that context is torn down.
+ *
+ * @cur instruction where the error occurred
+ * @ctxt transformation context
+ * @message the error message that was already reported
+ */
+static void
+slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
+			const char *message UNUSED)
+{
+    slaxDebugState_t *statep = slaxDebugGetState();
+    int status = xsltGetDebuggerStatus();
+
+    /* We don't want to be recursive (via the 'print' command) */
+    if (statep->ds_flags & DSF_INSHELL)
+	return;
+
+    /* If we're already shutting down, there's nothing useful to do */
+    if (status == XSLT_DEBUG_DONE || status == XSLT_DEBUG_QUIT)
+	return;
+
+    if (statep->ds_flags & DSF_PROFILER)
+	slaxProfExit();
+
+    statep->ds_inst = cur;
+    statep->ds_ctxt = ctxt;
+
+    /*
+     * The caller (xsltEvalVariable()/xsltEvalGlobalVariable(), the
+     * only current callers of this callback) has already reported
+     * "message" via xsltTransformError() just before invoking us, so
+     * printing it again here would just repeat the same line; we
+     * only need to announce that the debugger is taking over.
+     */
+    slaxOutput("Entering the debugger; the script will exit once you "
+	       "continue, since it cannot recover from this error.");
+
+    /*
+     * slaxDebugShell() only processes a single command per call; a
+     * command like "print" or "info locals" leaves the status at
+     * XSLT_DEBUG_INIT so we loop back for another command, while a
+     * stepping/continue/quit command changes the status, telling us
+     * it's time to stop looping and return (letting the fatal error
+     * unwind the transform, or honoring an explicit "quit").
+     */
+    for (;;) {
+	if (slaxDebugShell(statep) < 0) {
+	    xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+	    return;
+	}
+
+	if (xsltGetDebuggerStatus() != XSLT_DEBUG_INIT)
+	    return;
+    }
+}
+
+/**
  * Called from libxslt as callback function when template is executed.
  *
  * @template  template being executed (if NULL, we're called while
@@ -2719,7 +2801,7 @@ slaxDebugInitFlags (slaxDebugFlags_t flags)
 
     xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
     xsltSetDebuggerCallbacksHelper(slaxDebugHandler, slaxDebugAddFrame,
-				   slaxDebugDropFrame);
+				   slaxDebugDropFrame, slaxDebugErrorHandler);
 
     if (flags & SDBF_PROFILE_ONLY) {
 	slaxDebugDisplayMode = DEBUG_MODE_PROFILER;
