@@ -69,7 +69,7 @@ exsltFuncRegisterFunc (void *payload, void *vctxt, const xmlChar *URI,
     exsltFuncFunctionData *data = (exsltFuncFunctionData *) payload;
     xsltTransformContextPtr ctxt = (xsltTransformContextPtr) vctxt;
 
-    if ((data == NULL) || (ctxt == NULL) || (URI == NULL) || (name == NULL))
+    if (data == NULL || ctxt == NULL || URI == NULL || name == NULL)
         return;
 
     xsltGenericDebug(xsltGenericDebugContext,
@@ -95,7 +95,7 @@ exsltFuncRegisterImportFunc (void *payload, void *vctxt, const xmlChar *URI,
     exsltFuncImportRegData *ch = (exsltFuncImportRegData *) vctxt;
     exsltFuncFunctionData *func = NULL;
 
-    if ((data == NULL) || (ch == NULL) || (URI == NULL) || (name == NULL))
+    if (data == NULL || ch == NULL || URI == NULL || name == NULL)
         return;
 
     if (ch->ctxt == NULL || ch->hash == NULL)
@@ -336,7 +336,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs)
         paramNode = xmlNodeGetPrev(func->content);
     } else
         paramNode = NULL;
-    if ((paramNode == NULL) && (func->nargs != 0)) {
+    if (paramNode == NULL && func->nargs != 0) {
         xsltGenericError(xsltGenericErrorContext,
                          "exsltFuncFunctionFunction: nargs != 0 and "
                          "param == NULL\n");
@@ -505,8 +505,8 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst)
     xmlHashTablePtr data;
     exsltFuncFunctionData *func;
 
-    if ((style == NULL) || (inst == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+    if (style == NULL || inst == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
     {
@@ -516,7 +516,7 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst)
         name = xmlSplitQName2(qname, &prefix);
         xmlFree(qname);
     }
-    if ((name == NULL) || (prefix == NULL)) {
+    if (name == NULL || prefix == NULL) {
         xsltGenericError(xsltGenericErrorContext,
                          "func:function: not a QName\n");
         if (name != NULL)
@@ -597,8 +597,8 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
     xmlChar *sel;
     exsltFuncResultPreComp *ret;
 
-    if ((style == NULL) || (inst == NULL)
-        || (xmlNodeGetType(inst) != XML_ELEMENT_NODE))
+    if (style == NULL || inst == NULL
+        || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return NULL;
 
     /*
@@ -631,19 +631,19 @@ exsltFuncResultComp (xsltStylesheetPtr style, xmlNodePtr inst,
          test = xmlNodeGetParent(test)) {
         if (/* Traversal has reached the top-level document without
          * finding a func:function ancestor. */
-            (test != NULL && xmlNodeGetType(test) == XML_DOCUMENT_NODE) ||
+            test != NULL && xmlNodeGetType(test) == XML_DOCUMENT_NODE ||
             /* Traversal reached a stylesheet-namespace node,
          * and has left the function namespace. */
-            (IS_XSLT_ELEM(test) && IS_XSLT_NAME(test, "stylesheet"))) {
+            IS_XSLT_ELEM(test) && IS_XSLT_NAME(test, "stylesheet")) {
             xsltGenericError(xsltGenericErrorContext,
                              "func:result element not a descendant "
                              "of a func:function\n");
             style->errors++;
             return NULL;
         }
-        if ((xmlNodeGetNs(test) != NULL)
-            && (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(test)),
-                            EXSLT_FUNCTIONS_NAMESPACE))) {
+        if (xmlNodeGetNs(test) != NULL
+            && xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(test)),
+                            EXSLT_FUNCTIONS_NAMESPACE)) {
             if (xmlStrEqual(xmlNodeGetName(test),
                             (const xmlChar *) "function")) {
                 break;
