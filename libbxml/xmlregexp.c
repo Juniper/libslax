@@ -483,7 +483,7 @@ xmlRegCalloc2 (size_t dim1, size_t dim2, size_t elemSize)
     void *ret;
 
     /* Check for overflow */
-    if ((dim2 == 0) || (elemSize == 0) || (dim1 > SIZE_MAX / dim2 / elemSize))
+    if (dim2 == 0 || elemSize == 0 || dim1 > SIZE_MAX / dim2 / elemSize)
         return NULL;
     numElems = dim1 * dim2;
     if (numElems > XML_MAX_ITEMS)
@@ -529,9 +529,9 @@ xmlRegEpxFromParse (xmlRegParserCtxtPtr ctxt)
         }
     }
 
-    if ((ret->determinist != 0) && (ret->nbCounters == 0) && (ctxt->negs == 0)
-        && (ret->atoms != NULL) && (ret->atoms[0] != NULL)
-        && (ret->atoms[0]->type == XML_REGEXP_STRING)) {
+    if (ret->determinist != 0 && ret->nbCounters == 0 && ctxt->negs == 0
+        && ret->atoms != NULL && ret->atoms[0] != NULL
+        && ret->atoms[0]->type == XML_REGEXP_STRING) {
         int i, j, nbstates = 0, nbatoms = 0;
         int *stateRemap;
         int *stringRemap;
@@ -578,8 +578,8 @@ xmlRegEpxFromParse (xmlRegParserCtxtPtr ctxt)
             return NULL;
         }
         for (i = 0; i < ret->nbAtoms; i++) {
-            if ((ret->atoms[i]->type == XML_REGEXP_STRING)
-                && (ret->atoms[i]->quant == XML_REGEXP_QUANT_ONCE)) {
+            if (ret->atoms[i]->type == XML_REGEXP_STRING
+                && ret->atoms[i]->quant == XML_REGEXP_QUANT_ONCE) {
                 value = ret->atoms[i]->valuep;
                 for (j = 0; j < nbatoms; j++) {
                     if (xmlStrEqual(stringMap[j], value)) {
@@ -643,10 +643,10 @@ xmlRegEpxFromParse (xmlRegParserCtxtPtr ctxt)
 
             for (j = 0; j < state->nbTrans; j++) {
                 trans = &(state->trans[j]);
-                if ((trans->to < 0) || (trans->atom == NULL))
+                if (trans->to < 0 || trans->atom == NULL)
                     continue;
                 atomno = stringRemap[trans->atom->no];
-                if ((trans->atom->data != NULL) && (transdata == NULL)) {
+                if (trans->atom->data != NULL && transdata == NULL) {
                     transdata = (void **) xmlRegCalloc2(nbstates, nbatoms,
                                                         sizeof(void *));
                     if (transdata == NULL) {
@@ -867,11 +867,11 @@ xmlRegFreeAtom (xmlRegAtomPtr atom)
         xmlRegFreeRange(atom->ranges[i]);
     if (atom->ranges != NULL)
         xmlFree(atom->ranges);
-    if ((atom->type == XML_REGEXP_STRING) && (atom->valuep != NULL))
+    if (atom->type == XML_REGEXP_STRING && atom->valuep != NULL)
         xmlFree(atom->valuep);
-    if ((atom->type == XML_REGEXP_STRING) && (atom->valuep2 != NULL))
+    if (atom->type == XML_REGEXP_STRING && atom->valuep2 != NULL)
         xmlFree(atom->valuep2);
-    if ((atom->type == XML_REGEXP_BLOCK_NAME) && (atom->valuep != NULL))
+    if (atom->type == XML_REGEXP_BLOCK_NAME && atom->valuep != NULL)
         xmlFree(atom->valuep);
     xmlFree(atom);
 }
@@ -1613,8 +1613,8 @@ xmlRegStateAddTrans (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr state,
 
     for (nrtrans = state->nbTrans - 1; nrtrans >= 0; nrtrans--) {
         xmlRegTransPtr trans = &(state->trans[nrtrans]);
-        if ((trans->atom == atom) && (trans->to == target->no)
-            && (trans->counter == counter) && (trans->count == count)) {
+        if (trans->atom == atom && trans->to == target->no
+            && trans->counter == counter && trans->count == count) {
             return;
         }
     }
@@ -1787,8 +1787,8 @@ xmlFAGenerateTransitions (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr from,
 	 * this is a subexpression handling one should not need to
 	 * create a new node except for XML_REGEXP_QUANT_RANGE.
 	 */
-        if ((to != NULL) && (atom->stop != to)
-            && (atom->quant != XML_REGEXP_QUANT_RANGE)) {
+        if (to != NULL && atom->stop != to
+            && atom->quant != XML_REGEXP_QUANT_RANGE) {
             /*
 	     * Generate an epsilon transition to link to the target
 	     */
@@ -1848,7 +1848,7 @@ xmlFAGenerateTransitions (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr from,
 		 * graph. This is clearly more complex but should not
 		 * be exploitable at runtime.
 		 */
-            if ((atom->min == 0) && (atom->start0 == NULL)) {
+            if (atom->min == 0 && atom->start0 == NULL) {
                 xmlRegAtomPtr copy;
                 /*
 		     * duplicate a transition based on atom to count next
@@ -1921,8 +1921,8 @@ xmlFAGenerateTransitions (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr from,
             return -1;
         return 0;
     }
-    if ((atom->min == 0) && (atom->max == 0)
-        && (atom->quant == XML_REGEXP_QUANT_RANGE)) {
+    if (atom->min == 0 && atom->max == 0
+        && atom->quant == XML_REGEXP_QUANT_RANGE) {
         /*
 	 * we can discard the atom and generate an epsilon transition instead
 	 */
@@ -1942,8 +1942,8 @@ xmlFAGenerateTransitions (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr from,
             return -1;
     }
     end = to;
-    if ((atom->quant == XML_REGEXP_QUANT_MULT)
-        || (atom->quant == XML_REGEXP_QUANT_PLUS)) {
+    if (atom->quant == XML_REGEXP_QUANT_MULT
+        || atom->quant == XML_REGEXP_QUANT_PLUS) {
         /*
 	 * Do not pollute the target state by adding transitions from
 	 * it as it is likely to be the shared target of multiple branches.
@@ -1957,8 +1957,8 @@ xmlFAGenerateTransitions (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr from,
         xmlFAGenerateEpsilonTransition(ctxt, tmp, to);
         to = tmp;
     }
-    if ((atom->quant == XML_REGEXP_QUANT_RANGE) && (atom->min == 0)
-        && (atom->max > 0)) {
+    if (atom->quant == XML_REGEXP_QUANT_RANGE && atom->min == 0
+        && atom->max > 0) {
         nullable = 1;
         atom->min = 1;
         if (atom->max == 1)
@@ -2012,8 +2012,8 @@ xmlFAReduceEpsilonTransitions (xmlRegParserCtxtPtr ctxt, int fromnr, int tonr,
     to = ctxt->states[tonr];
     if (to == NULL)
         return;
-    if ((to->mark == XML_REGEXP_MARK_START)
-        || (to->mark == XML_REGEXP_MARK_VISITED))
+    if (to->mark == XML_REGEXP_MARK_START
+        || to->mark == XML_REGEXP_MARK_VISITED)
         return;
 
     to->mark = XML_REGEXP_MARK_VISITED;
@@ -2066,14 +2066,14 @@ xmlFAFinishReduceEpsilonTransitions (xmlRegParserCtxtPtr ctxt, int tonr)
     to = ctxt->states[tonr];
     if (to == NULL)
         return;
-    if ((to->mark == XML_REGEXP_MARK_START)
-        || (to->mark == XML_REGEXP_MARK_NORMAL))
+    if (to->mark == XML_REGEXP_MARK_START
+        || to->mark == XML_REGEXP_MARK_NORMAL)
         return;
 
     to->mark = XML_REGEXP_MARK_NORMAL;
     for (transnr = 0; transnr < to->nbTrans; transnr++) {
         xmlRegTransPtr t1 = &to->trans[transnr];
-        if ((t1->to >= 0) && (t1->atom == NULL))
+        if (t1->to >= 0 && t1->atom == NULL)
             xmlFAFinishReduceEpsilonTransitions(ctxt, t1->to);
     }
 }
@@ -2114,9 +2114,9 @@ xmlFAEliminateSimpleEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
             || state->type == XML_REGEXP_FINAL_STATE)
             continue;
         /* is the only transition out a basic transition */
-        if ((state->trans[0].atom == NULL) && (state->trans[0].to >= 0)
-            && (state->trans[0].to != statenr) && (state->trans[0].counter < 0)
-            && (state->trans[0].count < 0)) {
+        if (state->trans[0].atom == NULL && state->trans[0].to >= 0
+            && state->trans[0].to != statenr && state->trans[0].counter < 0
+            && state->trans[0].count < 0) {
             newto = state->trans[0].to;
 
             if (state->type == XML_REGEXP_START_STATE) {
@@ -2163,7 +2163,7 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
     xmlFAEliminateSimpleEpsilonTransitions(ctxt);
     for (statenr = 0; statenr < ctxt->nbStates; statenr++) {
         state = ctxt->states[statenr];
-        if ((state != NULL) && (state->type == XML_REGEXP_UNREACH_STATE)) {
+        if (state != NULL && state->type == XML_REGEXP_UNREACH_STATE) {
             xmlRegFreeState(state);
             ctxt->states[statenr] = NULL;
         }
@@ -2183,12 +2183,12 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
         state = ctxt->states[statenr];
         if (state == NULL)
             continue;
-        if ((state->nbTrans == 0) && (state->type != XML_REGEXP_FINAL_STATE)) {
+        if (state->nbTrans == 0 && state->type != XML_REGEXP_FINAL_STATE) {
             state->type = XML_REGEXP_SINK_STATE;
         }
         for (transnr = 0; transnr < state->nbTrans; transnr++) {
-            if ((state->trans[transnr].atom == NULL)
-                && (state->trans[transnr].to >= 0)) {
+            if (state->trans[transnr].atom == NULL
+                && state->trans[transnr].to >= 0) {
                 if (state->trans[transnr].to == statenr) {
                     state->trans[transnr].to = -1;
                 } else if (state->trans[transnr].count < 0) {
@@ -2215,8 +2215,8 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
                 continue;
             for (transnr = 0; transnr < state->nbTrans; transnr++) {
                 xmlRegTransPtr trans = &(state->trans[transnr]);
-                if ((trans->atom == NULL) && (trans->count < 0)
-                    && (trans->to >= 0)) {
+                if (trans->atom == NULL && trans->count < 0
+                    && trans->to >= 0) {
                     trans->to = -1;
                 }
             }
@@ -2241,7 +2241,7 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
 	 * Mark all states reachable from the current reachable state
 	 */
         for (transnr = 0; transnr < state->nbTrans; transnr++) {
-            if ((state->trans[transnr].to >= 0)
+            if (state->trans[transnr].to >= 0
                 && ((state->trans[transnr].atom != NULL)
                     || (state->trans[transnr].count >= 0))) {
                 int newto = state->trans[transnr].to;
@@ -2261,8 +2261,8 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
         if (target == NULL) {
             for (statenr = 1; statenr < ctxt->nbStates; statenr++) {
                 state = ctxt->states[statenr];
-                if ((state != NULL)
-                    && (state->reached == XML_REGEXP_MARK_START)) {
+                if (state != NULL
+                    && state->reached == XML_REGEXP_MARK_START) {
                     target = state;
                     break;
                 }
@@ -2272,7 +2272,7 @@ xmlFAEliminateEpsilonTransitions (xmlRegParserCtxtPtr ctxt)
     }
     for (statenr = 0; statenr < ctxt->nbStates; statenr++) {
         state = ctxt->states[statenr];
-        if ((state != NULL) && (state->reached == XML_REGEXP_MARK_NORMAL)) {
+        if (state != NULL && state->reached == XML_REGEXP_MARK_NORMAL) {
             xmlRegFreeState(state);
             ctxt->states[statenr] = NULL;
         }
@@ -2284,12 +2284,12 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
 {
     int ret = 0;
 
-    if ((range1->type == XML_REGEXP_RANGES)
-        || (range2->type == XML_REGEXP_RANGES)
-        || (range2->type == XML_REGEXP_SUBREG)
-        || (range1->type == XML_REGEXP_SUBREG)
-        || (range1->type == XML_REGEXP_STRING)
-        || (range2->type == XML_REGEXP_STRING))
+    if (range1->type == XML_REGEXP_RANGES
+        || range2->type == XML_REGEXP_RANGES
+        || range2->type == XML_REGEXP_SUBREG
+        || range1->type == XML_REGEXP_SUBREG
+        || range1->type == XML_REGEXP_STRING
+        || range2->type == XML_REGEXP_STRING)
         return -1;
 
     /* put them in order */
@@ -2300,16 +2300,16 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
         range1 = range2;
         range2 = tmp;
     }
-    if ((range1->type == XML_REGEXP_ANYCHAR)
-        || (range2->type == XML_REGEXP_ANYCHAR)) {
+    if (range1->type == XML_REGEXP_ANYCHAR
+        || range2->type == XML_REGEXP_ANYCHAR) {
         ret = 1;
-    } else if ((range1->type == XML_REGEXP_EPSILON)
-               || (range2->type == XML_REGEXP_EPSILON)) {
+    } else if (range1->type == XML_REGEXP_EPSILON
+               || range2->type == XML_REGEXP_EPSILON) {
         return 0;
     } else if (range1->type == range2->type) {
         if (range1->type != XML_REGEXP_CHARVAL)
             ret = 1;
-        else if ((range1->end < range2->start) || (range2->end < range1->start))
+        else if (range1->end < range2->start || range2->end < range1->start)
             ret = 0;
         else
             ret = 1;
@@ -2323,8 +2323,8 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
 	 * compilation than testing over and over at runtime or
 	 * pushing too many states when evaluating.
 	 */
-        if (((range1->neg == 0) && (range2->neg != 0))
-            || ((range1->neg != 0) && (range2->neg == 0)))
+        if (range1->neg == 0 && range2->neg != 0
+            || range1->neg != 0 && range2->neg == 0)
             neg = 1;
 
         for (codepoint = range1->start; codepoint <= range1->end; codepoint++) {
@@ -2333,12 +2333,12 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
                                             range2->blockName);
             if (ret < 0)
                 return -1;
-            if (((neg == 1) && (ret == 0)) || ((neg == 0) && (ret == 1)))
+            if (neg == 1 && ret == 0 || neg == 0 && ret == 1)
                 return 1;
         }
         return 0;
-    } else if ((range1->type == XML_REGEXP_BLOCK_NAME)
-               || (range2->type == XML_REGEXP_BLOCK_NAME)) {
+    } else if (range1->type == XML_REGEXP_BLOCK_NAME
+               || range2->type == XML_REGEXP_BLOCK_NAME) {
         if (range1->type == range2->type) {
             ret = xmlStrEqual(range1->blockName, range2->blockName);
         } else {
@@ -2350,22 +2350,22 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
 	     */
             return 1;
         }
-    } else if ((range1->type < XML_REGEXP_LETTER)
-               || (range2->type < XML_REGEXP_LETTER)) {
-        if ((range1->type == XML_REGEXP_ANYSPACE)
-            && (range2->type == XML_REGEXP_NOTSPACE))
+    } else if (range1->type < XML_REGEXP_LETTER
+               || range2->type < XML_REGEXP_LETTER) {
+        if (range1->type == XML_REGEXP_ANYSPACE
+            && range2->type == XML_REGEXP_NOTSPACE)
             ret = 0;
-        else if ((range1->type == XML_REGEXP_INITNAME)
-                 && (range2->type == XML_REGEXP_NOTINITNAME))
+        else if (range1->type == XML_REGEXP_INITNAME
+                 && range2->type == XML_REGEXP_NOTINITNAME)
             ret = 0;
-        else if ((range1->type == XML_REGEXP_NAMECHAR)
-                 && (range2->type == XML_REGEXP_NOTNAMECHAR))
+        else if (range1->type == XML_REGEXP_NAMECHAR
+                 && range2->type == XML_REGEXP_NOTNAMECHAR)
             ret = 0;
-        else if ((range1->type == XML_REGEXP_DECIMAL)
-                 && (range2->type == XML_REGEXP_NOTDECIMAL))
+        else if (range1->type == XML_REGEXP_DECIMAL
+                 && range2->type == XML_REGEXP_NOTDECIMAL)
             ret = 0;
-        else if ((range1->type == XML_REGEXP_REALCHAR)
-                 && (range2->type == XML_REGEXP_NOTREALCHAR))
+        else if (range1->type == XML_REGEXP_REALCHAR
+                 && range2->type == XML_REGEXP_NOTREALCHAR)
             ret = 0;
         else {
             /* same thing to limit complexity */
@@ -2377,57 +2377,57 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
         switch (range1->type) {
         case XML_REGEXP_LETTER:
             /* all disjoint except in the subgroups */
-            if ((range2->type == XML_REGEXP_LETTER_UPPERCASE)
-                || (range2->type == XML_REGEXP_LETTER_LOWERCASE)
-                || (range2->type == XML_REGEXP_LETTER_TITLECASE)
-                || (range2->type == XML_REGEXP_LETTER_MODIFIER)
-                || (range2->type == XML_REGEXP_LETTER_OTHERS))
+            if (range2->type == XML_REGEXP_LETTER_UPPERCASE
+                || range2->type == XML_REGEXP_LETTER_LOWERCASE
+                || range2->type == XML_REGEXP_LETTER_TITLECASE
+                || range2->type == XML_REGEXP_LETTER_MODIFIER
+                || range2->type == XML_REGEXP_LETTER_OTHERS)
                 ret = 1;
             break;
         case XML_REGEXP_MARK:
-            if ((range2->type == XML_REGEXP_MARK_NONSPACING)
-                || (range2->type == XML_REGEXP_MARK_SPACECOMBINING)
-                || (range2->type == XML_REGEXP_MARK_ENCLOSING))
+            if (range2->type == XML_REGEXP_MARK_NONSPACING
+                || range2->type == XML_REGEXP_MARK_SPACECOMBINING
+                || range2->type == XML_REGEXP_MARK_ENCLOSING)
                 ret = 1;
             break;
         case XML_REGEXP_NUMBER:
-            if ((range2->type == XML_REGEXP_NUMBER_DECIMAL)
-                || (range2->type == XML_REGEXP_NUMBER_LETTER)
-                || (range2->type == XML_REGEXP_NUMBER_OTHERS))
+            if (range2->type == XML_REGEXP_NUMBER_DECIMAL
+                || range2->type == XML_REGEXP_NUMBER_LETTER
+                || range2->type == XML_REGEXP_NUMBER_OTHERS)
                 ret = 1;
             break;
         case XML_REGEXP_PUNCT:
-            if ((range2->type == XML_REGEXP_PUNCT_CONNECTOR)
-                || (range2->type == XML_REGEXP_PUNCT_DASH)
-                || (range2->type == XML_REGEXP_PUNCT_OPEN)
-                || (range2->type == XML_REGEXP_PUNCT_CLOSE)
-                || (range2->type == XML_REGEXP_PUNCT_INITQUOTE)
-                || (range2->type == XML_REGEXP_PUNCT_FINQUOTE)
-                || (range2->type == XML_REGEXP_PUNCT_OTHERS))
+            if (range2->type == XML_REGEXP_PUNCT_CONNECTOR
+                || range2->type == XML_REGEXP_PUNCT_DASH
+                || range2->type == XML_REGEXP_PUNCT_OPEN
+                || range2->type == XML_REGEXP_PUNCT_CLOSE
+                || range2->type == XML_REGEXP_PUNCT_INITQUOTE
+                || range2->type == XML_REGEXP_PUNCT_FINQUOTE
+                || range2->type == XML_REGEXP_PUNCT_OTHERS)
                 ret = 1;
             break;
         case XML_REGEXP_SEPAR:
-            if ((range2->type == XML_REGEXP_SEPAR_SPACE)
-                || (range2->type == XML_REGEXP_SEPAR_LINE)
-                || (range2->type == XML_REGEXP_SEPAR_PARA))
+            if (range2->type == XML_REGEXP_SEPAR_SPACE
+                || range2->type == XML_REGEXP_SEPAR_LINE
+                || range2->type == XML_REGEXP_SEPAR_PARA)
                 ret = 1;
             break;
         case XML_REGEXP_SYMBOL:
-            if ((range2->type == XML_REGEXP_SYMBOL_MATH)
-                || (range2->type == XML_REGEXP_SYMBOL_CURRENCY)
-                || (range2->type == XML_REGEXP_SYMBOL_MODIFIER)
-                || (range2->type == XML_REGEXP_SYMBOL_OTHERS))
+            if (range2->type == XML_REGEXP_SYMBOL_MATH
+                || range2->type == XML_REGEXP_SYMBOL_CURRENCY
+                || range2->type == XML_REGEXP_SYMBOL_MODIFIER
+                || range2->type == XML_REGEXP_SYMBOL_OTHERS)
                 ret = 1;
             break;
         case XML_REGEXP_OTHER:
-            if ((range2->type == XML_REGEXP_OTHER_CONTROL)
-                || (range2->type == XML_REGEXP_OTHER_FORMAT)
-                || (range2->type == XML_REGEXP_OTHER_PRIVATE))
+            if (range2->type == XML_REGEXP_OTHER_CONTROL
+                || range2->type == XML_REGEXP_OTHER_FORMAT
+                || range2->type == XML_REGEXP_OTHER_PRIVATE)
                 ret = 1;
             break;
         default:
-            if ((range2->type >= XML_REGEXP_LETTER)
-                && (range2->type < XML_REGEXP_BLOCK_NAME))
+            if (range2->type >= XML_REGEXP_LETTER
+                && range2->type < XML_REGEXP_BLOCK_NAME)
                 ret = 0;
             else {
                 /* safety net ! */
@@ -2435,8 +2435,8 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
             }
         }
     }
-    if (((range1->neg == 0) && (range2->neg != 0))
-        || ((range1->neg != 0) && (range2->neg == 0)))
+    if (range1->neg == 0 && range2->neg != 0
+        || range1->neg != 0 && range2->neg == 0)
         ret = !ret;
     return ret;
 }
@@ -2452,13 +2452,13 @@ xmlFACompareRanges (xmlRegRangePtr range1, xmlRegRangePtr range2)
 static int
 xmlFACompareAtomTypes (xmlRegAtomType type1, xmlRegAtomType type2)
 {
-    if ((type1 == XML_REGEXP_EPSILON) || (type1 == XML_REGEXP_CHARVAL)
-        || (type1 == XML_REGEXP_RANGES) || (type1 == XML_REGEXP_SUBREG)
-        || (type1 == XML_REGEXP_STRING) || (type1 == XML_REGEXP_ANYCHAR))
+    if (type1 == XML_REGEXP_EPSILON || type1 == XML_REGEXP_CHARVAL
+        || type1 == XML_REGEXP_RANGES || type1 == XML_REGEXP_SUBREG
+        || type1 == XML_REGEXP_STRING || type1 == XML_REGEXP_ANYCHAR)
         return 1;
-    if ((type2 == XML_REGEXP_EPSILON) || (type2 == XML_REGEXP_CHARVAL)
-        || (type2 == XML_REGEXP_RANGES) || (type2 == XML_REGEXP_SUBREG)
-        || (type2 == XML_REGEXP_STRING) || (type2 == XML_REGEXP_ANYCHAR))
+    if (type2 == XML_REGEXP_EPSILON || type2 == XML_REGEXP_CHARVAL
+        || type2 == XML_REGEXP_RANGES || type2 == XML_REGEXP_SUBREG
+        || type2 == XML_REGEXP_STRING || type2 == XML_REGEXP_ANYCHAR)
         return 1;
 
     if (type1 == type2)
@@ -2473,81 +2473,81 @@ xmlFACompareAtomTypes (xmlRegAtomType type1, xmlRegAtomType type2)
     switch (type1) {
     case XML_REGEXP_ANYSPACE: /* \s */
         /* can't be a letter, number, mark, punctuation, symbol */
-        if ((type2 == XML_REGEXP_NOTSPACE)
-            || ((type2 >= XML_REGEXP_LETTER)
-                && (type2 <= XML_REGEXP_LETTER_OTHERS))
-            || ((type2 >= XML_REGEXP_NUMBER)
-                && (type2 <= XML_REGEXP_NUMBER_OTHERS))
-            || ((type2 >= XML_REGEXP_MARK)
-                && (type2 <= XML_REGEXP_MARK_ENCLOSING))
-            || ((type2 >= XML_REGEXP_PUNCT)
-                && (type2 <= XML_REGEXP_PUNCT_OTHERS))
-            || ((type2 >= XML_REGEXP_SYMBOL)
-                && (type2 <= XML_REGEXP_SYMBOL_OTHERS)))
+        if (type2 == XML_REGEXP_NOTSPACE
+            || type2 >= XML_REGEXP_LETTER
+                && type2 <= XML_REGEXP_LETTER_OTHERS
+            || type2 >= XML_REGEXP_NUMBER
+                && type2 <= XML_REGEXP_NUMBER_OTHERS
+            || type2 >= XML_REGEXP_MARK
+                && type2 <= XML_REGEXP_MARK_ENCLOSING
+            || type2 >= XML_REGEXP_PUNCT
+                && type2 <= XML_REGEXP_PUNCT_OTHERS
+            || type2 >= XML_REGEXP_SYMBOL
+                && type2 <= XML_REGEXP_SYMBOL_OTHERS)
             return 0;
         break;
     case XML_REGEXP_NOTSPACE: /* \S */
         break;
     case XML_REGEXP_INITNAME: /* \l */
         /* can't be a number, mark, separator, punctuation, symbol or other */
-        if ((type2 == XML_REGEXP_NOTINITNAME)
-            || ((type2 >= XML_REGEXP_NUMBER)
-                && (type2 <= XML_REGEXP_NUMBER_OTHERS))
-            || ((type2 >= XML_REGEXP_MARK)
-                && (type2 <= XML_REGEXP_MARK_ENCLOSING))
-            || ((type2 >= XML_REGEXP_SEPAR) && (type2 <= XML_REGEXP_SEPAR_PARA))
-            || ((type2 >= XML_REGEXP_PUNCT)
-                && (type2 <= XML_REGEXP_PUNCT_OTHERS))
-            || ((type2 >= XML_REGEXP_SYMBOL)
-                && (type2 <= XML_REGEXP_SYMBOL_OTHERS))
-            || ((type2 >= XML_REGEXP_OTHER) && (type2 <= XML_REGEXP_OTHER_NA)))
+        if (type2 == XML_REGEXP_NOTINITNAME
+            || type2 >= XML_REGEXP_NUMBER
+                && type2 <= XML_REGEXP_NUMBER_OTHERS
+            || type2 >= XML_REGEXP_MARK
+                && type2 <= XML_REGEXP_MARK_ENCLOSING
+            || type2 >= XML_REGEXP_SEPAR && type2 <= XML_REGEXP_SEPAR_PARA
+            || type2 >= XML_REGEXP_PUNCT
+                && type2 <= XML_REGEXP_PUNCT_OTHERS
+            || type2 >= XML_REGEXP_SYMBOL
+                && type2 <= XML_REGEXP_SYMBOL_OTHERS
+            || type2 >= XML_REGEXP_OTHER && type2 <= XML_REGEXP_OTHER_NA)
             return 0;
         break;
     case XML_REGEXP_NOTINITNAME: /* \L */
         break;
     case XML_REGEXP_NAMECHAR: /* \c */
         /* can't be a mark, separator, punctuation, symbol or other */
-        if ((type2 == XML_REGEXP_NOTNAMECHAR)
-            || ((type2 >= XML_REGEXP_MARK)
-                && (type2 <= XML_REGEXP_MARK_ENCLOSING))
-            || ((type2 >= XML_REGEXP_PUNCT)
-                && (type2 <= XML_REGEXP_PUNCT_OTHERS))
-            || ((type2 >= XML_REGEXP_SEPAR) && (type2 <= XML_REGEXP_SEPAR_PARA))
-            || ((type2 >= XML_REGEXP_SYMBOL)
-                && (type2 <= XML_REGEXP_SYMBOL_OTHERS))
-            || ((type2 >= XML_REGEXP_OTHER) && (type2 <= XML_REGEXP_OTHER_NA)))
+        if (type2 == XML_REGEXP_NOTNAMECHAR
+            || type2 >= XML_REGEXP_MARK
+                && type2 <= XML_REGEXP_MARK_ENCLOSING
+            || type2 >= XML_REGEXP_PUNCT
+                && type2 <= XML_REGEXP_PUNCT_OTHERS
+            || type2 >= XML_REGEXP_SEPAR && type2 <= XML_REGEXP_SEPAR_PARA
+            || type2 >= XML_REGEXP_SYMBOL
+                && type2 <= XML_REGEXP_SYMBOL_OTHERS
+            || type2 >= XML_REGEXP_OTHER && type2 <= XML_REGEXP_OTHER_NA)
             return 0;
         break;
     case XML_REGEXP_NOTNAMECHAR: /* \C */
         break;
     case XML_REGEXP_DECIMAL: /* \d */
         /* can't be a letter, mark, separator, punctuation, symbol or other */
-        if ((type2 == XML_REGEXP_NOTDECIMAL) || (type2 == XML_REGEXP_REALCHAR)
-            || ((type2 >= XML_REGEXP_LETTER)
-                && (type2 <= XML_REGEXP_LETTER_OTHERS))
-            || ((type2 >= XML_REGEXP_MARK)
-                && (type2 <= XML_REGEXP_MARK_ENCLOSING))
-            || ((type2 >= XML_REGEXP_PUNCT)
-                && (type2 <= XML_REGEXP_PUNCT_OTHERS))
-            || ((type2 >= XML_REGEXP_SEPAR) && (type2 <= XML_REGEXP_SEPAR_PARA))
-            || ((type2 >= XML_REGEXP_SYMBOL)
-                && (type2 <= XML_REGEXP_SYMBOL_OTHERS))
-            || ((type2 >= XML_REGEXP_OTHER) && (type2 <= XML_REGEXP_OTHER_NA)))
+        if (type2 == XML_REGEXP_NOTDECIMAL || type2 == XML_REGEXP_REALCHAR
+            || type2 >= XML_REGEXP_LETTER
+                && type2 <= XML_REGEXP_LETTER_OTHERS
+            || type2 >= XML_REGEXP_MARK
+                && type2 <= XML_REGEXP_MARK_ENCLOSING
+            || type2 >= XML_REGEXP_PUNCT
+                && type2 <= XML_REGEXP_PUNCT_OTHERS
+            || type2 >= XML_REGEXP_SEPAR && type2 <= XML_REGEXP_SEPAR_PARA
+            || type2 >= XML_REGEXP_SYMBOL
+                && type2 <= XML_REGEXP_SYMBOL_OTHERS
+            || type2 >= XML_REGEXP_OTHER && type2 <= XML_REGEXP_OTHER_NA)
             return 0;
         break;
     case XML_REGEXP_NOTDECIMAL: /* \D */
         break;
     case XML_REGEXP_REALCHAR: /* \w */
         /* can't be a mark, separator, punctuation, symbol or other */
-        if ((type2 == XML_REGEXP_NOTDECIMAL)
-            || ((type2 >= XML_REGEXP_MARK)
-                && (type2 <= XML_REGEXP_MARK_ENCLOSING))
-            || ((type2 >= XML_REGEXP_PUNCT)
-                && (type2 <= XML_REGEXP_PUNCT_OTHERS))
-            || ((type2 >= XML_REGEXP_SEPAR) && (type2 <= XML_REGEXP_SEPAR_PARA))
-            || ((type2 >= XML_REGEXP_SYMBOL)
-                && (type2 <= XML_REGEXP_SYMBOL_OTHERS))
-            || ((type2 >= XML_REGEXP_OTHER) && (type2 <= XML_REGEXP_OTHER_NA)))
+        if (type2 == XML_REGEXP_NOTDECIMAL
+            || type2 >= XML_REGEXP_MARK
+                && type2 <= XML_REGEXP_MARK_ENCLOSING
+            || type2 >= XML_REGEXP_PUNCT
+                && type2 <= XML_REGEXP_PUNCT_OTHERS
+            || type2 >= XML_REGEXP_SEPAR && type2 <= XML_REGEXP_SEPAR_PARA
+            || type2 >= XML_REGEXP_SYMBOL
+                && type2 <= XML_REGEXP_SYMBOL_OTHERS
+            || type2 >= XML_REGEXP_OTHER && type2 <= XML_REGEXP_OTHER_NA)
             return 0;
         break;
     case XML_REGEXP_NOTREALCHAR: /* \W */
@@ -2643,7 +2643,7 @@ xmlFAEqualAtoms (xmlRegAtomPtr atom1, xmlRegAtomPtr atom2, int deep)
 
     if (atom1 == atom2)
         return 1;
-    if ((atom1 == NULL) || (atom2 == NULL))
+    if (atom1 == NULL || atom2 == NULL)
         return 0;
 
     if (atom1->type != atom2->type)
@@ -2687,11 +2687,11 @@ xmlFACompareAtoms (xmlRegAtomPtr atom1, xmlRegAtomPtr atom2, int deep)
 
     if (atom1 == atom2)
         return 1;
-    if ((atom1 == NULL) || (atom2 == NULL))
+    if (atom1 == NULL || atom2 == NULL)
         return 0;
 
-    if ((atom1->type == XML_REGEXP_ANYCHAR)
-        || (atom2->type == XML_REGEXP_ANYCHAR))
+    if (atom1->type == XML_REGEXP_ANYCHAR
+        || atom2->type == XML_REGEXP_ANYCHAR)
         return 1;
 
     if (atom1->type > atom2->type) {
@@ -2807,7 +2807,7 @@ xmlFARecurseDeterminism (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr state,
         /*
 	 * check transitions conflicting with the one looked at
 	 */
-        if ((t1->to < 0) || (t1->to == fromnr))
+        if (t1->to < 0 || t1->to == fromnr)
             continue;
         if (t1->atom == NULL) {
             state->markd = XML_REGEXP_MARK_VISITED;
@@ -2821,7 +2821,7 @@ xmlFARecurseDeterminism (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr state,
         }
         if (xmlFACompareAtoms(t1->atom, atom, deep)) {
             /* Treat equal transitions as deterministic. */
-            if ((t1->to != tonr) || (!xmlFAEqualAtoms(t1->atom, atom, deep)))
+            if (t1->to != tonr || !xmlFAEqualAtoms(t1->atom, atom, deep))
                 ret = 0;
             /* mark the transition as non-deterministic */
             t1->nd = 1;
@@ -2850,7 +2850,7 @@ xmlFAFinishRecurseDeterminism (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr state)
     nbTrans = state->nbTrans;
     for (transnr = 0; transnr < nbTrans; transnr++) {
         xmlRegTransPtr t1 = &state->trans[transnr];
-        if ((t1->atom == NULL) && (t1->to >= 0))
+        if (t1->atom == NULL && t1->to >= 0)
             xmlFAFinishRecurseDeterminism(ctxt, ctxt->states[t1->to]);
     }
 }
@@ -2909,8 +2909,8 @@ xmlFAComputesDeterminism (xmlRegParserCtxtPtr ctxt)
                          * transitions which indicate a conflict
                          */
                         if (xmlFAEqualAtoms(t1->atom, t2->atom, deep)
-                            && (t1->counter == t2->counter)
-                            && (t1->count == t2->count))
+                            && t1->counter == t2->counter
+                            && t1->count == t2->count)
                             t2->to = -1; /* eliminated */
                     }
                 }
@@ -2954,8 +2954,8 @@ xmlFAComputesDeterminism (xmlRegParserCtxtPtr ctxt)
                          * Treat equal counter transitions that couldn't be
                          * eliminated as deterministic.
                          */
-                        if ((t1->to != t2->to) || (t1->counter == t2->counter)
-                            || (!xmlFAEqualAtoms(t1->atom, t2->atom, deep)))
+                        if (t1->to != t2->to || t1->counter == t2->counter
+                            || !xmlFAEqualAtoms(t1->atom, t2->atom, deep))
                             ret = 0;
                         /* mark the transitions as non-deterministic ones */
                         t1->nd = 1;
@@ -3197,7 +3197,7 @@ xmlRegCheckCharacter (xmlRegAtomPtr atom, int codepoint)
     int i, ret = 0;
     xmlRegRangePtr range;
 
-    if ((atom == NULL) || (!IS_CHAR(codepoint)))
+    if (atom == NULL || !IS_CHAR(codepoint))
         return -1;
 
     switch (atom->type) {
@@ -3410,7 +3410,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
         memset(exec->counts, 0, comp->nbCounters * sizeof(int));
     } else
         exec->counts = NULL;
-    while ((exec->status == XML_REGEXP_OK) && (exec->state != NULL)
+    while (exec->status == XML_REGEXP_OK && exec->state != NULL
            && ((exec->inputString[exec->index] != 0)
                || ((exec->state != NULL)
                    && (exec->state->type != XML_REGEXP_FINAL_STATE)))) {
@@ -3425,7 +3425,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
 	 * we don't want to break.
 	 */
         len = 1;
-        if ((exec->inputString[exec->index] == 0) && (exec->counts == NULL)) {
+        if (exec->inputString[exec->index] == 0 && exec->counts == NULL) {
             /*
 	     * if there is a transition, we must check if
 	     *  atom allows minOccurs of 0
@@ -3464,7 +3464,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                 count = exec->counts[trans->count];
                 counter = &exec->comp->counters[trans->count];
                 ret = ((count >= counter->min) && (count <= counter->max));
-                if ((ret) && (counter->min != counter->max))
+                if (ret && counter->min != counter->max)
                     deter = 0;
             } else if (atom == NULL) {
                 exec->status = XML_REGEXP_INTERNAL_ERROR;
@@ -3478,7 +3478,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                     goto error;
                 }
                 ret = xmlRegCheckCharacter(atom, codepoint);
-                if ((ret == 1) && (atom->min >= 0) && (atom->max > 0)) {
+                if (ret == 1 && atom->min >= 0 && atom->max > 0) {
                     xmlRegStatePtr to = comp->states[trans->to];
 
                     /*
@@ -3490,8 +3490,8 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                     if (trans->counter >= 0) {
                         xmlRegCounterPtr counter;
 
-                        if ((exec->counts == NULL) || (exec->comp == NULL)
-                            || (exec->comp->counters == NULL)) {
+                        if (exec->counts == NULL || exec->comp == NULL
+                            || exec->comp->counters == NULL) {
                             exec->status = XML_REGEXP_INTERNAL_ERROR;
                             goto error;
                         }
@@ -3568,7 +3568,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                         }
                         exec->counts[trans->counter]--;
                     }
-                } else if ((ret == 0) && (atom->min == 0) && (atom->max > 0)) {
+                } else if (ret == 0 && atom->min == 0 && atom->max > 0) {
                     /*
 		     * we don't match on the codepoint, but minOccurs of 0
 		     * says that's ok.  Setting len to 0 inhibits stepping
@@ -3578,16 +3578,16 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                     len = 0;
                     ret = 1;
                 }
-            } else if ((atom->min == 0) && (atom->max > 0)) {
+            } else if (atom->min == 0 && atom->max > 0) {
                 /* another spot to match when minOccurs is 0 */
                 exec->transcount = 1;
                 len = 0;
                 ret = 1;
             }
             if (ret == 1) {
-                if ((trans->nd == 1)
-                    || ((trans->count >= 0) && (deter == 0)
-                        && (exec->state->nbTrans > exec->transno + 1))) {
+                if (trans->nd == 1
+                    || trans->count >= 0 && deter == 0
+                        && exec->state->nbTrans > exec->transno + 1) {
                     xmlFARegExecSave(exec);
                     if (exec->status != XML_REGEXP_OK)
                         goto error;
@@ -3596,8 +3596,8 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                     xmlRegCounterPtr counter;
 
                     /* make sure we don't go over the counter maximum value */
-                    if ((exec->counts == NULL) || (exec->comp == NULL)
-                        || (exec->comp->counters == NULL)) {
+                    if (exec->counts == NULL || exec->comp == NULL
+                        || exec->comp->counters == NULL) {
                         exec->status = XML_REGEXP_INTERNAL_ERROR;
                         goto error;
                     }
@@ -3606,8 +3606,8 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                         continue; /* for loop on transitions */
                     exec->counts[trans->counter]++;
                 }
-                if ((trans->count >= 0)
-                    && (trans->count < REGEXP_ALL_COUNTER)) {
+                if (trans->count >= 0
+                    && trans->count < REGEXP_ALL_COUNTER) {
                     if (exec->counts == NULL) {
                         exec->status = XML_REGEXP_INTERNAL_ERROR;
                         goto error;
@@ -3625,7 +3625,7 @@ xmlFARegExec (xmlRegexpPtr comp, const xmlChar *content)
                 break;
             }
         }
-        if ((exec->transno != 0) || (exec->state->nbTrans == 0)) {
+        if (exec->transno != 0 || exec->state->nbTrans == 0) {
         rollback:
             /*
 	     * Failed to find a way out
@@ -3682,7 +3682,7 @@ xmlRegNewExecCtxt (xmlRegexp *comp, xmlRegExecCallbacks callback, void *data)
 
     if (comp == NULL)
         return NULL;
-    if ((comp->compact == NULL) && (comp->states == NULL))
+    if (comp->compact == NULL && comp->states == NULL)
         return NULL;
     exec = (xmlRegExecCtxtPtr) xmlMalloc(sizeof(xmlRegExecCtxt));
     if (exec == NULL)
@@ -3857,7 +3857,7 @@ xmlRegStrEqualWildcard (const xmlChar *expStr, const xmlChar *valStr)
                 valStr = expStr;
                 expStr = tmp;
             }
-            if ((*valStr != 0) && (*expStr != 0) && (*expStr++ == '*')) {
+            if (*valStr != 0 && *expStr != 0 && *expStr++ == '*') {
                 do {
                     if (*valStr == XML_REG_STRING_SEPARATOR)
                         break;
@@ -3893,7 +3893,7 @@ xmlRegCompactPushString (xmlRegExecCtxtPtr exec, xmlRegexpPtr comp,
     int state = exec->index;
     int i, target;
 
-    if ((comp == NULL) || (comp->compact == NULL) || (comp->stringMap == NULL))
+    if (comp == NULL || comp->compact == NULL || comp->stringMap == NULL)
         return -1;
 
     if (value == NULL) {
@@ -3911,11 +3911,11 @@ xmlRegCompactPushString (xmlRegExecCtxtPtr exec, xmlRegexpPtr comp,
      */
     for (i = 0; i < comp->nbstrings; i++) {
         target = comp->compact[state * (comp->nbstrings + 1) + i + 1];
-        if ((target > 0) && (target <= comp->nbstates)) {
+        if (target > 0 && target <= comp->nbstates) {
             target--; /* to avoid 0 */
             if (xmlRegStrEqualWildcard(comp->stringMap[i], value)) {
                 exec->index = target;
-                if ((exec->callback != NULL) && (comp->transdata != NULL)) {
+                if (exec->callback != NULL && comp->transdata != NULL) {
                     exec->callback(exec->data, value,
                                    comp->transdata[state * comp->nbstrings + i],
                                    data);
@@ -3982,13 +3982,13 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
      * If we have an active rollback stack push the new value there
      * and get back to where we were left
      */
-    if ((value != NULL) && (exec->inputStackNr > 0)) {
+    if (value != NULL && exec->inputStackNr > 0) {
         xmlFARegExecSaveInputString(exec, value, data);
         value = exec->inputStack[exec->index].value;
         data = exec->inputStack[exec->index].data;
     }
 
-    while ((exec->status == XML_REGEXP_OK)
+    while (exec->status == XML_REGEXP_OK
            && ((value != NULL)
                || ((final == 1)
                    && (exec->state->type != XML_REGEXP_FINAL_STATE)))) {
@@ -3997,7 +3997,7 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
 	 * still have epsilon like transition for counted transitions
 	 * on counters, in that case don't break too early.
 	 */
-        if ((value == NULL) && (exec->counts == NULL))
+        if (value == NULL && exec->counts == NULL)
             goto rollback;
 
         exec->transcount = 0;
@@ -4018,23 +4018,23 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                 /*
 		 * Check all counted transitions from the current state
 		 */
-                if ((value == NULL) && (final)) {
+                if (value == NULL && final) {
                     ret = 1;
                 } else if (value != NULL) {
                     for (i = 0; i < exec->state->nbTrans; i++) {
                         t = &exec->state->trans[i];
-                        if ((t->counter < 0) || (t == trans))
+                        if (t->counter < 0 || t == trans)
                             continue;
                         counter = &exec->comp->counters[t->counter];
                         count = exec->counts[t->counter];
-                        if ((count < counter->max) && (t->atom != NULL)
-                            && (xmlStrEqual(value, t->atom->valuep))) {
+                        if (count < counter->max && t->atom != NULL
+                            && xmlStrEqual(value, t->atom->valuep)) {
                             ret = 0;
                             break;
                         }
-                        if ((count >= counter->min) && (count < counter->max)
-                            && (t->atom != NULL)
-                            && (xmlStrEqual(value, t->atom->valuep))) {
+                        if (count >= counter->min && count < counter->max
+                            && t->atom != NULL
+                            && xmlStrEqual(value, t->atom->valuep)) {
                             ret = 1;
                             break;
                         }
@@ -4053,11 +4053,11 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
 		 */
                 for (i = 0; i < exec->state->nbTrans; i++) {
                     t = &exec->state->trans[i];
-                    if ((t->counter < 0) || (t == trans))
+                    if (t->counter < 0 || t == trans)
                         continue;
                     counter = &exec->comp->counters[t->counter];
                     count = exec->counts[t->counter];
-                    if ((count < counter->min) || (count > counter->max)) {
+                    if (count < counter->min || count > counter->max) {
                         ret = 0;
                         break;
                     }
@@ -4083,7 +4083,7 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                     if (!compound)
                         ret = 0;
                 }
-                if ((ret == 1) && (trans->counter >= 0)) {
+                if (ret == 1 && trans->counter >= 0) {
                     xmlRegCounterPtr counter;
                     int count;
 
@@ -4093,7 +4093,7 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                         ret = 0;
                 }
 
-                if ((ret == 1) && (atom->min > 0) && (atom->max > 0)) {
+                if (ret == 1 && atom->min > 0 && atom->max > 0) {
                     xmlRegStatePtr to = exec->comp->states[trans->to];
 
                     /*
@@ -4158,8 +4158,8 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                 }
             }
             if (ret == 1) {
-                if ((exec->callback != NULL) && (atom != NULL)
-                    && (data != NULL)) {
+                if (exec->callback != NULL && atom != NULL
+                    && data != NULL) {
                     exec->callback(exec->data, atom->valuep, atom->data, data);
                 }
                 if (exec->state->nbTrans > exec->transno + 1) {
@@ -4171,13 +4171,13 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                 if (trans->counter >= 0) {
                     exec->counts[trans->counter]++;
                 }
-                if ((trans->count >= 0)
-                    && (trans->count < REGEXP_ALL_COUNTER)) {
+                if (trans->count >= 0
+                    && trans->count < REGEXP_ALL_COUNTER) {
                     exec->counts[trans->count] = 0;
                 }
-                if ((exec->comp->states[trans->to] != NULL)
-                    && (exec->comp->states[trans->to]->type
-                        == XML_REGEXP_SINK_STATE)) {
+                if (exec->comp->states[trans->to] != NULL
+                    && exec->comp->states[trans->to]->type
+                        == XML_REGEXP_SINK_STATE) {
                     /*
 		     * entering a sink state, save the current state as error
 		     * state.
@@ -4211,14 +4211,14 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
                 break;
             }
         }
-        if ((exec->transno != 0) || (exec->state->nbTrans == 0)) {
+        if (exec->transno != 0 || exec->state->nbTrans == 0) {
         rollback:
             /*
 	     * if we didn't yet rollback on the current input
 	     * store the current state as the error state.
 	     */
-            if ((progress) && (exec->state != NULL)
-                && (exec->state->type != XML_REGEXP_SINK_STATE)) {
+            if (progress && exec->state != NULL
+                && exec->state->type != XML_REGEXP_SINK_STATE) {
                 progress = 0;
                 if (xmlRegExecSetErrString(exec, value) < 0)
                     break;
@@ -4233,7 +4233,7 @@ xmlRegExecPushStringInternal (xmlRegExecCtxtPtr exec, const xmlChar *value,
 	     */
             exec->determinist = 0;
             xmlFARegExecRollBack(exec);
-            if ((exec->inputStack != NULL) && (exec->status == XML_REGEXP_OK)) {
+            if (exec->inputStack != NULL && exec->status == XML_REGEXP_OK) {
                 value = exec->inputStack[exec->index].value;
                 data = exec->inputStack[exec->index].data;
             }
@@ -4341,14 +4341,14 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
     int maxval;
     int nb = 0;
 
-    if ((exec == NULL) || (nbval == NULL) || (nbneg == NULL) || (values == NULL)
-        || (*nbval <= 0))
+    if (exec == NULL || nbval == NULL || nbneg == NULL || values == NULL
+        || *nbval <= 0)
         return -1;
 
     maxval = *nbval;
     *nbval = 0;
     *nbneg = 0;
-    if ((exec->comp != NULL) && (exec->comp->compact != NULL)) {
+    if (exec->comp != NULL && exec->comp->compact != NULL) {
         xmlRegexpPtr comp;
         int target, i, state;
 
@@ -4370,18 +4370,18 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
         }
         for (i = 0; (i < comp->nbstrings) && (nb < maxval); i++) {
             target = comp->compact[state * (comp->nbstrings + 1) + i + 1];
-            if ((target > 0) && (target <= comp->nbstates)
-                && (comp->compact[(target - 1) * (comp->nbstrings + 1)]
-                    != XML_REGEXP_SINK_STATE)) {
+            if (target > 0 && target <= comp->nbstates
+                && comp->compact[(target - 1) * (comp->nbstrings + 1)]
+                    != XML_REGEXP_SINK_STATE) {
                 values[nb++] = comp->stringMap[i];
                 (*nbval)++;
             }
         }
         for (i = 0; (i < comp->nbstrings) && (nb < maxval); i++) {
             target = comp->compact[state * (comp->nbstrings + 1) + i + 1];
-            if ((target > 0) && (target <= comp->nbstates)
-                && (comp->compact[(target - 1) * (comp->nbstrings + 1)]
-                    == XML_REGEXP_SINK_STATE)) {
+            if (target > 0 && target <= comp->nbstates
+                && comp->compact[(target - 1) * (comp->nbstrings + 1)]
+                    == XML_REGEXP_SINK_STATE) {
                 values[nb++] = comp->stringMap[i];
                 (*nbneg)++;
             }
@@ -4414,7 +4414,7 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
             if (trans->to < 0)
                 continue;
             atom = trans->atom;
-            if ((atom == NULL) || (atom->valuep == NULL))
+            if (atom == NULL || atom->valuep == NULL)
                 continue;
             if (trans->count == REGEXP_ALL_LAX_COUNTER) {
                 /* this should not be reached but ... */
@@ -4430,7 +4430,7 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
                     count = exec->counts[trans->counter];
                 if (exec->comp != NULL)
                     counter = &exec->comp->counters[trans->counter];
-                if ((counter == NULL) || (count < counter->max)) {
+                if (counter == NULL || count < counter->max) {
                     if (atom->neg)
                         values[nb++] = (xmlChar *) atom->valuep2;
                     else
@@ -4438,10 +4438,10 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
                     (*nbval)++;
                 }
             } else {
-                if ((exec->comp != NULL)
-                    && (exec->comp->states[trans->to] != NULL)
-                    && (exec->comp->states[trans->to]->type
-                        != XML_REGEXP_SINK_STATE)) {
+                if (exec->comp != NULL
+                    && exec->comp->states[trans->to] != NULL
+                    && exec->comp->states[trans->to]->type
+                        != XML_REGEXP_SINK_STATE) {
                     if (atom->neg)
                         values[nb++] = (xmlChar *) atom->valuep2;
                     else
@@ -4456,7 +4456,7 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
             if (trans->to < 0)
                 continue;
             atom = trans->atom;
-            if ((atom == NULL) || (atom->valuep == NULL))
+            if (atom == NULL || atom->valuep == NULL)
                 continue;
             if (trans->count == REGEXP_ALL_LAX_COUNTER) {
                 continue;
@@ -4465,9 +4465,9 @@ xmlRegExecGetValues (xmlRegExecCtxtPtr exec, int err, int *nbval, int *nbneg,
             } else if (trans->counter >= 0) {
                 continue;
             } else {
-                if ((exec->comp->states[trans->to] != NULL)
-                    && (exec->comp->states[trans->to]->type
-                        == XML_REGEXP_SINK_STATE)) {
+                if (exec->comp->states[trans->to] != NULL
+                    && exec->comp->states[trans->to]->type
+                        == XML_REGEXP_SINK_STATE) {
                     if (atom->neg)
                         values[nb++] = (xmlChar *) atom->valuep2;
                     else
@@ -4579,9 +4579,9 @@ xmlFAIsChar (xmlRegParserCtxtPtr ctxt)
         ERROR("Invalid UTF-8");
         return 0;
     }
-    if ((cur == '.') || (cur == '\\') || (cur == '?') || (cur == '*')
-        || (cur == '+') || (cur == '(') || (cur == ')') || (cur == '|')
-        || (cur == 0x5B) || (cur == 0x5D) || (cur == 0))
+    if (cur == '.' || cur == '\\' || cur == '?' || cur == '*'
+        || cur == '+' || cur == '(' || cur == ')' || cur == '|'
+        || cur == 0x5B || cur == 0x5D || cur == 0)
         return -1;
     return cur;
 }
@@ -4779,13 +4779,13 @@ xmlFAParseCharProp (xmlRegParserCtxtPtr ctxt)
         NEXT;
         start = ctxt->cur;
         cur = CUR;
-        if (((cur >= 'a') && (cur <= 'z')) || ((cur >= 'A') && (cur <= 'Z'))
-            || ((cur >= '0') && (cur <= '9')) || (cur == 0x2D)) {
+        if (cur >= 'a' && cur <= 'z' || cur >= 'A' && cur <= 'Z'
+            || cur >= '0' && cur <= '9' || cur == 0x2D) {
             NEXT;
             cur = CUR;
-            while (((cur >= 'a') && (cur <= 'z'))
-                   || ((cur >= 'A') && (cur <= 'Z'))
-                   || ((cur >= '0') && (cur <= '9')) || (cur == 0x2D)) {
+            while (cur >= 'a' && cur <= 'z'
+                   || cur >= 'A' && cur <= 'Z'
+                   || cur >= '0' && cur <= '9' || cur == 0x2D) {
                 NEXT;
                 cur = CUR;
             }
@@ -4917,29 +4917,29 @@ xmlFAParseCharClassEsc (xmlRegParserCtxtPtr ctxt)
             return;
         }
         NEXT;
-    } else if ((cur == 'n') || (cur == 'r') || (cur == 't') || (cur == '\\')
-               || (cur == '|') || (cur == '.') || (cur == '?') || (cur == '*')
-               || (cur == '+') || (cur == '(') || (cur == ')') || (cur == '{')
-               || (cur == '}') || (cur == 0x2D) || (cur == 0x5B)
-               || (cur == 0x5D) || (cur == 0x5E) ||
+    } else if (cur == 'n' || cur == 'r' || cur == 't' || cur == '\\'
+               || cur == '|' || cur == '.' || cur == '?' || cur == '*'
+               || cur == '+' || cur == '(' || cur == ')' || cur == '{'
+               || cur == '}' || cur == 0x2D || cur == 0x5B
+               || cur == 0x5D || cur == 0x5E ||
 
                /* Non-standard escape sequences:
 	 *                  Java 1.8|.NET Core 3.1|MSXML 6 */
-               (cur == '!') || /*   +  |     +       |    +   */
-               (cur == '"') || /*   +  |     +       |    +   */
-               (cur == '#') || /*   +  |     +       |    +   */
-               (cur == '$') || /*   +  |     +       |    +   */
-               (cur == '%') || /*   +  |     +       |    +   */
-               (cur == ',') || /*   +  |     +       |    +   */
-               (cur == '/') || /*   +  |     +       |    +   */
-               (cur == ':') || /*   +  |     +       |    +   */
-               (cur == ';') || /*   +  |     +       |    +   */
-               (cur == '=') || /*   +  |     +       |    +   */
-               (cur == '>') || /*      |     +       |    +   */
-               (cur == '@') || /*   +  |     +       |    +   */
-               (cur == '`') || /*   +  |     +       |    +   */
-               (cur == '~') || /*   +  |     +       |    +   */
-               (cur == 'u')) { /*      |     +       |    +   */
+               cur == '!' || /*   +  |     +       |    +   */
+               cur == '"' || /*   +  |     +       |    +   */
+               cur == '#' || /*   +  |     +       |    +   */
+               cur == '$' || /*   +  |     +       |    +   */
+               cur == '%' || /*   +  |     +       |    +   */
+               cur == ',' || /*   +  |     +       |    +   */
+               cur == '/' || /*   +  |     +       |    +   */
+               cur == ':' || /*   +  |     +       |    +   */
+               cur == ';' || /*   +  |     +       |    +   */
+               cur == '=' || /*   +  |     +       |    +   */
+               cur == '>' || /*      |     +       |    +   */
+               cur == '@' || /*   +  |     +       |    +   */
+               cur == '`' || /*   +  |     +       |    +   */
+               cur == '~' || /*   +  |     +       |    +   */
+               cur == 'u') { /*      |     +       |    +   */
         if (ctxt->atom == NULL) {
             ctxt->atom = xmlRegNewAtom(ctxt, XML_REGEXP_CHARVAL);
             if (ctxt->atom != NULL) {
@@ -4986,9 +4986,9 @@ xmlFAParseCharClassEsc (xmlRegParserCtxtPtr ctxt)
                                cur, cur, NULL);
         }
         NEXT;
-    } else if ((cur == 's') || (cur == 'S') || (cur == 'i') || (cur == 'I')
-               || (cur == 'c') || (cur == 'C') || (cur == 'd') || (cur == 'D')
-               || (cur == 'w') || (cur == 'W')) {
+    } else if (cur == 's' || cur == 'S' || cur == 'i' || cur == 'I'
+               || cur == 'c' || cur == 'C' || cur == 'd' || cur == 'D'
+               || cur == 'w' || cur == 'W') {
         xmlRegAtomType type = XML_REGEXP_ANYSPACE;
 
         switch (cur) {
@@ -5113,7 +5113,7 @@ xmlFAParseCharRange (xmlRegParserCtxtPtr ctxt)
         }
         end = start;
         len = 1;
-    } else if ((cur != 0x5B) && (cur != 0x5D)) {
+    } else if (cur != 0x5B && cur != 0x5D) {
         len = 4;
         end = start = xmlGetUTF8Char(ctxt->cur, &len);
         if (start < 0) {
@@ -5128,13 +5128,13 @@ xmlFAParseCharRange (xmlRegParserCtxtPtr ctxt)
      * Since we are "inside" a range, we can assume ctxt->cur is past
      * the start of ctxt->string, and PREV should be safe
      */
-    if ((start == '-') && (NXT(1) != ']') && (PREV != '[') && (PREV != '^')) {
+    if (start == '-' && NXT(1) != ']' && PREV != '[' && PREV != '^') {
         NEXTL(len);
         return;
     }
     NEXTL(len);
     cur = CUR;
-    if ((cur != '-') || (NXT(1) == '[') || (NXT(1) == ']')) {
+    if (cur != '-' || NXT(1) == '[' || NXT(1) == ']') {
         xmlRegAtomAddRange(ctxt, ctxt->atom, ctxt->neg, XML_REGEXP_CHARVAL,
                            start, end, NULL);
         return;
@@ -5195,7 +5195,7 @@ xmlFAParseCharRange (xmlRegParserCtxtPtr ctxt)
             return;
         }
         len = 1;
-    } else if ((cur != '\0') && (cur != 0x5B) && (cur != 0x5D)) {
+    } else if (cur != '\0' && cur != 0x5B && cur != 0x5D) {
         len = 4;
         end = xmlGetUTF8Char(ctxt->cur, &len);
         if (end < 0) {
@@ -5278,7 +5278,7 @@ xmlFAParsePosCharGroup (xmlRegParserCtxtPtr ctxt)
         } else {
             xmlFAParseCharRange(ctxt);
         }
-    } while ((CUR != ']') && (CUR != '-') && (CUR != 0) && (ctxt->error == 0));
+    } while (CUR != ']' && CUR != '-' && CUR != 0 && ctxt->error == 0);
 }
 
 /**
@@ -5300,8 +5300,8 @@ xmlFAParseCharGroup (xmlRegParserCtxtPtr ctxt)
         xmlFAParsePosCharGroup(ctxt);
         ctxt->neg = neg;
     }
-    while ((CUR != ']') && (ctxt->error == 0)) {
-        if ((CUR == '-') && (NXT(1) == '[')) {
+    while (CUR != ']' && ctxt->error == 0) {
+        if (CUR == '-' && NXT(1) == '[') {
             NEXT; /* eat the '-' */
             NEXT; /* eat the '[' */
             ctxt->neg = 2;
@@ -5357,7 +5357,7 @@ xmlFAParseQuantExact (xmlRegParserCtxtPtr ctxt)
     int ok = 0;
     int overflow = 0;
 
-    while ((CUR >= '0') && (CUR <= '9')) {
+    while (CUR >= '0' && CUR <= '9') {
         if (ret > INT_MAX / 10) {
             overflow = 1;
         } else {
@@ -5372,7 +5372,7 @@ xmlFAParseQuantExact (xmlRegParserCtxtPtr ctxt)
         ok = 1;
         NEXT;
     }
-    if ((ok != 1) || (overflow == 1)) {
+    if (ok != 1 || overflow == 1) {
         return -1;
     }
     return ret;
@@ -5393,7 +5393,7 @@ xmlFAParseQuantifier (xmlRegParserCtxtPtr ctxt)
     int cur;
 
     cur = CUR;
-    if ((cur == '?') || (cur == '*') || (cur == '+')) {
+    if (cur == '?' || cur == '*' || cur == '+') {
         if (ctxt->atom != NULL) {
             if (cur == '?')
                 ctxt->atom->quant = XML_REGEXP_QUANT_OPT;
@@ -5510,7 +5510,7 @@ xmlFAParseAtom (xmlRegParserCtxtPtr ctxt)
         ctxt->atom->stop = ctxt->state;
         ctxt->end = oldend;
         return 1;
-    } else if ((CUR == '[') || (CUR == '\\') || (CUR == '.')) {
+    } else if (CUR == '[' || CUR == '\\' || CUR == '.') {
         xmlFAParseCharClass(ctxt);
         return 1;
     }
@@ -5570,7 +5570,7 @@ xmlFAParseBranch (xmlRegParserCtxtPtr ctxt, xmlRegStatePtr to)
         previous = ctxt->state;
         ctxt->atom = NULL;
     }
-    while ((ret != 0) && (ctxt->error == 0)) {
+    while (ret != 0 && ctxt->error == 0) {
         ret = xmlFAParsePiece(ctxt);
         if (ret != 0) {
             if (xmlFAGenerateTransitions(
@@ -5612,7 +5612,7 @@ xmlFAParseRegExp (xmlRegParserCtxtPtr ctxt, int top)
         return;
     }
     end = ctxt->state;
-    while ((CUR == '|') && (ctxt->error == 0)) {
+    while (CUR == '|' && ctxt->error == 0) {
         NEXT;
         ctxt->state = start;
         ctxt->end = NULL;
@@ -5705,7 +5705,7 @@ error:
 int
 xmlRegexpExec (xmlRegexp *comp, const xmlChar *content)
 {
-    if ((comp == NULL) || (content == NULL))
+    if (comp == NULL || content == NULL)
         return -1;
     return xmlFARegExec(comp, content);
 }
@@ -5895,7 +5895,7 @@ xmlAutomataGetInitState (xmlAutomata *am)
 int
 xmlAutomataSetFinalState (xmlAutomata *am, xmlAutomataState *state)
 {
-    if ((am == NULL) || (state == NULL))
+    if (am == NULL || state == NULL)
         return -1;
     state->type = XML_REGEXP_FINAL_STATE;
     return 0;
@@ -5924,7 +5924,7 @@ xmlAutomataNewTransition (xmlAutomata *am, xmlAutomataState *from,
 {
     xmlRegAtomPtr atom;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
@@ -5968,13 +5968,13 @@ xmlAutomataNewTransition2 (xmlAutomata *am, xmlAutomataState *from,
 {
     xmlRegAtomPtr atom;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
         return NULL;
     atom->data = data;
-    if ((token2 == NULL) || (*token2 == 0)) {
+    if (token2 == NULL || *token2 == 0) {
         atom->valuep = xmlStrdup(token);
     } else {
         int lenn, lenp;
@@ -6030,14 +6030,14 @@ xmlAutomataNewNegTrans (xmlAutomata *am, xmlAutomataState *from,
     xmlRegAtomPtr atom;
     xmlChar err_msg[200];
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
         return NULL;
     atom->data = data;
     atom->neg = 1;
-    if ((token2 == NULL) || (*token2 == 0)) {
+    if (token2 == NULL || *token2 == 0) {
         atom->valuep = xmlStrdup(token);
     } else {
         int lenn, lenp;
@@ -6098,16 +6098,16 @@ xmlAutomataNewCountTrans2 (xmlAutomata *am, xmlAutomataState *from,
     xmlRegAtomPtr atom;
     int counter;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     if (min < 0)
         return NULL;
-    if ((max < min) || (max < 1))
+    if (max < min || max < 1)
         return NULL;
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
         return NULL;
-    if ((token2 == NULL) || (*token2 == 0)) {
+    if (token2 == NULL || *token2 == 0) {
         atom->valuep = xmlStrdup(token);
         if (atom->valuep == NULL)
             goto error;
@@ -6193,11 +6193,11 @@ xmlAutomataNewCountTrans (xmlAutomata *am, xmlAutomataState *from,
     xmlRegAtomPtr atom;
     int counter;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     if (min < 0)
         return NULL;
-    if ((max < min) || (max < 1))
+    if (max < min || max < 1)
         return NULL;
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
@@ -6272,7 +6272,7 @@ xmlAutomataNewOnceTrans2 (xmlAutomata *am, xmlAutomataState *from,
     xmlRegAtomPtr atom;
     int counter;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     if (min < 1)
         return NULL;
@@ -6281,7 +6281,7 @@ xmlAutomataNewOnceTrans2 (xmlAutomata *am, xmlAutomataState *from,
     atom = xmlRegNewAtom(am, XML_REGEXP_STRING);
     if (atom == NULL)
         return NULL;
-    if ((token2 == NULL) || (*token2 == 0)) {
+    if (token2 == NULL || *token2 == 0) {
         atom->valuep = xmlStrdup(token);
         if (atom->valuep == NULL)
             goto error;
@@ -6358,7 +6358,7 @@ xmlAutomataNewOnceTrans (xmlAutomata *am, xmlAutomataState *from,
     xmlRegAtomPtr atom;
     int counter;
 
-    if ((am == NULL) || (from == NULL) || (token == NULL))
+    if (am == NULL || from == NULL || token == NULL)
         return NULL;
     if (min < 1)
         return NULL;
@@ -6430,7 +6430,7 @@ xmlAutomataState *
 xmlAutomataNewEpsilon (xmlAutomata *am, xmlAutomataState *from,
                        xmlAutomataState *to)
 {
-    if ((am == NULL) || (from == NULL))
+    if (am == NULL || from == NULL)
         return NULL;
     xmlFAGenerateEpsilonTransition(am, from, to);
     if (to == NULL)
@@ -6456,7 +6456,7 @@ xmlAutomataState *
 xmlAutomataNewAllTrans (xmlAutomata *am, xmlAutomataState *from,
                         xmlAutomataState *to, int lax)
 {
-    if ((am == NULL) || (from == NULL))
+    if (am == NULL || from == NULL)
         return NULL;
     xmlFAGenerateAllTransition(am, from, to, lax);
     if (to == NULL)
@@ -6507,7 +6507,7 @@ xmlAutomataState *
 xmlAutomataNewCountedTrans (xmlAutomata *am, xmlAutomataState *from,
                             xmlAutomataState *to, int counter)
 {
-    if ((am == NULL) || (from == NULL) || (counter < 0))
+    if (am == NULL || from == NULL || counter < 0)
         return NULL;
     xmlFAGenerateCountedEpsilonTransition(am, from, to, counter);
     if (to == NULL)
@@ -6532,7 +6532,7 @@ xmlAutomataState *
 xmlAutomataNewCounterTrans (xmlAutomata *am, xmlAutomataState *from,
                             xmlAutomataState *to, int counter)
 {
-    if ((am == NULL) || (from == NULL) || (counter < 0))
+    if (am == NULL || from == NULL || counter < 0)
         return NULL;
     xmlFAGenerateCountedTransition(am, from, to, counter);
     if (to == NULL)
@@ -6554,7 +6554,7 @@ xmlAutomataCompile (xmlAutomata *am)
 {
     xmlRegexpPtr ret;
 
-    if ((am == NULL) || (am->error != 0))
+    if (am == NULL || am->error != 0)
         return NULL;
     xmlFAEliminateEpsilonTransitions(am);
     if (am->error != 0)
