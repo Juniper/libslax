@@ -187,8 +187,8 @@ exsltDynMapFunction (xmlXPathParserContextPtr ctxt, int nargs)
                 * the ns->next field.
                 */
                 cur = (xmlNodePtr) xmlNsGetNext((xmlNsPtr) cur);
-                if ((cur == NULL)
-                    || (xmlNodeGetType(cur) != XML_ELEMENT_NODE)) {
+                if (cur == NULL
+                    || xmlNodeGetType(cur) != XML_ELEMENT_NODE) {
                     xsltGenericError(
                         xsltGenericErrorContext,
                         "Internal error in exsltDynMapFunction: "
