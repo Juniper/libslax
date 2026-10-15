@@ -99,7 +99,7 @@ xmlModuleSymbol (xmlModule *module, const char *name, void **symbol)
 {
     int rc = -1;
 
-    if ((NULL == module) || (symbol == NULL) || (name == NULL))
+    if (NULL == module || symbol == NULL || name == NULL)
         return rc;
 
     rc = xmlModulePlatformSymbol(module->handle, name, symbol);
