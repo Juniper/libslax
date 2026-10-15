@@ -2702,10 +2702,10 @@ xsltGetDebuggerStatus (void)
 #ifdef WITH_DEBUGGER
 
 /*
- * There is currently only 3 debugging callback defined
+ * There is currently only 4 debugging callbacks defined
  * Debugger callbacks are disabled by default
  */
-#define XSLT_CALLBACK_NUMBER 3
+#define XSLT_CALLBACK_NUMBER 4
 
 typedef struct _xsltDebuggerCallbacks xsltDebuggerCallbacks;
 typedef xsltDebuggerCallbacks *xsltDebuggerCallbacksPtr;
@@ -2713,12 +2713,14 @@ struct _xsltDebuggerCallbacks {
     xsltHandleDebuggerCallback handler;
     xsltAddCallCallback add;
     xsltDropCallCallback drop;
+    xsltHandleDebuggerErrorCallback errorHandler;
 };
 
 static xsltDebuggerCallbacks xsltDebuggerCurrentCallbacks = {
     NULL, /* handler */
     NULL, /* add */
-    NULL  /* drop */
+    NULL, /* drop */
+    NULL  /* errorHandler */
 };
 
 /**
@@ -2756,6 +2758,7 @@ xsltSetDebuggerCallbacks (int no, void *block)
     xsltDebuggerCurrentCallbacks.handler = callbacks->handler;
     xsltDebuggerCurrentCallbacks.add = callbacks->add;
     xsltDebuggerCurrentCallbacks.drop = callbacks->drop;
+    xsltDebuggerCurrentCallbacks.errorHandler = callbacks->errorHandler;
     return 0;
 }
 
@@ -2776,6 +2779,27 @@ xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node, xsltTemplatePtr templ,
 {
     if (xsltDebuggerCurrentCallbacks.handler != NULL)
         xsltDebuggerCurrentCallbacks.handler(cur, node, templ, ctxt);
+}
+
+/**
+ * xslHandleDebuggerError:
+ * @cur : source node where the error occurred
+ * @ctxt : the xslt transform context
+ * @message : the error message that was reported
+ *
+ * Unconditionally transfer control to the debugger's error handler
+ * (if one is registered), regardless of the current xslDebugStatus
+ * or any breakpoint.  This gives the debugger a chance to let the
+ * user inspect the still-live transform context at the point of a
+ * fatal runtime error, before the transform unwinds and that context
+ * is torn down.
+ */
+void
+xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
+                        const char *message)
+{
+    if (xsltDebuggerCurrentCallbacks.errorHandler != NULL)
+        xsltDebuggerCurrentCallbacks.errorHandler(cur, ctxt, message);
 }
 
 /**
