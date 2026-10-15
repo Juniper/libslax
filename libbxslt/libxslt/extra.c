@@ -91,8 +91,8 @@ xsltDebug (xsltTransformContextPtr ctxt, xmlNodePtr node UNUSED,
                 xsltGenericError(xsltGenericErrorContext, "noname !!!!");
 #ifdef LIBXML_DEBUG_ENABLED
             if (cur->value != NULL) {
-                if ((xsltGenericDebugContext == stdout)
-                    || (xsltGenericDebugContext == stderr))
+                if (xsltGenericDebugContext == stdout
+                    || xsltGenericDebugContext == stderr)
                     xmlXPathDebugDumpObject((FILE *) xsltGenericDebugContext,
                                             cur->value, 1);
             } else {
@@ -130,11 +130,11 @@ xsltFunctionNodeSet (xmlXPathParserContextPtr ctxt, int nargs)
         xmlXPathParserContextSetError(ctxt, XPATH_INVALID_ARITY);
         return;
     }
-    if ((xmlXPathParserContextGetValue(ctxt) == NULL)
-        || ((xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
-             != XPATH_XSLT_TREE)
-            && (xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
-                != XPATH_NODESET))) {
+    if (xmlXPathParserContextGetValue(ctxt) == NULL
+        || xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+             != XPATH_XSLT_TREE
+            && xmlXPathObjectGetType(xmlXPathParserContextGetValue(ctxt))
+                != XPATH_NODESET) {
         xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
                            "node-set() invalid arg expecting a result tree\n");
         xmlXPathParserContextSetError(ctxt, XPATH_INVALID_TYPE);
