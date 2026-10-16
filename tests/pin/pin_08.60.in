@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.60.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    A syntactically-valid but semantically-invalid expression (a call to
+    an unknown/unregistered XPath function) must fail at compile time
+    (xo_eval_compile, not xo_xparse_parse_string) and be reported via
+    pin_error.  Kept in its own fixture file for the same reason as
+    pin_08.59; see that file's comment.
+  -->
+  <xsl:template match="start">
+    <xsl:if test="bogus-function(1)">
+      <bad/>
+    </xsl:if>
+  </xsl:template>
+
+</xsl:stylesheet>
