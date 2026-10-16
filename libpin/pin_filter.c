@@ -62,6 +62,7 @@ struct xo_filter_data_s {
     pin_node_id_t *xfd_node_stack;  /* retained node per depth */
     size_t xfd_node_stack_max;      /* allocated slot count of xfd_node_stack */
     int xfd_node_depth;             /* index of the current (top) slot */
+    pin_exec_state_t *xfd_esp;      /* current exec state, for xfdo_variable_of */
 };
 
 /*
@@ -307,6 +308,20 @@ pin_filter_data_value_of (xo_filter_data_t *dp, const char *name, ssize_t nlen)
     if (nlen < 0)
 	nlen = (ssize_t) strlen(name);
 
+    /*
+     * Callers (e.g. xo_eval_attribute) mark a bare attribute reference with
+     * a leading '@', per pin_filter_data_value_of_tree's convention below.
+     * dp->xfd_attribs holds bare (un-prefixed) "name=value" keys, so strip
+     * the marker before matching against it; the tree fallback still gets
+     * the original (possibly '@'-prefixed) name.
+     */
+    const char *bare = name;
+    ssize_t blen = nlen;
+    if (blen > 0 && *bare == '@') {
+	bare++;
+	blen--;
+    }
+
     const char *cp = dp->xfd_attribs;
     while (cp && *cp) {
 	/* skip whitespace */
@@ -338,7 +353,7 @@ pin_filter_data_value_of (xo_filter_data_t *dp, const char *name, ssize_t nlen)
 	if (vend == NULL)
 	    break;
 
-	if (klen == nlen && strncmp(cp, name, (size_t) nlen) == 0) {
+	if (klen == blen && strncmp(cp, bare, (size_t) blen) == 0) {
 	    /* copy value to scratch buffer so caller gets NUL-terminated str */
 	    size_t vlen = (size_t)(vend - vp);
 	    if (pin_filter_data_value_buf_grow(dp, vlen + 1) < 0)
@@ -355,6 +370,112 @@ pin_filter_data_value_of (xo_filter_data_t *dp, const char *name, ssize_t nlen)
     return pin_filter_data_value_of_tree(dp, name, nlen);
 }
 
+/*
+ * Resolve a $name variable reference to its current string value, for use
+ * by compiled PIN_OP_EVAL expressions (xo_eval_variable, via xfdo_variable_of).
+ * Only the current call frame's local bindings (esp->pes_vars[], set by
+ * pin_filter_set_esp before each eval) are consulted; the rulebook's
+ * global-variable table (pin_rulebook_global_find) is not, since the
+ * expressions this backs (select=/test= inside named templates) only ever
+ * reference template-local variables and parameters in practice.
+ *
+ * 'name' is not guaranteed to be NUL-terminated, so it is copied into a
+ * bounded stack buffer before interning.  Returns NULL if the name is too
+ * long, unbound, or has never been interned (and so cannot match any
+ * binding), or if no exec state has been set.
+ */
+static const char *
+pin_filter_data_variable_of (xo_filter_data_t *dp, const char *name, ssize_t nlen)
+{
+    if (name == NULL || dp->xfd_esp == NULL)
+	return NULL;
+
+    if (nlen < 0)
+	nlen = (ssize_t) strlen(name);
+
+    char buf[128];
+    if (nlen < 0 || (size_t) nlen >= sizeof(buf))
+	return NULL;
+    memcpy(buf, name, (size_t) nlen);
+    buf[nlen] = '\0';
+
+    pin_workspace_t *pwp = dp->xfd_workspace;
+    pin_name_id_t var_name = pin_namepool_atom(pwp, buf, FALSE);
+    if (pin_name_id_is_null(var_name))
+	return NULL;
+    uint32_t atom = pin_name_id_atom_of(var_name);
+
+    pin_exec_state_t *esp = dp->xfd_esp;
+    pin_var_binding_t *vp = NULL;
+    for (uint32_t i = 0; i < esp->pes_var_count; i++) {
+	if (esp->pes_vars[i].pvb_name == atom) {
+	    vp = &esp->pes_vars[i];
+	    break;
+	}
+    }
+    if (vp == NULL)
+	return NULL;
+
+    pin_value_t v = vp->pvb_value;
+    const char *result = NULL;
+
+    /*
+     * Every branch below returns storage that outlives this call (an
+     * interned namepool string, or a static string literal) rather than a
+     * buffer shared across calls.  xo_eval's multi-argument functions
+     * (e.g. concat()) evaluate all of their arguments -- each a separate
+     * call into this function -- before combining the results, so a
+     * single shared scratch buffer (as xfd_value_buf is, for the
+     * single-value-at-a-time @attr lookups in pin_filter_data_value_of)
+     * would have later arguments silently overwrite earlier ones.
+     */
+    switch (v.pv_type) {
+    case PVT_STRING:
+	result = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+	break;
+
+    case PVT_BOOLEAN:
+	result = (v.pv_flags & PVF_TRUE) ? "true" : "false";
+	break;
+
+    case PVT_NUMBER: {
+	char numbuf[32];
+	snprintf(numbuf, sizeof(numbuf), "%u", v.pv_atom);
+	pin_name_id_t id = pin_namepool_atom(pwp, numbuf, TRUE);
+	if (!pin_name_id_is_null(id))
+	    result = pin_namepool_string(pwp, id);
+	break;
+    }
+
+    case PVT_NODE: {
+	pin_name_id_t text_id = pin_exec_text_of(pwp, pin_node_id(v.pv_atom));
+	if (!pin_name_id_is_null(text_id))
+	    result = pin_namepool_string(pwp, text_id);
+	break;
+    }
+
+    case PVT_NODESET: {
+	if (v.pv_atom < esp->pes_nodeset_count) {
+	    pin_ns_entry_t *ns = &esp->pes_nodesets[v.pv_atom];
+	    if (ns->pne_count > 0) {
+		pin_name_id_t text_id
+		    = pin_exec_text_of(pwp, pin_node_id(ns->pne_nodes[0]));
+		if (!pin_name_id_is_null(text_id))
+		    result = pin_namepool_string(pwp, text_id);
+	    }
+	}
+	break;
+    }
+
+    case PVT_NULL:
+    default:
+	result = NULL;
+	break;
+    }
+
+    return result;
+}
+
 static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_version      = XO_FILTER_DATA_OPS_VERSION,
     .xfdo_realloc      = pin_filter_data_realloc,
@@ -362,6 +483,7 @@ static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_name_intern  = pin_filter_data_name_intern,
     .xfdo_name_eq      = pin_filter_data_name_eq,
     .xfdo_value_of     = pin_filter_data_value_of,
+    .xfdo_variable_of  = pin_filter_data_variable_of,
     .xfdo_event_open   = pin_filter_data_event_open,
     .xfdo_event_close  = pin_filter_data_event_close,
     .xfdo_destroy      = pin_filter_data_destroy,
@@ -444,4 +566,17 @@ pin_filter_set_cur_node (xo_filter_t *xfp, pin_node_id_t node)
 
     if ((size_t) dp->xfd_node_depth < dp->xfd_node_stack_max)
 	dp->xfd_node_stack[dp->xfd_node_depth] = node;
+}
+
+/*
+ * Set the exec state that xfdo_variable_of resolves $name references
+ * against.  Call this before each PIN_OP_EVAL run (pin_op_eval); 'esp'
+ * may be NULL, which makes every $name reference evaluate as missing.
+ */
+void
+pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp)
+{
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    if (dp)
+	dp->xfd_esp = esp;
 }
