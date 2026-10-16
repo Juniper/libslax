@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.58.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Chained/nested arithmetic and relational expressions: left-associative
+    "-" chain in a select=, and a nested "+" inside a ">" comparison in a
+    test=.  Exercises PIN_OP_EVAL compiling multi-operator xo_eval
+    expression trees (not just a single top-level operator).
+  -->
+  <xsl:template name="chain">
+    <xsl:param name="n" select="10"/>
+    <xsl:param name="m" select="3"/>
+    <diff><xsl:value-of select="$n - $m - 1"/></diff>
+    <xsl:if test="$n > $m + 1">
+      <bigger/>
+    </xsl:if>
+    <xsl:if test="$m + 1 > $n">
+      <not-bigger/>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="start">
+    <xsl:call-template name="chain"/>
+  </xsl:template>
+
+</xsl:stylesheet>
