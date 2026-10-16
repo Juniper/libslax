@@ -108,28 +108,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_PI_CLOSE      (PIN_OP_MAX_COMPLEX + 30) /* xsl:processing-instruction: flush as XML PI */
 #define PIN_OP_NUMBER        (PIN_OP_MAX_COMPLEX + 31) /* xsl:number: po_name=value-expr, po_name2=format */
 #define PIN_OP_PUSH_AVT      (PIN_OP_MAX_COMPLEX + 32) /* Eval AVT in po_name2 against context; push result string */
-#define PIN_OP_CMP           (PIN_OP_MAX_COMPLEX + 33) /* Pop rhs, lhs; compare per po_count (PIN_CMP_*); push PVT_BOOLEAN */
-#define PIN_OP_ARITH         (PIN_OP_MAX_COMPLEX + 34) /* Pop rhs, lhs; compute per po_count (PIN_ARITH_*); push PVT_STRING */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 35) /* Sentinel: number of defined op codes */
-
-/*
- * po_count values for PIN_OP_CMP.
- */
-#define PIN_CMP_EQ  0
-#define PIN_CMP_NE  1
-#define PIN_CMP_LT  2
-#define PIN_CMP_LE  3
-#define PIN_CMP_GT  4
-#define PIN_CMP_GE  5
-
-/*
- * po_count values for PIN_OP_ARITH.
- */
-#define PIN_ARITH_ADD  0
-#define PIN_ARITH_SUB  1
-#define PIN_ARITH_MUL  2
-#define PIN_ARITH_DIV  3
-#define PIN_ARITH_MOD  4
+#define PIN_OP_EVAL          (PIN_OP_MAX_COMPLEX + 33) /* Run compiled xo_eval_prog_t po_name indexes; push PVT_BOOLEAN or PVT_STRING */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 34) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
