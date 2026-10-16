@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.57.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Function-call expressions: concat() in a select=, starts-with() in a
+    test=.  Exercises PIN_OP_EVAL compiling xo_eval function calls.
+  -->
+  <xsl:template name="greet">
+    <xsl:param name="a" select="'10'"/>
+    <xsl:param name="b" select="'20'"/>
+    <pair><xsl:value-of select="concat($a, '-', $b)"/></pair>
+    <xsl:if test="starts-with($a, '1')">
+      <matched/>
+    </xsl:if>
+    <xsl:if test="starts-with($b, '1')">
+      <not-matched/>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="start">
+    <xsl:call-template name="greet"/>
+  </xsl:template>
+
+</xsl:stylesheet>
