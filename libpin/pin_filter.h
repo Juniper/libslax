@@ -86,4 +86,12 @@ pin_filter_set_attribs (xo_filter_t *xfp, const char *attribs);
 void
 pin_filter_set_cur_node (xo_filter_t *xfp, pin_node_id_t node);
 
+/*
+ * Set the exec state that xfdo_variable_of resolves $name references
+ * against, for filters created to evaluate PIN_OP_EVAL expressions.
+ * Call this before each run; 'esp' may be NULL.
+ */
+void
+pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp);
+
 #endif /* LIBSLAX_PIN_FILTER_H */
