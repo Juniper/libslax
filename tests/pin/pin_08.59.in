@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.59.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    A malformed XPath expression (a relational operator with no right-hand
+    operand) must fail to parse and be reported via pin_error: a clear
+    diagnostic, not a crash or a silently-wrong compile.  Kept in its own
+    fixture file: pin_compile() fails the whole stylesheet once any
+    pin_error has been reported (see pin_compile.c's pw_errors check), so
+    a deliberately-broken template can't share a file with ones whose
+    output we want to see run.
+  -->
+  <xsl:template match="start">
+    <xsl:if test="1 &gt;">
+      <bad/>
+    </xsl:if>
+  </xsl:template>
+
+</xsl:stylesheet>
