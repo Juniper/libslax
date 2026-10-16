@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <math.h>
+#include <sys/param.h>
 
 #include "slaxconfig.h"
 #include <libpsu/psulog.h>
@@ -45,7 +46,10 @@
 #include <parrotdb/pafixed.h>
 
 #include <libxo/xo.h>
+#include "xo_buf.h"
+#include "xo_xpath.tab.h"
 #include "xo_filter.h"
+#include "xo_xparse.h"
 
 #include <libpin/pin_common.h>
 #include <libpin/pin_workspace.h>
@@ -949,18 +953,6 @@ typedef struct pin_op_cursor_s {
     xmlNodePtr      poc_node;     /* current source node (for error messages) */
 } pin_op_cursor_t;
 
-/* Cursor-anchored warning: use poc_src_file + poc_src_line. */
-static void PSU_PRINTFLIKE(2, 3)
-pin_cursor_warn (pin_op_cursor_t *cur, const char *fmt, ...)
-{
-    const char *fn = pin_namepool_string(cur->poc_rb->prb_workspace,
-					 cur->poc_src_file);
-    va_list vap;
-    va_start(vap, fmt);
-    psu_warningv(fn, (int) cur->poc_src_line, fmt, vap);
-    va_end(vap);
-}
-
 /*
  * Allocate one op node, chain it at *poc_nextp, advance the cursor,
  * zero-fill the new node, and record source location.
@@ -1058,274 +1050,92 @@ pin_classify_select (const char *s)
 }
 
 /*
- * A binary comparison or arithmetic operator recognized between two
- * atomic operands (variable, attribute, literal, number, or context self).
- * PIN_BINOP_EQ .. PIN_BINOP_GE map directly to the PIN_CMP_* op codes;
- * PIN_BINOP_ADD .. PIN_BINOP_MOD map to PIN_ARITH_* after subtracting
- * PIN_BINOP_ADD.
- */
-typedef enum {
-    PIN_BINOP_NONE = -1,
-    PIN_BINOP_EQ = 0,
-    PIN_BINOP_NE,
-    PIN_BINOP_LT,
-    PIN_BINOP_LE,
-    PIN_BINOP_GT,
-    PIN_BINOP_GE,
-    PIN_BINOP_ADD,
-    PIN_BINOP_SUB,
-    PIN_BINOP_MUL,
-    PIN_BINOP_DIV,
-    PIN_BINOP_MOD,
-} pin_binop_t;
-
-static int
-pin_binop_is_cmp (pin_binop_t op)
-{
-    return op >= PIN_BINOP_EQ && op <= PIN_BINOP_GE;
-}
-
-/*
- * Trim leading/trailing spaces from s[op_start..op_end) and s[op_end..],
- * copying the two non-empty results into lhs/rhs.  Returns 0 (and leaves
- * lhs/rhs untouched) if either side is empty or does not fit.
- */
-static int
-pin_split_trim (const char *s, size_t op_start, size_t op_end,
-		 char *lhs, size_t lhs_sz, char *rhs, size_t rhs_sz)
-{
-    size_t a0 = 0, a1 = op_start;
-    while (a1 > a0 && s[a1 - 1] == ' ')
-	a1 -= 1;
-    while (a0 < a1 && s[a0] == ' ')
-	a0 += 1;
-    if (a0 >= a1 || a1 - a0 >= lhs_sz)
-	return 0;
-
-    size_t b0 = op_end, b1 = strlen(s);
-    while (b0 < b1 && s[b0] == ' ')
-	b0 += 1;
-    while (b1 > b0 && s[b1 - 1] == ' ')
-	b1 -= 1;
-    if (b0 >= b1 || b1 - b0 >= rhs_sz)
-	return 0;
-
-    memcpy(lhs, s + a0, a1 - a0);
-    lhs[a1 - a0] = '\0';
-    memcpy(rhs, s + b0, b1 - b0);
-    rhs[b1 - b0] = '\0';
-    return 1;
-}
-
-/*
- * Scan s for a single top-level binary operator (comparison or arithmetic)
- * and split it into trimmed lhs/rhs substrings.  Quoted literal content is
- * skipped so an "=" or "-" inside a 'literal' operand is never mistaken
- * for the operator.  Arithmetic operators require surrounding whitespace
- * (matching the convention pin_eval_arith already uses elsewhere) so a
- * hyphen in a name or a negative-number literal is never mistaken for
- * subtraction.  Returns PIN_BINOP_NONE if no operator is found; lhs/rhs
- * are then meaningless.
- */
-static pin_binop_t
-pin_split_binary_expr (const char *s, char *lhs, size_t lhs_sz,
-			char *rhs, size_t rhs_sz)
-{
-    size_t len = strlen(s);
-    int in_quote = 0;
-
-    for (size_t i = 0; i < len; i++) {
-	if (s[i] == '\'') {
-	    in_quote = !in_quote;
-	    continue;
-	}
-	if (in_quote)
-	    continue;
-
-	pin_binop_t op = PIN_BINOP_NONE;
-	size_t oplen = 0;
-
-	if (s[i] == '!' && s[i + 1] == '=') {
-	    op = PIN_BINOP_NE; oplen = 2;
-	} else if (s[i] == '<' && s[i + 1] == '=') {
-	    op = PIN_BINOP_LE; oplen = 2;
-	} else if (s[i] == '>' && s[i + 1] == '=') {
-	    op = PIN_BINOP_GE; oplen = 2;
-	} else if (s[i] == '=') {
-	    op = PIN_BINOP_EQ; oplen = 1;
-	} else if (s[i] == '<') {
-	    op = PIN_BINOP_LT; oplen = 1;
-	} else if (s[i] == '>') {
-	    op = PIN_BINOP_GT; oplen = 1;
-	}
-
-	if (op == PIN_BINOP_NONE)
-	    continue;
-	if (!pin_split_trim(s, i, i + oplen, lhs, lhs_sz, rhs, rhs_sz))
-	    return PIN_BINOP_NONE;
-	return op;
-    }
-
-    in_quote = 0;
-    for (size_t i = 1; i + 1 < len; i++) {
-	if (s[i] == '\'') {
-	    in_quote = !in_quote;
-	    continue;
-	}
-	if (in_quote || s[i - 1] != ' ')
-	    continue;
-
-	pin_binop_t op = PIN_BINOP_NONE;
-	size_t oplen = 0;
-
-	if (s[i] == '+' && s[i + 1] == ' ') {
-	    op = PIN_BINOP_ADD; oplen = 1;
-	} else if (s[i] == '-' && s[i + 1] == ' ') {
-	    op = PIN_BINOP_SUB; oplen = 1;
-	} else if (s[i] == '*' && s[i + 1] == ' ') {
-	    op = PIN_BINOP_MUL; oplen = 1;
-	} else if (i + 3 < len && strncmp(s + i, "div ", 4) == 0) {
-	    op = PIN_BINOP_DIV; oplen = 3;
-	} else if (i + 3 < len && strncmp(s + i, "mod ", 4) == 0) {
-	    op = PIN_BINOP_MOD; oplen = 3;
-	}
-
-	if (op == PIN_BINOP_NONE)
-	    continue;
-	if (!pin_split_trim(s, i, i + oplen, lhs, lhs_sz, rhs, rhs_sz))
-	    return PIN_BINOP_NONE;
-	return op;
-    }
-
-    return PIN_BINOP_NONE;
-}
-
-static int
-pin_sel_kind_is_atomic (pin_sel_kind_t k)
-{
-    switch (k) {
-    case SELK_SELF:
-    case SELK_ATTR:
-    case SELK_LITERAL:
-    case SELK_NUMBER:
-    case SELK_VAR:
-	return 1;
-    default:
-	return 0;
-    }
-}
-
-/*
- * Emit the PUSH_* op for one atomic operand of a binary expression.  The
- * caller must have already confirmed kind via pin_sel_kind_is_atomic.
- */
-static pin_op_t *
-pin_op_push_operand (pin_op_cursor_t *cur, pin_sel_kind_t kind, const char *s)
-{
-    pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
-    pin_op_t *push = pin_op_new(cur, NULL);
-    if (push == NULL)
-	return NULL;
-
-    switch (kind) {
-    case SELK_ATTR:
-	push->po_type = PIN_OP_PUSH_ATTR;
-	push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-	break;
-    case SELK_SELF:
-	push->po_type = PIN_OP_PUSH_TEXT;
-	push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-	break;
-    case SELK_VAR:
-	push->po_type = PIN_OP_LOAD_VAR;
-	push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-	break;
-    case SELK_NUMBER:
-	push->po_type = PIN_OP_PUSH_STRING;
-	push->po_name = pin_namepool_atom(pwp, s, TRUE);
-	break;
-    case SELK_LITERAL:;
-	char buf[256];
-	size_t n = strlen(s) - 2;
-	if (n >= sizeof(buf))
-	    n = sizeof(buf) - 1;
-	memcpy(buf, s + 1, n);
-	buf[n] = '\0';
-	push->po_type = PIN_OP_PUSH_STRING;
-	push->po_name = pin_namepool_atom(pwp, buf, TRUE);
-	break;
-    default:
-	push->po_type = PIN_OP_PUSH_STRING;
-	break;
-    }
-    return push;
-}
-
-/*
- * Try to compile s as a binary comparison/arithmetic expression between
- * two atomic operands.  Returns 1 and emits [push lhs, push rhs, CMP/ARITH],
- * leaving the CMP/ARITH op in *opp, on success; 0 (no ops emitted) if s is
- * not such an expression, so the caller should fall back to single-operand
- * classification; -1 if an op allocation failed (caller should abort the
- * compile, as elsewhere in this file).
- */
-static int
-pin_op_push_binary_expr (pin_op_cursor_t *cur, const char *s, pin_op_t **opp)
-{
-    char lhs[256], rhs[256];
-    pin_binop_t op = pin_split_binary_expr(s, lhs, sizeof(lhs), rhs, sizeof(rhs));
-    if (op == PIN_BINOP_NONE)
-	return 0;
-
-    pin_sel_kind_t lk = pin_classify_select(lhs);
-    pin_sel_kind_t rk = pin_classify_select(rhs);
-    if (!pin_sel_kind_is_atomic(lk) || !pin_sel_kind_is_atomic(rk))
-	return 0;
-
-    if (pin_op_push_operand(cur, lk, lhs) == NULL)
-	return -1;
-    if (pin_op_push_operand(cur, rk, rhs) == NULL)
-	return -1;
-
-    pin_op_t *combine = pin_op_new(cur, NULL);
-    if (combine == NULL)
-	return -1;
-
-    if (pin_binop_is_cmp(op)) {
-	combine->po_type = PIN_OP_CMP;
-	combine->po_count = (uint16_t) op;
-    } else {
-	combine->po_type = PIN_OP_ARITH;
-	combine->po_count = (uint16_t) (op - PIN_BINOP_ADD);
-    }
-    *opp = combine;
-    return 1;
-}
-
-/*
- * Emit the PUSH_* op that best represents an xsl:if / xsl:when test
- * expression, leaving the result on the value stack for a following
- * PUSH_BOOL + IF to consume.
+ * Compile expr as a full XPath expression via libxo's XPath parser and
+ * xo_eval compiler, store the resulting program on the rulebook, and turn
+ * *push (already allocated by the caller) into a PIN_OP_EVAL referencing
+ * it.  po_name holds a plain array index into prb_eval_progs[] (see
+ * pin_rulebook_eval_prog_add), not a namepool atom.  Returns 0 on success,
+ * -1 on a parse/compile failure (reported via pin_error against the node
+ * currently being compiled).
  *
- * Supported forms:
- *   @attr        -> PUSH_ATTR  (non-null string -> true)
- *   .            -> PUSH_TEXT  (non-empty string -> true)
- *   simple-name  -> PUSH_NODES (non-empty nodeset -> true)
- *   lhs OP rhs   -> CMP        (binary comparison between atomic operands)
+ * xo_xparse_parse_string()'s top-level grammar only accepts a union of
+ * location paths (it's built for libxo's own filter-path use case); the
+ * full expression grammar -- comparisons, arithmetic, function calls --
+ * is only reachable inside a predicate.  So expr is wrapped as a wildcard
+ * step's predicate ("*[expr]", same wrapping the xsl:if/xsl:when
+ * standalone-filter path above already uses) and then unwrapped by
+ * walking down to the predicate's content node, which is what
+ * xo_eval_compile() actually expects for 'root' (see xo_filter.c's own
+ * xo_filter_pred_eval()/xo_filter_pred_prog(), which do the same walk).
+ */
+static int
+pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
+{
+    pin_rulebook_t *rb = cur->poc_rb;
+    xo_filter_t *xfp = pin_rulebook_get_eval_filter(rb);
+    xo_xparse_data_t *xdp = xo_filter_xparse_data(NULL, xfp);
+
+    size_t elen = strlen(expr);
+    char *wrapped = xo_realloc(NULL, elen + 4); /* "*[" + expr + "]" + NUL */
+    if (wrapped == NULL) {
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "out of memory compiling XPath expression: %s", expr);
+	return -1;
+    }
+    snprintf(wrapped, elen + 4, "*[%s]", expr);
+
+    uint32_t start = xdp->xd_paths_cur;
+    int rc = xo_xparse_parse_string(NULL, xdp, wrapped);
+    xo_free(wrapped);
+    if (rc != 0 || xdp->xd_paths_cur <= start) {
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "unable to parse XPath expression: %s", expr);
+	return -1;
+    }
+
+    xo_xparse_node_id_t step = xdp->xd_paths[start];
+    xo_xparse_node_id_t pred = xo_xparse_node_contents(xdp, step);
+    if (pred == 0 || xo_xparse_node_type(xdp, pred) != C_PREDICATE) {
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "unable to parse XPath expression: %s", expr);
+	return -1;
+    }
+
+    xo_xparse_node_id_t root = xo_xparse_node_contents(xdp, pred);
+    xo_eval_prog_t *prog = xo_eval_compile(xdp, root, NULL, NULL);
+    if (prog == NULL) {
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "unable to compile XPath expression: %s", expr);
+	return -1;
+    }
+
+    uint32_t idx = pin_rulebook_eval_prog_add(rb, prog);
+    if (idx == UINT32_MAX) {
+	xo_eval_prog_destroy(prog);
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "out of memory compiling XPath expression: %s", expr);
+	return -1;
+    }
+
+    push->po_type = PIN_OP_EVAL;
+    push->po_name = pin_name_id(idx);
+    return 0;
+}
+
+/*
+ * Emit the op that best represents an xsl:if / xsl:when test expression,
+ * leaving the result on the value stack for a following PUSH_BOOL + IF
+ * to consume.
  *
- * Anything more complex is stubbed as PUSH_BOOL (always false).
+ * Supported atomic forms get a dedicated PUSH_* op (@attr, ., $var,
+ * simple-name, number); anything else -- binary comparisons, arithmetic,
+ * function calls, predicates -- is compiled once via xo_eval and replayed
+ * at runtime by a single PIN_OP_EVAL.
  */
 static pin_op_t *
 pin_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 {
     pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
-
-    pin_op_t *combine = NULL;
-    int bop = pin_op_push_binary_expr(cur, test, &combine);
-    if (bop < 0)
-	return NULL;
-    if (bop > 0)
-	return combine;
 
     pin_op_t *push = pin_op_new(cur, NULL);
     if (push == NULL)
@@ -1353,8 +1163,8 @@ pin_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 	push->po_name = pin_namepool_atom(pwp, test, TRUE);
 	break;
     default:
-	push->po_type = PIN_OP_COMPLEX_EXPR;
-	cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+	if (pin_op_push_eval(cur, push, test) < 0)
+	    return NULL;
 	break;
     }
     return push;
@@ -1444,24 +1254,6 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
 	    const char *s = sel ? (const char *) sel : ".";
 
-	    pin_op_t *combine = NULL;
-	    int bop = pin_op_push_binary_expr(cur, s, &combine);
-	    if (bop < 0) {
-		if (sel)
-		    xmlFree(sel);
-		return;
-	    }
-	    if (bop > 0) {
-		if (sel)
-		    xmlFree(sel);
-
-		pin_op_t *emit = pin_op_new(cur, NULL);
-		if (emit == NULL)
-		    return;
-		emit->po_type = PIN_OP_EMIT;
-		continue;
-	    }
-
 	    pin_op_t *push = pin_op_new(cur, NULL);
 	    if (push == NULL) {
 		if (sel)
@@ -1503,8 +1295,11 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		push->po_name = pin_namepool_atom(pwp, s, TRUE);
 		break;
 	    default:  /* SELK_COMPLEX */
-		push->po_type = PIN_OP_COMPLEX_EXPR;
-		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		if (pin_op_push_eval(cur, push, s) < 0) {
+		    if (sel)
+			xmlFree(sel);
+		    return;
+		}
 		break;
 	    }
 	    if (sel)
@@ -1828,61 +1623,52 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		const char *s = (const char *) sel;
 		size_t slen = strlen(s);
 
-		pin_op_t *combine = NULL;
-		int bop = pin_op_push_binary_expr(cur, s, &combine);
-		if (bop < 0) {
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL) {
 		    xmlFree(vname);
 		    xmlFree(sel);
 		    return;
 		}
 
-		if (bop == 0) {
-		    pin_op_t *push = pin_op_new(cur, NULL);
-		    if (push == NULL) {
+		switch (pin_classify_select(s)) {
+		case SELK_LITERAL: {
+		    /* Strip enclosing quotes in-place; sel is freed below */
+		    char q = s[0];
+		    if (slen >= 2 && sel[slen - 1] == q) {
+			sel[slen - 1] = '\0';
+			push->po_type = PIN_OP_PUSH_STRING;
+			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
+		    break;
+		}
+		case SELK_ATTR:
+		    push->po_type = PIN_OP_PUSH_ATTR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_VAR:
+		    push->po_type = PIN_OP_LOAD_VAR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_SELF:
+		    push->po_type = PIN_OP_PUSH_TEXT;
+		    push->po_name = pin_namepool_atom(pwp, ".", TRUE);
+		    break;
+		case SELK_DOWN:
+		    /* Downward path: collect matching nodes as a nodeset */
+		    push->po_type = PIN_OP_PUSH_NODES;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		case SELK_NUMBER:
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		default:
+		    if (pin_op_push_eval(cur, push, s) < 0) {
 			xmlFree(vname);
 			xmlFree(sel);
 			return;
 		    }
-
-		    switch (pin_classify_select(s)) {
-		    case SELK_LITERAL: {
-			/* Strip enclosing quotes in-place; sel is freed below */
-			char q = s[0];
-			if (slen >= 2 && sel[slen - 1] == q) {
-			    sel[slen - 1] = '\0';
-			    push->po_type = PIN_OP_PUSH_STRING;
-			    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			}
-			break;
-		    }
-		    case SELK_ATTR:
-			push->po_type = PIN_OP_PUSH_ATTR;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_VAR:
-			push->po_type = PIN_OP_LOAD_VAR;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_SELF:
-			push->po_type = PIN_OP_PUSH_TEXT;
-			push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-			break;
-		    case SELK_DOWN:
-			/* Downward path: collect matching nodes as a nodeset */
-			push->po_type = PIN_OP_PUSH_NODES;
-			push->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    case SELK_NUMBER:
-			push->po_type = PIN_OP_PUSH_STRING;
-			push->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    default:
-			pin_cursor_warn(cur,
-			    "xsl:variable: complex select not supported: %s", s);
-			push->po_type = PIN_OP_COMPLEX_EXPR;
-			cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
-			break;
-		    }
+		    break;
 		}
 		xmlFree(sel);
 	    } else {
@@ -1997,58 +1783,51 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		/* Compile default select expression */
 		const char *s = (const char *) psel;
 
-		pin_op_t *combine = NULL;
-		int bop = pin_op_push_binary_expr(cur, s, &combine);
-		if (bop < 0) {
+		pin_op_t *push_def = pin_op_new(cur, NULL);
+		if (push_def == NULL) {
 		    xmlFree(pname);
 		    xmlFree(psel);
 		    return;
 		}
-
-		if (bop == 0) {
-		    pin_op_t *push_def = pin_op_new(cur, NULL);
-		    if (push_def == NULL) {
+		switch (pin_classify_select(s)) {
+		case SELK_LITERAL: {
+		    /* Strip enclosing quotes in-place; psel is freed below */
+		    char q = s[0];
+		    size_t slen = strlen(s);
+		    if (slen >= 2 && psel[slen - 1] == q) {
+			psel[slen - 1] = '\0';
+			push_def->po_type = PIN_OP_PUSH_STRING;
+			push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
+		    break;
+		}
+		case SELK_ATTR:
+		    push_def->po_type = PIN_OP_PUSH_ATTR;
+		    push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_VAR:
+		    push_def->po_type = PIN_OP_LOAD_VAR;
+		    push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_SELF:
+		    push_def->po_type = PIN_OP_PUSH_TEXT;
+		    push_def->po_name = pin_namepool_atom(pwp, ".", TRUE);
+		    break;
+		case SELK_DOWN:
+		    push_def->po_type = PIN_OP_PUSH_NODES;
+		    push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		case SELK_NUMBER:
+		    push_def->po_type = PIN_OP_PUSH_STRING;
+		    push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		default:
+		    if (pin_op_push_eval(cur, push_def, s) < 0) {
 			xmlFree(pname);
 			xmlFree(psel);
 			return;
 		    }
-		    switch (pin_classify_select(s)) {
-		    case SELK_LITERAL: {
-			/* Strip enclosing quotes in-place; psel is freed below */
-			char q = s[0];
-			size_t slen = strlen(s);
-			if (slen >= 2 && psel[slen - 1] == q) {
-			    psel[slen - 1] = '\0';
-			    push_def->po_type = PIN_OP_PUSH_STRING;
-			    push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			}
-			break;
-		    }
-		    case SELK_ATTR:
-			push_def->po_type = PIN_OP_PUSH_ATTR;
-			push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_VAR:
-			push_def->po_type = PIN_OP_LOAD_VAR;
-			push_def->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_SELF:
-			push_def->po_type = PIN_OP_PUSH_TEXT;
-			push_def->po_name = pin_namepool_atom(pwp, ".", TRUE);
-			break;
-		    case SELK_DOWN:
-			push_def->po_type = PIN_OP_PUSH_NODES;
-			push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    case SELK_NUMBER:
-			push_def->po_type = PIN_OP_PUSH_STRING;
-			push_def->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    default:
-			push_def->po_type = PIN_OP_COMPLEX_EXPR;
-			cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
-			break;
-		    }
+		    break;
 		}
 
 		pin_op_t *store_def = pin_op_new(cur, NULL);
@@ -2141,9 +1920,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		/* Compile value expression */
 		const char *s = wpsel ? (const char *) wpsel : ".";
 
-		pin_op_t *combine = NULL;
-		int bop = pin_op_push_binary_expr(cur, s, &combine);
-		if (bop < 0) {
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL) {
 		    if (wpname)
 			xmlFree(wpname);
 		    if (wpsel)
@@ -2151,10 +1929,40 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    xmlFree(tname);
 		    return;
 		}
-
-		if (bop == 0) {
-		    pin_op_t *push = pin_op_new(cur, NULL);
-		    if (push == NULL) {
+		switch (pin_classify_select(s)) {
+		case SELK_LITERAL: {
+		    /* Strip enclosing quotes in-place; wpsel is freed below */
+		    char q = s[0];
+		    size_t slen = strlen(s);
+		    if (slen >= 2 && wpsel[slen - 1] == q) {
+			wpsel[slen - 1] = '\0';
+			push->po_type = PIN_OP_PUSH_STRING;
+			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    }
+		    break;
+		}
+		case SELK_ATTR:
+		    push->po_type = PIN_OP_PUSH_ATTR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_VAR:
+		    push->po_type = PIN_OP_LOAD_VAR;
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		    break;
+		case SELK_SELF:
+		    push->po_type = PIN_OP_PUSH_TEXT;
+		    push->po_name = pin_namepool_atom(pwp, ".", TRUE);
+		    break;
+		case SELK_DOWN:
+		    push->po_type = PIN_OP_PUSH_NODES;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		case SELK_NUMBER:
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		    break;
+		default:
+		    if (pin_op_push_eval(cur, push, s) < 0) {
 			if (wpname)
 			    xmlFree(wpname);
 			if (wpsel)
@@ -2162,43 +1970,7 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 			xmlFree(tname);
 			return;
 		    }
-		    switch (pin_classify_select(s)) {
-		    case SELK_LITERAL: {
-			/* Strip enclosing quotes in-place; wpsel is freed below */
-			char q = s[0];
-			size_t slen = strlen(s);
-			if (slen >= 2 && wpsel[slen - 1] == q) {
-			    wpsel[slen - 1] = '\0';
-			    push->po_type = PIN_OP_PUSH_STRING;
-			    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			}
-			break;
-		    }
-		    case SELK_ATTR:
-			push->po_type = PIN_OP_PUSH_ATTR;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_VAR:
-			push->po_type = PIN_OP_LOAD_VAR;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-			break;
-		    case SELK_SELF:
-			push->po_type = PIN_OP_PUSH_TEXT;
-			push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-			break;
-		    case SELK_DOWN:
-			push->po_type = PIN_OP_PUSH_NODES;
-			push->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    case SELK_NUMBER:
-			push->po_type = PIN_OP_PUSH_STRING;
-			push->po_name = pin_namepool_atom(pwp, s, TRUE);
-			break;
-		    default:
-			push->po_type = PIN_OP_COMPLEX_EXPR;
-			cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
-			break;
-		    }
+		    break;
 		}
 
 		pin_op_t *wp = pin_op_new(cur, NULL);
