@@ -1,0 +1,3 @@
+pin_08: filter expression error: unexpected input: close bracket (']'); expected attribute axis ('@'), parent axis ('..'), descendant operator ('//'), minus sign ('-'), not sign ('!'), open parentheses ('('), etc.
+../../../tests/pin/pin_08.59.in:17: error: unable to parse XPath expression: 1 >
+pin_08.test: pin_compile failed
