@@ -44,6 +44,7 @@
 #include <libpin/pin_tree.h>
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
+#include <libpin/pin_filter.h>
 #include <libxo/xo.h>
 #include "xo_filter.h"
 
@@ -711,6 +712,18 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_mode_filters_len = 0;
 	rules->prb_mode_filters_cap = 0;
     }
+    if (rules->prb_eval_progs) {
+	for (uint32_t i = 0; i < rules->prb_eval_prog_count; i++)
+	    xo_eval_prog_destroy(rules->prb_eval_progs[i]);
+	free(rules->prb_eval_progs);
+	rules->prb_eval_progs = NULL;
+	rules->prb_eval_prog_count = 0;
+	rules->prb_eval_prog_size = 0;
+    }
+    if (rules->prb_eval_xfp) {
+	xo_filter_destroy_standalone(rules->prb_eval_xfp);
+	rules->prb_eval_xfp = NULL;
+    }
     if (rules->prb_named) {
 	free(rules->prb_named);
 	rules->prb_named = NULL;
@@ -963,6 +976,32 @@ pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp)
     }
     uint32_t idx = prbp->prb_if_filter_count++;
     prbp->prb_if_filters[idx] = xfp;
+    return idx;
+}
+
+xo_filter_t *
+pin_rulebook_get_eval_filter (pin_rulebook_t *prbp)
+{
+    if (prbp->prb_eval_xfp == NULL)
+	prbp->prb_eval_xfp = pin_filter_create(NULL, prbp->prb_workspace);
+    return prbp->prb_eval_xfp;
+}
+
+uint32_t
+pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog)
+{
+    if (prbp->prb_eval_prog_count >= prbp->prb_eval_prog_size) {
+	uint32_t newsize = prbp->prb_eval_prog_size
+			  ? prbp->prb_eval_prog_size * 2 : 8;
+	xo_eval_prog_t **newp = realloc(prbp->prb_eval_progs,
+					 newsize * sizeof(*newp));
+	if (newp == NULL)
+	    return UINT32_MAX;
+	prbp->prb_eval_progs = newp;
+	prbp->prb_eval_prog_size = newsize;
+    }
+    uint32_t idx = prbp->prb_eval_prog_count++;
+    prbp->prb_eval_progs[idx] = prog;
     return idx;
 }
 
