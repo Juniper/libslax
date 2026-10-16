@@ -20,7 +20,9 @@ AM_CFLAGS = \
     -I${top_builddir}/libpin \
     -I${top_srcdir} \
     -I${top_builddir}/libxo \
+    -I${top_builddir}/libxo/libxo \
     -I${top_builddir}/libxo/filter \
+    -I${top_builddir}/libxo/build/filter \
     ${WARNINGS}
 
 lib_LTLIBRARIES = libpin.la
