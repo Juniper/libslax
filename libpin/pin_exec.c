@@ -35,6 +35,9 @@
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_parse.h>
 #include <libpin/pin_sort.h>
+#include <libpin/pin_filter.h>
+#include <libxo/xo.h>
+#include "xo_filter.h"
 
 /*
  * Helpers used by multiple op functions
@@ -1290,84 +1293,54 @@ pin_op_call (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
-/* String value of a PVT_STRING (or PVT_NULL); "" for anything else/missing. */
-static const char *
-pin_exec_cmp_operand_string (pin_workspace_t *pwp, pin_value_t v)
-{
-    if (v.pv_type != PVT_STRING || v.pv_atom == 0)
-        return "";
-    const char *s = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
-    return s ? s : "";
-}
-
 /*
- * Pop rhs, then lhs; compare numerically if both parse fully as numbers,
- * otherwise lexically; push the PVT_BOOLEAN result of po_count's comparator
- * (PIN_CMP_*).
+ * Run the compiled xo_eval_prog_t that po_name indexes into
+ * parsep->pp_rulebook's prb_eval_progs[] (a plain array index, not a
+ * namepool atom -- see pin_rulebook_eval_prog_add) against the current
+ * context node and the active call frame's local variables (resolved via
+ * pin_filter_data_variable_of, through the rulebook's shared eval filter).
+ * Pushes PVT_BOOLEAN for a native boolean result (comparisons, boolean
+ * functions), PVT_STRING for everything else, or PVT_NULL if the
+ * expression's value is missing (e.g. an unbound variable).
  */
 static pin_value_t
-pin_op_cmp (PIN_OP_FUNC_ARGS)
+pin_op_eval (PIN_OP_FUNC_ARGS)
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
-    pin_value_t rhs = pin_exec_pop(esp);
-    pin_value_t lhs = pin_exec_pop(esp);
-    const char *ls = pin_exec_cmp_operand_string(pwp, lhs);
-    const char *rs = pin_exec_cmp_operand_string(pwp, rhs);
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    uint32_t idx = pin_name_id_atom_of(opp->po_name);
+    xo_eval_prog_t *prog = (idx < rb->prb_eval_prog_count)
+			  ? rb->prb_eval_progs[idx] : NULL;
 
-    char *lend, *rend;
-    double ln = strtod(ls, &lend);
-    double rn = strtod(rs, &rend);
-    int numeric = (lend != ls && *lend == '\0' && rend != rs && *rend == '\0');
-
-    int cmp = numeric ? (ln < rn ? -1 : (ln > rn ? 1 : 0)) : strcmp(ls, rs);
-
-    int truth;
-    switch (opp->po_count) {
-    case PIN_CMP_EQ: truth = (cmp == 0); break;
-    case PIN_CMP_NE: truth = (cmp != 0); break;
-    case PIN_CMP_LT: truth = (cmp < 0);  break;
-    case PIN_CMP_LE: truth = (cmp <= 0); break;
-    case PIN_CMP_GT: truth = (cmp > 0);  break;
-    case PIN_CMP_GE: truth = (cmp >= 0); break;
-    default:         truth = 0;         break;
+    pin_value_t result = pin_value_null();
+    if (prog == NULL || rb->prb_eval_xfp == NULL) {
+	pin_exec_push(esp, result);
+	return pin_value_null();
     }
 
-    pin_exec_push(esp, pin_value_bool(truth));
-    return pin_value_null();
-}
+    xo_filter_t *xfp = rb->prb_eval_xfp;
+    pin_node_id_t ctx = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
+    pin_filter_set_cur_node(xfp, ctx);
+    pin_filter_set_esp(xfp, esp);
 
-/*
- * Pop rhs, then lhs; parse both as numbers (non-numeric -> 0), compute
- * po_count's arithmetic operator (PIN_ARITH_*), and push the result as a
- * PVT_STRING, formatted as an integer when the result is integral.
- */
-static pin_value_t
-pin_op_arith (PIN_OP_FUNC_ARGS)
-{
-    pin_workspace_t *pwp = pin_parse_workspace(parsep);
-    pin_value_t rhs = pin_exec_pop(esp);
-    pin_value_t lhs = pin_exec_pop(esp);
-    double ln = strtod(pin_exec_cmp_operand_string(pwp, lhs), NULL);
-    double rn = strtod(pin_exec_cmp_operand_string(pwp, rhs), NULL);
+    struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
 
-    double result;
-    switch (opp->po_count) {
-    case PIN_ARITH_ADD: result = ln + rn; break;
-    case PIN_ARITH_SUB: result = ln - rn; break;
-    case PIN_ARITH_MUL: result = ln * rn; break;
-    case PIN_ARITH_DIV: result = rn != 0 ? ln / rn : 0; break;
-    case PIN_ARITH_MOD: result = rn != 0 ? fmod(ln, rn) : 0; break;
-    default:            result = 0; break;
+    int is_boolean = 0, bool_value = 0, is_missing = 0;
+    char *str = xo_eval_prog_run_simple(NULL, xfp, NULL, xdp, prog,
+					 &is_boolean, &bool_value, &is_missing);
+
+    if (is_missing) {
+	result = pin_value_null();
+    } else if (is_boolean) {
+	result = pin_value_bool(bool_value);
+    } else if (str != NULL) {
+	pin_name_id_t atom = pin_namepool_atom(pwp, str, TRUE);
+	result = pin_value_string(pin_name_id_atom_of(atom));
     }
+    if (str != NULL)
+	free(str);
 
-    char buf[64];
-    if (result == (double) (long) result)
-        snprintf(buf, sizeof(buf), "%ld", (long) result);
-    else
-        snprintf(buf, sizeof(buf), "%g", result);
-
-    pin_name_id_t atom = pin_namepool_atom(pwp, buf, TRUE);
-    pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(atom)));
+    pin_exec_push(esp, result);
     return pin_value_null();
 }
 
@@ -1416,8 +1389,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_PI_CLOSE]      = { "pi-close",      pin_op_pi_close,      0 },
     [PIN_OP_NUMBER]        = { "number",        pin_op_number,        0 },
     [PIN_OP_PUSH_AVT]      = { "push-avt",      pin_op_push_avt,      0 },
-    [PIN_OP_CMP]           = { "cmp",           pin_op_cmp,           0 },
-    [PIN_OP_ARITH]         = { "arith",         pin_op_arith,         0 },
+    [PIN_OP_EVAL]          = { "eval",          pin_op_eval,          0 },
 };
 
 /*
