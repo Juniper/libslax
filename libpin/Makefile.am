@@ -43,8 +43,7 @@ libpininc_HEADERS = \
     pin_tree.h \
     pin_value.h \
     pin_whiffle.h \
-    pin_workspace.h \
-    pin_xpath.h
+    pin_workspace.h
 
 libpin_la_SOURCES = \
     pin_exec.c \
@@ -63,8 +62,7 @@ libpin_la_LIBADD = \
     $(libdir)/libxo.la
 
 XXXX=\
-    pinwhiffle.c \
-    pinxpath.c
+    pinwhiffle.c
 
 GEN_CODE = ${top_srcdir}/bin/gen-code.sh
 GEN_STAMP = gen/.stamp
