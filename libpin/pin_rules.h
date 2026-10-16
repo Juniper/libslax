@@ -31,6 +31,7 @@
 #include <libpin/pin_exec.h>
 
 typedef struct xo_filter_s xo_filter_t;
+typedef struct xo_eval_prog_s xo_eval_prog_t;
 
 typedef uint8_t pin_action_type_t;
 
@@ -254,6 +255,13 @@ typedef struct pin_rulebook_s {
     xo_filter_t **prb_if_filters; /* Per-BIA_IF compiled condition filters */
     uint32_t prb_if_filter_count; /* Number of entries in prb_if_filters */
     uint32_t prb_if_filter_size;   /* Allocated capacity of prb_if_filters */
+    xo_filter_t *prb_eval_xfp;	  /* Shared filter driving PIN_OP_EVAL's
+				     xo_eval_prog_t compile/run (one xparse
+				     arena, reused for every select=/test=
+				     expression in this rulebook) */
+    xo_eval_prog_t **prb_eval_progs; /* Per-PIN_OP_EVAL compiled programs */
+    uint32_t prb_eval_prog_count;  /* Number of entries in prb_eval_progs */
+    uint32_t prb_eval_prog_size;   /* Allocated capacity of prb_eval_progs */
     pin_rule_id_t prb_root_rule;  /* Rule for match="/" or a simple absolute
 				     single-step path like match="/foo" (null
 				     if none) */
@@ -418,6 +426,25 @@ pin_rulebook_dump (pin_rulebook_t *prbp);
  */
 uint32_t
 pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp);
+
+/*
+ * Return the rulebook's shared filter for compiling/running PIN_OP_EVAL
+ * expressions, creating it on first use.  One filter (and its one xparse
+ * arena) is reused for every select=/test= expression compiled by this
+ * rulebook; xo_xparse_parse_string() appends each new expression's AST to
+ * that same arena, so node ids compiled into earlier xo_eval_prog_t
+ * programs stay valid.  Returns NULL on allocation failure.
+ */
+xo_filter_t *
+pin_rulebook_get_eval_filter (pin_rulebook_t *prbp);
+
+/*
+ * Append a compiled PIN_OP_EVAL program to the rulebook's prb_eval_progs
+ * array.  Returns the index (for storage in the owning pin_op_t), or
+ * UINT32_MAX on allocation failure.
+ */
+uint32_t
+pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog);
 
 /*
  * Register a named template (xsl:template name="...") with the rulebook.
