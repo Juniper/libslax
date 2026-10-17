@@ -248,6 +248,7 @@
 %token M_PARSE_SLAX		/* Parse a SLAX-style XPath expression */
 %token M_PARSE_XPATH		/* Parse an XPath expression */
 %token M_PARSE_PARTIAL		/* Parse partial SLAX contents */
+%token M_PARSE_INITIAL_VALUE	/* Parse a single initial-value RHS */
 %token M_JSON			/* Parse a JSON document */
 
 /*
@@ -374,6 +375,9 @@ start :
 		}
 
 	| M_PARSE_PARTIAL partial_list
+		{ $$ = STACK_CLEAR($1); }
+
+	| M_PARSE_INITIAL_VALUE initial_value_entry
 		{ $$ = STACK_CLEAR($1); }
 
 	| M_JSON json_content
@@ -891,6 +895,24 @@ initial_value :
 	| call_stmt
 		{
 		    ALL_KEYWORDS_ON();
+		    $$ = NULL;
+		}
+	;
+
+initial_value_entry :
+	initial_value_preface initial_value
+		{
+		    ALL_KEYWORDS_ON();
+		    slaxElementPop(slax_data);
+		    $$ = STACK_CLEAR($1);
+		}
+	;
+
+initial_value_preface :
+	/* empty */
+		{
+		    SLAX_KEYWORDS_OFF();
+		    slaxElementPush(slax_data, ELT_SET_VARIABLE, NULL, NULL);
 		    $$ = NULL;
 		}
 	;
