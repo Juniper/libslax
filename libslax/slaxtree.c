@@ -307,7 +307,8 @@ slaxCheckFunction (slax_data_t *sdp, const char *fname)
 
     if (sdp->sd_parse == M_PARSE_SLAX
 	|| sdp->sd_parse == M_PARSE_FULL
-	|| sdp->sd_parse == M_PARSE_PARTIAL) {
+	|| sdp->sd_parse == M_PARSE_PARTIAL
+	|| sdp->sd_parse == M_PARSE_INITIAL_VALUE) {
 	cp = index(fname, ':');
 	if (cp) {
 	    const char *prefix = fname;
