@@ -32,6 +32,7 @@ libpinincdir = ${includedir}/libpin
 libpininc_HEADERS = \
     pin_body.h \
     pin_common.h \
+    pin_dyn.h \
     pin_exec.h \
     pin_filter.h \
     pin_nodeset.h \
