@@ -151,4 +151,15 @@ slaxConvertExpression (const char *opt_expression, int is_slax);
 void
 slaxDataCleanup (slax_data_t *sdp);
 
+/*
+ * Parse "input" using the given M_PARSE_* entry point ("ttype"),
+ * grafting the result directly onto "context_node" in its live
+ * document.  Returns the newly parsed node, already unlinked from
+ * "context_node", or NULL on error.  The caller owns the returned
+ * node.
+ */
+xmlNodePtr
+slaxLoadBufferAt (const char *filename, char *input,
+		   xmlNodePtr context_node, int ttype);
+
 #endif /* SLAX_SLAXINTERNALS_H */
