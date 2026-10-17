@@ -39,6 +39,7 @@
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_exec.h>
 #include <libpin/pin_filter.h>
+#include <libpin/pin_dyn.h>
 
 /*
  * Real definition of xo_filter_data_t for the pin backend.
@@ -476,6 +477,87 @@ pin_filter_data_variable_of (xo_filter_data_t *dp, const char *name, ssize_t nle
     return result;
 }
 
+/*
+ * The dynamic-loading provider's callbacks (libslax, via
+ * pin_set_dyn_ops(), typically called once from slaxEnable()), or NULL
+ * if none has been registered (e.g. libslax was never linked/
+ * initialized -- the normal, fully-supported state for a libpin-only
+ * application).
+ */
+static const pin_dyn_ops_t *pin_dyn_ops;
+
+void
+pin_set_dyn_ops (const pin_dyn_ops_t *ops)
+{
+    pin_dyn_ops = ops;
+}
+
+/*
+ * Split a possibly-prefixed XPath function name ("slax:printf") into
+ * its prefix and local parts. Pure string work -- no namespace lookup.
+ * Returns FALSE if 'name' has no ':', meaning it isn't a namespace-
+ * prefixed call at all and so isn't ours to resolve, or if either part
+ * doesn't fit in the caller's buffer.
+ */
+static int
+pin_split_qname (const char *name, char *prefix, size_t prefix_max,
+		  char *local, size_t local_max)
+{
+    const char *colon = strchr(name, ':');
+    if (colon == NULL)
+	return FALSE;
+
+    size_t plen = (size_t) (colon - name);
+    size_t llen = strlen(colon + 1);
+    if (plen == 0 || plen >= prefix_max || llen == 0 || llen >= local_max)
+	return FALSE;
+
+    memcpy(prefix, name, plen);
+    prefix[plen] = '\0';
+    memcpy(local, colon + 1, llen);
+    local[llen] = '\0';
+    return TRUE;
+}
+
+/*
+ * xfdo_find_function hook: resolve a namespace-prefixed function name
+ * (e.g. "slax:printf") that the compiled evaluator's built-in table
+ * doesn't recognize. A thin forwarder to the pin_dyn_ops_t provider, if
+ * any -- no libxml2-XPath/libxslt/libslax symbol is ever touched here
+ * (see build/plans/slax-funcs.rst, Part 2 point 4).
+ *
+ * libpin's own namespace-scope tracking (resolving 'prefix' against an
+ * in-scope xmlns declaration before falling back to
+ * pdo_resolve_prefix) is not implemented yet (Concrete step 5); until
+ * it lands, every prefix falls straight through to pdo_resolve_prefix.
+ */
+static xo_eval_ext_fn_t
+pin_filter_find_function (xo_filter_data_t *dp UNUSED, const char *name,
+			   int *nargsp, int *min_argsp)
+{
+    char prefix[64], local[64], uri[256];
+
+    if (!pin_split_qname(name, prefix, sizeof(prefix), local, sizeof(local)))
+	return NULL;			/* no colon; not ours */
+
+    if (pin_dyn_ops == NULL || pin_dyn_ops->pdo_resolve_prefix == NULL)
+	return NULL;			/* no provider registered */
+
+    const char *found = pin_dyn_ops->pdo_resolve_prefix(prefix);
+    if (found == NULL)
+	return NULL;			/* unknown prefix */
+
+    size_t ulen = strlen(found);
+    if (ulen >= sizeof(uri))
+	return NULL;
+    memcpy(uri, found, ulen + 1);
+
+    if (pin_dyn_ops->pdo_find_function == NULL)
+	return NULL;
+
+    return pin_dyn_ops->pdo_find_function(local, uri, nargsp, min_argsp);
+}
+
 static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_version      = XO_FILTER_DATA_OPS_VERSION,
     .xfdo_realloc      = pin_filter_data_realloc,
@@ -487,6 +569,7 @@ static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_event_open   = pin_filter_data_event_open,
     .xfdo_event_close  = pin_filter_data_event_close,
     .xfdo_destroy      = pin_filter_data_destroy,
+    .xfdo_find_function = pin_filter_find_function,
 };
 
 /*
