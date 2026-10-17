@@ -1102,7 +1102,9 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
     }
 
     xo_xparse_node_id_t root = xo_xparse_node_contents(xdp, pred);
-    xo_eval_prog_t *prog = xo_eval_compile(xdp, root, NULL, NULL);
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
+    xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
     if (prog == NULL) {
 	pin_error(cur->poc_rb, cur->poc_node,
 		  "unable to compile XPath expression: %s", expr);
