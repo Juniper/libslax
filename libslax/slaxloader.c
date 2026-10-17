@@ -836,6 +836,78 @@ slaxLoadBuffer (const char *filename, char *input,
     return res;
 }
 
+/**
+ * Parse a single SLAX fragment, grafting it directly onto a node
+ * already in a live document, instead of building a fresh,
+ * disconnected document the way slaxLoadBuffer() does.  Used by sdb's
+ * "set"/"append" commands to turn user-typed text into a node that can
+ * be evaluated against the live transform.
+ *
+ * @param filename Name of the file (or "-"), for error messages
+ * @param input Input data (caller-owned; not freed here)
+ * @param context_node Live node to graft the parse onto
+ * @param ttype M_PARSE_* entry point to use
+ * @return the newly parsed node, already unlinked from context_node,
+ *         or NULL on error.  The caller owns the returned node.
+ */
+xmlNodePtr
+slaxLoadBufferAt (const char *filename, char *input,
+		   xmlNodePtr context_node, int ttype)
+{
+    slax_data_t sd;
+    xmlNodePtr res = NULL;
+    int rc;
+    xmlParserCtxtPtr ctxt = slaxSetupFakeContext();
+
+    if (ctxt == NULL)
+	return NULL;
+
+    bzero(&sd, sizeof(sd));
+    sd.sd_line = 1;
+    sd.sd_parse = sd.sd_ttype = ttype;
+    strlcpy(sd.sd_filename, filename, sizeof(sd.sd_filename));
+    sd.sd_ctxt = ctxt;
+
+    xmlParserCtxtSetVersion(ctxt, xmlCharStrdup(XML_DEFAULT_VERSION));
+    xmlParserCtxtSetUserData(ctxt, &sd);
+
+    /*
+     * Reuse the live document and its existing xsl: namespace object;
+     * never build a fresh, disconnected one.
+     */
+    sd.sd_docp = xmlNodeGetDoc(context_node);
+    sd.sd_xsl_ns = xmlSearchNsByHref(sd.sd_docp, context_node,
+				      (const xmlChar *) XSL_URI);
+
+    xmlParserPushNode(ctxt, context_node); /* graft here */
+
+    sd.sd_buf = input;
+    sd.sd_len = strlen(input);
+
+    rc = slaxParse(&sd);
+
+    xmlParserPopNode(ctxt);		    /* balance the push above */
+
+    if (sd.sd_errors) {
+	slaxError("%s: %d error%s detected during parsing (%d)",
+	  sd.sd_filename, sd.sd_errors, (sd.sd_errors == 1) ? "" : "s", rc);
+    } else {
+	res = xmlGetLastChild(context_node); /* the new wrapper node */
+	if (res)
+	    xmlUnlinkNode(res);	    /* detach; caller owns it now */
+    }
+
+    /*
+     * Deliberately not slaxDataCleanup(): it would free sd_buf
+     * unconditionally (wrong here -- "input" is the caller's buffer)
+     * and free sd_docp (wrong here -- it's the live document, not a
+     * scratch one we built).
+     */
+    xmlFreeParserCtxt(sd.sd_ctxt);
+
+    return res;
+}
+
 /*
  * Turn a SLAX expression into an XPath one.  Returns a freshly
  * allocated string, or NULL.
