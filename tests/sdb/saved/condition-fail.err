@@ -5,6 +5,7 @@ Breakpoint 1 at file ../../../tests/sdb/condition-fail.slax, line 10
 runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
 Variable 'nonexistent_var' has not been declared.
 XPath error : Undefined variable: nonexistent_var
+warning: breakpoint 1 condition failed to evaluate: '$nonexistent_var > 1'
 runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
 Variable 'nonexistent_var' has not been declared.
 XPath error : Undefined variable: nonexistent_var
