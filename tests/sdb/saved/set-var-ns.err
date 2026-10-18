@@ -1,0 +1,31 @@
+Type 'help' for help
+(sdb) b 8
+Breakpoint 1 at file ../../../tests/sdb/set-var-ns.slax, line 8
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/set-var-ns.slax:8
+set-var-ns.slax: 8:     <top> {
+(sdb) set $top = <my:tag> "hello"
+$top =
+[rtf] (1)
+<my:tag xmlns:my="http://example.com/my">hello</my:tag>
+
+(sdb) p $top
+[rtf] (1)
+<my:tag xmlns:my="http://example.com/my">hello</my:tag>
+
+
+(sdb) append $top += <my:other> "world"
+$top =
+[rtf] (1)
+<my:tag xmlns:my="http://example.com/my">hello</my:tag>
+<my:other xmlns:my="http://example.com/my">world</my:other>
+
+(sdb) p $top
+[rtf] (1)
+<my:tag xmlns:my="http://example.com/my">hello</my:tag>
+<my:other xmlns:my="http://example.com/my">world</my:other>
+
+
+(sdb) c
+Script exited normally.
+(sdb) quit
