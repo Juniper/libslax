@@ -1,0 +1,11 @@
+version 1.3;
+
+ns my = "http://example.com/my";
+
+mvar $top = <one> "this";
+
+main <top> {
+    <top> {
+	copy-of $top;
+    }
+}
