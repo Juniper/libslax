@@ -1,7 +1,7 @@
 Type 'help' for help
 (sdb) help
 List of commands:
-  append $var += value  Append a value to an mvar
+  append $var += value  Append a value to a variable
   backtrace [full] Show the backtrace of template calls (alias: bt)
   break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
   callflow [val]  Enable call flow tracing
@@ -20,7 +20,7 @@ List of commands:
   profile [val]   Turn profiler on or off
   reload          Reload the script contents
   run             Restart the script
-  set             Set a variable to a new value
+  set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
@@ -29,7 +29,7 @@ List of commands:
 Command name abbreviations are allowed
 (sdb) ?
 List of commands:
-  append $var += value  Append a value to an mvar
+  append $var += value  Append a value to a variable
   backtrace [full] Show the backtrace of template calls (alias: bt)
   break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
   callflow [val]  Enable call flow tracing
@@ -48,7 +48,7 @@ List of commands:
   profile [val]   Turn profiler on or off
   reload          Reload the script contents
   run             Restart the script
-  set             Set a variable to a new value
+  set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
