@@ -8,28 +8,4 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = gt setup.sh gen-code.sh gen-xmlaccessors.sh gen-xsltaccessors.sh
-
-GT_INSTALL_DIR = ${DESTDIR}${prefix}/bin
-GT_INSTALL_FILES = gt
-
-install-data-hook:
-	@echo "Installing gt ... "
-	@-mkdir -p ${GT_INSTALL_DIR}
-	@for file in ${GT_INSTALL_FILES} ; do \
-		if [ -f $$file ]; then \
-			rfile=$$file ; \
-		else \
-			rfile=${srcdir}/$$file ; \
-		fi ; \
-		mdir=${GT_INSTALL_DIR}/ ; \
-		mkdir -p $$mdir ; \
-		cp $$rfile $$mdir/ ; \
-        done
-	@${CHMOD} a+x ${GT_INSTALL_DIR}/gt
-
-uninstall-hook:
-	@echo "Uninstalling gt ... "
-	@for file in ${GT_INSTALL_FILES} ; do \
-		${RM} -f ${GT_INSTALL_DIR}/$$file ; \
-        done
+EXTRA_DIST = setup.sh gen-code.sh gen-xmlaccessors.sh gen-xsltaccessors.sh
