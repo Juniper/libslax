@@ -82,6 +82,7 @@
 #include <libxslt/transform.h>
 
 #include "slaxinternals.h"
+#include "slaxparser.h"
 #include <libslax/slax.h>
 #include <libpsu/psustring.h>
 
@@ -1738,6 +1739,196 @@ slaxDebugCmdDump (DC_ARGS)
     }
 }
 
+static inline char *
+slaxDebugSkipToken (char *str)
+{
+    while (*str && !isspace((int) *str))
+	str += 1;
+
+    return str;
+}
+
+static inline char *
+slaxDebugSkipSpace (char *str)
+{
+    while (*str && isspace((int) *str))
+	str += 1;
+
+    return str;
+}
+
+/*
+ * Shared implementation of the 'set' and 'append' commands: parse
+ * "$name = value" / "$name += value" ourselves (the grammar's
+ * M_PARSE_INITIAL_VALUE entry point only ever sees "value"), evaluate
+ * "value" against the live transform context, and store it into
+ * $name via slaxMvarSet()/slaxMvarAppend().
+ */
+static void
+slaxDebugCmdSetCommon (slaxDebugState_t *statep, const char *commandline,
+		       int is_append)
+{
+    char *cp = ALLOCADUP(commandline);
+    char name[BUFSIZ];
+    int i;
+
+    /* Move over the command word ("set" / "append"), same as print/dump */
+    cp = slaxDebugSkipToken(cp);
+    cp = slaxDebugSkipSpace(cp);
+
+    if (*cp++ != '$') {
+	slaxOutput("expected a variable name ($name)");
+	return;
+    }
+
+    for (i = 0; i < (int) sizeof(name) - 1 && slaxIsVarChar(*cp); i++, cp++)
+	name[i] = *cp;
+    name[i] = '\0';
+
+    if (i == 0) {
+	slaxOutput("expected a variable name ($name)");
+	return;
+    }
+
+    cp = slaxDebugSkipSpace(cp);
+
+    if (is_append) {
+	if (cp[0] != '+' || cp[1] != '=') {
+	    slaxOutput("usage: append $%s += value", name);
+	    return;
+	}
+	cp += 2;
+
+    } else {
+	if (cp[0] != '=') {
+	    slaxOutput("usage: set $%s = value", name);
+	    return;
+	}
+	cp += 1;
+    }
+
+    cp = slaxDebugSkipSpace(cp);
+    if (*cp == '\0') {
+	slaxOutput("missing value for variable '$%s'", name);
+	return;
+    }
+
+    /* Copy the remainder so we can safely extend it by one char */
+    size_t len = strlen(cp);
+    char *buf = alloca(len + 2);
+    memcpy(buf, cp, len + 1);
+
+    /*
+     * Trim trailing whitespace, then require a trailing ';' unless the
+     * value is a block/element-constructor/braced-call ending in '}' --
+     * that's the only thing initial_value's four alternatives need:
+     * xpath_value requires L_EOS; call_stmt's parens-only form needs
+     * it too (its braces form doesn't); block/element_stmt end in '}'
+     * and must NOT get an extra ';' appended.  The user may have
+     * already typed a trailing ';' themselves, so don't double it up.
+     */
+    char *end = buf + len;
+    while (end > buf && isspace((int) end[-1]))
+	end -= 1;
+    *end = '\0';
+
+    if (end == buf) {
+	slaxOutput("missing value for variable '$%s'", name);
+	return;
+    }
+
+    /* Add terminating semi-colon if needed */
+    if (end[-1] != '}' && end[-1] != ';') {
+	*end++ = ';';
+	*end = '\0';
+    }
+
+    if (statep->ds_inst == NULL) {
+	slaxOutput("no current context");
+	return;
+    }
+
+    xmlNodePtr context_node = xmlNodeGetParent(statep->ds_inst);
+    xmlNodePtr inst = slaxLoadBufferAt("sdb-set", buf, context_node,
+					M_PARSE_INITIAL_VALUE);
+    if (inst == NULL)
+	return;	/* slaxLoadBufferAt() already reported the parse error */
+
+    xmlXPathObjectPtr value = NULL;
+    xmlChar *sel = xmlGetNsProp(inst, (const xmlChar *) ATT_SELECT, NULL);
+
+    if (sel) {
+	value = slaxDebugEvalXpath(statep, (const char *) sel);
+	xmlFree(sel);
+
+    } else if (xmlNodeGetChildren(inst)) {
+	/*
+	 * inst's content was never run through the stylesheet's own
+	 * compile pass, so none of its xsl: instructions (value-of,
+	 * element, etc) have the precomputed "comp" info that
+	 * xsltApplyOneTemplate() (inside slaxMvarEvalBlock()) requires.
+	 * xsltParseTemplateContent() is the same call libxslt itself
+	 * uses to lazily compile content added after the initial parse
+	 * (e.g. EXSLT's func:function body). It also validates that
+	 * each xsl: instruction sits within a template/variable/param,
+	 * walking up inst's real ancestors to find one -- which requires
+	 * inst to be (temporarily) back in the live tree, since
+	 * slaxLoadBufferAt() already unlinked it.
+	 */
+	xmlAddChild(context_node, inst);
+	xsltParseTemplateContent(statep->ds_script, inst);
+	xmlUnlinkNode(inst);
+
+	xmlDocPtr tree = slaxMvarEvalBlock(statep->ds_ctxt, statep->ds_node,
+					   inst);
+	if (tree)
+	    value = xmlXPathNewValueTree((xmlNodePtr) tree);
+
+    } else {
+	slaxOutput("missing value for variable '$%s'", name);
+    }
+
+    xmlFreeNode(inst);
+
+    if (value == NULL)
+	return;
+
+    int local;
+    xsltStackElemPtr var = slaxMvarLookupQname(statep->ds_ctxt,
+					       (const xmlChar *) name, &local);
+    if (var == NULL) {
+	slaxOutput("variable not found: $%s", name);
+	xmlXPathFreeObject(value);
+	return;
+    }
+
+    if (is_append)
+	slaxMvarAppend(statep->ds_ctxt, (const xmlChar *) name, var, value);
+    else
+	slaxMvarSet((const xmlChar *) name, var, value);
+
+    slaxOutput("$%s =", name);
+    slaxDebugOutputXpath(xsltStackElemGetValue(var), NULL, TRUE);
+}
+
+/*
+ * 'set' command
+ */
+static void
+slaxDebugCmdSet (DC_ARGS)
+{
+    slaxDebugCmdSetCommon(statep, commandline, FALSE);
+}
+
+/*
+ * 'append' command
+ */
+static void
+slaxDebugCmdAppend (DC_ARGS)
+{
+    slaxDebugCmdSetCommon(statep, commandline, TRUE);
+}
+
 static void
 slaxDebugHelpProfile (DH_ARGS)
 {
@@ -2121,6 +2312,11 @@ slaxDebugCmdQuit (DC_ARGS)
 /* ---------------------------------------------------------------------- */
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
+    { "append",        2, slaxDebugCmdAppend,
+      "append $var += value  Append a value to an mvar",
+      NULL,
+    },
+
     { "backtrace",     2, slaxDebugCmdWhere,
       "backtrace [full] Show the backtrace of template calls (alias: bt)",
       NULL,
@@ -2216,6 +2412,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
 
     { "run",	       3, slaxDebugCmdRun,
       "run             Restart the script",
+      NULL,
+    },
+
+    { "set",	       1, slaxDebugCmdSet,
+      "set             Set a variable to a new value",
       NULL,
     },
 
