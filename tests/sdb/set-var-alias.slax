@@ -1,0 +1,15 @@
+version 1.3;
+
+main <top> {
+    var $a := {
+	<bar> "1";
+	<bar> "2";
+    }
+
+    var $c = $a/bar[1];
+
+    <top> {
+	copy-of $a;
+	copy-of $c;
+    }
+}
