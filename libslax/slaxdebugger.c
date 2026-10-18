@@ -209,7 +209,8 @@ typedef struct slaxDebugBreakpoint_s {
     char *dbp_where;		/* Text name as given by user */
     xmlNodePtr dbp_inst;	/* Node we are breaking on */
     uint dbp_num;		/* Breakpoint number */
-    char *dbp_condition;	/* Conditional breakpoint expression */
+    char *dbp_condition;	/* Conditional breakpoint expression (XPath) */
+    char *dbp_condition_user;	/* Same, in user's original syntax (slax?) */
     int dbp_cond_warned;	/* Already warned that condition fails to eval */
 } slaxDebugBreakpoint_t;
 
@@ -506,6 +507,7 @@ slaxDebugClearBreakpoints (void)
 	    break;
 	xmlFreeAndEasy(dbp->dbp_where);
 	xmlFreeAndEasy(dbp->dbp_condition);
+	xmlFreeAndEasy(dbp->dbp_condition_user);
 	TAILQ_REMOVE(&slaxDebugBreakpoints, dbp, dbp_link);
     }
 
@@ -815,8 +817,9 @@ slaxDebugAnnounceBreakpoint (slaxDebugState_t *statep, xmlNodePtr node)
 	    slaxOutput("Reached breakpoint %d, at %s:%ld",
 		       dbp->dbp_num, xmlDocGetURL(xmlNodeGetDoc(node)),
 		       xmlGetLineNo(node));
-	    if (dbp->dbp_condition)
-		slaxOutput("  Condition: '%s'", dbp->dbp_condition);
+
+	    if (dbp->dbp_condition_user)
+		slaxOutput("  Condition: '%s'", dbp->dbp_condition_user);
 
 	    xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
 	    return;
@@ -987,6 +990,7 @@ slaxDebugCmdBreak (DC_ARGS)
     xmlNodePtr node = NULL;
     slaxDebugBreakpoint_t *bp;
     char *condition = NULL;
+    char *condition_user = NULL;
 
     node = slaxDebugGetNode(statep, argv[1]);
     if (node == NULL) {
@@ -996,7 +1000,7 @@ slaxDebugCmdBreak (DC_ARGS)
 
     if (slaxDebugCheckBreakpoint(statep, node)) {
 	slaxOutput("Duplicate breakpoint");
-	return; 
+	return;
     }
 
     /* If we have a breakpoint, make sure the expression parses */
@@ -1008,9 +1012,13 @@ slaxDebugCmdBreak (DC_ARGS)
 	    return;
 	}
 
+	/* Keep the user's original SLAX spelling around for display */
+	condition_user = xmlStrdup2(condition);
+
 	condition = slaxSlaxToXpath("sdb", 1, condition, NULL);
 	if (condition == NULL) {
 	    slaxOutput("Invalid expression");
+	    xmlFreeAndEasy(condition_user);
 	    return;
 	}
 
@@ -1018,6 +1026,7 @@ slaxDebugCmdBreak (DC_ARGS)
 	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
 	if (comp == NULL) {
 	    xmlFreeAndEasy(condition);
+	    xmlFreeAndEasy(condition_user);
 	    return;
 	}
 
@@ -1036,6 +1045,7 @@ slaxDebugCmdBreak (DC_ARGS)
     bp->dbp_num = ++slaxDebugBreakpointNumber;
     bp->dbp_inst = node;
     bp->dbp_condition = condition;
+    bp->dbp_condition_user = condition_user;
 
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
 
@@ -1142,6 +1152,7 @@ slaxDebugCmdDelete (DC_ARGS)
 	if (dbpp->dbp_num == num) {
 	    xmlFreeAndEasy(dbpp->dbp_where);
 	    xmlFreeAndEasy(dbpp->dbp_condition);
+	    xmlFreeAndEasy(dbpp->dbp_condition_user);
 	    TAILQ_REMOVE(&slaxDebugBreakpoints, dbpp, dbp_link);
 	    slaxOutput("Deleted breakpoint '%d'", num);
 	    return;
@@ -1161,6 +1172,7 @@ slaxDebugCmdCondition (DC_ARGS)
     slaxDebugBreakpoint_t *dbp;
     uint num;
     char *condition = NULL;
+    char *condition_user = NULL;
     int found = FALSE;
 
     if (argv[1] == NULL) {
@@ -1195,9 +1207,13 @@ slaxDebugCmdCondition (DC_ARGS)
 	    return;
 	}
 
+	/* Keep the user's original SLAX spelling around for display */
+	condition_user = xmlStrdup2(condition);
+
 	condition = slaxSlaxToXpath("sdb", 1, condition, NULL);
 	if (condition == NULL) {
 	    slaxOutput("Invalid expression");
+	    xmlFreeAndEasy(condition_user);
 	    return;
 	}
 
@@ -1206,6 +1222,7 @@ slaxDebugCmdCondition (DC_ARGS)
 	if (comp == NULL) {
 	    slaxOutput("Invalid expression");
 	    xmlFreeAndEasy(condition);
+	    xmlFreeAndEasy(condition_user);
 	    return;
 	}
 
@@ -1213,11 +1230,13 @@ slaxDebugCmdCondition (DC_ARGS)
     }
 
     xmlFreeAndEasy(dbp->dbp_condition);
+    xmlFreeAndEasy(dbp->dbp_condition_user);
     dbp->dbp_condition = condition;
+    dbp->dbp_condition_user = condition_user;
     dbp->dbp_cond_warned = FALSE;
 
     if (condition)
-	slaxOutput("Breakpoint %d now conditional on '%s'", num, condition);
+	slaxOutput("Breakpoint %d now conditional on '%s'", num, condition_user);
     else
 	slaxOutput("Breakpoint %d is now unconditional", num);
 }
@@ -1280,7 +1299,7 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 	template = slaxDebugGetTemplate(statep, dbp->dbp_inst);
 
 	if (dbp->dbp_inst) {
-	    char *cond = dbp->dbp_condition;
+	    char *cond = dbp->dbp_condition_user;
 	    slaxOutput("    %s#%d %s at %s:%ld%s%s%s",
 		       tag, dbp->dbp_num,
 		       slaxDebugTemplateInfo(template, buf, sizeof(buf)),
@@ -2573,7 +2592,7 @@ slaxDebugEvalCondition (slaxDebugState_t *statep,
 	 */
 	if (!dbp->dbp_cond_warned) {
 	    slaxOutput("warning: breakpoint %d condition failed to "
-		       "evaluate: '%s'", dbp->dbp_num, dbp->dbp_condition);
+		       "evaluate: '%s'", dbp->dbp_num, dbp->dbp_condition_user);
 	    dbp->dbp_cond_warned = TRUE;
 	}
 	return FALSE;		/* Failure means don't stop */
