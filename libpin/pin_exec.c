@@ -1351,20 +1351,20 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
 static pin_value_t
 pin_op_ns_push (PIN_OP_FUNC_ARGS)
 {
-    if (esp->pes_ns_count >= esp->pes_ns_size) {
-        uint32_t newsize = esp->pes_ns_size ? esp->pes_ns_size * 2 : 8;
+    if (esp->pes_ns_cur >= esp->pes_ns_max) {
+        uint32_t newsize = esp->pes_ns_max ? esp->pes_ns_max * 2 : 8;
         pin_ns_map_t *np = realloc(esp->pes_ns, newsize * sizeof(*np));
         if (np == NULL)
             return pin_value_null();
 
         esp->pes_ns = np;
-        esp->pes_ns_size = newsize;
+        esp->pes_ns_max = newsize;
     }
 
-    pin_ns_map_t *np = &esp->pes_ns[esp->pes_ns_count];
+    pin_ns_map_t *np = &esp->pes_ns[esp->pes_ns_cur];
     np->pnm_prefix = opp->po_name;
     np->pnm_uri = opp->po_name2;
-    esp->pes_ns_count += 1;
+    esp->pes_ns_cur += 1;
     return pin_value_null();
 }
 
@@ -1375,9 +1375,9 @@ static pin_value_t
 pin_op_ns_pop (PIN_OP_FUNC_ARGS)
 {
     uint32_t count = opp->po_count;
-    if (count > esp->pes_ns_count)
-        count = esp->pes_ns_count;
-    esp->pes_ns_count -= count;
+    if (count > esp->pes_ns_cur)
+        count = esp->pes_ns_cur;
+    esp->pes_ns_cur -= count;
     return pin_value_null();
 }
 
