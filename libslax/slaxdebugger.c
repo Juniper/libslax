@@ -2313,7 +2313,7 @@ slaxDebugCmdQuit (DC_ARGS)
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "append",        2, slaxDebugCmdAppend,
-      "append $var += value  Append a value to an mvar",
+      "append $var += value  Append a value to a variable",
       NULL,
     },
 
@@ -2415,8 +2415,8 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
-    { "set",	       1, slaxDebugCmdSet,
-      "set             Set a variable to a new value",
+    { "set",	       2, slaxDebugCmdSet,
+      "set $var = value  Set a variable to a new value",
       NULL,
     },
 
