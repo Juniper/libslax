@@ -1,0 +1,29 @@
+Type 'help' for help
+(sdb) b 11
+Breakpoint 1 at file ../../../tests/sdb/set-var-alias.slax, line 11
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/set-var-alias.slax:11
+set-var-alias.slax: 11:     <top> {
+(sdb) p $a
+[node-set] (1) rtf-doc
+<bar>1</bar>
+<bar>2</bar>
+
+
+(sdb) p $c
+[node-set] (1)
+<bar>1</bar>
+
+(sdb) set $a = "replaced"
+$a =
+[string] "replaced"
+(sdb) p $a
+[string] "replaced"
+
+(sdb) p $c
+[node-set] (1)
+<bar>1</bar>
+
+(sdb) c
+Script exited normally.
+(sdb) quit
