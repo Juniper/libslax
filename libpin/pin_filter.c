@@ -64,6 +64,8 @@ struct xo_filter_data_s {
     size_t xfd_node_stack_max;      /* allocated slot count of xfd_node_stack */
     int xfd_node_depth;             /* index of the current (top) slot */
     pin_exec_state_t *xfd_esp;      /* current exec state, for xfdo_variable_of */
+    const pin_ns_map_t *xfd_compile_ns; /* in-scope prefix/uri bindings at compile site */
+    size_t xfd_compile_ns_count;    /* number of entries in xfd_compile_ns */
 };
 
 /*
@@ -523,16 +525,30 @@ pin_split_qname (const char *name, char *prefix, size_t prefix_max,
  * xfdo_find_function hook: resolve a namespace-prefixed function name
  * (e.g. "slax:printf") that the compiled evaluator's built-in table
  * doesn't recognize. A thin forwarder to the pin_dyn_ops_t provider, if
- * any -- no libxml2-XPath/libxslt/libslax symbol is ever touched here
- * (see build/plans/slax-funcs.rst, Part 2 point 4).
+ * any -- no libxml2-XPath/libxslt/libslax symbol is touched here; see
+ * build/plans/slax-funcs.rst, Part 2 point 4.
  *
- * libpin's own namespace-scope tracking (resolving 'prefix' against an
- * in-scope xmlns declaration before falling back to
- * pdo_resolve_prefix) is not implemented yet (Concrete step 5); until
- * it lands, every prefix falls straight through to pdo_resolve_prefix.
+ * Resolution order: first, search the in-scope prefix/uri bindings
+ * recorded via pin_filter_set_compile_ns (the compiler's namespace
+ * stack at the point this expression was compiled -- see
+ * pin_compile.c's PIN_OP_NS_PUSH/POP bracketing), searched from the
+ * end (innermost/most-recent) backward so the nearest declaration
+ * wins, exactly like ordinary XML prefix-shadowing. Only when that
+ * misses -- no bindings were recorded, or none match 'prefix' -- fall
+ * back to the pin_dyn_ops_t provider's pdo_resolve_prefix. This
+ * matches Concrete step 5 / Design step 2a in the plan.
+ *
+ * Note: this in-scope lookup only runs for call sites that record
+ * bindings (currently pin_op_push_eval, for "real" XPath expressions
+ * -- select=/test=/etc.). The match-pattern predicate compile path
+ * (xo_filter_pred_prog, lazily compiling predicates found in
+ * xsl:template match= patterns) does not yet thread a namespace stack
+ * through to its compile call, so prefixed function calls inside
+ * pattern predicates always fall straight through to
+ * pdo_resolve_prefix -- a known, flagged gap, not an oversight.
  */
 static xo_eval_ext_fn_t
-pin_filter_find_function (xo_filter_data_t *dp UNUSED, const char *name,
+pin_filter_find_function (xo_filter_data_t *dp, const char *name,
 			   int *nargsp, int *min_argsp)
 {
     char prefix[64], local[64], uri[256];
@@ -540,19 +556,35 @@ pin_filter_find_function (xo_filter_data_t *dp UNUSED, const char *name,
     if (!pin_split_qname(name, prefix, sizeof(prefix), local, sizeof(local)))
 	return NULL;			/* no colon; not ours */
 
-    if (pin_dyn_ops == NULL || pin_dyn_ops->pdo_resolve_prefix == NULL)
-	return NULL;			/* no provider registered */
+    const char *found = NULL;
 
-    const char *found = pin_dyn_ops->pdo_resolve_prefix(prefix);
-    if (found == NULL)
-	return NULL;			/* unknown prefix */
+    if (dp != NULL && dp->xfd_compile_ns != NULL) {
+	for (size_t i = dp->xfd_compile_ns_count; i > 0; i--) {
+	    const pin_ns_map_t *nsp = &dp->xfd_compile_ns[i - 1];
+	    const char *pfx = pin_namepool_string(dp->xfd_workspace,
+						   nsp->pnm_prefix);
+	    if (pfx != NULL && strcmp(pfx, prefix) == 0) {
+		found = pin_namepool_string(dp->xfd_workspace, nsp->pnm_uri);
+		break;
+	    }
+	}
+    }
+
+    if (found == NULL) {
+	if (pin_dyn_ops == NULL || pin_dyn_ops->pdo_resolve_prefix == NULL)
+	    return NULL;		/* no provider registered */
+
+	found = pin_dyn_ops->pdo_resolve_prefix(prefix);
+	if (found == NULL)
+	    return NULL;		/* unknown prefix */
+    }
 
     size_t ulen = strlen(found);
     if (ulen >= sizeof(uri))
 	return NULL;
     memcpy(uri, found, ulen + 1);
 
-    if (pin_dyn_ops->pdo_find_function == NULL)
+    if (pin_dyn_ops == NULL || pin_dyn_ops->pdo_find_function == NULL)
 	return NULL;
 
     return pin_dyn_ops->pdo_find_function(local, uri, nargsp, min_argsp);
@@ -662,4 +694,20 @@ pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp)
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     if (dp)
 	dp->xfd_esp = esp;
+}
+
+/*
+ * Record the in-scope prefix/uri bindings an XPath expression is being
+ * compiled "at" (see pin_filter.h for the full doc comment and
+ * pin_filter_find_function for how it's used).
+ */
+void
+pin_filter_set_compile_ns (xo_filter_t *xfp, const pin_ns_map_t *bindings,
+			    size_t count)
+{
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    if (dp) {
+	dp->xfd_compile_ns = bindings;
+	dp->xfd_compile_ns_count = count;
+    }
 }
