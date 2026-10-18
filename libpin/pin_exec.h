@@ -109,7 +109,9 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_NUMBER        (PIN_OP_MAX_COMPLEX + 31) /* xsl:number: po_name=value-expr, po_name2=format */
 #define PIN_OP_PUSH_AVT      (PIN_OP_MAX_COMPLEX + 32) /* Eval AVT in po_name2 against context; push result string */
 #define PIN_OP_EVAL          (PIN_OP_MAX_COMPLEX + 33) /* Run compiled xo_eval_prog_t po_name indexes; push PVT_BOOLEAN or PVT_STRING */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 34) /* Sentinel: number of defined op codes */
+#define PIN_OP_NS_PUSH       (PIN_OP_MAX_COMPLEX + 34) /* Push prefix/uri binding (po_name=prefix atom, po_name2=uri atom) */
+#define PIN_OP_NS_POP        (PIN_OP_MAX_COMPLEX + 35) /* Pop po_count bindings pushed by preceding NS_PUSH ops */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 36) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -214,6 +216,11 @@ typedef struct pin_exec_state_s {
     pin_pending_param_t *pes_pending;
     uint32_t             pes_pending_count;
     uint32_t             pes_pending_size;
+
+    /* Namespace-binding stack maintained by PIN_OP_NS_PUSH / PIN_OP_NS_POP */
+    pin_ns_map_t *pes_ns;
+    uint32_t      pes_ns_cur;
+    uint32_t      pes_ns_max;
 } pin_exec_state_t;
 
 /*
