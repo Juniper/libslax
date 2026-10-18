@@ -19,6 +19,7 @@
 #ifndef LIBSLAX_PIN_FILTER_H
 #define LIBSLAX_PIN_FILTER_H
 
+#include <stddef.h>
 #include <libxo/xo.h>
 #include <libpin/pin_workspace.h>
 #include <libpin/pin_rules.h>
@@ -93,5 +94,22 @@ pin_filter_set_cur_node (xo_filter_t *xfp, pin_node_id_t node);
  */
 void
 pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp);
+
+/*
+ * Record the in-scope prefix/uri bindings (the compiler's namespace
+ * stack, innermost last) that an XPath expression is being compiled
+ * "at", so that xfdo_find_function can resolve a namespace prefix
+ * against one of them before falling back to the pin_dyn_ops_t
+ * provider's pdo_resolve_prefix.  Call this immediately before
+ * compiling an expression (e.g. before xo_eval_compile); 'bindings' is
+ * retained by pointer, not copied, so it must stay valid for the
+ * compile (a compiler's own pin_op_cursor_t namespace stack fits this).
+ * 'bindings' may be NULL (with count 0), which simply disables the
+ * in-scope lookup for that compile (every prefix then falls straight
+ * through to pdo_resolve_prefix, the pre-step-5 behavior).
+ */
+void
+pin_filter_set_compile_ns (xo_filter_t *xfp, const pin_ns_map_t *bindings,
+			    size_t count);
 
 #endif /* LIBSLAX_PIN_FILTER_H */
