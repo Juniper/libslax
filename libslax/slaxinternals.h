@@ -93,6 +93,18 @@ xsltStackElemPtr
 slaxMvarLookupQname (xsltTransformContextPtr tctxt, const xmlChar *svarname,
 		     int *localp);
 
+int
+slaxMvarSet (const xmlChar *name, xsltStackElemPtr var,
+	     xmlXPathObjectPtr value);
+
+int
+slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
+		xsltStackElemPtr var, xmlXPathObjectPtr value);
+
+xmlDocPtr
+slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
+		   xmlNodePtr inst);
+
 /* --- slaxwriter.h --- */
 
 struct slax_writer_s;
