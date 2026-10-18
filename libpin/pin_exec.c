@@ -1345,6 +1345,43 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
 }
 
 /*
+ * Push one prefix/uri binding onto the runtime namespace stack.
+ * po_name is the prefix atom (null = default namespace), po_name2 the uri atom.
+ */
+static pin_value_t
+pin_op_ns_push (PIN_OP_FUNC_ARGS)
+{
+    if (esp->pes_ns_count >= esp->pes_ns_size) {
+        uint32_t newsize = esp->pes_ns_size ? esp->pes_ns_size * 2 : 8;
+        pin_ns_map_t *np = realloc(esp->pes_ns, newsize * sizeof(*np));
+        if (np == NULL)
+            return pin_value_null();
+
+        esp->pes_ns = np;
+        esp->pes_ns_size = newsize;
+    }
+
+    pin_ns_map_t *np = &esp->pes_ns[esp->pes_ns_count];
+    np->pnm_prefix = opp->po_name;
+    np->pnm_uri = opp->po_name2;
+    esp->pes_ns_count += 1;
+    return pin_value_null();
+}
+
+/*
+ * Pop po_count bindings pushed by the preceding NS_PUSH ops.
+ */
+static pin_value_t
+pin_op_ns_pop (PIN_OP_FUNC_ARGS)
+{
+    uint32_t count = opp->po_count;
+    if (count > esp->pes_ns_count)
+        count = esp->pes_ns_count;
+    esp->pes_ns_count -= count;
+    return pin_value_null();
+}
+
+/*
  * Op dispatch table
  */
 
@@ -1390,6 +1427,8 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_NUMBER]        = { "number",        pin_op_number,        0 },
     [PIN_OP_PUSH_AVT]      = { "push-avt",      pin_op_push_avt,      0 },
     [PIN_OP_EVAL]          = { "eval",          pin_op_eval,          0 },
+    [PIN_OP_NS_PUSH]       = { "ns-push",       pin_op_ns_push,       0 },
+    [PIN_OP_NS_POP]        = { "ns-pop",        pin_op_ns_pop,        0 },
 };
 
 /*
