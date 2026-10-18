@@ -17,4 +17,7 @@ main <top> {
     <copy> {
         copy-of $b;
     }
+    <top> {
+	copy-of $top;
+    }
 }
