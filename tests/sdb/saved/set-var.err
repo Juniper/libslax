@@ -1,0 +1,82 @@
+Type 'help' for help
+(sdb) b 6
+Breakpoint 1 at file ../../../tests/sdb/set-var.slax, line 6
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/set-var.slax:6
+set-var.slax: 6:     var $a := {
+(sdb) p $top
+[node-set] (1) rtf-doc
+<one>this</one>
+
+
+(sdb) set $top = "test"
+$top =
+[string] "test"
+(sdb) p $top
+[string] "test"
+
+(sdb) set $top = <one> 1;
+$top =
+[rtf] (1)
+<one>1</one>
+
+(sdb) p $top
+[rtf] (1)
+<one>1</one>
+
+
+(sdb) set $top = { <two> 2; <three> "333"; }
+$top =
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+
+(sdb) p $top
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+
+
+(sdb) append $top += <four> "forty"
+$top =
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+<four>forty</four>
+
+(sdb) p $top
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+<four>forty</four>
+
+
+(sdb) append $top += <five>
+$top =
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+<four>forty</four>
+<five/>
+
+(sdb) p $top
+[rtf] (1)
+<two>2</two>
+<three>333</three>
+<four>forty</four>
+<five/>
+
+
+(sdb) set $top = <six>
+$top =
+[rtf] (1)
+<six/>
+
+(sdb) p $top
+[rtf] (1)
+<six/>
+
+
+(sdb) c
+Script exited normally.
+(sdb) quit
