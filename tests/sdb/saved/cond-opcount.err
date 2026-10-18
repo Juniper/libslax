@@ -3,7 +3,7 @@ Type 'help' for help
 Breakpoint 1 at file ../../../tests/sdb/cond-opcount.slax, line 10
 (sdb) run
 Reached breakpoint 1, at ../../../tests/sdb/cond-opcount.slax:10
-  Condition: '$i = 4999'
+  Condition: '$i == 4999'
 cond-opcount.slax: 10:         set $total = $total + $i;
 (sdb) continue
 Script exited normally.
