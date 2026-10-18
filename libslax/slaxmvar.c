@@ -245,7 +245,7 @@ slaxValueIsScalar (xmlXPathObjectPtr value)
  * something else -- e.g. a plain variable that captured $foo's old
  * value -- still references it).
  */
-static int
+int
 slaxMvarSet (const xmlChar *name, xsltStackElemPtr var,
 	     xmlXPathObjectPtr value)
 {
@@ -367,7 +367,7 @@ slaxMvarAppendContainer (xsltTransformContextPtr ctxt, xsltStackElemPtr var)
  * In case 2, the scalar value will be placed inside a <text> element
  * and that node will be used as a node set.
  */
-static int
+int
 slaxMvarAppend (xsltTransformContextPtr ctxt, const xmlChar *name,
 		xsltStackElemPtr var, xmlXPathObjectPtr value)
 {
@@ -676,7 +676,7 @@ slaxMvarEvalString (xsltTransformContextPtr ctxt, xmlNodePtr node,
     return value;
 }
 
-static xmlDocPtr
+xmlDocPtr
 slaxMvarEvalBlock (xsltTransformContextPtr ctxt, xmlNodePtr node,
 		   xmlNodePtr inst)
 {
