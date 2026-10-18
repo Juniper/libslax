@@ -210,6 +210,7 @@ typedef struct slaxDebugBreakpoint_s {
     xmlNodePtr dbp_inst;	/* Node we are breaking on */
     uint dbp_num;		/* Breakpoint number */
     char *dbp_condition;	/* Conditional breakpoint expression */
+    int dbp_cond_warned;	/* Already warned that condition fails to eval */
 } slaxDebugBreakpoint_t;
 
 TAILQ_HEAD(slaxDebugBpList_s, slaxDebugBreakpoint_s) slaxDebugBreakpoints;
@@ -1213,6 +1214,7 @@ slaxDebugCmdCondition (DC_ARGS)
 
     xmlFreeAndEasy(dbp->dbp_condition);
     dbp->dbp_condition = condition;
+    dbp->dbp_cond_warned = FALSE;
 
     if (condition)
 	slaxOutput("Breakpoint %d now conditional on '%s'", num, condition);
@@ -2557,8 +2559,25 @@ slaxDebugEvalCondition (slaxDebugState_t *statep,
     int res = FALSE;
 
     xpobj = slaxDebugEvalXpath(statep, dbp->dbp_condition);
-    if (xpobj == NULL)
+    if (xpobj == NULL) {
+	/*
+	 * The condition failed to evaluate (e.g. a variable that's out
+	 * of scope at this call site) rather than evaluating to false.
+	 * Without this, that's indistinguishable from a condition that
+	 * legitimately evaluated to false, and the only other signal is
+	 * libxml2/libxslt's generic error handler printing to stderr --
+	 * on every single pass through this breakpoint.  Warn once per
+	 * breakpoint (reset if the condition is changed via 'condition')
+	 * instead of letting a broken condition on a hot code path spam
+	 * the same message every iteration.
+	 */
+	if (!dbp->dbp_cond_warned) {
+	    slaxOutput("warning: breakpoint %d condition failed to "
+		       "evaluate: '%s'", dbp->dbp_num, dbp->dbp_condition);
+	    dbp->dbp_cond_warned = TRUE;
+	}
 	return FALSE;		/* Failure means don't stop */
+    }
 
     if (print)
 	slaxDebugOutputXpath(xpobj, NULL, TRUE); /* Debug output */
