@@ -12,7 +12,7 @@ List of breakpoints:
      #1 template second at ../../../tests/sdb/break-loc.slax:16
      #2 template second at ../../../tests/sdb/break-loc.slax:14
      #3 template first at ../../../tests/sdb/break-loc.slax:10 condition: '$n > 2'
-     #4 template first at ../../../tests/sdb/break-loc.slax:11 condition: '$n = 2'
+     #4 template first at ../../../tests/sdb/break-loc.slax:11 condition: '$n == 2'
 (sdb) list 8
 break-loc.slax: 8: template first ($n) {
 break-loc.slax: 9:     var $label = "first";
