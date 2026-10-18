@@ -656,6 +656,7 @@ debugger resembles `gdb` command syntax and operation.
 
   (sdb) help
   List of commands:
+    append $var += value  Append a value to a variable
     break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
     callflow [val]  Enable call flow tracing
     condition <num> [expr]  Set, change, or clear a breakpoint's condition
@@ -671,6 +672,7 @@ debugger resembles `gdb` command syntax and operation.
     profile [val]   Turn profiler on or off
     reload          Reload the script contents
     run             Restart the script
+    set $var = value  Set a variable to a new value
     step            Execute the next instruction, stepping into calls
     where           Show the backtrace of template calls
     quit            Quit debugger
@@ -741,6 +743,118 @@ next element inserted will appear at the end of that hierarchy.
 
 The `info locals` command displays the current set of local variables
 and their values.
+
+The `set` and `append` commands let you change the value of a
+variable while stopped in the debugger, with the current document and
+evaluation context fully available to the new value. `value` can be a
+scalar, a quoted string, a general XPath expression (including one
+that references other live variables or walks the current document),
+or a SLAX node constructor or block:
+
+::
+
+  (sdb) set $top = "hello"
+  $top =
+  [string] "hello"
+  (sdb) set $top = <one> "this";
+  $top =
+  [rtf] (1)
+  <one>this</one>
+
+  (sdb) set $top = { <one> 11; <two> 22; <three> 33; }
+  $top =
+  [rtf] (1)
+  <one>11</one>
+  <two>22</two>
+  <three>33</three>
+
+  (sdb) set $top = .
+  $top =
+  [node-set] (1)
+
+Only a variable that already exists can be set or appended to --
+`set`/`append` never create a new variable. Assigning to an unknown
+name, or using either command without a value, is reported as an
+error:
+
+::
+
+  (sdb) set $nosuch = 1
+  variable not found: $nosuch
+  (sdb) set $top =
+  missing value for variable '$top'
+
+This works on any kind of variable, not just one declared `mvar` --
+plain `var` and `param` targets are settable too. The one divergence
+from the in-script `set` statement: a `{ ... }`-assigned value takes
+on plain `var` semantics (a result tree fragment) regardless of
+whether the target was declared `mvar`, rather than being flattened
+into an indexable node-set. As with any XSLT result tree fragment,
+applying a further path step or predicate directly to such a value
+(`$top[2]`, `$top/*`) raises libxslt's usual "convert it with the
+exslt:node-set() function first" error; only a variable already
+holding a genuine node-set (for example, one assigned from a path
+expression over real document nodes) can be indexed that way.
+
+`append $var += value` adds to the variable's current value instead
+of replacing it, with the result depending on the current and new
+values' types:
+
+::
+
+  (sdb) set $top = "foo"
+  $top =
+  [string] "foo"
+  (sdb) append $top += "bar"
+  $top =
+  [string] "foobar"
+
+  (sdb) set $top = "foo"
+  $top =
+  [string] "foo"
+  (sdb) append $top += <two> "22"
+  $top =
+  [rtf] (1)
+  <two>22</two>
+
+  (sdb) set $top = <one> "this";
+  $top =
+  [rtf] (1)
+  <one>this</one>
+  (sdb) append $top += "hello"
+  $top =
+  [rtf] (1)
+  <one>this</one>
+  <text>hello</text>
+
+  (sdb) append $top += <two> "22"
+  $top =
+  [rtf] (1)
+  <one>this</one>
+  <text>hello</text>
+  <two>22</two>
+
+A scalar appended to a scalar is concatenated as a string (first
+example above). A non-scalar value appended to a scalar discards the
+old value outright, becoming the variable's new value (second
+example). A scalar value appended to a non-scalar value is wrapped in
+a `<text>` element and added as a new child (third example). A
+non-scalar value appended to a non-scalar value has every node in the
+new value merged into the variable's existing content (fourth
+example).
+
+A constructed node can use any namespace prefix already declared in
+the script being debugged, not just the default or `xsl` namespace:
+
+::
+
+  (sdb) append $top += <my:tag> "nsval"
+  $top =
+  [rtf] (1)
+  <one>this</one>
+  <text>hello</text>
+  <two>22</two>
+  <my:tag xmlns:my="http://example.com/my">nsval</my:tag>
 
 .. index:: profiler
 .. _profiler:
