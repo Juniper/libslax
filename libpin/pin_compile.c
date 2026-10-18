@@ -951,6 +951,16 @@ typedef struct pin_op_cursor_s {
     uint32_t        poc_src_line; /* line number of the node being compiled */
     uint64_t        poc_complexity;  /* bitmask: bit (1<<type) set for each complex op present */
     xmlNodePtr      poc_node;     /* current source node (for error messages) */
+
+    /*
+     * Compile-time namespace-binding stack, mirroring the real PIN_OP_NS_PUSH
+     * / PIN_OP_NS_POP ops emitted into the op sequence, but kept separately
+     * here so that xpath expression compilation (pin_op_push_eval) can
+     * resolve a prefix to a URI immediately, without replaying ops.
+     */
+    pin_ns_map_t   *poc_ns_stack;
+    uint32_t        poc_ns_cur;
+    uint32_t        poc_ns_max;
 } pin_op_cursor_t;
 
 /*
@@ -976,6 +986,139 @@ pin_op_new (pin_op_cursor_t *cur, pin_op_id_t *oidp)
     opp->po_src_file = cur->poc_src_file;
     opp->po_src_line = cur->poc_src_line;
     return opp;
+}
+
+/*
+ * Push one prefix/uri binding: emit a real PIN_OP_NS_PUSH op (so the
+ * runtime pes_ns stack stays in sync for future output-side namespace
+ * work) and record the same binding on cur's compile-time stack (used by
+ * pin_op_push_eval for immediate prefix resolution). 'prefix' may be the
+ * null atom, meaning the default (unprefixed) namespace.
+ * Returns 0 on success, -1 on failure (OOM); the caller should simply
+ * skip counting this binding as pending-to-pop on failure.
+ */
+static int
+pin_compile_ns_push (pin_op_cursor_t *cur, pin_name_id_t prefix, pin_name_id_t uri)
+{
+    if (cur->poc_ns_cur >= cur->poc_ns_max) {
+	uint32_t newsize = cur->poc_ns_max ? cur->poc_ns_max * 2 : 8;
+	pin_ns_map_t *np = realloc(cur->poc_ns_stack, newsize * sizeof(*np));
+	if (np == NULL)
+	    return -1;
+	cur->poc_ns_stack = np;
+	cur->poc_ns_max = newsize;
+    }
+
+    pin_op_t *opp = pin_op_new(cur, NULL);
+    if (opp == NULL)
+	return -1;
+    opp->po_type = PIN_OP_NS_PUSH;
+    opp->po_name = prefix;
+    opp->po_name2 = uri;
+
+    cur->poc_ns_stack[cur->poc_ns_cur].pnm_prefix = prefix;
+    cur->poc_ns_stack[cur->poc_ns_cur].pnm_uri = uri;
+    cur->poc_ns_cur += 1;
+    return 0;
+}
+
+/*
+ * Emit a PIN_OP_NS_POP for 'count' bindings previously pushed by
+ * pin_compile_ns_push on this same cursor, and pop them off the
+ * compile-time stack. 'count' is clamped to the current depth so a
+ * mismatched call cannot underflow.
+ */
+static void
+pin_compile_ns_pop (pin_op_cursor_t *cur, uint32_t count)
+{
+    if (count > cur->poc_ns_cur)
+	count = cur->poc_ns_cur;
+    if (count == 0)
+	return;
+
+    pin_op_t *opp = pin_op_new(cur, NULL);
+    if (opp != NULL) {
+	opp->po_type = PIN_OP_NS_POP;
+	opp->po_count = count;
+    }
+
+    cur->poc_ns_cur -= count;
+}
+
+/*
+ * Copy src's current compile-time namespace bindings into dst, as a
+ * snapshot (not shared storage). Used when forking an independent
+ * sub-cursor (e.g. for xsl:for-each's body), which needs to resolve
+ * prefixes against everything already in scope but must not alias cur's
+ * growable array, since the sub-cursor's own pushes/pops must not affect
+ * cur after the fork returns. The caller frees dst->poc_ns_stack when done;
+ * no PIN_OP_NS_POP is emitted for this copy, since the real ops for these
+ * inherited bindings already live in src's own sequence.
+ */
+static void
+pin_compile_ns_clone (pin_op_cursor_t *dst, const pin_op_cursor_t *src)
+{
+    dst->poc_ns_stack = NULL;
+    dst->poc_ns_cur = 0;
+    dst->poc_ns_max = 0;
+
+    if (src->poc_ns_cur == 0)
+	return;
+
+    pin_ns_map_t *np = malloc(src->poc_ns_cur * sizeof(*np));
+    if (np == NULL)
+	return;
+
+    memcpy(np, src->poc_ns_stack, src->poc_ns_cur * sizeof(*np));
+    dst->poc_ns_stack = np;
+    dst->poc_ns_cur = src->poc_ns_cur;
+    dst->poc_ns_max = src->poc_ns_cur;
+}
+
+/*
+ * Walk body_node up through its ancestors to the document root, pushing
+ * every xmlns declaration found along the way onto cur's namespace stack,
+ * outermost first, so the innermost (closest) declaration ends up on top --
+ * matching ordinary XML prefix-shadowing. Call once before compiling a
+ * template body: the per-child nsDef walk in pin_compile_ops_r only sees
+ * declarations on body_node's own children, so this seeds anything
+ * declared on body_node itself (the xsl:template element) or higher
+ * (e.g. xmlns:slax on the enclosing xsl:stylesheet), which is the common
+ * real-world case. Returns the number of bindings pushed, for the
+ * matching pin_compile_ns_pop() once the body has been compiled.
+ */
+static uint32_t
+pin_compile_ns_seed (xmlNodePtr body_node, pin_op_cursor_t *cur)
+{
+    enum { PIN_NS_SEED_MAX_ANCESTORS = 128 };
+    xmlNodePtr ancestors[PIN_NS_SEED_MAX_ANCESTORS];
+    uint32_t count = 0;
+
+    for (xmlNodePtr np = body_node; np && count < PIN_NS_SEED_MAX_ANCESTORS;
+	 np = np->parent)
+	ancestors[count++] = np;
+
+    pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
+    uint32_t pushed = 0;
+
+    for (uint32_t i = count; i > 0; i--) {
+	xmlNodePtr np = ancestors[i - 1];
+	for (xmlNsPtr ns = np->nsDef; ns; ns = ns->next) {
+	    if (ns->href == NULL)
+		continue;
+
+	    pin_name_id_t prefix_id = ns->prefix
+		? pin_namepool_atom(pwp, (const char *) ns->prefix, TRUE)
+		: pin_name_id_null_atom();
+	    pin_name_id_t uri_id = pin_namepool_atom(pwp,
+			(const char *) ns->href, TRUE);
+
+	    if (pin_compile_ns_push(cur, prefix_id, uri_id) == 0)
+		pushed += 1;
+	}
+    }
+
+    return pushed;
 }
 
 /*
@@ -1104,7 +1247,7 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
     xo_xparse_node_id_t root = xo_xparse_node_contents(xdp, pred);
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
-    pin_filter_set_compile_node(xfp, cur->poc_node);
+    pin_filter_set_compile_ns(xfp, cur->poc_ns_stack, cur->poc_ns_cur);
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
     if (prog == NULL) {
 	pin_error(cur->poc_rb, cur->poc_node,
@@ -1182,10 +1325,32 @@ static void
 pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 {
     pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
+    uint32_t pending_ns_pop = 0;
 
     for (xmlNodePtr child = body_node->children; child; child = child->next) {
+	if (pending_ns_pop) {
+	    pin_compile_ns_pop(cur, pending_ns_pop);
+	    pending_ns_pop = 0;
+	}
+
 	cur->poc_src_line = (uint32_t) xmlGetLineNo(child);
 	cur->poc_node = child;
+
+	if (child->type == XML_ELEMENT_NODE) {
+	    for (xmlNsPtr ns = child->nsDef; ns; ns = ns->next) {
+		if (ns->href == NULL)
+		    continue;
+
+		pin_name_id_t prefix_id = ns->prefix
+		    ? pin_namepool_atom(pwp, (const char *) ns->prefix, TRUE)
+		    : pin_name_id_null_atom();
+		pin_name_id_t uri_id = pin_namepool_atom(pwp,
+			    (const char *) ns->href, TRUE);
+
+		if (pin_compile_ns_push(cur, prefix_id, uri_id) == 0)
+		    pending_ns_pop += 1;
+	    }
+	}
 
 	if (child->type == XML_TEXT_NODE) {
 	    if (!child->content || xmlIsBlankNode(child))
@@ -1593,7 +1758,9 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		.poc_src_line = cur->poc_src_line,
 		.poc_complexity = 0,
 	    };
+	    pin_compile_ns_clone(&sub, cur);
 	    pin_compile_ops_r(child, &sub);
+	    free(sub.poc_ns_stack);
 
 	    if (sub.poc_complexity) {
 		/* Body too complex for op-dispatch; neutralise and fall back */
@@ -2307,6 +2474,9 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    close_op->po_name = tag_id;
 	}
     }
+
+    if (pending_ns_pop)
+	pin_compile_ns_pop(cur, pending_ns_pop);
 }
 
 /*
@@ -2326,7 +2496,13 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 	.poc_src_line = 0,
 	.poc_complexity = 0,
     };
+
+    uint32_t seeded = pin_compile_ns_seed(body_node, &cur);
     pin_compile_ops_r(body_node, &cur);
+    if (seeded)
+	pin_compile_ns_pop(&cur, seeded);
+    free(cur.poc_ns_stack);
+
     if (complexity_out)
 	*complexity_out = cur.poc_complexity;
     return head;
