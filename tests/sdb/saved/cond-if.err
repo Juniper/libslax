@@ -1,0 +1,29 @@
+Type 'help' for help
+(sdb) break 10 if $n > 2
+Breakpoint 1 at file ../../../tests/sdb/cond-if.slax, line 10
+(sdb) break 16 when $n > 2
+Breakpoint 2 at file ../../../tests/sdb/cond-if.slax, line 16
+(sdb) run
+Reached breakpoint 2, at ../../../tests/sdb/cond-if.slax:16
+  Condition: '$n > 2'
+cond-if.slax: 16:     <level> $n;
+(sdb) print $n
+[number] 3.000000
+
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/cond-if.slax:10
+  Condition: '$n > 2'
+cond-if.slax: 10:     <level> $n;
+(sdb) print $n
+[number] 3.000000
+
+(sdb) continue
+Reached breakpoint 2, at ../../../tests/sdb/cond-if.slax:16
+  Condition: '$n > 2'
+cond-if.slax: 16:     <level> $n;
+(sdb) print $n
+[number] 4.000000
+
+(sdb) continue
+Script exited normally.
+(sdb) quit
