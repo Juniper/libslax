@@ -280,6 +280,15 @@ slaxExtRegisterOther (const char *namespace);
  */
 void slaxExtRegister (void);
 
+/*
+ * Look up the arity of a slax: extension function by name, as
+ * recorded in its slax_function_table_t entry.  Returns 0 and
+ * fills nargsp/min_argsp if found; returns -1 (leaving them
+ * untouched) if "name" is not a known slax: function.
+ */
+int
+slaxExtFindArity (const char *name, int *nargsp, int *min_argsp);
+
 /**
  * Initial the randomizer
  */
