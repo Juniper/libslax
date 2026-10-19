@@ -3723,6 +3723,110 @@ slaxInitRandomizer (void)
 }
  
 /*
+ * Functions registered under whatever namespace the caller gives
+ * slaxExtRegisterOther() (SLAX_URI, when called with NULL).
+ */
+static slax_function_table_t slaxExtOtherTable[] = {
+    {
+	"break-lines", slaxExtBreakLines,
+	"Break a string into lines", "(string)", XPATH_NODESET, -1, 1,
+    },
+    {
+	"break_lines", slaxExtBreakLines, /*OLD*/
+	"Break a string into lines", "(string)", XPATH_NODESET, -1, 1,
+    },
+    {
+	"dampen", slaxExtDampen,
+	"Rate-limit a signal", "(tag, period, value)", XPATH_BOOLEAN, 3, -1,
+    },
+    {
+	"empty", slaxExtEmpty,
+	"Test if a value is empty", "(value)", XPATH_BOOLEAN, -1, -1,
+    },
+    {
+	"first-of", slaxExtFirstOf,
+	"Return the first non-empty argument", "(value, ...)",
+	XPATH_STRING, -1, -1,
+    },
+    {
+	"get-command", slaxExtGetCommand,
+	"Prompt for and return a command line", "(prompt)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"get-input", slaxExtGetInput,
+	"Prompt for and return a line of input", "(prompt)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"get-secret", slaxExtGetSecret,
+	"Prompt for and return a secret (without echo)", "(prompt)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"getsecret", slaxExtGetSecret, /*OLD*/
+	"Prompt for and return a secret (without echo)", "(prompt)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"input", slaxExtGetInput, /*OLD*/
+	"Prompt for and return a line of input", "(prompt)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"is-empty", slaxExtEmpty,
+	"Test if a value is empty", "(value)", XPATH_BOOLEAN, -1, -1,
+    },
+    {
+	"output", slaxExtOutput,
+	"Emit an output message", "(value, ...)", XPATH_BOOLEAN, -1, -1,
+    },
+    {
+	"progress", slaxExtProgress,
+	"Emit a progress message", "(value, ...)", XPATH_BOOLEAN, -1, -1,
+    },
+    {
+	"printf", slaxExtPrintf,
+	"Format and return a string", "(format, ...)", XPATH_STRING, -1, 1,
+    },
+    {
+	"regex", slaxExtRegex,
+	"Match a string against a regular expression",
+	"(string, pattern, flags?)", XPATH_NODESET, -1, 2,
+    },
+    {
+	"sleep", slaxExtSleep,
+	"Sleep for a period of time", "(seconds, nanoseconds?)",
+	XPATH_BOOLEAN, -1, 1,
+    },
+    {
+	"split", slaxExtSplit,
+	"Split a string using a regular expression",
+	"(string, pattern, limit?)", XPATH_NODESET, -1, 2,
+    },
+    {
+	"sprintf", slaxExtPrintf,
+	"Format and return a string", "(format, ...)", XPATH_STRING, -1, 1,
+    },
+#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
+    {
+	"sysctl", slaxExtSysctl,
+	"Return a sysctl value", "(name, type?)", XPATH_STRING, -1, 1,
+    },
+#endif
+    {
+	"syslog", slaxExtSyslog,
+	"Emit a message via syslog", "(priority, value, ...)",
+	XPATH_BOOLEAN, -1, 1,
+    },
+    {
+	"trace", slaxExtTrace,
+	"Emit a trace message", "(value, ...)", XPATH_BOOLEAN, -1, -1,
+    },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 },
+};
+
+/*
  * Register our extension functions.
  */
 int
@@ -3731,34 +3835,92 @@ slaxExtRegisterOther (const char *namespace)
     if (namespace == NULL)
 	namespace = SLAX_URI;
 
-    slaxRegisterFunction(namespace, "break-lines", slaxExtBreakLines);
-    slaxRegisterFunction(namespace, "break_lines", slaxExtBreakLines); /*OLD*/
-    slaxRegisterFunction(namespace, "dampen", slaxExtDampen);
-    slaxRegisterFunction(namespace, "empty", slaxExtEmpty);
-    slaxRegisterFunction(namespace, "first-of", slaxExtFirstOf);
-    slaxRegisterFunction(namespace, "get-command", slaxExtGetCommand);
-    slaxRegisterFunction(namespace, "get-input", slaxExtGetInput);
-    slaxRegisterFunction(namespace, "get-secret", slaxExtGetSecret);
-    slaxRegisterFunction(namespace, "getsecret", slaxExtGetSecret); /*OLD*/
-    slaxRegisterFunction(namespace, "input", slaxExtGetInput); /*OLD*/
-    slaxRegisterFunction(namespace, "is-empty", slaxExtEmpty);
-    slaxRegisterFunction(namespace, "output", slaxExtOutput);
-    slaxRegisterFunction(namespace, "progress", slaxExtProgress);
-    slaxRegisterFunction(namespace, "printf", slaxExtPrintf);
-    slaxRegisterFunction(namespace, "regex", slaxExtRegex);
-    slaxRegisterFunction(namespace, "sleep", slaxExtSleep);
-    slaxRegisterFunction(namespace, "split", slaxExtSplit);
-    slaxRegisterFunction(namespace, "sprintf", slaxExtPrintf);
-#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTLBYNAME)
-    slaxRegisterFunction(namespace, "sysctl", slaxExtSysctl);
-#endif
-    slaxRegisterFunction(namespace, "syslog", slaxExtSyslog);
-    slaxRegisterFunction(namespace, "trace", slaxExtTrace);
+    slaxRegisterFunctionTable(namespace, slaxExtOtherTable);
 
     return 0;
 }
 
 /* ---------------------------------------------------------------------- */
+
+/*
+ * Functions registered directly under SLAX_URI (not shared with any
+ * other namespace).
+ */
+static slax_function_table_t slaxExtMainTable[] = {
+    {
+	FUNC_BUILD_SEQUENCE, slaxExtBuildSequence,
+	"Build a sequence of numbers", "(start, stop)",
+	XPATH_NODESET, 2, -1,
+    },
+    {
+	"base64-decode", slaxExtBase64Decode,
+	"Decode a base64 string", "(string, flags?)", XPATH_STRING, -1, 1,
+    },
+    {
+	"base64-encode", slaxExtBase64Encode,
+	"Encode a string as base64", "(string)", XPATH_STRING, 1, -1,
+    },
+    {
+	"debug", slaxExtDebug,
+	"Enter the slax debugger", "()", XPATH_BOOLEAN, 0, -1,
+    },
+    {
+	"document", slaxExtDocument,
+	"Write a document to a file", "(contents, options?)",
+	XPATH_BOOLEAN, -1, 1,
+    },
+    {
+	"evaluate", slaxExtEvaluate,
+	"Evaluate a string as an XPath expression", "(string)",
+	XPATH_NODESET, 1, -1,
+    },
+    {
+	"join", slaxExtJoin,
+	"Join a node-set into a string", "(separator, ...)",
+	XPATH_STRING, -1, 1,
+    },
+    {
+	"value", slaxExtValue,
+	"Return the value of a variable reference", "(name)",
+	XPATH_STRING, 1, -1,
+    },
+    {
+	"get-host", slaxExtGetHost,
+	"Resolve a hostname or address", "(name, ...)",
+	XPATH_NODESET, -1, 1,
+    },
+    {
+	"ends-with", slaxExtEndsWith,
+	"Test if a string ends with another string",
+	"(string, suffix)", XPATH_BOOLEAN, 2, -1,
+    },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 },
+};
+
+/*
+ * Scan the slax: extension function tables for "name", returning
+ * its recorded arity.  Returns 0 and fills nargsp/min_argsp when
+ * found, -1 (untouched) otherwise.
+ */
+int
+slaxExtFindArity (const char *name, int *nargsp, int *min_argsp)
+{
+    slax_function_table_t *tables[] = { slaxExtMainTable, slaxExtOtherTable };
+    slax_function_table_t *ftp;
+    unsigned i;
+
+    for (i = 0; i < sizeof(tables) / sizeof(tables[0]); i++) {
+	for (ftp = tables[i]; ftp->ft_name; ftp++) {
+	    if (streq(ftp->ft_name, name)) {
+		*nargsp = ftp->ft_nargs;
+		*min_argsp = ftp->ft_min_args;
+		return 0;
+	    }
+	}
+    }
+
+    return -1;
+}
 
 /**
  * Registers the SLAX-only (not shared) extension functions
@@ -3772,18 +3934,7 @@ slaxExtRegister (void)
     slaxRegisterElement(SLAX_URI, ELT_WHILE,
 			slaxWhileCompile, slaxWhileElement);
 
-    slaxRegisterFunction(SLAX_URI, FUNC_BUILD_SEQUENCE, slaxExtBuildSequence);
-
-    slaxRegisterFunction(SLAX_URI, "base64-decode", slaxExtBase64Decode);
-    slaxRegisterFunction(SLAX_URI, "base64-encode", slaxExtBase64Encode);
-    slaxRegisterFunction(SLAX_URI, "debug", slaxExtDebug);
-    slaxRegisterFunction(SLAX_URI, "document", slaxExtDocument);
-    slaxRegisterFunction(SLAX_URI, "evaluate", slaxExtEvaluate);
-    slaxRegisterFunction(SLAX_URI, "join", slaxExtJoin);
-    slaxRegisterFunction(SLAX_URI, "value", slaxExtValue);
-
-    slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
-    slaxRegisterFunction(SLAX_URI, "ends-with", slaxExtEndsWith);
+    slaxRegisterFunctionTable(SLAX_URI, slaxExtMainTable);
 
     slaxExtRegisterOther(NULL);
 
