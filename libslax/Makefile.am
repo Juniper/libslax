@@ -24,7 +24,12 @@ slaxincdir = ${includedir}/libslax
 
 AM_CFLAGS = \
     -I${top_builddir} \
+    -I${top_builddir}/libpin \
     -I${top_srcdir} \
+    -I${top_builddir}/libxo \
+    -I${top_builddir}/libxo/libxo \
+    -I${top_builddir}/libxo/filter \
+    -I${top_builddir}/libxo/build/filter \
     ${LIBXSLT_CFLAGS} \
     ${LIBXML_CFLAG} \
     ${WARNINGS}
@@ -36,6 +41,7 @@ AM_CFLAGS += \
 lib_LTLIBRARIES = libslax.la
 libslax_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
 libslax_la_LIBADD += $(top_builddir)/parrotdb/libparrotdb.la
+libslax_la_LIBADD += $(top_builddir)/libpin/libpin.la
 libslax_la_LIBADD += ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
 slaxinc_HEADERS = \
