@@ -623,94 +623,94 @@ slax_function_table_t slaxBitTable[] = {
     {
 	"and", extBitAnd,
 	"Bit-wise AND operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
     {
 	"ashift-right", extBitAShiftRight,
 	"Arithmentic shift a value to the right",
-	"(bit-string, count)", XPATH_STRING,
+	"(bit-string, count)", XPATH_STRING, 2, -1,
     },
     {
 	"clear", extBitClear,
 	"Clear a bit inside a bit string",
-	"(bit-string, bit-number)", XPATH_STRING,
+	"(bit-string, bit-number)", XPATH_STRING, -1, 1,
     },
     {
 	"compare", extBitCompare,
 	"Compare two bit strings, returning 1, 0, or -1",
-	"(bit-string, bit-string)", XPATH_NUMBER,
+	"(bit-string, bit-string)", XPATH_NUMBER, 2, -1,
     },
     {
 	"from-hex", extBitFromHex,
 	"Return a bit string based on a hexidecimal number",
-	"(hex-value, len?)", XPATH_STRING,
+	"(hex-value, len?)", XPATH_STRING, -1, 1,
     },
     {
 	"from-int", extBitFromInt,
 	"Return a bit string based on a number",
-	"(value, len?)", XPATH_STRING,
+	"(value, len?)", XPATH_STRING, -1, 1,
     },
     {
 	"mask", extBitMask,
 	"Return a bit string of len with the low count bits set",
-	"(count, len?)", XPATH_STRING,
+	"(count, len?)", XPATH_STRING, -1, 1,
     },
     {
 	"nand", extBitNand,
 	"Bit-wise NAND operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
     {
 	"nor", extBitNor,
 	"Bit-wise NOR operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
     {
 	"not", extBitNot,
 	"Bit-wise NOT operation",
-	"(bit-string)", XPATH_STRING,
+	"(bit-string)", XPATH_STRING, 1, -1,
     },
     {
 	"or", extBitOr,
 	"Bit-wise OR operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
     {
 	"set", extBitSet,
 	"Set a bit within a bit-string",
-	"(bit-string, bit-number)", XPATH_STRING,
+	"(bit-string, bit-number)", XPATH_STRING, -1, 1,
     },
     {
 	"shift-left", extBitShiftLeft,
 	"Shift a value to the left",
-	"(bit-string, count)", XPATH_STRING,
+	"(bit-string, count)", XPATH_STRING, 2, -1,
     },
     {
 	"shift-right", extBitShiftRight,
 	"Shift a value to the right",
-	"(bit-string, count)", XPATH_STRING,
+	"(bit-string, count)", XPATH_STRING, 2, -1,
     },
     {
 	"to-hex", extBitToHex,
 	"Return the hexidecimal value of a bit-string",
-	"(bit-string)", XPATH_STRING,
+	"(bit-string)", XPATH_STRING, 1, -1,
     },
     {
 	"to-int", extBitToInt,
 	"Return the numeric value of a bit-string",
-	"(bit-string)", XPATH_NUMBER,
+	"(bit-string)", XPATH_NUMBER, 1, -1,
     },
     {
 	"xnor", extBitXnor,
 	"Bit-wise XNOR operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
     {
 	"xor", extBitXor,
 	"Bit-wise XOR operator",
-	"(bit-string, bit-string)", XPATH_STRING,
+	"(bit-string, bit-string)", XPATH_STRING, 2, -1,
     },
-    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED },
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 },
 };
 
 SLAX_DYN_FUNC(slaxDynLibInit)
