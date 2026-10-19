@@ -2489,6 +2489,20 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 		      pin_name_id_t src_file_id, uint64_t *complexity_out)
 {
     pin_op_id_t head = pin_op_id_null_atom();
+
+    /*
+     * A node with no children at all can never produce a single op, so
+     * skip straight to "no ops" rather than seeding namespace bindings
+     * that nothing will use: that seeding emits real PIN_OP_NS_PUSH/POP
+     * ops of its own, which would otherwise turn an empty body into a
+     * non-null (but functionally inert) op sequence.
+     */
+    if (body_node->children == NULL) {
+	if (complexity_out)
+	    *complexity_out = 0;
+	return head;
+    }
+
     pin_op_cursor_t cur = {
 	.poc_nextp = &head,
 	.poc_rb = rb,
