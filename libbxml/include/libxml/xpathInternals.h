@@ -425,6 +425,7 @@ XMLPUBFUN xmlXPathObject *xmlXPathNewFloat (double val);
 XMLPUBFUN xmlXPathObject *xmlXPathNewBoolean (int val);
 XMLPUBFUN xmlXPathObject *xmlXPathNewNodeSet (xmlNode *val);
 XMLPUBFUN xmlXPathObject *xmlXPathNewValueTree (xmlNode *val);
+XMLPUBFUN xmlXPathObjectType xmlXPathSetRtfType (xmlXPathObjectType type);
 XMLPUBFUN int xmlXPathNodeSetAdd (xmlNodeSet *cur, xmlNode *val);
 XMLPUBFUN int xmlXPathNodeSetAddUnique (xmlNodeSet *cur, xmlNode *val);
 XMLPUBFUN int xmlXPathNodeSetAddNs (xmlNodeSet *cur, xmlNode *node, xmlNs *ns);
