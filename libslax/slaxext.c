@@ -3376,10 +3376,23 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
     else if (xmlXPathObjectGetType(xop) == XPATH_STRING)
 	valuePush(ctxt, xmlXPathNewString(xmlXPathObjectGetStringval(xop)));
  
-    else if (xmlXPathObjectGetType(xop) == XPATH_XSLT_TREE) {
-	if (xmlXPathObjectGetNodesetval(xop) == NULL || xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)) == 0)
-	    goto fail;
-
+    else if ((xmlXPathObjectGetType(xop) == XPATH_XSLT_TREE
+		|| xmlXPathObjectGetType(xop) == XPATH_NODESET)
+	    && xmlXPathObjectGetNodesetval(xop) != NULL
+	    && xmlNodeSetGetNodeNr(xmlXPathObjectGetNodesetval(xop)) == 1
+	    && xsltIsResultTreeFragment(
+		   xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0))) {
+	/*
+	 * This is a value tree (RTF), regardless of whether XPath's
+	 * node-set/RTF type split is in effect (see
+	 * xmlXPathSetRtfType()): keep its one node (the RVT root) in
+	 * the result node-set as-is. Returning its children instead
+	 * seems more "correct" but does not work in practice: it
+	 * breaks positional/string-value semantics for callers (e.g.
+	 * value-of takes only the first child, rather than the whole
+	 * RTF's string value) -- see tests/core/test-empty-23.slax and
+	 * test-empty-33.slax.
+	 */
 	parent = xmlNodeSetGetNodeEntry(xmlXPathObjectGetNodesetval(xop), 0);
 	if (parent == NULL || xmlNodeGetChildren(parent) == NULL)
 	    goto fail;
@@ -3393,18 +3406,13 @@ slaxExtValue (xmlXPathParserContext *ctxt, int nargs)
 	    if (ret == NULL)
 		goto fail;
 
-#if THIS_FIX_DOES_NOT_WORK
-            /* For an RTF, we want the child nodes, not the parent */
-            for (child = xmlNodeGetChildren(parent); child; child = xmlNodeGetNext(child))
-                xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), child);
-#else
 	    xmlXPathNodeSetAdd(xmlXPathObjectGetNodesetval(ret), parent);
-#endif
 
 	    valuePush(ctxt, ret);
 	}
 
-    } else if (xmlXPathObjectGetType(xop) == XPATH_NODESET) {
+    } else if (xmlXPathObjectGetType(xop) == XPATH_NODESET
+	    || xmlXPathObjectGetType(xop) == XPATH_XSLT_TREE) {
 	if (xmlXPathObjectGetNodesetval(xop) == NULL)
 	    goto fail;
 
