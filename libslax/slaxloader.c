@@ -1144,6 +1144,7 @@ slaxEnable (int enable)
 	}
 
 	slaxDynInit();
+	slaxDynSetPinOps(TRUE);
 
 	/*
 	 * Save the original doc loader to pass non-slax file into
@@ -1157,6 +1158,7 @@ slaxEnable (int enable)
 	xmlSetExternalEntityLoader(slaxLoadEntity);
 
     } else if (slaxEnabled && !enable) {
+	slaxDynSetPinOps(FALSE);
 	slaxDynClean();
 	if (slaxIncludesInited)
 	    slaxDataListClean(&slaxIncludes);
