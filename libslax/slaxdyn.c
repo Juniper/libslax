@@ -71,6 +71,13 @@ static slax_data_list_t slaxDynDirList;
 static slax_data_list_t slaxDynLoaded;
 static slax_dyn_list_t slaxDynLibraries;
 
+/*
+ * The bit: extension's URI, duplicated here (rather than shared via a
+ * header) because extensions/bit is a separately built module; keep
+ * this in sync with ext_bit.c's private URI_BIT.
+ */
+#define SLAXDYN_BIT_URI "http://xml.libslax.org/bit"
+
 static int slaxDynInited;
 
 void
@@ -441,10 +448,63 @@ slaxPinScalarCall (xo_filter_data_t *dp UNUSED, int argc, const char **argv)
 }
 
 /*
+ * Scan the retained slax_function_table_t for the dynamically loaded
+ * module registered under "uri" (if any) for "name", returning its
+ * recorded arity.  Returns 0 and fills nargsp/min_argsp when found,
+ * -1 (untouched) otherwise.
+ */
+static int
+slaxDynFindArity (const char *uri, const char *name,
+		   int *nargsp, int *min_argsp)
+{
+    slax_dyn_node_t *dnp;
+    slax_function_table_t *ftp;
+
+    TAILQ_FOREACH(dnp, &slaxDynLibraries, dn_link) {
+	slax_dyn_arg_t *dap = &dnp->dn_da;
+
+	if (dap->da_uri == NULL || !streq(dap->da_uri, uri))
+	    continue;
+
+	for (ftp = dap->da_functions; ftp && ftp->ft_name; ftp++) {
+	    if (streq(ftp->ft_name, name)) {
+		*nargsp = ftp->ft_nargs;
+		*min_argsp = ftp->ft_min_args;
+		return 0;
+	    }
+	}
+    }
+
+    return -1;
+}
+
+/*
+ * Look up the recorded arity for "local" under "uri", for the subset
+ * of namespaces we have real arity data for (slax: and bit:).  Every
+ * other namespace -- including the other dynamically loaded modules
+ * (os:, db:, curl:, xutil:), whose tables don't yet carry real
+ * ft_nargs/ft_min_args values -- falls through to "not found", which
+ * slaxPinFindFunction() turns into the unchecked -1/-1.
+ */
+static int
+slaxPinFindArity (const char *local, const char *uri,
+		   int *nargsp, int *min_argsp)
+{
+    if (streq(uri, SLAX_URI))
+	return slaxExtFindArity(local, nargsp, min_argsp);
+
+    if (streq(uri, SLAXDYN_BIT_URI))
+	return slaxDynFindArity(uri, local, nargsp, min_argsp);
+
+    return -1;
+}
+
+/*
  * pdo_find_function: resolve "local" under "uri" to an xmlXPathFunction
  * (loading the extension module for "uri" if needed) and hand back the
- * scalar-call adapter in its place.  Arity is not checked; nargsp and
- * min_argsp are always set to -1.
+ * scalar-call adapter in its place.  Arity is consulted for slax: and
+ * bit:, via slaxPinFindArity(); every other namespace gets the
+ * unchecked -1/-1 (not checked).
  */
 static xo_eval_ext_fn_t
 slaxPinFindFunction (const char *local, const char *uri,
@@ -461,8 +521,10 @@ slaxPinFindFunction (const char *local, const char *uri,
 
     slaxPinScalarFunc = func;
 
-    *nargsp = -1;
-    *min_argsp = -1;
+    if (slaxPinFindArity(local, uri, nargsp, min_argsp) < 0) {
+	*nargsp = -1;
+	*min_argsp = -1;
+    }
 
     return slaxPinScalarCall;
 }
