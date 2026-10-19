@@ -25,6 +25,18 @@ typedef struct slax_function_table_s {
     const char *ft_desc;	/* Description */
     const char *ft_arghelp;	/* Help string for arguments */
     xmlXPathObjectType ft_returns; /* Type of returned data */
+
+    /*
+     * Arity, mirroring xo_eval_func_map_t's xfm_nargs/xfm_min_args
+     * convention: ft_nargs == -1 means "don't check the exact count";
+     * ft_min_args is then a floor on the count (also -1 for "no
+     * floor either").  ft_min_args is ignored when ft_nargs != -1.
+     * An entry that omits these two (an initializer with fewer than
+     * seven members) gets 0/0, which means "exactly zero arguments",
+     * NOT "unchecked" -- every entry must set them explicitly.
+     */
+    int ft_nargs;
+    int ft_min_args;
 } slax_function_table_t;
 
 typedef struct slax_element_table_s {
