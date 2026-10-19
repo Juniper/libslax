@@ -4,6 +4,6 @@
     number;
     boolean;
     node-set;
-    RTF;
+    node-set;
     external;                    
   </out>
