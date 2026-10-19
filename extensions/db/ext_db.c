@@ -1100,54 +1100,54 @@ slax_function_table_t slaxDbTable[] = {
     {
 	"close", extDbClose,
 	"Close a database handle",
-	"(handle)", XPATH_UNDEFINED,
+	"(handle)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"create", extDbCreate,
 	"Creates a table with given schema",
-	"(handle, schema)", XPATH_NODESET,
+	"(handle, schema)", XPATH_NODESET, -1, -1,
     },
     {
 	"delete", extDbDelete,
 	"Deletes selected instances",
-	"(handle, input)", XPATH_NODESET,
+	"(handle, input)", XPATH_NODESET, -1, -1,
     },
     {
 	"fetch", extDbFetch,
 	"Fetches data from given cursor",
-	"(handle, cursor)", XPATH_XSLT_TREE,
+	"(handle, cursor)", XPATH_XSLT_TREE, -1, -1,
     },
     {
 	"find", extDbFind,
 	"Finds data that matches given input",
-	"(handle, input)", XPATH_NODESET,
+	"(handle, input)", XPATH_NODESET, -1, -1,
     },
     {
 	"find-and-fetch", extDbFindAndFetch,
 	"Finds and returns the data that matches given input",
-	"(handle, input)", XPATH_NODESET,
+	"(handle, input)", XPATH_NODESET, -1, -1,
     },
     {
 	"insert", extDbInsert,
 	"Inserts given data into the database",
-	"(handle, data)", XPATH_NODESET,
+	"(handle, data)", XPATH_NODESET, -1, -1,
     },
     {
 	"open", extDbOpen,
 	"Opens database and returns the handle. Creates if possible",
-	"(handle, options)", XPATH_NODESET,
+	"(handle, options)", XPATH_NODESET, -1, -1,
     },
     {
 	"query", extDbQuery,
 	"Queries the database",
-	"(handle, query)", XPATH_NODESET,
+	"(handle, query)", XPATH_NODESET, -1, -1,
     },
     {
 	"update", extDbUpdate,
 	"Updates selected instances with given data",
-	"(handle, input)", XPATH_NODESET,
+	"(handle, input)", XPATH_NODESET, -1, -1,
     },
-    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 }
 };
 
 void
