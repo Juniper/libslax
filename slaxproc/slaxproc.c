@@ -71,6 +71,7 @@ static int opt_width;		/* Output line width limit */
 static int opt_no_readline;	/* Don't use readline/libedit */
 static int opt_partial;		/* Parse partial contents */
 static int opt_slax_output;	/* Make output in SLAX format */
+static int opt_use_rtfs;	/* Restore the RTF/node-set type distinction */
 static int opt_verbose;		/* How verbose do you want it? */
 static int opt_want_parens;	/* They really want the parens */
 
@@ -99,6 +100,7 @@ static struct opts {
     int o_no_tty;
     int o_profile;
     int o_profile_mode;
+    int o_use_rtfs;
     int o_version_only;
     int o_want_parens;
 } opts;
@@ -150,6 +152,7 @@ static const char slaxproc_help[] =
 "\t--profile-mode <mode>: enable profiler mode (e.g. 'brief')\n"
 "\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
 "\t--trace <file> OR -t <file>: write trace data to a file\n"
+"\t--use-rtfs: keep result tree fragments distinct from node-sets\n"
 "\t--verbose OR -v: enable debugging output (slaxLog())\n"
 "\t--version OR -V: show version information (and exit)\n"
 "\t--version-only: show version information line (and exit)\n"
@@ -206,6 +209,7 @@ static struct option long_opts[] = {
     { "profile-mode", required_argument, &opts.o_profile_mode, 1 },
     { "slax-output", no_argument, NULL, 'S' },
     { "trace", required_argument, NULL, 't' },
+    { "use-rtfs", no_argument, &opts.o_use_rtfs, 1 },
     { "verbose", no_argument, NULL, 'v' },
     { "version", no_argument, NULL, 'V' },
     { "version-only", no_argument, &opts.o_version_only, 1 },
@@ -1347,6 +1351,9 @@ main (int argc UNUSED, char **argv)
 	    } else if (opts.o_no_tty) {
 		ioflags |= SIF_NO_TTY;
 
+	    } else if (opts.o_use_rtfs) {
+		opt_use_rtfs = TRUE;
+
 	    } else if (opts.o_version_only) {
 		print_version(FALSE);
 		return 0;
@@ -1400,6 +1407,9 @@ main (int argc UNUSED, char **argv)
 
     if (opt_check_namespaces)
 	slaxSetCheckNamespaces(opt_check_namespaces);
+
+    if (opt_use_rtfs)
+	xmlXPathSetRtfType(XPATH_XSLT_TREE);
 
     if (opt_no_readline)
 	slaxIoUseReadline(FALSE);
