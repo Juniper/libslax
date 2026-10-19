@@ -923,49 +923,49 @@ slax_function_table_t slaxXutilTable[] = {
     {
 	"xml-to-string", extXutilXmlToString,
 	"Encodes XML hierarchies as text strings",
-	"(xml-data)", XPATH_STRING,
+	"(xml-data)", XPATH_STRING, -1, -1,
     },
     {
 	"string-to-xml", extXutilStringToXml,
 	"Decodes data from strings into XML nodes",
-	"(string)", XPATH_XSLT_TREE,
+	"(string)", XPATH_XSLT_TREE, -1, -1,
     },
     {
 	"xml-to-json", extXutilXmlToJson,
 	"Encodes XML hierarchies as JSON data",
-	"(xml-data)", XPATH_STRING,
+	"(xml-data)", XPATH_STRING, -1, -1,
     },
     {
 	"json-to-xml", extXutilJsonToXml,
 	"Decodes data from JSON into XML nodes",
-	"(string)", XPATH_XSLT_TREE,
+	"(string)", XPATH_XSLT_TREE, -1, -1,
     },
     {
 	"max-call-depth", extXutilMaxCallDepth,
 	"Sets the maximum call depth for recursion in the XSLT engine",
-	"(call-depth)", XPATH_UNDEFINED,
+	"(call-depth)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"xml-to-slax", extXutilXmlToSlax,
 	"Converts an XML hierarchy into a string of SLAX syntax",
-	"(data, version-string)", XPATH_STRING,
+	"(data, version-string)", XPATH_STRING, -1, -1,
     },
     {
 	"slax-to-xml", extXutilSlaxToXml,
 	"Converts a string containing a SLAX hierarchy into an XML hierarchy",
-	"(string)", XPATH_STRING,
+	"(string)", XPATH_STRING, -1, -1,
     },
     {
 	"common", extXutilCommon,
 	"Return the nodes in the first nodeset that appear in any others",
-	"(ns1, ns2, ...)", XPATH_NODESET,
+	"(ns1, ns2, ...)", XPATH_NODESET, -1, -1,
     },
     {
 	"distinct", extXutilDistinct,
 	"Return the nodes that appear only in the first nodeset",
-	"(ns1, ns2, ...)", XPATH_NODESET,
+	"(ns1, ns2, ...)", XPATH_NODESET, -1, -1,
     },
-    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 }
 };
 
 SLAX_DYN_FUNC(slaxDynLibInit)
