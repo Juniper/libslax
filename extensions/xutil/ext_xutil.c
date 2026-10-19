@@ -771,35 +771,36 @@ extXutilSetsCheckNode (xmlNodeSet *results, xmlNodePtr nop,
 
 	switch (xmlXPathObjectGetType(xop)) {
 	case XPATH_NODESET:
-	    if (xmlXPathObjectGetNodesetval(xop) == NULL)
-		break;
-
-	    tab = xmlXPathObjectGetNodesetval(xop);
-	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
-		match = extXutilSetsCheckOneNode(nop, xmlNodeSetGetNodeEntry(tab, i), TRUE);
-		if (match)
-		    break;
-	    }
-
-	    break;
-
 	case XPATH_XSLT_TREE:
 	    if (xmlXPathObjectGetNodesetval(xop) == NULL)
 		break;
 
-	    /* It's a tree, so there should only be one node, but...
-	     * We need to look at the children of the tree, not the
-	     * root
+	    /*
+	     * A node here might be the root of a value tree (RTF),
+	     * regardless of whether XPath's node-set/RTF type split
+	     * is in effect (see xmlXPathSetRtfType()); check that
+	     * structurally, and if so, compare its children, not
+	     * the root itself.
 	     */
 	    tab = xmlXPathObjectGetNodesetval(xop);
 	    for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
-		xmlNode *gop, *cop =  xmlNodeSetGetNodeEntry(tab, i);
-		for (gop = xmlNodeGetChildren(cop); gop; gop = xmlNodeGetNext(gop)) {
-		    match = extXutilSetsCheckOneNode(nop, gop, TRUE);
-		    if (match)
-			break;
+		xmlNode *cop = xmlNodeSetGetNodeEntry(tab, i);
+
+		if (xsltIsResultTreeFragment(cop)) {
+		    xmlNode *gop;
+		    for (gop = xmlNodeGetChildren(cop); gop; gop = xmlNodeGetNext(gop)) {
+			match = extXutilSetsCheckOneNode(nop, gop, TRUE);
+			if (match)
+			    break;
+		    }
+		} else {
+		    match = extXutilSetsCheckOneNode(nop, cop, TRUE);
 		}
+
+		if (match)
+		    break;
 	    }
+
 	    break;
 
 	case XPATH_BOOLEAN:
@@ -864,29 +865,29 @@ extXutilCheck (xmlXPathParserContext *ctxt, int nargs, int common)
 
     switch (xmlXPathObjectGetType(base)) {
     case XPATH_NODESET:
-	if (xmlXPathObjectGetNodesetval(base) == NULL)
-	    break;
-
-	tab = xmlXPathObjectGetNodesetval(base);
-	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
-	    extXutilSetsCheckNode(results, xmlNodeSetGetNodeEntry(tab, i),
-				  objstack, count, common);
-	}
-	break;
-
     case XPATH_XSLT_TREE:
 	if (xmlXPathObjectGetNodesetval(base) == NULL)
 	    break;
 
-	/* It's a tree, so there should only be one node, but...
-	 * We need to look at the children of the tree, not the
-	 * root
+	/*
+	 * A node here might be the root of a value tree (RTF),
+	 * regardless of whether XPath's node-set/RTF type split is
+	 * in effect (see xmlXPathSetRtfType()); check that
+	 * structurally, and if so, use its children, not the root
+	 * itself.
 	 */
 	tab = xmlXPathObjectGetNodesetval(base);
 	for (i = 0; i < xmlNodeSetGetNodeNr(tab); i++) {
-	    xmlNode *cop, *nop =  xmlNodeSetGetNodeEntry(tab, i);
-	    for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop))
-		extXutilSetsCheckNode(results, cop, objstack, count, common);
+	    xmlNode *nop =  xmlNodeSetGetNodeEntry(tab, i);
+
+	    if (xsltIsResultTreeFragment(nop)) {
+		xmlNode *cop;
+		for (cop = xmlNodeGetChildren(nop); cop; cop = xmlNodeGetNext(cop)) {
+		    extXutilSetsCheckNode(results, cop, objstack, count, common);
+		}
+	    } else {
+		extXutilSetsCheckNode(results, nop, objstack, count, common);
+	    }
 	}
 	break;
 
