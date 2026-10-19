@@ -1518,29 +1518,29 @@ slax_function_table_t slaxCurlTable[] = {
     {
 	"close", extCurlClose,
 	"Close a CURL handle",
-	"(handle)", XPATH_UNDEFINED,
+	"(handle)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"perform", extCurlPerform,
 	"Perform a CURL transfer",
-	"(handle, options*)", XPATH_XSLT_TREE,
+	"(handle, options*)", XPATH_XSLT_TREE, -1, -1,
     },
     {
 	"single", extCurlSingle,
 	"Perform a CURL transfer",
-	"(options+)", XPATH_XSLT_TREE,
+	"(options+)", XPATH_XSLT_TREE, -1, -1,
     },
     {
 	"open", extCurlOpen,
 	"Open a CURL handle",
-	"()", XPATH_NODESET,
+	"()", XPATH_NODESET, -1, -1,
     },
     {
 	"set", extCurlSet,
 	"Set persistent options on a CURL handle",
-	"(handle, options+)", XPATH_UNDEFINED,
+	"(handle, options+)", XPATH_UNDEFINED, -1, -1,
     },
-    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 }
 };
 
 void
