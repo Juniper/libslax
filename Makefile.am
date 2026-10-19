@@ -13,8 +13,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
     libpsu \
     parrotdb \
-    libslax \
     libpin \
+    libslax \
     extensions \
     slaxproc \
     tests \
