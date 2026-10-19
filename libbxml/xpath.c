@@ -3256,6 +3256,37 @@ xmlXPathNewNodeSet (xmlNode *val)
     return ret;
 }
 
+/*
+ * Type assigned by xmlXPathNewValueTree() to the value trees (RTFs) it
+ * creates. Defaults to XPATH_NODESET: XPath 1.0's RTF/node-set split
+ * (predicates and location steps refuse to operate on XPATH_XSLT_TREE;
+ * see xmlXPathNodeCollectAndTest()) exists only to be worked around, by
+ * hand, with exslt:node-set() -- see xmlXPathSetRtfType().
+ */
+static xmlXPathObjectType xmlXPathRtfType = XPATH_NODESET;
+
+/**
+ * Sets the type that #xmlXPathNewValueTree uses to tag the value trees
+ * (result tree fragments) it creates. Pass `XPATH_XSLT_TREE` to restore
+ * historical XPath 1.0 behavior, in which such a value cannot be
+ * indexed or stepped into without first converting it with
+ * exslt:node-set(); pass `XPATH_NODESET` (the default) to make value
+ * trees fully steppable/indexable node-sets from the moment they're
+ * created.
+ *
+ * @param type  XPATH_NODESET or XPATH_XSLT_TREE
+ * @returns the previous type
+ */
+xmlXPathObjectType
+xmlXPathSetRtfType (xmlXPathObjectType type)
+{
+    xmlXPathObjectType ret = xmlXPathRtfType;
+
+    xmlXPathRtfType = type;
+
+    return ret;
+}
+
 /**
  * Create a new xmlXPathObject of type Value Tree (XSLT) and initialize
  * it with the tree root `val`
@@ -3271,7 +3302,7 @@ xmlXPathNewValueTree (xmlNode *val)
     ret = xmlXPathNewNodeSet(val);
     if (ret == NULL)
         return NULL;
-    ret->type = XPATH_XSLT_TREE;
+    ret->type = xmlXPathRtfType;
 
     return ret;
 }
