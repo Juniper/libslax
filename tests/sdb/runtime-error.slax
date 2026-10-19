@@ -8,5 +8,5 @@ main <top> {
         <item> 4;
     }
 
-    var $b = $a/item[. == 2];
+    var $b = substring($a, 1, 2, 3);
 }
