@@ -38,12 +38,16 @@
 
 #include <libxml/uri.h>
 #include <libxml/tree.h>
+#include <libxml/xpathInternals.h>
 
 #include "slaxinternals.h"
 #include <libslax/slax.h>
 #include "slaxdata.h"
 
 #include "slaxdyn.h"
+
+#include <libxo/xo.h>
+#include <libpin/pin_dyn.h>
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -331,6 +335,167 @@ slaxDynMarkExslt (void)
     slaxDynMarkLoaded("http://exslt.org/sets.ext");
     slaxDynMarkLoaded("http://exslt.org/strings.ext");
     slaxDynMarkLoaded("http://icl.com/saxon.ext");
+}
+
+/*
+ * A single, generic adapter that lets libpin's xo_filter-based
+ * evaluator call an xmlXPathFunction -- the calling convention shared
+ * by libxslt's builtin functions and dynamically loaded extension
+ * functions -- through the xo_eval_ext_fn_t signature.  Each call is
+ * scalar in, scalar out: string arguments go in, and a single number,
+ * boolean, or string comes back.
+ *
+ * slaxPinFindFunction() resolves a name to an xmlXPathFunction and
+ * stashes it here immediately before handing back this adapter, so
+ * the same adapter can be reused for every function it resolves.
+ */
+static xmlXPathFunction slaxPinScalarFunc;
+
+/*
+ * A single buffer, reused (and grown as needed) across calls, used to
+ * hand back XO_EVAL_EXT_STRING results.  The caller consumes the
+ * returned xee_str before this adapter is called again, so reusing
+ * one buffer rather than allocating a fresh one per call is safe.
+ */
+static char *slaxPinScalarBuf;
+static size_t slaxPinScalarBufMax;
+
+static const char *
+slaxPinScalarSaveString (const char *str)
+{
+    size_t len = strlen(str) + 1;
+
+    if (len > slaxPinScalarBufMax) {
+	slaxPinScalarBuf = xmlRealloc(slaxPinScalarBuf, len);
+	slaxPinScalarBufMax = len;
+    }
+
+    memcpy(slaxPinScalarBuf, str, len);
+    return slaxPinScalarBuf;
+}
+
+static xo_eval_ext_value_t
+slaxPinScalarCall (xo_filter_data_t *dp UNUSED, int argc, const char **argv)
+{
+    xo_eval_ext_value_t rv;
+    xmlXPathContext *ctxt;
+    xmlXPathParserContext *pctxt;
+    xmlXPathObject *obj;
+    int i;
+
+    bzero(&rv, sizeof(rv));
+    rv.xee_type = XO_EVAL_EXT_MISSING;
+
+    if (slaxPinScalarFunc == NULL)
+	return rv;
+
+    ctxt = xmlXPathNewContext(NULL);
+    if (ctxt == NULL)
+	return rv;
+
+    pctxt = xmlXPathNewParserContext(NULL, ctxt);
+    if (pctxt == NULL) {
+	xmlXPathFreeContext(ctxt);
+	return rv;
+    }
+
+    for (i = 0; i < argc; i++)
+	valuePush(pctxt, xmlXPathNewCString(argv[i]));
+
+    (*slaxPinScalarFunc)(pctxt, argc);
+
+    if (pctxt->error == XPATH_EXPRESSION_OK) {
+	obj = valuePop(pctxt);
+	if (obj) {
+	    switch (obj->type) {
+	    case XPATH_NUMBER:
+		rv.xee_type = XO_EVAL_EXT_NUMBER;
+		rv.xee_num = obj->floatval;
+		break;
+
+	    case XPATH_BOOLEAN:
+		rv.xee_type = XO_EVAL_EXT_BOOLEAN;
+		rv.xee_bool = obj->boolval;
+		break;
+
+	    default: {
+		xmlChar *str = xmlXPathCastToString(obj);
+		if (str) {
+		    rv.xee_type = XO_EVAL_EXT_STRING;
+		    rv.xee_str = slaxPinScalarSaveString((const char *) str);
+		    if (str != obj->stringval)
+			xmlFree(str);
+		}
+		break;
+	    }
+	    }
+
+	    xmlXPathFreeObject(obj);
+	}
+    }
+
+    xmlXPathFreeParserContext(pctxt);
+    xmlXPathFreeContext(ctxt);
+
+    return rv;
+}
+
+/*
+ * pdo_find_function: resolve "local" under "uri" to an xmlXPathFunction
+ * (loading the extension module for "uri" if needed) and hand back the
+ * scalar-call adapter in its place.  Arity is not checked; nargsp and
+ * min_argsp are always set to -1.
+ */
+static xo_eval_ext_fn_t
+slaxPinFindFunction (const char *local, const char *uri,
+		      int *nargsp, int *min_argsp)
+{
+    xmlXPathFunction func;
+
+    slaxDynLoadNamespace(NULL, NULL, uri);
+
+    func = xsltExtModuleFunctionLookup((const xmlChar *) local,
+					(const xmlChar *) uri);
+    if (func == NULL)
+	return NULL;
+
+    slaxPinScalarFunc = func;
+
+    *nargsp = -1;
+    *min_argsp = -1;
+
+    return slaxPinScalarCall;
+}
+
+/*
+ * pdo_resolve_prefix: resolve a "well-known" prefix (one of the
+ * extension directory's ".prefix" symlinks) to its URI.
+ */
+static const char *
+slaxPinResolvePrefix (const char *prefix)
+{
+    static char buf[MAXPATHLEN];
+
+    if (slaxDynFindPrefix(buf, sizeof(buf), prefix) < 0)
+	return NULL;
+
+    return buf;
+}
+
+static const pin_dyn_ops_t slaxPinDynOps = {
+    .pdo_version = PIN_DYN_OPS_VERSION,
+    .pdo_resolve_prefix = slaxPinResolvePrefix,
+    .pdo_find_function = slaxPinFindFunction,
+};
+
+/*
+ * Register (or, with 'enable' FALSE, unregister) libpin's dynamic
+ * function-lookup provider.  Called from slaxEnable().
+ */
+void
+slaxDynSetPinOps (int enable)
+{
+    pin_set_dyn_ops(enable ? &slaxPinDynOps : NULL);
 }
 
 /*
