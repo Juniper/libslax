@@ -1,0 +1,22 @@
+Type 'help' for help
+(sdb) break 10 if
+Missing expression
+(sdb) break 10 when
+Missing expression
+(sdb) break 10 when $n == 2
+Breakpoint 1 at file ../../../tests/sdb/cond-invalid.slax, line 10
+(sdb) condition 1 ($n >
+:1: unexpected end-of-file
+
+error: : 1 error detected during parsing (1)
+XPath error : Invalid expression
+Invalid expression
+(sdb) info breakpoints
+List of breakpoints:
+     #1 template first at ../../../tests/sdb/cond-invalid.slax:10 condition: '$n == 2'
+(sdb) continue
+Reached breakpoint 1, at ../../../tests/sdb/cond-invalid.slax:10
+  Condition: '$n == 2'
+cond-invalid.slax: 10:     <level> $n;
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y
