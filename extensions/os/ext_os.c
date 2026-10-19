@@ -1343,47 +1343,47 @@ slax_function_table_t slaxOsTable[] = {
     {
 	"exit-code", extOsExitCode,
 	"Specify an exit code for the process",
-	"(number)", XPATH_UNDEFINED,
+	"(number)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"mkdir", extOsMkdir,
 	"Create a directory",
-	"(path)", XPATH_UNDEFINED,
+	"(path)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"stat", extOsStat,
 	"Return stat information about a file",
-	"(file-spec)", XPATH_XSLT_TREE,
+	"(file-spec)", XPATH_XSLT_TREE, -1, -1,
     },
 #if 0
     {
 	"copy", extOsCopy,
 	"Copy files",
-	"(filespec, file-or-directory)", XPATH_NUMBER,
+	"(filespec, file-or-directory)", XPATH_NUMBER, -1, -1,
     },
 #endif
     {
 	"remove", extOsRemove,
 	"Remove files",
-	"(filespec, ...)", XPATH_UNDEFINED,
+	"(filespec, ...)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"chmod", extOsChmod,
 	"Change the mode of a file",
-	"(permissions, filespec, ...)", XPATH_UNDEFINED,
+	"(permissions, filespec, ...)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"chown", extOsChown,
 	"Change ownership of a file",
-	"(ownership, file-spec, ...)", XPATH_UNDEFINED,
+	"(ownership, file-spec, ...)", XPATH_UNDEFINED, -1, -1,
     },
     {
 	"user-info", extUserInfo,
 	"Return information about user running the script",
-	"()", XPATH_UNDEFINED,
+	"()", XPATH_UNDEFINED, -1, -1,
     },
 
-    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED }
+    { NULL, NULL, NULL, NULL, XPATH_UNDEFINED, 0, 0 }
 };
 
 SLAX_DYN_FUNC(slaxDynLibInit)
