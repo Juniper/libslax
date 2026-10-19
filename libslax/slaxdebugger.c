@@ -968,12 +968,14 @@ slaxDebugFindCondition (char *input)
     while (*input && isspace((int) *input))
 	input += 1;
 
-    if (strncmp(input, "if ", 3) == 0) {
-	input += 3;
+    if (strncmp(input, "if", 2) == 0
+	    && (input[2] == '\0' || isspace((int) input[2]))) {
+	input += 2;
 	while (*input && isspace((int) *input))
 	    input += 1;
-    } else if (strncmp(input, "when ", 5) == 0) {
-	input += 5;
+    } else if (strncmp(input, "when", 4) == 0
+	    && (input[4] == '\0' || isspace((int) input[4]))) {
+	input += 4;
 	while (*input && isspace((int) *input))
 	    input += 1;
     }
@@ -1025,6 +1027,7 @@ slaxDebugCmdBreak (DC_ARGS)
 	xmlXPathCompExprPtr comp;
 	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
 	if (comp == NULL) {
+	    slaxOutput("Invalid expression");
 	    xmlFreeAndEasy(condition);
 	    xmlFreeAndEasy(condition_user);
 	    return;
