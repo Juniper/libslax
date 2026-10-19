@@ -76,6 +76,14 @@ slaxDynInit (void);
 int
 slaxDynFindPrefix (char *uri, size_t urisiz, const char *name);
 
+/*
+ * Register (enable != 0) or unregister (enable == 0) libpin's
+ * pin_dyn_ops_t provider, backed by slaxDynLoadNamespace/
+ * xsltExtModuleFunctionLookup.
+ */
+void
+slaxDynSetPinOps (int enable);
+
 
 /*
  * De-initialize the entire dynamic extension loading mechanism.
