@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_09.02.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:bit="http://xml.libslax.org/bit">
+
+  <!--
+    A successful call to a Tier 1 bit: function, with xmlns:bit
+    declared in scope.  Unlike slax:, bit: is a separately built
+    extension module (extensions/bit): resolving this call requires
+    dlopen()'ing libext_bit's shared library at compile time, via
+    slaxDynLoadNamespace() inside slaxPinFindFunction(), a real
+    dynamic load, not just a table lookup.
+  -->
+  <xsl:template match="start">
+    <out>
+      <xsl:if test="bit:and('10', '11') = '10'">
+        <match/>
+      </xsl:if>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
