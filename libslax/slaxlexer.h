@@ -38,7 +38,8 @@ struct slax_data_s {
     int sd_ytype;		/* YANG argument type */
     char sd_filename[MAXPATHLEN]; /* Path of current file */
     int sd_line;		/* Line number */
-    int sd_col;			/* Column number */
+    int sd_col;			/* Column number (of the token at sd_start) */
+    int sd_line_start;		/* Offset in sd_buf of start of sd_line */
     int sd_start;		/* Next valid byte in sd_buf */
     int sd_cur;			/* Current byte in sd_buf */
     int sd_len;			/* Last valid byte in sd_buf (+1) */
@@ -113,6 +114,29 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *yylval,
  */
 char *
 slaxExpectingError (const char *token, int yystate, int yychar);
+
+/*
+ * Report a clang-style diagnostic (file:line:col, severity, message,
+ * echoed source line, caret, optional "consider" hint) against sdp's
+ * current position (sd_filename/sd_line/sd_col, i.e. the most recently
+ * lexed token).  'iserr' selects "error" (non-zero) vs "warning" (zero)
+ * and, for an error, increments sd_errors the same way slaxYyerror does.
+ */
+int
+#ifdef HAVE_PRINTFLIKE
+__printflike(3, 4)
+#endif /* HAVE_PRINTFLIKE */
+slaxComplain (slax_data_t *sdp, int iserr, const char *fmt, ...);
+
+/*
+ * Record a "consider" (hint) line to be appended to the *next*
+ * slaxComplain() call; see psu_complain_consider()'s doc comment.
+ */
+void
+#ifdef HAVE_PRINTFLIKE
+__printflike(2, 3)
+#endif /* HAVE_PRINTFLIKE */
+slaxComplainConsider (slax_data_t *sdp, const char *fmt, ...);
 
 /**
  * Make a child node and assign it proper file/line number info.
