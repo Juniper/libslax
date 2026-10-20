@@ -15,8 +15,11 @@ SUBDIRS= \
     reuse \
     errors \
     pa \
-    xi \
-    sdb
+    xi
+
+if WITH_DEBUGGER
+SUBDIRS += sdb
+endif
 
 test tests:
 	@(cur=`pwd` ; for dir in $(SUBDIRS) ; do \
