@@ -1193,6 +1193,95 @@ pin_classify_select (const char *s)
 }
 
 /*
+ * Return a malloc'd copy of the 'lineno'-th (1-based) line of 'text'
+ * (no trailing newline), or NULL if 'text' has fewer lines than that.
+ * Used to echo the offending source line in a clang-style diagnostic.
+ */
+static char *
+pin_nth_line (const char *text, unsigned lineno)
+{
+    if (lineno == 0)
+	lineno = 1;
+
+    const char *start = text;
+    for (unsigned n = 1; n < lineno; n++) {
+	start = strchr(start, '\n');
+	if (start == NULL)
+	    return NULL;
+	start += 1;
+    }
+
+    const char *end = strchr(start, '\n');
+    size_t len = end ? (size_t) (end - start) : strlen(start);
+
+    char *copy = xo_realloc(NULL, len + 1);
+    if (copy == NULL)
+	return NULL;
+
+    memcpy(copy, start, len);
+    copy[len] = '\0';
+    return copy;
+}
+
+/*
+ * Report a failed xo_eval_compile() (from pin_op_push_eval, below) as a
+ * clang-style diagnostic: the detailed message xo_eval_compile_fail()
+ * built (now retained, since pin's xfdo_error is wired up -- see
+ * pin_filter_data_error() in pin_filter.c), the real line/column of the
+ * offending token, the echoed source line, and -- for an arity mismatch
+ * on a dynamically-resolved function (e.g. bit:and) -- a "consider"
+ * hint built from its recorded description/argument-hint.
+ *
+ * Location mapping: 'expr' was compiled wrapped as "*[expr]" (see the
+ * caller's doc comment), which adds no newline, so the failing node's
+ * internal line number maps 1:1 onto a line of 'expr' itself, and only
+ * the column needs adjusting -- by 2, to remove the "*[" prefix's
+ * width -- and only on line 1.  The *file* line is approximated as the
+ * XML node's own line number plus however many newlines precede the
+ * failure inside 'expr' (0 for the overwhelmingly common single-line
+ * expression); libxml2 only annotates nodes with a line, not a column,
+ * so there's no way to recover the attribute value's exact byte offset
+ * on that line, and this is as close as that allows.
+ */
+static void
+pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
+{
+    xmlNodePtr nodep = cur->poc_node;
+    const char *fn = (nodep && nodep->doc && nodep->doc->URL)
+        ? (const char *) nodep->doc->URL : NULL;
+    int node_line = nodep ? (int) xmlGetLineNo(nodep) : 0;
+
+    unsigned eline = 0, ecol = 0;
+    xo_eval_compile_fail_location(&eline, &ecol);
+
+    int line = node_line + (eline > 1 ? (int) eline - 1 : 0);
+    int col = (eline <= 1 && ecol > 2) ? (int) ecol - 2 : (int) ecol;
+
+    char *source_line = pin_nth_line(expr, eline ? eline : 1);
+
+    const char *msg = pin_filter_last_compile_error();
+
+    const char *fname = NULL, *fdesc = NULL, *farghelp = NULL;
+    pin_filter_last_function_help(&fname, &fdesc, &farghelp);
+    if (fname != NULL && (fdesc != NULL || farghelp != NULL))
+	psu_complain_consider("invoke as %s%s%s%s%s", fname,
+			       farghelp ? farghelp : "",
+			       fdesc ? " -- " : "", fdesc ? fdesc : "", "");
+
+    if (msg != NULL)
+	psu_complain(fn, line, col, 0, source_line, "%s", msg);
+    else
+	psu_complain(fn, line, col, 0, source_line,
+		     "unable to compile XPath expression: %s", expr);
+
+    if (source_line != NULL)
+	xo_free(source_line);
+
+    if (cur->poc_rb && cur->poc_rb->prb_workspace)
+        cur->poc_rb->prb_workspace->pw_errors += 1;
+}
+
+/*
  * Compile expr as a full XPath expression via libxo's XPath parser and
  * xo_eval compiler, store the resulting program on the rulebook, and turn
  * *push (already allocated by the caller) into a PIN_OP_EVAL referencing
@@ -1248,14 +1337,15 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
     pin_filter_set_compile_ns(xfp, cur->poc_ns_stack, cur->poc_ns_cur);
+    pin_filter_clear_compile_error();
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
     if (prog == NULL) {
-	pin_error(cur->poc_rb, cur->poc_node,
-		  "unable to compile XPath expression: %s", expr);
+	pin_report_eval_fail(cur, expr);
 	return -1;
     }
 
-    uint32_t idx = pin_rulebook_eval_prog_add(rb, prog);
+    uint32_t idx = pin_rulebook_eval_prog_add(rb, prog, cur->poc_ns_stack,
+					       cur->poc_ns_cur);
     if (idx == UINT32_MAX) {
 	xo_eval_prog_destroy(prog);
 	pin_error(cur->poc_rb, cur->poc_node,
