@@ -37,11 +37,14 @@ typedef unsigned char xmlChar;
  * xmlChar handling
  */
 XMLPUBFUN xmlChar *xmlStrdup (const xmlChar *cur);
+XMLPUBFUN char *xmlStrdup2 (const char *str);
+XMLPUBFUN int xmlAtoi (const xmlChar *nptr);
 XMLPUBFUN xmlChar *xmlStrndup (const xmlChar *cur, int len);
 XMLPUBFUN xmlChar *xmlCharStrndup (const char *cur, int len);
 XMLPUBFUN xmlChar *xmlCharStrdup (const char *cur);
 XMLPUBFUN xmlChar *xmlStrsub (const xmlChar *str, int start, int len);
 XMLPUBFUN const xmlChar *xmlStrchr (const xmlChar *str, xmlChar val);
+XMLPUBFUN xmlChar *xmlStrchru (xmlChar *str, xmlChar val);
 XMLPUBFUN const xmlChar *xmlStrstr (const xmlChar *str, const xmlChar *val);
 XMLPUBFUN const xmlChar *xmlStrcasestr (const xmlChar *str, const xmlChar *val);
 XMLPUBFUN int xmlStrcmp (const xmlChar *str1, const xmlChar *str2);
