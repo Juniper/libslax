@@ -285,9 +285,15 @@ void slaxExtRegister (void);
  * recorded in its slax_function_table_t entry.  Returns 0 and
  * fills nargsp/min_argsp if found; returns -1 (leaving them
  * untouched) if "name" is not a known slax: function.
+ *
+ * descp/arghelpp are optional (pass NULL if not wanted); when found,
+ * they're filled with the entry's ft_desc/ft_arghelp (may themselves
+ * be NULL if the table entry doesn't set them), for use as a
+ * diagnostic "consider" hint.
  */
 int
-slaxExtFindArity (const char *name, int *nargsp, int *min_argsp);
+slaxExtFindArity (const char *name, int *nargsp, int *min_argsp,
+		   const char **descp, const char **arghelpp);
 
 /**
  * Initial the randomizer
