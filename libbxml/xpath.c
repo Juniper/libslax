@@ -10047,6 +10047,41 @@ xmlXPathIsPositionalPredicate (xmlXPathParserContextPtr ctxt,
     return 0;
 }
 
+/*
+ * Checks that the top of the XPath value stack is a node-set, raising
+ * XPATH_INVALID_TYPE and returning 0 if not. When the value is instead
+ * a result tree fragment (e.g. a variable holding a literal result
+ * element tree), reports that specific, common mistake together with
+ * the offending expression, instead of the generic and uninformative
+ * "Invalid type". File/line/element context is added automatically
+ * (see xmlVUpdateError) from ctxt->context->debugNode, when the
+ * caller -- e.g. xsltEvalVariable() -- has set it to the instruction
+ * being evaluated.
+ *
+ * @param ctxt  the XPath parser context
+ * @returns 1 if the top of the stack is a node-set, 0 otherwise
+ */
+static int
+xmlXPathCheckNodeSetType (xmlXPathParserContextPtr ctxt)
+{
+    if (ctxt->value != NULL && ctxt->value->type == XPATH_NODESET)
+        return 1;
+
+    if (ctxt->value != NULL && ctxt->value->type == XPATH_XSLT_TREE) {
+        xmlXPathErrFmt(ctxt, XPATH_INVALID_TYPE,
+                       "Cannot apply an XPath expression to a result tree"
+                       " fragment; convert it with the exslt:node-set()"
+                       " function first: %s\n",
+                       ((ctxt->comp != NULL) && (ctxt->comp->expr != NULL))
+                           ? ctxt->comp->expr
+                           : (const xmlChar *) "(unknown expression)");
+    } else {
+        xmlXPathErr(ctxt, XPATH_INVALID_TYPE);
+    }
+
+    return 0;
+}
+
 static int
 xmlXPathNodeCollectAndTest (xmlXPathParserContextPtr ctxt, xmlXPathStepOpPtr op,
                             xmlNodePtr *first, xmlNodePtr *last, int toBool)
@@ -10115,32 +10150,8 @@ xmlXPathNodeCollectAndTest (xmlXPathParserContextPtr ctxt, xmlXPathStepOpPtr op,
     xmlNodePtr oldContextNode;
     xmlXPathContextPtr xpctxt = ctxt->context;
 
-    if (ctxt->value == NULL || ctxt->value->type != XPATH_NODESET) {
-        if (ctxt->value != NULL && ctxt->value->type == XPATH_XSLT_TREE) {
-            /*
-             * The operand is a result tree fragment (e.g. a variable
-             * holding a literal result element tree), which XPath 1.0
-             * forbids navigating into with a location step. Report
-             * this specific, common mistake together with the
-             * offending expression, instead of the generic and
-             * uninformative "Invalid type". File/line/element context
-             * is added automatically (see xmlVUpdateError) from
-             * ctxt->context->debugNode, when the caller -- e.g.
-             * xsltEvalVariable() -- has set it to the instruction
-             * being evaluated.
-             */
-            xmlXPathErrFmt(ctxt, XPATH_INVALID_TYPE,
-                           "Cannot apply an XPath expression to a result tree"
-                           " fragment; convert it with the exslt:node-set()"
-                           " function first: %s\n",
-                           ((ctxt->comp != NULL) && (ctxt->comp->expr != NULL))
-                               ? ctxt->comp->expr
-                               : (const xmlChar *) "(unknown expression)");
-        } else {
-            xmlXPathErr(ctxt, XPATH_INVALID_TYPE);
-        }
+    if (!xmlXPathCheckNodeSetType(ctxt))
         return 0;
-    }
 
     obj = xmlXPathValuePop(ctxt);
 
@@ -11363,7 +11374,8 @@ xmlXPathCompOpEval (xmlXPathParserContextPtr ctxt, xmlXPathStepOpPtr op)
                  * nodeset object from the stack to avoid freeing it
                  * prematurely.
                  */
-        CHECK_TYPE0(XPATH_NODESET);
+        if (!xmlXPathCheckNodeSetType(ctxt))
+            return 0;
         obj = xmlXPathValuePop(ctxt);
         set = obj->nodesetval;
         if (set != NULL)
