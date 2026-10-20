@@ -40,6 +40,8 @@ struct slax_data_s {
     int sd_line;		/* Line number */
     int sd_col;			/* Column number (of the token at sd_start) */
     int sd_line_start;		/* Offset in sd_buf of start of sd_line */
+    int sd_uline;		/* Line number of start of unterminated string */
+    int sd_ucol;		/* Column number of start of unterminated string */
     int sd_start;		/* Next valid byte in sd_buf */
     int sd_cur;			/* Current byte in sd_buf */
     int sd_len;			/* Last valid byte in sd_buf (+1) */
