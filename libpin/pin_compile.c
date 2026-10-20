@@ -1224,6 +1224,47 @@ pin_nth_line (const char *text, unsigned lineno)
 }
 
 /*
+ * Return a malloc'd copy of the 'lineno'-th (1-based) line of the file
+ * named 'filename' (no trailing newline/CR), or NULL if the file can't
+ * be opened or has fewer lines than that.  Used to echo the *real*
+ * source line -- the whole statement, not just the XPath fragment
+ * being compiled -- in a clang-style diagnostic.  Freed with free(),
+ * not xo_free(), since it comes from getline().
+ */
+static char *
+pin_read_source_line (const char *filename, unsigned lineno)
+{
+    if (filename == NULL || lineno == 0)
+	return NULL;
+
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+	return NULL;
+
+    char *line = NULL;
+    size_t cap = 0;
+    ssize_t len = -1;
+
+    for (unsigned n = 0; n < lineno; n++) {
+	len = getline(&line, &cap, fp);
+	if (len < 0)
+	    break;
+    }
+
+    fclose(fp);
+
+    if (len < 0) {
+	free(line);
+	return NULL;
+    }
+
+    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
+	line[--len] = '\0';
+
+    return line;
+}
+
+/*
  * Report a failed xo_eval_compile() (from pin_op_push_eval, below) as a
  * clang-style diagnostic: the detailed message xo_eval_compile_fail()
  * built (now retained, since pin's xfdo_error is wired up -- see
@@ -1241,7 +1282,17 @@ pin_nth_line (const char *text, unsigned lineno)
  * failure inside 'expr' (0 for the overwhelmingly common single-line
  * expression); libxml2 only annotates nodes with a line, not a column,
  * so there's no way to recover the attribute value's exact byte offset
- * on that line, and this is as close as that allows.
+ * on that line directly from the node.
+ *
+ * To still show the *complete* source line (e.g. "var $x =
+ * slax:value(...);", not just the "slax:value(...)" fragment that was
+ * actually compiled) and the right column within it, re-read that line
+ * from 'fn' on disk and locate the compiled fragment inside it via a
+ * verbatim substring search; 'expr' is lexed straight out of the
+ * original source text, so it reliably reappears unchanged in the real
+ * line for the common case.  Falls back to echoing 'expr' itself (the
+ * prior, narrower behavior) if the file can't be read or the fragment
+ * isn't found verbatim (e.g. it was rewritten during compilation).
  */
 static void
 pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
@@ -1258,6 +1309,20 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
     int col = (eline <= 1 && ecol > 2) ? (int) ecol - 2 : (int) ecol;
 
     char *source_line = pin_nth_line(expr, eline ? eline : 1);
+    char *real_line = (line > 0) ? pin_read_source_line(fn, (unsigned) line)
+	: NULL;
+
+    const char *display_line = source_line;
+    int disp_col = col;
+
+    if (real_line != NULL) {
+	char *match = (source_line != NULL)
+	    ? strstr(real_line, source_line) : NULL;
+	if (match != NULL) {
+	    display_line = real_line;
+	    disp_col = (int) (match - real_line) + col;
+	}
+    }
 
     const char *msg = pin_filter_last_compile_error();
 
@@ -1269,13 +1334,15 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
 			       fdesc ? " -- " : "", fdesc ? fdesc : "", "");
 
     if (msg != NULL)
-	psu_complain(fn, line, col, 0, source_line, "%s", msg);
+	psu_complain(fn, line, disp_col, 0, display_line, "%s", msg);
     else
-	psu_complain(fn, line, col, 0, source_line,
+	psu_complain(fn, line, disp_col, 0, display_line,
 		     "unable to compile XPath expression: %s", expr);
 
     if (source_line != NULL)
 	xo_free(source_line);
+    if (real_line != NULL)
+	free(real_line);
 
     if (cur->poc_rb && cur->poc_rb->prb_workspace)
         cur->poc_rb->prb_workspace->pw_errors += 1;
