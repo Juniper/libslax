@@ -1,2 +1,4 @@
-../../../tests/pin/pin_08.60.in:15: error: unable to compile XPath expression: bogus-function(1)
+../../../tests/pin/pin_08.60.in:15:1: error: unknown function in filter expression: 'bogus-function'
+15 | bogus-function(1)
+   | ^
 pin_08.test: pin_compile failed
