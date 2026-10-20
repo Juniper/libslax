@@ -834,52 +834,74 @@ for bxml_name in $BXML_COMPONENT_NAMES; do
 done
 
 AC_SUBST(WITH_C14N)
-AC_DEFINE_UNQUOTED([WITH_C14N], [$WITH_C14N], [Canonical XML 1.0 support])
+if test "$WITH_C14N" = "1"; then
+    AC_DEFINE([WITH_C14N], [1], [Canonical XML 1.0 support])
+fi
 AM_CONDITIONAL([WITH_C14N], [test "$WITH_C14N" = "1"])
 AM_CONDITIONAL([WITH_C14N_SOURCES], [test "$WITH_C14N" = "1"])
 
 AC_SUBST(WITH_CATALOG)
-AC_DEFINE_UNQUOTED([WITH_CATALOG], [$WITH_CATALOG], [XML Catalogs support])
+if test "$WITH_CATALOG" = "1"; then
+    AC_DEFINE([WITH_CATALOG], [1], [XML Catalogs support])
+fi
 AM_CONDITIONAL([WITH_CATALOG], [test "$WITH_CATALOG" = "1"])
 AM_CONDITIONAL([WITH_CATALOG_SOURCES], [test "$WITH_CATALOG" = "1"])
 
 AC_SUBST(WITH_DEBUG)
-AC_DEFINE_UNQUOTED([WITH_DEBUG], [$WITH_DEBUG], [debugging component])
+if test "$WITH_DEBUG" = "1"; then
+    AC_DEFINE([WITH_DEBUG], [1], [debugging component])
+fi
 AM_CONDITIONAL([WITH_DEBUG], [test "$WITH_DEBUG" = "1"])
 AM_CONDITIONAL([WITH_DEBUG_SOURCES], [test "$WITH_DEBUG" = "1"])
 
 AC_SUBST(WITH_DOCS)
-AC_DEFINE_UNQUOTED([WITH_DOCS], [$WITH_DOCS], [Build documentation])
+if test "$WITH_DOCS" = "1"; then
+    AC_DEFINE([WITH_DOCS], [1], [Build documentation])
+fi
 AM_CONDITIONAL([WITH_DOCS], [test "$WITH_DOCS" = "1"])
 
 AC_SUBST(WITH_HISTORY)
-AC_DEFINE_UNQUOTED([WITH_HISTORY], [$WITH_HISTORY], [history support for xmllint shell])
+if test "$WITH_HISTORY" = "1"; then
+    AC_DEFINE([WITH_HISTORY], [1], [history support for xmllint shell])
+fi
 AM_CONDITIONAL([WITH_HISTORY], [test "$WITH_HISTORY" = "1"])
 
 AC_SUBST(WITH_READLINE)
-AC_DEFINE_UNQUOTED([WITH_READLINE], [$WITH_READLINE], [use readline for shell history])
+if test "$WITH_READLINE" = "1"; then
+    AC_DEFINE([WITH_READLINE], [1], [use readline for shell history])
+fi
 AM_CONDITIONAL([WITH_READLINE], [test "$WITH_READLINE" = "1"])
 
 AC_SUBST(WITH_HTML)
-AC_DEFINE_UNQUOTED([WITH_HTML], [$WITH_HTML], [HTML parser])
+if test "$WITH_HTML" = "1"; then
+    AC_DEFINE([WITH_HTML], [1], [HTML parser])
+fi
 AM_CONDITIONAL([WITH_HTML], [test "$WITH_HTML" = "1"])
 AM_CONDITIONAL([WITH_HTML_SOURCES], [test "$WITH_HTML" = "1"])
 
 AC_SUBST(WITH_HTTP)
-AC_DEFINE_UNQUOTED([WITH_HTTP], [$WITH_HTTP], [ABI compatibility stubs for removed HTTP support])
+if test "$WITH_HTTP" = "1"; then
+    AC_DEFINE([WITH_HTTP], [1], [ABI compatibility stubs for removed HTTP support])
+fi
 AM_CONDITIONAL([WITH_HTTP], [test "$WITH_HTTP" = "1"])
 AM_CONDITIONAL([WITH_HTTP_SOURCES], [test "$WITH_HTTP" = "1"])
 
 AC_SUBST(WITH_ICONV)
-AC_DEFINE_UNQUOTED([WITH_ICONV], [$WITH_ICONV], [iconv support])
+if test "$WITH_ICONV" = "1"; then
+    AC_DEFINE([WITH_ICONV], [1], [iconv support])
+fi
 AM_CONDITIONAL([WITH_ICONV], [test "$WITH_ICONV" = "1"])
 
 AC_SUBST(WITH_ICU)
-AC_DEFINE_UNQUOTED([WITH_ICU], [$WITH_ICU], [ICU support])
+if test "$WITH_ICU" = "1"; then
+    AC_DEFINE([WITH_ICU], [1], [ICU support])
+fi
 AM_CONDITIONAL([WITH_ICU], [test "$WITH_ICU" = "1"])
 
 AC_SUBST(WITH_ISO8859X)
-AC_DEFINE_UNQUOTED([WITH_ISO8859X], [$WITH_ISO8859X], [ISO-8859-X support if no iconv])
+if test "$WITH_ISO8859X" = "1"; then
+    AC_DEFINE([WITH_ISO8859X], [1], [ISO-8859-X support if no iconv])
+fi
 AM_CONDITIONAL([WITH_ISO8859X], [test "$WITH_ISO8859X" = "1"])
 
 AC_SUBST(WITH_MODULES)
@@ -894,92 +916,130 @@ AM_CONDITIONAL([WITH_MODULES], [test "$WITH_MODULES" = "1"])
 AM_CONDITIONAL([WITH_MODULES_SOURCES], [test "$WITH_MODULES" = "1"])
 
 AC_SUBST(WITH_OUTPUT)
-AC_DEFINE_UNQUOTED([WITH_OUTPUT], [$WITH_OUTPUT], [serialization support])
+if test "$WITH_OUTPUT" = "1"; then
+    AC_DEFINE([WITH_OUTPUT], [1], [serialization support])
+fi
 AM_CONDITIONAL([WITH_OUTPUT], [test "$WITH_OUTPUT" = "1"])
 AM_CONDITIONAL([WITH_OUTPUT_SOURCES], [test "$WITH_OUTPUT" = "1"])
 
 AC_SUBST(WITH_PATTERN)
-AC_DEFINE_UNQUOTED([WITH_PATTERN], [$WITH_PATTERN], [xmlPattern selection interface])
+if test "$WITH_PATTERN" = "1"; then
+    AC_DEFINE([WITH_PATTERN], [1], [xmlPattern selection interface])
+fi
 AM_CONDITIONAL([WITH_PATTERN], [test "$WITH_PATTERN" = "1"])
 AM_CONDITIONAL([WITH_PATTERN_SOURCES], [test "$WITH_PATTERN" = "1"])
 
 AC_SUBST(WITH_PUSH)
-AC_DEFINE_UNQUOTED([WITH_PUSH], [$WITH_PUSH], [push parser interfaces])
+if test "$WITH_PUSH" = "1"; then
+    AC_DEFINE([WITH_PUSH], [1], [push parser interfaces])
+fi
 AM_CONDITIONAL([WITH_PUSH], [test "$WITH_PUSH" = "1"])
 
 AC_SUBST(WITH_PYTHON)
-AC_DEFINE_UNQUOTED([WITH_PYTHON], [$WITH_PYTHON], [Python bindings])
+if test "$WITH_PYTHON" = "1"; then
+    AC_DEFINE([WITH_PYTHON], [1], [Python bindings])
+fi
 AM_CONDITIONAL([WITH_PYTHON], [test "$WITH_PYTHON" = "1"])
 
 AC_SUBST(WITH_READER)
-AC_DEFINE_UNQUOTED([WITH_READER], [$WITH_READER], [xmlReader parsing interface])
+if test "$WITH_READER" = "1"; then
+    AC_DEFINE([WITH_READER], [1], [xmlReader parsing interface])
+fi
 AM_CONDITIONAL([WITH_READER], [test "$WITH_READER" = "1"])
 AM_CONDITIONAL([WITH_READER_SOURCES], [test "$WITH_READER" = "1"])
 
 AC_SUBST(WITH_REGEXPS)
-AC_DEFINE_UNQUOTED([WITH_REGEXPS], [$WITH_REGEXPS], [regular expressions support])
+if test "$WITH_REGEXPS" = "1"; then
+    AC_DEFINE([WITH_REGEXPS], [1], [regular expressions support])
+fi
 AM_CONDITIONAL([WITH_REGEXPS], [test "$WITH_REGEXPS" = "1"])
 AM_CONDITIONAL([WITH_REGEXPS_SOURCES], [test "$WITH_REGEXPS" = "1"])
 
 AC_SUBST(WITH_RELAXNG)
-AC_DEFINE_UNQUOTED([WITH_RELAXNG], [$WITH_RELAXNG], [RELAX NG support])
+if test "$WITH_RELAXNG" = "1"; then
+    AC_DEFINE([WITH_RELAXNG], [1], [RELAX NG support])
+fi
 AM_CONDITIONAL([WITH_RELAXNG], [test "$WITH_RELAXNG" = "1"])
 AM_CONDITIONAL([WITH_RELAXNG_SOURCES], [test "$WITH_RELAXNG" = "1"])
 
 AC_SUBST(WITH_SAX1)
-AC_DEFINE_UNQUOTED([WITH_SAX1], [$WITH_SAX1], [older SAX1 interface])
+if test "$WITH_SAX1" = "1"; then
+    AC_DEFINE([WITH_SAX1], [1], [older SAX1 interface])
+fi
 AM_CONDITIONAL([WITH_SAX1], [test "$WITH_SAX1" = "1"])
 AM_CONDITIONAL([WITH_SAX1_SOURCES], [test "$WITH_SAX1" = "1"])
 
 AC_SUBST(WITH_SCHEMAS)
-AC_DEFINE_UNQUOTED([WITH_SCHEMAS], [$WITH_SCHEMAS], [XML Schemas 1.0 support])
+if test "$WITH_SCHEMAS" = "1"; then
+    AC_DEFINE([WITH_SCHEMAS], [1], [XML Schemas 1.0 support])
+fi
 AM_CONDITIONAL([WITH_SCHEMAS], [test "$WITH_SCHEMAS" = "1"])
 AM_CONDITIONAL([WITH_SCHEMAS_SOURCES], [test "$WITH_SCHEMAS" = "1"])
 
 AC_SUBST(WITH_SCHEMATRON)
-AC_DEFINE_UNQUOTED([WITH_SCHEMATRON], [$WITH_SCHEMATRON], [Schematron support])
+if test "$WITH_SCHEMATRON" = "1"; then
+    AC_DEFINE([WITH_SCHEMATRON], [1], [Schematron support])
+fi
 AM_CONDITIONAL([WITH_SCHEMATRON], [test "$WITH_SCHEMATRON" = "1"])
 AM_CONDITIONAL([WITH_SCHEMATRON_SOURCES], [test "$WITH_SCHEMATRON" = "1"])
 
 AC_SUBST(WITH_THREADS)
-AC_DEFINE_UNQUOTED([WITH_THREADS], [$WITH_THREADS], [multithreading support])
+if test "$WITH_THREADS" = "1"; then
+    AC_DEFINE([WITH_THREADS], [1], [multithreading support])
+fi
 AM_CONDITIONAL([WITH_THREADS], [test "$WITH_THREADS" = "1"])
 
 AC_SUBST(WITH_THREAD_ALLOC)
-AC_DEFINE_UNQUOTED([WITH_THREAD_ALLOC], [$WITH_THREAD_ALLOC], [per-thread malloc hooks])
+if test "$WITH_THREAD_ALLOC" = "1"; then
+    AC_DEFINE([WITH_THREAD_ALLOC], [1], [per-thread malloc hooks])
+fi
 AM_CONDITIONAL([WITH_THREAD_ALLOC], [test "$WITH_THREAD_ALLOC" = "1"])
 
 AC_SUBST(WITH_VALID)
-AC_DEFINE_UNQUOTED([WITH_VALID], [$WITH_VALID], [DTD validation support])
+if test "$WITH_VALID" = "1"; then
+    AC_DEFINE([WITH_VALID], [1], [DTD validation support])
+fi
 AM_CONDITIONAL([WITH_VALID], [test "$WITH_VALID" = "1"])
 AM_CONDITIONAL([WITH_VALID_SOURCES], [test "$WITH_VALID" = "1"])
 
 AC_SUBST(WITH_WRITER)
-AC_DEFINE_UNQUOTED([WITH_WRITER], [$WITH_WRITER], [xmlWriter serialization interface])
+if test "$WITH_WRITER" = "1"; then
+    AC_DEFINE([WITH_WRITER], [1], [xmlWriter serialization interface])
+fi
 AM_CONDITIONAL([WITH_WRITER], [test "$WITH_WRITER" = "1"])
 AM_CONDITIONAL([WITH_WRITER_SOURCES], [test "$WITH_WRITER" = "1"])
 
 AC_SUBST(WITH_XINCLUDE)
-AC_DEFINE_UNQUOTED([WITH_XINCLUDE], [$WITH_XINCLUDE], [XInclude 1.0 support])
+if test "$WITH_XINCLUDE" = "1"; then
+    AC_DEFINE([WITH_XINCLUDE], [1], [XInclude 1.0 support])
+fi
 AM_CONDITIONAL([WITH_XINCLUDE], [test "$WITH_XINCLUDE" = "1"])
 AM_CONDITIONAL([WITH_XINCLUDE_SOURCES], [test "$WITH_XINCLUDE" = "1"])
 
 AC_SUBST(WITH_XPATH)
-AC_DEFINE_UNQUOTED([WITH_XPATH], [$WITH_XPATH], [XPath 1.0 support])
+if test "$WITH_XPATH" = "1"; then
+    AC_DEFINE([WITH_XPATH], [1], [XPath 1.0 support])
+fi
 AM_CONDITIONAL([WITH_XPATH], [test "$WITH_XPATH" = "1"])
 AM_CONDITIONAL([WITH_XPATH_SOURCES], [test "$WITH_XPATH" = "1"])
 
 AC_SUBST(WITH_XPTR)
-AC_DEFINE_UNQUOTED([WITH_XPTR], [$WITH_XPTR], [XPointer support])
+if test "$WITH_XPTR" = "1"; then
+    AC_DEFINE([WITH_XPTR], [1], [XPointer support])
+fi
 AM_CONDITIONAL([WITH_XPTR], [test "$WITH_XPTR" = "1"])
 AM_CONDITIONAL([WITH_XPTR_SOURCES], [test "$WITH_XPTR" = "1"])
 
 AC_SUBST(WITH_ZLIB)
-AC_DEFINE_UNQUOTED([WITH_ZLIB], [$WITH_ZLIB], [use libz for compression])
+if test "$WITH_ZLIB" = "1"; then
+    AC_DEFINE([WITH_ZLIB], [1], [use libz for compression])
+fi
 AM_CONDITIONAL([WITH_ZLIB], [test "$WITH_ZLIB" = "1"])
 
 AC_SUBST(WITH_TLS)
-AC_DEFINE_UNQUOTED([WITH_TLS], [$WITH_TLS], [thread-local storage])
+if test "$WITH_TLS" = "1"; then
+    AC_DEFINE([WITH_TLS], [1], [thread-local storage])
+fi
 AM_CONDITIONAL([WITH_TLS], [test "$WITH_TLS" = "1"])
 
 dnl
@@ -1481,27 +1541,39 @@ for bxslt_name in $BXSLT_COMPONENT_NAMES; do
 done
 
 AC_SUBST(WITH_CRYPTO)
-AC_DEFINE_UNQUOTED([WITH_CRYPTO], [$WITH_CRYPTO], [crypto support for exslt])
+if test "$WITH_CRYPTO" = "1"; then
+    AC_DEFINE([WITH_CRYPTO], [1], [crypto support for exslt])
+fi
 AM_CONDITIONAL([WITH_CRYPTO], [test "$WITH_CRYPTO" = "1"])
 
 AC_SUBST(WITH_DEBUGGER)
-AC_DEFINE_UNQUOTED([WITH_DEBUGGER], [$WITH_DEBUGGER], [XSLT debugger support])
+if test "$WITH_DEBUGGER" = "1"; then
+    AC_DEFINE([WITH_DEBUGGER], [1], [XSLT debugger support])
+fi
 AM_CONDITIONAL([WITH_DEBUGGER], [test "$WITH_DEBUGGER" = "1"])
 
 AC_SUBST(WITH_PROFILER)
-AC_DEFINE_UNQUOTED([WITH_PROFILER], [$WITH_PROFILER], [XSLT profiler support])
+if test "$WITH_PROFILER" = "1"; then
+    AC_DEFINE([WITH_PROFILER], [1], [XSLT profiler support])
+fi
 AM_CONDITIONAL([WITH_PROFILER], [test "$WITH_PROFILER" = "1"])
 
 AC_SUBST(WITH_XSLT_DEBUG)
-AC_DEFINE_UNQUOTED([WITH_XSLT_DEBUG], [$WITH_XSLT_DEBUG], [XSLT verbose debug reporting])
+if test "$WITH_XSLT_DEBUG" = "1"; then
+    AC_DEFINE([WITH_XSLT_DEBUG], [1], [XSLT verbose debug reporting])
+fi
 AM_CONDITIONAL([WITH_XSLT_DEBUG], [test "$WITH_XSLT_DEBUG" = "1"])
 
 AC_SUBST(WITH_XSLT_MODULES)
-AC_DEFINE_UNQUOTED([WITH_XSLT_MODULES], [$WITH_XSLT_MODULES], [XSLT plugin extension support])
+if test "$WITH_XSLT_MODULES" = "1"; then
+    AC_DEFINE([WITH_XSLT_MODULES], [1], [XSLT plugin extension support])
+fi
 AM_CONDITIONAL([WITH_XSLT_MODULES], [test "$WITH_XSLT_MODULES" = "1"])
 
 AC_SUBST(WITH_XSLT_PYTHON)
-AC_DEFINE_UNQUOTED([WITH_XSLT_PYTHON], [$WITH_XSLT_PYTHON], [build libxslt Python bindings])
+if test "$WITH_XSLT_PYTHON" = "1"; then
+    AC_DEFINE([WITH_XSLT_PYTHON], [1], [build libxslt Python bindings])
+fi
 AM_CONDITIONAL([WITH_XSLT_PYTHON], [test "$WITH_XSLT_PYTHON" = "1"])
 
 dnl
@@ -1740,13 +1812,11 @@ AC_COMPILE_IFELSE(
                      [[struct stat st; st.st_mtimespec.tv_sec = 0;]])],
     [
         AC_MSG_RESULT([yes])
-        AC_DEFINE_UNQUOTED([HAVE_MTIMESPEC], 1,
-	                   [Define to 1 if you have the `st_mtimespec' field.])
+        AC_DEFINE([HAVE_MTIMESPEC], 1,
+	          [Define to 1 if you have the `st_mtimespec' field.])
     ],
     [
         AC_MSG_RESULT([no])
-        AC_DEFINE_UNQUOTED([HAVE_MTIMESPEC], 0,
-                           [Define to 1 if you have the `st_mtimespec' field.])
     ]
 )
 
