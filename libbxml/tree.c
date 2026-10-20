@@ -3201,6 +3201,109 @@ xmlAddChild (xmlNode *parent, xmlNode *cur)
 }
 
 /**
+ * Create a new element node with the given name and text content and
+ * add it as a child of `parent`, in one step.
+ *
+ * @param doc  the document holding the new node
+ * @param parent  the parent node
+ * @param name  the name of the new element
+ * @param value  the text content of the new element
+ * @returns the new node, or NULL on failure
+ */
+xmlNode *
+xmlAddChildContent (xmlDoc *doc, xmlNode *parent,
+                     const xmlChar *name, const xmlChar *value)
+{
+    xmlNode *node = xmlNewDocRawNode(doc, NULL, name, value);
+    if (node == NULL)
+        return NULL;
+
+    xmlNode *added = xmlAddChild(parent, node);
+    if (added == NULL)
+        xmlFreeNode(node);
+
+    return added;
+}
+
+/**
+ * Add a new attribute (property) to the end of a node's attribute
+ * list, without any of the checks or copying xmlSetProp performs.
+ *
+ * @param node  the node to receive the attribute
+ * @param prop  the attribute to add
+ */
+void
+xmlAddProp (xmlNode *node, xmlAttr *prop)
+{
+    if (node == NULL)
+        return;
+
+    prop->parent = node;
+    if (node->properties == NULL) {
+        node->properties = prop;
+    } else {
+        xmlAttr *last = node->properties;
+
+        while (last->next != NULL)
+            last = last->next;
+        last->next = prop;
+        prop->prev = last;
+    }
+}
+
+/**
+ * Return the name of a node.
+ *
+ * @param node  the node
+ * @returns the node's name, or NULL if `node` is NULL
+ */
+const char *
+xmlNodeName (const xmlNode *node)
+{
+    if (node == NULL)
+        return NULL;
+    return (const char *) node->name;
+}
+
+/**
+ * Return the text content of an element: the content of its first
+ * non-whitespace text child, or an empty string if the element has
+ * no such child.
+ *
+ * @param node  the element node
+ * @returns the text content, an empty string, or NULL if `node` is
+ * not an element
+ */
+const char *
+xmlNodeValue (const xmlNode *node)
+{
+    if (node == NULL || node->type != XML_ELEMENT_NODE)
+        return NULL;
+
+    for (xmlNode *child = node->children; child; child = child->next) {
+        if (child->type != XML_TEXT_NODE)
+            continue;
+
+        const xmlChar *content = child->content;
+        const xmlChar *cp = content;
+
+        if (cp != NULL) {
+            while (*cp != 0 && isspace((int) *cp))
+                cp++;
+            if (*cp != 0)
+                return (const char *) content;
+        }
+    }
+
+    /*
+     * We found the element but no non-whitespace text child; return
+     * an empty string so callers can distinguish this from "no such
+     * element" (NULL).
+     */
+    return "";
+}
+
+/**
  * Find the last child of a node.
  *
  * @param parent  the parent node
