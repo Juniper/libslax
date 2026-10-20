@@ -120,6 +120,7 @@ XMLPUBFUN int xmlMemSetup (xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
 XMLPUBFUN int xmlMemGet (xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
                          xmlReallocFunc *reallocFunc,
                          xmlStrdupFunc *strdupFunc);
+XMLPUBFUN void xmlFreeAndEasy (void *ptr);
 XML_DEPRECATED
 XMLPUBFUN int xmlGcMemSetup (xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc,
                              xmlMallocFunc mallocAtomicFunc,
