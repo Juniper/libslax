@@ -454,6 +454,18 @@ xmlMemGet (xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc,
 }
 
 /**
+ * Free a chunk of memory, ignoring NULL pointers.
+ *
+ * @param ptr  the memory to free, or NULL
+ */
+void
+xmlFreeAndEasy (void *ptr)
+{
+    if (ptr != NULL)
+        xmlFree(ptr);
+}
+
+/**
  * Override the default memory access functions with a new set
  * This has to be called before any other libxml routines !
  * The mallocAtomicFunc is specialized for atomic block
