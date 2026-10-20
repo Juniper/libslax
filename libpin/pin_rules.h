@@ -233,6 +233,17 @@ typedef struct pin_mode_filter_s {
 } pin_mode_filter_t;
 
 /*
+ * An owned snapshot of the in-scope prefix/uri bindings at one
+ * pin_op_push_eval compile site, malloc'd/memcpy'd rather than borrowed
+ * from the compiler's own (transient) namespace stack.  See
+ * prb_eval_ns's comment.
+ */
+typedef struct pin_eval_ns_s {
+    pin_ns_map_t *pen_bindings; /* Owned copy; NULL if pen_count is 0 */
+    uint32_t      pen_count;
+} pin_eval_ns_t;
+
+/*
  * A rule set is an optimized set of rules
  */
 typedef struct pin_rulebook_s {
@@ -260,6 +271,13 @@ typedef struct pin_rulebook_s {
 				     arena, reused for every select=/test=
 				     expression in this rulebook) */
     xo_eval_prog_t **prb_eval_progs; /* Per-PIN_OP_EVAL compiled programs */
+    pin_eval_ns_t *prb_eval_ns;	  /* Per-PIN_OP_EVAL durable namespace-binding
+					     snapshot (parallel to prb_eval_progs),
+					     consulted by xfdo_find_function's
+					     runtime re-lookup; the compiler's own
+					     poc_ns_stack is freed once compilation
+					     finishes, so this is an owned copy,
+					     not a borrowed pointer into it */
     uint32_t prb_eval_prog_count;  /* Number of entries in prb_eval_progs */
     uint32_t prb_eval_prog_size;   /* Allocated capacity of prb_eval_progs */
     pin_rule_id_t prb_root_rule;  /* Rule for match="/" or a simple absolute
@@ -440,11 +458,28 @@ pin_rulebook_get_eval_filter (pin_rulebook_t *prbp);
 
 /*
  * Append a compiled PIN_OP_EVAL program to the rulebook's prb_eval_progs
- * array.  Returns the index (for storage in the owning pin_op_t), or
+ * array, along with an owned snapshot of 'ns_bindings'[0 .. ns_count)
+ * (the in-scope prefix/uri bindings at this compile site), stored in the
+ * parallel prb_eval_ns array.  pin_op_eval (pin_exec.c) reinstates this
+ * snapshot via pin_filter_set_compile_ns before each run, since
+ * xfdo_find_function is re-consulted at runtime (see xo_eval_func_external
+ * in xo_filter.c) and the compiler's own namespace stack no longer exists
+ * by then.  Returns the index (for storage in the owning pin_op_t), or
  * UINT32_MAX on allocation failure.
  */
 uint32_t
-pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog);
+pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog,
+			      const pin_ns_map_t *ns_bindings,
+			      uint32_t ns_count);
+
+/*
+ * Return the durable namespace-binding snapshot recorded for the
+ * PIN_OP_EVAL program at 'idx' (as returned by pin_rulebook_eval_prog_add),
+ * or NULL with *countp set to 0 if 'idx' is out of range.
+ */
+const pin_ns_map_t *
+pin_rulebook_eval_prog_ns (pin_rulebook_t *prbp, uint32_t idx,
+			     uint32_t *countp);
 
 /*
  * Register a named template (xsl:template name="...") with the rulebook.
