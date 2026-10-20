@@ -70,4 +70,37 @@ void psu_warning (const char *filename, int line, const char *fmt, ...);
  */
 void psu_warningv (const char *filename, int line, const char *fmt, va_list vap);
 
+/*
+ * Clang-style diagnostics: location (filename:line[:col]), severity class,
+ * message, an echoed source line, a '^' caret under the offending column,
+ * and an optional trailing "consider: ..." hint (Rust-style), e.g.:
+ *
+ *     filename:line:col: error: <message>
+ *        line | <source line text>
+ *             |      ^
+ *     consider: <hint>
+ *
+ * col <= 0 omits the caret line (location unknown at that precision).
+ * source_line == NULL omits the echoed source line (and thus the caret).
+ * Any "consider" text previously recorded via psu_complain_consider() is
+ * appended and then cleared, whether or not this call uses it.
+ */
+PSU_PRINTFLIKE(6, 7)
+void psu_complain (const char *filename, int line, int col, int is_warning,
+                    const char *source_line, const char *fmt, ...);
+
+void psu_complainv (const char *filename, int line, int col, int is_warning,
+                     const char *source_line, const char *fmt, va_list vap);
+
+/*
+ * Record a "consider" (hint) message to be appended to the *next*
+ * psu_complain()/psu_complainv() call, then discarded.  Call this before
+ * the psu_complain() it should attach to; if no psu_complain() follows
+ * before another psu_complain_consider(), the hint is simply dropped.
+ */
+PSU_PRINTFLIKE(1, 2)
+void psu_complain_consider (const char *fmt, ...);
+
+void psu_complain_considerv (const char *fmt, va_list vap);
+
 #endif /* LIBPSU_PSUERROR_H */
