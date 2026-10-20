@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_09.03.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    A call to bit:and() with NO xmlns:bit declaration anywhere in the
+    stylesheet.  xfdo_find_function's in-scope namespace lookup has
+    nothing to match "bit" against, so it must fall back to the
+    pin_dyn_ops_t provider's pdo_resolve_prefix(), which resolves the
+    "well-known" prefix via the bit.prefix symlink installed alongside
+    the extension module (see slaxDynFindPrefix()): the prefix-shortcut
+    path, needing no namespace declaration at all.
+  -->
+  <xsl:template match="start">
+    <out>
+      <xsl:if test="bit:and('10', '11') = '10'">
+        <match/>
+      </xsl:if>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
