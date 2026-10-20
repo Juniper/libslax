@@ -406,6 +406,28 @@ slaxPinScalarCall (xo_filter_data_t *dp UNUSED, int argc, const char **argv)
 	return rv;
     }
 
+    /*
+     * xmlXPathNewParserContext() leaves valueTab/valueMax at zero,
+     * and valuePush()'s grow-from-zero path does not preserve the
+     * entries already on the stack when it reallocates (confirmed
+     * against libxml2 2.13.5: each push after the first silently
+     * drops everything pushed before it).  Extension functions are
+     * normally only ever invoked by libxml2's own compiled-expression
+     * evaluator, which pre-sizes this stack itself, so this path is
+     * never exercised there.  Preallocating enough room up front
+     * (every argument, plus headroom for the function's own return
+     * push) keeps every push inside valuePush()'s "already have
+     * room" fast path, avoiding the buggy growth path entirely.
+     */
+    pctxt->valueTab = (xmlXPathObject **)
+	xmlMalloc(sizeof(xmlXPathObject *) * (argc + 4));
+    if (pctxt->valueTab == NULL) {
+	xmlXPathFreeParserContext(pctxt);
+	xmlXPathFreeContext(ctxt);
+	return rv;
+    }
+    pctxt->valueMax = argc + 4;
+
     for (i = 0; i < argc; i++)
 	valuePush(pctxt, xmlXPathNewCString(argv[i]));
 
@@ -455,7 +477,8 @@ slaxPinScalarCall (xo_filter_data_t *dp UNUSED, int argc, const char **argv)
  */
 static int
 slaxDynFindArity (const char *uri, const char *name,
-		   int *nargsp, int *min_argsp)
+		   int *nargsp, int *min_argsp,
+		   const char **descp, const char **arghelpp)
 {
     slax_dyn_node_t *dnp;
     slax_function_table_t *ftp;
@@ -470,6 +493,10 @@ slaxDynFindArity (const char *uri, const char *name,
 	    if (streq(ftp->ft_name, name)) {
 		*nargsp = ftp->ft_nargs;
 		*min_argsp = ftp->ft_min_args;
+		if (descp)
+		    *descp = ftp->ft_desc;
+		if (arghelpp)
+		    *arghelpp = ftp->ft_arghelp;
 		return 0;
 	    }
 	}
@@ -488,13 +515,15 @@ slaxDynFindArity (const char *uri, const char *name,
  */
 static int
 slaxPinFindArity (const char *local, const char *uri,
-		   int *nargsp, int *min_argsp)
+		   int *nargsp, int *min_argsp,
+		   const char **descp, const char **arghelpp)
 {
     if (streq(uri, SLAX_URI))
-	return slaxExtFindArity(local, nargsp, min_argsp);
+	return slaxExtFindArity(local, nargsp, min_argsp, descp, arghelpp);
 
     if (streq(uri, SLAXDYN_BIT_URI))
-	return slaxDynFindArity(uri, local, nargsp, min_argsp);
+	return slaxDynFindArity(uri, local, nargsp, min_argsp,
+				 descp, arghelpp);
 
     return -1;
 }
@@ -508,7 +537,8 @@ slaxPinFindArity (const char *local, const char *uri,
  */
 static xo_eval_ext_fn_t
 slaxPinFindFunction (const char *local, const char *uri,
-		      int *nargsp, int *min_argsp)
+		      int *nargsp, int *min_argsp,
+		      const char **descp, const char **arghelpp)
 {
     xmlXPathFunction func;
 
@@ -521,9 +551,14 @@ slaxPinFindFunction (const char *local, const char *uri,
 
     slaxPinScalarFunc = func;
 
-    if (slaxPinFindArity(local, uri, nargsp, min_argsp) < 0) {
+    if (slaxPinFindArity(local, uri, nargsp, min_argsp,
+			  descp, arghelpp) < 0) {
 	*nargsp = -1;
 	*min_argsp = -1;
+	if (descp)
+	    *descp = NULL;
+	if (arghelpp)
+	    *arghelpp = NULL;
     }
 
     return slaxPinScalarCall;
