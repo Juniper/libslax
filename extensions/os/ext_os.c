@@ -1126,7 +1126,7 @@ extOsStatInfo (xmlDocPtr docp, xmlNodePtr parent,
 	snprintf(buf, sizeof(buf), "%llu", (long long unsigned) stp->st_size);
 	slaxMakeNode(docp, parent, ELT_SIZE, buf, NULL, NULL);
 
-#if HAVE_MTIMESPEC
+#ifdef HAVE_MTIMESPEC
 	mtime = stp->st_mtimespec;
 #else /* HAVE_MTIMESPEC */
 	bzero(&mtime, sizeof(mtime));
