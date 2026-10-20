@@ -145,6 +145,9 @@ XSLTPUBFUN void XSLTCALL xsltPrintErrorContext (xsltTransformContextPtr ctxt,
                                                 xmlNodePtr node);
 XSLTPUBFUN void XSLTCALL xsltMessage (xsltTransformContextPtr ctxt,
                                       xmlNodePtr node, xmlNodePtr inst);
+XSLTPUBFUN void XSLTCALL xsltStopEngine (xsltTransformContextPtr ctxt);
+XSLTPUBFUN int XSLTCALL xsltGetMaxDepth (void);
+XSLTPUBFUN void XSLTCALL xsltSetMaxDepth (int value);
 XSLTPUBFUN void XSLTCALL xsltSetGenericErrorFunc (void *ctx,
                                                   xmlGenericErrorFunc handler);
 XSLTPUBFUN void XSLTCALL xsltSetGenericDebugFunc (void *ctx,
