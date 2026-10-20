@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_09.01.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:slax="http://xml.libslax.org/slax">
+
+  <!--
+    A successful call to a Tier 1 slax: function.  The slax: namespace
+    is eagerly registered by slaxExtRegister() (called from
+    slaxEnable()), so no dynamic module load is involved, unlike bit:.
+    Exercises xfdo_find_function's in-scope xmlns:slax binding lookup,
+    not the pdo_resolve_prefix fallback.
+  -->
+  <xsl:template match="start">
+    <out>
+      <xsl:if test="slax:ends-with('hello world', 'world')">
+        <match/>
+      </xsl:if>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
