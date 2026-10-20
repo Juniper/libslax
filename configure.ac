@@ -1415,7 +1415,7 @@ AC_PATH_PROG(XSLTPROC, xsltproc, /usr/bin/xsltproc)
 #
 BXSLT_COMPONENT_TABLE='
 crypto:off::Add crypto support to exslt
-debugger:off::Add debugging (breakpoint/inspection) support
+debugger:on::Add debugging (breakpoint/inspection) support
 profiler:on::Add profiling support
 xslt-debug:off::Enable XSLT verbose debug reporting (xsltproc -v)
 xslt-modules:off::Add plugin extension support
