@@ -94,6 +94,8 @@
 #define XSLT_DEBUG_OVER (XSLT_DEBUG_LOCAL + 1) /* The "over" operation */
 #define XSLT_DEBUG_DONE (XSLT_DEBUG_LOCAL + 2) /* The script is done */
 
+#ifdef WITH_DEBUGGER
+
 /*
  * Information about the current point of debugging
  */
@@ -3325,3 +3327,57 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
     return res;
 }
+
+#else /* WITH_DEBUGGER */
+
+/*
+ * libbxslt was built without debugger support (--without-debugger),
+ * so xsltSetDebuggerCallbacks() and the rest of the debugger hook API
+ * don't exist in the compiled library, and none of the real code above
+ * can be built against it.  Without these stubs, sdb would either fail
+ * to link or crash the first time it tried to call into a debugger
+ * hook the library was never built with.  Fail cleanly instead.
+ */
+
+int
+slaxDebugInitFlags (slaxDebugFlags_t flags UNUSED)
+{
+    slaxError("sdb: debugger support was not compiled into this build "
+	      "(rebuild with --with-debugger)");
+    return TRUE;
+}
+
+int
+slaxDebugInit (void)
+{
+    return slaxDebugInitFlags(0);
+}
+
+void
+slaxDebugSetStylesheet (xsltStylesheetPtr script UNUSED)
+{
+    /* nothing to do; debugger support isn't compiled in */
+}
+
+void
+slaxDebugSetScriptBuffer (const char *buffer UNUSED)
+{
+    /* nothing to do; debugger support isn't compiled in */
+}
+
+void
+slaxDebugSetIncludes (const char **includes UNUSED)
+{
+    /* nothing to do; debugger support isn't compiled in */
+}
+
+xmlDocPtr
+slaxDebugApplyStylesheet (const char *scriptname UNUSED,
+			  xsltStylesheetPtr style UNUSED,
+			  const char *docname UNUSED, xmlDocPtr doc UNUSED,
+			  const char **params UNUSED)
+{
+    return NULL;
+}
+
+#endif /* WITH_DEBUGGER */
