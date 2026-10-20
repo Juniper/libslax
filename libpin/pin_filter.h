@@ -112,4 +112,30 @@ void
 pin_filter_set_compile_ns (xo_filter_t *xfp, const pin_ns_map_t *bindings,
 			    size_t count);
 
+/*
+ * Message from the most recent xo_eval_compile()/evaluation failure
+ * reported through this backend's xfdo_error, or NULL if none is
+ * pending.  Only meaningful immediately after a failing call into the
+ * filter; clear it with pin_filter_clear_compile_error() before that
+ * call so a stale message from an earlier, unrelated failure can't be
+ * mistaken for this one.
+ */
+const char *
+pin_filter_last_compile_error (void);
+
+void
+pin_filter_clear_compile_error (void);
+
+/*
+ * Name/description/argument-hint of the function most recently
+ * resolved via the pin_dyn_ops_t provider (e.g. "bit:and", "requires 2
+ * bit-strings", "(left, right)"), or all NULL if none is on record.
+ * Only meaningful immediately after a failing xo_eval_compile() whose
+ * failure was an arity mismatch on a dynamically-resolved function;
+ * used to build a "consider: ..." diagnostic hint.
+ */
+void
+pin_filter_last_function_help (const char **namep, const char **descp,
+				const char **arghelpp);
+
 #endif /* LIBSLAX_PIN_FILTER_H */
