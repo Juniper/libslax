@@ -22,14 +22,17 @@
 #include <ctype.h>
 
 /*
- * Beginning with libxslt-v1.1.38, xsltutils.h only conditionally
- * exposes xslt debugger functions, like xsltSetDebuggerCallbacks().
- * So we have to punt duplicate its declaration here.  Sad, but ...
- * And you need to hope that the library was built with the debuggger.
+ * xsltutils.h declares xsltSetDebuggerCallbacks()/xsltSetDebuggerStatus()
+ * only when WITH_DEBUGGER is defined, i.e. only when libbxslt was itself
+ * built with debugger support.  We used to punt-declare them here
+ * unconditionally, but libbxslt is ours now and WITH_DEBUGGER really
+ * does control whether those symbols exist in the compiled library --
+ * declaring (and calling) them regardless is how "built without the
+ * debugger" turns into a SEGV instead of a clean error.  So we rely on
+ * the same #ifdef WITH_DEBUGGER here, fed by the same shared config
+ * header libbxslt was built from.
  */
 #include <libxslt/xsltutils.h>  /* For xsltSetDebuggerCallbacks, etc */
-XSLTPUBFUN int XSLTCALL xsltSetDebuggerCallbacks (int no, void *block);
-XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
 
 #include <libxslt/extensions.h>
 #include <libslax/slaxdyn.h>
@@ -41,6 +44,7 @@ XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
  */
 #define LX_ERR(_msg...) xsltGenericError(xsltGenericErrorContext, _msg)
 
+#ifdef WITH_DEBUGGER
 /**
  * Call xsltSetDebuggerCallbacks() with the properly typed argument.
  * I'm not sure of the reason but the arguments are untyped, giving it
@@ -58,29 +62,7 @@ xsltSetDebuggerCallbacksHelper (xsltHandleDebuggerCallback handler,
 
     xsltSetDebuggerCallbacks(NUM_ARRAY(cb), &cb);
 }
-
-/*
- * Free a chunk of memory
- */
-static inline void
-xmlFreeAndEasy (void *ptr)
-{
-    if (ptr)
-	xmlFree(ptr);
-}
-
-/*
- * The stock xmlStrchr() returns a "const" pointer, which isn't good.
- */
-static inline xmlChar *
-xmlStrchru (xmlChar *str, xmlChar val)
-{
-    for ( ; str && *str != 0; str++)
-        if (*str == val)
-	    return str;
-
-    return NULL;
-}
+#endif /* WITH_DEBUGGER */
 
 static inline void
 slaxRegisterFunction (const char *uri, const char *fn, xmlXPathFunction func)
@@ -149,30 +131,6 @@ slaxUnregisterElementTable (const char *uri, slax_element_table_t *etp)
 	    slaxUnregisterElement(uri, etp->et_name);
 }
 
-static inline int
-xmlAtoi (const xmlChar *nptr)
-{
-    return atoi((const char *) nptr);
-}
-
-static inline char *
-xmlStrdup2 (const char *str)
-{
-    return (char *) xmlStrdup((const xmlChar *) str);
-}
-
-/*
- * There's no clear way to stop the XSLT engine in the middle of
- * a script, but this is the way <xsl:message terminate="yes">
- * does it.  See xsltMessage().
- */
-static inline void
-xsltStopEngine (xsltTransformContextPtr ctxt)
-{
-    if (ctxt)
-	xsltTransformContextSetState(ctxt, XSLT_STATE_STOPPED);
-}
-
 /*
  * Sadly, xmlAddChild can coalesce the item we're adding with other
  * nodes and free our node.  It returns the new node, so we need to
@@ -213,21 +171,6 @@ slaxAddChildAttrib (xmlNodePtr parent, xmlNodePtr child,
     return child;
 }
 
-static inline xmlNodePtr
-xmlAddChildContent (xmlDocPtr docp, xmlNodePtr parent,
-		    const xmlChar *name, const xmlChar *value)
-{
-    xmlNodePtr nodep = xmlNewDocRawNode(docp, NULL, name, value);
-    if (nodep == NULL)
-	return NULL;
-
-    xmlNodePtr added = xmlAddChild(parent, nodep);
-    if (added == NULL)
-	xmlFreeNode(nodep);
-
-    return added;
-}
-
 /*
  * Add a child node to the parent with the given name and value.  It's
  * "fire and forget" in that errors are ignored.  The parent doesn't care
@@ -246,17 +189,6 @@ slaxAddChildName (xmlDocPtr docp, xmlNodePtr parent, const char *name,
     slaxAddChild(parent, newp);
 }
 
-/*
- * Return the name of a node
- */
-static inline const char *
-xmlNodeName (xmlNodePtr np)
-{
-    if (np == NULL || xmlNodeGetName(np) == NULL)
-	return NULL;
-    return (const char *) xmlNodeGetName(np);
-}
-
 static inline int
 slaxStringIsWhitespace (const char *str)
 {
@@ -264,67 +196,6 @@ slaxStringIsWhitespace (const char *str)
 	if (!isspace((int) *str))
 	    return FALSE;
     return TRUE;
-}
-
-/*
- * Return the value of this element
- */
-static inline const char *
-xmlNodeValue (xmlNodePtr np)
-{
-    xmlNodePtr gp;
-  
-    if (xmlNodeGetType(np) == XML_ELEMENT_NODE) {
-	for (gp = xmlNodeGetChildren(np); gp; gp = xmlNodeGetNext(gp))
-	    if (xmlNodeGetType(gp) == XML_TEXT_NODE
-		    && !slaxStringIsWhitespace((char *) xmlNodeGetContentRaw(gp)))
-		return (char *) xmlNodeGetContentRaw(gp);
-	/*
-	 * If we found the element but not a valid text node,
-	 * return an empty string to the caller can see
-	 * empty elements.
-	 */
-	return "";
-    }
-     
-    return NULL;
-}
-
-/* libxslt provides no means for setting the max call depth */
-extern int xsltMaxDepth;
-
-static inline int
-xsltGetMaxDepth (void)
-{
-    return xsltMaxDepth;
-}
-
-static inline void
-xsltSetMaxDepth (int value)
-{
-    xsltMaxDepth = value;
-}
-
-/*
- * Add a new attribute (aka property) to a node
- */
-static inline void
-xmlAddProp (xmlNodePtr nodep, xmlAttrPtr newp)
-{
-    if (nodep == NULL)
-	return;
-
-    xmlAttrSetParent(newp, nodep);
-    if (xmlNodeGetProperties(nodep) == NULL) {
-	xmlNodeSetProperties(nodep, newp);
-    } else {
-	xmlAttrPtr prev = xmlNodeGetProperties(nodep);
-
-	while (xmlAttrGetNext(prev) != NULL)
-	    prev = xmlAttrGetNext(prev);
-	xmlAttrSetNext(prev, newp);
-	xmlAttrSetPrev(newp, prev);
-    }
 }
 
 /**
