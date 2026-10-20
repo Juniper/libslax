@@ -3903,7 +3903,8 @@ static slax_function_table_t slaxExtMainTable[] = {
  * found, -1 (untouched) otherwise.
  */
 int
-slaxExtFindArity (const char *name, int *nargsp, int *min_argsp)
+slaxExtFindArity (const char *name, int *nargsp, int *min_argsp,
+		   const char **descp, const char **arghelpp)
 {
     slax_function_table_t *tables[] = { slaxExtMainTable, slaxExtOtherTable };
     slax_function_table_t *ftp;
@@ -3914,6 +3915,10 @@ slaxExtFindArity (const char *name, int *nargsp, int *min_argsp)
 	    if (streq(ftp->ft_name, name)) {
 		*nargsp = ftp->ft_nargs;
 		*min_argsp = ftp->ft_min_args;
+		if (descp)
+		    *descp = ftp->ft_desc;
+		if (arghelpp)
+		    *arghelpp = ftp->ft_arghelp;
 		return 0;
 	    }
 	}
