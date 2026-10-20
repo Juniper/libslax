@@ -73,7 +73,7 @@ TEST_ONE = \
 
 test tests: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@(for test in ${TEST_CASES} ; do \
+	-@${DEB} (for test in ${TEST_CASES} ; do \
 	    echo "... $$test ..."; \
 	    ${TEST_ONE}; \
 	    true; \
