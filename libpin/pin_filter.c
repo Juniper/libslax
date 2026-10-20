@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 #include "slaxconfig.h"
@@ -529,14 +530,22 @@ pin_split_qname (const char *name, char *prefix, size_t prefix_max,
  * build/plans/slax-funcs.rst, Part 2 point 4.
  *
  * Resolution order: first, search the in-scope prefix/uri bindings
- * recorded via pin_filter_set_compile_ns (the compiler's namespace
- * stack at the point this expression was compiled -- see
- * pin_compile.c's PIN_OP_NS_PUSH/POP bracketing), searched from the
- * end (innermost/most-recent) backward so the nearest declaration
- * wins, exactly like ordinary XML prefix-shadowing. Only when that
- * misses -- no bindings were recorded, or none match 'prefix' -- fall
- * back to the pin_dyn_ops_t provider's pdo_resolve_prefix. This
- * matches Concrete step 5 / Design step 2a in the plan.
+ * recorded via pin_filter_set_compile_ns, searched from the end
+ * (innermost/most-recent) backward so the nearest declaration wins,
+ * exactly like ordinary XML prefix-shadowing. Only when that misses --
+ * no bindings were recorded, or none match 'prefix' -- fall back to the
+ * pin_dyn_ops_t provider's pdo_resolve_prefix. This matches Concrete
+ * step 5 / Design step 2a in the plan.
+ *
+ * This hook runs twice per call site: once at compile time (to learn
+ * the arity) and again at runtime (xo_eval_func_external re-resolves
+ * rather than caching -- see its doc comment in xo_filter.c), both
+ * against the shared rulebook-wide eval filter. The bindings in scope
+ * therefore can't be the compiler's own transient namespace stack --
+ * it's freed once compilation finishes -- so pin_op_push_eval snapshots
+ * it into the rulebook (pin_rulebook_eval_prog_add's ns_bindings/
+ * ns_count) and pin_op_eval (pin_exec.c) reinstates that program's own
+ * snapshot via pin_filter_set_compile_ns before every run.
  *
  * Note: this in-scope lookup only runs for call sites that record
  * bindings (currently pin_op_push_eval, for "real" XPath expressions
@@ -547,6 +556,45 @@ pin_split_qname (const char *name, char *prefix, size_t prefix_max,
  * pattern predicates always fall straight through to
  * pdo_resolve_prefix -- a known, flagged gap, not an oversight.
  */
+/*
+ * Name/desc/arghelp of the most recent successful pdo_find_function
+ * resolution, stashed here because pin_filter_find_function's own
+ * signature is fixed by xo_filter.h's xfdo_find_function vtable member
+ * (nargsp/min_argsp only -- no room for a hint).  pin_op_push_eval
+ * reads these back, via pin_filter_last_function_help() below, to build
+ * a "consider: ..." hint when a compile fails on an arity mismatch for
+ * this function.  Only meaningful immediately after a failed compile;
+ * a later, unrelated runtime re-resolution (see this function's own
+ * doc comment) may silently overwrite it, but by then any diagnostic
+ * for the earlier compile failure has already been reported.
+ */
+static char pin_filter_last_func_name[128];
+static const char *pin_filter_last_func_desc;
+static const char *pin_filter_last_func_arghelp;
+static int pin_filter_last_func_set;
+
+void
+pin_filter_last_function_help (const char **namep, const char **descp,
+				const char **arghelpp)
+{
+    if (!pin_filter_last_func_set) {
+	if (namep)
+	    *namep = NULL;
+	if (descp)
+	    *descp = NULL;
+	if (arghelpp)
+	    *arghelpp = NULL;
+	return;
+    }
+
+    if (namep)
+	*namep = pin_filter_last_func_name;
+    if (descp)
+	*descp = pin_filter_last_func_desc;
+    if (arghelpp)
+	*arghelpp = pin_filter_last_func_arghelp;
+}
+
 static xo_eval_ext_fn_t
 pin_filter_find_function (xo_filter_data_t *dp, const char *name,
 			   int *nargsp, int *min_argsp)
@@ -587,7 +635,54 @@ pin_filter_find_function (xo_filter_data_t *dp, const char *name,
     if (pin_dyn_ops == NULL || pin_dyn_ops->pdo_find_function == NULL)
 	return NULL;
 
-    return pin_dyn_ops->pdo_find_function(local, uri, nargsp, min_argsp);
+    const char *desc = NULL, *arghelp = NULL;
+    xo_eval_ext_fn_t fn = pin_dyn_ops->pdo_find_function(local, uri, nargsp,
+							  min_argsp, &desc,
+							  &arghelp);
+    if (fn != NULL) {
+	snprintf(pin_filter_last_func_name, sizeof(pin_filter_last_func_name),
+		 "%s", name);
+	pin_filter_last_func_desc = desc;
+	pin_filter_last_func_arghelp = arghelp;
+	pin_filter_last_func_set = 1;
+    } else {
+	pin_filter_last_func_set = 0;
+    }
+
+    return fn;
+}
+
+/*
+ * Formatted message from the most recent xo_eval_compile()/evaluation
+ * failure reported through this backend, stashed here because this is
+ * the wiring that finally gives pin's xo_filter_data_ops_t an
+ * xfdo_error -- without it, xo_filter_data_verror() finds ops->
+ * xfdo_error NULL and drops the message (see xo_filter.c). Cleared by
+ * pin_filter_clear_compile_error(); callers should clear before a
+ * compile and check pin_filter_last_compile_error() immediately after
+ * a failure, since any later compile or evaluation overwrites it.
+ */
+static char pin_filter_last_error[2048];
+static int pin_filter_last_error_set;
+
+static void
+pin_filter_data_error (xo_filter_data_t *dp UNUSED, const char *fmt,
+			va_list vap)
+{
+    vsnprintf(pin_filter_last_error, sizeof(pin_filter_last_error), fmt, vap);
+    pin_filter_last_error_set = 1;
+}
+
+const char *
+pin_filter_last_compile_error (void)
+{
+    return pin_filter_last_error_set ? pin_filter_last_error : NULL;
+}
+
+void
+pin_filter_clear_compile_error (void)
+{
+    pin_filter_last_error_set = 0;
 }
 
 static xo_filter_data_ops_t pin_filter_data_ops = {
@@ -602,6 +697,7 @@ static xo_filter_data_ops_t pin_filter_data_ops = {
     .xfdo_event_close  = pin_filter_data_event_close,
     .xfdo_destroy      = pin_filter_data_destroy,
     .xfdo_find_function = pin_filter_find_function,
+    .xfdo_error        = pin_filter_data_error,
 };
 
 /*
