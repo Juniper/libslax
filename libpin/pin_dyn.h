@@ -34,13 +34,21 @@ typedef struct pin_dyn_ops_s {
      * pdo_find_function: load and look up 'local' under 'uri', wrapped
      * in a calling-convention bridge, ready to call as an
      * xo_eval_ext_fn_t. Returns NULL if nothing provides local@uri.
+     *
+     * descp/arghelpp are optional (pass NULL if not wanted); on a
+     * successful lookup they're filled with a short description and
+     * an argument-list hint for the function (either may still come
+     * back NULL, if the provider has none on file for it), for use in
+     * a diagnostic "consider" hint. Untouched when the lookup fails.
      */
     xo_eval_ext_fn_t (*pdo_find_function)(const char *local,
                                            const char *uri,
-                                           int *nargsp, int *min_argsp);
+                                           int *nargsp, int *min_argsp,
+                                           const char **descp,
+                                           const char **arghelpp);
 } pin_dyn_ops_t;
 
-#define PIN_DYN_OPS_VERSION 1
+#define PIN_DYN_OPS_VERSION 2
 
 /*
  * Register the dynamic-loading provider's callbacks. Call once, at
