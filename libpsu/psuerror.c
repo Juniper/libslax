@@ -83,3 +83,91 @@ psu_warning (const char *filename, int line, const char *fmt, ...)
     psu_emit(filename, line, 1, fmt, vap);
     va_end(vap);
 }
+
+/*
+ * Holds the pending "consider" (hint) text between a psu_complain_consider()
+ * call and the psu_complain() that consumes it.  See the doc comment on
+ * both in psuerror.h.
+ */
+static THREAD_GLOBAL(char) psu_complain_consider_buf[256];
+static THREAD_GLOBAL(int) psu_complain_consider_set;
+
+void
+psu_complain_considerv (const char *fmt, va_list vap)
+{
+    vsnprintf(psu_complain_consider_buf, sizeof(psu_complain_consider_buf),
+	       fmt, vap);
+    psu_complain_consider_set = 1;
+}
+
+void
+psu_complain_consider (const char *fmt, ...)
+{
+    va_list vap;
+    va_start(vap, fmt);
+    psu_complain_considerv(fmt, vap);
+    va_end(vap);
+}
+
+void
+psu_complainv (const char *filename, int line, int col, int is_warning,
+	       const char *source_line, const char *fmt, va_list vap)
+{
+    char msgbuf[2048];
+    vsnprintf(msgbuf, sizeof(msgbuf), fmt, vap);
+
+    const char *consider = psu_complain_consider_set
+	? psu_complain_consider_buf : NULL;
+
+    if (psu_error_callback) {
+	/*
+	 * The plain callback only knows filename/line/is_warning/msg; the
+	 * richer location (col), source line, and consider hint have no
+	 * home in that older signature, so callers wanting them must use
+	 * psu_complain() without a callback installed (stderr output).
+	 */
+	psu_error_callback(psu_error_callback_data,
+			   filename, line, is_warning, msgbuf);
+	psu_complain_consider_set = 0;
+	return;
+    }
+
+    const char *severity = is_warning ? "warning" : "error";
+    if (filename && filename[0] != '\0' && line > 0) {
+	if (col > 0)
+	    fprintf(stderr, "%s:%d:%d: %s: %s\n",
+		    filename, line, col, severity, msgbuf);
+	else
+	    fprintf(stderr, "%s:%d: %s: %s\n", filename, line, severity, msgbuf);
+    } else if (filename && filename[0] != '\0') {
+	fprintf(stderr, "%s: %s: %s\n", filename, severity, msgbuf);
+    } else {
+	fprintf(stderr, "%s: %s\n", severity, msgbuf);
+    }
+
+    if (source_line != NULL) {
+	char linebuf[32];
+	snprintf(linebuf, sizeof(linebuf), "%d", line > 0 ? line : 0);
+	int gutter = (int) strlen(linebuf);
+
+	fprintf(stderr, "%*s | %s\n", gutter, linebuf, source_line);
+
+	if (col > 0)
+	    fprintf(stderr, "%*s | %*s^\n", gutter, "", col - 1, "");
+    }
+
+    if (consider != NULL)
+	fprintf(stderr, "consider: %s\n", consider);
+
+    psu_complain_consider_set = 0;
+}
+
+void
+psu_complain (const char *filename, int line, int col, int is_warning,
+	      const char *source_line, const char *fmt, ...)
+{
+    va_list vap;
+    va_start(vap, fmt);
+    psu_complainv(filename, line, col, is_warning, source_line, fmt, vap);
+    va_end(vap);
+}
