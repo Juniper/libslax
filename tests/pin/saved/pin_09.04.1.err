@@ -1,5 +1,5 @@
-../../../tests/pin/pin_09.04.in:19:1: error: function 'bit:and' requires 2 argument(s), got 1
-19 | bit:and('10')
-   | ^
+../../../tests/pin/pin_09.04.in:19:19: error: function 'bit:and' requires 2 argument(s), got 1
+19 |     <xsl:if test="bit:and('10')">
+   |                   ^
 consider: invoke as bit:and(bit-string, bit-string) -- Bit-wise AND operator
 pin_09.test: pin_compile failed
