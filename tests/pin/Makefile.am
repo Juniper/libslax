@@ -34,7 +34,8 @@ pin_04.c \
 pin_05.c \
 pin_06.c \
 pin_07.c \
-pin_08.c
+pin_08.c \
+pin_09.c
 
 pin_01_test_SOURCES = pin_01.c
 pin_02_test_SOURCES = pin_02.c
@@ -44,6 +45,7 @@ pin_05_test_SOURCES = pin_05.c
 pin_06_test_SOURCES = pin_06.c
 pin_07_test_SOURCES = pin_07.c
 pin_08_test_SOURCES = pin_08.c
+pin_09_test_SOURCES = pin_09.c
 
 # pin04 needs parrotdb; pin01 only needs libpin
 pin_04_test_LDADD = \
@@ -80,6 +82,19 @@ pin_08_test_LDADD = \
     ${libdir}/libxo/libxo_filter.la \
     ${libdir}/libxo.la \
     ${LIBXML_LIBS}
+
+# pin09 calls slaxEnable(), the one real one-time application-startup
+# hook, which registers libslax's pin_dyn_ops_t provider with libpin
+# (slaxDynSetPinOps()); unlike pin01-pin08, it needs libslax itself and
+# libslax's own libxslt/libexslt dependencies
+pin_09_test_LDADD = \
+    ${top_builddir}/libpsu/libpsu.la \
+    ${top_builddir}/libpin/libpin.la \
+    ${top_builddir}/libslax/libslax.la \
+    ${libdir}/libxo/libxo_filter.la \
+    ${libdir}/libxo.la \
+    ${LIBXML_LIBS} \
+    ${LIBXSLT_LIBS} -lexslt
 
 # TEST_CASES := $(shell cd ${srcdir} ; echo *.c )
 SAVEDDATA := $(shell cd ${srcdir} ; echo saved/pin_*.out saved/pin_*.err)
@@ -213,6 +228,14 @@ EXTRA_DIST = \
     pin_08.52.in \
     pin_08.53.in \
     pin_08.53.xml \
+    pin_09.01.in \
+    pin_09.01.xml \
+    pin_09.02.in \
+    pin_09.02.xml \
+    pin_09.03.in \
+    pin_09.03.xml \
+    pin_09.04.in \
+    pin_09.04.xml \
     ${SAVEDDATA}
 
 S2O = | ${SED} '1,/@@/d'
