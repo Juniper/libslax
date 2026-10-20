@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <libpsu/psustring.h>
+#include <libpsu/psuerror.h>
 #include <libxslt/extensions.h>
 #include <libexslt/exslt.h>
 
@@ -600,6 +601,9 @@ slaxGetInput (slax_data_t *sdp, int final)
 		       sdp->sd_len - sdp->sd_start);
 		sdp->sd_len -= sdp->sd_start;
 		sdp->sd_cur -= sdp->sd_start;
+		sdp->sd_line_start -= sdp->sd_start;
+		if (sdp->sd_line_start < 0)
+		    sdp->sd_line_start = 0;
 		sdp->sd_start = 0;
 
 	    } else {
@@ -662,6 +666,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 		 */
 		sdp->sd_len = 0;
 		sdp->sd_line += 1;
+		sdp->sd_line_start = 0;
 	    }
 
 	    first_read = FALSE;
@@ -684,6 +689,10 @@ slaxMoveCur (slax_data_t *sdp)
 
     int moved;
     if (sdp->sd_cur < sdp->sd_len) {
+	if (sdp->sd_buf[sdp->sd_cur] == '\n') {
+	    sdp->sd_line += 1;
+	    sdp->sd_line_start = sdp->sd_cur + 1;
+	}
 	sdp->sd_cur += 1;
 	moved = TRUE;
     } else moved = FALSE;
@@ -824,8 +833,10 @@ slaxDrainComment (slax_data_t *sdp)
 	}
 
 	/* Keep the line number accurate inside comments */
-	if (sdp->sd_buf[sdp->sd_cur] == '\n')
+	if (sdp->sd_buf[sdp->sd_cur] == '\n') {
 	    sdp->sd_line += 1;
+	    sdp->sd_line_start = sdp->sd_cur + 1;
+	}
     }
 }
 
@@ -1005,6 +1016,7 @@ slaxLexer (slax_data_t *sdp)
 	       && isspace((int) sdp->sd_buf[sdp->sd_cur])) {
 	    if (sdp->sd_buf[sdp->sd_cur] == '\n') {
 		sdp->sd_line += 1;
+		sdp->sd_line_start = sdp->sd_cur + 1;
 		if (sdp->sd_ctxt->input)
 		    sdp->sd_ctxt->input->line = sdp->sd_line;
 	    }
@@ -1086,7 +1098,8 @@ slaxLexer (slax_data_t *sdp)
     }
 
     sdp->sd_start = sdp->sd_cur;
-	
+    sdp->sd_col = sdp->sd_cur - sdp->sd_line_start + 1;
+
     ch1 = sdp->sd_buf[sdp->sd_cur];
     ch2 = (sdp->sd_cur + 1 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 1] : 0;
     ch3 = (sdp->sd_cur + 2 < sdp->sd_len) ? sdp->sd_buf[sdp->sd_cur + 2] : 0;
@@ -1646,6 +1659,93 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
     return xmlStrdup2(buf);
 }
 
+/*
+ * Return a malloc'd copy of the 'lineno'-th (1-based) line of the file
+ * named 'filename' (no trailing newline/CR), or NULL if the file can't
+ * be opened or has fewer lines than that.  Used by slaxComplain() to
+ * echo the real source line in a clang-style diagnostic.  Freed with
+ * free(), not xmlFree()/xo_free(), since it comes from getline().
+ */
+static char *
+slaxReadSourceLine (const char *filename, int lineno)
+{
+    if (filename == NULL || lineno <= 0)
+	return NULL;
+
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+	return NULL;
+
+    char *line = NULL;
+    size_t cap = 0;
+    ssize_t len = -1;
+
+    for (int n = 0; n < lineno; n++) {
+	len = getline(&line, &cap, fp);
+	if (len < 0)
+	    break;
+    }
+
+    fclose(fp);
+
+    if (len < 0) {
+	free(line);
+	return NULL;
+    }
+
+    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
+	line[--len] = '\0';
+
+    return line;
+}
+
+/*
+ * Record a "consider" (hint) line to be appended to the next
+ * slaxComplain() call.  See psu_complain_consider()'s doc comment for
+ * the attach-to-next-call semantics.  'sdp' isn't needed to build the
+ * hint itself but is accepted for symmetry with slaxComplain() and in
+ * case a future hint wants to reference the current position.
+ */
+void
+slaxComplainConsider (slax_data_t *sdp UNUSED, const char *fmt, ...)
+{
+    va_list vap;
+
+    va_start(vap, fmt);
+    psu_complain_considerv(fmt, vap);
+    va_end(vap);
+}
+
+/*
+ * Report a clang-style diagnostic (file:line:col, severity, message,
+ * echoed source line, caret, optional "consider" hint) against sdp's
+ * current position: sd_filename/sd_line/sd_col, i.e. the most recently
+ * lexed token.  The source line is re-read from sd_filename on disk
+ * (sd_buf only ever holds a sliding window of the input, not the whole
+ * file), so this degrades gracefully -- no echoed line/caret, just the
+ * location and message -- for unseekable input (e.g. "-"/stdin).
+ */
+int
+slaxComplain (slax_data_t *sdp, int iserr, const char *fmt, ...)
+{
+    const char *fn = sdp->sd_filename[0] ? sdp->sd_filename : NULL;
+    char *source_line = slaxReadSourceLine(fn, sdp->sd_line);
+
+    if (iserr)
+	sdp->sd_errors += 1;
+
+    va_list vap;
+    va_start(vap, fmt);
+    psu_complainv(fn, sdp->sd_line, sdp->sd_col, !iserr, source_line, fmt,
+		  vap);
+    va_end(vap);
+
+    if (source_line != NULL)
+	free(source_line);
+
+    return 0;
+}
+
 /**
  * Callback from bison when an error is detected.
  *
@@ -1708,9 +1808,9 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 			count += 1;
 
 		snprintf(buf, sizeof(buf),
-			 "\n%s:%d:   could be related to unterminated string "
+			 "could be related to unterminated string "
 			 "on line %d (\"%.*s\\n...\")",
-			 sdp->sd_filename, sdp->sd_line, sdp->sd_line - count,
+			 sdp->sd_line - count,
 			 (int) (np - ssp->ss_token), ssp->ss_token);
 	    }
 	}
@@ -1727,8 +1827,9 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 				    vstack, vtop);
 
 	if (msg) {
-	    slaxError("%s:%d: %s%s\n", sdp->sd_filename, sdp->sd_line,
-		      msg, buf);
+	    if (buf[0])
+		slaxComplainConsider(sdp, "%s", buf);
+	    slaxComplain(sdp, 1, "%s", msg);
 	    xmlFree(msg);
 	    return 0;
 	}
@@ -1738,11 +1839,14 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
     if (unterm)
 	strlcat(buf, "possibly unterminated string", sizeof(buf));
 
-    slaxError("%s:%d: %s%s%s%s%s%s\n",
-	      sdp->sd_filename, sdp->sd_line, str,
-	      token ? " before " : "", token ?: "",
-	      token && trunc ? "... " : "",
-	      token ? ": " : "", buf);
+    if (buf[0])
+	slaxComplainConsider(sdp, "%s", buf);
+
+    slaxComplain(sdp, 1, "%s%s%s%s%s",
+		 str,
+		 token ? " before " : "", token ?: "",
+		 token && trunc ? "... " : "",
+		 token ? ": " : "");
 
     return 0;
 }
