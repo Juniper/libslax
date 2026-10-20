@@ -1057,6 +1057,12 @@ XMLPUBFUN int xmlIsBlankNode (const xmlNode *node);
 XMLPUBFUN xmlNode *xmlDocSetRootElement (xmlDoc *doc, xmlNode *root);
 XMLPUBFUN void xmlNodeSetName (xmlNode *cur, const xmlChar *name);
 XMLPUBFUN xmlNode *xmlAddChild (xmlNode *parent, xmlNode *cur);
+XMLPUBFUN xmlNode *xmlAddChildContent (xmlDoc *doc, xmlNode *parent,
+                                       const xmlChar *name,
+                                       const xmlChar *value);
+XMLPUBFUN void xmlAddProp (xmlNode *node, xmlAttr *prop);
+XMLPUBFUN const char *xmlNodeName (const xmlNode *node);
+XMLPUBFUN const char *xmlNodeValue (const xmlNode *node);
 XMLPUBFUN xmlNode *xmlAddChildList (xmlNode *parent, xmlNode *cur);
 XMLPUBFUN xmlNode *xmlReplaceNode (xmlNode *old, xmlNode *cur);
 XMLPUBFUN xmlNode *xmlAddPrevSibling (xmlNode *cur, xmlNode *elem);
