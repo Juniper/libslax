@@ -1323,6 +1323,19 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
     pin_filter_set_cur_node(xfp, ctx);
     pin_filter_set_esp(xfp, esp);
 
+    /*
+     * Reinstate this program's own namespace-binding snapshot before
+     * running it: xfdo_find_function (pin_filter_find_function) is
+     * re-consulted at runtime for any "slax:"/"bit:"-style call compiled
+     * into this program, and prb_eval_xfp is shared by every PIN_OP_EVAL
+     * program in the rulebook, so without this each run would see
+     * whichever program compiled last, rather than its own bindings.
+     */
+    uint32_t ns_count = 0;
+    const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
+								   &ns_count);
+    pin_filter_set_compile_ns(xfp, ns_bindings, ns_count);
+
     struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
 
     int is_boolean = 0, bool_value = 0, is_missing = 0;
