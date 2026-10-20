@@ -541,6 +541,50 @@ xsltMessage (xsltTransformContextPtr ctxt, xmlNodePtr node, xmlNodePtr inst)
         ctxt->state = XSLT_STATE_STOPPED;
 }
 
+/**
+ * xsltStopEngine:
+ * @ctxt:  an XSLT transformation context
+ *
+ * Stop the XSLT transformation engine in the middle of a script, the
+ * same way <xsl:message terminate="yes"/> does above.  There's no
+ * other direct way to halt an in-progress transform.
+ */
+void
+xsltStopEngine (xsltTransformContextPtr ctxt)
+{
+    if (ctxt != NULL)
+        ctxt->state = XSLT_STATE_STOPPED;
+}
+
+/**
+ * xsltGetMaxDepth:
+ *
+ * Returns the current value of xsltMaxDepth, the maximum call depth
+ * allowed before the transformation engine aborts with a "potential
+ * infinite template recursion" error.
+ *
+ * Returns the current max call depth.
+ */
+int
+xsltGetMaxDepth (void)
+{
+    return xsltMaxDepth;
+}
+
+/**
+ * xsltSetMaxDepth:
+ * @value:  the new maximum call depth
+ *
+ * Sets xsltMaxDepth, the maximum call depth allowed before the
+ * transformation engine aborts with a "potential infinite template
+ * recursion" error.
+ */
+void
+xsltSetMaxDepth (int value)
+{
+    xsltMaxDepth = value;
+}
+
 /************************************************************************
  *									*
  *		Handling of out of context errors			*
