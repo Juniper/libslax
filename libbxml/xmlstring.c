@@ -83,6 +83,31 @@ xmlStrdup (const xmlChar *cur)
 }
 
 /**
+ * a strdup() for a plain char * that returns a (char *) xmlChar
+ * string, for callers mixing the two string types.
+ *
+ * @param str  the input char *
+ * @returns a new char * or NULL
+ */
+char *
+xmlStrdup2 (const char *str)
+{
+    return (char *) xmlStrdup((const xmlChar *) str);
+}
+
+/**
+ * an atoi() for xmlChar's
+ *
+ * @param nptr  the xmlChar * array
+ * @returns the integer value parsed from the string
+ */
+int
+xmlAtoi (const xmlChar *nptr)
+{
+    return atoi((const char *) nptr);
+}
+
+/**
  * a strndup for char's to xmlChar's
  *
  * @param cur  the input char *
@@ -352,6 +377,24 @@ xmlStrchr (const xmlChar *str, xmlChar val)
             return (xmlChar *) str;
         str++;
     }
+    return NULL;
+}
+
+/**
+ * Like xmlStrchr(), but returns a non-const pointer, for callers that
+ * need to write through the result.
+ *
+ * @param str  the xmlChar * array
+ * @param val  the xmlChar to search
+ * @returns the xmlChar * for the first occurrence or NULL.
+ */
+xmlChar *
+xmlStrchru (xmlChar *str, xmlChar val)
+{
+    for ( ; str && *str != 0; str++)
+        if (*str == val)
+            return str;
+
     return NULL;
 }
 
