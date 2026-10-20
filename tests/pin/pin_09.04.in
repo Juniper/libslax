@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_09.04.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:bit="http://xml.libslax.org/bit">
+
+  <!--
+    A Tier 1 bit: function (bit:and, which takes exactly 2 arguments)
+    called with the wrong argc must fail at compile time
+    (xo_eval_compile_check_arity, reached via the xfdo_find_function
+    fallback path) and be reported via pin_error, not silently
+    compile and misbehave at runtime.  Kept in its own fixture file
+    for the same reason as pin_08.59/pin_08.60: pin_compile() fails
+    the whole stylesheet once any pin_error has been reported.
+  -->
+  <xsl:template match="start">
+    <xsl:if test="bit:and('10')">
+      <bad/>
+    </xsl:if>
+  </xsl:template>
+
+</xsl:stylesheet>
