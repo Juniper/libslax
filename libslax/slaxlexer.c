@@ -1224,21 +1224,29 @@ slaxLexer (slax_data_t *sdp)
 	     * Found a quoted string.  Scan for the end.  We may
 	     * need to read some more, if the string is long.
 	     */
+	    int uline = sdp->sd_line, ucol = sdp->sd_col; /* Start of string */
+
 	    if (slaxMoveCur(sdp)) /* Move past the first quote */
 		return -1;
 
 	    for (;;) {
 		if (sdp->sd_cur == sdp->sd_len)
-		    if (slaxGetInput(sdp, 0))
+		    if (slaxGetInput(sdp, 0)) {
+			sdp->sd_uline = uline;
+			sdp->sd_ucol = ucol;
 			return T_UNTERMINATED_STRING;
+		    }
 
 		if ((uint8_t) sdp->sd_buf[sdp->sd_cur] == ch1)
 		    break;
 
 		int bump = (sdp->sd_buf[sdp->sd_cur] == '\\') ? 1 : 0;
 
-		if (slaxMoveCur(sdp))
+		if (slaxMoveCur(sdp)) {
+		    sdp->sd_uline = uline;
+		    sdp->sd_ucol = ucol;
 		    return T_UNTERMINATED_STRING;
+		}
 
 		if (bump && !slaxParseIsXpath(sdp)
 			&& sdp->sd_cur < sdp->sd_len)
@@ -1662,41 +1670,57 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
 /*
  * Return a malloc'd copy of the 'lineno'-th (1-based) line of the file
  * named 'filename' (no trailing newline/CR), or NULL if the file can't
- * be opened or has fewer lines than that.  Used by slaxComplain() to
- * echo the real source line in a clang-style diagnostic.  Freed with
- * free(), not xmlFree()/xo_free(), since it comes from getline().
+ * be opened.  Used by slaxComplain() to echo the real source line in a
+ * clang-style diagnostic.  Freed with free(), not xmlFree()/xo_free(),
+ * since it comes from getline().
+ *
+ * If the file has fewer than 'lineno' lines -- e.g. an unterminated
+ * quoted string ran the lexer's line counter past the last real line
+ * while hunting (in vain) for a closing quote -- we fall back to the
+ * last line the file actually has, and update '*linenop' to match, so
+ * the caller can keep the reported line number and the echoed line in
+ * sync instead of pointing at a line that doesn't exist.
  */
 static char *
-slaxReadSourceLine (const char *filename, int lineno)
+slaxReadSourceLine (const char *filename, int *linenop)
 {
-    if (filename == NULL || lineno <= 0)
+    if (filename == NULL || *linenop <= 0)
 	return NULL;
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL)
 	return NULL;
 
-    char *line = NULL;
+    char *line = NULL, *last = NULL;
     size_t cap = 0;
-    ssize_t len = -1;
+    ssize_t len = -1, lastlen = -1;
+    int n, lastn = 0;
 
-    for (int n = 0; n < lineno; n++) {
+    for (n = 1; n <= *linenop; n++) {
 	len = getline(&line, &cap, fp);
 	if (len < 0)
 	    break;
+
+	free(last);
+	last = line;
+	lastlen = len;
+	lastn = n;
+
+	line = NULL;
+	cap = 0;
     }
 
     fclose(fp);
+    free(line);
 
-    if (len < 0) {
-	free(line);
+    if (last == NULL)
 	return NULL;
-    }
 
-    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
-	line[--len] = '\0';
+    while (lastlen > 0 && (last[lastlen - 1] == '\n' || last[lastlen - 1] == '\r'))
+	last[--lastlen] = '\0';
 
-    return line;
+    *linenop = lastn;
+    return last;
 }
 
 /*
@@ -1724,20 +1748,32 @@ slaxComplainConsider (slax_data_t *sdp UNUSED, const char *fmt, ...)
  * (sd_buf only ever holds a sliding window of the input, not the whole
  * file), so this degrades gracefully -- no echoed line/caret, just the
  * location and message -- for unseekable input (e.g. "-"/stdin).
+ *
+ * sd_line can run past the file's last real line (an unterminated
+ * quoted string drags the line counter through the final newline
+ * while looking for a closing quote that never shows up); when that
+ * happens, slaxReadSourceLine() clamps to the last line the file
+ * actually has, and we clamp the reported line/col to match, so the
+ * location, the echoed line, and the caret all agree instead of the
+ * echo silently vanishing.
  */
 int
 slaxComplain (slax_data_t *sdp, int iserr, const char *fmt, ...)
 {
     const char *fn = sdp->sd_filename[0] ? sdp->sd_filename : NULL;
-    char *source_line = slaxReadSourceLine(fn, sdp->sd_line);
+    int line = sdp->sd_line;
+    char *source_line = slaxReadSourceLine(fn, &line);
+    int col = sdp->sd_col;
+
+    if (source_line != NULL && line != sdp->sd_line)
+	col = strlen(source_line) + 1; /* Point just past the last char */
 
     if (iserr)
 	sdp->sd_errors += 1;
 
     va_list vap;
     va_start(vap, fmt);
-    psu_complainv(fn, sdp->sd_line, sdp->sd_col, !iserr, source_line, fmt,
-		  vap);
+    psu_complainv(fn, line, col, !iserr, source_line, fmt, vap);
     va_end(vap);
 
     if (source_line != NULL)
@@ -1758,7 +1794,7 @@ int
 slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	     int yystate, slax_string_t **vstack, slax_string_t **vtop)
 {
-    static const char leader[] = "syntax error, unexpected";
+    static const char leader[] = "syntax error";
     static const char leader2[] = "error recovery ignores input";
     const char *token = value ? value->ss_token : NULL;
     char buf[BUFSIZ * 4];
@@ -1781,7 +1817,15 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 
 	char *np = strchr(cp, '\n');
 	if (np) {
-	    *np = '\0';
+	    /*
+	     * Truncate at the embedded newline, but replace it (rather
+	     * than just chopping there) with the closing quote that
+	     * cp[len + 1] appended after the *full* (multi-line) token,
+	     * which truncation would otherwise throw away, leaving the
+	     * displayed token looking unclosed.
+	     */
+	    np[0] = '\'';
+	    np[1] = '\0';
 	    trunc = TRUE;
 	}
 
@@ -1816,6 +1860,16 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	}
     }
 
+    /* Just trying to give a better error message */
+    if (unterm) {
+	char ubuf[BUFSIZ];
+
+	snprintf(ubuf, sizeof(ubuf),
+		 "possibly unterminated string starting on line %d, column %d",
+		 sdp->sd_uline, sdp->sd_ucol);
+	strlcat(buf, ubuf, sizeof(buf));
+    }
+
     /*
      * Two possibilities: generic "syntax error" or some
      * specific error.  If the message has a generic
@@ -1834,10 +1888,6 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *value,
 	    return 0;
 	}
     }
-
-    /* Just trying to give a better error message */
-    if (unterm)
-	strlcat(buf, "possibly unterminated string", sizeof(buf));
 
     if (buf[0])
 	slaxComplainConsider(sdp, "%s", buf);
