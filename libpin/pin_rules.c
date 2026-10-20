@@ -712,6 +712,12 @@ pin_rulebook_close (pin_rulebook_t *rules)
 	rules->prb_mode_filters_len = 0;
 	rules->prb_mode_filters_cap = 0;
     }
+    if (rules->prb_eval_ns) {
+	for (uint32_t i = 0; i < rules->prb_eval_prog_count; i++)
+	    free(rules->prb_eval_ns[i].pen_bindings);
+	free(rules->prb_eval_ns);
+	rules->prb_eval_ns = NULL;
+    }
     if (rules->prb_eval_progs) {
 	for (uint32_t i = 0; i < rules->prb_eval_prog_count; i++)
 	    xo_eval_prog_destroy(rules->prb_eval_progs[i]);
@@ -988,7 +994,9 @@ pin_rulebook_get_eval_filter (pin_rulebook_t *prbp)
 }
 
 uint32_t
-pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog)
+pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog,
+			      const pin_ns_map_t *ns_bindings,
+			      uint32_t ns_count)
 {
     if (prbp->prb_eval_prog_count >= prbp->prb_eval_prog_size) {
 	uint32_t newsize = prbp->prb_eval_prog_size
@@ -998,11 +1006,41 @@ pin_rulebook_eval_prog_add (pin_rulebook_t *prbp, xo_eval_prog_t *prog)
 	if (newp == NULL)
 	    return UINT32_MAX;
 	prbp->prb_eval_progs = newp;
+
+	pin_eval_ns_t *newns = realloc(prbp->prb_eval_ns,
+					 newsize * sizeof(*newns));
+	if (newns == NULL)
+	    return UINT32_MAX;
+	prbp->prb_eval_ns = newns;
+
 	prbp->prb_eval_prog_size = newsize;
     }
+
+    pin_ns_map_t *snapshot = NULL;
+    if (ns_count > 0) {
+	snapshot = malloc(ns_count * sizeof(*snapshot));
+	if (snapshot == NULL)
+	    return UINT32_MAX;
+	memcpy(snapshot, ns_bindings, ns_count * sizeof(*snapshot));
+    }
+
     uint32_t idx = prbp->prb_eval_prog_count++;
     prbp->prb_eval_progs[idx] = prog;
+    prbp->prb_eval_ns[idx].pen_bindings = snapshot;
+    prbp->prb_eval_ns[idx].pen_count = ns_count;
     return idx;
+}
+
+const pin_ns_map_t *
+pin_rulebook_eval_prog_ns (pin_rulebook_t *prbp, uint32_t idx, uint32_t *countp)
+{
+    if (idx >= prbp->prb_eval_prog_count) {
+	*countp = 0;
+	return NULL;
+    }
+
+    *countp = prbp->prb_eval_ns[idx].pen_count;
+    return prbp->prb_eval_ns[idx].pen_bindings;
 }
 
 /*
