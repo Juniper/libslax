@@ -49,7 +49,7 @@
 #endif
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_EXTENSIONS
+#define WITH_XSLT_VERBOSE_EXTENSIONS 1
 #endif
 
 #include "xsltverbose.h"
