@@ -17,7 +17,7 @@ SUBDIRS= \
     pa \
     xi
 
-if WITH_DEBUGGER
+if WITH_SLAX_DEBUGGER
 SUBDIRS += sdb
 endif
 
