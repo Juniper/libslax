@@ -35,6 +35,7 @@
 #include <libxml/HTMLtree.h>
 #include <libxml/xmlerror.h>
 #include <libxml/xmlIO.h>
+#include <libpsu/psutime.h>
 #include "xsltutils.h"
 #include "templates.h"
 #include "xsltInternals.h"
@@ -713,6 +714,29 @@ xsltSetGenericDebugFunc (void *ctx, xmlGenericErrorFunc handler)
         xsltGenericDebug = handler;
     else
         xsltGenericDebug = xsltGenericDebugDefaultFunc;
+}
+
+/**
+ * xsltGenericDebugV:
+ * @ctx:  an error context
+ * @fmt:  the message format
+ * @ap:   the already-started argument list
+ *
+ * va_list counterpart to xsltGenericDebug(), for callers (xsltVerbose(),
+ * xsltverbose.h) that only have a va_list, not "...", to forward.  The
+ * message is formatted here and passed on to the installed
+ * xsltGenericDebug handler as a single "%s" argument, so that handler
+ * (default or user-installed via xsltSetGenericDebugFunc()) still gets
+ * to decide what to do with it, exactly as if the caller had invoked
+ * xsltGenericDebug() directly.
+ */
+void
+xsltGenericDebugV (void *ctx, const char *fmt, va_list ap)
+{
+    char buf[2048];
+
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    xsltGenericDebug(ctx, "%s", buf);
 }
 
 /**
@@ -2152,7 +2176,7 @@ xsltGetPSVIPtr (xmlNodePtr cur)
     }
 }
 
-#ifdef WITH_PROFILER
+#ifdef WITH_XSLT_PROFILER
 
 /************************************************************************
  *									*
@@ -2175,11 +2199,11 @@ static long calibration = -1;
 static long
 xsltCalibrateTimestamps (void)
 {
-    register int i;
+    long result;
 
-    for (i = 0; i < 999; i++)
-        xsltTimestamp();
-    return xsltTimestamp() / 1000;
+    PSU_CALIBRATE_OVERHEAD(xsltTimestamp, result);
+
+    return result;
 }
 #endif
 
@@ -2653,7 +2677,7 @@ xsltGetProfileInformation (xsltTransformContextPtr ctxt)
     return ret;
 }
 
-#endif /* WITH_PROFILER */
+#endif /* WITH_XSLT_PROFILER */
 
 /************************************************************************
  *									*
@@ -2743,7 +2767,7 @@ xsltGetDebuggerStatus (void)
     return xslDebugStatus;
 }
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_XSLT_DEBUGGER
 
 /*
  * There is currently only 4 debugging callbacks defined
@@ -2875,4 +2899,4 @@ xslDropCall (void)
         xsltDebuggerCurrentCallbacks.drop();
 }
 
-#endif /* WITH_DEBUGGER */
+#endif /* WITH_XSLT_DEBUGGER */
