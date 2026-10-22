@@ -33,6 +33,8 @@
 #include <libslax/slax.h>
 #include <libpsu/psutime.h>
 
+#ifdef WITH_SLAX_PROFILER
+
 typedef struct slax_prof_entry_s {
     unsigned long spe_count; /* Number of times we've hit this line */
     unsigned long spe_user; /* Total number of user cycles we've spent */
@@ -56,6 +58,15 @@ typedef struct slax_prof_s {
 slax_prof_t *slax_profile;	/* Profiling data */
 psu_time_usecs_t slax_profile_time_user; /* Last user time from getrusage */
 unsigned long slax_profile_time_system; /* Last system time from getrusage */
+
+/*
+ * Overhead (in microseconds) of a single psu_get_time() call, used to
+ * correct the wall-clock deltas we record below for the cost that our
+ * own measurement calls add.  Calibrated once, lazily, since the
+ * calibration loop itself takes long enough that we don't want to pay
+ * for it more than once per profiling run.
+ */
+static psu_time_usecs_t slax_profile_overhead;
 
 static unsigned
 slaxProfCountLines (xmlDocPtr docp)
@@ -100,6 +111,9 @@ slaxProfOpen (xmlDocPtr docp)
     spp->sp_lines = lines;
 
     slax_profile = spp;		/* Record as current document */
+
+    slax_profile_overhead = psu_calibrate_overhead();
+
     return FALSE;
 }
 
@@ -180,9 +194,15 @@ slaxProfExit (void)
 	spp->sp_data[line].spe_system += syst;
     }
 
-    /* Update the wall-clock number */
-    if (spp->sp_wall != 0 && now > spp->sp_wall)
-	spp->sp_data[line].spe_wall += now - spp->sp_wall;
+    /* Update the wall-clock number, correcting for our own overhead */
+    if (spp->sp_wall != 0 && now > spp->sp_wall) {
+	psu_time_usecs_t wall = now - spp->sp_wall;
+
+	wall = (wall > slax_profile_overhead)
+	      ? wall - slax_profile_overhead : 0;
+
+	spp->sp_data[line].spe_wall += wall;
+    }
     spp->sp_wall = 0;		/* Clear it out */
 
     slax_profile_time_user = slax_profile_time_system = 0; /* Not valid */
@@ -435,3 +455,52 @@ slaxProfClose (void)
 
     slax_profile_time_user = slax_profile_time_system = 0; /* Not valid */
 }
+
+#else /* WITH_SLAX_PROFILER */
+
+/*
+ * This build was configured without the slax per-source-line profiler
+ * (--without-slax-profiler), so none of the real code above was built.
+ * Without these stubs, sdb would either fail to link or crash the first
+ * time it tried to call into a profiler that was never built.  Fail
+ * cleanly instead.
+ */
+
+int
+slaxProfOpen (xmlDocPtr docp UNUSED)
+{
+    return FALSE;
+}
+
+void
+slaxProfEnter (xmlNodePtr inst UNUSED)
+{
+    /* nothing to do; profiler support isn't compiled in */
+}
+
+void
+slaxProfExit (void)
+{
+    /* nothing to do; profiler support isn't compiled in */
+}
+
+void
+slaxProfReport (slaxDebugFlags_t flags UNUSED, const char *buffer UNUSED)
+{
+    slaxOutput("sdb: profiler support was not compiled into this build "
+	      "(rebuild with --with-bxslt-components=\"default +slax-profiler\")");
+}
+
+void
+slaxProfClear (void)
+{
+    /* nothing to do; profiler support isn't compiled in */
+}
+
+void
+slaxProfClose (void)
+{
+    /* nothing to do; profiler support isn't compiled in */
+}
+
+#endif /* WITH_SLAX_PROFILER */
