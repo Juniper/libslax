@@ -23,7 +23,7 @@ extern "C" {
  * by default unless --without-debug is passed to configure
  */
 #if @WITH_XSLT_VERBOSE@
-#define WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE 1
 #endif
 
 /**
@@ -35,17 +35,17 @@ extern "C" {
  */
 
 #if @WITH_TRIO@
-#define XSLT_NEED_TRIO
+#define XSLT_NEED_TRIO 1
 #endif
 #ifdef __VMS
 #define HAVE_SYS_STAT_H 1
 #ifndef XSLT_NEED_TRIO
-#define XSLT_NEED_TRIO
+#define XSLT_NEED_TRIO 1
 #endif
 #endif
 
 #ifdef	XSLT_NEED_TRIO
-#define	TRIO_REPLACE_STDIO
+#define	TRIO_REPLACE_STDIO 1
 #endif
 
 /**
@@ -57,7 +57,7 @@ extern "C" {
  */
 #if @WITH_XSLT_DEBUGGER@
 #ifndef WITH_XSLT_DEBUGGER
-#define WITH_XSLT_DEBUGGER
+#define WITH_XSLT_DEBUGGER 1
 #endif
 #endif
 
@@ -69,7 +69,7 @@ extern "C" {
  */
 #if @WITH_XSLT_MODULES@
 #ifndef WITH_MODULES
-#define WITH_MODULES
+#define WITH_MODULES 1
 #endif
 #define LIBXSLT_DEFAULT_PLUGINS_PATH() "@LIBXSLT_DEFAULT_PLUGINS_PATH@"
 #endif
