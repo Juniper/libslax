@@ -36,7 +36,7 @@
 #include "documents.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_PATTERN
+#define WITH_XSLT_VERBOSE_PATTERN 1
 #endif
 
 #include "xsltverbose.h"
