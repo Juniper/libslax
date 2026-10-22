@@ -48,9 +48,11 @@
 #endif
 #endif
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_EXTENSIONS
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_EXTENSIONS
 #endif
+
+#include "xsltverbose.h"
 
 /************************************************************************
  *									*
@@ -403,29 +405,23 @@ xsltExtModuleRegisterDynamic (const xmlChar *URI)
         if (NULL == ext_directory)
             return -1;
     }
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
     else
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "LIBXSLT_PLUGINS_PATH is %s\n", ext_directory);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "LIBXSLT_PLUGINS_PATH is %s\n", ext_directory);
 
     /* build the module filename, and confirm the module exists */
     xmlStrPrintf((xmlChar *) module_filename, sizeof(module_filename),
                  "%s/%s%s", ext_directory, ext_name, MODULE_EXTENSION);
 
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "Attempting to load plugin: %s for URI: %s\n",
-                     module_filename, URI);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Attempting to load plugin: %s for URI: %s\n",
+                module_filename, URI);
 
 #if LIBXML_VERSION < 21300
     if (1 != xmlCheckFilename(module_filename)) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xmlCheckFilename failed for plugin: %s\n",
-                         module_filename);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "xmlCheckFilename failed for plugin: %s\n",
+                    module_filename);
 
         xmlFree(ext_name);
         return -1;
@@ -439,10 +435,8 @@ xsltExtModuleRegisterDynamic (const xmlChar *URI)
     m = dlopen(module_filename, RTLD_LOCAL | RTLD_NOW);
 #endif
     if (NULL == m) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "dlopen failed for plugin: %s\n", module_filename);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "dlopen failed for plugin: %s\n", module_filename);
 
         xmlFree(ext_name);
         return -1;
@@ -470,11 +464,9 @@ xsltExtModuleRegisterDynamic (const xmlChar *URI)
         xmlHashAddEntry(xsltModuleHash, URI, (void *) m);
         xmlMutexUnlock(xsltExtMutex);
     } else {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "dlsym failed for plugin: %s, regfunc: %s\n",
-                         module_filename, regfunc_name);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "dlsym failed for plugin: %s, regfunc: %s\n",
+                    module_filename, regfunc_name);
 
         /* if regfunc not found unload the module immediately */
 #ifdef _WIN32
@@ -541,10 +533,8 @@ xsltRegisterExtPrefix (xsltStylesheetPtr style, const xmlChar *prefix,
     if (style == NULL || URI == NULL)
         return -1;
 
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "Registering extension namespace '%s'.\n", URI);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Registering extension namespace '%s'.\n", URI);
     def = (xsltExtDefPtr) style->nsDefs;
 #ifdef XSLT_REFACTORED
     /*
@@ -702,10 +692,8 @@ xsltStyleInitializeStylesheetModule (xsltStylesheetPtr style,
         return NULL;
 
     if (xsltExtensionsHash == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Not registered extension module: %s\n", URI);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "Not registered extension module: %s\n", URI);
         return NULL;
     }
 
@@ -716,10 +704,8 @@ xsltStyleInitializeStylesheetModule (xsltStylesheetPtr style,
     xmlMutexUnlock(xsltExtMutex);
 
     if (module == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Not registered extension module: %s\n", URI);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "Not registered extension module: %s\n", URI);
         return NULL;
     }
     /*
@@ -734,15 +720,11 @@ xsltStyleInitializeStylesheetModule (xsltStylesheetPtr style,
     * Fire the initialization callback if available.
     */
     if (module->styleInitFunc == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Initializing module with *no* callback: %s\n", URI);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "Initializing module with *no* callback: %s\n", URI);
     } else {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Initializing module with callback: %s\n", URI);
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "Initializing module with callback: %s\n", URI);
         /*
 	* Fire the initialization callback.
 	*/
@@ -904,19 +886,15 @@ xsltGetExtData (xsltTransformContextPtr ctxt, const xmlChar *URI)
         xmlMutexUnlock(xsltExtMutex);
 
         if (module == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "Not registered extension module: %s\n", URI);
-#endif
+            xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                        "Not registered extension module: %s\n", URI);
             return NULL;
         } else {
             if (module->initFunc == NULL)
                 return NULL;
 
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "Initializing module: %s\n", URI);
-#endif
+            xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                        "Initializing module: %s\n", URI);
 
             extData = module->initFunc(ctxt, URI);
             if (extData == NULL)
@@ -962,36 +940,28 @@ xsltInitCtxtExt (void *payload, void *data, const xmlChar *URI)
 
     if (styleData == NULL || ctxt == NULL || URI == NULL
         || ctxt->ret == -1) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltInitCtxtExt: NULL param or error\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "xsltInitCtxtExt: NULL param or error\n");
         return;
     }
     module = styleData->extModule;
     if (module == NULL || module->initFunc == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltInitCtxtExt: no module or no initFunc\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "xsltInitCtxtExt: no module or no initFunc\n");
         return;
     }
 
     ctxtData = (xsltExtDataPtr) xmlHashLookup(ctxt->ctxt->extInfos, URI);
     if (ctxtData != NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltInitCtxtExt: already initialized\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "xsltInitCtxtExt: already initialized\n");
         return;
     }
 
     extData = module->initFunc(ctxt->ctxt, URI);
     if (extData == NULL) {
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltInitCtxtExt: no extData\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                    "xsltInitCtxtExt: no extData\n");
     }
     ctxtData = xsltNewExtData(module, extData);
     if (ctxtData == NULL) {
@@ -1020,9 +990,8 @@ xsltInitCtxtExt (void *payload, void *data, const xmlChar *URI)
         ctxt->ret = -1;
         return;
     }
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext, "Registered module %s\n", URI);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Registered module %s\n", URI);
     ctxt->ret++;
 }
 
@@ -1058,10 +1027,9 @@ xsltInitCtxtExts (xsltTransformContextPtr ctxt)
         }
         style = xsltNextImport(style);
     }
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext, "Registered %d modules\n",
-                     ctx.ret);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Registered %d modules\n",
+                ctx.ret);
     return ctx.ret;
 }
 
@@ -1086,10 +1054,9 @@ xsltShutdownCtxtExt (void *payload, void *vctxt, const xmlChar *URI)
     if (module == NULL || module->shutdownFunc == NULL)
         return;
 
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext, "Shutting down module : %s\n",
-                     URI);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Shutting down module : %s\n",
+                URI);
     module->shutdownFunc(ctxt, URI, data->extData);
 }
 
@@ -1132,10 +1099,9 @@ xsltShutdownExt (void *payload, void *vctxt, const xmlChar *URI)
     if (module == NULL || module->styleShutdownFunc == NULL)
         return;
 
-#ifdef WITH_XSLT_DEBUG_EXTENSIONS
-    xsltGenericDebug(xsltGenericDebugContext, "Shutting down module : %s\n",
-                     URI);
-#endif
+    xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
+                "Shutting down module : %s\n",
+                URI);
     module->styleShutdownFunc(style, URI, data->extData);
     /*
     * Don't remove the entry from the hash table here, since
@@ -2021,10 +1987,8 @@ xsltExtFunctionTest (xmlXPathParserContextPtr ctxt, int nargs UNUSED)
                            "xsltExtFunctionTest: got wrong module data\n");
         return;
     }
-#ifdef WITH_XSLT_DEBUG_FUNCTION
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "libxslt:test() called with %d args\n", nargs);
-#endif
+    xsltVerbose(XSLT_VB_FUNCTION, xsltGenericDebugContext,
+                "libxslt:test() called with %d args\n", nargs);
 }
 
 /**
