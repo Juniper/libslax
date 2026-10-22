@@ -30,10 +30,12 @@
 #include "transform.h"
 #include "preproc.h"
 
-#define WITH_XSLT_DEBUG_ATTRIBUTES
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_ATTRIBUTES
+#define WITH_XSLT_VERBOSE_ATTRIBUTES
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_ATTRIBUTES
 #endif
+
+#include "xsltverbose.h"
 
 /*
  * Useful macros
@@ -422,10 +424,8 @@ xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
     }
 
     if (style->attributeSets == NULL) {
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "creating attribute set table\n");
-#endif
+        xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                    "creating attribute set table\n");
         style->attributeSets = xmlHashCreate(10);
     }
     if (style->attributeSets == NULL)
@@ -466,10 +466,8 @@ xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
                                "xsl:attribute-set : unexpected child xsl:%s\n",
                                xmlNodeGetName(child));
         } else {
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "add attribute to list %s\n", ncname);
-#endif
+            xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                        "add attribute to list %s\n", ncname);
             xsltStylePreCompute(style, child);
             if (xmlNodeGetChildren(child) != NULL) {
 #ifdef XSLT_REFACTORED
@@ -514,11 +512,9 @@ xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
                 const xmlChar *prefix2 = NULL;
                 const xmlChar *nsUri2 = NULL;
 
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsl:attribute-set : %s adds use %s\n", ncname,
-                                 curval);
-#endif
+                xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                            "xsl:attribute-set : %s adds use %s\n", ncname,
+                            curval);
 
                 if (xmlValidateQName(curval, 0)) {
                     xsltTransformError(
@@ -555,10 +551,8 @@ xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
         value = NULL;
     }
 
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-    xsltGenericDebug(xsltGenericDebugContext, "updated attribute list %s\n",
-                     ncname);
-#endif
+    xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                "updated attribute list %s\n", ncname);
 }
 
 /**
@@ -657,11 +651,9 @@ xsltResolveAttrSet (xsltAttrSetPtr set, xsltStylesheetPtr topStyle,
             other = xmlHashLookup2(cur->attributeSets, name, ns);
 
             if (other != NULL) {
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsl:attribute-set : merging import for %s\n",
-                                 name);
-#endif
+                xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                            "xsl:attribute-set : merging import for %s\n",
+                            name);
                 xsltResolveUseAttrSets(other, topStyle, depth);
                 xsltMergeAttrSets(set, other);
                 xmlHashRemoveEntry2(cur->attributeSets, name, ns, NULL);
@@ -731,20 +723,16 @@ xsltResolveStylesheetAttributeSet (xsltStylesheetPtr style)
     xsltStylesheetPtr cur;
     xsltAttrSetContext asctx;
 
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "Resolving attribute sets references\n");
-#endif
+    xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                "Resolving attribute sets references\n");
     asctx.topStyle = style;
     asctx.error = 0;
     cur = style;
     while (cur != NULL) {
         if (cur->attributeSets != NULL) {
             if (style->attributeSets == NULL) {
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "creating attribute set table\n");
-#endif
+                xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                            "creating attribute set table\n");
                 style->attributeSets = xmlHashCreate(10);
             }
             asctx.style = cur;
@@ -863,7 +851,7 @@ xsltAttribute (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     * ----------------
     */
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_XSLT_DEBUGGER
     if (xslDebugStatus != XSLT_DEBUG_NONE)
         xslHandleDebugger(inst, contextNode, NULL, ctxt);
 #endif
@@ -1195,10 +1183,8 @@ xsltApplyAttributeSet (xsltTransformContextPtr ctxt, xmlNodePtr node,
             xmlNsPtr ns;
             const xmlChar *nsUri = NULL;
 
-#ifdef WITH_XSLT_DEBUG_ATTRIBUTES
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "apply attribute set %s\n", curstr);
-#endif
+            xsltVerbose(XSLT_VB_ATTRIBUTES, xsltGenericDebugContext,
+                        "apply attribute set %s\n", curstr);
 
             if (xmlValidateQName(curstr, 0)) {
                 xsltTransformError(
@@ -1225,7 +1211,7 @@ xsltApplyAttributeSet (xsltTransformContextPtr ctxt, xmlNodePtr node,
 
             style = ctxt->style;
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_XSLT_DEBUGGER
             if (style != NULL && style->attributeSets != NULL
                 && xslDebugStatus != XSLT_DEBUG_NONE) {
                 set = xmlHashLookup2(style->attributeSets, ncname, nsUri);
