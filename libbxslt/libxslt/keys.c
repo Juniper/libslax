@@ -30,7 +30,7 @@
 #include "keys.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_KEYS
+#define WITH_XSLT_VERBOSE_KEYS 1
 #endif
 
 #include "xsltverbose.h"
