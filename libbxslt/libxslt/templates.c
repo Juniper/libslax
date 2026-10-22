@@ -31,9 +31,11 @@
 #include "namespaces.h"
 #include "attributes.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_TEMPLATES
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_TEMPLATES
 #endif
+
+#include "xsltverbose.h"
 
 /************************************************************************
  *									*
@@ -88,18 +90,13 @@ xsltEvalXPathPredicate (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     if (res != NULL) {
         ret = xmlXPathEvalPredicate(ctxt->xpathCtxt, res);
         xmlXPathFreeObject(res);
-#ifdef WITH_XSLT_DEBUG_TEMPLATES
         XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
-                   xsltGenericDebug(xsltGenericDebugContext,
-                                    "xsltEvalXPathPredicate: returns %d\n",
-                                    ret));
-#endif
+                   xsltVerbose(XSLT_VB_TEMPLATES, xsltGenericDebugContext,
+                               "xsltEvalXPathPredicate: returns %d\n", ret));
     } else {
-#ifdef WITH_XSLT_DEBUG_TEMPLATES
         XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
-                   xsltGenericDebug(xsltGenericDebugContext,
-                                    "xsltEvalXPathPredicate: failed\n"));
-#endif
+                   xsltVerbose(XSLT_VB_TEMPLATES, xsltGenericDebugContext,
+                               "xsltEvalXPathPredicate: failed\n"));
         ctxt->state = XSLT_STATE_STOPPED;
         ret = 0;
     }
@@ -173,11 +170,9 @@ xsltEvalXPathStringNs (xsltTransformContextPtr ctxt, xmlXPathCompExprPtr comp,
     } else {
         ctxt->state = XSLT_STATE_STOPPED;
     }
-#ifdef WITH_XSLT_DEBUG_TEMPLATES
     XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
-               xsltGenericDebug(xsltGenericDebugContext,
-                                "xsltEvalXPathString: returns %s\n", ret));
-#endif
+               xsltVerbose(XSLT_VB_TEMPLATES, xsltGenericDebugContext,
+                           "xsltEvalXPathString: returns %s\n", ret));
     ctxt->inst = oldInst;
     xmlXPathContextSetNode(ctxt->xpathCtxt, oldNode);
     xmlXPathContextSetContextSize(ctxt->xpathCtxt, oldSize);
@@ -444,12 +439,10 @@ xsltEvalAttrValueTemplate (xsltTransformContextPtr ctxt, xmlNodePtr inst,
      */
 
     ret = xsltAttrTemplateValueProcessNode(ctxt, expr, inst);
-#ifdef WITH_XSLT_DEBUG_TEMPLATES
     XSLT_TRACE(ctxt, XSLT_TRACE_TEMPLATES,
-               xsltGenericDebug(xsltGenericDebugContext,
-                                "xsltEvalAttrValueTemplate: %s returns %s\n",
-                                expr, ret));
-#endif
+               xsltVerbose(XSLT_VB_TEMPLATES, xsltGenericDebugContext,
+                           "xsltEvalAttrValueTemplate: %s returns %s\n",
+                           expr, ret));
     if (expr != NULL)
         xmlFree(expr);
     return ret;
