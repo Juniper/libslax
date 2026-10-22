@@ -560,7 +560,7 @@ pythonDocLoaderFuncWrapper (const xmlChar *URI, xmlDictPtr dict, int options,
         return NULL;
     if (dict != NULL) {
         xmlCtxtSetDict(pctxt, dict);
-#ifdef WITH_XSLT_DEBUG
+#ifdef WITH_XSLT_VERBOSE
         xsltGenericDebug(xsltGenericDebugContext,
                          "Reusing dictionary for document\n");
 #endif
