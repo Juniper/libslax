@@ -1413,11 +1413,30 @@ AC_PATH_PROG(XSLTPROC, xsltproc, /usr/bin/xsltproc)
 # bxslt/libxslt/xsltconfig.h.in and the bxslt Makefile.am files that used
 # the bare names have been updated to match.
 #
+# There are two debuggers and two profilers in this tree, and the old
+# "debugger"/"profiler" names only named one of each -- confusing for
+# anyone picking components.  So each is split in two:
+#   xslt-debugger -> the libbxslt-side breakpoint/inspection hook API
+#                     (xsltSetDebuggerCallbacks() and friends), upstream's
+#                     WITH_DEBUGGER.
+#   slax-debugger -> sdb/slaxproc's own source-level debugger
+#                     (libslax/slaxdebugger.c).  It calls into the
+#                     xslt-debugger hooks, so it implies xslt-debugger.
+#   xslt-profiler -> libbxslt's per-template profiler (xsltSaveProfiling()
+#                     et al), upstream's WITH_PROFILER.  Used by xsltproc
+#                     --profile; unrelated to the slax one below.
+#   slax-profiler -> sdb/slaxproc's per-source-line profiler
+#                     (libslax/slaxprofiler.c).  It's driven entirely by
+#                     the slax debugger's instruction hooks, so it implies
+#                     slax-debugger (which in turn implies xslt-debugger).
+#
 BXSLT_COMPONENT_TABLE='
 crypto:off::Add crypto support to exslt
-debugger:on::Add debugging (breakpoint/inspection) support
-profiler:on::Add profiling support
-xslt-debug:off::Enable XSLT verbose debug reporting (xsltproc -v)
+xslt-debugger:on::Add the libbxslt debugger hook API (breakpoint/inspection)
+slax-debugger:on:xslt-debugger:Add the slax/sdb source-level debugger
+xslt-profiler:on::Add the libbxslt per-template profiler (xsltproc --profile)
+slax-profiler:on:slax-debugger:Add the slax per-source-line profiler
+xslt-verbose:off::Enable XSLT verbose debug reporting (xsltproc -v)
 xslt-modules:off::Add plugin extension support
 xslt-python:on::Build Python bindings
 '
@@ -1491,8 +1510,10 @@ if test "x$BXSLT_LIST" != "xno"; then
         test -z "$bxslt_row" && continue
         bxslt_name=`echo "$bxslt_row" | cut -d: -f1`
         bxslt_default=`echo "$bxslt_row" | cut -d: -f2`
+        bxslt_implies=`echo "$bxslt_row" | cut -d: -f3`
         bxslt_desc=`echo "$bxslt_row" | cut -d: -f4`
-        printf '  %-14s %-4s %s\n' "$bxslt_name" "$bxslt_default" "$bxslt_desc"
+        printf '  %-14s %-4s implies: %-16s %s\n' \
+            "$bxslt_name" "$bxslt_default" "$bxslt_implies" "$bxslt_desc"
     done
     IFS=$bxslt_old_IFS
     exit 0
@@ -1523,6 +1544,34 @@ for bxslt_tok in $BXSLT_COMPONENTS_ARG; do
     esac
 done
 
+# Force on, to a fixed point, every prerequisite of a component that's on
+# (e.g. slax-debugger implies xslt-debugger, slax-profiler implies
+# slax-debugger -- which then also pulls in xslt-debugger).  Mirrors
+# bxml's own implies resolution above.  Turning a component off never
+# reaches out and turns other components off, so a contradictory request
+# (e.g. "slax-debugger -xslt-debugger") just re-enables xslt-debugger and
+# says so, rather than silently dropping slax-debugger instead.
+bxslt_changed=yes
+bxslt_pass=0
+while test "$bxslt_changed" = yes; do
+    bxslt_changed=no
+    bxslt_pass=`expr $bxslt_pass + 1`
+    test $bxslt_pass -gt 10 && \
+        AC_MSG_ERROR([bxslt component dependency resolution did not converge])
+    for bxslt_name in $BXSLT_COMPONENT_NAMES; do
+        test "`bxslt_get $bxslt_name`" = on || continue
+        eval "bxslt_implies=\$bxslt_implies_`bxslt_var $bxslt_name`"
+        test -z "$bxslt_implies" && continue
+        for bxslt_dep in `echo "$bxslt_implies" | tr ',' ' '`; do
+            if test "`bxslt_get $bxslt_dep`" = off; then
+                AC_MSG_NOTICE([bxslt: enabling '$bxslt_dep', required by '$bxslt_name'])
+                bxslt_set "$bxslt_dep" on
+                bxslt_changed=yes
+            fi
+        done
+    done
+done
+
 BXSLT_COMPONENTS=
 for bxslt_name in $BXSLT_COMPONENT_NAMES; do
     test "`bxslt_get $bxslt_name`" = on && BXSLT_COMPONENTS="$BXSLT_COMPONENTS $bxslt_name"
@@ -1546,23 +1595,35 @@ if test "$WITH_CRYPTO" = "1"; then
 fi
 AM_CONDITIONAL([WITH_CRYPTO], [test "$WITH_CRYPTO" = "1"])
 
-AC_SUBST(WITH_DEBUGGER)
-if test "$WITH_DEBUGGER" = "1"; then
-    AC_DEFINE([WITH_DEBUGGER], [1], [XSLT debugger support])
+AC_SUBST(WITH_XSLT_DEBUGGER)
+if test "$WITH_XSLT_DEBUGGER" = "1"; then
+    AC_DEFINE([WITH_XSLT_DEBUGGER], [1], [XSLT debugger hook API support])
 fi
-AM_CONDITIONAL([WITH_DEBUGGER], [test "$WITH_DEBUGGER" = "1"])
+AM_CONDITIONAL([WITH_XSLT_DEBUGGER], [test "$WITH_XSLT_DEBUGGER" = "1"])
 
-AC_SUBST(WITH_PROFILER)
-if test "$WITH_PROFILER" = "1"; then
-    AC_DEFINE([WITH_PROFILER], [1], [XSLT profiler support])
+AC_SUBST(WITH_SLAX_DEBUGGER)
+if test "$WITH_SLAX_DEBUGGER" = "1"; then
+    AC_DEFINE([WITH_SLAX_DEBUGGER], [1], [slax/sdb source-level debugger support])
 fi
-AM_CONDITIONAL([WITH_PROFILER], [test "$WITH_PROFILER" = "1"])
+AM_CONDITIONAL([WITH_SLAX_DEBUGGER], [test "$WITH_SLAX_DEBUGGER" = "1"])
 
-AC_SUBST(WITH_XSLT_DEBUG)
-if test "$WITH_XSLT_DEBUG" = "1"; then
-    AC_DEFINE([WITH_XSLT_DEBUG], [1], [XSLT verbose debug reporting])
+AC_SUBST(WITH_XSLT_PROFILER)
+if test "$WITH_XSLT_PROFILER" = "1"; then
+    AC_DEFINE([WITH_XSLT_PROFILER], [1], [XSLT per-template profiler support])
 fi
-AM_CONDITIONAL([WITH_XSLT_DEBUG], [test "$WITH_XSLT_DEBUG" = "1"])
+AM_CONDITIONAL([WITH_XSLT_PROFILER], [test "$WITH_XSLT_PROFILER" = "1"])
+
+AC_SUBST(WITH_SLAX_PROFILER)
+if test "$WITH_SLAX_PROFILER" = "1"; then
+    AC_DEFINE([WITH_SLAX_PROFILER], [1], [slax per-source-line profiler support])
+fi
+AM_CONDITIONAL([WITH_SLAX_PROFILER], [test "$WITH_SLAX_PROFILER" = "1"])
+
+AC_SUBST(WITH_XSLT_VERBOSE)
+if test "$WITH_XSLT_VERBOSE" = "1"; then
+    AC_DEFINE([WITH_XSLT_VERBOSE], [1], [XSLT verbose debug reporting])
+fi
+AM_CONDITIONAL([WITH_XSLT_VERBOSE], [test "$WITH_XSLT_VERBOSE" = "1"])
 
 AC_SUBST(WITH_XSLT_MODULES)
 if test "$WITH_XSLT_MODULES" = "1"; then
