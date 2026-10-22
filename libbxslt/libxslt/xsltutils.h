@@ -234,7 +234,7 @@ void **xsltGetPSVIPtr (xmlNodePtr cur);
 /** DOC_ENABLE */
 #endif
 
-#ifdef WITH_PROFILER
+#ifdef WITH_XSLT_PROFILER
 /*
  * Profiling.
  */
@@ -283,7 +283,7 @@ typedef void (*xsltHandleDebuggerErrorCallback)(xmlNodePtr cur,
                                            const char *message);
 
 XSLTPUBFUN int XSLTCALL xsltGetDebuggerStatus (void);
-#ifdef WITH_DEBUGGER
+#ifdef WITH_XSLT_DEBUGGER
 XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
 XSLTPUBFUN int XSLTCALL xsltSetDebuggerCallbacks (int no, void *block);
 XSLTPUBFUN int XSLTCALL xslAddCall (xsltTemplatePtr templ, xmlNodePtr source);
