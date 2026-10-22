@@ -58,9 +58,9 @@
 #include "security.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_EXTRA
-#define WITH_XSLT_VERBOSE_PROCESS
-#define WITH_XSLT_VERBOSE_VARIABLE
+#define WITH_XSLT_VERBOSE_EXTRA 1
+#define WITH_XSLT_VERBOSE_PROCESS 1
+#define WITH_XSLT_VERBOSE_VARIABLE 1
 #endif
 
 #include "xsltverbose.h"
