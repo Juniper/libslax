@@ -30,8 +30,8 @@
 #include "extra.h"
 #include "preproc.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_EXTRA
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_EXTRA
 #endif
 
 /************************************************************************
