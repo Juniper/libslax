@@ -27,9 +27,11 @@
 #include "xsltInternals.h"
 #include "templates.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_AVT
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_AVT
 #endif
+
+#include "xsltverbose.h"
 
 #define MAX_AVT_SEG 10
 
@@ -206,15 +208,11 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
     if (xmlStrchr(str, '{') == NULL && xmlStrchr(str, '}') == NULL)
         return;
 
-#ifdef WITH_XSLT_DEBUG_AVT
-    xsltGenericDebug(xsltGenericDebugContext, "Found AVT %s: %s\n",
-                     xmlAttrGetName(attr), str);
-#endif
+    xsltVerbose(XSLT_VB_AVT, xsltGenericDebugContext, "Found AVT %s: %s\n",
+                xmlAttrGetName(attr), str);
     if (xmlAttrGetPsvi(attr) != NULL) {
-#ifdef WITH_XSLT_DEBUG_AVT
-        xsltGenericDebug(xsltGenericDebugContext, "AVT %s: already compiled\n",
-                         xmlAttrGetName(attr));
-#endif
+        xsltVerbose(XSLT_VB_AVT, xsltGenericDebugContext,
+                    "AVT %s: already compiled\n", xmlAttrGetName(attr));
         return;
     }
     /*
