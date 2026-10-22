@@ -42,7 +42,7 @@
 #include "pattern.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_PREPROC
+#define WITH_XSLT_VERBOSE_PREPROC 1
 #endif
 
 #include "xsltverbose.h"
