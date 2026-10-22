@@ -47,7 +47,6 @@ slaxinc_HEADERS = \
      slax.h \
      slaxdata.h \
      slaxdyn.h \
-     slaxversion.h \
      xmlsoft.h
 
 noinst_HEADERS = \
