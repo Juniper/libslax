@@ -41,9 +41,11 @@
 #include "extensions.h"
 #include "pattern.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_PREPROC
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_PREPROC
 #endif
+
+#include "xsltverbose.h"
 
 const xmlChar *xsltExtMarker = (const xmlChar *) "Extension Element";
 
@@ -600,10 +602,8 @@ xsltDocumentComp (xsltStylesheetPtr style, xmlNodePtr inst,
     comp->ver11 = 0;
 
     if (xmlStrEqual(xmlNodeGetName(inst), (const xmlChar *) "output")) {
-#ifdef WITH_XSLT_DEBUG_EXTRA
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Found saxon:output extension\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTRA, xsltGenericDebugContext,
+                    "Found saxon:output extension\n");
         /*
 	* The element "output" is in the namespace XSLT_SAXON_NAMESPACE
 	*   (http://icl.com/saxon)
@@ -615,10 +615,8 @@ xsltDocumentComp (xsltStylesheetPtr style, xmlNodePtr inst,
         filename = xsltEvalStaticAttrValueTemplate(
             style, inst, (const xmlChar *) "file", NULL, &comp->has_filename);
     } else if (xmlStrEqual(xmlNodeGetName(inst), (const xmlChar *) "write")) {
-#ifdef WITH_XSLT_DEBUG_EXTRA
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Found xalan:write extension\n");
-#endif
+        xsltVerbose(XSLT_VB_EXTRA, xsltGenericDebugContext,
+                    "Found xalan:write extension\n");
         /* the filename need to be interpreted */
         /*
 	* TODO: Is "filename need to be interpreted" meant to be a todo?
@@ -637,25 +635,19 @@ xsltDocumentComp (xsltStylesheetPtr style, xmlNodePtr inst,
 		* XSLT version 1.1 (abandoned).
 		*/
                 comp->ver11 = 1;
-#ifdef WITH_XSLT_DEBUG_EXTRA
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "Found xslt11:document construct\n");
-#endif
+                xsltVerbose(XSLT_VB_EXTRA, xsltGenericDebugContext,
+                            "Found xslt11:document construct\n");
             } else {
                 if (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(inst)),
                                 (const xmlChar *) "http://exslt.org/common")) {
                     /* EXSLT. */
-#ifdef WITH_XSLT_DEBUG_EXTRA
-                    xsltGenericDebug(xsltGenericDebugContext,
-                                     "Found exslt:document extension\n");
-#endif
+                    xsltVerbose(XSLT_VB_EXTRA, xsltGenericDebugContext,
+                                "Found exslt:document extension\n");
                 } else if (xmlStrEqual(xmlNsGetHref(xmlNodeGetNs(inst)),
                                        XSLT_XT_NAMESPACE)) {
                     /* James Clark's XT. */
-#ifdef WITH_XSLT_DEBUG_EXTRA
-                    xsltGenericDebug(xsltGenericDebugContext,
-                                     "Found xt:document extension\n");
-#endif
+                    xsltVerbose(XSLT_VB_EXTRA, xsltGenericDebugContext,
+                                "Found xt:document extension\n");
                 }
             }
         }
