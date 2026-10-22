@@ -16,14 +16,14 @@ extern "C" {
 #endif
 
 /**
- * WITH_XSLT_DEBUG:
+ * WITH_XSLT_VERBOSE:
  *
  * Activate the compilation of the debug reporting. Speed penalty
  * is insignifiant and being able to run xsltpoc -v is useful. On
  * by default unless --without-debug is passed to configure
  */
-#if @WITH_XSLT_DEBUG@
-#define WITH_XSLT_DEBUG
+#if @WITH_XSLT_VERBOSE@
+#define WITH_XSLT_VERBOSE
 #endif
 
 /**
@@ -55,9 +55,9 @@ extern "C" {
  * is insignifiant.
  * On by default unless --without-debugger is passed to configure
  */
-#if @WITH_DEBUGGER@
-#ifndef WITH_DEBUGGER
-#define WITH_DEBUGGER
+#if @WITH_XSLT_DEBUGGER@
+#ifndef WITH_XSLT_DEBUGGER
+#define WITH_XSLT_DEBUGGER
 #endif
 #endif
 
