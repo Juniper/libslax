@@ -35,9 +35,11 @@
 #include "pattern.h"
 #include "documents.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_PATTERN
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_PATTERN
 #endif
+
+#include "xsltverbose.h"
 
 /*
  * Types are private:
@@ -1922,11 +1924,9 @@ xsltCompilePatternInternal (const xmlChar *pattern, xmlDocPtr doc,
         }
         element->nsNr = j;
 
-#ifdef WITH_XSLT_DEBUG_PATTERN
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltCompilePattern : parsing '%s'\n",
-                         element->pattern);
-#endif
+        xsltVerbose(XSLT_VB_PATTERN, xsltGenericDebugContext,
+                    "xsltCompilePattern : parsing '%s'\n",
+                    element->pattern);
         /*
 	 Preset default priority to be zero.
 	 This may be changed by xsltCompileLocationPathPattern.
@@ -1981,12 +1981,10 @@ xsltCompilePatternInternal (const xmlChar *pattern, xmlDocPtr doc,
                 element->priority = 0.5;
             }
         }
-#ifdef WITH_XSLT_DEBUG_PATTERN
-        xsltGenericDebug(
-            xsltGenericDebugContext,
+        xsltVerbose(
+            XSLT_VB_PATTERN, xsltGenericDebugContext,
             "xsltCompilePattern : parsed %s, default priority %f\n",
             element->pattern, element->priority);
-#endif
         if (pattern[end] == '|')
             end++;
         current = end;
@@ -2239,16 +2237,14 @@ xsltAddTemplate (xsltStylesheetPtr style, xsltTemplatePtr cur,
             xsltFreeCompMatchList(next);
             return -1;
         }
-#ifdef WITH_XSLT_DEBUG_PATTERN
         if (mode)
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "added pattern : '%s' mode '%s' priority %f\n",
-                             pat->pattern, pat->mode, pat->priority);
+            xsltVerbose(XSLT_VB_PATTERN, xsltGenericDebugContext,
+                        "added pattern : '%s' mode '%s' priority %f\n",
+                        pat->pattern, pat->mode, pat->priority);
         else
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "added pattern : '%s' priority %f\n", pat->pattern,
-                             pat->priority);
-#endif
+            xsltVerbose(XSLT_VB_PATTERN, xsltGenericDebugContext,
+                        "added pattern : '%s' priority %f\n", pat->pattern,
+                        pat->priority);
 
         pat = next;
     }
