@@ -36,9 +36,11 @@
 #include "documents.h"
 #include "transformInternals.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_FUNCTION
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_FUNCTION
 #endif
+
+#include "xsltverbose.h"
 
 /*
  * Some versions of DocBook XSL use the vendor string to detect
@@ -68,10 +70,8 @@ xsltXPathFunctionLookup (void *vctxt, const xmlChar *name,
     if (ctxt == NULL || name == NULL || ns_uri == NULL)
         return NULL;
 
-#ifdef WITH_XSLT_DEBUG_FUNCTION
-    xsltGenericDebug(xsltGenericDebugContext, "Lookup function {%s}%s\n",
-                     ns_uri, name);
-#endif
+    xsltVerbose(XSLT_VB_FUNCTION, xsltGenericDebugContext,
+                "Lookup function {%s}%s\n", ns_uri, name);
 
     /* give priority to context-level functions */
     /*
@@ -82,10 +82,9 @@ xsltXPathFunctionLookup (void *vctxt, const xmlChar *name,
     if (ret == NULL)
         ret = xsltExtModuleFunctionLookup(name, ns_uri);
 
-#ifdef WITH_XSLT_DEBUG_FUNCTION
     if (ret != NULL)
-        xsltGenericDebug(xsltGenericDebugContext, "found function %s\n", name);
-#endif
+        xsltVerbose(XSLT_VB_FUNCTION, xsltGenericDebugContext,
+                    "found function %s\n", name);
     return ret;
 }
 
