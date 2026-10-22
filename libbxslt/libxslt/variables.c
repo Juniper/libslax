@@ -34,7 +34,7 @@
 #include "keys.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_VARIABLE
+#define WITH_XSLT_VERBOSE_VARIABLE 1
 #endif
 
 #include "xsltverbose.h"
