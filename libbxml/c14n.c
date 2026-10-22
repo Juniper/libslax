@@ -1135,15 +1135,20 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
 
     switch (ctx->mode) {
     case XML_C14N_1_0:
-        /* The processing of an element node E MUST be modified slightly when an XPath node-set is
-         * given as input and the element's parent is omitted from the node-set. The method for processing
-         * the attribute axis of an element E in the node-set is enhanced. All element nodes along E's
-         * ancestor axis are examined for nearest occurrences of attributes in the xml namespace, such
-         * as xml:lang and xml:space (whether or not they are in the node-set). From this list of attributes,
-         * remove any that are in E's attribute axis (whether or not they are in the node-set). Then,
-         * lexicographically merge this attribute list with the nodes of E's attribute axis that are in
-         * the node-set. The result of visiting the attribute axis is computed by processing the attribute
-         * nodes in this merged attribute list.
+        /* The processing of an element node E MUST be modified
+         * slightly when an XPath node-set is given as input and the
+         * element's parent is omitted from the node-set. The method
+         * for processing the attribute axis of an element E in the
+         * node-set is enhanced. All element nodes along E's ancestor
+         * axis are examined for nearest occurrences of attributes in
+         * the xml namespace, such as xml:lang and xml:space (whether
+         * or not they are in the node-set). From this list of
+         * attributes, remove any that are in E's attribute axis
+         * (whether or not they are in the node-set). Then,
+         * lexicographically merge this attribute list with the nodes
+         * of E's attribute axis that are in the node-set. The result
+         * of visiting the attribute axis is computed by processing
+         * the attribute nodes in this merged attribute list.
          */
 
         /*
@@ -1209,29 +1214,39 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
         /* The processing of an element node E MUST be modified slightly when an XPath node-set is
          * given as input and some of the element's ancestors are omitted from the node-set.
          *
-         * Simple inheritable attributes are attributes that have a value that requires at most a simple
-         * redeclaration. This redeclaration is done by supplying a new value in the child axis. The
-         * redeclaration of a simple inheritable attribute A contained in one of E's ancestors is done
-         * by supplying a value to an attribute Ae inside E with the same name. Simple inheritable attributes
-         * are xml:lang and xml:space.
+         * Simple inheritable attributes are attributes that have a
+         * value that requires at most a simple redeclaration. This
+         * redeclaration is done by supplying a new value in the child
+         * axis. The redeclaration of a simple inheritable attribute A
+         * contained in one of E's ancestors is done by supplying a
+         * value to an attribute Ae inside E with the same
+         * name. Simple inheritable attributes are xml:lang and
+         * xml:space.
          *
-         * The method for processing the attribute axis of an element E in the node-set is hence enhanced.
-         * All element nodes along E's ancestor axis are examined for the nearest occurrences of simple
-         * inheritable attributes in the xml namespace, such as xml:lang and xml:space (whether or not they
-         * are in the node-set). From this list of attributes, any simple inheritable attributes that are
-         * already in E's attribute axis (whether or not they are in the node-set) are removed. Then,
-         * lexicographically merge this attribute list with the nodes of E's attribute axis that are in
-         * the node-set. The result of visiting the attribute axis is computed by processing the attribute
-         * nodes in this merged attribute list.
+         * The method for processing the attribute axis of an element
+         * E in the node-set is hence enhanced.  All element nodes
+         * along E's ancestor axis are examined for the nearest
+         * occurrences of simple inheritable attributes in the xml
+         * namespace, such as xml:lang and xml:space (whether or not
+         * they are in the node-set). From this list of attributes,
+         * any simple inheritable attributes that are already in E's
+         * attribute axis (whether or not they are in the node-set)
+         * are removed. Then, lexicographically merge this attribute
+         * list with the nodes of E's attribute axis that are in the
+         * node-set. The result of visiting the attribute axis is
+         * computed by processing the attribute nodes in this merged
+         * attribute list.
          *
-         * The xml:id attribute is not a simple inheritable attribute and no processing of these attributes is
-         * performed.
+         * The xml:id attribute is not a simple inheritable attribute
+         * and no processing of these attributes is performed.
          *
-         * The xml:base attribute is not a simple inheritable attribute and requires special processing beyond
-         * a simple redeclaration.
+         * The xml:base attribute is not a simple inheritable
+         * attribute and requires special processing beyond a simple
+         * redeclaration.
          *
-         * Attributes in the XML namespace other than xml:base, xml:id, xml:lang, and xml:space MUST be processed
-         * as ordinary attributes.
+         * Attributes in the XML namespace other than xml:base,
+         * xml:id, xml:lang, and xml:space MUST be processed as
+         * ordinary attributes.
          */
 
         /*
@@ -1239,7 +1254,10 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
          */
         attr = cur->properties;
         while (attr != NULL) {
-            /* special processing for XML attribute kiks in only when we have invisible parents */
+            /*
+	     * special processing for XML attribute kiks in only when
+	     * we have invisible parents
+	     */
             if (!parent_visible || xmlC14NIsXmlAttr(attr) == 0) {
                 /* check that attribute is visible */
                 if (xmlC14NIsVisible(ctx, attr, cur)) {
@@ -1267,7 +1285,10 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
                     matched = 1;
                 }
 
-                /* otherwise, it is a normal attribute, so just check if it is visible */
+                /*
+		 * otherwise, it is a normal attribute, so just check
+		 * if it is visible
+		 */
                 if (!matched && xmlC14NIsVisible(ctx, attr, cur)) {
                     xmlListInsert(list, attr);
                 }
@@ -1277,7 +1298,10 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
             attr = attr->next;
         }
 
-        /* special processing for XML attribute kiks in only when we have invisible parents */
+        /*
+	 * special processing for XML attribute kiks in only when we
+	 * have invisible parents
+	 */
         if (parent_visible) {
             /* simple inheritance attributes - copy */
             if (xml_lang_attr == NULL) {
@@ -1297,7 +1321,10 @@ xmlC14NProcessAttrsAxis (xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
 
             /* base uri attribute - fix up */
             if (xml_base_attr == NULL) {
-                /* if we don't have base uri attribute, check if we have a "hidden" one above */
+                /*
+		 * if we don't have base uri attribute, check if we
+		 * have a "hidden" one above
+		 */
                 xml_base_attr = xmlC14NFindHiddenParentAttr(
                     ctx, cur->parent, BAD_CAST "base", XML_XML_NAMESPACE);
             }
@@ -1510,11 +1537,11 @@ xmlC14NProcessNode (xmlC14NCtxPtr ctx, xmlNodePtr cur)
     case XML_CDATA_SECTION_NODE:
     case XML_TEXT_NODE:
         /*
-             * Text Nodes
-             * the string value, except all ampersands are replaced
-             * by &amp;, all open angle brackets (<) are replaced by &lt;, all closing
-             * angle brackets (>) are replaced by &gt;, and all #xD characters are
-             * replaced by &#xD;.
+             * Text Nodes the string value, except all ampersands are
+             * replaced by &amp;, all open angle brackets (<) are
+             * replaced by &lt;, all closing angle brackets (>) are
+             * replaced by &gt;, and all #xD characters are replaced
+             * by &#xD;.
              */
         /* cdata sections are processed as text nodes */
         /* todo: verify that cdata sections are included in XPath nodes set */
