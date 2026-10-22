@@ -30,9 +30,9 @@
 #include "transform.h"
 #include "preproc.h"
 
-#define WITH_XSLT_VERBOSE_ATTRIBUTES
+#define WITH_XSLT_VERBOSE_ATTRIBUTES 1
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_ATTRIBUTES
+#define WITH_XSLT_VERBOSE_ATTRIBUTES 1
 #endif
 
 #include "xsltverbose.h"
