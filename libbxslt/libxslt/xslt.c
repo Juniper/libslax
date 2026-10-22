@@ -44,10 +44,17 @@
 #include "security.h"
 #include "xsltlocale.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_PARSING
-/* #define WITH_XSLT_DEBUG_BLANKS */
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_PARSING
+/* #define WITH_XSLT_VERBOSE_BLANKS */
 #endif
+
+/*
+ * xsltverbose.h must be included after the local override above, since
+ * it reads WITH_XSLT_VERBOSE_PARSING/WITH_XSLT_VERBOSE_BLANKS to compute
+ * XSLT_VB_PARSING/XSLT_VB_BLANKS.
+ */
+#include "xsltverbose.h"
 
 const char *xsltEngineVersion = LIBXSLT_VERSION_STRING LIBXSLT_VERSION_EXTRA;
 const int xsltLibxsltVersion = LIBXSLT_VERSION;
@@ -575,13 +582,13 @@ xsltCompilationCtxtFree (xsltCompilerCtxtPtr cctxt)
 {
     if (cctxt == NULL)
         return;
-#ifdef WITH_XSLT_DEBUG_PARSING
-    xsltGenericDebug(xsltGenericDebugContext, "Freeing compilation context\n");
-    xsltGenericDebug(xsltGenericDebugContext, "### Max inodes: %d\n",
-                     cctxt->maxNodeInfos);
-    xsltGenericDebug(xsltGenericDebugContext, "### Max LREs  : %d\n",
-                     cctxt->maxLREs);
-#endif
+    if (XSLT_VB_PARSING) {
+        xsltGenericDebug(xsltGenericDebugContext, "Freeing compilation context\n");
+        xsltGenericDebug(xsltGenericDebugContext, "### Max inodes: %d\n",
+                         cctxt->maxNodeInfos);
+        xsltGenericDebug(xsltGenericDebugContext, "### Max LREs  : %d\n",
+                         cctxt->maxLREs);
+    }
     /*
     * Free node-infos.
     */
@@ -787,10 +794,8 @@ xsltNewStylesheetInternal (xsltStylesheetPtr parent)
     ret->literal_result = 0;
     ret->forwards_compatible = 0;
     ret->dict = xmlDictCreate();
-#ifdef WITH_XSLT_DEBUG
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "creating dictionary for stylesheet\n");
-#endif
+    xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                "creating dictionary for stylesheet\n");
 
     if (parent == NULL) {
         ret->principal = ret;
@@ -1077,10 +1082,8 @@ xsltFreeStylesheet (xsltStylesheetPtr style)
         xmlFreeDoc(style->doc);
     }
 
-#ifdef WITH_XSLT_DEBUG
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "freeing dictionary from stylesheet\n");
-#endif
+    xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                "freeing dictionary from stylesheet\n");
     xmlDictFree(style->dict);
 
     if (style->xpathCtxt != NULL)
@@ -1178,10 +1181,8 @@ xsltGetInheritedNsList (xsltStylesheetPtr style, xsltTemplatePtr template,
         node = xmlNodeGetParent(node);
     }
     if (nbns != 0) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "template has %d inherited namespaces\n", nbns);
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "template has %d inherited namespaces\n", nbns);
         template->inheritedNsNr = nbns;
         template->inheritedNs = ret;
     }
@@ -1339,11 +1340,9 @@ xsltParseStylesheetOutput (xsltStylesheetPtr style, xmlNodePtr cur)
                 end++;
             element = xmlStrndup(element, end - element);
             if (element) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "add cdata section output element %s\n",
-                                 element);
-#endif
+                xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                            "add cdata section output element %s\n",
+                            element);
                 if (xmlValidateQName(BAD_CAST element, 0) != 0) {
                     xsltTransformError(
                         NULL, style, cur,
@@ -1601,10 +1600,8 @@ xsltParseStylesheetPreserveSpace (xsltStylesheetPtr style, xmlNodePtr cur)
             end++;
         element = xmlStrndup(element, end - element);
         if (element) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "add preserved space element %s\n", element);
-#endif
+            xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                        "add preserved space element %s\n", element);
             if (xmlStrEqual(element, (const xmlChar *) "*")) {
                 style->stripAll = -1;
             } else {
@@ -1694,10 +1691,8 @@ xsltParseStylesheetExtPrefix (xsltStylesheetPtr style, xmlNodePtr cur,
                 if (style != NULL)
                     style->warnings++;
             } else {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "add extension prefix %s\n", prefix);
-#endif
+                xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                            "add extension prefix %s\n", prefix);
                 xsltRegisterExtPrefix(style, prefix, xmlNsGetHref(ns));
             }
             xmlFree(prefix);
@@ -1753,10 +1748,8 @@ xsltParseStylesheetStripSpace (xsltStylesheetPtr style, xmlNodePtr cur)
             end++;
         element = xmlStrndup(element, end - element);
         if (element) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "add stripped space element %s\n", element);
-#endif
+            xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                        "add stripped space element %s\n", element);
             if (xmlStrEqual(element, (const xmlChar *) "*")) {
                 style->stripAll = 1;
             } else {
@@ -1842,10 +1835,8 @@ xsltParseStylesheetExcludePrefix (xsltStylesheetPtr style, xmlNodePtr cur,
                     style->warnings++;
             } else {
                 if (exclPrefixPush(style, (xmlChar *) xmlNsGetHref(ns)) >= 0) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                    xsltGenericDebug(xsltGenericDebugContext,
-                                     "exclude result prefix %s\n", prefix);
-#endif
+                    xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                                "exclude result prefix %s\n", prefix);
                     nb++;
                 }
             }
@@ -2768,10 +2759,8 @@ xsltParseNsPrefixList (xsltCompilerCtxtPtr cctxt, xsltPointerListPtr list,
 	    */
             cctxt->style->errors++;
         } else {
-#ifdef WITH_XSLT_DEBUG_PARSING
-            xsltGenericDebug(xsltGenericDebugContext, "resolved prefix '%s'\n",
-                             cur);
-#endif
+            xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                        "resolved prefix '%s'\n", cur);
             /*
 	    * Note that we put the namespace name into the dict.
 	    */
@@ -3139,11 +3128,8 @@ xsltParsePreprocessStylesheetTree (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
     cur = node;
     while (cur != NULL) {
         if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_BLANKS
-            xsltGenericDebug(
-                xsltGenericDebugContext,
-                "xsltParsePreprocessStylesheetTree: removing node\n");
-#endif
+            xsltVerbose(XSLT_VB_BLANKS, xsltGenericDebugContext,
+                        "xsltParsePreprocessStylesheetTree: removing node\n");
             xmlUnlinkNode(deleteNode);
             xmlFreeNode(deleteNode);
             deleteNode = NULL;
@@ -3490,10 +3476,8 @@ xsltParsePreprocessStylesheetTree (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
         };
     }
     if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParsePreprocessStylesheetTree: removing node\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParsePreprocessStylesheetTree: removing node\n");
         xmlUnlinkNode(deleteNode);
         xmlFreeNode(deleteNode);
     }
@@ -3537,11 +3521,8 @@ xsltPreprocessStylesheet (xsltStylesheetPtr style, xmlNodePtr cur)
     deleteNode = NULL;
     while (cur != NULL) {
         if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_BLANKS
-            xsltGenericDebug(
-                xsltGenericDebugContext,
-                "xsltPreprocessStylesheet: removing ignorable blank node\n");
-#endif
+            xsltVerbose(XSLT_VB_BLANKS, xsltGenericDebugContext,
+                        "xsltPreprocessStylesheet: removing ignorable blank node\n");
             xmlUnlinkNode(deleteNode);
             xmlFreeNode(deleteNode);
             deleteNode = NULL;
@@ -3697,11 +3678,8 @@ xsltPreprocessStylesheet (xsltStylesheetPtr style, xmlNodePtr cur)
         } while (cur != NULL);
     }
     if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(
-            xsltGenericDebugContext,
-            "xsltPreprocessStylesheet: removing ignorable blank node\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltPreprocessStylesheet: removing ignorable blank node\n");
         xmlUnlinkNode(deleteNode);
         xmlFreeNode(deleteNode);
     }
@@ -3764,11 +3742,9 @@ xsltGatherNamespaces (xsltStylesheetPtr style)
                         xmlHashUpdateEntry(style->nsHash, xmlNsGetPrefix(ns),
                                            (void *) xmlNsGetHref(ns), NULL);
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-                        xsltGenericDebug(xsltGenericDebugContext,
-                                         "Added namespace: %s mapped to %s\n",
-                                         xmlNsGetPrefix(ns), xmlNsGetHref(ns));
-#endif
+                        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                                    "Added namespace: %s mapped to %s\n",
+                                    xmlNsGetPrefix(ns), xmlNsGetHref(ns));
                     }
                 }
                 ns = xmlNsGetNext(ns);
@@ -4096,11 +4072,9 @@ xsltParseAnyXSLTElem (xsltCompilerCtxtPtr cctxt, xmlNodePtr elem)
         /* <!-- Content: template --> */
         goto sequence_constructor;
     default:
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseXSLTNode: Unhandled XSLT element '%s'.\n",
-                         xmlNodeGetName(elem));
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseXSLTNode: Unhandled XSLT element '%s'.\n",
+                    xmlNodeGetName(elem));
         xsltTransformError(NULL, cctxt->style, elem,
                            "xsltParseXSLTNode: Internal error; "
                            "unhandled XSLT element '%s'.\n",
@@ -4509,11 +4483,8 @@ xsltParseSequenceConstructor (xsltCompilerCtxtPtr cctxt, xmlNodePtr cur)
         cctxt->style->principal->opCount += 1;
 
         if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_BLANKS
-            xsltGenericDebug(
-                xsltGenericDebugContext,
-                "xsltParseSequenceConstructor: removing xsl:text element\n");
-#endif
+            xsltVerbose(XSLT_VB_BLANKS, xsltGenericDebugContext,
+                        "xsltParseSequenceConstructor: removing xsl:text element\n");
             xmlUnlinkNode(deleteNode);
             xmlFreeNode(deleteNode);
             deleteNode = NULL;
@@ -4866,11 +4837,8 @@ xsltParseSequenceConstructor (xsltCompilerCtxtPtr cctxt, xmlNodePtr cur)
         cur = xmlNodeGetNext(cur);
     }
     if (deleteNode != NULL) {
-#ifdef WITH_XSLT_DEBUG_BLANKS
-        xsltGenericDebug(
-            xsltGenericDebugContext,
-            "xsltParseSequenceConstructor: removing xsl:text element\n");
-#endif
+        xsltVerbose(XSLT_VB_BLANKS, xsltGenericDebugContext,
+                    "xsltParseSequenceConstructor: removing xsl:text element\n");
         xmlUnlinkNode(deleteNode);
         xmlFreeNode(deleteNode);
         deleteNode = NULL;
@@ -4961,10 +4929,8 @@ xsltParseTemplateContent (xsltStylesheetPtr style, xmlNodePtr templ)
         style->principal->opCount += 1;
 
         if (delete != NULL) {
-#ifdef WITH_XSLT_DEBUG_BLANKS
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "xsltParseTemplateContent: removing text\n");
-#endif
+            xsltVerbose(XSLT_VB_BLANKS, xsltGenericDebugContext,
+                        "xsltParseTemplateContent: removing text\n");
             xmlUnlinkNode(delete);
             xmlFreeNode(delete);
             delete = NULL;
@@ -4988,11 +4954,9 @@ xsltParseTemplateContent (xsltStylesheetPtr style, xmlNodePtr templ)
                     prop = xmlGetNsProp(
                         cur, (const xmlChar *) "disable-output-escaping", NULL);
                     if (prop != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                        xsltGenericDebug(xsltGenericDebugContext,
-                                         "Disable escaping: %s\n",
-                                         xmlNodeGetContentRaw(text));
-#endif
+                        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                                    "Disable escaping: %s\n",
+                                    xmlNodeGetContentRaw(text));
                         if (xmlStrEqual(prop, (const xmlChar *) "yes")) {
                             noesc = 1;
                         } else if (!xmlStrEqual(prop, (const xmlChar *) "no")) {
@@ -5123,10 +5087,8 @@ xsltParseTemplateContent (xsltStylesheetPtr style, xmlNodePtr templ)
         } while (cur != NULL);
     }
     if (delete != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseTemplateContent: removing text\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseTemplateContent: removing text\n");
         xmlUnlinkNode(delete);
         xmlFreeNode(delete);
         delete = NULL;
@@ -5208,10 +5170,8 @@ xsltParseStylesheetKey (xsltStylesheetPtr style, xmlNodePtr key)
             if (URI != NULL)
                 nameURI = xmlStrdup(URI);
         }
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseStylesheetKey: name %s\n", name);
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseStylesheetKey: name %s\n", name);
     } else {
         xsltTransformError(NULL, style, key, "xsl:key : error missing name\n");
         if (style != NULL)
@@ -5328,10 +5288,8 @@ xsltParseXSLTTemplate (xsltCompilerCtxtPtr cctxt, xmlNodePtr templNode)
         }
         if (modeURI != NULL)
             templ->modeURI = xmlDictLookup(cctxt->style->dict, modeURI, -1);
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseXSLTTemplate: mode %s\n", templ->mode);
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseXSLTTemplate: mode %s\n", templ->mode);
     }
     /*
     * Attribute "match".
@@ -5497,10 +5455,8 @@ xsltParseStylesheetTemplate (xsltStylesheetPtr style, xmlNodePtr template)
         }
         ret->mode = xmlDictLookup(style->dict, mode, -1);
         ret->modeURI = xmlDictLookup(style->dict, modeURI, -1);
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseStylesheetTemplate: mode %s\n", mode);
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseStylesheetTemplate: mode %s\n", mode);
         if (mode != NULL)
             xmlFree(mode);
         if (modeURI != NULL)
@@ -5729,9 +5685,7 @@ xsltParseRemoveWhitespace(xmlNodePtr node)
 static int
 xsltParseXSLTStylesheetElemCore (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
 {
-#ifdef WITH_XSLT_DEBUG_PARSING
     int templates = 0;
-#endif
     xmlNodePtr cur, start = NULL;
     xsltStylesheetPtr style;
 
@@ -5953,9 +5907,7 @@ xsltParseXSLTStylesheetElemCore (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
 		*  to int.
 		*/
                 if (IS_XSLT_NAME(cur, "template")) {
-#ifdef WITH_XSLT_DEBUG_PARSING
                     templates++;
-#endif
                     /*
 		    * TODO: Is the position of xsl:template in the
 		    *  tree significant? If not it would be easier to
@@ -6037,13 +5989,10 @@ xsltParseXSLTStylesheetElemCore (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
                     xmlNodeGetName(cur), xmlNsGetHref(xmlNodeGetNs(cur)));
                 if (function != NULL)
                     function(style, cur);
-#ifdef WITH_XSLT_DEBUG_PARSING
-                xsltGenericDebug(
-                    xsltGenericDebugContext,
-                    "xsltParseXSLTStylesheetElemCore : User-defined "
-                    "data element '%s'.\n",
-                    xmlNodeGetName(cur));
-#endif
+                xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                            "xsltParseXSLTStylesheetElemCore : User-defined "
+                            "data element '%s'.\n",
+                            xmlNodeGetName(cur));
             }
         }
         cur = xmlNodeGetNext(cur);
@@ -6051,18 +6000,18 @@ xsltParseXSLTStylesheetElemCore (xsltCompilerCtxtPtr cctxt, xmlNodePtr node)
 
 exit:
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "### END of parsing top-level elements of doc '%s'.\n",
-                     xmlDocGetURL(xmlNodeGetDoc(node)));
-    xsltGenericDebug(xsltGenericDebugContext, "### Templates: %d\n", templates);
+    if (XSLT_VB_PARSING) {
+        xsltGenericDebug(xsltGenericDebugContext,
+                         "### END of parsing top-level elements of doc '%s'.\n",
+                         xmlDocGetURL(xmlNodeGetDoc(node)));
+        xsltGenericDebug(xsltGenericDebugContext, "### Templates: %d\n", templates);
 #ifdef XSLT_REFACTORED
-    xsltGenericDebug(xsltGenericDebugContext, "### Max inodes: %d\n",
-                     cctxt->maxNodeInfos);
-    xsltGenericDebug(xsltGenericDebugContext, "### Max LREs  : %d\n",
-                     cctxt->maxLREs);
+        xsltGenericDebug(xsltGenericDebugContext, "### Max inodes: %d\n",
+                         cctxt->maxNodeInfos);
+        xsltGenericDebug(xsltGenericDebugContext, "### Max LREs  : %d\n",
+                         cctxt->maxLREs);
 #endif /* XSLT_REFACTORED */
-#endif /* WITH_XSLT_DEBUG_PARSING */
+    }
 
     xsltCompilerNodePop(cctxt, node);
     return 0;
@@ -6181,9 +6130,7 @@ xsltParseStylesheetTop (xsltStylesheetPtr style, xmlNodePtr top)
 {
     xmlNodePtr cur;
     xmlChar *prop;
-#ifdef WITH_XSLT_DEBUG_PARSING
     int templates = 0;
-#endif
 
     if (top == NULL || xmlNodeGetType(top) != XML_ELEMENT_NODE)
         return;
@@ -6279,12 +6226,9 @@ xsltParseStylesheetTop (xsltStylesheetPtr style, xmlNodePtr top)
             if (function != NULL)
                 function(style, cur);
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-            xsltGenericDebug(
-                xsltGenericDebugContext,
-                "xsltParseStylesheetTop : found foreign element %s\n",
-                xmlNodeGetName(cur));
-#endif
+            xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                        "xsltParseStylesheetTop : found foreign element %s\n",
+                        xmlNodeGetName(cur));
             cur = xmlNodeGetNext(cur);
             continue;
         }
@@ -6315,9 +6259,7 @@ xsltParseStylesheetTop (xsltStylesheetPtr style, xmlNodePtr top)
         } else if (IS_XSLT_NAME(cur, "param")) {
             xsltParseGlobalParam(style, cur);
         } else if (IS_XSLT_NAME(cur, "template")) {
-#ifdef WITH_XSLT_DEBUG_PARSING
             templates++;
-#endif
             xsltParseStylesheetTemplate(style, cur);
         } else if (IS_XSLT_NAME(cur, "namespace-alias")) {
             xsltNamespaceAlias(style, cur);
@@ -6333,10 +6275,8 @@ xsltParseStylesheetTop (xsltStylesheetPtr style, xmlNodePtr top)
         }
         cur = xmlNodeGetNext(cur);
     }
-#ifdef WITH_XSLT_DEBUG_PARSING
-    xsltGenericDebug(xsltGenericDebugContext, "parsed %d templates\n",
-                     templates);
-#endif
+    xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                "parsed %d templates\n", templates);
 }
 
 #endif /* else of XSLT_REFACTORED */
@@ -6374,11 +6314,8 @@ xsltParseSimplifiedStylesheetTree (xsltCompilerCtxtPtr cctxt, xmlDocPtr doc,
         return 1;
     }
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-    xsltGenericDebug(
-        xsltGenericDebugContext,
-        "xsltParseSimplifiedStylesheetTree: document is stylesheet\n");
-#endif
+    xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                "xsltParseSimplifiedStylesheetTree: document is stylesheet\n");
 
     /*
     * Create and link the template
@@ -6485,10 +6422,8 @@ xsltParseStylesheetProcess (xsltStylesheetPtr style, xmlDocPtr doc)
     if ((IS_XSLT_ELEM(cur))
         && ((IS_XSLT_NAME(cur, "stylesheet"))
             || (IS_XSLT_NAME(cur, "transform")))) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseStylesheetProcess : found stylesheet\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseStylesheetProcess : found stylesheet\n");
         cctxt->simplified = 0;
         style->literal_result = 0;
     } else {
@@ -6560,10 +6495,8 @@ xsltParseStylesheetProcess (xsltStylesheetPtr ret, xmlDocPtr doc)
     if (IS_XSLT_ELEM(cur)
         && ((IS_XSLT_NAME(cur, "stylesheet"))
             || (IS_XSLT_NAME(cur, "transform")))) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltParseStylesheetProcess : found stylesheet\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseStylesheetProcess : found stylesheet\n");
         ret->literal_result = 0;
         xsltParseStylesheetExcludePrefix(ret, cur, 1);
         xsltParseStylesheetExtPrefix(ret, cur, 1);
@@ -6592,11 +6525,8 @@ xsltParseStylesheetProcess (xsltStylesheetPtr ret, xmlDocPtr doc)
             return NULL;
         }
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(
-            xsltGenericDebugContext,
-            "xsltParseStylesheetProcess : document is stylesheet\n");
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltParseStylesheetProcess : document is stylesheet\n");
 
         if (!xmlStrEqual(prop, (const xmlChar *) "1.0")
             && !xmlStrEqual(prop, (const xmlChar *) "1.1")) {
@@ -6686,11 +6616,9 @@ xsltParseStylesheetUser (xsltStylesheetPtr style, xmlDocPtr doc)
     if (xmlDocGetDict(doc) != NULL) {
         xmlDictFree(style->dict);
         style->dict = xmlDocGetDict(doc);
-#ifdef WITH_XSLT_DEBUG
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "reusing dictionary from %s for stylesheet\n",
-                         xmlDocGetURL(doc));
-#endif
+        xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                    "reusing dictionary from %s for stylesheet\n",
+                    xmlDocGetURL(doc));
         xmlDictReference(style->dict);
     }
 
@@ -6856,10 +6784,8 @@ xsltParseStylesheetFile (const xmlChar *filename)
     if (filename == NULL)
         return NULL;
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-    xsltGenericDebug(xsltGenericDebugContext,
-                     "xsltParseStylesheetFile : parse %s\n", filename);
-#endif
+    xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                "xsltParseStylesheetFile : parse %s\n", filename);
 
     /*
      * Security framework check
@@ -7043,10 +6969,8 @@ xsltLoadStylesheetPI (xmlDocPtr doc)
      * If found check the href to select processing
      */
     if (href != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "xsltLoadStylesheetPI : found PI href=%s\n", href);
-#endif
+        xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                    "xsltLoadStylesheetPI : found PI href=%s\n", href);
         URI = xmlParseURI((const char *) href);
         if (URI == NULL) {
             xsltTransformError(NULL, NULL, child,
@@ -7060,11 +6984,9 @@ xsltLoadStylesheetPI (xmlDocPtr doc)
             && URI->path == NULL && URI->query == NULL) {
             xmlAttrPtr ID;
 
-#ifdef WITH_XSLT_DEBUG_PARSING
-            xsltGenericDebug(xsltGenericDebugContext,
-                             "xsltLoadStylesheetPI : Reference to ID %s\n",
-                             href);
-#endif
+            xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                        "xsltLoadStylesheetPI : Reference to ID %s\n",
+                        href);
             if (URI->fragment[0] == '#')
                 ID = xmlGetID(doc, (const xmlChar *) &(URI->fragment[1]));
             else
@@ -7078,12 +7000,9 @@ xsltLoadStylesheetPI (xmlDocPtr doc)
                 xmlNodePtr subtree, newtree;
                 xmlNsPtr ns;
 
-#ifdef WITH_XSLT_DEBUG
-                xsltGenericDebug(
-                    xsltGenericDebugContext,
-                    "creating new document from %s for embedded stylesheet\n",
-                    xmlDocGetURL(doc));
-#endif
+                xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                            "creating new document from %s for embedded stylesheet\n",
+                            xmlDocGetURL(doc));
                 /*
 		 * move the subtree in a new document passed to
 		 * the stylesheet analyzer
@@ -7097,23 +7016,17 @@ xsltLoadStylesheetPI (xmlDocPtr doc)
 		    */
                     xmlDocSetDict(fake, xmlDocGetDict(doc));
                     xmlDictReference(xmlDocGetDict(doc));
-#ifdef WITH_XSLT_DEBUG
-                    xsltGenericDebug(
-                        xsltGenericDebugContext,
-                        "reusing dictionary from %s for embedded stylesheet\n",
-                        xmlDocGetURL(doc));
-#endif
+                    xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                                "reusing dictionary from %s for embedded stylesheet\n",
+                                xmlDocGetURL(doc));
 
                     newtree = xmlDocCopyNode(subtree, fake, 1);
 
                     xmlDocSetURL(
                         fake, xmlNodeGetBase(doc, xmlNodeGetParent(subtree)));
-#ifdef WITH_XSLT_DEBUG
-                    xsltGenericDebug(
-                        xsltGenericDebugContext,
-                        "set base URI for embedded stylesheet as %s\n",
-                        xmlDocGetURL(fake));
-#endif
+                    xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                                "set base URI for embedded stylesheet as %s\n",
+                                xmlDocGetURL(fake));
 
                     /*
 		    * Add all namespaces in scope of embedded stylesheet to
@@ -7144,17 +7057,13 @@ xsltLoadStylesheetPI (xmlDocPtr doc)
             base = xmlNodeGetBase(doc, (xmlNodePtr) doc);
             URL = xmlBuildURI(href, base);
             if (URL != NULL) {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsltLoadStylesheetPI : fetching %s\n", URL);
-#endif
+                xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                            "xsltLoadStylesheetPI : fetching %s\n", URL);
                 ret = xsltParseStylesheetFile(URL);
                 xmlFree(URL);
             } else {
-#ifdef WITH_XSLT_DEBUG_PARSING
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsltLoadStylesheetPI : fetching %s\n", href);
-#endif
+                xsltVerbose(XSLT_VB_PARSING, xsltGenericDebugContext,
+                            "xsltLoadStylesheetPI : fetching %s\n", href);
                 ret = xsltParseStylesheetFile(href);
             }
             if (base != NULL)
