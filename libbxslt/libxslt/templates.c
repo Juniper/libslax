@@ -32,7 +32,7 @@
 #include "attributes.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_TEMPLATES
+#define WITH_XSLT_VERBOSE_TEMPLATES 1
 #endif
 
 #include "xsltverbose.h"
