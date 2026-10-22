@@ -45,13 +45,13 @@
 #include "xsltlocale.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_PARSING
+#define WITH_XSLT_VERBOSE_PARSING 1
 /* #define WITH_XSLT_VERBOSE_BLANKS */
 #endif
 
 /*
  * xsltverbose.h must be included after the local override above, since
- * it reads WITH_XSLT_VERBOSE_PARSING/WITH_XSLT_VERBOSE_BLANKS to compute
+ * it reads WITH_XSLT_VERBOSE_PARSING 1/WITH_XSLT_VERBOSE_BLANKS to compute
  * XSLT_VB_PARSING/XSLT_VB_BLANKS.
  */
 #include "xsltverbose.h"
