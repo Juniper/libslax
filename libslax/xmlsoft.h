@@ -23,14 +23,14 @@
 
 /*
  * xsltutils.h declares xsltSetDebuggerCallbacks()/xsltSetDebuggerStatus()
- * only when WITH_DEBUGGER is defined, i.e. only when libbxslt was itself
- * built with debugger support.  We used to punt-declare them here
- * unconditionally, but libbxslt is ours now and WITH_DEBUGGER really
- * does control whether those symbols exist in the compiled library --
- * declaring (and calling) them regardless is how "built without the
- * debugger" turns into a SEGV instead of a clean error.  So we rely on
- * the same #ifdef WITH_DEBUGGER here, fed by the same shared config
- * header libbxslt was built from.
+ * only when WITH_XSLT_DEBUGGER is defined, i.e. only when libbxslt was
+ * itself built with debugger-hook support.  We used to punt-declare them
+ * here unconditionally, but libbxslt is ours now and WITH_XSLT_DEBUGGER
+ * really does control whether those symbols exist in the compiled
+ * library -- declaring (and calling) them regardless is how "built
+ * without the debugger" turns into a SEGV instead of a clean error.  So
+ * we rely on the same #ifdef WITH_XSLT_DEBUGGER here, fed by the same
+ * shared config header libbxslt was built from.
  */
 #include <libxslt/xsltutils.h>  /* For xsltSetDebuggerCallbacks, etc */
 
@@ -44,7 +44,7 @@
  */
 #define LX_ERR(_msg...) xsltGenericError(xsltGenericErrorContext, _msg)
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_XSLT_DEBUGGER
 /**
  * Call xsltSetDebuggerCallbacks() with the properly typed argument.
  * I'm not sure of the reason but the arguments are untyped, giving it
@@ -62,7 +62,7 @@ xsltSetDebuggerCallbacksHelper (xsltHandleDebuggerCallback handler,
 
     xsltSetDebuggerCallbacks(NUM_ARRAY(cb), &cb);
 }
-#endif /* WITH_DEBUGGER */
+#endif /* WITH_XSLT_DEBUGGER */
 
 static inline void
 slaxRegisterFunction (const char *uri, const char *fn, xmlXPathFunction func)
