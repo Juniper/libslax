@@ -106,6 +106,7 @@ libbxslt_la_SOURCES = 			\
 	transform.c			\
 	security.c			\
 	win32config.h			\
+	xsltverbose.h			\
 	libxslt.h
 
 if USE_VERSION_SCRIPT
