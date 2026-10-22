@@ -31,7 +31,7 @@
 #include "preproc.h"
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_EXTRA
+#define WITH_XSLT_VERBOSE_EXTRA 1
 #endif
 
 /************************************************************************
