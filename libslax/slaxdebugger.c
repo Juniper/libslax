@@ -94,7 +94,7 @@
 #define XSLT_DEBUG_OVER (XSLT_DEBUG_LOCAL + 1) /* The "over" operation */
 #define XSLT_DEBUG_DONE (XSLT_DEBUG_LOCAL + 2) /* The script is done */
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_SLAX_DEBUGGER
 
 /*
  * Information about the current point of debugging
@@ -3328,22 +3328,21 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     return res;
 }
 
-#else /* WITH_DEBUGGER */
+#else /* WITH_SLAX_DEBUGGER */
 
 /*
- * libbxslt was built without debugger support (--without-debugger),
- * so xsltSetDebuggerCallbacks() and the rest of the debugger hook API
- * don't exist in the compiled library, and none of the real code above
- * can be built against it.  Without these stubs, sdb would either fail
- * to link or crash the first time it tried to call into a debugger
- * hook the library was never built with.  Fail cleanly instead.
+ * This build was configured without the slax/sdb source-level debugger
+ * (--without-slax-debugger), so none of the real code above was built.
+ * Without these stubs, sdb would either fail to link or crash the first
+ * time it tried to call into a debugger that was never built.  Fail
+ * cleanly instead.
  */
 
 int
 slaxDebugInitFlags (slaxDebugFlags_t flags UNUSED)
 {
     slaxError("sdb: debugger support was not compiled into this build "
-	      "(rebuild with --with-debugger)");
+	      "(rebuild with --with-bxslt-components=\"default +slax-debugger\")");
     return TRUE;
 }
 
@@ -3380,4 +3379,4 @@ slaxDebugApplyStylesheet (const char *scriptname UNUSED,
     return NULL;
 }
 
-#endif /* WITH_DEBUGGER */
+#endif /* WITH_SLAX_DEBUGGER */
