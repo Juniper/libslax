@@ -29,11 +29,13 @@
 #include <libxml/xinclude.h>
 #endif
 
-#define WITH_XSLT_DEBUG_DOCUMENTS
+#define WITH_XSLT_VERBOSE_DOCUMENTS
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_DOCUMENTS
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_DOCUMENTS
 #endif
+
+#include "xsltverbose.h"
 
 /************************************************************************
  *									*
@@ -70,10 +72,8 @@ xsltDocDefaultLoaderFunc (const xmlChar *URI, xmlDictPtr dict, int options,
         return NULL;
     if (dict != NULL) {
         xmlCtxtSetDict(pctxt, dict);
-#ifdef WITH_XSLT_DEBUG
-        xsltGenericDebug(xsltGenericDebugContext,
-                         "Reusing dictionary for document\n");
-#endif
+        xsltVerbose(XSLT_VB_GENERAL, xsltGenericDebugContext,
+                    "Reusing dictionary for document\n");
     }
     xmlCtxtUseOptions(pctxt, options);
     inputStream = xmlLoadExternalEntity((const char *) URI, NULL, pctxt);
