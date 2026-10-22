@@ -29,10 +29,10 @@
 #include <libxml/xinclude.h>
 #endif
 
-#define WITH_XSLT_VERBOSE_DOCUMENTS
+#define WITH_XSLT_VERBOSE_DOCUMENTS 1
 
 #ifdef WITH_XSLT_VERBOSE
-#define WITH_XSLT_VERBOSE_DOCUMENTS
+#define WITH_XSLT_VERBOSE_DOCUMENTS 1
 #endif
 
 #include "xsltverbose.h"
