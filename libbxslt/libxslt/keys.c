@@ -29,9 +29,11 @@
 #include "templates.h"
 #include "keys.h"
 
-#ifdef WITH_XSLT_DEBUG
-#define WITH_XSLT_DEBUG_KEYS
+#ifdef WITH_XSLT_VERBOSE
+#define WITH_XSLT_VERBOSE_KEYS
 #endif
+
+#include "xsltverbose.h"
 
 static int xsltInitDocKeyTable (xsltTransformContextPtr ctxt,
                                 const xmlChar *name, const xmlChar *nameURI);
@@ -301,10 +303,9 @@ xsltAddKey (xsltStylesheetPtr style, const xmlChar *name,
     if (style == NULL || name == NULL || match == NULL || use == NULL)
         return -1;
 
-#ifdef WITH_XSLT_DEBUG_KEYS
-    xsltGenericDebug(xsltGenericDebugContext, "Add key %s, match %s, use %s\n",
-                     name, match, use);
-#endif
+    xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                "Add key %s, match %s, use %s\n",
+                name, match, use);
 
     key = xsltNewKeyDef(name, nameURI);
     if (key == NULL)
@@ -378,10 +379,9 @@ xsltAddKey (xsltStylesheetPtr style, const xmlChar *name,
             style->errors++;
         goto error;
     }
-#ifdef WITH_XSLT_DEBUG_KEYS
-    xsltGenericDebug(xsltGenericDebugContext, "   resulting pattern %s\n",
-                     pattern);
-#endif
+    xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                "   resulting pattern %s\n",
+                pattern);
     /*
     * XSLT-1: "It is an error for the value of either the use
     *  attribute or the match attribute to contain a
@@ -466,10 +466,9 @@ xsltGetKey (xsltTransformContextPtr ctxt, const xmlChar *name,
         || ctxt->document == NULL)
         return NULL;
 
-#ifdef WITH_XSLT_DEBUG_KEYS
-    xsltGenericDebug(xsltGenericDebugContext, "Get key %s, value %s\n", name,
-                     value);
-#endif
+    xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                "Get key %s, value %s\n", name,
+                value);
 
     /*
      * keys are computed only on-demand on first key access for a document
@@ -544,12 +543,10 @@ xsltInitDocKeyTable (xsltTransformContextPtr ctxt, const xmlChar *name,
         style = xsltNextImport(style);
     }
     if (found == 0) {
-#ifdef WITH_XSLT_DEBUG_KEYS
         XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
-                   xsltGenericDebug(xsltGenericDebugContext,
-                                    "xsltInitDocKeyTable: did not found %s\n",
-                                    name));
-#endif
+                   xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                               "xsltInitDocKeyTable: did not found %s\n",
+                               name));
         xsltTransformError(ctxt, NULL, keyd ? keyd->inst : NULL,
                            "Failed to find key definition for %s\n", name);
         ctxt->state = XSLT_STATE_STOPPED;
@@ -669,13 +666,11 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
      * Detect recursive keys
      */
     if (ctxt->keyInitLevel > ctxt->nbKeys) {
-#ifdef WITH_XSLT_DEBUG_KEYS
         XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
-                   xsltGenericDebug(
-                       xsltGenericDebugContext,
+                   xsltVerbose(
+                       XSLT_VB_KEYS, xsltGenericDebugContext,
                        "xsltInitCtxtKey: key definition of %s is recursive\n",
                        keyDef->name));
-#endif
         xsltTransformError(ctxt, NULL, keyDef->inst,
                            "Key definition for %s is recursive\n",
                            keyDef->name);
@@ -719,12 +714,10 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
     */
     matchRes = xmlXPathCompiledEval(keyDef->comp, xpctxt);
     if (matchRes == NULL) {
-#ifdef WITH_XSLT_DEBUG_KEYS
         XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
-                   xsltGenericDebug(xsltGenericDebugContext,
-                                    "xsltInitCtxtKey: %s evaluation failed\n",
-                                    keyDef->match));
-#endif
+                   xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                               "xsltInitCtxtKey: %s evaluation failed\n",
+                               keyDef->match));
         xsltTransformError(ctxt, NULL, keyDef->inst,
                            "Failed to evaluate the 'match' expression.\n");
         ctxt->state = XSLT_STATE_STOPPED;
@@ -733,25 +726,21 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
         if (xmlXPathObjectGetType(matchRes) == XPATH_NODESET) {
             matchList = xmlXPathObjectGetNodesetval(matchRes);
 
-#ifdef WITH_XSLT_DEBUG_KEYS
             if (matchList != NULL)
                 XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
-                           xsltGenericDebug(
-                               xsltGenericDebugContext,
+                           xsltVerbose(
+                               XSLT_VB_KEYS, xsltGenericDebugContext,
                                "xsltInitCtxtKey: %s evaluates to %d nodes\n",
                                keyDef->match, xmlNodeSetGetNodeNr(matchList)));
-#endif
         } else {
             /*
 	    * Is not a node set, but must be.
 	    */
-#ifdef WITH_XSLT_DEBUG_KEYS
             XSLT_TRACE(
                 ctxt, XSLT_TRACE_KEYS,
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsltInitCtxtKey: %s is not a node set\n",
-                                 keyDef->match));
-#endif
+                xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                            "xsltInitCtxtKey: %s is not a node set\n",
+                            keyDef->match));
             xsltTransformError(
                 ctxt, NULL, keyDef->inst,
                 "The 'match' expression did not evaluate to a node set.\n");
@@ -848,13 +837,11 @@ xsltInitCtxtKey (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc,
             if (str == NULL)
                 goto next_string;
 
-#ifdef WITH_XSLT_DEBUG_KEYS
             XSLT_TRACE(
                 ctxt, XSLT_TRACE_KEYS,
-                xsltGenericDebug(xsltGenericDebugContext,
-                                 "xsl:key : node associated to ('%s', '%s')\n",
-                                 keyDef->name, str));
-#endif
+                xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                            "xsl:key : node associated to ('%s', '%s')\n",
+                            keyDef->name, str));
 
             keylist = xmlHashLookup(table->keys, str);
             if (keylist == NULL) {
@@ -932,13 +919,11 @@ xsltInitCtxtKeys (xsltTransformContextPtr ctxt, xsltDocumentPtr idoc)
     fprintf(stderr, "xsltInitCtxtKeys on document\n");
 #endif
 
-#ifdef WITH_XSLT_DEBUG_KEYS
     if (idoc->doc != NULL && xmlDocGetURL(idoc->doc) != NULL)
         XSLT_TRACE(ctxt, XSLT_TRACE_KEYS,
-                   xsltGenericDebug(xsltGenericDebugContext,
-                                    "Initializing keys on %s\n",
-                                    xmlDocGetURL(idoc->doc)));
-#endif
+                   xsltVerbose(XSLT_VB_KEYS, xsltGenericDebugContext,
+                               "Initializing keys on %s\n",
+                               xmlDocGetURL(idoc->doc)));
     style = ctxt->style;
     while (style != NULL) {
         keyDef = (xsltKeyDefPtr) style->keys;
