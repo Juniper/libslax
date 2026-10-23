@@ -228,6 +228,7 @@ typedef unsigned slaxDebugFlags_t;
 #define SDBF_PROFILE_BRIEF	(1<<2) /* ... and only brief output */
 #define SDBF_PROFILE_WALL	(1<<3) /* ... and wall-clock output */
 #define SDBF_ECHO_INPUT		(1<<4) /* Echo each command before running it */
+#define SDBF_PROFILE_CALLGRAPH	(1<<5) /* Profile via xsltApplyStylesheetUser */
 
 int
 slaxDebugInitFlags (slaxDebugFlags_t flags);
