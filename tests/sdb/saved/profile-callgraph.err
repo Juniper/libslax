@@ -1,0 +1,4 @@
+Type 'help' for help
+(sdb) profile call-graph out/profile-callgraph.prof
+Enabling call-graph profiling, output to out/profile-callgraph.prof
+(sdb) (sdb) (sdb) 
