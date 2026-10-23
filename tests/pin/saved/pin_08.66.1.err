@@ -1,0 +1,1 @@
+../../../tests/pin/pin_08.66.in:25: warning: xsl:call-template name="wrap": not supported here; only supported inside xsl:for-each in the streaming compiler
