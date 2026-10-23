@@ -1519,6 +1519,45 @@ pin_insert_attrib_pair (pin_parse_t *parsep, const char *name, const char *value
 }
 
 /*
+ * Evaluate a value expression used inside a for-each body (xsl:variable
+ * select= or xsl:with-param select=): a quoted string literal is unquoted,
+ * a $name reference resolves against the frame's variable bindings (falling
+ * back to rulebook globals via pin_body_var_get), and anything else is
+ * evaluated as a path/arithmetic expression against the frame's current
+ * for-each context node.
+ */
+static void
+pin_body_eval_foreach_value (pin_parse_t *parsep, pin_body_frame_t *bfp,
+			     const char *sel, size_t slen,
+			     char *vbuf, size_t vcap)
+{
+    vbuf[0] = '\0';
+    if (sel == NULL || slen == 0 || vcap == 0)
+	return;
+
+    if (slen >= 2
+	    && ((sel[0] == '\'' && sel[slen - 1] == '\'')
+		|| (sel[0] == '"' && sel[slen - 1] == '"'))) {
+	size_t n = slen - 2;
+	if (n >= vcap)
+	    n = vcap - 1;
+	memcpy(vbuf, sel + 1, n);
+	vbuf[n] = '\0';
+	return;
+    }
+
+    if (sel[0] == '$') {
+	const char *val = pin_body_var_get(parsep, bfp, sel + 1, slen - 1);
+	if (val)
+	    snprintf(vbuf, vcap, "%s", val);
+	return;
+    }
+
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node, sel, slen, vbuf, vcap);
+}
+
+/*
  * Execute a for-each body instruction sub-list synchronously.
  * All data is read from the retained tree; this function never pauses for
  * streaming events.  bfp->pbf_ctx_node / pbf_position / pbf_last must be
@@ -1644,15 +1683,15 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 	    break;
 	}
 	case BIA_VARIABLE: {
-	    /* Evaluate select (path or arithmetic) and store in pbf_vars */
+	    /* Evaluate select (literal, $var, path, or arithmetic) and store */
 	    const char *sel = !pin_name_id_is_null(instr->bi_select)
 			      ? pin_namepool_string(pwp, instr->bi_select) : NULL;
 	    pin_name_id_t val = pin_name_id_null_atom();
 
-	    if (sel && sel[0] != '\0' && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+	    if (sel && sel[0] != '\0') {
 		char vbuf[128];
-		pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
-					  sel, strlen(sel), vbuf, sizeof(vbuf));
+		pin_body_eval_foreach_value(parsep, bfp, sel, strlen(sel),
+					    vbuf, sizeof(vbuf));
 		if (vbuf[0] != '\0')
 		    val = pin_namepool_atom(pwp, vbuf, TRUE);
 	    }
@@ -1762,6 +1801,33 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 		    snprintf(nbuf, sizeof(nbuf), "%ld", n);
 		    pin_insert_text(parsep, nbuf, strlen(nbuf), PIN_TYPE_TEXT);
 		}
+	    }
+	    break;
+	}
+	case BIA_WITH_PARAM: {
+	    /* Evaluate the value expression and stage it for the next BIA_CALL */
+	    const char *sel = !pin_name_id_is_null(instr->bi_select)
+			      ? pin_namepool_string(pwp, instr->bi_select) : NULL;
+	    if (sel && !pin_name_id_is_null(instr->bi_tag)) {
+		char vbuf[512];
+		pin_body_eval_foreach_value(parsep, bfp, sel, strlen(sel),
+					    vbuf, sizeof(vbuf));
+		pin_name_id_t val_atom = pin_namepool_atom(pwp, vbuf, TRUE);
+		uint32_t name_atom = pin_name_id_atom_of(instr->bi_tag);
+		pin_exec_stage_pending_param(&parsep->pp_exec, name_atom,
+					     pin_value_string(pin_name_id_atom_of(val_atom)));
+	    }
+	    break;
+	}
+	case BIA_CALL: {
+	    /* Invoke the named template's compiled op-sequence against the
+	     * fully-retained for-each context node; see pin_exec_run_call(). */
+	    if (!pin_name_id_is_null(instr->bi_select)
+		    && !pin_node_id_is_null(bfp->pbf_ctx_node)) {
+		pin_op_id_t callee_ops = pin_rulebook_named_find(rb, instr->bi_select);
+		if (!pin_op_id_is_null(callee_ops))
+		    pin_exec_run_call(&parsep->pp_exec, parsep, callee_ops,
+				      bfp->pbf_ctx_node, instr->bi_filter_idx);
 	    }
 	    break;
 	}
@@ -2076,6 +2142,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 				    bfp->pbf_match_attribs, PIA_SAVE_ATTRIB);
 		    pip->pin_stack[pip->pin_depth].ps_statep = NULL;
 		    bfp->pbf_copy_depth = pip->pin_depth;
+		    bfp->pbf_match_node = pip->pin_stack[pip->pin_depth].ps_atom;
 		    /* Mark as transient: retained for navigation only, not output */
 		    if (pip->pin_stack[pip->pin_depth].ps_node)
 			pip->pin_stack[pip->pin_depth].ps_node->pn_flags |= PNF_TRANSIENT;
@@ -2112,8 +2179,15 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    if (sel[0] == '/') {
 		start = !pin_node_id_is_null(fe_root) ? fe_root : ptp->pt_root;
 		path = sel + 1;		/* strip leading '/' */
+	    } else if (bfp->pbf_is_root_match) {
+		/* match="/": the context node is the document root, and the
+		 * retained element (the first document child) sits directly
+		 * under fe_root -- same navigation root as an absolute path. */
+		start = !pin_node_id_is_null(fe_root) ? fe_root : ptp->pt_root;
 	    } else {
-		start = pip->pin_stack[pip->pin_depth].ps_atom;
+		start = !pin_node_id_is_null(bfp->pbf_match_node)
+			? bfp->pbf_match_node
+			: pip->pin_stack[pip->pin_depth].ps_atom;
 	    }
 
 	    /* Collect matching nodes */
@@ -2330,6 +2404,10 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	    bfp->pbf_match_name = name_id;
 	    bfp->pbf_match_prefix = prefix;
 	    bfp->pbf_match_attribs = attribs;
+	    pin_rulebook_t *hrb = parsep->pp_rulebook;
+	    bfp->pbf_is_root_match = (hrb != NULL
+		    && !pin_rule_id_is_null(hrb->prb_root_rule)
+		    && prp == pin_rulebook_rule(hrb, hrb->prb_root_rule));
 	    body->pbe_depth += 1;
 	}
 
