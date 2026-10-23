@@ -504,3 +504,43 @@ slaxProfClose (void)
 }
 
 #endif /* WITH_SLAX_PROFILER */
+
+/**
+ * Report libbxslt's per-template call-graph profiling output, as
+ * captured by xsltSaveProfiling() into an in-memory buffer, by
+ * re-emitting it a line at a time via slaxOutput().  Routing it
+ * through slaxOutput() (rather than just printing it directly) means
+ * it picks up the same output redirection sdb's own per-line profiler
+ * output already uses.
+ *
+ * Unlike the rest of this file, this does not depend on
+ * WITH_SLAX_PROFILER (sdb's own per-source-line profiler); it only
+ * reformats text produced by libbxslt's independent
+ * WITH_XSLT_PROFILER machinery, so it is always compiled in.
+ */
+void
+slaxProfReportCallgraph (const char *buffer)
+{
+    const char *last, *xp;
+    char line[BUFSIZ];
+    size_t len;
+
+    if (buffer == NULL) {
+	slaxOutput("no call-graph profiling data was recorded");
+	return;
+    }
+
+    for (last = buffer; last != NULL && *last; ) {
+	xp = strchr(last, '\n');
+	len = xp ? (size_t) (xp - last) : strlen(last);
+	if (len > sizeof(line) - 1)
+	    len = sizeof(line) - 1;
+
+	memcpy(line, last, len);
+	line[len] = '\0';
+
+	slaxOutput("%s", line);
+
+	last = xp ? xp + 1 : NULL;
+    }
+}
