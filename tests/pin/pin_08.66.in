@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.66.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-real.rst's test plan item 6: a top-level call-template
+    (outside any for-each), reached before any pause-inducing construct
+    in a BIA_ body (apply-templates forces BIA_ here, but it comes
+    after the call-template, not before).  Deliberately malformed:
+    exercises Open Question 1's "rejected, loud warning" half: the
+    main body FSM's current node is a still-open element with no
+    closed/retained context for the callee to walk, so pin_compile.c
+    warns and skips the call-template rather than compiling it.
+  -->
+
+  <xsl:template name="wrap">
+    <xsl:param name="label"/>
+    <field><xsl:value-of select="$label"/></field>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:call-template name="wrap">
+        <xsl:with-param name="label" select="'eager'"/>
+      </xsl:call-template>
+      <xsl:apply-templates select="note"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="note">
+    <note-out><xsl:value-of select="."/></note-out>
+  </xsl:template>
+
+</xsl:stylesheet>
