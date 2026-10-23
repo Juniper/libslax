@@ -1,0 +1,15 @@
+compiled 2 patterns
+<out>
+   <field>
+      <name>alpha</name>
+      <value>one</value>
+   </field>
+   <field>
+      <name>beta</name>
+      <value>two</value>
+   </field>
+   <field>
+      <name>gamma</name>
+      <value>three</value>
+   </field>
+</out>
