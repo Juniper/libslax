@@ -232,6 +232,21 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 	      pin_op_id_t start, pin_node_id_t context_node);
 
 /*
+ * Top-level call-template invocation from outside the op-sequence machine
+ * (used by BIA_CALL in pin_parse.c).  See pin_exec.c for details.
+ */
+int
+pin_exec_run_call (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+		   pin_op_id_t start, pin_node_id_t context_node,
+		   uint32_t nparams);
+
+/* Stage one {name, value} pending param; shared by PIN_OP_WITH_PARAM and
+ * BIA_WITH_PARAM.  Returns 0 on success, -1 on OOM.                      */
+int
+pin_exec_stage_pending_param (pin_exec_state_t *esp, uint32_t name_atom,
+			      pin_value_t v);
+
+/*
  * Dump all rulebooks, rules, and op sequences in human-readable form.
  * Format matches the examples in build/pin-plan.md.
  */
