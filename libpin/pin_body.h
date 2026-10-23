@@ -60,6 +60,8 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_PI_OPEN       22  /* xsl:processing-instruction: start capture; bi_tag=target atom */
 #define BIA_PI_CLOSE      23  /* xsl:processing-instruction: flush capture as XML PI */
 #define BIA_NUMBER        24  /* xsl:number: bi_select=value-expr, bi_text=format */
+#define BIA_WITH_PARAM    25  /* xsl:with-param: bi_tag=param-name, bi_select=value-expr */
+#define BIA_CALL          26  /* xsl:call-template: bi_select=template-name, bi_filter_idx=with-param count */
 
 /* Comparison operators for BIA_IF_POSITION (stored in bi_tag.pnid_atom) */
 #define PCMP_EQ  0   /* position() = N */
@@ -128,6 +130,14 @@ typedef struct pin_body_frame_s {
     const char *pbf_match_prefix;       /* Namespace prefix of matched element */
     char *pbf_match_attribs;            /* Attribute string from matched element open */
     pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
+    pin_node_id_t pbf_match_node;       /* BIA_FOR_EACH: retained matched element itself,
+					    used as the navigation root for a relative
+					    select in Phase 2 (null = none) */
+    uint8_t pbf_is_root_match;          /* Set when this frame's rule is the match="/"
+					    root rule: the retained element is the first
+					    document child, not the context node, so
+					    relative BIA_FOR_EACH selects must navigate
+					    from the document root instead */
     int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
     pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
     uint32_t pbf_apply_fallback_rid;    /* PBMODE_APPLY_WAIT: rule atom to use if the pending
