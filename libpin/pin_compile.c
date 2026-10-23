@@ -19,10 +19,15 @@
  * selects which rules fire at runtime based on the current mode.
  *
  * What is NOT handled here (deferred to later items):
- *   - named templates / call-template (item 15)
  *   - variables and parameters (item 14)
  *   - template body expression language (item 17)
  *   - apply-templates body / frame stack (item 16)
+ *
+ * named templates / call-template (item 15) are handled by both compilers:
+ * pin_compile_template()'s named branch, xsl:call-template/xsl:with-param
+ * handling in pin_compile_ops_r() (op-dispatch), and the BIA_WITH_PARAM/
+ * BIA_CALL branch in pin_compile_body_r() (body-FSM; for-each sub-bodies
+ * only -- see build/plans/call-template-real.rst).
  */
 
 #include <stdio.h>
@@ -193,7 +198,7 @@ pin_parse_position_test (const char *test, uint32_t *op_out, uint32_t *n_out)
  */
 static void
 pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
-		      pin_body_instr_id_t **nextp)
+		      pin_body_instr_id_t **nextp, int in_foreach)
 {
     for (xmlNodePtr child = body_node->children; child; child = child->next) {
 	if (child->type == XML_TEXT_NODE) {
@@ -328,7 +333,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    }
 
 	    /* Compile the true-body; bi_next of bip_if is filled in here */
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 
 	    /* Create BIA_JUMP join point after the true-body */
 	    pin_body_instr_id_t bid_jump;
@@ -440,7 +445,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		}
 		bid_last_if = bid_if;
 
-		pin_compile_body_r(wc, rb, nextp);
+		pin_compile_body_r(wc, rb, nextp, in_foreach);
 
 		if (n_gotos >= gotos_size) {
 		    int newsize = gotos_size ? gotos_size * 2 : 4;
@@ -477,7 +482,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		    if (last_if)
 			last_if->bi_else = bid_oth;
 		}
-		pin_compile_body_r(otherwise_node, rb, nextp);
+		pin_compile_body_r(otherwise_node, rb, nextp, in_foreach);
 	    }
 
 	    pin_body_instr_id_t bid_join;
@@ -596,7 +601,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    /* Compile for-each body as an independent sub-list via bi_else */
 	    pin_body_instr_id_t body_head = pin_body_instr_id_null_atom();
 	    pin_body_instr_id_t *body_nextp = &body_head;
-	    pin_compile_body_r(child, rb, &body_nextp);
+	    pin_compile_body_r(child, rb, &body_nextp, 1);
 	    bip_fe->bi_else = body_head;
 	    continue;
 	}
@@ -617,7 +622,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    bip->bi_select = pin_namepool_atom(rb->prb_workspace,
 					      (const char *) ename, TRUE);
 	    xmlFree(ename);
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
 	    if (cbip == NULL)
 		return;
@@ -694,7 +699,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    if (bip == NULL)
 		continue;
 	    bip->bi_type = BIA_COPY_OPEN;
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
 	    if (cbip == NULL)
 		continue;
@@ -708,7 +713,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
 	    if (bip != NULL)
 		bip->bi_type = BIA_MESSAGE_OPEN;
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
 	    if (cbip != NULL) {
 		cbip->bi_type = BIA_MESSAGE_CLOSE;
@@ -725,7 +730,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
 	    if (bip != NULL)
 		bip->bi_type = BIA_COMMENT_OPEN;
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
 	    if (cbip != NULL)
 		cbip->bi_type = BIA_COMMENT_CLOSE;
@@ -744,7 +749,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    }
 	    if (piname)
 		xmlFree(piname);
-	    pin_compile_body_r(child, rb, nextp);
+	    pin_compile_body_r(child, rb, nextp, in_foreach);
 	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
 	    if (cbip != NULL)
 		cbip->bi_type = BIA_PI_CLOSE;
@@ -770,6 +775,97 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		xmlFree(val);
 	    if (fmt)
 		xmlFree(fmt);
+	    continue;
+	}
+
+	/*
+	 * xsl:call-template name="x" -- possibly with xsl:with-param children.
+	 * Compile each with-param as BIA_WITH_PARAM(name, raw value-expr text),
+	 * then BIA_CALL(name, with-param count); bi_select holds the raw
+	 * expression text (evaluated at runtime via pin_exec_eval_expr_string)
+	 * rather than classifying it at compile time, per Open Question 3 in
+	 * build/plans/call-template-real.rst.
+	 *
+	 * Only supported inside a for-each sub-body (in_foreach): there
+	 * pin_body_foreach_body() always supplies a fully-closed, retained
+	 * context node for the callee's PUSH_ATTR/PUSH_TEXT/PUSH_NODES ops to
+	 * walk (see pin_exec_run_call()).  Outside a for-each, the main body
+	 * FSM's "current node" can be a still-open element with an incomplete
+	 * retained subtree (Open Question 1), so warn and skip rather than
+	 * risk silent wrong output.
+	 */
+	if (pin_is_xsl(child, "call-template")) {
+	    xmlChar *tname = xmlGetProp(child, (const xmlChar *) "name");
+	    if (tname == NULL || tname[0] == '\0') {
+		pin_error(rb, child,
+			  "xsl:call-template: missing or empty name attribute");
+		if (tname)
+		    xmlFree(tname);
+		continue;
+	    }
+
+	    if (!in_foreach) {
+		pin_warn(child, "xsl:call-template name=\"%s\": not supported "
+			 "here; only supported inside xsl:for-each in the "
+			 "streaming compiler", (const char *) tname);
+		xmlFree(tname);
+		continue;
+	    }
+
+	    uint32_t nparam = 0;
+	    for (xmlNodePtr wpc = child->children; wpc; wpc = wpc->next) {
+		if (!pin_is_xsl(wpc, "with-param"))
+		    continue;
+		xmlChar *wpname = xmlGetProp(wpc, (const xmlChar *) "name");
+		xmlChar *wpsel  = xmlGetProp(wpc, (const xmlChar *) "select");
+		if (wpname == NULL || wpname[0] == '\0') {
+		    pin_error(rb, wpc,
+			      "xsl:with-param: missing or empty name attribute");
+		    if (wpname)
+			xmlFree(wpname);
+		    if (wpsel)
+			xmlFree(wpsel);
+		    continue;
+		}
+
+		pin_body_instr_t *wbip = pin_body_instr_new(rb, nextp, NULL);
+		if (wbip == NULL) {
+		    xmlFree(wpname);
+		    if (wpsel)
+			xmlFree(wpsel);
+		    xmlFree(tname);
+		    return;
+		}
+		wbip->bi_type = BIA_WITH_PARAM;
+		wbip->bi_tag = pin_namepool_atom(rb->prb_workspace,
+						 (const char *) wpname, TRUE);
+		const char *s = wpsel ? (const char *) wpsel : ".";
+		wbip->bi_select = pin_namepool_atom(rb->prb_workspace, s, TRUE);
+		nparam += 1;
+
+		xmlFree(wpname);
+		if (wpsel)
+		    xmlFree(wpsel);
+	    }
+
+	    pin_body_instr_t *cbip = pin_body_instr_new(rb, nextp, NULL);
+	    if (cbip == NULL) {
+		xmlFree(tname);
+		return;
+	    }
+	    cbip->bi_type = BIA_CALL;
+	    cbip->bi_select = pin_namepool_atom(rb->prb_workspace,
+						(const char *) tname, TRUE);
+	    cbip->bi_filter_idx = nparam;
+
+	    const char *url = (child->doc && child->doc->URL)
+			      ? (const char *) child->doc->URL : "(unknown)";
+	    pin_name_id_t src_file = pin_namepool_atom(rb->prb_workspace,
+						       url, TRUE);
+	    pin_rulebook_pending_call_add(rb, cbip->bi_select, src_file,
+					  (uint32_t) xmlGetLineNo(child));
+
+	    xmlFree(tname);
 	    continue;
 	}
 
@@ -842,7 +938,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		xo_buf_cleanup(&avtbuf);
 	    }
 	}
-	pin_compile_body_r(child, rb, nextp);
+	pin_compile_body_r(child, rb, nextp, in_foreach);
 	{
 	    pin_body_instr_t *bip = pin_body_instr_new(rb, nextp, NULL);
 	    if (bip == NULL)
@@ -859,11 +955,11 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
  * or the null id for an empty body.
  */
 static pin_body_instr_id_t
-pin_compile_body (xmlNodePtr body_node, pin_rulebook_t *rb)
+pin_compile_body (xmlNodePtr body_node, pin_rulebook_t *rb, int in_foreach)
 {
     pin_body_instr_id_t head = pin_body_instr_id_null_atom();
     pin_body_instr_id_t *nextp = &head;
-    pin_compile_body_r(body_node, rb, &nextp);
+    pin_compile_body_r(body_node, rb, &nextp, in_foreach);
     return head;
 }
 
@@ -879,11 +975,23 @@ pin_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
 	pin_body_instr_t *bip = pin_body_instr_addr(rb, cur);
 	if (bip == NULL)
 	    break;
+
+	pin_body_retain_t level = BRETAIN_DISCARD;
 	if (bip->bi_type == BIA_COPY || bip->bi_type == BIA_COPY_SELECT
 		|| bip->bi_type == BIA_APPLY || bip->bi_type == BIA_VALUE_OF)
-	    retain = BRETAIN_NONE;
+	    level = BRETAIN_NONE;
 	if (bip->bi_type == BIA_FOR_EACH)
-	    retain = BRETAIN_DOCUMENT;
+	    level = BRETAIN_DOCUMENT;
+	/*
+	 * BIA_CALL hands the matched element to pin_exec_run_call(), whose
+	 * ops (PUSH_ATTR/PUSH_TEXT/PUSH_NODES) require a fully-closed
+	 * retained subtree; a single BIA_COPY-style stream isn't enough.
+	 */
+	if (bip->bi_type == BIA_CALL && level < BRETAIN_ELEMENT)
+	    level = BRETAIN_ELEMENT;
+	if (level > retain)
+	    retain = level;
+
 	cur = bip->bi_next;
     }
     return retain;
@@ -919,7 +1027,7 @@ pin_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
 	    continue;
 	}
 
-	pin_body_instr_id_t body_head = pin_compile_body(child, rb);
+	pin_body_instr_id_t body_head = pin_compile_body(child, rb, 1);
 	pin_rstate_id_t sid;
 
 	if (pin_body_instr_id_is_null(body_head)) {
@@ -2946,7 +3054,7 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 	    prp->pr_new_state = foreach_sid;
 	    prp->pr_close_ops = pin_op_id_null_atom();
 	} else {
-	    pin_body_instr_id_t body_head = pin_compile_body(child, rb);
+	    pin_body_instr_id_t body_head = pin_compile_body(child, rb, 0);
 	    if (!pin_body_instr_id_is_null(body_head)) {
 		prp->pr_body = body_head;
 		prp->pr_body_retain = pin_body_retain(body_head, rb);
