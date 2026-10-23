@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.63.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    BIA_CALL and BIA_APPLY sharing the same compiled body: a for-each
+    (downward select, forcing BIA_) that calls a named template, followed
+    in the same template body by an apply-templates (also downward,
+    also BIA_) to a separately matched template.
+  -->
+
+  <xsl:template name="wrap">
+    <xsl:param name="label"/>
+    <field><xsl:value-of select="$label"/>: <xsl:value-of select="."/></field>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:for-each select="group/item">
+        <xsl:call-template name="wrap">
+          <xsl:with-param name="label" select="@id"/>
+        </xsl:call-template>
+      </xsl:for-each>
+      <xsl:apply-templates select="note"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="note">
+    <note-out><xsl:value-of select="."/></note-out>
+  </xsl:template>
+
+</xsl:stylesheet>
