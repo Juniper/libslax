@@ -1,0 +1,9 @@
+compiled 3 patterns
+<out>
+   <outer-rec>alpha
+      <inner-rec>alpha</inner-rec>
+   </outer-rec>
+   <outer-rec>beta
+      <inner-rec>beta</inner-rec>
+   </outer-rec>
+</out>
