@@ -1,0 +1,32 @@
+run
+Script exited normally.
+profile report call-graph
+number               match                name      mode  Calls Tot 100us Avg
+
+    0  /                     calls=1 tot=TIME avg=TIME
+    1  a                     calls=2 tot=TIME avg=TIME
+    2  b                     calls=2 tot=TIME avg=TIME
+
+    Total  calls=5 tot=TIME
+
+index % time    self  children    called     name
+        TIME TIME 1/1        -> [3] -
+[0] TIME TIME TIME called=1 /
+        TIME TIME 1/1        -> [1] a
+-----------------------------------------------
+        TIME TIME 1/2        -> [0] /
+        TIME TIME 1/2        -> [2] b
+[1] TIME TIME TIME called=2 a
+        TIME TIME 2/2        -> [2] b
+-----------------------------------------------
+        TIME TIME 2/2        -> [1] a
+[2] TIME TIME TIME called=2 b
+        TIME TIME 1/1        -> [1] a
+-----------------------------------------------
+
+Index by function name
+[0] / (../../../tests/sdb/profile-callgraph.slax:3)
+[1] a (../../../tests/sdb/profile-callgraph.slax:9)
+[2] b (../../../tests/sdb/profile-callgraph.slax:18)
+
+quit
