@@ -1683,14 +1683,7 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
     if (return_boolean)
 	nmatch = 0;		/* Boolean doesn't care for patterns */
 
-    /*
-     * Create a Result Value Tree container, and register it with RVT garbage 
-     * collector. 
-     */
-    container = slaxMakeRtf(ctxt);
-    if (container == NULL)
-	return;
-
+    container = NULL;
     bzero(&pm, sizeof(pm));
 
     rc = regcomp(&reg, (const char *) pattern, cflags);
@@ -1719,6 +1712,19 @@ slaxExtRegex (xmlXPathParserContext *ctxt, int nargs)
 	    if (pm[i].rm_so == -1 && pm[i].rm_eo == -1)
 		continue;
 	    max = i;
+	}
+
+	/*
+	 * Create a Result Value Tree container, and register it with RVT
+	 * garbage collector.  Only needed for the node-set-returning path;
+	 * the boolean path above returns before reaching here.
+	 */
+	container = slaxMakeRtf(ctxt);
+	if (container == NULL) {
+	    regfree(&reg);
+	    xmlFree(target_str);
+	    xmlFree(pattern);
+	    return;
 	}
 
 	results = xmlXPathNodeSetCreate(NULL);
