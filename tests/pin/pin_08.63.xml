@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <group>
+    <item id="alpha">one</item>
+    <item id="beta">two</item>
+  </group>
+  <group>
+    <item id="gamma">three</item>
+  </group>
+  <note>a note</note>
+</catalog>
