@@ -81,7 +81,7 @@ check syntax.
         --param <name> <value> OR -a <name> <value>: pass parameters
         --partial OR -p: allow partial SLAX input to --slax-to-xslt
         --profile <file>: run profiler and save output to given file
-        --profile-mode <mode>: enable profiler mode (e.g. brief, wall)
+        --profile-mode <mode>: enable profiler mode ('brief', 'wall', or 'call-graph')
         --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
@@ -576,8 +576,10 @@ Behavioral Options
   Provide additional information to the profiler.  For `brief` mode,
   lines that are not executed are trimmed from the profiler output.
   For `wall` mode, columns for "wall clock" time are added, displaying
-  how much time (in seconds) was used for that line.  Refer to the
-  :ref:`profiler` for additional information.
+  how much time (in seconds) was used for that line.  For
+  `call-graph` mode, the per-line report is replaced entirely by a
+  gprof-style call-graph report of per-template call relationships.
+  Refer to the :ref:`profiler` for additional information.
 
   When the `--profile-mode` option is used without the `--profile`
   option, profile output is written to the file `profile.output`.
@@ -873,10 +875,11 @@ Use the `profile` command to access the profiler::
 
   (sdb) help profile
   List of commands:
+    profile call-graph <file>  Enable call-graph profiling, writing output to <file>
     profile clear   Clear  profiling information
     profile off     Disable profiling
     profile on      Enable profiling
-    profile report [brief | wall]  Report profiling information
+    profile report [brief | wall | call-graph]  Report profiling information
   (sdb)
 
 The profile report includes the following information:
@@ -944,9 +947,91 @@ The profiling is not "Monte Carlo", or clock based, but is based on
 trace data generated as each SLAX instruction is executed, giving
 more accurate and precise data.
 
+.. index:: call-graph
+.. _callgraph:
+
+**Call-graph profiling**
+
+The profiler also supports a `call-graph` report, which shows
+per-template call relationships in the style of Unix `gprof`, rather
+than the per-line timing shown above.  This reuses libxslt's own
+template-level profiler rather than sdb's line-level one, so it is
+driven by a different pair of commands: `profile call-graph <file>`
+enables it (in place of plain `profile on`), and writes the report to
+`<file>` once the script finishes running; `profile report call-graph`
+then prints that file's contents.
+
+::
+
+  (sdb) profile call-graph out/profile-callgraph.prof
+  Enabling call-graph profiling, output to out/profile-callgraph.prof
+  (sdb) run
+  <?xml version="1.0"?>
+  <out><a/><b/><a/><done-b/></out>
+  Script exited normally.
+  (sdb) profile report call-graph
+  number               match                name      mode  Calls Tot 100us Avg
+
+      0                                        a                2      1      0
+      1                                        b                2      1      0
+      2                    /                                    1      0      0
+
+                           Total                                5      2
+
+  index % time    self  children    called     name
+                  0.000    0.000      1/2         / [2]
+                  0.000    0.000      1/2         b [1]
+  [0]    50.00    0.000    0.000      2     a [0]
+                  0.000    0.000      2/2         b [1]
+  -----------------------------------------------
+                  0.000    0.000      2/2         a [0]
+  [1]    50.00    0.000    0.000      2     b [1]
+                  0.000    0.000      1/1         a [0]
+  -----------------------------------------------
+                  0.000    0.000      1/1         - [3]
+  [2]     0.00    0.000    0.000      1     / [2]
+                  0.000    0.000      1/1         a [0]
+  -----------------------------------------------
+
+  Index by function name
+  [0] a (../tests/sdb/profile-callgraph.slax:9)
+  [1] b (../tests/sdb/profile-callgraph.slax:18)
+  [2] / (../tests/sdb/profile-callgraph.slax:3)
+
+  (sdb)
+
+Each template is assigned an index number (`[0]`, `[1]`, ...), listed
+at the end in the "Index by function name" table along with the file
+and line where it is defined.  The report is organized into one block
+per template (set off by dashed lines), each with:
+
+- The template's own line, giving its index, the percentage of total
+  time attributed to it (its own time plus the time of everything it
+  calls), its own time, time spent in its children, how many times it
+  was called, and its name.
+- One line above that for each caller, showing how much time that
+  caller is charged for calls into this template, and what fraction of
+  this template's total calls came from that caller (`x/y`).
+- One line below that for each template this one calls, in the same
+  `x/y` form, from the callee's point of view.
+
+A caller shown as `-` (as seen for `/` above) stands for calls that
+cannot be attributed to any specific caller template -- here, the
+implicit call libxslt makes to apply the stylesheet's root match (`/`)
+in the first place.
+
+Because the row order and `[N]` indices in this report are assigned
+by sorting on measured execution time, they are not guaranteed to be
+stable from run to run, especially for a script fast enough that
+timing is dominated by measurement noise.  Only the call counts and
+the call-graph structure itself (which templates call which, and how
+many times) are guaranteed to reproduce.
+
 The profiler can also be accessed using the :ref:`slaxproc <slaxproc>`
-:ref:`--profile <profile>` option.  The `brief` and `wall` modes can
-be specified using the :ref:`--profile-mode <profile-mode>` option.
+:ref:`--profile <profile>` option.  The `brief` and `wall` modes, and
+the call-graph report described above, can all be selected with the
+:ref:`--profile-mode <profile-mode>` option (`brief`, `wall`, or
+`call-graph`).
 
 .. index
 
