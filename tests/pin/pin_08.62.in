@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.62.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:with-param value-kind coverage inside a BIA_-forced xsl:for-each.
+
+    Covers every select= shape pin_body_eval_foreach_value() supports in
+    this position: the implicit "." default (no select= attribute at
+    all), an "@attr" lookup, a relative child-element path, a quoted
+    string literal, and a $variable reference (bound per-iteration via
+    xsl:variable, itself a BIA_VARIABLE instruction).
+  -->
+
+  <xsl:template name="show">
+    <xsl:param name="pdot"/>
+    <xsl:param name="pattr"/>
+    <xsl:param name="pchild"/>
+    <xsl:param name="plit"/>
+    <xsl:param name="pvar"/>
+    <rec>
+      <dot><xsl:value-of select="$pdot"/></dot>
+      <attr><xsl:value-of select="$pattr"/></attr>
+      <child><xsl:value-of select="$pchild"/></child>
+      <lit><xsl:value-of select="$plit"/></lit>
+      <var><xsl:value-of select="$pvar"/></var>
+    </rec>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:for-each select="group/item">
+        <xsl:variable name="v" select="'via-var'"/>
+        <xsl:call-template name="show">
+          <xsl:with-param name="pdot"/>
+          <xsl:with-param name="pattr" select="@id"/>
+          <xsl:with-param name="pchild" select="sub"/>
+          <xsl:with-param name="plit" select="'via-literal'"/>
+          <xsl:with-param name="pvar" select="$v"/>
+        </xsl:call-template>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
