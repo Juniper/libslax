@@ -1174,8 +1174,37 @@ pin_op_copy_of (PIN_OP_FUNC_ARGS)
         pin_name_id_t vname = pin_namepool_atom(pwp, path + 1, FALSE);
         pin_var_binding_t *vp = pin_exec_var_find(esp,
                 pin_name_id_atom_of(vname));
-        if (vp && vp->pvb_value.pv_type == PVT_NODESET)
-            ns_idx = vp->pvb_value.pv_atom;
+        if (vp) {
+            /*
+             * Per XSLT 1.0 copy-of semantics: a node-set is deep-copied
+             * node by node; any other value type is converted to its
+             * string value and inserted as a single text node.
+             */
+            switch (vp->pvb_value.pv_type) {
+            case PVT_NODESET:
+                ns_idx = vp->pvb_value.pv_atom;
+                break;
+            case PVT_NODE:
+                pin_exec_emit_subtree(parsep,
+                        pin_node_id(vp->pvb_value.pv_atom), stop_depth);
+                return pin_value_null();
+            case PVT_STRING: {
+                const char *s = pin_namepool_string(pwp,
+                        pin_name_id(vp->pvb_value.pv_atom));
+                if (s && *s)
+                    pin_insert_text(parsep, s, strlen(s), PIN_TYPE_TEXT);
+                return pin_value_null();
+            }
+            case PVT_BOOLEAN: {
+                const char *s = (vp->pvb_value.pv_flags & PVF_TRUE)
+                        ? "true" : "false";
+                pin_insert_text(parsep, s, strlen(s), PIN_TYPE_TEXT);
+                return pin_value_null();
+            }
+            default:
+                break;
+            }
+        }
     } else {
         /* Path or null (meaning "."): collect into ephemeral nodeset */
         ns_idx = pin_exec_nodeset_alloc(esp);
@@ -1205,24 +1234,38 @@ pin_op_copy_of (PIN_OP_FUNC_ARGS)
     return pin_value_null();
 }
 
-static pin_value_t
-pin_op_with_param (PIN_OP_FUNC_ARGS)
+/*
+ * Append {name_atom, v} to the pending-param staging buffer, growing it
+ * as needed.  Shared by PIN_OP_WITH_PARAM and BIA_WITH_PARAM (pin_parse.c)
+ * so both xsl:with-param paths stage params identically for the next
+ * PIN_OP_CALL / pin_exec_run_call().  Returns 0 on success, -1 on OOM.
+ */
+int
+pin_exec_stage_pending_param (pin_exec_state_t *esp, uint32_t name_atom,
+			      pin_value_t v)
 {
-    pin_value_t v = pin_exec_pop(esp);
-    uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
-
     if (esp->pes_pending_count >= esp->pes_pending_size) {
         uint32_t newsize = esp->pes_pending_size ? esp->pes_pending_size * 2 : 8;
         pin_pending_param_t *np = realloc(esp->pes_pending,
                                           newsize * sizeof(*np));
         if (np == NULL)
-            return pin_value_null();
+            return -1;
         esp->pes_pending = np;
         esp->pes_pending_size = newsize;
     }
     esp->pes_pending[esp->pes_pending_count].ppp_name  = name_atom;
     esp->pes_pending[esp->pes_pending_count].ppp_value = v;
     esp->pes_pending_count += 1;
+    return 0;
+}
+
+static pin_value_t
+pin_op_with_param (PIN_OP_FUNC_ARGS)
+{
+    pin_value_t v = pin_exec_pop(esp);
+    uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
+
+    pin_exec_stage_pending_param(esp, name_atom, v);
     return pin_value_null();
 }
 
@@ -1479,9 +1522,18 @@ pin_exec_seq_grow (pin_exec_state_t *esp)
     return 0;
 }
 
-int
-pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
-	      pin_op_id_t start, pin_node_id_t context_node)
+/*
+ * Shared core for pin_exec_run() / pin_exec_run_call(): push one seq frame
+ * for 'start' and drain the dispatch loop until that frame (and anything
+ * it calls) finishes.  is_call/param_base/param_count mirror what
+ * pin_op_call() stages for an in-sequence PIN_OP_CALL, letting a fresh
+ * top-level call (e.g. a BIA_CALL body instruction) hand parameters to
+ * the callee's PIN_OP_LOAD_PARAM ops exactly as a nested call would.
+ */
+static int
+pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+		     pin_op_id_t start, pin_node_id_t context_node,
+		     uint8_t is_call, uint32_t param_base, uint32_t param_count)
 {
     pin_rulebook_t *prbp = parsep->pp_rulebook;
 
@@ -1499,11 +1551,11 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     int top = esp->pes_seq_top;
     esp->pes_seq[top].psf_pc = start;
     esp->pes_seq[top].psf_context = context_node;
-    esp->pes_seq[top].psf_is_call = 0;
+    esp->pes_seq[top].psf_is_call = is_call;
     esp->pes_seq[top].psf_saved_var_count = 0;
     esp->pes_seq[top].psf_saved_nodeset_count = 0;
-    esp->pes_seq[top].psf_param_base = 0;
-    esp->pes_seq[top].psf_param_count = 0;
+    esp->pes_seq[top].psf_param_base = param_base;
+    esp->pes_seq[top].psf_param_count = param_count;
     esp->pes_seq_top += 1;
 
     while (esp->pes_seq_top > 0) {
@@ -1548,6 +1600,33 @@ pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     esp->pes_nodeset_count = saved_nodeset_count;
 
     return 0;
+}
+
+int
+pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+	      pin_op_id_t start, pin_node_id_t context_node)
+{
+    return pin_exec_run_frame(esp, parsep, start, context_node, 0, 0, 0);
+}
+
+/*
+ * Top-level call-template invocation from outside the op-sequence machine
+ * (BIA_CALL in the body FSM).  'nparams' is the count of BIA_WITH_PARAM
+ * instructions already staged into esp->pes_pending immediately before
+ * this call; param_base is derived exactly as pin_op_call() derives it,
+ * so the callee's PIN_OP_LOAD_PARAM ops see the same pending-param window
+ * they would from a nested PIN_OP_CALL.
+ */
+int
+pin_exec_run_call (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+		   pin_op_id_t start, pin_node_id_t context_node,
+		   uint32_t nparams)
+{
+    uint32_t param_base = (esp->pes_pending_count >= nparams)
+	? esp->pes_pending_count - nparams : 0;
+
+    return pin_exec_run_frame(esp, parsep, start, context_node,
+			      1, param_base, nparams);
 }
 
 /*
