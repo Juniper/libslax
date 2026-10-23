@@ -149,7 +149,8 @@ static const char slaxproc_help[] =
 "\t--param <name> <value> OR -a <name> <value>: pass parameters\n"
 "\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
 "\t--profile <file>: run profiler and save output to given file\n"
-"\t--profile-mode <mode>: enable profiler mode (e.g. 'brief')\n"
+"\t--profile-mode <mode>: enable profiler mode "
+    "('brief', 'wall', or 'call-graph')\n"
 "\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
 "\t--trace <file> OR -t <file>: write trace data to a file\n"
 "\t--use-rtfs: keep result tree fragments distinct from node-sets\n"
@@ -1329,6 +1330,9 @@ main (int argc UNUSED, char **argv)
 
 		} else if (streq(mode, "wall")) {
 		    opt_debugger |= SDBF_PROFILE_WALL;
+
+		} else if (streq(mode, "call-graph")) {
+		    opt_debugger |= SDBF_PROFILE_CALLGRAPH;
 
 		} else {
 		    errx(1, "unknown profile-mode '%s'", mode);
