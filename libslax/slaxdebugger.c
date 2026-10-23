@@ -113,6 +113,7 @@ typedef struct slaxDebugState_s {
     xmlNodePtr ds_list_node;	/* Last "list" target */
     int ds_list_line;		/* Last "list" line number */
     char *ds_script_buffer;	/* In-memory copy of the script text */
+    char *ds_callgraph_buffer;	/* Captured xsltSaveProfiling() output */
 } slaxDebugState_t;
 
 /* Flags for ds_flags */
@@ -127,6 +128,7 @@ typedef struct slaxDebugState_s {
 #define DSF_CONTINUE	(1<<7)	/* Continue (or run) when restarted */
 
 #define DSF_RELOAD	(1<<8)	/* Reload the script */
+#define DSF_PROFILE_CALLGRAPH (1<<9) /* Call-graph profiling armed */
 
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
@@ -1959,10 +1961,13 @@ static void
 slaxDebugHelpProfile (DH_ARGS)
 {
     slaxOutput("List of commands:");
+    slaxOutput("  profile call-graph <file>  Enable call-graph profiling, "
+	       "writing output to <file>");
     slaxOutput("  profile clear   Clear  profiling information");
     slaxOutput("  profile off     Disable profiling");
     slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report [brief | wall]  Report profiling information");
+    slaxOutput("  profile report [brief | wall | call-graph]  "
+	       "Report profiling information");
 }
 
 /*
@@ -1988,8 +1993,28 @@ slaxDebugCmdProfiler (DC_ARGS)
 	    slaxProfClear();
 	    return;
 
+	} else if (slaxDebugIsAbbrev("call-graph", arg)) {
+	    const char *file = argv[2];
+
+	    if (file == NULL) {
+		slaxOutput("profile call-graph: missing <file> argument");
+		return;
+	    }
+
+	    slaxOutput("Enabling call-graph profiling, output to %s", file);
+
+	    statep->ds_flags &= ~DSF_PROFILER;
+	    statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
+	    slaxIoWriteOutputToFileStart(file);
+	    return;
+
 	} else if (slaxDebugIsAbbrev("report", arg)) {
 	    slaxDebugFlags_t flags = 0;
+
+	    if (argv[2] && slaxDebugIsAbbrev("call-graph", argv[2])) {
+		slaxProfReportCallgraph(statep->ds_callgraph_buffer);
+		return;
+	    }
 
 	    if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
 		flags |= SDBF_PROFILE_BRIEF;
@@ -2012,12 +2037,13 @@ slaxDebugCmdProfiler (DC_ARGS)
 
     if (enable) {
 	statep->ds_flags |= DSF_PROFILER;
+	statep->ds_flags &= ~DSF_PROFILE_CALLGRAPH;
 	slaxOutput("Enabling profiler");
     } else {
 	statep->ds_flags &= ~DSF_PROFILER;
 	slaxOutput("Disabling profiler");
     }
-    
+
 }
 
 /*
@@ -3165,6 +3191,12 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     slaxProfOpen(xsltStylesheetGetDoc(style));
     statep->ds_flags |= DSF_PROFILER;
 
+    /* A "--profile-mode call-graph" CLI run arms this before any "run" */
+    if (slaxDebugFlags & SDBF_PROFILE_CALLGRAPH) {
+	statep->ds_flags &= ~DSF_PROFILER;
+	statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
+    }
+
     xsltSetDebuggerStatus(0);
 
     /* Start up in profiler-only mode */
@@ -3176,7 +3208,8 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 	xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
 	statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
-	statep->ds_flags |= DSF_PROFILER;
+	if (!(statep->ds_flags & DSF_PROFILE_CALLGRAPH))
+	    statep->ds_flags |= DSF_PROFILER;
     }
 
     int working = TRUE; 
@@ -3202,6 +3235,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 	    slaxProfClear();
 	    slaxRestartListCall();
+
+	    if (statep->ds_callgraph_buffer) {
+		free(statep->ds_callgraph_buffer);
+		statep->ds_callgraph_buffer = NULL;
+	    }
 
 	} else if (statep->ds_flags & DSF_RELOAD) {
 	reload:
@@ -3262,7 +3300,22 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	if (res)		/* Free doc from last run */
 	    xmlFreeDoc(res);
 
-	res = xsltApplyStylesheet(style, doc, params);
+	if (statep->ds_flags & DSF_PROFILE_CALLGRAPH) {
+	    char *buf = NULL;
+	    size_t buflen = 0;
+	    FILE *memfp = open_memstream(&buf, &buflen);
+
+	    res = xsltApplyStylesheetUser(style, doc, params, NULL, memfp,
+					  NULL);
+	    fclose(memfp);
+
+	    if (statep->ds_callgraph_buffer)
+		free(statep->ds_callgraph_buffer);
+	    statep->ds_callgraph_buffer = buf;
+
+	} else {
+	    res = xsltApplyStylesheet(style, doc, params);
+	}
 
 	status = xsltGetDebuggerStatus();
 	if (status == XSLT_DEBUG_QUIT) {
@@ -3299,7 +3352,10 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 * the report and then stop the loop.
 	 */
 	if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
-	    slaxProfReport(slaxDebugFlags, statep->ds_script_buffer);
+	    if (statep->ds_flags & DSF_PROFILE_CALLGRAPH)
+		slaxProfReportCallgraph(statep->ds_callgraph_buffer);
+	    else
+		slaxProfReport(slaxDebugFlags, statep->ds_script_buffer);
 	    working = FALSE;
 	}
 
@@ -3321,6 +3377,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     slaxDebugClearBreakpoints();
     slaxDebugClearStacktrace();
     slaxProfClose();
+
+    if (statep->ds_callgraph_buffer) {
+	free(statep->ds_callgraph_buffer);
+	statep->ds_callgraph_buffer = NULL;
+    }
 
     if (save_style)
 	xsltFreeStylesheet(save_style);
