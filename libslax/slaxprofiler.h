@@ -42,6 +42,16 @@ void
 slaxProfReport (slaxDebugFlags_t flags, const char *buffer);
 
 /**
+ * Report libbxslt's per-template call-graph profiling output, as
+ * captured by xsltSaveProfiling() into an in-memory buffer, by
+ * re-emitting it a line at a time via slaxOutput()
+ *
+ * @buffer captured text, or NULL if nothing was captured
+ */
+void
+slaxProfReportCallgraph (const char *buffer);
+
+/**
  * Clear all values
  */
 void
