@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.61.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    xsl:call-template / xsl:with-param inside a BIA_-forced xsl:for-each.
+
+    Minimized repro of the test-authors-05.slax bug: a for-each whose
+    select is a downward path ("group/item") forces the body-FSM (BIA_)
+    compiler instead of op-dispatch, and the for-each body calls a named
+    template with an xsl:with-param.  Before this was supported, the
+    call-template was silently dropped (or produced an empty context) in
+    this position.
+  -->
+
+  <!-- Named template: wrap the call context and a label param -->
+  <xsl:template name="wrap">
+    <xsl:param name="label"/>
+    <field>
+      <name><xsl:value-of select="$label"/></name>
+      <value><xsl:value-of select="."/></value>
+    </field>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:for-each select="group/item">
+        <xsl:call-template name="wrap">
+          <xsl:with-param name="label" select="@id"/>
+        </xsl:call-template>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
