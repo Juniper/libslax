@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.65.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-real.rst's test plan item 5: a top-level call-template
+    (outside any for-each), reached after a preceding apply-templates in
+    the same BIA_ body, written to exercise the "allowed" half of
+    Open Question 1's guard as that item's prose describes it.
+
+    NOTE: the guard that actually shipped (pin_compile.c, the
+    xsl:call-template branch) only checks "in_foreach", with no
+    ordering/preceding-construct logic at all (Open Question 1's
+    narrower "option (a)").  So this call-template warns and is
+    skipped, identically to pin_08.66 (item 6's "rejected" case), not
+    the success case the plan's original prose anticipated.  Kept as
+    its own fixture to document that outcome rather than silently
+    reconciling the plan.
+  -->
+
+  <xsl:template name="wrap">
+    <xsl:param name="label"/>
+    <field><xsl:value-of select="$label"/></field>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:apply-templates select="note"/>
+      <xsl:call-template name="wrap">
+        <xsl:with-param name="label" select="'fixed'"/>
+      </xsl:call-template>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="note">
+    <note-out><xsl:value-of select="."/></note-out>
+  </xsl:template>
+
+</xsl:stylesheet>
