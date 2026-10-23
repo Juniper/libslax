@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.64.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Nested named-template calls entered from a BIA_ call site: a for-each
+    (downward select, forcing BIA_) calls "outer" via BIA_CALL; "outer"
+    itself calls "inner" via ordinary op-dispatch (PIN_OP_CALL), since
+    "outer"'s own body has no for-each/apply-templates/copy-of needing
+    BIA_.  Exercises that the call-frame stack behaves the same whether
+    the outermost call originated from BIA_ or op-dispatch.
+  -->
+
+  <xsl:template name="inner">
+    <xsl:param name="label"/>
+    <inner-rec><xsl:value-of select="$label"/></inner-rec>
+  </xsl:template>
+
+  <xsl:template name="outer">
+    <xsl:param name="label"/>
+    <outer-rec>
+      <xsl:value-of select="$label"/>
+      <xsl:call-template name="inner">
+        <xsl:with-param name="label" select="$label"/>
+      </xsl:call-template>
+    </outer-rec>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:for-each select="group/item">
+        <xsl:call-template name="outer">
+          <xsl:with-param name="label" select="@id"/>
+        </xsl:call-template>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>
