@@ -1,0 +1,25 @@
+version 1.0;
+
+match / {
+    <out> {
+        call a($depth = 3);
+    }
+}
+
+template a ($depth = 0) {
+    if ($depth > 0) {
+        <a>;
+        call b($depth = $depth - 1);
+    } else {
+        <done-a>;
+    }
+}
+
+template b ($depth = 0) {
+    if ($depth > 0) {
+        <b>;
+        call a($depth = $depth - 1);
+    } else {
+        <done-b>;
+    }
+}
