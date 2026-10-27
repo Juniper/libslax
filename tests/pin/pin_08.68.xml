@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <section>
+    <group>
+      <item id="a">Alpha</item>
+      <item id="b">Beta</item>
+    </group>
+  </section>
+</root>
