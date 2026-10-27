@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.67.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    PIN_OP_APPLY (B5): a named template whose body is nothing but a
+    top-level xsl:apply-templates.  This used to be flatly rejected (the
+    named-template branch in pin_compile_template errored on any
+    complexity bit, and PIN_OP_APPLY was a no-op stub); now apply-templates
+    is exempt from that rejection and pin_op_apply really walks the
+    retained children, dispatching each one through the apply-templates
+    rule index.  Both "item" children are matched by an op-compiled
+    (complexity 0) match-template, so this exercises the success path.
+  -->
+
+  <xsl:template name="dispatch">
+    <xsl:apply-templates/>
+  </xsl:template>
+
+  <xsl:template match="root">
+    <out>
+      <xsl:call-template name="dispatch"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="item">
+    <entry><xsl:value-of select="@id"/>: <xsl:value-of select="."/></entry>
+  </xsl:template>
+
+</xsl:stylesheet>
