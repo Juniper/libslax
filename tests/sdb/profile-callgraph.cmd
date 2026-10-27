@@ -1,4 +1,4 @@
-profile call-graph out/profile-callgraph.prof
+profile callgraph out/profile-callgraph.prof
 run
-profile report call-graph
+profile report callgraph
 quit
