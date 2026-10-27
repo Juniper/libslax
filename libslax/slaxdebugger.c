@@ -78,6 +78,7 @@
 
 #include <libxml/xmlsave.h>
 #include <libxml/xmlIO.h>
+#include <libxml/hash.h>
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
@@ -85,6 +86,7 @@
 #include "slaxparser.h"
 #include <libslax/slax.h>
 #include <libpsu/psustring.h>
+#include <libpsu/psutime.h>
 
 #define MAXARGS	256
 #define DEBUG_LIST_COUNT	12 /* Number of lines "list" shows */
@@ -114,6 +116,8 @@ typedef struct slaxDebugState_s {
     int ds_list_line;		/* Last "list" line number */
     char *ds_script_buffer;	/* In-memory copy of the script text */
     char *ds_callgraph_buffer;	/* Captured xsltSaveProfiling() output */
+    xmlHashTablePtr ds_flamegraph_hash; /* Per-call-path self time (usecs) */
+    char *ds_profile_file;	/* Target file for callgraph/flamegraph report */
 } slaxDebugState_t;
 
 /* Flags for ds_flags */
@@ -128,7 +132,8 @@ typedef struct slaxDebugState_s {
 #define DSF_CONTINUE	(1<<7)	/* Continue (or run) when restarted */
 
 #define DSF_RELOAD	(1<<8)	/* Reload the script */
-#define DSF_PROFILE_CALLGRAPH (1<<9) /* Call-graph profiling armed */
+#define DSF_PROFILE_CALLGRAPH (1<<9) /* Callgraph profiling armed */
+#define DSF_PROFILE_FLAMEGRAPH (1<<10) /* Flame-graph profiling armed */
 
 slaxDebugState_t slaxDebugState;
 const char **slaxDebugIncludes;
@@ -190,6 +195,8 @@ typedef struct slaxDebugStackFrame_s {
     int st_locals_start;     /* Our first entry in ctxt->varsTab[] */
     int st_locals_stop;      /* Our last entry in ctxt->varsTab[] */
     unsigned st_flags; /* STF_* flags for this stack frame */
+    psu_time_usecs_t st_enter_time; /* Entry time, for flame-graph mode */
+    psu_time_usecs_t st_child_time; /* Time already charged to children */
 } slaxDebugStackFrame_t;
 
 /* Flags for st_flags */
@@ -1961,13 +1968,15 @@ static void
 slaxDebugHelpProfile (DH_ARGS)
 {
     slaxOutput("List of commands:");
-    slaxOutput("  profile call-graph <file>  Enable call-graph profiling, "
+    slaxOutput("  profile callgraph <file>  Enable callgraph profiling, "
+	       "writing output to <file>");
+    slaxOutput("  profile flamegraph <file>  Enable flame-graph profiling, "
 	       "writing output to <file>");
     slaxOutput("  profile clear   Clear  profiling information");
     slaxOutput("  profile off     Disable profiling");
     slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report [brief | wall | call-graph]  "
-	       "Report profiling information");
+    slaxOutput("  profile report [brief | wall | callgraph | flamegraph] "
+	       "[<file>]  Report profiling information");
 }
 
 /*
@@ -1993,26 +2002,48 @@ slaxDebugCmdProfiler (DC_ARGS)
 	    slaxProfClear();
 	    return;
 
-	} else if (slaxDebugIsAbbrev("call-graph", arg)) {
+	} else if (slaxDebugIsAbbrev("callgraph", arg)) {
 	    const char *file = argv[2];
 
 	    if (file == NULL) {
-		slaxOutput("profile call-graph: missing <file> argument");
+		slaxOutput("profile callgraph: missing <file> argument");
 		return;
 	    }
 
-	    slaxOutput("Enabling call-graph profiling, output to %s", file);
+	    slaxOutput("Enabling callgraph profiling, output to %s", file);
 
-	    statep->ds_flags &= ~DSF_PROFILER;
+	    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_FLAMEGRAPH);
 	    statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
-	    slaxIoWriteOutputToFileStart(file);
+	    slaxDebugSetProfileFile(file);
+	    return;
+
+	} else if (slaxDebugIsAbbrev("flamegraph", arg)) {
+	    const char *file = argv[2];
+
+	    if (file == NULL) {
+		slaxOutput("profile flamegraph: missing <file> argument");
+		return;
+	    }
+
+	    slaxOutput("Enabling flame-graph profiling, output to %s", file);
+
+	    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_CALLGRAPH);
+	    statep->ds_flags |= DSF_PROFILE_FLAMEGRAPH;
+	    slaxDebugSetProfileFile(file);
 	    return;
 
 	} else if (slaxDebugIsAbbrev("report", arg)) {
 	    slaxDebugFlags_t flags = 0;
 
-	    if (argv[2] && slaxDebugIsAbbrev("call-graph", argv[2])) {
-		slaxProfReportCallgraph(statep->ds_callgraph_buffer);
+	    if (argv[2] && slaxDebugIsAbbrev("callgraph", argv[2])) {
+		const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
+		slaxProfReportCallgraph(statep->ds_callgraph_buffer, file);
+		return;
+	    }
+
+	    if (argv[2] && slaxDebugIsAbbrev("flamegraph", argv[2])) {
+		const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
+		slaxProfReportFlamegraph(statep->ds_flamegraph_hash, file);
 		return;
 	    }
 
@@ -2037,7 +2068,7 @@ slaxDebugCmdProfiler (DC_ARGS)
 
     if (enable) {
 	statep->ds_flags |= DSF_PROFILER;
-	statep->ds_flags &= ~DSF_PROFILE_CALLGRAPH;
+	statep->ds_flags &= ~(DSF_PROFILE_CALLGRAPH | DSF_PROFILE_FLAMEGRAPH);
 	slaxOutput("Enabling profiler");
     } else {
 	statep->ds_flags &= ~DSF_PROFILER;
@@ -2892,6 +2923,95 @@ slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
     }
 }
 
+/*
+ * Build a ';'-joined folded-stack path string for the live call
+ * stack, from the outermost frame down through (and including)
+ * "stp" -- the format flamegraph.pl and speedscope.app both expect
+ * as input.  Caller must xmlFree() the result.
+ */
+static char *
+slaxDebugFlamegraphPath (slaxDebugStackFrame_t *stp)
+{
+    slaxDebugStackFrame_t *fp;
+    char *path = NULL;
+    size_t len = 0;
+    char buf[BUFSIZ];
+
+    for (fp = TAILQ_FIRST(&slaxDebugStack); fp; fp = TAILQ_NEXT(fp, st_link)) {
+	const char *name = slaxDebugTemplateInfo(fp->st_template, buf,
+						  sizeof(buf));
+	size_t namelen = strlen(name);
+	char *newpath = xmlMalloc(len + namelen + 2); /* ';' and NUL */
+
+	if (newpath == NULL) {
+	    if (path)
+		xmlFree(path);
+	    return NULL;
+	}
+
+	if (path) {
+	    memcpy(newpath, path, len);
+	    newpath[len] = ';';
+	    memcpy(newpath + len + 1, name, namelen);
+	    newpath[len + 1 + namelen] = '\0';
+	    xmlFree(path);
+	    len = len + 1 + namelen;
+	} else {
+	    memcpy(newpath, name, namelen);
+	    newpath[namelen] = '\0';
+	    len = namelen;
+	}
+
+	path = newpath;
+
+	if (fp == stp)
+	    break;
+    }
+
+    return path;
+}
+
+/*
+ * xmlHashFree() deallocator for the malloc'd psu_time_usecs_t
+ * accumulators we store as values in ds_flamegraph_hash.
+ */
+static void
+slaxDebugFlamegraphFreeEntry (void *payload, const xmlChar *name UNUSED)
+{
+    xmlFree(payload);
+}
+
+/*
+ * Add "self" microseconds to the accumulated self time for the full
+ * call path ending at "stp", creating the hash table and/or this
+ * path's entry on first use.
+ */
+static void
+slaxDebugFlamegraphAccum (slaxDebugState_t *statep, slaxDebugStackFrame_t *stp,
+			   psu_time_usecs_t self)
+{
+    char *path = slaxDebugFlamegraphPath(stp);
+    psu_time_usecs_t *valp;
+
+    if (path == NULL)
+	return;
+
+    if (statep->ds_flamegraph_hash == NULL)
+	statep->ds_flamegraph_hash = xmlHashCreate(0);
+
+    valp = xmlHashLookup(statep->ds_flamegraph_hash, (const xmlChar *) path);
+    if (valp == NULL) {
+	valp = xmlMalloc(sizeof(*valp));
+	*valp = self;
+	xmlHashAddEntry(statep->ds_flamegraph_hash, (const xmlChar *) path,
+			valp);
+    } else {
+	*valp += self;
+    }
+
+    xmlFree(path);
+}
+
 /**
  * Called from libxslt as callback function when template is executed.
  *
@@ -2899,7 +3019,7 @@ slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
  *        evaluating a global variable)
  * @inst instruction node
  */
-static int 
+static int
 slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
 {
     slaxDebugState_t *statep = slaxDebugGetState();
@@ -2964,6 +3084,9 @@ slaxDebugAddFrame (xsltTemplatePtr template, xmlNodePtr inst)
     stp->st_template = template;
     stp->st_inst = inst;
     stp->st_caller = statep->ds_inst;
+
+    if (statep->ds_flags & DSF_PROFILE_FLAMEGRAPH)
+	stp->st_enter_time = psu_get_time();
 
     if (xmlNodeGetNs(inst) && xmlNsGetHref(xmlNodeGetNs(inst)) && xmlNodeGetName(inst)
 	&& streq((const char *) xmlNsGetHref(xmlNodeGetNs(inst)), XSL_URI)) {
@@ -3030,6 +3153,20 @@ slaxDebugDropFrame (void)
 
     if (stp->st_flags & STF_STOPWHENPOP)
 	xsltSetDebuggerStatus(XSLT_DEBUG_INIT);
+
+    if (statep->ds_flags & DSF_PROFILE_FLAMEGRAPH) {
+	psu_time_usecs_t now = psu_get_time();
+	psu_time_usecs_t elapsed = now - stp->st_enter_time;
+	psu_time_usecs_t self = (elapsed > stp->st_child_time)
+	    ? elapsed - stp->st_child_time : 0;
+	slaxDebugStackFrame_t *parent;
+
+	slaxDebugFlamegraphAccum(statep, stp, self);
+
+	parent = TAILQ_PREV(stp, slaxDebugStack_s, st_link);
+	if (parent)
+	    parent->st_child_time += elapsed;
+    }
 
     /* 'Pop' the stack frame */
     TAILQ_REMOVE(&slaxDebugStack, stp, st_link);
@@ -3121,6 +3258,23 @@ slaxDebugSetScriptBuffer (const char *buffer)
 	statep->ds_script_buffer = strdup(buffer);
 }
 
+void
+slaxDebugSetProfileFile (const char *filename)
+{
+    slaxDebugState_t *statep = slaxDebugGetState();
+
+    if (statep == NULL)
+	return;
+
+    if (statep->ds_profile_file) {
+	free(statep->ds_profile_file);
+	statep->ds_profile_file = NULL;
+    }
+
+    if (filename)
+	statep->ds_profile_file = strdup(filename);
+}
+
 /**
  * Set a search path for included and imported files
  *
@@ -3191,10 +3345,16 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     slaxProfOpen(xsltStylesheetGetDoc(style));
     statep->ds_flags |= DSF_PROFILER;
 
-    /* A "--profile-mode call-graph" CLI run arms this before any "run" */
+    /* A "--profile-mode callgraph" CLI run arms this before any "run" */
     if (slaxDebugFlags & SDBF_PROFILE_CALLGRAPH) {
 	statep->ds_flags &= ~DSF_PROFILER;
 	statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
+    }
+
+    /* A "--profile-mode flamegraph" CLI run arms this before any "run" */
+    if (slaxDebugFlags & SDBF_PROFILE_FLAMEGRAPH) {
+	statep->ds_flags &= ~DSF_PROFILER;
+	statep->ds_flags |= DSF_PROFILE_FLAMEGRAPH;
     }
 
     xsltSetDebuggerStatus(0);
@@ -3208,7 +3368,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
 	xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
 	statep->ds_flags |= DSF_RESTART | DSF_DISPLAY | DSF_CONTINUE;
-	if (!(statep->ds_flags & DSF_PROFILE_CALLGRAPH))
+	if (!(statep->ds_flags & (DSF_PROFILE_CALLGRAPH | DSF_PROFILE_FLAMEGRAPH)))
 	    statep->ds_flags |= DSF_PROFILER;
     }
 
@@ -3239,6 +3399,12 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	    if (statep->ds_callgraph_buffer) {
 		free(statep->ds_callgraph_buffer);
 		statep->ds_callgraph_buffer = NULL;
+	    }
+
+	    if (statep->ds_flamegraph_hash) {
+		xmlHashFree(statep->ds_flamegraph_hash,
+			    slaxDebugFlamegraphFreeEntry);
+		statep->ds_flamegraph_hash = NULL;
 	    }
 
 	} else if (statep->ds_flags & DSF_RELOAD) {
@@ -3353,7 +3519,11 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	 */
 	if (slaxDebugDisplayMode == DEBUG_MODE_PROFILER) {
 	    if (statep->ds_flags & DSF_PROFILE_CALLGRAPH)
-		slaxProfReportCallgraph(statep->ds_callgraph_buffer);
+		slaxProfReportCallgraph(statep->ds_callgraph_buffer,
+					statep->ds_profile_file);
+	    else if (statep->ds_flags & DSF_PROFILE_FLAMEGRAPH)
+		slaxProfReportFlamegraph(statep->ds_flamegraph_hash,
+					 statep->ds_profile_file);
 	    else
 		slaxProfReport(slaxDebugFlags, statep->ds_script_buffer);
 	    working = FALSE;
@@ -3381,6 +3551,16 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
     if (statep->ds_callgraph_buffer) {
 	free(statep->ds_callgraph_buffer);
 	statep->ds_callgraph_buffer = NULL;
+    }
+
+    if (statep->ds_flamegraph_hash) {
+	xmlHashFree(statep->ds_flamegraph_hash, slaxDebugFlamegraphFreeEntry);
+	statep->ds_flamegraph_hash = NULL;
+    }
+
+    if (statep->ds_profile_file) {
+	free(statep->ds_profile_file);
+	statep->ds_profile_file = NULL;
     }
 
     if (save_style)
@@ -3421,6 +3601,12 @@ slaxDebugSetStylesheet (xsltStylesheetPtr script UNUSED)
 
 void
 slaxDebugSetScriptBuffer (const char *buffer UNUSED)
+{
+    /* nothing to do; debugger support isn't compiled in */
+}
+
+void
+slaxDebugSetProfileFile (const char *filename UNUSED)
 {
     /* nothing to do; debugger support isn't compiled in */
 }
