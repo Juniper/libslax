@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -26,6 +27,7 @@
 
 #include <libxml/xmlsave.h>
 #include <libxml/xmlIO.h>
+#include <libxml/hash.h>
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
@@ -505,13 +507,46 @@ slaxProfClose (void)
 
 #endif /* WITH_SLAX_PROFILER */
 
+/*
+ * Emit one report line to either "fp" (the file given to
+ * slaxProfReportCallgraph()/slaxProfReportFlamegraph(), opened and
+ * closed by the caller) or, when "fp" is NULL, via slaxOutput().
+ * This is the only place either report writes a line, so it's also
+ * the only place that needs to know the destination differs; neither
+ * report function (nor anything they call) ever goes through
+ * slaxIoWriteOutputToFileStart(), so a target file never contains
+ * anything but these lines.
+ */
+static void
+slaxProfReportLine (FILE *fp, const char *line)
+{
+    if (fp)
+	fprintf(fp, "%s\n", line);
+    else
+	slaxOutput("%s", line);
+}
+
+/*
+ * Close out a report written to "fp" (if any), telling the user how
+ * much was written and where; when "fp" is NULL (console output via
+ * slaxOutput()), there's nothing to close or confirm.
+ */
+static void
+slaxProfReportDone (FILE *fp, const char *filename, int count)
+{
+    if (fp == NULL)
+	return;
+
+    slaxOutput("Wrote %d line%s of data to file '%s'",
+	       count, count == 1 ? "" : "s", filename);
+    fclose(fp);
+}
+
 /**
- * Report libbxslt's per-template call-graph profiling output, as
- * captured by xsltSaveProfiling() into an in-memory buffer, by
- * re-emitting it a line at a time via slaxOutput().  Routing it
- * through slaxOutput() (rather than just printing it directly) means
- * it picks up the same output redirection sdb's own per-line profiler
- * output already uses.
+ * Report libbxslt's per-template callgraph profiling output, as
+ * captured by xsltSaveProfiling() into an in-memory buffer.  When
+ * "filename" is given, the report is written directly to that file;
+ * otherwise it's re-emitted a line at a time via slaxOutput().
  *
  * Unlike the rest of this file, this does not depend on
  * WITH_SLAX_PROFILER (sdb's own per-source-line profiler); it only
@@ -519,14 +554,26 @@ slaxProfClose (void)
  * WITH_XSLT_PROFILER machinery, so it is always compiled in.
  */
 void
-slaxProfReportCallgraph (const char *buffer)
+slaxProfReportCallgraph (const char *buffer, const char *filename)
 {
     const char *last, *xp;
     char line[BUFSIZ];
     size_t len;
+    FILE *fp = NULL;
+    int count = 0;
+
+    if (filename) {
+	fp = fopen(filename, "w");
+	if (fp == NULL) {
+	    slaxOutput("could not open '%s' for writing: %s",
+		       filename, strerror(errno));
+	    return;
+	}
+    }
 
     if (buffer == NULL) {
-	slaxOutput("no call-graph profiling data was recorded");
+	slaxProfReportLine(fp, "no callgraph profiling data was recorded");
+	slaxProfReportDone(fp, filename, 1);
 	return;
     }
 
@@ -539,8 +586,112 @@ slaxProfReportCallgraph (const char *buffer)
 	memcpy(line, last, len);
 	line[len] = '\0';
 
-	slaxOutput("%s", line);
+	slaxProfReportLine(fp, line);
+	count++;
 
 	last = xp ? xp + 1 : NULL;
     }
+
+    slaxProfReportDone(fp, filename, count);
+}
+
+/*
+ * One (path, self-time) pair pulled out of a flame-graph hash table,
+ * for sorting before we print.
+ */
+typedef struct slax_flamegraph_entry_s {
+    const xmlChar *fe_path;
+    psu_time_usecs_t fe_usecs;
+} slax_flamegraph_entry_t;
+
+/*
+ * Scan context for slaxProfFlamegraphScan(): the array we're filling
+ * in, and how much of it is used so far.
+ */
+typedef struct slax_flamegraph_scan_s {
+    slax_flamegraph_entry_t *fs_entries;
+    unsigned fs_count;
+} slax_flamegraph_scan_t;
+
+static void
+slaxProfFlamegraphScan (void *payload, void *data, const xmlChar *name)
+{
+    slax_flamegraph_scan_t *fsp = data;
+    psu_time_usecs_t *valp = payload;
+
+    fsp->fs_entries[fsp->fs_count].fe_path = name;
+    fsp->fs_entries[fsp->fs_count].fe_usecs = *valp;
+    fsp->fs_count += 1;
+}
+
+static int
+slaxProfFlamegraphCompare (const void *ap, const void *bp)
+{
+    const slax_flamegraph_entry_t *a = ap;
+    const slax_flamegraph_entry_t *b = bp;
+
+    return strcmp((const char *) a->fe_path, (const char *) b->fe_path);
+}
+
+/**
+ * Report sdb's own per-call-path self-time flame-graph data (see
+ * slaxDebugAddFrame()/slaxDebugDropFrame() in slaxdebugger.c, which
+ * build "hash" via the debugger's existing call-stack hooks).  When
+ * "filename" is given, the report is written directly to that file;
+ * otherwise it's emitted a line at a time via slaxOutput().
+ *
+ * Entries are sorted alphabetically by path before printing, so the
+ * report is deterministic without needing a separate normalization
+ * pass, unlike slaxProfReportCallgraph()'s captured-text buffer.
+ *
+ * Like slaxProfReportCallgraph(), this does not depend on
+ * WITH_SLAX_PROFILER: it only reformats sdb's own call-path hash
+ * table, so it is always compiled in.
+ */
+void
+slaxProfReportFlamegraph (xmlHashTablePtr hash, const char *filename)
+{
+    int count = hash ? xmlHashSize(hash) : 0;
+    slax_flamegraph_scan_t scan;
+    int i;
+    FILE *fp = NULL;
+    char line[BUFSIZ];
+
+    if (filename) {
+	fp = fopen(filename, "w");
+	if (fp == NULL) {
+	    slaxOutput("could not open '%s' for writing: %s",
+		       filename, strerror(errno));
+	    return;
+	}
+    }
+
+    if (hash == NULL || count <= 0) {
+	slaxProfReportLine(fp, "no flamegraph profiling data was recorded");
+	slaxProfReportDone(fp, filename, 1);
+	return;
+    }
+
+    scan.fs_entries = xmlMalloc(count * sizeof(*scan.fs_entries));
+    if (scan.fs_entries == NULL) {
+	slaxProfReportLine(fp, "out of memory");
+	slaxProfReportDone(fp, filename, 1);
+	return;
+    }
+    scan.fs_count = 0;
+
+    xmlHashScan(hash, slaxProfFlamegraphScan, &scan);
+
+    qsort(scan.fs_entries, scan.fs_count, sizeof(*scan.fs_entries),
+	  slaxProfFlamegraphCompare);
+
+    for (i = 0; i < (int) scan.fs_count; i++) {
+	snprintf(line, sizeof(line), "%s %llu", scan.fs_entries[i].fe_path,
+		 scan.fs_entries[i].fe_usecs);
+	slaxProfReportLine(fp, line);
+    }
+
+    xmlFree(scan.fs_entries);
+
+    slaxProfReportDone(fp, filename, (int) scan.fs_count);
 }
