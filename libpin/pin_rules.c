@@ -582,6 +582,39 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
     return 0;
 }
 
+/*
+ * Look up the rule registered for (mode_id, name_id) in the apply-templates
+ * Patricia tree.  Mirrors the inline lookup pin_parse.c's PBMODE_APPLY
+ * dispatch performs for the live-streaming case; this is the retained-tree
+ * counterpart used by PIN_OP_APPLY (pin_exec.c).
+ */
+pin_rule_t *
+pin_rulebook_apply_find (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			 pin_name_id_t name_id)
+{
+    if (prbp == NULL || prbp->prb_apply_pat == NULL)
+	return NULL;
+
+    pin_apply_key2_t apply_key;
+    pin_apply_key2_build(&apply_key, mode_id, name_id);
+
+    pa_pat_node_t *pat_node = pa_pat_get(prbp->prb_apply_pat,
+					 sizeof(apply_key), &apply_key);
+    if (pat_node == NULL)
+	return NULL;
+
+    pa_pat_data_atom_t datom = pa_pat_node_data(prbp->prb_apply_pat, pat_node);
+    if (pa_pat_data_is_null(datom))
+	return NULL;
+
+    pin_apply_id_t aid = pin_apply_id(pa_pat_data_atom_of(datom));
+    pin_apply_entry_t *ep = pin_apply_addr(prbp, aid);
+    if (ep == NULL)
+	return NULL;
+
+    return pin_rulebook_rule(prbp, ep->pae_rule);
+}
+
 int
 pin_rulebook_mode_register (pin_rulebook_t *prbp, pin_name_id_t mode_id,
 			    const char *match_str, pin_rule_id_t rid,
