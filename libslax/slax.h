@@ -229,6 +229,7 @@ typedef unsigned slaxDebugFlags_t;
 #define SDBF_PROFILE_WALL	(1<<3) /* ... and wall-clock output */
 #define SDBF_ECHO_INPUT		(1<<4) /* Echo each command before running it */
 #define SDBF_PROFILE_CALLGRAPH	(1<<5) /* Profile via xsltApplyStylesheetUser */
+#define SDBF_PROFILE_FLAMEGRAPH (1<<6) /* Profile via per-path self time */
 
 int
 slaxDebugInitFlags (slaxDebugFlags_t flags);
@@ -246,6 +247,19 @@ slaxDebugSetStylesheet (struct _xsltStylesheet *stylep);
  */
 void
 slaxDebugSetScriptBuffer (const char *buffer);
+
+/**
+ * Give the debugger the filename to use for the callgraph/flamegraph
+ * profiler report ("--profile-mode callgraph|flamegraph" on the
+ * command line); the report is written to this file directly, never
+ * via slaxIoWriteOutputToFileStart(), so no other output ever lands
+ * in it.  The same slot is set interactively by "profile callgraph
+ * <file>"/"profile flamegraph <file>".
+ *
+ * @filename target file for the report, or NULL for none
+ */
+void
+slaxDebugSetProfileFile (const char *filename);
 
 /**
  * Set a search path for included and imported files
