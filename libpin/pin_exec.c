@@ -1072,6 +1072,98 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
 }
 
 /*
+ * Apply templates to every retained child of the current context node,
+ * resolving each child against the apply-templates (mode, name) Patricia
+ * tree (see pin_rulebook_apply_find).  Unlike pin_op_for_each, there is no
+ * tag-name filter: every PIN_TYPE_ELT child is a candidate, matched by its
+ * own name, and (unlike for_each) each matched child gets ITS OWN rule's
+ * op sequence as the frame's pc, not a single shared po_alt.
+ *
+ * Scope of this first cut: only rules that compiled to a plain op sequence
+ * (pr_close_ops set) can run here, since the op engine executes against an
+ * already-retained subtree and has no live parse event stream to feed a
+ * BIA_ body.  A child whose matched template needs BIA_ (pr_body/
+ * pr_new_state) logs a warning and is skipped, consistent with this
+ * project's practice of a loud diagnostic over a silent drop.  A child
+ * with no matching rule at all is silently discarded, matching the live
+ * PBMODE_APPLY streaming dispatch's own no-match behavior (PIA_DISCARD).
+ *
+ * Not yet handled: select= on the apply-templates itself (only "every
+ * element child, in document order" is supported), xsl:sort, and the
+ * XSLT built-in template fallback (recursing into an unmatched element's
+ * own children) -- an unmatched element's descendants are never visited.
+ */
+static pin_value_t
+pin_op_apply (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    pin_node_id_t parent_id = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
+    pin_node_t *parent = pin_node_addr(pwp, parent_id);
+    if (parent == NULL)
+        return pin_value_null();
+
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    pin_name_id_t mode_id = opp->po_name;
+
+    pin_node_id_t *doc = NULL;
+    int doc_count = 0, doc_size = 0;
+
+    pin_depth_t depth = parent->pn_depth;
+    for (pin_node_id_t cid = pin_node_child(parent);
+            !pin_node_id_is_null(cid); ) {
+        pin_node_t *child = pin_node_addr(pwp, cid);
+        if (child == NULL || child->pn_depth <= depth)
+            break;
+        if (child->pn_type == PIN_TYPE_ELT) {
+            if (doc_count >= doc_size) {
+                int newsize = doc_size ? doc_size * 2 : 8;
+                pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
+                if (nd == NULL)
+                    break;
+                doc = nd;
+                doc_size = newsize;
+            }
+            doc[doc_count++] = cid;
+        }
+        cid = child->pn_next;
+    }
+
+    for (int i = doc_count - 1; i >= 0; i -= 1) {
+        pin_node_t *child = pin_node_addr(pwp, doc[i]);
+        if (child == NULL)
+            continue;
+
+        pin_rule_t *rule = pin_rulebook_apply_find(rb, mode_id, child->pn_name);
+        if (rule == NULL)
+            continue;	/* No match: discard, like the live PBMODE_APPLY path */
+
+        /*
+         * pr_close_ops alone is not sufficient: a rule that fell back to
+         * BIA_ (pr_body) or a for-each state (pr_new_state) can still have
+         * a stale non-null pr_close_ops left over from an abandoned op-
+         * compile attempt (pin_compile_template never clears it on that
+         * path).  Mirror the live dispatcher's three-way check
+         * (pin_parse.c's pin_parse_handle_rule) rather than trusting
+         * pr_close_ops by itself.
+         */
+        if (!pin_op_id_is_null(rule->pr_close_ops)
+                && pin_body_instr_id_is_null(rule->pr_body)
+                && pin_rstate_id_is_null(rule->pr_new_state)) {
+            pin_exec_push_seq_frame(esp, rule->pr_close_ops, doc[i]);
+        } else {
+            psu_log("pin_exec: apply-templates: matched template for \"%s\" "
+                     "needs apply-templates/copy-of/for-each, which the "
+                     "retained-subtree op engine does not support yet; "
+                     "skipping",
+                     pin_namepool_string(pwp, child->pn_name));
+        }
+    }
+
+    free(doc);
+    return pin_value_null();
+}
+
+/*
  * Recursively emit one node and its full subtree to the output stream as new
  * non-transient nodes.  Children are walked via pin_node_child + pn_next
  * (sibling chain), never pn_next of the root, which links to siblings.
@@ -1444,7 +1536,7 @@ pin_op_ns_pop (PIN_OP_FUNC_ARGS)
 pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     /* complex ops (types < PIN_OP_MAX_COMPLEX) */
     [PIN_OP_NONE]         = { "none",         pin_op_stub,         0 },
-    [PIN_OP_APPLY]        = { "apply",        pin_op_stub,         0 },
+    [PIN_OP_APPLY]        = { "apply",        pin_op_apply,        0 },
     [PIN_OP_PUSH_NODE]    = { "push-node",    pin_op_push_node,    0 },
     [PIN_OP_COMPLEX_EXPR] = { "complex-expr", pin_op_complex_expr, 0 },
     /* slots 4-7: reserved for future complex ops (NULL handler -> skipped) */
