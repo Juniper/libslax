@@ -1,6 +1,3 @@
-run
-Script exited normally.
-profile report call-graph
 number               match                name      mode  Calls Tot 100us Avg
 
     0  /                     calls=1 tot=TIME avg=TIME
@@ -29,4 +26,3 @@ Index by function name
 [1] a (../../../tests/sdb/profile-callgraph.slax:9)
 [2] b (../../../tests/sdb/profile-callgraph.slax:18)
 
-quit
