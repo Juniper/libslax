@@ -398,6 +398,17 @@ pin_rulebook_apply_add (pin_rulebook_t *prbp,
 			float priority, int16_t import_prec);
 
 /*
+ * Look up the rule registered for (mode_id, name_id) in the apply-templates
+ * Patricia tree (see pin_apply_key2_t).  Used by PIN_OP_APPLY (pin_exec.c)
+ * to resolve each retained child against the apply-templates rule index;
+ * mirrors the lookup sequence pin_parse.c's PBMODE_APPLY dispatch already
+ * performs inline.  Returns NULL if nothing is registered for that pair.
+ */
+pin_rule_t *
+pin_rulebook_apply_find (pin_rulebook_t *prbp, pin_name_id_t mode_id,
+			 pin_name_id_t name_id);
+
+/*
  * Register one xsl:template match pattern for later batch-compilation into
  * a mode-specific filter (see pin_compile_build_mode_filters in
  * pin_compile.c).  match_str is interned into the workspace namepool
