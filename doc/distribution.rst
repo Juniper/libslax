@@ -81,7 +81,7 @@ check syntax.
         --param <name> <value> OR -a <name> <value>: pass parameters
         --partial OR -p: allow partial SLAX input to --slax-to-xslt
         --profile <file>: run profiler and save output to given file
-        --profile-mode <mode>: enable profiler mode ('brief', 'wall', or 'call-graph')
+        --profile-mode <mode>: enable profiler mode ('brief', 'wall', or 'callgraph')
         --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
@@ -577,8 +577,8 @@ Behavioral Options
   lines that are not executed are trimmed from the profiler output.
   For `wall` mode, columns for "wall clock" time are added, displaying
   how much time (in seconds) was used for that line.  For
-  `call-graph` mode, the per-line report is replaced entirely by a
-  gprof-style call-graph report of per-template call relationships.
+  `callgraph` mode, the per-line report is replaced entirely by a
+  gprof-style callgraph report of per-template call relationships.
   Refer to the :ref:`profiler` for additional information.
 
   When the `--profile-mode` option is used without the `--profile`
@@ -875,11 +875,11 @@ Use the `profile` command to access the profiler::
 
   (sdb) help profile
   List of commands:
-    profile call-graph <file>  Enable call-graph profiling, writing output to <file>
+    profile callgraph <file>  Enable callgraph profiling, writing output to <file>
     profile clear   Clear  profiling information
     profile off     Disable profiling
     profile on      Enable profiling
-    profile report [brief | wall | call-graph]  Report profiling information
+    profile report [brief | wall | callgraph]  Report profiling information
   (sdb)
 
 The profile report includes the following information:
@@ -947,29 +947,32 @@ The profiling is not "Monte Carlo", or clock based, but is based on
 trace data generated as each SLAX instruction is executed, giving
 more accurate and precise data.
 
-.. index:: call-graph
+.. index:: callgraph
 .. _callgraph:
 
-**Call-graph profiling**
+**Callgraph profiling**
 
-The profiler also supports a `call-graph` report, which shows
+The profiler also supports a `callgraph` report, which shows
 per-template call relationships in the style of Unix `gprof`, rather
 than the per-line timing shown above.  This reuses libxslt's own
 template-level profiler rather than sdb's line-level one, so it is
-driven by a different pair of commands: `profile call-graph <file>`
+driven by a different pair of commands: `profile callgraph <file>`
 enables it (in place of plain `profile on`), and writes the report to
-`<file>` once the script finishes running; `profile report call-graph`
-then prints that file's contents.
+`<file>` once the script finishes running; `profile report callgraph`
+then prints that file's contents.  `report` also takes an optional
+`<file>` of its own; when given, the report is written there instead,
+otherwise it falls back to the armed file, or the console if nothing
+was armed.
 
 ::
 
-  (sdb) profile call-graph out/profile-callgraph.prof
-  Enabling call-graph profiling, output to out/profile-callgraph.prof
+  (sdb) profile callgraph out/profile-callgraph.prof
+  Enabling callgraph profiling, output to out/profile-callgraph.prof
   (sdb) run
   <?xml version="1.0"?>
   <out><a/><b/><a/><done-b/></out>
   Script exited normally.
-  (sdb) profile report call-graph
+  (sdb) profile report callgraph
   number               match                name      mode  Calls Tot 100us Avg
 
       0                                        a                2      1      0
@@ -1024,14 +1027,14 @@ Because the row order and `[N]` indices in this report are assigned
 by sorting on measured execution time, they are not guaranteed to be
 stable from run to run, especially for a script fast enough that
 timing is dominated by measurement noise.  Only the call counts and
-the call-graph structure itself (which templates call which, and how
+the callgraph structure itself (which templates call which, and how
 many times) are guaranteed to reproduce.
 
 The profiler can also be accessed using the :ref:`slaxproc <slaxproc>`
 :ref:`--profile <profile>` option.  The `brief` and `wall` modes, and
-the call-graph report described above, can all be selected with the
+the callgraph report described above, can all be selected with the
 :ref:`--profile-mode <profile-mode>` option (`brief`, `wall`, or
-`call-graph`).
+`callgraph`).
 
 .. index
 
