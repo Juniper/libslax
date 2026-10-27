@@ -1,4 +1,8 @@
 Type 'help' for help
-(sdb) profile call-graph out/profile-callgraph.prof
-Enabling call-graph profiling, output to out/profile-callgraph.prof
-(sdb) (sdb) (sdb) 
+(sdb) profile callgraph out/profile-callgraph.prof
+Enabling callgraph profiling, output to out/profile-callgraph.prof
+(sdb) run
+Script exited normally.
+(sdb) profile report callgraph
+Wrote 28 lines of data to file 'out/profile-callgraph.prof'
+(sdb) quit
