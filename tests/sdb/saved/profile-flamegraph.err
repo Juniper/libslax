@@ -1,0 +1,8 @@
+Type 'help' for help
+(sdb) profile flamegraph out/profile-flamegraph.prof
+Enabling flame-graph profiling, output to out/profile-flamegraph.prof
+(sdb) run
+Script exited normally.
+(sdb) profile report flamegraph
+Wrote 13 lines of data to file 'out/profile-flamegraph.prof'
+(sdb) quit
