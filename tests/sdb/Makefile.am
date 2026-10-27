@@ -18,7 +18,8 @@ EXTRA_DIST = \
     $(addprefix saved/, ${TEST_CASES:.slax=.out}) \
     $(addprefix saved/, ${TEST_CASES:.slax=.err}) \
     saved/profile-file.prof \
-    saved/profile-callgraph.prof
+    saved/profile-callgraph.prof \
+    saved/profile-flamegraph.prof
 
 SLAXPROC = ${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'
@@ -43,13 +44,19 @@ CLEANPROFILE = sed -i.bak -E \
 # placeholder before diffing.
 CLEANADDR = sed -i.bak -E 's/0x[0-9a-f]+/0xADDR/g'
 
-# libxslt's own xsltSaveProfiling() call-graph report (produced by
-# "profile call-graph <file>") ranks templates by measured wall-clock
+# libxslt's own xsltSaveProfiling() callgraph report (produced by
+# "profile callgraph <file>") ranks templates by measured wall-clock
 # time; for a fast test stylesheet that time is near-zero and noisy, so
 # the "[N]" indices and row/block order reshuffle from run to run even
 # with identical input.  normalize-callgraph.pl re-derives a stable
 # numbering and masks the timing fields; see its header comment.
 CLEANCALLGRAPH = ${PERL} ${srcdir}/normalize-callgraph.pl
+
+# sdb's own folded-stack flame-graph report ("profile flamegraph <file>")
+# sorts its own rows alphabetically by path, so unlike CLEANCALLGRAPH no
+# reordering/renumbering is needed -- only the trailing self-time (usecs)
+# value on each "path;with;semicolons <usecs>" line is non-deterministic.
+CLEANFLAMEGRAPH = sed -i.bak -E 's/ [0-9]+$$/ TIME/'
 
 CLEANDIRS = out
 
@@ -63,7 +70,7 @@ ${SLAXPROC}:
 # separate non-interactive "--profile <file>" mode (no debugger prompt,
 # no stdin) and has no .cmd file.  Either kind of test may produce an
 # out/$base.prof report file -- "profile-file" always does (via
-# --profile), and a .cmd test does if it issues "profile call-graph
+# --profile), and a .cmd test does if it issues "profile callgraph
 # <file>" -- and when it does, that gets diffed against an extra
 # saved/*.prof golden file too, after the appropriate cleaner.
 TEST_ONE = \
@@ -74,7 +81,10 @@ TEST_ONE = \
  if test -f $$cmd ; then \
    ${SDB} ${srcdir}/$$test $$data < $$cmd > out/$$base.out 2> out/$$base.err ; \
    if test -f out/$$base.prof ; then \
-     ${CLEANCALLGRAPH} out/$$base.prof ; \
+     case $$base in \
+       profile-flamegraph) ${CLEANFLAMEGRAPH} out/$$base.prof ;; \
+       *) ${CLEANCALLGRAPH} out/$$base.prof ;; \
+     esac ; \
      ${DIFF} -Nbu ${srcdir}/saved/$$base.prof out/$$base.prof ${S2O} ; \
    fi ; \
  else \
