@@ -2028,9 +2028,18 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    free(sub.poc_ns_stack);
 
 	    if (sub.poc_complexity) {
-		/* Body too complex for op-dispatch; neutralise and fall back */
 		cur->poc_complexity |= sub.poc_complexity;
-		fe->po_type = PIN_OP_NONE;
+
+		/*
+		 * PIN_OP_APPLY alone is not a reason to neutralise: it now
+		 * has a real op-engine implementation (pin_op_apply), and
+		 * runs the same way whether reached directly or, as here,
+		 * from inside a for-each's sub-sequence.  Any OTHER complex
+		 * bit (PUSH_NODE's copy-of stub, COMPLEX_EXPR) still means
+		 * "body too complex for op-dispatch", so fall back for those.
+		 */
+		if (sub.poc_complexity & ~(1ULL << PIN_OP_APPLY))
+		    fe->po_type = PIN_OP_NONE;
 	    }
 	    continue;
 	}
@@ -2993,19 +3002,24 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 	uint64_t complexity = 0;
 	pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity);
 	int count = 0;
-	if (complexity != 0) {
-	    /*
-	     * Named templates have no BIA_ fallback: only match-based
-	     * templates get one (see below).  A body that needs it --
-	     * apply-templates, copy-of, a for-each needing iteration state --
-	     * cannot be compiled as a plain op sequence, so reject it instead
-	     * of silently registering nothing and leaving every call to it a
-	     * silent no-op at runtime.
-	     */
+
+	/*
+	 * Named templates have no BIA_ fallback: only match-based templates
+	 * get one (see below).  PIN_OP_APPLY is exempt from this check: it
+	 * now has a real op-engine implementation (pin_op_apply, matching
+	 * retained children against the apply-templates rule index), so a
+	 * named template whose only complexity source is apply-templates
+	 * compiles and runs like any other op sequence.  Any OTHER complex
+	 * op -- copy-of's PUSH_NODE stub, an unsupported for-each sort/select
+	 * (COMPLEX_EXPR) -- still cannot be compiled as a plain op sequence,
+	 * so reject those instead of silently registering nothing and
+	 * leaving every call to it a silent no-op at runtime.
+	 */
+	if (complexity & ~(1ULL << PIN_OP_APPLY)) {
 	    pin_error(rb, child,
 		      "xsl:template name=\"%s\": body requires "
-		      "apply-templates, copy-of, or for-each, which named "
-		      "templates do not support yet",
+		      "copy-of or a for-each with an unsupported sort/select, "
+		      "which named templates do not support yet",
 		      (const char *) tname);
 	} else if (!pin_op_id_is_null(ops)) {
 	    pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
