@@ -1,0 +1,117 @@
+config: looking for 'pin08.names.data.data.shift' (default 12)
+config: looking for 'pin08.names.data.data.atom-shift' (default 2)
+config: looking for 'pin08.names.data.data.max-atoms' (default 67108864)
+config: looking for 'pin08.names.data.index.shift' (default 12)
+config: looking for 'pin08.names.data.index.atom-size' (default 4)
+config: looking for 'pin08.names.data.index.max-atoms' (default 67108864)
+config: looking for 'pin08.names.index.shift' (default 12)
+config: looking for 'pin08.names.index.atom-size' (default 16)
+config: looking for 'pin08.names.index.max-atoms' (default 67108864)
+config: looking for 'pin08.namespaces.data.shift' (default 12)
+config: looking for 'pin08.namespaces.data.atom-size' (default 8)
+config: looking for 'pin08.namespaces.data.max-atoms' (default 67108864)
+config: looking for 'pin08.namespaces.index.shift' (default 12)
+config: looking for 'pin08.namespaces.index.atom-size' (default 16)
+config: looking for 'pin08.namespaces.index.max-atoms' (default 67108864)
+config: looking for 'pin08.nodes.shift' (default 12)
+config: looking for 'pin08.nodes.atom-size' (default 24)
+config: looking for 'pin08.nodes.max-atoms' (default 67108864)
+config: looking for 'pin08.nodeset-chunks.shift' (default 12)
+config: looking for 'pin08.nodeset-chunks.atom-size' (default 256)
+config: looking for 'pin08.nodeset-chunks.max-atoms' (default 67108864)
+config: looking for 'pin08.nodeset-info.shift' (default 12)
+config: looking for 'pin08.nodeset-info.atom-size' (default 12)
+config: looking for 'pin08.nodeset-info.max-atoms' (default 67108864)
+config: looking for 'pin08.rules.set.shift' (default 12)
+config: looking for 'pin08.rules.set.atom-size' (default 60)
+config: looking for 'pin08.rules.set.max-atoms' (default 67108864)
+config: looking for 'pin08.rulebook.states.shift' (default 12)
+config: looking for 'pin08.rulebook.states.atom-size' (default 12)
+config: looking for 'pin08.rulebook.states.max-atoms' (default 67108864)
+config: looking for 'pin08.rulebook.bitmaps.shift' (default 10)
+config: looking for 'pin08.rulebook.bitmaps.atom-size' (default 1024)
+config: looking for 'pin08.rulebook.bitmaps.max-atoms' (default 16777216)
+config: looking for 'pin08.rulebook.body.shift' (default 12)
+config: looking for 'pin08.rulebook.body.atom-size' (default 32)
+config: looking for 'pin08.rulebook.body.max-atoms' (default 67108864)
+config: looking for 'pin08.apply.entries.shift' (default 12)
+config: looking for 'pin08.apply.entries.atom-size' (default 32)
+config: looking for 'pin08.apply.entries.max-atoms' (default 67108864)
+config: looking for 'pin08.mode.entries.shift' (default 12)
+config: looking for 'pin08.mode.entries.atom-size' (default 32)
+config: looking for 'pin08.mode.entries.max-atoms' (default 67108864)
+config: looking for 'pin08.rulebook.ops.shift' (default 12)
+config: looking for 'pin08.rulebook.ops.atom-size' (default 28)
+config: looking for 'pin08.rulebook.ops.max-atoms' (default 67108864)
+config: looking for 'pin08.apply.index.shift' (default 12)
+config: looking for 'pin08.apply.index.atom-size' (default 16)
+config: looking for 'pin08.apply.index.max-atoms' (default 67108864)
+config: looking for 'pin08.mode.index.shift' (default 12)
+config: looking for 'pin08.mode.index.atom-size' (default 16)
+config: looking for 'pin08.mode.index.max-atoms' (default 67108864)
+pi [xml] [version="1.0" encoding="UTF-8"]
+text [
+] (6)
+pin_insert_text: [
+] 0 / 783 (depth 1)
+open tag [root] []
+pin_insert_open: [root] 262 / 0 (depth 1)
+text [
+  ] (6)
+pin_insert_text: [
+  ] 0 / 784 (depth 2)
+open tag [section] []
+pin_insert_open: [section] 267 / 0 (depth 2)
+text [
+    ] (6)
+pin_insert_text: [
+    ] 0 / 785 (depth 3)
+open tag [group] []
+pin_insert_open: [group] 268 / 0 (depth 3)
+text [
+      ] (6)
+pin_insert_text: [
+      ] 0 / 786 (depth 4)
+open tag [item] [id="a"]
+pin_insert_open: [item] 269 / 0 (depth 4)
+pin_insert_attribs_extract: [id] 266 / 787 (depth 5)
+text [Alpha] (6)
+pin_insert_text: [Alpha] 0 / 788 (depth 5)
+close tag [item] []
+pin_insert_close: [item] 269 (depth 4)
+text [
+      ] (6)
+pin_insert_text: [
+      ] 0 / 789 (depth 4)
+open tag [item] [id="b"]
+pin_insert_open: [item] 269 / 0 (depth 4)
+pin_insert_attribs_extract: [id] 266 / 790 (depth 5)
+text [Beta] (6)
+pin_insert_text: [Beta] 0 / 791 (depth 5)
+close tag [item] []
+pin_insert_close: [item] 269 (depth 4)
+text [
+    ] (6)
+pin_insert_text: [
+    ] 0 / 792 (depth 4)
+close tag [group] []
+pin_insert_close: [group] 268 (depth 3)
+text [
+  ] (6)
+pin_insert_text: [
+  ] 0 / 793 (depth 3)
+close tag [section] []
+pin_insert_close: [section] 267 (depth 2)
+text [
+] (6)
+pin_insert_text: [
+] 0 / 794 (depth 2)
+close tag [root] []
+pin_insert_close: [root] 262 (depth 1)
+pin_insert_open: [out] 261 / 0 (depth 1)
+pin_exec: apply-templates: matched template for "section" needs apply-templates/copy-of/for-each, which the retained-subtree op engine does not support yet; skipping
+pin_insert_close: [out] 261 (depth 1)
+text [
+] (6)
+pin_insert_text: [
+] 0 / 795 (depth 1)
