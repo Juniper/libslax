@@ -7,12 +7,12 @@
 # using the SOFTWARE, you agree to be bound by the terms of that
 # LICENSE.
 #
-# Canonicalize libxslt's xsltSaveProfiling() call-graph report so it can
+# Canonicalize libxslt's xsltSaveProfiling() callgraph report so it can
 # be golden-file diffed.
 #
 # xsltSaveProfiling() (libbxslt/libxslt/xsltutils.c) assigns each
 # template's "[N]" index, and the row/block order of both the flat
-# profile and the call-graph, by sorting templates on measured wall-clock
+# profile and the callgraph, by sorting templates on measured wall-clock
 # time.  For a fast test stylesheet the real times are near-zero and
 # noisy, so ties are broken arbitrarily and the whole layout reshuffles
 # from run to run, even with identical input.  Masking only the numeric
@@ -23,7 +23,7 @@
 # This script re-derives a stable "[N]" numbering from each template's
 # name/match text (alphabetical order is as good as any; it only needs
 # to be deterministic), renumbers every reference to it, sorts rows and
-# call-graph blocks into that order, and replaces the timing-derived
+# callgraph blocks into that order, and replaces the timing-derived
 # fields (percentage, self time, children time, the flat table's Tot and
 # Avg columns) with the literal placeholder TIME.  Fields that are plain
 # repeat counts (Calls, and the "x/y" called-ratios in the call graph)
@@ -53,7 +53,7 @@ while ($i < @lines && $lines[$i] !~ /^number\s+match\s+name\s+mode\s+Calls/) {
     $i++;
 }
 if ($i >= @lines) {
-    # Not a call-graph report (e.g. "no call-graph profiling data was
+    # Not a callgraph report (e.g. "no callgraph profiling data was
     # recorded"); nothing to canonicalize.
     exit 0;
 }
@@ -104,7 +104,7 @@ if ($i < @lines && $lines[$i] =~ /^\s*Total\b/) {
     $i++;
 }
 
-# Blank line(s), then the call-graph header.
+# Blank line(s), then the callgraph header.
 while ($i < @lines && $lines[$i] =~ /^\s*$/) {
     push @out, $lines[$i++];
 }
@@ -112,7 +112,7 @@ if ($i < @lines && $lines[$i] =~ /^index\s+%\s*time/) {
     push @out, $lines[$i++];
 }
 
-# Call-graph blocks, separated by a line of dashes, up to the blank
+# Callgraph blocks, separated by a line of dashes, up to the blank
 # line before "Index by function name".
 my @blocks;
 my @cur;
