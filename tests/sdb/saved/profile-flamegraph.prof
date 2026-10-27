@@ -1,0 +1,13 @@
+match / TIME
+match /;template a TIME
+match /;template a;[global] TIME
+match /;template a;[global];template b TIME
+match /;template a;[global];template b;[global] TIME
+match /;template a;[global];template b;[global];template a TIME
+match /;template a;[global];template b;[global];template a;[global] TIME
+match /;template a;[global];template b;[global];template a;[global];template b TIME
+match /;template a;[global];template b;[global];template a;[global];template b;[global] TIME
+match /;template a;[global];template b;[global];template a;[global];template b;[global];template a TIME
+match /;template a;[global];template b;[global];template a;[global];template b;[global];template a;[global] TIME
+match /;template a;[global];template b;[global];template a;[global];template b;[global];template a;[global];template b TIME
+match /;template a;[global];template b;[global];template a;[global];template b;[global];template a;[global];template b;[global] TIME
