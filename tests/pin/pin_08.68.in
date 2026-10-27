@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# dump xml pin_08.68.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    PIN_OP_APPLY (B5): a named template's top-level xsl:apply-templates
+    reaches a matched child ("section") whose own match-template needs
+    BIA_ (its for-each select="group/item" is a downward path, forcing
+    BIA_ just as in pin_08.63), so it has no pr_close_ops for the op
+    engine to run.  pin_op_apply cannot execute a BIA_ body against an
+    already-retained subtree, so it logs a clear warning and skips that
+    child rather than silently dropping it: the same loud-diagnostic
+    convention B2/B3 established elsewhere.  (No "quiet" here: the point
+    of this fixture is to see that warning in stderr.)
+  -->
+
+  <xsl:template name="dispatch">
+    <xsl:apply-templates/>
+  </xsl:template>
+
+  <xsl:template match="root">
+    <out>
+      <xsl:call-template name="dispatch"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="section">
+    <members>
+      <xsl:for-each select="group/item">
+        <member><xsl:value-of select="@id"/></member>
+      </xsl:for-each>
+    </members>
+  </xsl:template>
+
+</xsl:stylesheet>
