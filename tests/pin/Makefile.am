@@ -255,6 +255,10 @@ EXTRA_DIST = \
     pin_08.65.xml \
     pin_08.66.in \
     pin_08.66.xml \
+    pin_08.67.in \
+    pin_08.67.xml \
+    pin_08.68.in \
+    pin_08.68.xml \
     pin_09.01.in \
     pin_09.01.xml \
     pin_09.02.in \
