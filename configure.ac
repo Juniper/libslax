@@ -1403,6 +1403,13 @@ AC_PATH_PROG(XSLTPROC, xsltproc, /usr/bin/xsltproc)
 # --with-crypto/--with-debugger/--with-profiler/--with-debug/--with-plugins/
 # --with-python switches libxslt used to have.
 #
+# --with-debugger is kept on as its own standalone flag below (rather than
+# folded into the LIST), as a back-compat alias for upstream's old combined
+# debugger switch: it just forces both of the split components it used to
+# mean (slax-debugger and xslt-debugger, see below) on, or both off with
+# --without-debugger. The same two components remain individually
+# selectable via --with-bxslt-components=LIST as usual.
+#
 # Two of these are renamed from their upstream libxslt names to avoid
 # colliding with bxml's own same-named components (both vendored libraries
 # now share one configure.ac):
@@ -1422,18 +1429,24 @@ AC_PATH_PROG(XSLTPROC, xsltproc, /usr/bin/xsltproc)
 #   slax-debugger -> sdb/slaxproc's own source-level debugger
 #                     (libslax/slaxdebugger.c).  It calls into the
 #                     xslt-debugger hooks, so it implies xslt-debugger.
+#                     The slax profiler below is part of this same
+#                     debugger (it's driven by slax-debugger's own
+#                     instruction hooks), so slax-debugger implies
+#                     slax-profiler right back -- the two are enabled
+#                     and disabled together.
 #   xslt-profiler -> libbxslt's per-template profiler (xsltSaveProfiling()
 #                     et al), upstream's WITH_PROFILER.  Used by xsltproc
 #                     --profile; unrelated to the slax one below.
 #   slax-profiler -> sdb/slaxproc's per-source-line profiler
 #                     (libslax/slaxprofiler.c).  It's driven entirely by
 #                     the slax debugger's instruction hooks, so it implies
-#                     slax-debugger (which in turn implies xslt-debugger).
+#                     slax-debugger (which in turn implies xslt-debugger);
+#                     see slax-debugger above for the implication back.
 #
 BXSLT_COMPONENT_TABLE='
 crypto:off::Add crypto support to exslt
 xslt-debugger:on::Add the libbxslt debugger hook API (breakpoint/inspection)
-slax-debugger:on:xslt-debugger:Add the slax/sdb source-level debugger
+slax-debugger:on:xslt-debugger,slax-profiler:Add the slax/sdb source-level debugger
 xslt-profiler:on::Add the libbxslt per-template profiler (xsltproc --profile)
 slax-profiler:on:slax-debugger:Add the slax per-source-line profiler
 xslt-verbose:off::Enable XSLT verbose debug reporting (xsltproc -v)
@@ -1495,6 +1508,13 @@ AC_ARG_WITH(bxslt-components,
   [BXSLT_COMPONENTS_ARG=$withval], [BXSLT_COMPONENTS_ARG=default])
 test "x$BXSLT_COMPONENTS_ARG" = "xyes" && BXSLT_COMPONENTS_ARG=default
 
+AC_ARG_WITH(debugger,
+  [  --with-debugger        Enable both the slax-debugger and xslt-debugger
+                        components (back-compat alias for upstream
+                        libxslt's old combined debugger switch); use
+                        --without-debugger to disable both instead.],
+  [BXSLT_DEBUGGER_ARG=$withval], [BXSLT_DEBUGGER_ARG=])
+
 AC_ARG_ENABLE(list-bxslt-components,
   [  --enable-list-bxslt-components  List captive libxslt components/sets and exit],
   [BXSLT_LIST=$enableval], [BXSLT_LIST=no])
@@ -1543,6 +1563,21 @@ for bxslt_tok in $BXSLT_COMPONENTS_ARG; do
             ;;
     esac
 done
+
+# --with-debugger/--without-debugger is a standalone override, applied
+# after the --with-bxslt-components=LIST parsing above so it always wins
+# over whatever that list did or didn't say about these two components.
+case $BXSLT_DEBUGGER_ARG in
+    "") ;;
+    no)
+        bxslt_set slax-debugger off
+        bxslt_set xslt-debugger off
+        ;;
+    *)
+        bxslt_set slax-debugger on
+        bxslt_set xslt-debugger on
+        ;;
+esac
 
 # Force on, to a fixed point, every prerequisite of a component that's on
 # (e.g. slax-debugger implies xslt-debugger, slax-profiler implies
