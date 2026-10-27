@@ -150,7 +150,7 @@ static const char slaxproc_help[] =
 "\t--partial OR -p: allow partial SLAX input to --slax-to-xslt\n"
 "\t--profile <file>: run profiler and save output to given file\n"
 "\t--profile-mode <mode>: enable profiler mode "
-    "('brief', 'wall', or 'call-graph')\n"
+    "('brief', 'wall', 'callgraph', or 'flamegraph')\n"
 "\t--slax-output OR -S: Write the result using SLAX-style XML (braces, etc)\n"
 "\t--trace <file> OR -t <file>: write trace data to a file\n"
 "\t--use-rtfs: keep result tree fragments distinct from node-sets\n"
@@ -1331,8 +1331,11 @@ main (int argc UNUSED, char **argv)
 		} else if (streq(mode, "wall")) {
 		    opt_debugger |= SDBF_PROFILE_WALL;
 
-		} else if (streq(mode, "call-graph")) {
+		} else if (streq(mode, "callgraph")) {
 		    opt_debugger |= SDBF_PROFILE_CALLGRAPH;
+
+		} else if (streq(mode, "flamegraph")) {
+		    opt_debugger |= SDBF_PROFILE_FLAMEGRAPH;
 
 		} else {
 		    errx(1, "unknown profile-mode '%s'", mode);
@@ -1427,7 +1430,21 @@ main (int argc UNUSED, char **argv)
     if (opt_profile == NULL && (opt_debugger & SDBF_PROFILE_ONLY))
 	opt_profile = strdup("profile.output");
 
-    if (opt_profile)
+    /*
+     * callgraph/flamegraph write their report straight to opt_profile
+     * (see slaxProfReportCallgraph()/slaxProfReportFlamegraph() in
+     * slaxprofiler.c, reached via slaxDebugSetProfileFile() below), so
+     * unlike the other profiler modes, they must never be wrapped in
+     * slaxIoWriteOutputToFileStart()/Stop(): that would redirect
+     * *all* output (not just the report) into the file.
+     */
+    int opt_profile_is_graph = (opt_debugger
+				 & (SDBF_PROFILE_CALLGRAPH
+				    | SDBF_PROFILE_FLAMEGRAPH)) ? TRUE : FALSE;
+
+    if (opt_profile_is_graph)
+	slaxDebugSetProfileFile(opt_profile);
+    else if (opt_profile)
 	slaxIoWriteOutputToFileStart(opt_profile);
 
 
@@ -1472,7 +1489,7 @@ main (int argc UNUSED, char **argv)
     if (trace_fp && trace_fp != stderr)
 	fclose(trace_fp);
 
-    if (opt_profile)
+    if (opt_profile && !opt_profile_is_graph)
 	slaxIoWriteOutputToFileStop();
 
     slaxDynClean();
