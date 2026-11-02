@@ -81,7 +81,7 @@ check syntax.
         --param <name> <value> OR -a <name> <value>: pass parameters
         --partial OR -p: allow partial SLAX input to --slax-to-xslt
         --profile <file>: run profiler and save output to given file
-        --profile-mode <mode>: enable profiler mode ('brief', 'wall', or 'callgraph')
+        --profile-mode <mode>: enable profiler mode ('brief', 'wall', 'callgraph', or 'flamegraph')
         --slax-output OR -S: Write the result using SLAX-style XML (braces, etc)
         --trace <file> OR -t <file>: write trace data to a file
         --verbose OR -v: enable debugging output (slaxLog())
@@ -876,10 +876,11 @@ Use the `profile` command to access the profiler::
   (sdb) help profile
   List of commands:
     profile callgraph <file>  Enable callgraph profiling, writing output to <file>
+    profile flamegraph <file>  Enable flame-graph profiling, writing output to <file>
     profile clear   Clear  profiling information
     profile off     Disable profiling
     profile on      Enable profiling
-    profile report [brief | wall | callgraph]  Report profiling information
+    profile report [brief | wall | callgraph | flamegraph] [<file>]  Report profiling information
   (sdb)
 
 The profile report includes the following information:
