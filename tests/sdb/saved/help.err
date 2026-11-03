@@ -22,6 +22,7 @@ List of commands:
   run             Restart the script
   set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
+  tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
@@ -50,6 +51,7 @@ List of commands:
   run             Restart the script
   set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
+  tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
