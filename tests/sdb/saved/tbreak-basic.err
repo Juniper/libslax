@@ -1,0 +1,12 @@
+Type 'help' for help
+(sdb) tbreak 10
+Temporary breakpoint 1 at file ../../../tests/sdb/tbreak-basic.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/tbreak-basic.slax:10
+Deleted temporary breakpoint 1
+tbreak-basic.slax: 10:     <level> $n;
+(sdb) info breakpoints
+No breakpoints.
+(sdb) continue
+Script exited normally.
+(sdb) quit
