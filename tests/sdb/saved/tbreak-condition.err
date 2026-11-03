@@ -1,0 +1,15 @@
+Type 'help' for help
+(sdb) tbreak 10 if $n = 2
+Temporary breakpoint 1 at file ../../../tests/sdb/tbreak-condition.slax, line 10
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/tbreak-condition.slax:10
+  Condition: '$n = 2'
+Deleted temporary breakpoint 1
+tbreak-condition.slax: 10:     <level> $n;
+(sdb) continue
+Script exited normally.
+(sdb) info breakpoints
+No breakpoints.
+(sdb) continue
+The script is not being run.
+(sdb) quit
