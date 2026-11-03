@@ -676,6 +676,7 @@ debugger resembles `gdb` command syntax and operation.
     run             Restart the script
     set $var = value  Set a variable to a new value
     step            Execute the next instruction, stepping into calls
+    tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
     where           Show the backtrace of template calls
     quit            Quit debugger
 
@@ -734,6 +735,26 @@ unconditional again.
   (sdb) condition 1
   Breakpoint 1 is now unconditional
   (sdb)
+
+The `tbreak` command adds a breakpoint the same way `break` does, but
+the breakpoint is automatically deleted the moment it's hit, so it
+only stops execution once, even if its location is reached again
+later in the run (for example, inside a loop or a recursive
+template).  Like `break`, it accepts an optional `if` (or `when`)
+condition; when given, the breakpoint is only hit (and only deleted)
+the first time the condition evaluates true, not the first time its
+location is merely reached.
+
+::
+
+  (sdb) tbreak loopbody
+  Temporary breakpoint 1 at file test.slax, line 13
+  (sdb) run
+  Reached breakpoint 1, at test.slax:13
+  Deleted temporary breakpoint 1
+  (sdb) info br
+  No breakpoints.
+  (sdb) continue
 
 Information on the profiler is in the next section (:ref:`profiler`).
 
@@ -1031,11 +1052,75 @@ timing is dominated by measurement noise.  Only the call counts and
 the callgraph structure itself (which templates call which, and how
 many times) are guaranteed to reproduce.
 
+.. index:: flamegraph
+.. _flamegraph:
+
+**Flame-graph profiling**
+
+The profiler also supports a `flamegraph` report, which records, for
+every distinct call path through the script's templates, how much
+time was spent with that exact path on the call stack.  This is
+sdb's own call-path profiler (unlike the `callgraph` report above,
+which reuses libxslt's gprof-style profiler), and is driven by a
+matching pair of commands: `profile flamegraph <file>` enables it
+(in place of plain `profile on`), and writes the report to `<file>`
+once the script finishes running; `profile report flamegraph` then
+prints that file's contents.  As with `callgraph`, `report` also
+takes an optional `<file>` of its own; when given, the report is
+written there instead, otherwise it falls back to the armed file, or
+the console if nothing was armed.
+
+::
+
+  (sdb) profile flamegraph out/profile-flamegraph.prof
+  Enabling flame-graph profiling, output to out/profile-flamegraph.prof
+  (sdb) run
+  <?xml version="1.0"?>
+  <out><a/><b/><a/><b/><a/><done-b/></out>
+  Script exited normally.
+  (sdb) profile report flamegraph
+  Wrote 13 lines of data to file 'out/profile-flamegraph.prof'
+  (sdb) quit
+
+The output file holds one line per distinct call path, in the
+"folded stack" format used by Brendan Gregg's `FlameGraph` tools: the
+path itself, as a semicolon-separated list of frames from the root
+down, followed by a space and the number of microseconds of self
+time measured with that path on the stack::
+
+  match / 9
+  match /;template a 5
+  match /;template a;[global] 3
+  match /;template a;[global];template b 2
+  match /;template a;[global];template b;[global] 4
+
+Each `;`-separated segment is one stack frame -- either `match
+<pattern>` for the template that `xsl:apply-templates` selected by
+matching a node, or `[global]` for the implicit frame used while
+evaluating top-level expressions between template calls.  Rows are
+sorted alphabetically by path, so, unlike `callgraph`, this report is
+already stable from run to run; only the trailing microsecond counts
+vary.
+
+To turn the saved file into the familiar flame-graph SVG, fetch
+`flamegraph.pl` from the FlameGraph project
+(https://github.com/brendangregg/FlameGraph) and run it directly on
+the file -- no conversion step is needed, since sdb already writes
+the folded-stack format `flamegraph.pl` expects::
+
+  git clone https://github.com/brendangregg/FlameGraph
+  FlameGraph/flamegraph.pl out/profile-flamegraph.prof > profile-flamegraph.svg
+
+Open the resulting `.svg` in a browser for an interactive flame
+graph: each box is a stack frame, its width proportional to the self
+time measured for that path, and clicking a box zooms into that
+subtree.
+
 The profiler can also be accessed using the :ref:`slaxproc <slaxproc>`
 :ref:`--profile <profile>` option.  The `brief` and `wall` modes, and
-the callgraph report described above, can all be selected with the
-:ref:`--profile-mode <profile-mode>` option (`brief`, `wall`, or
-`callgraph`).
+the callgraph and flame-graph reports described above, can all be
+selected with the :ref:`--profile-mode <profile-mode>` option
+(`brief`, `wall`, `callgraph`, or `flamegraph`).
 
 .. index
 
