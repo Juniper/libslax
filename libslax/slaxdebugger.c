@@ -222,8 +222,12 @@ typedef struct slaxDebugBreakpoint_s {
     uint dbp_num;		/* Breakpoint number */
     char *dbp_condition;	/* Conditional breakpoint expression (XPath) */
     char *dbp_condition_user;	/* Same, in user's original syntax (slax?) */
-    int dbp_cond_warned;	/* Already warned that condition fails to eval */
+    uint32_t dbp_flags;		/* DBPF_* flags for this breakpoint */
 } slaxDebugBreakpoint_t;
+
+/* Flags for dbp_flags */
+#define DBPF_COND_WARNED (1<<0) /* Already warned that condition fails to eval */
+#define DBPF_TEMPORARY	 (1<<1) /* Delete automatically after it's hit */
 
 TAILQ_HEAD(slaxDebugBpList_s, slaxDebugBreakpoint_s) slaxDebugBreakpoints;
 
@@ -505,6 +509,18 @@ slaxDebugOutputXpath (xmlXPathObjectPtr xpath, const char *tag, int full)
 }
  
 /*
+ * Remove a breakpoint from the list and free its contents
+ */
+static void
+slaxDebugFreeBreakpoint (slaxDebugBreakpoint_t *dbp)
+{
+    xmlFreeAndEasy(dbp->dbp_where);
+    xmlFreeAndEasy(dbp->dbp_condition);
+    xmlFreeAndEasy(dbp->dbp_condition_user);
+    TAILQ_REMOVE(&slaxDebugBreakpoints, dbp, dbp_link);
+}
+
+/*
  * Clear all breakpoints
  */
 static void
@@ -516,10 +532,7 @@ slaxDebugClearBreakpoints (void)
 	dbp = TAILQ_FIRST(&slaxDebugBreakpoints);
 	if (dbp == NULL)
 	    break;
-	xmlFreeAndEasy(dbp->dbp_where);
-	xmlFreeAndEasy(dbp->dbp_condition);
-	xmlFreeAndEasy(dbp->dbp_condition_user);
-	TAILQ_REMOVE(&slaxDebugBreakpoints, dbp, dbp_link);
+	slaxDebugFreeBreakpoint(dbp);
     }
 
     slaxDebugBreakpointNumber = 0;
@@ -995,10 +1008,13 @@ slaxDebugFindCondition (char *input)
 }
 
 /*
- * 'break' command
+ * Shared logic behind the 'break' and 'tbreak' commands: resolve the
+ * location, parse and validate an optional condition, and add the
+ * resulting breakpoint to the list.  "temporary" marks it to be
+ * auto-deleted (by slaxDebugHandler()) the first time it's hit.
  */
 static void
-slaxDebugCmdBreak (DC_ARGS)
+slaxDebugAddBreakpoint (DC_ARGS, int temporary)
 {
     xmlNodePtr node = NULL;
     slaxDebugBreakpoint_t *bp;
@@ -1060,12 +1076,34 @@ slaxDebugCmdBreak (DC_ARGS)
     bp->dbp_inst = node;
     bp->dbp_condition = condition;
     bp->dbp_condition_user = condition_user;
+    if (temporary)
+	bp->dbp_flags |= DBPF_TEMPORARY;
 
     TAILQ_INSERT_TAIL(&slaxDebugBreakpoints, bp, dbp_link);
 
-    slaxOutput("Breakpoint %d at file %s, line %ld",
-		    bp->dbp_num, 
+    slaxOutput("%s %d at file %s, line %ld",
+		    temporary ? "Temporary breakpoint" : "Breakpoint",
+		    bp->dbp_num,
 		    xmlDocGetURL(xmlNodeGetDoc(node)), xmlGetLineNo(node));
+}
+
+/*
+ * 'break' command
+ */
+static void
+slaxDebugCmdBreak (DC_ARGS)
+{
+    slaxDebugAddBreakpoint(statep, commandline, argv, FALSE);
+}
+
+/*
+ * 'tbreak' command -- like 'break', but the breakpoint is automatically
+ * deleted the first time it's hit (see slaxDebugHandler())
+ */
+static void
+slaxDebugCmdTbreak (DC_ARGS)
+{
+    slaxDebugAddBreakpoint(statep, commandline, argv, TRUE);
 }
 
 static int
@@ -1164,10 +1202,7 @@ slaxDebugCmdDelete (DC_ARGS)
      */
     TAILQ_FOREACH(dbpp, &slaxDebugBreakpoints, dbp_link) {
 	if (dbpp->dbp_num == num) {
-	    xmlFreeAndEasy(dbpp->dbp_where);
-	    xmlFreeAndEasy(dbpp->dbp_condition);
-	    xmlFreeAndEasy(dbpp->dbp_condition_user);
-	    TAILQ_REMOVE(&slaxDebugBreakpoints, dbpp, dbp_link);
+	    slaxDebugFreeBreakpoint(dbpp);
 	    slaxOutput("Deleted breakpoint '%d'", num);
 	    return;
 	}
@@ -1247,7 +1282,7 @@ slaxDebugCmdCondition (DC_ARGS)
     xmlFreeAndEasy(dbp->dbp_condition_user);
     dbp->dbp_condition = condition;
     dbp->dbp_condition_user = condition_user;
-    dbp->dbp_cond_warned = FALSE;
+    dbp->dbp_flags &= ~DBPF_COND_WARNED;
 
     if (condition)
 	slaxOutput("Breakpoint %d now conditional on '%s'", num, condition_user);
@@ -2508,6 +2543,12 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
+    { "tbreak",	       2, slaxDebugCmdTbreak,
+      "tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit "
+      "(also: when expr)",
+      NULL,
+    },
+
     { "verbose",       1, slaxDebugCmdVerbose,
       "verbose         Turn on verbose (-v) output logging",
       slaxDebugHelpVerbose,
@@ -2652,10 +2693,10 @@ slaxDebugEvalCondition (slaxDebugState_t *statep,
 	 * instead of letting a broken condition on a hot code path spam
 	 * the same message every iteration.
 	 */
-	if (!dbp->dbp_cond_warned) {
+	if (!(dbp->dbp_flags & DBPF_COND_WARNED)) {
 	    slaxOutput("warning: breakpoint %d condition failed to "
 		       "evaluate: '%s'", dbp->dbp_num, dbp->dbp_condition_user);
-	    dbp->dbp_cond_warned = TRUE;
+	    dbp->dbp_flags |= DBPF_COND_WARNED;
 	}
 	return FALSE;		/* Failure means don't stop */
     }
@@ -2807,6 +2848,11 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     }
 
     slaxDebugAnnounceBreakpoint(statep, inst);
+
+    if (dbp && (dbp->dbp_flags & DBPF_TEMPORARY)) {
+	slaxOutput("Deleted temporary breakpoint %d", dbp->dbp_num);
+	slaxDebugFreeBreakpoint(dbp);
+    }
 
 #if 0
     if (statep->ds_flags & DSF_OVER) {
