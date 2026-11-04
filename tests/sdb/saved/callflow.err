@@ -20,5 +20,5 @@ callflow: 3: exit <xsl:call-template> at ../../../tests/sdb/callflow.slax:18
 callflow: 2: exit <xsl:template> in template second at ../../../tests/sdb/callflow.slax:14
 callflow: 1: exit <xsl:template> in template first at ../../../tests/sdb/callflow.slax:8
 callflow: 0: exit <xsl:template> in match / at ../../../tests/sdb/callflow.slax:3
-Script exited normally.
+Script exited normally
 (sdb) quit
