@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.71.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Pending: wrong on libslax-work, so this file is named .pending
+    and kept out of the run until the port step named below fixes it
+    (rename it to .in then).
+    Expected fix: P5 (unary minus), P8 (substring, round); the rest
+    are libpin or evaluator bugs with no port step yet.
+
+    Expression values through xsl:value-of that are wrong today.
+    Expected values are given for n=1 / n=2 / n=3 / n=4.
+
+    Data (pin_08.71.xml): four foo elements:
+      foo n=1 type=a: goo "g1", x 2
+      foo n=2 type=b: no goo, x -3
+      foo n=3 type=a: goo containing bar "b3", x 5
+      foo n=4 type=c: goo "g4", no x
+    Expected answers below are from the XPath 1.0 spec.
+  -->
+
+  <xsl:template match="foo">
+    <r n="{@n}">
+      <!-- -x: expect -2 / 3 / -5 / NaN -->
+      <neg><xsl:value-of select="-x"/></neg>
+      <!-- contains(@type, 'a'): expect true / false / true / false -->
+      <bool><xsl:value-of select="contains(@type, 'a')"/></bool>
+      <!-- not(goo): expect false / true / false / false -->
+      <not><xsl:value-of select="not(goo)"/></not>
+      <!-- concat(@n, '-', @type): expect 1-a / 2-b / 3-a / 4-c -->
+      <concat><xsl:value-of select="concat(@n, '-', @type)"/></concat>
+      <!-- concat(@type, @n): expect a1 / b2 / a3 / c4 -->
+      <concat2><xsl:value-of select="concat(@type, @n)"/></concat2>
+      <!-- concat(@n, x): expect 12 / 2-3 / 35 / 4 -->
+      <concat3><xsl:value-of select="concat(@n, x)"/></concat3>
+      <!-- round(x div 2): expect 1 / -1 / 3 / NaN -->
+      <round><xsl:value-of select="round(x div 2)"/></round>
+      <!-- substring('abcdef', 1.5, 2.6): expect bcd / bcd / bcd / bcd -->
+      <substr><xsl:value-of select="substring('abcdef', 1.5, 2.6)"/></substr>
+      <!-- substring('12345', 0, 3): expect 12 / 12 / 12 / 12 -->
+      <substr0><xsl:value-of select="substring('12345', 0, 3)"/></substr0>
+      <!-- substring('12345', 0 div 0, 3): expect  /  /  /  -->
+      <substrnan><xsl:value-of select="substring('12345', 0 div 0, 3)"/></substrnan>
+      <!-- string-length(goo): expect 2 / 0 / 2 / 2 -->
+      <len><xsl:value-of select="string-length(goo)"/></len>
+      <!-- number(goo): expect NaN / NaN / NaN / NaN -->
+      <number><xsl:value-of select="number(goo)"/></number>
+      <!-- x + 1: expect 3 / -2 / 6 / NaN -->
+      <missing><xsl:value-of select="x + 1"/></missing>
+      <!-- floor(x div 2): expect 1 / -2 / 2 / NaN -->
+      <floor><xsl:value-of select="floor(x div 2)"/></floor>
+      <!-- sum(x): expect 2 / -3 / 5 / 0 -->
+      <sum><xsl:value-of select="sum(x)"/></sum>
+      <!-- translate(goo, 'g', 'G'): expect G1 /  / b3 / G4 -->
+      <translate><xsl:value-of select="translate(goo, 'g', 'G')"/></translate>
+      <!-- substring(goo, 2): expect 1 /  / 3 / 4 -->
+      <substr2><xsl:value-of select="substring(goo, 2)"/></substr2>
+      <!-- string(boolean(goo)): expect true / false / true / true -->
+      <boolean><xsl:value-of select="string(boolean(goo))"/></boolean>
+      <!-- string(not(goo)): expect false / true / false / false -->
+      <strnot><xsl:value-of select="string(not(goo))"/></strnot>
+    </r>
+  </xsl:template>
+
+</xsl:stylesheet>
