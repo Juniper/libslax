@@ -1,0 +1,36 @@
+compiled 1 pattern
+<top>
+   <r n="1">
+      <goo/>
+      <goo-g1/>
+      <neg/>
+      <plus/>
+      <a-and-x/>
+      <contains/>
+      <starts/>
+      <sum/>
+      <len/>
+   </r>
+   <r n="2">
+      <not-a/>
+      <len/>
+   </r>
+   <r n="3">
+      <goo/>
+      <goo-bar/>
+      <neg/>
+      <odd/>
+      <a-and-x/>
+      <contains/>
+      <num/>
+      <sum/>
+      <len/>
+   </r>
+   <r n="4">
+      <goo/>
+      <starts/>
+      <not-a/>
+      <num/>
+      <len/>
+   </r>
+</top>
