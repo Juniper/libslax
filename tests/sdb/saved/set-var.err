@@ -10,14 +10,12 @@ set-var.slax: 6:     var $a := {
 
 
 (sdb) set $top = "test"
-$top =
-[string] "test"
+$top = [string] "test"
 (sdb) p $top
 [string] "test"
 
 (sdb) set $top = <one> 1;
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <one>1</one>
 
 (sdb) p $top
@@ -26,8 +24,7 @@ $top =
 
 
 (sdb) set $top = { <two> 2; <three> "333"; }
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <two>2</two>
 <three>333</three>
 
@@ -38,8 +35,7 @@ $top =
 
 
 (sdb) append $top += <four> "forty"
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <two>2</two>
 <three>333</three>
 <four>forty</four>
@@ -52,8 +48,7 @@ $top =
 
 
 (sdb) append $top += <five>
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <two>2</two>
 <three>333</three>
 <four>forty</four>
@@ -68,8 +63,7 @@ $top =
 
 
 (sdb) set $top = <six>
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <six/>
 
 (sdb) p $top
@@ -78,5 +72,5 @@ $top =
 
 
 (sdb) c
-Script exited normally.
+Script exited normally
 (sdb) quit
