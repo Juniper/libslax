@@ -1,0 +1,20 @@
+version 1.0;
+
+match / {
+    call outer();
+}
+
+template outer () {
+    var $olabel = "outer";
+    call middle();
+}
+
+template middle () {
+    var $mlabel = "middle";
+    call inner();
+}
+
+template inner () {
+    var $ilabel = "inner";
+    <result> $ilabel;
+}
