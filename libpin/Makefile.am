@@ -19,11 +19,15 @@ AM_CFLAGS = \
     -I${top_builddir}/parrotdb \
     -I${top_builddir}/libpin \
     -I${top_srcdir} \
-    -I${top_builddir}/libxo \
-    -I${top_builddir}/libxo/libxo \
-    -I${top_builddir}/libxo/filter \
-    -I${top_builddir}/libxo/build/filter \
+    ${LIBXO_CFLAGS} \
+    ${LIBXO_SRC_CFLAGS} \
     ${WARNINGS}
+
+# XXX TEMPORARY: ${LIBXO_SRC_CFLAGS} (from --with-libxo-src) is only
+# for libxo's private headers, which aren't installed: xo_buf.h (and
+# the xo_private.h it includes), xo_xparse.h and xo_xpath.tab.h.
+# It comes after ${LIBXO_CFLAGS}, so the installed headers win.
+# See the notes for --with-libxo-src in configure.ac.
 
 lib_LTLIBRARIES = libpin.la
 
@@ -60,7 +64,7 @@ libpin_la_SOURCES = \
 libpin_la_LIBADD = \
     $(top_builddir)/libpsu/libpsu.la \
     $(top_builddir)/parrotdb/libparrotdb.la \
-    $(libdir)/libxo.la
+    ${LIBXO_LIBS}
 
 XXXX=\
     pinwhiffle.c
