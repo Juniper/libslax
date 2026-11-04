@@ -1,0 +1,39 @@
+Type 'help' for help
+(sdb) break 18
+Breakpoint 1 at file ../../../tests/sdb/updown-basic.slax, line 18
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/updown-basic.slax:18
+updown-basic.slax: 18:     var $ilabel = "inner";
+(sdb) locals
+no local variables
+(sdb) up
+#2 template middle() at updown-basic.slax:9
+(sdb) locals
+Local variables:
+var $mlabel = [string] "middle"
+(sdb) up
+#1 template outer() at updown-basic.slax:4
+(sdb) locals
+Local variables:
+var $olabel = [string] "outer"
+(sdb) up
+#0 match / at updown-basic.slax:3
+(sdb) down
+#1 template outer() at updown-basic.slax:4
+(sdb) locals
+Local variables:
+var $olabel = [string] "outer"
+(sdb) down
+#2 template middle() at updown-basic.slax:9
+(sdb) locals
+Local variables:
+var $mlabel = [string] "middle"
+(sdb) down
+#3 template inner() at updown-basic.slax:14
+(sdb) where
+#0 match / at updown-basic.slax:3
+#1 template outer() at updown-basic.slax:4
+#2 template middle() at updown-basic.slax:9
+#3 template inner() at updown-basic.slax:14
+(sdb) quit
+The script is running.  Exit anyway? (y or n) (sdb) 
