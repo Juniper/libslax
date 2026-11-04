@@ -12,5 +12,5 @@ XPath error : Undefined variable: nonexistent_var
 runtime error: file ../../../tests/sdb/condition-fail.slax line 10 element level
 Variable 'nonexistent_var' has not been declared.
 XPath error : Undefined variable: nonexistent_var
-Script exited normally.
+Script exited normally
 (sdb) quit
