@@ -6,5 +6,5 @@ Reached breakpoint 1, at ../../../tests/sdb/cond-opcount.slax:10
   Condition: '$i == 4999'
 cond-opcount.slax: 10:         set $total = $total + $i;
 (sdb) continue
-Script exited normally.
+Script exited normally
 (sdb) quit
