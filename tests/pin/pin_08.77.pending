@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.71.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Pending: wrong on libslax-work, so this file is named .pending
+    and kept out of the run until the port step named below fixes it
+    (rename it to .in then).
+    Expected fix: P6/P7 (decisions that need the whole child list);
+    not() of a node-set is inverted today.
+
+    xsl:if tests that are wrong today.
+
+    Data (pin_08.71.xml): four foo elements:
+      foo n=1 type=a: goo "g1", x 2
+      foo n=2 type=b: no goo, x -3
+      foo n=3 type=a: goo containing bar "b3", x 5
+      foo n=4 type=c: goo "g4", no x
+    Expected answers below are from the XPath 1.0 spec.
+  -->
+
+  <xsl:template match="foo">
+    <r n="{@n}">
+      <!-- not(goo): expect n=2 -->
+      <xsl:if test="not(goo)"><not-goo/></xsl:if>
+      <!-- not(goo/bar): expect n=1, 2, 4 -->
+      <xsl:if test="not(goo/bar)"><not-bar/></xsl:if>
+      <!-- string-length(goo) = 2: expect n=1, 3, 4 -->
+      <xsl:if test="string-length(goo) = 2"><len/></xsl:if>
+      <!-- @type = 'a' and goo/bar: expect n=3 -->
+      <xsl:if test="@type = 'a' and goo/bar"><a-and-bar/></xsl:if>
+      <!-- not(x > 0): expect n=2, 4 -->
+      <xsl:if test="not(x &gt; 0)"><not-pos/></xsl:if>
+      <!-- boolean(goo/bar): expect n=3 -->
+      <xsl:if test="boolean(goo/bar)"><bool-bar/></xsl:if>
+    </r>
+  </xsl:template>
+
+</xsl:stylesheet>
