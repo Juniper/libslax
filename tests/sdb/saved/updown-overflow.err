@@ -1,0 +1,21 @@
+Type 'help' for help
+(sdb) break 5
+Breakpoint 1 at file ../../../tests/sdb/updown-overflow.slax, line 5
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/updown-overflow.slax:5
+updown-overflow.slax: 5:     <result> $label;
+(sdb) down
+Current frame depth is #0 of 0; cannot 'down' more than 0
+(sdb) up
+Current frame depth is #0 of 0; cannot 'up' more than 0
+(sdb) up
+Current frame depth is #0 of 0; cannot 'up' more than 0
+(sdb) down
+Current frame depth is #0 of 0; cannot 'down' more than 0
+(sdb) locals
+Local variables:
+var $label = [string] "root"
+(sdb) where
+#0 match / at updown-overflow.slax:3
+(sdb) quit
+The script is running.  Exit anyway? (y or n) (sdb) 
