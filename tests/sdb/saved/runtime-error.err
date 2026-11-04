@@ -8,7 +8,7 @@ runtime-error.slax: 11:     var $b = substring($a, 1, 2, 3);
 ../../../tests/sdb/runtime-error.slax:11: element variable: XPath error : Invalid number of arguments
 runtime error: file ../../../tests/sdb/runtime-error.slax line 11 element variable
 Failed to evaluate the expression of variable 'b'.
-Entering the debugger; the script will exit once you continue, since it cannot recover from this error.
+Entering the debugger; the script has failed and cannot continue from this error
 runtime-error.slax: 11:     var $b = substring($a, 1, 2, 3);
 (sdb) p $a
 [node-set] (1) rtf-doc
