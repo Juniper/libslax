@@ -21,7 +21,8 @@ AM_CFLAGS = \
     -I${top_builddir} \
     -I${top_builddir}/parrotdb \
     -I${top_builddir}/libpin \
-    -I${top_builddir}/libxo \
+    ${LIBXO_CFLAGS} \
+    ${LIBXO_SRC_CFLAGS} \
     ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
@@ -56,31 +57,27 @@ pin_04_test_LDADD = \
 pin_05_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/libpin/libpin.la \
-    ${libdir}/libxo/libxo_filter.la \
-    ${libdir}/libxo.la
+    ${LIBXO_LIBS}
 
 # pin06 also calls xmlReadFile directly, so it needs libxml2
 pin_06_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/libpin/libpin.la \
-    ${libdir}/libxo/libxo_filter.la \
-    ${libdir}/libxo.la \
+    ${LIBXO_LIBS} \
     ${LIBXML_LIBS}
 
 # pin07 likewise calls xmlReadFile directly
 pin_07_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/libpin/libpin.la \
-    ${libdir}/libxo/libxo_filter.la \
-    ${libdir}/libxo.la \
+    ${LIBXO_LIBS} \
     ${LIBXML_LIBS}
 
 # pin08 likewise calls xmlReadFile directly
 pin_08_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/libpin/libpin.la \
-    ${libdir}/libxo/libxo_filter.la \
-    ${libdir}/libxo.la \
+    ${LIBXO_LIBS} \
     ${LIBXML_LIBS}
 
 # pin09 calls slaxEnable(), the one real one-time application-startup
@@ -91,8 +88,7 @@ pin_09_test_LDADD = \
     ${top_builddir}/libpsu/libpsu.la \
     ${top_builddir}/libpin/libpin.la \
     ${top_builddir}/libslax/libslax.la \
-    ${libdir}/libxo/libxo_filter.la \
-    ${libdir}/libxo.la \
+    ${LIBXO_LIBS} \
     ${LIBXML_LIBS} \
     ${LIBXSLT_LIBS} -lexslt
 
@@ -259,6 +255,17 @@ EXTRA_DIST = \
     pin_08.67.xml \
     pin_08.68.in \
     pin_08.68.xml \
+    pin_08.71.in \
+    pin_08.71.xml \
+    pin_08.72.in \
+    pin_08.73.in \
+    pin_08.73.xml \
+    pin_08.74.pending \
+    pin_08.74.xml \
+    pin_08.75.pending \
+    pin_08.76.pending \
+    pin_08.77.pending \
+    pin_08.78.pending \
     pin_09.01.in \
     pin_09.01.xml \
     pin_09.02.in \
