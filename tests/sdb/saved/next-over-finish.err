@@ -9,7 +9,7 @@ next-over-finish.slax: 11:     call second($n = $n + 1);
 (sdb) delete 1
 Deleted breakpoint '1'
 (sdb) over
-Script exited normally.
+Script exited normally
 (sdb) finish
-The script is not being run.
+The script is not being run
 (sdb) quit
