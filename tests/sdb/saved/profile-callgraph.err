@@ -2,7 +2,7 @@ Type 'help' for help
 (sdb) profile callgraph out/profile-callgraph.prof
 Enabling callgraph profiling, output to out/profile-callgraph.prof
 (sdb) run
-Script exited normally.
+Script exited normally
 (sdb) profile report callgraph
 Wrote 28 lines of data to file 'out/profile-callgraph.prof'
 (sdb) quit
