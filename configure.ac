@@ -450,6 +450,108 @@ fi
 # ---- end of noise
 #
 
+AC_ARG_WITH(libxo,
+        [  --with-libxo=[PFX]           Specify location of libxo],
+        LIBXO_PREFIX=$withval
+)
+
+AC_ARG_WITH(libxo-prefix,
+        [  --with-libxo-prefix=[PFX]     Specify location of libxo],
+        LIBXO_PREFIX=$withval
+)
+
+AC_MSG_CHECKING(for libxo)
+if test "x$LIBXO_PREFIX" != "x"
+then
+        LIBXO_CONFIG=${LIBXO_PREFIX}/bin/libxo-config
+else
+        LIBXO_CONFIG=libxo-config
+fi
+
+dnl
+dnl make sure libxo-config is executable,
+dnl check for filter support and init our variables
+dnl
+
+if ${LIBXO_CONFIG} --libs > /dev/null 2>&1
+then
+        XOVERS=`$LIBXO_CONFIG --version`
+        if test "`$LIBXO_CONFIG --filters`" != "yes"
+        then
+                AC_MSG_ERROR(libxo $XOVERS found, but it was built without --enable-filters, which libslax needs)
+        fi
+
+        # Our sources include "xo_filter.h", which lives in
+        # ${includedir}/libxo, so add that to libxo's own cflags
+        LIBXO_CFLAGS="`$LIBXO_CONFIG --cflags` -I`$LIBXO_CONFIG --includedir`/libxo"
+
+        # libxo_filter lives in the filter directory, not the libdir
+        LIBXO_LIBS="-L`$LIBXO_CONFIG --filterdir` -lxo_filter `$LIBXO_CONFIG --libs`"
+        AC_MSG_RESULT($XOVERS found)
+else
+        AC_MSG_ERROR([Could not find libxo-config; use --with-libxo=PFX to give libxo's install prefix])
+fi
+
+AC_SUBST(LIBXO_CONFIG)
+AC_SUBST(LIBXO_CFLAGS)
+AC_SUBST(LIBXO_LIBS)
+
+dnl
+dnl XXX TEMPORARY HACK -- FIX THIS LATER XXX
+dnl
+dnl --with-libxo-src=DIR points at a libxo source tree, which must
+dnl have been built in DIR/build.  We need it because libpin uses
+dnl libxo headers that libxo does not install:
+dnl
+dnl   xo_buf.h        DIR/libxo        (pin_body.h, pin_compile.c)
+dnl   xo_private.h    DIR/libxo        (included by xo_buf.h and xo_xparse.h)
+dnl   xo_xparse.h     DIR/filter       (pin_compile.c)
+dnl   xo_xpath.tab.h  DIR/build/filter (pin_compile.c; bison output)
+dnl
+dnl This is fragile: these headers must match the installed libxo
+dnl given by --with-libxo exactly.  xo_xpath.tab.h's token numbers
+dnl and the xo_xparse_data_t/xo_xparse_node_t layouts (used via
+dnl static inlines) are compiled into libpin, so a mismatch builds
+dnl cleanly but misbehaves at run time.
+dnl
+dnl The real fix, after which this option and LIBXO_SRC_CFLAGS go away:
+dnl   - xo_buf.h: move the xo_realloc/xo_free externs out of
+dnl     xo_private.h into an installed header, then install xo_buf.h
+dnl   - xo_xparse.h/xo_xpath.tab.h: give libxo a public call that
+dnl     compiles an expression into an xo_eval_prog_t (the walk in
+dnl     pin_compile.c that xo_filter.c already does internally)
+dnl
+AC_ARG_WITH(libxo-src,
+        [  --with-libxo-src=[DIR]        TEMPORARY: libxo source tree (built in DIR/build) for private headers],
+        [LIBXO_SRCDIR=$withval],
+        [LIBXO_SRCDIR=]
+)
+
+AC_MSG_CHECKING(for libxo private headers)
+if test "x$LIBXO_SRCDIR" = "x"
+then
+        AC_MSG_ERROR([libpin needs libxo's private headers; use --with-libxo-src=DIR to give a built libxo source tree (temporary)])
+fi
+for file in libxo/xo_buf.h libxo/xo_private.h filter/xo_xparse.h \
+            build/filter/xo_xpath.tab.h
+do
+        if test ! -f "${LIBXO_SRCDIR}/${file}"
+        then
+                AC_MSG_ERROR([${LIBXO_SRCDIR}/${file} not found; --with-libxo-src must name a libxo source tree that has been built in DIR/build])
+        fi
+done
+AC_MSG_RESULT(${LIBXO_SRCDIR})
+
+# -I${LIBXO_SRCDIR} is for <libxo/xo_buf.h> (pin_body.h); the others
+# are for the quoted includes in pin_compile.c.  These must come
+# after ${LIBXO_CFLAGS} in each Makefile.am, so the installed public
+# headers (xo.h, xo_filter.h, etc) win over the source tree's copies.
+LIBXO_SRC_CFLAGS="-I${LIBXO_SRCDIR} -I${LIBXO_SRCDIR}/libxo -I${LIBXO_SRCDIR}/filter -I${LIBXO_SRCDIR}/build/filter"
+
+AC_SUBST(LIBXO_SRCDIR)
+AC_SUBST(LIBXO_SRC_CFLAGS)
+dnl XXX END TEMPORARY HACK XXX
+
 # Cygwin lacks the modern st_mtimespec field in struct stat
 AC_MSG_CHECKING([for stat.st_mtimespec])
 AC_COMPILE_IFELSE(
@@ -709,6 +811,10 @@ AC_MSG_NOTICE([summary of build options:
   libcurl version:  ${CURLVERS}
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
+  libxo version:    ${XOVERS}
+  libxo cflags:     ${LIBXO_CFLAGS}
+  libxo libs:       ${LIBXO_LIBS}
+  libxo srcdir:     ${LIBXO_SRCDIR} (TEMPORARY)
   bison version:    ${BISON_VERSION}
   sqlite3 version:  ${SQLITE3_VERSION}
 
