@@ -8,6 +8,7 @@ List of commands:
   condition <num> [expr]  Set, change, or clear a breakpoint's condition
   continue [loc]  Continue running the script
   delete [num]    Delete all (or one) breakpoints
+  down [n]        Move the selected frame toward the innermost frame
   dump            Dump internal information about libxml2 objects
   finish          Finish the current template
   help            Show this help message
@@ -23,6 +24,7 @@ List of commands:
   set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
   tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
+  up [n]          Move the selected frame toward the outermost frame
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
@@ -37,6 +39,7 @@ List of commands:
   condition <num> [expr]  Set, change, or clear a breakpoint's condition
   continue [loc]  Continue running the script
   delete [num]    Delete all (or one) breakpoints
+  down [n]        Move the selected frame toward the innermost frame
   dump            Dump internal information about libxml2 objects
   finish          Finish the current template
   help            Show this help message
@@ -52,6 +55,7 @@ List of commands:
   set $var = value  Set a variable to a new value
   step            Execute the next instruction, stepping into calls
   tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
+  up [n]          Move the selected frame toward the outermost frame
   verbose         Turn on verbose (-v) output logging
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
