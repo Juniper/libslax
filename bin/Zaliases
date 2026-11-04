@@ -12,11 +12,14 @@ set opts=' \
 --with-libxslt-tests=$HOME/work/xmlsoft/libxslt-1.1.24/tests/ \
 --with-libxml-prefix=$HOME/work/root/slax \
 --with-libxslt-prefix=$HOME/work/root/slax \
---prefix $HOME/work/root/slax \
+--with-libxo=$XO_ROOT_DIR \
+--prefix $ROOT_DIR \
 '
 set opts=`echo $opts`
 
 setenv CONFIGURE_OPTS "$opts"
+setenv ROOT_DIR $HOME/work/root/slax
+setenv XO_ROOT_DIR $HOME/work/root/xo
 
 set vers=`make --version`
 switch ( "$vers" )
