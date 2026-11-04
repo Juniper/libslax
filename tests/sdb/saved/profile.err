@@ -2,7 +2,7 @@ Type 'help' for help
 (sdb) profile on
 Enabling profiler
 (sdb) run
-Script exited normally.
+Script exited normally
 (sdb) profile report
  Line     Hits  %      User  %     U/Hit   System    S/Hit Source
     1        -            -            -        -        - version 1.0;
