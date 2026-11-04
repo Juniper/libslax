@@ -1,0 +1,60 @@
+compiled 1 pattern
+<top>
+   <r n="1">
+      <plus>3</plus>
+      <minus>1</minus>
+      <times>4</times>
+      <div>1</div>
+      <mod>0</mod>
+      <floor>1</floor>
+      <ceiling>1</ceiling>
+      <len>1</len>
+      <concat>[a]</concat>
+      <number>2</number>
+      <translate>A</translate>
+      <substr2>ab</substr2>
+      <substr>bcd</substr>
+      <contains>true</contains>
+   </r>
+   <r n="2">
+      <plus>-2</plus>
+      <minus>-4</minus>
+      <times>-6</times>
+      <div>-1.5</div>
+      <mod>-1</mod>
+      <floor>-2</floor>
+      <ceiling>-1</ceiling>
+      <len>1</len>
+      <concat>[b]</concat>
+      <number>3</number>
+      <translate>B</translate>
+      <substr2>bc</substr2>
+      <substr>bcd</substr>
+      <contains>false</contains>
+   </r>
+   <r n="3">
+      <plus>6</plus>
+      <minus>4</minus>
+      <times>10</times>
+      <div>2.5</div>
+      <mod>1</mod>
+      <floor>2</floor>
+      <ceiling>3</ceiling>
+      <len>1</len>
+      <concat>[a]</concat>
+      <number>4</number>
+      <translate>A</translate>
+      <substr2>cd</substr2>
+      <substr>bcd</substr>
+      <contains>true</contains>
+   </r>
+   <r n="4">
+      <len>1</len>
+      <concat>[c]</concat>
+      <number>5</number>
+      <translate>c</translate>
+      <substr2>de</substr2>
+      <substr>bcd</substr>
+      <contains>false</contains>
+   </r>
+</top>
