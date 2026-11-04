@@ -1,0 +1,84 @@
+Type 'help' for help
+(sdb) break 18
+Breakpoint 1 at file ../../../tests/sdb/deep.slax, line 18
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) c
+Reached breakpoint 1, at ../../../tests/sdb/deep.slax:18
+deep.slax: 18:     <two> $mine;
+(sdb) up 7
+#7 template one() at deep.slax:23
+(sdb) locals
+Local variables:
+param $this = [uninitialized]
+param $depth = [uninitialized]
+(sdb) up
+#6 template three() at deep.slax:19
+(sdb) locals
+Local variables:
+param $depth = [number] 2.000000
+param $ours = [string] "yours and mine"
+(sdb) set $ours = "working"
+$ours = [string] "working"
+(sdb) locals
+Local variables:
+param $depth = [number] 2.000000
+param $ours = [string] "working"
+(sdb) up
+#5 template two() at deep.slax:11
+(sdb) locals
+Local variables:
+var $yours = [string] "mine"
+param $depth = [number] 2.000000
+param $mine = [string] "yours"
+(sdb) set $mine = "sure"
+$mine = [string] "sure"
+(sdb) locals
+Local variables:
+var $yours = [string] "mine"
+param $depth = [number] 2.000000
+param $mine = [string] "sure"
+(sdb) where
+#0 match / at deep.slax:3
+#1 template one() at deep.slax:5
+#2 template two() at deep.slax:11
+    $depth = [number] 1.000000
+#3 template three() at deep.slax:19
+    $ours = [string] "yours and mine"
+    $depth = [number] 1.000000
+#4 template one() at deep.slax:23
+#5 template two() at deep.slax:11
+    $depth = [number] 2.000000
+#6 template three() at deep.slax:19
+    $ours = [string] "working"
+    $depth = [number] 2.000000
+#7 template one() at deep.slax:23
+#8 template two() at deep.slax:11
+    $depth = [number] 3.000000
+#9 template three() at deep.slax:19
+    $ours = [string] "yours and mine"
+    $depth = [number] 3.000000
+#10 template one() at deep.slax:23
+#11 template two() at deep.slax:11
+    $depth = [number] 4.000000
+#12 template three() at deep.slax:19
+    $ours = [string] "yours and mine"
+    $depth = [number] 4.000000
+#13 template one() at deep.slax:23
+#14 template two() at deep.slax:12
+    $depth = [number] 5.000000
+(sdb) quit
+The script is running.  Exit anyway? (y or n) (sdb) 
