@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.74.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Pending: wrong on libslax-work, so this file is named .pending
+    and kept out of the run until the port step named below fixes it
+    (rename it to .in then).
+    Expected fix: P6 (foo[goo]) for the child predicates; P5 for
+    unary minus.
+
+    Predicates in match= patterns that look at children, plus
+    last(), a positional predicate after a filter, and nested
+    predicates.  Matched foo elements become m; the rest go to the
+    plain "foo" template and become no.
+
+    Data (pin_08.71.xml): the same four foo elements under each
+    of p1, p2, ...; each pattern is anchored to its own parent so
+    the patterns never compete for the same foo:
+      foo n=1 type=a: goo "g1", x 2
+      foo n=2 type=b: no goo, x -3
+      foo n=3 type=a: goo containing bar "b3", x 5
+      foo n=4 type=c: goo "g4", no x
+    Expected answers below are from the XPath 1.0 spec.
+  -->
+
+  <!-- foo[goo]: expect n=1, 3, 4 -->
+  <xsl:template match="p1/foo[goo]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[goo/bar]: expect n=3 -->
+  <xsl:template match="p2/foo[goo/bar]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[goo = 'g1']: expect n=1 -->
+  <xsl:template match="p3/foo[goo = 'g1']"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[x > 0]: expect n=1, 3 -->
+  <xsl:template match="p4/foo[x &gt; 0]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[-x < 0]: expect n=1, 3 -->
+  <xsl:template match="p5/foo[-x &lt; 0]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[x + 1 = 3]: expect n=1 -->
+  <xsl:template match="p6/foo[x + 1 = 3]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[x mod 2 = 1]: expect n=3 -->
+  <xsl:template match="p7/foo[x mod 2 = 1]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[last()]: expect n=4 -->
+  <xsl:template match="p8/foo[last()]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[goo][2]: expect n=3 -->
+  <xsl:template match="p9/foo[goo][2]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[goo[bar]]: expect n=3 -->
+  <xsl:template match="p10/foo[goo[bar]]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@type = 'a' and x]: expect n=1, 3 -->
+  <xsl:template match="p11/foo[@type = 'a' and x]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@type = 'a' and goo/bar]: expect n=3 -->
+  <xsl:template match="p12/foo[@type = 'a' and goo/bar]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[not(x)]: expect n=4 -->
+  <xsl:template match="p13/foo[not(x)]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo elements no pattern above matches -->
+  <xsl:template match="foo"><no n="{@n}"/></xsl:template>
+
+</xsl:stylesheet>
