@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<top>
+  <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+  <foo n="2" type="b"><x>-3</x></foo>
+  <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+  <foo n="4" type="c"><goo>g4</goo></foo>
+</top>
