@@ -81,14 +81,18 @@ transformcontext_tag=TransformContext ; transformcontext_ptr=xsltTransformContex
 # in libbxslt/libxslt/xsltaccessors-custom.h, redirecting straight to
 # that global. Don't add a debugStatus row here; there's no field to
 # generate an accessor for.
+# varsNr/varsBase get setters (below) so the debugger can temporarily
+# narrow the live context's variable scope to an outer stack frame's
+# range while evaluating an expression in that frame (see "up"/"down"
+# and "print" in slaxdebugger.c), then restore it afterward.
 transformcontext_fields='
 style:xsltStylesheetPtr::none
 inst:xmlNodePtr::none
 templ:xsltTemplatePtr::none
 templNr:int::none
 vars:xsltStackElemPtr::none
-varsNr:int::none
-varsBase:int::none
+varsNr:int
+varsBase:int
 insert:xmlNodePtr
 output:xmlDocPtr::none
 xpathCtxt:xmlXPathContextPtr::none
