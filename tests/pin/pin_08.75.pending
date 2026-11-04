@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.71.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Pending: wrong on libslax-work, so this file is named .pending
+    and kept out of the run until the port step named below fixes it
+    (rename it to .in then).
+    Expected fix: P6, and probably libpin work beyond it.
+
+    Predicates in select= (xsl:for-each and xsl:apply-templates).
+    Each s element lists the n of the foo elements selected.
+
+    Data (pin_08.71.xml): four foo elements:
+      foo n=1 type=a: goo "g1", x 2
+      foo n=2 type=b: no goo, x -3
+      foo n=3 type=a: goo containing bar "b3", x 5
+      foo n=4 type=c: goo "g4", no x
+    Expected answers below are from the XPath 1.0 spec.
+  -->
+
+  <xsl:template match="top">
+    <r>
+      <!-- for-each select="foo[@type = 'a']": expect n=1, 3 -->
+      <fe-attr><xsl:for-each select="foo[@type = 'a']"><m n="{@n}"/></xsl:for-each></fe-attr>
+      <!-- for-each select="foo[2]": expect n=2 -->
+      <fe-pos><xsl:for-each select="foo[2]"><m n="{@n}"/></xsl:for-each></fe-pos>
+      <!-- for-each select="foo[last()]": expect n=4 -->
+      <fe-last><xsl:for-each select="foo[last()]"><m n="{@n}"/></xsl:for-each></fe-last>
+      <!-- for-each select="foo[goo]": expect n=1, 3, 4 -->
+      <fe-goo><xsl:for-each select="foo[goo]"><m n="{@n}"/></xsl:for-each></fe-goo>
+      <!-- for-each select="foo[goo[bar]]": expect n=3 -->
+      <fe-nested><xsl:for-each select="foo[goo[bar]]"><m n="{@n}"/></xsl:for-each></fe-nested>
+      <!-- for-each select="foo[@type = 'a' and x > 3]": expect n=3 -->
+      <fe-both><xsl:for-each select="foo[@type = 'a' and x &gt; 3]"><m n="{@n}"/></xsl:for-each></fe-both>
+      <!-- apply-templates select="foo[x > 0]": expect n=1, 3 -->
+      <at-x><xsl:apply-templates select="foo[x &gt; 0]"/></at-x>
+      <!-- apply-templates select="foo[@type = 'a']": expect n=1, 3 -->
+      <at-attr><xsl:apply-templates select="foo[@type = 'a']"/></at-attr>
+    </r>
+  </xsl:template>
+
+  <xsl:template match="foo"><m n="{@n}"/></xsl:template>
+
+</xsl:stylesheet>
