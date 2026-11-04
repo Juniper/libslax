@@ -1,0 +1,11 @@
+version 1.1;
+
+match / {
+    <top> {
+        mvar $x = 1;
+        var $y = $x;
+        set $x = 2;
+        var $z = $y;
+        <out> $z;
+    }
+}
