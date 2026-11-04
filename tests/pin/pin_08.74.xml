@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<top>
+  <p1>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p1>
+  <p2>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p2>
+  <p3>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p3>
+  <p4>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p4>
+  <p5>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p5>
+  <p6>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p6>
+  <p7>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p7>
+  <p8>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p8>
+  <p9>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p9>
+  <p10>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p10>
+  <p11>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p11>
+  <p12>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p12>
+  <p13>
+    <foo n="1" type="a"><goo>g1</goo><x>2</x></foo>
+    <foo n="2" type="b"><x>-3</x></foo>
+    <foo n="3" type="a"><goo><bar>b3</bar></goo><x>5</x></foo>
+    <foo n="4" type="c"><goo>g4</goo></foo>
+  </p13>
+</top>
