@@ -1,0 +1,18 @@
+@@ -228,6 +228,17 @@
+     pin_08.52.in \
+     pin_08.53.in \
+     pin_08.53.xml \
++    pin_08.71.in \
++    pin_08.71.xml \
++    pin_08.72.in \
++    pin_08.73.in \
++    pin_08.73.xml \
++    pin_08.74.pending \
++    pin_08.74.xml \
++    pin_08.75.pending \
++    pin_08.76.pending \
++    pin_08.77.pending \
++    pin_08.78.pending \
+     pin_09.01.in \
+     pin_09.01.xml \
+     pin_09.02.in \
