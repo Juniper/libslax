@@ -5,8 +5,7 @@ Breakpoint 1 at file ../../../tests/sdb/set-var-ns.slax, line 8
 Reached breakpoint 1, at ../../../tests/sdb/set-var-ns.slax:8
 set-var-ns.slax: 8:     <top> {
 (sdb) set $top = <my:tag> "hello"
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <my:tag xmlns:my="http://example.com/my">hello</my:tag>
 
 (sdb) p $top
@@ -15,8 +14,7 @@ $top =
 
 
 (sdb) append $top += <my:other> "world"
-$top =
-[node-set] (1) rtf-doc
+$top = [node-set] (1) rtf-doc
 <my:tag xmlns:my="http://example.com/my">hello</my:tag>
 <my:other xmlns:my="http://example.com/my">world</my:other>
 
@@ -27,5 +25,5 @@ $top =
 
 
 (sdb) c
-Script exited normally.
+Script exited normally
 (sdb) quit
