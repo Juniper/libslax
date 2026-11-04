@@ -11,5 +11,5 @@ over-noncall.slax: 6:     var $c = $a + $b;
 (sdb) info output
 [context output document]
 (sdb) continue
-Script exited normally.
+Script exited normally
 (sdb) quit
