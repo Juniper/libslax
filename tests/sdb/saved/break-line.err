@@ -13,5 +13,5 @@ List of breakpoints:
 (sdb) delete 1
 Deleted breakpoint '1'
 (sdb) continue
-Script exited normally.
+Script exited normally
 (sdb) quit
