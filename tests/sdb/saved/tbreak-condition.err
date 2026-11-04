@@ -7,9 +7,9 @@ Reached breakpoint 1, at ../../../tests/sdb/tbreak-condition.slax:10
 Deleted temporary breakpoint 1
 tbreak-condition.slax: 10:     <level> $n;
 (sdb) continue
-Script exited normally.
+Script exited normally
 (sdb) info breakpoints
-No breakpoints.
+No breakpoints
 (sdb) continue
-The script is not being run.
+The script is not being run
 (sdb) quit
