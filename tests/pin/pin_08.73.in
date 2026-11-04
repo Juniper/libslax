@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.73.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    Predicates in match= patterns: the forms that work today, which
+    are positional and attribute-only predicates.  Matched foo
+    elements become m; the rest go to the plain "foo" template and
+    become no.
+
+    Data (pin_08.71.xml): the same four foo elements under each
+    of p1, p2, ...; each pattern is anchored to its own parent so
+    the patterns never compete for the same foo:
+      foo n=1 type=a: goo "g1", x 2
+      foo n=2 type=b: no goo, x -3
+      foo n=3 type=a: goo containing bar "b3", x 5
+      foo n=4 type=c: goo "g4", no x
+    Expected answers below are from the XPath 1.0 spec.
+  -->
+
+  <!-- foo[2]: expect n=2 -->
+  <xsl:template match="p1/foo[2]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@type = 'a']: expect n=1, 3 -->
+  <xsl:template match="p2/foo[@type = 'a']"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@n + 1 = 3]: expect n=2 -->
+  <xsl:template match="p3/foo[@n + 1 = 3]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@n mod 2 = 1]: expect n=1, 3 -->
+  <xsl:template match="p4/foo[@n mod 2 = 1]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[-@n < -2]: expect n=3, 4 -->
+  <xsl:template match="p5/foo[-@n &lt; -2]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo[@type = 'a' and @n > 1]: expect n=3 -->
+  <xsl:template match="p6/foo[@type = 'a' and @n &gt; 1]"><m n="{@n}"/></xsl:template>
+
+  <!-- foo elements no pattern above matches -->
+  <xsl:template match="foo"><no n="{@n}"/></xsl:template>
+
+</xsl:stylesheet>
