@@ -25,5 +25,5 @@ cond-if.slax: 16:     <level> $n;
 [number] 4.000000
 
 (sdb) continue
-Script exited normally.
+Script exited normally
 (sdb) quit
