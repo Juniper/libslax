@@ -12,7 +12,7 @@ XPath error : Undefined variable: nonexistent_one
 runtime error: file ../../../tests/sdb/cond-rewarn.slax line 10 element level
 Variable 'nonexistent_one' has not been declared.
 XPath error : Undefined variable: nonexistent_one
-Script exited normally.
+Script exited normally
 (sdb) condition 1 $nonexistent_two > 1
 Breakpoint 1 now conditional on '$nonexistent_two > 1'
 (sdb) run
@@ -26,5 +26,5 @@ XPath error : Undefined variable: nonexistent_two
 runtime error: file ../../../tests/sdb/cond-rewarn.slax line 10 element level
 Variable 'nonexistent_two' has not been declared.
 XPath error : Undefined variable: nonexistent_two
-Script exited normally.
+Script exited normally
 (sdb) quit
