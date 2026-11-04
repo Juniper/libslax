@@ -112,6 +112,8 @@ typedef struct slaxDebugState_s {
     int ds_count;		/* Command count */
     int ds_flags;		/* Global state flags */
     int ds_stackdepth;		/* Current depth of call stack */
+    int ds_frame_selected;	/* "up"/"down" selected frame, as an offset
+				   from the innermost (0 == live/current) */
     xmlNodePtr ds_list_node;	/* Last "list" target */
     int ds_list_line;		/* Last "list" line number */
     char *ds_script_buffer;	/* In-memory copy of the script text */
@@ -1111,7 +1113,7 @@ slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
 {
     int status = xsltGetDebuggerStatus();
     if (status == 0 || status == XSLT_DEBUG_DONE) {
-	slaxOutput("The script is not being run.");
+	slaxOutput("The script is not being run");
 	return TRUE;
     }
 
@@ -1128,7 +1130,7 @@ slaxDebugCheckStart (slaxDebugState_t *statep UNUSED)
 	return FALSE;
 
     } else if (status == XSLT_DEBUG_DONE) {
-	slaxOutput("The script is not being run.");
+	slaxOutput("The script is not being run");
 	return TRUE;
     }
 
@@ -1301,7 +1303,7 @@ slaxDebugCmdHelp (DC_ARGS)
     if (argv[1]) {
 	cmdp = slaxDebugGetCommand(argv[1]);
 	if (cmdp == NULL)
-	    slaxOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
+	    slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[0]);
 	else if (cmdp->dc_helpfunc)
 	    cmdp->dc_helpfunc(statep);
 	else if (cmdp->dc_help)
@@ -1361,35 +1363,183 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
     }
 
     if (hit == 0)
-	slaxOutput("No breakpoints.");
+	slaxOutput("No breakpoints");
 }
 
 /*
- * Dump the variables in a context
+ * Return the template/match name for a stack frame, or NULL if the
+ * frame has no name, such as a pseudo-frame pushed for an
+ * <xsl:call-template> instruction itself rather than for the
+ * template it calls.  This is the same test 'where' uses to decide
+ * which frames to show by default; 'up'/'down' use it too, so that
+ * frame offsets/numbers agree with what 'where' displays.  If
+ * "tagp" is non-NULL, it's filled in with the "()" suffix used for
+ * named (as opposed to matched) templates.
+ */
+static const char *
+slaxDebugFrameName (slaxDebugStackFrame_t *stp, const char **tagp)
+{
+    const char *name = NULL;
+    const char *tag = "";
+
+    if (stp->st_template) {
+	if (xsltTemplateGetMatch(stp->st_template)) {
+	    name = (const char *) xsltTemplateGetMatch(stp->st_template);
+	} else if (xsltTemplateGetName(stp->st_template)) {
+	    name = (const char *) xsltTemplateGetName(stp->st_template);
+	    tag = "()";
+	}
+    }
+
+    if (tagp)
+	*tagp = tag;
+
+    return name;
+}
+
+/*
+ * Return the stack frame "offset" (named) frames out from the
+ * innermost (live) frame.  Offset 0 is the innermost named frame,
+ * which is where execution is actually sitting right now; larger
+ * offsets walk toward the outermost (head) frame.  Unnamed
+ * pseudo-frames (see slaxDebugFrameName) are skipped entirely, so
+ * offsets here line up with the frame numbers 'where' displays.
+ * Returns NULL if the stack doesn't have that many named frames,
+ * including when the stack is empty.
+ */
+static slaxDebugStackFrame_t *
+slaxDebugFrameAt (int offset)
+{
+    slaxDebugStackFrame_t *stp;
+
+    if (offset < 0)
+	return NULL;
+
+    stp = TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s);
+    while (stp != NULL && slaxDebugFrameName(stp, NULL) == NULL)
+	stp = TAILQ_PREV(stp, slaxDebugStack_s, st_link);
+
+    while (stp != NULL && offset-- > 0) {
+	do {
+	    stp = TAILQ_PREV(stp, slaxDebugStack_s, st_link);
+	} while (stp != NULL && slaxDebugFrameName(stp, NULL) == NULL);
+    }
+
+    return stp;
+}
+
+/*
+ * Resolve the local-variable range (ctxt, start, stop) for the
+ * currently selected frame (see "up"/"down").  The live/innermost
+ * frame (ds_frame_selected == 0) uses the live context's own
+ * current vars range, since its stack frame's st_locals_stop isn't
+ * finalized until a deeper frame is pushed; any other, outer frame
+ * uses its own recorded st_locals_start/st_locals_stop.  "templatep",
+ * if non-NULL, is filled in with the selected frame's template, so
+ * callers can report params that are declared but not yet bound
+ * (see slaxDebugUninitializedParams).  Returns FALSE (and prints a
+ * message) if there's no live context to fall back on.
+ */
+static int
+slaxDebugLocalsRange (slaxDebugState_t *statep, xsltTransformContextPtr *ctxtp,
+		      int *startp, int *stopp, xsltTemplatePtr *templatep)
+{
+    slaxDebugStackFrame_t *stp = slaxDebugFrameAt(statep->ds_frame_selected);
+
+    if (statep->ds_frame_selected == 0 || stp == NULL) {
+	xsltTransformContextPtr ctxt = statep->ds_ctxt;
+
+	if (ctxt == NULL) {
+	    slaxOutput("The script is not being run");
+	    return FALSE;
+	}
+
+	*ctxtp = ctxt;
+	*startp = xsltTransformContextGetVarsBase(ctxt);
+	*stopp = xsltTransformContextGetVarsNr(ctxt);
+	if (templatep)
+	    *templatep = statep->ds_template;
+
+    } else {
+	*ctxtp = stp->st_ctxt;
+	*startp = stp->st_locals_start;
+	*stopp = stp->st_locals_stop;
+	if (templatep)
+	    *templatep = stp->st_template;
+    }
+
+    return TRUE;
+}
+
+/*
+ * Report a template's own declared <xsl:param>s as "uninitialized".
+ * libxslt binds an xsl:param's value lazily, on first reference,
+ * rather than when the template is entered; if nothing in the
+ * template's own body (before the point we stopped at) has
+ * referenced a param yet, it has no slot in ctxt->varsTab[] at all,
+ * even though it's plainly declared.  This walks the template's own
+ * source element for direct <xsl:param> children and reports each
+ * by name, so "no local variables" doesn't hide the fact that the
+ * template does have declared parameters -- they just haven't been
+ * bound yet.
+ */
+static int
+slaxDebugUninitializedParams (xsltTemplatePtr template)
+{
+    xmlNodePtr elem, child;
+    int count = 0;
+
+    if (template == NULL)
+	return 0;
+
+    elem = xsltTemplateGetElem(template);
+    if (elem == NULL)
+	return 0;
+
+    for (child = xmlNodeGetChildren(elem); child;
+	 child = xmlNodeGetNext(child)) {
+	if (!slaxNodeIsXsl(child, ELT_PARAM))
+	    continue;
+
+	xmlChar *pname = xmlGetProp(child, (const xmlChar *) ATT_NAME);
+	if (pname) {
+	    if (count++ == 0)
+		slaxOutput("Local variables:");
+	    slaxOutput("param $%s = [uninitialized]", pname);
+	    xmlFree(pname);
+	}
+    }
+
+    return count;
+}
+
+/*
+ * Dump the variables in a context, over the range [start, stop)
+ * of ctxt->varsTab[].  "template", if non-NULL, is the frame's own
+ * template, used to report declared-but-not-yet-bound params (see
+ * slaxDebugUninitializedParams) when the range comes up empty.
  */
 static void
-slaxDebugContextVariables (xsltTransformContextPtr ctxt)
+slaxDebugContextVariables (xsltTransformContextPtr ctxt, int start, int stop,
+			   xsltTemplatePtr template)
 {
     int i;
     const char *type, *name;
     char buf[BUFSIZ];
-    int varsNr, varsBase;
 
     if (ctxt == NULL) {
-	slaxOutput("The script is not being run.");
+	slaxOutput("The script is not being run");
 	return;
     }
 
-    varsNr = xsltTransformContextGetVarsNr(ctxt);
-    varsBase = xsltTransformContextGetVarsBase(ctxt);
-
-    if (varsNr <= varsBase) {
-	slaxOutput("no local variables");
+    if (stop <= start) {
+	if (slaxDebugUninitializedParams(template) == 0)
+	    slaxOutput("no local variables");
 	return;
     }
 
     slaxOutput("Local variables:");
-    for (i = varsNr; i > varsBase; i--) {
+    for (i = stop; i > start; i--) {
         xsltStackElemPtr cur = xsltTransformContextGetVarsEntry(ctxt, i - 1);
 	xmlXPathObjectPtr value;
 	xsltStylePreCompPtr comp;
@@ -1422,7 +1572,15 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
 	if (comp == NULL) {
 	    type = "invalid";
 
-	} else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM) {
+	} else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_PARAM
+		   || xsltStylePreCompGetType(comp) == XSLT_FUNC_WITHPARAM) {
+	    /*
+	     * A param whose value comes from the caller's
+	     * <xsl:with-param> (rather than from this template's own
+	     * default) is pushed with the with-param's own precomp,
+	     * not the <xsl:param>'s -- but it's still a parameter of
+	     * this template, so it gets the same "param" label.
+	     */
 	    type = "param";
 
 	} else if (xsltStylePreCompGetType(comp) == XSLT_FUNC_VARIABLE) {
@@ -1444,14 +1602,21 @@ slaxDebugContextVariables (xsltTransformContextPtr ctxt)
 static void
 slaxDebugCmdLocals (DC_ARGS)
 {
-    slaxDebugContextVariables(statep->ds_ctxt);
+    xsltTransformContextPtr ctxt;
+    int start, stop;
+    xsltTemplatePtr template;
+
+    if (!slaxDebugLocalsRange(statep, &ctxt, &start, &stop, &template))
+	return;
+
+    slaxDebugContextVariables(ctxt, start, stop, template);
 }
 
 static int
 slaxDebugCheckContext (xsltTransformContextPtr ctxt)
 {
     if (ctxt == NULL) {
-	slaxOutput("The script is not being run.");
+	slaxOutput("The script is not being run");
 	return TRUE;
     }
 
@@ -1498,10 +1663,17 @@ slaxDebugCmdInfo (DC_ARGS)
 	}
 
     } else if (slaxDebugIsAbbrev("locals", argv[1])) {
+	xsltTransformContextPtr lctxt;
+	int start, stop;
+	xsltTemplatePtr ltemplate;
+
 	if (slaxDebugCheckContext(ctxt))
 	    return;
 
-	slaxDebugContextVariables(ctxt);
+	if (!slaxDebugLocalsRange(statep, &lctxt, &start, &stop, &ltemplate))
+	    return;
+
+	slaxDebugContextVariables(lctxt, start, stop, ltemplate);
 
     } else if (slaxDebugIsAbbrev("profile", argv[1])) {
 	slaxDebugFlags_t flags = 0;
@@ -1518,7 +1690,7 @@ slaxDebugCmdInfo (DC_ARGS)
 	slaxDebugHelpInfo(statep);
 
     } else
-	slaxOutput("Undefined command: \"%s\".  Try \"help\".", argv[1]);
+	slaxOutput("Undefined command: \"%s\".  Try \"help\"", argv[1]);
 }
 
 /*
@@ -1691,8 +1863,56 @@ slaxDebugCmdOver (DC_ARGS)
 }
 
 /**
- * 
+ * If a non-live frame is selected (see "up"/"down"), temporarily narrow
+ * @ctxt's varsNr/varsBase to that frame's own local-variable range, so
+ * that variable lookups and evaluations against @ctxt see the selected
+ * frame's variables rather than always the innermost/live ones. Returns
+ * TRUE if the scope was narrowed (in which case the caller must restore
+ * it with slaxDebugUnscopeFrame(), passing back *old_nrp and *old_basep),
+ * FALSE otherwise (nothing to restore).
+ */
+static int
+slaxDebugScopeToFrame (slaxDebugState_t *statep, xsltTransformContextPtr ctxt,
+			int *old_nrp, int *old_basep)
+{
+    if (ctxt != NULL && statep->ds_frame_selected != 0) {
+	xsltTransformContextPtr fctxt;
+	int start, stop;
+
+	if (slaxDebugLocalsRange(statep, &fctxt, &start, &stop, NULL)
+	    && fctxt == ctxt) {
+	    *old_nrp = xsltTransformContextGetVarsNr(ctxt);
+	    *old_basep = xsltTransformContextGetVarsBase(ctxt);
+
+	    xsltTransformContextSetVarsNr(ctxt, stop);
+	    xsltTransformContextSetVarsBase(ctxt, start);
+	    return TRUE;
+	}
+    }
+
+    return FALSE;
+}
+
+/*
+ * Undo slaxDebugScopeToFrame(), restoring the vars range it saved.
+ */
+static void
+slaxDebugUnscopeFrame (xsltTransformContextPtr ctxt, int old_nr, int old_base)
+{
+    xsltTransformContextSetVarsNr(ctxt, old_nr);
+    xsltTransformContextSetVarsBase(ctxt, old_base);
+}
+
+/**
+ *
  * The caller must free the results with xmlXPathFreeObject(res);
+ *
+ * If a non-live frame is selected (see "up"/"down"), the live
+ * context's varsNr/varsBase are temporarily narrowed to that
+ * frame's own local-variable range for the duration of the
+ * evaluation, so "print" (and anything else built on this
+ * function) sees the selected frame's variables rather than always
+ * the innermost/live ones.
  */
 static xmlXPathObjectPtr
 slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
@@ -1702,6 +1922,9 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
 
     xsltTransformContextPtr ctxt = statep->ds_ctxt;
     xmlXPathContextPtr xpctxt;
+    xmlXPathObjectPtr res;
+    int old_nr = 0, old_base = 0;
+    int scoped;
 
     if (ctxt == NULL)
 	return NULL;
@@ -1710,8 +1933,15 @@ slaxDebugEvalXpath (slaxDebugState_t *statep, const char *expr)
     if (xpctxt == NULL)
 	return NULL;
 
-    return slaxXpathEval(statep->ds_node, statep->ds_inst, xpctxt,
+    scoped = slaxDebugScopeToFrame(statep, ctxt, &old_nr, &old_base);
+
+    res = slaxXpathEval(statep->ds_node, statep->ds_inst, xpctxt,
 			 statep->ds_script, expr);
+
+    if (scoped)
+	slaxDebugUnscopeFrame(ctxt, old_nr, old_base);
+
+    return res;
 }
 
 /*
@@ -1963,9 +2193,25 @@ slaxDebugCmdSetCommon (slaxDebugState_t *statep, const char *commandline,
     if (value == NULL)
 	return;
 
+    /*
+     * Look up the target variable/param within the selected frame's own
+     * scope (see slaxDebugScopeToFrame()) -- not always the live/innermost
+     * frame's -- so that "up"/"down" followed by "set $foo = ..." affects
+     * the $foo the user is actually looking at, rather than whichever
+     * (possibly unrelated) $foo happens to be in scope at the real,
+     * currently-running point of the script.
+     */
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+    int old_nr = 0, old_base = 0;
+    int scoped = slaxDebugScopeToFrame(statep, ctxt, &old_nr, &old_base);
+
     int local;
-    xsltStackElemPtr var = slaxMvarLookupQname(statep->ds_ctxt,
-					       (const xmlChar *) name, &local);
+    xsltStackElemPtr var = slaxMvarLookupQname(ctxt, (const xmlChar *) name,
+						&local);
+
+    if (scoped)
+	slaxDebugUnscopeFrame(ctxt, old_nr, old_base);
+
     if (var == NULL) {
 	slaxOutput("variable not found: $%s", name);
 	xmlXPathFreeObject(value);
@@ -1973,12 +2219,13 @@ slaxDebugCmdSetCommon (slaxDebugState_t *statep, const char *commandline,
     }
 
     if (is_append)
-	slaxMvarAppend(statep->ds_ctxt, (const xmlChar *) name, var, value);
+	slaxMvarAppend(ctxt, (const xmlChar *) name, var, value);
     else
 	slaxMvarSet((const xmlChar *) name, var, value);
 
-    slaxOutput("$%s =", name);
-    slaxDebugOutputXpath(xsltStackElemGetValue(var), NULL, TRUE);
+    char tagbuf[BUFSIZ];
+    snprintf(tagbuf, sizeof(tagbuf), "$%s = ", name);
+    slaxDebugOutputXpath(xsltStackElemGetValue(var), tagbuf, TRUE);
 }
 
 /*
@@ -2113,6 +2360,49 @@ slaxDebugCmdProfiler (DC_ARGS)
 }
 
 /*
+ * Print the single summary line for one stack frame, in the same
+ * "#<num> <template> at <file>:<line>" format that 'where' uses.
+ * Shared with 'up'/'down' so the newly-selected frame is rendered
+ * identically to how 'where' would show it.
+ */
+static void
+slaxDebugPrintFrame (slaxDebugStackFrame_t *stp, int num)
+{
+    const char *tag;
+    const char *name = slaxDebugFrameName(stp, &tag);
+    const char *filename;
+    char template_info[BUFSIZ];
+    char from_info[BUFSIZ];
+    xmlNodePtr caller;
+
+    if (name)
+	slaxDebugTemplateInfo(stp->st_template,
+			      template_info, sizeof(template_info));
+    else snprintf(template_info, sizeof(template_info),
+		  "<%s%s%s>",
+		  (stp->st_inst && xmlNodeGetNs(stp->st_inst)
+		   && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)))
+		  ? xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)) : slaxNull,
+		  (stp->st_inst && xmlNodeGetNs(stp->st_inst)
+		   && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst))) ? ":" : "",
+		  NAME(stp->st_inst));
+
+    caller = stp->st_caller ?: stp->st_inst;
+
+    const char *url = (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
+    filename = strrchr(url, '/');
+    filename = filename ? filename + 1
+	: (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
+
+    if (caller)
+	snprintf(from_info, sizeof(from_info),
+		 " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
+    else from_info[0] = '\0';
+
+    slaxOutput("#%d %s%s%s", num, template_info, tag, from_info);
+}
+
+/*
  * 'where' command
  *  syntax: where [full]
  */
@@ -2121,13 +2411,8 @@ slaxDebugCmdWhere (DC_ARGS)
 {
     slaxDebugStackFrame_t *stp;
     const char *name;
-    const char *filename;
-    const char *tag;
     int num = 0;
-    char template_info[BUFSIZ];
-    char from_info[BUFSIZ];
     int full;
-    xmlNodePtr caller;
 
     if (slaxDebugCheckDone(statep))
 	return;
@@ -2138,46 +2423,12 @@ slaxDebugCmdWhere (DC_ARGS)
      * Walk the stack linked list in reverse order and print it
      */
     TAILQ_FOREACH(stp, &slaxDebugStack, st_link) {
-	name = NULL;
-	tag = "";
-
-	if (stp->st_template) {
-	    if (xsltTemplateGetMatch(stp->st_template)) {
-		name = (const char *) xsltTemplateGetMatch(stp->st_template);
-	    } else if (xsltTemplateGetName(stp->st_template)) {
-		name = (const char *) xsltTemplateGetName(stp->st_template);
-		tag = "()";
-	    }
-	}
+	name = slaxDebugFrameName(stp, NULL);
 
 	if (name == NULL && !full)
 	    continue;
 
-	if (name)
-	    slaxDebugTemplateInfo(stp->st_template,
-				  template_info, sizeof(template_info));
-	else snprintf(template_info, sizeof(template_info),
-		      "<%s%s%s>",
-		      (stp->st_inst && xmlNodeGetNs(stp->st_inst)
-		       && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)))
-		      ? xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst)) : slaxNull,
-		      (stp->st_inst && xmlNodeGetNs(stp->st_inst)
-		       && xmlNsGetPrefix(xmlNodeGetNs(stp->st_inst))) ? ":" : "",
-		      NAME(stp->st_inst));
-
-	caller = stp->st_caller ?: stp->st_inst;
-
-	const char *url = (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
-	filename = strrchr(url, '/');
-	filename = filename ? filename + 1
-	    : (const char *) xmlDocGetURL(xmlNodeGetDoc(caller));
-
-	if (caller)
-	    snprintf(from_info, sizeof(from_info),
-		     " at %s:%ld", filename ?: "", xmlGetLineNo(caller));
-	else from_info[0] = '\0';
-
-	slaxOutput("#%d %s%s%s", num, template_info, tag, from_info);
+	slaxDebugPrintFrame(stp, num);
 	slaxLog("  locals %d .. %d",
 		   stp->st_locals_start, stp->st_locals_stop);
 
@@ -2225,6 +2476,98 @@ slaxDebugCmdWhere (DC_ARGS)
 
     if (num == 0)
 	slaxOutput("call stack is empty");
+}
+
+/*
+ * Return the total number of named frames currently on the call
+ * stack, i.e. the same set that 'where' numbers by default (see
+ * slaxDebugFrameName).
+ */
+static int
+slaxDebugFrameCount (void)
+{
+    slaxDebugStackFrame_t *stp;
+    int count = 0;
+
+    TAILQ_FOREACH(stp, &slaxDebugStack, st_link)
+	if (slaxDebugFrameName(stp, NULL) != NULL)
+	    count += 1;
+
+    return count;
+}
+
+/*
+ * Shared implementation of 'up' and 'down': move the selected frame
+ * (statep->ds_frame_selected) toward the outermost frame (direction
+ * == 1, for "up") or toward the innermost/live frame (direction ==
+ * -1, for "down") by "n" frames (default 1), printing the newly
+ * selected frame the same way 'where' would.
+ *
+ * Note that ds_frame_selected is an offset from the innermost
+ * (tail) frame (0 == live/current), but 'where' numbers frames the
+ * other way, from the outermost (head) frame.  We print the
+ * 'where'-style number here, not the raw offset, so a frame is
+ * labeled the same regardless of which command showed it.
+ */
+static void
+slaxDebugChangeFrame (DC_ARGS, int direction)
+{
+    int n = 1;
+    int new_offset;
+    slaxDebugStackFrame_t *stp;
+
+    if (slaxDebugCheckDone(statep))
+	return;
+
+    if (argv[1]) {
+	n = atoi(argv[1]);
+	if (n <= 0) {
+	    slaxOutput("Invalid frame count");
+	    return;
+	}
+    }
+
+    new_offset = statep->ds_frame_selected + (direction * n);
+
+    const char msg[] = "Current frame depth is #%d of %d; "
+                   "cannot '%s' more than %d";
+    int fnum = slaxDebugFrameCount() - statep->ds_frame_selected - 1;
+
+    if (new_offset < 0) {
+	slaxOutput(msg, fnum, slaxDebugFrameCount() - 1,
+                   "down", statep->ds_frame_selected);
+	return;
+    }
+
+    stp = slaxDebugFrameAt(new_offset);
+    if (stp == NULL) {
+	slaxOutput(msg, fnum, slaxDebugFrameCount() - 1,
+                   "up", fnum);
+	return;
+    }
+
+    statep->ds_frame_selected = new_offset;
+    slaxDebugPrintFrame(stp, slaxDebugFrameCount() - 1 - new_offset);
+}
+
+/*
+ * 'up' command
+ *  syntax: up [n]
+ */
+static void
+slaxDebugCmdUp (DC_ARGS)
+{
+    slaxDebugChangeFrame(statep, commandline, argv, 1);
+}
+
+/*
+ * 'down' command
+ *  syntax: down [n]
+ */
+static void
+slaxDebugCmdDown (DC_ARGS)
+{
+    slaxDebugChangeFrame(statep, commandline, argv, -1);
 }
 
 static void
@@ -2284,7 +2627,7 @@ slaxDebugCmdReload (DC_ARGS)
     if (status != 0 && status != XSLT_DEBUG_DONE
 		&& status != XSLT_DEBUG_QUIT) {
 	const char warning[] =
-	    "The script being debugged has been started already.";
+	    "The script being debugged has been started already";
 	const char prompt[]
 	    = "Reload and restart it from the beginning? (y or n) ";
 	char *input;
@@ -2334,7 +2677,7 @@ slaxDebugCmdRun (DC_ARGS)
     if (status != 0 && status != XSLT_DEBUG_DONE
 		&& status != XSLT_DEBUG_QUIT) {
 	const char warning[] =
-	    "The script being debugged has been started already.";
+	    "The script being debugged has been started already";
 	const char prompt[] = "Start it from the beginning? (y or n) ";
 	char *input;
 
@@ -2469,6 +2812,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
+    { "down",	       1, slaxDebugCmdDown,
+      "down [n]        Move the selected frame toward the innermost frame",
+      NULL,
+    },
+
     { "dump",	       1, slaxDebugCmdDump,
       "dump            Dump internal information about libxml2 objects",
       slaxDebugHelpDump,
@@ -2549,6 +2897,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL,
     },
 
+    { "up",	       1, slaxDebugCmdUp,
+      "up [n]          Move the selected frame toward the outermost frame",
+      NULL,
+    },
+
     { "verbose",       1, slaxDebugCmdVerbose,
       "verbose         Turn on verbose (-v) output logging",
       slaxDebugHelpVerbose,
@@ -2606,7 +2959,7 @@ slaxDebugRunCommand (slaxDebugState_t *statep, char *input)
 	cmdp->dc_func(statep, input_copy, argv);
 
     } else {
-	slaxOutput("Unknown command \"%s\".  Try \"help\".", argv[0]);
+	slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[0]);
     }
 }
 
@@ -2807,6 +3160,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
     statep->ds_node = node;
     statep->ds_template = template;
     statep->ds_ctxt = ctxt;
+    statep->ds_frame_selected = 0;	/* Snap back to the live frame */
 
     /*
      * The addFrame callback doesn't get passed the context pointer
@@ -2947,8 +3301,8 @@ slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
      * printing it again here would just repeat the same line; we
      * only need to announce that the debugger is taking over.
      */
-    slaxOutput("Entering the debugger; the script will exit once you "
-	       "continue, since it cannot recover from this error.");
+    slaxOutput("Entering the debugger; the script has failed and "
+	       "cannot continue from this error");
 
     /*
      * slaxDebugShell() only processes a single command per call; a
@@ -3364,7 +3718,7 @@ slaxDebugReload (const char *scriptname)
 	}
     }
 
-    slaxOutput("Reload failed.");
+    slaxOutput("Reload failed");
     return NULL;
 }
 
@@ -3491,7 +3845,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
 		xsltSetDebuggerStatus(0);
 
-		slaxOutput("Reloading complete.");
+		slaxOutput("Reloading complete");
 
 		if (res) {
 		    xmlFreeDoc(res);
@@ -3540,7 +3894,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 		goto reload;
 
 	    } else if (statep->ds_flags & DSF_RESTART) {
-		slaxOutput("Restarting script.");
+		slaxOutput("Restarting script");
 		slaxProfClear();
 		slaxDebugClearStacktrace();
 		goto restart;
@@ -3583,7 +3937,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 	statep->ds_last_inst = NULL;
 	statep->ds_stop_at = NULL;
 
-	slaxOutput("Script exited normally.");
+	slaxOutput("Script exited normally");
 
 	statep->ds_flags &= ~(DSF_RESTART & DSF_DISPLAY);
 	xsltSetDebuggerStatus(XSLT_DEBUG_DONE);
