@@ -664,6 +664,7 @@ debugger resembles `gdb` command syntax and operation.
     condition <num> [expr]  Set, change, or clear a breakpoint's condition
     continue [loc]  Continue running the script
     delete [num]    Delete all (or one) breakpoints
+    down [n]        Move the selected frame toward the innermost frame
     finish          Finish the current template
     help            Show this help message
     info            Showing info about the script being debugged
@@ -677,6 +678,7 @@ debugger resembles `gdb` command syntax and operation.
     set $var = value  Set a variable to a new value
     step            Execute the next instruction, stepping into calls
     tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
+    up [n]          Move the selected frame toward the outermost frame
     where           Show the backtrace of template calls
     quit            Quit debugger
 
@@ -755,6 +757,34 @@ location is merely reached.
   (sdb) info br
   No breakpoints.
   (sdb) continue
+
+The `up` and `down` commands move the "selected frame" used by
+`locals` through the current call stack, without changing where
+execution is actually paused.  `up` moves toward the caller (the
+outermost frame); `down` moves back toward the frame execution is
+actually stopped in (the innermost, or "live", frame).  Each takes
+an optional repeat count `n` (default 1), and each prints the newly
+selected frame using the same format `where` does, including
+`where`'s frame numbering.  Going further than the stack allows
+prints a message and leaves the selection where it was, the same way
+`gdb` does.  The selection snaps back to the live frame whenever
+execution actually advances, via `continue`, `step`, `next`, and
+similar commands.
+
+::
+
+  (sdb) where
+  #0 template outer() at test.slax:4
+  #1 template inner() at test.slax:9
+  (sdb) up
+  #0 template outer() at test.slax:4
+  (sdb) locals
+  Local variables:
+  var $olabel = [string] "outer"
+  (sdb) down
+  #1 template inner() at test.slax:9
+  (sdb) down
+  Bottom (innermost) frame selected; you cannot go down.
 
 Information on the profiler is in the next section (:ref:`profiler`).
 
