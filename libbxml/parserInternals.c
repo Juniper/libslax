@@ -3045,6 +3045,10 @@ xmlFreeParserCtxt (xmlParserCtxt *ctxt)
         xmlFree(ctxt->pushTab);
     if (ctxt->attallocs != NULL)
         xmlFree(ctxt->attallocs);
+    if (ctxt->attLines != NULL)
+        xmlFree(ctxt->attLines);
+    if (ctxt->attCols != NULL)
+        xmlFree(ctxt->attCols);
     if (ctxt->attsDefault != NULL)
         xmlHashFree(ctxt->attsDefault, xmlHashDefaultDeallocator);
     if (ctxt->attsSpecial != NULL)
