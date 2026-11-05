@@ -283,12 +283,19 @@ XMLPUBFUN void *xmlXPathPopExternal (xmlXPathParserContext *ctxt);
  *
  * @param x  the number of expected args
  */
-#define CHECK_ARITY(x)                 \
-    if (ctxt == NULL)                  \
-        return;                        \
-    if (nargs != (x))                  \
-        XP_ERROR(XPATH_INVALID_ARITY); \
-    if (ctxt->valueNr < (x))           \
+#define CHECK_ARITY(x)                                                 \
+    if (ctxt == NULL)                                                 \
+        return;                                                       \
+    if (nargs != (x)) {                                               \
+        xmlXPathErrFmt(ctxt, XPATH_INVALID_ARITY,                     \
+            "the function \"%s\" is called with the wrong number "   \
+            "of arguments (%d)\n",                                   \
+            (ctxt->context->function != NULL)                       \
+                ? (const char *) ctxt->context->function : "?",      \
+            nargs);                                                   \
+        return;                                                       \
+    }                                                                 \
+    if (ctxt->valueNr < (x))                                          \
         XP_ERROR(XPATH_STACK_ERROR);
 
 /**
