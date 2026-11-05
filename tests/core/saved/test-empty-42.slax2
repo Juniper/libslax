@@ -1,0 +1,10 @@
+version 1.2;
+
+main <top> {
+    mvar $x = <node> "one";
+    var $y = $x;
+    set $x = <node> "two";
+    var $z = $y;
+    
+    copy-of $z;
+}
