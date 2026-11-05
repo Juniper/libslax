@@ -30,6 +30,7 @@
 #include <libxslt/xsltutils.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/extensions.h>
+#include <libxslt/transform.h>
 
 #include "exslt.h"
 
@@ -74,6 +75,7 @@ exsltDynEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs)
         xmlXPathParserContextGetContext(ctxt),
         xmlXPathContextGetDepth(xmlXPathParserContextGetContext(ctxt)) + 5);
 #endif
+    xmlResetLastError();
     ret = xmlXPathEval(str, xmlXPathParserContextGetContext(ctxt));
 #if LIBXML_VERSION >= 20911
     xmlXPathContextSetDepth(
@@ -83,9 +85,48 @@ exsltDynEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs)
     if (ret)
         valuePush(ctxt, ret);
     else {
-        xsltGenericError(
-            xsltGenericErrorContext,
-            "dyn:evaluate() : unable to evaluate expression '%s'\n", str);
+        xsltTransformContextPtr tctxt = xsltXPathGetTransformContext(ctxt);
+        const char *note = xsltLastXPathErrorMessage();
+        int handled = 0;
+        char errbuf[256];
+
+        snprintf(errbuf, sizeof(errbuf),
+                 "dyn:evaluate(): unable to evaluate expression '%s'", str);
+
+#ifdef WITH_XSLT_DEBUGGER
+        /*
+         * Give the error reporter (debugger-attached or not -- see
+         * slaxDebugInitErrorReporting()) a chance to report this with
+         * real file/line/column, the source line, and a caret, before
+         * falling back to the plain message below.
+         */
+        handled = xslHandleDebuggerError(
+            (tctxt != NULL) ? tctxt->inst : NULL, tctxt, errbuf, note);
+#endif /* WITH_XSLT_DEBUGGER */
+
+        if (!handled) {
+            int oldState = (tctxt != NULL) ? tctxt->state : XSLT_STATE_OK;
+
+            /*
+             * dyn:evaluate() gracefully degrades to an empty node-set on
+             * failure, per the EXSLT spec, rather than aborting the
+             * transform -- so report this without leaving the transform
+             * context in an error state (xsltTransformError() would
+             * otherwise mark it, causing the final result tree to be
+             * discarded even though the transform otherwise completes
+             * normally).
+             */
+            if (note != NULL)
+                xsltTransformError(tctxt, NULL, NULL,
+                                   "dyn:evaluate(): unable to evaluate "
+                                   "expression '%s'.\nnote: %s\n", str, note);
+            else
+                xsltTransformError(tctxt, NULL, NULL,
+                                   "dyn:evaluate(): unable to evaluate "
+                                   "expression '%s'.\n", str);
+            if (tctxt != NULL)
+                tctxt->state = oldState;
+        }
         valuePush(ctxt, xmlXPathNewNodeSet(NULL));
     }
     xmlFree(str);
@@ -202,9 +243,51 @@ exsltDynMapFunction (xmlXPathParserContextPtr ctxt, int nargs)
                                       xmlNodeGetDoc(cur));
             }
 
+            xmlResetLastError();
             subResult = xmlXPathCompiledEval(
                 comp, xmlXPathParserContextGetContext(ctxt));
-            if (subResult != NULL) {
+            if (subResult == NULL) {
+                const char *note = xsltLastXPathErrorMessage();
+                int handled = 0;
+                char errbuf[256];
+
+                snprintf(errbuf, sizeof(errbuf),
+                         "dyn:map(): unable to evaluate expression '%s'",
+                         str);
+
+#ifdef WITH_XSLT_DEBUGGER
+                /*
+                 * Give the error reporter (debugger-attached or not --
+                 * see slaxDebugInitErrorReporting()) a chance to report
+                 * this with real file/line/column, the source line, and
+                 * a caret, before falling back to the plain message
+                 * below.
+                 */
+                handled = xslHandleDebuggerError(tctxt->inst, tctxt, errbuf,
+                                                 note);
+#endif /* WITH_XSLT_DEBUGGER */
+
+                if (!handled) {
+                    int oldState = tctxt->state;
+
+                    /*
+                     * dyn:map() gracefully degrades (skips this node) on a
+                     * sub-expression failure, per the EXSLT spec, rather
+                     * than aborting the transform -- so report it without
+                     * leaving the transform context in an error state.
+                     */
+                    if (note != NULL)
+                        xsltTransformError(tctxt, NULL, NULL,
+                                           "dyn:map(): unable to evaluate "
+                                           "expression '%s'.\nnote: %s\n",
+                                           str, note);
+                    else
+                        xsltTransformError(tctxt, NULL, NULL,
+                                           "dyn:map(): unable to evaluate "
+                                           "expression '%s'.\n", str);
+                    tctxt->state = oldState;
+                }
+            } else {
                 switch (xmlXPathObjectGetType(subResult)) {
                 case XPATH_NODESET:
                     if (xmlXPathObjectGetNodesetval(subResult) != NULL)
