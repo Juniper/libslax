@@ -141,24 +141,53 @@ XSLTPUBFUN void XSLTCALL xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node,
  * Hook for the debugger to stop (unconditionally, regardless of any
  * breakpoint or step/continue state) at the point where a runtime
  * error aborted the transform, so the current frame can still be
- * inspected before the transform unwinds.
+ * inspected before the transform unwinds.  If no debugger is
+ * attached, this reports the error itself in compiler-style format
+ * (see xsltReportFatalError() below) instead of declining outright.
  *
  * "note" is an optional, more specific detail about the failure
  * (e.g. from xsltLastXPathErrorMessage()), or NULL if none is
  * available; the debugger reports it as a note following its own
  * report.
  *
- * Returns non-zero if the debugger actually reported the error (so
- * the caller can skip its own, less informative error message), or
- * zero if no debugger is attached or the debugger declined to report
- * it (e.g. it's mid-eval on its own behalf, as when checking a
- * breakpoint condition) -- in which case the caller's own message is
- * still the only report this failure will get.
+ * Returns non-zero if the error was actually reported (so the caller
+ * can skip its own, less informative error message), or zero if the
+ * debugger declined to report it (e.g. it's mid-eval on its own
+ * behalf, as when checking a breakpoint condition) -- in which case
+ * the caller's own message is still the only report this failure
+ * will get.
  */
 XSLTPUBFUN int XSLTCALL xslHandleDebuggerError (xmlNodePtr cur,
                                             xsltTransformContextPtr ctxt,
                                             const char *message,
                                             const char *note);
+
+/*
+ * Report a fatal runtime error in a compiler-style format:
+ *
+ *     file:line:col: fatal error: message
+ *     line |     source text
+ *          |            ^
+ *     note: detail
+ *
+ * "cur" is the source node where the error occurred, used (together
+ * with any "select"/"test" attribute on it) to find the real
+ * file/line/column to report.  "note" is an optional, more specific
+ * detail about the failure, printed as an indented "note: ..." line,
+ * or NULL if none is available.  "script_buffer", if non-NULL, is the
+ * full text of the script, searched for the line to echo instead of
+ * reading one from disk -- for callers (e.g. the SLAX debugger) that
+ * already have the script's text in memory and may not have a real,
+ * re-readable file to read back from.
+ *
+ * This is the default error reporter used by xslHandleDebuggerError()
+ * when no debugger is attached; most callers go through that
+ * function and never need to call this directly.
+ */
+XSLTPUBFUN void XSLTCALL xsltReportFatalError (xmlNodePtr cur,
+                                            const char *message,
+                                            const char *note,
+                                            const char *script_buffer);
 
 #ifdef __cplusplus
 }
