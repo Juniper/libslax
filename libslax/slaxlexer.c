@@ -601,6 +601,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 		       sdp->sd_len - sdp->sd_start);
 		sdp->sd_len -= sdp->sd_start;
 		sdp->sd_cur -= sdp->sd_start;
+		sdp->sd_line_offset -= sdp->sd_start;
 		sdp->sd_start = 0;
 
 	    } else {
@@ -655,6 +656,8 @@ slaxGetInput (slax_data_t *sdp, int final)
 		    && (unsigned char) sdp->sd_buf[2] == 0xbf)
 		sdp->sd_cur += 3;
 
+	    sdp->sd_line_offset = sdp->sd_cur;
+
 	    if (sdp->sd_buf[sdp->sd_cur] == '#'
 		    && sdp->sd_buf[sdp->sd_cur + 1] == '!') {
 		/*
@@ -663,6 +666,7 @@ slaxGetInput (slax_data_t *sdp, int final)
 		 */
 		sdp->sd_len = 0;
 		sdp->sd_line += 1;
+		sdp->sd_line_offset = sdp->sd_cur;
 	    }
 
 	    first_read = FALSE;
@@ -887,8 +891,10 @@ slaxDrainComment (slax_data_t *sdp)
 	}
 
 	/* Keep the line number accurate inside comments */
-	if (sdp->sd_buf[sdp->sd_cur] == '\n')
+	if (sdp->sd_buf[sdp->sd_cur] == '\n') {
 	    sdp->sd_line += 1;
+	    sdp->sd_line_offset = sdp->sd_cur + 1;
+	}
     }
 }
 
@@ -1068,6 +1074,7 @@ slaxLexer (slax_data_t *sdp)
 	       && isspace((int) sdp->sd_buf[sdp->sd_cur])) {
 	    if (sdp->sd_buf[sdp->sd_cur] == '\n') {
 		sdp->sd_line += 1;
+		sdp->sd_line_offset = sdp->sd_cur + 1;
 		xmlParserInputPtr input = xmlParserCtxtGetInput(sdp->sd_ctxt);
 		if (input)
 		    input->line = sdp->sd_line;
