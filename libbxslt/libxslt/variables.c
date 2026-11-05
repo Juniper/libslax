@@ -1329,6 +1329,7 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
         ctxt->contextVariable = variable;
         variable->flags |= XSLT_VAR_IN_SELECT;
 
+        xmlResetLastError();
         result = xmlXPathCompiledEval(xpExpr, xpctxt);
 
         variable->flags ^= XSLT_VAR_IN_SELECT;
@@ -1348,28 +1349,47 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
         if (comp == NULL || comp->comp == NULL)
             xmlXPathFreeCompExpr(xpExpr);
         if (result == NULL) {
-            xsltTransformError(
-                ctxt, NULL, (comp != NULL) ? comp->inst : NULL,
-                "Failed to evaluate the expression of variable '%s'.\n",
-                variable->name);
+            int handled = 0;
+            const char *note = xsltLastXPathErrorMessage();
 
 #ifdef WITH_XSLT_DEBUGGER
             /*
-             * Give the debugger (if attached) a chance to stop here,
-             * unconditionally, so the user can still inspect the
-             * current frame before the transform unwinds due to
-             * this fatal error.
+             * Give the error reporter (debugger-attached or not --
+             * see slaxDebugInitErrorReporting()) a chance to report
+             * this with real file/line/column, the source line, and
+             * a caret, before the transform unwinds due to this
+             * fatal error.  If it actually reports the error (returns
+             * non-zero), it does so with strictly more detail than
+             * our own message below, so skip ours to avoid reporting
+             * the same failure twice, once in uglier form; if it
+             * declines (e.g. no reporter is registered at all, or
+             * it's mid-eval on its own behalf), fall through and
+             * report it ourselves, since otherwise this failure would
+             * go unreported.
              */
-            if (xslDebugStatus != XSLT_DEBUG_NONE) {
+            {
                 char errbuf[256];
 
                 snprintf(errbuf, sizeof(errbuf),
-                    "Failed to evaluate the expression of variable '%s'.",
+                    "expression for variable '$%s' failed to evaluate",
                     variable->name);
-                xslHandleDebuggerError(
-                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf);
+                handled = xslHandleDebuggerError(
+                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf, note);
             }
 #endif /* WITH_XSLT_DEBUGGER */
+
+            if (!handled) {
+                if (note != NULL)
+                    xsltTransformError(
+                        ctxt, NULL, (comp != NULL) ? comp->inst : NULL,
+                        "Failed to evaluate the expression of variable "
+                        "'%s'.\nnote: %s\n", variable->name, note);
+                else
+                    xsltTransformError(
+                        ctxt, NULL, (comp != NULL) ? comp->inst : NULL,
+                        "Failed to evaluate the expression of variable "
+                        "'%s'.\n", variable->name);
+            }
 
             ctxt->state = XSLT_STATE_STOPPED;
 
@@ -1608,6 +1628,7 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
             xpctxt->nsNr = 0;
         }
 
+        xmlResetLastError();
         result = xmlXPathCompiledEval(xpExpr, xpctxt);
 
         /*
@@ -1624,31 +1645,48 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
         if (comp == NULL || comp->comp == NULL)
             xmlXPathFreeCompExpr(xpExpr);
         if (result == NULL) {
-            if (comp == NULL)
-                xsltTransformError(ctxt, NULL, NULL,
-                                   "Evaluating global variable %s failed\n",
-                                   elem->name);
-            else
-                xsltTransformError(ctxt, NULL, comp->inst,
-                                   "Evaluating global variable %s failed\n",
-                                   elem->name);
+            int handled = 0;
+            const char *note = xsltLastXPathErrorMessage();
 
 #ifdef WITH_XSLT_DEBUGGER
             /*
-             * Give the debugger (if attached) a chance to stop here,
-             * unconditionally, so the user can still inspect the
-             * current frame before the transform unwinds due to
-             * this fatal error.
+             * Give the error reporter (debugger-attached or not --
+             * see slaxDebugInitErrorReporting()) a chance to report
+             * this with real file/line/column, the source line, and
+             * a caret, before the transform unwinds due to this
+             * fatal error.  If it actually reports the error (returns
+             * non-zero), it does so with strictly more detail than
+             * our own message below, so skip ours to avoid reporting
+             * the same failure twice, once in uglier form; if it
+             * declines (e.g. no reporter is registered at all, or
+             * it's mid-eval on its own behalf), fall through and
+             * report it ourselves, since otherwise this failure would
+             * go unreported.
              */
-            if (xslDebugStatus != XSLT_DEBUG_NONE) {
+            {
                 char errbuf[256];
 
                 snprintf(errbuf, sizeof(errbuf),
-                    "Evaluating global variable %s failed.", elem->name);
-                xslHandleDebuggerError(
-                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf);
+                    "expression for variable '$%s' failed to evaluate",
+                    elem->name);
+                handled = xslHandleDebuggerError(
+                    (comp != NULL) ? comp->inst : NULL, ctxt, errbuf, note);
             }
 #endif /* WITH_XSLT_DEBUGGER */
+
+            if (!handled) {
+                xmlNodePtr errInst = (comp != NULL) ? comp->inst : NULL;
+
+                if (note != NULL)
+                    xsltTransformError(ctxt, NULL, errInst,
+                                       "Evaluating global variable %s "
+                                       "failed\nnote: %s\n",
+                                       elem->name, note);
+                else
+                    xsltTransformError(ctxt, NULL, errInst,
+                                       "Evaluating global variable %s failed\n",
+                                       elem->name);
+            }
 
             ctxt->state = XSLT_STATE_STOPPED;
             goto error;
@@ -2857,14 +2895,43 @@ xsltXPathVariableLookup (void *ctxt, const xmlChar *name, const xmlChar *ns_uri)
                    xsltVerbose(XSLT_VB_VARIABLE, xsltGenericDebugContext,
                                "variable not found '%s'\n", name));
 
-        if (ns_uri) {
-            xsltTransformError(tctxt, NULL, tctxt->inst,
-                               "Variable '{%s}%s' has not been declared.\n",
-                               ns_uri, name);
-        } else {
-            xsltTransformError(tctxt, NULL, tctxt->inst,
-                               "Variable '%s' has not been declared.\n", name);
+#ifdef WITH_XSLT_DEBUGGER
+        /*
+         * Give the error reporter (debugger-attached or not -- see
+         * slaxDebugInitErrorReporting()) a chance to report this with
+         * real file/line/column, the source line, and a caret pointing
+         * at the "$name" reference itself, before the transform
+         * unwinds due to this fatal error -- mirroring the
+         * xsl:variable/xsl:param hooks in
+         * xsltEvalVariable()/xsltEvalGlobalVariable(), but for the
+         * more general case of any expression (in any instruction)
+         * that references an undeclared variable.  Called
+         * unconditionally (not gated on xslDebugStatus): with no
+         * reporter registered at all, xslHandleDebuggerError() is a
+         * cheap NULL check; with one registered, DSF_ERRORSTOP makes
+         * sure only this -- the most specific -- report of the
+         * failure survives as it keeps propagating outward.
+         */
+        {
+            char errbuf[256];
+
+            snprintf(errbuf, sizeof(errbuf),
+                "the variable '$%s' is undefined", name);
+            xslHandleDebuggerError(tctxt->inst, tctxt, errbuf, NULL);
         }
+#endif /* WITH_XSLT_DEBUGGER */
+
+        /*
+         * Don't report the failure ourselves: libxml2's own XPath
+         * evaluator (xmlXPathCompOpEval(), case XPATH_OP_VARIABLE)
+         * unconditionally raises its own "Undefined variable: %s"
+         * error immediately after this function returns NULL, so
+         * the caller -- or that error's "note:" surfaced by a
+         * note-enriched failure report -- still sees the failure.
+         * Printing our own message here too would just report the
+         * same failure twice, once in uglier form.
+         */
+
     } else {
         XSLT_TRACE(tctxt, XSLT_TRACE_VARIABLES,
                    xsltVerbose(XSLT_VB_VARIABLE, xsltGenericDebugContext,
