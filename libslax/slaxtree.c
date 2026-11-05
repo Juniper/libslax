@@ -423,7 +423,8 @@ slaxNsAdd (slax_data_t *sdp, const char *prefix, const char *uri)
 }
 
 void
-slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value,
+		      int line, int col)
 {
     xmlNsPtr ns = NULL;
     xmlAttrPtr attr;
@@ -456,6 +457,10 @@ slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value)
 		      (const xmlChar *) value);
     if (attr == NULL)
 	fprintf(stderr, "could not make attribute: @%s=%s\n", name, value);
+    else {
+	xmlAttrSetLine(attr, line);
+	xmlAttrSetColumn(attr, col);
+    }
 }
 
 /*
@@ -523,7 +528,7 @@ slaxAttribAdd (slax_data_t *sdp, int style,
 	buf = slaxStringAsChar(value, SSF_BRACES | ss_flags);
     }
 
-    slaxAttribAddSimple(sdp, name, buf);
+    slaxAttribAddSimple(sdp, name, buf, value->ss_line, value->ss_col);
 
     free(buf);
 }
@@ -549,7 +554,7 @@ slaxAttribAddDataValue (slax_data_t *sdp, const char *name,
 	    ep[-1] = '\0';
     }
 
-    slaxAttribAddSimple(sdp, name, bp);
+    slaxAttribAddSimple(sdp, name, bp, value->ss_line, value->ss_col);
 
     xmlFreeAndEasy(buf);
 }
@@ -583,7 +588,7 @@ slaxAttribAddValue (slax_data_t *sdp, const char *name, slax_string_t *value)
     if (buf == NULL)
 	return;
 
-    slaxAttribAddSimple(sdp, name, buf);
+    slaxAttribAddSimple(sdp, name, buf, value->ss_line, value->ss_col);
 
     xmlFreeAndEasy(buf);
 }
@@ -606,7 +611,7 @@ slaxAttribAddXpath (slax_data_t *sdp, const char *name, slax_string_t *value)
     if (buf == NULL)
 	return;
 
-    slaxAttribAddSimple(sdp, name, buf);
+    slaxAttribAddSimple(sdp, name, buf, value->ss_line, value->ss_col);
 
     xmlFreeAndEasy(buf);
 }
@@ -636,6 +641,10 @@ slaxAttribAddString (slax_data_t *sdp, const char *name,
 			  (const xmlChar *) buf);
 	if (attr == NULL)
 	    fprintf(stderr, "could not make attribute: @%s=%s\n", name, buf);
+	else {
+	    xmlAttrSetLine(attr, value->ss_line);
+	    xmlAttrSetColumn(attr, value->ss_col);
+	}
 
 	xmlFree(buf);
     }
