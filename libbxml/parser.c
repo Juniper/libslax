@@ -1852,10 +1852,13 @@ xmlCtxtGrowAttrs (xmlParserCtxtPtr ctxt)
 {
     const xmlChar **atts;
     unsigned *attallocs;
+    unsigned short *attLines;
+    short *attCols;
     int newSize;
 
     newSize = xmlGrowCapacity(ctxt->maxatts / 5,
-                              sizeof(atts[0]) * 5 + sizeof(attallocs[0]), 10,
+                              sizeof(atts[0]) * 5 + sizeof(attallocs[0])
+                              + sizeof(attLines[0]) + sizeof(attCols[0]), 10,
                               XML_MAX_ATTRS);
     if (newSize < 0) {
         xmlFatalErr(ctxt, XML_ERR_RESOURCE_LIMIT,
@@ -1872,6 +1875,16 @@ xmlCtxtGrowAttrs (xmlParserCtxtPtr ctxt)
     if (attallocs == NULL)
         goto mem_error;
     ctxt->attallocs = attallocs;
+
+    attLines = xmlRealloc(ctxt->attLines, newSize * sizeof(attLines[0]));
+    if (attLines == NULL)
+        goto mem_error;
+    ctxt->attLines = attLines;
+
+    attCols = xmlRealloc(ctxt->attCols, newSize * sizeof(attCols[0]));
+    if (attCols == NULL)
+        goto mem_error;
+    ctxt->attCols = attCols;
 
     ctxt->maxatts = newSize * 5;
 
@@ -8960,6 +8973,8 @@ xmlParseStartTag2 (xmlParserCtxtPtr ctxt, const xmlChar **pref,
             && (IS_BYTE_CHAR(RAW))
            && PARSER_STOPPED(ctxt) == 0) {
         int len = -1;
+        int attline = ctxt->input->line;
+        int attcol = ctxt->input->col;
 
         hattname = xmlParseAttribute2(ctxt, prefix, localname, &haprefix,
                                       &attvalue, &len, &alloc);
@@ -9104,6 +9119,10 @@ xmlParseStartTag2 (xmlParserCtxtPtr ctxt, const xmlChar **pref,
                 if (res < 0)
                     goto next_attr;
             }
+            ctxt->attLines[nratts] =
+                (attline > 0 && attline < USHRT_MAX) ? attline : 0;
+            ctxt->attCols[nratts] =
+                (attcol > 0 && attcol < SHRT_MAX) ? attcol : -1;
             ctxt->attallocs[nratts++]
                 = (hattname.hashValue & 0x7FFFFFFF) | ((unsigned) alloc << 31);
             atts[nbatts++] = attname;
@@ -9375,6 +9394,14 @@ xmlParseStartTag2 (xmlParserCtxtPtr ctxt, const xmlChar **pref,
                         goto done;
                     }
                 }
+
+                /*
+                 * Defaulted attributes have no source position; mark
+                 * them unknown rather than leaving attLines/attCols
+                 * uninitialized (see xmlSAX2StartElementNs).
+                 */
+                ctxt->attLines[nbatts / 5] = 0;
+                ctxt->attCols[nbatts / 5] = -1;
 
                 atts[nbatts++] = attname;
                 atts[nbatts++] = aprefix;
