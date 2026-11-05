@@ -142,10 +142,23 @@ XSLTPUBFUN void XSLTCALL xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node,
  * breakpoint or step/continue state) at the point where a runtime
  * error aborted the transform, so the current frame can still be
  * inspected before the transform unwinds.
+ *
+ * "note" is an optional, more specific detail about the failure
+ * (e.g. from xsltLastXPathErrorMessage()), or NULL if none is
+ * available; the debugger reports it as a note following its own
+ * report.
+ *
+ * Returns non-zero if the debugger actually reported the error (so
+ * the caller can skip its own, less informative error message), or
+ * zero if no debugger is attached or the debugger declined to report
+ * it (e.g. it's mid-eval on its own behalf, as when checking a
+ * breakpoint condition) -- in which case the caller's own message is
+ * still the only report this failure will get.
  */
-XSLTPUBFUN void XSLTCALL xslHandleDebuggerError (xmlNodePtr cur,
+XSLTPUBFUN int XSLTCALL xslHandleDebuggerError (xmlNodePtr cur,
                                             xsltTransformContextPtr ctxt,
-                                            const char *message);
+                                            const char *message,
+                                            const char *note);
 
 #ifdef __cplusplus
 }
