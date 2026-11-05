@@ -149,6 +149,8 @@ slaxStringCreate (slax_data_t *sdp, int ttype)
 	ssp->ss_token[len] = 0;
 	ssp->ss_ttype = ttype;
 	ssp->ss_next = ssp->ss_concat = NULL;
+	ssp->ss_line = sdp->sd_line;
+	ssp->ss_col = sdp->sd_start - sdp->sd_line_offset + 1;
 
 	if (ttype != T_QUOTED) {
 	    memcpy(ssp->ss_token, start, len);
@@ -270,6 +272,8 @@ slaxStringLiteral (const char *str, int ttype)
 	ssp->ss_token[len] = 0;
 	ssp->ss_ttype = ttype;
 	ssp->ss_next = ssp->ss_concat = NULL;
+	ssp->ss_line = 0;	/* Synthetic token: no real source position */
+	ssp->ss_col = -1;
 	ssp->ss_flags = slaxStringQFlags(ssp);
     }
 
@@ -1051,6 +1055,8 @@ slaxStringFuse (slax_string_t *start)
 
     results->ss_ttype = start->ss_ttype;
     results->ss_next = NULL;
+    results->ss_line = start->ss_line;
+    results->ss_col = start->ss_col;
     results->ss_flags = slaxStringQFlags(results);
 
     if (slaxLogIsEnabled)
@@ -1119,6 +1125,8 @@ slaxConcatRewrite (slax_data_t *sdp UNUSED, slax_string_t *left,
 	 *     "concat" -> "(" -> left... -> "," -> right... -> ")"
 	 */
 	if (conp && openp && commap) {
+	    conp->ss_line = left->ss_line;
+	    conp->ss_col = left->ss_col;
 	    conp->ss_next = openp;
 	    openp->ss_next = left;
 
@@ -1215,6 +1223,8 @@ slaxTernaryRewrite (slax_data_t *sdp UNUSED, slax_string_t *scond,
 
     /* Our use of "slax:value()" requires the SLAX namespace */
     tsp->ss_flags |= SSF_SLAXNS;
+    tsp->ss_line = scond->ss_line;
+    tsp->ss_col = scond->ss_col;
 
     /*
      * Make "concat" links:
@@ -1284,6 +1294,8 @@ slaxStringAddTailHelper (slax_string_t ***tailp,
     ssp->ss_token[bufsiz] = '\0';
     ssp->ss_next = NULL;
     ssp->ss_ttype = ttype;
+    ssp->ss_line = 0;	/* Synthetic token: no real source position */
+    ssp->ss_col = -1;
     ssp->ss_flags = slaxStringQFlags(ssp);
 
     **tailp = ssp;
