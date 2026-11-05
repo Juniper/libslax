@@ -103,7 +103,8 @@ void slaxAttribAdd (slax_data_t *sdp, int style,
 		    const char *name, slax_string_t *value);
 
 void
-slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value);
+slaxAttribAddSimple (slax_data_t *sdp, const char *name, const char *value,
+		      int line, int col);
 
 /*
  * Add a value to an attribute on an XML element.  The value consists of
