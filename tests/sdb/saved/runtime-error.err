@@ -5,10 +5,10 @@ Breakpoint 1 at file ../../../tests/sdb/runtime-error.slax, line 11
 Reached breakpoint 1, at ../../../tests/sdb/runtime-error.slax:11
 runtime-error.slax: 11:     var $b = substring($a, 1, 2, 3);
 (sdb) next
-../../../tests/sdb/runtime-error.slax:11: element variable: XPath error : Invalid number of arguments
-runtime error: file ../../../tests/sdb/runtime-error.slax line 11 element variable
-Failed to evaluate the expression of variable 'b'.
-Entering the debugger; the script has failed and cannot continue from this error
+runtime-error.slax:11:14: fatal error: expression for variable '$b' failed to evaluate
+11 |     var $b = substring($a, 1, 2, 3);
+   |              ^
+   note: the function "substring" is called with the wrong number of arguments (4)
 runtime-error.slax: 11:     var $b = substring($a, 1, 2, 3);
 (sdb) p $a
 [node-set] (1) rtf-doc
