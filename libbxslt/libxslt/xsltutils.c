@@ -2912,6 +2912,274 @@ xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node, xsltTemplatePtr templ,
         xsltDebuggerCurrentCallbacks.handler(cur, node, templ, ctxt);
 }
 
+/*
+ * Names of attributes that carry an XPath expression evaluated at
+ * runtime, in the order we prefer to check them.  Used to locate the
+ * xmlAttr whose tracked ->line/->column records where the failing
+ * expression was actually written, as opposed to "cur" itself, whose
+ * ->line/->column (if any) is just the position of the instruction's
+ * opening tag.
+ */
+static const char * const xsltFatalErrorExprAttribs[] = {
+    "select", "test", NULL
+};
+
+/*
+ * Find the attribute on "cur" (an XSLT instruction node) that holds
+ * the XPath expression it was executing when a fatal error occurred,
+ * and return the real line/column we tracked when that attribute's
+ * value was parsed.  Returns non-zero and fills "linep"/"colp" if a
+ * known position was found, zero otherwise (synthetic/compiler-
+ * generated expression, or no matching attribute).
+ */
+static int
+xsltFindExprPosition (xmlNodePtr cur, int *linep, int *colp)
+{
+    const char * const *namep;
+
+    if (cur == NULL)
+        return 0;
+
+    for (namep = xsltFatalErrorExprAttribs; *namep != NULL; namep++) {
+        xmlAttrPtr attr = xmlHasProp(cur, (const xmlChar *) *namep);
+
+        if (attr == NULL)
+            continue;
+
+        short col = xmlAttrGetColumn(attr);
+        if (col == -1)
+            continue;
+
+        unsigned short line = xmlAttrGetLine(attr);
+        *linep = line ? line : xmlGetLineNo(cur);
+        *colp = col;
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+ * Fetch the raw text of a single source line (no trailing newline) by
+ * reading "filename" from disk.  Used by xsltReportFatalError() to
+ * show the offending line under a compiler-style error message, when
+ * the caller hasn't already handed us the line via "known_srcline".
+ * Returns non-zero and fills "buf" on success, zero if the line isn't
+ * available (bad filename, line past EOF, etc).
+ */
+static int
+xsltFetchSourceLine (const char *filename, int lineno, char *buf,
+                     size_t bufsiz)
+{
+    FILE *fp;
+    int count = 0;
+    int found = 0;
+
+    if (filename == NULL || lineno <= 0)
+        return 0;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+        return 0;
+
+    while (fgets(buf, bufsiz, fp) != NULL) {
+        count += 1;
+        if (count == lineno) {
+            size_t len = strlen(buf);
+            if (len > 0 && buf[len - 1] == '\n')
+                buf[len - 1] = '\0';
+            found = 1;
+            break;
+        }
+    }
+
+    fclose(fp);
+    return found;
+}
+
+/**
+ * xsltReportFatalError:
+ * @cur : source node where the error occurred
+ * @message : the error message to report
+ * @note : an optional, more specific detail about the failure, or
+ *         NULL if none is available
+ * @script_buffer : the full text of the script, if the caller already
+ *         has it in memory (e.g. the SLAX debugger's script buffer)
+ *         and it may not correspond to a real, re-readable file, or
+ *         NULL to read the needed line from disk instead
+ *
+ * Report a fatal runtime error in a compiler-style format:
+ *
+ *     file:line:col: fatal error: message
+ *     line |     source text
+ *          |            ^
+ *
+ * The line/column are normally taken from the real position tracked
+ * for the failing expression (see xsltFindExprPosition()).  But if
+ * "message" contains a '...'-quoted token (e.g. "the variable
+ * '$pStyle' is undefined") whose first occurrence on the source line
+ * falls at or after that tracked position, we point at the token
+ * instead -- it's more specific, e.g. the exact undefined-variable
+ * reference within a larger expression, rather than just where the
+ * expression starts.  A token that matches only *before* the tracked
+ * position (e.g. the assignment target "'$b'" in "expression for
+ * variable '$b' failed to evaluate", which can coincidentally match
+ * earlier, unrelated text on the line) is ignored in favor of the
+ * tracked position.  With no tracked position at all, the token (if
+ * any) is used outright, and failing that, the caret points at the
+ * line's first non-blank column.  Falls back to a plain "file:line:
+ * fatal error: message" (no source line/caret) when the source line
+ * isn't available.
+ *
+ * If "note" is non-NULL, it is printed as an indented "note: ..."
+ * line following the report, aligned under the gutter when a source
+ * line/caret was printed.  This carries more specific detail (e.g.
+ * from the underlying XPath error) that "message" doesn't have, such
+ * as which function was miscalled and with how many arguments.
+ */
+void
+xsltReportFatalError (xmlNodePtr cur, const char *message, const char *note,
+                      const char *script_buffer)
+{
+    const char *filename = NULL;
+    int line_no = 0;
+    int known_col = -1;
+
+    if (cur != NULL) {
+        int exprline;
+
+        if (xsltFindExprPosition(cur, &exprline, &known_col))
+            line_no = exprline;
+        else
+            line_no = xmlGetLineNo(cur);
+
+        if (xmlNodeGetDoc(cur))
+            filename = (const char *) xmlDocGetURL(xmlNodeGetDoc(cur));
+    }
+
+    const char *base = filename ? strrchr(filename, '/') : NULL;
+    base = base ? base + 1 : filename;
+
+    char srcline[BUFSIZ];
+    int have_line;
+
+    if (script_buffer != NULL) {
+        const char *last = script_buffer;
+        const char *xp;
+        int count = 1;
+
+        have_line = 0;
+        if (line_no > 0) {
+            for (xp = strchr(last, '\n'); xp; xp = strchr(last, '\n')) {
+                if (count == line_no)
+                    break;
+                count += 1;
+                last = xp + 1;
+            }
+
+            if (count == line_no) {
+                size_t len = xp ? (size_t) (xp - last) : strlen(last);
+                if (len >= sizeof(srcline))
+                    len = sizeof(srcline) - 1;
+                memcpy(srcline, last, len);
+                srcline[len] = '\0';
+                have_line = 1;
+            }
+        }
+    } else {
+        have_line = (base != NULL && line_no > 0
+                     && xsltFetchSourceLine(filename, line_no, srcline,
+                                            sizeof(srcline)));
+    }
+
+    int col = 0;
+    int marker_col = -1;
+
+    /*
+     * Independently of known_col, see if "message" names a '...'-quoted
+     * token that actually occurs on the source line -- e.g. an
+     * undefined-variable reference like '$pStyle' that appears
+     * literally inside the failing expression.  We still prefer
+     * known_col when it's at least as far along the line: a token
+     * quoted merely to identify the failure (e.g. the variable being
+     * assigned in "expression for variable '$b' failed to evaluate",
+     * where "$b" is the assignment target, not part of the failing
+     * expression) can coincidentally match earlier text on the same
+     * line, which would be a worse answer than known_col.
+     */
+    if (have_line) {
+        const char *marker = strchr(message, '\'');
+        const char *hit = NULL;
+
+        if (marker != NULL) {
+            const char *end = strchr(marker + 1, '\'');
+            if (end != NULL && end > marker + 1) {
+                size_t mlen = end - (marker + 1);
+                char token[BUFSIZ];
+
+                if (mlen < sizeof(token)) {
+                    memcpy(token, marker + 1, mlen);
+                    token[mlen] = '\0';
+                    hit = strstr(srcline, token);
+                }
+            }
+        }
+
+        if (hit != NULL)
+            marker_col = (int) (hit - srcline) + 1;
+    }
+
+    if (have_line && known_col != -1
+        && (marker_col == -1 || marker_col < known_col)) {
+        col = known_col;
+    } else if (have_line && marker_col != -1) {
+        col = marker_col;
+    } else if (have_line) {
+        const char *cp = srcline;
+        while (*cp == ' ' || *cp == '\t')
+            cp++;
+        col = (int) (cp - srcline) + 1;
+    }
+
+    if (base != NULL && line_no > 0 && col > 0)
+        fprintf(stderr, "%s:%d:%d: fatal error: %s\n", base, line_no, col,
+                message);
+    else if (base != NULL && line_no > 0)
+        fprintf(stderr, "%s:%d: fatal error: %s\n", base, line_no, message);
+    else
+        fprintf(stderr, "fatal error: %s\n", message);
+
+    if (have_line) {
+        fprintf(stderr, "%d | %s\n", line_no, srcline);
+
+        char gutter[32];
+        int gutter_len = snprintf(gutter, sizeof(gutter), "%d", line_no);
+        char caret[BUFSIZ];
+        int n = 0;
+        int i;
+        const char *sep = " | ";
+
+        for (i = 0; i < gutter_len && n < (int) sizeof(caret) - 1; i++)
+            caret[n++] = ' ';
+        for ( ; *sep != '\0' && n < (int) sizeof(caret) - 1; sep++)
+            caret[n++] = *sep;
+
+        for (i = 1; i < col && n < (int) sizeof(caret) - 1; i++)
+            caret[n++] = ' ';
+
+        if (n < (int) sizeof(caret) - 1)
+            caret[n++] = '^';
+        caret[n] = '\0';
+
+        fprintf(stderr, "%s\n", caret);
+
+        if (note != NULL)
+            fprintf(stderr, "%*snote: %s\n", gutter_len + 1, "", note);
+    } else if (note != NULL) {
+        fprintf(stderr, "note: %s\n", note);
+    }
+}
+
 /**
  * xslHandleDebuggerError:
  * @cur : source node where the error occurred
@@ -2928,11 +3196,17 @@ xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node, xsltTemplatePtr templ,
  * fatal runtime error, before the transform unwinds and that context
  * is torn down.
  *
- * Returns non-zero if the handler actually reported the error, zero
- * if no handler is registered or it declined (e.g. it's mid-eval on
- * its own behalf).  Callers use this to decide whether to also print
- * their own, less informative error message, rather than assuming
- * that a debugger being attached means this error was reported.
+ * If no debugger is attached, reports the error itself via
+ * xsltReportFatalError() instead of declining outright -- this is
+ * what makes compiler-style fatal errors the default, for plain XSLT
+ * and SLAX-compiled scripts alike, with no extra wiring needed by
+ * either.
+ *
+ * Returns non-zero if the error was actually reported, zero if the
+ * debugger declined (e.g. it's mid-eval on its own behalf).  Callers
+ * use this to decide whether to also print their own, less
+ * informative error message, rather than assuming that a debugger
+ * being attached means this error was reported.
  */
 int
 xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
@@ -2941,7 +3215,9 @@ xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
     if (xsltDebuggerCurrentCallbacks.errorHandler != NULL)
         return xsltDebuggerCurrentCallbacks.errorHandler(cur, ctxt, message,
                                                            note);
-    return 0;
+
+    xsltReportFatalError(cur, message, note, NULL);
+    return 1;
 }
 
 /**
