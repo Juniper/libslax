@@ -608,6 +608,10 @@ struct _xmlAttr {
     xmlAttributeType atype;
     /** for type/PSVI information */
     void *psvi;
+    /** Line number where the attribute's value starts (0 if unknown) */
+    unsigned short line;
+    /** Column number where the attribute's value starts (-1 if unknown) */
+    short column;
     /** ID struct if any */
     struct _xmlID *id XML_DEPRECATED_MEMBER;
 };
@@ -749,6 +753,8 @@ struct _xmlNode {
     void *psvi;
     /** Line number */
     unsigned short line;
+    /** Column number where this node's value/expression starts (-1 if unknown) */
+    short column;
     /** Extra data for XPath/XSLT */
     unsigned short extra;
 };
