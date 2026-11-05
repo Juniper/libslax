@@ -222,15 +222,6 @@ slaxError (const char *fmt, ...);
 int
 slaxDebugInit (void);
 
-/*
- * Register just the compiler-style fatal-error reporter (file:line:col,
- * source line, caret), without turning on full interactive debugging.
- * Lets ordinary (non "-d") runs get the same error-message quality as
- * a debugging session, with none of the per-node overhead or shell UI.
- */
-void
-slaxDebugInitErrorReporting (void);
-
 typedef unsigned slaxDebugFlags_t;
 #define SDBF_ENABLE		(1<<0) /* Enable debugger */
 #define SDBF_PROFILE_ONLY	(1<<1) /* Just report profile output */
