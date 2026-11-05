@@ -646,257 +646,6 @@ slaxDebugOutputExpanded (const char *filename, int line,
 }
 
 /*
- * Fetch the raw text of a single source line (no trailing newline),
- * from the in-memory script buffer if we have one, otherwise by
- * reading "filename" from disk.  Used by slaxDebugReportFatalError()
- * to show the offending line under a compiler-style error message.
- * Returns TRUE and fills "buf" on success, FALSE if the line isn't
- * available (bad filename, line past EOF, etc).
- */
-static int
-slaxDebugFetchSourceLine (slaxDebugState_t *statep, const char *filename,
-			   int lineno, char *buf, size_t bufsiz)
-{
-    if (filename == NULL || lineno <= 0)
-	return FALSE;
-
-    if (statep->ds_script_buffer) {
-	const char *last = statep->ds_script_buffer;
-	const char *xp;
-	int count = 1;
-
-	for (xp = strchr(last, '\n'); xp; xp = strchr(last, '\n')) {
-	    if (count == lineno)
-		break;
-	    count += 1;
-	    last = xp + 1;
-	}
-
-	if (count != lineno)
-	    return FALSE;
-
-	size_t len = xp ? (size_t) (xp - last) : strlen(last);
-	if (len >= bufsiz)
-	    len = bufsiz - 1;
-	memcpy(buf, last, len);
-	buf[len] = '\0';
-	return TRUE;
-    }
-
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL)
-	return FALSE;
-
-    int count = 0;
-    int found = FALSE;
-
-    while (fgets(buf, bufsiz, fp) != NULL) {
-	count += 1;
-	if (count == lineno) {
-	    size_t len = strlen(buf);
-	    if (len > 0 && buf[len - 1] == '\n')
-		buf[len - 1] = '\0';
-	    found = TRUE;
-	    break;
-	}
-    }
-
-    fclose(fp);
-    return found;
-}
-
-/*
- * Names of attributes that carry an XPath expression evaluated at
- * runtime, in the order we prefer to check them.  Used to locate the
- * xmlAttr whose tracked ->line/->column records where the failing
- * expression was actually written, as opposed to "cur" itself, whose
- * ->line/->column (if any) is just the position of the instruction's
- * opening tag.
- */
-static const char * const slaxDebugExprAttribs[] = {
-    "select", "test", NULL
-};
-
-/*
- * Find the attribute on "cur" (an XSLT instruction node) that holds
- * the XPath expression it was executing when a fatal error occurred,
- * and return the real line/column we tracked when that attribute's
- * value was parsed.  Returns TRUE and fills "linep"/"colp" if a
- * known position was found, FALSE otherwise (synthetic/compiler-
- * generated expression, or no matching attribute).
- */
-static int
-slaxDebugFindExprPosition (xmlNodePtr cur, int *linep, int *colp)
-{
-    const char * const *namep;
-
-    if (cur == NULL)
-	return FALSE;
-
-    for (namep = slaxDebugExprAttribs; *namep != NULL; namep++) {
-	xmlAttrPtr attr = xmlHasProp(cur, (const xmlChar *) *namep);
-
-	if (attr == NULL)
-	    continue;
-
-	short col = xmlAttrGetColumn(attr);
-	if (col == -1)
-	    continue;
-
-	unsigned short line = xmlAttrGetLine(attr);
-	*linep = line ? line : xmlGetLineNo(cur);
-	*colp = col;
-	return TRUE;
-    }
-
-    return FALSE;
-}
-
-/*
- * Report a fatal runtime error in a compiler-style format:
- *
- *     file:line:col: fatal error: message
- *     line |     source text
- *          |            ^
- *
- * The line/column are normally taken from the real position we
- * tracked for the failing expression (see slaxDebugFindExprPosition()).
- * But if "message" contains a '...'-quoted token (e.g. "the variable
- * '$pStyle' is undefined") whose first occurrence on the source line
- * falls at or after that tracked position, we point at the token
- * instead -- it's more specific, e.g. the exact undefined-variable
- * reference within a larger expression, rather than just where the
- * expression starts.  A token that matches only *before* the tracked
- * position (e.g. the assignment target "'$b'" in "expression for
- * variable '$b' failed to evaluate", which can coincidentally match
- * earlier, unrelated text on the line) is ignored in favor of the
- * tracked position.  With no tracked position at all, the token (if
- * any) is used outright, and failing that, the caret points at the
- * line's first non-blank column.  Falls back to a plain "file:line:
- * fatal error: message" (no source line/caret) when the source line
- * isn't available.
- *
- * If "note" is non-NULL, it is printed as an indented "note: ..."
- * line following the report, aligned under the gutter when a source
- * line/caret was printed.  This carries more specific detail (e.g.
- * from the underlying XPath error) that "message" doesn't have, such
- * as which function was miscalled and with how many arguments.
- */
-static void
-slaxDebugReportFatalError (slaxDebugState_t *statep, xmlNodePtr cur,
-			    const char *message, const char *note)
-{
-    const char *filename = NULL;
-    int line_no = 0;
-    int known_col = -1;
-
-    if (cur != NULL) {
-	int exprline;
-
-	if (slaxDebugFindExprPosition(cur, &exprline, &known_col))
-	    line_no = exprline;
-	else
-	    line_no = xmlGetLineNo(cur);
-
-	if (xmlNodeGetDoc(cur))
-	    filename = (const char *) xmlDocGetURL(xmlNodeGetDoc(cur));
-    }
-
-    const char *base = filename ? strrchr(filename, '/') : NULL;
-    base = base ? base + 1 : filename;
-
-    char srcline[BUFSIZ];
-    int have_line = (base != NULL && line_no > 0
-		      && slaxDebugFetchSourceLine(statep, filename, line_no,
-						   srcline, sizeof(srcline)));
-    int col = 0;
-    int marker_col = -1;
-
-    /*
-     * Independently of known_col, see if "message" names a '...'-quoted
-     * token that actually occurs on the source line -- e.g. an
-     * undefined-variable reference like '$pStyle' that appears
-     * literally inside the failing expression.  We still prefer
-     * known_col when it's at least as far along the line: a token
-     * quoted merely to identify the failure (e.g. the variable being
-     * assigned in "expression for variable '$b' failed to evaluate",
-     * where "$b" is the assignment target, not part of the failing
-     * expression) can coincidentally match earlier text on the same
-     * line, which would be a worse answer than known_col.
-     */
-    if (have_line) {
-	const char *marker = strchr(message, '\'');
-	const char *hit = NULL;
-
-	if (marker != NULL) {
-	    const char *end = strchr(marker + 1, '\'');
-	    if (end != NULL && end > marker + 1) {
-		size_t mlen = end - (marker + 1);
-		char token[BUFSIZ];
-
-		if (mlen < sizeof(token)) {
-		    memcpy(token, marker + 1, mlen);
-		    token[mlen] = '\0';
-		    hit = strstr(srcline, token);
-		}
-	    }
-	}
-
-	if (hit != NULL)
-	    marker_col = (int) (hit - srcline) + 1;
-    }
-
-    if (have_line && known_col != -1
-	&& (marker_col == -1 || marker_col < known_col)) {
-	col = known_col;
-    } else if (have_line && marker_col != -1) {
-	col = marker_col;
-    } else if (have_line) {
-	const char *cp = srcline;
-	while (*cp == ' ' || *cp == '\t')
-	    cp++;
-	col = (int) (cp - srcline) + 1;
-    }
-
-    if (base != NULL && line_no > 0 && col > 0)
-	slaxOutput("%s:%d:%d: fatal error: %s", base, line_no, col, message);
-    else if (base != NULL && line_no > 0)
-	slaxOutput("%s:%d: fatal error: %s", base, line_no, message);
-    else
-	slaxOutput("fatal error: %s", message);
-
-    if (have_line) {
-	slaxOutput("%d | %s", line_no, srcline);
-
-	char gutter[32];
-	int gutter_len = snprintf(gutter, sizeof(gutter), "%d", line_no);
-	char caret[BUFSIZ];
-	int n = 0;
-	int i;
-	const char *sep = " | ";
-
-	for (i = 0; i < gutter_len && n < (int) sizeof(caret) - 1; i++)
-	    caret[n++] = ' ';
-	for ( ; *sep != '\0' && n < (int) sizeof(caret) - 1; sep++)
-	    caret[n++] = *sep;
-
-	for (i = 1; i < col && n < (int) sizeof(caret) - 1; i++)
-	    caret[n++] = ' ';
-
-	if (n < (int) sizeof(caret) - 1)
-	    caret[n++] = '^';
-	caret[n] = '\0';
-
-	slaxOutput("%s", caret);
-
-	if (note != NULL)
-	    slaxOutput("%*snote: %s", gutter_len + 1, "", note);
-    } else if (note != NULL) {
-	slaxOutput("note: %s", note);
-    }
-}
-
-/*
  * Return the line for given linenumber from file.
  *
  * Very inefficient way, we read the file from begining till we reach the
@@ -3555,7 +3304,7 @@ slaxDebugHandler (xmlNodePtr inst, xmlNodePtr node,
  *       the underlying XPath error), or NULL if none is available
  *
  * Returns TRUE if we actually reported the error (via
- * slaxDebugReportFatalError()), FALSE if we declined (e.g. we're
+ * xsltReportFatalError()), FALSE if we declined (e.g. we're
  * mid-eval on our own behalf, or already shutting down) -- our
  * caller (xslHandleDebuggerError(), and transitively the libxslt
  * code that calls it) uses this to decide whether its own, less
@@ -3600,28 +3349,13 @@ slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
 
     statep->ds_flags |= DSF_ERRORSTOP;
 
-    /*
-     * XSLT_DEBUG_NONE means no real debugging session is attached --
-     * we were wired up by slaxDebugInitErrorReporting() purely for our
-     * compiler-style error report, not an interactive one.  There's no
-     * live "run"/"step"/"quit" protocol to drive, and no shell to drop
-     * into, so just report and return.
-     */
-    if (status == XSLT_DEBUG_NONE) {
-	statep->ds_inst = cur;
-	statep->ds_ctxt = ctxt;
-
-	slaxDebugReportFatalError(statep, cur, message, note);
-	return TRUE;
-    }
-
     if (statep->ds_flags & DSF_PROFILER)
 	slaxProfExit();
 
     statep->ds_inst = cur;
     statep->ds_ctxt = ctxt;
 
-    slaxDebugReportFatalError(statep, cur, message, note);
+    xsltReportFatalError(cur, message, note, statep->ds_script_buffer);
 
     /*
      * slaxDebugShell() only processes a single command per call; a
@@ -3946,31 +3680,6 @@ int
 slaxDebugInit (void)
 {
     return slaxDebugInitFlags(0);
-}
-
-/*
- * Register just the compiler-style fatal-error reporter
- * (slaxDebugErrorHandler(), via slaxDebugReportFatalError()), without
- * enabling full interactive debugging: we deliberately do NOT call
- * xsltSetDebuggerStatus(XSLT_DEBUG_INIT) here, so xslDebugStatus stays
- * XSLT_DEBUG_NONE and none of the per-node/per-template breakpoint or
- * callstack-tracking hooks activate.  Only a fatal runtime error routes
- * through slaxDebugErrorHandler(), which checks xsltGetDebuggerStatus()
- * itself and, finding XSLT_DEBUG_NONE, reports the error and returns
- * without dropping into the interactive shell.  This lets ordinary
- * ("-d"-less) runs get the same "file:line:col:" error messages as a
- * debugging session, with none of its overhead or UI.
- */
-void
-slaxDebugInitErrorReporting (void)
-{
-    static int done_register;
-
-    if (done_register)
-	return;
-    done_register = TRUE;
-
-    xsltSetDebuggerCallbacksHelper(NULL, NULL, NULL, slaxDebugErrorHandler);
 }
 
 /**
@@ -4338,12 +4047,6 @@ int
 slaxDebugInit (void)
 {
     return slaxDebugInitFlags(0);
-}
-
-void
-slaxDebugInitErrorReporting (void)
-{
-    /* nothing to do; debugger support isn't compiled in */
 }
 
 void
