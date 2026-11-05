@@ -801,6 +801,7 @@ do_run (const char *name, const char *output, const char *input, char **argv)
 				 slaxFilenameIsStd(input) ? NULL : input,
 				 indoc, params);
     } else {
+	slaxDebugInitErrorReporting();
 	res = xsltApplyStylesheet(script, indoc, params);
     }
 
@@ -893,6 +894,7 @@ do_xpath (const char *name UNUSED, const char *output,
 				 slaxFilenameIsStd(input) ? NULL : input,
 				 indoc, params);
     } else {
+	slaxDebugInitErrorReporting();
 	res = xsltApplyStylesheet(script, indoc, params);
     }
 
