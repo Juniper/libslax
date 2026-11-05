@@ -369,6 +369,7 @@ xsltPreCompEval (xsltTransformContextPtr ctxt, xmlNodePtr node,
     xpctxt->nsNr = comp->nsNr;
 #endif
 
+    xmlResetLastError();
     res = xmlXPathCompiledEval(comp->comp, xpctxt);
 
     xpctxt->node = oldXPContextNode;
@@ -553,6 +554,28 @@ xsltTransformCacheFree (xsltTransformCachePtr cache)
 }
 
 /**
+ * xsltXPathErrorHandler:
+ * @userData:  unused
+ * @error:  the raised libxml2 XPath error
+ *
+ * Structured-error callback registered on every transform's XPath
+ * context so that an XPath evaluation failure (e.g. a wrong number
+ * of arguments, an undefined variable) does not also print its own
+ * raw, uncontextualized report straight to stderr. The instruction
+ * handler that evaluated the expression already reports the failure
+ * itself (via xsltTransformError() and/or xslHandleDebuggerError()),
+ * retrieving the underlying detail from xmlGetLastError() -- which
+ * libxml2 populates regardless of whether a handler is registered
+ * here, so this callback itself has nothing further to do.
+ */
+static void
+xsltXPathErrorHandler (void *userData, const xmlError *error)
+{
+    (void) userData;
+    (void) error;
+}
+
+/**
  * xsltNewTransformContext:
  * @style:  a parsed XSLT stylesheet
  * @doc:  the input document
@@ -641,6 +664,11 @@ xsltNewTransformContext (xsltStylesheetPtr style, xmlDocPtr doc)
     */
     if (xmlXPathContextSetCache(cur->xpathCtxt, 1, -1, 0) == -1)
         goto internal_err;
+    /*
+    * Keep libxml2's own XPath-error reporting quiet; we report
+    * these failures ourselves (see xsltXPathErrorHandler()).
+    */
+    xmlXPathSetErrorHandler(cur->xpathCtxt, xsltXPathErrorHandler, NULL);
     /*
      * Initialize the extras array
      */
@@ -4634,8 +4662,23 @@ xsltValueOf (xsltTransformContextPtr ctxt, xmlNodePtr node, xmlNodePtr inst,
             xsltCopyTextString(ctxt, ctxt->insert, value, comp->noescape);
         }
     } else {
-        xsltTransformError(ctxt, NULL, inst,
-                           "XPath evaluation returned no result.\n");
+        int handled = 0;
+        const char *note = xsltLastXPathErrorMessage();
+
+#ifdef WITH_XSLT_DEBUGGER
+        handled = xslHandleDebuggerError(
+            inst, ctxt, "XPath evaluation returned no result", note);
+#endif /* WITH_XSLT_DEBUGGER */
+
+        if (!handled) {
+            if (note != NULL)
+                xsltTransformError(ctxt, NULL, inst,
+                                   "XPath evaluation returned no "
+                                   "result.\nnote: %s\n", note);
+            else
+                xsltTransformError(ctxt, NULL, inst,
+                                   "XPath evaluation returned no result.\n");
+        }
         ctxt->state = XSLT_STATE_STOPPED;
         goto error;
     }
