@@ -550,6 +550,10 @@ struct _xmlParserCtxt {
     const xmlChar **nsTab XML_DEPRECATED_MEMBER;
     /* which attribute were allocated */
     unsigned *attallocs XML_DEPRECATED_MEMBER;
+    /* line/column where each real attribute's parsing began, parallel
+     * to attallocs (same index, same lifetime) */
+    unsigned short *attLines;
+    short *attCols;
     /* array of data for push */
     xmlStartTag *pushTab XML_DEPRECATED_MEMBER;
     /* defaulted attributes if any */
