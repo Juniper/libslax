@@ -55,6 +55,7 @@ struct testDesc {
 };
 
 static int update_results = 0;
+static int dump_diffs = 0;
 static char *temp_directory = NULL;
 static int checkTestFile (const char *filename);
 
@@ -514,8 +515,11 @@ compareFileMem (const char *filename, const char *mem, int size)
 {
     int res;
     int fd;
-    char bytes[4096];
+    FILE *file;
+    char line[8192];
     int idx = 0;
+    int lineno = 0;
+    int mismatch = 0;
     struct stat info;
 
     if (update_results) {
@@ -542,35 +546,69 @@ compareFileMem (const char *filename, const char *mem, int size)
     if (info.st_size != size) {
         fprintf(stderr, "file %s is %ld bytes, result is %d bytes\n", filename,
                 (long) info.st_size, size);
-        return -1;
+        if (!dump_diffs)
+            return -1;
+        mismatch = 1;
     }
-    fd = open(filename, RD_FLAGS);
-    if (fd < 0) {
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
         fprintf(stderr, "failed to open %s for reading", filename);
         return -1;
     }
-    while (idx < size) {
-        res = read(fd, bytes, 4096);
-        if (res <= 0)
-            break;
-        if (res + idx > size)
-            break;
-        if (memcmp(bytes, &mem[idx], res) != 0) {
-            int ix;
-            for (ix = 0; ix < res; ix++)
-                if (bytes[ix] != mem[idx + ix])
-                    break;
-            fprintf(stderr, "Compare error at position %d\n", idx + ix);
-            close(fd);
-            return 1;
+
+    /*
+     * Compare a line at a time (rather than in raw 4k chunks) so that,
+     * with -d, we can print each differing line from both sides with a
+     * "<"/">" prefix instead of just the byte offset where they first
+     * diverge.  The "mem" side is matched to whatever chunk fgets()
+     * just handed us -- never re-split on its own newlines -- so a
+     * single line longer than our buffer (fgets then returns it as
+     * several buffer-sized chunks with no trailing '\n') still lines
+     * up byte-for-byte on both sides instead of desyncing.
+     */
+    while (fgets(line, sizeof(line), file) != NULL) {
+        int linelen = (int) strlen(line);
+        int chunklen = (idx < size) ? size - idx : 0;
+        const char *memline = &mem[idx];
+
+        if (chunklen > linelen)
+            chunklen = linelen;
+
+        lineno++;
+
+        if (chunklen != linelen
+            || memcmp(line, memline, (size_t) chunklen) != 0) {
+            mismatch = 1;
+            if (!dump_diffs) {
+                fprintf(stderr, "Compare error at line %d\n", lineno);
+                fclose(file);
+                return 1;
+            }
+
+            fprintf(stderr, "%4d: < %.*s", lineno, linelen, line);
+            if (linelen == 0 || line[linelen - 1] != '\n')
+                fprintf(stderr, "\n");
+            fprintf(stderr, "%4d: > %.*s", lineno, chunklen, memline);
+            if (chunklen == 0 || memline[chunklen - 1] != '\n')
+                fprintf(stderr, "\n");
         }
-        idx += res;
+
+        idx += chunklen;
     }
-    close(fd);
+
+    fclose(file);
+
     if (idx != size) {
-        fprintf(stderr, "Compare error index %d, size %d\n", idx, size);
+        mismatch = 1;
+        if (dump_diffs) {
+            fprintf(stderr, "%4d: > %.*s\n", ++lineno, size - idx, &mem[idx]);
+        } else {
+            fprintf(stderr, "Compare error index %d, size %d\n", idx, size);
+        }
     }
-    return idx != size;
+
+    return mismatch;
 }
 
 /************************************************************************
@@ -852,6 +890,8 @@ main (int argc UNUSED, char **argv UNUSED)
             verbose = 1;
         else if (!strcmp(argv[a], "-u"))
             update_results = 1;
+        else if (!strcmp(argv[a], "-d"))
+            dump_diffs = 1;
         else if (!strcmp(argv[a], "-quiet"))
             tests_quiet = 1;
         else if (!strcmp(argv[a], "--out"))
