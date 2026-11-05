@@ -1,0 +1,6 @@
+version 1.0;
+
+main <top> {
+    var $ok = "ok";
+    <fail> $fail;
+}
