@@ -96,9 +96,11 @@ exsltDynEvaluateFunction (xmlXPathParserContextPtr ctxt, int nargs)
 #ifdef WITH_XSLT_DEBUGGER
         /*
          * Give the error reporter (debugger-attached or not -- see
-         * slaxDebugInitErrorReporting()) a chance to report this with
-         * real file/line/column, the source line, and a caret, before
-         * falling back to the plain message below.
+         * xslHandleDebuggerError(), which defaults to a compiler-style
+         * report via xsltReportFatalError() when no debugger is
+         * attached) a chance to report this with real file/line/
+         * column, the source line, and a caret, before falling back
+         * to the plain message below.
          */
         handled = xslHandleDebuggerError(
             (tctxt != NULL) ? tctxt->inst : NULL, tctxt, errbuf, note);
@@ -258,10 +260,12 @@ exsltDynMapFunction (xmlXPathParserContextPtr ctxt, int nargs)
 #ifdef WITH_XSLT_DEBUGGER
                 /*
                  * Give the error reporter (debugger-attached or not --
-                 * see slaxDebugInitErrorReporting()) a chance to report
-                 * this with real file/line/column, the source line, and
-                 * a caret, before falling back to the plain message
-                 * below.
+                 * see xslHandleDebuggerError(), which defaults to a
+                 * compiler-style report via xsltReportFatalError()
+                 * when no debugger is attached) a chance to report
+                 * this with real file/line/column, the source line,
+                 * and a caret, before falling back to the plain
+                 * message below.
                  */
                 handled = xslHandleDebuggerError(tctxt->inst, tctxt, errbuf,
                                                  note);
