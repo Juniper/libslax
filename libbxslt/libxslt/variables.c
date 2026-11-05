@@ -1355,17 +1355,17 @@ xsltEvalVariable (xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 #ifdef WITH_XSLT_DEBUGGER
             /*
              * Give the error reporter (debugger-attached or not --
-             * see slaxDebugInitErrorReporting()) a chance to report
-             * this with real file/line/column, the source line, and
-             * a caret, before the transform unwinds due to this
-             * fatal error.  If it actually reports the error (returns
-             * non-zero), it does so with strictly more detail than
-             * our own message below, so skip ours to avoid reporting
-             * the same failure twice, once in uglier form; if it
-             * declines (e.g. no reporter is registered at all, or
-             * it's mid-eval on its own behalf), fall through and
-             * report it ourselves, since otherwise this failure would
-             * go unreported.
+             * see xslHandleDebuggerError(), which defaults to a
+             * compiler-style report when no debugger is attached) a
+             * chance to report this with real file/line/column, the
+             * source line, and a caret, before the transform unwinds
+             * due to this fatal error.  If it actually reports the
+             * error (returns non-zero), it does so with strictly more
+             * detail than our own message below, so skip ours to
+             * avoid reporting the same failure twice, once in uglier
+             * form; if it declines (e.g. it's mid-eval on its own
+             * behalf), fall through and report it ourselves, since
+             * otherwise this failure would go unreported.
              */
             {
                 char errbuf[256];
@@ -1651,17 +1651,17 @@ xsltEvalGlobalVariable (xsltStackElemPtr elem, xsltTransformContextPtr ctxt)
 #ifdef WITH_XSLT_DEBUGGER
             /*
              * Give the error reporter (debugger-attached or not --
-             * see slaxDebugInitErrorReporting()) a chance to report
-             * this with real file/line/column, the source line, and
-             * a caret, before the transform unwinds due to this
-             * fatal error.  If it actually reports the error (returns
-             * non-zero), it does so with strictly more detail than
-             * our own message below, so skip ours to avoid reporting
-             * the same failure twice, once in uglier form; if it
-             * declines (e.g. no reporter is registered at all, or
-             * it's mid-eval on its own behalf), fall through and
-             * report it ourselves, since otherwise this failure would
-             * go unreported.
+             * see xslHandleDebuggerError(), which defaults to a
+             * compiler-style report when no debugger is attached) a
+             * chance to report this with real file/line/column, the
+             * source line, and a caret, before the transform unwinds
+             * due to this fatal error.  If it actually reports the
+             * error (returns non-zero), it does so with strictly more
+             * detail than our own message below, so skip ours to
+             * avoid reporting the same failure twice, once in uglier
+             * form; if it declines (e.g. it's mid-eval on its own
+             * behalf), fall through and report it ourselves, since
+             * otherwise this failure would go unreported.
              */
             {
                 char errbuf[256];
@@ -2898,19 +2898,20 @@ xsltXPathVariableLookup (void *ctxt, const xmlChar *name, const xmlChar *ns_uri)
 #ifdef WITH_XSLT_DEBUGGER
         /*
          * Give the error reporter (debugger-attached or not -- see
-         * slaxDebugInitErrorReporting()) a chance to report this with
-         * real file/line/column, the source line, and a caret pointing
-         * at the "$name" reference itself, before the transform
-         * unwinds due to this fatal error -- mirroring the
+         * xslHandleDebuggerError(), which defaults to a compiler-style
+         * report via xsltReportFatalError() when no debugger is
+         * attached) a chance to report this with real
+         * file/line/column, the source line, and a caret pointing at
+         * the "$name" reference itself, before the transform unwinds
+         * due to this fatal error -- mirroring the
          * xsl:variable/xsl:param hooks in
          * xsltEvalVariable()/xsltEvalGlobalVariable(), but for the
          * more general case of any expression (in any instruction)
          * that references an undeclared variable.  Called
-         * unconditionally (not gated on xslDebugStatus): with no
-         * reporter registered at all, xslHandleDebuggerError() is a
-         * cheap NULL check; with one registered, DSF_ERRORSTOP makes
-         * sure only this -- the most specific -- report of the
-         * failure survives as it keeps propagating outward.
+         * unconditionally (not gated on xslDebugStatus): with a
+         * debugger registered, DSF_ERRORSTOP makes sure only this --
+         * the most specific -- report of the failure survives as it
+         * keeps propagating outward.
          */
         {
             char errbuf[256];
