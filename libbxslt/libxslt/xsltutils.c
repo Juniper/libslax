@@ -1181,6 +1181,7 @@ xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
         xmlXPathContextSetNamespaces(ctxt->xpathCtxt, comp->nsList);
         xmlXPathContextSetNsNr(ctxt->xpathCtxt, comp->nsNr);
 #endif
+        xmlResetLastError();
         res = xmlXPathCompiledEval(comp->comp, ctxt->xpathCtxt);
         if (res != NULL) {
             if (xmlXPathObjectGetType(res) != XPATH_STRING)
@@ -1229,6 +1230,26 @@ xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
                 }
             }
         } else {
+            int handled = 0;
+            const char *note = xsltLastXPathErrorMessage();
+
+#ifdef WITH_XSLT_DEBUGGER
+            handled = xslHandleDebuggerError(
+                sort, ctxt, "expression for 'xsl:sort' failed to "
+                "evaluate", note);
+#endif /* WITH_XSLT_DEBUGGER */
+
+            if (!handled) {
+                if (note != NULL)
+                    xsltTransformError(ctxt, NULL, sort,
+                                       "Failed to evaluate the expression "
+                                       "of 'xsl:sort'.\nnote: %s\n", note);
+                else
+                    xsltTransformError(ctxt, NULL, sort,
+                                       "Failed to evaluate the expression "
+                                       "of 'xsl:sort'.\n");
+            }
+
             ctxt->state = XSLT_STATE_STOPPED;
             results[i] = NULL;
         }
@@ -2767,6 +2788,48 @@ xsltGetDebuggerStatus (void)
     return xslDebugStatus;
 }
 
+static PSU_THREAD_LOCAL(char) xsltLastXPathErrorBuf[256];
+
+/**
+ * xsltLastXPathErrorMessage:
+ *
+ * Fetch the message from the most recent XPath error raised on this
+ * thread (libxml2's global/thread-local last-error, populated by
+ * xmlXPathErrFmt() regardless of whether a structured error handler
+ * is registered).  This is where the specific "why" behind a failed
+ * XPath evaluation lives -- e.g. the message built by CHECK_ARITY(),
+ * such as "the function \"substring\" is called with the wrong
+ * number of arguments (4)" -- for callers to report as a "note"
+ * alongside their own, more general failure message.
+ *
+ * Returns a pointer to a thread-local static buffer, valid until the
+ * next call to this function on the same thread, or NULL if there is
+ * no current error, it isn't an XPath error, or it has no message.
+ */
+const char *
+xsltLastXPathErrorMessage (void)
+{
+    const xmlError *err = xmlGetLastError();
+    size_t len;
+
+    if (err == NULL || err->domain != XML_FROM_XPATH || err->message == NULL)
+        return NULL;
+
+    len = strlen(err->message);
+    while (len > 0 && (err->message[len - 1] == '\n'
+                        || err->message[len - 1] == '\r'))
+        len--;
+    if (len == 0)
+        return NULL;
+    if (len >= sizeof(xsltLastXPathErrorBuf))
+        len = sizeof(xsltLastXPathErrorBuf) - 1;
+
+    memcpy(xsltLastXPathErrorBuf, err->message, len);
+    xsltLastXPathErrorBuf[len] = 0;
+
+    return xsltLastXPathErrorBuf;
+}
+
 #ifdef WITH_XSLT_DEBUGGER
 
 /*
@@ -2854,6 +2917,9 @@ xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node, xsltTemplatePtr templ,
  * @cur : source node where the error occurred
  * @ctxt : the xslt transform context
  * @message : the error message that was reported
+ * @note : an optional, more specific detail about the failure (e.g.
+ *         from xsltLastXPathErrorMessage()), or NULL if none is
+ *         available
  *
  * Unconditionally transfer control to the debugger's error handler
  * (if one is registered), regardless of the current xslDebugStatus
@@ -2861,13 +2927,21 @@ xslHandleDebugger (xmlNodePtr cur, xmlNodePtr node, xsltTemplatePtr templ,
  * user inspect the still-live transform context at the point of a
  * fatal runtime error, before the transform unwinds and that context
  * is torn down.
+ *
+ * Returns non-zero if the handler actually reported the error, zero
+ * if no handler is registered or it declined (e.g. it's mid-eval on
+ * its own behalf).  Callers use this to decide whether to also print
+ * their own, less informative error message, rather than assuming
+ * that a debugger being attached means this error was reported.
  */
-void
+int
 xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
-                        const char *message)
+                        const char *message, const char *note)
 {
     if (xsltDebuggerCurrentCallbacks.errorHandler != NULL)
-        xsltDebuggerCurrentCallbacks.errorHandler(cur, ctxt, message);
+        return xsltDebuggerCurrentCallbacks.errorHandler(cur, ctxt, message,
+                                                           note);
+    return 0;
 }
 
 /**
