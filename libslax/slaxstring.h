@@ -19,6 +19,8 @@ struct slax_string_s {
     struct slax_string_s *ss_concat; /* Next link to concatenation */
     int ss_ttype;		   /* Token type */
     int ss_flags;		   /* Flags */
+    int ss_line;		   /* Line number where this token starts (0 if unknown) */
+    int ss_col;		   /* Column number where this token starts (-1 if unknown) */
     char ss_token[];		   /* Value of this token */
 };
 
