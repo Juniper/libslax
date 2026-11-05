@@ -2271,7 +2271,7 @@ output_method_intro :
 
 		    if (is_json)
 			slaxAttribAddSimple(slax_data,
-					    "slax:" ATT_MAKE, "json");
+					    "slax:" ATT_MAKE, "json", 0, -1);
 
 		    $$ = STACK_CLEAR($1);
 		}
