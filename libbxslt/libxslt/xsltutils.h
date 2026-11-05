@@ -278,11 +278,13 @@ typedef void (*xsltHandleDebuggerCallback)(xmlNodePtr cur, xmlNodePtr node,
                                            xsltTransformContextPtr ctxt);
 typedef int (*xsltAddCallCallback)(xsltTemplatePtr templ, xmlNodePtr source);
 typedef void (*xsltDropCallCallback)(void);
-typedef void (*xsltHandleDebuggerErrorCallback)(xmlNodePtr cur,
+typedef int (*xsltHandleDebuggerErrorCallback)(xmlNodePtr cur,
                                            xsltTransformContextPtr ctxt,
-                                           const char *message);
+                                           const char *message,
+                                           const char *note);
 
 XSLTPUBFUN int XSLTCALL xsltGetDebuggerStatus (void);
+XSLTPUBFUN const char * XSLTCALL xsltLastXPathErrorMessage (void);
 #ifdef WITH_XSLT_DEBUGGER
 XSLTPUBFUN void XSLTCALL xsltSetDebuggerStatus (int value);
 XSLTPUBFUN int XSLTCALL xsltSetDebuggerCallbacks (int no, void *block);
