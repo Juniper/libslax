@@ -40,6 +40,7 @@ struct slax_data_s {
     int sd_line;		/* Line number */
     int sd_comment_line;	/* Line where the current comment started */
     int sd_col;			/* Column number */
+    int sd_line_offset;	/* sd_buf offset of the start of sd_line */
     int sd_start;		/* Next valid byte in sd_buf */
     int sd_cur;			/* Current byte in sd_buf */
     int sd_len;			/* Last valid byte in sd_buf (+1) */
