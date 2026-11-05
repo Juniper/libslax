@@ -108,6 +108,7 @@ properties:xmlAttrPtr
 nsDef:xmlNsPtr
 psvi:void *
 line:unsigned short
+column:short
 extra:unsigned short
 '
 
@@ -133,6 +134,8 @@ doc:xmlDocPtr
 ns:xmlNsPtr
 atype:xmlAttributeType
 psvi:void *
+line:unsigned short
+column:short
 '
 
 doc_tag=Doc ; doc_ptr=xmlDocPtr ; doc_var=doc
