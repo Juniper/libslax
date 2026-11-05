@@ -947,6 +947,11 @@ xmlSAX2AppendChild (xmlParserCtxtPtr ctxt, xmlNodePtr node)
             node->line = ctxt->input->line;
         else
             node->line = USHRT_MAX;
+
+        if (ctxt->input->col > 0 && ctxt->input->col < SHRT_MAX)
+            node->column = ctxt->input->col;
+        else
+            node->column = -1;
     }
 }
 
@@ -2388,6 +2393,11 @@ xmlSAX2StartElementNs (void *ctx, const xmlChar *localname,
         have_attr:
             if (attr == NULL)
                 continue;
+
+            if (ctxt->attLines != NULL && ctxt->attCols != NULL) {
+                attr->line = ctxt->attLines[i];
+                attr->column = ctxt->attCols[i];
+            }
 
             /* link at the end to preserve order */
             if (prev == NULL) {
