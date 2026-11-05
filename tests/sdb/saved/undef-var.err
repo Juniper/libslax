@@ -1,0 +1,18 @@
+Type 'help' for help
+(sdb) break 5
+Breakpoint 1 at file ../../../tests/sdb/undef-var.slax, line 5
+(sdb) run
+Reached breakpoint 1, at ../../../tests/sdb/undef-var.slax:5
+undef-var.slax: 5:     <fail> $fail;
+(sdb) next
+undef-var.slax:5:12: fatal error: the variable '$fail' is undefined
+5 |     <fail> $fail;
+  |            ^
+undef-var.slax: 5:     <fail> $fail;
+(sdb) bt
+#0 match / at undef-var.slax:3
+(sdb) info locals
+Local variables:
+var $ok = [string] "ok"
+(sdb) quit
+The script is running.  Exit anyway? (y or n) y
