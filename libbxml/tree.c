@@ -1489,6 +1489,7 @@ xmlNewPropInternal (xmlNodePtr node, xmlNsPtr ns, const xmlChar *name,
         return NULL;
     }
     memset(cur, 0, sizeof(xmlAttr));
+    cur->column = -1;
     cur->type = XML_ATTRIBUTE_NODE;
 
     cur->parent = node;
@@ -1665,6 +1666,7 @@ xmlNewDocProp (xmlDoc *doc, const xmlChar *name, const xmlChar *value)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlAttr));
+    cur->column = -1;
     cur->type = XML_ATTRIBUTE_NODE;
 
     if (doc != NULL && doc->dict != NULL)
@@ -1805,6 +1807,7 @@ xmlNewDocPI (xmlDoc *doc, const xmlChar *name, const xmlChar *content)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_PI_NODE;
     cur->doc = doc;
 
@@ -1891,6 +1894,7 @@ xmlNewElem (xmlDocPtr doc, xmlNsPtr ns, const xmlChar *name,
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
 
     cur->type = XML_ELEMENT_NODE;
     cur->doc = doc;
@@ -2063,6 +2067,7 @@ xmlNewDocFragment (xmlDoc *doc)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_DOCUMENT_FRAG_NODE;
 
     cur->doc = doc;
@@ -2093,6 +2098,7 @@ xmlNewText (const xmlChar *content)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_TEXT_NODE;
 
     cur->name = xmlStringText;
@@ -2197,6 +2203,7 @@ xmlNewEntityRef (xmlDocPtr doc, xmlChar *name)
         return NULL;
     }
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_ENTITY_REF_NODE;
     cur->doc = doc;
     cur->name = name;
@@ -2273,6 +2280,7 @@ xmlNewReference (const xmlDoc *doc, const xmlChar *name)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_ENTITY_REF_NODE;
 
     cur->doc = (xmlDoc *) doc;
@@ -2351,6 +2359,7 @@ xmlNewTextLen (const xmlChar *content, int len)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_TEXT_NODE;
 
     cur->name = xmlStringText;
@@ -2408,6 +2417,7 @@ xmlNewComment (const xmlChar *content)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_COMMENT_NODE;
 
     cur->name = xmlStringComment;
@@ -2447,6 +2457,7 @@ xmlNewCDataBlock (xmlDoc *doc, const xmlChar *content, int len)
     if (cur == NULL)
         return NULL;
     memset(cur, 0, sizeof(xmlNode));
+    cur->column = -1;
     cur->type = XML_CDATA_SECTION_NODE;
     cur->doc = doc;
 
@@ -3865,6 +3876,8 @@ xmlCopyPropInternal (xmlDocPtr doc, xmlNodePtr target, xmlAttrPtr cur)
     if (ret == NULL)
         return NULL;
     ret->parent = target;
+    ret->line = cur->line;
+    ret->column = cur->column;
 
     if (cur->ns != NULL && target != NULL) {
         xmlNsPtr ns;
@@ -4085,6 +4098,7 @@ xmlStaticCopyNode (xmlNode *node, xmlDoc *doc, xmlNode *parent, int extended)
     if (ret == NULL)
         return NULL;
     memset(ret, 0, sizeof(xmlNode));
+    ret->column = -1;
     ret->type = node->type;
 
     ret->doc = doc;
@@ -4111,8 +4125,10 @@ xmlStaticCopyNode (xmlNode *node, xmlDoc *doc, xmlNode *parent, int extended)
         if (ret->content == NULL)
             goto error;
     } else {
-        if (node->type == XML_ELEMENT_NODE)
+        if (node->type == XML_ELEMENT_NODE) {
             ret->line = node->line;
+            ret->column = node->column;
+        }
     }
 
     if (!extended)
@@ -8460,6 +8476,7 @@ xmlDOMWrapCloneNode (xmlDOMWrapCtxt *ctxt, xmlDoc *sourceDoc, xmlNode *node,
             if (clone == NULL)
                 goto internal_error;
             memset(clone, 0, sizeof(xmlNode));
+            clone->column = -1;
             /*
 		* Set hierarchical links.
 		*/
@@ -8483,6 +8500,7 @@ xmlDOMWrapCloneNode (xmlDOMWrapCtxt *ctxt, xmlDoc *sourceDoc, xmlNode *node,
             if (clone == NULL)
                 goto internal_error;
             memset(clone, 0, sizeof(xmlAttr));
+            clone->column = -1;
             /*
 		* Set hierarchical links.
 		* TODO: Change this to add to the end of attributes.
