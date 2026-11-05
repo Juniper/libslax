@@ -410,6 +410,9 @@ slaxElementXPath (slax_data_t *sdp, slax_string_t *value,
 	return;
     }
 
+    xmlAttrSetLine(attr, value->ss_line);
+    xmlAttrSetColumn(attr, value->ss_col);
+
     xmlFree(buf);
 
     if (disable_escaping) {
