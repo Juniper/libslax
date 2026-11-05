@@ -3,6 +3,8 @@
 
 \#*
 .#*
+*.orig
+*.rej
 
 # Libraries
 *.lib
