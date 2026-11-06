@@ -349,10 +349,8 @@ xsltCompMatchAdd (xsltParserContextPtr ctxt, xsltCompMatchPtr comp, xsltOp op,
             flags = XML_XPATH_NOVAR;
 #endif
         comp->steps[comp->nbStep].comp
-            = xsltXPathCompileFlags(ctxt->style, value, flags);
+            = xsltXPathCompileFlags(ctxt->style, value, flags, ctxt->elem);
         if (comp->steps[comp->nbStep].comp == NULL) {
-            xsltTransformError(NULL, ctxt->style, ctxt->elem,
-                               "Failed to compile predicate\n");
             if (ctxt->style != NULL)
                 ctxt->style->errors++;
         }
