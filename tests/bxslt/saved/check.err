@@ -1,0 +1,73 @@
+bug-165.xsl:6:61: fatal error: the variable '$pStyle' is undefined
+6 | <xsl:value-of select="preceding-sibling::p[not(pPr/pStyle = $pStyle)][1]/preceding-sibling::p/pPr/pStyle"/>
+  |                                                             ^
+bug-180.xsl:4:42: fatal error: the variable '$xxx' is undefined
+4 |       <xsl:copy-of select=" * | document($xxx) "/>
+  |                                          ^
+bug-184.xsl:5:73: fatal error: the variable '$nonexistent' is undefined
+5 |             <xsl:value-of select="generate-id()=generate-id(key('none', $nonexistent))"/>
+  |                                                                         ^
+fatal error: the variable '$p' is undefined
+bug-201.xsl:8:27: fatal error: expression for variable '$var' failed to evaluate
+8 |     <xsl:param name="var" select="test:func()"/>
+  |                           ^
+  note: Stack usage error
+bug-208.xsl:5:25: fatal error: could not compile expression '*[a:b]'
+5 |       <xsl:sort select="*[a:b]"/>;
+  |                         ^
+  note: Undefined namespace prefix: a
+
+bug-215.xsl:5:26: fatal error: expression for variable '$ var/param being computed' failed to evaluate
+5 |   <xsl:variable name="v" select="abc:f()"/>
+  |                          ^
+  note: Stack usage error
+bug-165.xsl:6:61: fatal error: the variable '$pStyle' is undefined
+6 | <xsl:value-of select="preceding-sibling::p[not(pPr/pStyle = $pStyle)][1]/preceding-sibling::p/pPr/pStyle"/>
+  |                                                             ^
+bug-180.xsl:4:42: fatal error: the variable '$xxx' is undefined
+4 |       <xsl:copy-of select=" * | document($xxx) "/>
+  |                                          ^
+bug-184.xsl:5:73: fatal error: the variable '$nonexistent' is undefined
+5 |             <xsl:value-of select="generate-id()=generate-id(key('none', $nonexistent))"/>
+  |                                                                         ^
+fatal error: the variable '$p' is undefined
+bug-201.xsl:8:27: fatal error: expression for variable '$var' failed to evaluate
+8 |     <xsl:param name="var" select="test:func()"/>
+  |                           ^
+  note: Stack usage error
+bug-208.xsl:5:25: fatal error: could not compile expression '*[a:b]'
+5 |       <xsl:sort select="*[a:b]"/>;
+  |                         ^
+  note: Undefined namespace prefix: a
+
+bug-215.xsl:5:26: fatal error: expression for variable '$ var/param being computed' failed to evaluate
+5 |   <xsl:variable name="v" select="abc:f()"/>
+  |                          ^
+  note: Stack usage error
+recglobparam.xsl:4:46: fatal error: the variable '$ok' is undefined
+4 |   <xsl:param name="ok"><xsl:value-of select="$ok"/></xsl:param>
+  |                                              ^
+recglobvar.xsl:4:49: fatal error: the variable '$ok' is undefined
+4 |   <xsl:variable name="ok"><xsl:value-of select="$ok"/></xsl:variable>
+  |                                                 ^
+reclocparam.xsl:5:46: fatal error: the variable '$ok' is undefined
+5 |   <xsl:param name="ok"><xsl:value-of select="$ok"/></xsl:param>
+  |                                              ^
+reclocvar.xsl:5:49: fatal error: the variable '$ok' is undefined
+5 |   <xsl:variable name="ok"><xsl:value-of select="$ok"/></xsl:variable>
+  |                                                 ^
+undefvar.xsl:6:53: fatal error: the variable '$one' is undefined
+6 |     <xsl:value-of select="translate('hello','ABCDE',$one)"/>
+  |                                                     ^
+recursion.xsl:13:25: fatal error: dyn:evaluate(): unable to evaluate expression 'dyn:evaluate(.)'
+13 |   <xsl:value-of select="dyn:evaluate(.)"/>
+   |                         ^
+   note: Recursion limit exceeded
+eval.2.xsl:11:23: fatal error: XPath evaluation returned no result
+11 |         <xsl:value-of select="true() and saxon:expression('###')"/>
+   |                       ^
+   note: Invalid expression
+eval.3.xsl:11:23: fatal error: XPath evaluation returned no result
+11 |         <xsl:value-of select="true() and saxon:eval(saxon:expression('ns:foo'))"/>
+   |                       ^
+   note: Invalid expression
