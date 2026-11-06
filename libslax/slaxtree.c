@@ -1144,7 +1144,11 @@ slaxXpathEval (xmlNodePtr node, xmlNodePtr inst, xmlXPathContextPtr xpctxt,
     if (sexpr)
 	expr = sexpr;
 
-    comp = xsltXPathCompile(script, (const xmlChar *) expr);
+    /*
+     * NULL, not inst: this evaluates live, user-typed expressions,
+     * which should fail softly rather than with a compile-time report.
+     */
+    comp = xsltXPathCompile(script, (const xmlChar *) expr, NULL);
     if (comp == NULL) {
 	xmlFreeAndEasy(sexpr);
 	return NULL;
