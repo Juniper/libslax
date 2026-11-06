@@ -779,8 +779,11 @@ slaxDebugSplitArgs (char *buf, const char **args, int maxargs)
     for (i = 0; (s = strsep(&buf, wsp)) && i < maxargs - 1; i++) {
 	args[i] = s;
 
-	if (buf)
+	if (buf) {
 	    buf += strspn(buf, wsp);
+	    if (*buf == '\0')
+		buf = NULL;
+	}
     }
 
     args[i] = NULL;
@@ -1312,7 +1315,7 @@ slaxDebugCmdHelp (DC_ARGS)
     if (argv[1]) {
 	cmdp = slaxDebugGetCommand(argv[1]);
 	if (cmdp == NULL)
-	    slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[0]);
+	    slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[1]);
 	else if (cmdp->dc_helpfunc)
 	    cmdp->dc_helpfunc(statep);
 	else if (cmdp->dc_help)
