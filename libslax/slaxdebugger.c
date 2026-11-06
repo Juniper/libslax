@@ -1061,7 +1061,8 @@ slaxDebugAddBreakpoint (DC_ARGS, int temporary)
 	}
 
 	xmlXPathCompExprPtr comp;
-	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
+	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition,
+				 NULL);
 	if (comp == NULL) {
 	    slaxOutput("Invalid expression");
 	    xmlFreeAndEasy(condition);
@@ -1276,7 +1277,8 @@ slaxDebugCmdCondition (DC_ARGS)
 	}
 
 	xmlXPathCompExprPtr comp;
-	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition);
+	comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition,
+				 NULL);
 	if (comp == NULL) {
 	    slaxOutput("Invalid expression");
 	    xmlFreeAndEasy(condition);
