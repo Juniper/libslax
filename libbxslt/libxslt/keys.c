@@ -391,26 +391,20 @@ xsltAddKey (xsltStylesheetPtr style, const xmlChar *name,
     *   marks, could be sufficient.
     */
 #ifdef XML_XPATH_NOVAR
-    key->comp = xsltXPathCompileFlags(style, pattern, XML_XPATH_NOVAR);
+    key->comp = xsltXPathCompileFlags(style, pattern, XML_XPATH_NOVAR, inst);
 #else
-    key->comp = xsltXPathCompile(style, pattern);
+    key->comp = xsltXPathCompile(style, pattern, inst);
 #endif
     if (key->comp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsl:key : 'match' pattern compilation failed '%s'\n", pattern);
         if (style != NULL)
             style->errors++;
     }
 #ifdef XML_XPATH_NOVAR
-    key->usecomp = xsltXPathCompileFlags(style, use, XML_XPATH_NOVAR);
+    key->usecomp = xsltXPathCompileFlags(style, use, XML_XPATH_NOVAR, inst);
 #else
-    key->usecomp = xsltXPathCompile(style, use);
+    key->usecomp = xsltXPathCompile(style, use, inst);
 #endif
     if (key->usecomp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsl:key : 'use' expression compilation failed '%s'\n", use);
         if (style != NULL)
             style->errors++;
     }
