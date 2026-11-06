@@ -287,13 +287,8 @@ xsltCompileAttr (xsltStylesheetPtr style, xmlAttrPtr attr)
                 XSLT_TODO
                 goto error;
             } else {
-                comp = xsltXPathCompile(style, expr);
+                comp = xsltXPathCompile(style, expr, xmlAttrGetParent(attr));
                 if (comp == NULL) {
-                    xsltTransformError(
-                        NULL, style, xmlAttrGetParent(attr),
-                        "Attribute '%s': Failed to compile the expression "
-                        "'%s' in the AVT.\n",
-                        xmlAttrGetName(attr), expr);
                     style->errors++;
                     goto error;
                 }
