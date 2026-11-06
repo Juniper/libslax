@@ -1786,6 +1786,12 @@ struct _xsltTransformContext {
     xsltNewLocaleFunc newLocale;
     xsltFreeLocaleFunc freeLocale;
     xsltGenSortKeyFunc genSortKey;
+
+    /*
+     * Avoid issuing multiple fatal errors; set by
+     * xslHandleDebuggerError()
+     */
+    int fatalErrorReported;
 };
 
 /*
