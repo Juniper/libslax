@@ -2711,17 +2711,29 @@ xsltGetProfileInformation (xsltTransformContextPtr ctxt)
  * @style: the stylesheet
  * @str:  the XPath expression
  * @flags: extra compilation flags to pass down to libxml2 XPath
+ * @inst: the node whose in-scope namespaces should be validated against,
+ *        or NULL to skip namespace-prefix validation
  *
- * Compile an XPath expression
+ * Compile an XPath expression.  When @inst is non-NULL, validates the
+ * expression's namespace prefixes against @inst's in-scope namespaces
+ * at compile time (via XML_XPATH_CHECKNS), so an undeclared prefix fails
+ * immediately rather than only when evaluated.  Reports such a failure
+ * itself via xsltReportFatalError(), since no transform context exists
+ * yet at compile time.
  *
  * Returns the xmlXPathCompExprPtr resulting from the compilation or NULL.
  *         the caller has to free the object.
  */
 xmlXPathCompExprPtr
-xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags)
+xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags,
+                       xmlNodePtr inst)
 {
     xmlXPathContextPtr xpathCtxt;
     xmlXPathCompExprPtr ret;
+    xmlNsPtr *nsList = NULL;
+    xmlNsPtr *oldNsList = NULL;
+    int nsNr = 0;
+    int oldNsNr = 0;
 
     if (style != NULL) {
         xpathCtxt = style->principal->xpathCtxt;
@@ -2733,12 +2745,46 @@ xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags)
         if (xpathCtxt == NULL)
             return NULL;
     }
+
+    if (inst != NULL) {
+        nsList = xmlGetNsList(xmlNodeGetDoc(inst), inst);
+        for (nsNr = 0; nsList && nsList[nsNr]; nsNr++)
+            continue;
+
+        oldNsList = xmlXPathContextGetNamespaces(xpathCtxt);
+        oldNsNr = xmlXPathContextGetNsNr(xpathCtxt);
+
+        xmlXPathContextSetNamespaces(xpathCtxt, nsList);
+        xmlXPathContextSetNsNr(xpathCtxt, nsNr);
+
+        flags |= XML_XPATH_CHECKNS;
+    }
+
     xmlXPathContextSetFlags(xpathCtxt, flags);
 
     /*
     * Compile the expression.
     */
     ret = xmlXPathCtxtCompile(xpathCtxt, str);
+
+    if (inst != NULL) {
+        xmlXPathContextSetNamespaces(xpathCtxt, oldNsList);
+        xmlXPathContextSetNsNr(xpathCtxt, oldNsNr);
+        xmlFree(nsList);
+
+        if (ret == NULL) {
+            xmlErrorPtr lastError = xmlGetLastError();
+            const char *note = NULL;
+            char buf[256];
+
+            if (lastError != NULL && lastError->message != NULL)
+                note = lastError->message;
+
+            snprintf(buf, sizeof(buf),
+                     "could not compile expression '%s'", (const char *) str);
+            xsltReportFatalError(inst, buf, note, NULL);
+        }
+    }
 
     if (style == NULL) {
         xmlXPathFreeContext(xpathCtxt);
@@ -2755,6 +2801,8 @@ xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags)
  * xsltXPathCompile:
  * @style: the stylesheet
  * @str:  the XPath expression
+ * @inst: the node whose in-scope namespaces should be validated against,
+ *        or NULL to skip namespace-prefix validation
  *
  * Compile an XPath expression
  *
@@ -2762,9 +2810,10 @@ xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags)
  *         the caller has to free the object.
  */
 xmlXPathCompExprPtr
-xsltXPathCompile (xsltStylesheetPtr style, const xmlChar *str)
+xsltXPathCompile (xsltStylesheetPtr style, const xmlChar *str,
+                  xmlNodePtr inst)
 {
-    return xsltXPathCompileFlags(style, str, 0);
+    return xsltXPathCompileFlags(style, str, 0, inst);
 }
 
 /************************************************************************
@@ -3189,24 +3238,16 @@ xsltReportFatalError (xmlNodePtr cur, const char *message, const char *note,
  *         from xsltLastXPathErrorMessage()), or NULL if none is
  *         available
  *
- * Unconditionally transfer control to the debugger's error handler
- * (if one is registered), regardless of the current xslDebugStatus
- * or any breakpoint.  This gives the debugger a chance to let the
- * user inspect the still-live transform context at the point of a
- * fatal runtime error, before the transform unwinds and that context
- * is torn down.
+ * Gives an attached debugger first chance to handle a fatal runtime
+ * error, so the user can inspect the still-live transform context
+ * before it unwinds.  If no debugger is attached, reports the error
+ * itself via xsltReportFatalError(); ctxt->fatalErrorReported latches
+ * after the first report so a failure that propagates through several
+ * callers is only reported once.
  *
- * If no debugger is attached, reports the error itself via
- * xsltReportFatalError() instead of declining outright -- this is
- * what makes compiler-style fatal errors the default, for plain XSLT
- * and SLAX-compiled scripts alike, with no extra wiring needed by
- * either.
- *
- * Returns non-zero if the error was actually reported, zero if the
- * debugger declined (e.g. it's mid-eval on its own behalf).  Callers
- * use this to decide whether to also print their own, less
- * informative error message, rather than assuming that a debugger
- * being attached means this error was reported.
+ * Returns non-zero if the error was reported, zero if the debugger
+ * declined -- callers use this to decide whether to print their own
+ * fallback message.
  */
 int
 xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
@@ -3215,6 +3256,12 @@ xslHandleDebuggerError (xmlNodePtr cur, xsltTransformContextPtr ctxt,
     if (xsltDebuggerCurrentCallbacks.errorHandler != NULL)
         return xsltDebuggerCurrentCallbacks.errorHandler(cur, ctxt, message,
                                                            note);
+
+    if (ctxt != NULL) {
+        if (ctxt->fatalErrorReported)
+            return 1;
+        ctxt->fatalErrorReported = 1;
+    }
 
     xsltReportFatalError(cur, message, note, NULL);
     return 1;
