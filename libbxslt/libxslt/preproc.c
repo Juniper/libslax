@@ -788,12 +788,8 @@ xsltSortComp (xsltStylesheetPtr style, xmlNodePtr inst)
 	 */
         comp->select = xmlDictLookup(style->dict, BAD_CAST ".", 1);
     }
-    comp->comp = xsltXPathCompile(style, comp->select);
+    comp->comp = xsltXPathCompile(style, comp->select, inst);
     if (comp->comp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsltSortComp: could not compile select expression '%s'\n",
-            comp->select);
         if (style != NULL)
             style->errors++;
     }
@@ -1251,12 +1247,8 @@ xsltCopyOfComp (xsltStylesheetPtr style, xmlNodePtr inst)
             style->errors++;
         return;
     }
-    comp->comp = xsltXPathCompile(style, comp->select);
+    comp->comp = xsltXPathCompile(style, comp->select, inst);
     if (comp->comp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsl:copy-of : could not compile select expression '%s'\n",
-            comp->select);
         if (style != NULL)
             style->errors++;
     }
@@ -1318,12 +1310,8 @@ xsltValueOfComp (xsltStylesheetPtr style, xmlNodePtr inst)
             style->errors++;
         return;
     }
-    comp->comp = xsltXPathCompile(style, comp->select);
+    comp->comp = xsltXPathCompile(style, comp->select, inst);
     if (comp->comp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsl:value-of : could not compile select expression '%s'\n",
-            comp->select);
         if (style != NULL)
             style->errors++;
     }
@@ -1440,12 +1428,8 @@ xsltWithParamComp (xsltStylesheetPtr style, xmlNodePtr inst)
     comp->select = xsltGetCNsProp(style, inst, (const xmlChar *) "select",
                                   XSLT_NAMESPACE);
     if (comp->select != NULL) {
-        comp->comp = xsltXPathCompile(style, comp->select);
+        comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
-            xsltTransformError(NULL, style, inst,
-                               "XSLT-with-param: Failed to compile select "
-                               "expression '%s'\n",
-                               comp->select);
             style->errors++;
         }
         if (xmlNodeGetChildren(inst) != NULL) {
@@ -1715,12 +1699,8 @@ xsltApplyTemplatesComp (xsltStylesheetPtr style, xmlNodePtr inst)
     comp->select
         = xsltGetCNsProp(style, inst, BAD_CAST "select", XSLT_NAMESPACE);
     if (comp->select != NULL) {
-        comp->comp = xsltXPathCompile(style, comp->select);
+        comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
-            xsltTransformError(NULL, style, inst,
-                               "XSLT-apply-templates: could not compile select "
-                               "expression '%s'\n",
-                               comp->select);
             style->errors++;
         }
     }
@@ -1799,11 +1779,8 @@ xsltIfComp (xsltStylesheetPtr style, xmlNodePtr inst)
             style->errors++;
         return;
     }
-    comp->comp = xsltXPathCompile(style, comp->test);
+    comp->comp = xsltXPathCompile(style, comp->test, inst);
     if (comp->comp == NULL) {
-        xsltTransformError(NULL, style, inst,
-                           "xsl:if : could not compile test expression '%s'\n",
-                           comp->test);
         if (style != NULL)
             style->errors++;
     }
@@ -1849,11 +1826,8 @@ xsltWhenComp (xsltStylesheetPtr style, xmlNodePtr inst)
             style->errors++;
         return;
     }
-    comp->comp = xsltXPathCompile(style, comp->test);
+    comp->comp = xsltXPathCompile(style, comp->test, inst);
     if (comp->comp == NULL) {
-        xsltTransformError(
-            NULL, style, inst,
-            "xsl:when : could not compile test expression '%s'\n", comp->test);
         if (style != NULL)
             style->errors++;
     }
@@ -1899,12 +1873,8 @@ xsltForEachComp (xsltStylesheetPtr style, xmlNodePtr inst)
         if (style != NULL)
             style->errors++;
     } else {
-        comp->comp = xsltXPathCompile(style, comp->select);
+        comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
-            xsltTransformError(
-                NULL, style, inst,
-                "xsl:for-each : could not compile select expression '%s'\n",
-                comp->select);
             if (style != NULL)
                 style->errors++;
         }
@@ -1964,12 +1934,8 @@ xsltVariableComp (xsltStylesheetPtr style, xmlNodePtr inst)
 #ifndef XSLT_REFACTORED
         xmlNodePtr cur;
 #endif
-        comp->comp = xsltXPathCompile(style, comp->select);
+        comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
-            xsltTransformError(
-                NULL, style, inst,
-                "XSLT-variable: Failed to compile the XPath expression '%s'.\n",
-                comp->select);
             style->errors++;
         }
 #ifdef XSLT_REFACTORED
@@ -2041,12 +2007,8 @@ xsltParamComp (xsltStylesheetPtr style, xmlNodePtr inst)
     comp->select = xsltGetCNsProp(style, inst, (const xmlChar *) "select",
                                   XSLT_NAMESPACE);
     if (comp->select != NULL) {
-        comp->comp = xsltXPathCompile(style, comp->select);
+        comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
-            xsltTransformError(
-                NULL, style, inst,
-                "XSLT-param: could not compile select expression '%s'.\n",
-                comp->select);
             style->errors++;
         }
         if (xmlNodeGetChildren(inst) != NULL) {
