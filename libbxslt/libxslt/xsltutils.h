@@ -217,9 +217,11 @@ XSLTPUBFUN int XSLTCALL xsltSaveResultToString (xmlChar **doc_txt_ptr,
  * XPath interface
  */
 XSLTPUBFUN xmlXPathCompExprPtr XSLTCALL
-xsltXPathCompile (xsltStylesheetPtr style, const xmlChar *str);
+xsltXPathCompile (xsltStylesheetPtr style, const xmlChar *str,
+                  xmlNodePtr inst);
 XSLTPUBFUN xmlXPathCompExprPtr XSLTCALL
-xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags);
+xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags,
+                       xmlNodePtr inst);
 
 #ifdef IN_LIBXSLT
 /** DOC_DISABLE */
