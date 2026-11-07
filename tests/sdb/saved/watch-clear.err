@@ -1,0 +1,21 @@
+Type 'help' for help
+(sdb) watch variable $total
+Watchpoint 1: $total
+(sdb) watch variable $count
+Watchpoint 2: $count
+(sdb) info watch
+List of watchpoints:
+    #1 $total
+    #2 $count
+(sdb) clear watch variable $total
+Deleted watchpoint 1 ($total)
+(sdb) info watch
+List of watchpoints:
+    #2 $count
+(sdb) clear watch variable 2
+Deleted watchpoint 2
+(sdb) info watch
+No watchpoints
+(sdb) run
+Script exited normally
+(sdb) quit
