@@ -1,0 +1,11 @@
+Type 'help' for help
+(sdb) watch variable $local
+Watchpoint 1: $local
+(sdb) run
+Watchpoint 1: $local
+Old value: 99
+New value: 100
+watch-out-of-scope.slax: 14:     set $local = 100;
+(sdb) continue
+Script exited normally
+(sdb) quit
