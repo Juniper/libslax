@@ -1,0 +1,16 @@
+version 1.0;
+
+match / {
+    mvar $outer = 0;
+    set $outer = 1;
+    call inner();
+    set $outer = 2;
+    <result> $outer;
+}
+
+template inner () {
+    mvar $local = 0;
+    set $local = 99;
+    set $local = 100;
+    <inner> $local;
+}
