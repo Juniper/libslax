@@ -5,6 +5,7 @@ List of commands:
   backtrace [full] Show the backtrace of template calls (alias: bt)
   break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
   callflow [val]  Enable call flow tracing
+  clear watch variable [$var | num]  Clear a watchpoint
   condition <num> [expr]  Set, change, or clear a breakpoint's condition
   continue [loc]  Continue running the script
   delete [num]    Delete all (or one) breakpoints
@@ -26,6 +27,7 @@ List of commands:
   tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
   up [n]          Move the selected frame toward the outermost frame
   verbose         Turn on verbose (-v) output logging
+  watch variable $var  Set a watchpoint on a variable
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
 
@@ -36,6 +38,7 @@ List of commands:
   backtrace [full] Show the backtrace of template calls (alias: bt)
   break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
   callflow [val]  Enable call flow tracing
+  clear watch variable [$var | num]  Clear a watchpoint
   condition <num> [expr]  Set, change, or clear a breakpoint's condition
   continue [loc]  Continue running the script
   delete [num]    Delete all (or one) breakpoints
@@ -57,6 +60,7 @@ List of commands:
   tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
   up [n]          Move the selected frame toward the outermost frame
   verbose         Turn on verbose (-v) output logging
+  watch variable $var  Set a watchpoint on a variable
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
 
