@@ -243,7 +243,33 @@ TAILQ_HEAD(slaxDebugBpList_s, slaxDebugBreakpoint_s) slaxDebugBreakpoints;
 static uint slaxDebugBreakpointNumber;
 
 /*
- * Various display mode 
+ * Double linked list to hold the watchpoints.  A watchpoint fires
+ * whenever the watched variable is assigned a new value, whether by
+ * normal script execution (slaxMvarElement()) or by an interactive
+ * "set"/"append" (slaxDebugCmdSetCommon()); see
+ * slaxDebugCheckWatchpoints().  Watchpoint numbers are independent of
+ * breakpoint numbers, so adding or removing one never shifts the
+ * other's numbering.
+ */
+typedef struct slaxDebugWatch_s {
+    TAILQ_ENTRY(slaxDebugWatch_s) dwp_link;
+    char *dwp_where;		/* Text as given by the user ("$foo") */
+    char *dwp_name;		/* Bare variable name ("foo"), for matching */
+    char *dwp_condition;	/* "$foo" translated to XPath */
+    uint dwp_num;		/* Watchpoint number */
+    int dwp_have_value;	/* TRUE once dwp_value holds a real snapshot */
+    char *dwp_value;		/* Last known value, stringified, for display */
+    xmlDocPtr dwp_nodes;	/* Deep copy of the last node-set value's
+				   top-level nodes, for structural
+				   comparison; NULL for a scalar value */
+} slaxDebugWatch_t;
+
+TAILQ_HEAD(slaxDebugWpList_s, slaxDebugWatch_s) slaxDebugWatches;
+
+static uint slaxDebugWatchNumber;
+
+/*
+ * Various display mode
  */
 int slaxDebugDisplayMode;
 #define DEBUG_MODE_CLI		1 /* Normal CLI operations */
@@ -545,6 +571,39 @@ slaxDebugClearBreakpoints (void)
     }
 
     slaxDebugBreakpointNumber = 0;
+}
+
+/*
+ * Remove a watchpoint from the list and free its contents
+ */
+static void
+slaxDebugFreeWatch (slaxDebugWatch_t *dwp)
+{
+    xmlFreeAndEasy(dwp->dwp_where);
+    xmlFreeAndEasy(dwp->dwp_name);
+    xmlFreeAndEasy(dwp->dwp_condition);
+    xmlFreeAndEasy(dwp->dwp_value);
+    if (dwp->dwp_nodes != NULL)
+	xmlFreeDoc(dwp->dwp_nodes);
+    TAILQ_REMOVE(&slaxDebugWatches, dwp, dwp_link);
+}
+
+/*
+ * Clear all watchpoints
+ */
+static void
+slaxDebugClearWatches (void)
+{
+    slaxDebugWatch_t *dwp;
+
+    for (;;) {
+	dwp = TAILQ_FIRST(&slaxDebugWatches);
+	if (dwp == NULL)
+	    break;
+	slaxDebugFreeWatch(dwp);
+    }
+
+    slaxDebugWatchNumber = 0;
 }
 
 /*
@@ -1119,6 +1178,136 @@ slaxDebugCmdTbreak (DC_ARGS)
     slaxDebugAddBreakpoint(statep, commandline, argv, TRUE);
 }
 
+/*
+ * 'watch variable $foo' subcommand: parse and validate "$foo" the
+ * same way slaxDebugAddBreakpoint() validates a breakpoint condition,
+ * then add a new watchpoint for it.
+ */
+static void
+slaxDebugCmdWatchVariable (DC_ARGS)
+{
+    slaxDebugWatch_t *dwp;
+    const char *where = argv[2];
+
+    if (where == NULL || where[0] != '$' || where[1] == '\0') {
+	slaxOutput("usage: watch variable $name");
+	return;
+    }
+
+    TAILQ_FOREACH(dwp, &slaxDebugWatches, dwp_link) {
+	if (streq(dwp->dwp_name, where + 1)) {
+	    slaxOutput("Duplicate watchpoint");
+	    return;
+	}
+    }
+
+    char *condition = slaxSlaxToXpath("sdb", 1, where, NULL);
+    if (condition == NULL) {
+	slaxOutput("Invalid expression");
+	return;
+    }
+
+    xmlXPathCompExprPtr comp;
+    comp = xsltXPathCompile(statep->ds_script, (const xmlChar *) condition,
+			     NULL);
+    if (comp == NULL) {
+	slaxOutput("Invalid expression");
+	xmlFreeAndEasy(condition);
+	return;
+    }
+
+    xmlXPathFreeCompExpr(comp);
+
+    dwp = xmlMalloc(sizeof(*dwp));
+    if (dwp == NULL)
+	return;
+
+    bzero(dwp, sizeof(*dwp));
+    dwp->dwp_where = xmlStrdup2(where);
+    dwp->dwp_name = xmlStrdup2(where + 1);
+    dwp->dwp_condition = condition;
+    dwp->dwp_num = ++slaxDebugWatchNumber;
+
+    TAILQ_INSERT_TAIL(&slaxDebugWatches, dwp, dwp_link);
+
+    slaxOutput("Watchpoint %d: %s", dwp->dwp_num, dwp->dwp_where);
+}
+
+/*
+ * 'watch' command
+ */
+static void
+slaxDebugCmdWatch (DC_ARGS)
+{
+    if (argv[1] && slaxDebugIsAbbrev("variable", argv[1])) {
+	slaxDebugCmdWatchVariable(statep, commandline, argv);
+	return;
+    }
+
+    slaxOutput("usage: watch variable $name");
+}
+
+/*
+ * 'clear watch variable [$var | num]' subcommand
+ */
+static void
+slaxDebugCmdClearWatch (DC_ARGS)
+{
+    slaxDebugWatch_t *dwp;
+    uint num;
+    const char *target = argv[3];
+
+    if (argv[2] == NULL || !slaxDebugIsAbbrev("variable", argv[2])
+	    || target == NULL) {
+	slaxOutput("usage: clear watch variable [$name | num]");
+	return;
+    }
+
+    if (target[0] == '$') {
+	TAILQ_FOREACH(dwp, &slaxDebugWatches, dwp_link) {
+	    if (streq(dwp->dwp_name, target + 1)) {
+		num = dwp->dwp_num;
+		slaxDebugFreeWatch(dwp);
+		slaxOutput("Deleted watchpoint %d (%s)", num, target);
+		return;
+	    }
+	}
+
+	slaxOutput("No watchpoint on variable \"%s\"", target);
+	return;
+    }
+
+    num = atoi(target);
+    if (num <= 0) {
+	slaxOutput("Invalid watchpoint number");
+	return;
+    }
+
+    TAILQ_FOREACH(dwp, &slaxDebugWatches, dwp_link) {
+	if (dwp->dwp_num == num) {
+	    slaxDebugFreeWatch(dwp);
+	    slaxOutput("Deleted watchpoint %d", num);
+	    return;
+	}
+    }
+
+    slaxOutput("Watchpoint %d not found", num);
+}
+
+/*
+ * 'clear' command
+ */
+static void
+slaxDebugCmdClear (DC_ARGS)
+{
+    if (argv[1] && slaxDebugIsAbbrev("watch", argv[1])) {
+	slaxDebugCmdClearWatch(statep, commandline, argv);
+	return;
+    }
+
+    slaxOutput("usage: clear watch variable [$name | num]");
+}
+
 static int
 slaxDebugCheckDone (slaxDebugState_t *statep UNUSED)
 {
@@ -1343,6 +1532,7 @@ slaxDebugHelpInfo (DH_ARGS)
     slaxOutput("  info locals       Display local variables");
     slaxOutput("  info output       Display output document");
     slaxOutput("  info profile [brief | wall]  Report profiling information");
+    slaxOutput("  info watch        Display current watchpoints");
 }
 
 static void
@@ -1376,6 +1566,25 @@ slaxDebugInfoBreakpoints (slaxDebugState_t *statep)
 
     if (hit == 0)
 	slaxOutput("No breakpoints");
+}
+
+static void
+slaxDebugInfoWatch (void)
+{
+    slaxDebugWatch_t *dwp;
+    int hit = 0;
+
+    TAILQ_FOREACH(dwp, &slaxDebugWatches, dwp_link) {
+	if (++hit == 1)
+	    slaxOutput("List of watchpoints:");
+
+	slaxOutput("    #%d %s%s%s", dwp->dwp_num, dwp->dwp_where,
+		   dwp->dwp_have_value ? ", current value: " : "",
+		   dwp->dwp_have_value ? dwp->dwp_value : "");
+    }
+
+    if (hit == 0)
+	slaxOutput("No watchpoints");
 }
 
 /*
@@ -1697,6 +1906,9 @@ slaxDebugCmdInfo (DC_ARGS)
 	    flags |= SDBF_PROFILE_WALL;
 
 	slaxProfReport(flags, statep->ds_script_buffer);
+
+    } else if (slaxDebugIsAbbrev("watch", argv[1])) {
+	slaxDebugInfoWatch();
 
     } else if (slaxDebugIsAbbrev("help", argv[1])) {
 	slaxDebugHelpInfo(statep);
@@ -2244,6 +2456,8 @@ slaxDebugCmdSetCommon (slaxDebugState_t *statep, const char *commandline,
 	slaxMvarAppend(ctxt, (const xmlChar *) name, var, value);
     else
 	slaxMvarSet((const xmlChar *) name, var, value);
+
+    slaxDebugCheckWatchpoints(name);
 
     char tagbuf[BUFSIZ];
     snprintf(tagbuf, sizeof(tagbuf), "$%s = ", name);
@@ -2818,6 +3032,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       slaxDebugHelpCallFlow,
     },
 
+    { "clear",	       2, slaxDebugCmdClear,
+      "clear watch variable [$var | num]  Clear a watchpoint",
+      NULL,
+    },
+
     { "condition",     4, slaxDebugCmdCondition,
       "condition <num> [expr]  Set, change, or clear a breakpoint's "
       "condition",
@@ -2927,6 +3146,11 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "verbose",       1, slaxDebugCmdVerbose,
       "verbose         Turn on verbose (-v) output logging",
       slaxDebugHelpVerbose,
+    },
+
+    { "watch",	       2, slaxDebugCmdWatch,
+      "watch variable $var  Set a watchpoint on a variable",
+      NULL,
     },
 
     { "where",	       1, slaxDebugCmdWhere,
@@ -3382,6 +3606,137 @@ slaxDebugErrorHandler (xmlNodePtr cur, xsltTransformContextPtr ctxt,
 }
 
 /*
+ * Make a standalone, deep copy of the sibling chain starting at
+ * "first", owned by a throwaway document, so a watchpoint can keep
+ * comparing against it after the live value (an RTF that may be
+ * replaced or freed by the next assignment) has moved on
+ */
+static xmlDocPtr
+slaxDebugSnapshotNodes (xmlNodePtr first)
+{
+    xmlDocPtr docp = xmlNewDoc(NULL);
+    xmlNodePtr np, copy;
+
+    if (docp == NULL)
+	return NULL;
+
+    for (np = first; np != NULL; np = xmlNodeGetNext(np)) {
+	copy = xmlCopyNode(np, 1);
+	if (copy != NULL)
+	    xmlAddChild((xmlNodePtr) docp, copy);
+    }
+
+    return docp;
+}
+
+/**
+ * Called whenever a variable is assigned a new value, from both
+ * slaxMvarElement() (an <xsl:variable>/<xsl:param> executing
+ * normally) and slaxDebugCmdSetCommon() (an interactive
+ * "set"/"append").  If "name" matches a watched variable and its
+ * value actually changed, force an interactive stop, the same way a
+ * breakpoint hit does.
+ *
+ * Unlike slaxDebugHandler() and slaxDebugErrorHandler(), this can be
+ * called while DSF_INSHELL is set (an interactive "set" runs with it
+ * set the entire time), so we can't use that flag to guard against
+ * recursion the way they do.  That's fine here: a nested stop (e.g.
+ * typing "set $y = 2" while already stopped at a watchpoint on $y)
+ * is just another level of C-stack recursion, and each level's own
+ * loop below independently exits once the status leaves
+ * XSLT_DEBUG_INIT, so a "continue" at the innermost stop unwinds
+ * cleanly back out through all of them.
+ *
+ * @name bare name (no leading "$") of the variable just assigned
+ */
+void
+slaxDebugCheckWatchpoints (const char *name)
+{
+    slaxDebugState_t *statep = slaxDebugGetState();
+    slaxDebugWatch_t *dwp;
+    int status;
+
+    if (TAILQ_EMPTY(&slaxDebugWatches))
+	return;
+
+    status = xsltGetDebuggerStatus();
+    if (status == XSLT_DEBUG_DONE || status == XSLT_DEBUG_QUIT)
+	return;
+
+    TAILQ_FOREACH(dwp, &slaxDebugWatches, dwp_link) {
+	if (!streq(dwp->dwp_name, name))
+	    continue;
+
+	xmlXPathObjectPtr xpath = slaxDebugEvalXpath(statep, dwp->dwp_condition);
+	if (xpath == NULL)
+	    continue;	/* Out of scope or otherwise unevaluable; skip quietly */
+
+	int is_nodeset = (xmlXPathObjectGetType(xpath) == XPATH_NODESET);
+	xmlNodeSetPtr nset = is_nodeset
+	    ? xmlXPathObjectGetNodesetval(xpath) : NULL;
+	xmlNodePtr new_nodes = (nset != NULL && xmlNodeSetGetNodeNr(nset) > 0)
+	    ? xmlNodeSetGetNodeEntry(nset, 0) : NULL;
+
+	char *value = (char *) xmlXPathCastToString(xpath);
+	xmlXPathFreeObject(xpath);
+
+	/*
+	 * xpath is gone, but new_nodes still points into the live
+	 * document -- freeing the xmlXPathObjectPtr only frees the
+	 * node-set wrapper, not the nodes it referenced -- so reading
+	 * or deep-copying it below is still safe.
+	 */
+
+	if (!dwp->dwp_have_value) {
+	    /* First evaluation just records a baseline; no stop */
+	    dwp->dwp_value = value;
+	    dwp->dwp_nodes = is_nodeset
+		? slaxDebugSnapshotNodes(new_nodes) : NULL;
+	    dwp->dwp_have_value = TRUE;
+	    continue;
+	}
+
+	int changed = is_nodeset
+	    ? !slaxNodeListEqual(dwp->dwp_nodes
+				 ? xmlDocGetChildren(dwp->dwp_nodes) : NULL,
+				 new_nodes)
+	    : !streq(dwp->dwp_value, value);
+
+	if (!changed) {
+	    xmlFreeAndEasy(value);
+	    continue;
+	}
+
+	slaxOutput("Watchpoint %d: %s", dwp->dwp_num, dwp->dwp_where);
+	slaxOutput("Old value: %s", dwp->dwp_value);
+	slaxOutput("New value: %s", value);
+
+	xmlFreeAndEasy(dwp->dwp_value);
+	dwp->dwp_value = value;
+
+	if (dwp->dwp_nodes != NULL)
+	    xmlFreeDoc(dwp->dwp_nodes);
+	dwp->dwp_nodes = is_nodeset ? slaxDebugSnapshotNodes(new_nodes) : NULL;
+
+	if (statep->ds_flags & DSF_PROFILER)
+	    slaxProfExit();
+
+	for (;;) {
+	    if (slaxDebugShell(statep) < 0) {
+		xsltSetDebuggerStatus(XSLT_DEBUG_QUIT);
+		break;
+	    }
+
+	    if (xsltGetDebuggerStatus() != XSLT_DEBUG_INIT)
+		break;
+	}
+
+	if (statep->ds_flags & DSF_PROFILER)
+	    slaxProfEnter(statep->ds_inst);
+    }
+}
+
+/*
  * Build a ';'-joined folded-stack path string for the live call
  * stack, from the outermost frame down through (and including)
  * "stp" -- the format flamegraph.pl and speedscope.app both expect
@@ -3659,6 +4014,7 @@ slaxDebugInitFlags (slaxDebugFlags_t flags)
 
     TAILQ_INIT(&slaxDebugRestartList);
     TAILQ_INIT(&slaxDebugBreakpoints);
+    TAILQ_INIT(&slaxDebugWatches);
     TAILQ_INIT(&slaxDebugStack);
 
     /* Start with the current line */
@@ -4006,6 +4362,7 @@ slaxDebugApplyStylesheet (const char *scriptname, xsltStylesheetPtr style,
 
     /* Free our resources */
     slaxDebugClearBreakpoints();
+    slaxDebugClearWatches();
     slaxDebugClearStacktrace();
     slaxProfClose();
 
