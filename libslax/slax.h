@@ -270,6 +270,16 @@ void
 slaxDebugSetIncludes (const char **includes);
 
 /**
+ * Called whenever a variable is assigned a new value, whether by
+ * normal script execution or by an interactive "set"/"append", so
+ * any matching watchpoint can force an interactive stop.
+ *
+ * @name bare name (no leading "$") of the variable just assigned
+ */
+void
+slaxDebugCheckWatchpoints (const char *name);
+
+/**
  * Apply a stylesheet to an input document, returning the results.
  *
  * @scriptname Name of the script, or NULL to prohibit reloading
