@@ -69,6 +69,260 @@ slaxNodeIsXsl (xmlNodePtr nodep, const char *name)
 	    && streq((const char *) xmlNsGetHref(ns), XSL_URI));
 }
 
+/*
+ * Is "node" a whitespace-only text node sitting next to an element --
+ * the indentation a pretty-printer adds between a parent's start tag
+ * and an element child, between an element child's end tag and its
+ * parent's end tag, or between two element siblings?  Such a node is
+ * pure formatting, so slaxNodeListEqual() and slaxNodeSetEqual() skip
+ * it on both sides.  A whitespace-only text node with no element
+ * neighbor (the entire content of a leaf element) is real content and
+ * is kept.
+ */
+static int
+slaxNodeIsIndent (xmlNodePtr node)
+{
+    xmlNodePtr prev, next;
+
+    if (xmlNodeGetType(node) != XML_TEXT_NODE || !xmlIsBlankNode(node))
+	return FALSE;
+
+    prev = xmlNodeGetPrev(node);
+    next = xmlNodeGetNext(node);
+
+    return (prev != NULL && xmlNodeGetType(prev) == XML_ELEMENT_NODE)
+	|| (next != NULL && xmlNodeGetType(next) == XML_ELEMENT_NODE);
+}
+
+/*
+ * First node at or after "node" that isn't ignorable indentation
+ */
+static xmlNodePtr
+slaxNodeSkipIndent (xmlNodePtr node)
+{
+    while (node != NULL && slaxNodeIsIndent(node))
+	node = xmlNodeGetNext(node);
+
+    return node;
+}
+
+/*
+ * Compare two possibly-NULL content strings, treating NULL as equal
+ * only to NULL (streq() alone would call NULL-vs-NULL unequal)
+ */
+static int
+slaxContentEqual (const xmlChar *s1, const xmlChar *s2)
+{
+    if (s1 == NULL || s2 == NULL)
+	return s1 == s2;
+
+    return streq((const char *) s1, (const char *) s2);
+}
+
+/*
+ * Compare two elements' attribute sets for equality, ignoring order
+ */
+static int
+slaxAttrsEqual (xmlNodePtr n1, xmlNodePtr n2)
+{
+    xmlAttrPtr a1, a2;
+    xmlNodePtr c1, c2;
+    int count1 = 0, count2 = 0;
+
+    for (a1 = xmlNodeGetProperties(n1); a1; a1 = xmlAttrGetNext(a1))
+	count1 += 1;
+    for (a2 = xmlNodeGetProperties(n2); a2; a2 = xmlAttrGetNext(a2))
+	count2 += 1;
+
+    if (count1 != count2)
+	return FALSE;		/* Different attribute counts */
+
+    for (a1 = xmlNodeGetProperties(n1); a1; a1 = xmlAttrGetNext(a1)) {
+	xmlNsPtr ns1 = xmlAttrGetNs(a1);
+
+	for (a2 = xmlNodeGetProperties(n2); a2; a2 = xmlAttrGetNext(a2)) {
+	    xmlNsPtr ns2 = xmlAttrGetNs(a2);
+
+	    if (!streq((const char *) xmlAttrGetName(a1),
+		       (const char *) xmlAttrGetName(a2)))
+		continue;
+
+	    if ((ns1 == NULL) != (ns2 == NULL))
+		continue;
+
+	    if (ns1 != NULL && !streq((const char *) xmlNsGetHref(ns1),
+				       (const char *) xmlNsGetHref(ns2)))
+		continue;
+
+	    break;
+	}
+
+	if (a2 == NULL)
+	    return FALSE;	/* No matching attribute in n2 */
+
+	c1 = xmlAttrGetChildren(a1);
+	c2 = xmlAttrGetChildren(a2);
+
+	if (!slaxContentEqual(c1 ? xmlNodeGetContentRaw(c1) : NULL,
+			       c2 ? xmlNodeGetContentRaw(c2) : NULL))
+	    return FALSE;	/* Different attribute value */
+    }
+
+    return TRUE;
+}
+
+/*
+ * A node-set holding the value of a node-valued ("RTF") variable has
+ * the RTF's container node -- a document node, not the content
+ * itself -- as its member, so a plain node-to-node comparison needs
+ * to see through it to the content underneath.  Returns the
+ * container's children, or NULL if "node" isn't an RTF container.
+ */
+static xmlNodePtr
+slaxNodeRtfChildren (xmlNodePtr node)
+{
+    if (xmlNodeGetType(node) == XML_DOCUMENT_NODE
+	    && xsltIsResultTreeFragment(node))
+	return xmlNodeGetChildren(node);
+
+    return NULL;
+}
+
+/*
+ * Compare two single nodes: same type, and for an element, same name,
+ * namespace, attributes, and (recursively) children; for a text node,
+ * the same content.  Children are compared via slaxNodeListEqual(),
+ * so indentation whitespace between them doesn't matter.  Either
+ * side may be an RTF container, which compares by its children
+ * rather than as a node in its own right.
+ */
+static int
+slaxNodeEqual (xmlNodePtr n1, xmlNodePtr n2)
+{
+    xmlNsPtr ns1, ns2;
+    xmlNodePtr rtf1 = slaxNodeRtfChildren(n1);
+    xmlNodePtr rtf2 = slaxNodeRtfChildren(n2);
+
+    if (rtf1 != NULL || rtf2 != NULL)
+	return slaxNodeListEqual(rtf1 != NULL ? rtf1 : n1,
+				  rtf2 != NULL ? rtf2 : n2);
+
+    if (xmlNodeGetType(n1) != xmlNodeGetType(n2))
+	return FALSE;
+
+    switch (xmlNodeGetType(n1)) {
+    case XML_ELEMENT_NODE:
+	if (!streq((const char *) xmlNodeGetName(n1),
+		   (const char *) xmlNodeGetName(n2)))
+	    return FALSE;
+
+	ns1 = xmlNodeGetNs(n1);
+	ns2 = xmlNodeGetNs(n2);
+
+	if ((ns1 == NULL) != (ns2 == NULL))
+	    return FALSE;
+	if (ns1 != NULL && !streq((const char *) xmlNsGetHref(ns1),
+				   (const char *) xmlNsGetHref(ns2)))
+	    return FALSE;
+
+	if (!slaxAttrsEqual(n1, n2))
+	    return FALSE;
+
+	return slaxNodeListEqual(xmlNodeGetChildren(n1),
+				  xmlNodeGetChildren(n2));
+
+    case XML_TEXT_NODE:
+	return slaxContentEqual(xmlNodeGetContentRaw(n1),
+				 xmlNodeGetContentRaw(n2));
+
+    default:
+	return TRUE;
+    }
+}
+
+/**
+ * Compare two sibling chains the way a node-valued ("RTF") variable's
+ * value needs to be compared to detect a real change: a plain string
+ * comparison is fooled by pretty-printing, since reformatted XML with
+ * the same content casts to a different string value.  Indentation
+ * whitespace (slaxNodeIsIndent()) is skipped on both sides before
+ * comparing, so "<one><two>x</two></one>" and the same tree
+ * reformatted with newlines and indentation compare equal.
+ *
+ * @n1: head of the first sibling chain
+ * @n2: head of the second sibling chain
+ * @returns non-zero if the two chains are equal
+ */
+int
+slaxNodeListEqual (xmlNodePtr n1, xmlNodePtr n2)
+{
+    n1 = slaxNodeSkipIndent(n1);
+    n2 = slaxNodeSkipIndent(n2);
+
+    for ( ; n1 != NULL && n2 != NULL;
+	    n1 = slaxNodeSkipIndent(xmlNodeGetNext(n1)),
+	    n2 = slaxNodeSkipIndent(xmlNodeGetNext(n2))) {
+	if (!slaxNodeEqual(n1, n2))
+	    return FALSE;
+    }
+
+    return n1 == NULL && n2 == NULL;
+}
+
+/*
+ * First index at or after "*idxp" in "ns" whose node isn't ignorable
+ * indentation, returning the node and leaving "*idxp" pointing at it
+ */
+static xmlNodePtr
+slaxNodeSetSkipIndent (xmlNodeSetPtr ns, int *idxp)
+{
+    xmlNodePtr node;
+
+    for ( ; *idxp < xmlNodeSetGetNodeNr(ns); *idxp += 1) {
+	node = xmlNodeSetGetNodeEntry(ns, *idxp);
+	if (!slaxNodeIsIndent(node))
+	    return node;
+    }
+
+    return NULL;
+}
+
+/**
+ * Compare two node-sets member-by-member, in document order, the way
+ * slaxNodeListEqual() compares a sibling chain.  Unlike a sibling
+ * chain, a node-set's members aren't necessarily linked to each other
+ * in the live tree (an arbitrary XPath expression can select a
+ * scattered set of nodes), so this walks each node-set's own member
+ * array instead of following "next" pointers; indentation whitespace
+ * members are still skipped, using the same test as for a sibling
+ * chain, since that test looks only at a node's own neighbors in the
+ * live tree, not at node-set membership.
+ *
+ * @ns1: the first node-set, or NULL for an empty set
+ * @ns2: the second node-set, or NULL for an empty set
+ * @returns non-zero if the two node-sets are equal
+ */
+int
+slaxNodeSetEqual (xmlNodeSetPtr ns1, xmlNodeSetPtr ns2)
+{
+    int i1 = 0, i2 = 0;
+    xmlNodePtr n1, n2;
+
+    for ( ; ; ) {
+	n1 = (ns1 != NULL) ? slaxNodeSetSkipIndent(ns1, &i1) : NULL;
+	n2 = (ns2 != NULL) ? slaxNodeSetSkipIndent(ns2, &i2) : NULL;
+
+	if (n1 == NULL || n2 == NULL)
+	    return n1 == n2;
+
+	if (!slaxNodeEqual(n1, n2))
+	    return FALSE;
+
+	i1 += 1;
+	i2 += 1;
+    }
+}
+
 /**
  * Decide if a namespace value is suitable
  */
