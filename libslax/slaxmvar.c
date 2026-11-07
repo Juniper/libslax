@@ -780,6 +780,8 @@ slaxMvarElement (xsltTransformContextPtr ctxt,
 	slaxMvarAppend(ctxt, comp->mp_localname, var, value);
     else
 	slaxMvarSet(comp->mp_localname, var, value);
+
+    slaxDebugCheckWatchpoints((const char *) comp->mp_localname);
 }
 
 static xsltElemPreCompPtr
