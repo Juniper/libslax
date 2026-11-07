@@ -198,6 +198,30 @@ int
 slaxNodeIsXsl (xmlNodePtr nodep, const char *name);
 
 /**
+ * Compare two sibling chains for equality, ignoring purely cosmetic
+ * indentation whitespace between elements, so pretty-printed and
+ * compact XML with the same content compare equal.
+ *
+ * @n1: head of the first sibling chain
+ * @n2: head of the second sibling chain
+ * @returns non-zero if the two chains are equal
+ */
+int
+slaxNodeListEqual (xmlNodePtr n1, xmlNodePtr n2);
+
+/**
+ * Compare two node-sets for equality, member-by-member in document
+ * order, the same way slaxNodeListEqual() compares a sibling chain
+ * (including ignoring indentation whitespace members).
+ *
+ * @ns1: the first node-set, or NULL for an empty set
+ * @ns2: the second node-set, or NULL for an empty set
+ * @returns non-zero if the two node-sets are equal
+ */
+int
+slaxNodeSetEqual (xmlNodeSetPtr ns1, xmlNodeSetPtr ns2);
+
+/**
  * Find a namespace, or make one if the prefix is well known
  */
 xmlNsPtr
