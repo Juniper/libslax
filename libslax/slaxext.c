@@ -1811,8 +1811,49 @@ slaxExtEmpty (xmlXPathParserContext *ctxt, int nargs)
 
     if (empty)
 	xmlXPathReturnTrue(ctxt);
-    else 
+    else
 	xmlXPathReturnFalse(ctxt);
+}
+
+/*
+ * Return TRUE if the two arguments are equal.  Two node-sets are
+ * compared structurally, ignoring purely cosmetic indentation
+ * whitespace (see slaxNodeSetEqual()), so reformatted XML with the
+ * same content still compares equal; anything else is compared as a
+ * string, the normal XPath way of comparing a scalar.
+ *
+ * Usage:  item[slax:equal(., $other)]
+ */
+static void
+slaxExtEqual (xmlXPathParserContext *ctxt, int nargs)
+{
+    if (nargs != 2) {
+	xmlXPathSetArityError(ctxt);
+	return;
+    }
+
+    xmlXPathObject *xop2 = valuePop(ctxt);
+    xmlXPathObject *xop1 = valuePop(ctxt);
+    int result;
+
+    if (xmlXPathObjectGetNodesetval(xop1) && xmlXPathObjectGetNodesetval(xop2)) {
+	result = slaxNodeSetEqual(xmlXPathObjectGetNodesetval(xop1),
+				   xmlXPathObjectGetNodesetval(xop2));
+
+    } else {
+	xmlChar *s1 = xmlXPathCastToString(xop1);
+	xmlChar *s2 = xmlXPathCastToString(xop2);
+
+	result = streq((const char *) s1, (const char *) s2);
+
+	xmlFreeAndEasy(s1);
+	xmlFreeAndEasy(s2);
+    }
+
+    xmlXPathFreeObject(xop1);
+    xmlXPathFreeObject(xop2);
+
+    xmlXPathReturnBoolean(ctxt, result);
 }
 
 /*
@@ -3799,6 +3840,7 @@ slaxExtRegister (void)
 
     slaxRegisterFunction(SLAX_URI, "get-host", slaxExtGetHost);
     slaxRegisterFunction(SLAX_URI, "ends-with", slaxExtEndsWith);
+    slaxRegisterFunction(SLAX_URI, "equal", slaxExtEqual);
 
     slaxExtRegisterOther(NULL);
 
