@@ -1,0 +1,16 @@
+Type 'help' for help
+(sdb) watch variable $total
+Watchpoint 1: $total
+(sdb) run
+Watchpoint 1: $total
+Old value: 1
+New value: 3
+watch-basic.slax: 10:         set $total = $total + $i;
+(sdb) continue
+Watchpoint 1: $total
+Old value: 3
+New value: 6
+watch-basic.slax: 10:         set $total = $total + $i;
+(sdb) continue
+Script exited normally
+(sdb) quit
