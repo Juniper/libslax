@@ -1,0 +1,17 @@
+version 1.0;
+
+match / {
+    call sum($n = 3);
+}
+
+template sum ($n) {
+    mvar $total = 0;
+    mvar $count = 0;
+    for $i (1 ... $n) {
+        set $total = $total + $i;
+        set $count = $count + 1;
+        <item> $i;
+    }
+    <total> $total;
+    <count> $count;
+}
