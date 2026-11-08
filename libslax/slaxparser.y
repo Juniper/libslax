@@ -283,9 +283,11 @@
 /*
  * This is a pure parser, allowing this library to link with other users
  * of yacc. To allow this, we pass our data structure (slax_data_t)
- * to yyparse as the argument.
+ * to yyparse as the argument.  slaxParse() (in slaxparser-tail.y)
+ * wraps it, to free the stack snapshot made by slaxYylexSnap().
  */
-#define yyparse slaxParse
+#define yyparse slaxYyparse
+int yyparse (slax_data_t *slax_data);
 #define YYPARSE_PARAM slax_data
 #define YYLEX_PARAM slax_data
 #define YYERROR_VERBOSE
