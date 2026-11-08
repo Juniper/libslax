@@ -22,7 +22,6 @@ AM_CFLAGS = \
     -I${top_builddir}/parrotdb \
     -I${top_builddir}/libpin \
     ${LIBXO_CFLAGS} \
-    ${LIBXO_SRC_CFLAGS} \
     ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
