@@ -18,7 +18,7 @@
 #ifndef LIBSLAX_PIN_DYN_H
 #define LIBSLAX_PIN_DYN_H
 
-#include "xo_filter.h"
+#include <libxo/xo_filter.h>
 
 typedef struct pin_dyn_ops_s {
     unsigned pdo_version;
