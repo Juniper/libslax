@@ -90,8 +90,11 @@ AM_CONDITIONAL([HAVE_LIBCRYPTO], [test "$HAVE_LIBCRYPTO" != "no"])
 AC_CHECK_LIB([m], [lrint])
 AM_CONDITIONAL([HAVE_LIBM], [test "$HAVE_LIBM" != "no"])
 
-AC_CHECK_LIB([xml2], [xmlNewParserCtxt])
-AC_CHECK_LIB([xslt], [xsltInit])
+dnl No AC_CHECK_LIB for xml2/xslt: it would put a bare "-lxslt -lxml2"
+dnl into LIBS for every link, found via whatever -L comes first (e.g.
+dnl one from libxo.la's dependency_libs), rather than the ones given by
+dnl --with-libxml-prefix/--with-libxslt-prefix.  Targets that need them
+dnl use ${LIBXML_LIBS} and ${LIBXSLT_LIBS}, set below.
 
 dnl
 dnl Some packages need to be checked against version numbers so we
@@ -496,62 +499,6 @@ AC_SUBST(LIBXO_CONFIG)
 AC_SUBST(LIBXO_CFLAGS)
 AC_SUBST(LIBXO_LIBS)
 
-dnl
-dnl XXX TEMPORARY HACK -- FIX THIS LATER XXX
-dnl
-dnl --with-libxo-src=DIR points at a libxo source tree, which must
-dnl have been built in DIR/build.  We need it because libpin uses
-dnl libxo headers that libxo does not install:
-dnl
-dnl   xo_buf.h        DIR/libxo        (pin_body.h, pin_compile.c)
-dnl   xo_private.h    DIR/libxo        (included by xo_buf.h and xo_xparse.h)
-dnl   xo_xparse.h     DIR/filter       (pin_compile.c)
-dnl   xo_xpath.tab.h  DIR/build/filter (pin_compile.c; bison output)
-dnl
-dnl This is fragile: these headers must match the installed libxo
-dnl given by --with-libxo exactly.  xo_xpath.tab.h's token numbers
-dnl and the xo_xparse_data_t/xo_xparse_node_t layouts (used via
-dnl static inlines) are compiled into libpin, so a mismatch builds
-dnl cleanly but misbehaves at run time.
-dnl
-dnl The real fix, after which this option and LIBXO_SRC_CFLAGS go away:
-dnl   - xo_buf.h: move the xo_realloc/xo_free externs out of
-dnl     xo_private.h into an installed header, then install xo_buf.h
-dnl   - xo_xparse.h/xo_xpath.tab.h: give libxo a public call that
-dnl     compiles an expression into an xo_eval_prog_t (the walk in
-dnl     pin_compile.c that xo_filter.c already does internally)
-dnl
-AC_ARG_WITH(libxo-src,
-        [  --with-libxo-src=[DIR]        TEMPORARY: libxo source tree (built in DIR/build) for private headers],
-        [LIBXO_SRCDIR=$withval],
-        [LIBXO_SRCDIR=]
-)
-
-AC_MSG_CHECKING(for libxo private headers)
-if test "x$LIBXO_SRCDIR" = "x"
-then
-        AC_MSG_ERROR([libpin needs libxo's private headers; use --with-libxo-src=DIR to give a built libxo source tree (temporary)])
-fi
-for file in libxo/xo_buf.h libxo/xo_private.h filter/xo_xparse.h \
-            build/filter/xo_xpath.tab.h
-do
-        if test ! -f "${LIBXO_SRCDIR}/${file}"
-        then
-                AC_MSG_ERROR([${LIBXO_SRCDIR}/${file} not found; --with-libxo-src must name a libxo source tree that has been built in DIR/build])
-        fi
-done
-AC_MSG_RESULT(${LIBXO_SRCDIR})
-
-# -I${LIBXO_SRCDIR} is for <libxo/xo_buf.h> (pin_body.h); the others
-# are for the quoted includes in pin_compile.c.  These must come
-# after ${LIBXO_CFLAGS} in each Makefile.am, so the installed public
-# headers (xo.h, xo_filter.h, etc) win over the source tree's copies.
-LIBXO_SRC_CFLAGS="-I${LIBXO_SRCDIR} -I${LIBXO_SRCDIR}/libxo -I${LIBXO_SRCDIR}/filter -I${LIBXO_SRCDIR}/build/filter"
-
-AC_SUBST(LIBXO_SRCDIR)
-AC_SUBST(LIBXO_SRC_CFLAGS)
-dnl XXX END TEMPORARY HACK XXX
-
 # Cygwin lacks the modern st_mtimespec field in struct stat
 AC_MSG_CHECKING([for stat.st_mtimespec])
 AC_COMPILE_IFELSE(
@@ -814,7 +761,6 @@ AC_MSG_NOTICE([summary of build options:
   libxo version:    ${XOVERS}
   libxo cflags:     ${LIBXO_CFLAGS}
   libxo libs:       ${LIBXO_LIBS}
-  libxo srcdir:     ${LIBXO_SRCDIR} (TEMPORARY)
   bison version:    ${BISON_VERSION}
   sqlite3 version:  ${SQLITE3_VERSION}
 
