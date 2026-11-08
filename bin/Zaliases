@@ -19,7 +19,7 @@ set opts=`echo $opts`
 
 setenv CONFIGURE_OPTS "$opts"
 setenv ROOT_DIR $HOME/work/root/slax
-setenv XO_ROOT_DIR $HOME/work/root/xo
+setenv XO_ROOT_DIR $HOME/work/root
 
 set vers=`make --version`
 switch ( "$vers" )
