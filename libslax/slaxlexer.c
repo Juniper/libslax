@@ -1655,7 +1655,7 @@ slaxSyntaxError (slax_data_t *sdp, const char *token, int yystate, int yychar,
 	}
 
     } else {
-	char *msg = slaxExpectingError(token, yystate, yychar);
+	char *msg = slaxExpectingError(sdp, token, yystate, yychar);
 	if (msg)
 	    return msg;
 
