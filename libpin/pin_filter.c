@@ -34,7 +34,7 @@
 #include <parrotdb/pafixed.h>
 
 #include <libxo/xo.h>
-#include "xo_filter.h"
+#include <libxo/xo_filter.h>
 
 #include <libpin/pin_common.h>
 #include <libpin/pin_workspace.h>
