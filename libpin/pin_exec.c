@@ -37,7 +37,7 @@
 #include <libpin/pin_sort.h>
 #include <libpin/pin_filter.h>
 #include <libxo/xo.h>
-#include "xo_filter.h"
+#include <libxo/xo_filter.h>
 
 /*
  * Helpers used by multiple op functions
