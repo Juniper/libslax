@@ -46,7 +46,7 @@
 #include <libpin/pin_parse.h>
 #include <libpin/pin_filter.h>
 #include <libxo/xo.h>
-#include "xo_filter.h"
+#include <libxo/xo_filter.h>
 
 static const psu_byte_t *pin_apply_key_func (pa_pat_t *, pa_pat_data_atom_t);
 static const psu_byte_t *pin_mode_key_func (pa_pat_t *, pa_pat_data_atom_t);
