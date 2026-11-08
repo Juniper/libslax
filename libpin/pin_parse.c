@@ -57,7 +57,7 @@ static void pin_body_foreach_body(pin_parse_t *parsep, pin_body_instr_id_t head,
 				  pin_body_frame_t *bfp);
 
 #include <libxo/xo.h>
-#include "xo_filter.h"
+#include <libxo/xo_filter.h>
 #include <libpin/pin_filter.h>
 
 
