@@ -27,9 +27,8 @@ AM_CFLAGS = \
     -I${top_builddir}/libpin \
     -I${top_srcdir} \
     ${LIBXO_CFLAGS} \
-    ${LIBXO_SRC_CFLAGS} \
     ${LIBXSLT_CFLAGS} \
-    ${LIBXML_CFLAG} \
+    ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
 AM_CFLAGS += \
@@ -40,6 +39,8 @@ lib_LTLIBRARIES = libslax.la
 libslax_la_LIBADD = $(top_builddir)/libpsu/libpsu.la
 libslax_la_LIBADD += $(top_builddir)/parrotdb/libparrotdb.la
 libslax_la_LIBADD += $(top_builddir)/libpin/libpin.la
+# ${LIBXO_LIBS} comes before the libxslt/libxml2 -L directories, which
+# may also hold an older libxo; the first -L directory listed wins
 libslax_la_LIBADD += ${LIBXO_LIBS}
 libslax_la_LIBADD += ${LIBXSLT_LIBS} -lexslt ${LIBXML_LIBS}
 
