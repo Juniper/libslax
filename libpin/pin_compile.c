@@ -51,10 +51,8 @@
 #include <parrotdb/pafixed.h>
 
 #include <libxo/xo.h>
-#include "xo_buf.h"
-#include "xo_xpath.tab.h"
-#include "xo_filter.h"
-#include "xo_xparse.h"
+#include <libxo/xo_buf.h>
+#include <libxo/xo_filter.h>
 
 #include <libpin/pin_common.h>
 #include <libpin/pin_workspace.h>
@@ -1414,7 +1412,7 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
     xo_eval_compile_fail_location(&eline, &ecol);
 
     int line = node_line + (eline > 1 ? (int) eline - 1 : 0);
-    int col = (eline <= 1 && ecol > 2) ? (int) ecol - 2 : (int) ecol;
+    int col = (int) ecol;
 
     char *source_line = pin_nth_line(expr, eline ? eline : 1);
     char *real_line = (line > 0) ? pin_read_source_line(fn, (unsigned) line)
@@ -1465,50 +1463,24 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
  * -1 on a parse/compile failure (reported via pin_error against the node
  * currently being compiled).
  *
- * xo_xparse_parse_string()'s top-level grammar only accepts a union of
- * location paths (it's built for libxo's own filter-path use case); the
- * full expression grammar -- comparisons, arithmetic, function calls --
- * is only reachable inside a predicate.  So expr is wrapped as a wildcard
- * step's predicate ("*[expr]", same wrapping the xsl:if/xsl:when
- * standalone-filter path above already uses) and then unwrapped by
- * walking down to the predicate's content node, which is what
- * xo_eval_compile() actually expects for 'root' (see xo_filter.c's own
- * xo_filter_pred_eval()/xo_filter_pred_prog(), which do the same walk).
+ * xo_filter_parse_expr() parses a full XPath expression (rather than
+ * libxo's usual union of location paths) and returns its root, which
+ * is what xo_eval_compile() wants for 'root'.
  */
 static int
 pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
 {
     pin_rulebook_t *rb = cur->poc_rb;
     xo_filter_t *xfp = pin_rulebook_get_eval_filter(rb);
-    xo_xparse_data_t *xdp = xo_filter_xparse_data(NULL, xfp);
+    struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
 
-    size_t elen = strlen(expr);
-    char *wrapped = xo_realloc(NULL, elen + 4); /* "*[" + expr + "]" + NUL */
-    if (wrapped == NULL) {
-	pin_error(cur->poc_rb, cur->poc_node,
-		  "out of memory compiling XPath expression: %s", expr);
-	return -1;
-    }
-    snprintf(wrapped, elen + 4, "*[%s]", expr);
-
-    uint32_t start = xdp->xd_paths_cur;
-    int rc = xo_xparse_parse_string(NULL, xdp, wrapped);
-    xo_free(wrapped);
-    if (rc != 0 || xdp->xd_paths_cur <= start) {
+    ssize_t root = xo_filter_parse_expr(NULL, xfp, expr);
+    if (root < 0) {
 	pin_error(cur->poc_rb, cur->poc_node,
 		  "unable to parse XPath expression: %s", expr);
 	return -1;
     }
 
-    xo_xparse_node_id_t step = xdp->xd_paths[start];
-    xo_xparse_node_id_t pred = xo_xparse_node_contents(xdp, step);
-    if (pred == 0 || xo_xparse_node_type(xdp, pred) != C_PREDICATE) {
-	pin_error(cur->poc_rb, cur->poc_node,
-		  "unable to parse XPath expression: %s", expr);
-	return -1;
-    }
-
-    xo_xparse_node_id_t root = xo_xparse_node_contents(xdp, pred);
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
     pin_filter_set_compile_ns(xfp, cur->poc_ns_stack, cur->poc_ns_cur);
