@@ -8,6 +8,7 @@
  */
 
 #include <ctype.h>		/* isalnum() */
+#include <stdint.h>
 
 /*
  * This is a should-not-occur error string if you ever see it, we've
@@ -55,6 +56,9 @@ struct slax_data_s {
     xmlNodePtr sd_nodep;	/* Node for looking up ternary expressions */
     xmlNodePtr sd_insert;	/* List of nodes to be inserted shortly */
     void *sd_opaque;		/* Additional opaque data */
+    int16_t *sd_snapshot_stack;		/* Parser state stack, saved at each yylex */
+    uint32_t sd_snapshot_stack_count;	/* Entries in sd_snapshot_stack[] */
+    uint32_t sd_snapshot_stack_max;	/* Size of sd_snapshot_stack[] */
 };
 
 /* Flags for sd_flags */
@@ -115,7 +119,8 @@ slaxYyerror (slax_data_t *sdp, const char *str, slax_string_t *yylval,
  * Return a better class of error message
  */
 char *
-slaxExpectingError (const char *token, int yystate, int yychar);
+slaxExpectingError (slax_data_t *sdp, const char *token,
+		    int yystate, int yychar);
 
 /*
  * Report a clang-style diagnostic (file:line:col, severity, message,
@@ -189,10 +194,26 @@ int
 slaxYylex (slax_data_t *sdp, YYSTYPE *yylvalp);
 
 /*
- * We redefine yylex to give our parser a specific name, avoiding
- * conflicts with other yacc/bison based parsers.
+ * Wrapper around slaxYylex() that first saves a copy of the parser's
+ * state stack (yyss through yyssp) in sd_snapshot_stack[], so a syntax error
+ * can work out which tokens would have been accepted.
  */
-#define yylex(sp, v) slaxYylex(slax_data, sp)
+int
+slaxYylexSnap (slax_data_t *sdp, YYSTYPE *yylvalp,
+	       const int16_t *ss_base, const int16_t *ss_top);
+
+/*
+ * Turns off slaxYylexSnap()'s stack copy, so the "expected" list in
+ * syntax errors falls back to looking at the error state alone
+ */
+extern int slaxParserSnapStack;
+
+/*
+ * We redefine yylex to give our parser a specific name, avoiding
+ * conflicts with other yacc/bison based parsers.  It's only used
+ * inside yyparse(), where yyss and yyssp are the state stack.
+ */
+#define yylex(sp, v) slaxYylexSnap(slax_data, sp, yyss, yyssp)
 
 /* ----------------------------------------------------------------------
  * Functions exposed in slaxparser.y (no better place than here)
