@@ -20,14 +20,13 @@ AM_CFLAGS = \
     -I${top_builddir}/libpin \
     -I${top_srcdir} \
     ${LIBXO_CFLAGS} \
-    ${LIBXO_SRC_CFLAGS} \
+    ${LIBXML_CFLAGS} \
     ${WARNINGS}
 
-# XXX TEMPORARY: ${LIBXO_SRC_CFLAGS} (from --with-libxo-src) is only
-# for libxo's private headers, which aren't installed: xo_buf.h (and
-# the xo_private.h it includes), xo_xparse.h and xo_xpath.tab.h.
-# It comes after ${LIBXO_CFLAGS}, so the installed headers win.
-# See the notes for --with-libxo-src in configure.ac.
+# libpin uses libxml2 (pin_compile.c walks the stylesheet's xmlDoc and
+# loads xsl:include/xsl:import files), but not libxslt.  ${LIBXO_*}
+# come first: the libxml2 -I/-L directories may also hold an older
+# libxo, and the first directory listed wins.
 
 lib_LTLIBRARIES = libpin.la
 
@@ -64,7 +63,8 @@ libpin_la_SOURCES = \
 libpin_la_LIBADD = \
     $(top_builddir)/libpsu/libpsu.la \
     $(top_builddir)/parrotdb/libparrotdb.la \
-    ${LIBXO_LIBS}
+    ${LIBXO_LIBS} \
+    ${LIBXML_LIBS}
 
 XXXX=\
     pinwhiffle.c
