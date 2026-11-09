@@ -1,0 +1,13 @@
+version 1.3;
+
+import "include/one.slax";
+
+main <top> {
+    apply-templates data;
+    apply-templates data {
+	mode "one";
+    }
+    apply-templates data {
+	mode "three";
+    }
+}
