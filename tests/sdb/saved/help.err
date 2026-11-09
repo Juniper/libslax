@@ -12,7 +12,7 @@ List of commands:
   down [n]        Move the selected frame toward the innermost frame
   dump            Dump internal information about libxml2 objects
   finish          Finish the current template
-  help            Show this help message
+  help [cmd ...] [all]  Show this help message
   info            Showing info about the script being debugged
   list [loc]      List contents of the current script
   locals          List contents of local variables
@@ -45,7 +45,7 @@ List of commands:
   down [n]        Move the selected frame toward the innermost frame
   dump            Dump internal information about libxml2 objects
   finish          Finish the current template
-  help            Show this help message
+  help [cmd ...] [all]  Show this help message
   info            Showing info about the script being debugged
   list [loc]      List contents of the current script
   locals          List contents of local variables
