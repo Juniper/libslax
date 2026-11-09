@@ -1,0 +1,69 @@
+Type 'help' for help
+(sdb) info files
+List of open files:
+    ../../../tests/sdb/file-test.slax
+    ../../../tests/sdb/include/one.slax
+        (included from ../../../tests/sdb/file-test.slax:3)
+    ../../../tests/sdb/include/two.slax
+        (included from ../../../tests/sdb/include/one.slax:3)
+    ../../../tests/sdb/include/three.slax
+        (included from ../../../tests/sdb/include/two.slax:3)
+(sdb) profile on
+Enabling profiler
+(sdb) run
+Script exited normally
+(sdb) profile report
+File: ../../../tests/sdb/file-test.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.3;
+    2        -            -            -        -        - 
+    3        -            -            -        -        - import "include/one.slax";
+    4        -            -            -        -        - 
+    5        3(50) TIME TIME TIME TIME main <top> {
+    6        1(16) TIME TIME TIME TIME     apply-templates data;
+    7        1(16) TIME TIME TIME TIME     apply-templates data {
+    8        -            -            -        -        - 	mode "one";
+    9        -            -            -        -        -     }
+   10        1(16) TIME TIME TIME TIME     apply-templates data {
+   11        -            -            -        -        - 	mode "three";
+   12        -            -            -        -        -     }
+   13        -            -            -        -        - }
+Total        6 TIME TIME  Total
+File: ../../../tests/sdb/include/one.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.3;
+    2        -            -            -        -        - 
+    3        -            -            -        -        - import "two.slax";
+    4        -            -            -        -        - 
+    5        6(25) TIME TIME TIME TIME match foo {
+    6        6(25) TIME TIME TIME TIME     <one> .;
+    7        -            -            -        -        - }
+    8        -            -            -        -        - 
+    9        6(25) TIME TIME TIME TIME match foo {
+   10        -            -            -        -        -     mode "one";
+   11        6(25) TIME TIME TIME TIME     <one-mode> .;
+   12        -            -            -        -        - }
+Total       24 TIME TIME  Total
+File: ../../../tests/sdb/include/three.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.3;
+    2        -            -            -        -        - 
+    3        -            -            -        -        - match foo {
+    4        -            -            -        -        -     <three> .;
+    5        -            -            -        -        - }
+    6        -            -            -        -        - 
+    7        6(50) TIME TIME TIME TIME match foo {
+    8        -            -            -        -        -     mode "three";
+    9        6(50) TIME TIME TIME TIME     <three-mode> .;
+   10        -            -            -        -        - }
+Total       12 TIME TIME  Total
+(sdb) info files
+List of open files:
+    ../../../tests/sdb/file-test.slax
+    ../../../tests/sdb/include/one.slax
+        (included from ../../../tests/sdb/file-test.slax:3)
+    ../../../tests/sdb/include/two.slax
+        (included from ../../../tests/sdb/include/one.slax:3)
+    ../../../tests/sdb/include/three.slax
+        (included from ../../../tests/sdb/include/two.slax:3)
+(sdb) quit
