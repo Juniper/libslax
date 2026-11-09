@@ -1,0 +1,6 @@
+version 1.0;
+
+match item {
+    var $v = .;
+    <seen> $v;
+}
