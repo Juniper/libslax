@@ -14,6 +14,7 @@ EXTRA_DIST = \
     ${TEST_CASES} \
     $(wildcard *.cmd) \
     $(wildcard *.xml) \
+    multidoc/included.slax \
     normalize-callgraph.pl \
     $(addprefix saved/, ${TEST_CASES:.slax=.out}) \
     $(addprefix saved/, ${TEST_CASES:.slax=.err}) \
