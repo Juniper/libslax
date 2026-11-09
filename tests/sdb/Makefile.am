@@ -10,11 +10,17 @@
 
 TEST_CASES := $(shell cd ${srcdir} ; echo *.slax )
 
+INCLUDE_FILES = \
+    included.slax \
+    one.slax \
+    three.slax \
+    two.slax
+
 EXTRA_DIST = \
     ${TEST_CASES} \
     $(wildcard *.cmd) \
     $(wildcard *.xml) \
-    multidoc/included.slax \
+    ${INCLUDE_FILES} \
     normalize-callgraph.pl \
     $(addprefix saved/, ${TEST_CASES:.slax=.out}) \
     $(addprefix saved/, ${TEST_CASES:.slax=.err}) \
