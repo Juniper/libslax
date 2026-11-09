@@ -63,9 +63,11 @@ mkdir -p "$incdir" "$srcdir"
 
 stylesheet_tag=Stylesheet ; stylesheet_ptr=xsltStylesheetPtr ; stylesheet_var=style
 stylesheet_fields='
+parent:xsltStylesheetPtr::none
 next:xsltStylesheetPtr::none
 imports:xsltStylesheetPtr::none
 doc:xmlDocPtr::none
+docList:xsltDocumentPtr::none
 templates:xsltTemplatePtr::none
 indent:int
 errors:int
