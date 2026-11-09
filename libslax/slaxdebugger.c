@@ -185,12 +185,10 @@ typedef struct slaxDebugCommand_s {
     slaxDebugCommandFunc_t dc_func; /* Function pointer */
     const char *dc_help;	/* Help text */
     slaxDebugHelpFunc_t dc_helpfunc; /* Function to generate more help */
+    struct slaxDebugCommand_s *dc_nested; /* Nested subcommand table */
 } slaxDebugCommand_t;
 
 static slaxDebugCommand_t slaxDebugCmdTable[];
-
-static slaxDebugCommand_t *
-slaxDebugGetCommand (const char *name);
 
 /*
  * Doubly linked list to store the templates call sequence
@@ -1230,6 +1228,52 @@ slaxDebugAddBreakpoint (DC_ARGS, int temporary)
 		    xmlDocGetURL(xmlNodeGetDoc(node)), xmlGetLineNo(node));
 }
 
+/**
+ * Find a command, descending through "dc_nested" tables one word at
+ * a time.  Falls back to the deepest match found so far if a later
+ * word doesn't match, so "watch badword" still resolves to "watch".
+ * @table command table to search; NULL means the top-level table
+ * @argcp if non-NULL, set to the number of argv words consumed
+ * @argv words to match, one per nesting level
+ * @return the command found, or NULL if the first word didn't match
+ */
+static slaxDebugCommand_t *
+slaxDebugFindCommand (slaxDebugCommand_t *table, int *argcp, const char **argv)
+{
+    slaxDebugCommand_t *cmdp, *match = NULL;
+    int i;
+
+    if (table == NULL)
+	table = slaxDebugCmdTable;
+
+    for (i = 0; argv[i]; i++) {
+	const char *name = argv[i];
+	slaxDebugCommand_t *found = NULL;
+
+	for (cmdp = table; cmdp->dc_command; cmdp++) {
+	    if (slaxDebugCheckAbbrev(cmdp->dc_command, cmdp->dc_min,
+				      name, strlen(name))) {
+		found = cmdp;
+		break;
+	    }
+	}
+
+	if (found == NULL)
+	    break;
+
+	match = found;
+	if (argcp)
+	    *argcp = i + 1;
+
+	if (found->dc_nested == NULL)
+	    break;
+
+	table = found->dc_nested;
+    }
+
+    return match;
+}
+
 /*
  * 'break' command
  */
@@ -1305,16 +1349,12 @@ slaxDebugCmdWatchVariable (DC_ARGS)
 }
 
 /*
- * 'watch' command
+ * 'watch' command; the real work happens in slaxDebugWatchCmdTable's
+ * nested commands, so this is reached only for a bad/missing subcommand.
  */
 static void
 slaxDebugCmdWatch (DC_ARGS)
 {
-    if (argv[1] && slaxDebugIsAbbrev("variable", argv[1])) {
-	slaxDebugCmdWatchVariable(statep, commandline, argv);
-	return;
-    }
-
     slaxOutput("usage: watch variable $name");
 }
 
@@ -1322,14 +1362,13 @@ slaxDebugCmdWatch (DC_ARGS)
  * 'clear watch variable [$var | num]' subcommand
  */
 static void
-slaxDebugCmdClearWatch (DC_ARGS)
+slaxDebugCmdClearWatchVariable (DC_ARGS)
 {
     slaxDebugWatch_t *dwp;
     uint num;
     const char *target = argv[3];
 
-    if (argv[2] == NULL || !slaxDebugIsAbbrev("variable", argv[2])
-	    || target == NULL) {
+    if (target == NULL) {
 	slaxOutput("usage: clear watch variable [$name | num]");
 	return;
     }
@@ -1366,16 +1405,21 @@ slaxDebugCmdClearWatch (DC_ARGS)
 }
 
 /*
- * 'clear' command
+ * 'clear watch' subcommand; reached only when 'variable' is missing or
+ * misspelled, since slaxDebugClearWatchCmdTable handles the real case.
+ */
+static void
+slaxDebugCmdClearWatch (DC_ARGS)
+{
+    slaxOutput("usage: clear watch variable [$name | num]");
+}
+
+/*
+ * 'clear' command; reached only when 'watch' is missing or misspelled.
  */
 static void
 slaxDebugCmdClear (DC_ARGS)
 {
-    if (argv[1] && slaxDebugIsAbbrev("watch", argv[1])) {
-	slaxDebugCmdClearWatch(statep, commandline, argv);
-	return;
-    }
-
     slaxOutput("usage: clear watch variable [$name | num]");
 }
 
@@ -1565,46 +1609,63 @@ slaxDebugCmdCondition (DC_ARGS)
 }
 
 /*
- * 'help' command
+ * Show help for one command.  With "deep", recurse into every nested
+ * subcommand; without it, list only the immediate children's help.
+ */
+static void
+slaxDebugShowCommandHelp (slaxDebugState_t *statep, slaxDebugCommand_t *cmdp,
+                           int indent)
+{
+    if (cmdp == NULL)
+	cmdp = slaxDebugCmdTable;
+
+    slaxDebugCommand_t *np = cmdp->dc_nested;
+
+    if (cmdp->dc_helpfunc)
+        cmdp->dc_helpfunc(statep);
+    else if (np) {
+	slaxOutput("List of command under '%s':", cmdp->dc_command);
+	for (; np && np->dc_command; np++) {
+	    if (np->dc_help)
+		slaxOutput("%*s%s", indent + 2, "", np->dc_help);
+	}
+
+    } else if (cmdp->dc_help)
+        slaxOutput("%*s%s", indent, "", cmdp->dc_help);
+    else
+        slaxOutput("No help is available");
+}
+
+/*
+ * 'help' command.  A target may be followed by nested subcommand
+ * names, e.g. "help watch variable".
  */
 static void
 slaxDebugCmdHelp (DC_ARGS)
 {
     slaxDebugCommand_t *cmdp;
 
-    if (argv[1]) {
-	cmdp = slaxDebugGetCommand(argv[1]);
-	if (cmdp == NULL)
-	    slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[1]);
-	else if (cmdp->dc_helpfunc)
-	    cmdp->dc_helpfunc(statep);
-	else if (cmdp->dc_help)
-	    slaxOutput("  %s", cmdp->dc_help);
-	else 
-	    slaxOutput("No help is available");
-	
-    } else {
-	slaxOutput("List of commands:");
-	for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
-	    if (cmdp->dc_help)
-		slaxOutput("  %s", cmdp->dc_help);
-	}
-	slaxOutput("%s", "");	/* Avoid compiler warning */
-	slaxOutput("Command name abbreviations are allowed");
-    }
-}
+    argv += 1;			/* Skip "help" */
 
-static void
-slaxDebugHelpInfo (DH_ARGS)
-{
+    if (argv[0] == NULL) {
+        slaxOutput("List of commands:");
+        for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
+            if (cmdp->dc_help)
+                slaxOutput("  %s", cmdp->dc_help);
+        }
+        slaxOutput("%s", "");	/* Avoid compiler warning (empty string) */
+        slaxOutput("Command name abbreviations are allowed");
+        return;
+    }
+
+    cmdp = slaxDebugFindCommand(NULL, NULL, argv);
+    if (cmdp == NULL) {
+        slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[0]);
+        return;
+    }
+
     slaxOutput("List of commands:");
-    slaxOutput("  info breakpoints  Display current breakpoints");
-    slaxOutput("  info insert       Display current insertion point");
-    slaxOutput("  info locals       Display local variables");
-    slaxOutput("  info output       Display output document");
-    slaxOutput("  info profile [brief | wall]  Report profiling information");
-    slaxOutput("  info watch        Display current watchpoints");
-    slaxOutput("  info files        Display open files (imports, includes)");
+    slaxDebugShowCommandHelp(statep, cmdp, 2);
 }
 
 static void
@@ -1960,86 +2021,114 @@ slaxDebugCheckContext (xsltTransformContextPtr ctxt)
     return FALSE;
 }
 
+static void
+slaxDebugCmdInfoBreakpoints (DC_ARGS)
+{
+    slaxDebugInfoBreakpoints(statep);
+}
+
+static void
+slaxDebugCmdInfoInsert (DC_ARGS)
+{
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+
+    if (slaxDebugCheckContext(ctxt))
+	return;
+
+    if (xsltTransformContextGetInsert(ctxt) == NULL) {
+	slaxOutput("context insertion point is NULL");
+    } else {
+	slaxOutput("[context insertion point]");
+	slaxOutputNode(xsltTransformContextGetInsert(ctxt));
+    }
+}
+
+static void
+slaxDebugCmdInfoNodes (DC_ARGS)
+{
+    if (statep->ds_script && xsltStylesheetGetDoc(statep->ds_script))
+	slaxDebugListNodeByLine(
+	    xmlDocGetChildren(xsltStylesheetGetDoc(statep->ds_script)));
+}
+
+static void
+slaxDebugCmdInfoFiles (DC_ARGS)
+{
+    if (statep->ds_script == NULL) {
+	slaxOutput("no script is loaded");
+	return;
+    }
+
+    slaxOutput("List of open files:");
+    slaxDebugInfoFiles(statep->ds_script);
+}
+
+static void
+slaxDebugCmdInfoOutput (DC_ARGS)
+{
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+
+    if (slaxDebugCheckContext(ctxt))
+	return;
+
+    if (xsltTransformContextGetOutput(ctxt) == NULL) {
+	slaxOutput("context output document is NULL");
+    } else {
+	slaxOutput("[context output document]");
+	slaxDumpToFd(1, xsltTransformContextGetOutput(ctxt), FALSE);
+    }
+}
+
+static void
+slaxDebugCmdInfoLocals (DC_ARGS)
+{
+    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+    xsltTransformContextPtr lctxt;
+    int start, stop;
+    xsltTemplatePtr ltemplate;
+
+    if (slaxDebugCheckContext(ctxt))
+	return;
+
+    if (!slaxDebugLocalsRange(statep, &lctxt, &start, &stop, &ltemplate))
+	return;
+
+    slaxDebugContextVariables(lctxt, start, stop, ltemplate);
+}
+
+static void
+slaxDebugCmdInfoProfile (DC_ARGS)
+{
+    slaxDebugFlags_t flags = 0;
+
+    if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
+	flags |= SDBF_PROFILE_BRIEF;
+
+    if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
+	flags |= SDBF_PROFILE_WALL;
+
+    slaxProfReport(flags, statep->ds_script_buffer);
+}
+
+static void
+slaxDebugCmdInfoWatch (DC_ARGS)
+{
+    slaxDebugInfoWatch();
+}
+
 /*
- * 'info' command
+ * 'info' command.  With no subcommand (or an unrecognized one), default
+ * to showing breakpoints, matching long-standing debugger convention.
  */
 static void
 slaxDebugCmdInfo (DC_ARGS)
 {
-    xsltTransformContextPtr ctxt = statep->ds_ctxt;
+    if (argv[1] == NULL || argv[1][0] == '\0') {
+	slaxDebugCmdInfoBreakpoints(statep, commandline, argv);
+	return;
+    }
 
-    if (argv[1] == NULL || argv[1][0] == '\0'
-		|| slaxDebugIsAbbrev("breakpoints", argv[1])) {
-	slaxDebugInfoBreakpoints(statep);
-
-    } else if (slaxDebugIsAbbrev("insert", argv[1])) {
-	if (slaxDebugCheckContext(ctxt))
-	    return;
-
-	if (xsltTransformContextGetInsert(ctxt) == NULL) {
-	    slaxOutput("context insertion point is NULL");
-	} else {
-	    slaxOutput("[context insertion point]");
-	    slaxOutputNode(xsltTransformContextGetInsert(ctxt));
-	}
-
-    } else if (slaxDebugIsAbbrev("nodes", argv[1])) {
-	if (statep->ds_script && xsltStylesheetGetDoc(statep->ds_script))
-	    slaxDebugListNodeByLine(
-		xmlDocGetChildren(xsltStylesheetGetDoc(statep->ds_script)));
-
-    } else if (slaxDebugIsAbbrev("files", argv[1])) {
-	if (statep->ds_script == NULL) {
-	    slaxOutput("no script is loaded");
-	    return;
-	}
-
-	slaxOutput("List of open files:");
-	slaxDebugInfoFiles(statep->ds_script);
-
-    } else if (slaxDebugIsAbbrev("output", argv[1])) {
-	if (slaxDebugCheckContext(ctxt))
-	    return;
-
-	if (xsltTransformContextGetOutput(ctxt) == NULL) {
-	    slaxOutput("context output document is NULL");
-	} else {
-	    slaxOutput("[context output document]");
-	    slaxDumpToFd(1, xsltTransformContextGetOutput(ctxt), FALSE);
-	}
-
-    } else if (slaxDebugIsAbbrev("locals", argv[1])) {
-	xsltTransformContextPtr lctxt;
-	int start, stop;
-	xsltTemplatePtr ltemplate;
-
-	if (slaxDebugCheckContext(ctxt))
-	    return;
-
-	if (!slaxDebugLocalsRange(statep, &lctxt, &start, &stop, &ltemplate))
-	    return;
-
-	slaxDebugContextVariables(lctxt, start, stop, ltemplate);
-
-    } else if (slaxDebugIsAbbrev("profile", argv[1])) {
-	slaxDebugFlags_t flags = 0;
-
-	if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
-	    flags |= SDBF_PROFILE_BRIEF;
-
-	if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
-	    flags |= SDBF_PROFILE_WALL;
-
-	slaxProfReport(flags, statep->ds_script_buffer);
-
-    } else if (slaxDebugIsAbbrev("watch", argv[1])) {
-	slaxDebugInfoWatch();
-
-    } else if (slaxDebugIsAbbrev("help", argv[1])) {
-	slaxDebugHelpInfo(statep);
-
-    } else
-	slaxOutput("Undefined command: \"%s\".  Try \"help\"", argv[1]);
+    slaxOutput("Undefined command: \"%s\".  Try \"help\"", argv[1]);
 }
 
 /*
@@ -2337,75 +2426,73 @@ slaxDebugCmdPrint (DC_ARGS)
     }
 }
 
+/*
+ * 'dump var $var ...' subcommand
+ */
 static void
-slaxDebugHelpDump (DH_ARGS)
+slaxDebugCmdDumpVar (DC_ARGS)
 {
-    slaxOutput("List of commands:");
-    slaxOutput("  dump var $var   Dump information on a variable");
-    slaxOutput("  dump expr $expr Dump an expression (nodeset)");
+    if (argv[2] == NULL) {
+	slaxOutput("missing variable name");
+	return;
+    }
+
+    for (argv += 2; *argv; argv++) {
+	const char *name = *argv;
+	if (name[0] == '$')
+	    name += 1;	/* Skip over leading $var */
+
+	xsltStackElemPtr var
+	    = slaxMvarLookupQname(statep->ds_ctxt,
+				  (const xmlChar *) name, NULL);
+	if (var == NULL) {
+	    slaxOutput("variable not found: $%s", name);
+	    return;
+	}
+
+	slaxOutput("variable: $%s/%p", name, var);
+	slaxDumpVar(var);
+    }
 }
 
 /*
- * 'print' command
- * @bugs need to be more like "eval" functionality (e.g. "print $x/name")
+ * 'dump expr $expr' subcommand
+ */
+static void
+slaxDebugCmdDumpExpr (DC_ARGS)
+{
+    /*
+     * Reconstruct the command line by taking the raw command and
+     * moving past the command name ("dump expr").
+     */
+    char *cp = ALLOCADUP(commandline);
+
+    while (*cp && !isspace((int) *cp))
+	cp += 1;
+    while (*cp && isspace((int) *cp)) /* "dump" */
+	cp += 1;
+    while (*cp && !isspace((int) *cp))
+	cp += 1;
+    while (*cp && isspace((int) *cp)) /* "expr" */
+	cp += 1;
+
+    xmlXPathObjectPtr res = slaxDebugEvalXpath(statep, cp);
+    if (res) {
+	slaxDebugOutputXpath(res, NULL, TRUE);
+	slaxDumpObject(res);
+	xmlXPathFreeObject(res);
+    }
+}
+
+/*
+ * 'dump' command; reached only for a bad/missing subcommand, since
+ * slaxDebugDumpCmdTable handles 'var' and 'expr'.
  */
 static void
 slaxDebugCmdDump (DC_ARGS)
 {
-    const char *arg = argv[1];
-
-    if (arg) {
-	if (slaxDebugIsAbbrev("var", arg)) {
-	    if (argv[2] == NULL) {
-		slaxOutput("missing variable name");
-		return;
-	    }
-
-	    for (argv += 2; *argv; argv++) {
-		const char *name = *argv;
-		if (name[0] == '$')
-		    name += 1;	/* Skip over leading $var */
-
-		xsltStackElemPtr var
-		    = slaxMvarLookupQname(statep->ds_ctxt,
-					  (const xmlChar *) name, NULL);
-		if (var == NULL) {
-		    slaxOutput("variable not found: $%s", name);
-		    return;
-		}
-
-		slaxOutput("variable: $%s/%p", name, var);
-		slaxDumpVar(var);
-	    }
-
-	} else if (slaxDebugIsAbbrev("expr", arg)) {
-	    /*
-	     * We need to reconstruct the command line by taking the
-	     * raw command, and moving over command name ("dump expr").
-	     */
-	    char *cp = ALLOCADUP(commandline);
-
-	    while (*cp && !isspace((int) *cp))
-		cp += 1;
-	    while (*cp && isspace((int) *cp)) /* "dump" */
-		cp += 1;
-	    while (*cp && !isspace((int) *cp))
-		cp += 1;
-	    while (*cp && isspace((int) *cp)) /* "expr" */
-		cp += 1;
-
-	    xmlXPathObjectPtr res = slaxDebugEvalXpath(statep, cp);
-	    if (res) {
-		slaxDebugOutputXpath(res, NULL, TRUE);
-		slaxDumpObject(res);
-		xmlXPathFreeObject(res);
-	    }
-
-	} else {
-	    slaxOutput("invalid command: %s", arg);
-	    return;
-	}
-    }
+    if (argv[1])
+	slaxOutput("invalid command: %s", argv[1]);
 }
 
 static inline char *
@@ -2618,22 +2705,101 @@ slaxDebugCmdAppend (DC_ARGS)
 }
 
 static void
-slaxDebugHelpProfile (DH_ARGS)
+slaxDebugCmdProfileOn (DC_ARGS)
 {
-    slaxOutput("List of commands:");
-    slaxOutput("  profile callgraph <file>  Enable callgraph profiling, "
-	       "writing output to <file>");
-    slaxOutput("  profile flamegraph <file>  Enable flame-graph profiling, "
-	       "writing output to <file>");
-    slaxOutput("  profile clear   Clear  profiling information");
-    slaxOutput("  profile off     Disable profiling");
-    slaxOutput("  profile on      Enable profiling");
-    slaxOutput("  profile report [brief | wall | callgraph | flamegraph] "
-	       "[<file>]  Report profiling information");
+    statep->ds_flags |= DSF_PROFILER;
+    statep->ds_flags &= ~(DSF_PROFILE_CALLGRAPH | DSF_PROFILE_FLAMEGRAPH);
+    slaxOutput("Enabling profiler");
+}
+
+static void
+slaxDebugCmdProfileOff (DC_ARGS)
+{
+    statep->ds_flags &= ~DSF_PROFILER;
+    slaxOutput("Disabling profiler");
+}
+
+static void
+slaxDebugCmdProfileClear (DC_ARGS)
+{
+    slaxOutput("Clearing profile information");
+    slaxProfClear();
+}
+
+static void
+slaxDebugCmdProfileCallgraph (DC_ARGS)
+{
+    const char *file = argv[2];
+
+    if (file == NULL) {
+	slaxOutput("profile callgraph: missing <file> argument");
+	return;
+    }
+
+    slaxOutput("Enabling callgraph profiling, output to %s", file);
+
+    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_FLAMEGRAPH);
+    statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
+    slaxDebugSetProfileFile(file);
+}
+
+static void
+slaxDebugCmdProfileFlamegraph (DC_ARGS)
+{
+    const char *file = argv[2];
+
+    if (file == NULL) {
+	slaxOutput("profile flamegraph: missing <file> argument");
+	return;
+    }
+
+    slaxOutput("Enabling flame-graph profiling, output to %s", file);
+
+    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_CALLGRAPH);
+    statep->ds_flags |= DSF_PROFILE_FLAMEGRAPH;
+    slaxDebugSetProfileFile(file);
+}
+
+static void
+slaxDebugCmdProfileReportCallgraph (DC_ARGS)
+{
+    const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
+    slaxProfReportCallgraph(statep->ds_callgraph_buffer, file);
+}
+
+static void
+slaxDebugCmdProfileReportFlamegraph (DC_ARGS)
+{
+    const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
+    slaxProfReportFlamegraph(statep->ds_flamegraph_hash, file);
+}
+
+static void
+slaxDebugCmdProfileReportBrief (DC_ARGS)
+{
+    slaxProfReport(SDBF_PROFILE_BRIEF, statep->ds_script_buffer);
+}
+
+static void
+slaxDebugCmdProfileReportWall (DC_ARGS)
+{
+    slaxProfReport(SDBF_PROFILE_WALL, statep->ds_script_buffer);
 }
 
 /*
- * 'profiler [on|off]' command
+ * 'profile report' command; reached when no (or no recognized)
+ * reporting mode is given, since slaxDebugProfileReportCmdTable
+ * handles 'callgraph', 'flamegraph', 'brief', and 'wall'.
+ */
+static void
+slaxDebugCmdProfileReport (DC_ARGS)
+{
+    slaxProfReport(0, statep->ds_script_buffer);
+}
+
+/*
+ * 'profile [on|off]' command.  With no argument, toggles the profiler;
+ * "yes"/"enable" and "no"/"disable" are longer synonyms for on/off.
  */
 static void
 slaxDebugCmdProfiler (DC_ARGS)
@@ -2642,78 +2808,14 @@ slaxDebugCmdProfiler (DC_ARGS)
     int enable = !(statep->ds_flags & DSF_PROFILER);
 
     if (arg) {
-	if (streq("on", arg) || slaxDebugIsAbbrev("yes", arg)
-	    || slaxDebugIsAbbrev("enable", arg))
+	if (slaxDebugIsAbbrev("yes", arg) || slaxDebugIsAbbrev("enable", arg))
 	    enable = TRUE;
 
-	else if (streq("off", arg) || slaxDebugIsAbbrev("no", arg)
+	else if (slaxDebugIsAbbrev("no", arg)
 		 || slaxDebugIsAbbrev("disable", arg))
 	    enable = FALSE;
 
-	else if (slaxDebugIsAbbrev("clear", arg)) {
-	    slaxOutput("Clearing profile information");
-	    slaxProfClear();
-	    return;
-
-	} else if (slaxDebugIsAbbrev("callgraph", arg)) {
-	    const char *file = argv[2];
-
-	    if (file == NULL) {
-		slaxOutput("profile callgraph: missing <file> argument");
-		return;
-	    }
-
-	    slaxOutput("Enabling callgraph profiling, output to %s", file);
-
-	    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_FLAMEGRAPH);
-	    statep->ds_flags |= DSF_PROFILE_CALLGRAPH;
-	    slaxDebugSetProfileFile(file);
-	    return;
-
-	} else if (slaxDebugIsAbbrev("flamegraph", arg)) {
-	    const char *file = argv[2];
-
-	    if (file == NULL) {
-		slaxOutput("profile flamegraph: missing <file> argument");
-		return;
-	    }
-
-	    slaxOutput("Enabling flame-graph profiling, output to %s", file);
-
-	    statep->ds_flags &= ~(DSF_PROFILER | DSF_PROFILE_CALLGRAPH);
-	    statep->ds_flags |= DSF_PROFILE_FLAMEGRAPH;
-	    slaxDebugSetProfileFile(file);
-	    return;
-
-	} else if (slaxDebugIsAbbrev("report", arg)) {
-	    slaxDebugFlags_t flags = 0;
-
-	    if (argv[2] && slaxDebugIsAbbrev("callgraph", argv[2])) {
-		const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
-		slaxProfReportCallgraph(statep->ds_callgraph_buffer, file);
-		return;
-	    }
-
-	    if (argv[2] && slaxDebugIsAbbrev("flamegraph", argv[2])) {
-		const char *file = argv[3] ? argv[3] : statep->ds_profile_file;
-		slaxProfReportFlamegraph(statep->ds_flamegraph_hash, file);
-		return;
-	    }
-
-	    if (argv[2] && slaxDebugIsAbbrev("brief", argv[2]))
-		flags |= SDBF_PROFILE_BRIEF;
-
-	    if (argv[2] && slaxDebugIsAbbrev("wall", argv[2]))
-		flags |= SDBF_PROFILE_WALL;
-
-	    slaxProfReport(flags, statep->ds_script_buffer);
-	    return;
-
-	} else if (slaxDebugIsAbbrev("help", arg)) {
-	    slaxDebugHelpProfile(statep);
-	    return;
-
-	} else {
+	else {
 	    slaxOutput("invalid setting: %s", arg);
 	    return;
 	}
@@ -2727,7 +2829,6 @@ slaxDebugCmdProfiler (DC_ARGS)
 	statep->ds_flags &= ~DSF_PROFILER;
 	slaxOutput("Disabling profiler");
     }
-
 }
 
 /*
@@ -3143,182 +3244,337 @@ slaxDebugCmdQuit (DC_ARGS)
 
 /* ---------------------------------------------------------------------- */
 
+/*
+ * Subcommands nested under 'watch'
+ */
+static slaxDebugCommand_t slaxDebugWatchCmdTable[] = {
+    { "variable",      1, slaxDebugCmdWatchVariable,
+      "variable $var  Set a watchpoint on a variable",
+      NULL, NULL,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'dump'
+ */
+static slaxDebugCommand_t slaxDebugDumpCmdTable[] = {
+    { "var",	       1, slaxDebugCmdDumpVar,
+      "var $var        Dump information on a variable",
+      NULL, NULL,
+    },
+
+    { "expr",	       1, slaxDebugCmdDumpExpr,
+      "expr $expr      Dump an expression (nodeset)",
+      NULL, NULL,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'clear watch'
+ */
+static slaxDebugCommand_t slaxDebugClearWatchCmdTable[] = {
+    { "variable",      1, slaxDebugCmdClearWatchVariable,
+      "variable [$var | num]  Clear a watchpoint",
+      NULL, NULL,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'clear'
+ */
+static slaxDebugCommand_t slaxDebugClearCmdTable[] = {
+    { "watch",	       1, slaxDebugCmdClearWatch,
+      "watch variable [$var | num]  Clear a watchpoint",
+      NULL, slaxDebugClearWatchCmdTable,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'info'
+ */
+static slaxDebugCommand_t slaxDebugInfoCmdTable[] = {
+    { "breakpoints",   1, slaxDebugCmdInfoBreakpoints,
+      "breakpoints     Display current breakpoints",
+      NULL, NULL,
+    },
+
+    { "insert",	       1, slaxDebugCmdInfoInsert,
+      "insert          Display current insertion point",
+      NULL, NULL,
+    },
+
+    { "nodes",	       1, slaxDebugCmdInfoNodes, NULL, NULL, NULL }, /* Hidden */
+
+    { "files",	       1, slaxDebugCmdInfoFiles,
+      "files           Display open files (imports, includes)",
+      NULL, NULL,
+    },
+
+    { "output",	       1, slaxDebugCmdInfoOutput,
+      "output          Display output document",
+      NULL, NULL,
+    },
+
+    { "locals",	       1, slaxDebugCmdInfoLocals,
+      "locals          Display local variables",
+      NULL, NULL,
+    },
+
+    { "profile",       1, slaxDebugCmdInfoProfile,
+      "profile [brief | wall]  Report profiling information",
+      NULL, NULL,
+    },
+
+    { "watch",	       1, slaxDebugCmdInfoWatch,
+      "watch           Display current watchpoints",
+      NULL, NULL,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'profile report'
+ */
+static slaxDebugCommand_t slaxDebugProfileReportCmdTable[] = {
+    { "callgraph",     1, slaxDebugCmdProfileReportCallgraph,
+      "callgraph [<file>]  Report callgraph profiling information",
+      NULL, NULL,
+    },
+
+    { "flamegraph",    1, slaxDebugCmdProfileReportFlamegraph,
+      "flamegraph [<file>]  Report flame-graph profiling information",
+      NULL, NULL,
+    },
+
+    { "brief",	       1, slaxDebugCmdProfileReportBrief,
+      "brief           Report profiling information, briefly",
+      NULL, NULL,
+    },
+
+    { "wall",	       1, slaxDebugCmdProfileReportWall,
+      "wall            Report profiling information, wall-clock",
+      NULL, NULL,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
+/*
+ * Subcommands nested under 'profile'
+ */
+static slaxDebugCommand_t slaxDebugProfileCmdTable[] = {
+    { "on",	       2, slaxDebugCmdProfileOn,
+      "on              Enable profiling",
+      NULL, NULL,
+    },
+
+    { "off",	       3, slaxDebugCmdProfileOff,
+      "off             Disable profiling",
+      NULL, NULL,
+    },
+
+    { "clear",	       1, slaxDebugCmdProfileClear,
+      "clear           Clear profiling information",
+      NULL, NULL,
+    },
+
+    { "callgraph",     1, slaxDebugCmdProfileCallgraph,
+      "callgraph <file>  Enable callgraph profiling, writing output "
+      "to <file>",
+      NULL, NULL,
+    },
+
+    { "flamegraph",    1, slaxDebugCmdProfileFlamegraph,
+      "flamegraph <file>  Enable flame-graph profiling, writing output "
+      "to <file>",
+      NULL, NULL,
+    },
+
+    { "brief",	       1, slaxDebugCmdProfileReportBrief,
+      "brief           Report profiling information, briefly",
+      NULL, NULL,
+    },
+
+    { "wall",	       1, slaxDebugCmdProfileReportWall,
+      "wall            Report profiling information, wall-clock",
+      NULL, NULL,
+    },
+
+    { "report",	       1, slaxDebugCmdProfileReport,
+      "report [brief | wall | callgraph | flamegraph] [<file>]  "
+      "Report profiling information",
+      NULL, slaxDebugProfileReportCmdTable,
+    },
+
+    { NULL, 0, NULL, NULL, NULL, NULL }
+};
+
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "append",        2, slaxDebugCmdAppend,
       "append $var += value  Append a value to a variable",
-      NULL,
+      NULL, NULL,
     },
 
     { "backtrace",     2, slaxDebugCmdWhere,
       "backtrace [full] Show the backtrace of template calls (alias: bt)",
-      NULL,
+      NULL, NULL,
     },
 
     { "break",	       1, slaxDebugCmdBreak,
       "break [loc] [if expr]  Add a breakpoint, optionally conditional "
       "(also: when expr)",
-      NULL,
+      NULL, NULL,
     },
 
-    { "bt",	       1, slaxDebugCmdWhere, NULL, NULL }, /* Hidden */
+    { "bt",	       1, slaxDebugCmdWhere, NULL, NULL, NULL }, /* Hidden */
 
     { "callflow",      2, slaxDebugCmdCallFlow,
       "callflow [val]  Enable call flow tracing",
-      slaxDebugHelpCallFlow,
+      slaxDebugHelpCallFlow, NULL,
     },
 
     { "clear",	       2, slaxDebugCmdClear,
       "clear watch variable [$var | num]  Clear a watchpoint",
-      NULL,
+      NULL, slaxDebugClearCmdTable,
     },
 
     { "condition",     4, slaxDebugCmdCondition,
       "condition <num> [expr]  Set, change, or clear a breakpoint's "
       "condition",
-      NULL,
+      NULL, NULL,
     },
 
     { "continue",      1, slaxDebugCmdContinue,
       "continue [loc]  Continue running the script",
-      NULL,
+      NULL, NULL,
     },
 
     { "delete",	       1, slaxDebugCmdDelete,
       "delete [num]    Delete all (or one) breakpoints",
-      NULL,
+      NULL, NULL,
     },
 
     { "down",	       1, slaxDebugCmdDown,
       "down [n]        Move the selected frame toward the innermost frame",
-      NULL,
+      NULL, NULL,
     },
 
     { "dump",	       1, slaxDebugCmdDump,
       "dump            Dump internal information about libxml2 objects",
-      slaxDebugHelpDump,
+      NULL, slaxDebugDumpCmdTable,
     },
- 
+
     { "finish",	       1, slaxDebugCmdFinish,
       "finish          Finish the current template",
-      NULL,
+      NULL, NULL,
     },
 
     { "help",	       1, slaxDebugCmdHelp,
-      "help            Show this help message",
-      NULL,
+      "help [cmd ...] [all]  Show this help message",
+      NULL, NULL,
     },
 
     { "info",	       1, slaxDebugCmdInfo,
       "info            Showing info about the script being debugged",
-      slaxDebugHelpInfo,
+      NULL, slaxDebugInfoCmdTable,
     },
 
-    { "?",	       1, slaxDebugCmdHelp, NULL, NULL }, /* Hidden */
+    { "?",	       1, slaxDebugCmdHelp, NULL, NULL, NULL }, /* Hidden */
 
     { "list",	       1, slaxDebugCmdList,
       "list [loc]      List contents of the current script",
-      NULL,
+      NULL, NULL,
     },
 
     { "locals",	       2, slaxDebugCmdLocals,
       "locals          List contents of local variables",
-      NULL,
+      NULL, NULL,
     },
 
-    { "mode",	       1, slaxDebugCmdMode, NULL, NULL }, /* Hidden */
+    { "mode",	       1, slaxDebugCmdMode, NULL, NULL, NULL }, /* Hidden */
 
     { "next",	       1, slaxDebugCmdNext,
       "next            Execute the over instruction, stepping over calls",
-      NULL,
+      NULL, NULL,
     },
 
     { "over",	       1, slaxDebugCmdOver,
       "over            Execute the current instruction hierarchy",
-      NULL,
+      NULL, NULL,
     },
 
     { "print",	       1, slaxDebugCmdPrint,
       "print <xpath>   Print the value of an XPath expression",
-      NULL,
+      NULL, NULL,
     },
 
     { "profile",       2, slaxDebugCmdProfiler,
       "profile [val]   Turn profiler on or off",
-      slaxDebugHelpProfile,
+      NULL, slaxDebugProfileCmdTable,
     },
 
     { "reload",	       3, slaxDebugCmdReload,
       "reload          Reload the script contents",
-      NULL,
+      NULL, NULL,
     },
 
     { "run",	       3, slaxDebugCmdRun,
       "run             Restart the script",
-      NULL,
+      NULL, NULL,
     },
 
     { "set",	       2, slaxDebugCmdSet,
       "set $var = value  Set a variable to a new value",
-      NULL,
+      NULL, NULL,
     },
 
     { "step",	       1, slaxDebugCmdStep,
       "step            Execute the next instruction, stepping into calls",
-      NULL,
+      NULL, NULL,
     },
 
     { "tbreak",	       2, slaxDebugCmdTbreak,
       "tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit "
       "(also: when expr)",
-      NULL,
+      NULL, NULL,
     },
 
     { "up",	       1, slaxDebugCmdUp,
       "up [n]          Move the selected frame toward the outermost frame",
-      NULL,
+      NULL, NULL,
     },
 
     { "verbose",       1, slaxDebugCmdVerbose,
       "verbose         Turn on verbose (-v) output logging",
-      slaxDebugHelpVerbose,
+      slaxDebugHelpVerbose, NULL,
     },
 
     { "watch",	       2, slaxDebugCmdWatch,
       "watch variable $var  Set a watchpoint on a variable",
-      NULL,
+      NULL, slaxDebugWatchCmdTable,
     },
 
     { "where",	       1, slaxDebugCmdWhere,
       "where           Show the backtrace of template calls (alias: bt)",
-      NULL,
+      NULL, NULL,
     },
 
     { "quit",	       1, slaxDebugCmdQuit,
       "quit            Quit debugger",
-      NULL,
+      NULL, NULL,
     },
 
-    { NULL, 0, NULL, NULL, NULL }
+    { NULL, 0, NULL, NULL, NULL, NULL }
 };
-
-/**
- * Find a command with the given name
- * @name name of command
- * @return command structure for that command
- */
-static slaxDebugCommand_t *
-slaxDebugGetCommand (const char *name)
-{
-    slaxDebugCommand_t *cmdp;
-    int len = strlen(name);
-
-    for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
-	if (slaxDebugCheckAbbrev(cmdp->dc_command, cmdp->dc_min, name, len))
-	    return cmdp;
-    }
-
-    return NULL;
-}
 
 /**
  * Run the command entered by user
@@ -3328,20 +3584,50 @@ static void
 slaxDebugRunCommand (slaxDebugState_t *statep, char *input)
 {
     const char *argv[MAXARGS];
-    slaxDebugCommand_t *cmdp = NULL;
+    const char **cmdv = argv;
+    slaxDebugCommand_t *cmdp;
     char *input_copy = ALLOCADUP(input);
+    int help = FALSE;
 
-    slaxDebugSplitArgs(input, argv, MAXARGS);
-    if (argv[0] == NULL)
+    int argc = slaxDebugSplitArgs(input, argv, MAXARGS);
+    if (argc <= 0)
 	return;
 
-    cmdp = slaxDebugGetCommand(argv[0]);
-    if (cmdp) {
-	cmdp->dc_func(statep, input_copy, argv);
+    /* Allow "help a b c" or "a b c help" */
+    if (slaxDebugIsAbbrev("help", argv[0])) {
+	help = TRUE;
+	cmdv = argv + 1;	/* Skip "help" */
 
-    } else {
-	slaxOutput("Unknown command \"%s\".  Try \"help\"", argv[0]);
+    } else if (slaxDebugIsAbbrev("help", argv[argc - 1])) {
+	help = TRUE;
+	argv[--argc] = NULL;	/* Drop the trailing "help" */
     }
+
+    if (help && cmdv[0] == NULL) {
+	slaxDebugCmdHelp(statep, input_copy, argv);
+	return;
+    }	
+
+    cmdp = slaxDebugFindCommand(NULL, NULL, cmdv);
+    if (cmdp == NULL) {
+	slaxOutput("Unknown command \"%s\".  Try \"help\"", cmdv[0] ?: "");
+	return;
+    }
+
+    if (help) {
+	slaxDebugShowCommandHelp(statep, cmdp, 2);
+	return;
+    }
+
+    if (cmdp->dc_func == NULL) {
+	slaxOutput("incomplete command");
+	slaxOutput("%s", "");
+	slaxOutput("List of commands:");
+	slaxDebugShowCommandHelp(statep, cmdp, 2);
+	return;
+    }
+
+    cmdp->dc_func(statep, input_copy, argv);
 }
 
 /**
