@@ -1,0 +1,9 @@
+version 1.0;
+
+import "multidoc/included.slax";
+
+match / {
+    <out> {
+        apply-templates root/item;
+    }
+}
