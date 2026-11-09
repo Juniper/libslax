@@ -1,6 +1,6 @@
 version 1.0;
 
-import "multidoc/included.slax";
+import "include/included.slax";
 
 match / {
     <out> {
