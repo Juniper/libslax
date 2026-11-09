@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<top>
+  <one>red</one>
+  <one>green</one>
+  <one>bllue</one>
+
+  <one-mode>red</one-mode>
+  <one-mode>green</one-mode>
+  <one-mode>bllue</one-mode>
+
+  <three-mode>red</three-mode>
+  <three-mode>green</three-mode>
+  <three-mode>bllue</three-mode>
+</top>
+<?xml version="1.0"?>
+<top>
+  <one>red</one>
+  <one>green</one>
+  <one>bllue</one>
+
+  <one-mode>red</one-mode>
+  <one-mode>green</one-mode>
+  <one-mode>bllue</one-mode>
+
+  <three-mode>red</three-mode>
+  <three-mode>green</three-mode>
+  <three-mode>bllue</three-mode>
+</top>
