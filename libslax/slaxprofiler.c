@@ -45,11 +45,13 @@ typedef struct slax_prof_entry_s {
 } slax_prof_entry_t;
 
 /*
- * The profile information for the document we are profiling.
- * Note: If/when we want to support multiple files, a TAILQ_ENTRY-based
- * linked list can be added.  But not yet.....
+ * The profile information for one document we are profiling.  A
+ * script typically pulls in other documents via xsl:import/
+ * xsl:include, each with their own line numbering, so we keep one
+ * of these per document, linked onto "slax_profiles".
  */
 typedef struct slax_prof_s {
+    TAILQ_ENTRY(slax_prof_s) sp_link;	/* Next document's profile data */
     xmlDocPtr sp_docp;		/* Document pointer */
     unsigned sp_inst_line;	/* Current instruction line number*/
     unsigned sp_lines;		/* Number of lines in the file */
@@ -57,7 +59,12 @@ typedef struct slax_prof_s {
     slax_prof_entry_t sp_data[0]; /* Raw data, indexed by line number */
 } slax_prof_t;
 
-slax_prof_t *slax_profile;	/* Profiling data */
+TAILQ_HEAD(slax_prof_list_s, slax_prof_s) slax_profiles
+    = TAILQ_HEAD_INITIALIZER(slax_profiles);
+
+/* The spp set by the most recent slaxProfEnter(), for its matching Exit */
+slax_prof_t *slax_profile_current;
+
 psu_time_usecs_t slax_profile_time_user; /* Last user time from getrusage */
 unsigned long slax_profile_time_system; /* Last system time from getrusage */
 
@@ -86,6 +93,53 @@ slaxProfCountLines (xmlDocPtr docp)
     return prev ? xmlGetLineNo(prev) : 1;
 }
 
+/*
+ * Find the profile data for "docp", if we've already opened it.
+ */
+static slax_prof_t *
+slaxProfFind (xmlDocPtr docp)
+{
+    slax_prof_t *spp;
+
+    TAILQ_FOREACH(spp, &slax_profiles, sp_link) {
+	if (spp->sp_docp == docp)
+	    return spp;
+    }
+
+    return NULL;
+}
+
+/*
+ * Allocate and link in the profile data for "docp", shared by the
+ * eager open below (for the top-level script) and the lazy open in
+ * slaxProfEnter() (for documents pulled in via xsl:import/include,
+ * which we only discover as instructions from them execute).
+ */
+static slax_prof_t *
+slaxProfOpenInternal (xmlDocPtr docp)
+{
+    unsigned lines = slaxProfCountLines(docp);
+    slax_prof_t *spp;
+
+    if (lines == 0)
+	return NULL;
+
+    spp = xmlMalloc(sizeof(*spp) + sizeof(spp->sp_data[0]) * (lines + 1));
+    if (spp == NULL) {
+	slaxOutput("out of memory");
+	return NULL;
+    }
+
+    bzero(spp, sizeof(*spp) + sizeof(spp->sp_data[0]) * (lines + 1));
+
+    spp->sp_docp = docp;
+    spp->sp_lines = lines;
+
+    TAILQ_INSERT_TAIL(&slax_profiles, spp, sp_link);
+
+    return spp;
+}
+
 /**
  * Called from the debugger when we want to profile a script.
  *
@@ -95,24 +149,10 @@ slaxProfCountLines (xmlDocPtr docp)
 int
 slaxProfOpen (xmlDocPtr docp)
 {
-    unsigned lines = slaxProfCountLines(docp);
-    slax_prof_t *spp;
+    slax_prof_t *spp = slaxProfOpenInternal(docp);
 
-    if (lines == 0)
+    if (spp == NULL)
 	return TRUE;
-
-    spp = xmlMalloc(sizeof(*spp) + sizeof(spp->sp_data[0]) * (lines + 1));
-    if (spp == NULL) {
-	slaxOutput("out of memory");
-	return TRUE;
-    }
-
-    bzero(spp, sizeof(*spp) + sizeof(spp->sp_data[0]) * (lines + 1));
-
-    spp->sp_docp = docp;
-    spp->sp_lines = lines;
-
-    slax_profile = spp;		/* Record as current document */
 
     slax_profile_overhead = psu_calibrate_overhead();
 
@@ -128,11 +168,20 @@ slaxProfOpen (xmlDocPtr docp)
 void
 slaxProfEnter (xmlNodePtr inst)
 {
-    slax_prof_t *spp = slax_profile;
+    xmlDocPtr docp = xmlNodeGetDoc(inst);
+    slax_prof_t *spp = slaxProfFind(docp);
     unsigned line;
     struct rusage ru;
 
     slaxLog("profile:enter for %s", xmlNodeGetName(inst));
+
+    if (spp == NULL)
+	spp = slaxProfOpenInternal(docp);
+
+    slax_profile_current = spp;	/* Record for the matching Exit */
+
+    if (spp == NULL)
+	return;
 
     if (spp->sp_inst_line)
 	slaxLog("profile: warning: enter while still set");
@@ -141,9 +190,6 @@ slaxProfEnter (xmlNodePtr inst)
     slax_profile_time_user = slax_profile_time_system = 0;
 
     spp->sp_wall = psu_get_time();
-
-    if (xmlNodeGetDoc(inst) != spp->sp_docp)
-	return;
 
     line = xmlGetLineNo(inst);
     if (line == 0 || line > spp->sp_lines)
@@ -162,14 +208,14 @@ slaxProfEnter (xmlNodePtr inst)
 void
 slaxProfExit (void)
 {
-    slax_prof_t *spp = slax_profile;
+    slax_prof_t *spp = slax_profile_current;
     unsigned line;
     struct rusage ru;
     int rc;
 
     psu_time_usecs_t now = psu_get_time();
 
-    if (spp->sp_inst_line == 0)
+    if (spp == NULL || spp->sp_inst_line == 0)
 	return;
 
     /* Zero means no valid data, so don't record */
@@ -226,13 +272,14 @@ slaxProfTrimTime (char *buf, int bufsiz, psu_time_usecs_t t)
     return buf;
 }
 
-/**
- * Report the results
+/*
+ * Report the results for one document; "buffer" is only meaningful for
+ * the top-level script (an in-memory script with no readable file on
+ * disk), so callers pass NULL for every other document.
  */
-void
-slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
+static void
+slaxProfReportOne (slax_prof_t *spp, int brief, int wall, const char *buffer)
 {
-    slax_prof_t *spp = slax_profile;
     const char *filename = (const char *) xmlDocGetURL(spp->sp_docp);
     FILE *fp = NULL;
     unsigned num = 0, count;
@@ -248,9 +295,6 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
     char wall_buf[20];
     char wall_val[64];
 
-    int brief = (flags & SDBF_PROFILE_BRIEF) ? 1 : 0;
-    int wall  = (flags & SDBF_PROFILE_WALL) ? 1 : 0;
-
     if (buffer) {
 	last = buffer;
     } else {
@@ -260,6 +304,8 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
 	    return;
 	}
     }
+
+    slaxOutput("File: %s", filename);
 
     if (wall)
 	slaxOutput("%5s %8s  %% %9s  %% %9s %8s %8s %12s  %% %s",
@@ -433,6 +479,24 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
 
 }
 
+/**
+ * Report the results, one section per document we profiled.  The
+ * top-level script is always first (it's the one opened eagerly, at
+ * the head of the list), and any imported/included documents follow,
+ * in the order we first saw an instruction execute from them.
+ */
+void
+slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
+{
+    slax_prof_t *spp;
+    int brief = (flags & SDBF_PROFILE_BRIEF) ? 1 : 0;
+    int wall  = (flags & SDBF_PROFILE_WALL) ? 1 : 0;
+
+    TAILQ_FOREACH(spp, &slax_profiles, sp_link) {
+	slaxProfReportOne(spp, brief, wall, buffer);
+	buffer = NULL;	/* Only the top-level document uses "buffer" */
+    }
+}
 
 /**
  * Clear all values
@@ -440,9 +504,11 @@ slaxProfReport (slaxDebugFlags_t flags, const char *buffer)
 void
 slaxProfClear (void)
 {
-    slax_prof_t *spp = slax_profile;
+    slax_prof_t *spp;
 
-    bzero(spp->sp_data, (spp->sp_lines + 1) * sizeof(spp->sp_data[0]));
+    TAILQ_FOREACH(spp, &slax_profiles, sp_link) {
+	bzero(spp->sp_data, (spp->sp_lines + 1) * sizeof(spp->sp_data[0]));
+    }
 }
 
 /**
@@ -451,10 +517,14 @@ slaxProfClear (void)
 void
 slaxProfClose (void)
 {
-    slax_prof_t *spp = slax_profile;
+    slax_prof_t *spp;
 
-    xmlFree(spp);
+    while ((spp = TAILQ_FIRST(&slax_profiles)) != NULL) {
+	TAILQ_REMOVE(&slax_profiles, spp, sp_link);
+	xmlFree(spp);
+    }
 
+    slax_profile_current = NULL;
     slax_profile_time_user = slax_profile_time_system = 0; /* Not valid */
 }
 
