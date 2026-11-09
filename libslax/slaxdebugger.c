@@ -79,6 +79,7 @@
 #include <libxml/xmlsave.h>
 #include <libxml/xmlIO.h>
 #include <libxml/hash.h>
+#include <libxml/uri.h>
 #include <libxslt/variables.h>
 #include <libxslt/transform.h>
 
@@ -346,6 +347,76 @@ slaxDebugGetFile (xsltStylesheetPtr style, const char *filename)
 	    if (answer)
 		return answer;
 	}
+    }
+
+    return NULL;
+}
+
+/*
+ * Look for an xsl:import or xsl:include element among "doc"'s
+ * top-level children whose "href" resolves to "target", so "info
+ * files" can report where a loaded document was pulled in from.
+ */
+static xmlNodePtr
+slaxDebugFindImportNode (xmlDocPtr doc, const xmlChar *target)
+{
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+    xmlNodePtr cur, answer = NULL;
+    xmlChar *href, *base, *uri;
+
+    for (cur = root ? xmlNodeGetChildren(root) : NULL; cur;
+	 cur = xmlNodeGetNext(cur)) {
+	if (!slaxNodeIsXsl(cur, ELT_IMPORT) && !slaxNodeIsXsl(cur, ELT_INCLUDE))
+	    continue;
+
+	href = xmlGetNsProp(cur, (const xmlChar *) "href", NULL);
+	if (href == NULL)
+	    continue;
+
+	base = xmlNodeGetBase(doc, cur);
+	uri = xmlBuildURI(href, base);
+
+	if (uri && xmlStrEqual(uri, target))
+	    answer = cur;
+
+	if (base)
+	    xmlFree(base);
+	if (uri)
+	    xmlFree(uri);
+	xmlFree(href);
+
+	if (answer)
+	    break;
+    }
+
+    return answer;
+}
+
+/*
+ * Find the xsl:import/xsl:include element that pulled "target" into
+ * the stylesheet, searching every document merged into "style"'s own
+ * level (its main document plus any xsl:include'd ones) -- a nested
+ * xsl:include can live in any of them.
+ */
+static xmlNodePtr
+slaxDebugFindImportSource (xsltStylesheetPtr style, xmlDocPtr target)
+{
+    const xmlChar *url = xmlDocGetURL(target);
+    xsltDocumentPtr xdoc;
+    xmlNodePtr answer;
+
+    if (url == NULL)
+	return NULL;
+
+    answer = slaxDebugFindImportNode(xsltStylesheetGetDoc(style), url);
+    if (answer)
+	return answer;
+
+    for (xdoc = xsltStylesheetGetDocList(style); xdoc;
+	 xdoc = xsltDocumentGetNext(xdoc)) {
+	answer = slaxDebugFindImportNode(xsltDocumentGetDoc(xdoc), url);
+	if (answer)
+	    return answer;
     }
 
     return NULL;
@@ -1533,6 +1604,7 @@ slaxDebugHelpInfo (DH_ARGS)
     slaxOutput("  info output       Display output document");
     slaxOutput("  info profile [brief | wall]  Report profiling information");
     slaxOutput("  info watch        Display current watchpoints");
+    slaxOutput("  info files        Display open files (imports, includes)");
 }
 
 static void
@@ -1585,6 +1657,50 @@ slaxDebugInfoWatch (void)
 
     if (hit == 0)
 	slaxOutput("No watchpoints");
+}
+
+static void
+slaxDebugInfoFilesOne (xmlDocPtr doc, xmlNodePtr source)
+{
+    const char *filename = (const char *) xmlDocGetURL(doc);
+
+    if (source)
+	slaxOutput("    %s\n        (included from %s:%ld)", filename,
+		   (const char *) xmlDocGetURL(xmlNodeGetDoc(source)),
+		   xmlGetLineNo(source));
+    else
+	slaxOutput("    %s", filename);
+}
+
+/*
+ * List every document open as part of the script: the main script,
+ * everything it (transitively) imports, and every xsl:include'd
+ * document merged into each of those, along with where each one was
+ * pulled in from.
+ */
+static void
+slaxDebugInfoFiles (xsltStylesheetPtr style)
+{
+    xsltDocumentPtr xdoc;
+    xmlNodePtr source;
+
+    for ( ; style; style = xsltStylesheetGetNext(style)) {
+	source = xsltStylesheetGetParent(style)
+	    ? slaxDebugFindImportSource(xsltStylesheetGetParent(style),
+					 xsltStylesheetGetDoc(style))
+	    : NULL;
+
+	slaxDebugInfoFilesOne(xsltStylesheetGetDoc(style), source);
+
+	for (xdoc = xsltStylesheetGetDocList(style); xdoc;
+	     xdoc = xsltDocumentGetNext(xdoc)) {
+	    source = slaxDebugFindImportSource(style, xsltDocumentGetDoc(xdoc));
+	    slaxDebugInfoFilesOne(xsltDocumentGetDoc(xdoc), source);
+	}
+
+	if (xsltStylesheetGetImports(style))
+	    slaxDebugInfoFiles(xsltStylesheetGetImports(style));
+    }
 }
 
 /*
@@ -1871,6 +1987,15 @@ slaxDebugCmdInfo (DC_ARGS)
 	if (statep->ds_script && xsltStylesheetGetDoc(statep->ds_script))
 	    slaxDebugListNodeByLine(
 		xmlDocGetChildren(xsltStylesheetGetDoc(statep->ds_script)));
+
+    } else if (slaxDebugIsAbbrev("files", argv[1])) {
+	if (statep->ds_script == NULL) {
+	    slaxOutput("no script is loaded");
+	    return;
+	}
+
+	slaxOutput("List of open files:");
+	slaxDebugInfoFiles(statep->ds_script);
 
     } else if (slaxDebugIsAbbrev("output", argv[1])) {
 	if (slaxDebugCheckContext(ctxt))
