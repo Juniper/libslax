@@ -4,6 +4,7 @@ Enabling profiler
 (sdb) run
 Script exited normally
 (sdb) profile report
+File: ../../../tests/sdb/profile.slax
  Line     Hits  %      User  %     U/Hit   System    S/Hit Source
     1        -            -            -        -        - version 1.0;
     2        -            -            -        -        - 
@@ -19,6 +20,7 @@ Script exited normally
    12        -            -            -        -        - }
 Total      104 TIME TIME  Total
 (sdb) profile report brief
+File: ../../../tests/sdb/profile.slax
  Line     Hits  %      User  %     U/Hit   System    S/Hit Source
     3        2 (1) TIME TIME TIME TIME match / {
     4        1 (0) TIME TIME TIME TIME     <out> {
