@@ -1,0 +1,45 @@
+Type 'help' for help
+(sdb) profile on
+Enabling profiler
+(sdb) run
+Script exited normally
+(sdb) profile report
+File: ../../../tests/sdb/profile-multidoc-main.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.0;
+    2        -            -            -        -        - 
+    3        -            -            -        -        - import "include/included.slax";
+    4        -            -            -        -        - 
+    5        2(50) TIME TIME TIME TIME match / {
+    6        1(25) TIME TIME TIME TIME     <out> {
+    7        1(25) TIME TIME TIME TIME         apply-templates root/item;
+    8        -            -            -        -        -     }
+    9        -            -            -        -        - }
+Total        4 TIME TIME  Total
+File: ../../../tests/sdb/include/included.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    1        -            -            -        -        - version 1.0;
+    2        -            -            -        -        - 
+    3        6(40) TIME TIME TIME TIME match item {
+    4        3(20) TIME TIME TIME TIME     var $v = .;
+    5        6(40) TIME TIME TIME TIME     <seen> $v;
+    6        -            -            -        -        - }
+Total       15 TIME TIME  Total
+(sdb) profile report brief
+File: ../../../tests/sdb/profile-multidoc-main.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    5        2(50) TIME TIME TIME TIME match / {
+    6        1(25) TIME TIME TIME TIME     <out> {
+    7        1(25) TIME TIME TIME TIME         apply-templates root/item;
+Total        4 TIME TIME  Total
+File: ../../../tests/sdb/include/included.slax
+ Line     Hits  %      User  %     U/Hit   System    S/Hit Source
+    3        6(40) TIME TIME TIME TIME match item {
+    4        3(20) TIME TIME TIME TIME     var $v = .;
+    5        6(40) TIME TIME TIME TIME     <seen> $v;
+Total       15 TIME TIME  Total
+(sdb) profile clear
+Clearing profile information
+(sdb) profile off
+Disabling profiler
+(sdb) quit
