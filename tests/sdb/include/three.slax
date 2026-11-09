@@ -1,0 +1,10 @@
+version 1.3;
+
+match foo {
+    <three> .;
+}
+
+match foo {
+    mode "three";
+    <three-mode> .;
+}
