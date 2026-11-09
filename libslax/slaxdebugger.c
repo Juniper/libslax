@@ -1933,23 +1933,33 @@ slaxDebugCmdList (DC_ARGS)
 	} else {
 	    line_no = atoi(argv[1]);
 	    if (line_no <= 0) {
-		slaxOutput("invalid target: %s", argv[1]);
-		return;
-	    }
+		/* Not a line number either; maybe it's just a filename */
+		xsltStylesheetPtr fstyle
+		    = slaxDebugGetFile(statep->ds_script, argv[1]);
 
-	    /* We have a line number but no node */
-	    if (statep->ds_list_node)
-		node = statep->ds_list_node;
+		if (fstyle == NULL) {
+		    slaxOutput("invalid target: %s", argv[1]);
+		    return;
+		}
 
-	    else if (statep->ds_inst)
-		node = statep->ds_inst;
+		node = xmlDocGetChildren(xsltStylesheetGetDoc(fstyle));
+		line_no = xmlGetLineNo(node) ?: 1;
 
-	    else if (xsltStylesheetGetDoc(statep->ds_script))
-		node = xmlDocGetRootElement(xsltStylesheetGetDoc(statep->ds_script));
+	    } else {
+		/* We have a line number but no node */
+		if (statep->ds_list_node)
+		    node = statep->ds_list_node;
 
-	    else {
-		slaxOutput("unknown location");
-		return;
+		else if (statep->ds_inst)
+		    node = statep->ds_inst;
+
+		else if (xsltStylesheetGetDoc(statep->ds_script))
+		    node = xmlDocGetRootElement(xsltStylesheetGetDoc(statep->ds_script));
+
+		else {
+		    slaxOutput("unknown location");
+		    return;
+		}
 	    }
 	}
 
