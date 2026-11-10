@@ -55,30 +55,35 @@ param $mine = [string] "sure"
 #0 match / at deep.slax:3
 #1 template one() at deep.slax:5
 #2 template two() at deep.slax:11
+    $mine = [string] "yours"
     $depth = [number] 1.000000
 #3 template three() at deep.slax:19
     $ours = [string] "yours and mine"
     $depth = [number] 1.000000
 #4 template one() at deep.slax:23
 #5 template two() at deep.slax:11
+    $mine = [string] "sure"
     $depth = [number] 2.000000
 #6 template three() at deep.slax:19
     $ours = [string] "working"
     $depth = [number] 2.000000
 #7 template one() at deep.slax:23
 #8 template two() at deep.slax:11
+    $mine = [string] "yours"
     $depth = [number] 3.000000
 #9 template three() at deep.slax:19
     $ours = [string] "yours and mine"
     $depth = [number] 3.000000
 #10 template one() at deep.slax:23
 #11 template two() at deep.slax:11
+    $mine = [string] "yours"
     $depth = [number] 4.000000
 #12 template three() at deep.slax:19
     $ours = [string] "yours and mine"
     $depth = [number] 4.000000
 #13 template one() at deep.slax:23
 #14 template two() at deep.slax:12
+    $mine = [string] "yours"
     $depth = [number] 5.000000
 (sdb) quit
 The script is running.  Exit anyway? (y or n) (sdb) 
