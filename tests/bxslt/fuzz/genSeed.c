@@ -19,8 +19,10 @@
 #include <libxml/parserInternals.h>
 #include <libxslt/documents.h>
 #include <libxslt/transform.h>
+#include <libxslt/xslt.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/xsltutils.h>
+#include <libexslt/exslt.h>
 #include "fuzz.h"
 
 #define PATH_SIZE     500
@@ -485,6 +487,18 @@ main (int argc, const char **argv)
         fprintf(stderr, "usage: genSeed [FUZZER] [PATTERN...]\n");
         return 1;
     }
+
+    /*
+     * Needed so that stylesheets using EXSLT (or other built-in
+     * extension) functions parse and run instead of failing with
+     * "Unregistered function" -- the real fuzz targets get this via
+     * xsltFuzzInit(), but that also reassigns the error funcs and
+     * entity loader genSeed sets up for its own purposes below, so
+     * it is not called here.
+     */
+    xmlInitParser();
+    xsltInit();
+    exsltRegisterAll();
 
     xmlSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
     xsltSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
