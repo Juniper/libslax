@@ -2773,7 +2773,7 @@ xsltXPathCompileFlags (xsltStylesheetPtr style, const xmlChar *str, int flags,
         xmlFree(nsList);
 
         if (ret == NULL) {
-            xmlErrorPtr lastError = xmlGetLastError();
+            const xmlError *lastError = xmlGetLastError();
             const char *note = NULL;
             char buf[256];
 
