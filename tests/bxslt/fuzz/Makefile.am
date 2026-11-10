@@ -32,7 +32,7 @@ $(top_builddir)/libbxslt/libxslt/libbxslt.la:
 $(top_builddir)/libbxslt/libexslt/libexslt.la: $(top_builddir)/libbxslt/libxslt/libbxslt.la
 	cd $(top_builddir)/libbxslt/libexslt && $(MAKE) libexslt.la
 
-.PHONY: fuzz-xpath fuzz-xslt
+.PHONY: fuzz-xpath fuzz-xslt corpus
 
 check-local: $(noinst_PROGRAMS)
 	@echo '## Running fuzz target tests'
@@ -43,10 +43,12 @@ check-local: $(noinst_PROGRAMS)
 genSeed_SOURCES = genSeed.c fuzz.c
 
 # XPath fuzzer
+#
+# Seed generation is setup for fuzz-xpath/fuzz-xslt, not a test, and those
+# targets already depend on these stamps directly -- so it stays off of
+# "all" and only runs when fuzzing is actually invoked.
 
 corpus: seed/xpath.stamp seed/xslt.stamp
-
-all: corpus
 
 seed/xpath.stamp: genSeed$(EXEEXT)
 	@mkdir -p seed/xpath
