@@ -189,6 +189,22 @@ XSLTPUBFUN void XSLTCALL xsltReportFatalError (xmlNodePtr cur,
                                             const char *note,
                                             const char *script_buffer);
 
+/**
+ * Print a full backtrace of "ctxt"'s real call-frame stack
+ * (ctxt->frameTab), one real frame per line -- named templates and
+ * pseudo-frames (xsl:if, xsl:call-template, built-in-rule descent,
+ * etc) alike, with each frame's parameter/variable values underneath
+ * it. This works with no debugger attached: the frame stack is
+ * always-on, maintained in lockstep with ctxt->depth. The output
+ * matches the SLAX debugger's own "where full" command output line
+ * for line, so the two are interchangeable.
+ *
+ * Called from the engine's own fatal-error paths (runaway recursion,
+ * too many nested variables) in place of the older xsltDebug(), which
+ * only had the flat, unstructured templTab/varsTab to dump.
+ */
+XSLTPUBFUN void XSLTCALL xsltFormatBacktrace (xsltTransformContextPtr ctxt);
+
 #ifdef __cplusplus
 }
 #endif
