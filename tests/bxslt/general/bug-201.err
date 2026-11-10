@@ -1,3 +1,4 @@
 runtime error: file ./bug-201.xsl line 13 element copy-of
 exsltFuncFunctionFunction: Potentially infinite recursion detected in function {test}func.
+#0 match / at bug-201.xsl:12
 no result for ./bug-201.xml
