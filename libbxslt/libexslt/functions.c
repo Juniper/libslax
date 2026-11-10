@@ -356,6 +356,7 @@ exsltFuncFunctionFunction (xmlXPathParserContextPtr ctxt, int nargs)
             xmlXPathContextGetFunctionURI(
                 xmlXPathParserContextGetContext(ctxt)),
             xmlXPathContextGetFunction(xmlXPathParserContextGetContext(ctxt)));
+        xsltFormatBacktrace(tctxt);
         tctxt->state = XSLT_STATE_STOPPED;
         return;
     }
