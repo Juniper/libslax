@@ -2911,22 +2911,45 @@ slaxDebugCmdWhere (DC_ARGS)
 	    xsltTransformContextPtr ctxt = stp->st_ctxt;
 
 	    /*
-	     * We display the parameter list for the template
+	     * We display the parameter list for the template.  The
+	     * live (innermost) frame's st_locals_stop isn't finalized
+	     * until a deeper frame is pushed, so pull its range from
+	     * the live context instead, the same way
+	     * slaxDebugLocalsRange does for the same reason.
 	     */
-	    start = (stp->st_locals_start > 0) ? stp->st_locals_start : 0;
-	    stop = stp->st_locals_stop ?:
-		stp->st_locals_start ? xsltTransformContextGetVarsNr(ctxt) : 0;
+	    if (stp == TAILQ_LAST(&slaxDebugStack, slaxDebugStack_s)) {
+		start = xsltTransformContextGetVarsBase(ctxt);
+		stop = xsltTransformContextGetVarsNr(ctxt);
+	    } else {
+		start = stp->st_locals_start;
+		stop = stp->st_locals_stop;
+	    }
+
 	    for (i = start; i < stop; i++) {
 		const xmlChar *curName;
 		xmlXPathObjectPtr curValue;
+		xsltStylePreCompPtr curComp;
 		int curLevel;
 
 		cur = xsltTransformContextGetVarsEntry(ctxt, i);
 		if (cur == NULL)
 		    continue;
 
+		/*
+		 * A caller-supplied value (xsl:with-param bound to a
+		 * matching xsl:param) keeps a negative level; a
+		 * template's own declared parameter, whether bound to
+		 * a passed value or its own default, is always an
+		 * XSLT_FUNC_PARAM stack element regardless of level.
+		 * Without "full", we want both of those (the template's
+		 * parameters) but not its plain xsl:variable locals.
+		 */
 		curLevel = xsltStackElemGetLevel(cur);
-		if (!full && curLevel >= 0)
+		curComp = xsltStackElemGetComp(cur);
+		if (!full && curLevel >= 0
+		        && (curComp == NULL
+			    || xsltStylePreCompGetType(curComp)
+			        != XSLT_FUNC_PARAM))
 		    continue;
 
 		curName = xsltStackElemGetName(cur);
