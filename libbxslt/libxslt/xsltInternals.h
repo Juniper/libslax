@@ -1430,6 +1430,23 @@ struct _xsltStackElem {
     xmlDocPtr *mvarDocsTab; /* the referenced docs */
 };
 
+/*
+ * One entry in xsltTransformContext's frameTab: a real call-frame
+ * stack, kept in lockstep with "depth" so every recursion step --
+ * named template or pseudo-frame alike -- has a structured record of
+ * who called it, from where, and which part of varsTab belongs to it.
+ * This is what lets xsltFormatBacktrace() give a full backtrace with
+ * no debugger attached.
+ */
+typedef struct _xsltCallFrame xsltCallFrame;
+typedef xsltCallFrame *xsltCallFramePtr;
+struct _xsltCallFrame {
+    xmlNodePtr caller;     /* ctxt->inst at push time: the call site */
+    xmlNodePtr inst;       /* this frame's own instruction/template elem */
+    xsltTemplatePtr templ; /* NULL for a pseudo-frame */
+    int varsBase;          /* ctxt->varsNr at push time */
+};
+
 #ifdef XSLT_REFACTORED
 
 struct _xsltPrincipalStylesheetData {
@@ -1778,6 +1795,28 @@ struct _xsltTransformContext {
     int depth;              /* Needed to catch recursions */
     int maxTemplateDepth;
     int maxTemplateVars;
+
+    /*
+     * The real call-frame stack, kept in lockstep with "depth": one
+     * entry per push/pop of "depth", so frameNr always equals depth.
+     * See xsltCallFrame and xsltFormatBacktrace().
+     */
+    int frameNr;
+    int frameMax;
+    xsltCallFramePtr frameTab;
+
+    /*
+     * Set by xsltApplyXSLTTemplate() to the vars stack height it
+     * sampled before running a template's xsl:param bindings, and
+     * consumed by the very next framePush() for that same invocation.
+     * This lets the pushed frame's varsBase land where the SLAX
+     * debugger's own call-frame hook samples it -- before the
+     * template's own parameters go on the stack -- so those
+     * parameters are attributed to the template's own frame instead
+     * of its caller's. -1 means "use ctxt->varsNr", the ordinary case
+     * for every pseudo-frame push.
+     */
+    int frameVarsBasePending;
     unsigned long opLimit;
     unsigned long opCount;
     int sourceDocDirty;
