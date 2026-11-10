@@ -163,6 +163,240 @@ templPop (xsltTransformContextPtr ctxt)
 }
 
 /**
+ * framePush:
+ * @ctxt: the transformation context
+ * @templ: the template being entered, or NULL for a pseudo-frame
+ * @inst: this frame's own instruction, or the called template's
+ *        source element
+ *
+ * Push a new call frame onto ctxt->frameTab, recording the call site
+ * (ctxt->inst, read before this call overwrites it) and the current
+ * top of the variable stack as this frame's base -- or, if
+ * ctxt->frameVarsBasePending was set by the caller for this exact
+ * invocation, that earlier-sampled height instead (see its
+ * declaration in xsltInternals.h). Also bumps ctxt->depth, so the two
+ * stay in lockstep by construction instead of by convention at each
+ * call site.
+ */
+static void
+framePush (xsltTransformContextPtr ctxt, xsltTemplatePtr templ,
+           xmlNodePtr inst)
+{
+    xsltCallFramePtr frame;
+
+    ctxt->depth++;
+
+    if (ctxt->frameNr >= ctxt->frameMax) {
+        xsltCallFramePtr tmp;
+        int newMax = ctxt->frameMax == 0 ? 4 : ctxt->frameMax * 2;
+
+        tmp = (xsltCallFramePtr) xmlRealloc(ctxt->frameTab,
+                                            newMax * sizeof(*tmp));
+        if (tmp == NULL) {
+            xmlGenericError(xmlGenericErrorContext, "realloc failed !\n");
+            return;
+        }
+        ctxt->frameTab = tmp;
+        ctxt->frameMax = newMax;
+    }
+    frame = &ctxt->frameTab[ctxt->frameNr++];
+    frame->caller = ctxt->inst;
+    frame->inst = inst;
+    frame->templ = templ;
+    frame->varsBase = (ctxt->frameVarsBasePending >= 0)
+        ? ctxt->frameVarsBasePending : ctxt->varsNr;
+    ctxt->frameVarsBasePending = -1;
+}
+
+/**
+ * framePop:
+ * @ctxt: the transformation context
+ *
+ * Pop the innermost call frame and bring ctxt->depth back down with
+ * it, so the two stay in lockstep by construction instead of by
+ * convention at each call site.
+ */
+static void
+framePop (xsltTransformContextPtr ctxt)
+{
+    if (ctxt->frameNr > 0)
+        ctxt->frameNr--;
+
+    ctxt->depth--;
+}
+
+/**
+ * xsltFormatBacktraceTemplate:
+ * @templ: the template owning this frame; must have a name or match
+ * @buf: destination buffer
+ * @bufsiz: size of @buf
+ *
+ * Build the "template NAME match PATTERN" descriptive string for a
+ * named/matched template, trimming the trailing space when only one
+ * of the two is present. Mirrors slaxDebugTemplateInfo() in
+ * libslax/slaxdebugger.c, which this function's output must match.
+ */
+static void
+xsltFormatBacktraceTemplate (xsltTemplatePtr templ, char *buf, size_t bufsiz)
+{
+    buf[0] = 0;
+
+    if (templ->name != NULL)
+        snprintf(buf, bufsiz, "template %s ", templ->name);
+
+    if (templ->match != NULL)
+        snprintf(buf + strlen(buf), bufsiz - strlen(buf), "match %s",
+                 templ->match);
+
+    if (buf[0] != 0 && buf[strlen(buf) - 1] == ' ')
+        buf[strlen(buf) - 1] = 0;
+}
+
+/**
+ * xsltFormatBacktraceValue:
+ * @value: the XPath value to print, or NULL
+ * @prefix: text to emit before the value, e.g. "    $name = "
+ *
+ * Print one variable/parameter's value in the same per-type, terse
+ * (non-dumping) format as slaxDebugOutputXpath()'s "full == FALSE"
+ * case, which is what "where full" itself uses for each parameter --
+ * only the full dump variant is gated by "full", not the parameter
+ * listing itself.
+ */
+static void
+xsltFormatBacktraceValue (xmlXPathObjectPtr value, const char *prefix)
+{
+    xmlNodeSetPtr ns;
+
+    if (value == NULL) {
+        xsltGenericError(xsltGenericErrorContext, "%sNULL\n", prefix);
+        return;
+    }
+
+    switch (xmlXPathObjectGetType(value)) {
+    case XPATH_BOOLEAN:
+        xsltGenericError(xsltGenericErrorContext, "%s[boolean] %s\n", prefix,
+                         xmlXPathObjectGetBoolval(value) ? "true" : "false");
+        break;
+
+    case XPATH_NUMBER:
+        xsltGenericError(xsltGenericErrorContext, "%s[number] %lf\n", prefix,
+                         xmlXPathObjectGetFloatval(value));
+        break;
+
+    case XPATH_STRING:
+        if (xmlXPathObjectGetStringval(value) != NULL)
+            xsltGenericError(xsltGenericErrorContext, "%s[string] \"%s\"\n",
+                             prefix, xmlXPathObjectGetStringval(value));
+        break;
+
+    case XPATH_NODESET:
+        ns = xmlXPathObjectGetNodesetval(value);
+        if (ns != NULL && xmlNodeSetGetNodeNr(ns) == 0)
+            ns = NULL;
+
+        xsltGenericError(xsltGenericErrorContext,
+                         "%s[node-set]%s (%d)%s%s%s\n", prefix,
+                         xmlXPathObjectGetNodesetval(value) ? "" : " [null]",
+                         ns ? xmlNodeSetGetNodeNr(ns) : 0,
+                         ns ? " <" : "",
+                         ns ? (const char *)
+                             xmlNodeSetGetNodeEntry(ns, 0)->name : "",
+                         ns ? "> ...." : "");
+        break;
+
+    case XPATH_XSLT_TREE:
+        ns = xmlXPathObjectGetNodesetval(value);
+
+        xsltGenericError(xsltGenericErrorContext, "%s[rtf]%s (%d)\n", prefix,
+                         ns ? "" : " [null]",
+                         ns ? xmlNodeSetGetNodeNr(ns) : 0);
+        break;
+
+    default:
+        break;
+    }
+}
+
+/**
+ * xsltFormatBacktrace:
+ * @ctxt: the transformation context
+ *
+ * See the declaration in transform.h for the contract this function
+ * must honor: output identical to the SLAX debugger's own "where
+ * full" command (slaxDebugCmdWhere() in libslax/slaxdebugger.c),
+ * whose logic this function mirrors line for line.
+ */
+void
+xsltFormatBacktrace (xsltTransformContextPtr ctxt)
+{
+    int i;
+
+    if (ctxt == NULL || ctxt->frameNr == 0) {
+        xsltGenericError(xsltGenericErrorContext, "call stack is empty\n");
+        return;
+    }
+
+    for (i = 0; i < ctxt->frameNr; i++) {
+        xsltCallFramePtr frame = &ctxt->frameTab[i];
+        xsltTemplatePtr templ = frame->templ;
+        xmlNodePtr caller;
+        const xmlChar *url;
+        const char *filename;
+        const char *tag;
+        char template_info[512];
+        int start, stop, j;
+
+        if (templ != NULL && (templ->name != NULL || templ->match != NULL)) {
+            xsltFormatBacktraceTemplate(templ, template_info,
+                                        sizeof(template_info));
+            tag = (templ->match == NULL && templ->name != NULL) ? "()" : "";
+        } else {
+            xmlNsPtr ns = frame->inst ? xmlNodeGetNs(frame->inst) : NULL;
+            const xmlChar *prefix = ns ? xmlNsGetPrefix(ns) : NULL;
+
+            snprintf(template_info, sizeof(template_info), "<%s%s%s>",
+                     prefix ? (const char *) prefix : "",
+                     prefix ? ":" : "",
+                     frame->inst ? (const char *) frame->inst->name : "");
+            tag = "";
+        }
+
+        caller = frame->caller != NULL ? frame->caller : frame->inst;
+        url = caller ? xmlDocGetURL(xmlNodeGetDoc(caller)) : NULL;
+        if (url != NULL) {
+            filename = strrchr((const char *) url, '/');
+            filename = filename != NULL ? filename + 1 : (const char *) url;
+        } else {
+            filename = "";
+        }
+
+        if (caller != NULL)
+            xsltGenericError(xsltGenericErrorContext, "#%d %s%s at %s:%ld\n",
+                             i, template_info, tag, filename,
+                             xmlGetLineNo(caller));
+        else
+            xsltGenericError(xsltGenericErrorContext, "#%d %s%s\n",
+                             i, template_info, tag);
+
+        start = frame->varsBase;
+        stop = (i + 1 < ctxt->frameNr)
+            ? ctxt->frameTab[i + 1].varsBase : ctxt->varsNr;
+
+        for (j = start; j < stop; j++) {
+            xsltStackElemPtr cur = ctxt->varsTab[j];
+            char prefix[256];
+
+            if (cur == NULL)
+                continue;
+
+            snprintf(prefix, sizeof(prefix), "    $%s = ", cur->name);
+            xsltFormatBacktraceValue(cur->value, prefix);
+        }
+    }
+}
+
+/**
  * xsltLocalVariablePop:
  * @ctxt: the transformation context
  * @limitNr: number of variables which should remain
@@ -642,6 +876,7 @@ xsltNewTransformContext (xsltStylesheetPtr style, xmlDocPtr doc)
     cur->vars = NULL;
     cur->varsBase = 0;
     cur->maxTemplateVars = xsltMaxVars;
+    cur->frameVarsBasePending = -1;
 
     /*
      * the profiling stack is not initialized by default
@@ -2050,12 +2285,13 @@ xsltDefaultProcessOneNode (xsltTransformContextPtr ctxt, xmlNodePtr node,
                     "raise the maximum number of nested template calls and "
                     "variables/params (currently set to %d).\n",
                     ctxt->maxTemplateDepth);
+                xsltFormatBacktrace(ctxt);
                 ctxt->state = XSLT_STATE_STOPPED;
                 return;
             }
-            ctxt->depth++;
+            framePush(ctxt, NULL, cur);
             xsltProcessOneNode(ctxt, cur, params);
-            ctxt->depth--;
+            framePop(ctxt);
             break;
         case XML_CDATA_SECTION_NODE:
             template = xsltGetTemplate(ctxt, cur, NULL);
@@ -2461,11 +2697,12 @@ xsltApplySequenceConstructor (xsltTransformContextPtr ctxt,
             "raise the maximum number of nested template calls and "
             "variables/params (currently set to %d).\n",
             ctxt->maxTemplateDepth);
-        xsltDebug(ctxt, contextNode, list, NULL);
+        xsltFormatBacktrace(ctxt);
         ctxt->state = XSLT_STATE_STOPPED;
+        ctxt->frameVarsBasePending = -1;
         return;
     }
-    ctxt->depth++;
+    framePush(ctxt, templ, templ ? templ->elem : list);
 
     oldLocalFragmentTop = ctxt->localRVT;
     oldInsert = insert = ctxt->insert;
@@ -3145,7 +3382,7 @@ error:
     ctxt->inst = oldInst;
     ctxt->insert = oldInsert;
 
-    ctxt->depth--;
+    framePop(ctxt);
 
 #ifdef WITH_XSLT_DEBUGGER
     if (xslDebugStatus != XSLT_DEBUG_NONE && addCallResult) {
@@ -3176,6 +3413,7 @@ xsltApplyXSLTTemplate (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
                        xsltStackElemPtr withParams)
 {
     int oldVarsBase = 0;
+    int earlyVarsNr;
     xmlNodePtr cur;
     xsltStackElemPtr tmpParam = NULL;
     xmlDocPtr oldUserFragmentTop;
@@ -3213,6 +3451,17 @@ xsltApplyXSLTTemplate (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
 
     if (list == NULL)
         return;
+
+    /*
+     * Sampled here, before xsl:param processing below, to match where
+     * the SLAX debugger's own call-frame hook just fired above: this
+     * template's own frame (pushed later, inside
+     * xsltApplySequenceConstructor()) must attribute its parameters to
+     * itself, not to its caller. See frameVarsBasePending's declaration
+     * in xsltInternals.h.
+     */
+    earlyVarsNr = ctxt->varsNr;
+
     /*
      * Not CHECK_STOPPED here: xsltDebuggerStartSequenceConstructor() above
      * may have added a debugger call-stack frame (addCallResult), and a
@@ -3238,7 +3487,7 @@ xsltApplyXSLTTemplate (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
             "raise the maximum number of variables/params (currently set to "
             "%d).\n",
             ctxt->maxTemplateVars);
-        xsltDebug(ctxt, contextNode, list, NULL);
+        xsltFormatBacktrace(ctxt);
         ctxt->state = XSLT_STATE_STOPPED;
         return;
     }
@@ -3336,6 +3585,7 @@ xsltApplyXSLTTemplate (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     /*
     * Process the sequence constructor.
     */
+    ctxt->frameVarsBasePending = earlyVarsNr;
     xsltApplySequenceConstructor(ctxt, contextNode, list, templ);
 
     /*
