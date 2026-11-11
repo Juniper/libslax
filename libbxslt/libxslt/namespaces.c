@@ -37,33 +37,6 @@
  *									*
  ************************************************************************/
 
-#ifdef XSLT_REFACTORED
-static xsltNsAliasPtr
-xsltNewNsAlias (xsltCompilerCtxtPtr cctxt)
-{
-    xsltNsAliasPtr ret;
-
-    if (cctxt == NULL)
-        return NULL;
-
-    ret = (xsltNsAliasPtr) xmlMalloc(sizeof(xsltNsAlias));
-    if (ret == NULL) {
-        xsltTransformError(
-            NULL, cctxt->style, NULL,
-            "Internal error in xsltNewNsAlias(): Memory allocation failed.\n");
-        cctxt->style->errors++;
-        return NULL;
-    }
-    memset(ret, 0, sizeof(xsltNsAlias));
-    /*
-    * TODO: Store the item at current stylesheet-level.
-    */
-    ret->next = cctxt->nsAliases;
-    cctxt->nsAliases = ret;
-
-    return ret;
-}
-#endif /* XSLT_REFACTORED */
 /**
  * xsltNamespaceAlias:
  * @style:  the XSLT stylesheet
@@ -80,121 +53,6 @@ xsltNamespaceAlias (xsltStylesheetPtr style, xmlNodePtr node)
     xmlNsPtr literalNs = NULL;
     xmlNsPtr targetNs = NULL;
 
-#ifdef XSLT_REFACTORED
-    xsltNsAliasPtr alias;
-
-    if ((style == NULL) || (node == NULL))
-        return;
-
-    /*
-    * SPEC XSLT 1.0:
-    *  "If a namespace URI is declared to be an alias for multiple
-    *  different namespace URIs, then the declaration with the highest
-    *  import precedence is used. It is an error if there is more than
-    *  one such declaration. An XSLT processor may signal the error;
-    *  if it does not signal the error, it must recover by choosing,
-    *  from amongst the declarations with the highest import precedence,
-    *  the one that occurs last in the stylesheet."
-    *
-    * SPEC TODO: Check for the errors mentioned above.
-    */
-    /*
-    * NOTE that the XSLT 2.0 also *does* use the NULL namespace if
-    *  "#default" is used and there's no default namespace is scope.
-    *  I.e., this is *not* an error.
-    *  Most XSLT 1.0 implementations work this way.
-    *  The XSLT 1.0 spec has nothing to say on the subject.
-    */
-    /*
-    * Attribute "stylesheet-prefix".
-    */
-    stylePrefix
-        = xmlGetNsProp(node, (const xmlChar *) "stylesheet-prefix", NULL);
-    if (stylePrefix == NULL) {
-        xsltTransformError(NULL, style, node,
-                           "The attribute 'stylesheet-prefix' is missing.\n");
-        return;
-    }
-    if (xmlStrEqual(stylePrefix, (const xmlChar *) "#default"))
-        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
-    else {
-        literalNs = xmlSearchNs(xmlNodeGetDoc(node), node, stylePrefix);
-        if (literalNs == NULL) {
-            xsltTransformError(
-                NULL, style, node,
-                "Attribute 'stylesheet-prefix': There's no namespace "
-                "declaration in scope for the prefix '%s'.\n",
-                stylePrefix);
-            goto error;
-        }
-    }
-    /*
-    * Attribute "result-prefix".
-    */
-    resultPrefix = xmlGetNsProp(node, (const xmlChar *) "result-prefix", NULL);
-    if (resultPrefix == NULL) {
-        xsltTransformError(NULL, style, node,
-                           "The attribute 'result-prefix' is missing.\n");
-        goto error;
-    }
-    if (xmlStrEqual(resultPrefix, (const xmlChar *) "#default"))
-        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, NULL);
-    else {
-        targetNs = xmlSearchNs(xmlNodeGetDoc(node), node, resultPrefix);
-
-        if (targetNs == NULL) {
-            xsltTransformError(
-                NULL, style, node,
-                "Attribute 'result-prefix': There's no namespace "
-                "declaration in scope for the prefix '%s'.\n",
-                stylePrefix);
-            goto error;
-        }
-    }
-    /*
-     *
-     * Same alias for multiple different target namespace URIs:
-     *  TODO: The one with the highest import precedence is used.
-     *  Example:
-     *  <xsl:namespace-alias stylesheet-prefix="foo"
-     *                       result-prefix="bar"/>
-     *
-     *  <xsl:namespace-alias stylesheet-prefix="foo"
-     *                       result-prefix="zar"/>
-     *
-     * Same target namespace URI for multiple different aliases:
-     *  All alias-definitions will be used.
-     *  Example:
-     *  <xsl:namespace-alias stylesheet-prefix="bar"
-     *                       result-prefix="foo"/>
-     *
-     *  <xsl:namespace-alias stylesheet-prefix="zar"
-     *                       result-prefix="foo"/>
-     * Cases using #default:
-     *  <xsl:namespace-alias stylesheet-prefix="#default"
-     *                       result-prefix="#default"/>
-     *  TODO: Has this an effect at all?
-     *
-     *  <xsl:namespace-alias stylesheet-prefix="foo"
-     *                       result-prefix="#default"/>
-     *  From namespace to no namespace.
-     *
-     *  <xsl:namespace-alias stylesheet-prefix="#default"
-     *                       result-prefix="foo"/>
-     *  From no namespace to namespace.
-     */
-
-    /*
-     * Store the ns-node in the alias-object.
-    */
-    alias = xsltNewNsAlias(XSLT_CCTXT(style));
-    if (alias == NULL)
-        return;
-    alias->literalNs = literalNs;
-    alias->targetNs = targetNs;
-    XSLT_CCTXT(style)->hasNsAliases = 1;
-
-#else  /* XSLT_REFACTORED */
     const xmlChar *literalNsName;
     const xmlChar *targetNsName;
 
@@ -291,7 +149,6 @@ xsltNamespaceAlias (xsltStylesheetPtr style, xmlNodePtr node)
         xmlHashAddEntry((xmlHashTablePtr) style->nsAliases, literalNsName,
                         (void *) targetNsName);
     }
-#endif /* else of XSLT_REFACTORED */
 
 error:
     if (stylePrefix != NULL)
@@ -630,16 +487,6 @@ xsltGetNamespace (xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
     if (ns == NULL)
         return NULL;
 
-#ifdef XSLT_REFACTORED
-    /*
-    * Namespace exclusion and ns-aliasing is performed at
-    * compilation-time in the refactored code.
-    * Additionally, aliasing is not intended for non Literal
-    * Result Elements.
-    */
-    return xsltGetSpecialNamespace(ctxt, cur, xmlNsGetHref(ns),
-                                   xmlNsGetPrefix(ns), out);
-#else
     {
         xsltStylesheetPtr style;
         const xmlChar *URI = NULL; /* the replacement URI */
@@ -678,7 +525,6 @@ xsltGetNamespace (xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
 
         return xsltGetSpecialNamespace(ctxt, cur, URI, xmlNsGetPrefix(ns), out);
     }
-#endif
 }
 
 /**
@@ -765,19 +611,6 @@ xsltCopyNamespaceList (xsltTransformContextPtr ctxt, xmlNodePtr node,
                 continue;
             }
         }
-#ifdef XSLT_REFACTORED
-        /*
-	* Namespace exclusion and ns-aliasing is performed at
-	* compilation-time in the refactored code.
-	*/
-        q = xmlNewNs(node, xmlNsGetHref(cur), xmlNsGetPrefix(cur));
-        if (p == NULL) {
-            ret = p = q;
-        } else {
-            xmlNsSetNext(p, q);
-            p = q;
-        }
-#else
         /*
 	* TODO: Remove this if the refactored code gets enabled.
 	*/
@@ -802,7 +635,6 @@ xsltCopyNamespaceList (xsltTransformContextPtr ctxt, xmlNodePtr node,
                 p = q;
             }
         }
-#endif
         cur = xmlNsGetNext(cur);
     }
     return ret;

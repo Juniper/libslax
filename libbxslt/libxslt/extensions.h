@@ -94,11 +94,6 @@ XSLTPUBFUN void *XSLTCALL xsltGetExtData (xsltTransformContextPtr ctxt,
 
 XSLTPUBFUN void *XSLTCALL xsltStyleGetExtData (xsltStylesheetPtr style,
                                                const xmlChar *URI);
-#ifdef XSLT_REFACTORED
-XSLTPUBFUN void *
-    XSLTCALL xsltStyleStylesheetLevelGetExtData (xsltStylesheetPtr style,
-                                                 const xmlChar *URI);
-#endif
 XSLTPUBFUN void XSLTCALL xsltShutdownCtxtExts (xsltTransformContextPtr ctxt);
 
 XSLTPUBFUN void XSLTCALL xsltShutdownExts (xsltStylesheetPtr style);

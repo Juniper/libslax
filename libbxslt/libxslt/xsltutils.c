@@ -378,113 +378,6 @@ error:
     return -1;
 }
 
-#ifdef XSLT_REFACTORED
-
-/**
- * xsltPointerListAddSize:
- * @list: the pointer list structure
- * @item: the item to be stored
- * @initialSize: the initial size of the list
- *
- * Adds an item to the list.
- *
- * Returns the position of the added item in the list or
- *         -1 in case of an error.
- */
-int
-xsltPointerListAddSize (xsltPointerListPtr list, void *item, int initialSize)
-{
-    if (list->items == NULL) {
-        if (initialSize <= 0)
-            initialSize = 1;
-        list->items = (void **) xmlMalloc(initialSize * sizeof(void *));
-        if (list->items == NULL) {
-            xsltGenericError(
-                xsltGenericErrorContext,
-                "xsltPointerListAddSize: memory allocation failure.\n");
-            return -1;
-        }
-        list->number = 0;
-        list->size = initialSize;
-    } else if (list->size <= list->number) {
-        list->size *= 2;
-        list->items
-            = (void **) xmlRealloc(list->items, list->size * sizeof(void *));
-        if (list->items == NULL) {
-            xsltGenericError(
-                xsltGenericErrorContext,
-                "xsltPointerListAddSize: memory re-allocation failure.\n");
-            list->size = 0;
-            return -1;
-        }
-    }
-    list->items[list->number++] = item;
-    return 0;
-}
-
-/**
- * xsltPointerListCreate:
- * @initialSize: the initial size for the list
- *
- * Creates an xsltPointerList structure.
- *
- * Returns a xsltPointerList structure or NULL in case of an error.
- */
-xsltPointerListPtr
-xsltPointerListCreate (int initialSize)
-{
-    xsltPointerListPtr ret;
-
-    ret = xmlMalloc(sizeof(xsltPointerList));
-    if (ret == NULL) {
-        xsltGenericError(xsltGenericErrorContext,
-                         "xsltPointerListCreate: memory allocation failure.\n");
-        return NULL;
-    }
-    memset(ret, 0, sizeof(xsltPointerList));
-    if (initialSize > 0) {
-        xsltPointerListAddSize(ret, NULL, initialSize);
-        ret->number = 0;
-    }
-    return ret;
-}
-
-/**
- * xsltPointerListFree:
- * @list: pointer to the list to be freed
- *
- * Frees the xsltPointerList structure. This does not free
- * the content of the list.
- */
-void
-xsltPointerListFree (xsltPointerListPtr list)
-{
-    if (list == NULL)
-        return;
-    if (list->items != NULL)
-        xmlFree(list->items);
-    xmlFree(list);
-}
-
-/**
- * xsltPointerListClear:
- * @list: pointer to the list to be cleared
- *
- * Resets the list, but does not free the allocated array
- * and does not free the content of the list.
- */
-void
-xsltPointerListClear (xsltPointerListPtr list)
-{
-    if (list->items != NULL) {
-        xmlFree(list->items);
-        list->items = NULL;
-    }
-    list->number = 0;
-    list->size = 0;
-}
-
-#endif /* XSLT_REFACTORED */
 
 /************************************************************************
  *									*
@@ -788,14 +681,7 @@ xsltPrintErrorContext (xsltTransformContextPtr ctxt, xsltStylesheetPtr style,
     if (ctxt != NULL)
         type = "runtime error";
     else if (style != NULL) {
-#ifdef XSLT_REFACTORED
-        if (XSLT_CCTXT(style)->errSeverity == XSLT_ERROR_SEVERITY_WARNING)
-            type = "compilation warning";
-        else
-            type = "compilation error";
-#else
         type = "compilation error";
-#endif
     }
 
     if (file != NULL && line != 0 && name != NULL)
@@ -1113,11 +999,7 @@ static xmlXPathObjectPtr *
 xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
                                int number, void *locale)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemSortPtr comp;
-#else
     const xsltStylePreComp *comp;
-#endif
     xmlXPathObjectPtr *results = NULL;
     xmlNodeSetPtr list = NULL;
     xmlXPathObjectPtr res;
@@ -1167,20 +1049,8 @@ xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
         xmlXPathContextSetProximityPosition(ctxt->xpathCtxt, i + 1);
         ctxt->node = xmlNodeSetGetNodeEntry(list, i);
         xmlXPathContextSetNode(ctxt->xpathCtxt, ctxt->node);
-#ifdef XSLT_REFACTORED
-        if (comp->inScopeNs != NULL) {
-            xmlXPathContextSetNamespaces(ctxt->xpathCtxt,
-                                         comp->inScopeNs->list);
-            xmlXPathContextSetNsNr(ctxt->xpathCtxt,
-                                   comp->inScopeNs->xpathNumber);
-        } else {
-            xmlXPathContextSetNamespaces(ctxt->xpathCtxt, NULL);
-            xmlXPathContextSetNsNr(ctxt->xpathCtxt, 0);
-        }
-#else
         xmlXPathContextSetNamespaces(ctxt->xpathCtxt, comp->nsList);
         xmlXPathContextSetNsNr(ctxt->xpathCtxt, comp->nsNr);
-#endif
         xmlResetLastError();
         res = xmlXPathCompiledEval(comp->comp, ctxt->xpathCtxt);
         if (res != NULL) {
@@ -1299,11 +1169,7 @@ void
 xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
                          int nbsorts)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemSortPtr comp;
-#else
     const xsltStylePreComp *comp;
-#endif
     xmlXPathObjectPtr *resultsTab[XSLT_MAX_SORT];
     xmlXPathObjectPtr *results = NULL, *res;
     xmlNodeSetPtr list = NULL;

@@ -55,11 +55,6 @@ const xmlChar *xsltExtMarker = (const xmlChar *) "Extension Element";
  *									*
  ************************************************************************/
 
-#ifdef XSLT_REFACTORED
-/*
-    * Grammar checks are now performed in xslt.c.
-    */
-#else
 /**
  * xsltCheckTopLevelElement:
  * @style: the XSLT stylesheet
@@ -220,7 +215,6 @@ xsltCheckParentElement (xsltStylesheetPtr style, xmlNodePtr inst,
                        xmlNodeGetName(inst));
     style->errors++;
 }
-#endif
 
 /************************************************************************
  *									*
@@ -242,105 +236,10 @@ static xsltStylePreCompPtr
 xsltNewStylePreComp (xsltStylesheetPtr style, xsltStyleType type)
 {
     xsltStylePreCompPtr cur;
-#ifdef XSLT_REFACTORED
-    size_t size;
-#endif
 
     if (style == NULL)
         return NULL;
 
-#ifdef XSLT_REFACTORED
-    /*
-    * URGENT TODO: Use specialized factory functions in order
-    *   to avoid this ugliness.
-    */
-    switch (type) {
-    case XSLT_FUNC_COPY:
-        size = sizeof(xsltStyleItemCopy);
-        break;
-    case XSLT_FUNC_SORT:
-        size = sizeof(xsltStyleItemSort);
-        break;
-    case XSLT_FUNC_TEXT:
-        size = sizeof(xsltStyleItemText);
-        break;
-    case XSLT_FUNC_ELEMENT:
-        size = sizeof(xsltStyleItemElement);
-        break;
-    case XSLT_FUNC_ATTRIBUTE:
-        size = sizeof(xsltStyleItemAttribute);
-        break;
-    case XSLT_FUNC_COMMENT:
-        size = sizeof(xsltStyleItemComment);
-        break;
-    case XSLT_FUNC_PI:
-        size = sizeof(xsltStyleItemPI);
-        break;
-    case XSLT_FUNC_COPYOF:
-        size = sizeof(xsltStyleItemCopyOf);
-        break;
-    case XSLT_FUNC_VALUEOF:
-        size = sizeof(xsltStyleItemValueOf);
-        break;
-        ;
-    case XSLT_FUNC_NUMBER:
-        size = sizeof(xsltStyleItemNumber);
-        break;
-    case XSLT_FUNC_APPLYIMPORTS:
-        size = sizeof(xsltStyleItemApplyImports);
-        break;
-    case XSLT_FUNC_CALLTEMPLATE:
-        size = sizeof(xsltStyleItemCallTemplate);
-        break;
-    case XSLT_FUNC_APPLYTEMPLATES:
-        size = sizeof(xsltStyleItemApplyTemplates);
-        break;
-    case XSLT_FUNC_CHOOSE:
-        size = sizeof(xsltStyleItemChoose);
-        break;
-    case XSLT_FUNC_IF:
-        size = sizeof(xsltStyleItemIf);
-        break;
-    case XSLT_FUNC_FOREACH:
-        size = sizeof(xsltStyleItemForEach);
-        break;
-    case XSLT_FUNC_DOCUMENT:
-        size = sizeof(xsltStyleItemDocument);
-        break;
-    case XSLT_FUNC_WITHPARAM:
-        size = sizeof(xsltStyleItemWithParam);
-        break;
-    case XSLT_FUNC_PARAM:
-        size = sizeof(xsltStyleItemParam);
-        break;
-    case XSLT_FUNC_VARIABLE:
-        size = sizeof(xsltStyleItemVariable);
-        break;
-    case XSLT_FUNC_WHEN:
-        size = sizeof(xsltStyleItemWhen);
-        break;
-    case XSLT_FUNC_OTHERWISE:
-        size = sizeof(xsltStyleItemOtherwise);
-        break;
-    default:
-        xsltTransformError(NULL, style, NULL,
-                           "xsltNewStylePreComp : invalid type %d\n", type);
-        style->errors++;
-        return NULL;
-    }
-    /*
-    * Create the structure.
-    */
-    cur = (xsltStylePreCompPtr) xmlMalloc(size);
-    if (cur == NULL) {
-        xsltTransformError(NULL, style, NULL,
-                           "xsltNewStylePreComp : malloc failed\n");
-        style->errors++;
-        return NULL;
-    }
-    memset(cur, 0, size);
-
-#else  /* XSLT_REFACTORED */
     /*
     * Old behaviour.
     */
@@ -352,7 +251,6 @@ xsltNewStylePreComp (xsltStylesheetPtr style, xsltStyleType type)
         return NULL;
     }
     memset(cur, 0, sizeof(xsltStylePreComp));
-#endif /* XSLT_REFACTORED */
 
     /*
     * URGENT TODO: Better to move this to spezialized factory functions.
@@ -440,103 +338,6 @@ xsltFreeStylePreComp (xsltStylePreCompPtr comp)
 {
     if (comp == NULL)
         return;
-#ifdef XSLT_REFACTORED
-    /*
-    * URGENT TODO: Implement destructors.
-    */
-    switch (comp->type) {
-    case XSLT_FUNC_LITERAL_RESULT_ELEMENT:
-        break;
-    case XSLT_FUNC_COPY:
-        break;
-    case XSLT_FUNC_SORT: {
-        xsltStyleItemSortPtr item = (xsltStyleItemSortPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_TEXT:
-        break;
-    case XSLT_FUNC_ELEMENT:
-        break;
-    case XSLT_FUNC_ATTRIBUTE:
-        break;
-    case XSLT_FUNC_COMMENT:
-        break;
-    case XSLT_FUNC_PI:
-        break;
-    case XSLT_FUNC_COPYOF: {
-        xsltStyleItemCopyOfPtr item = (xsltStyleItemCopyOfPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_VALUEOF: {
-        xsltStyleItemValueOfPtr item = (xsltStyleItemValueOfPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_NUMBER: {
-        xsltStyleItemNumberPtr item = (xsltStyleItemNumberPtr) comp;
-        if (item->numdata.countPat != NULL)
-            xsltFreeCompMatchList(item->numdata.countPat);
-        if (item->numdata.fromPat != NULL)
-            xsltFreeCompMatchList(item->numdata.fromPat);
-    } break;
-    case XSLT_FUNC_APPLYIMPORTS:
-        break;
-    case XSLT_FUNC_CALLTEMPLATE:
-        break;
-    case XSLT_FUNC_APPLYTEMPLATES: {
-        xsltStyleItemApplyTemplatesPtr item
-            = (xsltStyleItemApplyTemplatesPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_CHOOSE:
-        break;
-    case XSLT_FUNC_IF: {
-        xsltStyleItemIfPtr item = (xsltStyleItemIfPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_FOREACH: {
-        xsltStyleItemForEachPtr item = (xsltStyleItemForEachPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_DOCUMENT:
-        break;
-    case XSLT_FUNC_WITHPARAM: {
-        xsltStyleItemWithParamPtr item = (xsltStyleItemWithParamPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_PARAM: {
-        xsltStyleItemParamPtr item = (xsltStyleItemParamPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_VARIABLE: {
-        xsltStyleItemVariablePtr item = (xsltStyleItemVariablePtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_WHEN: {
-        xsltStyleItemWhenPtr item = (xsltStyleItemWhenPtr) comp;
-        if (item->comp != NULL)
-            xmlXPathFreeCompExpr(item->comp);
-    } break;
-    case XSLT_FUNC_OTHERWISE:
-    case XSLT_FUNC_FALLBACK:
-    case XSLT_FUNC_MESSAGE:
-    case XSLT_FUNC_INCLUDE:
-    case XSLT_FUNC_ATTRSET:
-
-        break;
-    default:
-        /* TODO: Raise error. */
-        break;
-    }
-#else
     if (comp->comp != NULL)
         xmlXPathFreeCompExpr(comp->comp);
     if (comp->numdata.countPat != NULL)
@@ -545,7 +346,6 @@ xsltFreeStylePreComp (xsltStylePreCompPtr comp)
         xsltFreeCompMatchList(comp->numdata.fromPat);
     if (comp->nsList != NULL)
         xmlFree(comp->nsList);
-#endif
 
     xmlFree(comp);
 }
@@ -570,11 +370,7 @@ xsltElemPreCompPtr
 xsltDocumentComp (xsltStylesheetPtr style, xmlNodePtr inst,
                   xsltTransformFunction function UNUSED)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemDocumentPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
     const xmlChar *filename = NULL;
 
     /*
@@ -589,12 +385,7 @@ xsltDocumentComp (xsltStylesheetPtr style, xmlNodePtr inst,
     * (in libexslt/common.c)
     * "document" in EXSLT_COMMON_NAMESPACE
     */
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemDocumentPtr) xsltNewStylePreComp(style,
-                                                          XSLT_FUNC_DOCUMENT);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_DOCUMENT);
-#endif
 
     if (comp == NULL)
         return NULL;
@@ -706,20 +497,12 @@ error:
 static void
 xsltSortComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemSortPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemSortPtr) xsltNewStylePreComp(style, XSLT_FUNC_SORT);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_SORT);
-#endif
 
     if (comp == NULL)
         return;
@@ -810,20 +593,12 @@ xsltSortComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltCopyComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemCopyPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemCopyPtr) xsltNewStylePreComp(style, XSLT_FUNC_COPY);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_COPY);
-#endif
 
     if (comp == NULL)
         return;
@@ -838,9 +613,6 @@ xsltCopyComp (xsltStylesheetPtr style, xmlNodePtr inst)
         comp->has_use = 1;
 }
 
-#ifdef XSLT_REFACTORED
-/* Enable if ever needed for xsl:text. */
-#else
 /**
  * xsltTextComp:
  * @style: an XSLT compiled stylesheet
@@ -854,22 +626,14 @@ xsltCopyComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltTextComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemTextPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
     const xmlChar *prop;
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemTextPtr) xsltNewStylePreComp(style, XSLT_FUNC_TEXT);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_TEXT);
-#endif
     if (comp == NULL)
         return;
     xmlNodeSetPsvi(inst, comp);
@@ -891,7 +655,6 @@ xsltTextComp (xsltStylesheetPtr style, xmlNodePtr inst)
         }
     }
 }
-#endif /* else of XSLT_REFACTORED */
 
 /**
  * xsltElementComp:
@@ -903,11 +666,7 @@ xsltTextComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltElementComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemElementPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     /*
     * <xsl:element
@@ -921,12 +680,7 @@ xsltElementComp (xsltStylesheetPtr style, xmlNodePtr inst)
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemElementPtr) xsltNewStylePreComp(style,
-                                                         XSLT_FUNC_ELEMENT);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_ELEMENT);
-#endif
 
     if (comp == NULL)
         return;
@@ -982,12 +736,7 @@ xsltElementComp (xsltStylesheetPtr style, xmlNodePtr inst)
                 if (ns != NULL) {
                     comp->ns = xmlDictLookup(style->dict, xmlNsGetHref(ns), -1);
                     comp->has_ns = 1;
-#ifdef XSLT_REFACTORED
-                    comp->nsPrefix = prefix;
-                    comp->name = name;
-#else
                     (void) name; /* Suppress unused variable warning. */
-#endif
                 } else if (prefix != NULL) {
                     xsltTransformError(
                         NULL, style, inst,
@@ -1029,11 +778,7 @@ error:
 static void
 xsltAttributeComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemAttributePtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     /*
     * <xsl:attribute
@@ -1046,12 +791,7 @@ xsltAttributeComp (xsltStylesheetPtr style, xmlNodePtr inst)
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemAttributePtr) xsltNewStylePreComp(style,
-                                                           XSLT_FUNC_ATTRIBUTE);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_ATTRIBUTE);
-#endif
 
     if (comp == NULL)
         return;
@@ -1115,12 +855,7 @@ xsltAttributeComp (xsltStylesheetPtr style, xmlNodePtr inst)
                         comp->ns
                             = xmlDictLookup(style->dict, xmlNsGetHref(ns), -1);
                         comp->has_ns = 1;
-#ifdef XSLT_REFACTORED
-                        comp->nsPrefix = prefix;
-                        comp->name = name;
-#else
                         (void) name; /* Suppress unused variable warning. */
-#endif
                     } else {
                         xsltTransformError(
                             NULL, style, inst,
@@ -1148,22 +883,13 @@ xsltAttributeComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltCommentComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemCommentPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemCommentPtr) xsltNewStylePreComp(style,
-                                                         XSLT_FUNC_COMMENT);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_COMMENT);
-#endif
 
     if (comp == NULL)
         return;
@@ -1181,21 +907,13 @@ xsltCommentComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltProcessingInstructionComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemPIPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemPIPtr) xsltNewStylePreComp(style, XSLT_FUNC_PI);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_PI);
-#endif
 
     if (comp == NULL)
         return;
@@ -1216,22 +934,13 @@ xsltProcessingInstructionComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltCopyOfComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemCopyOfPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp
-        = (xsltStyleItemCopyOfPtr) xsltNewStylePreComp(style, XSLT_FUNC_COPYOF);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_COPYOF);
-#endif
 
     if (comp == NULL)
         return;
@@ -1264,23 +973,14 @@ xsltCopyOfComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltValueOfComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemValueOfPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
     const xmlChar *prop;
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemValueOfPtr) xsltNewStylePreComp(style,
-                                                         XSLT_FUNC_VALUEOF);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_VALUEOF);
-#endif
 
     if (comp == NULL)
         return;
@@ -1393,22 +1093,13 @@ xsltGetQNameProperty (xsltStylesheetPtr style, xmlNodePtr inst,
 static void
 xsltWithParamComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemWithParamPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemWithParamPtr) xsltNewStylePreComp(style,
-                                                           XSLT_FUNC_WITHPARAM);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_WITHPARAM);
-#endif
 
     if (comp == NULL)
         return;
@@ -1452,23 +1143,14 @@ xsltWithParamComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltNumberComp (xsltStylesheetPtr style, xmlNodePtr cur)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemNumberPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
     const xmlChar *prop;
 
     if (style == NULL || cur == NULL
         || xmlNodeGetType(cur) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp
-        = (xsltStyleItemNumberPtr) xsltNewStylePreComp(style, XSLT_FUNC_NUMBER);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_NUMBER);
-#endif
 
     if (comp == NULL)
         return;
@@ -1592,22 +1274,13 @@ xsltNumberComp (xsltStylesheetPtr style, xmlNodePtr cur)
 static void
 xsltApplyImportsComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemApplyImportsPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemApplyImportsPtr) xsltNewStylePreComp(
-        style, XSLT_FUNC_APPLYIMPORTS);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_APPLYIMPORTS);
-#endif
 
     if (comp == NULL)
         return;
@@ -1625,22 +1298,13 @@ xsltApplyImportsComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltCallTemplateComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemCallTemplatePtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemCallTemplatePtr) xsltNewStylePreComp(
-        style, XSLT_FUNC_CALLTEMPLATE);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_CALLTEMPLATE);
-#endif
 
     if (comp == NULL)
         return;
@@ -1666,22 +1330,13 @@ xsltCallTemplateComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltApplyTemplatesComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemApplyTemplatesPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemApplyTemplatesPtr) xsltNewStylePreComp(
-        style, XSLT_FUNC_APPLYTEMPLATES);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_APPLYTEMPLATES);
-#endif
 
     if (comp == NULL)
         return;
@@ -1717,22 +1372,13 @@ xsltApplyTemplatesComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltChooseComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemChoosePtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp
-        = (xsltStyleItemChoosePtr) xsltNewStylePreComp(style, XSLT_FUNC_CHOOSE);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_CHOOSE);
-#endif
 
     if (comp == NULL)
         return;
@@ -1750,21 +1396,13 @@ xsltChooseComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltIfComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemIfPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemIfPtr) xsltNewStylePreComp(style, XSLT_FUNC_IF);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_IF);
-#endif
 
     if (comp == NULL)
         return;
@@ -1796,21 +1434,13 @@ xsltIfComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltWhenComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemWhenPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemWhenPtr) xsltNewStylePreComp(style, XSLT_FUNC_WHEN);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_WHEN);
-#endif
 
     if (comp == NULL)
         return;
@@ -1843,22 +1473,13 @@ xsltWhenComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltForEachComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemForEachPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemForEachPtr) xsltNewStylePreComp(style,
-                                                         XSLT_FUNC_FOREACH);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_FOREACH);
-#endif
 
     if (comp == NULL)
         return;
@@ -1892,22 +1513,13 @@ xsltForEachComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltVariableComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemVariablePtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemVariablePtr) xsltNewStylePreComp(style,
-                                                          XSLT_FUNC_VARIABLE);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_VARIABLE);
-#endif
 
     if (comp == NULL)
         return;
@@ -1931,22 +1543,11 @@ xsltVariableComp (xsltStylesheetPtr style, xmlNodePtr inst)
     comp->select = xsltGetCNsProp(style, inst, (const xmlChar *) "select",
                                   XSLT_NAMESPACE);
     if (comp->select != NULL) {
-#ifndef XSLT_REFACTORED
         xmlNodePtr cur;
-#endif
         comp->comp = xsltXPathCompile(style, comp->select, inst);
         if (comp->comp == NULL) {
             style->errors++;
         }
-#ifdef XSLT_REFACTORED
-        if (xmlNodeGetChildren(inst) != NULL) {
-            xsltTransformError(
-                NULL, style, inst,
-                "XSLT-variable: There must be no child nodes, since the "
-                "attribute 'select' was specified.\n");
-            style->errors++;
-        }
-#else
         for (cur = xmlNodeGetChildren(inst); cur != NULL;
              cur = xmlNodeGetNext(cur)) {
             if (xmlNodeGetType(cur) != XML_COMMENT_NODE
@@ -1959,7 +1560,6 @@ xsltVariableComp (xsltStylesheetPtr style, xmlNodePtr inst)
                 style->errors++;
             }
         }
-#endif
     }
 }
 
@@ -1973,21 +1573,13 @@ xsltVariableComp (xsltStylesheetPtr style, xmlNodePtr inst)
 static void
 xsltParamComp (xsltStylesheetPtr style, xmlNodePtr inst)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemParamPtr comp;
-#else
     xsltStylePreCompPtr comp;
-#endif
 
     if (style == NULL || inst == NULL
         || xmlNodeGetType(inst) != XML_ELEMENT_NODE)
         return;
 
-#ifdef XSLT_REFACTORED
-    comp = (xsltStyleItemParamPtr) xsltNewStylePreComp(style, XSLT_FUNC_PARAM);
-#else
     comp = xsltNewStylePreComp(style, XSLT_FUNC_PARAM);
-#endif
 
     if (comp == NULL)
         return;
@@ -2052,225 +1644,6 @@ xsltFreeStylePreComps (xsltStylesheetPtr style)
     }
 }
 
-#ifdef XSLT_REFACTORED
-
-/**
- * xsltStylePreCompute:
- * @style:  the XSLT stylesheet
- * @node:  the element in the XSLT namespace
- *
- * Precompute an XSLT element.
- * This expects the type of the element to be already
- * set in style->compCtxt->inode->type;
- */
-void
-xsltStylePreCompute (xsltStylesheetPtr style, xmlNodePtr node)
-{
-    /*
-    * The xsltXSLTElemMarker marker was set beforehand by
-    *  the parsing mechanism for all elements in the XSLT namespace.
-    */
-    if (style == NULL) {
-        if ((node != NULL) && (xmlNodeGetType(node) == XML_ELEMENT_NODE))
-            xmlNodeSetPsvi(node, NULL);
-        return;
-    }
-    if (node == NULL)
-        return;
-    if (!IS_XSLT_ELEM_FAST(node))
-        return;
-
-    xmlNodeSetPsvi(node, NULL);
-    if (XSLT_CCTXT(style)->inode->type != 0) {
-        switch (XSLT_CCTXT(style)->inode->type) {
-        case XSLT_FUNC_APPLYTEMPLATES:
-            xsltApplyTemplatesComp(style, node);
-            break;
-        case XSLT_FUNC_WITHPARAM:
-            xsltWithParamComp(style, node);
-            break;
-        case XSLT_FUNC_VALUEOF:
-            xsltValueOfComp(style, node);
-            break;
-        case XSLT_FUNC_COPY:
-            xsltCopyComp(style, node);
-            break;
-        case XSLT_FUNC_COPYOF:
-            xsltCopyOfComp(style, node);
-            break;
-        case XSLT_FUNC_IF:
-            xsltIfComp(style, node);
-            break;
-        case XSLT_FUNC_CHOOSE:
-            xsltChooseComp(style, node);
-            break;
-        case XSLT_FUNC_WHEN:
-            xsltWhenComp(style, node);
-            break;
-        case XSLT_FUNC_OTHERWISE:
-            /* NOP yet */
-            return;
-        case XSLT_FUNC_FOREACH:
-            xsltForEachComp(style, node);
-            break;
-        case XSLT_FUNC_APPLYIMPORTS:
-            xsltApplyImportsComp(style, node);
-            break;
-        case XSLT_FUNC_ATTRIBUTE:
-            xsltAttributeComp(style, node);
-            break;
-        case XSLT_FUNC_ELEMENT:
-            xsltElementComp(style, node);
-            break;
-        case XSLT_FUNC_SORT:
-            xsltSortComp(style, node);
-            break;
-        case XSLT_FUNC_COMMENT:
-            xsltCommentComp(style, node);
-            break;
-        case XSLT_FUNC_NUMBER:
-            xsltNumberComp(style, node);
-            break;
-        case XSLT_FUNC_PI:
-            xsltProcessingInstructionComp(style, node);
-            break;
-        case XSLT_FUNC_CALLTEMPLATE:
-            xsltCallTemplateComp(style, node);
-            break;
-        case XSLT_FUNC_PARAM:
-            xsltParamComp(style, node);
-            break;
-        case XSLT_FUNC_VARIABLE:
-            xsltVariableComp(style, node);
-            break;
-        case XSLT_FUNC_FALLBACK:
-            /* NOP yet */
-            return;
-        case XSLT_FUNC_DOCUMENT:
-            /* The extra one */
-            xmlNodeSetPsvi(
-                node, (void *) xsltDocumentComp(style, node, xsltDocumentElem));
-            break;
-        case XSLT_FUNC_MESSAGE:
-            /* NOP yet */
-            return;
-        default:
-            /*
-		* NOTE that xsl:text, xsl:template, xsl:stylesheet,
-		*  xsl:transform, xsl:import, xsl:include are not expected
-		*  to be handed over to this function.
-		*/
-            xsltTransformError(
-                NULL, style, node,
-                "Internal error: (xsltStylePreCompute) cannot handle "
-                "the XSLT element '%s'.\n",
-                xmlNodeGetName(node));
-            style->errors++;
-            return;
-        }
-    } else {
-        /*
-	* Fallback to string comparison.
-	*/
-        if (IS_XSLT_NAME(node, "apply-templates")) {
-            xsltApplyTemplatesComp(style, node);
-        } else if (IS_XSLT_NAME(node, "with-param")) {
-            xsltWithParamComp(style, node);
-        } else if (IS_XSLT_NAME(node, "value-of")) {
-            xsltValueOfComp(style, node);
-        } else if (IS_XSLT_NAME(node, "copy")) {
-            xsltCopyComp(style, node);
-        } else if (IS_XSLT_NAME(node, "copy-of")) {
-            xsltCopyOfComp(style, node);
-        } else if (IS_XSLT_NAME(node, "if")) {
-            xsltIfComp(style, node);
-        } else if (IS_XSLT_NAME(node, "choose")) {
-            xsltChooseComp(style, node);
-        } else if (IS_XSLT_NAME(node, "when")) {
-            xsltWhenComp(style, node);
-        } else if (IS_XSLT_NAME(node, "otherwise")) {
-            /* NOP yet */
-            return;
-        } else if (IS_XSLT_NAME(node, "for-each")) {
-            xsltForEachComp(style, node);
-        } else if (IS_XSLT_NAME(node, "apply-imports")) {
-            xsltApplyImportsComp(style, node);
-        } else if (IS_XSLT_NAME(node, "attribute")) {
-            xsltAttributeComp(style, node);
-        } else if (IS_XSLT_NAME(node, "element")) {
-            xsltElementComp(style, node);
-        } else if (IS_XSLT_NAME(node, "sort")) {
-            xsltSortComp(style, node);
-        } else if (IS_XSLT_NAME(node, "comment")) {
-            xsltCommentComp(style, node);
-        } else if (IS_XSLT_NAME(node, "number")) {
-            xsltNumberComp(style, node);
-        } else if (IS_XSLT_NAME(node, "processing-instruction")) {
-            xsltProcessingInstructionComp(style, node);
-        } else if (IS_XSLT_NAME(node, "call-template")) {
-            xsltCallTemplateComp(style, node);
-        } else if (IS_XSLT_NAME(node, "param")) {
-            xsltParamComp(style, node);
-        } else if (IS_XSLT_NAME(node, "variable")) {
-            xsltVariableComp(style, node);
-        } else if (IS_XSLT_NAME(node, "fallback")) {
-            /* NOP yet */
-            return;
-        } else if (IS_XSLT_NAME(node, "document")) {
-            /* The extra one */
-            xmlNodeSetPsvi(
-                node, (void *) xsltDocumentComp(style, node, xsltDocumentElem));
-        } else if (IS_XSLT_NAME(node, "output")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "preserve-space")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "strip-space")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "key")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "message")) {
-            return;
-        } else if (IS_XSLT_NAME(node, "attribute-set")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "namespace-alias")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "decimal-format")) {
-            /* Top-level */
-            return;
-        } else if (IS_XSLT_NAME(node, "include")) {
-            /* Top-level */
-        } else {
-            /*
-	    * NOTE that xsl:text, xsl:template, xsl:stylesheet,
-	    *  xsl:transform, xsl:import, xsl:include are not expected
-	    *  to be handed over to this function.
-	    */
-            xsltTransformError(
-                NULL, style, node,
-                "Internal error: (xsltStylePreCompute) cannot handle "
-                "the XSLT element '%s'.\n",
-                xmlNodeGetName(node));
-            style->errors++;
-            return;
-        }
-    }
-    /*
-    * Assign the current list of in-scope namespaces to the
-    * item. This is needed for XPath expressions.
-    */
-    if (xmlNodeGetPsvi(node) != NULL) {
-        ((xsltStylePreCompPtr) xmlNodeGetPsvi(node))->inScopeNs
-            = XSLT_CCTXT(style)->inode->inScopeNs;
-    }
-}
-
-#else
 
 /**
  * xsltStylePreCompute:
@@ -2464,4 +1837,3 @@ xsltStylePreCompute (xsltStylesheetPtr style, xmlNodePtr inst)
             xmlNodeSetPsvi(inst, (void *) xsltExtMarker);
     }
 }
-#endif /* XSLT_REFACTORED */

@@ -536,22 +536,11 @@ xsltRegisterExtPrefix (xsltStylesheetPtr style, const xmlChar *prefix,
     xsltVerbose(XSLT_VB_EXTENSIONS, xsltGenericDebugContext,
                 "Registering extension namespace '%s'.\n", URI);
     def = (xsltExtDefPtr) style->nsDefs;
-#ifdef XSLT_REFACTORED
-    /*
-    * The extension is associated with a namespace name.
-    */
-    while (def != NULL) {
-        if (xmlStrEqual(URI, def->URI))
-            return 1;
-        def = def->next;
-    }
-#else
     while (def != NULL) {
         if (xmlStrEqual(prefix, def->prefix))
             return -1;
         def = def->next;
     }
-#endif
     ret = xsltNewExtDef(prefix, URI);
     if (ret == NULL)
         return -1;
@@ -562,12 +551,6 @@ xsltRegisterExtPrefix (xsltStylesheetPtr style, const xmlChar *prefix,
      * check whether there is an extension module with a stylesheet
      * initialization function.
      */
-#ifdef XSLT_REFACTORED
-    /*
-    * Don't initialize modules based on specified namespaces via
-    * the attribute "[xsl:]extension-element-prefixes".
-    */
-#else
     if (xsltExtensionsHash != NULL) {
         xsltExtModulePtr module;
 
@@ -585,7 +568,6 @@ xsltRegisterExtPrefix (xsltStylesheetPtr style, const xmlChar *prefix,
             xsltStyleGetExtData(style, URI);
         }
     }
-#endif
     return 0;
 }
 
@@ -775,26 +757,6 @@ xsltStyleGetExtData (xsltStylesheetPtr style, const xmlChar *URI)
     if (style == NULL || URI == NULL || xsltExtensionsHash == NULL)
         return NULL;
 
-#ifdef XSLT_REFACTORED
-    /*
-    * This is intended for global storage, so only the main
-    * stylesheet will hold the data.
-    */
-    tmpStyle = style;
-    while (tmpStyle->parent != NULL)
-        tmpStyle = tmpStyle->parent;
-    if (tmpStyle->extInfos != NULL) {
-        dataContainer = (xsltExtDataPtr) xmlHashLookup(tmpStyle->extInfos, URI);
-        if (dataContainer != NULL) {
-            /*
-	    * The module was already initialized in the context
-	    * of this stylesheet; just return the user-data that
-	    * comes with it.
-	    */
-            return dataContainer->extData;
-        }
-    }
-#else
     /*
     * Old behaviour.
     */
@@ -805,7 +767,6 @@ xsltStyleGetExtData (xsltStylesheetPtr style, const xmlChar *URI)
             return dataContainer->extData;
         }
     }
-#endif
 
     dataContainer = xsltStyleInitializeStylesheetModule(tmpStyle, URI);
     if (dataContainer != NULL)
@@ -813,42 +774,6 @@ xsltStyleGetExtData (xsltStylesheetPtr style, const xmlChar *URI)
     return NULL;
 }
 
-#ifdef XSLT_REFACTORED
-/**
- * xsltStyleStylesheetLevelGetExtData:
- * @style: an XSLT stylesheet
- * @URI:  the URI associated to the exension module
- *
- * Retrieve the data associated to the extension module in this given
- * stylesheet.
- *
- * Returns the pointer or NULL if not present
- */
-void *
-xsltStyleStylesheetLevelGetExtData (xsltStylesheetPtr style, const xmlChar *URI)
-{
-    xsltExtDataPtr dataContainer = NULL;
-
-    if ((style == NULL) || (URI == NULL) || (xsltExtensionsHash == NULL))
-        return NULL;
-
-    if (style->extInfos != NULL) {
-        dataContainer = (xsltExtDataPtr) xmlHashLookup(style->extInfos, URI);
-        /*
-	* The module was already initialized in the context
-	* of this stylesheet; just return the user-data that
-	* comes with it.
-	*/
-        if (dataContainer)
-            return dataContainer->extData;
-    }
-
-    dataContainer = xsltStyleInitializeStylesheetModule(style, URI);
-    if (dataContainer != NULL)
-        return dataContainer->extData;
-    return NULL;
-}
-#endif
 
 /**
  * xsltGetExtData:
@@ -1145,26 +1070,6 @@ xsltShutdownExts (xsltStylesheetPtr style)
 int
 xsltCheckExtPrefix (xsltStylesheetPtr style, const xmlChar *URI)
 {
-#ifdef XSLT_REFACTORED
-    if ((style == NULL) || (style->compCtxt == NULL)
-        || (XSLT_CCTXT(style)->inode == NULL)
-        || (XSLT_CCTXT(style)->inode->extElemNs == NULL))
-        return 0;
-    /*
-    * Lookup the extension namespaces registered
-    * at the current node in the stylesheet's tree.
-    */
-    if (XSLT_CCTXT(style)->inode->extElemNs != NULL) {
-        int i;
-        xsltPointerListPtr list = XSLT_CCTXT(style)->inode->extElemNs;
-
-        for (i = 0; i < list->number; i++) {
-            if (xmlStrEqual((const xmlChar *) list->items[i], URI)) {
-                return 1;
-            }
-        }
-    }
-#else
     xsltExtDefPtr cur;
 
     if (style == NULL || style->nsDefs == NULL)
@@ -1183,7 +1088,6 @@ xsltCheckExtPrefix (xsltStylesheetPtr style, const xmlChar *URI)
             return 1;
         cur = cur->next;
     }
-#endif
     return 0;
 }
 

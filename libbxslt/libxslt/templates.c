@@ -523,14 +523,9 @@ xsltAttrTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     /*
     * Skip all XSLT attributes.
     */
-#ifdef XSLT_REFACTORED
-    if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
-        return NULL;
-#else
     if (xmlAttrGetNs(attr) != NULL
         && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE))
         return NULL;
-#endif
     /*
     * Get the value.
     */
@@ -697,20 +692,12 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
     */
     attr = attrs;
     do {
-#ifdef XSLT_REFACTORED
-        if ((xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker)
-            && xmlStrEqual(xmlAttrGetName(attr),
-                           (const xmlChar *) "use-attribute-sets")) {
-            xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
-        }
-#else
         if (xmlAttrGetNs(attr) != NULL
             && xmlStrEqual(xmlAttrGetName(attr),
                            (const xmlChar *) "use-attribute-sets")
             && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
             xsltApplyAttributeSet(ctxt, ctxt->node, (xmlNodePtr) attr, NULL);
         }
-#endif
         attr = xmlAttrGetNext(attr);
     } while (attr != NULL);
 
@@ -726,16 +713,10 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
         /*
 	* Skip XSLT attributes.
 	*/
-#ifdef XSLT_REFACTORED
-        if (xmlAttrGetPsvi(attr) == xsltXSLTAttrMarker) {
-            goto next_attribute;
-        }
-#else
         if (xmlAttrGetNs(attr) != NULL
             && xmlStrEqual(xmlNsGetHref(xmlAttrGetNs(attr)), XSLT_NAMESPACE)) {
             goto next_attribute;
         }
-#endif
         /*
 	* Get the value.
 	*/
@@ -760,15 +741,8 @@ xsltAttrListTemplateProcess (xsltTransformContextPtr ctxt, xmlNodePtr target,
         if (xmlAttrGetNs(attr) != origNs) {
             origNs = xmlAttrGetNs(attr);
             if (xmlAttrGetNs(attr) != NULL) {
-#ifdef XSLT_REFACTORED
-                copyNs = xsltGetSpecialNamespace(
-                    ctxt, xmlAttrGetParent(attr),
-                    xmlNsGetHref(xmlAttrGetNs(attr)),
-                    xmlNsGetPrefix(xmlAttrGetNs(attr)), target);
-#else
                 copyNs = xsltGetNamespace(ctxt, xmlAttrGetParent(attr),
                                           xmlAttrGetNs(attr), target);
-#endif
                 if (copyNs == NULL)
                     goto error;
             } else

@@ -243,17 +243,6 @@ xsltParseStylesheetInclude (xsltStylesheetPtr style, xmlNodePtr cur)
                            "xsl:include : unable to load %s\n", URI);
         goto error;
     }
-#ifdef XSLT_REFACTORED
-    if (IS_XSLT_ELEM_FAST(cur) && (xmlNodeGetPsvi(cur) != NULL)) {
-        ((xsltStyleItemIncludePtr) xmlNodeGetPsvi(cur))->include = include;
-    } else {
-        xsltTransformError(NULL, style, cur,
-                           "Internal error: (xsltParseStylesheetInclude) "
-                           "The xsl:include element was not compiled.\n",
-                           URI);
-        style->errors++;
-    }
-#endif
     oldDoc = style->doc;
     style->doc = include->doc;
     /* chain to stylesheet for recursion checking */

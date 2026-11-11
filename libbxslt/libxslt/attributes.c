@@ -470,12 +470,7 @@ xsltParseStylesheetAttributeSet (xsltStylesheetPtr style, xmlNodePtr cur)
                         "add attribute to list %s\n", ncname);
             xsltStylePreCompute(style, child);
             if (xmlNodeGetChildren(child) != NULL) {
-#ifdef XSLT_REFACTORED
-                xsltParseSequenceConstructor(XSLT_CCTXT(style),
-                                             xmlNodeGetChildren(child));
-#else
                 xsltParseTemplateContent(style, child);
-#endif
             }
             if (xmlNodeGetPsvi(child) == NULL) {
                 xsltTransformError(
@@ -764,11 +759,7 @@ void
 xsltAttribute (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
                xmlNodePtr inst, xsltElemPreCompPtr castedComp)
 {
-#ifdef XSLT_REFACTORED
-    xsltStyleItemAttributePtr comp = (xsltStyleItemAttributePtr) castedComp;
-#else
     xsltStylePreCompPtr comp = (xsltStylePreCompPtr) castedComp;
-#endif
     xmlNodePtr targetElem;
     xmlChar *prop = NULL;
     const xmlChar *name = NULL, *prefix = NULL, *nsName = NULL;
@@ -892,12 +883,7 @@ xsltAttribute (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
         /*
 	* The "name" value was static.
 	*/
-#ifdef XSLT_REFACTORED
-        prefix = comp->nsPrefix;
-        name = comp->name;
-#else
         name = xsltSplitQName(ctxt->dict, comp->name, &prefix);
-#endif
     }
 
     /*

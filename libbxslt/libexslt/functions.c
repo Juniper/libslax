@@ -556,18 +556,8 @@ exsltFuncFunctionComp (xsltStylesheetPtr style, xmlNodePtr inst)
      * Register the function data such that it can be retrieved
      * by exslFuncFunctionFunction
      */
-#ifdef XSLT_REFACTORED
-    /*
-    * Ensure that the hash table will be stored in the *current*
-    * stylesheet level in order to correctly evaluate the
-    * import precedence.
-    */
-    data = (xmlHashTablePtr) xsltStyleStylesheetLevelGetExtData(
-        style, EXSLT_FUNCTIONS_NAMESPACE);
-#else
     data = (xmlHashTablePtr) xsltStyleGetExtData(style,
                                                  EXSLT_FUNCTIONS_NAMESPACE);
-#endif
     if (data == NULL) {
         xsltGenericError(xsltGenericErrorContext,
                          "exsltFuncFunctionComp: no stylesheet data\n");
