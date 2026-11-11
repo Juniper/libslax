@@ -74,13 +74,6 @@ static int libxml_xpathCallbacksNb = 0;
  *									*
  ************************************************************************/
 
-#if 0
-extern void xmlMemFree(void *ptr);
-extern void *xmlMemMalloc(size_t size);
-extern void *xmlMemRealloc(void *ptr, size_t size);
-extern char *xmlMemoryStrdup(const char *str);
-#endif
-
 static int libxmlMemoryDebugActivated = 0;
 static long libxmlMemoryAllocatedBase = 0;
 
@@ -707,12 +700,6 @@ pythonExternalEntityLoader (const char *URL, const char *ID,
                     result = xmlNewIOInputStream(ctxt, buf,
                                                  XML_CHAR_ENCODING_NONE);
                 }
-#if 0
-	    } else {
-		if (URL != NULL)
-		    printf("pythonExternalEntityLoader: can't read %s\n",
-		           URL);
-#endif
             }
             if (result == NULL) {
                 Py_DECREF(ret);

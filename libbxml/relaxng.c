@@ -4725,12 +4725,6 @@ xmlRelaxNGParsePattern (xmlRelaxNGParserCtxtPtr ctxt, xmlNodePtr node)
         if (old != NULL) {
             ctxt->grammar = old;
             ctxt->parentgrammar = oldparent;
-#if 0
-            if (grammar != NULL) {
-                grammar->next = old->next;
-                old->next = grammar;
-            }
-#endif
         }
         if (grammar != NULL)
             def = grammar->start;
@@ -5975,13 +5969,6 @@ xmlRelaxNGCheckRules (xmlRelaxNGParserCtxtPtr ctxt, xmlRelaxNGDefinePtr cur,
             * element boundaries, c.f. Bug #159968 local refs are dropped
             * in step 4.19.
             */
-#if 0
-            if (flags & XML_RELAXNG_IN_LIST) {
-                xmlRngPErr(ctxt, cur->node, XML_RNGP_PAT_LIST_REF,
-                           "Found forbidden pattern list//ref\n", NULL,
-                           NULL);
-            }
-#endif
             if (flags & XML_RELAXNG_IN_DATAEXCEPT) {
                 xmlRngPErr(ctxt, cur->node, XML_RNGP_PAT_DATA_EXCEPT_REF,
                            "Found forbidden pattern data/except//ref\n", NULL,
@@ -9641,10 +9628,6 @@ xmlRelaxNGValidateState (xmlRelaxNGValidCtxtPtr ctxt,
             if ((ctxt->flags & FLAGS_IGNORABLE) == 0) {
                 xmlRelaxNGDumpValidError(ctxt);
                 ret = 0;
-#if 0
-                } else {
-                    ret = -2;
-#endif
             }
         } else {
             if (ctxt->errNr > errNr)
@@ -9818,13 +9801,6 @@ xmlRelaxNGValidateState (xmlRelaxNGValidCtxtPtr ctxt,
         }
         ctxt->states = res;
         ctxt->flags = oldflags;
-#if 0
-                /*
-                 * errors may have to be propagated back...
-                 */
-                if (ctxt->errNr > errNr)
-                    xmlRelaxNGPopErrors(ctxt, errNr);
-#endif
         ret = 0;
         break;
     }

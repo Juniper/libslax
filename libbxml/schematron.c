@@ -747,72 +747,6 @@ xmlSchematronFreeParserCtxt (xmlSchematronParserCtxt *ctxt)
     xmlFree(ctxt);
 }
 
-#if 0
-/**
- * Add an included document
- *
- * @param ctxt  the schema parser context
- * @param doc  the included document
- * @param cur  the current include node
- */
-static void
-xmlSchematronPushInclude(xmlSchematronParserCtxtPtr ctxt,
-                        xmlDocPtr doc, xmlNodePtr cur)
-{
-    if (ctxt->includes == NULL) {
-        ctxt->maxIncludes = 10;
-        ctxt->includes = (xmlNodePtr *)
-            xmlMalloc(ctxt->maxIncludes * 2 * sizeof(xmlNodePtr));
-        if (ctxt->includes == NULL) {
-            xmlSchematronPErrMemory(NULL);
-            return;
-        }
-        ctxt->nbIncludes = 0;
-    } else if (ctxt->nbIncludes + 2 >= ctxt->maxIncludes) {
-        xmlNodePtr *tmp;
-
-        tmp = (xmlNodePtr *)
-            xmlRealloc(ctxt->includes, ctxt->maxIncludes * 4 *
-                       sizeof(xmlNodePtr));
-        if (tmp == NULL) {
-            xmlSchematronPErrMemory(NULL);
-            return;
-        }
-        ctxt->includes = tmp;
-        ctxt->maxIncludes *= 2;
-    }
-    ctxt->includes[2 * ctxt->nbIncludes] = cur;
-    ctxt->includes[2 * ctxt->nbIncludes + 1] = (xmlNodePtr) doc;
-    ctxt->nbIncludes++;
-}
-
-/**
- * Pop an include level. The included document is being freed
- *
- * @param ctxt  the schema parser context
- * @returns the node immediately following the include or NULL if the
- *         include list was empty.
- */
-static xmlNodePtr
-xmlSchematronPopInclude(xmlSchematronParserCtxtPtr ctxt)
-{
-    xmlDocPtr doc;
-    xmlNodePtr ret;
-
-    if (ctxt->nbIncludes <= 0)
-        return(NULL);
-    ctxt->nbIncludes--;
-    doc = (xmlDocPtr) ctxt->includes[2 * ctxt->nbIncludes + 1];
-    ret = ctxt->includes[2 * ctxt->nbIncludes];
-    xmlFreeDoc(doc);
-    if (ret != NULL)
-        ret = ret->next;
-    if (ret == NULL)
-        return(xmlSchematronPopInclude(ctxt));
-    return(ret);
-}
-#endif
-
 /**
  * Add a namespace definition in the context
  *
@@ -1114,71 +1048,6 @@ xmlSchematronParsePattern (xmlSchematronParserCtxtPtr ctxt, xmlNodePtr pat)
                           "Pattern has no rule element", NULL, NULL);
     }
 }
-
-#if 0
-/**
- * Load the include document, Push the current pointer
- *
- * @param ctxt  a schema validation context
- * @param cur  the include element
- * @returns the updated node pointer
- */
-static xmlNodePtr
-xmlSchematronLoadInclude(xmlSchematronParserCtxtPtr ctxt, xmlNodePtr cur)
-{
-    xmlNodePtr ret = NULL;
-    xmlDocPtr doc = NULL;
-    xmlChar *href = NULL;
-    xmlChar *base = NULL;
-    xmlChar *URI = NULL;
-
-    if ((ctxt == NULL) || (cur == NULL))
-        return(NULL);
-
-    href = xmlGetNoNsProp(cur, BAD_CAST "href");
-    if (href == NULL) {
-        xmlSchematronPErr(ctxt, cur,
-            XML_SCHEMAP_NOROOT,
-            "Include has no href attribute", NULL, NULL);
-        return(cur->next);
-    }
-
-    /* do the URI base composition, load and find the root */
-    base = xmlNodeGetBase(cur->doc, cur);
-    URI = xmlBuildURI(href, base);
-    doc = xmlReadFile((const char *) URI, NULL, SCHEMATRON_PARSE_OPTIONS);
-    if (doc == NULL) {
-        xmlSchematronPErr(ctxt, cur,
-                      XML_SCHEMAP_FAILED_LOAD,
-                      "could not load include '%s'.\n",
-                      URI, NULL);
-        goto done;
-    }
-    ret = xmlDocGetRootElement(doc);
-    if (ret == NULL) {
-        xmlSchematronPErr(ctxt, cur,
-                      XML_SCHEMAP_FAILED_LOAD,
-                      "could not find root from include '%s'.\n",
-                      URI, NULL);
-        goto done;
-    }
-
-    /* Success, push the include for rollback on exit */
-    xmlSchematronPushInclude(ctxt, doc, cur);
-
-done:
-    if (ret == NULL) {
-        if (doc != NULL)
-            xmlFreeDoc(doc);
-    }
-    xmlFree(href);
-    if (base != NULL)
-        xmlFree(base);
-    if (URI != NULL)
-        xmlFree(URI);
-    return(ret);
-}
-#endif
 
 /**
  * parse a schema definition resource and build an internal
@@ -1558,10 +1427,6 @@ xmlSchematronReportSuccess (xmlSchematronValidCtxtPtr ctxt,
         path = xmlGetNodePath(cur);
         if (path == NULL)
             path = (xmlChar *) cur->name;
-#if 0
-        if ((test->report != NULL) && (test->report[0] != 0))
-            report = test->report;
-#endif
         if (test->node != NULL)
             report = xmlSchematronFormatReport(ctxt, test->node, cur);
         if (report == NULL) {

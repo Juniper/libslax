@@ -1203,45 +1203,6 @@ xmlSchemaGetComponentNode (xmlSchemaBasicItemPtr item)
     }
 }
 
-#if 0
-/**
- * @param item  a schema component
- * @returns the next sibling of the schema component.
- */
-static xmlSchemaBasicItemPtr
-xmlSchemaGetNextComponent(xmlSchemaBasicItemPtr item)
-{
-    switch (item->type) {
-	case XML_SCHEMA_TYPE_ELEMENT:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaElementPtr) item)->next);
-	case XML_SCHEMA_TYPE_ATTRIBUTE:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaAttributePtr) item)->next);
-	case XML_SCHEMA_TYPE_COMPLEX:
-	case XML_SCHEMA_TYPE_SIMPLE:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaTypePtr) item)->next);
-	case XML_SCHEMA_TYPE_ANY:
-	case XML_SCHEMA_TYPE_ANY_ATTRIBUTE:
-	    return (NULL);
-	case XML_SCHEMA_TYPE_PARTICLE:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaParticlePtr) item)->next);
-	case XML_SCHEMA_TYPE_SEQUENCE:
-	case XML_SCHEMA_TYPE_CHOICE:
-	case XML_SCHEMA_TYPE_ALL:
-	    return (NULL);
-	case XML_SCHEMA_TYPE_GROUP:
-	    return (NULL);
-	case XML_SCHEMA_TYPE_ATTRIBUTEGROUP:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaAttributeGroupPtr) item)->next);
-	case XML_SCHEMA_TYPE_IDC_UNIQUE:
-	case XML_SCHEMA_TYPE_IDC_KEY:
-	case XML_SCHEMA_TYPE_IDC_KEYREF:
-	    return ((xmlSchemaBasicItemPtr) ((xmlSchemaIDCPtr) item)->next);
-	default:
-	    return (NULL);
-    }
-}
-#endif
-
 /**
  * Returns the given QName in the format "{namespaceName}localName" or
  * just "localName" if `namespaceName` is NULL.
@@ -2293,19 +2254,6 @@ static void LIBXML_ATTR_FORMAT(3, 0)
 {
     xmlSchemaInternalErr2(actxt, funcName, message, NULL, NULL);
 }
-
-#if 0
-static void LIBXML_ATTR_FORMAT(3,0)
-xmlSchemaPInternalErr(xmlSchemaParserCtxtPtr pctxt,
-		     const char *funcName,
-		     const char *message,
-		     const xmlChar *str1,
-		     const xmlChar *str2)
-{
-    xmlSchemaInternalErr2(ACTXT_CAST pctxt, funcName, message,
-	str1, str2);
-}
-#endif
 
 static void LIBXML_ATTR_FORMAT(5, 0)
     xmlSchemaCustomErr4(xmlSchemaAbstractCtxtPtr actxt, xmlParserErrors error,
@@ -4043,17 +3991,6 @@ xmlSchemaElementDump (void *payload, void *data, const xmlChar *name UNUSED,
     if (namespace != NULL)
         fprintf(output, "ns '%s'", namespace);
     fprintf(output, "\n");
-#if 0
-    if ((elem->minOccurs != 1) || (elem->maxOccurs != 1)) {
-	fprintf(output, "  min %d ", elem->minOccurs);
-        if (elem->maxOccurs >= UNBOUNDED)
-            fprintf(output, "max: unbounded\n");
-        else if (elem->maxOccurs != 1)
-            fprintf(output, "max: %d\n", elem->maxOccurs);
-        else
-            fprintf(output, "\n");
-    }
-#endif
     /*
     * Misc other properties.
     */
@@ -9356,14 +9293,6 @@ xmlSchemaSchemaRelationCreate (void)
     return ret;
 }
 
-#if 0
-static void
-xmlSchemaSchemaRelationFree(xmlSchemaSchemaRelationPtr rel)
-{
-    xmlFree(rel);
-}
-#endif
-
 static void
 xmlSchemaRedefListFree (xmlSchemaRedefPtr redef)
 {
@@ -11787,52 +11716,6 @@ xmlSchemaParseComplexType (xmlSchemaParserCtxtPtr ctxt, xmlSchemaPtr schema,
  *									*
  ************************************************************************/
 
-#if 0 /* Will be enabled if it is clear what options are needed. */
-/**
- * Sets the options to be used during the parse.
- *
- * @param ctxt  	a schema parser context
- * @param options  a combination of xmlSchemaParserOption
- * @returns 0 in case of success, -1 in case of an
- * API error.
- */
-static int
-xmlSchemaParserCtxtSetOptions(xmlSchemaParserCtxtPtr ctxt,
-			      int options)
-
-{
-    int i;
-
-    if (ctxt == NULL)
-	return (-1);
-    /*
-    * WARNING: Change the start value if adding to the
-    * xmlSchemaParseOption.
-    */
-    for (i = 1; i < (int) sizeof(int) * 8; i++) {
-        if (options & 1<<i) {
-	    return (-1);
-        }
-    }
-    ctxt->options = options;
-    return (0);
-}
-
-/**
- * @param ctxt  a schema parser context
- * @returns the option combination of the parser context.
- */
-static int
-xmlSchemaParserCtxtGetOptions(xmlSchemaParserCtxtPtr ctxt)
-
-{
-    if (ctxt == NULL)
-	return (-1);
-    else
-	return (ctxt->options);
-}
-#endif
-
 /**
  * Create an XML Schemas parse context for that file/resource expected
  * to contain an XML Schemas file.
@@ -12740,45 +12623,6 @@ xmlSchemaIsDerivedFromBuiltInType (xmlSchemaTypePtr type, int valType)
     return xmlSchemaIsDerivedFromBuiltInType(type->subtypes, valType);
 }
 
-#if 0
-/**
- *
- * @param ctxt  the schema parser context
- * @param type  the type definition
- * @param valType  the value type
- * @returns 1 if the type has the given value type, or
- * is derived from such a type.
- */
-static int
-xmlSchemaIsUserDerivedFromBuiltInType(xmlSchemaTypePtr type, int valType)
-{
-    if (type == NULL)
-	return (0);
-    if (WXS_IS_COMPLEX(type))
-	return (0);
-    if (type->type == XML_SCHEMA_TYPE_BASIC) {
-	if (type->builtInType == valType)
-	    return(1);
-	return (0);
-    } else
-	return(xmlSchemaIsDerivedFromBuiltInType(type->subtypes, valType));
-
-    return (0);
-}
-
-static xmlSchemaTypePtr
-xmlSchemaQueryBuiltInType(xmlSchemaTypePtr type)
-{
-    if (type == NULL)
-	return (NULL);
-    if (WXS_IS_COMPLEX(type))
-	return (NULL);
-    if (type->type == XML_SCHEMA_TYPE_BASIC)
-	return(type);
-    return(xmlSchemaQueryBuiltInType(type->subtypes));
-}
-#endif
-
 /**
  * @param type  the simpleType definition
  * @returns the primitive type of the given type or
@@ -12800,27 +12644,6 @@ xmlSchemaGetPrimitiveType (xmlSchemaTypePtr type)
 
     return NULL;
 }
-
-#if 0
-/**
- * @param type  the simpleType definition
- * @returns the primitive type of the given type or
- * NULL in case of error.
- */
-static xmlSchemaTypePtr
-xmlSchemaGetBuiltInTypeAncestor(xmlSchemaTypePtr type)
-{
-    if (WXS_IS_LIST(type) || WXS_IS_UNION(type))
-	return (0);
-    while (type != NULL) {
-	if (type->type == XML_SCHEMA_TYPE_BASIC)
-	    return (type);
-	type = type->baseType;
-    }
-
-    return (NULL);
-}
-#endif
 
 /**
  * Clones the namespace constraints of source
@@ -13950,119 +13773,6 @@ xmlSchemaGetUnionSimpleTypeMemberTypes (xmlSchemaTypePtr type)
     return NULL;
 }
 
-#if 0
-/**
- * Schema Component Constraint: Effective Total Range
- * (all and sequence) + (choice)
- *
- * @param particle  the particle
- * @returns the minimum Effective Total Range.
- */
-static int
-xmlSchemaGetParticleTotalRangeMin(xmlSchemaParticlePtr particle)
-{
-    if ((particle->children == NULL) ||
-	(particle->minOccurs == 0))
-	return (0);
-    if (particle->children->type == XML_SCHEMA_TYPE_CHOICE) {
-	int min = -1, cur;
-	xmlSchemaParticlePtr part =
-	    (xmlSchemaParticlePtr) particle->children->children;
-
-	if (part == NULL)
-	    return (0);
-	while (part != NULL) {
-	    if ((part->children->type == XML_SCHEMA_TYPE_ELEMENT) ||
-		(part->children->type == XML_SCHEMA_TYPE_ANY))
-		cur = part->minOccurs;
-	    else
-		cur = xmlSchemaGetParticleTotalRangeMin(part);
-	    if (cur == 0)
-		return (0);
-	    if ((min > cur) || (min == -1))
-		min = cur;
-	    part = (xmlSchemaParticlePtr) part->next;
-	}
-	return (particle->minOccurs * min);
-    } else {
-	/* <all> and <sequence> */
-	int sum = 0;
-	xmlSchemaParticlePtr part =
-	    (xmlSchemaParticlePtr) particle->children->children;
-
-	if (part == NULL)
-	    return (0);
-	do {
-	    if ((part->children->type == XML_SCHEMA_TYPE_ELEMENT) ||
-		(part->children->type == XML_SCHEMA_TYPE_ANY))
-		sum += part->minOccurs;
-	    else
-		sum += xmlSchemaGetParticleTotalRangeMin(part);
-	    part = (xmlSchemaParticlePtr) part->next;
-	} while (part != NULL);
-	return (particle->minOccurs * sum);
-    }
-}
-
-/**
- * Schema Component Constraint: Effective Total Range
- * (all and sequence) + (choice)
- *
- * @param particle  the particle
- * @returns the maximum Effective Total Range.
- */
-static int
-xmlSchemaGetParticleTotalRangeMax(xmlSchemaParticlePtr particle)
-{
-    if ((particle->children == NULL) ||
-	(particle->children->children == NULL))
-	return (0);
-    if (particle->children->type == XML_SCHEMA_TYPE_CHOICE) {
-	int max = -1, cur;
-	xmlSchemaParticlePtr part =
-	    (xmlSchemaParticlePtr) particle->children->children;
-
-	for (; part != NULL; part = (xmlSchemaParticlePtr) part->next) {
-	    if (part->children == NULL)
-		continue;
-	    if ((part->children->type == XML_SCHEMA_TYPE_ELEMENT) ||
-		(part->children->type == XML_SCHEMA_TYPE_ANY))
-		cur = part->maxOccurs;
-	    else
-		cur = xmlSchemaGetParticleTotalRangeMax(part);
-	    if (cur == UNBOUNDED)
-		return (UNBOUNDED);
-	    if ((max < cur) || (max == -1))
-		max = cur;
-	}
-	/* TODO: Handle overflows? */
-	return (particle->maxOccurs * max);
-    } else {
-	/* <all> and <sequence> */
-	int sum = 0, cur;
-	xmlSchemaParticlePtr part =
-	    (xmlSchemaParticlePtr) particle->children->children;
-
-	for (; part != NULL; part = (xmlSchemaParticlePtr) part->next) {
-	    if (part->children == NULL)
-		continue;
-	    if ((part->children->type == XML_SCHEMA_TYPE_ELEMENT) ||
-		(part->children->type == XML_SCHEMA_TYPE_ANY))
-		cur = part->maxOccurs;
-	    else
-		cur = xmlSchemaGetParticleTotalRangeMax(part);
-	    if (cur == UNBOUNDED)
-		return (UNBOUNDED);
-	    if ((cur > 0) && (particle->maxOccurs == UNBOUNDED))
-		return (UNBOUNDED);
-	    sum += cur;
-	}
-	/* TODO: Handle overflows? */
-	return (particle->maxOccurs * sum);
-    }
-}
-#endif
-
 /**
  * @param particle  the particle
  * @returns 1 if emptiable, 0 otherwise.
@@ -15029,51 +14739,6 @@ xmlSchemaCheckCOSSTRestricts (xmlSchemaParserCtxtPtr pctxt,
     return 0;
 }
 
-#if 0
-/**
- * Checks crc-simple-type constraints.
- *
- * @param ctxt  the schema parser context
- * @param type  the simple type definition
- * @returns 0 if the constraints are satisfied,
- * if not a positive error code and -1 on internal
- * errors.
- */
-static int
-xmlSchemaCheckSRCSimpleType(xmlSchemaParserCtxtPtr ctxt,
-			    xmlSchemaTypePtr type)
-{
-    /*
-    * src-simple-type.1 The corresponding simple type definition, if any,
-    * must satisfy the conditions set out in Constraints on Simple Type
-    * Definition Schema Components ($3.14.6).
-    */
-    if (WXS_IS_RESTRICTION(type)) {
-	/*
-	* src-simple-type.2 "If the <restriction> alternative is chosen,
-	* either it must have a base [attribute] or a <simpleType> among its
-	* [children], but not both."
-	* NOTE: This is checked in the parse function of <restriction>.
-	*/
-	/*
-	*
-	*/
-    } else if (WXS_IS_LIST(type)) {
-	/* src-simple-type.3 "If the <list> alternative is chosen, either it must have
-	* an itemType [attribute] or a <simpleType> among its [children],
-	* but not both."
-	*
-	* NOTE: This is checked in the parse function of <list>.
-	*/
-    } else if (WXS_IS_UNION(type)) {
-	/*
-	* src-simple-type.4 is checked in xmlSchemaCheckUnionTypeDefCircular().
-	*/
-    }
-    return (0);
-}
-#endif
-
 static int
 xmlSchemaCreateVCtxtOnPCtxt (xmlSchemaParserCtxtPtr ctxt)
 {
@@ -15458,98 +15123,6 @@ xmlSchemaCheckCOSCTExtends (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
 	* Note that even if redefining components, the inheriting mechanism
 	* is used.
 	*/
-#if 0
-	/*
-	* SPEC (1.2) "Its {attribute uses} must be a subset of the {attribute
-	* uses}
-	* of the complex type definition itself, that is, for every attribute
-	* use in the {attribute uses} of the {base type definition}, there
-	* must be an attribute use in the {attribute uses} of the complex
-	* type definition itself whose {attribute declaration} has the same
-	* {name}, {target namespace} and {type definition} as its attribute
-	* declaration"
-	*/
-	if (base->attrUses != NULL) {
-	    int i, j, found;
-	    xmlSchemaAttributeUsePtr use, buse;
-
-	    for (i = 0; i < (WXS_LIST_CAST base->attrUses)->nbItems; i ++) {
-		buse = (WXS_LIST_CAST base->attrUses)->items[i];
-		found = 0;
-		if (type->attrUses != NULL) {
-		    use = (WXS_LIST_CAST type->attrUses)->items[j];
-		    for (j = 0; j < (WXS_LIST_CAST type->attrUses)->nbItems; j ++)
-		    {
-			if ((WXS_ATTRUSE_DECL_NAME(use) ==
-				WXS_ATTRUSE_DECL_NAME(buse)) &&
-			    (WXS_ATTRUSE_DECL_TNS(use) ==
-				WXS_ATTRUSE_DECL_TNS(buse)) &&
-			    (WXS_ATTRUSE_TYPEDEF(use) ==
-				WXS_ATTRUSE_TYPEDEF(buse))
-			{
-			    found = 1;
-			    break;
-			}
-		    }
-		}
-		if (! found) {
-		    xmlChar *str = NULL;
-
-		    xmlSchemaCustomErr(ACTXT_CAST ctxt,
-			XML_SCHEMAP_COS_CT_EXTENDS_1_2,
-			NULL, WXS_BASIC_CAST type,
-			/*
-			* TODO: The report does not indicate that also the
-			* type needs to be the same.
-			*/
-			"This type is missing a matching correspondent "
-			"for its {base type}'s %s in its {attribute uses}",
-			xmlSchemaGetComponentDesignation(&str,
-			    buse->children),
-			NULL);
-		    FREE_AND_NULL(str)
-		}
-	    }
-	}
-	/*
-	* SPEC (1.3) "If it has an {attribute wildcard}, the complex type
-	* definition must also have one, and the base type definition's
-	* {attribute  wildcard}'s {namespace constraint} must be a subset
-	* of the complex  type definition's {attribute wildcard}'s {namespace
-	* constraint}, as defined by Wildcard Subset ($3.10.6)."
-	*/
-
-	/*
-	* MAYBE TODO: Enable if ever needed. But this will be needed only
-	* if created the type via a schema construction API.
-	*/
-	if (base->attributeWildcard != NULL) {
-	    if (type->attributeWildcard == NULL) {
-		xmlChar *str = NULL;
-
-		xmlSchemaCustomErr(ACTXT_CAST pctxt,
-		    XML_SCHEMAP_COS_CT_EXTENDS_1_3,
-		    NULL, type,
-		    "The base %s has an attribute wildcard, "
-		    "but this type is missing an attribute wildcard",
-		    xmlSchemaGetComponentDesignation(&str, base));
-		FREE_AND_NULL(str)
-
-	    } else if (xmlSchemaCheckCOSNSSubset(
-		base->attributeWildcard, type->attributeWildcard))
-	    {
-		xmlChar *str = NULL;
-
-		xmlSchemaCustomErr(ACTXT_CAST pctxt,
-		    XML_SCHEMAP_COS_CT_EXTENDS_1_3,
-		    NULL, type,
-		    "The attribute wildcard is not a valid "
-		    "superset of the one in the base %s",
-		    xmlSchemaGetComponentDesignation(&str, base));
-		FREE_AND_NULL(str)
-	    }
-	}
-#endif
         /*
 	* SPEC (1.4) "One of the following must be true:"
 	*/
@@ -16319,59 +15892,6 @@ xmlSchemaCheckCOSParticleRestrict (xmlSchemaParserCtxtPtr ctxt,
 
     return 0;
 }
-
-#if 0
-/**
- * (3.9.6) Constraints on Particle Schema Components
- * Schema Component Constraint:
- * Particle Derivation OK (All/Choice/Sequence:Any --
- *                         NSRecurseCheckCardinality)
- * (rcase-NSRecurseCheckCardinality)
- *
- * STATUS: TODO: subst-groups
- *
- * @param ctxt  the schema parser context
- * @param r  the model group particle
- * @param b  the base wildcard particle
- * @returns 0 if the constraints are satisfied, a positive
- * error code if not and -1 if an internal error occurred.
- */
-static int
-xmlSchemaCheckRCaseNSRecurseCheckCardinality(xmlSchemaParserCtxtPtr ctxt,
-					     xmlSchemaParticlePtr r,
-					     xmlSchemaParticlePtr b)
-{
-    xmlSchemaParticlePtr part;
-    /* TODO: Error codes (rcase-NSRecurseCheckCardinality). */
-    if ((r->children == NULL) || (r->children->children == NULL))
-	return (-1);
-    /*
-    * SPEC "For a group particle to be a `valid restriction` of a
-    * wildcard particle..."
-    *
-    * SPEC (1) "Every member of the {particles} of the group is a `valid
-    * restriction` of the wildcard as defined by
-    * Particle Valid (Restriction) ($3.9.6)."
-    */
-    part = (xmlSchemaParticlePtr) r->children->children;
-    do {
-	if (xmlSchemaCheckCOSParticleRestrict(ctxt, part, b))
-	    return (1);
-	part = (xmlSchemaParticlePtr) part->next;
-    } while (part != NULL);
-    /*
-    * SPEC (2) "The effective total range of the group [...] is a
-    * valid restriction of B's occurrence range as defined by
-    * Occurrence Range OK ($3.9.6)."
-    */
-    if (xmlSchemaCheckParticleRangeOK(
-	    xmlSchemaGetParticleTotalRangeMin(r),
-	    xmlSchemaGetParticleTotalRangeMax(r),
-	    b->minOccurs, b->maxOccurs) != 0)
-	return (1);
-    return (0);
-}
-#endif
 
 /**
  * (3.9.6) Constraints on Particle Schema Components
@@ -22016,9 +21536,6 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
 	    * Get the IDC binding from the matcher and check for
 	    * duplicate key-sequences.
 	    */
-#if 0
-	    bind = xmlSchemaIDCAcquireBinding(vctxt, matcher);
-#endif
             targets = xmlSchemaIDCAcquireTargetList(vctxt, matcher);
             if (targets == NULL)
                 return -1;
@@ -22129,9 +21646,6 @@ xmlSchemaXPathProcessHistory (xmlSchemaValidCtxtPtr vctxt, int depth)
             ntItem->nodeLine = vctxt->inode->nodeLine;
             ntItem->keys = *keySeq;
             *keySeq = NULL;
-#if 0
-	    if (xmlSchemaIDCAppendNodeTableItem(bind, ntItem) == -1)
-#endif
             if (xmlSchemaItemListAdd(targets, ntItem) == -1) {
                 if (idc->type == XML_SCHEMA_TYPE_IDC_KEYREF) {
                     /*
@@ -23137,9 +22651,6 @@ xmlSchemaClearElemInfo (xmlSchemaValidCtxtPtr vctxt, xmlSchemaNodeInfoPtr ielem)
 	*   Does it work?
 	*/
         xmlSchemaIDCReleaseMatcherList(vctxt, ielem->idcMatchers);
-#if 0
-	xmlSchemaIDCFreeMatcherList(ielem->idcMatchers);
-#endif
         ielem->idcMatchers = NULL;
     }
     if (ielem->idcTable != NULL) {
@@ -27814,10 +27325,6 @@ xmlSchemaValidateStream (xmlSchemaValidCtxt *ctxt, xmlParserInputBuffer *input,
         xmlFree(pctxt->sax);
         pctxt->sax = NULL;
     }
-#if 0
-    if (options)
-        xmlCtxtUseOptions(pctxt, options);
-#endif
 
     inputStream = xmlNewIOInputStream(pctxt, input, enc);
     ;

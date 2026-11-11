@@ -502,12 +502,6 @@ struct _xmlSchemaFacetLink {
  * The type was redefined.
  */
 #define XML_SCHEMAS_TYPE_REDEFINED 1 << 30
-#if 0
-/**
- * The type redefines an other type.
- */
-#define XML_SCHEMAS_TYPE_REDEFINING 1 << 31
-#endif
 
 /**
  * Schemas type definition.
