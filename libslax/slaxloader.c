@@ -702,13 +702,6 @@ slaxLoadFile (const char *filename, FILE *file, xmlDictPtr dict, int partial)
     if (ctxt == NULL)
 	return NULL;
 
-#if 0
-    /*
-     * Turn on line number recording in each node
-     */
-    ctxt->linenumbers = 1;
-#endif
-
     if (dict)
 	xmlCtxtSetDict(ctxt, dict);
 
@@ -777,13 +770,6 @@ slaxLoadBuffer (const char *filename, char *input,
 
     if (ctxt == NULL)
 	return NULL;
-
-#if 0
-    /*
-     * Turn on line number recording in each node
-     */
-    ctxt->linenumbers = 1;
-#endif
 
     if (dict)
 	xmlCtxtSetDict(ctxt, dict);

@@ -89,17 +89,6 @@ static int doubleWideData[] = {
     0
 };
 
-#if 0
-/*
- * Define all three character literal tokens, mapping three contiguous
- * characters into a single slaxparser.y token.
- */
-static int tripleWideData[] = {
-    L_DOTDOTDOT, '.', '.', '.',
-    0
-};
-#endif
-
 /*
  * Define all keyword tokens, mapping the keywords into the slaxparser.y
  * token.  We also provide KMF_* flags to indicate what context the keyword

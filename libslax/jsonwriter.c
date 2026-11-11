@@ -89,19 +89,6 @@ jsonNameNeedsQuotes (const char *str, unsigned flags)
     return "\"";
 }
 
-#if 0
-static const char *
-jsonNeedsComma (xmlNodePtr nodep UNUSED)
-{
-    xmlNodePtr nextp;
-    for (nextp = xmlNodeGetNext(nodep); nextp; nextp = xmlNodeGetNext(nextp))
-	if (xmlNodeGetType(nextp) != XML_TEXT_NODE)
-	    return ",";
-
-    return "";
-}
-#endif
-
 static void
 jsonEscape (char *buf, int bufsiz, const char *str)
 {

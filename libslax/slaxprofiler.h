@@ -31,10 +31,6 @@ slaxProfEnter (xmlNodePtr inst);
 void
 slaxProfExit (void);
 
-#if 0
-typedef int (*slaxProfCallback_t)(void *, const char *fmt, ...);
-#endif
-
 /**
  * Report the results
  */

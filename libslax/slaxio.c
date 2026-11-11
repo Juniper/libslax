@@ -29,24 +29,16 @@
 #include <libslax/slax.h>
 
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
-#if 0
 /*
  * The readline header files contain function prototypes that
  * won't compile with our warning level.  We take the "lesser
  * of two evils" approach and fake a prototype here instead
  * of turning down our warning levels.
- *
- * (...Hmmmm.... when this was a one-line extern for readline, I
- * didn't feel guilty, but it's getting longer....)
  */
-#include <readline/readline.h>
-#include <readline/history.h>
-#else /* 0 */
 extern char *readline (const char *);
 extern void add_history (const char *);
 extern FILE *rl_instream;
 extern FILE *rl_outstream;
-#endif /* 0 */
 #endif /* defined(HAVE_READLINE) || defined(HAVE_LIBEDIT) */
 
 /* Callback functions for input and output */
