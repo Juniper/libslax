@@ -502,9 +502,6 @@ xsltPatPushState (xsltTransformContextPtr ctxt, xsltStepStates *states,
     }
     states->states[states->nbstates].step = step;
     states->states[states->nbstates++].node = node;
-#if 0
-    fprintf(stderr, "Push: %d, %s\n", step, xmlNodeGetName(node));
-#endif
     return 0;
 }
 
@@ -1120,9 +1117,6 @@ rollback:
     states.nbstates--;
     i = states.states[states.nbstates].step;
     node = states.states[states.nbstates].node;
-#if 0
-    fprintf(stderr, "Pop: %d, %s\n", i, xmlNodeGetName(node));
-#endif
     goto restart;
 }
 

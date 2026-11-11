@@ -56,13 +56,6 @@ XSLTPUBFUN xsltTemplatePtr XSLTCALL xsltGetTemplate (
 XSLTPUBFUN void XSLTCALL xsltFreeTemplateHashes (xsltStylesheetPtr style);
 XSLTPUBFUN void XSLTCALL xsltCleanupTemplates (xsltStylesheetPtr style);
 
-#if 0
-int		xsltMatchPattern	(xsltTransformContextPtr ctxt,
-					 xmlNodePtr node,
-					 const xmlChar *pattern,
-					 xmlDocPtr ctxtdoc,
-					 xmlNodePtr ctxtnode);
-#endif
 #ifdef __cplusplus
 }
 #endif

@@ -1452,35 +1452,6 @@ xsltShallowCopyAttr (xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
     if (copy == NULL)
         return NULL;
 
-#if 0
-    /*
-    * NOTE: This was optimized according to bug #342695.
-    * TODO: Can this further be optimized, if source and target
-    *  share the same dict and attr->children is just 1 text node
-    *  which is in the dict? How probable is such a case?
-    */
-    /*
-    * TODO: Do we need to create an empty text node if the value
-    *  is the empty string?
-    */
-    value = xmlNodeListGetString(attr->doc, attr->children, 1);
-    if (value != NULL) {
-	txtNode = xmlNewDocText(target->doc, NULL);
-	if (txtNode == NULL)
-	    return(NULL);
-	if ((target->doc != NULL) &&
-	    (xmlDocGetDict(target->doc) != NULL))
-	{
-	    txtNode->content =
-		(xmlChar *) xmlDictLookup(xmlDocGetDict(target->doc),
-		    BAD_CAST value, -1);
-	    xmlFree(value);
-	} else
-	    txtNode->content = value;
-	copy->children = txtNode;
-    }
-#endif
-
     return copy;
 }
 
@@ -1993,10 +1964,6 @@ xsltCopyTree (xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 			    * Search by namespace name.
 			    * REVISIT TODO: Currently disabled.
 			    */
-#if 0
-			    ns = xmlSearchNsByHref(insert->doc,
-				insert, (*curns)->href);
-#endif
                         }
                         if (ns == NULL) {
                             /*
@@ -2931,10 +2898,6 @@ xsltApplySequenceConstructor (xsltTransformContextPtr ctxt,
                     /* Note that the XSLT namespace was already excluded
 		    * in xsltGetInheritedNsList().
 		    */
-#if 0
-		    if (xmlStrEqual(ns->href, XSLT_NAMESPACE))
-			continue;
-#endif
                     style = ctxt->style;
                     while (style != NULL) {
                         if (style->nsAliases != NULL)
@@ -4905,20 +4868,6 @@ xsltApplyTemplates (xsltTransformContextPtr ctxt, xmlNodePtr node,
 	* when the Result Tree Fragment is freed.
 	*
 	*/
-#if 0
-	if ((ctxt->nbKeys > 0) &&
-	    (xmlNodeSetGetNodeNr(list) != 0) &&
-	    (xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0)) != NULL) &&
-	    XSLT_IS_RES_TREE_FRAG(xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0))))
-	{
-	    /*
-	    * NOTE that it's also OK if @effectiveDocInfo will be
-	    * set to NULL.
-	    */
-	    isRTF = 1;
-	    effectiveDocInfo = xmlDocGetPrivate(xmlNodeGetDoc(xmlNodeSetGetNodeEntry(list, 0)));
-	}
-#endif
     } else {
         /*
 	 * Build an XPath node set with the children

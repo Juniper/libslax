@@ -747,13 +747,6 @@ exsltDateCurrent (void)
     gmTm = *tb;
 #endif
     ret->tz_flag = 0;
-#if 0
-    ret->tzo = (((ret->day * 1440) +
-                 (ret->hour * 60) +
-                  ret->min) -
-                ((gmTm.tm_mday * 1440) + (gmTm.tm_hour * 60) +
-                  gmTm.tm_min));
-#endif
     local_s = localTm.tm_hour * SECS_PER_HOUR + localTm.tm_min * SECS_PER_MIN
         + localTm.tm_sec;
 

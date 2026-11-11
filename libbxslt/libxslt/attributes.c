@@ -964,26 +964,6 @@ xsltAttribute (xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     */
     ns = NULL;
 
-#if 0
-    if (0) {
-	/*
-	* OPTIMIZE TODO: How do we know if we are adding to a
-	*  fragment or to the result tree?
-	*
-	* If we are adding to a result tree fragment (i.e., not to the
-	* actual result tree), we'll don't bother searching for the
-	* ns-decl, but just store it in the dummy-doc of the result
-	* tree fragment.
-	*/
-	if (nsName != NULL) {
-	    /*
-	    * TODO: Get the doc of @targetElem.
-	    */
-	    ns = xsltTreeAcquireStoredNs(some doc, nsName, prefix);
-	}
-    }
-#endif
-
     if (nsName != NULL) {
         /*
 	* Something about ns-prefixes:

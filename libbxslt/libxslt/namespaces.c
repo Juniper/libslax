@@ -403,11 +403,6 @@ xsltGetSpecialNamespace (xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 	    *  the old way was use xmlSearchNsByHref() and to let change
 	    *  the prefix.
 	    */
-#if 0
-	    ns = xmlSearchNsByHref(xmlNodeGetDoc(target), target, nsName);
-	    if (ns != NULL)
-		return(ns);
-#endif
         }
         /*
 	* Create the ns-decl on the current result element.
@@ -507,19 +502,6 @@ xsltGetNamespace (xsltTransformContextPtr ctxt, xmlNodePtr cur, xmlNsPtr ns,
 
         if (URI == UNDEFINED_DEFAULT_NS) {
             return xsltGetSpecialNamespace(ctxt, cur, NULL, NULL, out);
-#if 0
-	    /*
-	    * TODO: Removed, since wrong. If there was no default
-	    * namespace in the stylesheet then this must resolve to
-	    * the NULL namespace.
-	    */
-	    xmlNsPtr dflt;
-	    dflt = xmlSearchNs(xmlNodeGetDoc(cur), cur, NULL);
-	    if (dflt != NULL)
-		URI = xmlNsGetHref(dflt);
-	    else
-		return NULL;
-#endif
         } else if (URI == NULL)
             URI = xmlNsGetHref(ns);
 
