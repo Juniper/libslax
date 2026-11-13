@@ -40,6 +40,13 @@ LT_INIT([dlopen shared])
 LT_LIB_M
 
 AC_PATH_PROG(BASENAME, basename, /usr/bin/basename)
+
+dnl Not AC_PATH_PROG(BASH, ...): when configure runs under bash,
+dnl BASH is already set (to the running shell, e.g. /bin/sh on
+dnl macOS), so the search is skipped and the wrong path is used.
+AC_PATH_PROG(BASH_PATH, bash, /bin/bash)
+AC_SUBST([BASH], [$BASH_PATH])
+
 AC_PATH_PROG(BEAR, bear, [no])
 AC_PATH_PROG(BISON, bison, /usr/bin/bison)
 AC_PATH_PROG(CAT, cat, /bin/cat)
