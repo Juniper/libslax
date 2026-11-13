@@ -34,10 +34,12 @@ EXTRA_DIST = \
     INSTALL.md \
     packaging/rpm/libslax.spec
 
-.PHONY: test tests
+CLEANFILES =
 
-test tests:
-	@(cd tests ; ${MAKE} test)
+include ${top_srcdir}/tests/report.mk
+
+tests-run:
+	@(cd tests ; REPORT_PATH="$${REPORT_PATH}tests/" ${MAKE} tests)
 
 errors:
 	@(cd tests/errors ; ${MAKE} errors)
