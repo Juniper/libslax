@@ -37,6 +37,9 @@ SRUN = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --run --indent --exslt
 # Remove the line numbers that libxslt emits, which breaks our tests
 CLEANLINES = sed -i.bak 's/\(Unimplemented block at\).*\(preproc.c\):.*/\1 \2/'
 
+CLEANFILES =
+
+include ${top_srcdir}/tests/report.mk
 CLEANDIRS = out
 
 # For MacOS debugging.  Docs are:
@@ -68,26 +71,26 @@ scribble:
 TEST_ONE = \
  base=`${BASENAME} $$test .slax` ; \
  ${S2X} ${srcdir}/$$test out/$$base.xsl ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.xsl out/$$base.xsl ${S2O} ; \
+ ${CHECK_DIFF} ${srcdir}/saved/$$base.xsl out/$$base.xsl ; \
  ${X2S} out/$$base.xsl out/$$base.slax2 ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.slax2 out/$$base.slax2 ${S2O} ; \
+ ${CHECK_DIFF} ${srcdir}/saved/$$base.slax2 out/$$base.slax2 ; \
  ${SRUN} ${srcdir}/$$test ${srcdir}/$$data \
    > out/$$base.out 2> out/$$base.err ; \
  ${CLEANLINES} out/$$base.err ; \
- ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
- ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
+ ${CHECK_DIFFS} ${srcdir}/saved/$$base out/$$base
 
 TEST_TWO = \
  ${F13} out/$$base.slax2 out/$$base.slax3 ; \
  ${F12} out/$$base.slax3 out/$$base.slax4 ; \
  ${F13} out/$$base.slax4 out/$$base.slax5 ; \
- ${DIFF} -Nu out/$$base.slax3 out/$$base.slax5 ${S2O}
+ ${DIFF} out/$$base.slax3 out/$$base.slax5 \
+   || { echo "FAIL: round-trip mismatch $$base" ; \
+        ${REPORT_RECORD} out/$$base.slax5 \
+            "round-trip mismatch (slax3 vs slax5)" ; }
 
-SH_OPTS= :
-
-test tests: ${SLAXPROC}
+tests-run: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@(${SH_OPTS} ; for data in ${TEST_XML} ; do \
+	-@(for data in ${TEST_XML} ; do \
 	    basedata=`${BASENAME} $$data .xml` ; \
 	    cases=`cd ${srcdir} ; echo $${basedata}-*.slax`; \
 	    (for test in $$cases ; do \

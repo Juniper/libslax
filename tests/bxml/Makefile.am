@@ -109,13 +109,12 @@ runtests: check
 
 S2O = | ${SED} '1,/@@/d'
 
-test tests:
+tests-run:
 	@${MKDIR} -p out
 	-@(for base in check; do \
 	    echo "... bxml ... $$base ..." ; \
 	    $(MAKE) $$base > out/check.out 2> out/check.err ; \
-	    ${DIFF} -Nu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
-	    ${DIFF} -Nu ${srcdir}/saved/$$base.err out/$$base.err ${S2O} ; \
+	    ${CHECK_DIFFS} ${srcdir}/saved/$$base out/$$base ; \
 	done);
 
 accept:
@@ -133,6 +132,8 @@ check-valgrind valgrind:
 
 CLEANFILES = missing.lst runsuite.log runxmlconf.log test.out \
 	     *.gcda *.gcno *.res test result
+
+include ${top_srcdir}/tests/report.mk
 
 dist-hook:
 	(cd $(srcdir) ; tar -cf - --exclude .git test result) | (cd $(distdir); tar xf -)

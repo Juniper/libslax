@@ -69,11 +69,9 @@ check-local:
 
 S2O = | ${SED} '1,/@@/d'
 
-SHOW_DIFFS = \
- ${DIFF} -Nbu ${srcdir}/saved/$$file.out out/$$file.out ${S2O} ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$file.err out/$$file.err ${S2O}
+SHOW_DIFFS = ${CHECK_DIFFS} ${srcdir}/saved/$$file out/$$file
 
-test tests: work-links mkdir-out test-check test-multiple
+tests-run: work-links mkdir-out test-check test-multiple
 
 mkdir-out:
 	@${MKDIR_P} out
@@ -122,6 +120,10 @@ accept-results:
 
 docbook_tests:
 	@(cd docbook ; $(MAKE) full)
+
+CLEANFILES =
+
+include ${top_srcdir}/tests/report.mk
 
 dist-hook:
 	cp -a $(srcdir)/REC $(distdir)

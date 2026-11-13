@@ -54,7 +54,7 @@ scribble:
 	@echo '## Running the regression tests under MallocPreScribble'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
-test tests: ${SLAXPROC} main-tests other-tests
+tests-run: ${SLAXPROC} main-tests other-tests
 
 main-tests:
 	@${MKDIR} -p out
@@ -62,9 +62,9 @@ main-tests:
 	  echo "... $$test ..."; \
 	  name=`${BASENAME} $$test .slax` ; \
 	  ${S2X} ${srcdir}/$$test out/$$name.xsl ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.xsl out/$$name.xsl ${S2O} ; \
+	  ${CHECK_DIFF} ${srcdir}/$$name.xsl out/$$name.xsl ; \
 	  ${X2S} out/$$name.xsl out/$$name.slax2 ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.slax2 out/$$name.slax2 ${S2O} ; \
+	  ${CHECK_DIFF} ${srcdir}/$$name.slax2 out/$$name.slax2 ; \
 	done)
 
 other-tests: ${SLAXPROC}
@@ -73,7 +73,7 @@ other-tests: ${SLAXPROC}
 	  echo "... $$test ..."; \
 	  name=`${BASENAME} $$test .slax` ; \
 	  ${SDUMP} ${srcdir}/$$test > out/$$name.out 2>&1 ; \
-	  ${DIFF} -Nbu ${srcdir}/$$name.out out/$$name.out ${S2O} ; \
+	  ${CHECK_DIFF} ${srcdir}/$$name.out out/$$name.out ; \
 	done)
 
 accept:
@@ -86,6 +86,10 @@ accept:
 	  name=`${BASENAME} $$test .slax` ; \
 	  ${CP} out/$$name.out ${srcdir}/$$name.out ; \
 	done)
+
+CLEANFILES =
+
+include ${top_srcdir}/tests/report.mk
 
 clean-local:
 	${RM} -fr out

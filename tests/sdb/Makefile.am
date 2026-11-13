@@ -66,6 +66,9 @@ CLEANCALLGRAPH = ${PERL} ${srcdir}/normalize-callgraph.pl
 CLEANFLAMEGRAPH = sed -i.bak -E 's/ [0-9]+$$/ TIME/'
 
 CLEANDIRS = out
+CLEANFILES =
+
+include ${top_srcdir}/tests/report.mk
 
 all:
 
@@ -87,25 +90,26 @@ TEST_ONE = \
  cmd=${srcdir}/$$base.cmd ; \
  if test -f $$cmd ; then \
    ${SDB} ${srcdir}/$$test $$data < $$cmd > out/$$base.out 2> out/$$base.err ; \
+   rc=$$? ; \
    if test -f out/$$base.prof ; then \
      case $$base in \
        profile-flamegraph) ${CLEANFLAMEGRAPH} out/$$base.prof ;; \
        *) ${CLEANCALLGRAPH} out/$$base.prof ;; \
      esac ; \
-     ${DIFF} -Nbu ${srcdir}/saved/$$base.prof out/$$base.prof ${S2O} ; \
+     ${CHECK_DIFF} ${srcdir}/saved/$$base.prof out/$$base.prof ; \
    fi ; \
  else \
    ${SLAXPROC} --profile out/$$base.prof --run ${srcdir}/$$test $$data \
      > out/$$base.out 2> out/$$base.err ; \
+   rc=$$? ; \
    ${CLEANPROFILE} out/$$base.prof ; \
-   ${DIFF} -Nbu ${srcdir}/saved/$$base.prof out/$$base.prof ${S2O} ; \
+   ${CHECK_DIFF} ${srcdir}/saved/$$base.prof out/$$base.prof ; \
  fi ; \
  ${CLEANPROFILE} out/$$base.err ; \
  ${CLEANADDR} out/$$base.err ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
+ ${CHECK_DIFFS} ${srcdir}/saved/$$base out/$$base $$rc
 
-test tests: ${SLAXPROC}
+tests-run: ${SLAXPROC}
 	@${MKDIR} -p out
 	-@${DEB} (for test in ${TEST_CASES} ; do \
 	    echo "... $$test ..."; \

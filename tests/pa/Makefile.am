@@ -58,8 +58,6 @@ EXTRA_DIST = \
 
 S2O = | ${SED} '1,/@@/d'
 
-SH_OPTS=
-
 all:
 
 valgrind:
@@ -90,20 +88,22 @@ TEST_FORMATS = T XP JP HP X J H HIPx
 
 RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
-test tests: ${bin_PROGRAMS}
+tests-run: ${bin_PROGRAMS}
 	@${MKDIR} -p out
-	@sh ${SH_OPTS} ${RUN_TESTS} run ${TEST_FILES}
+	@${BASH} ${RUN_TESTS} run ${TEST_FILES}
 
 one:
 
 accept:
 	@${MKDIR} -p ${srcdir}/saved
-	@sh ${SH_OPTS} ${RUN_TESTS} accept ${TEST_FILES}
+	@${BASH} ${RUN_TESTS} accept ${TEST_FILES}
 
 .c.test:
 	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -o $@ $<
 
 CLEANFILES = ${TEST_CASES:.c=.test}
+
+include ${top_srcdir}/tests/report.mk
 CLEANDIRS = out
 
 clean-local:

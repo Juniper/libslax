@@ -362,15 +362,16 @@ scribble:
 	@echo '## Running the regression tests under MallocPreScribble'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
-SH_OPTS=
-
 RUN_TESTS = ${srcdir}/../run-tests.sh -d ${srcdir}
 
+CLEANFILES =
 
-test tests: ${SLAXPROC} copy-files
+include ${top_srcdir}/tests/report.mk
+
+tests-run: ${SLAXPROC} copy-files
 	@SLAXPROC=${SLAXPROC} CHECKER="${CHECKER}" SPDEBUG="${SPDEBUG}" \
 	    WIDTH=${WIDTH} TEST_VERSION=${TEST_VERSION} TESTDIR=${testdir} \
-	    sh ${SH_OPTS} ${RUN_TESTS} run-reuse ${TEST_CASES}
+	    ${BASH} ${RUN_TESTS} run-reuse ${TEST_CASES}
 
 COPY_FILES= \
 documents/fragment2.xml \
@@ -428,7 +429,7 @@ accept-old:
 ACCEPT_CASES = ${TEST_CASES}
 
 accept:
-	@sh ${SH_OPTS} ${RUN_TESTS} accept-reuse ${ACCEPT_CASES}
+	@${BASH} ${RUN_TESTS} accept-reuse ${ACCEPT_CASES}
 
 test-input:
 	@echo TEST_CASES_WITH_INPUT =

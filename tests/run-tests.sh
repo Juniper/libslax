@@ -48,6 +48,102 @@ Exists () {
     fi
 }
 
+# Report verbs, usable from any Makefile.am (see tests/report.mk):
+#   check-diff SAVED OUT
+#   check-diffs SAVED_BASE OUT_BASE [STATUS]
+#   record PATH [REASON ...]
+#   report-start
+#   report-finish
+
+record () {
+    local path="$1" ; shift
+
+    if [ -z "${REPORT_FILE}" ]; then
+        return 0
+    fi
+
+    if [ $# -gt 0 ]; then
+        ${ECHO} "${REPORT_PATH}${path}: $*" >> "${REPORT_FILE}"
+    else
+        ${ECHO} "${REPORT_PATH}${path}" >> "${REPORT_FILE}"
+    fi
+}
+
+check_diff () {
+    local saved="$1"
+    local out="$2"
+    local output rc
+
+    if [ "$DOC" = doc ]; then
+        ${ECHO} "diff -Nu $saved $out | ${S2O}"
+        return 0
+    fi
+
+    output=`diff -Nu "$saved" "$out"`
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        if [ ! -z "$output" ]; then
+            printf '%s\n' "$output" | eval "${S2O}"
+        fi
+        record "$out"
+    fi
+}
+
+check_status () {
+    local status="$1"
+    local out="$2"
+
+    case "$status" in
+    ''|*[!0-9]*)
+        return 0
+        ;;
+    esac
+
+    if [ "$status" -gt 128 ]; then
+        ${ECHO} "*** $out: killed by signal `expr $status - 128`"
+        record "$out" "killed by signal `expr $status - 128`"
+    elif [ "$status" -ge 126 ]; then
+        ${ECHO} "*** $out: could not run (status $status)"
+        record "$out" "could not run (status $status)"
+    fi
+}
+
+check_diffs () {
+    check_diff "$1.out" "$2.out"
+    check_diff "$1.err" "$2.err"
+    if [ $# -gt 2 ]; then
+        check_status "$3" "$2"
+    fi
+}
+
+report_start () {
+    if [ -z "${REPORT_FILE}" ]; then
+        ${ECHO} "report-start: REPORT_FILE is not set" 1>&2
+        return 0
+    fi
+
+    cp /dev/null "${REPORT_FILE}"
+}
+
+report_finish () {
+    local count
+
+    if [ -z "${REPORT_FILE}" ]; then
+        ${ECHO} "report-finish: REPORT_FILE is not set" 1>&2
+        return 0
+    fi
+
+    if [ -s "${REPORT_FILE}" ]; then
+        count=`wc -l < "${REPORT_FILE}" | tr -d ' '`
+        ${ECHO} ""
+        ${ECHO} "*** ${count} test failure(s), listed in" \
+            "`basename ${REPORT_FILE}`:"
+        cat "${REPORT_FILE}"
+    else
+        ${ECHO} "--- no test failures ---"
+    fi
+}
+
 run_tests () {
     oname=$name.$ds
     out=out/$oname
@@ -55,8 +151,7 @@ run_tests () {
     run "./$test $data input $input > $out.out 2> $out.err"
     ${ECHO} "    done"
 
-    run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
-    run "diff -Nu ${SRCDIR}/saved/$oname.err out/$oname.err | ${S2O}"
+    check_diffs "${SRCDIR}/saved/$oname" "out/$oname"
 }
 
 run_one_test () {
@@ -66,8 +161,7 @@ run_one_test () {
     run "./$test $data </dev/null > $out.out 2> $out.err"
     ${ECHO} "    done"
 
-    run "diff -Nu ${SRCDIR}/saved/$oname.out out/$oname.out | ${S2O}"
-    run "diff -Nu ${SRCDIR}/saved/$oname.err out/$oname.err | ${S2O}"
+    check_diffs "${SRCDIR}/saved/$oname" "out/$oname"
 }
 
 do_run_tests () {
@@ -195,7 +289,15 @@ reuse_test_two () {
     run "${F13} out/$dir/$base.slax out/$dir/$base.slax3"
     run "${F12} out/$dir/$base.slax3 out/$dir/$base.slax4"
     run "${F13} out/$dir/$base.slax4 out/$dir/$base.slax5"
-    run "diff -Nu out/$dir/$base.slax3 out/$dir/$base.slax5 | ${S2O}"
+
+    output=`diff -Nu out/$dir/$base.slax3 out/$dir/$base.slax5`
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        if [ ! -z "$output" ]; then
+            printf '%s\n' "$output" | eval "${S2O}"
+        fi
+        record "out/$dir/$base.slax5" "round-trip mismatch (slax3 vs slax5)"
+    fi
 }
 
 run_reuse_test () {
@@ -204,8 +306,8 @@ run_reuse_test () {
 
     run "${X2S} ${TESTDIR}/$test out/$dir/$base.slax"
     run "${S2X} out/$dir/$base.slax out/$dir/$base.xsl2"
-    run "diff -Nu ${SRCDIR}/saved/$dir/$base.slax out/$dir/$base.slax | ${S2O}"
-    run "diff -Nu ${SRCDIR}/saved/$dir/$base.xsl2 out/$dir/$base.xsl2 | ${S2O}"
+    check_diff "${SRCDIR}/saved/$dir/$base.slax" "out/$dir/$base.slax"
+    check_diff "${SRCDIR}/saved/$dir/$base.xsl2" "out/$dir/$base.xsl2"
 
     reuse_test_two
 
@@ -214,16 +316,12 @@ run_reuse_test () {
         run "${SRUN} out/$dir/$base.slax $input > out/$dir/$base.out 2> out/$dir/$base.err"
 
         if [ -f ${SRCDIR}/saved/$dir/$base.out ]; then
-            run "diff -Nu ${SRCDIR}/saved/$dir/$base.out out/$dir/$base.out | ${S2O}"
+            baseline=${SRCDIR}/saved/$dir/$base
         else
-            run "diff -Nu ${TESTDIR}/$dir/$base.out out/$dir/$base.out | ${S2O}"
+            baseline=${TESTDIR}/$dir/$base
         fi
 
-        if [ -f ${SRCDIR}/saved/$dir/$base.err ]; then
-            run "diff -Nu ${SRCDIR}/saved/$dir/$base.err out/$dir/$base.err | ${S2O}"
-        else
-            run "diff -Nu ${TESTDIR}/$dir/$base.err out/$dir/$base.err | ${S2O}"
-        fi
+        check_diffs "$baseline" "out/$dir/$base"
     fi
 }
 
@@ -304,6 +402,26 @@ case $verb in
     accept-reuse)
         TESTS="$@"
         do_accept_reuse
+    ;;
+
+    check-diff)
+        check_diff "$@"
+    ;;
+
+    check-diffs)
+        check_diffs "$@"
+    ;;
+
+    record)
+        record "$@"
+    ;;
+
+    report-start)
+        report_start
+    ;;
+
+    report-finish)
+        report_finish
     ;;
 
     *)

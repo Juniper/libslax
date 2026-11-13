@@ -21,10 +21,15 @@ if WITH_SLAX_DEBUGGER
 SUBDIRS += sdb
 endif
 
-test tests:
+CLEANFILES =
+
+include ${top_srcdir}/tests/report.mk
+
+tests-run:
 	@(cur=`pwd` ; for dir in $(SUBDIRS) ; do \
 		cd $$dir ; \
-		$(MAKE) tests ; \
+		REPORT_PATH="$${REPORT_PATH}$$dir/" $(MAKE) tests \
+		    || ${REPORT_RECORD} $$dir "make tests failed" ; \
 		cd $$cur ; \
 	done)
 
@@ -47,4 +52,4 @@ scribble:
 	@echo '## Go get a cup of coffee it is gonna take a while ...'
 	${MAKE} CHECKER="${SCRIBBLE}" tests
 
-EXTRA_DIST = run-tests.sh
+EXTRA_DIST = run-tests.sh report.mk

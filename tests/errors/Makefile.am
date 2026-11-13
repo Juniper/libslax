@@ -19,6 +19,9 @@ S2O = | ${SED} '1,/@@/d'
 SPDEBUG=
 S2E = ${CHECKER} ${SLAXPROC} ${SPDEBUG} --check
 
+TEST_PREFIX = not-read-
+include ${top_srcdir}/tests/report.mk
+
 CLEANDIRS = out
 
 all:
@@ -41,8 +44,7 @@ scribble:
 TEST_ONE = \
  base=`${BASENAME} $$test .slax` ; \
  ${S2E} ${srcdir}/$$test > out/$$base.out 2> out/$$base.err ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.out out/$$base.out ${S2O} ; \
- ${DIFF} -Nbu ${srcdir}/saved/$$base.err out/$$base.err ${S2O}
+ ${CHECK_DIFFS} ${srcdir}/saved/$$base out/$$base
 
 test tests:
 	-@echo "... (skipping errors) ...";
