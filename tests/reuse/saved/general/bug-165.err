@@ -1,5 +1,3 @@
-runtime error: file out/general/bug-165.slax line 4 element value-of
-Variable 'pStyle' has not been declared.
-XPath error : Undefined variable: pStyle
-runtime error: file out/general/bug-165.slax line 4 element value-of
-XPath evaluation returned no result.
+bug-165.slax:4:48: fatal error: the variable '$pStyle' is undefined
+4 |     expr preceding-sibling::p[ !(pPr/pStyle == $pStyle)][1]/preceding-sibling::p/pPr/pStyle;
+  |                                                ^
