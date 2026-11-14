@@ -287,6 +287,11 @@ typedef struct pin_rulebook_s {
 				     prb_root_rule; null means "any name"
 				     (plain match="/") */
     pin_apply_id_t prb_apply_list; /* Head of all apply-entry linked list */
+    void *prb_stream_fe;	  /* Compile-time only: the xsl:for-each (an
+				     xmlNodePtr) chosen to stream in the match
+				     template being compiled, or NULL */
+    pin_op_id_t prb_stream_ops;	  /* Compile-time only: its per-item body, as
+				     ops (see PBMODE_FOR_EACH_STREAM) */
     pin_named_template_t *prb_named;      /* Array of named templates */
     uint32_t              prb_named_count;
     uint32_t              prb_named_size;
