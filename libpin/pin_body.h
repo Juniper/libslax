@@ -46,7 +46,9 @@ typedef uint8_t pin_body_instr_type_t;
 #define BIA_JUMP        8   /* Unconditional fall-through join point (follows bi_next) */
 #define BIA_IF          9   /* Conditional: if true, follow bi_next; if false, bi_else */
 #define BIA_GOTO       10   /* Unconditional jump to bi_else (used for else-branch skip) */
-#define BIA_FOR_EACH   11   /* Iterate nodes: bi_select=path, bi_text=sort-spec, bi_else=body-head */
+#define BIA_FOR_EACH   11   /* Iterate nodes: bi_select=path, bi_text=sort-spec, bi_else=body-head,
+				bi_filter_idx=atom of the body's op sequence to stream
+				(0 = buffer; see PBMODE_FOR_EACH_STREAM) */
 #define BIA_IF_POSITION 12  /* position()-based test: bi_filter_idx=N, bi_tag.pnid_atom=PCMP_* */
 #define BIA_VARIABLE   13   /* xsl:variable: bi_tag=var-name, bi_select=select-expr */
 #define BIA_ELEMENT_OPEN  14  /* xsl:element open: bi_select=name-AVT, bi_text=attrs-AVT */
@@ -118,6 +120,13 @@ typedef uint8_t pin_body_mode_t;
 				    ambiguous (xo_filter status PRED); defer the rule
 				    decision until the child closes and its predicate,
 				    if any, force-resolves against the retained subtree */
+#define PBMODE_FOR_EACH_STREAM 7 /* Streaming BIA_FOR_EACH: the matched element is not
+				    retained; children not named by the select are
+				    dropped, and each one that is enters
+				    PBMODE_FOR_EACH_ITEM */
+#define PBMODE_FOR_EACH_ITEM 8   /* Retaining one streaming for-each item; the body runs
+				    against it when it closes, then back to
+				    PBMODE_FOR_EACH_STREAM */
 
 /*
  * One frame on the body execution stack.
@@ -138,7 +147,15 @@ typedef struct pin_body_frame_s {
 					    document child, not the context node, so
 					    relative BIA_FOR_EACH selects must navigate
 					    from the document root instead */
-    int pbf_depth_counter;              /* PBMODE_VALUE_OF: nesting depth of child elements */
+    int pbf_depth_counter;              /* PBMODE_VALUE_OF, PBMODE_FOR_EACH_STREAM: nesting
+					    depth of child elements */
+    uint32_t pbf_stream_ops;            /* PBMODE_FOR_EACH_STREAM/ITEM: atom of the
+					    op sequence run for each item */
+    pin_name_id_t pbf_stream_name;      /* PBMODE_FOR_EACH_STREAM: element name selected */
+    char *pbf_attribs_owned;            /* Heap copy of pbf_match_attribs, made when the
+					    body outlives the open event that supplied
+					    them (a streaming for-each); freed with the
+					    frame */
     pin_name_id_t pbf_apply_mode_id;    /* PBMODE_APPLY: mode for child dispatch (null = default) */
     uint32_t pbf_apply_fallback_rid;    /* PBMODE_APPLY_WAIT: rule atom to use if the pending
 					    predicate resolves false (PA_NULL_ATOM = discard) */
