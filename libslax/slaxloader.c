@@ -136,15 +136,33 @@ slaxRelocateSort (slax_data_t *sdp)
         xmlChar *sel = xmlGetProp(parent, (const xmlChar *) ATT_SELECT);
 
 	if (sel && strncmp((char *) sel, "$slax-dot-", 10) == 0) {
+	    xmlNodePtr outer = xmlNodeGetParent(parent);
+	    xmlNodePtr last = NULL, cur;
+
 	    slaxLog("slaxRelocateSort: %s:%ld: must relocate",
 		      xmlNodeGetName(nodep), xmlGetLineNo(nodep));
+
 	    /*
-	     * "parent" is the inner for-each loop, and "parent->parent"
-	     * is the outer for-each loop.  Add the sort as the first
-	     * child of the outer loop.  xmlAddPrevSibling will unlink
-	     * nodep from its current location.
+	     * "parent" is the inner for-each loop, and "outer" is the
+	     * outer for-each loop.  Multiple sorts relocate one at a
+	     * time, in source order, so each one has to land after
+	     * the sorts already relocated, not before all of them, or
+	     * the sort-key priority ends up reversed.  Find the last
+	     * "sort" child the outer loop already has, and insert
+	     * after it; with no prior sort, fall back to inserting as
+	     * the first child.  Either Add function unlinks nodep
+	     * from its current location.
 	     */
-	    xmlAddPrevSibling(xmlNodeGetChildren(xmlNodeGetParent(parent)), nodep);
+	    for (cur = xmlNodeGetChildren(outer); cur;
+			cur = xmlNodeGetNext(cur)) {
+		if (slaxNodeIsXsl(cur, ELT_SORT))
+		    last = cur;
+	    }
+
+	    if (last)
+		xmlAddNextSibling(last, nodep);
+	    else
+		xmlAddPrevSibling(xmlNodeGetChildren(outer), nodep);
 	}
 
 	xmlFreeAndEasy(sel);
