@@ -550,8 +550,8 @@ xsltSortComp (xsltStylesheetPtr style, xmlNodePtr inst)
             comp->lower_first = 1;
         else {
             xsltTransformError(NULL, style, inst,
-                               "xsltSortComp: invalid value %s for order\n",
-                               comp->order);
+                               "xsltSortComp: invalid value %s for case-order\n",
+                               comp->case_order);
             comp->lower_first = 0; /* use default */
             if (style != NULL)
                 style->warnings++;
