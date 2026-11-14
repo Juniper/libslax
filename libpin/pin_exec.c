@@ -954,23 +954,122 @@ pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
 }
 
 /*
+ * Parse val as an XPath number (optional whitespace, optional '-',
+ * digits with an optional '.' fraction, and, as libxslt allows, an
+ * optional exponent).  Returns false for anything else, which
+ * XPath's number() turns into NaN.
+ */
+static bool
+pin_sort_parse_number (const char *val, double *dp)
+{
+    const char *p = val;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+        p += 1;
+
+    const char *start = p;
+    if (*p == '-')
+        p += 1;
+
+    int digits = 0;
+    while (*p >= '0' && *p <= '9') {
+        digits += 1;
+        p += 1;
+    }
+    if (*p == '.') {
+        p += 1;
+        while (*p >= '0' && *p <= '9') {
+            digits += 1;
+            p += 1;
+        }
+    }
+    if (digits == 0)
+        return false;
+
+    /* libxslt also accepts an exponent ("1e3"); match it */
+    if (*p == 'e' || *p == 'E') {
+        const char *q = p + 1;
+        if (*q == '+' || *q == '-')
+            q += 1;
+        if (*q >= '0' && *q <= '9') {
+            while (*q >= '0' && *q <= '9')
+                q += 1;
+            p = q;
+        }
+    }
+
+    const char *end = p;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+        p += 1;
+    if (*p != '\0')
+        return false;
+
+    char nbuf[end - start + 1];
+    memcpy(nbuf, start, end - start);
+    nbuf[end - start] = '\0';
+    *dp = strtod(nbuf, NULL);
+    return true;
+}
+
+/*
+ * Encode a numeric sort field so that byte order equals numeric order:
+ * map the IEEE double to a uint64 (flip all bits if negative, else
+ * flip the sign bit) and write it as 16 uppercase hex digits.  A
+ * non-number (NaN) is written as an empty field, so it sorts before
+ * every number, as XSLT 1.0 requires for ascending order.
+ */
+static size_t
+pin_sort_encode_number (char *keybuf, size_t keycap, size_t pos,
+                        const char *val)
+{
+    double d;
+    if (!pin_sort_parse_number(val, &d))
+        return pos;
+
+    if (d == 0)
+        d = 0;                  /* Fold -0 into +0 */
+
+    uint64_t bits;
+    memcpy(&bits, &d, sizeof(bits));
+    if (bits & (1ULL << 63))
+        bits = ~bits;
+    else
+        bits ^= (1ULL << 63);
+
+    static const char hex[] = "0123456789ABCDEF";
+    for (int shift = 60; shift >= 0 && pos < keycap; shift -= 4)
+        keybuf[pos++] = hex[(bits >> shift) & 0xf];
+
+    return pos;
+}
+
+/*
  * Build the sort key for child element child_id using the sort-key spec
- * string spec.  Writes the encoded, NUL-separated key into keybuf[keycap].
- * Returns the total key length in bytes.
+ * string spec.  Each newline-separated key may carry leading flags:
+ * '-' (descending), '^' (upper-first) and '#' (data-type="number").
+ * Writes the encoded, NUL-separated key into keybuf[keycap], followed
+ * by the four-byte big-endian ordinal seq, so nodes with equal keys
+ * stay distinct in the tree and keep document order.  When the
+ * primary key is descending the tree is walked backwards, so seq is
+ * inverted to keep ties in document order.  Returns the total key
+ * length in bytes.
  */
 uint16_t
 pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
-                        const char *spec,
+                        const char *spec, uint32_t seq,
                         char *keybuf, size_t keycap)
 {
     size_t pos = 0;
     const char *p = spec;
+    bool primary_desc = (spec && *spec == '-');
 
     while (p && *p) {
         bool upper = false;
-        while (*p == '-' || *p == '^') {
+        bool number = false;
+        while (*p == '-' || *p == '^' || *p == '#') {
             if (*p == '^')
                 upper = true;
+            else if (*p == '#')
+                number = true;
             p += 1;
         }
 
@@ -980,7 +1079,10 @@ pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
         char valbuf[256];
         pin_for_each_eval_expr(pwp, child_id, p, elen, valbuf, sizeof(valbuf));
 
-        pos = pin_stree_encode_key(keybuf, keycap, pos, valbuf, upper);
+        if (number)
+            pos = pin_sort_encode_number(keybuf, keycap, pos, valbuf);
+        else
+            pos = pin_stree_encode_key(keybuf, keycap, pos, valbuf, upper);
 
         if (pos < keycap)
             keybuf[pos++] = '\0';
@@ -988,8 +1090,11 @@ pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
         p = end ? end + 1 : NULL;
     }
 
-    if (pos < keycap)
-        keybuf[pos] = '\0';
+    if (primary_desc)
+        seq = ~seq;
+    for (int shift = 24; shift >= 0 && pos < keycap; shift -= 8)
+        keybuf[pos++] = (char) ((seq >> shift) & 0xff);
+
     return (uint16_t) pos;
 }
 
@@ -1011,7 +1116,7 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
     bool primary_desc = false;
     if (has_sort) {
         const char *sp = spec;
-        while (*sp == '-' || *sp == '^') {
+        while (*sp == '-' || *sp == '^' || *sp == '#') {
             if (*sp == '-') primary_desc = true;
             sp += 1;
         }
@@ -1022,35 +1127,72 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
     pin_node_id_t *doc = NULL;
     int doc_count = 0, doc_size = 0;
 
-    pin_depth_t depth = parent->pn_depth;
-    for (pin_node_id_t cid = pin_node_child(parent);
-            !pin_node_id_is_null(cid); ) {
-        pin_node_t *child = pin_node_addr(pwp, cid);
-        if (child == NULL || child->pn_depth <= depth)
-            break;
-        if (child->pn_type == PIN_TYPE_ELT
-                && pin_name_id_equal(child->pn_name, opp->po_name)) {
-            if (has_sort && tree) {
-                char keybuf[512];
-                uint16_t klen = pin_for_each_build_key(pwp, cid, spec,
-                                                       keybuf, sizeof(keybuf));
-
-		/* XXX deal with failure (klen < 0?) */
-                pin_stree_insert(tree, keybuf, klen, cid);
-            } else {
-                if (doc_count >= doc_size) {
-                    int newsize = doc_size ? doc_size * 2 : 8;
-                    pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
-                    if (nd == NULL)
-                        break;
-                    doc = nd;
-                    doc_size = newsize;
-                }
-                doc[doc_count++] = cid;
-            }
-        }
-        cid = child->pn_next;
+    /*
+     * A multi-step path ("a/b/c") is collected in document order by
+     * pin_exec_collect_path(); a single step is matched directly
+     * against the context node's children below.
+     */
+    const char *path = pin_namepool_string(pwp, opp->po_name);
+    uint32_t ns_idx = UINT32_MAX;
+    if (path && strchr(path, '/') != NULL) {
+        ns_idx = pin_exec_nodeset_alloc(esp);
+        if (ns_idx != UINT32_MAX)
+            pin_exec_collect_path(pwp, esp, parent_id, path, strlen(path),
+                                  ns_idx);
     }
+
+    pin_depth_t depth = parent->pn_depth;
+    uint32_t ns_pos = 0;
+    uint32_t key_seq = 0;
+    pin_node_id_t cid = pin_node_child(parent);
+
+    for (;;) {
+        pin_node_id_t match_id;
+
+        if (ns_idx != UINT32_MAX) {
+            pin_ns_entry_t *nsp = &esp->pes_nodesets[ns_idx];
+            if (ns_pos >= nsp->pne_count)
+                break;
+            match_id = pin_node_id(nsp->pne_nodes[ns_pos]);
+            ns_pos += 1;
+        } else {
+            if (pin_node_id_is_null(cid))
+                break;
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= depth)
+                break;
+            match_id = cid;
+            cid = child->pn_next;
+            if (child->pn_type != PIN_TYPE_ELT
+                    || !pin_name_id_equal(child->pn_name, opp->po_name))
+                continue;
+        }
+
+        if (has_sort && tree) {
+            char keybuf[512];
+            uint16_t klen = pin_for_each_build_key(pwp, match_id, spec,
+                                                   key_seq, keybuf,
+                                                   sizeof(keybuf));
+            key_seq += 1;
+
+            /* XXX deal with failure (klen < 0?) */
+            pin_stree_insert(tree, keybuf, klen, match_id);
+        } else {
+            if (doc_count >= doc_size) {
+                int newsize = doc_size ? doc_size * 2 : 8;
+                pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
+                if (nd == NULL)
+                    break;
+                doc = nd;
+                doc_size = newsize;
+            }
+            doc[doc_count] = match_id;
+            doc_count += 1;
+        }
+    }
+
+    if (ns_idx != UINT32_MAX)
+        pin_exec_nodeset_free(esp, ns_idx);
 
     if (has_sort && tree) {
         pin_stree_entry_t *e;
