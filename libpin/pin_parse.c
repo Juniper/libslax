@@ -1107,6 +1107,19 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 		    pin_exec_emit_node(parsep, pwp, context_node);
 		}
 	    }
+	} else if (bfp->pbf_mode == PBMODE_FOR_EACH_ITEM
+		&& pip->pin_depth == bfp->pbf_copy_depth) {
+	    /*
+	     * A streaming for-each item has closed and its retained
+	     * subtree is complete: run the loop body's ops against it, as
+	     * op dispatch does for each node of a buffered for-each.  As
+	     * with PBMODE_APPLY_WAIT, reset the mode first, since the
+	     * body's own pin_insert_close calls land here too.
+	     */
+	    bfp->pbf_mode = PBMODE_FOR_EACH_STREAM;
+	    bfp->pbf_position += 1;
+	    pin_exec_run(&parsep->pp_exec, parsep,
+			 pin_op_id(bfp->pbf_stream_ops), context_node);
 	}
     }
 }
@@ -1317,6 +1330,8 @@ static void
 pin_body_frame_cleanup (pin_body_frame_t *bfp)
 {
     xo_buf_cleanup(&bfp->pbf_value_cache);
+    free(bfp->pbf_attribs_owned);
+    bfp->pbf_attribs_owned = NULL;
     xo_free(bfp->pbf_var_names);
     xo_free(bfp->pbf_var_values);
     bfp->pbf_var_names = NULL;
@@ -1396,6 +1411,25 @@ pin_body_avt_expand (pin_parse_t *parsep, pin_body_frame_t *bfp,
 							   expr + 1, elen - 1);
 			if (val)
 			    snprintf(valbuf, sizeof(valbuf), "%s", val);
+		    } else if (expr[0] == '@'
+			       && pin_node_id_is_null(bfp->pbf_ctx_node)) {
+			/*
+			 * {@name} outside a for-each: the context node is
+			 * the matched element, which may not be retained
+			 * (a streaming for-each), but its attribute string
+			 * is saved in the frame.
+			 */
+			char aname[128];
+			size_t vlen = 0;
+			if (elen - 1 < sizeof(aname)) {
+			    memcpy(aname, expr + 1, elen - 1);
+			    aname[elen - 1] = '\0';
+			    const char *aval = pin_body_find_attrib(
+				bfp->pbf_match_attribs, aname, &vlen);
+			    if (aval && vlen > 0)
+				snprintf(valbuf, sizeof(valbuf), "%.*s",
+					 (int) vlen, aval);
+			}
 		    } else if (!pin_node_id_is_null(bfp->pbf_ctx_node)) {
 			pin_workspace_t *pwp = pin_parse_workspace(parsep);
 			pin_exec_eval_expr_string(pwp, bfp->pbf_ctx_node,
@@ -2127,7 +2161,32 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	     *
 	     * Phase 2 (pbf_depth_counter == 1): Matched element and all its
 	     * children are now in the retained tree; execute the for-each.
+	     *
+	     * Streaming (bi_filter_idx set at compile time, for an unsorted
+	     * select of one child name): don't retain the matched element.
+	     * Switch to PBMODE_FOR_EACH_STREAM, which keeps one selected
+	     * child at a time and runs the body as each one closes.  The
+	     * PC already points past the for-each, so the matched element's
+	     * close resumes with what follows it.
 	     */
+	    if (instr->bi_filter_idx != 0 && !bfp->pbf_is_root_match) {
+		bfp->pbf_copy_depth = pip->pin_depth;
+		bfp->pbf_depth_counter = 0;
+		bfp->pbf_position = 0;
+		bfp->pbf_last = 0;
+		bfp->pbf_stream_ops = instr->bi_filter_idx;
+		bfp->pbf_stream_name = instr->bi_select;
+		/*
+		 * Instructions after the loop run at the matched element's
+		 * close, when the parser's attribute string is long gone.
+		 */
+		if (bfp->pbf_match_attribs && bfp->pbf_attribs_owned == NULL) {
+		    bfp->pbf_attribs_owned = strdup(bfp->pbf_match_attribs);
+		    bfp->pbf_match_attribs = bfp->pbf_attribs_owned;
+		}
+		bfp->pbf_mode = PBMODE_FOR_EACH_STREAM;
+		return;		/* Pause; resume on matched element CLOSE */
+	    }
 	    if (bfp->pbf_depth_counter == 0) {
 		/* Save the current output node so Phase 2 can use it as the
 		 * navigation root for absolute paths.  For /authors/author the
@@ -2209,6 +2268,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 			char keybuf[512];
 			uint16_t klen = pin_for_each_build_key(pwp, nodes[i],
 							       sort_spec,
+							       (uint32_t) i,
 							       keybuf, sizeof(keybuf));
 			pin_stree_insert(tree, keybuf, klen, nodes[i]);
 		    }
@@ -2599,6 +2659,18 @@ pin_parse (pin_parse_t *parsep)
 		}
 		psu_log("text [%.*s] (%u)", (int) len, data, type);
 		{
+		    /*
+		     * A streaming for-each drops text that isn't inside an
+		     * item: it belongs to the matched element (never opened)
+		     * or to a dropped child.
+		     */
+		    pin_body_exec_t *sbody = &pip->pin_body;
+		    if (sbody->pbe_depth > 0
+			    && sbody->pbe_stack[sbody->pbe_depth - 1].pbf_mode
+			       == PBMODE_FOR_EACH_STREAM)
+			break;
+		}
+		{
 		    uint8_t smode = parsep->pp_strip_len > 0
 				    ? parsep->pp_strip_stack[parsep->pp_strip_len - 1]
 				    : PIN_STRIP_NONE;
@@ -2912,6 +2984,60 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /*
+	     * PBMODE_FOR_EACH_STREAM bypass: a streaming for-each is reading
+	     * the matched element's children.  A direct child with the
+	     * selected name is retained (transiently) as the next item, and
+	     * PBMODE_FOR_EACH_ITEM saves its descendants.  Anything else is
+	     * dropped without touching the tree; pbf_depth_counter tracks how
+	     * deep inside a dropped child we are, as PBMODE_VALUE_OF does.
+	     */
+	    {
+		pin_body_exec_t *body = &pip->pin_body;
+		if (body->pbe_depth > 0
+			&& (body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			    == PBMODE_FOR_EACH_STREAM
+			    || body->pbe_stack[body->pbe_depth - 1].pbf_mode
+			    == PBMODE_FOR_EACH_ITEM)) {
+		    pin_body_frame_t *sbfp = &body->pbe_stack[body->pbe_depth - 1];
+		    xo_filter_t *fs_filter = pin_parse_current_filter(parsep);
+		    if (fs_filter) {
+			pin_filter_set_attribs(fs_filter, rest);
+			xo_filter_walk_open(NULL, fs_filter, localp, -1);
+		    }
+
+		    bool keep = (sbfp->pbf_mode == PBMODE_FOR_EACH_ITEM);
+		    if (!keep && sbfp->pbf_depth_counter == 0
+			    && pin_name_id_equal(name_id, sbfp->pbf_stream_name)) {
+			keep = true;
+			pin_insert_open(parsep, name_id, data, localp,
+					rest, PIA_SAVE_ATTRIB);
+			if (pip->pin_stack[pip->pin_depth].ps_node)
+			    pip->pin_stack[pip->pin_depth].ps_node->pn_flags
+				|= PNF_TRANSIENT;
+			sbfp->pbf_mode = PBMODE_FOR_EACH_ITEM;
+		    } else if (keep) {
+			pin_rule_t save_rule;
+			bzero(&save_rule, sizeof(save_rule));
+			save_rule.pr_action = PIA_SAVE_ATTRIB;
+			pin_parse_handle_rule(parsep, name_id, data, localp,
+					     rest, &save_rule);
+		    } else {
+			sbfp->pbf_depth_counter += 1;
+		    }
+
+		    if (type == PIN_TYPE_EMPTY) {
+			if (keep)
+			    pin_insert_close(parsep, data, localp);
+			else
+			    sbfp->pbf_depth_counter -= 1;
+			if (fs_filter)
+			    xo_filter_walk_close(NULL, fs_filter, localp, -1);
+		    }
+		    break;
+		}
+	    }
+
+	    /*
 	     * PBMODE_FOR_EACH_WAIT bypass: BIA_FOR_EACH is waiting for the
 	     * matched element to be fully retained before executing.  Save all
 	     * children to the tree, exactly like PBMODE_COPY.
@@ -3143,6 +3269,32 @@ pin_parse (pin_parse_t *parsep)
 			}
 			/* The matched element itself is closing */
 			vbfp->pbf_mode = PBMODE_EXEC;
+			pin_body_exec_advance(parsep);
+			break;
+		    }
+		}
+	    }
+
+	    /*
+	     * PBMODE_FOR_EACH_STREAM bypass: the close of a dropped child
+	     * just unwinds the counter.  At zero it is the matched element
+	     * itself, which was never opened, so the loop is done: resume
+	     * the body after the for-each.  (An item's close, in
+	     * PBMODE_FOR_EACH_ITEM, goes through pin_insert_close.)
+	     */
+	    {
+		pin_body_exec_t *sbody = &pip->pin_body;
+		if (sbody->pbe_depth > 0) {
+		    pin_body_frame_t *sbfp =
+			&sbody->pbe_stack[sbody->pbe_depth - 1];
+		    if (sbfp->pbf_mode == PBMODE_FOR_EACH_STREAM) {
+			if (sbfp->pbf_depth_counter > 0) {
+			    sbfp->pbf_depth_counter -= 1;
+			    break;
+			}
+			sbfp->pbf_position = 0;
+			sbfp->pbf_stream_ops = 0;
+			sbfp->pbf_mode = PBMODE_EXEC;
 			pin_body_exec_advance(parsep);
 			break;
 		    }
