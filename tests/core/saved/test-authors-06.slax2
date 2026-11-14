@@ -1,0 +1,18 @@
+version 1.2;
+
+/*
+ * Exercise multiple "sort" statements inside a "for $var in expr { }"
+ * loop (as opposed to a direct "for-each (...)"), which desugars into
+ * nested for-each loops and relocates each sort statement to the
+ * outer one.  The result must sort by name/last, then by name/first,
+ * in that priority, matching the order the sort statements are
+ * written in.
+ */
+main <out> {
+    for $a (/authors/author) {
+        sort name/last;
+        sort name/first;
+        <author last=$a/name/last first=$a/name/first>;
+    }
+    
+}
