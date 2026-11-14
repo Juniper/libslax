@@ -37,6 +37,8 @@ struct _xsltNumberData {
     int digitsPerGroup;
     int groupingCharacter;
     int groupingCharacterLen;
+    const xmlChar *lang;	/* language for alphabet selection, if any */
+    int letterValue;	/* XSLT_NUMBER_LV_* ; disambiguates 'i'/'I' */
     xmlDocPtr doc;
     xmlNodePtr node;
     struct _xsltCompMatch *countPat;
@@ -46,6 +48,19 @@ struct _xsltNumberData {
      * accelerators
      */
 };
+
+/**
+ * xsltNumberLetterValue:
+ *
+ * Values for xsltNumberData.letterValue, from xsl:number's
+ * letter-value attribute.  This only affects the 'i'/'I' format
+ * token: traditional keeps the current roman-numeral interpretation,
+ * while alphabetic switches it to the plain alphabetic sequence (the
+ * same one already used for 'a'/'A').
+ */
+#define XSLT_NUMBER_LV_DEFAULT     0
+#define XSLT_NUMBER_LV_TRADITIONAL 1
+#define XSLT_NUMBER_LV_ALPHABETIC  2
 
 /**
  * xsltFormatNumberInfo,:
