@@ -544,10 +544,16 @@ xsltNumberFormatInsertNumbers (xsltNumberDataPtr data, double *numbers,
                     xsltNumberFormatAlpha(data, buffer, number, FALSE);
                     break;
                 case 'I':
-                    xsltNumberFormatRoman(data, buffer, number, TRUE);
+                    if (data->letterValue == XSLT_NUMBER_LV_ALPHABETIC)
+                        xsltNumberFormatAlpha(data, buffer, number, TRUE);
+                    else
+                        xsltNumberFormatRoman(data, buffer, number, TRUE);
                     break;
                 case 'i':
-                    xsltNumberFormatRoman(data, buffer, number, FALSE);
+                    if (data->letterValue == XSLT_NUMBER_LV_ALPHABETIC)
+                        xsltNumberFormatAlpha(data, buffer, number, FALSE);
+                    else
+                        xsltNumberFormatRoman(data, buffer, number, FALSE);
                     break;
                 default:
                     if (IS_DIGIT_ZERO(token->token)) {
