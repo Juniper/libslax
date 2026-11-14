@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<out>
+  <author last="Poe" first="Edgar Allan" born="1809" died="1849"/>
+  <author last="Doyle" first="Arthur Conan" born="1859" died="1930"/>
+  <author last="Chesterton" first="G. K." born="1874" died="1936"/>
+  <author last="Bentley" first="E.C." born="1875" died="1956"/>
+  <author last="Wentworth" first="Patricia" born="1878" died="1961"/>
+  <author last="Biggers" first="Earl Derr" born="1884" died="1933"/>
+  <author last="Stout" first="Rex" born="1886" died="1975"/>
+  <author last="Chandler" first="Raymond" born="1888" died="1959"/>
+  <author last="Wakefield" first="H. Russell" born="1888" died="1964"/>
+  <author last="Gardner" first="Erle Stanley" born="1889" died="1970"/>
+  <author last="Christie" first="Agatha" born="1890" died="1976"/>
+  <author last="Brooks" first="Collin" born="1893" died="1959"/>
+  <author last="Sayers" first="Dorothy L." born="1893" died="1957"/>
+  <author last="Arnau" first="Frank" born="1894" died="1976"/>
+  <author last="Edogawa" first="Rampo" born="1894" died="1965"/>
+  <author last="Hammett" first="Dashiell" born="1894" died="1961"/>
+  <author last="Marsh" first="Ngaio" born="1895" died="1982"/>
+  <author last="Tey" first="Josephine" born="1896" died="1952"/>
+  <author last="Gould" first="Chester" born="1900" died="1985"/>
+  <author last="Mitchell" first="Gladys" born="1901" died="1983"/>
+  <author last="Simenon" first="Georges" born="1903" died="1989"/>
+  <author last="Allingham" first="Margery" born="1904" died="1966"/>
+  <author last="Carr" first="John Dickson" born="1905" died="1977"/>
+  <author last="Innes" first="Michael" born="1906" died="1994"/>
+  <author last="Charteris" first="Leslie" born="1907" died="1993"/>
+  <author last="Dodge" first="David" born="1910" died="1974"/>
+  <author last="Peters" first="Ellis" born="1913" died="1995"/>
+  <author last="Brackett" first="Leigh" born="1915" died="1978"/>
+  <author last="MacDonald" first="Ross" born="1915" died="1983"/>
+  <author last="MacDonald" first="John D." born="1916" died="1986"/>
+  <author last="Crispin" first="Edmund" born="1921" died="1978"/>
+  <author last="Cleeve" first="Brian" born="1921" died="2003"/>
+  <author last="Collins" first="Michael" born="1924" died="2005"/>
+  <author last="Lynds" first="Dennis" born="1924" died="2005"/>
+  <author last="Hildick" first="Edmund Wallace" born="1925" died="2001"/>
+  <author last="Cross" first="Amanda" born="1926" died="2003"/>
+  <author last="Larsson" first="Stieg" born="1954" died="2004"/>
+  <author last="Bonett" first="Emery" born="" died=""/>
+  <author last="Bonett" first="John" born="" died=""/>
+  <author last="Braun" first="Lilian Jackson" born="" died=""/>
+  <author last="Crais" first="Robert" born="" died=""/>
+  <author last="Dane" first="Jordan" born="" died=""/>
+  <author last="Davis" first="Lindsey" born="" died=""/>
+  <author last="Diamond" first="Graham" born="" died=""/>
+  <author last="Durbridge" first="Francis" born="" died=""/>
+  <author last="Estleman" first="Loren D." born="" died=""/>
+  <author last="Freeman" first="R. Austin" born="" died=""/>
+  <author last="Futrelle" first="Jacques" born="" died=""/>
+  <author last="Fyfield" first="Frances" born="" died=""/>
+  <author last="Harvey" first="John" born="" died=""/>
+  <author last="Hughart" first="Barry" born="" died=""/>
+  <author last="Lehane" first="Dennis" born="" died=""/>
+  <author last="Jance" first="J. A." born="" died=""/>
+  <author last="Klavan" first="Andrew" born="" died=""/>
+  <author last="McGovern" first="Jimmy" born="" died=""/>
+  <author last="Murphy" first="Margaret" born="" died=""/>
+  <author last="Nadelson" first="Reggie" born="" died=""/>
+  <author last="Neznansky" first="Friedrich" born="" died=""/>
+  <author last="Oates" first="Joyce Carol" born="" died=""/>
+  <author last="Pattison" first="Eliot" born="" died=""/>
+  <author last="Queen" first="Ellery" born="" died=""/>
+  <author last="Reichs" first="Kathy" born="" died=""/>
+  <author last="Robb" first="J. D." born="" died=""/>
+  <author last="Roberts" first="Les" born="" died=""/>
+  <author last="Swann" first="Leonie" born="" died=""/>
+  <author last="Tardif" first="Cheryl Kaye" born="" died=""/>
+  <author last="Gulik" first="Robert van" born="" died=""/>
+  <author last="Vine" first="Barbara" born="" died=""/>
+  <author last="Vance" first="Jack" born="1916" died=""/>
+  <author last="Spillane" first="Mickey" born="1918" died=""/>
+  <author last="James" first="P. D." born="1920" died=""/>
+  <author last="Albrect" first="C.M." born="1927" died=""/>
+  <author last="Albrecht" first="C.M." born="1927" died=""/>
+  <author last="Dexter" first="Colin" born="1930" died=""/>
+  <author last="Rendell" first="Ruth" born="1930" died=""/>
+  <author last="Wetering" first="Janwillem van de" born="1931" died=""/>
+  <author last="Parker" first="Robert B." born="1932" died=""/>
+  <author last="Burke" first="James Lee" born="1936" died=""/>
+  <author last="McClure" first="James" born="1939" died=""/>
+  <author last="Grafton" first="Sue" born="1940" died=""/>
+  <author last="Vachss" first="Andrew" born="1942" died=""/>
+  <author last="Friedman" first="Kinky" born="1944" died=""/>
+  <author last="Levinson" first="Paul" born="1947" died=""/>
+  <author last="Mankell" first="Henning" born="1948" died=""/>
+  <author last="Deaver" first="Jeffery" born="1950" died=""/>
+  <author last="Kirino" first="Natsuo" born="1951" died=""/>
+  <author last="Moore" first="Christopher G." born="1952" died=""/>
+  <author last="Edwards" first="Martin" born="1955" died=""/>
+  <author last="Connelly" first="Michael" born="1956" died=""/>
+  <author last="Cornwell" first="Patricia" born="1956" died=""/>
+  <author last="Saylor" first="Steven" born="1956" died=""/>
+  <author last="Gordon" first="Alan" born="1959" died=""/>
+  <author last="Rankin" first="Ian" born="1960" died=""/>
+  <author last="Aoyama" first="Gosho" born="1963" died=""/>
+  <author last="Brown" first="Dan" born="1964" died=""/>
+  <author last="Froese" first="Gayleen" born="1972" died=""/>
+  <author last="Finch" first="Charles" born="1980" died=""/>
+</out>
