@@ -285,7 +285,8 @@ pin_node_id_t pin_exec_node_at_path (pin_workspace_t *pwp, pin_node_id_t start,
 void pin_exec_emit_node (struct pin_parse_s *parsep, pin_workspace_t *pwp,
                          pin_node_id_t nid);
 uint16_t pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
-                                 const char *spec, char *keybuf, size_t keycap);
+                                 const char *spec, uint32_t seq,
+                                 char *keybuf, size_t keycap);
 void pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
                                 const char *expr, size_t elen,
                                 char *buf, size_t bufsz);
