@@ -1204,30 +1204,23 @@ xsltNumberComp (xsltStylesheetPtr style, xmlNodePtr cur)
         }
     }
 
-    prop = xsltGetCNsProp(style, cur, (const xmlChar *) "lang", XSLT_NAMESPACE);
-    if (prop != NULL) {
-        xsltTransformError(NULL, style, cur,
-                           "xsl:number : lang attribute not implemented\n");
-        XSLT_TODO; /* xsl:number lang attribute */
-    }
+    /*
+     * "lang" selects the alphabet used for alphabetic numbering
+     * sequences.  Only the default (Latin) alphabet is supported, so
+     * the value is accepted and stored but otherwise has no effect,
+     * which is the fallback the spec allows when a language's own
+     * numbering sequence isn't available.
+     */
+    comp->numdata.lang
+        = xsltGetCNsProp(style, cur, (const xmlChar *) "lang", XSLT_NAMESPACE);
 
     prop = xsltGetCNsProp(style, cur, (const xmlChar *) "letter-value",
                           XSLT_NAMESPACE);
     if (prop != NULL) {
         if (xmlStrEqual(prop, BAD_CAST("alphabetic"))) {
-            xsltTransformError(
-                NULL, style, cur,
-                "xsl:number : letter-value 'alphabetic' not implemented\n");
-            if (style != NULL)
-                style->warnings++;
-            XSLT_TODO; /* xsl:number letter-value attribute alphabetic */
+            comp->numdata.letterValue = XSLT_NUMBER_LV_ALPHABETIC;
         } else if (xmlStrEqual(prop, BAD_CAST("traditional"))) {
-            xsltTransformError(
-                NULL, style, cur,
-                "xsl:number : letter-value 'traditional' not implemented\n");
-            if (style != NULL)
-                style->warnings++;
-            XSLT_TODO; /* xsl:number letter-value attribute traditional */
+            comp->numdata.letterValue = XSLT_NUMBER_LV_TRADITIONAL;
         } else {
             xsltTransformError(
                 NULL, style, cur,
