@@ -4904,8 +4904,11 @@ xsltApplyTemplates (xsltTransformContextPtr ctxt, xmlNodePtr node,
     * Process xsl:with-param and xsl:sort instructions.
     * (The code became so verbose just to avoid the
     *  xmlNodePtr sorts[XSLT_MAX_SORT] if there's no xsl:sort)
-    * BUG TODO: We are not using namespaced potentially defined on the
-    * xsl:sort or xsl:with-param elements; XPath expression might fail.
+    * BUG TODO: xsl:with-param's own select expression does not use
+    * namespaces potentially defined on the xsl:with-param element
+    * itself; XPath expression might fail.  (xsl:sort's select is
+    * fine here: xsltComputeSortResultInternal() applies the sort's
+    * own comp->nsList/nsNr to the XPath context before evaluating.)
     */
     if (xmlNodeGetChildren(inst)) {
         xsltStackElemPtr param;
