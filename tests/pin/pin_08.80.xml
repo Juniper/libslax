@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <shelf name="top">
+    <box><item>pear</item><item>Apple</item></box>
+    <box><item>fig</item></box>
+  </shelf>
+  <shelf name="bottom">
+    <box><item>banana</item></box>
+    <item>not-in-a-box</item>
+  </shelf>
+</catalog>

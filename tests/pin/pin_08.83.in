@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.83.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R5: top-level call-templates, one before
+    and one inside an xsl:if after apply-templates, with with-params
+    that read the context element.  <title> and <footer> arrive after
+    a <note>, so the params must be evaluated once <catalog> has closed;
+    the template buffers and runs as ops at the close.  Matches
+    xsltproc.  Expected:
+      <out>
+        <field>Late Title</field>
+        <note-out>first</note-out>
+        <note-out>second</note-out>
+        <field>Late Footer</field>
+      </out>
+  -->
+
+  <xsl:template name="wrap">
+    <xsl:param name="label"/>
+    <field><xsl:value-of select="$label"/></field>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <out>
+      <xsl:call-template name="wrap">
+        <xsl:with-param name="label" select="title"/>
+      </xsl:call-template>
+      <xsl:apply-templates select="note"/>
+      <xsl:if test="title">
+        <xsl:call-template name="wrap">
+          <xsl:with-param name="label" select="footer"/>
+        </xsl:call-template>
+      </xsl:if>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="note">
+    <note-out><xsl:value-of select="."/></note-out>
+  </xsl:template>
+
+</xsl:stylesheet>

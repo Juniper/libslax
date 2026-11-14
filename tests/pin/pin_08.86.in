@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.86.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R5: a template whose only reader of the
+    context element's children is one unsorted for-each streams.  Each
+    <item> is kept (transient) only until it closes, the loop body runs
+    against it, and the other children (title, note, group) are never
+    inserted.  The matched element's attributes are read before and
+    after the loop.  Matches xsltproc.
+    Expected:
+      <out id="c1">
+        <head/>
+        <i n="1">one</i>
+        <i n="2">two</i>
+        <i n="3"/>
+        <tail id="c1"/>
+      </out>
+  -->
+
+  <xsl:template match="catalog">
+    <out id="{@id}">
+      <head/>
+      <xsl:for-each select="item">
+        <i n="{@n}"><xsl:value-of select="."/></i>
+      </xsl:for-each>
+      <tail id="{@id}"/>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>

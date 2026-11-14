@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.85.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R5: two or more readers of the context
+    element's children must buffer.  Here three for-eachs (two over the
+    multi-step path group/item, the second sorted, plus one over note)
+    read <catalog>, so the template stays on op dispatch and runs when
+    <catalog> closes.  Before, it fell back to BIA_, whose one-shot
+    for-each wait left the second loop empty.  Matches xsltproc.
+    Expected:
+      <out>
+        <doc>two,three,one,</doc>
+        <sorted>a,b,c,</sorted>
+        <notes>a note</notes>
+      </out>
+  -->
+
+  <xsl:template match="catalog">
+    <out>
+      <doc>
+        <xsl:for-each select="group/item">
+          <xsl:value-of select="."/><xsl:text>,</xsl:text>
+        </xsl:for-each>
+      </doc>
+      <sorted>
+        <xsl:for-each select="group/item">
+          <xsl:sort select="@id"/>
+          <xsl:value-of select="@id"/><xsl:text>,</xsl:text>
+        </xsl:for-each>
+      </sorted>
+      <notes>
+        <xsl:for-each select="note">
+          <xsl:value-of select="."/>
+        </xsl:for-each>
+      </notes>
+    </out>
+  </xsl:template>
+
+</xsl:stylesheet>

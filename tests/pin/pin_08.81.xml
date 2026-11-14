@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sorts>
+  <asc>
+    <g>
+      <i n="10" w="b">ten</i>
+      <i n="9" w="a">nine</i>
+      <i n="-2.5" w="b">negtwo</i>
+      <i n="abc" w="a">notnum</i>
+      <i n="9" w="a">nine2</i>
+      <i n=" 100 " w="a">hundred</i>
+      <i n="0" w="b">zero</i>
+      <i n="-0" w="a">negzero</i>
+      <i n="1e3" w="b">thousand</i>
+    </g>
+  </asc>
+  <desc>
+    <g>
+      <i n="10" w="b">ten</i>
+      <i n="9" w="a">nine</i>
+      <i n="-2.5" w="b">negtwo</i>
+      <i n="abc" w="a">notnum</i>
+      <i n="9" w="a">nine2</i>
+      <i n=" 100 " w="a">hundred</i>
+      <i n="0" w="b">zero</i>
+      <i n="-0" w="a">negzero</i>
+      <i n="1e3" w="b">thousand</i>
+    </g>
+  </desc>
+  <text>
+    <g>
+      <i n="10" w="b">ten</i>
+      <i n="9" w="a">nine</i>
+      <i n="-2.5" w="b">negtwo</i>
+      <i n="abc" w="a">notnum</i>
+      <i n="9" w="a">nine2</i>
+      <i n=" 100 " w="a">hundred</i>
+      <i n="0" w="b">zero</i>
+      <i n="-0" w="a">negzero</i>
+      <i n="1e3" w="b">thousand</i>
+    </g>
+  </text>
+  <mixed>
+    <g>
+      <i n="10" w="b">ten</i>
+      <i n="9" w="a">nine</i>
+      <i n="-2.5" w="b">negtwo</i>
+      <i n="abc" w="a">notnum</i>
+      <i n="9" w="a">nine2</i>
+      <i n=" 100 " w="a">hundred</i>
+      <i n="0" w="b">zero</i>
+      <i n="-0" w="a">negzero</i>
+      <i n="1e3" w="b">thousand</i>
+    </g>
+  </mixed>
+  <upper>
+    <g>
+      <c>b</c>
+      <c>B</c>
+      <c>a</c>
+      <c>A</c>
+    </g>
+  </upper>
+</sorts>

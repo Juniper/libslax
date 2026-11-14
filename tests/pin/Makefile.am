@@ -265,6 +265,20 @@ EXTRA_DIST = \
     pin_08.76.pending \
     pin_08.77.pending \
     pin_08.78.pending \
+    pin_08.79.in \
+    pin_08.79.xml \
+    pin_08.80.in \
+    pin_08.80.xml \
+    pin_08.81.in \
+    pin_08.81.xml \
+    pin_08.82.in \
+    pin_08.83.in \
+    pin_08.83.xml \
+    pin_08.84.in \
+    pin_08.85.in \
+    pin_08.85.xml \
+    pin_08.86.in \
+    pin_08.86.xml \
     pin_09.01.in \
     pin_09.01.xml \
     pin_09.02.in \

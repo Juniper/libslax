@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog id="c1">
+  <title>The catalog</title>
+  <item n="1">one</item>
+  <note>skip me</note>
+  <item n="2">two</item>
+  <group>
+    <item n="9">nested, not selected</item>
+  </group>
+  <item n="3"/>
+</catalog>

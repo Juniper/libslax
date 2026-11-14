@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <group>
+    <item id="b">two</item>
+    <item id="c">three</item>
+  </group>
+  <note>a note</note>
+  <group>
+    <item id="a">one</item>
+  </group>
+</catalog>

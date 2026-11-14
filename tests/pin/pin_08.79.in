@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.79.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R2: copy-of of a string literal or a number
+    inserts its string value as text (XSLT 1.0), so a named template
+    using one no longer trips the "complex body" gate in
+    pin_compile_template().  Expected, per note:
+      <out><lit>abc</lit><num>42</num><mix>x-7.5-y</mix></out>
+    inside a single <result>.
+  -->
+
+  <xsl:template name="vals">
+    <lit><xsl:copy-of select="'abc'"/></lit>
+    <num><xsl:copy-of select="42"/></num>
+    <mix>x-<xsl:copy-of select="7.5"/>-y</mix>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <result><xsl:apply-templates select="note"/></result>
+  </xsl:template>
+
+  <xsl:template match="note">
+    <out><xsl:call-template name="vals"/></out>
+  </xsl:template>
+
+</xsl:stylesheet>

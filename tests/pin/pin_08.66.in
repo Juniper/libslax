@@ -7,12 +7,16 @@
   <!--
     call-template-real.rst's test plan item 6: a top-level call-template
     (outside any for-each), reached before any pause-inducing construct
-    in a BIA_ body (apply-templates forces BIA_ here, but it comes
-    after the call-template, not before).  Deliberately malformed:
-    exercises Open Question 1's "rejected, loud warning" half: the
-    main body FSM's current node is a still-open element with no
-    closed/retained context for the callee to walk, so pin_compile.c
-    warns and skips the call-template rather than compiling it.
+    in the body, with apply-templates after it.
+
+    call-template-rest.rst R5: a top-level call-template needs the
+    whole context element, so the template buffers: it stays on op
+    dispatch and runs when <catalog> closes.  The call now runs before
+    the notes, matching xsltproc.  Expected:
+      <out>
+        <field>eager</field>
+        <note-out>a note</note-out>
+      </out>
   -->
 
   <xsl:template name="wrap">

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.81.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R4: the same sorts as pin_08.81, in named
+    templates, so they run in the op-dispatch engine (which used to
+    reject data-type="number").  Uses pin_08.81.xml.  Expected:
+      <result>
+        <asc>notnum negtwo zero negzero nine nine2 ten hundred thousand </asc>
+        <desc>thousand hundred ten nine nine2 zero negzero negtwo notnum </desc>
+        <text>hundred negzero negtwo zero ten thousand nine nine2 notnum </text>
+        <mixed>notnum negzero nine nine2 hundred negtwo zero ten thousand </mixed>
+        <upper>A B a b </upper>
+      </result>
+    (whitespace between elements may differ)
+  -->
+
+  <xsl:template match="sorts">
+    <result><xsl:apply-templates/></result>
+  </xsl:template>
+
+  <xsl:template name="sort-asc">
+    <xsl:for-each select="g/i">
+      <xsl:sort select="@n" data-type="number"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="asc">
+    <asc><xsl:call-template name="sort-asc"/></asc>
+  </xsl:template>
+
+  <xsl:template name="sort-desc">
+    <xsl:for-each select="g/i">
+      <xsl:sort select="@n" data-type="number" order="descending"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="desc">
+    <desc><xsl:call-template name="sort-desc"/></desc>
+  </xsl:template>
+
+  <xsl:template name="sort-text">
+    <xsl:for-each select="g/i">
+      <xsl:sort select="@n"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="text">
+    <text><xsl:call-template name="sort-text"/></text>
+  </xsl:template>
+
+  <xsl:template name="sort-mixed">
+    <xsl:for-each select="g/i">
+      <xsl:sort select="@w"/>
+      <xsl:sort select="@n" data-type="number"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="mixed">
+    <mixed><xsl:call-template name="sort-mixed"/></mixed>
+  </xsl:template>
+
+  <xsl:template name="sort-upper">
+    <xsl:for-each select="g/c">
+      <xsl:sort select="." case-order="upper-first"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="upper">
+    <upper><xsl:call-template name="sort-upper"/></upper>
+  </xsl:template>
+
+</xsl:stylesheet>

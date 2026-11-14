@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.80.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R3: a named template's for-each over a
+    downward path ("shelf/box/item") runs in the op engine, in
+    document order, and sorted.  "not-in-a-box" is a shelf/item, so
+    it must not be selected.  Expected:
+      <result>
+        <doc>pear Apple fig banana </doc>
+        <sorted>Apple banana fig pear </sorted>
+        <shelves>top bottom </shelves>
+      </result>
+  -->
+
+  <xsl:template name="items">
+    <doc><xsl:for-each select="shelf/box/item">
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each></doc>
+    <sorted><xsl:for-each select="shelf/box/item">
+      <xsl:sort select="."/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each></sorted>
+    <shelves><xsl:for-each select="shelf">
+      <xsl:value-of select="@name"/><xsl:text> </xsl:text>
+    </xsl:for-each></shelves>
+  </xsl:template>
+
+  <xsl:template match="catalog">
+    <result><xsl:call-template name="items"/></result>
+  </xsl:template>
+
+</xsl:stylesheet>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.81.xml
+-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+  <!--
+    call-template-rest.rst R5: a sorted for-each must buffer, never
+    take the streaming path (which used to drop the sort silently).
+    The shared key evaluator can't handle a function-call key (or any
+    form other than '.', '@attr', a child path, or arithmetic on child
+    paths), so this is a compile error rather than unsorted output.
+    Expected (stderr):
+      pin_08.84.in:21: error: xsl:sort: select "string(@n)": this sort
+        key form is not supported yet (only '.', '@attr', a child path,
+        or arithmetic on child paths)
+  -->
+
+  <xsl:template match="asc">
+    <asc><xsl:for-each select="g/i">
+      <xsl:sort select="string(@n)" data-type="number"/>
+      <xsl:value-of select="."/><xsl:text> </xsl:text>
+    </xsl:for-each></asc>
+  </xsl:template>
+
+</xsl:stylesheet>
