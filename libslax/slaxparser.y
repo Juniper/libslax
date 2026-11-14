@@ -2842,10 +2842,6 @@ sort_sub_stmt :
 
 	| K_LANGUAGE xpath_value L_EOS
 		{
-		    /*
-		     * As of libxslt 1.1.26, the "lang" attribute is
-		     * not implemented.
-		     */
 		    slaxAttribAddDataValue(slax_data, ATT_LANG, $2);
 		    $$ = STACK_CLEAR($1);
 		}
