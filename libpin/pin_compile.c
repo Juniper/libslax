@@ -80,6 +80,7 @@ pin_is_xsl (xmlNodePtr nodep, const char *name)
 	&& strcmp((const char *) nodep->ns->href, PIN_XSL_URI) == 0;
 }
 
+
 /*
  * Emit a compiler-style error or warning anchored to an XML source node.
  * The filename comes from the node's owning document URL; the line number
@@ -186,6 +187,165 @@ pin_parse_position_test (const char *test, uint32_t *op_out, uint32_t *n_out)
     *op_out = op;
     *n_out = (uint32_t) n;
     return 1;
+}
+
+/*
+ * Is s[0..len) a step path the sort key evaluator can walk: ".", a
+ * child path ("a", "a/b", "./a"), or (when allow_attr) "@name"?  An
+ * attribute followed by steps ("@name/last") is accepted: it is empty
+ * for every item, in XPath and in pin_for_each_eval_expr() alike.
+ */
+static bool
+pin_sort_path_ok (const char *s, size_t len, bool allow_attr)
+{
+    if (len == 0 || s[0] == '/')
+	return false;
+
+    size_t i = 0;
+    if (s[0] == '@') {
+	if (!allow_attr || len == 1)
+	    return false;
+	i = 1;
+    }
+
+    for (size_t step = i; i < len; i++) {
+	unsigned char c = (unsigned char) s[i];
+	/* A step starts like an XML name, or is "." */
+	if (i == step && !isalpha(c) && c != '_' && c != '.')
+	    return false;
+	if (c == '/')
+	    step = i + 1;
+	if (!isalnum(c) && c != '_' && c != '-' && c != '.' && c != '/'
+	        && c != ':')
+	    return false;
+	if (i + 1 < len && ((c == '/' && s[i + 1] == '/')
+			    || (c == '.' && s[i + 1] == '.')
+			    || (c == ':' && s[i + 1] == ':')
+			    || (c == '/' && s[i + 1] == '@')))
+	    return false;
+    }
+
+    return true;
+}
+
+/*
+ * Can pin_for_each_eval_expr() evaluate this sort key?  It handles
+ * ".", "@attr", a child path, and "path OP path" arithmetic (OP one of
+ * + - * / with single spaces).  A string or number literal is a
+ * constant key, which ties every item and so keeps document order,
+ * as XSLT does.  Anything else (predicates, function calls, "..",
+ * "//", axes, unions, variables, other operators) would silently
+ * evaluate to an empty key for every item.
+ */
+static bool
+pin_sort_key_supported (const char *k)
+{
+    size_t len = strlen(k);
+
+    if (len >= 2 && (k[0] == '\'' || k[0] == '"')
+	    && k[len - 1] == k[0] && memchr(k + 1, k[0], len - 2) == NULL)
+	return true;
+
+    if (len > 0 && strspn(k, "0123456789.") == len)
+	return true;
+
+    if (strpbrk(k, " \t\r\n") == NULL)
+	return pin_sort_path_ok(k, len, true);
+
+    /* Arithmetic: split on " OP "; every operand must be a child path */
+    const char *start = k;
+    for (const char *p = k; *p; p++) {
+	if (p[0] == ' ' && p[1] && strchr("+-*/", p[1]) && p[2] == ' ') {
+	    if (!pin_sort_path_ok(start, (size_t) (p - start), false))
+		return false;
+	    start = p + 3;
+	    p += 2;
+	}
+    }
+
+    return start != k && pin_sort_path_ok(start, strlen(start), false);
+}
+
+/*
+ * Build the multi-key sort spec for an xsl:for-each from its xsl:sort
+ * children, for both the BIA_ and op-dispatch compilers.  Keys are
+ * newline-separated; each starts with optional flags, in this order:
+ * '-' (order="descending"), '^' (case-order="upper-first") and '#'
+ * (data-type="number"), followed by the key expression ("." when
+ * select is absent).  An unknown data-type is a compile error when
+ * report is set; otherwise it just makes the spec non-simple, so a
+ * match template falls back to BIA_, which reports it once.  A key
+ * that pin_sort_key_supported() rejects is reported the same way.
+ * Returns false if any key expression has a predicate, function call
+ * or wildcard, which op dispatch can't evaluate; the spec is still
+ * built in full.
+ */
+static bool
+pin_compile_sort_spec (pin_rulebook_t *rb, xmlNodePtr for_each,
+                       xo_buffer_t *specp, bool report)
+{
+    bool simple = true;
+
+    for (xmlNodePtr sp = for_each->children; sp; sp = sp->next) {
+	if (!pin_is_xsl(sp, "sort"))
+	    continue;
+
+	xmlChar *order  = xmlGetProp(sp, (const xmlChar *) "order");
+	xmlChar *corder = xmlGetProp(sp, (const xmlChar *) "case-order");
+	xmlChar *dtype  = xmlGetProp(sp, (const xmlChar *) "data-type");
+	xmlChar *kexpr  = xmlGetProp(sp, (const xmlChar *) "select");
+
+	const char *kstr = kexpr ? (const char *) kexpr : ".";
+	bool supported = pin_sort_key_supported(kstr);
+	if (!supported || strpbrk(kstr, "[()*") != NULL)
+	    simple = false;
+
+	/*
+	 * Both engines share one key evaluator (pin_for_each_eval_expr);
+	 * a form it doesn't handle would come out empty for every item
+	 * and the sort would silently be document order.
+	 */
+	if (report && !supported)
+	    pin_error(rb, sp, "xsl:sort: select \"%s\": this sort key form "
+		      "is not supported yet (only '.', '@attr', a child path, "
+		      "or arithmetic on child paths)", kstr);
+
+	bool desc   = order  && strcmp((char *) order,  "descending") == 0;
+	bool upper  = corder && strcmp((char *) corder, "upper-first") == 0;
+	bool number = false;
+	if (dtype) {
+	    if (strcmp((char *) dtype, "number") == 0)
+		number = true;
+	    else if (strcmp((char *) dtype, "text") != 0) {
+		if (report)
+		    pin_error(rb, sp, "xsl:sort: unsupported data-type '%s'",
+			      (char *) dtype);
+		else
+		    simple = false;
+	    }
+	}
+
+	if (!xo_buf_is_empty(specp))
+	    xo_buf_append(specp, "\n", 1);
+	if (desc)
+	    xo_buf_append(specp, "-", 1);
+	if (upper)
+	    xo_buf_append(specp, "^", 1);
+	if (number)
+	    xo_buf_append(specp, "#", 1);
+	xo_buf_append_str(specp, kstr);
+
+	if (order)
+	    xmlFree(order);
+	if (corder)
+	    xmlFree(corder);
+	if (dtype)
+	    xmlFree(dtype);
+	if (kexpr)
+	    xmlFree(kexpr);
+    }
+
+    return simple;
 }
 
 /*
@@ -542,7 +702,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	 * xsl:for-each -> BIA_FOR_EACH.
 	 *
 	 * bi_select = select path (may be absolute "/a/b" or relative "a/b")
-	 * bi_text   = multi-key sort spec (newline-separated, "-" prefix = desc)
+	 * bi_text   = multi-key sort spec (see pin_compile_sort_spec())
 	 * bi_else   = head of the for-each body sub-list (compiled separately)
 	 * bi_next   = first instruction after the for-each
 	 */
@@ -558,25 +718,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    /* Build multi-key sort spec from xsl:sort children */
 	    xo_buffer_t sortbuf;
 	    xo_buf_init(&sortbuf);
-	    for (xmlNodePtr sc = child->children; sc; sc = sc->next) {
-		if (!pin_is_xsl(sc, "sort"))
-		    continue;
-		xmlChar *skey = xmlGetProp(sc, (const xmlChar *) "select");
-		xmlChar *sord = xmlGetProp(sc, (const xmlChar *) "order");
-		const char *kstr = skey ? (const char *) skey : ".";
-		bool desc = sord && strcmp((const char *) sord, "descending") == 0;
-
-		if (!xo_buf_is_empty(&sortbuf))
-		    xo_buf_append(&sortbuf, "\n", 1);
-		if (desc)
-		    xo_buf_append(&sortbuf, "-", 1);
-		xo_buf_append_str(&sortbuf, kstr);
-
-		if (skey)
-		    xmlFree(skey);
-		if (sord)
-		    xmlFree(sord);
-	    }
+	    pin_compile_sort_spec(rb, child, &sortbuf, true);
 
 	    pin_body_instr_id_t bid_fe;
 	    pin_body_instr_t *bip_fe = pin_body_instr_new(rb, nextp, &bid_fe);
@@ -588,6 +730,19 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    bip_fe->bi_type = BIA_FOR_EACH;
 	    bip_fe->bi_select = pin_namepool_atom(rb->prb_workspace,
 						   (const char *) fsel, TRUE);
+
+	    /*
+	     * The template's one reader, streaming as items arrive: its
+	     * body runs as ops (compiled by the caller), so there's no
+	     * BIA_ sub-list to build.
+	     */
+	    if (child == rb->prb_stream_fe) {
+		bip_fe->bi_filter_idx
+		    = pa_fixed_atom_of(pin_op_id_atom_of(rb->prb_stream_ops));
+		xo_buf_cleanup(&sortbuf);
+		xmlFree(fsel);
+		continue;
+	    }
 	    if (!xo_buf_is_empty(&sortbuf)) {
 		xo_buf_force_nul(&sortbuf);
 		bip_fe->bi_text = pin_namepool_atom(rb->prb_workspace,
@@ -996,6 +1151,457 @@ pin_body_retain (pin_body_instr_id_t head, pin_rulebook_t *rb)
 }
 
 /*
+ * Return true if node's body holds an xsl:call-template outside any
+ * xsl:for-each (whose sub-body BIA_ can already run a call from).
+ * Such a call needs the whole context element, and BIA_ can't wait
+ * for it at the top level, so the template must buffer and run as
+ * ops at the element's close.
+ */
+static bool
+pin_has_toplevel_call (xmlNodePtr node)
+{
+    for (xmlNodePtr child = node->children; child; child = child->next) {
+	if (child->type != XML_ELEMENT_NODE)
+	    continue;
+	if (pin_is_xsl(child, "for-each"))
+	    continue;
+	if (pin_is_xsl(child, "call-template"))
+	    return true;
+	if (pin_has_toplevel_call(child))
+	    return true;
+    }
+
+    return false;
+}
+
+/*
+ * Count the instructions in node's body that read the context
+ * element's children: xsl:for-each and xsl:apply-templates, outside
+ * any for-each (a nested one runs per item of its outer loop).  One
+ * reader can stream; two or more need the whole element, so the
+ * template buffers and runs as ops at the element's close.
+ */
+static int
+pin_count_readers (xmlNodePtr node)
+{
+    int count = 0;
+
+    for (xmlNodePtr child = node->children; child; child = child->next) {
+	if (child->type != XML_ELEMENT_NODE)
+	    continue;
+	if (pin_is_xsl(child, "for-each")
+	        || pin_is_xsl(child, "apply-templates"))
+	    count += 1;
+	else
+	    count += pin_count_readers(child);
+    }
+
+    return count;
+}
+
+/*
+ * Return true if the XPath expression s (len bytes) reads nothing but
+ * attributes of the context node, variables and literals: no child
+ * paths, ".", or functions that could read one.  Used for the parts
+ * of a template body outside a streaming for-each, where the context
+ * element's children are not retained.
+ */
+static bool
+pin_expr_attrs_only (const char *s, size_t len)
+{
+    static const char *ok_words[] = {
+	"and", "or", "div", "mod", "not", "true", "false", "concat",
+	"contains", "starts-with", "translate", "substring",
+	"substring-before", "substring-after", NULL
+    };
+    size_t i = 0;
+
+    while (i < len) {
+	char c = s[i];
+
+	if (c == '\'' || c == '"') {
+	    const char *q = memchr(s + i + 1, c, len - i - 1);
+	    if (q == NULL)
+		return false;
+	    i = (size_t) (q - s) + 1;
+	    continue;
+	}
+
+	if (c == '@' || c == '$') {
+	    i += 1;
+	    while (i < len && (isalnum((unsigned char) s[i])
+				|| s[i] == '_' || s[i] == '-' || s[i] == '.'))
+		i += 1;
+	    if (i < len && s[i] == ':')
+		return false;
+	    continue;
+	}
+
+	if (isalpha((unsigned char) c) || c == '_') {
+	    size_t start = i;
+	    while (i < len && (isalnum((unsigned char) s[i])
+				|| s[i] == '_' || s[i] == '-'))
+		i += 1;
+	    bool known = false;
+	    for (int w = 0; ok_words[w]; w++) {
+		if (strlen(ok_words[w]) == i - start
+			&& strncmp(ok_words[w], s + start, i - start) == 0) {
+		    known = true;
+		    break;
+		}
+	    }
+	    if (!known)
+		return false;
+	    continue;
+	}
+
+	if (c == '.' && !(i + 1 < len && isdigit((unsigned char) s[i + 1])))
+	    return false;
+	if (c == '/' || c == '*' || c == '[' || c == '|' || c == ':')
+	    return false;
+	i += 1;
+    }
+
+    return true;
+}
+
+/*
+ * Return true if the expressions in node's AVT attribute values (the
+ * "{...}" parts) all satisfy check.  A "{{" is a literal brace.
+ */
+static bool
+pin_avts_ok (xmlNodePtr node, bool (*check)(const char *, size_t))
+{
+    for (xmlAttrPtr attr = node->properties; attr; attr = attr->next) {
+	xmlChar *val = xmlNodeGetContent((xmlNodePtr) attr);
+	if (val == NULL)
+	    continue;
+
+	bool ok = true;
+	for (const char *cp = (const char *) val; ok && *cp; cp++) {
+	    if (*cp != '{')
+		continue;
+	    if (cp[1] == '{') {
+		cp += 1;
+		continue;
+	    }
+	    const char *ep = strchr(cp, '}');
+	    if (ep == NULL)
+		break;
+	    ok = check(cp + 1, (size_t) (ep - cp - 1));
+	    cp = ep;
+	}
+	xmlFree(val);
+	if (!ok)
+	    return false;
+    }
+
+    return true;
+}
+
+/*
+ * Return true if node's expression attributes (select, test) and AVTs
+ * all satisfy check.  For xsl:* elements other than xsl:element and
+ * xsl:attribute, only select and test hold expressions; the rest are
+ * plain names (mode, name, ...).
+ */
+static bool
+pin_node_exprs_ok (xmlNodePtr node, bool (*check)(const char *, size_t))
+{
+    if (pin_is_xsl(node, NULL)) {
+	static const char *expr_attrs[] = { "select", "test", NULL };
+	for (int a = 0; expr_attrs[a]; a++) {
+	    xmlChar *val = xmlGetProp(node, (const xmlChar *) expr_attrs[a]);
+	    if (val == NULL)
+		continue;
+	    bool ok = check((const char *) val, strlen((const char *) val));
+	    xmlFree(val);
+	    if (!ok)
+		return false;
+	}
+	if (!pin_is_xsl(node, "element") && !pin_is_xsl(node, "attribute"))
+	    return true;
+    }
+
+    return pin_avts_ok(node, check);
+}
+
+/*
+ * Return true if the XPath expression s (len bytes) can run against one
+ * streamed for-each item: nothing that looks outside the item's own
+ * subtree (parents, siblings, the document, keys) or needs the whole
+ * node-set (last()).
+ */
+static bool
+pin_expr_item_only (const char *s, size_t len)
+{
+    static const char *bad[] = {
+	"..", "::", "//", "last(", "key(", "document(", "id(", NULL
+    };
+    char prev = ' ';
+
+    for (size_t i = 0; i < len; i++) {
+	char c = s[i];
+
+	if (c == '\'' || c == '"') {
+	    const char *q = memchr(s + i + 1, c, len - i - 1);
+	    if (q == NULL)
+		return false;
+	    i = (size_t) (q - s);
+	    prev = c;
+	    continue;
+	}
+
+	for (int b = 0; bad[b]; b++) {
+	    size_t blen = strlen(bad[b]);
+	    if (i + blen <= len && strncmp(s + i, bad[b], blen) == 0)
+		return false;
+	}
+
+	/* An absolute path: '/' that doesn't follow a step */
+	if (c == '/' && strchr(" \t\n(,[=<>|+-!", prev) != NULL)
+	    return false;
+
+	prev = c;
+    }
+
+    return true;
+}
+
+/*
+ * Return true if every node in node's subtree can run against one
+ * streamed for-each item: see pin_expr_item_only().  A nested reader,
+ * call, sort or xsl:number (which counts preceding siblings) needs
+ * more than the item, so it disqualifies the loop.
+ */
+static bool
+pin_subtree_item_only (xmlNodePtr node)
+{
+    for (xmlNodePtr child = node->children; child; child = child->next) {
+	if (child->type != XML_ELEMENT_NODE)
+	    continue;
+	if (pin_is_xsl(child, "for-each")
+		|| pin_is_xsl(child, "apply-templates")
+		|| pin_is_xsl(child, "call-template")
+		|| pin_is_xsl(child, "sort")
+		|| pin_is_xsl(child, "number"))
+	    return false;
+	if (!pin_node_exprs_ok(child, pin_expr_item_only))
+	    return false;
+	if (!pin_subtree_item_only(child))
+	    return false;
+    }
+
+    return true;
+}
+
+/*
+ * Return true if node is an extension element: its namespace is named
+ * by an extension-element-prefixes attribute on an enclosing element
+ * (unqualified on the xsl:stylesheet, xsl:-qualified elsewhere), like
+ * slax:trace.  It is an instruction, not a literal result element.
+ */
+static bool
+pin_is_extension_element (xmlNodePtr node)
+{
+    if (node->ns == NULL || node->ns->href == NULL)
+	return false;
+
+    for (xmlNodePtr np = node; np && np->type == XML_ELEMENT_NODE;
+	    np = np->parent) {
+	xmlChar *list = pin_is_xsl(np, NULL)
+	    ? xmlGetNoNsProp(np, (const xmlChar *) "extension-element-prefixes")
+	    : xmlGetNsProp(np, (const xmlChar *) "extension-element-prefixes",
+			   (const xmlChar *) PIN_XSL_URI);
+	if (list == NULL)
+	    continue;
+
+	bool found = false;
+	char *save = NULL;
+	for (char *tok = strtok_r((char *) list, " \t\n", &save); tok;
+		tok = strtok_r(NULL, " \t\n", &save)) {
+	    const xmlChar *prefix = strcmp(tok, "#default") == 0
+		? NULL : (const xmlChar *) tok;
+	    xmlNsPtr ns = xmlSearchNs(node->doc, node, prefix);
+	    if (ns && ns->href && xmlStrEqual(ns->href, node->ns->href)) {
+		found = true;
+		break;
+	    }
+	}
+	xmlFree(list);
+	if (found)
+	    return true;
+    }
+
+    return false;
+}
+
+/*
+ * Return true if s (len bytes) is exactly "@name" or "$name": the AVT
+ * forms BIA_ can expand outside a for-each, where there is no context
+ * node, only the matched element's attribute string.
+ */
+static bool
+pin_expr_attr_or_var (const char *s, size_t len)
+{
+    if (len < 2 || (s[0] != '@' && s[0] != '$'))
+	return false;
+    for (size_t i = 1; i < len; i++) {
+	if (!isalnum((unsigned char) s[i]) && s[i] != '_' && s[i] != '-'
+		&& s[i] != '.')
+	    return false;
+    }
+
+    return true;
+}
+
+/*
+ * Return true if every node in node's subtree, skipping the subtree of
+ * skip, is one BIA_ runs without the context element's children, which
+ * a streaming for-each doesn't retain: literal elements and text,
+ * xsl:text, xsl:value-of of an attribute or literal, xsl:if/choose on
+ * attributes, and the output instructions around them.  AVTs must be
+ * "{@name}" or "{$name}".  Anything else (variables, copy-of, general
+ * expressions) returns false, and the template keeps buffering.
+ */
+static bool
+pin_subtree_attrs_only (xmlNodePtr node, xmlNodePtr skip)
+{
+    for (xmlNodePtr child = node->children; child; child = child->next) {
+	if (child->type != XML_ELEMENT_NODE || child == skip)
+	    continue;
+
+	if (!pin_is_xsl(child, NULL)) {
+	    if (pin_is_extension_element(child)
+		    || !pin_avts_ok(child, pin_expr_attr_or_var))
+		return false;
+	} else if (pin_is_xsl(child, "value-of")) {
+	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    const char *ss = sel ? (const char *) sel : "";
+	    size_t slen = strlen(ss);
+	    bool ok = (ss[0] == '@' && pin_expr_attr_or_var(ss, slen))
+		|| (slen >= 2 && (ss[0] == '\'' || ss[0] == '"')
+		    && ss[slen - 1] == ss[0]
+		    && memchr(ss + 1, ss[0], slen - 2) == NULL);
+	    if (sel)
+		xmlFree(sel);
+	    if (!ok)
+		return false;
+	} else if (pin_is_xsl(child, "if") || pin_is_xsl(child, "when")) {
+	    /* BIA_IF's filter can't read variables */
+	    xmlChar *test = xmlGetProp(child, (const xmlChar *) "test");
+	    bool var = (test && strchr((const char *) test, '$') != NULL);
+	    if (test)
+		xmlFree(test);
+	    if (var || !pin_node_exprs_ok(child, pin_expr_attrs_only))
+		return false;
+	} else if (pin_is_xsl(child, "element")
+		   || pin_is_xsl(child, "attribute")) {
+	    if (!pin_avts_ok(child, pin_expr_attr_or_var))
+		return false;
+	} else if (!pin_is_xsl(child, "text")
+		   && !pin_is_xsl(child, "choose")
+		   && !pin_is_xsl(child, "otherwise")
+		   && !pin_is_xsl(child, "comment")
+		   && !pin_is_xsl(child, "message")) {
+	    return false;
+	}
+
+	if (!pin_subtree_attrs_only(child, skip))
+	    return false;
+    }
+
+    return true;
+}
+
+/*
+ * Return the xsl:for-each node at depth >= 1 in node's subtree, outside
+ * any other for-each, or NULL.  Used once pin_count_readers() has said
+ * there's exactly one reader.
+ */
+static xmlNodePtr
+pin_find_reader (xmlNodePtr node)
+{
+    for (xmlNodePtr child = node->children; child; child = child->next) {
+	if (child->type != XML_ELEMENT_NODE)
+	    continue;
+	if (pin_is_xsl(child, "for-each"))
+	    return child;
+	if (pin_is_xsl(child, "apply-templates"))
+	    continue;
+	xmlNodePtr found = pin_find_reader(child);
+	if (found)
+	    return found;
+    }
+
+    return NULL;
+}
+
+/*
+ * R5 "stream where we can": if the match template tmpl's only reader
+ * of the context element's children is an unsorted xsl:for-each over
+ * one child name, return that for-each.  It can then run as each
+ * selected child arrives (PBMODE_FOR_EACH_STREAM), keeping one item
+ * at a time rather than the whole element.  This needs:
+ *
+ *   - no top-level call-template and exactly one reader;
+ *   - select is a bare element name, with no xsl:sort;
+ *   - the loop body looks only inside the item (no "..", absolute
+ *     paths, last(), nested readers, or calls);
+ *   - the rest of the template reads only the context element's
+ *     attributes, since its children are not retained.
+ *
+ * Return NULL otherwise (the template buffers, as before).
+ */
+static xmlNodePtr
+pin_template_stream_foreach (xmlNodePtr tmpl)
+{
+    if (tmpl == NULL || !pin_is_xsl(tmpl, "template"))
+	return NULL;
+
+    xmlChar *match = xmlGetProp(tmpl, (const xmlChar *) "match");
+    if (match == NULL)
+	return NULL;
+    /*
+     * "/" and "/name" are root rules (prb_root_rule), whose context
+     * isn't handled by the streaming path; a union or path could match
+     * anywhere, which is fine, but keep anything anchored out.
+     */
+    bool root = (match[0] == '/');
+    xmlFree(match);
+    if (root)
+	return NULL;
+
+    if (pin_has_toplevel_call(tmpl) || pin_count_readers(tmpl) != 1)
+	return NULL;
+
+    xmlNodePtr fe = pin_find_reader(tmpl);
+    if (fe == NULL)
+	return NULL;
+
+    xmlChar *sel = xmlGetProp(fe, (const xmlChar *) "select");
+    if (sel == NULL)
+	return NULL;
+    const char *s = (const char *) sel;
+    bool name_ok = (isalpha((unsigned char) s[0]) || s[0] == '_');
+    for (const char *cp = s; name_ok && *cp; cp++) {
+	if (!isalnum((unsigned char) *cp) && *cp != '_' && *cp != '-'
+		&& *cp != '.')
+	    name_ok = false;
+    }
+    xmlFree(sel);
+    if (!name_ok)
+	return NULL;
+
+    if (!pin_subtree_item_only(fe))
+	return NULL;
+    if (!pin_subtree_attrs_only(tmpl, fe))
+	return NULL;
+
+    return fe;
+}
+
+/*
  * Scan a template body for the first simple xsl:for-each select="name".
  * Compiles the for-each body into a body instruction list and returns a
  * new rulebook state (select_name->body, default->DISCARD), or the null id
@@ -1021,6 +1627,23 @@ pin_compile_foreach (xmlNodePtr template_node, pin_rulebook_t *rb)
 	if (!simple) {
 	    pin_warn(child, "xsl:for-each: complex select not supported: %s",
 			  sel);
+	    xmlFree(select);
+	    continue;
+	}
+
+	/*
+	 * A sorted for-each can't stream: the sort needs the whole set,
+	 * so leave it to BIA_, which buffers until the element closes.
+	 * Streaming here would silently drop the sort.
+	 */
+	bool sorted = false;
+	for (xmlNodePtr sp = child->children; sp; sp = sp->next) {
+	    if (pin_is_xsl(sp, "sort")) {
+		sorted = true;
+		break;
+	    }
+	}
+	if (sorted) {
 	    xmlFree(select);
 	    continue;
 	}
@@ -1057,6 +1680,8 @@ typedef struct pin_op_cursor_s {
     uint32_t        poc_src_line; /* line number of the node being compiled */
     uint64_t        poc_complexity;  /* bitmask: bit (1<<type) set for each complex op present */
     xmlNodePtr      poc_node;     /* current source node (for error messages) */
+    int             poc_named;    /* compiling a named template's body */
+    int             poc_multi_step; /* for-each may walk a multi-step path */
 
     /*
      * Compile-time namespace-binding stack, mirroring the real PIN_OP_NS_PUSH
@@ -1622,8 +2247,42 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    const char *s = sel ? (const char *) sel : ".";
 	    pin_sel_kind_t kind = pin_classify_select(s);
 
-	    if (kind == SELK_COMPLEX || kind == SELK_LITERAL || kind == SELK_EMPTY
-		    || kind == SELK_NUMBER) {
+	    if (kind == SELK_EMPTY) {
+		pin_error(cur->poc_rb, child,
+			  "xsl:copy-of: empty select attribute");
+		xmlFree(sel);
+		continue;
+	    }
+
+	    /*
+	     * Per XSLT 1.0, copy-of of a non-node-set value inserts its
+	     * string value as a text node, so a literal or number needs
+	     * no node-set evaluation: compile it exactly as value-of does.
+	     */
+	    if (kind == SELK_LITERAL || kind == SELK_NUMBER) {
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL) {
+		    xmlFree(sel);
+		    return;
+		}
+		push->po_type = PIN_OP_PUSH_STRING;
+		if (kind == SELK_LITERAL) {
+		    /* Strip the enclosing quotes in-place; sel is freed below */
+		    sel[strlen(s) - 1] = '\0';
+		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
+		} else {
+		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		}
+		xmlFree(sel);
+
+		pin_op_t *emit = pin_op_new(cur, NULL);
+		if (emit == NULL)
+		    return;
+		emit->po_type = PIN_OP_EMIT;
+		continue;
+	    }
+
+	    if (kind == SELK_COMPLEX) {
 		/* Fall back to stub */
 		cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
 		pin_op_t *push = pin_op_new(cur, NULL);
@@ -1914,8 +2573,19 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 	    const char *s = (const char *) sel;
 
-	    /* Only simple element-name selects (no path, predicates, wildcards) */
-	    if (strpbrk(s, "/@[]*.:") != NULL) {
+	    /*
+	     * Only downward element paths ("a", "a/b/c"; no predicates,
+	     * wildcards, attributes, or axes): pin_op_for_each walks the
+	     * retained subtree child-by-child, one step at a time.  A
+	     * multi-step path is only taken when poc_multi_step is set: in
+	     * a named template's body, or in a match template that buffers
+	     * anyway (see pin_count_readers()).  Otherwise a match template
+	     * falls back to BIA_ for it, whose streaming for-each
+	     * (pin_compile_foreach) needs no retained subtree.
+	     */
+	    if (pin_classify_select(s) != SELK_DOWN
+		    || strpbrk(s, ".:") != NULL
+		    || (!cur->poc_multi_step && strchr(s, '/') != NULL)) {
 		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
 		xmlFree(sel);
 		continue;
@@ -1924,45 +2594,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    /* Collect xsl:sort children into a newline-separated spec string */
 	    xo_buffer_t spec;
 	    xo_buf_init(&spec);
-	    bool sort_ok = true;
-	    for (xmlNodePtr sp = child->children; sp; sp = sp->next) {
-		if (!pin_is_xsl(sp, "sort"))
-		    continue;
-
-		xmlChar *order  = xmlGetProp(sp, (const xmlChar *) "order");
-		xmlChar *corder = xmlGetProp(sp, (const xmlChar *) "case-order");
-		xmlChar *dtype  = xmlGetProp(sp, (const xmlChar *) "data-type");
-		xmlChar *kexpr  = xmlGetProp(sp, (const xmlChar *) "select");
-
-		/* data-type="number" not yet supported in op-dispatch */
-		if (dtype && strcmp((char *) dtype, "number") == 0)
-		    sort_ok = false;
-
-		const char *kstr = kexpr ? (const char *) kexpr : ".";
-		if (sort_ok && strpbrk(kstr, "[()*") != NULL)
-		    sort_ok = false;
-
-		if (sort_ok) {
-		    bool desc  = order  && strcmp((char *) order,  "descending") == 0;
-		    bool upper = corder && strcmp((char *) corder, "upper-first") == 0;
-		    if (!xo_buf_is_empty(&spec))
-			xo_buf_append(&spec, "\n", 1);
-		    if (desc)
-			xo_buf_append(&spec, "-", 1);
-		    if (upper)
-			xo_buf_append(&spec, "^", 1);
-		    xo_buf_append_str(&spec, kstr);
-		}
-
-		if (order)
-		    xmlFree(order);
-		if (corder)
-		    xmlFree(corder);
-		if (dtype)
-		    xmlFree(dtype);
-		if (kexpr)
-		    xmlFree(kexpr);
-	    }
+	    bool sort_ok = pin_compile_sort_spec(cur->poc_rb, child, &spec,
+						 cur->poc_named);
 
 	    if (!sort_ok) {
 		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
@@ -1994,6 +2627,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		.poc_src_file = cur->poc_src_file,
 		.poc_src_line = cur->poc_src_line,
 		.poc_complexity = 0,
+		.poc_named    = cur->poc_named,
+		.poc_multi_step = cur->poc_multi_step,
 	    };
 	    pin_compile_ns_clone(&sub, cur);
 	    pin_compile_ops_r(child, &sub);
@@ -2727,12 +3362,16 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 /*
  * Compile the template body rooted at body_node into a PIN_OP_* sequence
- * in the rulebook's prb_ops pool.
+ * in the rulebook's prb_ops pool.  'named' is non-zero for a named
+ * template's body, which has no BIA_ fallback.  'multi_step' is non-zero
+ * when a for-each may walk a multi-step path (a named template, or a
+ * match template that buffers); otherwise that form is left to BIA_.
  * Returns the id of the first op, or the null id for an empty body.
  */
 static pin_op_id_t
 pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
-		      pin_name_id_t src_file_id, uint64_t *complexity_out)
+		      pin_name_id_t src_file_id, uint64_t *complexity_out,
+		      int named, int multi_step)
 {
     pin_op_id_t head = pin_op_id_null_atom();
 
@@ -2755,6 +3394,8 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 	.poc_src_file = src_file_id,
 	.poc_src_line = 0,
 	.poc_complexity = 0,
+	.poc_named = named,
+	.poc_multi_step = multi_step,
     };
 
     uint32_t seeded = pin_compile_ns_seed(body_node, &cur);
@@ -2972,7 +3613,8 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 	    return 0;
 	}
 	uint64_t complexity = 0;
-	pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity);
+	pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity,
+					  1, 1);
 	int count = 0;
 
 	/*
@@ -2981,16 +3623,20 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 	 * now has a real op-engine implementation (pin_op_apply, matching
 	 * retained children against the apply-templates rule index), so a
 	 * named template whose only complexity source is apply-templates
-	 * compiles and runs like any other op sequence.  Any OTHER complex
-	 * op -- copy-of's PUSH_NODE stub, an unsupported for-each sort/select
-	 * (COMPLEX_EXPR) -- still cannot be compiled as a plain op sequence,
-	 * so reject those instead of silently registering nothing and
-	 * leaving every call to it a silent no-op at runtime.
+	 * compiles and runs like any other op sequence.  Literal and number
+	 * copy-of, downward-path for-each and text/number sorts are op
+	 * dispatchable now; what's left is a general node-set expression
+	 * (copy-of's PUSH_NODE stub, or COMPLEX_EXPR from a for-each
+	 * select or sort key with a variable, function call, predicate,
+	 * wildcard or non-child axis).  Those still can't be compiled as
+	 * a plain op sequence, so reject them instead of silently
+	 * registering nothing and leaving every call to it a silent no-op
+	 * at runtime.
 	 */
 	if (complexity & ~(1ULL << PIN_OP_APPLY)) {
 	    pin_error(rb, child,
-		      "xsl:template name=\"%s\": body requires "
-		      "copy-of or a for-each with an unsupported sort/select, "
+		      "xsl:template name=\"%s\": copy-of or for-each "
+		      "select (or a sort key) needs a node-set expression, "
 		      "which named templates do not support yet",
 		      (const char *) tname);
 	} else if (!pin_op_id_is_null(ops)) {
@@ -3030,17 +3676,63 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
      * apply-templates, no copy-of), op-dispatch executes the full body
      * without BIA_.  Complex ops set bits in complexity, triggering BIA_.
      */
+    /*
+     * Stream where we can, buffer when we must.  A top-level
+     * call-template needs the whole context element, and so do two or
+     * more readers of its children (for-each, apply-templates): the
+     * first would consume what the second needs.  Such a template
+     * buffers: op dispatch runs at the element's close with the
+     * subtree retained, and may then walk a multi-step for-each.
+     *
+     * pin_op_apply handles apply-templates for a top-level call, which
+     * BIA_ can't run at all.  For readers alone, op dispatch is used
+     * only when it can run the whole body (complexity 0): pin_op_apply
+     * ignores select= and finds only rules matching a bare name, so a
+     * body with apply-templates keeps its BIA_ fallback.
+     */
+    /*
+     * And stream when we can: a body whose one reader is a for-each
+     * that qualifies (see pin_template_stream_foreach()) skips op
+     * dispatch, which would buffer, and goes to BIA_, whose
+     * BIA_FOR_EACH streams it.  It also skips pin_compile_foreach(),
+     * which streams too but drops the rest of the body.  The loop
+     * body itself is compiled to ops (it must need nothing more), and
+     * runs once per item as each one closes.
+     */
+    bool call = pin_has_toplevel_call(child);
+    bool readers = pin_count_readers(child) >= 2;
+    bool stream = false;
+
+    xmlNodePtr stream_fe = pin_template_stream_foreach(child);
+    if (stream_fe != NULL) {
+	uint64_t fe_complexity = 0;
+	pin_op_id_t fe_ops = pin_compile_ops(stream_fe, rb, src_file_id,
+					     &fe_complexity, 0, 0);
+	if (fe_complexity == 0 && !pin_op_id_is_null(fe_ops)) {
+	    rb->prb_stream_fe = stream_fe;
+	    rb->prb_stream_ops = fe_ops;
+	    stream = true;
+	}
+    }
+
     uint64_t complexity = 0;
-    prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id, &complexity);
+    if (!stream)
+	prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id,
+					     &complexity, 0, call || readers);
+
+    if (complexity == (1ULL << PIN_OP_APPLY) && call)
+	complexity = 0;
 
     if (complexity != 0 || pin_op_id_is_null(prp->pr_close_ops)) {
-	pin_rstate_id_t foreach_sid = pin_compile_foreach(child, rb);
+	pin_rstate_id_t foreach_sid = stream ? pin_rstate_id_null_atom()
+	    : pin_compile_foreach(child, rb);
 	if (!pin_rstate_id_is_null(foreach_sid)) {
 	    prp->pr_action = PIA_SAVE;
 	    prp->pr_new_state = foreach_sid;
 	    prp->pr_close_ops = pin_op_id_null_atom();
 	} else {
 	    pin_body_instr_id_t body_head = pin_compile_body(child, rb, 0);
+	    rb->prb_stream_fe = NULL;
 	    if (!pin_body_instr_id_is_null(body_head)) {
 		prp->pr_body = body_head;
 		prp->pr_body_retain = pin_body_retain(body_head, rb);
