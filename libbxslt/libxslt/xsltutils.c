@@ -1027,8 +1027,11 @@ xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
 
     len = xmlNodeSetGetNodeNr(list);
 
-    /* TODO: xsl:sort lang attribute */
-    /* TODO: xsl:sort case-order attribute */
+    /*
+     * TODO: xsl:sort case-order attribute.  xsltNewLocale() takes a
+     * lowerFirst argument for this but never uses it on any platform,
+     * so case-order has no effect regardless of lang.
+     */
 
     results = xmlMalloc(len * sizeof(xmlXPathObjectPtr));
     if (results == NULL) {
