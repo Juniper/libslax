@@ -237,6 +237,6 @@ YES			    item[position() mod 2 = 1]
 YES			    div[@class="appendix"]//p
 YES			    @class
 YES			    @*
-YES   except ns for key	    key('a','b')
+YES			    key('a','b')
 
 daniel@veillard.com
