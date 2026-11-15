@@ -120,6 +120,11 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque);
 void
 pin_parse_emit_xml (pin_parse_t *parsep, FILE *out);
 
+struct pin_output_s;		/* See pin_output.h */
+
+void
+pin_parse_emit_sink (pin_parse_t *parsep, const struct pin_output_s *sinkp);
+
 void
 pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);
 
