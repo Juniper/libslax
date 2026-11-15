@@ -99,8 +99,7 @@ Pattern tester:
   => done
 
 Support Attribute value templates:
-  -> namespace support for attribute value templates is not done, need
-     a small API redesign
+  => done, namespace support included
 
 Doc:
   - put a page at http://xmlsoft.org/XSLT/
@@ -116,7 +115,7 @@ Error handling:
   -> reports context
 
 ID and Key support:
-  -> done but namespace support in keys is not defined
+  => done, including namespace support in match/use patterns
   -> make sure keys are recomputed on new document input
 
 Profiler:
