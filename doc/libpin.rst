@@ -26,6 +26,41 @@ libpin depends on parrotdb for all persistent storage.  It does not depend
 on libxml2 or libxslt.
 
 
+Store and Output
+----------------
+
+The libpin store (the tiny tree of ``pin_node_t`` in the parrotdb
+segment) holds **input**, never output.
+
+* **The store keeps the minimum subset of the streaming input** that the
+  rulebook can still need.  The compiled rules decide what that subset
+  is.
+* **Ancestors are always kept.**  Every input element that is still open
+  is in the store with its name, namespaces and attributes, so an
+  expression can always look upward from the current node.
+* **Siblings and children are dropped** as soon as nothing can need them
+  any more.  An element's subtree is kept only while something will
+  still read it, such as a template body that runs when the element
+  closes, a for-each, a sort or a live node-set.
+* **Index mode.**  With no rulebook, nothing is dropped and the store
+  holds the whole document.  This is the "index" use: parse a fixed
+  file once, then run scripts and search paths against the store.
+  ``pin_parse_emit`` and ``pin_parse_emit_xml`` dump the store in this
+  mode.
+* **Output is streamed, never stored.**  Output is written as soon as it
+  is produced, through an output sink: a table of callbacks (open,
+  attribute, text, close, and so on) plus an opaque pointer.  More than
+  one sink can be attached.  The sink, not the engine, decides how
+  output is formatted, so sinks other than XML are possible.  Errors go
+  through their own callback in the same table, so they can be sent
+  somewhere other than the output, such as stderr.
+
+*Status:* the current code doesn't yet follow this design.  It still
+builds transform output in the store and writes it after the parse,
+and it keeps input ancestors only when a rule copies them to output.
+The output sink and the input-only store are being added.
+
+
 Dependency: ParrotDB
 --------------------
 
@@ -217,13 +252,19 @@ Calling ``pin_parse(parsep)`` drives the tokeniser loop: for each token it
 consults the rulebook, executes the resulting action, and either inserts a
 node into the tree or discards it.
 
-The parser exposes two output mechanisms:
+The parser has two ways of getting nodes out (see "Store and Output"
+above for the design they are moving to):
 
 * **Tree building** (default): nodes are inserted into the ``pin_insert_t``
   tree via ``pin_insert_open`` / ``pin_insert_node`` / ``pin_insert_close``.
-* **Emit callback**: ``pin_parse_emit(parsep, func, opaque)`` walks the
-  completed tree and calls ``func`` for each node, useful for streaming
-  results to a downstream consumer without holding the whole tree.
+* **Store walk**: ``pin_parse_emit(parsep, func, opaque)`` walks the
+  tree as it stands and calls ``func`` for each node.
+  ``pin_parse_emit_xml`` uses it to write the tree as XML.  This is a
+  dump of the store, not a streaming path: everything it writes has
+  been held in the store until the call.  Today transform output is
+  written this way, after the parse.  Under the design above that
+  output goes through the output sink as it is produced, and the store
+  walk is used only for index mode and debugging.
 
 The parser also holds a **default rule** (``xp_default_rule``) used when no
 rulebook is present or when the rulebook has no matching rule and no
