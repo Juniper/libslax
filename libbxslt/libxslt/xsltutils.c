@@ -984,6 +984,56 @@ xsltDocumentSortFunction (xmlNodeSetPtr list)
 }
 
 /**
+ * xsltCaseOrderCompare:
+ * @str1:  first string
+ * @str2:  second string
+ * @lowerFirst:  non-zero for case-order="lower-first"
+ *
+ * Compares two strings the way xmlStrcmp does, except that when the
+ * strings are identical but for the case of their letters, the
+ * comparison is decided by the case at the first position where they
+ * differ, per case-order, instead of by character code.  Only the
+ * ASCII alphabet is folded; this matches the Latin-only scope already
+ * used for xsl:number's lang attribute.
+ *
+ * Returns <0, 0 or >0 like xmlStrcmp.
+ */
+static int
+xsltCaseOrderCompare (const xmlChar *str1, const xmlChar *str2,
+                      int lowerFirst)
+{
+    int c1, c2, lc1, lc2;
+    int tieBreak = 0;
+
+    if (str1 == NULL || str2 == NULL)
+        return xmlStrcmp(str1, str2);
+
+    while (*str1 != 0 && *str2 != 0) {
+        c1 = *str1++;
+        c2 = *str2++;
+        lc1 = (((unsigned) ((c1 | 0x20) - 'a')) < 26) ? (c1 | 0x20) : c1;
+        lc2 = (((unsigned) ((c2 | 0x20) - 'a')) < 26) ? (c2 | 0x20) : c2;
+
+        if (lc1 != lc2)
+            return (lc1 < lc2) ? -1 : 1;
+
+        if (tieBreak == 0 && c1 != c2) {
+            int c1IsUpper = (c1 != lc1);
+
+            if (lowerFirst)
+                tieBreak = c1IsUpper ? 1 : -1;
+            else
+                tieBreak = c1IsUpper ? -1 : 1;
+        }
+    }
+
+    if (*str1 != *str2)
+        return (*str1 < *str2) ? -1 : 1;
+
+    return tieBreak;
+}
+
+/**
  * xsltComputeSortResultInternal:
  * @ctxt:  a XSLT process context
  * @sort:  xsl:sort node
@@ -1028,9 +1078,8 @@ xsltComputeSortResultInternal (xsltTransformContextPtr ctxt, xmlNodePtr sort,
     len = xmlNodeSetGetNodeNr(list);
 
     /*
-     * TODO: xsl:sort case-order attribute.  xsltNewLocale() takes a
-     * lowerFirst argument for this but never uses it on any platform,
-     * so case-order has no effect regardless of lang.
+     * case-order is applied by xsltDefaultSortFunction as a string
+     * comparator, not here; this just computes the raw sort keys.
      */
 
     results = xmlMalloc(len * sizeof(xmlXPathObjectPtr));
@@ -1184,6 +1233,7 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
     xmlXPathObjectPtr tmp;
     int number[XSLT_MAX_SORT], desc[XSLT_MAX_SORT];
     void *locale[XSLT_MAX_SORT];
+    int hasCaseOrder[XSLT_MAX_SORT], lowerFirst[XSLT_MAX_SORT];
 
     if (ctxt == NULL || sorts == NULL || nbsorts <= 0
         || nbsorts >= XSLT_MAX_SORT)
@@ -1242,6 +1292,26 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
         } else {
             desc[j] = comp->descending;
         }
+        if (comp->case_order == NULL && comp->has_use != 0) {
+            xmlChar *caseOrder = xsltEvalAttrValueTemplate(
+                ctxt, sorts[j], BAD_CAST "case-order", NULL);
+            lowerFirst[j] = 0;
+            if (caseOrder != NULL) {
+                if (xmlStrEqual(caseOrder, (const xmlChar *) "upper-first"))
+                    ;
+                else if (xmlStrEqual(caseOrder, (const xmlChar *) "lower-first"))
+                    lowerFirst[j] = 1;
+                else
+                    xsltTransformError(
+                        ctxt, NULL, sorts[j],
+                        "xsltDoSortFunction: invalid value %s for case-order\n",
+                        caseOrder);
+                xmlFree(caseOrder);
+            }
+        } else {
+            lowerFirst[j] = comp->lower_first;
+        }
+        hasCaseOrder[j] = comp->has_use;
         if (comp->lang == NULL && comp->has_lang != 0) {
             lang = xsltEvalAttrValueTemplate(ctxt, sorts[j], (xmlChar *) "lang",
                                              NULL);
@@ -1260,7 +1330,8 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
     len = xmlNodeSetGetNodeNr(list);
 
     resultsTab[0]
-        = xsltComputeSortResultInternal(ctxt, sorts[0], number[0], locale[0]);
+        = xsltComputeSortResultInternal(ctxt, sorts[0], number[0],
+                                        hasCaseOrder[0] ? NULL : locale[0]);
     for (i = 1; i < XSLT_MAX_SORT; i++)
         resultsTab[i] = NULL;
 
@@ -1303,6 +1374,11 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
                             tst = 1;
                         else
                             tst = -1;
+                    } else if (hasCaseOrder[0]) {
+                        tst = xsltCaseOrderCompare(
+                            xmlXPathObjectGetStringval(results[j]),
+                            xmlXPathObjectGetStringval(results[j + incr]),
+                            lowerFirst[0]);
                     } else {
                         tst = xmlStrcmp(
                             xmlXPathObjectGetStringval(results[j]),
@@ -1330,7 +1406,7 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
                         if (resultsTab[depth] == NULL)
                             resultsTab[depth] = xsltComputeSortResultInternal(
                                 ctxt, sorts[depth], number[depth],
-                                locale[depth]);
+                                hasCaseOrder[depth] ? NULL : locale[depth]);
                         res = resultsTab[depth];
                         if (res == NULL)
                             break;
@@ -1364,6 +1440,11 @@ xsltDefaultSortFunction (xsltTransformContextPtr ctxt, xmlNodePtr *sorts,
                                     tst = 1;
                                 else
                                     tst = -1;
+                            } else if (hasCaseOrder[depth]) {
+                                tst = xsltCaseOrderCompare(
+                                    xmlXPathObjectGetStringval(res[j]),
+                                    xmlXPathObjectGetStringval(res[j + incr]),
+                                    lowerFirst[depth]);
                             } else {
                                 tst = xmlStrcmp(
                                     xmlXPathObjectGetStringval(res[j]),
