@@ -197,6 +197,8 @@ static xmlEntityPtr xmlParseStringPEReference (xmlParserCtxtPtr ctxt,
                                                const xmlChar **str);
 
 static void xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent);
+static xmlNodePtr xmlParseEntityContentInPlace (xmlParserCtxtPtr ctxt,
+                                                xmlEntityPtr ent);
 
 static int xmlLoadEntityContent (xmlParserCtxtPtr ctxt, xmlEntityPtr entity);
 
@@ -7302,35 +7304,17 @@ xmlParseReference (xmlParserCtxt *ctxt)
      * far more secure as the parser will only process data coming from
      * the document entity by default.
      *
-     * FIXME: This doesn't work correctly since entities can be
-     * expanded with different namespace declarations in scope.
-     * For example:
-     *
-     * <!DOCTYPE doc [
-     *   <!ENTITY ent "<ns:elem/>">
-     * ]>
-     * <doc>
-     *   <decl1 xmlns:ns="urn:ns1">
-     *     &ent;
-     *   </decl1>
-     *   <decl2 xmlns:ns="urn:ns2">
-     *     &ent;
-     *   </decl2>
-     * </doc>
-     *
-     * Proposed fix:
-     *
-     * - Ignore current namespace declarations when parsing the
-     *   entity. If a prefix can't be resolved, don't report an error
-     *   but mark it as unresolved.
-     * - Try to resolve these prefixes when expanding the entity.
-     *   This will require a specialized version of xmlStaticCopyNode
-     *   which can also make use of the namespace hash table to avoid
-     *   quadratic behavior.
-     *
-     * Alternatively, we could simply reparse the entity on each
-     * expansion like we already do with custom SAX callbacks.
-     * External entity content should be cached in this case.
+     * A general entity, internal or external, is just a named text
+     * blob: this first parse only exists to size the entity for
+     * amplification accounting (ent->expandedSize) and to populate
+     * ent->children for other consumers. The namespace scope it
+     * resolves against here is irrelevant, since a prefix like "ns:"
+     * in the entity's text can resolve to a different URI at each
+     * reference site. External entity content is fetched once and
+     * cached as text, same as an internal entity's literal value
+     * (see xmlCtxtParseEntity); the actual expansion below reparses
+     * that cached text fresh at every reference, in whatever scope
+     * is in effect there, via xmlParseEntityContentInPlace.
      */
     if (ent->etype == XML_INTERNAL_GENERAL_ENTITY
         || (ctxt->options & XML_PARSE_NO_XXE) == 0
@@ -7368,18 +7352,26 @@ xmlParseReference (xmlParserCtxt *ctxt)
         if (ctxt->sax->reference != NULL)
             ctxt->sax->reference(ctxt->userData, ent->name);
     } else if (ent->children != NULL && ctxt->node != NULL) {
-        xmlNodePtr copy, cur;
+        xmlNodePtr cur, next;
 
         /*
-         * Seems we are generating the DOM content, copy the tree
-	 */
-        cur = ent->children;
+         * General entities, internal or external, are just named text
+         * blobs: the replacement text is reparsed fresh at this
+         * reference site, using whatever namespace declarations are
+         * actually in scope here, instead of reusing the tree cached
+         * by the first reference, which froze whatever scope happened
+         * to be in effect back then. The resulting nodes are freshly
+         * allocated and not referenced anywhere else, so they're
+         * adopted directly instead of copied.
+         */
+        cur = xmlParseEntityContentInPlace(ctxt, ent);
 
         /*
          * Handle first text node with SAX to coalesce text efficiently
          */
-        if (cur->type == XML_TEXT_NODE
-            || cur->type == XML_CDATA_SECTION_NODE) {
+        if (cur != NULL
+            && (cur->type == XML_TEXT_NODE
+                || cur->type == XML_CDATA_SECTION_NODE)) {
             int len = xmlStrlen(cur->content);
 
             if (cur->type == XML_TEXT_NODE
@@ -7391,7 +7383,9 @@ xmlParseReference (xmlParserCtxt *ctxt)
                     ctxt->sax->cdataBlock(ctxt->userData, cur->content, len);
             }
 
-            cur = cur->next;
+            next = cur->next;
+            xmlFreeNode(cur);
+            cur = next;
         }
 
         while (cur != NULL) {
@@ -7416,6 +7410,7 @@ xmlParseReference (xmlParserCtxt *ctxt)
                                               len);
                 }
 
+                xmlFreeNode(cur);
                 break;
             }
 
@@ -7425,31 +7420,19 @@ xmlParseReference (xmlParserCtxt *ctxt)
             ctxt->nodemem = 0;
             ctxt->nodelen = 0;
 
-            copy = xmlDocCopyNode(cur, ctxt->myDoc, 1);
+            next = cur->next;
 
-            if (copy == NULL) {
-                xmlErrMemory(ctxt);
-                break;
-            }
-
-            if (ctxt->parseMode == XML_PARSE_READER) {
-                /* Needed for reader */
-                copy->extra = cur->extra;
-                /* Maybe needed for reader */
-                copy->_private = cur->_private;
-            }
-
-            copy->parent = ctxt->node;
+            cur->parent = ctxt->node;
             last = ctxt->node->last;
             if (last == NULL) {
-                ctxt->node->children = copy;
+                ctxt->node->children = cur;
             } else {
-                last->next = copy;
-                copy->prev = last;
+                last->next = cur;
+                cur->prev = last;
             }
-            ctxt->node->last = copy;
+            ctxt->node->last = cur;
 
-            cur = cur->next;
+            cur = next;
         }
     }
 }
@@ -11915,6 +11898,47 @@ error:
     return list;
 }
 
+/*
+ * Parse an internal general entity's replacement text fresh, using
+ * whatever namespace declarations are currently in scope at the
+ * reference site. Unlike xmlCtxtParseEntity, the result isn't cached
+ * on the entity: it's meant to be adopted directly into the tree by
+ * the caller, so it must reflect this particular reference site, not
+ * whatever scope was in effect the first time the entity was used.
+ */
+static xmlNodePtr
+xmlParseEntityContentInPlace (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
+{
+    xmlParserInputPtr input;
+    xmlNodePtr list;
+    int oldNodelen, oldNodemem;
+
+    if (ent->flags & XML_ENT_EXPANDING) {
+        xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
+        return NULL;
+    }
+
+    input = xmlNewEntityInputStream(ctxt, ent);
+    if (input == NULL)
+        return NULL;
+
+    oldNodelen = ctxt->nodelen;
+    oldNodemem = ctxt->nodemem;
+    ctxt->nodelen = 0;
+    ctxt->nodemem = 0;
+
+    ent->flags |= XML_ENT_EXPANDING;
+    list = xmlCtxtParseContentInternal(ctxt, input, /* hasTextDecl */ 0, 1);
+    ent->flags &= ~XML_ENT_EXPANDING;
+
+    ctxt->nodelen = oldNodelen;
+    ctxt->nodemem = oldNodemem;
+
+    xmlFreeInputStream(input);
+
+    return list;
+}
+
 static void
 xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
 {
@@ -11935,6 +11959,17 @@ xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
     if (ent->flags & XML_ENT_EXPANDING) {
         xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
         goto error;
+    }
+
+    /*
+     * External entities are fetched once and cached as text, exactly
+     * like an internal entity's literal value, so later references
+     * can reparse the content fresh under their own namespace scope
+     * (xmlParseEntityContentInPlace) without refetching the resource.
+     */
+    if (isExternal && ent->content == NULL) {
+        if (xmlLoadEntityContent(ctxt, ent) < 0)
+            goto error;
     }
 
     /*
@@ -11977,7 +12012,13 @@ xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
 
     ent->flags |= XML_ENT_EXPANDING;
 
-    list = xmlCtxtParseContentInternal(ctxt, input, isExternal, buildTree);
+    /*
+     * The entity's content, cached above for external entities, never
+     * carries a leading text declaration: xmlLoadEntityContent already
+     * stripped it when the content was fetched.
+     */
+    list = xmlCtxtParseContentInternal(ctxt, input, /* hasTextDecl */ 0,
+                                       buildTree);
 
     ent->flags &= ~XML_ENT_EXPANDING;
 
@@ -11986,7 +12027,9 @@ xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
     ctxt->nodemem = oldNodemem;
 
     /*
-     * Entity size accounting
+     * Entity size accounting. External entities were already
+     * accounted for in xmlLoadEntityContent when their content was
+     * fetched, so only expandedSize still needs updating here.
      */
     consumed = input->consumed;
     xmlSaturatedAddSizeT(&consumed, input->end - input->base);
@@ -11995,9 +12038,6 @@ xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
         xmlSaturatedAdd(&ent->expandedSize, consumed);
 
     if ((ent->flags & XML_ENT_PARSED) == 0) {
-        if (isExternal)
-            xmlSaturatedAdd(&ctxt->sizeentities, consumed);
-
         ent->children = list;
 
         while (list != NULL) {
