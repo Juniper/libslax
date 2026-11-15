@@ -123,6 +123,15 @@ accept:
 	    ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \
 	done);
 
+# runtest has its own built-in "update results in place" mode (-u),
+# which overwrites the baselines under $(srcdir)/result with freshly
+# generated output from its own compareFileMem() checks -- separate
+# from, and not touched by, the "accept" target above, which only
+# refreshes the aggregate out/check.{out,err} snapshot used by
+# CHECK_DIFFS.
+accept-results:
+	cd $(srcdir) && $(abs_builddir)/runtest -u
+
 VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
 
 check-valgrind valgrind:
