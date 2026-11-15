@@ -32,7 +32,6 @@
         <two>
           <xsl:number value="$two" format="001" letter-value="alphabetic" grouping-separator="/" grouping-size="100">
             <!-- language "en"; -->
-            <!-- Unsupported in libxslt -->
           </xsl:number>
         </two>
         <!-- * The following substatements of 'number' can only appear if
