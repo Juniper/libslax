@@ -57,9 +57,9 @@ evaluation mechanism. Not sure this is best.
   xsl:apply-templates is the recurstion mechanism, note the select
 mechanism.
 
-  detection of loop: once the applied nodeset has been computed,
-check that none of the elements is part of the existing set in use, this
-may be costly and should be triggered only at a certain depth.
+  loop detection: implemented via ctxt->maxTemplateDepth, checked at
+each recursive apply-templates call rather than by inspecting node
+sets, so there is no per-call cost proportional to set membership.
 
 5.5 Conflict Resolution for Template Rules
 
