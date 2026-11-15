@@ -49,6 +49,7 @@
 #include <libpin/pin_parse.h>
 #include <libpin/pin_exec.h>
 #include <libpin/pin_sort.h>
+#include <libpin/pin_output.h>
 
 /* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
@@ -3491,14 +3492,6 @@ pin_parse_dump (pin_parse_t *parsep)
     pin_parse_emit(parsep, pin_parse_dump_cb, NULL);
 }
 
-typedef struct pin_xml_output_s {
-    FILE *xx_out;		/* Output file descriptor */
-    unsigned xx_indent;		/* Current indent amount */
-    unsigned xx_incr;		/* Indent increment */
-    pin_node_type_t xx_last_type; /* Last type seen */
-    const char *xx_encoding;	/* Encoding for XML declaration (NULL=omit) */
-} pin_xml_output_t;
-
 static int
 pin_is_ws_only (const char *data, size_t len)
 {
@@ -3508,167 +3501,138 @@ pin_is_ws_only (const char *data, size_t len)
     return 1;
 }
 
-static int
-pin_parse_is_ws (const char *data)
+/*
+ * Turn the events of a store walk (pin_parse_emit) into calls on an
+ * output writer.  The walk's EOL_EMPTY needs no call: a close with no
+ * end_attribs before it is an empty element.
+ */
+typedef struct pin_parse_emit_sink_s {
+    pin_output_writer_t *pes_writer; /* Where the events go */
+    pin_workspace_t *pes_workspace; /* For names and namespaces */
+} pin_parse_emit_sink_t;
+
+static void
+pin_parse_emit_ns_names (pin_workspace_t *pwp, pin_node_t *nodep,
+			 const char **prefixp, const char **urip)
 {
-    for (const char *cp = data; cp && *cp; cp++)
-	if (!isspace(*cp))
-	    return FALSE;
-    return TRUE;
+    *prefixp = *urip = NULL;
+
+    if (nodep == NULL || nodep->pn_ns_map == PA_NULL_ATOM)
+	return;
+
+    pin_ns_map_t *ns_map = pin_ns_map_addr(pwp,
+					   pin_ns_map_id(nodep->pn_ns_map));
+    if (ns_map == NULL)
+	return;
+
+    *prefixp = pin_namepool_string(pwp, ns_map->pnm_prefix);
+    *urip = pin_namepool_string(pwp, ns_map->pnm_uri);
 }
 
 static int
-pin_parse_emit_xml_cb (pin_parse_t *parsep, pin_node_type_t type,
-		      pin_node_id_t node_atom UNUSED, pin_node_t *nodep,
-		      const char *data, void *opaque)
+pin_parse_emit_sink_cb (pin_parse_t *parsep UNUSED, pin_node_type_t type,
+			pin_node_id_t node_atom UNUSED, pin_node_t *nodep,
+			const char *data, void *opaque)
 {
-    pin_xml_output_t *xmlp = opaque;
-    FILE *out = xmlp->xx_out;
-    pin_workspace_t *pwp = parsep->pp_insert->pin_tree->pt_workspace;
+    pin_parse_emit_sink_t *pesp = opaque;
+    pin_output_writer_t *wrp = pesp->pes_writer;
+    pin_workspace_t *pwp = pesp->pes_workspace;
+    const char *prefix, *uri;
     pin_ns_map_t *ns_map;
-    const char *cp;
-    int indent;
-    const char *pref, *uri;
-    int is_debug = pin_parse_flags_isset(parsep, PIN_PF_DEBUG);
-    int skipped = 0;
-
-    if (is_debug)
-	fprintf(out, "<!-- [[%d]%s%s%s] -->", type, data ? "[" : "",
-		data ?: "", data ? "]" : "");
 
     switch (type) {
     case PIN_TYPE_ROOT:
-	if (xmlp->xx_encoding)
-	    fprintf(out, "<?xml version=\"1.0\" encoding=\"%s\"?>\n",
-		    xmlp->xx_encoding);
-	if (is_debug)
-	    fprintf(out, "<!-- start of output>\n");
-	break;
+	return pin_output_start(wrp);
 
     case PIN_TYPE_OPEN:
-	if (xmlp->xx_last_type != PIN_TYPE_ROOT
-	    && xmlp->xx_last_type != PIN_TYPE_CLOSE
-	    && xmlp->xx_last_type != PIN_TYPE_EMPTY)
-	    fprintf(out, "\n");
-
-	pref = NULL;
-	if (nodep->pn_ns_map != PA_NULL_ATOM) {
-	    ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
-	    if (ns_map != NULL)
-		pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
-	}
-
-	fprintf(out, "%*s<%s%s%s", xmlp->xx_indent, "",
- 		pref ?: "", pref ? ":" : "", data);
-	xmlp->xx_indent += xmlp->xx_incr;
-	break;
+	pin_parse_emit_ns_names(pwp, nodep, &prefix, &uri);
+	return pin_output_open(wrp, prefix, uri, data);
 
     case PIN_TYPE_EOL_ATTRIB:
-	fprintf(out, ">");
-	break;
+	return pin_output_end_attribs(wrp);
 
     case PIN_TYPE_EOL_EMPTY:
-	fprintf(out, "/>\n");
-	break;
+	return 0;
 
     case PIN_TYPE_CLOSE:
-	xmlp->xx_indent -= xmlp->xx_incr;
-
-	if (data != NULL) {
-	    if (xmlp->xx_last_type != PIN_TYPE_EOL_EMPTY) {
-		pref = NULL;
-
-		if (nodep->pn_ns_map != PA_NULL_ATOM) {
-		    ns_map = pin_ns_map_addr(pwp, pin_ns_map_id(nodep->pn_ns_map));
-		    if (ns_map != NULL)
-			pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
-		}
-
-		if (xmlp->xx_last_type == PIN_TYPE_UNESC
-			|| xmlp->xx_last_type == PIN_TYPE_TEXT) {
-		    fprintf(out, "</%s%s%s>\n",
-			    pref ?: "", pref ? ":" : "", data);
-		} else {
-		    indent = xmlp->xx_indent;
-		    fprintf(out, "%*s</%s%s%s>\n", indent, "",
-			    pref ?: "", pref ? ":" : "", data);
-		}
-	    }
-	}
-	break;
+	return pin_output_close(wrp);
 
     case PIN_TYPE_COMMENT:
-	if (data)
-	    fprintf(out, "\n<!--%s-->", data);
-	break;
+	return pin_output_comment(wrp, data);
 
     case PIN_TYPE_PI: {
-	if (data) {
-	    const char *nl = strchr(data, '\n');
-	    if (nl)
-		fprintf(out, "\n<?%.*s %s?>", (int)(nl - data), data, nl + 1);
-	    else
-		fprintf(out, "\n<?%s?>", data);
-	}
-	break;
+	/* The store holds a PI as "target\ncontent" */
+	const char *nl = data ? strchr(data, '\n') : NULL;
+	if (nl == NULL)
+	    return pin_output_pi(wrp, data, NULL);
+
+	char *target = strndup(data, nl - data);
+	if (target == NULL)
+	    return -1;
+
+	int rc = pin_output_pi(wrp, target, nl + 1);
+	free(target);
+	return rc;
     }
 
-    case PIN_TYPE_TEXT:		/* XXX Text needs to be escaped */
-	fprintf(out, "%s%s%s", is_debug ? "[text]" : "", data,
-		is_debug ? "[/text]": "");
-	break;
+    case PIN_TYPE_TEXT:
+	return pin_output_text(wrp, data, data ? strlen(data) : 0, 0);
 
     case PIN_TYPE_UNESC:
-	if (pin_parse_is_ws(data)) {
-	    skipped = 1;
-	} else {
-	    fprintf(out, "%s%s%s", is_debug ? "[unes]" : "", data,
-		    is_debug ? "[/unes]": "");
-	}
-	break;
+	return pin_output_text(wrp, data, data ? strlen(data) : 0,
+			       PIN_OUTPUT_TEXT_UNESC);
 
     case PIN_TYPE_ATSTR:
-	fprintf(out, " %s", data);
-	break;
+	return pin_output_attrib_raw(wrp, data);
 
     case PIN_TYPE_ATTRIB:
-	cp = pin_namepool_string(parsep->pp_insert->pin_tree->pt_workspace,
-				     nodep->pn_name);
-	fprintf(out, " %s=\"%s\"", cp, data);
-	break;
+	/* The old writer never wrote an attribute's prefix; nor do we (yet) */
+	return pin_output_attrib(wrp, NULL, NULL,
+				 pin_namepool_string(pwp, nodep->pn_name),
+				 data);
 
     case PIN_TYPE_NS:
 	ns_map = pin_ns_map_addr(pwp, pin_node_ns_contents(nodep));
-	if (ns_map) {
-	    pref = pin_namepool_string(pwp, ns_map->pnm_prefix);
-	    uri = pin_namepool_string(pwp, ns_map->pnm_uri);
-	    fprintf(out, " xmlns%s%s=\"%s\"",
-		    pref ? ":" : "", pref ?: "", uri ?: "");
-	} else {
-	if (is_debug)
-	    fprintf(out, "namespace: [null]\n");
-	}
-	break;
+	if (ns_map == NULL)
+	    return 0;
+
+	return pin_output_ns(wrp, pin_namepool_string(pwp, ns_map->pnm_prefix),
+			     pin_namepool_string(pwp, ns_map->pnm_uri));
 
     case PIN_TYPE_EOF:
-	if (is_debug)
-	    fprintf(out, "<!-- end of output>\n");
-	break;
+	return pin_output_finish(wrp);
     }
 
-    if (!skipped)
-	xmlp->xx_last_type = type;
     return 0;
 }
 
+/*
+ * Walk the store into a sink.
+ */
+void
+pin_parse_emit_sink (pin_parse_t *parsep, const pin_output_t *sinkp)
+{
+    pin_output_writer_t writer;
+    pin_parse_emit_sink_t pes = {
+	.pes_writer = &writer,
+	.pes_workspace = parsep->pp_insert->pin_tree->pt_workspace,
+    };
+
+    pin_output_writer_init(&writer, sinkp);
+    pin_parse_emit(parsep, pin_parse_emit_sink_cb, &pes);
+    pin_output_writer_cleanup(&writer);
+}
+
+/*
+ * Dump the store as XML, using the rulebook's output settings.
+ */
 void
 pin_parse_emit_xml (pin_parse_t *parsep, FILE *out)
 {
-    pin_xml_output_t xml;
-
-    bzero(&xml, sizeof(xml));
-    xml.xx_out = out;
-    xml.xx_incr = 3;
+    pin_output_xml_opts_t opts = {
+	.poxo_indent = 3,
+	.poxo_debug = pin_parse_flags_isset(parsep, PIN_PF_DEBUG),
+    };
 
     pin_rulebook_t *rb = parsep->pp_rulebook;
     if (rb) {
@@ -3678,14 +3642,19 @@ pin_parse_emit_xml (pin_parse_t *parsep, FILE *out)
 	    const char *enc = NULL;
 	    if (!pin_name_id_is_null(op->pos_encoding))
 		enc = pin_namepool_string(rb->prb_workspace, op->pos_encoding);
-	    xml.xx_encoding = enc ? enc : "UTF-8";
+	    opts.poxo_encoding = enc ? enc : "UTF-8";
 	}
 
 	if (op->pos_indent_set && !op->pos_indent)
-	    xml.xx_incr = 0;
+	    opts.poxo_indent = 0;
     }
 
-    pin_parse_emit(parsep, pin_parse_emit_xml_cb, &xml);
+    pin_output_t sink;
+    if (pin_output_xml_init(&sink, out, &opts) < 0)
+	return;
+
+    pin_parse_emit_sink(parsep, &sink);
+    pin_output_free(&sink);
 }
 
 void
