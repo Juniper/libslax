@@ -30,7 +30,8 @@ Store and Output
 ----------------
 
 The libpin store (the tiny tree of ``pin_node_t`` in the parrotdb
-segment) holds **input**, never output.
+segment) holds **input**, plus any content built as the value of a
+variable.  It never holds output written to the result.
 
 * **The store keeps the minimum subset of the streaming input** that the
   rulebook can still need.  The compiled rules decide what that subset
@@ -54,6 +55,21 @@ segment) holds **input**, never output.
   output is formatted, so sinks other than XML are possible.  Errors go
   through their own callback in the same table, so they can be sent
   somewhere other than the output, such as stderr.
+* **Content built for a value is stored, not streamed.**  When a
+  variable, parameter or ``mvar`` has a content body (``var $f = {
+  <top> name; }``), the content is built in the store as a detached
+  fragment, not under any input node.  It lives as long as the
+  variable, and it reaches the output only if something copies it
+  there.  An ``mvar`` fragment can grow (``append``) or be replaced
+  (``set``); output already written to the result can't change.  So
+  output always has a destination: the sinks, or a fragment in the
+  store.
+* **The sink table is the output API.**  Everything that makes output
+  calls the callbacks of the current destination.  One sink writes
+  XML to a file; another builds a fragment in the store.  The code
+  making the output doesn't know which it has, and replaying stored
+  nodes (``copy-of``, a store dump) is a walk that calls the same
+  callbacks.
 
 *Status:* the current code doesn't yet follow this design.  It still
 builds transform output in the store and writes it after the parse,
