@@ -1,0 +1,2 @@
+../../../tests/pin/pin_08.84.in:21: error: xsl:sort: select "string(@n)": this sort key form is not supported yet (only '.', '@attr', a child path, or arithmetic on child paths)
+pin_08.test: pin_compile failed

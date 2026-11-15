@@ -1,0 +1,8 @@
+compiled 1 pattern
+<out id="c1">
+   <head/>
+   <i n="1">one</i>
+   <i n="2">two</i>
+   <i n="3"/>
+   <tail id="c1"/>
+</out>

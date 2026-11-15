@@ -1,0 +1,8 @@
+compiled 11 patterns
+<result>
+   <asc>notnum negtwo zero negzero nine nine2 ten hundred thousand </asc>
+   <desc>thousand hundred ten nine nine2 zero negzero negtwo notnum </desc>
+   <text>hundred negzero negtwo zero ten thousand nine nine2 notnum </text>
+   <mixed>notnum negzero nine nine2 hundred negtwo zero ten thousand </mixed>
+   <upper>A B a b </upper>
+</result>

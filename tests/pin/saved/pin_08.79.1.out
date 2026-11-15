@@ -1,0 +1,13 @@
+compiled 3 patterns
+<result>
+   <out>
+      <lit>abc</lit>
+      <num>42</num>
+      <mix>x-7.5-y</mix>
+   </out>
+   <out>
+      <lit>abc</lit>
+      <num>42</num>
+      <mix>x-7.5-y</mix>
+   </out>
+</result>
