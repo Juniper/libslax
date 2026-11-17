@@ -7207,6 +7207,50 @@ xmlParseExternalSubset (xmlParserCtxt *ctxt, const xmlChar *publicId,
     }
 }
 
+/*
+ * Register ID attributes found in a subtree that's about to be
+ * adopted into the document, recursing into element children.
+ *
+ * ID registration is normally done by the SAX2 attribute callbacks,
+ * but those suppress it for content parsed from an entity, since
+ * that used to be a throwaway copy source rather than the actual
+ * tree: the old entity-expansion code relied on xmlDocCopyNode's own
+ * ID handling to register the copy that really landed in the
+ * document. Since the replacement text is now adopted directly
+ * instead of copied, nothing else registers these IDs, so this
+ * walks the adopted subtree and does it here instead.
+ */
+static void
+xmlRegisterEntityContentIds (xmlParserCtxtPtr ctxt, xmlNodePtr cur)
+{
+    xmlAttrPtr attr;
+
+    while (cur != NULL) {
+        if (cur->type == XML_ELEMENT_NODE) {
+            for (attr = cur->properties; attr != NULL; attr = attr->next) {
+                int res = xmlIsID(ctxt->myDoc, cur, attr);
+
+                if (res < 0) {
+                    xmlCtxtErrMemory(ctxt);
+                } else if (res > 0) {
+                    xmlChar *id = xmlNodeGetContent((xmlNodePtr) attr);
+
+                    if (id == NULL) {
+                        xmlCtxtErrMemory(ctxt);
+                    } else {
+                        xmlAddID(&ctxt->vctxt, ctxt->myDoc, id, attr);
+                        xmlFree(id);
+                    }
+                }
+            }
+
+            xmlRegisterEntityContentIds(ctxt, cur->children);
+        }
+
+        cur = cur->next;
+    }
+}
+
 /**
  * Parse and handle entity references in content, depending on the SAX
  * interface, this may end-up in a call to character() if this is a
@@ -7366,8 +7410,15 @@ xmlParseReference (xmlParserCtxt *ctxt)
          */
         cur = xmlParseEntityContentInPlace(ctxt, ent);
 
+        xmlRegisterEntityContentIds(ctxt, cur);
+
         /*
-         * Handle first text node with SAX to coalesce text efficiently
+         * Handle first text node to coalesce text efficiently. The
+         * reparse above already notified the real SAX consumer (a
+         * schema validator or xmlReader, say) of this content while
+         * building it, so splice it into the tree directly through
+         * the base SAX2 handlers instead of ctxt->sax, which would
+         * notify that consumer a second time for the same text.
          */
         if (cur != NULL
             && (cur->type == XML_TEXT_NODE
@@ -7375,13 +7426,10 @@ xmlParseReference (xmlParserCtxt *ctxt)
             int len = xmlStrlen(cur->content);
 
             if (cur->type == XML_TEXT_NODE
-                || (ctxt->options & XML_PARSE_NOCDATA)) {
-                if (ctxt->sax->characters != NULL)
-                    ctxt->sax->characters(ctxt->userData, cur->content, len);
-            } else {
-                if (ctxt->sax->cdataBlock != NULL)
-                    ctxt->sax->cdataBlock(ctxt->userData, cur->content, len);
-            }
+                || (ctxt->options & XML_PARSE_NOCDATA))
+                xmlSAX2Characters(ctxt, cur->content, len);
+            else
+                xmlSAX2CDataBlock(ctxt, cur->content, len);
 
             next = cur->next;
             xmlFreeNode(cur);
@@ -7392,7 +7440,7 @@ xmlParseReference (xmlParserCtxt *ctxt)
             xmlNodePtr last;
 
             /*
-             * Handle last text node with SAX to coalesce text efficiently
+             * Handle last text node the same way, for the same reason.
              */
             if (cur->next == NULL
                 && ((cur->type == XML_TEXT_NODE)
@@ -7400,15 +7448,10 @@ xmlParseReference (xmlParserCtxt *ctxt)
                 int len = xmlStrlen(cur->content);
 
                 if (cur->type == XML_TEXT_NODE
-                    || (ctxt->options & XML_PARSE_NOCDATA)) {
-                    if (ctxt->sax->characters != NULL)
-                        ctxt->sax->characters(ctxt->userData, cur->content,
-                                              len);
-                } else {
-                    if (ctxt->sax->cdataBlock != NULL)
-                        ctxt->sax->cdataBlock(ctxt->userData, cur->content,
-                                              len);
-                }
+                    || (ctxt->options & XML_PARSE_NOCDATA))
+                    xmlSAX2Characters(ctxt, cur->content, len);
+                else
+                    xmlSAX2CDataBlock(ctxt, cur->content, len);
 
                 xmlFreeNode(cur);
                 break;
@@ -11899,6 +11942,40 @@ error:
 }
 
 /*
+ * Like xmlCtxtParseContentInternal, but with ctxt->sax swapped out for
+ * a plain default SAX2 handler for the duration of the parse.
+ *
+ * This is for xmlCtxtParseEntity's first-reference bookkeeping pass,
+ * whose nodes are only ever cached on the entity for other consumers,
+ * never spliced into the document: the real document's SAX consumer
+ * (which might be something like a schema validator or an xmlReader
+ * plugged into ctxt->sax, not just a tree builder) must not learn
+ * about this content at all here, since it never actually appears at
+ * this reference site.
+ */
+static xmlNodePtr
+xmlCtxtParseContentSilently (xmlParserCtxtPtr ctxt, xmlParserInputPtr input,
+                             int hasTextDecl, int buildTree)
+{
+    xmlSAXHandler silentSax;
+    xmlSAXHandlerPtr savedSax = ctxt->sax;
+    void *savedUserData = ctxt->userData;
+    xmlNodePtr list;
+
+    memset(&silentSax, 0, sizeof(silentSax));
+    xmlSAX2InitDefaultSAXHandler(&silentSax, 1);
+    ctxt->sax = &silentSax;
+    ctxt->userData = ctxt;
+
+    list = xmlCtxtParseContentInternal(ctxt, input, hasTextDecl, buildTree);
+
+    ctxt->sax = savedSax;
+    ctxt->userData = savedUserData;
+
+    return list;
+}
+
+/*
  * Parse an internal general entity's replacement text fresh, using
  * whatever namespace declarations are currently in scope at the
  * reference site. Unlike xmlCtxtParseEntity, the result isn't cached
@@ -12016,9 +12093,25 @@ xmlCtxtParseEntity (xmlParserCtxtPtr ctxt, xmlEntityPtr ent)
      * The entity's content, cached above for external entities, never
      * carries a leading text declaration: xmlLoadEntityContent already
      * stripped it when the content was fetched.
+     *
+     * When building a tree, this pass exists only to size the entity
+     * and populate ent->children for other consumers: the nodes it
+     * builds are never spliced into the document, since every
+     * reference site gets its own fresh reparse from
+     * xmlParseEntityContentInPlace. So it's silenced here to avoid
+     * reporting this content to the document's real SAX consumer a
+     * second time.
+     *
+     * Without a tree (ctxt->node == NULL), xmlParseReference's own
+     * splice branch never runs at all, so this is the only place the
+     * entity's content is ever reported -- it must stay live there.
      */
-    list = xmlCtxtParseContentInternal(ctxt, input, /* hasTextDecl */ 0,
-                                       buildTree);
+    if (buildTree)
+        list = xmlCtxtParseContentSilently(ctxt, input, /* hasTextDecl */ 0,
+                                           buildTree);
+    else
+        list = xmlCtxtParseContentInternal(ctxt, input, /* hasTextDecl */ 0,
+                                           buildTree);
 
     ent->flags &= ~XML_ENT_EXPANDING;
 
