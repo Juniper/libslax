@@ -1,7 +1,7 @@
 I/O warning : failed to load "http://example.invalid/imported.xsd": No such file or directory
 test/schemas/v012-reader-schema-main.xsd:4: element import: Schemas parser warning : Element '{http://www.w3.org/2001/XMLSchema}import': Failed to locate a schema at location 'http://example.invalid/imported.xsd'. Skipping the import.
 test/schemas/v012-reader-schema-main.xsd:5: element element: Schemas parser error : element decl. 'doc', attribute 'type': The QName value '{urn:remote}RemoteType' does not resolve to a(n) type definition.
-doc.xml:2: Schemas validity error : Element 'e': 'not-an-intnot-an-int' is not a valid value of the atomic type 'xs:integer'.
+doc.xml:2: Schemas validity error : Element 'e': 'not-an-int' is not a valid value of the atomic type 'xs:integer'.
 I/O warning : failed to load "http://example.invalid/imported.rng": No such file or directory
 test/relaxng/v012-reader-main.rng:2: element include: Relax-NG parser error : xmlRelaxNG: could not load http://example.invalid/imported.rng
 test/relaxng/v012-reader-main.rng:2: element include: Relax-NG parser error : Failed to load include http://example.invalid/imported.rng
