@@ -60,6 +60,7 @@ pin_output_writer_cleanup (pin_output_writer_t *wrp)
 {
     free(wrp->pw_names);
     free(wrp->pw_offsets);
+    free(wrp->pw_ns);
     memset(wrp, 0, sizeof(*wrp));
 }
 
@@ -153,7 +154,43 @@ pin_output_ns (pin_output_writer_t *wrp, const char *prefix, const char *uri)
     if (!wrp->pw_attribs_open)
 	return pin_output_rc(wrp, -1); /* Too late for this element */
 
+    if (wrp->pw_ns_count + 1 > wrp->pw_ns_size) {
+	unsigned newsize = wrp->pw_ns_size ? wrp->pw_ns_size * 2 : 16;
+	size_t *np = realloc(wrp->pw_ns, newsize * sizeof(*np));
+	if (np == NULL)
+	    return pin_output_rc(wrp, -1);
+
+	wrp->pw_ns = np;
+	wrp->pw_ns_size = newsize;
+    }
+
+    size_t start = wrp->pw_names_len;
+    if (pin_output_names_add(wrp, prefix) < 0
+	    || pin_output_names_add(wrp, uri) < 0) {
+	wrp->pw_names_len = start;
+	return pin_output_rc(wrp, -1);
+    }
+
+    wrp->pw_ns[wrp->pw_ns_count] = start;
+    wrp->pw_ns_count += 1;
+
     return pin_output_rc(wrp, PIN_OUTPUT_CALL(wrp, pof_ns, prefix, uri));
+}
+
+const char *
+pin_output_ns_lookup (pin_output_writer_t *wrp, const char *prefix)
+{
+    if (prefix == NULL)
+	prefix = "";
+
+    /* Innermost first, so a nearer declaration hides an outer one */
+    for (unsigned i = wrp->pw_ns_count; i > 0; i--) {
+	const char *cp = wrp->pw_names + wrp->pw_ns[i - 1];
+	if (strcmp(cp, prefix) == 0)
+	    return pin_output_names_get(cp + strlen(cp) + 1);
+    }
+
+    return NULL;
 }
 
 int
@@ -236,7 +273,11 @@ pin_output_close (pin_output_writer_t *wrp)
 			     pin_output_names_get(uri),
 			     pin_output_names_get(name));
 
+    /* Drop the element's names and its namespace declarations */
     wrp->pw_names_len = start;
+    while (wrp->pw_ns_count > 0 && wrp->pw_ns[wrp->pw_ns_count - 1] >= start)
+	wrp->pw_ns_count -= 1;
+
     return pin_output_rc(wrp, rc);
 }
 
