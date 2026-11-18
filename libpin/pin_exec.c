@@ -228,9 +228,9 @@ pin_op_element_close (PIN_OP_FUNC_ARGS)
 {
     pin_insert_t *pip = parsep->pp_insert;
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
-    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
-    if (psp->ps_node != NULL) {
-        const char *tag = pin_namepool_string(pwp, psp->ps_node->pn_name);
+    pin_name_id_t top_name = pin_insert_top_name(pip);
+    if (!pin_name_id_is_null(top_name)) {
+        const char *tag = pin_namepool_string(pwp, top_name);
         if (tag)
             pin_insert_close(parsep, NULL, tag);
     }
