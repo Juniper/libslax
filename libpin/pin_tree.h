@@ -58,7 +58,13 @@ typedef struct pin_istack_s {
     pin_name_id_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
     pin_op_id_t ps_close_ops;	/* Op sequence to run when this element closes */
     int ps_context_retain;	/* Non-zero: new children are marked PNF_TRANSIENT */
+    unsigned ps_emit;		/* Output state of this frame (PSE_*) */
 } pin_istack_t;
+
+/* Flags for ps_emit */
+#define PSE_CONTENT	(1<<0)	/* Content of this frame goes to the output */
+#define PSE_OPEN	(1<<1)	/* The output has an open element for us */
+#define PSE_ONLY	(1<<2)	/* Output only: no node in the store */
 
 /*
  * An insertion point is all the information we need to add a node to
@@ -76,6 +82,39 @@ typedef struct pin_insert_s {
 /* Values for pin_relation */
 #define PIR_SIBLING	1	/* Insert as sibling */
 #define PIR_CHILD	2	/* Insert as child */
+
+/*
+ * The frame that new store nodes go under: the top frame, or, if that
+ * is output only (PSE_ONLY), the nearest frame below it with a node.
+ * Input kept inside output-only elements is stored under its nearest
+ * stored ancestor.  The root frame always has a node.
+ */
+static inline pin_istack_t *
+pin_insert_store_frame (pin_insert_t *pip)
+{
+    pin_depth_t depth = pip->pin_depth;
+
+    while (depth > 0 && (pip->pin_stack[depth].ps_emit & PSE_ONLY))
+	depth -= 1;
+
+    return &pip->pin_stack[depth];
+}
+
+/*
+ * The name of the element on top of the stack: its node's name, or,
+ * for an output-only frame, the name it was opened with.
+ */
+static inline pin_name_id_t
+pin_insert_top_name (pin_insert_t *pip)
+{
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+
+    if (psp->ps_node)
+	return psp->ps_node->pn_name;
+    if (psp->ps_emit & PSE_ONLY)
+	return psp->ps_old_name;
+    return pin_name_id_null_atom();
+}
 
 static inline const char *
 pin_mk_name (char *namebuf, const char *name, const char *ext)
