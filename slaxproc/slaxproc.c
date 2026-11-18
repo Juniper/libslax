@@ -794,8 +794,6 @@ do_pin (const char *name, const char *output, const char *input, char **argv)
     pin_parse_set_filter(parsep, xfp);
     pin_parse_set_rulebook(parsep, rb);
 
-    pin_parse(parsep);
-
     if (output == NULL || slaxFilenameIsStd(output))
         outfile = stdout;
     else {
@@ -804,7 +802,11 @@ do_pin (const char *name, const char *output, const char *input, char **argv)
             err(1, "could not open file: '%s'", output);
     }
 
-    pin_parse_emit_xml(parsep, outfile);
+    /* Output is written as it is made */
+    if (pin_parse_add_output_xml(parsep, outfile) < 0)
+        errx(1, "pin_parse_add_output_xml failed");
+
+    pin_parse(parsep);
 
     if (outfile != stdout)
         fclose(outfile);
