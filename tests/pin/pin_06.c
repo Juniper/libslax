@@ -161,10 +161,11 @@ main (int argc, char **argv)
     pin_parse_set_filter(parsep, xfp);
     pin_parse_set_rulebook(parsep, rb);
 
-    pin_parse(parsep);
+    /* Output is written as it is made */
+    if (opt_dump && pin_parse_add_output_xml(parsep, stdout) < 0)
+	errx(1, "pin_parse_add_output_xml failed");
 
-    if (opt_dump)
-	pin_parse_emit_xml(parsep, stdout);
+    pin_parse(parsep);
 
     pin_workspace_close(workp);
     pa_mmap_close(pmp);
