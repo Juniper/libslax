@@ -58,7 +58,15 @@ typedef struct pin_parse_s {
     uint8_t *pp_strip_stack;    /* per-depth strip mode (PIN_STRIP_*), heap-allocated */
     uint32_t pp_strip_len;      /* number of entries in use */
     uint32_t pp_strip_size;     /* allocated capacity */
+    struct pin_output_s *pp_result; /* Fan-out of the attached sinks */
+    struct pin_output_stack_s *pp_dests; /* Output destinations; top is current */
+    int pp_output_state;	/* PIN_OUTPUT_STATE_* */
 } pin_parse_t;
+
+/* Values for pp_output_state */
+#define PIN_OUTPUT_STATE_NONE	 0 /* Not started */
+#define PIN_OUTPUT_STATE_STARTED 1 /* "start" has been sent */
+#define PIN_OUTPUT_STATE_DONE	 2 /* "finish" has been sent */
 
 /* Flags for pp_flags: */
 #define PIN_PF_DEBUG		(1<<0) /* Make some debug output */
@@ -121,9 +129,27 @@ void
 pin_parse_emit_xml (pin_parse_t *parsep, FILE *out);
 
 struct pin_output_s;		/* See pin_output.h */
+struct pin_output_funcs_s;
+struct pin_output_stack_s;
 
 void
 pin_parse_emit_sink (pin_parse_t *parsep, const struct pin_output_s *sinkp);
+
+/*
+ * Attach a sink before the parse.  Output is sent to it as it is
+ * made, rather than built in the store; more than one sink can be
+ * attached, and each gets every event.  Returns 0 or -1.
+ */
+int
+pin_parse_add_output (pin_parse_t *parsep,
+		      const struct pin_output_funcs_s *funcs, void *opaque);
+
+/*
+ * Attach an XML sink writing to "out", using the rulebook's output
+ * settings (so set the rulebook first).
+ */
+int
+pin_parse_add_output_xml (pin_parse_t *parsep, FILE *out);
 
 void
 pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);
