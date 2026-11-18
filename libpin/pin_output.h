@@ -190,7 +190,10 @@ pin_output_free (pin_output_t *sinkp);
  * The writer: the engine side of a sink.  It records each open
  * element so close needs no name, and sends end_attribs before the
  * first child.  Names are copied into pw_names, since the caller's
- * strings may live in an mmap that can move.
+ * strings may live in an mmap that can move.  Namespace declarations
+ * are kept there too, after their element's names, so a close drops
+ * them with the element; pin_output_ns_lookup() finds the one in
+ * scope for a prefix.
  */
 typedef struct pin_output_writer_s {
     pin_output_t pw_sink;	/* The sink we write to */
@@ -202,6 +205,9 @@ typedef struct pin_output_writer_s {
     size_t pw_names_size;	/* Bytes allocated */
     size_t *pw_offsets;		/* Start of each depth in pw_names */
     unsigned pw_offsets_size;	/* Slots allocated */
+    size_t *pw_ns;		/* "prefix\0uri\0" in pw_names, per decl */
+    unsigned pw_ns_count;	/* Declarations in scope */
+    unsigned pw_ns_size;	/* Slots allocated */
 } pin_output_writer_t;
 
 void
@@ -226,6 +232,15 @@ int pin_output_pi(pin_output_writer_t *wrp, const char *target,
 		  const char *data);
 int pin_output_close(pin_output_writer_t *wrp);
 int pin_output_finish(pin_output_writer_t *wrp);
+
+/*
+ * The URI that "prefix" (NULL for the default namespace) is bound to
+ * in the output's current scope, or NULL if none is.  The string is
+ * the writer's; it lasts until the declaring element closes.
+ */
+const char *
+pin_output_ns_lookup (pin_output_writer_t *wrp, const char *prefix);
+
 void pin_output_error(pin_output_writer_t *wrp, pin_output_severity_t sev,
 		      const pin_output_loc_t *locp, const char *fmt, ...);
 
