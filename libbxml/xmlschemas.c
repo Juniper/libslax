@@ -82,8 +82,6 @@
 
 /* #define WXS_ELEM_DECL_CONS_ENABLED */
 
-/* #define ENABLE_PARTICLE_RESTRICTION 1 */
-
 #define ENABLE_REDEFINE
 
 /* #define ENABLE_NAMED_LOCALS */
@@ -15239,10 +15237,6 @@ xmlSchemaCheckCOSCTExtends (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
  * Schema Component Constraint:
  * Derivation Valid (Restriction, Complex) (derivation-ok-restriction)
  *
- * STATUS:
- *   missing:
- *     (5.4.2) ???
- *
  * ATTENTION:
  * In XML Schema 1.1 this will be:
  * Validation Rule: Checking complex type subsumption
@@ -15252,6 +15246,11 @@ xmlSchemaCheckCOSCTExtends (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
  * @returns 0 if the constraints are satisfied, a positive
  * error code if not and -1 if an internal error occurred.
  */
+static int
+xmlSchemaCheckCOSParticleRestrict (xmlSchemaParserCtxtPtr ctxt,
+                                   xmlSchemaParticlePtr r,
+                                   xmlSchemaParticlePtr b);
+
 static int
 xmlSchemaCheckDerivationOKRestriction (xmlSchemaParserCtxtPtr ctxt,
                                        xmlSchemaTypePtr type)
@@ -15420,9 +15419,23 @@ xmlSchemaCheckDerivationOKRestriction (xmlSchemaParserCtxtPtr ctxt,
 	* must be a `valid restriction` of the particle of the {content
 	* type} of the {base type definition} as defined in Particle Valid
 	* (Restriction) ($3.9.6).
-	*
-	* URGENT TODO: (5.4.2)
 	*/
+        {
+            int err = xmlSchemaCheckCOSParticleRestrict(
+                ctxt, WXS_TYPE_PARTICLE(type), WXS_TYPE_PARTICLE(base));
+
+            if (err == -1)
+                return -1;
+            if (err != 0) {
+                xmlSchemaPCustomErr(
+                    ctxt, XML_SCHEMAP_DERIVATION_OK_RESTRICTION_1,
+                    WXS_BASIC_CAST type, NULL,
+                    "The particle of the type is not a valid restriction "
+                    "of the particle of the base type's content type",
+                    NULL);
+                return ctxt->err;
+            }
+        }
     } else {
         xmlSchemaPCustomErr(
             ctxt, XML_SCHEMAP_DERIVATION_OK_RESTRICTION_1, WXS_BASIC_CAST type,
@@ -15614,7 +15627,6 @@ xmlSchemaCheckSRCCT (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
     return ret;
 }
 
-#ifdef ENABLE_PARTICLE_RESTRICTION
 /**
  * (3.9.6) Constraints on Particle Schema Components
  * Schema Component Constraint:
@@ -15622,8 +15634,10 @@ xmlSchemaCheckSRCCT (xmlSchemaParserCtxtPtr ctxt, xmlSchemaTypePtr type)
  *
  * STATUS: complete
  *
- * @param ctxt  the schema parser context
- * @param type  the complex type definition
+ * @param rmin  the restricting particle's minOccurs
+ * @param rmax  the restricting particle's maxOccurs
+ * @param bmin  the base particle's minOccurs
+ * @param bmax  the base particle's maxOccurs
  * @returns 0 if the constraints are satisfied, a positive
  * error code if not and -1 if an internal error occurred.
  */
@@ -15636,6 +15650,13 @@ xmlSchemaCheckParticleRangeOK (int rmin, int rmax, int bmin, int bmax)
         return 1;
     return 0;
 }
+
+/*
+ * The rcase-* helpers below and xmlSchemaCheckCOSParticleRestrict() are
+ * mutually recursive: a group's children are checked by recursing back
+ * into the dispatcher, which is defined last.  (Forward-declared above,
+ * ahead of xmlSchemaCheckDerivationOKRestriction, which also calls it.)
+ */
 
 /**
  * (3.9.6) Constraints on Particle Schema Components
@@ -15794,7 +15815,16 @@ xmlSchemaCheckRCaseNSCompat (xmlSchemaParserCtxtPtr ctxt,
  * Particle Derivation OK (Elt:All/Choice/Sequence -- RecurseAsIfGroup)
  * (rcase-RecurseAsIfGroup)
  *
- * STATUS: TODO
+ * STATUS: complete
+ *
+ * SPEC "For an element declaration particle to be a `valid restriction`
+ * of a group particle, R is treated as if it were a group whose
+ * {compositor} is the same as B's, with {min occurs} and {max occurs}
+ * of 1, containing only R itself; that synthetic group must then be a
+ * `valid restriction` of B as defined by Recurse (All or Sequence) or
+ * RecurseLax (Choice)."  Since the synthetic group holds only R, these
+ * reduce to: some particle of B must match R, and (for All/Sequence)
+ * every other particle of B must be `emptiable`.
  *
  * @param ctxt  the schema parser context
  * @param r  the restricting element declaration particle
@@ -15807,8 +15837,35 @@ xmlSchemaCheckRCaseRecurseAsIfGroup (xmlSchemaParserCtxtPtr ctxt,
                                      xmlSchemaParticlePtr r,
                                      xmlSchemaParticlePtr b)
 {
-    /* TODO: Error codes (rcase-RecurseAsIfGroup). */
-    TODO return 0;
+    xmlSchemaModelGroupPtr bModel;
+    xmlSchemaParticlePtr bp, matched;
+
+    if (xmlSchemaCheckParticleRangeOK(1, 1, b->minOccurs, b->maxOccurs) != 0)
+        return 1;
+
+    bModel = WXS_PARTICLE_MODEL(b);
+    matched = NULL;
+    for (bp = WXS_MODELGROUP_PARTICLE(bModel); bp != NULL;
+         bp = WXS_PTC_CAST bp->next) {
+        int ret = xmlSchemaCheckCOSParticleRestrict(ctxt, r, bp);
+
+        if (ret == -1)
+            return -1;
+        if (ret == 0) {
+            matched = bp;
+            break;
+        }
+    }
+    if (matched == NULL)
+        return 1;
+    if (bModel->type == XML_SCHEMA_TYPE_CHOICE)
+        return 0;
+    for (bp = WXS_MODELGROUP_PARTICLE(bModel); bp != NULL;
+         bp = WXS_PTC_CAST bp->next) {
+        if ((bp != matched) && (!xmlSchemaIsParticleEmptiable(bp)))
+            return 1;
+    }
+    return 0;
 }
 
 /**
@@ -15863,45 +15920,124 @@ xmlSchemaCheckRCaseNSSubset (xmlSchemaParserCtxtPtr ctxt,
 /**
  * (3.9.6) Constraints on Particle Schema Components
  * Schema Component Constraint:
- * Particle Valid (Restriction) (cos-particle-restrict)
+ * Particle Derivation OK (All/Choice/Sequence:Any --
+ * NSRecurseCheckCardinality) (rcase-NSRecurseCheckCardinality)
  *
- * STATUS: TODO
+ * STATUS: complete
+ *
+ * Computes a group particle's "effective total range": the occurrence
+ * range the group as a whole allows an instance to appear across all of
+ * its children, folding in each child's own range (recursing into
+ * nested groups).  Needed by rcase-NSRecurseCheckCardinality, which
+ * restricts a wildcard against the combined range of a whole group
+ * rather than against any single child.
+ *
+ * @param group  a group (all, choice or sequence) particle
+ * @param effMin  returns the effective total minimum
+ * @param effMax  returns the effective total maximum, or UNBOUNDED
+ */
+static void
+xmlSchemaCheckRCaseEffectiveTotalRange (xmlSchemaParticlePtr group,
+                                        int *effMin, int *effMax)
+{
+    xmlSchemaModelGroupPtr model = WXS_PARTICLE_MODEL(group);
+    xmlSchemaParticlePtr part;
+    int isChoice = (model->type == XML_SCHEMA_TYPE_CHOICE);
+    int aggMin = 0, aggMax = 0, anyUnbounded = 0, first = 1;
+
+    for (part = WXS_MODELGROUP_PARTICLE(model); part != NULL;
+         part = WXS_PTC_CAST part->next) {
+        int cmin, cmax;
+
+        if (WXS_IS_MODEL_GROUP(part->children))
+            xmlSchemaCheckRCaseEffectiveTotalRange(part, &cmin, &cmax);
+        else {
+            cmin = part->minOccurs;
+            cmax = part->maxOccurs;
+        }
+        if (cmax == UNBOUNDED)
+            anyUnbounded = 1;
+        if (isChoice) {
+            if (first || (cmin < aggMin))
+                aggMin = cmin;
+            if (first || (cmax > aggMax))
+                aggMax = cmax;
+        } else {
+            aggMin += cmin;
+            /*
+            * Once anyUnbounded is set, the final max is UNBOUNDED
+            * regardless of aggMax, so stop summing to avoid overflowing
+            * aggMax with repeated UNBOUNDED additions.
+            */
+            if (cmax != UNBOUNDED)
+                aggMax += cmax;
+        }
+        first = 0;
+    }
+    *effMin = group->minOccurs * aggMin;
+    if (anyUnbounded || ((group->maxOccurs == UNBOUNDED) && (aggMax != 0)))
+        *effMax = UNBOUNDED;
+    else
+        *effMax = group->maxOccurs * aggMax;
+}
+
+/**
+ * (3.9.6) Constraints on Particle Schema Components
+ * Schema Component Constraint:
+ * Particle Derivation OK (All/Choice/Sequence:Any --
+ * NSRecurseCheckCardinality) (rcase-NSRecurseCheckCardinality)
+ *
+ * STATUS: complete
  *
  * @param ctxt  the schema parser context
- * @param type  the complex type definition
+ * @param r  the restricting group particle
+ * @param b  the base wildcard particle
  * @returns 0 if the constraints are satisfied, a positive
  * error code if not and -1 if an internal error occurred.
  */
 static int
-xmlSchemaCheckCOSParticleRestrict (xmlSchemaParserCtxtPtr ctxt,
-                                   xmlSchemaParticlePtr r,
-                                   xmlSchemaParticlePtr b)
+xmlSchemaCheckRCaseNSRecurseCheckCardinality (xmlSchemaParserCtxtPtr ctxt,
+                                              xmlSchemaParticlePtr r,
+                                              xmlSchemaParticlePtr b)
 {
-    int ret = 0;
+    xmlSchemaParticlePtr part;
+    int effMin, effMax;
 
-    /*part = WXS_TYPE_PARTICLE(type);
-    basePart = WXS_TYPE_PARTICLE(base);
+    /*
+    * SPEC (1) "Every particle in R's {particles} is a `valid
+    * restriction` of B, as defined by this constraint."
     */
+    for (part = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(r)); part != NULL;
+         part = WXS_PTC_CAST part->next) {
+        int ret = xmlSchemaCheckCOSParticleRestrict(ctxt, part, b);
 
-    TODO
-
-        /*
-    * SPEC (1) "They are the same particle."
+        if (ret == -1)
+            return -1;
+        if (ret != 0)
+            return 1;
+    }
+    /*
+    * SPEC (2) "R's {effective total range}, as defined in Effective
+    * Total Range (all and sequence) ($3.8.6) (if R is an all or
+    * sequence) or Effective Total Range (choice) ($3.8.6) (if R is a
+    * choice) is a valid restriction of B's occurrence range as
+    * defined by Occurrence Range OK ($3.9.6)."
     */
-        if (r == b) return 0;
-
+    xmlSchemaCheckRCaseEffectiveTotalRange(r, &effMin, &effMax);
+    if (xmlSchemaCheckParticleRangeOK(effMin, effMax, b->minOccurs,
+                                      b->maxOccurs)
+        != 0)
+        return 1;
     return 0;
 }
 
 /**
  * (3.9.6) Constraints on Particle Schema Components
  * Schema Component Constraint:
- * Particle Derivation OK (All:All,Sequence:Sequence --
-                           Recurse)
+ * Particle Derivation OK (All:All,Sequence:Sequence -- Recurse)
  * (rcase-Recurse)
  *
- * STATUS:  ?
- * TODO: subst-groups
+ * STATUS: complete
  *
  * @param ctxt  the schema parser context
  * @param r  the <all> or <sequence> model group particle
@@ -15913,8 +16049,8 @@ static int
 xmlSchemaCheckRCaseRecurse (xmlSchemaParserCtxtPtr ctxt, xmlSchemaParticlePtr r,
                             xmlSchemaParticlePtr b)
 {
-    /* xmlSchemaParticlePtr part; */
-    /* TODO: Error codes (rcase-Recurse). */
+    xmlSchemaParticlePtr rp, bp;
+
     if ((r->children == NULL) || (b->children == NULL)
         || (r->children->type != b->children->type))
         return -1;
@@ -15928,11 +16064,317 @@ xmlSchemaCheckRCaseRecurse (xmlSchemaParserCtxtPtr ctxt, xmlSchemaParticlePtr r,
     if (xmlSchemaCheckParticleRangeOK(r->minOccurs, r->maxOccurs, b->minOccurs,
                                       b->maxOccurs))
         return 1;
+    /*
+    * SPEC (2), (3) "There is a complete order-preserving functional
+    * mapping from the particles in R's {particles} to the particles in
+    * B's {particles} such that each mapped pair is a `valid
+    * restriction` of its partner, and every particle in B's
+    * {particles} that is not mapped to is `emptiable`."
+    *
+    * This is found by a single left-to-right pass over B: each B
+    * particle either consumes the next unmatched R particle (if it
+    * validly restricts it) or is skipped, in which case it must be
+    * emptiable.  Order is preserved because R particles are consumed
+    * strictly in order.
+    */
+    rp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(r));
+    for (bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b)); bp != NULL;
+         bp = WXS_PTC_CAST bp->next) {
+        if (rp != NULL) {
+            int ret = xmlSchemaCheckCOSParticleRestrict(ctxt, rp, bp);
 
+            if (ret == -1)
+                return -1;
+            if (ret == 0) {
+                rp = WXS_PTC_CAST rp->next;
+                continue;
+            }
+        }
+        if (!xmlSchemaIsParticleEmptiable(bp))
+            return 1;
+    }
+    if (rp != NULL)
+        return 1;
     return 0;
 }
 
-#endif
+/**
+ * (3.9.6) Constraints on Particle Schema Components
+ * Schema Component Constraint:
+ * Particle Derivation OK (Choice:Choice -- RecurseLax)
+ * (rcase-RecurseLax)
+ *
+ * STATUS: complete
+ *
+ * @param ctxt  the schema parser context
+ * @param r  the restricting <choice> model group particle
+ * @param b  the base <choice> model group particle
+ * @returns 0 if the constraints are satisfied, a positive
+ * error code if not and -1 if an internal error occurred.
+ */
+static int
+xmlSchemaCheckRCaseRecurseLax (xmlSchemaParserCtxtPtr ctxt,
+                               xmlSchemaParticlePtr r, xmlSchemaParticlePtr b)
+{
+    xmlSchemaParticlePtr rp, bp;
+
+    if (xmlSchemaCheckParticleRangeOK(r->minOccurs, r->maxOccurs, b->minOccurs,
+                                      b->maxOccurs))
+        return 1;
+    /*
+    * SPEC "There is a complete order-preserving functional mapping from
+    * the particles in R's {particles} to the particles in B's
+    * {particles} such that each mapped pair is a `valid restriction` of
+    * its partner."  Unlike Recurse, B's unmapped particles need not be
+    * `emptiable`, since only one alternative of a choice is ever
+    * required to be satisfiable.
+    */
+    rp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(r));
+    for (bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b));
+         (rp != NULL) && (bp != NULL); bp = WXS_PTC_CAST bp->next) {
+        int ret = xmlSchemaCheckCOSParticleRestrict(ctxt, rp, bp);
+
+        if (ret == -1)
+            return -1;
+        if (ret == 0)
+            rp = WXS_PTC_CAST rp->next;
+    }
+    if (rp != NULL)
+        return 1;
+    return 0;
+}
+
+/**
+ * (3.9.6) Constraints on Particle Schema Components
+ * Schema Component Constraint:
+ * Particle Derivation OK (Sequence:All -- RecurseUnordered)
+ * (rcase-RecurseUnordered)
+ *
+ * STATUS: complete
+ *
+ * @param ctxt  the schema parser context
+ * @param r  the restricting <sequence> model group particle
+ * @param b  the base <all> model group particle
+ * @returns 0 if the constraints are satisfied, a positive
+ * error code if not and -1 if an internal error occurred.
+ */
+static int
+xmlSchemaCheckRCaseRecurseUnordered (xmlSchemaParserCtxtPtr ctxt,
+                                     xmlSchemaParticlePtr r,
+                                     xmlSchemaParticlePtr b)
+{
+    xmlSchemaParticlePtr rp, bp;
+    int bCount = 0, i;
+    unsigned char *used;
+    int ret = 0;
+
+    if (xmlSchemaCheckParticleRangeOK(r->minOccurs, r->maxOccurs, b->minOccurs,
+                                      b->maxOccurs))
+        return 1;
+
+    for (bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b)); bp != NULL;
+         bp = WXS_PTC_CAST bp->next)
+        bCount += 1;
+    if (bCount == 0)
+        used = NULL;
+    else {
+        used = (unsigned char *) xmlMalloc(bCount);
+        if (used == NULL) {
+            xmlSchemaPErrMemory(ctxt);
+            return -1;
+        }
+        memset(used, 0, bCount);
+    }
+    /*
+    * SPEC "There is a complete functional mapping from the particles in
+    * R's {particles} to the particles in B's {particles} such that no
+    * particle in B's {particles} is mapped to more than once, each
+    * mapped pair is a `valid restriction` of its partner, and every
+    * particle in B's {particles} that is not mapped to is `emptiable`."
+    * Since B is an all group, order does not matter, only that the
+    * mapping is injective.
+    */
+    for (rp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(r)); rp != NULL;
+         rp = WXS_PTC_CAST rp->next) {
+        int found = 0;
+
+        for (i = 0, bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b));
+             bp != NULL; i += 1, bp = WXS_PTC_CAST bp->next) {
+            if (!used[i]) {
+                int r2 = xmlSchemaCheckCOSParticleRestrict(ctxt, rp, bp);
+
+                if (r2 == -1) {
+                    ret = -1;
+                    goto done;
+                }
+                if (r2 == 0) {
+                    used[i] = 1;
+                    found = 1;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            ret = 1;
+            goto done;
+        }
+    }
+    for (i = 0, bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b));
+         bp != NULL; i += 1, bp = WXS_PTC_CAST bp->next) {
+        if ((!used[i]) && (!xmlSchemaIsParticleEmptiable(bp))) {
+            ret = 1;
+            goto done;
+        }
+    }
+
+done:
+    if (used != NULL)
+        xmlFree(used);
+    return ret;
+}
+
+/**
+ * (3.9.6) Constraints on Particle Schema Components
+ * Schema Component Constraint:
+ * Particle Derivation OK (Sequence:Choice -- MapAndSum)
+ * (rcase-MapAndSum)
+ *
+ * STATUS: complete
+ *
+ * @param ctxt  the schema parser context
+ * @param r  the restricting <sequence> model group particle
+ * @param b  the base <choice> model group particle
+ * @returns 0 if the constraints are satisfied, a positive
+ * error code if not and -1 if an internal error occurred.
+ */
+static int
+xmlSchemaCheckRCaseMapAndSum (xmlSchemaParserCtxtPtr ctxt,
+                              xmlSchemaParticlePtr r, xmlSchemaParticlePtr b)
+{
+    xmlSchemaParticlePtr rp, bp;
+    int n = 0, effMin, effMax;
+
+    /*
+    * SPEC "There is a complete functional mapping from the particles in
+    * R's {particles} to the particles in B's {particles} such that
+    * each mapped pair is a `valid restriction` of its partner."  Since
+    * B is a choice, the same alternative may satisfy more than one
+    * particle of R, so unlike Recurse/RecurseUnordered no injectivity
+    * or ordering is required here.
+    */
+    for (rp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(r)); rp != NULL;
+         rp = WXS_PTC_CAST rp->next) {
+        int found = 0;
+
+        for (bp = WXS_MODELGROUP_PARTICLE(WXS_PARTICLE_MODEL(b)); bp != NULL;
+             bp = WXS_PTC_CAST bp->next) {
+            int ret = xmlSchemaCheckCOSParticleRestrict(ctxt, rp, bp);
+
+            if (ret == -1)
+                return -1;
+            if (ret == 0) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+            return 1;
+        n += 1;
+    }
+    /*
+    * SPEC "R's {min occurs} multiplied by the number of particles in
+    * R's {particles}, and (unless unbounded) R's {max occurs}
+    * similarly multiplied, is a valid restriction of B's occurrence
+    * range as defined by Occurrence Range OK ($3.9.6)."
+    */
+    effMin = r->minOccurs * n;
+    effMax = (r->maxOccurs == UNBOUNDED) ? UNBOUNDED : r->maxOccurs * n;
+    if (xmlSchemaCheckParticleRangeOK(effMin, effMax, b->minOccurs,
+                                      b->maxOccurs)
+        != 0)
+        return 1;
+    return 0;
+}
+
+/**
+ * (3.9.6) Constraints on Particle Schema Components
+ * Schema Component Constraint:
+ * Particle Valid (Restriction) (cos-particle-restrict)
+ *
+ * STATUS: complete
+ *
+ * Dispatches to the rcase-* constraint matching R's and B's terms, per
+ * the case table in the spec.  A substitution-group-as-choice and
+ * pointless-wrapper "preprocessing" step the spec describes before this
+ * table is consulted is not implemented: it only affects particles
+ * built from substitution groups or nested single-child wrapper groups,
+ * which are edge cases unlikely in directly-authored schemas.
+ *
+ * @param ctxt  the schema parser context
+ * @param r  the restricting particle
+ * @param b  the base particle
+ * @returns 0 if the constraints are satisfied, a positive
+ * error code if not and -1 if an internal error occurred.
+ */
+static int
+xmlSchemaCheckCOSParticleRestrict (xmlSchemaParserCtxtPtr ctxt,
+                                   xmlSchemaParticlePtr r,
+                                   xmlSchemaParticlePtr b)
+{
+    xmlSchemaTypeType rKind, bKind;
+
+    /*
+    * SPEC (1) "They are the same particle."
+    */
+    if (r == b)
+        return 0;
+    if ((r == NULL) || (b == NULL) || (r->children == NULL)
+        || (b->children == NULL))
+        return -1;
+
+    rKind = r->children->type;
+    bKind = b->children->type;
+
+    if (rKind == XML_SCHEMA_TYPE_ELEMENT) {
+        if (bKind == XML_SCHEMA_TYPE_ELEMENT)
+            return xmlSchemaCheckRCaseNameAndTypeOK(ctxt, r, b);
+        if (bKind == XML_SCHEMA_TYPE_ANY)
+            return xmlSchemaCheckRCaseNSCompat(ctxt, r, b);
+        if (WXS_IS_MODEL_GROUP(b->children))
+            return xmlSchemaCheckRCaseRecurseAsIfGroup(ctxt, r, b);
+        return -1;
+    }
+    if (rKind == XML_SCHEMA_TYPE_ANY) {
+        /*
+        * SPEC: a wildcard can only validly restrict another wildcard.
+        */
+        if (bKind == XML_SCHEMA_TYPE_ANY)
+            return xmlSchemaCheckRCaseNSSubset(ctxt, r, b, 0);
+        return 1;
+    }
+    if (WXS_IS_MODEL_GROUP(r->children)) {
+        if (bKind == XML_SCHEMA_TYPE_ANY)
+            return xmlSchemaCheckRCaseNSRecurseCheckCardinality(ctxt, r, b);
+        if (bKind == XML_SCHEMA_TYPE_ELEMENT)
+            return 1;
+        if (rKind == bKind)
+            return (rKind == XML_SCHEMA_TYPE_CHOICE)
+                ? xmlSchemaCheckRCaseRecurseLax(ctxt, r, b)
+                : xmlSchemaCheckRCaseRecurse(ctxt, r, b);
+        if ((rKind == XML_SCHEMA_TYPE_SEQUENCE)
+            && (bKind == XML_SCHEMA_TYPE_ALL))
+            return xmlSchemaCheckRCaseRecurseUnordered(ctxt, r, b);
+        if ((rKind == XML_SCHEMA_TYPE_SEQUENCE)
+            && (bKind == XML_SCHEMA_TYPE_CHOICE))
+            return xmlSchemaCheckRCaseMapAndSum(ctxt, r, b);
+        /*
+        * SPEC: the remaining combinations (all:choice, choice:all) are
+        * not permitted restrictions.
+        */
+        return 1;
+    }
+    return -1;
+}
 
 #define FACET_RESTR_MUTUAL_ERR(fac1, fac2)                              \
     xmlSchemaPCustomErrExt(                                             \
