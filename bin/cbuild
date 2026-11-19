@@ -1,0 +1,70 @@
+#!/bin/sh
+
+top=`gt top`
+echo "[building in '$top']"
+cd $top/build
+
+targ=${1:-all} ; shift
+
+if [ "$targ" = full ]; then
+    targ="clean all"
+fi
+
+echo "[build target is '$targ']"
+
+if [ "$targ" = "configure" ]; then
+    echo "[running autoreconf]"
+    (cd .. ; autoreconf --install ) || (echo autoconf failed ; exit 1)
+
+    if [ ! -f config-status ]; then
+        conf=`./config.status --config`
+	echo "[found config as $conf]"
+    elif [ ! -f conf ]; then
+        conf=`cat conf`
+	echo "[using config as $conf]"
+    else
+	echo "ERROR: cbuild has no configuration"
+	exit 1
+    fi
+
+    echo "[configure using '../configure $conf']"
+    bash ../configure $conf
+    if [ $? -ne 0 ]; then
+	echo "ERROR: configure failed"
+	exit 1
+    fi
+
+    targ="clean all"
+fi
+
+if [ "$targ" = test ]; then
+    dir=$1
+    if [ ! -z "$dir" ]; then
+        if [ ! -d $dir ]; then
+            dir="tests/$dir"
+        fi
+        dir="-C $dir"
+    fi
+    targ=
+    test=test
+fi
+
+make CFLAGS='-g -O0 -DXO_XPARSE_DEBUG -DLIBXO_DEBUG -DSLAX_DEBUG' $targ install
+rc=$?
+
+if [ $rc -eq 0 ]; then
+    if [ ! -z "$test" ]; then
+        make test $dir
+        rc=$?
+    fi
+else
+    echo "ERROR: make $targ has failed: $rc"
+fi
+
+if [ $rc -ne 0 ]; then
+    echo "ERROR: make has failed: $rc"
+else
+    echo "make has succeeded"
+fi
+
+exit $rc
