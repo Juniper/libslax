@@ -908,6 +908,10 @@ pin_parse_current_filter (pin_parse_t *parsep)
 #define PIN_IOF_RETAIN	(1<<0)	/* Retained input only; never output */
 #define PIN_IOF_INPUT	(1<<1)	/* Input copied to the output; keep it */
 
+static void pin_insert_text_flags(pin_parse_t *parsep, const char *data,
+				  size_t len, pin_node_type_t type,
+				  unsigned flags);
+
 /*
  * Find the namespace for an element's prefix: in the store (the
  * element and its stored ancestors), then in the output's scope,
@@ -983,8 +987,10 @@ pin_insert_drop_open (pin_parse_t *parsep, pin_istack_t *sfp,
  * element opened where content goes to the output is sent to the
  * output.  If it is made only for the output (not PIN_IOF_INPUT), it
  * then leaves the store: its frame stays, with no node, so its
- * content and close go to the output too.  Where nothing goes to the
- * output (no sink, or the store is the result), it stays in the store.
+ * content and close go to the output too.  Input that is sent stays,
+ * marked PNF_TRANSIENT, since the store is no longer the result.
+ * Where nothing goes to the output (no sink, or the store is the
+ * result), it stays in the store.
  */
 static void
 pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
@@ -1017,8 +1023,9 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
      * to send it (with its attributes) to the output, so remember
      * where it goes, to take it out again.
      */
-    pin_boolean_t only = !(flags & (PIN_IOF_RETAIN | PIN_IOF_INPUT))
+    pin_boolean_t sent = !(flags & PIN_IOF_RETAIN)
 	&& pin_parse_emit_writer(parsep, pip->pin_depth) != NULL;
+    pin_boolean_t only = sent && !(flags & PIN_IOF_INPUT);
     pin_istack_t *sfp = pin_insert_store_frame(pip);
     pin_boolean_t had_child = (sfp->ps_node->pn_contents != PA_NULL_ATOM);
     pin_node_id_t last_atom = sfp->ps_last_atom;
@@ -1085,6 +1092,9 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
 
     if (!(flags & PIN_IOF_RETAIN))
 	pin_insert_emit_open(parsep, nodep);
+
+    if (sent && !only)
+	nodep->pn_flags |= PNF_TRANSIENT;
 
     if (only) {
 	pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
@@ -1279,9 +1289,22 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     }
 }
 
+/*
+ * Add text (or a comment or PI).  Where content goes to the output,
+ * it is sent there; output text (not PIN_IOF_INPUT) then isn't kept,
+ * and input text is kept, marked PNF_TRANSIENT.  Otherwise it goes
+ * into the store.
+ */
 void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
 		pin_node_type_t type)
+{
+    pin_insert_text_flags(parsep, data, len, type, 0);
+}
+
+static void
+pin_insert_text_flags (pin_parse_t *parsep, const char *data, size_t len,
+		       pin_node_type_t type, unsigned flags)
 {
     if (parsep->pp_capture > 0) {
 	/* Redirect text to capture buffer (for comment/PI/message bodies) */
@@ -1313,10 +1336,13 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     memcpy(cp, data, len);
     cp[len] = '\0';
 
+    pin_boolean_t sent = (pin_parse_emit_writer(parsep, pip->pin_depth)
+			  != NULL);
     pin_insert_emit_text(parsep, cp, len, type);
 
-    /* Content of an output-only element isn't kept */
-    if (pip->pin_stack[pip->pin_depth].ps_emit & PSE_ONLY) {
+    /* Output text, and content of an output-only element, isn't kept */
+    if (sent && (!(flags & PIN_IOF_INPUT)
+		 || (pip->pin_stack[pip->pin_depth].ps_emit & PSE_ONLY))) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
@@ -1327,6 +1353,13 @@ pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
     if (pin_node_id_is_null(node_atom)) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
+    }
+
+    if (sent) {
+	pin_node_t *nodep = pin_node_addr(pip->pin_tree->pt_workspace,
+					  node_atom);
+	if (nodep)
+	    nodep->pn_flags |= PNF_TRANSIENT;
     }
 }
 
@@ -2877,15 +2910,15 @@ pin_parse (pin_parse_t *parsep)
 			}
 		    }
 		    if (parsep->pp_ws_pending) {
-			pin_insert_text(parsep, parsep->pp_ws_pending,
-					(size_t) parsep->pp_ws_pending_len,
-					PIN_TYPE_TEXT);
+			pin_insert_text_flags(parsep, parsep->pp_ws_pending,
+					      (size_t) parsep->pp_ws_pending_len,
+					      PIN_TYPE_TEXT, PIN_IOF_INPUT);
 			free(parsep->pp_ws_pending);
 			parsep->pp_ws_pending = NULL;
 			parsep->pp_ws_pending_len = 0;
 		    }
 		}
-		pin_insert_text(parsep, data, len, type);
+		pin_insert_text_flags(parsep, data, len, type, PIN_IOF_INPUT);
 		/* If in VALUE_OF mode, also cache text for subsequent select="." reuse */
 		{
 		    pin_body_exec_t *vbody = &pip->pin_body;
@@ -3378,9 +3411,9 @@ pin_parse (pin_parse_t *parsep)
 	case PIN_TYPE_CLOSE:	/* Close tag */
 	    {
 		if (parsep->pp_ws_pending) {
-		    pin_insert_text(parsep, parsep->pp_ws_pending,
-				    (size_t) parsep->pp_ws_pending_len,
-				    PIN_TYPE_TEXT);
+		    pin_insert_text_flags(parsep, parsep->pp_ws_pending,
+					  (size_t) parsep->pp_ws_pending_len,
+					  PIN_TYPE_TEXT, PIN_IOF_INPUT);
 		    free(parsep->pp_ws_pending);
 		    parsep->pp_ws_pending = NULL;
 		    parsep->pp_ws_pending_len = 0;
@@ -4121,6 +4154,15 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 		need_eol_attrib = TRUE;
 		next_node_atom = pin_node_id(nodep->pn_contents);
 	    }
+
+	} else if ((nodep->pn_type == PIN_TYPE_TEXT
+		    || nodep->pn_type == PIN_TYPE_UNESC
+		    || nodep->pn_type == PIN_TYPE_COMMENT
+		    || nodep->pn_type == PIN_TYPE_PI)
+		   && (nodep->pn_flags & PNF_TRANSIENT)) {
+	    last_depth = nodep->pn_depth;
+	    node_atom = nodep->pn_next;
+	    continue;
 
 	} else if (nodep->pn_type == PIN_TYPE_TEXT
 		   || nodep->pn_type == PIN_TYPE_UNESC) {
