@@ -53,59 +53,59 @@ pi [xml] [version="1.0" encoding="UTF-8"]
 text [
 ] (6)
 pin_insert_text: [
-] 0 / 783 (depth 1)
+] 0 / 777 (depth 1)
 open tag [root] []
 pin_insert_open: [root] 262 / 0 (depth 1)
 text [
   ] (6)
 pin_insert_text: [
-  ] 0 / 784 (depth 2)
+  ] 0 / 778 (depth 2)
 open tag [section] []
 pin_insert_open: [section] 267 / 0 (depth 2)
 text [
     ] (6)
 pin_insert_text: [
-    ] 0 / 785 (depth 3)
+    ] 0 / 779 (depth 3)
 open tag [group] []
 pin_insert_open: [group] 268 / 0 (depth 3)
 text [
       ] (6)
 pin_insert_text: [
-      ] 0 / 786 (depth 4)
+      ] 0 / 780 (depth 4)
 open tag [item] [id="a"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 787 (depth 5)
+pin_insert_attribs_extract: [id] 266 / 781 (depth 5)
 text [Alpha] (6)
-pin_insert_text: [Alpha] 0 / 788 (depth 5)
+pin_insert_text: [Alpha] 0 / 782 (depth 5)
 close tag [item] []
 pin_insert_close: [item] 269 (depth 4)
 text [
       ] (6)
 pin_insert_text: [
-      ] 0 / 789 (depth 4)
+      ] 0 / 783 (depth 4)
 open tag [item] [id="b"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 790 (depth 5)
+pin_insert_attribs_extract: [id] 266 / 784 (depth 5)
 text [Beta] (6)
-pin_insert_text: [Beta] 0 / 791 (depth 5)
+pin_insert_text: [Beta] 0 / 785 (depth 5)
 close tag [item] []
 pin_insert_close: [item] 269 (depth 4)
 text [
     ] (6)
 pin_insert_text: [
-    ] 0 / 792 (depth 4)
+    ] 0 / 786 (depth 4)
 close tag [group] []
 pin_insert_close: [group] 268 (depth 3)
 text [
   ] (6)
 pin_insert_text: [
-  ] 0 / 793 (depth 3)
+  ] 0 / 787 (depth 3)
 close tag [section] []
 pin_insert_close: [section] 267 (depth 2)
 text [
 ] (6)
 pin_insert_text: [
-] 0 / 794 (depth 2)
+] 0 / 788 (depth 2)
 close tag [root] []
 pin_insert_close: [root] 262 (depth 1)
 pin_insert_open: [out] 261 / 0 (depth 1)
@@ -114,4 +114,4 @@ pin_insert_close: [out] 261 (depth 1)
 text [
 ] (6)
 pin_insert_text: [
-] 0 / 795 (depth 1)
+] 0 / 789 (depth 1)
