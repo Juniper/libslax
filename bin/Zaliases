@@ -1,19 +1,32 @@
-set top_src=`pwd`
+# This is a tcsh/csh file; don't run this file, just "source" it
+
+set top_src=`gt top`
 #set test=$HOME/work/xmlsoft/libxslt-1.1.24/tests/
+
+if ( "$top_src" == "" ) then
+    echo "missing git top"
+    exit 1
+endif
+
+cd $top_src
+mkdir -p build
+cd build
 
 alias Zautoreconf "(cd $top_src ; autoreconf --install)"
 
-set opts=' \
+set conf=' \
 --enable-debug \
+--enable-debugger \
 --enable-warnings \
 --enable-readline \
 --enable-printflike \
 --with-sqlite3=/opt/local \
 --prefix $HOME/work/root/new-libs \
 '
-set opts=`echo $opts`
 
-setenv CONFIGURE_OPTS "$opts"
+set conf=`echo $conf`
+
+setenv CONFIGURE_OPTS "$conf"
 
 set vers=`make --version`
 switch ( "$vers" )
@@ -29,16 +42,16 @@ endsw
 
 set mycflags="-O0 -g -DSLAX_DEBUG -DYYDEBUG -DSLAX_YYDEBUG -DLIBSLAX_DEBUG"
 
-alias Zconfigure "(cd $top_src/build; $gmake_opts ../configure $opts)"
+echo "$conf" > $top_src/build/conf
+
+alias Zshow "$top_src/build/config.status --config"
+alias Zconfigure "(cd $top_src/build; $gmake_opts ../configure `Zshow`)"
 alias Zbuild "(cd $top_src/build; $zmake \!* )"
 alias mi "(cd $top_src/build; $zmake && $zmake install); ."
 
 alias mm "(cd $top_src/build; $zmake CFLAGS='$mycflags')"
 alias mmi "(cd $top_src/build; $zmake CFLAGS='$mycflags' && $zmake install)"
 
-mkdir -p build
-cd build
+unset vers
 
-unset vers opts
-
-alias mk "make CFLAGS='-DLIBSLAX_DEBUG -DLIBXO_DEBUG -DYYDEBUG -DSLAX_YYDEBUG -O0 -g' all install"
+alias mk "$zmake CFLAGS='-DLIBSLAX_DEBUG -DLIBXO_DEBUG -DYYDEBUG -DSLAX_YYDEBUG -O0 -g' all install"
