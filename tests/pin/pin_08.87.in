@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--
+# quiet highwater dump clean xml pin_08.87.xml
+-->
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <!--
+    Store size over a long, repetitive, three-level document.  Each
+    <part> is held as context for its op-dispatch template and freed
+    once the template has run, so the store's high-water mark stays
+    the same however many bins the document has: the open ancestors
+    plus one <part>.
+  -->
+  <xsl:template match="part">
+    <row>
+      <id><xsl:value-of select="@id"/></id>
+      <n><xsl:value-of select="name"/></n>
+      <v><xsl:value-of select="vendor/name"/></v>
+    </row>
+  </xsl:template>
+</xsl:stylesheet>

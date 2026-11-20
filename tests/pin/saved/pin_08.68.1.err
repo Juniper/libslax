@@ -52,66 +52,63 @@ config: looking for 'pin08.mode.index.max-atoms' (default 67108864)
 pi [xml] [version="1.0" encoding="UTF-8"]
 text [
 ] (6)
-pin_insert_text: [
-] 0 / 777 (depth 1)
 open tag [root] []
 pin_insert_open: [root] 262 / 0 (depth 1)
 text [
   ] (6)
 pin_insert_text: [
-  ] 0 / 778 (depth 2)
+  ] 0 / 774 (depth 2)
 open tag [section] []
 pin_insert_open: [section] 267 / 0 (depth 2)
 text [
     ] (6)
 pin_insert_text: [
-    ] 0 / 779 (depth 3)
+    ] 0 / 773 (depth 3)
 open tag [group] []
 pin_insert_open: [group] 268 / 0 (depth 3)
 text [
       ] (6)
 pin_insert_text: [
-      ] 0 / 780 (depth 4)
+      ] 0 / 772 (depth 4)
 open tag [item] [id="a"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 781 (depth 5)
+pin_insert_attribs_extract: [id] 266 / 771 (depth 5)
 text [Alpha] (6)
-pin_insert_text: [Alpha] 0 / 782 (depth 5)
+pin_insert_text: [Alpha] 0 / 770 (depth 5)
 close tag [item] []
 pin_insert_close: [item] 269 (depth 4)
 text [
       ] (6)
 pin_insert_text: [
-      ] 0 / 783 (depth 4)
+      ] 0 / 769 (depth 4)
 open tag [item] [id="b"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 784 (depth 5)
+pin_insert_attribs_extract: [id] 266 / 768 (depth 5)
 text [Beta] (6)
-pin_insert_text: [Beta] 0 / 785 (depth 5)
+pin_insert_text: [Beta] 0 / 775 (depth 5)
 close tag [item] []
 pin_insert_close: [item] 269 (depth 4)
 text [
     ] (6)
 pin_insert_text: [
-    ] 0 / 786 (depth 4)
+    ] 0 / 776 (depth 4)
 close tag [group] []
 pin_insert_close: [group] 268 (depth 3)
 text [
   ] (6)
 pin_insert_text: [
-  ] 0 / 787 (depth 3)
+  ] 0 / 777 (depth 3)
 close tag [section] []
 pin_insert_close: [section] 267 (depth 2)
 text [
 ] (6)
 pin_insert_text: [
-] 0 / 788 (depth 2)
+] 0 / 778 (depth 2)
 close tag [root] []
 pin_insert_close: [root] 262 (depth 1)
 pin_insert_open: [out] 261 / 0 (depth 1)
 pin_exec: apply-templates: matched template for "section" needs apply-templates/copy-of/for-each, which the retained-subtree op engine does not support yet; skipping
-pin_insert_close: [out] 261 (depth 1)
+pin_insert_close: [out] 261 (depth 0)
+pin_insert_release: 2 (depth 1)
 text [
 ] (6)
-pin_insert_text: [
-] 0 / 789 (depth 1)

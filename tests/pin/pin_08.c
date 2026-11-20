@@ -26,6 +26,7 @@
  *   quiet                suppress debug logging
  *   clean                delete the mmap backing file before opening
  *   debug                enable PIN_PF_DEBUG on the parser
+ *   highwater            report the store's high-water mark on stderr
  *   db <file>            override mmap backing file (default /tmp/pin08.sxb)
  */
 
@@ -89,6 +90,7 @@ main (int argc, char **argv)
     int opt_debug = 0;
     int opt_modes = 0;
     int opt_passthru = 1;
+    int opt_highwater = 0;
 
     /* Collected param name=value overrides */
     const char *opt_param_names[64];
@@ -119,6 +121,8 @@ main (int argc, char **argv)
 	    opt_clean = 1;
 	} else if (strcmp(cp, "debug") == 0) {
 	    opt_debug = 1;
+	} else if (strcmp(cp, "highwater") == 0) {
+	    opt_highwater = 1;
 	} else if (strcmp(cp, "passthru") == 0) {
 	    opt_passthru = 1;
 	} else if (strcmp(cp, "nopassthru") == 0) {
@@ -220,6 +224,10 @@ main (int argc, char **argv)
 	errx(1, "pin_parse_add_output_xml failed");
 
     pin_parse(parsep);
+
+    if (opt_highwater)
+	fprintf(stderr, "store high-water mark: %u nodes\n",
+		pin_parse_store_high_water(parsep));
 
     pin_workspace_close(workp);
     pa_mmap_close(pmp);
